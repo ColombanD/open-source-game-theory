@@ -2532,4 +2532,86 @@ theorem stageB {tbl N E Γ p ip' b m K Z js ink iw iw0 iw1 : V} (htbl : TableOK 
 
 end stageBmain
 
+/-! ## 6. The producer: `axmInd_ok`, and the honest oracle `AxmIndOracle'` -/
+
+section producer
+
+variable {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
+
+set_option maxHeartbeats 1000000 in
+/-- **The per-model producer** (task item 5, the honest variant): from the dossier of `p` at `ip` — `p` an
+induction instance in the sense of `InductionR (fun _ ↦ True)`, possibly NONSTANDARD — one list `P`, applicable at
+cap `9`, `NoDrop'`, Horn-only (so `SizeOK` for free), WITH eigenvariables (`shiftsV P ≤ 100 Z³`), of length
+`≤ 4100 Z⁵`, leaving `axchFact &(ip + shiftsV P)` — the fact at `p`'s MOVED offset. `Z` bounds `ip` and
+`|p|(|p| + 1)`; `E ≥ 200 Z³`. -/
+theorem axmInd_ok {tbl N E Γ p ip Z : V} (htbl : TableOK tbl N) (hT : IndRecTable tbl) (hΓ : IsFormulaSet LAct Γ)
+    (hZ : 1 ≤ Z) (hI : InductionR (fun _ ↦ True) p)
+    (hip : ip ≤ Z) (hpZ : formulaLen LAct p * (formulaLen LAct p + 1) ≤ Z) (hE : 200 * gp Z 3 ≤ E)
+    (hD : DossF walkPieces Γ 0 p ip) :
+    ∃ P : V, ListOK tbl E ((9 : ℕ) : V) Γ P ∧ NoDrop' P ∧ HornOnly P ∧ shiftsV P ≤ 100 * gp Z 3 ∧
+      len P ≤ 4100 * gp Z 5 ∧ neg LAct (axchFact (^&(ip + shiftsV P))) ∈ finalCtx Γ P := by
+  obtain ⟨m, _, b, _, hp, hub, hsh, hbv, K, _, hK, _, hs⟩ := hI
+  have hbO : IsSemiformula ℒₒᵣ m b := ⟨hub, le_of_eq hbv⟩
+  have hbL := IsSemiformula.LAct_of_LOR hbO
+  have hshL : shift LAct b = b := by rw [shift_LAct_eq hub]; exact hsh
+  have hw : IsSemitermVec LAct m 0 (Bootstrapping.fvarVec m) :=
+    IsSemitermVec.LAct_of_LOR (fvarVec_isSemitermVec_LOR m)
+  have hsL : subst LAct (Bootstrapping.fvarVec m) b = indBodyVal K := by
+    rw [subst_LAct_eq hub (fvarVec_isSemitermVec_LOR m).isUTermVec]; exact hs
+  -- sizes
+  have hLp : formulaLen LAct p = formulaLen LAct b + m := by rw [hp]; exact formulaLen_qqAlls hbL.isUFormula m
+  have hpp : formulaLen LAct p ≤ formulaLen LAct p * (formulaLen LAct p + 1) :=
+    le_trans (le_add_self : formulaLen LAct p ≤ formulaLen LAct p * formulaLen LAct p + formulaLen LAct p) (le_of_eq (by ring))
+  have hpZ' : formulaLen LAct p ≤ Z := le_trans hpp hpZ
+  have hLb : formulaLen LAct b ≤ Z := le_trans (le_trans le_self_add (le_of_eq hLp.symm)) hpZ'
+  have hm : m ≤ Z := le_trans (le_trans le_add_self (le_of_eq hLp.symm)) hpZ'
+  have hLs : formulaLen LAct (indBodyVal K) ≤ Z := by
+    rw [← hsL]
+    refine le_trans (formulaLen_subst_le (B := m + 1) le_add_self hbL 0 _ hw (substInv_fvarVec m)) (le_trans ?_ hpZ)
+    exact mul_le_mul (le_trans le_self_add (le_of_eq hLp.symm)) (add_le_add (le_trans le_add_self (le_of_eq hLp.symm)) le_rfl)
+      zero_le zero_le
+  have hLk : formulaLen LAct K ≤ Z := le_trans (formulaLen_pieces_le hK).2.2.2.2 hLs
+  -- stage A
+  obtain ⟨L, σ, js, ink, iw, iw0, iw1, hL, hσ, hlen, hjs, hink, hiw, hiw0, hiw1, hDp, hDs, hDk, hDw, hDw0, hDw1, hf6, hf7, hf8⟩ :=
+    stageA htbl hT hΓ hZ hbL hK hp hsL hip hm hLb hLs hLk hE hD
+  -- stage B
+  have hip' : ip + σ ≤ 101 * gp Z 3 :=
+    gp_final hZ (add_gp_le hZ (atom_gp_le hip) hσ (by norm_num) le_rfl) le_rfl (by norm_num)
+  obtain ⟨P, hP, hlP, hfact⟩ := stageB htbl hT (hL.isFormulaSet htbl hΓ) hZ hbO hK hp hbv hshL hm hLb hLs hLk hip'
+    (le_trans hjs hσ) (le_trans hink hσ) (le_trans hiw hσ) (le_trans hiw0 hσ) (le_trans hiw1 hσ) hE
+    hDp hDs hDk hDw hDw0 hDw1 hf6 hf7 hf8
+  have hLP : WInv tbl E Γ (appendV L P) (σ + 0) := hL.append hP.winv
+  have hsh' : shiftsV (appendV L P) = σ := by rw [hLP.2.2.2, add_zero]
+  refine ⟨appendV L P, hLP.1, hLP.2.1, hLP.2.2.1, by rw [hsh']; exact hσ, ?_, ?_⟩
+  · rw [len_appendV]
+    exact gp_final hZ (add_gp_le hZ hlen hlP le_rfl (by norm_num)) le_rfl (by norm_num)
+  · rw [hsh', finalCtx_appendV]; exact hfact
+
+/-- **The honest oracle** (`ProAxm.AxmIndOracle` with eigenvariables): for every induction-instance member `p` of
+`s`, a cap-`9`, `NoDrop'`, Horn-only list with `shiftsV P ≤ C`, `len P ≤ C`, `SizeOK C C P`, leaving
+`axchFact &(memTop s p i + shiftsV P)` — the fact at the MOVED offset of `p`'s dossier. `C : V` (the bound is a
+polynomial in the sequent bound `D` and `i`, hence nonstandard when they are). -/
+def AxmIndOracle' (tbl E Wc T Γ s i C : V) : Prop :=
+  ∀ p ∈ s, IsSemiformula ℒₒᵣ 0 p → InductionR (fun _ ↦ True) p →
+    ∃ P : V, ListOK tbl E ((9 : ℕ) : V) Γ P ∧ NoDrop' P ∧ HornOnly P ∧ shiftsV P ≤ C ∧ len P ≤ C ∧
+      SizeOK C C P ∧ neg LAct (axchFact (^&(memTop walkPieces Wc T s p i + shiftsV P))) ∈ finalCtx Γ P
+
+/-- **`AxmIndOracle'` is DISCHARGED**: at the layout of `s` at `i` with `setLen s ≤ D`, with `Z := i + 6D + 1 + D(D+1)`
+and `E ≥ 200 Z³`, the honest oracle holds with `C = 4100 Z⁵`. -/
+theorem axmIndOracle_of {tbl N Wc T s D E Γ i : V} (htbl : TableOK tbl N) (hT : IndRecTable tbl) (hWc : Wc = certPieces)
+    (hs : IsFormulaSet LAct s) (hsD : setLen LAct s ≤ D) (hΓ : IsFormulaSet LAct Γ)
+    (hLay : Layout walkPieces Wc T Γ s i) (hE : 200 * gp (i + 6 * D + 1 + D * (D + 1)) 3 ≤ E) :
+    AxmIndOracle' tbl E Wc T Γ s i (4100 * gp (i + 6 * D + 1 + D * (D + 1)) 5) := by
+  intro p hp _ hI
+  have hZ : (1 : V) ≤ i + 6 * D + 1 + D * (D + 1) := le_trans le_add_self le_self_add
+  have hip : memTop walkPieces Wc T s p i ≤ i + 6 * D + 1 + D * (D + 1) :=
+    le_trans (memTop_le htbl hT.walkTable hWc T hs hp hsD) le_self_add
+  have hpD : formulaLen LAct p ≤ D := le_trans (formulaLen_le_setLen_of_mem hp) hsD
+  have hpZ : formulaLen LAct p * (formulaLen LAct p + 1) ≤ i + 6 * D + 1 + D * (D + 1) :=
+    le_trans (mul_le_mul hpD (add_le_add hpD le_rfl) zero_le zero_le) le_add_self
+  obtain ⟨P, h1, h2, h3, h4, h5, h6⟩ := axmInd_ok htbl hT hΓ hZ hI hip hpZ hE (hLay.member hp).1
+  exact ⟨P, h1, h2, h3, le_trans h4 (gp_final hZ le_rfl (by norm_num) (by norm_num)), h5, sizeOK_of_hornOnly h3, h6⟩
+
+end producer
+
 end ArithS
