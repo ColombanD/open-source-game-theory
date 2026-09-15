@@ -1447,6 +1447,27 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms len_vOr_eq
 #print axioms or_arm_size
 
+-- U10 (Necessitation/Verify5, 2026-09-16): THE SIZE HALF, PART 9 — the `and` and `cut` ARMS (8 of 10 arms done).
+-- The two-child arms: `vAnd` is SEVEN blocks (`proIns ++ L₁ ++ postIns ++ proIns ++ L₂ ++ postIns ++ nodeAnd`) and
+-- `vCut` is EIGHT (`proCutPre ++ cutPro ++ L₁ ++ postIns ++ cutPro ++ L₂ ++ postIns ++ nodeCut`); both nodes sit on
+-- the BINARY tail, so their side conditions are `bin3Fact`/`bin3Code` (§8's `dlen_bin3Code_le_kitD`). Two new
+-- landing lemmas: `sizeOK_proCutPre_kit` — `Prologue.sizeOK_proCutPre` lands in `(lenQ B' D + Q', lenD N' B' D + D')`
+-- at ANY `Q'`, `D'`, NOT the layout class, so instantiate `Q' = D' = 0` and route `lenQ ≤ layQ` (`lenQ_le_layQ`, by
+-- definition since `layQ = lenQ + sum2Q`); and `sizeOK_cutPro` — the `cut` selector splits on the EMPTY PARENT
+-- (`proIns0` vs `proIns`), the third and last selector split in the file (§8 did the empty-CHILD splits). The second
+-- `proIns`/`cutPro` of each arm runs in a LATER context, taken as separate hypotheses (the glue supplies them by
+-- transport). TRAP: a context variable introduced only in a hypothesis is autobound AFTER the section's
+-- `variable {V …}`, leaving its `V` a metavariable and stalling instance search ("typeclass instance problem is
+-- stuck"); bind it in the binder list.
+#print axioms lenQ_le_layQ
+#print axioms lenD_le_layD
+#print axioms sizeOK_proCutPre_kit
+#print axioms sizeOK_cutPro
+#print axioms len_vAnd_eq
+#print axioms len_vCut_eq
+#print axioms and_arm_size
+#print axioms cut_arm_size
+
 -- U10 (Necessitation/Package, 2026-09-15): THE PACKAGE AND THE HEADLINE THEOREMS, with `Assemble.SizeOracle`
 -- BYPASSED. `SizeOracle` is NOT PROVABLE as stated (it binds the numeral table `T` with no `NumTableOK T N' B'`,
 -- while every prologue size lemma requires one and lands at `layQ B B' D`/`layD N' B' D`; `NumTableOK` is never a

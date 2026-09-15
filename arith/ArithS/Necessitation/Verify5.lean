@@ -879,4 +879,217 @@ theorem or_arm_size {Wl Wc W₁ W T s p q d' L' B E Cz N' B' D d Γ : V}
 
 end orArm
 
+
+/-! ## 12. The `and` and `cut` arms
+
+The two-child arms. `vAnd` is SEVEN blocks — `proIns ++ L₁ ++ postIns ++ proIns ++ L₂ ++ postIns ++ nodeAnd` — and
+`vCut` is EIGHT: `proCutPre ++ cutPro ++ L₁ ++ postIns ++ cutPro ++ L₂ ++ postIns ++ nodeCut`. Both nodes sit on the
+BINARY tail, so their side conditions are `bin3Fact`/`bin3Code` (§8's `dlen_bin3Code_le_kitD`).
+
+Two new landing lemmas are needed and proved here:
+
+* `sizeOK_proCutPre_kit` — `Prologue.sizeOK_proCutPre` lands in `(lenQ B' D + Q', lenD N' B' D + D')` at ANY `Q'`,
+  `D'`, NOT the layout class; instantiating `Q' = D' = 0` and routing `lenQ ≤ layQ` (`lenQ_le_layQ`, by definition
+  since `layQ = lenQ + sum2Q`) puts it in the kit class;
+* `sizeOK_cutPro` — the `cut` selector splits on the EMPTY PARENT (`proIns0` vs `proIns`), the third and last
+  selector split in the file (§8 did `wkPro`/`shiftPro`, which split on the empty CHILD).
+
+The second `proIns`/`cutPro` of each arm runs in a LATER context (after the first child and its `postIns`), so the
+arms take that context and its layout as separate hypotheses — the glue supplies them by transport. TRAP: a context
+variable introduced only in a hypothesis is autobound AFTER the section's `variable {V …}`, leaving its `V` a
+metavariable and stalling instance search ("typeclass instance problem is stuck"); bind it in the binder list.
+-/
+
+section andCutArms
+
+/-- `lenQ ≤ layQ`, by definition (`layQ = lenQ + sum2Q`). -/
+lemma lenQ_le_layQ (B B' Dz : V) : lenQ B' Dz ≤ layQ B B' Dz := by unfold layQ; exact le_self_add
+
+/-- `lenD ≤ layD`, by definition (`layD = lenD + sum2D`). -/
+lemma lenD_le_layD (N' B' Dz : V) : lenD N' B' Dz ≤ layD N' B' Dz := by unfold layD; exact le_self_add
+
+/-- **`proCutPre` lands in the kit class**: its class is `(lenQ B' D + Q', lenD N' B' D + D')` at ANY `Q'`, `D'`,
+so instantiate `Q' := 0`, `D' := 0` and route `lenQ ≤ layQ ≤ kitQ`. -/
+lemma sizeOK_proCutPre_kit {tbl N N' B' T Wc p B E Cz D d Γ : V} (htbl : TableOK tbl N) (hP : ProTable tbl)
+    (htblN : NumTableOK T N' B') (hWc : Wc = certPieces)
+    (hp : IsSemiformula LAct 0 p) (hpD : formulaLen LAct p ≤ D) (hnpD : formulaLen LAct (neg LAct p) ≤ D)
+    (hE : 13 * D + 8 ≤ E) (hΓ : IsFormulaSet LAct Γ)
+    (hDE : D ≤ E) (hDd : D ≤ 2 * d)
+    (hCQ : 19 * B' + 25 ≤ Cz) (hCD : 27 * N' + 525600 * B' ≤ Cz) :
+    SizeOK (kitQ Cz B E) (kitD Cz (2 * d)) (proCutPre walkPieces Wc T p) := by
+  have h := sizeOK_proCutPre (B' := B') (Q' := 0) (D' := 0) htbl hP htblN hWc hp hpD hnpD hE hΓ
+  refine h.mono ?_ ?_
+  · rw [add_zero]; exact le_trans (lenQ_le_layQ B B' D) (layQ_le_kitQ hDE hCQ)
+  · rw [add_zero]; exact le_trans (lenD_le_layD N' B' D) (layD_le_kitD hDd hCD)
+
+/-- **The `cut` selector is size-disciplined in BOTH branches** (the empty-PARENT split), at the layout class. -/
+lemma sizeOK_cutPro {Wl Wc W T s p i ip : V} (hWp : W = proPieces)
+    {tbl N N' B' B D E Γ : V} (htbl : TableOK tbl N) (hP : ProTable tbl)
+    (htblN : NumTableOK T N' B') (hWl : Wl = layoutPieces) (hWc : Wc = certPieces)
+    (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 0 p)
+    (hsD : setLen LAct (insert p s) ≤ D)
+    (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E) (hiE : i + 14 * D + 5 ≤ E) (hipE : ip + 8 * D + 4 ≤ E)
+    (hΓ : IsFormulaSet LAct Γ) (hDp : DossF walkPieces Γ 0 p ip)
+    (hLay : Layout walkPieces Wc T Γ s i) (hLay0 : Layout0 walkPieces Wc T Γ i)
+    (hsD0 : setLen LAct (insert p (0 : V)) ≤ D) :
+    SizeOK (layQ B B' D) (layD N' B' D) (cutPro walkPieces Wl Wc W T s p i ip) := by
+  unfold cutPro
+  by_cases h : memberList s = 0
+  · rw [if_pos h]
+    exact sizeOK_proIns0 htbl hP htblN hWl hWc hWp hPle hp hsD0 hE hiE hipE hΓ hLay0 hDp
+  · rw [if_neg h]
+    exact sizeOK_proIns htbl hP htblN hWl hWc hWp hPle hs hp (one_le_len_memberList_of_ne h) hsD hE hiE hipE hΓ hLay hDp
+
+/-- **The `and` arm, length half**: seven blocks, two `postIns` (six each), the node (nine). -/
+theorem len_vAnd_eq (Ww Wl Wc W₁ W T s p q dp dq L₁ L₂ : V) :
+    len (vAnd Ww Wl Wc W₁ W T s p q dp dq L₁ L₂) =
+      len (proIns Ww Wl Wc W T s p 0 (memTop Ww Wc T s (p ^⋏ q) 0 + descCountF Ww 0 q + 1)) +
+      (len L₁ + (6 +
+        (len (proIns Ww Wl Wc W T s q (1 + proSig Ww Wl Wc W T (insert p s) + shiftsV L₁ + 2)
+          (memTop Ww Wc T s (p ^⋏ q) 0 + 1 + (1 + proSig Ww Wl Wc W T (insert p s) + shiftsV L₁ + 2))) +
+          (len L₂ + (6 + 9))))) := by
+  unfold vAnd
+  rw [len_appendV, len_appendV, len_appendV, len_appendV, len_appendV, len_appendV,
+    len_postIns, len_postIns, len_nodeAnd]
+
+/-- **The `cut` arm, length half**: eight blocks. -/
+theorem len_vCut_eq (Ww Wl Wc W₁ W T s p d₁ d₂ L₁ L₂ : V) :
+    len (vCut Ww Wl Wc W₁ W T s p d₁ d₂ L₁ L₂) =
+      len (proCutPre Ww Wc T p) +
+      (len (cutPro Ww Wl Wc W T s p (mShift Ww Wc T p + mShift Ww Wc T (neg LAct p))
+        (mLen Wc T p + mShift Ww Wc T (neg LAct p))) +
+        (len L₁ + (6 +
+          (len (cutPro Ww Wl Wc W T s (neg LAct p)
+            (mShift Ww Wc T p + mShift Ww Wc T (neg LAct p) + (1 + proSig Ww Wl Wc W T (insert p s) + shiftsV L₁ + 2))
+            (mLen Wc T (neg LAct p) + (1 + proSig Ww Wl Wc W T (insert p s) + shiftsV L₁ + 2))) +
+            (len L₂ + (6 + 9)))))) := by
+  unfold vCut
+  rw [len_appendV, len_appendV, len_appendV, len_appendV, len_appendV, len_appendV, len_appendV,
+    len_postIns, len_postIns, len_nodeCut]
+
+/-- **The `and` arm, size half** — seven blocks, two children, two `postIns`, a `bin3` node. -/
+theorem and_arm_size {Wl Wc W₁ W T s p q dp dq L₁ L₂ B E Cz N' B' D d Γ Γ₃ : V}
+    (hWp : W = proPieces) (hW₁ : W₁ = frag1Pieces)
+    {tbl N : V} (htbl : TableOK tbl N) (hP : ProTable tbl) (htblN : NumTableOK T N' B')
+    (hWl : Wl = layoutPieces) (hWc : Wc = certPieces)
+    (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 0 p) (hq : IsSemiformula LAct 0 q)
+    (hk1 : 1 ≤ len (memberList s))
+    (hsDp : setLen LAct (insert p s) ≤ D) (hsDq : setLen LAct (insert q s) ≤ D)
+    (hEpro : 13 * D + 18 * ‖D‖ + 12 ≤ E)
+    (hiE₁ : 0 + 14 * D + 5 ≤ E)
+    (hipE₁ : memTop walkPieces Wc T s (p ^⋏ q) 0 + descCountF walkPieces 0 q + 1 + 8 * D + 4 ≤ E)
+    (hiE₂ : 1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2 + 14 * D + 5 ≤ E)
+    (hipE₂ : memTop walkPieces Wc T s (p ^⋏ q) 0 + 1 +
+      (1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2) + 8 * D + 4 ≤ E)
+    (hΓ : IsFormulaSet LAct Γ) (hLay : Layout walkPieces Wc T Γ s 0)
+    (hDp : DossF walkPieces Γ 0 p (memTop walkPieces Wc T s (p ^⋏ q) 0 + descCountF walkPieces 0 q + 1))
+    (hΓ₃ : IsFormulaSet LAct Γ₃)
+    (hLay₃ : Layout walkPieces Wc T Γ₃ s (1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2))
+    (hDq₃ : DossF walkPieces Γ₃ 0 q (memTop walkPieces Wc T s (p ^⋏ q) 0 + 1 +
+      (1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2)))
+    (hDE : D ≤ E) (hDd : D ≤ 2 * d)
+    (hCQ : 19 * B' + 25 ≤ Cz) (hCD : 27 * N' + 525600 * B' ≤ Cz) (hCz1 : 1 ≤ Cz)
+    (hchild₁ : SizeOK (kitQ Cz B E) (kitD Cz (2 * d)) L₁)
+    (hchild₂ : SizeOK (kitQ Cz B E) (kitD Cz (2 * d)) L₂)
+    (hE1 : 1 ≤ E) (hcG : 4 * ((cDer : V) + cDlen + cFst + 6) ≤ Cz)
+    (hgE₁ : len (memberList (insert p s)) + 1 + shiftsV L₁ + 1 ≤ E)
+    (hgE₂ : len (memberList (insert q s)) + 1 + shiftsV L₂ + 1 ≤ E)
+    (hbn₁ : termLen LAct (bnum (dlen TAct dp)) ≤ E)
+    (hbn₂ : termLen LAct (bnum (dlen TAct dq)) ≤ E)
+    (hbn' : termLen LAct (bnum (dlen TAct (andIntro s p q dp dq))) ≤ E)
+    (hnE : 18 * ‖dlen TAct (andIntro s p q dp dq)‖ + 7 ≤ E)
+    (hLn : setLen LAct s + dlen TAct dp + dlen TAct dq + 1 ≤ dlen TAct (andIntro s p q dp dq))
+    (hnd : dlen TAct (andIntro s p q dp dq) ≤ 2 * d)
+    (hgE3 : 1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2 +
+      (1 + proSig walkPieces Wl Wc W T (insert q s) + shiftsV L₂ + 2) + (len (memberList s) + 1) + 1 + 1 ≤ E)
+    (hCbin : 2 * (27 * N' + 525600 * B') ≤ Cz) :
+    SizeOK (kitQ Cz B E) (kitD Cz (2 * d)) (vAnd walkPieces Wl Wc W₁ W T s p q dp dq L₁ L₂) := by
+  unfold vAnd
+  refine sizeOK_appendV ?_ (sizeOK_appendV hchild₁ (sizeOK_appendV ?_
+    (sizeOK_appendV ?_ (sizeOK_appendV hchild₂ (sizeOK_appendV ?_ ?_)))))
+  · exact (sizeOK_proIns htbl hP htblN hWl hWc hWp hPle hs hp hk1 hsDp hEpro hiE₁ hipE₁ hΓ hLay hDp).mono
+      (layQ_le_kitQ hDE hCQ) (layD_le_kitD hDd hCD)
+  · exact sizeOK_postIns_kit hWp hE1 hPle hgE₁ hbn₁ hcG
+  · exact (sizeOK_proIns htbl hP htblN hWl hWc hWp hPle hs hq hk1 hsDq hEpro hiE₂ hipE₂ hΓ₃ hLay₃ hDq₃).mono
+      (layQ_le_kitQ hDE hCQ) (layD_le_kitD hDd hCD)
+  · exact sizeOK_postIns_kit hWp hE1 hPle hgE₂ hbn₂ hcG
+  · refine sizeOK_nodeAnd hW₁ ?_ ?_ ?_
+    · exact le_trans (formulaLen_bin3Fact_le hE1 hPle hnE
+        (le_trans (le_trans (le_trans le_self_add le_self_add) le_self_add) hLn)
+        (le_trans (le_trans (le_trans le_add_self le_self_add) le_self_add) hLn)
+        (le_trans (le_trans le_add_self le_self_add) hLn))
+        (BE_le_kitQ hCz1)
+    · exact dlen_bin3Code_le_kitD htblN hLn hnd hCbin
+    · exact goalFact_le_kitQ hE1 hPle hgE3 (isSemiterm_bnum_LAct 0 _) hbn' hcG
+
+/-- **The `cut` arm, size half** — eight blocks: `proCutPre`, two `cutPro` selectors, two children, two `postIns`,
+the node. -/
+theorem cut_arm_size {Wl Wc W₁ W T s p d₁ d₂ L₁ L₂ B E Cz N' B' D d Γ Γ₄ Γc : V}
+    (hWp : W = proPieces) (hW₁ : W₁ = frag1Pieces)
+    {tbl N : V} (htbl : TableOK tbl N) (hP : ProTable tbl) (htblN : NumTableOK T N' B')
+    (hWl : Wl = layoutPieces) (hWc : Wc = certPieces)
+    (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 0 p)
+    (hpD : formulaLen LAct p ≤ D) (hnpD : formulaLen LAct (neg LAct p) ≤ D)
+    (hsDp : setLen LAct (insert p s) ≤ D) (hsDnp : setLen LAct (insert (neg LAct p) s) ≤ D)
+    (hsD0p : setLen LAct (insert p (0 : V)) ≤ D) (hsD0np : setLen LAct (insert (neg LAct p) (0 : V)) ≤ D)
+    (hEpre : 13 * D + 8 ≤ E) (hEpro : 13 * D + 18 * ‖D‖ + 12 ≤ E)
+    (hiE₁ : mShift walkPieces Wc T p + mShift walkPieces Wc T (neg LAct p) + 14 * D + 5 ≤ E)
+    (hipE₁ : mLen Wc T p + mShift walkPieces Wc T (neg LAct p) + 8 * D + 4 ≤ E)
+    (hiE₂ : mShift walkPieces Wc T p + mShift walkPieces Wc T (neg LAct p) +
+      (1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2) + 14 * D + 5 ≤ E)
+    (hipE₂ : mLen Wc T (neg LAct p) + (1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2) + 8 * D + 4 ≤ E)
+    (hΓ : IsFormulaSet LAct Γ)
+    (hLay₁ : Layout walkPieces Wc T Γ s (mShift walkPieces Wc T p + mShift walkPieces Wc T (neg LAct p)))
+    (hLay0₁ : Layout0 walkPieces Wc T Γ (mShift walkPieces Wc T p + mShift walkPieces Wc T (neg LAct p)))
+    (hDp₁ : DossF walkPieces Γ 0 p (mLen Wc T p + mShift walkPieces Wc T (neg LAct p)))
+    (hΓ₄ : IsFormulaSet LAct Γ₄)
+    (hLay₄ : Layout walkPieces Wc T Γ₄ s (mShift walkPieces Wc T p + mShift walkPieces Wc T (neg LAct p) +
+      (1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2)))
+    (hLay0₄ : Layout0 walkPieces Wc T Γ₄ (mShift walkPieces Wc T p + mShift walkPieces Wc T (neg LAct p) +
+      (1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2)))
+    (hDnp₄ : DossF walkPieces Γ₄ 0 (neg LAct p)
+      (mLen Wc T (neg LAct p) + (1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2)))
+    (hΓc : IsFormulaSet LAct Γc)
+    (hDE : D ≤ E) (hDd : D ≤ 2 * d)
+    (hCQ : 19 * B' + 25 ≤ Cz) (hCD : 27 * N' + 525600 * B' ≤ Cz) (hCz1 : 1 ≤ Cz)
+    (hchild₁ : SizeOK (kitQ Cz B E) (kitD Cz (2 * d)) L₁)
+    (hchild₂ : SizeOK (kitQ Cz B E) (kitD Cz (2 * d)) L₂)
+    (hE1 : 1 ≤ E) (hcG : 4 * ((cDer : V) + cDlen + cFst + 6) ≤ Cz)
+    (hgE₁ : len (memberList (insert p s)) + 1 + shiftsV L₁ + 1 ≤ E)
+    (hgE₂ : len (memberList (insert (neg LAct p) s)) + 1 + shiftsV L₂ + 1 ≤ E)
+    (hbn₁ : termLen LAct (bnum (dlen TAct d₁)) ≤ E)
+    (hbn₂ : termLen LAct (bnum (dlen TAct d₂)) ≤ E)
+    (hbn' : termLen LAct (bnum (dlen TAct (cutRule s p d₁ d₂))) ≤ E)
+    (hnE : 18 * ‖dlen TAct (cutRule s p d₁ d₂)‖ + 7 ≤ E)
+    (hLn : setLen LAct s + dlen TAct d₁ + dlen TAct d₂ + 1 ≤ dlen TAct (cutRule s p d₁ d₂))
+    (hnd : dlen TAct (cutRule s p d₁ d₂) ≤ 2 * d)
+    (hgE3 : mShift walkPieces Wc T p + mShift walkPieces Wc T (neg LAct p) +
+      (1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2) +
+      (1 + proSig walkPieces Wl Wc W T (insert (neg LAct p) s) + shiftsV L₂ + 2) + (len (memberList s) + 1) + 1 + 1 ≤ E)
+    (hCbin : 2 * (27 * N' + 525600 * B') ≤ Cz) :
+    SizeOK (kitQ Cz B E) (kitD Cz (2 * d)) (vCut walkPieces Wl Wc W₁ W T s p d₁ d₂ L₁ L₂) := by
+  unfold vCut
+  refine sizeOK_appendV ?_ (sizeOK_appendV ?_ (sizeOK_appendV hchild₁ (sizeOK_appendV ?_
+    (sizeOK_appendV ?_ (sizeOK_appendV hchild₂ (sizeOK_appendV ?_ ?_))))))
+  · exact sizeOK_proCutPre_kit (B := B) (d := d) htbl hP htblN hWc hp hpD hnpD hEpre hΓc hDE hDd hCQ hCD
+  · exact (sizeOK_cutPro hWp htbl hP htblN hWl hWc hPle hs hp hsDp hEpro hiE₁ hipE₁ hΓ hDp₁ hLay₁ hLay0₁ hsD0p).mono
+      (layQ_le_kitQ hDE hCQ) (layD_le_kitD hDd hCD)
+  · exact sizeOK_postIns_kit hWp hE1 hPle hgE₁ hbn₁ hcG
+  · exact (sizeOK_cutPro hWp htbl hP htblN hWl hWc hPle hs hp.neg hsDnp hEpro hiE₂ hipE₂ hΓ₄ hDnp₄ hLay₄ hLay0₄ hsD0np).mono
+      (layQ_le_kitQ hDE hCQ) (layD_le_kitD hDd hCD)
+  · exact sizeOK_postIns_kit hWp hE1 hPle hgE₂ hbn₂ hcG
+  · refine sizeOK_nodeCut hW₁ ?_ ?_ ?_
+    · exact le_trans (formulaLen_bin3Fact_le hE1 hPle hnE
+        (le_trans (le_trans (le_trans le_self_add le_self_add) le_self_add) hLn)
+        (le_trans (le_trans (le_trans le_add_self le_self_add) le_self_add) hLn)
+        (le_trans (le_trans le_add_self le_self_add) hLn))
+        (BE_le_kitQ hCz1)
+    · exact dlen_bin3Code_le_kitD htblN hLn hnd hCbin
+    · exact goalFact_le_kitQ hE1 hPle hgE3 (isSemiterm_bnum_LAct 0 _) hbn' hcG
+
+end andCutArms
+
 end ArithS
