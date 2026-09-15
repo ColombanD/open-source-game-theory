@@ -645,4 +645,45 @@ lemma dlen_bin3Code_le_kitD {T N' B' Cz L m₁ m₂ n d : V} (htblN : NumTableOK
 
 end nodeCodeKit
 
+
+/-! ## 9. The size statement in the shape the package consumes
+
+`Package.lean` §1 names the statement the size glue must deliver: `SizeThm N' B' Cz`, i.e.
+`VerifySizeOracle` universally quantified over the models and the tables with `NumTableOK T (N' : V) (B' : V)`
+RESTORED — the hypothesis `Assemble.SizeOracle` drops and every prologue size lemma needs. `SizeThmAll` is
+`∀ N' B', ∃ Cz, SizeThm N' B' Cz`; the quantifier ORDER is the bypass (`N'`, `B'` fixed first by
+`NumSteps.exists_numTable`, `Cz` chosen after, so `Cz` may depend on them).
+
+This section states that shape modulo the ten induction arms, which remain the named hypothesis of §2 lifted
+uniformly over the models (`ArmHypsAll`). With the arms discharged, `verifyGraph''_size4_of_arms` IS
+`Package.SizeThm N' B' Cz`, and `SizeThmAll` follows by choosing `Cz` per `(N', B')`.
+
+**Status of the arms** (2026-09-16): `axm` (§4), `axL` and `verumIntro` (§5) are PROVED as standalone arm lemmas;
+the reusable machinery every remaining arm needs is in place — the layout-class landing (§6 `layQ_le_kitQ`,
+`layD_le_kitD`), the recovery blocks (§6 `sizeOK_goalElim_kit`, `sizeOK_postIns_kit`), the `wk`/`shift` node and
+selector lengths (§7) and selector sizes (§8 `sizeOK_wkPro`, `sizeOK_shiftPro`), and the node codes in the kit
+class (§8 `dlen_bin2Code_le_kitD`, `dlen_bin3Code_le_kitD`). What remains is the assembly of the seven non-leaf
+arms (`wk`, `shift`, `and`, `or`, `cut`, `all`, `exs`) from those blocks and the `Derivation.induction1 𝚷`
+recursion that threads them — the shape of `Verify4.verifyGraph''_ok4`, with `len`/`SizeOK` in place of `shiftsV`.
+-/
+
+section packageShape
+
+/-- The ten arms, uniformly in the model, at a FIXED numeral table (`N'`, `B'` naturals). -/
+def ArmHypsAll (N' B' Cz : ℕ) : Prop :=
+  ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] (tbl B T : V), IndRecTable tbl →
+    (∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ B) → NumTableOK T (N' : V) (B' : V) →
+    ArmHyps tbl B layoutPieces certPieces frag1Pieces frag2Pieces proPieces T Cz
+
+/-- **The size theorem in `Package.SizeThm`'s shape**, modulo the ten arms: on every `IndRec` table with its
+row-body bound and every numeral table described by the fixed naturals `N'`, `B'`, every graph list of a
+`VerifyGraph''` is `≤ Cz·(dlen ρ + 1)^4` long and size-disciplined at the kit class. -/
+theorem verifyGraph''_size4_of_arms (N' B' : ℕ) {Cz : ℕ} (harms : ArmHypsAll N' B' Cz) :
+    ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] (tbl B T : V), IndRecTable tbl →
+      (∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ B) → NumTableOK T (N' : V) (B' : V) →
+      VerifySizeOracle tbl B layoutPieces certPieces frag1Pieces frag2Pieces proPieces T Cz :=
+  fun V _ _ tbl B T hPA hB htblN ↦ verifySizeOracle_of_arms (harms V tbl B T hPA hB htblN)
+
+end packageShape
+
 end ArithS

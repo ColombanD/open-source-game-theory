@@ -1403,6 +1403,19 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms dlen_bin2Code_le_kitD
 #print axioms dlen_bin3Code_le_kitD
 
+-- U10 (Necessitation/Verify5, 2026-09-16): THE SIZE HALF, PART 6 — the statement in the shape the package consumes.
+-- `Package.lean` §1 names what the size glue must deliver: `SizeThm N' B' Cz`, i.e. `Assemble.VerifySizeOracle`
+-- quantified over the models and tables with `NumTableOK T (N' : V) (B' : V)` RESTORED (the hypothesis
+-- `Assemble.SizeOracle` drops and every prologue size lemma needs); `SizeThmAll` is `∀ N' B', ∃ Cz, SizeThm N' B' Cz`,
+-- the quantifier ORDER being the bypass. `ArmHypsAll` lifts §2's named per-model hypothesis `ArmHyps` uniformly over
+-- the models at a FIXED numeral table, and `verifyGraph''_size4_of_arms` IS `Package.SizeThm N' B' Cz` modulo it.
+-- ARMS PROVED so far: `axm` (§4), `axL`/`verumIntro` (§5). The reusable machinery for the remaining seven is in
+-- place — the layout-class landing (§6), the recovery blocks `goalElim`/`postIns` (§6), the `wk`/`shift` node and
+-- selector lengths (§7) and selector sizes (§8), and the node codes in the kit class (§8). What remains is the
+-- assembly of the seven non-leaf arms and the `Derivation.induction1 𝚷` recursion threading them.
+#print axioms ArmHypsAll
+#print axioms verifyGraph''_size4_of_arms
+
 -- U10 (Necessitation/Package, 2026-09-15): THE PACKAGE AND THE HEADLINE THEOREMS, with `Assemble.SizeOracle`
 -- BYPASSED. `SizeOracle` is NOT PROVABLE as stated (it binds the numeral table `T` with no `NumTableOK T N' B'`,
 -- while every prologue size lemma requires one and lands at `layQ B B' D`/`layD N' B' D`; `NumTableOK` is never a
