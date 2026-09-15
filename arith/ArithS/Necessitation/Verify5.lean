@@ -1539,4 +1539,254 @@ lemma eroom_off {D E Czv x : V} (hE : Czv * p4 (D + 1) ≤ E)
 
 end eroom
 
+/-! ## 18. The `wk` motive wrapper
+
+The third wrapper, and the first NON-LEAF one. Written UNABBREVIATED per TRAP 18 (`wk_arm_size` hard-wires
+`dlen TAct (wkRule s d')` and `dlen TAct d'` in its hypothesis types), with the arm lemma's implicits pinned per
+TRAP 16 and every E-room from §17's helper family.
+
+The two goal-fact offsets and the length half all close the same way: a linear term plus the child's
+`Czv·p4 (dlen d')`, absorbed by `Bounds.rec1₄` at `hdeq : dlen (wkRule s d') = dlen d' + (setLen s + 1)`.
+
+**RESIDUAL (Part 6):** `lin_le_p3` concludes at `1 * D + c`, not `D + c`, so each of its uses here is followed by
+`rw [one_mul] at …`. -/
+
+section wkWrapper
+
+set_option maxHeartbeats 2000000 in
+/-- **THE `wk` MOTIVE WRAPPER.** -/
+theorem wk_wrapper {tbl N N' B' Wl Wc W₁ W T B E Czv Γ s d' L' : V}
+    (htbl : TableOK tbl N) (hP : ProTable tbl) (htblN : NumTableOK T N' B')
+    (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (hWp : W = proPieces) (hW₁ : W₁ = frag1Pieces)
+    (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (hCz1 : 1 ≤ Czv) (hCk : ∀ n : ℕ, n ≤ 1000000 → ((n : ℕ) : V) ≤ Czv)
+    (hCQ : 19 * B' + 25 ≤ Czv) (hCD : 27 * N' + 525600 * B' ≤ Czv)
+    (hCbin : 2 * (27 * N' + 525600 * B') ≤ Czv)
+    (hcG : 4 * ((cDer : V) + cDlen + cFst + 6) ≤ Czv)
+    (hs : IsFormulaSet LAct s) (hsub : fstIdx d' ⊆ s) (hd' : Derivation TAct d')
+    (hΓ : IsFormulaSet LAct Γ) (hLay : NodeLay walkPieces Wc T Γ s)
+    (hchildSz : SizeOK (kitQ Czv B E) (kitD Czv (2 * dlen TAct (wkRule s d'))) L')
+    (hchildLen : len L' ≤ Czv * p4 (dlen TAct d'))
+    (hE : Czv * p4 (dlen TAct (wkRule s d') + 1) ≤ E) :
+    len (vWk walkPieces Wl Wc W₁ W T s d' L') ≤ Czv * p4 (dlen TAct (wkRule s d')) ∧
+    SizeOK (kitQ Czv B E) (kitD Czv (2 * dlen TAct (wkRule s d'))) (vWk walkPieces Wl Wc W₁ W T s d' L') := by
+  have hD : Derivation TAct (wkRule s d') := Derivation.wkRule hs hsub ⟨rfl, hd'⟩
+  have hd1 : 1 ≤ dlen TAct (wkRule s d') := one_le_dlen hD
+  have hsD : setLen LAct s ≤ dlen TAct (wkRule s d') := by
+    have := setLen_fstIdx_le_dlen hD; rwa [fstIdx_wkRule] at this
+  have hcD : setLen LAct (fstIdx d') ≤ dlen TAct (wkRule s d') := setLen_child_le_dlen_wkRule hD
+  have hdl : dlen TAct (wkRule s d') = setLen LAct s + dlen TAct d' + 1 := dlen_wkRule hD
+  have hcs : IsFormulaSet LAct (fstIdx d') := DerivationOf.isFormulaSet ⟨rfl, hd'⟩
+  have hkcD : len (memberList (fstIdx d')) ≤ dlen TAct (wkRule s d') :=
+    le_trans (len_memberList_le_setLen hcs) hcD
+  have hksD : len (memberList s) ≤ dlen TAct (wkRule s d') :=
+    le_trans (len_memberList_le_setLen hs) hsD
+  have he1 : (1 : V) ≤ dlen TAct (wkRule s d') + 1 := le_add_self
+  have hyd : dlen TAct d' ≤ dlen TAct (wkRule s d') := by
+    rw [hdl]; exact le_of_add_eq' (c := setLen LAct s + 1) (by ring)
+  have hdeq : dlen TAct (wkRule s d') = dlen TAct d' + (setLen LAct s + 1) := by rw [hdl]; ring
+  have hE1 : (1 : V) ≤ E := le_trans (le_trans hd1 (le_p4_self hd1))
+    (le_trans (le_mul_of_one_le_left zero_le hCz1)
+      (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE))
+  have hDE : dlen TAct (wkRule s d') ≤ E := le_trans (le_p4_self hd1)
+    (le_trans (le_mul_of_one_le_left zero_le hCz1)
+      (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE))
+  have hEpro : 13 * dlen TAct (wkRule s d') + 18 * ‖dlen TAct (wkRule s d')‖ + 12 ≤ E := by
+    have := eroom_lin hE hCk 13 18 12 (by norm_num)
+    push_cast at this
+    exact this
+  have hiEpro : 0 + 14 * dlen TAct (wkRule s d') + 5 ≤ E := by
+    rw [zero_add]
+    have := eroom_lin hE hCk 14 0 5 (by norm_num)
+    push_cast at this
+    rw [zero_mul, add_zero] at this
+    exact this
+  have hnE : 18 * ‖dlen TAct (wkRule s d')‖ + 7 ≤ E := by
+    have := eroom_lin hE hCk 0 18 7 (by norm_num)
+    push_cast at this
+    rw [zero_mul, zero_add] at this
+    exact this
+  have hbnc : termLen LAct (bnum (dlen TAct d')) ≤ E := eroom_bnum hE hCk hyd
+  have hbn' : termLen LAct (bnum (dlen TAct (wkRule s d'))) ≤ E := eroom_bnum hE hCk le_rfl
+  have hLn : setLen LAct s + dlen TAct d' + 1 ≤ dlen TAct (wkRule s d') := le_of_eq hdl.symm
+  have hnd : dlen TAct (wkRule s d') ≤ 2 * dlen TAct (wkRule s d') := le_two_mul_self _
+  have hshL : shiftsV L' ≤ Czv * p4 (dlen TAct d') := le_trans (shiftsV_le_len L') hchildLen
+  have hlenPro : len (wkPro walkPieces Wl Wc W T s (fstIdx d')) ≤ 44 * dlen TAct (wkRule s d') + 11 :=
+    len_wkPro_le htbl hP hWl hWc walkPieces W T s hcs hcD
+  have hshPro : shiftsV (wkPro walkPieces Wl Wc W T s (fstIdx d')) ≤ 44 * dlen TAct (wkRule s d') + 11 :=
+    le_trans (shiftsV_le_len _) hlenPro
+  have hgE : len (memberList (fstIdx d')) + 1 + shiftsV L' + 1 ≤ E := by
+    have hlin : dlen TAct (wkRule s d') + 2 ≤ Czv * p3 (dlen TAct (wkRule s d')) := by
+      have h3 := hCk 3 (by norm_num)
+      push_cast at h3
+      have := lin_le_p3 (a := 1) (b := 2) hd1 (by
+        exact le_trans (le_of_eq (by norm_num : (1 : V) + 2 = 3)) h3)
+      rw [one_mul] at this
+      exact this
+    refine le_trans ?_ (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE)
+    calc len (memberList (fstIdx d')) + 1 + shiftsV L' + 1
+        ≤ dlen TAct (wkRule s d') + 1 + Czv * p4 (dlen TAct d') + 1 :=
+          add_le_add (add_le_add (add_le_add hkcD le_rfl) hshL) le_rfl
+      _ = (dlen TAct (wkRule s d') + 2) + Czv * p4 (dlen TAct d') := by ring
+      _ ≤ Czv * p4 (dlen TAct (wkRule s d')) := rec1₄ le_add_self hdeq hlin
+  have hgE2 : shiftsV (wkPro walkPieces Wl Wc W T s (fstIdx d')) + shiftsV L' + 2 +
+      (len (memberList s) + 1) + 1 + 1 ≤ E := by
+    have hlin : 45 * dlen TAct (wkRule s d') + 16 ≤ Czv * p3 (dlen TAct (wkRule s d')) := by
+      have h61 := hCk 61 (by norm_num)
+      push_cast at h61
+      exact lin_le_p3 hd1 (le_trans (le_of_eq (by norm_num : (45 : V) + 16 = 61)) h61)
+    refine le_trans ?_ (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE)
+    calc shiftsV (wkPro walkPieces Wl Wc W T s (fstIdx d')) + shiftsV L' + 2 +
+          (len (memberList s) + 1) + 1 + 1
+        ≤ (44 * dlen TAct (wkRule s d') + 11) + Czv * p4 (dlen TAct d') + 2 +
+          (dlen TAct (wkRule s d') + 1) + 1 + 1 :=
+          add_le_add (add_le_add (add_le_add (add_le_add (add_le_add hshPro hshL) le_rfl)
+            (add_le_add hksD le_rfl)) le_rfl) le_rfl
+      _ = (45 * dlen TAct (wkRule s d') + 16) + Czv * p4 (dlen TAct d') := by ring
+      _ ≤ Czv * p4 (dlen TAct (wkRule s d')) := rec1₄ le_add_self hdeq hlin
+  refine ⟨?_, ?_⟩
+  · rw [len_vWk_eq]
+    have hX : 44 * dlen TAct (wkRule s d') + 25 ≤ Czv * p3 (dlen TAct (wkRule s d')) := by
+      have h69 := hCk 69 (by norm_num)
+      push_cast at h69
+      exact lin_le_p3 hd1 (le_trans (le_of_eq (by norm_num : (44 : V) + 25 = 69)) h69)
+    calc len (wkPro walkPieces Wl Wc W T s (fstIdx d')) + (len L' + (5 + 9))
+        ≤ (44 * dlen TAct (wkRule s d') + 11) + (Czv * p4 (dlen TAct d') + 14) :=
+          add_le_add hlenPro (add_le_add hchildLen (by norm_num))
+      _ = (44 * dlen TAct (wkRule s d') + 25) + Czv * p4 (dlen TAct d') := by ring
+      _ ≤ Czv * p4 (dlen TAct (wkRule s d')) := rec1₄ le_add_self hdeq hX
+  · exact wk_arm_size (Wl := Wl) (Wc := Wc) (W₁ := W₁) (W := W) (T := T) (s := s) (d' := d') (L' := L')
+      (B := B) (E := E) (Cz := Czv) (N' := N') (B' := B')
+      (D := dlen TAct (wkRule s d')) (d := dlen TAct (wkRule s d')) (Γ := Γ)
+      hWp hW₁ htbl hP htblN hWl hWc hPle hs hsub hsD hcD hEpro hiEpro hΓ hLay.layout
+      hDE hnd hCQ hCD hCz1 hchildSz hE1 hcG hgE hbnc hbn' hnE hLn hnd hgE2 hCbin
+
+end wkWrapper
+
+/-! ## 19. The `shift` motive wrapper
+
+The `wk` wrapper's twin. `shift_arm_size` differs from `wk_arm_size` in three places only: it wants the child's
+`IsFormulaSet` and the shift equation (`hc`, `hsc : s = setShift LAct (fstIdx d')`) in place of `wk`'s `hsub`, and
+its insert room is `0 + 16·D + 8` rather than `0 + 14·D + 5`. `dlen_shiftRule` has the same shape as `dlen_wkRule`
+(`setLen s + dlen d + 1`), so `hdeq`, `hyd` and `hLn` transcribe unchanged.
+
+The constants move with `len_shiftPro_le ≤ 62·D + 23` (against `wk`'s `44·D + 11`): the length half needs
+`62 + 23 + 14 = 99` and `hgE2` needs `63·D + 28`, i.e. `91`. -/
+
+section shiftWrapper
+
+set_option maxHeartbeats 2000000 in
+/-- **THE `shift` MOTIVE WRAPPER.** -/
+theorem shift_wrapper {tbl N N' B' Wl Wc W₂ W T B E Czv Γ s d' L' : V}
+    (htbl : TableOK tbl N) (hP : ProTable tbl) (htblN : NumTableOK T N' B')
+    (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (hWp : W = proPieces) (hW₂ : W₂ = frag2Pieces)
+    (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (hCz1 : 1 ≤ Czv) (hCk : ∀ n : ℕ, n ≤ 1000000 → ((n : ℕ) : V) ≤ Czv)
+    (hCQ : 19 * B' + 25 ≤ Czv) (hCD : 27 * N' + 525600 * B' ≤ Czv)
+    (hCbin : 2 * (27 * N' + 525600 * B') ≤ Czv)
+    (hcG : 4 * ((cDer : V) + cDlen + cFst + 6) ≤ Czv)
+    (hs : IsFormulaSet LAct s) (hsc : s = setShift LAct (fstIdx d')) (hd' : Derivation TAct d')
+    (hΓ : IsFormulaSet LAct Γ) (hLay : NodeLay walkPieces Wc T Γ s)
+    (hchildSz : SizeOK (kitQ Czv B E) (kitD Czv (2 * dlen TAct (shiftRule s d'))) L')
+    (hchildLen : len L' ≤ Czv * p4 (dlen TAct d'))
+    (hE : Czv * p4 (dlen TAct (shiftRule s d') + 1) ≤ E) :
+    len (vShift walkPieces Wl Wc W₂ W T s d' L') ≤ Czv * p4 (dlen TAct (shiftRule s d')) ∧
+    SizeOK (kitQ Czv B E) (kitD Czv (2 * dlen TAct (shiftRule s d')))
+      (vShift walkPieces Wl Wc W₂ W T s d' L') := by
+  have hD : Derivation TAct (shiftRule s d') := by
+    have := Derivation.shiftRule (T := TAct) ⟨rfl, hd'⟩; rwa [← hsc] at this
+  have hd1 : 1 ≤ dlen TAct (shiftRule s d') := one_le_dlen hD
+  have hsD : setLen LAct s ≤ dlen TAct (shiftRule s d') := by
+    have := setLen_fstIdx_le_dlen hD; rwa [fstIdx_shiftRule] at this
+  have hcD : setLen LAct (fstIdx d') ≤ dlen TAct (shiftRule s d') := setLen_child_le_dlen_shiftRule hD
+  have hdl : dlen TAct (shiftRule s d') = setLen LAct s + dlen TAct d' + 1 := dlen_shiftRule hD
+  have hcs : IsFormulaSet LAct (fstIdx d') := DerivationOf.isFormulaSet ⟨rfl, hd'⟩
+  have hkcD : len (memberList (fstIdx d')) ≤ dlen TAct (shiftRule s d') :=
+    le_trans (len_memberList_le_setLen hcs) hcD
+  have hksD : len (memberList s) ≤ dlen TAct (shiftRule s d') :=
+    le_trans (len_memberList_le_setLen hs) hsD
+  have he1 : (1 : V) ≤ dlen TAct (shiftRule s d') + 1 := le_add_self
+  have hyd : dlen TAct d' ≤ dlen TAct (shiftRule s d') := by
+    rw [hdl]; exact le_of_add_eq' (c := setLen LAct s + 1) (by ring)
+  have hdeq : dlen TAct (shiftRule s d') = dlen TAct d' + (setLen LAct s + 1) := by rw [hdl]; ring
+  have hE1 : (1 : V) ≤ E := le_trans (le_trans hd1 (le_p4_self hd1))
+    (le_trans (le_mul_of_one_le_left zero_le hCz1)
+      (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE))
+  have hDE : dlen TAct (shiftRule s d') ≤ E := le_trans (le_p4_self hd1)
+    (le_trans (le_mul_of_one_le_left zero_le hCz1)
+      (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE))
+  have hEpro : 13 * dlen TAct (shiftRule s d') + 18 * ‖dlen TAct (shiftRule s d')‖ + 12 ≤ E := by
+    have := eroom_lin hE hCk 13 18 12 (by norm_num)
+    push_cast at this
+    exact this
+  have hiEpro : 0 + 16 * dlen TAct (shiftRule s d') + 8 ≤ E := by
+    rw [zero_add]
+    have := eroom_lin hE hCk 16 0 8 (by norm_num)
+    push_cast at this
+    rw [zero_mul, add_zero] at this
+    exact this
+  have hnE : 18 * ‖dlen TAct (shiftRule s d')‖ + 7 ≤ E := by
+    have := eroom_lin hE hCk 0 18 7 (by norm_num)
+    push_cast at this
+    rw [zero_mul, zero_add] at this
+    exact this
+  have hbnc : termLen LAct (bnum (dlen TAct d')) ≤ E := eroom_bnum hE hCk hyd
+  have hbn' : termLen LAct (bnum (dlen TAct (shiftRule s d'))) ≤ E := eroom_bnum hE hCk le_rfl
+  have hLn : setLen LAct s + dlen TAct d' + 1 ≤ dlen TAct (shiftRule s d') := le_of_eq hdl.symm
+  have hnd : dlen TAct (shiftRule s d') ≤ 2 * dlen TAct (shiftRule s d') := le_two_mul_self _
+  have hshL : shiftsV L' ≤ Czv * p4 (dlen TAct d') := le_trans (shiftsV_le_len L') hchildLen
+  have hlenPro : len (shiftPro walkPieces Wl Wc W T s (fstIdx d')) ≤
+      62 * dlen TAct (shiftRule s d') + 23 :=
+    len_shiftPro_le hWc walkPieces Wl W T hs hcs hsD hcD
+  have hshPro : shiftsV (shiftPro walkPieces Wl Wc W T s (fstIdx d')) ≤
+      62 * dlen TAct (shiftRule s d') + 23 :=
+    le_trans (shiftsV_le_len _) hlenPro
+  have hgE : len (memberList (fstIdx d')) + 1 + shiftsV L' + 1 ≤ E := by
+    have hlin : dlen TAct (shiftRule s d') + 2 ≤ Czv * p3 (dlen TAct (shiftRule s d')) := by
+      have h3 := hCk 3 (by norm_num)
+      push_cast at h3
+      have := lin_le_p3 (a := 1) (b := 2) hd1 (by
+        exact le_trans (le_of_eq (by norm_num : (1 : V) + 2 = 3)) h3)
+      rw [one_mul] at this
+      exact this
+    refine le_trans ?_ (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE)
+    calc len (memberList (fstIdx d')) + 1 + shiftsV L' + 1
+        ≤ dlen TAct (shiftRule s d') + 1 + Czv * p4 (dlen TAct d') + 1 :=
+          add_le_add (add_le_add (add_le_add hkcD le_rfl) hshL) le_rfl
+      _ = (dlen TAct (shiftRule s d') + 2) + Czv * p4 (dlen TAct d') := by ring
+      _ ≤ Czv * p4 (dlen TAct (shiftRule s d')) := rec1₄ le_add_self hdeq hlin
+  have hgE2 : shiftsV (shiftPro walkPieces Wl Wc W T s (fstIdx d')) + shiftsV L' + 2 +
+      (len (memberList s) + 1) + 1 + 1 ≤ E := by
+    have hlin : 63 * dlen TAct (shiftRule s d') + 28 ≤ Czv * p3 (dlen TAct (shiftRule s d')) := by
+      have h91 := hCk 91 (by norm_num)
+      push_cast at h91
+      exact lin_le_p3 hd1 (le_trans (le_of_eq (by norm_num : (63 : V) + 28 = 91)) h91)
+    refine le_trans ?_ (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE)
+    calc shiftsV (shiftPro walkPieces Wl Wc W T s (fstIdx d')) + shiftsV L' + 2 +
+          (len (memberList s) + 1) + 1 + 1
+        ≤ (62 * dlen TAct (shiftRule s d') + 23) + Czv * p4 (dlen TAct d') + 2 +
+          (dlen TAct (shiftRule s d') + 1) + 1 + 1 :=
+          add_le_add (add_le_add (add_le_add (add_le_add (add_le_add hshPro hshL) le_rfl)
+            (add_le_add hksD le_rfl)) le_rfl) le_rfl
+      _ = (63 * dlen TAct (shiftRule s d') + 28) + Czv * p4 (dlen TAct d') := by ring
+      _ ≤ Czv * p4 (dlen TAct (shiftRule s d')) := rec1₄ le_add_self hdeq hlin
+  refine ⟨?_, ?_⟩
+  · rw [len_vShift_eq]
+    have hX : 62 * dlen TAct (shiftRule s d') + 37 ≤ Czv * p3 (dlen TAct (shiftRule s d')) := by
+      have h99 := hCk 99 (by norm_num)
+      push_cast at h99
+      exact lin_le_p3 hd1 (le_trans (le_of_eq (by norm_num : (62 : V) + 37 = 99)) h99)
+    calc len (shiftPro walkPieces Wl Wc W T s (fstIdx d')) + (len L' + (5 + 9))
+        ≤ (62 * dlen TAct (shiftRule s d') + 23) + (Czv * p4 (dlen TAct d') + 14) :=
+          add_le_add hlenPro (add_le_add hchildLen (by norm_num))
+      _ = (62 * dlen TAct (shiftRule s d') + 37) + Czv * p4 (dlen TAct d') := by ring
+      _ ≤ Czv * p4 (dlen TAct (shiftRule s d')) := rec1₄ le_add_self hdeq hX
+  · exact shift_arm_size (Wl := Wl) (Wc := Wc) (W₂ := W₂) (W := W) (T := T) (s := s) (d' := d') (L' := L')
+      (B := B) (E := E) (Cz := Czv) (N' := N') (B' := B')
+      (D := dlen TAct (shiftRule s d')) (d := dlen TAct (shiftRule s d')) (Γ := Γ)
+      hWp hW₂ htbl hP htblN hWl hWc hPle hs hcs hsc hsD hcD hEpro hiEpro hΓ hLay.layout
+      hDE hnd hCQ hCD hCz1 hchildSz hE1 hcG hgE hbnc hbn' hnE hLn hnd hgE2 hCbin
+
+end shiftWrapper
+
 end ArithS

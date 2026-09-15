@@ -1552,6 +1552,26 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms eroom_bnum
 #print axioms eroom_off
 
+-- U10 (Necessitation/Verify5, 2026-09-16): §18 — the `wk` MOTIVE WRAPPER (3 of 10), the first NON-LEAF one.
+-- Written UNABBREVIATED per TRAP 18 (`wk_arm_size` hard-wires `dlen TAct (wkRule s d')` and `dlen TAct d'` in its
+-- hypothesis TYPES), with the arm lemma's implicits pinned per TRAP 16 and every E-room from §17's helper family —
+-- `eroom_lin` at (13,18,12), (14,0,5) and (0,18,7), `eroom_bnum` for the child's and the parent's `dlen`. The two
+-- goal-fact offsets and the length half all close the same way: a linear term plus the child's `Czv·p4 (dlen d')`,
+-- absorbed by `Bounds.rec1₄` at `hdeq : dlen (wkRule s d') = dlen d' + (setLen s + 1)`. RESIDUAL (Part 6):
+-- `lin_le_p3` concludes at `1 * D + c`, so its use in `hgE` pins `(a := 1) (b := 2)` and rewrites by `one_mul`;
+-- where the coefficient is already a literal (`45 *`, `44 *`) no rewrite is needed. Transcribed LITERALLY in one
+-- pass (Edit, no scripting) and green in 5 s at the first attempt — the two prior scripted splices each cost a round.
+#print axioms wk_wrapper
+
+-- U10 (Necessitation/Verify5, 2026-09-16): §19 — the `shift` MOTIVE WRAPPER (4 of 10), the `wk` wrapper's twin.
+-- `shift_arm_size` differs from `wk_arm_size` in three places only: it wants the child's `IsFormulaSet` and the
+-- shift equation (`hc`, `hsc : s = setShift LAct (fstIdx d')`) in place of `wk`'s `hsub`, and its insert room is
+-- `0 + 16·D + 8` rather than `0 + 14·D + 5`. `dlen_shiftRule` has the SAME shape as `dlen_wkRule`
+-- (`setLen s + dlen d + 1`), so `hdeq`, `hyd` and `hLn` transcribe unchanged. The constants move with
+-- `len_shiftPro_le ≤ 62·D + 23` (against `wk`'s `44·D + 11`): the length half needs `62 + 37 = 99` and `hgE2`
+-- needs `63·D + 28`, i.e. `91`. Transcribed literally in one pass and green in 7 s at the first attempt.
+#print axioms shift_wrapper
+
 -- U10 (Necessitation/Package, 2026-09-15): THE PACKAGE AND THE HEADLINE THEOREMS, with `Assemble.SizeOracle`
 -- BYPASSED. `SizeOracle` is NOT PROVABLE as stated (it binds the numeral table `T` with no `NumTableOK T N' B'`,
 -- while every prologue size lemma requires one and lands at `layQ B B' D`/`layD N' B' D`; `NumTableOK` is never a
