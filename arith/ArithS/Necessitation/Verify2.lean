@@ -4211,4 +4211,33 @@ theorem verifyGraph'_ok : ∃ Cs Ck : ℕ, ∀ (V : Type) [ORingStructure V] [V�
 
 end glueMain
 
+/-! ### 8.10 The kit-facing form: `(dlen ρ + 1)^6`
+
+`verifyGraph'_ok` restated with the `VerifyKit''`-style multiplier `(dlen ρ + 1) ^ m`, `m = 6`. The hypothesis on the
+root is `NodeLay … (fstIdx ρ)` at offset `0` — the bridge from `RootLayout Γ x i` (dossier at `&(i + 2)`, chain at
+`&(i + 1)`, no fold base) to a `Layout` at `0` is NOT written here; see the header. -/
+
+section kitForm
+
+theorem verifyGraph'_ok_pow : ∃ Ck : ℕ, ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
+    {tbl N N' B' Ww Wl Wc W₁ W₂ W T A Cv E ρ : V},
+    TableOK tbl N → ProTable tbl → NumTableOK T N' B' → Ww = walkPieces → Wl = layoutPieces → Wc = certPieces →
+    W₁ = frag1Pieces → W₂ = frag2Pieces → W = proPieces → AxmTableOK tbl E Ww A Cv → Derivation TAct ρ →
+    (Ck : V) * (dlen TAct ρ + 1) ^ 6 ≤ E →
+    ∀ L Γ : V, VerifyGraph' Ww Wl Wc W₁ W₂ W T A ρ L → IsFormulaSet LAct Γ → NodeLay Ww Wc T Γ (fstIdx ρ) →
+      ListOK tbl E ((9 : ℕ) : V) Γ L ∧ NoDrop' L ∧ shiftsV L ≤ (Ck : V) * (dlen TAct ρ + 1) ^ 6 ∧
+      neg LAct (goalFact (^&(len (memberList (fstIdx ρ)) + 1 + shiftsV L)) (bnum (dlen TAct ρ))) ∈ finalCtx Γ L := by
+  obtain ⟨Cs, Ck, h⟩ := verifyGraph'_ok
+  refine ⟨Cs + Ck, fun V _ _ tbl N N' B' Ww Wl Wc W₁ W₂ W T A Cv E ρ htbl hP htblN hWw hWl hWc hW₁ hW₂ hWp hA hd hE
+    L Γ hL hΓ hLay ↦ ?_⟩
+  have hp : (dlen TAct ρ + 1) ^ 6 = p6 (dlen TAct ρ + 1) := by simp only [p6]; ring
+  rw [hp] at hE ⊢
+  push_cast at hE ⊢
+  obtain ⟨ok, nd, sh, goal⟩ := h V htbl hP htblN hWw hWl hWc hW₁ hW₂ hWp hA hd
+    (le_trans (mul_le_mul_of_nonneg_right le_add_self zero_le) hE) L Γ hL hΓ hLay
+  refine ⟨ok, nd, ?_, goal⟩
+  exact le_trans sh (mul_le_mul le_self_add (p6_mono le_self_add) zero_le zero_le)
+
+end kitForm
+
 end ArithS

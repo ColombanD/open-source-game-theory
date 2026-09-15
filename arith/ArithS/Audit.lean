@@ -1146,4 +1146,29 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms deg_three
 #print axioms boundedInnerNec_of_kit''
 
+-- U10 (Necessitation/Verify2, 2026-09-15): THE VERIFY GRAPH WITH COMPUTED PROLOGUES. `VerifyGraph'` is the Δ₁
+-- fixpoint on ⟪ρ, L⟫ whose lists are the ten assemblers `v<Tag>` (prologue ++ child ++ recovery ++ node, every node at
+-- offset 0); the axm certificates are a TABLE parameter `A` (`AxmTableOK`, Δ₁), monotone (`VerifyGraph'.mono_A`);
+-- existence from the induction oracle `AxmIndOracleC` (`verifyGraph'_exists`); context monotonicity of `ListOK`
+-- (`listOK_mono_subset`, no shift-freeness needed); the per-tag `ok` lemmas and the glued node invariant
+-- `verifyGraph'_ok`: `shiftsV L ≤ Cs·(dlen ρ)^6` under `Ck·(dlen ρ + 1)^6 ≤ E` (degree 6, forced by the quintic
+-- `shiftsV_proAll_le`/`shiftsV_proExs_le`); `verifyGraph'_ok_pow` is the `(dlen ρ + 1)^m` form, `m = 6`.
+#print axioms VerifyGraph'.case_iff
+#print axioms VerifyGraph'.mono_A
+#print axioms verifyGraph'_exists
+#print axioms listOK_mono_subset
+#print axioms axmEntry_exists
+#print axioms vAxL_ok
+#print axioms vVerum_ok
+#print axioms vAxm_ok
+#print axioms vAnd_ok
+#print axioms vOr_ok
+#print axioms vWk_ok
+#print axioms vShift_ok
+#print axioms vCut_ok
+#print axioms vAll_ok
+#print axioms vExs_ok
+#print axioms verifyGraph'_ok
+#print axioms verifyGraph'_ok_pow
+
 end ArithS
