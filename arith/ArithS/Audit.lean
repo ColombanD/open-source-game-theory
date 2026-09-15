@@ -989,4 +989,16 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms transport_bnum
 #print axioms pin_assembly
 
+-- U10 (Necessitation/Top §9–§11, 2026-09-15): THE DEGREE-4 ASSEMBLY (BRIEF §11 THE FINDING). The kits
+-- restated in the COARSE cost shape the repository's lemmas produce (`VerifyKit'`/`PinKit'`: costSum ≤
+-- len·(costK N E B 9 (kitQ C B E) (kitD C size) + 38·(ctxBoundG (growK …) Γ len + …)) with the ctxBoundG
+-- end-context bounds), `top_main'`, the quartic bound `topBound'_pb` and
+-- `boundedInnerNec_four_of_kit : KitPackage' … → BoundedInnerNec 4`. Degree 4 (not 3) because the generic
+-- accounting charges 4·B·E of context growth per step; `_three_of_kit` stays as the fine-kit target.
+#print axioms costK9_le
+#print axioms top_main'
+#print axioms succ_quart_le
+#print axioms topBound'_pb
+#print axioms boundedInnerNec_four_of_kit
+
 end ArithS
