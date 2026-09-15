@@ -1415,3 +1415,19 @@ done. `costSum_proAll/proExs_le''` at the cubic lengths. TRAP: `le_trans hrD le_
 middle term — pin it.
 IN FLIGHT: `Assemble` (at `m = 6`: the unconditional `BoundedInnerNec 24`); `Verify4` (the re-glue at
 `m = 4`).
+
+**§11 status — `Verify4` DONE: the recursion invariant at `m = 4` (4e4d058, fd75d19; 560 lines;
+census 763, all standard).** **`verifyGraph''_ok4`** = `Verify3.verifyGraph''_ok` with `p6 ↦ p4`
+throughout (`Cs = 25731`, `Ck = 128655`; the binding floor is `proSA_add_le_p3`'s `25731 ≤ Csv`)
+and **`verifyGraph''_ok_pow4`** in the `VerifyKit'' … 4` shape (cap `Ck·(Cv+1)·(dlen ρ+1)^4 ≤ E`,
+`Ck = 154391`) — so `boundedInnerNec_of_kit'' 4` gives **`deg 4 = 16`**. Every arm closes at 4, none
+forces 5: the linear arms via `capE4'/capE4`, `child_bound4`, `lin_le_p3`, `rec1₄/rec2₄`; `all`/`exs`
+via `shiftsV_proAll/proExs_le_cubic` landed in EXACTLY `402·p3(2(d+1))` (the `p3_mono hD3` lift;
+`256 ≤ 402` by `mul_le_mul`), `allE_p4`/`exsE_p4`, `allEQ/alliE/exsEQ/exsiE_p3` lifted by `p3_le_p4`,
+`allNode_p4`; `axm` via `entryB` unfolded to `Cv·p3(|p|+1)`, `axmLeaf_p4`. `m = 3` would need per-
+node accounting, which the `_ok`s' single global `D` does not support (and Σ over nodes of a cubic
+in the CHILD's sequent size is not obviously summable to `g³` — a different recurrence, not
+attempted). TRAPS: an EMPTY log with `EXIT 0` is the normal green here (linters off) — sentinel
+with a deliberate error + `#print axioms`; `entryB` must be unfolded before `axmLeaf_p4`; the
+mechanical `p6 → p4` rename must rename the LEMMA names first, then the bare tokens.
+IN FLIGHT: `Assemble` (switched to `m = 4`: `boundedInnerNec_sixteen`, `dupoc_self_coop_unconditional`).
