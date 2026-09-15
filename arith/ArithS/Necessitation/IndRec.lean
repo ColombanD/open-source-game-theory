@@ -2159,4 +2159,110 @@ theorem stageA {tbl N E Γ p ip b m K Z : V} (htbl : TableOK tbl N) (hT : IndRec
 end stageA
 
 
+/-! ### 5.5 Stage B: the shift-free closing — `qqAlls`, `bs`, `shift`, `fvSeq`, `neg`, the identification, the rows -/
+
+section stageB
+
+variable {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
+
+/-- `certNeg` re-indexed to the table, as an `HInv` list: `negFact &j &i` from the dossiers of `r` (at `&i`) and `neg r` (at `&j`). -/
+theorem negInst_ok {tbl N E Γ n r i j : V} (htbl : TableOK tbl N) (hT : IndRecTable tbl) (hΓ : IsFormulaSet LAct Γ)
+    (hr : IsSemiformula LAct n r) (hE : 2 * n + 2 * formulaLen LAct r + 8 ≤ E) (hEi : i + 2 * formulaLen LAct r + 1 ≤ E)
+    (hEj : j + 2 * formulaLen LAct r + 1 ≤ E) (hDi : DossF walkPieces Γ n r i) (hDj : DossF walkPieces Γ n (neg LAct r) j) :
+    ∃ P : V, HInv tbl E Γ P ∧ len P ≤ 12 * formulaLen LAct r ∧ neg LAct (negFact (^&j) (^&i)) ∈ finalCtx Γ P := by
+  obtain ⟨hok, hnd, hho, hs, hf⟩ := certNeg_ok (tbl := certView tbl) (N := N) (Wd := walkPieces) (W := certPieces)
+    (hT.proTable.tableOK_certView htbl) hT.proTable.certTable rfl rfl hr hE hEi hEj hΓ hDi hDj
+  refine ⟨reidxL (certNeg certPieces n r i j),
+    ⟨(listOK_reidxL hT.proTable hok).mono (by exact_mod_cast (by decide : 8 ≤ 9)), noDrop'_reidxL hnd.noDrop',
+      hornOnly_reidxL hho, by rw [shiftsV_reidxL, hs]⟩, ?_, ?_⟩
+  · rw [len_reidxL]; exact le_trans le_self_add (len_certNeg_le hr)
+  · rw [finalCtx_reidxL]; exact hf
+
+/-- `eqSteps` as an `HInv` list: `eqFactB &i &j` from two dossiers of `r`. -/
+theorem eqInst_ok {tbl N E Γ n r i j : V} (htbl : TableOK tbl N) (hT : IndRecTable tbl) (hΓ : IsFormulaSet LAct Γ)
+    (hr : IsSemiformula LAct n r) (hE : 2 * (n + formulaLen LAct r) + 12 ≤ E) (hEi : i + 2 * formulaLen LAct r + 1 ≤ E)
+    (hEj : j + 2 * formulaLen LAct r + 1 ≤ E) (hDi : DossF walkPieces Γ n r i) (hDj : DossF walkPieces Γ n r j) :
+    ∃ P : V, HInv tbl E Γ P ∧ len P ≤ 4 * formulaLen LAct r + 1 ∧ neg LAct (eqFactB (^&i) (^&j)) ∈ finalCtx Γ P := by
+  have hW := hT.walkTable
+  have hc : eqCount r ≤ 2 * formulaLen LAct r := by
+    rw [eqCount_eq_descCountF walkPieces hr]; exact le_trans le_self_add (descCountF_succ_le' htbl hW hr)
+  obtain ⟨hok, hnd, hho, hs, hl, hf⟩ := eqSteps_ok htbl hT.layoutTable rfl rfl hr hE
+    (le_trans (add_le_add (add_le_add le_rfl hc) le_rfl) hEi) (le_trans (add_le_add (add_le_add le_rfl hc) le_rfl) hEj) hΓ
+    (dossierAt_of_dossF htbl hW rfl hr hDi) (dossierAt_of_dossF htbl hW rfl hr hDj)
+  refine ⟨_, ⟨hok.mono (by exact_mod_cast (by decide : 8 ≤ 9)), hnd.noDrop', hho, hs⟩, ?_, hf⟩
+  calc len (eqSteps layoutPieces i j r) ≤ 2 * eqCount r + 1 := hl
+    _ ≤ 2 * (2 * formulaLen LAct r) + 1 := add_le_add (mul_le_mul_of_nonneg_left hc zero_le) le_rfl
+    _ = 4 * formulaLen LAct r + 1 := by ring
+
+/-- The `isC0Fact &iw0` step from the vector dossier of `⟨⌜0⌝⟩` at `&iw0`. -/
+theorem c0Intro_ok {tbl N E Γ iw0 : V} (htbl : TableOK tbl N) (hT : IndRecTable tbl) (hΓ : IsFormulaSet LAct Γ)
+    (hE : iw0 + 2 ≤ E) (hD : DossV walkPieces Γ 0 1 c0v 1 iw0) :
+    ∃ P : V, HInv tbl E Γ P ∧ len P ≤ 1 ∧ neg LAct (isC0Fact (^&iw0)) ∈ finalCtx Γ P := by
+  have hW := hT.walkTable
+  have hD' : DossV walkPieces Γ 0 1 c0v (0 + 1) iw0 := by rwa [zero_add]
+  obtain ⟨hadj, _, hDt, _⟩ := dossV_succ htbl hW rfl isSemitermVec_c0v (by rw [zero_add]) hD'
+  have hnth : (c0v : V).[1 - (0 + 1)] = ^func 0 0 0 := by rw [zero_add, tsub_self]; unfold c0v; exact nth_adjoin_zero _ _
+  rw [hnth] at hDt hadj
+  rw [vRef_zero] at hadj
+  obtain ⟨hfunc, _, _, _⟩ := dossT_func htbl hW rfl (k := 0) (f := 0) (v := 0) isFunc_LAct_zeroIndex (IsSemitermVec.nil _) hDt
+  rw [cTV_zero, vRef_zero] at hfunc
+  obtain ⟨hlen, hrow⟩ := hT.c0Intro
+  obtain ⟨hok, htag, hctx⟩ := iok_c0Intro htbl rfl hlen hrow hΓ (by simp) (termLen_fvar_le (le_trans (le_of_eq (by ring)) hE)) (by simp)
+    (termLen_fvar_le (le_trans (add_le_add le_rfl (by norm_num)) hE)) hfunc hadj
+  refine ⟨_, HInv.single hok htag, by rw [len_single], ?_⟩
+  rw [finalCtx_single, hctx]; exact mem_insert_self'
+
+/-- The `isC1Fact &iw1` step from the vector dossier of `⟨#0 + 1⟩` at `&iw1` (bound `1`). -/
+theorem c1Intro_ok {tbl N E Γ iw1 : V} (htbl : TableOK tbl N) (hT : IndRecTable tbl) (hΓ : IsFormulaSet LAct Γ)
+    (hE : iw1 + 8 ≤ E) (hD : DossV walkPieces Γ 1 1 c1v 1 iw1) :
+    ∃ P : V, HInv tbl E Γ P ∧ len P ≤ 1 ∧ neg LAct (isC1Fact (^&iw1)) ∈ finalCtx Γ P := by
+  have hW := hT.walkTable
+  have hD' : DossV walkPieces Γ 1 1 c1v (0 + 1) iw1 := by rwa [zero_add]
+  obtain ⟨hadj, _, hDt, _⟩ := dossV_succ htbl hW rfl isSemitermVec_c1v (by rw [zero_add]) hD'
+  have hnth : (c1v : V).[1 - (0 + 1)] = ^#(0 : V) ^+ (𝟏 : V) := by rw [zero_add, tsub_self]; unfold c1v; exact nth_adjoin_zero _ _
+  rw [hnth] at hDt hadj
+  rw [vRef_zero] at hadj
+  have hv2 : IsSemitermVec LAct 2 1 (?[^#(0 : V), (𝟏 : V)] : V) := by
+    rw [show (2 : V) = 0 + 1 + 1 by norm_num, IsSemitermVec.cons_iff, IsSemitermVec.cons_iff]
+    exact ⟨by simp, isSemiterm_qqOne_LAct 1, IsSemitermVec.nil _⟩
+  have hDt' : DossT walkPieces Γ 1 (^func 2 (addIndex : V) ?[^#(0 : V), (𝟏 : V)]) (iw1 + 1) := by unfold qqAdd at hDt; exact hDt
+  obtain ⟨hfunc, _, _, hDv2⟩ := dossT_func htbl hW rfl isFunc_LAct_addIndex hv2 hDt'
+  rw [coe_addIndex_eq, cTV_zero, cTV_two_eq, ← cT_two, vRef_of_ne (by norm_num : (2 : V) ≠ 0)] at hfunc
+  -- the two entries: `#0` then `𝟏`
+  have hDv2' : DossV walkPieces Γ 1 2 ?[^#(0 : V), (𝟏 : V)] (1 + 1) (iw1 + 1 + 1) := by
+    rw [one_add_one_eq_two]; exact hDv2
+  obtain ⟨hadj2, _, hDx, hDv1⟩ := dossV_succ htbl hW rfl hv2 (by rw [one_add_one_eq_two]) hDv2'
+  have hn0 : (?[^#(0 : V), (𝟏 : V)] : V).[2 - (1 + 1)] = ^#0 := by rw [one_add_one_eq_two, tsub_self]; simp
+  rw [hn0] at hDx hadj2 hDv1
+  rw [vRef_of_ne _root_.one_ne_zero] at hadj2
+  obtain ⟨hbvar, _⟩ := dossT_bvar htbl hW rfl hDx
+  rw [cTV_zero] at hbvar
+  have hDv1' : DossV walkPieces Γ 1 2 ?[^#(0 : V), (𝟏 : V)] (0 + 1) (iw1 + 1 + 1 + 1 + descCountT walkPieces 1 (^#0)) := by
+    rw [zero_add]; exact hDv1
+  obtain ⟨hadj1, _, hDo, _⟩ := dossV_succ htbl hW rfl hv2 (by rw [zero_add]; norm_num) hDv1'
+  have hn1 : (?[^#(0 : V), (𝟏 : V)] : V).[2 - (0 + 1)] = 𝟏 := by
+    rw [zero_add, show (2 : V) = 1 + 1 by norm_num, add_tsub_cancel_right]; simp
+  rw [hn1] at hDo hadj1
+  rw [vRef_zero] at hadj1
+  have hDo' : DossT walkPieces Γ 1 (^func 0 (oneIndex : V) 0) (iw1 + 1 + 1 + 1 + descCountT walkPieces 1 (^#0) + 1) := by
+    rw [← qqOne_eq]; exact hDo
+  obtain ⟨hfunc1, _, _, _⟩ := dossT_func htbl hW rfl isFunc_LAct_oneIndex (IsSemitermVec.nil _) hDo'
+  rw [coe_oneIndex_eq, cTV_zero, cTV_one_eq, ← cT_one, vRef_zero] at hfunc1
+  rw [descCountT_bvar] at hadj2 hadj1 hfunc1
+  -- the step
+  have hct : iw1 + 1 + 1 + 1 + 1 + 1 + 1 ≤ E := le_trans (le_of_eq (by ring)) (le_trans (add_le_add le_rfl (by norm_num : (6 : V) ≤ 8)) hE)
+  have hE1 : iw1 + 1 ≤ E := le_trans (add_le_add le_rfl (by norm_num)) hE
+  have hE2 : iw1 + 1 + 1 ≤ E := le_trans (le_of_eq (by ring)) (le_trans (add_le_add le_rfl (by norm_num : (2 : V) ≤ 8)) hE)
+  have hE3 : iw1 + 1 + 1 + 1 ≤ E := le_trans (le_of_eq (by ring)) (le_trans (add_le_add le_rfl (by norm_num : (3 : V) ≤ 8)) hE)
+  have hE4 : iw1 + 1 + 1 + 1 + 1 ≤ E := le_trans (le_of_eq (by ring)) (le_trans (add_le_add le_rfl (by norm_num : (4 : V) ≤ 8)) hE)
+  have hE5 : iw1 + 1 + 1 + 1 + 1 + 1 ≤ E := le_trans (le_of_eq (by ring)) (le_trans (add_le_add le_rfl (by norm_num : (5 : V) ≤ 8)) hE)
+  obtain ⟨hlen, hrow⟩ := hT.c1Intro
+  obtain ⟨hok, htag, hctx⟩ := iok_c1Intro htbl rfl hlen hrow hΓ (by simp) (termLen_fvar_le hct) (by simp) (termLen_fvar_le hE5)
+    (by simp) (termLen_fvar_le hE4) (by simp) (termLen_fvar_le hE3) (by simp) (termLen_fvar_le hE2) (by simp) (termLen_fvar_le hE1)
+    hfunc1 hadj1 hbvar hadj2 hfunc hadj
+  refine ⟨_, HInv.single hok htag, by rw [len_single], ?_⟩
+  rw [finalCtx_single, hctx]; exact mem_insert_self'
+
+end stageB
+
 end ArithS
