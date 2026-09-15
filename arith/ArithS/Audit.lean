@@ -59,6 +59,7 @@ import ArithS.Necessitation.Bounds
 import ArithS.Necessitation.Verify4
 import ArithS.Necessitation.Assemble
 import ArithS.Necessitation.Verify5
+import ArithS.Necessitation.Package
 
 /-!
 # ArithS.Audit — the axiom census of the arithmetized layer
@@ -1326,5 +1327,24 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms dlen_bin3Code_le'
 #print axioms sum2D_le_layD
 #print axioms verifySizeOracle_of_arms
+
+-- U10 (Necessitation/Package, 2026-09-15): THE PACKAGE AND THE HEADLINE THEOREMS, with `Assemble.SizeOracle`
+-- BYPASSED. `SizeOracle` is NOT PROVABLE as stated (it binds the numeral table `T` with no `NumTableOK T N' B'`,
+-- while every prologue size lemma requires one and lands at `layQ B B' D`/`layD N' B' D`; `NumTableOK` is never a
+-- conclusion anywhere). It is not proved here but bypassed: its ONLY consumer, `Assemble.kitPackage'''_of_size`,
+-- instantiates it at the CANONICAL numeral table of `NumSteps.exists_numTable`, where `N'`/`B'` ARE fixed naturals,
+-- so the `NumTableOK`-CARRYING statement `SizeThm N' B' Cz` suffices. `SizeThmAll` (= `∀ N' B', ∃ Cz, SizeThm N' B' Cz`)
+-- is the shape the size glue delivers; the quantifier ORDER is the whole point (`N'`, `B'` fixed first, `Cz` chosen
+-- after, so `Cz` may depend on them). `kitPackage'''_of_size'` re-derives the package from it exactly as
+-- `kitPackage'''_of_size` does, and the three headline theorems follow: `BoundedInnerNec 16` (`deg 4 = 16`),
+-- Dupoc's self-cooperation (`Assembly/Cell.dupoc_self_coop` at `d = 16`) and the uniform PBLT
+-- (`Assembly/Uniform.pblt_uniform` at `d = 16`) — each conditional ONLY on `SizeThmAll`.
+#print axioms SizeThm
+#print axioms SizeThmAll
+#print axioms verifySizeOracle_of_sizeThm
+#print axioms kitPackage'''_of_size'
+#print axioms boundedInnerNec_sixteen
+#print axioms dupoc_self_coop_unconditional
+#print axioms pblt_unconditional
 
 end ArithS
