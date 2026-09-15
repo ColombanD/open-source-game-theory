@@ -465,4 +465,465 @@ instance exsSig_definable :
 
 end helperDefs
 
+/-! ## 5. The per-tag assemblers `v<Tag>`: prologue ++ child ++ recovery ++ … ++ node, at the determined offsets
+
+Every node is verified at offset `0` of its own layout; `k = len (memberList s)` is the parent's member count,
+`σ = shiftsV` of a block, and each child list `L'` is spliced in after the prologue that lays the child out at `0`.
+The recovery after a child is `postIns W s'' cp n` (`goalElim` + `congFstIdx`, 2 shifts) for the `insert` children
+(`and`/`or`/`cut`/`all`/`exs`) and the bare `goalElim` (2 shifts) for `wk`/`shift`, whose child sequent IS the row
+object. The EMPTY-sequent split (`Prologue.lean` §12) lives in the three selectors `wkPro`/`shiftPro`/`cutPro`; the
+empty `shift` child comes out of `proShift0` at offset `1`, so `reset0` re-lays the empty child out at `0`
+(`layoutSteps0` + the identification `eqSymm`/`eqTrans`/`congSetShiftR` of the fresh `∅`-object with the old one). -/
+
+section assemblers
+
+/-- The `axL` list: `proAxL` (shift-free), then `fragAxL` at `is = k + 1`, `il = 0`. -/
+noncomputable def vAxL (Ww Wc W₁ T s p : V) : V :=
+  appendV (proAxL Ww Wc T s p 0)
+    (fragAxL W₁ T (len (memberList s) + 1) 0 (memTop Ww Wc T s p 0) (memTop Ww Wc T s (neg LAct p) 0)
+      (setLen LAct s) (dlen TAct (axL s p)))
+
+noncomputable def vAxLDef : 𝚺₁.Semisentence 7 := .mkSigma
+  “y Ww Wc W₁ T s p. ∃ P, !proAxLDef P Ww Wc T s p 0 ∧ ∃ xs, !memberListDef xs s ∧ ∃ k, !lenDef k xs ∧
+    ∃ is, is = k + 1 ∧ ∃ ip, !memTopDef ip Ww Wc T s p 0 ∧ ∃ np, !(negGraph LAct) np p ∧ ∃ inp, !memTopDef inp Ww Wc T s np 0 ∧
+    ∃ Ls, !(setLenDef LAct) Ls s ∧ ∃ d, !axLGraph d s p ∧ ∃ n, !(dlenDef TAct) n d ∧
+    ∃ F, !fragAxLDef F W₁ T is 0 ip inp Ls n ∧ !appendVDef y P F”
+
+instance vAxL_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 6 → V ↦ vAxL (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) vAxLDef := .mk fun v ↦ by
+  simp [vAxLDef, vAxL, proAxL_defined.iff, memberList_defined.iff, memTop_defined.iff, neg.defined.iff,
+    setLen_defined.iff, dlen_defined.iff, fragAxL_defined.iff, appendV_defined.iff, numeral_eq_natCast]
+instance vAxL_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 6 → V ↦ vAxL (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) := vAxL_defined.to_definable
+
+/-- The `verumIntro` list: no prologue (`layout_verum`), `fragVerum` at `is = k + 1`, `il = 0`. -/
+noncomputable def vVerum (Ww Wc W₁ T s : V) : V :=
+  fragVerum W₁ T (len (memberList s) + 1) 0 (memTop Ww Wc T s (^⊤ : V) 0) (setLen LAct s) (dlen TAct (verumIntro s))
+
+noncomputable def vVerumDef : 𝚺₁.Semisentence 6 := .mkSigma
+  “y Ww Wc W₁ T s. ∃ xs, !memberListDef xs s ∧ ∃ k, !lenDef k xs ∧ ∃ is, is = k + 1 ∧
+    ∃ vt, !qqVerumDef vt ∧ ∃ iv, !memTopDef iv Ww Wc T s vt 0 ∧
+    ∃ Ls, !(setLenDef LAct) Ls s ∧ ∃ d, !verumIntroGraph d s ∧ ∃ n, !(dlenDef TAct) n d ∧
+    !fragVerumDef y W₁ T is 0 iv Ls n”
+
+instance vVerum_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 5 → V ↦ vVerum (v 0) (v 1) (v 2) (v 3) (v 4)) vVerumDef := .mk fun v ↦ by
+  simp [vVerumDef, vVerum, memberList_defined.iff, memTop_defined.iff, setLen_defined.iff, dlen_defined.iff,
+    fragVerum_defined.iff, numeral_eq_natCast]
+instance vVerum_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 5 → V ↦ vVerum (v 0) (v 1) (v 2) (v 3) (v 4)) := vVerum_defined.to_definable
+
+/-- The `andIntro` list. Block 1: `proIns s p 0 ip₀` (`σ₁ = 1 + proSig (insert p s)`), `L₁`, `postIns` at the child's
+chain top `&(k₁ + 1 + s₁)` and the insert object `&(proSig (insert p s) + s₁)`; `τ₁ = σ₁ + s₁ + 2`. Block 2 the same
+for `q` with the parent at `τ₁`; `τ = τ₁ + τ₂`. Then `nodeAnd` with the parent at `τ`, the block-1 facts moved by `τ₂`. -/
+noncomputable def vAnd (Ww Wl Wc W₁ W T s p q dp dq L₁ L₂ : V) : V :=
+  appendV (proIns Ww Wl Wc W T s p 0 (memTop Ww Wc T s (p ^⋏ q) 0 + descCountF Ww 0 q + 1))
+  (appendV L₁
+  (appendV (postIns W (len (memberList (insert p s)) + 1 + shiftsV L₁) (proSig Ww Wl Wc W T (insert p s) + shiftsV L₁)
+      (dlen TAct dp))
+  (appendV (proIns Ww Wl Wc W T s q (1 + proSig Ww Wl Wc W T (insert p s) + shiftsV L₁ + 2)
+      (memTop Ww Wc T s (p ^⋏ q) 0 + 1 + (1 + proSig Ww Wl Wc W T (insert p s) + shiftsV L₁ + 2)))
+  (appendV L₂
+  (appendV (postIns W (len (memberList (insert q s)) + 1 + shiftsV L₂) (proSig Ww Wl Wc W T (insert q s) + shiftsV L₂)
+      (dlen TAct dq))
+    (nodeAnd W₁ T
+      (1 + proSig Ww Wl Wc W T (insert p s) + shiftsV L₁ + 2 + (1 + proSig Ww Wl Wc W T (insert q s) + shiftsV L₂ + 2) +
+        (len (memberList s) + 1))
+      (1 + proSig Ww Wl Wc W T (insert p s) + shiftsV L₁ + 2 + (1 + proSig Ww Wl Wc W T (insert q s) + shiftsV L₂ + 2))
+      (memTop Ww Wc T s (p ^⋏ q) 0 +
+        (1 + proSig Ww Wl Wc W T (insert p s) + shiftsV L₁ + 2 + (1 + proSig Ww Wl Wc W T (insert q s) + shiftsV L₂ + 2)))
+      (memTop Ww Wc T s (p ^⋏ q) 0 + descCountF Ww 0 q + 1 +
+        (1 + proSig Ww Wl Wc W T (insert p s) + shiftsV L₁ + 2 + (1 + proSig Ww Wl Wc W T (insert q s) + shiftsV L₂ + 2)))
+      (memTop Ww Wc T s (p ^⋏ q) 0 + 1 +
+        (1 + proSig Ww Wl Wc W T (insert p s) + shiftsV L₁ + 2 + (1 + proSig Ww Wl Wc W T (insert q s) + shiftsV L₂ + 2)))
+      (1 + (1 + proSig Ww Wl Wc W T (insert q s) + shiftsV L₂ + 2)) 1
+      (proSig Ww Wl Wc W T (insert p s) + shiftsV L₁ + 2 + (1 + proSig Ww Wl Wc W T (insert q s) + shiftsV L₂ + 2))
+      (proSig Ww Wl Wc W T (insert q s) + shiftsV L₂ + 2)
+      (1 + proSig Ww Wl Wc W T (insert q s) + shiftsV L₂ + 2) 0
+      (setLen LAct s) (dlen TAct dp) (dlen TAct dq) (dlen TAct (andIntro s p q dp dq))))))))
+
+noncomputable def vAndDef : 𝚺₁.Semisentence 14 := .mkSigma
+  “y Ww Wl Wc W₁ W T s p q dp dq L₁ L₂.
+    ∃ xs, !memberListDef xs s ∧ ∃ k, !lenDef k xs ∧
+    ∃ r, !qqAndDef r p q ∧ ∃ ir₀, !memTopDef ir₀ Ww Wc T s r 0 ∧ ∃ cq, !descCountFDef cq Ww 0 q ∧
+    ∃ ip₀, ip₀ = ir₀ + cq + 1 ∧ ∃ iq₀, iq₀ = ir₀ + 1 ∧
+    ∃ c₁, !insertDef c₁ p s ∧ ∃ xs₁, !memberListDef xs₁ c₁ ∧ ∃ k₁, !lenDef k₁ xs₁ ∧ ∃ σ₁, !proSigDef σ₁ Ww Wl Wc W T c₁ ∧
+    ∃ c₂, !insertDef c₂ q s ∧ ∃ xs₂, !memberListDef xs₂ c₂ ∧ ∃ k₂, !lenDef k₂ xs₂ ∧ ∃ σ₂, !proSigDef σ₂ Ww Wl Wc W T c₂ ∧
+    ∃ s₁, !shiftsVDef s₁ L₁ ∧ ∃ s₂, !shiftsVDef s₂ L₂ ∧
+    ∃ m₁, !(dlenDef TAct) m₁ dp ∧ ∃ m₂, !(dlenDef TAct) m₂ dq ∧ ∃ d, !andIntroGraph d s p q dp dq ∧ ∃ n, !(dlenDef TAct) n d ∧
+    ∃ Ls, !(setLenDef LAct) Ls s ∧
+    ∃ τ₁, τ₁ = 1 + σ₁ + s₁ + 2 ∧ ∃ τ₂, τ₂ = 1 + σ₂ + s₂ + 2 ∧ ∃ τ, τ = τ₁ + τ₂ ∧
+    ∃ P₁, !proInsDef P₁ Ww Wl Wc W T s p 0 ip₀ ∧
+    ∃ a₁, a₁ = k₁ + 1 + s₁ ∧ ∃ b₁, b₁ = σ₁ + s₁ ∧ ∃ Q₁, !postInsDef Q₁ W a₁ b₁ m₁ ∧
+    ∃ iq₁, iq₁ = iq₀ + τ₁ ∧ ∃ P₂, !proInsDef P₂ Ww Wl Wc W T s q τ₁ iq₁ ∧
+    ∃ a₂, a₂ = k₂ + 1 + s₂ ∧ ∃ b₂, b₂ = σ₂ + s₂ ∧ ∃ Q₂, !postInsDef Q₂ W a₂ b₂ m₂ ∧
+    ∃ is, is = τ + (k + 1) ∧ ∃ ir, ir = ir₀ + τ ∧ ∃ ip, ip = ip₀ + τ ∧ ∃ iq, iq = iq₀ + τ ∧ ∃ id₁, id₁ = 1 + τ₂ ∧
+    ∃ icp, icp = σ₁ + s₁ + 2 + τ₂ ∧ ∃ icq, icq = σ₂ + s₂ + 2 ∧
+    ∃ Nd, !nodeAndDef Nd W₁ T is τ ir ip iq id₁ 1 icp icq τ₂ 0 Ls m₁ m₂ n ∧
+    ∃ r₆, !appendVDef r₆ Q₂ Nd ∧ ∃ r₅, !appendVDef r₅ L₂ r₆ ∧ ∃ r₄, !appendVDef r₄ P₂ r₅ ∧ ∃ r₃, !appendVDef r₃ Q₁ r₄ ∧
+    ∃ r₂, !appendVDef r₂ L₁ r₃ ∧ !appendVDef y P₁ r₂”
+
+set_option maxHeartbeats 2000000 in
+instance vAnd_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 13 → V ↦ vAnd (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10) (v 11) (v 12))
+      vAndDef := .mk fun v ↦ by
+  simp [vAndDef, vAnd, memberList_defined.iff, memTop_defined.iff, descCountF_defined.iff, proSig_defined.iff,
+    shiftsV_defined.iff, dlen_defined.iff, setLen_defined.iff, proIns_defined.iff, postIns_defined.iff,
+    nodeAnd_defined.iff, appendV_defined.iff, numeral_eq_natCast]
+instance vAnd_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 13 → V ↦ vAnd (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10) (v 11) (v 12)) :=
+  vAnd_defined.to_definable
+
+/-- The `orIntro` list: `proOr` (`σ = 1 + proSig (insert q s) + (1 + proSig c)`, `c = insert p (insert q s)`), `L'`,
+`postIns`, `nodeOr` with `icq = proSig (insert q s) + (1 + proSig c) + s' + 2`, `ic = proSig c + s' + 2`. -/
+noncomputable def vOr (Ww Wl Wc W₁ W T s p q d' L' : V) : V :=
+  appendV (proOr Ww Wl Wc W T s p q 0 (memTop Ww Wc T s (p ^⋎ q) 0 + descCountF Ww 0 q + 1) (memTop Ww Wc T s (p ^⋎ q) 0 + 1))
+  (appendV L'
+  (appendV (postIns W (len (memberList (insert p (insert q s))) + 1 + shiftsV L')
+      (proSig Ww Wl Wc W T (insert p (insert q s)) + shiftsV L') (dlen TAct d'))
+    (nodeOr W₁ T
+      (1 + proSig Ww Wl Wc W T (insert q s) + (1 + proSig Ww Wl Wc W T (insert p (insert q s))) + shiftsV L' + 2 +
+        (len (memberList s) + 1))
+      (1 + proSig Ww Wl Wc W T (insert q s) + (1 + proSig Ww Wl Wc W T (insert p (insert q s))) + shiftsV L' + 2)
+      (memTop Ww Wc T s (p ^⋎ q) 0 +
+        (1 + proSig Ww Wl Wc W T (insert q s) + (1 + proSig Ww Wl Wc W T (insert p (insert q s))) + shiftsV L' + 2))
+      (memTop Ww Wc T s (p ^⋎ q) 0 + descCountF Ww 0 q + 1 +
+        (1 + proSig Ww Wl Wc W T (insert q s) + (1 + proSig Ww Wl Wc W T (insert p (insert q s))) + shiftsV L' + 2))
+      (memTop Ww Wc T s (p ^⋎ q) 0 + 1 +
+        (1 + proSig Ww Wl Wc W T (insert q s) + (1 + proSig Ww Wl Wc W T (insert p (insert q s))) + shiftsV L' + 2))
+      1
+      (proSig Ww Wl Wc W T (insert q s) + (1 + proSig Ww Wl Wc W T (insert p (insert q s))) + shiftsV L' + 2)
+      (proSig Ww Wl Wc W T (insert p (insert q s)) + shiftsV L' + 2)
+      0 (setLen LAct s) (dlen TAct d') (dlen TAct (orIntro s p q d')))))
+
+noncomputable def vOrDef : 𝚺₁.Semisentence 12 := .mkSigma
+  “y Ww Wl Wc W₁ W T s p q d' L'.
+    ∃ xs, !memberListDef xs s ∧ ∃ k, !lenDef k xs ∧
+    ∃ r, !qqOrDef r p q ∧ ∃ ir₀, !memTopDef ir₀ Ww Wc T s r 0 ∧ ∃ cq, !descCountFDef cq Ww 0 q ∧
+    ∃ ip₀, ip₀ = ir₀ + cq + 1 ∧ ∃ iq₀, iq₀ = ir₀ + 1 ∧
+    ∃ cq', !insertDef cq' q s ∧ ∃ σq, !proSigDef σq Ww Wl Wc W T cq' ∧
+    ∃ c, !insertDef c p cq' ∧ ∃ xsc, !memberListDef xsc c ∧ ∃ kc, !lenDef kc xsc ∧ ∃ σc, !proSigDef σc Ww Wl Wc W T c ∧
+    ∃ s', !shiftsVDef s' L' ∧ ∃ m₁, !(dlenDef TAct) m₁ d' ∧ ∃ d, !orIntroGraph d s p q d' ∧ ∃ n, !(dlenDef TAct) n d ∧
+    ∃ Ls, !(setLenDef LAct) Ls s ∧
+    ∃ σ, σ = 1 + σq + (1 + σc) ∧ ∃ τ, τ = σ + s' + 2 ∧
+    ∃ P, !proOrDef P Ww Wl Wc W T s p q 0 ip₀ iq₀ ∧
+    ∃ a, a = kc + 1 + s' ∧ ∃ b, b = σc + s' ∧ ∃ Q, !postInsDef Q W a b m₁ ∧
+    ∃ is, is = τ + (k + 1) ∧ ∃ ir, ir = ir₀ + τ ∧ ∃ ip, ip = ip₀ + τ ∧ ∃ iq, iq = iq₀ + τ ∧
+    ∃ icq, icq = σq + (1 + σc) + s' + 2 ∧ ∃ ic, ic = σc + s' + 2 ∧
+    ∃ Nd, !nodeOrDef Nd W₁ T is τ ir ip iq 1 icq ic 0 Ls m₁ n ∧
+    ∃ r₃, !appendVDef r₃ Q Nd ∧ ∃ r₂, !appendVDef r₂ L' r₃ ∧ !appendVDef y P r₂”
+
+set_option maxHeartbeats 2000000 in
+instance vOr_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 11 → V ↦ vOr (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10))
+      vOrDef := .mk fun v ↦ by
+  simp [vOrDef, vOr, memberList_defined.iff, memTop_defined.iff, descCountF_defined.iff, proSig_defined.iff,
+    shiftsV_defined.iff, dlen_defined.iff, setLen_defined.iff, proOr_defined.iff, postIns_defined.iff,
+    nodeOr_defined.iff, appendV_defined.iff, numeral_eq_natCast]
+instance vOr_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 11 → V ↦ vOr (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10)) :=
+  vOr_defined.to_definable
+
+/-- The `wk` prologue selector: `proWk` for a nonempty child, `proWk0` for the empty child. -/
+noncomputable def wkPro (Ww Wl Wc W T s c : V) : V :=
+  if memberList c = 0 then proWk0 W s 0 else proWk Ww Wl Wc W T s c 0
+
+noncomputable def wkProDef : 𝚺₁.Semisentence 8 := .mkSigma
+  “y Ww Wl Wc W T s c. ∃ xs, !memberListDef xs c ∧
+    (xs = 0 → !proWk0Def y W s 0) ∧ (xs ≠ 0 → !proWkDef y Ww Wl Wc W T s c 0)”
+
+instance wkPro_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 7 → V ↦ wkPro (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) wkProDef := .mk fun v ↦ by
+  simp [wkProDef, wkPro, memberList_defined.iff, proWk_defined.iff, proWk0_defined.iff, numeral_eq_natCast]
+  by_cases h : memberList (v 7) = 0 <;> simp [h]
+instance wkPro_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 7 → V ↦ wkPro (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) := wkPro_defined.to_definable
+
+/-- The `wkRule` list: the selector, `L'`, `goalElim` at the child's sequent object `&(k_c + 1 + s')`, `nodeWk` with
+`ic = k_c + 1 + s' + 2`, `id = 1`, `in₁ = 0`. -/
+noncomputable def vWk (Ww Wl Wc W₁ W T s d' L' : V) : V :=
+  appendV (wkPro Ww Wl Wc W T s (fstIdx d'))
+  (appendV L'
+  (appendV (goalElim (^&(len (memberList (fstIdx d')) + 1 + shiftsV L')) (bnum (dlen TAct d')))
+    (nodeWk W₁ T (shiftsV (wkPro Ww Wl Wc W T s (fstIdx d')) + shiftsV L' + 2 + (len (memberList s) + 1))
+      (shiftsV (wkPro Ww Wl Wc W T s (fstIdx d')) + shiftsV L' + 2)
+      (len (memberList (fstIdx d')) + 1 + shiftsV L' + 2) 1 0 (setLen LAct s) (dlen TAct d') (dlen TAct (wkRule s d')))))
+
+noncomputable def vWkDef : 𝚺₁.Semisentence 10 := .mkSigma
+  “y Ww Wl Wc W₁ W T s d' L'.
+    ∃ xs, !memberListDef xs s ∧ ∃ k, !lenDef k xs ∧ ∃ c, !fstIdxDef c d' ∧ ∃ xsc, !memberListDef xsc c ∧ ∃ kc, !lenDef kc xsc ∧
+    ∃ P, !wkProDef P Ww Wl Wc W T s c ∧ ∃ σ, !shiftsVDef σ P ∧ ∃ s', !shiftsVDef s' L' ∧
+    ∃ m₁, !(dlenDef TAct) m₁ d' ∧ ∃ d, !wkRuleGraph d s d' ∧ ∃ n, !(dlenDef TAct) n d ∧ ∃ Ls, !(setLenDef LAct) Ls s ∧
+    ∃ a, a = kc + 1 + s' ∧ ∃ za, !qqFvarDef za a ∧ ∃ bm, !bnumGraph bm m₁ ∧ ∃ G, !goalElimDef G za bm ∧
+    ∃ τ, τ = σ + s' + 2 ∧ ∃ is, is = τ + (k + 1) ∧ ∃ ic, ic = a + 2 ∧
+    ∃ Nd, !nodeWkDef Nd W₁ T is τ ic 1 0 Ls m₁ n ∧
+    ∃ r₃, !appendVDef r₃ G Nd ∧ ∃ r₂, !appendVDef r₂ L' r₃ ∧ !appendVDef y P r₂”
+
+set_option maxHeartbeats 2000000 in
+instance vWk_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 9 → V ↦ vWk (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8)) vWkDef := .mk fun v ↦ by
+  simp [vWkDef, vWk, memberList_defined.iff, fstIdx_defined.iff, wkPro_defined.iff, shiftsV_defined.iff, dlen_defined.iff,
+    setLen_defined.iff, bnum.defined.iff, goalElim_defined.iff, nodeWk_defined.iff, appendV_defined.iff, numeral_eq_natCast]
+instance vWk_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 9 → V ↦ vWk (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8)) := vWk_defined.to_definable
+
+/-- **The reset of the empty `shift` child** (`proShift0` leaves it at offset `1`): `layoutSteps0` (a fresh `Layout0` at
+`0`, `eqFactB &1 𝟎`), then `eqSymm [&4, 𝟎]` (`𝟎 = &4`, the old `∅`-object), `eqTrans [&1, 𝟎, &4]` (`&1 = &4`),
+`congSetShiftR [&6, &4, &1]` (`setShiftFact S &4 → &1 = &4 → setShiftFact S &1`, `S = &6` the parent's object). -/
+noncomputable def reset0 (W : V) : V :=
+  appendV (layoutSteps0 W)
+    (mkStep W 42 ?[^&4, (𝟎 : V)] ∷ mkStep W 43 ?[^&1, (𝟎 : V), ^&4] ∷ mkStep W 158 ?[^&6, ^&4, ^&1] ∷ (0 : V))
+
+noncomputable def reset0Def : 𝚺₁.Semisentence 2 := .mkSigma
+  “y W. ∃ L, !layoutSteps0Def L W ∧ ∃ z, !cTVGraph z 0 ∧ ∃ f1, !qqFvarDef f1 1 ∧ ∃ f4, !qqFvarDef f4 4 ∧ ∃ f6, !qqFvarDef f6 6 ∧
+    ∃ e₁', !adjoinDef e₁' z 0 ∧ ∃ e₁, !adjoinDef e₁ f4 e₁' ∧ ∃ s₁, !mkStepDef s₁ W 42 e₁ ∧
+    ∃ e₂'', !adjoinDef e₂'' f4 0 ∧ ∃ e₂', !adjoinDef e₂' z e₂'' ∧ ∃ e₂, !adjoinDef e₂ f1 e₂' ∧ ∃ s₂, !mkStepDef s₂ W 43 e₂ ∧
+    ∃ e₃'', !adjoinDef e₃'' f1 0 ∧ ∃ e₃', !adjoinDef e₃' f4 e₃'' ∧ ∃ e₃, !adjoinDef e₃ f6 e₃' ∧ ∃ s₃, !mkStepDef s₃ W 158 e₃ ∧
+    ∃ l₃, !adjoinDef l₃ s₃ 0 ∧ ∃ l₂, !adjoinDef l₂ s₂ l₃ ∧ ∃ l₁, !adjoinDef l₁ s₁ l₂ ∧ !appendVDef y L l₁”
+
+instance reset0_defined : 𝚺₁-Function₁ (reset0 : V → V) via reset0Def := .mk fun v ↦ by
+  simp [reset0Def, reset0, layoutSteps0_defined.iff, mkStep_defined.iff, cTV.defined.iff, cTV_zero, appendV_defined.iff,
+    numeral_eq_natCast]
+instance reset0_definable : 𝚺₁-Function₁ (reset0 : V → V) := reset0_defined.to_definable
+
+/-- The `shift` prologue selector: `proShift` for a nonempty child, `proShift0 ++ reset0` for the empty one. -/
+noncomputable def shiftPro (Ww Wl Wc W T s c : V) : V :=
+  if memberList c = 0 then appendV (proShift0 W 0) (reset0 W) else proShift Ww Wl Wc W T s c 0
+
+noncomputable def shiftProDef : 𝚺₁.Semisentence 8 := .mkSigma
+  “y Ww Wl Wc W T s c. ∃ xs, !memberListDef xs c ∧
+    (xs = 0 → ∃ P, !proShift0Def P W 0 ∧ ∃ R, !reset0Def R W ∧ !appendVDef y P R) ∧
+    (xs ≠ 0 → !proShiftDef y Ww Wl Wc W T s c 0)”
+
+instance shiftPro_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 7 → V ↦ shiftPro (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) shiftProDef := .mk fun v ↦ by
+  simp [shiftProDef, shiftPro, memberList_defined.iff, proShift_defined.iff, proShift0_defined.iff, reset0_defined.iff,
+    appendV_defined.iff, numeral_eq_natCast]
+  by_cases h : memberList (v 7) = 0 <;> simp [h]
+instance shiftPro_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 7 → V ↦ shiftPro (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) := shiftPro_defined.to_definable
+
+/-- The `shiftRule` list: as `vWk` with `shiftPro` and `nodeShift`. -/
+noncomputable def vShift (Ww Wl Wc W₂ W T s d' L' : V) : V :=
+  appendV (shiftPro Ww Wl Wc W T s (fstIdx d'))
+  (appendV L'
+  (appendV (goalElim (^&(len (memberList (fstIdx d')) + 1 + shiftsV L')) (bnum (dlen TAct d')))
+    (nodeShift W₂ T (shiftsV (shiftPro Ww Wl Wc W T s (fstIdx d')) + shiftsV L' + 2 + (len (memberList s) + 1))
+      (shiftsV (shiftPro Ww Wl Wc W T s (fstIdx d')) + shiftsV L' + 2)
+      (len (memberList (fstIdx d')) + 1 + shiftsV L' + 2) 1 0 (setLen LAct s) (dlen TAct d') (dlen TAct (shiftRule s d')))))
+
+noncomputable def vShiftDef : 𝚺₁.Semisentence 10 := .mkSigma
+  “y Ww Wl Wc W₂ W T s d' L'.
+    ∃ xs, !memberListDef xs s ∧ ∃ k, !lenDef k xs ∧ ∃ c, !fstIdxDef c d' ∧ ∃ xsc, !memberListDef xsc c ∧ ∃ kc, !lenDef kc xsc ∧
+    ∃ P, !shiftProDef P Ww Wl Wc W T s c ∧ ∃ σ, !shiftsVDef σ P ∧ ∃ s', !shiftsVDef s' L' ∧
+    ∃ m₁, !(dlenDef TAct) m₁ d' ∧ ∃ d, !shiftRuleGraph d s d' ∧ ∃ n, !(dlenDef TAct) n d ∧ ∃ Ls, !(setLenDef LAct) Ls s ∧
+    ∃ a, a = kc + 1 + s' ∧ ∃ za, !qqFvarDef za a ∧ ∃ bm, !bnumGraph bm m₁ ∧ ∃ G, !goalElimDef G za bm ∧
+    ∃ τ, τ = σ + s' + 2 ∧ ∃ is, is = τ + (k + 1) ∧ ∃ ic, ic = a + 2 ∧
+    ∃ Nd, !nodeShiftDef Nd W₂ T is τ ic 1 0 Ls m₁ n ∧
+    ∃ r₃, !appendVDef r₃ G Nd ∧ ∃ r₂, !appendVDef r₂ L' r₃ ∧ !appendVDef y P r₂”
+
+set_option maxHeartbeats 2000000 in
+instance vShift_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 9 → V ↦ vShift (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8)) vShiftDef := .mk
+  fun v ↦ by
+  simp [vShiftDef, vShift, memberList_defined.iff, fstIdx_defined.iff, shiftPro_defined.iff, shiftsV_defined.iff, dlen_defined.iff,
+    setLen_defined.iff, bnum.defined.iff, goalElim_defined.iff, nodeShift_defined.iff, appendV_defined.iff, numeral_eq_natCast]
+instance vShift_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 9 → V ↦ vShift (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8)) := vShift_defined.to_definable
+
+/-- The `cut` insert selector: `proIns` for a nonempty parent, `proIns0` for the empty parent. -/
+noncomputable def cutPro (Ww Wl Wc W T s p i ip : V) : V :=
+  if memberList s = 0 then proIns0 Ww Wl Wc W T p i ip else proIns Ww Wl Wc W T s p i ip
+
+noncomputable def cutProDef : 𝚺₁.Semisentence 10 := .mkSigma
+  “y Ww Wl Wc W T s p i ip. ∃ xs, !memberListDef xs s ∧
+    (xs = 0 → !proIns0Def y Ww Wl Wc W T p i ip) ∧ (xs ≠ 0 → !proInsDef y Ww Wl Wc W T s p i ip)”
+
+instance cutPro_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 9 → V ↦ cutPro (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8)) cutProDef := .mk fun v ↦ by
+  simp [cutProDef, cutPro, memberList_defined.iff, proIns_defined.iff, proIns0_defined.iff, numeral_eq_natCast]
+  by_cases h : memberList (v 6) = 0 <;> simp [h]
+instance cutPro_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 9 → V ↦ cutPro (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8)) := cutPro_defined.to_definable
+
+/-- The `cutRule` list: `proCutPre` (`σc = mShift p + mShift (neg p)`; `p` at `ip₀ = mLen p + mShift (neg p)`, `neg p` at
+`inp₀ = mLen (neg p)`), block 1 for `insert p s` (the parent at `σc`), block 2 for `insert (neg p) s` (the parent at
+`σc + τ₁`), `nodeCut`. -/
+noncomputable def vCut (Ww Wl Wc W₁ W T s p d₁ d₂ L₁ L₂ : V) : V :=
+  appendV (proCutPre Ww Wc T p)
+  (appendV (cutPro Ww Wl Wc W T s p (mShift Ww Wc T p + mShift Ww Wc T (neg LAct p)) (mLen Wc T p + mShift Ww Wc T (neg LAct p)))
+  (appendV L₁
+  (appendV (postIns W (len (memberList (insert p s)) + 1 + shiftsV L₁) (proSig Ww Wl Wc W T (insert p s) + shiftsV L₁)
+      (dlen TAct d₁))
+  (appendV (cutPro Ww Wl Wc W T s (neg LAct p)
+      (mShift Ww Wc T p + mShift Ww Wc T (neg LAct p) + (1 + proSig Ww Wl Wc W T (insert p s) + shiftsV L₁ + 2))
+      (mLen Wc T (neg LAct p) + (1 + proSig Ww Wl Wc W T (insert p s) + shiftsV L₁ + 2)))
+  (appendV L₂
+  (appendV (postIns W (len (memberList (insert (neg LAct p) s)) + 1 + shiftsV L₂)
+      (proSig Ww Wl Wc W T (insert (neg LAct p) s) + shiftsV L₂) (dlen TAct d₂))
+    (nodeCut W₁ T
+      (mShift Ww Wc T p + mShift Ww Wc T (neg LAct p) + (1 + proSig Ww Wl Wc W T (insert p s) + shiftsV L₁ + 2) +
+        (1 + proSig Ww Wl Wc W T (insert (neg LAct p) s) + shiftsV L₂ + 2) + (len (memberList s) + 1))
+      (mShift Ww Wc T p + mShift Ww Wc T (neg LAct p) + (1 + proSig Ww Wl Wc W T (insert p s) + shiftsV L₁ + 2) +
+        (1 + proSig Ww Wl Wc W T (insert (neg LAct p) s) + shiftsV L₂ + 2))
+      (mLen Wc T p + mShift Ww Wc T (neg LAct p) + (1 + proSig Ww Wl Wc W T (insert p s) + shiftsV L₁ + 2) +
+        (1 + proSig Ww Wl Wc W T (insert (neg LAct p) s) + shiftsV L₂ + 2))
+      (mLen Wc T (neg LAct p) + (1 + proSig Ww Wl Wc W T (insert p s) + shiftsV L₁ + 2) +
+        (1 + proSig Ww Wl Wc W T (insert (neg LAct p) s) + shiftsV L₂ + 2))
+      (1 + (1 + proSig Ww Wl Wc W T (insert (neg LAct p) s) + shiftsV L₂ + 2)) 1
+      (proSig Ww Wl Wc W T (insert p s) + shiftsV L₁ + 2 + (1 + proSig Ww Wl Wc W T (insert (neg LAct p) s) + shiftsV L₂ + 2))
+      (proSig Ww Wl Wc W T (insert (neg LAct p) s) + shiftsV L₂ + 2)
+      (1 + proSig Ww Wl Wc W T (insert (neg LAct p) s) + shiftsV L₂ + 2) 0
+      (setLen LAct s) (dlen TAct d₁) (dlen TAct d₂) (dlen TAct (cutRule s p d₁ d₂)))))))))
+
+noncomputable def vCutDef : 𝚺₁.Semisentence 13 := .mkSigma
+  “y Ww Wl Wc W₁ W T s p d₁ d₂ L₁ L₂.
+    ∃ xs, !memberListDef xs s ∧ ∃ k, !lenDef k xs ∧ ∃ np, !(negGraph LAct) np p ∧
+    ∃ mp, !mShiftDef mp Ww Wc T p ∧ ∃ mnp, !mShiftDef mnp Ww Wc T np ∧ ∃ lp, !mLenDef lp Wc T p ∧ ∃ lnp, !mLenDef lnp Wc T np ∧
+    ∃ σc, σc = mp + mnp ∧ ∃ ip₀, ip₀ = lp + mnp ∧
+    ∃ c₁, !insertDef c₁ p s ∧ ∃ xs₁, !memberListDef xs₁ c₁ ∧ ∃ k₁, !lenDef k₁ xs₁ ∧ ∃ σ₁, !proSigDef σ₁ Ww Wl Wc W T c₁ ∧
+    ∃ c₂, !insertDef c₂ np s ∧ ∃ xs₂, !memberListDef xs₂ c₂ ∧ ∃ k₂, !lenDef k₂ xs₂ ∧ ∃ σ₂, !proSigDef σ₂ Ww Wl Wc W T c₂ ∧
+    ∃ s₁, !shiftsVDef s₁ L₁ ∧ ∃ s₂, !shiftsVDef s₂ L₂ ∧
+    ∃ m₁, !(dlenDef TAct) m₁ d₁ ∧ ∃ m₂, !(dlenDef TAct) m₂ d₂ ∧ ∃ d, !cutRuleGraph d s p d₁ d₂ ∧ ∃ n, !(dlenDef TAct) n d ∧
+    ∃ Ls, !(setLenDef LAct) Ls s ∧
+    ∃ τ₁, τ₁ = 1 + σ₁ + s₁ + 2 ∧ ∃ τ₂, τ₂ = 1 + σ₂ + s₂ + 2 ∧ ∃ τ, τ = σc + τ₁ + τ₂ ∧
+    ∃ P₀, !proCutPreDef P₀ Ww Wc T p ∧
+    ∃ P₁, !cutProDef P₁ Ww Wl Wc W T s p σc ip₀ ∧
+    ∃ a₁, a₁ = k₁ + 1 + s₁ ∧ ∃ b₁, b₁ = σ₁ + s₁ ∧ ∃ Q₁, !postInsDef Q₁ W a₁ b₁ m₁ ∧
+    ∃ i₂, i₂ = σc + τ₁ ∧ ∃ inp₁, inp₁ = lnp + τ₁ ∧ ∃ P₂, !cutProDef P₂ Ww Wl Wc W T s np i₂ inp₁ ∧
+    ∃ a₂, a₂ = k₂ + 1 + s₂ ∧ ∃ b₂, b₂ = σ₂ + s₂ ∧ ∃ Q₂, !postInsDef Q₂ W a₂ b₂ m₂ ∧
+    ∃ is, is = τ + (k + 1) ∧ ∃ ip, ip = ip₀ + τ₁ + τ₂ ∧ ∃ inp, inp = lnp + τ₁ + τ₂ ∧ ∃ id₁, id₁ = 1 + τ₂ ∧
+    ∃ ic₁, ic₁ = σ₁ + s₁ + 2 + τ₂ ∧ ∃ ic₂, ic₂ = σ₂ + s₂ + 2 ∧
+    ∃ Nd, !nodeCutDef Nd W₁ T is τ ip inp id₁ 1 ic₁ ic₂ τ₂ 0 Ls m₁ m₂ n ∧
+    ∃ r₇, !appendVDef r₇ Q₂ Nd ∧ ∃ r₆, !appendVDef r₆ L₂ r₇ ∧ ∃ r₅, !appendVDef r₅ P₂ r₆ ∧ ∃ r₄, !appendVDef r₄ Q₁ r₅ ∧
+    ∃ r₃, !appendVDef r₃ L₁ r₄ ∧ ∃ r₂, !appendVDef r₂ P₁ r₃ ∧ !appendVDef y P₀ r₂”
+
+set_option maxHeartbeats 2000000 in
+instance vCut_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 12 → V ↦ vCut (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10) (v 11))
+      vCutDef := .mk fun v ↦ by
+  simp [vCutDef, vCut, memberList_defined.iff, neg.defined.iff, mShift_defined.iff, mLen_defined.iff, proSig_defined.iff,
+    shiftsV_defined.iff, dlen_defined.iff, setLen_defined.iff, proCutPre_defined.iff, cutPro_defined.iff, postIns_defined.iff,
+    nodeCut_defined.iff, appendV_defined.iff, numeral_eq_natCast]
+instance vCut_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 12 → V ↦ vCut (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10) (v 11)) :=
+  vCut_defined.to_definable
+
+/-- The `allIntro` list: `proAll` (its shifts `σA`, the child `c = insert (free p) (setShift s)` at `0`, the insert object
+at `σc = proSig c`, `free p` at `fp₀`, the `setShift` object at `iss₀`), `L'`, `postIns`, `nodeAll`. -/
+noncomputable def vAll (Ww Wl Wc W₂ W T s p d' L' : V) : V :=
+  appendV (proAll Ww Wl Wc W T s p 0)
+  (appendV L'
+  (appendV (postIns W (len (memberList (insert (free LAct p) (setShift LAct s))) + 1 + shiftsV L')
+      (proSig Ww Wl Wc W T (insert (free LAct p) (setShift LAct s)) + shiftsV L') (dlen TAct d'))
+    (nodeAll W₂ T
+      (allCertSig Ww Wc p + (proSig Ww Wl Wc W T (setShift LAct s) + (1 + (len (memberList s) + 1) + proSig Ww Wl Wc W T s)) +
+        (1 + proSig Ww Wl Wc W T (insert (free LAct p) (setShift LAct s))) + shiftsV L' + 2 + (len (memberList s) + 1))
+      (allCertSig Ww Wc p + (proSig Ww Wl Wc W T (setShift LAct s) + (1 + (len (memberList s) + 1) + proSig Ww Wl Wc W T s)) +
+        (1 + proSig Ww Wl Wc W T (insert (free LAct p) (setShift LAct s))) + shiftsV L' + 2)
+      (memTop Ww Wc T s (^∀ p)
+        (allCertSig Ww Wc p + (proSig Ww Wl Wc W T (setShift LAct s) + (1 + (len (memberList s) + 1) + proSig Ww Wl Wc W T s)) +
+          (1 + proSig Ww Wl Wc W T (insert (free LAct p) (setShift LAct s))) + shiftsV L' + 2))
+      (memTop Ww Wc T s (^∀ p)
+        (allCertSig Ww Wc p + (proSig Ww Wl Wc W T (setShift LAct s) + (1 + (len (memberList s) + 1) + proSig Ww Wl Wc W T s)) +
+          (1 + proSig Ww Wl Wc W T (insert (free LAct p) (setShift LAct s))) + shiftsV L' + 2) + 1)
+      (allCf Ww Wc p + (proSig Ww Wl Wc W T (setShift LAct s) + (1 + (len (memberList s) + 1) + proSig Ww Wl Wc W T s)) + 1 +
+        proSig Ww Wl Wc W T (insert (free LAct p) (setShift LAct s)) + shiftsV L' + 2)
+      (0 + 1 + (len (memberList s) + 1) + proSig Ww Wl Wc W T s + 1 + proSig Ww Wl Wc W T (insert (free LAct p) (setShift LAct s)) +
+        (len (memberList (setShift LAct s)) + 1) + shiftsV L' + 2)
+      (proSig Ww Wl Wc W T (insert (free LAct p) (setShift LAct s)) + shiftsV L' + 2)
+      1 0 (setLen LAct s) (dlen TAct d') (dlen TAct (allIntro s p d')))))
+
+noncomputable def vAllDef : 𝚺₁.Semisentence 11 := .mkSigma
+  “y Ww Wl Wc W₂ W T s p d' L'.
+    ∃ xs, !memberListDef xs s ∧ ∃ k, !lenDef k xs ∧ ∃ fp, !(freeGraph LAct) fp p ∧ ∃ v, !(setShiftGraph LAct) v s ∧
+    ∃ xsv, !memberListDef xsv v ∧ ∃ kv, !lenDef kv xsv ∧ ∃ c, !insertDef c fp v ∧ ∃ xsc, !memberListDef xsc c ∧ ∃ kc, !lenDef kc xsc ∧
+    ∃ σv, !proSigDef σv Ww Wl Wc W T v ∧ ∃ σs, !proSigDef σs Ww Wl Wc W T s ∧ ∃ σc, !proSigDef σc Ww Wl Wc W T c ∧
+    ∃ cA, !allCertSigDef cA Ww Wc p ∧ ∃ cf, !allCfDef cf Ww Wc p ∧ ∃ s', !shiftsVDef s' L' ∧
+    ∃ m₁, !(dlenDef TAct) m₁ d' ∧ ∃ d, !allIntroGraph d s p d' ∧ ∃ n, !(dlenDef TAct) n d ∧ ∃ Ls, !(setLenDef LAct) Ls s ∧
+    ∃ r, !qqAllDef r p ∧
+    ∃ sSS, sSS = σv + (1 + (k + 1) + σs) ∧ ∃ σA, σA = cA + sSS + (1 + σc) ∧ ∃ τ, τ = σA + s' + 2 ∧
+    ∃ P, !proAllDef P Ww Wl Wc W T s p 0 ∧
+    ∃ a, a = kc + 1 + s' ∧ ∃ b, b = σc + s' ∧ ∃ Q, !postInsDef Q W a b m₁ ∧
+    ∃ is, is = τ + (k + 1) ∧ ∃ ir, !memTopDef ir Ww Wc T s r τ ∧ ∃ ip, ip = ir + 1 ∧
+    ∃ ifp, ifp = cf + sSS + 1 + σc + s' + 2 ∧ ∃ iss, iss = 0 + 1 + (k + 1) + σs + 1 + σc + (kv + 1) + s' + 2 ∧
+    ∃ ic, ic = σc + s' + 2 ∧
+    ∃ Nd, !nodeAllDef Nd W₂ T is τ ir ip ifp iss ic 1 0 Ls m₁ n ∧
+    ∃ r₃, !appendVDef r₃ Q Nd ∧ ∃ r₂, !appendVDef r₂ L' r₃ ∧ !appendVDef y P r₂”
+
+set_option maxHeartbeats 2000000 in
+instance vAll_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 10 → V ↦ vAll (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9)) vAllDef := .mk
+  fun v ↦ by
+  simp [vAllDef, vAll, memberList_defined.iff, free.defined.iff, setShift.defined.iff, proSig_defined.iff, allCertSig_defined.iff,
+    allCf_defined.iff, shiftsV_defined.iff, dlen_defined.iff, setLen_defined.iff, memTop_defined.iff, proAll_defined.iff,
+    postIns_defined.iff, nodeAll_defined.iff, appendV_defined.iff, numeral_eq_natCast]
+instance vAll_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 10 → V ↦ vAll (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9)) :=
+  vAll_defined.to_definable
+
+/-- The `exsIntro` list: `proExs` (shifts `exsSig + (1 + σc)`, `c = insert (substs1 t p) s`; `T̂` at `it₀`, `l` at `ilt₀`,
+`PT` at `ipt₀`, the insert object at `σc`), `L'`, `postIns`, `nodeExs` with `Lt = termLen t`. -/
+noncomputable def vExs (Ww Wl Wc W₂ W T s p t d' L' : V) : V :=
+  appendV (proExs Ww Wl Wc W T s p t 0)
+  (appendV L'
+  (appendV (postIns W (len (memberList (insert (substs1 LAct t p) s)) + 1 + shiftsV L')
+      (proSig Ww Wl Wc W T (insert (substs1 LAct t p) s) + shiftsV L') (dlen TAct d'))
+    (nodeExs W₂ T
+      (exsSig Ww Wc T s p t 0 + (1 + proSig Ww Wl Wc W T (insert (substs1 LAct t p) s)) + shiftsV L' + 2 + (len (memberList s) + 1))
+      (exsSig Ww Wc T s p t 0 + (1 + proSig Ww Wl Wc W T (insert (substs1 LAct t p) s)) + shiftsV L' + 2)
+      (memTop Ww Wc T s (^∃ p) (exsSig Ww Wc T s p t 0 + (1 + proSig Ww Wl Wc W T (insert (substs1 LAct t p) s)) + shiftsV L' + 2))
+      (memTop Ww Wc T s (^∃ p) (exsSig Ww Wc T s p t 0 + (1 + proSig Ww Wl Wc W T (insert (substs1 LAct t p) s)) + shiftsV L' + 2) + 1)
+      (exsIw Ww Wc T t p + exsSc Ww Wc T s p t 0 + 1 + 1 + proSig Ww Wl Wc W T (insert (substs1 LAct t p) s) + shiftsV L' + 2)
+      (exsSc Ww Wc T s p t 0 + 1 + proSig Ww Wl Wc W T (insert (substs1 LAct t p) s) + shiftsV L' + 2)
+      (proSig Ww Wl Wc W T (insert (substs1 LAct t p) s) + shiftsV L' + 2) 1
+      (exsC3 Ww t p + exsSc Ww Wc T s p t 0 + 1 + proSig Ww Wl Wc W T (insert (substs1 LAct t p) s) + shiftsV L' + 2) 0
+      (setLen LAct s) (termLen LAct t) (dlen TAct d') (dlen TAct (exsIntro s p t d')))))
+
+noncomputable def vExsDef : 𝚺₁.Semisentence 12 := .mkSigma
+  “y Ww Wl Wc W₂ W T s p t d' L'.
+    ∃ xs, !memberListDef xs s ∧ ∃ k, !lenDef k xs ∧ ∃ pt, !(substs1Graph LAct) pt t p ∧ ∃ c, !insertDef c pt s ∧
+    ∃ xsc, !memberListDef xsc c ∧ ∃ kc, !lenDef kc xsc ∧ ∃ σc, !proSigDef σc Ww Wl Wc W T c ∧
+    ∃ eS, !exsSigDef eS Ww Wc T s p t 0 ∧ ∃ eIw, !exsIwDef eIw Ww Wc T t p ∧ ∃ eSc, !exsScDef eSc Ww Wc T s p t 0 ∧
+    ∃ eC3, !exsC3Def eC3 Ww t p ∧ ∃ s', !shiftsVDef s' L' ∧
+    ∃ m₁, !(dlenDef TAct) m₁ d' ∧ ∃ d, !exsIntroGraph d s p t d' ∧ ∃ n, !(dlenDef TAct) n d ∧ ∃ Ls, !(setLenDef LAct) Ls s ∧
+    ∃ lt, !(termLenGraph LAct) lt t ∧ ∃ r, !qqExsDef r p ∧
+    ∃ σE, σE = eS + (1 + σc) ∧ ∃ τ, τ = σE + s' + 2 ∧
+    ∃ P, !proExsDef P Ww Wl Wc W T s p t 0 ∧
+    ∃ a, a = kc + 1 + s' ∧ ∃ b, b = σc + s' ∧ ∃ Q, !postInsDef Q W a b m₁ ∧
+    ∃ is, is = τ + (k + 1) ∧ ∃ ir, !memTopDef ir Ww Wc T s r τ ∧ ∃ ip, ip = ir + 1 ∧
+    ∃ it, it = eIw + eSc + 1 + 1 + σc + s' + 2 ∧ ∃ ipt, ipt = eSc + 1 + σc + s' + 2 ∧ ∃ ic, ic = σc + s' + 2 ∧
+    ∃ ilt, ilt = eC3 + eSc + 1 + σc + s' + 2 ∧
+    ∃ Nd, !nodeExsDef Nd W₂ T is τ ir ip it ipt ic 1 ilt 0 Ls lt m₁ n ∧
+    ∃ r₃, !appendVDef r₃ Q Nd ∧ ∃ r₂, !appendVDef r₂ L' r₃ ∧ !appendVDef y P r₂”
+
+set_option maxHeartbeats 2000000 in
+instance vExs_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 11 → V ↦ vExs (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10)) vExsDef := .mk
+  fun v ↦ by
+  simp [vExsDef, vExs, memberList_defined.iff, substs1.defined.iff, proSig_defined.iff, exsSig_defined.iff, exsIw_defined.iff,
+    exsSc_defined.iff, exsC3_defined.iff, shiftsV_defined.iff, dlen_defined.iff, setLen_defined.iff, termLen.defined.iff,
+    memTop_defined.iff, proExs_defined.iff, postIns_defined.iff, nodeExs_defined.iff, appendV_defined.iff, numeral_eq_natCast]
+instance vExs_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 11 → V ↦ vExs (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10)) :=
+  vExs_defined.to_definable
+
+/-- The `axm` list: the certificate `pro` (shift-free), then `nodeAxm` at `is = k + 1`, `il = 0`, `ip = memTop s p 0`. -/
+noncomputable def vAxm (Ww Wc W₂ T s p pro : V) : V :=
+  appendV pro (nodeAxm W₂ T (len (memberList s) + 1) 0 (memTop Ww Wc T s p 0) (setLen LAct s) (dlen TAct (axm s p)))
+
+noncomputable def vAxmDef : 𝚺₁.Semisentence 8 := .mkSigma
+  “y Ww Wc W₂ T s p pro. ∃ xs, !memberListDef xs s ∧ ∃ k, !lenDef k xs ∧ ∃ is, is = k + 1 ∧ ∃ ip, !memTopDef ip Ww Wc T s p 0 ∧
+    ∃ Ls, !(setLenDef LAct) Ls s ∧ ∃ d, !axmGraph d s p ∧ ∃ n, !(dlenDef TAct) n d ∧
+    ∃ F, !nodeAxmDef F W₂ T is 0 ip Ls n ∧ !appendVDef y pro F”
+
+instance vAxm_defined :
+    𝚺₁.DefinedFunction (fun v : Fin 7 → V ↦ vAxm (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) vAxmDef := .mk fun v ↦ by
+  simp [vAxmDef, vAxm, memberList_defined.iff, memTop_defined.iff, setLen_defined.iff, dlen_defined.iff, nodeAxm_defined.iff,
+    appendV_defined.iff, numeral_eq_natCast]
+instance vAxm_definable :
+    𝚺₁.DefinableFunction (fun v : Fin 7 → V ↦ vAxm (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) := vAxm_defined.to_definable
+
+end assemblers
+
 end ArithS
