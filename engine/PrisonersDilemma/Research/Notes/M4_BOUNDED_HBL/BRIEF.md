@@ -1031,3 +1031,33 @@ REMAINING: `Prologue` — `shift`, the cost bounds, the empty child sequent, the
 (now unblocked) and `axm`; a NUMERAL-IDENTIFICATION producer (`eqFact &x (numeral c)` from a
 dossier of a VARIABLE code `c`) shared by `axm`(i) and `PinKit`; then `PinKit`; `Verify`'s
 clause edit; `VerifyKit`; `KitPackage`.
+
+**§11 status — `Prologue` Part 2 DONE: `or`, `shift`, the costs, the EMPTY sequent (ccffdfe,
+6bf83b9, cb5eb8d; `Prologue.lean` 6082 lines; rows 156–158; census 601, all standard).**
+`proOr_ok` (two `proIns` + `congInsertS`; discharges every `nodeOr_ok` hypothesis — no gap);
+`proShift_ok` (`shBase ++ chainSteps (shPos …) ++ layoutSteps c ++ shTail` with `loopS` = re-indexed
+`certShift` per member, `loopI` = `setShiftInsert` up the `u`-chain, `uSub` = `insertSubset` fold,
+`loopM` = `shiftMemSetShift`, `subChain`, `subsetAntisymm`, `congSetShiftL`; discharges
+`nodeShift_ok`'s `setShiftFact &is &ic` — `hf` is the child's own goal after `goalElim`, no
+`congFstIdx` needed). COSTS: size classes `sum2Q/sum2D`, `layQ/layD`; `sizeOK_layoutSteps`
+standalone; `costSum_layoutSteps_le`, `costSum_proAxL/postIns/proIns/proCutPre/proWk/proOr/
+proShift_le`, all in the `costSum_le_of_sizeOK 8` shape (gap: the loops' `len` bounds are not
+stated, so `len (pro…)` stays symbolic). **THE EMPTY SEQUENT — DECISION: the `k = 0` case, not a
+nonemptiness invariant.** Verified in `Proof/Basic.lean`: `wkRule` needs only `fstIdx d' ⊆ s`,
+`shiftRule` `s = setShift (fstIdx d')`; under `¬Con(TAct)` (not excludable in `𝗜𝚺₁`) a derivation
+of `∅` EXISTS, so "every node sequent is nonempty" is FALSE (`∅` occurs as `wk`'s child, both sides
+of `shift`, `cut`'s parent). Delivered: rows `setLenEmptyLe` (156, new Lib), `congSubsetL` (157),
+`congSetShiftR` (158); `Layout0 … i := Layout … 0 i ∧ eqFactB &(i+1) 𝟎`; `layoutSteps0_ok`,
+`proWk0_ok`, `proShift0_ok`, `Layout.mono`. NOT done: `proIns0` (cut at an empty parent), the
+`0`-producers' costs, the verify recursion carrying `1 ≤ k ∧ Layout ∨ k = 0 ∧ Layout0`.
+`all`/`exs` NOT started (plans in the file's §8): BLOCKER IN `Cert`'S VOCABULARY — `certFree_ok`/
+`certSubst_ok` need `SubFPre …` bounds on `listSum (termLenVec (1+e) (qVecIterV LAct fvec e))`
+(should be `e + 1`) and on `len (π₂ (qWalkP Wd e (1+e) (qVecIterV fvec e)))` for all `e ≤ |shift
+p|` — no such lemmas exist yet (lemma-writing, not a wall); both certifications are at cap 9
+(`ListOK.mono` for the splice). TRAPS: `set Γ := finalCtx …` with many hypotheses makes
+`kabstract` run `isDefEq` on every other `finalCtx` application — a whole-declaration `whnf`
+timeout that bisection cannot attribute (40M heartbeats, > 1 h): use `obtain ⟨Γ', hΓ'⟩ : ∃ Γ', Γ' =
+finalCtx … := ⟨_, rfl⟩` and `rw [hΓ']`; never `set k := len (memberList s)` when instantiating
+lemmas stated with it; a loop's frame equation must take σ as a VARIABLE; `hornOnly_single`'s goal
+already has `?[s]` unfolded; `norm_num` cannot do `6D+1+1 ≤ 6D+2` on `V` — `calc` with `ring`.
+IN FLIGHT: `NumId`/`Pin`; `Prologue` Part 3 (all/exs, with the two `qVecIterV` bounds in Cert).
