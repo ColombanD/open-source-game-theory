@@ -1328,6 +1328,27 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms sum2D_le_layD
 #print axioms verifySizeOracle_of_arms
 
+-- U10 (Necessitation/Verify5, 2026-09-15): THE SIZE HALF, PART 2 — the size-class LANDING lemmas and the `axm` ARM.
+-- The three classes of the glue each land in the kit class `(kitQ Cz B E, kitD Cz d)`: the `axm` ENTRY class
+-- `entryB Cv p = Cv·(|p|+1)³` by `entryB_le_kitQ` (under the E-room `p3 (d+1) ≤ E`, which `Verify4`'s cap supplies
+-- through `p3_le_p4`) and `entryB_le_kitD` (`pow3_eq_p3`); the fragments' closed leaf/bin facts, which
+-- `Frag1.formulaLen_{leaf,bin2,bin3}Fact_le` bound by `B·E`, through `BE_le_kitQ`; and the goal fact at the SINGLE
+-- multiple through `goalFact_le_kitQ` (`Assemble.goalFact4_le_kitQ` states the quadruple). `len_nodeAxm` computes
+-- `len (nodeAxm …) = 9` STRUCTURALLY — `Frag2.nodeAxm_ok` proves the same equation but only under its full
+-- applicability hypotheses, which the size glue does not have at hand. Then the FIRST of the ten arms:
+-- `axm_arm_len : len (vAxm' …) = len pro + 9` and `axm_arm_size : SizeOK (kitQ Cz B E) (kitD Cz (dlen (axm s p))) (vAxm' …)`
+-- — the certificate's own class (`Verify3.AxmEntryOK'`) lifted and appended to `Frag2.sizeOK_nodeAxm`, whose
+-- `dlen (leafCode …) ≤ D` side condition is exactly what §3's `dlen_leafCode_le'` was written to discharge.
+#print axioms le_kitQ_factor
+#print axioms BE_le_kitQ
+#print axioms goalFact_le_kitQ
+#print axioms entryB_le_kitQ
+#print axioms entryB_le_kitD
+#print axioms len_nodeAxm
+#print axioms axm_hpd
+#print axioms axm_arm_len
+#print axioms axm_arm_size
+
 -- U10 (Necessitation/Package, 2026-09-15): THE PACKAGE AND THE HEADLINE THEOREMS, with `Assemble.SizeOracle`
 -- BYPASSED. `SizeOracle` is NOT PROVABLE as stated (it binds the numeral table `T` with no `NumTableOK T N' B'`,
 -- while every prologue size lemma requires one and lands at `layQ B B' D`/`layD N' B' D`; `NumTableOK` is never a

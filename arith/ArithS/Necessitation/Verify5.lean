@@ -251,4 +251,109 @@ lemma sum2D_le_layD (N' B' Dz : V) : sum2D N' B' Dz ≤ layD N' B' Dz := by
 
 end nodeCodes
 
+
+/-! ## 4. The size-class landing lemmas and the `axm` arm
+
+The three classes of §2's docstring, each landed in the kit class `(kitQ Cz B E, kitD Cz d)`:
+
+* `entryB_le_kitQ` / `entryB_le_kitD` — the `axm` ENTRY class `entryB Cv p = Cv·(|p|+1)³`
+  (`Verify3.AxmEntryOK'` already carries `len pro ≤ entryB Cv p` and `SizeOK (entryB Cv p) (entryB Cv p) pro`),
+  under `|p| + 1 ≤ d + 1` and the E-room `p3 (d+1) ≤ E`;
+* `BE_le_kitQ` — the fragments' closed leaf/bin facts, which `Frag1.formulaLen_{leaf,bin2,bin3}Fact_le` bound by `B·E`;
+* `goalFact_le_kitQ` — the goal fact at the SINGLE multiple (`Assemble.goalFact4_le_kitQ` gives `4·|goalFact|`).
+
+Then the first arm: `vAxm' = pro ++ nodeAxm` (`Verify3` §2), so `len = len pro + 9` (`len_nodeAxm`, structural —
+the applicability hypotheses of `Frag2.nodeAxm_ok` are NOT needed for the length) and the sizes are the entry's
+lifted class appended to `Frag2.sizeOK_nodeAxm`, whose `dlen (leafCode …) ≤ D` side condition is exactly what §3's
+`dlen_leafCode_le'` was written to discharge.
+-/
+
+section landing
+
+/-- `E ≤ (B + 1)(E + 1)` — the factor `kitQ` hides. -/
+lemma le_kitQ_factor (B E : V) : E ≤ (B + 1) * (E + 1) :=
+  le_trans le_self_add (le_mul_of_one_le_left zero_le le_add_self)
+
+/-- **The fragments' closed facts land**: `Frag1.formulaLen_{leaf,bin2,bin3}Fact_le` all conclude `≤ B·E`. -/
+lemma BE_le_kitQ {Cz B E : V} (hCz : 1 ≤ Cz) : B * E ≤ kitQ Cz B E := by
+  unfold kitQ
+  calc B * E ≤ (B + 1) * (E + 1) := mul_le_mul le_self_add le_self_add zero_le zero_le
+    _ = 1 * ((B + 1) * (E + 1)) := by ring
+    _ ≤ Cz * ((B + 1) * (E + 1)) := mul_le_mul_of_nonneg_right hCz zero_le
+
+/-- **The goal fact lands at the single multiple** (`Assemble.goalFact4_le_kitQ` states the quadruple). -/
+lemma goalFact_le_kitQ {Cz B E j u : V} (hE1 : 1 ≤ E) (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (hj : j + 1 ≤ E) (hu : IsSemiterm LAct 0 u) (hlu : termLen LAct u ≤ E)
+    (hC : 4 * ((cDer : V) + cDlen + cFst + 6) ≤ Cz) :
+    formulaLen LAct (goalFact (^&j) u) ≤ kitQ Cz B E :=
+  le_trans (le_mul_of_one_le_left zero_le (by norm_num : (1 : V) ≤ 4))
+    (goalFact4_le_kitQ hE1 hPle hj hu hlu hC)
+
+/-- **The `axm` entry's `Q` lands**, under the E-room `p3 (d+1) ≤ E` (which `Verify4`'s cap supplies through
+`p3_le_p4`) and `Cv ≤ Cz`. -/
+lemma entryB_le_kitQ {Cv Cz B E p d : V} (hpd : formulaLen LAct p + 1 ≤ d + 1)
+    (hE : p3 (d + 1) ≤ E) (hC : Cv ≤ Cz) : entryB Cv p ≤ kitQ Cz B E := by
+  unfold entryB kitQ
+  calc Cv * p3 (formulaLen LAct p + 1) ≤ Cz * E :=
+        mul_le_mul hC (le_trans (p3_mono hpd) hE) zero_le zero_le
+    _ ≤ Cz * ((B + 1) * (E + 1)) := mul_le_mul_of_nonneg_left (le_kitQ_factor B E) zero_le
+
+/-- **The `axm` entry's `D` lands** — `entryB` is cubic and `kitD Cz d = Cz·(d+1)³` (`pow3_eq_p3`). -/
+lemma entryB_le_kitD {Cv Cz p d : V} (hpd : formulaLen LAct p + 1 ≤ d + 1) (hC : Cv ≤ Cz) :
+    entryB Cv p ≤ kitD Cz d := by
+  unfold entryB kitD
+  rw [pow3_eq_p3]
+  exact mul_le_mul hC (p3_mono hpd) zero_le zero_le
+
+/-- `len (nodeAxm …) = 9`, STRUCTURALLY — `Frag2.nodeAxm_ok` proves the same equation but only under its full
+applicability hypotheses, which the size glue does not have at hand. -/
+lemma len_nodeAxm (W tblN is il ip L n : V) : len (nodeAxm W tblN is il ip L n) = 9 := by
+  unfold nodeAxm nodeAxmHead goalTailLeaf dlenLeafSteps
+  rw [len_appendV, len_appendV]
+  simp [len_adjoin]
+  norm_num
+
+/-- `|p| + 1 ≤ dlen (axm s p) + 1` for `p ∈ s` (`dlen_axm : dlen = setLen s + 1`). -/
+lemma axm_hpd {s p : V} (hD : Derivation TAct (axm s p)) (hp : p ∈ s) :
+    formulaLen LAct p + 1 ≤ dlen TAct (axm s p) + 1 := by
+  rw [dlen_axm hD]
+  exact add_le_add (le_trans (formulaLen_le_setLen_of_mem (L := LAct) hp) le_self_add) le_rfl
+
+end landing
+
+section axmArm
+
+/-- **THE `axm` ARM, length half**: `vAxm' = pro ++ nodeAxm`, and the node is nine steps. -/
+theorem axm_arm_len (Wc W₂ T s p pro : V) :
+    len (vAxm' walkPieces Wc W₂ T s p pro) = len pro + 9 := by
+  unfold vAxm'
+  rw [len_appendV, len_nodeAxm]
+
+/-- **THE `axm` ARM, size half**: the certificate's own class (`Verify3.AxmEntryOK'`) lifted into the kit class,
+appended to `Frag2.sizeOK_nodeAxm` — whose `leafFact` side condition goes through `BE_le_kitQ`, whose goal-fact side
+condition through `goalFact_le_kitQ`, and whose `dlen (leafCode …) ≤ D` side condition is §3's `dlen_leafCode_le'`. -/
+theorem axm_arm_size {Wc W₂ T s p pro B E Cv Cz : V}
+    (hW₂ : W₂ = frag2Pieces)
+    (hs : IsFormulaSet LAct s) (hp : p ∈ s) (hax : p ∈ TAct.Δ₁Class)
+    (hsz : SizeOK (entryB Cv p) (entryB Cv p) pro)
+    (hCv : Cv ≤ Cz) (hCz1 : 1 ≤ Cz)
+    (hE1 : 1 ≤ E) (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (hp3E : p3 (dlen TAct (axm s p) + 1) ≤ E)
+    (hgoalE : len (memberList s) + 1 + shiftsV pro + 1 + 1 ≤ E)
+    (hbn : termLen LAct (bnum (dlen TAct (axm s p))) ≤ E)
+    (hcG : 4 * ((cDer : V) + cDlen + cFst + 6) ≤ Cz)
+    (hleaf : dlen TAct (leafCode T (setLen LAct s) (dlen TAct (axm s p))) ≤ kitD Cz (dlen TAct (axm s p)))
+    (hLn : setLen LAct s + 1 ≤ dlen TAct (axm s p))
+    (hnE : 18 * ‖dlen TAct (axm s p)‖ + 7 ≤ E) :
+    SizeOK (kitQ Cz B E) (kitD Cz (dlen TAct (axm s p))) (vAxm' walkPieces Wc W₂ T s p pro) := by
+  have hD : Derivation TAct (axm s p) := Derivation.axm hs hp hax
+  have hpd := axm_hpd hD hp
+  unfold vAxm'
+  refine sizeOK_appendV (hsz.mono (entryB_le_kitQ hpd hp3E hCv) (entryB_le_kitD hpd hCv)) ?_
+  refine sizeOK_nodeAxm hW₂ ?_ hleaf ?_
+  · exact le_trans (formulaLen_leafFact_le hE1 hPle hnE (le_trans le_self_add hLn)) (BE_le_kitQ hCz1)
+  · exact goalFact_le_kitQ hE1 hPle hgoalE (isSemiterm_bnum_LAct 0 _) hbn hcG
+
+end axmArm
+
 end ArithS
