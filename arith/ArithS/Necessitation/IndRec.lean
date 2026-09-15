@@ -18,8 +18,25 @@ index bounded, hence `𝚺₁`.
 * §2 the `≤` chain on chain numerals: `leFact (cTV a) (cTV (a + d))` in `d + 1` steps.
 * §3 the `bs` pass: bottom-up over the dossier of an `ℒₒᵣ`-code, `bsTFact (cTV n) (cTV (termBV t)) &i`,
   `bsVFact …`, `bsFFact (cTV n) (cTV (bv r)) &i` — `ℒₒᵣ`-formation and the EXACT `bv` in one pass.
-* §4 `fvSeq`, the substitution instances, the body, and the assembly `axmInd_ok` (see the closing docstring
-  for what is delivered and what remains).
+* §4 `fvSeq` (`fvSeqFact (vRef i m) 𝟎 (cTV m)` along the walk of `fvarVec m`), `shift b = b` (`certShift` at the
+  table, re-indexed), the `⟨#0 + 1⟩` iterate bounds.
+* §5 the polynomial bookkeeping `gp Z k`, the lists WITH eigenvariables `WInv tbl E Γ P σ`; stage A (`stageA`): the
+  five walks (`s = subst (fvarVec m) b`, `neg K`, `fvarVec m`, `⟨⌜0⌝⟩`, `⟨#0 + 1⟩`) and the three `certSubst`
+  instances (the body at `fvarVec m`, and `neg K` at `𝟎` and at `#0 + 1`); stage B (`stageB`): the shift-free
+  closing at stage A's context — the `qqAlls` walk, the `bs` pass on `b`, `shiftFact`, `fvSeqFact`, `negFact`, the
+  identification of `K`'s two copies, `isC0Fact`/`isC1Fact`, then `bodyIntro`, `indBodyIntroL`, `indRecL`.
+* §6 the producer `axmInd_ok` and the honest oracle `AxmIndOracle'` with `axmIndOracle_of`.
+
+**What is delivered, and the honest variant (READ THIS).** The list `axmInd_ok` produces is NOT shift-free: the
+recognizer needs the dossiers of `s`, `neg K` and three substitution vectors, which do not occur in the sequent's
+layout, and `certSubst` itself introduces eigenvariables — so `shiftsV P = σ ≤ 100 Z³` and the fact is
+`axchFact &(ip + σ)`, at `p`'s MOVED offset. `ProAxm.AxmIndOracle` (`NumInv`: `shiftsV P = 0`, standard `C : ℕ`)
+and `Verify2`'s `AxmIndOracleC` are therefore NOT met by this construction, and for NONSTANDARD `p` no shift-free
+list of standard length can meet them (the walks alone are `|p|` steps long). The consumer must be adjusted to
+`AxmIndOracle'`: `shiftsV P ≤ C`, `len P ≤ C`, `SizeOK C C P`, fact at `&(memTop s p i + shiftsV P)`, with
+`C = 4100 Z⁵`, `Z = i + 6D + 1 + D(D + 1)`, under `E ≥ 200 Z³` — every bound a polynomial in the sequent bound `D`
+and the base offset `i` (degree 10 in `D`), `V`-valued. `vAxm_ok`'s node then reads the fact at the moved
+offset exactly as `vAll_ok`/`vExs_ok` already do for their eigenvariable prologues.
 -/
 
 namespace ArithS

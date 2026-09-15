@@ -50,6 +50,8 @@ import ArithS.Necessitation.NumIdRows
 import ArithS.Necessitation.Pin
 import ArithS.Necessitation.ProAxmRows
 import ArithS.Necessitation.ProAxm
+import ArithS.Necessitation.IndRecRows
+import ArithS.Necessitation.IndRec
 import ArithS.Necessitation.NodeSize
 import ArithS.Necessitation.Verify2
 
@@ -1171,5 +1173,30 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms vExs_ok
 #print axioms verifyGraph'_ok
 #print axioms verifyGraph'_ok_pow
+
+-- U10 (Necessitation/IndRecRows + IndRec, 2026-09-15): CASE (ii) OF THE `axm` PROLOGUE — the induction-instance
+-- recognizer `indRecL` (Lib rows for `bs` = ℒₒᵣ-formation + exact `bv`, `fvSeq`, `isC0`/`isC1`, `bodyShape`,
+-- `indBodyL`, `indRecL`, six closed `isFuncOR`/`isRelOR` rows; the ℒₒᵣ/LAct wall crossed semantically in
+-- `inductionR_of_L`), the per-model passes (`qqAllsWalk_ok`, `leChain_ok`, `bsT_ok`/`bsV_of_entries`/`bsF_ok`,
+-- `fvSeq_ok`, `shiftSelf_ok`), the two stages (`stageA` with eigenvariables, `stageB` shift-free) and the producer
+-- `axmInd_ok`: from `p`'s dossier a cap-9 `NoDrop'` Horn-only list with `shiftsV ≤ 100 Z³`, `len ≤ 4100 Z⁵`, leaving
+-- `axchFact &(ip + shiftsV P)`. The HONEST oracle `AxmIndOracle'` (shifts allowed, the fact at the moved offset,
+-- `C : V` polynomial in `D`, `i`) is discharged by `axmIndOracle_of`; `ProAxm.AxmIndOracle` (shift-free, standard
+-- `C`) is unsatisfiable for nonstandard `p` — the consumer is to be adjusted (see `IndRec.lean`'s docstring).
+#print axioms inductionR_of_L
+#print axioms qqAllsWalk_ok
+#print axioms leChain_ok
+#print axioms bsT_ok
+#print axioms bsV_of_entries
+#print axioms bsF_ok
+#print axioms fvSeq_ok
+#print axioms shiftSelf_ok
+#print axioms indBodyVal_shape
+#print axioms stageWalks
+#print axioms bodyDoss
+#print axioms stageA
+#print axioms stageB
+#print axioms axmInd_ok
+#print axioms axmIndOracle_of
 
 end ArithS
