@@ -323,4 +323,151 @@ theorem lemmaThenHorn_ok {tbl N E Γ A dA s F Q D : V} (htbl : TableOK tbl N) (h
 
 end nodeSteps
 
+/-! ## 2. The meta induction -/
+
+section metaInduction
+
+/-! ### 2.1 The invariants, and the absoluteness helpers -/
+
+/-- The `ℕ`-value of `termLen LAct` at a standard code. -/
+noncomputable def tlN (t : ℕ) : ℕ := termLen LAct t
+
+/-- The quote vector of a meta vector of terms, in a model `V`. -/
+noncomputable def vv (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] {n k : ℕ} (v : Fin k → SyntacticSemiterm LAct n) : V :=
+  SemitermVec.val (fun m ↦ (⌜v m⌝ : Bootstrapping.Semiterm V LAct n))
+
+/-- **The term invariant** for a meta term `t`: for some standard `C`, in every model, from the dossier of
+`⌜t⌝` at `&i` a shift-free list of length `≤ C`, `SizeOK C C`, applicable at cap `9` under
+`C + i ≤ E`, leaving `eqFact (^&i) (numeral ⌜t⌝)`. -/
+def TermId {n : ℕ} (t : SyntacticSemiterm LAct n) : Prop :=
+  ∃ C : ℕ, ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] {tbl N E Γ i : V},
+    TableOK tbl N → LayoutTable tbl → IsFormulaSet LAct Γ →
+    DossT walkPieces Γ n (⌜t⌝ : V) i → (C : V) + i ≤ E →
+    ∃ P : V, ListOK tbl E ((9 : ℕ) : V) Γ P ∧ NoDrop' P ∧ shiftsV P = 0 ∧ len P ≤ (C : V) ∧
+      SizeOK (C : V) (C : V) P ∧ neg LAct (eqFact (^&i) (numeral (⌜t⌝ : V))) ∈ finalCtx Γ P
+
+/-- **The vector invariant** for the last `j` entries of a meta vector `v`: the walked suffix
+`takeLast (vv v) j` is identified at its reference `vRef i j`. -/
+def VecId {n k : ℕ} (v : Fin k → SyntacticSemiterm LAct n) (j : ℕ) : Prop :=
+  ∃ C : ℕ, ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] {tbl N E Γ i : V},
+    TableOK tbl N → LayoutTable tbl → IsFormulaSet LAct Γ →
+    DossV walkPieces Γ n k (vv V v) j i → (C : V) + i ≤ E →
+    ∃ P : V, ListOK tbl E ((9 : ℕ) : V) Γ P ∧ NoDrop' P ∧ shiftsV P = 0 ∧ len P ≤ (C : V) ∧
+      SizeOK (C : V) (C : V) P ∧ neg LAct (eqFact (vRef i j) (numeral (takeLast (vv V v) j))) ∈ finalCtx Γ P
+
+/-- **The formula invariant** for a meta formula `φ`. -/
+def FormId {n : ℕ} (φ : Semiproposition LAct n) : Prop :=
+  ∃ C : ℕ, ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] {tbl N E Γ i : V},
+    TableOK tbl N → LayoutTable tbl → IsFormulaSet LAct Γ →
+    DossF walkPieces Γ n (⌜φ⌝ : V) i → (C : V) + i ≤ E →
+    ∃ P : V, ListOK tbl E ((9 : ℕ) : V) Γ P ∧ NoDrop' P ∧ shiftsV P = 0 ∧ len P ≤ (C : V) ∧
+      SizeOK (C : V) (C : V) P ∧ neg LAct (eqFact (^&i) (numeral (⌜φ⌝ : V))) ∈ finalCtx Γ P
+
+variable {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
+
+lemma tlN_cast (t : ℕ) : termLen LAct (t : V) = (tlN t : V) := by
+  have := DefinedFunction.shigmaOne_absolute_func V (termLen.defined (V := ℕ) (L := LAct))
+    (termLen.defined (V := V) (L := LAct)) ![t]
+  simpa [tlN, Function.comp_def] using this.symm
+
+lemma takeLast_cast (a b : ℕ) : ((takeLast a b : ℕ) : V) = takeLast (a : V) (b : V) := by
+  have := DefinedFunction.shigmaOne_absolute_func V (takeLast_defined (V := ℕ)) (takeLast_defined (V := V)) ![a, b]
+  simpa [Function.comp_def] using this
+
+lemma vv_cast {n k : ℕ} (v : Fin k → SyntacticSemiterm LAct n) : ((vv ℕ v : ℕ) : V) = vv V v := by
+  unfold vv
+  rw [Semiterm.quote_eq_encode', Semiterm.quote_eq_encode']
+  simp
+
+lemma isSemitermVec_vv {n k : ℕ} (v : Fin k → SyntacticSemiterm LAct n) : IsSemitermVec LAct (k : V) (n : V) (vv V v) :=
+  SemitermVec.isSemitermVec _
+
+lemma len_vv {n k : ℕ} (v : Fin k → SyntacticSemiterm LAct n) : len (vv V v) = k :=
+  SemitermVec.len_eq _
+
+lemma nth_vv {n k : ℕ} (v : Fin k → SyntacticSemiterm LAct n) (m : Fin k) : (vv V v).[((m : ℕ) : V)] = ⌜v m⌝ :=
+  SemitermVec.val_nth_eq _ m
+
+lemma isSemiterm_numeral_LAct (x : V) : IsSemiterm LAct 0 (numeral x) :=
+  InstV.isSemiterm_LAct_of_LOR (numeral_semiterm 0 _)
+
+lemma termLen_numeral_le' {x E : V} (h : 2 * x + 1 ≤ E) : termLen LAct (numeral x) ≤ E :=
+  le_trans (termLen_numeral_le x) h
+
+/-- The `E`-cap arithmetic: `(a : ℕ) + i ≤ E` from `(b : ℕ) + i ≤ E` and `a ≤ b`. -/
+lemma cap_mono {a b : ℕ} {i E : V} (hab : a ≤ b) (h : (b : V) + i ≤ E) : (a : V) + i ≤ E :=
+  le_trans (add_le_add ((Nat.cast_le (α := V)).mpr hab) (le_refl i)) h
+
+lemma cap_le {a b : ℕ} {i E : V} (hab : a ≤ b) (h : (b : V) + i ≤ E) : (a : V) ≤ E :=
+  le_trans (le_trans ((Nat.cast_le (α := V)).mpr hab) le_self_add) h
+
+lemma cap_fvar {a b : ℕ} {i E : V} (hab : a + 1 ≤ b) (h : (b : V) + i ≤ E) : i + 1 ≤ E := by
+  calc i + 1 = ((1 : ℕ) : V) + i := by push_cast; ring
+    _ ≤ (b : V) + i := add_le_add ((Nat.cast_le (α := V)).mpr (by omega : 1 ≤ b)) (le_refl i)
+    _ ≤ E := h
+
+/-- Repackaging a two-step result under the invariant's single constant. -/
+lemma pack2 {tbl E Γ S F Q D : V} {C : ℕ}
+    (h : ListOK tbl E ((9 : ℕ) : V) Γ S ∧ NoDrop' S ∧ shiftsV S = 0 ∧ len S = 2 ∧ SizeOK Q D S ∧ neg LAct F ∈ finalCtx Γ S)
+    (hQ : Q ≤ (C : V)) (hD : D ≤ (C : V)) (h2 : 2 ≤ C) :
+    ListOK tbl E ((9 : ℕ) : V) Γ S ∧ NoDrop' S ∧ shiftsV S = 0 ∧ len S ≤ (C : V) ∧ SizeOK (C : V) (C : V) S ∧
+      neg LAct F ∈ finalCtx Γ S := by
+  obtain ⟨h1, h2', h3, h4, h5, h6⟩ := h
+  refine ⟨h1, h2', h3, ?_, h5.mono hQ hD, h6⟩
+  rw [h4]; exact_mod_cast h2
+
+/-- The code of a predicate is the cast of its `ℕ`-code (a `Semisentence` quote). -/
+lemma quote_semisentence_cast {L : Language} [L.Encodable] [L.LORDefinable] {m : ℕ} (σ : Semisentence L m) :
+    (⌜σ⌝ : V) = ((⌜σ⌝ : ℕ) : V) := (Sentence.coe_quote_eq_quote σ).symm
+
+/-! ### 2.2 Terms and vectors -/
+
+/-- The code of a predicate constant is `formulaLen`-absolute: `formulaLen LAct P = flN P`. -/
+lemma flN_pred {L : Language} [L.Encodable] [L.LORDefinable] {m : ℕ} (σ : Semisentence L m) :
+    formulaLen LAct (⌜σ⌝ : V) = (flN (⌜σ⌝ : ℕ) : V) := by
+  rw [quote_semisentence_cast]; exact flN_cast _
+
+/-- `#z`: the closed fact `bvarFact (numeral ⌜#z⌝) (cT z)` and `eqOfBvar`. -/
+theorem termId_bvar {n : ℕ} (z : Fin n) : TermId (#z : SyntacticSemiterm LAct n) := by
+  obtain ⟨x, hx⟩ : ∃ x : ℕ, x = (⌜(#z : SyntacticSemiterm LAct n)⌝ : ℕ) := ⟨_, rfl⟩
+  have hxq : x = qqBvar (z : ℕ) := by rw [hx, Semiterm.quote_bvar]; simp
+  obtain ⟨Nd, hNd⟩ := closedDer_of_lib (lib_cfBvar hxq)
+  obtain ⟨Q, hQ⟩ : ∃ Q : ℕ, Q = flN (Pbvar : ℕ) * (2 * x + 1 + (2 * (z : ℕ) + 1)) := ⟨_, rfl⟩
+  obtain ⟨C, hC⟩ : ∃ C : ℕ, C = 2 * x + 1 + (2 * (z : ℕ) + 1) + Q + Nd + 4 := ⟨_, rfl⟩
+  refine ⟨C, ?_⟩
+  intro V _ _ tbl N E Γ i htbl hL hΓ hD hE
+  obtain ⟨dA, hdA, hdl⟩ := hNd V
+  simp only at hdA hdl
+  rw [code_cfBvar] at hdA
+  have hxV : ((x : ℕ) : V) = ⌜(#z : SyntacticSemiterm LAct n)⌝ := by rw [hx]; exact Semiterm.coe_quote_eq_quote _
+  rw [Semiterm.quote_bvar] at hD
+  obtain ⟨h0, _⟩ := dossT_bvar htbl hL.walkTable rfl hD
+  have hcz : cTV ((z : ℕ) : V) = cT (z : ℕ) := rfl
+  rw [hcz] at h0
+  have hnum : IsSemiterm LAct 0 (numeral (x : V)) := isSemiterm_numeral_LAct _
+  have hcT : IsSemiterm LAct 0 (cT (z : ℕ) : V) := cT_semiterm_LAct 0 _
+  have h2x : ((2 * x + 1 : ℕ) : V) ≤ E := cap_le (a := 2 * x + 1) (by omega) hE
+  have h2z : ((2 * (z : ℕ) + 1 : ℕ) : V) ≤ E := cap_le (a := 2 * (z : ℕ) + 1) (by omega) hE
+  have hEx : termLen LAct (numeral (x : V)) ≤ E := termLen_numeral_le' (by push_cast at h2x; exact h2x)
+  have hEz : termLen LAct (cT (z : ℕ) : V) ≤ E := by rw [termLen_cT]; push_cast at h2z; exact h2z
+  have hEi : i + 1 ≤ E := cap_fvar (a := 0) (by omega) hE
+  have hA : IsFormula LAct (bvarFact (numeral (x : V)) (cT (z : ℕ))) := isFormula_bvarFact hnum hcT
+  have hP : formulaLen LAct (Pbvar : V) = (flN (Pbvar : ℕ) : V) := flN_pred _
+  have hQ' : formulaLen LAct (bvarFact (numeral (x : V)) (cT (z : ℕ))) ≤ (Q : V) := by
+    have hB : (1 : V) ≤ ((2 * x + 1 + (2 * (z : ℕ) + 1) : ℕ) : V) := by exact_mod_cast (by omega : 1 ≤ 2 * x + 1 + (2 * (z : ℕ) + 1))
+    refine le_trans (formulaLen_bvarFact_le hB hnum hcT ?_ ?_) ?_
+    · exact le_trans (termLen_numeral_le _) (by push_cast; exact le_self_add)
+    · rw [termLen_cT]; push_cast; exact le_add_self
+    · rw [hP, hQ]; push_cast; exact le_refl _
+  have hres := lemmaThenHorn_ok (s := mkStep layoutPieces 72 ?[cT (z : ℕ), ^&i, numeral (x : V)])
+    (F := eqFactB (^&i) (numeral (x : V))) htbl hΓ hA hdA hQ' hdl (fun hΓ' ↦ by
+      obtain ⟨hok, htag, hctx⟩ := lok_eqOfBvar htbl hL rfl hΓ' hcT hEz (by simp) (termLen_fvar_le hEi) hnum hEx
+        (mem_insert_of_mem' h0) mem_insert_self'
+      exact ⟨hok.mono (by exact_mod_cast (by decide : 8 ≤ 9)), htag, hctx⟩)
+  have := pack2 (C := C) hres (by exact_mod_cast (by omega : Q ≤ C)) (by exact_mod_cast (by omega : Nd ≤ C)) (by omega)
+  rw [hxV] at this
+  exact ⟨_, this⟩
+
+end metaInduction
+
 end ArithS
