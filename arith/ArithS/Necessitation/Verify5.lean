@@ -1289,4 +1289,39 @@ theorem len_cutPro_le {tbl N : V} (htbl : TableOK tbl N) (hP : ProTable tbl) {Wl
 
 end selectorLengths
 
+
+/-! ## 15. Three lemmas the recursion needs: `kitD` monotone, the doubling, `leafCode` in the kit class
+
+The arm lemmas of §§4–13 conclude at the class `kitD Cz n` with `n` the node's OWN `dlen`, while the recursion's
+motive carries `kitD Cz (2 * dlen ρ)` (the `D = 2d` convention of `Verify4`, which §8's `dlen_bin2Code_le_kitD`
+and `dlen_bin3Code_le_kitD` are already stated at). Widening one to the other is `kitD_mono` plus `le_two_mul_self`,
+and the third lemma is the `leafCode` analogue of §8's two: §3 bounds it by a SINGLE `sum2D` (not the doubled one),
+so no doubling constant is needed and `sum2D ≤ layD ≤ kitD` suffices.
+
+TRAP: in `dlen_leafCode_le_kitD`'s chain the size argument is pinned at `Dz` by `sum2D_le_layD`, so `layD_le_kitD`
+there takes `le_rfl`, NOT the `d ≤ 2 * d` widening — that step happens afterwards, through `kitD_mono`.
+-/
+
+section recursionPrep
+
+/-- `kitD` is monotone in its size argument (`kitD Cz z = Cz·(z+1)³`). -/
+lemma kitD_mono {Cz a b : V} (h : a ≤ b) : kitD Cz a ≤ kitD Cz b := by
+  unfold kitD
+  refine mul_le_mul_of_nonneg_left ?_ zero_le
+  rw [pow3_eq_p3, pow3_eq_p3]
+  exact p3_mono (add_le_add h le_rfl)
+
+/-- `d ≤ 2·d`. -/
+lemma le_two_mul_self (d : V) : d ≤ 2 * d := le_of_add_eq' (c := d) (by ring)
+
+/-- **`leafCode` lands in the kit class** — the `leafCode` analogue of §8's `dlen_bin2Code_le_kitD`, with NO
+doubling constant (§3 bounds `leafCode` by a single `sum2D`). -/
+lemma dlen_leafCode_le_kitD {T N' B' Cz a n d : V} (htblN : NumTableOK T N' B')
+    (h : a + 1 ≤ n) (hn : n ≤ 2 * d) (hC : 27 * N' + 525600 * B' ≤ Cz) :
+    dlen TAct (leafCode T a n) ≤ kitD Cz (2 * d) :=
+  le_trans (dlen_leafCode_le' htblN h hn)
+    (le_trans (sum2D_le_layD N' B' (2 * d)) (layD_le_kitD le_rfl hC))
+
+end recursionPrep
+
 end ArithS

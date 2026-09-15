@@ -1501,6 +1501,18 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms len_shiftPro_le
 #print axioms len_cutPro_le
 
+-- U10 (Necessitation/Verify5, 2026-09-16): THE SIZE HALF, PART 12 — three lemmas the RECURSION needs. The arm
+-- lemmas of §§4–13 conclude at the class `kitD Cz n` with `n` the node's OWN `dlen`, while the recursion's motive
+-- carries `kitD Cz (2 * dlen ρ)` (the `D = 2d` convention of `Verify4`, which §8's `dlen_bin2Code_le_kitD` and
+-- `dlen_bin3Code_le_kitD` are already stated at); widening one to the other is `kitD_mono` plus `le_two_mul_self`.
+-- The third, `dlen_leafCode_le_kitD`, is the `leafCode` analogue of §8's two, with NO doubling constant (§3 bounds
+-- `leafCode` by a SINGLE `sum2D`, not the doubled one). TRAP: in its chain the size argument is pinned at `Dz` by
+-- `sum2D_le_layD`, so `layD_le_kitD` there takes `le_rfl`, NOT the `d ≤ 2 * d` widening — that step happens
+-- afterwards, through `kitD_mono`.
+#print axioms kitD_mono
+#print axioms le_two_mul_self
+#print axioms dlen_leafCode_le_kitD
+
 -- U10 (Necessitation/Package, 2026-09-15): THE PACKAGE AND THE HEADLINE THEOREMS, with `Assemble.SizeOracle`
 -- BYPASSED. `SizeOracle` is NOT PROVABLE as stated (it binds the numeral table `T` with no `NumTableOK T N' B'`,
 -- while every prologue size lemma requires one and lands at `layQ B B' D`/`layD N' B' D`; `NumTableOK` is never a
