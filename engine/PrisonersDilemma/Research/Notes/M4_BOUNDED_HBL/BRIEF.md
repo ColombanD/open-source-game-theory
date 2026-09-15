@@ -1159,3 +1159,32 @@ the table as arguments.
 **THE ENTIRE REMAINING OBLIGATION IS `VerifyKit'`** (+ the one-line `KitPackage'` assembly with a
 common `B`, then `dupoc_self_coop` at `boundedInnerNec_four_of_kit`).
 IN FLIGHT: `Prologue` Part 3 (all/exs); `Prologue` axm (a separate agent, `ProAxm.lean`).
+
+**§11 status — `Prologue` Part 3 DONE: `all`, `exs`, `proIns0`, costs (0790044, cac11e7, 0a7710a;
+`Prologue.lean` 8387 lines; census 661, all standard). NINE OF TEN PROLOGUES EXIST.**
+DESIGN (deviates from §8's plan, deliberately): no "unshift index" — `proSS` lays out `setShift s`
+by REUSING `proShift_ok` with roles `(s := setShift s, c := s, i := 0)` and identifies the fresh
+chain top with the parent's `S` by Loop E (`eqSteps` per member, both `congMem` directions) + two
+`subChain`s + `subsetAntisymm` + `congSetShiftR` (158); `proIns_ok` reused for both inserts, the
+fresh dossiers of `free p`/`substs1 t p` walked BEFORE the layouts so `certFree`/`certSubst` run
+between fresh dossiers; `exs`'s length OBJECT by `eqTotal [bnum |t|]`, `eqSymm`, re-indexed
+`congTLenNum` (146), `leOfEqP` (159); `certFreeDef` (the Σ₁ graph `Cert` lacked). `proAll_ok`
+discharges EVERY `nodeAll_ok` fact hypothesis (`hall/hmr` via `layout_all`, `hfree`, `hsh`,
+`hins`, `hsl/hle`, `hfst/hd/hn₁/hle₁` via `postIns_ok` after the child); `proExs_ok` likewise for
+`nodeExs_ok` (`htpi`, `htl`, `hlet` with `Lt = termLen t`, `hsub`, `hins`, …). No fact gaps; the
+numeric caps `his … hLn` are the consumer's E-room, as for every tag. `costSum_proAll/proExs_le`
+in the `costSum_le_of_sizeOK 9` shape at `(layQ B B' D, layD N' B' D)`; `proIns0_ok`
+(`identIns0` = Loop A + child `subChain` + `emptySubsetC` + `congSubsetL` + `blockP` +
+`insertSubset` + `subsetAntisymm`), `costSum_layoutSteps0/proWk0/proShift0/proIns0_le`.
+STILL SYMBOLIC: the loops' `len` bounds — every `costSum_pro*_le` has `len (pro…)` as its
+multiplier, but `VerifyKit'.cost` needs `len ≤ Ck·(dlen ρ + 1)`, so concrete `len_pro<Tag>_le`
+bounds (linear in the node's sequent/formula sizes) are REQUIRED, plus `setLen (fstIdx d) ≤ dlen d`
+-style size lemmas for the node's data. TRAPS: **`PrologueRows.olean` was STALE at session start**
+(a commit without rebuilding; `lake env lean` silently used the old olean — sentinel with
+`#print proExtraRowCount`); `lake build` removes `Prologue.olean` for ~2 min; `cok_*` take `hWc` —
+passing `rfl` yields a step at `certPieces` that no longer matches `mkStep Wc …`; `dossV_succ
+(j := 0)` wants `0 + 1`; `proShift_ok`/`proSS_ok` return the parent offset LEFT-associated;
+`rw [finalCtx_single]` picks the OUTERMOST — `simp only` then the `cx` rewrites; `le_add_self`
+with an unpinned RHS unifies wrongly — pin the type; rewriting `hq` in a Loop fact rewrites under
+`loopA` too — rewrite the projections.
+IN FLIGHT: `ProAxm` (axm); `Prologue` Part 4 (the `len` bounds + node-size lemmas).
