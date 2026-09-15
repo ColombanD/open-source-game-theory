@@ -1527,6 +1527,16 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 -- `((21 : ℕ) : V) ≤ Czv`; a cast mismatch there reads as an application type error, not as a numeric one.
 #print axioms axL_wrapper
 
+-- U10 (Necessitation/Verify5, 2026-09-16): §16.1 — the `verumIntro` WRAPPER, and the confirmation that the template
+-- GENERALISES: green in 5 s, the same cost as `axL` (2 of 10 wrappers). `vVerum = fragVerum` alone (no prologue),
+-- so there is no `HornOnly` block and no `proAxL_ok` destructuring — just the four E-rooms and `verum_arm_size`
+-- with its implicits pinned per TRAP 16. **TRAP 17 — `rw [← hdd]` must come AFTER the `unfold`.** The wrapper
+-- abbreviates `d = dlen TAct (…)` and rewrites it through the goal in bulk at the top; `unfold vVerum` then
+-- RE-EXPOSES the raw `dlen` in the fragment's `n` position, so the pinned `n := d` no longer matches and the
+-- application fails on a `SizeOK … (fragVerum … d)` versus `SizeOK … (fragVerum … (dlen TAct (verumIntro s)))`
+-- mismatch. Repeating the rewrite after the unfold fixes it.
+#print axioms verum_wrapper
+
 -- U10 (Necessitation/Package, 2026-09-15): THE PACKAGE AND THE HEADLINE THEOREMS, with `Assemble.SizeOracle`
 -- BYPASSED. `SizeOracle` is NOT PROVABLE as stated (it binds the numeral table `T` with no `NumTableOK T N' B'`,
 -- while every prologue size lemma requires one and lands at `layQ B B' D`/`layD N' B' D`; `NumTableOK` is never a

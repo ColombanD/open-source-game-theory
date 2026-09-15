@@ -1413,6 +1413,74 @@ theorem axL_wrapper {tbl N N' B' Wc W₁ T B E Czv Γ s p : V}
         (le_trans (sum2D_le_layD N' B' d) (layD_le_kitD le_rfl hCD)))).mono le_rfl
       (kitD_mono (le_two_mul_self d))
 
+
+/-! ### 16.1 The `verumIntro` wrapper
+
+The second wrapper, and the confirmation that the template generalises: green in 5 s, the same cost as `axL`.
+`vVerum = fragVerum` alone (no prologue), so there is no `HornOnly` block and no `proAxL_ok` destructuring — just
+the four E-rooms and `verum_arm_size` with its implicits pinned.
+
+**TRAP 17 — `rw [← hdd]` must come AFTER the `unfold`.** The wrapper abbreviates `d = dlen TAct (…)` and rewrites
+it through the goal in bulk at the top; `unfold vVerum` then RE-EXPOSES the raw `dlen` in the fragment's `n`
+position, so the pinned `n := d` no longer matches and the application fails on a `SizeOK … (fragVerum … d)` versus
+`SizeOK … (fragVerum … (dlen TAct (verumIntro s)))` mismatch. Repeating the rewrite after the unfold fixes it.
+-/
+
+set_option maxHeartbeats 2000000 in
+/-- **THE `verumIntro` MOTIVE WRAPPER** — `vVerum = fragVerum` alone (no prologue). -/
+theorem verum_wrapper {tbl N N' B' Wc W₁ T B E Czv Γ s : V}
+    (htbl : TableOK tbl N) (hP : ProTable tbl) (htblN : NumTableOK T N' B')
+    (hWc : Wc = certPieces) (hW₁ : W₁ = frag1Pieces)
+    (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (hCz1 : 1 ≤ Czv) (hCk : ∀ a : ℕ, a ≤ 1000000 → ((a : ℕ) : V) ≤ Czv)
+    (hC9 : (9 : V) ≤ Czv)
+    (hCD : 27 * N' + 525600 * B' ≤ Czv)
+    (hcG : 4 * ((cDer : V) + cDlen + cFst + 6) ≤ Czv)
+    (hs : IsFormulaSet LAct s) (hv : (^⊤ : V) ∈ s)
+    (hΓ : IsFormulaSet LAct Γ) (hLay : NodeLay walkPieces Wc T Γ s)
+    (hE : Czv * p4 (dlen TAct (verumIntro s) + 1) ≤ E) :
+    len (vVerum walkPieces Wc W₁ T s) ≤ Czv * p4 (dlen TAct (verumIntro s)) ∧
+    SizeOK (kitQ Czv B E) (kitD Czv (2 * dlen TAct (verumIntro s))) (vVerum walkPieces Wc W₁ T s) := by
+  have hD : Derivation TAct (verumIntro s) := Derivation.verumIntro hs hv
+  have hd1 : 1 ≤ dlen TAct (verumIntro s) := one_le_dlen hD
+  have hsD : setLen LAct s ≤ dlen TAct (verumIntro s) := by
+    have := setLen_fstIdx_le_dlen hD; rwa [fstIdx_verumIntro] at this
+  have hkD : len (memberList s) ≤ dlen TAct (verumIntro s) := le_trans (len_memberList_le_setLen hs) hsD
+  have hdl : dlen TAct (verumIntro s) = setLen LAct s + 1 := dlen_verumIntro hD
+  obtain ⟨d, hdd⟩ : ∃ x, x = dlen TAct (verumIntro s) := ⟨_, rfl⟩
+  rw [← hdd] at hE hd1 hsD hkD hdl ⊢
+  have he1 : (1 : V) ≤ d + 1 := le_add_self
+  have hE1 : (1 : V) ≤ E := le_trans (le_trans hd1 (le_p4_self hd1))
+    (le_trans (le_mul_of_one_le_left zero_le hCz1)
+      (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE))
+  have hnE : 18 * ‖d‖ + 7 ≤ E := capE4' hE he1 (hCk 25 (by norm_num)) (by
+    calc 18 * ‖d‖ + 7 ≤ 0 * d + 18 * ‖d‖ + 7 := by rw [zero_mul, zero_add]
+      _ ≤ (0 + 18 + 7) * (d + 1) := lin_cap 0 18 7 d
+      _ = ((25 : ℕ) : V) * (d + 1) := by push_cast; ring)
+  have hLn : setLen LAct s + 1 ≤ d := le_of_eq hdl.symm
+  have hgoalE : len (memberList s) + 1 + 1 + 1 ≤ E := capE4' hE he1 (hCk 4 (by norm_num)) (by
+    calc len (memberList s) + 1 + 1 + 1 ≤ d + 3 :=
+          (add_le_add (add_le_add (add_le_add hkD le_rfl) le_rfl) le_rfl).trans (le_of_eq (by ring))
+      _ ≤ ((4 : ℕ) : V) * (d + 1) := by push_cast; exact le_of_add_eq' (c := 3 * d + 1) (by ring))
+  have hbn : termLen LAct (bnum d) ≤ E := capE4' hE he1 (hCk 7 (by norm_num)) (by
+    refine le_trans (termLen_bnum_le_V d) ?_
+    calc 6 * ‖d‖ + 1 ≤ 6 * (d + 1) + 1 * (d + 1) :=
+          add_le_add (mul_le_mul_of_nonneg_left (le_trans (length_le d) le_self_add) zero_le)
+            (by rw [one_mul]; exact le_add_self)
+      _ = ((7 : ℕ) : V) * (d + 1) := by push_cast; ring)
+  refine ⟨?_, ?_⟩
+  · rw [verum_arm_len]
+    exact le_trans hC9 (le_mul_of_one_le_right zero_le (one_le_p4 hd1))
+  · unfold vVerum
+    rw [← hdd]
+    exact (verum_arm_size (W₁ := W₁) (T := T) (B := B) (E := E) (Cz := Czv)
+      (is := len (memberList s) + 1) (il := 0) (iv := memTop walkPieces Wc T s (^⊤ : V) 0)
+      (L := setLen LAct s) (n := d)
+      hW₁ hCz1 hE1 hPle hnE hLn hgoalE hbn hcG
+      (le_trans (dlen_leafCode_le' htblN (le_of_eq hdl.symm) le_rfl)
+        (le_trans (sum2D_le_layD N' B' d) (layD_le_kitD le_rfl hCD)))).mono le_rfl
+      (kitD_mono (le_two_mul_self d))
+
 end motiveWrappers
 
 end ArithS
