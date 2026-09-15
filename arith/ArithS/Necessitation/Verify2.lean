@@ -3570,4 +3570,645 @@ theorem vExs_ok {tbl N N' B' Wl Wc W₂ W T s p t d' L' D B SA E Γ : V} (htbl :
 
 end exsOk
 
+/-! ### 8.9 The node invariant, glued by `Derivation.induction1 𝚷`
+
+`verifyGraph'_ok`: every list of `VerifyGraph'` at a node laid out at `0` is applicable, cut-admitting, has at most
+`Cs · (dlen ρ)^6` eigenvariables, and leaves the node's goal fact. The DEGREE 6 is forced by the per-node shift bounds
+available today (`Prologue.shiftsV_proAll_le`/`_proExs_le`, quintic in a size `D` that is only GLOBALLY bounded by
+`dlen ρ`): with per-node terms `≤ c·(dlen ρ)^5` the recursion closes at `Cs·(dlen ρ)^6` via
+`(y + m)^6 ≥ y^6 + m·(y + m)^5`. It drops by one for every degree the prologue bounds lose (cubic bounds ⇒ degree 4;
+LOCAL bounds ⇒ degree 3). Powers are written as explicit products (`p5`, `p6`) so that the motive stays `definability`-friendly. -/
+
+section glue
+
+/-- `x^5` and `x^6` as explicit products (definability-friendly). -/
+def p5 (x : V) : V := x * x * x * x * x
+def p6 (x : V) : V := x * x * x * x * x * x
+
+lemma p6_eq (x : V) : p6 x = x * p5 x := by simp only [p5, p6]; ring
+
+lemma p5_mono {a b : V} (h : a ≤ b) : p5 a ≤ p5 b := by
+  simp only [p5]
+  exact mul_le_mul (mul_le_mul (mul_le_mul (mul_le_mul h h zero_le zero_le) h zero_le zero_le) h zero_le zero_le) h zero_le zero_le
+
+lemma p6_mono {a b : V} (h : a ≤ b) : p6 a ≤ p6 b := by
+  simp only [p6]
+  exact mul_le_mul (mul_le_mul (mul_le_mul (mul_le_mul (mul_le_mul h h zero_le zero_le) h zero_le zero_le) h zero_le zero_le)
+    h zero_le zero_le) h zero_le zero_le
+
+lemma le_p5_self {d : V} (hd : 1 ≤ d) : d ≤ p5 d := by
+  simp only [p5]
+  calc d = 1 * 1 * 1 * 1 * d := by ring
+    _ ≤ d * d * d * d * d :=
+      mul_le_mul (mul_le_mul (mul_le_mul (mul_le_mul hd hd zero_le zero_le) hd zero_le zero_le) hd zero_le zero_le) (le_refl d)
+        zero_le zero_le
+
+lemma one_le_p5 {d : V} (hd : 1 ≤ d) : 1 ≤ p5 d := le_trans hd (le_p5_self hd)
+
+lemma le_p6_self {d : V} (hd : 1 ≤ d) : d ≤ p6 d := by
+  rw [p6_eq]; calc d = d * 1 := by ring
+    _ ≤ d * p5 d := mul_le_mul_of_nonneg_left (one_le_p5 hd) zero_le
+
+lemma p5_le_p6 {d : V} (hd : 1 ≤ d) : p5 d ≤ p6 d := by
+  rw [p6_eq]; calc p5 d = 1 * p5 d := by ring
+    _ ≤ d * p5 d := mul_le_mul_of_nonneg_right hd zero_le
+
+/-- `(y + m)^6 ≥ y^6 + m·(y + m)^5`. -/
+lemma p6_split (y m : V) : p6 y + m * p5 (y + m) ≤ p6 (y + m) := by
+  rw [p6_eq (y + m), p6_eq y, add_mul]
+  exact add_le_add (mul_le_mul_of_nonneg_left (p5_mono le_self_add) zero_le) (le_refl _)
+
+lemma p6_add_le (y₁ y₂ : V) : p6 y₁ + p6 y₂ ≤ p6 (y₁ + y₂) := by
+  simp only [p6]
+  exact le_of_add_eq' (c := 6 * (y₁ * y₁ * y₁ * y₁ * y₁) * y₂ + 15 * (y₁ * y₁ * y₁ * y₁) * (y₂ * y₂) +
+    20 * (y₁ * y₁ * y₁) * (y₂ * y₂ * y₂) + 15 * (y₁ * y₁) * (y₂ * y₂ * y₂ * y₂) + 6 * y₁ * (y₂ * y₂ * y₂ * y₂ * y₂)) (by ring)
+
+/-- The one-child recursion step: `X + Cs·y^6 ≤ Cs·d^6` when `d = y + m`, `m ≥ 1`, `X ≤ Cs·d^5`. -/
+lemma rec1 {Cs X y m d : V} (hm : 1 ≤ m) (hd : d = y + m) (hX : X ≤ Cs * p5 d) : X + Cs * p6 y ≤ Cs * p6 d := by
+  have h := p6_split y m
+  rw [← hd] at h
+  calc X + Cs * p6 y ≤ Cs * p5 d + Cs * p6 y := add_le_add hX (le_refl _)
+    _ = Cs * (p6 y + 1 * p5 d) := by ring
+    _ ≤ Cs * (p6 y + m * p5 d) := mul_le_mul_of_nonneg_left (add_le_add (le_refl _) (mul_le_mul_of_nonneg_right hm zero_le)) zero_le
+    _ ≤ Cs * p6 d := mul_le_mul_of_nonneg_left h zero_le
+
+/-- The two-children recursion step. -/
+lemma rec2 {Cs X y₁ y₂ m d : V} (hm : 1 ≤ m) (hd : d = y₁ + y₂ + m) (hX : X ≤ Cs * p5 d) :
+    X + Cs * p6 y₁ + Cs * p6 y₂ ≤ Cs * p6 d := by
+  have h := rec1 (Cs := Cs) (X := X) (y := y₁ + y₂) hm hd hX
+  calc X + Cs * p6 y₁ + Cs * p6 y₂ = X + Cs * (p6 y₁ + p6 y₂) := by ring
+    _ ≤ X + Cs * p6 (y₁ + y₂) := add_le_add (le_refl _) (mul_le_mul_of_nonneg_left (p6_add_le _ _) zero_le)
+    _ ≤ Cs * p6 d := h
+
+/-- A linear cap sits under `Cs·d^5` for `d ≥ 1` and `Cs ≥ a + b`. -/
+lemma lin_le_p5 {a b Cs d : V} (hd : 1 ≤ d) (hab : a + b ≤ Cs) : a * d + b ≤ Cs * p5 d := by
+  calc a * d + b ≤ a * p5 d + b * p5 d := add_le_add (mul_le_mul_of_nonneg_left (le_p5_self hd) zero_le)
+        (le_mul_of_one_le_right zero_le (one_le_p5 hd))
+    _ = (a + b) * p5 d := by ring
+    _ ≤ Cs * p5 d := mul_le_mul_of_nonneg_right hab zero_le
+
+end glue
+
+section glueMain
+
+lemma cube_le_p6 {e : V} (he : 1 ≤ e) : e * e * e ≤ p6 e := by
+  simp only [p6]
+  calc e * e * e = e * e * e * 1 * 1 * 1 := by ring
+    _ ≤ e * e * e * e * e * e :=
+      mul_le_mul (mul_le_mul (mul_le_mul_of_nonneg_left he zero_le) he zero_le zero_le) he zero_le zero_le
+
+lemma pow5_eq_p5 (x : V) : x ^ 5 = p5 x := by simp only [p5]; ring
+
+lemma p5_two_mul (x : V) : p5 (2 * x) = 32 * p5 x := by simp only [p5]; ring
+
+lemma p5_succ_le {d : V} (hd : 1 ≤ d) : p5 (d + 1) ≤ 32 * p5 d := by
+  rw [← p5_two_mul]
+  exact p5_mono (by calc d + 1 ≤ d + d := add_le_add (le_refl d) hd
+    _ = 2 * d := by ring)
+
+lemma capE {Ckv E e X a : V} (hE : Ckv * p6 e ≤ E) (he : 1 ≤ e) (ha : a ≤ Ckv) (hX : X ≤ a * e) : X ≤ E :=
+  le_trans hX (le_trans (mul_le_mul ha (le_p6_self he) zero_le zero_le) hE)
+
+lemma capE6 {Ckv E e X a : V} (hE : Ckv * p6 e ≤ E) (ha : a ≤ Ckv) (hX : X ≤ a * p6 e) : X ≤ E :=
+  le_trans hX (le_trans (mul_le_mul_of_nonneg_right ha zero_le) hE)
+
+/-- `a·D + b·‖D‖ + c ≤ (a + b + c)·(D + 1)`. -/
+lemma lin_cap (a b c D : V) : a * D + b * ‖D‖ + c ≤ (a + b + c) * (D + 1) := by
+  calc a * D + b * ‖D‖ + c ≤ a * D + b * D + c :=
+        add_le_add (add_le_add (le_refl _) (mul_le_mul_of_nonneg_left (length_le D) zero_le)) (le_refl c)
+    _ ≤ (a + b + c) * (D + 1) := le_of_add_eq' (c := c * D + a + b) (by ring)
+
+/-- `Cs·y^6 ≤ Cs·d^6` for `y ≤ d`. -/
+lemma child_bound {Cs y d : V} (h : y ≤ d) : Cs * p6 y ≤ Cs * p6 d := mul_le_mul_of_nonneg_left (p6_mono h) zero_le
+
+/-- The cubic prologue caps: `2·(a·b)·c ≤ 2·ka·kb·kc·e^6` for `a ≤ ka·e`, … -/
+lemma quad_cap {e a b c ka kb kc : V} (he : 1 ≤ e) (ha : a ≤ ka * e) (hb : b ≤ kb * e) (hc : c ≤ kc * e) :
+    2 * (a * b) * c ≤ 2 * ka * kb * kc * p6 e := by
+  calc 2 * (a * b) * c ≤ 2 * (ka * e * (kb * e)) * (kc * e) :=
+        mul_le_mul (mul_le_mul_of_nonneg_left (mul_le_mul ha hb zero_le zero_le) zero_le) hc zero_le zero_le
+    _ = 2 * ka * kb * kc * (e * e * e) := by ring
+    _ ≤ 2 * ka * kb * kc * p6 e := mul_le_mul_of_nonneg_left (cube_le_p6 he) zero_le
+
+/-- The leaf shift `1 ≤ Cs·d^6`. -/
+lemma one_le_Cs_p6 {Cs d : V} (hCs : 1 ≤ Cs) (hd : 1 ≤ d) : 1 ≤ Cs * p6 d :=
+  le_trans hCs (le_mul_of_one_le_right zero_le (le_trans hd (le_p6_self hd)))
+
+/-- The uniform prologue shift bound used for `all`/`exs`: `450·(2(d+1))^5 = 14400·(d+1)^5`. -/
+lemma proSA_le_p6 {d : V} (hd : 1 ≤ d) : 450 * p5 (2 * (d + 1)) ≤ 14400 * p6 (d + 1) := by
+  rw [p5_two_mul]
+  calc 450 * (32 * p5 (d + 1)) = 14400 * p5 (d + 1) := by ring
+    _ ≤ 14400 * p6 (d + 1) := mul_le_mul_of_nonneg_left (p5_le_p6 le_add_self) zero_le
+
+lemma proSA_add_le_p5 {Csv d : V} (hd : 1 ≤ d) (hCs : 460803 ≤ Csv) : 450 * p5 (2 * (d + 1)) + 3 ≤ Csv * p5 d := by
+  rw [p5_two_mul]
+  have h1 : p5 (d + 1) ≤ 32 * p5 d := p5_succ_le hd
+  calc 450 * (32 * p5 (d + 1)) + 3 ≤ 450 * (32 * (32 * p5 d)) + 3 * p5 d :=
+        add_le_add (mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left h1 zero_le) zero_le)
+          (le_mul_of_one_le_right zero_le (one_le_p5 hd))
+    _ = 460803 * p5 d := by ring
+    _ ≤ Csv * p5 d := mul_le_mul_of_nonneg_right hCs zero_le
+
+set_option maxHeartbeats 20000000 in
+/-- **The node invariant** (`DESIGN_fragments.md` §6.3 for `VerifyGraph'`): at a node laid out at offset `0`, every
+verification list is applicable at cap `9`, cut-admitting, has at most `Cs·(dlen ρ)^6` eigenvariables, and leaves the
+node's goal fact at `&(k + 1 + shiftsV L)`. The E-room is `Ck·(dlen ρ + 1)^6 ≤ E`. The degree is 6, forced by the
+quintic `shiftsV_proAll_le`/`shiftsV_proExs_le` (see the section docstring). -/
+theorem verifyGraph'_ok : ∃ Cs Ck : ℕ, ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
+    {tbl N N' B' Ww Wl Wc W₁ W₂ W T A Cv E ρ : V},
+    TableOK tbl N → ProTable tbl → NumTableOK T N' B' → Ww = walkPieces → Wl = layoutPieces → Wc = certPieces →
+    W₁ = frag1Pieces → W₂ = frag2Pieces → W = proPieces → AxmTableOK tbl E Ww A Cv → Derivation TAct ρ →
+    ((Ck : ℕ) : V) * p6 (dlen TAct ρ + 1) ≤ E →
+    ∀ L Γ : V, VerifyGraph' Ww Wl Wc W₁ W₂ W T A ρ L → IsFormulaSet LAct Γ → NodeLay Ww Wc T Γ (fstIdx ρ) →
+      ListOK tbl E ((9 : ℕ) : V) Γ L ∧ NoDrop' L ∧ shiftsV L ≤ ((Cs : ℕ) : V) * p6 (dlen TAct ρ) ∧
+      neg LAct (goalFact (^&(len (memberList (fstIdx ρ)) + 1 + shiftsV L)) (bnum (dlen TAct ρ))) ∈ finalCtx Γ L := by
+  refine ⟨500000, 2500000, fun V _ _ tbl N N' B' Ww Wl Wc W₁ W₂ W T A Cv E ρ htbl hP htblN hWw hWl hWc hW₁ hW₂ hWp hA hd ↦ ?_⟩
+  obtain ⟨Csv, hCsv⟩ : ∃ x : V, x = ((500000 : ℕ) : V) := ⟨_, rfl⟩
+  obtain ⟨Ckv, hCkv⟩ : ∃ x : V, x = ((2500000 : ℕ) : V) := ⟨_, rfl⟩
+  rw [← hCsv, ← hCkv]
+  have hCs1 : (1 : V) ≤ Csv := by rw [hCsv]; exact_mod_cast (by norm_num : 1 ≤ 500000)
+  have hCs' : (460803 : V) ≤ Csv := by rw [hCsv]; exact_mod_cast (by norm_num : 460803 ≤ 500000)
+  have hCk : ∀ a : ℕ, a ≤ 2500000 → ((a : ℕ) : V) ≤ Ckv := fun a ha ↦ by rw [hCkv]; exact_mod_cast ha
+  have hCsCk : 5 * Csv ≤ Ckv := by rw [hCsv, hCkv]; exact_mod_cast (by norm_num : 5 * 500000 ≤ 2500000)
+  subst hWw
+  apply Derivation.induction1 𝚷 (T := TAct)
+    (P := fun ρ ↦ Ckv * p6 (dlen TAct ρ + 1) ≤ E → ∀ L Γ : V, VerifyGraph' walkPieces Wl Wc W₁ W₂ W T A ρ L →
+      IsFormulaSet LAct Γ → NodeLay walkPieces Wc T Γ (fstIdx ρ) →
+      ListOK tbl E ((9 : ℕ) : V) Γ L ∧ NoDrop' L ∧ shiftsV L ≤ Csv * p6 (dlen TAct ρ) ∧
+      neg LAct (goalFact (^&(len (memberList (fstIdx ρ)) + 1 + shiftsV L)) (bnum (dlen TAct ρ))) ∈ finalCtx Γ L)
+    (by simp only [VerifyGraph', p6]; definability) hd
+  · -- axL
+    intro s hs p hp hnp hE L Γ hL hΓ hLay
+    rw [VerifyGraph'.axL_iff] at hL; subst hL
+    rw [fstIdx_axL] at hLay ⊢
+    have hD : Derivation TAct (axL s p) := Derivation.axL hs hp hnp
+    have hd1 : 1 ≤ dlen TAct (axL s p) := one_le_dlen hD
+    have hsD : setLen LAct s ≤ dlen TAct (axL s p) := by have := setLen_fstIdx_le_dlen hD; rwa [fstIdx_axL] at this
+    have hkD : len (memberList s) ≤ dlen TAct (axL s p) := le_trans (len_memberList_le_setLen hs) hsD
+    obtain ⟨d, hdd⟩ : ∃ x, x = dlen TAct (axL s p) := ⟨_, rfl⟩
+    rw [← hdd] at hE hd1 hsD hkD
+    have he1 : (1 : V) ≤ d + 1 := le_add_self
+    have hn : 18 * ‖setLen LAct s + 1‖ + 7 ≤ 43 * (d + 1) := by
+      have h1 : ‖setLen LAct s + 1‖ ≤ d + 1 := le_trans (length_le _) (add_le_add hsD (le_refl 1))
+      calc 18 * ‖setLen LAct s + 1‖ + 7 ≤ 18 * (d + 1) + 7 := add_le_add (mul_le_mul_of_nonneg_left h1 zero_le) (le_refl 7)
+        _ ≤ 43 * (d + 1) := le_of_add_eq' (c := 25 * d + 18) (by ring)
+    obtain ⟨ok, nd, sh, goal⟩ := vAxL_ok (D := d) htbl hP htblN hWc hW₁ hs hp hnp hsD
+      (capE hE he1 (hCk 39 (by norm_num)) (by
+        calc 13 * d + 18 * ‖d‖ + 8 ≤ (13 + 18 + 8) * (d + 1) := lin_cap 13 18 8 d
+          _ = ((39 : ℕ) : V) * (d + 1) := by push_cast; ring))
+      (capE hE he1 (hCk 11 (by norm_num)) (by push_cast; exact le_of_add_eq' (c := 3 * d + 8) (by ring)))
+      (capE hE he1 (hCk 3 (by norm_num)) (by
+        push_cast; exact le_trans (add_le_add hkD (le_refl 3)) (le_of_add_eq' (c := 2 * d) (by ring))))
+      (capE hE he1 (hCk 43 (by norm_num)) (by push_cast; exact hn))
+      hΓ hLay.layout
+    refine ⟨ok, nd, ?_, by rw [sh]; exact goal⟩
+    rw [sh, ← hdd]
+    exact one_le_Cs_p6 hCs1 hd1
+  · -- verumIntro
+    intro s hs hv hE L Γ hL hΓ hLay
+    rw [VerifyGraph'.verumIntro_iff] at hL; subst hL
+    rw [fstIdx_verumIntro] at hLay ⊢
+    have hD : Derivation TAct (verumIntro s) := Derivation.verumIntro hs hv
+    have hd1 : 1 ≤ dlen TAct (verumIntro s) := one_le_dlen hD
+    have hsD : setLen LAct s ≤ dlen TAct (verumIntro s) := by
+      have := setLen_fstIdx_le_dlen hD; rwa [fstIdx_verumIntro] at this
+    have hkD : len (memberList s) ≤ dlen TAct (verumIntro s) := le_trans (len_memberList_le_setLen hs) hsD
+    obtain ⟨d, hdd⟩ : ∃ x, x = dlen TAct (verumIntro s) := ⟨_, rfl⟩
+    rw [← hdd] at hE hd1 hsD hkD
+    have he1 : (1 : V) ≤ d + 1 := le_add_self
+    have hn : 18 * ‖setLen LAct s + 1‖ + 7 ≤ 43 * (d + 1) := by
+      have h1 : ‖setLen LAct s + 1‖ ≤ d + 1 := le_trans (length_le _) (add_le_add hsD (le_refl 1))
+      calc 18 * ‖setLen LAct s + 1‖ + 7 ≤ 18 * (d + 1) + 7 := add_le_add (mul_le_mul_of_nonneg_left h1 zero_le) (le_refl 7)
+        _ ≤ 43 * (d + 1) := le_of_add_eq' (c := 25 * d + 18) (by ring)
+    obtain ⟨ok, nd, sh, goal⟩ := vVerum_ok (D := d) htbl hP htblN hWc hW₁ hs hv hsD
+      (capE hE he1 (hCk 9 (by norm_num)) (by push_cast; exact le_of_add_eq' (c := 3 * d + 6) (by ring)))
+      (capE hE he1 (hCk 3 (by norm_num)) (by
+        push_cast; exact le_trans (add_le_add hkD (le_refl 3)) (le_of_add_eq' (c := 2 * d) (by ring))))
+      (capE hE he1 (hCk 43 (by norm_num)) (by push_cast; exact hn))
+      hΓ hLay.layout
+    refine ⟨ok, nd, ?_, by rw [sh]; exact goal⟩
+    rw [sh, ← hdd]
+    exact one_le_Cs_p6 hCs1 hd1
+  · -- andIntro
+    intro s hs p q dp dq hpq hdp hdq ih₁ ih₂ hE L Γ hL hΓ hLay
+    rw [VerifyGraph'.andIntro_iff] at hL
+    obtain ⟨L₁, -, hL₁, L₂, -, hL₂, rfl⟩ := hL
+    rw [fstIdx_andIntro] at hLay ⊢
+    have hD : Derivation TAct (andIntro s p q dp dq) := Derivation.andIntro hpq hdp hdq
+    have hd1 : 1 ≤ dlen TAct (andIntro s p q dp dq) := one_le_dlen hD
+    have hsD : setLen LAct s ≤ dlen TAct (andIntro s p q dp dq) := by
+      have := setLen_fstIdx_le_dlen hD; rwa [fstIdx_andIntro] at this
+    have hc₁D := setLen_child_le_dlen_andIntro_left hD
+    have hc₂D := setLen_child_le_dlen_andIntro_right hD
+    have hy₁ := dlen_dp_succ_le_andIntro hD
+    have hy₂ := dlen_dq_succ_le_andIntro hD
+    have hdl := dlen_andIntro hD
+    obtain ⟨d, hdd⟩ : ∃ x, x = dlen TAct (andIntro s p q dp dq) := ⟨_, rfl⟩
+    rw [← hdd] at hE hd1 hsD hc₁D hc₂D hy₁ hy₂ hdl
+    obtain ⟨y₁, hy₁d⟩ : ∃ x, x = dlen TAct dp := ⟨_, rfl⟩
+    obtain ⟨y₂, hy₂d⟩ : ∃ x, x = dlen TAct dq := ⟨_, rfl⟩
+    rw [← hy₁d] at hy₁ hdl; rw [← hy₂d] at hy₂ hdl
+    have he1 : (1 : V) ≤ d + 1 := le_add_self
+    have hm₁D : y₁ ≤ d := le_trans le_self_add hy₁
+    have hm₂D : y₂ ≤ d := le_trans le_self_add hy₂
+    have hch₁ : ChildOK tbl Wc T E L₁ dp (Csv * p6 y₁) := fun Γ' hΓ' hLay' ↦ by
+      rw [hy₁d]
+      exact ih₁ (le_trans (child_bound (by rw [← hy₁d]; exact le_trans hy₁ le_self_add)) hE) L₁ Γ' hL₁ hΓ' hLay'
+    have hch₂ : ChildOK tbl Wc T E L₂ dq (Csv * p6 y₂) := fun Γ' hΓ' hLay' ↦ by
+      rw [hy₂d]
+      exact ih₂ (le_trans (child_bound (by rw [← hy₂d]; exact le_trans hy₂ le_self_add)) hE) L₂ Γ' hL₂ hΓ' hLay'
+    have hlin : 60 * d + 18 * ‖d‖ + 60 ≤ 138 * p6 (d + 1) := by
+      calc 60 * d + 18 * ‖d‖ + 60 ≤ (60 + 18 + 60) * (d + 1) := lin_cap 60 18 60 d
+        _ = 138 * (d + 1) := by ring
+        _ ≤ 138 * p6 (d + 1) := mul_le_mul_of_nonneg_left (le_p6_self he1) zero_le
+    have h138 : (138 : V) ≤ 2 * Csv := by rw [hCsv]; exact_mod_cast (by norm_num : 138 ≤ 2 * 500000)
+    obtain ⟨ok, nd, sh, goal⟩ := vAnd_ok (D := d) htbl hP htblN hWl hWc hWp hW₁ hs hpq hdp hdq hsD hc₁D hc₂D
+      (by rw [← hy₁d]; exact hm₁D) (by rw [← hy₂d]; exact hm₂D)
+      (capE6 hE hCsCk (by
+        calc 60 * d + 18 * ‖d‖ + Csv * p6 y₁ + 2 * (Csv * p6 y₂) + 60
+            = (60 * d + 18 * ‖d‖ + 60) + Csv * p6 y₁ + 2 * (Csv * p6 y₂) := by ring
+          _ ≤ 138 * p6 (d + 1) + Csv * p6 (d + 1) + 2 * (Csv * p6 (d + 1)) :=
+              add_le_add (add_le_add hlin (child_bound (le_trans hm₁D le_self_add)))
+                (mul_le_mul_of_nonneg_left (child_bound (le_trans hm₂D le_self_add)) zero_le)
+          _ = (138 + 3 * Csv) * p6 (d + 1) := by ring
+          _ ≤ (2 * Csv + 3 * Csv) * p6 (d + 1) := mul_le_mul_of_nonneg_right (add_le_add h138 (le_refl _)) zero_le
+          _ = 5 * Csv * p6 (d + 1) := by ring))
+      hΓ hLay hch₁ hch₂
+    refine ⟨ok, nd, ?_, goal⟩
+    rw [← hdd]
+    refine le_trans sh ?_
+    have hdeq : d = y₁ + y₂ + (setLen LAct s + 1) := by rw [hdl]; ring
+    have hX : 12 * d + 9 ≤ Csv * p5 d := lin_le_p5 hd1 (by
+      rw [hCsv]; exact_mod_cast (by norm_num : 12 + 9 ≤ 500000))
+    calc 12 * d + Csv * p6 y₁ + Csv * p6 y₂ + 9 = (12 * d + 9) + Csv * p6 y₁ + Csv * p6 y₂ := by ring
+      _ ≤ Csv * p6 d := rec2 le_add_self hdeq hX
+  · -- orIntro
+    intro s hs p q d' hpq hd' ih hE L Γ hL hΓ hLay
+    rw [VerifyGraph'.orIntro_iff] at hL
+    obtain ⟨L', -, hL', rfl⟩ := hL
+    rw [fstIdx_orIntro] at hLay ⊢
+    have hD : Derivation TAct (orIntro s p q d') := Derivation.orIntro hpq hd'
+    have hd1 : 1 ≤ dlen TAct (orIntro s p q d') := one_le_dlen hD
+    have hsD : setLen LAct s ≤ dlen TAct (orIntro s p q d') := by
+      have := setLen_fstIdx_le_dlen hD; rwa [fstIdx_orIntro] at this
+    have hcD := setLen_child_le_dlen_orIntro hD
+    have hy := dlen_d_succ_le_orIntro hD
+    have hdl := dlen_orIntro hD
+    obtain ⟨d, hdd⟩ : ∃ x, x = dlen TAct (orIntro s p q d') := ⟨_, rfl⟩
+    rw [← hdd] at hE hd1 hsD hcD hy hdl
+    obtain ⟨y, hyd⟩ : ∃ x, x = dlen TAct d' := ⟨_, rfl⟩
+    rw [← hyd] at hy hdl
+    have he1 : (1 : V) ≤ d + 1 := le_add_self
+    have hmD : y ≤ d := le_trans le_self_add hy
+    have hch : ChildOK tbl Wc T E L' d' (Csv * p6 y) := fun Γ' hΓ' hLay' ↦ by
+      rw [hyd]
+      exact ih (le_trans (child_bound (by rw [← hyd]; exact le_trans hy le_self_add)) hE) L' Γ' hL' hΓ' hLay'
+    have hlin : 40 * d + 18 * ‖d‖ + 40 ≤ 98 * p6 (d + 1) := by
+      calc 40 * d + 18 * ‖d‖ + 40 ≤ (40 + 18 + 40) * (d + 1) := lin_cap 40 18 40 d
+        _ = 98 * (d + 1) := by ring
+        _ ≤ 98 * p6 (d + 1) := mul_le_mul_of_nonneg_left (le_p6_self he1) zero_le
+    have h98 : (98 : V) ≤ 4 * Csv := by rw [hCsv]; exact_mod_cast (by norm_num : 98 ≤ 4 * 500000)
+    obtain ⟨ok, nd, sh, goal⟩ := vOr_ok (D := d) htbl hP htblN hWl hWc hWp hW₁ hs hpq hd' hsD hcD (by rw [← hyd]; exact hmD)
+      (capE6 hE hCsCk (by
+        calc 40 * d + 18 * ‖d‖ + Csv * p6 y + 40 = (40 * d + 18 * ‖d‖ + 40) + Csv * p6 y := by ring
+          _ ≤ 98 * p6 (d + 1) + Csv * p6 (d + 1) := add_le_add hlin (child_bound (le_trans hmD le_self_add))
+          _ = (98 + Csv) * p6 (d + 1) := by ring
+          _ ≤ (4 * Csv + Csv) * p6 (d + 1) := mul_le_mul_of_nonneg_right (add_le_add h98 (le_refl _)) zero_le
+          _ = 5 * Csv * p6 (d + 1) := by ring))
+      hΓ hLay hch
+    refine ⟨ok, nd, ?_, goal⟩
+    rw [← hdd]
+    refine le_trans sh ?_
+    have hdeq : d = y + (setLen LAct s + 1) := by rw [hdl]; ring
+    have hX : 12 * d + 7 ≤ Csv * p5 d := lin_le_p5 hd1 (by
+      rw [hCsv]; exact_mod_cast (by norm_num : 12 + 7 ≤ 500000))
+    calc 12 * d + Csv * p6 y + 7 = (12 * d + 7) + Csv * p6 y := by ring
+      _ ≤ Csv * p6 d := rec1 le_add_self hdeq hX
+  · -- allIntro
+    intro s hs p d' hr hd' ih hE L Γ hL hΓ hLay
+    rw [VerifyGraph'.allIntro_iff] at hL
+    obtain ⟨L', -, hL', rfl⟩ := hL
+    rw [fstIdx_allIntro] at hLay ⊢
+    have hD : Derivation TAct (allIntro s p d') := Derivation.allIntro hr hd'
+    have hd1 : 1 ≤ dlen TAct (allIntro s p d') := one_le_dlen hD
+    have hsD : setLen LAct s ≤ dlen TAct (allIntro s p d') := by
+      have := setLen_fstIdx_le_dlen hD; rwa [fstIdx_allIntro] at this
+    have hcD := setLen_child_le_dlen_allIntro hD
+    have hy := dlen_d_succ_le_allIntro hD
+    have hdl := dlen_allIntro hD
+    have hp1 : IsSemiformula LAct 1 p := by have := IsSemiformula.all.mp (hs _ hr); simpa using this
+    have hspD : formulaLen LAct (shift LAct p) ≤ 2 * dlen TAct (allIntro s p d') := by
+      refine le_trans (formulaLen_shift_le hp1) (mul_le_mul_of_nonneg_left ?_ zero_le)
+      have := formulaLen_all_le_dlen_allIntro hD
+      rw [formulaLen_all hp1.isUFormula] at this
+      exact le_trans le_self_add this
+    obtain ⟨d, hdd⟩ : ∃ x, x = dlen TAct (allIntro s p d') := ⟨_, rfl⟩
+    rw [← hdd] at hE hd1 hsD hcD hy hdl hspD
+    obtain ⟨y, hyd⟩ : ∃ x, x = dlen TAct d' := ⟨_, rfl⟩
+    rw [← hyd] at hy hdl
+    have he1 : (1 : V) ≤ d + 1 := le_add_self
+    have hmD : y ≤ d := le_trans le_self_add hy
+    have hch : ChildOK tbl Wc T E L' d' (Csv * p6 y) := fun Γ' hΓ' hLay' ↦ by
+      rw [hyd]
+      exact ih (le_trans (child_bound (by rw [← hyd]; exact le_trans hy le_self_add)) hE) L' Γ' hL' hΓ' hLay'
+    obtain ⟨D, hDe⟩ : ∃ x : V, x = 2 * d := ⟨_, rfl⟩
+    have hDd : d ≤ D := by rw [hDe]; exact le_of_add_eq' (c := d) (by ring)
+    have hD0 : D ≤ 2 * (d + 1) := le_of_add_eq' (c := 2) (by rw [hDe]; ring)
+    have hD1 : 1 + D ≤ 2 * (d + 1) := le_of_add_eq' (c := 1) (by rw [hDe]; ring)
+    have hD2 : 1 + D + 1 ≤ 2 * (d + 1) := le_of_add_eq' (c := 0) (by rw [hDe]; ring)
+    have hD3 : D + 1 ≤ 2 * (d + 1) := le_of_add_eq' (c := 1) (by rw [hDe]; ring)
+    have hSA : shiftsV (proAll walkPieces Wl Wc W T s p 0) ≤ 450 * p5 (2 * (d + 1)) := by
+      refine le_trans (shiftsV_proAll_le htbl hP hWl hWc walkPieces W T 0 hs hp1 hr (le_trans hsD hDd)
+        (le_trans hcD hDd) (by rw [hDe]; exact hspD)) ?_
+      rw [pow5_eq_p5]
+      exact mul_le_mul_of_nonneg_left (p5_mono hD3) zero_le
+    have hlin : 40 * D + 18 * ‖D‖ + 40 ≤ 196 * p6 (d + 1) := by
+      calc 40 * D + 18 * ‖D‖ + 40 ≤ (40 + 18 + 40) * (D + 1) := lin_cap 40 18 40 D
+        _ ≤ (40 + 18 + 40) * (2 * (d + 1)) := mul_le_mul_of_nonneg_left hD3 zero_le
+        _ = 196 * (d + 1) := by ring
+        _ ≤ 196 * p6 (d + 1) := mul_le_mul_of_nonneg_left (le_p6_self he1) zero_le
+    have h14596 : (14596 : V) ≤ 4 * Csv := by rw [hCsv]; exact_mod_cast (by norm_num : 14596 ≤ 4 * 500000)
+    have hEQ : 2 * ((1 + D) * (1 + D + 1)) * (D + 1) + 4 * D + 11 ≤ 27 * p6 (d + 1) := by
+      have h1 := quad_cap he1 hD1 hD2 hD3
+      have h2 : 4 * D + 11 ≤ 11 * (d + 1) := le_of_add_eq' (c := 3 * d) (by rw [hDe]; ring)
+      calc 2 * ((1 + D) * (1 + D + 1)) * (D + 1) + 4 * D + 11
+          = 2 * ((1 + D) * (1 + D + 1)) * (D + 1) + (4 * D + 11) := by ring
+        _ ≤ 2 * 2 * 2 * 2 * p6 (d + 1) + 11 * (d + 1) := add_le_add h1 h2
+        _ ≤ 2 * 2 * 2 * 2 * p6 (d + 1) + 11 * p6 (d + 1) :=
+            add_le_add (le_refl _) (mul_le_mul_of_nonneg_left (le_p6_self he1) zero_le)
+        _ = 27 * p6 (d + 1) := by ring
+    have hiE : 0 + 2 * ((1 + D) * (1 + D + 1)) * D + 40 * D + 20 ≤ 96 * p6 (d + 1) := by
+      have h1 := quad_cap he1 hD1 hD2 hD0
+      have h2 : 40 * D + 20 ≤ 80 * (d + 1) := le_of_add_eq' (c := 60) (by rw [hDe]; ring)
+      calc 0 + 2 * ((1 + D) * (1 + D + 1)) * D + 40 * D + 20 = 2 * ((1 + D) * (1 + D + 1)) * D + (40 * D + 20) := by ring
+        _ ≤ 2 * 2 * 2 * 2 * p6 (d + 1) + 80 * (d + 1) := add_le_add h1 h2
+        _ ≤ 2 * 2 * 2 * 2 * p6 (d + 1) + 80 * p6 (d + 1) :=
+            add_le_add (le_refl _) (mul_le_mul_of_nonneg_left (le_p6_self he1) zero_le)
+        _ = 96 * p6 (d + 1) := by ring
+    obtain ⟨ok, nd, sh, goal⟩ := vAll_ok (D := D) htbl hP htblN hWl hWc hWp hW₂ hs hr hd' (le_trans hsD hDd)
+      (le_trans hcD hDd) (by rw [hDe]; exact hspD) (by rw [← hyd]; exact le_trans hmD hDd) hSA
+      (capE6 hE hCsCk (by
+        calc 450 * p5 (2 * (d + 1)) + 40 * D + 18 * ‖D‖ + Csv * p6 y + 40
+            = 450 * p5 (2 * (d + 1)) + (40 * D + 18 * ‖D‖ + 40) + Csv * p6 y := by ring
+          _ ≤ 14400 * p6 (d + 1) + 196 * p6 (d + 1) + Csv * p6 (d + 1) :=
+              add_le_add (add_le_add (proSA_le_p6 hd1) hlin) (child_bound (le_trans hmD le_self_add))
+          _ = (14596 + Csv) * p6 (d + 1) := by ring
+          _ ≤ (4 * Csv + Csv) * p6 (d + 1) := mul_le_mul_of_nonneg_right (add_le_add h14596 (le_refl _)) zero_le
+          _ = 5 * Csv * p6 (d + 1) := by ring))
+      (capE6 hE (by have := hCk 27 (by norm_num); push_cast at this; exact this) hEQ)
+      (capE6 hE (by have := hCk 96 (by norm_num); push_cast at this; exact this) hiE)
+      hΓ hLay hch
+    refine ⟨ok, nd, ?_, goal⟩
+    rw [← hdd]
+    refine le_trans sh ?_
+    have hdeq : d = y + (setLen LAct s + 1) := by rw [hdl]; ring
+    calc 450 * p5 (2 * (d + 1)) + Csv * p6 y + 3 = (450 * p5 (2 * (d + 1)) + 3) + Csv * p6 y := by ring
+      _ ≤ Csv * p6 d := rec1 le_add_self hdeq (proSA_add_le_p5 hd1 hCs')
+  · -- exsIntro
+    intro s hs p t d' hr ht hd' ih hE L Γ hL hΓ hLay
+    rw [VerifyGraph'.exsIntro_iff] at hL
+    obtain ⟨L', -, hL', rfl⟩ := hL
+    rw [fstIdx_exsIntro] at hLay ⊢
+    have hD : Derivation TAct (exsIntro s p t d') := Derivation.exsIntro hr ht hd'
+    have hd1 : 1 ≤ dlen TAct (exsIntro s p t d') := one_le_dlen hD
+    have hsD : setLen LAct s ≤ dlen TAct (exsIntro s p t d') := by
+      have := setLen_fstIdx_le_dlen hD; rwa [fstIdx_exsIntro] at this
+    have hcD := setLen_child_le_dlen_exsIntro hD
+    have htD := termLen_le_dlen_exsIntro hD
+    have hy := dlen_d_succ_le_exsIntro hD
+    have hdl := dlen_exsIntro hD
+    have hp1 : IsSemiformula LAct 1 p := by have := IsSemiformula.exs.mp (hs _ hr); simpa using this
+    obtain ⟨d, hdd⟩ : ∃ x, x = dlen TAct (exsIntro s p t d') := ⟨_, rfl⟩
+    rw [← hdd] at hE hd1 hsD hcD htD hy hdl
+    obtain ⟨y, hyd⟩ : ∃ x, x = dlen TAct d' := ⟨_, rfl⟩
+    rw [← hyd] at hy hdl
+    have he1 : (1 : V) ≤ d + 1 := le_add_self
+    have hmD : y ≤ d := le_trans le_self_add hy
+    have hch : ChildOK tbl Wc T E L' d' (Csv * p6 y) := fun Γ' hΓ' hLay' ↦ by
+      rw [hyd]
+      exact ih (le_trans (child_bound (by rw [← hyd]; exact le_trans hy le_self_add)) hE) L' Γ' hL' hΓ' hLay'
+    obtain ⟨D, hDe⟩ : ∃ x : V, x = 2 * d := ⟨_, rfl⟩
+    have hDd : d ≤ D := by rw [hDe]; exact le_of_add_eq' (c := d) (by ring)
+    have hD0 : D ≤ 2 * (d + 1) := le_of_add_eq' (c := 2) (by rw [hDe]; ring)
+    have hD1 : 1 + D ≤ 2 * (d + 1) := le_of_add_eq' (c := 1) (by rw [hDe]; ring)
+    have hD2 : 1 + D + D ≤ 4 * (d + 1) := le_of_add_eq' (c := 3) (by rw [hDe]; ring)
+    have hD3 : D + 1 ≤ 2 * (d + 1) := le_of_add_eq' (c := 1) (by rw [hDe]; ring)
+    have hSA : shiftsV (proExs walkPieces Wl Wc W T s p t 0) ≤ 450 * p5 (2 * (d + 1)) := by
+      refine le_trans (shiftsV_proExs_le htbl hP hWl hWc walkPieces W T 0 hs hp1 hr ht (le_trans hsD hDd)
+        (le_trans hcD hDd) (le_trans htD hDd)) ?_
+      rw [pow5_eq_p5]
+      have h310 : (310 : V) ≤ 450 := by exact_mod_cast (by norm_num : (310 : ℕ) ≤ 450)
+      exact mul_le_mul h310 (p5_mono hD3) zero_le zero_le
+    have hlin : 60 * D + 18 * ‖D‖ + 60 ≤ 276 * p6 (d + 1) := by
+      calc 60 * D + 18 * ‖D‖ + 60 ≤ (60 + 18 + 60) * (D + 1) := lin_cap 60 18 60 D
+        _ ≤ (60 + 18 + 60) * (2 * (d + 1)) := mul_le_mul_of_nonneg_left hD3 zero_le
+        _ = 276 * (d + 1) := by ring
+        _ ≤ 276 * p6 (d + 1) := mul_le_mul_of_nonneg_left (le_p6_self he1) zero_le
+    have h29076 : (29076 : V) ≤ 3 * Csv := by rw [hCsv]; exact_mod_cast (by norm_num : 29076 ≤ 3 * 500000)
+    have hEQ : 2 * ((1 + D) * (1 + D + D)) * (D + 1) + 4 * D + 11 ≤ 43 * p6 (d + 1) := by
+      have h1 := quad_cap he1 hD1 hD2 hD3
+      have h2 : 4 * D + 11 ≤ 11 * (d + 1) := le_of_add_eq' (c := 3 * d) (by rw [hDe]; ring)
+      calc 2 * ((1 + D) * (1 + D + D)) * (D + 1) + 4 * D + 11
+          = 2 * ((1 + D) * (1 + D + D)) * (D + 1) + (4 * D + 11) := by ring
+        _ ≤ 2 * 2 * 4 * 2 * p6 (d + 1) + 11 * (d + 1) := add_le_add h1 h2
+        _ ≤ 2 * 2 * 4 * 2 * p6 (d + 1) + 11 * p6 (d + 1) :=
+            add_le_add (le_refl _) (mul_le_mul_of_nonneg_left (le_p6_self he1) zero_le)
+        _ = 43 * p6 (d + 1) := by ring
+    have hiE : 0 + 2 * ((1 + D) * (1 + D + D)) * D + 40 * D + 20 ≤ 112 * p6 (d + 1) := by
+      have h1 := quad_cap he1 hD1 hD2 hD0
+      have h2 : 40 * D + 20 ≤ 80 * (d + 1) := le_of_add_eq' (c := 60) (by rw [hDe]; ring)
+      calc 0 + 2 * ((1 + D) * (1 + D + D)) * D + 40 * D + 20 = 2 * ((1 + D) * (1 + D + D)) * D + (40 * D + 20) := by ring
+        _ ≤ 2 * 2 * 4 * 2 * p6 (d + 1) + 80 * (d + 1) := add_le_add h1 h2
+        _ ≤ 2 * 2 * 4 * 2 * p6 (d + 1) + 80 * p6 (d + 1) :=
+            add_le_add (le_refl _) (mul_le_mul_of_nonneg_left (le_p6_self he1) zero_le)
+        _ = 112 * p6 (d + 1) := by ring
+    obtain ⟨ok, nd, sh, goal⟩ := vExs_ok (D := D) htbl hP htblN hWl hWc hWp hW₂ hs hr ht hd' (le_trans hsD hDd)
+      (le_trans hcD hDd) (le_trans htD hDd) (by rw [← hyd]; exact le_trans hmD hDd) hSA
+      (capE6 hE hCsCk (by
+        calc 2 * (450 * p5 (2 * (d + 1))) + 60 * D + 18 * ‖D‖ + 2 * (Csv * p6 y) + 60
+            = 2 * (450 * p5 (2 * (d + 1))) + (60 * D + 18 * ‖D‖ + 60) + 2 * (Csv * p6 y) := by ring
+          _ ≤ 2 * (14400 * p6 (d + 1)) + 276 * p6 (d + 1) + 2 * (Csv * p6 (d + 1)) :=
+              add_le_add (add_le_add (mul_le_mul_of_nonneg_left (proSA_le_p6 hd1) zero_le) hlin)
+                (mul_le_mul_of_nonneg_left (child_bound (le_trans hmD le_self_add)) zero_le)
+          _ = (29076 + 2 * Csv) * p6 (d + 1) := by ring
+          _ ≤ (3 * Csv + 2 * Csv) * p6 (d + 1) := mul_le_mul_of_nonneg_right (add_le_add h29076 (le_refl _)) zero_le
+          _ = 5 * Csv * p6 (d + 1) := by ring))
+      (capE6 hE (by have := hCk 43 (by norm_num); push_cast at this; exact this) hEQ)
+      (capE6 hE (by have := hCk 112 (by norm_num); push_cast at this; exact this) hiE)
+      hΓ hLay hch
+    refine ⟨ok, nd, ?_, goal⟩
+    rw [← hdd]
+    refine le_trans sh ?_
+    have hdeq : d = y + (setLen LAct s + termLen LAct t + 1) := by rw [hdl]; ring
+    calc 450 * p5 (2 * (d + 1)) + Csv * p6 y + 3 = (450 * p5 (2 * (d + 1)) + 3) + Csv * p6 y := by ring
+      _ ≤ Csv * p6 d := rec1 le_add_self hdeq (proSA_add_le_p5 hd1 hCs')
+  · -- wkRule
+    intro s hs d' hsub hd' ih hE L Γ hL hΓ hLay
+    rw [VerifyGraph'.wkRule_iff] at hL
+    obtain ⟨L', -, hL', rfl⟩ := hL
+    rw [fstIdx_wkRule] at hLay ⊢
+    have hD : Derivation TAct (wkRule s d') := Derivation.wkRule hs hsub ⟨rfl, hd'⟩
+    have hd1 : 1 ≤ dlen TAct (wkRule s d') := one_le_dlen hD
+    have hsD : setLen LAct s ≤ dlen TAct (wkRule s d') := by
+      have := setLen_fstIdx_le_dlen hD; rwa [fstIdx_wkRule] at this
+    have hcD := setLen_child_le_dlen_wkRule hD
+    have hy := dlen_d_succ_le_wkRule hD
+    have hdl := dlen_wkRule hD
+    obtain ⟨d, hdd⟩ : ∃ x, x = dlen TAct (wkRule s d') := ⟨_, rfl⟩
+    rw [← hdd] at hE hd1 hsD hcD hy hdl
+    obtain ⟨y, hyd⟩ : ∃ x, x = dlen TAct d' := ⟨_, rfl⟩
+    rw [← hyd] at hy hdl
+    have he1 : (1 : V) ≤ d + 1 := le_add_self
+    have hmD : y ≤ d := le_trans le_self_add hy
+    have hch : ChildOK tbl Wc T E L' d' (Csv * p6 y) := fun Γ' hΓ' hLay' ↦ by
+      rw [hyd]
+      exact ih (le_trans (child_bound (by rw [← hyd]; exact le_trans hy le_self_add)) hE) L' Γ' hL' hΓ' hLay'
+    have hlin : 40 * d + 18 * ‖d‖ + 40 ≤ 98 * p6 (d + 1) := by
+      calc 40 * d + 18 * ‖d‖ + 40 ≤ (40 + 18 + 40) * (d + 1) := lin_cap 40 18 40 d
+        _ = 98 * (d + 1) := by ring
+        _ ≤ 98 * p6 (d + 1) := mul_le_mul_of_nonneg_left (le_p6_self he1) zero_le
+    have h98 : (98 : V) ≤ 4 * Csv := by rw [hCsv]; exact_mod_cast (by norm_num : 98 ≤ 4 * 500000)
+    obtain ⟨ok, nd, sh, goal⟩ := vWk_ok (D := d) htbl hP htblN hWl hWc hWp hW₁ hs hd' hsub hsD hcD (by rw [← hyd]; exact hmD)
+      (capE6 hE hCsCk (by
+        calc 40 * d + 18 * ‖d‖ + Csv * p6 y + 40 = (40 * d + 18 * ‖d‖ + 40) + Csv * p6 y := by ring
+          _ ≤ 98 * p6 (d + 1) + Csv * p6 (d + 1) := add_le_add hlin (child_bound (le_trans hmD le_self_add))
+          _ = (98 + Csv) * p6 (d + 1) := by ring
+          _ ≤ (4 * Csv + Csv) * p6 (d + 1) := mul_le_mul_of_nonneg_right (add_le_add h98 (le_refl _)) zero_le
+          _ = 5 * Csv * p6 (d + 1) := by ring))
+      hΓ hLay hch
+    refine ⟨ok, nd, ?_, goal⟩
+    rw [← hdd]
+    refine le_trans sh ?_
+    have hdeq : d = y + (setLen LAct s + 1) := by rw [hdl]; ring
+    have hX : 7 * d + 8 ≤ Csv * p5 d := lin_le_p5 hd1 (by
+      rw [hCsv]; exact_mod_cast (by norm_num : 7 + 8 ≤ 500000))
+    calc 7 * d + Csv * p6 y + 8 = (7 * d + 8) + Csv * p6 y := by ring
+      _ ≤ Csv * p6 d := rec1 le_add_self hdeq hX
+  · -- shiftRule
+    intro s hs d' hsc hd' ih hE L Γ hL hΓ hLay
+    rw [VerifyGraph'.shiftRule_iff] at hL
+    obtain ⟨L', -, hL', rfl⟩ := hL
+    rw [fstIdx_shiftRule] at hLay ⊢
+    have hD : Derivation TAct (shiftRule s d') := by
+      have := Derivation.shiftRule (T := TAct) ⟨rfl, hd'⟩; rwa [← hsc] at this
+    have hd1 : 1 ≤ dlen TAct (shiftRule s d') := one_le_dlen hD
+    have hsD : setLen LAct s ≤ dlen TAct (shiftRule s d') := by
+      have := setLen_fstIdx_le_dlen hD; rwa [fstIdx_shiftRule] at this
+    have hcD := setLen_child_le_dlen_shiftRule hD
+    have hy := dlen_d_succ_le_shiftRule hD
+    have hdl := dlen_shiftRule hD
+    obtain ⟨d, hdd⟩ : ∃ x, x = dlen TAct (shiftRule s d') := ⟨_, rfl⟩
+    rw [← hdd] at hE hd1 hsD hcD hy hdl
+    obtain ⟨y, hyd⟩ : ∃ x, x = dlen TAct d' := ⟨_, rfl⟩
+    rw [← hyd] at hy hdl
+    have he1 : (1 : V) ≤ d + 1 := le_add_self
+    have hmD : y ≤ d := le_trans le_self_add hy
+    have hch : ChildOK tbl Wc T E L' d' (Csv * p6 y) := fun Γ' hΓ' hLay' ↦ by
+      rw [hyd]
+      exact ih (le_trans (child_bound (by rw [← hyd]; exact le_trans hy le_self_add)) hE) L' Γ' hL' hΓ' hLay'
+    have hlin : 40 * d + 18 * ‖d‖ + 40 ≤ 98 * p6 (d + 1) := by
+      calc 40 * d + 18 * ‖d‖ + 40 ≤ (40 + 18 + 40) * (d + 1) := lin_cap 40 18 40 d
+        _ = 98 * (d + 1) := by ring
+        _ ≤ 98 * p6 (d + 1) := mul_le_mul_of_nonneg_left (le_p6_self he1) zero_le
+    have h98 : (98 : V) ≤ 4 * Csv := by rw [hCsv]; exact_mod_cast (by norm_num : 98 ≤ 4 * 500000)
+    obtain ⟨ok, nd, sh, goal⟩ := vShift_ok (D := d) htbl hP htblN hWl hWc hWp hW₂ hs hd' hsc hsD hcD (by rw [← hyd]; exact hmD)
+      (capE6 hE hCsCk (by
+        calc 40 * d + 18 * ‖d‖ + Csv * p6 y + 40 = (40 * d + 18 * ‖d‖ + 40) + Csv * p6 y := by ring
+          _ ≤ 98 * p6 (d + 1) + Csv * p6 (d + 1) := add_le_add hlin (child_bound (le_trans hmD le_self_add))
+          _ = (98 + Csv) * p6 (d + 1) := by ring
+          _ ≤ (4 * Csv + Csv) * p6 (d + 1) := mul_le_mul_of_nonneg_right (add_le_add h98 (le_refl _)) zero_le
+          _ = 5 * Csv * p6 (d + 1) := by ring))
+      hΓ hLay hch
+    refine ⟨ok, nd, ?_, goal⟩
+    rw [← hdd]
+    refine le_trans sh ?_
+    have hdeq : d = y + (setLen LAct s + 1) := by rw [hdl]; ring
+    have hX : 7 * d + 8 ≤ Csv * p5 d := lin_le_p5 hd1 (by
+      rw [hCsv]; exact_mod_cast (by norm_num : 7 + 8 ≤ 500000))
+    calc 7 * d + Csv * p6 y + 8 = (7 * d + 8) + Csv * p6 y := by ring
+      _ ≤ Csv * p6 d := rec1 le_add_self hdeq hX
+  · -- cutRule
+    intro s hs p d₁ d₂ hd₁ hd₂ ih₁ ih₂ hE L Γ hL hΓ hLay
+    rw [VerifyGraph'.cutRule_iff] at hL
+    obtain ⟨L₁, -, hL₁, L₂, -, hL₂, rfl⟩ := hL
+    rw [fstIdx_cutRule] at hLay ⊢
+    have hD : Derivation TAct (cutRule s p d₁ d₂) := Derivation.cutRule hd₁ hd₂
+    have hd1 : 1 ≤ dlen TAct (cutRule s p d₁ d₂) := one_le_dlen hD
+    have hsD : setLen LAct s ≤ dlen TAct (cutRule s p d₁ d₂) := by
+      have := setLen_fstIdx_le_dlen hD; rwa [fstIdx_cutRule] at this
+    have hc₁D := setLen_child_le_dlen_cutRule_left hD
+    have hc₂D := setLen_child_le_dlen_cutRule_right hD
+    have hy₁ := dlen_d₁_succ_le_cutRule hD
+    have hy₂ := dlen_d₂_succ_le_cutRule hD
+    have hdl := dlen_cutRule hD
+    obtain ⟨d, hdd⟩ : ∃ x, x = dlen TAct (cutRule s p d₁ d₂) := ⟨_, rfl⟩
+    rw [← hdd] at hE hd1 hsD hc₁D hc₂D hy₁ hy₂ hdl
+    obtain ⟨y₁, hy₁d⟩ : ∃ x, x = dlen TAct d₁ := ⟨_, rfl⟩
+    obtain ⟨y₂, hy₂d⟩ : ∃ x, x = dlen TAct d₂ := ⟨_, rfl⟩
+    rw [← hy₁d] at hy₁ hdl; rw [← hy₂d] at hy₂ hdl
+    have he1 : (1 : V) ≤ d + 1 := le_add_self
+    have hm₁D : y₁ ≤ d := le_trans le_self_add hy₁
+    have hm₂D : y₂ ≤ d := le_trans le_self_add hy₂
+    have hch₁ : ChildOK tbl Wc T E L₁ d₁ (Csv * p6 y₁) := fun Γ' hΓ' hLay' ↦ by
+      rw [hy₁d]
+      exact ih₁ (le_trans (child_bound (by rw [← hy₁d]; exact le_trans hy₁ le_self_add)) hE) L₁ Γ' hL₁ hΓ' hLay'
+    have hch₂ : ChildOK tbl Wc T E L₂ d₂ (Csv * p6 y₂) := fun Γ' hΓ' hLay' ↦ by
+      rw [hy₂d]
+      exact ih₂ (le_trans (child_bound (by rw [← hy₂d]; exact le_trans hy₂ le_self_add)) hE) L₂ Γ' hL₂ hΓ' hLay'
+    have hlin : 60 * d + 18 * ‖d‖ + 60 ≤ 138 * p6 (d + 1) := by
+      calc 60 * d + 18 * ‖d‖ + 60 ≤ (60 + 18 + 60) * (d + 1) := lin_cap 60 18 60 d
+        _ = 138 * (d + 1) := by ring
+        _ ≤ 138 * p6 (d + 1) := mul_le_mul_of_nonneg_left (le_p6_self he1) zero_le
+    have h138 : (138 : V) ≤ 2 * Csv := by rw [hCsv]; exact_mod_cast (by norm_num : 138 ≤ 2 * 500000)
+    obtain ⟨ok, nd, sh, goal⟩ := vCut_ok (D := d) htbl hP htblN hWl hWc hWp hW₁ hs hd₁ hd₂ hsD hc₁D hc₂D
+      (by rw [← hy₁d]; exact hm₁D) (by rw [← hy₂d]; exact hm₂D)
+      (capE6 hE hCsCk (by
+        calc 60 * d + 18 * ‖d‖ + Csv * p6 y₁ + 2 * (Csv * p6 y₂) + 60
+            = (60 * d + 18 * ‖d‖ + 60) + Csv * p6 y₁ + 2 * (Csv * p6 y₂) := by ring
+          _ ≤ 138 * p6 (d + 1) + Csv * p6 (d + 1) + 2 * (Csv * p6 (d + 1)) :=
+              add_le_add (add_le_add hlin (child_bound (le_trans hm₁D le_self_add)))
+                (mul_le_mul_of_nonneg_left (child_bound (le_trans hm₂D le_self_add)) zero_le)
+          _ = (138 + 3 * Csv) * p6 (d + 1) := by ring
+          _ ≤ (2 * Csv + 3 * Csv) * p6 (d + 1) := mul_le_mul_of_nonneg_right (add_le_add h138 (le_refl _)) zero_le
+          _ = 5 * Csv * p6 (d + 1) := by ring))
+      hΓ hLay hch₁ hch₂
+    refine ⟨ok, nd, ?_, goal⟩
+    rw [← hdd]
+    refine le_trans sh ?_
+    have hdeq : d = y₁ + y₂ + (setLen LAct s + 1) := by rw [hdl]; ring
+    have hX : 20 * d + 9 ≤ Csv * p5 d := lin_le_p5 hd1 (by
+      rw [hCsv]; exact_mod_cast (by norm_num : 20 + 9 ≤ 500000))
+    calc 20 * d + Csv * p6 y₁ + Csv * p6 y₂ + 9 = (20 * d + 9) + Csv * p6 y₁ + Csv * p6 y₂ := by ring
+      _ ≤ Csv * p6 d := rec2 le_add_self hdeq hX
+  · -- axm
+    intro s hs p hps hpT hE L Γ hL hΓ hLay
+    rw [VerifyGraph'.axm_iff] at hL
+    obtain ⟨pro, -, hmem, rfl⟩ := hL
+    rw [fstIdx_axm] at hLay ⊢
+    obtain ⟨p', -, ip', -, pro', -, heq, hinv⟩ := hA _ hmem
+    obtain ⟨e₁, heq₂⟩ := pair_ext_iff.mp heq
+    obtain ⟨e₂, e₃⟩ := pair_ext_iff.mp heq₂
+    rw [← e₁, ← e₂, ← e₃] at hinv
+    have hD : Derivation TAct (axm s p) := Derivation.axm hs hps hpT
+    have hd1 : 1 ≤ dlen TAct (axm s p) := one_le_dlen hD
+    have hsD : setLen LAct s ≤ dlen TAct (axm s p) := by have := setLen_fstIdx_le_dlen hD; rwa [fstIdx_axm] at this
+    have hkD : len (memberList s) ≤ dlen TAct (axm s p) := le_trans (len_memberList_le_setLen hs) hsD
+    obtain ⟨d, hdd⟩ : ∃ x, x = dlen TAct (axm s p) := ⟨_, rfl⟩
+    rw [← hdd] at hE hd1 hsD hkD
+    have he1 : (1 : V) ≤ d + 1 := le_add_self
+    have hn : 18 * ‖setLen LAct s + 1‖ + 7 ≤ 43 * (d + 1) := by
+      have h1 : ‖setLen LAct s + 1‖ ≤ d + 1 := le_trans (length_le _) (add_le_add hsD (le_refl 1))
+      calc 18 * ‖setLen LAct s + 1‖ + 7 ≤ 18 * (d + 1) + 7 := add_le_add (mul_le_mul_of_nonneg_left h1 zero_le) (le_refl 7)
+        _ ≤ 43 * (d + 1) := le_of_add_eq' (c := 25 * d + 18) (by ring)
+    obtain ⟨ok, nd, sh, goal⟩ := vAxm_ok (D := d) htbl hP htblN hWc hW₂ hs hps hpT hsD
+      (capE hE he1 (hCk 9 (by norm_num)) (by push_cast; exact le_of_add_eq' (c := 3 * d + 6) (by ring)))
+      (capE hE he1 (hCk 3 (by norm_num)) (by
+        push_cast; exact le_trans (add_le_add hkD (le_refl 3)) (le_of_add_eq' (c := 2 * d) (by ring))))
+      (capE hE he1 (hCk 43 (by norm_num)) (by push_cast; exact hn))
+      hΓ hLay.layout hinv
+    refine ⟨ok, nd, ?_, by rw [sh]; exact goal⟩
+    rw [sh, ← hdd]
+    exact one_le_Cs_p6 hCs1 hd1
+
+end glueMain
+
 end ArithS
