@@ -1365,3 +1365,30 @@ the shifted assembler `vAxm'` (node at `is = k+1+σ`, `il = σ`, `ip = memTop s 
 `Assemble.lean` (in flight): §1–§4 committed (`identRoot`, `retargetRoot`, `vList`/`vList_ok` — the
 `ok` half of the kit from the ROOT layout, `Ck = Ck' + 50`); the cost half, the kit instance and
 the conditional theorem pending.
+
+**§11 status — THE SEAM CLOSED (76822d6, a9a4919; census 743, all standard): the recognizer is
+plugged into the recursion and NO NAMED WEAKENING REMAINS in the verification chain.**
+`IndRec` §7: `VarInv w` (every entry a variable `#z`/`&x` with index ≤ position), `varInv_qVec`,
+`varInv_fvarVec`, `termLen_termSubst_le_var`, **`formulaLen_subst_fvarVec_le : |subst (fvarVec m) b|
+≤ |b|`** — the old `Z ≥ |p|(|p|+1)` came from the general `formulaLen_subst_le` (`|b|·(m+1)`); with
+it every atom is `≤ |p| ≤ D`, `Z := D + 1`, and `stageA'/stageB'/axmInd_ok'` are CUBIC (`shiftsV ≤
+100(D+1)³`, `len ≤ 1400(D+1)³`, offset only in E-room). `Verify3.lean`: **`VerifyGraph'` could NOT be
+reused** — its `axm` clause bakes the UNMOVED offset into the assembler (`nodeAxm … (memTop s p 0)`),
+so a shifted `pro` needs `vAxm'` with the node at `is = k+1+σ`, `il = σ`, `ip = memTop s p σ`, hence
+a new fixpoint **`VerifyGraph''`** (nine clauses verbatim); `AxmEntryOK'`/`AxmTableOK'` with the
+INTRINSIC entry bound `entryB Cv p = Cv·(|p|+1)³` (a small leaf deep in a large derivation must fit
+ITS OWN node budget `Cs·(dlen (axm s p))^6` — a root-sized constant would not); `vAxm_ok'`;
+`axmIndOracleC'_of_indRec : IndRecTable tbl → AxmIndOracleC' tbl E 1400` (THE ORACLE DISCHARGED);
+`axmEntry_exists'`; **`verifyGraph''_exists_unconditional : ∃ C, ∀ V …, TableOK tbl N →
+IndRecTable tbl → … → Derivation TAct ρ → Cv·p3(dlen ρ+1) + 6·dlen ρ + 1 ≤ E → ∃ A L, AxmTableOK'
+tbl E Ww A Cv ∧ VerifyGraph'' … A ρ L`** (`IndRecTable ⇒ ProAxmTable ⇒ NumIdTable ⇒ ProTable ⇒
+TopTable` — the ONLY table hypothesis); **`verifyGraph''_ok_pow`** at `m = 6` STILL HOLDS (at the
+leaf `d = setLen s + 1 ≥ |p| + 1`, so `Cv·(|p|+1)³ + 1 ≤ (Cv+1)·d⁶`; the shift constant absorbs
+`Cv`: cap `Ck·(Cv+1)·(dlen ρ+1)^6 ≤ E`). `Verify2.AxmIndOracleC` and `ProAxm.AxmIndOracle` are no
+longer needed anywhere. TRAPS: `exact_mod_cast` under `le_trans` with a free middle term fails
+silently — pin it (`le_trans (b := ((500000 : ℕ) : V)) …`); `add_le_add` on `a + b + c ≤ …` splits
+as `(a+b), c` — write the `calc` with an explicit `ring` reassociation; `hC 1400 …` on a `∀ (V :
+Type)` theorem passes `1400` as `V` — `hC V 1400`; `Γ-[m+1]-Relation₁[V]` is not a notation;
+`Layout.transport` returns `0 + shiftsV S`.
+IN FLIGHT: `Assemble` (switched to Verify3: the cost conjunct, `verifyKit'''_of` with no oracle,
+`KitPackage''' 6`, **`boundedInnerNec_twentyfour`**, **`dupoc_self_coop_unconditional`**).
