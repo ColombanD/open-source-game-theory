@@ -1535,3 +1535,32 @@ not from `node*_ok` (those bundle applicability hypotheses the size glue lacks);
 ring)` after `add_le_add` leaves `ring` a metavariable; `pgrep -f 'bin/lake build'` can match the
 IDE's `lake serve` children — verify with `ps -p`; `goalFact4_le_kitQ` states the QUADRUPLE.
 IN FLIGHT: `Verify5` glue Part 2 (the seven remaining arms + the ten-arm induction).
+
+**§11 status — `Verify5` glue, Part 2: ALL TEN ARMS PROVED, both halves (1d201fe, 1ca4a40, c5c18fc,
+29b1aa8; build 3270, census 861, all standard; every section sentinel-tested).**
+§10 `wk`/`shift` (`len_vWk_eq`/`len_vShift_eq`, `wk_arm_size`/`shift_arm_size`); §11 `or`
+(+ `len_nodeOr`/`len_nodeAnd`/`len_nodeCut`); §12 `and`/`cut` (+ `lenQ_le_layQ`, `lenD_le_layD`,
+`sizeOK_proCutPre_kit`, `sizeOK_cutPro`); §13 `all`/`exs` (+ `len_nodeAll`/`len_nodeExs`). With
+Part 1's `axm`/`axL`/`verumIntro`, **every arm has a size half and a length half.**
+`ArmHyps`/`verifySizeOracle_of_arms` untouched (`Package.lean` consumes them).
+REMAINING: ONLY the `Derivation.induction1 𝚷` recursion threading the ten. Its one unguessable step
+is DE-RISKED by a scratchpad probe: the size motive passes `definability` and the induction opens
+with exactly ten arms in `Verify4`'s order under
+**`(by simp only [VerifyGraph'', p4, kitQ, kitD]; definability) hd`**. THE ONE CONCRETE GAP:
+`len_cutPro` DOES NOT EXIST and must be written first; `len_wkPro`/`len_shiftPro` are branch
+EQUATIONS, not bounds, so they need bound forms too (`len_proIns/proOr/proAll/proExs` bounds do
+exist). `rec1₄`/`rec2₄`/`capE4`/`child_bound4` are stated on bare `V`-terms, so they DO apply to
+`len` as to `shiftsV`. Scale: each arm lemma takes 20–30 hypotheses (E-rooms, layouts, dossiers,
+later contexts) which the glue must construct per arm from the induction binders plus the single
+cap — `verifyGraph''_ok4` spends 560 lines doing that for the SHIFT half alone, and the size half
+adds a `len` recursion; multiple sessions, not one.
+TRAPS (beyond Part 1's eight): `simp only [SizeOK, StepSizeOK]` in the motive is FATAL ("aesop:
+goal 128 was not normalised") — use `VerifyGraph'', p4, kitQ, kitD` only; a context variable
+introduced only in a HYPOTHESIS is autobound AFTER `variable {V …}`, leaving its `V` a metavariable
+("typeclass instance problem is stuck") — bind it in the binder list; `Prologue.sizeOK_proCutPre`
+lands in `(lenQ B' D + Q', lenD N' B' D + D')`, NOT the layout class — instantiate `Q' = D' = 0`
+and route `lenQ ≤ layQ`; the three selectors split on TWO different conditions (`wkPro`/`shiftPro`
+on the empty CHILD, `cutPro` on the empty PARENT); the recovery block's goal fact sits at the
+CHILD's `dlen`, the node's at the PARENT's — two different term-length hypotheses; do not extract
+validated Lean text across files by script (backtick escaping) — write each section out literally.
+IN FLIGHT: `Verify5` Part 3 (`len_cutPro` + the wk/shift bound forms, then the ten-arm induction).
