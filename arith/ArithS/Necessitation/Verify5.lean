@@ -356,4 +356,70 @@ theorem axm_arm_size {Wc W₂ T s p pro B E Cv Cz : V}
 
 end axmArm
 
+
+/-! ## 5. The `axL` and `verumIntro` arms
+
+The two LEAF arms, and the cheapest after `axm`: `vAxL = proAxL ++ fragAxL` and `vVerum = fragVerum` (no prologue
+at all — `Prologue.layout_verum` reads the node's facts straight off the layout). Both fragments are
+`head (four steps) ++ goalTailLeaf (five steps)`, so their lengths are `9` structurally, exactly as `len_nodeAxm`.
+
+The size half needs NO layout class: `proAxL = reidxL (certNeg …)` is HORN-ONLY (`Prologue.proAxL_ok`'s third
+conjunct), so `Cert.sizeOK_of_hornOnly` places it at ANY class, and the fragment goes through
+`Frag1.sizeOK_fragAxL`/`sizeOK_fragVerum` with §4's landing lemmas — `BE_le_kitQ` for the closed `leafFact`,
+`goalFact_le_kitQ` for the goal fact, and §3's `dlen_leafCode_le'` for the `dlen (leafCode …) ≤ D` side condition.
+-/
+
+section leafArms
+
+lemma len_fragAxL (W tblN is il ip inp L n : V) : len (fragAxL W tblN is il ip inp L n) = 9 := by
+  unfold fragAxL fragAxLHead goalTailLeaf dlenLeafSteps
+  rw [len_appendV, len_appendV]
+  simp [len_adjoin]
+  norm_num
+
+lemma len_fragVerum (W tblN is il iv L n : V) : len (fragVerum W tblN is il iv L n) = 9 := by
+  unfold fragVerum fragVerumHead goalTailLeaf dlenLeafSteps
+  rw [len_appendV, len_appendV]
+  simp [len_adjoin]
+  norm_num
+
+/-- **The `axL` arm, length half**: the Horn prologue plus the nine-step fragment. -/
+theorem axL_arm_len (Ww Wc W₁ T s p : V) :
+    len (vAxL Ww Wc W₁ T s p) = len (proAxL Ww Wc T s p 0) + 9 := by
+  unfold vAxL
+  rw [len_appendV, len_fragAxL]
+
+/-- **The `verumIntro` arm, length half**: the list IS the fragment. -/
+theorem verum_arm_len (Ww Wc W₁ T s : V) : len (vVerum Ww Wc W₁ T s) = 9 := by
+  unfold vVerum
+  rw [len_fragVerum]
+
+/-- **The `axL` arm, size half**, given the prologue's `HornOnly` (`Prologue.proAxL_ok`). -/
+theorem axL_arm_size {Ww Wc W₁ T s p B E Cz L n is il ip inp : V} (hW₁ : W₁ = frag1Pieces)
+    (hho : HornOnly (proAxL Ww Wc T s p 0))
+    (hCz1 : 1 ≤ Cz) (hE1 : 1 ≤ E) (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (hnE : 18 * ‖n‖ + 7 ≤ E) (hLn : L + 1 ≤ n)
+    (hgoalE : is + 1 + 1 ≤ E) (hbn : termLen LAct (bnum n) ≤ E)
+    (hcG : 4 * ((cDer : V) + cDlen + cFst + 6) ≤ Cz)
+    (hleaf : dlen TAct (leafCode T L n) ≤ kitD Cz n) :
+    SizeOK (kitQ Cz B E) (kitD Cz n) (appendV (proAxL Ww Wc T s p 0) (fragAxL W₁ T is il ip inp L n)) := by
+  refine sizeOK_appendV (sizeOK_of_hornOnly hho) ?_
+  refine sizeOK_fragAxL hW₁ ?_ hleaf ?_
+  · exact le_trans (formulaLen_leafFact_le hE1 hPle hnE (le_trans le_self_add hLn)) (BE_le_kitQ hCz1)
+  · exact goalFact_le_kitQ hE1 hPle hgoalE (isSemiterm_bnum_LAct 0 _) hbn hcG
+
+/-- **The `verumIntro` arm, size half**: the fragment alone. -/
+theorem verum_arm_size {W₁ T B E Cz L n is il iv : V} (hW₁ : W₁ = frag1Pieces)
+    (hCz1 : 1 ≤ Cz) (hE1 : 1 ≤ E) (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (hnE : 18 * ‖n‖ + 7 ≤ E) (hLn : L + 1 ≤ n)
+    (hgoalE : is + 1 + 1 ≤ E) (hbn : termLen LAct (bnum n) ≤ E)
+    (hcG : 4 * ((cDer : V) + cDlen + cFst + 6) ≤ Cz)
+    (hleaf : dlen TAct (leafCode T L n) ≤ kitD Cz n) :
+    SizeOK (kitQ Cz B E) (kitD Cz n) (fragVerum W₁ T is il iv L n) := by
+  refine sizeOK_fragVerum hW₁ ?_ hleaf ?_
+  · exact le_trans (formulaLen_leafFact_le hE1 hPle hnE (le_trans le_self_add hLn)) (BE_le_kitQ hCz1)
+  · exact goalFact_le_kitQ hE1 hPle hgoalE (isSemiterm_bnum_LAct 0 _) hbn hcG
+
+end leafArms
+
 end ArithS

@@ -1349,6 +1349,21 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms axm_arm_len
 #print axioms axm_arm_size
 
+-- U10 (Necessitation/Verify5, 2026-09-15): THE SIZE HALF, PART 3 — the two LEAF arms, `axL` and `verumIntro`.
+-- `vAxL = proAxL ++ fragAxL` and `vVerum = fragVerum` (no prologue: `Prologue.layout_verum` reads the node's facts
+-- straight off the layout). Both fragments are `head (four steps) ++ goalTailLeaf (five steps)`, so `len_fragAxL`
+-- and `len_fragVerum` compute `9` structurally, exactly as `len_nodeAxm`; hence `axL_arm_len` and `verum_arm_len`.
+-- The size halves need NO layout class: `proAxL = reidxL (certNeg …)` is HORN-ONLY (`Prologue.proAxL_ok`'s third
+-- conjunct), so `Cert.sizeOK_of_hornOnly` places it at ANY class, and the fragments go through
+-- `Frag1.sizeOK_fragAxL`/`sizeOK_fragVerum` with §4's landing lemmas (`BE_le_kitQ` for the closed `leafFact`,
+-- `goalFact_le_kitQ` for the goal fact) and §3's `dlen_leafCode_le'` for the `dlen (leafCode …) ≤ D` condition.
+#print axioms len_fragAxL
+#print axioms len_fragVerum
+#print axioms axL_arm_len
+#print axioms verum_arm_len
+#print axioms axL_arm_size
+#print axioms verum_arm_size
+
 -- U10 (Necessitation/Package, 2026-09-15): THE PACKAGE AND THE HEADLINE THEOREMS, with `Assemble.SizeOracle`
 -- BYPASSED. `SizeOracle` is NOT PROVABLE as stated (it binds the numeral table `T` with no `NumTableOK T N' B'`,
 -- while every prologue size lemma requires one and lands at `layQ B B' D`/`layD N' B' D`; `NumTableOK` is never a
