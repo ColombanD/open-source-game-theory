@@ -1,5 +1,6 @@
 import ArithS.Necessitation.NumIdRows
 import ArithS.Necessitation.NumId
+import ArithS.Necessitation.BnumSteps
 
 /-!
 # ArithS.Necessitation.Pin — towards `PinKit χ` (`DESIGN_fragments.md` §7.1 steps 1–4 / §7.2)
@@ -581,5 +582,382 @@ conjunct is weakened at the top (`Top.lean`, e.g. to `Cχ·(‖k‖+1)²·(setLe
 `top_main`'s cubic budget may or may not absorb — `E` itself is `Θ(‖k‖)` there) or the finer analysis is
 written. Nothing here is an axiom; the two oracles are hypotheses of `pin_assembly`.
 -/
+
+/-! ## 4. The binary-numeral oracle, discharged (`BnumSteps.lean`) -/
+
+section bnumOracle
+
+lemma NumIdTable.bnRows {tbl : V} (h : NumIdTable tbl) : BnRows tbl :=
+  ⟨h.bnumZeroCert, h.bnumOneCert, h.bnumEvenCert, h.bnumOddOfEven⟩
+
+/-- **`BnumOracle` holds with the standard constant `27`**: the list `bnumSteps numIdPieces walkPieces tblN k j`
+(`NumTableOK tblN N' B'` for the `sLemma`s `𝟏 ≤ bnum m`). -/
+theorem bnumOracle_of {tbl N tblN N' B' E k : V} (htbl : TableOK tbl N) (hT : NumIdTable tbl)
+    (htblN : NumTableOK tblN N' B') : BnumOracle tbl E k 27 := by
+  intro Γ j hΓ hD hE
+  have hE' : j + 27 * (‖k‖ + 1) ≤ E := by
+    refine le_trans ?_ hE
+    push_cast
+    calc j + 27 * (‖k‖ + 1) ≤ 27 * j + 27 * (‖k‖ + 1) :=
+          add_le_add (le_mul_of_one_le_left zero_le (by norm_num)) le_rfl
+      _ = 27 * (‖k‖ + j + 1) := by ring
+  obtain ⟨ok, nd, sh, _, _, hf⟩ := bnumSteps_ok htbl hT.layoutTable hT.bnRows htblN hΓ hD hE'
+  refine ⟨_, ok, nd, by rw [sh]; exact zero_le, ?_⟩
+  rw [sh, add_zero]; exact hf
+
+end bnumOracle
+
+/-! ## 5. The substitution oracle, discharged (`Cert.certSubst_ok` re-indexed)
+
+`Cert.len_subFGraph_le` bounds the length of the formula pass by `sfK L Q · |r|` with `sfK L Q = L + 12Q(Q + 1) +
+12(Q + 1) + 10` — QUADRATIC in the sum bound `Q`, hence quadratic in `‖k‖` for the vector `bnum k ∷ 0`. The
+square is an artifact: in the quantifier case the mode-`1` vector pass is bounded by `len_subVGraph_le'` whose
+entry-length parameter `S` is vacuous at mode `1` (`μ = 0 → …`) and was instantiated at `S := Q`. Instantiating
+it at `S := 0` gives the LINEAR `sfL L Q = L + 24Q + 22` (`len_subFGraph_le_lin`, the same induction) — which
+is what makes `len Ps ≤ Cs·(‖k‖ + 1)` and hence the coarse cost conjunct of `PinKit'` reachable. -/
+
+section substOracle
+
+noncomputable def sfL (L Q : V) : V := L + 24 * Q + 22
+
+lemma one_le_sfL (L Q : V) : (1 : V) ≤ sfL L Q := by
+  unfold sfL; exact le_trans (by norm_num) le_add_self
+
+set_option maxHeartbeats 4000000 in
+/-- **Length bound, linear in `Q`** (`Cert.len_subFGraph_le` with the mode-`1` vector pass bounded at `S := 0`). -/
+lemma len_subFGraph_le_lin (W Wd : V) {n₀ m₀ w₀ : V} (hw₀ : IsSemitermVec LAct n₀ m₀ w₀) (D L Q : V)
+    (hQ : ∀ e ≤ D, listSum (termLenVec LAct (n₀ + e) (qVecIterV LAct w₀ e)) ≤ Q)
+    (hL : ∀ e ≤ D, len (π₂ (qWalkP Wd (m₀ + e) (n₀ + e) (qVecIterV LAct w₀ e))) ≤ L) :
+    ∀ {n r : V}, IsSemiformula LAct n r →
+    ∀ d, d + formulaLen LAct r ≤ D → n = n₀ + d → ∀ i j iw y : V,
+      SubFGraph W Wd n (m₀ + d) (qVecIterV LAct w₀ d) iw r i j y → len y ≤ sfL L Q * formulaLen LAct r := by
+  intro n r
+  apply IsSemiformula.pi1_structural_induction
+    (P := fun n r ↦ ∀ d, d + formulaLen LAct r ≤ D → n = n₀ + d → ∀ i j iw y : V,
+      SubFGraph W Wd n (m₀ + d) (qVecIterV LAct w₀ d) iw r i j y → len y ≤ sfL L Q * formulaLen LAct r)
+  · simp only [SubFGraph]; definability
+  · intro n k R v hkR hv d hD hn i j iw y hy
+    subst hn
+    have hwd := isSemitermVec_qVecIterV hw₀ d
+    rw [formulaLen_rel hkR hv.isUTerm] at hD
+    rw [SubFGraph.rel_iff.mp hy, len_sfAtomSteps, formulaLen_rel hkR hv.isUTerm]
+    have htl : takeLast v k = v := by rw [← hv.lh]; exact takeLast_len_self v
+    have hl := len_subVGraph_le' W iw 0 (fun _ ↦ hwd) (listSum (termLenVec LAct (n₀ + d) (qVecIterV LAct w₀ d)))
+      (fun _ z hz ↦ termLen_nth_le_listSum hwd hz) hv k le_rfl (i + 1) (j + 1) _ (subV_graph (fun _ ↦ hwd) hv le_rfl)
+    rw [htl] at hl
+    have hQd : listSum (termLenVec LAct (n₀ + d) (qVecIterV LAct w₀ d)) ≤ Q :=
+      hQ d (le_trans le_self_add (le_trans (add_le_add (le_refl d) (le_add_self)) hD))
+    calc len (subV W (qVecIterV LAct w₀ d) iw (m₀ + d) 0 (n₀ + d) k v k (i + 1) (j + 1)) + 2
+        ≤ 12 * listSum (termLenVec LAct k v) * (listSum (termLenVec LAct (n₀ + d) (qVecIterV LAct w₀ d)) + 1) + 4 := hl
+      _ ≤ 12 * listSum (termLenVec LAct k v) * (Q + 1) + 4 :=
+          add_le_add (mul_le_mul_of_nonneg_left (add_le_add hQd (le_refl 1)) zero_le) (le_refl 4)
+      _ ≤ listSum (termLenVec LAct k v) * sfL L Q + sfL L Q := by
+          refine add_le_add ?_ ?_
+          · rw [mul_comm (12 * listSum (termLenVec LAct k v)), ← mul_assoc, mul_comm (Q + 1) 12, mul_comm]
+            refine mul_le_mul_of_nonneg_left ?_ zero_le
+            unfold sfL
+            calc 12 * (Q + 1) ≤ 12 * (Q + 1) + (L + 12 * Q + 10) := le_self_add
+              _ = L + 24 * Q + 22 := by ring
+          · unfold sfL
+            calc (4 : V) ≤ 22 := by norm_num
+              _ ≤ L + 24 * Q + 22 := le_add_self
+      _ = sfL L Q * (listSum (termLenVec LAct k v) + 1) := by ring
+  · intro n k R v hkR hv d hD hn i j iw y hy
+    subst hn
+    have hwd := isSemitermVec_qVecIterV hw₀ d
+    rw [formulaLen_nrel hkR hv.isUTerm] at hD
+    rw [SubFGraph.nrel_iff.mp hy, len_sfAtomSteps, formulaLen_nrel hkR hv.isUTerm]
+    have htl : takeLast v k = v := by rw [← hv.lh]; exact takeLast_len_self v
+    have hl := len_subVGraph_le' W iw 0 (fun _ ↦ hwd) (listSum (termLenVec LAct (n₀ + d) (qVecIterV LAct w₀ d)))
+      (fun _ z hz ↦ termLen_nth_le_listSum hwd hz) hv k le_rfl (i + 1) (j + 1) _ (subV_graph (fun _ ↦ hwd) hv le_rfl)
+    rw [htl] at hl
+    have hQd : listSum (termLenVec LAct (n₀ + d) (qVecIterV LAct w₀ d)) ≤ Q :=
+      hQ d (le_trans le_self_add (le_trans (add_le_add (le_refl d) (le_add_self)) hD))
+    calc len (subV W (qVecIterV LAct w₀ d) iw (m₀ + d) 0 (n₀ + d) k v k (i + 1) (j + 1)) + 2
+        ≤ 12 * listSum (termLenVec LAct k v) * (listSum (termLenVec LAct (n₀ + d) (qVecIterV LAct w₀ d)) + 1) + 4 := hl
+      _ ≤ 12 * listSum (termLenVec LAct k v) * (Q + 1) + 4 :=
+          add_le_add (mul_le_mul_of_nonneg_left (add_le_add hQd (le_refl 1)) zero_le) (le_refl 4)
+      _ ≤ listSum (termLenVec LAct k v) * sfL L Q + sfL L Q := by
+          refine add_le_add ?_ ?_
+          · rw [mul_comm (12 * listSum (termLenVec LAct k v)), ← mul_assoc, mul_comm (Q + 1) 12, mul_comm]
+            refine mul_le_mul_of_nonneg_left ?_ zero_le
+            unfold sfL
+            calc 12 * (Q + 1) ≤ 12 * (Q + 1) + (L + 12 * Q + 10) := le_self_add
+              _ = L + 24 * Q + 22 := by ring
+          · unfold sfL
+            calc (4 : V) ≤ 22 := by norm_num
+              _ ≤ L + 24 * Q + 22 := le_add_self
+      _ = sfL L Q * (listSum (termLenVec LAct k v) + 1) := by ring
+  · intro n d _ _ i j iw y hy
+    rw [SubFGraph.verum_iff.mp hy, len_sfConstSteps, formulaLen_verum, mul_one]; exact one_le_sfL L Q
+  · intro n d _ _ i j iw y hy
+    rw [SubFGraph.falsum_iff.mp hy, len_sfConstSteps, formulaLen_falsum, mul_one]; exact one_le_sfL L Q
+  · intro n p q hp hq ihp ihq d hD hn i j iw y hy
+    obtain ⟨yq, yp, _, _, hyq, hyp, rfl⟩ := SubFGraph.and_iff.mp hy
+    rw [formulaLen_and hp.isUFormula hq.isUFormula] at hD ⊢
+    have hDq : d + formulaLen LAct q ≤ D :=
+      le_trans (add_le_add (le_refl d) (le_trans le_add_self le_self_add)) hD
+    have hDp : d + formulaLen LAct p ≤ D :=
+      le_trans (add_le_add (le_refl d) (le_trans le_self_add le_self_add)) hD
+    rw [len_sfBinSteps]
+    calc len yq + (len yp + 1) ≤ sfL L Q * formulaLen LAct q + (sfL L Q * formulaLen LAct p + sfL L Q) :=
+          add_le_add (ihq d hDq hn _ _ _ _ hyq) (add_le_add (ihp d hDp hn _ _ _ _ hyp) (one_le_sfL L Q))
+      _ = sfL L Q * (formulaLen LAct p + formulaLen LAct q + 1) := by ring
+  · intro n p q hp hq ihp ihq d hD hn i j iw y hy
+    obtain ⟨yq, yp, _, _, hyq, hyp, rfl⟩ := SubFGraph.or_iff.mp hy
+    rw [formulaLen_or hp.isUFormula hq.isUFormula] at hD ⊢
+    have hDq : d + formulaLen LAct q ≤ D :=
+      le_trans (add_le_add (le_refl d) (le_trans le_add_self le_self_add)) hD
+    have hDp : d + formulaLen LAct p ≤ D :=
+      le_trans (add_le_add (le_refl d) (le_trans le_self_add le_self_add)) hD
+    rw [len_sfBinSteps]
+    calc len yq + (len yp + 1) ≤ sfL L Q * formulaLen LAct q + (sfL L Q * formulaLen LAct p + sfL L Q) :=
+          add_le_add (ihq d hDq hn _ _ _ _ hyq) (add_le_add (ihp d hDp hn _ _ _ _ hyp) (one_le_sfL L Q))
+      _ = sfL L Q * (formulaLen LAct p + formulaLen LAct q + 1) := by ring
+  · intro n p hp ih d hD hn i j iw y hy
+    subst hn
+    obtain ⟨yb, _, hyb, rfl⟩ := SubFGraph.all_iff.mp hy
+    rw [formulaLen_all hp.isUFormula] at hD ⊢
+    have hwd := isSemitermVec_qVecIterV hw₀ d
+    have hDp : d + 1 + formulaLen LAct p ≤ D := by rw [add_assoc, add_comm 1]; exact hD
+    have hLd : len (π₂ (qWalkP Wd (m₀ + d) (n₀ + d) (qVecIterV LAct w₀ d))) ≤ L :=
+      hL d (le_trans le_self_add (le_trans (add_le_add (le_refl d) le_add_self) hD))
+    have hQd : listSum (termLenVec LAct (n₀ + d) (qVecIterV LAct w₀ d)) ≤ Q :=
+      hQ d (le_trans le_self_add (le_trans (add_le_add (le_refl d) le_add_self) hD))
+    have hb : len yb ≤ sfL L Q * formulaLen LAct p := by
+      have := ih (d + 1) hDp (by ring) _ _ _ _ (by rw [qVecIterV_succ, show m₀ + (d + 1) = m₀ + d + 1 by ring]; exact hyb)
+      exact this
+    have htl : takeLast (qVecIterV LAct w₀ d) (n₀ + d) = qVecIterV LAct w₀ d := by
+      have := takeLast_len_self (qVecIterV LAct w₀ d); rwa [hwd.lh] at this
+    have hLb := len_subVGraph_le' W (iw + π₁ (qWalkP Wd (m₀ + d) (n₀ + d) (qVecIterV LAct w₀ d))) 1 (n := m₀ + d) (m := m₀ + d)
+      (w := qVecIterV LAct w₀ d) (fun h ↦ absurd h _root_.one_ne_zero) 0 (fun h ↦ absurd h _root_.one_ne_zero) hwd (n₀ + d) le_rfl
+      (iw + π₁ (qWalkP Wd (m₀ + d) (n₀ + d) (qVecIterV LAct w₀ d))) 2 _
+      (subV_graph (W := W) (w := qVecIterV LAct w₀ d) (m := m₀ + d) (fun h ↦ absurd h _root_.one_ne_zero) hwd le_rfl)
+    rw [htl] at hLb
+    have hLb' : len (subV W (qVecIterV LAct w₀ d) (iw + π₁ (qWalkP Wd (m₀ + d) (n₀ + d) (qVecIterV LAct w₀ d))) (m₀ + d) 1 (m₀ + d)
+        (n₀ + d) (qVecIterV LAct w₀ d) (n₀ + d) (iw + π₁ (qWalkP Wd (m₀ + d) (n₀ + d) (qVecIterV LAct w₀ d))) 2) + 2
+        ≤ 12 * Q * (0 + 1) + 4 :=
+      le_trans hLb (add_le_add (mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left hQd zero_le) zero_le) (le_refl 4))
+    rw [len_sfQuantSteps]
+    calc len (π₂ (qWalkP Wd (m₀ + d) (n₀ + d) (qVecIterV LAct w₀ d))) +
+          (len (subV W (qVecIterV LAct w₀ d) (iw + π₁ (qWalkP Wd (m₀ + d) (n₀ + d) (qVecIterV LAct w₀ d))) (m₀ + d) 1 (m₀ + d)
+            (n₀ + d) (qVecIterV LAct w₀ d) (n₀ + d) (iw + π₁ (qWalkP Wd (m₀ + d) (n₀ + d) (qVecIterV LAct w₀ d))) 2) + (3 + (len yb + 1)))
+        = (len (π₂ (qWalkP Wd (m₀ + d) (n₀ + d) (qVecIterV LAct w₀ d))) +
+            (len (subV W (qVecIterV LAct w₀ d) (iw + π₁ (qWalkP Wd (m₀ + d) (n₀ + d) (qVecIterV LAct w₀ d))) (m₀ + d) 1 (m₀ + d)
+              (n₀ + d) (qVecIterV LAct w₀ d) (n₀ + d) (iw + π₁ (qWalkP Wd (m₀ + d) (n₀ + d) (qVecIterV LAct w₀ d))) 2) + 2) + 2) + len yb := by ring
+      _ ≤ (L + (12 * Q * (0 + 1) + 4) + 2) + sfL L Q * formulaLen LAct p := add_le_add (add_le_add (add_le_add hLd hLb') (le_refl 2)) hb
+      _ ≤ sfL L Q + sfL L Q * formulaLen LAct p := by
+          refine add_le_add ?_ (le_refl _)
+          unfold sfL
+          calc L + (12 * Q * (0 + 1) + 4) + 2 = L + 12 * Q + 6 := by ring
+            _ ≤ L + 12 * Q + 6 + (12 * Q + 16) := le_self_add
+            _ = L + 24 * Q + 22 := by ring
+      _ = sfL L Q * (formulaLen LAct p + 1) := by ring
+  · intro n p hp ih d hD hn i j iw y hy
+    subst hn
+    obtain ⟨yb, _, hyb, rfl⟩ := SubFGraph.exs_iff.mp hy
+    rw [formulaLen_exs hp.isUFormula] at hD ⊢
+    have hwd := isSemitermVec_qVecIterV hw₀ d
+    have hDp : d + 1 + formulaLen LAct p ≤ D := by rw [add_assoc, add_comm 1]; exact hD
+    have hLd : len (π₂ (qWalkP Wd (m₀ + d) (n₀ + d) (qVecIterV LAct w₀ d))) ≤ L :=
+      hL d (le_trans le_self_add (le_trans (add_le_add (le_refl d) le_add_self) hD))
+    have hQd : listSum (termLenVec LAct (n₀ + d) (qVecIterV LAct w₀ d)) ≤ Q :=
+      hQ d (le_trans le_self_add (le_trans (add_le_add (le_refl d) le_add_self) hD))
+    have hb : len yb ≤ sfL L Q * formulaLen LAct p := by
+      have := ih (d + 1) hDp (by ring) _ _ _ _ (by rw [qVecIterV_succ, show m₀ + (d + 1) = m₀ + d + 1 by ring]; exact hyb)
+      exact this
+    have htl : takeLast (qVecIterV LAct w₀ d) (n₀ + d) = qVecIterV LAct w₀ d := by
+      have := takeLast_len_self (qVecIterV LAct w₀ d); rwa [hwd.lh] at this
+    have hLb := len_subVGraph_le' W (iw + π₁ (qWalkP Wd (m₀ + d) (n₀ + d) (qVecIterV LAct w₀ d))) 1 (n := m₀ + d) (m := m₀ + d)
+      (w := qVecIterV LAct w₀ d) (fun h ↦ absurd h _root_.one_ne_zero) 0 (fun h ↦ absurd h _root_.one_ne_zero) hwd (n₀ + d) le_rfl
+      (iw + π₁ (qWalkP Wd (m₀ + d) (n₀ + d) (qVecIterV LAct w₀ d))) 2 _
+      (subV_graph (W := W) (w := qVecIterV LAct w₀ d) (m := m₀ + d) (fun h ↦ absurd h _root_.one_ne_zero) hwd le_rfl)
+    rw [htl] at hLb
+    have hLb' : len (subV W (qVecIterV LAct w₀ d) (iw + π₁ (qWalkP Wd (m₀ + d) (n₀ + d) (qVecIterV LAct w₀ d))) (m₀ + d) 1 (m₀ + d)
+        (n₀ + d) (qVecIterV LAct w₀ d) (n₀ + d) (iw + π₁ (qWalkP Wd (m₀ + d) (n₀ + d) (qVecIterV LAct w₀ d))) 2) + 2
+        ≤ 12 * Q * (0 + 1) + 4 :=
+      le_trans hLb (add_le_add (mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left hQd zero_le) zero_le) (le_refl 4))
+    rw [len_sfQuantSteps]
+    calc len (π₂ (qWalkP Wd (m₀ + d) (n₀ + d) (qVecIterV LAct w₀ d))) +
+          (len (subV W (qVecIterV LAct w₀ d) (iw + π₁ (qWalkP Wd (m₀ + d) (n₀ + d) (qVecIterV LAct w₀ d))) (m₀ + d) 1 (m₀ + d)
+            (n₀ + d) (qVecIterV LAct w₀ d) (n₀ + d) (iw + π₁ (qWalkP Wd (m₀ + d) (n₀ + d) (qVecIterV LAct w₀ d))) 2) + (3 + (len yb + 1)))
+        = (len (π₂ (qWalkP Wd (m₀ + d) (n₀ + d) (qVecIterV LAct w₀ d))) +
+            (len (subV W (qVecIterV LAct w₀ d) (iw + π₁ (qWalkP Wd (m₀ + d) (n₀ + d) (qVecIterV LAct w₀ d))) (m₀ + d) 1 (m₀ + d)
+              (n₀ + d) (qVecIterV LAct w₀ d) (n₀ + d) (iw + π₁ (qWalkP Wd (m₀ + d) (n₀ + d) (qVecIterV LAct w₀ d))) 2) + 2) + 2) + len yb := by ring
+      _ ≤ (L + (12 * Q * (0 + 1) + 4) + 2) + sfL L Q * formulaLen LAct p := add_le_add (add_le_add (add_le_add hLd hLb') (le_refl 2)) hb
+      _ ≤ sfL L Q + sfL L Q * formulaLen LAct p := by
+          refine add_le_add ?_ (le_refl _)
+          unfold sfL
+          calc L + (12 * Q * (0 + 1) + 4) + 2 = L + 12 * Q + 6 := by ring
+            _ ≤ L + 12 * Q + 6 + (12 * Q + 16) := le_self_add
+            _ = L + 24 * Q + 22 := by ring
+      _ = sfL L Q * (formulaLen LAct p + 1) := by ring
+
+/-- The linear length bound of `certSubst` itself. -/
+lemma len_certSubst_le_lin {Wd W n m w iw r i j Q L : V} (hw : IsSemitermVec LAct n m w) (hr : IsSemiformula LAct n r)
+    (hQ : ∀ e ≤ formulaLen LAct r, listSum (termLenVec LAct (n + e) (qVecIterV LAct w e)) ≤ Q)
+    (hL : ∀ e ≤ formulaLen LAct r, len (π₂ (qWalkP Wd (m + e) (n + e) (qVecIterV LAct w e))) ≤ L) :
+    len (certSubst W Wd n m w iw r i j) ≤ sfL L Q * formulaLen LAct r :=
+  len_subFGraph_le_lin W Wd hw (formulaLen LAct r) L Q hQ hL hr 0 (by rw [zero_add]) (by rw [add_zero]) i j iw
+    (certSubst W Wd n m w iw r i j) (by rw [add_zero, qVecIterV_zero]; exact certSubst_graph hw hr)
+
+/-- The cap helper: `z ≤ A·(‖k‖ + 1) + t` with `t ≤ x + y + iw` and `A ≤ Cs` gives `z ≤ E`. -/
+lemma capS {A Cs : ℕ} {k x y iw E z t : V} (hA1 : 1 ≤ Cs) (hA : A ≤ Cs) (hE : (Cs : V) * (‖k‖ + x + y + iw + 1) ≤ E)
+    (ht : t ≤ x + y + iw) (hz : z ≤ (A : V) * (‖k‖ + 1) + t) : z ≤ E := by
+  refine le_trans hz (le_trans ?_ hE)
+  calc (A : V) * (‖k‖ + 1) + t ≤ (Cs : V) * (‖k‖ + 1) + (Cs : V) * (x + y + iw) :=
+        add_le_add (mul_le_mul_of_nonneg_right (by exact_mod_cast hA) zero_le)
+          (le_trans ht (le_mul_of_one_le_left zero_le (by exact_mod_cast hA1)))
+    _ = (Cs : V) * (‖k‖ + x + y + iw + 1) := by ring
+
+set_option maxHeartbeats 2000000 in
+/-- **The certified substitution of `bnum k` into `χ`, re-indexed to the pin table**: from the three dossiers
+(source `⌜χ⌝` at `&y`, image `instB ⌜χ⌝ k` at `&x`, vector `bnum k ∷ 0` at `&iw`) a Horn-only, cut-admitting list
+at cap `9` with shifts AND length `≤ Cs·(‖k‖ + 1)` (`Cs` standard, per `χ`) leaving `substFact &(x+σ) &(iw+σ) &(y+σ)`. -/
+theorem substSteps_ok (χ : Semisentence LAct 1) :
+    ∃ Cs : ℕ, ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] {tbl N E Γ y x iw k : V},
+      TableOK tbl N → ProTable tbl → IsFormulaSet LAct Γ → DossF walkPieces Γ 1 (⌜χ⌝ : V) y →
+      DossF walkPieces Γ 0 (instB (⌜χ⌝ : V) k) x → DossV walkPieces Γ 0 1 (bnum k ∷ 0) 1 iw →
+      (Cs : V) * (‖k‖ + x + y + iw + 1) ≤ E →
+      ∃ Ps : V, ListOK tbl E ((9 : ℕ) : V) Γ Ps ∧ NoDrop' Ps ∧ HornOnly Ps ∧ shiftsV Ps ≤ (Cs : V) * (‖k‖ + 1) ∧
+        len Ps ≤ (Cs : V) * (‖k‖ + 1) ∧
+        neg LAct (substFact (^&(x + shiftsV Ps)) (^&(iw + shiftsV Ps)) (^&(y + shiftsV Ps))) ∈ finalCtx Γ Ps := by
+  obtain ⟨f, hf⟩ : ∃ f : ℕ, f = flN (⌜χ⌝ : ℕ) := ⟨_, rfl⟩
+  obtain ⟨q, hq⟩ : ∃ q : ℕ, q = (1 + f) * (f + 7) := ⟨_, rfl⟩
+  obtain ⟨l, hl⟩ : ∃ l : ℕ, l = 12 * ((f + 2) * (f + 8)) + 2 := ⟨_, rfl⟩
+  obtain ⟨A₁, hA₁⟩ : ∃ A : ℕ, A = 4 * f + 2 * q + 11 := ⟨_, rfl⟩
+  obtain ⟨A₂, hA₂⟩ : ∃ A : ℕ, A = 2 * f * (q + 1) + 1 := ⟨_, rfl⟩
+  obtain ⟨A₃, hA₃⟩ : ∃ A : ℕ, A = 12 * f + 2 * q * f + 1 := ⟨_, rfl⟩
+  obtain ⟨A₄, hA₄⟩ : ∃ A : ℕ, A = 2 * q * (f + 1) + 2 := ⟨_, rfl⟩
+  obtain ⟨A₅, hA₅⟩ : ∃ A : ℕ, A = 2 * q * f := ⟨_, rfl⟩
+  obtain ⟨A₆, hA₆⟩ : ∃ A : ℕ, A = (l + 24 * q + 22) * f := ⟨_, rfl⟩
+  obtain ⟨Cs, hCs⟩ : ∃ C : ℕ, C = A₁ + A₂ + A₃ + A₄ + A₅ + A₆ + 1 := ⟨_, rfl⟩
+  have hC1 : 1 ≤ Cs := by omega
+  refine ⟨Cs, fun V _ _ tbl N E Γ y x iw k htbl hP hΓ hDy hDx hDw hE ↦ ?_⟩
+  -- the source as a variable, its standard length
+  obtain ⟨c, hc⟩ : ∃ c : V, c = ⌜χ⌝ := ⟨_, rfl⟩
+  have hr : IsSemiformula LAct (1 : V) c := by rw [hc]; exact Sentence.quote_isSemiformul₁ χ
+  have hfV : formulaLen LAct c = (f : V) := by
+    rw [hc, hf, ← Sentence.coe_quote_eq_quote (V := V) χ, flN_cast]
+  rw [← hc] at hDy hDx
+  have hDx' : DossF walkPieces Γ 0 (subst LAct (bnum k ∷ 0) c) x := hDx
+  -- the vector
+  have hbk : IsSemiterm LAct 0 (bnum k) := isSemiterm_bnum_LAct 0 k
+  have hw : IsSemitermVec LAct 1 0 (bnum k ∷ (0 : V)) := by simp [hbk]
+  have hB : termLen LAct (bnum k) ≤ 6 * ‖k‖ + 1 := termLen_bnum_le_bk le_rfl
+  have hu1 : (1 : V) ≤ ‖k‖ + 1 := le_add_self
+  have hB6 : 6 * ‖k‖ + 1 ≤ ((6 : ℕ) : V) * (‖k‖ + 1) := by
+    push_cast; rw [mul_add, mul_one]; exact add_le_add le_rfl (by norm_num)
+  -- Q and L
+  obtain ⟨Q, hQ⟩ : ∃ Q : V, Q = (1 + formulaLen LAct c) * (1 + formulaLen LAct c + (6 * ‖k‖ + 1)) := ⟨_, rfl⟩
+  obtain ⟨L, hL⟩ : ∃ L : V, L = 12 * ((1 + formulaLen LAct c + 1) * (1 + formulaLen LAct c + 1 + (6 * ‖k‖ + 1))) + 2 := ⟨_, rfl⟩
+  have hQle : Q ≤ (q : V) * (‖k‖ + 1) := by
+    rw [hQ, hfV, hq]; push_cast
+    have h1 : 1 + (f : V) + (6 * ‖k‖ + 1) ≤ ((f : V) + 7) * (‖k‖ + 1) := by
+      calc 1 + (f : V) + (6 * ‖k‖ + 1) ≤ (1 + (f : V)) * (‖k‖ + 1) + 6 * (‖k‖ + 1) :=
+            add_le_add (le_mul_of_one_le_right zero_le hu1) (by rw [mul_add, mul_one]; exact add_le_add le_rfl (by norm_num))
+        _ = ((f : V) + 7) * (‖k‖ + 1) := by ring
+    calc (1 + (f : V)) * (1 + (f : V) + (6 * ‖k‖ + 1)) ≤ (1 + (f : V)) * (((f : V) + 7) * (‖k‖ + 1)) :=
+          mul_le_mul_of_nonneg_left h1 zero_le
+      _ = (1 + (f : V)) * ((f : V) + 7) * (‖k‖ + 1) := by ring
+  have hLle : L ≤ (l : V) * (‖k‖ + 1) := by
+    rw [hL, hfV, hl]; push_cast
+    have h1 : 1 + (f : V) + 1 + (6 * ‖k‖ + 1) ≤ ((f : V) + 8) * (‖k‖ + 1) := by
+      calc 1 + (f : V) + 1 + (6 * ‖k‖ + 1) ≤ (1 + (f : V) + 1) * (‖k‖ + 1) + 6 * (‖k‖ + 1) :=
+            add_le_add (le_mul_of_one_le_right zero_le hu1) (by rw [mul_add, mul_one]; exact add_le_add le_rfl (by norm_num))
+        _ = ((f : V) + 8) * (‖k‖ + 1) := by ring
+    calc 12 * ((1 + (f : V) + 1) * (1 + (f : V) + 1 + (6 * ‖k‖ + 1))) + 2
+        ≤ 12 * ((1 + (f : V) + 1) * (((f : V) + 8) * (‖k‖ + 1))) + 2 * (‖k‖ + 1) :=
+          add_le_add (mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left h1 zero_le) zero_le) (le_mul_of_one_le_right zero_le hu1)
+      _ = (12 * (((f : V) + 2) * ((f : V) + 8)) + 2) * (‖k‖ + 1) := by ring
+  have hfu : formulaLen LAct c ≤ (f : V) * (‖k‖ + 1) := by rw [hfV]; exact le_mul_of_one_le_right zero_le hu1
+  -- the four caps of `subFPre_single`
+  have cap1 : 4 * formulaLen LAct c + 2 * Q + 11 ≤ E := by
+    refine capS hC1 (by omega : A₁ ≤ Cs) hE (t := 0) zero_le ?_
+    rw [add_zero, hA₁]; push_cast
+    calc 4 * formulaLen LAct c + 2 * Q + 11 ≤ 4 * ((f : V) * (‖k‖ + 1)) + 2 * ((q : V) * (‖k‖ + 1)) + 11 * (‖k‖ + 1) :=
+          add_le_add (add_le_add (mul_le_mul_of_nonneg_left hfu zero_le) (mul_le_mul_of_nonneg_left hQle zero_le))
+            (le_mul_of_one_le_right zero_le hu1)
+      _ = (4 * (f : V) + 2 * (q : V) + 11) * (‖k‖ + 1) := by ring
+  have cap2 : y + 2 * formulaLen LAct c * (Q + 1) + 1 ≤ E := by
+    refine capS hC1 (by omega : A₂ ≤ Cs) hE (t := y) (le_trans le_add_self le_self_add) ?_
+    rw [hA₂]; push_cast
+    have hQ1 : Q + 1 ≤ ((q : V) + 1) * (‖k‖ + 1) := by
+      calc Q + 1 ≤ (q : V) * (‖k‖ + 1) + (‖k‖ + 1) := add_le_add hQle hu1
+        _ = ((q : V) + 1) * (‖k‖ + 1) := by ring
+    calc y + 2 * formulaLen LAct c * (Q + 1) + 1
+        ≤ y + 2 * (f : V) * (((q : V) + 1) * (‖k‖ + 1)) + 1 * (‖k‖ + 1) := by
+          rw [hfV]
+          exact add_le_add (add_le_add le_rfl (mul_le_mul_of_nonneg_left hQ1 zero_le)) (le_mul_of_one_le_right zero_le hu1)
+      _ = (2 * (f : V) * ((q : V) + 1) + 1) * (‖k‖ + 1) + y := by ring
+  have hsub : formulaLen LAct (subst LAct (bnum k ∷ 0) c) ≤ formulaLen LAct c * (6 * ‖k‖ + 1) :=
+    formulaLen_subst_le (L := LAct) (le_trans (by norm_num) le_add_self) hr 0 _ hw (substInv_single hbk hB)
+  have cap3 : x + 2 * formulaLen LAct (subst LAct (bnum k ∷ 0) c) + 2 * Q * formulaLen LAct c + 1 ≤ E := by
+    refine capS hC1 (by omega : A₃ ≤ Cs) hE (t := x) (le_trans le_self_add le_self_add) ?_
+    rw [hA₃]; push_cast
+    have h1 : 2 * formulaLen LAct (subst LAct (bnum k ∷ 0) c) ≤ 12 * (f : V) * (‖k‖ + 1) := by
+      calc 2 * formulaLen LAct (subst LAct (bnum k ∷ 0) c) ≤ 2 * (formulaLen LAct c * (6 * ‖k‖ + 1)) :=
+            mul_le_mul_of_nonneg_left hsub zero_le
+        _ ≤ 2 * ((f : V) * (((6 : ℕ) : V) * (‖k‖ + 1))) := by
+            rw [hfV]; exact mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left hB6 zero_le) zero_le
+        _ = 12 * (f : V) * (‖k‖ + 1) := by push_cast; ring
+    have h2 : 2 * Q * formulaLen LAct c ≤ 2 * (q : V) * (f : V) * (‖k‖ + 1) := by
+      rw [hfV]
+      calc 2 * Q * (f : V) ≤ 2 * ((q : V) * (‖k‖ + 1)) * (f : V) :=
+            mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left hQle zero_le) zero_le
+        _ = 2 * (q : V) * (f : V) * (‖k‖ + 1) := by ring
+    calc x + 2 * formulaLen LAct (subst LAct (bnum k ∷ 0) c) + 2 * Q * formulaLen LAct c + 1
+        ≤ x + 12 * (f : V) * (‖k‖ + 1) + 2 * (q : V) * (f : V) * (‖k‖ + 1) + 1 * (‖k‖ + 1) :=
+          add_le_add (add_le_add (add_le_add le_rfl h1) h2) (le_mul_of_one_le_right zero_le hu1)
+      _ = (12 * (f : V) + 2 * (q : V) * (f : V) + 1) * (‖k‖ + 1) + x := by ring
+  have cap4 : iw + 2 * Q * (formulaLen LAct c + 1) + 2 ≤ E := by
+    refine capS hC1 (by omega : A₄ ≤ Cs) hE (t := iw) le_add_self ?_
+    rw [hA₄, hfV]; push_cast
+    calc iw + 2 * Q * ((f : V) + 1) + 2 ≤ iw + 2 * ((q : V) * (‖k‖ + 1)) * ((f : V) + 1) + 2 * (‖k‖ + 1) :=
+          add_le_add (add_le_add le_rfl (mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left hQle zero_le) zero_le))
+            (le_mul_of_one_le_right zero_le hu1)
+      _ = (2 * (q : V) * ((f : V) + 1) + 2) * (‖k‖ + 1) + iw := by ring
+  have hPre : SubFPre E Q 1 0 (bnum k ∷ 0) c y x iw Γ := by
+    rw [hQ]; exact subFPre_single hbk hB (by rw [← hQ]; exact cap1) (by rw [← hQ]; exact cap2) (by rw [← hQ]; exact cap3)
+      (by rw [← hQ]; exact cap4) hΓ
+  have hLc : ∀ e ≤ formulaLen LAct c, len (π₂ (qWalkP walkPieces (0 + e) (1 + e) (qVecIterV LAct (bnum k ∷ 0) e))) ≤ L := by
+    rw [hL]; exact qWalkP_single_cap hbk hB
+  -- the certification at the view, re-indexed
+  have htblV : TableOK (certView tbl) N := hP.tableOK_certView htbl
+  have hC : CertTable (certView tbl) := hP.certTable
+  obtain ⟨ok, nd, hho, hsh, _, hfact⟩ := certSubst_ok htblV hC rfl rfl hw hr hPre hLc hDy hDx' hDw
+  have hlen := len_certSubst_le_lin (Wd := walkPieces) (W := certPieces) (iw := iw) (i := y) (j := x) hw hr hPre.2.1 hLc
+  refine ⟨reidxL (certSubst certPieces walkPieces 1 0 (bnum k ∷ 0) iw c y x), listOK_reidxL hP ok, noDrop'_reidxL nd,
+    hornOnly_reidxL hho, ?_, ?_, ?_⟩
+  · rw [shiftsV_reidxL]
+    refine le_trans hsh ?_
+    refine lin_mono (by omega : A₅ ≤ Cs) ?_
+    rw [hA₅, hfV]; push_cast
+    calc 2 * Q * (f : V) ≤ 2 * ((q : V) * (‖k‖ + 1)) * (f : V) :=
+          mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left hQle zero_le) zero_le
+      _ = 2 * (q : V) * (f : V) * (‖k‖ + 1) := by ring
+  · rw [len_reidxL]
+    refine le_trans hlen ?_
+    refine lin_mono (by omega : A₆ ≤ Cs) ?_
+    rw [hA₆, hfV]; push_cast
+    unfold sfL
+    calc (L + 24 * Q + 22) * (f : V) ≤ ((l : V) * (‖k‖ + 1) + 24 * ((q : V) * (‖k‖ + 1)) + 22 * (‖k‖ + 1)) * (f : V) :=
+          mul_le_mul_of_nonneg_right (add_le_add (add_le_add hLle (mul_le_mul_of_nonneg_left hQle zero_le))
+            (le_mul_of_one_le_right zero_le hu1)) zero_le
+      _ = ((l : V) + 24 * (q : V) + 22) * (f : V) * (‖k‖ + 1) := by ring
+  · rw [finalCtx_reidxL, shiftsV_reidxL]
+    rw [vRef_of_ne _root_.one_ne_zero] at hfact
+    exact hfact
+
+/-- **`SubstOracle` holds** with the constant of `substSteps_ok`. -/
+theorem substOracle_of (χ : Semisentence LAct 1) :
+    ∃ Cs : ℕ, ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] {tbl N E k : V},
+      TableOK tbl N → ProTable tbl → SubstOracle tbl E χ k Cs := by
+  obtain ⟨Cs, h⟩ := substSteps_ok χ
+  refine ⟨Cs, fun V _ _ tbl N E k htbl hP Γ y x iw hΓ hDy hDx hDw hE ↦ ?_⟩
+  obtain ⟨Ps, ok, nd, _, hsh, _, hf⟩ := h V htbl hP hΓ hDy hDx hDw hE
+  exact ⟨Ps, ok, nd, hsh, hf⟩
+
+end substOracle
 
 end ArithS
