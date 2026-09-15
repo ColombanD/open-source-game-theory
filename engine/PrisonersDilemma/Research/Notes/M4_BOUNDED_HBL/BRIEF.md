@@ -1593,3 +1593,33 @@ STATUS: all ten arms have proved size AND length lemmas (§§4–13), the length
 the prerequisites are in place (§15); only the glue remains, now with a concrete strategy and a
 measured reason the direct approach fails.
 IN FLIGHT: `Verify5` Part 4 (the ten per-arm motive wrappers, then the one-line recursion).
+
+**§11 status — `Verify5` glue, Part 4: THE RESTRUCTURING CONFIRMED, and the real cost centre found
+(e0611ec, bc29810; build 3270, census 869, all standard).** **TRAP 16 SUPERSEDES TRAP 15's
+diagnosis: the blowup was never the induction context — it is `isDefEq` searching for the arm
+lemma's IMPLICIT arguments (`is`, `il`, `ip`, `inp`, `L`, `n`, …) against the large unfolded list
+term.** Measured on `axL_wrapper`, identical content: in the induction body > 40 min
+(non-terminating); as a wrapper with implicits UNPINNED, `isDefEq` timeout at 2 M heartbeats in
+73 s; as a wrapper with implicits **PINNED BY NAME, green in 5 s**. Pinning turns a search into a
+check. Wrappers also need `maxHeartbeats 2000000` (200 000 is insufficient even pinned) and
+constant hypotheses in the SHAPE the arithmetic lemmas expect (`lin_le_p3` wants `(12 : V) + 9 ≤
+Czv`, NOT `((21 : ℕ) : V) ≤ Czv`; the cast mismatch reads as an APPLICATION type error, not a
+numeric one). WRAPPERS LANDED (2 of 10): `axL_wrapper` (§16, 5 s), `verum_wrapper` (§16.1, 5 s —
+the template generalises). REMAINING 8: `wk`, `shift`, `and`, `or`, `cut`, `all`, `exs`, `axm` —
+all template copies; every arm lemma (§§4–13), length bound (§14) and prerequisite (§15) they
+consume is proved.
+TRAP 17: `rw [← hdd]` must come AFTER the `unfold` — the wrapper abbreviates `d = dlen TAct (…)`
+and rewrites in bulk at the top, then `unfold v<Tag>` RE-EXPOSES the raw `dlen` in the fragment's
+`n` position and the pinned `n := d` stops matching; repeat the rewrite after the unfold, but ONLY
+where an unfold re-exposed it (in `axm`, never unfolded, the repeat fails "did not find an
+occurrence"). TRAP 18: the arm lemmas DIFFER in whether the node length is free or hard-wired —
+`axL_arm_size`/`verum_arm_size` take a free `n` so the `d` abbreviation pins cleanly, but
+**`axm_arm_size` HARD-WIRES `dlen TAct (axm s p)` in its hypothesis types** (`hp3E`, `hLn`,
+`hleaf`, `hgoalE`, `hbn`, `hnE`), so `d` cannot be pinned into it and **its wrapper must be written
+UNABBREVIATED from the start**; check each remaining arm lemma's statement for this before
+drafting. CAUTION (trap 14 recurring): an attempt to convert the `axm` probe by BULK STRING
+SUBSTITUTION corrupted it (missed occurrences left unbound `d`s whose malformed terms sent `whnf`
+into a 70 s timeout — an artifact of the edit, NOT evidence against the template); the file is
+quarantined in the scratchpad as `Probe29.CORRUPTED-by-bulk-substitution.lean.bak` — REWRITE FRESH,
+do not repair. Mechanical text surgery on validated Lean is a false economy.
+IN FLIGHT: `Verify5` Part 5 (the eight remaining wrappers, then the one-line recursion).
