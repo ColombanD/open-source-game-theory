@@ -1026,4 +1026,30 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms sizeOK_proExs
 #print axioms costSum_proExs_le
 
+-- U10 (Necessitation/BnumSteps + Pin §4–§7, 2026-09-15): `PinKit'` DISCHARGED FOR EVERY χ. `BnumSteps`: the
+-- bit-wise certification `bnumSteps k j` (a Fixpoint over the bits of `k` with PACKED parameters — `definability`'s
+-- comp rules stop at arity 5; per bit an `sLemma` `𝟏 ≤ bnum m` + one Horn `bnumEvenCert`/`bnumOddOfEven`, the two
+-- `𝟏`s of `𝟐` identified by `eqRefl/eqOfFunc/eqRefl/congAdj`), `bnGraph_ok` (Π₁ order induction, the quote `Pbnum`
+-- and the pieces/counts OPAQUE in the motive), `bnumSteps_ok` (cap 9, shift-free, len ≤ 8‖k‖+1, SizeOK) ⇒
+-- `bnumOracle_of` (Cb = 27). `Pin` §5: `substSteps_ok`/`substOracle_of` — `certSubst_ok` re-indexed at `bnum k ∷ 0`
+-- with `SubFPre` from `subFPre_single`; its LENGTH is linear in ‖k‖ through `len_subFGraph_le_lin` (`sfL L Q = L + 24Q
+-- + 22`: `Cert.sfK`'s `12Q(Q+1)` is the mode-1 vector pass bounded at `S := Q`; at `S := 0` it is `12Q`). §6: `pin_full`
+-- (the assembly with the real producers, `len ≤ Cχ(‖k‖+1)`, `SizeOK (Cχ(‖k‖+1)) (Cχ(‖k‖+1)³)`), `pinKit'_of` — the
+-- three coarse cost conjuncts of `Top.PinKit'` in ONE `costSum_le_of_sizeOK` over the whole list. §7:
+-- `exists_numIdTableB` (the row-body bound `rowsB`), `pinKit'_package` — the pin half of `KitPackage'`. Nothing below
+-- is an axiom.
+#print axioms bnEvenTail_ok
+#print axioms bnOddTop_ok
+#print axioms bnGraph_ok
+#print axioms bnGraph_len_size
+#print axioms bnumSteps_ok
+#print axioms bnumOracle_of
+#print axioms len_subFGraph_le_lin
+#print axioms substSteps_ok
+#print axioms substOracle_of
+#print axioms pin_full
+#print axioms pinKit'_of
+#print axioms exists_numIdTableB
+#print axioms pinKit'_package
+
 end ArithS
