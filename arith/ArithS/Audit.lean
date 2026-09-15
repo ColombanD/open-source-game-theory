@@ -50,6 +50,7 @@ import ArithS.Necessitation.NumIdRows
 import ArithS.Necessitation.Pin
 import ArithS.Necessitation.ProAxmRows
 import ArithS.Necessitation.ProAxm
+import ArithS.Necessitation.NodeSize
 
 /-!
 # ArithS.Audit — the axiom census of the arithmetized layer
@@ -1093,5 +1094,41 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms proAxm_std
 #print axioms proAxm_ok
 #print axioms costSum_proAxm_le
+
+
+-- U10 (Necessitation/NodeSize + Prologue §18, 2026-09-15): every node's sizes are charged in its own `dlen`
+-- (`setLen_fstIdx_le_dlen`, the principal formulas / the `exs` witness / the children `≤ dlen`), and the LENGTHS and
+-- SHIFTS of every prologue producer made concrete (`len_eqSteps_le` by a double walk; the loops via `preSum`; `and`/`or`/
+-- `cut`/`wk`/`shift`/`∅` linear in the node sizes; `all`/`exs` degree 5 in `D` through `Cert`'s `sfK L Q` — see §18's
+-- head docstring), with the cost corollaries `costSum_pro*_le'` at the concrete lengths. Nothing below is an axiom.
+#print axioms one_le_dlen
+#print axioms setLen_fstIdx_le_dlen
+#print axioms formulaLen_le_dlen_of_mem
+#print axioms dlen_dp_succ_le_andIntro
+#print axioms termLen_le_dlen_exsIntro
+#print axioms setLen_child_le_dlen_cutRule_right
+#print axioms preSum_len_eq
+#print axioms len_eqSteps_le
+#print axioms len_loopA_le
+#print axioms len_layoutSteps_le
+#print axioms len_identIns_le
+#print axioms len_proIns_le
+#print axioms len_proOr_le
+#print axioms len_proWk_le
+#print axioms len_proShift_le
+#print axioms len_proSS_le
+#print axioms len_certSubst_le_sfK
+#print axioms len_certSubst_single_le
+#print axioms len_allCert_le
+#print axioms len_proAll_le
+#print axioms len_exsCert_le
+#print axioms len_proExs_le
+#print axioms len_proIns0_le
+#print axioms costSum_proIns_le'
+#print axioms costSum_proShift_le'
+#print axioms costSum_proAll_le'
+#print axioms costSum_proExs_le'
+#print axioms shiftsV_proIns_le'
+#print axioms shiftsV_proAll_le
 
 end ArithS
