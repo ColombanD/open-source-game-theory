@@ -24,7 +24,14 @@ NEW_ROWS = [
   [A('insert', 't', 'x', 'Z'), A('setLen', 'l', 't'), A('flenG', 'lx', 'x')], A('le', 'l', 'lx'),
   by("subst_vars; rw [setLen_insert_of_not_mem_V (L := LAct) (by simp), ← emptyset_def, setLen_empty, zero_add]"),
   '`t = insert x ∅ → l = setLen t → lx = |x| → l ≤ lx` (the base of the `setLen` fold: a singleton is at most its member).'),
+ ('setLenEmptyLe', ['l'],
+  [A('setLen', 'l', 'Z')], A('le', 'l', 'Z'),
+  by("subst_vars; rw [← emptyset_def, setLen_empty]; try exact le_refl _"),
+  '`l = setLen ∅ → l ≤ 0` (the empty sequent: its length object is bounded by the numeral `bnum 0 = 𝟎`).'),
 ]
+# Rows whose `Lib` block AND `quote_row_`/`inst_` block already exist (`Lib/Frag.lean`, `RowInstB.lean`) but which sit
+# in no piece table: only their table entries are generated here (APPEND-ONLY).
+EXISTING_ROWS = ['congSubsetL', 'congSetShiftR']
 
 G.frag = []
 G.out = []
@@ -34,9 +41,9 @@ for (name, binders, ants, conc, proof, doc) in NEW_ROWS:
 lib_blocks = '\n'.join(G.frag)
 new_blocks = '\n'.join(G.out)
 
-TABLE = [n for (n, *_r) in NEW_ROWS]
+TABLE = [n for (n, *_r) in NEW_ROWS] + EXISTING_ROWS
 BASE = 155
-alltext = new_blocks
+alltext = new_blocks + open(os.path.join(HERE, '..', 'ArithS', 'Necessitation', 'RowInstB.lean')).read()
 
 def split_top(s):
     out=[]; d=0; cur=''
@@ -211,9 +218,11 @@ The rows `Prologue.lean` needs beyond the top table, each with its `Lib` block (
 The applicability lemmas take the table readings at the row's index as EXPLICIT hypotheses — no table
 predicate is defined here (`Prologue.lean`'s `ProTable` places these rows and the certification tail).
 
-Currently: `setLenSingLe` — `t = insert x ∅ → l = setLen t → lx = |x| → l ≤ lx`, the base of the
+Currently: `setLenSingLe` (155) — `t = insert x ∅ → l = setLen t → lx = |x| → l ≤ lx`, the base of the
 `setLen` fold (`DESIGN_fragments.md` §3.4; the library's `setLenInsertLe` needs a length object of the
-set below, and the empty set has none in any table).
+set below, and the empty set has none in any table); `setLenEmptyLe` (156) — `l = setLen ∅ → l ≤ 0`, the
+EMPTY sequent's layout; and two library rows that were in no piece table, `congSubsetL` (157) and
+`congSetShiftR` (158) (their `Lib` and `inst_` blocks live in `Lib/Frag.lean` / `RowInstB.lean`).
 -/
 
 namespace ArithS

@@ -934,4 +934,38 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms numId_sentence
 #print axioms numInv_cost
 
+-- U10 (Necessitation/Prologue, 2026-09-15 evening): the `or` and `shift` prologues, the size classes and costs of every
+-- prologue, and the rows 156–158 for the EMPTY sequent. `proOr` = two `proIns` + `congInsertS`; `proShift` = the chain
+-- over the shifted members + the child's layout + Loop S (`certShift`) + Loop I (`setShiftInsert`) + Fold U
+-- (`insertSubset`) + Loop M (`shiftMemSetShift`) + the parent's `subChain` + `subsetAntisymm` + `congSetShiftL`;
+-- `sizeOK_layoutSteps` is standalone (`hornOnly_chainSteps` by the rows, the fold's `sum2` lemmas bounded by
+-- `sum2Q`/`sum2D`); every `costSum_pro<Tag>_le` is `costSum_le_of_sizeOK 8`. Nothing below is an axiom.
+#print axioms proOr_ok
+#print axioms shBase_ok
+#print axioms loopS_ok
+#print axioms loopI_ok
+#print axioms uSub_ok
+#print axioms loopM_ok
+#print axioms proShiftPre_ok
+#print axioms shTail2_ok
+#print axioms proShift_ok
+#print axioms formulaLen_sum2Fact_le
+#print axioms dlen_sum2Code_le'
+#print axioms sizeOK_lenFoldAux
+#print axioms hornOnly_chainSteps
+#print axioms sizeOK_layoutSteps
+#print axioms costSum_layoutSteps_le
+#print axioms costSum_proAxL_le
+#print axioms costSum_postIns_le
+#print axioms sizeOK_proIns
+#print axioms costSum_proIns_le
+#print axioms sizeOK_proCutPre
+#print axioms costSum_proCutPre_le
+#print axioms sizeOK_proWk
+#print axioms costSum_proWk_le
+#print axioms sizeOK_proOr
+#print axioms costSum_proOr_le
+#print axioms sizeOK_proShift
+#print axioms costSum_proShift_le
+
 end ArithS
