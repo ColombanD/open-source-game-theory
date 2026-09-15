@@ -1107,3 +1107,27 @@ carry an opaque `a` with `a + (j+1) = k`; at `V := ℕ` Foundation's `Sub ℕ` i
 `((1:ℕ):V)` vs `(1:V)` not defeq; `definability`/`simp` on a motive containing the quote `Pbnum`
 times out — state transports for a VARIABLE predicate code; `(⌜f⌝ : ℕ) = encode f` is not `rfl`.
 IN FLIGHT: `Prologue` Part 3 (all/exs); `Top` (degree-4 kits + assembly).
+
+**§11 status — `Top` §9–§11 DONE: `boundedInnerNec_four_of_kit` (06d6ab7 … 9c2f131; census 606,
+all standard; §1–§8 byte-identical).** The COARSE-shape kits: `kitQ C B E := C·((B+1)(E+1))`,
+`kitD C z := C·(z+1)³` (dominate every producer's `Q`/`D`: `lenD` is CUBIC in the length argument,
+since `cTE` is unary — a `‖·‖`-polynomial `D` would not have been dischargeable); `VerifyKit' tbl
+N B W tblN Ck` (`ok` as before; `cost : … → costSum N E Γ L ≤ Ck·(dlen ρ+1)·(costK N E B 9 (kitQ Ck
+B E) (kitD Ck (dlen ρ)) + 38·(ctxBoundG (growK B E (kitQ …)) Γ (Ck·(dlen ρ+1)) + (fvOccS Γ +
+Ck·(dlen ρ+1)·growK …))) ∧ setLen (finalCtx Γ L) ≤ ctxBoundG … ∧ fvOccS (finalCtx Γ L) ≤ fvOccS Γ
++ Ck·(dlen ρ+1)·growK …`), `PinKit' χ tbl N B Cχ` (first four conjuncts EXACTLY `pin_assembly`'s
+conclusion, then the same three cost conjuncts with `‖k‖+1`), `KitPackage'`, `top_main'`,
+`stepKM9_le ≤ 1899·(N + BE + B + E + 1)`, `succ_quart_le`, `topBound'_pb : PB G u … 4 0`,
+**`theorem boundedInnerNec_four_of_kit (hpkg : KitPackage' …) : BoundedInnerNec 4`.** THE DEGREE
+IS EXACTLY 4: `E = Etop ~ G`, `kitQ/growK ~ G`, `L_k ~ G`; after verify the context is
+`S₂' + L_k·F₂' + (L_k² + L_k)·growK ~ G³` and the verify block costs `L_k·(… ctxBoundG …) ~ G⁴`
+— the `(L²+L)·growK` term of `ctxBoundG` (the full LENGTH `4·B·E` of each new fact charged as
+context growth) is the ONE factor above the design's cubic count; nothing reaches 5. TRAPS: graded
+products give degree `0 + e` (put the constant-degree factor second); graded sums need
+syntactically equal degrees; re-type folded pieces with `PB.of_le (q := …) (le_of_eq rfl)`; read
+big constants off Lean's mismatch (dummy `0`), paste as an `irreducible` `def`.
+**THE REMAINING OBLIGATION IS EXACTLY `KitPackage'`:** `VerifyKit'` (the ten prologues — seven
+done, `all`/`exs` in flight, `axm` pending — + `Verify`'s clause edit + the per-tag layout/cost
+theorems glued by `Derivation.induction1 𝚷` at the root) and `PinKit'` (`pin_assembly` + the two
+oracles `BnumOracle`/`SubstOracle` + the coarse cost conjuncts).
+IN FLIGHT: `Prologue` Part 3 (all/exs); `Pin` Part 2 (the oracles + cost → a `PinKit'` instance).
