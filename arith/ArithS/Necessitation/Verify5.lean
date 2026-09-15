@@ -1225,4 +1225,68 @@ theorem exs_arm_size {Wl Wc W₂ W T s p t d' L' B E Cz N' B' D d Γ : V}
 
 end allExsArms
 
+
+/-! ## 14. The selectors' lengths as BOUNDS — the length gap closed
+
+§7's `len_wkPro`/`len_shiftPro` are branch EQUATIONS (`if memberList c = 0 then 11 else len (proWk …)`), and the
+recursion needs a single `≤` covering both branches; `cutPro` had no length lemma at all. This section supplies all
+three, in the `D`-shape the induction carries:
+
+* `len_wkPro_le ≤ 44·D + 11` — the empty branch is the literal `11` (`proWk0 ++ emptyFsetPi`, `7 + 4`), the other
+  is `Prologue.len_proWk_le`'s `44·setLen c + 7`;
+* `len_shiftPro_le ≤ 62·D + 23` — the empty branch is `23` (`proShift0 ++ reset0 ++ emptyFsetPi`, `11 + 8 + 4`),
+  the other is `len_proShift_le`'s `61·setLen c + setLen s + 20`, so BOTH size hypotheses are consumed;
+* `len_cutPro_le ≤ 55·D + 13` — THE MISSING ONE. `cutPro` splits on the EMPTY PARENT, so the two branches are
+  `Prologue.len_proIns0_le`'s `49·setLen (insert p 0) + 13` and `len_proIns_le`'s `55·setLen (insert p s) + 12`;
+  the bound takes the larger coefficient from one and the larger constant from the other, and the empty-parent
+  branch needs its own size hypothesis (`setLen (insert p 0) ≤ D`) since `insert p 0` is not `insert p s`.
+-/
+
+section selectorLengths
+
+/-- **The `wk` selector's length, as a BOUND covering both branches.** -/
+theorem len_wkPro_le {tbl N : V} (htbl : TableOK tbl N) (hP : ProTable tbl) {Wl Wc : V}
+    (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (Ww W T s : V) {c D : V}
+    (hc : IsFormulaSet LAct c) (hcD : setLen LAct c ≤ D) :
+    len (wkPro Ww Wl Wc W T s c) ≤ 44 * D + 11 := by
+  rw [len_wkPro]
+  by_cases h : memberList c = 0
+  · rw [if_pos h]; exact le_add_self
+  · rw [if_neg h]
+    refine le_trans (len_proWk_le htbl hP hWl hWc Ww W T s 0 hc) ?_
+    exact add_le_add (mul_le_mul_of_nonneg_left hcD zero_le) (by norm_num : (7 : V) ≤ 11)
+
+/-- **The `shift` selector's length, as a BOUND covering both branches.** -/
+theorem len_shiftPro_le {Wc : V} (hWc : Wc = certPieces) (Ww Wl W T : V) {s c D : V}
+    (hs : IsFormulaSet LAct s) (hc : IsFormulaSet LAct c)
+    (hsD : setLen LAct s ≤ D) (hcD : setLen LAct c ≤ D) :
+    len (shiftPro Ww Wl Wc W T s c) ≤ 62 * D + 23 := by
+  rw [len_shiftPro]
+  by_cases h : memberList c = 0
+  · rw [if_pos h]; exact le_add_self
+  · rw [if_neg h]
+    refine le_trans (len_proShift_le hWc Ww Wl W T 0 hs hc) ?_
+    calc 61 * setLen LAct c + setLen LAct s + 20 ≤ 61 * D + D + 20 :=
+          add_le_add (add_le_add (mul_le_mul_of_nonneg_left hcD zero_le) hsD) le_rfl
+      _ = 62 * D + 20 := by ring
+      _ ≤ 62 * D + 23 := add_le_add le_rfl (by norm_num : (20 : V) ≤ 23)
+
+/-- **The `cut` selector's length** — the lemma the tree never had (`cutPro` splits on the EMPTY PARENT). -/
+theorem len_cutPro_le {tbl N : V} (htbl : TableOK tbl N) (hP : ProTable tbl) {Wl Wc : V}
+    (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (Ww W T i ip : V) {s p D : V}
+    (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 0 p)
+    (hsDp : setLen LAct (insert p s) ≤ D) (hsD0 : setLen LAct (insert p (0 : V)) ≤ D) :
+    len (cutPro Ww Wl Wc W T s p i ip) ≤ 55 * D + 13 := by
+  unfold cutPro
+  by_cases h : memberList s = 0
+  · rw [if_pos h]
+    refine le_trans (len_proIns0_le htbl hP hWl hWc Ww W T i ip hp) ?_
+    exact add_le_add (le_trans (mul_le_mul_of_nonneg_left hsD0 zero_le)
+      (mul_le_mul_of_nonneg_right (by norm_num : (49 : V) ≤ 55) zero_le)) le_rfl
+  · rw [if_neg h]
+    refine le_trans (len_proIns_le htbl hP hWl hWc Ww W T i ip hs hp) ?_
+    exact add_le_add (mul_le_mul_of_nonneg_left hsDp zero_le) (by norm_num : (12 : V) ≤ 13)
+
+end selectorLengths
+
 end ArithS

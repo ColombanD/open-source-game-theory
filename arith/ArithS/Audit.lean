@@ -1486,6 +1486,21 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms all_arm_size
 #print axioms exs_arm_size
 
+-- U10 (Necessitation/Verify5, 2026-09-16): THE SIZE HALF, PART 11 — the selectors' lengths as BOUNDS; the length
+-- gap CLOSED. §7's `len_wkPro`/`len_shiftPro` are branch EQUATIONS (`if memberList c = 0 then 11 else …`) and the
+-- recursion needs a single `≤` covering both branches; `cutPro` had NO length lemma at all. All three are supplied
+-- here in the `D`-shape the induction carries: `len_wkPro_le ≤ 44·D + 11` (empty branch the literal `11` =
+-- `proWk0 ++ emptyFsetPi` = `7 + 4`, the other `Prologue.len_proWk_le`'s `44·setLen c + 7`); `len_shiftPro_le ≤
+-- 62·D + 23` (empty branch `23` = `proShift0 ++ reset0 ++ emptyFsetPi` = `11 + 8 + 4`, the other
+-- `len_proShift_le`'s `61·setLen c + setLen s + 20`, so BOTH size hypotheses are consumed); and `len_cutPro_le ≤
+-- 55·D + 13` — THE MISSING ONE, whose split is on the EMPTY PARENT, so its branches are `len_proIns0_le`'s
+-- `49·setLen (insert p 0) + 13` and `len_proIns_le`'s `55·setLen (insert p s) + 12`; the bound takes the larger
+-- coefficient from one and the larger constant from the other, and the empty-parent branch needs its OWN size
+-- hypothesis (`setLen (insert p 0) ≤ D`), since `insert p 0` is not `insert p s`.
+#print axioms len_wkPro_le
+#print axioms len_shiftPro_le
+#print axioms len_cutPro_le
+
 -- U10 (Necessitation/Package, 2026-09-15): THE PACKAGE AND THE HEADLINE THEOREMS, with `Assemble.SizeOracle`
 -- BYPASSED. `SizeOracle` is NOT PROVABLE as stated (it binds the numeral table `T` with no `NumTableOK T N' B'`,
 -- while every prologue size lemma requires one and lands at `layQ B B' D`/`layD N' B' D`; `NumTableOK` is never a
