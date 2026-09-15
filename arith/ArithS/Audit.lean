@@ -58,6 +58,7 @@ import ArithS.Necessitation.Verify3
 import ArithS.Necessitation.Bounds
 import ArithS.Necessitation.Verify4
 import ArithS.Necessitation.Assemble
+import ArithS.Necessitation.Verify5
 
 /-!
 # ArithS.Audit — the axiom census of the arithmetized layer
@@ -1297,5 +1298,33 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms deg_four
 #print axioms boundedInnerNec_sixteen_of_size
 #print axioms dupoc_self_coop_of_size
+
+-- U10 (Necessitation/Verify5, 2026-09-15): THE SIZE HALF, PART 1 — the layout size class is MONOTONE
+-- (`layQ_mono`/`layD_mono` from `lenQ`/`lenD`/`sum2Q`/`sum2D`), and the NODE CODES' derivation lengths land in it:
+-- `dlen_leafCode_le' ≤ sum2D N' B' Dz`, `dlen_bin2Code_le'`/`dlen_bin3Code_le' ≤ 2·sum2D N' B' Dz`, through
+-- `codeK N' B' Dz = (‖Dz‖+1)(‖Dz‖+2)·nodeCost N' B' (18‖Dz‖+7)` and the summand bounds `dlen_succCode_le_codeK`,
+-- `dlen_addCode_le_codeK`, `dlen_leCode_le_codeK` (modelled on `Prologue.dlen_sum2Code_le'`). These discharge the
+-- `dlen TAct (leafCode …) ≤ D` hypotheses of `Frag1`/`Frag2`'s `sizeOK_frag*`/`sizeOK_node*`, which NO caller in the
+-- tree had ever discharged. NOTE: `Assemble.SizeOracle` is NOT PROVABLE as stated (it binds the numeral table `T`
+-- with no `NumTableOK`, while every prologue size lemma needs one and lands at `layD N' B' D`; machine-checked:
+-- `sizeOK_layoutSteps` cannot even be elaborated with `T` free). `verifySizeOracle_of_arms` is the
+-- `NumTableOK`-carrying interface; the ten induction arms are still the named hypothesis `ArmHyps`.
+#print axioms lenQ_mono
+#print axioms lenD_mono
+#print axioms sum2Q_mono
+#print axioms sum2D_mono
+#print axioms layQ_mono
+#print axioms layD_mono
+#print axioms sum2D_eq_four_codeK
+#print axioms nodeCost_le_codeK
+#print axioms nodeCost_bk_le_codeK
+#print axioms dlen_succCode_le_codeK
+#print axioms dlen_addCode_le_codeK
+#print axioms dlen_leCode_le_codeK
+#print axioms dlen_leafCode_le'
+#print axioms dlen_bin2Code_le'
+#print axioms dlen_bin3Code_le'
+#print axioms sum2D_le_layD
+#print axioms verifySizeOracle_of_arms
 
 end ArithS
