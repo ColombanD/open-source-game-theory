@@ -2265,4 +2265,271 @@ theorem c1Intro_ok {tbl N E Γ iw1 : V} (htbl : TableOK tbl N) (hT : IndRecTable
 
 end stageB
 
+/-! ### 5.6 Stage B: the composition -/
+
+section stageBmain
+
+variable {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
+
+/-- One tag-`0` step at cap `9`. -/
+lemma HInv.single9 {tbl E Γ s : V} (h : StepOK tbl E ((9 : ℕ) : V) Γ s) (htag : sTag s = 0) :
+    HInv tbl E Γ ?[s] :=
+  ⟨listOK_single h, noDrop'_single (Or.inl htag), hornOnly_single (Or.inl htag), shiftsV_single_tag0 htag⟩
+lemma HInv.snoc9 {tbl E Γ P s : V} (hP : HInv tbl E Γ P) (h : StepOK tbl E ((9 : ℕ) : V) (finalCtx Γ P) s)
+    (htag : sTag s = 0) : HInv tbl E Γ (appendV P ?[s]) :=
+  hP.append (HInv.single9 h htag)
+lemma HInv.mem_app' {tbl E Γ P L P' x : V} (hP' : P' = appendV P L) (hL : HInv tbl E (finalCtx Γ P) L)
+    (hx : x ∈ finalCtx Γ P) : x ∈ finalCtx Γ P' := by subst hP'; rw [finalCtx_appendV]; exact hL.mem hx
+lemma HInv.new_app' {tbl E Γ P L P' x : V} (hP' : P' = appendV P L) (_ : HInv tbl E (finalCtx Γ P) L)
+    (hx : x ∈ finalCtx (finalCtx Γ P) L) : x ∈ finalCtx Γ P' := by subst hP'; rw [finalCtx_appendV]; exact hx
+lemma HInv.mem_app {tbl E Γ P L x : V} (hL : HInv tbl E (finalCtx Γ P) L) (hx : x ∈ finalCtx Γ P) :
+    x ∈ finalCtx Γ (appendV P L) := by rw [finalCtx_appendV]; exact hL.mem hx
+lemma HInv.new_app {tbl E Γ P L x : V} (_ : HInv tbl E (finalCtx Γ P) L) (hx : x ∈ finalCtx (finalCtx Γ P) L) :
+    x ∈ finalCtx Γ (appendV P L) := by rw [finalCtx_appendV]; exact hx
+lemma HInv.dossF_app {tbl E Γ P L W n r i : V} (hL : HInv tbl E (finalCtx Γ P) L) (hD : DossF W (finalCtx Γ P) n r i) :
+    DossF W (finalCtx Γ (appendV P L)) n r i := by rw [finalCtx_appendV]; exact hL.dossF hD
+lemma HInv.dossV_app {tbl E Γ P L W n k v j i : V} (hL : HInv tbl E (finalCtx Γ P) L) (hD : DossV W (finalCtx Γ P) n k v j i) :
+    DossV W (finalCtx Γ (appendV P L)) n k v j i := by rw [finalCtx_appendV]; exact hL.dossV hD
+
+set_option maxHeartbeats 4000000 in
+/-- **Stage B**: at the context of stage A, the shift-free closing: the `qqAlls` walk, the `bs` pass, the shift and
+`fvSeq` certificates, `neg K`, the identification of the two copies of `K`, the four packaging rows and the
+recognizer — `axchFact &ip'`. -/
+theorem stageB {tbl N E Γ p ip' b m K Z js ink iw iw0 iw1 : V} (htbl : TableOK tbl N) (hT : IndRecTable tbl)
+    (hΓ : IsFormulaSet LAct Γ) (hZ : 1 ≤ Z)
+    (hb : IsSemiformula ℒₒᵣ m b) (hK : IsSemiformula ℒₒᵣ 1 K) (hp : p = qqAlls b m) (hbv : Bootstrapping.bv ℒₒᵣ b = m)
+    (hsh : shift LAct b = b)
+    (hm : m ≤ Z) (hLb : formulaLen LAct b ≤ Z) (hLs : formulaLen LAct (indBodyVal K) ≤ Z) (hLk : formulaLen LAct K ≤ Z)
+    (hip : ip' ≤ 101 * gp Z 3) (hjs : js ≤ 100 * gp Z 3) (hink : ink ≤ 100 * gp Z 3) (hiw : iw ≤ 100 * gp Z 3)
+    (hiw0 : iw0 ≤ 100 * gp Z 3) (hiw1 : iw1 ≤ 100 * gp Z 3) (hE : 200 * gp Z 3 ≤ E)
+    (hDp : DossF walkPieces Γ 0 p ip') (hDs : DossF walkPieces Γ 0 (indBodyVal K) js)
+    (hDk : DossF walkPieces Γ 1 (neg LAct K) ink) (hDw : DossV walkPieces Γ 0 m (Bootstrapping.fvarVec m) m iw)
+    (hDw0 : DossV walkPieces Γ 0 1 c0v 1 iw0) (hDw1 : DossV walkPieces Γ 1 1 c1v 1 iw1)
+    (hf6 : neg LAct (substFact (^&js) (vRef iw m) (^&(ip' + m))) ∈ Γ)
+    (hf7 : neg LAct (substFact (^&(js + descCountF walkPieces 0 (yK K) + 1)) (^&iw0) (^&ink)) ∈ Γ)
+    (hf8 : neg LAct (substFact (^&(js + 1 + descCountF walkPieces 0 (zK K) + 1 + 1 + 1)) (^&iw1) (^&ink)) ∈ Γ) :
+    ∃ P : V, HInv tbl E Γ P ∧ len P ≤ 100 * gp Z 3 ∧ neg LAct (axchFact (^&ip')) ∈ finalCtx Γ P := by
+  have hW := hT.walkTable
+  have hbL := IsSemiformula.LAct_of_LOR hb
+  have hKL := IsSemiformula.LAct_of_LOR hK
+  have hnkL := nkL_of hK
+  have hLnk : formulaLen LAct (neg LAct K) = formulaLen LAct K := formulaLen_neg hKL.isUFormula
+  obtain ⟨hLx, hLy, hLz, hLns, hLK⟩ := formulaLen_pieces_le hK
+  -- the atoms
+  have hZ1 : (1 : V) ≤ 1 * gp Z 1 := by rw [one_mul]; exact one_le_gp hZ 1
+  have hm' := atom_gp_le hm
+  have hLb' := atom_gp_le hLb
+  have hLk' := atom_gp_le hLk
+  have hcy : descCountF walkPieces 0 (yK K) ≤ 2 * gp Z 1 := by
+    have := descCountF_succ_le' htbl hW (yK_isSemiformula hK)
+    exact gp_final hZ (le_trans (le_trans le_self_add this) (cmul_gp_le 2 (atom_gp_le (le_trans hLy hLs)))) le_rfl (by norm_num)
+  have hcz : descCountF walkPieces 0 (zK K) ≤ 2 * gp Z 1 := by
+    have := descCountF_succ_le' htbl hW (zK_isSemiformula hK)
+    exact gp_final hZ (le_trans (le_trans le_self_add this) (cmul_gp_le 2 (atom_gp_le (le_trans hLz hLs)))) le_rfl (by norm_num)
+  have hcns : descCountF walkPieces 1 (nsK K) ≤ 2 * gp Z 1 := by
+    have := descCountF_succ_le' htbl hW (nsK_isSemiformula hK)
+    exact gp_final hZ (le_trans (le_trans le_self_add this) (cmul_gp_le 2 (atom_gp_le (le_trans hLns hLs)))) le_rfl (by norm_num)
+  have hbig : ∀ (x : V) (c : V), x ≤ c * gp Z 3 → c ≤ 150 → x + 1 ≤ E := fun x c hx hc ↦
+    le_trans (gp_final hZ (add_gp_le hZ hx (const_gp_le (1 : V) hZ 3) le_rfl le_rfl) le_rfl (by
+      exact le_trans (add_le_add hc le_rfl) (by norm_num : (150 : V) + 1 ≤ 200))) hE
+  have hE8 : (8 : V) ≤ E := le_trans (gp_final hZ (const_gp_le (8 : V) hZ 3) le_rfl (by norm_num)) hE
+  -- the offsets inside `s`
+  obtain ⟨hor1, hor2, hexs, hand, hall, _, _, hDK1, hDK2⟩ := bodyDoss htbl hW hK hDs
+  have hix : js + descCountF walkPieces 0 (yK K) + 1 ≤ 104 * gp Z 3 :=
+    gp_final hZ (add_gp_le hZ (add_gp_le hZ hjs hcy le_rfl (by norm_num)) (const_gp_le (1 : V) hZ 3) le_rfl le_rfl) le_rfl (by norm_num)
+  have hiu : js + 1 + descCountF walkPieces 0 (zK K) + 1 ≤ 105 * gp Z 3 :=
+    gp_final hZ (add_gp_le hZ (add_gp_le hZ (add_gp_le hZ hjs (const_gp_le (1 : V) hZ 3) le_rfl le_rfl) hcz le_rfl (by norm_num))
+      (const_gp_le (1 : V) hZ 3) le_rfl le_rfl) le_rfl (by norm_num)
+  have hin1 : js + 1 + descCountF walkPieces 0 (zK K) + 1 + 1 ≤ 106 * gp Z 3 :=
+    gp_final hZ (add_gp_le hZ hiu (const_gp_le (1 : V) hZ 3) le_rfl le_rfl) le_rfl (by norm_num)
+  have hins : js + 1 + descCountF walkPieces 0 (zK K) + 1 + 1 + 1 ≤ 107 * gp Z 3 :=
+    gp_final hZ (add_gp_le hZ hin1 (const_gp_le (1 : V) hZ 3) le_rfl le_rfl) le_rfl (by norm_num)
+  have hiK1 : js + 1 + descCountF walkPieces 0 (zK K) + 1 + 1 + descCountF walkPieces 1 (nsK K) + 1 ≤ 110 * gp Z 3 :=
+    gp_final hZ (add_gp_le hZ (add_gp_le hZ hin1 hcns le_rfl (by norm_num)) (const_gp_le (1 : V) hZ 3) le_rfl le_rfl) le_rfl (by norm_num)
+  have hiK2 : js + 1 + 1 + 1 ≤ 103 * gp Z 3 :=
+    gp_final hZ (add_gp_le hZ (add_gp_le hZ (add_gp_le hZ hjs (const_gp_le (1 : V) hZ 3) le_rfl le_rfl) (const_gp_le (1 : V) hZ 3) le_rfl le_rfl)
+      (const_gp_le (1 : V) hZ 3) le_rfl le_rfl) le_rfl (by norm_num)
+  have hiy : js + 1 ≤ 101 * gp Z 3 := gp_final hZ (add_gp_le hZ hjs (const_gp_le (1 : V) hZ 3) le_rfl le_rfl) le_rfl (by norm_num)
+  have hiz : js + 1 + 1 ≤ 102 * gp Z 3 := gp_final hZ (add_gp_le hZ hiy (const_gp_le (1 : V) hZ 3) le_rfl le_rfl) le_rfl (by norm_num)
+  have hib : ip' + m ≤ 102 * gp Z 3 := gp_final hZ (add_gp_le hZ hip hm' le_rfl (by norm_num)) le_rfl (by norm_num)
+  have hEm : termLen LAct (cTV m) ≤ E := cTV_cap le_rfl (hbig _ _ (gp_final hZ (cmul_gp_le 2 hm') (by norm_num) le_rfl) (by norm_num))
+  -- B1. the `qqAlls` walk
+  have hDp' : DossF walkPieces Γ 0 (qqAlls b m) ip' := by rw [← hp]; exact hDp
+  obtain ⟨L1, hL1, hl1, hf1⟩ := qqAllsWalk_ok htbl hT hΓ hbL hDp'
+    (hbig _ _ (gp_final hZ (cmul_gp_le 2 hm') (by norm_num) le_rfl) (by norm_num)) (hbig _ _ hib (by norm_num))
+  obtain ⟨P₁, hP₁⟩ : ∃ P', P' = L1 := ⟨_, rfl⟩
+  rw [← hP₁] at hL1 hl1 hf1
+  have hΓ₁ := hL1.isFormulaSet htbl hΓ
+  -- B2. the `bs` pass on `b`
+  have hDb₁ : DossF walkPieces (finalCtx Γ P₁) m b (ip' + m) := by
+    have := dossF_qqAlls htbl hW rfl hbL (hL1.dossF hDp') m le_rfl 0 (zero_add m)
+    rwa [qqAlls_zero] at this
+  have hBi : ip' + m + 2 * formulaLen LAct b ≤ 104 * gp Z 3 :=
+    gp_final hZ (add_gp_le hZ hib (cmul_gp_le 2 hLb') le_rfl (by norm_num)) le_rfl (by norm_num)
+  obtain ⟨L2, hL2, hl2, hf2⟩ := bsF_ok (B := m + formulaLen LAct b) (Bi := ip' + m + 2 * formulaLen LAct b) htbl hT hΓ₁
+    (hbig _ _ (gp_final hZ (cmul_gp_le 2 (add_gp_le hZ hm' hLb' le_rfl le_rfl)) (by norm_num) le_rfl) (by norm_num)) (hbig _ _ hBi (by norm_num)) hE8 hb
+    (ip' + m) le_self_add le_rfl le_rfl hDb₁
+  rw [hbv] at hf2
+  obtain ⟨P₂, hP₂⟩ : ∃ P', P' = appendV P₁ L2 := ⟨_, rfl⟩
+  have hP₂i : HInv tbl E Γ P₂ := by rw [hP₂]; exact hL1.append hL2
+  have hf2' : neg LAct (bsFFact (cTV m) (cTV m) (^&(ip' + m))) ∈ finalCtx Γ P₂ := by rw [hP₂]; exact hL2.new_app hf2
+  have hf1' : neg LAct (allsFact (^&ip') (^&(ip' + m)) (cTV m)) ∈ finalCtx Γ P₂ := by rw [hP₂]; exact hL2.mem_app hf1
+  have hΓ₂ := hP₂i.isFormulaSet htbl hΓ
+  -- B3. `shift b = b`
+  have hDb₂ : DossF walkPieces (finalCtx Γ P₂) m b (ip' + m) := by
+    rw [hP₂, finalCtx_appendV]; exact hL2.dossF hDb₁
+  obtain ⟨L3, hL3, hl3, hf3⟩ := shiftSelf_ok htbl hT hΓ₂ hbL hsh hDb₂
+    (le_trans (gp_final hZ (add_gp_le hZ (add_gp_le hZ (cmul_gp_le 2 hm') (cmul_gp_le 2 hLb') le_rfl le_rfl)
+      (const_gp_le (8 : V) hZ 1) le_rfl le_rfl) (by norm_num) (by norm_num)) hE) (hbig _ _ hBi (by norm_num))
+  obtain ⟨P₃, hP₃⟩ : ∃ P', P' = appendV P₂ L3 := ⟨_, rfl⟩
+  have hP₃i : HInv tbl E Γ P₃ := by rw [hP₃]; exact hP₂i.append hL3
+  have hf3' : neg LAct (shiftFact (^&(ip' + m)) (^&(ip' + m))) ∈ finalCtx Γ P₃ := by rw [hP₃]; exact hL3.new_app hf3
+  have hf2'' := show neg LAct (bsFFact (cTV m) (cTV m) (^&(ip' + m))) ∈ finalCtx Γ P₃ by rw [hP₃]; exact hL3.mem_app hf2'
+  have hf1'' := show neg LAct (allsFact (^&ip') (^&(ip' + m)) (cTV m)) ∈ finalCtx Γ P₃ by rw [hP₃]; exact hL3.mem_app hf1'
+  have hΓ₃ := hP₃i.isFormulaSet htbl hΓ
+  -- B4. `fvSeq`
+  have hDw₃ : DossV walkPieces (finalCtx Γ P₃) 0 m (Bootstrapping.fvarVec m) m iw := hP₃i.dossV hDw
+  have hmm : m * (m + 1) ≤ 2 * gp Z 2 := gp_final hZ (mul_gp_le hm' (add_gp_le hZ hm' hZ1 le_rfl le_rfl)) le_rfl (by norm_num)
+  have htk : takeLast (Bootstrapping.fvarVec m) m = Bootstrapping.fvarVec m := by
+    have := takeLast_len_self (Bootstrapping.fvarVec m); rwa [Bootstrapping.len_fvarVec] at this
+  have hBi' : iw + 2 * (m * (m + 1)) + 1 ≤ 105 * gp Z 3 :=
+    gp_final hZ (add_gp_le hZ (add_gp_le hZ hiw (cmul_gp_le 2 hmm) le_rfl (by norm_num)) (const_gp_le (1 : V) hZ 3) le_rfl le_rfl)
+      le_rfl (by norm_num)
+  obtain ⟨L4, hL4, hl4, hf4⟩ := fvSeq_ok (Bi := iw + 2 * (m * (m + 1)) + 1) htbl hT hΓ₃
+    (hbig _ _ (gp_final hZ (cmul_gp_le 2 hm') (by norm_num) le_rfl) (by norm_num)) (hbig _ _ hBi' (by norm_num)) m le_rfl 0 zero_le (zero_add m) iw
+    (le_trans le_self_add (le_trans le_self_add le_rfl))
+    (by rw [htk]; exact add_le_add (add_le_add le_rfl (mul_le_mul_of_nonneg_left (listSum_termLenVec_fvarVec_le m) zero_le)) le_rfl) hDw₃
+  rw [cTV_zero] at hf4
+  obtain ⟨P₄, hP₄⟩ : ∃ P', P' = appendV P₃ L4 := ⟨_, rfl⟩
+  have hP₄i : HInv tbl E Γ P₄ := by rw [hP₄]; exact hP₃i.append hL4
+  have hΓ₄ := hP₄i.isFormulaSet htbl hΓ
+  -- B5. `neg K`
+  have hDK1₄ : DossF walkPieces (finalCtx Γ P₄) 1 K _ := hP₄i.dossF hDK1
+  have hDk₄ : DossF walkPieces (finalCtx Γ P₄) 1 (neg LAct K) ink := hP₄i.dossF hDk
+  have hEk1 : 2 * 1 + 2 * formulaLen LAct K + 8 ≤ E :=
+    le_trans (gp_final hZ (add_gp_le hZ (add_gp_le hZ (const_gp_le (2 * 1 : V) hZ 1) (cmul_gp_le 2 hLk') le_rfl le_rfl)
+      (const_gp_le (8 : V) hZ 1) le_rfl le_rfl) (by norm_num) (by norm_num)) hE
+  obtain ⟨L5, hL5, hl5, hf5⟩ := negInst_ok htbl hT hΓ₄ hKL hEk1
+    (hbig _ _ (gp_final hZ (add_gp_le hZ hiK1 (cmul_gp_le 2 hLk') le_rfl (by norm_num)) le_rfl le_rfl) (by norm_num))
+    (hbig _ _ (gp_final hZ (add_gp_le hZ hink (cmul_gp_le 2 hLk') le_rfl (by norm_num)) le_rfl le_rfl) (by norm_num)) hDK1₄ hDk₄
+  obtain ⟨P₅, hP₅⟩ : ∃ P', P' = appendV P₄ L5 := ⟨_, rfl⟩
+  have hP₅i : HInv tbl E Γ P₅ := by rw [hP₅]; exact hP₄i.append hL5
+  have hΓ₅ := hP₅i.isFormulaSet htbl hΓ
+  -- B6. the identification of the two copies of `K`
+  have hDK1₅ : DossF walkPieces (finalCtx Γ P₅) 1 K _ := hP₅i.dossF hDK1
+  have hDK2₅ : DossF walkPieces (finalCtx Γ P₅) 1 K _ := hP₅i.dossF hDK2
+  obtain ⟨L6, hL6, hl6, hf6'⟩ := eqInst_ok htbl hT hΓ₅ hKL
+    (le_trans (gp_final hZ (add_gp_le hZ (cmul_gp_le 2 (add_gp_le hZ hZ1 hLk' le_rfl le_rfl)) (const_gp_le (12 : V) hZ 1) le_rfl le_rfl)
+      (by norm_num) (by norm_num)) hE)
+    (hbig _ _ (gp_final hZ (add_gp_le hZ hiK2 (cmul_gp_le 2 hLk') le_rfl (by norm_num)) le_rfl le_rfl) (by norm_num))
+    (hbig _ _ (gp_final hZ (add_gp_le hZ hiK1 (cmul_gp_le 2 hLk') le_rfl (by norm_num)) le_rfl le_rfl) (by norm_num)) hDK2₅ hDK1₅
+  obtain ⟨P₆, hP₆⟩ : ∃ P', P' = appendV P₅ L6 := ⟨_, rfl⟩
+  have hP₆i : HInv tbl E Γ P₆ := by rw [hP₆]; exact hP₅i.append hL6
+  have hΓ₆ := hP₆i.isFormulaSet htbl hΓ
+  -- B7, B8. the constant vectors
+  obtain ⟨L7, hL7, hl7, hf7'⟩ := c0Intro_ok htbl hT hΓ₆ (le_trans (le_of_eq (by ring)) (hbig _ _ (gp_final hZ (add_gp_le hZ hiw0 (const_gp_le (1 : V) hZ 3) le_rfl le_rfl) le_rfl le_rfl) (by norm_num))) (hP₆i.dossV hDw0)
+  obtain ⟨P₇, hP₇⟩ : ∃ P', P' = appendV P₆ L7 := ⟨_, rfl⟩
+  have hP₇i : HInv tbl E Γ P₇ := by rw [hP₇]; exact hP₆i.append hL7
+  have hΓ₇ := hP₇i.isFormulaSet htbl hΓ
+  obtain ⟨L8, hL8, hl8, hf8'⟩ := c1Intro_ok htbl hT hΓ₇ (le_trans (le_of_eq (by ring)) (hbig _ _ (gp_final hZ (add_gp_le hZ hiw1 (const_gp_le (7 : V) hZ 3) le_rfl le_rfl) le_rfl le_rfl) (by norm_num))) (hP₇i.dossV hDw1)
+  obtain ⟨P₈, hP₈⟩ : ∃ P', P' = appendV P₇ L8 := ⟨_, rfl⟩
+  have hP₈i : HInv tbl E Γ P₈ := by rw [hP₈]; exact hP₇i.append hL8
+  have hΓ₈ := hP₈i.isFormulaSet htbl hΓ
+  -- all the facts at `P₈`
+  have mem₈ : ∀ x : V, x ∈ Γ → x ∈ finalCtx Γ P₈ := fun x hx ↦ hP₈i.mem hx
+  have mem₈₃ : ∀ x : V, x ∈ finalCtx Γ P₃ → x ∈ finalCtx Γ P₈ := fun x hx ↦
+    hL8.mem_app' hP₈ (hL7.mem_app' hP₇ (hL6.mem_app' hP₆ (hL5.mem_app' hP₅ (hL4.mem_app' hP₄ hx))))
+  have g1 := mem₈₃ _ hf1''
+  have g2 := mem₈₃ _ hf2''
+  have g3 := mem₈₃ _ hf3'
+  have g4 : neg LAct (fvSeqFact (vRef iw m) (𝟎 : V) (cTV m)) ∈ finalCtx Γ P₈ := by
+    exact hL8.mem_app' hP₈ (hL7.mem_app' hP₇ (hL6.mem_app' hP₆ (hL5.mem_app' hP₅ (hL4.new_app' hP₄ hf4))))
+  have g5 : neg LAct (negFact (^&ink) (^&(js + 1 + descCountF walkPieces 0 (zK K) + 1 + 1 + descCountF walkPieces 1 (nsK K) + 1))) ∈
+      finalCtx Γ P₈ := by
+    exact hL8.mem_app' hP₈ (hL7.mem_app' hP₇ (hL6.mem_app' hP₆ (hL5.new_app' hP₅ hf5)))
+  have g6 : neg LAct (eqFactB (^&(js + 1 + 1 + 1)) (^&(js + 1 + descCountF walkPieces 0 (zK K) + 1 + 1 + descCountF walkPieces 1 (nsK K) + 1))) ∈
+      finalCtx Γ P₈ := by
+    exact hL8.mem_app' hP₈ (hL7.mem_app' hP₇ (hL6.new_app' hP₆ hf6'))
+  have g7 : neg LAct (isC0Fact (^&iw0)) ∈ finalCtx Γ P₈ := hL8.mem_app' hP₈ (hL7.new_app' hP₇ hf7')
+  have g8 : neg LAct (isC1Fact (^&iw1)) ∈ finalCtx Γ P₈ := hL8.new_app' hP₈ hf8'
+  -- the witnesses' caps
+  have cJs : termLen LAct (^&js : V) ≤ E := termLen_fvar_le (hbig _ _ (gp_final hZ hjs le_rfl le_rfl) (by norm_num))
+  have cIx : termLen LAct (^&(js + descCountF walkPieces 0 (yK K) + 1) : V) ≤ E := termLen_fvar_le (hbig _ _ (gp_final hZ hix le_rfl le_rfl) (by norm_num))
+  have cIy : termLen LAct (^&(js + 1) : V) ≤ E := termLen_fvar_le (hbig _ _ (gp_final hZ hiy le_rfl le_rfl) (by norm_num))
+  have cIu : termLen LAct (^&(js + 1 + descCountF walkPieces 0 (zK K) + 1) : V) ≤ E := termLen_fvar_le (hbig _ _ (gp_final hZ hiu le_rfl le_rfl) (by norm_num))
+  have cIz : termLen LAct (^&(js + 1 + 1) : V) ≤ E := termLen_fvar_le (hbig _ _ (gp_final hZ hiz le_rfl le_rfl) (by norm_num))
+  have cIn1 : termLen LAct (^&(js + 1 + descCountF walkPieces 0 (zK K) + 1 + 1) : V) ≤ E := termLen_fvar_le (hbig _ _ (gp_final hZ hin1 le_rfl le_rfl) (by norm_num))
+  have cIK1 : termLen LAct (^&(js + 1 + descCountF walkPieces 0 (zK K) + 1 + 1 + descCountF walkPieces 1 (nsK K) + 1) : V) ≤ E :=
+    termLen_fvar_le (hbig _ _ (gp_final hZ hiK1 le_rfl le_rfl) (by norm_num))
+  have cIns : termLen LAct (^&(js + 1 + descCountF walkPieces 0 (zK K) + 1 + 1 + 1) : V) ≤ E := termLen_fvar_le (hbig _ _ (gp_final hZ hins le_rfl le_rfl) (by norm_num))
+  have cIK2 : termLen LAct (^&(js + 1 + 1 + 1) : V) ≤ E := termLen_fvar_le (hbig _ _ (gp_final hZ hiK2 le_rfl le_rfl) (by norm_num))
+  have cInk : termLen LAct (^&ink : V) ≤ E := termLen_fvar_le (hbig _ _ (gp_final hZ hink le_rfl le_rfl) (by norm_num))
+  have cIw0 : termLen LAct (^&iw0 : V) ≤ E := termLen_fvar_le (hbig _ _ (gp_final hZ hiw0 le_rfl le_rfl) (by norm_num))
+  have cIw1 : termLen LAct (^&iw1 : V) ≤ E := termLen_fvar_le (hbig _ _ (gp_final hZ hiw1 le_rfl le_rfl) (by norm_num))
+  have cIw : termLen LAct (vRef iw m) ≤ E := termLen_vRef_le (hbig _ _ (gp_final hZ hiw le_rfl le_rfl) (by norm_num))
+  have cIp : termLen LAct (^&ip' : V) ≤ E := termLen_fvar_le (hbig _ _ (gp_final hZ hip le_rfl le_rfl) (by norm_num))
+  have cIb : termLen LAct (^&(ip' + m) : V) ≤ E := termLen_fvar_le (hbig _ _ (gp_final hZ hib le_rfl le_rfl) (by norm_num))
+  -- B9. `bodyIntro`
+  obtain ⟨hlen9, hrow9⟩ := hT.bodyIntro
+  obtain ⟨hok9, htag9, hctx9⟩ := iok_bodyIntro htbl rfl hlen9 hrow9 hΓ₈ (by simp) cIK2 (by simp) cIns (by simp) cIK1 (by simp) cIn1
+    (by simp) cIz (by simp) cIu (by simp) cIy (by simp) cIx (by simp) cJs
+    (mem₈ _ hor1) (mem₈ _ hor2) (mem₈ _ hexs) (mem₈ _ hand) (mem₈ _ hall) g6
+  obtain ⟨P₉, hP₉⟩ : ∃ P', P' = appendV P₈ ?[mkStep indRecPieces ((iIdx_bodyIntro : ℕ) : V)
+    ?[^&(js + 1 + 1 + 1), ^&(js + 1 + descCountF walkPieces 0 (zK K) + 1 + 1 + 1),
+      ^&(js + 1 + descCountF walkPieces 0 (zK K) + 1 + 1 + descCountF walkPieces 1 (nsK K) + 1),
+      ^&(js + 1 + descCountF walkPieces 0 (zK K) + 1 + 1), ^&(js + 1 + 1), ^&(js + 1 + descCountF walkPieces 0 (zK K) + 1),
+      ^&(js + 1), ^&(js + descCountF walkPieces 0 (yK K) + 1), ^&js]] := ⟨_, rfl⟩
+  have hP₉i : HInv tbl E Γ P₉ := by rw [hP₉]; exact hP₈i.snoc9 hok9 htag9
+  have hΓ₉ := hP₉i.isFormulaSet htbl hΓ
+  have g9 : neg LAct (bodyShapeFact (^&js) (^&(js + descCountF walkPieces 0 (yK K) + 1))
+      (^&(js + 1 + descCountF walkPieces 0 (zK K) + 1 + 1 + 1))
+      (^&(js + 1 + descCountF walkPieces 0 (zK K) + 1 + 1 + descCountF walkPieces 1 (nsK K) + 1))) ∈ finalCtx Γ P₉ := by
+    rw [hP₉, finalCtx_appendV_single, hctx9]; exact mem_insert_self'
+  have mem₉ : ∀ x : V, x ∈ finalCtx Γ P₈ → x ∈ finalCtx Γ P₉ := fun x hx ↦ by
+    rw [hP₉, finalCtx_appendV_single, hctx9]; exact mem_insert_of_mem' hx
+  -- B10. `indBodyIntroL`
+  obtain ⟨hlen10, hrow10⟩ := hT.indBodyIntroL
+  obtain ⟨hok10, htag10, hctx10⟩ := iok_indBodyIntroL htbl rfl hlen10 hrow10 hΓ₉ (by simp) cIw1 (by simp) cIw0 (by simp) cInk
+    (by simp) cIns (by simp) cIx (by simp) cIK1 (by simp) cJs g9 (mem₉ _ g5) (mem₉ _ g7) (mem₉ _ (mem₈ _ hf7)) (mem₉ _ g8) (mem₉ _ (mem₈ _ hf8))
+  obtain ⟨P₁₀, hP₁₀⟩ : ∃ P', P' = appendV P₉ ?[mkStep indRecPieces ((iIdx_indBodyIntroL : ℕ) : V)
+    ?[^&iw1, ^&iw0, ^&ink, ^&(js + 1 + descCountF walkPieces 0 (zK K) + 1 + 1 + 1), ^&(js + descCountF walkPieces 0 (yK K) + 1),
+      ^&(js + 1 + descCountF walkPieces 0 (zK K) + 1 + 1 + descCountF walkPieces 1 (nsK K) + 1), ^&js]] := ⟨_, rfl⟩
+  have hP₁₀i : HInv tbl E Γ P₁₀ := by rw [hP₁₀]; exact hP₉i.snoc hok10 htag10
+  have hΓ₁₀ := hP₁₀i.isFormulaSet htbl hΓ
+  have g10 : neg LAct (indBodyLFact (^&js) (^&(js + 1 + descCountF walkPieces 0 (zK K) + 1 + 1 + descCountF walkPieces 1 (nsK K) + 1))) ∈
+      finalCtx Γ P₁₀ := by
+    rw [hP₁₀, finalCtx_appendV_single, hctx10]; exact mem_insert_self'
+  have mem₁₀ : ∀ x : V, x ∈ finalCtx Γ P₉ → x ∈ finalCtx Γ P₁₀ := fun x hx ↦ by
+    rw [hP₁₀, finalCtx_appendV_single, hctx10]; exact mem_insert_of_mem' hx
+  -- B11. `indRecL`
+  obtain ⟨hlen11, hrow11⟩ := hT.indRecL
+  obtain ⟨hok11, htag11, hctx11⟩ := iok_indRecL htbl rfl hlen11 hrow11 hΓ₁₀ (by simp) cIp (cTV_semiterm_LAct 0 m) hEm (by simp) cIb
+    (isSemiterm_vRef _ _) cIw (by simp) cJs (by simp) cIK1
+    (mem₁₀ _ (mem₉ _ g1)) (mem₁₀ _ (mem₉ _ g2)) (mem₁₀ _ (mem₉ _ g3)) (mem₁₀ _ (mem₉ _ g4)) (mem₁₀ _ (mem₉ _ (mem₈ _ hf6))) g10
+  refine ⟨_, hP₁₀i.snoc hok11 htag11, ?_, ?_⟩
+  · -- the length
+    have hl : len P₈ ≤ 60 * gp Z 3 := by
+      rw [hP₈, hP₇, hP₆, hP₅, hP₄, hP₃, hP₂]
+      rw [len_appendV, len_appendV, len_appendV, len_appendV, len_appendV, len_appendV, len_appendV]
+      have hB3 : m + formulaLen LAct b + 3 ≤ 5 * gp Z 1 :=
+        gp_final hZ (add_gp_le hZ (add_gp_le hZ hm' hLb' le_rfl le_rfl) (const_gp_le (3 : V) hZ 1) le_rfl le_rfl) le_rfl (by norm_num)
+      have hl2' : len L2 ≤ 20 * gp Z 3 :=
+        le_trans hl2 (gp_final hZ (mul_gp_le (mul_gp_le (cmul_gp_le 4 hLb') hLb') hB3) le_rfl (by norm_num))
+      have hl1' : len P₁ ≤ 2 * gp Z 1 := le_trans hl1 (gp_final hZ (add_gp_le hZ hm' hZ1 le_rfl le_rfl) le_rfl (by norm_num))
+      have hl3' : len L3 ≤ 12 * gp Z 1 := le_trans hl3 (gp_final hZ (cmul_gp_le 12 hLb') le_rfl (by norm_num))
+      have hl4' : len L4 ≤ 2 * gp Z 1 := le_trans hl4 (gp_final hZ (add_gp_le hZ hm' hZ1 le_rfl le_rfl) le_rfl (by norm_num))
+      have hl5' : len L5 ≤ 12 * gp Z 1 := le_trans hl5 (gp_final hZ (cmul_gp_le 12 hLk') le_rfl (by norm_num))
+      have hl6' : len L6 ≤ 5 * gp Z 1 := le_trans hl6 (gp_final hZ (add_gp_le hZ (cmul_gp_le 4 hLk') hZ1 le_rfl le_rfl) le_rfl (by norm_num))
+      have hl7' : len L7 ≤ 1 * gp Z 1 := le_trans hl7 (const_gp_le 1 hZ 1)
+      have hl8' : len L8 ≤ 1 * gp Z 1 := le_trans hl8 (const_gp_le 1 hZ 1)
+      exact gp_final hZ (add_gp_le hZ (add_gp_le hZ (add_gp_le hZ (add_gp_le hZ (add_gp_le hZ (add_gp_le hZ (add_gp_le hZ hl1' hl2'
+        (by norm_num) le_rfl) hl3' le_rfl (by norm_num)) hl4' le_rfl (by norm_num)) hl5' le_rfl (by norm_num)) hl6' le_rfl (by norm_num))
+        hl7' le_rfl (by norm_num)) hl8' le_rfl (by norm_num)) le_rfl (by norm_num)
+    rw [len_appendV, len_single, hP₁₀, len_appendV, len_single, hP₉, len_appendV, len_single]
+    exact gp_final hZ (add_gp_le hZ (add_gp_le hZ (add_gp_le hZ hl (const_gp_le (1 : V) hZ 3) le_rfl le_rfl) (const_gp_le (1 : V) hZ 3) le_rfl le_rfl)
+      (const_gp_le (1 : V) hZ 3) le_rfl le_rfl) le_rfl (by norm_num)
+  · rw [finalCtx_appendV_single, hctx11]; exact mem_insert_self'
+
+end stageBmain
+
 end ArithS
