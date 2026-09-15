@@ -5597,6 +5597,427 @@ theorem costSum_proShift_le {tbl N N' B' B Wl Wc W T s c i D E Γ : V} (htbl : T
 
 end proSizes
 
+
+/-! ## 12. The EMPTY sequent (`DESIGN_fragments.md` §4.7/§4.8 at `∅`; a nonstandard derivation of `∅`)
+
+`Derivation` admits `wkRule s d'` with `fstIdx d' ⊆ s` and `shiftRule s d'` with `s = setShift (fstIdx d')`, so in a
+model `V ⊧ ¬Con(TAct)` a node's sequent may be EMPTY (as the child of `wk`, as both sides of `shift`, as the parent of
+`cut`; never at a leaf, never as an `insert` child). "Every sequent of a derivation is nonempty" is therefore FALSE
+in general, and the honest treatment is a `k = 0` layout: `Layout0` = the `Layout` predicate at `s = 0` (vacuous
+members, `setLenFact &i &(i + 1)`, `leFact &i (bnum 0)`) TOGETHER WITH the identification `eqFactB &(i + 1) 𝟎` of the
+sequent object — the fact every consumer needs in place of a chain. `layoutSteps0` builds it in five steps (rows
+`eqTotal`, `setLenTotalC`, `eqSymm`, `congSetLenR`, and the prologue row `setLenEmptyLe` = 156); the table rows
+`congSubsetL` (157) and `congSetShiftR` (158) move `emptySubsetC`/`setShiftFact` facts onto the object. -/
+
+section emptySequent
+
+/-- The reading of the prologue row `setLenEmptyLe` (156). -/
+lemma ProTable.setLenEmptyLe {tbl : V} (h : ProTable tbl) :
+    ((pIdx_setLenEmptyLe : ℕ) : V) < len tbl ∧
+    rowM tbl.[((pIdx_setLenEmptyLe : ℕ) : V)] = ((1 : ℕ) : V) ∧
+    rowB tbl.[((pIdx_setLenEmptyLe : ℕ) : V)] = impChainV LAct (vecOf row_setLenEmptyLe_as) row_setLenEmptyLe_c := by
+  have hlt : pIdx_setLenEmptyLe < proRows.length := by
+    rw [proRows_length]; simp only [proRowCount, proBase, pIdx_setLenEmptyLe, topRowCount, proExtraRowCount]; omega
+  have hr := h.2 pIdx_setLenEmptyLe hlt
+  have e' : proRows[pIdx_setLenEmptyLe]? = proExtraRows[1]? := by
+    have h1 : pIdx_setLenEmptyLe < (topRows ++ proExtraRows).length := by
+      rw [List.length_append]; simp only [pIdx_setLenEmptyLe, topRows_length, proExtraRows_length, topRowCount, proExtraRowCount]; omega
+    have h2 : topRows.length ≤ pIdx_setLenEmptyLe := by rw [topRows_length]; simp only [pIdx_setLenEmptyLe, topRowCount]; omega
+    unfold proRows
+    rw [List.getElem?_append_left h1, List.getElem?_append_right h2]
+    rfl
+  have e : proRows[pIdx_setLenEmptyLe] = proExtraRows[1] := by
+    rw [List.getElem?_eq_getElem hlt, List.getElem?_eq_getElem (by decide : 1 < proExtraRows.length)] at e'
+    exact Option.some.inj e'
+  rw [e] at hr
+  refine ⟨lt_of_lt_of_le (by exact_mod_cast hlt) (proRows_length ▸ h.1), hr.1, ?_⟩
+  rw [impChainV_vecOf, hr.2]
+  exact quote_row_setLenEmptyLe
+
+/-- The reading of the table row `congSubsetL` (157). -/
+lemma ProTable.congSubsetL {tbl : V} (h : ProTable tbl) :
+    ((pIdx_congSubsetL : ℕ) : V) < len tbl ∧
+    rowM tbl.[((pIdx_congSubsetL : ℕ) : V)] = ((3 : ℕ) : V) ∧
+    rowB tbl.[((pIdx_congSubsetL : ℕ) : V)] = impChainV LAct (vecOf row_congSubsetL_as) row_congSubsetL_c := by
+  have hlt : pIdx_congSubsetL < proRows.length := by
+    rw [proRows_length]; simp only [proRowCount, proBase, pIdx_congSubsetL, topRowCount, proExtraRowCount]; omega
+  have hr := h.2 pIdx_congSubsetL hlt
+  have e' : proRows[pIdx_congSubsetL]? = proExtraRows[2]? := by
+    have h1 : pIdx_congSubsetL < (topRows ++ proExtraRows).length := by
+      rw [List.length_append]; simp only [pIdx_congSubsetL, topRows_length, proExtraRows_length, topRowCount, proExtraRowCount]; omega
+    have h2 : topRows.length ≤ pIdx_congSubsetL := by rw [topRows_length]; simp only [pIdx_congSubsetL, topRowCount]; omega
+    unfold proRows
+    rw [List.getElem?_append_left h1, List.getElem?_append_right h2]
+    rfl
+  have e : proRows[pIdx_congSubsetL] = proExtraRows[2] := by
+    rw [List.getElem?_eq_getElem hlt, List.getElem?_eq_getElem (by decide : 2 < proExtraRows.length)] at e'
+    exact Option.some.inj e'
+  rw [e] at hr
+  refine ⟨lt_of_lt_of_le (by exact_mod_cast hlt) (proRows_length ▸ h.1), hr.1, ?_⟩
+  rw [impChainV_vecOf, hr.2]
+  exact quote_row_congSubsetL
+
+/-- The reading of the table row `congSetShiftR` (158). -/
+lemma ProTable.congSetShiftR {tbl : V} (h : ProTable tbl) :
+    ((pIdx_congSetShiftR : ℕ) : V) < len tbl ∧
+    rowM tbl.[((pIdx_congSetShiftR : ℕ) : V)] = ((3 : ℕ) : V) ∧
+    rowB tbl.[((pIdx_congSetShiftR : ℕ) : V)] = impChainV LAct (vecOf row_congSetShiftR_as) row_congSetShiftR_c := by
+  have hlt : pIdx_congSetShiftR < proRows.length := by
+    rw [proRows_length]; simp only [proRowCount, proBase, pIdx_congSetShiftR, topRowCount, proExtraRowCount]; omega
+  have hr := h.2 pIdx_congSetShiftR hlt
+  have e' : proRows[pIdx_congSetShiftR]? = proExtraRows[3]? := by
+    have h1 : pIdx_congSetShiftR < (topRows ++ proExtraRows).length := by
+      rw [List.length_append]; simp only [pIdx_congSetShiftR, topRows_length, proExtraRows_length, topRowCount, proExtraRowCount]; omega
+    have h2 : topRows.length ≤ pIdx_congSetShiftR := by rw [topRows_length]; simp only [pIdx_congSetShiftR, topRowCount]; omega
+    unfold proRows
+    rw [List.getElem?_append_left h1, List.getElem?_append_right h2]
+    rfl
+  have e : proRows[pIdx_congSetShiftR] = proExtraRows[3] := by
+    rw [List.getElem?_eq_getElem hlt, List.getElem?_eq_getElem (by decide : 3 < proExtraRows.length)] at e'
+    exact Option.some.inj e'
+  rw [e] at hr
+  refine ⟨lt_of_lt_of_le (by exact_mod_cast hlt) (proRows_length ▸ h.1), hr.1, ?_⟩
+  rw [impChainV_vecOf, hr.2]
+  exact quote_row_congSetShiftR
+
+/-- **The layout of the empty sequent at chain offset `i`**: the `Layout` predicate at `s = 0` and the identification
+`eqFactB &(i + 1) 𝟎` of the sequent object. -/
+def Layout0 (Ww Wc T Γ i : V) : Prop :=
+  Layout Ww Wc T Γ 0 i ∧ neg LAct (eqFactB (^&(i + 1)) (𝟎 : V)) ∈ Γ
+
+lemma len_memberList_zero : len (memberList (0 : V)) = 0 := by simp [memberList]
+
+/-- A layout is monotone in the context (every conjunct is a membership). -/
+lemma Layout.mono {Ww Wc T Γ Γ' s i : V} (h : ∀ x ∈ Γ, x ∈ Γ') (hL : Layout Ww Wc T Γ s i) : Layout Ww Wc T Γ' s i := by
+  obtain ⟨hmem, hsl, hle⟩ := hL
+  refine ⟨fun j hj ↦ ?_, h _ hsl, h _ hle⟩
+  obtain ⟨hD, h1, h2, h3, h4, h5⟩ := hmem j hj
+  exact ⟨hD.mono (fun x hx ↦ h x hx), h _ h1, h _ h2, h _ h3, h _ h4, h _ h5⟩
+
+lemma Layout0.mono {Ww Wc T Γ Γ' i : V} (h : ∀ x ∈ Γ, x ∈ Γ') (hL : Layout0 Ww Wc T Γ i) : Layout0 Ww Wc T Γ' i :=
+  ⟨hL.1.mono h, h _ hL.2⟩
+
+theorem Layout0.transport {Ww Wc T Γ i S : V} (hS : NoDrop' S) (h : Layout0 Ww Wc T Γ i) :
+    Layout0 Ww Wc T (finalCtx Γ S) (i + shiftsV S) := by
+  refine ⟨h.1.transport hS, ?_⟩
+  have := mem_finalCtx_of_mem' hS h.2
+  rwa [shiftIterV_neg (isFormula_eqFactB (by simp) isSemiterm_zeroV), shiftIterV_eqFactB (by simp) isSemiterm_zeroV,
+    termShiftIterV_fvar, termShiftIterV_zeroV, add_right_comm] at this
+
+/-- **`layoutSteps0`**: `eqTotal [𝟎]` (the sequent object `&0 = 𝟎`), `setLenTotalC [&0]` (its length `&0`), `eqSymm [&1, 𝟎]`,
+`congSetLenR [&1, 𝟎, &0]` (`setLenFact &0 𝟎`), `setLenEmptyLe [&0]` (`leFact &0 𝟎 = leFact &0 (bnum 0)`). -/
+noncomputable def layoutSteps0 (W : V) : V :=
+  mkStep W 40 ?[(𝟎 : V)] ∷ mkStep W 85 ?[^&0] ∷ mkStep W 42 ?[^&1, (𝟎 : V)] ∷ mkStep W 124 ?[^&1, (𝟎 : V), ^&0] ∷
+    mkStep W 156 ?[^&0] ∷ (0 : V)
+
+noncomputable def layoutSteps0Def : 𝚺₁.Semisentence 2 := .mkSigma
+  “y W. ∃ z, !cTVGraph z 0 ∧ ∃ f0, !qqFvarDef f0 0 ∧ ∃ f1, !qqFvarDef f1 1 ∧
+    ∃ e₁, !adjoinDef e₁ z 0 ∧ ∃ s₁, !mkStepDef s₁ W 40 e₁ ∧
+    ∃ e₂, !adjoinDef e₂ f0 0 ∧ ∃ s₂, !mkStepDef s₂ W 85 e₂ ∧
+    ∃ e₃, !adjoinDef e₃ f1 e₁ ∧ ∃ s₃, !mkStepDef s₃ W 42 e₃ ∧
+    ∃ e₄', !adjoinDef e₄' z e₂ ∧ ∃ e₄, !adjoinDef e₄ f1 e₄' ∧ ∃ s₄, !mkStepDef s₄ W 124 e₄ ∧
+    ∃ s₅, !mkStepDef s₅ W 156 e₂ ∧
+    ∃ l₅, !adjoinDef l₅ s₅ 0 ∧ ∃ l₄, !adjoinDef l₄ s₄ l₅ ∧ ∃ l₃, !adjoinDef l₃ s₃ l₄ ∧ ∃ l₂, !adjoinDef l₂ s₂ l₃ ∧
+    !adjoinDef y s₁ l₂”
+
+instance layoutSteps0_defined : 𝚺₁-Function₁ (layoutSteps0 : V → V) via layoutSteps0Def := .mk fun v ↦ by
+  simp [layoutSteps0Def, layoutSteps0, mkStep_defined.iff, cTV.defined.iff, cTV_zero, numeral_eq_natCast]
+instance layoutSteps0_definable : 𝚺₁-Function₁ (layoutSteps0 : V → V) := layoutSteps0_defined.to_definable
+
+set_option maxHeartbeats 2000000 in
+/-- **`layoutSteps0` is applicable and leaves `Layout0` at offset `0`**: two eigenvariables, five steps. -/
+theorem layoutSteps0_ok {tbl N W Wc T E Γ : V} (htbl : TableOK tbl N) (hP : ProTable tbl) (hWp : W = proPieces)
+    (hΓ : IsFormulaSet LAct Γ) (hE : (2 : V) ≤ E) :
+    ListOK tbl E ((8 : ℕ) : V) Γ (layoutSteps0 W) ∧ NoDrop' (layoutSteps0 W) ∧ shiftsV (layoutSteps0 W) = 2 ∧
+    len (layoutSteps0 W) = 5 ∧ Layout0 walkPieces Wc T (finalCtx Γ (layoutSteps0 W)) 0 := by
+  have hL := hP.layoutTable
+  have hF1 := hP.frag1Table
+  have e40 : ∀ ev : V, mkStep proPieces (40 : V) ev = mkStep layoutPieces (40 : V) ev := fun ev ↦ by
+    have := mkStep_pro_layout 40 (by decide) ev; simpa using this
+  have e85 : ∀ ev : V, mkStep proPieces (85 : V) ev = mkStep layoutPieces (85 : V) ev := fun ev ↦ by
+    have := mkStep_pro_layout 85 (by decide) ev; simpa using this
+  have e42 : ∀ ev : V, mkStep proPieces (42 : V) ev = mkStep layoutPieces (42 : V) ev := fun ev ↦ by
+    have := mkStep_pro_layout 42 (by decide) ev; simpa using this
+  have e124 : ∀ ev : V, mkStep proPieces (124 : V) ev = mkStep frag1Pieces (124 : V) ev := fun ev ↦ by
+    have := mkStep_pro_frag1 124 (by decide) ev; simpa using this
+  have hE1 : (1 : V) ≤ E := le_trans (by norm_num) hE
+  have h0 : IsSemiterm LAct (0 : V) (𝟎 : V) := isSemiterm_zeroV
+  have h0E : termLen LAct (𝟎 : V) ≤ E := termLen_zeroV_le hE1
+  have hf0 : IsSemiterm LAct 0 (^&0 : V) := by simp
+  have hf0E : termLen LAct (^&0 : V) ≤ E := termLen_fvar0_le hE1
+  have hf1 : IsSemiterm LAct 0 (^&1 : V) := by simp
+  have hf1E : termLen LAct (^&1 : V) ≤ E := termLen_fvar_le' (by rw [one_add_one_eq_two]; exact hE)
+  -- step 1: the object `&0 = 𝟎`
+  obtain ⟨ok₁, tg₁, cx₁⟩ := lok_eqTotal htbl hL rfl hΓ h0 h0E
+  rw [← e40, ← hWp] at ok₁ tg₁ cx₁
+  rw [Nat.cast_zero, termShift_zeroV] at cx₁
+  have hΓ₁f : IsFormulaSet LAct (insert (neg LAct (eqFactB (^&0) (𝟎 : V))) (setShift LAct Γ)) := by
+    rw [← cx₁]; exact isFormulaSet_ctxAfter 8 htbl ok₁
+  -- step 2: its length `&0`, with `setLenFact &0 &1`; the object moves to `&1`
+  obtain ⟨ok₂, tg₂, cx₂⟩ := lok_setLenTotalC htbl hL rfl hΓ₁f hf0 hf0E
+  rw [← e85, ← hWp] at ok₂ tg₂ cx₂
+  rw [Nat.cast_zero, termShift_fvar, zero_add] at cx₂
+  have heq₂ : neg LAct (eqFactB (^&1) (𝟎 : V)) ∈
+      insert (neg LAct (setLenFact (^&0) (^&1))) (setShift LAct (insert (neg LAct (eqFactB (^&0) (𝟎 : V))) (setShift LAct Γ))) := by
+    have := mem_shift_insert (f := neg LAct (setLenFact (^&0) (^&1))) (memInsSelf (neg LAct (eqFactB (^&0) (𝟎 : V))) (setShift LAct Γ))
+    rwa [shift_neg (isFormula_eqFactB hf0 h0), shift_eqFactB hf0 h0, termShift_fvar, termShift_zeroV, zero_add] at this
+  have hΓ₂f : IsFormulaSet LAct (insert (neg LAct (setLenFact (^&0) (^&1))) (setShift LAct (insert (neg LAct (eqFactB (^&0) (𝟎 : V))) (setShift LAct Γ)))) := by
+    rw [← cx₂]; exact isFormulaSet_ctxAfter 8 htbl ok₂
+  -- step 3: `eqSymm`
+  obtain ⟨ok₃, tg₃, cx₃⟩ := lok_eqSymm htbl hL rfl hΓ₂f hf1 hf1E h0 h0E heq₂
+  rw [← e42, ← hWp] at ok₃ tg₃ cx₃
+  have hΓ₃f : IsFormulaSet LAct (insert (neg LAct (eqFactB (𝟎 : V) (^&1))) (insert (neg LAct (setLenFact (^&0) (^&1)))
+      (setShift LAct (insert (neg LAct (eqFactB (^&0) (𝟎 : V))) (setShift LAct Γ))))) := by
+    rw [← cx₃]; exact isFormulaSet_ctxAfter 8 htbl ok₃
+  -- step 4: `congSetLenR`
+  obtain ⟨ok₄, tg₄, cx₄⟩ := fok_congSetLenR htbl hF1 rfl hΓ₃f hf1 hf1E h0 h0E hf0 hf0E (memInsSelf _ _) (memIns (memInsSelf _ _))
+  rw [← e124, ← hWp] at ok₄ tg₄ cx₄
+  have hΓ₄f : IsFormulaSet LAct (insert (neg LAct (setLenFact (^&0) (𝟎 : V))) (insert (neg LAct (eqFactB (𝟎 : V) (^&1)))
+      (insert (neg LAct (setLenFact (^&0) (^&1))) (setShift LAct (insert (neg LAct (eqFactB (^&0) (𝟎 : V))) (setShift LAct Γ)))))) := by
+    rw [← cx₄]; exact isFormulaSet_ctxAfter 8 htbl ok₄
+  -- step 5: `setLenEmptyLe`
+  obtain ⟨hlen, hrow⟩ := hP.setLenEmptyLe
+  obtain ⟨ok₅, tg₅, cx₅⟩ := pok_setLenEmptyLe htbl hWp hlen hrow hΓ₄f hf0 hf0E (memInsSelf _ _)
+  refine ⟨?_, ?_, ?_, ?_, ?_⟩
+  · unfold layoutSteps0
+    refine listOK_cons ok₁ ?_
+    rw [cx₁]
+    refine listOK_cons ok₂ ?_
+    rw [cx₂]
+    refine listOK_cons ok₃ ?_
+    rw [cx₃]
+    refine listOK_cons ok₄ ?_
+    rw [cx₄]
+    exact listOK_single ok₅
+  · unfold layoutSteps0
+    exact noDrop'_cons (by rw [tg₁]; simp) (noDrop'_cons (by rw [tg₂]; simp) (noDrop'_cons (by rw [tg₃]; simp)
+      (noDrop'_cons (by rw [tg₄]; simp) (noDrop'_single (by rw [tg₅]; simp)))))
+  · unfold layoutSteps0
+    rw [shiftsV_cons, shiftsV_cons, shiftsV_cons, shiftsV_cons, shiftsV_single, tg₁, tg₂, tg₃, tg₄, tg₅]
+    simp; norm_num
+  · unfold layoutSteps0; simp [len_adjoin]; norm_num
+  · unfold layoutSteps0
+    rw [finalCtx_cons, cx₁, finalCtx_cons, cx₂, finalCtx_cons, cx₃, finalCtx_cons, cx₄, finalCtx_single, cx₅]
+    refine ⟨⟨fun j hj ↦ ?_, ?_, ?_⟩, ?_⟩
+    · rw [len_memberList_zero] at hj; exact absurd hj (by simp)
+    · rw [len_memberList_zero, zero_add, zero_add]; exact memIns (memIns (memIns (memInsSelf _ _)))
+    · rw [← emptyset_def, setLen_empty, bnum_zero]; exact memInsSelf _ _
+    · rw [zero_add]; exact memIns (memIns (memIns heq₂))
+
+/-- **`proWk0 s i`** — the `wk` child is EMPTY: `layoutSteps0` (the child's `Layout0` at `0`, its object `&1`), then
+`emptySubsetC [S]` and `congSubsetL [𝟎, &1, S]` → `subsetFact &1 S` (`nodeWk_ok`'s `subsetFact &ic &is` with `ic = 1`;
+`S = &(i + 2 + (k + 1))` the parent's chain top after the two eigenvariables). -/
+noncomputable def proWk0 (W s i : V) : V :=
+  appendV (layoutSteps0 W)
+    ?[mkStep W 81 ?[^&(i + 2 + (len (memberList s) + 1))],
+      mkStep W 157 ?[(𝟎 : V), ^&1, ^&(i + 2 + (len (memberList s) + 1))]]
+
+noncomputable def proWk0Def : 𝚺₁.Semisentence 4 := .mkSigma
+  “y W s i. ∃ L, !layoutSteps0Def L W ∧ ∃ xs, !memberListDef xs s ∧ ∃ k, !lenDef k xs ∧ ∃ iS, iS = i + 2 + (k + 1) ∧
+    ∃ zS, !qqFvarDef zS iS ∧ ∃ z, !cTVGraph z 0 ∧ ∃ f1, !qqFvarDef f1 1 ∧
+    ∃ e₁, !adjoinDef e₁ zS 0 ∧ ∃ s₁, !mkStepDef s₁ W 81 e₁ ∧
+    ∃ e₂', !adjoinDef e₂' f1 e₁ ∧ ∃ e₂, !adjoinDef e₂ z e₂' ∧ ∃ s₂, !mkStepDef s₂ W 157 e₂ ∧
+    ∃ l₂, !adjoinDef l₂ s₂ 0 ∧ ∃ l₁, !adjoinDef l₁ s₁ l₂ ∧ !appendVDef y L l₁”
+
+instance proWk0_defined : 𝚺₁-Function₃ (proWk0 : V → V → V → V) via proWk0Def := .mk fun v ↦ by
+  simp [proWk0Def, proWk0, layoutSteps0_defined.iff, memberList_defined.iff, mkStep_defined.iff, cTV.defined.iff, cTV_zero,
+    appendV_defined.iff, numeral_eq_natCast]
+instance proWk0_definable : 𝚺₁-Function₃ (proWk0 : V → V → V → V) := proWk0_defined.to_definable
+
+set_option maxHeartbeats 2000000 in
+/-- **`proWk0` is applicable**: two eigenvariables; afterwards the child's `Layout0` at `0`, the parent's layout at `i + 2`,
+and `subsetFact &1 &(i + 2 + (k + 1))`. -/
+theorem proWk0_ok {tbl N W Wc T s i E Γ : V} (htbl : TableOK tbl N) (hP : ProTable tbl) (hWp : W = proPieces)
+    (hΓ : IsFormulaSet LAct Γ) (hiE : i + 2 + (len (memberList s) + 1) + 1 ≤ E) (hLay : Layout walkPieces Wc T Γ s i) :
+    ListOK tbl E ((8 : ℕ) : V) Γ (proWk0 W s i) ∧ NoDrop' (proWk0 W s i) ∧ shiftsV (proWk0 W s i) = 2 ∧
+    Layout0 walkPieces Wc T (finalCtx Γ (proWk0 W s i)) 0 ∧
+    Layout walkPieces Wc T (finalCtx Γ (proWk0 W s i)) s (i + 2) ∧
+    neg LAct (subsetFact (^&1) (^&(i + 2 + (len (memberList s) + 1)))) ∈ finalCtx Γ (proWk0 W s i) := by
+  have hL := hP.layoutTable
+  have e81 : ∀ ev : V, mkStep proPieces (81 : V) ev = mkStep layoutPieces (81 : V) ev := fun ev ↦ by
+    have := mkStep_pro_layout 81 (by decide) ev; simpa using this
+  have hE2 : (2 : V) ≤ E := le_trans le_add_self (le_trans le_self_add (le_trans le_self_add hiE))
+  have hE1 : (1 : V) ≤ E := le_trans (by norm_num) hE2
+  obtain ⟨lok, lnd, lsh, _, lLay⟩ := layoutSteps0_ok htbl hP hWp hΓ hE2
+  obtain ⟨Γ₁, hΓ₁⟩ : ∃ Γ', Γ' = finalCtx Γ (layoutSteps0 W) := ⟨_, rfl⟩
+  have hΓ₁f : IsFormulaSet LAct Γ₁ := by rw [hΓ₁]; exact finalCtx_isFormulaSet 8 htbl hΓ lok
+  have hLay₁ : Layout walkPieces Wc T Γ₁ s (i + 2) := by rw [hΓ₁]; have := hLay.transport lnd; rwa [lsh] at this
+  have lLay₁ : Layout0 walkPieces Wc T Γ₁ 0 := by rw [hΓ₁]; exact lLay
+  have hSE : i + 2 + (len (memberList s) + 1) + 1 ≤ E := hiE
+  obtain ⟨ok₁, tg₁, cx₁⟩ := lok_emptySubsetC htbl hL rfl hΓ₁f (by simp) (termLen_fvar_le' hSE)
+  rw [← e81, ← hWp] at ok₁ tg₁ cx₁
+  have hΓ₂f : IsFormulaSet LAct (insert (neg LAct (subsetFact (𝟎 : V) (^&(i + 2 + (len (memberList s) + 1))))) Γ₁) := by
+    rw [← cx₁]; exact isFormulaSet_ctxAfter 8 htbl ok₁
+  obtain ⟨hlen, hrow⟩ := hP.congSubsetL
+  obtain ⟨ok₂, tg₂, cx₂⟩ := pok_congSubsetL htbl hWp hlen hrow hΓ₂f isSemiterm_zeroV (termLen_zeroV_le hE1) (by simp)
+    (termLen_fvar_le' (by rw [one_add_one_eq_two]; exact hE2)) (by simp) (termLen_fvar_le' hSE)
+    (memIns (by have := lLay₁.2; rwa [zero_add] at this)) (memInsSelf _ _)
+  have hnd : NoDrop' (?[mkStep W 81 ?[^&(i + 2 + (len (memberList s) + 1))],
+      mkStep W 157 ?[(𝟎 : V), ^&1, ^&(i + 2 + (len (memberList s) + 1))]] : V) :=
+    noDrop'_cons (Or.inl tg₁) (noDrop'_single (Or.inl tg₂))
+  have hsh : shiftsV (?[mkStep W 81 ?[^&(i + 2 + (len (memberList s) + 1))],
+      mkStep W 157 ?[(𝟎 : V), ^&1, ^&(i + 2 + (len (memberList s) + 1))]] : V) = 0 := by
+    rw [shiftsV_cons_tag0 tg₁, shiftsV_single_tag0 tg₂]
+  unfold proWk0
+  refine ⟨listOK_appendV lok (by rw [← hΓ₁]; exact listOK_cons ok₁ (by rw [cx₁]; exact listOK_single ok₂)),
+    noDrop'_appendV lnd hnd, ?_, ?_, ?_, ?_⟩
+  · rw [shiftsV_appendV, lsh, hsh, add_zero]
+  · rw [finalCtx_appendV, ← hΓ₁]; have := lLay₁.transport hnd; rwa [hsh, add_zero] at this
+  · rw [finalCtx_appendV, ← hΓ₁]; have := hLay₁.transport hnd; rwa [hsh, add_zero] at this
+  · rw [finalCtx_appendV, ← hΓ₁, finalCtx_cons, cx₁, finalCtx_single, cx₂]; exact memInsSelf _ _
+
+/-- **`proShift0 i`** — BOTH sequents of a `shift` node are empty (`setShift ∅ = ∅`): `layoutSteps0` (the child at `0`), then
+`setShiftTotal [𝟎]`, `setShiftEmpty [&0]`, `eqSymm [&0, 𝟎]`, `eqTrans [S, 𝟎, &0]` (`S = &(i + 3 + 1)` the parent's
+object after the three eigenvariables), `congSetShiftL [&0, S, 𝟎]` → `setShiftFact S 𝟎`, `congSetShiftR [S, 𝟎, &2]`
+→ `setShiftFact S s''` (`s'' = &2` the child's object) — `nodeShift_ok`'s `hss`. -/
+noncomputable def proShift0 (W i : V) : V :=
+  appendV (layoutSteps0 W)
+    (mkStep W 138 ?[(𝟎 : V)] ∷ mkStep W 145 ?[^&0] ∷ mkStep W 42 ?[^&0, (𝟎 : V)] ∷
+      mkStep W 43 ?[^&(i + 3 + 1), (𝟎 : V), ^&0] ∷ mkStep W 148 ?[^&0, ^&(i + 3 + 1), (𝟎 : V)] ∷
+      mkStep W 158 ?[^&(i + 3 + 1), (𝟎 : V), ^&2] ∷ (0 : V))
+
+noncomputable def proShift0Def : 𝚺₁.Semisentence 3 := .mkSigma
+  “y W i. ∃ L, !layoutSteps0Def L W ∧ ∃ z, !cTVGraph z 0 ∧ ∃ f0, !qqFvarDef f0 0 ∧ ∃ f2, !qqFvarDef f2 2 ∧
+    ∃ iS, iS = i + 3 + 1 ∧ ∃ zS, !qqFvarDef zS iS ∧
+    ∃ e₁, !adjoinDef e₁ z 0 ∧ ∃ s₁, !mkStepDef s₁ W 138 e₁ ∧
+    ∃ e₂, !adjoinDef e₂ f0 0 ∧ ∃ s₂, !mkStepDef s₂ W 145 e₂ ∧
+    ∃ e₃, !adjoinDef e₃ f0 e₁ ∧ ∃ s₃, !mkStepDef s₃ W 42 e₃ ∧
+    ∃ e₄', !adjoinDef e₄' z e₂ ∧ ∃ e₄, !adjoinDef e₄ zS e₄' ∧ ∃ s₄, !mkStepDef s₄ W 43 e₄ ∧
+    ∃ e₅', !adjoinDef e₅' zS e₁ ∧ ∃ e₅, !adjoinDef e₅ f0 e₅' ∧ ∃ s₅, !mkStepDef s₅ W 148 e₅ ∧
+    ∃ e₆'', !adjoinDef e₆'' f2 0 ∧ ∃ e₆', !adjoinDef e₆' z e₆'' ∧ ∃ e₆, !adjoinDef e₆ zS e₆' ∧ ∃ s₆, !mkStepDef s₆ W 158 e₆ ∧
+    ∃ l₆, !adjoinDef l₆ s₆ 0 ∧ ∃ l₅, !adjoinDef l₅ s₅ l₆ ∧ ∃ l₄, !adjoinDef l₄ s₄ l₅ ∧ ∃ l₃, !adjoinDef l₃ s₃ l₄ ∧
+    ∃ l₂, !adjoinDef l₂ s₂ l₃ ∧ ∃ l₁, !adjoinDef l₁ s₁ l₂ ∧ !appendVDef y L l₁”
+
+instance proShift0_defined : 𝚺₁-Function₂ (proShift0 : V → V → V) via proShift0Def := .mk fun v ↦ by
+  simp [proShift0Def, proShift0, layoutSteps0_defined.iff, mkStep_defined.iff, cTV.defined.iff, cTV_zero,
+    appendV_defined.iff, numeral_eq_natCast]
+instance proShift0_definable : 𝚺₁-Function₂ (proShift0 : V → V → V) := proShift0_defined.to_definable
+
+set_option maxHeartbeats 4000000 in
+/-- **`proShift0` is applicable**: three eigenvariables; afterwards the child's `Layout0` at `1`, the parent's `Layout0` at
+`i + 3`, and `setShiftFact &(i + 3 + 1) &2` (`nodeShift_ok`'s `hss`). -/
+theorem proShift0_ok {tbl N W Wc T i E Γ : V} (htbl : TableOK tbl N) (hP : ProTable tbl) (hWp : W = proPieces)
+    (hΓ : IsFormulaSet LAct Γ) (hiE : i + 3 + 1 + 1 ≤ E) (hLay : Layout0 walkPieces Wc T Γ i) :
+    ListOK tbl E ((8 : ℕ) : V) Γ (proShift0 W i) ∧ NoDrop' (proShift0 W i) ∧ shiftsV (proShift0 W i) = 3 ∧
+    Layout0 walkPieces Wc T (finalCtx Γ (proShift0 W i)) 1 ∧
+    Layout0 walkPieces Wc T (finalCtx Γ (proShift0 W i)) (i + 3) ∧
+    neg LAct (setShiftFact (^&(i + 3 + 1)) (^&2)) ∈ finalCtx Γ (proShift0 W i) := by
+  have hL := hP.layoutTable
+  have hF2 := hP.frag2Table
+  have e138 : ∀ ev : V, mkStep proPieces (138 : V) ev = mkStep frag2Pieces (138 : V) ev := fun ev ↦ by
+    have := mkStep_pro_frag2 138 (by decide) ev; simpa using this
+  have e145 : ∀ ev : V, mkStep proPieces (145 : V) ev = mkStep frag2Pieces (145 : V) ev := fun ev ↦ by
+    have := mkStep_pro_frag2 145 (by decide) ev; simpa using this
+  have e148 : ∀ ev : V, mkStep proPieces (148 : V) ev = mkStep frag2Pieces (148 : V) ev := fun ev ↦ by
+    have := mkStep_pro_frag2 148 (by decide) ev; simpa using this
+  have e42 : ∀ ev : V, mkStep proPieces (42 : V) ev = mkStep layoutPieces (42 : V) ev := fun ev ↦ by
+    have := mkStep_pro_layout 42 (by decide) ev; simpa using this
+  have e43 : ∀ ev : V, mkStep proPieces (43 : V) ev = mkStep layoutPieces (43 : V) ev := fun ev ↦ by
+    have := mkStep_pro_layout 43 (by decide) ev; simpa using this
+  have hE3 : (3 : V) ≤ E := le_trans le_add_self (le_trans le_self_add (le_trans le_self_add hiE))
+  have hE2 : (2 : V) ≤ E := le_trans (by norm_num) hE3
+  have hE1 : (1 : V) ≤ E := le_trans (by norm_num) hE2
+  have h0 : IsSemiterm LAct (0 : V) (𝟎 : V) := isSemiterm_zeroV
+  have h0E : termLen LAct (𝟎 : V) ≤ E := termLen_zeroV_le hE1
+  have hf0 : IsSemiterm LAct 0 (^&0 : V) := by simp
+  have hf0E : termLen LAct (^&0 : V) ≤ E := termLen_fvar0_le hE1
+  have hf2 : IsSemiterm LAct 0 (^&2 : V) := by simp
+  have hf2E : termLen LAct (^&2 : V) ≤ E := termLen_fvar_le' (by rw [show (2 : V) + 1 = 3 by norm_num]; exact hE3)
+  have hfS : IsSemiterm LAct 0 (^&(i + 3 + 1) : V) := by simp
+  have hfSE : termLen LAct (^&(i + 3 + 1) : V) ≤ E := termLen_fvar_le' hiE
+  -- the child's layout
+  obtain ⟨lok, lnd, lsh, _, lLay⟩ := layoutSteps0_ok htbl hP hWp hΓ hE2
+  obtain ⟨Γ₁, hΓ₁⟩ : ∃ Γ', Γ' = finalCtx Γ (layoutSteps0 W) := ⟨_, rfl⟩
+  have hΓ₁f : IsFormulaSet LAct Γ₁ := by rw [hΓ₁]; exact finalCtx_isFormulaSet 8 htbl hΓ lok
+  have hLay₁ : Layout0 walkPieces Wc T Γ₁ (i + 2) := by rw [hΓ₁]; have := hLay.transport lnd; rwa [lsh] at this
+  have lLay₁ : Layout0 walkPieces Wc T Γ₁ 0 := by rw [hΓ₁]; exact lLay
+  -- step 1: `setShiftTotal [𝟎]`
+  obtain ⟨ok₁, tg₁, cx₁⟩ := gok_setShiftTotal htbl hF2 rfl hΓ₁f h0 h0E
+  rw [← e138, ← hWp] at ok₁ tg₁ cx₁
+  rw [Nat.cast_zero, termShift_zeroV] at cx₁
+  have h1nd : NoDrop' (?[mkStep W 138 ?[(𝟎 : V)]] : V) := noDrop'_single (Or.inr (Or.inr (Or.inl tg₁)))
+  have h1sh : shiftsV (?[mkStep W 138 ?[(𝟎 : V)]] : V) = 1 := shiftsV_single_tag2 tg₁
+  obtain ⟨Γ₂, hΓ₂⟩ : ∃ Γ', Γ' = insert (neg LAct (setShiftFact (^&0) (𝟎 : V))) (setShift LAct Γ₁) := ⟨_, rfl⟩
+  have hΓ₂e : Γ₂ = finalCtx Γ₁ ?[mkStep W 138 ?[(𝟎 : V)]] := by rw [hΓ₂, finalCtx_single, cx₁]
+  have hΓ₂f : IsFormulaSet LAct Γ₂ := by rw [hΓ₂e]; exact finalCtx_isFormulaSet 8 htbl hΓ₁f (listOK_single ok₁)
+  have hLay₂ : Layout0 walkPieces Wc T Γ₂ (i + 3) := by
+    rw [hΓ₂e]; have := hLay₁.transport h1nd; rwa [h1sh, add_assoc, show (2 : V) + 1 = 3 by norm_num] at this
+  have lLay₂ : Layout0 walkPieces Wc T Γ₂ 1 := by
+    rw [hΓ₂e]; have := lLay₁.transport h1nd; rwa [h1sh, zero_add] at this
+  have hss₂ : neg LAct (setShiftFact (^&0) (𝟎 : V)) ∈ Γ₂ := by rw [hΓ₂]; exact memInsSelf _ _
+  have hS₂ : neg LAct (eqFactB (^&(i + 3 + 1)) (𝟎 : V)) ∈ Γ₂ := hLay₂.2
+  have hs''₂ : neg LAct (eqFactB (^&2) (𝟎 : V)) ∈ Γ₂ := by have := lLay₂.2; rwa [one_add_one_eq_two] at this
+  -- step 2: `setShiftEmpty [&0]` → `eqFactB &0 𝟎`
+  obtain ⟨ok₂, tg₂, cx₂⟩ := gok_setShiftEmpty htbl hF2 rfl hΓ₂f hf0 hf0E hss₂
+  rw [← e145, ← hWp] at ok₂ tg₂ cx₂
+  have hΓ₃f : IsFormulaSet LAct (insert (neg LAct (eqFactB (^&0) (𝟎 : V))) Γ₂) := by rw [← cx₂]; exact isFormulaSet_ctxAfter 8 htbl ok₂
+  -- step 3: `eqSymm [&0, 𝟎]` → `eqFactB 𝟎 &0`
+  obtain ⟨ok₃, tg₃, cx₃⟩ := lok_eqSymm htbl hL rfl hΓ₃f hf0 hf0E h0 h0E (memInsSelf _ _)
+  rw [← e42, ← hWp] at ok₃ tg₃ cx₃
+  have hΓ₄f : IsFormulaSet LAct (insert (neg LAct (eqFactB (𝟎 : V) (^&0))) (insert (neg LAct (eqFactB (^&0) (𝟎 : V))) Γ₂)) := by
+    rw [← cx₃]; exact isFormulaSet_ctxAfter 8 htbl ok₃
+  -- step 4: `eqTrans [S, 𝟎, &0]` → `eqFactB S &0`
+  obtain ⟨ok₄, tg₄, cx₄⟩ := lok_eqTrans htbl hL rfl hΓ₄f hfS hfSE h0 h0E hf0 hf0E (memIns (memIns hS₂)) (memInsSelf _ _)
+  rw [← e43, ← hWp] at ok₄ tg₄ cx₄
+  have hΓ₅f : IsFormulaSet LAct (insert (neg LAct (eqFactB (^&(i + 3 + 1)) (^&0))) (insert (neg LAct (eqFactB (𝟎 : V) (^&0)))
+      (insert (neg LAct (eqFactB (^&0) (𝟎 : V))) Γ₂))) := by
+    rw [← cx₄]; exact isFormulaSet_ctxAfter 8 htbl ok₄
+  -- step 5: `congSetShiftL [&0, S, 𝟎]` → `setShiftFact S 𝟎`
+  obtain ⟨ok₅, tg₅, cx₅⟩ := gok_congSetShiftL htbl hF2 rfl hΓ₅f hf0 hf0E hfS hfSE h0 h0E (memInsSelf _ _)
+    (memIns (memIns (memIns hss₂)))
+  rw [← e148, ← hWp] at ok₅ tg₅ cx₅
+  have hΓ₆f : IsFormulaSet LAct (insert (neg LAct (setShiftFact (^&(i + 3 + 1)) (𝟎 : V))) (insert (neg LAct (eqFactB (^&(i + 3 + 1)) (^&0)))
+      (insert (neg LAct (eqFactB (𝟎 : V) (^&0))) (insert (neg LAct (eqFactB (^&0) (𝟎 : V))) Γ₂)))) := by
+    rw [← cx₅]; exact isFormulaSet_ctxAfter 8 htbl ok₅
+  -- step 6: `congSetShiftR [S, 𝟎, &2]` → `setShiftFact S &2`
+  obtain ⟨hlen, hrow⟩ := hP.congSetShiftR
+  obtain ⟨ok₆, tg₆, cx₆⟩ := pok_congSetShiftR htbl hWp hlen hrow hΓ₆f hfS hfSE h0 h0E hf2 hf2E
+    (memIns (memIns (memIns (memIns hs''₂)))) (memInsSelf _ _)
+  -- assembly
+  have hnd : NoDrop' (mkStep W 138 ?[(𝟎 : V)] ∷ mkStep W 145 ?[^&0] ∷ mkStep W 42 ?[^&0, (𝟎 : V)] ∷
+      mkStep W 43 ?[^&(i + 3 + 1), (𝟎 : V), ^&0] ∷ mkStep W 148 ?[^&0, ^&(i + 3 + 1), (𝟎 : V)] ∷
+      mkStep W 158 ?[^&(i + 3 + 1), (𝟎 : V), ^&2] ∷ (0 : V)) :=
+    noDrop'_cons (by rw [tg₁]; simp) (noDrop'_cons (by rw [tg₂]; simp) (noDrop'_cons (by rw [tg₃]; simp)
+      (noDrop'_cons (by rw [tg₄]; simp) (noDrop'_cons (by rw [tg₅]; simp) (noDrop'_single (by rw [tg₆]; simp))))))
+  have hsh : shiftsV (mkStep W 138 ?[(𝟎 : V)] ∷ mkStep W 145 ?[^&0] ∷ mkStep W 42 ?[^&0, (𝟎 : V)] ∷
+      mkStep W 43 ?[^&(i + 3 + 1), (𝟎 : V), ^&0] ∷ mkStep W 148 ?[^&0, ^&(i + 3 + 1), (𝟎 : V)] ∷
+      mkStep W 158 ?[^&(i + 3 + 1), (𝟎 : V), ^&2] ∷ (0 : V)) = 1 := by
+    rw [shiftsV_cons, shiftsV_cons, shiftsV_cons, shiftsV_cons, shiftsV_cons, shiftsV_single, tg₁, tg₂, tg₃, tg₄, tg₅, tg₆]
+    simp
+  have hfin : finalCtx Γ₁ (mkStep W 138 ?[(𝟎 : V)] ∷ mkStep W 145 ?[^&0] ∷ mkStep W 42 ?[^&0, (𝟎 : V)] ∷
+      mkStep W 43 ?[^&(i + 3 + 1), (𝟎 : V), ^&0] ∷ mkStep W 148 ?[^&0, ^&(i + 3 + 1), (𝟎 : V)] ∷
+      mkStep W 158 ?[^&(i + 3 + 1), (𝟎 : V), ^&2] ∷ (0 : V)) =
+      insert (neg LAct (setShiftFact (^&(i + 3 + 1)) (^&2))) (insert (neg LAct (setShiftFact (^&(i + 3 + 1)) (𝟎 : V)))
+        (insert (neg LAct (eqFactB (^&(i + 3 + 1)) (^&0))) (insert (neg LAct (eqFactB (𝟎 : V) (^&0)))
+          (insert (neg LAct (eqFactB (^&0) (𝟎 : V))) Γ₂)))) := by
+    rw [finalCtx_cons, cx₁, ← hΓ₂, finalCtx_cons, cx₂, finalCtx_cons, cx₃, finalCtx_cons, cx₄, finalCtx_cons, cx₅,
+      finalCtx_single, cx₆]
+  have tr : ∀ x ∈ Γ₂, x ∈ insert (neg LAct (setShiftFact (^&(i + 3 + 1)) (^&2))) (insert (neg LAct (setShiftFact (^&(i + 3 + 1)) (𝟎 : V)))
+        (insert (neg LAct (eqFactB (^&(i + 3 + 1)) (^&0))) (insert (neg LAct (eqFactB (𝟎 : V) (^&0)))
+          (insert (neg LAct (eqFactB (^&0) (𝟎 : V))) Γ₂)))) := fun x hx ↦ memIns (memIns (memIns (memIns (memIns hx))))
+  unfold proShift0
+  refine ⟨listOK_appendV lok ?_, noDrop'_appendV lnd hnd, ?_, ?_, ?_, ?_⟩
+  · rw [← hΓ₁]
+    refine listOK_cons ok₁ ?_
+    rw [cx₁, ← hΓ₂]
+    refine listOK_cons ok₂ ?_
+    rw [cx₂]
+    refine listOK_cons ok₃ ?_
+    rw [cx₃]
+    refine listOK_cons ok₄ ?_
+    rw [cx₄]
+    refine listOK_cons ok₅ ?_
+    rw [cx₅]
+    exact listOK_single ok₆
+  · rw [shiftsV_appendV, lsh, hsh]; norm_num
+  · rw [finalCtx_appendV, ← hΓ₁, hfin]
+    exact lLay₂.mono tr
+  · rw [finalCtx_appendV, ← hΓ₁, hfin]
+    exact hLay₂.mono tr
+  · rw [finalCtx_appendV, ← hΓ₁, hfin]; exact memInsSelf _ _
+
+end emptySequent
+
 /-! ## 8. What remains (2026-09-15, evening) — recorded precisely
 
 DELIVERED since the morning entry: §9 `proOr`/`proOr_ok` (two `proIns` + `congInsertS`); §10 `proShift`/`proShift_ok`
@@ -5614,12 +6035,14 @@ DELIVERED since the morning entry: §9 `proOr`/`proOr_ok` (two `proIns` + `congI
   `and/or/all/exs` children are inserts, never empty). "Every node's sequent is nonempty" is FALSE. The honest
   treatment: `Layout0 Γ i := Layout … 0 i ∧ eqFactB &(i + 1) 𝟎` (§12; the object identified with `𝟎` replaces the
   chain), built by `layoutSteps0` (rows `eqTotal`, `setLenTotalC`, `eqSymm`, `congSetLenR`, `setLenEmptyLe`; 2
-  eigenvariables). STILL TO WRITE on top of it: `proWk0` (child `∅`: `layoutSteps0 ++ emptySubsetC [S] ++
-  congSubsetL [S, &1, 𝟎]` → `subsetFact &1 S`), `proShift0` (both `∅`: `layoutSteps0 ++ setShiftTotal [𝟎] ++
-  setShiftEmpty ++ eqSymm ++ eqTrans [S, 𝟎, &0] ++ congSetShiftL ++ congSetShiftR [S, 𝟎, s'']` → `setShiftFact S s''`),
-  and `proIns0` (parent `∅`, child `insert p ∅`: `identIns` WITHOUT Loop B and the parent `subChain` — direction
-  `S ⊆ s''` from `emptySubsetC [s'']` + `congSubsetL [s'', S, 𝟎]`, then `insertSubset`, `subsetAntisymm`); the
-  verify recursion must carry `Layout0` for `∅`-nodes (a per-node disjunction `1 ≤ k ∧ Layout … ∨ k = 0 ∧ Layout0 …`).
+  eigenvariables; `layoutSteps0_ok`). DELIVERED on top of it (§12): `proWk0_ok` (child `∅`: `layoutSteps0 ++
+  emptySubsetC [S] ++ congSubsetL [𝟎, &1, S]` → `subsetFact &1 S`) and `proShift0_ok` (both `∅`: `layoutSteps0 ++
+  setShiftTotal [𝟎] ++ setShiftEmpty ++ eqSymm ++ eqTrans [S, 𝟎, &0] ++ congSetShiftL ++ congSetShiftR [S, 𝟎, &2]` →
+  `setShiftFact S &2`). STILL TO WRITE: `proIns0` (parent `∅`, child `insert p ∅`: `identIns` WITHOUT Loop B and the
+  parent `subChain` — direction `S ⊆ s''` from `emptySubsetC [s'']` + `congSubsetL [𝟎, S, s'']`, then `insertSubset`,
+  `subsetAntisymm`), the costs of `layoutSteps0`/`proWk0`/`proShift0` (all Horn-only or tag-2 — `sizeOK_of_hornOnly` after
+  a tag census), and the verify recursion must carry `Layout0` for `∅`-nodes (a per-node disjunction
+  `1 ≤ k ∧ Layout … ∨ k = 0 ∧ Layout0 …`).
 * **`all` (§4.5)**: every producer exists (`certFree_ok`, `certShift_ok`, `setShiftTotal`, `insertTotalC`). Plan on this
   file's producers: parent `s` at `i` with `∀p ∈ s` (`dossF_all` → `p`'s dossier at `n = 1`); child `c = insert (free p)
   (setShift s)` laid out by `layoutSteps c`; a fresh walk `describeF walkPieces 1 (shift p)`; `certFree` (cap 9 —
