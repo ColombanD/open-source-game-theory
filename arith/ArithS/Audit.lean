@@ -48,6 +48,8 @@ import ArithS.Necessitation.Prologue
 import ArithS.Necessitation.NumId
 import ArithS.Necessitation.NumIdRows
 import ArithS.Necessitation.Pin
+import ArithS.Necessitation.ProAxmRows
+import ArithS.Necessitation.ProAxm
 
 /-!
 # ArithS.Audit — the axiom census of the arithmetized layer
@@ -1065,5 +1067,31 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms costSum_proShift0_le
 #print axioms sizeOK_proIns0
 #print axioms costSum_proIns0_le
+
+-- U10 (Necessitation/ProAxm + ProAxmRows, 2026-09-15): the `axm` prologue. The `V`-level case split of `Δ₁ch TAct`
+-- (`mem_TAct_class_cases`: a standard axiom's code — `StdAxiom`, the four action sentences and `𝗣𝗔⁻` along `emb`,
+-- FINITE — or an induction instance, `InductionR`), read off `Theory.Δ₁.singleton`/`ofList`/`ofFinite` for VARIABLE
+-- sentences over a VARIABLE language (never a closed quote). Case (i) DISCHARGED per model on NumId's route: the
+-- closed `Lib` fact `axchNum ⌜σ⌝` (= `axchFact (numeral ⌜σ⌝)`, TRUE by `Δ₁Class.mem_iff`) as an `sLemma`, then ONE
+-- Horn step at the NEW row `congAxch` (`!axch x → y = x → !axch y`, one row for every σ — `axiomRec σ` would need
+-- one per σ): `axmStd_ok` (at the dossier), `proAxmStd_ok` (at the `Layout`, `memTop_le`), `proAxm_std` (ONE
+-- constant over `StdAxiom` by `Set.Finite.bddAbove`), `proAxm_ok` (both cases; case (ii) is the explicitly named,
+-- UNDISCHARGED hypothesis `AxmIndOracle`), `costSum_proAxm_le` (= `numInv_cost`). NOT a Σ₁ producer (NumId's
+-- `sLemma` derivations are per model) — see the file docstring. Nothing below is an axiom.
+#print axioms lib_congAxch
+#print axioms aok_congAxch
+#print axioms exists_proAxmTableB
+#print axioms eval_singleton_ch
+#print axioms eval_ofList_ch
+#print axioms eval_paMinus_ch
+#print axioms stdAxiom_finite
+#print axioms mem_TAct_class_cases
+#print axioms lib_axchNum
+#print axioms code_axchNum
+#print axioms axmStd_ok
+#print axioms proAxmStd_ok
+#print axioms proAxm_std
+#print axioms proAxm_ok
+#print axioms costSum_proAxm_le
 
 end ArithS

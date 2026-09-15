@@ -71,6 +71,8 @@ import ArithS.Necessitation.Prologue
 import ArithS.Necessitation.NumId
 import ArithS.Necessitation.NumIdRows
 import ArithS.Necessitation.Pin
+import ArithS.Necessitation.ProAxmRows
+import ArithS.Necessitation.ProAxm
 import ArithS.Neg
 import ArithS.Agent
 import ArithS.AgentConverse
