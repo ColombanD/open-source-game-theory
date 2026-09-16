@@ -97,6 +97,7 @@ replacing it. -/
 def ArmHyps (tbl B Wl Wc W₁ W₂ W T : V) (Cv Cz : ℕ) : Prop :=
   ∀ {E A ρ L : V}, AxmTableOK' tbl E walkPieces A (Cv : V) → Derivation TAct ρ →
     VerifyGraph'' walkPieces Wl Wc W₁ W₂ W T A ρ L →
+    (Cz : V) * (dlen TAct ρ + 1) ^ 4 ≤ E →
     len L ≤ (Cz : V) * (dlen TAct ρ + 1) ^ 4 ∧
       SizeOK (kitQ (Cz : V) B E) (kitD (Cz : V) (dlen TAct ρ)) L
 
@@ -111,8 +112,8 @@ theorem verifySizeOracle_of_arms {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] 
     {tbl B T : V} {Cv Cz : ℕ}
     (harms : ArmHyps tbl B layoutPieces certPieces frag1Pieces frag2Pieces proPieces T Cv Cz) :
     VerifySizeOracle tbl B layoutPieces certPieces frag1Pieces frag2Pieces proPieces T Cv Cz := by
-  intro E A rho L hA hd hL
-  exact harms hA hd hL
+  intro E A rho L hA hd hL hEcap
+  exact harms hA hd hL hEcap
 
 end sizeInvariant
 /-! ## 3. The node codes' derivation lengths, in the layout size class

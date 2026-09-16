@@ -488,6 +488,7 @@ machine-checked. -/
 def VerifySizeOracle (tbl B Wl Wc W₁ W₂ W T : V) (Cv Cz : ℕ) : Prop :=
   ∀ {E A ρ L : V}, AxmTableOK' tbl E walkPieces A (Cv : V) → Derivation TAct ρ →
     VerifyGraph'' walkPieces Wl Wc W₁ W₂ W T A ρ L →
+    (Cz : V) * (dlen TAct ρ + 1) ^ 4 ≤ E →
     len L ≤ (Cz : V) * (dlen TAct ρ + 1) ^ 4 ∧ SizeOK (kitQ (Cz : V) B E) (kitD (Cz : V) (dlen TAct ρ)) L
 
 /-- **The goal-fact size constant, PACKAGED EXISTENTIALLY** (`4·(cDer + cDlen + cFst + 6)`). TRAP (2026-09-15): a
@@ -783,7 +784,12 @@ theorem vList_full (N' B' Cz Cv : ℕ) : ∃ Ck : ℕ, 1 ≤ Ck ∧ ∀ (V : Typ
     rw [← hβ, ← hdd, ← hσ, len_appendV, len_appendV, len_appendV, len_retargetRoot]
     have h1 := len_layoutSteps_le hWc walkPieces Wl W T hxs
     rw [len_memberList_single] at h1
-    have h3 := (hsize hA hd hL).1
+    have hEcap : (Cz : V) * (dlen TAct ρ + 1) ^ 4 ≤ E := by
+      rw [← hdd]
+      exact cap_gen hE (c := (Cz : V)) (a := 0) (b := 0)
+        (by rw [add_zero, hCkv]; exact_mod_cast (hle (Cz) (by unfold asmCk; omega))) zero_le
+        (by rw [zero_mul, zero_mul, add_zero, add_zero])
+    have h3 := (hsize hA hd hL hEcap).1
     rw [← hdd] at h3
     calc len (layoutSteps walkPieces Wl Wc W T (insert x 0)) +
           (len (identRoot Wl x (i + β + 2) (sTop Wc T x 0) (i + β + 1) (0 + 2)) + (len L + 7))
@@ -815,7 +821,12 @@ theorem vList_full (N' B' Cz Cv : ℕ) : ∃ Ck : ℕ, 1 ≤ Ck ∧ ∀ (V : Typ
       (by rw [hCkv]; exact_mod_cast (hle (19 * B' + 25) (by unfold asmCk; omega))) zero_le)
     have hlD : layD (N' : V) (B' : V) d ≤ kitD Ckv d := le_trans (layD_le (N' : V) (B' : V) d) (mul_le_mul_of_nonneg_right
       (by rw [hCkv]; exact_mod_cast (hle (27 * N' + 525600 * B') (by unfold asmCk; omega))) zero_le)
-    have hsz := (hsize hA hd hL).2
+    have hEcap : (Cz : V) * (dlen TAct ρ + 1) ^ 4 ≤ E := by
+      rw [← hdd]
+      exact cap_gen hE (c := (Cz : V)) (a := 0) (b := 0)
+        (by rw [add_zero, hCkv]; exact_mod_cast (hle (Cz) (by unfold asmCk; omega))) zero_le
+        (by rw [zero_mul, zero_mul, add_zero, add_zero])
+    have hsz := (hsize hA hd hL hEcap).2
     rw [← hdd] at hsz
     have hcGoal : 4 * ((cDer : V) + cDlen + cFst + 6) ≤ Ckv := by
       rw [← hcG V, hCkv]; exact_mod_cast (hle cG (by omega))
