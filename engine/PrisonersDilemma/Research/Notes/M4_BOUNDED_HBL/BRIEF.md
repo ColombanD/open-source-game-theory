@@ -2045,3 +2045,40 @@ reordered — nothing else in `Assemble.lean`.
 IN FLIGHT: `Verify5` Part 19 — (1) lift + threading across all three files, green and alone;
 (2) the ten-arm recursion with `and`/`cut` named; (3) the transport chains; (4) discharge → the
 unconditional `verifyGraph''_size4_of_arms`.
+
+**§11 status — `Verify5` Part 18b: THE `Cv` LIFT IS BANKED (f8fe4ec; transitive build green 3266
+jobs, zero `sorry`, every affected declaration standard; sentinel-tested at `Assemble.lean:1273`
+under a real `lake build` and restored byte-exactly).** The root fix, four sites in `Assemble.lean`:
+`VerifySizeOracle (tbl B Wl Wc W₁ W₂ W T : V) (Cv Cz : ℕ)` with `Cv` lifted out of the inner `∀`;
+`vList_full` (600) and `verifyKit'''_of` (871) hypotheses retyped — ONE TOKEN EACH, no proof body
+touched; the legacy branch threaded (`SizeOracle (Cv Cz : ℕ)` + its three consumers). Threaded in
+`Verify5`: `ArmHyps`, `verifySizeOracle_of_arms`, `ArmHypsAll`, `verifyGraph''_size4_of_arms`. In
+`Package`: `SizeThm`, `SizeThmAll` (now `∀ N' B' Cv, ∃ Cz, SizeThm N' B' Cv Cz`),
+`verifySizeOracle_of_sizeThm`, and `kitPackage'''_of_size'` reordered (`C` before `Cz`,
+`hsz N' B' C`). No `Audit.lean` edit needed — the census references names, all of which resolve.
+**DEVIATION FROM THE AUTHORISATION, REPORTED NOT BURIED (coordinator-verified): the `obtain` reorder
+inside `kitPackage'''_of_size` was NOT NEEDED and was NOT MADE.** That body already obtained `C`
+before `Ck`; the only change is one expression at line 1342. Instead the three legacy statements take
+**`hsz : ∀ Cv : ℕ, SizeOracle Cv Cz`** rather than a threaded `Cv` parameter — FORCED, because `C` is
+obtained INSIDE `kitPackage'''_of_size`'s proof, so no parameter list can name it. One token more
+than threading; every body line intact. Taking the smaller edit rather than spending the authorised
+licence is the third time this agent's stop-and-report judgement has averted a wider change.
+**THE `axm` ARM IS NOW DISCHARGEABLE** — `ArmHyps … (Cv Cz : ℕ)` supplies the fixed `Cv` that
+`axm_wrapper`'s `hCv`/`hCv8` require. The recursion is FULLY SPECIFIED: motive `Czv·p4 (dlen ρ + 1)
+≤ E → ∀ L Γ, VerifyGraph'' … ρ L → IsFormulaSet Γ → NodeLay … (fstIdx ρ) → len L ≤ Czv·p4 (dlen ρ)
+∧ SizeOK (kitQ Czv B E) (kitD Czv (2·dlen ρ)) L` under `(by simp only [VerifyGraph'', p4, kitQ,
+kitD]; definability) hd`; arm order (from Foundation) `axL, verum, and, or, all, exs, wk, shift,
+cut, axm`; constant `Czv := ((K : ℕ) : V)` with `K := 1000000 + (19·B' + 25) + 2·(27·N' +
+525600·B') + cG + (8·Cv + 9)` on `Verify4`'s `obtain ⟨Czv, hCzv⟩ : ∃ x : V, x = ((K : ℕ) : V)`
+idiom (`cG` from `exists_cGoal`, whose only interface is its cast identity; `hC21`/`hC9` fall out of
+`hCk` since 21, 9 ≤ 1000000); bridge to `ArmHyps` at `Cz := 8·K` via the banked `kitD_two_mul_le`/
+`kitQ_mono_const` with `pow4_eq_p4` + `p4_mono le_self_add`. **`and`/`cut` become named hypotheses
+of the ENCLOSING THEOREM, not of the motive** — their `Γ₃`/`Γ₄`/`Γc` are per-node EXISTENTIAL
+witnesses and cannot live in the motive (agent's call, coordinator agreed).
+The agent stopped before drafting rather than start a ~150-line theorem it could not also compile
+and verify in-round, and said so plainly. COORDINATOR'S STEER for Part 19: **open by writing §27,
+no reads first**; if the draft exceeds one turn, SPLIT AT AN ARM BOUNDARY (first five arms, rest as
+named hypotheses, compile, commit) rather than stop with nothing — a partially-discharged recursion
+that compiles is a real asset; an unwritten one is not.
+IN FLIGHT: `Verify5` Part 19 — (1) §27 the ten-arm recursion; (2) the two transport chains;
+(3) discharge → the unconditional `verifyGraph''_size4_of_arms`.
