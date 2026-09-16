@@ -1599,6 +1599,21 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 -- exact `= by ring` step is safer than an inequality with invented slack.
 #print axioms or_wrapper
 
+-- U10 (Necessitation/Verify5, 2026-09-16): §22 — the `and` MOTIVE WRAPPER (6 of 10), the first TWO-CHILD arm.
+-- `dlen_andIntro` is `setLen s + dlen dp + dlen dq + 1`, so `hdeq` takes the `d = y₁ + y₂ + m` shape that
+-- `Bounds.rec2₄` wants — and TRAP 19: EVERY room in a two-child arm must use `rec2₄`, not `rec1₄`, even the ones
+-- that mention only ONE child (`hiE₂`, `hipE₂`, `hgE₁`, `hgE₂`). `rec1₄` wants `d = y + m`, and a two-child `dlen`
+-- cannot be written that way — the other child's `dlen` has nowhere to go; the residual goal shows it as
+-- `… + dlen dq = …` with the summand simply missing. Each such room adds the absent child's `Czv·p4` as slack via
+-- `le_of_add_eq'` and then closes with `rec2₄`. Seven blocks, so the length half is two
+-- `Prologue.len_proIns_le ≤ 55·setLen (insert · s) + 12` (the `setLen`s by `setLen_child_le_dlen_andIntro_left`/
+-- `_right`) plus `6 + 6 + 9 = 21`, i.e. `110·D + 45 = 155`. The later-context hypotheses `hΓ₃`/`hLay₃`/`hDq₃` are
+-- EXPLICIT wrapper hypotheses (the Part-8 finding), `hDp` comes from `Prologue.layout_and`, and
+-- `shiftsV L₁ ≤ Czv·p4 (dlen dp)` (via `shiftsV_le_len`) bounds the later-context rooms. Constants, all read off
+-- the residual goals rather than guessed: `hipE₁` `16·D + 6`, `hiE₂` `20·D + 9`, `hipE₂` `20·D + 10`,
+-- `hgE₃` `13·D + 11`.
+#print axioms and_wrapper
+
 -- U10 (Necessitation/Package, 2026-09-15): THE PACKAGE AND THE HEADLINE THEOREMS, with `Assemble.SizeOracle`
 -- BYPASSED. `SizeOracle` is NOT PROVABLE as stated (it binds the numeral table `T` with no `NumTableOK T N' B'`,
 -- while every prologue size lemma requires one and lands at `layQ B B' D`/`layD N' B' D`; `NumTableOK` is never a
