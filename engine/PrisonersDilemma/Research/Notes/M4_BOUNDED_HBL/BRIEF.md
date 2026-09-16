@@ -2262,3 +2262,36 @@ committable unit on their own; land them first, then the transport body against 
 half is an asset; a fully specified nothing is not.
 IN FLIGHT: `Verify5` Part 24 — (1) §28's six E-room lemmas, committed alone; (2) the `and`
 transport body; (3) discharge `hAndArm`; (4) then `cut`.
+
+**§11 status — `Verify5` Part 24: THREE PIECES BANKED (40228d5, b46aa52, c06aec1; tree clean,
+green throughout, each sentinel-tested before banking). THE SPLIT INSTRUCTION WORKED — three assets
+where the previous two rounds produced none.**
+**`40228d5` §26.2, the four linear E-rooms**: `and_room13`, `and_room8`, `and_roomI`,
+`and_roomIP`, each one `capE4'` at its own constant (43, 39, 26, 22), all taking `hE : Czv·p4 (D+1)
+≤ E` exactly as the arm supplies it. *TRAP 25*: `capE4'`'s `a` is IMPLICIT and `refine capE4' hE
+he1 ?_ ?_` leaves it unsolved — supply it POSITIONALLY.
+**`b46aa52` §26.3, the two child-carrying rooms**: both close at the arm's OWN SINGLE CAP by
+splitting it with `p4_split D 1`. They differ at a real arithmetic boundary — `hsE`'s linear part
+is `D + 4` (covered from `1 ≤ D`), while `hcE`'s is `6·D + 4`, and **`6·D + 4 ≤ p3 (D+1)` is FALSE
+at `D = 1`** (`10 ≤ 8`); it needs `2 ≤ D`, which the STRICT DESCENT supplies (`1 ≤ y` from
+`one_le_dlen`, `y + 1 ≤ D` from `dlen_dp_succ_le_andIntro`, both already bound in the arm).
+**A GREEN-BUT-UNCALLABLE LEMMA WAS CAUGHT BEFORE IT SPREAD**: an earlier doubled-cap form compiled
+fine but could never be applied — the arm holds `hE` at a SINGLE `Czv` and cannot manufacture a
+multiple. **Checking CALLABILITY before transcribing is what produced the strict-descent route**;
+worth making standard practice for any new hypothesis shape.
+**`c06aec1` §26.4, the input block + the `hCk5` binder**: `and_input` runs `layout_and` and the
+first `proIns`, carrying the `q`-dossier across. It validated the banked rooms AT A REAL CALL SITE —
+`proIns_ok`'s three E-rooms are exactly `and_room13`, `and_roomI` at `i := 0`, and `and_roomIP`,
+with NO adjustment. TRAPS: *27* — `proIns_ok`'s `i` is inferred from whichever room supplies
+`hiE`, so PIN IT `(i := 0)` or the layouts stop lining up; *28* — `IdFrame` has NAMED fields
+(`child`, `parent`, `dp`, `cp`), and an anonymous `fr₁.2.1` descends into `parent`'s conjunction
+and prints the whole unfolded `Layout`.
+AGENT'S SELF-REPORT: mid-round it twice wrote `sorry`-carrying scratchpad drafts while reaching for
+multiplicative absorptions that do not exist, and patched rather than discarding them; rewriting
+clean was faster both times. (Recorded as method, not blame — the same lesson as the corrupted
+probes: discard and rewrite beats repair.)
+REMAINING on `and`: the CHILD CROSSING (instantiate `verifyGraph''_ok4` at `dp` for
+`cnd₁`/`cgoal₁`; `tr_fact` for `heq₁₂`; `postIns_ok`), then the THREE TRANSPORTS to `Γ₃`
+(`noDrop'_appendV cnd₁ qnd₁`, `shiftsV_appendV`, `finalCtx_appendV`), then `hAndArm`'s discharge.
+Then `cut`, whose `cutPro` block must be re-derived (no exported lemma).
+IN FLIGHT: `Verify5` Part 25 — the child crossing, banked at its own seam; then the transports.
