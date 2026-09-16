@@ -1720,6 +1720,24 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 -- does not reach. Those two are the transport-chain work that remains.
 #print axioms armHyps_of_arms
 
+-- U10 (Necessitation/Verify5, 2026-09-16): §26.2 — THE `and` TRANSPORT CHAIN'S E-ROOMS, the first banked piece of
+-- the `and` chain. `Prologue.proIns_ok`, `proSig_le`, `memTop_le`, `descCountF_le_of_len` and `postIns_ok` each want
+-- a LINEAR room (`13·D + 18·‖D‖ + 12`, `i + 14·D + 5`, `ip + 8·D + 4`, …), while the recursion's arms carry only the
+-- `p4` cap `Czv·p4 (dlen ρ + 1) ≤ E`. Each lemma bridges that by ONE `Bounds.capE4'` at its own constant, with the
+-- offset inputs at the bounds the tree actually delivers: `memTop_le ≤ i + 6·D + 1` (so `≤ 6·D + 1` at `i = 0`),
+-- `descCountF_le_of_len ≤ 2·D` (hence `ir₀ + cq + 1 ≤ 8·D + 2`), `proSig_le ≤ 6·D + 1`.
+-- Constants: `43`, `39`, `26` (folded `20·D + 6`), `22` (folded `16·D + 6`).
+-- TRAP 25: `capE4'`'s `a` is IMPLICIT and `refine capE4' hE he1 ?_ ?_` leaves it unsolved — the `ha` argument must
+-- be supplied POSITIONALLY. Verified by probe before transcription.
+-- The two REMAINING rooms (`postIns_ok`'s `hsE`/`hcE`) carry the CHILD's shift and are NOT in this commit:
+-- `hsE`'s linear part is `D + 4`, which fits under one `p3 (D+1)` (`lin4_le_p3succ`, `D+4 ≤ p3 (D+1)` at `1 ≤ D`),
+-- but `hcE`'s is `6·D + 4`, and `6·D + 4 ≤ p3 (D+1)` is FALSE at `D = 1` (`10 ≤ 8`) — so that room needs either
+-- `2 ≤ D` or a doubled cap, which is the next piece rather than a proof-search failure.
+#print axioms and_room13
+#print axioms and_room8
+#print axioms and_roomI
+#print axioms and_roomIP
+
 -- U10 (Necessitation/Package, 2026-09-15): THE PACKAGE AND THE HEADLINE THEOREMS, with `Assemble.SizeOracle`
 -- BYPASSED. `SizeOracle` is NOT PROVABLE as stated (it binds the numeral table `T` with no `NumTableOK T N' B'`,
 -- while every prologue size lemma requires one and lands at `layQ B B' D`/`layD N' B' D`; `NumTableOK` is never a

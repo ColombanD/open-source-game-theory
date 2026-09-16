@@ -3233,6 +3233,66 @@ theorem nodeCtx_exists {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜�
 
 end nodeContext
 
+/-! ## 26.2 THE `and` TRANSPORT CHAIN'S E-ROOMS
+
+The `and` chain (§28) runs `Prologue.proIns_ok`, `proSig_le`, `memTop_le`, `descCountF_le_of_len` and
+`postIns_ok`, each of which wants a LINEAR room (`13·D + 18·‖D‖ + 12`, `i + 14·D + 5`, `ip + 8·D + 4`, …) while
+the recursion's arms carry the `p4` cap `Czv·p4 (dlen ρ + 1) ≤ E`. These four lemmas bridge that, each by one
+`Bounds.capE4'` at its own constant, with the offset inputs at the bounds the tree actually delivers:
+`memTop_le` gives `≤ i + 6·D + 1` (so `≤ 6·D + 1` at `i = 0`), `descCountF_le_of_len` gives `≤ 2·D`, hence
+`ir₀ + cq + 1 ≤ 8·D + 2`, and `proSig_le` gives `≤ 6·D + 1`. -/
+
+section andRooms
+
+/-- `proIns_ok`'s `hE` room (`13 + 18 + 12 = 43`). -/
+theorem and_room13 {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] {E Czv D : V}
+    (hCk : ∀ n : ℕ, n ≤ 1000000 → ((n : ℕ) : V) ≤ Czv)
+    (hE : Czv * p4 (D + 1) ≤ E) :
+    13 * D + 18 * ‖D‖ + 12 ≤ E := by
+  have he1 : (1 : V) ≤ D + 1 := le_add_self
+  exact capE4' hE he1 (hCk 43 (by norm_num)) (by
+    push_cast
+    exact le_trans (lin_cap 13 18 12 D) (le_of_eq (by ring)))
+
+/-- `proSig_le`'s room (`13 + 18 + 8 = 39`). -/
+theorem and_room8 {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] {E Czv D : V}
+    (hCk : ∀ n : ℕ, n ≤ 1000000 → ((n : ℕ) : V) ≤ Czv)
+    (hE : Czv * p4 (D + 1) ≤ E) :
+    13 * D + 18 * ‖D‖ + 8 ≤ E := by
+  have he1 : (1 : V) ≤ D + 1 := le_add_self
+  exact capE4' hE he1 (hCk 39 (by norm_num)) (by
+    push_cast
+    exact le_trans (lin_cap 13 18 8 D) (le_of_eq (by ring)))
+
+/-- `proIns_ok`'s `hiE` at any offset `i ≤ 6·D + 1`: folded `≤ 20·D + 6`, constant `26`. -/
+theorem and_roomI {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] {E Czv D i : V}
+    (hCk : ∀ n : ℕ, n ≤ 1000000 → ((n : ℕ) : V) ≤ Czv)
+    (hi : i ≤ 6 * D + 1)
+    (hE : Czv * p4 (D + 1) ≤ E) :
+    i + 14 * D + 5 ≤ E := by
+  have he1 : (1 : V) ≤ D + 1 := le_add_self
+  refine capE4' hE he1 (hCk 26 (by norm_num)) ?_
+  push_cast
+  calc i + 14 * D + 5 ≤ (6 * D + 1) + 14 * D + 5 := add_le_add (add_le_add hi le_rfl) le_rfl
+    _ = 20 * D + 6 := by ring
+    _ ≤ 26 * (D + 1) := le_of_add_eq' (c := 6 * D + 20) (by ring)
+
+/-- `proIns_ok`'s `hipE` at `ip ≤ 8·D + 2` (that is `ir₀ + cq + 1` with `ir₀ ≤ 6·D + 1`, `cq ≤ 2·D`):
+folded `≤ 16·D + 6`, constant `22`. -/
+theorem and_roomIP {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] {E Czv D ip : V}
+    (hCk : ∀ n : ℕ, n ≤ 1000000 → ((n : ℕ) : V) ≤ Czv)
+    (hip : ip ≤ 8 * D + 2)
+    (hE : Czv * p4 (D + 1) ≤ E) :
+    ip + 8 * D + 4 ≤ E := by
+  have he1 : (1 : V) ≤ D + 1 := le_add_self
+  refine capE4' hE he1 (hCk 22 (by norm_num)) ?_
+  push_cast
+  calc ip + 8 * D + 4 ≤ (8 * D + 2) + 8 * D + 4 := add_le_add (add_le_add hip le_rfl) le_rfl
+    _ = 16 * D + 6 := by ring
+    _ ≤ 22 * (D + 1) := le_of_add_eq' (c := 6 * D + 16) (by ring)
+
+end andRooms
+
 /-! ## 27. THE TEN-ARM RECURSION
 
 `Verify4.verifyGraph''_ok4`'s shape with `len`/`SizeOK` in place of `shiftsV`: one `Derivation.induction1 𝚷` whose
