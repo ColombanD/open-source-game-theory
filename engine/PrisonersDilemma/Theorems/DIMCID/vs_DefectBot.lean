@@ -14,10 +14,12 @@ open PD.Bots
 namespace PD.Theorems
 
 /-- The consequent of DIMCID's guard against DefectBot is provable: DefectBot
-    defects against DIMCID. -/
+    defects against DIMCID. The atom charges the one-step run (`c_leaf`) plus its
+    own size. -/
 theorem DIMCID_consequent_DefectBot (k : Nat) :
-    Pf (atom_cost 1) (Formula.plays DefectBot (DIMCID k) Action.D) :=
-  Pf.atom ⟨PlaysProof.const, by decide⟩
+    Pf (c_leaf + (Formula.plays DefectBot (DIMCID k) Action.D).size)
+      (Formula.plays DefectBot (DIMCID k) Action.D) :=
+  Pf.atom ⟨PlaysProof.const, Nat.le_refl _⟩
 
 /-- DIMCID's guard against DefectBot is provable: `weakenImpl` turns the provable
     consequent into the implication, once `k` is large enough for the
@@ -33,11 +35,11 @@ theorem proofSearch_true_for_DIMCID_vs_DefectBot :
   show Pf k
     (Formula.impl (.plays (DIMCID k) DefectBot Action.C)
                   (.plays DefectBot (DIMCID k) Action.D))
-  refine Pf.weakenImpl _ _ (atom_cost 1) (DIMCID_consequent_DefectBot k) ?_
-  -- transcript: consequent certificate (`atom_cost 1 = 3`) + the implication's size, ≤ k.
+  refine Pf.weakenImpl _ _ (c_leaf + (Formula.plays DefectBot (DIMCID k) Action.D).size)
+    (DIMCID_consequent_DefectBot k) ?_
+  -- transcript: consequent certificate (`c_leaf + |atom|`) + the implication's size, ≤ k.
   have hb := hK k hk
-  have h1 : atom_cost 1 = 3 := by decide
-  simp only [numCost, Formula.size, Prog.size, DIMCID, DefectBot]
+  simp only [numCost, Formula.size, Prog.size, DIMCID, DefectBot, c_leaf]
   omega
 
 /-- DIMCID defects against DefectBot: its guard fires (proved above), so it takes

@@ -23,10 +23,12 @@ probe clears — "the guard is refuted" in this directory always means `¬ ⊢_k
 `S`-derivation exists because `φ` is false), never an `S`-refutation `⊢_k ¬φ`. Statements verified against the deterministic pre-pass (2026-07-29). -/
 
 /-- DefectBot provably (`⊢_k`) bullies the probe: a bare `.const` certificate at cost
-    `c_leaf`, so the guard fires at every budget `k ≥ 1`. -/
+    `c_leaf`, plus the atom's size 4 (since the atom recost of 2026-09-16), so the
+    guard fires at every budget `k ≥ 5`. -/
 theorem proofSearch_true_guardian_DefectBot (k : Nat) :
-    proofSearch (k + 1) (.plays DefectBot (.bot CooperateBot) .D) = true :=
-  (proofSearch_spec _ _).2 (Pf.atom ⟨PlaysProof.const, by unfold c_leaf; omega⟩)
+    proofSearch (k + 5) (.plays DefectBot (.bot CooperateBot) .D) = true :=
+  (proofSearch_spec _ _).2 (Pf.atom ⟨PlaysProof.const,
+    by simp only [Formula.size, Prog.size, DefectBot, CooperateBot, c_leaf]; omega⟩)
 
 /-- CooperateBot never bullies the probe (it cannot play D at all), so the guard
     is refuted by soundness at EVERY budget. -/
@@ -70,9 +72,9 @@ theorem proofSearch_false_guardian_MirrorBot (k : Nat) :
 
 /-- GuardianBot punishes DefectBot: the bully certificate fires the guard. -/
 theorem GuardianBot_defects_vs_DefectBot (k fuel : Nat) :
-    play (fuel + 2) (GuardianBot (k + 1)) DefectBot = some .D := by
+    play (fuel + 2) (GuardianBot (k + 5)) DefectBot = some .D := by
   have hg := proofSearch_true_guardian_DefectBot k
-  show eval (fuel + 2) (GuardianBot (k + 1)) DefectBot (GuardianBot (k + 1)) = some .D
+  show eval (fuel + 2) (GuardianBot (k + 5)) DefectBot (GuardianBot (k + 5)) = some .D
   unfold GuardianBot
   simp [eval, Prog.subst, Formula.subst, hg]
 

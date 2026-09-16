@@ -75,9 +75,13 @@ theorem ot_tft_D_cert_vs_Optim (k K : Nat)
   refine ⟨_, PlaysProof.ite_f (a' := Action.C) hg (by decide) PlaysProof.const, ?_⟩
   simp only [c_leaf, c_node]; omega
 
-theorem ot_botCB_C_Pf (k K : Nat) (hk : 2 ≤ k) :
+/-- `.bot CooperateBot`'s two-step certificate against OptimBot costs `2` plus
+    OptimBot's own source size (the atom rule charges the opponent's size), so `hk`
+    asks that `2 + |OptimBot k K|` fit `k`. -/
+theorem ot_botCB_C_Pf (k K : Nat) (hk : 2 + (Formula.plays (.bot CooperateBot) (OptimBot k K) Action.C).size ≤ k) :
     Pf k (.plays (.bot CooperateBot) (OptimBot k K) Action.C) := by
-  have hcert : AtomProvable 2 (.plays (.bot CooperateBot) (OptimBot k K) Action.C) :=
+  have hcert : AtomProvable (2 + (Formula.plays (.bot CooperateBot) (OptimBot k K) Action.C).size)
+      (.plays (.bot CooperateBot) (OptimBot k K) Action.C) :=
     ⟨(PlaysProof.bot PlaysProof.const :
         PlaysProof (.bot CooperateBot) (OptimBot k K) (.bot CooperateBot) Action.C (c_leaf + c_node)),
      by simp [c_leaf, c_node]⟩
@@ -85,19 +89,22 @@ theorem ot_botCB_C_Pf (k K : Nat) (hk : 2 ≤ k) :
 
 /-! ## Inner Löb premise & bootstrap: OptimBot defects against .bot CooperateBot -/
 
-theorem ot_inner_loeb (k K : Nat) (h2 : 2 ≤ k) :
+theorem ot_inner_loeb (k K : Nat) (h2 : 2 + (Formula.plays (.bot CooperateBot) (OptimBot k K) Action.C).size ≤ k) :
     Pf (300 * (Nat.log2 k + Nat.log2 K) + 3000)
        (.impl (.box K (.plays (OptimBot k K) (.bot CooperateBot) Action.D))
               (.plays (OptimBot k K) (.bot CooperateBot) Action.D)) := by
-  have hcert : AtomProvable 2 (.plays (.bot CooperateBot) (OptimBot k K) Action.C) :=
+  have hcert : AtomProvable (2 + (Formula.plays (.bot CooperateBot) (OptimBot k K) Action.C).size)
+      (.plays (.bot CooperateBot) (OptimBot k K) Action.C) :=
     ⟨(PlaysProof.bot PlaysProof.const :
         PlaysProof (.bot CooperateBot) (OptimBot k K) (.bot CooperateBot) Action.C (c_leaf + c_node)),
      by simp [c_leaf, c_node]⟩
-  have hbox2 : Pf _ (.box 2 (.plays (.bot CooperateBot) (OptimBot k K) Action.C)) :=
-    Pf.boxIntro 2 _ _ (Pf.atom hcert) (Nat.le_refl _)
-  have hmono : Pf _ (.impl (.box 2 (.plays (.bot CooperateBot) (OptimBot k K) Action.C))
+  have hbox2 : Pf _ (.box (2 + (Formula.plays (.bot CooperateBot) (OptimBot k K) Action.C).size)
+      (.plays (.bot CooperateBot) (OptimBot k K) Action.C)) :=
+    Pf.boxIntro (2 + (Formula.plays (.bot CooperateBot) (OptimBot k K) Action.C).size) _ _ (Pf.atom hcert) (Nat.le_refl _)
+  have hmono : Pf _ (.impl (.box (2 + (Formula.plays (.bot CooperateBot) (OptimBot k K) Action.C).size)
+                              (.plays (.bot CooperateBot) (OptimBot k K) Action.C))
                            (.box k (.plays (.bot CooperateBot) (OptimBot k K) Action.C))) :=
-    Pf.boxMono 2 k _ _ h2 (Nat.le_refl _)
+    Pf.boxMono (2 + (Formula.plays (.bot CooperateBot) (OptimBot k K) Action.C).size) k _ _ h2 (Nat.le_refl _)
   have hboxk : Pf _ (.box k (.plays (.bot CooperateBot) (OptimBot k K) Action.C)) :=
     Pf.mp _ _ _ _ hmono hbox2 (Nat.le_refl _)
   have hchain := Pf.searchChain k (Formula.plays .opp .self Action.C)
@@ -107,9 +114,9 @@ theorem ot_inner_loeb (k K : Nat) (h2 : 2 ≤ k) :
   simp only [searchGuards, implChain, List.foldr, Formula.subst, Prog.subst] at hchain
   have hfinal := Pf.mp _ _ _ _ hchain hboxk (Nat.le_refl _)
   refine Pf_mono hfinal ?_
-  have hlog2 : Nat.log2 2 = 1 := by decide
+  have hlogb := log2_le_self (2 + (Formula.plays (.bot CooperateBot) (OptimBot k K) Action.C).size)
   have hlogk : Nat.log2 k ≤ k := log2_le_self _
-  simp only [Formula.size, Prog.size, numCost, OptimBot, CooperateBot, hlog2]
+  simp only [Formula.size, Prog.size, numCost, OptimBot, CooperateBot] at hlogb ⊢
   omega
 
 theorem ot_inner_atom_size (k K : Nat) :
@@ -118,12 +125,51 @@ theorem ot_inner_atom_size (k K : Nat) :
   simp only [Formula.size, Prog.size, numCost, OptimBot, CooperateBot]
   omega
 
+theorem ot_log_65536 (k : Nat) : Nat.log2 (65536 * k) ≤ Nat.log2 k + 16 := by
+  rcases Nat.eq_zero_or_pos k with rfl | hpos
+  · simp
+  have h1 : k < 2 ^ (Nat.log2 k + 1) := by
+    rw [Nat.log2_eq_log_two]; exact Nat.lt_pow_succ_log_self (by norm_num) k
+  have h3 : 65536 * k < 2 ^ (Nat.log2 k + 17) := by
+    have : (2:Nat) ^ (Nat.log2 k + 17) = 2 ^ (Nat.log2 k + 1) * 65536 := by
+      rw [show Nat.log2 k + 17 = (Nat.log2 k + 1) + 16 from rfl, pow_add]; norm_num
+    omega
+  have := (Nat.log2_lt (by omega)).2 h3
+  omega
+
+/-- The size of `.bot CooperateBot`'s cooperation atom against OptimBot at the
+    stagger, in `log₂ k`: the price the atom rule charges its two-step certificate. -/
+theorem ot_self_size_stagger (k : Nat) :
+    2 + (Formula.plays (.bot CooperateBot) (OptimBot k (65536 * k)) Action.C).size
+      ≤ 14 * Nat.log2 k + 300 := by
+  have := ot_log_65536 k
+  simp only [Prog.size, Formula.size, numCost, OptimBot, CooperateBot]
+  omega
+
+/-- TFT's defection atom against OptimBot at the stagger, with its certificate's
+    step count `log k + log K + 20`, in `log₂ k`. -/
+theorem ot_tft_atom_size_stagger (k : Nat) :
+    Nat.log2 k + Nat.log2 (65536 * k) + 20
+      + (Formula.plays TitForTatBot (OptimBot k (65536 * k)) Action.D).size
+      ≤ 16 * Nat.log2 k + 400 := by
+  have := ot_log_65536 k
+  simp only [Prog.size, Formula.size, numCost, OptimBot, TitForTatBot, CooperateBot]
+  omega
+
+/-- The inner bootstrap, bundled with the atom-size bound `2 + |atom| ≤ k` that
+    `.bot CooperateBot`'s certificate against OptimBot needs at budget `k`. -/
 theorem ot_inner_D_at_stagger :
     ∃ k₂, ∀ k, k > k₂ →
+      2 + (Formula.plays (.bot CooperateBot) (OptimBot k (65536 * k)) Action.C).size ≤ k ∧
       Pf (65536 * k) (.plays (OptimBot k (65536 * k)) (.bot CooperateBot) Action.D) := by
   obtain ⟨Ka, hKa⟩ := linear_log2_add_le 40000000 8000000000
-  refine ⟨max 2 Ka, fun k hk => ?_⟩
-  have h2 : 2 ≤ k := (lt_of_le_of_lt (Nat.le_max_left _ _) hk).le
+  obtain ⟨Kb, hKb⟩ := linear_log2_add_le 14 300
+  refine ⟨max Kb Ka, fun k hk => ?_⟩
+  have h2 : 2 + (Formula.plays (.bot CooperateBot) (OptimBot k (65536 * k)) Action.C).size ≤ k := by
+    have := hKb k (lt_of_le_of_lt (Nat.le_max_left _ _) hk).le
+    have := ot_self_size_stagger k
+    omega
+  refine ⟨h2, ?_⟩
   have hKk : k ≥ Ka := (lt_of_le_of_lt (Nat.le_max_right _ _) hk).le
   set KS := 65536 * k with hKS
   have hlkS : Nat.log2 k ≤ Nat.log2 KS := log2_mono (by omega)
@@ -148,8 +194,11 @@ theorem ot_inner_D_at_stagger :
   exact Pf_mono hpf (by omega)
 /-! ## Outer Löb premise (searchElseChain) & bootstrap: OptimBot defects against TFT -/
 
-theorem ot_loeb_premise (k K : Nat) (h2 : 2 ≤ k)
-    (hcnk : Nat.log2 k + Nat.log2 K + 20 ≤ k)
+/-- `hcnk` asks that TFT's certificate against OptimBot (`≤ log k + log K + 20` steps,
+    plus OptimBot's source size charged by the atom rule) fit the opponent budget `k`. -/
+theorem ot_loeb_premise (k K : Nat) (h2 : 2 + (Formula.plays (.bot CooperateBot) (OptimBot k K) Action.C).size ≤ k)
+    (hcnk : Nat.log2 k + Nat.log2 K + 20
+              + (Formula.plays TitForTatBot (OptimBot k K) Action.D).size ≤ k)
     (hInner : Pf K (.plays (OptimBot k K) (.bot CooperateBot) Action.D)) :
     Pf (2 * k + 1000 * (Nat.log2 k + Nat.log2 K) + 100000)
        (.impl (.box K (.plays (OptimBot k K) TitForTatBot Action.D))
@@ -158,25 +207,27 @@ theorem ot_loeb_premise (k K : Nat) (h2 : 2 ≤ k)
   have hOuterPf := ot_botCB_C_Pf k K h2
   have hlogO : Nat.log2 k ≤ k := log2_le_self _
   obtain ⟨cn, cert, hcn⟩ := ot_tft_D_cert_vs_Optim k K hOuterPf hInner
-  have hlogcn : Nat.log2 cn ≤ cn := log2_le_self _
-  have hcnk' : cn ≤ k := by omega
+  have hlogcn : Nat.log2 (cn + (Formula.plays TitForTatBot O Action.D).size) ≤ cn + (Formula.plays TitForTatBot O Action.D).size := log2_le_self _
+  have hcnk' : cn + (Formula.plays TitForTatBot O Action.D).size ≤ k := by omega
   have hneg : Pf (20 * (Nat.log2 k + Nat.log2 K) + 2000)
       (.neg (.plays TitForTatBot O Action.C)) := by
-    refine Pf.atomNeg TitForTatBot O .D .C cn ⟨cert, le_rfl⟩ (by decide) ?_
+    refine Pf.atomNeg TitForTatBot O .D .C (cn + (Formula.plays TitForTatBot O Action.D).size) ⟨cert, le_rfl⟩ (by decide) ?_
     simp only [Formula.size, Prog.size, numCost, OptimBot, TitForTatBot, CooperateBot, hO]
     omega
   have hboxD : Pf (300 * (Nat.log2 k + Nat.log2 K) + 50000)
       (.box k (.plays TitForTatBot O Action.D)) := by
     have hb1 : Pf (100 * (Nat.log2 k + Nat.log2 K) + 20000)
-        (.box cn (.plays TitForTatBot O Action.D)) := by
-      refine Pf.boxIntro cn _ _ (Pf.atom ⟨cert, le_rfl⟩) ?_
+        (.box (cn + (Formula.plays TitForTatBot O Action.D).size) (.plays TitForTatBot O Action.D)) := by
+      refine Pf.boxIntro (cn + (Formula.plays TitForTatBot O Action.D).size) _ _ (Pf.atom ⟨cert, le_rfl⟩) ?_
       simp only [Formula.size, Prog.size, numCost, OptimBot, TitForTatBot, CooperateBot, hO]
+        at hlogcn ⊢
       omega
     have hmono : Pf (100 * (Nat.log2 k + Nat.log2 K) + 20000)
-        (.impl (.box cn (.plays TitForTatBot O Action.D))
+        (.impl (.box (cn + (Formula.plays TitForTatBot O Action.D).size) (.plays TitForTatBot O Action.D))
                (.box k (.plays TitForTatBot O Action.D))) := by
-      refine Pf.boxMono cn k _ _ hcnk' ?_
+      refine Pf.boxMono (cn + (Formula.plays TitForTatBot O Action.D).size) k _ _ hcnk' ?_
       simp only [Formula.size, Prog.size, numCost, OptimBot, TitForTatBot, CooperateBot, hO]
+        at hlogcn ⊢
       omega
     refine Pf.mp _ _ _ _ hmono hb1 ?_
     simp only [Formula.size, Prog.size, numCost, OptimBot, TitForTatBot, CooperateBot, hO]
@@ -212,31 +263,22 @@ theorem ot_D_atom_size (k K : Nat) :
   simp only [Formula.size, Prog.size, numCost, OptimBot, TitForTatBot, CooperateBot]
   omega
 
-theorem ot_log_65536 (k : Nat) : Nat.log2 (65536 * k) ≤ Nat.log2 k + 16 := by
-  rcases Nat.eq_zero_or_pos k with rfl | hpos
-  · simp
-  have h1 : k < 2 ^ (Nat.log2 k + 1) := by
-    rw [Nat.log2_eq_log_two]; exact Nat.lt_pow_succ_log_self (by norm_num) k
-  have h3 : 65536 * k < 2 ^ (Nat.log2 k + 17) := by
-    have : (2:Nat) ^ (Nat.log2 k + 17) = 2 ^ (Nat.log2 k + 1) * 65536 := by
-      rw [show Nat.log2 k + 17 = (Nat.log2 k + 1) + 16 from rfl, pow_add]; norm_num
-    omega
-  have := (Nat.log2_lt (by omega)).2 h3
-  omega
-
-/-- The staggered inner Löb premise, packaged with the log stagger bound. -/
+/-- The staggered inner Löb premise, packaged with the two atom-size bounds the
+    eval side needs at budget `k` (the `.bot CooperateBot` probe's and TFT's). -/
 theorem ot_inner_D_at_stagger_bundled :
     ∃ k₂, ∀ k, k > k₂ →
-      2 ≤ k ∧ (Nat.log2 k + Nat.log2 (65536 * k) + 20 ≤ k) ∧
+      2 + (Formula.plays (.bot CooperateBot) (OptimBot k (65536 * k)) Action.C).size ≤ k ∧
+      (Nat.log2 k + Nat.log2 (65536 * k) + 20
+        + (Formula.plays TitForTatBot (OptimBot k (65536 * k)) Action.D).size ≤ k) ∧
       Pf (65536 * k) (.plays (OptimBot k (65536 * k)) (.bot CooperateBot) Action.D) := by
   obtain ⟨k₁, hinner⟩ := ot_inner_D_at_stagger
-  obtain ⟨Kb, hKb⟩ := linear_log2_add_le 3 100
-  refine ⟨max (max 2 k₁) Kb, fun k hk => ?_⟩
-  have h2 : 2 ≤ k := (lt_of_le_of_lt (le_trans (Nat.le_max_left _ _) (Nat.le_max_left _ _)) hk).le
-  have hk1 : k > k₁ := lt_of_le_of_lt (le_trans (Nat.le_max_right _ _) (Nat.le_max_left _ _)) hk
+  obtain ⟨Kb, hKb⟩ := linear_log2_add_le 16 400
+  refine ⟨max k₁ Kb, fun k hk => ?_⟩
+  have hk1 : k > k₁ := lt_of_le_of_lt (Nat.le_max_left _ _) hk
   have hKbk : k ≥ Kb := (lt_of_le_of_lt (Nat.le_max_right _ _) hk).le
-  refine ⟨h2, ?_, hinner k hk1⟩
-  have hst := ot_log_65536 k
+  obtain ⟨h2, hpf⟩ := hinner k hk1
+  refine ⟨h2, ?_, hpf⟩
+  have := ot_tft_atom_size_stagger k
   have := hKb k hKbk
   omega
 
@@ -273,15 +315,16 @@ theorem ot_D_provable_at_stagger :
   exact (proofSearch_spec KS φ).2 hpfk
 /-! ## Eval side -/
 
-theorem ot_ps_botCB_C (k K : Nat) (hk : 2 ≤ k) :
+theorem ot_ps_botCB_C (k K : Nat) (hk : 2 + (Formula.plays (.bot CooperateBot) (OptimBot k K) Action.C).size ≤ k) :
     proofSearch k (.plays (.bot CooperateBot) (OptimBot k K) Action.C) = true := by
-  have hcert : AtomProvable 2 (.plays (.bot CooperateBot) (OptimBot k K) Action.C) :=
+  have hcert : AtomProvable (2 + (Formula.plays (.bot CooperateBot) (OptimBot k K) Action.C).size)
+      (.plays (.bot CooperateBot) (OptimBot k K) Action.C) :=
     ⟨(PlaysProof.bot PlaysProof.const :
         PlaysProof (.bot CooperateBot) (OptimBot k K) (.bot CooperateBot) Action.C (c_leaf + c_node)),
      by simp [c_leaf, c_node]⟩
   exact (proofSearch_spec _ _).2 (Pf_mono (Pf.atom hcert) hk)
 
-theorem ot_optim_plays_D_vs_botCB (k K fuel : Nat) (hk : 2 ≤ k)
+theorem ot_optim_plays_D_vs_botCB (k K fuel : Nat) (hk : 2 + (Formula.plays (.bot CooperateBot) (OptimBot k K) Action.C).size ≤ k)
     (hD : proofSearch K (.plays (OptimBot k K) (.bot CooperateBot) Action.D) = true) :
     play (fuel + 6) (OptimBot k K) (.bot CooperateBot) = some .D := by
   have hOuter := ot_ps_botCB_C k K hk
@@ -289,7 +332,7 @@ theorem ot_optim_plays_D_vs_botCB (k K fuel : Nat) (hk : 2 ≤ k)
   unfold OptimBot at hOuter hD ⊢
   simp [eval, Prog.subst, Formula.subst, hOuter, hD]
 
-theorem ot_tft_plays_D_vs_optim (k K fuel : Nat) (hk : 2 ≤ k)
+theorem ot_tft_plays_D_vs_optim (k K fuel : Nat) (hk : 2 + (Formula.plays (.bot CooperateBot) (OptimBot k K) Action.C).size ≤ k)
     (hD : proofSearch K (.plays (OptimBot k K) (.bot CooperateBot) Action.D) = true) :
     play (fuel + 8) TitForTatBot (OptimBot k K) = some .D := by
   have hOptD : play (fuel + 6) (OptimBot k K) (.bot CooperateBot) = some .D :=
@@ -305,7 +348,7 @@ theorem ot_tft_plays_D_vs_optim (k K fuel : Nat) (hk : 2 ≤ k)
         (.const Action.C) (.const Action.D) from rfl] at *
   rw [hPlay]; rfl
 
-theorem ot_interp_tft_C_false (k K : Nat) (hk : 2 ≤ k)
+theorem ot_interp_tft_C_false (k K : Nat) (hk : 2 + (Formula.plays (.bot CooperateBot) (OptimBot k K) Action.C).size ≤ k)
     (hD : proofSearch K (.plays (OptimBot k K) (.bot CooperateBot) Action.D) = true) :
     ¬ (Formula.plays TitForTatBot (OptimBot k K) .C).interp := by
   rintro ⟨n, hn⟩
@@ -315,15 +358,16 @@ theorem ot_interp_tft_C_false (k K : Nat) (hk : 2 ≤ k)
     unfold play at hn ⊢; exact eval_mono_le hn (n + 8) (by omega)
   rw [hCplay] at hDplay; cases hDplay
 
-theorem ot_ps_tft_C_false (k K : Nat) (hk : 2 ≤ k)
+theorem ot_ps_tft_C_false (k K : Nat) (hk : 2 + (Formula.plays (.bot CooperateBot) (OptimBot k K) Action.C).size ≤ k)
     (hD : proofSearch K (.plays (OptimBot k K) (.bot CooperateBot) Action.D) = true) :
     proofSearch k (.plays TitForTatBot (OptimBot k K) Action.C) = false := by
   cases h : proofSearch k (.plays TitForTatBot (OptimBot k K) Action.C) with
   | true => exact absurd (proofSearch_sound _ _ h) (ot_interp_tft_C_false k K hk hD)
   | false => rfl
 
-theorem ot_ps_tft_D_true (k K : Nat) (hk : 2 ≤ k)
-    (hcnk : Nat.log2 k + Nat.log2 K + 20 ≤ k)
+theorem ot_ps_tft_D_true (k K : Nat) (hk : 2 + (Formula.plays (.bot CooperateBot) (OptimBot k K) Action.C).size ≤ k)
+    (hcnk : Nat.log2 k + Nat.log2 K + 20
+              + (Formula.plays TitForTatBot (OptimBot k K) Action.D).size ≤ k)
     (hInnerPf : Pf K (.plays (OptimBot k K) (.bot CooperateBot) Action.D)) :
     proofSearch k (.plays TitForTatBot (OptimBot k K) Action.D) = true := by
   have hOuterPf := ot_botCB_C_Pf k K hk
@@ -331,8 +375,9 @@ theorem ot_ps_tft_D_true (k K : Nat) (hk : 2 ≤ k)
   exact (proofSearch_spec _ _).2 (Pf.atom ⟨cert, by omega⟩)
 
 /-- OptimBot plays D against TFT: rung1&2 fail, rung3 fires with staggered self-proof. -/
-theorem ot_optim_plays_D_vs_tft (k K fuel : Nat) (hk : 2 ≤ k)
-    (hcnk : Nat.log2 k + Nat.log2 K + 20 ≤ k)
+theorem ot_optim_plays_D_vs_tft (k K fuel : Nat) (hk : 2 + (Formula.plays (.bot CooperateBot) (OptimBot k K) Action.C).size ≤ k)
+    (hcnk : Nat.log2 k + Nat.log2 K + 20
+              + (Formula.plays TitForTatBot (OptimBot k K) Action.D).size ≤ k)
     (hInnerPf : Pf K (.plays (OptimBot k K) (.bot CooperateBot) Action.D))
     (hInnerPS : proofSearch K (.plays (OptimBot k K) (.bot CooperateBot) Action.D) = true)
     (hDtft : proofSearch K (.plays (OptimBot k K) TitForTatBot Action.D) = true) :

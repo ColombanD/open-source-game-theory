@@ -54,15 +54,14 @@ theorem outcome_JustBot_vs_DupocBot :
     (fun k => Formula.plays (.bot (DupocBot k)) (DupocBot k) .C)
     (fun k => 30 * Nat.log2 k + 300) (fun k => 30 * Nat.log2 k + 300) 0
     hφsz hsB hpb hpb (fun k _ => legPD k) (fun k _ => legDP k)
-  obtain ⟨KL, hKL⟩ := linear_log2_add_le 1 3
+  obtain ⟨KL, hKL⟩ := linear_log2_add_le 4 25
   refine ⟨max k₂ KL, fun k hk fuel => outcome_at_of_ex ?_ ?_ fuel⟩
   -- The old existential-fuel argument, verbatim: some fuel determines the outcome…
   · have hkk2 : k₂ < k := by
       have := Nat.le_max_left k₂ KL; omega
-    have hKLk : Nat.log2 k + 3 ≤ k := by
+    have hKLk : 4 * Nat.log2 k + 25 ≤ k := by
       have h1 := Nat.le_max_right k₂ KL
-      have := hKL k (by omega)
-      omega
+      exact hKL k (by omega)
     obtain ⟨m, hm⟩ := hk₂ k hkk2
     have hAint : (φ k).interp := Pf_sound m _ hm
     obtain ⟨n, hplayA⟩ := hAint
@@ -95,12 +94,12 @@ theorem outcome_JustBot_vs_DupocBot :
       simp [eval, Prog.subst, Formula.subst, hBtrue]
     have hGA : proofSearch k
         (Formula.plays (DupocBot k) (.bot (DupocBot k)) .C) = true := by
-      -- hand certificate: Dupoc's search FIRED (hBtrue) — search_t ∘ const
+      -- hand certificate: Dupoc's search FIRED (hBtrue) — search_t ∘ const, plus the
+      -- atom's own size (`2·log2 k + 16`)
       refine (proofSearch_spec _ _).2 (Pf.atom
         (⟨PlaysProof.search_t ((proofSearch_spec _ _).1 hBtrue) PlaysProof.const, ?_⟩ :
           AtomProvable k (.plays (DupocBot k) (.bot (DupocBot k)) .C)))
-      show c_leaf + c_guard k + c_node ≤ k
-      simp only [numCost, c_leaf, c_guard, c_node]
+      simp only [numCost, c_leaf, c_guard, c_node, Formula.size, Prog.size, DupocBot]
       omega
     have hJ : play 2 (JustBot k) (DupocBot k) = some .C := by
       show eval 2 (JustBot k) (DupocBot k) (JustBot k) = some .C
@@ -108,12 +107,12 @@ theorem outcome_JustBot_vs_DupocBot :
       simp [eval, Prog.subst, Formula.subst, hGA]
     have hGJ : proofSearch k
         (Formula.plays (JustBot k) (DupocBot k) .C) = true := by
-      -- hand certificate: JustBot's search FIRED (hGA) — search_t ∘ const
+      -- hand certificate: JustBot's search FIRED (hGA) — search_t ∘ const, plus the
+      -- atom's own size (`3·log2 k + 22`)
       refine (proofSearch_spec _ _).2 (Pf.atom
         (⟨PlaysProof.search_t ((proofSearch_spec _ _).1 hGA) PlaysProof.const, ?_⟩ :
           AtomProvable k (.plays (JustBot k) (DupocBot k) .C)))
-      show c_leaf + c_guard k + c_node ≤ k
-      simp only [numCost, c_leaf, c_guard, c_node]
+      simp only [numCost, c_leaf, c_guard, c_node, Formula.size, Prog.size, JustBot, DupocBot]
       omega
     have hD : play 2 (DupocBot k) (JustBot k) = some .C := by
       show eval 2 (DupocBot k) (JustBot k) (DupocBot k) = some .C

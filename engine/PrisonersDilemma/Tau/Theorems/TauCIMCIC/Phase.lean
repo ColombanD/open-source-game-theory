@@ -43,7 +43,6 @@ def cimcicRow : Tmpl → Action
     entangled dupoc slot is the mutual-Löb play, supplied as a hypothesis (the
     `∃k₂` gate). -/
 theorem cimcicRow_plays {k : Nat} (hL : 100 * Nat.log2 k + 1000 ≤ k)
-    (hcg : c_guard k + 20 ≤ k)
     (hcq : proofSearch k (probe (inst (tauZoo k) .cimcic .dupoc)) = true)
     (hmdP : ∃ N, eval N (.bot (inst (tauZoo k) .cimcic .dupoc))
       (.bot (inst (tauZoo k) .cimcic .dupoc)) (inst (tauZoo k) .cimcic .dupoc)
@@ -55,8 +54,8 @@ theorem cimcicRow_plays {k : Nat} (hL : 100 * Nat.log2 k + 1000 ≤ k)
               (inst (tauZoo k) .cimcic T) = some (cimcicRow T)
   | .coop       => cimcic_coop_plays_C hL
   | .defect     => cimcic_defect_plays_D
-  | .tftSim     => cimcic_tftSim_plays_C hL hcg
-  | .tftPf      => cimcic_tftPf_plays_C hL hcg
+  | .tftSim     => cimcic_tftSim_plays_C hL
+  | .tftPf      => cimcic_tftPf_plays_C hL
   | .dupoc      => hmdP
   | .prudent    => cimcic_prudent_plays_D
   | .mirror     => hmirP
@@ -90,10 +89,7 @@ theorem cimcicRowSpec : RowSpec .cimcic tauOrder cimcicRow := by
   have hmdP := hkP k (by omega)
   have hL : 100 * Nat.log2 k + 1000 ≤ k := hkA k (by omega)
   have hmirP := hkX k (by omega)
-  have hcg : c_guard k + 20 ≤ k := by
-    have := Nat.log2_le_self k
-    simp only [c_guard, numCost]; omega
-  exact cimcicRow_plays hL hcg hcq hmdP hmirP T
+  exact cimcicRow_plays hL hcq hmdP hmirP T
 
 /-- **τ(CIMCIC)** — boundary `θ ≤ cimcicMass`. UNCONDITIONAL since 2026-08-24:
     both entangled slots (dupoc, mirror) are closed by bounded Löb. -/
@@ -111,11 +107,8 @@ theorem tauCIMCIC_phase :
   have hmdP := hkP k (by omega)
   have hL : 100 * Nat.log2 k + 1000 ≤ k := hkA k (by omega)
   have hmirP := hkX k (by omega)
-  have hcg : c_guard k + 20 ≤ k := by
-    have := Nat.log2_le_self k
-    simp only [c_guard, numCost]; omega
   have h := phase_of_bits (tauZoo k) .cimcic w cimcicRow tauOrder θ opponent
-    (fun T _ => cimcicRow_plays hL hcg hcq hmdP hmirP T)
+    (fun T _ => cimcicRow_plays hL hcq hmdP hmirP T)
   simp only [bitMass, tauOrder, List.map, cimcicRow, massOf, massOf_ifC, massOf_ifD,
     TauBotZ] at h ⊢
   simpa [cimcicMass] using h

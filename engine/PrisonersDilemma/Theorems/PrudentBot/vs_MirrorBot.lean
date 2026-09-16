@@ -25,13 +25,14 @@ theorem MirrorBot_plays_D_vs_bot_DefectBot (fuel : Nat) :
   show eval (fuel + 3) MirrorBot (.bot DefectBot) MirrorBot = some .D
   simp [eval, Prog.subst, MirrorBot, DefectBot]
 
-/-- Hence the prudence atom `MirrorBot plays D vs DefectBot` is `S`-derivable, `⊢_27`
-    (the certificate's size; any budget `k ≥ 27` fits it). -/
+/-- Hence the prudence atom `MirrorBot plays D vs DefectBot` is `S`-derivable, `⊢_33`
+    (the certificate's size `3^3` plus the atom's own size `6`; any budget `k ≥ 33` fits it). -/
 theorem prudence_provable :
-    Pf 27 (Formula.plays MirrorBot (.bot DefectBot) Action.D) := by
+    Pf 33 (Formula.plays MirrorBot (.bot DefectBot) Action.D) := by
   have hPlay : play 3 MirrorBot (.bot DefectBot) = some .D := by
     simpa using MirrorBot_plays_D_vs_bot_DefectBot 0
-  exact Pf.atom (atom_monotone (3 ^ 3) 27 _ (by norm_num)
+  exact Pf.atom (atom_monotone (3 ^ 3 + (Formula.plays MirrorBot (.bot DefectBot) Action.D).size) 33 _
+    (by norm_num [MirrorBot, DefectBot, Prog.size, Formula.size])
     (atom_complete_searchfree MirrorBot (.bot DefectBot) Action.D 3 rfl rfl hPlay))
 
 /-- **Löb premise for PrudentBot vs MirrorBot**, built with the new
@@ -42,19 +43,19 @@ theorem prudence_provable :
     * `simStep` reads MirrorBot's `.sim .opp .self` swap: `(PrudentBot plays C vs
       MirrorBot) → (MirrorBot plays C vs PrudentBot)`.
     The result is the closed `□_k φ → φ` that `PBLT` consumes. -/
-theorem prudent_mirror_loeb_premise (k : Nat) (hk : 27 ≤ k) :
+theorem prudent_mirror_loeb_premise (k : Nat) (hk : 33 ≤ k) :
     Pf (50 * Nat.log2 k + 500)
       (.impl (.box k (Formula.plays MirrorBot (PrudentBot k) Action.C))
              (Formula.plays MirrorBot (PrudentBot k) Action.C)) := by
   -- TRANSCRIPT-TIGHT: the whole premise costs O(log k) — searchThenSearch pays the
-  -- prudence certificate (search-free, ≤ 27 chars, whence `27 ≤ k` so the inner
+  -- prudence certificate (search-free, ≤ 33 chars, whence `33 ≤ k` so the inner
   -- search at budget `k` finds it) + its conclusion; the `.sim` leg is one leaf;
   -- `implTrans` pays both legs + the conclusion. No `K₀` eventuality.
   -- Leg 1: `□_k φ → (PrudentBot plays C vs Mirror)` via `searchThenSearch_t`.
   have leg1 : Pf (20 * Nat.log2 k + 200)
       (.impl (.box k (Formula.plays MirrorBot (PrudentBot k) Action.C))
              (Formula.plays (PrudentBot k) MirrorBot Action.C)) := by
-    refine Pf.searchThenSearch_t k k 27
+    refine Pf.searchThenSearch_t k k 33
       (Formula.plays .opp .self Action.C)
       (Formula.plays .opp (.bot DefectBot) Action.D)
       Action.C Action.D (.const Action.D) (PrudentBot k) MirrorBot rfl
@@ -127,7 +128,7 @@ theorem proofSearch_k_of_play_MirrorBot_prudent
 /-- **PrudentBot vs MirrorBot → (C, C)** for all large enough `k`. Application of
     `PBLT` to the Löb premise: the cooperation atom `φ = MirrorBot plays C vs
     PrudentBot` is `S`-derivable (`⊢_k φ`), so PrudentBot's outer search fires; the
-    prudence atom is independently derivable (`⊢_27`), so the inner search fires too —
+    prudence atom is independently derivable (`⊢_33`), so the inner search fires too —
     both bots cooperate.
 
     Contrast the *old* PrudentBot (prudence `.ite` over the search), whose Löb
@@ -139,7 +140,7 @@ theorem outcome_PrudentBot_vs_MirrorBot :
     OutcomeSpec .eventual 4
       PrudentBot (fun _ => MirrorBot) (some (.C, .C)) := by
   let φ : Nat → Formula := fun k => Formula.plays MirrorBot (PrudentBot k) Action.C
-  have hLoeb : ∀ k, k > 27 →
+  have hLoeb : ∀ k, k > 33 →
       Pf (50 * Nat.log2 k + 500) (.impl (.box k (φ k)) (φ k)) := by
     intro k hk
     exact prudent_mirror_loeb_premise k (by omega)
@@ -149,10 +150,10 @@ theorem outcome_PrudentBot_vs_MirrorBot :
     simp only [numCost, Formula.size, Prog.size, PrudentBot, MirrorBot, DefectBot]
     omega
   have hpm : ∀ k, 50 * Nat.log2 k + 500 ≤ 100 * Nat.log2 k + 1000 := fun k => by omega
-  obtain ⟨k₂, hk₂⟩ := pblt_engine_id φ (fun k => 50 * Nat.log2 k + 500) 27 hφsz hpm hLoeb
-  refine ⟨max k₂ 27, fun k hk fuel => ?_⟩
+  obtain ⟨k₂, hk₂⟩ := pblt_engine_id φ (fun k => 50 * Nat.log2 k + 500) 33 hφsz hpm hLoeb
+  refine ⟨max k₂ 33, fun k hk fuel => ?_⟩
   have hk2 : k > k₂ := lt_of_le_of_lt (le_max_left _ _) hk
-  have hkP : (27 : Nat) ≤ k :=
+  have hkP : (33 : Nat) ≤ k :=
     le_of_lt (lt_of_le_of_lt (le_max_right _ _) hk)
   -- PBLT gives `Pf m (φ k)` at *some* budget `m`; its truth yields a play
   -- witness, which the inversion lemma lifts to `proofSearch k = true` at budget `k`.

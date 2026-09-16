@@ -23,8 +23,11 @@ namespace PD.Theorems
 @[outcome]
 theorem outcome_CupodBot_vs_OBot :
     OutcomeSpec .eventual 5 CupodBot (fun _ => OBot) (some (.C, .D)) := by
-  refine ⟨1, fun k hlt fuel => ?_⟩
-  have hk : 2 ≤ k := hlt
+  -- OBot's `.bot DefectBot` probe certificate pays the atom's size (`Nat.log2 k + 12`,
+  -- the recost of 2026-09-16), so the threshold comes from `linear_log2_add_le`.
+  obtain ⟨K, hK⟩ := linear_log2_add_le 1 12
+  refine ⟨K, fun k hlt fuel => ?_⟩
+  have hk : Nat.log2 k + 12 ≤ k := by have := hK k (Nat.le_of_lt hlt); omega
   have hA : play (fuel + 5) (CupodBot k) OBot = some .C := by
     simpa [Nat.add_assoc] using CupodBot_plays_C_against_OBot k (fuel + 3)
   have hB : play (fuel + 5) OBot (CupodBot k) = some .D :=

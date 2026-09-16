@@ -12,34 +12,32 @@ open PD.BaseTheorems
 open PD.Bots
 namespace PD.Theorems
 
-theorem gd_ps_true_guardian_vs_DBot (k : Nat) (hk : 5 ≤ k) :
+theorem gd_ps_true_guardian_vs_DBot (k : Nat) (hk : 15 ≤ k) :
     proofSearch k (.plays DBot (.bot CooperateBot) .D) = true := by
   refine (proofSearch_spec _ _).2 (Pf.atom
     ⟨PlaysProof.ite_t (PlaysProof.sim (PlaysProof.bot PlaysProof.const))
       (by decide) PlaysProof.const, ?_⟩)
-  show c_leaf + c_node + c_node + c_leaf + c_node ≤ k
-  simp only [c_leaf, c_node]
+  simp only [c_leaf, c_node, Formula.size, Prog.size, CooperateBot, DefectBot, DBot]
   omega
 
-theorem gd_GuardianBot_plays_D_vs_DBot (k fuel : Nat) (hk : 5 ≤ k) :
+theorem gd_GuardianBot_plays_D_vs_DBot (k fuel : Nat) (hk : 15 ≤ k) :
     play (fuel + 2) (GuardianBot k) DBot = some .D := by
   have hg := gd_ps_true_guardian_vs_DBot k hk
   show eval (fuel + 2) (GuardianBot k) DBot (GuardianBot k) = some .D
   unfold GuardianBot
   simp [eval, Prog.subst, Formula.subst, hg]
 
-theorem gd_GuardianBot_plays_D_vs_botDefect (k fuel : Nat) (hk : 5 ≤ k) :
+theorem gd_GuardianBot_plays_D_vs_botDefect (k fuel : Nat) (hk : 15 ≤ k) :
     play (fuel + 2) (GuardianBot k) (.bot DefectBot) = some .D := by
   have hg : proofSearch k (.plays (.bot DefectBot) (.bot CooperateBot) .D) = true := by
     refine (proofSearch_spec _ _).2 (Pf.atom
       ⟨PlaysProof.bot PlaysProof.const, ?_⟩)
-    show c_leaf + c_node ≤ k
-    simp only [c_leaf, c_node]; omega
+    simp only [c_leaf, c_node, Formula.size, Prog.size, CooperateBot, DefectBot]; omega
   show eval (fuel + 2) (GuardianBot k) (.bot DefectBot) (GuardianBot k) = some .D
   unfold GuardianBot
   simp [eval, Prog.subst, Formula.subst, hg]
 
-theorem gd_DBot_plays_C_vs_GuardianBot (k fuel : Nat) (hk : 5 ≤ k) :
+theorem gd_DBot_plays_C_vs_GuardianBot (k fuel : Nat) (hk : 15 ≤ k) :
     play (fuel + 4) DBot (GuardianBot k) = some .C := by
   have hInner : play (fuel + 2) (GuardianBot k) (.bot DefectBot) = some .D :=
     gd_GuardianBot_plays_D_vs_botDefect k fuel hk
@@ -55,12 +53,12 @@ theorem gd_DBot_plays_C_vs_GuardianBot (k fuel : Nat) (hk : 5 ≤ k) :
 theorem llm_outcome_GuardianBot_vs_DBot :
     OutcomeSpec .eventual 4
       GuardianBot (fun _ => DBot) (some (.D, .C)) := by
-  refine ⟨5, fun k hk fuel => outcome_mono_le (N := 4) ?_ (fuel + 4) (by omega)⟩
-  have hk5 : 5 ≤ k := by omega
+  refine ⟨15, fun k hk fuel => outcome_mono_le (N := 4) ?_ (fuel + 4) (by omega)⟩
+  have hk15 : 15 ≤ k := by omega
   have hA : play 4 (GuardianBot k) DBot = some .D := by
-    simpa using gd_GuardianBot_plays_D_vs_DBot k 2 hk5
+    simpa using gd_GuardianBot_plays_D_vs_DBot k 2 hk15
   have hB : play 4 DBot (GuardianBot k) = some .C := by
-    simpa using gd_DBot_plays_C_vs_GuardianBot k 0 hk5
+    simpa using gd_DBot_plays_C_vs_GuardianBot k 0 hk15
   exact outcome_of_plays _ _ _ _ _ hA hB
 
 end PD.Theorems

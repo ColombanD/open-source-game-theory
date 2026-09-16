@@ -71,17 +71,23 @@ theorem pf_mirror_copies_C {k K : Nat} {T : Tmpl} {m : Nat}
     (hw : PlaysProof (.bot (inst (tauZoo k) T .mirror))
             (.bot (inst (tauZoo k) T .mirror)) (inst (tauZoo k) T .mirror)
             Action.C m)
-    (hK : m + c_node + c_node + c_node ≤ K) :
+    (hK : m + c_node + c_node + c_node + (probe (inst (tauZoo k) .mirror T)).size ≤ K) :
     Pf K (probe (inst (tauZoo k) .mirror T)) := by
-  rw [probe, hpeel]
+  rw [probe, hpeel] at hK ⊢
   exact Pf.atom ⟨PlaysProof.bot (playsProof_simFwd hw), by have := hcn; omega⟩
 
-/-- At the constant cooperator the transcript is the constant's own. -/
-theorem ps_probe_mirror_coop {k : Nat} (h10 : 10 ≤ k) :
+/-- At the constant cooperator the transcript is the constant's own (from 17:
+    transcript 4 + atom size 13). -/
+theorem ps_probe_mirror_coop {k : Nat} (hk : 17 ≤ k) :
     proofSearch k (probe (inst (tauZoo k) .mirror .coop)) = true :=
   (proofSearch_spec _ _).2
     (pf_mirror_copies_C (T := .coop) (m := c_leaf) rfl PlaysProof.const
-      (by have := hcl; have := hcn; omega))
+      (by
+        have := hcl; have := hcn
+        rw [show inst (tauZoo k) .mirror .coop
+            = .sim (.bot (.const .C)) (.bot (.const .C)) from rfl]
+        simp only [probe, Formula.size, Prog.size]
+        omega))
 
 /-! ## The cell τ(EBot)'s third watch reads
 
@@ -482,10 +488,8 @@ theorem cimcic_mirror_plays_C :
         (.bot (inst (tauZoo k) .cimcic .mirror)) (inst (tauZoo k) .cimcic .mirror)
         = some Action.C := by
   obtain ⟨kL, hLb⟩ := cimMir_loeb
-  obtain ⟨kC, hkC⟩ := cg_headroom
-  refine ⟨max kL kC, fun k hk => ?_⟩
-  obtain ⟨m, hmk, hm⟩ := hLb k (lt_of_le_of_lt (Nat.le_max_left _ _) hk)
-  have hcg := hkC k (Nat.le_of_lt (lt_of_le_of_lt (Nat.le_max_right _ _) hk))
+  refine ⟨kL, fun k hk => ?_⟩
+  obtain ⟨m, hmk, hm⟩ := hLb k hk
   rw [inst_cimcic_mirror_eq k]
   have hpre : Pf k (((Formula.impl (.plays .self (.bot (.selfIdx 1)) Action.C)
       (.plays (.bot (.selfIdx 1)) .self Action.C)).sysClose (cimMirSys k)).subst
@@ -497,8 +501,10 @@ theorem cimcic_mirror_plays_C :
   have hbody : PlaysProof (.bot (.sys (cimMirSys k) 0)) (.bot (.sys (cimMirSys k) 0))
       (.sys (cimMirSys k) 0) Action.C (c_leaf + c_guard k + c_node + c_node) :=
     PlaysProof.sysStep (cimMirSys_get0 k) (by simp only [Prog.sysClose]; exact h1)
-  exact entry_of_interp (Pf_sound (c_leaf + c_guard k + c_node + c_node + c_node) _
-    (Pf.atom ⟨PlaysProof.bot hbody, by omega⟩))
+  exact entry_of_interp (Pf_sound (c_leaf + c_guard k + c_node + c_node + c_node
+      + (Formula.plays (.bot (.sys (cimMirSys k) 0)) (.bot (.sys (cimMirSys k) 0))
+          Action.C).size) _
+    (Pf.atom ⟨PlaysProof.bot hbody, le_rfl⟩))
 
 /-! ### Mirror × CIMCIC, mirror at the head — the other `.sys` term of the
 pair closed above (`cimcic_mirror_plays_C`), same Löb-on-the-guard shape. -/
@@ -568,10 +574,8 @@ theorem mirror_cimcic_plays_C :
         (.bot (inst (tauZoo k) .mirror .cimcic)) (inst (tauZoo k) .mirror .cimcic)
         = some Action.C := by
   obtain ⟨kL, hLb⟩ := mirCim_loeb
-  obtain ⟨kC, hkC⟩ := cg_headroom
-  refine ⟨max kL kC, fun k hk => ?_⟩
-  obtain ⟨m, hmk, hm⟩ := hLb k (by omega)
-  have hcg := hkC k (by omega)
+  refine ⟨kL, fun k hk => ?_⟩
+  obtain ⟨m, hmk, hm⟩ := hLb k hk
   have hpre : Pf k (((Formula.impl (.plays .self (.bot (.selfIdx 0)) Action.C)
       (.plays (.bot (.selfIdx 0)) .self Action.C)).sysClose (mirCimSys k)).subst
       (.bot (.sys (mirCimSys k) 1)) (.bot (.sys (mirCimSys k) 1))) := by
@@ -584,8 +588,10 @@ theorem mirror_cimcic_plays_C :
     PlaysProof.sysStep (mirCimSys_get1 k) (by simp only [Prog.sysClose]; exact h1)
   have h1play : ∃ N, eval N (.bot (.sys (mirCimSys k) 1)) (.bot (.sys (mirCimSys k) 1))
       (.sys (mirCimSys k) 1) = some Action.C :=
-    entry_of_interp (Pf_sound (c_leaf + c_guard k + c_node + c_node + c_node) _
-      (Pf.atom ⟨PlaysProof.bot hbody, by omega⟩))
+    entry_of_interp (Pf_sound (c_leaf + c_guard k + c_node + c_node + c_node
+        + (Formula.plays (.bot (.sys (mirCimSys k) 1)) (.bot (.sys (mirCimSys k) 1))
+            Action.C).size) _
+      (Pf.atom ⟨PlaysProof.bot hbody, le_rfl⟩))
   rw [inst_mirror_cimcic_eq k]
   exact sysFwd_plays _ _ (mirCimSys_get0 k) h1play
 
@@ -696,7 +702,6 @@ theorem dimcidSys_selfD_of_guard {defs : ProgList} {d f k : Nat}
     (hgetD : defs.get? d = some (.search k
       (.impl (.plays .self (.bot (.selfIdx f)) Action.C)
              (.plays (.bot (.selfIdx f)) .self Action.D)) (.const .D) (.const .C)))
-    (hcg : c_leaf + c_guard k + c_node + c_node + c_node ≤ k)
     (hG : Pf k (dG defs d f)) :
     ∃ N, eval N (.bot (.sys defs d)) (.bot (.sys defs d)) (.sys defs d) = some Action.D := by
   have hpre : Pf k (((Formula.impl (.plays .self (.bot (.selfIdx f)) Action.C)
@@ -709,8 +714,9 @@ theorem dimcidSys_selfD_of_guard {defs : ProgList} {d f k : Nat}
   have hbody : PlaysProof (.bot (.sys defs d)) (.bot (.sys defs d)) (.sys defs d) Action.D
       (c_leaf + c_guard k + c_node + c_node) :=
     PlaysProof.sysStep hgetD (by simp only [Prog.sysClose]; exact h1)
-  exact entry_of_interp (Pf_sound (c_leaf + c_guard k + c_node + c_node + c_node) _
-    (Pf.atom ⟨PlaysProof.bot hbody, by omega⟩))
+  exact entry_of_interp (Pf_sound (c_leaf + c_guard k + c_node + c_node + c_node
+      + (Formula.plays (.bot (.sys defs d)) (.bot (.sys defs d)) Action.D).size) _
+    (Pf.atom ⟨PlaysProof.bot hbody, le_rfl⟩))
 
 /-- **τ(DIMCID) at Mirror DEFECTS** — the `.mirror` slot of DIMCID's row. -/
 theorem dimcid_mirror_plays_D :
@@ -719,11 +725,10 @@ theorem dimcid_mirror_plays_D :
         (.bot (inst (tauZoo k) .dimcid .mirror)) (inst (tauZoo k) .dimcid .mirror)
         = some Action.D := by
   obtain ⟨kL, hLb⟩ := dimMir_loeb
-  obtain ⟨kC, hkC⟩ := cg_headroom
-  refine ⟨max kL kC, fun k hk => ?_⟩
-  obtain ⟨m, hmk, hm⟩ := hLb k (by omega)
+  refine ⟨kL, fun k hk => ?_⟩
+  obtain ⟨m, hmk, hm⟩ := hLb k hk
   rw [inst_dimcid_mirror_eq k]
-  exact dimcidSys_selfD_of_guard (dimMirSys_get0 k) (hkC k (by omega)) (Pf_mono hm (by omega))
+  exact dimcidSys_selfD_of_guard (dimMirSys_get0 k) (Pf_mono hm (by omega))
 
 /-- **τ(Mirror) at DIMCID DEFECTS** — the forwarder copies DIMCID's self-defection. -/
 theorem mirror_dimcid_plays_D :
@@ -732,12 +737,11 @@ theorem mirror_dimcid_plays_D :
         (.bot (inst (tauZoo k) .mirror .dimcid)) (inst (tauZoo k) .mirror .dimcid)
         = some Action.D := by
   obtain ⟨kL, hLb⟩ := mirDim_loeb
-  obtain ⟨kC, hkC⟩ := cg_headroom
-  refine ⟨max kL kC, fun k hk => ?_⟩
-  obtain ⟨m, hmk, hm⟩ := hLb k (by omega)
+  refine ⟨kL, fun k hk => ?_⟩
+  obtain ⟨m, hmk, hm⟩ := hLb k hk
   have h1 : ∃ N, eval N (.bot (.sys (mirDimSys k) 1)) (.bot (.sys (mirDimSys k) 1))
       (.sys (mirDimSys k) 1) = some Action.D :=
-    dimcidSys_selfD_of_guard (mirDimSys_get1 k) (hkC k (by omega)) (Pf_mono hm (by omega))
+    dimcidSys_selfD_of_guard (mirDimSys_get1 k) (Pf_mono hm (by omega))
   rw [inst_mirror_dimcid_eq k]
   exact sysFwd_plays _ _ (mirDimSys_get0 k) h1
 

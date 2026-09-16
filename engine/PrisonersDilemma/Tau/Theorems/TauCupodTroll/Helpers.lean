@@ -124,13 +124,15 @@ theorem ps_probeD_inst_cupodTroll_false {k : Nat} (m : Nat) (T : Tmpl)
 /-- At `.cupod` the defection IS provable — the guard fired, so `search_t` gives a
     cheap positive transcript. -/
 theorem ps_probeD_inst_cupodTroll_cupod {k : Nat} (hk : 3 ≤ k)
-    (hkk : c_guard k + 3 ≤ k) :
+    (hkk : 3 * c_guard k + 22 ≤ k) :
     proofSearch k (probeD (inst (tauZoo k) .cupodTroll .cupod)) = true := by
   refine (proofSearch_spec _ _).2 ?_
   rw [probeD, inst_cupodTroll_peel_cupod k]
   refine Pf.atom ⟨PlaysProof.bot (PlaysProof.search_t ?_ PlaysProof.const), ?_⟩
   · show Pf k (.eq (.const Action.C) (.const Action.C))
     exact Pf.eqRefl _ (by simp only [Formula.size, Prog.size]; omega)
-  · have := hcl; have := hcn; omega
+  · have := hcl; have := hcn
+    simp only [c_guard, numCost, Formula.size, Prog.size] at hkk ⊢
+    omega
 
 end PD.Tau

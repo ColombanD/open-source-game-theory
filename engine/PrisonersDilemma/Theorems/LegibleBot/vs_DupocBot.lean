@@ -24,14 +24,15 @@ theorem llm_outcome_LegibleBot_vs_DupocBot :
   · obtain ⟨n, hn⟩ := hA k (lt_of_le_of_lt (Nat.le_max_left _ _) hk)
     have hbox : Pf (2*k+64) (.box k (.plays (LegibleBot (2*k+64) k) (DupocBot k) .C)) :=
       LegibleBot_playC_gives_box k n (DupocBot k) hn
-    have hatom : AtomProvable (c_leaf + c_guard (2*k+64) + c_node)
+    have hatom : AtomProvable (c_leaf + c_guard (2*k+64) + c_node
+          + (Formula.plays (LegibleBot (2*k+64) k) (DupocBot k) .C).size)
         (.plays (LegibleBot (2*k+64) k) (DupocBot k) .C) :=
       ⟨PlaysProof.search_t hbox PlaysProof.const, Nat.le_refl _⟩
     have hguardD : Pf k (.plays (LegibleBot (2*k+64) k) (DupocBot k) .C) := by
       refine Pf.atom (atom_monotone _ k _ ?_ hatom)
       have hKk := hK k (Nat.le_of_lt (lt_of_le_of_lt (Nat.le_max_right _ _) hk))
       have hst := log2_stagger_le k
-      simp only [c_leaf, c_node, c_guard, numCost]
+      simp only [c_leaf, c_node, c_guard, numCost, LegibleBot, DupocBot, Prog.size, Formula.size]
       omega
     have hps : proofSearch k
         (.plays (LegibleBot (2*k+64) k) (DupocBot k) Action.C) = true :=

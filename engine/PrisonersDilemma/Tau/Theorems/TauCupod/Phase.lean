@@ -41,8 +41,8 @@ def cupodRow : Tmpl → Action
 
 /-- The row's witness: one punish-probe per hypothesis, fed the δ_Cu guard column;
     the diagonal is the Löb quine, the `.dupoc` slot the open entangled play. -/
-theorem cupodRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 ≤ k)
-    (h10 : 10 ≤ k)
+theorem cupodRow_plays {k : Nat} (hk : 7 ≤ k) (hkk : 3 * c_guard k + 22 ≤ k) (h6 : 25 ≤ k)
+    (h10 : 43 ≤ k)
     (hquine : proofSearch k (probeD (inst (tauZoo k) .cupod .cupod)) = true)
     -- the mirror×cupod entangled cell (mutual simulation), Löb-gated
     (hmirCu : proofSearch k (probeD (inst (tauZoo k) .mirror .cupod))
@@ -89,7 +89,7 @@ theorem cupodRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 
 @[tau_row]
 theorem cupodRowSpec : RowSpec .cupod tauOrder cupodRow := by
   obtain ⟨kL, hkL⟩ := ps_probeD_inst_cupod_quine
-  obtain ⟨kA, hkA⟩ := linear_log2_add_le 1 12
+  obtain ⟨kA, hkA⟩ := linear_log2_add_le 12 140
   obtain ⟨kX, hkX⟩ := ps_probeD_mirror_cupod
   obtain ⟨kY, hkY⟩ := cupod_mirror_plays_D
   obtain ⟨kD, hkD⟩ := ps_probeD_inst_dimcid_cupod
@@ -98,13 +98,13 @@ theorem cupodRowSpec : RowSpec .cupod tauOrder cupodRow := by
   have hdc := hkD k (by omega)
   have hdcP := hkE k (by omega)
   have hquine := hkL k (by omega)
-  have hkA' : 1 * Nat.log2 k + 12 ≤ k := hkA k (by omega)
+  have hkA' : 12 * Nat.log2 k + 140 ≤ k := hkA k (by omega)
   have hmirCu := hkX k (by omega)
   have hmirP := hkY k (by omega)
-  have hk2 : 2 ≤ k := by omega
-  have hkk : c_guard k + 3 ≤ k := by simp only [c_guard, numCost]; omega
-  have h6 : 6 ≤ k := by omega
-  have h10 : 10 ≤ k := by omega
+  have hk2 : 7 ≤ k := by omega
+  have hkk : 3 * c_guard k + 22 ≤ k := by simp only [c_guard, numCost]; omega
+  have h6 : 25 ≤ k := by omega
+  have h10 : 43 ≤ k := by omega
   exact cupodRow_plays hk2 hkk h6 h10 hquine hmirCu hmirP hdc hdcP T
 
 /-- **τ(CupodBot)** — boundary `θ ≤ cupodMass`. UNCONDITIONAL since 2026-08-24:
@@ -117,7 +117,7 @@ theorem tauCupod_phase :
       (θ ≤ cupodMass w → ∃ N, play N (TauBotZ k .cupod w θ) opponent = some .C)
       ∧ (¬ θ ≤ cupodMass w → ∃ N, play N (TauBotZ k .cupod w θ) opponent = some .D) := by
   obtain ⟨kL, hkL⟩ := ps_probeD_inst_cupod_quine
-  obtain ⟨kA, hkA⟩ := linear_log2_add_le 1 12
+  obtain ⟨kA, hkA⟩ := linear_log2_add_le 12 140
   obtain ⟨kX, hkX⟩ := ps_probeD_mirror_cupod
   obtain ⟨kY, hkY⟩ := cupod_mirror_plays_D
   obtain ⟨kD, hkD⟩ := ps_probeD_inst_dimcid_cupod
@@ -126,13 +126,13 @@ theorem tauCupod_phase :
   have hdc := hkD k (by omega)
   have hdcP := hkE k (by omega)
   have hquine := hkL k (by omega)
-  have hkA' : 1 * Nat.log2 k + 12 ≤ k := hkA k (by omega)
+  have hkA' : 12 * Nat.log2 k + 140 ≤ k := hkA k (by omega)
   have hmirCu := hkX k (by omega)
   have hmirP := hkY k (by omega)
-  have hk2 : 2 ≤ k := by omega
-  have hkk : c_guard k + 3 ≤ k := by simp only [c_guard, numCost]; omega
-  have h6 : 6 ≤ k := by omega
-  have h10 : 10 ≤ k := by omega
+  have hk2 : 7 ≤ k := by omega
+  have hkk : 3 * c_guard k + 22 ≤ k := by simp only [c_guard, numCost]; omega
+  have h6 : 25 ≤ k := by omega
+  have h10 : 43 ≤ k := by omega
   have h := phase_of_bits (tauZoo k) .cupod w cupodRow tauOrder θ opponent
     (fun T _ => cupodRow_plays hk2 hkk h6 h10 hquine hmirCu hmirP hdc hdcP T)
   simp only [bitMass, tauOrder, List.map, cupodRow, massOf, massOf_ifC, massOf_ifD,

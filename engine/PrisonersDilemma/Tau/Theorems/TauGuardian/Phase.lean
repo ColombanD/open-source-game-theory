@@ -40,8 +40,8 @@ def guardianRow : Tmpl → Action
 
 /-- The row's witness: every entry is the punish-probe (`test = .D` prove-stage)
     fed the guard column's bits. -/
-theorem guardianRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 ≤ k)
-    (h10 : 10 ≤ k) (hL : 100 * Nat.log2 k + 1000 ≤ k) (hcg : c_guard k + 20 ≤ k) :
+theorem guardianRow_plays {k : Nat} (hk : 7 ≤ k) (hkk : 3 * c_guard k + 22 ≤ k) (h6 : 25 ≤ k)
+    (h10 : 43 ≤ k) (hL : 100 * Nat.log2 k + 1000 ≤ k) (hcg : 3 * c_guard k + 30 ≤ k) :
     ∀ T, ∃ N, eval N (.bot (inst (tauZoo k) .guardian T))
               (.bot (inst (tauZoo k) .guardian T))
               (inst (tauZoo k) .guardian T) = some (guardianRow T) :=
@@ -79,8 +79,8 @@ theorem guardianRowSpec : RowSpec .guardian tauOrder guardianRow := by
     (by simp only [c_guard, numCost]; omega) T
 
 /-- **τ(GuardianBot)** — boundary `θ ≤ guardMass`. -/
-theorem tauGuardian_phase {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 ≤ k)
-    (h10 : 10 ≤ k) (hL : 100 * Nat.log2 k + 1000 ≤ k) (hcg : c_guard k + 20 ≤ k) (θ : Nat) (w : Tmpl → Nat) (opponent : Prog) :
+theorem tauGuardian_phase {k : Nat} (hk : 7 ≤ k) (hkk : 3 * c_guard k + 22 ≤ k) (h6 : 25 ≤ k)
+    (h10 : 43 ≤ k) (hL : 100 * Nat.log2 k + 1000 ≤ k) (hcg : 3 * c_guard k + 30 ≤ k) (θ : Nat) (w : Tmpl → Nat) (opponent : Prog) :
     (θ ≤ guardMass w → ∃ N, play N (TauBotZ k .guardian w θ) opponent = some .C)
     ∧ (¬ θ ≤ guardMass w → ∃ N, play N (TauBotZ k .guardian w θ) opponent = some .D) := by
   have h := phase_of_bits (tauZoo k) .guardian w guardianRow tauOrder θ opponent

@@ -46,23 +46,27 @@ theorem CupodTrollBot_defects_vs_CupodBot (k fuel : Nat)
     guard's atom is provable, so once the budget `k` covers it the guard fires and
     CupodBot takes its `.const .D` branch. (An `atom_cost (fuel + 2) ≤ k` hypothesis
     used to ride along; it was never used — the certificate is a `search_t` over the
-    `eqRefl` leaf, whose cost is `log2 k + 3`, not an atom census.) -/
+    `eqRefl` leaf, whose cost is `log2 k + 3`, not an atom census.) Since the atom
+    recost (2026-09-16) the certificate also pays the size of the atom
+    `Troll k plays D vs Cupod k` (`3 * log2 k + 21`), so the budget must cover
+    `4 * log2 k + 24` — which also covers the `.eq` guard's size (`2 * log2 k + 15`). -/
 theorem CupodBot_defects_vs_CupodTrollBot (k fuel : Nat)
-    (hk : (Formula.eq (CupodBot k) (CupodBot k)).size ≤ k) :
+    (hk : 4 * Nat.log2 k + 24 ≤ k) :
     play (fuel + 2) (CupodBot k) (CupodTrollBot k) = some .D := by
+  have hkEq : (Formula.eq (CupodBot k) (CupodBot k)).size ≤ k := by
+    simp only [numCost, Formula.size, Prog.size, CupodBot]; omega
   -- CupodTrollBot defects against `CupodBot k` (direction A).
   have hA : play (fuel + 2) (CupodTrollBot k) (CupodBot k) = some .D :=
-    CupodTrollBot_defects_vs_CupodBot k fuel hk
+    CupodTrollBot_defects_vs_CupodBot k fuel hkEq
   -- Certify the play directly: Troll's `.eq` guard FIRES (eqRefl), so `search_t` + the
-  -- defect leaf give the certificate at `log2 k + 3` characters (≤ k via `hk`).
+  -- defect leaf give the certificate at `log2 k + 3` characters, plus the atom's size.
   have hEqProv : Pf k (.eq (CupodBot k) (CupodBot k)) :=
-    Pf.eqRefl (CupodBot k) hk
+    Pf.eqRefl (CupodBot k) hkEq
   have hg : proofSearch k (.plays (CupodTrollBot k) (CupodBot k) .D) = true := by
     refine (proofSearch_spec _ _).2 (Pf.atom
       (⟨PlaysProof.search_t hEqProv PlaysProof.const, ?_⟩ :
         AtomProvable k (.plays (CupodTrollBot k) (CupodBot k) .D)))
-    show c_leaf + c_guard k + c_node ≤ k
-    simp only [numCost, Formula.size, Prog.size, CupodBot, c_leaf, c_guard, c_node] at hk ⊢
+    simp only [numCost, Formula.size, Prog.size, CupodBot, CupodTrollBot, c_leaf, c_guard, c_node]
     omega
   -- CupodBot's `.search` guard `subst`s to exactly `hg`'s formula (`self` = `me`).
   show eval (fuel + 2) (CupodBot k) (CupodTrollBot k) (CupodBot k) = some .D
@@ -224,20 +228,24 @@ theorem EBot_plays_D_against_CupodTrollBot (k fuel : Nat) :
     certificate pays the `search_f` floor: the refutation of the guard (`Pf.eqNeg` —
     the programs are syntactically distinct) plus Troll's whole failed budget `j`. `DupocBot k`
     can prove it only when `k` affords that: `hjk`. Critch-faithful: proving a bounded search
-    fails costs at least the search budget. -/
+    fails costs at least the search budget. Since the atom recost (2026-09-16) the
+    certificate also pays the size of the atom `Troll j plays C vs Dupoc k`. -/
 theorem DupocBot_plays_C_against_CupodTrollBot (j k fuel : Nat)
-    (hjk : (Formula.neg (.eq (DupocBot k) (CupodBot j))).size + j + 2 ≤ k) :
+    (hjk : (Formula.neg (.eq (DupocBot k) (CupodBot j))).size + j + 2
+      + (Formula.plays (CupodTrollBot j) (DupocBot k) .C).size ≤ k) :
     play (fuel + 2) (DupocBot k) (CupodTrollBot j) = some .C := by
   have hne : DupocBot k ≠ CupodBot j := by simp [DupocBot, CupodBot]
   -- the guard refutation (eqNeg leaf), at its own size
   have hneg : Pf ((Formula.neg (.eq (DupocBot k) (CupodBot j))).size)
       (.neg (.eq (DupocBot k) (CupodBot j))) :=
     Pf.eqNeg _ _ hne (Nat.le_refl _)
-  -- Troll's else-certificate: search_f over the refutation, then the cooperate leaf
+  -- Troll's else-certificate: search_f over the refutation, then the cooperate leaf,
+  -- plus the conclusion atom's size
   have hg : proofSearch k (.plays (CupodTrollBot j) (DupocBot k) .C) = true := by
     refine (proofSearch_spec _ _).2 (Pf.atom (atom_monotone _ k _ ?_
       (⟨PlaysProof.search_f hneg PlaysProof.const, Nat.le_refl _⟩ :
-        AtomProvable (c_leaf + (Formula.neg (.eq (DupocBot k) (CupodBot j))).size + j + c_node)
+        AtomProvable (c_leaf + (Formula.neg (.eq (DupocBot k) (CupodBot j))).size + j + c_node
+            + (Formula.plays (CupodTrollBot j) (DupocBot k) .C).size)
           (.plays (CupodTrollBot j) (DupocBot k) .C))))
     simp only [c_leaf, c_node]
     omega

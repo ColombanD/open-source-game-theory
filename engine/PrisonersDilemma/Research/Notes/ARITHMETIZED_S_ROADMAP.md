@@ -40,7 +40,7 @@ Three tiers of claim, each a milestone gate:
 | T2 | `S` relative to PA, as PROVED (2026-09-10): T2-CORE (modal core sound over PA, budget erased), T2-AGENT (evaluation certificates = arith evaluator runs, same budgets, relative to the consulted `□_k` facts), T2-NEG (no budget-keeping transfer at any inflation) — see `ARITHMETIZED_S_RESULTS.md` | M3 DONE |
 | T3 | The Löbian cells (`Dupoc` self-cooperation, mutual Löb) hold in PA at large `k` | M4 + M5 (bounded HBL, parametric PBLT) |
 
-T1 and T2 together are the thesis-scoped finish line (BOTH DONE 2026-09-10; results record: `ARITHMETIZED_S_RESULTS.md`). T3 is a second program.
+T1 and T2 together are the thesis-scoped finish line (BOTH DONE 2026-09-10; results record: `ARITHMETIZED_S_RESULTS.md`). T3 is a second program — DONE 2026-09-16 for the Dupoc self-cooperation cell and PBLT (M5, unconditional). The MERGE of the engine's rule system onto `S'` is milestone **M6** (§3, design fixed 2026-09-16): the engine's rules as derived rules of `S'`, budget-keeping — its atom obstruction is repaired by the re-cost, its box obstruction is recorded there with the three shapes the merge can take.
 
 ---
 
@@ -1032,6 +1032,88 @@ improvements deferred (certificate redesign, occurrence accounting, binary index
 dominate; four constants before their quantifier, one layout before its case distinction, three
 missing interface binders. Lesson: *an interface written ahead of its consumer has provisional
 binders until the consumer compiles against it.*
+
+**M6 — THE MERGE `S` → `S'` (design fixed with Colomban 2026-09-16; status log below).**
+
+*The decision.* `S'` (= PA-`S`: `TAct` + the length-bounded `□_k`, `LenDerivable`/`LenProvableV`)
+is THE formal system. The engine's `Pf` is not a second system: each of its 33 constructors is to
+be a DERIVED RULE of `S'` — a theorem "premises in `S'` at their budgets ⇒ conclusion in `S'` at
+budget `f`(engine budget)". The ~155 outcome theorems stay untouched: an engine derivation is a
+tree of rule applications, so ONE induction over `Pf` composes the per-rule theorems into an
+`S'` derivation. The rule layer is the API (as tactics are to a kernel); re-deriving outcomes
+from `S'` primitives is not planned — it would buy constants only. Budget-KEEPING, not the erased
+T2-CORE: erased, `.box ↦ Bew_PA` and every outcome is a fact about UNBOUNDED modal agents
+(Barász 2014 = FAF's ModalAgents, the competitor); Critch's theorems are about proof length;
+U10 exists for this. OptimBot/LegibleBot stay OUT of the merge (two-tier box guards).
+
+*The two trusted definitions* (what a reader must accept by eye; everything else is checked):
+`tr : Formula → Sentence LAct` (`Core/Tr.lean`, today budget-erased; the budget-keeping version
+changes the `.box` clause to the bounded predicate at the rewritten budget and must rewrite the
+budgets inside PROGRAMS the same way, `search k ↦ search (f k)`, or self-referential bots do not
+translate to themselves) and `f` (the budget function; per-template constants packaged
+existentially — the numeral trap).
+
+*Obstruction 1 — the atom leaf (T2-NEG), REPAIRED by the re-cost.* `AtomProvable.mk` charged
+the run cost only, so `Pf 1 (.plays (.const C) q C)` for every `q`. Branch `colomban-recost`
+(2026-09-16): `mk : PlaysProof … n → n + (Formula.plays me opponent a).size ≤ k → …` — the WHOLE
+conclusion, because the subject side has its own witness (an untaken `.ite` branch is never
+paid: `Pf 3 (.plays (.ite (.const C) C (.const C) huge) q C)`); a first pass charged only
+`opponent.size` and was corrected the same day. With it `pf_size_or_atom` loses its exception.
+Rejected alternative: keep the engine's cost and let `f` read `|φ|` (`Pf k φ → □_{f(k,|φ|)} tr φ`
+evades T2-NEG, whose `e` sees `k` only) — it leaves a cost model in which a leaf does not pay for
+the program it names, unfaithful to Critch's character count independently of any bridge.
+
+*Obstruction 2 — the box rules, FOUND 2026-09-16 while checking step 2; NOT repaired; the
+user's decision.* The engine's `boxIntro`/`box4`/`axK` are ADDITIVE: `Pf a φ → Pf (a + |□_a φ|)
+(□_a φ)`. `S'`'s provable inner necessitation is POLYNOMIAL (degree 16, U10; linear is not
+available without abbreviations). A budget-rewriting `f` must therefore satisfy
+`f(a + |□_a φ|) ≥ C_φ · f(a)^16`, which no polynomial does (`(a + log a + s)^D < C a^{16 D}`),
+nor any single exponential; `f(a) = 2^{2^{αa}}` works (`f(a+1) = f(a)^{2^α} ≥ C f(a)^16` for
+`α ≥ 5`). So a rule-by-rule budget-keeping bridge exists only with a DOUBLY-EXPONENTIAL budget
+rewriting, applied uniformly to every box and every `search` budget (then self-reference closes:
+`tr (Dupoc k) = Dupoc' (f k)` consults `□_{f k} tr guard`, and the bridge delivers exactly
+`LenProvable (f k) (tr guard)` from `Pf k guard`). Two consequences. (i) On the Löbian cells the
+bridge is DOMINATED by M5: it gives `Dupoc' (f k)` self-cooperation at the budgets `f k` only,
+while `dupoc_self_coop_unconditional` gives ALL large budgets directly (the parametric PBLT is
+the mechanism by which a bounded agent's certificate fits its OWN budget in `S'`; the engine's
+mechanism is the additive citation rule — they are different mechanisms, and the second is
+Critch's (c)+(d) taken as a rule with `e* = 1`). (ii) `search_t` cites a budget-`k` proof at
+cost `numCost k = log₂ k + 1` (the second departure T2-NEG already named); under any monotone
+`f` the obligation `f(log k + c) ≥ C f(k)^16` is unsatisfiable, so the bridge additionally needs
+`search_t` re-costed to charge `k` (the M3 note's own suggestion; blast radius unmeasured —
+the same-`k` cells that cite a partner's fired search are at risk).
+
+*Three shapes the merge can take (to decide before step 3):*
+  A. **Uniform bridge with a doubly-exponential `f`** + the `search_t` re-cost. Realizes the
+     stated design literally (33 derived rules, one induction), engine budgets become nominal.
+  B. **No rule bridge; direct `S'` proofs of the bounded cells** in the M5 pattern (Dupoc self
+     done; next mutual-Löb Prudent/Just × Dupoc and the staggers), plus the erased T2-CORE for the
+     logic. NOTE the erased bridge does not cover the source-reading leaves for search bots:
+     `Bew_PA (tr guard) → plays` is false when the evaluator consults the bounded `□_g`.
+  C. **`S''`: the citation rule as a primitive of the arithmetized system** — derivations =
+     `TAct` proof codes + a `cite` node charging `|□_k σ|` (Critch's (c)/(d) built in, as his
+     Appendix B assumes); the engine's rules become derived rules of `S''` at essentially the
+     SAME budgets (no `search_t` re-cost), and U10 becomes the theorem that `S''` reduces to PA
+     with polynomial expansion per box level. New construction in `arith/`, moderate size (the
+     U10 kit does the reduction).
+
+*Step 2 check (2026-09-16), "are the M3 lemmas stated at explicit budgets":* bounded D2 YES
+(`CutV.lenDerivable_cut_V_TAct : a + b + 10(|φ|+|ψ|) + 9`; `Cut.lenProvable_mp`); quantifier
+distribution YES (`InstV.lenDerivable_instB_V`); the diagonal lemma NO — `Diag.tact_parametric_
+diagonal_inst` is `TAct ⊢ …` with no length; the bounded instance follows by the
+`Uniform.exists_forward_length`/`forward_inst_V` pattern (one existential constant per template
++ `lenDerivable_instB_V`), a small wrapper to write; bounded D1 PARAMETRIC ONLY — `BoundedInnerNec
+16` is stated for `instB ⌜χ⌝ k` at budget `gBudget k = ‖k‖³` tied to the instance parameter, so
+a closed-sentence, arbitrary-budget form `LenDerivable b ⌜σ⌝ → LenDerivable (C_σ (b^16+1)) ⌜□_b σ⌝`
+must be re-packaged from the kit (`Necessitation/Top.lean`), not read off.
+
+*Status log.* 2026-09-16: STEP 1 DONE — re-cost applied and repaired on `colomban-recost`
+(engine 3278 jobs green, export byte-identical: 155 cells / 4 companions / 18 tau rows keep
+values, regimes and pads; blast radius and the few statement changes in the results record §5;
+`ArithS/Neg.lean` retired T2-NEG and proves `no_budget_keeping_witness_pays` + `pf_size`).
+STEP 2 DONE with the finding above. STEP 3 (the induction) NOT started — waiting on the A/B/C
+decision. The `4·log2 k ≤ k + 12` lemma now exists privately in four theorem files
+(PrudentBot ×2, JustBot ×2) — promote it to `Base/Asymptotics` in a follow-up.
 
 **M4 — quantitative HBL and parametric bounded Löb in PA.** The research-grade block:
 * bounded D1: `PA ⊢_k σ → PA ⊢_{e(k)+|□_k σ|} □_k σ` — Critch's (d) with `e` linear or

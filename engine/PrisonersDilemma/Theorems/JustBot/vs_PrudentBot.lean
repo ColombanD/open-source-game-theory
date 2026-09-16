@@ -63,32 +63,64 @@ via the two-budget mutual wrapper) are T3.2b; cf. the PrudentBot×DupocBot tombs
 floored defection-vs-DefectBot certificate; the mutual Löb chain runs through
 `mutual_pblt_engine_staggered` on the (botDupoc, PrudentBot) leg pair. -/
 
-/-- `.bot (DupocBot k)`'s else-play vs `.bot DefectBot`, certified at the FLOOR. -/
-theorem prudence_botdupoc (k : Nat) :
-    Pf (k + Nat.log2 k + 17) (.plays (.bot (DupocBot k)) (.bot DefectBot) .D) := by
-  have hneg : Pf (Nat.log2 k + 14)
-      (.neg (.plays (.bot DefectBot) (.bot (DupocBot k)) .C)) := by
-    refine Pf.atomNeg (.bot DefectBot) (.bot (DupocBot k)) .D .C 2
-      ⟨PlaysProof.bot PlaysProof.const, by decide⟩ (by decide) ?_
-    simp only [numCost, Formula.size, Prog.size, DefectBot, DupocBot]
+/-- `4 · log₂ k ≤ k + 12` for every `k` — the `2k+64` stagger needs a linear bound on
+    `log2 k` sharper than `log2_le_self` once every atom certificate also pays the atom's
+    own size (which carries the bots' numerals). File-private, as in the PrudentBot
+    files. -/
+private theorem four_mul_log2_le (k : Nat) : 4 * Nat.log2 k ≤ k + 12 := by
+  have haux : ∀ n : Nat, 4 * (n + 4) ≤ 2 ^ (n + 4) := by
+    intro n
+    induction n with
+    | zero => decide
+    | succ n ih =>
+        have h : 2 ^ (n + 1 + 4) = 2 ^ (n + 4) * 2 := by
+          rw [show n + 1 + 4 = (n + 4) + 1 by omega, Nat.pow_succ]
+        omega
+  have h4 : ∀ n : Nat, 4 * n ≤ 2 ^ n + 12 := by
+    intro n
+    rcases Nat.lt_or_ge n 4 with h | h
+    · have := Nat.one_le_two_pow (n := n); omega
+    · obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le' h
+      have := haux m
+      omega
+  rcases Nat.eq_zero_or_pos k with rfl | hk
+  · simp
+  · have hpow : 2 ^ Nat.log2 k ≤ k := by
+      rw [Nat.log2_eq_log_two]; exact Nat.pow_log_le_self 2 (by omega)
+    have := h4 (Nat.log2 k)
     omega
-  have hcert := atom_search_f_bot_top k (Nat.log2 k + 14) (.plays .opp .self .C) .C .D
-    (.bot DefectBot) hneg
-  exact Pf.atom (atom_monotone _ _ _ (by omega) hcert)
+
+/-- The `atomNeg` refutation of "`.bot DefectBot` cooperates with the frozen snapshot"
+    (DefectBot's actual bot∘const defection certificate), shared by both prudence facts.
+    Every atom certificate pays its atom's size, whence `2 · log₂ k`. -/
+theorem neg_botDefect_C_vs_botDupoc (k : Nat) :
+    Pf (2 * Nat.log2 k + 25) (.neg (.plays (.bot DefectBot) (.bot (DupocBot k)) .C)) := by
+  refine Pf.atomNeg (.bot DefectBot) (.bot (DupocBot k)) .D .C
+    (2 + (Formula.plays (.bot DefectBot) (.bot (DupocBot k)) .D).size)
+    ⟨PlaysProof.bot PlaysProof.const, by simp only [c_leaf, c_node]; omega⟩ (by decide) ?_
+  simp only [numCost, Formula.size, Prog.size, DefectBot, DupocBot]
+  omega
+
+/-- `.bot (DupocBot k)`'s else-play vs `.bot DefectBot`, certified at the FLOOR
+    (`k`, plus the refutation and the else-play atom's own size: `3 · log₂ k`). -/
+theorem prudence_botdupoc (k : Nat) :
+    Pf (k + 3 * Nat.log2 k + 39) (.plays (.bot (DupocBot k)) (.bot DefectBot) .D) := by
+  have hcert := atom_search_f_bot_top k (2 * Nat.log2 k + 25) (.plays .opp .self .C) .C .D
+    (.bot DefectBot) (neg_botDefect_C_vs_botDupoc k)
+  refine Pf.atom (atom_monotone _ _ _ ?_ hcert)
+  simp only [numCost, Formula.size, Prog.size, DefectBot]
+  omega
 
 /-- JustBot's else-play vs `.bot DefectBot`, certified at the FLOOR (consumed as
-    PrudentBot's prudence fact about JustBot). -/
+    PrudentBot's prudence fact about JustBot; JustBot's atom carries two numerals, so
+    `4 · log₂ k`). -/
 theorem justbot_prudence (k : Nat) :
-    Pf (k + Nat.log2 k + 16) (.plays (JustBot k) (.bot DefectBot) .D) := by
-  have hneg : Pf (Nat.log2 k + 14)
-      (.neg (.plays (.bot DefectBot) (.bot (DupocBot k)) .C)) := by
-    refine Pf.atomNeg (.bot DefectBot) (.bot (DupocBot k)) .D .C 2
-      ⟨PlaysProof.bot PlaysProof.const, by decide⟩ (by decide) ?_
-    simp only [numCost, Formula.size, Prog.size, DefectBot, DupocBot]
-    omega
-  have hcert := atom_search_f_top k (Nat.log2 k + 14)
-    (.plays .opp (.bot (DupocBot k)) .C) .C .D (.bot DefectBot) hneg
-  exact Pf.atom (atom_monotone _ _ _ (by omega) hcert)
+    Pf (k + 4 * Nat.log2 k + 44) (.plays (JustBot k) (.bot DefectBot) .D) := by
+  have hcert := atom_search_f_top k (2 * Nat.log2 k + 25)
+    (.plays .opp (.bot (DupocBot k)) .C) .C .D (.bot DefectBot) (neg_botDefect_C_vs_botDupoc k)
+  refine Pf.atom (atom_monotone _ _ _ ?_ hcert)
+  simp only [numCost, Formula.size, Prog.size, DefectBot, DupocBot]
+  omega
 
 /-- Leg 1 (staggered): `□_{2k+64} φD' → φP'` — `PrudentBot (2k+64)` reads its stacked
     searches against `.bot (DupocBot k)`; the inner prudence is `prudence_botdupoc`. -/
@@ -96,9 +128,9 @@ theorem prudent_botdupoc_legPD (k : Nat) :
     Pf (30 * Nat.log2 k + 700)
       (.impl (.box (2*k+64) (.plays (.bot (DupocBot k)) (PrudentBot (2*k+64)) .C))
              (.plays (PrudentBot (2*k+64)) (.bot (DupocBot k)) .C)) := by
-  have hlk := log2_le_self k
+  have hlk := four_mul_log2_le k
   have hlg := log2_stagger_le k
-  refine Pf.searchThenSearch_t (2*k+64) (2*k+64) (k + Nat.log2 k + 17)
+  refine Pf.searchThenSearch_t (2*k+64) (2*k+64) (k + 3 * Nat.log2 k + 39)
     (.plays .opp .self .C) (.plays .opp (.bot DefectBot) .D)
     .C .D (.const .D) (PrudentBot (2*k+64)) (.bot (DupocBot k)) rfl
     (by simpa [Formula.subst, Prog.subst] using prudence_botdupoc k) (by omega) ?_
@@ -143,7 +175,7 @@ theorem ps_k_of_play_botdupoc_any (k n : Nat) (q : Prog)
 theorem outcome_JustBot_vs_PrudentBot_staggered :
     OutcomeSpec .eventual 3
       JustBot (fun k => PrudentBot (2*k+64)) (some (.C, .C)) := by
-  obtain ⟨KL, hKL⟩ := linear_log2_add_le 1 3
+  obtain ⟨KL, hKL⟩ := linear_log2_add_le 5 100
   have hsD : ∀ k, (Formula.plays (.bot (DupocBot k)) (PrudentBot (2*k+64)) .C).size
       ≤ 100 * Nat.log2 k + 1000 := by
     intro k
@@ -168,10 +200,10 @@ theorem outcome_JustBot_vs_PrudentBot_staggered :
   refine ⟨max k₂ KL, fun k hk fuel => outcome_at_of_ex ?_ ?_ fuel⟩
   -- The old existential-fuel argument, verbatim: some fuel determines the outcome…
   · have hk2 : k > k₂ := lt_of_le_of_lt (le_max_left _ _) hk
-    have hKLk : Nat.log2 k + 3 ≤ k := by
-      have := hKL k (le_of_lt (lt_of_le_of_lt (le_max_right _ _) hk))
-      omega
+    have hKLk : 5 * Nat.log2 k + 100 ≤ k :=
+      hKL k (le_of_lt (lt_of_le_of_lt (le_max_right _ _) hk))
     have hlk := log2_le_self k
+    have hlg := log2_stagger_le k
     obtain ⟨m, hm⟩ := hk₂ k hk2
     obtain ⟨n, hplayD⟩ := Pf_sound m _ hm
     -- botDupoc's guard fired: JustBot's own guard about PrudentBot fires at k (`⊢_k`)
@@ -188,8 +220,10 @@ theorem outcome_JustBot_vs_PrudentBot_staggered :
       refine (proofSearch_spec _ _).2 (Pf.atom
         (⟨PlaysProof.search_t ((proofSearch_spec _ _).1 hA_ps) PlaysProof.const, ?_⟩ :
           AtomProvable (2*k+64) (.plays (JustBot k) (PrudentBot (2*k+64)) .C)))
-      show c_leaf + c_guard k + c_node ≤ 2*k+64
-      simp only [numCost, c_leaf, c_guard, c_node]
+      -- search_t ∘ const, plus the atom's own size (JustBot's two numerals, PrudentBot's
+      -- two staggered ones)
+      simp only [numCost, c_leaf, c_guard, c_node, Formula.size, Prog.size, JustBot,
+        PrudentBot, DupocBot, DefectBot]
       omega
     -- PrudentBot's prudence about JustBot: the floored certificate fits its bigger budget
     have hprud : proofSearch (2*k+64) (.plays (JustBot k) (.bot DefectBot) .D) = true := by

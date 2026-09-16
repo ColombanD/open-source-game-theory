@@ -265,8 +265,11 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 -- T2-CORE: the modal-propositional core is sound over PA (budget erased).
 #print axioms Core.Pf_core_sound
 
--- T2-NEG: no budget-keeping transfer at any inflation.
-#print axioms no_budget_keeping_transfer
+-- T2-NEG: RETIRED 2026-09-16 by the atom re-cost (`no_budget_keeping_transfer` is no longer
+-- statable — its witness is not an engine theorem any more); what remains is the record that
+-- the witness now pays for the program it names, and that every engine theorem fits its budget.
+#print axioms no_budget_keeping_witness_pays
+#print axioms pf_size
 
 -- T2-AGENT: engine certificates are arith evaluator runs, same budgets.
 #print axioms playsProof_evalGraph

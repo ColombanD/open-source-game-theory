@@ -36,6 +36,31 @@ floor — JustBot's guard at the same `k` can never afford it. Staggered-budget 
 FAILS against `.bot (DupocBot (4j+100))`, refuted by `Pf.eqNeg`). Holds for EVERY
 `j` — no eventuality. -/
 
+/-- `4·log2 k ≤ k + 12` (file-private twin of the PrudentBot files' lemma; needed since the
+    2026-09-16 re-cost charges the atom's size on top of the stagger). -/
+private theorem four_mul_log2_le (k : Nat) : 4 * Nat.log2 k ≤ k + 12 := by
+  have haux : ∀ n : Nat, 4 * (n + 4) ≤ 2 ^ (n + 4) := by
+    intro n
+    induction n with
+    | zero => decide
+    | succ n ih =>
+        have h : 2 ^ (n + 1 + 4) = 2 ^ (n + 4) * 2 := by
+          rw [show n + 1 + 4 = (n + 4) + 1 by omega, Nat.pow_succ]
+        omega
+  have h4 : ∀ n : Nat, 4 * n ≤ 2 ^ n + 12 := by
+    intro n
+    rcases Nat.lt_or_ge n 4 with h | h
+    · have := Nat.one_le_two_pow (n := n); omega
+    · obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le' h
+      have := haux m
+      omega
+  rcases Nat.eq_zero_or_pos k with rfl | hk
+  · simp
+  · have hpow : 2 ^ Nat.log2 k ≤ k := by
+      rw [Nat.log2_eq_log_two]; exact Nat.pow_log_le_self 2 (by omega)
+    have := h4 (Nat.log2 k)
+    omega
+
 -- The staggered companion (not the cell — see `outcome_JustBot_vs_CupodTrollBot` below).
 @[outcome_companion]
 theorem outcome_JustBot_vs_CupodTrollBot_staggered :
@@ -56,9 +81,13 @@ theorem outcome_JustBot_vs_CupodTrollBot_staggered :
       (⟨PlaysProof.search_f hneg PlaysProof.const, Nat.le_refl _⟩ :
         AtomProvable
           (c_leaf + (Formula.neg (.eq (.bot (DupocBot (4*j+100))) (CupodBot j))).size
-            + j + c_node)
+            + j + c_node
+            + (Formula.plays (CupodTrollBot j) (.bot (DupocBot (4*j+100))) .C).size)
           (.plays (CupodTrollBot j) (.bot (DupocBot (4*j+100))) .C))))
-    simp only [numCost, c_leaf, c_node, Formula.size, Prog.size, DupocBot, CupodBot]
+    -- `4·log2 j ≤ j + 12` (`log2 j ≤ j` alone is too weak once the atom's size is charged)
+    have h4 := four_mul_log2_le j
+    simp only [numCost, c_leaf, c_node, Formula.size, Prog.size, DupocBot, CupodBot,
+      CupodTrollBot]
     omega
   have hA : play (fuel + 2) (JustBot (4*j+100)) (CupodTrollBot j) = some .C := by
     refine JustBot_eval_step (4*j+100) fuel (CupodTrollBot j) .C ?_

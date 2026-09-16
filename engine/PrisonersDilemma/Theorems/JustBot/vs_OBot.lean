@@ -19,17 +19,21 @@ open PD.Bots
 namespace PD.Theorems
 
 -- Generalized from the single witness `k = atom_cost 5`: the only certificate here is a
--- `Pf.atom` with a CONSTANT cost (`.bot .const`, no `c_guard k` term), so it is afforded
--- at every budget above that floor, and the rest of the proof treats `k` abstractly.
+-- `Pf.atom` with cost `.bot .const` plus the atom's own size (`log2 k + 13`, no
+-- `c_guard k` term), so it is afforded at every budget above that threshold, and the
+-- rest of the proof treats `k` abstractly.
 @[outcome]
 theorem outcome_JustBot_vs_OBot :
     OutcomeSpec .eventual 6
       JustBot (fun _ => OBot) (some (.D, .D)) := by
-  refine ⟨atom_cost 5, fun k hlt n => ?_⟩
+  obtain ⟨K, hK⟩ := linear_log2_add_le 1 13
+  refine ⟨K, fun k hlt n => ?_⟩
+  have hKk := hK k (Nat.le_of_lt hlt)
 
   have hPSCB : proofSearch k (.plays (.bot CooperateBot) (.bot (DupocBot k)) .C) = true :=
     (proofSearch_spec _ _).2
-      (Pf.atom ⟨PlaysProof.bot PlaysProof.const, by simp [atom_cost] at hlt ⊢; omega⟩)
+      (Pf.atom ⟨PlaysProof.bot PlaysProof.const, by
+        simp only [Formula.size, DupocBot_size, CooperateBot, Prog.size, c_leaf, c_node]; omega⟩)
 
   have hPSDB : proofSearch k (.plays (.bot DefectBot) (.bot (DupocBot k)) .C) = false := by
     cases h : proofSearch k (.plays (.bot DefectBot) (.bot (DupocBot k)) .C) with

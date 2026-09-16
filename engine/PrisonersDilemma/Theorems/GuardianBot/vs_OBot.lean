@@ -56,35 +56,36 @@ theorem guardian_plays_C_vs_botCB (k fuel : Nat) :
   simp [eval, Prog.subst, Formula.subst, hg]
 
 theorem guardian_plays_D_vs_botDB (k fuel : Nat) :
-    play (fuel + 2) (GuardianBot (k+2)) (.bot DefectBot) = some .D := by
-  have hg : proofSearch (k+2) (.plays (.bot DefectBot) (.bot CooperateBot) .D) = true :=
-    (proofSearch_spec _ _).2 (Pf.atom ⟨PlaysProof.bot PlaysProof.const, by simp only [c_leaf, c_node]; omega⟩)
-  show eval (fuel + 2) (GuardianBot (k+2)) (.bot DefectBot) (GuardianBot (k+2)) = some .D
+    play (fuel + 2) (GuardianBot (k+7)) (.bot DefectBot) = some .D := by
+  have hg : proofSearch (k+7) (.plays (.bot DefectBot) (.bot CooperateBot) .D) = true :=
+    (proofSearch_spec _ _).2 (Pf.atom ⟨PlaysProof.bot PlaysProof.const,
+      by simp only [c_leaf, c_node, Formula.size, Prog.size, CooperateBot, DefectBot]; omega⟩)
+  show eval (fuel + 2) (GuardianBot (k+7)) (.bot DefectBot) (GuardianBot (k+7)) = some .D
   unfold GuardianBot
   simp [eval, Prog.subst, Formula.subst, hg]
 
 theorem obot_plays_D_vs_guardian (k fuel : Nat) :
-    play (fuel + 5) OBot (GuardianBot (k+2)) = some .D := by
-  have hGuard1 : eval (fuel + 4) OBot (GuardianBot (k+2)) (.sim .opp (.bot CooperateBot)) = some .C := by
-    have hProbe : play (fuel + 3) (GuardianBot (k+2)) (.bot CooperateBot) = some .C := by
-      simpa [Nat.add_assoc] using guardian_plays_C_vs_botCB (k+2) (fuel + 1)
+    play (fuel + 5) OBot (GuardianBot (k+7)) = some .D := by
+  have hGuard1 : eval (fuel + 4) OBot (GuardianBot (k+7)) (.sim .opp (.bot CooperateBot)) = some .C := by
+    have hProbe : play (fuel + 3) (GuardianBot (k+7)) (.bot CooperateBot) = some .C := by
+      simpa [Nat.add_assoc] using guardian_plays_C_vs_botCB (k+7) (fuel + 1)
     simpa [Nat.add_assoc] using
-      (eval_sim_opp_bot_of_play (fuel + 3) OBot (GuardianBot (k+2)) CooperateBot Action.C hProbe)
-  have hGuard2 : eval (fuel + 3) OBot (GuardianBot (k+2)) (.sim .opp (.bot DefectBot)) = some .D := by
-    have hProbe : play (fuel + 2) (GuardianBot (k+2)) (.bot DefectBot) = some .D :=
+      (eval_sim_opp_bot_of_play (fuel + 3) OBot (GuardianBot (k+7)) CooperateBot Action.C hProbe)
+  have hGuard2 : eval (fuel + 3) OBot (GuardianBot (k+7)) (.sim .opp (.bot DefectBot)) = some .D := by
+    have hProbe : play (fuel + 2) (GuardianBot (k+7)) (.bot DefectBot) = some .D :=
       guardian_plays_D_vs_botDB k fuel
     simpa [Nat.add_assoc] using
-      (eval_sim_opp_bot_of_play (fuel + 2) OBot (GuardianBot (k+2)) DefectBot Action.D hProbe)
+      (eval_sim_opp_bot_of_play (fuel + 2) OBot (GuardianBot (k+7)) DefectBot Action.D hProbe)
   have hPlay := play_ite_from_guard
-    fuel 4 OBot (GuardianBot (k+2)) (.sim .opp (.bot CooperateBot))
+    fuel 4 OBot (GuardianBot (k+7)) (.sim .opp (.bot CooperateBot))
     (.ite (.sim .opp (.bot DefectBot)) Action.C (.const Action.C) (.const Action.D))
     (.const Action.D)
     Action.C Action.C
     (by rfl) hGuard1
-  have hInner : eval (fuel + 4) OBot (GuardianBot (k+2))
+  have hInner : eval (fuel + 4) OBot (GuardianBot (k+7))
       (.ite (.sim .opp (.bot DefectBot)) Action.C (.const Action.C) (.const Action.D)) = some .D := by
     simpa [Nat.add_assoc] using!
-      (eval_ite_from_guard (fuel + 3) OBot (GuardianBot (k+2))
+      (eval_ite_from_guard (fuel + 3) OBot (GuardianBot (k+7))
         (.sim .opp (.bot DefectBot)) (.const Action.C) (.const Action.D)
         Action.C Action.D hGuard2)
   simpa [hInner] using! hPlay
@@ -95,12 +96,12 @@ theorem obot_plays_D_vs_guardian (k fuel : Nat) :
 theorem llm_outcome_GuardianBot_vs_OBot :
     OutcomeSpec .eventual 7
       GuardianBot (fun _ => OBot) (some (.C, .D)) := by
-  refine ⟨1, fun k hk fuel => ?_⟩
-  obtain ⟨j, rfl⟩ : ∃ j, k = j + 2 := ⟨k - 2, by omega⟩
+  refine ⟨6, fun k hk fuel => ?_⟩
+  obtain ⟨j, rfl⟩ : ∃ j, k = j + 7 := ⟨k - 7, by omega⟩
   refine outcome_mono_le (N := 7) ?_ (fuel + 7) (by omega)
-  have hA : play 7 (GuardianBot (j+2)) OBot = some .C := by
-    simpa using guardian_plays_C_vs_OBot (j+2) 5
-  have hB : play 7 OBot (GuardianBot (j+2)) = some .D := by
+  have hA : play 7 (GuardianBot (j+7)) OBot = some .C := by
+    simpa using guardian_plays_C_vs_OBot (j+7) 5
+  have hB : play 7 OBot (GuardianBot (j+7)) = some .D := by
     simpa using obot_plays_D_vs_guardian j 2
   exact outcome_of_plays _ _ _ _ _ hA hB
 

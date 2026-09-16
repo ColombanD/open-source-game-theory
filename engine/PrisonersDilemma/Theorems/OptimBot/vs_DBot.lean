@@ -13,7 +13,10 @@ open PD.Bots
 open PD.BaseTheorems
 namespace PD.Theorems
 
-theorem optim_dbot_selfD_loeb (k S : Nat) (hk : 2 ≤ k) :
+/-- `hk` asks that `.bot DefectBot`'s two-step certificate against OptimBot — which
+    the atom rule charges at `2 + |atom|` — fit the opponent budget `k`. -/
+theorem optim_dbot_selfD_loeb (k S : Nat)
+    (hk : 2 + (Formula.plays DefectBot.bot (OptimBot k S) Action.D).size ≤ k) :
     Pf (500 * k + 500 * Nat.log2 S + 500 * Nat.log2 k + 100000)
       (.impl (.box S (.plays (OptimBot k S) DefectBot.bot Action.D))
         (.plays (OptimBot k S) DefectBot.bot Action.D)) := by
@@ -38,10 +41,11 @@ theorem optim_dbot_selfD_loeb (k S : Nat) (hk : 2 ≤ k) :
     Action.D (OptimBot k S) DefectBot.bot (by unfold OptimBot; rfl) (Nat.le_refl _)
   simp only [guard2, guards2, implChain, List.foldr, Formula.subst, Prog.subst] at hchain
   have href : Pf _ (.neg (.plays DefectBot.bot (OptimBot k S) Action.C)) :=
-    Pf.atomNeg DefectBot.bot (OptimBot k S) .D .C 2
-      ⟨PlaysProof.bot PlaysProof.const, by decide⟩ (by decide) (Nat.le_refl _)
+    Pf.atomNeg DefectBot.bot (OptimBot k S) .D .C
+      (2 + (Formula.plays DefectBot.bot (OptimBot k S) Action.D).size)
+      ⟨PlaysProof.bot PlaysProof.const, by simp [c_leaf, c_node]⟩ (by decide) (Nat.le_refl _)
   have hcertD : AtomProvable k (.plays DefectBot.bot (OptimBot k S) Action.D) :=
-    ⟨PlaysProof.bot PlaysProof.const, by show c_leaf + c_node ≤ k; simp only [c_leaf, c_node]; omega⟩
+    ⟨PlaysProof.bot PlaysProof.const, by simp only [c_leaf, c_node]; omega⟩
   have hbox3 : Pf _ (.box k (.plays DefectBot.bot (OptimBot k S) Action.D)) :=
     Pf.boxIntro k _ _ (Pf.atom hcertD) (Nat.le_refl _)
   have h1 := Pf.mp _ _ _ _ hchain href (Nat.le_refl _)
@@ -75,12 +79,29 @@ theorem optim_log2_1e8 (k : Nat) (hk : 1 ≤ k) :
   have := (Nat.log2_lt (by omega)).2 h3
   omega
 
+/-- The size of `.bot DefectBot`'s defection atom against OptimBot at the stagger,
+    in `log₂ k`: the price the atom rule charges its two-step certificate. -/
+theorem optim_dbot_self_size (k : Nat) (hk : 1 ≤ k) :
+    2 + (Formula.plays DefectBot.bot (OptimBot k (100000000 * k)) Action.D).size
+      ≤ 14 * Nat.log2 k + 300 := by
+  have := optim_log2_1e8 k hk
+  simp only [Prog.size, Formula.size, numCost, OptimBot, DefectBot]
+  omega
+
+/-- The self-defection bootstrap at the stagger, bundled with the atom-size bound
+    `2 + |.bot DefectBot plays D vs OptimBot| ≤ k` that its certificate needs at budget `k`. -/
 theorem optim_dbot_selfD_provable :
     ∃ k₂, ∀ k, k > k₂ →
+      2 + (Formula.plays DefectBot.bot (OptimBot k (100000000 * k)) Action.D).size ≤ k ∧
       proofSearch (100000000 * k) (.plays (OptimBot k (100000000 * k)) DefectBot.bot Action.D) = true := by
-  refine ⟨100, fun k hk => ?_⟩
-  have h1 : 1 ≤ k := by omega
-  have h2k : 2 ≤ k := by omega
+  obtain ⟨Kb, hKb⟩ := linear_log2_add_le 14 300
+  refine ⟨max 100 Kb, fun k hk => ?_⟩
+  have h1 : 1 ≤ k := by have := Nat.le_max_left 100 Kb; omega
+  have h2k : 2 + (Formula.plays DefectBot.bot (OptimBot k (100000000 * k)) Action.D).size ≤ k := by
+    have := hKb k (lt_of_le_of_lt (Nat.le_max_right _ _) hk).le
+    have := optim_dbot_self_size k h1
+    omega
+  refine ⟨h2k, ?_⟩
   have hpm := optim_dbot_selfD_loeb k (100000000 * k) h2k
   have hlogS : Nat.log2 (100000000 * k) ≤ Nat.log2 k + 27 := optim_log2_1e8 k h1
   have hsz := optim_dbot_atom_size k (100000000 * k)
@@ -111,10 +132,11 @@ theorem optim_ps_oppC_false (k S : Nat) :
                           (interp_bot_DefectBot_plays_C_false _)
   | false => rfl
 
-theorem optim_ps_oppD_true (k S : Nat) (hk : 2 ≤ k) :
+theorem optim_ps_oppD_true (k S : Nat)
+    (hk : 2 + (Formula.plays DefectBot.bot (OptimBot k S) Action.D).size ≤ k) :
     proofSearch k (.plays DefectBot.bot (OptimBot k S) Action.D) = true :=
   (proofSearch_spec _ _).2 (Pf.atom
-    ⟨PlaysProof.bot PlaysProof.const, by show c_leaf + c_node ≤ k; simp only [c_leaf, c_node]; omega⟩)
+    ⟨PlaysProof.bot PlaysProof.const, by simp only [c_leaf, c_node]; omega⟩)
 
 theorem optim_plays_D_vs_botDefect (k S fuel : Nat)
     (hselfD : proofSearch S (.plays (OptimBot k S) DefectBot.bot Action.D) = true)
@@ -214,12 +236,9 @@ theorem llm_outcome_OptimBot_vs_DBot :
     OutcomeSpec .eventual 12
       (fun k => OptimBot k (100000000 * k)) (fun _ => DBot) (some (.C, .C)) := by
   obtain ⟨k₂, hk₂⟩ := optim_dbot_selfD_provable
-  refine ⟨max k₂ 2, fun k hk fuel => ?_⟩
-  have hkk₂ : k > k₂ := lt_of_le_of_lt (Nat.le_max_left _ _) hk
-  have h2k : 2 ≤ k := le_of_lt (lt_of_le_of_lt (Nat.le_max_right _ _) hk)
+  refine ⟨k₂, fun k hk fuel => ?_⟩
+  obtain ⟨h2k, hselfD⟩ := hk₂ k hk
   set S := 100000000 * k with hS
-  have hselfD : proofSearch S (.plays (OptimBot k S) DefectBot.bot Action.D) = true :=
-    hk₂ k hkk₂
   have hoppC : proofSearch k (.plays DefectBot.bot (OptimBot k S) Action.C) = false :=
     optim_ps_oppC_false k S
   have hoppD : proofSearch k (.plays DefectBot.bot (OptimBot k S) Action.D) = true :=

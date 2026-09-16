@@ -99,7 +99,7 @@ theorem dupoc_maxconfidence_plays_C :
 
 /-- The cheap budget-`k` certificate for component 0's cooperation from component
     1's provable cooperation: its guard fires (`search_t` cites via `c_guard`). -/
-theorem pf_A0_of_A1_cd {k : Nat} (hkk : c_guard k + 5 ≤ k)
+theorem pf_A0_of_A1_cd {k : Nat} (hkk : 5 * c_guard k + 60 ≤ k)
     (h1 : Pf k (.plays (.bot (.sys (cfdSys k) 1)) (.bot (.sys (cfdSys k) 1)) Action.C)) :
     Pf k (.plays (.bot (.sys (cfdSys k) 0)) (.bot (.sys (cfdSys k) 0)) Action.C) := by
   have hpre : Pf k (((Formula.plays (.bot (.selfIdx 1)) (.bot (.selfIdx 1)) Action.C).sysClose
@@ -109,7 +109,12 @@ theorem pf_A0_of_A1_cd {k : Nat} (hkk : c_guard k + 5 ≤ k)
     (PlaysProof.const (me := .bot (.sys (cfdSys k) 0)) (opponent := .bot (.sys (cfdSys k) 0))
       (a := Action.C))
   exact Pf.atom ⟨PlaysProof.bot (PlaysProof.sysStep (cfdSys_get0 k) hs),
-    by have := hcl; have := hcn; omega⟩
+    by
+      have := hcl; have := hcn
+      have h0 : Nat.log2 0 = 0 := by decide
+      have h1 : Nat.log2 1 = 0 := by decide
+      simp only [c_guard, numCost, Formula.size, Prog.size, ProgList.psize, cfdSys] at hkk ⊢
+      omega⟩
 
 /-- **THE LÖB BIT of the pair**: past a threshold the probe of `inst .maxconfidence .dupoc`
     fires AT THE PROBING BUDGET. Consumed by the δ_L column's `.maxconfidence` slot and by
@@ -118,12 +123,12 @@ theorem ps_probe_inst_maxconfidence_dupoc :
     ∃ k₂, ∀ k, k₂ < k →
       proofSearch k (probe (inst (tauZoo k) .maxconfidence .dupoc)) = true := by
   obtain ⟨kL, hLp⟩ := maxconfidence_dupoc_plays_C
-  obtain ⟨kA, hkA⟩ := linear_log2_add_le 1 12
+  obtain ⟨kA, hkA⟩ := linear_log2_add_le 5 65
   refine ⟨max kL kA, fun k hk => ?_⟩
   have hplay := hLp k (lt_of_le_of_lt (Nat.le_max_left _ _) hk)
-  have hkA' : 1 * Nat.log2 k + 12 ≤ k :=
+  have hkA' : 5 * Nat.log2 k + 65 ≤ k :=
     hkA k (Nat.le_of_lt (lt_of_le_of_lt (Nat.le_max_right _ _) hk))
-  have hkk : c_guard k + 5 ≤ k := by simp only [c_guard, numCost]; omega
+  have hkk : 5 * c_guard k + 60 ≤ k := by simp only [c_guard, numCost]; omega
   rw [inst_maxconfidence_dupoc_eq k] at hplay
   have hfired := sysSearcher_fired_of_plays (by decide) _ _ (cfdSys_get0 k) hplay
   rw [sysClose_subst_botSelfIdx] at hfired
@@ -132,7 +137,7 @@ theorem ps_probe_inst_maxconfidence_dupoc :
 
 /-- τ(Just) at MaxConfidenceBot: its third-party probe is aimed at the system, and fires
     exactly when the system's Löb bit does. -/
-theorem ps_probe_just_maxconfidence {k : Nat} (hkk : c_guard k + 3 ≤ k)
+theorem ps_probe_just_maxconfidence {k : Nat} (hkk : 11 * c_guard k + 120 ≤ k)
     (hconf : proofSearch k (probe (inst (tauZoo k) .maxconfidence .dupoc)) = true) :
     proofSearch k (probe (inst (tauZoo k) .just .maxconfidence)) = true :=
   (proofSearch_spec _ _).2 (Pf.atom
@@ -142,6 +147,11 @@ theorem ps_probe_just_maxconfidence {k : Nat} (hkk : c_guard k + 3 ≤ k)
         have h1 : c_leaf = 1 := rfl
         have h2 : c_node = 1 := rfl
         have h3 : c_guard (tauZoo k).budget = c_guard k := rfl
+        have h0 : Nat.log2 0 = 0 := by decide
+        have h1' : Nat.log2 1 = 0 := by decide
+        rw [h3, inst_just_maxconfidence_peel k, inst_maxconfidence_dupoc_eq k]
+        simp only [c_guard, numCost, probe, Formula.size, Prog.size, ProgList.psize, cfdSys]
+          at hkk ⊢
         omega⟩)
 
 end PD.Tau

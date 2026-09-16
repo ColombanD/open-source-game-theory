@@ -22,10 +22,10 @@ theorem CIMCIC_guard_bot_CooperateBot_provable :
                       (.plays (.bot CooperateBot) (CIMCIC k) Action.C)) := by
   obtain ⟨K, hK⟩ := linear_log2_add_le 10 100
   refine ⟨K, fun k hk => ?_⟩
-  refine Pf.weakenImpl _ _ (atom_cost 2)
-    (Pf.atom ⟨PlaysProof.bot PlaysProof.const, by decide⟩) ?_
-  have hb := hK k hk
   have h1 : atom_cost 2 = 7 := by decide
+  refine Pf.weakenImpl _ _ (atom_cost 2 + (Formula.plays (.bot CooperateBot) (CIMCIC k) Action.C).size)
+    (Pf.atom ⟨PlaysProof.bot PlaysProof.const, by simp only [c_leaf, c_node]; omega⟩) ?_
+  have hb := hK k hk
   simp only [numCost, Formula.size, Prog.size, CIMCIC, CooperateBot]
   omega
 
@@ -76,7 +76,8 @@ theorem TitForTatBot_plays_C_against_CIMCIC (k fuel : Nat)
     the `.const .C` leaf). -/
 theorem TFT_plays_C_vs_CIMCIC_provable :
     ∃ K, ∀ k, k ≥ K →
-      Pf ((((c_leaf + c_guard k + c_node) + c_node) + c_leaf) + c_node)
+      Pf ((((c_leaf + c_guard k + c_node) + c_node) + c_leaf) + c_node
+            + (Formula.plays TitForTatBot (CIMCIC k) Action.C).size)
         (Formula.plays TitForTatBot (CIMCIC k) Action.C) := by
   obtain ⟨K, hK⟩ := CIMCIC_guard_bot_CooperateBot_provable
   refine ⟨K, fun k hk => ?_⟩

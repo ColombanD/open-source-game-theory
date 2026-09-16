@@ -251,13 +251,35 @@ top assembly remain (roadmap status log, brief §9–§10). Until then every M4 
 5. Encoding sensitivity: Cantor pairing makes `‖⌜φ⌝‖` exponential in syntax depth; every
    quantitative statement is "for all large k".
 
-## 5. Engine-side finding for the maintainers
+## 5. Engine-side finding for the maintainers — HALF ADOPTED 2026-09-16
 
 Charging `AtomProvable.mk` by `n + |φ| ≤ k` and `search_t` by `n + k + c_node` would remove
 both departures from a character count and make a budget-keeping transfer plausible on the
 size-gated fragment — at the price of every cheap-citation cell (the `(2k+64)` staggers,
 `outcome_DupocBot_vs_CooperateBot` at pad `atom_cost 1`, which survives only as `eventual`).
 A design decision, not part of M3.
+
+**The atom half was adopted (branch `colomban-recost`, 2026-09-16, roadmap M6).**
+`AtomProvable.mk` now requires `n + (Formula.plays me opponent a).size ≤ k` — the whole
+conclusion (a first pass charged `opponent.size` only; the subject side has its own witness, an
+untaken `.ite` branch that `ite_t` never pays). Consequences: T2-NEG is RETIRED (its witness is no
+longer an engine theorem; `ArithS/Neg.lean` keeps the record and proves `no_budget_keeping_witness_pays`
+and `pf_size : Pf k φ → φ.size ≤ k`, the exception of `pf_size_or_atom` closed); every outcome
+VALUE survived; the blast radius was budget arithmetic only: 6 `Base/` sites, then ~120 errors
+across 61 theorem files in two layers (Helpers first, their consumers second; the tau layer
+last), repaired in one day by five agents plus the coordinator; the export of 155 cells, 4
+staggered companions and 18 tau rows is BYTE-IDENTICAL (values, regimes, fuel pads all
+unchanged — every `.eventual` witness and every internal threshold simply grew by the atom
+size, typically `+ (Nat.log2 k + c)` for a searcher against a constant, twice `Nat.log2 k` at a
+fired top-level search). Statement changes: `outcome_WaryBot_vs_DefectBot_defended` (non-cell
+companion) moved from `WaryBot 16` to `WaryBot 32` — the 16 statement is FALSE under the new
+charge (transcript 30), so the documented "phase transition at k = 16" is now "exploited at 2,
+defended from 32"; `GuardianBot_defects_vs_DefectBot` at `GuardianBot (k+5)` (was `k+1`); the
+WaryBot literal lemmas renamed `…wary32…`; `Tau/Theorems/Helpers` literal thresholds grew
+(`2 ≤ K` → `7 ≤ K`, `6 → 25`, `10 → 43`, `c_guard k + 3 → 3 * c_guard k + 22`, …). Engine build
+3278 jobs, both targets + `OutcomeCheck` green.
+**The `search_t` half is NOT adopted** — it is needed only for a budget-keeping rule bridge
+(roadmap M6, obstruction 2), which is waiting on a design decision.
 
 ## 6. Where things are
 

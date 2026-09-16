@@ -225,12 +225,39 @@ Orchestration with background subagents (§5 agent operations); design decisions
 brief plus verbatim reader reports; a judge panel was tried once and not needed. Check
 `git status` in the worktree before assuming work was lost.
 
-## 8. Last session state (2026-09-16 — U10 COMPLETE; the hypothesis is discharged)
+## 8. Last session state (2026-09-16 evening — U10 COMPLETE; the merge's step 1 DONE, its
+## box obstruction FOUND)
 
-Branch `colomban-arith-u10`, **NOT pushed since 2026-09-14** — push is the first thing to do
-(`git push`). Tree clean, build GREEN: **3270 jobs, census 918 lines, all `[propext,
-Classical.choice, Quot.sound]`** (the single `substs_leF_imp` subset line is pre-existing); zero
-`sorry`, zero `axiom` declarations, zero `native_decide` in the package.
+**Two branches now.** `colomban-arith-u10` (U10, the unconditional theorems; NOT pushed since
+2026-09-14) and, on top of it, `colomban-recost` (the engine's atom re-cost, M6 step 1 — this
+session's work, committed, not pushed). Both green. Resume on `colomban-recost`.
+
+**M6 = THE MERGE `S` → `S'`** (roadmap §3 "M6", the authoritative text): the engine's 33 rules
+are to become derived rules of `S'`, budget-keeping, outcomes untouched. Steps agreed with the
+user: (1) re-cost branch green — DONE; (2) check the M3 lemmas are stated at explicit budgets —
+DONE, and it surfaced the obstruction; (3) the induction over `Pf` — NOT started, waiting on the
+user's choice among the three shapes A/B/C recorded in the roadmap.
+* Step 1: `AtomProvable.mk` now charges `n + (Formula.plays me opponent a).size ≤ k`
+  (`ProofSystem.lean` §3, the long comment there). Engine 3278 jobs green, both targets +
+  `OutcomeCheck`; export byte-identical (155 cells / 4 companions / 18 tau rows: values, regimes,
+  pads unchanged); ~120 budget-arithmetic repairs across 61 theorem files, statement changes
+  listed in the results record §5 (the WaryBot "defended" companion moved from budget 16 to 32).
+  `ArithS/Neg.lean`: T2-NEG RETIRED (its witness is no longer an engine theorem), replaced by
+  `no_budget_keeping_witness_pays` and `pf_size : Pf k φ → φ.size ≤ k`. Arith **3271 jobs, census
+  908 lines**, all standard axioms; zero `sorry`/`axiom`/`native_decide`.
+* Step 2: cut and instantiation are at explicit budgets; the diagonal lemma is not (wrapper
+  needed); bounded D1 exists only in the PARAMETRIC form (`BoundedInnerNec 16` at `gBudget k`).
+* THE OBSTRUCTION: the engine's box rules are ADDITIVE, `S'`'s inner necessitation is
+  POLYNOMIAL (degree 16) — so the budget function of a rule-by-rule bridge must satisfy
+  `f(a + log a + s) ≥ C f(a)^16`, i.e. be doubly exponential, and `search_t`'s `log k` citation
+  makes even that impossible without a second re-cost. The three shapes (A uniform bridge with
+  a doubly-exponential `f` + `search_t` re-cost; B no rule bridge, direct `S'` proofs per Löbian
+  family; C `S''` with a primitive citation node, the engine's rules derived at the same budgets,
+  U10 = the reduction of `S''` to PA) are the user's decision. Do NOT start step 3 before it.
+
+**The U10 state (unchanged since the morning).** Tree clean, build GREEN: **3270 jobs, census
+918 lines, all `[propext, Classical.choice, Quot.sound]`** (the single `substs_leF_imp` subset
+line is pre-existing); zero `sorry`, zero `axiom` declarations, zero `native_decide` in the package.
 
 **THE RESULT.** `BoundedInnerNec` — the one hypothesis M4 rested on — is a THEOREM at degree 16,
 and the headline results are unconditional:

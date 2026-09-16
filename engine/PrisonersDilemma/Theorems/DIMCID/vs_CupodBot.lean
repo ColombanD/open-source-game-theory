@@ -132,8 +132,9 @@ theorem dc_guard_fired (k n : Nat)
   exact (proofSearch_spec _ _).1 hguard
 
 /-- With the guard provable at `k`, DIMCID's own defection is cheaply certified
-    (`search_t` cites via `c_guard`, not the premise transcript). -/
-theorem dc_af_at_k (k : Nat) (hthr : Nat.log2 k + 3 ≤ k)
+    (`search_t` cites via `c_guard`, not the premise transcript); the atom also
+    charges its own size (both bots' sources), another `O(log k)`. -/
+theorem dc_af_at_k (k : Nat) (hthr : 3 * Nat.log2 k + 30 ≤ k)
     (hBf : Pf k (.impl (.plays (DIMCID k) (CupodBot k) Action.C)
                        (.plays (CupodBot k) (DIMCID k) Action.D))) :
     Pf k (.plays (DIMCID k) (CupodBot k) Action.D) := by
@@ -142,8 +143,7 @@ theorem dc_af_at_k (k : Nat) (hthr : Nat.log2 k + 3 ≤ k)
       (DIMCID k) (CupodBot k)) := hBf
   refine Pf.atom (⟨PlaysProof.search_t hBf' PlaysProof.const, ?_⟩ :
     AtomProvable k (.plays (DIMCID k) (CupodBot k) Action.D))
-  show c_leaf + c_guard k + c_node ≤ k
-  simp only [c_leaf, c_node, c_guard, numCost]; omega
+  simp only [c_leaf, c_node, c_guard, numCost, Prog.size, Formula.size, CupodBot, DIMCID]; omega
 
 /-- CupodBot defects once DIMCID's defection is provable at `k` — its guard IS
     that atom. -/
@@ -163,11 +163,11 @@ theorem outcome_DIMCID_vs_CupodBot :
     OutcomeSpec .eventual 2
       DIMCID CupodBot (some (.D, .D)) := by
   obtain ⟨ke, hke⟩ := dc_mutual
-  obtain ⟨kt, hkt⟩ := linear_log2_add_le 1 3
+  obtain ⟨kt, hkt⟩ := linear_log2_add_le 3 30
   refine ⟨max ke kt, fun k hk fuel => outcome_at_of_ex ?_ ?_ fuel⟩
   -- The old existential-fuel argument, verbatim: some fuel determines the outcome…
   · have hkke : ke < k := lt_of_le_of_lt (Nat.le_max_left _ _) hk
-    have hkkt : Nat.log2 k + 3 ≤ k := by
+    have hkkt : 3 * Nat.log2 k + 30 ≤ k := by
       have := hkt k (Nat.le_of_lt (lt_of_le_of_lt (Nat.le_max_right _ _) hk)); omega
     obtain ⟨m, hm⟩ := hke k hkke
     obtain ⟨n, hnA⟩ := Pf_sound m _ hm

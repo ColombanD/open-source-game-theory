@@ -24,9 +24,11 @@ namespace PD.Theorems
 theorem outcome_WaryBot_vs_EBot :
     OutcomeSpec .eventual 5
       WaryBot (fun _ => EBot) (some (.C, .C)) := by
-  obtain ⟨K, hK⟩ := linear_log2_add_le 1 14
+  -- The transcript is `2 · log₂ k + 25` since the atom recost (2026-09-16): the searcher's
+  -- own size enters the atom charge on top of the guard cite.
+  obtain ⟨K, hK⟩ := linear_log2_add_le 2 25
   refine ⟨K, fun k hk fuel => ?_⟩
-  have hlog : Nat.log2 k + 14 ≤ k := by have := hK k (Nat.le_of_lt hk); omega
+  have hlog : 2 * Nat.log2 k + 25 ≤ k := by have := hK k (Nat.le_of_lt hk); omega
   have hA : play (fuel + 5) (WaryBot k) EBot = some .C := by
     simpa [Nat.add_assoc] using WaryBot_cooperates_vs_EBot_large k (fuel + 3) hlog
   exact outcome_of_plays _ _ _ _ _ hA (EBot_plays_C_against_WaryBot_large k fuel hlog)

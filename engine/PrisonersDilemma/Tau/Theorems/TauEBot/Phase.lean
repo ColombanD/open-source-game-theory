@@ -43,8 +43,8 @@ def eRow : Tmpl → Action
 
 /-- The row's witness: each entry is the two-stage run cascade fed the δ_D
     (exploit-watch) and δ_C (reciprocity-watch) behavioral columns. -/
-theorem eRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 ≤ k)
-    (h10 : 10 ≤ k) (hL : 100 * Nat.log2 k + 1000 ≤ k) (hcg : c_guard k + 20 ≤ k)
+theorem eRow_plays {k : Nat} (hk : 7 ≤ k) (hkk : 3 * c_guard k + 22 ≤ k) (h6 : 25 ≤ k)
+    (h10 : 43 ≤ k) (hL : 100 * Nat.log2 k + 1000 ≤ k) (hcg : 3 * c_guard k + 30 ≤ k)
     (hpm : ∃ N, eval N (.bot (inst (tauZoo k) .prudent .mirror))
       (.bot (inst (tauZoo k) .prudent .mirror)) (inst (tauZoo k) .prudent .mirror)
       = some Action.C) :
@@ -97,8 +97,8 @@ theorem ebotRowSpec : RowSpec .ebot tauOrder eRow := by
     (by simp only [c_guard, numCost]; omega) (hP k (by omega)) T
 
 /-- **τ(EBot)** — one-sided boundary `θ ≤ eMass`, no window. -/
-theorem tauEBot_phase {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 ≤ k)
-    (h10 : 10 ≤ k) (hL : 100 * Nat.log2 k + 1000 ≤ k) (hcg : c_guard k + 20 ≤ k)
+theorem tauEBot_phase {k : Nat} (hk : 7 ≤ k) (hkk : 3 * c_guard k + 22 ≤ k) (h6 : 25 ≤ k)
+    (h10 : 43 ≤ k) (hL : 100 * Nat.log2 k + 1000 ≤ k) (hcg : 3 * c_guard k + 30 ≤ k)
     (hpm : ∃ N, eval N (.bot (inst (tauZoo k) .prudent .mirror))
       (.bot (inst (tauZoo k) .prudent .mirror)) (inst (tauZoo k) .prudent .mirror)
       = some Action.C) (θ : Nat) (w : Tmpl → Nat) (opponent : Prog) :

@@ -16,8 +16,11 @@ namespace PD.Theorems
 /-- The consequent of CIMCIC's guard against CooperateBot is provable at any large
     enough budget: CooperateBot cooperates with CIMCIC. -/
 theorem CIMCIC_consequent_CooperateBot (k : Nat) :
-    Pf (atom_cost 1) (Formula.plays CooperateBot (CIMCIC k) Action.C) :=
-  Pf.atom ⟨PlaysProof.const, by decide⟩
+    Pf (atom_cost 1 + (Formula.plays CooperateBot (CIMCIC k) Action.C).size)
+      (Formula.plays CooperateBot (CIMCIC k) Action.C) :=
+  Pf.atom ⟨PlaysProof.const, by
+    have h1 : atom_cost 1 = 3 := by decide
+    simp only [c_leaf]; omega⟩
 
 /-- CIMCIC's guard against CooperateBot is provable: the `weakenImpl` rule turns
     the provable consequent into the implication, once the budget `k` is large
@@ -39,8 +42,10 @@ theorem proofSearch_true_for_CIMCIC_vs_CooperateBot :
   show Pf k
     (Formula.impl (.plays (CIMCIC k) CooperateBot Action.C)
                   (.plays CooperateBot (CIMCIC k) Action.C))
-  refine Pf.weakenImpl _ _ (atom_cost 1) (CIMCIC_consequent_CooperateBot k) ?_
-  -- transcript: consequent certificate (`atom_cost 1 = 3`) + the implication's size, ≤ k.
+  refine Pf.weakenImpl _ _ (atom_cost 1 + (Formula.plays CooperateBot (CIMCIC k) Action.C).size)
+    (CIMCIC_consequent_CooperateBot k) ?_
+  -- transcript: consequent certificate (`atom_cost 1 = 3` + the atom's own size) + the
+  -- implication's size, ≤ k.
   have hb := hK k hk
   have h1 : atom_cost 1 = 3 := by decide
   simp only [numCost, Formula.size, Prog.size, CIMCIC, CooperateBot]

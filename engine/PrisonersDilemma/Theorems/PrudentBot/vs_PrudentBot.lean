@@ -150,23 +150,53 @@ theorem outcome_PrudentBot_vs_PrudentBot :
 the bounded PA+1. Its self-prudence ("I defect vs `.bot DefectBot`") is an else-play of its
 OWN outer search, floored at `k`; the inner literal `4k+100` affords it. -/
 
+/-- `4 · log2 k ≤ k + 12` for every `k` — the two-tier arithmetic below needs a bound on
+    `log2 k` sharper than `log2_le_self` once every atom certificate also pays the atom's
+    own size (which carries the bot's numerals). -/
+private theorem four_mul_log2_le (k : Nat) : 4 * Nat.log2 k ≤ k + 12 := by
+  have haux : ∀ n : Nat, 4 * (n + 4) ≤ 2 ^ (n + 4) := by
+    intro n
+    induction n with
+    | zero => decide
+    | succ n ih =>
+        have h : 2 ^ (n + 1 + 4) = 2 ^ (n + 4) * 2 := by
+          rw [show n + 1 + 4 = (n + 4) + 1 by omega, Nat.pow_succ]
+        omega
+  have h4 : ∀ n : Nat, 4 * n ≤ 2 ^ n + 12 := by
+    intro n
+    rcases Nat.lt_or_ge n 4 with h | h
+    · have := Nat.one_le_two_pow (n := n); omega
+    · obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le' h
+      have := haux m
+      omega
+  rcases Nat.eq_zero_or_pos k with rfl | hk
+  · simp
+  · have hpow : 2 ^ Nat.log2 k ≤ k := by
+      rw [Nat.log2_eq_log_two]; exact Nat.pow_log_le_self 2 (by omega)
+    have := h4 (Nat.log2 k)
+    omega
+
 /-- `PrudentBot2 k j` defects against `.bot DefectBot` — certified at the outer FLOOR `k`:
     `search_f` over the `atomNeg` refutation of the outer guard ("botDefect cooperates
-    with me"). -/
+    with me"). Every atom certificate also pays its atom's size, whence the `3 · log2`
+    terms (the refuted atom, its negation, and the else-play atom each carry both
+    numerals). -/
 theorem prudence_P2 (k j : Nat) :
-    Pf (k + Nat.log2 k + Nat.log2 j + 22)
+    Pf (k + 3 * Nat.log2 k + 3 * Nat.log2 j + 56)
       (.plays (PrudentBot2 k j) (.bot DefectBot) .D) := by
-  have hneg : Pf (Nat.log2 k + Nat.log2 j + 20)
+  have hneg : Pf (2 * Nat.log2 k + 2 * Nat.log2 j + 37)
       (.neg (.plays (.bot DefectBot) (PrudentBot2 k j) .C)) := by
-    refine Pf.atomNeg (.bot DefectBot) (PrudentBot2 k j) .D .C 2
-      ⟨PlaysProof.bot PlaysProof.const, by decide⟩ (by decide) ?_
+    refine Pf.atomNeg (.bot DefectBot) (PrudentBot2 k j) .D .C
+      (2 + (Formula.plays (.bot DefectBot) (PrudentBot2 k j) .D).size)
+      ⟨PlaysProof.bot PlaysProof.const, by simp only [c_leaf, c_node]; omega⟩ (by decide) ?_
     simp only [numCost, Formula.size, Prog.size, DefectBot, PrudentBot2]
     omega
   refine Pf.atom (⟨PlaysProof.search_f hneg PlaysProof.const, ?_⟩ :
-    AtomProvable (k + Nat.log2 k + Nat.log2 j + 22)
+    AtomProvable (k + 3 * Nat.log2 k + 3 * Nat.log2 j + 56)
       (.plays (PrudentBot2 k j) (.bot DefectBot) .D))
-  show c_leaf + (Nat.log2 k + Nat.log2 j + 20) + k + c_node ≤ _
-  simp only [c_leaf, c_node]
+  show c_leaf + (2 * Nat.log2 k + 2 * Nat.log2 j + 37) + k + c_node
+    + (Formula.plays (PrudentBot2 k j) (.bot DefectBot) .D).size ≤ _
+  simp only [c_leaf, c_node, numCost, Formula.size, Prog.size, DefectBot, PrudentBot2]
   omega
 
 /-- Both guards fired ⇒ `PrudentBot2` cooperates. -/
@@ -200,15 +230,17 @@ theorem P2_outer_true_of_play_C (k j n : Nat) (q : Prog)
     rw [hC] at hD; cases hD
 
 /-- The self-play Löb premise — `searchThenSearch_t` on the two-tier shape, its inner
-    prudence premise the floored `prudence_P2` (fits: `k + log2 k + log2 j + 22 ≤ 4k+100`). -/
+    prudence premise the floored `prudence_P2` (fits: `k + 3·log2 k + 3·log2 j + 56 ≤ 4k+100`
+    at `j = 4k+100`). -/
 theorem P2_self_loeb_premise (k : Nat) :
     Pf (30 * Nat.log2 k + 800)
       (.impl (.box k (.plays (PrudentBot2 k (4*k+100)) (PrudentBot2 k (4*k+100)) .C))
              (.plays (PrudentBot2 k (4*k+100)) (PrudentBot2 k (4*k+100)) .C)) := by
   have hlk := log2_le_self k
   have hlgj := log2_stagger4_le k
+  have hl4 := four_mul_log2_le k
   refine Pf.searchThenSearch_t k (4*k+100)
-    (k + Nat.log2 k + Nat.log2 (4*k+100) + 22)
+    (k + 3 * Nat.log2 k + 3 * Nat.log2 (4*k+100) + 56)
     (.plays .opp .self .C) (.plays .opp (.bot DefectBot) .D)
     .C .D (.const .D) (PrudentBot2 k (4*k+100)) (PrudentBot2 k (4*k+100)) rfl
     (by simpa [Formula.subst, Prog.subst] using prudence_P2 k (4*k+100)) (by omega) ?_
@@ -237,6 +269,7 @@ theorem outcome_PrudentBot2_vs_PrudentBot2 :
   refine ⟨k₂, fun k hk => ?_⟩
   have hlk := log2_le_self k
   have hlgj := log2_stagger4_le k
+  have hl4 := four_mul_log2_le k
   obtain ⟨m, hm⟩ := hk₂ k hk
   obtain ⟨n, hplay⟩ := Pf_sound m _ hm
   have hpsOuter : proofSearch k

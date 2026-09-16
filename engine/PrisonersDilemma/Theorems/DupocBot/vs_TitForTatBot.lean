@@ -15,24 +15,26 @@ open PD.BaseTheorems
 open PD.Bots
 namespace PD.Theorems
 /-- DupocBot vs TitForTatBot: mutual cooperation. Both witnesses at a common
-    budget `atom_cost 4`. -/
+    budget above the `2 · log₂ k + 21` threshold. -/
 -- Generalized from the single witness `kTFT = atom_cost 4`. An earlier attempt read the
 -- failing `omega` as a hard obstruction ("c_guard grows with k"); that was too coarse.
--- `c_guard k = numCost k = log2 k + 1` is LOGARITHMIC, so `log2 k + 6 ≤ k` holds for all
--- large `k` by `linear_log2_add_le` — the same route as JustBot × TitForTatBot.
+-- `c_guard k = numCost k = log2 k + 1` is LOGARITHMIC, so the transcript bound holds for
+-- all large `k` by `linear_log2_add_le` — the same route as JustBot × TitForTatBot.
+-- Since the atom recost (2026-09-16) each certificate also pays its conclusion atom's
+-- size, which contains `DupocBot k` (`Nat.log2 k + 7`): TFT's certificate is
+-- `2 · log₂ k + 21`, which dominates the `.bot CooperateBot` leg's `log₂ k + 12`.
 @[outcome]
 theorem outcome_DupocBot_vs_TitForTatBot :
     OutcomeSpec .eventual 4
       DupocBot (fun _ => TitForTatBot) (some (.C, .C)) := by
-  obtain ⟨K, hK⟩ := linear_log2_add_le 1 6
-  refine ⟨max K (atom_cost 4), fun k hlt fuel => outcome_at_of_ex ?_ ?_ fuel⟩
+  obtain ⟨K, hK⟩ := linear_log2_add_le 2 21
+  refine ⟨K, fun k hlt fuel => outcome_at_of_ex ?_ ?_ fuel⟩
   -- The old existential-fuel argument, verbatim: some fuel determines the outcome…
-  · have hKk : K ≤ k := le_of_lt (lt_of_le_of_lt (le_max_left _ _) hlt)
-    have hfloor : atom_cost 4 ≤ k := le_of_lt (lt_of_le_of_lt (le_max_right K _) hlt)
-    have hcost : Nat.log2 k + 6 ≤ k := by have := hK k hKk; omega
+  · have hcost : 2 * Nat.log2 k + 21 ≤ k := by have := hK k (Nat.le_of_lt hlt); omega
     have hCBprov : Pf k (.plays (.bot CooperateBot) (DupocBot k) .C) :=
       Pf.atom ⟨PlaysProof.bot PlaysProof.const, by
-        simp [atom_cost, numCost, c_leaf, c_node] at hfloor ⊢; omega⟩
+        simp only [Formula.size, DupocBot_size, CooperateBot, Prog.size, c_leaf, c_node]
+        omega⟩
     have hkCB : proofSearch k (.plays (.bot CooperateBot) (DupocBot k) .C) = true :=
       (proofSearch_spec _ _).2 hCBprov
     have hkTFT : proofSearch k (.plays TitForTatBot (DupocBot k) .C) = true := by
@@ -40,8 +42,8 @@ theorem outcome_DupocBot_vs_TitForTatBot :
         (⟨PlaysProof.ite_t (PlaysProof.sim (PlaysProof.search_t hCBprov PlaysProof.const))
           rfl PlaysProof.const, ?_⟩ :
           AtomProvable k (.plays TitForTatBot (DupocBot k) .C)))
-      show c_leaf + c_guard k + c_node + c_node + c_leaf + c_node ≤ k
-      simp [c_leaf, c_node, c_guard, numCost] at hcost ⊢
+      simp only [Formula.size, DupocBot_size, TitForTatBot, CooperateBot, Prog.size,
+        c_leaf, c_node, c_guard, numCost]
       omega
     refine ⟨4, ?_⟩
     have hA : play 4 (DupocBot k) TitForTatBot = some .C := by

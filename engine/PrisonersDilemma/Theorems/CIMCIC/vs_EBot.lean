@@ -123,8 +123,11 @@ theorem interp_cimcic_guard_botDef_true (k : Nat) :
 /-! ## CIMCIC vs `.bot CooperateBot` : cooperates (guard consequent provable) -/
 
 theorem cimcic_botCoop_consequent (k : Nat) :
-    Pf (atom_cost 2) (Formula.plays (.bot CooperateBot) (CIMCIC k) Action.C) :=
-  Pf.atom ⟨PlaysProof.bot PlaysProof.const, by decide⟩
+    Pf (atom_cost 2 + (Formula.plays (.bot CooperateBot) (CIMCIC k) Action.C).size)
+      (Formula.plays (.bot CooperateBot) (CIMCIC k) Action.C) :=
+  Pf.atom ⟨PlaysProof.bot PlaysProof.const, by
+    have h1 : atom_cost 2 = 7 := by decide
+    simp only [c_leaf, c_node]; omega⟩
 
 theorem proofSearch_true_CIMCIC_vs_botCoop :
     ∃ K, ∀ k, k ≥ K →
@@ -137,7 +140,8 @@ theorem proofSearch_true_CIMCIC_vs_botCoop :
   show Pf k
     (Formula.impl (.plays (CIMCIC k) (.bot CooperateBot) Action.C)
                   (.plays (.bot CooperateBot) (CIMCIC k) Action.C))
-  refine Pf.weakenImpl _ _ (atom_cost 2) (cimcic_botCoop_consequent k) ?_
+  refine Pf.weakenImpl _ _ (atom_cost 2 + (Formula.plays (.bot CooperateBot) (CIMCIC k) Action.C).size)
+    (cimcic_botCoop_consequent k) ?_
   have hb := hK k hk
   have h1 : atom_cost 2 = 7 := by decide
   simp only [numCost, Formula.size, Prog.size, CIMCIC, CooperateBot]

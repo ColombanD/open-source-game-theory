@@ -41,7 +41,7 @@ theorem cd_dupoc_guard_fired (k n : Nat)
   exact (proofSearch_spec _ _).1 hguard
 
 /-- From CIMCIC's guard provable at k, a cheap certificate makes Af provable at k. -/
-theorem cd_af_provable_at_k (k : Nat) (hthr : Nat.log2 k + 3 ≤ k)
+theorem cd_af_provable_at_k (k : Nat) (hthr : 3 * Nat.log2 k + 22 ≤ k)
     (hBf : Pf k (.impl (.plays (CIMCIC k) (DupocBot k) .C) (.plays (DupocBot k) (CIMCIC k) .C))) :
     Pf k (.plays (CIMCIC k) (DupocBot k) .C) := by
   have hsub : ((Formula.impl (.plays .self .opp Action.C) (.plays .opp .self Action.C)).subst
@@ -52,8 +52,8 @@ theorem cd_af_provable_at_k (k : Nat) (hthr : Nat.log2 k + 3 ≤ k)
       (CIMCIC k) (DupocBot k)) := by rw [hsub]; exact hBf
   refine Pf.atom (⟨PlaysProof.search_t hBf' PlaysProof.const, ?_⟩ :
     AtomProvable k (.plays (CIMCIC k) (DupocBot k) .C))
-  show c_leaf + c_guard k + c_node ≤ k
-  simp only [c_leaf, c_node, c_guard, numCost]; omega
+  show c_leaf + c_guard k + c_node + (Formula.plays (CIMCIC k) (DupocBot k) .C).size ≤ k
+  simp only [c_leaf, c_node, c_guard, numCost, CIMCIC, DupocBot, Prog.size, Formula.size]; omega
 
 /-- Dupoc plays C once its guard (Af) is provable at k. -/
 theorem cd_dupoc_plays_C (k fuel : Nat)
@@ -115,11 +115,11 @@ theorem llm_outcome_CIMCIC_vs_DupocBot :
     show _ ≤ 100 * Nat.log2 k + 1000
     simp only [numCost, Formula.size, Prog.size, CIMCIC, DupocBot, Af, Bf]; omega
   obtain ⟨ke, hke⟩ := mutual_pblt_engine_id Af Bf p p 0 hsA hsB hp hp hL1 hL2
-  obtain ⟨kt, hkt⟩ := linear_log2_add_le 1 3
+  obtain ⟨kt, hkt⟩ := linear_log2_add_le 3 22
   refine ⟨max ke kt, fun k hk fuel => outcome_at_of_ex ?_ ?_ fuel⟩
   -- The old existential-fuel argument, verbatim: some fuel determines the outcome…
   · have hkke : k > ke := lt_of_le_of_lt (Nat.le_max_left _ _) hk
-    have hkkt : Nat.log2 k + 3 ≤ k := by
+    have hkkt : 3 * Nat.log2 k + 22 ≤ k := by
       have := hkt k (Nat.le_of_lt (lt_of_le_of_lt (Nat.le_max_right _ _) hk)); omega
     obtain ⟨m, hm⟩ := hke k hkke
     have hAint : (Af k).interp := Pf_sound m (Af k) hm

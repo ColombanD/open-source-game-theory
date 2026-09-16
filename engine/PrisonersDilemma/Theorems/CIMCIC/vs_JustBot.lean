@@ -102,7 +102,7 @@ theorem cj_cimcic_guard_fired (k n : Nat)
   exact (proofSearch_spec _ _).1 hguard
 
 /-- From the guard provable at `k`, a cheap `search_t` cert gives `Pf k Af`. -/
-theorem cj_af_provable_at_k (k : Nat) (hthr : Nat.log2 k + 3 ≤ k)
+theorem cj_af_provable_at_k (k : Nat) (hthr : 3 * Nat.log2 k + 23 ≤ k)
     (hBf : Pf k (.impl (.plays (CIMCIC k) (.bot (DupocBot k)) .C) (.plays (.bot (DupocBot k)) (CIMCIC k) .C))) :
     Pf k (.plays (CIMCIC k) (.bot (DupocBot k)) .C) := by
   have hsub : ((Formula.impl (.plays .self .opp Action.C) (.plays .opp .self Action.C)).subst
@@ -113,8 +113,8 @@ theorem cj_af_provable_at_k (k : Nat) (hthr : Nat.log2 k + 3 ≤ k)
       (CIMCIC k) (.bot (DupocBot k))) := by rw [hsub]; exact hBf
   refine Pf.atom (⟨PlaysProof.search_t hBf' PlaysProof.const, ?_⟩ :
     AtomProvable k (.plays (CIMCIC k) (.bot (DupocBot k)) .C))
-  show c_leaf + c_guard k + c_node ≤ k
-  simp only [c_leaf, c_node, c_guard, numCost]; omega
+  show c_leaf + c_guard k + c_node + (Formula.plays (CIMCIC k) (.bot (DupocBot k)) .C).size ≤ k
+  simp only [c_leaf, c_node, c_guard, numCost, CIMCIC, DupocBot, Prog.size, Formula.size]; omega
 
 /-- JustBot cooperates vs CIMCIC when its guard (= Af) fires. -/
 theorem cj_JustBot_C_vs_CIMCIC (k fuel : Nat)
@@ -132,7 +132,8 @@ theorem cj_JustBot_C_vs_CIMCIC (k fuel : Nat)
 /-- Cheap bounded cert: JustBot plays C vs CIMCIC, from `Pf k Af`. -/
 theorem cj_JustBot_C_cert (k : Nat)
     (hAf : Pf k (.plays (CIMCIC k) (.bot (DupocBot k)) .C)) :
-    AtomProvable (c_leaf + c_guard k + c_node) (.plays (JustBot k) (CIMCIC k) .C) := by
+    AtomProvable (c_leaf + c_guard k + c_node + (Formula.plays (JustBot k) (CIMCIC k) .C).size)
+      (.plays (JustBot k) (CIMCIC k) .C) := by
   have hsub : ((Formula.plays .opp (.bot (DupocBot k)) Action.C).subst (JustBot k) (CIMCIC k))
       = .plays (CIMCIC k) (.bot (DupocBot k)) Action.C := by
     simp [Formula.subst, Prog.subst]
@@ -144,9 +145,11 @@ theorem cj_JustBot_C_cert (k : Nat)
 /-- CIMCIC's implication guard vs JustBot is provable at `k` (weakenImpl on the
     true consequent's cheap cert). -/
 theorem cj_cimcic_guard_provable (k : Nat) (hthr : 10 * Nat.log2 k + 100 ≤ k)
-    (hcert : AtomProvable (c_leaf + c_guard k + c_node) (.plays (JustBot k) (CIMCIC k) .C)) :
+    (hcert : AtomProvable (c_leaf + c_guard k + c_node + (Formula.plays (JustBot k) (CIMCIC k) .C).size)
+      (.plays (JustBot k) (CIMCIC k) .C)) :
     Pf k (.impl (.plays (CIMCIC k) (JustBot k) .C) (.plays (JustBot k) (CIMCIC k) .C)) := by
-  refine Pf.weakenImpl _ _ (c_leaf + c_guard k + c_node) (Pf.atom hcert) ?_
+  refine Pf.weakenImpl _ _ (c_leaf + c_guard k + c_node + (Formula.plays (JustBot k) (CIMCIC k) .C).size)
+    (Pf.atom hcert) ?_
   have hl := log2_le_self k
   simp only [c_leaf, c_node, c_guard, numCost, Formula.size, Prog.size, CIMCIC, JustBot, DupocBot]
   omega
@@ -182,7 +185,7 @@ theorem llm_outcome_CIMCIC_vs_JustBot :
   have hkke : ke < k := lt_of_le_of_lt (Nat.le_max_left _ _) hk
   have hkkt : 10 * Nat.log2 k + 100 ≤ k :=
     hkt k (Nat.le_of_lt (lt_of_le_of_lt (Nat.le_max_right _ _) hk))
-  have hkkt3 : Nat.log2 k + 3 ≤ k := by omega
+  have hkkt3 : 3 * Nat.log2 k + 23 ≤ k := by omega
   obtain ⟨n, hn⟩ := hke k hkke
   have hBf := cj_cimcic_guard_fired k n hn
   have hAf : Pf k (.plays (CIMCIC k) (.bot (DupocBot k)) .C) := cj_af_provable_at_k k hkkt3 hBf

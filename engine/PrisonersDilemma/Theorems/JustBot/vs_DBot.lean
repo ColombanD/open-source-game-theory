@@ -114,10 +114,11 @@ theorem outcome_JustBot_vs_DBot :
 /-! ### JustBot2 — the FREEZE TRICK: cooperation with DBot recovered (2026-07-09).
 
 `outcome_JustBot_vs_DBot = (D, C)` above is an artifact of BUDGET-TYING, not of the
-matchup: JustBot's guard fact "DBot plays C vs `.bot (DupocBot k)`" costs exactly
-`k + log₂ k + 26` (the snapshot's `search_f` floor `k`, plus the `atomNeg` refutation
-and the replay overhead) — one floor above JustBot's own budget `k`. `JustBot2 K k`
-decouples the dials: at `K ≥ k + log₂ k + 26` the certificate fits, the guard fires,
+matchup: JustBot's guard fact "DBot plays C vs `.bot (DupocBot k)`" costs
+`k + 3·log₂ k + 47` (the snapshot's `search_f` floor `k`, plus the `atomNeg` refutation,
+the replay overhead and the three atom sizes) — one floor above JustBot's own budget
+`k`. `JustBot2 K k` decouples the dials: at `K ≥ k + 3·log₂ k + 47` the certificate
+fits, the guard fires,
 and the FairBot×DBot handshake returns at staggered internal budgets. Constructive
 companion to the floor impossibilities: the `(D, C)` outcomes are about budget-TIED
 bots, not about the pairs. -/
@@ -127,32 +128,35 @@ bots, not about the pairs. -/
     Structure: replay DBot's `ite` (else-branch C), whose guard simulates the snapshot
     against `.bot DefectBot`; the snapshot's probe search fails, certified by
     `search_f` over the `atomNeg` refutation (DefectBot's actual D-play refutes the
-    C-claim) — paying the floor `k`. Total: `k + log₂ k + 26`. -/
-theorem provable_DBot_C_vs_botDupoc (k K : Nat) (hK : k + Nat.log2 k + 26 ≤ K) :
+    C-claim) — paying the floor `k`. Every atom certificate also pays its atom's size
+    (the refuted atom, its negation and the replayed atom each carry the snapshot's
+    numeral), whence `3 · log₂ k`. Total: `k + 3·log₂ k + 47`. -/
+theorem provable_DBot_C_vs_botDupoc (k K : Nat) (hK : k + 3 * Nat.log2 k + 47 ≤ K) :
     Pf K (.plays DBot (.bot (DupocBot k)) .C) := by
-  have hneg : Pf (Nat.log2 k + 20)
+  have hneg : Pf (2 * Nat.log2 k + 25)
       (.neg (.plays (.bot DefectBot) (.bot (DupocBot k)) .C)) := by
-    refine Pf.atomNeg (.bot DefectBot) (.bot (DupocBot k)) .D .C 2
-      ⟨PlaysProof.bot PlaysProof.const, by decide⟩ (by decide) ?_
+    refine Pf.atomNeg (.bot DefectBot) (.bot (DupocBot k)) .D .C
+      (2 + (Formula.plays (.bot DefectBot) (.bot (DupocBot k)) .D).size)
+      ⟨PlaysProof.bot PlaysProof.const, by simp only [c_leaf, c_node]; omega⟩ (by decide) ?_
     simp only [Formula.size, Prog.size, DupocBot, DefectBot, numCost]
     omega
   refine Pf.atom
     ⟨PlaysProof.ite_f
       (PlaysProof.sim (PlaysProof.bot (PlaysProof.search_f hneg PlaysProof.const)))
       (by decide) PlaysProof.const, ?_⟩
-  simp only [c_leaf, c_node]
+  simp only [c_leaf, c_node, Formula.size, Prog.size, DBot, DefectBot, DupocBot, numCost]
   omega
 
 /-- JustBot2's guard fires against DBot once `K` clears the staggered price. -/
 theorem proofSearch_true_DBot_vs_botDupoc (k K : Nat)
-    (hK : k + Nat.log2 k + 26 ≤ K) :
+    (hK : k + 3 * Nat.log2 k + 47 ≤ K) :
     proofSearch K (.plays DBot (.bot (DupocBot k)) .C) = true :=
   (proofSearch_spec _ _).2 (provable_DBot_C_vs_botDupoc k K hK)
 
 /-- JustBot2 cooperates with DBot: the staggered budget affords the certificate the
     single-parameter JustBot could never see. -/
 theorem JustBot2_plays_C_against_DBot (k K fuel : Nat)
-    (hK : k + Nat.log2 k + 26 ≤ K) :
+    (hK : k + 3 * Nat.log2 k + 47 ≤ K) :
     play (fuel + 2) (JustBot2 K k) DBot = some .C := by
   have hg := proofSearch_true_DBot_vs_botDupoc k K hK
   show eval (fuel + 2) (JustBot2 K k) DBot (JustBot2 K k) = some .C
@@ -189,6 +193,33 @@ theorem DBot_plays_C_against_JustBot2 (k K fuel : Nat) :
     (by rfl) hGuard
   simpa [eval] using! hPlay
 
+/-- `4 · log₂ k ≤ k + 12` for every `k` — the `2k+64` stagger needs a linear bound on
+    `log2 k` sharper than `log2_le_self` once every atom certificate also pays the atom's
+    own size (which carries the snapshot's numeral). File-private, as in the PrudentBot
+    files. -/
+private theorem four_mul_log2_le (k : Nat) : 4 * Nat.log2 k ≤ k + 12 := by
+  have haux : ∀ n : Nat, 4 * (n + 4) ≤ 2 ^ (n + 4) := by
+    intro n
+    induction n with
+    | zero => decide
+    | succ n ih =>
+        have h : 2 ^ (n + 1 + 4) = 2 ^ (n + 4) * 2 := by
+          rw [show n + 1 + 4 = (n + 4) + 1 by omega, Nat.pow_succ]
+        omega
+  have h4 : ∀ n : Nat, 4 * n ≤ 2 ^ n + 12 := by
+    intro n
+    rcases Nat.lt_or_ge n 4 with h | h
+    · have := Nat.one_le_two_pow (n := n); omega
+    · obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le' h
+      have := haux m
+      omega
+  rcases Nat.eq_zero_or_pos k with rfl | hk
+  · simp
+  · have hpow : 2 ^ Nat.log2 k ≤ k := by
+      rw [Nat.log2_eq_log_two]; exact Nat.pow_log_le_self 2 (by omega)
+    have := h4 (Nat.log2 k)
+    omega
+
 /-- **The recovered handshake — `(C, C)` at staggered internal budgets, every `k`.**
     The freeze trick in action: `JustBot2 (2k+64) k` affords the certificate of DBot's
     cooperation with its frozen snapshot (floor `k` < budget `2k+64`), while DBot's
@@ -196,8 +227,8 @@ theorem DBot_plays_C_against_JustBot2 (k K fuel : Nat) :
     (D, C)`: same matchup, budgets tied, guard starved by its own floor. -/
 theorem outcome_JustBot2_vs_DBot (k fuel : Nat) :
     outcome (fuel + 4) (JustBot2 (2*k + 64) k) DBot = some (.C, .C) := by
-  have hK : k + Nat.log2 k + 26 ≤ 2*k + 64 := by
-    have := log2_le_self k
+  have hK : k + 3 * Nat.log2 k + 47 ≤ 2*k + 64 := by
+    have := four_mul_log2_le k
     omega
   have hA : play (fuel + 4) (JustBot2 (2*k + 64) k) DBot = some .C := by
     simpa [Nat.add_assoc] using JustBot2_plays_C_against_DBot k (2*k + 64) (fuel + 2) hK

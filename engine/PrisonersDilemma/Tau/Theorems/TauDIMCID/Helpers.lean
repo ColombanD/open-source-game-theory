@@ -196,9 +196,9 @@ theorem ps_probeD_dimcid_quine :
     simp only [hpm]
     omega
   obtain ⟨k₂, hk₂⟩ := pblt_engine φ f pm (max Kc Ksz) hLoeb hsz
-  obtain ⟨Kt, hKt⟩ := linear_log2_add_le 1 8
+  obtain ⟨Kt, hKt⟩ := linear_log2_add_le 3 29
   refine ⟨max k₂ Kt, fun k hk => ?_⟩
-  have hkt : 1 * Nat.log2 k + 8 ≤ k :=
+  have hkt : 3 * Nat.log2 k + 29 ≤ k :=
     hKt k (Nat.le_of_lt (lt_of_le_of_lt (Nat.le_max_right _ _) hk))
   obtain ⟨m, hm⟩ := hk₂ k (lt_of_le_of_lt (Nat.le_max_left _ _) hk)
   obtain ⟨n, hn⟩ := Pf_sound m _ hm
@@ -210,7 +210,7 @@ theorem ps_probeD_dimcid_quine :
   refine Pf.atom ⟨PlaysProof.bot (PlaysProof.search_t
     ((proofSearch_spec _ _).1 hguard) PlaysProof.const), ?_⟩
   have := hcl; have := hcn
-  simp only [c_guard, numCost]
+  simp only [c_guard, numCost, probeD, Dq, Formula.size, Prog.size]
   omega
 
 /-- The diagonal SLOT: τ(DIMCID)'s self-play is `D` past the Löb threshold —
@@ -283,10 +283,13 @@ theorem dimcid_coop_plays_C {k : Nat} :
 /-- The defect-cell consequent: the frozen constant defector provably defects. -/
 theorem pf_dimG_defect {k : Nat} (hL : 100 * Nat.log2 k + 1000 ≤ k) :
     Pf k (dimG (.bot (inst (tauZoo k) .dimcid .defect)) (.const .D)) := by
-  refine pf_dimG_of_consequent (m := 3)
-    (Pf.atom ⟨PlaysProof.bot PlaysProof.const, by decide⟩) ?_
+  refine pf_dimG_of_consequent
+    (m := c_leaf + c_node + (Formula.plays (.bot (.const .D))
+      (.bot (inst (tauZoo k) .dimcid .defect)) Action.D).size)
+    (Pf.atom ⟨PlaysProof.bot PlaysProof.const, le_rfl⟩) ?_
   rw [inst_dimcid_peel_defect k, inst_defect_peel k .dimcid]
   have hlog := Nat.log2_le_self k
+  have := hcl; have := hcn
   simp only [dimG, Formula.size, Prog.size, numCost]
   omega
 
@@ -871,7 +874,8 @@ theorem pf_dimcidSys_D_of_guard {defs : ProgList} {i j k : Nat}
     (hget : defs.get? i = some (.search k
       (.impl (.plays .self (.bot (.selfIdx j)) Action.C)
              (.plays (.bot (.selfIdx j)) .self Action.D)) (.const .D) (.const .C)))
-    (hkk : c_guard k + 5 ≤ k)
+    (hkk : c_guard k + 5
+      + (Formula.plays (.bot (.sys defs i)) (.bot (.sys defs i)) Action.D).size ≤ k)
     (hBf : Pf k (.impl (.plays (.bot (.sys defs i)) (.bot (.sys defs j)) Action.C)
                        (.plays (.bot (.sys defs j)) (.bot (.sys defs i)) Action.D))) :
     Pf k (.plays (.bot (.sys defs i)) (.bot (.sys defs i)) Action.D) := by
@@ -905,11 +909,17 @@ theorem ps_probeD_inst_dimcid_cupod :
     ∃ k₂, ∀ k, k₂ < k →
       proofSearch k (probeD (inst (tauZoo k) .dimcid .cupod)) = true := by
   obtain ⟨kL, hLp⟩ := dimcid_cupod_plays_D
-  obtain ⟨kA, hkA⟩ := linear_log2_add_le 1 12
+  obtain ⟨kA, hkA⟩ := linear_log2_add_le 5 75
   refine ⟨max kL kA, fun k hk => ?_⟩
   have hplay := hLp k (by omega)
-  have hkA' : 1 * Nat.log2 k + 12 ≤ k := hkA k (by omega)
-  have hkk : c_guard k + 5 ≤ k := by simp only [c_guard, numCost]; omega
+  have hkA' : 5 * Nat.log2 k + 75 ≤ k := hkA k (by omega)
+  have hkk : c_guard k + 5
+      + (Formula.plays (.bot (.sys (dimCupSys k) 0)) (.bot (.sys (dimCupSys k) 0))
+          Action.D).size ≤ k := by
+    have h0 : Nat.log2 0 = 0 := by decide
+    have h1 : Nat.log2 1 = 0 := by decide
+    simp only [c_guard, numCost, Formula.size, Prog.size, ProgList.psize, dimCupSys]
+    omega
   rw [inst_dimcid_cupod_eq k] at hplay
   have hfired := sysSearcher_fired_of_plays (by decide) _ _ (dimCupSys_get0 k) hplay
   rw [sysClose_subst_cimSelfIdxD] at hfired
@@ -926,11 +936,17 @@ theorem cupod_dimcid_plays_D :
         = some Action.D := by
   obtain ⟨kL, hLb⟩ := cupDim_mutual
   obtain ⟨kC, hkC⟩ := cg_headroom
-  obtain ⟨kA, hkA⟩ := linear_log2_add_le 1 12
+  obtain ⟨kA, hkA⟩ := linear_log2_add_le 5 75
   refine ⟨max kL (max kC kA), fun k hk => ?_⟩
   obtain ⟨m, hm⟩ := hLb k (by omega)
-  have hkA' : 1 * Nat.log2 k + 12 ≤ k := hkA k (by omega)
-  have hkk : c_guard k + 5 ≤ k := by simp only [c_guard, numCost]; omega
+  have hkA' : 5 * Nat.log2 k + 75 ≤ k := hkA k (by omega)
+  have hkk : c_guard k + 5
+      + (Formula.plays (.bot (.sys (cupDimSys k) 1)) (.bot (.sys (cupDimSys k) 1))
+          Action.D).size ≤ k := by
+    have h0 : Nat.log2 0 = 0 := by decide
+    have h1 : Nat.log2 1 = 0 := by decide
+    simp only [c_guard, numCost, Formula.size, Prog.size, ProgList.psize, cupDimSys]
+    omega
   have hplay : ∃ N, eval N (.bot (.sys (cupDimSys k) 1)) (.bot (.sys (cupDimSys k) 1))
       (.sys (cupDimSys k) 1) = some Action.D := entry_of_interp (Pf_sound m _ hm)
   have hfired := sysSearcher_fired_of_plays (by decide) _ _ (cupDimSys_get1 k) hplay
@@ -1048,30 +1064,24 @@ theorem dimcid_coop_watch_over_budget {k : Nat} {me opp : Prog} {r : Action} {m 
     (h : PlaysProof me opp
       (.sim (.bot (inst (tauZoo k) .dimcid .coop)) (.bot (inst (tauZoo k) .dimcid .coop))) r m)
     (hm : m ≤ k) : False := by
+  -- Since the atom rule charges the conclusion's size (2026-09-16), the inner
+  -- transcript is read DIRECTLY instead of being packaged as an atom certificate:
+  -- the searcher's guard is refuted at every budget, so the only transcript is
+  -- `search_f`, which pays the floor `k` — and the watch's own frame adds two nodes.
   cases h with
   | sim hin =>
     simp only [Prog.subst] at hin
     cases hin with
     | bot hin3 =>
       rename_i m₃
-      have hcert : AtomProvable (m₃ + c_node)
-          (.plays (.bot (inst (tauZoo k) .dimcid .coop)) (.bot (inst (tauZoo k) .dimcid .coop)) r) :=
-        ⟨PlaysProof.bot hin3, le_refl _⟩
-      cases r with
-      | C =>
-          have h1 := (proofSearch_spec _ _).2 (Pf.atom hcert)
-          have h2 := ps_probe_inst_dimcid_coop_false (k := k) (K := m₃ + c_node)
-            (by have := hcn; omega)
-          rw [probe] at h2
-          exact absurd (h1.symm.trans h2) (by decide)
-      | D =>
-          obtain ⟨n, hn⟩ := Pf_sound _ _ (Pf.atom hcert)
-          obtain ⟨N, hN⟩ := dimcid_coop_plays_C (k := k)
-          have hN' : eval (N + 1) (.bot (inst (tauZoo k) .dimcid .coop))
-              (.bot (inst (tauZoo k) .dimcid .coop)) (.bot (inst (tauZoo k) .dimcid .coop))
-              = some Action.C := by rw [eval]; exact hN
-          rw [play] at hn
-          exact absurd (eval_det hn hN') (by decide)
+      have hfalse := ps_dimGuard_coop_false (k := k) (K := k)
+      rw [inst_dimcid_peel_coop k] at hin3 hfalse
+      cases hin3 with
+      | search_t hg _ =>
+          have h1 := (proofSearch_spec _ _).2 hg
+          exact absurd (h1.symm.trans hfalse) (by decide)
+      | search_f _ _ =>
+          have := hcn; omega
 
 /-- τ(DIMCID) at OBot COOPERATES: obot defects against it, but no certificate of
     that defection fits in `k`, so DIMCID's guard is floor-unprovable. -/

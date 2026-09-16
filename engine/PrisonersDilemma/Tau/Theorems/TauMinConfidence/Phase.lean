@@ -56,8 +56,8 @@ theorem minconfidenceRow_eq_dupocRow : minconfidenceRow = dupocRow := by
     `.maxconfidence` slots are the ONE system `cfdSys` (so `hcfP` covers both by
     `rfl`), the diagonal is Dupoc's quine, and the `.just` slot probes the system
     exactly as it does from the `.maxconfidence` slot. -/
-theorem minconfidenceRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
-    (hk7 : c_guard k + 7 ≤ k)
+theorem minconfidenceRow_plays {k : Nat} (hk : 7 ≤ k) (hkk : 3 * c_guard k + 22 ≤ k)
+    (hk7 : 11 * c_guard k + 120 ≤ k)
     (hquine : proofSearch k (probe (inst (tauZoo k) .dupoc .dupoc)) = true)
     (hcim : proofSearch k (probe (inst (tauZoo k) .cimcic .dupoc)) = dupocColBit .cimcic)
     (hmir : proofSearch k (probe (inst (tauZoo k) .mirror .dupoc)) = dupocColBit .mirror)
@@ -79,13 +79,13 @@ theorem minconfidenceRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤
       (.bot (inst (tauZoo k) .dupoc .maxconfidence)) (inst (tauZoo k) .dupoc .maxconfidence)
       = some (dupocRow .maxconfidence) := by
     rw [inst_dupoc_maxconfidence_eq]; rw [inst_maxconfidence_dupoc_eq] at hcfP; exact hcfP
-  have hD := dupocRow_plays hk hkk hk7 hquine hcim hmir hconf hcfP' hmirP hdmP
+  have hD := dupocRow_plays hk hkk (by omega) hquine hcim hmir hconf hcfP' hmirP hdmP
   intro T
   cases T with
   | dupoc => exact hcfP
   | maxconfidence => exact hcfP
   | minconfidence => rw [inst_minconfidence_quine]; exact inst_quine_plays hquine
-  | just => exact searchProbe_plays_C _ _ (ps_probe_just_maxconfidence hkk hconf)
+  | just => exact searchProbe_plays_C _ _ (ps_probe_just_maxconfidence hk7 hconf)
   | coop => rw [inst_minconfidence_eq_dupoc k .coop (by decide) (by decide) (by decide) (by decide)]; exact hD .coop
   | defect => rw [inst_minconfidence_eq_dupoc k .defect (by decide) (by decide) (by decide) (by decide)]; exact hD .defect
   | tftSim => rw [inst_minconfidence_eq_dupoc k .tftSim (by decide) (by decide) (by decide) (by decide)]; exact hD .tftSim
@@ -106,7 +106,7 @@ theorem minconfidenceRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤
 @[tau_row]
 theorem minconfidenceRowSpec : RowSpec .minconfidence tauOrder minconfidenceRow := by
   obtain ⟨kL, hkL⟩ := ps_probe_inst_quine
-  obtain ⟨kA, hkA⟩ := linear_log2_add_le 1 8
+  obtain ⟨kA, hkA⟩ := linear_log2_add_le 12 140
   obtain ⟨kM, hkM⟩ := ps_probe_inst_cimcic_dupoc
   obtain ⟨kP, hkP⟩ := dupoc_cimcic_plays_C
   obtain ⟨kX, hkX⟩ := ps_probe_mirror_dupoc
@@ -115,16 +115,16 @@ theorem minconfidenceRowSpec : RowSpec .minconfidence tauOrder minconfidenceRow 
   obtain ⟨kD, hkD⟩ := maxconfidence_dupoc_plays_C
   refine ⟨kL + kA + kM + kP + kX + kY + kC + kD, fun k hk T _ => ?_⟩
   have hquine := hkL k (by omega)
-  have hkA' : 1 * Nat.log2 k + 8 ≤ k := hkA k (by omega)
+  have hkA' : 12 * Nat.log2 k + 140 ≤ k := hkA k (by omega)
   have hcim := hkM k (by omega)
   have hdmP := hkP k (by omega)
   have hmir := hkX k (by omega)
   have hmirP := hkY k (by omega)
   have hconf := hkC k (by omega)
   have hcfP := hkD k (by omega)
-  have hk2 : 2 ≤ k := by omega
-  have hkk : c_guard k + 3 ≤ k := by simp only [c_guard, numCost]; omega
-  have hk7 : c_guard k + 7 ≤ k := by simp only [c_guard, numCost]; omega
+  have hk2 : 7 ≤ k := by omega
+  have hkk : 3 * c_guard k + 22 ≤ k := by simp only [c_guard, numCost]; omega
+  have hk7 : 11 * c_guard k + 120 ≤ k := by simp only [c_guard, numCost]; omega
   exact minconfidenceRow_plays hk2 hkk hk7 hquine hcim hmir hconf hcfP hmirP hdmP T
 
 /-- **MinConfidenceBot's phase** — the MIN aggregator over its row: C iff no single

@@ -261,12 +261,14 @@ theorem simTestD_falls {I : Prog} {cont : Prog} {a : Action} (me opp : Prog)
 
 /-! ## Shape lemmas — constants -/
 
-/-- A frozen constant cooperator provably cooperates, from budget 2. -/
-theorem pf_probe_constC {K : Nat} (hK : 2 ≤ K) :
+/-- A frozen constant cooperator provably cooperates, from budget 7 (transcript 2 +
+    the atom `probe (.const .C)` of size 5 — both `.bot (.const .C)` sides plus 1). -/
+theorem pf_probe_constC {K : Nat} (hK : 7 ≤ K) :
     Pf K (probe (.const .C)) :=
-  Pf.atom ⟨PlaysProof.bot PlaysProof.const, by have := hcl; have := hcn; omega⟩
+  Pf.atom ⟨PlaysProof.bot PlaysProof.const,
+    by simp only [Formula.size, Prog.size, c_leaf, c_node]; omega⟩
 
-theorem ps_probe_constC {k : Nat} (hk : 2 ≤ k) :
+theorem ps_probe_constC {k : Nat} (hk : 7 ≤ k) :
     proofSearch k (probe (.const .C)) = true :=
   (proofSearch_spec _ _).2 (pf_probe_constC hk)
 
@@ -288,15 +290,16 @@ theorem ps_probe_constD (m : Nat) :
 /-! ## Shape lemmas — one prove-stage on a constant -/
 
 /-- A prove-stage probing the constant cooperator fires: provable from
-    `c_guard k + 3`. -/
-theorem pf_searchProbe_constC {k K : Nat} (hk : 2 ≤ k)
-    (hK : c_guard k + 3 ≤ K) :
+    `3 * c_guard k + 22` (transcript `c_guard k + 3` + the probe atom of the searcher
+    `.search k (probe (.const .C)) …` (size `c_guard k + 8`): `2 * c_guard k + 19`). -/
+theorem pf_searchProbe_constC {k K : Nat} (hk : 7 ≤ k)
+    (hK : 3 * c_guard k + 22 ≤ K) :
     Pf K (probe (.search k (probe (.const .C)) (.const .C) (.const .D))) :=
   Pf.atom ⟨PlaysProof.bot (PlaysProof.search_t (pf_probe_constC hk) PlaysProof.const),
-    by have := hcl; have := hcn; omega⟩
+    by simp only [Prog.size, Formula.size, probe, c_guard, numCost, c_leaf, c_node] at *; omega⟩
 
-theorem ps_searchProbe_constC {k : Nat} (hk : 2 ≤ k)
-    (hkk : c_guard k + 3 ≤ k) :
+theorem ps_searchProbe_constC {k : Nat} (hk : 7 ≤ k)
+    (hkk : 3 * c_guard k + 22 ≤ k) :
     proofSearch k (probe (.search k (probe (.const .C)) (.const .C) (.const .D)))
       = true :=
   (proofSearch_spec _ _).2 (pf_searchProbe_constC hk hkk)
@@ -328,16 +331,17 @@ theorem ps_searchProbe_constD (k m : Nat) :
 
 /-! ## Shape lemmas — one run-stage on a constant -/
 
-/-- A run-stage watching the constant cooperator copies the C: provable from 6. -/
-theorem pf_simCopy_constC {K : Nat} (hK : 6 ≤ K) :
+/-- A run-stage watching the constant cooperator copies the C: provable from 25
+    (transcript 6 + the probe atom of the run-stage (size 8): 19). -/
+theorem pf_simCopy_constC {K : Nat} (hK : 25 ≤ K) :
     Pf K (probe (.ite (.sim (.bot (.const .C)) (.bot (.const .C))) Action.C
       (.const .C) (.const .D))) :=
   Pf.atom ⟨PlaysProof.bot
     (PlaysProof.ite_t (PlaysProof.sim (PlaysProof.bot PlaysProof.const)) rfl
       PlaysProof.const),
-    by have := hcl; have := hcn; omega⟩
+    by simp only [Formula.size, Prog.size, c_leaf, c_node]; omega⟩
 
-theorem ps_simCopy_constC {k : Nat} (h6 : 6 ≤ k) :
+theorem ps_simCopy_constC {k : Nat} (h6 : 25 ≤ k) :
     proofSearch k (probe (.ite (.sim (.bot (.const .C)) (.bot (.const .C))) Action.C
       (.const .C) (.const .D))) = true :=
   (proofSearch_spec _ _).2 (pf_simCopy_constC h6)
@@ -378,8 +382,8 @@ Both probe `inst .dupoc .coop` — "Dupoc seeing the cooperator" — which is it
 prove-stage on the constant cooperator; its bit is true, so the TFTs' instances
 seeing Dupoc cooperate, provably. -/
 
-theorem pf_simCopy_searchProbeC {k K : Nat} (hk : 2 ≤ k)
-    (hK : c_guard k + 7 ≤ K) :
+theorem pf_simCopy_searchProbeC {k K : Nat} (hk : 7 ≤ k)
+    (hK : 5 * c_guard k + 54 ≤ K) :
     Pf K (probe (.ite (.sim
       (.bot (.search k (probe (.const .C)) (.const .C) (.const .D)))
       (.bot (.search k (probe (.const .C)) (.const .C) (.const .D)))) Action.C
@@ -389,16 +393,16 @@ theorem pf_simCopy_searchProbeC {k K : Nat} (hk : 2 ≤ k)
       (PlaysProof.sim (PlaysProof.bot
         (PlaysProof.search_t (pf_probe_constC hk) PlaysProof.const)))
       rfl PlaysProof.const),
-    by have := hcl; have := hcn; omega⟩
+    by simp only [Prog.size, Formula.size, probe, c_guard, numCost, c_leaf, c_node] at *; omega⟩
 
-theorem pf_searchProbe_searchProbeC {k K : Nat} (hk : 2 ≤ k)
-    (hkk : c_guard k + 3 ≤ k) (hK : c_guard k + 3 ≤ K) :
+theorem pf_searchProbe_searchProbeC {k K : Nat} (hk : 7 ≤ k)
+    (hkk : 3 * c_guard k + 22 ≤ k) (hK : 7 * c_guard k + 50 ≤ K) :
     Pf K (probe (.search k
       (probe (.search k (probe (.const .C)) (.const .C) (.const .D)))
       (.const .C) (.const .D))) :=
   Pf.atom ⟨PlaysProof.bot
     (PlaysProof.search_t (pf_searchProbe_constC hk hkk) PlaysProof.const),
-    by have := hcl; have := hcn; omega⟩
+    by simp only [Prog.size, Formula.size, probe, c_guard, numCost, c_leaf, c_node] at *; omega⟩
 
 /-! ## `probeD` bits for the two idioms the δ_Cu column meets (2026-08-21) -/
 
@@ -422,28 +426,29 @@ theorem ps_probeD_searchProbe_false {k K : Nat} (hK : K ≤ k) (I : Prog) :
     defects) — `ite_f` over the first sim, then `ite_t` over the second.
 
     Transcript: `sim(bot hP) = m+2`, `sim(bot hQ) = n+2`, `ite_t = n+4`,
-    `ite_f = m+n+7`, outer `bot = m+n+8`. -/
+    `ite_f = m+n+7`, outer `bot = m+n+8`; plus the probe atom's size
+    `4 * P.size + 4 * Q.size + 25` (the cascade has size `2P + 2Q + 11`, framed twice). -/
 theorem pf_probeD_obotSecondFires {K m n : Nat} {P Q : Prog}
     (hP : PlaysProof (.bot P) (.bot P) P Action.C m)
     (hQ : PlaysProof (.bot Q) (.bot Q) Q Action.D n)
-    (hK : m + n + 8 ≤ K) :
+    (hK : m + n + 4 * P.size + 4 * Q.size + 33 ≤ K) :
     Pf K (probeD (.ite (.sim (.bot P) (.bot P)) Action.D (.const .D)
       (.ite (.sim (.bot Q) (.bot Q)) Action.D (.const .D) (.const .C)))) :=
   Pf.atom ⟨PlaysProof.bot
     (PlaysProof.ite_f (PlaysProof.sim (PlaysProof.bot hP)) (by decide)
       (PlaysProof.ite_t (PlaysProof.sim (PlaysProof.bot hQ)) rfl PlaysProof.const)),
-    by have := hcl; have := hcn; omega⟩
+    by simp only [Formula.size, Prog.size, c_leaf, c_node]; omega⟩
 
 /-- `S` REFUTES the constant cooperator's defection — `⊢_K ¬(probeD (.const .C))`, an
     object refutation, not merely `¬ ⊢_K probeD …` — the refutation that Cupod's
     trust-transcript cites (`search_f` needs a `.neg` of its guard). -/
-theorem pf_neg_probeD_constC {K : Nat} (hK : 10 ≤ K) :
+theorem pf_neg_probeD_constC {K : Nat} (hK : 13 ≤ K) :
     Pf K (.neg (probeD (.const .C))) := by
-  have hl : Nat.log2 1 = 0 := by decide
-  refine Pf.atomNeg (.bot (.const .C)) (.bot (.const .C)) Action.C Action.D (atom_cost 1)
+  -- the positive atom at 7 (transcript 2 + atom size 5), then the `.neg` atom's size 6.
+  refine Pf.atomNeg (.bot (.const .C)) (.bot (.const .C)) Action.C Action.D 7
     ⟨PlaysProof.bot PlaysProof.const, ?_⟩ (by decide) ?_
-  · simp only [atom_cost, c_leaf, c_node, c_guard, numCost, hl]; omega
-  · simp only [Formula.size, Prog.size, atom_cost, c_leaf, c_node, c_guard, numCost, hl]
+  · simp only [Formula.size, Prog.size, c_leaf, c_node]; omega
+  · simp only [Formula.size, Prog.size]
     omega
 
 abbrev simMass (w : Tmpl → Nat) : Nat :=
@@ -736,7 +741,9 @@ theorem sysSearcher_head_plays {defs : ProgList} {k i : Nat} {aT aE : Action}
   have hbody : PlaysProof (.bot (.sys defs 0)) (.bot (.sys defs 0)) (.sys defs 0) aT
       (c_leaf + c_guard k + c_node + c_node) :=
     PlaysProof.sysStep hget (by simp only [Prog.sysClose]; exact h1)
-  exact entry_of_interp (Pf_sound (c_leaf + c_guard k + c_node + c_node + c_node) _
+  exact entry_of_interp (Pf_sound
+    (c_leaf + c_guard k + c_node + c_node + c_node
+      + (Formula.plays (.bot (.sys defs 0)) (.bot (.sys defs 0)) aT).size) _
     (Pf.atom ⟨PlaysProof.bot hbody, by omega⟩))
 
 /-- The `c_guard` headroom every head-fires cell needs, past a threshold. -/
@@ -748,12 +755,13 @@ theorem cg_headroom : ∃ kC, ∀ k, kC ≤ k → c_leaf + c_guard k + c_node + 
 
 /-! ## Shape lemmas — the `test = .D` idioms (9-zoo extension, 2026-08-18) -/
 
-/-- The constant defector PROVABLY defects. -/
-theorem pf_probeD_constD {K : Nat} (hK : 2 ≤ K) :
+/-- The constant defector PROVABLY defects (from 7: transcript 2 + atom size 5). -/
+theorem pf_probeD_constD {K : Nat} (hK : 7 ≤ K) :
     Pf K (probeD (.const .D)) :=
-  Pf.atom ⟨PlaysProof.bot PlaysProof.const, by have := hcl; have := hcn; omega⟩
+  Pf.atom ⟨PlaysProof.bot PlaysProof.const,
+    by simp only [Formula.size, Prog.size, c_leaf, c_node]; omega⟩
 
-theorem ps_probeD_constD {k : Nat} (hk : 2 ≤ k) :
+theorem ps_probeD_constD {k : Nat} (hk : 7 ≤ k) :
     proofSearch k (probeD (.const .D)) = true :=
   (proofSearch_spec _ _).2 (pf_probeD_constD hk)
 
@@ -761,46 +769,46 @@ theorem ps_probeD_constD {k : Nat} (hk : 2 ≤ k) :
     exploit-WATCH sees the cooperator cooperate and fires, and the firing
     transcript is a cheap positive `ite_t` over a constant sim. This is the bit
     GuardianBot reads to punish EBot. -/
-theorem pf_probeD_runCascadeConstC {K : Nat} (hK : 6 ≤ K) (cont : Prog) :
+theorem pf_probeD_runCascadeConstC {K : Nat} (cont : Prog) (hK : 2 * cont.size + 23 ≤ K) :
     Pf K (probeD (.ite (.sim (.bot (.const .C)) (.bot (.const .C))) Action.C
       (.const .D) cont)) :=
   Pf.atom ⟨PlaysProof.bot
     (PlaysProof.ite_t (PlaysProof.sim (PlaysProof.bot PlaysProof.const)) rfl
       PlaysProof.const),
-    by have := hcl; have := hcn; omega⟩
+    by simp only [Formula.size, Prog.size, c_leaf, c_node]; omega⟩
 
-theorem ps_probeD_runCascadeConstC {k : Nat} (h6 : 6 ≤ k) (cont : Prog) :
+theorem ps_probeD_runCascadeConstC {k : Nat} (cont : Prog) (h6 : 2 * cont.size + 23 ≤ k) :
     proofSearch k (probeD (.ite (.sim (.bot (.const .C)) (.bot (.const .C))) Action.C
       (.const .D) cont)) = true :=
-  (proofSearch_spec _ _).2 (pf_probeD_runCascadeConstC h6 cont)
+  (proofSearch_spec _ _).2 (pf_probeD_runCascadeConstC cont h6)
 
 /-- DBot's instance at the constant DEFECTOR provably cooperates: its watch sees
     the defector defect (an `ite_f` over a constant sim) and falls through to the
     trusting default. -/
-theorem pf_probe_dbotConstD {K : Nat} (hK : 6 ≤ K) :
+theorem pf_probe_dbotConstD {K : Nat} (hK : 25 ≤ K) :
     Pf K (probe (.ite (.sim (.bot (.const .D)) (.bot (.const .D))) Action.C
       (.const .D) (.const .C))) :=
   Pf.atom ⟨PlaysProof.bot
     (PlaysProof.ite_f (PlaysProof.sim (PlaysProof.bot PlaysProof.const)) (by decide)
       PlaysProof.const),
-    by have := hcl; have := hcn; omega⟩
+    by simp only [Formula.size, Prog.size, c_leaf, c_node]; omega⟩
 
-theorem ps_probe_dbotConstD {k : Nat} (h6 : 6 ≤ k) :
+theorem ps_probe_dbotConstD {k : Nat} (h6 : 25 ≤ k) :
     proofSearch k (probe (.ite (.sim (.bot (.const .D)) (.bot (.const .D))) Action.C
       (.const .D) (.const .C))) = true :=
   (proofSearch_spec _ _).2 (pf_probe_dbotConstD h6)
 
 /-- DBot's instance at the constant COOPERATOR provably DEFECTS: its watch fires
     (an `ite_t` over a constant sim). The bit GuardianBot reads to punish DBot. -/
-theorem pf_probeD_dbotConstC {K : Nat} (hK : 6 ≤ K) :
+theorem pf_probeD_dbotConstC {K : Nat} (hK : 25 ≤ K) :
     Pf K (probeD (.ite (.sim (.bot (.const .C)) (.bot (.const .C))) Action.C
       (.const .D) (.const .C))) :=
   Pf.atom ⟨PlaysProof.bot
     (PlaysProof.ite_t (PlaysProof.sim (PlaysProof.bot PlaysProof.const)) rfl
       PlaysProof.const),
-    by have := hcl; have := hcn; omega⟩
+    by simp only [Formula.size, Prog.size, c_leaf, c_node]; omega⟩
 
-theorem ps_probeD_dbotConstC {k : Nat} (h6 : 6 ≤ k) :
+theorem ps_probeD_dbotConstC {k : Nat} (h6 : 25 ≤ k) :
     proofSearch k (probeD (.ite (.sim (.bot (.const .C)) (.bot (.const .C))) Action.C
       (.const .D) (.const .C))) = true :=
   (proofSearch_spec _ _).2 (pf_probeD_dbotConstC h6)
@@ -808,7 +816,7 @@ theorem ps_probeD_dbotConstC {k : Nat} (h6 : 6 ≤ k) :
 /-- OBot's instance at the cooperator PROVABLY cooperates: both defection-watching
     stages see the constant cooperator cooperate and fall through to the trusting
     default; the transcript is two `ite_f`s over constant sims. -/
-theorem pf_probe_obotConstC {K : Nat} (hK : 10 ≤ K) :
+theorem pf_probe_obotConstC {K : Nat} (hK : 43 ≤ K) :
     Pf K (probe (.ite (.sim (.bot (.const .C)) (.bot (.const .C))) Action.D (.const .D)
       (.ite (.sim (.bot (.const .C)) (.bot (.const .C))) Action.D (.const .D)
         (.const .C)))) :=
@@ -816,9 +824,9 @@ theorem pf_probe_obotConstC {K : Nat} (hK : 10 ≤ K) :
     (PlaysProof.ite_f (PlaysProof.sim (PlaysProof.bot PlaysProof.const)) (by decide)
       (PlaysProof.ite_f (PlaysProof.sim (PlaysProof.bot PlaysProof.const)) (by decide)
         PlaysProof.const)),
-    by have := hcl; have := hcn; omega⟩
+    by simp only [Formula.size, Prog.size, c_leaf, c_node]; omega⟩
 
-theorem ps_probe_obotConstC {k : Nat} (h10 : 10 ≤ k) :
+theorem ps_probe_obotConstC {k : Nat} (h10 : 43 ≤ k) :
     proofSearch k (probe (.ite (.sim (.bot (.const .C)) (.bot (.const .C))) Action.D
       (.const .D) (.ite (.sim (.bot (.const .C)) (.bot (.const .C))) Action.D
         (.const .D) (.const .C)))) = true :=

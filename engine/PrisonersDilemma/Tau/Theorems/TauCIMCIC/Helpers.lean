@@ -73,10 +73,13 @@ Cost hypothesis convention: one generous linear bound `100·log₂ k + 1000 ≤ 
     certificate, and the implication's size is `O(log k)`. -/
 theorem pf_cimG_coop {k : Nat} (hL : 100 * Nat.log2 k + 1000 ≤ k) :
     Pf k (cimG (.bot (inst (tauZoo k) .cimcic .coop)) (.const .C)) := by
-  refine pf_cimG_of_consequent (m := 3)
-    (Pf.atom ⟨PlaysProof.bot PlaysProof.const, by decide⟩) ?_
+  refine pf_cimG_of_consequent
+    (m := c_leaf + c_node + (Formula.plays (.bot (.const .C))
+      (.bot (inst (tauZoo k) .cimcic .coop)) Action.C).size)
+    (Pf.atom ⟨PlaysProof.bot PlaysProof.const, le_rfl⟩) ?_
   rw [inst_cimcic_peel_coop k, inst_coop_peel k .cimcic]
   have hlog := Nat.log2_le_self k
+  have := hcl; have := hcn
   simp only [cimG, Formula.size, Prog.size, numCost]
   omega
 
@@ -101,7 +104,7 @@ theorem cimcic_coop_plays_C {k : Nat} (hL : 100 * Nat.log2 k + 1000 ≤ k) :
 /-- The δ_C bit: τ(CIMCIC)'s self-play cooperation at the coop hypothesis is
     PROVABLE — `bot ∘ search_t` citing the fired guard. -/
 theorem pf_probe_cimcic_coop {k K : Nat} (hL : 100 * Nat.log2 k + 1000 ≤ k)
-    (hK : c_guard k + 10 ≤ K) :
+    (hK : 3 * c_guard k + 30 ≤ K) :
     Pf K (probe (inst (tauZoo k) .cimcic .coop)) := by
   rw [show inst (tauZoo k) .cimcic .coop
       = .search k (.impl (.plays .self (.bot (inst (tauZoo k) .coop .cimcic)) Action.C)
@@ -110,20 +113,24 @@ theorem pf_probe_cimcic_coop {k K : Nat} (hL : 100 * Nat.log2 k + 1000 ≤ k)
   refine Pf.atom ⟨PlaysProof.bot (PlaysProof.search_t ?_ PlaysProof.const), ?_⟩
   · rw [cimG_subst, inst_coop_peel k .cimcic]
     exact pf_cimG_coop hL
-  · have := hcl; have := hcn; omega
+  · have := hcl; have := hcn
+    rw [inst_coop_peel k .cimcic]
+    simp only [c_guard, numCost, probe, Formula.size, Prog.size] at hK ⊢
+    omega
 
 theorem ps_probe_cimcic_coop {k : Nat} (hL : 100 * Nat.log2 k + 1000 ≤ k)
-    (hkk : c_guard k + 10 ≤ k) :
+    (hkk : 3 * c_guard k + 30 ≤ k) :
     proofSearch k (probe (inst (tauZoo k) .cimcic .coop)) = true :=
   (proofSearch_spec _ _).2 (pf_probe_cimcic_coop hL hkk)
 
 /-- The tftSim-cell guard fires: the consequent — the mirror copies the coop cell's
     C — is certified by an `ite_t ∘ sim` transcript over the SAME fired guard. -/
-theorem pf_cimG_tftSim {k : Nat} (hL : 100 * Nat.log2 k + 1000 ≤ k)
-    (hkk : c_guard k + 20 ≤ k) :
+theorem pf_cimG_tftSim {k : Nat} (hL : 100 * Nat.log2 k + 1000 ≤ k) :
     Pf k (cimG (.bot (inst (tauZoo k) .cimcic .tftSim))
                (inst (tauZoo k) .tftSim .cimcic)) := by
-  refine pf_cimG_of_consequent (m := c_guard k + 20)
+  refine pf_cimG_of_consequent
+    (m := c_guard k + 20 + (Formula.plays (.bot (inst (tauZoo k) .tftSim .cimcic))
+      (.bot (inst (tauZoo k) .cimcic .tftSim)) Action.C).size)
     ?_ ?_
   · rw [show inst (tauZoo k) .tftSim .cimcic
         = .ite (.sim (.bot (inst (tauZoo k) .cimcic .coop))
@@ -148,17 +155,19 @@ theorem pf_cimG_tftSim {k : Nat} (hL : 100 * Nat.log2 k + 1000 ≤ k)
 
 /-- The tftPf-cell guard fires: the prover TFT probes the δ_C cell, whose bit is
     true (`pf_probe_cimcic_coop`). -/
-theorem pf_cimG_tftPf {k : Nat} (hL : 100 * Nat.log2 k + 1000 ≤ k)
-    (hkk : c_guard k + 20 ≤ k) :
+theorem pf_cimG_tftPf {k : Nat} (hL : 100 * Nat.log2 k + 1000 ≤ k) :
     Pf k (cimG (.bot (inst (tauZoo k) .cimcic .tftPf))
                (inst (tauZoo k) .tftPf .cimcic)) := by
-  refine pf_cimG_of_consequent (m := c_guard k + 20) ?_ ?_
+  refine pf_cimG_of_consequent
+    (m := c_guard k + 20 + (Formula.plays (.bot (inst (tauZoo k) .tftPf .cimcic))
+      (.bot (inst (tauZoo k) .cimcic .tftPf)) Action.C).size)
+    ?_ ?_
   · rw [show inst (tauZoo k) .tftPf .cimcic
         = .search k (probe (inst (tauZoo k) .cimcic .coop)) (.const .C) (.const .D)
           from inst_tftPf_peel k .cimcic]
     refine Pf.atom ⟨PlaysProof.bot (PlaysProof.search_t ?_ PlaysProof.const), ?_⟩
     · rw [probe_subst]
-      exact pf_probe_cimcic_coop hL (by omega)
+      exact pf_probe_cimcic_coop hL (by simp only [c_guard, numCost]; omega)
     · have := hcl; have := hcn; omega
   · rw [inst_cimcic_peel_tftPf k, inst_tftPf_peel k .cimcic,
         inst_cimcic_peel_coop k, inst_coop_peel k .cimcic]
@@ -172,7 +181,10 @@ theorem pf_cimG_just {k : Nat} (hL : 100 * Nat.log2 k + 1000 ≤ k)
     (hcq : proofSearch k (probe (inst (tauZoo k) .cimcic .dupoc)) = true) :
     Pf k (cimG (.bot (inst (tauZoo k) .cimcic .just))
                (inst (tauZoo k) .just .cimcic)) := by
-  refine pf_cimG_of_consequent (m := c_guard k + 20) ?_ ?_
+  refine pf_cimG_of_consequent
+    (m := c_guard k + 20 + (Formula.plays (.bot (inst (tauZoo k) .just .cimcic))
+      (.bot (inst (tauZoo k) .cimcic .just)) Action.C).size)
+    ?_ ?_
   · rw [show inst (tauZoo k) .just .cimcic
         = .search k (probe (inst (tauZoo k) .cimcic .dupoc)) (.const .C) (.const .D)
           from inst_just_peel k .cimcic]
@@ -690,7 +702,7 @@ theorem cimcic_dupoc_mutual :
 
 /-- The cheap budget-`k` certificate for the CIMCIC component's cooperation, from
     its fired guard (`search_t` cites via `c_guard`, not the premise transcript). -/
-theorem pf_Af_of_Bf_md {k : Nat} (hkk : c_guard k + 5 ≤ k)
+theorem pf_Af_of_Bf_md {k : Nat} (hkk : 5 * c_guard k + 70 ≤ k)
     (hBf : Pf k (.impl (.plays (.bot (.sys (mdSys k) 0)) (.bot (.sys (mdSys k) 1)) Action.C)
                        (.plays (.bot (.sys (mdSys k) 1)) (.bot (.sys (mdSys k) 0)) Action.C))) :
     Pf k (.plays (.bot (.sys (mdSys k) 0)) (.bot (.sys (mdSys k) 0)) Action.C) := by
@@ -702,7 +714,12 @@ theorem pf_Af_of_Bf_md {k : Nat} (hkk : c_guard k + 5 ≤ k)
     (PlaysProof.const (me := .bot (.sys (mdSys k) 0)) (opponent := .bot (.sys (mdSys k) 0))
       (a := Action.C))
   exact Pf.atom ⟨PlaysProof.bot (PlaysProof.sysStep (mdSys_get0 k) h1),
-    by have := hcl; have := hcn; omega⟩
+    by
+      have := hcl; have := hcn
+      have h0 : Nat.log2 0 = 0 := by decide
+      have h1 : Nat.log2 1 = 0 := by decide
+      simp only [c_guard, numCost, Formula.size, Prog.size, ProgList.psize, mdSys] at hkk ⊢
+      omega⟩
 
 /-- **τ(CIMCIC) at Dupoc COOPERATES** (Löb-gated). -/
 theorem cimcic_dupoc_plays_C :
@@ -724,12 +741,12 @@ theorem ps_probe_inst_cimcic_dupoc :
     ∃ k₂, ∀ k, k₂ < k →
       proofSearch k (probe (inst (tauZoo k) .cimcic .dupoc)) = true := by
   obtain ⟨kL, hLp⟩ := cimcic_dupoc_plays_C
-  obtain ⟨kA, hkA⟩ := linear_log2_add_le 1 12
+  obtain ⟨kA, hkA⟩ := linear_log2_add_le 5 75
   refine ⟨max kL kA, fun k hk => ?_⟩
   have hplay := hLp k (lt_of_le_of_lt (Nat.le_max_left _ _) hk)
-  have hkA' : 1 * Nat.log2 k + 12 ≤ k :=
+  have hkA' : 5 * Nat.log2 k + 75 ≤ k :=
     hkA k (Nat.le_of_lt (lt_of_le_of_lt (Nat.le_max_right _ _) hk))
-  have hkk : c_guard k + 5 ≤ k := by simp only [c_guard, numCost]; omega
+  have hkk : 5 * c_guard k + 70 ≤ k := by simp only [c_guard, numCost]; omega
   rw [inst_cimcic_dupoc_eq k] at hplay
   have hfired := sysSearcher_fired_of_plays (by decide) _ _ (mdSys_get0 k) hplay
   rw [sysClose_subst_cimSelfIdx] at hfired
@@ -787,7 +804,7 @@ theorem dupoc_cimcic_mutual :
     omega
 
 /-- The cheap budget-`k` certificate, `dm` orientation. -/
-theorem pf_Af_of_Bf_dm {k : Nat} (hkk : c_guard k + 5 ≤ k)
+theorem pf_Af_of_Bf_dm {k : Nat} (hkk : 5 * c_guard k + 70 ≤ k)
     (hBf : Pf k (.impl (.plays (.bot (.sys (dmSys k) 1)) (.bot (.sys (dmSys k) 0)) Action.C)
                        (.plays (.bot (.sys (dmSys k) 0)) (.bot (.sys (dmSys k) 1)) Action.C))) :
     Pf k (.plays (.bot (.sys (dmSys k) 1)) (.bot (.sys (dmSys k) 1)) Action.C) := by
@@ -799,7 +816,12 @@ theorem pf_Af_of_Bf_dm {k : Nat} (hkk : c_guard k + 5 ≤ k)
     (PlaysProof.const (me := .bot (.sys (dmSys k) 1)) (opponent := .bot (.sys (dmSys k) 1))
       (a := Action.C))
   exact Pf.atom ⟨PlaysProof.bot (PlaysProof.sysStep (dmSys_get1 k) h1),
-    by have := hcl; have := hcn; omega⟩
+    by
+      have := hcl; have := hcn
+      have h0 : Nat.log2 0 = 0 := by decide
+      have h1 : Nat.log2 1 = 0 := by decide
+      simp only [c_guard, numCost, Formula.size, Prog.size, ProgList.psize, dmSys] at hkk ⊢
+      omega⟩
 
 /-- **τ(Dupoc) at CIMCIC COOPERATES** (Löb-gated): its trust-probe of the CIMCIC
     component FIRES — the mirror of the base `(C, C)`. -/
@@ -809,12 +831,12 @@ theorem dupoc_cimcic_plays_C :
         (.bot (inst (tauZoo k) .dupoc .cimcic)) (inst (tauZoo k) .dupoc .cimcic)
         = some Action.C := by
   obtain ⟨kL, hLb⟩ := dupoc_cimcic_mutual
-  obtain ⟨kA, hkA⟩ := linear_log2_add_le 1 12
+  obtain ⟨kA, hkA⟩ := linear_log2_add_le 5 75
   refine ⟨max kL kA, fun k hk => ?_⟩
   obtain ⟨m, hm⟩ := hLb k (lt_of_le_of_lt (Nat.le_max_left _ _) hk)
-  have hkA' : 1 * Nat.log2 k + 12 ≤ k :=
+  have hkA' : 5 * Nat.log2 k + 75 ≤ k :=
     hkA k (Nat.le_of_lt (lt_of_le_of_lt (Nat.le_max_right _ _) hk))
-  have hkk : c_guard k + 5 ≤ k := by simp only [c_guard, numCost]; omega
+  have hkk : 5 * c_guard k + 70 ≤ k := by simp only [c_guard, numCost]; omega
   -- the CIMCIC component really cooperates in self-play…
   have hint : (probe (.sys (dmSys k) 1)).interp := Pf_sound m _ hm
   have hplay := entry_C_of_interp hint
@@ -831,26 +853,24 @@ theorem dupoc_cimcic_plays_C :
 /-! ## Row-facing plays for the remaining TRUE cells -/
 
 /-- τ(CIMCIC) COOPERATES with the behavioral TFT. -/
-theorem cimcic_tftSim_plays_C {k : Nat} (hL : 100 * Nat.log2 k + 1000 ≤ k)
-    (hkk : c_guard k + 20 ≤ k) :
+theorem cimcic_tftSim_plays_C {k : Nat} (hL : 100 * Nat.log2 k + 1000 ≤ k) :
     ∃ N, eval N (.bot (inst (tauZoo k) .cimcic .tftSim))
       (.bot (inst (tauZoo k) .cimcic .tftSim)) (inst (tauZoo k) .cimcic .tftSim)
       = some Action.C := by
   rw [inst_cimcic_peel_tftSim k]
   refine searchGuard_plays_C _ _ ?_
   rw [cimG_subst]
-  exact (proofSearch_spec _ _).2 (pf_cimG_tftSim hL hkk)
+  exact (proofSearch_spec _ _).2 (pf_cimG_tftSim hL)
 
 /-- τ(CIMCIC) COOPERATES with the prover TFT. -/
-theorem cimcic_tftPf_plays_C {k : Nat} (hL : 100 * Nat.log2 k + 1000 ≤ k)
-    (hkk : c_guard k + 20 ≤ k) :
+theorem cimcic_tftPf_plays_C {k : Nat} (hL : 100 * Nat.log2 k + 1000 ≤ k) :
     ∃ N, eval N (.bot (inst (tauZoo k) .cimcic .tftPf))
       (.bot (inst (tauZoo k) .cimcic .tftPf)) (inst (tauZoo k) .cimcic .tftPf)
       = some Action.C := by
   rw [inst_cimcic_peel_tftPf k]
   refine searchGuard_plays_C _ _ ?_
   rw [cimG_subst]
-  exact (proofSearch_spec _ _).2 (pf_cimG_tftPf hL hkk)
+  exact (proofSearch_spec _ _).2 (pf_cimG_tftPf hL)
 
 /-- τ(CIMCIC) COOPERATES with τ(Just) — conditionally on the entangled Löb bit,
     which τ(Just) probes. -/

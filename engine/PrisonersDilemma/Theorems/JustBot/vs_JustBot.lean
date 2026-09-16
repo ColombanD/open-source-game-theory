@@ -72,21 +72,21 @@ theorem outcome_JustBot_vs_JustBot :
     OutcomeSpec .eventual 2
       JustBot JustBot (some (.C, .C)) := by
   obtain ⟨k₂, hk₂⟩ := botDupoc_self_coop
-  obtain ⟨KL, hKL⟩ := linear_log2_add_le 1 3
+  obtain ⟨KL, hKL⟩ := linear_log2_add_le 4 26
   refine ⟨max k₂ KL, fun k hk fuel => outcome_at_of_ex ?_ ?_ fuel⟩
   -- The old existential-fuel argument, verbatim: some fuel determines the outcome…
   · have hk2 : k₂ < k := lt_of_le_of_lt (le_max_left _ _) hk
-    have hKLk : Nat.log2 k + 3 ≤ k := by
-      have := hKL k (le_of_lt (lt_of_le_of_lt (le_max_right _ _) hk))
-      omega
+    have hKLk : 4 * Nat.log2 k + 26 ≤ k :=
+      hKL k (le_of_lt (lt_of_le_of_lt (le_max_right _ _) hk))
     have hdd : proofSearch k (.plays (.bot (DupocBot k)) (.bot (DupocBot k)) .C) = true := hk₂ k hk2
     have hd' : proofSearch k (.plays (JustBot k) (.bot (DupocBot k)) .C) = true := by
-      -- hand certificate: JustBot's own search FIRED (hdd) — search_t ∘ const, log2 k + 3 chars
+      -- hand certificate: JustBot's own search FIRED (hdd) — search_t ∘ const, log2 k + 3
+      -- chars, plus the atom's own size (`3·log2 k + 23`: JustBot carries two numerals,
+      -- the frozen snapshot one more)
       refine (proofSearch_spec _ _).2 (Pf.atom
         (⟨PlaysProof.search_t ((proofSearch_spec _ _).1 hdd) PlaysProof.const, ?_⟩ :
           AtomProvable k (.plays (JustBot k) (.bot (DupocBot k)) .C)))
-      show c_leaf + c_guard k + c_node ≤ k
-      simp only [numCost, c_leaf, c_guard, c_node]
+      simp only [numCost, c_leaf, c_guard, c_node, Formula.size, Prog.size, JustBot, DupocBot]
       omega
     have hJJ : ∀ f, play (f + 2) (JustBot k) (JustBot k) = some .C := by
       intro f

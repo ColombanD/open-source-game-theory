@@ -16,17 +16,22 @@ namespace PD.Theorems
 /-! ## Threshold and DIMCID's defection-detection facts -/
 
 abbrev dimcidObThresh (k : Nat) : Prop :=
-  2 + (Formula.impl (.plays (DIMCID k) (.bot DefectBot) Action.C)
+  2 + (Formula.plays (.bot DefectBot) (DIMCID k) Action.D).size
+    + (Formula.impl (.plays (DIMCID k) (.bot DefectBot) Action.C)
         (.plays (.bot DefectBot) (DIMCID k) Action.D)).size ≤ k
 
 theorem dimcidOb_guard_bot_def_provable (k : Nat) :
-    Pf (2 + (Formula.impl (.plays (DIMCID k) (.bot DefectBot) Action.C)
+    Pf (2 + (Formula.plays (.bot DefectBot) (DIMCID k) Action.D).size
+          + (Formula.impl (.plays (DIMCID k) (.bot DefectBot) Action.C)
               (.plays (.bot DefectBot) (DIMCID k) Action.D)).size)
       (.impl (.plays (DIMCID k) (.bot DefectBot) Action.C)
              (.plays (.bot DefectBot) (DIMCID k) Action.D)) := by
-  have hcons : Pf 2 (.plays (.bot DefectBot) (DIMCID k) Action.D) :=
-    Pf.atom ⟨PlaysProof.bot PlaysProof.const, by decide⟩
-  exact Pf.weakenImpl _ _ 2 hcons (by omega)
+  -- the atom charges its own size on top of the two-step run
+  have hcons : Pf (2 + (Formula.plays (.bot DefectBot) (DIMCID k) Action.D).size)
+      (.plays (.bot DefectBot) (DIMCID k) Action.D) :=
+    Pf.atom ⟨PlaysProof.bot PlaysProof.const, by simp only [c_leaf, c_node]; omega⟩
+  exact Pf.weakenImpl _ _ (2 + (Formula.plays (.bot DefectBot) (DIMCID k) Action.D).size)
+    hcons (by omega)
 
 theorem dimcidOb_proofSearch_true_bot_def (k : Nat) (hk : dimcidObThresh k) :
     proofSearch k
@@ -230,12 +235,13 @@ theorem llm_outcome_DIMCID_vs_OBot :
   obtain ⟨K, hK⟩ := linear_log2_add_le 4 100
   refine ⟨K, fun k hk fuel => outcome_mono_le (N := 7) ?_ (fuel + 7) (by omega)⟩
   have hthresh : dimcidObThresh k := by
-    have hsz : 2 + (Formula.impl (.plays (DIMCID k) (.bot DefectBot) Action.C)
-                (.plays (.bot DefectBot) (DIMCID k) Action.D)).size
+    have hsz : 2 + (Formula.plays (.bot DefectBot) (DIMCID k) Action.D).size
+                + (Formula.impl (.plays (DIMCID k) (.bot DefectBot) Action.C)
+                    (.plays (.bot DefectBot) (DIMCID k) Action.D)).size
               ≤ 4 * Nat.log2 k + 100 := by
       simp only [DIMCID, DefectBot, Formula.size, Prog.size, numCost]; omega
     have hkK : 4 * Nat.log2 k + 100 ≤ k := hK k (by omega)
-    show 2 + _ ≤ k
+    show 2 + _ + _ ≤ k
     omega
   have hA : play 7 (DIMCID k) OBot = some .C := by
     simpa using dimcidOb_DIMCID_plays_C_against_OBot k 5

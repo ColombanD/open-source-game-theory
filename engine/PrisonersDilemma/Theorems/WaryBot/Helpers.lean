@@ -56,20 +56,23 @@ theorem WaryBot_cooperates_vs_CooperateBot (k fuel : Nat) :
   unfold WaryBot at hg ⊢
   simp [eval, Prog.subst, Formula.subst, hg]
 
-/-- **The defended side of the phase transition**: at `k = 16` the `Pf.atomNeg`
-    transcript (DefectBot's D-certificate at `c_leaf`, plus the negated atom's
-    size 15) exactly fits the budget, and the refutation fires. -/
-theorem proofSearch_true_wary16_DefectBot :
-    proofSearch 16 (.neg (.plays DefectBot (WaryBot 16) .C)) = true :=
+/-- **The defended side of the phase transition**: at `k = 32` the `Pf.atomNeg`
+    transcript (DefectBot's D-certificate at `c_leaf + 15` — the leaf plus the
+    positive atom's size, since the atom recost of 2026-09-16 — plus the negated
+    atom's size 16) exactly fits the budget, and the refutation fires. (It was `k = 16`
+    before the recost; `2 * log₂ k + 22 ≤ k` first holds at `k = 30`.) -/
+theorem proofSearch_true_wary32_DefectBot :
+    proofSearch 32 (.neg (.plays DefectBot (WaryBot 32) .C)) = true :=
   (proofSearch_spec _ _).2
-    (Pf.atomNeg DefectBot (WaryBot 16) .D .C c_leaf ⟨PlaysProof.const, le_rfl⟩
-      (by decide) (by decide))
+    (Pf.atomNeg DefectBot (WaryBot 32) .D .C
+      (c_leaf + (Formula.plays DefectBot (WaryBot 32) .D).size)
+      ⟨PlaysProof.const, le_rfl⟩ (by decide) (by decide))
 
-/-- WaryBot 16 defends itself against DefectBot. -/
-theorem WaryBot16_defects_vs_DefectBot (fuel : Nat) :
-    play (fuel + 2) (WaryBot 16) DefectBot = some .D := by
-  have hg := proofSearch_true_wary16_DefectBot
-  show eval (fuel + 2) (WaryBot 16) DefectBot (WaryBot 16) = some .D
+/-- WaryBot 32 defends itself against DefectBot. -/
+theorem WaryBot32_defects_vs_DefectBot (fuel : Nat) :
+    play (fuel + 2) (WaryBot 32) DefectBot = some .D := by
+  have hg := proofSearch_true_wary32_DefectBot
+  show eval (fuel + 2) (WaryBot 32) DefectBot (WaryBot 32) = some .D
   unfold WaryBot at hg ⊢
   simp [eval, Prog.subst, Formula.subst, hg]
 
@@ -199,20 +202,21 @@ for `.neg` guards yet), OBot (needs `¬Pf` of a TRUE probe formula — a floor
 census for `.neg` spines), and the impl/eq/box-guard opponents. -/
 
 /-- Large-`k` defended guard vs DefectBot: the refutation transcript costs
-    `log₂ k + 12`, affordable once `k` dominates it. -/
+    `2 * log₂ k + 22` (the positive atom `c_leaf + |atom|`, then the negated atom's
+    size), affordable once `k` dominates it. -/
 theorem proofSearch_true_wary_DefectBot_large (k : Nat)
-    (hk : Nat.log2 k + 12 ≤ k) :
+    (hk : 2 * Nat.log2 k + 22 ≤ k) :
     proofSearch k (.neg (.plays DefectBot (WaryBot k) .C)) = true := by
   refine (proofSearch_spec _ _).2
-    (Pf.atomNeg DefectBot (WaryBot k) .D .C c_leaf ⟨PlaysProof.const, le_rfl⟩
-      (by decide) ?_)
-  show c_leaf + (Formula.neg (.plays DefectBot (WaryBot k) .C)).size ≤ k
+    (Pf.atomNeg DefectBot (WaryBot k) .D .C
+      (c_leaf + (Formula.plays DefectBot (WaryBot k) .D).size)
+      ⟨PlaysProof.const, le_rfl⟩ (by decide) ?_)
   simp [WaryBot, Formula.size, Prog.size, numCost, c_leaf, DefectBot]
   omega
 
 /-- WaryBot defends itself against DefectBot at every sufficiently large budget. -/
 theorem WaryBot_defects_vs_DefectBot_large (k fuel : Nat)
-    (hk : Nat.log2 k + 12 ≤ k) :
+    (hk : 2 * Nat.log2 k + 22 ≤ k) :
     play (fuel + 2) (WaryBot k) DefectBot = some .D := by
   have hg := proofSearch_true_wary_DefectBot_large k hk
   show eval (fuel + 2) (WaryBot k) DefectBot (WaryBot k) = some .D
@@ -220,22 +224,22 @@ theorem WaryBot_defects_vs_DefectBot_large (k fuel : Nat)
   simp [eval, Prog.subst, Formula.subst, hg]
 
 /-- Large-`k` defended guard vs the FROZEN DefectBot probe (`.bot DefectBot`):
-    one extra `c_node` for the `.bot` hop, transcript `log₂ k + 14`. -/
+    one extra `c_node` for the `.bot` hop and one more character on each atom,
+    transcript `2 * log₂ k + 25`. -/
 theorem proofSearch_true_wary_botDefectBot_large (k : Nat)
-    (hk : Nat.log2 k + 14 ≤ k) :
+    (hk : 2 * Nat.log2 k + 25 ≤ k) :
     proofSearch k (.neg (.plays (.bot DefectBot) (WaryBot k) .C)) = true := by
   refine (proofSearch_spec _ _).2
-    (Pf.atomNeg (.bot DefectBot) (WaryBot k) .D .C (c_leaf + c_node)
+    (Pf.atomNeg (.bot DefectBot) (WaryBot k) .D .C
+      (c_leaf + c_node + (Formula.plays (.bot DefectBot) (WaryBot k) .D).size)
       ⟨PlaysProof.bot PlaysProof.const, le_rfl⟩ (by decide) ?_)
-  show (c_leaf + c_node) +
-      (Formula.neg (.plays (.bot DefectBot) (WaryBot k) .C)).size ≤ k
   simp [WaryBot, Formula.size, Prog.size, numCost, c_leaf, c_node, DefectBot]
   omega
 
 /-- WaryBot defends on the DefectBot PROBE at large `k` — this is what flips the
     simulators' assessment of it. -/
 theorem WaryBot_defects_vs_botDefectBot_large (k fuel : Nat)
-    (hk : Nat.log2 k + 14 ≤ k) :
+    (hk : 2 * Nat.log2 k + 25 ≤ k) :
     play (fuel + 2) (WaryBot k) (.bot DefectBot) = some .D := by
   have hg := proofSearch_true_wary_botDefectBot_large k hk
   show eval (fuel + 2) (WaryBot k) (.bot DefectBot) (WaryBot k) = some .D
@@ -279,7 +283,7 @@ theorem WaryBot_cooperates_vs_TitForTatBot (k fuel : Nat) :
 /-- At large `k` DBot's probe sees WaryBot DEFEND against DefectBot, so DBot has
     no sucker to exploit and cooperates — the opposite of the floor regime. -/
 theorem DBot_plays_C_against_WaryBot_large (k fuel : Nat)
-    (hk : Nat.log2 k + 14 ≤ k) :
+    (hk : 2 * Nat.log2 k + 25 ≤ k) :
     play (fuel + 4) DBot (WaryBot k) = some .C := by
   have hW : play (fuel + 2) (WaryBot k) (.bot DefectBot) = some .D :=
     WaryBot_defects_vs_botDefectBot_large k fuel hk
@@ -293,7 +297,7 @@ theorem DBot_plays_C_against_WaryBot_large (k fuel : Nat)
 
 /-- At large `k` WaryBot cannot refute DBot's (true) cooperation, so it trusts. -/
 theorem proofSearch_false_wary_DBot_large (k : Nat)
-    (hk : Nat.log2 k + 14 ≤ k) :
+    (hk : 2 * Nat.log2 k + 25 ≤ k) :
     proofSearch k (.neg (.plays DBot (WaryBot k) .C)) = false := by
   cases h : proofSearch k (.neg (.plays DBot (WaryBot k) .C)) with
   | true =>
@@ -305,7 +309,7 @@ theorem proofSearch_false_wary_DBot_large (k : Nat)
 
 /-- WaryBot cooperates with DBot at large `k`. -/
 theorem WaryBot_cooperates_vs_DBot_large (k fuel : Nat)
-    (hk : Nat.log2 k + 14 ≤ k) :
+    (hk : 2 * Nat.log2 k + 25 ≤ k) :
     play (fuel + 2) (WaryBot k) DBot = some .C := by
   have hg := proofSearch_false_wary_DBot_large k hk
   show eval (fuel + 2) (WaryBot k) DBot (WaryBot k) = some .C
@@ -316,7 +320,7 @@ theorem WaryBot_cooperates_vs_DBot_large (k fuel : Nat)
     probe fails EBot's exploit test) then cooperates with CooperateBot — and
     EBot cooperates. -/
 theorem EBot_plays_C_against_WaryBot_large (k fuel : Nat)
-    (hk : Nat.log2 k + 14 ≤ k) :
+    (hk : 2 * Nat.log2 k + 25 ≤ k) :
     play (fuel + 5) EBot (WaryBot k) = some .C := by
   have hW1 : play (fuel + 3) (WaryBot k) (.bot DefectBot) = some .D :=
     WaryBot_defects_vs_botDefectBot_large k (fuel + 1) hk
@@ -346,7 +350,7 @@ theorem EBot_plays_C_against_WaryBot_large (k fuel : Nat)
 
 /-- At large `k` WaryBot cannot refute EBot's (true) cooperation, so it trusts. -/
 theorem proofSearch_false_wary_EBot_large (k : Nat)
-    (hk : Nat.log2 k + 14 ≤ k) :
+    (hk : 2 * Nat.log2 k + 25 ≤ k) :
     proofSearch k (.neg (.plays EBot (WaryBot k) .C)) = false := by
   cases h : proofSearch k (.neg (.plays EBot (WaryBot k) .C)) with
   | true =>
@@ -358,7 +362,7 @@ theorem proofSearch_false_wary_EBot_large (k : Nat)
 
 /-- WaryBot cooperates with EBot at large `k`. -/
 theorem WaryBot_cooperates_vs_EBot_large (k fuel : Nat)
-    (hk : Nat.log2 k + 14 ≤ k) :
+    (hk : 2 * Nat.log2 k + 25 ≤ k) :
     play (fuel + 2) (WaryBot k) EBot = some .C := by
   have hg := proofSearch_false_wary_EBot_large k hk
   show eval (fuel + 2) (WaryBot k) EBot (WaryBot k) = some .C

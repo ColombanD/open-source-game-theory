@@ -34,7 +34,7 @@ def dbotRow : Tmpl → Action
 /-- The row's witness: one run-stage watching the δ_D behavioral column — every
     hypothesis but the constant cooperator defects against a defector, so the
     watch falls through to trust. -/
-theorem dbotRow_plays {k : Nat} (hk : 2 ≤ k)
+theorem dbotRow_plays {k : Nat} (hk : 7 ≤ k)
     (hL : 100 * Nat.log2 k + 1000 ≤ k) :
     ∀ T, ∃ N, eval N (.bot (inst (tauZoo k) .dbot T)) (.bot (inst (tauZoo k) .dbot T))
               (inst (tauZoo k) .dbot T) = some (dbotRow T) :=
@@ -69,10 +69,10 @@ theorem dbotRow_plays {k : Nat} (hk : 2 ≤ k)
 @[tau_row]
 theorem dbotRowSpec : RowSpec .dbot tauOrder dbotRow := by
   obtain ⟨K, hK⟩ := linear_log2_add_le 100 1000
-  exact ⟨K + 1, fun k hk T _ => dbotRow_plays (by omega) (hK k (by omega)) T⟩
+  exact ⟨K + 10, fun k hk T _ => dbotRow_plays (by omega) (hK k (by omega)) T⟩
 
 /-- **τ(DBot)** — boundary `θ ≤ dbotMass` (everything but `w .coop`). -/
-theorem tauDBot_phase {k : Nat} (hk : 2 ≤ k)
+theorem tauDBot_phase {k : Nat} (hk : 7 ≤ k)
     (hL : 100 * Nat.log2 k + 1000 ≤ k) (θ : Nat) (w : Tmpl → Nat)
     (opponent : Prog) :
     (θ ≤ dbotMass w → ∃ N, play N (TauBotZ k .dbot w θ) opponent = some .C)

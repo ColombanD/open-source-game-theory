@@ -53,38 +53,41 @@ theorem optim_plug2_decomp (k K : Nat) :
 /-- **The Löb premise via `searchElseChain`** — parametric in both budgets: the
     `bloeb_engine` premise for OptimBot's defection against DefectBot costs
     `2·k` (the two refuted cooperation rungs' floors) plus logarithmic overhead. -/
-theorem od_loeb_premise (k K : Nat) (h1 : 1 ≤ k) :
+theorem od_loeb_premise (k K : Nat)
+    (h1 : 1 + (Formula.plays DefectBot (OptimBot k K) Action.D).size ≤ k) :
     Pf (2 * k + 1000 * (Nat.log2 k + Nat.log2 K) + 100000)
        (.impl (.box K (.plays (OptimBot k K) DefectBot Action.D))
               (.plays (OptimBot k K) DefectBot Action.D)) := by
   set O := OptimBot k K with hO
   have hlogO : Nat.log2 k ≤ k := log2_le_self _
-  -- the Σ₁ refutation of "DefectBot cooperates with O" (its actual play is D)
+  -- the Σ₁ refutation of "DefectBot cooperates with O" (its actual play is D);
+  -- the atom charges one leaf plus its own size
   have hneg : Pf (20 * (Nat.log2 k + Nat.log2 K) + 2000)
       (.neg (.plays DefectBot O Action.C)) := by
-    refine Pf.atomNeg DefectBot O .D .C c_leaf
+    refine Pf.atomNeg DefectBot O .D .C (c_leaf + (Formula.plays DefectBot O Action.D).size)
       ⟨(PlaysProof.const :
           PlaysProof DefectBot O (.const Action.D) Action.D c_leaf), le_rfl⟩
       (by decide) ?_
     simp only [Formula.size, Prog.size, numCost, OptimBot, DefectBot, c_leaf, hO]
     omega
-  -- the cheap boxed fact for the fired rung: "DefectBot defects against O"
+  -- the cheap boxed fact for the fired rung: "DefectBot defects against O", boxed
+  -- at the certificate's own budget `1 + |atom|` and lifted to `k` by `boxMono`
   have hboxD : Pf (300 * (Nat.log2 k + Nat.log2 K) + 50000)
       (.box k (.plays DefectBot O Action.D)) := by
-    have hlog1 : Nat.log2 1 = 0 := by decide
+    have hlogb := log2_le_self (1 + (Formula.plays DefectBot O Action.D).size)
     have hb1 : Pf (100 * (Nat.log2 k + Nat.log2 K) + 20000)
-        (.box 1 (.plays DefectBot O Action.D)) := by
-      refine Pf.boxIntro 1 _ _
+        (.box (1 + (Formula.plays DefectBot O Action.D).size) (.plays DefectBot O Action.D)) := by
+      refine Pf.boxIntro (1 + (Formula.plays DefectBot O Action.D).size) _ _
         (Pf.atom ⟨(PlaysProof.const :
             PlaysProof DefectBot O (.const Action.D) Action.D c_leaf),
-          by decide⟩) ?_
-      simp only [Formula.size, Prog.size, numCost, OptimBot, DefectBot, hO, hlog1]
+          by simp [c_leaf]⟩) ?_
+      simp only [Formula.size, Prog.size, numCost, OptimBot, DefectBot, hO] at hlogb ⊢
       omega
     have hmono : Pf (100 * (Nat.log2 k + Nat.log2 K) + 20000)
-        (.impl (.box 1 (.plays DefectBot O Action.D))
+        (.impl (.box (1 + (Formula.plays DefectBot O Action.D).size) (.plays DefectBot O Action.D))
                (.box k (.plays DefectBot O Action.D))) := by
-      refine Pf.boxMono 1 k _ _ h1 ?_
-      simp only [Formula.size, Prog.size, numCost, OptimBot, DefectBot, hO, hlog1]
+      refine Pf.boxMono (1 + (Formula.plays DefectBot O Action.D).size) k _ _ h1 ?_
+      simp only [Formula.size, Prog.size, numCost, OptimBot, DefectBot, hO] at hlogb ⊢
       omega
     refine Pf.mp _ _ _ _ hmono hb1 ?_
     simp only [Formula.size, Prog.size, numCost, OptimBot, DefectBot, hO]
@@ -123,15 +126,45 @@ theorem od_atom_size (k K : Nat) :
   simp only [Formula.size, Prog.size, numCost, OptimBot, DefectBot]
   omega
 
+/-- The stagger's log bound: `log₂(65536·k) ≤ log₂ k + 16`. -/
+theorem od_log_65536 (k : Nat) : Nat.log2 (65536 * k) ≤ Nat.log2 k + 16 := by
+  rcases Nat.eq_zero_or_pos k with rfl | hpos
+  · simp
+  have h1 : k < 2 ^ (Nat.log2 k + 1) := by
+    rw [Nat.log2_eq_log_two]; exact Nat.lt_pow_succ_log_self (by norm_num) k
+  have h3 : 65536 * k < 2 ^ (Nat.log2 k + 17) := by
+    have : (2:Nat) ^ (Nat.log2 k + 17) = 2 ^ (Nat.log2 k + 1) * 65536 := by
+      rw [show Nat.log2 k + 17 = (Nat.log2 k + 1) + 16 from rfl, pow_add]; norm_num
+    omega
+  have := (Nat.log2_lt (by omega)).2 h3
+  omega
+
+/-- The size of DefectBot's defection atom against OptimBot at the stagger, in
+    `log₂ k`: the price the atom rule charges its one-leaf certificate. -/
+theorem od_self_size_stagger (k : Nat) :
+    1 + (Formula.plays DefectBot (OptimBot k (65536 * k)) Action.D).size
+      ≤ 14 * Nat.log2 k + 300 := by
+  have := od_log_65536 k
+  simp only [Prog.size, Formula.size, numCost, OptimBot, DefectBot]
+  omega
+
 /-- **The bootstrap**: at the stagger `kSelf = 65536·k`, `bloeb_engine` turns the
-    premise into `Pf kSelf φD` — OptimBot provably defects against DefectBot. -/
+    premise into `Pf kSelf φD` — OptimBot provably defects against DefectBot. Bundled
+    with the atom-size bound `1 + |DefectBot plays D vs OptimBot| ≤ k` that DefectBot's
+    certificate against it needs at budget `k`. -/
 theorem od_D_provable_at_stagger :
     ∃ k₂, ∀ k, k > k₂ →
+      1 + (Formula.plays DefectBot (OptimBot k (65536 * k)) Action.D).size ≤ k ∧
       proofSearch (65536 * k)
         (.plays (OptimBot k (65536 * k)) DefectBot Action.D) = true := by
   obtain ⟨Ka, hKa⟩ := linear_log2_add_le 40000000 8000000000
-  refine ⟨max 1 Ka, fun k hk => ?_⟩
-  have h1 : 1 ≤ k := (lt_of_le_of_lt (Nat.le_max_left _ _) hk).le
+  obtain ⟨Kb, hKb⟩ := linear_log2_add_le 14 300
+  refine ⟨max Kb Ka, fun k hk => ?_⟩
+  have h1 : 1 + (Formula.plays DefectBot (OptimBot k (65536 * k)) Action.D).size ≤ k := by
+    have := hKb k (lt_of_le_of_lt (Nat.le_max_left _ _) hk).le
+    have := od_self_size_stagger k
+    omega
+  refine ⟨h1, ?_⟩
   have hKk : k ≥ Ka := (lt_of_le_of_lt (Nat.le_max_right _ _) hk).le
   set KS := 65536 * k with hKS
   have hkKS : k ≤ KS := by omega
@@ -169,8 +202,9 @@ theorem od_ps_false_defC (k K B : Nat) :
   | false => rfl
 
 /-- The fired rung: "DefectBot defects against OptimBot" is certifiable at any
-    positive budget. -/
-theorem od_ps_true_defD (k K B : Nat) (hB : 1 ≤ B) :
+    budget that fits one leaf plus the atom's own size. -/
+theorem od_ps_true_defD (k K B : Nat)
+    (hB : 1 + (Formula.plays DefectBot (OptimBot k K) Action.D).size ≤ B) :
     proofSearch B (.plays DefectBot (OptimBot k K) Action.D) = true := by
   refine (proofSearch_spec _ _).2 (Pf.atom ⟨(PlaysProof.const :
     PlaysProof DefectBot (OptimBot k K) (.const Action.D) Action.D c_leaf), ?_⟩)
@@ -179,7 +213,8 @@ theorem od_ps_true_defD (k K B : Nat) (hB : 1 ≤ B) :
 
 /-- OptimBot's play: both cooperation rungs fail, the defection rung fires, and
     the staggered self-proof certifies rung 3's inner search. -/
-theorem OptimBot_plays_D_against_DefectBot (k K fuel : Nat) (h1 : 1 ≤ k)
+theorem OptimBot_plays_D_against_DefectBot (k K fuel : Nat)
+    (h1 : 1 + (Formula.plays DefectBot (OptimBot k K) Action.D).size ≤ k)
     (hD : proofSearch K (.plays (OptimBot k K) DefectBot Action.D) = true) :
     play (fuel + 6) (OptimBot k K) DefectBot = some .D := by
   have hg1 := od_ps_false_defC k K k
@@ -196,12 +231,9 @@ theorem llm_outcome_OptimBot_vs_DefectBot :
       (fun k => OptimBot k (65536 * k)) (fun _ => DefectBot) (some (.D, .D)) := by
   obtain ⟨k₂, hk₂⟩ := od_D_provable_at_stagger
   refine ⟨k₂, fun k hk fuel => outcome_mono_le (N := 6) ?_ (fuel + 6) (by omega)⟩
-  have h1 : 1 ≤ k := by
-    rcases Nat.eq_zero_or_pos k with rfl | h
-    · omega
-    · exact h
+  obtain ⟨h1, hD⟩ := hk₂ k hk
   have hA : play 6 (OptimBot k (65536 * k)) DefectBot = some .D := by
-    simpa using OptimBot_plays_D_against_DefectBot k (65536 * k) 0 h1 (hk₂ k hk)
+    simpa using OptimBot_plays_D_against_DefectBot k (65536 * k) 0 h1 hD
   have hB : play 6 DefectBot (OptimBot k (65536 * k)) = some .D := by
     simpa using play_DefectBot 5 (OptimBot k (65536 * k))
   exact outcome_of_plays _ _ _ _ _ hA hB

@@ -27,20 +27,30 @@ theorem proofSearch_false_for_DefectBot (k : Nat) :
                           (interp_DefectBot_plays_C_false _)
   | false => rfl
 
-/-- Proof search is true for CooperateBot vs DupocBot k at budget/index
-    `atom_cost 1`. -/
+/-- `DupocBot k`'s source size: the budget numeral, the guard atom (3), two constant
+    branches and the node — `Nat.log2 k + 7`. Every atom certificate against Dupoc now
+    pays this on top of its transcript (the recost of 2026-09-16). -/
+theorem DupocBot_size (k : Nat) : (DupocBot k).size = Nat.log2 k + 7 := by
+  simp only [DupocBot, Prog.size, Formula.size, numCost]
+
+/-- Proof search is true for CooperateBot vs DupocBot k at SOME budget/index: the
+    transcript is one leaf, plus the atom's size `1 + (Nat.log2 k + 7) + 1`. -/
 theorem proofSearch_true_for_CooperateBot :
-    ∃ k, proofSearch k (.plays CooperateBot (DupocBot k) .C) = true :=
-  let k := atom_cost 1
-  ⟨k, (proofSearch_spec _ _).2 (Pf.atom ⟨PlaysProof.const, by decide⟩)⟩
+    ∃ k, proofSearch k (.plays CooperateBot (DupocBot k) .C) = true := by
+  obtain ⟨K, hK⟩ := linear_log2_add_le 1 10
+  exact ⟨K, (proofSearch_spec _ _).2 (Pf.atom ⟨PlaysProof.const,
+    by have := hK K le_rfl
+       simp only [Formula.size, DupocBot_size, CooperateBot, Prog.size, c_leaf]; omega⟩)⟩
 
 /-- Threshold form of `proofSearch_true_for_CooperateBot`: the certificate is a fixed
     `Pf.atom` whose only side condition is a COST INEQUALITY, so the guard fires (`⊢_k`) at every
-    budget above `atom_cost 1` -- not merely at that one witness. This is what lets the
-    outcome theorem be stated in the `.eventual` regime. -/
-theorem proofSearch_true_for_CooperateBot_ge (k : Nat) (hk : atom_cost 1 ≤ k) :
+    budget above `Nat.log2 k + 10` (leaf + the atom's size) -- not merely at one witness. This is
+    what lets the outcome theorem be stated in the `.eventual` regime
+    (`linear_log2_add_le 1 10` supplies the threshold). -/
+theorem proofSearch_true_for_CooperateBot_ge (k : Nat) (hk : Nat.log2 k + 10 ≤ k) :
     proofSearch k (.plays CooperateBot (DupocBot k) .C) = true :=
-  (proofSearch_spec _ _).2 (Pf.atom ⟨PlaysProof.const, by simp [atom_cost] at hk ⊢; omega⟩)
+  (proofSearch_spec _ _).2 (Pf.atom ⟨PlaysProof.const,
+    by simp only [Formula.size, DupocBot_size, CooperateBot, Prog.size, c_leaf]; omega⟩)
 
 
 -- DBot --
@@ -237,20 +247,24 @@ theorem DupocBot_plays_D_against_OBot (k fuel : Nat)
   unfold DupocBot at hOBot ⊢
   simp [eval, Prog.subst, Formula.subst, hOBot]
 
-/-- Proof search is true for `.bot CooperateBot` vs DupocBot k at budget
-    `atom_cost 2`. -/
+/-- Proof search is true for `.bot CooperateBot` vs DupocBot k at SOME budget: a
+    two-character transcript plus the atom's size `2 + (Nat.log2 k + 7) + 1`. -/
 theorem proofSearch_true_for_bot_CooperateBot :
-    ∃ k, proofSearch k (.plays (.bot CooperateBot) (DupocBot k) .C) = true :=
-  let k := atom_cost 2
-  ⟨k, (proofSearch_spec _ _).2 (Pf.atom ⟨PlaysProof.bot PlaysProof.const, by decide⟩)⟩
+    ∃ k, proofSearch k (.plays (.bot CooperateBot) (DupocBot k) .C) = true := by
+  obtain ⟨K, hK⟩ := linear_log2_add_le 1 12
+  exact ⟨K, (proofSearch_spec _ _).2 (Pf.atom ⟨PlaysProof.bot PlaysProof.const,
+    by have := hK K le_rfl
+       simp only [Formula.size, DupocBot_size, CooperateBot, Prog.size, c_leaf, c_node]; omega⟩)⟩
 
 /-- Threshold form of `proofSearch_true_for_bot_CooperateBot`: the certificate is a fixed
     `Pf.atom` whose only side condition is a COST INEQUALITY, so the guard fires (`⊢_k`) at every
-    budget above `atom_cost 2` -- not merely at that one witness. This is what lets the
-    outcome theorem be stated in the `.eventual` regime. -/
-theorem proofSearch_true_for_bot_CooperateBot_ge (k : Nat) (hk : atom_cost 2 ≤ k) :
+    budget above `Nat.log2 k + 12` (bot + leaf + the atom's size) -- not merely at one witness.
+    This is what lets the outcome theorem be stated in the `.eventual` regime
+    (`linear_log2_add_le 1 12` supplies the threshold). -/
+theorem proofSearch_true_for_bot_CooperateBot_ge (k : Nat) (hk : Nat.log2 k + 12 ≤ k) :
     proofSearch k (.plays (.bot CooperateBot) (DupocBot k) .C) = true :=
-  (proofSearch_spec _ _).2 (Pf.atom ⟨PlaysProof.bot PlaysProof.const, by simp [atom_cost] at hk ⊢; omega⟩)
+  (proofSearch_spec _ _).2 (Pf.atom ⟨PlaysProof.bot PlaysProof.const,
+    by simp only [Formula.size, DupocBot_size, CooperateBot, Prog.size, c_leaf, c_node]; omega⟩)
 
 
 -- TitForTatBot --
@@ -280,17 +294,23 @@ theorem TitForTatBot_plays_C_against_DupocBot (k fuel : Nat)
     can cooperate at fuel 4, then bounded completeness gives the TFT budget. -/
 theorem proofSearch_true_for_TitForTatBot :
     ∃ k, proofSearch k (.plays TitForTatBot (DupocBot k) .C) = true := by
-  let kTFT := atom_cost 4
+  -- The budget: TFT's transcript is `Nat.log2 k + 6` (the guard cite `c_guard k`
+  -- plus five characters) and the atom `TFT plays C vs Dupoc` has size
+  -- `7 + (Nat.log2 k + 7) + 1`.
+  obtain ⟨kTFT, hkTFT⟩ := linear_log2_add_le 2 21
+  have hk := hkTFT kTFT le_rfl
   -- Dupoc's guard vs `.bot CooperateBot` FIRES; TFT's certificate is built by hand:
   -- ite_t over the probe (sim → Dupoc's fired search_t) then the cooperate leaf.
   have hCBprov : Pf kTFT (.plays (.bot CooperateBot) (DupocBot kTFT) .C) :=
-    Pf.atom ⟨PlaysProof.bot PlaysProof.const, by decide⟩
+    Pf.atom ⟨PlaysProof.bot PlaysProof.const,
+      by simp only [Formula.size, DupocBot_size, CooperateBot, Prog.size, c_leaf, c_node]; omega⟩
   refine ⟨kTFT, (proofSearch_spec _ _).2 (Pf.atom
     (⟨PlaysProof.ite_t (PlaysProof.sim (PlaysProof.search_t hCBprov PlaysProof.const))
       rfl PlaysProof.const, ?_⟩ :
       AtomProvable kTFT (.plays TitForTatBot (DupocBot kTFT) .C)))⟩
-  show c_leaf + c_guard kTFT + c_node + c_node + c_leaf + c_node ≤ kTFT
-  decide
+  simp only [Formula.size, DupocBot_size, TitForTatBot, CooperateBot, Prog.size,
+    c_leaf, c_node, c_guard, numCost]
+  omega
 
 /-- DupocBot cooperates with TFT once its search for "TFT plays C" succeeds. -/
 theorem DupocBot_plays_C_against_TitForTatBot (k fuel : Nat)
@@ -392,10 +412,11 @@ theorem DupocBot_plays_D_against_EBot (k fuel : Nat) :
 
 /-- The `.bot CooperateBot` probe guard is Σ₁-certifiable at run price (a two-character
     `bot`+`const` replay), discharging `EBot_plays_C_against_DupocBot`'s hypothesis. -/
-theorem proofSearch_true_for_bot_CooperateBot_vs_Dupoc (k : Nat) (hk : 2 ≤ k) :
+theorem proofSearch_true_for_bot_CooperateBot_vs_Dupoc (k : Nat) (hk : Nat.log2 k + 12 ≤ k) :
     proofSearch k (.plays (.bot CooperateBot) (DupocBot k) .C) = true :=
   (proofSearch_spec _ _).2 (Pf.atom
-    ⟨PlaysProof.bot PlaysProof.const, by simp only [c_leaf, c_node]; omega⟩)
+    ⟨PlaysProof.bot PlaysProof.const,
+      by simp only [Formula.size, DupocBot_size, CooperateBot, Prog.size, c_leaf, c_node]; omega⟩)
 
 /-- DupocBot cooperates with EBot once its search for "EBot plays C" succeeds. -/
 theorem DupocBot_plays_C_against_EBot (k fuel : Nat)

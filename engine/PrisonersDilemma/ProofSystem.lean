@@ -268,10 +268,27 @@ mutual
     | cons {w : Nat} {I : Prog} {rest : VoteList} {a : Action} {m c : Nat} :
         PlaysProof (.bot I) (.bot I) I a m → VoteAllPlay rest c → VoteAllPlay (.cons w I rest) (m + c)
 
--- 3. `AtomProvable k φ` — a `PlaysProof` whose run cost fits the budget (`n ≤ k`); the bridge for
--- atomic `.plays` facts (which the reasoning rules cannot read).
+-- 3. `AtomProvable k φ` — a `PlaysProof` whose run cost PLUS the size of its conclusion fits the
+-- budget (`n + (.plays me opponent a).size ≤ k`); the bridge for atomic `.plays` facts (which
+-- the reasoning rules cannot read).
+--
+-- **RE-COSTED 2026-09-16 (T2-NEG repair).** The old side-condition was `n ≤ k`: the run cost
+-- alone, never the size of the conclusion. That made `Pf 1 (.plays (.const C) q C)` hold for
+-- EVERY `q` — one leaf step, cost 1, whatever the opponent — and it is exactly the witness of
+-- `ArithS.Neg.no_budget_keeping_transfer`: any arithmetical realization must WRITE `q`, and a
+-- `TAct`-proof is at least as long as its conclusion, so the bot-iterates `q = .bot^n (.const C)`
+-- force the realized proof past every inflation `e` while the engine's budget stays `1`. The
+-- SUBJECT side has the same witness: an untaken `.ite` branch is never run, so `ite_t` charges
+-- nothing for it (`Pf 3 (.plays (.ite (.const C) C (.const C) huge) q C)` for every `huge`).
+-- Charging the whole conclusion `(.plays me opponent a).size = me.size + opponent.size + 1`
+-- removes both witnesses and restores the cost model's own invariant: every rule pays for what
+-- its conclusion NAMES, as `atomNeg` (which charges `(.neg (.plays p q aN)).size`) and
+-- `c_guard`/`numCost` already do. With it `Base/Exclusion.pf_size_or_atom` loses its exception:
+-- every derivable formula fits its budget. `Prog.size` is the engine's own structural measure
+-- (`Program.lean`) and dominates the bit length of a program's code, which is what T2-NEG exploits.
   inductive AtomProvable : Nat → Formula → Prop where
-    | mk : PlaysProof me opponent me a n → n ≤ k → AtomProvable k (.plays me opponent a)
+    | mk : PlaysProof me opponent me a n → n + (Formula.plays me opponent a).size ≤ k →
+        AtomProvable k (.plays me opponent a)
 
 /-- **`Pf k φ` — "φ has a proof transcript of ≤ k characters"**: the proof system `S`, as ONE type.
 Written `⊢_k φ` (`Research/Notes/PROVABILITY_NOTATION.md`); `⊢` never means Lean.

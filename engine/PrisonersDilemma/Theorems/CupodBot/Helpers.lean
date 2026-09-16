@@ -31,21 +31,31 @@ theorem proofSearch_false_for_CooperateBot (k : Nat) :
 
 -- DefectBot --
 
-/-- Proof search is true for DefectBot vs CupodBot k at budget/index
-    `atom_cost 1`. DefectBot ignores its opponent
+/-- `CupodBot k`'s source size: the budget numeral, the guard atom (3), two constant
+    branches and the node — `Nat.log2 k + 7`. Every atom certificate against Cupod now
+    pays this on top of its transcript (the recost of 2026-09-16). -/
+theorem CupodBot_size (k : Nat) : (CupodBot k).size = Nat.log2 k + 7 := by
+  simp only [CupodBot, Prog.size, Formula.size, numCost]
+
+/-- Proof search is true for DefectBot vs CupodBot k at SOME budget/index: one leaf
+    plus the atom's size `1 + (Nat.log2 k + 7) + 1`. DefectBot ignores its opponent
     so the plays-atom is `S`-derivable (`⊢`) for any CupodBot index. -/
 theorem proofSearch_true_for_DefectBot :
-    ∃ k, proofSearch k (.plays DefectBot (CupodBot k) .D) = true :=
-  let k := atom_cost 1
-  ⟨k, (proofSearch_spec _ _).2 (Pf.atom ⟨PlaysProof.const, by decide⟩)⟩
+    ∃ k, proofSearch k (.plays DefectBot (CupodBot k) .D) = true := by
+  obtain ⟨K, hK⟩ := linear_log2_add_le 1 10
+  exact ⟨K, (proofSearch_spec _ _).2 (Pf.atom ⟨PlaysProof.const,
+    by have := hK K le_rfl
+       simp only [Formula.size, CupodBot_size, DefectBot, Prog.size, c_leaf]; omega⟩)⟩
 
 /-- Threshold form of `proofSearch_true_for_DefectBot`: the certificate is a fixed
     `Pf.atom` whose only side condition is a COST INEQUALITY, so the guard fires (`⊢_k`) at every
-    budget above `atom_cost 1` -- not merely at that one witness. This is what lets the
-    outcome theorem be stated in the `.eventual` regime. -/
-theorem proofSearch_true_for_DefectBot_ge (k : Nat) (hk : atom_cost 1 ≤ k) :
+    budget above `Nat.log2 k + 10` (leaf + the atom's size) -- not merely at one witness. This is
+    what lets the outcome theorem be stated in the `.eventual` regime
+    (`linear_log2_add_le 1 10` supplies the threshold). -/
+theorem proofSearch_true_for_DefectBot_ge (k : Nat) (hk : Nat.log2 k + 10 ≤ k) :
     proofSearch k (.plays DefectBot (CupodBot k) .D) = true :=
-  (proofSearch_spec _ _).2 (Pf.atom ⟨PlaysProof.const, by simp [atom_cost] at hk ⊢; omega⟩)
+  (proofSearch_spec _ _).2 (Pf.atom ⟨PlaysProof.const,
+    by simp only [Formula.size, CupodBot_size, DefectBot, Prog.size, c_leaf]; omega⟩)
 
 
 -- CupodBot --
@@ -144,17 +154,24 @@ theorem proofSearch_false_for_TitForTatBot (k : Nat) :
 
 -- DBot --
 
+/-- Proof search is true for `.bot DefectBot` vs CupodBot k at SOME budget: a
+    two-character transcript plus the atom's size `2 + (Nat.log2 k + 7) + 1`. -/
 theorem proofSearch_true_for_bot_DefectBot :
-    ∃ k, proofSearch k (.plays (.bot DefectBot) (CupodBot k) .D) = true :=
-  let k := atom_cost 2
-  ⟨k, (proofSearch_spec _ _).2 (Pf.atom ⟨PlaysProof.bot PlaysProof.const, by decide⟩)⟩
+    ∃ k, proofSearch k (.plays (.bot DefectBot) (CupodBot k) .D) = true := by
+  obtain ⟨K, hK⟩ := linear_log2_add_le 1 12
+  exact ⟨K, (proofSearch_spec _ _).2 (Pf.atom ⟨PlaysProof.bot PlaysProof.const,
+    by have := hK K le_rfl
+       simp only [Formula.size, CupodBot_size, DefectBot, Prog.size, c_leaf, c_node]; omega⟩)⟩
 
 /-- Threshold form of `proofSearch_true_for_bot_DefectBot`: the certificate's only side
-    condition is a COST INEQUALITY, so the guard fires (`⊢_k`) at every budget above `atom_cost 2`. -/
-theorem proofSearch_true_for_bot_DefectBot_ge (k : Nat) (hk : atom_cost 2 ≤ k) :
+    condition is a COST INEQUALITY, so the guard fires (`⊢_k`) at every budget above
+    `Nat.log2 k + 12` (bot + leaf + the atom's size; `linear_log2_add_le 1 12` supplies
+    the threshold). -/
+theorem proofSearch_true_for_bot_DefectBot_ge (k : Nat) (hk : Nat.log2 k + 12 ≤ k) :
     proofSearch k (.plays (.bot DefectBot) (CupodBot k) .D) = true :=
   (proofSearch_spec _ _).2
-    (Pf.atom ⟨PlaysProof.bot PlaysProof.const, by simp [atom_cost] at hk ⊢; omega⟩)
+    (Pf.atom ⟨PlaysProof.bot PlaysProof.const,
+      by simp only [Formula.size, CupodBot_size, DefectBot, Prog.size, c_leaf, c_node]; omega⟩)
 
 /-- CUPOD defects against `.bot DefectBot` once its search guard succeeds. -/
 theorem CupodBot_plays_D_against_bot_DefectBot (k fuel : Nat)
@@ -317,11 +334,13 @@ theorem CupodBot_plays_C_against_OBot (k fuel : Nat) :
   simp [eval, Prog.subst, Formula.subst, hg]
 
 /-- The `.bot DefectBot` probe guard is Σ₁-certifiable at run price, discharging
-    `OBot_plays_D_against_CupodBot`'s hypothesis at every `k ≥ 2`. -/
-theorem proofSearch_true_for_bot_DefectBot_vs_Cupod (k : Nat) (hk : 2 ≤ k) :
+    `OBot_plays_D_against_CupodBot`'s hypothesis at every `k` with `Nat.log2 k + 12 ≤ k`
+    (two characters + the atom's size). -/
+theorem proofSearch_true_for_bot_DefectBot_vs_Cupod (k : Nat) (hk : Nat.log2 k + 12 ≤ k) :
     proofSearch k (.plays (.bot DefectBot) (CupodBot k) .D) = true :=
   (proofSearch_spec _ _).2 (Pf.atom
-    ⟨PlaysProof.bot PlaysProof.const, by simp only [c_leaf, c_node]; omega⟩)
+    ⟨PlaysProof.bot PlaysProof.const,
+      by simp only [Formula.size, CupodBot_size, DefectBot, Prog.size, c_leaf, c_node]; omega⟩)
 
 theorem CupodBot_plays_D_against_OBot (fuel : Nat) (k : Nat)
     (hk : proofSearch k (.plays OBot (CupodBot k) .D) = true) :

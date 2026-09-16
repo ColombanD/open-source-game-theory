@@ -1,6 +1,6 @@
 ---
 name: project-arithmetized-s-roadmap
-description: "Arithmetized S on Foundation (arith/ArithS): T1 red cell proven and non-vacuous; M3 DONE 2026-09-10 on canonical branch colomban-arith-m3 (~/wt/osgt-arith-m3, engine on v4.33.1) — T2 = T2-CORE + T2-NEG + T2-AGENT, all 3-axiom; what is out of scope (box compositionality, tau constructors, LAct Σ₁-completeness) and the traps"
+description: "Arithmetized S on Foundation (arith/ArithS): U10 DONE 2026-09-16 (BoundedInnerNec 16, headline theorems unconditional); M6 merge: atom re-cost DONE on colomban-recost, BOX OBSTRUCTION found (additive engine box vs polynomial S' ⇒ no polynomial bridge budget) — user decision A/B/C pending; T1 red cell proven; M3 DONE 2026-09-10 on canonical branch colomban-arith-m3 (~/wt/osgt-arith-m3, engine on v4.33.1) — T2 = T2-CORE + T2-NEG + T2-AGENT, all 3-axiom; what is out of scope (box compositionality, tau constructors, LAct Σ₁-completeness) and the traps"
 metadata: 
   node_type: memory
   type: project
@@ -211,3 +211,36 @@ interface written AHEAD of its consumer has PROVISIONAL binders until the consum
 it (six corrections from that one pattern; two were mine). Check CALLABILITY before transcribing.
 Compile a skeleton rather than read when the question is structural. Never edit Lean by script.
 Only a must-fail probe distinguishes a real edit from a stale olean.
+**2026-09-16 (later) — M6, THE MERGE `S`→`S'`: design fixed with Colomban, then an obstruction found.**
+DESIGN (roadmap §3 "M6"): `S'` is THE formal system; each of the engine's 33 `Pf` rules becomes a
+DERIVED RULE of `S'` (theorem at budget `f`(engine budget)); the ~155 outcome theorems stay untouched
+(one induction over `Pf` composes the rules); rule layer = API; BUDGET-KEEPING (erased = Barász/FAF
+territory); OptimBot/LegibleBot out. Trusted definitions = `tr` (must rewrite budgets inside PROGRAMS
+too, `search k ↦ search (f k)`, else self-referential bots don't translate to themselves) and `f`.
+ORDER agreed: (1) recost branch green, (2) check M3 lemmas at explicit budgets, (3) the induction.
+STEP 1 — branch `colomban-recost`: `AtomProvable.mk` charges `n + (Formula.plays me opponent a).size ≤ k`
+(FULL conclusion; a first pass charged `opponent.size` only — WRONG, the subject side has an untaken-
+`.ite`-branch witness, `ite_t` never pays the unrun branch). Blast radius ≈ 70 errors / 30 theorem
+files, all budget arithmetic — DONE the same day: engine 3278 jobs green, export BYTE-IDENTICAL
+(155 cells / 4 companions / 18 tau rows keep values, regimes, pads; only witnesses/thresholds grew;
+WaryBot "defended" companion moved 16→32, the k=16 statement is FALSE now). Method: Helpers layer
+first (one agent with `lake build`), then per-pair files in parallel with `lake env lean` ONLY (never
+two `lake build`s); agents that "wait" on their own background checks stop — resume by SendMessage.
+`ArithS/Neg.lean`: T2-NEG RETIRED, replaced by `no_budget_keeping_witness_pays` + `pf_size`
+(needs `import PrisonersDilemma.Base.Exclusion`, `PD.BaseTheorems.pf_size_or_atom`). Arith 3271 jobs,
+census 908, all standard. Committed on `colomban-recost` (on top of -u10), NOT pushed.
+STEP 2 — cut YES (`lenDerivable_cut_V_TAct`), instantiation YES (`lenDerivable_instB_V`), diagonal NO
+(`tact_parametric_diagonal_inst` unbounded; wrapper via `exists_forward_length` pattern), bounded D1
+PARAMETRIC ONLY (`BoundedInnerNec 16` at `gBudget k = ‖k‖³`; closed-sentence arbitrary-budget form
+must be re-packaged from `Necessitation/Top.lean`).
+THE OBSTRUCTION (not repaired, USER DECISION): engine box rules are ADDITIVE (`Pf a φ → Pf (a+|□_a φ|)
+(□_a φ)`), `S'` expansion is POLYNOMIAL (deg 16) ⇒ `f(a + log a + s) ≥ C f(a)^16` ⇒ no polynomial or
+single-exponential `f`; `f = 2^{2^{5a}}` works. Löbian cells then DOMINATED by M5 (direct parametric
+PBLT gives all large k; bridge gives budgets `f k` only). AND `search_t` cites at `log k` ⇒ unsatisfiable
+for any monotone f ⇒ needs a second recost (charge `k`). Options: A uniform bridge + doubly-exp f +
+search_t recost; B no rule bridge, direct S' proofs per Löbian family (erased T2-CORE doesn't cover
+search-bot reading leaves); C `S''` = arithmetized derivations with a primitive `cite` node charging
+`|□_k σ|` (Critch (c)/(d) as a rule) — engine rules derived at the SAME budgets, U10 = "S'' reduces to
+PA polynomially per box level". I lean C or B; A realizes the wording literally but budgets become nominal.
+LESSON: I told the user "the budget-keeping bridge is the same induction with f threaded through" —
+wrong; composition through nested boxes was not checked. Check composition, not just per-rule.

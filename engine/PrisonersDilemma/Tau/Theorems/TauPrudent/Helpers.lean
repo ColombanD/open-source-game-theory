@@ -122,14 +122,19 @@ theorem ps_probeD_inst_cimcic_defect_false {k K : Nat} (hK : K ≤ k) :
   rw [inst_cimcic_peel_defect k, probeD]
   exact ps_botSearcherElse_false hK _ .C .D (by decide) _
 
-/-- The forwarder's D on the defector is cheap: `bot ∘ sim ∘ bot ∘ const`. -/
-theorem pf_probeD_mirror_defect {k K : Nat} (hK : 5 ≤ K) :
+/-- The forwarder's D on the defector is cheap: `bot ∘ sim ∘ bot ∘ const` (transcript 4
+    + atom size 13). -/
+theorem pf_probeD_mirror_defect {k K : Nat} (hK : 17 ≤ K) :
     Pf K (probeD (inst (tauZoo k) .mirror .defect)) := by
   rw [probeD, show inst (tauZoo k) .mirror .defect
       = .sim (.bot (inst (tauZoo k) .defect .mirror)) (.bot (inst (tauZoo k) .defect .mirror))
       from rfl]
-  exact Pf.atom ⟨PlaysProof.bot (playsProof_simFwd (I := inst (tauZoo k) .defect .mirror)
-    (PlaysProof.const (a := Action.D))), by have := hcl; have := hcn; omega⟩
+  refine Pf.atom ⟨PlaysProof.bot (playsProof_simFwd (I := inst (tauZoo k) .defect .mirror)
+    (PlaysProof.const (a := Action.D))), ?_⟩
+  have := hcl; have := hcn
+  rw [show inst (tauZoo k) .defect .mirror = .const .D from rfl]
+  simp only [Formula.size, Prog.size]
+  omega
 
 /-! ## τ(Prudent)'s OFF-CYCLE row — ten cells, all `D` -/
 
@@ -288,7 +293,9 @@ theorem prudent_defect_watch_over_budget {k : Nat} {me opp : Prog} {r : Action} 
           have := nested_D_transcript_ge hin3
           have := hcn; omega
       | C =>
-          have hcert : AtomProvable (m₃ + c_node)
+          have hcert : AtomProvable (m₃ + c_node
+                + (Formula.plays (.bot (inst (tauZoo k) .prudent .defect))
+                    (.bot (inst (tauZoo k) .prudent .defect)) Action.C).size)
               (.plays (.bot (inst (tauZoo k) .prudent .defect))
                 (.bot (inst (tauZoo k) .prudent .defect)) Action.C) :=
             ⟨PlaysProof.bot hin3, le_refl _⟩
@@ -707,7 +714,7 @@ theorem sys_prudent_leg (defs : ProgList) (p f k K : Nat) (opp : Prog)
     (hget : defs.get? p = some (.search k (.plays (.bot (.selfIdx f)) (.bot (.selfIdx f)) Action.C)
         (.search k (probeD (inst (tauZoo k) .mirror .defect)) (.const .C) (.const .D))
         (.const .D)))
-    (h5 : 5 ≤ k)
+    (h17 : 17 ≤ k)
     (hK : c_guard k + (Formula.impl (.box k (.plays (.bot (.sys defs f)) (.bot (.sys defs f)) Action.C))
         (.plays (.bot (.sys defs p)) opp Action.C)).size ≤ K) :
     Pf K (.impl (.box k (.plays (.bot (.sys defs f)) (.bot (.sys defs f)) Action.C))
@@ -716,7 +723,7 @@ theorem sys_prudent_leg (defs : ProgList) (p f k K : Nat) (opp : Prog)
     (.plays (.bot (.selfIdx f)) (.bot (.selfIdx f)) Action.C)
     (probeD (inst (tauZoo k) .mirror .defect)) .C .D (.const .D)
     (.bot (.sys defs p)) opp rfl hget
-    (by rw [sysClose_subst_probeD _ _ _ _ rfl]; exact pf_probeD_mirror_defect h5) le_rfl
+    (by rw [sysClose_subst_probeD _ _ _ _ rfl]; exact pf_probeD_mirror_defect h17) le_rfl
     (by simpa [sysClose_subst_botSelfIdx] using hK)
   rw [sysClose_subst_botSelfIdx] at h
   exact h
@@ -734,18 +741,18 @@ private def pmA (k : Nat) : Formula :=   -- the forwarder member (index 1) self-
 private def pmB (k : Nat) : Formula :=   -- Prudent's member (index 0) self-cooperates
   .plays (.bot (.sys (pmirSys k) 0)) (.bot (.sys (pmirSys k) 0)) Action.C
 
-theorem pmir_loeb_premise (k : Nat) (h5 : 5 ≤ k) :
+theorem pmir_loeb_premise (k : Nat) (h17 : 17 ≤ k) :
     Pf ((c_guard k + (Formula.impl (.box k (pmA k)) (pmB k)).size)
         + (Formula.impl (pmB k) (pmA k)).size
         + (Formula.impl (.box k (pmA k)) (pmA k)).size)
       (.impl (.box k (pmA k)) (pmA k)) :=
   Pf.implTrans _ _ _ _ _
-    (sys_prudent_leg (pmirSys k) 0 1 k _ (.bot (.sys (pmirSys k) 0)) (pmirSys_get0 k) h5 le_rfl)
+    (sys_prudent_leg (pmirSys k) 0 1 k _ (.bot (.sys (pmirSys k) 0)) (pmirSys_get0 k) h17 le_rfl)
     (sys_mirror_fwd (pmirSys k) 1 0 .C _ (.bot (.sys (pmirSys k) 1)) (pmirSys_get1 k) le_rfl)
     le_rfl
 
 theorem pmir_loeb : ∃ k₂, ∀ k, k₂ < k → ∃ m, 2 * m ≤ k ∧ Pf m (pmA k) := by
-  obtain ⟨kA, hkA⟩ := linear_log2_add_le 1 8
+  obtain ⟨kA, hkA⟩ := linear_log2_add_le 1 17
   refine pblt_engine_id_bounded pmA
     (fun k => (c_guard k + (Formula.impl (.box k (pmA k)) (pmB k)).size)
         + (Formula.impl (pmB k) (pmA k)).size
@@ -778,10 +785,10 @@ theorem prudent_mirror_plays_C :
       ∃ N, eval N (.bot (inst (tauZoo k) .prudent .mirror)) (.bot (inst (tauZoo k) .prudent .mirror))
         (inst (tauZoo k) .prudent .mirror) = some Action.C := by
   obtain ⟨kL, hLb⟩ := pmir_loeb
-  obtain ⟨kA, hkA⟩ := linear_log2_add_le 1 8
+  obtain ⟨kA, hkA⟩ := linear_log2_add_le 1 17
   refine ⟨max kL kA, fun k hk => ?_⟩
   obtain ⟨m, hmk, hm⟩ := hLb k (by omega)
-  have h8 : 1 * Nat.log2 k + 8 ≤ k := hkA k (by omega)
+  have h17 : 1 * Nat.log2 k + 17 ≤ k := hkA k (by omega)
   rw [inst_prudent_mirror_eq k]
   refine sysNested_plays_C_of_both _ _ (pmirSys_get0 k) ?_ ?_
   · rw [sysClose_subst_botSelfIdx]; exact (proofSearch_spec _ _).2 (Pf_mono hm (by omega))
@@ -794,18 +801,18 @@ private def mpA (k : Nat) : Formula :=   -- the forwarder member (index 0) self-
 private def mpB (k : Nat) : Formula :=
   .plays (.bot (.sys (mirpSys k) 1)) (.bot (.sys (mirpSys k) 1)) Action.C
 
-theorem mirp_loeb_premise (k : Nat) (h5 : 5 ≤ k) :
+theorem mirp_loeb_premise (k : Nat) (h17 : 17 ≤ k) :
     Pf ((c_guard k + (Formula.impl (.box k (mpA k)) (mpB k)).size)
         + (Formula.impl (mpB k) (mpA k)).size
         + (Formula.impl (.box k (mpA k)) (mpA k)).size)
       (.impl (.box k (mpA k)) (mpA k)) :=
   Pf.implTrans _ _ _ _ _
-    (sys_prudent_leg (mirpSys k) 1 0 k _ (.bot (.sys (mirpSys k) 1)) (mirpSys_get1 k) h5 le_rfl)
+    (sys_prudent_leg (mirpSys k) 1 0 k _ (.bot (.sys (mirpSys k) 1)) (mirpSys_get1 k) h17 le_rfl)
     (sys_mirror_fwd (mirpSys k) 0 1 .C _ (.bot (.sys (mirpSys k) 0)) (mirpSys_get0 k) le_rfl)
     le_rfl
 
 theorem mirp_loeb : ∃ k₂, ∀ k, k₂ < k → ∃ m, 2 * m ≤ k ∧ Pf m (mpA k) := by
-  obtain ⟨kA, hkA⟩ := linear_log2_add_le 1 8
+  obtain ⟨kA, hkA⟩ := linear_log2_add_le 1 17
   refine pblt_engine_id_bounded mpA
     (fun k => (c_guard k + (Formula.impl (.box k (mpA k)) (mpB k)).size)
         + (Formula.impl (mpB k) (mpA k)).size

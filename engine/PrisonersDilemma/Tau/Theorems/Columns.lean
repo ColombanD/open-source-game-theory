@@ -41,7 +41,7 @@ namespace PD.Tau
 
 /-- τ(Just)'s δ_L diagonal-adjacent cell: `inst .just .dupoc` probes THE QUINE, so
     its bit is Löb-gated — provable exactly when the quine's is. -/
-theorem ps_probe_just_dupoc {k : Nat} (hkk : c_guard k + 3 ≤ k)
+theorem ps_probe_just_dupoc {k : Nat} (hk7 : 7 * c_guard k + 54 ≤ k)
     (hquine : proofSearch k (probe (inst (tauZoo k) .dupoc .dupoc)) = true) :
     proofSearch k (probe (inst (tauZoo k) .just .dupoc)) = true :=
   (proofSearch_spec _ _).2 (Pf.atom
@@ -51,11 +51,13 @@ theorem ps_probe_just_dupoc {k : Nat} (hkk : c_guard k + 3 ≤ k)
         have h1 : c_leaf = 1 := rfl
         have h2 : c_node = 1 := rfl
         have h3 : c_guard (tauZoo k).budget = c_guard k := rfl
+        rw [h3, inst_just_peel k .dupoc, inst_dupoc_quine k]
+        simp only [c_guard, numCost, probe, Formula.size, Prog.size] at hk7 ⊢
         omega⟩)
 
 /-- `inst .obot .dupoc` plays D: its first watch sees Dupoc-seeing-Coop cooperate
     (falls through), its second sees Dupoc-seeing-Defect defect (fires D). -/
-theorem obot_dupoc_plays_D {k : Nat} (hk : 2 ≤ k) :
+theorem obot_dupoc_plays_D {k : Nat} (hk : 7 ≤ k) :
     ∃ N, eval N (.bot (inst (tauZoo k) .obot .dupoc)) (.bot (inst (tauZoo k) .obot .dupoc))
       (inst (tauZoo k) .obot .dupoc) = some Action.D :=
   simTestD_falls _ _
@@ -71,7 +73,7 @@ theorem obot_defect_plays_D {k : Nat} :
 
 /-- `inst .guardian .defect` plays D: the punish-probe of the constant defector
     FIRES. -/
-theorem guardian_defect_plays_D {k : Nat} (hk : 2 ≤ k) :
+theorem guardian_defect_plays_D {k : Nat} (hk : 7 ≤ k) :
     ∃ N, eval N (.bot (inst (tauZoo k) .guardian .defect))
       (.bot (inst (tauZoo k) .guardian .defect))
       (inst (tauZoo k) .guardian .defect) = some Action.D :=
@@ -172,9 +174,9 @@ def coopColBit : Tmpl → Bool
   | .dbot     => false
   | _         => true
 
-theorem ps_probe_inst_coop {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
-    (h6 : 6 ≤ k) (h10 : 10 ≤ k) (hL : 100 * Nat.log2 k + 1000 ≤ k)
-    (hcg : c_guard k + 20 ≤ k) :
+theorem ps_probe_inst_coop {k : Nat} (hk : 7 ≤ k) (hkk : 3 * c_guard k + 22 ≤ k)
+    (h6 : 25 ≤ k) (h10 : 43 ≤ k) (hL : 100 * Nat.log2 k + 1000 ≤ k)
+    (hcg : 3 * c_guard k + 30 ≤ k) :
     ∀ T, proofSearch k (probe (inst (tauZoo k) T .coop)) = coopColBit T
   | .coop     => ps_probe_constC hk
   | .defect   => ps_probe_constD k
@@ -188,7 +190,7 @@ theorem ps_probe_inst_coop {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
   | .dbot     => ps_probe_false_of_plays_D k dbot_coop_plays_D
   | .cupod      => ps_probe_inst_cupod_coop_false (le_refl k)
   | .cupodTroll => ps_probe_inst_cupodTroll_false (le_refl k) _ (by decide)
-  | .cimcic     => ps_probe_cimcic_coop hL (by omega)
+  | .cimcic     => ps_probe_cimcic_coop hL hcg
   | .dimcid     => ps_probe_inst_dimcid_coop_false (le_refl k)
   | .prudent    => ps_probe_false_of_plays_D k prudent_coop_plays_D
   | .mirror     => ps_probe_mirror_coop (by omega)
@@ -208,7 +210,7 @@ def defectColBit : Tmpl → Bool
   | .dbot => true
   | _     => false
 
-theorem ps_probe_inst_defect {k : Nat} (hk : 2 ≤ k) (hk6 : 6 ≤ k)
+theorem ps_probe_inst_defect {k : Nat} (hk : 7 ≤ k) (hk6 : 25 ≤ k)
     (hL : 100 * Nat.log2 k + 1000 ≤ k) :
     ∀ T, proofSearch k (probe (inst (tauZoo k) T .defect)) = defectColBit T
   | .coop     => ps_probe_constC hk
@@ -254,8 +256,8 @@ def dupocColBit : Tmpl → Bool
   | .dbot     => false
   | _         => true
 
-theorem ps_probe_inst_dupoc {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
-    (hk7 : c_guard k + 7 ≤ k)
+theorem ps_probe_inst_dupoc {k : Nat} (hk : 7 ≤ k) (hkk : 3 * c_guard k + 22 ≤ k)
+    (hk7 : 7 * c_guard k + 54 ≤ k)
     (hquine : proofSearch k (probe (inst (tauZoo k) .dupoc .dupoc)) = true)
     -- the CIMCIC×Dupoc entangled bit is LÖB-GATED (`ps_probe_inst_cimcic_dupoc`),
     -- so it enters as a hypothesis exactly like the quine bit above; the
@@ -272,11 +274,13 @@ theorem ps_probe_inst_dupoc {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
     ∀ T, proofSearch k (probe (inst (tauZoo k) T .dupoc)) = dupocColBit T
   | .coop     => ps_probe_constC hk
   | .defect   => ps_probe_constD k
-  | .tftSim   => (proofSearch_spec _ _).2 (pf_simCopy_searchProbeC hk hk7)
-  | .tftPf    => (proofSearch_spec _ _).2 (pf_searchProbe_searchProbeC hk hkk hkk)
+  | .tftSim   => (proofSearch_spec _ _).2 (pf_simCopy_searchProbeC hk
+      (by have h3 : c_guard (tauZoo k).budget = c_guard k := rfl; omega))
+  | .tftPf    => (proofSearch_spec _ _).2 (pf_searchProbe_searchProbeC hk hkk
+      (by have h3 : c_guard (tauZoo k).budget = c_guard k := rfl; omega))
   | .dupoc    => hquine
   | .ebot     => ps_probe_inst_ebot_dupoc_false (le_refl k)
-  | .just     => ps_probe_just_dupoc hkk hquine
+  | .just     => ps_probe_just_dupoc hk7 hquine
   | .obot     => ps_probe_false_of_plays_D k (obot_dupoc_plays_D hk)
   | .guardian => ps_probe_guardCell_false (le_refl k) _
   | .dbot     => ps_probe_inst_dbot_dupoc_false (le_refl k)
@@ -305,8 +309,8 @@ def guardColBit : Tmpl → Bool
   | .dbot   => true
   | _       => false
 
-theorem ps_probeD_inst_coop {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
-    (h6 : 6 ≤ k) (h10 : 10 ≤ k) (hL : 100 * Nat.log2 k + 1000 ≤ k) :
+theorem ps_probeD_inst_coop {k : Nat} (hk : 7 ≤ k) (hkk : 3 * c_guard k + 22 ≤ k)
+    (h6 : 25 ≤ k) (h10 : 43 ≤ k) (hL : 100 * Nat.log2 k + 1000 ≤ k) :
     ∀ T, proofSearch k (probeD (inst (tauZoo k) T .coop)) = guardColBit T
   | .coop     => ps_probeD_false_of_plays_C k ⟨1, rfl⟩
   | .defect   => ps_probeD_constD hk
@@ -316,7 +320,13 @@ theorem ps_probeD_inst_coop {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
       (entry_C_of_interp (Pf_sound _ _ (pf_searchProbe_constC hk hkk)))
   | .dupoc    => ps_probeD_false_of_plays_C k
       (entry_C_of_interp (Pf_sound _ _ (pf_searchProbe_constC hk hkk)))
-  | .ebot     => ps_probeD_runCascadeConstC h6 _
+  | .ebot     => by
+      -- the watched instances are all the constant cooperator, so the
+      -- continuation's size is a literal (15): the certificate costs 53
+      rw [inst_ebot_peel k .coop, show inst (tauZoo k) .coop .defect = .const .C from rfl,
+        show inst (tauZoo k) .coop .coop = .const .C from rfl,
+        show inst (tauZoo k) .coop .mirror = .const .C from rfl]
+      exact ps_probeD_runCascadeConstC _ (by simp only [Prog.size]; omega)
   | .just     => ps_probeD_false_of_plays_C k
       (entry_C_of_interp (Pf_sound _ _ (pf_searchProbe_constC hk hkk)))
   | .obot     => ps_probeD_false_of_plays_C k
@@ -373,7 +383,7 @@ def cupodColBit : Tmpl → Bool
   | .mirror => true
   | _       => false
 
-theorem ps_probeD_inst_cupod {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
+theorem ps_probeD_inst_cupod {k : Nat} (hk : 7 ≤ k) (hkk : 3 * c_guard k + 22 ≤ k)
     (hquine : proofSearch k (probeD (inst (tauZoo k) .cupod .cupod)) = true)
     -- the ALIGNED dimcid×cupod pair: mutual Löb on defection, gated like every
     -- other Löb bit (see `TauDIMCID/Helpers`, "The ENTANGLED cells")
@@ -431,8 +441,8 @@ def coopColPlay : Tmpl → Action
   | .dbot   => .D
   | _       => .C
 
-theorem inst_coop_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
-    (h6 : 6 ≤ k) (h10 : 10 ≤ k) (hL : 100 * Nat.log2 k + 1000 ≤ k) :
+theorem inst_coop_plays {k : Nat} (hk : 7 ≤ k) (hkk : 3 * c_guard k + 22 ≤ k)
+    (h6 : 25 ≤ k) (h10 : 43 ≤ k) (hL : 100 * Nat.log2 k + 1000 ≤ k) :
     ∀ T, ∃ N, eval N (.bot (inst (tauZoo k) T .coop)) (.bot (inst (tauZoo k) T .coop))
               (inst (tauZoo k) T .coop) = some (coopColPlay T)
   | .coop     => ⟨1, rfl⟩
@@ -467,7 +477,7 @@ def defectColPlay : Tmpl → Action
   | .dbot => .C
   | _     => .D
 
-theorem inst_defect_plays {k : Nat} (hk : 2 ≤ k)
+theorem inst_defect_plays {k : Nat} (hk : 7 ≤ k)
     (hL : 100 * Nat.log2 k + 1000 ≤ k) :
     ∀ T, ∃ N, eval N (.bot (inst (tauZoo k) T .defect)) (.bot (inst (tauZoo k) T .defect))
               (inst (tauZoo k) T .defect) = some (defectColPlay T)

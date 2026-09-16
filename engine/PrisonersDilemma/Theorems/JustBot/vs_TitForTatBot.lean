@@ -20,14 +20,12 @@ namespace PD.Theorems
 -- TitForTatBot --
 
 /-- The shared guard: `(.bot CooperateBot)` cooperates against `(.bot (DupocBot k))`.
-    Pf at budget `atom_cost 2` (a `.bot`-wrapped constant cooperates in two
-    steps); we lift it to any `k ≥ atom_cost 2` via monotonicity. -/
-theorem proofSearch_botCB_vs_botDupoc (k : Nat) (hk : k ≥ atom_cost 2) :
+    A `.bot`-wrapped constant cooperates in two steps, plus the atom's own size
+    (`log2 k + 11`, the frozen snapshot's numeral): `⊢_k` at every `k ≥ log2 k + 13`. -/
+theorem proofSearch_botCB_vs_botDupoc (k : Nat) (hk : Nat.log2 k + 13 ≤ k) :
     proofSearch k (Formula.plays (.bot CooperateBot) (.bot (DupocBot k)) Action.C) = true := by
   refine (proofSearch_spec _ _).2 (Pf.atom ⟨PlaysProof.bot PlaysProof.const, ?_⟩)
-  have h7 : atom_cost 2 = 7 := by decide
-  show c_leaf + c_node ≤ k
-  simp only [c_leaf, c_node]
+  simp only [Formula.size, DupocBot_size, CooperateBot, Prog.size, c_leaf, c_node]
   omega
 
 /-- DupocBot (`.bot`-wrapped) cooperates against `.bot CooperateBot`: once the
@@ -89,30 +87,29 @@ theorem JustBot_plays_C_against_TitForTatBot (k fuel : Nat)
 /-- JustBot vs TitForTatBot: mutual cooperation. Both legs ride the shared guard at
     budget `atom_cost 5`. -/
 -- Generalized from the single witness `k = atom_cost 5`. The hand certificate's cost is
--- `c_leaf + c_guard k + 4*c_node + c_leaf`, and `c_guard k = numCost k = log2 k + 1` is
--- LOGARITHMIC, so the bound `log2 k + 7 ≤ k` holds for all large `k` by
--- `linear_log2_add_le` — the `decide` at the old fixed budget was not the only route.
+-- `c_leaf + c_guard k + 4*c_node + c_leaf` plus the atom's own size (`log2 k + 16`), and
+-- `c_guard k = numCost k = log2 k + 1` is LOGARITHMIC, so the bound `2·log2 k + 23 ≤ k`
+-- holds for all large `k` by `linear_log2_add_le` — the `decide` at the old fixed budget
+-- was not the only route.
 @[outcome]
 theorem outcome_JustBot_vs_TitForTatBot :
     OutcomeSpec .eventual 5
       JustBot (fun _ => TitForTatBot) (some (.C, .C)) := by
-  obtain ⟨K, hK⟩ := linear_log2_add_le 1 7
-  refine ⟨max K (atom_cost 2), fun k hlt fuel => ?_⟩
-  have hKk : K ≤ k := le_of_lt (lt_of_le_of_lt (le_max_left _ _) hlt)
-  have hcost : Nat.log2 k + 7 ≤ k := by have := hK k hKk; omega
+  obtain ⟨K, hK⟩ := linear_log2_add_le 2 23
+  refine ⟨K, fun k hlt fuel => ?_⟩
+  have hcost : 2 * Nat.log2 k + 23 ≤ k := hK k (le_of_lt hlt)
   have hk : proofSearch k (Formula.plays (.bot CooperateBot) (.bot (DupocBot k)) Action.C) = true :=
-    proofSearch_botCB_vs_botDupoc k
-      (le_of_lt (lt_of_le_of_lt (le_max_right K _) hlt))
+    proofSearch_botCB_vs_botDupoc k (by omega)
   have hGuardTFT : proofSearch k (Formula.plays TitForTatBot (.bot (DupocBot k)) Action.C) = true := by
     -- hand certificate: TFT's probe runs `.bot (DupocBot k)`'s FIRED search (hk), so
-    -- ite_t ∘ sim ∘ bot ∘ search_t ∘ const; cost = log2 k + 7 ≤ k (k = atom_cost 5 = 21).
+    -- ite_t ∘ sim ∘ bot ∘ search_t ∘ const; cost = log2 k + 7, plus the atom's size.
     refine (proofSearch_spec _ _).2 (Pf.atom
       (⟨PlaysProof.ite_t (PlaysProof.sim (PlaysProof.bot
           (PlaysProof.search_t ((proofSearch_spec _ _).1 hk) PlaysProof.const)))
         rfl PlaysProof.const, ?_⟩ :
         AtomProvable k (.plays TitForTatBot (.bot (DupocBot k)) .C)))
-    show c_leaf + c_guard k + c_node + c_node + c_node + c_leaf + c_node ≤ k
-    simp [c_leaf, c_node, c_guard, numCost] at hcost ⊢
+    simp only [c_leaf, c_node, c_guard, numCost, Formula.size, Prog.size, TitForTatBot,
+      CooperateBot, DupocBot_size]
     omega
   have hA : play (fuel + 5) (JustBot k) TitForTatBot = some .C := by
     simpa [Nat.add_assoc] using JustBot_plays_C_against_TitForTatBot k (fuel + 3) hGuardTFT

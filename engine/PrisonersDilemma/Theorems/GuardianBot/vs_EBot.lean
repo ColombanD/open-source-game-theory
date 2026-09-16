@@ -11,10 +11,11 @@ open PD PD.BaseTheorems PD.Bots
 namespace PD.Theorems
 
 -- GuardianBot vs .bot DefectBot: guard "DefectBot plays D vs botCB" provable at k≥2
-theorem gebot_guardian_D_vs_botDefect (k fuel : Nat) (hk : 2 ≤ k) :
+theorem gebot_guardian_D_vs_botDefect (k fuel : Nat) (hk : 7 ≤ k) :
     play (fuel + 2) (GuardianBot k) (.bot DefectBot) = some .D := by
   have hg : proofSearch k (.plays (.bot DefectBot) (.bot CooperateBot) .D) = true :=
-    (proofSearch_spec _ _).2 (Pf.atom ⟨PlaysProof.bot PlaysProof.const, by simp only [c_leaf, c_node]; omega⟩)
+    (proofSearch_spec _ _).2 (Pf.atom ⟨PlaysProof.bot PlaysProof.const,
+      by simp only [c_leaf, c_node, Formula.size, Prog.size, CooperateBot, DefectBot]; omega⟩)
   show eval (fuel + 2) (GuardianBot k) (.bot DefectBot) (GuardianBot k) = some .D
   unfold GuardianBot
   simp [eval, Prog.subst, Formula.subst, hg]
@@ -39,7 +40,7 @@ theorem gebot_guardian_C_vs_botCoop (k fuel : Nat) :
   unfold GuardianBot
   simp [eval, Prog.subst, Formula.subst, hg]
 
-theorem gebot_ebot_C (k fuel : Nat) (hk : 2 ≤ k) :
+theorem gebot_ebot_C (k fuel : Nat) (hk : 7 ≤ k) :
     play (fuel + 6) EBot (GuardianBot k) = some .C := by
   have hP2 : play (fuel + 3) (GuardianBot k) (.bot CooperateBot) = some .C := by
     simpa [Nat.add_assoc] using gebot_guardian_C_vs_botCoop k (fuel + 1)
@@ -62,14 +63,16 @@ theorem gebot_ebot_C (k fuel : Nat) (hk : 2 ≤ k) :
   simpa using! hIte2
 
 -- guard certificate for GuardianBot: EBot plays D vs .bot CooperateBot
-theorem gebot_guard_cert (k : Nat) (hk : 3 ^ 5 ≤ k) :
+theorem gebot_guard_cert (k : Nat)
+    (hk : 3 ^ 5 + (Formula.plays EBot (.bot CooperateBot) .D).size ≤ k) :
     proofSearch k (.plays EBot (.bot CooperateBot) .D) = true := by
   have hplay : play 5 EBot (.bot CooperateBot) = some .D := by
     show eval 5 EBot (.bot CooperateBot) EBot = some .D
     simp [eval, EBot, Prog.subst, CooperateBot, DefectBot, MirrorBot]; decide
-  have hcert : AtomProvable (3 ^ 5) (.plays EBot (.bot CooperateBot) .D) :=
+  have hcert : AtomProvable (3 ^ 5 + (Formula.plays EBot (.bot CooperateBot) .D).size)
+      (.plays EBot (.bot CooperateBot) .D) :=
     atom_complete_searchfree EBot (.bot CooperateBot) .D 5 rfl rfl hplay
-  exact (proofSearch_spec _ _).2 (Pf.atom (atom_monotone (3 ^ 5) k _ hk hcert))
+  exact (proofSearch_spec _ _).2 (Pf.atom (atom_monotone _ k _ hk hcert))
 
 theorem gebot_guardian_D (k fuel : Nat)
     (hg : proofSearch k (.plays EBot (.bot CooperateBot) .D) = true) :
@@ -82,9 +85,10 @@ theorem gebot_guardian_D (k fuel : Nat)
 theorem llm_outcome_GuardianBot_vs_EBot :
     OutcomeSpec .eventual 6
       GuardianBot (fun _ => EBot) (some (.D, .C)) := by
-  refine ⟨3 ^ 5, fun k hk fuel => outcome_mono_le (N := 6) ?_ (fuel + 6) (by omega)⟩
-  have hk2 : 2 ≤ k := by omega
-  have hkcert : 3 ^ 5 ≤ k := by omega
+  refine ⟨3 ^ 5 + (Formula.plays EBot (.bot CooperateBot) .D).size,
+    fun k hk fuel => outcome_mono_le (N := 6) ?_ (fuel + 6) (by omega)⟩
+  have hk2 : 7 ≤ k := by omega
+  have hkcert : 3 ^ 5 + (Formula.plays EBot (.bot CooperateBot) .D).size ≤ k := by omega
   have hA : play 6 (GuardianBot k) EBot = some .D := by
     have := gebot_guardian_D k 4 (gebot_guard_cert k hkcert)
     simpa using this

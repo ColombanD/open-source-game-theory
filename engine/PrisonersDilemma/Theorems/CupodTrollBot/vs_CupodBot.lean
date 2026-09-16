@@ -31,10 +31,13 @@ theorem outcome_CupodTrollBot_vs_CupodBot :
   refine ⟨K, fun k hk fuel => ?_⟩
   have hk' : (Formula.eq (CupodBot k) (CupodBot k)).size ≤ k :=
     le_trans (hsz k) (hK k (by omega))
+  -- Cupod's own certificate (fired guard + the recost atom charge) needs the tighter
+  -- `4 · log₂ k + 24 ≤ k`, which the same threshold covers.
+  have hk'' : 4 * Nat.log2 k + 24 ≤ k := by have := hK k (by omega); omega
   have hA : play (fuel + 2) (CupodTrollBot k) (CupodBot k) = some .D :=
     CupodTrollBot_defects_vs_CupodBot k fuel hk'
   have hB : play (fuel + 2) (CupodBot k) (CupodTrollBot k) = some .D :=
-    CupodBot_defects_vs_CupodTrollBot k fuel hk'
+    CupodBot_defects_vs_CupodTrollBot k fuel hk''
   exact outcome_of_plays _ _ _ _ _ hA hB
 
 end PD.Theorems

@@ -1,12 +1,20 @@
 import ArithS.Code
 import ArithS.Fit
+import PrisonersDilemma.Base.Exclusion
 
 /-!
 # ArithS.Neg — T2-NEG: no budget-keeping transfer exists, at any inflation (roadmap M3, step (d))
 
-The engine's transcript-cost model charges an ATOM by the number of evaluation steps of
-its play certificate, never by the size of its conclusion: `AtomProvable.mk` needs only
-`n ≤ k` for the run cost `n`, so `Pf 1 (.plays (.const C) q C)` holds for EVERY program `q`
+**STATUS 2026-09-16: the impossibility theorem is RETIRED — the engine's atom rule was re-costed
+in response to it (branch `colomban-recost`, roadmap M6), and the file now ends with the theorem
+that the old witness pays for the program it names (`no_budget_keeping_witness_pays`) and that
+every engine theorem fits its budget (`pf_size`). The bit-length lemmas of §1–2 are unchanged and
+still used (`FitBox`). The text below describes the ORIGINAL situation, kept as the record of why
+the re-cost was made.**
+
+The engine's transcript-cost model charged an ATOM by the number of evaluation steps of
+its play certificate, never by the size of its conclusion: `AtomProvable.mk` needed only
+`n ≤ k` for the run cost `n`, so `Pf 1 (.plays (.const C) q C)` held for EVERY program `q`
 (`PlaysProof.const` costs `c_leaf = 1`; this is the exception in `Base/Exclusion.pf_size_or_atom`).
 Any arithmetical realization of that atom must WRITE `q` — at least the canonical numeral of
 its code — and a `TAct`-proof is at least as long as its conclusion (`flen_le_of_lenProvable`,
@@ -152,37 +160,46 @@ theorem size_dnum_le_flen_trAt (me opp p q : PD.Prog) (a : PD.Action) (hq : clos
     exact size_le_tlen_progTT _
   omega
 
-/-! ### T2-NEG -/
+/-! ### T2-NEG, RETIRED by the re-cost — the witness now pays
 
-/-- **T2-NEG — no budget-keeping transfer at any inflation.** For every `e : ℕ → ℕ` and every
-realization `tr` that writes (the canonical numeral of) the second program of a play-atom,
-some engine theorem `Pf k φ` has NO `TAct`-proof of length `≤ e k` of `tr φ`. Witness: `k = 1`,
-`φ = .plays (.const C) (.bot^(e 1 + 1) (.const C)) C`, whose engine certificate is the
-one-step `PlaysProof.const` (cost `c_leaf = 1`) while its realization is longer than `e 1`. -/
+**History (2026-09-10 → 2026-09-16).** Against the ORIGINAL atom rule (`AtomProvable.mk` with the
+side condition `n ≤ k`, run cost only) this file proved
+
+```
 theorem no_budget_keeping_transfer (e : ℕ → ℕ) (tr : PD.Formula → Sentence LAct)
-    (htr : ∀ (p q : PD.Prog) (a : PD.Action), closedP q = true →
+    (htr : ∀ p q a, closedP q = true →
       Nat.size (dnum (pcode q)) ≤ flen (Rewriting.emb (tr (.plays p q a)) : Proposition LAct)) :
-    ∃ (k : ℕ) (φ : PD.Formula), PD.Pf k φ ∧ ¬ LenProvable (fbound : ℕ → ℕ) (e k) TAct (⌜tr φ⌝ : ℕ) := by
-  refine ⟨1, .plays (.const .C) (botIter (e 1 + 1) (.const .C)) .C, ?_, ?_⟩
-  · exact PD.Pf.atom (PD.AtomProvable.mk PD.PlaysProof.const (le_refl _))
-  · intro h
-    have h1 := flen_le_of_lenProvable h
-    have h2 := htr (.const .C) (botIter (e 1 + 1) (.const .C)) .C (closedP_botIter_succ _ _)
-    have h3 : e 1 + 1 ≤ Nat.size (dnum (pcode (botIter (e 1 + 1) (.const .C)))) := by
-      rw [pcode_botIter]; exact le_size_dnum_pBotIter _ _
-    omega
+    ∃ k φ, PD.Pf k φ ∧ ¬ LenProvable (fbound : ℕ → ℕ) (e k) TAct (⌜tr φ⌝ : ℕ)
+```
 
-/-- **T2-NEG for the concrete bounded translation** `trAt me opp` of `ArithS.Code`. -/
-theorem no_budget_keeping_transfer_tmpl (e : ℕ → ℕ) (me opp : PD.Prog) :
-    ∃ (k : ℕ) (φ : PD.Formula), PD.Pf k φ ∧ ¬ LenProvable (fbound : ℕ → ℕ) (e k) TAct (⌜trAt me opp φ⌝ : ℕ) :=
-  no_budget_keeping_transfer e (trAt me opp) (fun p q a hq ↦ size_dnum_le_flen_trAt me opp p q a hq)
+with the witness `k = 1`, `φ = .plays (.const C) (botIter (e 1 + 1) (.const C)) C`, plus its
+instances `_tmpl` (for `trAt`) and `_guardCode` (on the code the evaluator consults) — T2-NEG,
+three standard axioms, last checked at commit 0c8b410 of `colomban-arith-u10`. It is exactly why
+the engine's atom rule was RE-COSTED on 2026-09-16 (`ProofSystem.lean` §3, roadmap M6): the rule now
+charges `n + (Formula.plays me opponent a).size ≤ k`, the whole conclusion, so the witness can no
+longer be derived at budget `1` — and the theorem below records that it now pays for every
+program it names, which is the property the re-cost was made for. -/
 
-/-- The same, on the code the arithmetized evaluator consults at a search node: the guard
-code of the template code at the players' codes. -/
-theorem no_budget_keeping_transfer_guardCode (e : ℕ → ℕ) (me opp : PD.Prog) :
-    ∃ (k : ℕ) (φ : PD.Formula), PD.Pf k φ ∧
-      ¬ LenProvable (fbound : ℕ → ℕ) (e k) TAct (guardCode (tcode φ) (pcode me) (pcode opp)) := by
-  obtain ⟨k, φ, hpf, h⟩ := no_budget_keeping_transfer_tmpl e me opp
-  exact ⟨k, φ, hpf, by rwa [quote_trAt] at h⟩
+/-- `.bot^n p` has size `n + p.size`. -/
+lemma size_botIter (n : ℕ) (p : PD.Prog) : (botIter n p).size = n + p.size := by
+  induction n with
+  | zero => simp [botIter]
+  | succ n ih => simp [botIter, PD.Prog.size, ih]; omega
+
+/-- **Every engine theorem fits its budget** (the consequence of the re-cost:
+`Base/Exclusion.pf_size_or_atom` with the atom exception closed by the new side condition). -/
+theorem pf_size {k : ℕ} {φ : PD.Formula} (h : PD.Pf k φ) : φ.size ≤ k := by
+  rcases PD.BaseTheorems.pf_size_or_atom h with hle | hatom
+  · exact hle
+  · cases hatom with
+    | mk _ hle => omega
+
+/-- **T2-NEG's witness now pays.** The atom `(.const C) plays C against .bot^n (.const C)` is an
+engine theorem only at budgets `≥ n + 3`: the program it names is charged. -/
+theorem no_budget_keeping_witness_pays (k n : ℕ)
+    (h : PD.Pf k (.plays (.const .C) (botIter n (.const .C)) .C)) : n + 3 ≤ k := by
+  have := pf_size h
+  simp only [PD.Formula.size, PD.Prog.size, size_botIter] at this
+  omega
 
 end ArithS

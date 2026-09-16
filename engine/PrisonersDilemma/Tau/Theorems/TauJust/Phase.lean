@@ -40,8 +40,8 @@ def justRow : Tmpl → Action
 
 /-- The row's witness: prove-stages on the δ_L column — including at the `.dupoc`
     slot, where the probed object is the quine (by name, not by self). -/
-theorem justRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
-    (hk7 : c_guard k + 7 ≤ k)
+theorem justRow_plays {k : Nat} (hk : 7 ≤ k) (hkk : 3 * c_guard k + 22 ≤ k)
+    (hk7 : 7 * c_guard k + 54 ≤ k)
     (hquine : proofSearch k (probe (inst (tauZoo k) .dupoc .dupoc)) = true)
     (hcim : proofSearch k (probe (inst (tauZoo k) .cimcic .dupoc)) = dupocColBit .cimcic)
     -- the mirror×dupoc entangled bit, read through the same δ_L column
@@ -79,19 +79,19 @@ theorem justRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
 @[tau_row]
 theorem justRowSpec : RowSpec .just tauOrder justRow := by
   obtain ⟨kL, hkL⟩ := ps_probe_inst_quine
-  obtain ⟨kA, hkA⟩ := linear_log2_add_le 1 8
+  obtain ⟨kA, hkA⟩ := linear_log2_add_le 12 140
   obtain ⟨kM, hkM⟩ := ps_probe_inst_cimcic_dupoc
   obtain ⟨kX, hkX⟩ := ps_probe_mirror_dupoc
   obtain ⟨kC, hkC⟩ := ps_probe_inst_maxconfidence_dupoc
   refine ⟨kL + kA + kM + kX + kC, fun k hk T _ => ?_⟩
   have hquine := hkL k (by omega)
-  have hkA' : 1 * Nat.log2 k + 8 ≤ k := hkA k (by omega)
+  have hkA' : 12 * Nat.log2 k + 140 ≤ k := hkA k (by omega)
   have hcim := hkM k (by omega)
   have hmir := hkX k (by omega)
   have hconf := hkC k (by omega)
-  have hk2 : 2 ≤ k := by omega
-  have hkk : c_guard k + 3 ≤ k := by simp only [c_guard, numCost]; omega
-  have hk7 : c_guard k + 7 ≤ k := by simp only [c_guard, numCost]; omega
+  have hk2 : 7 ≤ k := by omega
+  have hkk : 3 * c_guard k + 22 ≤ k := by simp only [c_guard, numCost]; omega
+  have hk7 : 7 * c_guard k + 54 ≤ k := by simp only [c_guard, numCost]; omega
   exact justRow_plays hk2 hkk hk7 hquine hcim hmir hconf T
 
 /-- **τ(JustBot)** — boundary `θ ≤ dupMass`, same as TauDupoc's. UNCONDITIONAL
@@ -102,19 +102,19 @@ theorem tauJust_phase :
       (θ ≤ dupMass w → ∃ N, play N (TauBotZ k .just w θ) opponent = some .C)
       ∧ (¬ θ ≤ dupMass w → ∃ N, play N (TauBotZ k .just w θ) opponent = some .D) := by
   obtain ⟨kL, hkL⟩ := ps_probe_inst_quine
-  obtain ⟨kA, hkA⟩ := linear_log2_add_le 1 8
+  obtain ⟨kA, hkA⟩ := linear_log2_add_le 12 140
   obtain ⟨kM, hkM⟩ := ps_probe_inst_cimcic_dupoc
   obtain ⟨kX, hkX⟩ := ps_probe_mirror_dupoc
   obtain ⟨kC, hkC⟩ := ps_probe_inst_maxconfidence_dupoc
   refine ⟨kL + kA + kM + kX + kC, fun k hk θ w opponent => ?_⟩
   have hquine := hkL k (by omega)
-  have hkA' : 1 * Nat.log2 k + 8 ≤ k := hkA k (by omega)
+  have hkA' : 12 * Nat.log2 k + 140 ≤ k := hkA k (by omega)
   have hcim := hkM k (by omega)
   have hmir := hkX k (by omega)
   have hconf := hkC k (by omega)
-  have hk2 : 2 ≤ k := by omega
-  have hkk : c_guard k + 3 ≤ k := by simp only [c_guard, numCost]; omega
-  have hk7 : c_guard k + 7 ≤ k := by simp only [c_guard, numCost]; omega
+  have hk2 : 7 ≤ k := by omega
+  have hkk : 3 * c_guard k + 22 ≤ k := by simp only [c_guard, numCost]; omega
+  have hk7 : 7 * c_guard k + 54 ≤ k := by simp only [c_guard, numCost]; omega
   have h := phase_of_bits (tauZoo k) .just w justRow tauOrder θ opponent
     (fun T _ => justRow_plays hk2 hkk hk7 hquine hcim hmir hconf T)
   simp only [bitMass, tauOrder, List.map, justRow, massOf, massOf_ifC, massOf_ifD,

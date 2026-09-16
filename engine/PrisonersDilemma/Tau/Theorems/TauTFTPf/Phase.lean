@@ -37,8 +37,8 @@ def tftPfRow : Tmpl → Action
   | .mirror     => .C
 
 /-- The row's witness: every entry is a prove-stage on the δ_C prover column. -/
-theorem tftPfRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 ≤ k)
-    (h10 : 10 ≤ k) (hL : 100 * Nat.log2 k + 1000 ≤ k) (hcg : c_guard k + 20 ≤ k) :
+theorem tftPfRow_plays {k : Nat} (hk : 7 ≤ k) (hkk : 3 * c_guard k + 22 ≤ k) (h6 : 25 ≤ k)
+    (h10 : 43 ≤ k) (hL : 100 * Nat.log2 k + 1000 ≤ k) (hcg : 3 * c_guard k + 30 ≤ k) :
     ∀ T, ∃ N, eval N (.bot (inst (tauZoo k) .tftPf T)) (.bot (inst (tauZoo k) .tftPf T))
               (inst (tauZoo k) .tftPf T) = some (tftPfRow T) :=
   let bC := ps_probe_inst_coop hk hkk h6 h10 hL hcg
@@ -75,8 +75,8 @@ theorem tftPfRowSpec : RowSpec .tftPf tauOrder tftPfRow := by
     (by simp only [c_guard, numCost]; omega) T
 
 /-- **τ(TitForTatBot), prover** — boundary `θ ≤ pfMass` (Guardian excluded). -/
-theorem tauTFTPf_phase {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 ≤ k)
-    (h10 : 10 ≤ k) (hL : 100 * Nat.log2 k + 1000 ≤ k) (hcg : c_guard k + 20 ≤ k) (θ : Nat) (w : Tmpl → Nat) (opponent : Prog) :
+theorem tauTFTPf_phase {k : Nat} (hk : 7 ≤ k) (hkk : 3 * c_guard k + 22 ≤ k) (h6 : 25 ≤ k)
+    (h10 : 43 ≤ k) (hL : 100 * Nat.log2 k + 1000 ≤ k) (hcg : 3 * c_guard k + 30 ≤ k) (θ : Nat) (w : Tmpl → Nat) (opponent : Prog) :
     (θ ≤ pfMass w → ∃ N, play N (TauBotZ k .tftPf w θ) opponent = some .C)
     ∧ (¬ θ ≤ pfMass w → ∃ N, play N (TauBotZ k .tftPf w θ) opponent = some .D) := by
   have h := phase_of_bits (tauZoo k) .tftPf w tftPfRow tauOrder θ opponent
