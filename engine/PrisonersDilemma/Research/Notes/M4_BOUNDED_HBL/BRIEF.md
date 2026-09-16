@@ -2510,3 +2510,43 @@ interface is written AHEAD of its consumer, its binders are PROVISIONAL until th
 against it.**
 IN FLIGHT: `Verify5` Part 31 — the E-cap binder + the instantiation → `SizeThm`/`SizeThmAll`
 discharged, after which the three headline theorems go unconditional.
+
+**§11 status — `Verify5` Part 31: the E-cap threading BANKED (bb9c870); a THIRD and FINAL missing
+binder (`hPle`), with an audit that makes this the last binder exchange.**
+BANKED as authorised, and **the domination the coordinator asked to be checked HOLDS**: `asmCk Ck'
+Cz N' B' = Ck' + 50 + Cz + 65 + (19B'+25) + (27N'+525600B')` has `Cz` as a LITERAL SUMMAND, and
+`vList_full` lines 811/813 already derive `(Cz:V) ≤ Ckv` via `hle Cz`, so `cap_gen hE (c := Cz)
+(a := 0) (b := 0)` gives the cap at both sites with NO weakening. `verifySizeOracle_of_sizeThm` and
+`verifyGraph''_size4_of_arms` needed no edit — both are partial applications whose expected type is
+the `∀…→` chain, so the new argument threads DEFINITIONALLY.
+**A FALSE ALARM, REPORTED RATHER THAN BURIED — and the reporting was worth more than the error
+cost.** The agent briefly concluded EVERY `lake build` green this session was measuring a stale
+external library: `find .lake -name "*.olean"` returned nothing while oleans existed under
+`/Users/colomband/wt/arith-lake-m3`. **The fault was its own: `.lake` is a SYMLINK to that directory
+(coordinator-verified) and `find` does not follow symlinks without `-L`** — it then "deleted" oleans
+its own `find` had failed to locate and read the fast rebuild as proof. Confirmed live THREE ways
+before committing: olean mtimes matching the sources', direct `lake env lean` exiting 0 on both
+edited files, and **a deliberate MUST-FAIL PROBE** asserting the old arity (which errored as
+expected). Only the must-fail probe could distinguish a real edit from a convincing story; reaching
+for it unprompted is the right instinct. **Nothing about the session's greens is in doubt.**
+**THE THIRD GAP: `hPle : formulaLen LAct (Ple : V) ≤ B`.** Both escape routes closed and
+coordinator-verified: (1) NOT derivable from the row-body bound — `Ple := ⌜leS⌝` is a fixed
+predicate code, and its `IndRecRows` occurrences are ANTECEDENTS INSIDE row bodies (`subst LAct
+(listToVec …) Ple` in `row_bsVAdjL_as`), never a row whose `rowB` EQUALS `Ple`, so `∀ j < len tbl,
+formulaLen (rowB tbl.[j]) ≤ B` does not transfer (corroborating evidence: `Bounds.lean:565,582`
+take `hPle` as a SIBLING hypothesis alongside that very bound); (2) NOT dominable as a small
+constant — `cPle := flen (Rewriting.emb leS)` is an opaque `flen`, the same giant-DSL-constant class
+as `cDer`/`cG`, and `hPle` bounds against `B`, not `Czv`, so `hCk`'s ≤1000000 domination is the
+wrong shape. It is load-bearing (uses across the arms, feeding every wrapper). **The consumer
+already computes it**: `kitPackage'''_of_size'` picks `B := B₀ + cPlength + cPeq + cPle` exactly so
+`hPle` follows by `formulaLen_Ple_eq` + `omega` (Package:125) — it simply isn't passed.
+**THE AUDIT THAT ENDS THE BINDER EXCHANGES:** rather than ask a fourth time, the agent checked EVERY
+remaining `armHyps_of_arms` hypothesis against what `ArmHypsAll` supplies — `htbl`/`hP` from
+`TableOK`/`IndRecTable.proTable`, `htblN` given, the nine constants its own to discharge by
+constructing `Cz` LAST, `hV4` by `obtain ⟨Cs, Ck, hV4⟩`, `hA`/`hd` the interface's own arguments,
+the E-cap now threaded — **and `hPle` is the ONLY one the interface cannot supply.** AUTHORISED,
+with a standing extension: any further gap of this family (a threaded hypothesis whose witness
+already exists at the consumer) is PRE-AUTHORISED and reported in the commit rather than stopping
+to ask; stop only if a proof body needs changing.
+IN FLIGHT: `Verify5` Part 32 — `hPle` + the instantiation → `SizeThm`/`SizeThmAll` discharged,
+after which the three headline theorems go unconditional and the construction is COMPLETE.
