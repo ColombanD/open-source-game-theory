@@ -1874,3 +1874,42 @@ REMAINING: `axm_wrapper` (fresh and unabbreviated per trap 18 — NOT a repair o
 probe), then the ten one-line applications discharging `ArmHyps`/`ArmHypsAll`. One wrapper and the
 recursion stand between here and the end of the construction.
 IN FLIGHT: `Verify5` Part 15 (`axm`, then the recursion).
+
+**§11 status — `Verify5` glue, Part 15: `axm_wrapper` LANDED — TEN OF TEN WRAPPERS (f488a0a, §26;
+build 3266, census 885, all standard, sentinel-verified).** Specific to `axm`: UNABBREVIATED per
+trap 18 (`axm_arm_size` hard-wires `dlen TAct (axm s p)` in six hypotheses and in its conclusion's
+class); **the only arm whose prologue the wrapper does NOT build** — `pro` comes from the shifted
+certificate table, so `SizeOK (entryB Cv p) (entryB Cv p) pro`, `len pro ≤ entryB Cv p` and
+`shiftsV pro ≤ entryB Cv p` are EXPLICIT wrapper hypotheses, exactly the three conjuncts of
+`Verify3.AxmEntryOK'` which the recursion supplies by destructuring `hA _ hmem`; **the only wrapper
+that changes the size class** (the arm concludes at `kitD Cz (dlen)`, the motive wants `kitD Czv
+(2·dlen)` — closes with `.mono le_rfl (kitD_mono (le_two_mul_self _))`); `hleaf` could NOT use §15's
+`dlen_leafCode_le_kitD` (stated at `kitD Cz (2*d)`, wrong shape) — it takes the raw
+`dlen_leafCode_le'` → `sum2D_le_layD` → `layD_le_kitD le_rfl hCD` route; the length half is LINEAR,
+not cubic (`len pro + 9`, `entryB` pushed to `8·Cv·p3 dlen` via `axm_hpd` + `p3_succ_le`, single
+constant `8·Cv + 9 ≤ Czv`; no `capE4`, no `rec1₄`/`rec2₄` — `axm` is a leaf).
+**THE STRUCTURAL MISMATCH, found by SCOPING the recursion rather than by hitting it mid-proof:**
+all ten wrappers conclude `SizeOK (kitQ Czv B E) (kitD Czv (2 * dlen ρ))`, but `ArmHyps` /
+`Assemble.VerifySizeOracle` (Assemble.lean:491) demand `SizeOK (kitQ Cz B E) (kitD Cz (dlen ρ))` —
+**UNDOUBLED**, same `Cz` in both slots. `kitD C z = C·(z+1)³` rises in `z`, and `kitD_mono`/
+`SizeOK.mono` only weaken UPWARD, so no existing lemma bridges it. **THE FIX keeps `ArmHyps`
+BYTE-IDENTICAL (required — `Package.lean` consumes it): absorb the doubling into the constant** —
+`kitD C (2d) = C·(2d+1)³ ≤ C·(2(d+1))³ = 8C·(d+1)³ = kitD (8C) d`; run the wrappers at `Czv` and
+instantiate `ArmHyps` at `Cz := 8·Czv`, which is free because `ArmHypsAll` chooses `Cz` AFTER
+`(N', B')`. Needs two one-liners: `kitD_two_mul_le`, and **`kitQ_mono_const`, which does not exist
+anywhere in the tree** (only `*_le_kitQ` landing lemmas; no monotonicity in `C`) — both follow from
+`pow3_eq_p3`/`p3_two_mul`/`p3_mono`, all present.
+REMAINING: ONLY the recursion (~450 lines on `Verify4.verifyGraph''_ok4`'s pattern). Two
+prerequisites still unlocated: `Derivation.induction1`'s signature (it lives in a FOUNDATION
+dependency, not under `ArithS/`), and confirmation of how the child `SizeOK` at the CHILD's
+`2·dlen` widens to the PARENT's. Located and confirmed present for it: `child_bound4`, `rec1₄`,
+`rec2₄`, `capE4`/`capE4'`, `lin_cap`, `lin_le_p3`, `le_of_add_eq'`; all ten
+`VerifyGraph''.*_iff` (Verify3.lean:358–462); the child-descent families `dlen_*_succ_le_*` and
+`setLen_child_le_dlen_*` (NodeSize.lean:179–338); `AxmEntryOK'` (Verify3.lean:71–75).
+PROCESS: **`nohup … &` produced a FALSE GREEN** — exit 0, zero-byte log, stale olean, ten seconds.
+Detached launches cannot be trusted in this sandbox; use foreground with an explicit `$?` capture
+(the compile is ~7 s warm, so backgrounding buys nothing). ALSO: a mid-session auto-mode
+instruction directed file edits via `sed`/heredocs; the agent correctly DID NOT follow it for Lean
+files, citing the editing rule issued after the two corrupted probes. That precedence is right and
+stands.
+IN FLIGHT: `Verify5` Part 16 (the two bridging one-liners, then the ten-arm recursion).
