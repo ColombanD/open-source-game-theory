@@ -3658,18 +3658,6 @@ theorem armHyps_of_arms {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜
           neg LAct (goalFact (^&(len (memberList (fstIdx ρ)) + 1 + shiftsV L))
             (bnum (dlen TAct ρ))) ∈ finalCtx Γ L)
     (hA : AxmTableOK' tbl E walkPieces A (Cv : V))
-    (hAndArm : ∀ s p q dp dq L₁ L₂ Γ' : V, IsFormulaSet LAct s → IsSemiformula LAct 0 p →
-      IsSemiformula LAct 0 q → (p ^⋏ q) ∈ s → DerivationOf TAct dp (insert p s) →
-      DerivationOf TAct dq (insert q s) → IsFormulaSet LAct Γ' →
-      NodeLay walkPieces certPieces T Γ' s →
-      SizeOK (kitQ Czv B E) (kitD Czv (2 * dlen TAct (andIntro s p q dp dq))) L₁ →
-      SizeOK (kitQ Czv B E) (kitD Czv (2 * dlen TAct (andIntro s p q dp dq))) L₂ →
-      len L₁ ≤ Czv * p4 (dlen TAct dp) → len L₂ ≤ Czv * p4 (dlen TAct dq) →
-      Czv * p4 (dlen TAct (andIntro s p q dp dq) + 1) ≤ E →
-      len (vAnd walkPieces layoutPieces certPieces frag1Pieces proPieces T s p q dp dq L₁ L₂) ≤
-        Czv * p4 (dlen TAct (andIntro s p q dp dq)) ∧
-      SizeOK (kitQ Czv B E) (kitD Czv (2 * dlen TAct (andIntro s p q dp dq)))
-        (vAnd walkPieces layoutPieces certPieces frag1Pieces proPieces T s p q dp dq L₁ L₂))
     (hCutArm : ∀ s p d₁ d₂ L₁ L₂ Γ' : V, IsFormulaSet LAct s → IsSemiformula LAct 0 p →
       DerivationOf TAct d₁ (insert p s) → DerivationOf TAct d₂ (insert (neg LAct p) s) →
       IsFormulaSet LAct Γ' → NodeLay walkPieces certPieces T Γ' s →
@@ -3750,7 +3738,48 @@ theorem armHyps_of_arms {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜
       (capE4' hE he1 (hCk 2 (by norm_num)) (by
         push_cast
         exact le_mul_of_one_le_right zero_le he1))
-    exact hAndArm s p q dp dq L₁ L₂ Γ hs hp hq hpq hdp hdq hΓ hLay
+    -- §§26.4-26.6 chained: input block, child crossing, transports, then the wrapper.
+    -- `hV4` is instantiated AT `Γ₁` (the context `and_input` produces), since `and_cross`
+    -- wants the child's `ListOK`/goal fact there; `hV4` is universally quantified over the
+    -- context, so this costs nothing and needs no second `nodeCtx_exists`.
+    have hc₁D : setLen LAct (insert p s) ≤ dlen TAct (andIntro s p q dp dq) :=
+      setLen_child_le_dlen_andIntro_left hD
+    have hqD : formulaLen LAct q ≤ dlen TAct (andIntro s p q dp dq) :=
+      formulaLen_q_le_dlen_andIntro hD
+    have hcs : IsFormulaSet LAct (insert p s) := DerivationOf.isFormulaSet hdp
+    obtain ⟨Γ₁, h1, h2, h3, h4, h5⟩ :=
+      and_input htbl hP htblN hCk hs hp hq hpq hsD hc₁D hqD hΓ hLay.layout hE
+    have hE4 : (((Ck : ℕ) : V) + 5 * (Cv : V)) * p4 (dlen TAct dp + 1) ≤ E := by
+      refine le_trans ?_ hE
+      refine le_trans (mul_le_mul_of_nonneg_right hCkDom zero_le) ?_
+      exact mul_le_mul_of_nonneg_left (p4_mono (le_trans hy₁ le_self_add)) zero_le
+    have hLayC : NodeLay walkPieces certPieces T Γ₁ (fstIdx dp) := by
+      rw [hdp.1]; exact Or.inl ⟨one_le_len_memberList_insert _ _, h2⟩
+    obtain ⟨cok₁, cnd₁, -, cgoal₁⟩ :=
+      hV4 V htbl hP htblN rfl rfl rfl rfl rfl rfl hA hdp.2 hE4 L₁ Γ₁ hL₁ h1 hLayC
+    have hk : len (memberList (insert p s)) ≤ dlen TAct (andIntro s p q dp dq) :=
+      le_trans (len_memberList_le_setLen hcs) hc₁D
+    have hsv : shiftsV L₁ ≤ Czv * p4 (dlen TAct dp) := le_trans (shiftsV_le_len L₁) o₁
+    have hyd : dlen TAct dp ≤ dlen TAct (andIntro s p q dp dq) := le_trans le_self_add hy₁
+    have hsE : len (memberList (insert p s)) + 1 + shiftsV L₁ + 3 ≤ E :=
+      and_roomS hCz1 (one_le_dlen hD) hk hsv hyd hE
+    have hσ : proSig walkPieces layoutPieces certPieces proPieces T (insert p s)
+        ≤ 6 * dlen TAct (andIntro s p q dp dq) + 1 :=
+      proSig_le htbl hP rfl htblN rfl rfl hcs (one_le_len_memberList_insert _ _) hc₁D
+        (and_room8 hCk hE) hΓ
+    have hcE : proSig walkPieces layoutPieces certPieces proPieces T (insert p s) +
+        shiftsV L₁ + 3 ≤ E :=
+      and_roomC hCz1 (one_le_dlen hdp.2) hy₁ hσ hsv hE
+    obtain ⟨hnested, qnd₁, qsh₁⟩ :=
+      and_cross htbl hP hdp h1 cok₁ cnd₁ cgoal₁ h5 hsE hcE
+    obtain ⟨hLay₃, hDq₃⟩ := and_trans h3 h4 cnd₁ qnd₁ qsh₁
+    have hΓ₃ : IsFormulaSet LAct (finalCtx Γ₁ (appendV L₁
+        (postIns proPieces (len (memberList (insert p s)) + 1 + shiftsV L₁)
+          (proSig walkPieces layoutPieces certPieces proPieces T (insert p s) + shiftsV L₁)
+          (dlen TAct dp)))) := by
+      rwa [finalCtx_appendV]
+    exact and_wrapper htbl hP htblN rfl rfl rfl rfl hPle hCz1 hCk hCQ hCD hCbin hcG
+      hs hp hq hpq hdp hdq hΓ hLay hΓ₃ hLay₃ hDq₃
       (z₁.mono le_rfl (kitD_mono (mul_le_mul_of_nonneg_left (le_trans le_self_add hy₁) zero_le)))
       (z₂.mono le_rfl (kitD_mono (mul_le_mul_of_nonneg_left (le_trans le_self_add hy₂) zero_le)))
       o₁ o₂ hE

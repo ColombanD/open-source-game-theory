@@ -1736,6 +1736,18 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 -- own `obtain ⟨Cs, Ck, hV4⟩ := verifyGraph''_ok4`; nothing applies `armHyps_of_arms` yet, so the cost is zero today.
 -- Probe-verified before transcription: with `hV4` at the signature's `Ck`, the child triple extracts and `hE4`
 -- follows from `hCkDom` plus `p4_mono (le_trans hy₁ le_self_add)`.
+-- **`hAndArm` IS DISCHARGED.** The `and` arm no longer takes the arm's conclusion as a hypothesis: it proves it,
+-- by chaining §26.4 `and_input` → §26.5 `and_cross` → §26.6 `and_trans` → `rwa [finalCtx_appendV]` → §22
+-- `and_wrapper`, with two `have`s the arm lacked (`setLen_child_le_dlen_andIntro_left`,
+-- `formulaLen_q_le_dlen_andIntro`) and the two `postIns` rooms from §26.3 (`and_roomS`, `and_roomC`).
+-- The child's `ListOK`/`NoDrop'`/goal fact come from `hV4` INSTANTIATED AT `Γ₁` — the context `and_input` itself
+-- produces — not at a separately built one: `and_cross` wants them at `Γ₁`, and `hV4` is universally quantified
+-- over the context, so drawing them there costs nothing and removes a second `nodeCtx_exists` call. The child
+-- `NodeLay` at `Γ₁` is `Or.inl ⟨one_le_len_memberList_insert _ _, h2⟩` after `hdp.1` rewrites `fstIdx dp`, the
+-- `Verify2`:2295 idiom, with `h2` being `and_input`'s SECOND component.
+-- A first attempt drew the child facts at a separate `Γc` and failed on exactly that mismatch — the fix was
+-- reordering, not a bridge lemma.
+-- `hCutArm` remains; `armHyps_of_arms` is now conditional on the `cut` arm alone.
 -- TRAP 31: `set_option … in` binds to the NEXT declaration, so a sentinel planted BETWEEN the `set_option` and its
 -- theorem steals the raise and the theorem then elaborates at the default 200000 heartbeats — here the motive's
 -- `simp only [VerifyGraph'', p4, kitQ, kitD]; definability` times out, which reads as a real failure but is an
