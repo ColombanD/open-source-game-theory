@@ -3617,6 +3617,129 @@ theorem and_trans {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺�
 
 end andTrans
 
+/-! ## 26.7 THE `cut` CHAIN'S INPUT BLOCK
+
+The first seam of the `cut` transport chain, and the analogue of §26.4 `and_input`: from the
+node's own layout, run `proCutPre` (the cut formula and its negation, walked and certified)
+and then the FIRST `cutPro` selector, producing the context in which the first child runs.
+
+Two differences from `and`, both structural:
+
+* the offsets come from `mShift`/`mLen` rather than `memTop`/`descCountF` (`mShift_le ≤ 4·|x|`,
+  `mLen_succ_le : mLen + 1 ≤ 2·|x|`), so the parent sits at `mShift p + mShift (neg p) ≤ 8·D`
+  and the dossier at `mLen p + mShift (neg p) ≤ 6·D`. §26.2's `and_roomI`/`and_roomIP` do NOT
+  apply — they want `i ≤ 6·D + 1` and `ip ≤ 8·D + 2` — so the two offset rooms are taken
+  directly from the general `eroom_of_le` at `22·D + 5` and `14·D + 4` (the coordinator's
+  standing preference for the general machinery over new special cases). Only `and_room13`
+  is reused, unchanged.
+* the parent's layout is a `PLay` throughout, because the empty-parent case is real here —
+  that is what `cutPro` selects on.
+
+**The statement does NOT mention `cutPro`.** An earlier draft tried `rw [cutPro, if_pos hs0]`
+and failed with "Failed to rewrite using equation theorems": the goal is an `∃ Γ₁, …` whose
+body never contains the selector, so there is no occurrence to rewrite. `cutBlock_ok` and
+`sizeOK_cutPro` can unfold it only because their own conclusions name it. The fix is that the
+seam needs no selector at all: each branch supplies its own witness (`finalCtx Γ₀ (proIns0 …)`
+or `finalCtx Γ₀ (proIns …)`) and which one produced it is invisible downstream — the selector
+is re-assembled later, inside `sizeOK_cutPro`, which does its own split. This is why `and`
+needed no analogue.
+
+TRAP 28 applies here too: `IdFrame`'s fields are NAMED (`child`, `parent`, `dp`, `cp`), so the
+nonempty branch's parent layout is `fr.parent`, never an anonymous projection. -/
+
+section cutInput
+
+set_option maxHeartbeats 4000000 in
+/-- **The `cut` chain's input block**: `proCutPre`, then the first `cutPro` selector. -/
+theorem cut_input {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
+    {tbl N N' B' T E Czv D Γ s p : V}
+    (htbl : TableOK tbl N) (hP : ProTable tbl) (htblN : NumTableOK T N' B')
+    (hCk : ∀ n : ℕ, n ≤ 1000000 → ((n : ℕ) : V) ≤ Czv)
+    (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 0 p)
+    (hpD : formulaLen LAct p ≤ D) (hnpD : formulaLen LAct (neg LAct p) ≤ D)
+    (hc₁D : setLen LAct (insert p s) ≤ D)
+    (hsD0p : setLen LAct (insert p (0 : V)) ≤ D)
+    (hΓ : IsFormulaSet LAct Γ) (hLay : NodeLay walkPieces certPieces T Γ s)
+    (hE : Czv * p4 (D + 1) ≤ E) :
+    ∃ Γ₁ : V, IsFormulaSet LAct Γ₁ ∧
+      Layout walkPieces certPieces T Γ₁ (insert p s) 0 ∧
+      PLay certPieces T Γ₁ s
+        (mShift walkPieces certPieces T p + mShift walkPieces certPieces T (neg LAct p) +
+          (1 + proSig walkPieces layoutPieces certPieces proPieces T (insert p s))) ∧
+      DossF walkPieces Γ₁ 0 (neg LAct p)
+        (mLen certPieces T (neg LAct p) +
+          (1 + proSig walkPieces layoutPieces certPieces proPieces T (insert p s))) ∧
+      neg LAct (eqFactB
+          (^&(proSig walkPieces layoutPieces certPieces proPieces T (insert p s)))
+          (^&(0 + (len (memberList (insert p s)) + 1)))) ∈ Γ₁ := by
+  have hW : WalkTable tbl := hP.walkTable
+  have hnp : IsSemiformula LAct 0 (neg LAct p) := hp.neg
+  -- the prefix's room, via the general machinery
+  have hEc : 13 * D + 8 ≤ E := by
+    refine eroom_of_le hE hCk 13 8 (by norm_num) ?_
+    push_cast
+    exact le_rfl
+  obtain ⟨c0ok, c0nd, c0sh, hDp, -, hDnp, -, hneg⟩ :=
+    proCutPre_ok htbl hP htblN rfl hp hpD hnpD hEc hΓ
+  have hΓ₀f : IsFormulaSet LAct (finalCtx Γ (proCutPre walkPieces certPieces T p)) :=
+    finalCtx_isFormulaSet 8 htbl hΓ c0ok
+  have layP₀ : PLay certPieces T (finalCtx Γ (proCutPre walkPieces certPieces T p)) s
+      (mShift walkPieces certPieces T p + mShift walkPieces certPieces T (neg LAct p)) := by
+    have h := hLay.play.transport c0nd
+    rwa [c0sh, zero_add] at h
+  -- the three E-rooms for the first `cutPro`
+  have hml : mLen certPieces T p ≤ 2 * D :=
+    le_trans le_self_add (le_trans (mLen_succ_le rfl T hp)
+      (mul_le_mul_of_nonneg_left hpD zero_le))
+  have hmsn : mShift walkPieces certPieces T (neg LAct p) ≤ 4 * D :=
+    le_trans (mShift_le htbl hW rfl T hnp) (mul_le_mul_of_nonneg_left hnpD zero_le)
+  have hmsp : mShift walkPieces certPieces T p ≤ 4 * D :=
+    le_trans (mShift_le htbl hW rfl T hp) (mul_le_mul_of_nonneg_left hpD zero_le)
+  have hE13 : 13 * D + 18 * ‖D‖ + 12 ≤ E := and_room13 hCk hE
+  have hiE : mShift walkPieces certPieces T p + mShift walkPieces certPieces T (neg LAct p)
+      + 14 * D + 5 ≤ E := by
+    refine eroom_of_le hE hCk 22 5 (by norm_num) ?_
+    push_cast
+    calc mShift walkPieces certPieces T p + mShift walkPieces certPieces T (neg LAct p)
+          + 14 * D + 5
+        ≤ 4 * D + 4 * D + 14 * D + 5 :=
+          add_le_add (add_le_add (add_le_add hmsp hmsn) le_rfl) le_rfl
+      _ = 22 * D + 5 := by ring
+  have hipE : mLen certPieces T p + mShift walkPieces certPieces T (neg LAct p)
+      + 8 * D + 4 ≤ E := by
+    refine eroom_of_le hE hCk 14 4 (by norm_num) ?_
+    push_cast
+    calc mLen certPieces T p + mShift walkPieces certPieces T (neg LAct p) + 8 * D + 4
+        ≤ 2 * D + 4 * D + 8 * D + 4 :=
+          add_le_add (add_le_add (add_le_add hml hmsn) le_rfl) le_rfl
+      _ = 14 * D + 4 := by ring
+  -- the selector, both branches (the `cutBlock_ok` `key` recipe)
+  by_cases hs0 : memberList s = 0
+  · have hs0' : s = 0 := eq_zero_of_memberList_eq_zero hs0
+    have hLay0 : Layout0 walkPieces certPieces T
+        (finalCtx Γ (proCutPre walkPieces certPieces T p))
+        (mShift walkPieces certPieces T p + mShift walkPieces certPieces T (neg LAct p)) := by
+      rcases layP₀ with ⟨hk1, -⟩ | ⟨-, h0⟩
+      · exfalso; rw [hs0', len_memberList_zero] at hk1; exact absurd hk1 (by simp)
+      · exact h0
+    subst hs0'
+    obtain ⟨pok, pnd, psh, layC, layP, hins, heq⟩ :=
+      proIns0_ok htbl hP htblN rfl rfl rfl hp hsD0p hE13 hiE hipE hΓ₀f hLay0 hDp
+    refine ⟨_, finalCtx_isFormulaSet 8 htbl hΓ₀f pok, layC, Or.inr ⟨rfl, ?_⟩, ?_, heq⟩
+    · rwa [add_assoc] at layP
+    · have h := dossF_transport' pnd hDnp
+      rwa [psh] at h
+  · have hk1 : 1 ≤ len (memberList s) := one_le_len_memberList_of_ne hs0
+    obtain ⟨pok, pnd, psh, layC, fr, heq⟩ :=
+      proIns_ok htbl hP htblN rfl rfl rfl hs hp hk1 hc₁D hE13 hiE hipE hΓ₀f layP₀.layout hDp
+    refine ⟨_, finalCtx_isFormulaSet 8 htbl hΓ₀f pok, layC, Or.inl ⟨hk1, ?_⟩, ?_, heq⟩
+    · have h := fr.parent
+      rwa [add_assoc] at h
+    · have h := dossF_transport' pnd hDnp
+      rwa [psh] at h
+
+end cutInput
+
 /-! ## 27. THE TEN-ARM RECURSION
 
 `Verify4.verifyGraph''_ok4`'s shape with `len`/`SizeOK` in place of `shiftsV`: one `Derivation.induction1 𝚷` whose
