@@ -225,64 +225,49 @@ Orchestration with background subagents (§5 agent operations); design decisions
 brief plus verbatim reader reports; a judge panel was tried once and not needed. Check
 `git status` in the worktree before assuming work was lost.
 
-## 8. Last session state (2026-09-15, 11:55 — Fable 5.1 session, stopped cleanly for a model switch)
+## 8. Last session state (2026-09-16 — U10 COMPLETE; the hypothesis is discharged)
 
-Branch `colomban-arith-u10`, pushed and in sync as of 2026-09-14 (PUSH FIRST: `git push`). Tree
-CLEAN, build GREEN: last full build 3245–3257 jobs, **census 606 lines, all `[propext,
-Classical.choice, Quot.sound]`** (the single `substs_leF_imp` subset line is pre-existing). The
-full narrative is `M4_BOUNDED_HBL/BRIEF.md` §11 — read its status entries IN ORDER, newest last;
-they are the U10 log with every interface and every trap.
+Branch `colomban-arith-u10`, **NOT pushed since 2026-09-14** — push is the first thing to do
+(`git push`). Tree clean, build GREEN: **3270 jobs, census 918 lines, all `[propext,
+Classical.choice, Quot.sound]`** (the single `substs_leF_imp` subset line is pre-existing); zero
+`sorry`, zero `axiom` declarations, zero `native_decide` in the package.
 
-**THE HEADLINE.** `Necessitation/Top.lean` proves **`boundedInnerNec_four_of_kit : KitPackage' … →
-BoundedInnerNec 4`** (and `_three_of_kit` from the finer `KitPackage`). Since every M4 result is
-parametric in the degree (`pblt_uniform {d}`, `dupoc_self_coop {d}`), filling `KitPackage'` makes
-Dupoc's self-cooperation UNCONDITIONAL in PA-`S`. **The target is DEGREE 4** (decided with the user
-2026-09-15): the generic cost lemmas charge a new fact's full length `4·B·E` as context growth,
-which costs one factor of `g` over the design's cubic count; degree 3 is a later, optional
-refinement (occurrence accounting: an `OccOK` per step, a `costSum_le_of_sizeOK_occ` variant,
-`occOK_*` per producer). Linear is impossible in this measure and not claimed.
+**THE RESULT.** `BoundedInnerNec` — the one hypothesis M4 rested on — is a THEOREM at degree 16,
+and the headline results are unconditional:
+`ArithS.boundedInnerNec_sixteen`, `ArithS.dupoc_self_coop_unconditional`,
+`ArithS.pblt_unconditional`, all in `Necessitation/Package.lean` §4.
 
-**WHAT `KitPackage'` NEEDS (the ENTIRE remaining obligation; `Top.lean` §9 verbatim):**
-(A) **`PinKit' χ tbl N B Cχ` for every χ.** `Pin.lean` has `pin_assembly` (every conjunct except the
-COST, from two ORACLES) and §3's exact plans. Remaining: (1) `BnumOracle` — a producer `bnumSteps
-k j` over the bits of `k` on the dossier of `bnum k` (per bit an `sLemma` `𝟏 ≤ bnum m` via
-`NumSteps.oneLe_proof` + one Horn step `bnumEvenCert`/`bnumOddOfEven` — rows in `NumIdRows`; TRAP:
-the two `𝟏`s in `𝟐 = 𝟏 ^+ 𝟏` are DIFFERENT eigenvariables, identify by `eqOfFunc` at `𝟎` then
-`congAdj`); (2) `SubstOracle` — `certSubst_ok` re-indexed (`Prologue` §0 `reidxL`/`certView`/
-`listOK_reidxL`) at `w = bnum k ∷ 0`, `r = ⌜χ⌝` as a VARIABLE `c`; `SubFPre` is now dischargeable:
-`Cert` §6.7 (8243772) has `subFPre_single`, `listSum_termLenVec_qVecIterV_le/_cap` (QUADRATIC:
-`Σ_{i<e}(i+1)`, not `e+1` — the earlier plan was wrong), `len_qWalkP_le/_cap`; (3) the three
-coarse cost conjuncts via `costSum_appendV` + each block's cost lemma (`numInv_cost`,
-`costSum_certSubst_le` + `costSum_reidxL`, the walk's cost, `pinKernel_ok`'s `SizeOK 0 0`) then
-`≤` the `kitQ`/`kitD` shape. The Pin agent was stopped BEFORE writing anything.
-(B) **`VerifyKit' tbl N B W tblN Ck`.** (1) The prologues: seven of ten DONE in `Prologue.lean`
-(`proAxL_ok`, `layout_verum`, `proIns_ok`/`postIns_ok` for and/or/cut, `proWk_ok`, `proOr_ok`,
-`proShift_ok`, the `Layout`/`Layout0` predicates with ONE transport lemma, the `costSum_pro*_le`
-bounds, the empty-sequent case — `∅` genuinely occurs, a nonemptiness invariant is FALSE under
-`¬Con`); `all`/`exs` NOT started (plans in `Prologue.lean` §8; the `Cert` §6.7 caps they need are
-in; the row `leOfEqP` for `exs` is in `PrologueRows` — the agent was stopped right after adding
-it); `axm` NOT started (`DESIGN_fragments` §4.10: case (i) the finitely many standard axioms via
-`NumId`'s `numId_sentence` + the `axiomRec σ` rows — one per σ; case (ii) induction instances via
-`qqAlls`/`bv`/`fvarVec` + `indRec` + `Lib/Bridge`'s ℒₒᵣ↔LAct chain — the longest single chain,
-`nodeAxm` currently takes `axchFact` as its layout hypothesis). (2) `Verify.lean` §3.6's clause
-edit: replace each clause's `∃ pro ≤ L, …` by the Σ₁ call computing the prologue (`∃ pro, !proDef
-pro … ∧ …`); blueprint/`StrongFinite`/`case_iff`/inversions/`verifyGraph_exists` survive; NOTE the
-verify list runs at the `proRows` table (`Prologue` §0) with fragment steps read through
-`mkStep_frag2Pieces_lt`/`mkStep_proPieces_lt`, certification steps re-indexed, and cap 9
-(`ListOK.mono h89`). (3) `VerifyKit'.ok/.cost`: by `Derivation.induction1 𝚷` on ρ with `Fixpoint.case`,
-each tag's case = its `pro<Tag>_ok` + the child's IH + `node<Tag>_ok` + the offset bookkeeping
-(`DESIGN_fragments` §9 risk 1 — the bulk, and the risk), carrying `1 ≤ k ∧ Layout ∨ k = 0 ∧
-Layout0`; the cost by the `costSum_appendV` chain in the coarse shape.
-(C) Then `KitPackage'` per model (one table: `NumIdTable ⇒ ProTable ⇒ TopTable …`, `exists_*`), the
-unconditional **`dupoc_self_coop`** (instantiate `Assembly/Cell.lean`'s `dupoc_self_coop` at
-`boundedInnerNec_four_of_kit …`), the results record and roadmap updated, the paper sentence.
+**The chain, bottom to top** (all in `arith/ArithS/Necessitation/`): the row library and step
+language (`Lib/`, `Steps`, `Chain`) → the formula walk (`Describe`) → numeral provers (`NumSteps`,
+`NumLength`, `NumMul`) → certification passes (`Cert`: `certNeg`/`certShift`/`certSubst`/`certFree`/
+`lenSteps`) → the dossier bridge (`Dossier`) → ten per-tag fragments (`Frag1`, `Frag2`) → their
+prologues (`Prologue`, `ProAxm`, `IndRec`) → the recursion (`Verify2`/`Verify3`/`Verify4`:
+`VerifyGraph''`, `verifyGraph''_ok4`) → the size/length discipline (`Verify5`: ten motive wrappers,
+`armHyps_of_arms`, `armHypsAll_of_arms`) → the kit and the top (`Assemble`, `Top`) → the package
+(`Package`: `sizeThmAll_holds`, then §4's three unconditional theorems).
 
-**PROCESS (binding, learned the hard way).** Verify a reported blocker against the tree before
-believing it (four of five dissolved this week). Sentinel-test a suspiciously fast green on a large
-or generated file. `exit 124` with an EMPTY log is a stall — bisect by truncation; a prefix ending
-mid-declaration reports `unexpected end of input` (artifact). Never end an agent turn while its own
-check runs; poll with a non-self-matching pattern; concurrent `Cert` rebuilds remove `Cert.olean`
-for minutes (poll the olean). Every green section is its own wip commit; resume from `git status`.
-Two concurrent Lean agents maximum; one file set each; commit by name only. The rate limit kills
-agents mid-task (resets seen at 03:30, 02:10, 20:50, 16:20, 15:10, 04:10); their commits and files
-survive.
+**WHAT IS LEFT — all optional, none blocking.**
+1. *Lower the degree* (16 → 3 is the design's target; nothing downstream needs it, since the M4
+   results are parametric in `d`). In increasing cost: redesign the substitution certificate to
+   take one `qVec` step per depth; fine occurrence accounting (`fvOccF`) instead of full-length
+   charging in the per-step cost; **binary variable-index charging in `Length.lean`** — the root
+   cause of every loss, but it touches the M1 constants and the whole census.
+2. *Cosmetic in `Package.lean`*: `SizeThm`'s docstring still calls the headline theorems
+   conditional, and `boundedInnerNec_sixteen_of_sizeThm` still takes `hsz` (harmless — §4 discharges
+   it).
+3. The post-U10 programme of §4: the mutual-Löb cells (PrudentBot/JustBot vs Dupoc), the tau
+   constructors, LegibleBot/OptimBot (box guards need the node-data coding fix), the merge onto `Pf`
+   (T2-NEG says it cannot be budget-preserving), and the paper.
+
+**PROCESS LESSONS EARNED (the full list is `M4_BOUNDED_HBL/BRIEF.md` §11, Parts 1–32).**
+*Verify a reported blocker against the tree before believing it* — most dissolved. *A completion
+claim must be re-derived from the tree, never repeated*: the final report quoted three theorem names
+that did not exist, and the work was two lines short. *An interface written ahead of its consumer
+has provisional binders until the consumer compiles against it* — six corrections came from that
+one pattern. *Check callability before transcribing*: a lemma that compiles but can never be applied
+is worse than one that fails. *Compile a skeleton rather than read* when the question is structural
+— seven seconds settled what three rounds of reading had not. *Never edit Lean by script* (two
+corrupted probes); *discard and rewrite rather than patch*. *Only a must-fail probe distinguishes a
+real edit from a stale olean.* *`exit 124` with an empty log is a stall; a truncation prefix's
+`unexpected end of input` is an artefact.* *Never end a turn with uncommitted text or at a red
+boundary — reach the boundary by banking a piece, not by declining to start one.*

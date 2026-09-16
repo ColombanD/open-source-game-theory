@@ -1018,6 +1018,21 @@ introduction laws `freeIterAt`/`freeIter_exsIter`/`freeIterAt_subst_listToVec` (
 `freeIterT`). Two DSL literals to know: the `1` of `isSemiformulaSubsts1B`/`isFormulaFreeB` is `𝟏`,
 not `cT 1`. IN FLIGHT: `Lib/Occ`. NEXT: `describeSteps` (DESIGN_describe §4).
 
+**M5 — the hypothesis discharged (2026-09-16).** `BoundedInnerNec 16` is a theorem; with it
+`dupoc_self_coop_unconditional` and `pblt_unconditional` hold with no hypothesis. Build 3270 jobs,
+census 918, all three standard axioms, zero `sorry`/`axiom`/`native_decide`. U10 delivered in
+`Necessitation/`: the library and step language, the formula walk, the numeral provers, the
+certification passes, all ten per-tag fragments and their prologues, the ten motive wrappers, the
+`Derivation.induction1 𝚷` recursion (`armHyps_of_arms`), the axiom recogniser (standard axioms +
+nonstandard induction instances), the per-χ pinning, and the size/length discipline
+(`sizeThmAll_holds`). Degree 16 rather than 3: every loss traces to unary variable-index charging;
+the M4 results are parametric in `d`, so nothing downstream depends on it. Three optional
+improvements deferred (certificate redesign, occurrence accounting, binary index charging).
+**Six corrections were forced by one pattern** — an obligation fixed before the thing it must
+dominate; four constants before their quantifier, one layout before its case distinction, three
+missing interface binders. Lesson: *an interface written ahead of its consumer has provisional
+binders until the consumer compiles against it.*
+
 **M4 — quantitative HBL and parametric bounded Löb in PA.** The research-grade block:
 * bounded D1: `PA ⊢_k σ → PA ⊢_{e(k)+|□_k σ|} □_k σ` — Critch's (d) with `e` linear or
   polynomial (danger 1);

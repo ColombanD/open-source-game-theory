@@ -270,3 +270,44 @@ A design decision, not part of M3.
   `Prog, RelabelTemplate, Bnum, BewV, Guard, Subst, Eval, EvalN, SimTest, Template, RedCell,
   Fit` (agents, T1); `Core/Tr, Core/Sound` (T2-CORE); `Code, Neg, Agent, AgentConverse, Inst` (T2-NEG, T2-AGENT, its converse, the instantiation);
   `EngineBridge, Audit`.
+
+## M5 — THE HYPOTHESIS DISCHARGED (2026-09-16): the headline results are UNCONDITIONAL
+
+`BoundedInnerNec` — Critch's assumption (d), the single hypothesis every M4 result rested on — is
+now a **theorem** at degree 16, and with it the two headline results hold with no assumption beyond
+Lean's own three axioms:
+
+```
+ArithS.boundedInnerNec_sixteen        : BoundedInnerNec 16
+ArithS.dupoc_self_coop_unconditional  : ∃ k₀, ∀ k > k₀, EvalGraph 2 (Dupoc k) (Dupoc k) (Dupoc k) 0
+                                                       ∧ EvalGraph 2 (Cupod k) (Cupod k) (Cupod k) 1
+ArithS.pblt_unconditional             : ∃ kHat, TAct ⊢ ∀¹ (leF kHat #0 🡒 psi)
+```
+
+All three at `[propext, Classical.choice, Quot.sound]`; build 3270 jobs; census 918 lines, one
+pre-existing subset line (`substs_leF_imp`); zero `sorry`, zero `axiom` declarations, zero
+`native_decide` in the package.
+
+**THE PAPER SENTENCE.** *In Peano Arithmetic with a length-bounded provability predicate, Dupoc
+cooperates with itself and Cupod defects against itself at every sufficiently large budget — and
+the bounded inner necessitation principle this rests on is itself a theorem of the system, with
+polynomial (degree 16) expansion.* Nothing is assumed; the conditional phrasing of the M4 addendum
+is superseded.
+
+**How it was discharged.** The verification proof is built as a derivation CODE inside every model:
+a Σ₁ step-list producer that walks an arbitrary (possibly nonstandard) derivation, introduces every
+code it mentions as an EIGENVARIABLE via ∃-elimination from a finite library of universal
+lemma-sentences, and never writes a code as a numeral. Ten per-tag fragments, ten motive wrappers,
+a `Derivation.induction1 𝚷` recursion over the derivation, certified re-description of every
+derived formula, an axiom recogniser covering both the standard axioms and nonstandard induction
+instances, and a per-χ pinning of the target's numeral.
+
+**On the degree.** 16, not the design's 3. Every loss traces to ONE cause: variable indices are
+charged in UNARY by the M1 length measure, which inflates the eigenvariable cap, the substitution
+certificate's `qVec` iterate, and the per-step context growth. Critch asserts polynomial expansion
+and does not fix a degree, so 16 satisfies the assumption as stated; the M4 results are parametric
+in `d` (`pblt_uniform {d}`, `dupoc_self_coop {d}`), so nothing downstream depends on the value.
+Three improvements are available and were deliberately deferred as optional: the substitution
+certificate redesigned to take one `qVec` step per depth; fine occurrence accounting
+(`fvOccF`-based) in place of full-length charging; and — the root fix — binary variable-index
+charging in `Length.lean`, which touches the M1 constants and the whole census.
