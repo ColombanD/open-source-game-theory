@@ -2478,3 +2478,35 @@ the two shape bridges via `pow4_eq_p4` and §15's `kitD_two_mul_le`, which force
 IN FLIGHT: `Verify5` Part 30 — the `Package.lean` binder + the instantiation → `SizeThm` and
 `SizeThmAll` discharged, after which the coordinator takes the three headline theorems
 unconditional.
+
+**§11 status — `Verify5` Part 30: the `TableOK` threading BANKED (9793d7b); blocked again on the
+SAME interface by A SECOND MISSING BINDER — and this one is the sharpest instance of the class.**
+BANKED exactly as authorised: `N : ℕ` beside `N'`/`B'`; `TableOK tbl (N : V)` added to `SizeThm`,
+`SizeThmAll`, `ArmHypsAll`, `verifyGraph''_size4_of_arms`, `verifySizeOracle_of_sizeThm`; `htbl`
+passed at the call site. Threaded hypotheses only, no proof body touched, full package green (3270
+jobs) on a FORCED rebuild. **VERIFICATION DISCIPLINE WORTH KEEPING: the IDE reported four errors in
+`Package.lean` mid-edit; the agent did NOT accept its own "intermediate-state artifact" explanation
+on reasoning alone — it `touch`ed both files, forced a full rebuild, and read the final text at all
+seven sites. Intermediate-state artefacts and real breakage look IDENTICAL from a hook.**
+**THE SECOND BLOCKER: `armHyps_of_arms` requires `Czv * p4 (dlen ρ + 1) ≤ E`, which `ArmHyps`
+cannot supply.** Both escape routes closed again, and coordinator-verified: (1) NOT DERIVABLE —
+`AxmTableOK' tbl E Ww A Cv := ∀ e ∈ A, AxmEntryOK' …` is **VACUOUS AT `A = 0`** so it bounds
+nothing; `VerifyGraph''` is the fixpoint `VPackedP'` and never mentions `E`; `ListOK` is vacuous at
+`len S = 0` and `StepOK` uses `E` only as an UPPER cap inside `HornOK`/`GoalOK`, never a lower
+bound. (2) THE CONCLUSION IS NOT WEAK AT SMALL `E` — **`kitQ C B E = C*((B+1)*(E+1))` SHRINKS as `E`
+shrinks, so `SizeOK (kitQ Cz B E) …` gets STRICTLY HARDER**. So `ArmHyps` as written asserts the
+size bound at EVERY `E`, including caps far too small for the graph's own steps to fit: **the
+previous five instances were unprovable-as-stated; this one asserts something FALSE at small `E`.**
+The same gap sits in `VerifySizeOracle` (Assemble:488) and the original `Assemble.SizeOracle`.
+**THE CONSUMER CAN SUPPLY IT (coordinator-verified): `vList_full` carries `(Ck : V) * ((dlen ρ +
+1)^4 + i) ≤ E` in its own binder list and calls `hsize hA hd hL` with NO cap at both sites (786,
+818)** — that dominates the needed `(Cz : V) * (dlen ρ + 1)^4 ≤ E` given `Cz ≤ Ck`, the same
+domination `hle`/`asmCk` already establish for other constants at 814–820. AUTHORISED: add the cap
+binder to `VerifySizeOracle` (Assemble:488) and `ArmHyps` (Verify5:97), pass it at the two call
+sites, then build the instantiation — one commit; if the domination does not hold at
+`vList_full`'s actual shape, STOP AND REPORT rather than weaken the cap.
+**SIXTH CORRECTION FORCED BY THE SAME PATTERN, two of them the coordinator's. THE LESSON: when an
+interface is written AHEAD of its consumer, its binders are PROVISIONAL until the consumer compiles
+against it.**
+IN FLIGHT: `Verify5` Part 31 — the E-cap binder + the instantiation → `SizeThm`/`SizeThmAll`
+discharged, after which the three headline theorems go unconditional.
