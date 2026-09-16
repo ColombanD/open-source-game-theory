@@ -1585,6 +1585,20 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 -- `hipE` composition before landing.
 #print axioms eroom_of_le
 
+-- U10 (Necessitation/Verify5, 2026-09-16): §21 — the `or` MOTIVE WRAPPER (5 of 10). The first arm with a `postIns`
+-- recovery block (SIX steps, against `goalElim`'s five) and with DOSSIER hypotheses, but still one child and one
+-- context, so it transcribes like `wk`/`shift` with three differences: the tail is `6 + 9 = 15` and
+-- `Prologue.len_proOr_le ≤ 110·setLen (insert p (insert q s)) + 25` (the `setLen` bounded by
+-- `setLen_child_le_dlen_orIntro`), so the length half's constant is `110 + 40 = 150`; the two OFFSET rooms go
+-- through §20's `eroom_of_le` after their summands are bounded — `hipE` collapses to `22·D + 8`
+-- (`memTop_le ≤ 0 + 6·D + 1`, `descCountF_le_of_len ≤ 2·D`) and `hiqE` to `14·D + 6`; and `hgE2` carries two
+-- `proSig` terms, each `≤ 6·D + 1` by `Prologue.proSig_le`, which itself needs an E-room at `(13, 18, 8)`.
+-- `dlen_orIntro` has the same `setLen s + dlen d' + 1` shape as `wk`/`shift`, so `hdeq`/`hyd`/`hLn` are unchanged.
+-- The dossiers `hDp`/`hDq` come from `Prologue.layout_or` at the node's own layout. TRAP: `hgE2`'s summed constant
+-- is `13·D + 9` (paired with `22`), not `13·D + 10` — the IDE's residual goal gives the true normal form, and an
+-- exact `= by ring` step is safer than an inequality with invented slack.
+#print axioms or_wrapper
+
 -- U10 (Necessitation/Package, 2026-09-15): THE PACKAGE AND THE HEADLINE THEOREMS, with `Assemble.SizeOracle`
 -- BYPASSED. `SizeOracle` is NOT PROVABLE as stated (it binds the numeral table `T` with no `NumTableOK T N' B'`,
 -- while every prologue size lemma requires one and lands at `layQ B B' D`/`layD N' B' D`; `NumTableOK` is never a

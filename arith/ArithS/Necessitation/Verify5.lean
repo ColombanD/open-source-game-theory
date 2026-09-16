@@ -1819,4 +1819,184 @@ lemma eroom_of_le {D E Czv X : V} (hE : Czv * p4 (D + 1) ≤ E)
 
 end eroomGeneral
 
+/-! ## 21. The `or` motive wrapper
+
+The first arm with a `postIns` recovery block (six steps, against `goalElim`'s five) and with DOSSIER hypotheses.
+Still one child and one context, so it transcribes like `wk`/`shift` with three differences:
+
+* the tail is `6 + 9 = 15`, and `Prologue.len_proOr_le ≤ 110·setLen (insert p (insert q s)) + 25` with the `setLen`
+  bounded by `setLen_child_le_dlen_orIntro`, so the length half's constant is `110 + 25 + 15 = 150`;
+* the two OFFSET rooms go through §20's `eroom_of_le` after their summands are bounded —
+  `hipE` collapses to `22·D + 8` (`memTop_le ≤ 0 + 6·D + 1`, `descCountF_le_of_len ≤ 2·D`) and `hiqE` to `14·D + 6`;
+* `hgE2` carries two `proSig` terms, each `≤ 6·D + 1` by `Prologue.proSig_le`, which itself needs an E-room at
+  `(13, 18, 8)`.
+
+`dlen_orIntro` has the same `setLen s + dlen d' + 1` shape as `wk`/`shift`, so `hdeq`, `hyd` and `hLn` are unchanged. -/
+
+section orWrapper
+
+set_option maxHeartbeats 2000000 in
+/-- **THE `or` MOTIVE WRAPPER.** -/
+theorem or_wrapper {tbl N N' B' Wl Wc W₁ W T B E Czv Γ s p q d' L' : V}
+    (htbl : TableOK tbl N) (hP : ProTable tbl) (htblN : NumTableOK T N' B')
+    (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (hWp : W = proPieces) (hW₁ : W₁ = frag1Pieces)
+    (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (hCz1 : 1 ≤ Czv) (hCk : ∀ n : ℕ, n ≤ 1000000 → ((n : ℕ) : V) ≤ Czv)
+    (hCQ : 19 * B' + 25 ≤ Czv) (hCD : 27 * N' + 525600 * B' ≤ Czv)
+    (hCbin : 2 * (27 * N' + 525600 * B') ≤ Czv)
+    (hcG : 4 * ((cDer : V) + cDlen + cFst + 6) ≤ Czv)
+    (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 0 p) (hq : IsSemiformula LAct 0 q)
+    (hpq : (p ^⋎ q) ∈ s) (hd' : DerivationOf TAct d' (insert p (insert q s)))
+    (hΓ : IsFormulaSet LAct Γ) (hLay : NodeLay walkPieces Wc T Γ s)
+    (hchildSz : SizeOK (kitQ Czv B E) (kitD Czv (2 * dlen TAct (orIntro s p q d'))) L')
+    (hchildLen : len L' ≤ Czv * p4 (dlen TAct d'))
+    (hE : Czv * p4 (dlen TAct (orIntro s p q d') + 1) ≤ E) :
+    len (vOr walkPieces Wl Wc W₁ W T s p q d' L') ≤ Czv * p4 (dlen TAct (orIntro s p q d')) ∧
+    SizeOK (kitQ Czv B E) (kitD Czv (2 * dlen TAct (orIntro s p q d')))
+      (vOr walkPieces Wl Wc W₁ W T s p q d' L') := by
+  have hD : Derivation TAct (orIntro s p q d') := Derivation.orIntro hpq hd'
+  have hd1 : 1 ≤ dlen TAct (orIntro s p q d') := one_le_dlen hD
+  have hsD : setLen LAct s ≤ dlen TAct (orIntro s p q d') := by
+    have := setLen_fstIdx_le_dlen hD; rwa [fstIdx_orIntro] at this
+  have hcD : setLen LAct (insert p (insert q s)) ≤ dlen TAct (orIntro s p q d') :=
+    setLen_child_le_dlen_orIntro hD
+  have hdl : dlen TAct (orIntro s p q d') = setLen LAct s + dlen TAct d' + 1 := dlen_orIntro hD
+  have hcs : IsFormulaSet LAct (insert p (insert q s)) :=
+    IsFormulaSet.insert_iff.mpr ⟨hp, IsFormulaSet.insert_iff.mpr ⟨hq, hs⟩⟩
+  have hkcD : len (memberList (insert p (insert q s))) ≤ dlen TAct (orIntro s p q d') :=
+    le_trans (len_memberList_le_setLen hcs) hcD
+  have hksD : len (memberList s) ≤ dlen TAct (orIntro s p q d') :=
+    le_trans (len_memberList_le_setLen hs) hsD
+  have hk1 : 1 ≤ len (memberList s) := one_le_len_memberList_of_mem hpq
+  have he1 : (1 : V) ≤ dlen TAct (orIntro s p q d') + 1 := le_add_self
+  have hyd : dlen TAct d' ≤ dlen TAct (orIntro s p q d') := by
+    rw [hdl]; exact le_of_add_eq' (c := setLen LAct s + 1) (by ring)
+  have hdeq : dlen TAct (orIntro s p q d') = dlen TAct d' + (setLen LAct s + 1) := by rw [hdl]; ring
+  have hqmem : q ∈ insert p (insert q s) := by simp
+  have hqD : formulaLen LAct q ≤ dlen TAct (orIntro s p q d') :=
+    le_trans (formulaLen_le_setLen_of_mem (L := LAct) hqmem) hcD
+  have hE1 : (1 : V) ≤ E := le_trans (le_trans hd1 (le_p4_self hd1))
+    (le_trans (le_mul_of_one_le_left zero_le hCz1)
+      (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE))
+  have hDE : dlen TAct (orIntro s p q d') ≤ E := le_trans (le_p4_self hd1)
+    (le_trans (le_mul_of_one_le_left zero_le hCz1)
+      (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE))
+  have hEpro : 13 * dlen TAct (orIntro s p q d') + 18 * ‖dlen TAct (orIntro s p q d')‖ + 12 ≤ E := by
+    have := eroom_lin hE hCk 13 18 12 (by norm_num)
+    push_cast at this
+    exact this
+  have hE8 : 13 * dlen TAct (orIntro s p q d') + 18 * ‖dlen TAct (orIntro s p q d')‖ + 8 ≤ E := by
+    have := eroom_lin hE hCk 13 18 8 (by norm_num)
+    push_cast at this
+    exact this
+  have hiEpro : 0 + 14 * dlen TAct (orIntro s p q d') + 5 ≤ E := by
+    rw [zero_add]
+    have := eroom_lin hE hCk 14 0 5 (by norm_num)
+    push_cast at this
+    rw [zero_mul, add_zero] at this
+    exact this
+  have hnE : 18 * ‖dlen TAct (orIntro s p q d')‖ + 7 ≤ E := by
+    have := eroom_lin hE hCk 0 18 7 (by norm_num)
+    push_cast at this
+    rw [zero_mul, zero_add] at this
+    exact this
+  have hmT : memTop walkPieces Wc T s (p ^⋎ q) 0 ≤ 0 + 6 * dlen TAct (orIntro s p q d') + 1 :=
+    memTop_le htbl hP.walkTable hWc T hs hpq hsD
+  have hdC : descCountF walkPieces 0 q ≤ 2 * dlen TAct (orIntro s p q d') :=
+    descCountF_le_of_len htbl hP.walkTable hq hqD
+  have hipE : memTop walkPieces Wc T s (p ^⋎ q) 0 + descCountF walkPieces 0 q + 1 +
+      14 * dlen TAct (orIntro s p q d') + 6 ≤ E := by
+    refine eroom_of_le hE hCk 22 8 (by norm_num) ?_
+    push_cast
+    calc memTop walkPieces Wc T s (p ^⋎ q) 0 + descCountF walkPieces 0 q + 1 +
+          14 * dlen TAct (orIntro s p q d') + 6
+        ≤ (0 + 6 * dlen TAct (orIntro s p q d') + 1) + 2 * dlen TAct (orIntro s p q d') + 1 +
+          14 * dlen TAct (orIntro s p q d') + 6 :=
+          add_le_add (add_le_add (add_le_add (add_le_add hmT hdC) le_rfl) le_rfl) le_rfl
+      _ = 22 * dlen TAct (orIntro s p q d') + 8 := by ring
+  have hiqE : memTop walkPieces Wc T s (p ^⋎ q) 0 + 1 + 8 * dlen TAct (orIntro s p q d') + 4 ≤ E := by
+    refine eroom_of_le hE hCk 14 6 (by norm_num) ?_
+    push_cast
+    calc memTop walkPieces Wc T s (p ^⋎ q) 0 + 1 + 8 * dlen TAct (orIntro s p q d') + 4
+        ≤ (0 + 6 * dlen TAct (orIntro s p q d') + 1) + 1 + 8 * dlen TAct (orIntro s p q d') + 4 :=
+          add_le_add (add_le_add (add_le_add hmT le_rfl) le_rfl) le_rfl
+      _ = 14 * dlen TAct (orIntro s p q d') + 6 := by ring
+  have hbnc : termLen LAct (bnum (dlen TAct d')) ≤ E := eroom_bnum hE hCk hyd
+  have hbn' : termLen LAct (bnum (dlen TAct (orIntro s p q d'))) ≤ E := eroom_bnum hE hCk le_rfl
+  have hLn : setLen LAct s + dlen TAct d' + 1 ≤ dlen TAct (orIntro s p q d') := le_of_eq hdl.symm
+  have hnd : dlen TAct (orIntro s p q d') ≤ 2 * dlen TAct (orIntro s p q d') := le_two_mul_self _
+  have hshL : shiftsV L' ≤ Czv * p4 (dlen TAct d') := le_trans (shiftsV_le_len L') hchildLen
+  have hlenPro : len (proOr walkPieces Wl Wc W T s p q 0
+      (memTop walkPieces Wc T s (p ^⋎ q) 0 + descCountF walkPieces 0 q + 1)
+      (memTop walkPieces Wc T s (p ^⋎ q) 0 + 1)) ≤
+      110 * dlen TAct (orIntro s p q d') + 25 := by
+    refine le_trans (len_proOr_le htbl hP hWl hWc walkPieces W T 0 _ _ hs hp hq) ?_
+    exact add_le_add (mul_le_mul_of_nonneg_left hcD zero_le) le_rfl
+  have hqsf : IsFormulaSet LAct (insert q s) := IsFormulaSet.insert_iff.mpr ⟨hq, hs⟩
+  have hqsD : setLen LAct (insert q s) ≤ dlen TAct (orIntro s p q d') :=
+    le_trans (setLen_le_insert p (insert q s)) hcD
+  have hk1q : 1 ≤ len (memberList (insert q s)) :=
+    one_le_len_memberList_of_mem (by simp : q ∈ insert q s)
+  have hk1c : 1 ≤ len (memberList (insert p (insert q s))) :=
+    one_le_len_memberList_of_mem (by simp : p ∈ insert p (insert q s))
+  have hsig1 : proSig walkPieces Wl Wc W T (insert q s) ≤ 6 * dlen TAct (orIntro s p q d') + 1 :=
+    proSig_le htbl hP hWc htblN hWl hWp hqsf hk1q hqsD hE8 hΓ
+  have hsig2 : proSig walkPieces Wl Wc W T (insert p (insert q s)) ≤
+      6 * dlen TAct (orIntro s p q d') + 1 :=
+    proSig_le htbl hP hWc htblN hWl hWp hcs hk1c hcD hE8 hΓ
+  have hgE : len (memberList (insert p (insert q s))) + 1 + shiftsV L' + 1 ≤ E := by
+    have hlin : dlen TAct (orIntro s p q d') + 2 ≤ Czv * p3 (dlen TAct (orIntro s p q d')) := by
+      have h3 := hCk 3 (by norm_num)
+      push_cast at h3
+      have := lin_le_p3 (a := 1) (b := 2) hd1 (by
+        exact le_trans (le_of_eq (by norm_num : (1 : V) + 2 = 3)) h3)
+      rw [one_mul] at this
+      exact this
+    refine le_trans ?_ (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE)
+    calc len (memberList (insert p (insert q s))) + 1 + shiftsV L' + 1
+        ≤ dlen TAct (orIntro s p q d') + 1 + Czv * p4 (dlen TAct d') + 1 :=
+          add_le_add (add_le_add (add_le_add hkcD le_rfl) hshL) le_rfl
+      _ = (dlen TAct (orIntro s p q d') + 2) + Czv * p4 (dlen TAct d') := by ring
+      _ ≤ Czv * p4 (dlen TAct (orIntro s p q d')) := rec1₄ le_add_self hdeq hlin
+  have hgE2 : 1 + proSig walkPieces Wl Wc W T (insert q s) +
+      (1 + proSig walkPieces Wl Wc W T (insert p (insert q s))) + shiftsV L' + 2 +
+      (len (memberList s) + 1) + 1 + 1 ≤ E := by
+    have hlin : 13 * dlen TAct (orIntro s p q d') + 9 ≤ Czv * p3 (dlen TAct (orIntro s p q d')) := by
+      have h22 := hCk 22 (by norm_num)
+      push_cast at h22
+      exact lin_le_p3 hd1 (le_trans (le_of_eq (by norm_num : (13 : V) + 9 = 22)) h22)
+    refine le_trans ?_ (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE)
+    calc 1 + proSig walkPieces Wl Wc W T (insert q s) +
+          (1 + proSig walkPieces Wl Wc W T (insert p (insert q s))) + shiftsV L' + 2 +
+          (len (memberList s) + 1) + 1 + 1
+        ≤ 1 + (6 * dlen TAct (orIntro s p q d') + 1) +
+          (1 + (6 * dlen TAct (orIntro s p q d') + 1)) + Czv * p4 (dlen TAct d') + 2 +
+          (dlen TAct (orIntro s p q d') + 1) + 1 + 1 :=
+          add_le_add (add_le_add (add_le_add (add_le_add (add_le_add (add_le_add
+            (add_le_add le_rfl hsig1) (add_le_add le_rfl hsig2)) hshL) le_rfl)
+            (add_le_add hksD le_rfl)) le_rfl) le_rfl
+      _ = (13 * dlen TAct (orIntro s p q d') + 9) + Czv * p4 (dlen TAct d') := by ring
+      _ ≤ Czv * p4 (dlen TAct (orIntro s p q d')) := rec1₄ le_add_self hdeq hlin
+  refine ⟨?_, ?_⟩
+  · rw [len_vOr_eq]
+    have hX : 110 * dlen TAct (orIntro s p q d') + 40 ≤ Czv * p3 (dlen TAct (orIntro s p q d')) := by
+      have h150 := hCk 150 (by norm_num)
+      push_cast at h150
+      exact lin_le_p3 hd1 (le_trans (le_of_eq (by norm_num : (110 : V) + 40 = 150)) h150)
+    calc len (proOr walkPieces Wl Wc W T s p q 0
+          (memTop walkPieces Wc T s (p ^⋎ q) 0 + descCountF walkPieces 0 q + 1)
+          (memTop walkPieces Wc T s (p ^⋎ q) 0 + 1)) + (len L' + (6 + 9))
+        ≤ (110 * dlen TAct (orIntro s p q d') + 25) + (Czv * p4 (dlen TAct d') + 15) :=
+          add_le_add hlenPro (add_le_add hchildLen (by norm_num))
+      _ = (110 * dlen TAct (orIntro s p q d') + 40) + Czv * p4 (dlen TAct d') := by ring
+      _ ≤ Czv * p4 (dlen TAct (orIntro s p q d')) := rec1₄ le_add_self hdeq hX
+  · obtain ⟨-, hDp, hDq, -⟩ := layout_or htbl hP hp hq hpq hLay.layout
+    exact or_arm_size (Wl := Wl) (Wc := Wc) (W₁ := W₁) (W := W) (T := T) (s := s) (p := p) (q := q)
+      (d' := d') (L' := L') (B := B) (E := E) (Cz := Czv) (N' := N') (B' := B')
+      (D := dlen TAct (orIntro s p q d')) (d := dlen TAct (orIntro s p q d')) (Γ := Γ)
+      hWp hW₁ htbl hP htblN hWl hWc hPle hs hp hq hk1 hcD hEpro hiEpro hipE hiqE hΓ hLay.layout
+      hDp hDq hDE hnd hCQ hCD hCz1 hchildSz hE1 hcG hgE hbnc hbn' hnE hLn hnd hgE2 hCbin
+
+end orWrapper
+
 end ArithS
