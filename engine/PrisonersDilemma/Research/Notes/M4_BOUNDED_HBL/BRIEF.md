@@ -1826,3 +1826,26 @@ constants, the `D = 2d` instantiation, the `allCert_ok` destructuring and the co
 are all recorded here and reproducible in ONE transcription. `all` should now be cheap: only the
 two arithmetic tails remain, and `exs` follows it mechanically.
 IN FLIGHT: `Verify5` Part 13 (`all`, `exs`, `axm`, then the recursion).
+
+**§11 status — `Verify5` glue, Part 13: `all_wrapper` LANDED, 8 of 10 (a31bb60, §24; build 3270,
+census 879, all standard).** The single-pass transcription worked as predicted: Part 12's validated
+structure held unchanged and the round's whole cost was the two arithmetic tails, exactly as
+scoped — two repair hunks, each diagnosed in seconds. QUADRATIC rooms through `allEQ_p3 ≤ 27·p3
+(d+1)` and `alliE_p3 ≤ 96·p3 (d+1)`, lifted by `p3_le_p4`, capped by `capE4` (no new helper —
+Part 11's finding confirmed in use). CUBIC length half through `len_proAll_le_cubic ≤ 402·p3 (D+1)`
+at `D = 2·dlen`: `p3_mono` takes `2d+1 ≤ 2(d+1)`, `p3_two_mul` gives `8·p3 (d+1)`, `p3_succ_le`
+gives `64·p3 d` — constant `402·64 = 25728`, capped at `25743`. `hgE2` closes against `alliE_p3` at
+constant `768` (`allCertSig` from `allCert_ok`'s sixth conjunct + three `proSig` bounds).
+**TRAP 22, the methodological one: that closing step is a genuine `≤`, not an `=`.** The summed
+bound normalises to `13 + 56·d + 24·d² + 16·d³`; `alliE_p3`'s left side is `20 + 88·d + 24·d² +
+16·d³`. The cubic and quadratic terms agree EXACTLY, so the slack is precisely `7 + 32·d` — **READ
+OFF THE RESIDUAL GOAL, NOT INVENTED**, and it landed first try. That is the difference between a
+derived correction and a guess (cf. Part 9's note).
+PROCESS ERROR RECORDED: a full 570 s poll window was lost to a build that never started — the
+`lake build` was backgrounded as the LAST CONJUNCT of an `&&` chain whose earlier element exited
+non-zero, so the launch never ran and the log never existed. **Launch detached builds as STANDALONE
+commands, never as the last conjunct of an `&&` chain.** The correct relaunch took 8 s.
+REMAINING: `exs` (now MECHANICAL — `all`'s shape with `exsEQ_p3 ≤ 43·p3 (d+1)`, `exsiE_p3 ≤ 112·p3
+(d+1)`, `len_proExs_le_cubic`; trap 21's `D = 2·dlen` applies identically), then `axm` (fresh,
+unabbreviated, trap 18), then the ten-application recursion.
+IN FLIGHT: `Verify5` Part 14 (`exs`, `axm`, then the recursion).
