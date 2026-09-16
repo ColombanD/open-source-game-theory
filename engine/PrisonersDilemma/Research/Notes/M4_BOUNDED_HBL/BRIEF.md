@@ -2226,3 +2226,39 @@ is a real asset and a clean boundary; half of both is neither.
 IN FLIGHT: `Verify5` Part 23 — (1) the `and` transport chain + the new binder; (2) then `cut`;
 (3) discharge both → unconditional `armHyps_of_arms` → `ArmHypsAll` → unconditional
 `verifyGraph''_size4_of_arms` = `Package.SizeThm N' B' Cv Cz`, THE LAST HYPOTHESIS.
+
+**§11 status — `Verify5` Part 23: the `and` chain FULLY SPECIFIED, not drafted (no commit; tree
+clean at dcc33cd, green). Second consecutive specification-only round.**
+THE RULING IS VERIFIED SOUND IN PRACTICE: the `NoDrop'`-at-child probe passed (exit 0) —
+`verifyGraph''_ok4` instantiates at a child with `hA`, `hdp.2`, a context from §26.1's
+`nodeCtx_exists` and the E-room, yielding `NoDrop' L₁` AND (fourth conjunct) the child's goal fact
+`cgoal₁` that `postIns_ok` needs. No motive conjunct; `armHyps_of_arms` stays as committed.
+WHAT THE LOOKUPS SETTLED (the agent did all four itself, plus four more they implied):
+`layout_and` (Prologue:3107) already supplies `hDq : DossF … Γ 0 q (memTop … 0 + 1)` at the node's
+own layout — the chain's input, no new producer. The chain is `Γ → Γ₁ → Γ₂ → Γ₃` over `proIns`
+(shift `1 + σ₁`), `L₁` (shift `s₁`), `postIns` (shift `2`), assembled as `hndB := noDrop'_appendV
+cnd₁ qnd₁` with `Γ₃ = finalCtx Γ₁ (appendV L₁ postIns)`; the target `τ₁ = 1 + σ₁ + s₁ + 2` matches
+`hLay₃`'s binder VERBATIM. Inputs need `memTop_le ≤ i + 6·D + 1`, `descCountF_le_of_len ≤ 2·D`,
+`proSig_le ≤ 6·D + 1` (the last needing an `hE8` room); `heq₁₂` via `tr_fact` +
+`shiftIterV_eqFactB`/`termShiftIterV_fvar`/`isFormula_eqFactB`.
+**A REAL STRUCTURAL ASYMMETRY FOUND: `cut` has NO EXPORTED `cutPro` LEMMA.** Verify2:2833 is a
+`have key : …` LOCAL to `vCut_ok`, so `cut` cannot reuse a lemma the way `and` reuses
+`proIns_ok`/`postIns_ok` — that block would have to be re-derived. This independently vindicates
+the land-`and`-first instruction.
+DESIGN DECISION (the agent's, accepted): §28 takes the **E-room facts as EXPLICIT HYPOTHESES**,
+mirroring `vAnd_ok`'s linear cap (Verify2:2447, `60·D + 18·‖D‖ + B₁ + 2·B₂ + 60 ≤ E`) exactly as
+`and_wrapper` already takes `hΓ₃`/`hLay₃`/`hDq₃`; the arm then reconciles them against its
+`p4`-shaped `hE` separately, six `capE4'` derivations (`hE13`, `hE8`, `hiE₁`, `hipE₁`, `hsE₁`,
+`hcE₁`) each with its own constant — that is where the two-residual method goes. The approved
+binder is taken in its SPECIFIC form (`hCk5 : ((128655:ℕ):V) + 5·Cv ≤ Czv`) until `cut` shows it
+wants another constant.
+**COORDINATOR'S CORRECTION: two consecutive rounds have produced specification rather than code.**
+Each had a defensible reason, but the standing rule against ending mid-draft has begun to function
+as a reason to DEFER drafting rather than a constraint on how to END one. The rule's purpose is to
+prevent uncommitted or red text at a turn boundary — not to require that a whole construction fit
+one turn. **New instruction: split §28 at its natural seam and bank the first half.** The E-room
+lemmas (six `capE4'` derivations, self-contained, no `τ₁` bookkeeping) are a complete, compilable,
+committable unit on their own; land them first, then the transport body against them. A committed
+half is an asset; a fully specified nothing is not.
+IN FLIGHT: `Verify5` Part 24 — (1) §28's six E-room lemmas, committed alone; (2) the `and`
+transport body; (3) discharge `hAndArm`; (4) then `cut`.
