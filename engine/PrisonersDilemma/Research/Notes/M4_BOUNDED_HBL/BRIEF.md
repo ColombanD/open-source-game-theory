@@ -2195,3 +2195,34 @@ IN FLIGHT: `Verify5` Part 22 — (1) §28 the two transport chains, `NoDrop'` fo
 `verifyGraph''_ok4`, on Verify2's `vAnd_ok` template (2515/2540/2545); (2) discharge
 `hAndArm`/`hCutArm` → unconditional `armHyps_of_arms` and `ArmHypsAll`; (3) unconditional
 `verifyGraph''_size4_of_arms` = `Package.SizeThm N' B' Cv Cz`, THE LAST HYPOTHESIS.
+
+**§11 status — `Verify5` Part 22: THE RULING IS SOUND — the probe passed (exit 0); §28 is writable
+(no commit this round; tree clean at dcc33cd).** `verifyGraph''_ok4` INSTANTIATES AT A CHILD and
+yields `NoDrop' L₁`, with the child context from §26.1's `nodeCtx_exists` and the E-room assumed —
+so the Part-21 ruling (cite, don't widen the motive) holds in practice, not just on paper.
+TWO COSTS, both arithmetic and both anticipated: (1) **THE E-ROOM RECONCILIATION** —
+`verifyGraph''_ok4` wants `(((Ck:ℕ):V) + 5·Cv)·p4 (dlen dp + 1) ≤ E` at its OWN `Ck = 128655`
+(Verify4:73), while the arms carry `hE : Czv·p4 (dlen node + 1) ≤ E` and `hCk : ∀ a ≤ 1000000,
+((a:ℕ):V) ≤ Czv` (Verify5:1382). `hCk 128655` covers the constant (128655 ≤ 1000000), but
+**NOTHING IN SCOPE DOMINATES A TERM CONTAINING `5·Cv`** — `hCk` reaches only standard constants and
+`Cv` is a VARIABLE (coordinator-verified: no existing binder mentions `5·Cv`). The descent from
+`dlen node + 1` to `dlen dp + 1` is `child_bound4` + `dlen_dp_succ_le_andIntro`, already used in the
+arm. (2) the child context needs `setLen (insert p s) ≤ D` and two E-room facts, all derivable
+in-arm as the existing `nodeCtx_exists` calls show.
+**COORDINATOR'S RULING: the new binder is APPROVED** — `hCk5 : ((128655:ℕ):V) + 5·Cv ≤ Czv` (or a
+general `hCvD : ∀ a ≤ 1000000, ((a:ℕ):V) + 5·Cv ≤ Czv` if `cut` wants it at another constant), in
+the style of its neighbours. It is an ADDITIVE signature change to `armHyps_of_arms`, which is the
+agent's own and has no committed downstream consumers, so no further authorisation was needed —
+but FLAGGING it rather than slipping it in was right, and is why these approvals have been quick.
+ALSO RULED: the agent's four requested reads (`cutPro`'s exported lemma, `and_wrapper`'s binder
+text, Verify2:2560–2600, `layout_and`'s output) are LOOKUPS IN ITS OWN FILE SET — it should do them
+itself; routing lookups through the coordinator costs a round. **Ask upward only when the answer
+would change a frozen statement or set policy.**
+SCALE (the agent's read, accepted): the `and` chain is Verify2:2508–2560, ~50 dense transport lines
+with `τ₁` bookkeeping; `cut` is longer (six blocks: `proCutPre ++ cutPro ++ L₁ ++ postIns ++
+cutPro' ++ …`), plus `hDq₃`/`hDnp₄`/`Layout0` at shifted offsets. **Instruction: LAND `and` FIRST,
+green and committed, before touching `cut`** — a committed `and` chain with `hCutArm` still named
+is a real asset and a clean boundary; half of both is neither.
+IN FLIGHT: `Verify5` Part 23 — (1) the `and` transport chain + the new binder; (2) then `cut`;
+(3) discharge both → unconditional `armHyps_of_arms` → `ArmHypsAll` → unconditional
+`verifyGraph''_size4_of_arms` = `Package.SizeThm N' B' Cv Cz`, THE LAST HYPOTHESIS.
