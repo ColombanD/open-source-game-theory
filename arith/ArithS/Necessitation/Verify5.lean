@@ -3533,6 +3533,85 @@ theorem and_cross {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺�
 
 end andCross
 
+/-! ## 26.6 THE `and` CHAIN'S THREE TRANSPORTS
+
+The third seam, and the last new mathematics for `and`: carry the input block's parent
+layout and `q`-dossier across `appendV L₁ postIns`, landing exactly on `and_arm_size`'s
+`hLay₃` and `hDq₃`.
+
+`Γ₃` is `finalCtx (finalCtx Γ₁ L₁) postIns` as §26.5 returns it; the transports want the
+APPENDED form `finalCtx Γ₁ (appendV L₁ postIns)`, which is `finalCtx_appendV`. The block's
+shift is `shiftsV L₁ + 2` (`shiftsV_appendV` + `postIns_ok`'s `shiftsV … = 2`), and its
+`NoDrop'` is `noDrop'_appendV cnd₁ qnd₁`.
+
+TRAP 30: both normalisations need an explicit `show … = … by ring`, NOT chained
+`← add_assoc`. `Layout.transport`/`dossF_transport'` deliver `i + shiftsV S` fully
+LEFT-nested (`memTop + 1 + 1 + proSig + shiftsV L₁ + 2`) while the targets carry an inner
+group (`memTop + 1 + (1 + proSig + shiftsV L₁ + 2)`); associativity rewrites peel the wrong
+way. `Verify2`'s own chain uses the same `show … by ring` idiom. -/
+
+section andTrans
+
+set_option maxHeartbeats 4000000 in
+/-- **The `and` chain's three transports**: across `appendV L₁ postIns`, onto
+`and_arm_size`'s `hLay₃`/`hDq₃`. -/
+theorem and_trans {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
+    {T Γ₁ L₁ s p q dp : V}
+    (layS₁ : Layout walkPieces certPieces T Γ₁ s
+      (0 + 1 + proSig walkPieces layoutPieces certPieces proPieces T (insert p s)))
+    (hDq₁ : DossF walkPieces Γ₁ 0 q
+      (memTop walkPieces certPieces T s (p ^⋏ q) 0 + 1 +
+        (1 + proSig walkPieces layoutPieces certPieces proPieces T (insert p s))))
+    (cnd₁ : NoDrop' L₁)
+    (qnd₁ : NoDrop' (postIns proPieces
+      (len (memberList (insert p s)) + 1 + shiftsV L₁)
+      (proSig walkPieces layoutPieces certPieces proPieces T (insert p s) + shiftsV L₁)
+      (dlen TAct dp)))
+    (qsh₁ : shiftsV (postIns proPieces
+      (len (memberList (insert p s)) + 1 + shiftsV L₁)
+      (proSig walkPieces layoutPieces certPieces proPieces T (insert p s) + shiftsV L₁)
+      (dlen TAct dp)) = 2) :
+    Layout walkPieces certPieces T
+        (finalCtx Γ₁ (appendV L₁ (postIns proPieces
+          (len (memberList (insert p s)) + 1 + shiftsV L₁)
+          (proSig walkPieces layoutPieces certPieces proPieces T (insert p s) + shiftsV L₁)
+          (dlen TAct dp)))) s
+        (1 + proSig walkPieces layoutPieces certPieces proPieces T (insert p s) + shiftsV L₁ + 2) ∧
+      DossF walkPieces
+        (finalCtx Γ₁ (appendV L₁ (postIns proPieces
+          (len (memberList (insert p s)) + 1 + shiftsV L₁)
+          (proSig walkPieces layoutPieces certPieces proPieces T (insert p s) + shiftsV L₁)
+          (dlen TAct dp)))) 0 q
+        (memTop walkPieces certPieces T s (p ^⋏ q) 0 + 1 +
+          (1 + proSig walkPieces layoutPieces certPieces proPieces T (insert p s) + shiftsV L₁ + 2)) := by
+  have hndB : NoDrop' (appendV L₁ (postIns proPieces
+      (len (memberList (insert p s)) + 1 + shiftsV L₁)
+      (proSig walkPieces layoutPieces certPieces proPieces T (insert p s) + shiftsV L₁)
+      (dlen TAct dp))) := noDrop'_appendV cnd₁ qnd₁
+  have hshB : shiftsV (appendV L₁ (postIns proPieces
+      (len (memberList (insert p s)) + 1 + shiftsV L₁)
+      (proSig walkPieces layoutPieces certPieces proPieces T (insert p s) + shiftsV L₁)
+      (dlen TAct dp))) = shiftsV L₁ + 2 := by
+    rw [shiftsV_appendV, qsh₁]
+  constructor
+  · have h := layS₁.transport hndB
+    rw [hshB] at h
+    rwa [show (0 : V) + 1 + proSig walkPieces layoutPieces certPieces proPieces T (insert p s)
+        + (shiftsV L₁ + 2)
+        = 1 + proSig walkPieces layoutPieces certPieces proPieces T (insert p s) + shiftsV L₁ + 2
+      from by ring] at h
+  · have h := dossF_transport' hndB hDq₁
+    rw [hshB] at h
+    rwa [show memTop walkPieces certPieces T s (p ^⋏ q) 0 + 1 +
+          (1 + proSig walkPieces layoutPieces certPieces proPieces T (insert p s))
+          + (shiftsV L₁ + 2)
+        = memTop walkPieces certPieces T s (p ^⋏ q) 0 + 1 +
+          (1 + proSig walkPieces layoutPieces certPieces proPieces T (insert p s)
+            + shiftsV L₁ + 2)
+      from by ring] at h
+
+end andTrans
+
 /-! ## 27. THE TEN-ARM RECURSION
 
 `Verify4.verifyGraph''_ok4`'s shape with `len`/`SizeOK` in place of `shiftsV`: one `Derivation.induction1 𝚷` whose

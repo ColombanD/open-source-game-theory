@@ -1788,6 +1788,21 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 -- leFact); only the first three are used here.
 #print axioms and_cross
 
+-- U10 (Necessitation/Verify5, 2026-09-16): §26.6 — THE `and` CHAIN'S THREE TRANSPORTS, the third seam and the LAST
+-- new mathematics for `and`. Carries the input block's parent layout and `q`-dossier across `appendV L₁ postIns`,
+-- landing exactly on `and_arm_size`'s `hLay₃`/`hDq₃`. `Γ₃` is `finalCtx (finalCtx Γ₁ L₁) postIns` as §26.5 returns
+-- it; the transports want the APPENDED form `finalCtx Γ₁ (appendV L₁ postIns)` (`finalCtx_appendV`). The block's
+-- shift is `shiftsV L₁ + 2` (`shiftsV_appendV` + `postIns_ok`'s `shiftsV … = 2`) and its `NoDrop'` is
+-- `noDrop'_appendV cnd₁ qnd₁`.
+-- TRAP 30: both normalisations need an explicit `show … = … by ring`, NOT chained `← add_assoc`.
+-- `Layout.transport`/`dossF_transport'` deliver `i + shiftsV S` fully LEFT-nested while the targets carry an inner
+-- group, so associativity rewrites peel the wrong way; `Verify2`'s own chain uses the same `show … by ring` idiom.
+-- SCOPE NOTE: with this seam `and_wrapper` already supplies every remaining `and_arm_size` input internally
+-- (`hbn₁`/`hbn₂`/`hbn'` by `eroom_bnum`, `hLn` by `le_of_eq hdl.symm`, `hnd` by `le_two_mul_self`, and
+-- `hgE₁`/`hgE₂`/`hgE3` by `rec2₄` derivations), and it takes `hΓ₃`/`hLay₃`/`hDq₃` as HYPOTHESES — exactly what
+-- §§26.4–26.6 produce. So `hAndArm`'s discharge is a short chain of four existing pieces, not a re-derivation.
+#print axioms and_trans
+
 -- U10 (Necessitation/Package, 2026-09-15): THE PACKAGE AND THE HEADLINE THEOREMS, with `Assemble.SizeOracle`
 -- BYPASSED. `SizeOracle` is NOT PROVABLE as stated (it binds the numeral table `T` with no `NumTableOK T N' B'`,
 -- while every prologue size lemma requires one and lands at `layQ B B' D`/`layD N' B' D`; `NumTableOK` is never a
