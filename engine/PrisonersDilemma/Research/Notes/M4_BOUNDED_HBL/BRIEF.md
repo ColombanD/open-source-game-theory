@@ -2012,3 +2012,36 @@ wrappers), and a third named hypothesis (buries the defect exactly as `SizeOracl
 IN FLIGHT: `Verify5` Part 18 — (1) the lift + threading, green and alone; (2) the ten-arm recursion
 with `and`/`cut` named; (3) the transport chains; (4) discharge → the unconditional
 `verifyGraph''_size4_of_arms`.
+
+**§11 status — `Verify5` Part 18: THE LIFT IS CORRECT AND COMPILES; one legacy branch blocks it.**
+The agent made all five authorised edits and compiled `Assemble.lean`: **exactly ONE error, at line
+1276 — everything else green, and NO PROOF BODY needed touching**, as predicted.
+`VerifySizeOracle (tbl B Wl Wc W₁ W₂ W T : V) (Cv Cz : ℕ)` with `Cv` lifted out of the inner `∀`
+(Assemble:488); `vList_full`'s hypothesis (600) and `verifyKit'''_of`'s (871) retyped — ONE TOKEN
+EACH; `ArmHyps`/`verifySizeOracle_of_arms`/`ArmHypsAll`/`verifyGraph''_size4_of_arms` threaded in
+`Verify5`; `SizeThm`/`SizeThmAll`/`verifySizeOracle_of_sizeThm` threaded and `kitPackage'''_of_size'`
+reordered (`C` before `Cz`, `hsz N' B' C`) in `Package`. `verifySizeOracle_of_arms` now reads
+`intro E A rho L hA hd hL; exact harms hA hd hL` and typechecks at the fixed `Cv`. So the Part-17b
+diagnosis holds and the fix is right.
+**THE BLOCKER: `Assemble.SizeOracle` (1273) — the LEGACY oracle that `Package.lean` exists to
+bypass — also references `VerifySizeOracle` and breaks at the new arity.** Repairing it needs four
+statements threaded (`SizeOracle` 1273, `kitPackage'''_of_size` 1315, `boundedInnerNec_sixteen_of_size`
+1350, `dupoc_self_coop_of_size` 1357), and the fourth is NOT a retype: at line 1342 `hkit` is
+`verifyKit'''_of N' B' Cz C`, so its `Cv` is pinned to `C`, which is obtained INSIDE the proof
+(`obtain ⟨C, hex⟩ := verifyGraph''_exists_unconditional`) — no parameter list can name it. **The
+identical quantifier-order knot, in the legacy branch.** The agent hit the stop condition, reverted
+rather than widen or leave the tree red, and reported. (The four correct edits are fully specified,
+so re-applying costs minutes.)
+**COORDINATOR'S CHECK AND DECISION: the legacy branch has NO LIVE CODE CONSUMERS** — every mention
+of `SizeOracle`, `kitPackage'''_of_size`, `boundedInnerNec_sixteen_of_size`, `dupoc_self_coop_of_size`
+outside `Assemble.lean`/`Audit.lean` is a DOCSTRING or comment explaining the bypass; no declaration
+applies them; only three `Audit` census lines (1298, 1300, 1301) pin them. So RETIRING them was
+genuinely available. **Chosen instead: OPTION 1, thread them** — including the `obtain` reorder
+inside `kitPackage'''_of_size`'s body (mechanically the reorder already approved for `_of_size'`).
+REASON: those three census lines document a defect we FOUND AND WORKED AROUND; keeping the audit
+trail visible is worth more than the few tokens saved by deleting declarations. Authorisation is
+now: the five edits re-applied, the four legacy statements threaded, and that ONE proof body
+reordered — nothing else in `Assemble.lean`.
+IN FLIGHT: `Verify5` Part 19 — (1) lift + threading across all three files, green and alone;
+(2) the ten-arm recursion with `and`/`cut` named; (3) the transport chains; (4) discharge → the
+unconditional `verifyGraph''_size4_of_arms`.
