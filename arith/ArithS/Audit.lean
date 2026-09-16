@@ -1718,6 +1718,22 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 -- because `and_arm_size` binds `Γ₃` and `cut_arm_size` binds `Γ₄`/`Γc` in their OWN signatures, at SHIFTED offsets
 -- (`1 + proSig (insert p s) + shiftsV L₁ + 2`, `mShift p + mShift (neg p) + …`) that §26.1's offset-0 construction
 -- does not reach. Those two are the transport-chain work that remains.
+-- U10 (Necessitation/Verify5, 2026-09-16): the `Ck` THREADING. `armHyps_of_arms` briefly carried
+-- `hCk5 : ((128655 : ℕ) : V) + 5·Cv ≤ Czv`, naming `Verify4.verifyGraph''_ok4`'s constant as a LITERAL. That binder
+-- is unusable: `verifyGraph''_ok4 : ∃ Cs Ck : ℕ, ∀ …`, so `128655` is a witness chosen inside its own proof and
+-- never appears in the statement — after `obtain ⟨Cs, Ck, h⟩` the `Ck` is OPAQUE and no literal can discharge its
+-- E-room. Replaced by `{Ck : ℕ}` in the implicit group plus `hCkDom : ((Ck : ℕ) : V) + 5·(Cv : V) ≤ Czv`, the
+-- `Assemble.verifyKit'''_of` precedent (obtain the existential FIRST, choose the constant as a function of it).
+-- The blast radius is this theorem alone: `Ck` occurs only in the proof obligation, never in the conclusion, so
+-- `ArmHyps`, `ArmHypsAll` and `verifyGraph''_size4_of_arms` are byte-identical (diff: 2 insertions, 2 deletions,
+-- both on binder lines).
+-- FOURTH instance of one pattern: a constant fixed BEFORE the quantifier ranging over what it must dominate
+-- (`SizeOracle`'s table, `ArmHyps`' `Cv`, `VerifySizeOracle`'s `Cv`, now `Verify4`'s `Ck`). Order constants LAST.
+-- TRAP 31: `set_option … in` binds to the NEXT declaration, so a sentinel planted BETWEEN the `set_option` and its
+-- theorem steals the raise and the theorem then elaborates at the default 200000 heartbeats — here the motive's
+-- `simp only [VerifyGraph'', p4, kitQ, kitD]; definability` times out, which reads as a real failure but is an
+-- artifact of the probe's placement. Sentinels go ABOVE the `set_option` line, never between it and its
+-- declaration; and a sentinel run that changes the file's options is not a valid check of the unmodified file.
 #print axioms armHyps_of_arms
 
 -- U10 (Necessitation/Verify5, 2026-09-16): §26.2 — THE `and` TRANSPORT CHAIN'S E-ROOMS, the first banked piece of

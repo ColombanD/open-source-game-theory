@@ -3636,7 +3636,7 @@ set_option maxHeartbeats 4000000 in
 /-- **THE RECURSION**, with the node context as an explicit hypothesis and the `and`/`cut` context witnesses as
 named hypotheses (their shifted-offset layouts have no producer). -/
 theorem armHyps_of_arms {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
-    {tbl N N' B' T B E A Czv : V} {Cv : ℕ}
+    {tbl N N' B' T B E A Czv : V} {Cv Ck : ℕ}
     (htbl : TableOK tbl N) (hP : ProTable tbl) (htblN : NumTableOK T N' B')
     (hPle : formulaLen LAct (Ple : V) ≤ B)
     (hCz1 : 1 ≤ Czv) (hCk : ∀ n : ℕ, n ≤ 1000000 → ((n : ℕ) : V) ≤ Czv)
@@ -3644,7 +3644,7 @@ theorem armHyps_of_arms {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜
     (hCbin : 2 * (27 * N' + 525600 * B') ≤ Czv)
     (hcG : 4 * ((cDer : V) + cDlen + cFst + 6) ≤ Czv)
     (hCv : (Cv : V) ≤ Czv) (hCv8 : 8 * (Cv : V) + 9 ≤ Czv)
-    (hCk5 : ((128655 : ℕ) : V) + 5 * (Cv : V) ≤ Czv)
+    (hCkDom : ((Ck : ℕ) : V) + 5 * (Cv : V) ≤ Czv)
     (hA : AxmTableOK' tbl E walkPieces A (Cv : V))
     (hAndArm : ∀ s p q dp dq L₁ L₂ Γ' : V, IsFormulaSet LAct s → IsSemiformula LAct 0 p →
       IsSemiformula LAct 0 q → (p ^⋏ q) ∈ s → DerivationOf TAct dp (insert p s) →
