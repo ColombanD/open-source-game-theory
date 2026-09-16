@@ -1727,3 +1727,25 @@ infrastructure was each time the right call and is now complete for `or` — eve
 needs is located and validated. Part 9's priority is to BANK `or` itself.
 IN FLIGHT: `Verify5` Part 9 (`or` first, then `and`/`cut` with later-context hypotheses, then
 `all`/`exs`/`axm`, then the recursion).
+
+**§11 status — `Verify5` glue, Part 9: `or_wrapper` LANDED, 5 of 10 (0da3306, §21; build 3270,
+census 876, all standard).** The Part 8 infrastructure paid off as intended: BOTH offset rooms
+collapsed through `eroom_of_le` on the FIRST try — `hipE` to `22·D + 8` (via `memTop_le` +
+`descCountF_le_of_len`), `hiqE` to `14·D + 6` — and the dossiers came straight from
+`Prologue.layout_or`. WHAT DIFFERS from `wk`/`shift`: the `postIns` recovery block is SIX steps (not
+`goalElim`'s five), so the tail is `6 + 9 = 15`; `len_proOr_le ≤ 110·setLen (insert p (insert q s))
++ 25` with the `setLen` bounded by `setLen_child_le_dlen_orIntro` gives a length-half constant of
+`110 + 40 = 150`; `hgE2` carries TWO `proSig` terms, each `≤ 6·D + 1`, that bound itself needing an
+E-room at `(13,18,8)`. `dlen_orIntro` has the same `setLen s + dlen d' + 1` shape, so
+`hdeq`/`hyd`/`hLn` transcribed unchanged. THREE REPAIR HUNKS, each diagnosed in seconds, all
+arithmetic or plumbing: `Derivation.orIntro` wants the whole `DerivationOf` (not its `.2`); `hqD`
+needed an explicit membership witness, not `le_of_eq rfl`; and **`hgE2`'s summed constant is
+`13·D + 9`, NOT `13·D + 10`**. **METHOD NOTE WORTH KEEPING: on that off-by-one, papering over it
+with `le_of_add_eq' (c := 0)` slack FAILED; reading the IDE's residual goal (`9 + D·13 + … =
+10 + D·13 + …`) gave the true normal form directly. Read the residual goal; do not invent slack.**
+No corrupted probes this round — the Edit-only rule held.
+REMAINING: 5 wrappers (`and`, `cut`, `all`, `exs`, `axm`) then the recursion. Per Part 8, `and`/`cut`
+take their later-context hypotheses (`hΓ₃`/`hLay₃`/`hDq₃`; `Γ₄` + the `proCutPre` block for `cut`)
+as EXPLICIT wrapper hypotheses with `shiftsV L₁ ≤ Czv·p4 (dlen dp)` from the first child's motive
+via `shiftsV_le_len`; the agent holds every signature and bound they need — nothing left to locate.
+IN FLIGHT: `Verify5` Part 10 (`and`, `cut`, then `all`/`exs`/`axm`, then the recursion).
