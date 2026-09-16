@@ -1980,3 +1980,35 @@ Cv ρ L}`); `Package.kitPackage'''_of_size'` may be REORDERED so `obtain ⟨C, h
 IN FLIGHT: `Verify5` Part 18 — (1) the reordering alone, (2) the ten-arm recursion with `and`/`cut`
 as two named hypotheses, (3) the transport chains, (4) their discharge → the unconditional
 `verifyGraph''_size4_of_arms`.
+
+**§11 status — `Verify5` Part 17b: NO CODE AGAIN, and rightly — THE ROOT OF THE DEFECT CLASS IS IN
+`Assemble.lean` ITSELF, verified by the coordinator at every site.** The agent stopped a SECOND
+time rather than edit a frozen file, and traced the fault to its source instead of patching the two
+symptoms. **THE ROOT: `Assemble.VerifySizeOracle` (Assemble:488) binds `Cv` INSIDE its
+`∀ {E A Cv ρ L}` while `Cz` is a parameter.** Threading `Cv` through `ArmHyps` alone therefore does
+NOT close: `verifySizeOracle_of_arms` (Verify5:110) and `verifySizeOracle_of_sizeThm` (Package:82)
+must both PRODUCE `VerifySizeOracle`, whose `∀ Cv` a `Cv`-fixed `ArmHyps` cannot discharge, and
+`verifyKit'''_of` (Assemble:866) passes that hypothesis WHOLE to `vList_full` (876, 879), so the
+type must match exactly. **AND IT IS FALSE, NOT MERELY UNPROVABLE, AT ARBITRARY `Cv`:** the
+certificate steps are bounded by `entryB Cv p = Cv·(|p|+1)³` (Verify3:66), and for `Cv > Cz` they
+genuinely exceed the kit class — which is precisely why `entryB_le_kitQ`/`entryB_le_kitD`
+(Verify5:294, 302) demand `hC : Cv ≤ Cz`.
+**THE SURPLUS IS PROVABLY UNUSED — coordinator-verified at all five real application sites**
+(Assemble 600, 871, 1276; Package 70/86; Verify5 113/684): not one instantiates the oracle at any
+`Cv` other than the fixed parameter. `vList_full (N' B' Cz Cv : ℕ)` (596) and `verifyKit'''_of
+(N' B' Cz Cv : ℕ)` (866) ALREADY take `Cv` as an explicit `ℕ` parameter, and `VerifyKit'''`
+(Assemble:844) carries `Cv : ℕ` as a structure parameter with both `.ok` and `.cost` at
+`AxmTableOK' … (Cv : V)`. The whole downstream chain is already `Cv`-fixed; the `∀ Cv` exists ONLY
+in `VerifySizeOracle`'s own statement. **THIRD INSTANCE OF THE CLASS** (`SizeOracle`'s table,
+`ArmHyps`'s `Cv`, `VerifySizeOracle`'s `Cv`) — and the third is the ROOT of the other two.
+**COORDINATOR'S DECISION: extend the authorisation to the two-line lift in `Assemble.lean`** —
+`def VerifySizeOracle (… ) (Cv Cz : ℕ)` with `Cv` lifted out of the inner `∀`, and the `hsize`
+argument of `vList_full`/`verifyKit'''_of` retyped (a token each; both already have `Cv` in scope).
+NOTHING ELSE in `Assemble.lean` — no proof bodies, no other statements; if a proof body needs more
+than a retyped hypothesis, STOP and report rather than widen the edit. REJECTED: re-deriving
+`Cv`-fixed `vList_full`/`verifyKit'''_of` inside `Package.lean` (~180 lines duplicating Assemble's
+hardest proof — the same "risk a known-good asset by reproducing it" cost ruled against for the
+wrappers), and a third named hypothesis (buries the defect exactly as `SizeOracle` was buried).
+IN FLIGHT: `Verify5` Part 18 — (1) the lift + threading, green and alone; (2) the ten-arm recursion
+with `and`/`cut` named; (3) the transport chains; (4) discharge → the unconditional
+`verifyGraph''_size4_of_arms`.
