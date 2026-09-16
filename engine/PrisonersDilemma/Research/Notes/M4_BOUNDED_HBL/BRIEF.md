@@ -1947,3 +1947,36 @@ PROCESS: the two lemmas were sentinel-tested under a FOREGROUND compile (a plant
 its line), so the 7 s exit-0 was honest — the Part-15 `nohup` false green is not recurring.
 IN FLIGHT: `Verify5` Part 17 (the recursion with 8 arms discharged + 2 named hypotheses; then the
 two transport chains; then their discharge → the unconditional `verifyGraph''_size4_of_arms`).
+
+**§11 status — `Verify5` Part 17: NO CODE, and rightly so — A SECOND QUANTIFIER-ORDER DEFECT,
+found by scoping and VERIFIED BY THE COORDINATOR AT ALL FOUR SITES.** The agent stopped before
+drafting rather than ship eight arms plus a silent third named hypothesis, and handed up a decision.
+**THE DEFECT: `ArmHyps` (Verify5:97) binds `Cv` UNIVERSALLY INSIDE (`∀ {E A Cv ρ L}`) while
+`Cz : ℕ` is fixed OUTSIDE** — and the `axm` arm needs `hCv : Cv ≤ Cz` (from `axm_arm_size`
+Verify5:335, because the certificate's class is `entryB Cv p = Cv·(|p|+1)³` and BOTH
+`entryB_le_kitQ` (294) and `entryB_le_kitD` (302) take `hC : Cv ≤ Cz` as the step landing the entry
+in the kit class). No fixed `Cz : ℕ` dominates a universally quantified `Cv : V`: instantiate
+`Cv := Cz + 1` and the arm is FALSE. `AxmTableOK'.mono_const` (Verify3:97) only RAISES `Cv`, so it
+cannot rescue it. **THIS IS THE SAME SHAPE AS THE `SizeOracle` DEFECT of Part 1 — a constant fixed
+outside a quantifier that ranges over what it must dominate. Second instance in this file; name it
+as a class and check for it when writing any `∃ C, ∀ …` interface.**
+EVIDENCE IT IS THE STATEMENT'S FAULT, NOT THE WRAPPER'S: every neighbouring statement that is
+actually USED threads `Cv` as a PARAMETER beside `Cz` — `vList_full (N' B' Cz Cv : ℕ)`
+(Assemble:596) builds `Ck := (asmCk Ck' Cz N' B' + cG)·(Cv + 1)`, scaled by `Cv + 1` precisely to
+absorb it; `verifyKit'''_of (N' B' Cz Cv : ℕ)` (Assemble:866) likewise; and at the ONE real use
+site, `kitPackage'''_of_size'` (Package:101), `Cz` is obtained at line 105 and `C` at line 109 —
+FOUR LINES LATER, inside the same proof — so `Cv` is a fixed canonical natural there
+(`C` from `verifyGraph''_exists_unconditional`, Verify3:685). The universal quantifier is strictly
+stronger than anything the package needs, and that surplus strength is what makes the arm
+unprovable.
+**COORDINATOR'S DECISION: option 1 — thread `Cv` as a parameter** (rejected: deriving the bound
+from `AxmTableOK'` + the E-room, which does not carry it; and landing three named hypotheses, which
+would bury a structural defect as ordinary unfinished work — exactly how `SizeOracle` went
+unnoticed). AUTHORISED, narrowly: `ArmHyps`/`SizeThm`/`SizeThmAll` may take `Cv` as a parameter
+(`SizeThmAll := ∀ N' B' Cv, ∃ Cz, SizeThm N' B' Cv Cz`, the `Cv` binder lifted out of the `∀ {E A
+Cv ρ L}`); `Package.kitPackage'''_of_size'` may be REORDERED so `obtain ⟨C, hex⟩` precedes
+`obtain ⟨Cz, hCz⟩ := hsz N' B' C`; `Assemble.lean` stays untouched; everything downstream of
+`SizeThmAll` keeps its statement modulo the new shape.
+IN FLIGHT: `Verify5` Part 18 — (1) the reordering alone, (2) the ten-arm recursion with `and`/`cut`
+as two named hypotheses, (3) the transport chains, (4) their discharge → the unconditional
+`verifyGraph''_size4_of_arms`.
