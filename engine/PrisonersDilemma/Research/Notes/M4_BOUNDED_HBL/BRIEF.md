@@ -1749,3 +1749,26 @@ take their later-context hypotheses (`hΓ₃`/`hLay₃`/`hDq₃`; `Γ₄` + the 
 as EXPLICIT wrapper hypotheses with `shiftsV L₁ ≤ Czv·p4 (dlen dp)` from the first child's motive
 via `shiftsV_le_len`; the agent holds every signature and bound they need — nothing left to locate.
 IN FLIGHT: `Verify5` Part 10 (`and`, `cut`, then `all`/`exs`/`axm`, then the recursion).
+
+**§11 status — `Verify5` glue, Part 10: `and_wrapper` LANDED, 6 of 10 (b844f72, §22; build 3270,
+census 877, all standard).** The first TWO-CHILD arm; seven repair hunks, each arithmetic or
+structural and each diagnosed in seconds.
+**TRAP 19 (the structural finding, and it RECURS IN `cut`): in a two-child arm, EVERY room must use
+`rec2₄`, NOT `rec1₄` — including the four that mention only ONE child** (`hiE₂`, `hipE₂`, `hgE₁`,
+`hgE₂`). `rec1₄` wants `d = y + m`, and a two-child `dlen` cannot be written that way: the other
+child's `dlen` has nowhere to go, and the residual goal shows it as `… + dlen dq = …` with the
+summand simply MISSING. The fix is uniform — add the absent child's `Czv·p4` as slack via
+`le_of_add_eq'`, then close with `rec2₄`.
+SPECIFICS: seven blocks, so the length half is two `len_proIns_le ≤ 55·setLen (insert · s) + 12`
+(the `setLen`s via `setLen_child_le_dlen_andIntro_left`/`_right`) plus `6 + 6 + 9 = 21`, giving
+`110·D + 45 = 155`. The later-context hypotheses `hΓ₃`/`hLay₃`/`hDq₃` went in as explicit binders
+(Part 8's finding), `hDp` from `layout_and`, and `shiftsV L₁ ≤ Czv·p4 (dlen dp)` via
+`shiftsV_le_len` bounds the later-context rooms. **Part 9's method note earned its keep four
+times**: the constants `hipE₁ 16·D+6`, `hiE₂ 20·D+9`, `hipE₂ 20·D+10`, `hgE₃ 13·D+11` were all READ
+OFF THE RESIDUAL GOALS, not guessed; where invented slack (`le_of_add_eq' (c := 0)`) was tried it
+failed immediately.
+REMAINING: 4 wrappers (`cut`, `all`, `exs`, `axm`) then the recursion. **`cut` is next and should be
+cheapest of the four in design terms** — `and`'s shape with `Γ₄` plus the `proCutPre` block, and
+trap 19 now tells us in advance that all its rooms need `rec2₄`. Every signature and bound for all
+four is in hand; nothing left to locate.
+IN FLIGHT: `Verify5` Part 11 (`cut`, `all`, `exs`, `axm`, then the recursion).
