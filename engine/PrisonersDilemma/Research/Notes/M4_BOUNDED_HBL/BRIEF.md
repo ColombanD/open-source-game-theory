@@ -2082,3 +2082,37 @@ named hypotheses, compile, commit) rather than stop with nothing — a partially
 that compiles is a real asset; an unwritten one is not.
 IN FLIGHT: `Verify5` Part 19 — (1) §27 the ten-arm recursion; (2) the two transport chains;
 (3) discharge → the unconditional `verifyGraph''_size4_of_arms`.
+
+**§11 status — `Verify5` Part 19: §27 DRAFTED AND COMPILED; a structural mismatch affecting ALL
+EIGHT non-`and`/`cut` arms (no commit; tree clean at 0e5a600, green 3262 jobs).** The draft-first
+steer WORKED: forty seconds of compiling surfaced what three rounds of reading had not. THE
+SKELETON IS RIGHT — motive, arm order, the `axL`/`verum`/`axm` applications, the `and`/`cut` named
+hypotheses, the `ih` E-room descent via `child_bound4` and the child→parent `kitD_mono` widening all
+elaborated as designed. TRIVIAL FAULT: `hC21`/`hC9` need the LITERAL shape `(12 : V) + 9 ≤ Czv`, not
+`((21:ℕ):V) ≤ Czv` — the cast trap §16's own header documents.
+**THE STRUCTURAL FAULT: the wrappers take INSTANTIATED child facts, but the child obligation is
+DEFERRED BY DESIGN.** `vWk_ok` (Verify2:1945) takes `hch : ChildOK tbl Wc T E L' d' B`, and
+`ChildOK` (Verify2:1811) is `∀ Γ', IsFormulaSet Γ' → NodeLay walkPieces Wc T Γ' (fstIdx d') → …` —
+quantified over the CHILD's context. `Verify4` NEVER instantiates the `ih`: it packages it as
+`hch : ChildOK … := fun Γ' hΓ' hLay' ↦ … ih …` (Verify4:360) and hands that λ to the arm lemma,
+which instantiates it LATER, at its own prologue's `finalCtx`, where a child context finally
+exists. The wrappers instead take `hchild : SizeOK (kitQ Cz B E) (kitD Cz (2*d)) L'`
+(Verify5:736) — fine inside a wrapper, but it moves instantiation OUT into the recursion body,
+where there is no child context and none can be built: `NodeLay` unfolds to `1 ≤ len (memberList s)
+∧ Layout … Γ' s 0`, `Layout` (Prologue:634) is a conjunction of `∈ Γ` membership facts, and EVERY
+producer yields it only at a prologue's OUTPUT context (`proWk_ok` 3427 gives `Layout … c 0` at
+`finalCtx Γ (proWk …)`). **There is no from-nothing `Layout`; the nine `nodeLay_child` calls the
+draft needed cannot exist.**
+**COORDINATOR'S DECISION (verified at all four sites; OVERTURNS the "don't touch green wrappers"
+rule): OPTION 1 — restate the eight wrappers to take `ChildOK`-shaped hypotheses.** That rule was
+set to prevent RE-PROVING verified work (after two corrupted probes and a proposal to duplicate 180
+lines); this is eight HYPOTHESIS-LIST changes to a shape the underlying arm lemmas natively consume,
+with every wrapper body already passing its child fact straight through. Rejected: an eightfold
+`Layout.transport` construction (far larger than §28's two chains, and unnecessary). EXPECTED
+BONUS: restating should DISSOLVE the `and`/`cut` context problem too, making §28 unnecessary —
+to be confirmed, not assumed.
+METHOD LESSON, recorded: **when the question is structural, COMPILE A SKELETON rather than read for
+it.** Three rounds of reading missed what one compile found.
+IN FLIGHT: `Verify5` Part 20 — (1) restate the eight wrappers to `ChildOK`; (2) §27 with the `ih`
+handed over as a λ (`Verify4`'s idiom) + the `hC21`/`hC9` literal fix; (3) confirm whether §28 is
+still needed.
