@@ -674,7 +674,8 @@ section packageShape
 def ArmHypsAll (N N' B' Cv Cz : ℕ) : Prop :=
   ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] (tbl B T : V),
     TableOK tbl (N : V) → IndRecTable tbl →
-    (∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ B) → NumTableOK T (N' : V) (B' : V) →
+    (∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ B) →
+    formulaLen LAct (Ple : V) ≤ B → NumTableOK T (N' : V) (B' : V) →
     ArmHyps tbl B layoutPieces certPieces frag1Pieces frag2Pieces proPieces T Cv Cz
 
 /-- **The size theorem in `Package.SizeThm`'s shape**, modulo the ten arms: on every `IndRec` table with its
@@ -683,10 +684,11 @@ row-body bound and every numeral table described by the fixed naturals `N'`, `B'
 theorem verifyGraph''_size4_of_arms (N N' B' : ℕ) {Cv Cz : ℕ} (harms : ArmHypsAll N N' B' Cv Cz) :
     ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] (tbl B T : V),
       TableOK tbl (N : V) → IndRecTable tbl →
-      (∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ B) → NumTableOK T (N' : V) (B' : V) →
+      (∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ B) →
+      formulaLen LAct (Ple : V) ≤ B → NumTableOK T (N' : V) (B' : V) →
       VerifySizeOracle tbl B layoutPieces certPieces frag1Pieces frag2Pieces proPieces T Cv Cz :=
-  fun V _ _ tbl B T htbl hPA hB htblN ↦
-    verifySizeOracle_of_arms (harms V tbl B T htbl hPA hB htblN)
+  fun V _ _ tbl B T htbl hPA hB hPle htblN ↦
+    verifySizeOracle_of_arms (harms V tbl B T htbl hPA hB hPle htblN)
 
 end packageShape
 
@@ -4216,5 +4218,98 @@ theorem armHyps_of_arms {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜
       htblN rfl rfl hPle hCz1 hCk hCD hcG hCv hCv8 hs hps hpT hΓ hLay hszp hlen hsh hE
 
 end recursion
+
+/-! ## 28. THE INSTANTIATION — `ArmHypsAll` DISCHARGED
+
+The ten arms are unconditional (§27), so `ArmHypsAll` is now a matter of CHOOSING the
+constant — and the constant is chosen LAST, the standing lesson from the ordering bugs.
+
+`Cz := 8 * Cn` is FORCED, not chosen: the recursion's size conjunct sits at
+`kitD Czv (2 * dlen ρ)` (the arms double `D`), while `ArmHyps` demands the UNDOUBLED
+`kitD Cz (dlen ρ)`, and §15's `kitD_two_mul_le` bridges exactly that at the cost of a
+factor `8`. The `Q` side then rides along by §15's `kitQ_mono_const`, and the length side
+by `p4_mono le_self_add` + `pow4_eq_p4` — the recursion's `p4 (dlen ρ)` is SMALLER than
+`ArmHyps`' `(dlen ρ + 1)^4`, so that direction is free.
+
+`Cn` collects every constant the recursion's nine domination hypotheses need, each as a
+SUMMAND: `1000000` (for `hCk`'s `∀ n ≤ 1000000`), the two numeral-table constants, their
+doubling, the goal-fact constant `cG`, then `8·Cv + 9` and `Ck + 5·Cv`. Both `cG` (from
+`Assemble.exists_cGoal`) and `Ck` (from `Verify4.verifyGraph''_ok4`) are OPAQUE and never
+unfolded — `exists_cGoal` exists precisely because a `def` of `4·(cDer + …)` stalls the
+kernel on the giant DSL constants.
+
+TRAP: this theorem must sit AFTER §27, not beside `ArmHypsAll`'s definition in §2 —
+`armHyps_of_arms` is declared at the file's end and Lean needs the callee first. A first
+attempt placed it in `packageShape` and failed with `Unknown identifier armHyps_of_arms`.
+
+TRAP: `ArmHyps` binds `{E A ρ L}` IMPLICITLY, so the arm goal is reached by the tactic
+`intro E A rho L hA hd hL hEcap`, mirroring `verifySizeOracle_of_arms`. A term-mode
+`fun … ↦` there binds the wrong slots and the context silently shifts by one (`L` catching
+the `AxmTableOK'`, `hA` the `Derivation`). -/
+
+section instantiation
+
+set_option maxHeartbeats 4000000 in
+/-- **`ArmHypsAll` holds**, at `Cz = 8·Cn` with `Cn` built last. -/
+theorem armHypsAll_of_arms (N N' B' Cv : ℕ) : ∃ Cz : ℕ, ArmHypsAll N N' B' Cv Cz := by
+  obtain ⟨Cs, Ck, hV4⟩ := verifyGraph''_ok4
+  obtain ⟨cG, hcG⟩ := exists_cGoal
+  refine ⟨8 * (1000000 + (19 * B' + 25) + 2 * (27 * N' + 525600 * B') + cG
+      + (8 * Cv + 9) + (Ck + 5 * Cv)), ?_⟩
+  intro V _ _ tbl B T htbl hPA hB hPle htblN
+  set Cn : ℕ := 1000000 + (19 * B' + 25) + 2 * (27 * N' + 525600 * B') + cG
+      + (8 * Cv + 9) + (Ck + 5 * Cv) with hCn
+  obtain ⟨Czv, hCzv⟩ : ∃ x : V, x = ((Cn : ℕ) : V) := ⟨_, rfl⟩
+  have hCz1 : (1 : V) ≤ Czv := by
+    rw [hCzv]; exact_mod_cast (by omega : 1 ≤ Cn)
+  have hCk : ∀ n : ℕ, n ≤ 1000000 → ((n : ℕ) : V) ≤ Czv := fun n hn ↦ by
+    rw [hCzv]; exact_mod_cast (by omega : n ≤ Cn)
+  have hCQ : 19 * (B' : V) + 25 ≤ Czv := by
+    rw [hCzv]
+    calc 19 * (B' : V) + 25 = (((19 * B' + 25 : ℕ) : ℕ) : V) := by push_cast; ring
+      _ ≤ ((Cn : ℕ) : V) := by exact_mod_cast (by omega : 19 * B' + 25 ≤ Cn)
+  have hCD : 27 * (N' : V) + 525600 * (B' : V) ≤ Czv := by
+    rw [hCzv]
+    calc 27 * (N' : V) + 525600 * (B' : V)
+        = (((27 * N' + 525600 * B' : ℕ) : ℕ) : V) := by push_cast; ring
+      _ ≤ ((Cn : ℕ) : V) := by exact_mod_cast (by omega : 27 * N' + 525600 * B' ≤ Cn)
+  have hCbin : 2 * (27 * (N' : V) + 525600 * (B' : V)) ≤ Czv := by
+    rw [hCzv]
+    calc 2 * (27 * (N' : V) + 525600 * (B' : V))
+        = (((2 * (27 * N' + 525600 * B') : ℕ) : ℕ) : V) := by push_cast; ring
+      _ ≤ ((Cn : ℕ) : V) := by exact_mod_cast (by omega : 2 * (27 * N' + 525600 * B') ≤ Cn)
+  have hcGv : 4 * ((cDer : V) + cDlen + cFst + 6) ≤ Czv := by
+    rw [← hcG V, hCzv]; exact_mod_cast (by omega : cG ≤ Cn)
+  have hCvv : ((Cv : ℕ) : V) ≤ Czv := by
+    rw [hCzv]; exact_mod_cast (by omega : Cv ≤ Cn)
+  have hCv8 : 8 * ((Cv : ℕ) : V) + 9 ≤ Czv := by
+    rw [hCzv]
+    calc 8 * ((Cv : ℕ) : V) + 9 = (((8 * Cv + 9 : ℕ) : ℕ) : V) := by push_cast; ring
+      _ ≤ ((Cn : ℕ) : V) := by exact_mod_cast (by omega : 8 * Cv + 9 ≤ Cn)
+  have hCkDom : ((Ck : ℕ) : V) + 5 * ((Cv : ℕ) : V) ≤ Czv := by
+    rw [hCzv]
+    calc ((Ck : ℕ) : V) + 5 * ((Cv : ℕ) : V) = (((Ck + 5 * Cv : ℕ) : ℕ) : V) := by push_cast; ring
+      _ ≤ ((Cn : ℕ) : V) := by exact_mod_cast (by omega : Ck + 5 * Cv ≤ Cn)
+  intro E A rho L hA hd hL hEcap
+  have hcast : (((8 * Cn : ℕ) : V)) = 8 * Czv := by rw [hCzv]; push_cast; ring
+  rw [hcast] at hEcap ⊢
+  have hE : Czv * p4 (dlen TAct rho + 1) ≤ E := by
+    refine le_trans ?_ hEcap
+    rw [pow4_eq_p4]
+    exact mul_le_mul_of_nonneg_right
+      (le_mul_of_one_le_left zero_le (by norm_num : (1 : V) ≤ 8)) zero_le
+  obtain ⟨hlen, hsz⟩ :=
+    armHyps_of_arms htbl hPA.proTable htblN hPle hCz1 hCk hCQ hCD hCbin hcGv hCvv hCv8 hCkDom
+      hV4 hA hd hE L hL
+  refine ⟨?_, ?_⟩
+  · rw [pow4_eq_p4]
+    refine le_trans hlen ?_
+    exact mul_le_mul (le_mul_of_one_le_left zero_le (by norm_num : (1 : V) ≤ 8))
+      (p4_mono le_self_add) zero_le zero_le
+  · exact hsz.mono (kitQ_mono_const B E
+      (le_mul_of_one_le_left zero_le (by norm_num : (1 : V) ≤ 8)))
+      (kitD_two_mul_le Czv (dlen TAct rho))
+
+end instantiation
 
 end ArithS

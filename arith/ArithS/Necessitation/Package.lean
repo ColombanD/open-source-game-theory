@@ -67,7 +67,8 @@ list `L` of a `VerifyGraph''` is `≤ Cz·(dlen ρ + 1)^4` long and size-discipl
 def SizeThm (N N' B' Cv Cz : ℕ) : Prop :=
   ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] (tbl B T : V),
     TableOK tbl (N : V) → IndRecTable tbl →
-    (∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ B) → NumTableOK T (N' : V) (B' : V) →
+    (∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ B) →
+    formulaLen LAct (Ple : V) ≤ B → NumTableOK T (N' : V) (B' : V) →
     VerifySizeOracle tbl B layoutPieces certPieces frag1Pieces frag2Pieces proPieces T Cv Cz
 
 /-- **The size statement, quantified over the numeral table's naturals** — the shape the size glue delivers
@@ -84,9 +85,10 @@ theorem verifySizeOracle_of_sizeThm {N N' B' Cv Cz : ℕ} (hsz : SizeThm N N' B'
     {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] {tbl B T : V}
     (htbl : TableOK tbl (N : V))
     (hPA : IndRecTable tbl) (hB : ∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ B)
+    (hPle : formulaLen LAct (Ple : V) ≤ B)
     (htblN : NumTableOK T (N' : V) (B' : V)) :
     VerifySizeOracle tbl B layoutPieces certPieces frag1Pieces frag2Pieces proPieces T Cv Cz :=
-  hsz V tbl B T htbl hPA hB htblN
+  hsz V tbl B T htbl hPA hB hPle htblN
 
 end carrying
 
@@ -129,11 +131,24 @@ theorem kitPackage'''_of_size' (hsz : SizeThmAll) :
   · intro ρ E hd hE
     exact hex V htbl hPA rfl rfl rfl hd hE
   · exact hkit V htbl hPA.proTable hB hPle hN rfl rfl rfl rfl rfl
-      (verifySizeOracle_of_sizeThm hCz htbl hPA hB hN)
+      (verifySizeOracle_of_sizeThm hCz htbl hPA hB hPle hN)
   · intro χ
     exact Classical.choose_spec (pinKit'_of χ N' B') V htbl hPA.numIdTable hB hN
 
 end package
+
+/-! ## 2.5 THE CARRYING SIZE THEOREM, DISCHARGED
+
+`Verify5.armHypsAll_of_arms` chooses the size constant for each `(N, N', B', Cv)`, and
+`Verify5.verifyGraph''_size4_of_arms` turns `ArmHypsAll` into `SizeThm`'s shape verbatim —
+the two statements are now the same binder list and the same `VerifySizeOracle` target. So
+`SizeThmAll` holds outright, and every theorem below that took it as a hypothesis is
+unconditional. -/
+
+theorem sizeThmAll_holds : SizeThmAll := by
+  intro N N' B' Cv
+  obtain ⟨Cz, harms⟩ := armHypsAll_of_arms N N' B' Cv
+  exact ⟨Cz, verifyGraph''_size4_of_arms N N' B' harms⟩
 
 /-! ## 3. The headline theorems, UNCONDITIONAL modulo the carrying size theorem -/
 

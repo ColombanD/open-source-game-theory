@@ -1885,4 +1885,30 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms dupoc_self_coop_of_sizeThm
 #print axioms pblt_of_sizeThm
 
+-- U10 (Necessitation/Verify5 §28 + Package §2.5, 2026-09-16): **`SizeThmAll` IS DISCHARGED.**
+-- With the ten arms unconditional (§27), `ArmHypsAll` is a matter of CHOOSING the constant, and the constant is
+-- chosen LAST — the standing lesson from the six ordering bugs. `Cz := 8·Cn` is FORCED, not chosen: the recursion's
+-- size conjunct sits at `kitD Czv (2·dlen ρ)` (the arms double `D`) while `ArmHyps` demands the UNDOUBLED
+-- `kitD Cz (dlen ρ)`, and §15's `kitD_two_mul_le` bridges exactly that at the cost of a factor `8`; the `Q` side
+-- rides along by §15's `kitQ_mono_const`, the length side by `p4_mono le_self_add` + `pow4_eq_p4` (the recursion's
+-- `p4 (dlen ρ)` is SMALLER than `ArmHyps`' `(dlen ρ + 1)^4`, so that direction is free). `Cn` collects each of the
+-- nine domination constants as a SUMMAND, with `cG` (`Assemble.exists_cGoal`) and `Ck` (`Verify4.verifyGraph''_ok4`)
+-- OPAQUE throughout — `exists_cGoal` exists precisely because a `def` of `4·(cDer + …)` stalls the kernel.
+-- THREE interface binders were missing and were threaded first, each a hypothesis written before its consumer's
+-- requirements were known: `TableOK tbl N` (no table predicate in the chain mentions `rowD`, so no `N` bounds the
+-- proof codes); the E-cap `(Cz:V)·(dlen ρ + 1)^4 ≤ E` (absent, and FALSE at small `E` — `kitQ C B E` SHRINKS with
+-- `E`, so a small cap makes the conclusion strictly stronger, while `AxmTableOK'` is vacuous at `A = 0` and can
+-- bound nothing); and `hPle` (`Ple` is never a `rowB`, and `cPle` is an opaque `flen`). Each witness already existed
+-- at the consumer, so all three cost one argument at `kitPackage'''_of_size'`.
+-- TRAP: §28 must sit AFTER §27 — `armHyps_of_arms` is declared at the file's end, and a first attempt beside
+-- `ArmHypsAll`'s definition in §2 failed with `Unknown identifier armHyps_of_arms`.
+-- TRAP: `ArmHyps` binds `{E A ρ L}` IMPLICITLY; the arm goal is reached by the tactic `intro E A rho L hA hd hL
+-- hEcap`, mirroring `verifySizeOracle_of_arms`. A term-mode `fun … ↦` binds the wrong slots and shifts the context
+-- by one, silently.
+-- With `sizeThmAll_holds`, `boundedInnerNec_sixteen_of_sizeThm`, `dupoc_self_coop_of_sizeThm` and `pblt_of_sizeThm`
+-- are UNCONDITIONAL: `BoundedInnerNec 16`, Critch's Theorem 3.7 in PA-`S` (Dupoc's self-cooperation) and the uniform
+-- PBLT each hold outright on [propext, Classical.choice, Quot.sound].
+#print axioms armHypsAll_of_arms
+#print axioms sizeThmAll_holds
+
 end ArithS
