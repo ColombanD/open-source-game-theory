@@ -1322,6 +1322,33 @@ lemma dlen_leafCode_le_kitD {T N' B' Cz a n d : V} (htblN : NumTableOK T N' B')
   le_trans (dlen_leafCode_le' htblN h hn)
     (le_trans (sum2D_le_layD N' B' (2 * d)) (layD_le_kitD le_rfl hC))
 
+/-- **THE DOUBLING ABSORBED INTO THE CONSTANT.** The ten motive wrappers conclude at `kitD Cz (2·dlen ρ)`, while
+`ArmHyps`/`Assemble.VerifySizeOracle` demand the UNDOUBLED `kitD Cz (dlen ρ)`. `kitD Cz z = Cz·(z+1)³` is INCREASING
+in `z`, so `kitD_mono` (which only weakens upward) cannot bridge them and neither can `SizeOK.mono`: the doubling is
+a genuine strengthening of the class, not a notational difference.
+
+It IS absorbable into the CONSTANT, which is what the recursion does — `2·d + 1 ≤ 2·(d + 1)`, so
+
+  `kitD Cz (2·d) = Cz·(2d+1)³ ≤ Cz·(2(d+1))³ = 8·Cz·(d+1)³ = kitD (8·Cz) d`.
+
+`ArmHypsAll` quantifies `Cz` AFTER the fixed naturals `N'`, `B'`, so instantiating the arms at `8·Czv` costs nothing
+and leaves `ArmHyps` byte-identical (which `Package.lean` requires). -/
+lemma kitD_two_mul_le (Cz d : V) : kitD Cz (2 * d) ≤ kitD (8 * Cz) d := by
+  unfold kitD
+  rw [pow3_eq_p3, pow3_eq_p3]
+  calc Cz * p3 (2 * d + 1) ≤ Cz * p3 (2 * (d + 1)) :=
+        mul_le_mul_of_nonneg_left (p3_mono (le_of_add_eq' (c := 1) (by ring))) zero_le
+    _ = Cz * (8 * p3 (d + 1)) := by rw [p3_two_mul]
+    _ = 8 * Cz * p3 (d + 1) := by ring
+
+/-- **`kitQ` is monotone in its CONSTANT** (`kitQ C B E = C·((B+1)(E+1))`) — the `Q`-side companion of
+`kitD_two_mul_le`, so a wrapper's conclusion at `Czv` weakens to the recursion's `8·Czv`. No such lemma existed
+anywhere in the tree: §4's family (`le_kitQ_factor`, `BE_le_kitQ`, `goalFact_le_kitQ`, `entryB_le_kitQ`) all LAND a
+quantity in the class and none of them varies the constant. -/
+lemma kitQ_mono_const {C C' : V} (B E : V) (h : C ≤ C') : kitQ C B E ≤ kitQ C' B E := by
+  unfold kitQ
+  exact mul_le_mul_of_nonneg_right h zero_le
+
 end recursionPrep
 
 

@@ -1513,6 +1513,20 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms le_two_mul_self
 #print axioms dlen_leafCode_le_kitD
 
+-- U10 (Necessitation/Verify5, 2026-09-16): §15, TWO LEMMAS ADDED for the recursion — the DOUBLING MISMATCH and its
+-- fix. Scoping the ten-arm recursion (Part 16) showed the ten motive wrappers conclude at `kitD Cz (2·dlen ρ)` while
+-- `ArmHyps`/`Assemble.VerifySizeOracle` demand the UNDOUBLED `kitD Cz (dlen ρ)`. `kitD Cz z = Cz·(z+1)³` is
+-- INCREASING in `z`, and `kitD_mono` and `SizeOK.mono` both weaken only UPWARD, so nothing in the tree bridged them:
+-- the doubling is a genuine strengthening of the size class, not a notational difference. `kitD_two_mul_le` absorbs
+-- it into the CONSTANT instead — `2d + 1 ≤ 2(d + 1)`, so `Cz·(2d+1)³ ≤ Cz·(2(d+1))³ = 8·Cz·(d+1)³` — giving
+-- `kitD Cz (2·d) ≤ kitD (8·Cz) d`; since `ArmHypsAll` quantifies `Cz` AFTER the fixed naturals `N'`, `B'`, arming the
+-- recursion at `8·Czv` costs nothing and leaves `ArmHyps` BYTE-IDENTICAL, which `Package.lean` requires.
+-- `kitQ_mono_const` is the `Q`-side companion (monotonicity in the constant). It did NOT exist anywhere in the tree:
+-- §4's family (`le_kitQ_factor`, `BE_le_kitQ`, `goalFact_le_kitQ`, `entryB_le_kitQ`) all LAND a quantity in the class
+-- and none of them varies the constant.
+#print axioms kitD_two_mul_le
+#print axioms kitQ_mono_const
+
 -- U10 (Necessitation/Verify5, 2026-09-16): THE SIZE HALF, PART 13 — the per-arm MOTIVE WRAPPERS begin (`axL`).
 -- TRAP 15 measured that filling one arm INSIDE the ten-arm `Derivation.induction1` body does not converge (>40 min
 -- on the cheapest arm, against ~10 s standalone). The restructuring is one TOP-LEVEL theorem per arm, taking the
