@@ -931,15 +931,21 @@ lemma sizeOK_cutPro {Wl Wc W T s p i ip : V} (hWp : W = proPieces)
     (hsD : setLen LAct (insert p s) ≤ D)
     (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E) (hiE : i + 14 * D + 5 ≤ E) (hipE : ip + 8 * D + 4 ≤ E)
     (hΓ : IsFormulaSet LAct Γ) (hDp : DossF walkPieces Γ 0 p ip)
-    (hLay : Layout walkPieces Wc T Γ s i) (hLay0 : Layout0 walkPieces Wc T Γ i)
+    (hLay : PLay Wc T Γ s i)
     (hsD0 : setLen LAct (insert p (0 : V)) ≤ D) :
     SizeOK (layQ B B' D) (layD N' B' D) (cutPro walkPieces Wl Wc W T s p i ip) := by
   unfold cutPro
   by_cases h : memberList s = 0
   · rw [if_pos h]
+    have hLay0 : Layout0 walkPieces Wc T Γ i := by
+      rcases hLay with ⟨hk1, -⟩ | ⟨-, h0⟩
+      · exfalso
+        rw [h, len_nil] at hk1
+        exact absurd hk1 (by simp)
+      · exact h0
     exact sizeOK_proIns0 htbl hP htblN hWl hWc hWp hPle hp hsD0 hE hiE hipE hΓ hLay0 hDp
   · rw [if_neg h]
-    exact sizeOK_proIns htbl hP htblN hWl hWc hWp hPle hs hp (one_le_len_memberList_of_ne h) hsD hE hiE hipE hΓ hLay hDp
+    exact sizeOK_proIns htbl hP htblN hWl hWc hWp hPle hs hp (one_le_len_memberList_of_ne h) hsD hE hiE hipE hΓ hLay.layout hDp
 
 /-- **The `and` arm, length half**: seven blocks, two `postIns` (six each), the node (nine). -/
 theorem len_vAnd_eq (Ww Wl Wc W₁ W T s p q dp dq L₁ L₂ : V) :
@@ -1042,13 +1048,10 @@ theorem cut_arm_size {Wl Wc W₁ W T s p d₁ d₂ L₁ L₂ B E Cz N' B' D d Γ
       (1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2) + 14 * D + 5 ≤ E)
     (hipE₂ : mLen Wc T (neg LAct p) + (1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2) + 8 * D + 4 ≤ E)
     (hΓ : IsFormulaSet LAct Γ)
-    (hLay₁ : Layout walkPieces Wc T Γ s (mShift walkPieces Wc T p + mShift walkPieces Wc T (neg LAct p)))
-    (hLay0₁ : Layout0 walkPieces Wc T Γ (mShift walkPieces Wc T p + mShift walkPieces Wc T (neg LAct p)))
+    (hLay₁ : PLay Wc T Γ s (mShift walkPieces Wc T p + mShift walkPieces Wc T (neg LAct p)))
     (hDp₁ : DossF walkPieces Γ 0 p (mLen Wc T p + mShift walkPieces Wc T (neg LAct p)))
     (hΓ₄ : IsFormulaSet LAct Γ₄)
-    (hLay₄ : Layout walkPieces Wc T Γ₄ s (mShift walkPieces Wc T p + mShift walkPieces Wc T (neg LAct p) +
-      (1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2)))
-    (hLay0₄ : Layout0 walkPieces Wc T Γ₄ (mShift walkPieces Wc T p + mShift walkPieces Wc T (neg LAct p) +
+    (hLay₄ : PLay Wc T Γ₄ s (mShift walkPieces Wc T p + mShift walkPieces Wc T (neg LAct p) +
       (1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2)))
     (hDnp₄ : DossF walkPieces Γ₄ 0 (neg LAct p)
       (mLen Wc T (neg LAct p) + (1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2)))
@@ -1075,10 +1078,10 @@ theorem cut_arm_size {Wl Wc W₁ W T s p d₁ d₂ L₁ L₂ B E Cz N' B' D d Γ
   refine sizeOK_appendV ?_ (sizeOK_appendV ?_ (sizeOK_appendV hchild₁ (sizeOK_appendV ?_
     (sizeOK_appendV ?_ (sizeOK_appendV hchild₂ (sizeOK_appendV ?_ ?_))))))
   · exact sizeOK_proCutPre_kit (B := B) (d := d) htbl hP htblN hWc hp hpD hnpD hEpre hΓc hDE hDd hCQ hCD
-  · exact (sizeOK_cutPro hWp htbl hP htblN hWl hWc hPle hs hp hsDp hEpro hiE₁ hipE₁ hΓ hDp₁ hLay₁ hLay0₁ hsD0p).mono
+  · exact (sizeOK_cutPro hWp htbl hP htblN hWl hWc hPle hs hp hsDp hEpro hiE₁ hipE₁ hΓ hDp₁ hLay₁ hsD0p).mono
       (layQ_le_kitQ hDE hCQ) (layD_le_kitD hDd hCD)
   · exact sizeOK_postIns_kit hWp hE1 hPle hgE₁ hbn₁ hcG
-  · exact (sizeOK_cutPro hWp htbl hP htblN hWl hWc hPle hs hp.neg hsDnp hEpro hiE₂ hipE₂ hΓ₄ hDnp₄ hLay₄ hLay0₄ hsD0np).mono
+  · exact (sizeOK_cutPro hWp htbl hP htblN hWl hWc hPle hs hp.neg hsDnp hEpro hiE₂ hipE₂ hΓ₄ hDnp₄ hLay₄ hsD0np).mono
       (layQ_le_kitQ hDE hCQ) (layD_le_kitD hDd hCD)
   · exact sizeOK_postIns_kit hWp hE1 hPle hgE₂ hbn₂ hcG
   · refine sizeOK_nodeCut hW₁ ?_ ?_ ?_
@@ -2313,10 +2316,15 @@ Length half: `Prologue.len_proCutPre_le ≤ 64·|p|` (with `|p| ≤ D`) plus TWO
 The rooms are stated over `mShift`/`mLen` rather than `memTop`/`descCountF`, bounded by `Prologue.mShift_le ≤ 4·|x|`
 and `mLen_succ_le : mLen + 1 ≤ 2·|x|`, with `CutV.formulaLen_neg` turning `|neg p|` into `|p|`.
 
-**The later-context AND the `Layout0` hypotheses are EXPLICIT.** `cut_arm_size` wants `Layout0` at both `cutPro`
-offsets (`hLay0₁`, `hLay0₄`), and `NodeLay.layout` only supplies `Layout … s 0` — there is no lemma producing
-`Layout0` at a shifted offset, so these are wrapper hypotheses the recursion discharges, alongside `hΓ₄`/`hLay₄`/
-`hDnp₄` and the `proCutPre` context `hΓc`. -/
+**The later contexts are EXPLICIT, and the two `cutPro` layouts are `PLay`.** The earlier design demanded
+`Layout … s i` AND `Layout0 … i` at both `cutPro` offsets. That pair is not dischargeable from above: `Layout0`
+(`Prologue` §12) asserts `eqFactB (^&(i+1)) 𝟎 ∈ Γ` — the sequent object IS `𝟎` — which is FALSE at a nonempty
+parent, and nothing upstream deposits it (`proCutPre` is two member blocks plus `certNeg`). The lemmas were sound
+but unusable: `sizeOK_cutPro` splits on `memberList s = 0` and consumes each hypothesis only in the branch where it
+holds, yet demanded both BEFORE the split. The fix is the disjunction the codebase already uses for this selector
+(`Verify2.PLay`, as in `cutBlock_ok`): `hLay₁`/`hLay₄` are `PLay`, and the branch projections (`PLay.layout`, and
+the `Or.inr` disjunct) happen inside `sizeOK_cutPro`. The later context `Γ₄` and the `proCutPre` context `Γc`
+remain wrapper hypotheses the recursion discharges, alongside `hDnp₄`. -/
 
 section cutWrapper
 
@@ -2335,13 +2343,10 @@ theorem cut_wrapper {tbl N N' B' Wl Wc W₁ W T B E Czv Γ Γ₄ Γc s p d₁ d�
     (hsD0p : setLen LAct (insert p (0 : V)) ≤ dlen TAct (cutRule s p d₁ d₂))
     (hsD0np : setLen LAct (insert (neg LAct p) (0 : V)) ≤ dlen TAct (cutRule s p d₁ d₂))
     (hΓ : IsFormulaSet LAct Γ) (hLay : NodeLay walkPieces Wc T Γ s)
-    (hLay₁ : Layout walkPieces Wc T Γ s (mShift walkPieces Wc T p + mShift walkPieces Wc T (neg LAct p)))
-    (hLay0₁ : Layout0 walkPieces Wc T Γ (mShift walkPieces Wc T p + mShift walkPieces Wc T (neg LAct p)))
+    (hLay₁ : PLay Wc T Γ s (mShift walkPieces Wc T p + mShift walkPieces Wc T (neg LAct p)))
     (hDp₁ : DossF walkPieces Γ 0 p (mLen Wc T p + mShift walkPieces Wc T (neg LAct p)))
     (hΓ₄ : IsFormulaSet LAct Γ₄)
-    (hLay₄ : Layout walkPieces Wc T Γ₄ s (mShift walkPieces Wc T p + mShift walkPieces Wc T (neg LAct p) +
-      (1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2)))
-    (hLay0₄ : Layout0 walkPieces Wc T Γ₄ (mShift walkPieces Wc T p + mShift walkPieces Wc T (neg LAct p) +
+    (hLay₄ : PLay Wc T Γ₄ s (mShift walkPieces Wc T p + mShift walkPieces Wc T (neg LAct p) +
       (1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2)))
     (hDnp₄ : DossF walkPieces Γ₄ 0 (neg LAct p)
       (mLen Wc T (neg LAct p) + (1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2)))
@@ -2605,7 +2610,7 @@ theorem cut_wrapper {tbl N N' B' Wl Wc W₁ W T B E Czv Γ Γ₄ Γc s p d₁ d�
       (D := dlen TAct (cutRule s p d₁ d₂)) (d := dlen TAct (cutRule s p d₁ d₂))
       (Γ := Γ) (Γ₄ := Γ₄) (Γc := Γc)
       hWp hW₁ htbl hP htblN hWl hWc hPle hs hp hpD hnpD hcD₁ hcD₂ hsD0p hsD0np
-      hEpre hEpro hiE₁ hipE₁ hiE₂ hipE₂ hΓ hLay₁ hLay0₁ hDp₁ hΓ₄ hLay₄ hLay0₄ hDnp₄ hΓc
+      hEpre hEpro hiE₁ hipE₁ hiE₂ hipE₂ hΓ hLay₁ hDp₁ hΓ₄ hLay₄ hDnp₄ hΓc
       hDE hnd hCQ hCD hCz1 hchildSz₁ hchildSz₂ hE1 hcG hgE₁ hgE₂ hbn₁ hbn₂ hbn' hnE hLn hnd
       hgE3 hCbin
 
