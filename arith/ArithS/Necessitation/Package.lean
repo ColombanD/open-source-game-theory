@@ -64,8 +64,9 @@ then asks for `Cz`.
 Everything else is `VerifySizeOracle`'s shape verbatim: on every `IndRec` table with its row-body bound, every graph
 list `L` of a `VerifyGraph''` is `≤ Cz·(dlen ρ + 1)^4` long and size-disciplined at the kit class
 `Q = kitQ Cz B E`, `D = kitD Cz (dlen ρ)`. -/
-def SizeThm (N' B' Cv Cz : ℕ) : Prop :=
-  ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] (tbl B T : V), IndRecTable tbl →
+def SizeThm (N N' B' Cv Cz : ℕ) : Prop :=
+  ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] (tbl B T : V),
+    TableOK tbl (N : V) → IndRecTable tbl →
     (∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ B) → NumTableOK T (N' : V) (B' : V) →
     VerifySizeOracle tbl B layoutPieces certPieces frag1Pieces frag2Pieces proPieces T Cv Cz
 
@@ -74,17 +75,18 @@ def SizeThm (N' B' Cv Cz : ℕ) : Prop :=
 there is a size constant. The quantifier order matters and is the whole point of the bypass: `N'`, `B'` are fixed
 first (by `NumSteps.exists_numTable`, inside the package proof), and only then is `Cz` chosen — so `Cz` may depend
 on them, which the layout class `(layQ B B' D, layD N' B' D)` requires. -/
-def SizeThmAll : Prop := ∀ N' B' Cv : ℕ, ∃ Cz : ℕ, SizeThm N' B' Cv Cz
+def SizeThmAll : Prop := ∀ N N' B' Cv : ℕ, ∃ Cz : ℕ, SizeThm N N' B' Cv Cz
 
 /-- `SizeThm` at a FIXED numeral table gives precisely `Assemble.VerifySizeOracle` — the shape
 `Assemble.verifyKit'''_of` consumes. (The content of the bypass: the missing hypothesis is available at the use
 site, because the use site owns the table.) -/
-theorem verifySizeOracle_of_sizeThm {N' B' Cv Cz : ℕ} (hsz : SizeThm N' B' Cv Cz)
+theorem verifySizeOracle_of_sizeThm {N N' B' Cv Cz : ℕ} (hsz : SizeThm N N' B' Cv Cz)
     {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] {tbl B T : V}
+    (htbl : TableOK tbl (N : V))
     (hPA : IndRecTable tbl) (hB : ∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ B)
     (htblN : NumTableOK T (N' : V) (B' : V)) :
     VerifySizeOracle tbl B layoutPieces certPieces frag1Pieces frag2Pieces proPieces T Cv Cz :=
-  hsz V tbl B T hPA hB htblN
+  hsz V tbl B T htbl hPA hB htblN
 
 end carrying
 
@@ -106,7 +108,7 @@ theorem kitPackage'''_of_size' (hsz : SizeThmAll) :
   obtain ⟨N₂, B₂, hLen⟩ := exists_lenTable
   obtain ⟨N₃, B₃, hMul⟩ := exists_mulTable
   obtain ⟨C, hex⟩ := verifyGraph''_exists_unconditional
-  obtain ⟨Cz, hCz⟩ := hsz N' B' C
+  obtain ⟨Cz, hCz⟩ := hsz N N' B' C
   obtain ⟨Ck, hkit⟩ := verifyKit'''_of N' B' Cz C
   refine ⟨N, B₀ + cPlength + cPeq + cPle, N', B', N₂, B₂, N₃, B₃, Ck, C,
     fun χ ↦ Classical.choose (pinKit'_of χ N' B'), fun V _ _ ↦ ?_⟩
@@ -127,7 +129,7 @@ theorem kitPackage'''_of_size' (hsz : SizeThmAll) :
   · intro ρ E hd hE
     exact hex V htbl hPA rfl rfl rfl hd hE
   · exact hkit V htbl hPA.proTable hB hPle hN rfl rfl rfl rfl rfl
-      (verifySizeOracle_of_sizeThm hCz hPA hB hN)
+      (verifySizeOracle_of_sizeThm hCz htbl hPA hB hN)
   · intro χ
     exact Classical.choose_spec (pinKit'_of χ N' B') V htbl hPA.numIdTable hB hN
 

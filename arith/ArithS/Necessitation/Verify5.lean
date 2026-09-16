@@ -670,19 +670,22 @@ recursion that threads them — the shape of `Verify4.verifyGraph''_ok4`, with `
 section packageShape
 
 /-- The ten arms, uniformly in the model, at a FIXED numeral table (`N'`, `B'` naturals). -/
-def ArmHypsAll (N' B' Cv Cz : ℕ) : Prop :=
-  ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] (tbl B T : V), IndRecTable tbl →
+def ArmHypsAll (N N' B' Cv Cz : ℕ) : Prop :=
+  ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] (tbl B T : V),
+    TableOK tbl (N : V) → IndRecTable tbl →
     (∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ B) → NumTableOK T (N' : V) (B' : V) →
     ArmHyps tbl B layoutPieces certPieces frag1Pieces frag2Pieces proPieces T Cv Cz
 
 /-- **The size theorem in `Package.SizeThm`'s shape**, modulo the ten arms: on every `IndRec` table with its
 row-body bound and every numeral table described by the fixed naturals `N'`, `B'`, every graph list of a
 `VerifyGraph''` is `≤ Cz·(dlen ρ + 1)^4` long and size-disciplined at the kit class. -/
-theorem verifyGraph''_size4_of_arms (N' B' : ℕ) {Cv Cz : ℕ} (harms : ArmHypsAll N' B' Cv Cz) :
-    ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] (tbl B T : V), IndRecTable tbl →
+theorem verifyGraph''_size4_of_arms (N N' B' : ℕ) {Cv Cz : ℕ} (harms : ArmHypsAll N N' B' Cv Cz) :
+    ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] (tbl B T : V),
+      TableOK tbl (N : V) → IndRecTable tbl →
       (∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ B) → NumTableOK T (N' : V) (B' : V) →
       VerifySizeOracle tbl B layoutPieces certPieces frag1Pieces frag2Pieces proPieces T Cv Cz :=
-  fun V _ _ tbl B T hPA hB htblN ↦ verifySizeOracle_of_arms (harms V tbl B T hPA hB htblN)
+  fun V _ _ tbl B T htbl hPA hB htblN ↦
+    verifySizeOracle_of_arms (harms V tbl B T htbl hPA hB htblN)
 
 end packageShape
 
