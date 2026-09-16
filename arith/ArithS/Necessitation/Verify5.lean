@@ -94,8 +94,8 @@ section sizeInvariant
 /-- The per-arm obligations of the size glue, as ONE named hypothesis (discharged arm by arm below).
 This is a scaffold: with it assumed, `verifySizeOracle_of` is immediate; the mathematics is in
 replacing it. -/
-def ArmHyps (tbl B Wl Wc W₁ W₂ W T : V) (Cz : ℕ) : Prop :=
-  ∀ {E A Cv ρ L : V}, AxmTableOK' tbl E walkPieces A Cv → Derivation TAct ρ →
+def ArmHyps (tbl B Wl Wc W₁ W₂ W T : V) (Cv Cz : ℕ) : Prop :=
+  ∀ {E A ρ L : V}, AxmTableOK' tbl E walkPieces A (Cv : V) → Derivation TAct ρ →
     VerifyGraph'' walkPieces Wl Wc W₁ W₂ W T A ρ L →
     len L ≤ (Cz : V) * (dlen TAct ρ + 1) ^ 4 ∧
       SizeOK (kitQ (Cz : V) B E) (kitD (Cz : V) (dlen TAct ρ)) L
@@ -108,10 +108,10 @@ may depend on the fixed naturals `N'`, `B'`. Its only consumer, `Assemble.kitPac
 applies the oracle at the canonical numeral table of `NumSteps.exists_numTable`, where `N'` and
 `B'` are fixed. -/
 theorem verifySizeOracle_of_arms {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
-    {tbl B T : V} {Cz : ℕ}
-    (harms : ArmHyps tbl B layoutPieces certPieces frag1Pieces frag2Pieces proPieces T Cz) :
-    VerifySizeOracle tbl B layoutPieces certPieces frag1Pieces frag2Pieces proPieces T Cz := by
-  intro E A Cv rho L hA hd hL
+    {tbl B T : V} {Cv Cz : ℕ}
+    (harms : ArmHyps tbl B layoutPieces certPieces frag1Pieces frag2Pieces proPieces T Cv Cz) :
+    VerifySizeOracle tbl B layoutPieces certPieces frag1Pieces frag2Pieces proPieces T Cv Cz := by
+  intro E A rho L hA hd hL
   exact harms hA hd hL
 
 end sizeInvariant
@@ -670,18 +670,18 @@ recursion that threads them — the shape of `Verify4.verifyGraph''_ok4`, with `
 section packageShape
 
 /-- The ten arms, uniformly in the model, at a FIXED numeral table (`N'`, `B'` naturals). -/
-def ArmHypsAll (N' B' Cz : ℕ) : Prop :=
+def ArmHypsAll (N' B' Cv Cz : ℕ) : Prop :=
   ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] (tbl B T : V), IndRecTable tbl →
     (∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ B) → NumTableOK T (N' : V) (B' : V) →
-    ArmHyps tbl B layoutPieces certPieces frag1Pieces frag2Pieces proPieces T Cz
+    ArmHyps tbl B layoutPieces certPieces frag1Pieces frag2Pieces proPieces T Cv Cz
 
 /-- **The size theorem in `Package.SizeThm`'s shape**, modulo the ten arms: on every `IndRec` table with its
 row-body bound and every numeral table described by the fixed naturals `N'`, `B'`, every graph list of a
 `VerifyGraph''` is `≤ Cz·(dlen ρ + 1)^4` long and size-disciplined at the kit class. -/
-theorem verifyGraph''_size4_of_arms (N' B' : ℕ) {Cz : ℕ} (harms : ArmHypsAll N' B' Cz) :
+theorem verifyGraph''_size4_of_arms (N' B' : ℕ) {Cv Cz : ℕ} (harms : ArmHypsAll N' B' Cv Cz) :
     ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] (tbl B T : V), IndRecTable tbl →
       (∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ B) → NumTableOK T (N' : V) (B' : V) →
-      VerifySizeOracle tbl B layoutPieces certPieces frag1Pieces frag2Pieces proPieces T Cz :=
+      VerifySizeOracle tbl B layoutPieces certPieces frag1Pieces frag2Pieces proPieces T Cv Cz :=
   fun V _ _ tbl B T hPA hB htblN ↦ verifySizeOracle_of_arms (harms V tbl B T hPA hB htblN)
 
 end packageShape

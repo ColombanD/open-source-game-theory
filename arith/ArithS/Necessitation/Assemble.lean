@@ -485,8 +485,8 @@ status is only known through their `ok` lemmas), so discharging this needs a sec
 carrying the node layouts — `Verify2.lean` §8.9 with `SizeOK ∧ len` conjuncts (the `axm` entries' `SizeOK Cv Cv` come
 from `AxmTableOK`). Morally true (every payload is a numeral fact of a `NumSteps` derivation or a goal fact), not yet
 machine-checked. -/
-def VerifySizeOracle (tbl B Wl Wc W₁ W₂ W T : V) (Cz : ℕ) : Prop :=
-  ∀ {E A Cv ρ L : V}, AxmTableOK' tbl E walkPieces A Cv → Derivation TAct ρ →
+def VerifySizeOracle (tbl B Wl Wc W₁ W₂ W T : V) (Cv Cz : ℕ) : Prop :=
+  ∀ {E A ρ L : V}, AxmTableOK' tbl E walkPieces A (Cv : V) → Derivation TAct ρ →
     VerifyGraph'' walkPieces Wl Wc W₁ W₂ W T A ρ L →
     len L ≤ (Cz : V) * (dlen TAct ρ + 1) ^ 4 ∧ SizeOK (kitQ (Cz : V) B E) (kitD (Cz : V) (dlen TAct ρ)) L
 
@@ -597,7 +597,7 @@ theorem vList_full (N' B' Cz Cv : ℕ) : ∃ Ck : ℕ, 1 ≤ Ck ∧ ∀ (V : Typ
     {tbl N B Wl Wc W₁ W₂ W T A E ρ x Γ i L : V},
     TableOK tbl N → ProTable tbl → (∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ B) →
     formulaLen LAct (Ple : V) ≤ B → NumTableOK T (N' : V) (B' : V) → Wl = layoutPieces → Wc = certPieces →
-    W₁ = frag1Pieces → W₂ = frag2Pieces → W = proPieces → VerifySizeOracle tbl B Wl Wc W₁ W₂ W T Cz →
+    W₁ = frag1Pieces → W₂ = frag2Pieces → W = proPieces → VerifySizeOracle tbl B Wl Wc W₁ W₂ W T Cv Cz →
     AxmTableOK' tbl E walkPieces A (Cv : V) →
     Proof TAct ρ x → IsSemiformula LAct 0 x → RootLayout Γ x i → IsFormulaSet LAct Γ →
     (Ck : V) * ((dlen TAct ρ + 1) ^ 4 + i) ≤ E → VerifyGraph'' walkPieces Wl Wc W₁ W₂ W T A ρ L →
@@ -868,7 +868,7 @@ theorem verifyKit'''_of (N' B' Cz Cv : ℕ) : ∃ Ck : ℕ, ∀ (V : Type) [ORin
     {tbl N B Wl Wc W₁ W₂ W T : V},
     TableOK tbl N → ProTable tbl → (∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ B) →
     formulaLen LAct (Ple : V) ≤ B → NumTableOK T (N' : V) (B' : V) → Wl = layoutPieces → Wc = certPieces →
-    W₁ = frag1Pieces → W₂ = frag2Pieces → W = proPieces → VerifySizeOracle tbl B Wl Wc W₁ W₂ W T Cz →
+    W₁ = frag1Pieces → W₂ = frag2Pieces → W = proPieces → VerifySizeOracle tbl B Wl Wc W₁ W₂ W T Cv Cz →
     VerifyKit''' tbl N B Wl Wc W₁ W₂ W T Cv Ck 4 := by
   obtain ⟨Ck, hCk1, h⟩ := vList_full N' B' Cz Cv
   refine ⟨Ck, fun V _ _ tbl N B Wl Wc W₁ W₂ W T htbl hP hBt hPle htblN hWl hWc hW₁ hW₂ hWp hsize ↦ ⟨?_, ?_⟩⟩
@@ -1270,10 +1270,10 @@ section theorem24
 /-- **The size oracle** at the package's tables (`VerifySizeOracle` for every `IndRec` table with its row-body
 bound, at the canonical piece tables) — THE ONE remaining hypothesis of the theorem (`Verify4`'s
 `verifyGraph''_ok_pow4` gives `ListOK`/`NoDrop'`/`shiftsV`/the goal fact, not `len`/`SizeOK`). -/
-def SizeOracle (Cz : ℕ) : Prop :=
+def SizeOracle (Cv Cz : ℕ) : Prop :=
   ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] (tbl B T : V), IndRecTable tbl →
     (∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ B) →
-    VerifySizeOracle tbl B layoutPieces certPieces frag1Pieces frag2Pieces proPieces T Cz
+    VerifySizeOracle tbl B layoutPieces certPieces frag1Pieces frag2Pieces proPieces T Cv Cz
 
 /-- The standard lengths of the three predicate codes the closing block needs below `B`. -/
 noncomputable def cPlength : ℕ := flen (Rewriting.emb (Semiformula.lMap emb (↑lengthDef : ArithmeticSemisentence 2)) : Semiproposition LAct 2)
@@ -1312,7 +1312,7 @@ theorem exists_indRecTableB : ∃ N B : ℕ, ∀ (V : Type) [ORingStructure V] [
 NumIdTable ⇒ ProTable ⇒ TopTable`, `exists_indRecTableB`), the row-body bound `B` enlarged by the three predicate
 lengths, the numeral tables, the graph's existence half from `verifyGraph''_exists_unconditional` (the `axm` case
 UNCONDITIONAL: `IndRec`'s recognizer, `Cv = C`), the kit from `verifyKit'''_of`, the pins from `pinKit'_of`. -/
-theorem kitPackage'''_of_size (Cz : ℕ) (hsz : SizeOracle Cz) :
+theorem kitPackage'''_of_size (Cz : ℕ) (hsz : ∀ Cv : ℕ, SizeOracle Cv Cz) :
     ∃ (N B N' B' N₂ B₂ N₃ B₃ Ck Cv : ℕ) (Cχ : Semisentence LAct 1 → ℕ),
       KitPackage''' N B N' B' N₂ B₂ N₃ B₃ Ck Cv Cχ 4 := by
   obtain ⟨N, B₀, hTab⟩ := exists_indRecTableB
@@ -1339,7 +1339,7 @@ theorem kitPackage'''_of_size (Cz : ℕ) (hsz : SizeOracle Cz) :
     hPA.proTable.topTable, hB, hPl, hPeq, hPle, hN, hL, hM, ?_, ?_, ?_⟩
   · intro ρ E hd hE
     exact hex V htbl hPA rfl rfl rfl hd hE
-  · exact hkit V htbl hPA.proTable hB hPle hN rfl rfl rfl rfl rfl (hsz V tbl _ tblN hPA hB)
+  · exact hkit V htbl hPA.proTable hB hPle hN rfl rfl rfl rfl rfl (hsz C V tbl _ tblN hPA hB)
   · intro χ
     exact Classical.choose_spec (pinKit'_of χ N' B') V htbl hPA.numIdTable hB hN
 
@@ -1347,13 +1347,13 @@ lemma deg_four : deg 4 = 16 := rfl
 
 /-- **`BoundedInnerNec 16`** (`deg 4 = 16`), conditional on the size oracle ONLY (the `axm` case is unconditional
 since `Verify3`/`IndRec`). -/
-theorem boundedInnerNec_sixteen_of_size (Cz : ℕ) (hsz : SizeOracle Cz) : BoundedInnerNec 16 := by
+theorem boundedInnerNec_sixteen_of_size (Cz : ℕ) (hsz : ∀ Cv : ℕ, SizeOracle Cv Cz) : BoundedInnerNec 16 := by
   obtain ⟨N, B, N', B', N₂, B₂, N₃, B₃, Ck, Cv, Cχ, hpkg⟩ := kitPackage'''_of_size Cz hsz
   exact boundedInnerNec_of_kit''' 4 (by norm_num) hpkg
 
 /-- **Critch's Theorem 3.7 in PA-`S`, conditional on the size oracle**: for all large `k`, `Dupoc k` cooperates
 with itself and `Cupod k` defects against itself (`Assembly/Cell.dupoc_self_coop` at `d = 16`). -/
-theorem dupoc_self_coop_of_size (Cz : ℕ) (hsz : SizeOracle Cz) :
+theorem dupoc_self_coop_of_size (Cz : ℕ) (hsz : ∀ Cv : ℕ, SizeOracle Cv Cz) :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 2 (Dupoc k) (Dupoc k) (Dupoc k) 0 ∧ EvalGraph 2 (Cupod k) (Cupod k) (Cupod k) 1 :=
   dupoc_self_coop (boundedInnerNec_sixteen_of_size Cz hsz)
