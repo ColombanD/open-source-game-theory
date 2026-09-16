@@ -2374,3 +2374,35 @@ for Lean including the scratchpad, using Read/Write/Edit and Bash only for reads
 **That rule stands regardless of mid-session guidance.**
 IN FLIGHT: `Verify5` Part 27 — the three `PLay` restatements (one commit each), then the `cut`
 crossing, transports and discharge.
+
+**§11 status — `Verify5` Part 27: the `PLay` restatement BANKED (7efd774; Verify5 green 3262 jobs,
+census 900, no `sorry`, tree clean); the `cut` chain fully verified except ONE DEAD BINDER.**
+FOUR GREEN PROBES settled every structural question: (1) **`cut_wrapper`'s `Γ` is the POST-PREFIX
+context** — `proCutPre_ok … hΓ` gives `c0ok/c0nd/c0sh/hDp/hDnp` at `Γ₀ = finalCtx Γ (proCutPre …)`,
+and `layP₀ : PLay … Γ₀ s σc` comes from `hLay.play.transport c0nd` + `rwa [c0sh, zero_add]`; (2) the
+**`Γ₄` side is constructible** — `cutBlock_ok`'s `layP₃` lands at EXACTLY `hLay₄`'s offset
+(`rw [← hσ₁]; exact layP₃`), with `hDnp₄` from `dossF_transport' b1nd hDnp` + `rwa [b1sh]`; (3) **the
+`ChildOK` bridge is a LAMBDA, not a lemma** — `fun Γ' hΓ' hLay' => hV4 V … L₁ Γ' hL₁ hΓ' hLay'`
+typechecks at `B := ((Cs:V)+Cv)·p4 (dlen d₁)`; (4) the rooms come from `eroom_of_le`/`eroom_lin` as
+directed, with `σc = mShift p + mShift (neg p) ≤ 8·D` and `mLen p + mShift (neg p) ≤ 6·D ≤ 8·D`
+from `mShift_le`/`mLen_succ_le`, matching `cutBlock_ok`'s `Bi := 8*D`.
+**THE `ChildOK` FINDING CLOSES A LOOP: `ChildOK` was NEVER constructible from the `SizeOK`-shaped
+wrappers (no `len` conjunct) — which is exactly why the Part-20 instruction to restate eight
+wrappers toward it was wrong. It IS constructible from `hV4`, because that theorem is
+context-universal by construction.** The reason, not just the outcome, is now on record.
+**THE BLOCKER, approved for deletion: `cut_wrapper`'s `hLay : NodeLay walkPieces Wc T Γ s` is DEAD
+AND UNSATISFIABLE.** Coordinator-verified: it occurs EXACTLY ONCE, at its binder (line 2345), with
+no use in the body through 2620; `cut_arm_size` takes NO `NodeLay` at all, so the pass-through
+cannot forward it; and `and_wrapper` by contrast consumes its own THREE times (948, 1413, 1691) —
+that asymmetry is what made the two wrappers look alike while only one used the hypothesis. It is
+also unsatisfiable where it sits: Q1 forces `Γ` post-prefix, but the `NodeLay` is held PRE-prefix,
+and `mem_finalCtx_of_mem` only gives SHIFTED membership, so the node layout cannot cross the prefix.
+**Ruling: DELETE it, don't retype it to `PLay` — a hypothesis nothing reads is the same liability
+as a green lemma nothing calls** (the agent's own Part-26 judgement, applied to itself).
+**DEVIATION, AND THE COORDINATOR'S INSTRUCTION WAS THE WRONG ONE:** three commits were authorised,
+one per lemma; the agent banked ONE, because `sizeOK_cutPro` cannot compile alone — its two
+consumers sit 140 lines below in the same file — so splitting meant two knowingly-RED commits. **The
+green-tree rule outranks a batching preference; when they collide, the green tree wins and no ask
+is needed.** Recording the reason in the commit message was the right handling.
+IN FLIGHT: `Verify5` Part 28 — delete the binder, then transcribe the `cut` discharge (every piece
+verified piecewise), banking at natural seams → `armHyps_of_arms` unconditional.
