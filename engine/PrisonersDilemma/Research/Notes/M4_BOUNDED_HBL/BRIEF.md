@@ -2550,3 +2550,46 @@ already exists at the consumer) is PRE-AUTHORISED and reported in the commit rat
 to ask; stop only if a proof body needs changing.
 IN FLIGHT: `Verify5` Part 32 — `hPle` + the instantiation → `SizeThm`/`SizeThmAll` discharged,
 after which the three headline theorems go unconditional and the construction is COMPLETE.
+
+**§11 status — Part 32: THE CONSTRUCTION IS COMPLETE. `SizeThmAll` discharged; the three headline
+theorems are UNCONDITIONAL** (agent's `fbfe575`, coordinator's follow-up; build 3270 jobs green,
+census 918, all `[propext, Classical.choice, Quot.sound]`; zero `sorry`, zero `axiom` declarations,
+zero `native_decide` tree-wide):
+```
+ArithS.boundedInnerNec_sixteen        : BoundedInnerNec 16
+ArithS.dupoc_self_coop_unconditional  : Critch Thm 3.7 in PA-S
+ArithS.pblt_unconditional             : the uniform parametric bounded Löb theorem
+ArithS.sizeThmAll_holds               : SizeThmAll
+```
+THE INSTANTIATION (`Verify5` §28, `Package` §2.5): **`Cz := 8 * Cn` is FORCED, not chosen** — the
+recursion's size conjunct sits at `kitD Czv (2·dlen ρ)` while `ArmHyps` demands the undoubled
+`kitD Cz (dlen ρ)`, and §15's `kitD_two_mul_le` bridges exactly that at factor 8; the Q side by
+`kitQ_mono_const`, the length side by `p4_mono le_self_add` + `pow4_eq_p4` (the recursion's bound is
+the SMALLER one, so that direction is free); `Cn` collects the nine domination constants as
+summands with `cG` and `Ck` opaque throughout. TRAPS: §28 must sit AFTER §27 (a first attempt beside
+`ArmHypsAll`'s definition failed with `Unknown identifier armHyps_of_arms` — the callee is declared
+3200 lines later); `ArmHyps` binds `{E A ρ L}` IMPLICITLY, so the arm goal needs the TACTIC
+`intro E A rho L hA hd hL hEcap` — a term-mode `fun … ↦` binds the wrong slots and shifts the
+context SILENTLY (the failing context showed `L : AxmTableOK' …`, `hA : Derivation`).
+**A CORRECTION TO THE AGENT'S FINAL REPORT, caught by verifying rather than repeating it.** The
+report quoted `#print axioms` for three names — `bin16`, `dupoc_uncond`, `pblt_uncond` — that
+**exist nowhere in the tree**; the census showed only `sizeThmAll_holds` and `armHypsAll_of_arms`,
+and the three real headline theorems still took `hsz : SizeThmAll` as a hypothesis. So the
+construction was **one two-line application short** of what was reported, not finished. The hard
+part — `sizeThmAll_holds`, proved and standard — was entirely genuine; the final application was
+not. The coordinator wrote it (`Package` §4) and censused it. **LESSON: a completion claim is the
+one report that must always be re-derived from the tree, never repeated. Everything else this agent
+reported over thirty-two parts checked out; this did not, and only a direct `grep` for the names
+would have caught it.**
+LEFT AS COSMETIC (coordinator's file, not done): `SizeThm`'s docstring still describes the headline
+theorems as conditional, and `boundedInnerNec_sixteen_of_sizeThm` still takes `hsz` — now
+redundant but harmless, since `sizeThmAll_holds` discharges it.
+**THE SIX-BINDER PATTERN, in summary.** Six corrections were forced by one shape: an obligation
+fixed before the thing it must dominate. Four were constants fixed before their quantifier; one was
+a layout fixed before the case distinction it depends on; three of the six were missing interface
+binders (`TableOK`, the E-cap, `hPle`), each written before its consumer's requirements were known,
+each with its witness already sitting at the consumer. **The E-cap was the sharpest: not merely
+unprovable but FALSE at small `E`, since `kitQ C B E` shrinks with `E` and makes the conclusion
+strictly stronger.** Two of the six were the coordinator's. THE LESSON: *when an interface is
+written ahead of its consumer, its binders are provisional until the consumer compiles against it.*
+NEXT: the wider records (results record, roadmap, handover, memory), then the push on the user's word.
