@@ -29,6 +29,7 @@ import ArithS.EvalN
 import ArithS.SimTest
 import ArithS.Template
 import ArithS.RedCell
+import ArithS.RedCellAudit
 import ArithS.Fit
 import ArithS.Code
 import ArithS.Instance
