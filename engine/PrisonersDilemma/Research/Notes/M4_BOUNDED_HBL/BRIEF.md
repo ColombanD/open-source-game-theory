@@ -1796,3 +1796,33 @@ bound (`≤ 4·D + 2 + 2·((1+D)(1+D+1))·D`) sits at `Prologue.lean:6563` as a 
 `_ok` theorem whose name and hypotheses are not yet read — next round's opening move.
 REMAINING: 3 wrappers (`all`, `exs`, `axm`) then the recursion.
 IN FLIGHT: `Verify5` Part 12 (`all`, `exs`, `axm`, then the recursion).
+
+**§11 status — `Verify5` glue, Part 12: NO COMMITS (tree green and clean at d462921), but `all`'s
+structure VALIDATED and its design point found.** Wrappers still 7 of 10.
+THE OUTSTANDING READ, RESOLVED: `allCertSig`'s bound lives in **`Prologue.allCert_ok`** (~line
+6549), a nine-conjunct theorem — its SIXTH conjunct gives `allCertSig walkPieces Wc p ≤ 4·D + 2 +
+2·((1+D)(1+D+1))·D`, its FIFTH gives `allCf ≤ 2 + 2·((1+D)(1+D+1))·D`; hypotheses `htbl`, `hP`,
+`hWc`, `hs`, `hp : IsSemiformula LAct 1 p`, `hr`, `hsD`, `hspD`, the three rooms `hE`/`hEQ`/`hiE`,
+`hΓ`/`hLay` — all suppliable by the wrapper.
+**STRUCTURALLY VALIDATED (transcribed with two deliberate `sorry`s so the compile would answer the
+structural questions first; all came back clean):** the 30-ARGUMENT pinned `all_arm_size`
+application type-checks at `D := 2·dlen`; both QUADRATIC rooms discharge through `capE4` +
+`allEQ_p3`/`alliE_p3` + `p3_le_p4` (confirming Part 11 — NO new helper needed); `allCert_ok`'s
+nine-conjunct destructuring is right; `hDE`, `hnE`, the `setShift` facts (`hs.setShift`,
+`one_le_len_memberList_setShift`) and all three `proSig` bounds hold.
+**TRAP 21 (the design point): `all` is the first wrapper whose `D` is NOT the node's `dlen` — it
+must run at `D := 2 · dlen (allIntro s p d')`**, for two reasons that agree: `hspD : formulaLen
+(shift p) ≤ D` only holds at twice the `dlen` (`formulaLen_shift_le ≤ 2·|p|`), and
+`allEQ_p3`/`alliE_p3` are stated at exactly `D = 2d`. The motive's `d` stays `dlen (allIntro …)`,
+so `hDd` becomes `le_rfl` and `hsD`/`hcD` are weakened via `le_two_mul_self`. **`exs` will be
+identical** with `exsEQ_p3`/`exsiE_p3`. One repair: `hEpro`'s cap was written at `44` doubling the
+right-hand side; the residual goal gave the true form — the constant is **`62`** (`13·2 + 18·2`),
+with NO doubling on the right.
+WHY NOTHING WAS BANKED: closing the two remaining `sorry`s (a quadratic `hgE2` chain and a cubic
+length half needing a `p3 (2(d+1)) → p4 (d+1)` route) was not startable-and-finishable in the
+budget left; a file containing `sorry` must never be committed and a turn must never end with
+uncommitted text, so `Verify5.lean` was reverted to HEAD. NOTHING VALIDATED WAS LOST — the
+constants, the `D = 2d` instantiation, the `allCert_ok` destructuring and the confirmed structure
+are all recorded here and reproducible in ONE transcription. `all` should now be cheap: only the
+two arithmetic tails remain, and `exs` follows it mechanically.
+IN FLIGHT: `Verify5` Part 13 (`all`, `exs`, `axm`, then the recursion).
