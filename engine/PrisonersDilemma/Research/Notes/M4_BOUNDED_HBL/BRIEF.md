@@ -2295,3 +2295,41 @@ REMAINING on `and`: the CHILD CROSSING (instantiate `verifyGraph''_ok4` at `dp` 
 (`noDrop'_appendV cnd₁ qnd₁`, `shiftsV_appendV`, `finalCtx_appendV`), then `hAndArm`'s discharge.
 Then `cut`, whose `cutPro` block must be re-derived (no exported lemma).
 IN FLIGHT: `Verify5` Part 25 — the child crossing, banked at its own seam; then the transports.
+
+**§11 status — `Verify5` Part 25: THREE MORE SEAMS BANKED (425d8cc, c0c0875; tree clean, green
+throughout) — and the `hCk5` binder approved in Part 22 is UNUSABLE.**
+**`425d8cc` §26.5, the child crossing** (plus §26.4 widened to five components): `cgoal₁` matches
+`postIns_ok`'s `hg` once `hdp.1` rewrites `fstIdx dp`; `heq₁₂` is `proIns_ok`'s sixth conjunct
+pushed across `L₁` by `tr_fact` + `shiftIterV_eqFactB` + two `termShiftIterV_fvar` + `zero_add`.
+Compiled FIRST ATTEMPT. The widening was forced by a COMPOSITION gap — the four-component form was
+green but `and_cross` needs `heq₁`, which §26.4 discarded; **caught before banking, not at the call
+site** (the callability discipline of Part 24, applied one level up).
+**`c0c0875` §26.6, the three transports** — the last new mathematics for `and`. *TRAP 30*: both
+normalisations need an explicit `show … by ring`; `Layout.transport`/`dossF_transport'` deliver
+`i + shiftsV S` fully LEFT-NESTED while the targets carry an inner group, so `← add_assoc` peels
+the wrong way. Caught by probe (the first attempt closed the `Layout` half and failed only on the
+`DossF`).
+SCOPE DISCOVERY: `and_wrapper` already derives every remaining `and_arm_size` input internally
+(`hbn₁`/`hbn₂`/`hbn'`, `hLn`, `hnd`, `hgE₁`/`hgE₂`/`hgE3`, `hyp`/`hyq`) and takes
+`hΓ₃`/`hLay₃`/`hDq₃` as hypotheses — EXACTLY what §§26.4–26.6 produce, and its conclusion is
+verbatim `hAndArm`'s. So the discharge is ASSEMBLY, drafted green: `and_input` → `and_cross` →
+`and_trans` → `rwa [finalCtx_appendV]` → `and_wrapper`, plus two `have`s
+(`setLen_child_le_dlen_andIntro_left`, `formulaLen_q_le_dlen_andIntro`).
+**THE BLOCKER, AND A COORDINATOR ERROR: `verifyGraph''_ok4` is `∃ Cs Ck : ℕ, ∀ …`** — the literal
+`128655` is a witness chosen INSIDE its own proof and never appears in the statement
+(coordinator-verified), so after `obtain ⟨Cs, Ck, h⟩` the `Ck` is OPAQUE and **the `hCk5 :
+((128655:ℕ):V) + 5·Cv ≤ Czv` binder approved in Part 22 can NEVER be discharged.** It occurs on
+exactly one line — its own binder, unused (verified) — so replacing it is free. **The Part-22
+approval was the coordinator's error, not the agent's implementation**: the gap was checked, the
+REACHABILITY of the constant was not. The agent caught it while it was still a single unused line,
+by applying Part 24's callability discipline to an instruction from above rather than to its own
+work.
+**RULING: thread the constant.** `armHyps_of_arms`/`ArmHypsAll` take `Verify4`'s `Ck` as a
+parameter via an `obtain` at the top, with **`hCkDom : ((Ck:ℕ):V) + 5·(Cv:V) ≤ Czv`** replacing
+`hCk5` and `Czv` chosen AFTER it — the `verifyKit'''_of` precedent (Assemble:866) exactly. Blast
+radius is `Verify5` only: **`Package.lean` does not consume `ArmHypsAll`** (verified). NOTE: this is
+the FOURTH signature revision forced by the same pattern — a constant fixed before the quantifier
+ranging over what it must dominate. **When writing the `cut` chain, order the constants LAST by
+default.**
+IN FLIGHT: `Verify5` Part 26 — (1) the binder replacement alone; (2) the `hAndArm` discharge
+(drafted green); (3) then `cut`, its `cutPro` block re-derived as its own piece.
