@@ -2444,3 +2444,37 @@ statement shapes — `(dlen+1)^4` vs `p4 (dlen)` via `pow4_eq_p4`, and `kitD Cz 
 FOLLOW-UPS folded into the next commit: the stale `Audit.lean` comments at 1717 and 1750 (they
 still say `hCutArm` remains), and a missing `#print axioms armHyps_of_arms` census entry.
 IN FLIGHT: `Verify5` Part 29 — the instantiation lemma + the two follow-ups → `SizeThm` discharged.
+
+**§11 status — `Verify5` Part 29: item 2 banked (b517c54); item 1 blocked by A MISSING BINDER IN
+`Package.SizeThm` — the coordinator's own interface.**
+BANKED: census 900 → 902 (`cut_input`, `cut_trans`, both standard), the two stale Audit notes at
+1717/1750 corrected, and a new block recording what the `cut` chain cost and why it was two seams.
+**THE BLOCKER: `armHyps_of_arms` needs `TableOK tbl N`, but `ArmHypsAll`/`SizeThm` supply only
+`IndRecTable tbl`, with no `N` anywhere in scope.** The agent CLOSED BOTH ESCAPE ROUTES before
+escalating: (1) `TableOK` is NOT a projection of `IndRecTable` (the projections are
+`proAxmTable`/`numIdTable`/`proTable`/`layoutTable`/`walkTable`/`extra` + per-row readings); (2)
+`∃ N, TableOK tbl N` is NOT derivable, and structurally so — **`TableOK tbl N` constrains the PROOF
+CODES (`rowD`), asserting `Proof TAct (rowD tbl.[i]) (qqAlls …) ∧ dlen TAct (rowD tbl.[i]) ≤ N`,
+while `rowD` occurs in NONE of the six table predicates** (coordinator-verified by grep:
+`IndRecTable`, `ProAxmTable`, `NumIdTable`, `ProTable`, `LayoutTable`, `WalkTable` all 0;
+`TableOK` 1). A table can satisfy `IndRecTable` with arbitrary junk in `rowD`, so no `N` bounds it.
+The sole producer is `tableOK_vecOf` at table CONSTRUCTION inside `exists_indRecTableB`, which
+emits `TableOK tbl (N : V)` and `IndRecTable tbl` as SIBLING conjuncts of one existential — and
+every other consumer (`verifyGraph''_exists_unconditional`, `verifyKit'''_of`) takes the two as
+INDEPENDENT hypotheses.
+**THE GAP IS THE COORDINATOR'S:** `SizeThm` was written before `armHyps_of_arms` existed and its
+binders were never revisited when the consumer's requirements firmed up. **The fix costs the
+consumer nothing** — at the one call site, `kitPackage'''_of_size'` already holds `htbl` from line
+113's `obtain ⟨tbl, htbl, hPA, hB₀⟩` and simply does not pass it at line 130.
+**AUTHORISED (narrowly): the agent edits `Package.lean` itself** — add `N : ℕ` beside `N'`/`B'` and
+`TableOK tbl (N : V)` to `SizeThm`'s binders, thread through `ArmHypsAll` and
+`verifyGraph''_size4_of_arms`, add the same binder to `verifySizeOracle_of_sizeThm`, pass `htbl` at
+the call site. Nothing else in `Package.lean`; if a proof body needs more than a threaded
+hypothesis, stop and report.
+THEN THE INSTANTIATION: `Cz` built LAST in `Verify4`'s style, the nine constant hypotheses
+discharged, `Ck` from `obtain ⟨Cs, Ck, hV4⟩ := verifyGraph''_ok4`, the goal-fact constant from
+`exists_cGoal` KEPT OPAQUE and never unfolded (the giant-DSL-constant trap it exists to avoid), and
+the two shape bridges via `pow4_eq_p4` and §15's `kitD_two_mul_le`, which forces `Cz := 8 * Czv`.
+IN FLIGHT: `Verify5` Part 30 — the `Package.lean` binder + the instantiation → `SizeThm` and
+`SizeThmAll` discharged, after which the coordinator takes the three headline theorems
+unconditional.
