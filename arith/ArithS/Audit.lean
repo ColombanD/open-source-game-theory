@@ -1714,10 +1714,11 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 -- settled in seven seconds after three rounds of reading had not settled it.
 -- The per-arm E-room for §26.1 is `capE4' hE he1 (hCk 39 _) (lin_cap 13 18 8 D)` and `capE4' hE he1 (hCk 2 _) _`,
 -- with `a` supplied POSITIONALLY — `refine capE4' hE he1 ?_ ?_` leaves `capE4'`'s implicit `a` unsolved.
--- Eight arms are discharged from the banked wrappers; `and` and `cut` remain NAMED HYPOTHESES (`hAndArm`, `hCutArm`)
--- because `and_arm_size` binds `Γ₃` and `cut_arm_size` binds `Γ₄`/`Γc` in their OWN signatures, at SHIFTED offsets
--- (`1 + proSig (insert p s) + shiftsV L₁ + 2`, `mShift p + mShift (neg p) + …`) that §26.1's offset-0 construction
--- does not reach. Those two are the transport-chain work that remains.
+-- Eight arms were discharged from the banked wrappers directly; `and` and `cut` were briefly NAMED HYPOTHESES
+-- (`hAndArm`, `hCutArm`) because `and_arm_size` binds `Γ₃` and `cut_arm_size` binds `Γ₄`/`Γc` in their OWN
+-- signatures, at SHIFTED offsets (`1 + proSig (insert p s) + shiftsV L₁ + 2`, `mShift p + mShift (neg p) + …`)
+-- that §26.1's offset-0 construction does not reach. Both are now DISCHARGED by the transport chains
+-- (§§26.4–26.6 for `and`, §§26.7–26.8 for `cut`), and `armHyps_of_arms` takes no arm hypothesis at all.
 -- U10 (Necessitation/Verify5, 2026-09-16): the `Ck` THREADING. `armHyps_of_arms` briefly carried
 -- `hCk5 : ((128655 : ℕ) : V) + 5·Cv ≤ Czv`, naming `Verify4.verifyGraph''_ok4`'s constant as a LITERAL. That binder
 -- is unusable: `verifyGraph''_ok4 : ∃ Cs Ck : ℕ, ∀ …`, so `128655` is a witness chosen inside its own proof and
@@ -1747,7 +1748,8 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 -- `Verify2`:2295 idiom, with `h2` being `and_input`'s SECOND component.
 -- A first attempt drew the child facts at a separate `Γc` and failed on exactly that mismatch — the fix was
 -- reordering, not a bridge lemma.
--- `hCutArm` remains; `armHyps_of_arms` is now conditional on the `cut` arm alone.
+-- `hCutArm` is DISCHARGED too (§§26.7–26.8): `armHyps_of_arms` is UNCONDITIONAL — its binders are the tables,
+-- the constants, `hV4` and `hA`, with no arm hypothesis of any kind.
 -- TRAP 31: `set_option … in` binds to the NEXT declaration, so a sentinel planted BETWEEN the `set_option` and its
 -- theorem steals the raise and the theorem then elaborates at the default 200000 heartbeats — here the motive's
 -- `simp only [VerifyGraph'', p4, kitQ, kitD]; definability` times out, which reads as a real failure but is an
@@ -1837,6 +1839,32 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 -- `hgE₁`/`hgE₂`/`hgE3` by `rec2₄` derivations), and it takes `hΓ₃`/`hLay₃`/`hDq₃` as HYPOTHESES — exactly what
 -- §§26.4–26.6 produce. So `hAndArm`'s discharge is a short chain of four existing pieces, not a re-derivation.
 #print axioms and_trans
+
+-- U10 (Necessitation/Verify5, 2026-09-16): §§26.7–26.8 — THE `cut` TRANSPORT CHAIN, and with it `hCutArm`'s
+-- discharge. TWO seams, not three: §26.5 `and_cross` is REUSED VERBATIM (its binders are parametric in the
+-- context and its `heq₁` is exactly the `eqFactB` §26.7 returns), so the child crossing is shared between the
+-- arms — checked by compiling the application before writing anything, the second planned `cut` lemma to
+-- dissolve on inspection after `cutPro_ok`. §26.6 `and_trans` does NOT transfer: it carries a
+-- `Layout … (0 + 1 + proSig …)` while `cut`'s parent is a `PLay` — the empty-parent case is live — at the
+-- prefix's own shift `mShift p + mShift (neg p) + (1 + proSig …)`, so §26.8 restates the transports over
+-- `PLay.transport`.
+-- §26.7 `cut_input`'s statement deliberately does NOT mention `cutPro`: a first draft tried
+-- `rw [cutPro, if_pos hs0]` and failed ("Failed to rewrite using equation theorems") because the goal is an
+-- `∃ Γ₁, …` whose body never contains the selector. `cutBlock_ok`/`sizeOK_cutPro` can unfold it only because
+-- their own conclusions name it. Each branch supplies its own witness and which produced it is invisible
+-- downstream; the selector is re-assembled later inside `sizeOK_cutPro`, which does its own split.
+-- Offsets come from `mShift`/`mLen`, so §26.2's `and_roomI`/`and_roomIP` do NOT apply (they want `i ≤ 6·D + 1`,
+-- `ip ≤ 8·D + 2`, against `cut`'s `8·D`/`6·D`): the two offset rooms come from the general `eroom_of_le` at
+-- `22·D + 5` and `14·D + 4`, preferring the existing general machinery to new special cases.
+-- The discharge's one structural subtlety: `cut_input` does NOT supply `cut_wrapper`'s `Γ`/`hLay₁`. Those are
+-- the PRE-selector, post-`proCutPre` context, one block EARLIER; `cut_input`'s `Γ₁` is the CROSSING context,
+-- one block LATER. Both name the same `proCutPre` term, so the two invocations agree definitionally and no
+-- bridging lemma is needed. `ChildOK` is IRRELEVANT to the size half (it appears nowhere in `Verify5`;
+-- `cut_wrapper` takes plain `SizeOK` + `len`), which also dissolved an apparent sixth instance of the
+-- constant-ordering class — a missing `Cs` domination binder that turned out to be an artifact of drafting
+-- toward `cutBlock_ok` (applicability side) instead of `cut_wrapper`.
+#print axioms cut_input
+#print axioms cut_trans
 
 -- U10 (Necessitation/Package, 2026-09-15): THE PACKAGE AND THE HEADLINE THEOREMS, with `Assemble.SizeOracle`
 -- BYPASSED. `SizeOracle` is NOT PROVABLE as stated (it binds the numeral table `T` with no `NumTableOK T N' B'`,
