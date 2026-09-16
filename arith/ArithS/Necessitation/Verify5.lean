@@ -3636,7 +3636,7 @@ set_option maxHeartbeats 4000000 in
 /-- **THE RECURSION**, with the node context as an explicit hypothesis and the `and`/`cut` context witnesses as
 named hypotheses (their shifted-offset layouts have no producer). -/
 theorem armHyps_of_arms {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
-    {tbl N N' B' T B E A Czv : V} {Cv Ck : ℕ}
+    {tbl N N' B' T B E A Czv : V} {Cv Cs Ck : ℕ}
     (htbl : TableOK tbl N) (hP : ProTable tbl) (htblN : NumTableOK T N' B')
     (hPle : formulaLen LAct (Ple : V) ≤ B)
     (hCz1 : 1 ≤ Czv) (hCk : ∀ n : ℕ, n ≤ 1000000 → ((n : ℕ) : V) ≤ Czv)
@@ -3645,6 +3645,18 @@ theorem armHyps_of_arms {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜
     (hcG : 4 * ((cDer : V) + cDlen + cFst + 6) ≤ Czv)
     (hCv : (Cv : V) ≤ Czv) (hCv8 : 8 * (Cv : V) + 9 ≤ Czv)
     (hCkDom : ((Ck : ℕ) : V) + 5 * (Cv : V) ≤ Czv)
+    (hV4 : ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
+      {tbl N N' B' Ww Wl Wc W₁ W₂ W T A Cv E ρ : V},
+      TableOK tbl N → ProTable tbl → NumTableOK T N' B' → Ww = walkPieces → Wl = layoutPieces →
+      Wc = certPieces → W₁ = frag1Pieces → W₂ = frag2Pieces → W = proPieces →
+      AxmTableOK' tbl E Ww A Cv → Derivation TAct ρ →
+      (((Ck : ℕ) : V) + 5 * Cv) * p4 (dlen TAct ρ + 1) ≤ E →
+      ∀ L Γ : V, VerifyGraph'' Ww Wl Wc W₁ W₂ W T A ρ L → IsFormulaSet LAct Γ →
+        NodeLay Ww Wc T Γ (fstIdx ρ) →
+        ListOK tbl E ((9 : ℕ) : V) Γ L ∧ NoDrop' L ∧
+          shiftsV L ≤ (((Cs : ℕ) : V) + Cv) * p4 (dlen TAct ρ) ∧
+          neg LAct (goalFact (^&(len (memberList (fstIdx ρ)) + 1 + shiftsV L))
+            (bnum (dlen TAct ρ))) ∈ finalCtx Γ L)
     (hA : AxmTableOK' tbl E walkPieces A (Cv : V))
     (hAndArm : ∀ s p q dp dq L₁ L₂ Γ' : V, IsFormulaSet LAct s → IsSemiformula LAct 0 p →
       IsSemiformula LAct 0 q → (p ^⋏ q) ∈ s → DerivationOf TAct dp (insert p s) →

@@ -1729,6 +1729,13 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 -- both on binder lines).
 -- FOURTH instance of one pattern: a constant fixed BEFORE the quantifier ranging over what it must dominate
 -- (`SizeOracle`'s table, `ArmHyps`' `Cv`, `VerifySizeOracle`'s `Cv`, now `Verify4`'s `Ck`). Order constants LAST.
+-- The `Ck` threading needed a second step: `hCkDom` alone names a constant the body cannot connect to anything,
+-- because an `obtain ⟨Cs, Ck', h⟩ := verifyGraph''_ok4` INSIDE the body introduces a FRESH `Ck'` unrelated to the
+-- signature's `Ck`. So `armHyps_of_arms` also takes `hV4`, `verifyGraph''_ok4`'s CONCLUSION at the signature's
+-- `Cs`/`Ck` — the `Assemble.vList_full` precedent, which threads `hV` the same way. The caller supplies both by its
+-- own `obtain ⟨Cs, Ck, hV4⟩ := verifyGraph''_ok4`; nothing applies `armHyps_of_arms` yet, so the cost is zero today.
+-- Probe-verified before transcription: with `hV4` at the signature's `Ck`, the child triple extracts and `hE4`
+-- follows from `hCkDom` plus `p4_mono (le_trans hy₁ le_self_add)`.
 -- TRAP 31: `set_option … in` binds to the NEXT declaration, so a sentinel planted BETWEEN the `set_option` and its
 -- theorem steals the raise and the theorem then elaborates at the default 200000 heartbeats — here the motive's
 -- `simp only [VerifyGraph'', p4, kitQ, kitD]; definability` times out, which reads as a real failure but is an
