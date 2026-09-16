@@ -3874,17 +3874,6 @@ theorem armHyps_of_arms {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜
           neg LAct (goalFact (^&(len (memberList (fstIdx ρ)) + 1 + shiftsV L))
             (bnum (dlen TAct ρ))) ∈ finalCtx Γ L)
     (hA : AxmTableOK' tbl E walkPieces A (Cv : V))
-    (hCutArm : ∀ s p d₁ d₂ L₁ L₂ Γ' : V, IsFormulaSet LAct s → IsSemiformula LAct 0 p →
-      DerivationOf TAct d₁ (insert p s) → DerivationOf TAct d₂ (insert (neg LAct p) s) →
-      IsFormulaSet LAct Γ' → NodeLay walkPieces certPieces T Γ' s →
-      SizeOK (kitQ Czv B E) (kitD Czv (2 * dlen TAct (cutRule s p d₁ d₂))) L₁ →
-      SizeOK (kitQ Czv B E) (kitD Czv (2 * dlen TAct (cutRule s p d₁ d₂))) L₂ →
-      len L₁ ≤ Czv * p4 (dlen TAct d₁) → len L₂ ≤ Czv * p4 (dlen TAct d₂) →
-      Czv * p4 (dlen TAct (cutRule s p d₁ d₂) + 1) ≤ E →
-      len (vCut walkPieces layoutPieces certPieces frag1Pieces proPieces T s p d₁ d₂ L₁ L₂) ≤
-        Czv * p4 (dlen TAct (cutRule s p d₁ d₂)) ∧
-      SizeOK (kitQ Czv B E) (kitD Czv (2 * dlen TAct (cutRule s p d₁ d₂)))
-        (vCut walkPieces layoutPieces certPieces frag1Pieces proPieces T s p d₁ d₂ L₁ L₂))
     {ρ : V} (hd : Derivation TAct ρ) :
     Czv * p4 (dlen TAct ρ + 1) ≤ E → ∀ L : V,
       VerifyGraph'' walkPieces layoutPieces certPieces frag1Pieces frag2Pieces proPieces T A ρ L →
@@ -4132,7 +4121,69 @@ theorem armHyps_of_arms {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜
       (capE4' hE he1 (hCk 2 (by norm_num)) (by
         push_cast
         exact le_mul_of_one_le_right zero_le he1))
-    exact hCutArm s p d₁ d₂ L₁ L₂ Γ hs hp hd₁ hd₂ hΓ hLay
+    -- §26.7 `cut_input` → `hV4` at its context → §26.5 `and_cross` (REUSED) → §26.8
+    -- `cut_trans` → §23 `cut_wrapper`. NOTE: `cut_input` does NOT supply `cut_wrapper`'s
+    -- `Γ`/`hLay₁`; those are the PRE-selector, post-`proCutPre` context, one block earlier.
+    have hW : WalkTable tbl := hP.walkTable
+    have hnp : IsSemiformula LAct 0 (neg LAct p) := hp.neg
+    have hc₁D : setLen LAct (insert p s) ≤ dlen TAct (cutRule s p d₁ d₂) :=
+      setLen_child_le_dlen_cutRule_left hD
+    have hpD : formulaLen LAct p ≤ dlen TAct (cutRule s p d₁ d₂) :=
+      le_trans (formulaLen_le_setLen_of_mem (L := LAct) (by simp)) hc₁D
+    have hnpD : formulaLen LAct (neg LAct p) ≤ dlen TAct (cutRule s p d₁ d₂) := by
+      rw [formulaLen_neg hp.isUFormula]; exact hpD
+    have hsing : ∀ x : V, setLen LAct (insert x (0 : V)) = formulaLen LAct x := fun x => by
+      have hnm : x ∉ (0 : V) := by simp
+      rw [setLen_insert_of_not_mem_V hnm, ← emptyset_def, setLen_empty', zero_add]
+    have hsD0p : setLen LAct (insert p (0 : V)) ≤ dlen TAct (cutRule s p d₁ d₂) := by
+      rw [hsing]; exact hpD
+    have hsD0np : setLen LAct (insert (neg LAct p) (0 : V)) ≤ dlen TAct (cutRule s p d₁ d₂) := by
+      rw [hsing]; exact hnpD
+    have hEc : 13 * dlen TAct (cutRule s p d₁ d₂) + 8 ≤ E := by
+      refine eroom_of_le hE hCk 13 8 (by norm_num) ?_
+      push_cast
+      exact le_rfl
+    obtain ⟨c0ok, c0nd, c0sh, hDp, -, hDnp, -, hneg⟩ :=
+      proCutPre_ok htbl hP htblN rfl hp hpD hnpD hEc hΓ
+    have hΓ₀f : IsFormulaSet LAct (finalCtx Γ (proCutPre walkPieces certPieces T p)) :=
+      finalCtx_isFormulaSet 8 htbl hΓ c0ok
+    have layP₀ : PLay certPieces T (finalCtx Γ (proCutPre walkPieces certPieces T p)) s
+        (mShift walkPieces certPieces T p + mShift walkPieces certPieces T (neg LAct p)) := by
+      have h := hLay.play.transport c0nd
+      rwa [c0sh, zero_add] at h
+    obtain ⟨Γ₁, h1, h2, h3, h4, h5⟩ :=
+      cut_input htbl hP htblN hCk hs hp hpD hnpD hc₁D hsD0p hΓ hLay hE
+    have hE₁ : (((Ck : ℕ) : V) + 5 * (Cv : V)) * p4 (dlen TAct d₁ + 1) ≤ E := by
+      refine le_trans ?_ hE
+      refine le_trans (mul_le_mul_of_nonneg_right hCkDom zero_le) ?_
+      exact mul_le_mul_of_nonneg_left (p4_mono (le_trans hy₁ le_self_add)) zero_le
+    have hLayC : NodeLay walkPieces certPieces T Γ₁ (fstIdx d₁) := by
+      rw [hd₁.1]; exact Or.inl ⟨one_le_len_memberList_insert _ _, h2⟩
+    obtain ⟨cok₁, cnd₁, -, cgoal₁⟩ :=
+      hV4 V htbl hP htblN rfl rfl rfl rfl rfl rfl hA hd₁.2 hE₁ L₁ Γ₁ hL₁ h1 hLayC
+    have hk : len (memberList (insert p s)) ≤ dlen TAct (cutRule s p d₁ d₂) :=
+      le_trans (len_memberList_le_setLen hc₁) hc₁D
+    have hsv : shiftsV L₁ ≤ Czv * p4 (dlen TAct d₁) := le_trans (shiftsV_le_len L₁) o₁
+    have hyd : dlen TAct d₁ ≤ dlen TAct (cutRule s p d₁ d₂) := le_trans le_self_add hy₁
+    have hsE : len (memberList (insert p s)) + 1 + shiftsV L₁ + 3 ≤ E :=
+      and_roomS hCz1 (one_le_dlen hD) hk hsv hyd hE
+    have hσ : proSig walkPieces layoutPieces certPieces proPieces T (insert p s)
+        ≤ 6 * dlen TAct (cutRule s p d₁ d₂) + 1 :=
+      proSig_le htbl hP rfl htblN rfl rfl hc₁ (one_le_len_memberList_insert _ _) hc₁D
+        (and_room8 hCk hE) hΓ
+    have hcE : proSig walkPieces layoutPieces certPieces proPieces T (insert p s) +
+        shiftsV L₁ + 3 ≤ E :=
+      and_roomC hCz1 (one_le_dlen hd₁.2) hy₁ hσ hsv hE
+    obtain ⟨hnested, qnd₁, qsh₁⟩ :=
+      and_cross htbl hP hd₁ h1 cok₁ cnd₁ cgoal₁ h5 hsE hcE
+    obtain ⟨hLay₄, hDnp₄⟩ := cut_trans h3 h4 cnd₁ qnd₁ qsh₁
+    have hΓ₄ : IsFormulaSet LAct (finalCtx Γ₁ (appendV L₁
+        (postIns proPieces (len (memberList (insert p s)) + 1 + shiftsV L₁)
+          (proSig walkPieces layoutPieces certPieces proPieces T (insert p s) + shiftsV L₁)
+          (dlen TAct d₁)))) := by
+      rwa [finalCtx_appendV]
+    exact cut_wrapper htbl hP htblN rfl rfl rfl rfl hPle hCz1 hCk hCQ hCD hCbin hcG
+      hs hp hd₁ hd₂ hsD0p hsD0np hΓ₀f layP₀ hDp hΓ₄ hLay₄ hDnp₄ hΓ
       (z₁.mono le_rfl (kitD_mono (mul_le_mul_of_nonneg_left (le_trans le_self_add hy₁) zero_le)))
       (z₂.mono le_rfl (kitD_mono (mul_le_mul_of_nonneg_left (le_trans le_self_add hy₂) zero_le)))
       o₁ o₂ hE
