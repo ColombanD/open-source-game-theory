@@ -175,4 +175,26 @@ theorem pblt_of_sizeThm (hsz : SizeThmAll) :
 
 end headline
 
+
+/-! ## §4. The three headline theorems, UNCONDITIONAL
+
+`sizeThmAll_holds` (§3) discharges `SizeThmAll`, so the `_of_sizeThm` forms apply. These are the
+end of the construction: `BoundedInnerNec 16` with no hypothesis, and with it Critch's Theorem 3.7
+and the uniform parametric bounded Löb theorem, inside `PA`-`S`. -/
+
+/-- **`BoundedInnerNec 16`, unconditional.** -/
+theorem boundedInnerNec_sixteen : BoundedInnerNec 16 :=
+  boundedInnerNec_sixteen_of_sizeThm sizeThmAll_holds
+
+/-- **Dupoc's self-cooperation, unconditional** (Critch Thm 3.7 in `PA`-`S`). -/
+theorem dupoc_self_coop_unconditional :
+    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
+      EvalGraph 2 (Dupoc k) (Dupoc k) (Dupoc k) 0 ∧ EvalGraph 2 (Cupod k) (Cupod k) (Cupod k) 1 :=
+  dupoc_self_coop_of_sizeThm sizeThmAll_holds
+
+/-- **The uniform parametric bounded Löb theorem, unconditional.** -/
+theorem pblt_unconditional :
+    ∃ kHat : ℕ, TAct ⊢ ∀¹ ((leF (↑kHat) #0 : Semisentence LAct 1) 🡒 psi) :=
+  pblt_of_sizeThm sizeThmAll_holds
+
 end ArithS

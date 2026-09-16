@@ -1885,6 +1885,14 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms dupoc_self_coop_of_sizeThm
 #print axioms pblt_of_sizeThm
 
+-- **THE END OF THE CONSTRUCTION (2026-09-16).** `sizeThmAll_holds` discharges `SizeThmAll`, so the
+-- three headline results hold with NO hypothesis: bounded inner necessitation at degree 16, and with
+-- it Critch's Theorem 3.7 and the uniform parametric bounded Löb theorem, inside `PA`-`S`.
+#print axioms sizeThmAll_holds
+#print axioms boundedInnerNec_sixteen
+#print axioms dupoc_self_coop_unconditional
+#print axioms pblt_unconditional
+
 -- U10 (Necessitation/Verify5 §28 + Package §2.5, 2026-09-16): **`SizeThmAll` IS DISCHARGED.**
 -- With the ten arms unconditional (§27), `ArmHypsAll` is a matter of CHOOSING the constant, and the constant is
 -- chosen LAST — the standing lesson from the six ordering bugs. `Cz := 8·Cn` is FORCED, not chosen: the recursion's
