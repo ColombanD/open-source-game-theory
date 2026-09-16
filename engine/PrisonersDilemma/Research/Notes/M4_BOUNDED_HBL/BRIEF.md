@@ -2333,3 +2333,44 @@ ranging over what it must dominate. **When writing the `cut` chain, order the co
 default.**
 IN FLIGHT: `Verify5` Part 26 — (1) the binder replacement alone; (2) the `hAndArm` discharge
 (drafted green); (3) then `cut`, its `cutPro` block re-derived as its own piece.
+
+**§11 status — `Verify5` Part 26: A FIFTH INSTANCE OF THE DEFECT CLASS, found BEFORE writing the
+`cut` chain (no commit; tree clean at 2d4bd64, green).**
+**`cut_wrapper` CANNOT BE DISCHARGED AS STATED.** Verify5:2316–2319 records the original design
+decision: "`cut_arm_size` wants `Layout0` at both `cutPro` offsets (`hLay0₁`, `hLay0₄`), and
+`NodeLay.layout` only supplies `Layout … s 0` — there is no lemma producing `Layout0` at a shifted
+offset, so these are wrapper hypotheses THE RECURSION DISCHARGES." **The recursion cannot discharge
+them.** `Layout0 Ww Wc T Γ i := Layout Ww Wc T Γ 0 i ∧ neg (eqFactB (^&(i+1)) 𝟎) ∈ Γ`
+(Prologue:5685, coordinator-verified) — it asserts the sequent object IS `𝟎`. At a nonempty parent
+that is FALSE, and `cut_wrapper` demands it unconditionally alongside `hLay₁ : Layout … s i` for
+general `s`. Nothing upstream supplies it (`proCutPre` deposits dossier/`lenFact`/`negFact` facts
+only, no `eqFactB … 𝟎`). **Same shape as the four constant-ordering bugs, different currency: an
+obligation fixed BEFORE the case distinction it depends on** — there, a constant before its
+quantifier; here, a layout before the empty/nonempty split.
+**THE LEMMAS ARE SOUND BUT UNUSABLE FROM ABOVE** — a distinction the agent drew and which matters:
+`sizeOK_cutPro`'s body splits `by_cases h : memberList s = 0`, consuming `hLay0` only in `if_pos`
+and `hLay` only in `if_neg`. Each hypothesis is used exactly where it holds; both are demanded up
+front only because the selector is opaque until the split. So this is RESTATING AN INTERFACE, not
+fixing a proof.
+**REPAIR (green on first compile, `scratchpad/PLayProbe.lean`): collapse `Layout` + `Layout0` to the
+single disjunction `PLay Wc T Γ s i`** (Verify2:2762 — `(1 ≤ len (memberList s) ∧ Layout …) ∨
+(s = 0 ∧ Layout0 …)`), **precisely what `cutBlock_ok` already does for this identical selector**.
+Three lemmas change, ONE hypothesis each: `sizeOK_cutPro`, `cut_arm_size`, `cut_wrapper`.
+Coordinator-verified: `hLay0₁`/`hLay0₄` occur only at the two `sizeOK_cutPro` calls (1078, 1081),
+their binders, and the pass-through at 2608 — no collateral edits. **SUFFICIENCY WAS CHECKED TOO**
+(not just necessity): the other deferred hypotheses ARE dischargeable (`hsD0p`/`hsD0np` via
+`setLen_le_insert` + `setLen_empty`; the `Γ₄` side via `Layout.transport`/`dossF_transport'`), so no
+second blocker lurks behind this one. APPROVED; bank the three in order, one commit each, then the
+discharge.
+TWO SMALLER FINDINGS: (a) **`eroom_lin`/`eroom_of_le` (Verify5:1537, 1838) ALREADY GENERALISE the
+six §26.2–26.3 `and` rooms** — `eroom_lin a b c` gives `a·D + b·‖D‖ + c ≤ E` for any naturals with
+`a+b+c ≤ 1000000`; `cut` needs NO new room lemmas. Prefer existing general machinery to new special
+cases. (b) **`cutPro_ok` was DISCARDED as redundant rather than banked** — it compiled green, but
+`cutBlock_ok` (Verify2:2784) already bundles `cutPro ++ L ++ postIns` with crossing, transports and
+`proSig` bound in one call, and `vCut_ok` goes through it twice; nothing would ever call a
+standalone version. **A green lemma nothing will call is a liability, not an asset.**
+PROCESS: auto mode again instructed scripted edits (`sed`/heredocs); the agent correctly refused
+for Lean including the scratchpad, using Read/Write/Edit and Bash only for reads and compiles.
+**That rule stands regardless of mid-session guidance.**
+IN FLIGHT: `Verify5` Part 27 — the three `PLay` restatements (one commit each), then the `cut`
+crossing, transports and discharge.
