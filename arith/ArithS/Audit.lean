@@ -10,6 +10,9 @@ import ArithS.Diag
 import ArithS.Det
 import ArithS.FitBox
 import ArithS.Inst
+import ArithS.RedCellInstance
+import PrisonersDilemma.Theorems.DupocBot.RedCellInstance
+import ArithS.RedCellUnsound
 import ArithS.Instance
 import ArithS.InstanceV
 import ArithS.Transparency
@@ -78,8 +81,23 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
   red_cell
 #print axioms red_cell
 #print axioms red_cell_unique
+-- The red cell ONCE, abstractly (`Base/RedCellFramework`: symmetry excludes (C,C)/(D,D),
+-- soundness excludes (C,D)), and its two instances: the engine's `Pf` and PA-`S'`.
+#print axioms PD.RedCellFramework.red_cell
+#print axioms PD.Theorems.red_cell_engine
+#print axioms red_cell_via_framework
 #print axioms guard_fits
 #print axioms guard_fits'
+-- The audit's "drop soundness" mutation as a THEOREM (`RedCellUnsound`, Proposition 6.1):
+-- `TBad = TAct + {c_C = c_D}` is inconsistent, every sentence has a `TBad`-proof of length
+-- `3|φ| + 2|axEq| + 3`, both guards are found for all large `k`, and under the evaluator
+-- consulting `TBad` (a verbatim copy with the theory swapped) the cell FLIPS to `(C, D)`.
+#print axioms tbad_inconsistent
+#print axioms lenProvable_TBad_of_flen
+#print axioms guard_provable_bad
+#print axioms red_cell_flips_when_unsound
+#print axioms red_cell_flip
+#print axioms red_cell_flips_unique
 
 -- τ-closure of TAct at every proof length (the engine's `Pf.transpose`, on codes).
 #print axioms lenProvable_fbound_swap_iff

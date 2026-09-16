@@ -30,7 +30,9 @@ import ArithS.SimTest
 import ArithS.Template
 import ArithS.RedCell
 import ArithS.RedCellAudit
+import ArithS.RedCellInstance
 import ArithS.Fit
+import ArithS.RedCellUnsound
 import ArithS.Code
 import ArithS.Instance
 import ArithS.InstanceV

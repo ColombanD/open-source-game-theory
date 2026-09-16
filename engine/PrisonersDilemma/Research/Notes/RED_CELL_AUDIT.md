@@ -61,6 +61,26 @@ definition is not load-bearing and the audit has found a hole.
 | in `gtmpl`, run `me` instead of `opp` (`EvalGraph n me opp me t`) | `models_guardSentenceA_iff`, hence `guard_is_about_the_run` |
 | in the evaluator's `search` clause, swap the `p`/`q` branches | `red_cell` via `EvalGraph.search_iff` |
 | drop `axAct` from `TAct` | the M4 vacuity found 2026-09-12 returns: models where the constants read as 5/7 (`tact_complete'` fails) — `red_cell` itself is EXPECTED to survive (it only needs soundness in ℕ + symmetry), i.e. the red cell should not depend on the action axiom; untested (the mutation rebuilds the whole package) |
+| **drop soundness**: add `c_C = c_D` (and its swap) to the theory (`TBad`) | EXECUTED 2026-09-16 as a THEOREM, `arith/ArithS/RedCellUnsound.lean`: `TBad` is inconsistent, every sentence has a 3-node proof of length `3·|σ| + c`, both guards become provable for large `k`, and the cell FLIPS to `(C, D)` — `red_cell_flips_when_unsound`, with `red_cell_flip` showing `(D, C)` under `TAct` and `(C, D)` under `TBad` at the same budgets. The evaluator is copied with the theory swapped (`EvalGraphBad`; not yet parametric). This is the paper note's Proposition 6.1 (soundness cannot be dropped), mechanized. |
+
+## 4b. The theorem, stated once, instantiated twice (2026-09-16)
+
+`engine/PrisonersDilemma/Base/RedCellFramework.lean` states the hypothesis package (the paper
+note's (H0)–(H6), abstracted: bounded derivability `Prov`, an involutive transposition `τ` with
+`prov_swap : Prov k φ → Prov k (τ φ)`, the two guard sentences with `mirror : τ (ρ₁ k) = ρ₂ k`,
+the fire/else clauses of the two searchers, soundness at the ONE instance `sound₂ : Prov k (ρ₂ k) →
+playA k D`, determinism of both plays) and proves, with NO axioms at all:
+`search_symmetry`, `guards_fail`, `red_cell : ∀ k, playA k D ∧ playB k C`, and the §6.1 table —
+`not_CC` and `not_DD` from symmetry alone, `not_CD` from soundness. (Finding: the split needs
+determinism of BOTH plays, which the note folds into (H0).) Two instances, both at the three
+standard axioms and sharing no code:
+* `PD.Theorems.red_cell_engine` (`Theorems/DupocBot/RedCellInstance.lean`): `Prov := Pf`,
+  `τ := Formula.transpose`, `prov_swap := Pf.transpose`, plays via `play`;
+* `ArithS.red_cell_via_framework` (`arith/ArithS/RedCellInstance.lean`): `Prov k φ :=
+  LenProvableV TAct k ⌜φ⌝`, `τ := lMap swap`, `prov_swap` from the same-length swap transport,
+  plays via `EvalGraph`.
+Each instance file also identifies the framework's conclusion with the hand-proven cell
+(`outcome_DupocBot_vs_CupodBot` at its pad; `red_cell` at fuel 2).
 | replace `dlen` by `0` in `LenProvableV` | `guard_fits` becomes trivial and `lower_bound_dlen_proof_lenGödel_fbound` (M1 gate) fails |
 
 ## 5. What this audit does NOT establish

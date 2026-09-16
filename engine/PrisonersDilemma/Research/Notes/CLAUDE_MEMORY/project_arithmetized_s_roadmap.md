@@ -244,3 +244,30 @@ search-bot reading leaves); C `S''` = arithmetized derivations with a primitive 
 PA polynomially per box level". I lean C or B; A realizes the wording literally but budgets become nominal.
 LESSON: I told the user "the budget-keeping bridge is the same induction with f threaded through" —
 wrong; composition through nested boxes was not checked. Check composition, not just per-rule.
+**2026-09-16 (evening) — THE D SPIKE (branch `colomban-boxcost`, `Research/Notes/BOXCOST_SPIKE.md`):**
+polynomial box gate `boxCost a φ = (a + |□_a φ|)^boxDeg`, `boxDeg = 2`, on `boxIntro`/`box4`/`atomBoxImpl`.
+RESULT: `pblt_engine_id`/`_bounded`/`mutual_pblt_engine_id`/`_staggered` statements byte-identical (agent
+re-assigned the chain: `bloeb_std`, `mutual_loeb_std`, `poly_envelope_le`); ALL 155 cells + 4 companions
++ 18 tau rows compile unchanged except 3 OptimBot staggered cells (out of scope) which FAIL AT EVERY
+THRESHOLD: premise pays `search_f` floors (`pm ≥ 2k`) ⇒ fixpoint box costs `≥ 4k²` ⇒ linear stagger
+insufficient — cooperation across a floor needs a POLYNOMIAL stagger. The in-scope `_staggered`
+companions survive only because `searchThenSearch_t` CITES its floor-paying inner premise at `c_guard`
+(second citation rule, the search_t half). Degrees: single Löb W⁴, mutual W¹⁶, vector W¹²⁸ (2⁴⁰²⁹).
+LegibleBot's inner-dial `box4 k (2k+64)` dead under the gate (repaired via polylog fixpoint). Metatheory
+target pre-broken (docstring-before-imports) — its PfG mirror has 164 box sites if this lands.
+PAPER SENTENCE: the additive rule was never load-bearing; the engine satisfies Critch (a)–(d) as rules
+with the polynomial U10 proves. Also `MERGE_CROSSROAD.md` (routes A–D), `RED_CELL_AUDIT.md` +
+`ArithS/RedCellAudit.lean` (trusted base / negative controls / mutation protocol, one probe executed).
+Agent lesson: raw `bloeb_engine` users → switch to `bloeb_std`; keep squares opaque (`obtain ⟨V,hV⟩`),
+never let omega/decide see `2^34`-size literals (recursion depth).
+**2026-09-16 (night) — RED CELL STATED ONCE, INSTANTIATED TWICE + SOUNDNESS MUTATION.** `Base/RedCellFramework.lean`
+(engine, imports nothing): hypothesis package (H0)–(H6) of the July-27 paper note, `red_cell`/`search_symmetry`/
+`guards_fail`/`not_CC`/`not_DD`/`not_CD` with NO axioms (split needs determinism of BOTH plays). Instances:
+`PD.Theorems.red_cell_engine` (Pf, Formula.transpose, Pf.transpose) and `ArithS.red_cell_via_framework`
+(LenProvableV TAct, lMap swap). `ArithS/RedCellUnsound.lean`: `TBad := TAct + c_C = c_D (+swap)` inconsistent,
+3-node ex-falso proofs, `red_cell_flips_when_unsound` (cell → (C,D) for large k) = the note's Prop 6.1;
+`EvalGraphBad` is a COPY of the evaluator with the theory swapped (evaluator not parametric in the theory —
+a refactor candidate). Arith 3295 jobs, census 917. The July note (dupoc_vs_cupod_proof.pdf) makes the SAME
+symmetric-axiom assumption (its (H1), Remark 3.4); its theory lacks `axAct`, so by its own Prop 6.2 it cannot
+prove positive guard instances (Löbian cooperation unprovable there) — our `axAct` is the minimal symmetric fix.
+Design rationale for every trusted definition: `SPRIME_DESIGN_RATIONALE.md`.
