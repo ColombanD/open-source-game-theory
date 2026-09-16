@@ -1772,3 +1772,27 @@ cheapest of the four in design terms** — `and`'s shape with `Γ₄` plus the `
 trap 19 now tells us in advance that all its rooms need `rec2₄`. Every signature and bound for all
 four is in hand; nothing left to locate.
 IN FLIGHT: `Verify5` Part 11 (`cut`, `all`, `exs`, `axm`, then the recursion).
+
+**§11 status — `Verify5` glue, Part 11: `cut_wrapper` LANDED GREEN AT THE FIRST ATTEMPT, 7 of 10
+(447166e, §23; build 3270, census 878, all standard).** **Trap 19's payoff, measured: `and` (the
+first two-child arm) cost SEVEN repair hunks; `cut` — a strictly LARGER arm, eight blocks — cost
+NONE, green in 6 s**, because the rule "every room in a two-child arm needs `rec2₄`" was known in
+advance. SPECIFICS: `len_proCutPre_le ≤ 64·|p|` + two `len_cutPro_le ≤ 55·D + 13` + `21` gives
+`174·D + 47 = 221`; its rooms are over `mShift`/`mLen` (not `memTop`/`descCountF`), bounded by
+`mShift_le ≤ 4·|x|` and `mLen_succ_le`, with `formulaLen_neg` turning `|neg p|` into `|p|`;
+constants `22·D+5`, `14·D+4`, `28·D+9`, `16·D+8`, `21·D+11`.
+**TRAP 20: `cut_arm_size` wants `Layout0` at BOTH `cutPro` offsets, but `NodeLay.layout` supplies
+only `Layout … s 0` — no lemma produces `Layout0` at a SHIFTED offset.** Rather than invent a
+weaker statement, those became explicit wrapper hypotheses alongside `hΓ₄`/`hLay₄`/`hDnp₄`/`hΓc`,
+for the recursion to discharge.
+**A CORRECTED INSTINCT, worth recording: `all`/`exs` need NO NEW HELPER.** Reading `all_arm_size`
+shows a different shape again — two QUADRATIC rooms (`hEQ`, `hiE` over `2·((1+D)(1+D+1))·D`) and a
+CUBIC length half (`len_proAll_le_cubic ≤ 402·p3 (D+1)`) — and the first instinct was that this
+needs new infrastructure. It does not: `Bounds` ALREADY SHIPS exactly these caps — `allEQ_p3 ≤
+27·p3 (d+1)`, `alliE_p3 ≤ 96·p3 (d+1)`, `exsEQ_p3 ≤ 43·p3 (d+1)`, `exsiE_p3 ≤ 112·p3 (d+1)` — all
+stated at `D = 2d`, precisely the instantiation the wrappers use; they route through those plus
+`capE4`, as `Verify4`'s own arms do. OUTSTANDING READ before `all` can be drafted: `allCertSig`'s
+bound (`≤ 4·D + 2 + 2·((1+D)(1+D+1))·D`) sits at `Prologue.lean:6563` as a conjunct of a larger
+`_ok` theorem whose name and hypotheses are not yet read — next round's opening move.
+REMAINING: 3 wrappers (`all`, `exs`, `axm`) then the recursion.
+IN FLIGHT: `Verify5` Part 12 (`all`, `exs`, `axm`, then the recursion).
