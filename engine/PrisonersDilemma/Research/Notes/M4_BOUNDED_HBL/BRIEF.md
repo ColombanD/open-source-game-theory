@@ -2116,3 +2116,40 @@ it.** Three rounds of reading missed what one compile found.
 IN FLIGHT: `Verify5` Part 20 — (1) restate the eight wrappers to `ChildOK`; (2) §27 with the `ih`
 handed over as a λ (`Verify4`'s idiom) + the `hC21`/`hC9` literal fix; (3) confirm whether §28 is
 still needed.
+
+**§11 status — `Verify5` Part 20: OPTION 1'S PREMISE FALSIFIED BY THE AGENT, and a skeleton probe
+found the real fix (no commit; tree clean at 0e5a600, green).**
+**THE COORDINATOR'S OPTION 1 WAS WRONG IN ITS PREMISE, and the agent checked instead of complying.**
+It named `vWk_ok`/`vAnd_ok`/`vCut_ok` — lemmas the wrappers DO NOT CALL. The wrappers call the
+§§10–13 SIZE arm lemmas (`wk_arm_size`, `and_arm_size`, …), whose child hypothesis is the plain
+context-free `hchild : SizeOK (kitQ Cz B E) (kitD Cz (2*d)) L'`. Worse, **`ChildOK` (Verify2:1811)
+has NO `len` CONJUNCT** (coordinator-verified) — and the `len` half is exactly what distinguishes
+`ArmHyps` from Verify4's motive, so restating toward it would have DESTROYED the length half.
+SELF-CORRECTION, also recorded: Part 19's claim that the bodies "pass child facts straight through"
+is TRUE of `hchildSz` but **FALSE of `hchildLen`**, which every wrapper consumes locally twice
+(`hshL := le_trans (shiftsV_le_len L') hchildLen` and the length calc; wk 1640/1682, shift
+1764/1808, or 1955/2017, all 2732/2841, exs 2971/3069, and 2133-4/2287-8, cut 2422-3/2597-8).
+**THE REAL FIX, found by COMPILING TWO SKELETONS (7 s each, following the draft-first lesson): THE
+MOTIVE NEEDS NO CONTEXT AT ALL.** `Derivation.induction1 𝚷` accepts `P ρ := Czv·p4 (dlen ρ + 1) ≤ E
+→ ∀ L, VerifyGraph'' … ρ L → len L ≤ Czv·p4 (dlen ρ) ∧ SizeOK (kitQ Czv B E) (kitD Czv (2·dlen ρ))
+L` — no `Γ`, no `NodeLay`. **That is `ArmHyps`'s EXACT shape** (coordinator-verified: Verify5:97
+binds only `{E A ρ L}` and neither conjunct mentions a context). The `∀ L Γ … → NodeLay …` copied
+from `Verify4` was DEAD WEIGHT — Verify4 needs it because ITS conjuncts mention `Γ` (`ListOK tbl E
+9 Γ L`, `… ∈ finalCtx Γ L`); these do not. **This dissolves the child-context problem outright, no
+wrapper needs restating, and `and`/`cut` lose their special status — §28 CANCELLED.**
+THE RESIDUAL: the eight wrappers still need `hΓ`/`hLay` at the NODE's own sequent (`proAxL_ok`
+1805, `sizeOK_wkPro` 582, `layout_or` 3121, `layout_and` 3107). A per-node `hctx : ∀ σ, ∃ Γ, …`
+elaborates but is NOT PROVABLE — every `NodeLay` conclusion in the tree (Verify2:2295, 2511, 2578,
+2867; Assemble:698) is `Or.inl ⟨one_le_len_memberList_insert _, layC⟩` with `layC` a `Layout` at a
+prologue's `finalCtx`; there is no from-nothing constructor. But **`vList_full` DOES build
+`hLay₂ : NodeLay walkPieces Wc T Γ₂ (fstIdx ρ)` at Assemble:698** (coordinator-verified), four
+lines before it consumes the oracle — a node context exists exactly where `ArmHyps` is consumed.
+**COORDINATOR'S RULING: the node context enters the RECURSION THEOREM as ordinary hypotheses
+(`hΓ`, `hLay`), threaded to the wrappers by each arm; `ArmHyps` and `VerifySizeOracle` stay
+BYTE-IDENTICAL. NO `hctx`/`∃ Γ` hypothesis is to be added to either — relocating an unprovable
+obligation into an interface is the defect class already hit three times, and a fourth will not be
+sanctioned.** Whether it discharges at `verifySizeOracle_of_arms` (no `Γ` in scope) is to be
+settled BY COMPILING, not reading; if it needs the context one level further out, bring the compile
+output for a ruling rather than inventing a shape that typechecks.
+IN FLIGHT: `Verify5` Part 21 — (1) §27 with the context-free motive + node context as recursion
+hypotheses; (2) the discharge at `verifySizeOracle_of_arms`; (3) confirm §28 cancelled.
