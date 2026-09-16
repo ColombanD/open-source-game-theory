@@ -1699,3 +1699,31 @@ offset-plus-linear room covering the `memTop`/`descCountF`/`proSig` shapes, BEFO
 two dossier hypotheses each).
 IN FLIGHT: `Verify5` Part 8 (the offset helper, then `or`/`and`/`cut`/`all`/`exs`/`axm`, then the
 recursion).
+
+**§11 status — `Verify5` glue, Part 8: the helper widening LANDED, simpler than planned (1953775,
+§20; build 3270, census 875, all standard). Wrappers still 4 of 10.**
+**COLLAPSE FINDING — no bespoke `memTop`-shaped helper is needed.** Each summand of an offset room
+is already linear in `D` (`memTop_le ≤ i + 6·D + 1`, `descCountF_le_of_len ≤ 2·D`, `proSig_le ≤
+6·D + 1`), so every such room COLLAPSES to `a·D + c` once the summands are bounded — `or`'s `hipE`
+to `22·D + 8`, `hiqE` to `14·D + 6`. The right widening is therefore the GENERAL one:
+**`eroom_of_le`**, taking `X ≤ a·D + c` to `X ≤ E`, subsuming `eroom_lin` at `b = 0` and every
+offset room of the remaining arms; green in 4 s and VALIDATED against `or`'s actual `hipE`
+composition (through `memTop_le` and `descCountF_le_of_len`), not merely on synthetic shapes.
+USAGE IDIOM: bound each summand by its own `k·D + c`, sum the coefficients, then
+`refine eroom_of_le hE hCk a c (by norm_num) ?_; push_cast` and close with `calc … := by ring`;
+`proSig_le` itself needs an E-room at `(13,18,8)` via `eroom_lin`.
+**LATER-CONTEXT FINDING (read before drafting, per trap 18): `and` and `cut` are a REAL STEP UP
+from `or`, not variants of it.** Both carry hypotheses stated at a LATER CONTEXT — `and` has
+`hΓ₃`, `hLay₃`, `hDq₃` at `Γ₃` (the context after the first child and its `postIns`), and its
+rooms `hiE₂`/`hipE₂`/`hgE3` carry `shiftsV L₁` INSIDE the offsets; `cut` is the same with `Γ₄` plus
+an extra `proCutPre` block. So their wrappers CANNOT bound their rooms from `D` alone: they need
+`shiftsV L₁ ≤ Czv·p4 (dlen dp)` (from the first child's motive via `shiftsV_le_len`) AND the
+layout/dossier transport into the later context — which the recursion supplies but a standalone
+wrapper must take as EXPLICIT hypotheses. ORDERING CONSEQUENCE: `or` is genuinely next-cheapest
+(one child, one context, its two offset rooms now collapsing via `eroom_of_le`); `and`/`cut` follow
+only once `or` proves the pattern, carrying the later-context hypotheses explicitly.
+NOTE (coordinator): three of the last four rounds produced infrastructure rather than wrappers. The
+infrastructure was each time the right call and is now complete for `or` — every ingredient it
+needs is located and validated. Part 9's priority is to BANK `or` itself.
+IN FLIGHT: `Verify5` Part 9 (`or` first, then `and`/`cut` with later-context hypotheses, then
+`all`/`exs`/`axm`, then the recursion).
