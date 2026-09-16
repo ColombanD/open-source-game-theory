@@ -1789,4 +1789,34 @@ theorem shift_wrapper {tbl N N' B' Wl Wc W₂ W T B E Czv Γ s d' L' : V}
 
 end shiftWrapper
 
+/-! ## 20. The general E-room, and why the offset shapes need no bespoke helper
+
+The `or`/`and`/`cut` arms want rooms over `memTop`, `descCountF` and `proSig` offsets — e.g. `or`'s
+`hipE : memTop … (p ^⋎ q) 0 + descCountF … 0 q + 1 + 14·D + 6 ≤ E`. Those look like a new shape, but each
+summand's own bound is already LINEAR in `D` (`Prologue.memTop_le ≤ i + 6·D + 1`,
+`Verify2.descCountF_le_of_len ≤ 2·D`, `Prologue.proSig_le ≤ 6·D + 1`), so every such room COLLAPSES to
+`a·D + c` once the summands are bounded — `hipE` to `22·D + 8`, `hiqE` to `14·D + 6`.
+
+So the widening that was wanted is not a `memTop`-shaped helper but the general one: anything bounded by
+`a·D + c` is bounded by `E`. `eroom_of_le` is that lemma, and it subsumes `eroom_lin`'s role at `b = 0` as
+well as every offset room of the remaining arms.
+
+**Usage.** Bound each summand by its own `k·D + c`, sum the coefficients, then
+`refine eroom_of_le hE hCk a c (by norm_num) ?_; push_cast` and close with one `calc … := by ring`.
+`Prologue.proSig_le` itself needs an E-room at `(13, 18, 8)`, supplied by `eroom_lin`. -/
+
+section eroomGeneral
+
+/-- **The GENERAL E-room**: anything bounded by `a·D + c` is bounded by `E`. -/
+lemma eroom_of_le {D E Czv X : V} (hE : Czv * p4 (D + 1) ≤ E)
+    (hCk : ∀ n : ℕ, n ≤ 1000000 → ((n : ℕ) : V) ≤ Czv)
+    (a c : ℕ) (hac : a + c ≤ 1000000)
+    (hX : X ≤ ((a : ℕ) : V) * D + ((c : ℕ) : V)) : X ≤ E := by
+  refine le_trans hX ?_
+  have := eroom_lin hE hCk a 0 c (by omega)
+  rw [Nat.cast_zero, zero_mul, add_zero] at this
+  exact this
+
+end eroomGeneral
+
 end ArithS

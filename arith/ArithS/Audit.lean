@@ -1572,6 +1572,19 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 -- needs `63·D + 28`, i.e. `91`. Transcribed literally in one pass and green in 7 s at the first attempt.
 #print axioms shift_wrapper
 
+-- U10 (Necessitation/Verify5, 2026-09-16): §20 — the GENERAL E-room, and why the offset shapes need NO bespoke
+-- helper. The `or`/`and`/`cut` arms want rooms over `memTop`/`descCountF`/`proSig` offsets (e.g. `or`'s
+-- `hipE : memTop … (p ^⋎ q) 0 + descCountF … 0 q + 1 + 14·D + 6 ≤ E`), which look like a new shape; but each
+-- summand's own bound is already LINEAR in `D` (`Prologue.memTop_le ≤ i + 6·D + 1`,
+-- `Verify2.descCountF_le_of_len ≤ 2·D`, `Prologue.proSig_le ≤ 6·D + 1`), so every such room COLLAPSES to `a·D + c`
+-- once the summands are bounded — `hipE` to `22·D + 8`, `hiqE` to `14·D + 6`. So the widening wanted was not a
+-- `memTop`-shaped helper but the general one: `eroom_of_le` takes `X ≤ a·D + c` to `X ≤ E`, subsuming `eroom_lin`
+-- at `b = 0` and every offset room of the remaining arms. USAGE: bound each summand by its own `k·D + c`, sum the
+-- coefficients, then `refine eroom_of_le hE hCk a c (by norm_num) ?_; push_cast` and close with `calc … := by ring`;
+-- `proSig_le` itself needs an E-room at `(13, 18, 8)`, supplied by `eroom_lin`. Validated against `or`'s actual
+-- `hipE` composition before landing.
+#print axioms eroom_of_le
+
 -- U10 (Necessitation/Package, 2026-09-15): THE PACKAGE AND THE HEADLINE THEOREMS, with `Assemble.SizeOracle`
 -- BYPASSED. `SizeOracle` is NOT PROVABLE as stated (it binds the numeral table `T` with no `NumTableOK T N' B'`,
 -- while every prologue size lemma requires one and lands at `layQ B B' D`/`layD N' B' D`; `NumTableOK` is never a
