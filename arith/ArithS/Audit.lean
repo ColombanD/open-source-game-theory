@@ -1644,6 +1644,20 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 -- slack is exactly `7 + 32·d`, READ OFF the residual goal rather than guessed.
 #print axioms all_wrapper
 
+-- U10 (Necessitation/Verify5, 2026-09-16): §25 — the `exs` MOTIVE WRAPPER (9 of 10), mechanically `all`'s twin at
+-- `D := 2·dlen (exsIntro s p t d')` (TRAP 21 again), with four differences: the quadratic rooms carry `(1 + D + D)`
+-- rather than `(1 + D + 1)`, matching `Bounds.exsEQ_p3 ≤ 43·p3 (d+1)` and `exsiE_p3 ≤ 112·p3 (d+1)`;
+-- `dlen_exsIntro = setLen s + termLen t + dlen d' + 1`, so `hdeq` is `dlen d' + (setLen s + termLen t + 1)` — the
+-- WITNESS TERM's length joins the `rec1₄` remainder; the arm wants `ht`/`htD` (`termLen_le_dlen_exsIntro`); and
+-- `hgE2` carries `exsSig`, bounded by `Prologue.exsCert_ok`'s FIFTH conjunct
+-- (`≤ 2·((1+D)(1+D+D))·D + 6·D + 1`), whose own `hptD` comes from `formulaLen_substs1_le_dlen_exsIntro`. The cubic
+-- length half is `len_proExs_le_cubic ≤ 256·p3 (D+1)` at `D = 2·dlen`, so `256·64 = 16384`, capped at `16399`.
+-- TRAP 23: when `le_of_add_eq'` supplies the slack, the slack is folded INTO the left side before normalisation, so
+-- each attempt shows a DIFFERENT residual goal and chasing it term-by-term loops. Two readings pin it
+-- algebraically: `c := 40·d` gave left `8 + 70·d`, `c := 12 + 14·d` gave `20 + 44·d`, target `20 + 84·d`; hence
+-- base `8 + 30·d` and the true slack `12 + 54·d`. Solve the two equations rather than iterating a third time.
+#print axioms exs_wrapper
+
 -- U10 (Necessitation/Package, 2026-09-15): THE PACKAGE AND THE HEADLINE THEOREMS, with `Assemble.SizeOracle`
 -- BYPASSED. `SizeOracle` is NOT PROVABLE as stated (it binds the numeral table `T` with no `NumTableOK T N' B'`,
 -- while every prologue size lemma requires one and lands at `layQ B B' D`/`layD N' B' D`; `NumTableOK` is never a

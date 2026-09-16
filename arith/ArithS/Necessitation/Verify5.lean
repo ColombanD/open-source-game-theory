@@ -2824,4 +2824,232 @@ theorem all_wrapper {tbl N N' B' Wl Wc W₂ W T B E Czv Γ s p d' L' : V}
 
 end allWrapper
 
+/-! ## 25. The `exs` motive wrapper
+
+Mechanically `all`'s twin at `D := 2 · dlen (exsIntro s p t d')` (TRAP 21 again), with four differences:
+
+* the quadratic rooms carry `(1 + D + D)` rather than `(1 + D + 1)`, matching `Bounds.exsEQ_p3 ≤ 43·p3 (d+1)` and
+  `exsiE_p3 ≤ 112·p3 (d+1)`;
+* `dlen_exsIntro = setLen s + termLen t + dlen d' + 1`, so `hdeq` is `dlen d' + (setLen s + termLen t + 1)` — the
+  witness term's length joins the `rec1₄` remainder;
+* the arm wants `ht : IsSemiterm LAct 0 t` and `htD : termLen t ≤ D` (`termLen_le_dlen_exsIntro`);
+* `hgE2` carries `exsSig`, bounded by `Prologue.exsCert_ok`'s FIFTH conjunct
+  (`≤ 2·((1+D)(1+D+D))·D + 6·D + 1`), whose own `hptD` comes from `formulaLen_substs1_le_dlen_exsIntro`.
+
+The cubic length half is `Bounds.len_proExs_le_cubic ≤ 256·p3 (D+1)` at `D = 2·dlen`, so `256·64 = 16384`,
+capped at `16399`. -/
+
+section exsWrapper
+
+set_option maxHeartbeats 4000000 in
+/-- **THE `exs` MOTIVE WRAPPER.** -/
+theorem exs_wrapper {tbl N N' B' Wl Wc W₂ W T B E Czv Γ s p t d' L' : V}
+    (htbl : TableOK tbl N) (hP : ProTable tbl) (htblN : NumTableOK T N' B')
+    (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (hWp : W = proPieces) (hW₂ : W₂ = frag2Pieces)
+    (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (hCz1 : 1 ≤ Czv) (hCk : ∀ n : ℕ, n ≤ 1000000 → ((n : ℕ) : V) ≤ Czv)
+    (hCQ : 19 * B' + 25 ≤ Czv) (hCD : 27 * N' + 525600 * B' ≤ Czv)
+    (hCbin : 2 * (27 * N' + 525600 * B') ≤ Czv)
+    (hcG : 4 * ((cDer : V) + cDlen + cFst + 6) ≤ Czv)
+    (hs : IsFormulaSet LAct s) (hr : (^∃ p) ∈ s) (ht : IsSemiterm LAct 0 t)
+    (hd' : DerivationOf TAct d' (insert (substs1 LAct t p) s))
+    (hΓ : IsFormulaSet LAct Γ) (hLay : NodeLay walkPieces Wc T Γ s)
+    (hchildSz : SizeOK (kitQ Czv B E) (kitD Czv (2 * dlen TAct (exsIntro s p t d'))) L')
+    (hchildLen : len L' ≤ Czv * p4 (dlen TAct d'))
+    (hE : Czv * p4 (dlen TAct (exsIntro s p t d') + 1) ≤ E) :
+    len (vExs walkPieces Wl Wc W₂ W T s p t d' L') ≤ Czv * p4 (dlen TAct (exsIntro s p t d')) ∧
+    SizeOK (kitQ Czv B E) (kitD Czv (2 * dlen TAct (exsIntro s p t d')))
+      (vExs walkPieces Wl Wc W₂ W T s p t d' L') := by
+  have hD : Derivation TAct (exsIntro s p t d') := Derivation.exsIntro hr ht hd'
+  have hd1 : 1 ≤ dlen TAct (exsIntro s p t d') := one_le_dlen hD
+  have hp1 : IsSemiformula LAct 1 p := by
+    have := IsSemiformula.exs.mp (hs _ hr); simpa using this
+  have hsD0 : setLen LAct s ≤ dlen TAct (exsIntro s p t d') := by
+    have := setLen_fstIdx_le_dlen hD; rwa [fstIdx_exsIntro] at this
+  have hcD0 : setLen LAct (insert (substs1 LAct t p) s) ≤ dlen TAct (exsIntro s p t d') :=
+    setLen_child_le_dlen_exsIntro hD
+  have htD0 : termLen LAct t ≤ dlen TAct (exsIntro s p t d') := termLen_le_dlen_exsIntro hD
+  have hptD0 : formulaLen LAct (substs1 LAct t p) ≤ dlen TAct (exsIntro s p t d') :=
+    formulaLen_substs1_le_dlen_exsIntro hD
+  have hdl : dlen TAct (exsIntro s p t d') =
+      setLen LAct s + termLen LAct t + dlen TAct d' + 1 := dlen_exsIntro hD
+  have hdeq : dlen TAct (exsIntro s p t d') =
+      dlen TAct d' + (setLen LAct s + termLen LAct t + 1) := by rw [hdl]; ring
+  have hyd : dlen TAct d' ≤ dlen TAct (exsIntro s p t d') := by
+    rw [hdeq]; exact le_of_add_eq' (c := setLen LAct s + termLen LAct t + 1) (by ring)
+  have he1 : (1 : V) ≤ dlen TAct (exsIntro s p t d') + 1 := le_add_self
+  have hsD : setLen LAct s ≤ 2 * dlen TAct (exsIntro s p t d') :=
+    le_trans hsD0 (le_two_mul_self _)
+  have hcD : setLen LAct (insert (substs1 LAct t p) s) ≤ 2 * dlen TAct (exsIntro s p t d') :=
+    le_trans hcD0 (le_two_mul_self _)
+  have htD : termLen LAct t ≤ 2 * dlen TAct (exsIntro s p t d') :=
+    le_trans htD0 (le_two_mul_self _)
+  have hptD : formulaLen LAct (substs1 LAct t p) ≤ 2 * dlen TAct (exsIntro s p t d') :=
+    le_trans hptD0 (le_two_mul_self _)
+  have hk1 : 1 ≤ len (memberList s) := one_le_len_memberList_of_mem hr
+  have hksD : len (memberList s) ≤ 2 * dlen TAct (exsIntro s p t d') :=
+    le_trans (len_memberList_le_setLen hs) hsD
+  have hcs : IsFormulaSet LAct (insert (substs1 LAct t p) s) :=
+    IsFormulaSet.insert_iff.mpr ⟨hp1.substs1 ht, hs⟩
+  have hkcD : len (memberList (insert (substs1 LAct t p) s)) ≤
+      2 * dlen TAct (exsIntro s p t d') := le_trans (len_memberList_le_setLen hcs) hcD
+  have hE1 : (1 : V) ≤ E := le_trans (le_trans hd1 (le_p4_self hd1))
+    (le_trans (le_mul_of_one_le_left zero_le hCz1)
+      (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE))
+  have hDE : 2 * dlen TAct (exsIntro s p t d') ≤ E := by
+    refine eroom_of_le hE hCk 2 0 (by norm_num) ?_
+    push_cast
+    rw [add_zero]
+  have hEpro : 13 * (2 * dlen TAct (exsIntro s p t d')) +
+      18 * ‖2 * dlen TAct (exsIntro s p t d')‖ + 12 ≤ E := by
+    refine eroom_of_le hE hCk 62 12 (by norm_num) ?_
+    push_cast
+    calc 13 * (2 * dlen TAct (exsIntro s p t d')) +
+          18 * ‖2 * dlen TAct (exsIntro s p t d')‖ + 12
+        ≤ 26 * dlen TAct (exsIntro s p t d') +
+          18 * (2 * dlen TAct (exsIntro s p t d')) + 12 :=
+          add_le_add (add_le_add (le_of_eq (by ring))
+            (mul_le_mul_of_nonneg_left (length_le _) zero_le)) le_rfl
+      _ = 62 * dlen TAct (exsIntro s p t d') + 12 := by ring
+  have hE8 : 13 * (2 * dlen TAct (exsIntro s p t d')) +
+      18 * ‖2 * dlen TAct (exsIntro s p t d')‖ + 8 ≤ E :=
+    le_trans (add_le_add le_rfl (by norm_num : (8 : V) ≤ 12)) hEpro
+  have hnE : 18 * ‖dlen TAct (exsIntro s p t d')‖ + 7 ≤ E := by
+    have := eroom_lin hE hCk 0 18 7 (by norm_num)
+    push_cast at this
+    rw [zero_mul, zero_add] at this
+    exact this
+  have hEQ : 2 * ((1 + 2 * dlen TAct (exsIntro s p t d')) *
+      (1 + 2 * dlen TAct (exsIntro s p t d') + 2 * dlen TAct (exsIntro s p t d'))) *
+      (2 * dlen TAct (exsIntro s p t d') + 1) +
+      4 * (2 * dlen TAct (exsIntro s p t d')) + 11 ≤ E := by
+    refine capE4 hE (hCk 43 (by norm_num)) ?_
+    refine le_trans (exsEQ_p3 (D := 2 * dlen TAct (exsIntro s p t d'))
+      (d := dlen TAct (exsIntro s p t d')) rfl) ?_
+    exact mul_le_mul_of_nonneg_left (p3_le_p4 he1) zero_le
+  have hiE : 0 + 2 * ((1 + 2 * dlen TAct (exsIntro s p t d')) *
+      (1 + 2 * dlen TAct (exsIntro s p t d') + 2 * dlen TAct (exsIntro s p t d'))) *
+      (2 * dlen TAct (exsIntro s p t d')) +
+      40 * (2 * dlen TAct (exsIntro s p t d')) + 20 ≤ E := by
+    refine capE4 hE (hCk 112 (by norm_num)) ?_
+    refine le_trans (exsiE_p3 (D := 2 * dlen TAct (exsIntro s p t d'))
+      (d := dlen TAct (exsIntro s p t d')) rfl) ?_
+    exact mul_le_mul_of_nonneg_left (p3_le_p4 he1) zero_le
+  have hbn : termLen LAct (bnum (dlen TAct d')) ≤ E := eroom_bnum hE hCk hyd
+  have hbn' : termLen LAct (bnum (dlen TAct (exsIntro s p t d'))) ≤ E := eroom_bnum hE hCk le_rfl
+  have hLn : setLen LAct s + termLen LAct t + dlen TAct d' + 1 ≤
+      dlen TAct (exsIntro s p t d') := le_of_eq hdl.symm
+  have hnd : dlen TAct (exsIntro s p t d') ≤ 2 * dlen TAct (exsIntro s p t d') :=
+    le_two_mul_self _
+  have hshL : shiftsV L' ≤ Czv * p4 (dlen TAct d') := le_trans (shiftsV_le_len L') hchildLen
+  have hsigC : proSig walkPieces Wl Wc W T (insert (substs1 LAct t p) s) ≤
+      6 * (2 * dlen TAct (exsIntro s p t d')) + 1 :=
+    proSig_le htbl hP hWc htblN hWl hWp hcs (one_le_len_memberList_insert _ _) hcD hE8 hΓ
+  have hgE : len (memberList (insert (substs1 LAct t p) s)) + 1 + shiftsV L' + 1 ≤ E := by
+    refine le_trans ?_ (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE)
+    have hlin : 2 * dlen TAct (exsIntro s p t d') + 2 ≤
+        Czv * p3 (dlen TAct (exsIntro s p t d')) := by
+      have h4 := hCk 4 (by norm_num)
+      push_cast at h4
+      exact lin_le_p3 hd1 (le_trans (le_of_eq (by norm_num : (2 : V) + 2 = 4)) h4)
+    calc len (memberList (insert (substs1 LAct t p) s)) + 1 + shiftsV L' + 1
+        ≤ 2 * dlen TAct (exsIntro s p t d') + 1 + Czv * p4 (dlen TAct d') + 1 :=
+          add_le_add (add_le_add (add_le_add hkcD le_rfl) hshL) le_rfl
+      _ = (2 * dlen TAct (exsIntro s p t d') + 2) + Czv * p4 (dlen TAct d') := by ring
+      _ ≤ Czv * p4 (dlen TAct (exsIntro s p t d')) := rec1₄ le_add_self hdeq hlin
+  have hESig : exsSig walkPieces Wc T s p t 0 ≤
+      2 * ((1 + 2 * dlen TAct (exsIntro s p t d')) *
+        (1 + 2 * dlen TAct (exsIntro s p t d') + 2 * dlen TAct (exsIntro s p t d'))) *
+        (2 * dlen TAct (exsIntro s p t d')) + 6 * (2 * dlen TAct (exsIntro s p t d')) + 1 := by
+    obtain ⟨-, -, -, -, h, -, -, -, -, -⟩ :=
+      exsCert_ok (i := 0) (D := 2 * dlen TAct (exsIntro s p t d')) (E := E)
+        htbl hP htblN hWc hWp hs hp1 hr ht hsD htD hptD hEpro hEQ
+        (le_trans (le_of_eq (by ring)) hiE) hΓ hLay.layout
+    exact h
+  have hgE2 : exsSig walkPieces Wc T s p t 0 +
+      (1 + proSig walkPieces Wl Wc W T (insert (substs1 LAct t p) s)) + shiftsV L' + 2 +
+      (len (memberList s) + 1) + 1 + 1 ≤ E := by
+    refine le_trans ?_ (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE)
+    have hquad : 0 + 2 * ((1 + 2 * dlen TAct (exsIntro s p t d')) *
+        (1 + 2 * dlen TAct (exsIntro s p t d') + 2 * dlen TAct (exsIntro s p t d'))) *
+        (2 * dlen TAct (exsIntro s p t d')) + 40 * (2 * dlen TAct (exsIntro s p t d')) + 20 ≤
+        112 * p3 (dlen TAct (exsIntro s p t d') + 1) :=
+      exsiE_p3 (D := 2 * dlen TAct (exsIntro s p t d'))
+        (d := dlen TAct (exsIntro s p t d')) rfl
+    have hlin : 112 * p3 (dlen TAct (exsIntro s p t d') + 1) ≤
+        Czv * p3 (dlen TAct (exsIntro s p t d')) := by
+      refine le_trans (mul_le_mul_of_nonneg_left (p3_succ_le hd1) zero_le) ?_
+      have h896 := hCk 896 (by norm_num)
+      push_cast at h896
+      calc 112 * (8 * p3 (dlen TAct (exsIntro s p t d'))) =
+            896 * p3 (dlen TAct (exsIntro s p t d')) := by ring
+        _ ≤ Czv * p3 (dlen TAct (exsIntro s p t d')) :=
+            mul_le_mul_of_nonneg_right h896 zero_le
+    calc exsSig walkPieces Wc T s p t 0 +
+          (1 + proSig walkPieces Wl Wc W T (insert (substs1 LAct t p) s)) + shiftsV L' + 2 +
+          (len (memberList s) + 1) + 1 + 1
+        ≤ (2 * ((1 + 2 * dlen TAct (exsIntro s p t d')) *
+            (1 + 2 * dlen TAct (exsIntro s p t d') + 2 * dlen TAct (exsIntro s p t d'))) *
+            (2 * dlen TAct (exsIntro s p t d')) + 6 * (2 * dlen TAct (exsIntro s p t d')) + 1) +
+          (1 + (6 * (2 * dlen TAct (exsIntro s p t d')) + 1)) +
+          Czv * p4 (dlen TAct d') + 2 + (2 * dlen TAct (exsIntro s p t d') + 1) + 1 + 1 :=
+          add_le_add (add_le_add (add_le_add (add_le_add (add_le_add
+            (add_le_add hESig (add_le_add le_rfl hsigC)) hshL) le_rfl)
+            (add_le_add hksD le_rfl)) le_rfl) le_rfl
+      _ ≤ (0 + 2 * ((1 + 2 * dlen TAct (exsIntro s p t d')) *
+            (1 + 2 * dlen TAct (exsIntro s p t d') + 2 * dlen TAct (exsIntro s p t d'))) *
+            (2 * dlen TAct (exsIntro s p t d')) +
+            40 * (2 * dlen TAct (exsIntro s p t d')) + 20) + Czv * p4 (dlen TAct d') :=
+          le_of_add_eq' (c := 12 + 54 * dlen TAct (exsIntro s p t d')) (by ring)
+      _ ≤ 112 * p3 (dlen TAct (exsIntro s p t d') + 1) + Czv * p4 (dlen TAct d') :=
+          add_le_add hquad le_rfl
+      _ ≤ Czv * p3 (dlen TAct (exsIntro s p t d')) + Czv * p4 (dlen TAct d') :=
+          add_le_add hlin le_rfl
+      _ ≤ Czv * p4 (dlen TAct (exsIntro s p t d')) := rec1₄ le_add_self hdeq le_rfl
+  refine ⟨?_, ?_⟩
+  · rw [len_vExs_eq]
+    have hlenPro : len (proExs walkPieces Wl Wc W T s p t 0) ≤
+        256 * p3 (2 * dlen TAct (exsIntro s p t d') + 1) :=
+      len_proExs_le_cubic htbl hP hWl hWc walkPieces W T 0 hs hp1 hr ht hsD hcD htD
+    have hcube : 256 * p3 (2 * dlen TAct (exsIntro s p t d') + 1) ≤
+        16384 * p3 (dlen TAct (exsIntro s p t d')) := by
+      have h1 : p3 (2 * dlen TAct (exsIntro s p t d') + 1) ≤
+          p3 (2 * (dlen TAct (exsIntro s p t d') + 1)) :=
+        p3_mono (le_of_add_eq' (c := 1) (by ring))
+      have h2 : p3 (2 * (dlen TAct (exsIntro s p t d') + 1)) =
+          8 * p3 (dlen TAct (exsIntro s p t d') + 1) := p3_two_mul _
+      have h3 : p3 (dlen TAct (exsIntro s p t d') + 1) ≤
+          8 * p3 (dlen TAct (exsIntro s p t d')) := p3_succ_le hd1
+      calc 256 * p3 (2 * dlen TAct (exsIntro s p t d') + 1)
+          ≤ 256 * (8 * p3 (dlen TAct (exsIntro s p t d') + 1)) := by
+            rw [← h2]; exact mul_le_mul_of_nonneg_left h1 zero_le
+        _ ≤ 256 * (8 * (8 * p3 (dlen TAct (exsIntro s p t d')))) :=
+            mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left h3 zero_le) zero_le
+        _ = 16384 * p3 (dlen TAct (exsIntro s p t d')) := by ring
+    have hX : 16384 * p3 (dlen TAct (exsIntro s p t d')) + 15 ≤
+        Czv * p3 (dlen TAct (exsIntro s p t d')) := by
+      have h16399 := hCk 16399 (by norm_num)
+      push_cast at h16399
+      calc 16384 * p3 (dlen TAct (exsIntro s p t d')) + 15
+          ≤ 16384 * p3 (dlen TAct (exsIntro s p t d')) +
+            15 * p3 (dlen TAct (exsIntro s p t d')) :=
+            add_le_add le_rfl (le_mul_of_one_le_right zero_le (one_le_p3 hd1))
+        _ = 16399 * p3 (dlen TAct (exsIntro s p t d')) := by ring
+        _ ≤ Czv * p3 (dlen TAct (exsIntro s p t d')) :=
+            mul_le_mul_of_nonneg_right h16399 zero_le
+    calc len (proExs walkPieces Wl Wc W T s p t 0) + (len L' + (6 + 9))
+        ≤ 256 * p3 (2 * dlen TAct (exsIntro s p t d') + 1) + (Czv * p4 (dlen TAct d') + 15) :=
+          add_le_add hlenPro (add_le_add hchildLen (by norm_num))
+      _ ≤ 16384 * p3 (dlen TAct (exsIntro s p t d')) + (Czv * p4 (dlen TAct d') + 15) :=
+          add_le_add hcube le_rfl
+      _ = (16384 * p3 (dlen TAct (exsIntro s p t d')) + 15) + Czv * p4 (dlen TAct d') := by ring
+      _ ≤ Czv * p4 (dlen TAct (exsIntro s p t d')) := rec1₄ le_add_self hdeq hX
+  · exact exs_arm_size (Wl := Wl) (Wc := Wc) (W₂ := W₂) (W := W) (T := T) (s := s) (p := p)
+      (t := t) (d' := d') (L' := L') (B := B) (E := E) (Cz := Czv) (N' := N') (B' := B')
+      (D := 2 * dlen TAct (exsIntro s p t d')) (d := dlen TAct (exsIntro s p t d')) (Γ := Γ)
+      hWp hW₂ htbl hP htblN hWl hWc hPle hs hp1 hr ht hsD hcD htD hEpro hEQ hiE hΓ hLay.layout
+      hDE le_rfl hCQ hCD hCz1 hchildSz hE1 hcG hgE hbn hbn' hnE hLn hnd hgE2 hCbin
+
+end exsWrapper
+
 end ArithS
