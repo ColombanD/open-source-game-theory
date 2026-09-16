@@ -1687,6 +1687,39 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 -- the single constant is `8·Cv + 9 ≤ Czv` — no `capE4`, no `rec1₄`/`rec2₄` room at all, since `axm` is a LEAF.
 #print axioms axm_wrapper
 
+-- U10 (Necessitation/Verify5, 2026-09-16): §26.1 — A NODE CONTEXT EXISTS AT EVERY SEQUENT, built from the EMPTY
+-- context. The recursion's arms hand each wrapper a `Γ` with `NodeLay walkPieces certPieces T Γ s` at the node's own
+-- sequent (the wrappers feed `hLay.layout` to `proAxL_ok`/`sizeOK_wkPro`/`layout_or`/`layout_and`), and with a
+-- CONTEXT-FREE motive (TRAP 24) nothing threads one through the induction — so each arm BUILDS one. Nonempty
+-- sequent: `layoutSteps_ok` AT `Γ := 0` already concludes `Layout … (finalCtx 0 (layoutSteps …)) s 0`, so
+-- `NodeLay`'s first disjunct is immediate. Empty sequent: the second disjunct wants `Layout0 … Γ 0` AND
+-- `fsetPiFact (^&1) ∈ Γ`; `layoutSteps0_ok` gives the former, and `Layout0`'s OWN second conjunct at `i = 0` IS
+-- `eqFactB (^&1) 𝟎` — exactly `emptyFsetPi_ok`'s precondition — so appending `emptyFsetPi` gives the latter, with
+-- `Layout0.mono` carrying the layout across on that lemma's context-monotonicity conjunct. The two branches split on
+-- `memberList s = 0` via `eq_zero_of_memberList_eq_zero`. THE POINT: the obligation is DISCHARGEABLE, not merely
+-- relocatable — no `∃ Γ` hypothesis is added to `ArmHyps` or `VerifySizeOracle`, which stay byte-identical.
+#print axioms nodeCtx_exists
+
+-- U10 (Necessitation/Verify5, 2026-09-16): §27 — THE TEN-ARM RECURSION, `Verify4.verifyGraph''_ok4`'s shape with
+-- `len`/`SizeOK` in place of `shiftsV`: one `Derivation.induction1 𝚷` whose arms are one-line applications of
+-- §§16–26's motive wrappers (TRAP 15 — the constructions must NOT sit in the induction body).
+-- **TRAP 24 — THE MOTIVE IS CONTEXT-FREE.** `Verify4`'s motive carries `∀ L Γ, … → NodeLay … Γ (fstIdx ρ) → …`
+-- because its conjuncts MENTION the context (`ListOK tbl E 9 Γ L`, `… ∈ finalCtx Γ L`). `ArmHyps`' two conjuncts do
+-- NOT: `len L ≤ Cz·(dlen ρ+1)^4` and `SizeOK (kitQ …) (kitD …) L` are context-free. Copying `Verify4`'s binders made
+-- the induction hypothesis UNUSABLE at a child — discharging it would need a `NodeLay` at the CHILD's sequent, and
+-- every `NodeLay` in the tree (`Verify2` 2295/2511/2578/2867, `Assemble` 698) is `Or.inl ⟨one_le_len_memberList_insert
+-- _, layC⟩` from a `Layout` at a PROLOGUE's `finalCtx`, with no from-nothing constructor. Dropping `Γ` from the
+-- motive removes the obligation outright: the `ih` then applies to a child directly, with NO context argument.
+-- Diagnosed by compiling a motive SKELETON (arms left unfilled) rather than by reading — the structural question was
+-- settled in seven seconds after three rounds of reading had not settled it.
+-- The per-arm E-room for §26.1 is `capE4' hE he1 (hCk 39 _) (lin_cap 13 18 8 D)` and `capE4' hE he1 (hCk 2 _) _`,
+-- with `a` supplied POSITIONALLY — `refine capE4' hE he1 ?_ ?_` leaves `capE4'`'s implicit `a` unsolved.
+-- Eight arms are discharged from the banked wrappers; `and` and `cut` remain NAMED HYPOTHESES (`hAndArm`, `hCutArm`)
+-- because `and_arm_size` binds `Γ₃` and `cut_arm_size` binds `Γ₄`/`Γc` in their OWN signatures, at SHIFTED offsets
+-- (`1 + proSig (insert p s) + shiftsV L₁ + 2`, `mShift p + mShift (neg p) + …`) that §26.1's offset-0 construction
+-- does not reach. Those two are the transport-chain work that remains.
+#print axioms armHyps_of_arms
+
 -- U10 (Necessitation/Package, 2026-09-15): THE PACKAGE AND THE HEADLINE THEOREMS, with `Assemble.SizeOracle`
 -- BYPASSED. `SizeOracle` is NOT PROVABLE as stated (it binds the numeral table `T` with no `NumTableOK T N' B'`,
 -- while every prologue size lemma requires one and lands at `layQ B B' D`/`layD N' B' D`; `NumTableOK` is never a

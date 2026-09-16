@@ -3188,4 +3188,341 @@ theorem axm_wrapper {tbl N N' B' Wc W₂ T B E Czv Cv Γ s p pro : V}
 
 end axmWrapper
 
+/-! ## 26.1 A NODE CONTEXT EXISTS AT EVERY SEQUENT
+
+The recursion's arms hand each wrapper a context `Γ` with `NodeLay walkPieces certPieces T Γ s` at the node's own
+sequent (the wrappers feed `hLay.layout` to `proAxL_ok`/`sizeOK_wkPro`/`layout_or`/`layout_and`). The motive is
+context-free (TRAP 24), so no context is threaded through the induction — each arm BUILDS one.
+
+It is built from the EMPTY context, which is the point: `layoutSteps_ok` at `Γ := 0` already concludes
+`Layout walkPieces Wc T (finalCtx 0 (layoutSteps …)) s 0`, so `NodeLay`'s first disjunct is immediate for a
+nonempty sequent. For the empty sequent the second disjunct wants `Layout0 … Γ 0` AND `fsetPiFact (^&1) ∈ Γ`:
+`layoutSteps0_ok` gives the former (and `Layout0`'s own second conjunct at `i = 0` IS `eqFactB (^&1) 𝟎`, exactly
+`emptyFsetPi_ok`'s precondition), and appending `emptyFsetPi` gives the latter, with `Layout0.mono` carrying the
+layout across on `emptyFsetPi_ok`'s context-monotonicity conjunct.
+
+This is why no `∃ Γ` hypothesis is needed anywhere: the obligation is DISCHARGEABLE, not merely relocatable. -/
+
+section nodeContext
+
+set_option maxHeartbeats 2000000 in
+/-- **A node context exists at every sequent.** -/
+theorem nodeCtx_exists {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
+    {tbl N N' B' T D E : V} (htbl : TableOK tbl N) (hP : ProTable tbl)
+    (htblN : NumTableOK T N' B') {s : V} (hs : IsFormulaSet LAct s)
+    (hsD : setLen LAct s ≤ D) (hE : 13 * D + 18 * ‖D‖ + 8 ≤ E) (hE2 : (2 : V) ≤ E) :
+    ∃ Γ : V, IsFormulaSet LAct Γ ∧ NodeLay walkPieces certPieces T Γ s := by
+  by_cases h0 : memberList s = 0
+  · have hs0 := eq_zero_of_memberList_eq_zero h0
+    subst hs0
+    obtain ⟨lok, lnd, lsh, llen, lLay0⟩ :=
+      layoutSteps0_ok (Γ := (0 : V)) (E := E) (Wc := certPieces) (T := T)
+        htbl hP rfl IsFormulaSet.empty hE2
+    have hΓ1 : IsFormulaSet LAct (finalCtx (0 : V) (layoutSteps0 proPieces)) :=
+      finalCtx_isFormulaSet 8 htbl IsFormulaSet.empty lok
+    obtain ⟨eok, end', esh, efact, emono⟩ :=
+      emptyFsetPi_ok (Γ := finalCtx (0 : V) (layoutSteps0 proPieces)) (E := E)
+        htbl hP rfl hΓ1 hE2 (by simpa using lLay0.2)
+    exact ⟨_, finalCtx_isFormulaSet 8 htbl hΓ1 eok, Or.inr ⟨rfl, lLay0.mono emono, efact⟩⟩
+  · have hk1 : 1 ≤ len (memberList s) :=
+      pos_iff_one_le.mp (pos_iff_ne_zero.mpr (fun hz ↦ h0 (len_zero_iff_eq_nil.mp hz)))
+    obtain ⟨lok, lnd, lsh, llen, lLay⟩ :=
+      layoutSteps_ok (Γ := (0 : V)) (D := D) (E := E) htbl hP htblN rfl rfl rfl hs hk1 hsD hE
+        IsFormulaSet.empty
+    exact ⟨_, finalCtx_isFormulaSet 8 htbl IsFormulaSet.empty lok, Or.inl ⟨hk1, lLay⟩⟩
+
+end nodeContext
+
+/-! ## 27. THE TEN-ARM RECURSION
+
+`Verify4.verifyGraph''_ok4`'s shape with `len`/`SizeOK` in place of `shiftsV`: one `Derivation.induction1 𝚷` whose
+ten arms are one-line applications of §§16–26's wrappers (TRAP 15 — the constructions must NOT sit in the body).
+
+**TRAP 24 — the motive is CONTEXT-FREE.** `Verify4`'s motive carries `∀ L Γ, … → IsFormulaSet Γ →
+NodeLay … Γ (fstIdx ρ) → …` because its conjuncts MENTION the context (`ListOK tbl E 9 Γ L`, `… ∈ finalCtx Γ L`).
+`ArmHyps`' two conjuncts do not: `len L ≤ Cz·(dlen ρ+1)^4` and `SizeOK (kitQ …) (kitD …) L` are both context-free.
+Copying `Verify4`'s binders made the induction hypothesis UNUSABLE at a child, because discharging it would need a
+`NodeLay` at the CHILD's sequent and no such witness exists — every `NodeLay` in the tree (`Verify2` 2295/2511/2578,
+`Assemble` 698) is built as `Or.inl ⟨one_le_len_memberList_insert _, layC⟩` from a `Layout` at a PROLOGUE's
+`finalCtx`, and there is no from-nothing constructor. Dropping `Γ` from the motive removes the obligation entirely:
+the `ih` then applies to a child directly. It also removes `and`/`cut`'s special status — their `Γ₃`/`Γ₄`/`Γc` are
+still wrapper hypotheses, but they are now supplied by this theorem's own binders like every other arm's.
+
+The node's OWN context stays: the wrappers feed `hLay.layout` to `proAxL_ok`/`sizeOK_wkPro`/`layout_or`/`layout_and`,
+so `hΓ`/`hLay` at `fstIdx ρ` are hypotheses OF THIS THEOREM (never of `ArmHyps`, which stays byte-identical). -/
+
+section recursion
+
+set_option maxHeartbeats 4000000 in
+/-- **THE RECURSION**, with the node context as an explicit hypothesis and the `and`/`cut` context witnesses as
+named hypotheses (their shifted-offset layouts have no producer). -/
+theorem armHyps_of_arms {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
+    {tbl N N' B' T B E A Czv : V} {Cv : ℕ}
+    (htbl : TableOK tbl N) (hP : ProTable tbl) (htblN : NumTableOK T N' B')
+    (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (hCz1 : 1 ≤ Czv) (hCk : ∀ n : ℕ, n ≤ 1000000 → ((n : ℕ) : V) ≤ Czv)
+    (hCQ : 19 * B' + 25 ≤ Czv) (hCD : 27 * N' + 525600 * B' ≤ Czv)
+    (hCbin : 2 * (27 * N' + 525600 * B') ≤ Czv)
+    (hcG : 4 * ((cDer : V) + cDlen + cFst + 6) ≤ Czv)
+    (hCv : (Cv : V) ≤ Czv) (hCv8 : 8 * (Cv : V) + 9 ≤ Czv)
+    (hA : AxmTableOK' tbl E walkPieces A (Cv : V))
+    (hAndArm : ∀ s p q dp dq L₁ L₂ Γ' : V, IsFormulaSet LAct s → IsSemiformula LAct 0 p →
+      IsSemiformula LAct 0 q → (p ^⋏ q) ∈ s → DerivationOf TAct dp (insert p s) →
+      DerivationOf TAct dq (insert q s) → IsFormulaSet LAct Γ' →
+      NodeLay walkPieces certPieces T Γ' s →
+      SizeOK (kitQ Czv B E) (kitD Czv (2 * dlen TAct (andIntro s p q dp dq))) L₁ →
+      SizeOK (kitQ Czv B E) (kitD Czv (2 * dlen TAct (andIntro s p q dp dq))) L₂ →
+      len L₁ ≤ Czv * p4 (dlen TAct dp) → len L₂ ≤ Czv * p4 (dlen TAct dq) →
+      Czv * p4 (dlen TAct (andIntro s p q dp dq) + 1) ≤ E →
+      len (vAnd walkPieces layoutPieces certPieces frag1Pieces proPieces T s p q dp dq L₁ L₂) ≤
+        Czv * p4 (dlen TAct (andIntro s p q dp dq)) ∧
+      SizeOK (kitQ Czv B E) (kitD Czv (2 * dlen TAct (andIntro s p q dp dq)))
+        (vAnd walkPieces layoutPieces certPieces frag1Pieces proPieces T s p q dp dq L₁ L₂))
+    (hCutArm : ∀ s p d₁ d₂ L₁ L₂ Γ' : V, IsFormulaSet LAct s → IsSemiformula LAct 0 p →
+      DerivationOf TAct d₁ (insert p s) → DerivationOf TAct d₂ (insert (neg LAct p) s) →
+      IsFormulaSet LAct Γ' → NodeLay walkPieces certPieces T Γ' s →
+      SizeOK (kitQ Czv B E) (kitD Czv (2 * dlen TAct (cutRule s p d₁ d₂))) L₁ →
+      SizeOK (kitQ Czv B E) (kitD Czv (2 * dlen TAct (cutRule s p d₁ d₂))) L₂ →
+      len L₁ ≤ Czv * p4 (dlen TAct d₁) → len L₂ ≤ Czv * p4 (dlen TAct d₂) →
+      Czv * p4 (dlen TAct (cutRule s p d₁ d₂) + 1) ≤ E →
+      len (vCut walkPieces layoutPieces certPieces frag1Pieces proPieces T s p d₁ d₂ L₁ L₂) ≤
+        Czv * p4 (dlen TAct (cutRule s p d₁ d₂)) ∧
+      SizeOK (kitQ Czv B E) (kitD Czv (2 * dlen TAct (cutRule s p d₁ d₂)))
+        (vCut walkPieces layoutPieces certPieces frag1Pieces proPieces T s p d₁ d₂ L₁ L₂))
+    {ρ : V} (hd : Derivation TAct ρ) :
+    Czv * p4 (dlen TAct ρ + 1) ≤ E → ∀ L : V,
+      VerifyGraph'' walkPieces layoutPieces certPieces frag1Pieces frag2Pieces proPieces T A ρ L →
+      len L ≤ Czv * p4 (dlen TAct ρ) ∧
+        SizeOK (kitQ Czv B E) (kitD Czv (2 * dlen TAct ρ)) L := by
+  apply Derivation.induction1 𝚷 (T := TAct)
+    (P := fun ρ ↦ Czv * p4 (dlen TAct ρ + 1) ≤ E → ∀ L : V,
+      VerifyGraph'' walkPieces layoutPieces certPieces frag1Pieces frag2Pieces proPieces T A ρ L →
+      len L ≤ Czv * p4 (dlen TAct ρ) ∧
+        SizeOK (kitQ Czv B E) (kitD Czv (2 * dlen TAct ρ)) L)
+    (by simp only [VerifyGraph'', p4, kitQ, kitD]; definability) hd
+  · -- axL
+    intro s hs p hp hnp hE L hL
+    rw [VerifyGraph''.axL_iff] at hL; subst hL
+    have hD : Derivation TAct (axL s p) := Derivation.axL hs hp hnp
+    have hsD : setLen LAct s ≤ dlen TAct (axL s p) := by
+      have := setLen_fstIdx_le_dlen hD; rwa [fstIdx_axL] at this
+    have he1 : (1 : V) ≤ dlen TAct (axL s p) + 1 := le_add_self
+    obtain ⟨Γ, hΓ, hLay⟩ := nodeCtx_exists htbl hP htblN hs hsD
+      (capE4' hE he1 (hCk 39 (by norm_num)) (by
+        push_cast
+        exact le_trans (lin_cap 13 18 8 (dlen TAct (axL s p))) (le_of_eq (by ring))))
+      (capE4' hE he1 (hCk 2 (by norm_num)) (by
+        push_cast
+        exact le_mul_of_one_le_right zero_le he1))
+    exact axL_wrapper (tbl := tbl) (N := N) (N' := N') (B' := B') (Wc := certPieces)
+      (W₁ := frag1Pieces) (T := T) (B := B) (E := E) (Czv := Czv) (Γ := Γ) (s := s) (p := p)
+      htbl hP htblN rfl rfl hPle hCz1 hCk
+      (by have := hCk 21 (by norm_num); push_cast at this; exact le_trans (by norm_num) this)
+      hCD hcG hs hp hnp hΓ hLay hE
+  · -- verumIntro
+    intro s hs hv hE L hL
+    rw [VerifyGraph''.verumIntro_iff] at hL; subst hL
+    have hD : Derivation TAct (verumIntro s) := Derivation.verumIntro hs hv
+    have hsD : setLen LAct s ≤ dlen TAct (verumIntro s) := by
+      have := setLen_fstIdx_le_dlen hD; rwa [fstIdx_verumIntro] at this
+    have he1 : (1 : V) ≤ dlen TAct (verumIntro s) + 1 := le_add_self
+    obtain ⟨Γ, hΓ, hLay⟩ := nodeCtx_exists htbl hP htblN hs hsD
+      (capE4' hE he1 (hCk 39 (by norm_num)) (by
+        push_cast
+        exact le_trans (lin_cap 13 18 8 (dlen TAct (verumIntro s))) (le_of_eq (by ring))))
+      (capE4' hE he1 (hCk 2 (by norm_num)) (by
+        push_cast
+        exact le_mul_of_one_le_right zero_le he1))
+    exact verum_wrapper (tbl := tbl) (N := N) (N' := N') (B' := B') (Wc := certPieces)
+      (W₁ := frag1Pieces) (T := T) (B := B) (E := E) (Czv := Czv) (Γ := Γ) (s := s)
+      htbl hP htblN rfl rfl hPle hCz1 hCk
+      (by have := hCk 9 (by norm_num); push_cast at this; exact this)
+      hCD hcG hs hv hΓ hLay hE
+  · -- andIntro
+    intro s hs p q dp dq hpq hdp hdq ih₁ ih₂ hE L hL
+    rw [VerifyGraph''.andIntro_iff] at hL
+    obtain ⟨L₁, -, hL₁, L₂, -, hL₂, rfl⟩ := hL
+    have hD : Derivation TAct (andIntro s p q dp dq) := Derivation.andIntro hpq hdp hdq
+    have hsD : setLen LAct s ≤ dlen TAct (andIntro s p q dp dq) := by
+      have := setLen_fstIdx_le_dlen hD; rwa [fstIdx_andIntro] at this
+    have he1 : (1 : V) ≤ dlen TAct (andIntro s p q dp dq) + 1 := le_add_self
+    obtain ⟨hp, hq⟩ := IsSemiformula.and.mp (hs _ hpq)
+    have hy₁ := dlen_dp_succ_le_andIntro hD
+    have hy₂ := dlen_dq_succ_le_andIntro hD
+    obtain ⟨o₁, z₁⟩ := ih₁ (le_trans (child_bound4 (le_trans hy₁ le_self_add)) hE) L₁ hL₁
+    obtain ⟨o₂, z₂⟩ := ih₂ (le_trans (child_bound4 (le_trans hy₂ le_self_add)) hE) L₂ hL₂
+    obtain ⟨Γ, hΓ, hLay⟩ := nodeCtx_exists htbl hP htblN hs hsD
+      (capE4' hE he1 (hCk 39 (by norm_num)) (by
+        push_cast
+        exact le_trans (lin_cap 13 18 8 (dlen TAct (andIntro s p q dp dq))) (le_of_eq (by ring))))
+      (capE4' hE he1 (hCk 2 (by norm_num)) (by
+        push_cast
+        exact le_mul_of_one_le_right zero_le he1))
+    exact hAndArm s p q dp dq L₁ L₂ Γ hs hp hq hpq hdp hdq hΓ hLay
+      (z₁.mono le_rfl (kitD_mono (mul_le_mul_of_nonneg_left (le_trans le_self_add hy₁) zero_le)))
+      (z₂.mono le_rfl (kitD_mono (mul_le_mul_of_nonneg_left (le_trans le_self_add hy₂) zero_le)))
+      o₁ o₂ hE
+  · -- orIntro
+    intro s hs p q d' hpq hd' ih hE L hL
+    rw [VerifyGraph''.orIntro_iff] at hL
+    obtain ⟨L', -, hL', rfl⟩ := hL
+    have hD : Derivation TAct (orIntro s p q d') := Derivation.orIntro hpq hd'
+    have hsD : setLen LAct s ≤ dlen TAct (orIntro s p q d') := by
+      have := setLen_fstIdx_le_dlen hD; rwa [fstIdx_orIntro] at this
+    have he1 : (1 : V) ≤ dlen TAct (orIntro s p q d') + 1 := le_add_self
+    obtain ⟨hp, hq⟩ := IsSemiformula.or.mp (hs _ hpq)
+    have hy := dlen_d_succ_le_orIntro hD
+    obtain ⟨o, z⟩ := ih (le_trans (child_bound4 (le_trans hy le_self_add)) hE) L' hL'
+    obtain ⟨Γ, hΓ, hLay⟩ := nodeCtx_exists htbl hP htblN hs hsD
+      (capE4' hE he1 (hCk 39 (by norm_num)) (by
+        push_cast
+        exact le_trans (lin_cap 13 18 8 (dlen TAct (orIntro s p q d'))) (le_of_eq (by ring))))
+      (capE4' hE he1 (hCk 2 (by norm_num)) (by
+        push_cast
+        exact le_mul_of_one_le_right zero_le he1))
+    exact or_wrapper (tbl := tbl) (N := N) (N' := N') (B' := B') (Wl := layoutPieces)
+      (Wc := certPieces) (W₁ := frag1Pieces) (W := proPieces) (T := T) (B := B) (E := E)
+      (Czv := Czv) (Γ := Γ) (s := s) (p := p) (q := q) (d' := d') (L' := L')
+      htbl hP htblN rfl rfl rfl rfl hPle hCz1 hCk hCQ hCD hCbin hcG hs hp hq hpq hd' hΓ hLay
+      (z.mono le_rfl (kitD_mono (mul_le_mul_of_nonneg_left (le_trans le_self_add hy) zero_le))) o hE
+  · -- allIntro
+    intro s hs p d' hr hd' ih hE L hL
+    rw [VerifyGraph''.allIntro_iff] at hL
+    obtain ⟨L', -, hL', rfl⟩ := hL
+    have hD : Derivation TAct (allIntro s p d') := Derivation.allIntro hr hd'
+    have hsD : setLen LAct s ≤ dlen TAct (allIntro s p d') := by
+      have := setLen_fstIdx_le_dlen hD; rwa [fstIdx_allIntro] at this
+    have he1 : (1 : V) ≤ dlen TAct (allIntro s p d') + 1 := le_add_self
+    have hy := dlen_d_succ_le_allIntro hD
+    obtain ⟨o, z⟩ := ih (le_trans (child_bound4 (le_trans hy le_self_add)) hE) L' hL'
+    obtain ⟨Γ, hΓ, hLay⟩ := nodeCtx_exists htbl hP htblN hs hsD
+      (capE4' hE he1 (hCk 39 (by norm_num)) (by
+        push_cast
+        exact le_trans (lin_cap 13 18 8 (dlen TAct (allIntro s p d'))) (le_of_eq (by ring))))
+      (capE4' hE he1 (hCk 2 (by norm_num)) (by
+        push_cast
+        exact le_mul_of_one_le_right zero_le he1))
+    exact all_wrapper (tbl := tbl) (N := N) (N' := N') (B' := B') (Wl := layoutPieces)
+      (Wc := certPieces) (W₂ := frag2Pieces) (W := proPieces) (T := T) (B := B) (E := E)
+      (Czv := Czv) (Γ := Γ) (s := s) (p := p) (d' := d') (L' := L')
+      htbl hP htblN rfl rfl rfl rfl hPle hCz1 hCk hCQ hCD hCbin hcG hs hr hd' hΓ hLay
+      (z.mono le_rfl (kitD_mono (mul_le_mul_of_nonneg_left (le_trans le_self_add hy) zero_le))) o hE
+  · -- exsIntro
+    intro s hs p t d' hr ht hd' ih hE L hL
+    rw [VerifyGraph''.exsIntro_iff] at hL
+    obtain ⟨L', -, hL', rfl⟩ := hL
+    have hD : Derivation TAct (exsIntro s p t d') := Derivation.exsIntro hr ht hd'
+    have hsD : setLen LAct s ≤ dlen TAct (exsIntro s p t d') := by
+      have := setLen_fstIdx_le_dlen hD; rwa [fstIdx_exsIntro] at this
+    have he1 : (1 : V) ≤ dlen TAct (exsIntro s p t d') + 1 := le_add_self
+    have hy := dlen_d_succ_le_exsIntro hD
+    obtain ⟨o, z⟩ := ih (le_trans (child_bound4 (le_trans hy le_self_add)) hE) L' hL'
+    obtain ⟨Γ, hΓ, hLay⟩ := nodeCtx_exists htbl hP htblN hs hsD
+      (capE4' hE he1 (hCk 39 (by norm_num)) (by
+        push_cast
+        exact le_trans (lin_cap 13 18 8 (dlen TAct (exsIntro s p t d'))) (le_of_eq (by ring))))
+      (capE4' hE he1 (hCk 2 (by norm_num)) (by
+        push_cast
+        exact le_mul_of_one_le_right zero_le he1))
+    exact exs_wrapper (tbl := tbl) (N := N) (N' := N') (B' := B') (Wl := layoutPieces)
+      (Wc := certPieces) (W₂ := frag2Pieces) (W := proPieces) (T := T) (B := B) (E := E)
+      (Czv := Czv) (Γ := Γ) (s := s) (p := p) (t := t) (d' := d') (L' := L')
+      htbl hP htblN rfl rfl rfl rfl hPle hCz1 hCk hCQ hCD hCbin hcG hs hr ht hd' hΓ hLay
+      (z.mono le_rfl (kitD_mono (mul_le_mul_of_nonneg_left (le_trans le_self_add hy) zero_le))) o hE
+  · -- wkRule
+    intro s hs d' hsub hd' ih hE L hL
+    rw [VerifyGraph''.wkRule_iff] at hL
+    obtain ⟨L', -, hL', rfl⟩ := hL
+    have hD : Derivation TAct (wkRule s d') := Derivation.wkRule hs hsub ⟨rfl, hd'⟩
+    have hsD : setLen LAct s ≤ dlen TAct (wkRule s d') := by
+      have := setLen_fstIdx_le_dlen hD; rwa [fstIdx_wkRule] at this
+    have he1 : (1 : V) ≤ dlen TAct (wkRule s d') + 1 := le_add_self
+    have hy := dlen_d_succ_le_wkRule hD
+    obtain ⟨o, z⟩ := ih (le_trans (child_bound4 (le_trans hy le_self_add)) hE) L' hL'
+    obtain ⟨Γ, hΓ, hLay⟩ := nodeCtx_exists htbl hP htblN hs hsD
+      (capE4' hE he1 (hCk 39 (by norm_num)) (by
+        push_cast
+        exact le_trans (lin_cap 13 18 8 (dlen TAct (wkRule s d'))) (le_of_eq (by ring))))
+      (capE4' hE he1 (hCk 2 (by norm_num)) (by
+        push_cast
+        exact le_mul_of_one_le_right zero_le he1))
+    exact wk_wrapper (tbl := tbl) (N := N) (N' := N') (B' := B') (Wl := layoutPieces)
+      (Wc := certPieces) (W₁ := frag1Pieces) (W := proPieces) (T := T) (B := B) (E := E)
+      (Czv := Czv) (Γ := Γ) (s := s) (d' := d') (L' := L')
+      htbl hP htblN rfl rfl rfl rfl hPle hCz1 hCk hCQ hCD hCbin hcG hs hsub hd' hΓ hLay
+      (z.mono le_rfl (kitD_mono (mul_le_mul_of_nonneg_left (le_trans le_self_add hy) zero_le))) o hE
+  · -- shiftRule
+    intro s hs d' hsc hd' ih hE L hL
+    rw [VerifyGraph''.shiftRule_iff] at hL
+    obtain ⟨L', -, hL', rfl⟩ := hL
+    have hD : Derivation TAct (shiftRule s d') := by
+      have := Derivation.shiftRule (T := TAct) ⟨rfl, hd'⟩; rwa [← hsc] at this
+    have hsD : setLen LAct s ≤ dlen TAct (shiftRule s d') := by
+      have := setLen_fstIdx_le_dlen hD; rwa [fstIdx_shiftRule] at this
+    have he1 : (1 : V) ≤ dlen TAct (shiftRule s d') + 1 := le_add_self
+    have hy := dlen_d_succ_le_shiftRule hD
+    obtain ⟨o, z⟩ := ih (le_trans (child_bound4 (le_trans hy le_self_add)) hE) L' hL'
+    obtain ⟨Γ, hΓ, hLay⟩ := nodeCtx_exists htbl hP htblN hs hsD
+      (capE4' hE he1 (hCk 39 (by norm_num)) (by
+        push_cast
+        exact le_trans (lin_cap 13 18 8 (dlen TAct (shiftRule s d'))) (le_of_eq (by ring))))
+      (capE4' hE he1 (hCk 2 (by norm_num)) (by
+        push_cast
+        exact le_mul_of_one_le_right zero_le he1))
+    exact shift_wrapper (tbl := tbl) (N := N) (N' := N') (B' := B') (Wl := layoutPieces)
+      (Wc := certPieces) (W₂ := frag2Pieces) (W := proPieces) (T := T) (B := B) (E := E)
+      (Czv := Czv) (Γ := Γ) (s := s) (d' := d') (L' := L')
+      htbl hP htblN rfl rfl rfl rfl hPle hCz1 hCk hCQ hCD hCbin hcG hs hsc hd' hΓ hLay
+      (z.mono le_rfl (kitD_mono (mul_le_mul_of_nonneg_left (le_trans le_self_add hy) zero_le))) o hE
+  · -- cutRule
+    intro s hs p d₁ d₂ hd₁ hd₂ ih₁ ih₂ hE L hL
+    rw [VerifyGraph''.cutRule_iff] at hL
+    obtain ⟨L₁, -, hL₁, L₂, -, hL₂, rfl⟩ := hL
+    have hD : Derivation TAct (cutRule s p d₁ d₂) := Derivation.cutRule hd₁ hd₂
+    have hsD : setLen LAct s ≤ dlen TAct (cutRule s p d₁ d₂) := by
+      have := setLen_fstIdx_le_dlen hD; rwa [fstIdx_cutRule] at this
+    have he1 : (1 : V) ≤ dlen TAct (cutRule s p d₁ d₂) + 1 := le_add_self
+    have hc₁ : IsFormulaSet LAct (insert p s) := DerivationOf.isFormulaSet hd₁
+    have hp : IsSemiformula LAct 0 p := hc₁ p (by simp)
+    have hy₁ := dlen_d₁_succ_le_cutRule hD
+    have hy₂ := dlen_d₂_succ_le_cutRule hD
+    obtain ⟨o₁, z₁⟩ := ih₁ (le_trans (child_bound4 (le_trans hy₁ le_self_add)) hE) L₁ hL₁
+    obtain ⟨o₂, z₂⟩ := ih₂ (le_trans (child_bound4 (le_trans hy₂ le_self_add)) hE) L₂ hL₂
+    obtain ⟨Γ, hΓ, hLay⟩ := nodeCtx_exists htbl hP htblN hs hsD
+      (capE4' hE he1 (hCk 39 (by norm_num)) (by
+        push_cast
+        exact le_trans (lin_cap 13 18 8 (dlen TAct (cutRule s p d₁ d₂))) (le_of_eq (by ring))))
+      (capE4' hE he1 (hCk 2 (by norm_num)) (by
+        push_cast
+        exact le_mul_of_one_le_right zero_le he1))
+    exact hCutArm s p d₁ d₂ L₁ L₂ Γ hs hp hd₁ hd₂ hΓ hLay
+      (z₁.mono le_rfl (kitD_mono (mul_le_mul_of_nonneg_left (le_trans le_self_add hy₁) zero_le)))
+      (z₂.mono le_rfl (kitD_mono (mul_le_mul_of_nonneg_left (le_trans le_self_add hy₂) zero_le)))
+      o₁ o₂ hE
+  · -- axm
+    intro s hs p hps hpT hE L hL
+    rw [VerifyGraph''.axm_iff] at hL
+    obtain ⟨pro, -, hmem, rfl⟩ := hL
+    obtain ⟨p', -, ip', -, pro', -, heq, hok, hnd, hsh, hlen, hszp, hfact⟩ := hA _ hmem
+    obtain ⟨e₁, heq₂⟩ := pair_ext_iff.mp heq
+    obtain ⟨e₂, e₃⟩ := pair_ext_iff.mp heq₂
+    subst e₁; subst e₂; subst e₃
+    have hD : Derivation TAct (axm s p) := Derivation.axm hs hps hpT
+    have hsD : setLen LAct s ≤ dlen TAct (axm s p) := by
+      have := setLen_fstIdx_le_dlen hD; rwa [fstIdx_axm] at this
+    have he1 : (1 : V) ≤ dlen TAct (axm s p) + 1 := le_add_self
+    obtain ⟨Γ, hΓ, hLay⟩ := nodeCtx_exists htbl hP htblN hs hsD
+      (capE4' hE he1 (hCk 39 (by norm_num)) (by
+        push_cast
+        exact le_trans (lin_cap 13 18 8 (dlen TAct (axm s p))) (le_of_eq (by ring))))
+      (capE4' hE he1 (hCk 2 (by norm_num)) (by
+        push_cast
+        exact le_mul_of_one_le_right zero_le he1))
+    exact axm_wrapper (tbl := tbl) (N := N) (N' := N') (B' := B') (Wc := certPieces)
+      (W₂ := frag2Pieces) (T := T) (B := B) (E := E) (Czv := Czv) (Cv := (Cv : V)) (Γ := Γ)
+      (s := s) (p := p) (pro := pro)
+      htblN rfl rfl hPle hCz1 hCk hCD hcG hCv hCv8 hs hps hpT hΓ hLay hszp hlen hsh hE
+
+end recursion
+
 end ArithS
