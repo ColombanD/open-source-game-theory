@@ -1849,3 +1849,28 @@ REMAINING: `exs` (now MECHANICAL — `all`'s shape with `exsEQ_p3 ≤ 43·p3 (d+
 (d+1)`, `len_proExs_le_cubic`; trap 21's `D = 2·dlen` applies identically), then `axm` (fresh,
 unabbreviated, trap 18), then the ten-application recursion.
 IN FLIGHT: `Verify5` Part 14 (`exs`, `axm`, then the recursion).
+
+**§11 status — `Verify5` glue, Part 14: `exs_wrapper` LANDED, 9 of 10 (2cf0785, §25; build 3270,
+census 880, all standard).** `all`'s twin at `D := 2·dlen (exsIntro s p t d')` (trap 21), with four
+differences, ALL anticipated from the pre-drafting read: the quadratic rooms carry `(1 + D + D)`
+not `(1 + D + 1)`, matching `exsEQ_p3 ≤ 43·p3 (d+1)` and `exsiE_p3 ≤ 112·p3 (d+1)`;
+**`dlen_exsIntro = setLen s + termLen t + dlen d' + 1`** — the WITNESS TERM's length joins the
+`rec1₄` remainder, so `hdeq` is `dlen d' + (setLen s + termLen t + 1)`; the arm wants `ht`/`htD`
+(`termLen_le_dlen_exsIntro`); `hgE2` carries `exsSig` from **`exsCert_ok`'s FIFTH conjunct**, whose
+`hptD` comes from `formulaLen_substs1_le_dlen_exsIntro`. Cubic length half:
+`len_proExs_le_cubic ≤ 256·p3 (D+1)` at `D = 2·dlen` gives `256·64 = 16384`, capped `16399`;
+`hgE2` constant `896`.
+**TRAP 23 — a REFINEMENT of trap 22, with an honest account of how it was hit.** Three repair
+hunks: an `add_le_add` nesting one level short, then TWO WRONG SLACK VALUES before the right one.
+The specific lesson: **when `le_of_add_eq'` supplies the slack, the slack is folded into the LEFT
+side BEFORE normalisation, so every attempt displays a DIFFERENT residual goal** — chasing the
+difference term-by-term is a loop (the agent went round it twice). What broke it was treating two
+readings as SIMULTANEOUS EQUATIONS: `c := 40·d` gave left `8 + 70·d`; `c := 12 + 14·d` gave
+`20 + 44·d`; target `20 + 84·d`; hence base `= 8 + 30·d` and true slack `12 + 54·d`, which compiled
+first try. **So trap 22's rule needs this refinement: READ TWO residual goals and SOLVE, rather
+than iterating a third time.** (The agent noted it should have seen the oscillation one attempt
+sooner — recorded as method, not blame.)
+REMAINING: `axm_wrapper` (fresh and unabbreviated per trap 18 — NOT a repair of the quarantined
+probe), then the ten one-line applications discharging `ArmHyps`/`ArmHypsAll`. One wrapper and the
+recursion stand between here and the end of the construction.
+IN FLIGHT: `Verify5` Part 15 (`axm`, then the recursion).
