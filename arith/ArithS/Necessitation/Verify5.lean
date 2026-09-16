@@ -3415,7 +3415,12 @@ TRAP 27: `proIns_ok`'s `i` is inferred from whichever room lemma supplies `hiE`.
 offset must be pinned `(i := 0)` with the room at `(0 : V) ≤ 6·D + 1`.
 
 TRAP 28: `IdFrame` has NAMED fields (`child`, `parent`, `dp`, `cp`). The parent layout is
-`fr₁.parent`; an anonymous `fr₁.2.1` descends into `parent`'s own conjunction instead. -/
+`fr₁.parent`; an anonymous `fr₁.2.1` descends into `parent`'s own conjunction instead.
+
+The FIFTH component (`proIns_ok`'s sixth conjunct, the `eqFactB` on the row object) is
+exposed because §26.5's crossing needs it as `heq₁`. An earlier form returned only four and
+was green but did not COMPOSE with the next seam — the same failure class as a green but
+uncallable lemma, caught here by checking the composition before banking. -/
 
 section andInput
 
@@ -3438,7 +3443,10 @@ theorem and_input {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺�
         (0 + 1 + proSig walkPieces layoutPieces certPieces proPieces T (insert p s)) ∧
       DossF walkPieces Γ₁ 0 q
         (memTop walkPieces certPieces T s (p ^⋏ q) 0 + 1 +
-          (1 + proSig walkPieces layoutPieces certPieces proPieces T (insert p s))) := by
+          (1 + proSig walkPieces layoutPieces certPieces proPieces T (insert p s))) ∧
+      neg LAct (eqFactB
+          (^&(proSig walkPieces layoutPieces certPieces proPieces T (insert p s)))
+          (^&(0 + (len (memberList (insert p s)) + 1)))) ∈ Γ₁ := by
   have hW : WalkTable tbl := hP.walkTable
   have hk1 : 1 ≤ len (memberList s) := one_le_len_memberList_of_mem hpq
   obtain ⟨hand, hDp, hDq, hmr⟩ := layout_and htbl hP hp hq hpq hLayS
@@ -3457,11 +3465,73 @@ theorem and_input {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺�
       htbl hP htblN rfl rfl rfl hs hp hk1 hc₁D
       (and_room13 hCk hE) (and_roomI hCk hzero hE) (and_roomIP hCk hip hE)
       hΓ hLayS hDp
-  refine ⟨_, finalCtx_isFormulaSet 8 htbl hΓ pok₁, layC₁, fr₁.parent, ?_⟩
+  refine ⟨_, finalCtx_isFormulaSet 8 htbl hΓ pok₁, layC₁, fr₁.parent, ⟨?_, heq₁⟩⟩
   have := dossF_transport' pnd₁ hDq
   rwa [psh₁] at this
 
 end andInput
+
+/-! ## 26.5 THE `and` CHAIN'S CHILD CROSSING
+
+The second seam: given the input block's `Γ₁` and the child's own facts — which come from
+`Verify4.verifyGraph''_ok4` instantiated at `dp`, the sourcing that avoids a third motive
+conjunct — cross `L₁` and apply `postIns_ok`.
+
+The two shapes line up without adjustment:
+
+* `cgoal₁` arrives as `neg (goalFact (^&(len (memberList (fstIdx dp)) + 1 + shiftsV L₁))
+  (bnum (dlen dp)))` in `finalCtx Γ₁ L₁`, which is `postIns_ok`'s `hg` at
+  `s'' := len (memberList (insert p s)) + 1 + shiftsV L₁` once `hdp.1` rewrites `fstIdx dp`.
+* `heq₁₂` is `proIns_ok`'s sixth conjunct pushed across `L₁` by `tr_fact` and normalised by
+  `shiftIterV_eqFactB` + two `termShiftIterV_fvar` + `zero_add`, giving `postIns_ok`'s
+  `heq` at `cp := proSig (insert p s) + shiftsV L₁`.
+
+`postIns_ok` has EIGHT conclusion conjuncts (`ListOK`, `NoDrop'`, `shiftsV`, `len`, and the
+four row facts); only the first three are needed here. -/
+
+section andCross
+
+set_option maxHeartbeats 4000000 in
+/-- **The `and` chain's child crossing**: across `L₁`, then `postIns`. -/
+theorem and_cross {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
+    {tbl N T E Γ₁ L₁ s p dp : V}
+    (htbl : TableOK tbl N) (hP : ProTable tbl)
+    (hdp : DerivationOf TAct dp (insert p s))
+    (hΓ₁ : IsFormulaSet LAct Γ₁)
+    (cok₁ : ListOK tbl E ((9 : ℕ) : V) Γ₁ L₁)
+    (cnd₁ : NoDrop' L₁)
+    (cgoal₁ : neg LAct (goalFact (^&(len (memberList (fstIdx dp)) + 1 + shiftsV L₁))
+      (bnum (dlen TAct dp))) ∈ finalCtx Γ₁ L₁)
+    (heq₁ : neg LAct (eqFactB (^&(proSig walkPieces layoutPieces certPieces proPieces T (insert p s)))
+      (^&(0 + (len (memberList (insert p s)) + 1)))) ∈ Γ₁)
+    (hsE : len (memberList (insert p s)) + 1 + shiftsV L₁ + 3 ≤ E)
+    (hcE : proSig walkPieces layoutPieces certPieces proPieces T (insert p s) + shiftsV L₁ + 3 ≤ E) :
+    IsFormulaSet LAct (finalCtx (finalCtx Γ₁ L₁)
+        (postIns proPieces (len (memberList (insert p s)) + 1 + shiftsV L₁)
+          (proSig walkPieces layoutPieces certPieces proPieces T (insert p s) + shiftsV L₁)
+          (dlen TAct dp))) ∧
+      NoDrop' (postIns proPieces (len (memberList (insert p s)) + 1 + shiftsV L₁)
+          (proSig walkPieces layoutPieces certPieces proPieces T (insert p s) + shiftsV L₁)
+          (dlen TAct dp)) ∧
+      shiftsV (postIns proPieces (len (memberList (insert p s)) + 1 + shiftsV L₁)
+          (proSig walkPieces layoutPieces certPieces proPieces T (insert p s) + shiftsV L₁)
+          (dlen TAct dp)) = 2 := by
+  have hΓ₂f : IsFormulaSet LAct (finalCtx Γ₁ L₁) :=
+    finalCtx_isFormulaSet 9 htbl hΓ₁ cok₁
+  have hg : neg LAct (goalFact (^&(len (memberList (insert p s)) + 1 + shiftsV L₁))
+      (bnum (dlen TAct dp))) ∈ finalCtx Γ₁ L₁ := by
+    rw [hdp.1] at cgoal₁; exact cgoal₁
+  have heq₁₂ : neg LAct (eqFactB
+      (^&(proSig walkPieces layoutPieces certPieces proPieces T (insert p s) + shiftsV L₁))
+      (^&(len (memberList (insert p s)) + 1 + shiftsV L₁))) ∈ finalCtx Γ₁ L₁ := by
+    have := tr_fact cnd₁ (isFormula_eqFactB (hf_ _) (hf_ _)) heq₁
+    rwa [shiftIterV_eqFactB (hf_ _) (hf_ _), termShiftIterV_fvar, termShiftIterV_fvar,
+      zero_add] at this
+  obtain ⟨qok₁, qnd₁, qsh₁, -, -, -, -, -⟩ :=
+    postIns_ok htbl hP rfl hΓ₂f hsE hcE hg heq₁₂
+  exact ⟨finalCtx_isFormulaSet 8 htbl hΓ₂f qok₁, qnd₁, qsh₁⟩
+
+end andCross
 
 /-! ## 27. THE TEN-ARM RECURSION
 

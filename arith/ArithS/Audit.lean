@@ -1768,7 +1768,25 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 -- TRAP 28: `Prologue.IdFrame` has NAMED fields (`child`, `parent`, `dp`, `cp`). The parent layout is `fr₁.parent`;
 -- an anonymous `fr₁.2.1` descends into `parent`'s own conjunction and the type mismatch prints the whole unfolded
 -- `Layout` body.
+-- The block returns FIVE components; the fifth is `proIns_ok`'s sixth conjunct (the `eqFactB` on the row object),
+-- which §26.5's crossing consumes as `heq₁`. An earlier four-component form was green but did NOT COMPOSE with the
+-- next seam — the same failure class as a green-but-uncallable lemma, caught by checking the composition before
+-- banking rather than at the call site afterwards.
 #print axioms and_input
+
+-- U10 (Necessitation/Verify5, 2026-09-16): §26.5 — THE `and` CHAIN'S CHILD CROSSING, the second seam. Given the
+-- input block's `Γ₁` and the child's own facts, it crosses `L₁` and applies `postIns_ok`. The child's facts come
+-- from `Verify4.verifyGraph''_ok4` INSTANTIATED AT `dp` — the sourcing that avoids adding a third conjunct
+-- (`NoDrop' L`) to the recursion's motive, since that theorem already proves `ListOK ∧ NoDrop' ∧ shiftsV ∧ goalFact`
+-- for the same `VerifyGraph''` object under the same table hypotheses.
+-- The two shapes line up with no adjustment: `cgoal₁` arrives at
+-- `^&(len (memberList (fstIdx dp)) + 1 + shiftsV L₁)`, which is `postIns_ok`'s `hg` at
+-- `s'' := len (memberList (insert p s)) + 1 + shiftsV L₁` once `hdp.1` rewrites `fstIdx dp`; and `heq₁₂` is
+-- `proIns_ok`'s SIXTH conjunct pushed across `L₁` by `tr_fact`, normalised by `shiftIterV_eqFactB` + two
+-- `termShiftIterV_fvar` + `zero_add`, giving `heq` at `cp := proSig (insert p s) + shiftsV L₁`.
+-- `postIns_ok` has EIGHT conclusion conjuncts (ListOK, NoDrop', shiftsV, len, derFact, fstIdxFact, dlenFact,
+-- leFact); only the first three are used here.
+#print axioms and_cross
 
 -- U10 (Necessitation/Package, 2026-09-15): THE PACKAGE AND THE HEADLINE THEOREMS, with `Assemble.SizeOracle`
 -- BYPASSED. `SizeOracle` is NOT PROVABLE as stated (it binds the numeral table `T` with no `NumTableOK T N' B'`,
