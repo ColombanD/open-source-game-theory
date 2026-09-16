@@ -1614,6 +1614,19 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 -- `hgE₃` `13·D + 11`.
 #print axioms and_wrapper
 
+-- U10 (Necessitation/Verify5, 2026-09-16): §23 — the `cut` MOTIVE WRAPPER (7 of 10), GREEN AT THE FIRST ATTEMPT.
+-- `and`'s shape with a `proCutPre` prefix and the two `cutPro` selectors, so EIGHT blocks and — being two-child —
+-- every room on `Bounds.rec2₄` per TRAP 19, which is precisely why it needed no repair hunks: the trap found in
+-- `and` told the transcription what to do in advance. Length half: `Prologue.len_proCutPre_le ≤ 64·|p|` plus TWO
+-- `§14.len_cutPro_le ≤ 55·D + 13` plus `6 + 6 + 9 = 21`, i.e. `174·D + 47 = 221`. The rooms are stated over
+-- `mShift`/`mLen` rather than `memTop`/`descCountF`, bounded by `Prologue.mShift_le ≤ 4·|x|` and
+-- `mLen_succ_le : mLen + 1 ≤ 2·|x|`, with `CutV.formulaLen_neg` turning `|neg p|` into `|p|`; constants
+-- `hiE₁ 22·D+5`, `hipE₁ 14·D+4`, `hiE₂ 28·D+9`, `hipE₂ 16·D+8`, `hgE3 21·D+11`. TRAP 20: `cut_arm_size` wants
+-- `Layout0` at BOTH `cutPro` offsets (`hLay0₁`, `hLay0₄`), and `NodeLay.layout` only supplies `Layout … s 0` —
+-- there is no lemma producing `Layout0` at a shifted offset, so those, like the later-context `hΓ₄`/`hLay₄`/`hDnp₄`
+-- and the `proCutPre` context `hΓc`, are EXPLICIT wrapper hypotheses for the recursion to discharge.
+#print axioms cut_wrapper
+
 -- U10 (Necessitation/Package, 2026-09-15): THE PACKAGE AND THE HEADLINE THEOREMS, with `Assemble.SizeOracle`
 -- BYPASSED. `SizeOracle` is NOT PROVABLE as stated (it binds the numeral table `T` with no `NumTableOK T N' B'`,
 -- while every prologue size lemma requires one and lands at `layQ B B' D`/`layD N' B' D`; `NumTableOK` is never a

@@ -2274,4 +2274,314 @@ theorem and_wrapper {tbl N N' B' Wl Wc W₁ W T B E Czv Γ Γ₃ s p q dp dq L�
 
 end andWrapper
 
+/-! ## 23. The `cut` motive wrapper
+
+`and`'s shape with a `proCutPre` prefix and the two `cutPro` selectors, so EIGHT blocks and — being two-child —
+every room on `Bounds.rec2₄` per TRAP 19. `dlen_cutRule` is `setLen s + dlen d₁ + dlen d₂ + 1`, the same shape as
+`dlen_andIntro`.
+
+Length half: `Prologue.len_proCutPre_le ≤ 64·|p|` (with `|p| ≤ D`) plus TWO `§14.len_cutPro_le ≤ 55·D + 13` plus
+`6 + 6 + 9 = 21`, i.e. `174·D + 47 = 221`.
+
+The rooms are stated over `mShift`/`mLen` rather than `memTop`/`descCountF`, bounded by `Prologue.mShift_le ≤ 4·|x|`
+and `mLen_succ_le : mLen + 1 ≤ 2·|x|`, with `CutV.formulaLen_neg` turning `|neg p|` into `|p|`.
+
+**The later-context AND the `Layout0` hypotheses are EXPLICIT.** `cut_arm_size` wants `Layout0` at both `cutPro`
+offsets (`hLay0₁`, `hLay0₄`), and `NodeLay.layout` only supplies `Layout … s 0` — there is no lemma producing
+`Layout0` at a shifted offset, so these are wrapper hypotheses the recursion discharges, alongside `hΓ₄`/`hLay₄`/
+`hDnp₄` and the `proCutPre` context `hΓc`. -/
+
+section cutWrapper
+
+set_option maxHeartbeats 2000000 in
+/-- **THE `cut` MOTIVE WRAPPER.** -/
+theorem cut_wrapper {tbl N N' B' Wl Wc W₁ W T B E Czv Γ Γ₄ Γc s p d₁ d₂ L₁ L₂ : V}
+    (htbl : TableOK tbl N) (hP : ProTable tbl) (htblN : NumTableOK T N' B')
+    (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (hWp : W = proPieces) (hW₁ : W₁ = frag1Pieces)
+    (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (hCz1 : 1 ≤ Czv) (hCk : ∀ n : ℕ, n ≤ 1000000 → ((n : ℕ) : V) ≤ Czv)
+    (hCQ : 19 * B' + 25 ≤ Czv) (hCD : 27 * N' + 525600 * B' ≤ Czv)
+    (hCbin : 2 * (27 * N' + 525600 * B') ≤ Czv)
+    (hcG : 4 * ((cDer : V) + cDlen + cFst + 6) ≤ Czv)
+    (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 0 p)
+    (hd₁ : DerivationOf TAct d₁ (insert p s)) (hd₂ : DerivationOf TAct d₂ (insert (neg LAct p) s))
+    (hsD0p : setLen LAct (insert p (0 : V)) ≤ dlen TAct (cutRule s p d₁ d₂))
+    (hsD0np : setLen LAct (insert (neg LAct p) (0 : V)) ≤ dlen TAct (cutRule s p d₁ d₂))
+    (hΓ : IsFormulaSet LAct Γ) (hLay : NodeLay walkPieces Wc T Γ s)
+    (hLay₁ : Layout walkPieces Wc T Γ s (mShift walkPieces Wc T p + mShift walkPieces Wc T (neg LAct p)))
+    (hLay0₁ : Layout0 walkPieces Wc T Γ (mShift walkPieces Wc T p + mShift walkPieces Wc T (neg LAct p)))
+    (hDp₁ : DossF walkPieces Γ 0 p (mLen Wc T p + mShift walkPieces Wc T (neg LAct p)))
+    (hΓ₄ : IsFormulaSet LAct Γ₄)
+    (hLay₄ : Layout walkPieces Wc T Γ₄ s (mShift walkPieces Wc T p + mShift walkPieces Wc T (neg LAct p) +
+      (1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2)))
+    (hLay0₄ : Layout0 walkPieces Wc T Γ₄ (mShift walkPieces Wc T p + mShift walkPieces Wc T (neg LAct p) +
+      (1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2)))
+    (hDnp₄ : DossF walkPieces Γ₄ 0 (neg LAct p)
+      (mLen Wc T (neg LAct p) + (1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2)))
+    (hΓc : IsFormulaSet LAct Γc)
+    (hchildSz₁ : SizeOK (kitQ Czv B E) (kitD Czv (2 * dlen TAct (cutRule s p d₁ d₂))) L₁)
+    (hchildSz₂ : SizeOK (kitQ Czv B E) (kitD Czv (2 * dlen TAct (cutRule s p d₁ d₂))) L₂)
+    (hchildLen₁ : len L₁ ≤ Czv * p4 (dlen TAct d₁))
+    (hchildLen₂ : len L₂ ≤ Czv * p4 (dlen TAct d₂))
+    (hE : Czv * p4 (dlen TAct (cutRule s p d₁ d₂) + 1) ≤ E) :
+    len (vCut walkPieces Wl Wc W₁ W T s p d₁ d₂ L₁ L₂) ≤ Czv * p4 (dlen TAct (cutRule s p d₁ d₂)) ∧
+    SizeOK (kitQ Czv B E) (kitD Czv (2 * dlen TAct (cutRule s p d₁ d₂)))
+      (vCut walkPieces Wl Wc W₁ W T s p d₁ d₂ L₁ L₂) := by
+  have hD : Derivation TAct (cutRule s p d₁ d₂) := Derivation.cutRule hd₁ hd₂
+  have hd1 : 1 ≤ dlen TAct (cutRule s p d₁ d₂) := one_le_dlen hD
+  have hsD : setLen LAct s ≤ dlen TAct (cutRule s p d₁ d₂) := by
+    have := setLen_fstIdx_le_dlen hD; rwa [fstIdx_cutRule] at this
+  have hcD₁ : setLen LAct (insert p s) ≤ dlen TAct (cutRule s p d₁ d₂) :=
+    setLen_child_le_dlen_cutRule_left hD
+  have hcD₂ : setLen LAct (insert (neg LAct p) s) ≤ dlen TAct (cutRule s p d₁ d₂) :=
+    setLen_child_le_dlen_cutRule_right hD
+  have hdl : dlen TAct (cutRule s p d₁ d₂) = setLen LAct s + dlen TAct d₁ + dlen TAct d₂ + 1 :=
+    dlen_cutRule hD
+  have hdeq : dlen TAct (cutRule s p d₁ d₂) =
+      dlen TAct d₁ + dlen TAct d₂ + (setLen LAct s + 1) := by rw [hdl]; ring
+  have hps : IsFormulaSet LAct (insert p s) := IsFormulaSet.insert_iff.mpr ⟨hp, hs⟩
+  have hnps : IsFormulaSet LAct (insert (neg LAct p) s) :=
+    IsFormulaSet.insert_iff.mpr ⟨hp.neg, hs⟩
+  have hksD : len (memberList s) ≤ dlen TAct (cutRule s p d₁ d₂) :=
+    le_trans (len_memberList_le_setLen hs) hsD
+  have hkD₁ : len (memberList (insert p s)) ≤ dlen TAct (cutRule s p d₁ d₂) :=
+    le_trans (len_memberList_le_setLen hps) hcD₁
+  have hkD₂ : len (memberList (insert (neg LAct p) s)) ≤ dlen TAct (cutRule s p d₁ d₂) :=
+    le_trans (len_memberList_le_setLen hnps) hcD₂
+  have he1 : (1 : V) ≤ dlen TAct (cutRule s p d₁ d₂) + 1 := le_add_self
+  have hyp : dlen TAct d₁ ≤ dlen TAct (cutRule s p d₁ d₂) := by
+    rw [hdeq]; exact le_trans le_self_add le_self_add
+  have hyq : dlen TAct d₂ ≤ dlen TAct (cutRule s p d₁ d₂) := by
+    rw [hdeq]; exact le_trans le_add_self le_self_add
+  have hpmem : p ∈ insert p s := by simp
+  have hpD : formulaLen LAct p ≤ dlen TAct (cutRule s p d₁ d₂) :=
+    le_trans (formulaLen_le_setLen_of_mem (L := LAct) hpmem) hcD₁
+  have hnpD : formulaLen LAct (neg LAct p) ≤ dlen TAct (cutRule s p d₁ d₂) := by
+    rw [formulaLen_neg hp.isUFormula]; exact hpD
+  have hE1 : (1 : V) ≤ E := le_trans (le_trans hd1 (le_p4_self hd1))
+    (le_trans (le_mul_of_one_le_left zero_le hCz1)
+      (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE))
+  have hDE : dlen TAct (cutRule s p d₁ d₂) ≤ E := le_trans (le_p4_self hd1)
+    (le_trans (le_mul_of_one_le_left zero_le hCz1)
+      (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE))
+  have hEpre : 13 * dlen TAct (cutRule s p d₁ d₂) + 8 ≤ E := by
+    refine eroom_of_le hE hCk 13 8 (by norm_num) ?_
+    push_cast
+    exact le_rfl
+  have hEpro : 13 * dlen TAct (cutRule s p d₁ d₂) +
+      18 * ‖dlen TAct (cutRule s p d₁ d₂)‖ + 12 ≤ E := by
+    have := eroom_lin hE hCk 13 18 12 (by norm_num)
+    push_cast at this
+    exact this
+  have hE8 : 13 * dlen TAct (cutRule s p d₁ d₂) +
+      18 * ‖dlen TAct (cutRule s p d₁ d₂)‖ + 8 ≤ E := by
+    have := eroom_lin hE hCk 13 18 8 (by norm_num)
+    push_cast at this
+    exact this
+  have hnE : 18 * ‖dlen TAct (cutRule s p d₁ d₂)‖ + 7 ≤ E := by
+    have := eroom_lin hE hCk 0 18 7 (by norm_num)
+    push_cast at this
+    rw [zero_mul, zero_add] at this
+    exact this
+  have hmSp : mShift walkPieces Wc T p ≤ 4 * dlen TAct (cutRule s p d₁ d₂) :=
+    le_trans (mShift_le htbl hP.walkTable hWc T hp) (mul_le_mul_of_nonneg_left hpD zero_le)
+  have hmSnp : mShift walkPieces Wc T (neg LAct p) ≤ 4 * dlen TAct (cutRule s p d₁ d₂) :=
+    le_trans (mShift_le htbl hP.walkTable hWc T hp.neg) (mul_le_mul_of_nonneg_left hnpD zero_le)
+  have hmLp : mLen Wc T p ≤ 2 * dlen TAct (cutRule s p d₁ d₂) :=
+    le_trans le_self_add (le_trans (mLen_succ_le hWc T hp) (mul_le_mul_of_nonneg_left hpD zero_le))
+  have hmLnp : mLen Wc T (neg LAct p) ≤ 2 * dlen TAct (cutRule s p d₁ d₂) :=
+    le_trans le_self_add
+      (le_trans (mLen_succ_le hWc T hp.neg) (mul_le_mul_of_nonneg_left hnpD zero_le))
+  have hshL₁ : shiftsV L₁ ≤ Czv * p4 (dlen TAct d₁) := le_trans (shiftsV_le_len L₁) hchildLen₁
+  have hshL₂ : shiftsV L₂ ≤ Czv * p4 (dlen TAct d₂) := le_trans (shiftsV_le_len L₂) hchildLen₂
+  have hsig₁ : proSig walkPieces Wl Wc W T (insert p s) ≤
+      6 * dlen TAct (cutRule s p d₁ d₂) + 1 :=
+    proSig_le htbl hP hWc htblN hWl hWp hps
+      (one_le_len_memberList_of_mem hpmem) hcD₁ hE8 hΓ
+  have hsig₂ : proSig walkPieces Wl Wc W T (insert (neg LAct p) s) ≤
+      6 * dlen TAct (cutRule s p d₁ d₂) + 1 :=
+    proSig_le htbl hP hWc htblN hWl hWp hnps
+      (one_le_len_memberList_of_mem (by simp : neg LAct p ∈ insert (neg LAct p) s)) hcD₂ hE8 hΓ
+  have hiE₁ : mShift walkPieces Wc T p + mShift walkPieces Wc T (neg LAct p) +
+      14 * dlen TAct (cutRule s p d₁ d₂) + 5 ≤ E := by
+    refine eroom_of_le hE hCk 22 5 (by norm_num) ?_
+    push_cast
+    calc mShift walkPieces Wc T p + mShift walkPieces Wc T (neg LAct p) +
+          14 * dlen TAct (cutRule s p d₁ d₂) + 5
+        ≤ 4 * dlen TAct (cutRule s p d₁ d₂) + 4 * dlen TAct (cutRule s p d₁ d₂) +
+          14 * dlen TAct (cutRule s p d₁ d₂) + 5 :=
+          add_le_add (add_le_add (add_le_add hmSp hmSnp) le_rfl) le_rfl
+      _ = 22 * dlen TAct (cutRule s p d₁ d₂) + 5 := by ring
+  have hipE₁ : mLen Wc T p + mShift walkPieces Wc T (neg LAct p) +
+      8 * dlen TAct (cutRule s p d₁ d₂) + 4 ≤ E := by
+    refine eroom_of_le hE hCk 14 4 (by norm_num) ?_
+    push_cast
+    calc mLen Wc T p + mShift walkPieces Wc T (neg LAct p) +
+          8 * dlen TAct (cutRule s p d₁ d₂) + 4
+        ≤ 2 * dlen TAct (cutRule s p d₁ d₂) + 4 * dlen TAct (cutRule s p d₁ d₂) +
+          8 * dlen TAct (cutRule s p d₁ d₂) + 4 :=
+          add_le_add (add_le_add (add_le_add hmLp hmSnp) le_rfl) le_rfl
+      _ = 14 * dlen TAct (cutRule s p d₁ d₂) + 4 := by ring
+  have hiE₂ : mShift walkPieces Wc T p + mShift walkPieces Wc T (neg LAct p) +
+      (1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2) +
+      14 * dlen TAct (cutRule s p d₁ d₂) + 5 ≤ E := by
+    refine le_trans ?_ (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE)
+    have hlin : 28 * dlen TAct (cutRule s p d₁ d₂) + 9 ≤
+        Czv * p3 (dlen TAct (cutRule s p d₁ d₂)) := by
+      have h37 := hCk 37 (by norm_num)
+      push_cast at h37
+      exact lin_le_p3 hd1 (le_trans (le_of_eq (by norm_num : (28 : V) + 9 = 37)) h37)
+    calc mShift walkPieces Wc T p + mShift walkPieces Wc T (neg LAct p) +
+          (1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2) +
+          14 * dlen TAct (cutRule s p d₁ d₂) + 5
+        ≤ 4 * dlen TAct (cutRule s p d₁ d₂) + 4 * dlen TAct (cutRule s p d₁ d₂) +
+          (1 + (6 * dlen TAct (cutRule s p d₁ d₂) + 1) + Czv * p4 (dlen TAct d₁) + 2) +
+          14 * dlen TAct (cutRule s p d₁ d₂) + 5 :=
+          add_le_add (add_le_add (add_le_add (add_le_add hmSp hmSnp)
+            (add_le_add (add_le_add (add_le_add le_rfl hsig₁) hshL₁) le_rfl)) le_rfl) le_rfl
+      _ ≤ (28 * dlen TAct (cutRule s p d₁ d₂) + 9) +
+          Czv * p4 (dlen TAct d₁) + Czv * p4 (dlen TAct d₂) :=
+          le_of_add_eq' (c := Czv * p4 (dlen TAct d₂)) (by ring)
+      _ ≤ Czv * p4 (dlen TAct (cutRule s p d₁ d₂)) := rec2₄ le_add_self hdeq hlin
+  have hipE₂ : mLen Wc T (neg LAct p) +
+      (1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2) +
+      8 * dlen TAct (cutRule s p d₁ d₂) + 4 ≤ E := by
+    refine le_trans ?_ (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE)
+    have hlin : 16 * dlen TAct (cutRule s p d₁ d₂) + 8 ≤
+        Czv * p3 (dlen TAct (cutRule s p d₁ d₂)) := by
+      have h24 := hCk 24 (by norm_num)
+      push_cast at h24
+      exact lin_le_p3 hd1 (le_trans (le_of_eq (by norm_num : (16 : V) + 8 = 24)) h24)
+    calc mLen Wc T (neg LAct p) +
+          (1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2) +
+          8 * dlen TAct (cutRule s p d₁ d₂) + 4
+        ≤ 2 * dlen TAct (cutRule s p d₁ d₂) +
+          (1 + (6 * dlen TAct (cutRule s p d₁ d₂) + 1) + Czv * p4 (dlen TAct d₁) + 2) +
+          8 * dlen TAct (cutRule s p d₁ d₂) + 4 :=
+          add_le_add (add_le_add (add_le_add hmLnp
+            (add_le_add (add_le_add (add_le_add le_rfl hsig₁) hshL₁) le_rfl)) le_rfl) le_rfl
+      _ ≤ (16 * dlen TAct (cutRule s p d₁ d₂) + 8) +
+          Czv * p4 (dlen TAct d₁) + Czv * p4 (dlen TAct d₂) :=
+          le_of_add_eq' (c := Czv * p4 (dlen TAct d₂)) (by ring)
+      _ ≤ Czv * p4 (dlen TAct (cutRule s p d₁ d₂)) := rec2₄ le_add_self hdeq hlin
+  have hbn₁ : termLen LAct (bnum (dlen TAct d₁)) ≤ E := eroom_bnum hE hCk hyp
+  have hbn₂ : termLen LAct (bnum (dlen TAct d₂)) ≤ E := eroom_bnum hE hCk hyq
+  have hbn' : termLen LAct (bnum (dlen TAct (cutRule s p d₁ d₂))) ≤ E := eroom_bnum hE hCk le_rfl
+  have hLn : setLen LAct s + dlen TAct d₁ + dlen TAct d₂ + 1 ≤
+      dlen TAct (cutRule s p d₁ d₂) := le_of_eq hdl.symm
+  have hnd : dlen TAct (cutRule s p d₁ d₂) ≤ 2 * dlen TAct (cutRule s p d₁ d₂) :=
+    le_two_mul_self _
+  have hgE₁ : len (memberList (insert p s)) + 1 + shiftsV L₁ + 1 ≤ E := by
+    refine le_trans ?_ (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE)
+    have hlin : dlen TAct (cutRule s p d₁ d₂) + 2 ≤
+        Czv * p3 (dlen TAct (cutRule s p d₁ d₂)) := by
+      have h3 := hCk 3 (by norm_num)
+      push_cast at h3
+      have := lin_le_p3 (a := 1) (b := 2) hd1 (by
+        exact le_trans (le_of_eq (by norm_num : (1 : V) + 2 = 3)) h3)
+      rw [one_mul] at this
+      exact this
+    calc len (memberList (insert p s)) + 1 + shiftsV L₁ + 1
+        ≤ dlen TAct (cutRule s p d₁ d₂) + 1 + Czv * p4 (dlen TAct d₁) + 1 :=
+          add_le_add (add_le_add (add_le_add hkD₁ le_rfl) hshL₁) le_rfl
+      _ ≤ (dlen TAct (cutRule s p d₁ d₂) + 2) +
+          Czv * p4 (dlen TAct d₁) + Czv * p4 (dlen TAct d₂) :=
+          le_of_add_eq' (c := Czv * p4 (dlen TAct d₂)) (by ring)
+      _ ≤ Czv * p4 (dlen TAct (cutRule s p d₁ d₂)) := rec2₄ le_add_self hdeq hlin
+  have hgE₂ : len (memberList (insert (neg LAct p) s)) + 1 + shiftsV L₂ + 1 ≤ E := by
+    refine le_trans ?_ (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE)
+    have hlin : dlen TAct (cutRule s p d₁ d₂) + 2 ≤
+        Czv * p3 (dlen TAct (cutRule s p d₁ d₂)) := by
+      have h3 := hCk 3 (by norm_num)
+      push_cast at h3
+      have := lin_le_p3 (a := 1) (b := 2) hd1 (by
+        exact le_trans (le_of_eq (by norm_num : (1 : V) + 2 = 3)) h3)
+      rw [one_mul] at this
+      exact this
+    calc len (memberList (insert (neg LAct p) s)) + 1 + shiftsV L₂ + 1
+        ≤ dlen TAct (cutRule s p d₁ d₂) + 1 + Czv * p4 (dlen TAct d₂) + 1 :=
+          add_le_add (add_le_add (add_le_add hkD₂ le_rfl) hshL₂) le_rfl
+      _ ≤ (dlen TAct (cutRule s p d₁ d₂) + 2) +
+          Czv * p4 (dlen TAct d₁) + Czv * p4 (dlen TAct d₂) :=
+          le_of_add_eq' (c := Czv * p4 (dlen TAct d₁)) (by ring)
+      _ ≤ Czv * p4 (dlen TAct (cutRule s p d₁ d₂)) := rec2₄ le_add_self hdeq hlin
+  have hgE3 : mShift walkPieces Wc T p + mShift walkPieces Wc T (neg LAct p) +
+      (1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2) +
+      (1 + proSig walkPieces Wl Wc W T (insert (neg LAct p) s) + shiftsV L₂ + 2) +
+      (len (memberList s) + 1) + 1 + 1 ≤ E := by
+    refine le_trans ?_ (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE)
+    have hlin : 21 * dlen TAct (cutRule s p d₁ d₂) + 11 ≤
+        Czv * p3 (dlen TAct (cutRule s p d₁ d₂)) := by
+      have h32 := hCk 32 (by norm_num)
+      push_cast at h32
+      exact lin_le_p3 hd1 (le_trans (le_of_eq (by norm_num : (21 : V) + 11 = 32)) h32)
+    calc mShift walkPieces Wc T p + mShift walkPieces Wc T (neg LAct p) +
+          (1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2) +
+          (1 + proSig walkPieces Wl Wc W T (insert (neg LAct p) s) + shiftsV L₂ + 2) +
+          (len (memberList s) + 1) + 1 + 1
+        ≤ 4 * dlen TAct (cutRule s p d₁ d₂) + 4 * dlen TAct (cutRule s p d₁ d₂) +
+          (1 + (6 * dlen TAct (cutRule s p d₁ d₂) + 1) + Czv * p4 (dlen TAct d₁) + 2) +
+          (1 + (6 * dlen TAct (cutRule s p d₁ d₂) + 1) + Czv * p4 (dlen TAct d₂) + 2) +
+          (dlen TAct (cutRule s p d₁ d₂) + 1) + 1 + 1 :=
+          add_le_add (add_le_add (add_le_add (add_le_add (add_le_add (add_le_add hmSp hmSnp)
+            (add_le_add (add_le_add (add_le_add le_rfl hsig₁) hshL₁) le_rfl))
+            (add_le_add (add_le_add (add_le_add le_rfl hsig₂) hshL₂) le_rfl))
+            (add_le_add hksD le_rfl)) le_rfl) le_rfl
+      _ = (21 * dlen TAct (cutRule s p d₁ d₂) + 11) +
+          Czv * p4 (dlen TAct d₁) + Czv * p4 (dlen TAct d₂) := by ring
+      _ ≤ Czv * p4 (dlen TAct (cutRule s p d₁ d₂)) := rec2₄ le_add_self hdeq hlin
+  refine ⟨?_, ?_⟩
+  · rw [len_vCut_eq]
+    have hlenPre : len (proCutPre walkPieces Wc T p) ≤ 64 * dlen TAct (cutRule s p d₁ d₂) :=
+      le_trans (len_proCutPre_le hWc walkPieces T hp) (mul_le_mul_of_nonneg_left hpD zero_le)
+    have hlenCut₁ : len (cutPro walkPieces Wl Wc W T s p
+        (mShift walkPieces Wc T p + mShift walkPieces Wc T (neg LAct p))
+        (mLen Wc T p + mShift walkPieces Wc T (neg LAct p))) ≤
+        55 * dlen TAct (cutRule s p d₁ d₂) + 13 :=
+      len_cutPro_le htbl hP hWl hWc walkPieces W T _ _ hs hp hcD₁ hsD0p
+    have hlenCut₂ : len (cutPro walkPieces Wl Wc W T s (neg LAct p)
+        (mShift walkPieces Wc T p + mShift walkPieces Wc T (neg LAct p) +
+          (1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2))
+        (mLen Wc T (neg LAct p) +
+          (1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2))) ≤
+        55 * dlen TAct (cutRule s p d₁ d₂) + 13 :=
+      len_cutPro_le htbl hP hWl hWc walkPieces W T _ _ hs hp.neg hcD₂ hsD0np
+    have hX : 174 * dlen TAct (cutRule s p d₁ d₂) + 47 ≤
+        Czv * p3 (dlen TAct (cutRule s p d₁ d₂)) := by
+      have h221 := hCk 221 (by norm_num)
+      push_cast at h221
+      exact lin_le_p3 hd1 (le_trans (le_of_eq (by norm_num : (174 : V) + 47 = 221)) h221)
+    calc len (proCutPre walkPieces Wc T p) +
+          (len (cutPro walkPieces Wl Wc W T s p
+            (mShift walkPieces Wc T p + mShift walkPieces Wc T (neg LAct p))
+            (mLen Wc T p + mShift walkPieces Wc T (neg LAct p))) +
+            (len L₁ + (6 +
+              (len (cutPro walkPieces Wl Wc W T s (neg LAct p)
+                (mShift walkPieces Wc T p + mShift walkPieces Wc T (neg LAct p) +
+                  (1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2))
+                (mLen Wc T (neg LAct p) +
+                  (1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2))) +
+                (len L₂ + (6 + 9))))))
+        ≤ 64 * dlen TAct (cutRule s p d₁ d₂) +
+          ((55 * dlen TAct (cutRule s p d₁ d₂) + 13) +
+            (Czv * p4 (dlen TAct d₁) + (6 +
+              ((55 * dlen TAct (cutRule s p d₁ d₂) + 13) +
+                (Czv * p4 (dlen TAct d₂) + 15))))) :=
+          add_le_add hlenPre (add_le_add hlenCut₁ (add_le_add hchildLen₁ (add_le_add le_rfl
+            (add_le_add hlenCut₂ (add_le_add hchildLen₂ (by norm_num))))))
+      _ = (174 * dlen TAct (cutRule s p d₁ d₂) + 47) +
+          Czv * p4 (dlen TAct d₁) + Czv * p4 (dlen TAct d₂) := by ring
+      _ ≤ Czv * p4 (dlen TAct (cutRule s p d₁ d₂)) := rec2₄ le_add_self hdeq hX
+  · exact cut_arm_size (Wl := Wl) (Wc := Wc) (W₁ := W₁) (W := W) (T := T) (s := s) (p := p)
+      (d₁ := d₁) (d₂ := d₂) (L₁ := L₁) (L₂ := L₂)
+      (B := B) (E := E) (Cz := Czv) (N' := N') (B' := B')
+      (D := dlen TAct (cutRule s p d₁ d₂)) (d := dlen TAct (cutRule s p d₁ d₂))
+      (Γ := Γ) (Γ₄ := Γ₄) (Γc := Γc)
+      hWp hW₁ htbl hP htblN hWl hWc hPle hs hp hpD hnpD hcD₁ hcD₂ hsD0p hsD0np
+      hEpre hEpro hiE₁ hipE₁ hiE₂ hipE₂ hΓ hLay₁ hLay0₁ hDp₁ hΓ₄ hLay₄ hLay0₄ hDnp₄ hΓc
+      hDE hnd hCQ hCD hCz1 hchildSz₁ hchildSz₂ hE1 hcG hgE₁ hgE₂ hbn₁ hbn₂ hbn' hnE hLn hnd
+      hgE3 hCbin
+
+end cutWrapper
+
 end ArithS
