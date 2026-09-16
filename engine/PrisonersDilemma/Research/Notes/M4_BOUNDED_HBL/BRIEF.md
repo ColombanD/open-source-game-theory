@@ -1673,3 +1673,29 @@ collision), exactly as the `axm` probe was in Part 4. Quarantined as
 script, heredoc splice, `sed`, or any bulk substitution — transcribe literally, one piece at a
 time, with the Edit tool.** Rewrite `wk` fresh; do not repair either quarantined probe.
 IN FLIGHT: `Verify5` Part 7 (`wk` transcribed literally, then the seven, then the recursion).
+
+**§11 status — `Verify5` glue, Part 7: `wk` and `shift` wrappers LANDED, 4 of 10 (e8498f3, §§18–19;
+build 3270, census 874, all standard).** **THE EDITING RULE IS VINDICATED: both wrappers were
+transcribed LITERALLY via Edit, one pass each, and both were GREEN AT THE FIRST ATTEMPT — `wk` in
+5 s, `shift` in 7 s, no repair cycles, no corrupted probes.** The two scripted splices of Parts 4
+and 6 cost a round each; literal transcription cost none. Both written UNABBREVIATED (trap 18),
+implicits PINNED (trap 16), every E-room from §17's helper family (`eroom_lin` at `(13,18,12)`,
+`(14,0,5)`/`(16,0,8)`, `(0,18,7)`; `eroom_bnum` for the child's and parent's `dlen`). The two
+goal-fact offsets and the length half close identically in both: a linear term plus the child's
+`Czv·p4 (dlen d')`, absorbed by `rec1₄` at `hdeq : dlen (rule s d') = dlen d' + (setLen s + 1)`.
+Constants follow the selector bound — `wk` at `44·D + 11` needs 69 and 61; `shift` at `62·D + 23`
+needs 99 and 91. REMAINING 6: `or`, `and`, `cut`, `all`, `exs`, `axm`.
+**`or` IS MATERIALLY HARDER than `wk`/`shift`** (read before drafting, per trap 18 — it does NOT
+mirror them): it needs `hipE`/`hiqE` (offset E-rooms over `memTop walkPieces Wc T s (p ^⋎ q) 0 +
+descCountF walkPieces 0 q + 1 + 14·D + 6` and `memTop … + 1 + 8·D + 4`), `hgE2` (carrying TWO
+`proSig` terms, `proSig … (insert q s)` and `proSig … (insert p (insert q s))`), and `hDp`/`hDq`
+(dossier hypotheses, supplied at glue level by `Prologue.layout_or` — verified to yield exactly
+those two at exactly those offsets). The three bounds are located: **`memTop_le ≤ i + 6·D + 1`**
+(`Prologue:1787`), **`descCountF_le_of_len ≤ 2·D`** (`Verify2:2224`), **`proSig_le ≤ 6·D + 1`**
+(`Prologue:2937`, itself needing an `eroom_lin` at `(13,18,8)`).
+**PLAN FOR PART 8 (the agent's, adopted): widen the helper family FIRST** with an
+offset-plus-linear room covering the `memTop`/`descCountF`/`proSig` shapes, BEFORE transcribing
+`or` — the same move that made Part 7 cheap, and `and`/`cut` reuse it (same `proIns`-based prologue,
+two dossier hypotheses each).
+IN FLIGHT: `Verify5` Part 8 (the offset helper, then `or`/`and`/`cut`/`all`/`exs`/`axm`, then the
+recursion).
