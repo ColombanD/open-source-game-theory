@@ -1913,3 +1913,37 @@ instruction directed file edits via `sed`/heredocs; the agent correctly DID NOT 
 files, citing the editing rule issued after the two corrupted probes. That precedence is right and
 stands.
 IN FLIGHT: `Verify5` Part 16 (the two bridging one-liners, then the ten-arm recursion).
+
+**§11 status — `Verify5` glue, Part 16: the two bridging lemmas BANKED; the `and`/`cut` obstruction
+DIAGNOSED AT THE SOURCE (7a6aaa8, §15; build 3266, census 887, all standard, sentinel-verified).**
+`kitD_two_mul_le (Cz d : V) : kitD Cz (2 * d) ≤ kitD (8 * Cz) d` and
+`kitQ_mono_const {C C'} (B E) (h : C ≤ C') : kitQ C B E ≤ kitQ C' B E`, both from
+`pow3_eq_p3`/`p3_two_mul`/`p3_mono`/`le_of_add_eq'`.
+THE RECURSION'S SHAPE IS SETTLED: `Derivation.induction1` (Foundation
+`.../Syntax/Proof/Basic.lean:560`) fixes the arm order `hAxL, hVerumIntro, hAnd, hOr, hAll, hExs,
+hWk, hShift, hCut, hRoot`, motive `P : V → Prop` with `Γ-[1]-Predicate P`; the motive is
+`P ρ := Czv·p4 (dlen ρ + 1) ≤ E → ∀ L Γ, VerifyGraph'' … ρ L → IsFormulaSet Γ → NodeLay …
+(fstIdx ρ) → len L ≤ Czv·p4 (dlen ρ) ∧ SizeOK (kitQ Czv B E) (kitD Czv (2·dlen ρ))`, with
+`ArmHyps` at `Cz := 8·Czv`, child→parent widening by `kitD_mono` on `2·y ≤ 2·d`, E-room descent by
+`child_bound4`.
+**THE OBSTRUCTION, verified by the coordinator at the source (not a wrapper artefact):
+`and_arm_size` (Verify5:972) BINDS `Γ₃` IN ITS OWN SIGNATURE** and requires `hΓ₃`,
+`hLay₃ : Layout … Γ₃ s (1 + proSig (insert p s) + shiftsV L₁ + 2)`, `hDq₃`; **`cut_arm_size`
+(Verify5:1029) binds `Γ₄` AND `Γc`** and requires `hLay₁`, `hLay0₁`, `hDp₁`, `hΓ₄`, `hLay₄`,
+`hLay0₄`, `hDnp₄`, `hΓc`. The induction supplies only `NodeLay … Γ (fstIdx ρ)` (i.e. `Layout … s
+0`); `Γ₃`/`Γ₄`/`Γc` are existential witnesses the recursion would have to CONSTRUCT. The machinery
+exists — `Layout.transport` (Prologue:672), `Layout0.transport` (5700), `dossF_transport'`,
+`Layout.mono` (5691) — and Prologue's own proofs (2999, 3446, 4667, 5231) show the idiom: transport
+the node layout through each block, `rwa` by that block's `shiftsV` equation. **THE OTHER EIGHT ARMS
+NEED NO SHIFTED-CONTEXT EXTRAS.**
+**COORDINATOR'S DECISION: build the transport chains as SEPARATE LEMMAS; do NOT restate the two
+wrappers.** Reasons in order of weight: the ten wrappers are green, verified and expensive to
+reproduce — touching two risks a known-good asset for a structural preference; trap 15 says
+context-heavy construction must not sit inside an induction body, and by the same argument it does
+not belong inside a wrapper the induction calls — a separate lemma is provable and checkable on
+its own; and uniform wrappers keep the recursion reading the same for all ten arms, which is what
+makes it reviewable.
+PROCESS: the two lemmas were sentinel-tested under a FOREGROUND compile (a planted failure fired at
+its line), so the 7 s exit-0 was honest — the Part-15 `nohup` false green is not recurring.
+IN FLIGHT: `Verify5` Part 17 (the recursion with 8 arms discharged + 2 named hypotheses; then the
+two transport chains; then their discharge → the unconditional `verifyGraph''_size4_of_arms`).
