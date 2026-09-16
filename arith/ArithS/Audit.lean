@@ -1658,6 +1658,21 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 -- base `8 + 30·d` and the true slack `12 + 54·d`. Solve the two equations rather than iterating a third time.
 #print axioms exs_wrapper
 
+-- U10 (Necessitation/Verify5, 2026-09-16): §26 — the `axm` MOTIVE WRAPPER, the TENTH AND LAST, and the only one
+-- whose prologue the wrapper does NOT build: `pro` arrives from the shifted CERTIFICATE TABLE, so its three facts
+-- (`SizeOK (entryB Cv p) (entryB Cv p) pro`, `len pro ≤ entryB Cv p`, `shiftsV pro ≤ entryB Cv p`) are EXPLICIT
+-- wrapper hypotheses, which the recursion supplies by destructuring `AxmTableOK'` at the node's entry exactly as
+-- `Verify4`'s `axm` arm does. Written UNABBREVIATED per TRAP 18: `axm_arm_size` hard-wires `dlen TAct (axm s p)` in
+-- `hp3E`/`hgoalE`/`hbn`/`hleaf`/`hLn`/`hnE` and in its conclusion's class, so no `d` abbreviation can be pinned in.
+-- The arm concludes at `kitD Cz (dlen (axm s p))` while the motive wants `kitD Czv (2·dlen)`, so the result is
+-- widened by `.mono le_rfl (kitD_mono (le_two_mul_self _))` — the one place a wrapper CHANGES the size class.
+-- `hleaf` CANNOT use §15's `dlen_leafCode_le_kitD` (that is stated at `kitD Cz (2·d)`, the wrong shape here); it
+-- takes the raw route `dlen_leafCode_le' htblN hLn le_rfl` → `sum2D_le_layD` → `layD_le_kitD le_rfl hCD`, landing
+-- at `kitD Czv (dlen)` exactly. The length half is LINEAR, not cubic: `axm_arm_len` gives `len pro + 9`, and
+-- `entryB Cv p = Cv·p3 (|p|+1)` is pushed to `dlen+1` by `axm_hpd` and then to `8·Cv·p3 dlen` by `p3_succ_le`, so
+-- the single constant is `8·Cv + 9 ≤ Czv` — no `capE4`, no `rec1₄`/`rec2₄` room at all, since `axm` is a LEAF.
+#print axioms axm_wrapper
+
 -- U10 (Necessitation/Package, 2026-09-15): THE PACKAGE AND THE HEADLINE THEOREMS, with `Assemble.SizeOracle`
 -- BYPASSED. `SizeOracle` is NOT PROVABLE as stated (it binds the numeral table `T` with no `NumTableOK T N' B'`,
 -- while every prologue size lemma requires one and lands at `layQ B B' D`/`layD N' B' D`; `NumTableOK` is never a

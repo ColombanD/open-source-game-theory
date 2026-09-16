@@ -3052,4 +3052,113 @@ theorem exs_wrapper {tbl N N' B' Wl Wc W₂ W T B E Czv Γ s p t d' L' : V}
 
 end exsWrapper
 
+/-! ## 26. The `axm` motive wrapper — the last arm
+
+Written UNABBREVIATED per TRAP 18: `axm_arm_size` hard-wires `dlen TAct (axm s p)` in `hp3E`, `hgoalE`, `hbn`,
+`hleaf`, `hLn`, `hnE` and in its conclusion's class, so no `d` abbreviation can be pinned into it.
+
+`axm` is the only arm whose prologue is NOT built by the wrapper: the certificate `pro` comes from the shifted
+certificate table, so its three facts — `SizeOK (entryB Cv p) (entryB Cv p) pro`, `len pro ≤ entryB Cv p` and
+`shiftsV pro ≤ entryB Cv p` — are EXPLICIT wrapper hypotheses, which the recursion supplies by destructuring
+`AxmTableOK'` at the node's table entry (`Verify4`'s `axm` arm does exactly that).
+
+Length half: `axm_arm_len` gives `len pro + 9`; `entryB Cv p = Cv·p3 (|p|+1)` and `axm_hpd` push `|p|+1` up to
+`dlen + 1`, then `p3_succ_le` turns `p3 (dlen+1)` into `8·p3 dlen`, so the constant is `8·Cv + 9 ≤ Czv`.
+
+`hleaf` cannot use §15's `dlen_leafCode_le_kitD` (that lands at `kitD Cz (2·d)`, while this arm's class is
+`kitD Cz (dlen)`); it takes §3's `dlen_leafCode_le'` then `sum2D_le_layD` then `layD_le_kitD le_rfl` directly.
+The conclusion is then widened to the motive's `kitD Czv (2·dlen)` by §15's `kitD_mono`. -/
+
+section axmWrapper
+
+set_option maxHeartbeats 2000000 in
+/-- **THE `axm` MOTIVE WRAPPER.** -/
+theorem axm_wrapper {tbl N N' B' Wc W₂ T B E Czv Cv Γ s p pro : V}
+    (htblN : NumTableOK T N' B') (hWc : Wc = certPieces) (hW₂ : W₂ = frag2Pieces)
+    (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (hCz1 : 1 ≤ Czv) (hCk : ∀ n : ℕ, n ≤ 1000000 → ((n : ℕ) : V) ≤ Czv)
+    (hCD : 27 * N' + 525600 * B' ≤ Czv)
+    (hcG : 4 * ((cDer : V) + cDlen + cFst + 6) ≤ Czv)
+    (hCv : Cv ≤ Czv) (hCv8 : 8 * Cv + 9 ≤ Czv)
+    (hs : IsFormulaSet LAct s) (hps : p ∈ s) (hpT : p ∈ TAct.Δ₁Class)
+    (hΓ : IsFormulaSet LAct Γ) (hLay : NodeLay walkPieces Wc T Γ s)
+    (hszPro : SizeOK (entryB Cv p) (entryB Cv p) pro)
+    (hlenPro : len pro ≤ entryB Cv p)
+    (hshPro : shiftsV pro ≤ entryB Cv p)
+    (hE : Czv * p4 (dlen TAct (axm s p) + 1) ≤ E) :
+    len (vAxm' walkPieces Wc W₂ T s p pro) ≤ Czv * p4 (dlen TAct (axm s p)) ∧
+    SizeOK (kitQ Czv B E) (kitD Czv (2 * dlen TAct (axm s p)))
+      (vAxm' walkPieces Wc W₂ T s p pro) := by
+  have hD : Derivation TAct (axm s p) := Derivation.axm hs hps hpT
+  have hd1 : 1 ≤ dlen TAct (axm s p) := one_le_dlen hD
+  have hsD : setLen LAct s ≤ dlen TAct (axm s p) := by
+    have := setLen_fstIdx_le_dlen hD; rwa [fstIdx_axm] at this
+  have hkD : len (memberList s) ≤ dlen TAct (axm s p) :=
+    le_trans (len_memberList_le_setLen hs) hsD
+  have hdl : dlen TAct (axm s p) = setLen LAct s + 1 := dlen_axm hD
+  have hLn : setLen LAct s + 1 ≤ dlen TAct (axm s p) := le_of_eq hdl.symm
+  have hpd : formulaLen LAct p + 1 ≤ dlen TAct (axm s p) + 1 := axm_hpd hD hps
+  have he1 : (1 : V) ≤ dlen TAct (axm s p) + 1 := le_add_self
+  have hE1 : (1 : V) ≤ E := le_trans (le_trans hd1 (le_p4_self hd1))
+    (le_trans (le_mul_of_one_le_left zero_le hCz1)
+      (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE))
+  have hp3E : p3 (dlen TAct (axm s p) + 1) ≤ E :=
+    le_trans (p3_le_p4 he1) (le_trans (le_mul_of_one_le_left zero_le hCz1) hE)
+  have hnE : 18 * ‖dlen TAct (axm s p)‖ + 7 ≤ E := by
+    have := eroom_lin hE hCk 0 18 7 (by norm_num)
+    push_cast at this
+    rw [zero_mul, zero_add] at this
+    exact this
+  have hbn : termLen LAct (bnum (dlen TAct (axm s p))) ≤ E := eroom_bnum hE hCk le_rfl
+  have hentryP4 : entryB Cv p ≤ 8 * Cv * p3 (dlen TAct (axm s p)) := by
+    unfold entryB
+    calc Cv * p3 (formulaLen LAct p + 1) ≤ Cv * p3 (dlen TAct (axm s p) + 1) :=
+          mul_le_mul_of_nonneg_left (p3_mono hpd) zero_le
+      _ ≤ Cv * (8 * p3 (dlen TAct (axm s p))) :=
+          mul_le_mul_of_nonneg_left (p3_succ_le hd1) zero_le
+      _ = 8 * Cv * p3 (dlen TAct (axm s p)) := by ring
+  have hshE : shiftsV pro ≤ 8 * Cv * p3 (dlen TAct (axm s p)) := le_trans hshPro hentryP4
+  have hgoalE : len (memberList s) + 1 + shiftsV pro + 1 + 1 ≤ E := by
+    refine le_trans ?_ (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE)
+    calc len (memberList s) + 1 + shiftsV pro + 1 + 1
+        ≤ dlen TAct (axm s p) + 1 + 8 * Cv * p3 (dlen TAct (axm s p)) + 1 + 1 :=
+          add_le_add (add_le_add (add_le_add (add_le_add hkD le_rfl) hshE) le_rfl) le_rfl
+      _ = (dlen TAct (axm s p) + 3) + 8 * Cv * p3 (dlen TAct (axm s p)) := by ring
+      _ ≤ 4 * p3 (dlen TAct (axm s p)) + 8 * Cv * p3 (dlen TAct (axm s p)) :=
+          add_le_add (by
+            calc dlen TAct (axm s p) + 3 ≤ p3 (dlen TAct (axm s p)) + 3 * p3 (dlen TAct (axm s p)) :=
+                  add_le_add (le_p3_self hd1)
+                    (le_mul_of_one_le_right zero_le (one_le_p3 hd1))
+              _ = 4 * p3 (dlen TAct (axm s p)) := by ring) le_rfl
+      _ = (4 + 8 * Cv) * p3 (dlen TAct (axm s p)) := by ring
+      _ ≤ Czv * p3 (dlen TAct (axm s p)) :=
+          mul_le_mul_of_nonneg_right (by
+            refine le_trans ?_ hCv8
+            exact le_of_add_eq' (c := 5) (by ring)) zero_le
+      _ ≤ Czv * p4 (dlen TAct (axm s p)) :=
+          mul_le_mul_of_nonneg_left (p3_le_p4 hd1) zero_le
+  have hleaf : dlen TAct (leafCode T (setLen LAct s) (dlen TAct (axm s p))) ≤
+      kitD Czv (dlen TAct (axm s p)) :=
+    le_trans (dlen_leafCode_le' htblN hLn le_rfl)
+      (le_trans (sum2D_le_layD N' B' (dlen TAct (axm s p))) (layD_le_kitD le_rfl hCD))
+  refine ⟨?_, ?_⟩
+  · rw [axm_arm_len]
+    have hX : 8 * Cv * p3 (dlen TAct (axm s p)) + 9 ≤ Czv * p3 (dlen TAct (axm s p)) := by
+      calc 8 * Cv * p3 (dlen TAct (axm s p)) + 9
+          ≤ 8 * Cv * p3 (dlen TAct (axm s p)) + 9 * p3 (dlen TAct (axm s p)) :=
+            add_le_add le_rfl (le_mul_of_one_le_right zero_le (one_le_p3 hd1))
+        _ = (8 * Cv + 9) * p3 (dlen TAct (axm s p)) := by ring
+        _ ≤ Czv * p3 (dlen TAct (axm s p)) := mul_le_mul_of_nonneg_right hCv8 zero_le
+    calc len pro + 9 ≤ 8 * Cv * p3 (dlen TAct (axm s p)) + 9 :=
+          add_le_add (le_trans hlenPro hentryP4) le_rfl
+      _ ≤ Czv * p3 (dlen TAct (axm s p)) := hX
+      _ ≤ Czv * p4 (dlen TAct (axm s p)) :=
+          mul_le_mul_of_nonneg_left (p3_le_p4 hd1) zero_le
+  · exact (axm_arm_size (Wc := Wc) (W₂ := W₂) (T := T) (s := s) (p := p) (pro := pro)
+      (B := B) (E := E) (Cv := Cv) (Cz := Czv)
+      hW₂ hs hps hpT hszPro hCv hCz1 hE1 hPle hp3E hgoalE hbn hcG hleaf hLn hnE).mono le_rfl
+      (kitD_mono (le_two_mul_self _))
+
+end axmWrapper
+
 end ArithS
