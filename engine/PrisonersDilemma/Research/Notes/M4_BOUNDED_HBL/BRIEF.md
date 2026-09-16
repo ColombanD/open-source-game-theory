@@ -2406,3 +2406,41 @@ green-tree rule outranks a batching preference; when they collide, the green tre
 is needed.** Recording the reason in the commit message was the right handling.
 IN FLIGHT: `Verify5` Part 28 — delete the binder, then transcribe the `cut` discharge (every piece
 verified piecewise), banking at natural seams → `armHyps_of_arms` unconditional.
+
+**§11 status — `Verify5` Part 28: `armHyps_of_arms` IS UNCONDITIONAL (c2f0e2e, 58d39f5, ed0468e;
+full package green 3270 jobs, census 900, zero `sorry` tree-wide, `pblt_of_sizeThm` on the standard
+three axioms).** THE HARDEST SINGLE PIECE OF THE CONSTRUCTION IS DONE. Coordinator-verified:
+`hAndArm`/`hCutArm` appear NOWHERE in code (only two stale Audit prose lines), the signature
+carries only tables, constants, `hV4`, `hA`, `hd`, and no `sorry` exists anywhere in the package.
+THE `cut` CHAIN WAS TWO SEAMS, NOT THREE: `c2f0e2e` §26.7 `cut_input` (`proCutPre` + the first
+`cutPro` selector; its statement deliberately **does not mention `cutPro`** — a first draft tried
+`rw [cutPro, if_pos hs0]` and failed because the goal is an `∃ Γ₁, …` that never contains the
+selector; each branch supplies its own witness and the selector is re-assembled inside
+`sizeOK_cutPro`, which does its own split; offsets from `mShift`/`mLen`, so the `and` rooms don't
+apply and the two offset rooms come from the GENERAL `eroom_of_le` at `22D+5` and `14D+4`);
+`58d39f5` §26.8 `cut_trans` — **`and_cross` is REUSED VERBATIM** (its binders are parametric in the
+context and its `heq₁` is exactly what `cut_input` returns), while `and_trans` genuinely does NOT
+transfer (it carries a `Layout … (0 + 1 + proSig)` while `cut`'s parent is a `PLay` at the prefix's
+own shift, the empty-parent case being live). STRUCTURAL SUBTLETY: `cut_input` does NOT supply
+`cut_wrapper`'s `Γ`/`hLay₁` — those are the pre-selector, post-`proCutPre` context, one block
+EARLIER, while `cut_input`'s `Γ₁` is the crossing context one block LATER; both name the same
+`proCutPre` term so the two invocations agree DEFINITIONALLY, confirmed by compiling rather than
+assuming.
+**THREE METHOD POINTS, all the agent's:** (a) TWO PLANNED LEMMAS DISSOLVED ON INSPECTION —
+`cutPro_ok` (Part 26) and now `and_cross`, reused verbatim; both found by COMPILING THE APPLICATION
+BEFORE WRITING ANYTHING, the cheapest way to discover reuse. (b) **A SIXTH DEFECT-CLASS INSTANCE
+WAS NEARLY REPORTED AND CHECKED FIRST** — the "missing `Cs` domination binder" was an artifact of
+drafting toward `cutBlock_ok` (applicability side) instead of `cut_wrapper`; `ChildOK` appears
+nowhere in Verify5 and `cut_wrapper` takes plain `SizeOK`+`len`. Checking before escalating saved a
+round and a spurious record entry. (c) A FAILED REWRITE TAUGHT THE RIGHT STATEMENT SHAPE (the
+selector-free `cut_input`).
+**NOT YET THE LAST HYPOTHESIS — the agent was precise about this rather than overclaiming.**
+`ArmHypsAll` still needs a lemma instantiating `armHyps_of_arms` at the `ArmHyps` shape: construct
+`Czv` from `(N', B', Cv)` LAST in `Verify4`'s style (`Csv := 25731 + Cv`), discharge the nine
+constant hypotheses, supply `hV4` by `obtain ⟨Cs, Ck, hV4⟩ := verifyGraph''_ok4`, and bridge the two
+statement shapes — `(dlen+1)^4` vs `p4 (dlen)` via `pow4_eq_p4`, and `kitD Cz (dlen ρ)` vs
+`kitD Czv (2·dlen ρ)` via §15's `kitD_two_mul_le`. Then `verifyGraph''_size4_of_arms` IS
+`Package.SizeThm N' B' Cv Cz`, and `SizeThmAll` follows by choosing `Cz` per `(N', B')`.
+FOLLOW-UPS folded into the next commit: the stale `Audit.lean` comments at 1717 and 1750 (they
+still say `hCutArm` remains), and a missing `#print axioms armHyps_of_arms` census entry.
+IN FLIGHT: `Verify5` Part 29 — the instantiation lemma + the two follow-ups → `SizeThm` discharged.
