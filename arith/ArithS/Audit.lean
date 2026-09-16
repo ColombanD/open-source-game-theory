@@ -1738,6 +1738,23 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms and_roomI
 #print axioms and_roomIP
 
+-- U10 (Necessitation/Verify5, 2026-09-16): §26.3 — THE TWO CHILD-CARRYING ROOMS. `postIns_ok`'s `hsE`/`hcE` carry
+-- the CHILD's shift `sv` on the left, so they are not pure linear caps; both still close at the arm's OWN single cap
+-- `Czv·p4 (D+1) ≤ E`, by splitting it with `Bounds.p4_split D 1 : p4 D + p3 (D+1) ≤ p4 (D+1)` — the child term
+-- under `p4 D` (`child_bound4`), the linear part under the spare `p3 (D+1)`.
+-- The two differ in whether that spare suffices: `hsE`'s linear part is `D + 4`, covered from `1 ≤ D`
+-- (`lin4_le_p3succ`, `5 ≤ 8` at `D = 1`); `hcE`'s is `6·D + 4`, and `6·D + 4 ≤ p3 (D+1)` is FALSE at `D = 1`
+-- (`10 ≤ 8`). It needs `2 ≤ D`, which the STRICT DESCENT supplies: `1 ≤ y` (`one_le_dlen`) and `y + 1 ≤ D`
+-- (`dlen_dp_succ_le_andIntro`), both already bound in the `and` arm — so the room is CALLABLE at the single cap,
+-- with no doubled cap and no second constant. An earlier doubled-cap form compiled but was uncallable, since the
+-- arm holds `hE` at a single `Czv` and cannot manufacture a multiple of it.
+-- TRAP 26: in `hD2`'s `calc (2:V) = 1 + 1 ≤ y + 1 ≤ D`, the `1` on the right of `add_le_add hy0 _` must be pinned
+-- `(le_refl (1 : V))`; plain `le_rfl` elaborates it as `Nat.unaryCast 1` against `hy1` and the application fails.
+#print axioms lin4_le_p3succ
+#print axioms lin6_le_p3succ
+#print axioms and_roomS
+#print axioms and_roomC
+
 -- U10 (Necessitation/Package, 2026-09-15): THE PACKAGE AND THE HEADLINE THEOREMS, with `Assemble.SizeOracle`
 -- BYPASSED. `SizeOracle` is NOT PROVABLE as stated (it binds the numeral table `T` with no `NumTableOK T N' B'`,
 -- while every prologue size lemma requires one and lands at `layQ B B' D`/`layD N' B' D`; `NumTableOK` is never a

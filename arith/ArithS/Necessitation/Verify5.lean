@@ -3291,6 +3291,113 @@ theorem and_roomIP {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺�
     _ = 16 * D + 6 := by ring
     _ ≤ 22 * (D + 1) := le_of_add_eq' (c := 6 * D + 16) (by ring)
 
+/-! ### 26.3 The two CHILD-CARRYING rooms
+
+`postIns_ok`'s `hsE`/`hcE` differ from §26.2's four: their left sides carry the CHILD's shift `sv`, so they are not
+pure linear caps. Both still close at the arm's OWN single cap `Czv·p4 (D+1) ≤ E`, by splitting the cap with
+`Bounds.p4_split D 1 : p4 D + p3 (D+1) ≤ p4 (D+1)` — the child term goes under `p4 D` (`child_bound4`) and the
+linear part under the spare `p3 (D+1)`.
+
+That spare has to cover the linear part EXACTLY, and the two rooms differ there:
+
+* `hsE`'s linear part is `k + 1 + 3 ≤ D + 4`, and `D + 4 ≤ p3 (D+1)` holds from `1 ≤ D` (`lin4_le_p3succ`;
+  at `D = 1`, `5 ≤ 8`).
+* `hcE`'s is `σ + 3 ≤ 6·D + 4`, and `6·D + 4 ≤ p3 (D+1)` is FALSE at `D = 1` (`10 ≤ 8`). It needs `2 ≤ D`
+  (`lin6_le_p3succ`; at `D = 2`, `16 ≤ 27`), which the STRICT DESCENT supplies: the child has `1 ≤ y`
+  (`one_le_dlen`) and `y + 1 ≤ D` (`dlen_dp_succ_le_andIntro`), so `2 ≤ D`. Both are already bound in the arm,
+  so the room is callable at the single cap — no doubled cap and no second constant.
+
+TRAP 26: in `hD2`'s `calc (2:V) = 1 + 1 ≤ y + 1 ≤ D`, the `1` on the right of `add_le_add hy0 _` must be pinned
+`(le_refl (1 : V))`; plain `le_rfl` elaborates it as `Nat.unaryCast 1` against `hy1` and the application fails. -/
+
+/-- `D + 4 ≤ p3 (D + 1)` for `1 ≤ D` (at `D = 1`: `5 ≤ 8`). -/
+theorem lin4_le_p3succ {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] {D : V}
+    (hD1 : 1 ≤ D) : D + 4 ≤ p3 (D + 1) := by
+  have h2 : (2 : V) ≤ D + 1 := by
+    calc (2 : V) = 1 + 1 := by norm_num
+      _ ≤ D + 1 := add_le_add hD1 le_rfl
+  simp only [p3]
+  calc D + 4 ≤ (D + 1) + 4 := add_le_add le_self_add le_rfl
+    _ ≤ (D + 1) + 2 * (D + 1) := add_le_add le_rfl (by
+        calc (4 : V) = 2 * 2 := by norm_num
+          _ ≤ 2 * (D + 1) := mul_le_mul_of_nonneg_left h2 zero_le)
+    _ = 3 * (D + 1) := by ring
+    _ ≤ (D + 1) * (D + 1) * (D + 1) := by
+        calc 3 * (D + 1) ≤ ((D + 1) * (D + 1)) * (D + 1) := by
+              refine mul_le_mul_of_nonneg_right ?_ zero_le
+              calc (3 : V) ≤ 4 := by norm_num
+                _ = 2 * 2 := by norm_num
+                _ ≤ (D + 1) * (D + 1) := mul_le_mul h2 h2 zero_le zero_le
+          _ = (D + 1) * (D + 1) * (D + 1) := by ring
+
+/-- `6*D + 4 ≤ p3 (D + 1)` once `2 ≤ D` (at `D = 2`: `16 ≤ 27`). -/
+theorem lin6_le_p3succ {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] {D : V}
+    (hD2 : 2 ≤ D) : 6 * D + 4 ≤ p3 (D + 1) := by
+  have h3 : (3 : V) ≤ D + 1 := by
+    calc (3 : V) = 2 + 1 := by norm_num
+      _ ≤ D + 1 := add_le_add hD2 le_rfl
+  simp only [p3]
+  calc 6 * D + 4 ≤ 6 * (D + 1) + 4 :=
+        add_le_add (mul_le_mul_of_nonneg_left le_self_add zero_le) le_rfl
+    _ ≤ 6 * (D + 1) + 2 * (D + 1) := add_le_add le_rfl (by
+        calc (4 : V) ≤ 6 := by norm_num
+          _ = 2 * 3 := by norm_num
+          _ ≤ 2 * (D + 1) := mul_le_mul_of_nonneg_left h3 zero_le)
+    _ = 8 * (D + 1) := by ring
+    _ ≤ ((D + 1) * (D + 1)) * (D + 1) := by
+        refine mul_le_mul_of_nonneg_right ?_ zero_le
+        calc (8 : V) ≤ 9 := by norm_num
+          _ = 3 * 3 := by norm_num
+          _ ≤ (D + 1) * (D + 1) := mul_le_mul h3 h3 zero_le zero_le
+    _ = (D + 1) * (D + 1) * (D + 1) := by ring
+
+/-- **`postIns_ok`'s `hsE` at the arm's own single cap.** -/
+theorem and_roomS {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] {E Czv D y k sv : V}
+    (hCz1 : 1 ≤ Czv) (hD1 : 1 ≤ D)
+    (hk : k ≤ D) (hsv : sv ≤ Czv * p4 y) (hy : y ≤ D)
+    (hE : Czv * p4 (D + 1) ≤ E) :
+    k + 1 + sv + 3 ≤ E := by
+  have hgap : p4 D + p3 (D + 1) ≤ p4 (D + 1) := by
+    have := p4_split D 1; rwa [one_mul] at this
+  have hlin : k + 1 + 3 ≤ p3 (D + 1) :=
+    le_trans (le_trans (add_le_add (add_le_add hk le_rfl) le_rfl)
+      (le_of_eq (by ring : D + 1 + 3 = D + 4))) (lin4_le_p3succ hD1)
+  have hchild : sv ≤ Czv * p4 D := le_trans hsv (child_bound4 hy)
+  refine le_trans ?_ hE
+  calc k + 1 + sv + 3 = (k + 1 + 3) + sv := by ring
+    _ ≤ p3 (D + 1) + Czv * p4 D := add_le_add hlin hchild
+    _ ≤ Czv * p3 (D + 1) + Czv * p4 D :=
+        add_le_add (le_mul_of_one_le_left zero_le hCz1) le_rfl
+    _ = Czv * (p4 D + p3 (D + 1)) := by ring
+    _ ≤ Czv * p4 (D + 1) := mul_le_mul_of_nonneg_left hgap zero_le
+
+/-- **`postIns_ok`'s `hcE` at the arm's own single cap**, on the STRICT-DESCENT route. -/
+theorem and_roomC {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] {E Czv D y σ sv : V}
+    (hCz1 : 1 ≤ Czv)
+    (hy0 : 1 ≤ y) (hy1 : y + 1 ≤ D)
+    (hσ : σ ≤ 6 * D + 1) (hsv : sv ≤ Czv * p4 y)
+    (hE : Czv * p4 (D + 1) ≤ E) :
+    σ + sv + 3 ≤ E := by
+  have hD2 : (2 : V) ≤ D := by
+    calc (2 : V) = 1 + 1 := by norm_num
+      _ ≤ y + 1 := add_le_add hy0 (le_refl (1 : V))
+      _ ≤ D := hy1
+  have hyD : y ≤ D := le_trans le_self_add hy1
+  have hgap : p4 D + p3 (D + 1) ≤ p4 (D + 1) := by
+    have := p4_split D 1; rwa [one_mul] at this
+  have hlin : σ + 3 ≤ p3 (D + 1) := by
+    refine le_trans (add_le_add hσ le_rfl) ?_
+    calc 6 * D + 1 + 3 = 6 * D + 4 := by ring
+      _ ≤ p3 (D + 1) := lin6_le_p3succ hD2
+  have hchild : sv ≤ Czv * p4 D := le_trans hsv (child_bound4 hyD)
+  refine le_trans ?_ hE
+  calc σ + sv + 3 = (σ + 3) + sv := by ring
+    _ ≤ p3 (D + 1) + Czv * p4 D := add_le_add hlin hchild
+    _ ≤ Czv * p3 (D + 1) + Czv * p4 D :=
+        add_le_add (le_mul_of_one_le_left zero_le hCz1) le_rfl
+    _ = Czv * (p4 D + p3 (D + 1)) := by ring
+    _ ≤ Czv * p4 (D + 1) := mul_le_mul_of_nonneg_left hgap zero_le
+
 end andRooms
 
 /-! ## 27. THE TEN-ARM RECURSION
