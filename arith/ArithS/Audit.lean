@@ -1755,6 +1755,21 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms and_roomS
 #print axioms and_roomC
 
+-- U10 (Necessitation/Verify5, 2026-09-16): §26.4 — THE `and` CHAIN'S INPUT BLOCK, the first seam of the transport
+-- chain. From the node's own layout it runs `Prologue.layout_and` and the first `proIns`, and carries the
+-- `q`-dossier across by `dossF_transport'`. The first `proIns` is at OFFSET `0` with dossier index `ir₀ + cq + 1`,
+-- where `ir₀ = memTop … 0 ≤ 6·D + 1` (`memTop_le` at `i = 0`, after `zero_add`) and `cq = descCountF 0 q ≤ 2·D`
+-- (`descCountF_le_of_len`) — so `proIns_ok`'s three E-rooms are EXACTLY §26.2's `and_room13`, `and_roomI` at
+-- `i := 0`, and `and_roomIP` at `ip ≤ 8·D + 2`. That the banked rooms discharged every argument at a real call site,
+-- rather than only in isolation, is what this block validates.
+-- TRAP 27: `proIns_ok`'s `i` is INFERRED from whichever room supplies `hiE`. Passing `and_roomI hCk hir₀ hE`
+-- unifies `i` with `memTop … 0` and the layouts stop lining up; the offset must be pinned `(i := 0)` with the room
+-- instantiated at `(0 : V) ≤ 6·D + 1`.
+-- TRAP 28: `Prologue.IdFrame` has NAMED fields (`child`, `parent`, `dp`, `cp`). The parent layout is `fr₁.parent`;
+-- an anonymous `fr₁.2.1` descends into `parent`'s own conjunction and the type mismatch prints the whole unfolded
+-- `Layout` body.
+#print axioms and_input
+
 -- U10 (Necessitation/Package, 2026-09-15): THE PACKAGE AND THE HEADLINE THEOREMS, with `Assemble.SizeOracle`
 -- BYPASSED. `SizeOracle` is NOT PROVABLE as stated (it binds the numeral table `T` with no `NumTableOK T N' B'`,
 -- while every prologue size lemma requires one and lands at `layQ B B' D`/`layD N' B' D`; `NumTableOK` is never a

@@ -3400,6 +3400,69 @@ theorem and_roomC {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺�
 
 end andRooms
 
+/-! ## 26.4 THE `and` CHAIN'S INPUT BLOCK
+
+The first seam of the `and` transport chain (§28): from the node's own layout, run
+`Prologue.layout_and` and the first `proIns`, and carry the `q`-dossier across it.
+
+The first `proIns` sits at OFFSET `0` with dossier index `ir₀ + cq + 1`, where
+`ir₀ = memTop … 0 ≤ 6·D + 1` (`memTop_le` at `i = 0`) and `cq = descCountF 0 q ≤ 2·D`
+(`descCountF_le_of_len`), so `proIns_ok`'s three E-rooms are exactly §26.2's: `and_room13`,
+`and_roomI` AT `i := 0`, and `and_roomIP` at `ip ≤ 8·D + 2`.
+
+TRAP 27: `proIns_ok`'s `i` is inferred from whichever room lemma supplies `hiE`. Passing
+`and_roomI hCk hir₀ hE` unifies `i` with `memTop … 0` and the layouts stop lining up — the
+offset must be pinned `(i := 0)` with the room at `(0 : V) ≤ 6·D + 1`.
+
+TRAP 28: `IdFrame` has NAMED fields (`child`, `parent`, `dp`, `cp`). The parent layout is
+`fr₁.parent`; an anonymous `fr₁.2.1` descends into `parent`'s own conjunction instead. -/
+
+section andInput
+
+set_option maxHeartbeats 4000000 in
+/-- **The `and` chain's input block**: `layout_and` + the first `proIns`, with the
+`q`-dossier transported across. -/
+theorem and_input {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
+    {tbl N N' B' T E Czv D Γ s p q : V}
+    (htbl : TableOK tbl N) (hP : ProTable tbl) (htblN : NumTableOK T N' B')
+    (hCk : ∀ n : ℕ, n ≤ 1000000 → ((n : ℕ) : V) ≤ Czv)
+    (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 0 p) (hq : IsSemiformula LAct 0 q)
+    (hpq : (p ^⋏ q) ∈ s)
+    (hsD : setLen LAct s ≤ D) (hc₁D : setLen LAct (insert p s) ≤ D)
+    (hqD : formulaLen LAct q ≤ D)
+    (hΓ : IsFormulaSet LAct Γ) (hLayS : Layout walkPieces certPieces T Γ s 0)
+    (hE : Czv * p4 (D + 1) ≤ E) :
+    ∃ Γ₁ : V, IsFormulaSet LAct Γ₁ ∧
+      Layout walkPieces certPieces T Γ₁ (insert p s) 0 ∧
+      Layout walkPieces certPieces T Γ₁ s
+        (0 + 1 + proSig walkPieces layoutPieces certPieces proPieces T (insert p s)) ∧
+      DossF walkPieces Γ₁ 0 q
+        (memTop walkPieces certPieces T s (p ^⋏ q) 0 + 1 +
+          (1 + proSig walkPieces layoutPieces certPieces proPieces T (insert p s))) := by
+  have hW : WalkTable tbl := hP.walkTable
+  have hk1 : 1 ≤ len (memberList s) := one_le_len_memberList_of_mem hpq
+  obtain ⟨hand, hDp, hDq, hmr⟩ := layout_and htbl hP hp hq hpq hLayS
+  have hir₀ : memTop walkPieces certPieces T s (p ^⋏ q) 0 ≤ 6 * D + 1 := by
+    have := memTop_le htbl hW rfl T hs hpq hsD (i := 0); rwa [zero_add] at this
+  have hcq : descCountF walkPieces 0 q ≤ 2 * D := descCountF_le_of_len htbl hW hq hqD
+  have hip : memTop walkPieces certPieces T s (p ^⋏ q) 0 + descCountF walkPieces 0 q + 1
+      ≤ 8 * D + 2 := by
+    calc memTop walkPieces certPieces T s (p ^⋏ q) 0 + descCountF walkPieces 0 q + 1
+        ≤ (6 * D + 1) + 2 * D + 1 := add_le_add (add_le_add hir₀ hcq) le_rfl
+      _ = 8 * D + 2 := by ring
+  have hzero : (0 : V) ≤ 6 * D + 1 := zero_le
+  obtain ⟨pok₁, pnd₁, psh₁, layC₁, fr₁, heq₁⟩ :=
+    proIns_ok (i := 0) (ip := memTop walkPieces certPieces T s (p ^⋏ q) 0 +
+        descCountF walkPieces 0 q + 1)
+      htbl hP htblN rfl rfl rfl hs hp hk1 hc₁D
+      (and_room13 hCk hE) (and_roomI hCk hzero hE) (and_roomIP hCk hip hE)
+      hΓ hLayS hDp
+  refine ⟨_, finalCtx_isFormulaSet 8 htbl hΓ pok₁, layC₁, fr₁.parent, ?_⟩
+  have := dossF_transport' pnd₁ hDq
+  rwa [psh₁] at this
+
+end andInput
+
 /-! ## 27. THE TEN-ARM RECURSION
 
 `Verify4.verifyGraph''_ok4`'s shape with `len`/`SizeOK` in place of `shiftsV`: one `Derivation.induction1 𝚷` whose
@@ -3432,6 +3495,7 @@ theorem armHyps_of_arms {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜
     (hCbin : 2 * (27 * N' + 525600 * B') ≤ Czv)
     (hcG : 4 * ((cDer : V) + cDlen + cFst + 6) ≤ Czv)
     (hCv : (Cv : V) ≤ Czv) (hCv8 : 8 * (Cv : V) + 9 ≤ Czv)
+    (hCk5 : ((128655 : ℕ) : V) + 5 * (Cv : V) ≤ Czv)
     (hA : AxmTableOK' tbl E walkPieces A (Cv : V))
     (hAndArm : ∀ s p q dp dq L₁ L₂ Γ' : V, IsFormulaSet LAct s → IsSemiformula LAct 0 p →
       IsSemiformula LAct 0 q → (p ^⋏ q) ∈ s → DerivationOf TAct dp (insert p s) →
