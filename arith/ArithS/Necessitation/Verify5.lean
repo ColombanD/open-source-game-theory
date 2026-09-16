@@ -2584,4 +2584,244 @@ theorem cut_wrapper {tbl N N' B' Wl Wc W₁ W T B E Czv Γ Γ₄ Γc s p d₁ d�
 
 end cutWrapper
 
+/-! ## 24. The `all` motive wrapper
+
+The first QUADRATIC arm, and the first whose `D` is not the node's `dlen`.
+
+**TRAP 21: `all` instantiates `D := 2 · dlen (allIntro s p d')`** — unlike every prior wrapper — for two reasons
+that agree: `hspD : formulaLen (shift p) ≤ D` only holds at TWICE the `dlen` (`Primitives.formulaLen_shift_le ≤
+2·|p|`, with `|p| ≤ |∀p| ≤ dlen` by `formulaLen_all_le_dlen_allIntro`), and `Bounds.allEQ_p3`/`alliE_p3` are stated
+at exactly `D = 2d`. The motive's `d` stays `dlen (allIntro …)`, so `hDd : D ≤ 2·d` is `le_rfl`, and `hsD`/`hcD`
+weaken to `≤ 2·dlen` through `le_two_mul_self`.
+
+No new helper was needed: the two quadratic rooms route through `allEQ_p3 ≤ 27·p3 (d+1)` and
+`alliE_p3 ≤ 96·p3 (d+1)`, lifted by `p3_le_p4` and capped by `Bounds.capE4`, as `Verify4`'s own `all` arm does.
+
+The CUBIC length half goes through `Bounds.len_proAll_le_cubic ≤ 402·p3 (D+1)` at `D = 2·dlen`, i.e.
+`402·p3 (2·dlen + 1)`; `p3_mono` takes `2d+1 ≤ 2(d+1)`, `p3_two_mul` turns `p3 (2(d+1))` into `8·p3 (d+1)`, and
+`p3_succ_le` turns that into `64·p3 d` — so the constant is `402·64 = 25728`.
+
+`hgE2` carries `allCertSig`, bounded by `Prologue.allCert_ok`'s sixth conjunct
+(`≤ 4·D + 2 + 2·((1+D)(1+D+1))·D`), plus three `proSig ≤ 6·D + 1` — one at `setShift s`, whose `IsFormulaSet` is
+`hs.setShift` and whose member count is `one_le_len_memberList_setShift`. -/
+
+section allWrapper
+
+set_option maxHeartbeats 4000000 in
+/-- **THE `all` MOTIVE WRAPPER.** -/
+theorem all_wrapper {tbl N N' B' Wl Wc W₂ W T B E Czv Γ s p d' L' : V}
+    (htbl : TableOK tbl N) (hP : ProTable tbl) (htblN : NumTableOK T N' B')
+    (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (hWp : W = proPieces) (hW₂ : W₂ = frag2Pieces)
+    (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (hCz1 : 1 ≤ Czv) (hCk : ∀ n : ℕ, n ≤ 1000000 → ((n : ℕ) : V) ≤ Czv)
+    (hCQ : 19 * B' + 25 ≤ Czv) (hCD : 27 * N' + 525600 * B' ≤ Czv)
+    (hCbin : 2 * (27 * N' + 525600 * B') ≤ Czv)
+    (hcG : 4 * ((cDer : V) + cDlen + cFst + 6) ≤ Czv)
+    (hs : IsFormulaSet LAct s) (hr : (^∀ p) ∈ s)
+    (hd' : DerivationOf TAct d' (insert (free LAct p) (setShift LAct s)))
+    (hΓ : IsFormulaSet LAct Γ) (hLay : NodeLay walkPieces Wc T Γ s)
+    (hchildSz : SizeOK (kitQ Czv B E) (kitD Czv (2 * dlen TAct (allIntro s p d'))) L')
+    (hchildLen : len L' ≤ Czv * p4 (dlen TAct d'))
+    (hE : Czv * p4 (dlen TAct (allIntro s p d') + 1) ≤ E) :
+    len (vAll walkPieces Wl Wc W₂ W T s p d' L') ≤ Czv * p4 (dlen TAct (allIntro s p d')) ∧
+    SizeOK (kitQ Czv B E) (kitD Czv (2 * dlen TAct (allIntro s p d')))
+      (vAll walkPieces Wl Wc W₂ W T s p d' L') := by
+  have hD : Derivation TAct (allIntro s p d') := Derivation.allIntro hr hd'
+  have hd1 : 1 ≤ dlen TAct (allIntro s p d') := one_le_dlen hD
+  have hp1 : IsSemiformula LAct 1 p := by
+    have := IsSemiformula.all.mp (hs _ hr); simpa using this
+  have hsD0 : setLen LAct s ≤ dlen TAct (allIntro s p d') := by
+    have := setLen_fstIdx_le_dlen hD; rwa [fstIdx_allIntro] at this
+  have hcD0 : setLen LAct (insert (free LAct p) (setShift LAct s)) ≤
+      dlen TAct (allIntro s p d') := setLen_child_le_dlen_allIntro hD
+  have hdl : dlen TAct (allIntro s p d') = setLen LAct s + dlen TAct d' + 1 := dlen_allIntro hD
+  have hdeq : dlen TAct (allIntro s p d') = dlen TAct d' + (setLen LAct s + 1) := by rw [hdl]; ring
+  have hyd : dlen TAct d' ≤ dlen TAct (allIntro s p d') := by
+    rw [hdeq]; exact le_of_add_eq' (c := setLen LAct s + 1) (by ring)
+  have he1 : (1 : V) ≤ dlen TAct (allIntro s p d') + 1 := le_add_self
+  have hsD : setLen LAct s ≤ 2 * dlen TAct (allIntro s p d') :=
+    le_trans hsD0 (le_two_mul_self _)
+  have hcD : setLen LAct (insert (free LAct p) (setShift LAct s)) ≤
+      2 * dlen TAct (allIntro s p d') := le_trans hcD0 (le_two_mul_self _)
+  have hspD : formulaLen LAct (shift LAct p) ≤ 2 * dlen TAct (allIntro s p d') := by
+    refine le_trans (formulaLen_shift_le hp1) (mul_le_mul_of_nonneg_left ?_ zero_le)
+    have := formulaLen_all_le_dlen_allIntro hD
+    rw [formulaLen_all hp1.isUFormula] at this
+    exact le_trans le_self_add this
+  have hV : IsFormulaSet LAct (setShift LAct s) := hs.setShift
+  have hk1 : 1 ≤ len (memberList s) := one_le_len_memberList_of_mem hr
+  have hkV1 : 1 ≤ len (memberList (setShift LAct s)) := one_le_len_memberList_setShift rfl hk1
+  have hvD : setLen LAct (setShift LAct s) ≤ 2 * dlen TAct (allIntro s p d') :=
+    le_trans (setLen_le_insert (free LAct p) (setShift LAct s)) hcD
+  have hksD : len (memberList s) ≤ 2 * dlen TAct (allIntro s p d') :=
+    le_trans (len_memberList_le_setLen hs) hsD
+  have hkcD : len (memberList (insert (free LAct p) (setShift LAct s))) ≤
+      2 * dlen TAct (allIntro s p d') :=
+    le_trans (len_memberList_le_setLen (IsFormulaSet.insert_iff.mpr ⟨hp1.free, hV⟩)) hcD
+  have hE1 : (1 : V) ≤ E := le_trans (le_trans hd1 (le_p4_self hd1))
+    (le_trans (le_mul_of_one_le_left zero_le hCz1)
+      (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE))
+  have hDE : 2 * dlen TAct (allIntro s p d') ≤ E := by
+    refine eroom_of_le hE hCk 2 0 (by norm_num) ?_
+    push_cast
+    rw [add_zero]
+  have hEpro : 13 * (2 * dlen TAct (allIntro s p d')) +
+      18 * ‖2 * dlen TAct (allIntro s p d')‖ + 12 ≤ E := by
+    refine eroom_of_le hE hCk 62 12 (by norm_num) ?_
+    push_cast
+    calc 13 * (2 * dlen TAct (allIntro s p d')) +
+          18 * ‖2 * dlen TAct (allIntro s p d')‖ + 12
+        ≤ 26 * dlen TAct (allIntro s p d') +
+          18 * (2 * dlen TAct (allIntro s p d')) + 12 :=
+          add_le_add (add_le_add (le_of_eq (by ring))
+            (mul_le_mul_of_nonneg_left (length_le _) zero_le)) le_rfl
+      _ = 62 * dlen TAct (allIntro s p d') + 12 := by ring
+  have hE8 : 13 * (2 * dlen TAct (allIntro s p d')) +
+      18 * ‖2 * dlen TAct (allIntro s p d')‖ + 8 ≤ E :=
+    le_trans (add_le_add le_rfl (by norm_num : (8 : V) ≤ 12)) hEpro
+  have hnE : 18 * ‖dlen TAct (allIntro s p d')‖ + 7 ≤ E := by
+    have := eroom_lin hE hCk 0 18 7 (by norm_num)
+    push_cast at this
+    rw [zero_mul, zero_add] at this
+    exact this
+  have hEQ : 2 * ((1 + 2 * dlen TAct (allIntro s p d')) *
+      (1 + 2 * dlen TAct (allIntro s p d') + 1)) * (2 * dlen TAct (allIntro s p d') + 1) +
+      4 * (2 * dlen TAct (allIntro s p d')) + 11 ≤ E := by
+    refine capE4 hE (hCk 27 (by norm_num)) ?_
+    refine le_trans (allEQ_p3 (D := 2 * dlen TAct (allIntro s p d'))
+      (d := dlen TAct (allIntro s p d')) rfl) ?_
+    exact mul_le_mul_of_nonneg_left (p3_le_p4 he1) zero_le
+  have hiE : 0 + 2 * ((1 + 2 * dlen TAct (allIntro s p d')) *
+      (1 + 2 * dlen TAct (allIntro s p d') + 1)) * (2 * dlen TAct (allIntro s p d')) +
+      40 * (2 * dlen TAct (allIntro s p d')) + 20 ≤ E := by
+    refine capE4 hE (hCk 96 (by norm_num)) ?_
+    refine le_trans (alliE_p3 (D := 2 * dlen TAct (allIntro s p d'))
+      (d := dlen TAct (allIntro s p d')) rfl) ?_
+    exact mul_le_mul_of_nonneg_left (p3_le_p4 he1) zero_le
+  have hbn : termLen LAct (bnum (dlen TAct d')) ≤ E := eroom_bnum hE hCk hyd
+  have hbn' : termLen LAct (bnum (dlen TAct (allIntro s p d'))) ≤ E := eroom_bnum hE hCk le_rfl
+  have hLn : setLen LAct s + dlen TAct d' + 1 ≤ dlen TAct (allIntro s p d') := le_of_eq hdl.symm
+  have hnd : dlen TAct (allIntro s p d') ≤ 2 * dlen TAct (allIntro s p d') := le_two_mul_self _
+  have hshL : shiftsV L' ≤ Czv * p4 (dlen TAct d') := le_trans (shiftsV_le_len L') hchildLen
+  have hsigS : proSig walkPieces Wl Wc W T s ≤ 6 * (2 * dlen TAct (allIntro s p d')) + 1 :=
+    proSig_le htbl hP hWc htblN hWl hWp hs hk1 hsD hE8 hΓ
+  have hsigV : proSig walkPieces Wl Wc W T (setShift LAct s) ≤
+      6 * (2 * dlen TAct (allIntro s p d')) + 1 :=
+    proSig_le htbl hP hWc htblN hWl hWp hV hkV1 hvD hE8 hΓ
+  have hsigC : proSig walkPieces Wl Wc W T (insert (free LAct p) (setShift LAct s)) ≤
+      6 * (2 * dlen TAct (allIntro s p d')) + 1 :=
+    proSig_le htbl hP hWc htblN hWl hWp (IsFormulaSet.insert_iff.mpr ⟨hp1.free, hV⟩)
+      (one_le_len_memberList_insert _ _) hcD hE8 hΓ
+  have hgE : len (memberList (insert (free LAct p) (setShift LAct s))) + 1 + shiftsV L' + 1 ≤ E := by
+    refine le_trans ?_ (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE)
+    have hlin : 2 * dlen TAct (allIntro s p d') + 2 ≤
+        Czv * p3 (dlen TAct (allIntro s p d')) := by
+      have h4 := hCk 4 (by norm_num)
+      push_cast at h4
+      exact lin_le_p3 hd1 (le_trans (le_of_eq (by norm_num : (2 : V) + 2 = 4)) h4)
+    calc len (memberList (insert (free LAct p) (setShift LAct s))) + 1 + shiftsV L' + 1
+        ≤ 2 * dlen TAct (allIntro s p d') + 1 + Czv * p4 (dlen TAct d') + 1 :=
+          add_le_add (add_le_add (add_le_add hkcD le_rfl) hshL) le_rfl
+      _ = (2 * dlen TAct (allIntro s p d') + 2) + Czv * p4 (dlen TAct d') := by ring
+      _ ≤ Czv * p4 (dlen TAct (allIntro s p d')) := rec1₄ le_add_self hdeq hlin
+  have hACS : allCertSig walkPieces Wc p ≤
+      4 * (2 * dlen TAct (allIntro s p d')) + 2 +
+      2 * ((1 + 2 * dlen TAct (allIntro s p d')) *
+        (1 + 2 * dlen TAct (allIntro s p d') + 1)) * (2 * dlen TAct (allIntro s p d')) := by
+    obtain ⟨-, -, -, -, -, h, -, -, -⟩ :=
+      allCert_ok (i := 0) (D := 2 * dlen TAct (allIntro s p d')) (E := E)
+        htbl hP hWc hs hp1 hr hsD hspD hEpro hEQ (le_trans (le_of_eq (by ring)) hiE) hΓ hLay.layout
+    exact h
+  have hgE2 : allCertSig walkPieces Wc p +
+      (proSig walkPieces Wl Wc W T (setShift LAct s) +
+        (1 + (len (memberList s) + 1) + proSig walkPieces Wl Wc W T s)) +
+      (1 + proSig walkPieces Wl Wc W T (insert (free LAct p) (setShift LAct s))) +
+      shiftsV L' + 2 + (len (memberList s) + 1) + 1 + 1 ≤ E := by
+    refine le_trans ?_ (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE)
+    have hquad : 0 + 2 * ((1 + 2 * dlen TAct (allIntro s p d')) *
+        (1 + 2 * dlen TAct (allIntro s p d') + 1)) * (2 * dlen TAct (allIntro s p d')) +
+        40 * (2 * dlen TAct (allIntro s p d')) + 20 ≤ 96 * p3 (dlen TAct (allIntro s p d') + 1) :=
+      alliE_p3 (D := 2 * dlen TAct (allIntro s p d')) (d := dlen TAct (allIntro s p d')) rfl
+    have hlin : 96 * p3 (dlen TAct (allIntro s p d') + 1) ≤
+        Czv * p3 (dlen TAct (allIntro s p d')) := by
+      refine le_trans (mul_le_mul_of_nonneg_left (p3_succ_le hd1) zero_le) ?_
+      have h768 := hCk 768 (by norm_num)
+      push_cast at h768
+      calc 96 * (8 * p3 (dlen TAct (allIntro s p d'))) =
+            768 * p3 (dlen TAct (allIntro s p d')) := by ring
+        _ ≤ Czv * p3 (dlen TAct (allIntro s p d')) :=
+            mul_le_mul_of_nonneg_right h768 zero_le
+    calc allCertSig walkPieces Wc p +
+          (proSig walkPieces Wl Wc W T (setShift LAct s) +
+            (1 + (len (memberList s) + 1) + proSig walkPieces Wl Wc W T s)) +
+          (1 + proSig walkPieces Wl Wc W T (insert (free LAct p) (setShift LAct s))) +
+          shiftsV L' + 2 + (len (memberList s) + 1) + 1 + 1
+        ≤ (4 * (2 * dlen TAct (allIntro s p d')) + 2 +
+            2 * ((1 + 2 * dlen TAct (allIntro s p d')) *
+              (1 + 2 * dlen TAct (allIntro s p d') + 1)) * (2 * dlen TAct (allIntro s p d'))) +
+          ((6 * (2 * dlen TAct (allIntro s p d')) + 1) +
+            (1 + (2 * dlen TAct (allIntro s p d') + 1) +
+              (6 * (2 * dlen TAct (allIntro s p d')) + 1))) +
+          (1 + (6 * (2 * dlen TAct (allIntro s p d')) + 1)) +
+          Czv * p4 (dlen TAct d') + 2 + (2 * dlen TAct (allIntro s p d') + 1) + 1 + 1 :=
+          add_le_add (add_le_add (add_le_add (add_le_add (add_le_add (add_le_add
+            (add_le_add hACS (add_le_add hsigV (add_le_add (add_le_add le_rfl
+              (add_le_add hksD le_rfl)) hsigS)))
+            (add_le_add le_rfl hsigC)) hshL) le_rfl) (add_le_add hksD le_rfl)) le_rfl) le_rfl
+      _ ≤ (0 + 2 * ((1 + 2 * dlen TAct (allIntro s p d')) *
+            (1 + 2 * dlen TAct (allIntro s p d') + 1)) * (2 * dlen TAct (allIntro s p d')) +
+            40 * (2 * dlen TAct (allIntro s p d')) + 20) + Czv * p4 (dlen TAct d') :=
+          le_of_add_eq' (c := 7 + 32 * dlen TAct (allIntro s p d')) (by ring)
+      _ ≤ 96 * p3 (dlen TAct (allIntro s p d') + 1) + Czv * p4 (dlen TAct d') :=
+          add_le_add hquad le_rfl
+      _ ≤ Czv * p3 (dlen TAct (allIntro s p d')) + Czv * p4 (dlen TAct d') :=
+          add_le_add hlin le_rfl
+      _ ≤ Czv * p4 (dlen TAct (allIntro s p d')) :=
+          rec1₄ le_add_self hdeq le_rfl
+  refine ⟨?_, ?_⟩
+  · rw [len_vAll_eq]
+    have hlenPro : len (proAll walkPieces Wl Wc W T s p 0) ≤
+        402 * p3 (2 * dlen TAct (allIntro s p d') + 1) :=
+      len_proAll_le_cubic htbl hP hWl hWc walkPieces W T 0 hs hp1 hr hsD hcD hspD
+    have hcube : 402 * p3 (2 * dlen TAct (allIntro s p d') + 1) ≤
+        25728 * p3 (dlen TAct (allIntro s p d')) := by
+      have h1 : p3 (2 * dlen TAct (allIntro s p d') + 1) ≤
+          p3 (2 * (dlen TAct (allIntro s p d') + 1)) :=
+        p3_mono (le_of_add_eq' (c := 1) (by ring))
+      have h2 : p3 (2 * (dlen TAct (allIntro s p d') + 1)) =
+          8 * p3 (dlen TAct (allIntro s p d') + 1) := p3_two_mul _
+      have h3 : p3 (dlen TAct (allIntro s p d') + 1) ≤
+          8 * p3 (dlen TAct (allIntro s p d')) := p3_succ_le hd1
+      calc 402 * p3 (2 * dlen TAct (allIntro s p d') + 1)
+          ≤ 402 * (8 * p3 (dlen TAct (allIntro s p d') + 1)) := by
+            rw [← h2]; exact mul_le_mul_of_nonneg_left h1 zero_le
+        _ ≤ 402 * (8 * (8 * p3 (dlen TAct (allIntro s p d')))) :=
+            mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left h3 zero_le) zero_le
+        _ = 25728 * p3 (dlen TAct (allIntro s p d')) := by ring
+    have hX : 25728 * p3 (dlen TAct (allIntro s p d')) + 15 ≤
+        Czv * p3 (dlen TAct (allIntro s p d')) := by
+      have h25743 := hCk 25743 (by norm_num)
+      push_cast at h25743
+      calc 25728 * p3 (dlen TAct (allIntro s p d')) + 15
+          ≤ 25728 * p3 (dlen TAct (allIntro s p d')) +
+            15 * p3 (dlen TAct (allIntro s p d')) :=
+            add_le_add le_rfl (le_mul_of_one_le_right zero_le (one_le_p3 hd1))
+        _ = 25743 * p3 (dlen TAct (allIntro s p d')) := by ring
+        _ ≤ Czv * p3 (dlen TAct (allIntro s p d')) :=
+            mul_le_mul_of_nonneg_right h25743 zero_le
+    calc len (proAll walkPieces Wl Wc W T s p 0) + (len L' + (6 + 9))
+        ≤ 402 * p3 (2 * dlen TAct (allIntro s p d') + 1) + (Czv * p4 (dlen TAct d') + 15) :=
+          add_le_add hlenPro (add_le_add hchildLen (by norm_num))
+      _ ≤ 25728 * p3 (dlen TAct (allIntro s p d')) + (Czv * p4 (dlen TAct d') + 15) :=
+          add_le_add hcube le_rfl
+      _ = (25728 * p3 (dlen TAct (allIntro s p d')) + 15) + Czv * p4 (dlen TAct d') := by ring
+      _ ≤ Czv * p4 (dlen TAct (allIntro s p d')) := rec1₄ le_add_self hdeq hX
+  · exact all_arm_size (Wl := Wl) (Wc := Wc) (W₂ := W₂) (W := W) (T := T) (s := s) (p := p)
+      (d' := d') (L' := L') (B := B) (E := E) (Cz := Czv) (N' := N') (B' := B')
+      (D := 2 * dlen TAct (allIntro s p d')) (d := dlen TAct (allIntro s p d')) (Γ := Γ)
+      hWp hW₂ htbl hP htblN hWl hWc hPle hs hp1 hr hsD hcD hspD hEpro hEQ hiE hΓ hLay.layout
+      hDE le_rfl hCQ hCD hCz1 hchildSz hE1 hcG hgE hbn hbn' hnE hLn hnd hgE2 hCbin
+
+end allWrapper
+
 end ArithS

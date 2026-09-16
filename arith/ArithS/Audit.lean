@@ -1627,6 +1627,23 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 -- and the `proCutPre` context `hΓc`, are EXPLICIT wrapper hypotheses for the recursion to discharge.
 #print axioms cut_wrapper
 
+-- U10 (Necessitation/Verify5, 2026-09-16): §24 — the `all` MOTIVE WRAPPER (8 of 10), the first QUADRATIC arm and
+-- the first whose `D` is NOT the node's `dlen`. TRAP 21: `all` runs at `D := 2·dlen (allIntro s p d')`, forced
+-- twice over — `hspD : formulaLen (shift p) ≤ D` holds only at TWICE the `dlen`
+-- (`Primitives.formulaLen_shift_le ≤ 2·|p|`, `|p| ≤ |∀p| ≤ dlen` by `formulaLen_all_le_dlen_allIntro`), and
+-- `Bounds.allEQ_p3`/`alliE_p3` are stated at exactly `D = 2d`. The motive's `d` stays `dlen (allIntro …)`, so
+-- `hDd` is `le_rfl` and `hsD`/`hcD` weaken by `le_two_mul_self`. NO new helper was needed (Part 11's finding): the
+-- two quadratic rooms go through `allEQ_p3 ≤ 27·p3 (d+1)` and `alliE_p3 ≤ 96·p3 (d+1)`, lifted by `p3_le_p4` and
+-- capped by `capE4`. The CUBIC length half goes through `len_proAll_le_cubic ≤ 402·p3 (D+1)` at `D = 2·dlen`:
+-- `p3_mono` takes `2d+1 ≤ 2(d+1)`, `p3_two_mul` gives `8·p3 (d+1)`, `p3_succ_le` gives `64·p3 d`, so the constant
+-- is `402·64 = 25728`, capped at `25743`. `hgE2` carries `allCertSig`, bounded by `Prologue.allCert_ok`'s SIXTH
+-- conjunct (`≤ 4·D + 2 + 2·((1+D)(1+D+1))·D`), plus three `proSig ≤ 6·D + 1` — one at `setShift s`, via
+-- `hs.setShift` and `one_le_len_memberList_setShift` — and closes against `alliE_p3` at constant `768`.
+-- TRAP 22: that closing step is a genuine `≤`, NOT an `=`: the summed bound normalises to `13 + 56·d + 24·d² +
+-- 16·d³` while `alliE_p3`'s left side is `20 + 88·d + 24·d² + 16·d³` — cubic and quadratic terms agree, so the
+-- slack is exactly `7 + 32·d`, READ OFF the residual goal rather than guessed.
+#print axioms all_wrapper
+
 -- U10 (Necessitation/Package, 2026-09-15): THE PACKAGE AND THE HEADLINE THEOREMS, with `Assemble.SizeOracle`
 -- BYPASSED. `SizeOracle` is NOT PROVABLE as stated (it binds the numeral table `T` with no `NumTableOK T N' B'`,
 -- while every prologue size lemma requires one and lands at `layQ B B' D`/`layD N' B' D`; `NumTableOK` is never a
