@@ -196,3 +196,18 @@ VerifyKit' (all/exs/axm prologues, Verify's clause edit, the per-tag layout theo
 induction1 𝚷 at the root, costs). Census 606, build green, branch pushed 09-14 (push again).
 Design bugs caught this week: neg pass certified against the wrong vector; cert/frag row tables
 collided (re-indexing wrapper in Prologue §0). 4 of 5 reported blockers dissolved on inspection.
+**2026-09-16 — U10 COMPLETE, THE HYPOTHESIS DISCHARGED.** `BoundedInnerNec 16` is a THEOREM
+(`ArithS.boundedInnerNec_sixteen`), and with it `dupoc_self_coop_unconditional` and
+`pblt_unconditional` hold with NO hypothesis — Critch's assumption (d) is no longer assumed. Build
+3270 jobs, census 918, all three standard axioms, zero sorry/axiom/native_decide. Degree 16 not 3:
+every loss traces to UNARY variable-index charging in the M1 length measure (the cap, the qVec
+iterate, per-step context growth); Critch asserts only polynomial expansion and the M4 results are
+parametric in `d`, so nothing downstream depends on it. Optional fixes deferred: substitution
+certificate redesign, occurrence accounting, binary index charging (root cause, touches M1).
+Branch `colomban-arith-u10`, NOT pushed since 09-14 — push first.
+LESSONS: a COMPLETION CLAIM must be re-derived from the tree, never repeated (the final agent report
+quoted three theorem names that did not exist; the work was two lines short — caught by grep). An
+interface written AHEAD of its consumer has PROVISIONAL binders until the consumer compiles against
+it (six corrections from that one pattern; two were mine). Check CALLABILITY before transcribing.
+Compile a skeleton rather than read when the question is structural. Never edit Lean by script.
+Only a must-fail probe distinguishes a real edit from a stale olean.
