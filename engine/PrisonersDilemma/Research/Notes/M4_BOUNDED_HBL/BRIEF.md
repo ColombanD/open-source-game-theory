@@ -2153,3 +2153,45 @@ settled BY COMPILING, not reading; if it needs the context one level further out
 output for a ruling rather than inventing a shape that typechecks.
 IN FLIGHT: `Verify5` Part 21 — (1) §27 with the context-free motive + node context as recursion
 hypotheses; (2) the discharge at `verifySizeOracle_of_arms`; (3) confirm §28 cancelled.
+
+**§11 status — `Verify5` Part 21: §26.1 AND §27 BANKED — THE TEN-ARM RECURSION EXISTS (dcc33cd;
+Verify5 green 3262 jobs, Audit green 3266, census 889, zero `sorry`, both new theorems standard;
+ADDITIONS ONLY — 337 + 33 insertions, ZERO deletions, so `ArmHyps`, `ArmHypsAll`,
+`verifySizeOracle_of_arms` and all ten wrappers are BYTE-IDENTICAL).**
+**§26.1 `nodeCtx_exists` — THE OBLIGATION WAS DISCHARGEABLE, NOT MERELY RELOCATABLE** (which is
+exactly what the Part-20 ruling refusing an `∃ Γ` hypothesis was protecting): a node context exists
+at every sequent, built from the EMPTY context. Nonempty: `layoutSteps_ok` at `Γ := 0` already
+concludes `Layout … (finalCtx 0 …) s 0`. Empty: `layoutSteps0_ok` gives `Layout0`, whose own second
+conjunct at `i = 0` IS `eqFactB (^&1) 𝟎` — precisely `emptyFsetPi_ok`'s precondition — so appending
+`emptyFsetPi` supplies `fsetPiFact (^&1)`, with `Layout0.mono` carrying the layout. No `∃ Γ`
+hypothesis was added to `ArmHyps` or `VerifySizeOracle`.
+**§27 `armHyps_of_arms` — the ten-arm `Derivation.induction1 𝚷`, EIGHT ARMS DISCHARGED** from the
+banked wrappers, each building its own context; sentinel-tested at 3208 under a 38 s foreground
+compile. The context-free motive was settled by compiling a skeleton with unfilled arms in SEVEN
+SECONDS after three rounds of reading had not settled it. TRAP: `capE4'`'s implicit `a` is unsolved
+by `refine capE4' hE he1 ?_ ?_` — supply it POSITIONALLY.
+**CORRECTION (the agent's own, second self-correction in two rounds): §28 is NOT cancelled.**
+`and_arm_size` binds `Γ₃` and `cut_arm_size` binds `Γ₄`/`Γc` IN THEIR OWN SIGNATURES, at shifted
+offsets (`1 + proSig (insert p s) + shiftsV L₁ + 2`; `mShift p + mShift (neg p) + …`) that §26.1's
+offset-0 construction cannot reach. The context-free motive killed the CHILD-context problem, not
+these. `hAndArm`/`hCutArm` remain as named hypotheses.
+**THE HINGE, and the COORDINATOR'S RULING — DO NOT WIDEN THE MOTIVE.** The agent traced the `and`
+chain exactly: `vAnd = proIns ++ L₁ ++ postIns ++ …`, `Γ₃`'s offset is the accumulated `shiftsV` of
+those blocks, and Verify2's own `vAnd_ok` builds it as `noDrop'_appendV cnd₁ qnd₁` (2540) then one
+`layS₁.transport hndB` (2545) — where **`cnd₁ : NoDrop' L₁` comes from `ChildOK`'s second conjunct**
+(2515), which the context-free motive does not carry. The agent proposed adding `NoDrop' L` as a
+third motive conjunct and brought it up rather than widening a committed theorem unilaterally.
+**COORDINATOR-VERIFIED CHEAPER SOURCE: `Verify4.verifyGraph''_ok4` (Verify4:69; `_pow4` at 541)
+ALREADY CONCLUDES `NoDrop' L` for `VerifyGraph'' Ww Wl Wc W₁ W₂ W T A ρ L` — the IDENTICAL graph,
+same table hypotheses — and `Verify5` ALREADY IMPORTS `Verify4` (line 1).** So `cnd₁` is obtained by
+INSTANTIATING that theorem at the child: no new conjunct, no re-discharge of the eight arms,
+`armHyps_of_arms` untouched, and the motive stays at the shape proved to be `ArmHyps`'s own. The
+agent's analysis of WHY `NoDrop'` is the hinge was right in every particular; only the sourcing had
+a cheaper answer.
+PROCESS, self-reported: the agent broke the no-scripted-edits rule ONCE this round (a `python3`/`sed`
+patch of a SCRATCHPAD probe — the rule covers the scratchpad explicitly), caught itself, and
+reported it unprompted; every Lean edit since went through Write/Edit.
+IN FLIGHT: `Verify5` Part 22 — (1) §28 the two transport chains, `NoDrop'` for the child from
+`verifyGraph''_ok4`, on Verify2's `vAnd_ok` template (2515/2540/2545); (2) discharge
+`hAndArm`/`hCutArm` → unconditional `armHyps_of_arms` and `ArmHypsAll`; (3) unconditional
+`verifyGraph''_size4_of_arms` = `Package.SizeThm N' B' Cv Cz`, THE LAST HYPOTHESIS.
