@@ -223,3 +223,26 @@ together with the LegibleBot node-data question (Phase 5) — they are the same 
   an instantiated `‖k‖ ^ 1` (the pow comes through `instCommSemiring_foundation ℕ`) — remove the
   exponent inside the V-generic binder (`linear_size_le_eventually`). IN FLIGHT: Prudent × Mirror
   (STEP 0 = the §7 verdict on Prudent's nested searches).
+* 2026-09-23 (later): **Phase 2 Prudent × Mirror DONE** (`9a71612`, `Cells/PrudentMirror.lean`):
+  `prudent_mirror_coop_unconditional : ∃ k₀, ∀ k > k₀, EvalGraph 3 (Prudent k) Mirror (Prudent k) 0 ∧
+  EvalGraph 4 Mirror (Prudent k) Mirror 0` (fuels 3/4: outer search, inner search, constant), the τ-twin
+  `(D, D)`, box forms for BOTH guards, bridge `pcode_PrudentBot`. **STEP-0 verdict: nested searches are
+  NOT the §7 obstruction** — Prudent's two stored templates are budget-free constants (`.bot DefectBot`
+  is closed), `k` sits only in the two `pSearch` budget slots, so `PrudentV k` IS a `bnum k`-instance of a
+  fixed two-`#0` term. What nesting costs: the canonical description compares two `k`-dependent codes
+  (`PrudentV k` vs its transposition), uniform only ABOVE a standard threshold `KP` (`nested_search_lt`,
+  an ordered-semiring argument on `ppair`); every description/instance/truth equation carries
+  `hk : KP ≤ k`, supplied by the family slack `S₀ = 14 + KP`. The two engine mechanisms replaced: the
+  prudence conjunct (engine: a search-free atom at `⊢_33`) is a fixed formula `qPP` whose truth is the
+  closed Σ₁ fact "Mirror plays D against `pBot (pConst 1)`", carried as a CONJUNCT of the family; the
+  inner-search citation (`searchThenSearch_t`) is ∧-elimination from the family's box, so both searches
+  fire from ONE Löb fixed point (`pPM = (qPM ⋏ qPP) ⋏ (qPMT ⋏ qPPT)`, `loebSound_pPM : LoebSound pPM
+  (14 + KP) 16`). Generic pieces added for any six-variable template: `qT`, `guardCode_qT_eq_instB`,
+  `eval_qT_iff`, `eval_tmpl_plays_opp_closed_V`. **FINAL GATE on `9a71612`: 3305 jobs, 0 errors, census
+  1163 standard.** **Phase 2 tally: 12 cells unconditional; of the 14 in-scope LOEB-FF cells of the
+  census, 11 are done; Just × Just, Just × Dupoc, CIMCIC × Just parked on §7.** TRAPS: in this Mathlib
+  `add_le_add_left h a : h.lhs + a ≤ h.rhs + a` and `add_le_add_right h a : a + … ≤ a + …` (`_root_.`
+  needed, Foundation shadows them); a statement mentioning only `MirrorV`/`pBot`/`pConst` without a
+  `V`-pinned term elaborates at ℕ silently (write `(MirrorV : V)`); `rw [relabel_const]` rewrites every
+  `pConst 1` at once; zsh: `${pipestatus[1]}`, not `${PIPESTATUS[0]}`, to read `lake env lean`'s exit
+  code through a pipe.

@@ -362,3 +362,12 @@ mutual family), **CIMCIC × Mirror = (C, C)**, and **CIMCIC × CIMCIC = (C, C)**
 `BoundedInnerNec` — the guard is `A → A`, `TAct ⊢ ∀¹ qCC` by completeness, and the `k`-instance costs
 `K₀ + K₁·size k`, below `k` for large `k`: the first cell of the POS class of `ROUTE_B_CENSUS.md` in `S'`,
 and the `S'` reading of the engine's `Pf.implRefl`.
+And `Cells/PrudentMirror.lean` (`9a71612`; FINAL GATE 3305 jobs, census 1163): **PrudentBot × Mirror =
+(C, C)** — the NESTED-search family: both of Prudent's searches fire from one Löb fixed point, the
+prudence conjunct ("I defect against DefectBot") carried as a conjunct of the family and the engine's
+inner-search citation (`searchThenSearch_t`) replaced by ∧-elimination from the box. Nested searches are
+not the §7 obstruction (their stored templates are budget-free); their price is a canonical description
+uniform only above a standard threshold `KP`, absorbed by the family slack. **Route-B day-1 total: 12
+cells unconditional in PA-`S'`** (Dupoc/Cupod × Mirror, bot-Dupoc self, Just × Mirror, DIMCID × DIMCID /
+Mirror / Cupod, CIMCIC × Dupoc / Mirror / CIMCIC, Prudent × Mirror and its τ-twin), plus Dupoc/Cupod
+self-play from M5; 11 of the 14 in-scope Löbian cells of `ROUTE_B_CENSUS.md`.
