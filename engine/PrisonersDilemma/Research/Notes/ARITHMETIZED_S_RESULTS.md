@@ -431,3 +431,29 @@ general lemma `found_of_all_above`; from FlipCells: `BoxConseq`/`found_of_box_co
 guard whose truth needs ANOTHER searcher's Löb-found guard, run in every model (no nonstandard
 found-ness needed). **Tally: 105 cells of the engine's 155 have an `S'` statement; 97 agree with the
 engine, 8 DISAGREE (6 flips + 2 CIMCIC cells kept for a different reason).**
+
+**DIMCID's row is closed (2026-09-24, `Cells/DimcidFlips.lean`, `614144b`; gate 3350 jobs, census 1579, 1575
+standard + the 4 pre-existing subsets).** The "consequence to check next" is settled, and it goes further than
+DBot/EBot: **the floor class is not immune, and neither is a UNIVERSAL cell.** All seven engine cells with DIMCID
+cooperating that `FlipCells` had left — every one closed by a census that never reads DIMCID's guard — flip on
+DIMCID's side in `S'`, unconditional, with box forms:
+| cell | engine | `S'` |
+|---|---|---|
+| DIMCID × DBot | (C, C), `no_provable_tailToS_floor` | **(D, C)** `loeb_DIMCID_vs_DBot` — DBot cooperates with a defector against `.bot DefectBot` |
+| DIMCID × EBot | (C, C), floor + unreadability | **(D, D)** `loeb_DIMCID_vs_EBot` — all three frozen probes see a defection |
+| DIMCID × OBot | (C, D), probe-first floor | **(D, D)** `loeb_DIMCID_vs_OBot` |
+| DIMCID × DupocBot | **(C, D) at EVERY `k`** (`outcome_DIMCID_vs_DupocBot`, universal) | **(D, D) for all large `k`** `loeb_DIMCID_vs_DupocBot` — Dupoc's guard "DIMCID cooperates with me" is FALSE, never found (soundness) |
+| DIMCID × JustBot | (C, D), floor | **(D, D)** `loeb_DIMCID_vs_JustBot` — on the budget-slot `Just7 k` (Just's half also on the engine code, `just_engine_vs_DIMCID_defects`) |
+| DIMCID × PrudentBot | (C, D), floor | **(D, D)** `loeb_DIMCID_vs_PrudentBot` — Prudent's outer guard false |
+| CIMCIC × DIMCID | (D, C), floor on both guards | **(D, D)** `loeb_CIMCIC_vs_DIMCID` — CIMCIC's guard self-refuting |
+The Dupoc cell is the sharpest statement of the finding so far: the engine's theorem is universal (every
+budget), `S'`'s is cofinal (every large budget), and they disagree — under a real proof predicate DIMCID's
+"else-play" is not an else-play, it is FOUND, and the floor the engine charges for it does not exist. The
+general lemma behind the row: **every closed code is described** (`describes_closed P`, the generic triple
+`(cl (dnumT P), dUT P, dWT P)` of `Template.lean` in every model), so `dimcid_vs_closed`: DIMCID defects against
+EVERY closed opponent; plus `DescribesAbove` for Prudent's threshold and the `SV`/`TD`/`TBD`/`TJ` tower instances
+for the searchers. Row summary: `dimcid_flips_census`. With `loeb_DIMCID_vs_CooperateBot`, `_TitForTatBot`,
+`_CupodTrollBot`, `loeb_GuardianBot_vs_DIMCID` and the Löbian `(D, D)` cells, **DIMCID cooperates nowhere in `S'`:
+its row is D against every described opponent, and the engine's thirteen cooperative DIMCID-related cells are
+census artifacts.** **Tally: 112 cells of the engine's 155 have an `S'` statement; 97 agree with the engine, 15
+DISAGREE (13 flips + 2 CIMCIC cells kept for a different reason).**

@@ -387,3 +387,30 @@ alongside (c)); SND/POS wait for (c) to settle.
   with sides INFERRED (`nat_le_of_le_def (le_def.mp h)`); `set t := …` AFTER the facts that mention it
   or `omega` sees two atoms; `Describes` fields quantify `(V : Type)` explicitly (usable at ℕ and inside
   `LoebSound`).
+* 2026-09-24: **`Cells/DimcidFlips.lean` DONE** (`614144b`): DIMCID's ROW — the seven cells where the engine
+  has DIMCID COOPERATING by a census that cannot read its guard (FLOOR: DBot, EBot, JustBot, PrudentBot,
+  CIMCIC × DIMCID; probe-first floor: OBot; the UNIVERSAL `outcome_DIMCID_vs_DupocBot`) all flip on DIMCID's
+  side in `S'`, unconditional, with box forms: `loeb_DIMCID_vs_DBot` `(C, C)` → `(D, C)` (fuels 2/4),
+  `loeb_DIMCID_vs_EBot` `(C, C)` → `(D, D)` (2/6, `ebot_D_of_probes_D`), `loeb_DIMCID_vs_OBot` `(C, D)` → `(D, D)`
+  (2/4), **`loeb_DIMCID_vs_DupocBot` `(C, D)` AT EVERY `k` in the engine → `(D, D)` for all large `k` in `S'`**
+  (engine codes; Dupoc's guard false ⇒ SND, `dupoc_guard_vs_DIMCID_not_found`) — the two systems CONTRADICT each
+  other on a universal cell, `loeb_DIMCID_vs_JustBot` `(C, D)` → `(D, D)` (on the budget-slot `Just7 k`:
+  `just7_else_V` + `evalGraph_of_guard`; Just's half ALSO on the engine code, `just_engine_vs_DIMCID_defects`,
+  through `.bot (DupocBot k) = pBot (SV gDu 0 k)`; no `Describes` for `pcode (JustBot k)`, §7),
+  `loeb_DIMCID_vs_PrudentBot` `(C, D)` → `(D, D)` (engine codes, above `KP`), `loeb_CIMCIC_vs_DIMCID` `(D, C)` →
+  `(D, D)` (engine codes, CIMCIC's guard self-refuting). Machinery: **`describes_closed P` — EVERY closed code
+  `P : ℕ` is described** by the generic triple `(cl (dnumT P), dUT P, dWT P)` of `Template.lean` in every model
+  (`cast_swapcode`/`cast_dnum` absoluteness; no per-bot code-order `norm_num`) ⇒ `dimcid_vs_closed`: DIMCID
+  defects against every closed code; `DescribesAbove K` (Prudent's `KP`; `loebSound_pG_of_above`, slack
+  `(7 + K, 8)`; `dimcid_vs_described_above`); instances `describes_botSV g a` (bot-wrapped engine searcher),
+  `describes_dupocV`/`describes_botDupoc` (the `TD`/`TBD` towers), `describes_just7`, `describesAbove_prudent`.
+  Row summary `dimcid_flips_census` (the seven at ONE threshold). **GATE: `lake build ArithS` 3350 jobs, 0 errors;
+  census 1579 rows (+49), 1575 standard + the 4 pre-existing subsets. Tally: 112 cells stated in `S'`, 15
+  disagree with the engine (13 flips + the 2 CIMCIC cells kept for a different reason); DIMCID cooperates
+  NOWHERE in `S'`.** TRAPS: `((K : ℕ) : ℕ)` in a `have` elaborates the cast AWAY (`instNatCastNat`) while the
+  V-generic lemmas at ℕ want Foundation's `Nat.cast` — never state the threshold hypothesis separately, discharge
+  it INLINE at the use site (`h.hX ℕ k (by rw [natCast_nat]; exact le_def.mpr (Nat.eq_or_lt_of_le (by omega)))`,
+  and `descVal_prudent (k := k) (by …)` inside `rw`, the implicit pinned so the `by` block sees its goal);
+  `Nat.cast_id` does not fire on that cast either (`natCast_nat` does); `Template.lMap_swap_dnumT` already
+  exists with the OTHER normal form (`dnumT (swapcode x)`) — a same-named local lemma is silently shadowed
+  by the import and the `rw` picks the import's.
