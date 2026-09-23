@@ -31,8 +31,10 @@ establish by reading them, because every headline statement (`red_cell`,
 
 Everything else in the package is a theorem about these, and `Audit.lean` — rebuilt by every
 `lake build ArithS`, its own import list, `#print axioms` on every headline theorem plus
-`example`s that fail to compile if a theorem is renamed — is the census. The last docs commit
-(`87b14b9`, recorded in `a63037b`) reports it as 1436 lines, 1428 of them the triple
+`example`s that fail to compile if a theorem is renamed — is the census, together with the 21
+`#print axioms` in `RedCellUnsound.lean`, `Det.lean` and `FitBox.lean` (the census is every
+`#print axioms` the build runs, 1436 at `a63037b`: 1411 in `Audit.lean` + 21 elsewhere). The full build
+at `a63037b` prints 1436 axiom lines, 1428 of them the triple
 `[propext, Classical.choice, Quot.sound]`, the rest pre-existing subsets or axiom-free lines
 and `sfp_transpose` at `[propext]`. There is no `axiom`, `sorry` or `native_decide` in the
 package (`arith/README.md`). Foundation (FormalizedFormalLogic) — its Gödel numbering, `Proof`,
