@@ -2481,7 +2481,6 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms not_found_neg_opp_self
 #print axioms not_found_eq_opp
 #print axioms found_of_tact
-#print axioms lMap_swap_trAt
 #print axioms tact_proves_plays_closed
 #print axioms search_else
 #print axioms search_then
