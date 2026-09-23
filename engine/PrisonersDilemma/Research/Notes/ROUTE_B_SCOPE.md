@@ -338,3 +338,8 @@ alongside (c)); SND/POS wait for (c) to settle.
   template hangs (giant terms) — separate templates SEMANTICALLY (`tcode_ne_of_models`), Wary from Cupod at the
   non-terminating frame `(Mirror, Mirror)`; `EvalGraph.mono_le (by omega)` needs the source fuel explicit
   (`const_play 3 _ _ _`, not `_`); `one_ne_zero` is ambiguous under `open Arithmetic` (`_root_.`).
+* 2026-09-23 (late): NEXT STEPS STARTED (Colomban: "go with all"): `Cells/FlipCells.lean` (the five
+  verdict-only flips as theorems), `Cells/KhatCells.lean` (`found_of_all_above`, the 3 TFT `k̂`-chain cells,
+  the budget-slot `CupodTroll7`, CupodTroll × Cupod), `SPRIME_DESIGN_RATIONALE.md` (the trusted base,
+  written against the post-route-(c) tree); the `gsubst` `.sim` debt is queued AFTER the two cell agents
+  land (it rebuilds everything downstream of `Subst.lean`).
