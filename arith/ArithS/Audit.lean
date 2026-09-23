@@ -2685,4 +2685,82 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms loeb_WaryBot_vs_WaryBot
 #print axioms wary_finds_guard_vs_self
 
+-- Route B, the `k̂`-CHAIN cells (Cells/KhatCells, 2026-09-24) — the four POS cells `Cells/PositiveCells.lean`
+-- skipped: the searcher's guard is true only ABOVE a standard threshold `k̂`, because the opponent's play in a
+-- model needs a guard FOUND in that model. `found_of_all_V` (a `TAct`-theorem `∀¹ q` is found at every large
+-- budget in EVERY model — the instance costs `N + 5|q|·|bnum k| + 3|q| + |bnum k| + 7 ≤ C·‖k‖ ≤ k`),
+-- `tact_all_above_of_both` (the conditional universal `∀¹ (k̂ ≤ #0 🡒 q)` by completeness), and
+-- `found_of_all_above` (`found_of_all` with the numeral antecedent cut by `NumeralFacts.lenProvable_le_bnumT`,
+-- cost `K₀ + K₁·size k + K₂·size k²`, below `k` for large `k`). TitForTatBot in every model (`TftV`, canonical:
+-- `TftV_lt_TftTV`; the closed term `TTft`; `tft_C_of_probe_C_V`), the probes found above `k̂` in every model.
+#print axioms found_of_all_V
+#print axioms tact_all_above_of_both
+#print axioms exists_instance_length_above
+#print axioms found_of_all_above
+#print axioms TftV_lt_TftTV
+#print axioms val_desc_tft
+#print axioms tft_C_of_probe_C_V
+#print axioms SV_then_V
+#print axioms dupoc_botCB_V
+#print axioms cupod_botDB_V
+#print axioms botDupoc_botCB_V
+#print axioms botCupod_botDB_V
+#print axioms cimcic_botCB_V
+#print axioms cimcicT_botDB_V
+
+-- The three TFT cells, unconditional at the engine's pads, on the engine's own codes: `khat_DupocBot_vs_TitForTatBot`
+-- `(C, C)` (pad 4), `khat_JustBot_vs_TitForTatBot` `(C, C)` (pad 5, on `pcode (JustBot k)`: the consulted guard is
+-- the frozen snapshot's, TFT sees `.bot (DupocBot k)` cooperate with `.bot CooperateBot`), and
+-- `khat_CIMCIC_vs_TitForTatBot` `(C, C)` (pad 6, the engine's `weakenImpl`): TFT probes the searcher against
+-- `.bot CooperateBot`, the searcher's guard "TFT cooperates with me" is true above `k̂`, found by the chain.
+#print axioms guardCode_DT
+#print axioms tact_qDT_above
+#print axioms khat_DupocBot_vs_TitForTatBot
+#print axioms just_botCB_found
+#print axioms guardCode_JT
+#print axioms tact_qJT_above
+#print axioms khat_JustBot_vs_TitForTatBot
+#print axioms guardCode_CT
+#print axioms tact_qCT_above
+#print axioms khat_CIMCIC_vs_TitForTatBot
+
+-- `CupodTroll7`: CupodTroll on a CONSTANT seven-variable template with the budget slot (route (c), the §7 shape:
+-- `CupodTrollBot k` freezes the budget-carrying snapshot `CupodBot k` inside its `.eq` guard). The six-variable
+-- base `eqTmpl` ("the opp-triple describes the me-triple's program", `eval_eqTmpl_V`), the template `GtmplT7`
+-- reading Cupod's budget from `#6` through `TS gCu 1`, the instance equation `guardCodeB_GtmplT7`, the ENGINE
+-- BRIDGE `guardCodeB_GtmplT7_nat` (the SAME code as the engine's `.eq .opp (CupodBot k)` guard, via the typed
+-- equality `eqTmpl_subst_eq_tmpl_eq`), hence `evalGraph_CupodTroll7_iff` (the same play as `pcode (CupodTrollBot k)`
+-- in every frame at every fuel), and the description layer `TT/uT/wT`.
+#print axioms eval_eqTmpl_V
+#print axioms lMap_swap_eqTmpl
+#print axioms eqTmpl_subst_eq_tmpl_eq
+#print axioms quote_subst_descTerms
+#print axioms guardCode_eqTmpl_eq_tcode
+#print axioms guardCodeB_GtmplT7A
+#print axioms guardCodeB_GtmplT7
+#print axioms guardCodeB_GtmplT7T
+#print axioms guardCodeB_GtmplT7_nat
+#print axioms swapcode_CupodTrollV7
+#print axioms troll7_then_V
+#print axioms evalGraph_CupodTroll7_iff
+#print axioms dnum_CupodTrollV7
+#print axioms hX_troll7
+#print axioms hopp_troll7
+#print axioms hopp'_troll7
+
+-- CupodTroll × Cupod `(D, D)` (engine `outcome_CupodTrollBot_vs_CupodBot`, pad 2): CupodTroll's `.eq` guard
+-- against `CupodBot k` is the reflexive equation `qEqSelf` (`tact_qEqSelf`, both readings), found by `found_of_all`
+-- ⇒ then-branch D (`troll_finds_guard_vs_cupod`, the box form on the engine's codes); Cupod's guard "CupodTroll
+-- defects against me" is then TRUE above `k̂` in every model (`troll7_vs_cupod_D_V`) and found by the chain ⇒ D:
+-- `khat_CupodTrollBot_vs_CupodBot` (on `CupodTroll7 k`, the described code) and `_engine` (CupodTroll's half on
+-- `pcode (CupodTrollBot k)`).
+#print axioms tact_qEqSelf
+#print axioms troll7_vs_cupod_D_V
+#print axioms troll7T_vs_dupoc_C_V
+#print axioms guardCode_CuT7
+#print axioms tact_qCuT7_above
+#print axioms troll_finds_guard_vs_cupod
+#print axioms khat_CupodTrollBot_vs_CupodBot
+#print axioms khat_CupodTrollBot_vs_CupodBot_engine
+
 end ArithS

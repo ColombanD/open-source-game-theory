@@ -36,9 +36,9 @@ conditional form `∀¹ (k̂ ≤ #0 🡒 q)` (`tact_all_above_of_both`), and its
    in every frame at every fuel), and the description layer `TT/uT/wT`, `hX_troll7`/`hopp_troll7`.
 5. **CupodTroll × Cupod `(D, D)`** (`outcome_CupodTrollBot_vs_CupodBot`): CupodTroll's guard against
    `Cupod k` is the true equation `SV gCu 1 k = SV gCu 1 k` in both readings (`tact_qTC`), found for all
-   large `k` (`found_of_all`), so CupodTroll plays its then-branch D; Cupod's guard "CupodTroll plays D
+   large `k` (`found_of_all`, `tact_qEqSelf`), so CupodTroll plays its then-branch D; Cupod's guard "CupodTroll plays D
    against me" is then TRUE above `k̂` in every model (`found_of_all_V`), found by the chain
-   (`found_of_all_above`): `khat_CupodTrollBot_vs_CupodBot`.
+   (`found_of_all_above`): `khat_CupodTrollBot_vs_CupodBot` (on the described `CupodTroll7 k`; CupodTroll's half also on the engine's code, `_engine`).
 
 Conventions: every threshold EXISTENTIAL; `simp` never sees a closed quote; `omega` is never asked about
 `V`; `≤` at ℕ bridged by `le_def`.
@@ -1098,5 +1098,113 @@ lemma hopp'_troll7 (k : V) :
   rw [lMap_swap_TT, val_TT_V]; exact relabel_val_uTT_wTT_V k
 
 end canonical
+
+/-! ### 8. CupodTroll × Cupod `(D, D)` -/
+
+section trollCupod
+
+/-- **The `.eq` guard of a searcher against the program it describes**: "the program described by
+`(TS g a, uS g a, wS g a)` IS the program described by the same triple" — a true equation in both readings. -/
+noncomputable def qEqSelf (g : Semisentence LAct 6) (a : ℕ) : Semisentence LAct 1 :=
+  qT eqTmpl (TS g a) (uS g a) (wS g a) (TS g a) (uS g a) (wS g a)
+
+theorem guardCode_eqSelf (g : Semisentence LAct 6) (a : ℕ) (ha : a = 0 ∨ a = 1) (k : V) :
+    guardCode (⌜eqTmpl⌝ : V) (SV g a k) (SV g a k) = instB (⌜qEqSelf g a⌝ : V) k :=
+  guardCode_qT_eq_instB eqTmpl k _ _ _ _ _ _ (hX_SV g a ha k) (hU_SV g a ha k) (hW_SV g a ha k)
+    (hX_SV g a ha k) (hU_SV g a ha k) (hW_SV g a ha k)
+
+/-- `TAct ⊢ ∀¹ qEqSelf g a`: the equation is reflexive in both readings (the engine's `eqRefl`). -/
+theorem tact_qEqSelf (g : Semisentence LAct 6) (a : ℕ) : TAct ⊢ ∀¹ qEqSelf g a := by
+  refine tact_all_of_both _ (fun M _ _ x ↦ ?_) (fun M _ _ x ↦ ?_)
+  · have : M↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
+    rw [qEqSelf, eval_qT_iff, eval_eqTmpl_V]
+    simp only [Matrix.cons_val]
+  · have : M↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
+    rw [qEqSelf, eval_qT_swap, lMap_swap_eqTmpl, eval_qT_iff, eval_eqTmpl_V]
+    simp only [Matrix.cons_val]
+
+/-- **CupodTroll finds "the opponent IS `CupodBot k`" against `CupodBot k` in every model, above a
+threshold** (found ⇒ D, fuel 2). -/
+theorem troll7_vs_cupod_D_V :
+    ∃ kHat : ℕ, ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] (k : V), (kHat : V) ≤ k →
+      EvalGraph 2 (CupodTrollV7 k) (SV gCu 1 k) (CupodTrollV7 k) 1 := by
+  obtain ⟨kHat, h⟩ := found_of_all_V (tact_qEqSelf gCu 1)
+  exact ⟨kHat, fun V _ _ k hk ↦
+    troll7_then_V k _ _ (by rw [guardCode_eqSelf gCu 1 (Or.inr rfl)]; exact h V k hk)⟩
+
+/-- The transposed searcher finds "the opponent IS `DupocBot k`" against `DupocBot k` (found ⇒ C, fuel 2). -/
+theorem troll7T_vs_dupoc_C_V :
+    ∃ kHat : ℕ, ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] (k : V), (kHat : V) ≤ k →
+      EvalGraph 2 (CupodTrollTV7 k) (SV gDu 0 k) (CupodTrollTV7 k) 0 := by
+  obtain ⟨kHat, h⟩ := found_of_all_V (tact_qEqSelf gDu 0)
+  exact ⟨kHat, fun V _ _ k hk ↦
+    troll7T_then_V k _ _ (by rw [guardCode_eqSelf gDu 0 (Or.inl rfl)]; exact h V k hk)⟩
+
+/-- Cupod's guard against CupodTroll: "CupodTroll(k) plays D against Cupod(k)". -/
+noncomputable def qCuT7 : Semisentence LAct 1 := qT gCu (TS gCu 1) (uS gCu 1) (wS gCu 1) TT uT wT
+
+theorem guardCode_CuT7 (k : V) :
+    guardCode (⌜gCu⌝ : V) (SV gCu 1 k) (CupodTrollV7 k) = instB (⌜qCuT7⌝ : V) k :=
+  guardCode_qT_eq_instB gCu k _ _ _ _ _ _ (hX_SV gCu 1 (Or.inr rfl) k) (hU_SV gCu 1 (Or.inr rfl) k)
+    (hW_SV gCu 1 (Or.inr rfl) k) (hX_troll7 k) (hU_troll7 k) (hW_troll7 k)
+
+/-- `qCuT7` is true in both readings above a standard threshold: CupodTroll's `.eq` guard is found there. -/
+theorem tact_qCuT7_above : ∃ kHat : ℕ, TAct ⊢ ∀¹ ((leF (↑kHat) #0 : Semisentence LAct 1) 🡒 qCuT7) := by
+  obtain ⟨k₁, h₁⟩ := troll7_vs_cupod_D_V
+  obtain ⟨k₂, h₂⟩ := troll7T_vs_dupoc_C_V
+  refine ⟨k₁ + k₂, tact_all_above_of_both _ _ (fun M _ _ x hx ↦ ?_) (fun M _ _ x hx ↦ ?_)⟩
+  · have : M↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
+    rw [qCuT7, eval_qT_plays_opp_self .D _ _ _ _ _ _ x (hme_SV gCu 1 (Or.inr rfl) x) (hopp_troll7 x),
+      actCode_D_cast]
+    exact ⟨_, h₁ M x (le_trans (by push_cast; exact le_self_add) hx)⟩
+  · have : M↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
+    rw [qCuT7, eval_qT_swap, lMap_swap_gCu,
+      eval_qT_plays_opp_self .C _ _ _ _ _ _ x (hme_SVT gCu 1 (Or.inr rfl) x) (hopp'_troll7 x),
+      actCode_C_cast, lMap_swap_gCu]
+    exact ⟨_, h₂ M x (le_trans (by push_cast; exact le_add_self) hx)⟩
+
+/-- **CupodTroll's guard against `CupodBot k` is found within the budget, for all large `k`** (the box form,
+on the engine's own codes: the consulted guard is `eqTmpl` in the frame `(CupodBot k, CupodBot k)`,
+`guardCodeB_GtmplT7_nat`). -/
+theorem troll_finds_guard_vs_cupod :
+    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
+      LenProvableV TAct k (guardCode (tcode (phiT k)) (pcode (CupodTrollBot k)) (pcode (CupodBot k))) :=
+  found_of_all (tact_qEqSelf gCu 1) _ (fun k ↦ by
+    rw [← guardCodeB_GtmplT7_nat, guardCodeB_GtmplT7, pcode_CupodBot_SV]
+    exact guardCode_eqSelf gCu 1 (Or.inr rfl) k)
+
+/-- **`CupodTrollBot × CupodBot = (D, D)`** (engine `outcome_CupodTrollBot_vs_CupodBot`, pad 2), for all large `k`,
+on the constant-template `CupodTroll7 k` (which plays as the engine's `CupodTrollBot k` in every frame,
+`evalGraph_CupodTroll7_iff`; an opponent's guard that DESCRIBES it is what needs the slot): CupodTroll's `.eq`
+guard against `CupodBot k` is the reflexive equation, found (`found_of_all`) ⇒ then-branch D; Cupod's guard
+"CupodTroll defects against me" is then TRUE above `k̂` in every model and found by the `k̂`-chain ⇒ D. -/
+theorem khat_CupodTrollBot_vs_CupodBot :
+    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
+      EvalGraph 2 (CupodTroll7 k) (pcode (CupodBot k)) (CupodTroll7 k) (actCode .D) ∧
+      EvalGraph 2 (pcode (CupodBot k)) (CupodTroll7 k) (pcode (CupodBot k)) (actCode .D) := by
+  obtain ⟨kHat, hq⟩ := tact_qCuT7_above
+  obtain ⟨k₀, h⟩ := found_of_all_above kHat hq
+    (fun k ↦ guardCode (tcode phiCu) (pcode (CupodBot k)) (CupodTroll7 k))
+    (fun k ↦ by rw [pcode_CupodBot_SV]; exact guardCode_CuT7 (V := ℕ) k)
+  obtain ⟨k₁, h₁⟩ := troll7_vs_cupod_D_V
+  refine ⟨k₀ + k₁, fun k hk ↦ ⟨?_, ?_⟩⟩
+  · have := h₁ ℕ k (le_def.mpr (Or.inr (by rw [natCast_nat]; omega)))
+    rw [← pcode_CupodBot_SV] at this
+    exact this
+  · have hg := h k (by omega)
+    rw [pcode_CupodBot] at hg ⊢
+    exact search_then phiCu hg (const_play _ _ _ _)
+
+/-- CupodTroll's half on the ENGINE's own code (its guard does not read the frame's `me`). -/
+theorem khat_CupodTrollBot_vs_CupodBot_engine :
+    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
+      EvalGraph 2 (pcode (CupodTrollBot k)) (pcode (CupodBot k)) (pcode (CupodTrollBot k)) (actCode .D) := by
+  obtain ⟨k₀, h⟩ := troll_finds_guard_vs_cupod
+  refine ⟨k₀, fun k hk ↦ ?_⟩
+  have hg := h k hk
+  rw [pcode_CupodTrollBot] at hg ⊢
+  exact search_then (phiT k) hg (const_play _ _ _ _)
+
+end trollCupod
 
 end ArithS
