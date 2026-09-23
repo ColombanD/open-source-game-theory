@@ -348,3 +348,12 @@ cupod_mirror_defect_unconditional : ∃ k₀, ∀ k > k₀, EvalGraph 2 (Cupod k
 — the engine's `outcome_DupocBot_vs_MirrorBot = (C, C)` and `outcome_CupodBot_vs_MirrorBot = (D, D)`
 in PA-`S'`, unconditional, three standard axioms. The route-B census of all 155 cells by mechanism is
 `ROUTE_B_CENSUS.md`; the plan is `ROUTE_B_SCOPE.md`.
+Further route-B cells the same day, all unconditional on three standard axioms (`Cells/JustBot.lean`,
+`Cells/DIMCID.lean`; merged gate `da5bd3c`, 3301 jobs, census 1071): the bot-wrapped Dupoc
+self-cooperation `botDupoc_self_coop_unconditional` (`EvalGraph 3 (pBot (Dupoc k)) … 0`), **Just × Mirror
+= (C, C)** (`just_mirror_coop_unconditional`), **DIMCID × DIMCID = (D, D)**, **DIMCID × Mirror = (D, D)**,
+and the first MUTUAL-Löb cell **DIMCID × Cupod = (D, D)** (`Cells/DIMCID.lean`: the `.impl` guard through
+the general translation `tmpl`, the conjunction of both bots' guards as one family). Finding recorded in
+`ROUTE_B_SCOPE.md` §7: a bot whose guard freezes a budget-carrying snapshot (`JustBot k` with `DupocBot k`
+inside) is NOT a `bnum k`-instance of a fixed formula, so cells that DESCRIBE it (Just × Just, Just ×
+Dupoc, CIMCIC × Just) need either the transparency lift or the two-tier `JustBot2` — a user decision.

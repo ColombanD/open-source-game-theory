@@ -203,3 +203,13 @@ together with the LegibleBot node-data question (Phase 5) — they are the same 
 
 * 2026-09-23 (later): **Phase 2 JustBot family**: cells (1) bot-wrapped Dupoc self-coop and (3)
   Just × Mirror DONE unconditional (`8df39b4`, `b9d0dcf`); Just × Just / Just × Dupoc blocked by §7.
+* 2026-09-23 (later): **Phase 2 DIMCID family DONE** (`c5f83f6`, `da5bd3c`, `Cells/DIMCID.lean`):
+  DIMCID × DIMCID `(D, D)`, DIMCID × Mirror `(D, D)` and the first MUTUAL cell DIMCID × Cupod `(D, D)`,
+  all unconditional. The guard went through the GENERAL translation `tmpl φD` (new: the truth of `tmpl`
+  at the pronoun atoms in every model, `eval_tmpl_plays_self_opp_V/_opp_self_V`; fixed formulas
+  generic in the opponent triple `pG X U W`); the mutual family is `pDC = pG TD uC wC ⋏ (qCD ⋏ τqCD)`,
+  four guards from one box by a two-level ∧-elimination at slack `(14, 16)`. **MERGED GATE on
+  `da5bd3c`: 3301 jobs, 0 errors, census 1071 standard.** Phase 2 tally: 8 cells unconditional
+  (Dupoc×Mirror, Cupod×Mirror, botDupoc self, Just×Mirror, DIMCID×DIMCID, DIMCID×Mirror,
+  DIMCID×Cupod, + Dupoc/Cupod self from M5). NEXT in flight: CIMCIC × Dupoc (mutual, `.impl`),
+  Prudent × Mirror (nested search).
