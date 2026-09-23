@@ -411,3 +411,23 @@ source its rules do not cover, and those two departures pull in opposite directi
 censuses are artifacts of the rule set: under a real proof predicate a negative-Löb guard ("I will not
 cooperate") is self-fulfilling and gets FOUND. This is the paper's clean example of a cell whose value is
 a property of the proof system, not of the bots.
+
+**The flips are THEOREMS (2026-09-24, `Cells/FlipCells.lean`, `9719f67`…`a1d28a7`; with `Cells/KhatCells.lean`
+`1995f5a`/`1239a5b`; gate 3348 jobs, census 1512 standard).** All five verdict-only rows above are now
+proved, each for all large `k`, each with its box form, each docstring naming the engine theorem it
+contradicts: `loeb_DIMCID_vs_TitForTatBot` (D, D), `loeb_GuardianBot_vs_DIMCID` (D, D),
+`loeb_WaryBot_vs_MirrorBot` (D, D), `loeb_WaryBot_vs_WaryBot` (D, D), `loeb_DIMCID_vs_CupodTrollBot`
+(D, C) — the last on the budget-slot `CupodTroll7 k` (same play as `pcode (CupodTrollBot k)` in every frame).
+**A stronger theorem fell out: `dimcid_vs_described` — in `S'`, DIMCID DEFECTS AGAINST EVERY described
+opponent and finds its guard.** The self-fulfilling Löb never uses the guard's consequent: "my
+cooperating implies X" is found because its antecedent ("I cooperate") is refuted by the very act of
+finding it, whatever `X` is. So DIMCID is a universal defector under a real proof predicate — while the
+engine has it COOPERATING in six cells (vs CooperateBot, TitForTatBot, CupodTrollBot, Guardian, and the
+FLOOR-census cells vs DBot and EBot), every one of them by a census that cannot read DIMCID's own guard.
+Consequence to check next: DIMCID × DBot and DIMCID × EBot, engine (C, C) by `no_provable_tailToS_floor`,
+are expected to flip on DIMCID's side too — the floor class is not immune. Also from KhatCells: the four
+`k̂`-chain POS cells (Dupoc/Just/CIMCIC × TFT `(C, C)`, CupodTroll × Cupod `(D, D)`) — POS 14/14 — and the
+general lemma `found_of_all_above`; from FlipCells: `BoxConseq`/`found_of_box_conseq`, the `k̂`-chain for a
+guard whose truth needs ANOTHER searcher's Löb-found guard, run in every model (no nonstandard
+found-ness needed). **Tally: 105 cells of the engine's 155 have an `S'` statement; 97 agree with the
+engine, 8 DISAGREE (6 flips + 2 CIMCIC cells kept for a different reason).**

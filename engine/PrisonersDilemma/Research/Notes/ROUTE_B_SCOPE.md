@@ -357,3 +357,16 @@ alongside (c)); SND/POS wait for (c) to settle.
   source fuel `(n := 0+1+1)`; a typed `Rewriting.subst` equality closed by bare `rfl` passes the
   elaborator but TIMES OUT IN THE KERNEL — factor into small `descF_*_subst` lemmas with `show`;
   `rw [cast_pConst, cast_pConst, cast_pConst]` fails on the third (the first instantiates `a`).
+* 2026-09-24: **`Cells/FlipCells.lean` DONE** (`9719f67`, `d9f2e3d`, `43e1d0c`, `a1d28a7`): all five flips
+  are theorems; **`dimcid_vs_described`: DIMCID defects against EVERY described opponent in `S'`** (the
+  self-fulfilling Löb never uses the consequent); `Describes X U W` (a description triple in every
+  model, instances for `.bot CooperateBot`, TFT, any `SV` searcher, `CupodTroll7`); `pQ q := q ⋏ τq`;
+  `BoxConseq`/`box_conseq_uniform`/`found_of_box_conseq` (the `k̂`-chain through another searcher's box,
+  in every model — the brief's "truth above `k̂` in both readings" route was NOT viable: it needs
+  found-ness at NONSTANDARD budgets, and `NumeralFacts` is ℕ-only). **GATE: 3348 jobs, census 1512
+  standard. 105 cells stated in `S'`, 8 disagree with the engine.** NEXT: the `gsubst` `.sim` debt (+ the
+  stale `Package.lean` docstring), then DIMCID × DBot / EBot (floor-class cells expected to flip).
+  TRAPS: never restate at ℕ a term carrying `‖k‖ ^ d` (pow instance mismatch) — take the Nat inequality
+  with sides INFERRED (`nat_le_of_le_def (le_def.mp h)`); `set t := …` AFTER the facts that mention it
+  or `omega` sees two atoms; `Describes` fields quantify `(V : Type)` explicitly (usable at ℕ and inside
+  `LoebSound`).
