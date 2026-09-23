@@ -71,6 +71,7 @@ import ArithS.Cells.DIMCID
 import ArithS.Cells.PrudentMirror
 import ArithS.Cells.CIMCIC
 import ArithS.Cells.SearchFree
+import ArithS.Cells.JustSlot
 
 /-!
 # ArithS.Audit — the axiom census of the arithmetized layer
@@ -2152,6 +2153,96 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms just_mirror_coop_unconditional
 #print axioms botDupoc_mirror_coop_unconditional
 #print axioms just_finds_guard_vs_mirror_unconditional
+
+-- Route (c) — templates with a BUDGET SLOT (ROUTE_B_SCOPE §8, 2026-09-23). The trusted base: `descVecB me opp k` =
+-- `descVec me opp` extended by `bnum k` in a SEVENTH slot `#6` (LAST, so every six-variable template and `descVec`
+-- are byte-identical), `guardCodeB g me opp k := subst (descVecB me opp k) g` (Σ₁), and the evaluator's search clause
+-- (`EvalGraph`'s `Phi`/blueprint/`case_iff`, `EvalN.search_iff`) consults `LenProvableV TAct k (guardCodeB g me opp
+-- k)`. THE GATE LEMMA `guardCodeB_of_template`: a six-variable template never reads the seventh entry (via the
+-- identity vector `idVec6`: `subst_eq_self` at (6,6), `substs_substs` at (6,7)); `EvalGraph.search_iff₆` is the
+-- pre-route-(c) reading on six-variable templates and repaired every use site; `gsubst`/`psubst` unchanged.
+-- Cells/JustSlot: Just's template becomes the CONSTANT `GtmplJ7 = (GtmplA 0 ⇜ ![TBD(#0), cl uD, cl wD, #1, #2, #3])
+-- ⇜ ![#6, #3, #4, #5]`; `JustV7 k = pSearch k ⌜GtmplJ7⌝ (pConst 0) (pConst 1)` is a `bnum k`-instance of a fixed
+-- term (`TJ`, `dnum_JustV7`), `guardCodeB_GtmplJ7` (Just's guard against `opp` = the bot-wrapped Dupoc's guard
+-- against `opp`), `evalGraph_JustV7_iff` (`JustV7 k` and `JustV k` play identically in every frame; the Mirror cell
+-- transfers). The three parked cells, all unconditional: **`just7_self_coop_unconditional`** (Just × Just `(C, C)`,
+-- family `pJJ = (qJJ ⋏ τqJJ) ⋏ pBD`, slack (14, 16)), **`just7_dupoc_coop_unconditional`** (Just × Dupoc `(C, C)`,
+-- the three-guard mutual family `pJD`, a THREE-level ∧-elimination at slack (21, 24)),
+-- **`cimcic_just7_coop_unconditional`** (CIMCIC × Just `(C, C)`, family `pCJ = pGC TJ uJ wJ ⋏ ((qJCi ⋏ τ) ⋏ pGC TBD uD
+-- wD)`, slack (21, 24)), plus the box forms with the node-budget guard code of the constant template.
+#print axioms guardCodeB_of_template
+#print axioms guardCodeB_of_sentence
+#print axioms guardCodeB_gsubst
+#print axioms EvalGraph.search_iff
+#print axioms EvalGraph.search_iff₆
+#print axioms quote_emb_castLE_V
+#print axioms termSubst_tower_of
+#print axioms termSubst_TBD_of
+#print axioms termRelabelVec_descVecB
+#print axioms relabelTemplate_guardCodeB
+#print axioms relabelTemplate_quote_sentence₇_V
+#print axioms lMap_swap_GtmplJ7
+#print axioms quote_GtmplJ7A
+#print axioms quote_qJ4
+#print axioms termSubstVec_sVec7
+#print axioms termSubstVec_jVec4
+#print axioms guardCodeB_GtmplJ7A
+#print axioms guardCodeB_GtmplJ7
+#print axioms guardCodeB_GtmplJ7T
+#print axioms swapcode_JustV7
+#print axioms just7_search_V
+#print axioms just7T_search_V
+#print axioms evalGraph_JustV7_iff
+#print axioms evalGraph_Just7_iff
+#print axioms just7_mirror_coop_unconditional
+#print axioms dnum_JustV7
+#print axioms dU_JustV7
+#print axioms dW_JustV7
+#print axioms val_TJ_V
+#print axioms relabel_val_uJ_wJ_V
+#print axioms relabel_val_uJT_wJT_V
+#print axioms hX_just7
+#print axioms hopp_just7
+#print axioms hopp'_just7
+#print axioms hme_bot
+#print axioms hme'_bot
+#print axioms slack6_le
+#print axioms slack6_le'
+#print axioms slack6_le₁
+#print axioms guardCode_botDupocV_JustV7_eq_instB
+#print axioms guardCode_botCupodV_JustTV7_eq_instB
+#print axioms eval_qJJ_iff_V
+#print axioms eval_qJJ_swapped_iff_V
+#print axioms pJJ_all_V
+#print axioms pJJ_guard_V
+#print axioms loebSound_pJJ
+#print axioms just7_self_cell_core
+#print axioms just7_self_coop
+#print axioms just7_self_coop_unconditional
+#print axioms just7_finds_guard_vs_self_unconditional
+#print axioms guardCode_botDupocV_DupocV_eq_instB
+#print axioms guardCode_DupocV_botDupocV_eq_instB
+#print axioms guardCode_DupocV_JustV7_eq_instB
+#print axioms guardCode_CupodV_JustTV7_eq_instB
+#print axioms eval_qJD_iff_V
+#print axioms eval_qBDD_iff_V
+#print axioms eval_qDJ_iff_V
+#print axioms pJD_boxes_V
+#print axioms pJD_all_V
+#print axioms loebSound_pJD
+#print axioms just7_dupoc_cell_core
+#print axioms just7_dupoc_coop
+#print axioms just7_dupoc_coop_unconditional
+#print axioms just7_dupoc_find_guards_unconditional
+#print axioms guardCode_botDupocV_CimcicV_eq_instB
+#print axioms guardCode_botCupodV_CimcicTV_eq_instB
+#print axioms eval_qJCi_iff_V
+#print axioms pCJ_all_V
+#print axioms loebSound_pCJ
+#print axioms cimcic_just7_cell_core
+#print axioms cimcic_just7_coop
+#print axioms cimcic_just7_coop_unconditional
+#print axioms cimcic_just7_find_guards_unconditional
 
 -- Route B Phase 2, the CIMCIC family — CIMCIC × Dupoc, CIMCIC × Mirror and CIMCIC × CIMCIC, all `(C, C)`, in
 -- PA-`S'` (Cells/CIMCIC, 2026-09-23): `Cells/DIMCID` re-run on the guard `phiC = .impl (.plays .self .opp C)
