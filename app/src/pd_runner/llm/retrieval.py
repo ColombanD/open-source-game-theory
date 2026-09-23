@@ -13,15 +13,26 @@ from pd_runner.lean.templates import (
     _UNIVERSAL_OUTCOME_THEOREMS,
     _EXISTENTIAL_OUTCOME_THEOREMS,
 )
+from pd_runner.llm.library_layout import file_bots
+from pd_runner.settings import RetrievalConfig
 
 
-def retrieve_few_shots(left_bot: str, right_bot: str, max_files: int = 4, exclude_bots: set[str] | None = None) -> list[tuple[str, str]]:
+def retrieve_few_shots(
+    left_bot: str,
+    right_bot: str,
+    max_files: int | None = None,
+    exclude_bots: set[str] | None = None,
+    config: RetrievalConfig | None = None,
+) -> list[tuple[str, str]]:
     """Return (filename, source) pairs for the most relevant existing theorem files.
 
     Ranking: files whose name matches one of the two bots come first; then any
     file that contains a theorem involving either bot name; then other files up
-    to max_files.
+    to the configured cap (plus the reserved cross-directory slots).
     """
+    cfg = config or RetrievalConfig()
+    if max_files is None:
+        max_files = cfg.max_files
     theorems_dir = _THEOREMS_DIR
     if not theorems_dir.exists():
         return []
@@ -29,25 +40,49 @@ def retrieve_few_shots(left_bot: str, right_bot: str, max_files: int = 4, exclud
     target_names = {left_bot.lower(), right_bot.lower()}
     excluded = {b.lower() for b in exclude_bots} if exclude_bots else set()
 
-    def _mentions_excluded(path: Path) -> bool:
-        """True if the file is the dedicated file for an excluded bot.
+    def _file_bots(path: Path) -> set[str]:
+        return file_bots(path, theorems_dir)
 
-        We only filter on filename stem — a file is "about" an excluded bot if
-        it is named after it (e.g. `Theorems/CupodBot.lean`). Files that merely
-        mention a target bot in passing are kept, since the proof for a pair
-        (A, B) is, by repo convention, located in `Theorems/A.lean` or
-        `Theorems/B.lean`, not in unrelated bots' files.
+    def _mentions_excluded(path: Path) -> bool:
+        """True if the file is dedicated to an excluded bot (filename/dir based).
+
+        Files that merely mention a target bot in passing are kept, since the
+        proof for a pair (A, B) is, by repo convention, located in a file named
+        for A or B, not in unrelated bots' files.
         """
-        return path.stem.lower() in excluded
+        return bool(_file_bots(path) & excluded)
+
+    _content_cache: dict[Path, str] = {}
+
+    def _content(path: Path) -> str:
+        if path not in _content_cache:
+            try:
+                _content_cache[path] = path.read_text(encoding="utf-8").lower()
+            except OSError:
+                _content_cache[path] = ""
+        return _content_cache[path]
 
     def _score(path: Path) -> int:
-        stem = path.stem.lower()
-        if stem in target_names:
-            return 2
-        content = path.read_text(encoding="utf-8").lower()
-        if any(name in content for name in target_names):
-            return 1
-        return 0
+        """Rank few-shot candidates.
+
+        Two signals beyond the old path-dedication test (both learned from the
+        DIMCID-vs-OBot incident, where the agent re-derived — and name-clashed
+        with — an OBot floor census it never saw): path-dedicated files (the
+        pair's own proofs and each bot's dir-local Helpers) rank first; then
+        files ranked by how SUBSTANTIVELY their content involves the targets
+        (occurrence count, capped) — a bot's reusable machinery often lives in
+        ANOTHER bot's Helpers (OBot's floor census sits in
+        `CupodBot/Helpers.lean`, ~dozens of mentions), while a passing mention
+        in an unrelated file counts for little.
+        """
+        content = _content(path)
+        occurrences = sum(content.count(name) for name in target_names)
+        path_hit = bool(_file_bots(path) & target_names)
+        if not path_hit and occurrences == 0:
+            return 0
+        return (cfg.path_dedicated_score if path_hit else 0) \
+            + min(occurrences, cfg.occurrence_cap) \
+            + (cfg.helpers_bonus if path.stem.lower() == "helpers" else 0)
 
     # Include the LLM-generated proof files as few-shot candidates too: the pipeline's
     # own past successes are often the best examples for a new pair. `LlmLemmas.lean`
@@ -55,23 +90,50 @@ def retrieve_few_shots(left_bot: str, right_bot: str, max_files: int = 4, exclud
     # the system prompt rather than competing for few-shot slots.
     pool = [
         p
-        for pattern in ("*.lean", "LlmGenerations/*.lean")
+        for pattern in ("*.lean", "LlmGenerations/*.lean", "*/vs_*.lean", "*/Helpers.lean")
         for p in theorems_dir.glob(pattern)
         if p.stem != "LlmLemmas" and not _mentions_excluded(p)
     ]
     candidates = sorted(pool, key=lambda p: (-_score(p), p.name))
 
     results: list[tuple[str, str]] = []
+    chosen: set[Path] = set()
+
+    def _take(path: Path) -> None:
+        try:
+            content = path.read_text(encoding="utf-8")
+        except OSError:
+            return
+        # Skip umbrella/index files (pure import lists) — no proof content to learn from.
+        if "theorem" not in content:
+            return
+        chosen.add(path)
+        # Label with the Theorems-relative path: per-pair files share basenames
+        # across bot directories (every dir has a vs_DBot.lean eventually).
+        results.append((str(path.relative_to(theorems_dir)), content))
+
     for path in candidates:
         if len(results) >= max_files:
             break
         # Skip files that scored 0 — not relevant enough unless we have few options
         if _score(path) == 0 and len(results) >= 2:
             break
-        try:
-            results.append((path.name, path.read_text(encoding="utf-8")))
-        except OSError:
-            continue
+        _take(path)
+
+    # RESERVED SLOTS for cross-directory machinery: a target bot's reusable lemmas
+    # can live in ANOTHER bot's file (OBot's floor census sits in
+    # `CupodBot/Helpers.lean`; the most analogous pair proof in
+    # `CupodBot/vs_OBot.lean`) — those score below path-dedicated files and get
+    # crowded out whenever the pair has many proofs of its own. Force-include the
+    # top substantive content matches so the agent sees the existing machinery
+    # (and its NAMES — re-deriving one under the same name breaks the library
+    # build).
+    cross = [
+        p for p in candidates
+        if p not in chosen and 0 < _score(p) < cfg.path_dedicated_score
+    ]
+    for path in cross[: cfg.reserved_cross_slots]:
+        _take(path)
 
     return results
 

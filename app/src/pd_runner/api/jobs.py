@@ -41,14 +41,33 @@ class Job:
     bot_b_draft: Optional[BotResult] = None
     proof_draft: Optional[ProofResult] = None
 
+    # Faithfulness reviews attached to the drafts (docs/BOT_REVIEWER.md).
+    # `review_payload()` dicts; None when review was off or failed.
+    bot_a_review: Optional[dict] = None
+    bot_b_review: Optional[dict] = None
+
     # Human decision signals (set by accept/reject endpoints)
     bots_accepted: asyncio.Event = field(default_factory=asyncio.Event)
     proof_accepted: asyncio.Event = field(default_factory=asyncio.Event)
+    diff_accepted: asyncio.Event = field(default_factory=asyncio.Event)
     rejected: bool = False  # True if user rejected at either gate
     stop_after_bots: bool = False  # True if user accepted bots but wants to skip the proof step
 
+    # Constructor-integration jobs only
+    proposal_name: Optional[str] = None
+    diff: Optional[str] = None
+    integration_summary: Optional[str] = None
+    integration_result: Optional[object] = field(default=None, repr=False)  # IntegrationResult
+
+    # EGT sweep jobs only — `egt.pipeline.SweepResult.summary()`
+    egt_result: Optional[dict] = field(default=None, repr=False)
+
     result: Optional[PipelineResult] = None
     error: Optional[str] = None
+
+    # Failure-path outcome tracking (proof jobs only)
+    status_note: Optional[str] = None      # e.g. "recorded as Tried in outcome_status.toml"
+    open_suggestion: Optional[dict] = None  # {"pair": [a, b], "kind": "open_*"} — awaiting human confirm
 
     # Log streaming
     log_queue: asyncio.Queue = field(default_factory=asyncio.Queue)
@@ -60,11 +79,13 @@ class Job:
         bot_a = None
         if self.bot_a_draft:
             bot_a = BotDraft(name=self.bot_a_draft.bot_name, source=self.bot_a_draft.lean_source,
-                             is_existing=self.bot_a_draft.iterations_used == 0)
+                             is_existing=self.bot_a_draft.iterations_used == 0,
+                             review=self.bot_a_review)
         bot_b = None
         if self.bot_b_draft:
             bot_b = BotDraft(name=self.bot_b_draft.bot_name, source=self.bot_b_draft.lean_source,
-                             is_existing=self.bot_b_draft.iterations_used == 0)
+                             is_existing=self.bot_b_draft.iterations_used == 0,
+                             review=self.bot_b_review)
         proof = None
         if self.proof_draft:
             proof = ProofDraft(
@@ -81,6 +102,12 @@ class Job:
             "proof": proof,
             "result": self.result,
             "error": self.error,
+            "status_note": self.status_note,
+            "open_suggestion": self.open_suggestion,
+            "proposal_name": self.proposal_name,
+            "diff": self.diff,
+            "integration_summary": self.integration_summary,
+            "egt_result": self.egt_result,
         }
 
 

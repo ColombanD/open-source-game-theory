@@ -1,0 +1,21 @@
+{
+  "timestamp": "20260804T110336",
+  "bot_a": "DIMCID",
+  "bot_b": "CupodTrollBot",
+  "model": "claude-opus-4-8",
+  "episode_index": 0,
+  "end_reason": "verdict",
+  "verdict_kind": "proved",
+  "turns_used": 17,
+  "tool_calls_used": 18,
+  "usage": {
+    "input_tokens": 34,
+    "output_tokens": 62850,
+    "cache_read_tokens": 2666147,
+    "cache_creation_tokens": 209833
+  },
+  "elapsed_seconds": 758.5172122080039,
+  "notebook": "DIMCID vs CupodTrollBot: SOLVED = (C,C). Proof compiled clean.\nRoute: DIMCID guard = A→cons where A=(DIMCID plays C vs CTB), cons=(CTB plays D vs DIMCID). cons is FALSE (CTB≠CupodBot ⇒ cooperates). Guard unprovable via modified-valuation census (wv_sound_upto master): inductive SP with base (DIMCID k, CupodTrollBot k) + simL/botSimL closure, forcing WV S A true. Then Pf guard ⇒ WV S A → WV S cons ⇒ True→False. KEY: CTB guard is .eq .opp (CupodBot k) with NO .self, so subst_eq lemma has an o=.opp ESCAPE (unlike WaryBot's subst_eq_wary). Handle via SP_opp: oppo = CTB ∨ oppo=.opp (disjunctive invariant), and subst_eq_opp for the .opp case. search_t base kill: subst h2 h3 h4 (ψ,P,Q) but NOT h1 (g=k, would eliminate outer k); instead rw[h1] at hWV hcert hS. The .opp opp sub-case: cases hS (base fixes oppo=CTB≠.opp).\nReusable pattern for both-const searcher targets where tail censuses fail (searchBranch reads both-const bots).",
+  "hidden_bots": [],
+  "final_text": "The entire proof compiles cleanly with zero errors and zero warnings. The outcome is (C, C): DIMCID cooperates (its guard `A → cons` is unprovable since it's a true→false implication — proven via a modified-valuation census forcing the C-atom true), and CupodTrollBot cooperates (DIMCID is not literally CupodBot).\n\nLet me update my notebook and submit."
+}

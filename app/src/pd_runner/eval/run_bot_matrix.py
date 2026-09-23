@@ -14,50 +14,16 @@ from __future__ import annotations
 
 import argparse
 import json
-import re
-import time
-from dataclasses import asdict, dataclass
+from dataclasses import asdict
 from pathlib import Path
 
+from pd_runner import settings
 from pd_runner.config import load_paths
+from pd_runner.eval.common import CaseRecord, classify_tier, run_case
 from pd_runner.logging_config import setup_logging
-from pd_runner.services.proof_service import (
-    ProofRequest, ProofSearchError, search_proof,
-)
+from pd_runner.services.proof_service import ProofRequest
 
-
-# Tier classification used for stratified reporting.
-# Tier 0: constant bots (.const action, no opponent inspection).
-# Tier 1: reactive bots (read history / opponent action, no .search).
-# Tier 2: .search-using bots (need the proof-system/Löb machinery).
-_TIER_OVERRIDES: dict[str, int] = {
-    "CooperateBot": 0,
-    "DefectBot": 0,
-    "MirrorBot": 1,
-    "TitForTatBot": 1,
-    "DBot": 1,
-    "EBot": 1,
-    "OBot": 1,
-    "CupodBot": 2,
-    "DupocBot": 2,
-}
-
-
-@dataclass
-class MatrixResult:
-    bot_a: str
-    bot_b: str
-    tier_a: int
-    tier_b: int
-    passed: bool
-    left_action: str | None
-    right_action: str | None
-    chosen_fuel: int | None
-    iterations: int
-    wall_clock_s: float
-    max_tokens: int = 0
-    error_class: str | None = None
-    error_msg: str | None = None
+_classify_tier = classify_tier  # legacy alias
 
 
 def _discover_bots(include_llm: bool = False) -> list[str]:
@@ -71,31 +37,13 @@ def _discover_bots(include_llm: bool = False) -> list[str]:
     return names
 
 
-def _classify_tier(bot: str) -> int:
-    if bot in _TIER_OVERRIDES:
-        return _TIER_OVERRIDES[bot]
-    # Fallback for LLM-generated bots: read the source and detect .search.
-    paths = load_paths()
-    for candidate in (
-        paths.lean_engine_dir / "PrisonersDilemma" / "Bots" / f"{bot}.lean",
-        paths.lean_engine_dir / "PrisonersDilemma" / "Bots" / "LlmGenerations" / f"{bot}.lean",
-    ):
-        if candidate.exists():
-            src = candidate.read_text(encoding="utf-8")
-            if ".search" in src or "Prog.search" in src:
-                return 2
-            if ".const" in src and ".sim" not in src and ".ite" not in src:
-                return 0
-            return 1
-    return 1
-
-
-_FUEL_RE = re.compile(r"outcome\s*\(\s*n\s*\+\s*(\d+)\s*\)")
-
-
-def _extract_chosen_fuel(lean_source: str) -> int | None:
-    m = _FUEL_RE.search(lean_source)
-    return int(m.group(1)) if m else None
+def _record_pair(rec: dict) -> tuple[str, str]:
+    """The (left, right) key of a JSONL record — accepts both the current
+    CaseRecord keys and the legacy MatrixResult keys (bot_a/bot_b)."""
+    return (
+        rec.get("left_bot") or rec.get("bot_a"),
+        rec.get("right_bot") or rec.get("bot_b"),
+    )
 
 
 def _load_completed(output_path: Path) -> set[tuple[str, str]]:
@@ -112,15 +60,14 @@ def _load_completed(output_path: Path) -> set[tuple[str, str]]:
             except json.JSONDecodeError:
                 continue
             if rec.get("passed"):
-                completed.add((rec["bot_a"], rec["bot_b"]))
+                completed.add(_record_pair(rec))
     return completed
 
 
 def _run_pair(
     bot_a: str, bot_b: str, model: str, max_iterations: int, max_tokens: int,
     thinking_effort: str,
-) -> MatrixResult:
-    tier_a, tier_b = _classify_tier(bot_a), _classify_tier(bot_b)
+) -> CaseRecord:
     req = ProofRequest(
         left_bot=bot_a,
         right_bot=bot_b,
@@ -130,35 +77,10 @@ def _run_pair(
         model=model,
         exclude_bots=frozenset({bot_a, bot_b}),
     )
-    t0 = time.monotonic()
-    try:
-        proof = search_proof(req)
-        elapsed = time.monotonic() - t0
-        return MatrixResult(
-            bot_a=bot_a, bot_b=bot_b,
-            tier_a=tier_a, tier_b=tier_b,
-            passed=True,
-            left_action=proof.left_action,
-            right_action=proof.right_action,
-            chosen_fuel=_extract_chosen_fuel(proof.lean_source),
-            iterations=proof.iterations_used,
-            wall_clock_s=elapsed,
-            max_tokens=max_tokens,
-        )
-    except (ProofSearchError, RuntimeError) as exc:
-        elapsed = time.monotonic() - t0
-        iters = getattr(exc, "iterations_used", 0)
-        return MatrixResult(
-            bot_a=bot_a, bot_b=bot_b,
-            tier_a=tier_a, tier_b=tier_b,
-            passed=False,
-            left_action=None, right_action=None, chosen_fuel=None,
-            iterations=iters,
-            wall_clock_s=elapsed,
-            max_tokens=max_tokens,
-            error_class=type(exc).__name__,
-            error_msg=str(exc)[:500],
-        )
+    record = run_case(req)  # discover mode: passes iff proved
+    record.tier_a = classify_tier(bot_a)
+    record.tier_b = classify_tier(bot_b)
+    return record
 
 
 def main() -> None:
@@ -171,9 +93,9 @@ def main() -> None:
                         help="Run a single pair, format 'BotA,BotB' (overrides --bots; ignores --ordered/--resume)")
     parser.add_argument("--include-llm", action="store_true",
                         help="Also include bots from Bots/LlmGenerations/")
-    parser.add_argument("--model", default="claude-opus-4-7")
+    parser.add_argument("--model", default=settings.DEFAULT_MODEL)
     parser.add_argument("--max-iterations", type=int, default=20)
-    parser.add_argument("--max-tokens", type=int, default=32000,
+    parser.add_argument("--max-tokens", type=int, default=settings.DEFAULT_MAX_TOKENS,
                         help="Max output tokens per API call (default: 32000, Opus 4.7 max: 32000)")
     parser.add_argument("--thinking-effort", default="medium",
                         choices=["low", "medium", "high", "xhigh"],
@@ -231,7 +153,7 @@ def main() -> None:
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    # Load existing results into a dict keyed by (bot_a, bot_b) so new runs
+    # Load existing results into a dict keyed by (left, right) so new runs
     # overwrite old ones rather than appending duplicates.
     latest: dict[tuple[str, str], dict] = {}
     if output_path.exists():
@@ -240,19 +162,21 @@ def main() -> None:
                 line = line.strip()
                 if line:
                     r = json.loads(line)
-                    latest[(r["bot_a"], r["bot_b"])] = r
+                    latest[_record_pair(r)] = r
 
     for i, (a, b) in enumerate(remaining, start=1):
-        print(f"\n[{i}/{len(remaining)}] {a} vs {b} (tier {_classify_tier(a)}x{_classify_tier(b)})")
+        print(f"\n[{i}/{len(remaining)}] {a} vs {b} (tier {classify_tier(a)}x{classify_tier(b)})")
         res = _run_pair(a, b, args.model, args.max_iterations, args.max_tokens, args.thinking_effort)
         latest[(a, b)] = asdict(res)
         # Rewrite the whole file with deduplicated latest results after each pair.
         with output_path.open("w", encoding="utf-8") as f:
             for record in latest.values():
                 f.write(json.dumps(record) + "\n")
-        status = "PASS" if res.passed else f"FAIL ({res.error_class})"
+        cost = f"${res.cost_usd:.2f}" if res.cost_usd else "-"
+        status = "PASS" if res.passed else f"FAIL ({res.kind})"
         print(f"  {status}  outcome=({res.left_action},{res.right_action})  fuel={res.chosen_fuel}  "
-              f"iters={res.iterations}  {res.wall_clock_s:.1f}s")
+              f"episodes={res.episodes_used}  turns={res.turns_used}  cache={res.cache_hit_rate:.0%}  "
+              f"{cost}  {res.elapsed_seconds:.1f}s")
 
     # Summary.
     passed = sum(1 for r in latest.values() if r["passed"])

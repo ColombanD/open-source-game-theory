@@ -1,3 +1,14 @@
+/-! # Metatheory umbrella — TEMPORARILY OUT OF THE DEFAULT BUILD (2026-08-11)
+
+The `tvote` Prog constructor (refined Def-4 TauBots, 2026-08-18; it replaced the
+short-lived `tsearch`, which was removed the same day) breaks every
+exhaustive Prog/PlaysProof match in this target until the T31–T54 arms are
+written. That migration is **Milestone 2** (enumProg over VoteList, gated
+mirror rules, evalG 3-valued peel, modest/instance-gate walkers, the T49
+substrate); until it lands, this target is unpinned in `lakefile.toml` and the
+decidability results speak about the PRE-tvote language. Build explicitly
+with `lake build Metatheory` when working on M2. Consequence for the app: the
+certified outcome-prepass (`evalG`/`guardFastN`) cannot see tau terms yet. -/
 import PrisonersDilemma.Decidability.T31EngineDecider
 import PrisonersDilemma.Decidability.T42PfB
 import PrisonersDilemma.Decidability.T43ModestUniverse
@@ -34,7 +45,7 @@ table at its top maps every result to its file). The modules keep their mileston
    `none` only at the Löb boundary. Supersedes `ComputableEval/evalC`.
 3. **The gate-parametric strata** (`T42PfB`): `PfG G` gates the six
    conclusion-absent premise formulas (uniform gating, incl. the merged `mp`/`implTrans` —
-   D2); `Pf ↔ ∃ N, PfB N` (every proof is
+   D2); `Pf ↔ ∃ N, PfB N` (every `S`-derivation is
    finitely-cut); `CutRelevance` states THE remaining open conjecture (T4.1b).
 4. **The modest universe** (`T43ModestUniverse`): bots whose substitution positions are
    `.self`/`.opp`/frozen — the WHOLE zoo, each by `rfl` — have finite query universes

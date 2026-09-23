@@ -1,0 +1,21 @@
+{
+  "timestamp": "20260731T144849",
+  "bot_a": "GuardianBot",
+  "bot_b": "TitForTatBot",
+  "model": "claude-opus-4-8",
+  "episode_index": 0,
+  "end_reason": "verdict",
+  "verdict_kind": "proved",
+  "turns_used": 3,
+  "tool_calls_used": 3,
+  "usage": {
+    "input_tokens": 6,
+    "output_tokens": 5646,
+    "cache_read_tokens": 325156,
+    "cache_creation_tokens": 41066
+  },
+  "elapsed_seconds": 84.15969583400874,
+  "notebook": null,
+  "hidden_bots": [],
+  "final_text": "Compiles cleanly. Let me submit."
+}

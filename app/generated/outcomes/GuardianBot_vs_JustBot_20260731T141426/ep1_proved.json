@@ -1,0 +1,21 @@
+{
+  "timestamp": "20260731T141426",
+  "bot_a": "GuardianBot",
+  "bot_b": "JustBot",
+  "model": "claude-opus-4-8",
+  "episode_index": 0,
+  "end_reason": "verdict",
+  "verdict_kind": "proved",
+  "turns_used": 13,
+  "tool_calls_used": 15,
+  "usage": {
+    "input_tokens": 26,
+    "output_tokens": 26279,
+    "cache_read_tokens": 1614126,
+    "cache_creation_tokens": 65451
+  },
+  "elapsed_seconds": 361.2440144169959,
+  "notebook": "## GuardianBot vs JustBot — SOLVED, outcome (C, D). Submitted.\n\nKey: JustBot's guard \"Guardian plays C vs .bot(DupocBot k)\" is TRUE but is an ELSE-play\nof Guardian's own search → search_f floor > k → JustBot defects. Guardian's guard\n\"JustBot plays D vs botCB\" is FALSE (JustBot coops with botCB) → Guardian coops.\n\nFloor census for a CONST-branch searcher whose ELSE action is target: DON'T use\nno_provable_searcherPlay_tail (needs non-const branches). Use no_provable_tailToS_floor\ndirectly with singleton set (· = target atom). hsb passes because it's ACTION-refined:\nme ≠ .search g ψ (.const c) (.const b) with c=target=C, but Guardian's then=.const D≠C.\natom-killer: cases hpp → search_t (then=.const D → cases hbr closes) | search_f (floor).",
+  "hidden_bots": [],
+  "final_text": "The complete proof compiles with zero errors and zero warnings. The outcome is (C, D): GuardianBot cooperates, JustBot defects.\n\nLet me update my notebook and submit."
+}

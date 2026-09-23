@@ -1,0 +1,108 @@
+{
+  "run": "body+twins_syntactic_t060_a030_ee207f993047",
+  "zoo": "body+twins",
+  "family": "syntactic",
+  "t": 0.6,
+  "alpha": 0.3,
+  "fingerprint": "ee207f993047",
+  "n_types": 12,
+  "bots": [
+    "CIMCIC",
+    "CooperateBot",
+    "CupodBot",
+    "CupodTrollBot",
+    "DBot",
+    "DIMCID",
+    "DefectBot",
+    "DupocBot",
+    "EBot",
+    "OBot",
+    "PrudentBot",
+    "TitForTatBot"
+  ],
+  "excluded_bots": [],
+  "is_fully_proven": true,
+  "grid_points": [
+    [
+      0.6,
+      0.3
+    ],
+    [
+      0.4,
+      0.45
+    ]
+  ],
+  "n_grid_points": 2,
+  "ok": true,
+  "failed_stages": [],
+  "stages": {
+    "ess": {
+      "ok": true,
+      "seconds": 0.002,
+      "error": null,
+      "n_pure_ess": 0,
+      "n_types": 12
+    },
+    "invasion": {
+      "ok": true,
+      "seconds": 0.433,
+      "error": null,
+      "edges_strict": 45,
+      "edges_weak": 91,
+      "n_sccs": 5,
+      "n_cycles": 69,
+      "layout_backend": "manual_layered"
+    },
+    "faces": {
+      "ok": true,
+      "seconds": 0.209,
+      "error": null,
+      "n_supports": 4083,
+      "by_class": {
+        "singular": 2299,
+        "non_interior": 1776,
+        "asymp_stable_invadable": 8
+      },
+      "enumeration_complete": true
+    },
+    "nash": {
+      "ok": true,
+      "seconds": 107.56,
+      "error": null,
+      "run_dir": "runs/20260901T125140Z_a979a91aa0c2",
+      "n_extreme_NE": 80,
+      "n_components": 2,
+      "cross_check_performed": false
+    },
+    "replicator": {
+      "ok": true,
+      "seconds": 0.785,
+      "error": null,
+      "n_attractors": 17,
+      "n_unconverged": 0,
+      "all_converged": true,
+      "largest_basin": 0.9801,
+      "dominant_support": [
+        "CIMCIC",
+        "DupocBot",
+        "CooperateBot",
+        "TitForTatBot"
+      ]
+    },
+    "moran": {
+      "ok": true,
+      "seconds": 0.045,
+      "error": null,
+      "n_points": 9,
+      "all_converged": true,
+      "headline": {
+        "population": 100,
+        "beta": 1.0,
+        "stochastically_stable": [
+          "DupocBot",
+          "CIMCIC"
+        ]
+      }
+    }
+  }
+}

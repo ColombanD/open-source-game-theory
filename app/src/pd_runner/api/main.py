@@ -10,11 +10,13 @@ from fastapi import BackgroundTasks, FastAPI, HTTPException
 from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
+from pd_runner.api.egt_task import run_egt_sweep
+from pd_runner.api.integration_task import run_integration
 from pd_runner.api.jobs import store
 from pd_runner.api.pipeline_task import bot_exists, bot_source_on_disk, run_pipeline
 from pd_runner.api.schemas import (
-    BotConflict, BotConflictResolution, BotSpec,
-    ConflictResponse, JobResponse, JobStatus, PipelineRequest,
+    BotConflict, ConflictResponse, EgtSweepRequest, IntegrationRequest, JobResponse,
+    JobStatus, MatrixStatusRequest, PipelineRequest, ProposalInfo, ProposalsResponse,
 )
 
 app = FastAPI(title="Open-Source Game Theory Pipeline", version="0.1.0")
@@ -22,6 +24,18 @@ app = FastAPI(title="Open-Source Game Theory Pipeline", version="0.1.0")
 _STATIC_DIR = Path(__file__).parent / "static"
 _STATIC_DIR.mkdir(exist_ok=True)
 app.mount("/static", StaticFiles(directory=_STATIC_DIR), name="static")
+
+# EGT sweep artefacts, so the report's links to a run's CSV/parquet/GEXF/figures
+# resolve in the browser. Mounted lazily-safe: the directory is created if the
+# app starts before any sweep has run.
+# Anchored to `app/`, not cwd: a relative path here created a stray
+# `generated/egt/runs/` wherever the server happened to be started from —
+# outside the gitignore, so sweep artefacts showed up in git status.
+from pd_runner.egt.pipeline import DEFAULT_OUT_ROOT as _EGT_OUT_ROOT
+
+_EGT_RUNS_DIR = _EGT_OUT_ROOT / "runs"
+_EGT_RUNS_DIR.mkdir(parents=True, exist_ok=True)
+app.mount("/egt/runs", StaticFiles(directory=_EGT_RUNS_DIR), name="egt-runs")
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -56,6 +70,228 @@ async def list_bots() -> dict:
     llm_dir = bots_dir / "LlmGenerations"
     llm = sorted(p.stem for p in llm_dir.glob("*.lean")) if llm_dir.exists() else []
     return {"handwritten": handwritten, "llm": llm}
+
+
+@app.get("/matrix")
+async def get_matrix() -> dict:
+    """The current outcome matrix, read from the Lean `@[outcome]` export on each call.
+
+    `stale` is a human-readable reason the export may lag the Lean sources (or null);
+    `POST /matrix/export` regenerates it.
+    """
+    from pd_runner.eval.outcome_matrix import (
+        MATRIX_LEGEND, build_outcome_details, build_outcome_matrix, export_staleness,
+        matrix_rows,
+    )
+
+    bots, cells = build_outcome_matrix()
+    details = build_outcome_details()
+    return {
+        "bots": bots,
+        "rows": matrix_rows(bots, cells),
+        "stale": export_staleness(),
+        "legend": [{"mark": m, "meaning": d} for m, d in MATRIX_LEGEND],
+        # Per proven cell, keyed "Row|Col": theorem, flags, companions, and the note the
+        # UI shows as a tooltip.
+        "details": {f"{r}|{c}": d for (r, c), d in details.items()},
+    }
+
+
+@app.post("/matrix/export")
+async def matrix_export() -> dict:
+    """Regenerate `outcome_theorems.json` from Lean (`lake build` + `lake exe export_outcomes`).
+
+    Runs the validator + census as a side effect, so an off-template or untagged
+    outcome theorem surfaces here as a 500 with the Lean error, never as a missing cell.
+    """
+    from pd_runner.eval.outcome_matrix import export_staleness, refresh_export
+
+    loop = asyncio.get_running_loop()
+    try:
+        output = await loop.run_in_executor(None, refresh_export)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+    return {"output": output.strip(), "stale": export_staleness()}
+
+
+@app.get("/tau/zoos")
+async def tau_zoos() -> dict:
+    """The selectable tau sub-zoos — the UI dropdown's source of truth."""
+    from pd_runner.tau.matrix import DEFAULT_ZOO, ZOOS
+
+    return {
+        "default": DEFAULT_ZOO,
+        "zoos": [
+            {
+                "key": z.key,
+                "label": z.label,
+                "description": z.description,
+                "size": len(z.bots),
+                "bots": list(z.bots),
+                "stipulated_pairs": len(z.stipulations),
+            }
+            for z in ZOOS.values()
+        ],
+    }
+
+
+@app.get("/tau/report", response_class=HTMLResponse)
+async def tau_report(
+    alphas: str = "0.3,0.45,0.62,0.8",
+    zoo: str = "body",
+) -> HTMLResponse:
+    """The TauBot graded-transparency analysis, rendered fresh on each request.
+
+    Rebuilds the tau matrix from the theorem library (plus the selected zoo's
+    documented stipulations) and returns the self-contained HTML report —
+    cooperation-vs-transparency sweep, outcome composition, per-bot robustness
+    thresholds, (t, α) phase diagram, and the underlying matrix.
+
+    `alphas` is a comma-separated list of caution thresholds to sweep; `zoo`
+    names one of the sub-zoos listed by `/tau/zoos`.
+    """
+    from pd_runner.tau.matrix import get_zoo
+    from pd_runner.tau.report import build_report
+
+    try:
+        parsed = tuple(float(a) for a in alphas.split(",") if a.strip())
+    except ValueError:
+        raise HTTPException(status_code=400,
+                            detail=f"alphas must be comma-separated numbers, got {alphas!r}")
+    if not parsed:
+        raise HTTPException(status_code=400, detail="alphas must contain at least one value")
+
+    try:
+        named = get_zoo(zoo)
+    except KeyError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+    # The build is pure CPU (a few hundred tournaments); keep the event loop free.
+    loop = asyncio.get_running_loop()
+    page = await loop.run_in_executor(
+        None, lambda: build_report(named.load(), parsed, zoo=named)
+    )
+    return HTMLResponse(page)
+
+
+@app.get("/egt/stages")
+async def egt_stages() -> dict:
+    """The analysis stages a sweep can run, in dependency order.
+
+    `ess` writes the numeric payoff matrix the other three read, so it is
+    required; the UI marks it non-optional for that reason.
+    """
+    from pd_runner.egt.pipeline import DEFAULT_ALPHAS, STAGES
+
+    labels = {
+        "ess": "ESS (pure evolutionarily stable strategies)",
+        "invasion": "Invasion graph (SCCs, cycles, condensation)",
+        "faces": "Face equilibria (replicator Jacobian)",
+        "nash": "Nash equilibria (exact, extreme NE) — slowest",
+        "replicator": "Replicator dynamics (basins of attraction)",
+        "moran": "Moran process (fixation, stochastic stability)",
+    }
+    return {
+        # `.get` rather than `[]`: a stage added to STAGES without a label
+        # here should degrade to its key, not 500 the endpoint and take the
+        # whole UI card down with it.
+        "stages": [
+            {"key": s, "label": labels.get(s, s), "required": s == "ess"}
+            for s in STAGES
+        ],
+        "default_alphas": list(DEFAULT_ALPHAS),
+    }
+
+
+@app.get("/egt/report", response_class=HTMLResponse)
+async def egt_report(zoo: str | None = None, family: str | None = None) -> HTMLResponse:
+    """The HTML report over one sweep's artefacts.
+
+    Unlike `/tau/report`, which recomputes on every request, this READS the
+    run directories a sweep already wrote — the four stages cost minutes and
+    their artefacts are the record. The shared artefact directory holds every
+    sweep ever launched, so `zoo`/`family` pick which one to render; left
+    unset, the report resolves a deterministic default and the page links to
+    the other sweeps present.
+    """
+    from pd_runner.egt.pipeline import DEFAULT_OUT_ROOT
+    from pd_runner.egt.report import build_report
+
+    loop = asyncio.get_running_loop()
+    try:
+        # Absolute base: the page is served at /egt/report but the artefacts
+        # are mounted at /egt/runs, so a relative "runs" would 404.
+        page = await loop.run_in_executor(
+            None, lambda: build_report(
+                DEFAULT_OUT_ROOT, artefact_base="/egt/runs",
+                zoo=zoo, family=family)
+        )
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    except ValueError as exc:
+        # Unknown zoo/family — the message lists what IS available.
+        raise HTTPException(status_code=404, detail=str(exc))
+    return HTMLResponse(page)
+
+
+@app.post("/egt/sweep", response_model=JobResponse, status_code=202)
+async def start_egt_sweep(req: EgtSweepRequest, background_tasks: BackgroundTasks):
+    """Launch an EGT `(t, α)` sweep as a background job.
+
+    Long-running (the Nash stage alone is ~50s per distinct matrix), so this
+    follows the job + SSE pattern rather than rendering synchronously the way
+    `/tau/report` does. No human gate: the sweep reads the proven outcome
+    matrix and writes analysis artefacts, touching nothing in the library.
+    """
+    job = store.create()
+    background_tasks.add_task(run_egt_sweep, job, req)
+    return JobResponse(**job.to_response_dict())
+
+
+@app.get("/egt/sweep/{job_id}", response_model=JobResponse)
+async def get_egt_sweep(job_id: str) -> JobResponse:
+    job = store.get(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+    return JobResponse(**job.to_response_dict())
+
+
+@app.post("/matrix/sync")
+async def matrix_sync() -> dict:
+    """Rebuild the outcome matrix from the theorem library and push it to the Google Sheet."""
+    from pd_runner.services.sheets import SheetsPushError, push_matrix
+
+    loop = asyncio.get_running_loop()
+    try:
+        return await loop.run_in_executor(None, push_matrix)
+    except SheetsPushError as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+
+
+@app.post("/matrix/status")
+async def add_matrix_status(req: MatrixStatusRequest) -> dict:
+    """Append a curated status (Open Problem / Tried / Need rework) and re-sync the Sheet."""
+    from pd_runner.eval.outcome_matrix import append_status, library_bots
+
+    if req.section not in ("open", "tried", "rework"):
+        raise HTTPException(status_code=400, detail=f"unknown section {req.section!r}")
+    bots = library_bots()
+    if len(req.pair) != 2 or any(b not in bots for b in req.pair):
+        raise HTTPException(status_code=400, detail=f"pair must be two library bots, got {req.pair}")
+
+    from datetime import date
+    reason = req.reason or f"Marked via app UI on {date.today().isoformat()}."
+    added = append_status(req.section, (req.pair[0], req.pair[1]), reason)
+
+    synced = False
+    from pd_runner.services.sheets import push_matrix, sheets_configured
+    if added and sheets_configured():
+        try:
+            await asyncio.get_running_loop().run_in_executor(None, push_matrix)
+            synced = True
+        except Exception:
+            pass  # sheet sync is best-effort; the TOML entry is the record
+    return {"added": added, "synced": synced}
 
 
 @app.post("/pipeline", response_model=JobResponse, status_code=202,
@@ -137,6 +373,78 @@ async def reject_proof(job_id: str) -> JobResponse:
     return JobResponse(**job.to_response_dict())
 
 
+@app.get("/proposals", response_model=ProposalsResponse)
+async def list_proposals() -> ProposalsResponse:
+    """List filed constructor proposals (Tier-2 evidence bundles) with status."""
+    import json
+    from pd_runner.services.constructor_proposals import proposals_dir
+
+    out: list[ProposalInfo] = []
+    root = proposals_dir()
+    if root.exists():
+        for meta_path in sorted(root.glob("*/meta.json")):
+            try:
+                meta = json.loads(meta_path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                continue
+            md_path = meta_path.parent / "proposal.md"
+            out.append(ProposalInfo(
+                name=meta.get("name", meta_path.parent.name),
+                date=meta.get("date"),
+                status=meta.get("status", "awaiting_review"),
+                integrated_as=meta.get("integrated_as"),
+                unblocks=meta.get("unblocks"),
+                has_unblocked_proof=meta.get("has_unblocked_proof", False),
+                proposal_md=md_path.read_text(encoding="utf-8") if md_path.exists() else None,
+            ))
+    return ProposalsResponse(proposals=out)
+
+
+@app.post("/proposals/{name}/integrate", response_model=JobResponse, status_code=202)
+async def start_integration(name: str, req: IntegrationRequest, background_tasks: BackgroundTasks):
+    """Human gate 1: accepting the constructor = starting its integration job."""
+    from pd_runner.services.constructor_proposals import proposals_dir
+
+    pdir = proposals_dir() / name
+    if not pdir.exists():
+        raise HTTPException(status_code=404, detail=f"No proposal named {name!r}")
+    import json
+    try:
+        meta = json.loads((pdir / "meta.json").read_text(encoding="utf-8"))
+        if meta.get("status") == "integrated":
+            raise HTTPException(status_code=409, detail=f"Proposal {name!r} is already integrated")
+    except (OSError, json.JSONDecodeError):
+        pass
+
+    job = store.create()
+    background_tasks.add_task(run_integration, job, name, req, store)
+    return JobResponse(**job.to_response_dict())
+
+
+@app.post("/integration/{job_id}/accept-diff", response_model=JobResponse)
+async def accept_diff(job_id: str) -> JobResponse:
+    """Human gate 2: accept the reviewed engine diff — applies it to the live tree."""
+    job = store.get(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+    if job.status != JobStatus.diff_ready:
+        raise HTTPException(status_code=409, detail=f"Job is not waiting for diff review (status: {job.status})")
+    job.diff_accepted.set()
+    return JobResponse(**job.to_response_dict())
+
+
+@app.post("/integration/{job_id}/reject-diff", response_model=JobResponse)
+async def reject_diff(job_id: str) -> JobResponse:
+    job = store.get(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+    if job.status != JobStatus.diff_ready:
+        raise HTTPException(status_code=409, detail=f"Job is not waiting for diff review (status: {job.status})")
+    job.rejected = True
+    job.diff_accepted.set()
+    return JobResponse(**job.to_response_dict())
+
+
 @app.get("/pipeline/{job_id}/logs")
 async def stream_logs(job_id: str) -> StreamingResponse:
     job = store.get(job_id)
@@ -160,7 +468,14 @@ async def stream_logs(job_id: str) -> StreamingResponse:
                 # record, which forces uvicorn to flush each SSE event instead
                 # of coalescing a burst of back-to-back yields into one write.
                 line = await asyncio.wait_for(job.log_queue.get(), timeout=10.0)
-                yield f"data: {line}\n\n"
+                # SSE is line-oriented: every line of a multi-line record needs
+                # its own `data: ` prefix (EventSource rejoins them with \n).
+                # Embedding raw newlines in one data field makes the browser
+                # parse the continuation lines as SSE fields and drop them —
+                # which used to eat everything after the first line of Lean
+                # sources, tool results, and assistant text.
+                payload = "".join(f"data: {l}\n" for l in (line.splitlines() or [""]))
+                yield payload + "\n"
             except asyncio.TimeoutError:
                 if job.logs_done and job.log_queue.empty():
                     yield "event: done\ndata: \n\n"

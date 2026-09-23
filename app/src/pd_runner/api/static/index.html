@@ -90,6 +90,21 @@
     .step-text { font-size: 0.85rem; color: #94a3b8; }
     .gate-actions { display: flex; gap: 0.75rem; margin-top: 1rem; }
 
+    #matrix-card { max-width: 1200px; }
+    .matrix-wrap { overflow-x: auto; margin-top: 0.9rem; }
+    table.matrix { border-collapse: collapse; font-size: 0.72rem; white-space: nowrap; }
+    table.matrix th, table.matrix td {
+      border: 1px solid #000; padding: 0.28rem 0.55rem; text-align: center;
+    }
+    table.matrix th { color: #93c5fd; font-weight: 600; position: sticky; top: 0; background: #1e2130; }
+    table.matrix td.mx-name { color: #93c5fd; font-weight: 600; text-align: left; }
+    table.matrix td.mx-lower { background: #000; }
+    table.matrix td.mx-open  { background: #7f1d1d; color: #fca5a5; }
+    table.matrix td.mx-tried { background: #92400e; color: #fcd34d; }
+    table.matrix td.mx-rework { background: #1d4ed8; color: #bfdbfe; }
+    table.matrix td.mx-none  { background: #065f46; color: #6ee7b7; }
+    table.matrix td.mx-sensitive { background: #3b2f5c; color: #d8b4fe; }
+
     .section-label {
       font-size: 0.75rem; color: #94a3b8; font-weight: 600;
       text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem;
@@ -206,6 +221,7 @@
           <option value="claude-opus-4-8">Opus 4.8 (128K)</option>
           <option value="claude-opus-4-7">Opus 4.7 (128K)</option>
           <option value="claude-haiku-4-5">Haiku 4.5 (64K)</option>
+          <option value="leanstral-1-5">Leanstral 1.5 (Lean-specialized, free)</option>
         </select>
       </div>
       <div style="display:flex; align-items:center; gap:0.5rem;">
@@ -217,9 +233,19 @@
       <div style="display:flex; align-items:center; gap:0.5rem;">
         <label style="margin:0; white-space:nowrap;" for="effort-select">Thinking</label>
         <select id="effort-select" style="width:auto;">
+          <option value="none">none</option>
           <option value="low">low</option>
           <option value="medium" selected>medium</option>
           <option value="high">high</option>
+        </select>
+      </div>
+      <div style="display:flex; align-items:center; gap:0.5rem;" id="review-wrap">
+        <label style="margin:0; white-space:nowrap;" for="review-select"
+               title="Checks the generated bot against its description using machine-certified behavior, before you accept it. Adds ~30-60s of Lean per bot.">Faithfulness</label>
+        <select id="review-select" style="width:auto;">
+          <option value="rewrite" selected>review + auto-rewrite</option>
+          <option value="review">review only</option>
+          <option value="off">off</option>
         </select>
       </div>
       <div style="display:flex; align-items:center; gap:0.5rem;">
@@ -257,6 +283,143 @@
     </div>
   </div>
 
+  <div class="card" id="matrix-card">
+    <h2>Outcome matrix</h2>
+    <p style="color:#9ca3af; font-size:0.85rem; margin-top:0;">
+      The bot-vs-bot outcome matrix, read from the <code>@[outcome]</code> cells the Lean
+      linter exported (<code>app/generated/outcome_theorems.json</code>). "Regenerate from
+      Lean" rebuilds the engine, runs the outcome census, and rewrites that export; it runs
+      automatically after each accepted proof. "Sync to Google Sheet" pushes the matrix to
+      its worksheet (e.g. after editing <code>app/outcome_status.toml</code>).
+    </p>
+    <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+      <button class="btn" id="matrix-export-btn" onclick="exportMatrix()">Regenerate from Lean</button>
+      <button class="btn btn-primary" id="matrix-sync-btn" onclick="syncMatrix()">Sync to Google Sheet</button>
+      <span id="matrix-sync-status" style="color:#9ca3af; font-size:0.85rem;"></span>
+    </div>
+    <p id="matrix-stale" style="color:#fcd34d; font-size:0.85rem; display:none;"></p>
+    <div id="matrix-table"></div>
+    <dl id="matrix-legend" style="color:#9ca3af; font-size:0.8rem; margin-top:0.6rem; display:grid; grid-template-columns:max-content 1fr; gap:0.15rem 0.8rem;"></dl>
+  </div>
+
+  <div class="card" id="tau-card">
+    <h2>TauBot analysis</h2>
+    <p style="color:#9ca3af; font-size:0.85rem; margin-top:0;">
+      Graded transparency over the zoo (Def 3 tau lift): cooperation vs
+      transparency, per-bot robustness thresholds, and the (t, α) phase
+      diagram, computed from the proven outcome matrix. Opens the report in a
+      new tab; it is rebuilt from the theorem library on every run.
+    </p>
+    <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+      <label style="color:#9ca3af; font-size:0.85rem;">sub-zoo
+        <select id="tau-zoo" onchange="onTauZooChange()"
+                style="margin-left:0.4rem; background:#0f1117; color:#e5e7eb;
+                       border:1px solid #2d3348; border-radius:6px; padding:0.35rem 0.5rem;
+                       font-size:0.85rem;">
+          <option value="default">default</option>
+        </select>
+      </label>
+      <label style="color:#9ca3af; font-size:0.85rem;">α values
+        <input id="tau-alphas" type="text" value="0.3,0.45,0.62,0.8"
+               style="width:11rem; margin-left:0.4rem; background:#0f1117; color:#e5e7eb;
+                      border:1px solid #2d3348; border-radius:6px; padding:0.35rem 0.5rem;
+                      font-size:0.85rem;">
+      </label>
+      <button class="btn btn-primary" onclick="openTauReport()">Run tau analysis</button>
+    </div>
+    <p id="tau-zoo-desc" style="color:#6b7280; font-size:0.8rem; margin:0.6rem 0 0;"></p>
+  </div>
+
+  <div class="card" id="egt-card">
+    <h2>Evolutionary analysis (EGT)</h2>
+    <p style="color:#9ca3af; font-size:0.85rem; margin-top:0;">
+      Which bots survive in a <em>population</em> of bots. Sweeps the (t, α)
+      grid, turns each tau tournament into a payoff matrix, and runs four
+      analyses over it: pure ESS, the invasion graph, face equilibria, and
+      exact Nash equilibria. Grid points that yield the same matrix are
+      analysed once — the phase diagram is piecewise constant, so this
+      typically halves the work.
+    </p>
+    <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+      <label style="color:#9ca3af; font-size:0.85rem;">sub-zoo
+        <select id="egt-zoo" onchange="onEgtZooChange()"
+                style="margin-left:0.4rem; background:#0f1117; color:#e5e7eb;
+                       border:1px solid #2d3348; border-radius:6px; padding:0.35rem 0.5rem;
+                       font-size:0.85rem;">
+          <option value="default">default</option>
+        </select>
+      </label>
+      <label style="color:#9ca3af; font-size:0.85rem;"
+             title="σ channel: behavioral (watch it play), syntactic (read blurred source), epsilon (identity-based null control — the aggregator-ablation family). All share the normalized-MI t dial.">σ family
+        <select id="egt-family"
+                style="margin-left:0.4rem; background:#0f1117; color:#e5e7eb;
+                       border:1px solid #2d3348; border-radius:6px; padding:0.35rem 0.5rem;
+                       font-size:0.85rem;">
+          <option value="behavioral">behavioral</option>
+          <option value="syntactic">syntactic</option>
+          <option value="epsilon">epsilon</option>
+        </select>
+      </label>
+      <label style="color:#9ca3af; font-size:0.85rem;">t steps
+        <input id="egt-t-steps" type="number" min="2" max="21" value="6"
+               oninput="onEgtCostChange()"
+               style="width:4.5rem; margin-left:0.4rem; background:#0f1117; color:#e5e7eb;
+                      border:1px solid #2d3348; border-radius:6px; padding:0.35rem 0.5rem;
+                      font-size:0.85rem;">
+      </label>
+      <label style="color:#9ca3af; font-size:0.85rem;" title="comma-separated, or 'phases'">α values
+        <input id="egt-alphas" type="text" placeholder="default" value=""
+               oninput="onEgtCostChange()"
+               style="width:12rem; margin-left:0.4rem; background:#0f1117; color:#e5e7eb;
+                      border:1px solid #2d3348; border-radius:6px; padding:0.35rem 0.5rem;
+                      font-size:0.85rem;">
+      </label>
+    </div>
+    <div style="display:flex; gap:0.9rem; align-items:center; flex-wrap:wrap; margin-top:0.6rem;">
+      <span style="color:#9ca3af; font-size:0.85rem;">stages</span>
+      <span id="egt-stages"></span>
+      <label style="color:#9ca3af; font-size:0.85rem;">
+        <input id="egt-render" type="checkbox" checked> figures
+      </label>
+    </div>
+    <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap; margin-top:0.7rem;">
+      <button class="btn btn-primary" id="egt-run-btn" onclick="runEgtSweep()">Run EGT sweep</button>
+      <button class="btn" id="egt-report-btn" onclick="openEgtReport()"
+              title="HTML report over the artefacts of the selected zoo + σ family (must have been swept)">Open report</button>
+      <span id="egt-status" style="color:#9ca3af; font-size:0.85rem;"></span>
+    </div>
+    <p id="egt-zoo-desc" style="color:#6b7280; font-size:0.8rem; margin:0.6rem 0 0;"></p>
+    <p id="egt-cost-hint" style="color:#6b7280; font-size:0.8rem; margin:0.3rem 0 0;"></p>
+    <div id="egt-results" style="display:none; margin-top:0.9rem;"></div>
+  </div>
+
+  <div class="card" id="proposals-card">
+    <h2>Constructor proposals</h2>
+    <p style="color:#9ca3af; font-size:0.85rem; margin-top:0;">
+      Tier-2 evidence bundles filed by the proof agent. Integrating one runs an agent in an
+      isolated git worktree (gate 1 = clicking Integrate); you then review the full engine
+      diff (gate 2) before it touches the live tree. Outcome proofs still go through the
+      normal proof gate afterwards.
+    </p>
+    <div style="display:flex; gap:0.5rem; align-items:center; margin-bottom:0.6rem;">
+      <button class="btn" onclick="loadProposals()">Refresh</button>
+      <span id="proposals-empty" style="color:#9ca3af; font-size:0.85rem;"></span>
+    </div>
+    <div id="proposals-list"></div>
+    <div id="integration-panel" style="display:none; margin-top:0.8rem;">
+      <div class="status-row">
+        <div class="spinner" id="integration-spinner"></div>
+        <span class="badge" id="integration-badge">pending</span>
+        <span class="step-text" id="integration-step"></span>
+      </div>
+      <div id="integration-area"></div>
+      <div id="integration-log-panel" style="display:none; margin-top:0.5rem;">
+        <div class="section-label">Integration logs</div>
+        <div id="integration-log-output" style="white-space:pre-wrap; word-break:break-all; font-family:monospace; font-size:0.75rem; max-height:16rem; overflow:auto;"></div>
+      </div>
+    </div>
+  </div>
+
   <script>
     let pollInterval = null;
     // Cache the last-rendered job JSON so we skip re-rendering when state hasn't changed.
@@ -273,7 +436,15 @@
       'claude-opus-4-8': 128000,
       'claude-sonnet-4-6': 64000,
       'claude-haiku-4-5': 64000,
+      'leanstral-1-5': 64000,
     };
+
+    // Thinking levels a model supports — keep in sync with the provider's
+    // reasoning_efforts in settings.OPENAI_COMPAT_PROVIDERS. Absent = all four.
+    const MODEL_EFFORTS = {
+      'leanstral-1-5': ['none', 'high'],  // binary reasoning dial
+    };
+    const ALL_EFFORTS = ['none', 'low', 'medium', 'high'];
 
     function onModelChange() {
       const model = document.getElementById('model-select').value;
@@ -282,6 +453,21 @@
       input.max = ceiling;
       if (parseInt(input.value, 10) > ceiling) input.value = ceiling;
       document.getElementById('max-tokens-ceiling').textContent = `max ${ceiling.toLocaleString()}`;
+
+      // Restrict the thinking dropdown to the model's supported levels; an
+      // unsupported current selection snaps to what the backend would map it
+      // to anyway (any thinking level → the highest supported one).
+      const allowed = MODEL_EFFORTS[model] || ALL_EFFORTS;
+      const effortSel = document.getElementById('effort-select');
+      const previous = effortSel.value;
+      effortSel.innerHTML = allowed
+        .map(e => `<option value="${e}">${e}</option>`)
+        .join('');
+      if (allowed.includes(previous)) {
+        effortSel.value = previous;
+      } else {
+        effortSel.value = previous === 'none' ? 'none' : allowed[allowed.length - 1];
+      }
     }
 
     function currentMode() {
@@ -303,6 +489,10 @@
       document.getElementById('bot-b-name').style.display = proveOnly ? 'none' : '';
       document.getElementById('bot-a-select').style.display = proveOnly ? '' : 'none';
       document.getElementById('bot-b-select').style.display = proveOnly ? '' : 'none';
+
+      // Faithfulness checks a bot against its DESCRIPTION; prove-only mode has
+      // no descriptions (both bots are loaded from the library), so hide it.
+      document.getElementById('review-wrap').style.display = proveOnly ? 'none' : '';
 
       if (proveOnly) loadBotList();
     }
@@ -346,6 +536,7 @@
           ...settings,
         };
       }
+      const reviewMode = document.getElementById('review-select').value; // off | review | rewrite
       const req = {
         bot_a: {
           name: document.getElementById('bot-a-name').value.trim(),
@@ -353,6 +544,8 @@
           conflict_resolution: conflictResolutions[document.getElementById('bot-a-name').value.trim()] || null,
         },
         log_level: logLevel,
+        review_bots: reviewMode !== 'off',
+        max_rewrites: reviewMode === 'rewrite' ? 2 : 0,
         ...settings,
       };
       if (mode === 'full') {
@@ -604,6 +797,55 @@
         document.getElementById('run-btn').disabled = false;
       }
 
+      // Faithfulness review (docs/BOT_REVIEWER.md). The verdict is deterministic
+      // — a blind NL prediction vs machine-certified behavior — but the judge
+      // line is an LLM opinion with no ground truth and is labelled as such.
+      function renderReview(r) {
+        if (!r) return '';
+        const colors = { faithful: '#6ee7b7', mismatch: '#fca5a5', underdetermined: '#fcd34d' };
+        const marks  = { match: '✓', mismatch: '✗', unspecified: '–', uncertified: '?' };
+        const cells = (r.cells || []).map(c =>
+          `<div style="display:flex;gap:0.5rem;padding:0.15rem 0;">
+             <span style="width:1rem;color:${c.kind === 'mismatch' ? '#fca5a5' : c.kind === 'match' ? '#6ee7b7' : '#9ca3af'};">${marks[c.kind] || '·'}</span>
+             <span style="width:8rem;color:#d1d5db;">${esc(c.opponent)}</span>
+             <span style="color:#9ca3af;">${esc(c.detail || '')}</span>
+           </div>`).join('');
+
+        const rewriteBlock = (r.attempts > 1) ? `
+          <div style="margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid #374151;">
+            <div style="color:#d1d5db;font-weight:600;">
+              Rewritten — showing attempt ${r.selected_attempt} of ${r.attempts - 1}
+              <span style="color:#9ca3af;font-weight:400;">(${esc(r.stop_reason || '')})</span>
+            </div>
+            ${(r.attempt_lines || []).map(l => `<div style="color:#9ca3af;">${esc(l)}</div>`).join('')}
+            ${r.oscillated ? '<div style="color:#fcd34d;">Behavior repeated across attempts — the description may be ambiguous.</div>' : ''}
+          </div>` : '';
+
+        const judgeBlock = r.judge_kind ? `
+          <div style="margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid #374151;color:#9ca3af;">
+            <em>Judge (advisory, no ground truth):</em> ${esc(r.judge_kind)}${r.judge_notes ? ' — ' + esc(r.judge_notes) : ''}
+          </div>` : '';
+
+        const warn = r.hard_failures > 0
+          ? `<div style="color:#fca5a5;margin-top:0.4rem;">${r.hard_failures} explicit mismatch(es) — the bot does not do what the description says.</div>`
+          : (r.unanimous_mismatch
+            ? '<div style="color:#fca5a5;margin-top:0.4rem;">Every certified cell contradicts the description.</div>'
+            : '');
+
+        return `
+          <div style="margin-top:0.6rem;padding:0.6rem 0.75rem;background:#111827;border:1px solid #374151;border-radius:0.375rem;font-size:0.8rem;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:0.35rem;">
+              <strong style="color:${colors[r.verdict] || '#d1d5db'};">Faithfulness: ${esc(r.verdict)}</strong>
+              <span style="color:#6b7280;">${esc(r.coverage || '')}</span>
+            </div>
+            ${r.summary ? `<div style="color:#9ca3af;margin-bottom:0.35rem;">Read as: ${esc(r.summary)}</div>` : ''}
+            ${cells}
+            ${warn}
+            ${rewriteBlock}
+            ${judgeBlock}
+          </div>`;
+      }
+
       if (job.status === 'bots_ready' && job.bot_a) {
         const tagA = job.bot_a.is_existing
           ? '<span class="tag-existing">existing</span>'
@@ -615,6 +857,7 @@
             <div>
               <div class="section-label">${esc(job.bot_b.name)} ${tagB}</div>
               <pre>${esc(job.bot_b.source)}</pre>
+              ${renderReview(job.bot_b.review)}
             </div>
         ` : '';
         const continueButton = job.bot_b
@@ -629,6 +872,7 @@
             <div>
               <div class="section-label">${esc(job.bot_a.name)} ${tagA}</div>
               <pre>${esc(job.bot_a.source)}</pre>
+              ${renderReview(job.bot_a.review)}
             </div>
             ${botBBlock}
           </div>
@@ -705,7 +949,224 @@
           ${proofBlock}
         `;
       } else if (job.error) {
-        area.innerHTML = `<div class="error-msg">${esc(job.error)}</div>`;
+        const noteBlock = job.status_note
+          ? `<p style="color:#fcd34d; font-size:0.85rem; margin-top:0.6rem;">${esc(job.status_note)}</p>`
+          : '';
+        let openBlock = '';
+        if (job.open_suggestion) {
+          const a = job.open_suggestion.pair[0], b = job.open_suggestion.pair[1];
+          openBlock = `
+            <div class="gate-actions" id="open-suggest">
+              <button class="btn btn-primary"
+                      onclick="confirmOpenProblem('${esc(a)}', '${esc(b)}', '${esc(job.open_suggestion.kind)}')">
+                Mark ${esc(a)} vs ${esc(b)} as Open Problem</button>
+              <span style="color:#94a3b8; font-size:0.85rem; align-self:center;">
+                Agent verdict: ${esc(job.open_suggestion.kind)} — recording is human-gated.</span>
+            </div>`;
+        }
+        area.innerHTML = `<div class="error-msg">${esc(job.error)}</div>${noteBlock}${openBlock}`;
+      }
+    }
+
+    async function confirmOpenProblem(a, b, kind) {
+      const el = document.getElementById('open-suggest');
+      try {
+        const resp = await fetch('/matrix/status', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ section: 'open', pair: [a, b],
+                                 reason: `Confirmed via app UI (agent verdict: ${kind}).` }),
+        });
+        const body = await resp.json();
+        if (!resp.ok) {
+          el.innerHTML = `<span style="color:#fca5a5;">Failed: ${esc(body.detail || resp.statusText)}</span>`;
+          return;
+        }
+        el.innerHTML = `<span style="color:#6ee7b7; font-size:0.85rem;">Recorded ${esc(a)} vs ${esc(b)} ` +
+          `as Open Problem${body.synced ? ' and synced to the Sheet' : ''}.</span>`;
+        loadMatrix();
+      } catch (e) {
+        el.innerHTML = `<span style="color:#fca5a5;">Failed: ${esc(e)}</span>`;
+      }
+    }
+
+    // ------------------------------------------------------------------
+    // Constructor proposals (Tier-2 integration flow)
+    // ------------------------------------------------------------------
+    let integrationJobId = null;
+    let integrationPoll = null;
+    let integrationLogSource = null;
+    let integrationDecisionInFlight = false;
+
+    async function loadProposals() {
+      let resp;
+      try { resp = await fetch('/proposals'); } catch (e) { return; }
+      if (!resp.ok) return;
+      const data = await resp.json();
+      const list = document.getElementById('proposals-list');
+      const empty = document.getElementById('proposals-empty');
+      if (!data.proposals.length) {
+        list.innerHTML = '';
+        empty.textContent = 'No proposals on file.';
+        return;
+      }
+      const proposalCard = p => {
+        const integrated = p.status === 'integrated';
+        const badge = integrated
+          ? `<span class="badge" style="background:#166534;">integrated${p.integrated_as ? ' as ' + esc(p.integrated_as) : ''}</span>`
+          : '<span class="badge">awaiting review</span>';
+        const proofTag = p.has_unblocked_proof
+          ? ' <span style="color:#9ca3af; font-size:0.75rem;">(conditional proof attached)</span>' : '';
+        return `
+          <div style="border:1px solid #374151; border-radius:6px; padding:0.6rem; margin-bottom:0.5rem;">
+            <div style="display:flex; align-items:center; gap:0.6rem;">
+              <strong>${esc(p.name)}</strong> ${badge}
+              <span style="color:#9ca3af; font-size:0.8rem;">${esc(p.date || '')}</span>${proofTag}
+              <span style="flex:1"></span>
+              <button class="btn" onclick="toggleProposalDetails('${esc(p.name)}')">Details</button>
+              <button class="btn btn-primary" onclick="integrateProposal('${esc(p.name)}')"
+                      ${integrated || integrationJobId ? 'disabled' : ''}>Integrate…</button>
+            </div>
+            <div style="color:#9ca3af; font-size:0.8rem; margin-top:0.3rem;">
+              ${esc((p.unblocks || '').slice(0, 220))}${(p.unblocks || '').length > 220 ? '…' : ''}
+            </div>
+            <pre id="proposal-md-${esc(p.name)}" style="display:none; white-space:pre-wrap; word-break:break-word; font-size:0.75rem; max-height:20rem; overflow:auto; margin-top:0.4rem;">${esc(p.proposal_md || '(no proposal.md)')}</pre>
+          </div>`;
+      };
+      const pending = data.proposals.filter(p => p.status !== 'integrated');
+      const integratedList = data.proposals.filter(p => p.status === 'integrated');
+      empty.textContent = pending.length ? ''
+        : (integratedList.length ? 'No proposals awaiting review.' : '');
+      list.innerHTML = pending.map(proposalCard).join('') + (integratedList.length ? `
+        <details style="margin-top:0.4rem;">
+          <summary style="cursor:pointer; color:#9ca3af; font-size:0.85rem;">
+            Integrated history (${integratedList.length}) — resolved proposals, now live \`Pf\` constructors
+          </summary>
+          <div style="margin-top:0.5rem;">${integratedList.map(proposalCard).join('')}</div>
+        </details>` : '');
+    }
+
+    function toggleProposalDetails(name) {
+      const el = document.getElementById(`proposal-md-${name}`);
+      if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+    }
+
+    async function integrateProposal(name) {
+      if (integrationJobId) return;  // one integration at a time
+      if (!confirm(`Accept constructor \`${name}\` and start its integration?\n\n` +
+                   'An agent will edit a git worktree of the engine until both lake targets ' +
+                   'build green. The live engine is untouched until you accept the diff.')) return;
+      const settings = modelSettings();
+      const logLevel = document.getElementById('log-level-select').value || 'INFO';
+      let resp;
+      try {
+        resp = await fetch(`/proposals/${encodeURIComponent(name)}/integrate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: settings.model,
+            max_tokens: settings.max_tokens,
+            thinking_effort: settings.thinking_effort,
+            log_level: logLevel,
+          }),
+        });
+      } catch (e) { alert('Request failed: ' + e); return; }
+      if (!resp.ok) {
+        const detail = (await resp.json().catch(() => ({}))).detail;
+        alert('Could not start integration: ' + (detail || resp.status));
+        return;
+      }
+      const job = await resp.json();
+      integrationJobId = job.job_id;
+      document.getElementById('integration-panel').style.display = 'block';
+      startIntegrationLogStream(job.job_id);
+      integrationPoll = setInterval(pollIntegration, 2000);
+      renderIntegration(job);
+      loadProposals();  // re-render list with Integrate buttons disabled
+    }
+
+    function startIntegrationLogStream(jobId) {
+      if (integrationLogSource) { integrationLogSource.close(); integrationLogSource = null; }
+      const out = document.getElementById('integration-log-output');
+      document.getElementById('integration-log-panel').style.display = 'block';
+      out.textContent = '';
+      const es = new EventSource(`/pipeline/${jobId}/logs`);
+      integrationLogSource = es;
+      es.onmessage = (e) => {
+        const atBottom = out.scrollHeight - out.scrollTop <= out.clientHeight + 4;
+        out.textContent += e.data + '\n';
+        if (atBottom) out.scrollTop = out.scrollHeight;
+      };
+      es.addEventListener('done', () => { es.close(); integrationLogSource = null; });
+      es.onerror = () => { es.close(); integrationLogSource = null; };
+    }
+
+    async function pollIntegration() {
+      if (!integrationJobId) return;
+      let resp;
+      try { resp = await fetch(`/pipeline/${integrationJobId}`); } catch (e) { return; }
+      if (resp.status === 404) {
+        clearInterval(integrationPoll);
+        renderIntegration({ status: 'failed', error: 'Job lost (server restarted?).' });
+        integrationJobId = null;
+        return;
+      }
+      if (!resp.ok) return;
+      renderIntegration(await resp.json());
+    }
+
+    async function integrationDecision(endpoint) {
+      if (integrationDecisionInFlight) return;
+      integrationDecisionInFlight = true;
+      document.querySelectorAll('#integration-area .gate-actions button')
+        .forEach(b => { b.disabled = true; });
+      try {
+        await fetch(`/integration/${integrationJobId}/${endpoint}`, { method: 'POST' });
+      } catch (e) { /* poll loop will recover state */ }
+      integrationDecisionInFlight = false;
+    }
+
+    function renderIntegration(job) {
+      const badge = document.getElementById('integration-badge');
+      const step = document.getElementById('integration-step');
+      const spinner = document.getElementById('integration-spinner');
+      const area = document.getElementById('integration-area');
+      badge.textContent = job.status;
+      step.textContent = job.step || '';
+      const terminal = job.status === 'done' || job.status === 'failed';
+      const waiting = job.status === 'diff_ready';
+      spinner.style.display = (terminal || waiting) ? 'none' : 'inline-block';
+
+      if (job.status === 'diff_ready') {
+        if (!document.getElementById('integration-diff')) {
+          area.innerHTML = `
+            <div class="section-label">Agent report</div>
+            <pre style="white-space:pre-wrap; word-break:break-word; font-size:0.75rem; max-height:14rem; overflow:auto;">${esc(job.integration_summary || '')}</pre>
+            <div class="section-label">Engine diff (gate 2 — this is exactly what will be applied)</div>
+            <pre id="integration-diff" style="white-space:pre; font-family:monospace; font-size:0.72rem; max-height:26rem; overflow:auto;">${esc(job.diff || '')}</pre>
+            <div class="gate-actions" style="display:flex; gap:0.5rem; margin-top:0.5rem;">
+              <button class="btn btn-primary" onclick="integrationDecision('accept-diff')">Accept diff — apply to engine</button>
+              <button class="btn" onclick="integrationDecision('reject-diff')">Reject (discard worktree)</button>
+            </div>`;
+        }
+      } else if (job.status === 'done') {
+        clearInterval(integrationPoll);
+        area.innerHTML = `
+          <div class="section-label">Integrated ✓</div>
+          <p style="font-size:0.85rem;">The constructor is live in the engine and both lake targets are green.
+          Now prove the unblocked outcome: run the pipeline above in <strong>prove-only</strong> mode for the
+          matchup — the proof agent automatically receives the proposal's conditional proof to discharge.</p>`;
+        integrationJobId = null;
+        loadProposals();
+      } else if (job.status === 'failed') {
+        clearInterval(integrationPoll);
+        area.innerHTML = `
+          <div class="section-label">Integration failed</div>
+          <pre style="white-space:pre-wrap; word-break:break-word; font-size:0.75rem; max-height:14rem; overflow:auto;">${esc(job.error || 'unknown error')}</pre>`;
+        integrationJobId = null;
+        loadProposals();
+      } else {
+        if (!waiting) area.innerHTML = '';
       }
     }
 
@@ -713,9 +1174,379 @@
       return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     }
 
-    // Initialise mode visibility and model-settings hints on load.
+    async function loadMatrix() {
+      const el = document.getElementById('matrix-table');
+      let data;
+      try {
+        const resp = await fetch('/matrix');
+        data = await resp.json();
+      } catch (e) {
+        el.innerHTML = `<p style="color:#fca5a5; font-size:0.85rem;">Failed to load matrix: ${esc(e)}</p>`;
+        return;
+      }
+      const staleEl = document.getElementById('matrix-stale');
+      if (data.stale) {
+        staleEl.textContent = `Export may be stale: ${data.stale}.`;
+        staleEl.style.display = '';
+      } else {
+        staleEl.style.display = 'none';
+      }
+      const legendEl = document.getElementById('matrix-legend');
+      legendEl.innerHTML = (data.legend || []).map(e =>
+        `<dt style="color:#e5e7eb; font-family:monospace;">${esc(e.mark)}</dt><dd style="margin:0;">${esc(e.meaning)}</dd>`
+      ).join('');
+      const [header, ...rows] = data.rows;
+      let html = '<div class="matrix-wrap"><table class="matrix"><tr>'
+        + header.map(h => `<th>${esc(h)}</th>`).join('') + '</tr>';
+      const details = data.details || {};
+      rows.forEach((row, i) => {
+        html += '<tr>' + row.map((cell, j) => {
+          if (j === 0) return `<td class="mx-name">${esc(cell)}</td>`;
+          if (j <= i) return '<td class="mx-lower"></td>';
+          const d = details[`${row[0]}|${header[j]}`];
+          const title = d ? ` title="${esc(d.note)}"` : '';
+          let cls = '';
+          if (cell === 'Open Problem') cls = 'mx-open';
+          else if (cell === 'Tried') cls = 'mx-tried';
+          else if (cell === 'Need rework') cls = 'mx-rework';
+          else if (cell === 'None') cls = 'mx-none';
+          else if (cell.includes('⇄')) cls = 'mx-sensitive';
+          return `<td class="${cls}"${title}>${esc(cell)}</td>`;
+        }).join('') + '</tr>';
+      });
+      el.innerHTML = html + '</table></div>';
+    }
+
+    async function exportMatrix() {
+      const btn = document.getElementById('matrix-export-btn');
+      const status = document.getElementById('matrix-sync-status');
+      btn.disabled = true;
+      status.textContent = 'Building the engine and exporting @[outcome] cells… (can take a while)';
+      try {
+        const resp = await fetch('/matrix/export', { method: 'POST' });
+        const body = await resp.json();
+        if (!resp.ok) {
+          status.textContent = `Export failed: ${body.detail || resp.statusText}`;
+        } else {
+          status.textContent = body.output || 'Export regenerated.';
+          loadMatrix();
+        }
+      } catch (e) {
+        status.textContent = `Export failed: ${e}`;
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    async function syncMatrix() {
+      const btn = document.getElementById('matrix-sync-btn');
+      const status = document.getElementById('matrix-sync-status');
+      btn.disabled = true;
+      status.textContent = 'Syncing…';
+      try {
+        const resp = await fetch('/matrix/sync', { method: 'POST' });
+        const body = await resp.json();
+        if (!resp.ok) {
+          status.textContent = `Failed: ${body.detail || resp.statusText}`;
+        } else {
+          status.innerHTML =
+            `Synced ${body.bots}×${body.bots} to <a href="${esc(body.spreadsheet_url)}" target="_blank">` +
+            `${esc(body.worksheet)}</a> — ${body.proven} proven, ${body.none} None, ` +
+            `${body.open} open, ${body.rework} need rework, ${body.tried} tried, ` +
+            `${body.empty} empty (${esc(body.pushed_at)})`;
+          loadMatrix();
+        }
+      } catch (e) {
+        status.textContent = `Failed: ${e}`;
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    let tauZoos = [];
+
+    async function loadTauZoos() {
+      const sel = document.getElementById('tau-zoo');
+      try {
+        const res = await fetch('/tau/zoos');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        tauZoos = data.zoos;
+        sel.innerHTML = tauZoos.map(z =>
+          `<option value="${z.key}"${z.key === data.default ? ' selected' : ''}>${z.label}</option>`
+        ).join('');
+      } catch (err) {
+        // Keep the hard-coded "default" option so the button still works.
+        document.getElementById('tau-zoo-desc').textContent =
+          `Could not load sub-zoo list (${err.message}); using the default zoo.`;
+        return;
+      }
+      onTauZooChange();
+    }
+
+    function onTauZooChange() {
+      const key = document.getElementById('tau-zoo').value;
+      const zoo = tauZoos.find(z => z.key === key);
+      const desc = document.getElementById('tau-zoo-desc');
+      if (!zoo) { desc.textContent = ''; return; }
+      const stip = zoo.stipulated_pairs === 0
+        ? 'every cell machine-checked'
+        : `${zoo.stipulated_pairs} stipulated pair(s) — results are conditional`;
+      desc.textContent = `${zoo.size} bots · ${stip}. ${zoo.description}`;
+    }
+
+    function openTauReport() {
+      // The report endpoint renders fresh HTML per request; a plain navigation
+      // in a new tab is all that's needed — no job/polling machinery.
+      const alphas = document.getElementById('tau-alphas').value.trim();
+      const zoo = document.getElementById('tau-zoo').value;
+      const params = new URLSearchParams();
+      if (alphas) params.set('alphas', alphas);
+      if (zoo) params.set('zoo', zoo);
+      const qs = params.toString();
+      window.open('/tau/report' + (qs ? `?${qs}` : ''), '_blank');
+    }
+
+    // ---- EGT sweep -------------------------------------------------------
+
+    let egtZoos = [];
+    let egtPollTimer = null;
+
+    async function loadEgtOptions() {
+      // The zoo list is the same registry the tau card uses, so a zoo added
+      // in tau.matrix appears in both places with no change here.
+      try {
+        const res = await fetch('/tau/zoos');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        egtZoos = data.zoos;
+        document.getElementById('egt-zoo').innerHTML = egtZoos.map(z =>
+          `<option value="${z.key}"${z.key === data.default ? ' selected' : ''}>${z.label}</option>`
+        ).join('');
+      } catch (err) {
+        document.getElementById('egt-zoo-desc').textContent =
+          `Could not load sub-zoo list (${err.message}); using the default zoo.`;
+      }
+
+      try {
+        const res = await fetch('/egt/stages');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        document.getElementById('egt-stages').innerHTML = data.stages.map(s => `
+          <label title="${esc(s.label)}"
+                 style="color:#9ca3af; font-size:0.85rem; margin-right:0.7rem;">
+            <input type="checkbox" class="egt-stage" value="${s.key}" checked
+                   ${s.required ? 'disabled' : ''} onchange="onEgtCostChange()">
+            ${esc(s.key)}${s.required ? ' *' : ''}
+          </label>`).join('');
+        document.getElementById('egt-alphas').placeholder =
+          data.default_alphas.join(',');
+      } catch (err) {
+        document.getElementById('egt-stages').textContent =
+          `Could not load stage list (${err.message}).`;
+      }
+      onEgtZooChange();
+    }
+
+    function onEgtZooChange() {
+      const key = document.getElementById('egt-zoo').value;
+      const zoo = egtZoos.find(z => z.key === key);
+      const desc = document.getElementById('egt-zoo-desc');
+      if (zoo) {
+        const stip = zoo.stipulated_pairs === 0
+          ? 'every cell machine-checked'
+          : `${zoo.stipulated_pairs} stipulated pair(s) — results are conditional`;
+        desc.textContent = `${zoo.size} bots · ${stip}. ${zoo.description}`;
+      } else {
+        desc.textContent = '';
+      }
+      onEgtCostChange();
+    }
+
+    function egtSelectedStages() {
+      return Array.from(document.querySelectorAll('.egt-stage'))
+        .filter(el => el.checked || el.disabled)
+        .map(el => el.value);
+    }
+
+    function onEgtCostChange() {
+      // Rough expectation-setting only. The real cost depends on how many
+      // grid points collapse to the same matrix, which is not known until the
+      // tournaments run — so this is deliberately an upper bound.
+      const hint = document.getElementById('egt-cost-hint');
+      const steps = parseInt(document.getElementById('egt-t-steps').value, 10) || 6;
+      const alphaRaw = document.getElementById('egt-alphas').value.trim();
+      const stages = egtSelectedStages();
+
+      if (alphaRaw === 'phases') {
+        hint.textContent =
+          'α = "phases" enumerates one α per behavioral phase — exact, but ~|zoo|² points ' +
+          'per t. Pair it with a single t, or deselect the nash stage.';
+        return;
+      }
+      const nAlpha = alphaRaw
+        ? alphaRaw.split(',').filter(s => s.trim()).length
+        : (document.getElementById('egt-alphas').placeholder.split(',').length);
+      const points = steps * nAlpha;
+      const nash = stages.includes('nash');
+      // Dedup typically removes about half; Nash dominates at ~50s a matrix.
+      const est = nash ? ` — up to ~${Math.round(points * 50 / 60)} min if nothing dedups` : '';
+      hint.textContent = `${points} grid point(s)${est}. Distinct matrices are analysed once.`;
+    }
+
+    async function runEgtSweep() {
+      const btn = document.getElementById('egt-run-btn');
+      const status = document.getElementById('egt-status');
+      const results = document.getElementById('egt-results');
+      const alphas = document.getElementById('egt-alphas').value.trim();
+
+      btn.disabled = true;
+      results.style.display = 'none';
+      results.innerHTML = '';
+      status.textContent = 'starting…';
+
+      const body = {
+        zoo: document.getElementById('egt-zoo').value,
+        family: document.getElementById('egt-family').value,
+        t_steps: parseInt(document.getElementById('egt-t-steps').value, 10) || 6,
+        stages: egtSelectedStages().join(','),
+        render: document.getElementById('egt-render').checked,
+      };
+      if (alphas) body.alphas = alphas;
+
+      try {
+        const res = await fetch('/egt/sweep', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(body),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const job = await res.json();
+        startLogStream(job.job_id);
+        pollEgtSweep(job.job_id);
+      } catch (err) {
+        status.textContent = `failed to start: ${err.message}`;
+        btn.disabled = false;
+      }
+    }
+
+    function pollEgtSweep(jobId) {
+      if (egtPollTimer) clearInterval(egtPollTimer);
+      const status = document.getElementById('egt-status');
+
+      egtPollTimer = setInterval(async () => {
+        let job;
+        try {
+          const res = await fetch(`/egt/sweep/${jobId}`);
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          job = await res.json();
+        } catch (err) {
+          status.textContent = `polling error: ${err.message}`;
+          return;
+        }
+
+        if (job.status === 'sweeping') {
+          status.textContent = job.step || 'sweeping…';
+          return;
+        }
+        if (job.status === 'done' || job.status === 'failed') {
+          clearInterval(egtPollTimer);
+          egtPollTimer = null;
+          document.getElementById('egt-run-btn').disabled = false;
+          // A failed sweep can still carry partial results worth showing.
+          if (job.egt_result) renderEgtResults(job.egt_result, job.error);
+          status.textContent = job.status === 'done'
+            ? 'done'
+            : (job.egt_result ? 'completed with failures' : `failed: ${job.error || ''}`);
+        }
+      }, 1500);
+    }
+
+    function openEgtReport() {
+      // The report renders ONE (zoo, family) sweep out of the shared artefact
+      // directory, so pass the card's current selection; 404s with a readable
+      // message (listing what IS available) if that combo was never swept.
+      const params = new URLSearchParams({
+        zoo: document.getElementById('egt-zoo').value,
+        family: document.getElementById('egt-family').value,
+      });
+      window.open('/egt/report?' + params.toString(), '_blank');
+    }
+
+    function renderEgtResults(summary, errorText) {
+      const box = document.getElementById('egt-results');
+      const rows = summary.runs.map(r => {
+        const s = r.stages || {};
+        const cell = (key, pick) => {
+          const st = s[key];
+          if (!st) return '<td style="color:#4b5563;">—</td>';
+          if (!st.ok) return '<td style="color:#f87171;" title="' + esc(st.error || '') + '">failed</td>';
+          return `<td>${pick(st)}</td>`;
+        };
+        const faces = s.faces && s.faces.ok
+          ? Object.entries(s.faces.by_class || {})
+              .filter(([k]) => k.startsWith('asymp_stable'))
+              .reduce((a, [, v]) => a + v, 0)
+          : null;
+        return `
+          <tr>
+            <td style="white-space:nowrap;">t=${r.t}, α=${r.alpha}</td>
+            <td style="color:#6b7280;">${r.n_grid_points}</td>
+            ${cell('ess', st => st.n_pure_ess)}
+            ${cell('invasion', st => `${st.edges_strict} / ${st.n_sccs}`)}
+            ${s.faces ? (s.faces.ok ? `<td>${faces} / ${s.faces.n_supports}</td>`
+                                    : '<td style="color:#f87171;">failed</td>')
+                      : '<td style="color:#4b5563;">—</td>'}
+            ${cell('nash', st => `${st.n_extreme_NE} / ${st.n_components}`)}
+          </tr>`;
+      }).join('');
+
+      const warn = errorText
+        ? `<p style="color:#f87171; font-size:0.85rem; margin:0 0 0.5rem;">${esc(errorText)}</p>`
+        : '';
+      const cond = summary.runs.some(r => r.is_fully_proven === false)
+        ? `<p style="color:#fbbf24; font-size:0.8rem; margin:0.5rem 0 0;">
+             Some cells are stipulated rather than proven — these results are conditional on them.
+           </p>`
+        : '';
+
+      box.innerHTML = `
+        ${warn}
+        <div class="section-label">
+          ${summary.n_distinct_matrices} distinct matrices from
+          ${summary.n_grid_points} grid points
+          (dedup saved ${summary.dedup_saved}) · ${summary.seconds}s
+        </div>
+        <div style="overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+          <thead>
+            <tr style="color:#9ca3af; text-align:left;">
+              <th style="padding:0.3rem 0.5rem 0.3rem 0;">(t, α)</th>
+              <th style="padding:0.3rem 0.5rem;" title="grid points sharing this matrix">pts</th>
+              <th style="padding:0.3rem 0.5rem;" title="pure ESS count">ESS</th>
+              <th style="padding:0.3rem 0.5rem;" title="strict edges / SCCs">invasion</th>
+              <th style="padding:0.3rem 0.5rem;" title="stable faces / supports">faces</th>
+              <th style="padding:0.3rem 0.5rem;" title="extreme NE / components">nash</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+        </div>
+        ${cond}
+        <p style="color:#6b7280; font-size:0.8rem; margin:0.5rem 0 0;">
+          Full artefacts (CSV, parquet, GEXF, figures, reports) under
+          <code>app/generated/egt/runs/</code>.
+        </p>`;
+      box.style.display = 'block';
+    }
+
+    // Initialise mode visibility, model-settings hints, proposals, and the matrix on load.
     onModeChange();
     onModelChange();
+    loadProposals();
+    loadMatrix();
+    loadTauZoos();
+    loadEgtOptions();
   </script>
 
 </body>

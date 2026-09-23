@@ -1,0 +1,1403 @@
+{
+  "zoo": "body+twins+natives",
+  "family": "epsilon",
+  "n_grid_points": 36,
+  "n_distinct_matrices": 12,
+  "dedup_saved": 24,
+  "seconds": 3171.84,
+  "ok": true,
+  "runs": [
+    {
+      "run": "body+twins+natives_epsilon_t100_a000_d2be5f067353",
+      "zoo": "body+twins+natives",
+      "family": "epsilon",
+      "t": 1.0,
+      "alpha": 0.0,
+      "fingerprint": "d2be5f067353",
+      "n_types": 14,
+      "bots": [
+        "CIMCIC",
+        "CooperateBot",
+        "CupodBot",
+        "CupodTrollBot",
+        "DBot",
+        "DIMCID",
+        "DefectBot",
+        "DupocBot",
+        "EBot",
+        "MaxConfidenceBot",
+        "MinConfidenceBot",
+        "OBot",
+        "PrudentBot",
+        "TitForTatBot"
+      ],
+      "excluded_bots": [],
+      "is_fully_proven": true,
+      "grid_points": [
+        [
+          1.0,
+          0.0
+        ],
+        [
+          0.8,
+          0.0
+        ],
+        [
+          0.6,
+          0.0
+        ],
+        [
+          0.4,
+          0.0
+        ],
+        [
+          0.2,
+          0.0
+        ],
+        [
+          0.0,
+          0.0
+        ]
+      ],
+      "n_grid_points": 6,
+      "ok": true,
+      "failed_stages": [],
+      "stages": {
+        "ess": {
+          "ok": true,
+          "seconds": 0.005,
+          "error": null,
+          "n_pure_ess": 0,
+          "n_types": 14
+        },
+        "invasion": {
+          "ok": true,
+          "seconds": 0.608,
+          "error": null,
+          "edges_strict": 0,
+          "edges_weak": 182,
+          "n_sccs": 14,
+          "n_cycles": 0,
+          "layout_backend": "manual_layered"
+        },
+        "faces": {
+          "ok": true,
+          "seconds": 0.984,
+          "error": null,
+          "n_supports": 16369,
+          "by_class": {
+            "singular": 16369
+          },
+          "enumeration_complete": true
+        },
+        "nash": {
+          "ok": true,
+          "seconds": 0.658,
+          "error": null,
+          "run_dir": "runs/20260901T150544Z_e168f535168d",
+          "n_extreme_NE": 196,
+          "n_components": 1,
+          "cross_check_performed": false
+        },
+        "replicator": {
+          "ok": true,
+          "seconds": 0.009,
+          "error": null,
+          "n_attractors": 31,
+          "n_unconverged": 0,
+          "all_converged": true,
+          "largest_basin": 0.840796,
+          "dominant_support": [
+            "EBot",
+            "DefectBot",
+            "DIMCID",
+            "DBot",
+            "CIMCIC",
+            "CupodTrollBot",
+            "CupodBot",
+            "CooperateBot",
+            "MaxConfidenceBot",
+            "MinConfidenceBot",
+            "DupocBot",
+            "OBot",
+            "PrudentBot",
+            "TitForTatBot"
+          ]
+        },
+        "moran": {
+          "ok": true,
+          "seconds": 0.068,
+          "error": null,
+          "n_points": 9,
+          "all_converged": true,
+          "headline": {
+            "population": 100,
+            "beta": 1.0,
+            "stochastically_stable": []
+          }
+        }
+      }
+    },
+    {
+      "run": "body+twins+natives_epsilon_t100_a030_6dc149db6632",
+      "zoo": "body+twins+natives",
+      "family": "epsilon",
+      "t": 1.0,
+      "alpha": 0.3,
+      "fingerprint": "6dc149db6632",
+      "n_types": 14,
+      "bots": [
+        "CIMCIC",
+        "CooperateBot",
+        "CupodBot",
+        "CupodTrollBot",
+        "DBot",
+        "DIMCID",
+        "DefectBot",
+        "DupocBot",
+        "EBot",
+        "MaxConfidenceBot",
+        "MinConfidenceBot",
+        "OBot",
+        "PrudentBot",
+        "TitForTatBot"
+      ],
+      "excluded_bots": [],
+      "is_fully_proven": true,
+      "grid_points": [
+        [
+          1.0,
+          0.3
+        ],
+        [
+          1.0,
+          0.45
+        ],
+        [
+          1.0,
+          0.62
+        ],
+        [
+          1.0,
+          0.8
+        ],
+        [
+          1.0,
+          1.0
+        ],
+        [
+          0.8,
+          0.3
+        ],
+        [
+          0.8,
+          0.45
+        ],
+        [
+          0.8,
+          0.62
+        ],
+        [
+          0.8,
+          0.8
+        ],
+        [
+          0.6,
+          0.3
+        ],
+        [
+          0.6,
+          0.45
+        ],
+        [
+          0.6,
+          0.62
+        ],
+        [
+          0.4,
+          0.45
+        ],
+        [
+          0.4,
+          0.62
+        ]
+      ],
+      "n_grid_points": 14,
+      "ok": true,
+      "failed_stages": [],
+      "stages": {
+        "ess": {
+          "ok": true,
+          "seconds": 0.002,
+          "error": null,
+          "n_pure_ess": 0,
+          "n_types": 14
+        },
+        "invasion": {
+          "ok": true,
+          "seconds": 0.477,
+          "error": null,
+          "edges_strict": 54,
+          "edges_weak": 125,
+          "n_sccs": 7,
+          "n_cycles": 39,
+          "layout_backend": "manual_layered"
+        },
+        "faces": {
+          "ok": true,
+          "seconds": 0.869,
+          "error": null,
+          "n_supports": 16369,
+          "by_class": {
+            "singular": 13232,
+            "non_interior": 3131,
+            "asymp_stable_invadable": 6
+          },
+          "enumeration_complete": true
+        },
+        "nash": {
+          "ok": true,
+          "seconds": 380.637,
+          "error": null,
+          "run_dir": "runs/20260901T151206Z_1f73b5115edb",
+          "n_extreme_NE": 272,
+          "n_components": 2,
+          "cross_check_performed": false
+        },
+        "replicator": {
+          "ok": true,
+          "seconds": 0.519,
+          "error": null,
+          "n_attractors": 17,
+          "n_unconverged": 0,
+          "all_converged": true,
+          "largest_basin": 0.985075,
+          "dominant_support": [
+            "CIMCIC",
+            "MinConfidenceBot",
+            "MaxConfidenceBot",
+            "DupocBot",
+            "TitForTatBot",
+            "CooperateBot"
+          ]
+        },
+        "moran": {
+          "ok": true,
+          "seconds": 0.067,
+          "error": null,
+          "n_points": 9,
+          "all_converged": true,
+          "headline": {
+            "population": 100,
+            "beta": 1.0,
+            "stochastically_stable": [
+              "DupocBot",
+              "MinConfidenceBot",
+              "MaxConfidenceBot",
+              "CIMCIC"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "run": "body+twins+natives_epsilon_t080_a100_28ca9e478fb9",
+      "zoo": "body+twins+natives",
+      "family": "epsilon",
+      "t": 0.8,
+      "alpha": 1.0,
+      "fingerprint": "28ca9e478fb9",
+      "n_types": 14,
+      "bots": [
+        "CIMCIC",
+        "CooperateBot",
+        "CupodBot",
+        "CupodTrollBot",
+        "DBot",
+        "DIMCID",
+        "DefectBot",
+        "DupocBot",
+        "EBot",
+        "MaxConfidenceBot",
+        "MinConfidenceBot",
+        "OBot",
+        "PrudentBot",
+        "TitForTatBot"
+      ],
+      "excluded_bots": [],
+      "is_fully_proven": true,
+      "grid_points": [
+        [
+          0.8,
+          1.0
+        ],
+        [
+          0.6,
+          1.0
+        ],
+        [
+          0.4,
+          1.0
+        ],
+        [
+          0.2,
+          1.0
+        ],
+        [
+          0.0,
+          1.0
+        ]
+      ],
+      "n_grid_points": 5,
+      "ok": true,
+      "failed_stages": [],
+      "stages": {
+        "ess": {
+          "ok": true,
+          "seconds": 0.002,
+          "error": null,
+          "n_pure_ess": 0,
+          "n_types": 14
+        },
+        "invasion": {
+          "ok": true,
+          "seconds": 0.561,
+          "error": null,
+          "edges_strict": 13,
+          "edges_weak": 169,
+          "n_sccs": 14,
+          "n_cycles": 0,
+          "layout_backend": "manual_layered"
+        },
+        "faces": {
+          "ok": true,
+          "seconds": 0.923,
+          "error": null,
+          "n_supports": 16369,
+          "by_class": {
+            "singular": 16369
+          },
+          "enumeration_complete": true
+        },
+        "nash": {
+          "ok": true,
+          "seconds": 0.632,
+          "error": null,
+          "run_dir": "runs/20260901T151209Z_dd7f14722323",
+          "n_extreme_NE": 169,
+          "n_components": 1,
+          "cross_check_performed": false
+        },
+        "replicator": {
+          "ok": true,
+          "seconds": 0.526,
+          "error": null,
+          "n_attractors": 28,
+          "n_unconverged": 0,
+          "all_converged": true,
+          "largest_basin": 0.855721,
+          "dominant_support": [
+            "DBot",
+            "EBot",
+            "DIMCID",
+            "DefectBot",
+            "CIMCIC",
+            "CupodTrollBot",
+            "CupodBot",
+            "DupocBot",
+            "MaxConfidenceBot",
+            "MinConfidenceBot",
+            "OBot",
+            "PrudentBot",
+            "TitForTatBot"
+          ]
+        },
+        "moran": {
+          "ok": true,
+          "seconds": 0.061,
+          "error": null,
+          "n_points": 9,
+          "all_converged": true,
+          "headline": {
+            "population": 100,
+            "beta": 1.0,
+            "stochastically_stable": []
+          }
+        }
+      }
+    },
+    {
+      "run": "body+twins+natives_epsilon_t060_a080_2e5b71550b3d",
+      "zoo": "body+twins+natives",
+      "family": "epsilon",
+      "t": 0.6,
+      "alpha": 0.8,
+      "fingerprint": "2e5b71550b3d",
+      "n_types": 14,
+      "bots": [
+        "CIMCIC",
+        "CooperateBot",
+        "CupodBot",
+        "CupodTrollBot",
+        "DBot",
+        "DIMCID",
+        "DefectBot",
+        "DupocBot",
+        "EBot",
+        "MaxConfidenceBot",
+        "MinConfidenceBot",
+        "OBot",
+        "PrudentBot",
+        "TitForTatBot"
+      ],
+      "excluded_bots": [],
+      "is_fully_proven": true,
+      "grid_points": [
+        [
+          0.6,
+          0.8
+        ]
+      ],
+      "n_grid_points": 1,
+      "ok": true,
+      "failed_stages": [],
+      "stages": {
+        "ess": {
+          "ok": true,
+          "seconds": 0.002,
+          "error": null,
+          "n_pure_ess": 0,
+          "n_types": 14
+        },
+        "invasion": {
+          "ok": true,
+          "seconds": 0.487,
+          "error": null,
+          "edges_strict": 59,
+          "edges_weak": 123,
+          "n_sccs": 7,
+          "n_cycles": 39,
+          "layout_backend": "manual_layered"
+        },
+        "faces": {
+          "ok": true,
+          "seconds": 0.851,
+          "error": null,
+          "n_supports": 16369,
+          "by_class": {
+            "singular": 11913,
+            "non_interior": 4450,
+            "asymp_stable_invadable": 6
+          },
+          "enumeration_complete": true
+        },
+        "nash": {
+          "ok": true,
+          "seconds": 893.444,
+          "error": null,
+          "run_dir": "runs/20260901T152704Z_ad8a0a2f31a7",
+          "n_extreme_NE": 36,
+          "n_components": 1,
+          "cross_check_performed": false
+        },
+        "replicator": {
+          "ok": true,
+          "seconds": 1.388,
+          "error": null,
+          "n_attractors": 21,
+          "n_unconverged": 0,
+          "all_converged": true,
+          "largest_basin": 0.61194,
+          "dominant_support": [
+            "MaxConfidenceBot",
+            "OBot",
+            "PrudentBot",
+            "DefectBot"
+          ]
+        },
+        "moran": {
+          "ok": true,
+          "seconds": 0.132,
+          "error": null,
+          "n_points": 9,
+          "all_converged": true,
+          "headline": {
+            "population": 100,
+            "beta": 1.0,
+            "stochastically_stable": [
+              "MaxConfidenceBot"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "run": "body+twins+natives_epsilon_t040_a030_e8c4a57c4e5d",
+      "zoo": "body+twins+natives",
+      "family": "epsilon",
+      "t": 0.4,
+      "alpha": 0.3,
+      "fingerprint": "e8c4a57c4e5d",
+      "n_types": 14,
+      "bots": [
+        "CIMCIC",
+        "CooperateBot",
+        "CupodBot",
+        "CupodTrollBot",
+        "DBot",
+        "DIMCID",
+        "DefectBot",
+        "DupocBot",
+        "EBot",
+        "MaxConfidenceBot",
+        "MinConfidenceBot",
+        "OBot",
+        "PrudentBot",
+        "TitForTatBot"
+      ],
+      "excluded_bots": [],
+      "is_fully_proven": true,
+      "grid_points": [
+        [
+          0.4,
+          0.3
+        ]
+      ],
+      "n_grid_points": 1,
+      "ok": true,
+      "failed_stages": [],
+      "stages": {
+        "ess": {
+          "ok": true,
+          "seconds": 0.007,
+          "error": null,
+          "n_pure_ess": 0,
+          "n_types": 14
+        },
+        "invasion": {
+          "ok": true,
+          "seconds": 1.045,
+          "error": null,
+          "edges_strict": 47,
+          "edges_weak": 130,
+          "n_sccs": 7,
+          "n_cycles": 15,
+          "layout_backend": "manual_layered"
+        },
+        "faces": {
+          "ok": true,
+          "seconds": 1.534,
+          "error": null,
+          "n_supports": 16369,
+          "by_class": {
+            "singular": 13643,
+            "non_interior": 2723,
+            "asymp_stable_invadable": 3
+          },
+          "enumeration_complete": true
+        },
+        "nash": {
+          "ok": true,
+          "seconds": 337.639,
+          "error": null,
+          "run_dir": "runs/20260901T153246Z_b0bb508e58f5",
+          "n_extreme_NE": 241,
+          "n_components": 2,
+          "cross_check_performed": false
+        },
+        "replicator": {
+          "ok": true,
+          "seconds": 0.794,
+          "error": null,
+          "n_attractors": 17,
+          "n_unconverged": 0,
+          "all_converged": true,
+          "largest_basin": 0.950249,
+          "dominant_support": [
+            "CIMCIC",
+            "DupocBot",
+            "MaxConfidenceBot",
+            "CooperateBot",
+            "TitForTatBot",
+            "MinConfidenceBot"
+          ]
+        },
+        "moran": {
+          "ok": true,
+          "seconds": 0.064,
+          "error": null,
+          "n_points": 9,
+          "all_converged": true,
+          "headline": {
+            "population": 100,
+            "beta": 1.0,
+            "stochastically_stable": [
+              "DupocBot",
+              "MaxConfidenceBot",
+              "CIMCIC"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "run": "body+twins+natives_epsilon_t040_a080_b3215a5e65eb",
+      "zoo": "body+twins+natives",
+      "family": "epsilon",
+      "t": 0.4,
+      "alpha": 0.8,
+      "fingerprint": "b3215a5e65eb",
+      "n_types": 14,
+      "bots": [
+        "CIMCIC",
+        "CooperateBot",
+        "CupodBot",
+        "CupodTrollBot",
+        "DBot",
+        "DIMCID",
+        "DefectBot",
+        "DupocBot",
+        "EBot",
+        "MaxConfidenceBot",
+        "MinConfidenceBot",
+        "OBot",
+        "PrudentBot",
+        "TitForTatBot"
+      ],
+      "excluded_bots": [],
+      "is_fully_proven": true,
+      "grid_points": [
+        [
+          0.4,
+          0.8
+        ],
+        [
+          0.2,
+          0.8
+        ]
+      ],
+      "n_grid_points": 2,
+      "ok": true,
+      "failed_stages": [],
+      "stages": {
+        "ess": {
+          "ok": true,
+          "seconds": 0.002,
+          "error": null,
+          "n_pure_ess": 0,
+          "n_types": 14
+        },
+        "invasion": {
+          "ok": true,
+          "seconds": 0.567,
+          "error": null,
+          "edges_strict": 63,
+          "edges_weak": 123,
+          "n_sccs": 10,
+          "n_cycles": 5,
+          "layout_backend": "manual_layered"
+        },
+        "faces": {
+          "ok": true,
+          "seconds": 0.924,
+          "error": null,
+          "n_supports": 16369,
+          "by_class": {
+            "singular": 13688,
+            "non_interior": 2679,
+            "asymp_stable_invadable": 2
+          },
+          "enumeration_complete": true
+        },
+        "nash": {
+          "ok": true,
+          "seconds": 493.936,
+          "error": null,
+          "run_dir": "runs/20260901T154102Z_542406f56ae2",
+          "n_extreme_NE": 36,
+          "n_components": 1,
+          "cross_check_performed": false
+        },
+        "replicator": {
+          "ok": true,
+          "seconds": 1.052,
+          "error": null,
+          "n_attractors": 19,
+          "n_unconverged": 0,
+          "all_converged": true,
+          "largest_basin": 0.935323,
+          "dominant_support": [
+            "CIMCIC",
+            "DupocBot",
+            "MaxConfidenceBot",
+            "OBot",
+            "PrudentBot",
+            "DefectBot"
+          ]
+        },
+        "moran": {
+          "ok": true,
+          "seconds": 0.086,
+          "error": null,
+          "n_points": 9,
+          "all_converged": true,
+          "headline": {
+            "population": 100,
+            "beta": 1.0,
+            "stochastically_stable": [
+              "CIMCIC",
+              "DupocBot",
+              "MaxConfidenceBot"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "run": "body+twins+natives_epsilon_t020_a030_5133d3155119",
+      "zoo": "body+twins+natives",
+      "family": "epsilon",
+      "t": 0.2,
+      "alpha": 0.3,
+      "fingerprint": "5133d3155119",
+      "n_types": 14,
+      "bots": [
+        "CIMCIC",
+        "CooperateBot",
+        "CupodBot",
+        "CupodTrollBot",
+        "DBot",
+        "DIMCID",
+        "DefectBot",
+        "DupocBot",
+        "EBot",
+        "MaxConfidenceBot",
+        "MinConfidenceBot",
+        "OBot",
+        "PrudentBot",
+        "TitForTatBot"
+      ],
+      "excluded_bots": [],
+      "is_fully_proven": true,
+      "grid_points": [
+        [
+          0.2,
+          0.3
+        ]
+      ],
+      "n_grid_points": 1,
+      "ok": true,
+      "failed_stages": [],
+      "stages": {
+        "ess": {
+          "ok": true,
+          "seconds": 0.005,
+          "error": null,
+          "n_pure_ess": 0,
+          "n_types": 14
+        },
+        "invasion": {
+          "ok": true,
+          "seconds": 0.906,
+          "error": null,
+          "edges_strict": 39,
+          "edges_weak": 136,
+          "n_sccs": 14,
+          "n_cycles": 0,
+          "layout_backend": "manual_layered"
+        },
+        "faces": {
+          "ok": true,
+          "seconds": 1.194,
+          "error": null,
+          "n_supports": 16369,
+          "by_class": {
+            "singular": 16111,
+            "non_interior": 258
+          },
+          "enumeration_complete": true
+        },
+        "nash": {
+          "ok": true,
+          "seconds": 37.241,
+          "error": null,
+          "run_dir": "runs/20260901T154143Z_d1e2c96343e2",
+          "n_extreme_NE": 160,
+          "n_components": 2,
+          "cross_check_performed": false
+        },
+        "replicator": {
+          "ok": true,
+          "seconds": 0.768,
+          "error": null,
+          "n_attractors": 19,
+          "n_unconverged": 0,
+          "all_converged": true,
+          "largest_basin": 0.930348,
+          "dominant_support": [
+            "CIMCIC",
+            "DupocBot",
+            "MaxConfidenceBot",
+            "CooperateBot",
+            "MinConfidenceBot",
+            "TitForTatBot"
+          ]
+        },
+        "moran": {
+          "ok": true,
+          "seconds": 0.08,
+          "error": null,
+          "n_points": 9,
+          "all_converged": true,
+          "headline": {
+            "population": 100,
+            "beta": 1.0,
+            "stochastically_stable": [
+              "DupocBot",
+              "MaxConfidenceBot",
+              "CIMCIC"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "run": "body+twins+natives_epsilon_t020_a045_ac0f8dda988b",
+      "zoo": "body+twins+natives",
+      "family": "epsilon",
+      "t": 0.2,
+      "alpha": 0.45,
+      "fingerprint": "ac0f8dda988b",
+      "n_types": 14,
+      "bots": [
+        "CIMCIC",
+        "CooperateBot",
+        "CupodBot",
+        "CupodTrollBot",
+        "DBot",
+        "DIMCID",
+        "DefectBot",
+        "DupocBot",
+        "EBot",
+        "MaxConfidenceBot",
+        "MinConfidenceBot",
+        "OBot",
+        "PrudentBot",
+        "TitForTatBot"
+      ],
+      "excluded_bots": [],
+      "is_fully_proven": true,
+      "grid_points": [
+        [
+          0.2,
+          0.45
+        ]
+      ],
+      "n_grid_points": 1,
+      "ok": true,
+      "failed_stages": [],
+      "stages": {
+        "ess": {
+          "ok": true,
+          "seconds": 0.002,
+          "error": null,
+          "n_pure_ess": 0,
+          "n_types": 14
+        },
+        "invasion": {
+          "ok": true,
+          "seconds": 0.711,
+          "error": null,
+          "edges_strict": 52,
+          "edges_weak": 128,
+          "n_sccs": 7,
+          "n_cycles": 15,
+          "layout_backend": "manual_layered"
+        },
+        "faces": {
+          "ok": true,
+          "seconds": 1.246,
+          "error": null,
+          "n_supports": 16369,
+          "by_class": {
+            "singular": 13609,
+            "non_interior": 2757,
+            "asymp_stable_invadable": 3
+          },
+          "enumeration_complete": true
+        },
+        "nash": {
+          "ok": true,
+          "seconds": 397.383,
+          "error": null,
+          "run_dir": "runs/20260901T154823Z_a420d20307ae",
+          "n_extreme_NE": 36,
+          "n_components": 1,
+          "cross_check_performed": false
+        },
+        "replicator": {
+          "ok": true,
+          "seconds": 0.996,
+          "error": null,
+          "n_attractors": 20,
+          "n_unconverged": 0,
+          "all_converged": true,
+          "largest_basin": 0.80597,
+          "dominant_support": [
+            "MaxConfidenceBot",
+            "OBot",
+            "PrudentBot",
+            "DefectBot"
+          ]
+        },
+        "moran": {
+          "ok": true,
+          "seconds": 0.074,
+          "error": null,
+          "n_points": 9,
+          "all_converged": true,
+          "headline": {
+            "population": 100,
+            "beta": 1.0,
+            "stochastically_stable": [
+              "MaxConfidenceBot"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "run": "body+twins+natives_epsilon_t020_a062_13bceaab1f68",
+      "zoo": "body+twins+natives",
+      "family": "epsilon",
+      "t": 0.2,
+      "alpha": 0.62,
+      "fingerprint": "13bceaab1f68",
+      "n_types": 14,
+      "bots": [
+        "CIMCIC",
+        "CooperateBot",
+        "CupodBot",
+        "CupodTrollBot",
+        "DBot",
+        "DIMCID",
+        "DefectBot",
+        "DupocBot",
+        "EBot",
+        "MaxConfidenceBot",
+        "MinConfidenceBot",
+        "OBot",
+        "PrudentBot",
+        "TitForTatBot"
+      ],
+      "excluded_bots": [],
+      "is_fully_proven": true,
+      "grid_points": [
+        [
+          0.2,
+          0.62
+        ]
+      ],
+      "n_grid_points": 1,
+      "ok": true,
+      "failed_stages": [],
+      "stages": {
+        "ess": {
+          "ok": true,
+          "seconds": 0.004,
+          "error": null,
+          "n_pure_ess": 0,
+          "n_types": 14
+        },
+        "invasion": {
+          "ok": true,
+          "seconds": 0.501,
+          "error": null,
+          "edges_strict": 59,
+          "edges_weak": 121,
+          "n_sccs": 10,
+          "n_cycles": 5,
+          "layout_backend": "manual_layered"
+        },
+        "faces": {
+          "ok": true,
+          "seconds": 0.912,
+          "error": null,
+          "n_supports": 16369,
+          "by_class": {
+            "singular": 12974,
+            "non_interior": 3393,
+            "asymp_stable_invadable": 2
+          },
+          "enumeration_complete": true
+        },
+        "nash": {
+          "ok": true,
+          "seconds": 598.876,
+          "error": null,
+          "run_dir": "runs/20260901T155824Z_60cdded28636",
+          "n_extreme_NE": 16,
+          "n_components": 1,
+          "cross_check_performed": false
+        },
+        "replicator": {
+          "ok": true,
+          "seconds": 1.02,
+          "error": null,
+          "n_attractors": 21,
+          "n_unconverged": 0,
+          "all_converged": true,
+          "largest_basin": 0.60199,
+          "dominant_support": [
+            "MaxConfidenceBot",
+            "OBot",
+            "PrudentBot",
+            "DefectBot"
+          ]
+        },
+        "moran": {
+          "ok": true,
+          "seconds": 0.077,
+          "error": null,
+          "n_points": 9,
+          "all_converged": true,
+          "headline": {
+            "population": 100,
+            "beta": 1.0,
+            "stochastically_stable": [
+              "MaxConfidenceBot"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "run": "body+twins+natives_epsilon_t000_a030_1a1aec1164b4",
+      "zoo": "body+twins+natives",
+      "family": "epsilon",
+      "t": 0.0,
+      "alpha": 0.3,
+      "fingerprint": "1a1aec1164b4",
+      "n_types": 14,
+      "bots": [
+        "CIMCIC",
+        "CooperateBot",
+        "CupodBot",
+        "CupodTrollBot",
+        "DBot",
+        "DIMCID",
+        "DefectBot",
+        "DupocBot",
+        "EBot",
+        "MaxConfidenceBot",
+        "MinConfidenceBot",
+        "OBot",
+        "PrudentBot",
+        "TitForTatBot"
+      ],
+      "excluded_bots": [],
+      "is_fully_proven": true,
+      "grid_points": [
+        [
+          0.0,
+          0.3
+        ]
+      ],
+      "n_grid_points": 1,
+      "ok": true,
+      "failed_stages": [],
+      "stages": {
+        "ess": {
+          "ok": true,
+          "seconds": 0.007,
+          "error": null,
+          "n_pure_ess": 0,
+          "n_types": 14
+        },
+        "invasion": {
+          "ok": true,
+          "seconds": 0.784,
+          "error": null,
+          "edges_strict": 40,
+          "edges_weak": 142,
+          "n_sccs": 14,
+          "n_cycles": 0,
+          "layout_backend": "manual_layered"
+        },
+        "faces": {
+          "ok": true,
+          "seconds": 0.931,
+          "error": null,
+          "n_supports": 16369,
+          "by_class": {
+            "singular": 16369
+          },
+          "enumeration_complete": true
+        },
+        "nash": {
+          "ok": true,
+          "seconds": 0.2,
+          "error": null,
+          "run_dir": "runs/20260901T155827Z_092db860e0a4",
+          "n_extreme_NE": 16,
+          "n_components": 1,
+          "cross_check_performed": false
+        },
+        "replicator": {
+          "ok": true,
+          "seconds": 0.705,
+          "error": null,
+          "n_attractors": 17,
+          "n_unconverged": 0,
+          "all_converged": true,
+          "largest_basin": 0.99005,
+          "dominant_support": [
+            "DefectBot",
+            "OBot",
+            "PrudentBot",
+            "MaxConfidenceBot"
+          ]
+        },
+        "moran": {
+          "ok": true,
+          "seconds": 0.067,
+          "error": null,
+          "n_points": 9,
+          "all_converged": true,
+          "headline": {
+            "population": 100,
+            "beta": 1.0,
+            "stochastically_stable": [
+              "DefectBot",
+              "MaxConfidenceBot",
+              "OBot",
+              "PrudentBot"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "run": "body+twins+natives_epsilon_t000_a045_30393625b4e5",
+      "zoo": "body+twins+natives",
+      "family": "epsilon",
+      "t": 0.0,
+      "alpha": 0.45,
+      "fingerprint": "30393625b4e5",
+      "n_types": 14,
+      "bots": [
+        "CIMCIC",
+        "CooperateBot",
+        "CupodBot",
+        "CupodTrollBot",
+        "DBot",
+        "DIMCID",
+        "DefectBot",
+        "DupocBot",
+        "EBot",
+        "MaxConfidenceBot",
+        "MinConfidenceBot",
+        "OBot",
+        "PrudentBot",
+        "TitForTatBot"
+      ],
+      "excluded_bots": [],
+      "is_fully_proven": true,
+      "grid_points": [
+        [
+          0.0,
+          0.45
+        ],
+        [
+          0.0,
+          0.62
+        ]
+      ],
+      "n_grid_points": 2,
+      "ok": true,
+      "failed_stages": [],
+      "stages": {
+        "ess": {
+          "ok": true,
+          "seconds": 0.002,
+          "error": null,
+          "n_pure_ess": 0,
+          "n_types": 14
+        },
+        "invasion": {
+          "ok": true,
+          "seconds": 0.618,
+          "error": null,
+          "edges_strict": 48,
+          "edges_weak": 134,
+          "n_sccs": 14,
+          "n_cycles": 0,
+          "layout_backend": "manual_layered"
+        },
+        "faces": {
+          "ok": true,
+          "seconds": 0.899,
+          "error": null,
+          "n_supports": 16369,
+          "by_class": {
+            "singular": 16369
+          },
+          "enumeration_complete": true
+        },
+        "nash": {
+          "ok": true,
+          "seconds": 0.293,
+          "error": null,
+          "run_dir": "runs/20260901T155830Z_326f1a366e38",
+          "n_extreme_NE": 36,
+          "n_components": 1,
+          "cross_check_performed": false
+        },
+        "replicator": {
+          "ok": true,
+          "seconds": 0.666,
+          "error": null,
+          "n_attractors": 19,
+          "n_unconverged": 0,
+          "all_converged": true,
+          "largest_basin": 0.975124,
+          "dominant_support": [
+            "DefectBot",
+            "CIMCIC",
+            "OBot",
+            "DupocBot",
+            "MaxConfidenceBot",
+            "PrudentBot"
+          ]
+        },
+        "moran": {
+          "ok": true,
+          "seconds": 0.063,
+          "error": null,
+          "n_points": 9,
+          "all_converged": true,
+          "headline": {
+            "population": 100,
+            "beta": 1.0,
+            "stochastically_stable": [
+              "DefectBot",
+              "DupocBot",
+              "MaxConfidenceBot",
+              "OBot",
+              "PrudentBot",
+              "CIMCIC"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "run": "body+twins+natives_epsilon_t000_a080_c2b7c4a9bd2f",
+      "zoo": "body+twins+natives",
+      "family": "epsilon",
+      "t": 0.0,
+      "alpha": 0.8,
+      "fingerprint": "c2b7c4a9bd2f",
+      "n_types": 14,
+      "bots": [
+        "CIMCIC",
+        "CooperateBot",
+        "CupodBot",
+        "CupodTrollBot",
+        "DBot",
+        "DIMCID",
+        "DefectBot",
+        "DupocBot",
+        "EBot",
+        "MaxConfidenceBot",
+        "MinConfidenceBot",
+        "OBot",
+        "PrudentBot",
+        "TitForTatBot"
+      ],
+      "excluded_bots": [],
+      "is_fully_proven": true,
+      "grid_points": [
+        [
+          0.0,
+          0.8
+        ]
+      ],
+      "n_grid_points": 1,
+      "ok": true,
+      "failed_stages": [],
+      "stages": {
+        "ess": {
+          "ok": true,
+          "seconds": 0.002,
+          "error": null,
+          "n_pure_ess": 0,
+          "n_types": 14
+        },
+        "invasion": {
+          "ok": true,
+          "seconds": 0.743,
+          "error": null,
+          "edges_strict": 33,
+          "edges_weak": 149,
+          "n_sccs": 14,
+          "n_cycles": 0,
+          "layout_backend": "manual_layered"
+        },
+        "faces": {
+          "ok": true,
+          "seconds": 0.89,
+          "error": null,
+          "n_supports": 16369,
+          "by_class": {
+            "singular": 16369
+          },
+          "enumeration_complete": true
+        },
+        "nash": {
+          "ok": true,
+          "seconds": 0.557,
+          "error": null,
+          "run_dir": "runs/20260901T155833Z_072fd05fa7cf",
+          "n_extreme_NE": 121,
+          "n_components": 1,
+          "cross_check_performed": false
+        },
+        "replicator": {
+          "ok": true,
+          "seconds": 0.623,
+          "error": null,
+          "n_attractors": 25,
+          "n_unconverged": 0,
+          "all_converged": true,
+          "largest_basin": 0.905473,
+          "dominant_support": [
+            "EBot",
+            "DBot",
+            "DefectBot",
+            "CIMCIC",
+            "DIMCID",
+            "CupodBot",
+            "OBot",
+            "MaxConfidenceBot",
+            "DupocBot",
+            "PrudentBot",
+            "TitForTatBot"
+          ]
+        },
+        "moran": {
+          "ok": true,
+          "seconds": 0.068,
+          "error": null,
+          "n_points": 9,
+          "all_converged": true,
+          "headline": {
+            "population": 100,
+            "beta": 1.0,
+            "stochastically_stable": []
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,109 @@
+{
+  "run": "body+twins+natives_epsilon_t040_a030_e8c4a57c4e5d",
+  "zoo": "body+twins+natives",
+  "family": "epsilon",
+  "t": 0.4,
+  "alpha": 0.3,
+  "fingerprint": "e8c4a57c4e5d",
+  "n_types": 14,
+  "bots": [
+    "CIMCIC",
+    "CooperateBot",
+    "CupodBot",
+    "CupodTrollBot",
+    "DBot",
+    "DIMCID",
+    "DefectBot",
+    "DupocBot",
+    "EBot",
+    "MaxConfidenceBot",
+    "MinConfidenceBot",
+    "OBot",
+    "PrudentBot",
+    "TitForTatBot"
+  ],
+  "excluded_bots": [],
+  "is_fully_proven": true,
+  "grid_points": [
+    [
+      0.4,
+      0.3
+    ]
+  ],
+  "n_grid_points": 1,
+  "ok": true,
+  "failed_stages": [],
+  "stages": {
+    "ess": {
+      "ok": true,
+      "seconds": 0.007,
+      "error": null,
+      "n_pure_ess": 0,
+      "n_types": 14
+    },
+    "invasion": {
+      "ok": true,
+      "seconds": 1.045,
+      "error": null,
+      "edges_strict": 47,
+      "edges_weak": 130,
+      "n_sccs": 7,
+      "n_cycles": 15,
+      "layout_backend": "manual_layered"
+    },
+    "faces": {
+      "ok": true,
+      "seconds": 1.534,
+      "error": null,
+      "n_supports": 16369,
+      "by_class": {
+        "singular": 13643,
+        "non_interior": 2723,
+        "asymp_stable_invadable": 3
+      },
+      "enumeration_complete": true
+    },
+    "nash": {
+      "ok": true,
+      "seconds": 337.639,
+      "error": null,
+      "run_dir": "runs/20260901T153246Z_b0bb508e58f5",
+      "n_extreme_NE": 241,
+      "n_components": 2,
+      "cross_check_performed": false
+    },
+    "replicator": {
+      "ok": true,
+      "seconds": 0.794,
+      "error": null,
+      "n_attractors": 17,
+      "n_unconverged": 0,
+      "all_converged": true,
+      "largest_basin": 0.950249,
+      "dominant_support": [
+        "CIMCIC",
+        "DupocBot",
+        "MaxConfidenceBot",
+        "CooperateBot",
+        "TitForTatBot",
+        "MinConfidenceBot"
+      ]
+    },
+    "moran": {
+      "ok": true,
+      "seconds": 0.064,
+      "error": null,
+      "n_points": 9,
+      "all_converged": true,
+      "headline": {
+        "population": 100,
+        "beta": 1.0,
+        "stochastically_stable": [
+          "DupocBot",
+          "MaxConfidenceBot",
+          "CIMCIC"
+        ]
+      }
+    }
+  }
+}

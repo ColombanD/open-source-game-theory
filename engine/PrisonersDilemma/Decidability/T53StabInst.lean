@@ -176,6 +176,27 @@ theorem stepG_congr (h₁ : modestP r₁ = true) (h₂ : modestP r₂ = true)
         simp only [Formula.size] at hsz
         omega
       rw [hag (K - (Formula.impl A B).size) B (by omega) hszB hInvB]
+      -- the contrapose leg: the un-negated implication is a SMALLER in-space query
+      congr 1
+      split
+      · rename_i B' A'
+        have hInv' : InvP r₁ r₂ N k₀ φ₀ (.impl A' B') := by
+          constructor
+          · intro P hP
+            refine hargs P ?_
+            simp only [playsArgsF, List.mem_append] at hP ⊢
+            tauto
+          · simp only [maxLitF] at hlit ⊢; omega
+        have hsz' : (Formula.impl A' B').size ≤
+            ZS r₁ r₂ N k₀ φ₀ (K - (Formula.impl (.neg B') (.neg A')).size) := by
+          have hZ := ZS_anti r₁ r₂ N k₀ φ₀
+            (show K - (Formula.impl (.neg B') (.neg A')).size ≤ K by omega)
+          have hs : (Formula.impl A' B').size ≤ (Formula.impl (.neg B') (.neg A')).size := by
+            simp only [Formula.size]; omega
+          omega
+        rw [hag (K - (Formula.impl (.neg B') (.neg A')).size) (.impl A' B')
+          (by omega) hsz' hInv']
+      · rfl
     · rfl
   have h_STS : chkSTS S₁ K φ = chkSTS S₂ K φ := by
     unfold chkSTS
@@ -752,8 +773,9 @@ theorem PfG_inst_iff_decG_bound (h₁ : modestP r₁ = true) (h₂ : modestP r�
   · intro h
     exact T52.decB_sound (instOKb (PP r₁ r₂) N) (fun _ => instOKb_iff) _ k₀ φ₀ h
 
-/-- The `Decidable` instance — bounded provability over the modest stratum is decided by
-    a terminating computation. -/
+/-- The `Decidable` instance — bounded provability over the instance stratum, `⊢^G_k φ` at
+    `G = instGate (PP r₁ r₂) N`, is decided by a terminating computation (a Lean theorem
+    about the Bool `T52.decG`). -/
 def decidePfG_inst (h₁ : modestP r₁ = true) (h₂ : modestP r₂ = true)
     (hargs₀ : ∀ P ∈ playsArgsF φ₀, P ∈ AP r₁ r₂ N k₀ φ₀) :
     Decidable (PfG (instGate (PP r₁ r₂) N) k₀ φ₀) :=

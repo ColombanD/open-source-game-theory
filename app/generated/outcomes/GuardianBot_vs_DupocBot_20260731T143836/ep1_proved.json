@@ -1,0 +1,21 @@
+{
+  "timestamp": "20260731T143836",
+  "bot_a": "GuardianBot",
+  "bot_b": "DupocBot",
+  "model": "claude-opus-4-8",
+  "episode_index": 0,
+  "end_reason": "verdict",
+  "verdict_kind": "proved",
+  "turns_used": 9,
+  "tool_calls_used": 9,
+  "usage": {
+    "input_tokens": 18,
+    "output_tokens": 17856,
+    "cache_read_tokens": 1124556,
+    "cache_creation_tokens": 69185
+  },
+  "elapsed_seconds": 247.91118741700484,
+  "notebook": null,
+  "hidden_bots": [],
+  "final_text": "The full proof compiles cleanly with no errors or warnings. The outcome is (C, D): GuardianBot cooperates (its guard about DupocBot bullying CooperateBot is refuted), while DupocBot defects (it cannot afford the search_f floor cost to certify GuardianBot's else-branch cooperation).\n\nLet me submit."
+}

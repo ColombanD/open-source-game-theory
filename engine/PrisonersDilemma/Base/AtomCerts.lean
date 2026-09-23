@@ -35,6 +35,12 @@ theorem Prog.hasSearch_subst : ∀ (p me oppo : Prog), p.hasSearch = false →
               Prog.hasSearch_subst p m1 o1 hp.1.2 hme ho⟩,
              Prog.hasSearch_subst q m1 o1 hp.2 hme ho⟩
   | .search _ _ _ _, _, _ => fun hp _ _ => by simp [Prog.hasSearch] at hp
+  -- `.tvote` has `hasSearch = true` UNCONDITIONALLY (Program.lean), so the search-free
+  -- hypothesis is already absurd — the same discharge as `.tsearch`, and precisely the
+  -- reason the roadmap chose the unconditional over-approximation.
+  | .tvote _ _ _ _, _, _ => fun hp _ _ => by simp [Prog.hasSearch] at hp
+  | .sys _ _, _, _ => fun hp _ _ => by simp [Prog.hasSearch] at hp
+  | .selfIdx _, _, _ => fun hp _ _ => by simp [Prog.hasSearch] at hp
 
 /-- `c_guard` (the cost of writing the budget numeral `k` in a proof transcript)
     is monotone: a larger `k` takes at least as many characters to write.
@@ -123,6 +129,9 @@ theorem cert_searchfree : ∀ (fuel : Nat) (me oppo body : Prog) (a : Action),
               have hrf : (r == ac) = false := by simpa using hr
               exact ⟨n₁ + n₂ + c_node, .ite_f cert₁ hrf cert₂, by omega⟩
     | search k g p q => simp [Prog.hasSearch] at hb
+    | tvote v θ p q => simp [Prog.hasSearch] at hb
+    | sys defs i => simp [Prog.hasSearch] at hb
+    | selfIdx j => simp [Prog.hasSearch] at hb
 
 /-- Σ₁-completeness for SEARCH-FREE atoms — the constructive fragment of the deleted
     `atom_complete`, at the honest bound `3 ^ fuel`. -/
@@ -132,8 +141,8 @@ theorem atom_complete_searchfree (p q : Prog) (a : Action) (fuel : Nat)
   obtain ⟨n, cert, hn⟩ := cert_searchfree fuel p q p a hp hq hp h
   exact ⟨cert, hn⟩
 
-/-- FIRED top-level search (the Dupoc/Cupod shape): the guard's provability at its own
-    literal certifies the then-play at `log2 k + 3` characters. -/
+/-- FIRED top-level search (the Dupoc/Cupod shape): the guard's `S`-derivability at its own
+    literal (`⊢_k guard`) certifies the then-play at `log2 k + 3` characters. -/
 theorem atom_search_t_top (k : Nat) (g : Formula) (aT aE : Action) (oppo : Prog)
     (hg : Pf k (g.subst (.search k g (.const aT) (.const aE)) oppo)) :
     AtomProvable (Nat.log2 k + 3)

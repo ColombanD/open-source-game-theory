@@ -2,7 +2,15 @@ import PrisonersDilemma.Program
 import PrisonersDilemma.Dynamics
 import PrisonersDilemma.ProofSystem
 import PrisonersDilemma.BaseTheorems
-import PrisonersDilemma.Theorems.CupodBot
+import PrisonersDilemma.Theorems.CupodBot.Helpers
+import PrisonersDilemma.Theorems.CupodBot.vs_CooperateBot
+import PrisonersDilemma.Theorems.CupodBot.vs_CupodBot
+import PrisonersDilemma.Theorems.CupodBot.vs_DBot
+import PrisonersDilemma.Theorems.CupodBot.vs_DefectBot
+import PrisonersDilemma.Theorems.CupodBot.vs_EBot
+import PrisonersDilemma.Theorems.CupodBot.vs_MirrorBot
+import PrisonersDilemma.Theorems.CupodBot.vs_OBot
+import PrisonersDilemma.Theorems.CupodBot.vs_TitForTatBot
 import Mathlib.Data.Nat.Log
 
 /-!

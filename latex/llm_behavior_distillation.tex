@@ -1,0 +1,49 @@
+\documentclass{article}
+
+\usepackage{graphicx} % Required for inserting images
+\usepackage{xcolor}
+\usepackage{minted}
+
+\input{theoremsetup}
+
+\title{LLM Behavior Distillation for Open-source Game Theory}
+\author{Colomban Duclaux}
+\date{\today}
+
+\usepackage[backend=biber,style=alphabetic]{biblatex}
+\addbibresource{references.bib}
+
+\begin{document}
+
+\maketitle
+
+These notes explore the gap between Open-Source Game Theory (OSGT) and Large Language Models (LLMs).
+
+\section{The Problem}
+OSGT is a field that explores the interactions of agents that can read each other's source code. The focus is on proof-based approaches to cooperation, which are less explored and more theoretical than simulation-based approaches.
+
+Although mathematically grounded, OSGT is not widely adopted in practice. One reason is that it requires agents to be able to read and reason about each other's source code, which is not always feasible in real-world scenarios. Another reason is that the theoretical results of OSGT are often difficult to apply in practice, as they require agents to have a deep understanding of formal verification and logic. Put more bluntly, OSGT manipulates simple programs with a few lines of code, while LLMs are complex models with millions of parameters. This makes it difficult to apply the theoretical results of OSGT to LLMs, as they are not designed to reason about each other's source code.
+
+We arbitrarily define "LLM behavior distillation" as the process of extracting the behavior of an LLM and representing it in a simpler form, such as a program that can be reasoned about using OSGT techniques. The goal is to bridge the gap between OSGT and LLMs, by providing a way to apply the theoretical results of OSGT to LLMs.
+
+\section{Ideas for Bridging the Gap}
+We see three routes for distilling the behavior of an LLM into a formal object, plus a verification layer, built on arithmetic circuits, that any of the three routes can plug into. The endpoint is always the same: a small formal program that our Lean engine can import and prove theorems about.
+
+\subsection{Route A: Behavioral Automaton Extraction (Black Box)}
+Treat the LLM as an oracle: we feed it a game history, it outputs C or D. For a wide class of strategies, a strategy in the iterated Prisoner's Dilemma is a finite-state machine over the alphabet of joint moves, so classical automata learning applies. Angluin's L* algorithm~\parencite{angluin1987learning} extracts a DFA or Moore machine by querying the oracle with histories and answering equivalence queries via sampling; \textcite{weiss2018extracting} use exactly this scheme to extract automata from RNNs, and nothing about it is transformer-specific. The output is a minimized finite-state strategy: a concrete, small, formal object, directly consumable by our Lean engine. The pipeline reads: the LLM plays the game, L* extracts an automaton, and the automaton is imported into the formalization, where we prove properties about it. Is it exactly grim trigger? Is it exploitable, and by how much? Does it satisfy a cooperation criterion against a given opponent class? This closes the loop from opaque model to verified program, and it works today on any model, including ones we only have API access to.
+
+\subsection{Route B: Direct Synthesis in Lean}
+Instead of extracting a program from the model, ask the model for one: the LLM proposes an OSGT bot directly in our Lean agent language, and the Lean kernel judges the result. Our existing pipeline already does this for natural-language strategy descriptions. The catch is that the synthesized bot is a program the LLM \emph{claims} to follow, not one it provably follows; faithfulness has to be established separately, which is exactly the job of the verification layer below.
+% Original note: "This could be implemented a bit better using ROTE" — expand once the reference is pinned down.
+
+\subsection{Route C: Decompilable by Construction}
+Transformer Programs~\parencite{friedman2023transformerprograms} constrain the architecture during training (discrete, disentangled attention) so that the trained model can be mechanically decompiled into a short Python program. Training such a model on the game task yields a program with no reverse-engineering step at all. This is the converse of Tracr~\parencite{lindner2023tracr}: Tracr goes from program to weights, this goes from training to program. Route C is attractive because it guarantees an artifact.
+
+\section{Arithmetic Circuits: The Verification Layer}
+Arithmetic circuits deserve their own discussion, because they change what kind of object a neural network is in this story. A neural network is, essentially, an arithmetic circuit over the reals: addition and multiplication gates plus activation gates. This correspondence can be made exact; \textcite{barlag2024gnnarithmeticcircuits} prove an equivalence between graph neural networks and constant-depth real arithmetic circuits, with gate types matching activation functions. Under this reading, a trained model already \emph{has} a formal source code, namely its own circuit, and OSGT applies to it literally: the circuit is the submitted program.
+
+Why distill at all, then? Because the circuit is formal but not legible. A million-gate circuit supports no Löbian argument we know how to find; a ten-line bot does. This is why we see arithmetic circuits not as an extraction tool but as a \emph{checking} tool: they do not help us obtain the small program, but they let us state, formally, whether a small program is a correct account of the model. That checking role is load-bearing. Each of Routes A--C ends with a candidate program $P$ and an implicit claim: $P$ computes the same function as the model $M$. By sampling, we can only estimate this claim, which yields a statistical fidelity gap $\varepsilon$. With $M$ rendered as an arithmetic circuit $C_M$ and $P$ compiled to a circuit $C_P$ over the same inputs, the claim becomes circuit equivalence: does $C_M \equiv C_P$ hold on the space of bounded game histories? That is a formal statement, decidable in principle on a finite domain. A proof of it upgrades every theorem about $P$ into a theorem about $M$ exactly (that is, $\varepsilon = 0$), while a counterexample is an interpretable input on which the distillation fails. The general problem is hard (equivalence of arithmetic circuits is polynomial identity testing in disguise, and exact treatment of activations needs care), but our setting is unusually favorable: inputs are short discrete histories and outputs are a single action.
+
+\printbibliography
+
+\end{document}

@@ -1,0 +1,44 @@
+{
+  "stage": "face_equilibria",
+  "faces_pipeline_version": "0.1.0",
+  "numeric_matrix_source": "/Users/colomband/Library/CloudStorage/OneDrive-Personal/Documents/Studies/ETH/Master Thesis/workspace/open-source-game-theory/app/generated/egt/runs/body+twins_syntactic_t040_a080_e6ab26a6bdb4/ess/payoff_matrix_numeric.csv",
+  "n_types": 12,
+  "n_supports_enumerated": 4083,
+  "tolerance": {
+    "tol": 1e-10,
+    "rationale": "single global tolerance used for: singular-system detection, is-interior threshold (x_i > tol), zero-real-part eigenvalue test for non-hyperbolicity, and external-stability test (max_external_fitness < -tol)."
+  },
+  "tangent_projection_method": "orthonormal basis of {v in R^|S| : 1^T v = 0} from scipy.linalg.null_space; J_tan = Q^T J Q; eig via scipy.linalg.eig",
+  "linear_solve_method": "scipy.linalg.solve on the (|S|+1)x(|S|+1) block system",
+  "non_interior_policy": "rows with is_interior=False have within-face Jacobian and eigenvalues NOT computed (tangent_eigvals='[]', max/min_re_eigval=NaN, has_complex_eigvals=False, within_face_class=''); external invasion fitnesses are not computed for non-interior solutions.",
+  "max_support_size": null,
+  "enumeration_is_complete": true,
+  "enumeration": "every non-empty support S with |S| >= 2 is enumerated; no pruning by strict domination (Akin 1980) or any other criterion.",
+  "pd_payoffs": {
+    "parametrisation": "(b, c) with b > c > 0",
+    "b": 3.0,
+    "c": 1.0,
+    "implied_trps": {
+      "T": 3.0,
+      "R": 2.0,
+      "P": 0.0,
+      "S": -1.0
+    },
+    "convention": "row payoff: (D,C)=b, (C,C)=b-c, (D,D)=0, (C,D)=-c"
+  },
+  "excluded_types": {},
+  "undefined_cells_resolved": {},
+  "diagonal_undefined_policy": {
+    "rule": "If A[i,i] is non-finite, enumerate_pure_ess raises ValueError. The ingest layer raises earlier; this is defence in depth.",
+    "currently_triggered": false,
+    "reason_currently_inactive": "non-terminating cells are resolved by NonTerminationPolicy before A is built, so no diagonal sentinel survives ingest."
+  },
+  "library_versions": {
+    "numpy": "2.5.1",
+    "scipy": "1.18.0",
+    "pandas": "3.0.5",
+    "pyarrow": "25.0.0",
+    "tqdm": "4.70.0",
+    "networkx": "3.6.1"
+  }
+}

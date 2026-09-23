@@ -48,9 +48,14 @@ def run_lean_proof_file(lean_project_dir: Path, lean_file: Path) -> LeanExecResu
     return run_lean_file(lean_project_dir, lean_file)
 
 
-def build_lean_project(lean_project_dir: Path, target: str = "PrisonersDilemma") -> LeanExecResult:
+def build_lean_project(
+    lean_project_dir: Path,
+    target: str | tuple[str, ...] | list[str] = "PrisonersDilemma",
+) -> LeanExecResult:
+    """`lake build <target…>`. Several targets are built in ONE lake invocation."""
     lean_project_dir = lean_project_dir.resolve()
-    cmd = ["lake", "build", target]
+    targets = [target] if isinstance(target, str) else list(target)
+    cmd = ["lake", "build", *targets]
     proc = subprocess.run(
         cmd,
         cwd=lean_project_dir,

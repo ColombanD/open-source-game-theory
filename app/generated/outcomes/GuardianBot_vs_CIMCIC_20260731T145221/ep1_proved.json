@@ -1,0 +1,21 @@
+{
+  "timestamp": "20260731T145221",
+  "bot_a": "GuardianBot",
+  "bot_b": "CIMCIC",
+  "model": "claude-opus-4-8",
+  "episode_index": 0,
+  "end_reason": "verdict",
+  "verdict_kind": "proved",
+  "turns_used": 7,
+  "tool_calls_used": 9,
+  "usage": {
+    "input_tokens": 14,
+    "output_tokens": 18190,
+    "cache_read_tokens": 869707,
+    "cache_creation_tokens": 61701
+  },
+  "elapsed_seconds": 333.9447694999981,
+  "notebook": null,
+  "hidden_bots": [],
+  "final_text": "The complete proof compiles cleanly with no errors or warnings. The outcome is **(C, D)**: GuardianBot cooperates (CIMCIC doesn't bully CooperateBot, so GuardianBot's punishment guard is refuted), while CIMCIC defects (GuardianBot's cooperation is its floor-priced else-play, which CIMCIC cannot prove at its own budget)."
+}

@@ -10,7 +10,10 @@
 
 ## ⚑ STATUS (2026-07-03, end of the T3/T4 arc) — read this first
 
-Everything below T4.1b is DONE, on Lean's 3 standard axioms, no sorries:
+Everything below T4.1b is DONE, on Lean's 3 standard axioms, no sorries. (Notation:
+`Provable k φ` is the pre-`Pf` name of `⊢_k φ`; `ProvableG G k φ` is `⊢^{G}_k φ`, a gated
+stratum of `S` — still OBJECT provability; `decFull`/`decB`/`decideProvableG` are
+Lean-computable META deciders of those. See `PROVABILITY_NOTATION.md`.)
 
 | Result | Where |
 |---|---|
@@ -68,7 +71,7 @@ milestone ledger; read §5c–§5g before touching anything). Executive summary:
 
 **The ONE remaining open item** is the T4.1b conjecture (`CutRelevance`,
 `T42ProvableB.lean`): a computable `N₀` with `Provable k φ → ProvableG (modestGate (N₀ k φ))
-k φ`. Given it, `proofSearch` is decidable ⇒ `eval` computable ⇒ outcomes `by decide`. If it
+k φ` (`⊢_k φ ⟹ ⊢^{G}_k φ`, object to object). Given it, `proofSearch` is decidable ⇒ `eval` computable ⇒ outcomes `by decide`. If it
 fails, `Provable` is a candidate undecidable bounded-provability predicate. Either resolution
 is thesis-grade. (Optional consolidation, T5: promote the spike chain into the engine tree,
 wire `proofSearch` to the decided fragment, retire `evalC`.)
@@ -165,8 +168,9 @@ right only if "never touch existing proofs" is paramount — explicitly not the 
 4. **The decider `D`:** extend `decGuard` from {plays, impl-weaken} to all rules — bounded search
    over the (finite) formulas of size ≤ k and rule applications within the remaining budget; mutual
    with computable `eval` on decreasing FUEL (the evalC stratification). Prove `D k φ = true ↔
-   Provable k φ`: soundness easy (search only applies real rules); completeness = the enumeration
-   bound (every ≤k-cost proof is found — this is where cumulative cost pays off: the search space IS
+   Provable k φ`: soundness of `D` (every hit is an `S`-derivation, `D k φ = true ⟹ ⊢_k φ` —
+   not `S`-soundness `⊢_k φ ⟹ ⊨ φ`) easy (search only applies real rules); completeness = the
+   enumeration bound (every ≤k-cost proof is found — this is where cumulative cost pays off: the search space IS
    finite). The fuel↔budget bridge for plays-atoms is `atom_cost` (already linear, invertible enough).
 5. **Endgame:** `proofSearch := D` (eval computable); `search_f` constructor with premise
    `D k guard = false` (positive, sound by D's completeness — Wall 2 dead); prove
@@ -271,9 +275,9 @@ right only if "never touch existing proofs" is paramount — explicitly not the 
   - **T3.2 — ⚠️ CRITICAL FINDING (2026-07-02): `atom_complete_false_guard` is INCONSISTENT.**
     `Research/Spikes/transcript/T32Inconsistency.lean`: `engine_inconsistent : False` on
     [3 std axioms + atom_complete_false_guard]. Witness = the ANTI-DIAGONAL bot
-    `G := .search 100 (.plays .self .self .D) (.const .C) (.const .D)`: guard true ⇒ soundness
-    yields a D-play but eval cooperates (contradiction); guard false ⇒ the axiom injects the
-    else-certificate at `atom_cost 2 = 7 ≤ 100`, monotonicity lifts it above the guard budget,
+    `G := .search 100 (.plays .self .self .D) (.const .C) (.const .D)`: guard fires (`⊢_100 g`) ⇒ soundness
+    (`⊢_k φ ⟹ ⊨ φ`) yields a D-play but eval cooperates (contradiction); guard fails
+    (`¬ ⊢_100 g`) ⇒ the axiom injects the else-certificate at `atom_cost 2 = 7 ≤ 100`, monotonicity lifts it above the guard budget,
     flipping the guard (contradiction). Predates the transcript refactor (all ingredients are
     from the original engine). Everything downstream of the axiom (all of `atom_complete`'s
     users, incl. PrudentBot/JustBot outcomes) is vacuous until repaired.
@@ -298,8 +302,8 @@ right only if "never touch existing proofs" is paramount — explicitly not the 
     Then T4 as planned.
   - **T3.2a STEP 1 — ✅ SHIPPED (2026-07-02, build green).** `PlaysProof.search_f` (refutation
     premise `Provable m (.neg guard)` + the cost FLOOR: pays the full failed budget `k`) and
-    `Provable.atomNeg` (refute a play-atom from a certificate of the actual play — eval
-    determinism) are IN; soundness restructured as `BaseTheorems.sound_upto` (joint, by STRONG
+    `Provable.atomNeg` (an `S`-refutation `⊢_m ¬φ` of a play-atom from a certificate of the
+    actual play — eval determinism) are IN; soundness restructured as `BaseTheorems.sound_upto` (joint, by STRONG
     INDUCTION ON THE BUDGET — the floor makes the hypothetical guard proof strictly smaller,
     which is what lets `search_f` be sounded at all); `Exclusion.no_pp_else` /
     `no_provable_forbidden` cost-qualified (the exclusion holds exactly WITHIN the guard's own
@@ -343,8 +347,8 @@ right only if "never touch existing proofs" is paramount — explicitly not the 
       (`j`/`k` with `|neg(eq)| + j + 2 ≤ k` — the first staggered-budget theorem, via an
       `eqNeg`+`search_f` certificate), JustBot self-play & ×TitForTat & ×Dupoc & ×OBot
       (hand `search_t` certificates, `log2 k + 3 ≤ k` thresholds).
-    * RETIRED with tombstones (axiom artifacts, honestly unprovable at same-`k` — the
-      self-referential floor): Dupoc×{DBot, EBot}, Cupod×OBot, PrudentBot×{EBot, Dupoc,
+    * RETIRED with tombstones (axiom artifacts: the same-`k` cooperation is not `S`-derivable,
+      `¬ ⊢_k`, so the same-`k` (C,C) statements are FALSE — the self-referential floor): Dupoc×{DBot, EBot}, Cupod×OBot, PrudentBot×{EBot, Dupoc,
       SELF}, JustBot×{DBot, CupodTroll, EBot, PrudentBot}. PrudentBot's same-`k` prudence
       is self-referentially impossible — rediscovering why MIRI's PrudentBot checks
       prudence in PA+1. T3.2b = staggered restatements (two-budget mutual wrapper;
@@ -373,7 +377,7 @@ right only if "never touch existing proofs" is paramount — explicitly not the 
     (green, 3 std axioms): the full backward-search `decProv O` now covers ALL 16 `Provable`
     rules (incl. `atomNeg` via the oracle, `eqNeg` in `decDeriv`, and the CITE-model
     `searchThenSearch_t`) with
-    * `decProv_sound` — every hit at every fuel is a real derivation;
+    * `decProv_sound` — every hit at every fuel is a real `S`-derivation (`⊢_k φ`);
     * `decProv_mono` — fuel monotonicity;
     * `decProv_complete` — every derivation is FOUND at some fuel (∃-fuel form: the
       `∀ fuel ≥ K` discipline is impossible under the CITE model, since inner premises live
@@ -410,8 +414,9 @@ right only if "never touch existing proofs" is paramount — explicitly not the 
   - **T4.0 — ✅ SHIPPED (2026-07-03): `evalG` — computable evaluation, both guard polarities,
     search bots RUN.** Spike §9. A 3-valued guard is sound in BOTH directions with no axiom:
     `some true` from `decFull` (soundness), `some false` from a DERIVABLE refutation
-    `Provable m (.neg φ)` — soundness + consistency exclude `Provable k φ` at EVERY budget
-    (the honest replacement for what the deleted axiom faked). `evalG G` = `eval`'s recursion
+    `Provable m (.neg φ)` (`⊢_m ¬φ`) — soundness + consistency exclude `Provable k φ` at EVERY
+    budget (`¬ ⊢_k φ` for all `k`, a META conclusion; the honest replacement for what the
+    deleted axiom faked). `evalG G` = `eval`'s recursion
     with the 3-valued guard, parametric in `G`; `GuardSound G → evalG` commits are `eval`'s
     answers AT THE SAME FUEL (`evalG_sound`, sharper than `evalC`'s `∃N`). Instances:
     `guardFull` (decFull both sides; `guardFull_converges_pos/_neg` = `none` escapable on the

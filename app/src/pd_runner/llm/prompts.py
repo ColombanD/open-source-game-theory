@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from pd_runner.lean.templates import _ENGINE_PD_DIR
+from pd_runner.llm.lean_index import strip_proof_bodies
+from pd_runner.settings import EvalGuard
 
 
 def _read_lean(relative: str) -> str:
@@ -52,7 +54,9 @@ def _llm_lemmas_block(exclude_bots: frozenset[str]) -> str:
 
 def _pending_proposals_block() -> str:
     """A short listing of already-filed constructor proposals, so later runs do not
-    re-derive and re-file duplicates. Production-mode only (the caller gates it)."""
+    re-derive and re-file duplicates. Production-mode only (the caller gates it).
+    Integrated proposals are skipped here (they are live rules now) and surfaced by
+    `_integrated_proposals_block` instead."""
     import json
 
     from pd_runner.config import load_paths
@@ -64,6 +68,8 @@ def _pending_proposals_block() -> str:
     for meta in sorted(root.glob("*/meta.json")):
         try:
             data = json.loads(meta.read_text(encoding="utf-8"))
+            if data.get("status") == "integrated":
+                continue
             lines.append(f"- `{data['name']}` — unblocks: {data.get('unblocks', '?')}")
         except (OSError, json.JSONDecodeError, KeyError):
             continue
@@ -71,21 +77,98 @@ def _pending_proposals_block() -> str:
         return ""
     return (
         "\n\n# Pending constructor proposals (awaiting human review — do NOT re-file these; "
-        "if one of them is exactly what your proof needs, conclude "
-        "`OUTCOME OPEN — CONSTRUCTOR PROPOSED <name>` referencing it)\n" + "\n".join(lines)
+        "if one of them is exactly what your proof needs, finish with "
+        "`submit_verdict(verdict=\"constructor_proposed\", proposal_name=<name>, …)` "
+        "referencing it)\n" + "\n".join(lines)
     )
 
 
-def build_system_prompt(
-    left_bot: str, right_bot: str, exclude_bots: frozenset[str] = frozenset()
-) -> str:
+def _integrated_proposals_block(left_bot: str = "", right_bot: str = "") -> str:
+    """Conditional outcome proofs of INTEGRATED constructor proposals.
+
+    Once a proposed rule has been integrated, its constructor is live in
+    `ProofSystem.lean` and the bundle's `unblocked_proof.lean` — written with
+    the rule as an explicit hypothesis — becomes a near-finished proof:
+    discharge the hypothesis with the real constructor and the outcome theorem
+    lands.
+
+    Growth control: the full proof is embedded ONLY when the proposal's
+    `unblocks` text mentions one of the target bots (that is when it is a
+    near-finished proof for THIS matchup); every other integrated proposal
+    contributes one summary line. This keeps the block from growing without
+    bound as proposals accumulate."""
+    import json
+
+    from pd_runner.config import load_paths
+
+    root = load_paths().generated_lean_dir.parent / "constructor_proposals"
+    if not root.exists():
+        return ""
+    targets = {left_bot.lower(), right_bot.lower()} - {""}
+    full_parts: list[str] = []
+    summary_lines: list[str] = []
+    for meta in sorted(root.glob("*/meta.json")):
+        try:
+            data = json.loads(meta.read_text(encoding="utf-8"))
+            if data.get("status") != "integrated":
+                continue
+            unblocks = str(data.get("unblocks", ""))
+            proof = meta.parent / "unblocked_proof.lean"
+            relevant = any(t in unblocks.lower() for t in targets)
+            if relevant and proof.exists():
+                full_parts.append(
+                    f"## `{data['name']}` (now a live `Pf` constructor)\n\n"
+                    f"```lean\n{proof.read_text(encoding='utf-8')}\n```"
+                )
+            else:
+                summary_lines.append(
+                    f"- `{data['name']}` — integrated; unblocks: {unblocks or '?'}"
+                )
+        except (OSError, json.JSONDecodeError, KeyError):
+            continue
+    if not full_parts and not summary_lines:
+        return ""
+    out = (
+        "\n\n# Integrated constructors — proposed by earlier runs, human-accepted, "
+        "NOW LIVE in `Pf`\n"
+    )
+    if summary_lines:
+        out += "\n" + "\n".join(summary_lines) + "\n"
+    if full_parts:
+        out += (
+            "\nEach block below is a COMPILED outcome proof for a matchup involving "
+            "your target bots, written with the (now live) rule as an explicit "
+            "hypothesis. If your target theorem matches one, adapt it: drop the "
+            "hypothesis parameter and use the real constructor (`Pf.<name> ...`) "
+            "where the hypothesis was applied — verify with run_lean_proof as usual.\n\n"
+            + "\n\n".join(full_parts)
+        )
+    return out
+
+
+def build_system_prompt_blocks(
+    left_bot: str,
+    right_bot: str,
+    exclude_bots: frozenset[str] = frozenset(),
+    guard: EvalGuard | None = None,
+) -> list[str]:
+    """The system prompt as cacheable blocks.
+
+    Block A is PAIR-INVARIANT (role + core library modules + task + rules) —
+    with a cache breakpoint on it, it caches across every matchup of a whole
+    run. Block B holds the pair/session content: the `.search`-tier modules
+    (signature digests for the heavyweight ones), the LlmLemmas library, and
+    the proposals blocks. `AnthropicClient` puts one cache breakpoint on each.
+    """
+    if guard is None:
+        guard = EvalGuard.from_exclude_bots(exclude_bots)
     program_src = _read_lean("Program.lean")
     dynamics_src = _read_lean("Dynamics.lean")
 
     # The `Base/` layer holds the load-bearing proof vocabulary (`proofSearch_spec`,
-    # `Pf_sound`, `atom_complete_searchfree`, …) that outcome proofs reference. Since the
-    # 2026-07-09 split, `BaseTheorems.lean` is only a re-exporting UMBRELLA (16 lines), so
-    # embed the split modules themselves: soundness + atom certificates for every proof.
+    # `Pf_sound`, `atom_complete_searchfree`, …) that outcome proofs reference.
+    # `BaseTheorems.lean` is only a re-exporting UMBRELLA, so embed the split
+    # modules themselves: soundness + atom certificates for every proof.
     # Files are read WITHOUT a fallback: a missing module is a bug (the old silent
     # `except OSError: continue` hid the `SizeLemmas.lean` → `Base/Asymptotics.lean`
     # rename for days).
@@ -94,28 +177,67 @@ def build_system_prompt(
         ("BaseTheorems.lean", "BaseTheorems.lean (umbrella — all names live in `PD.BaseTheorems`)"),
         ("Base/Soundness.lean", "Base/Soundness.lean (`proofSearch_spec`, `Pf_sound`, eval monotonicity)"),
         ("Base/AtomCerts.lean", "Base/AtomCerts.lean (constructive atom certificates)"),
+        ("Base/Helpers.lean", "Base/Helpers.lean (outcome assembly: `outcome_of_plays`, "
+         "`play_ite_from_guard`, `eval_sim_opp_bot_of_play`, `outcome_mono_le`)"),
+        ("Outcome/Spec.lean", "Outcome/Spec.lean (THE outcome-theorem template: `OutcomeSpec`, "
+         "`BudgetRegime` — your final theorem MUST be stated with it)"),
     ):
         proof_blocks.append(f"-- {label}\n```lean\n{_read_lean(relative)}\n```")
 
-    # `.search` bots additionally need the proof system itself plus the census/floor
-    # exclusion lemmas, the bounded-Löb engines, and the budget (log₂) arithmetic used
-    # to discharge `□`/`search` side-conditions. (`Axioms.lean` is gone — the engine has
-    # ZERO project axioms since 2026-07-03 and the file itself was later deleted.)
+    # Block B: `.search` bots additionally need the proof system itself plus the
+    # census/floor exclusion lemmas, the bounded-Löb engines, and the budget (log₂)
+    # arithmetic used to discharge `□`/`search` side-conditions. The two heavyweight
+    # modules are embedded as SIGNATURE DIGESTS (proof bodies stripped — statements,
+    # constructor lists, and doc comments intact); `Base/Loeb.lean`, `Asymptotics`,
+    # and `Closure` stay verbatim because their proof BODIES are the templates
+    # agents adapt. Full files are always one `read_library_file` call away.
+    search_blocks: list[str] = []
     needs_axioms = _bot_uses_search(left_bot) or _bot_uses_search(right_bot)
     if needs_axioms:
-        for relative, label in (
-            ("ProofSystem.lean", "ProofSystem.lean (the explicit proof-system `S`)"),
-            ("Base/Asymptotics.lean", "Base/Asymptotics.lean (character-budget / log₂ lemmas)"),
-            ("Base/Loeb.lean", "Base/Loeb.lean (the bounded-Löb / PBLT engines)"),
-            ("Base/Exclusion.lean", "Base/Exclusion.lean (the census + floor exclusion lemmas)"),
+        for relative, label, digest in (
+            ("ProofSystem.lean",
+             "ProofSystem.lean (the explicit proof-system `S`) — SIGNATURE DIGEST: "
+             "proof bodies stripped, every constructor and statement intact; fetch the "
+             "full file with read_library_file if you need a proof body", True),
+            ("Base/Asymptotics.lean", "Base/Asymptotics.lean (character-budget / log₂ lemmas)", False),
+            ("Base/Loeb.lean", "Base/Loeb.lean (the bounded-Löb / PBLT engines)", False),
+            ("Base/Exclusion.lean",
+             "Base/Exclusion.lean (the census + floor exclusion lemmas) — SIGNATURE "
+             "DIGEST: proof bodies stripped, every kernel statement intact; fetch the "
+             "full file with read_library_file if you need a proof body", True),
+            ("Base/Closure.lean", "Base/Closure.lean (closure certificates: telescope subsumption, "
+             "sim-composition, SKK=I, the ADMISSIBLE deduction theorem `Deriv`/`deduction_theorem`)", False),
         ):
-            proof_blocks.append(f"-- {label}\n```lean\n{_read_lean(relative)}\n```")
+            src = _read_lean(relative)
+            if digest:
+                src = strip_proof_bodies(src)
+            search_blocks.append(f"-- {label}\n```lean\n{src}\n```")
 
-    proof_system_block = "\n\n" + "\n\n".join(proof_blocks)
-    proof_system_block += _llm_lemmas_block(exclude_bots)
-    if not exclude_bots:
-        proof_system_block += _pending_proposals_block()
+    block_b = ""
+    if search_blocks:
+        block_b += (
+            "# Proof-system context for this matchup\n\n" + "\n\n".join(search_blocks)
+        )
+    block_b += _llm_lemmas_block(guard.hidden_bots)
+    if guard.allow_library_growth:
+        block_b += _pending_proposals_block()
+        block_b += _integrated_proposals_block(left_bot, right_bot)
 
+    block_a = _system_block_a(program_src, dynamics_src, "\n\n" + "\n\n".join(proof_blocks))
+    return [block_a, block_b] if block_b else [block_a]
+
+
+def build_system_prompt(
+    left_bot: str, right_bot: str, exclude_bots: frozenset[str] = frozenset(),
+    guard: EvalGuard | None = None,
+) -> str:
+    """Compat wrapper: the joined single-string form of the block layout."""
+    return "\n\n".join(
+        build_system_prompt_blocks(left_bot, right_bot, exclude_bots, guard)
+    )
+
+
+def _system_block_a(program_src: str, dynamics_src: str, proof_system_block: str) -> str:
     return f"""\
 You are an expert Lean 4 proof assistant for the open-source game theory project.
 
@@ -140,61 +262,185 @@ Write a complete, compilable Lean 4 theorem file that proves the requested outco
 Use the `run_lean_proof` tool to check your proof. Read errors carefully and fix them.
 Use the `read_library_file` tool to inspect existing bot definitions or existing proofs for guidance.
 
+You work in bounded attempts: if you run out of turns, your conversation is DISCARDED and a
+fresh attempt starts. Only three things survive into the next attempt: your lab notebook
+(`update_notebook` — replace-whole-text; record durable lessons the moment you learn them),
+your best compiling source, and the last compiler feedback. You finish by calling the
+`submit_verdict` tool — prose alone never ends the search.
+
 # Rules
 - The file must compile with zero errors and zero warnings in stderr.
 - Import only modules that exist in the PrisonersDilemma library.
+- **Minimal imports.** Import only modules whose definitions or lemmas your file actually
+  uses: the two bot modules, the helper/theorem modules you cite by name, and the core
+  modules you need. Do NOT copy the import block of an example proof wholesale — the
+  few-shot examples may import more than your proof needs, and unused imports accumulate
+  as dead weight in the library (Lean emits no warning for them).
 - The namespace must be `PD.Theorems`.
+- **Every declaration name must be UNIQUE across the whole library.** Your file shares
+  the `PD.Theorems` namespace with every existing theorem module, so a helper lemma
+  named like an existing one (e.g. `no_provable_OBot_D_tail`, which already exists for
+  the CupodBot pair) compiles standalone but breaks the library build with
+  `environment already contains ...`. Give EVERY auxiliary lemma a matchup-specific
+  name (e.g. `dimcid_obot_no_provable_forbidden`); only the final theorem uses the
+  `llm_outcome_<Left>_vs_<Right>` name. `run_lean_proof` appends a WARNING listing any
+  collisions — you MUST resolve those warnings before submitting your verdict (the
+  verdict gate re-checks them as hard failures).
 - **Do NOT redefine bots in your proof file.** Every bot already lives in its own
   module under `PrisonersDilemma.Bots.*` — import it (e.g. `import PrisonersDilemma.Bots.CupodBot`)
   and reference it by name. The proof file must contain only theorems, no `def` of any bot.
   Redefining a bot causes a namespace clash at `lake build` time.
-- Do not use `sorry`, `admit`, or `native_decide`.
+- Do not use `sorry`, `admit`, or `native_decide` in your FINAL source. You MAY check a
+  proof SKETCH in-loop: `run_lean_proof` accepts `sorry` placeholders and reports the
+  remaining goal at each one — useful for validating a statement and skeleton (imports,
+  helper-lemma decomposition) before filling the holes. The verdict gate rejects any
+  submission still containing `sorry`.
 - Prefer `unfold`, `simp`, `rfl`, `exact`, `rw`, `cases`, `omega` tactics.
-- **Strict theorem shape — no extra premises.** The theorem's conclusion must be of the form
-  `outcome <fuel-expr> <bot_a> <bot_b> = some (.X, .Y)`, optionally wrapped in `∃` / `∀`
-  quantifiers over fuel/search-budget naturals (e.g. `∃ k, ∀ n, outcome (n+f) ...` or
-  `∃ k₂, ∀ k, k₂ < k → ∃ fuel, ...`). You may NOT add hypotheses of the form
-  `proofSearch _ _ = false`, `proofSearch _ _ = true`, or any other premise that conditions
-  the outcome on the behavior of the proof oracle. Such hypotheses turn an outcome theorem
-  into a conditional claim and defeat the purpose of mechanizing the outcome. Binding the
-  search budget `k` with a `∃ k₂, ∀ k, k₂ < k → …` *threshold quantifier* is NOT an extra
-  premise — it is the correct way to state the outcome of a `.search`-bot matchup.
+- **Strict theorem shape — the `OutcomeSpec` template, tagged `@[outcome]`.** Your final
+  theorem MUST be stated with the template from `Outcome/Spec.lean` (embedded above) and
+  carry the `@[outcome]` attribute on the line directly above it
+  (`import PrisonersDilemma.Outcome` provides both):
+    `@[outcome] theorem llm_outcome_<L>_vs_<R> : OutcomeSpec <regime> <pad> L R (some (.X, .Y))`
+  `L R : Nat → Prog`: pass a budgeted bot BARE (`CupodBot`) and a closed bot as
+  `(fun _ => DefectBot)`. `<pad>` is a `Nat` literal, the fuel offset — the statement
+  unfolds to `outcome (fuel + pad) (L k) (R k) = some (.X, .Y)`. `<regime>` is
+  `.nobudget` (both bots closed), `.universal` (holds at EVERY budget `k`) or `.eventual`
+  (holds at every sufficiently large `k`: `∃ k₂, ∀ k, k₂ < k → …`). A pair proved (in Lean)
+  to have NO outcome (non-termination, e.g. MirrorBot self-play) states `none` as the result. Proof openers: `.nobudget` → `intro fuel`;
+  `.universal` → `intro k fuel`; `.eventual` → `refine ⟨K, fun k hk fuel => ?_⟩`; after
+  that the goal is the familiar `outcome (fuel + pad) … = some (…)` and every existing
+  proof technique applies. When your play witness comes out of `Pf_sound` with an
+  UNBOUNDED fuel (`interp (.plays p q a)` is `∃ n, play n p q = some a` — the Löbian
+  results), do not try to bound it: use `Base/Helpers.outcome_at_of_ex` /
+  `play_at_of_ex` — an existential witness plus TOTALITY of the match at the pad
+  (`play_search_const_total`, `play_ite_total`, `play_sim_opp_self_total`, …: structural,
+  budget-independent) gives the cofinite form by fuel determinism. See
+  `outcome_DupocBot_vs_DupocBot` for the pattern.
+  The verdict gate runs the library's OWN linter (`#validate_outcome`) on your file: a raw
+  `outcome … = …` equation, an `∃ k` witness, a hand-written `∀ k ≥ K` telescope, a
+  missing `@[outcome]`, or bots in the statement that differ from the ones the NAME
+  claims are all rejected. **No extra premises**: no `(h : …)` Prop binders, never
+  `proofSearch _ _ = true/false` (a hypothesis conditioning the outcome on the proof
+  oracle turns the theorem into a conditional claim) — a budget FLOOR is not a premise,
+  it is the `.eventual` regime.
+- **Three levels of "proving" — keep them apart in your notebook and comments.**
+  `⊢_k φ` = `Pf k φ`: the object system `S` derives `φ` within budget `k` (the guard fires;
+  `□_k φ` is `S`'s own syntax for it). `⊨ φ` = `φ.interp`: `φ` is TRUE of the evaluator
+  (`Pf_sound : ⊢_k φ → ⊨ φ`). META = your Lean `theorem` / "we show": no symbol, a turnstile
+  never means Lean. `¬ Pf k φ` (no `S`-derivation exists — a Lean fact, what a census proves)
+  ≠ `Pf k (.neg φ)` (`S` refutes `φ`) ≠ `Pf k' (.neg (.box k φ))` (internal unprovability).
 - **`.search`-bot matchups depend on the budget `k` — bind it, do not give up.** When one or
   both bots take a budget parameter `k`, the outcome typically flips with `k`: small `k` gives
-  defection (the oracle proves nothing), large `k` gives the Löb/Critch cooperation fixed
-  point. The unquantified statement with `k` left free is unprovable, but the **large-`k`
-  threshold** statement `∃ k₂, ∀ k, k₂ < k → ∃ fuel, outcome fuel (BotA k) (BotB k) = some (…)`
-  is provable and is the expected answer. Existing `.search`-bot self-play theorems in the
+  defection (no guard fires: `¬ Pf k φ`, no `S`-derivation fits the budget), large `k` gives
+  the Löb/Critch cooperation fixed point. The unquantified statement with `k` left free has
+  NO Lean proof (the outcome flips with `k`), but the **large-`k` threshold** statement
+  `OutcomeSpec .eventual pad BotA BotB (some (…))` is a theorem and is the expected answer. Existing `.search`-bot self-play theorems in the
   few-shot files show the canonical `PBLT` application for this shape — follow it. Prove the
   threshold theorem; do NOT declare OUTCOME OPEN merely because the result varies with `k`.
+  Not every self-play matchup cooperates, though: when the Löb premise is NOT derivable at
+  the same budget, the honest outcome is determined DEFECTION — the library precedent is
+  `outcome_PrudentBot_vs_PrudentBot = (D, D)` (same-`k` single-tier prudence is
+  self-defeating), proved via the exclusion census, not declared OPEN.
 - **Before ever declaring OUTCOME OPEN, climb the escalation ladder.** Historically, most
-  "unprovable" outcomes were provable — the missing piece was a DERIVED rule nobody had
-  stated yet (`boxInternalize` and `box_provable` were both once believed to need new
-  axioms; both turned out derivable). The ladder:
+  outcomes declared "unprovable" turned out to be Lean theorems — the missing piece was a
+  DERIVED rule of `S` nobody had stated yet (`boxInternalize` and `box_provable` were both
+  once believed to need new axioms; both turned out derivable from the existing `Pf` rules).
+  The ladder:
     1. **Search harder with existing rules** — re-read the Base/ modules in your prompt and
-       the few-shot proofs; the modal tier (`boxIntro`/`axK`/`box4`/`boxMono`/`impS2`) plus
-       `mutual_loeb`/`pblt_engine_id` compose further than it first appears.
+       the few-shot proofs. The rule inventory is COMPLETE for broad fragments since the
+       family-completion program: the positive implicational fragment has its
+       full Hilbert basis (`implRefl`, `implK`, `implS` as object formulas — a tautology
+       guard like `A → A` is a ONE-LINE `Pf.implRefl`, and the deduction theorem is
+       ADMISSIBLE via `Base/Closure.deduction_theorem`); source transparency reads search
+       telescopes and mixed search/ite-probe stacks at EVERY depth (`searchChain`,
+       `ctxChain` — the old fused rules are certified instances); `.sim`/`.bot` nestings
+       compose via `read_compose`/`simStep_compose`; and the modal tier
+       (`boxIntro`/`axK`/`box4`/`boxMono`/`impS2`) plus `mutual_loeb`/`pblt_engine_id`
+       compose further than it first appears.
     2. **Derive the missing principle as a lemma** (`add_base_lemma`, when available): state
        the reusable rule you wish existed and PROVE it from existing rules. This is always
        safe (kernel-checked, auto-rollback) and the lemma persists for future proofs.
+       This rung includes the NEGATIVE direction: "the guard is not `S`-derivable" — the
+       META fact `¬ Pf k guard`, NOT the object refutation `Pf k (.neg guard)` — is itself
+       a lemma obligation, not a prose claim. Do NOT hand-roll a `Pf.induct` census (the
+       proof system has ~30 constructors — a hand-rolled induction is a many-iteration
+       trap): instantiate the SHARED kernels in `Base/Exclusion.lean` —
+       `no_provable_tailTo_unreadable` (Gödelian targets: certificates impossible at
+       every budget + unreadable player), `no_provable_probeFirst_tail` /
+       `no_provable_searcherPlay_tail` (the `search_f` floor), or the set-valued
+       `no_provable_tailToS_floor` when the target player decomposes as a mixed
+       telescope. Each instance is a `refine` plus small shape bullets (the existing
+       census instances in the Theorems/ few-shots show the pattern, including the
+       `hctx`/`hpthen` mixed-telescope disequalities). SPECIAL SHAPE — the entangled
+       `.neg`-guard FIXPOINT (the guard refutes a cooperation atom that the searcher's
+       own play feeds back into, the WaryBot-vs-MirrorBot shape): none of the tail
+       kernels apply there, and a TailTo-style neg-tail census is FALSE (it dies by
+       contraposition) — do NOT attempt it, and do NOT declare OUTCOME OPEN. The move
+       is a MODIFIED-VALUATION census: instantiate the parametric master lemma
+       `wv_sound_upto` in `Base/ValuationSoundness.lean` with a valuation `WV S` that
+       makes the entangled C-atoms unconditionally true, yielding `¬ Pf K (.neg …)` at
+       EVERY budget; the WaryBot census instances in `Theorems/WaryBot/Helpers.lean`
+       show the pattern (fetch both files with read_library_file). A proven
+       `¬ Pf k guard` yields a
+       determined else-branch outcome theorem, not OUTCOME OPEN. PLACEMENT: your census
+       instance lives in YOUR proof file, with a matchup-specific name — never re-derive
+       an instance that already exists in the library (import its module and cite it;
+       the few-shots and `read_library_file` show what exists). The kernels stay in
+       `Base/Exclusion.lean` — you never write there; when the engine gains a
+       constructor, the kernels are repaired centrally and kernel-INSTANCES survive
+       untouched (or gain one mechanical bullet), which is exactly why you must
+       instantiate kernels instead of hand-rolling inductions.
     3. **Only if derivation genuinely fails**, and you can articulate WHY (which census/
        exclusion argument blocks it, or which Löb/self-reference shape no existing rule
        reads), file a constructor proposal (`propose_pf_constructor`, when available). You
        must supply a COMPILING soundness certificate (the rule's interp-level content proved
        in the current engine) and a faithfulness rationale; the engine is not modified and a
-       human reviews the proposal. Then conclude
-       `OUTCOME OPEN — CONSTRUCTOR PROPOSED <name>`.
-- **OUTCOME OPEN without a proposal is only for genuinely undetermined matchups.** Reserve
-  it for the rare case where *no* single action pair holds even past a threshold on `k`
-  (e.g. the matchup admits two incompatible fixed points and neither is forced for all
-  sufficiently large `k` — a BISTABLE matchup; no sound rule can force those, so do NOT
-  propose a constructor for them). If a large-`k` threshold theorem of the shape above is
-  provable, you must prove it instead. When OUTCOME OPEN genuinely applies, do not emit a
-  ```lean``` code block and say exactly `OUTCOME OPEN` followed by a one-paragraph
-  explanation of which action pairs are consistent with the proof system and why no single pair
-  is forced even in the large-`k` limit.
-- When you are confident the proof compiles cleanly, output the final Lean source inside
-  a ```lean ... ``` code fence and say "PROOF COMPLETE".
+       human reviews the proposal. Integration cost is lower than it once was: an accepted
+       constructor extends ONE parametric induction (the valuation-soundness master
+       `wv_sound_upto` in `Base/ValuationSoundness.lean`) instead of three separate
+       soundness/census copies; the Exclusion censuses still gain their one `Pf.induct`
+       arm each, as always. Also submit `unblocked_proof_lean`: the outcome proof
+       with your proposed rule stated as an explicit hypothesis — this kernel-checks your
+       "unblocks" claim and preserves the finished proof for the integrator (do the
+       verification anyway; submitting it costs nothing extra). Then finish with
+       `submit_verdict(verdict="constructor_proposed", proposal_name=<name>, …)`.
+- **OUTCOME OPEN without a proposal is only for genuinely undetermined matchups, and it
+  requires a machine artifact, not prose.** Reserve it for the rare case where *no* single
+  action pair holds even past a threshold on `k` (e.g. the matchup admits two incompatible
+  fixed points and neither is forced for all sufficiently large `k` — a BISTABLE matchup,
+  like a guard naming a frozen `.bot` literal; no sound rule can force those, so do NOT
+  propose a constructor for them). Before you may declare bare OUTCOME OPEN you must have
+  BOTH (a) attempted the `¬ Pf k guard` lemma of rung 2 and be able to point at which
+  induction arm genuinely fails, AND (b) explained why no sound-and-faithful rule could
+  force either outcome — if such a rule exists, rung 3 (a constructor proposal) is the
+  required exit, not OPEN. Beware the false-bistability trap: "both action pairs are
+  consistent with `Pf`" is true of EVERY search matchup before you determine which side
+  `S` picks — it is not bistability. In particular a guard whose `interp` is TRUE is NEVER
+  bistable: either `¬ Pf k guard` is a Lean theorem by structural exclusion (→ determined
+  defection theorem), or the missing capability is a faithful rule a PA-like `S` would
+  have (→ constructor proposal). Historical precedent: the tautology guard `A → A` was
+  exactly such a case — filed as the `identImpl` proposal, integrated as `Pf.implRefl`,
+  and its blocked outcome became a theorem. Check the live
+  `ProofSystem.lean` in your prompt before assuming a rule is missing.
+  When OUTCOME OPEN genuinely applies, DISTINGUISH the two very different situations
+  in your `submit_verdict` call:
+  * `verdict="open_blocked"`: the outcome IS semantically determined (say which pair,
+    with the eval-level argument), but its negative side — the `¬ Pf k guard` census —
+    is beyond the current exclusion kernels. Name the wall precisely in `explanation`
+    (e.g. "the target player is a `ctxChain` plug whose decomposition carries a FALSE
+    probe over a then-readable searcher — the recursively-closed avoid-set frontier
+    in FAMILY_COMPLETION_DESIGN.md"). This is NOT bistability, and a constructor
+    proposal is NOT the exit (a new `Pf` constructor only ADDS `S`-derivations; it can
+    never force the negative metatheorem `¬ Pf k guard`) — the exit is census research, recorded by this verdict.
+  * `verdict="open_bistable"`: genuinely no single action pair is forced even in
+    the large-`k` limit.
+  Either way, the `explanation` field must contain one paragraph on which action pairs
+  are consistent with the proof system and why (a) and (b) both fail.
+- When you are confident the proof compiles cleanly, submit it with
+  `submit_verdict(verdict="proved", lean_source=<the complete file>, left_action=…,
+  right_action=…)`. Submit EXACTLY the source that last passed `run_lean_proof`: the
+  gate re-compiles it and re-checks the strict template, name collisions, and census
+  inductions as hard failures — a rejection comes back as the tool result for you to fix.
 """
 
 
@@ -211,9 +457,9 @@ def proof_request_message(
 
     # A bot that uses `.search` takes a budget parameter `k` (project convention).
     # When either side is such a bot, the outcome can *flip with `k`* (small `k`:
-    # the proof oracle proves nothing, bots defect; large `k`: the Löb/Critch
+    # no guard fires (`¬ Pf k φ`), bots defect; large `k`: the Löb/Critch
     # fixed point makes them cooperate). An unquantified `outcome … BotA BotB`
-    # statement then leaves `k` free and is genuinely unprovable. The right shape
+    # statement then leaves `k` free and has no Lean proof. The right shape
     # is a **large-`k` threshold theorem** binding `k` — exactly the form used by
     # `outcome_DupocBot_vs_DupocBot`. Detect that case and render the threshold template.
     parameterized = _bot_uses_search(left_bot) or _bot_uses_search(right_bot)
@@ -225,8 +471,10 @@ def proof_request_message(
     )
 
     if parameterized:
-        left_app = f"({left_bot} k)" if _bot_uses_search(left_bot) else left_bot
-        right_app = f"({right_bot} k)" if _bot_uses_search(right_bot) else right_bot
+        # Template arguments are `Nat → Prog`: a budgeted bot goes in BARE, a closed
+        # bot as a constant lambda.
+        left_app = left_bot if _bot_uses_search(left_bot) else f"(fun _ => {left_bot})"
+        right_app = right_bot if _bot_uses_search(right_bot) else f"(fun _ => {right_bot})"
 
         if left_action is not None and right_action is not None:
             intro = (
@@ -238,7 +486,7 @@ def proof_request_message(
             intro = (
                 f"Determine the outcome of `{left_bot}` vs `{right_bot}` and prove it.\n\n"
                 f"At least one side is a `.search` bot, so the outcome may depend on the "
-                f"search budget `k` (small `k`: the proof oracle proves nothing and the "
+                f"search budget `k` (small `k`: no guard is `S`-derivable and the "
                 f"bots tend to defect; large `k`: the Löb/Critch fixed point can make them "
                 f"cooperate). Prove the **large-`k`** outcome as a threshold theorem of the "
                 f"form below, picking the action pair that holds for all sufficiently large "
@@ -260,29 +508,38 @@ def proof_request_message(
                 "that theorem (and the `PBLT` application it uses) as your template."
             )
 
+        pad_expr = str(fuel) if fuel is not None else "<PAD>"
         parts.append(
             f"{intro}\n\n"
             f"```lean\n"
+            f"import PrisonersDilemma.Outcome\n"
+            f"-- …plus the bot modules and the Base/ modules you use\n\n"
+            f"@[outcome]\n"
             f"theorem llm_outcome_{left_bot}_vs_{right_bot} :\n"
-            f"    ∃ k₂, ∀ k, k₂ < k →\n"
-            f"      ∃ fuel, outcome fuel {left_app} {right_app} = {outcome_clause} := by\n"
-            f"  sorry  -- replace with a real proof\n"
+            f"    OutcomeSpec .eventual {pad_expr} {left_app} {right_app} ({outcome_clause}) := by\n"
+            f"  refine ⟨K, fun k hk fuel => ?_⟩  -- pick the threshold K\n"
+            f"  sorry  -- replace with a real proof of `outcome (fuel + {pad_expr}) … = {outcome_clause}`\n"
             f"```\n\n"
-            f"{template_hint} Do NOT emit an unquantified `outcome … = some (…)` with `k` "
-            f"left free; that statement is unprovable because the outcome flips with `k`.\n\n"
-            f"Important: name your theorem exactly `llm_outcome_{left_bot}_vs_{right_bot}` "
-            f"to avoid clashing with existing library theorems."
+            f"Use `.universal` (opener `intro k fuel`) if the result holds at EVERY budget. If "
+            f"your play witness comes from `Pf_sound` (unbounded fuel), close with "
+            f"`outcome_at_of_ex ⟨witness⟩ ⟨totality at the pad⟩ fuel` — see "
+            f"`outcome_DupocBot_vs_DupocBot`. {template_hint} Do NOT emit a raw `outcome … = "
+            f"some (…)` equation or leave `k` free; that statement is off-template and, with "
+            f"`k` free, it has no Lean proof because the outcome flips with `k`.\n\n"
+            f"Important: name your theorem exactly `llm_outcome_{left_bot}_vs_{right_bot}`, "
+            f"tag it `@[outcome]`, and pass a budgeted bot BARE and a closed bot as "
+            f"`(fun _ => Bot)` — the linter checks the bots against the name."
         )
     else:
-        fuel_expr = f"n+{fuel}" if fuel is not None else "n+<FUEL>"
+        pad_expr = str(fuel) if fuel is not None else "<PAD>"
         fuel_note = (
-            f"Use fuel offset `+{fuel}` exactly."
+            f"Use pad `{fuel}` exactly (the statement unfolds to `outcome (fuel + {fuel}) …`)."
             if fuel is not None
             else (
-                "Pick `<FUEL>` yourself: it must be a concrete `Nat` literal large enough that "
-                "`outcome (n+<FUEL>) ...` settles to a single action pair for all `n`. Try a small "
-                "value first (1 or 3), increase if Lean rejects the proof because evaluation needs "
-                "more fuel."
+                "Pick `<PAD>` yourself: it must be a concrete `Nat` literal large enough that "
+                "`outcome (fuel + <PAD>) …` settles to a single action pair for all `fuel`. Try a "
+                "small value first (1 or 3), increase if Lean rejects the proof because "
+                "evaluation needs more fuel."
             )
         )
 
@@ -299,13 +556,19 @@ def proof_request_message(
         parts.append(
             f"{intro}\n\n"
             f"```lean\n"
-            f"theorem llm_outcome_{left_bot}_vs_{right_bot} (n : Nat) :\n"
-            f"    outcome ({fuel_expr}) {left_bot} {right_bot} = {outcome_clause} := by\n"
-            f"  sorry  -- replace with a real proof\n"
+            f"import PrisonersDilemma.Outcome\n"
+            f"-- …plus the bot modules and the Base/ modules you use\n\n"
+            f"@[outcome]\n"
+            f"theorem llm_outcome_{left_bot}_vs_{right_bot} :\n"
+            f"    OutcomeSpec .nobudget {pad_expr} (fun _ => {left_bot}) (fun _ => {right_bot}) "
+            f"({outcome_clause}) := by\n"
+            f"  intro fuel\n"
+            f"  sorry  -- replace with a real proof of `outcome (fuel + {pad_expr}) {left_bot} {right_bot} = {outcome_clause}`\n"
             f"```\n\n"
             f"{fuel_note}\n\n"
             f"Important: name your theorem exactly `llm_outcome_{left_bot}_vs_{right_bot}` "
-            f"to avoid clashing with existing library theorems."
+            f"and tag it `@[outcome]` — an untagged or off-template theorem is rejected by "
+            f"the verdict gate."
         )
 
     # Always inject the bot definitions so the agent doesn't need to fetch them manually.
@@ -345,8 +608,9 @@ def proof_request_message(
             parts.append(f"--- {filename} ---\n```lean\n{source}\n```")
 
     parts.append(
-        "Use the `run_lean_proof` tool to check your proof. "
-        "Iterate until it compiles cleanly, then output the final source and say PROOF COMPLETE."
+        "Use the `run_lean_proof` tool to check your proof. Iterate until it compiles "
+        "cleanly, then submit it with the `submit_verdict` tool (verdict=\"proved\", the "
+        "complete source, and the proven action pair)."
     )
 
     return "\n\n".join(parts)
@@ -413,8 +677,8 @@ Each bot is a Lean definition `def BotName : Prog := ...`.
 | `.search k φ p q` | If the proof oracle can verify formula `φ` within a budget of `k` characters, run `p`, else `q` |
 
 `φ` above is a `Formula` (see Program.lean). The relevant `Formula` constructors are
-`.plays p q a` ("`p(q.source) == a`"), `.impl`, `.neg`, `.box n φ` ("`φ` is provable
-within budget `n`"), and `.eq p q` — a **structural-identity** guard meaning "probe `p`
+`.plays p q a` ("`p(q.source) == a`"), `.impl`, `.neg`, `.box n φ` ("the proof system `S` derives `φ`
+within budget `n`" — `S`'s own name for `Pf n φ`), and `.eq p q` — a **structural-identity** guard meaning "probe `p`
 (typically `.opp`) is literally the same program as the frozen literal target `q`".
 `subst` resolves the probe `p` but does not descend into the literal `q`. Use `.eq` for
 strategies that test whether the opponent is a specific named bot.
@@ -443,14 +707,45 @@ Use the `read_library_file` tool to inspect any existing bot for reference.
 """
 
 
-def bot_request_message(bot_name: str, strategy_description: str) -> str:
+def bot_request_message(
+    bot_name: str, strategy_description: str, feedback: str | None = None
+) -> str:
+    """The bot writer's opening user turn.
+
+    `feedback` is the rewriter's mismatch brief (see docs/BOT_REVIEWER.md §7):
+    a previous attempt compiled but did NOT behave as the description says. It
+    deliberately carries only the FAILING cells, never the full certified
+    profile — handing over every cell invites fitting the four canonical
+    opponents instead of implementing the strategy, and such a bot would pass
+    the reviewer while being no more faithful.
+    """
+    retry_block = ""
+    if feedback:
+        retry_block = f"""
+# THIS IS A REWRITE — your previous attempt was not faithful
+
+A previous version of this bot compiled cleanly but did NOT behave the way the
+strategy describes. A certified evaluator (machine-checked, not an opinion)
+found these discrepancies:
+
+{feedback.strip()}
+
+Write a NEW definition that fixes them while still implementing the strategy
+above. The description is the specification and has not changed — do not
+special-case the opponents listed here to make individual cells come out
+right; fix the underlying logic. Common causes: a frozen `.bot X` probe target
+where the actual opponent `.opp` was meant (or vice versa), `.self`/`.opp`
+swapped inside a `.plays` atom, or the then/else branches of a guard exchanged.
+
+"""
+
     return f"""\
 Write a Lean 4 bot definition for the following strategy:
 
 **Bot name:** `{bot_name}`
 
 **Strategy:** {strategy_description}
-
+{retry_block}
 The bot definition should go in the namespace `PD.Bots` and follow this structure:
 
 ```lean

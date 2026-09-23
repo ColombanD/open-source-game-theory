@@ -1,0 +1,30 @@
+import PrisonersDilemma.Bots.CupodTrollBot
+import PrisonersDilemma.Bots.CupodBot
+import PrisonersDilemma.Bots.DBot
+
+
+import PrisonersDilemma.Dynamics
+import PrisonersDilemma.BaseTheorems
+import PrisonersDilemma.Base.Helpers
+import PrisonersDilemma.Theorems.CupodTrollBot.Helpers
+import PrisonersDilemma.Outcome
+
+open PD
+open PD.Bots
+open PD.BaseTheorems
+namespace PD.Theorems
+@[outcome]
+theorem outcome_CupodTrollBot_vs_DBot :
+    OutcomeSpec .universal 4
+      CupodTrollBot (fun _ => DBot) (some (.C, .D)) := by
+  intro k fuel
+  -- CupodTrollBot cooperates against `DBot` (direction A).
+  have hA : play (fuel + 4) (CupodTrollBot k) DBot = some .C :=
+    CupodTrollBot_cooperates_if_opp_not_CupodBot k (fuel + 2) DBot
+      (by simp [DBot, CupodBot])
+  -- `DBot` defects against CupodTrollBot (direction B).
+  have hB : play (fuel + 4) DBot (CupodTrollBot k) = some .D :=
+    DBot_plays_D_against_CupodTrollBot k fuel
+  exact outcome_of_plays _ _ _ _ _ hA hB
+
+end PD.Theorems

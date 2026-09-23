@@ -1,0 +1,594 @@
+import PrisonersDilemma.Tau.Bots.TauCooperate
+import PrisonersDilemma.Tau.Bots.TauDefect
+import PrisonersDilemma.Tau.Bots.TauTFTSim
+import PrisonersDilemma.Tau.Bots.TauTFTPf
+import PrisonersDilemma.Tau.Bots.TauDupoc
+import PrisonersDilemma.Tau.Bots.TauEBot
+import PrisonersDilemma.Tau.Bots.TauJust
+import PrisonersDilemma.Tau.Bots.TauOBot
+import PrisonersDilemma.Tau.Bots.TauGuardian
+import PrisonersDilemma.Tau.Bots.TauDBot
+import PrisonersDilemma.Tau.Bots.TauCupodTroll
+import PrisonersDilemma.Tau.Bots.TauCupod
+import PrisonersDilemma.Tau.Bots.TauCIMCIC
+import PrisonersDilemma.Tau.Bots.TauDIMCID
+import PrisonersDilemma.Tau.Bots.TauMirror
+import PrisonersDilemma.Tau.Bots.TauPrudent
+import PrisonersDilemma.Tau.Bots.TauMaxConfidence
+import PrisonersDilemma.Tau.Bots.TauMinConfidence
+
+/-!
+# Tau/Zoo — the assembled six-template zoo, its players, and Gate D1
+
+The binding step of the base-bot-style layout: `Tau/Roster.lean` declared the cast,
+each `Tau/Bots/<TauBot>.lean` wrote one spec row, and this file glues the rows into
+the zoo function, builds the players, and carries the Gate-D1 byte-identity checks.
+Adding a bot: one constructor in the roster, one bot file, one arm in `tmplSpec`
+below (and its arms in the consulted `InstCerts` columns — the mathematics).
+-/
+
+open PD
+
+namespace PD.Tau
+
+/-- The zoo function: one arm per roster member, each delegating to that bot's own
+    file. This match IS the zoo. -/
+def tmplSpec : Tmpl → Spec Tmpl
+  | .coop   => tauCoopSpec
+  | .defect => tauDefectSpec
+  | .tftSim => tauTFTSimSpec
+  | .tftPf  => tauTFTPfSpec
+  | .dupoc  => tauDupocSpec
+  | .ebot   => tauEBotSpec
+  | .just   => tauJustSpec
+  | .obot   => tauOBotSpec
+  | .guardian => tauGuardianSpec
+  | .dbot     => tauDBotSpec
+  | .cupodTroll => tauCupodTrollSpec
+  | .cupod    => tauCupodSpec
+  | .cimcic   => tauCIMCICSpec
+  | .dimcid   => tauDIMCIDSpec
+  | .prudent  => tauPrudentSpec
+  | .maxconfidence => tauMaxConfidenceSpec
+  | .minconfidence => tauMinConfidenceSpec
+  | .mirror   => tauMirrorSpec
+
+def tauZoo (k : Nat) : Zoo Tmpl := ⟨tmplSpec, k⟩
+
+/-- **The tau player**: bot A of the six-template zoo at prover budget k, signal
+    weights `w`, caution threshold θ. -/
+def TauBotZ (k : Nat) (A : Tmpl) (w : Tmpl → Nat) (θ : Nat) : Prog :=
+  tauPlayer (vecOf (tauZoo k) A w tauOrder) θ
+
+/-- **MaxConfidenceBot** (native, 2026-08-27): the MAX aggregator over the SAME decision
+    vector `TauBotZ k .maxconfidence` would sum — cooperate iff some single hypothesis
+    carrying at least θ of the signal on its own provably cooperates with me. -/
+def MaxConfidenceBotZ (k : Nat) (w : Tmpl → Nat) (θ : Nat) : Prog :=
+  maxPlayer θ (vecOf (tauZoo k) .maxconfidence w tauOrder)
+
+/-- **MinConfidenceBot** (native, 2026-09-01): the MIN / worst-case aggregator over
+    the same decision vector — cooperate iff no single hypothesis carrying at least
+    θ of the signal on its own provably defects against me. -/
+def MinConfidenceBotZ (k : Nat) (w : Tmpl → Nat) (θ : Nat) : Prog :=
+  minPlayer θ (vecOf (tauZoo k) .minconfidence w tauOrder)
+
+/-! ## Gate D1 — the compiler pinned, one peel at a time
+
+With the hand-written closure retired (2026-08-18 cleanup), the compiler is pinned
+against EXPLICIT one-level unfoldings: each equation exposes exactly one compile
+step, with the probed subterms still written as `inst …` — whose own equations pin
+them in turn, so the composition pins every instance byte-for-byte. All by `rfl`
+(kernel computation). These double as the peel handles the `Certs` proofs rewrite
+with. Any future change to `instGo` (e.g. the `.sys` rewrite of the probed-object
+resolution) must reproduce them or consciously replace them. -/
+
+/-- Constants ignore their hypothesis. -/
+theorem inst_coop_peel (k : Nat) : ∀ T, inst (tauZoo k) .coop T = .const .C :=
+  fun T => by cases T <;> rfl
+
+theorem inst_defect_peel (k : Nat) : ∀ T, inst (tauZoo k) .defect T = .const .D :=
+  fun T => by cases T <;> rfl
+
+/-- τ(TFTPf)'s row: one prove-stage on the hypothesis's δ_C instance. -/
+theorem inst_tftPf_peel (k : Nat) : ∀ T, inst (tauZoo k) .tftPf T
+    = .search k (probe (inst (tauZoo k) T .coop)) (.const .C) (.const .D) :=
+  fun T => by cases T <;> rfl
+
+/-- τ(TFTSim)'s row: one run-stage on the same instance — the behavioral read. -/
+theorem inst_tftSim_peel (k : Nat) : ∀ T, inst (tauZoo k) .tftSim T
+    = .ite (.sim (.bot (inst (tauZoo k) T .coop)) (.bot (inst (tauZoo k) T .coop)))
+        Action.C (.const .C) (.const .D) :=
+  fun T => by cases T <;> rfl
+
+/-- τ(EBot)'s row: the THREE-stage RUN cascade (base EBot's own sim modality)
+    over the hypothesis's δ_D, δ_C and δ_M instances. The third stage was
+    restored 2026-08-24 with the `.mirror` template — base EBot's last branch
+    sims MirrorBot, and the lift could not express it before. -/
+theorem inst_ebot_peel (k : Nat) : ∀ T, inst (tauZoo k) .ebot T
+    = .ite (.sim (.bot (inst (tauZoo k) T .defect)) (.bot (inst (tauZoo k) T .defect)))
+        .C (.const .D)
+        (.ite (.sim (.bot (inst (tauZoo k) T .coop)) (.bot (inst (tauZoo k) T .coop)))
+          .C (.const .C)
+          (.ite (.sim (.bot (inst (tauZoo k) T .mirror)) (.bot (inst (tauZoo k) T .mirror)))
+            .C (.const .C) (.const .D))) :=
+  fun T => by cases T <;> rfl
+
+/-- τ(DBot)'s row: ONE run-stage watching the hypothesis's δ_D instance, with a
+    trusting constant tail. -/
+theorem inst_dbot_peel (k : Nat) : ∀ T, inst (tauZoo k) .dbot T
+    = .ite (.sim (.bot (inst (tauZoo k) T .defect)) (.bot (inst (tauZoo k) T .defect)))
+        .C (.const .D) (.const .C) :=
+  fun T => by cases T <;> rfl
+
+/-! τ(CupodTroll)'s row: one `proveEq` stage — "is the signal I am treating the
+lift of CupodBot?" (RESTATED 2026-08-24; the old emission asked about `.opp`, a
+free pronoun, and could never fire). The compiler branches on the INDEX, so the
+row splits into the recognised hypothesis and all the others. -/
+
+/-- τ(CupodTroll) at the ONE hypothesis it recognises: the identity holds
+    (`.eq x x`), so the guard fires and it DEFECTS — base CupodTrollBot's whole
+    point. -/
+theorem inst_cupodTroll_peel_cupod (k : Nat) : inst (tauZoo k) .cupodTroll .cupod
+    = .search k (.eq (.const Action.C) (.const Action.C))
+        (.const .D) (.const .C) := rfl
+
+/-- …and at every OTHER hypothesis the identity is decidably FALSE, so it falls
+    through and cooperates. -/
+theorem inst_cupodTroll_peel (k : Nat) : ∀ T, T ≠ .cupod →
+    inst (tauZoo k) .cupodTroll T
+      = .search k (.eq (.const Action.C) (.const Action.D))
+          (.const .D) (.const .C) := by
+  intro T h
+  cases T <;> first | rfl | exact absurd rfl h
+
+/-! ### τ(Cupod)'s row — the FIRST `.sys` row (2026-08-20)
+
+Three shapes, because Cupod is a self-prober meeting another self-prober:
+* off-cycle hypotheses compile to an ordinary prove-stage (the partner is not a
+  self-prober, so the §6.3 rank argument bottoms out);
+* the DIAGONAL is the quine pronoun, exactly like Dupoc's;
+* the ENTANGLED cell (`.dupoc`) is the 2-member `.sys` system — the shape that had
+  no term at all before the binder. -/
+
+theorem inst_cupod_peel_coop (k : Nat) : inst (tauZoo k) .cupod .coop
+    = .search k (probeD (inst (tauZoo k) .coop .cupod)) (.const .D) (.const .C) := rfl
+theorem inst_cupod_peel_defect (k : Nat) : inst (tauZoo k) .cupod .defect
+    = .search k (probeD (inst (tauZoo k) .defect .cupod)) (.const .D) (.const .C) := rfl
+theorem inst_cupod_peel_tftSim (k : Nat) : inst (tauZoo k) .cupod .tftSim
+    = .search k (probeD (inst (tauZoo k) .tftSim .cupod)) (.const .D) (.const .C) := rfl
+theorem inst_cupod_peel_tftPf (k : Nat) : inst (tauZoo k) .cupod .tftPf
+    = .search k (probeD (inst (tauZoo k) .tftPf .cupod)) (.const .D) (.const .C) := rfl
+theorem inst_cupod_peel_ebot (k : Nat) : inst (tauZoo k) .cupod .ebot
+    = .search k (probeD (inst (tauZoo k) .ebot .cupod)) (.const .D) (.const .C) := rfl
+theorem inst_cupod_peel_just (k : Nat) : inst (tauZoo k) .cupod .just
+    = .search k (probeD (inst (tauZoo k) .just .cupod)) (.const .D) (.const .C) := rfl
+theorem inst_cupod_peel_obot (k : Nat) : inst (tauZoo k) .cupod .obot
+    = .search k (probeD (inst (tauZoo k) .obot .cupod)) (.const .D) (.const .C) := rfl
+theorem inst_cupod_peel_guardian (k : Nat) : inst (tauZoo k) .cupod .guardian
+    = .search k (probeD (inst (tauZoo k) .guardian .cupod)) (.const .D) (.const .C) := rfl
+theorem inst_cupod_peel_dbot (k : Nat) : inst (tauZoo k) .cupod .dbot
+    = .search k (probeD (inst (tauZoo k) .dbot .cupod)) (.const .D) (.const .C) := rfl
+theorem inst_cupod_peel_cupodTroll (k : Nat) : inst (tauZoo k) .cupod .cupodTroll
+    = .search k (probeD (inst (tauZoo k) .cupodTroll .cupod)) (.const .D) (.const .C) := rfl
+
+/-- τ(Cupod)'s DIAGONAL — the quine, mirroring Dupoc's with inverted polarity. -/
+theorem inst_cupod_quine (k : Nat) : inst (tauZoo k) .cupod .cupod
+    = .search k (.plays .self .self Action.D) (.const .D) (.const .C) := rfl
+
+/-- **THE ENTANGLED CELL** — τ(Cupod) meeting τ(Dupoc). Component 0 is Cupod-seeing-
+    Dupoc, component 1 is Dupoc-seeing-Cupod, and each probes the other by INDEX.
+    This term did not exist before the `.sys` binder. -/
+theorem inst_cupod_sys_dupoc (k : Nat) : inst (tauZoo k) .cupod .dupoc
+    = .sys (.cons (.search k (.plays (.bot (.selfIdx 1)) (.bot (.selfIdx 1)) Action.D)
+                     (.const .D) (.const .C))
+           (.cons (.search k (.plays (.bot (.selfIdx 0)) (.bot (.selfIdx 0)) Action.C)
+                     (.const .C) (.const .D)) .nil)) 0 := rfl
+
+/-- …and the same system seen from Dupoc's side: component 0 is now Dupoc-seeing-
+    Cupod. The two cells share one system, with the roles of the indices swapped. -/
+theorem inst_dupoc_sys_cupod (k : Nat) : inst (tauZoo k) .dupoc .cupod
+    = .sys (.cons (.search k (.plays (.bot (.selfIdx 1)) (.bot (.selfIdx 1)) Action.C)
+                     (.const .C) (.const .D))
+           (.cons (.search k (.plays (.bot (.selfIdx 0)) (.bot (.selfIdx 0)) Action.D)
+                     (.const .D) (.const .C)) .nil)) 0 := rfl
+
+/-! ### τ(CIMCIC)'s row — the first `.impl`-guard row, three shapes (2026-08-21)
+
+* off-cycle hypotheses: a `proveImpl` stage — NOTE the guard is NOT closed under
+  `subst` (its antecedent subject is the `.self` pronoun), unlike every
+  plays-atom row;
+* the DIAGONAL: the pronoun on BOTH sides — after subst the guard is literally
+  `φ → φ`, closed by `Pf.implRefl` (no Löb needed);
+* the ENTANGLED cells (`.dupoc`, `.cupod`): 2-member `.sys` systems, emitted
+  UNIFORMLY with the `.prove` pairs (the asymmetric alternative — recursing here
+  while the partner's arm emits — would create two syntactic representations of
+  one instance). -/
+
+theorem inst_cimcic_peel_coop (k : Nat) : inst (tauZoo k) .cimcic .coop
+    = .search k (.impl (.plays .self (.bot (inst (tauZoo k) .coop .cimcic)) Action.C)
+                       (.plays (.bot (inst (tauZoo k) .coop .cimcic)) .self Action.C))
+        (.const .C) (.const .D) := rfl
+theorem inst_cimcic_peel_defect (k : Nat) : inst (tauZoo k) .cimcic .defect
+    = .search k (.impl (.plays .self (.bot (inst (tauZoo k) .defect .cimcic)) Action.C)
+                       (.plays (.bot (inst (tauZoo k) .defect .cimcic)) .self Action.C))
+        (.const .C) (.const .D) := rfl
+theorem inst_cimcic_peel_tftSim (k : Nat) : inst (tauZoo k) .cimcic .tftSim
+    = .search k (.impl (.plays .self (.bot (inst (tauZoo k) .tftSim .cimcic)) Action.C)
+                       (.plays (.bot (inst (tauZoo k) .tftSim .cimcic)) .self Action.C))
+        (.const .C) (.const .D) := rfl
+theorem inst_cimcic_peel_tftPf (k : Nat) : inst (tauZoo k) .cimcic .tftPf
+    = .search k (.impl (.plays .self (.bot (inst (tauZoo k) .tftPf .cimcic)) Action.C)
+                       (.plays (.bot (inst (tauZoo k) .tftPf .cimcic)) .self Action.C))
+        (.const .C) (.const .D) := rfl
+theorem inst_cimcic_peel_ebot (k : Nat) : inst (tauZoo k) .cimcic .ebot
+    = .search k (.impl (.plays .self (.bot (inst (tauZoo k) .ebot .cimcic)) Action.C)
+                       (.plays (.bot (inst (tauZoo k) .ebot .cimcic)) .self Action.C))
+        (.const .C) (.const .D) := rfl
+theorem inst_cimcic_peel_just (k : Nat) : inst (tauZoo k) .cimcic .just
+    = .search k (.impl (.plays .self (.bot (inst (tauZoo k) .just .cimcic)) Action.C)
+                       (.plays (.bot (inst (tauZoo k) .just .cimcic)) .self Action.C))
+        (.const .C) (.const .D) := rfl
+theorem inst_cimcic_peel_obot (k : Nat) : inst (tauZoo k) .cimcic .obot
+    = .search k (.impl (.plays .self (.bot (inst (tauZoo k) .obot .cimcic)) Action.C)
+                       (.plays (.bot (inst (tauZoo k) .obot .cimcic)) .self Action.C))
+        (.const .C) (.const .D) := rfl
+theorem inst_cimcic_peel_guardian (k : Nat) : inst (tauZoo k) .cimcic .guardian
+    = .search k (.impl (.plays .self (.bot (inst (tauZoo k) .guardian .cimcic)) Action.C)
+                       (.plays (.bot (inst (tauZoo k) .guardian .cimcic)) .self Action.C))
+        (.const .C) (.const .D) := rfl
+theorem inst_cimcic_peel_dbot (k : Nat) : inst (tauZoo k) .cimcic .dbot
+    = .search k (.impl (.plays .self (.bot (inst (tauZoo k) .dbot .cimcic)) Action.C)
+                       (.plays (.bot (inst (tauZoo k) .dbot .cimcic)) .self Action.C))
+        (.const .C) (.const .D) := rfl
+theorem inst_cimcic_peel_cupodTroll (k : Nat) : inst (tauZoo k) .cimcic .cupodTroll
+    = .search k (.impl (.plays .self (.bot (inst (tauZoo k) .cupodTroll .cimcic)) Action.C)
+                       (.plays (.bot (inst (tauZoo k) .cupodTroll .cimcic)) .self Action.C))
+        (.const .C) (.const .D) := rfl
+
+/-- τ(CIMCIC)'s DIAGONAL: after subst the guard is `φ → φ` — `implRefl` territory. -/
+theorem inst_cimcic_quine (k : Nat) : inst (tauZoo k) .cimcic .cimcic
+    = .search k (.impl (.plays .self .self Action.C) (.plays .self .self Action.C))
+        (.const .C) (.const .D) := rfl
+
+/-- The CIMCIC↔Dupoc entangled system. -/
+theorem inst_cimcic_sys_dupoc (k : Nat) : inst (tauZoo k) .cimcic .dupoc
+    = .sys (.cons (.search k (.impl (.plays .self (.bot (.selfIdx 1)) Action.C)
+                                    (.plays (.bot (.selfIdx 1)) .self Action.C))
+                     (.const .C) (.const .D))
+           (.cons (.search k (.plays (.bot (.selfIdx 0)) (.bot (.selfIdx 0)) Action.C)
+                     (.const .C) (.const .D)) .nil)) 0 := rfl
+
+/-- The CIMCIC↔Cupod entangled system. -/
+theorem inst_cimcic_sys_cupod (k : Nat) : inst (tauZoo k) .cimcic .cupod
+    = .sys (.cons (.search k (.impl (.plays .self (.bot (.selfIdx 1)) Action.C)
+                                    (.plays (.bot (.selfIdx 1)) .self Action.C))
+                     (.const .C) (.const .D))
+           (.cons (.search k (.plays (.bot (.selfIdx 0)) (.bot (.selfIdx 0)) Action.D)
+                     (.const .D) (.const .C)) .nil)) 0 := rfl
+
+/-- …and the mirrored systems, seen from the partners' sides. -/
+theorem inst_dupoc_sys_cimcic (k : Nat) : inst (tauZoo k) .dupoc .cimcic
+    = .sys (.cons (.search k (.plays (.bot (.selfIdx 1)) (.bot (.selfIdx 1)) Action.C)
+                     (.const .C) (.const .D))
+           (.cons (.search k (.impl (.plays .self (.bot (.selfIdx 0)) Action.C)
+                                    (.plays (.bot (.selfIdx 0)) .self Action.C))
+                     (.const .C) (.const .D)) .nil)) 0 := rfl
+theorem inst_cupod_sys_cimcic (k : Nat) : inst (tauZoo k) .cupod .cimcic
+    = .sys (.cons (.search k (.plays (.bot (.selfIdx 1)) (.bot (.selfIdx 1)) Action.D)
+                     (.const .D) (.const .C))
+           (.cons (.search k (.impl (.plays .self (.bot (.selfIdx 0)) Action.C)
+                                    (.plays (.bot (.selfIdx 0)) .self Action.C))
+                     (.const .C) (.const .D)) .nil)) 0 := rfl
+
+/-! ### τ(DIMCID)'s row — the ASYMMETRIC `.impl` guard (2026-08-21)
+
+CIMCIC's twin at the opposite consequent polarity (`Mode.proveImplD`). Three
+shape classes, as for CIMCIC but with the branches swapped:
+
+* off-cycle: `.impl (I plays T C) (T plays I D)`, fire `D`, default `C`;
+* the DIAGONAL: `.impl (self plays self C) (self plays self D)` — the SAME player
+  at OPPOSITE actions, so `implRefl` does NOT close it (that is `proveImpl`'s
+  privilege). A genuine Löb fixpoint on defection;
+* the ENTANGLED cells (`.dupoc`, `.cupod`, `.cimcic`): DIMCID is the fourth
+  self-prober, so it forms a 2-cycle with each of the other three. -/
+
+theorem inst_dimcid_peel_coop (k : Nat) : inst (tauZoo k) .dimcid .coop
+    = .search k (.impl (.plays .self (.bot (inst (tauZoo k) .coop .dimcid)) Action.C)
+                       (.plays (.bot (inst (tauZoo k) .coop .dimcid)) .self Action.D))
+        (.const .D) (.const .C) := rfl
+theorem inst_dimcid_peel_defect (k : Nat) : inst (tauZoo k) .dimcid .defect
+    = .search k (.impl (.plays .self (.bot (inst (tauZoo k) .defect .dimcid)) Action.C)
+                       (.plays (.bot (inst (tauZoo k) .defect .dimcid)) .self Action.D))
+        (.const .D) (.const .C) := rfl
+theorem inst_dimcid_peel_tftSim (k : Nat) : inst (tauZoo k) .dimcid .tftSim
+    = .search k (.impl (.plays .self (.bot (inst (tauZoo k) .tftSim .dimcid)) Action.C)
+                       (.plays (.bot (inst (tauZoo k) .tftSim .dimcid)) .self Action.D))
+        (.const .D) (.const .C) := rfl
+theorem inst_dimcid_peel_tftPf (k : Nat) : inst (tauZoo k) .dimcid .tftPf
+    = .search k (.impl (.plays .self (.bot (inst (tauZoo k) .tftPf .dimcid)) Action.C)
+                       (.plays (.bot (inst (tauZoo k) .tftPf .dimcid)) .self Action.D))
+        (.const .D) (.const .C) := rfl
+theorem inst_dimcid_peel_ebot (k : Nat) : inst (tauZoo k) .dimcid .ebot
+    = .search k (.impl (.plays .self (.bot (inst (tauZoo k) .ebot .dimcid)) Action.C)
+                       (.plays (.bot (inst (tauZoo k) .ebot .dimcid)) .self Action.D))
+        (.const .D) (.const .C) := rfl
+theorem inst_dimcid_peel_just (k : Nat) : inst (tauZoo k) .dimcid .just
+    = .search k (.impl (.plays .self (.bot (inst (tauZoo k) .just .dimcid)) Action.C)
+                       (.plays (.bot (inst (tauZoo k) .just .dimcid)) .self Action.D))
+        (.const .D) (.const .C) := rfl
+theorem inst_dimcid_peel_obot (k : Nat) : inst (tauZoo k) .dimcid .obot
+    = .search k (.impl (.plays .self (.bot (inst (tauZoo k) .obot .dimcid)) Action.C)
+                       (.plays (.bot (inst (tauZoo k) .obot .dimcid)) .self Action.D))
+        (.const .D) (.const .C) := rfl
+theorem inst_dimcid_peel_guardian (k : Nat) : inst (tauZoo k) .dimcid .guardian
+    = .search k (.impl (.plays .self (.bot (inst (tauZoo k) .guardian .dimcid)) Action.C)
+                       (.plays (.bot (inst (tauZoo k) .guardian .dimcid)) .self Action.D))
+        (.const .D) (.const .C) := rfl
+theorem inst_dimcid_peel_dbot (k : Nat) : inst (tauZoo k) .dimcid .dbot
+    = .search k (.impl (.plays .self (.bot (inst (tauZoo k) .dbot .dimcid)) Action.C)
+                       (.plays (.bot (inst (tauZoo k) .dbot .dimcid)) .self Action.D))
+        (.const .D) (.const .C) := rfl
+theorem inst_dimcid_peel_cupodTroll (k : Nat) : inst (tauZoo k) .dimcid .cupodTroll
+    = .search k (.impl (.plays .self (.bot (inst (tauZoo k) .cupodTroll .dimcid)) Action.C)
+                       (.plays (.bot (inst (tauZoo k) .cupodTroll .dimcid)) .self Action.D))
+        (.const .D) (.const .C) := rfl
+
+/-- τ(DIMCID)'s DIAGONAL: same player, opposite actions — the Löb fixpoint on
+    defection, NOT an `implRefl` instance. -/
+theorem inst_dimcid_quine (k : Nat) : inst (tauZoo k) .dimcid .dimcid
+    = .search k (.impl (.plays .self .self Action.C) (.plays .self .self Action.D))
+        (.const .D) (.const .C) := rfl
+
+/-- The DIMCID↔Dupoc entangled system. -/
+theorem inst_dimcid_sys_dupoc (k : Nat) : inst (tauZoo k) .dimcid .dupoc
+    = .sys (.cons (.search k (.impl (.plays .self (.bot (.selfIdx 1)) Action.C)
+                                    (.plays (.bot (.selfIdx 1)) .self Action.D))
+                     (.const .D) (.const .C))
+           (.cons (.search k (.plays (.bot (.selfIdx 0)) (.bot (.selfIdx 0)) Action.C)
+                     (.const .C) (.const .D)) .nil)) 0 := rfl
+
+/-- The DIMCID↔Cupod entangled system. -/
+theorem inst_dimcid_sys_cupod (k : Nat) : inst (tauZoo k) .dimcid .cupod
+    = .sys (.cons (.search k (.impl (.plays .self (.bot (.selfIdx 1)) Action.C)
+                                    (.plays (.bot (.selfIdx 1)) .self Action.D))
+                     (.const .D) (.const .C))
+           (.cons (.search k (.plays (.bot (.selfIdx 0)) (.bot (.selfIdx 0)) Action.D)
+                     (.const .D) (.const .C)) .nil)) 0 := rfl
+
+/-- The DIMCID↔CIMCIC entangled system — the two `.impl`-guard bots facing each
+    other, at opposite consequent polarities. -/
+theorem inst_dimcid_sys_cimcic (k : Nat) : inst (tauZoo k) .dimcid .cimcic
+    = .sys (.cons (.search k (.impl (.plays .self (.bot (.selfIdx 1)) Action.C)
+                                    (.plays (.bot (.selfIdx 1)) .self Action.D))
+                     (.const .D) (.const .C))
+           (.cons (.search k (.impl (.plays .self (.bot (.selfIdx 0)) Action.C)
+                                    (.plays (.bot (.selfIdx 0)) .self Action.C))
+                     (.const .C) (.const .D)) .nil)) 0 := rfl
+
+/-- …and the three mirrored systems, seen from the partners' sides. -/
+theorem inst_dupoc_sys_dimcid (k : Nat) : inst (tauZoo k) .dupoc .dimcid
+    = .sys (.cons (.search k (.plays (.bot (.selfIdx 1)) (.bot (.selfIdx 1)) Action.C)
+                     (.const .C) (.const .D))
+           (.cons (.search k (.impl (.plays .self (.bot (.selfIdx 0)) Action.C)
+                                    (.plays (.bot (.selfIdx 0)) .self Action.D))
+                     (.const .D) (.const .C)) .nil)) 0 := rfl
+
+theorem inst_cupod_sys_dimcid (k : Nat) : inst (tauZoo k) .cupod .dimcid
+    = .sys (.cons (.search k (.plays (.bot (.selfIdx 1)) (.bot (.selfIdx 1)) Action.D)
+                     (.const .D) (.const .C))
+           (.cons (.search k (.impl (.plays .self (.bot (.selfIdx 0)) Action.C)
+                                    (.plays (.bot (.selfIdx 0)) .self Action.D))
+                     (.const .D) (.const .C)) .nil)) 0 := rfl
+
+theorem inst_cimcic_sys_dimcid (k : Nat) : inst (tauZoo k) .cimcic .dimcid
+    = .sys (.cons (.search k (.impl (.plays .self (.bot (.selfIdx 1)) Action.C)
+                                    (.plays (.bot (.selfIdx 1)) .self Action.C))
+                     (.const .C) (.const .D))
+           (.cons (.search k (.impl (.plays .self (.bot (.selfIdx 0)) Action.C)
+                                    (.plays (.bot (.selfIdx 0)) .self Action.D))
+                     (.const .D) (.const .C)) .nil)) 0 := rfl
+
+/-- τ(Dupoc)'s row, OFF the diagonal: one prove-stage on the hypothesis's δ_L
+    instance ("does T, seeing me, cooperate?"). -/
+theorem inst_dupoc_peel_coop (k : Nat) : inst (tauZoo k) .dupoc .coop
+    = .search k (probe (inst (tauZoo k) .coop .dupoc)) (.const .C) (.const .D) := rfl
+theorem inst_dupoc_peel_defect (k : Nat) : inst (tauZoo k) .dupoc .defect
+    = .search k (probe (inst (tauZoo k) .defect .dupoc)) (.const .C) (.const .D) := rfl
+theorem inst_dupoc_peel_tftSim (k : Nat) : inst (tauZoo k) .dupoc .tftSim
+    = .search k (probe (inst (tauZoo k) .tftSim .dupoc)) (.const .C) (.const .D) := rfl
+theorem inst_dupoc_peel_tftPf (k : Nat) : inst (tauZoo k) .dupoc .tftPf
+    = .search k (probe (inst (tauZoo k) .tftPf .dupoc)) (.const .C) (.const .D) := rfl
+theorem inst_dupoc_peel_ebot (k : Nat) : inst (tauZoo k) .dupoc .ebot
+    = .search k (probe (inst (tauZoo k) .ebot .dupoc)) (.const .C) (.const .D) := rfl
+
+/-- τ(Dupoc)'s DIAGONAL — the QUINE, fully literal: the compiler cannot embed the
+    instance in its own guard, so it emits the pronoun, and the guard becomes the
+    Löb fixpoint sentence. -/
+theorem inst_dupoc_quine (k : Nat) : inst (tauZoo k) .dupoc .dupoc
+    = .search k (.plays .self .self Action.C) (.const .C) (.const .D) := rfl
+
+/-- τ(Just)'s row: one prove-stage on the hypothesis's δ_L instance — the SAME
+    probed objects as τ(Dupoc)'s row (JustBot consults the column by NAME, Dupoc by
+    SELF; off Dupoc's diagonal the rows are byte-identical). -/
+theorem inst_just_peel (k : Nat) : ∀ T, inst (tauZoo k) .just T
+    = .search k (probe (inst (tauZoo k) T .dupoc)) (.const .C) (.const .D) :=
+  fun T => by cases T <;> rfl
+
+/-- τ(OBot)'s row: two run-stages TESTING DEFECTION (`test = .D`) over the
+    hypothesis's δ_C and δ_D instances, default C. -/
+theorem inst_obot_peel (k : Nat) : ∀ T, inst (tauZoo k) .obot T
+    = .ite (.sim (.bot (inst (tauZoo k) T .coop)) (.bot (inst (tauZoo k) T .coop)))
+        Action.D (.const .D)
+        (.ite (.sim (.bot (inst (tauZoo k) T .defect)) (.bot (inst (tauZoo k) T .defect)))
+          Action.D (.const .D) (.const .C)) :=
+  fun T => by cases T <;> rfl
+
+/-- τ(Guardian)'s row: one prove-stage on a DEFECTION atom (`test = .D`) over the
+    hypothesis's δ_C instance, default C. -/
+theorem inst_guardian_peel (k : Nat) : ∀ T, inst (tauZoo k) .guardian T
+    = .search k (.plays (.bot (inst (tauZoo k) T .coop))
+                        (.bot (inst (tauZoo k) T .coop)) Action.D)
+        (.const .D) (.const .C) :=
+  fun T => by cases T <;> rfl
+
+/-! τ(Prudent)'s off-cycle shape: outer probe of the hypothesis's instance, inner
+defect-check on its δ_D instance in the then-branch (2026-08-25). -/
+theorem inst_prudent_peel_coop (k : Nat) : inst (tauZoo k) .prudent .coop
+    = .search k (probe (inst (tauZoo k) .coop .prudent))
+        (.search k (probeD (inst (tauZoo k) .coop .defect)) (.const .C) (.const .D))
+        (.const .D) := rfl
+theorem inst_prudent_peel_defect (k : Nat) : inst (tauZoo k) .prudent .defect
+    = .search k (probe (inst (tauZoo k) .defect .prudent))
+        (.search k (probeD (inst (tauZoo k) .defect .defect)) (.const .C) (.const .D))
+        (.const .D) := rfl
+theorem inst_prudent_peel_tftSim (k : Nat) : inst (tauZoo k) .prudent .tftSim
+    = .search k (probe (inst (tauZoo k) .tftSim .prudent))
+        (.search k (probeD (inst (tauZoo k) .tftSim .defect)) (.const .C) (.const .D))
+        (.const .D) := rfl
+theorem inst_prudent_peel_tftPf (k : Nat) : inst (tauZoo k) .prudent .tftPf
+    = .search k (probe (inst (tauZoo k) .tftPf .prudent))
+        (.search k (probeD (inst (tauZoo k) .tftPf .defect)) (.const .C) (.const .D))
+        (.const .D) := rfl
+theorem inst_prudent_peel_ebot (k : Nat) : inst (tauZoo k) .prudent .ebot
+    = .search k (probe (inst (tauZoo k) .ebot .prudent))
+        (.search k (probeD (inst (tauZoo k) .ebot .defect)) (.const .C) (.const .D))
+        (.const .D) := rfl
+theorem inst_prudent_peel_just (k : Nat) : inst (tauZoo k) .prudent .just
+    = .search k (probe (inst (tauZoo k) .just .prudent))
+        (.search k (probeD (inst (tauZoo k) .just .defect)) (.const .C) (.const .D))
+        (.const .D) := rfl
+theorem inst_prudent_peel_obot (k : Nat) : inst (tauZoo k) .prudent .obot
+    = .search k (probe (inst (tauZoo k) .obot .prudent))
+        (.search k (probeD (inst (tauZoo k) .obot .defect)) (.const .C) (.const .D))
+        (.const .D) := rfl
+theorem inst_prudent_peel_guardian (k : Nat) : inst (tauZoo k) .prudent .guardian
+    = .search k (probe (inst (tauZoo k) .guardian .prudent))
+        (.search k (probeD (inst (tauZoo k) .guardian .defect)) (.const .C) (.const .D))
+        (.const .D) := rfl
+theorem inst_prudent_peel_dbot (k : Nat) : inst (tauZoo k) .prudent .dbot
+    = .search k (probe (inst (tauZoo k) .dbot .prudent))
+        (.search k (probeD (inst (tauZoo k) .dbot .defect)) (.const .C) (.const .D))
+        (.const .D) := rfl
+theorem inst_prudent_peel_cupodTroll (k : Nat) : inst (tauZoo k) .prudent .cupodTroll
+    = .search k (probe (inst (tauZoo k) .cupodTroll .prudent))
+        (.search k (probeD (inst (tauZoo k) .cupodTroll .defect)) (.const .C) (.const .D))
+        (.const .D) := rfl
+/-- τ(Prudent)'s DIAGONAL: the outer quine, the inner check on its own δ_D cell. -/
+theorem inst_prudent_quine (k : Nat) : inst (tauZoo k) .prudent .prudent
+    = .search k (.plays .self .self Action.C)
+        (.search k (probeD (inst (tauZoo k) .prudent .defect)) (.const .C) (.const .D))
+        (.const .D) := rfl
+
+/-! ### MaxConfidenceBot's slot — Dupoc's instances by `rfl` (2026-08-27)
+
+`inst` depends only on the specs and on `selfProbes`, never on the template's name,
+and `tauMaxConfidenceSpec = tauDupocSpec`. So MaxConfidenceBot's instances ARE Dupoc's,
+definitionally, everywhere except where the two Dupoc-spec self-probers meet each
+other: there the compiler emits a symmetric 2-member `.sys` system (the same term in
+both orientations) instead of Dupoc's `.self` quine. Every other bot's instance at the
+`.maxconfidence` slot is its instance at `.dupoc` — except τ(Just)'s, which targets
+`.name .dupoc` and so probes that very system. These bridges are what make the
+17th slot a one-line copy of the `.dupoc` arm in every row and column. -/
+
+/-- MaxConfidenceBot's OWN row is Dupoc's, off the `maxconfidence × dupoc` pair, the
+    diagonal, and the `.just` slot (Just-facing-MaxConfidence probes the new system
+    where Just-facing-Dupoc probes the quine — same value, different term). -/
+theorem inst_maxconfidence_eq_dupoc (k : Nat) : ∀ T, T ≠ .dupoc → T ≠ .maxconfidence →
+    T ≠ .just → inst (tauZoo k) .maxconfidence T = inst (tauZoo k) .dupoc T := by
+  intro T h1 h2 h3
+  cases T <;> first | rfl | exact (h1 rfl).elim | exact (h2 rfl).elim | exact (h3 rfl).elim
+
+/-- The `.just` slot of MaxConfidenceBot's row: a prove-stage on Just-facing-MaxConfidence,
+    which itself probes the `maxconfidence × dupoc` system. -/
+theorem inst_maxconfidence_peel_just (k : Nat) : inst (tauZoo k) .maxconfidence .just
+    = .search k (probe (inst (tauZoo k) .just .maxconfidence)) (.const .C) (.const .D) := rfl
+
+/-- …and Just-facing-MaxConfidence: Just's third-party probe aimed at the system. -/
+theorem inst_just_maxconfidence_peel (k : Nat) : inst (tauZoo k) .just .maxconfidence
+    = .search k (probe (inst (tauZoo k) .maxconfidence .dupoc)) (.const .C) (.const .D) := rfl
+
+/-- Everyone's instance AT the `.maxconfidence` slot is their instance at `.dupoc` —
+    except τ(Just)'s (its `.name .dupoc` probe reaches the new system), Dupoc's own
+    (the system instead of the quine) and MaxConfidenceBot's (the diagonal). -/
+theorem inst_at_maxconfidence_eq_dupoc (k : Nat) : ∀ A, A ≠ .just → A ≠ .dupoc →
+    A ≠ .maxconfidence → inst (tauZoo k) A .maxconfidence = inst (tauZoo k) A .dupoc := by
+  intro A h1 h2 h3
+  cases A <;> first | rfl | exact (h1 rfl).elim | exact (h2 rfl).elim | exact (h3 rfl).elim
+
+/-- The diagonal is the SAME quine term as Dupoc's. -/
+theorem inst_maxconfidence_quine (k : Nat) :
+    inst (tauZoo k) .maxconfidence .maxconfidence = inst (tauZoo k) .dupoc .dupoc := rfl
+
+/-- The one new cell: two Dupoc-spec self-probers in one symmetric system — each
+    member probes the other by index, both with Dupoc's guard. -/
+def cfdSys (k : Nat) : ProgList :=
+  .cons (.search k (.plays (.bot (.selfIdx 1)) (.bot (.selfIdx 1)) Action.C)
+           (.const .C) (.const .D))
+  (.cons (.search k (.plays (.bot (.selfIdx 0)) (.bot (.selfIdx 0)) Action.C)
+           (.const .C) (.const .D)) .nil)
+
+theorem inst_maxconfidence_dupoc_eq (k : Nat) :
+    inst (tauZoo k) .maxconfidence .dupoc = .sys (cfdSys k) 0 := rfl
+
+/-- …and it is the same term seen from Dupoc's side: the members are identical up to
+    which index they point at, and the compiler lists them in the same order. -/
+theorem inst_dupoc_maxconfidence_eq (k : Nat) :
+    inst (tauZoo k) .dupoc .maxconfidence = .sys (cfdSys k) 0 := rfl
+
+/-! ### MinConfidenceBot's slot — the same Dupoc instances, the same system (2026-09-01)
+
+The third Dupoc-spec self-prober. `sysGo`/`instGo` never consult the template NAME
+for `tauDupocSpec`'s tree (its only target is `.self`), so every entangled pair among
+{`.dupoc`, `.maxconfidence`, `.minconfidence`} compiles to the ONE symmetric system
+`cfdSys` — byte-identical in all six orientations — and every off-cycle instance is
+Dupoc's by `rfl`. Consequence: `TauMaxConfidence/Helpers.lean`'s mutual-Löb closure of
+`cfdSys` covers ALL these cells, and MinConfidenceBot adds no instance-level proof
+obligations — only the aggregator (`minPlayer`) is new. -/
+
+/-- MinConfidenceBot's OWN row is Dupoc's, off the two system slots (`.dupoc`,
+    `.maxconfidence`), the diagonal, and the `.just` slot. -/
+theorem inst_minconfidence_eq_dupoc (k : Nat) : ∀ T, T ≠ .dupoc → T ≠ .maxconfidence →
+    T ≠ .minconfidence → T ≠ .just →
+    inst (tauZoo k) .minconfidence T = inst (tauZoo k) .dupoc T := by
+  intro T h1 h2 h3 h4
+  cases T <;> first | rfl | exact (h1 rfl).elim | exact (h2 rfl).elim | exact (h3 rfl).elim | exact (h4 rfl).elim
+
+/-- The `.just` slot of MinConfidenceBot's row probes Just-facing-MinConfidence… -/
+theorem inst_minconfidence_peel_just (k : Nat) : inst (tauZoo k) .minconfidence .just
+    = .search k (probe (inst (tauZoo k) .just .minconfidence)) (.const .C) (.const .D) := rfl
+
+/-- …and Just-facing-MinConfidence is Just-facing-MaxConfidence, byte for byte: Just's
+    `.name .dupoc` probe reaches the same system from either slot. -/
+theorem inst_just_minconfidence_eq_maxconfidence (k : Nat) :
+    inst (tauZoo k) .just .minconfidence = inst (tauZoo k) .just .maxconfidence := rfl
+
+/-- Everyone's instance AT the `.minconfidence` slot is their instance at `.dupoc` —
+    same exceptions as the `.maxconfidence` slot (τ(Just)'s probe, Dupoc's own, the
+    diagonal), plus MaxConfidenceBot's (whose instance is the system from both slots,
+    hence NOT an exception in value — but its `.dupoc` instance is the system too,
+    so the bridge holds there by `rfl` and needs no exclusion). -/
+theorem inst_at_minconfidence_eq_dupoc (k : Nat) : ∀ A, A ≠ .just → A ≠ .dupoc →
+    A ≠ .minconfidence →
+    inst (tauZoo k) A .minconfidence = inst (tauZoo k) A .dupoc := by
+  intro A h1 h2 h3
+  cases A <;> first | rfl | exact (h1 rfl).elim | exact (h2 rfl).elim | exact (h3 rfl).elim
+
+/-- The diagonal is the SAME quine term as Dupoc's. -/
+theorem inst_minconfidence_quine (k : Nat) :
+    inst (tauZoo k) .minconfidence .minconfidence = inst (tauZoo k) .dupoc .dupoc := rfl
+
+/-- All six orientations of the three Dupoc-spec self-probers meeting each other are
+    the ONE system `cfdSys`. -/
+theorem inst_minconfidence_dupoc_eq (k : Nat) :
+    inst (tauZoo k) .minconfidence .dupoc = .sys (cfdSys k) 0 := rfl
+
+theorem inst_dupoc_minconfidence_eq (k : Nat) :
+    inst (tauZoo k) .dupoc .minconfidence = .sys (cfdSys k) 0 := rfl
+
+theorem inst_minconfidence_maxconfidence_eq (k : Nat) :
+    inst (tauZoo k) .minconfidence .maxconfidence = .sys (cfdSys k) 0 := rfl
+
+theorem inst_maxconfidence_minconfidence_eq (k : Nat) :
+    inst (tauZoo k) .maxconfidence .minconfidence = .sys (cfdSys k) 0 := rfl
+
+end PD.Tau

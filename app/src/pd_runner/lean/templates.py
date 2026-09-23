@@ -274,7 +274,9 @@ def _discover_outcome_theorems(
         re.DOTALL,
     )
 
-    for lean_file in theorems_dir.glob("*.lean"):
+    # Recursive: covers legacy per-bot files (Theorems/X.lean), the LlmGenerations
+    # folder, and the sharded per-pair layout (Theorems/<LeftBot>/vs_<RightBot>.lean).
+    for lean_file in sorted(theorems_dir.rglob("*.lean")):
         content = lean_file.read_text(encoding="utf-8")
         for theorem_match in theorem_pattern.finditer(content):
             theorem_name = theorem_match.group(1)
@@ -453,7 +455,68 @@ def _actions_match(
 
 _BOT_DEFS = _discover_bot_defs(_BOTS_DIR)
 _BOT_ALIASES = _legacy_bot_aliases(set(_BOT_DEFS))
+# Bots with no budget argument — they appear as `fun _ => Bot` in an `OutcomeSpec`
+# statement and must NOT be given a budget parameter in the citation catalog.
+_CLOSED_BOTS = frozenset({
+    "CooperateBot", "DefectBot", "MirrorBot", "OBot", "DBot", "EBot", "TitForTatBot",
+})
+
+
+def _universals_from_export() -> list[UniversalOutcomeTheorem]:
+    """Catalog entries for theorems that have MIGRATED to the `OutcomeSpec` template.
+
+    The regex discovery above cannot see them: their statement is now an `OutcomeSpec`
+    application rather than a literal `outcome … = some …` equation, so `fullmatch`
+    skips them and they silently vanish from the LLM's citable-theorem catalog. This
+    reads the same Lean-side export the outcome matrix uses.
+
+    Only `nobudget`/`universal` regimes become universal entries — an `eventual` theorem
+    is not citable at an arbitrary budget, which is exactly what the old classifier's
+    `∃` check encoded.
+    """
+    from pd_runner.eval.outcome_matrix import _theorems_from_export
+
+    out: list[UniversalOutcomeTheorem] = []
+    for t in _theorems_from_export():
+        if t.pair is None or t.shape != "universal":
+            continue
+        # `OutcomeSpec .nobudget/.universal` unfolds to `∀ k fuel` (budgeted) or
+        # `∀ fuel` (closed), so a citation supplies those positionally.
+        params = ("k", "fuel") if t.budget_regime == "universal" else ("fuel",)
+        # The budget parameter attaches PER BOT, not per regime: in
+        # `OutcomeSpec .universal … CupodBot (fun _ => CooperateBot)` the left bot takes
+        # `k` and the right one is closed. Giving both `k` makes the lookup miss.
+        budgeted = t.budget_regime == "universal"
+
+        def _pattern(bot: str) -> BotPattern:
+            return BotPattern(bot, "k" if budgeted and bot not in _CLOSED_BOTS else None)
+
+        out.append(UniversalOutcomeTheorem(
+            name=t.name,
+            module=t.module,
+            params=params,
+            left_bot=_pattern(t.left_bot),
+            right_bot=_pattern(t.right_bot),
+            left_action=t.pair[0],
+            right_action=t.pair[1],
+            fuel_param="fuel",
+            # PARENTHESIZED, like the legacy parser's raw source term: the generated
+            # call site interpolates this bare, so `fuel + 2` would emit
+            # `outcome fuel + 2 L R` and parse as `(outcome fuel) + 2`.
+            fuel_expr=f"(fuel + {t.fuel_pad})" if t.fuel_pad else "fuel",
+        ))
+    return out
+
+
 _UNIVERSAL_OUTCOME_THEOREMS, _EXISTENTIAL_OUTCOME_THEOREMS = _discover_outcome_theorems(_THEOREMS_DIR)
+
+# The catalog now comes ENTIRELY from the Lean `@[outcome]` export; the regex discovery
+# above is retained only for `ExistentialOutcomeTheorem`, whose form no longer occurs in
+# the library (see `test_existential_citation_path_has_no_inputs_left`).
+_seen_universal = {t.name for t in _UNIVERSAL_OUTCOME_THEOREMS}
+_UNIVERSAL_OUTCOME_THEOREMS = _UNIVERSAL_OUTCOME_THEOREMS + [
+    t for t in _universals_from_export() if t.name not in _seen_universal
+]
 
 
 def select_outcome_theorem(

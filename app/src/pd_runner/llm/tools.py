@@ -11,12 +11,14 @@ Tools exposed to the bot writer agent (in addition to read_library_file):
 from __future__ import annotations
 
 import tempfile
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 from pd_runner.config import load_paths
 from pd_runner.lean.executor import run_lean_proof_file
 from pd_runner.logging_config import get_logger
+from pd_runner.settings import EvalGuard
 
 _log = get_logger("llm.tools")
 
@@ -25,6 +27,32 @@ _log = get_logger("llm.tools")
 # Claude tool schemas (passed to the Anthropic messages API via `tools=`)
 # ---------------------------------------------------------------------------
 
+_SEARCH_LIBRARY_TOOL: dict[str, Any] = {
+    "name": "search_library",
+    "description": (
+        "Search every declaration in the engine library by name or statement content. "
+        "Returns declaration kind, name, file:line, and the signature (statement without "
+        "proof body) for each match — use it when you know WHAT you need but not WHERE it "
+        "lives (e.g. 'tailTo', 'no_provable.*OBot', 'floor'), then fetch the full file "
+        "with read_library_file. Case-insensitive; regex supported (falls back to literal "
+        "substring). Files dedicated to the bots under evaluation are excluded to prevent "
+        "answer leakage."
+    ),
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "pattern": {
+                "type": "string",
+                "description": (
+                    "Name or statement fragment to search for, e.g. 'searcherPlay_tail', "
+                    "'wv_sound', 'plays MirrorBot'."
+                ),
+            },
+        },
+        "required": ["pattern"],
+    },
+}
+
 _READ_LIBRARY_FILE_TOOL: dict[str, Any] = {
     "name": "read_library_file",
     "description": (
@@ -32,10 +60,9 @@ _READ_LIBRARY_FILE_TOOL: dict[str, Any] = {
         "Use this to fetch existing theorems as few-shot proof examples or to inspect a bot's "
         "definition before writing a proof about it. "
         "IMPORTANT: pass a full file path ending in `.lean`, not a directory — directory listings "
-        "are not supported. If you're unsure of the exact filename, the bot definitions you need "
-        "are already in your prompt; in general, prefer reasoning from the prompt over guessing "
-        "filenames. Files that mention the bots currently under evaluation are intentionally "
-        "blocked to prevent answer leakage."
+        "are not supported. If you're unsure of the exact filename, find it with `search_library` "
+        "first instead of guessing. Files that mention the bots currently under evaluation are "
+        "intentionally blocked to prevent answer leakage."
     ),
     "input_schema": {
         "type": "object",
@@ -99,7 +126,7 @@ _PROPOSE_PF_CONSTRUCTOR_TOOL: dict[str, Any] = {
         "conclusion's `Formula.interp` asserts, given the premises' interps; imports "
         "allowed, e.g. `import PrisonersDilemma.BaseTheorems`). A rule whose certificate "
         "does not compile is rejected outright. If the proposal is recorded, finish with "
-        "`OUTCOME OPEN — CONSTRUCTOR PROPOSED <name>`."
+        "`submit_verdict(verdict=\"constructor_proposed\", proposal_name=<name>, …)`."
     ),
     "input_schema": {
         "type": "object",
@@ -134,7 +161,19 @@ _PROPOSE_PF_CONSTRUCTOR_TOOL: dict[str, Any] = {
             },
             "unblocks": {
                 "type": "string",
-                "description": "The outcome theorem(s) this rule would make provable, and why.",
+                "description": "The outcome theorem(s) this rule would let you prove in Lean, and why.",
+            },
+            "unblocked_proof_lean": {
+                "type": "string",
+                "description": (
+                    "OPTIONAL but strongly encouraged: a COMPLETE Lean file proving the "
+                    "unblocked outcome theorem against the CURRENT engine, with the proposed "
+                    "rule stated as an explicit hypothesis (e.g. a theorem parameter "
+                    "`(hRule : ∀ k φ, <side-condition> → Pf k <conclusion>)`). The tool "
+                    "compiles it and stores it in the bundle — this turns your `unblocks` "
+                    "claim into a kernel-checked artifact the integrator can reuse. If it "
+                    "fails to compile the proposal is NOT recorded."
+                ),
             },
         },
         "required": [
@@ -144,10 +183,99 @@ _PROPOSE_PF_CONSTRUCTOR_TOOL: dict[str, Any] = {
     },
 }
 
-# The library-growth tools are only exposed in production mode (empty exclude_bots):
-# the eval harness must not mutate the library mid-run, and its leak-free config
-# predates the lemma library.
+# The library-growth tools are only exposed when the guard allows growth
+# (production mode): the eval harness must not mutate the library mid-run.
 GROWTH_TOOLS: list[dict[str, Any]] = [_ADD_BASE_LEMMA_TOOL, _PROPOSE_PF_CONSTRUCTOR_TOOL]
+
+
+def make_submit_verdict_tool(allow_constructor_proposed: bool) -> dict[str, Any]:
+    """The structured-verdict tool schema.
+
+    `constructor_proposed` appears in the enum only when the growth tools are
+    registered (a proposal must actually have been filed this run).
+    """
+    verdicts = ["proved", "open_bistable", "open_blocked"]
+    if allow_constructor_proposed:
+        verdicts.append("constructor_proposed")
+    return {
+        "name": "submit_verdict",
+        "description": (
+            "Submit your FINAL verdict for this matchup. This is the ONLY way to finish — "
+            "prose alone does not end the search. For `proved`, include the complete Lean "
+            "source: it will be RE-COMPILED and checked against the strict theorem template "
+            "(exact theorem name, `@[outcome]` tag, an `OutcomeSpec` "
+            "statement validated by the library's own linter, no hypotheses or "
+            "oracle-conditioning premises, no census inductions, no library name "
+            "collisions) before "
+            "acceptance; any failure comes back as this tool's result for you to fix. "
+            "For `open_bistable` / `open_blocked`, the explanation must cover why ladder "
+            "rungs (a) and (b) fail. Calling this tool ends the search only if the verdict "
+            "is accepted."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "verdict": {"type": "string", "enum": verdicts},
+                "lean_source": {
+                    "type": "string",
+                    "description": (
+                        "REQUIRED for `proved`: the complete, compiling theorem file "
+                        "(imports, namespace, theorems). Submit EXACTLY the source that "
+                        "last passed run_lean_proof."
+                    ),
+                },
+                "left_action": {
+                    "type": "string",
+                    "enum": ["C", "D", "none"],
+                    "description": "REQUIRED for `proved`: the left bot's proven action ('none' for `= none` theorems).",
+                },
+                "right_action": {
+                    "type": "string",
+                    "enum": ["C", "D", "none"],
+                    "description": "REQUIRED for `proved`: the right bot's proven action ('none' for `= none` theorems).",
+                },
+                "explanation": {
+                    "type": "string",
+                    "description": (
+                        "REQUIRED. For proved: one sentence on the proof route. For open_*: "
+                        "which action pairs are consistent and why rungs (a)/(b) fail; for "
+                        "open_blocked, name the wall precisely."
+                    ),
+                },
+                "proposal_name": {
+                    "type": "string",
+                    "description": (
+                        "REQUIRED for `constructor_proposed`: the name of the proposal you "
+                        "successfully filed via propose_pf_constructor this session."
+                    ),
+                },
+            },
+            "required": ["verdict", "explanation"],
+        },
+    }
+
+
+UPDATE_NOTEBOOK_TOOL: dict[str, Any] = {
+    "name": "update_notebook",
+    "description": (
+        "Replace your persistent lab notebook. It is the ONLY free-form memory that "
+        "survives into your next attempt if this one fails — distill durable lessons: "
+        "what compiled, what failed and WHY, which lemmas/kernels/imports apply, dead "
+        "ends to avoid, and your next plan. Replace-whole-text semantics: send the "
+        "full notebook every time, longest-lived insights first. Update it whenever "
+        "you learn something durable, and always before running out of turns."
+    ),
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "notebook": {
+                "type": "string",
+                "description": "The full replacement notebook text (keep it under 4000 characters).",
+            },
+        },
+        "required": ["notebook"],
+    },
+}
 
 LEAN_TOOLS: list[dict[str, Any]] = [
     {
@@ -180,6 +308,7 @@ LEAN_TOOLS: list[dict[str, Any]] = [
         },
     },
     _READ_LIBRARY_FILE_TOOL,
+    _SEARCH_LIBRARY_TOOL,
 ]
 
 
@@ -187,24 +316,12 @@ LEAN_TOOLS: list[dict[str, Any]] = [
 # Tool implementations
 # ---------------------------------------------------------------------------
 
-def _run_lean_proof(lean_source: str, filename_hint: str = "proof_attempt") -> str:
-    from pd_runner.services.proof_service import _find_bot_redefinitions
+def compile_proof_source(lean_source: str, filename_hint: str = "proof_attempt"):
+    """Write `lean_source` to a temp file inside the engine dir and compile it.
 
-    redefs = _find_bot_redefinitions(lean_source)
-    if redefs:
-        names = ", ".join(redefs)
-        return (
-            "exit_code: 1\n"
-            "--- stdout ---\n(empty)\n"
-            "--- stderr ---\n"
-            f"Rejected before compile: your proof file contains `def {names} : Prog` "
-            f"declaration(s). Proof files must NOT redefine bots — they cause a namespace "
-            f"clash with `PD.Bots.{redefs[0]}` at lake build time.\n"
-            f"Fix: remove the `def` block(s) and add an import line "
-            f"`import PrisonersDilemma.Bots.{redefs[0]}` (and similarly for any other bots). "
-            f"Reference the bots by name only."
-        )
-
+    Returns the raw `LeanExecResult` (returncode/stdout/stderr). Shared by the
+    `run_lean_proof` tool and the exit verification's CompileService.
+    """
     paths = load_paths()
     lean_dir = paths.lean_engine_dir
 
@@ -226,17 +343,101 @@ def _run_lean_proof(lean_source: str, filename_hint: str = "proof_attempt") -> s
     _log.debug("Running Lean on: %s\n%s", tmp_path.name, lean_source)
 
     try:
-        result = run_lean_proof_file(lean_dir, tmp_path)
+        return run_lean_proof_file(lean_dir, tmp_path)
     finally:
         tmp_path.unlink(missing_ok=True)
 
+
+def _run_lean_proof(
+    lean_source: str,
+    filename_hint: str = "proof_attempt",
+    *,
+    exclude_relpath: str | None = None,
+    on_attempt=None,
+) -> str:
+    from pd_runner.services.verdicts import find_bot_redefinitions
+
+    redefs = find_bot_redefinitions(lean_source)
+    if redefs:
+        names = ", ".join(redefs)
+        return (
+            "exit_code: 1\n"
+            "--- stdout ---\n(empty)\n"
+            "--- stderr ---\n"
+            f"Rejected before compile: your proof file contains `def {names} : Prog` "
+            f"declaration(s). Proof files must NOT redefine bots — they cause a namespace "
+            f"clash with `PD.Bots.{redefs[0]}` at lake build time.\n"
+            f"Fix: remove the `def` block(s) and add an import line "
+            f"`import PrisonersDilemma.Bots.{redefs[0]}` (and similarly for any other bots). "
+            f"Reference the bots by name only."
+        )
+
+    # Fast path: persistent LeanInteract REPL (env-cached per import block);
+    # silently degrades to the `lake env lean` file compile on any problem.
+    # The verdict gate always file-compiles — this backend only serves iteration.
+    from pd_runner.lean.interact import try_check
+
+    result = try_check(lean_source)
+    backend = "lean-interact (persistent REPL)"
+    if result is None:
+        result = compile_proof_source(lean_source, filename_hint)
+        backend = "lake env lean"
+
+    if on_attempt is not None:
+        on_attempt(lean_source, result)
+
     lines = [
-        f"exit_code: {result.returncode}",
+        f"exit_code: {result.returncode}  (checked via {backend})",
         "--- stdout ---",
         result.stdout or "(empty)",
         "--- stderr ---",
         result.stderr or "(empty)",
     ]
+
+    goals = getattr(result, "goals", None)
+    if goals:
+        listing = "\n\n".join(f"goal {i + 1}:\n{g}" for i, g in enumerate(goals))
+        lines.append(
+            "--- goals at sorry positions ---\n"
+            f"{listing}\n"
+            "(sketch check: these goals remain open. Fill every sorry — the final "
+            "submitted source must contain none.)"
+        )
+
+    # Advisory duplicate-name check: the file compiles STANDALONE even when a helper
+    # lemma duplicates a library declaration in the same namespace — the clash only
+    # surfaces at the umbrella `lake build` when the proof is written to the library,
+    # after this agent session is over. Warn NOW so the agent renames in-loop.
+    if result.returncode == 0:
+        from pd_runner.services.verdicts import (
+            find_census_inductions,
+            find_library_name_collisions,
+        )
+
+        inductions = find_census_inductions(lean_source)
+        if inductions:
+            lines.append(
+                "--- WARNING: hand-rolled Pf induction ---\n"
+                f"Your file uses {', '.join(f'`{t}`' for t in inductions)}. Hand-rolled "
+                "censuses break with missing-cases on EVERY future constructor addition "
+                "and the verdict gate will REFUSE the file. Instantiate the shared "
+                "kernels from Base/Exclusion.lean instead (no_provable_tailTo_unreadable / "
+                "no_provable_probeFirst_tail / no_provable_searcherPlay_tail / "
+                "no_provable_tailToS_floor) — a `refine` plus shape bullets; the census "
+                "instances in your few-shots show the pattern."
+            )
+
+        collisions = find_library_name_collisions(lean_source, exclude_relpath=exclude_relpath)
+        if collisions:
+            listing = "\n".join(f"  - `{n}` already declared in {f}" for n, f in collisions)
+            lines.append(
+                "--- WARNING: library name collisions ---\n"
+                f"{listing}\n"
+                "The file compiles standalone, but writing it to the library WILL FAIL at "
+                "`lake build` (`environment already contains ...`). Rename these "
+                "declarations with a matchup-specific prefix (e.g. "
+                "`dimcid_obot_<lemma>`) before submitting your verdict."
+            )
     return "\n".join(lines)
 
 
@@ -264,15 +465,18 @@ def _read_library_file(relative_path: str, exclude_bots: frozenset[str] = frozen
         return f"Error reading file: {exc}"
 
     if exclude_bots:
-        # Block only files named after a target bot — i.e. the bot's own definition
-        # or its dedicated theorem file. Files that merely mention a target bot in
-        # passing (e.g. a comparison theorem in another bot's file) are allowed,
-        # since the leak risk lives in files primarily about a target bot.
-        stem_lower = target.stem.lower()
+        # Block only files dedicated to a target bot. Files that merely mention a
+        # target bot in passing (e.g. a comparison theorem in another bot's file)
+        # are allowed, since the leak risk lives in files primarily about a target
+        # bot. Dedication is path-based — the single implementation lives in
+        # llm/library_layout.py (shared with the few-shot retriever).
+        from pd_runner.llm.library_layout import file_bots
+
+        dedicated = file_bots(target, base / "Theorems")
         excluded_lower = {b.lower() for b in exclude_bots}
-        if stem_lower in excluded_lower:
+        if dedicated & excluded_lower:
             return (
-                f"Error: access denied — `{relative_path}` is the dedicated file for one of "
+                f"Error: access denied — `{relative_path}` is a dedicated file for one of "
                 f"the bots under evaluation ({', '.join(sorted(exclude_bots))}). "
                 f"To prevent answer leakage during the bot-matrix run, files named after "
                 f"the target bots cannot be read via this tool. Reason about the bot "
@@ -347,33 +551,94 @@ def _run_lean_build(bot_name: str, lean_source: str) -> str:
     return "\n".join(lines)
 
 
-def register_lean_tools(handler, exclude_bots: frozenset[str] = frozenset()) -> None:
+def register_lean_tools(
+    handler,
+    exclude_bots: frozenset[str] = frozenset(),
+    *,
+    guard: EvalGuard | None = None,
+    ctx: "RequestContext | None" = None,
+    on_attempt=None,
+    on_proposal_recorded=None,
+) -> None:
     """Register the Lean tool implementations into a ToolHandler.
 
-    `exclude_bots` is forwarded to `read_library_file` so it refuses to read any
-    file whose content references a bot under evaluation (leak prevention).
-    In production mode (empty `exclude_bots`) the library-growth tools are also
+    `guard.hidden_bots` is forwarded to `read_library_file` so it refuses to
+    read any file dedicated to a bot under evaluation (leak prevention).
+    When `guard.allow_library_growth` the library-growth tools are also
     registered: `add_base_lemma` (Tier 1, autonomous — kernel-checked derived rules)
     and `propose_pf_constructor` (Tier 2, human-gated — evidence bundles only).
+
+    `ctx` names the matchup so `run_lean_proof`'s collision check can exclude
+    the pair's own target module (computed from the request, never from the
+    model-supplied filename hint). `on_attempt(lean_source, LeanExecResult)`
+    is called for every compile; `on_proposal_recorded(name)` for every
+    successfully filed constructor proposal.
+
+    `exclude_bots` is the legacy flag; when `guard` is omitted it is derived
+    exactly as the old flag implied (non-empty ⇒ hidden + growth off).
     """
-    handler.register_fn("run_lean_proof", _run_lean_proof)
+    if guard is None:
+        guard = EvalGuard.from_exclude_bots(exclude_bots)
+    exclude_relpath = (
+        f"Theorems/{ctx.left_bot}/vs_{ctx.right_bot}.lean" if ctx is not None else None
+    )
+    handler.register_fn(
+        "run_lean_proof",
+        lambda lean_source, filename_hint="proof_attempt": _run_lean_proof(
+            lean_source, filename_hint,
+            exclude_relpath=exclude_relpath, on_attempt=on_attempt,
+        ),
+    )
     handler.register_fn(
         "read_library_file",
-        lambda relative_path: _read_library_file(relative_path, exclude_bots=exclude_bots),
+        lambda relative_path: _read_library_file(relative_path, exclude_bots=guard.hidden_bots),
     )
-    if not exclude_bots:
+
+    def _search_library(pattern: str) -> str:
+        from pd_runner.llm.library_search import format_matches, search_declarations
+
+        matches = search_declarations(pattern, hidden_bots=guard.hidden_bots)
+        return format_matches(matches, pattern)
+
+    handler.register_fn("search_library", _search_library)
+    if guard.allow_library_growth:
         from pd_runner.services.constructor_proposals import propose
         from pd_runner.services.lemma_library import add_lemma
 
-        handler.register_fn("add_base_lemma", add_lemma)
-        handler.register_fn(
-            "propose_pf_constructor",
-            lambda name, constructor_lean, soundness_certificate_lean,
-                   faithfulness_rationale, unblocks: propose(
-                name, constructor_lean, soundness_certificate_lean,
-                faithfulness_rationale, unblocks,
-            ),
-        )
+        def _add_lemma_and_invalidate(**kwargs):
+            result = add_lemma(**kwargs)
+            # A landed lemma changes LlmLemmas.lean — cached REPL environments
+            # that imported it are stale. Conservative: always invalidate.
+            from pd_runner.lean.interact import invalidate_cache
+
+            invalidate_cache()
+            return result
+
+        handler.register_fn("add_base_lemma", _add_lemma_and_invalidate)
+
+        # `propose` accepts keyword args matching the tool schema exactly
+        # (unblocked_proof_lean is optional with a default). Successful filings
+        # are reported so the verdict gate can cross-check `constructor_proposed`.
+        def _propose_and_record(**kwargs):
+            result = propose(**kwargs)
+            if on_proposal_recorded is not None and str(result).startswith("PROPOSAL RECORDED"):
+                raw = kwargs.get("name", "")
+                on_proposal_recorded(raw)
+                # `propose` sanitizes the name for the bundle dir; accept both forms.
+                safe = "".join(c if c.isalnum() or c == "_" else "_" for c in raw)
+                if safe != raw:
+                    on_proposal_recorded(safe)
+            return result
+
+        handler.register_fn("propose_pf_constructor", _propose_and_record)
+
+
+@dataclass(frozen=True)
+class RequestContext:
+    """The matchup a proof-agent session is about (drives collision exclusion)."""
+
+    left_bot: str
+    right_bot: str
 
 
 def register_bot_tools(handler) -> None:

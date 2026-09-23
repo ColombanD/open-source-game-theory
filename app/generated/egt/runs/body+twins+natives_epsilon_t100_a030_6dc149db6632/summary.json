@@ -1,0 +1,162 @@
+{
+  "run": "body+twins+natives_epsilon_t100_a030_6dc149db6632",
+  "zoo": "body+twins+natives",
+  "family": "epsilon",
+  "t": 1.0,
+  "alpha": 0.3,
+  "fingerprint": "6dc149db6632",
+  "n_types": 14,
+  "bots": [
+    "CIMCIC",
+    "CooperateBot",
+    "CupodBot",
+    "CupodTrollBot",
+    "DBot",
+    "DIMCID",
+    "DefectBot",
+    "DupocBot",
+    "EBot",
+    "MaxConfidenceBot",
+    "MinConfidenceBot",
+    "OBot",
+    "PrudentBot",
+    "TitForTatBot"
+  ],
+  "excluded_bots": [],
+  "is_fully_proven": true,
+  "grid_points": [
+    [
+      1.0,
+      0.3
+    ],
+    [
+      1.0,
+      0.45
+    ],
+    [
+      1.0,
+      0.62
+    ],
+    [
+      1.0,
+      0.8
+    ],
+    [
+      1.0,
+      1.0
+    ],
+    [
+      0.8,
+      0.3
+    ],
+    [
+      0.8,
+      0.45
+    ],
+    [
+      0.8,
+      0.62
+    ],
+    [
+      0.8,
+      0.8
+    ],
+    [
+      0.6,
+      0.3
+    ],
+    [
+      0.6,
+      0.45
+    ],
+    [
+      0.6,
+      0.62
+    ],
+    [
+      0.4,
+      0.45
+    ],
+    [
+      0.4,
+      0.62
+    ]
+  ],
+  "n_grid_points": 14,
+  "ok": true,
+  "failed_stages": [],
+  "stages": {
+    "ess": {
+      "ok": true,
+      "seconds": 0.002,
+      "error": null,
+      "n_pure_ess": 0,
+      "n_types": 14
+    },
+    "invasion": {
+      "ok": true,
+      "seconds": 0.477,
+      "error": null,
+      "edges_strict": 54,
+      "edges_weak": 125,
+      "n_sccs": 7,
+      "n_cycles": 39,
+      "layout_backend": "manual_layered"
+    },
+    "faces": {
+      "ok": true,
+      "seconds": 0.869,
+      "error": null,
+      "n_supports": 16369,
+      "by_class": {
+        "singular": 13232,
+        "non_interior": 3131,
+        "asymp_stable_invadable": 6
+      },
+      "enumeration_complete": true
+    },
+    "nash": {
+      "ok": true,
+      "seconds": 380.637,
+      "error": null,
+      "run_dir": "runs/20260901T151206Z_1f73b5115edb",
+      "n_extreme_NE": 272,
+      "n_components": 2,
+      "cross_check_performed": false
+    },
+    "replicator": {
+      "ok": true,
+      "seconds": 0.519,
+      "error": null,
+      "n_attractors": 17,
+      "n_unconverged": 0,
+      "all_converged": true,
+      "largest_basin": 0.985075,
+      "dominant_support": [
+        "CIMCIC",
+        "MinConfidenceBot",
+        "MaxConfidenceBot",
+        "DupocBot",
+        "TitForTatBot",
+        "CooperateBot"
+      ]
+    },
+    "moran": {
+      "ok": true,
+      "seconds": 0.067,
+      "error": null,
+      "n_points": 9,
+      "all_converged": true,
+      "headline": {
+        "population": 100,
+        "beta": 1.0,
+        "stochastically_stable": [
+          "DupocBot",
+          "MinConfidenceBot",
+          "MaxConfidenceBot",
+          "CIMCIC"
+        ]
+      }
+    }
+  }
+}

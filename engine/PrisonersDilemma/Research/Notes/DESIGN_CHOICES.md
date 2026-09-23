@@ -17,9 +17,10 @@ oracle into an algorithm. Five phases; everything lives in `Decidability/`.
 `Provable k φ ↔ ∃ fuel, decFull fuel k φ = true` — keep a table of "provable so far",
 each round try to fire every rule against the table, iterate. On top, `evalG`: the
 computable evaluator; programs run directly, `.search` guards consult the oracle,
-which answers `some true` (proof found), `some false` (refutation found), or `none`
-(undetermined). A `none` can mask either polarity at fixed fuel; in the limit it masks
-exactly the false-but-IRREFUTABLE guards (the anti-diagonal's own — the honest
+which answers `some true` (an `S`-derivation found, `⊢_k φ`), `some false` (a refutation
+found, `⊢_m ¬φ`), or `none` (undetermined). A `none` can mask either polarity at fixed
+fuel; in the limit it masks exactly the false-but-IRREFUTABLE guards (`¬ ⊨ φ` yet
+`¬ ⊢ ¬φ` — the anti-diagonal's own — the honest
 Gödelian residue). The asterisk: semidecidable — yes-answers eventually, but no
 STOPPING BOUND after which "not found" means "no".
 
@@ -38,7 +39,7 @@ invent new material — every reachable question lives in one computable finite 
 
 **C — Proofs as data (T48–T49).** To reason about ALL proofs of a fact: `ProvT`, the
 `Type`-valued mirror (`Provable k φ ↔ Nonempty (ProvT k φ)`) — proof TREES you can
-measure and walk; the census (T48: every implication a `Derivation` proves has a
+measure and walk; the census (T48: every implication a `Derivation` concludes has a
 catalogued antecedent; literals `< 2^budget`); and the rewriting machine (T49): a
 cut-eliminator (β-reduce stepping-stones away) with a Tait-style normalization theorem
 proving it always halts, packaged as the excisor + kernel-decidable certificate
@@ -47,8 +48,9 @@ stratum.
 
 **D — The falsification (T50 witness, T51 theorem).** Test the hardest fact: Dupoc's
 self-cooperation (the Löb fixpoint), written as a concrete tree — it FAILS the modest
-gate. And unfixably so: `cutRelevance_modestGate_false` — the fact is `Provable` but
-`¬ProvableG (modestGate N)` at EVERY `N` and budget. Simply put: a Löb proof must at
+gate. And unfixably so: `cutRelevance_modestGate_false` — the fact is `Provable` (`⊢ φ`) but
+`¬ProvableG (modestGate N)` (`¬ ⊢^{G}_k φ` — the gated stratum is a sub-system of `S`, so
+this too is object provability) at EVERY `N` and budget. Simply put: a Löb proof must at
 some point hold the exact self-referential sentence ("Dupoc plays C vs Dupoc" — full
 of concrete bot code) in the very positions the gate restricts to generic shapes, and
 must apply `diag` to it; block that and every proof attempt is circular (the guard's
@@ -68,7 +70,7 @@ finite-space stabilization survives (T53: instance cuts' arguments re-enter `SL`
 `decideProvableG_inst`, decidable with the same `|SL|` bound. T54 then certifies every
 guard fact the zoo consults (kernel-evaluated checks, incl. Prudent×Dupoc at
 `k = 2²⁹`). NET: the zoo's oracle is an algorithm with a computable stopping bound.
-OPEN: the universal closure — arbitrary provable facts transport (excise + certify
+OPEN: the universal closure — arbitrary `⊢`-derivable facts transport (excise + certify
 composed for arbitrary trees) — on which certificate-free uniform computability rests.
 
 **The algorithm, and why saturation.** All deciders are bottom-up Kleene saturation
@@ -89,12 +91,476 @@ the transport theorem was built for.
 
 ---
 
+## The S-interface lands: `BoundedGL` — bounded Löb and PBLT proved generically (2026-08-27)
+
+*Provenance: the "interface formalization (middle path)" row of the 2026-08-20 entry below,
+and a Zulip exchange with Foundation's maintainers the same day (see the end of this entry).*
+
+**The decision.** `S`'s modal core is now a named object: `Base/BoundedGL.lean` defines
+`structure BoundedGL (Sent : Type)` — data `imp`, `box : Nat → Sent → Sent`, `diag`,
+`size`, `Proves : Nat → Sent → Prop`, and ten fields that are the bounded modal and glue
+schemes at their EXACT transcript costs (`mono`, `mp`, `implTrans`, `impS2`, `boxIntro`,
+`axKf`, `box4`, `boxMono`, `diagF`, `diagB`), plus a `Prop` mixin `SizeExact` holding the
+three `Formula.size` equations. Then:
+
+* `pfBoundedGL : BoundedGL Formula` — **the engine is a model**, every field discharged by
+  the constructor of the same name, verbatim (no wrappers, no slack);
+* `BoundedGL.mutual_loeb`, `.bloeb`, `.pblt`, `.pblt_bounded` — `mutual_loeb`,
+  `bloeb_engine`, `pblt_engine`, `pblt_engine_bounded` re-proved AGAINST THE STRUCTURE.
+  `bloeb`/`mutual_loeb` need no size law at all; only the PBLT wrappers consult `SizeExact`;
+* four `example : @bloeb_engine = pfBoundedGL.bloeb := rfl` (etc.) — the engine's theorems
+  ARE the instances, checked at the statement level (the `Eq` typechecks only if the field
+  binders match the constructors; proof irrelevance does the rest). Axiom footprint
+  unchanged: `bloeb`/`mutual_loeb`/`pfBoundedGL` depend on no axiom, `pblt` on Lean's three.
+
+`Pf` itself is untouched, and so is every downstream theorem: the structure is a LENS on
+the rule set, not a refactor of it. NO new `axiom`: fields are hypotheses discharged at
+instantiation.
+
+**Why "GL with bounded modalities" and not "a variant of `ProvabilityAbstraction.Provability`".**
+Foundation's `Provability T₀ T` is a first-order FORMULA `prov` in a theory with a Gödel
+numbering (`𝔅 σ := prov(⌜σ⌝)`; `HBL2`/`HBL3`/`Diagonalization` are classes over it). Our
+`Formula` is not a first-order language with a coding — `.box k φ` is a primitive
+connective — so `Pf` could never instantiate that structure without first being embedded
+in arithmetic, which is exactly the arithmetization we do not have. In the modal
+presentation `box` is a connective with axioms and "provable in a theory" is one
+INTERPRETATION; `Pf` is a model directly (`□_k ↦ Pf k`), an arithmetized PA-provability is
+another (unbuilt), and the faithfulness boundary of the 2026-08-20 entry becomes one
+statement.
+
+**Three design calls, each recorded in the module docstring:**
+
+1. *The Löb-premise gate on `diagF`/`diagB` is kept* (a held `Proves pm (□_fb tgt → tgt)`,
+   its transcript charged). Weaker than the textbook unconditional fixpoint, so any ungated
+   model discharges it a fortiori; free in the derivation (the proof always holds `hLoeb`);
+   and load-bearing in the engine's exclusion censuses (`Base/Exclusion` reaches the tail
+   invariant through the IH on the gate premise).
+2. *Size laws as a separate mixin, exact equations.* Inequality laws with additive slack
+   fail: `omega` cannot see through nested `size (imp (diag g φ) …)` atoms (tested). A
+   Gödel-coded model (size linear in `|φ|` with a constant) would not meet even those — it
+   gets `bloeb`/`mutual_loeb` for free and owes its own asymptotic wrapper. v2 item.
+3. *`→/□/diag` fragment only.* `neg`, the propositional `contrapose`/`negElim`/`implK`/
+   `implS`/`implRefl`/`weakenImpl`, and the rule-form `axK` are unused by the three theorems
+   and excluded; every source-reading rule is excluded on principle — the atom theory is the
+   model-specific half of `S`.
+
+**What it does NOT cover, on purpose.** Soundness, the τ-involution and the transparency
+family — the three items the 2026-08-20 row also listed. The 2026-08-25 entry predicted the
+split correctly: the transpose proof would factor through a soundness field; the
+floor/census proofs use the cost stipulations DIRECTLY and never will. A soundness field
+buys nothing until a second model exists.
+
+**The obligation, stated once.** *An arithmetized model of `BoundedGL` over PA* — a
+budget-indexed provability predicate validating these ten schemes at these costs — is what
+"the rule set is the real `S`" would mean, made finite. No costed derivability conditions
+are formalized in any prover: Foundation's `RestrictedProvability` (`∃ d < 2^e, Proof T d φ`,
+2026-01, with the classical no-short-proof lower bound for its Gödel sentence) is the
+closest object and has none of the schemes. The Solovay-style converse — is `BoundedGL`
+the COMPLETE logic of bounded provability? — is the precise form of the faithfulness
+question and is left open, deliberately.
+
+**External check (2026-08-27).** The design choice was put to the maintainers of
+Foundation (FormalizedFormalLogic) on the Lean Zulip, channel *Formalized Formal Logic*
+(web-public), topic "bounded provability with costs: rule-set presentation vs
+RestrictedProvability". Palalansoukî: bounded provability machinery is "too niche" for
+Foundation at present and arithmetized instances "would probably be technically
+difficult"; packaging the abstract theory as a structure is "reasonable"; "these abstract
+formalizations seem legitimate"; and it "may even be better to treat the abstract
+framework not as a variant of `ProvabilityAbstraction.Provability`, but instead as a
+variant of modal logic such as GL with proof-length-bounded modalities" — the framing
+adopted here. SnO₂WMaN: agreed an abstract system of this sort is worth setting up,
+suggested a separate repository (possible later: `Base/BoundedGL.lean` depends only on
+`numCost`, `log2_mono` and the constructors it names). Neither knew of prior work on
+proof-length-bounded modalities; leads to check before claiming novelty: Verbrugge's
+feasible/efficient provability logic (early 1990s), Parikh 1971, Artemov's Logic of Proofs.
+
+**Rejected / deferred:**
+
+| Alternative | Fate |
+|---|---|
+| Refactor `Pf` to CONSUME the structure (modal core + atom theory as separate inductives) | Not now — no result gets easier; the lens gives the name and the obligation without touching 80+ theorem files. |
+| A soundness / τ-closure field | Deferred until a second model exists; the transpose proof is the first client. |
+| Second model from the Metatheory's `ProvT` (`Nonempty (ProvT k φ)`) | Cheap follow-up spike; not here because `Metatheory` is a separate target the engine never imports. |
+| Size laws as inequalities (encoding-robust) | Fails `omega` on the PBLT wrapper as-is; needs a free-term size measure lemma. v2. |
+
+**One-line summary.** `S` = a bounded GL (ten costed schemes, `Base/BoundedGL`) + an
+atom theory; the engine's rule set is one model, bounded Löb and PBLT are theorems about
+every model, and "is PA a model?" is the whole faithfulness question in one line.
+
+---
+
+## The red cell has TWO proofs — transpose vs floor, and why the general one is the paper's (2026-08-25)
+
+*Provenance: a review question, 2026-08-25. The tau image of the red cell
+(`cupod_dupoc_plays_C` / `dupoc_cupod_plays_D`, `Tau/Theorems/TauCupod/Helpers.lean`)
+closes by the `search_f` floor with no transposition at all. Two discomforts followed:
+(a) if the tau layer needs no transpose, are the base and tau proofs of "the same" cell
+fundamentally different ideas? (b) the transpose proof was hard-won on paper, the floor
+was never even considered there — is the floor a way to "cheat" through obscure
+mechanics of `S`, and if it works just as well, how is the transpose proof justified?*
+
+**The fact, kernel-checked.** The base red cell closes by the floor too. In
+`Theorems/DupocBot/Helpers.lean`:
+
+```lean
+theorem not_Pf_dupoc_guard_floor (k : Nat) :
+    ¬ Pf k (.plays (CupodBot k) (DupocBot k) .C) := fun hp =>
+  no_provable_searcherElse_tail k (.plays .opp .self .D) .D .C (by decide)
+    (DupocBot k) k _ hp le_rfl (by simp [CupodBot])
+
+theorem not_Pf_cupod_guard_floor (k : Nat) :
+    ¬ Pf k (.plays (DupocBot k) (CupodBot k) .D) := fun hp =>
+  no_provable_searcherElse_tail k (.plays .opp .self .C) .C .D (by decide)
+    (CupodBot k) k _ hp le_rfl (by simp [DupocBot])
+```
+
+Byte-identical statements to the transpose route's `not_Pf_dupoc_guard` /
+`not_Pf_cupod_guard`; no `Base/Transpose` import; the three standard axioms. It is the
+tau argument transplanted verbatim: Dupoc's guard asks for "Cupod plays C" and `C` is
+Cupod's ELSE-action, so `search_t` mismatches on shape alone (`by decide` on two
+`Action` constructors — the `Pf` premise is discarded unexamined) and `search_f`
+carries the literal summand `k`, unpayable at budget `≤ k`. Nothing about the guard's
+truth is ever needed; the anti-alignment of the pair (each guard names the partner's
+else-action) is the whole mechanism.
+
+**Why the asymmetry existed — chronology, not structure.** The base cell was closed on
+2026-08-20 by transposition; the BARE-searcher else-floor census
+`no_provable_searcherElse_tail` landed on 2026-08-25 (with Prudent×Cupod). Tau had its
+`.bot`/`.sys` editions earlier (08-12, 08-21) because it HAD to: transposition is
+structurally unavailable there — the `.sys` binder makes the pair ONE object, and τ̂
+maps `cdSys k` to `dcSys k`, the OTHER orientation's system (`cdSys_transpose`), so the
+"same program, two actions" collision that `eval_det` needs never forms. Neither
+choice reflects a difference in the mathematics. And there was never a Base-vs-Tau
+mismatch in the PROOF SYSTEM: `Pf` is one constructor list, `sound_upto` and the
+census kernel `no_provable_tailToS_floor` quantify over all of its arms. The mismatch
+was in the census LIBRARY — which subject shapes (bare / `.bot` / `.sys`) had an
+edition — and is closed by the same-day census unification (`Base/Exclusion.lean`
+header table).
+
+**The floor is not a cheat.** It is a two-line pen-and-paper argument — *a certificate
+that a k-character search failed must at least account for the k-character space, so
+it is longer than k; an else-play is never citable at the searcher's own budget* — the
+very mechanism of `outcome_DupocBot_vs_EBot` and the whole honest-outcomes family. It
+is Critch-faithful (the literal transcript reading), it is NOT optional (dropping it is
+machine-checked inconsistent, T32), and it is externally calibrated (Pudlák,
+2026-08-12 section). The reason it never appeared on paper for this cell is that
+Critch's paper never prices else-certificates at all; pricing them is the genuine
+novelty of the transcript-cost model, and "once you price them — and consistency
+forces you to — the red cell closes" is a FINDING about the model, not a trick inside
+it.
+
+**The two proofs have different epistemic scope — and that is the justification.**
+
+| | floor route | transpose route |
+|---|---|---|
+| what it consumes | the literal constructor list (the census) + `S`'s cost stipulation for `search_f` | soundness + τ-closure + `eval` determinism |
+| a theorem about | `S` | any sound, deterministic formalization closed under C↔D renaming |
+| after a rule extension | must re-run the census (the canary) | unchanged if the extension is τ-symmetric |
+| transfers to Critch's PA agents | no — nobody knows the shortest PA proof of "this bounded search fails"; there the floor is a modeling commitment | yes — renaming C↔D is a symbol-for-symbol, length-preserving substitution on PA proofs; PA is sound; evaluation is deterministic |
+| available in tau | yes (the workhorse) | no (structural, above) |
+
+So the transposition is the result about the open problem AS CRITCH POSED IT: it never
+looks inside the proof system, only at three interface properties every reasonable
+formalization has. The floor is its `S`-internal shadow. Not redundant — strictly more
+general. Two honest caveats to carry into the paper: (i) the transfer to PA is prose,
+not machine-checked — `S` is what is mechanized; (ii) inside `S`, the transpose proof
+invokes `Pf_sound`, whose PROOF needs the floor (the `search_f` arm of the budget
+induction), so within the mechanization both routes rest on the floor — the difference
+is that transpose uses soundness as an INTERFACE property while the floor uses the cost
+stipulation DIRECTLY. This is exactly the "interface formalization" flagged in the
+08-20 table below: the transpose proof would go through verbatim against the abstract
+S-interface; the floor proof would not.
+
+**Agreement is corroboration, not embarrassment.** The model-specific route predicts
+exactly what the model-independent route proves — the strongest faithfulness check `S`
+has produced on a single cell, by the same logic as the `dupoc_loeb_premise` ↔
+`cupod_loeb_premise` differential test in `Theorems/DupocBot/vs_CupodBot.lean`. The
+two are complementary in practice as well: where transposition is unavailable (tau)
+the floor is the workhorse; where the census is fragile (rule extensions) transposition
+is robust.
+
+**How to present it.** Transposition is THE theorem, stated with its generality. The
+floor is "moreover, `S` derives the same cell internally by cost accounting (Prop.),
+the mechanism the tau layer uses throughout." One result, two proofs, one sentence on
+why their reach differs.
+
+---
+
+## Why `S` is a RULE SET, not an arithmetized theory (2026-08-20)
+
+*Provenance: the question was posed sharply by the transposition spike
+(`Research/Spikes/transpose/`, the red-cell proof), whose central theorem — "τ = (C D)
+is a length-preserving automorphism of S" — is exactly the kind of statement whose
+difficulty depends entirely on HOW S is presented.*
+
+**The decision.** `S` is presented as a constructor-closed, budget-indexed inductive
+rule set (`Pf`, ProofSystem.lean) — NOT as an arithmetized theory (PA + Gödel encoding
++ Hilbert calculus + representability formula `Γ_Eval`, the literal Def 1.5 of the
+paper notes). "Provable" (`⊢_k φ`) is stipulated by 30 rules with explicit transcript costs,
+rather than emerging from an axiom set and a proof-string predicate.
+
+**What justifies it — five points, in decreasing order of force:**
+
+1. **It matches the abstraction level of the source material.** Critch 2019/2022 does
+   not fix an arithmetization either: the results are proved against theories
+   satisfying bounded derivability conditions — an interface. The paper-notes' own
+   Def of `S` leaves "(S4) other technical assumptions" open in red for the same
+   reason. The engine mechanizes OSGT at the level OSGT is actually stated at;
+   arithmetizing would be *adding* a commitment the theory doesn't make.
+2. **The blocking prerequisite for the alternative exists nowhere.** A real
+   arithmetized `S` with `□_k` needs QUANTITATIVE proof theory — every substitution
+   lemma, derivability condition, and the diagonal lemma with explicit length bounds
+   threaded through, then bounded Löb (PBLT) on top. No formalization of this exists
+   in any prover. The closest bases: Foundation/FormalizedFormalLogic (Lean 4) has the
+   qualitative stack (FOL with derivations-as-data, IΣ₁ arithmetization, HBL
+   conditions, Gödel I & II, Löb) but nothing costed; mathlib's `ModelTheory` is
+   semantics-first (satisfaction, compactness — no usable proof calculus whose
+   derivations one could even measure) and is the wrong library outright. Estimate:
+   person-years of infrastructure before the FIRST outcome theorem — displacing the
+   actual research (the eval↔proof back-edge, decidability, the LLM pipeline,
+   tau/EGT), none of which needs the encoding.
+3. **Finite presentations make the meta-theorems finite.** Every global property of
+   `S` becomes a per-rule closure check instead of an induction over an open-ended
+   axiom schema: soundness (`sound_upto`'s arms), the exclusion censuses, decidability
+   (the gate enters at eight sites), and now the τ-automorphism — the paper's Def-1.9
+   HYPOTHESIS ("every nonlogical axiom maps to a theorem") became a 47-arm induction
+   that compiled in a day, its "equal encoding length" hypothesis became the EXACT
+   `size_transpose`, and its τ-equivariant-encoding hypothesis became the provable
+   `subst_transpose` (quotation is structural, so the encoding subtlety — Gödel codes
+   are numerals, numerals contain no `C`/`D`, so code-level equivariance needs a
+   nonstandard token encoding and a re-audit of every representability axiom —
+   dissolves). Bonus robustness: the compiler ENFORCES maintenance — a new `Pf`
+   constructor breaks every closure until its arm is written, which is the right
+   failure mode.
+4. **The boundary is relocated, not enlarged.** Every formalization has a
+   spec-fidelity boundary; arithmetizing does not eliminate it, it moves it into
+   murkier territory (WHICH encoding? do de Bruijn indices vs. proof STRINGS give the
+   same character counts? are the Appendix-B constants right for THIS calculus? —
+   length-of-proof results are notoriously encoding-sensitive, cf. the Pudlák caveat
+   in the 2026-08-12 section). The rule presentation concentrates the entire boundary
+   into ONE finite, human-auditable claim: *each of the 30 rules is a genuine
+   capability of a PA-like S, at a faithful transcript cost* — documented per-rule in
+   the constructor docstrings, calibrated against Pudlák where the pricing is deep
+   (the floor), and with a track record that the discipline has teeth: the one rule
+   that could not be faithful (`atom_complete_false_guard`) was machine-checked
+   INCONSISTENT and killed.
+5. **The residual risk is asymmetric and known.** Positive outcomes exhibit proof
+   objects — robust (a richer real `S` only makes them truer). Negative results
+   (`¬Pf`) implicitly claim rule-completeness — that is where faithfulness genuinely
+   bites, and why the floor/census work carries the Pudlák analysis. Notably, the
+   transposition-style negative (the red cell) is the ROBUST kind: it needs only
+   soundness + τ-closure of *whatever the rule set is*, surviving any τ-symmetric
+   extension unchanged, whereas censuses quantify over the literal constructor list.
+
+**Rejected / deferred alternatives:**
+
+| Alternative | Fate |
+|---|---|
+| Full arithmetization on mathlib `ModelTheory` | Wrong niche — no syntactic calculus with derivations as data; items (1)–(3) of the needed stack would be built from bare ground. Do not retry. |
+| Full arithmetization on Foundation | The right base IF ever attempted (derivations are measurable data; qualitative Gödel/Löb stack done), but the quantitative layer is virgin territory and the token-encoding equivariance becomes a real design obligation. Multi-person-year program; future work, not thesis scope. |
+| Interface formalization (middle path) | **LANDED 2026-08-27 for the modal core** — `Base/BoundedGL.lean` (`structure BoundedGL`, `Pf` a model by `rfl`, bounded Löb + PBLT generic); see the 2026-08-27 entry above. Soundness, the τ-involution and the transparency family remain per-rule prose; the arithmetized instance is the stated obligation. |
+
+**One-line summary.** The rule set is not a stand-in for the "real" `S` we failed to
+build; it is the Critch-faithful abstraction level, chosen so that the trust surface
+is a finite list of audited rules — and three months of axiom-elimination, soundness,
+decidability, and now automorphism results are precisely the campaign of shrinking
+that surface to its current state: three standard Lean axioms plus per-rule
+faithfulness prose.
+
+---
+
+## The floor is priced finite consistency — Löb, G2, and Pudlák on `search_f` (2026-08-12)
+
+*Companion to the 2026-07-02 floor section below, which records the engine-internal
+forcings (anti-diagonal, soundness induction, decidability). This entry records the
+LOGICAL analysis that resolves the "floor-coarseness question" raised by the Def-4
+comparison (now condensed into TAUBOTS.md): is charging `k` for an
+else-certificate too crude when the refuted guard is about a mere constant?*
+
+**Provenance.** The Def-4 floor cell `outcome_DupocBot_vs_EBot = (D, C)` (called
+"Def-3/Def-4 separating" before the 2026-08-13 retraction; under the corrected
+source-lift reading both definitions read this bit identically, so it does NOT
+separate them — the floor analysis below stands unchanged)
+rests on Dupoc being unable to certify EBot's (true!) cooperation at ANY budget. The
+natural objection, in two escalating forms: (i) *"Dupoc's failed sub-search is about
+DefectBot, a constant — surely `¬(DefectBot plays C)` is cheaply provable, so why pay
+the floor?"* and (ii) *"we are not asking S to reason about its own soundness; we hold
+an actual proof of `¬φ`, doesn't that suffice?"* Both are answered below; the answers
+are Löb's theorem and Gödel II respectively, and the bounded price tag is Pudlák's.
+
+### The two statements, and where each sits in the rule
+
+The guard of `.search k φ p q` branches on `proofSearch k φ`, i.e. (else branch) on
+
+```
+¬ ⊢_k φ   —   "S has NO derivation of φ of length ≤ k"      (a META fact; S's own sentence for it is ¬□ₖφ)
+```
+
+NOT on `¬ ⊨ φ`. The objection's cheap refutation — DefectBot plays D, `D ≠ C`, hence
+`⊢_m ¬φ` via `atomNeg` — is real, and the rule ALREADY admits it: it is the
+`Pf m (.neg φ)` premise, the `m` summand. The `+ k` is the price of the remaining
+bridge, which would have to be an OBJECT schema
+
+```
+⊢ □(¬φ) → ¬□ₖφ        "we proved ¬φ, therefore no proof of φ exists"
+```
+
+which is semantically trivial (at the `⊨` level soundness + consistency give it in one
+line) and syntactically Gödel-hard (as an `S`-derivation). Two candidate shortcuts,
+both locked:
+
+### Route 1 — reflection, blocked by Löb
+
+"If S proved φ it would be true; φ is false; hence unprovable" is soundness
+(`⊢_k φ ⟹ ⊨ φ`, a Lean theorem ABOUT S) used *inside* S, as the object schema `□φ → φ`.
+Löb: `S ⊢ □φ → φ` **iff** `S ⊢ φ`. Our φ is false (`¬ ⊨ φ`), hence — by soundness, at
+the meta level — `¬ ⊢ φ`, hence the reflection instance is underivable — not expensive,
+*unavailable*.
+
+### Route 2 — consistency, blocked by G2 (the seven-line derivation)
+
+The objection's form (ii) is the schema `□¬φ → ¬□φ` ("S doesn't prove both").
+Suppose S had it (levels per `PROVABILITY_NOTATION.md`: (H)–(6) are OBJECT claims, each
+an `S`-derivation; only (7) is a META step, made about S from outside):
+
+```
+(H)  S ⊢ □¬φ → ¬□φ                    the proposed principle, internalized      [object]
+(1)  S ⊢ ¬φ                            the cheap refutation (atomNeg)            [object]
+(2)  S ⊢ □¬φ                           D1 on (1): S checks its own receipt       [object]
+(3)  S ⊢ ¬□φ                           MP of (H),(2) — certified UNPROVABILITY   [object: the SENTENCE ¬□φ,
+                                                                                  not the meta fact ¬ ⊢ φ]
+(4)  S ⊢ □⊥ → □φ                       ⊥→φ tautology; D1+D2 (flooding: a proof   [object]
+                                        of ⊥ extends to a proof of anything)
+(5)  S ⊢ ¬□φ → ¬□⊥                     contrapose (4)                            [object]
+(6)  S ⊢ ¬□⊥  =  Con(S)                from (3),(5)                               [object]
+(7)  S inconsistent                     Gödel II                                  [META: we/Lean, about S]
+```
+
+Steps 1, 2, 4, 5 are receipts and gluing; ALL the force is in (3). The slogan that
+explains (5)–(6): **in an inconsistent system nothing is unprovable, so any certified
+unprovability is a certified consistency.** Routes 1 and 2 are the same locked door —
+G2 is Löb at `φ := ⊥`.
+
+### The bounded version: finite consistency, permitted but priced
+
+With budgets, everything survives with a ledger. Bounded flooding: a `j`-proof of ⊥
+extends to a `(j + |φ| + c)`-proof of φ, so with `j := k − |φ| − c`:
+
+```
+S ⊢ □_{k−|φ|−c}⊥ → □ₖφ,   contraposed:   S ⊢ ¬□ₖφ → ¬□_{k−|φ|−c}⊥      (both object schemas)
+```
+
+Hence the bounded principle `□ₘ¬φ → ¬□ₖφ` is (up to small shifts) the **finite
+consistency statement** `Con_{≤ ≈k}(S) = ¬□_{≤ ≈k}⊥`. The crucial asymmetry with the
+unbounded case: **G2 does NOT forbid finite consistency** — `Con_{≤n}` is a true Δ₀
+sentence for each fixed n (`⊨ Con_{≤n}`: finitely many candidate proofs), so S derives
+it at SOME budget (`⊢ Con_{≤n}`). *This is why `search_f` can exist as a sound rule at all.* What replaces impossibility is a
+price:
+
+* **Theorem (finitized G2 — Pudlák 1986/87, cf. Friedman; survey: Pudlák, "The
+  Lengths of Proofs", Handbook of Proof Theory 1998):** every S-proof of `Con_{≤n}(S)`
+  has ≥ `n^ε` symbols, some ε > 0; and `poly(n)`-length proofs exist. Both bounds are
+  theorems.
+* **The ledger.** If P is the size of a derivation of the bounded principle at budget
+  k, running (1)–(6) with sizes gives `P + m + |φ| + O(1) ≥ (k − |φ| − c)^ε`. In the
+  engine's cases `m, |φ| = O(log k)` (a numeral plus constants), so for all large k:
+  `P ≥ k^ε / 2^{ε+1} = Ω(k^ε)`. Any rule handing out such certificates at
+  `n + m + c_node = O(log k)` is mispriced by an exponential factor — and the T32
+  anti-diagonal is the machine-checked cash-out of exactly that mispricing in the
+  self-referential case.
+* **Epistemic status, carefully.** The `n^ε` lower bound is a THEOREM, not a
+  conjecture. What is open/conjectural: the tightness of the exponent (whether the true
+  cost is near-linear — Pudlák conjectures the upper end) and the broader feasible-
+  incompleteness program (P vs NP linkage). The engine's floor at exactly `k` sits
+  inside the proven band `[k^ε, poly(k)]`; its precise position is calibrated by the
+  machine-checked internal forcings (section below), which are independent of Pudlák.
+  Caveat: length-of-proof results are encoding-sensitive (symbols vs lines, schemata),
+  and the engine's S is a bespoke transcript calculus — Pudlák applies through the
+  Appendix-B "transcripts behave like PA proofs" analogy, as corroboration.
+
+### Case study: `DupocBot × EBot = (D, C)` — where in the chain the toll is paid
+
+The certificate of EBot's cooperation must replay EBot's FIRST probe
+(`.sim .opp (.bot DefectBot)`), i.e. certify **Dupoc's own else-play** against
+`.bot DefectBot` — a `search_f` step at Dupoc's OWN node: cost `n + m + k + c_node`
+with `n, m` small and `k` = Dupoc's budget. So Dupoc's guard, capacity exactly `k`,
+must contain a finite-consistency instance billed at `≥ k` — from inside. Raising k
+raises both sides in lockstep; hence `¬ ⊢_k` — no `S`-derivation of EBot's cooperation
+exists — at EVERY budget (`no_provable_EBot_C_tail`), not a small-budget artifact. The
+cooperation itself is TRUE (`⊨`); "unprovable" here never means "false".
+
+Two readings worth recording:
+
+* **The counterfactual is coherent.** `(C, C)` is semantically consistent: the
+  dependency graph Dupoc→(EBot's probes)→(Dupoc vs DefectBot/CooperateBot) is
+  well-founded, no fixpoint needed; under a discounted rule the whole transcript is
+  `O(log k)` and same-k `(C, C)` follows. So `(C, C)` is the behavior of a DIFFERENT
+  logic — one whose agents get bounded-unprovability-of-others for free. That is: a
+  simulator. Granting the discount collapses the prover into the behaviorist.
+* **The cell IS the prover/behaviorist gap, priced at one rule.** `¬φ` is cheap;
+  `¬□ₖφ` is Gödel-priced; the floor is the exchange rate. EBot pays fuel (running is
+  not proving); Dupoc pays consistency. Bounded provers pay a Löbian tax on negative
+  information about each other — and that tax is exactly what the Def-4 transparency
+  experiments measure as the prover/behavioral split.
+
+#### ⚠️ Summary in one breath: If we want to model the right formal System S, we need to make sure Podlak holds.
+* Your chain is a correct truth argument, and it's cheap — at the meta-level, where cheapness doesn't count.
+* Written in S, one link of the chain — "the budget-k search failed" — is forced to contain Con_{≤k} (four lines, any φ).
+* Under your hypothesis (suppose podlak bound is k and not k^eps), that link costs ~k in S. The discounted engine charging O(log k) for it is therefore not describing S — so no short S-proof exists, so Pudlák stands, and the discount is exposed as unfaithful.
+* Under sub-linear reality instead, that link might genuinely cost only k^ε in S, a k^ε floor would be honest, your chain would fit inside budget k, and (C,C) would be the faithful outcome. Nobody knows which world we're in — that's the open tightness question, and this one matrix cell encodes it.
+
+### The examined alternative: a "search-free-subject discount" — REJECTED
+
+Proposal: charge the honest `n + m + c_node` when the refuted guard's (post-subst)
+plays-subject is `hasSearch = false` (a frozen constant — truth fixed by evaluation,
+no certificate feedback). Verdict against the three independent forcings:
+
+| forcing | verdict |
+|---|---|
+| Consistency | *Plausibly survives*: T32's guard subject contains `.search`; a false guard about a search-free constant cannot be flipped by lifting its own else-certificate. |
+| Provable soundness | **Breaks.** `wv_sound_upto`'s `search_f` arm derives `¬Pf k φ` from `¬φ.interp` via the strong IH *at k*, available only because the floor puts k strictly below the certificate's cost. Discounted, k may exceed the induction budget; and the search-free fragment's own completeness does not substitute (deriving `¬Pf k φ` needs soundness of FULL `Pf` at k — the very statement under induction). A repair would be a new global induction strategy, not a side condition. |
+| Faithfulness | **Fails.** Löb and G2 block the semantic shortcuts even for guards about constants; the certificate vouches for proof-space silence, and the honest price of that is Pudlák-polynomial, not logarithmic. |
+
+So the floor stands for all guard shapes. The general lesson, sharpened: the floor was
+never "we couldn't find a short proof of a provable fact" — it is the intrinsic,
+theorem-priced cost of finite consistency, and `search_f` is that statement wearing a
+cost annotation. (This subsumes and grounds the older "Σ₁/Π₁ asymmetry" paragraph
+below: the bounded Π₁ is in fact Δ₀ and provable — the wall is its PRICE.)
+
+### The calibration contingency: the cell encodes Pudlák's conjecture
+
+One further honesty layer (raised immediately after the above was written). The
+theorem forbids charging below `k^ε`; nothing EXTERNAL forces charging `k`. A
+hypothetical floor `f(k)` with `k^ε ≤ f(k) < k` would let the EBot-cooperation
+certificate (`f(k) + O(log k)`) fit inside Dupoc's own budget, flipping the cell to
+`(C, C)` — and re-pricing the whole negative-information economy (all seven floor
+tombstones, single-tier prudence, the freeze-trick constants). What pins the engine
+at `> k` is INTERNAL and has a precise modality: the no-premise variant is
+machine-checked inconsistent (T32, absolute); the refutation-premised sub-k variant
+is NOT known inconsistent — its recorded fate is that it breaks the PROVABILITY of
+soundness (the budget-strong induction needs the refuted guard's budget strictly
+below the certificate's cost), and no alternative soundness strategy is known.
+
+Hence the precise status of `outcome_DupocBot_vs_EBot = (D, C)` as a claim about
+faithful bounded provers: **it is equivalent (at the engine level) to the open
+tightness question for finite consistency statements.** If `Con_{≤n}` admits
+`o(n)`-length proofs, a faithful engine could price the floor sub-linearly and the
+honest same-k cell is `(C, C)`; if near-linear lower bounds hold (Pudlák's
+conjecture — the mainstream expectation), the current `(D, C)` is faithful. The
+engine bets with Pudlák. Within this project's rules of the game — soundness must
+be a machine-checked theorem, and the only known proof needs the floor — the bet is
+also the only implementable option; any recalibration owes (1) a new global
+soundness proof, (2) a re-audit of every floor tombstone, (3) an arithmetic
+faithfulness argument against or around the conjecture.
+
+---
+
 ## The `search_f` floor: else-certificates cost `n + m + k + c_node` (2026-07-02)
 
 **The decision.** A `PlaysProof` for a search bot's *else*-play (the branch taken when
 the guard search fails) is only constructible by `PlaysProof.search_f`, whose premises
-are (i) a Σ₁ **refutation** of the guard instance, `Provable m (.neg (φ.subst me opp))`,
-and (ii) a certificate for the else branch (`n`); and whose **cost is
+are (i) a Σ₁ **refutation** of the guard instance, `Provable m (.neg (φ.subst me opp))`
+(`⊢_m ¬φ'` — an `S`-refutation, not the meta fact `¬ ⊢_k φ'`), and (ii) a certificate for the else branch (`n`); and whose **cost is
 `n + m + k + c_node`** — the bare `k` summand is the *full failed search budget*,
 charged unconditionally. We call that summand **the floor**.
 
@@ -115,12 +581,12 @@ A := .search k (.plays .self .self D) (then: .const C) (else: .const D)
 
 — "if I can prove I defect against myself, cooperate; else defect."
 
-1. The guard cannot be provable: if `Provable k (A plays D vs A)`, soundness makes it
-   true, but a provable guard makes `A` play **C** — contradicting the very play the
+1. The guard cannot be derivable: if `⊢_k (A plays D vs A)`, soundness makes it
+   true (`⊨`), but a fired guard makes `A` play **C** — contradicting the very play the
    guard asserts.
 2. So the search fails and `A` really plays D — the else branch.
-3. A cheap else-certificate would now place "`A` plays D vs `A`" inside `Provable k`.
-   But that atom **is the guard**. The guard just became provable at k, so `A` plays C
+3. A cheap else-certificate would now place "`A` plays D vs `A`" inside `⊢_k`.
+   But that atom **is the guard**. The guard just became derivable at k, so `A` plays C
    — and eval determinism yields machine-checked `False`.
 
 So *any* consistent accounting must charge **> k** for an else-certificate: the
@@ -134,7 +600,8 @@ node). There is no slack.
 - **Consistency** — the anti-diagonal argument above.
 - **Provable soundness** — `sound_upto` (Base/Soundness.lean) is a strong induction on
   the budget; the `search_f` case needs the inductive hypothesis *at budget k* to turn
-  the refutation into genuine search failure (`¬Provable k (guard)`), which requires
+  the refutation into genuine search failure (`¬Provable k (guard)` — the META fact
+  `¬ ⊢_k`, obtained from the object refutation `⊢_m ¬guard`), which requires
   `k <` the conclusion's cost. The floor is exactly what makes the induction go through.
 - **Decidability** — transcript-cumulative costs with the floor make every premise
   budget strictly smaller than the conclusion's, which is what makes bounded proof
@@ -143,7 +610,7 @@ node). There is no slack.
 **The Σ₁/Π₁ asymmetry (why `search_t` is cheap and `search_f` is not).** A *successful*
 search has a witness — the found proof — and citing a witness costs `c_guard k =
 numCost k = log₂ k + 1` (the numeral). A *failed* search has no witness: "no proof of
-length ≤ k exists" is Π₁ over the search space. A short certificate of one's own failed
+length ≤ k exists" (`¬ ⊢_k g`) is Π₁ over the search space. A short certificate of one's own failed
 k-search would be a bounded proof of one's own consistency-at-k — the floor is bounded
 Gödel II wearing a cost annotation.
 
@@ -161,6 +628,7 @@ literal-verification price. "Too strong" is backwards.
 | `¬Provable k g` as a premise (unprovability-premised `search_f`) | Non-monotone fixpoint — not even a proof system; the anti-diagonal is its paradox; kills r.e.-ness, hence `decFull`, hence decidability |
 | Refutation premise, no floor (`n + m + c_node`) | Breaks `sound_upto`'s strong induction (needs IH at budget k below the conclusion cost) |
 | Oracle receipts ("point at `decFull`'s run") | Reflection smuggled back in: a short Π₁ certificate about S itself — same Gödel II wall |
+| Search-free-subject discount (`n + m + c_node` when the refuted guard's subject has `hasSearch = false`) | Plausibly consistent, but breaks `sound_upto`'s induction architecture and is unfaithful (Löb/G2/Pudlák) — full analysis in the 2026-08-12 section above |
 
 **How to route around it (bot level, not rule level):**
 
@@ -180,8 +648,9 @@ where the partner's play crosses the searching bot's **own** failed search at th
 searcher's own budget (DupocBot×DBot, DupocBot×EBot, PrudentBot×EBot). The floor chases
 the budget (the failed search and the asking guard are the same `.search k` of the same
 bot, glued by `.self` substitution), so no stagger fixes them. Their honest outcomes
-are defection on the searcher's side; formalizing those needs a `¬Provable k` cost
-lower bound — nontrivial because the guard formula is TRUE (soundness gives nothing).
+are defection on the searcher's side; formalizing those needs a `¬Provable k` (`¬ ⊢_k`) cost
+lower bound — nontrivial because the guard formula is TRUE (`⊨`, so soundness gives
+nothing: the census must show no derivation exists, not that the formula fails).
 
 **The lower bound, delivered for ALL SIX floor pairs (2026-07-09).** `Base/Exclusion.lean`
 proves the reusable **Derivation census** (`tail_plays_readable`: only the five
@@ -191,8 +660,8 @@ and the **generalized floor bound** `no_provable_probeFirst_tail` (+ the
 `.ite (.sim .opp (.bot z)) aT p q` — test action and BOTH branches fully general, since
 the kill happens at the guard certificate that both `ite` polarities must carry —
 against any budget-`k` searcher (`.search k g pT pE`, bare or `.bot`-wrapped) whose
-guard instance vs the probe is false, no ≤ k certificate concludes the simulator's
-play. Strong induction on the budget: `struct` dies by the census, `atom` dies inside
+guard instance vs the probe is false (`¬ ⊨`), no ≤ k certificate concludes the simulator's
+play (`¬ ⊢_k`). Strong induction on the budget: `struct` dies by the census, `atom` dies inside
 the `PlaysProof` replay (`search_t` by soundness of the false probe guard, `search_f`
 by the literal floor summand), and the `app`/`weakenImpl`/`implTrans`/`diagF`/`impS2`
 regress descends by transcript cumulativity. Every floor tombstone falls as an
@@ -205,8 +674,8 @@ instance (the floor fires at the FIRST probe, before the simulators' branches di
   PrudentBot↔`.bot MirrorBot` Löb cooperation, so EBot's C-play itself rides
   `prudent_botmirror_coop` — a negative-outcome theorem whose positive half is PBLT);
 * `outcome_CupodBot_vs_OBot = (C, D)` for every `k ≥ 2` (`Theorems/CupodBot.lean`; the
-  defection-DETECTOR gets exploited — OBot's real defection is uncertifiable within
-  Cupod's own budget, so Cupod cooperates into the sucker payoff; target action D and
+  defection-DETECTOR gets exploited — OBot's real defection (`⊨`) is uncertifiable within
+  Cupod's own budget (`¬ ⊢_k`), so Cupod cooperates into the sucker payoff; target action D and
   a then-branch `ite`, exercising the lemma's full generality);
 * `outcome_JustBot_vs_DBot = (D, C)` at every budget and
   `outcome_JustBot_vs_EBot = (D, C)` for `k ≥ 2`
@@ -245,7 +714,7 @@ rules.** At same-`k` the bot REALLY defects against itself; the outcome theorem 
 what the evaluator does. Any rule change that let `S` conclude "I play C vs me" while
 `eval` plays D would certify a false play — exactly the unsoundness that killed
 `atom_complete_false_guard`. Rule design is only ever to blame when a TRUE play is
-uncertifiable; here the cooperation is genuinely absent at runtime.
+uncertifiable (`⊨` but `¬ ⊢_k`); here the cooperation is genuinely absent at runtime (`¬ ⊨`).
 
 **Where the classical Löb route dies.** Bounded Löb (`pblt_engine`) consumes
 `□_k("I play C vs me") → ("I play C vs me")` as its HYPOTHESIS. For a plain search bot
@@ -261,9 +730,9 @@ prudence cert (≤ k) → searchThenSearch_t → □φ→φ → pblt_engine → 
       ✗ floor            never assembled     no hyp    never runs     false
 ```
 
-Löb is never handed its hypothesis; cooperation is then FALSE (the bot plays D), so
-soundness settles the outer guard. (The Lean proof case-splits on the outer guard
-instead of running this analysis — proving the guard false directly would circularly
+Löb is never handed its hypothesis; cooperation is then FALSE (`¬ ⊨`: the bot plays D), so
+soundness settles the outer guard (`¬ ⊢_k`). (The Lean proof case-splits on the outer guard
+instead of running this analysis — establishing `¬ ⊢_k` directly would circularly
 need the play first; the true-branch is vacuous-but-handled via the floored prudence.)
 
 **Syntax shuffles don't help — the floor follows the single budget:**
@@ -276,7 +745,7 @@ need the play first; the true-branch is vacuous-but-handled via the floored prud
 
 The invariant: self-prudence is a fact about MY OWN play against DefectBot, and any
 single-budget bot's play against DefectBot crosses a failed `k`-search somewhere (a
-sound system can never prove "DefectBot cooperates", so whichever search asks, fails).
+sound system can never derive "DefectBot cooperates", so whichever search asks, fails).
 The certificate carries that search's floor — always `k`, because there is one dial.
 
 **`searchThenSearch_t` is already at its generosity limit.** Its inner premise is
@@ -284,7 +753,7 @@ CITED, not charged: the size condition pays only `c_guard k₂ = log₂ k₂ + 1
 non-cumulatively (charging it fully sinks the staggered Löb chains — see the dead-ends
 list). The one unremovable condition is `m ≤ k₂`, and it is not an accounting choice
 but the bot's own source: `eval` produces the then-play only if the inner guard is
-provable AT `k₂`. Drop the bound and the rule asserts plays the evaluator doesn't make.
+derivable AT `k₂` (`⊢_{k₂}`). Drop the bound and the rule asserts plays the evaluator doesn't make.
 
 **The deep reason (bounded Gödel II, and the MIRI parallel).** Bounded self-prudence
 IS bounded self-consistency: "I defect vs DefectBot" holds because my own search

@@ -1,6 +1,5 @@
 import PrisonersDilemma.Program
 import PrisonersDilemma.Bots.CupodBot
-import PrisonersDilemma.Bots.DupocBot
 
 open PD
 namespace PD.Bots

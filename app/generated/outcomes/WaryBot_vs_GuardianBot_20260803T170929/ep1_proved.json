@@ -1,0 +1,21 @@
+{
+  "timestamp": "20260803T170929",
+  "bot_a": "WaryBot",
+  "bot_b": "GuardianBot",
+  "model": "claude-opus-4-8",
+  "episode_index": 0,
+  "end_reason": "verdict",
+  "verdict_kind": "proved",
+  "turns_used": 4,
+  "tool_calls_used": 5,
+  "usage": {
+    "input_tokens": 8,
+    "output_tokens": 4402,
+    "cache_read_tokens": 445786,
+    "cache_creation_tokens": 35156
+  },
+  "elapsed_seconds": 84.37069491700095,
+  "notebook": null,
+  "hidden_bots": [],
+  "final_text": "Compiles cleanly with no errors or warnings. The outcome is (C, C)."
+}

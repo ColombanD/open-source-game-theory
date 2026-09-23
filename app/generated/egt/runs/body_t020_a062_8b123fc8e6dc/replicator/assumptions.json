@@ -1,0 +1,37 @@
+{
+  "stage": "replicator_dynamics",
+  "replicator_pipeline_version": "0.1.0",
+  "numeric_matrix_source": "/Users/colomband/Library/CloudStorage/OneDrive-Personal/Documents/Studies/ETH/Master Thesis/workspace/open-source-game-theory/app/generated/egt/runs/body_t020_a062_8b123fc8e6dc/ess/payoff_matrix_numeric.csv",
+  "equation": "xdot_i = x_i * ((A x)_i - x^T A x)",
+  "integrator": {
+    "method": "fixed-step RK4, projected onto the simplex each step",
+    "dt": 0.1,
+    "max_steps": 50000,
+    "convergence": "max|xdot| < 1e-7"
+  },
+  "sampling": {
+    "interior": "symmetric Dirichlet(1) \u2014 uniform ON the simplex, not normalised uniform draws (which concentrate at the centre)",
+    "n_samples": 200,
+    "seed": 20260514,
+    "vertices": "all N monocultures, counted separately from the basin fractions (a measure-zero set)"
+  },
+  "unconverged_policy": "a trajectory that does not reach the tolerance is NEVER assigned to an attractor; it is counted in n_unconverged. Cyclic games (e.g. rock-paper-scissors) legitimately produce mostly unconverged runs, which is a finding, not a failure.",
+  "basin_denominator": "converged INTERIOR samples only",
+  "pd_payoffs": {
+    "parametrisation": "(b, c) with b > c > 0",
+    "b": 3.0,
+    "c": 1.0,
+    "implied_trps": {
+      "T": 3.0,
+      "R": 2.0,
+      "P": 0.0,
+      "S": -1.0
+    },
+    "convention": "row payoff: (D,C)=b, (C,C)=b-c, (D,D)=0, (C,D)=-c"
+  },
+  "tau": {
+    "t": 0.2,
+    "alpha": 0.62
+  },
+  "zoo": "body"
+}

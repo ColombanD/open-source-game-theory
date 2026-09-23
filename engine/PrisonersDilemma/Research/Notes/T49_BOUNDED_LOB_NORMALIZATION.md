@@ -8,7 +8,8 @@ a bounded provability logic — paper material.*
 
 ## 1. The object
 
-The calculus is `Provable` (Derivation.lean): a bounded provability logic with
+The calculus is `Provable` (Derivation.lean; since 2026-07-14 the unified `Pf` of
+ProofSystem.lean — `⊢_k φ` in `PROVABILITY_NOTATION.md`): a bounded provability logic with
 transcript-cumulative budgets, whose modal fragment is GL-like — `boxIntro` (bounded
 necessitation), `axK`/`axKf` (K-distribution), `box4`, `boxMono`, and the Löb fixpoint
 pair `diagF`/`diagB` for the sentence `.diag g tgt` — plus a Hilbert implication layer
@@ -74,7 +75,8 @@ the formula recurs. Boundedness is what restores normalization to a GL-like logi
 7. **Syntactic fragments** (stack-monotone trees, depth ≤ 1): violated by
    `app(axKf-leaf, Löb-argument)` — the most common real pattern.
 8. **Prop-level bypass** (master induction on `Provable` with `∃ tame tree` motive,
-   using `Provable m (□cψ) → Provable c ψ` by soundness — a one-liner worth knowing):
+   using `Provable m (□cψ) → Provable c ψ` by soundness — `⊢_m □_c ψ ⟹ ⊨ □_c ψ ≡ ⊢_c ψ`,
+   a one-liner worth knowing):
    the wild-cut `app` case still requires crossing two tame trees, which is the same
    machine with the same contraction problem; and soundness-produced judgments are
    opaque to structural induction.

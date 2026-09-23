@@ -1,0 +1,79 @@
+# Curated statuses for matchups WITHOUT an accepted outcome theorem.
+#
+# The Lean library only records proofs; "we know this is open" and "we tried
+# and failed" are negative knowledge that lives here. Pairs are UNORDERED
+# (["A", "B"] also covers B vs A). `reason` is for humans; the matrix renderer
+# ignores it. A pair listed here that later gains a proven theorem is
+# overridden by the proof (with a warning to drop the stale entry).
+#
+#   [[open]]   -> cell reads "Open Problem"
+#   [[tried]]  -> cell reads "Tried"
+#   [[rework]] -> cell reads "Need rework" (a proof exists, but not in the
+#                 accepted large-k form — e.g. only `_floor` regime theorems)
+#
+# Anything not proven and not listed stays an empty cell (not yet attempted).
+#
+# A pair may appear in several sections; the strongest wins: open > rework >
+# tried. Failed pipeline proof attempts append [[tried]] entries automatically;
+# OUTCOME OPEN verdicts are recorded as [[open]] only after human confirmation
+# in the app UI.
+
+# ---- Genuinely open (semantic reasons) -------------------------------------
+# (CupodBot, DupocBot) — Critch's open problem, the "red cell" — was listed
+# here until 2026-08-20, when `outcome_DupocBot_vs_CupodBot = (D, C)` landed
+# (the τ-transposition route, Theorems/DupocBot/vs_CupodBot.lean).
+
+# (PrudentBot, CupodBot) was listed here until 2026-08-25, when
+# `outcome_PrudentBot_vs_CupodBot = (D, C)` landed at every same budget — two
+# else-play floors facing each other (Theorems/PrudentBot/vs_CupodBot.lean).
+
+# ---- Floor regime proven (see the _floor theorems), large-k OPEN -----------
+# These pairs have `_floor`/`_floor2` theorems in the library, which the strict
+# large-k acceptance rule excludes; the docstrings mark the large-k side OPEN.
+
+[[rework]]
+pair = ["WaryBot", "OBot"]
+reason = "Floor proven; large-k is OPEN (.neg-guard Löb fixpoint, no diag analogue for refutation guards)."
+
+[[rework]]
+pair = ["WaryBot", "CIMCIC"]
+reason = "Floor proven; large-k is OPEN (.neg-guard Löb fixpoint)."
+
+[[rework]]
+pair = ["WaryBot", "DIMCID"]
+reason = "Floor proven; large-k is OPEN (.neg-guard Löb fixpoint)."
+
+[[rework]]
+pair = ["WaryBot", "LegibleBot"]
+reason = "Floor proven; large-k is OPEN on BOTH sides."
+
+# ---- Tried but nothing provable yet ----------------------------------------
+# [[tried]]
+# pair = ["SomeBot", "OtherBot"]
+# reason = "Proof agent attempts on 2026-XX-XX failed; no floor/exclusion result either."
+
+# OptimBot/DefectBot entry dropped 2026-08-04: llm_outcome_OptimBot_vs_DefectBot
+# landed — (D,D) at the stagger kSelf = 65536·kOpp, via the searchElseChain
+# constructor (integrated from the Tier-2 proposal). The uniform-budget (C,D) side
+# remains unproven (modal-tier census wall) but the pair now has an accepted
+# large-k theorem.
+
+[[open]]
+pair = ["WaryBot", "OBot"]
+reason = "Confirmed via app UI (agent verdict: open_blocked)."
+
+[[open]]
+pair = ["WaryBot", "CupodBot"]
+reason = "Confirmed via app UI (agent verdict: open_blocked)."
+
+[[tried]]
+pair = ["OptimBot", "OBot"]
+reason = "Proof agent failed (no_output) on 2026-08-04; see app/generated/outcomes/."
+
+[[open]]
+pair = ["OptimBot", "MirrorBot"]
+reason = "Confirmed via app UI (agent verdict: open_blocked)."
+
+[[open]]
+pair = ["OptimBot", "EBot"]
+reason = "Confirmed via app UI (agent verdict: open_blocked)."

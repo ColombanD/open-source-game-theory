@@ -1,0 +1,105 @@
+{
+  "run": "body+twins_t000_a080_dabbd1a3162d",
+  "zoo": "body+twins",
+  "family": "behavioral",
+  "t": 0.0,
+  "alpha": 0.8,
+  "fingerprint": "dabbd1a3162d",
+  "n_types": 12,
+  "bots": [
+    "CIMCIC",
+    "CooperateBot",
+    "CupodBot",
+    "CupodTrollBot",
+    "DBot",
+    "DIMCID",
+    "DefectBot",
+    "DupocBot",
+    "EBot",
+    "OBot",
+    "PrudentBot",
+    "TitForTatBot"
+  ],
+  "excluded_bots": [],
+  "is_fully_proven": true,
+  "grid_points": [
+    [
+      0.0,
+      0.8
+    ]
+  ],
+  "n_grid_points": 1,
+  "ok": true,
+  "failed_stages": [],
+  "stages": {
+    "ess": {
+      "ok": true,
+      "seconds": 0.002,
+      "error": null,
+      "n_pure_ess": 0,
+      "n_types": 12
+    },
+    "invasion": {
+      "ok": true,
+      "seconds": 0.43,
+      "error": null,
+      "edges_strict": 20,
+      "edges_weak": 112,
+      "n_sccs": 12,
+      "n_cycles": 0,
+      "layout_backend": "manual_layered"
+    },
+    "faces": {
+      "ok": true,
+      "seconds": 0.211,
+      "error": null,
+      "n_supports": 4083,
+      "by_class": {
+        "singular": 4083
+      },
+      "enumeration_complete": true
+    },
+    "nash": {
+      "ok": true,
+      "seconds": 0.301,
+      "error": null,
+      "run_dir": "runs/20260901T124357Z_b32a29e4ef6e",
+      "n_extreme_NE": 100,
+      "n_components": 1,
+      "cross_check_performed": false
+    },
+    "replicator": {
+      "ok": true,
+      "seconds": 0.555,
+      "error": null,
+      "n_attractors": 23,
+      "n_unconverged": 0,
+      "all_converged": true,
+      "largest_basin": 0.915423,
+      "dominant_support": [
+        "EBot",
+        "DefectBot",
+        "CIMCIC",
+        "OBot",
+        "DIMCID",
+        "CupodBot",
+        "DBot",
+        "PrudentBot",
+        "TitForTatBot",
+        "DupocBot"
+      ]
+    },
+    "moran": {
+      "ok": true,
+      "seconds": 0.044,
+      "error": null,
+      "n_points": 9,
+      "all_converged": true,
+      "headline": {
+        "population": 100,
+        "beta": 1.0,
+        "stochastically_stable": []
+      }
+    }
+  }
+}

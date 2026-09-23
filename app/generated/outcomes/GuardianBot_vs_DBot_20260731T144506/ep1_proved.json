@@ -1,0 +1,21 @@
+{
+  "timestamp": "20260731T144506",
+  "bot_a": "GuardianBot",
+  "bot_b": "DBot",
+  "model": "claude-opus-4-8",
+  "episode_index": 0,
+  "end_reason": "verdict",
+  "verdict_kind": "proved",
+  "turns_used": 9,
+  "tool_calls_used": 10,
+  "usage": {
+    "input_tokens": 18,
+    "output_tokens": 9543,
+    "cache_read_tokens": 1099660,
+    "cache_creation_tokens": 49195
+  },
+  "elapsed_seconds": 140.16510079198633,
+  "notebook": null,
+  "hidden_bots": [],
+  "final_text": "The complete proof compiles cleanly. The outcome is (D, C): GuardianBot defects (it can prove DBot bullies CooperateBot for large k), DBot cooperates (it sees GuardianBot defect vs DefectBot)."
+}

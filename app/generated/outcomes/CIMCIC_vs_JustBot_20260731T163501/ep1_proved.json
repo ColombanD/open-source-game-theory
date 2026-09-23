@@ -1,0 +1,21 @@
+{
+  "timestamp": "20260731T163501",
+  "bot_a": "CIMCIC",
+  "bot_b": "JustBot",
+  "model": "claude-opus-4-8",
+  "episode_index": 0,
+  "end_reason": "verdict",
+  "verdict_kind": "proved",
+  "turns_used": 15,
+  "tool_calls_used": 16,
+  "usage": {
+    "input_tokens": 30,
+    "output_tokens": 27949,
+    "cache_read_tokens": 2070181,
+    "cache_creation_tokens": 73943
+  },
+  "elapsed_seconds": 338.7611302919977,
+  "notebook": "## CIMCIC vs JustBot — SOLVED (C,C). Full proof compiles.\n\nRoute: JustBot's guard vs CIMCIC = \"CIMCIC plays C vs .bot(DupocBot k)\" (frozen snapshot).\n1. cj_CIMCIC_C_vs_botDupoc: mutual_pblt_engine_id with Af=plays CIMCIC (.bot Dupoc) C,\n   Bf=impl Af (plays (.bot Dupoc) CIMCIC C). Leg CIMCIC via searchBranch (guard=impl),\n   leg .bot(Dupoc) via botSearchStep (unwraps .bot; guard .plays .opp .self C subst = Af)\n   + implK + implTrans. -> ∃n play n (CIMCIC) (.bot Dupoc) = C.\n2. cj_cimcic_guard_fired + cj_af_provable_at_k: extract Pf k Af (search_t cert cost log2 k+3 ≤ k).\n3. proofSearch k Af = true = JustBot's guard subst -> JustBot plays C (cj_JustBot_C_vs_CIMCIC).\n4. cj_JustBot_C_cert: cheap AtomProvable (c_leaf+c_guard k+c_node) of JustBot plays C, via\n   search_t on Pf k Af (JustBot body = .search k guard const const).\n5. cj_cimcic_guard_provable: weakenImpl on that cheap cert -> Pf k (CIMCIC guard vs JustBot)\n   at budget k (need 10*log2 k+100 ≤ k threshold). -> CIMCIC plays C.\nFinal: outcome_of_plays fuel=2 -> (C,C).\n\nKey lesson: weakenImpl charges m+|impl|; MUST keep cert at its actual small budget\n(c_leaf+c_guard k+c_node ≈ log2 k+3), NOT lift to k. Threshold 10*log2 k+100 ≤ k via\nlinear_log2_add_le 10 100.",
+  "hidden_bots": [],
+  "final_text": "The entire proof compiles cleanly with zero errors and zero warnings. Let me update my notebook and submit."
+}

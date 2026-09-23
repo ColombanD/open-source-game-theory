@@ -4,8 +4,8 @@ import PrisonersDilemma.Bots.DupocBot
 open PD
 namespace PD.Bots
 
-/-- JustBot: Cooperate if we can prove the opponent will cooperate against DupocBot,
-    otherwise defect.
+/-- JustBot: Cooperate if `S` derives (within `k`) that the opponent cooperates against
+    DupocBot, otherwise defect.
 
     The reference to DupocBot is wrapped in `.bot` so that `subst` treats it as a
     *closed bot reference* — a scope barrier (see `Prog.subst` / the `.bot` notes in

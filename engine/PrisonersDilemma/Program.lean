@@ -31,15 +31,65 @@ mutual
     | sim    : Prog → Prog → Prog                 -- source code for "run p with q as opponent"
     | ite    : Prog → Action → Prog → Prog → Prog -- if evaluating guard yields action a, run p, else q
     | search : Nat → Formula → Prog → Prog → Prog -- proof_search(k, φ): if oracle verifies φ in ≤k chars, run p, else q
+    | tvote : VoteList → Nat → Prog → Prog → Prog
+        -- weighted-threshold ACTION vote (the refined Def-4 TauBot primitive, 2026-08-18):
+        -- `tvote v θ p q` peels the weighted entries `v` IN LIST ORDER; an entry
+        -- `(w, I)` fires iff the closed program `I` PLAYS `C` (running against itself —
+        -- entries are `.opp`-free instances), and firing subtracts `w` from the residual
+        -- threshold (truncated). Residual 0 → run `p`; entries exhausted with residual
+        -- > 0 → run `q`.
+        --
+        -- The vote reads TRUE PLAYS, not provability: that is the whole point of the
+        -- refined Def 4 (`Research/Notes/TAUBOTS.md` §1). A tau player votes once over the
+        -- compound decisions of its own δ-instances; every `proofSearch` lives INSIDE
+        -- an entry, exactly where the lifted base bot's own code puts it. NO budget
+        -- argument: the vote itself never consults the oracle.
+        --
+        -- Entries are FROZEN (like `.bot` / the `.eq` RHS / `.diag`): `subst` does not
+        -- descend into a `VoteList`. That is what keeps tau players `.opp`-free by
+        -- construction — an entry is a closed instance, never a window on the current
+        -- frame.
+    | sys     : ProgList → Nat → Prog
+        -- the MUTUAL-FIXPOINT BINDER (revived 2026-08-20 for the Def-4 self-probers;
+        -- originally Def-5, see `Research/Notes/TAUBOTS.md`; archived at tag
+        -- `taubot-def5-research`). `sys defs i` is the i-th component of the
+        -- mutually-recursive system `defs`, whose members refer to each other via
+        -- `.selfIdx`. LAZY unfold: `eval` closes one level per fuel tick via
+        -- `sysClose` (never at definition time). Out-of-range `i` evals to `none`.
+        -- `.sys` is a BINDER: neither `subst` nor an outer `sysClose` descends into
+        -- `defs` (shadowing).
+        --
+        -- WHY Def 4 needs it: `inst(A, δ_B)` must contain `inst(B, δ_A)` must contain
+        -- `inst(A, δ_B)` whenever A and B both self-probe — no finite tree exists.
+        -- `.self` is a pronoun for "me" and cuts only the diagonal; `.selfIdx` is a
+        -- pronoun for "us, by index" and cuts cycles of any length.
+    | selfIdx : Nat → Prog
+        -- reference to system component `j` — closed by `sysClose` (the system-level
+        -- closer), NEVER by `subst` (the match-level closer). A bare `.selfIdx`
+        -- outside any system is a dangling reference and evals to `none`.
+  /-- The member list carried by `.sys`: the components of a mutually-recursive
+      system, referenced by position via `.selfIdx`. Kept INSIDE the mutual block
+      for the same reason as `VoteList` (a nested `List Prog` payload would make
+      `Prog` a nested inductive — recursor complications everywhere). -/
+  inductive ProgList : Type where
+    | nil  : ProgList
+    | cons : Prog → ProgList → ProgList
+  /-- The weighted entry list carried by `.tvote`: a specialized list kept INSIDE the
+      mutual block (a nested `List (Nat × Prog)`
+      payload would make `Prog` a nested inductive). `cons w I rest` = hypothesis
+      instance `I` with signal weight `w`. -/
+  inductive VoteList : Type where
+    | nil  : VoteList
+    | cons : Nat → Prog → VoteList → VoteList
   inductive Formula: Type where
     | plays : Prog → Prog → Action → Formula      -- atomic: "p(q.source) == a"
     | impl  : Formula → Formula → Formula         -- φ → ψ (needed for Löb-style hypotheses like □C → C)
     | neg   : Formula → Formula                   -- ¬ φ
-    | box   : Nat → Formula → Formula             -- □_n φ: "φ is provable by the oracle with budget n"
+    | box   : Nat → Formula → Formula             -- □_n φ: "S derives φ at budget n" (⊢_n φ; its interp is `Pf n φ`)
     | eq    : Prog → Prog → Formula               -- structural identity: "p and q are the same program". The 2nd arg is a frozen literal target (subst does not descend into it); the 1st is the probe (typically `.opp`), which subst resolves to the concrete player.
     | diag  : Nat → Formula → Formula             -- the Löb-fixpoint sentence for target `tgt` at box budget `g`: ψ with ψ ↔ (□_g ψ → tgt). Its meaning (Dynamics.interp) is the fixpoint BY DESIGN — same pattern as `.box` meaning `Pf`; the meta-justification that a faithful arithmetization contains such a sentence is the Reflection layer's DERIVED diagonal (Research/Notes/INTERNALIZATION_ROADMAP.md, I0). Never appears in bot source; used only by the meta Löb chain (bounded Löb / PBLT).
 end
-deriving instance DecidableEq for Prog, Formula
+deriving instance DecidableEq for Prog, VoteList, ProgList, Formula
 
 -- Closing self-reference via substitution.
 --
@@ -82,6 +132,14 @@ mutual
     | .sim p q,        m, o => .sim (p.subst m o) (q.subst m o)
     | .ite b a p q,    m, o => .ite (b.subst m o) a (p.subst m o) (q.subst m o)
     | .search k φ p q, m, o => .search k (φ.subst m o) (p.subst m o) (q.subst m o)
+    -- Entries are FROZEN — `subst` rewrites only the branches. A `VoteList` holds closed
+    -- δ-instances; descending would let the enclosing frame's `me`/`opponent` capture an
+    -- instance's internal placeholders (the `.bot` barrier rationale, one level up), and
+    -- would break the `.opp`-freeness that makes tau players extensionally constant.
+    | .tvote v θ p q,      m, o => .tvote v θ (p.subst m o) (q.subst m o)
+    | .sys defs i,     _, _ => .sys defs i       -- BINDER: a subst barrier like `.bot` (members are `.self`/`.opp`-free by convention; the outer frame must not capture)
+    | .selfIdx j,      _, _ => .selfIdx j        -- system-level reference: `subst` (match-level) never touches it; `sysClose` does
+  termination_by structural p _ _ => p
 
   def Formula.subst : Formula → (me opponent : Prog) → Formula
     | .plays p q a, m, o => .plays (p.subst m o) (q.subst m o) a
@@ -90,11 +148,64 @@ mutual
     | .box n φ,     m, o => .box n (φ.subst m o)
     | .eq p q,      m, o => .eq (p.subst m o) q   -- only the LHS (probe) substitutes; the RHS is a frozen literal target
     | .diag g φ,    _, _ => .diag g φ             -- FROZEN (like `.bot`/`.eq`-RHS): the diagonal is a closed meta-construction; subst does not descend
+  termination_by structural f _ _ => f
 end
 
+-- The SYSTEM-LEVEL closer (the `.sys` binder's counterpart to `subst`).
+-- `sysClose defs` replaces every `.selfIdx j` with `.sys defs j` — and nothing
+-- else. It is the complementary closer to `subst`: `subst` (match-level) closes
+-- `.self`/`.opp` and treats `.bot` as a barrier; `sysClose` (system-level) closes
+-- `.selfIdx`, is TRANSPARENT through `.bot` (the probes of a system's members live
+-- under `.bot` freezes), and its ONE barrier is an inner `.sys` — a nested system
+-- is a binder whose `.selfIdx` references belong to the inner system (shadowing).
+-- Unlike `subst` it is total below the binder (both `.eq` sides, `.diag` bodies):
+-- no dangling `.selfIdx` may survive into anything eval or the oracle will see.
+-- Spike-B validated (Research/Spikes/sysLob/MiniSys.lean): stays structural,
+-- definitional unfolding intact.
+--
+-- `.tvote` NOTE (2026-08-20): entries are FROZEN for `sysClose` too — they are
+-- closed compiled instances with no free `.selfIdx`, and freezing keeps τ̂
+-- equivariance (`Base/Transpose`) obligation-free.
+mutual
+  def Prog.sysClose (defs : ProgList) : Prog → Prog
+    | .const a            => .const a
+    | .self               => .self
+    | .opp                => .opp
+    | .bot p              => .bot (p.sysClose defs)
+    | .sim p q            => .sim (p.sysClose defs) (q.sysClose defs)
+    | .ite b a p q        => .ite (b.sysClose defs) a (p.sysClose defs) (q.sysClose defs)
+    | .search k φ p q     => .search k (φ.sysClose defs) (p.sysClose defs) (q.sysClose defs)
+    | .tvote v θ p q      =>
+        -- entries are FROZEN, matching both `subst` and τ̂ (`Base/Transpose`): a vote
+        -- entry is a CLOSED compiled instance with no free `.selfIdx` to close, so
+        -- descending would be a no-op that nonetheless forces a spurious
+        -- `sysClose`/τ̂ commutation obligation. If a future zoo ever needs system
+        -- members INSIDE vote entries, revisit here first.
+        .tvote v θ (p.sysClose defs) (q.sysClose defs)
+    | .sys dl i           => .sys dl i            -- inner system: BINDER (shadowing)
+    | .selfIdx j          => .sys defs j          -- the closer itself
+  termination_by structural p => p
+
+  def Formula.sysClose (defs : ProgList) : Formula → Formula
+    | .plays p q a => .plays (p.sysClose defs) (q.sysClose defs) a
+    | .impl φ ψ    => .impl (φ.sysClose defs) (ψ.sysClose defs)
+    | .neg φ       => .neg (φ.sysClose defs)
+    | .box n φ     => .box n (φ.sysClose defs)
+    | .eq p q      => .eq (p.sysClose defs) (q.sysClose defs)
+    | .diag g φ    => .diag g (φ.sysClose defs)
+  termination_by structural f => f
+end
+
+/-- Positional lookup into a system's member list (`.sys defs i` unfolds to member
+    `i`); out-of-range is `none`, which `eval` propagates as failure. -/
+def ProgList.get? : ProgList → Nat → Option Prog
+  | .nil,         _     => none
+  | .cons p _,    0     => some p
+  | .cons _ rest, n + 1 => rest.get? n
+
 -- Syntactic size = character count of source. This is the unit the proof system
--- measures budgets in: `□_k φ` means "φ has a proof of ≤ k characters", and a
--- proof's length is bounded in terms of the sizes of the formulas it manipulates.
+-- measures budgets in: `□_k φ` means "φ has an `S`-derivation of ≤ k characters", and a
+-- derivation's length is bounded in terms of the sizes of the formulas it manipulates.
 -- A numeral `k` costs `Nat.log2 k + 1` characters (critch22 Appendix B(b):
 -- numbers are written in `O(lg k)` characters), so e.g. `.search`/`.box` pay that
 -- for their index. Everything else is `(sum of children) + 1` for the node.
@@ -112,6 +223,25 @@ mutual
     | .sim p q        => p.size + q.size + 1
     | .ite b _ p q    => b.size + p.size + q.size + 1
     | .search k φ p q => numCost k + φ.size + p.size + q.size + 1
+    | .tvote v θ p q      => numCost θ + v.vsize + p.size + q.size + 1
+    | .sys defs i     => defs.psize + numCost i + 1
+        -- HONEST size: a `.sys` reference carries the WHOLE system's source —
+        -- transcript costs must see every member. This is where the n-dependent
+        -- constant enters every budget touching a system.
+    | .selfIdx j      => numCost j + 1
+
+  /-- Character count of an entry list: each entry pays its weight numeral, its instance
+      program, and one separator character; the empty list is free (the node itself is
+      charged by `.tvote`). -/
+  def VoteList.vsize : VoteList → Nat
+    | .nil           => 0
+    | .cons w I rest => numCost w + I.size + rest.vsize + 1
+
+  /-- Character count of a system's member list (one separator per member, like
+      `vsize`); the node itself is charged by `.sys`. -/
+  def ProgList.psize : ProgList → Nat
+    | .nil         => 0
+    | .cons p rest => p.size + rest.psize + 1
 
   def Formula.size : Formula → Nat
     | .plays p q _ => p.size + q.size + 1
@@ -134,5 +264,32 @@ def Prog.hasSearch : Prog → Bool
   | .sim p q        => p.hasSearch || q.hasSearch
   | .ite b _ p q    => b.hasSearch || p.hasSearch || q.hasSearch
   | .search _ _ _ _ => true
+  -- UNCONDITIONALLY true, NOT a fold over the entries: a vote whose entries happened to
+  -- be search-free would otherwise enter the search-free fragment and add a `.tvote`
+  -- case to `atom_complete_searchfree` — for no benefit, since tau players are never
+  -- census subjects and need no atom certificates. Conservative over-approximation
+  -- (Research/Notes/TAUBOTS.md).
+  | .tvote _ _ _ _     => true
+  | .sys _ _        => true      -- CONSERVATIVE: unfolding may consult the oracle through
+                                 -- members; kept out of the searchfree fragment without a
+                                 -- list census (overapproximation is sound — the fragment
+                                 -- only claims things for `hasSearch = false`)
+  | .selfIdx _      => true      -- dangling reference (evals `none`): no play certificate
+                                 -- exists, so it must not enter the searchfree fragment
+
+/-- Total weight carried by an entry list — the mass an all-cooperate signal would
+    accumulate. `θ > totalMass` means the threshold is unreachable (the else
+    short-circuit, `voteHigh_f`). -/
+def VoteList.totalMass : VoteList → Nat
+  | .nil           => 0
+  | .cons w _ rest => w + rest.totalMass
+
+/-- Mass of the entries selected by a predicate on (closed) instance programs: the sum of
+    the weights whose entry plays `C`. Instantiated with `fun I => eval … I I I == some .C`
+    in the tau-layer lemma statements; kept abstract here so `Program.lean` stays free of
+    the evaluator. -/
+def VoteList.massWhere (f : Prog → Bool) : VoteList → Nat
+  | .nil           => 0
+  | .cons w I rest => (if f I then w else 0) + rest.massWhere f
 
 end PD

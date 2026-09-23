@@ -1,0 +1,21 @@
+{
+  "timestamp": "20260731T141226",
+  "bot_a": "GuardianBot",
+  "bot_b": "CupodTrollBot",
+  "model": "claude-opus-4-8",
+  "episode_index": 0,
+  "end_reason": "verdict",
+  "verdict_kind": "proved",
+  "turns_used": 2,
+  "tool_calls_used": 2,
+  "usage": {
+    "input_tokens": 4,
+    "output_tokens": 3534,
+    "cache_read_tokens": 100695,
+    "cache_creation_tokens": 102705
+  },
+  "elapsed_seconds": 62.026180542001384,
+  "notebook": null,
+  "hidden_bots": [],
+  "final_text": "Compiles cleanly. The outcome is (C, C)."
+}

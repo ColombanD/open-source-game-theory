@@ -1,0 +1,126 @@
+{
+  "run": "body+twins+natives_epsilon_t080_a100_28ca9e478fb9",
+  "zoo": "body+twins+natives",
+  "family": "epsilon",
+  "t": 0.8,
+  "alpha": 1.0,
+  "fingerprint": "28ca9e478fb9",
+  "n_types": 14,
+  "bots": [
+    "CIMCIC",
+    "CooperateBot",
+    "CupodBot",
+    "CupodTrollBot",
+    "DBot",
+    "DIMCID",
+    "DefectBot",
+    "DupocBot",
+    "EBot",
+    "MaxConfidenceBot",
+    "MinConfidenceBot",
+    "OBot",
+    "PrudentBot",
+    "TitForTatBot"
+  ],
+  "excluded_bots": [],
+  "is_fully_proven": true,
+  "grid_points": [
+    [
+      0.8,
+      1.0
+    ],
+    [
+      0.6,
+      1.0
+    ],
+    [
+      0.4,
+      1.0
+    ],
+    [
+      0.2,
+      1.0
+    ],
+    [
+      0.0,
+      1.0
+    ]
+  ],
+  "n_grid_points": 5,
+  "ok": true,
+  "failed_stages": [],
+  "stages": {
+    "ess": {
+      "ok": true,
+      "seconds": 0.002,
+      "error": null,
+      "n_pure_ess": 0,
+      "n_types": 14
+    },
+    "invasion": {
+      "ok": true,
+      "seconds": 0.561,
+      "error": null,
+      "edges_strict": 13,
+      "edges_weak": 169,
+      "n_sccs": 14,
+      "n_cycles": 0,
+      "layout_backend": "manual_layered"
+    },
+    "faces": {
+      "ok": true,
+      "seconds": 0.923,
+      "error": null,
+      "n_supports": 16369,
+      "by_class": {
+        "singular": 16369
+      },
+      "enumeration_complete": true
+    },
+    "nash": {
+      "ok": true,
+      "seconds": 0.632,
+      "error": null,
+      "run_dir": "runs/20260901T151209Z_dd7f14722323",
+      "n_extreme_NE": 169,
+      "n_components": 1,
+      "cross_check_performed": false
+    },
+    "replicator": {
+      "ok": true,
+      "seconds": 0.526,
+      "error": null,
+      "n_attractors": 28,
+      "n_unconverged": 0,
+      "all_converged": true,
+      "largest_basin": 0.855721,
+      "dominant_support": [
+        "DBot",
+        "EBot",
+        "DIMCID",
+        "DefectBot",
+        "CIMCIC",
+        "CupodTrollBot",
+        "CupodBot",
+        "DupocBot",
+        "MaxConfidenceBot",
+        "MinConfidenceBot",
+        "OBot",
+        "PrudentBot",
+        "TitForTatBot"
+      ]
+    },
+    "moran": {
+      "ok": true,
+      "seconds": 0.061,
+      "error": null,
+      "n_points": 9,
+      "all_converged": true,
+      "headline": {
+        "population": 100,
+        "beta": 1.0,
+        "stochastically_stable": []
+      }
+    }
+  }
+}

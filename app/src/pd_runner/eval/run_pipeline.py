@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 
+from pd_runner import settings
 from pd_runner.logging_config import setup_logging
 from pd_runner.services.library_writer import write_proof_to_library
 from pd_runner.services.proof_service import ProofRequest, ProofSearchError, search_proof
@@ -16,7 +17,7 @@ from pd_runner.services.proof_service import ProofRequest, ProofSearchError, sea
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run the full proof pipeline for DefectBot vs DefectBot")
-    parser.add_argument("--model", default="claude-opus-4-7", help="Anthropic model ID")
+    parser.add_argument("--model", default=settings.DEFAULT_MODEL, help="Anthropic model ID")
     parser.add_argument("--max-iterations", type=int, default=20)
     parser.add_argument("--log-level", default="WARNING", choices=["TRACE", "DEBUG", "INFO", "WARNING", "ERROR"])
     parser.add_argument("--dry-run", action="store_true", help="Skip writing to library")

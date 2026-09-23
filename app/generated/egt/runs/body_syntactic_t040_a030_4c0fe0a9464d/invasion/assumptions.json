@@ -1,0 +1,56 @@
+{
+  "edge_definition": {
+    "strict": "G>: i -> j iff A[i, j] >  A[j, j]",
+    "weak": "G\u2265: i -> j iff A[i, j] >= A[j, j]",
+    "tie_set": "T = E(G\u2265) \\ E(G>) \u2014 pairs where ESS clause (b) bites"
+  },
+  "pd_payoffs": {
+    "parametrisation": "(b, c) with b > c > 0",
+    "b": 3.0,
+    "c": 1.0,
+    "implied_trps": {
+      "T": 3.0,
+      "R": 2.0,
+      "P": 0.0,
+      "S": -1.0
+    },
+    "convention": "row payoff: (D,C)=b, (C,C)=b-c, (D,D)=0, (C,D)=-c"
+  },
+  "bot_names": [
+    "CooperateBot",
+    "CupodBot",
+    "CupodTrollBot",
+    "DBot",
+    "DIMCID",
+    "DefectBot",
+    "DupocBot",
+    "EBot",
+    "OBot",
+    "TitForTatBot"
+  ],
+  "numeric_matrix_source": "/Users/colomband/Library/CloudStorage/OneDrive-Personal/Documents/Studies/ETH/Master Thesis/workspace/open-source-game-theory/app/generated/egt/runs/body_syntactic_t040_a030_4c0fe0a9464d/ess/payoff_matrix_numeric.csv",
+  "cross_check_against_ingest": {
+    "performed": true,
+    "max_abs_diff": 0.0
+  },
+  "suspect_cells": [],
+  "diagonal_handling": {
+    "rule": "If A[i,i] is non-finite, enumerate_pure_ess raises ValueError. The ingest layer raises earlier; this is defence in depth.",
+    "currently_triggered": false,
+    "reason_currently_inactive": "non-terminating cells are resolved by NonTerminationPolicy before A is built, so no diagonal sentinel survives ingest."
+  },
+  "tolerance": {
+    "atol": 1e-12,
+    "rationale": "guards float-noise; payoffs exact"
+  },
+  "cycle_cap": 10000,
+  "layout_backend_graph": "manual_layered",
+  "layout_backend_condensation": "manual_layered",
+  "seed": 20260514,
+  "library_versions": {
+    "networkx": "3.6.1",
+    "numpy": "2.5.1",
+    "matplotlib": "3.11.1"
+  },
+  "invasion_pipeline_version": "0.1.0"
+}

@@ -1,0 +1,21 @@
+{
+  "timestamp": "20260803T170019",
+  "bot_a": "WaryBot",
+  "bot_b": "JustBot",
+  "model": "claude-opus-4-8",
+  "episode_index": 0,
+  "end_reason": "verdict",
+  "verdict_kind": "proved",
+  "turns_used": 18,
+  "tool_calls_used": 24,
+  "usage": {
+    "input_tokens": 36,
+    "output_tokens": 37230,
+    "cache_read_tokens": 2826899,
+    "cache_creation_tokens": 109867
+  },
+  "elapsed_seconds": 504.33579683399876,
+  "notebook": "## WaryBot vs JustBot => (C, D)  -- SOLVED, compiles clean.\n\nWaryBot cooperates (else-branch), JustBot defects (else-branch). Both guards unprovable at every k.\n- JustBot guard \"WaryBot plays C vs .bot(DupocBot k)\" unprovable: WaryBot's C is else-play, floor-priced. Proved via no_provable_tailToS_floor singleton (copy of wd_no_provable_A_tail from Theorems/WaryBot/vs_DupocBot.lean, opponent = .bot(DupocBot k)).\n- WaryBot guard \".neg(JustBot plays C vs WaryBot)\" unprovable: JustBot's D-cert is search_f floor > k, so (JustBot k, WaryBot k) sits in play-C WV census; PD.LlmLemmas.wv_budget_census with S = SPJust (sim-closure of base). h_noD via cases on JustBot's .search PlaysProof (search_t=>C not D; search_f cost>=k+1).\n\nTemplate used: Theorems/WaryBot/vs_DupocBot.lean (SPDupoc pattern, wv_budget_census). Reused WaryCensus.subst_eq_wary for opp invariant.\nFinal source saved. Submit verdict proved (C,D).",
+  "hidden_bots": [],
+  "final_text": "The complete proof compiles cleanly with zero errors and zero warnings. The outcome is (C, D): WaryBot cooperates, JustBot defects.\n\nLet me update my notebook and submit."
+}

@@ -1,0 +1,21 @@
+{
+  "timestamp": "20260804T132212",
+  "bot_a": "OptimBot",
+  "bot_b": "TitForTatBot",
+  "model": "claude-opus-4-8",
+  "episode_index": 1,
+  "end_reason": "verdict",
+  "verdict_kind": "proved",
+  "turns_used": 19,
+  "tool_calls_used": 19,
+  "usage": {
+    "input_tokens": 38,
+    "output_tokens": 59410,
+    "cache_read_tokens": 3106888,
+    "cache_creation_tokens": 107869
+  },
+  "elapsed_seconds": 1160.6215561249992,
+  "notebook": "SOLVED: llm_outcome_OptimBot_vs_TitForTatBot = (D,D) at STAGGERED budget OptimBot k (65536*k). Full proof compiled (ot_full_final). Skeleton exactly mirrors OptimBot/vs_DefectBot.lean but opponent=TFT. Key extra work vs DefectBot: TFT's guard atoms are non-trivial — needed real certs ot_optim_D_cert_vs_botCB + ot_tft_D_cert_vs_Optim (via PlaysProof.sim + ite_f). Inner Löb (ot_inner_loeb) proves OptimBot defects vs .bot CooperateBot (rung1 exploit, searchChain). Then outer Löb (ot_loeb_premise via searchElseChain 4-layer). Two bloeb bootstraps at KS=65536*k. ot_loeb_premise needs hcnk: log2 k+log2 K+20≤k (for boxMono cn k). ot_log_65536 gives log2(65536*k)≤log2 k+16. Eval: TFT plays D (probe sim opp botCB→OptimBot D), OptimBot plays D (rung1&2 fail C-guard, rung3 D-guard true, inner D). All unique names ot_*. DONE.",
+  "hidden_bots": [],
+  "final_text": "The entire file compiles with exit code 0 and no warnings. Let me update the notebook and submit."
+}

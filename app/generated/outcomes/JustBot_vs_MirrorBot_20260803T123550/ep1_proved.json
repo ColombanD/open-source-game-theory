@@ -1,0 +1,21 @@
+{
+  "timestamp": "20260803T123550",
+  "bot_a": "JustBot",
+  "bot_b": "MirrorBot",
+  "model": "claude-opus-4-8",
+  "episode_index": 0,
+  "end_reason": "verdict",
+  "verdict_kind": "proved",
+  "turns_used": 16,
+  "tool_calls_used": 18,
+  "usage": {
+    "input_tokens": 32,
+    "output_tokens": 20562,
+    "cache_read_tokens": 2039488,
+    "cache_creation_tokens": 151747
+  },
+  "elapsed_seconds": 311.82544129099915,
+  "notebook": null,
+  "hidden_bots": [],
+  "final_text": "The entire proof compiles cleanly with no errors or warnings. The outcome is (C, C). Let me submit."
+}

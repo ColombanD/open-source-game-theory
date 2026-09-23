@@ -185,8 +185,18 @@ theorem pf_size_or_atom : ∀ {k φ}, Pf k φ → φ.size ≤ k ∨ AtomProvable
   | iteBranchSearch_t g z a' c0 c1 ψ q me opnt hme hle => exact Or.inl hle
   | eqRefl p hle => exact Or.inl hle
   | eqNeg p q hne hle => exact Or.inl hle
+  | implRefl φ' hle => exact Or.inl hle
+  | implK φ' ψ' hle => exact Or.inl hle
+  | implS φ' ψ' χ' hle => exact Or.inl hle
+  | contrapose φ' ψ' m h hle => exact Or.inl (by omega)
+  | negElim =>
+      rename_i φ' m₁ m₂ h1 h2 hle
+      exact Or.inl (by omega)
   | weakenImpl φ' ψ' m hψ hle => exact Or.inl (by omega)
   | searchThenSearch_t k₁ k₂ m ψ₁ ψ₂ c0 c1 q me opnt hme hprud hmk hle => exact Or.inl (by omega)
+  | searchChain g₁ ψ₁ e₁ L a me opnt hme hle => exact Or.inl hle
+  | searchElseChain hd L a me opnt hme hle => exact Or.inl (by omega)
+  | ctxChain hd L a me opnt hme hle => exact Or.inl hle
   | implTrans φ' ψ' χ' a b h1 h2 hle => exact Or.inl (by omega)
   | atomBoxImpl kBox p q a hatom hle => exact Or.inl (by omega)
   | boxIntro kIn K φ' hprem hle => exact Or.inl (by omega)
@@ -270,10 +280,472 @@ def chkIteBranchSearch (k : Nat) : Formula → Bool
           opnt2 c))).size ≤ k)
   | _ => false
 
-/-- The leaf decider — one disjunct per source-transparency rule of `Pf`. -/
+def chkImplRefl (k : Nat) : Formula → Bool
+  | .impl A B => A == B && decide ((Formula.impl A B).size ≤ k)
+  | _ => false
+
+def chkImplK (k : Nat) : Formula → Bool
+  | .impl A (.impl C B) => A == B && decide ((Formula.impl A (.impl C B)).size ≤ k)
+  | _ => false
+
+def chkImplS (k : Nat) : Formula → Bool
+  | .impl (.impl A (.impl B C)) (.impl (.impl A' B') (.impl A'' C')) =>
+      A == A' && A == A'' && B == B' && C == C' &&
+      decide ((Formula.impl (.impl A (.impl B C))
+        (.impl (.impl A' B') (.impl A'' C'))).size ≤ k)
+  | _ => false
+
+/-! ### The search-telescope parser (`searchChain`, 2026-07-28)
+
+Walk the candidate guard chain and the tail player's own source in lockstep: each
+`□ g ψ'` layer must match a `.search g ψ body e` layer of `me` (with the guard
+instance `ψ' = ψ.subst me opp`), ending at the chain's plays-atom over the remaining
+`.const` branch. Sound and complete against `Pf.searchChain` (below). -/
+
+def chkChainGo (me opp : Prog) : Formula → Prog → Bool
+  | .impl (.box g ψ') rest, .search g' ψ body _e =>
+      decide (g = g') && ψ' == ψ.subst me opp && chkChainGo me opp rest body
+  | .plays me' opp' a, .const a' =>
+      me' == me && opp' == opp && decide (a = a')
+  | _, _ => false
+
+def chainTail? : Formula → Option (Prog × Prog)
+  | .plays me opp _ => some (me, opp)
+  | .impl _ ψ => chainTail? ψ
+  | _ => none
+
+def chkSearchChain (k : Nat) : Formula → Bool
+  | .impl (.box g ψ') rest =>
+      decide ((Formula.impl (.box g ψ') rest).size ≤ k) &&
+      (match chainTail? rest with
+       | some (me, opp) => chkChainGo me opp (.impl (.box g ψ') rest) me
+       | none => false)
+  | _ => false
+
+theorem chkChainGo_sound (me opp : Prog) : ∀ (n : Nat) (φ : Formula), φ.size ≤ n →
+    ∀ (body : Prog), chkChainGo me opp φ body = true →
+    ∃ (L : List (Nat × Formula × Prog)) (a : Action),
+      body = searchPlug L (.const a) ∧
+      φ = implChain (searchGuards me opp L) (.plays me opp a) := by
+  intro n
+  induction n with
+  | zero =>
+      intro φ hφ
+      have := Formula.size_pos φ
+      omega
+  | succ n ih =>
+      intro φ hφ body h
+      cases φ with
+      | impl A rest =>
+          cases A with
+          | box g ψ' =>
+              cases body with
+              | search g' ψ pbody e =>
+                  simp only [chkChainGo, Bool.and_eq_true, decide_eq_true_eq,
+                    beq_iff_eq] at h
+                  obtain ⟨⟨rfl, rfl⟩, hr⟩ := h
+                  have hrest : rest.size ≤ n := by
+                    have h1 := Formula.size_pos (Formula.box g (ψ.subst me opp))
+                    simp only [Formula.size] at hφ
+                    omega
+                  obtain ⟨L, a, hb, hφ'⟩ := ih rest hrest pbody hr
+                  refine ⟨(g, ψ, e) :: L, a, ?_, ?_⟩
+                  · rw [hb]; exact rfl
+                  · rw [hφ']; exact rfl
+              | const a => simp [chkChainGo] at h
+              | self => simp [chkChainGo] at h
+              | opp => simp [chkChainGo] at h
+              | bot p => simp [chkChainGo] at h
+              | sim p q => simp [chkChainGo] at h
+              | ite b x p q => simp [chkChainGo] at h
+          | plays p q c => cases body <;> simp [chkChainGo] at h
+          | impl X Y => cases body <;> simp [chkChainGo] at h
+          | neg X => cases body <;> simp [chkChainGo] at h
+          | eq p q => cases body <;> simp [chkChainGo] at h
+          | diag gg X => cases body <;> simp [chkChainGo] at h
+      | plays p q c =>
+          cases body with
+          | const a' =>
+              simp only [chkChainGo, Bool.and_eq_true, decide_eq_true_eq,
+                beq_iff_eq] at h
+              obtain ⟨⟨rfl, rfl⟩, rfl⟩ := h
+              exact ⟨[], c, rfl, rfl⟩
+          | self => simp [chkChainGo] at h
+          | opp => simp [chkChainGo] at h
+          | bot pp => simp [chkChainGo] at h
+          | sim pp qq => simp [chkChainGo] at h
+          | ite b x pp qq => simp [chkChainGo] at h
+          | search g ψ pp qq => simp [chkChainGo] at h
+      | neg A => cases body <;> simp [chkChainGo] at h
+      | box m A => cases body <;> simp [chkChainGo] at h
+      | eq p q => cases body <;> simp [chkChainGo] at h
+      | diag g A => cases body <;> simp [chkChainGo] at h
+
+theorem chainTail?_implChain (me opp : Prog) (a : Action) :
+    ∀ (gs : List Formula),
+      chainTail? (implChain gs (.plays me opp a)) = some (me, opp) := by
+  intro gs
+  induction gs with
+  | nil => rfl
+  | cons g gs ih => exact ih
+
+theorem chkChainGo_complete (me opp : Prog) :
+    ∀ (L : List (Nat × Formula × Prog)) (a : Action),
+      chkChainGo me opp (implChain (searchGuards me opp L) (.plays me opp a))
+        (searchPlug L (.const a)) = true := by
+  intro L a
+  induction L with
+  | nil => cases a <;> simp [chkChainGo, implChain, searchGuards, searchPlug]
+  | cons hd tl ih =>
+      obtain ⟨g, ψ, e⟩ := hd
+      show chkChainGo me opp
+        (.impl (.box g (ψ.subst me opp))
+          (implChain (searchGuards me opp tl) (.plays me opp a)))
+        (.search g ψ (searchPlug tl (.const a)) e) = true
+      simp only [chkChainGo, Bool.and_eq_true, decide_eq_true_eq, beq_iff_eq,
+        true_and, and_true]
+      exact ih
+
+/-! ### The MIXED-telescope parser (`ctxChain`, the ite frontier, 2026-07-28)
+
+Like `chkChainGo`, but each formula layer may be a `□ g ψ'` matching a `.search`
+layer of `me`, OR a probe `.plays opp (.bot z) aT` matching an
+`.ite (.sim .opp (.bot z)) aT body other` layer (then-descent). Sound and complete
+against `Pf.ctxChain`. -/
+
+def chkCtxGo (me opp : Prog) : Formula → Prog → Bool
+  | .impl (.box g ψ') rest, .search g' ψ body _e =>
+      decide (g = g') && ψ' == ψ.subst me opp && chkCtxGo me opp rest body
+  | .impl (.plays opp' (.bot z') aT') rest, .ite (.sim .opp (.bot z)) aT body _other =>
+      opp' == opp && z' == z && decide (aT' = aT) && chkCtxGo me opp rest body
+  | .plays me' opp' a, .const a' =>
+      me' == me && opp' == opp && decide (a = a')
+  | _, _ => false
+
+def chkCtxChain (k : Nat) : Formula → Bool
+  | .impl A rest =>
+      decide ((Formula.impl A rest).size ≤ k) &&
+      (match chainTail? rest with
+       | some (me, opp) => chkCtxGo me opp (.impl A rest) me
+       | none => false)
+  | _ => false
+
+theorem chkCtxGo_sound (me opp : Prog) : ∀ (n : Nat) (φ : Formula), φ.size ≤ n →
+    ∀ (body : Prog), chkCtxGo me opp φ body = true →
+    ∃ (L : List CtxLayer) (a : Action),
+      body = ctxPlug L (.const a) ∧
+      φ = implChain (ctxGuards me opp L) (.plays me opp a) := by
+  intro n
+  induction n with
+  | zero =>
+      intro φ hφ
+      have := Formula.size_pos φ
+      omega
+  | succ n ih =>
+      intro φ hφ body h
+      cases φ with
+      | impl A rest =>
+          cases A with
+          | box g ψ' =>
+              cases body with
+              | search g' ψ pbody e =>
+                  simp only [chkCtxGo, Bool.and_eq_true, decide_eq_true_eq,
+                    beq_iff_eq] at h
+                  obtain ⟨⟨rfl, rfl⟩, hr⟩ := h
+                  have hrest : rest.size ≤ n := by
+                    have h1 := Formula.size_pos (Formula.box g (ψ.subst me opp))
+                    simp only [Formula.size] at hφ
+                    omega
+                  obtain ⟨L, a, hb, hφ'⟩ := ih rest hrest pbody hr
+                  refine ⟨.searchL g ψ e :: L, a, ?_, ?_⟩
+                  · rw [hb]; exact rfl
+                  · rw [hφ']; exact rfl
+              | const a => simp [chkCtxGo] at h
+              | self => simp [chkCtxGo] at h
+              | opp => simp [chkCtxGo] at h
+              | bot p => simp [chkCtxGo] at h
+              | sim p q => simp [chkCtxGo] at h
+              | ite b x p q => simp [chkCtxGo] at h
+          | plays op' bz aT' =>
+              cases body with
+              | ite b x pbody e =>
+                  cases bz with
+                  | bot z' =>
+                      cases b with
+                      | sim sp sq =>
+                          cases sp with
+                          | opp =>
+                              cases sq with
+                              | bot z =>
+                                  simp only [chkCtxGo, Bool.and_eq_true,
+                                    decide_eq_true_eq, beq_iff_eq] at h
+                                  obtain ⟨⟨⟨rfl, rfl⟩, rfl⟩, hr⟩ := h
+                                  have hrest : rest.size ≤ n := by
+                                    simp only [Formula.size] at hφ
+                                    omega
+                                  obtain ⟨L, a, hb, hφ'⟩ := ih rest hrest pbody hr
+                                  refine ⟨.iteL z' aT' e :: L, a, ?_, ?_⟩
+                                  · rw [hb]; exact rfl
+                                  · rw [hφ']; exact rfl
+                              | const a => simp [chkCtxGo] at h
+                              | self => simp [chkCtxGo] at h
+                              | opp => simp [chkCtxGo] at h
+                              | sim p q => simp [chkCtxGo] at h
+                              | ite b' x' p q => simp [chkCtxGo] at h
+                              | search g ψ p q => simp [chkCtxGo] at h
+                          | const a => simp [chkCtxGo] at h
+                          | self => simp [chkCtxGo] at h
+                          | bot p => simp [chkCtxGo] at h
+                          | sim p q => simp [chkCtxGo] at h
+                          | ite b' x' p q => simp [chkCtxGo] at h
+                          | search g ψ p q => simp [chkCtxGo] at h
+                      | const a => simp [chkCtxGo] at h
+                      | self => simp [chkCtxGo] at h
+                      | opp => simp [chkCtxGo] at h
+                      | bot p => simp [chkCtxGo] at h
+                      | ite b' x' p q => simp [chkCtxGo] at h
+                      | search g ψ p q => simp [chkCtxGo] at h
+                  | const a => cases b <;> simp [chkCtxGo] at h
+                  | self => cases b <;> simp [chkCtxGo] at h
+                  | opp => cases b <;> simp [chkCtxGo] at h
+                  | sim p q => cases b <;> simp [chkCtxGo] at h
+                  | ite b' x' p q => cases b <;> simp [chkCtxGo] at h
+                  | search g ψ p q => cases b <;> simp [chkCtxGo] at h
+              | const a => simp [chkCtxGo] at h
+              | self => simp [chkCtxGo] at h
+              | opp => simp [chkCtxGo] at h
+              | bot p => simp [chkCtxGo] at h
+              | sim p q => simp [chkCtxGo] at h
+              | search g ψ p q => simp [chkCtxGo] at h
+          | impl X Y => cases body <;> simp [chkCtxGo] at h
+          | neg X => cases body <;> simp [chkCtxGo] at h
+          | eq p q => cases body <;> simp [chkCtxGo] at h
+          | diag gg X => cases body <;> simp [chkCtxGo] at h
+      | plays p q c =>
+          cases body with
+          | const a' =>
+              simp only [chkCtxGo, Bool.and_eq_true, decide_eq_true_eq,
+                beq_iff_eq] at h
+              obtain ⟨⟨rfl, rfl⟩, rfl⟩ := h
+              exact ⟨[], c, rfl, rfl⟩
+          | self => simp [chkCtxGo] at h
+          | opp => simp [chkCtxGo] at h
+          | bot pp => simp [chkCtxGo] at h
+          | sim pp qq => simp [chkCtxGo] at h
+          | ite b x pp qq => simp [chkCtxGo] at h
+          | search g ψ pp qq => simp [chkCtxGo] at h
+      | neg A => cases body <;> simp [chkCtxGo] at h
+      | box m A => cases body <;> simp [chkCtxGo] at h
+      | eq p q => cases body <;> simp [chkCtxGo] at h
+      | diag g A => cases body <;> simp [chkCtxGo] at h
+
+theorem chkCtxGo_complete (me opp : Prog) :
+    ∀ (L : List CtxLayer) (a : Action),
+      chkCtxGo me opp (implChain (ctxGuards me opp L) (.plays me opp a))
+        (ctxPlug L (.const a)) = true := by
+  intro L a
+  induction L with
+  | nil => cases a <;> simp [chkCtxGo, implChain, ctxGuards, ctxPlug]
+  | cons hd tl ih =>
+      cases hd with
+      | searchL g ψ e =>
+          show chkCtxGo me opp
+            (.impl (.box g (ψ.subst me opp))
+              (implChain (ctxGuards me opp tl) (.plays me opp a)))
+            (.search g ψ (ctxPlug tl (.const a)) e) = true
+          simp only [chkCtxGo, Bool.and_eq_true, decide_eq_true_eq, beq_iff_eq,
+            true_and, and_true]
+          exact ih
+      | iteL z aT other =>
+          show chkCtxGo me opp
+            (.impl (.plays opp (.bot z) aT)
+              (implChain (ctxGuards me opp tl) (.plays me opp a)))
+            (.ite (.sim .opp (.bot z)) aT (ctxPlug tl (.const a)) other) = true
+          simp only [chkCtxGo, Bool.and_eq_true, decide_eq_true_eq, beq_iff_eq,
+            true_and, and_true]
+          exact ih
+
+/-! ### The MIXED-POLARITY telescope parser (`searchElseChain`, 2026-08-04)
+
+Like `chkChainGo`, but walks BOTH descent polarities of `me`'s search spine in
+lockstep with the candidate guard chain: a `□ g ψ'` antecedent matches a
+`.search g ψ body e` layer descending the THEN slot (`SearchLayer2.thenL`), and a
+`.neg (.plays P' Q' c)` antecedent matches a `.search g (.plays P Q c) q body`
+layer descending the ELSE slot (`SearchLayer2.elseL`; the guard is stored
+STRUCTURALLY as a plays-atom, so the reconstruction from the substituted
+antecedent is the syntactic `==` check on the substituted components). Returns
+the parsed layer list so the checker can charge `layersCost` (the else floor).
+Sound and complete against `Pf.searchElseChain`. -/
+
+def elseChainGo (me opp : Prog) : Formula → Prog → Option (List SearchLayer2 × Action)
+  | .impl (.box g ψ') rest, .search g' ψ body e =>
+      if g == g' && ψ' == ψ.subst me opp then
+        match elseChainGo me opp rest body with
+        | some (L, a) => some (.thenL g' ψ e :: L, a)
+        | none => none
+      else none
+  | .impl (.neg (.plays P' Q' c')) rest, .search g (.plays P Q c) q body =>
+      if P' == P.subst me opp && Q' == Q.subst me opp && decide (c' = c) then
+        match elseChainGo me opp rest body with
+        | some (L, a) => some (.elseL g P Q c q :: L, a)
+        | none => none
+      else none
+  | .plays me' opp' a, .const a' =>
+      if me' == me && opp' == opp && decide (a = a') then some ([], a) else none
+  | _, _ => none
+
+def chkSearchElseChain (k : Nat) : Formula → Bool
+  | .impl A rest =>
+      (match chainTail? rest with
+       | some (me, opp) =>
+           (match elseChainGo me opp (.impl A rest) me with
+            | some (L, _) => decide (layersCost L + (Formula.impl A rest).size ≤ k)
+            | none => false)
+       | none => false)
+  | _ => false
+
+theorem elseChainGo_sound (me opp : Prog) : ∀ (n : Nat) (φ : Formula), φ.size ≤ n →
+    ∀ (body : Prog) (L : List SearchLayer2) (a : Action),
+      elseChainGo me opp φ body = some (L, a) →
+      body = plug2 L (.const a) ∧
+      φ = implChain (guards2 me opp L) (.plays me opp a) := by
+  intro n
+  induction n with
+  | zero =>
+      intro φ hφ
+      have := Formula.size_pos φ
+      omega
+  | succ n ih =>
+      intro φ hφ body L a h
+      cases φ with
+      | impl A rest =>
+          cases A with
+          | box g ψ' =>
+              cases body with
+              | search g' ψ pbody e =>
+                  simp only [elseChainGo] at h
+                  split at h
+                  · rename_i hcond
+                    simp only [Bool.and_eq_true, beq_iff_eq] at hcond
+                    obtain ⟨rfl, rfl⟩ := hcond
+                    split at h
+                    · rename_i L' a' hrec
+                      simp only [Option.some.injEq, Prod.mk.injEq] at h
+                      obtain ⟨rfl, rfl⟩ := h
+                      have hrest : rest.size ≤ n := by
+                        simp only [Formula.size] at hφ
+                        omega
+                      obtain ⟨hb, hφ'⟩ := ih rest hrest pbody L' a' hrec
+                      refine ⟨?_, ?_⟩
+                      · rw [hb]; exact rfl
+                      · rw [hφ']; exact rfl
+                    · simp at h
+                  · simp at h
+              | const a' => simp [elseChainGo] at h
+              | self => simp [elseChainGo] at h
+              | opp => simp [elseChainGo] at h
+              | bot p => simp [elseChainGo] at h
+              | sim p q => simp [elseChainGo] at h
+              | ite b x p q => simp [elseChainGo] at h
+          | neg X =>
+              cases X with
+              | plays P' Q' c' =>
+                  cases body with
+                  | search g gφ q pbody =>
+                      cases gφ with
+                      | plays P Q c =>
+                          simp only [elseChainGo] at h
+                          split at h
+                          · rename_i hcond
+                            simp only [Bool.and_eq_true, beq_iff_eq,
+                              decide_eq_true_eq] at hcond
+                            obtain ⟨⟨rfl, rfl⟩, rfl⟩ := hcond
+                            split at h
+                            · rename_i L' a' hrec
+                              simp only [Option.some.injEq, Prod.mk.injEq] at h
+                              obtain ⟨rfl, rfl⟩ := h
+                              have hrest : rest.size ≤ n := by
+                                simp only [Formula.size] at hφ
+                                omega
+                              obtain ⟨hb, hφ'⟩ := ih rest hrest pbody L' a' hrec
+                              refine ⟨?_, ?_⟩
+                              · rw [hb]; exact rfl
+                              · rw [hφ']; exact rfl
+                            · simp at h
+                          · simp at h
+                      | impl A B => simp [elseChainGo] at h
+                      | neg A => simp [elseChainGo] at h
+                      | box m A => simp [elseChainGo] at h
+                      | eq p' q' => simp [elseChainGo] at h
+                      | diag m A => simp [elseChainGo] at h
+                  | const a' => simp [elseChainGo] at h
+                  | self => simp [elseChainGo] at h
+                  | opp => simp [elseChainGo] at h
+                  | bot p => simp [elseChainGo] at h
+                  | sim p q => simp [elseChainGo] at h
+                  | ite b x p q => simp [elseChainGo] at h
+              | impl A B => cases body <;> simp [elseChainGo] at h
+              | neg A => cases body <;> simp [elseChainGo] at h
+              | box m A => cases body <;> simp [elseChainGo] at h
+              | eq p' q' => cases body <;> simp [elseChainGo] at h
+              | diag m A => cases body <;> simp [elseChainGo] at h
+          | plays p q c => cases body <;> simp [elseChainGo] at h
+          | impl X Y => cases body <;> simp [elseChainGo] at h
+          | eq p q => cases body <;> simp [elseChainGo] at h
+          | diag gg X => cases body <;> simp [elseChainGo] at h
+      | plays p q c =>
+          cases body with
+          | const a' =>
+              simp only [elseChainGo] at h
+              split at h
+              · rename_i hcond
+                simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at hcond
+                obtain ⟨⟨rfl, rfl⟩, rfl⟩ := hcond
+                simp only [Option.some.injEq, Prod.mk.injEq] at h
+                obtain ⟨rfl, rfl⟩ := h
+                exact ⟨rfl, rfl⟩
+              · simp at h
+          | self => simp [elseChainGo] at h
+          | opp => simp [elseChainGo] at h
+          | bot pp => simp [elseChainGo] at h
+          | sim pp qq => simp [elseChainGo] at h
+          | ite b x pp qq => simp [elseChainGo] at h
+          | search g ψ pp qq => simp [elseChainGo] at h
+      | neg A => cases body <;> simp [elseChainGo] at h
+      | box m A => cases body <;> simp [elseChainGo] at h
+      | eq p q => cases body <;> simp [elseChainGo] at h
+      | diag g A => cases body <;> simp [elseChainGo] at h
+
+theorem elseChainGo_complete (me opp : Prog) :
+    ∀ (L : List SearchLayer2) (a : Action),
+      elseChainGo me opp (implChain (guards2 me opp L) (.plays me opp a))
+        (plug2 L (.const a)) = some (L, a) := by
+  intro L a
+  induction L with
+  | nil => simp [elseChainGo, implChain, guards2, plug2]
+  | cons hd tl ih =>
+      cases hd with
+      | thenL g ψ e =>
+          show elseChainGo me opp
+            (.impl (.box g (ψ.subst me opp))
+              (implChain (guards2 me opp tl) (.plays me opp a)))
+            (.search g ψ (plug2 tl (.const a)) e) = some (.thenL g ψ e :: tl, a)
+          simp [elseChainGo, ih]
+      | elseL g P Q c q =>
+          show elseChainGo me opp
+            (.impl (.neg (.plays (P.subst me opp) (Q.subst me opp) c))
+              (implChain (guards2 me opp tl) (.plays me opp a)))
+            (.search g (.plays P Q c) q (plug2 tl (.const a)))
+            = some (.elseL g P Q c q :: tl, a)
+          simp [elseChainGo, ih]
+
+/-- The leaf decider — one disjunct per source-transparency rule of `Pf`, plus the
+    Family-B implication leaves and the two telescopes (2026-07-28). -/
 def chkLeaf (k : Nat) (φ : Formula) : Bool :=
   chkEqRefl k φ || chkSearchBranch k φ || chkSimStep k φ || chkBotSimStep k φ ||
-  chkBotSearchStep k φ || chkIteBranchSearch k φ || chkEqNeg k φ
+  chkBotSearchStep k φ || chkIteBranchSearch k φ || chkEqNeg k φ ||
+  chkImplRefl k φ || chkImplK k φ || chkSearchChain k φ || chkCtxChain k φ ||
+  chkImplS k φ || chkSearchElseChain k φ
 
 /-! ### `chkLeaf` soundness — each hit is a `Pf` leaf. -/
 
@@ -281,7 +753,7 @@ theorem chkLeaf_sound : ∀ k φ, chkLeaf k φ = true → Pf k φ := by
   intro k φ h
   unfold chkLeaf at h
   simp only [Bool.or_eq_true] at h
-  rcases h with ((((((h | h) | h) | h) | h) | h) | h)
+  rcases h with ((((((((((((h | h) | h) | h) | h) | h) | h) | h) | h) | h) | h) | h) | h)
   · -- eqRefl
     unfold chkEqRefl at h
     split at h
@@ -338,6 +810,80 @@ theorem chkLeaf_sound : ∀ k φ, chkLeaf k φ = true → Pf k φ := by
       obtain ⟨hne, hsz⟩ := h
       exact Pf.eqNeg p q hne hsz
     · simp at h
+  · -- implRefl
+    unfold chkImplRefl at h
+    split at h
+    · rename_i A B
+      simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at h
+      obtain ⟨rfl, hsz⟩ := h
+      exact Pf.implRefl A hsz
+    · simp at h
+  · -- implK
+    unfold chkImplK at h
+    split at h
+    · rename_i A C B
+      simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at h
+      obtain ⟨rfl, hsz⟩ := h
+      exact Pf.implK A C hsz
+    · simp at h
+  · -- searchChain: parse the telescope
+    unfold chkSearchChain at h
+    split at h
+    · rename_i g ψ' rest
+      simp only [Bool.and_eq_true, decide_eq_true_eq] at h
+      obtain ⟨hsz, h⟩ := h
+      split at h
+      · rename_i me opp heq
+        obtain ⟨L, a, hb, hφ⟩ := chkChainGo_sound me opp _ _ (Nat.le_refl _) _ h
+        cases L with
+        | nil => exact Formula.noConfusion hφ
+        | cons hd tl =>
+            obtain ⟨g₀, ψ₀, e₀⟩ := hd
+            rw [hφ]
+            exact Pf.searchChain g₀ ψ₀ e₀ tl a me opp hb (congrArg Formula.size hφ ▸ hsz)
+      · simp at h
+    · simp at h
+  · -- ctxChain: parse the mixed telescope
+    unfold chkCtxChain at h
+    split at h
+    · rename_i A rest
+      simp only [Bool.and_eq_true, decide_eq_true_eq] at h
+      obtain ⟨hsz, h⟩ := h
+      split at h
+      · rename_i me opp heq
+        obtain ⟨L, a, hb, hφ⟩ := chkCtxGo_sound me opp _ _ (Nat.le_refl _) _ h
+        cases L with
+        | nil => exact Formula.noConfusion hφ
+        | cons hd tl =>
+            rw [hφ]
+            exact Pf.ctxChain hd tl a me opp hb (congrArg Formula.size hφ ▸ hsz)
+      · simp at h
+    · simp at h
+  · -- implS
+    unfold chkImplS at h
+    split at h
+    · simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at h
+      obtain ⟨⟨⟨⟨rfl, rfl⟩, rfl⟩, rfl⟩, hsz⟩ := h
+      exact Pf.implS _ _ _ hsz
+    · simp at h
+  · -- searchElseChain: parse the mixed-polarity telescope
+    unfold chkSearchElseChain at h
+    split at h
+    · rename_i A rest
+      split at h
+      · rename_i me opp heq
+        split at h
+        · rename_i L a hgo
+          simp only [decide_eq_true_eq] at h
+          obtain ⟨hb, hφ⟩ := elseChainGo_sound me opp _ _ (Nat.le_refl _) _ _ _ hgo
+          cases L with
+          | nil => exact Formula.noConfusion hφ
+          | cons hd tl =>
+              rw [hφ]
+              exact Pf.searchElseChain hd tl a me opp hb (congrArg Formula.size hφ ▸ h)
+        · simp at h
+      · simp at h
+    · simp at h
 
 /-! ### `chkLeaf` firing lemmas — each `Pf` leaf makes it fire (the completeness side). -/
 
@@ -345,7 +891,7 @@ theorem chkLeaf_eqRefl (K : Nat) (p : Prog)
     (hsz : (Formula.eq p p).size ≤ K) : chkLeaf K (.eq p p) = true := by
   have hfire : chkEqRefl K (.eq p p) = true := by unfold chkEqRefl; simp [hsz]
   unfold chkLeaf
-  simp only [hfire, Bool.or_true, Bool.true_or]
+  simp only [hfire, Bool.true_or]
 
 theorem chkLeaf_eqNeg (K : Nat) (p q : Prog) (hne : p ≠ q)
     (hsz : (Formula.neg (.eq p q)).size ≤ K) : chkLeaf K (.neg (.eq p q)) = true := by
@@ -431,6 +977,128 @@ theorem chkLeaf_iteBranchSearch (K kg : Nat) (z : Prog) (a' c0 c1 : Action) (ψg
   unfold chkLeaf
   simp only [hfire, Bool.or_true, Bool.true_or]
 
+theorem chkLeaf_implRefl (K : Nat) (A : Formula)
+    (hsz : (Formula.impl A A).size ≤ K) : chkLeaf K (.impl A A) = true := by
+  have hfire : chkImplRefl K (.impl A A) = true := by unfold chkImplRefl; simp [hsz]
+  unfold chkLeaf
+  simp only [hfire, Bool.or_true, Bool.true_or]
+
+theorem chkLeaf_implK (K : Nat) (A B : Formula)
+    (hsz : (Formula.impl A (.impl B A)).size ≤ K) :
+    chkLeaf K (.impl A (.impl B A)) = true := by
+  have hfire : chkImplK K (.impl A (.impl B A)) = true := by unfold chkImplK; simp [hsz]
+  unfold chkLeaf
+  simp only [hfire, Bool.or_true, Bool.true_or]
+
+theorem chkLeaf_searchChain (K g₁ : Nat) (ψ₁ : Formula) (e₁ : Prog)
+    (L : List (Nat × Formula × Prog)) (a : Action) (opnt : Prog)
+    (hsz : (Formula.impl
+      (.box g₁ (ψ₁.subst (.search g₁ ψ₁ (searchPlug L (.const a)) e₁) opnt))
+      (implChain
+        (searchGuards (.search g₁ ψ₁ (searchPlug L (.const a)) e₁) opnt L)
+        (.plays (.search g₁ ψ₁ (searchPlug L (.const a)) e₁) opnt a))).size ≤ K) :
+    chkLeaf K (.impl
+      (.box g₁ (ψ₁.subst (.search g₁ ψ₁ (searchPlug L (.const a)) e₁) opnt))
+      (implChain
+        (searchGuards (.search g₁ ψ₁ (searchPlug L (.const a)) e₁) opnt L)
+        (.plays (.search g₁ ψ₁ (searchPlug L (.const a)) e₁) opnt a))) = true := by
+  have hfire : chkSearchChain K (.impl
+      (.box g₁ (ψ₁.subst (.search g₁ ψ₁ (searchPlug L (.const a)) e₁) opnt))
+      (implChain
+        (searchGuards (.search g₁ ψ₁ (searchPlug L (.const a)) e₁) opnt L)
+        (.plays (.search g₁ ψ₁ (searchPlug L (.const a)) e₁) opnt a))) = true := by
+    show (decide (_ ≤ K) &&
+      (match chainTail? (implChain
+        (searchGuards (.search g₁ ψ₁ (searchPlug L (.const a)) e₁) opnt L)
+        (.plays (.search g₁ ψ₁ (searchPlug L (.const a)) e₁) opnt a)) with
+       | some (me, opp) => chkChainGo me opp _ me
+       | none => false)) = true
+    rw [chainTail?_implChain]
+    simp only [Bool.and_eq_true, decide_eq_true_eq]
+    exact ⟨hsz,
+      chkChainGo_complete (.search g₁ ψ₁ (searchPlug L (.const a)) e₁) opnt
+        ((g₁, ψ₁, e₁) :: L) a⟩
+  unfold chkLeaf
+  simp only [hfire, Bool.or_true, Bool.true_or]
+
+theorem chkLeaf_ctxChain (K : Nat) (me opnt : Prog) (hd : CtxLayer) (L : List CtxLayer)
+    (a : Action) (hme : me = ctxPlug (hd :: L) (.const a))
+    (hsz : (Formula.impl (ctxGuard me opnt hd)
+      (implChain (ctxGuards me opnt L) (.plays me opnt a))).size ≤ K) :
+    chkLeaf K (.impl (ctxGuard me opnt hd)
+      (implChain (ctxGuards me opnt L) (.plays me opnt a))) = true := by
+  have hfire : chkCtxChain K (.impl (ctxGuard me opnt hd)
+      (implChain (ctxGuards me opnt L) (.plays me opnt a))) = true := by
+    subst hme
+    cases hd with
+    | searchL g ψ e =>
+        show (decide _ &&
+          (match chainTail? (implChain
+            (ctxGuards (ctxPlug (.searchL g ψ e :: L) (.const a))
+              opnt L)
+            (.plays (ctxPlug (.searchL g ψ e :: L) (.const a)) opnt a)) with
+           | some (me', opp') => chkCtxGo me' opp' _ me'
+           | none => false)) = true
+        rw [chainTail?_implChain]
+        simp only [Bool.and_eq_true, decide_eq_true_eq]
+        exact ⟨hsz, chkCtxGo_complete (ctxPlug (.searchL g ψ e :: L) (.const a)) opnt
+          (.searchL g ψ e :: L) a⟩
+    | iteL z aT other =>
+        show (decide _ &&
+          (match chainTail? (implChain
+            (ctxGuards (ctxPlug (.iteL z aT other :: L) (.const a))
+              opnt L)
+            (.plays (ctxPlug (.iteL z aT other :: L) (.const a)) opnt a)) with
+           | some (me', opp') => chkCtxGo me' opp' _ me'
+           | none => false)) = true
+        rw [chainTail?_implChain]
+        simp only [Bool.and_eq_true, decide_eq_true_eq]
+        exact ⟨hsz, chkCtxGo_complete (ctxPlug (.iteL z aT other :: L) (.const a)) opnt
+          (.iteL z aT other :: L) a⟩
+  unfold chkLeaf
+  simp only [hfire, Bool.or_true, Bool.true_or]
+
+theorem chkLeaf_implS (K : Nat) (A B C : Formula)
+    (hsz : (Formula.impl (.impl A (.impl B C))
+      (.impl (.impl A B) (.impl A C))).size ≤ K) :
+    chkLeaf K (.impl (.impl A (.impl B C)) (.impl (.impl A B) (.impl A C))) = true := by
+  have hfire : chkImplS K
+      (.impl (.impl A (.impl B C)) (.impl (.impl A B) (.impl A C))) = true := by
+    unfold chkImplS; simp [hsz]
+  unfold chkLeaf
+  simp only [hfire, Bool.or_true, Bool.true_or]
+
+theorem chkLeaf_searchElseChain (K : Nat) (me opnt : Prog) (hd : SearchLayer2)
+    (L : List SearchLayer2) (a : Action) (hme : me = plug2 (hd :: L) (.const a))
+    (hsz : layersCost (hd :: L) + (Formula.impl (guard2 me opnt hd)
+      (implChain (guards2 me opnt L) (.plays me opnt a))).size ≤ K) :
+    chkLeaf K (.impl (guard2 me opnt hd)
+      (implChain (guards2 me opnt L) (.plays me opnt a))) = true := by
+  have hfire : chkSearchElseChain K (.impl (guard2 me opnt hd)
+      (implChain (guards2 me opnt L) (.plays me opnt a))) = true := by
+    have hgo0 := elseChainGo_complete me opnt (hd :: L) a
+    rw [← hme] at hgo0
+    have hgo : elseChainGo me opnt (.impl (guard2 me opnt hd)
+        (implChain (guards2 me opnt L) (.plays me opnt a))) me = some (hd :: L, a) := hgo0
+    show (match chainTail? (implChain (guards2 me opnt L) (.plays me opnt a)) with
+      | some (me', opp') =>
+          (match elseChainGo me' opp' (.impl (guard2 me opnt hd)
+              (implChain (guards2 me opnt L) (.plays me opnt a))) me' with
+           | some (L', _) => decide (layersCost L' + (Formula.impl (guard2 me opnt hd)
+               (implChain (guards2 me opnt L) (.plays me opnt a))).size ≤ K)
+           | none => false)
+      | none => false) = true
+    rw [chainTail?_implChain]
+    show (match elseChainGo me opnt (.impl (guard2 me opnt hd)
+        (implChain (guards2 me opnt L) (.plays me opnt a))) me with
+      | some (L', _) => decide (layersCost L' + (Formula.impl (guard2 me opnt hd)
+          (implChain (guards2 me opnt L) (.plays me opnt a))).size ≤ K)
+      | none => false) = true
+    rw [hgo]
+    exact decide_eq_true hsz
+  unfold chkLeaf
+  simp only [hfire, Bool.or_true]
+
 /-! ## 5. The `Pf` decider — the leaves + 15 reflective rules, atom-oracle-relative. -/
 
 /-- The stand-in for deciding `AtomProvable` (the `PlaysProof`/eval side — T3.2). -/
@@ -441,7 +1109,14 @@ def OracleComplete (O : Nat → Formula → Bool) : Prop :=
 
 def chkWeaken (rec : Nat → Formula → Bool) (k : Nat) : Formula → Bool
   | .impl A B =>
-      decide ((Formula.impl A B).size ≤ k) && rec (k - (Formula.impl A B).size) B
+      (decide ((Formula.impl A B).size ≤ k) && rec (k - (Formula.impl A B).size) B) ||
+      -- the contrapose leg (2026-07-28): a neg-neg implication may also come from
+      -- `Pf.contrapose` on the un-negated implication, at the same budget arithmetic
+      (match A, B with
+       | .neg B', .neg A' =>
+           decide ((Formula.impl A B).size ≤ k) &&
+           rec (k - (Formula.impl A B).size) (.impl A' B')
+       | _, _ => false)
   | _ => false
 
 def chkSTS (rec : Nat → Formula → Bool) (k : Nat) : Formula → Bool
@@ -579,13 +1254,19 @@ theorem decProv_sound (O : Nat → Formula → Bool) (hO : OracleSound O) :
       exact chkLeaf_sound k φ h
     · -- atom
       exact Pf.atom (hO k φ h)
-    · -- weakenImpl
+    · -- weakenImpl / contrapose (the two legs of the shared checker)
       unfold chkWeaken at h
       split at h
       · rename_i A B
-        simp only [Bool.and_eq_true, decide_eq_true_eq] at h
-        obtain ⟨hsz, hr⟩ := h
-        exact Pf.weakenImpl A B _ (ih _ _ hr) (by omega)
+        simp only [Bool.or_eq_true, Bool.and_eq_true, decide_eq_true_eq] at h
+        rcases h with ⟨hsz, hr⟩ | h2
+        · exact Pf.weakenImpl A B _ (ih _ _ hr) (by omega)
+        · split at h2
+          · rename_i B' A'
+            simp only [Bool.and_eq_true, decide_eq_true_eq] at h2
+            obtain ⟨hsz, hr⟩ := h2
+            exact Pf.contrapose A' B' _ (ih _ _ hr) (by omega)
+          · simp at h2
       · simp at h
     · -- searchThenSearch_t
       unfold chkSTS at h
@@ -718,14 +1399,21 @@ theorem decProv_mono (O : Nat → Formula → Bool) :
         (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl h))))))))))))))
     · exact Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl
         (Or.inl (Or.inl (Or.inl (Or.inl (Or.inr h))))))))))))))
-    · -- chkWeaken
+    · -- chkWeaken (two legs)
       refine Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl
         (Or.inl (Or.inl (Or.inl (Or.inr ?_)))))))))))))
       unfold chkWeaken at h ⊢
       split at h
       · rename_i A B
-        simp only [Bool.and_eq_true] at h ⊢
-        exact ⟨h.1, step _ _ h.2⟩
+        simp only [Bool.or_eq_true, Bool.and_eq_true] at h ⊢
+        rcases h with ⟨h1, h2⟩ | h2
+        · exact Or.inl ⟨h1, step _ _ h2⟩
+        · right
+          split at h2
+          · rename_i B' A'
+            simp only [Bool.and_eq_true] at h2 ⊢
+            exact ⟨h2.1, step _ _ h2.2⟩
+          · simp at h2
       · simp at h
     · -- chkSTS
       refine Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl
@@ -831,14 +1519,21 @@ theorem decProv_mono2 (O₁ O₂ : Nat → Formula → Bool)
         (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl h))))))))))))))
     · exact Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl
         (Or.inl (Or.inl (Or.inl (Or.inl (Or.inr (hO _ _ h)))))))))))))))
-    · -- chkWeaken
+    · -- chkWeaken (two legs)
       refine Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl
         (Or.inl (Or.inl (Or.inl (Or.inr ?_)))))))))))))
       unfold chkWeaken at h ⊢
       split at h
       · rename_i A B
-        simp only [Bool.and_eq_true] at h ⊢
-        exact ⟨h.1, step _ _ h.2⟩
+        simp only [Bool.or_eq_true, Bool.and_eq_true] at h ⊢
+        rcases h with ⟨h1, h2⟩ | h2
+        · exact Or.inl ⟨h1, step _ _ h2⟩
+        · right
+          split at h2
+          · rename_i B' A'
+            simp only [Bool.and_eq_true] at h2 ⊢
+            exact ⟨h2.1, step _ _ h2.2⟩
+          · simp at h2
       · simp at h
     · -- chkSTS
       refine Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl
@@ -942,8 +1637,8 @@ theorem decProv_mono2 (O₁ O₂ : Nat → Formula → Bool)
 
 The `∀ fuel ≥ K` form died with the CITE model: `searchThenSearch_t`'s inner premise lives at
 a SOURCE literal `k₂` unbounded by the conclusion's budget, so no budget-tied fuel covers it.
-The honest statement — and exactly T3.2c's target — is the enumerator form: every provable
-formula is FOUND at some fuel. -/
+The honest statement — and exactly T3.2c's target — is the enumerator form: every `S`-derivable
+formula (`⊢_k φ`) is FOUND at some fuel — a Lean theorem about the Bool `decProv`. -/
 
 set_option linter.unusedSimpArgs false in
 theorem decProv_complete (O : Nat → Formula → Bool) (hO : OracleComplete O) :
@@ -958,8 +1653,12 @@ theorem decProv_complete (O : Nat → Formula → Bool) (hO : OracleComplete O) 
     (fun _ _ _ _ _ => trivial) (fun _ _ _ _ _ => trivial) (fun _ _ _ _ => trivial)
     (fun _ _ _ _ => trivial)
     (fun _ _ _ => trivial)
-    ?cAtom ?cSB ?cSS ?cBSS ?cBSearch ?cIte ?cEqR ?cEqN ?cApp ?cITrans ?cWeaken ?cSTS
-    ?cAtomBox ?cBoxIntro ?cAxK ?cBox4 ?cDiagF ?cDiagB ?cAxKf ?cImpS2 ?cBoxMono ?cAtomNeg
+    ?cAtom ?cAtomNeg ?cSB ?cSS ?cBSS ?cBSearch ?cIte ?cSTS ?cSearchChain ?cCtxChain
+    ?cEqR ?cEqN
+    ?cApp ?cITrans ?cWeaken ?cImpS2 ?cImplRefl ?cImplK ?cImplS ?cContrapose
+    ?cNegElim
+    ?cBoxIntro ?cAtomBox ?cAxK ?cAxKf ?cBox4 ?cBoxMono ?cDiagF ?cDiagB
+    ?cSEC
     h
   case cSB =>
       intro k0 g ψg aT aE me opnt hme hsz K hmK
@@ -1008,6 +1707,59 @@ theorem decProv_complete (O : Nat → Formula → Bool) (hO : OracleComplete O) 
       have hfire := chkLeaf_eqNeg K p q hne (Nat.le_trans hsz hmK)
       rw [decProv]
       simp only [hfire, Bool.true_or]
+  case cImplRefl =>
+      intro k0 A hsz K hmK
+      refine ⟨1, ?_⟩
+      have hfire := chkLeaf_implRefl K A (Nat.le_trans hsz hmK)
+      rw [decProv]
+      simp only [hfire, Bool.true_or]
+  case cImplK =>
+      intro k0 A B hsz K hmK
+      refine ⟨1, ?_⟩
+      have hfire := chkLeaf_implK K A B (Nat.le_trans hsz hmK)
+      rw [decProv]
+      simp only [hfire, Bool.true_or]
+  case cSearchChain =>
+      intro k0 g₁ ψ₁ e₁ L a me opnt hme hle K hmK
+      subst hme
+      refine ⟨1, ?_⟩
+      have hfire := chkLeaf_searchChain K g₁ ψ₁ e₁ L a opnt (Nat.le_trans hle hmK)
+      rw [decProv]
+      simp only [hfire, Bool.true_or]
+  case cCtxChain =>
+      intro k0 hd L a me opnt hme hle K hmK
+      refine ⟨1, ?_⟩
+      have hfire := chkLeaf_ctxChain K me opnt hd L a hme (Nat.le_trans hle hmK)
+      rw [decProv]
+      simp only [hfire, Bool.true_or]
+  case cSEC =>
+      intro k0 hd L a me opnt hme hle K hmK
+      refine ⟨1, ?_⟩
+      have hfire := chkLeaf_searchElseChain K me opnt hd L a hme (Nat.le_trans hle hmK)
+      rw [decProv]
+      simp only [hfire, Bool.true_or]
+  case cImplS =>
+      intro k0 A B C hle K hmK
+      refine ⟨1, ?_⟩
+      have hfire := chkLeaf_implS K A B C (Nat.le_trans hle hmK)
+      rw [decProv]
+      simp only [hfire, Bool.true_or]
+  case cContrapose =>
+      intro k0 A B m0 _h hle ih K hmK
+      have h1 := Formula.size_pos (Formula.impl (.neg B) (.neg A))
+      obtain ⟨f, e⟩ := ih (K - (Formula.impl (.neg B) (.neg A)).size) (by omega)
+      refine ⟨f + 1, ?_⟩
+      have hfire : chkWeaken (fun m ψ => decProv O f m ψ) K
+          (Formula.impl (.neg B) (.neg A)) = true := by
+        unfold chkWeaken
+        have hg : (Formula.impl (.neg B) (.neg A)).size ≤ K := by omega
+        simp [e, hg]
+      rw [decProv]
+      simp only [hfire, Bool.or_true, Bool.true_or]
+  case cNegElim =>
+      -- vacuous: the premises are contradictory by soundness
+      intro k0 A B m₁ m₂ h1 h2 hle _ih1 _ih2 K hmK
+      exact absurd (PD.BaseTheorems.Pf_sound _ _ h2) (PD.BaseTheorems.Pf_sound _ _ h1)
   case cAtom =>
       intro k0 φ0 hatom _ K hmK
       refine ⟨1, ?_⟩
@@ -1461,8 +2213,12 @@ theorem decFull_complete : ∀ {m φ}, Pf m φ →
     (motive_2 := fun k φ _ => ∀ K, k ≤ K → ∃ F, certOG (decFull F) F K φ = true)
     (motive_3 := fun k φ _ => ∀ K, k ≤ K → ∃ F, decFull F K φ = true)
     ?pConst ?pSelf ?pOpp ?pBot ?pSim ?pIte_t ?pIte_f ?pSearch_t ?pSearch_f ?pMk
-    ?cAtom ?cSB ?cSS ?cBSS ?cBSearch ?cIte ?cEqR ?cEqN ?cApp ?cITrans ?cWeaken ?cSTS
-    ?cAtomBox ?cBoxIntro ?cAxK ?cBox4 ?cDiagF ?cDiagB ?cAxKf ?cImpS2 ?cBoxMono ?cAtomNeg
+    ?cAtom ?cAtomNeg ?cSB ?cSS ?cBSS ?cBSearch ?cIte ?cSTS ?cSearchChain ?cCtxChain
+    ?cEqR ?cEqN
+    ?cApp ?cITrans ?cWeaken ?cImpS2 ?cImplRefl ?cImplK ?cImplS ?cContrapose
+    ?cNegElim
+    ?cBoxIntro ?cAtomBox ?cAxK ?cAxKf ?cBox4 ?cBoxMono ?cDiagF ?cDiagB
+    ?cSEC
     h
   case pConst =>
       intro me oppo a b hb
@@ -1625,6 +2381,66 @@ theorem decFull_complete : ∀ {m φ}, Pf m φ →
       have hfire := chkLeaf_eqNeg K p q hne (Nat.le_trans hsz hmK)
       rw [decProv]
       simp only [hfire, Bool.true_or]
+  case cImplRefl =>
+      intro k0 A hsz K hmK
+      refine ⟨1, ?_⟩
+      show decProv (certOG (decFull 0) 0) 1 K _ = true
+      have hfire := chkLeaf_implRefl K A (Nat.le_trans hsz hmK)
+      rw [decProv]
+      simp only [hfire, Bool.true_or]
+  case cImplK =>
+      intro k0 A B hsz K hmK
+      refine ⟨1, ?_⟩
+      show decProv (certOG (decFull 0) 0) 1 K _ = true
+      have hfire := chkLeaf_implK K A B (Nat.le_trans hsz hmK)
+      rw [decProv]
+      simp only [hfire, Bool.true_or]
+  case cSearchChain =>
+      intro k0 g₁ ψ₁ e₁ L a me opnt hme hle K hmK
+      subst hme
+      refine ⟨1, ?_⟩
+      show decProv (certOG (decFull 0) 0) 1 K _ = true
+      have hfire := chkLeaf_searchChain K g₁ ψ₁ e₁ L a opnt (Nat.le_trans hle hmK)
+      rw [decProv]
+      simp only [hfire, Bool.true_or]
+  case cCtxChain =>
+      intro k0 hd L a me opnt hme hle K hmK
+      refine ⟨1, ?_⟩
+      show decProv (certOG (decFull 0) 0) 1 K _ = true
+      have hfire := chkLeaf_ctxChain K me opnt hd L a hme (Nat.le_trans hle hmK)
+      rw [decProv]
+      simp only [hfire, Bool.true_or]
+  case cSEC =>
+      intro k0 hd L a me opnt hme hle K hmK
+      refine ⟨1, ?_⟩
+      show decProv (certOG (decFull 0) 0) 1 K _ = true
+      have hfire := chkLeaf_searchElseChain K me opnt hd L a hme (Nat.le_trans hle hmK)
+      rw [decProv]
+      simp only [hfire, Bool.true_or]
+  case cImplS =>
+      intro k0 A B C hle K hmK
+      refine ⟨1, ?_⟩
+      show decProv (certOG (decFull 0) 0) 1 K _ = true
+      have hfire := chkLeaf_implS K A B C (Nat.le_trans hle hmK)
+      rw [decProv]
+      simp only [hfire, Bool.true_or]
+  case cContrapose =>
+      intro k0 A B m0 _h hle ih K hmK
+      have h1 := Formula.size_pos (Formula.impl (.neg B) (.neg A))
+      obtain ⟨F, e⟩ := ih (K - (Formula.impl (.neg B) (.neg A)).size) (by omega)
+      refine ⟨F + 1, ?_⟩
+      show decProv (certOG (decFull F) F) (F+1) K _ = true
+      have hfire : chkWeaken (fun m ψ => decProv (certOG (decFull F) F) F m ψ) K
+          (Formula.impl (.neg B) (.neg A)) = true := by
+        unfold chkWeaken
+        have hg : (Formula.impl (.neg B) (.neg A)).size ≤ K := by omega
+        have e' := decFull_le_inner F F le_rfl _ _ e
+        simp [e', hg]
+      rw [decProv]
+      simp only [hfire, Bool.or_true, Bool.true_or]
+  case cNegElim =>
+      intro k0 A B m₁ m₂ h1 h2 hle _ih1 _ih2 K hmK
+      exact absurd (PD.BaseTheorems.Pf_sound _ _ h2) (PD.BaseTheorems.Pf_sound _ _ h1)
   case cAtom =>
       intro k0 φ0 _hatom ih K hmK
       obtain ⟨F, e⟩ := ih K hmK
@@ -1878,9 +2694,9 @@ theorem decFull_complete : ∀ {m φ}, Pf m φ →
 
 /-! ## 8. THE PAYOFF — **the engine's `Pf` is SEMIDECIDABLE, absolutely.**
 
-`decFull` is a single computable, total function; every hit is a real derivation
+`decFull` is a single computable, total function; every hit is a real `S`-derivation
 (`decFull_sound`), and every derivation is found (`decFull_complete`). No oracle, no
-hypothesis: bounded provability — Löb fixpoints, floored else-certificates and all — is
+hypothesis: bounded provability `⊢_k φ` — Löb fixpoints, floored else-certificates and all — is
 recursively enumerable with a verified enumerator. The residual gap to full DECIDABILITY is
 exactly a computable fuel bound (the cited-premise/query-universe question, T4). -/
 
@@ -1915,7 +2731,8 @@ def GuardSound (G : Nat → Formula → Option Bool) : Prop :=
   ∀ k φ b, G k φ = some b → proofSearch k φ = b
 
 /-- The enumerator-backed guard. Note the else side consults the negation at ANY budget
-    `m ≤ fuelD`: a derivable refutation refutes provability at every budget. -/
+    `m ≤ fuelD`: a derivable refutation `⊢_m ¬φ` rules out `⊢_k φ` at every budget `k`
+    (soundness + consistency). -/
 def guardFull (fuelD : Nat) : Nat → Formula → Option Bool := fun k φ =>
   if decFull fuelD k φ then some true
   else if (List.range (fuelD + 1)).any (fun m => decFull fuelD m (.neg φ)) then some false
@@ -1979,6 +2796,92 @@ theorem guardFast_sound (fuelD : Nat) : GuardSound (guardFast fuelD) := by
         | true => exact absurd (proofSearch_sound _ _ hps) hnegI
       · simp at h
   · simp at h
+
+/-- Goal-directed guard EXTENDING `guardFast` beyond plays-atoms (2026-07-29):
+    * `.neg (.plays p q a)` — the refutation twin, both polarities goal-directed:
+      TRUE on a certificate of a DIFFERENT action `r ≠ a` whose `Pf.atomNeg`
+      transcript fits `k`; FALSE on a certificate of `a` itself (soundness refutes
+      the negation at EVERY budget — no floor to clear).
+    * any other non-`.plays` guard — FALSE once `k < φ.size`: by `pf_size_or_atom`
+      a proof either pays its conclusion's size or concludes a plays-atom, so an
+      oversized non-atom guard is unprovable outright (the size floor). This arm
+      decides the small-budget cells `guardFast` leaves `none` — e.g. a searcher
+      whose substituted guard mentions a same-size partner.
+    Plays-atoms delegate to `guardFast`. Strictly more commits, same soundness. -/
+def guardFastN (fuelD : Nat) : Nat → Formula → Option Bool := fun k φ =>
+  match φ with
+  | .plays p q a => guardFast fuelD k (.plays p q a)
+  | .neg (.plays p q a) =>
+      -- size floor FIRST: sound unconditionally, and it short-circuits before any
+      -- `decCertG` hop can reach a `.search` subject and trigger a `decFull` sweep
+      -- (self-play at real budgets OOMs otherwise — that sweep is exponential).
+      if k < (Formula.neg (.plays p q a)).size then some false
+      else if (List.range (fuelD + 1)).any (fun m =>
+          [Action.C, Action.D].any (fun r =>
+            decide (r ≠ a) && decide (m + (Formula.neg (.plays p q a)).size ≤ k) &&
+            decCertG (decFull fuelD) fuelD m p q p r)) then some true
+      else if (List.range (fuelD + 1)).any (fun m =>
+          decCertG (decFull fuelD) fuelD m p q p a) then some false
+      else none
+  | φ => if k < φ.size then some false else none
+
+theorem guardFastN_sound (fuelD : Nat) : GuardSound (guardFastN fuelD) := by
+  intro k φ b h
+  unfold guardFastN at h
+  split at h
+  · exact guardFast_sound fuelD _ _ _ h
+  · rename_i p q a
+    split at h
+    · rename_i hsz
+      injection h with h; subst h
+      cases hps : proofSearch k (.neg (.plays p q a)) with
+      | false => rfl
+      | true =>
+          exfalso
+          rcases pf_size_or_atom ((proofSearch_spec _ _).1 hps) with hle | hatom
+          · omega
+          · cases hatom
+    · split at h
+      · rename_i ht
+        injection h with h; subst h
+        simp only [List.any_eq_true, List.mem_range, Bool.and_eq_true,
+          decide_eq_true_eq] at ht
+        obtain ⟨m, _, r, _, ⟨hne, hbud⟩, hcert⟩ := ht
+        obtain ⟨n, cert, hn⟩ :=
+          decCertG_sound (decFull fuelD) (fun m' ψ => decFull_sound fuelD m' ψ) fuelD m
+            p q p r hcert
+        exact (proofSearch_spec _ _).2
+          (Pf.atomNeg p q r a n (AtomProvable.mk cert le_rfl) hne (by omega))
+      · split at h
+        · rename_i hf
+          injection h with h; subst h
+          simp only [List.any_eq_true, List.mem_range] at hf
+          obtain ⟨m, _, hcert⟩ := hf
+          obtain ⟨n, cert, hn⟩ :=
+            decCertG_sound (decFull fuelD) (fun m' ψ => decFull_sound fuelD m' ψ) fuelD m
+              p q p a hcert
+          have hI : (Formula.plays p q a).interp :=
+            Pf_sound _ _ (Pf.atom (AtomProvable.mk cert hn))
+          cases hps : proofSearch k (.neg (.plays p q a)) with
+          | false => rfl
+          | true =>
+              have hnI : ¬ (Formula.plays p q a).interp :=
+                Pf_sound _ _ ((proofSearch_spec _ _).1 hps)
+              exact absurd hI hnI
+        · simp at h
+  · rename_i hnp hnn
+    split at h
+    · rename_i hsz
+      injection h with h; subst h
+      cases hps : proofSearch k φ with
+      | false => rfl
+      | true =>
+          exfalso
+          rcases pf_size_or_atom ((proofSearch_spec _ _).1 hps) with hle | hatom
+          · omega
+          · cases hatom
+            exact hnp _ _ _ rfl
+    · simp at h
 
 /-- The COMPUTABLE evaluator: `eval`'s recursion verbatim, with the `.search` guard consulting
     a 3-valued computable `G`; `none` guard ⇒ `none` result. Parametric in `G` so any sound
@@ -2090,7 +2993,7 @@ theorem outcomeG_sound (G : Nat → Formula → Option Bool) (hG : GuardSound G)
 
 /-! ### Convergence — `guardFull`'s `none` is escapable on the whole r.e. fragment. -/
 
-/-- Σ₁ side: a provable guard is eventually committed `true`. -/
+/-- Σ₁ side: a guard with `⊢_k φ` is eventually committed `true`. -/
 theorem guardFull_converges_pos {k : Nat} {φ : Formula} (h : Pf k φ) :
     ∃ fuelD, guardFull fuelD k φ = some true := by
   obtain ⟨F, hF⟩ := decFull_complete h k le_rfl
@@ -2135,5 +3038,18 @@ private def FairB : Prog := .search 2 (.plays .opp .self .C) (.const .C) (.const
 #eval outcomeG (guardFast 2) 8 FairB CoopB -- expect: some (C, C) — grounded cooperation
 #eval outcomeG (guardFast 2) 8 FairB DefB  -- expect: some (D, D) — refutation-driven defection
 #eval outcomeG (guardFast 2) 8 FairB FairB  -- expect: none — the Löb fixpoint boundary
+
+-- The refutation-guard twin (WaryBot-mini, guard budget 16): defect iff a refutation of
+-- the opponent's cooperation is found within 16, else cooperate. `guardFastN` decides all
+-- three cells: vs DefB the TRUE commit (`Pf.atomNeg` from DefB's D-certificate: 1 + the
+-- substituted guard's size 15 ≤ 16), vs CoopB the FALSE commit (CoopB's C-certificate
+-- refutes the negation at every budget), and self-play by the SIZE FLOOR (the substituted
+-- guard costs 26 > 16, so it is unprovable by `pf_size_or_atom`) — the bounded analogue of
+-- "I cannot refute my own partner's cooperation, so I trust".
+private def WaryB : Prog := .search 16 (.neg (.plays .opp .self .C)) (.const .D) (.const .C)
+
+#eval outcomeG (guardFastN 2) 8 WaryB DefB   -- expect: some (D, D)
+#eval outcomeG (guardFastN 2) 8 WaryB CoopB  -- expect: some (C, C)
+#eval outcomeG (guardFastN 2) 8 WaryB WaryB  -- expect: some (C, C) — size-floor trust
 
 end PD.T31

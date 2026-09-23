@@ -45,10 +45,10 @@ Bot outcomes are being recorded here: [Outcome Matrix](https://docs.google.com/s
 
 - `PrisonersDilemma/Dynamics.lean`
 	- Defines fuel-bounded evaluator `eval : Nat → Prog → Prog → Prog → Option Action`.
-	- Axiomatizes `proofSearch : Nat → Formula → Bool` (oracle).
+	- Its `.search` guard calls `proofSearch : Nat → Formula → Bool := decide (Pf k φ)` (defined in `ProofSystem.lean`; the guard fires iff `⊢_k φ`, no axiom).
 	- Defines `play : Nat → Prog → Prog → Option Action` (single agent's move).
 	- Defines `outcome : Nat → Prog → Prog → Option Outcome` (both agents' moves).
-	- Defines `Formula.interp` (semantic interpretation of formulas).
+	- Defines `Formula.interp` (semantic interpretation of formulas — truth, `⊨ φ`).
 
 ### Bots
 
@@ -111,7 +111,7 @@ Bot outcomes are being recorded here: [Outcome Matrix](https://docs.google.com/s
 - `.opp`: Evaluate the opponent program.
 - `.sim p q`: Simulate program `p` against `q`, then evaluate the result.
 - `.ite b a p q`: If guard `b` evaluates to action `a`, run `p`, else run `q`.
-- `.search k φ p q`: If oracle proves formula `φ`, run `p`, else run `q`.
+- `.search k φ p q`: If the proof system `S` derives `φ` at budget `k` (`⊢_k φ`), run `p`, else run `q`.
 
 ### Evaluation: Fuel-Bounded Execution
 
@@ -130,7 +130,7 @@ Returns `Option Action`: `some a` if evaluation succeeds, `none` if fuel exhaust
 |---|---|
 | `play fuel me opp` | Single program `me`'s action when facing `opp` with given `fuel`. |
 | `outcome fuel p q` | Pair `(play fuel p q, play fuel q p)` of both programs' actions. |
-| Theorem proving `play`/`outcome` | Establishes what programs provably do at specific fuel levels. |
+| Theorem proving `play`/`outcome` | Establishes, as a Lean theorem, what programs do at specific fuel levels. |
 
 ### Substitution and Capture Avoidance
 

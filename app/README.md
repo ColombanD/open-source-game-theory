@@ -76,6 +76,15 @@ List bots discovered from the Lean engine:
 - Generated Lean snippets are written to `generated/lean/`.
 - Build/eval logs can be stored in `generated/logs/`.
 
+### Design notes
+
+- [`docs/BOT_REVIEWER.md`](docs/BOT_REVIEWER.md) — the NL→bot faithfulness reviewer:
+  blind expectation extraction, certified behavioral profiles, the judge tier, plus
+  the (unbuilt) rewriter loop and E2 harness designs. **Read before touching
+  `services/bot_profile.py`, `services/bot_expectation.py`, or
+  `services/bot_judge.py`** — it carries the memory-discipline rules that have
+  cost this project three machine restarts.
+
 ---
 
 ## Phase 2 — LLM Proof Agent
@@ -118,7 +127,20 @@ ProofRequest (bot pair + outcome)
 
 ### Running the proof agent
 
-Requires `ANTHROPIC_API_KEY` set in your environment (API credits separate from Claude Pro).
+Requires an Anthropic API key (API credits — billed separately from a Claude
+subscription). Put it in `app/.env`, which is gitignored and loaded
+automatically when `pd_runner` is imported:
+
+```bash
+# app/.env
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+Do **not** `export ANTHROPIC_API_KEY` from your shell rc file. A global export
+is inherited by every process on the machine — including Claude Code, which
+then bills the API account instead of your subscription. A real environment
+variable still wins over `.env` if you need a one-off override:
+`ANTHROPIC_API_KEY=sk-... uv run ...`.
 
 ```bash
 # Full eval run (calls LLM + Lean for all 10 cases)
@@ -152,3 +174,67 @@ uv run python -m pd_runner.eval.harness --dry-run
 | 1 | CooperateBot, DefectBot | Trivial — `.const` action, `unfold` + `rfl` |
 | 2 | MirrorBot, OBot, DBot | One-step simulation, `unfold` + `simp` |
 | 3 | TitForTatBot, EBot | Multi-step, requires inspecting bot definitions |
+
+## Outcome matrix → Google Sheet
+
+The bot-vs-bot outcome matrix in the tracking Google Sheet (link in
+`engine/README.md`) is generated from the proven theorem library by
+`pd_runner/eval/outcome_matrix.py` and pushed by `pd_runner/services/sheets.py`.
+
+The cells are NOT scraped from Lean source. Every matrix theorem is tagged
+`@[outcome]` and stated on the `OutcomeSpec` template (`engine/PrisonersDilemma/Outcome/`);
+`lake exe export_outcomes` reads their elaborated types and writes the committed
+`app/generated/outcome_theorems.json` (digest-protected — never hand-edit it), which
+is what the Python side reads. The export only changes when you regenerate it:
+
+```bash
+uv run python -m pd_runner.eval.outcome_matrix               # print TSV (warns if the export lags)
+uv run python -m pd_runner.eval.outcome_matrix --refresh     # lake build + export, then print
+uv run python -m pd_runner.eval.outcome_matrix --format md   # markdown
+uv run python -m pd_runner.eval.outcome_matrix --push        # write to the Sheet
+```
+
+The web UI (`uv run pd-serve`) loads the matrix on open and after every action,
+shows a staleness note when the export lags the sources, and has a "Regenerate
+from Lean" button (`POST /matrix/export`) and a "Sync to Google Sheet" button
+(`POST /matrix/sync`). The library writer regenerates the
+export after each accepted proof, and the pipeline syncs the sheet when
+credentials are present.
+
+Cell semantics (upper triangle only; a cell reads from the row bot's perspective):
+
+- `(C, D)` — proven outcome from an accepted `@[outcome]` `outcome_A_vs_B` /
+  `llm_outcome_A_vs_B` theorem at ONE shared budget (for-all-k or large-k
+  threshold statements; suffixed variants like `_floor` are not cells).
+- `(D, D) ⇄ (C, C)` — BUDGET-SENSITIVE: the shared-budget outcome, then what the
+  pair does once one bot is granted a bigger budget (a `…_staggered`
+  `@[outcome_companion]` theorem). Both are proven; the mark keeps the staggered
+  result visible.
+- ` †` — STAGGERED ONLY: no shared-budget theorem exists; the cell is proven with
+  one bot at a bigger budget (the LegibleBot/OptimBot two-tier cells).
+
+Every proven cell carries an explanation naming its theorem, the regime, and any
+staggered companion with the exact budgets (`PrudentBot (2 * k + 64) vs DupocBot k`):
+a hover tooltip in the web UI (`GET /matrix` → `details`) and a cell note in the
+Google Sheet. The legend under the matrix is shared by the UI, the sheet and this
+file (`MATRIX_LEGEND`).
+- `None` — a Lean theorem proves there is NO outcome (`= none`, e.g. MirrorBot self-play).
+- `Open Problem` / `Tried` / `Need rework` — curated in `app/outcome_status.toml`
+  (`Need rework` = a proof exists but not in the accepted large-k form, e.g. only
+  `_floor` regime theorems).
+- empty — not yet attempted.
+
+### One-time Google auth setup (service account)
+
+1. In Google Cloud Console, create (or reuse) a project and enable the
+   **Google Sheets API**.
+2. Create a **service account** (no roles needed), then create a **JSON key**
+   for it and save it as `app/.secrets/sheets-service-account.json`
+   (gitignored; or set `PD_SHEETS_CREDENTIALS=/path/to/key.json`).
+3. Share the tracking spreadsheet with the service account's email address
+   (`...@<project>.iam.gserviceaccount.com`) as **Editor**.
+
+The matrix is written to its own worksheet (default `Auto Matrix`, override
+with `PD_SHEETS_WORKSHEET`; spreadsheet override: `PD_SHEETS_SPREADSHEET_ID`).
+The worksheet is cleared and rewritten on every push — never hand-edit it;
+curate `Open Problem`/`Tried` in `app/outcome_status.toml` instead.

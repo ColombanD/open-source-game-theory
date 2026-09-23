@@ -1,0 +1,131 @@
+{
+  "run": "body+twins+natives_t100_a000_d2be5f067353",
+  "zoo": "body+twins+natives",
+  "family": "behavioral",
+  "t": 1.0,
+  "alpha": 0.0,
+  "fingerprint": "d2be5f067353",
+  "n_types": 14,
+  "bots": [
+    "CIMCIC",
+    "CooperateBot",
+    "CupodBot",
+    "CupodTrollBot",
+    "DBot",
+    "DIMCID",
+    "DefectBot",
+    "DupocBot",
+    "EBot",
+    "MaxConfidenceBot",
+    "MinConfidenceBot",
+    "OBot",
+    "PrudentBot",
+    "TitForTatBot"
+  ],
+  "excluded_bots": [],
+  "is_fully_proven": true,
+  "grid_points": [
+    [
+      1.0,
+      0.0
+    ],
+    [
+      0.8,
+      0.0
+    ],
+    [
+      0.6,
+      0.0
+    ],
+    [
+      0.4,
+      0.0
+    ],
+    [
+      0.2,
+      0.0
+    ],
+    [
+      0.0,
+      0.0
+    ]
+  ],
+  "n_grid_points": 6,
+  "ok": true,
+  "failed_stages": [],
+  "stages": {
+    "ess": {
+      "ok": true,
+      "seconds": 0.004,
+      "error": null,
+      "n_pure_ess": 0,
+      "n_types": 14
+    },
+    "invasion": {
+      "ok": true,
+      "seconds": 0.582,
+      "error": null,
+      "edges_strict": 0,
+      "edges_weak": 182,
+      "n_sccs": 14,
+      "n_cycles": 0,
+      "layout_backend": "manual_layered"
+    },
+    "faces": {
+      "ok": true,
+      "seconds": 0.886,
+      "error": null,
+      "n_supports": 16369,
+      "by_class": {
+        "singular": 16369
+      },
+      "enumeration_complete": true
+    },
+    "nash": {
+      "ok": true,
+      "seconds": 0.676,
+      "error": null,
+      "run_dir": "runs/20260901T130307Z_e168f535168d",
+      "n_extreme_NE": 196,
+      "n_components": 1,
+      "cross_check_performed": false
+    },
+    "replicator": {
+      "ok": true,
+      "seconds": 0.006,
+      "error": null,
+      "n_attractors": 31,
+      "n_unconverged": 0,
+      "all_converged": true,
+      "largest_basin": 0.840796,
+      "dominant_support": [
+        "EBot",
+        "DefectBot",
+        "DIMCID",
+        "DBot",
+        "CIMCIC",
+        "CupodTrollBot",
+        "CupodBot",
+        "CooperateBot",
+        "MaxConfidenceBot",
+        "MinConfidenceBot",
+        "DupocBot",
+        "OBot",
+        "PrudentBot",
+        "TitForTatBot"
+      ]
+    },
+    "moran": {
+      "ok": true,
+      "seconds": 0.061,
+      "error": null,
+      "n_points": 9,
+      "all_converged": true,
+      "headline": {
+        "population": 100,
+        "beta": 1.0,
+        "stochastically_stable": []
+      }
+    }
+  }
+}

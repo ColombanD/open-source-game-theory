@@ -1,0 +1,21 @@
+{
+  "timestamp": "20260731T154509",
+  "bot_a": "LegibleBot",
+  "bot_b": "GuardianBot",
+  "model": "claude-opus-4-8",
+  "episode_index": 0,
+  "end_reason": "verdict",
+  "verdict_kind": "proved",
+  "turns_used": 7,
+  "tool_calls_used": 7,
+  "usage": {
+    "input_tokens": 14,
+    "output_tokens": 8194,
+    "cache_read_tokens": 744160,
+    "cache_creation_tokens": 31188
+  },
+  "elapsed_seconds": 120.05337324998982,
+  "notebook": null,
+  "hidden_bots": [],
+  "final_text": "The proof compiles cleanly with no warnings or errors. Note the theorem statement uses `LegibleBot (2*k+64) k` (the staggered dials, matching all the library helpers and precedent — LegibleBot is a two-argument bot and the staggered version is the resolved regime). The outcome is (C, C)."
+}

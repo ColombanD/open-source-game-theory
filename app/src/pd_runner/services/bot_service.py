@@ -5,7 +5,9 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
-from pd_runner.llm.client import AnthropicClient, ToolHandler
+from pd_runner import settings
+from pd_runner.llm.client import ToolHandler
+from pd_runner.llm.factory import make_llm_client
 from pd_runner.llm.prompts import build_bot_system_prompt, bot_request_message
 from pd_runner.llm.tools import BOT_TOOLS, register_bot_tools
 from pd_runner.logging_config import get_logger, TRACE
@@ -17,10 +19,13 @@ _log = get_logger("services.bot_service")
 class BotRequest:
     bot_name: str
     strategy_description: str
-    max_iterations: int = 20
-    model: str = "claude-opus-4-7"
-    max_tokens: int = 32000
-    thinking_effort: str = "medium"
+    max_iterations: int = settings.DEFAULT_MAX_ITERATIONS
+    model: str = settings.DEFAULT_MODEL
+    max_tokens: int = settings.DEFAULT_MAX_TOKENS
+    thinking_effort: str = settings.DEFAULT_THINKING_EFFORT
+    # Rewriter feedback: the mismatch brief from a previous unfaithful attempt
+    # (docs/BOT_REVIEWER.md §7). None on a first attempt.
+    feedback: str | None = None
 
 
 @dataclass(frozen=True)
@@ -40,7 +45,9 @@ def search_bot(request: BotRequest) -> BotResult:
     Raises BotWriteError if the agent fails to produce a compiling bot definition.
     """
     system_prompt = build_bot_system_prompt()
-    user_message = bot_request_message(request.bot_name, request.strategy_description)
+    user_message = bot_request_message(
+        request.bot_name, request.strategy_description, request.feedback
+    )
 
     _log.log(TRACE, "Bot writer system prompt:\n%s", system_prompt)
     _log.log(TRACE, "Bot writer user message:\n%s", user_message)
@@ -48,7 +55,7 @@ def search_bot(request: BotRequest) -> BotResult:
     handler = ToolHandler()
     register_bot_tools(handler)
 
-    client = AnthropicClient(
+    client = make_llm_client(
         system_prompt=system_prompt,
         tools=BOT_TOOLS,
         model=request.model,
@@ -56,15 +63,6 @@ def search_bot(request: BotRequest) -> BotResult:
         max_tokens=request.max_tokens,
         thinking_effort=request.thinking_effort,
     )
-
-    iteration_count = [0]
-    original_call = handler.call
-
-    def counting_call(tool_name: str, tool_input):
-        iteration_count[0] += 1
-        return original_call(tool_name, tool_input)
-
-    handler.call = counting_call  # type: ignore[method-assign]
 
     final_text = client.run(user_message, tool_handler=handler)
 
@@ -78,7 +76,7 @@ def search_bot(request: BotRequest) -> BotResult:
     return BotResult(
         bot_name=request.bot_name,
         lean_source=lean_source,
-        iterations_used=iteration_count[0],
+        iterations_used=client.last_tool_calls,
     )
 
 

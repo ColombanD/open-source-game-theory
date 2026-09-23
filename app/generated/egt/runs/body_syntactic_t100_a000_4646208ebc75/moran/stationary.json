@@ -1,0 +1,457 @@
+{
+  "names": [
+    "CooperateBot",
+    "CupodBot",
+    "CupodTrollBot",
+    "DBot",
+    "DIMCID",
+    "DefectBot",
+    "DupocBot",
+    "EBot",
+    "OBot",
+    "TitForTatBot"
+  ],
+  "points": [
+    {
+      "population": 10,
+      "beta": 0.01,
+      "converged": true,
+      "neutral_share": 0.1,
+      "stochastically_stable": [],
+      "stationary": [
+        [
+          "CooperateBot",
+          0.1
+        ],
+        [
+          "CupodBot",
+          0.1
+        ],
+        [
+          "CupodTrollBot",
+          0.1
+        ],
+        [
+          "DBot",
+          0.1
+        ],
+        [
+          "DIMCID",
+          0.1
+        ],
+        [
+          "DefectBot",
+          0.1
+        ],
+        [
+          "DupocBot",
+          0.1
+        ],
+        [
+          "EBot",
+          0.1
+        ],
+        [
+          "OBot",
+          0.1
+        ],
+        [
+          "TitForTatBot",
+          0.1
+        ]
+      ]
+    },
+    {
+      "population": 10,
+      "beta": 0.1,
+      "converged": true,
+      "neutral_share": 0.1,
+      "stochastically_stable": [],
+      "stationary": [
+        [
+          "CooperateBot",
+          0.1
+        ],
+        [
+          "CupodBot",
+          0.1
+        ],
+        [
+          "CupodTrollBot",
+          0.1
+        ],
+        [
+          "DBot",
+          0.1
+        ],
+        [
+          "DIMCID",
+          0.1
+        ],
+        [
+          "DefectBot",
+          0.1
+        ],
+        [
+          "DupocBot",
+          0.1
+        ],
+        [
+          "EBot",
+          0.1
+        ],
+        [
+          "OBot",
+          0.1
+        ],
+        [
+          "TitForTatBot",
+          0.1
+        ]
+      ]
+    },
+    {
+      "population": 10,
+      "beta": 1.0,
+      "converged": true,
+      "neutral_share": 0.1,
+      "stochastically_stable": [],
+      "stationary": [
+        [
+          "CooperateBot",
+          0.1
+        ],
+        [
+          "CupodBot",
+          0.1
+        ],
+        [
+          "CupodTrollBot",
+          0.1
+        ],
+        [
+          "DBot",
+          0.1
+        ],
+        [
+          "DIMCID",
+          0.1
+        ],
+        [
+          "DefectBot",
+          0.1
+        ],
+        [
+          "DupocBot",
+          0.1
+        ],
+        [
+          "EBot",
+          0.1
+        ],
+        [
+          "OBot",
+          0.1
+        ],
+        [
+          "TitForTatBot",
+          0.1
+        ]
+      ]
+    },
+    {
+      "population": 50,
+      "beta": 0.01,
+      "converged": true,
+      "neutral_share": 0.1,
+      "stochastically_stable": [],
+      "stationary": [
+        [
+          "CupodTrollBot",
+          0.1
+        ],
+        [
+          "DBot",
+          0.1
+        ],
+        [
+          "DIMCID",
+          0.1
+        ],
+        [
+          "DefectBot",
+          0.1
+        ],
+        [
+          "DupocBot",
+          0.1
+        ],
+        [
+          "EBot",
+          0.1
+        ],
+        [
+          "OBot",
+          0.1
+        ],
+        [
+          "TitForTatBot",
+          0.1
+        ],
+        [
+          "CooperateBot",
+          0.1
+        ],
+        [
+          "CupodBot",
+          0.1
+        ]
+      ]
+    },
+    {
+      "population": 50,
+      "beta": 0.1,
+      "converged": true,
+      "neutral_share": 0.1,
+      "stochastically_stable": [],
+      "stationary": [
+        [
+          "CupodTrollBot",
+          0.1
+        ],
+        [
+          "DBot",
+          0.1
+        ],
+        [
+          "DIMCID",
+          0.1
+        ],
+        [
+          "DefectBot",
+          0.1
+        ],
+        [
+          "DupocBot",
+          0.1
+        ],
+        [
+          "EBot",
+          0.1
+        ],
+        [
+          "OBot",
+          0.1
+        ],
+        [
+          "TitForTatBot",
+          0.1
+        ],
+        [
+          "CooperateBot",
+          0.1
+        ],
+        [
+          "CupodBot",
+          0.1
+        ]
+      ]
+    },
+    {
+      "population": 50,
+      "beta": 1.0,
+      "converged": true,
+      "neutral_share": 0.1,
+      "stochastically_stable": [],
+      "stationary": [
+        [
+          "CupodTrollBot",
+          0.1
+        ],
+        [
+          "DBot",
+          0.1
+        ],
+        [
+          "DIMCID",
+          0.1
+        ],
+        [
+          "DefectBot",
+          0.1
+        ],
+        [
+          "DupocBot",
+          0.1
+        ],
+        [
+          "EBot",
+          0.1
+        ],
+        [
+          "OBot",
+          0.1
+        ],
+        [
+          "TitForTatBot",
+          0.1
+        ],
+        [
+          "CooperateBot",
+          0.1
+        ],
+        [
+          "CupodBot",
+          0.1
+        ]
+      ]
+    },
+    {
+      "population": 100,
+      "beta": 0.01,
+      "converged": true,
+      "neutral_share": 0.1,
+      "stochastically_stable": [],
+      "stationary": [
+        [
+          "CupodBot",
+          0.1
+        ],
+        [
+          "CooperateBot",
+          0.1
+        ],
+        [
+          "DIMCID",
+          0.1
+        ],
+        [
+          "DefectBot",
+          0.1
+        ],
+        [
+          "DupocBot",
+          0.1
+        ],
+        [
+          "EBot",
+          0.1
+        ],
+        [
+          "OBot",
+          0.1
+        ],
+        [
+          "TitForTatBot",
+          0.1
+        ],
+        [
+          "CupodTrollBot",
+          0.1
+        ],
+        [
+          "DBot",
+          0.1
+        ]
+      ]
+    },
+    {
+      "population": 100,
+      "beta": 0.1,
+      "converged": true,
+      "neutral_share": 0.1,
+      "stochastically_stable": [],
+      "stationary": [
+        [
+          "CupodBot",
+          0.1
+        ],
+        [
+          "CooperateBot",
+          0.1
+        ],
+        [
+          "DIMCID",
+          0.1
+        ],
+        [
+          "DefectBot",
+          0.1
+        ],
+        [
+          "DupocBot",
+          0.1
+        ],
+        [
+          "EBot",
+          0.1
+        ],
+        [
+          "OBot",
+          0.1
+        ],
+        [
+          "TitForTatBot",
+          0.1
+        ],
+        [
+          "CupodTrollBot",
+          0.1
+        ],
+        [
+          "DBot",
+          0.1
+        ]
+      ]
+    },
+    {
+      "population": 100,
+      "beta": 1.0,
+      "converged": true,
+      "neutral_share": 0.1,
+      "stochastically_stable": [],
+      "stationary": [
+        [
+          "CupodBot",
+          0.1
+        ],
+        [
+          "CooperateBot",
+          0.1
+        ],
+        [
+          "DIMCID",
+          0.1
+        ],
+        [
+          "DefectBot",
+          0.1
+        ],
+        [
+          "DupocBot",
+          0.1
+        ],
+        [
+          "EBot",
+          0.1
+        ],
+        [
+          "OBot",
+          0.1
+        ],
+        [
+          "TitForTatBot",
+          0.1
+        ],
+        [
+          "CupodTrollBot",
+          0.1
+        ],
+        [
+          "DBot",
+          0.1
+        ]
+      ]
+    }
+  ]
+}

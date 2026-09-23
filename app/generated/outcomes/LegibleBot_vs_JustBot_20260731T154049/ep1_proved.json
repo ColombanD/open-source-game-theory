@@ -1,0 +1,21 @@
+{
+  "timestamp": "20260731T154049",
+  "bot_a": "LegibleBot",
+  "bot_b": "JustBot",
+  "model": "claude-opus-4-8",
+  "episode_index": 0,
+  "end_reason": "verdict",
+  "verdict_kind": "proved",
+  "turns_used": 5,
+  "tool_calls_used": 5,
+  "usage": {
+    "input_tokens": 10,
+    "output_tokens": 6615,
+    "cache_read_tokens": 518588,
+    "cache_creation_tokens": 29730
+  },
+  "elapsed_seconds": 120.08893754200835,
+  "notebook": null,
+  "hidden_bots": [],
+  "final_text": "It compiles cleanly with no errors or warnings. The outcome is (C, C). Let me submit."
+}
