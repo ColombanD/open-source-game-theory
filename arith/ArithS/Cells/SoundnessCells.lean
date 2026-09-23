@@ -150,25 +150,54 @@ theorem found_of_tact {φ : PD.Formula} {me opp : PD.Prog} (h : TAct ⊢ trAt me
   rw [← guardOf, guardOf_eq_quote_trAt, lenProvableV_nat]
   exact lenProvable_fbound_mono hk hN
 
-/-- τ on the realized sentence (fragment frame and formula). -/
-theorem lMap_swap_trAt {me opp : PD.Prog} (hme : fragP me = true) (hopp : fragP opp = true)
-    (φ : PD.Formula) (hφ : fragF φ = true) :
-    Semiformula.lMap swap (trAt me opp φ) = trAt me.transpose opp.transpose φ.transpose := by
+/-- τ on the template of a play atom over FRAGMENT programs (atomicity is not needed: the `.plays`
+arm of `Code.lMap_swap_tmpl`, verbatim). -/
+theorem lMap_swap_tmpl_plays {p q : PD.Prog} (hp : fragP p = true) (hq : fragP q = true) (a : PD.Action) :
+    Semiformula.lMap swap (tmpl (.plays p q a)) = tmpl (.plays p.transpose q.transpose a.swap) := by
+  rw [tmpl_plays, tmpl_plays]
+  unfold progGraph
+  simp only [Semiformula.lMap_exs, LogicalConnective.HomClass.map_and, Semiformula.lMap_subst,
+    lMap_swap_evalG, lMap_swap_progAux (swapcode_pcode p hp), lMap_swap_progAux (swapcode_pcode q hq)]
+  congr 4
+  · congr 1; funext i; fin_cases i <;> rfl
+  · congr 1
+    · congr 1; funext i; fin_cases i <;> rfl
+    · congr 1
+      funext i
+      fin_cases i
+      · rfl
+      · rfl
+      · rfl
+      · rfl
+      · show Semiterm.lMap swap (cl (actT (actCode a))) = cl (actT (actCode a.swap))
+        rw [lMap_swap_cl, lMap_swap_actT, actCode_swap]
+
+/-- τ on the realized play atom (fragment frame and programs). -/
+theorem lMap_swap_trAt_plays {me opp p q : PD.Prog} (hme : fragP me = true) (hopp : fragP opp = true)
+    (hp : fragP p = true) (hq : fragP q = true) (a : PD.Action) :
+    Semiformula.lMap swap (trAt me opp (.plays p q a)) =
+      trAt me.transpose opp.transpose (.plays p.transpose q.transpose a.swap) := by
   unfold trAt
-  rw [Semiformula.lMap_subst, lMap_swap_tmpl φ hφ]
+  rw [Semiformula.lMap_subst, lMap_swap_tmpl_plays hp hq]
   congr 1
   funext i
   fin_cases i <;> simp [descTerms, lMap_swap_dnumT, lMap_swap_dUT, lMap_swap_dWT, swapcode_pcode me hme,
     swapcode_pcode opp hopp]
 
+/-- The transposition of a search-free player is a search-free player. -/
+theorem sfp_transpose {X : PD.Prog} (hX : SearchFreePlayer X) (hm : modestP X.transpose = true)
+    (hs : X.transpose.hasSearch = false) : SearchFreePlayer X.transpose :=
+  ⟨⟨transpose_ne_self hX.1.1, transpose_ne_opp hX.1.2⟩, hm, hs⟩
+
 /-- **`TAct` proves a true closed atom** about search-free proper players: the standard reading by
 Σ₁-completeness of PA at ℕ (`pa_proves_trAt_of_evalGraph`), the swapped reading by the same on the
 TRANSPOSED play; completeness (`tact_complete'`) closes. -/
 theorem tact_proves_plays_closed {X Y : PD.Prog} (hX : SearchFreePlayer X) (hY : SearchFreePlayer Y)
-    (hXc : closedP X = true) (hYc : closedP Y = true) (a : PD.Action) {N : ℕ} (h : EvalGraph N (pcode X) (pcode Y) (pcode X) (actCode a)) {N' : ℕ}
-    (hτ : EvalGraph N' (pcode X.transpose) (pcode Y.transpose) (pcode X.transpose) (actCode a.swap))
-    (hXτ : Proper X.transpose) (hYτ : Proper Y.transpose) :
+    (a : PD.Action) {N : ℕ} (h : EvalGraph N (pcode X) (pcode Y) (pcode X) (actCode a)) {N' : ℕ}
+    (hτ : EvalGraph N' (pcode X.transpose) (pcode Y.transpose) (pcode X.transpose) (actCode a.swap)) :
     TAct ⊢ trAt X Y (.plays X Y a) := by
+  have hXτ : Proper X.transpose := ⟨transpose_ne_self hX.1.1, transpose_ne_opp hX.1.2⟩
+  have hYτ : Proper Y.transpose := ⟨transpose_ne_self hY.1.1, transpose_ne_opp hY.1.2⟩
   refine tact_complete' _ fun M _ _ ↦ ?_
   have : M↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
   constructor
@@ -181,8 +210,8 @@ theorem tact_proves_plays_closed {X Y : PD.Prog} (hX : SearchFreePlayer X) (hY :
       models_of_provable inferInstance hpa
     rw [models_inst_V, stdActV_eq_stdActS] at hM
     refine (Semiformula.eval_lMap (s₂ := stdActS M) (Φ := swap)).mp ?_
-    rw [lMap_swap_trAt (fragP_of_modestP X hX.2.1) (fragP_of_modestP Y hY.2.1) _
-      (by simp [fragF, atomicP, hXc, hYc, fragP_of_modestP X hX.2.1, fragP_of_modestP Y hY.2.1])]
+    rw [lMap_swap_trAt_plays (fragP_of_modestP X hX.2.1) (fragP_of_modestP Y hY.2.1)
+      (fragP_of_modestP X hX.2.1) (fragP_of_modestP Y hY.2.1)]
     exact hM
 
 end found
@@ -941,5 +970,116 @@ theorem snd_JustBot_vs_OBot (k : ℕ) :
   exact EvalGraph.mono_le (by omega) (obot_D_of_any hr' h2)
 
 end sndCells
+
+/-! ### 10. Guardian's guard against a closed opponent is a FIXED sentence: the positive cells -/
+
+section guardianPos
+
+lemma sfp_botCB : SearchFreePlayer (.bot CooperateBot) := ⟨proper_botCB, rfl, rfl⟩
+lemma sfp_botDB : SearchFreePlayer (.bot DefectBot) := ⟨proper_botDB, rfl, rfl⟩
+
+/-- **Guardian finds its guard against a closed opponent `X` for all large `k`** as soon as `TAct`
+proves the closed atom "`X` defects against `.bot CooperateBot`": the guard mentions no `.self`, so
+its realization is that FIXED sentence (`trAt_subst`), found above its proof length. -/
+theorem guardian_found {X : PD.Prog} (hX : Proper X)
+    (hT : TAct ⊢ trAt X (.bot CooperateBot) (.plays X (.bot CooperateBot) .D)) :
+    ∃ L : ℕ, ∀ k : ℕ, L ≤ k → LenProvableV TAct k (guardCode (tcode phiG) (pcode (GuardianBot k)) (pcode X)) := by
+  obtain ⟨N, hN⟩ := lenProvable_of_provable hT
+  refine ⟨N, fun k hk ↦ ?_⟩
+  have e : phiG.subst (GuardianBot k) X = .plays X (.bot CooperateBot) .D := by
+    simp [phiG, PD.Formula.subst, PD.Prog.subst]
+  rw [← quote_trAt, ← trAt_subst X (.bot CooperateBot) (proper_GuardianBot k) hX phiG rfl, e, lenProvableV_nat]
+  exact lenProvable_fbound_mono hk hN
+
+/-- The transposed play of a closed search-free match, from the engine's evaluation by `decide`. -/
+theorem evalGraph_transpose_of_eval {X Y : PD.Prog} {a : PD.Action} {n : ℕ}
+    (h : PD.eval n X.transpose Y.transpose X.transpose = some a) (hX : SearchFreePlayer X.transpose)
+    (hY : SearchFreePlayer Y.transpose) :
+    EvalGraph n (pcode X.transpose) (pcode Y.transpose) (pcode X.transpose) (actCode a) :=
+  evalGraph_of_eval_searchFree h hX hY hX.2.1 hX.2.2
+
+/-- `TAct ⊢` "`DefectBot` defects against `.bot CooperateBot`". -/
+theorem tact_DB_D_vs_botCB : TAct ⊢ trAt DefectBot (.bot CooperateBot) (.plays DefectBot (.bot CooperateBot) .D) :=
+  tact_proves_plays_closed sfp_DefectBot sfp_botCB .D (N := 1)
+    (by rw [pcode_DB]; exact const_play 0 _ _ _) (N' := 1)
+    (by show EvalGraph 1 (pcode CooperateBot) (pcode (.bot DefectBot)) (pcode CooperateBot) (actCode .C)
+        rw [pcode_CB]; exact const_play 0 _ _ _)
+
+/-- `TAct ⊢` "`.bot DefectBot` defects against `.bot CooperateBot`". -/
+theorem tact_botDB_D_vs_botCB :
+    TAct ⊢ trAt (.bot DefectBot) (.bot CooperateBot) (.plays (.bot DefectBot) (.bot CooperateBot) .D) :=
+  tact_proves_plays_closed sfp_botDB sfp_botCB .D (N := 2)
+    (by rw [pcode_botDB]; exact bot_const_play 0 _ _ _) (N' := 2)
+    (by show EvalGraph 2 (pcode (.bot CooperateBot)) (pcode (.bot DefectBot)) (pcode (.bot CooperateBot)) (actCode .C)
+        rw [pcode_botCB]; exact bot_const_play 0 _ _ _)
+
+/-- `TAct ⊢` "`DBot` defects against `.bot CooperateBot`". -/
+theorem tact_DBot_D_vs_botCB : TAct ⊢ trAt DBot (.bot CooperateBot) (.plays DBot (.bot CooperateBot) .D) :=
+  tact_proves_plays_closed sfp_DBot sfp_botCB .D (N := 4)
+    (by rw [pcode_botCB]; exact dbot_D_of_probe_C (bot_const_play 0 _ _ 0)) (N' := 4)
+    (evalGraph_transpose_of_eval (by decide) (sfp_transpose sfp_DBot (by decide) (by decide))
+      (sfp_transpose sfp_botCB (by decide) (by decide)))
+
+/-- `TAct ⊢` "`EBot` defects against `.bot CooperateBot`". -/
+theorem tact_EBot_D_vs_botCB : TAct ⊢ trAt EBot (.bot CooperateBot) (.plays EBot (.bot CooperateBot) .D) :=
+  tact_proves_plays_closed sfp_EBot sfp_botCB .D (N := 4)
+    (by rw [pcode_botCB]; exact ebot_D_of_probe1_C (bot_const_play 0 _ _ 0)) (N' := 4)
+    (evalGraph_transpose_of_eval (by decide) (sfp_transpose sfp_EBot (by decide) (by decide))
+      (sfp_transpose sfp_botCB (by decide) (by decide)))
+
+/-- Guardian defects against `.bot DefectBot` for all large `k`. -/
+theorem guardian_vs_botDB_eventually :
+    ∃ L : ℕ, ∀ k : ℕ, L ≤ k → EvalGraph 2 (pcode (GuardianBot k)) (pBot (pConst 1)) (pcode (GuardianBot k)) 1 := by
+  obtain ⟨L, hL⟩ := guardian_found (X := .bot DefectBot) proper_botDB tact_botDB_D_vs_botCB
+  refine ⟨L, fun k hk ↦ ?_⟩
+  have := guardian_D_of_found k (hL k hk)
+  rwa [pcode_botDB] at this
+
+/-- `GuardianBot × DefectBot = (D, D)` (engine `outcome_GuardianBot_vs_DefectBot`, pad 2), for all large `k`:
+the guard "DefectBot defects against `.bot CooperateBot`" is a fixed true closed atom. -/
+theorem pos_GuardianBot_vs_DefectBot :
+    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
+      EvalGraph 2 (pcode (GuardianBot k)) (pcode DefectBot) (pcode (GuardianBot k)) (actCode .D) ∧
+      EvalGraph 2 (pcode DefectBot) (pcode (GuardianBot k)) (pcode DefectBot) (actCode .D) := by
+  obtain ⟨L, hL⟩ := guardian_found (X := DefectBot) sfp_DefectBot.1 tact_DB_D_vs_botCB
+  exact ⟨L, fun k hk ↦ ⟨guardian_D_of_found k (hL k (Nat.le_of_lt hk)), by rw [pcode_DB]; exact const_play 1 _ _ _⟩⟩
+
+/-- `GuardianBot × DBot = (D, C)` (engine `llm_outcome_GuardianBot_vs_DBot`, pad 4), for all large `k`. -/
+theorem pos_GuardianBot_vs_DBot :
+    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
+      EvalGraph 4 (pcode (GuardianBot k)) (pcode DBot) (pcode (GuardianBot k)) (actCode .D) ∧
+      EvalGraph 4 (pcode DBot) (pcode (GuardianBot k)) (pcode DBot) (actCode .C) := by
+  obtain ⟨L₁, hL₁⟩ := guardian_found (X := DBot) sfp_DBot.1 tact_DBot_D_vs_botCB
+  obtain ⟨L₂, hL₂⟩ := guardian_vs_botDB_eventually
+  refine ⟨L₁ + L₂, fun k hk ↦ ⟨EvalGraph.mono_le (by omega) (guardian_D_of_found k (hL₁ k (by omega))), ?_⟩⟩
+  exact dbot_C_of_probe_D (hL₂ k (by omega))
+
+/-- `GuardianBot × EBot = (D, C)` (engine `llm_outcome_GuardianBot_vs_EBot`, pad 6), for all large `k`: Guardian
+finds "EBot defects against `.bot CooperateBot`"; EBot sees Guardian defect against `.bot DefectBot` (found) and
+cooperate with `.bot CooperateBot` (guard false). -/
+theorem snd_GuardianBot_vs_EBot :
+    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
+      EvalGraph 6 (pcode (GuardianBot k)) (pcode EBot) (pcode (GuardianBot k)) (actCode .D) ∧
+      EvalGraph 6 (pcode EBot) (pcode (GuardianBot k)) (pcode EBot) (actCode .C) := by
+  obtain ⟨L₁, hL₁⟩ := guardian_found (X := EBot) sfp_EBot.1 tact_EBot_D_vs_botCB
+  obtain ⟨L₂, hL₂⟩ := guardian_vs_botDB_eventually
+  refine ⟨L₁ + L₂, fun k hk ↦ ⟨EvalGraph.mono_le (by omega) (guardian_D_of_found k (hL₁ k (by omega))), ?_⟩⟩
+  exact EvalGraph.mono_le (by omega) (ebot_C_of_probes (hL₂ k (by omega)) (guardian_vs_botCB k))
+
+/-- `GuardianBot × OBot = (C, D)` (engine `llm_outcome_GuardianBot_vs_OBot`, pad 7), for all large `k`: OBot
+cooperates with `.bot CooperateBot`, so Guardian's guard is false; OBot sees Guardian cooperate with
+`.bot CooperateBot` but defect against `.bot DefectBot` (found), and defects. -/
+theorem snd_GuardianBot_vs_OBot :
+    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
+      EvalGraph 7 (pcode (GuardianBot k)) (pcode OBot) (pcode (GuardianBot k)) (actCode .C) ∧
+      EvalGraph 7 (pcode OBot) (pcode (GuardianBot k)) (pcode OBot) (actCode .D) := by
+  obtain ⟨L₂, hL₂⟩ := guardian_vs_botDB_eventually
+  refine ⟨L₂, fun k hk ↦ ⟨?_, ?_⟩⟩
+  · have hO : EvalGraph 5 (pcode OBot) (pBot (pConst 0)) (pcode OBot) 0 :=
+      obot_C_of_probes (bot_const_play 0 _ _ 0) (bot_const_play 0 _ _ 0)
+    exact EvalGraph.mono_le (by omega) (guardian_C_of_probe k sfp_OBot.1 hO)
+  · exact EvalGraph.mono_le (by omega) (obot_D_of_probes (guardian_vs_botCB k) (hL₂ k (Nat.le_of_lt hk)))
+
+end guardianPos
 
 end ArithS

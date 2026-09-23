@@ -2520,4 +2520,26 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms snd_JustBot_vs_DefectBot
 #print axioms snd_JustBot_vs_OBot
 
+-- (batch 2) Guardian's guard names no `.self`, so against a closed opponent `X` its realization is the FIXED closed
+-- atom "`X` defects against `.bot CooperateBot`" (`trAt_subst`); `TAct` proves such an atom by Σ₁-completeness of PA
+-- at ℕ in BOTH readings (the transposed play by the engine's `decide` through the search-free lockstep transfer,
+-- `evalGraph_transpose_of_eval`; `lMap_swap_tmpl_plays` needs no atomicity) and completeness (`tact_complete'`), and
+-- the guard is found above that proof's length (`guardian_found`). The four cells: `pos_GuardianBot_vs_DefectBot`
+-- `(D, D)`, `pos_GuardianBot_vs_DBot` `(D, C)`, and the two SND cells with a positive sub-fact,
+-- `snd_GuardianBot_vs_EBot` `(D, C)` and `snd_GuardianBot_vs_OBot` `(C, D)`, all for large `k` at the engine's pads.
+#print axioms lMap_swap_tmpl_plays
+#print axioms lMap_swap_trAt_plays
+#print axioms sfp_transpose
+#print axioms guardian_found
+#print axioms evalGraph_transpose_of_eval
+#print axioms tact_DB_D_vs_botCB
+#print axioms tact_botDB_D_vs_botCB
+#print axioms tact_DBot_D_vs_botCB
+#print axioms tact_EBot_D_vs_botCB
+#print axioms guardian_vs_botDB_eventually
+#print axioms pos_GuardianBot_vs_DefectBot
+#print axioms pos_GuardianBot_vs_DBot
+#print axioms snd_GuardianBot_vs_EBot
+#print axioms snd_GuardianBot_vs_OBot
+
 end ArithS
