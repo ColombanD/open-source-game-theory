@@ -2650,4 +2650,21 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms loeb_DIMCID_vs_TitForTatBot
 #print axioms dimcid_finds_guard_vs_TFT
 
+-- Cell 2: the box-consequence lemma (`BoxConseq`, `box_conseq_uniform`, `found_of_box_conseq` — the general
+-- `k̂`-chain: a guard whose truth needs ANOTHER searcher's Löb-found guard is `TAct`-provable within the budget,
+-- the chain instantiated at `bnum k`, the numeral and box antecedents cut away, the total polylog
+-- `total_le_eventually`), `describes_SV` (the engine searchers' canonical triples), and
+-- `loeb_GuardianBot_vs_DIMCID` — GuardianBot × DIMCID is `(D, D)` in `S'` (engine
+-- `llm_outcome_GuardianBot_vs_DIMCID = (C, C)`): Guardian finds "DIMCID defects against `.bot CooperateBot`"
+-- (`guardian_finds_DIMCID`), DIMCID's guard against Guardian is self-fulfilling.
+#print axioms box_conseq_uniform
+#print axioms total_le_eventually
+#print axioms found_of_box_conseq
+#print axioms describes_SV
+#print axioms boxConseq_qGD
+#print axioms guardian_finds_DIMCID
+#print axioms dimcid_vs_Guardian_defects
+#print axioms loeb_GuardianBot_vs_DIMCID
+#print axioms dimcid_finds_guard_vs_Guardian
+
 end ArithS
