@@ -333,3 +333,18 @@ Three improvements are available and were deliberately deferred as optional: the
 certificate redesigned to take one `qVec` step per depth; fine occurrence accounting
 (`fvOccF`-based) in place of full-length charging; and — the root fix — binary variable-index
 charging in `Length.lean`, which touches the M1 constants and the whole census.
+
+**Addendum (2026-09-23) — route B, the first cells beyond self-play (`Cells/DupocMirror.lean`, branch
+`colomban-route-b`).** With the PBLT assembly parametrized by the Löb family (`Assembly/Family.lean`:
+`LoebSound p S₀ S₁` — "a proof of the `k`-instance of `p` within the budget, slack to spare, makes
+`p(k)` true in both standard readings" — and `family_found p : ∃ k₀, ∀ k > k₀, ∃ a ≤ k − slack,
+LenDerivable TAct a (instB ⌜p⌝ k)`, the arithmetized `pblt_engine`; U10 re-packaged for a closed
+sentence at an arbitrary budget, `closedInnerNec_sixteen`), the Mirror cells follow from one
+conjunction family `pDM := qDM ⋏ qCM` (Mirror is τ-fixed, so the swap reading is Cupod's cell):
+```
+dupoc_mirror_coop_unconditional   : ∃ k₀, ∀ k > k₀, EvalGraph 2 (Dupoc k) Mirror (Dupoc k) 0 ∧ EvalGraph 3 Mirror (Dupoc k) Mirror 0
+cupod_mirror_defect_unconditional : ∃ k₀, ∀ k > k₀, EvalGraph 2 (Cupod k) Mirror (Cupod k) 1 ∧ EvalGraph 3 Mirror (Cupod k) Mirror 1
+```
+— the engine's `outcome_DupocBot_vs_MirrorBot = (C, C)` and `outcome_CupodBot_vs_MirrorBot = (D, D)`
+in PA-`S'`, unconditional, three standard axioms. The route-B census of all 155 cells by mechanism is
+`ROUTE_B_CENSUS.md`; the plan is `ROUTE_B_SCOPE.md`.

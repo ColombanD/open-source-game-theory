@@ -143,3 +143,13 @@ no polynomial budget-preserving embedding of the citation rule exists.*
   (`VerifyKit'''`) — write Lean/notes via SHELL heredocs.
 * 2026-09-23 (later): Phase 2 cell 1 IN FLIGHT: `Cells/DupocMirror.lean` — the conjunction family
   `pDM := qDM ⋏ qCM` (Mirror is τ-fixed) for `Dupoc × Mirror = (C, C)` and `Cupod × Mirror = (D, D)`.
+* 2026-09-23 (later): **Phase 2 cell 1 DONE** (`52f9136`, `Cells/DupocMirror.lean`, 562 lines): the
+  conjunction family `pDM := qDM ⋏ qCM` gives `dupoc_mirror_coop_unconditional` (`EvalGraph 2 (Dupoc k)
+  Mirror (Dupoc k) 0 ∧ EvalGraph 3 Mirror (Dupoc k) Mirror 0`, the `(C, C)` cell) and
+  `cupod_mirror_defect_unconditional` (`(D, D)`) plus the box forms, all large `k`, three standard
+  axioms; NO generalization of `Instance*`/`Guard`/`Template` was needed — a closed opponent goes
+  through the existing `quote_emb_cl_V`/`termSubst_closed` route. Full build 3298 jobs, census 984
+  (+27). The engine is now used as a FUNCTION OF THE FAMILY: a cell = its truth equation + one
+  `LoebSound` proof. IN FLIGHT: `Cells/DIMCID.lean` (the `.impl` guard via `tmpl`: DIMCID×DIMCID,
+  DIMCID×Mirror, then DIMCID×Cupod mutual) and `Cells/JustBot.lean` (the frozen `.bot (Dupoc k)`
+  guard: bot-wrapped Dupoc self-coop, Just×Just, Just×Mirror, then Just×Dupoc mutual).
