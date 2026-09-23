@@ -77,6 +77,7 @@ import ArithS.Cells.SoundnessCells
 import ArithS.Cells.PositiveCells
 import ArithS.Cells.KhatCells
 import ArithS.Cells.FlipCells
+import ArithS.Cells.DimcidFlips
 
 /-!
 # ArithS.Audit — the axiom census of the arithmetized layer
@@ -2803,5 +2804,82 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms dimcid_vs_troll7_defects
 #print axioms loeb_DIMCID_vs_CupodTrollBot
 #print axioms dimcid_finds_guard_vs_troll7
+
+-- Route B, DIMCID's ROW (Cells/DimcidFlips, 2026-09-24) — the seven cells where the engine has DIMCID COOPERATING,
+-- every one by a census (a floor `no_provable_tailToS_floor`, a probe-first floor, or an unreadability census)
+-- that cannot read DIMCID's own guard; `dimcid_vs_described` (FlipCells) says DIMCID defects against every
+-- described opponent in `S'`. (1) EVERY CLOSED CODE IS DESCRIBED (`describes_closed`: the generic triple
+-- `(cl (dnumT P), dUT P, dWT P)` of Template.lean, in every model, via the absoluteness of `swapcode`/`dnum`)
+-- ⇒ `dimcid_vs_closed`: DIMCID defects against every closed code (DBot, EBot, OBot, the frozen `.bot` probes).
+-- (2) A description ABOVE a threshold (`DescribesAbove K`, Prudent's `KP`; `loebSound_pG_of_above` with slack
+-- `(7 + K, 8)`, `dimcid_vs_described_above`). (3) The instances: `describes_botSV` (the bot-wrapped engine
+-- searcher `pBot (SV g a k)`), `describes_dupocV`/`describes_botDupoc` (the `TD`/`TBD` towers), `describes_just7`
+-- (the budget-slot `Just7 k`), `describesAbove_prudent`.
+#print axioms cast_swapcode
+#print axioms cast_dnum
+#print axioms quote_emb_dnumT
+#print axioms descVal_closed
+#print axioms descVal_closed_T
+#print axioms describes_closed
+#print axioms dimcid_vs_closed
+#print axioms Describes.above
+#print axioms loebSound_pG_of_above
+#print axioms dimcid_vs_described_above
+#print axioms describes_botSV
+#print axioms describes_dupocV
+#print axioms describes_botDupoc
+#print axioms describes_just7
+#print axioms describesAbove_prudent
+
+-- The defections, one per opponent (each: DIMCID plays D at fuel 2 AND finds its guard within `k`, all large `k`),
+-- and the opponents' replies (`ebot_D_of_probes_D`: EBot's ladder ends in D when all three frozen probes see a
+-- defection; `just7_else_V`/`just7_D_of_probe`: the budget-slot Just's else branch by soundness of a found guard,
+-- `evalGraph_of_guard`).
+#print axioms dimcid_vs_botDB_defects
+#print axioms dimcid_vs_botMirror_defects
+#print axioms dimcid_vs_DBot_defects
+#print axioms dimcid_vs_EBot_defects
+#print axioms dimcid_vs_OBot_defects
+#print axioms dimcid_vs_DupocBot_defects
+#print axioms dimcid_vs_dupocV_defects
+#print axioms dimcid_vs_botDupocBot_defects
+#print axioms dimcid_vs_botDupocV_defects
+#print axioms dimcid_vs_just7_defects
+#print axioms dimcid_vs_PrudentBot_defects
+#print axioms pcode_CIMCIC_SV
+#print axioms dimcid_vs_CIMCIC_defects
+#print axioms ebot_D_of_probes_D
+#print axioms just7_else_V
+#print axioms just7_D_of_probe
+
+-- The seven cells (engine value → `S'` value), each with the box form: DIMCID × DBot `(C, C)` → `(D, C)`
+-- (`llm_outcome_DIMCID_vs_DBot`, floor); DIMCID × EBot `(C, C)` → `(D, D)` (`llm_outcome_DIMCID_vs_EBot`, floor +
+-- unreadability); DIMCID × OBot `(C, D)` → `(D, D)` (`llm_outcome_DIMCID_vs_OBot`, probe-first floor);
+-- DIMCID × DupocBot `(C, D)` AT EVERY `k` (`outcome_DIMCID_vs_DupocBot`, a UNIVERSAL engine theorem) → `(D, D)`
+-- for all large `k` — the two proof systems contradict each other on this cell (Dupoc's guard "DIMCID cooperates
+-- with me" is false ⇒ SND ⇒ D, `dupoc_guard_vs_DIMCID_not_found`); DIMCID × JustBot `(C, D)` → `(D, D)`
+-- (`llm_outcome_DIMCID_vs_JustBot`, floor; on the budget-slot `Just7 k`, DIMCID's half against the described
+-- `Just7 k`, Just's half on `Just7 k` AND on the engine's code `just_engine_vs_DIMCID_defects` — no `Describes`
+-- for `pcode (JustBot k)`, ROUTE_B_SCOPE §7); DIMCID × PrudentBot `(C, D)` → `(D, D)` (`llm_outcome_DIMCID_vs_PrudentBot`,
+-- floor; Prudent's outer guard false ⇒ D); CIMCIC × DIMCID `(D, C)` → `(D, D)` (`llm_outcome_CIMCIC_vs_DIMCID`,
+-- floor; CIMCIC's guard self-refuting ⇒ D, `cimcic_guard_vs_DIMCID_not_found`). The row: `dimcid_flips_census`.
+#print axioms loeb_DIMCID_vs_DBot
+#print axioms dimcid_finds_guard_vs_DBot
+#print axioms loeb_DIMCID_vs_EBot
+#print axioms dimcid_finds_guard_vs_EBot
+#print axioms loeb_DIMCID_vs_OBot
+#print axioms dimcid_finds_guard_vs_OBot
+#print axioms loeb_DIMCID_vs_DupocBot
+#print axioms dimcid_finds_guard_vs_DupocBot
+#print axioms dupoc_guard_vs_DIMCID_not_found
+#print axioms just_engine_vs_DIMCID_defects
+#print axioms loeb_DIMCID_vs_JustBot
+#print axioms dimcid_finds_guard_vs_just7
+#print axioms loeb_DIMCID_vs_PrudentBot
+#print axioms dimcid_finds_guard_vs_PrudentBot
+#print axioms loeb_CIMCIC_vs_DIMCID
+#print axioms dimcid_finds_guard_vs_CIMCIC
+#print axioms cimcic_guard_vs_DIMCID_not_found
+#print axioms dimcid_flips_census
 
 end ArithS

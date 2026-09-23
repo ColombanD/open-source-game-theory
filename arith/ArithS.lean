@@ -100,6 +100,7 @@ import ArithS.Cells.SoundnessCells
 import ArithS.Cells.PositiveCells
 import ArithS.Cells.KhatCells
 import ArithS.Cells.FlipCells
+import ArithS.Cells.DimcidFlips
 import ArithS.Neg
 import ArithS.Agent
 import ArithS.AgentConverse
