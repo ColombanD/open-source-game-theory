@@ -213,3 +213,13 @@ together with the LegibleBot node-data question (Phase 5) — they are the same 
   (Dupoc×Mirror, Cupod×Mirror, botDupoc self, Just×Mirror, DIMCID×DIMCID, DIMCID×Mirror,
   DIMCID×Cupod, + Dupoc/Cupod self from M5). NEXT in flight: CIMCIC × Dupoc (mutual, `.impl`),
   Prudent × Mirror (nested search).
+* 2026-09-23 (later): **Phase 2 CIMCIC family DONE** (`fa60f3a`, `Cells/CIMCIC.lean`): CIMCIC × Dupoc
+  `(C, C)` (the second MUTUAL family `pCiD`, slack `(14, 16)`), CIMCIC × Mirror `(C, C)`, and CIMCIC ×
+  CIMCIC `(C, C)` **Löb-FREE** — the guard is `A → A`, `tact_proves_qCC : TAct ⊢ ∀¹ qCC` by completeness,
+  the instance at `k` costs `K₀ + K₁·size k` (the `S'` twin of the engine's `Pf.implRefl`, the POS
+  mechanism of §2 realized: `cimcic_self_coop` needs no `BoundedInnerNec`). Nothing outside the new
+  file changed. Gate: 3303 jobs, 0 errors, census 1125 all standard. **Phase 2 tally: 11 cells
+  unconditional** (+ Dupoc/Cupod self from M5). TRAP: at ℕ `rw [pow_one]`/`simp [pow_one]` do not fire on
+  an instantiated `‖k‖ ^ 1` (the pow comes through `instCommSemiring_foundation ℕ`) — remove the
+  exponent inside the V-generic binder (`linear_size_le_eventually`). IN FLIGHT: Prudent × Mirror
+  (STEP 0 = the §7 verdict on Prudent's nested searches).

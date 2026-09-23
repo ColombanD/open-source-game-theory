@@ -357,3 +357,8 @@ the general translation `tmpl`, the conjunction of both bots' guards as one fami
 `ROUTE_B_SCOPE.md` §7: a bot whose guard freezes a budget-carrying snapshot (`JustBot k` with `DupocBot k`
 inside) is NOT a `bnum k`-instance of a fixed formula, so cells that DESCRIBE it (Just × Just, Just ×
 Dupoc, CIMCIC × Just) need either the transparency lift or the two-tier `JustBot2` — a user decision.
+Then `Cells/CIMCIC.lean` (`fa60f3a`; gate 3303 jobs, census 1125): **CIMCIC × Dupoc = (C, C)** (the second
+mutual family), **CIMCIC × Mirror = (C, C)**, and **CIMCIC × CIMCIC = (C, C)** with NO Löb and no
+`BoundedInnerNec` — the guard is `A → A`, `TAct ⊢ ∀¹ qCC` by completeness, and the `k`-instance costs
+`K₀ + K₁·size k`, below `k` for large `k`: the first cell of the POS class of `ROUTE_B_CENSUS.md` in `S'`,
+and the `S'` reading of the engine's `Pf.implRefl`.
