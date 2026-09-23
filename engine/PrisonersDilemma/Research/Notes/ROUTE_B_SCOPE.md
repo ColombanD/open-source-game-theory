@@ -43,16 +43,21 @@ GuardianBot, JustBot, PrudentBot; excluded = WaryBot (`.neg` guards: refutation 
 LegibleBot (box guard: `box_guard_never_fits`), OptimBot (seven searches, floor-paying Löb premise;
 out of the merge's scope by the M6 decision).
 
-| Class | First cut (to be confirmed by Phase 0) | In `S'` |
+| Class (from `ROUTE_B_CENSUS.md`, the Phase-0 census) | cells | In `S'` |
 |---|---|---|
-| Search-free, both players | 28 `nobudget` + their `universal` cells | covered: `eval_iff_evalGraph` is unconditional for search-free players (`AgentConverse`); a census pass |
-| One searcher vs a search-free bot, positive guard (Dupoc vs Cooperate) | by hand | Σ₁-completeness + instantiation fits at large `k`; unconditional |
-| Löb families, FLOOR-FREE | the Löb pair files (23) minus the floor pair files (43) | the core of B; unconditional |
-| Löb families, FLOOR-PAYING (Prudent, Guardian, CupodTroll, Just×Prudent; the 4 `_staggered` companions) | intersection | conditional on `BoundedReflection`; POLYNOMIAL staggers |
-| Pure floor cells `(D, C)` | the rest of the 43 | conditional; same-`k` ones may be OPEN or FALSE in `S'` (`k^ε` vs `+k`, roadmap danger 3) — not promised |
+| SF — search-free, both players | 28 | covered: `eval_iff_evalGraph` is unconditional for search-free players; a census pass |
+| POS — a positive guard, no Löb, no floor | 14 | Σ₁-completeness + instantiation fits at large `k`; unconditional |
+| **SND — the guard is semantically FALSE; the else branch by SOUNDNESS** | **36** | **UNCONDITIONAL: `TAct` sound in ℕ ⇒ no proof of any length ⇒ else branch; the red cell's own argument. Not a floor.** |
+| LOEB-FF — Löb, floor-free | 29 (14 without LegibleBot) | the core of B; unconditional via the family-parametric assembly |
+| LOEB-FP — Löb, floor-paying | 5 (Prudent×EBot + the two Löbian companions in scope) | conditional on `BoundedReflection`; POLYNOMIAL staggers |
+| FLOOR(cen) — a TRUE guard unprovable within the budget | 32 | a proof-length LOWER bound in PA (Pudlák; `k^ε` vs `+k`, roadmap danger 3): conditional or not claimed; same-`k` cells may be open or FALSE in `S'` |
+| FLOOR(cenU) + OTHER(WV) — negatives resting on UNREADABILITY | 6 + 4 | do NOT transfer: PA reads every source (Σ₁-completeness); the `S'` value may DIFFER — re-evaluate cell by cell |
+| OTHER — the red cell | 1 | done |
 
-The file grep is a first cut only: floors hide in `Theorems/<Bot>/Helpers.lean`. Phase 0 produces
-the definitive per-cell table.
+The SND class is the census's correction to the first cut: 36 of the cells I had lumped with the floor
+need no lower bound at all — the guard is false, and Lean-level soundness closes them exactly as it
+closes the red cell. The floor hypothesis is needed only where a PA PROOF must assert a negative
+(inside a Löb premise: LOEB-FP) or where the guard is TRUE but too long to prove (FLOOR(cen)).
 
 ## 3. Phases
 
@@ -89,7 +94,10 @@ guard exists" — the `S'` twin of the engine's `search_f`. Then Prudent×Dupoc,
 CupodTroll×Dupoc at POLYNOMIAL staggers, conditional; and the honest negative list: which same-`k`
 floor cells are NOT claimed. Its discharge (proof-length lower bounds, Pudlák) is OUT.
 
-**Phase 4 — the search-free and simple-search census (~1 day).** Mechanical; `AgentConverse` + `Inst`.
+**Phase 4 — the SF/POS/SND census (~2 days).** SF and POS mechanical (`AgentConverse` + `Inst`); SND = the
+red cell's soundness argument per cell (guard false in ℕ ⇒ `¬LenProvableV` at every budget ⇒ else branch):
+78 cells unconditional. Then the 10 unreadability cells (cenU + WV) re-evaluated in `S'` — expected to
+split into POS-like and genuine FLOOR(cen).
 
 **Phase 5 (optional) — LegibleBot** via box budgets/bodies as node data in `tmpl` (`FitBox`'s fix).
 
@@ -110,4 +118,5 @@ no polynomial budget-preserving embedding of the citation rule exists.*
 ## 6. Status log
 
 * 2026-09-23: decided B; branch `colomban-route-b`; Phase 0 (U10 re-packaging, census) and Phase 1
-  (the family-parametric assembly) started.
+  (the family-parametric assembly) started. Census DONE (`ROUTE_B_CENSUS.md`): the SND class found (36
+  cells closed by soundness, not floors); 10 unreadability cells flagged as possibly DIFFERENT in `S'`.
