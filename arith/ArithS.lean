@@ -87,6 +87,7 @@ import ArithS.Necessitation.Verify4
 import ArithS.Necessitation.Assemble
 import ArithS.Necessitation.Verify5
 import ArithS.Necessitation.Package
+import ArithS.Necessitation.ClosedNec
 import ArithS.Neg
 import ArithS.Agent
 import ArithS.AgentConverse

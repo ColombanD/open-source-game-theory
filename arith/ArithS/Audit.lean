@@ -64,6 +64,7 @@ import ArithS.Necessitation.Verify4
 import ArithS.Necessitation.Assemble
 import ArithS.Necessitation.Verify5
 import ArithS.Necessitation.Package
+import ArithS.Necessitation.ClosedNec
 
 /-!
 # ArithS.Audit — the axiom census of the arithmetized layer
@@ -1962,5 +1963,29 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 -- PBLT each hold outright on [propext, Classical.choice, Quot.sound].
 #print axioms armHypsAll_of_arms
 #print axioms sizeThmAll_holds
+
+-- Route B Phase 0 — U10 in CLOSED-SENTENCE, ARBITRARY-BUDGET form (Necessitation/ClosedNec, 2026-09-23):
+-- `closedInnerNec_sixteen : ∀ σ : Sentence LAct, ∃ C, ∀ V b, LenDerivable TAct b ⌜σ⌝ →
+--   ∃ e ≤ C·(b^16 + 1), LenDerivable TAct e (boxSentenceCode σ b)`, with `boxSentenceCode σ b = instB ⌜boxClosed σ⌝ b`
+-- the CODE of "`σ` has a `TAct`-proof of length `≤ b`" at the binary numeral `bnum b` (`boxClosed σ :=
+-- lenDerivableDef ⇜ ![#0, ⌜σ⌝]`, semantics `eval_boxSentence_iff` in every structure with a standard reduct, code
+-- equation `boxSentenceCode_eq : … = lenDerFact (bnum b) (numeral ⌜σ⌝)`). The verification kit (`VerifyKit'''`) is
+-- re-used verbatim — it is stated for an arbitrary conclusion; what the parametric form hard-codes is the PIN
+-- (`PinKit'`, replaced by `numId_sentence` on the root dossier), the CLOSING BLOCK (`closeSteps`' `gIntroNum`/`boxIntro`
+-- to `boxFact`, replaced by `closeStepsC` with ONE new table row `lenDerCong : LenDer a g → g = g' → LenDer a g'`, in
+-- `Lib` by truth, appended to the `IndRec` table as `closedRows`), and the COST GRADING (`G = gBudget k + 1`,
+-- `u = ‖k‖ + 1`, redone at `G = b + 1`, `u = 1` through the same `topBound''_pb`, hence degree 16 again).
+#print axioms eval_boxSentence_iff
+#print axioms boxSentenceCode_eq
+#print axioms boxSentenceCode_nat
+#print axioms lib_lenDerCong
+#print axioms exists_closedTableB
+#print axioms tok_lenDerCong
+#print axioms closeStepsC_ok
+#print axioms top_mainC
+#print axioms kitPackageC_of
+#print axioms closedInnerNec_of_kit
+#print axioms closedInnerNec_sixteen
+#print axioms closedInnerNec_sixteen'
 
 end ArithS
