@@ -124,3 +124,22 @@ no polynomial budget-preserving embedding of the citation rule exists.*
   `pblt_uniformF`, `family_found` (the arithmetized `pblt_engine`); Uniform/Cell = the `pConj` instance,
   53/53 statements byte-identical, `Package.lean`/`Prep.lean` untouched, census 926 all standard.
   Deviation: `theta/psi/psi_fixed_point` stay in `Prep.lean`, bridged by `rfl` (`psi = psiF pConj`).
+* 2026-09-23 (later): **Phase 0 item 1 DONE** (`715851b`, `Necessitation/ClosedNec.lean`):
+  `closedInnerNec_sixteen : ∀ σ : Sentence LAct, ∃ C, ∀ V b, LenDerivable TAct b ⌜σ⌝ → ∃ e ≤ C·(b^16+1),
+  LenDerivable TAct e (boxSentenceCode σ b)` with `boxSentenceCode σ b = instB ⌜boxClosed σ⌝ b` (budget as
+  the BINARY numeral `bnum b`, `σ` by its Gödel numeral — the `Box_g` discipline; semantics
+  `eval_boxSentence_iff`). The verification kit (`Assemble.VerifyKit'''`) was re-used VERBATIM for an
+  arbitrary conclusion; only the pin (`NumId.numId_sentence` on the root dossier), the closing block
+  (`closeStepsC`, one appended library row `lenDerCong` in `closedRows := indRecRows ++ [lenDerCongRow]`)
+  and the cost grading (`G = b+1`, `u = 1`, degree still `deg 4 = 16`) are new. **MERGED GATE**: full
+  `lake build ArithS` on `715851b` = 3297 jobs, 0 errors, census 957 standard triples (+3 pre-existing
+  `[propext, Quot.sound]` subsets, 4 axiom-free), i.e. Phase 0 + Phase 1 together are green.
+  TRAPS (ClosedNec): a `getElem` on a ~200-row list with a CLOSED index or an implicit bound proof
+  makes `get_elem_tactic` walk the list (recursion depth / whnf timeout) — state for a VARIABLE index
+  with `hi : i = cIdx` and explicit `l[i]'h`, go through `getElem?` (`List.getElem?_append_left/right`);
+  `(l₁ ++ l₂)[i]?` does not parse (collides with the `?[…]` vector notation) — `unfold` first; an
+  `obtain`ed `x` is not definitionally `⌜σ⌝` — feed the pin `hxdef ▸ …` and shift with the
+  `numeral`-stated `termShiftIterV_numeral`; python heredocs die on `'''` inside Lean text
+  (`VerifyKit'''`) — write Lean/notes via SHELL heredocs.
+* 2026-09-23 (later): Phase 2 cell 1 IN FLIGHT: `Cells/DupocMirror.lean` — the conjunction family
+  `pDM := qDM ⋏ qCM` (Mirror is τ-fixed) for `Dupoc × Mirror = (C, C)` and `Cupod × Mirror = (D, D)`.
