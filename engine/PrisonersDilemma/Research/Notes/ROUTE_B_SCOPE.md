@@ -304,3 +304,37 @@ alongside (c)); SND/POS wait for (c) to settle.
   `nth_adjoin_one/two` SHIFT (`(x ∷ v).[1] = v.[0]`); `rw [show (4:V) = 0+1+1+1+1]` also rewrites the `4`
   inside `^#4`; `LogicalConnective.HomClass.map_and` fires on `Semiformula.Eval` (unfold the family defs,
   `simp only`); a `-/` inside prose (`four-/seven-`) closes a docstring.
+* 2026-09-23 (night, later): **Phase 4 SND + POS classes DONE** (`5df270d`, `541cbb8`, `d988e63`, `7b7f609`;
+  `Cells/SoundnessCells.lean` 1080 lines, `Cells/PositiveCells.lean` 990 lines). **SND (36 of 36)**: the general
+  lemma `snd_else_of_false : ¬ (ℕ ⊨ trAt me opp φ) → ¬ LenProvableV TAct k (guardOf φ me opp)` (soundness of
+  `TAct` in ℕ) + `trAt_subst` (the realization of a fragment guard in a proper frame IS the realization of its
+  closed instantiation) + per-shape "not found" lemmas (`.plays .opp .self`, `.plays .opp (.bot P)`, `.neg`, `.eq`)
+  + the search-free probers' plays from their probe results; NO engine transfer for SND (the falsity of a guard
+  needs the arithmetized sub-play, which is the cell itself — the SF lockstep transfer stays the template;
+  `search_either` handles nodes whose branches agree, e.g. Prudent's outer guard and Dupoc's/Just's probe against
+  `.bot CooperateBot` inside OBot). All 36 on the ENGINE's own codes `pcode (L k)` at the engine's pads: 30 at
+  every `k`, 6 for large `k` (they need a positive sub-fact: Guardian × EBot/OBot, Cupod × DBot/EBot, Wary ×
+  DBot/EBot). **POS (10 of 13)**: `pos_GuardianBot_vs_DefectBot`/`_DBot` (fixed closed atoms: Guardian's guard
+  names no `.self`, `tact_proves_plays_closed` by Σ₁-completeness in both readings + `tact_complete'`),
+  `pos_DupocBot_vs_CooperateBot`, `pos_CupodBot_vs_DefectBot`, `pos_CIMCIC_vs_CooperateBot`,
+  `pos_DIMCID_vs_DefectBot`, `pos_JustBot_vs_CooperateBot` (on `pcode (JustBot k)`: `guardCode_JustBot_eq`),
+  `pos_WaryBot_vs_DefectBot` (the `.neg` guard, a Π₁ truth by determinism — `Pf.atomNeg`'s twin) — via the
+  GENERIC engine-searcher description layer `SV g a` (Dupoc/Cupod/Wary ENGINE codes described like
+  CIMCIC/DIMCID), `tact_all_of_both`, `found_of_all` (`K₀ + K₁·size k ≤ k`). NOT done (the "k̂ chain": the
+  opponent's play in `V` needs the searcher's guard found in `V`, i.e. `TAct ⊢ ∀ k ≥ k̂, q(k)` + `NumeralFacts`
+  instantiation): Dupoc × TFT, Just × TFT, CIMCIC × TFT, CupodTroll × Cupod. **The unreadability cells
+  re-evaluated**: CIMCIC's guard against an opponent that defects against it is SELF-REFUTING
+  (`cimcic_selfref_not_found`), so CIMCIC × DefectBot `(D, D)` (every `k`) and CIMCIC × OBot `(D, D)` hold in
+  `S'` by soundness; **DIMCID × CooperateBot FLIPS to `(D, C)`** (`loeb_DIMCID_vs_CooperateBot`, bounded Löb on
+  the self-fulfilling refutation "I do not cooperate"); verdicts for the rest in the hand-over report (DIMCID ×
+  TFT/CupodTroll, Guardian × DIMCID, Wary × Mirror/Wary all FLIP by the same Löb; CIMCIC × DBot/EBot are genuine
+  floors: a TRUE guard whose consequent needs PA to refute a self-search within the budget). **GATE on
+  `7b7f609`+audit fix: 3346 jobs, 0 errors, census 1436 lines = 1436 commands, 1428 standard triples (the 7
+  pre-existing subsets/axiom-free lines + `sfp_transpose` `[propext]`).** Tally: 43 + 36 SND + 10 POS + 3
+  re-evaluated = 92 cells in `S'`. TRAPS: BSD `sed` has no `\b` (use `perl -pi`); `closedP` is FALSE on DBot/EBot/
+  TFT/OBot (pronouns inside `.sim`) — `fragF` of a closed atom over them fails, so τ on `tmpl (.plays p q a)` must
+  be stated with `fragP` only (`lMap_swap_tmpl_plays`); `pgrep -f "lake env lean …"` matches the polling shell's
+  own command line (anchor with `^lean`, or poll a sentinel file); a `simp [closedDesc, descF, cl, dnumT]` on a
+  template hangs (giant terms) — separate templates SEMANTICALLY (`tcode_ne_of_models`), Wary from Cupod at the
+  non-terminating frame `(Mirror, Mirror)`; `EvalGraph.mono_le (by omega)` needs the source fuel explicit
+  (`const_play 3 _ _ _`, not `_`); `one_ne_zero` is ambiguous under `open Arithmetic` (`_root_.`).
