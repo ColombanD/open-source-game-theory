@@ -68,6 +68,7 @@ import ArithS.Necessitation.ClosedNec
 import ArithS.Cells.DupocMirror
 import ArithS.Cells.JustBot
 import ArithS.Cells.DIMCID
+import ArithS.Cells.CIMCIC
 
 /-!
 # ArithS.Audit — the axiom census of the arithmetized layer
@@ -2149,5 +2150,75 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms just_mirror_coop_unconditional
 #print axioms botDupoc_mirror_coop_unconditional
 #print axioms just_finds_guard_vs_mirror_unconditional
+
+-- Route B Phase 2, the CIMCIC family — CIMCIC × Dupoc, CIMCIC × Mirror and CIMCIC × CIMCIC, all `(C, C)`, in
+-- PA-`S'` (Cells/CIMCIC, 2026-09-23): `Cells/DIMCID` re-run on the guard `phiC = .impl (.plays .self .opp C)
+-- (.plays .opp .self C)` with the branches exchanged (`CimcicV k = pSearch k ⌜tmplC⌝ (pConst 0) (pConst 1)`,
+-- `pcode (PD.Bots.CIMCIC k) = Cimcic k`; the transposed searcher `CimcicTV`, τ(CIMCIC), is not a zoo bot). The
+-- fixed formulas generic in the opponent triple (`qCG`/`qCTG`, the family `pGC X U W`), the instance equations on
+-- codes in every model, the search clauses (found ⇒ C / found ⇒ D), `pGC_both_V` the ∧-elimination.
+-- Cell 1, the MUTUAL family CIMCIC × Dupoc `(C, C)` (engine `mutual_pblt_engine_id`): Dupoc's guard against CIMCIC
+-- `qDCi = qG 0 TD uD wD TCi uCi wCi` ("CIMCIC plays C against me") on DIMCID's generic hand-written instance, the
+-- four-guard family `pCiD = pGC TD uD wD ⋏ (qDCi ⋏ τqDCi)` with the two-level ∧-elimination at slack `(14, 16)`
+-- (`pCiD_all_V`): CIMCIC cooperates with Dupoc, Dupoc cooperates with CIMCIC, so CIMCIC's implications have TRUE
+-- consequents and Dupoc's atoms are TRUE in both readings (`loebSound_pCiD : LoebSound pCiD 14 16`); `family_found`
+-- gives the cell, conditional on `BoundedInnerNec d`, then UNCONDITIONAL at `boundedInnerNec_sixteen`:
+-- both cooperate at fuel 2, both find their guards. Cell 2, CIMCIC × Mirror `(C, C)`: Mirror COPIES at fuel 3.
+-- Cell 3, CIMCIC × CIMCIC `(C, C)` with NO Löb: `qCC = qCG TCi uCi wCi` is `A → A` in both readings, so
+-- `TAct ⊢ ∀¹ qCC` by completeness (`tact_proves_qCC`, the `S'` twin of `Pf.implRefl`), a proof code of standard
+-- length in every model (`exists_qCC_length`), instantiated at `bnum k` (`qCC_inst_V`); at ℕ the instance costs
+-- `K₀ + K₁·size k`, below `k` for all large `k` (`linear_size_le_eventually`) — `cimcic_self_finds_guard` and
+-- `cimcic_self_coop` need no `BoundedInnerNec` at all. Nothing in `Code`/`Agent`/`Det`/`Instance*` was changed.
+#print axioms pcode_CIMCIC
+#print axioms swapcode_CimcicV
+#print axioms dnum_CimcicV
+#print axioms eval_tmplC_V
+#print axioms eval_tmplCT_V
+#print axioms eval_qCG_iff_V
+#print axioms eval_qCTG_iff_V
+#print axioms guardCode_CimcicV_eq_instB
+#print axioms guardCode_CimcicTV_eq_instB
+#print axioms cimcic_search_V
+#print axioms cimcicT_search_V
+#print axioms pGC_both_V
+#print axioms pGC_guards_V
+#print axioms eval_pGC_iff_std
+#print axioms eval_pGC_iff_swap
+#print axioms guardCode_CimcicV_DupocV_eq_instB
+#print axioms guardCode_DupocV_CimcicV_eq_instB
+#print axioms guardCode_CupodV_CimcicTV_eq_instB
+#print axioms eval_qCDu_iff_V
+#print axioms eval_qCDu_swap_iff_V
+#print axioms eval_qDCi_iff_V
+#print axioms eval_qDCi_swapped_iff_V
+#print axioms pCiD_all_V
+#print axioms pCiD_guards_V
+#print axioms eval_pCiD_iff_std
+#print axioms eval_pCiD_iff_swap
+#print axioms loebSound_pCiD
+#print axioms cimcic_dupoc_cell_core
+#print axioms cimcic_dupoc_coop
+#print axioms cimcic_dupoc_find_guards
+#print axioms cimcic_dupoc_coop_unconditional
+#print axioms cimcic_dupoc_find_guards_unconditional
+#print axioms guardCode_CimcicV_MirrorV_eq_instB
+#print axioms eval_qCMi_iff_V
+#print axioms eval_qCMi_swap_iff_V
+#print axioms loebSound_pCMi
+#print axioms cimcic_mirror_cell_core
+#print axioms cimcic_mirror_coop
+#print axioms cimcic_finds_guard_vs_mirror
+#print axioms cimcic_mirror_coop_unconditional
+#print axioms cimcic_finds_guard_vs_mirror_unconditional
+#print axioms guardCode_CimcicV_self_eq_instB
+#print axioms eval_qCC_iff_V
+#print axioms eval_qCC_swap_iff_V
+#print axioms tact_proves_qCC
+#print axioms exists_qCC_length
+#print axioms qCC_inst_V
+#print axioms linear_size_le_eventually
+#print axioms cimcic_self_finds_guard
+#print axioms cimcic_self_coop
+#print axioms cimcic_finds_guardOf_self
 
 end ArithS
