@@ -6,14 +6,22 @@ import ArithS.Assembly.Cell
 import ArithS.Assembly.Uniform
 
 /-!
-# ArithS.Necessitation.Package
+# ArithS.Necessitation.Package — the package and the headline theorems, UNCONDITIONAL
 
-**Every theorem here is CONDITIONAL on `SizeThmAll`** (the length/size discipline of the
-verification list, `Verify5`'s ten-arm glue, in flight). The names carry `_of_sizeThm` for that
-reason: `SizeOracle` (`Assemble` §8) is UNPROVABLE as stated — it binds the numeral table with no
-`NumTableOK`, which every prologue size lemma needs and which is never a conclusion — so this file
-BYPASSES it. The quantifier order is the repair: `exists_numTable` fixes `N'`/`B'` FIRST, and only
-then is the size constant `Cz` chosen, which the layout class `(layQ B B' D, layD N' B' D)` requires. — the package and the headline theorems, with `SizeOracle` BYPASSED
+**Every headline theorem here is UNCONDITIONAL** (three standard axioms, `Audit.lean`): §2.5 proves
+the carrying size statement outright — `sizeThmAll_holds : SizeThmAll`, from `Verify5.armHypsAll_of_arms`
+and `verifyGraph''_size4_of_arms` (the ten-arm length/size glue of the verification list, landed
+2026-09-16, U10) — and §4 draws `boundedInnerNec_sixteen : BoundedInnerNec 16`,
+`dupoc_self_coop_unconditional` (Critch's Theorem 3.7 in `PA`-`S`) and `pblt_unconditional` (the
+uniform parametric bounded Löb theorem) with no hypothesis. The `_of_sizeThm` forms of §3 are the
+same theorems with `SizeThmAll` still a binder; they are kept because they document WHAT the size
+glue has to deliver, and §4 is their instantiation at `sizeThmAll_holds`.
+
+Historical: why `SizeThmAll` and not `Assemble.SizeOracle`. `SizeOracle` (`Assemble` §8) is
+UNPROVABLE as stated — it binds the numeral table with no `NumTableOK`, which every prologue size
+lemma needs and which is never a conclusion — so this file BYPASSES it. The quantifier order is the
+repair: `exists_numTable` fixes `N'`/`B'` FIRST, and only then is the size constant `Cz` chosen,
+which the layout class `(layQ B B' D, layD N' B' D)` requires.
 
 `Assemble.lean` §8 closes at `boundedInnerNec_sixteen_of_size (Cz) (hsz : SizeOracle Cz) : BoundedInnerNec 16`
 and `dupoc_self_coop_of_size`, conditional on ONE hypothesis, `Assemble.SizeOracle`.
@@ -28,9 +36,11 @@ This file does not prove `SizeOracle`; it BYPASSES it. The observation is that `
 `Assemble.kitPackage'''_of_size`, instantiates it at the CANONICAL numeral table of `NumSteps.exists_numTable`,
 where `N'` and `B'` are fixed naturals — so a `NumTableOK`-CARRYING size theorem suffices, and `Cz` is allowed to
 depend on those two naturals. §1 states that carrying theorem (`SizeThm`, the statement the size glue proves),
-§2 re-derives the package from it exactly as `kitPackage'''_of_size` does, and §3 draws the headline theorems.
+§2 re-derives the package from it exactly as `kitPackage'''_of_size` does, §3 draws the headline theorems
+with `SizeThmAll` as a binder, §2.5 proves `SizeThmAll` and §4 instantiates.
 
-The results are `Assemble.lean`'s, with the unprovable hypothesis replaced by the provable one.
+The results are `Assemble.lean`'s, with the unprovable hypothesis replaced by the provable one — and the
+provable one proved.
 -/
 
 namespace ArithS
