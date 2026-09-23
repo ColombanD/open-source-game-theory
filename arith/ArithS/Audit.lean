@@ -72,6 +72,7 @@ import ArithS.Cells.PrudentMirror
 import ArithS.Cells.CIMCIC
 import ArithS.Cells.SearchFree
 import ArithS.Cells.JustSlot
+import ArithS.Cells.SoundnessCells
 
 /-!
 # ArithS.Audit — the axiom census of the arithmetized layer
@@ -2449,5 +2450,74 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms pa_TitForTatBot_vs_TitForTatBot
 #print axioms searchFree_census
 #print axioms searchFree_pa_census
+
+
+-- Route B Phase 4, the SND class (Cells/SoundnessCells, 2026-09-23) — the cells of `ROUTE_B_CENSUS.md` whose searcher
+-- takes its ELSE branch because its guard is semantically FALSE, in PA-`S'` at ℕ, unconditional (no oracle, no Löb,
+-- no floor): `TAct` is sound in ℕ, so a false guard has no proof of ANY length (`snd_else_of_false`, the red cell's
+-- argument), the search clause takes the else branch, and the partner's play follows from its own clauses. The
+-- guard's realization in a proper frame is the realization of its closed instantiation (`trAt_subst`), the truth
+-- equations of the four guard shapes (`models_trAt_plays`, `models_trAt_neg`, `models_trAt_eq`, `models_trAt_impl`)
+-- give the "not found" lemmas per shape (`not_found_opp_self`/`_opp_bot`/`_neg_opp_self`/`_eq_opp`), the
+-- search clause on engine templates (`search_else`/`search_then`/`search_either` — a node whose branches agree needs
+-- no verdict: Prudent's outer guard, Dupoc's/Just's probe against `.bot CooperateBot` inside OBot), and the
+-- search-free probers' plays from their probe results (`dbot_*`, `tft_*`, `obot_*`, `ebot_*`, `mirror_copies`).
+-- Template disjointness for CupodTroll's `.eq` guard is SEMANTIC (`tcode_ne_of_models`: two guards whose realizations
+-- differ in truth at one frame have different codes — Wary vs Cupod separated at the non-terminating frame
+-- `(Mirror, Mirror)`). The 30 cells `snd_<L>_vs_<R>` at the engine's pads: Guardian 6, CupodTroll 8, Prudent 6,
+-- Wary 4, Cupod 2, Dupoc 2, Just 2 (on the engine's own code `pcode (JustBot k)`). Also the positive kit for
+-- CLOSED atoms: `tact_proves_plays_closed` (Σ₁-completeness of PA at ℕ in both readings, `lMap_swap_trAt`, then
+-- `tact_complete'`) and `found_of_tact`.
+#print axioms snd_else_of_false
+#print axioms trAt_subst
+#print axioms trAt_neg
+#print axioms trAt_impl
+#print axioms models_trAt_neg
+#print axioms models_trAt_impl
+#print axioms models_trAt_eq
+#print axioms not_found_opp_self
+#print axioms not_found_opp_bot
+#print axioms not_found_neg_opp_self
+#print axioms not_found_eq_opp
+#print axioms found_of_tact
+#print axioms lMap_swap_trAt
+#print axioms tact_proves_plays_closed
+#print axioms search_else
+#print axioms search_then
+#print axioms search_either
+#print axioms tcode_ne_of_models
+#print axioms tcode_phiG_ne_phiCu
+#print axioms tcode_phiT_ne_phiCu
+#print axioms tcode_phiW_ne_phiCu
+#print axioms snd_GuardianBot_vs_CupodBot
+#print axioms snd_GuardianBot_vs_CupodTrollBot
+#print axioms snd_GuardianBot_vs_GuardianBot
+#print axioms snd_GuardianBot_vs_TitForTatBot
+#print axioms snd_GuardianBot_vs_CooperateBot
+#print axioms snd_GuardianBot_vs_MirrorBot
+#print axioms snd_CupodTrollBot_vs_CooperateBot
+#print axioms snd_CupodTrollBot_vs_CupodTrollBot
+#print axioms snd_CupodTrollBot_vs_DBot
+#print axioms snd_CupodTrollBot_vs_DefectBot
+#print axioms snd_CupodTrollBot_vs_EBot
+#print axioms snd_CupodTrollBot_vs_MirrorBot
+#print axioms snd_CupodTrollBot_vs_OBot
+#print axioms snd_CupodTrollBot_vs_TitForTatBot
+#print axioms snd_PrudentBot_vs_CooperateBot
+#print axioms snd_PrudentBot_vs_CupodTrollBot
+#print axioms snd_PrudentBot_vs_DBot
+#print axioms snd_PrudentBot_vs_DefectBot
+#print axioms snd_PrudentBot_vs_OBot
+#print axioms snd_PrudentBot_vs_TitForTatBot
+#print axioms snd_WaryBot_vs_CooperateBot
+#print axioms snd_WaryBot_vs_CupodTrollBot
+#print axioms snd_WaryBot_vs_GuardianBot
+#print axioms snd_WaryBot_vs_TitForTatBot
+#print axioms snd_CupodBot_vs_CooperateBot
+#print axioms snd_CupodBot_vs_TitForTatBot
+#print axioms snd_DupocBot_vs_DefectBot
+#print axioms snd_DupocBot_vs_OBot
+#print axioms snd_JustBot_vs_DefectBot
+#print axioms snd_JustBot_vs_OBot
 
 end ArithS
