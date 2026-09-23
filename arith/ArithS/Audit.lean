@@ -74,6 +74,7 @@ import ArithS.Cells.SearchFree
 import ArithS.Cells.JustSlot
 import ArithS.Cells.SoundnessCells
 import ArithS.Cells.PositiveCells
+import ArithS.Cells.FlipCells
 
 /-!
 # ArithS.Audit — the axiom census of the arithmetized layer
@@ -2631,5 +2632,22 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms snd_CIMCIC_vs_OBot
 #print axioms loebSound_pDi0
 #print axioms loeb_DIMCID_vs_CooperateBot
+
+-- Route B, the FLIP cells (Cells/FlipCells, 2026-09-24) — where PA-`S'` DISAGREES with the engine's `S`: the
+-- unreadability censuses do not transfer, and a NEGATIVE-Löb guard is self-fulfilling under a real proof
+-- predicate. The generic Löb premise `loebSound_pG_of` (DIMCID's family against ANY described opponent — the
+-- consequent is irrelevant) and `dimcid_vs_described`; the closed opponents `.bot CooperateBot` and TFT.
+-- Cell 1: `loeb_DIMCID_vs_TitForTatBot` — DIMCID × TitForTatBot is `(D, D)` in `S'` (engine
+-- `llm_outcome_DIMCID_vs_TitForTatBot = (C, C)`): the self-fulfilling refutation found by Löb, TFT's probe
+-- sees DIMCID defect against `.bot CooperateBot`.
+#print axioms loebSound_pG_of
+#print axioms dimcid_vs_described
+#print axioms describes_botCB
+#print axioms TFTV_lt_TFTTV
+#print axioms describes_TFT
+#print axioms dimcid_vs_botCB_defects
+#print axioms dimcid_vs_TFT_defects
+#print axioms loeb_DIMCID_vs_TitForTatBot
+#print axioms dimcid_finds_guard_vs_TFT
 
 end ArithS
