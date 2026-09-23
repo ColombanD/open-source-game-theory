@@ -66,6 +66,8 @@ import ArithS.Necessitation.Verify5
 import ArithS.Necessitation.Package
 import ArithS.Necessitation.ClosedNec
 import ArithS.Cells.DupocMirror
+import ArithS.Cells.JustBot
+import ArithS.Cells.DIMCID
 
 /-!
 # ArithS.Audit — the axiom census of the arithmetized layer
@@ -2023,5 +2025,105 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms cupod_mirror_defect_unconditional
 #print axioms dupoc_finds_guard_vs_mirror_unconditional
 #print axioms cupod_finds_guard_vs_mirror_unconditional
+
+-- Route B Phase 2, the DIMCID family — DIMCID × DIMCID `(D, D)` and DIMCID × Mirror `(D, D)` in PA-`S'`
+-- (Cells/DIMCID, 2026-09-23), the first family whose guard is the GENERAL translation `tmpl` (an `.impl` of two
+-- pronoun atoms, `tmplD := tmpl phiD`, a closed constant never evaluated; `pcode (PD.Bots.DIMCID k) = Dimcid k`).
+-- New: the truth of `tmpl` at the PRONOUN atoms `.plays .self .opp a` / `.plays .opp .self a` in every model
+-- (`eval_tmpl_plays_self_opp_V`/`_opp_self_V` — `Det.models_trAt_plays_V` covers only PROPER programs), hence
+-- `eval_tmplD_V`. The fixed formulas are generic in the opponent's description triple (`qDG`/`qTG`, the family
+-- `pG X U W = qDG X U W ⋏ qTG (swap X) (swap U) (swap W)`); the instance equations on codes take the three
+-- code-level description hypotheses; `pG_both_V` is the ∧-elimination. Löb: a box of the family makes DIMCID
+-- DEFECT, which makes each guard's consequent ("opp plays D against me") true — against itself at fuel 2,
+-- against Mirror by the copy at fuel 3 — so the implications hold in both readings (`loebSound_pDD`,
+-- `loebSound_pDMi : LoebSound _ 7 8`), and `family_found` gives the cells: conditional on `BoundedInnerNec d`,
+-- then UNCONDITIONAL at `boundedInnerNec_sixteen`. Nothing in `Code`/`Agent`/`Det`/`Instance*` was changed.
+#print axioms pcode_DIMCID
+#print axioms swapcode_DimcidV
+#print axioms dnum_DimcidV
+#print axioms eval_tmpl_plays_self_opp_V
+#print axioms eval_tmpl_plays_opp_self_V
+#print axioms eval_tmplD_V
+#print axioms eval_qDG_iff_V
+#print axioms eval_qTG_iff_V
+#print axioms guardCode_DimcidV_eq_instB
+#print axioms guardCode_DimcidTV_eq_instB
+#print axioms dimcid_search_V
+#print axioms pG_both_V
+#print axioms pG_guards_V
+#print axioms eval_pG_iff_std
+#print axioms eval_pG_iff_swap
+#print axioms guardCode_DimcidV_self_eq_instB
+#print axioms eval_qDD_iff_V
+#print axioms eval_qDD_swap_iff_V
+#print axioms loebSound_pDD
+#print axioms dimcid_self_cell_core
+#print axioms dimcid_self_defect
+#print axioms dimcid_finds_guard
+#print axioms dimcid_self_defect_unconditional
+#print axioms dimcid_finds_guard_unconditional
+#print axioms dimcid_finds_guardOf_unconditional
+#print axioms guardCode_DimcidV_MirrorV_eq_instB
+#print axioms eval_qDMi_iff_V
+#print axioms eval_qDMi_swap_iff_V
+#print axioms loebSound_pDMi
+#print axioms dimcid_mirror_cell_core
+#print axioms dimcid_mirror_defect
+#print axioms dimcid_finds_guard_vs_mirror
+#print axioms dimcid_mirror_defect_unconditional
+#print axioms dimcid_finds_guard_vs_mirror_unconditional
+
+-- Route B Phase 2, the JustBot family (Cells/JustBot, 2026-09-23) — the frozen-`.bot` Löb families. `pBot p` runs `p`
+-- in the SAME frame (`EvalGraph.bot_iff`) and the canonical description commutes with it (`dnum_pBot`/`dU_pBot`/
+-- `dW_pBot`), so Dupoc's search clause holds in ANY frame (`dupoc_frame_search_V`) and the bot-wrapped guards are
+-- `k`-instances over the bot tower `TBD` (`termSubst_TBD`); the per-cell substitution computations are factored into
+-- the generic instance equation `guardCode_eq_instB_of` and truth equation `eval_GtmplA_subst_iff`. Family (1)
+-- `pBD = qBD ⋏ qBC`: **`botDupoc_self_coop_unconditional`** — the engine's `botDupoc_self_coop`, `EvalGraph 3 (pBot
+-- (Dupoc k)) (pBot (Dupoc k)) (pBot (Dupoc k)) 0` for all large `k` (fuel 3: bot, search, const). `JustV k = pSearch k
+-- (gJ k) (pConst 0) (pConst 1)` on the PRE-FILLED template `gJ k = subst (jVec k) ⌜GtmplA 0⌝` (me-slots = the closed
+-- description of `pBot (DupocV k)`, opp-slots = the frame variables): `guardCode_JustV` — Just's guard against `opp` IS
+-- Dupoc-in-bot's guard against `opp`; at ℕ `Just k = pSearch k ⌜GtmplJ k⌝ …` with the bridge `JustV_nat`. Family (3)
+-- `pJM = qJM ⋏ qJC` ("Mirror plays C against `pBot (Dupoc k)`"): **`just_mirror_coop_unconditional`** — `EvalGraph 2
+-- (Just k) Mirror (Just k) 0 ∧ EvalGraph 3 Mirror (Just k) Mirror 0`, the `(C, C)` cell (the engine's
+-- `llm_outcome_JustBot_vs_MirrorBot`), plus the bot-wrapped Dupoc × Mirror and the box forms. Just × Just and
+-- Just × Dupoc are NOT here: Just's own description carries the leaf `bnum (gJ k)`, so no fixed formula has those
+-- guards as `k`-instances (see the module docstring).
+#print axioms dnum_pBot
+#print axioms dupoc_frame_search_V
+#print axioms botDupoc_frame_search_V
+#print axioms val_TBD_V
+#print axioms termSubst_TBD
+#print axioms guardCode_eq_instB_of
+#print axioms eval_GtmplA_subst_iff
+#print axioms guardCode_botDupocV_eq_instB
+#print axioms guardCode_botCupodV_eq_instB
+#print axioms eval_qBD_iff_V
+#print axioms eval_qBC_iff_V
+#print axioms pBD_both_V
+#print axioms loebSound_pBD
+#print axioms botDupoc_cell_core
+#print axioms botDupoc_self_coop
+#print axioms botDupoc_finds_guard
+#print axioms botDupoc_self_coop_unconditional
+#print axioms botCupod_self_defect_unconditional
+#print axioms botDupoc_finds_guard_unconditional
+#print axioms termSubstVec_jVec
+#print axioms guardCode_JustV
+#print axioms just_search_V
+#print axioms quote_GtmplJ
+#print axioms JustV_nat
+#print axioms guardCode_botDupocV_MirrorV_eq_instB
+#print axioms guardCode_botCupodV_MirrorV_eq_instB
+#print axioms eval_qJM_iff_V
+#print axioms eval_qJC_iff_V
+#print axioms pJM_both_V
+#print axioms loebSound_pJM
+#print axioms just_mirror_cell_core
+#print axioms just_mirror_coop
+#print axioms botDupoc_mirror_coop
+#print axioms just_finds_guard_vs_mirror
+#print axioms just_mirror_coop_unconditional
+#print axioms botDupoc_mirror_coop_unconditional
+#print axioms just_finds_guard_vs_mirror_unconditional
 
 end ArithS

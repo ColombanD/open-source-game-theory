@@ -89,6 +89,8 @@ import ArithS.Necessitation.Verify5
 import ArithS.Necessitation.Package
 import ArithS.Necessitation.ClosedNec
 import ArithS.Cells.DupocMirror
+import ArithS.Cells.JustBot
+import ArithS.Cells.DIMCID
 import ArithS.Neg
 import ArithS.Agent
 import ArithS.AgentConverse
