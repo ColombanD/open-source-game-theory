@@ -381,3 +381,33 @@ PA-`S'` on the constant-template diagonal `Just7 k` (same play as `Just k` in ev
 `Cells/SearchFree.lean` (28 cells by transfer at the engine's own fuel — `eval` and `EvalGraph` step in
 lockstep on the search-free constructors): **43 cells of the engine's matrix hold in PA-`S'`, all 14
 in-scope Löbian cells among them; three standard axioms; census 1301.**
+
+**Phase 4 (2026-09-23 night, `5df270d`…`a63037b`; FINAL GATE 3346 jobs, census 1428 standard).**
+`Cells/SoundnessCells.lean`: all **36 SND cells**, on the ENGINE's own codes `pcode (L k)` at the engine's
+pads — 30 at EVERY `k`, 6 for all large `k` — by the red cell's argument (`snd_else_of_false`: a guard false
+in ℕ has no `TAct`-proof of any length, `TAct` being sound in ℕ), including WaryBot's `.neg` guards (the
+`S'` twin of `Pf.atomNeg` is Π₁ truth by evaluator determinism). `Cells/PositiveCells.lean`: **10 of the
+13 POS cells**, Löb-free (`found_of_all : TAct ⊢ ∀¹ q → … → ∃ k₀, ∀ k > k₀, LenProvableV TAct k (G k)`, the
+instance costing `K₀ + K₁·size k`); the 4 remaining need the `k̂`-chain instantiation (machinery exists).
+**Total: 92 cells of the engine's 155 hold in PA-`S'`** — every cell that is not a floor, an excluded bot
+(Legible/Optim/Wary-floor), or one of the 4 `k̂`-chain POS cells.
+
+**THE FINDING — `S'` DISAGREES with `S` on the "unreadability" cells, as the roadmap §4 predicted
+("PA reads every source; negatives are weaker").** The engine closes 10 cells by censuses that rest on a
+player being UNREADABLE by `S`'s rules (`no_provable_tailTo_unreadable`, the WV valuation censuses). In
+PA every source is readable (Σ₁-completeness), and 6 of the 10 FLIP:
+| cell | engine | `S'` |
+|---|---|---|
+| DIMCID × CooperateBot | (C, C) | **(D, C), PROVED** (`loeb_DIMCID_vs_CooperateBot`): DIMCID's guard "my cooperating implies your defecting" has a FALSE consequent, so it says "I do not cooperate" — SELF-FULFILLING; bounded Löb finds it and DIMCID defects |
+| DIMCID × TitForTatBot | (C, C) | (D, D) — same Löb; TFT side a `k̂` chain, verdict only |
+| DIMCID × CupodTrollBot | (C, C) | (D, C) — verdict only |
+| GuardianBot × DIMCID | (C, C) | (D, D) — verdict only |
+| WaryBot × MirrorBot | (C, C) | (D, D) — "¬(Mirror cooperates with me)" self-fulfilling under copying |
+| WaryBot × WaryBot | (C, C) | (D, D) — same |
+| CIMCIC × DefectBot, CIMCIC × OBot | (D, D) | **(D, D), PROVED** — kept, but by SOUNDNESS: CIMCIC's guard is SELF-REFUTING (found ⇒ CIMCIC cooperates ⇒ DefectBot would cooperate) |
+| CIMCIC × DBot, CIMCIC × EBot | (D, C) | genuine floors (guard true, provable only above the budget) |
+Reading: the engine's `S` is not only PA plus free citation; it is also PA MINUS the ability to read a
+source its rules do not cover, and those two departures pull in opposite directions. The unreadability
+censuses are artifacts of the rule set: under a real proof predicate a negative-Löb guard ("I will not
+cooperate") is self-fulfilling and gets FOUND. This is the paper's clean example of a cell whose value is
+a property of the proof system, not of the bots.
