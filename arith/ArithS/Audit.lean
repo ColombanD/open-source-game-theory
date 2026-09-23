@@ -2763,4 +2763,19 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms khat_CupodTrollBot_vs_CupodBot
 #print axioms khat_CupodTrollBot_vs_CupodBot_engine
 
+-- Cell 5: `loeb_DIMCID_vs_CupodTrollBot` — DIMCID × CupodTrollBot is `(D, C)` in `S'` (engine
+-- `llm_outcome_DIMCID_vs_CupodTrollBot = (C, C)`), on the budget-slot `CupodTroll7 k` of `Cells/KhatCells`
+-- (the same play as the engine's `CupodTrollBot k` in every frame): DIMCID's guard against the described
+-- CupodTroll (`describes_troll7`) is self-fulfilling; CupodTroll's `.eq` guard "DIMCID is `CupodBot k`" is FALSE
+-- (`tcode_phiD_ne_phiCu`, `pcode_DIMCID_ne_CupodBot`), never found by soundness, so CupodTroll cooperates
+-- (`troll7_vs_DIMCID`, and on the engine's own code `snd_CupodTrollBot_vs_DIMCID_engine`, at every `k`).
+#print axioms tcode_phiD_ne_phiCu
+#print axioms pcode_DIMCID_ne_CupodBot
+#print axioms troll7_vs_DIMCID
+#print axioms snd_CupodTrollBot_vs_DIMCID_engine
+#print axioms describes_troll7
+#print axioms dimcid_vs_troll7_defects
+#print axioms loeb_DIMCID_vs_CupodTrollBot
+#print axioms dimcid_finds_guard_vs_troll7
+
 end ArithS

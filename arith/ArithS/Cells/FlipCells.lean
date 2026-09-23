@@ -1,5 +1,6 @@
 import ArithS.Cells.PositiveCells
 import ArithS.Cells.DIMCID
+import ArithS.Cells.KhatCells
 
 /-!
 # ArithS.Cells.FlipCells — the FLIP cells: where PA-`S'` disagrees with the engine's `S`
@@ -38,10 +39,17 @@ no reader for a searcher's own else-play inside a negative), so its censuses ret
    `llm_outcome_GuardianBot_vs_DIMCID = (C, C)`, pad 2): Guardian's guard "DIMCID defects against
    `.bot CooperateBot`" is a box consequence of DIMCID's Löb family, so Guardian finds it (`guardian_finds_DIMCID`);
    DIMCID's guard against Guardian (described by the `SV` layer, `describes_Guardian`) is self-fulfilling.
-6. **The `.neg` family** (`pQ q := q ⋏ τq`, `pQ_guards_V`, `SV_search_V`) and **cells 3, 4 — WaryBot × MirrorBot
+6. **The `.neg` family** (`pQ q := q ⋏ τq`, `pQ_both_V`, `SV_search_V`) and **cells 3, 4 — WaryBot × MirrorBot
    `(D, D)`, WaryBot × WaryBot `(D, D)`** (`loeb_WaryBot_vs_MirrorBot`, `loeb_WaryBot_vs_WaryBot`; engine
    `outcome_WaryBot_vs_MirrorBot`/`outcome_WaryBot_vs_WaryBot = (C, C)` at EVERY `k`, pads 3/2): "¬(you
    cooperate with me)" against a copier is self-fulfilling — found ⇒ Wary defects ⇒ the copier defects.
+7. **Cell 5 — DIMCID × CupodTrollBot `(D, C)`** (`loeb_DIMCID_vs_CupodTrollBot`; engine
+   `llm_outcome_DIMCID_vs_CupodTrollBot = (C, C)`, pad 2), on the budget-slot `CupodTroll7 k` of
+   `Cells/KhatCells.lean` (the same play as the engine's `CupodTrollBot k` in every frame,
+   `evalGraph_CupodTroll7_iff`; an opponent's guard that DESCRIBES it needs the slot): DIMCID's guard against
+   the described CupodTroll (`describes_troll7`) is self-fulfilling; CupodTroll's `.eq` guard "DIMCID is
+   `CupodBot k`" is FALSE (`pcode_DIMCID_ne_CupodBot`, the templates separated semantically), so by soundness it
+   is never found and CupodTroll cooperates — on the engine's own code too (`snd_CupodTrollBot_vs_DIMCID_engine`).
 
 Conventions: every threshold EXISTENTIAL; `simp` never sees a closed quote; `omega` is never asked about `V`;
 `≤` at ℕ bridged by `le_def`; `V` pinned in every statement.
@@ -825,5 +833,95 @@ theorem wary_finds_guard_vs_self :
   exact ⟨k₀, fun k hk ↦ (h k hk).2⟩
 
 end negFamily
+
+/-! ### 7. Cell 5 — DIMCID × CupodTrollBot `(D, C)`, on the budget-slot `CupodTroll7` -/
+
+section cell5
+
+lemma proper_DIMCID (k : ℕ) : Proper (DIMCID k) := ⟨by simp [DIMCID], by simp [DIMCID]⟩
+
+/-- DIMCID's and Cupod's templates differ: at the frame `(DefectBot, CooperateBot)`, "I play C against
+CooperateBot ⇒ CooperateBot plays D against me" is true (a false antecedent) while "CooperateBot plays D
+against DefectBot" is false. -/
+lemma tcode_phiD_ne_phiCu : tcode phiD ≠ tcode phiCu := by
+  refine tcode_ne_of_models DefectBot CooperateBot ?_ ?_
+  · rw [← trAt_subst DefectBot CooperateBot sfp_DefectBot.1 sfp_CooperateBot.1 _ rfl]
+    show ℕ↓[LAct] ⊧ trAt DefectBot CooperateBot
+      (.impl (.plays DefectBot CooperateBot .C) (.plays CooperateBot DefectBot .D))
+    rw [models_trAt_impl, models_trAt_plays _ _ _ _ _ sfp_DefectBot.1 sfp_CooperateBot.1]
+    rintro ⟨N, hN⟩
+    rw [pcode_DB] at hN
+    exact absurd (EvalGraph.unique' hN (const_play 0 _ _ 1)) (by decide)
+  · rw [← trAt_subst DefectBot CooperateBot sfp_DefectBot.1 sfp_CooperateBot.1 _ rfl]
+    show ¬ ℕ↓[LAct] ⊧ trAt DefectBot CooperateBot (.plays CooperateBot DefectBot .D)
+    rw [models_trAt_plays _ _ _ _ _ sfp_CooperateBot.1 sfp_DefectBot.1]
+    rintro ⟨N, hN⟩
+    rw [pcode_CB] at hN
+    exact absurd (EvalGraph.unique' hN (const_play 0 _ _ 0)) (by decide)
+
+lemma pcode_DIMCID_ne_CupodBot (k : ℕ) : pcode (DIMCID k) ≠ pcode (CupodBot k) := by
+  rw [pcode_DIMCID', pcode_CupodBot]
+  intro e
+  exact tcode_phiD_ne_phiCu (pSearch_inj e).2.1
+
+/-- **CupodTroll's `.eq` guard against DIMCID is FALSE, hence never found (soundness): `CupodTroll7 k`
+cooperates with `DIMCID k` at EVERY `k`** (the SND mechanism on the budget-slot code). -/
+theorem troll7_vs_DIMCID (k : ℕ) : EvalGraph 2 (CupodTroll7 k) (pcode (DIMCID k)) (CupodTroll7 k) 0 := by
+  have hn := not_found_eq_opp (proper_CupodTrollBot k) (proper_DIMCID k) (Q := CupodBot k) rfl
+    (pcode_DIMCID_ne_CupodBot k) k
+  rw [← guardCode_eqTmpl_eq_tcode (CupodBot k) (pcode (CupodTrollBot k)) (pcode (DIMCID k)), pcode_CupodBot_SV] at hn
+  exact troll7_else_V k _ _ hn
+
+/-- CupodTroll's half on the ENGINE's own code, at every `k` (its guard does not read the frame's `me`). -/
+theorem snd_CupodTrollBot_vs_DIMCID_engine (k : ℕ) :
+    EvalGraph 2 (pcode (CupodTrollBot k)) (pcode (DIMCID k)) (pcode (CupodTrollBot k)) (actCode .C) :=
+  ctb_C_of_ne k (proper_DIMCID k) (pcode_DIMCID_ne_CupodBot k)
+
+lemma descVal_troll7 (k : V) : descVal TT uT wT k = CupodTrollV7 k := hopp_troll7 k
+
+lemma descVal_troll7_T (k : V) :
+    descVal (Semiterm.lMap swap TT) (Semiterm.lMap swap uT) (Semiterm.lMap swap wT) k = CupodTrollTV7 k :=
+  hopp'_troll7 k
+
+/-- The canonical triple of the budget-slot CupodTroll describes it in every model (`KhatCells` §7). -/
+theorem describes_troll7 : Describes TT uT wT where
+  hX := by intro V _ _ k; rw [descVal_troll7]; exact hX_troll7 k
+  hU := by intro V _ _ k; rw [descVal_troll7]; exact hU_troll7 k
+  hW := by intro V _ _ k; rw [descVal_troll7]; exact hW_troll7 k
+  hT := by intro V _ _ k; rw [descVal_troll7_T, descVal_troll7, swapcode_CupodTrollV7]
+
+/-- **DIMCID defects against `CupodTroll7 k` and FINDS its guard, for all large `k`** (the self-fulfilling
+refutation against the described CupodTroll). -/
+theorem dimcid_vs_troll7_defects :
+    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
+      EvalGraph 2 (pcode (DIMCID k)) (CupodTroll7 k) (pcode (DIMCID k)) 1 ∧
+      LenProvableV TAct k (guardCode (tcode phiD) (pcode (DIMCID k)) (CupodTroll7 k)) := by
+  obtain ⟨k₀, h⟩ := dimcid_vs_described describes_troll7
+  refine ⟨k₀, fun k hk ↦ ?_⟩
+  have := h k hk
+  rwa [descVal_troll7, CupodTrollV7_nat, ← pcode_DIMCID] at this
+
+/-- **DIMCID × CupodTrollBot is `(D, C)` in PA-`S'`**, for all large `k`, unconditional, on the budget-slot
+`CupodTroll7 k` (which plays as the engine's `CupodTrollBot k` in every frame, `evalGraph_CupodTroll7_iff`).
+The engine proves `(C, C)` by an unreadability census (`llm_outcome_DIMCID_vs_CupodTrollBot`, pad 2); in `S'`
+the value is `(D, C)` because DIMCID's guard "I play C against CupodTroll ⇒ CupodTroll plays D against me" is
+SELF-FULFILLING (its proof makes DIMCID defect, which falsifies the antecedent — the consequent, false here,
+never enters) and bounded Löb finds it, so DIMCID defects; while CupodTroll's `.eq` guard "DIMCID is
+`CupodBot k`" is false, so by soundness it is never found and CupodTroll cooperates. -/
+theorem loeb_DIMCID_vs_CupodTrollBot :
+    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
+      EvalGraph 2 (pcode (DIMCID k)) (CupodTroll7 k) (pcode (DIMCID k)) (actCode .D) ∧
+      EvalGraph 2 (CupodTroll7 k) (pcode (DIMCID k)) (CupodTroll7 k) (actCode .C) := by
+  obtain ⟨k₀, h⟩ := dimcid_vs_troll7_defects
+  exact ⟨k₀, fun k hk ↦ ⟨(h k hk).1, troll7_vs_DIMCID k⟩⟩
+
+/-- **The box form of cell 5**: DIMCID FINDS its guard against `CupodTroll7 k` within its budget. -/
+theorem dimcid_finds_guard_vs_troll7 :
+    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
+      LenProvableV TAct k (guardCode (tcode phiD) (pcode (DIMCID k)) (CupodTroll7 k)) := by
+  obtain ⟨k₀, h⟩ := dimcid_vs_troll7_defects
+  exact ⟨k₀, fun k hk ↦ (h k hk).2⟩
+
+end cell5
 
 end ArithS
