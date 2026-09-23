@@ -265,3 +265,14 @@ together with the LegibleBot node-data question (Phase 5) — they are the same 
 Also: the thesis is DONE (2026-09-23); the audience from here is the JMLR paper and the project.
 Phase 4 starts with the search-free cells (they never unfold the `search` clause, so they are safe
 alongside (c)); SND/POS wait for (c) to settle.
+* 2026-09-23 (evening): **Phase 4 search-free class DONE** (`8c49ec4`, `Cells/SearchFree.lean`): all 28 SF
+  cells of the census as `sf_<L>_vs_<R> : EvalGraph n (pcode L) (pcode R) (pcode L) a ∧ EvalGraph n (pcode R)
+  (pcode L) (pcode R) b` at an EXPLICIT fuel, by TRANSFER from the engine's `OutcomeSpec` theorems
+  (`outcomeSpec_evalGraph_of_searchFree`); Mirror × Mirror as non-termination (`SimTest.mirror_vs_mirror`);
+  the PA corollary `pa_proves_trAt_of_evalGraph` (certificate-free Σ₁-completeness) with 27 instances (54
+  atoms); summary `searchFree_census`/`searchFree_pa_census`. FINDING: the engine's `eval` and `EvalGraph`
+  step in LOCKSTEP on `const/self/opp/bot/sim/ite` (`evalGraph_of_eval_searchFree_core` at the SAME
+  fuel — stronger than `AgentConverse.evalGraph_of_eval`'s existential `N`, and it would hold with
+  `GuardAgree` too). `AgentConverse.eval_iff_evalGraph` quantifies `GuardAgree` over ALL formulas, so it
+  cannot be discharged for search-free players; the search-free induction was redone with `Agent.Inv`
+  at `sf = true`. Gate: 3339 jobs, census 1228 standard. **Tally: 12 Löbian/POS + 28 SF = 40 cells in `S'`.**
