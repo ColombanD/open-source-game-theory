@@ -57,4 +57,18 @@ theorem sim_search_outer_guard (n k g p q me opp a : ℕ) (hg : IsSemiformula LA
   rw [EvalGraph.sim_iff, psubst_search, psubst_self, EvalGraph.search_iff, guardCodeB_gsubst hg,
     gsubst_of_template hg]
 
+/-- The same on a SEVEN-variable template (route (c)'s budget slot; the `.sim` debt discharged
+2026-09-24): a search node placed under `sim` evaluates its guard against the OUTER frame at ITS OWN
+budget `k` — `guardCodeB g me opp k`, not `guardCodeB g (psubst me opp (pSearch k g p q)) me k`, the
+inner frame's. -/
+theorem sim_search_outer_guard₇ (n k g p q me opp a : ℕ) (hg : IsSemiformula LAct 7 g) :
+    EvalGraph (n + 1 + 1) me opp (pSim (pSearch k g p q) pSelf) a ↔
+    ((LenProvableV TAct k (guardCodeB g me opp k) ∧
+        EvalGraph n (pSearch k (gsubst me opp g) (psubst me opp p) (psubst me opp q)) me
+          (psubst me opp p) a) ∨
+      (¬LenProvableV TAct k (guardCodeB g me opp k) ∧
+        EvalGraph n (pSearch k (gsubst me opp g) (psubst me opp p) (psubst me opp q)) me
+          (psubst me opp q) a)) := by
+  rw [EvalGraph.sim_iff, psubst_search, psubst_self, EvalGraph.search_iff, guardCodeB_gsubst₇ hg]
+
 end ArithS

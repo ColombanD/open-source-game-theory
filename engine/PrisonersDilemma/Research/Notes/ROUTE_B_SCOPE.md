@@ -291,15 +291,32 @@ alongside (c)); SND/POS wait for (c) to settle.
   slack `(21, 24)`), `cimcic_just7_coop_unconditional` (`(C, C)`). **FINAL GATE on `f2cf619`: 3340 jobs,
   0 errors, census 1301 standard. Tally: 43 cells in `S'` (15 Löbian/POS + 28 SF); ALL 14 in-scope
   LOEB-FF cells of the census are done.**
-  DESIGN DEBT (record, not done): a seven-variable template is not `IsSemiformula LAct 6`, so `gsubst`
-  leaves it and `psubst` never fills its frame slots — the evaluator is faithful for every program that
-  never `.sim`s a seven-variable searcher (none of the three cells does); for a `.sim`-wrapped `Just7`
-  the inner guard would read the INNER frame. The faithful extension (~150 lines): a middle case in
-  `gsubst` — `IsSemiformula LAct 7 g ↦ subst (descVec me opp ++ [^#6]) g`, keeping `#6` — which changes
-  the hypothesis of `gsubst_of_not` to `¬IsSemiformula LAct 7 g` and the middle case of
-  `gsubstGraph`/`relabelTemplate_gsubst`. Do it before any `.sim`-of-Just cell.
-  Note: `SPRIME_DESIGN_RATIONALE.md` does not exist on this branch (the trusted-base description lives in
-  `HANDOVER_ARITHMETIZED_S.md` §1/§6 and the module docstrings) — write it or drop the reference.
+  DESIGN DEBT — DISCHARGED 2026-09-24 (the recipe below, executed; `Subst.lean`, `Guard.lean`,
+  `SimTest.lean`, `Cells/SimSlot.lean`). The debt: a seven-variable template is not `IsSemiformula
+  LAct 6`, so `gsubst` left it and `psubst` never filled its frame slots — faithful for every program
+  that never `.sim`s a seven-variable searcher (none of the three cells does), but a `.sim`-wrapped
+  `Just7` would have read the INNER frame. The extension: `gsubst` has a MIDDLE case — `¬IsSemiformula
+  LAct 6 g ∧ IsSemiformula LAct 7 g ↦ guardCodeSlot g me opp := subst (descVecSlot me opp) g` with
+  `descVecSlot me opp = descVec me opp` extended by the VARIABLE `^#6` (`Guard.lean`, Σ₁ graphs
+  `descVecSlotGraph`/`guardCodeSlotGraph`; `gsubstGraph` has the third disjunct) — fill `#0..#5` with
+  the outer descriptions, keep the slot. THE LEMMA: `guardCodeB_gsubst₇ : IsSemiformula LAct 7 g →
+  guardCodeB (gsubst me opp g) me' opp' k = guardCodeB g me opp k` (a seven-variable guard inside a
+  simulated program is evaluated against the OUTER players at the RUNNING node's budget; via
+  `substs_substs` at `(7, 7, 0)` and `termSubstVec_descVecB_descVecSlot`: the six closed entries are
+  fixed, `#6 ↦ bnum k`), the seven-variable twin of `guardCode_gsubst`. Statement changes: exactly
+  TWO — `gsubst_of_not`'s hypothesis is now `¬IsSemiformula LAct 7 g` (one use site, inside
+  `relabelTemplate_gsubst`; arity monotonicity `isSemiformula_of_le`/`isSemiformula_seven_of_six` from
+  the `IsSemiformula` structure) and `gsubstGraph`'s definition; `gsubst_of_template`,
+  `guardCode_gsubst`, `guardCodeB_gsubst`, `relabelTemplate_gsubst` (middle case via
+  `termRelabelVec_descVecSlot`: the swap fixes `^#6`), `swapcode_psubst`, `psubst_search`, the
+  `Psubst` blueprint (it cites `gsubstGraph` by name) all byte-identical. Faithfulness witnesses:
+  `SimTest.sim_search_outer_guard₇` (any seven-variable searcher under `sim` reads the outer frame at
+  its own budget `k`) and `Cells/SimSlot.evalGraph_sim_JustV7` (`pSim (JustV7 k) q` in `(me, opp)`
+  runs Just's guard `guardCode ⌜GtmplA 0⌝ (pBot (DupocV k)) opp` — the OUTER `opp`, not the simulated
+  `psubst me opp q` — the engine's `.sim (JustBot k) q`), `evalGraph_psubst_JustV7_iff`. `JustSlot`,
+  `KhatCells`, `FlipCells` unchanged. `SPRIME_DESIGN_RATIONALE.md` §4/§5 updated. GATE: `lake build
+  ArithS` 3349 jobs, 0 errors; census 1530 rows (+14: the new `Audit.lean` block), all standard but the 4
+  pre-existing subsets.
   TRAPS (JustSlot): `IsSemiterm LAct n t` with `n : ℕ` silently forces `V = ℕ` (cast the arity);
   `nth_adjoin_one/two` SHIFT (`(x ∷ v).[1] = v.[0]`); `rw [show (4:V) = 0+1+1+1+1]` also rewrites the `4`
   inside `^#4`; `LogicalConnective.HomClass.map_and` fires on `Semiformula.Eval` (unfold the family defs,

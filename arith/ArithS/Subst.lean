@@ -10,14 +10,21 @@ to the OUTER players. On codes:
 
 * `gsubst me opp g` instantiates a six-variable template with the canonical descriptions of
   `me` and `opp` — it IS `guardCode g me opp` on every template (`IsSemiformula LAct 6 g`,
-  `gsubst_of_template`) and the identity on every other code. The result is a SENTENCE
+  `gsubst_of_template`). The result is a SENTENCE
   (no free variables), so a later `guardCode … me' opp'` is the identity on it
   (`guardCode_gsubst`): a search node inside a simulated program evaluates its guard
   against the outer players whatever the current frame is — the engine's semantics.
-  (The guard on non-templates is what makes the τ-equivariance below hold on EVERY code:
+  On a SEVEN-variable template (route (c), the budget slot `#6`; `ArithS.Guard`) it fills
+  `#0..#5` with the outer descriptions and KEEPS `#6` a variable (`guardCodeSlot`,
+  `gsubst_of_template₇`), so the node that eventually runs the guard fills the slot with ITS
+  budget: `guardCodeB (gsubst me opp g) me' opp' k = guardCodeB g me opp k`
+  (`guardCodeB_gsubst₇`, the seven-variable twin of `guardCode_gsubst`) — the `.sim` debt of
+  route (c) (`ROUTE_B_SCOPE.md` §6), discharged 2026-09-24. Every other code is fixed
+  (`gsubst_of_not`, hypothesis `¬IsSemiformula LAct 7 g`).
+  (The identity on non-templates is what makes the τ-equivariance below hold on EVERY code:
   `subst` truncates out-of-range variables to `0` and `relabelTemplate` fixes the
-  resulting non-formula, so on a code with more than six free variables the two do not
-  commute — `^rel 2 R ?[c_C, #7]` is a counterexample.)
+  resulting non-formula, so on a code with more than seven free variables the two do not
+  commute — `^rel 2 R ?[c_C, #8]` is a counterexample.)
 * `psubst me opp p`: the Δ₁ fixpoint on pairs `⟪x, y⟫` with parameters `me opp`, exactly
   like `Relabel` (`ArithS.Prog`): `pConst a ↦ pConst a`, `pSelf ↦ me`, `pOpp ↦ opp`,
   `pBot p ↦ pBot p` (frozen), `pSim`/`pIte` structurally, `pSearch k g p q ↦
@@ -294,20 +301,101 @@ theorem guardCodeB_of_template {g : V} (hg : IsSemiformula LAct 6 g) (me opp k :
         substs_substs hg (descVecB_semitermVec me opp k) hid7
     _ = subst LAct (descVec me opp) g := by rw [termSubstVec_descVecB_idVec6]
 
+/-! ### The budget slot KEPT: `guardCodeSlot` (the `.sim` debt of route c, discharged 2026-09-24)
+
+`guardCodeSlot g me opp := subst (descVecSlot me opp) g` (`ArithS.Guard`) fills `#0..#5` of a
+seven-variable template with the frame's descriptions and keeps `#6` a variable. The result is a
+seven-variable formula with only `#6` free, and a later `guardCodeB … me' opp' k` in ANY frame fills
+that one variable with `bnum k` (`termSubstVec_descVecB_descVecSlot`, `guardCodeB_guardCodeSlot`):
+the seven-variable twin of `guardCode_of_sentence`, with the budget the RUNNING node's. -/
+
+lemma bvar_six_semiterm : IsSemiterm LAct 7 (^#6 : V) := IsSemiterm.bvar.mpr (by norm_num)
+
+/-- The kept-slot vector is a vector of seven terms of arity seven (six closed, one the variable `#6`). -/
+lemma descVecSlot_semitermVec (me opp : V) : IsSemitermVec LAct 7 7 (descVecSlot me opp) := by
+  unfold descVecSlot
+  have := (((((((IsSemitermVec.nil 7).adjoin bvar_six_semiterm).adjoin (dW_semiterm 7 opp)).adjoin
+    (dU_semiterm 7 opp)).adjoin (progT_semiterm_LAct 7 (dnum opp))).adjoin (dW_semiterm 7 me)).adjoin
+    (dU_semiterm 7 me)).adjoin (progT_semiterm_LAct 7 (dnum me))
+  rwa [← seven_eq] at this
+
+lemma len_descVecSlot (me opp : V) : len (descVecSlot me opp) = 7 := (descVecSlot_semitermVec me opp).lh
+
+/-- Filling `#0..#5` of a seven-variable template gives a seven-variable formula (`#6` is still free). -/
+lemma isSemiformula_guardCodeSlot {g : V} (hg : IsSemiformula LAct 7 g) (me opp : V) :
+    IsSemiformula LAct 7 (guardCodeSlot g me opp) :=
+  hg.subst (descVecSlot_semitermVec me opp)
+
+private lemma termSubst_of_closed (w : V) {t : V} (ht : IsSemiterm LAct 0 t) : termSubst LAct w t = t :=
+  termSubst_eq_self ht (fun i hi ↦ absurd hi (by simp))
+
+/-- The seventh entry of `descVecB` is the budget numeral. -/
+lemma nth_descVecB_budget (me opp k : V) : (descVecB me opp k).[6] = bnum k := by
+  unfold descVecB
+  rw [show (6 : V) = 2 + 1 + 1 + 1 + 1 by norm_num, nth_adjoin_succ, nth_adjoin_succ, nth_adjoin_succ,
+    nth_adjoin_succ]
+  simp only [nth_adjoin_zero, nth_adjoin_one, nth_adjoin_two]
+
+/-- Substituting `descVecB me' opp' k` into the kept-slot vector of `(me, opp)`: the six closed
+descriptions are fixed and `#6 ↦ bnum k` — the frame is the OUTER one, the budget the node's. -/
+theorem termSubstVec_descVecB_descVecSlot (me opp me' opp' k : V) :
+    termSubstVec LAct 7 (descVecB me' opp' k) (descVecSlot me opp) = descVecB me opp k := by
+  have h6 : IsUTerm LAct (^#6 : V) := bvar_six_semiterm.isUTerm
+  have e0 : IsUTermVec LAct 0 (0 : V) := IsUTermVec.empty
+  have e1 := e0.adjoin h6
+  have e2 := e1.adjoin (dW_semiterm 0 opp).isUTerm
+  have e3 := e2.adjoin (dU_semiterm 0 opp).isUTerm
+  have e4 := e3.adjoin (progT_semiterm_LAct 0 (dnum opp)).isUTerm
+  have e5 := e4.adjoin (dW_semiterm 0 me).isUTerm
+  have e6 := e5.adjoin (dU_semiterm 0 me).isUTerm
+  unfold descVecSlot
+  rw [seven_eq, termSubstVec_cons (progT_semiterm_LAct 0 (dnum me)).isUTerm e6,
+    termSubstVec_cons (dU_semiterm 0 me).isUTerm e5, termSubstVec_cons (dW_semiterm 0 me).isUTerm e4,
+    termSubstVec_cons (progT_semiterm_LAct 0 (dnum opp)).isUTerm e3,
+    termSubstVec_cons (dU_semiterm 0 opp).isUTerm e2, termSubstVec_cons (dW_semiterm 0 opp).isUTerm e1,
+    termSubstVec_cons h6 e0, termSubstVec_nil, termSubst_bvar, nth_descVecB_budget,
+    termSubst_of_closed _ (progT_semiterm_LAct 0 (dnum me)), termSubst_of_closed _ (dU_semiterm 0 me),
+    termSubst_of_closed _ (dW_semiterm 0 me), termSubst_of_closed _ (progT_semiterm_LAct 0 (dnum opp)),
+    termSubst_of_closed _ (dU_semiterm 0 opp), termSubst_of_closed _ (dW_semiterm 0 opp)]
+  rfl
+
+/-- **The seven-variable twin of `guardCode_of_sentence`**: after `guardCodeSlot` by the OUTER frame,
+`guardCodeB` in ANY frame at budget `k` is the outer frame's guard code at `k`. -/
+theorem guardCodeB_guardCodeSlot {g : V} (hg : IsSemiformula LAct 7 g) (me opp me' opp' k : V) :
+    guardCodeB (guardCodeSlot g me opp) me' opp' k = guardCodeB g me opp k := by
+  unfold guardCodeB guardCodeSlot
+  rw [substs_substs hg (descVecB_semitermVec me' opp' k) (descVecSlot_semitermVec me opp),
+    termSubstVec_descVecB_descVecSlot]
+
+/-- Arity monotonicity of `IsSemiformula` (from the structure: `bv p ≤ n ≤ m`). -/
+lemma isSemiformula_of_le {n m p : V} (hp : IsSemiformula LAct n p) (h : n ≤ m) : IsSemiformula LAct m p :=
+  ⟨hp.isUFormula, le_trans hp.bv_le h⟩
+
+lemma isSemiformula_seven_of_six {g : V} (hg : IsSemiformula LAct 6 g) : IsSemiformula LAct 7 g :=
+  isSemiformula_of_le hg (by norm_num)
+
 /-! ### `gsubst`: instantiate a template with the outer descriptions -/
 
 open scoped Classical in
-/-- Fill a six-variable template with the descriptions of `me` and `opp`; every other code is
-fixed. On templates this is `guardCode` (`gsubst_of_template`). -/
+/-- Fill a six-variable template with the descriptions of `me` and `opp` (`guardCode`,
+`gsubst_of_template`); fill `#0..#5` of a seven-variable template with them, keeping the budget
+slot `#6` free (`guardCodeSlot`, `gsubst_of_template₇`); every other code is fixed (`gsubst_of_not`). -/
 noncomputable def gsubst (me opp g : V) : V :=
-  if IsSemiformula LAct 6 g then guardCode g me opp else g
+  if IsSemiformula LAct 6 g then guardCode g me opp
+  else if IsSemiformula LAct 7 g then guardCodeSlot g me opp
+  else g
 
 lemma gsubst_of_template {g : V} (hg : IsSemiformula LAct 6 g) (me opp : V) :
     gsubst me opp g = guardCode g me opp := by
   unfold gsubst; rw [if_pos hg]
 
-lemma gsubst_of_not {g : V} (hg : ¬IsSemiformula LAct 6 g) (me opp : V) : gsubst me opp g = g := by
-  unfold gsubst; rw [if_neg hg]
+/-- The middle case: a seven-variable template that is not a six-variable one (it reads `#6`). -/
+lemma gsubst_of_template₇ {g : V} (h6 : ¬IsSemiformula LAct 6 g) (h7 : IsSemiformula LAct 7 g) (me opp : V) :
+    gsubst me opp g = guardCodeSlot g me opp := by
+  unfold gsubst; rw [if_neg h6, if_pos h7]
+
+lemma gsubst_of_not {g : V} (hg : ¬IsSemiformula LAct 7 g) (me opp : V) : gsubst me opp g = g := by
+  unfold gsubst; rw [if_neg (fun h ↦ hg (isSemiformula_seven_of_six h)), if_neg hg]
 
 lemma isSemiformula_gsubst {g : V} (hg : IsSemiformula LAct 6 g) (me opp : V) :
     IsSemiformula LAct 0 (gsubst me opp g) := by
@@ -324,15 +412,38 @@ theorem guardCodeB_gsubst {g : V} (hg : IsSemiformula LAct 6 g) (me opp me' opp'
     guardCodeB (gsubst me opp g) me' opp' k = gsubst me opp g :=
   guardCodeB_of_sentence (isSemiformula_gsubst hg me opp) me' opp' k
 
+/-- `gsubst` of a seven-variable template is a seven-variable formula (a sentence, or `#6` free). -/
+lemma isSemiformula_gsubst₇ {g : V} (hg : IsSemiformula LAct 7 g) (me opp : V) :
+    IsSemiformula LAct 7 (gsubst me opp g) := by
+  by_cases h6 : IsSemiformula LAct 6 g
+  · rw [gsubst_of_template h6]
+    exact isSemiformula_of_le (isSemiformula_guardCode h6 me opp) (by norm_num)
+  · rw [gsubst_of_template₇ h6 hg]; exact isSemiformula_guardCodeSlot hg me opp
+
+/-- **Outer reference on seven-variable templates, at the running node's budget**: a seven-variable
+guard inside a simulated program is evaluated against the OUTER players, with the budget slot filled by
+the node that runs it — the seven-variable twin of `guardCode_gsubst`. (On a six-variable template the
+slot is never read and both sides are `guardCode g me opp`.) -/
+theorem guardCodeB_gsubst₇ {g : V} (hg : IsSemiformula LAct 7 g) (me opp me' opp' k : V) :
+    guardCodeB (gsubst me opp g) me' opp' k = guardCodeB g me opp k := by
+  by_cases h6 : IsSemiformula LAct 6 g
+  · rw [gsubst_of_template h6, guardCodeB_of_sentence (isSemiformula_guardCode h6 me opp),
+      guardCodeB_of_template h6]
+  · rw [gsubst_of_template₇ h6 hg, guardCodeB_guardCodeSlot hg]
+
 noncomputable def gsubstGraph : 𝚺₁.Semisentence 4 := .mkSigma
   “y me opp g. (!(isSemiformula LAct).sigma 6 g ∧ !guardCodeGraph y g me opp) ∨
-    (¬!(isSemiformula LAct).pi 6 g ∧ y = g)”
+    (¬!(isSemiformula LAct).pi 6 g ∧ !(isSemiformula LAct).sigma 7 g ∧ !guardCodeSlotGraph y g me opp) ∨
+    (¬!(isSemiformula LAct).pi 7 g ∧ y = g)”
 
 instance gsubst.defined : 𝚺₁-Function₃ (gsubst : V → V → V → V) via gsubstGraph := .mk fun v ↦ by
   simp [gsubstGraph, HierarchySymbol.Semiformula.val_sigma,
     (IsSemiformula.defined (L := LAct) (V := V)).proper.iff',
-    (IsSemiformula.defined (L := LAct) (V := V)).df, guardCode.defined.df, numeral_eq_natCast]
-  by_cases h : IsSemiformula LAct 6 (v 3) <;> simp [h, gsubst]
+    (IsSemiformula.defined (L := LAct) (V := V)).df, guardCode.defined.df, guardCodeSlot.defined.df,
+    numeral_eq_natCast]
+  by_cases h6 : IsSemiformula LAct 6 (v 3)
+  · simp [h6, isSemiformula_seven_of_six h6, gsubst]
+  · by_cases h7 : IsSemiformula LAct 7 (v 3) <;> simp [h6, h7, gsubst]
 
 instance gsubst.definable : 𝚺₁-Function₃ (gsubst : V → V → V → V) := gsubst.defined.to_definable
 
@@ -614,6 +725,33 @@ theorem termRelabelVec_descVec (me opp : V) :
     termRelabel_progT, termRelabel_progT, termRelabel_dU, termRelabel_dU, termRelabel_dW, termRelabel_dW,
     dnum_swapcode, dnum_swapcode]
 
+/-- The code-level τ maps the kept-slot vector entrywise (the swap fixes the variable `#6`). -/
+theorem termRelabelVec_descVecSlot (me opp : V) :
+    termRelabelVec 1 0 7 (descVecSlot me opp) = descVecSlot (swapcode me) (swapcode opp) := by
+  have h6 : IsUTerm LAct (^#6 : V) := bvar_six_semiterm.isUTerm
+  have e0 : IsUTermVec LAct 0 (0 : V) := IsUTermVec.empty
+  have h0 : IsUTermVec LAct (0 + 1) (^#6 ∷ (0 : V)) := e0.adjoin h6
+  have h1 : IsUTermVec LAct (0 + 1 + 1) (dW opp ∷ ^#6 ∷ (0 : V)) := h0.adjoin (dW_semiterm 0 opp).isUTerm
+  have h2 : IsUTermVec LAct (0 + 1 + 1 + 1) (dU opp ∷ dW opp ∷ ^#6 ∷ (0 : V)) :=
+    h1.adjoin (dU_semiterm 0 opp).isUTerm
+  have h3 : IsUTermVec LAct (0 + 1 + 1 + 1 + 1) (progT (dnum opp) ∷ dU opp ∷ dW opp ∷ ^#6 ∷ (0 : V)) :=
+    h2.adjoin (progT_semiterm_LAct 0 (dnum opp)).isUTerm
+  have h4 : IsUTermVec LAct (0 + 1 + 1 + 1 + 1 + 1)
+      (dW me ∷ progT (dnum opp) ∷ dU opp ∷ dW opp ∷ ^#6 ∷ (0 : V)) :=
+    h3.adjoin (dW_semiterm 0 me).isUTerm
+  have h5 : IsUTermVec LAct (0 + 1 + 1 + 1 + 1 + 1 + 1)
+      (dU me ∷ dW me ∷ progT (dnum opp) ∷ dU opp ∷ dW opp ∷ ^#6 ∷ (0 : V)) :=
+    h4.adjoin (dU_semiterm 0 me).isUTerm
+  unfold descVecSlot
+  rw [seven_eq, termRelabelVec_cons (progT_semiterm_LAct 0 (dnum me)).isUTerm h5,
+    termRelabelVec_cons (dU_semiterm 0 me).isUTerm h4, termRelabelVec_cons (dW_semiterm 0 me).isUTerm h3,
+    termRelabelVec_cons (progT_semiterm_LAct 0 (dnum opp)).isUTerm h2,
+    termRelabelVec_cons (dU_semiterm 0 opp).isUTerm h1,
+    termRelabelVec_cons (dW_semiterm 0 opp).isUTerm h0,
+    termRelabelVec_cons h6 e0, termRelabelVec_nil,
+    termRelabel_progT, termRelabel_progT, termRelabel_dU, termRelabel_dU, termRelabel_dW, termRelabel_dW,
+    termRelabel_bvar, dnum_swapcode, dnum_swapcode]
+
 /-- **The swap equation for `gsubst`**, on every code. -/
 theorem relabelTemplate_gsubst (me opp g : V) :
     relabelTemplate 1 0 (gsubst me opp g) = gsubst (swapcode me) (swapcode opp) (relabelTemplate 1 0 g) := by
@@ -621,7 +759,14 @@ theorem relabelTemplate_gsubst (me opp g : V) :
   · rw [gsubst_of_template hg, gsubst_of_template (isSemiformula_relabelTemplate_swap_iff.mpr hg)]
     unfold guardCode
     rw [relabelTemplate_subst isAct_one isAct_zero hg (descVec_semitermVec me opp), termRelabelVec_descVec]
-  · rw [gsubst_of_not hg, gsubst_of_not (fun h ↦ hg (isSemiformula_relabelTemplate_swap_iff.mp h))]
+  · by_cases h7 : IsSemiformula LAct 7 g
+    · rw [gsubst_of_template₇ hg h7,
+        gsubst_of_template₇ (fun h ↦ hg (isSemiformula_relabelTemplate_swap_iff.mp h))
+          (isSemiformula_relabelTemplate_swap_iff.mpr h7)]
+      unfold guardCodeSlot
+      rw [relabelTemplate_subst isAct_one isAct_zero h7 (descVecSlot_semitermVec me opp),
+        termRelabelVec_descVecSlot]
+    · rw [gsubst_of_not h7, gsubst_of_not (fun h ↦ h7 (isSemiformula_relabelTemplate_swap_iff.mp h))]
 
 
 /-! ### `psubst`: a fixpoint on pairs `⟪x, y⟫` with parameters `me opp`

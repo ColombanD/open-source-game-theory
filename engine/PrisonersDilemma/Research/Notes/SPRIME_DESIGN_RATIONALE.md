@@ -247,15 +247,22 @@ guardCodeB g me opp k = guardCode g me opp` (`Subst.lean`, THM, via `idVec6`, `s
 `EvalGraph.search_iff₆` is the old reading on six-variable templates. This is the "node data"
 fix `FitBox.lean` describes for box budgets, applied one level down.
 
-**Known limitation (the `.sim` debt, `ROUTE_B_SCOPE.md` §8).** `gsubst` (§5) instantiates a
-template iff `IsSemiformula LAct 6 g`; a seven-variable template fails that test, so `gsubst`
-leaves it unchanged and `psubst` never fills its frame slots. The evaluator is faithful for
-every program that never `.sim`s a seven-variable searcher (none of the three JustSlot cells
-does); for a `.sim`-wrapped `Just7` the inner guard would read the INNER frame, against the
-engine's `Prog.subst`. The recipe (not done): a middle case in `gsubst`, `IsSemiformula LAct 7 g
-↦ subst (descVec me opp ++ [^#6]) g` keeping `#6`, which changes the hypothesis of
-`gsubst_of_not` to `¬IsSemiformula LAct 7 g` and the middle case of `gsubstGraph` and
-`relabelTemplate_gsubst`. Do it before any `.sim`-of-Just cell.
+**The `.sim` debt, DISCHARGED (2026-09-24; `ROUTE_B_SCOPE.md` §6).** Until then `gsubst` (§5)
+instantiated a template iff `IsSemiformula LAct 6 g`; a seven-variable template failed that test,
+so `gsubst` left it unchanged and `psubst` never filled its frame slots — faithful for every
+program that never `.sim`s a seven-variable searcher, but a `.sim`-wrapped `Just7` would have read
+the INNER frame, against the engine's `Prog.subst`. Now (DEF, `Guard.lean`): `descVecSlot me opp`
+is `descVec me opp` extended by the VARIABLE `^#6`, and `guardCodeSlot g me opp := subst LAct
+(descVecSlot me opp) g` fills `#0..#5` with the outer descriptions and keeps the slot (both Σ₁,
+`descVecSlotGraph`/`guardCodeSlotGraph`); `gsubst` applies it as its middle case (§5). THM
+(`Subst.lean`): `guardCodeB_gsubst₇ : IsSemiformula LAct 7 g → guardCodeB (gsubst me opp g) me'
+opp' k = guardCodeB g me opp k` — a seven-variable guard inside a simulated program is evaluated
+against the OUTER players at the RUNNING node's budget, the seven-variable twin of
+`guardCode_gsubst` (`substs_substs` at `(7, 7, 0)`, `termSubstVec_descVecB_descVecSlot`: the six
+closed entries are fixed by substitution, `#6 ↦ bnum k`). Witnesses (THM):
+`SimTest.sim_search_outer_guard₇` and `Cells/SimSlot.evalGraph_sim_JustV7` — `pSim (JustV7 k) q`
+in `(me, opp)` runs Just's guard `guardCode ⌜GtmplA 0⌝ (pBot (DupocV k)) opp` against the OUTER
+`opp`, the engine's `.sim (JustBot k) q`.
 
 ## 5. Substitution `psubst`/`gsubst`
 
@@ -265,20 +272,28 @@ guard through `Formula.subst`, so a guard inside a simulated program refers to t
 `.eq` substitutes only its probe side, `.diag` is frozen.
 
 **On codes (DEF, `Subst.lean`).** `gsubst me opp g := if IsSemiformula LAct 6 g then guardCode g
-me opp else g`; `psubst me opp p` is the Δ₁ fixpoint on pairs with parameters, `pConst a ↦ pConst
+me opp else if IsSemiformula LAct 7 g then guardCodeSlot g me opp else g` (the middle case since
+2026-09-24, §4; before it, the identity on seven-variable templates — the `.sim` debt); `psubst me
+opp p` is the Δ₁ fixpoint on pairs with parameters, `pConst a ↦ pConst
 a`, `pSelf ↦ me`, `pOpp ↦ opp`, `pBot p ↦ pBot p`, `pSim`/`pIte` structurally, `pSearch k g p q ↦
 pSearch k (gsubst me opp g) (psubst p) (psubst q)`, non-shapes fixed (equations
-`psubst_const` … `psubst_search`, THM). An instantiated template is a SENTENCE, so a later
+`psubst_const` … `psubst_search`, THM; the blueprint cites `gsubstGraph` by name, so the middle
+case cost it nothing). An instantiated six-variable template is a SENTENCE, so a later
 `guardCode`/`guardCodeB` in any frame is the identity on it (`guardCode_gsubst`,
-`guardCodeB_gsubst`, THM): outer reference, exactly the engine's.
+`guardCodeB_gsubst`, THM); an instantiated seven-variable template has only `#6` free, and a later
+`guardCodeB` in any frame fills it with THAT node's budget (`guardCodeB_gsubst₇`, THM): outer
+reference, exactly the engine's, at the running node's budget. `gsubst_of_not` (the identity
+case) takes `¬IsSemiformula LAct 7 g`; arity monotonicity is `isSemiformula_of_le`.
 
 **The truncation caveat (why `gsubst` is the identity off templates).** Foundation's `subst`
 truncates out-of-range variables to `0` and `relabelTemplate` fixes the resulting non-formula, so
-on a code with more than six free variables the two do not commute (the docstring's
-counterexample `^rel 2 R ?[c_C, #7]`). Restricting instantiation to genuine templates is what
-makes τ-equivariance hold on EVERY code: `swapcode_psubst : swapcode (psubst me opp p) = psubst
-(swapcode me) (swapcode opp) (swapcode p)` (THM). The same restriction is the source of the
-`.sim` debt of §4.
+on a code with more than seven free variables the two do not commute (the docstring's
+counterexample `^rel 2 R ?[c_C, #8]`). Restricting instantiation to genuine templates (six or
+seven variables) is what makes τ-equivariance hold on EVERY code: `swapcode_psubst : swapcode
+(psubst me opp p) = psubst (swapcode me) (swapcode opp) (swapcode p)` (THM, statement unchanged by
+the middle case; `relabelTemplate_gsubst`'s middle case is `termRelabelVec_descVecSlot`, the swap
+fixes `^#6`). The former restriction to SIX variables was the source of the `.sim` debt of §4,
+discharged.
 
 **Agreement with the engine (THM, `Code.lean`).** `pcode_subst : pcode (p.subst me opp) = psubst
 (pcode me) (pcode opp) (pcode p)` and `tcode_subst : tcode (ψ.subst me opp) = gsubst (pcode me)

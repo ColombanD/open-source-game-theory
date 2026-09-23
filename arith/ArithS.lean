@@ -95,6 +95,7 @@ import ArithS.Cells.PrudentMirror
 import ArithS.Cells.CIMCIC
 import ArithS.Cells.SearchFree
 import ArithS.Cells.JustSlot
+import ArithS.Cells.SimSlot
 import ArithS.Cells.SoundnessCells
 import ArithS.Cells.PositiveCells
 import ArithS.Cells.KhatCells

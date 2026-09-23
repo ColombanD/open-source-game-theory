@@ -221,4 +221,47 @@ instance guardCodeB.definable : 𝚺₁-Function₄ (guardCodeB : V → V → V 
 instance guardCodeB.definable' : Γ-[m + 1]-Function₄ (guardCodeB : V → V → V → V → V) :=
   guardCodeB.definable.of_sigmaOne
 
+/-! ### The guard code with the budget slot KEPT (the `.sim` debt of route c, discharged 2026-09-24)
+
+A seven-variable template stored inside a SIMULATED program must be instantiated by the OUTER frame
+(the engine's `Prog.subst` descends into every guard) while its budget slot must stay the budget of
+the node that eventually runs it. `gsubst` (`ArithS.Subst`) therefore fills `#0..#5` of a
+seven-variable template with the outer descriptions and KEEPS `#6` a variable: `guardCodeSlot g me opp
+:= subst (descVecSlot me opp) g` with `descVecSlot me opp = descVec me opp` extended by `^#6`. The
+evaluator's `search` clause later fills that one variable with the node's budget
+(`guardCodeB_gsubst₇`, `ArithS.Subst`: `guardCodeB (gsubst me opp g) me' opp' k = guardCodeB g me opp k`). -/
+
+/-- The description vector with the budget slot kept as the variable `#6`: `descVec me opp` extended
+by `^#6` in the seventh slot. -/
+noncomputable def descVecSlot (me opp : V) : V :=
+  progT (dnum me) ∷ dU me ∷ dW me ∷ progT (dnum opp) ∷ dU opp ∷ dW opp ∷ ^#6 ∷ 0
+
+/-- Fill `#0..#5` of the seven-variable template `g` with the descriptions of `me` and `opp`, keeping
+the budget slot `#6` free. -/
+noncomputable def guardCodeSlot (g me opp : V) : V := subst LAct (descVecSlot me opp) g
+
+noncomputable def descVecSlotGraph : 𝚺₁.Semisentence 3 := .mkSigma
+  “y me opp. ∃ n₁, !dnumGraph n₁ me ∧ ∃ t₁, !progTGraph t₁ n₁ ∧ ∃ u₁, !dUGraph u₁ me ∧ ∃ w₁, !dWGraph w₁ me ∧
+    ∃ n₂, !dnumGraph n₂ opp ∧ ∃ t₂, !progTGraph t₂ n₂ ∧ ∃ u₂, !dUGraph u₂ opp ∧ ∃ w₂, !dWGraph w₂ opp ∧
+    ∃ b, !qqBvarDef b 6 ∧
+    ∃ v₆, !adjoinDef v₆ b 0 ∧ ∃ v₅, !adjoinDef v₅ w₂ v₆ ∧ ∃ v₄, !adjoinDef v₄ u₂ v₅ ∧
+    ∃ v₃, !adjoinDef v₃ t₂ v₄ ∧ ∃ v₂, !adjoinDef v₂ w₁ v₃ ∧ ∃ v₁, !adjoinDef v₁ u₁ v₂ ∧ !adjoinDef y t₁ v₁”
+
+instance descVecSlot.defined : 𝚺₁-Function₂ (descVecSlot : V → V → V) via descVecSlotGraph := .mk fun v ↦ by
+  simp [descVecSlotGraph, descVecSlot, numeral_eq_natCast]
+
+instance descVecSlot.definable : 𝚺₁-Function₂ (descVecSlot : V → V → V) := descVecSlot.defined.to_definable
+
+noncomputable def guardCodeSlotGraph : 𝚺₁.Semisentence 4 := .mkSigma
+  “y g me opp. ∃ w, !descVecSlotGraph w me opp ∧ !(substsGraph LAct) y w g”
+
+instance guardCodeSlot.defined : 𝚺₁-Function₃ (guardCodeSlot : V → V → V → V) via guardCodeSlotGraph :=
+  .mk fun v ↦ by simp [guardCodeSlotGraph, guardCodeSlot]
+
+instance guardCodeSlot.definable : 𝚺₁-Function₃ (guardCodeSlot : V → V → V → V) :=
+  guardCodeSlot.defined.to_definable
+
+instance guardCodeSlot.definable' : Γ-[m + 1]-Function₃ (guardCodeSlot : V → V → V → V) :=
+  guardCodeSlot.definable.of_sigmaOne
+
 end ArithS

@@ -72,6 +72,7 @@ import ArithS.Cells.PrudentMirror
 import ArithS.Cells.CIMCIC
 import ArithS.Cells.SearchFree
 import ArithS.Cells.JustSlot
+import ArithS.Cells.SimSlot
 import ArithS.Cells.SoundnessCells
 import ArithS.Cells.PositiveCells
 import ArithS.Cells.KhatCells
@@ -2198,6 +2199,31 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms just7T_search_V
 #print axioms evalGraph_JustV7_iff
 #print axioms evalGraph_Just7_iff
+
+-- The `.sim` debt of route (c) DISCHARGED (2026-09-24): `gsubst` gets a MIDDLE case — a seven-variable template
+-- (not a six-variable one) is filled in `#0..#5` with the OUTER descriptions and KEEPS `#6` a variable
+-- (`guardCodeSlot g me opp := subst (descVecSlot me opp) g`, `gsubst_of_template₇`; `gsubstGraph` gets the third
+-- disjunct; `gsubst_of_not` now needs `¬IsSemiformula LAct 7 g`). The node that runs the guard fills the slot with
+-- ITS budget: `guardCodeB_gsubst₇ : guardCodeB (gsubst me opp g) me' opp' k = guardCodeB g me opp k` (via
+-- `substs_substs` at (7, 7, 0) and `termSubstVec_descVecB_descVecSlot`), the seven-variable twin of
+-- `guardCode_gsubst`; τ-equivariance keeps its statement (`termRelabelVec_descVecSlot`: the swap fixes `^#6`).
+-- Faithfulness witnesses: `sim_search_outer_guard₇` (any seven-variable searcher under `sim` reads the outer frame
+-- at its own budget) and `Cells/SimSlot`'s `evalGraph_sim_JustV7` (`pSim (JustV7 k) q` runs Just's guard against
+-- the OUTER `opp` — the engine's `.sim (JustBot k) q`).
+#print axioms descVecSlot_semitermVec
+#print axioms termSubstVec_descVecB_descVecSlot
+#print axioms guardCodeB_guardCodeSlot
+#print axioms isSemiformula_of_le
+#print axioms gsubst_of_template₇
+#print axioms gsubst_of_not
+#print axioms isSemiformula_gsubst₇
+#print axioms guardCodeB_gsubst₇
+#print axioms termRelabelVec_descVecSlot
+#print axioms relabelTemplate_gsubst
+#print axioms sim_search_outer_guard₇
+#print axioms evalGraph_psubst_JustV7_iff
+#print axioms evalGraph_sim_JustV7
+#print axioms evalGraph_sim_JustV7_self
 #print axioms just7_mirror_coop_unconditional
 #print axioms dnum_JustV7
 #print axioms dU_JustV7
