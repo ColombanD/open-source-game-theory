@@ -246,3 +246,22 @@ together with the LegibleBot node-data question (Phase 5) — they are the same 
   `V`-pinned term elaborates at ℕ silently (write `(MirrorV : V)`); `rw [relabel_const]` rewrites every
   `pConst 1` at once; zsh: `${pipestatus[1]}`, not `${PIPESTATUS[0]}`, to read `lake env lean`'s exit
   code through a pipe.
+
+## 8. Decisions (Colomban, 2026-09-23 evening)
+
+1. **§7 route: try (c) — templates with a BUDGET SLOT — with (a) the transparency lift as the fallback.**
+   Design of (c): a stored template may have a 7th free variable; the evaluator's `search` clause fills
+   it with the NODE'S OWN budget at guard time, `guardCode g me opp k := subst (descVec me opp ++ [bnum k])
+   g`, so a frozen snapshot whose budget equals the searcher's is described by a TERM in the slot and the
+   stored template is a constant (`JustBot k = JustBot2 k k`, the diagonal; `JustBot2 K k` keeps a constant
+   description as today). Existing 6-variable templates are untouched iff `subst` ignores entries beyond
+   the formula's arity (the one lemma the spike must establish first); the blast radius is the set of
+   files that unfold `EvalGraph.search_iff`. Fallback trigger: that lemma fails, the `EvalGraph` fixpoint
+   fights the extra substitution, or the re-check exceeds ~a day.
+2. **Floors DROPPED from `S'` for now**: no `BoundedReflection`, no Phase 3; the 32 FLOOR(cen) cells, the
+   3 in-scope LOEB-FP cells and the 4 companions stay the ENGINE's results, with the reflection assumption
+   stated in prose. `S'` is the positive theory.
+3. Branch pushed by Colomban.
+Also: the thesis is DONE (2026-09-23); the audience from here is the JMLR paper and the project.
+Phase 4 starts with the search-free cells (they never unfold the `search` clause, so they are safe
+alongside (c)); SND/POS wait for (c) to settle.
