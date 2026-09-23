@@ -1114,6 +1114,12 @@ values, regimes and pads; blast radius and the few statement changes in the resu
 STEP 2 DONE with the finding above. STEP 3 (the induction) NOT started — waiting on the A/B/C
 decision. The `4·log2 k ≤ k + 12` lemma now exists privately in four theorem files
 (PrudentBot ×2, JustBot ×2) — promote it to `Base/Asymptotics` in a follow-up.
+2026-09-23: DECIDED — route B (`ROUTE_B_SCOPE.md`: no rule bridge; direct `S'` proofs per family on the M5
+pattern, the floor as ONE named hypothesis `BoundedReflection`; route D recorded as an independent engine-side
+recommendation, not landed). Branch `colomban-route-b` off `colomban-recost`. Phase 0 (U10 closed-sentence
+arbitrary-budget form `Necessitation/ClosedNec`; the per-cell census) and Phase 1 (the family-parametric assembly
+`Assembly/Family`: `psiF/chiF/chainBoundF/LoebSound/pblt_uniformF/family_found`, Uniform/Cell as the `pConj`
+instance with byte-identical statements) started.
 
 **M4 — quantitative HBL and parametric bounded Löb in PA.** The research-grade block:
 * bounded D1: `PA ⊢_k σ → PA ⊢_{e(k)+|□_k σ|} □_k σ` — Critch's (d) with `e` linear or
