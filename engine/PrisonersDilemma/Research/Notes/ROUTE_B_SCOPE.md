@@ -343,3 +343,17 @@ alongside (c)); SND/POS wait for (c) to settle.
   the budget-slot `CupodTroll7`, CupodTroll × Cupod), `SPRIME_DESIGN_RATIONALE.md` (the trusted base,
   written against the post-route-(c) tree); the `gsubst` `.sim` debt is queued AFTER the two cell agents
   land (it rebuilds everything downstream of `Subst.lean`).
+* 2026-09-24: **`Cells/KhatCells.lean` DONE** (`1995f5a`, `1239a5b`): the `k̂`-CHAIN as general lemmas
+  (`found_of_all_V`, `tact_all_above_of_both`, `exists_instance_length_above`, **`found_of_all_above`** —
+  a positive guard true only above a threshold is found for all large `k`, cost `K₀ + K₁·size k +
+  K₂·size k²`); TFT in every model; the three TFT cells `khat_DupocBot/JustBot/CIMCIC_vs_TitForTatBot`
+  `(C, C)` at pads 4/5/6 on the ENGINE's codes; **the budget-slot `CupodTroll7`** (`GtmplT7`, the `.eq`
+  template with the frozen `CupodBot k` as a term in `#6`; `evalGraph_CupodTroll7_iff`: same play as
+  `pcode (CupodTrollBot k)` in every frame; engine bridge `guardCodeB_GtmplT7_nat`); CupodTroll × Cupod
+  `(D, D)` (`khat_CupodTrollBot_vs_CupodBot`: the `.eq` guard is true by `rfl` in both readings —
+  `eqRefl`'s twin — then Cupod's guard above `k̂`). **POS class 14/14.** Gate 3348 jobs, census 1486 all
+  standard. TRAPS: `add_lt_add_right` is the LEFT version (Foundation shadowing); Cantor pairing is not
+  lexicographic — decide code orders by `unfold …; norm_num`; `EvalGraph.mono_le (by omega)` needs the
+  source fuel `(n := 0+1+1)`; a typed `Rewriting.subst` equality closed by bare `rfl` passes the
+  elaborator but TIMES OUT IN THE KERNEL — factor into small `descF_*_subst` lemmas with `show`;
+  `rw [cast_pConst, cast_pConst, cast_pConst]` fails on the third (the first instantiates `a`).
