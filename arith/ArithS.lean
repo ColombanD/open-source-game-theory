@@ -88,6 +88,7 @@ import ArithS.Necessitation.Assemble
 import ArithS.Necessitation.Verify5
 import ArithS.Necessitation.Package
 import ArithS.Necessitation.ClosedNec
+import ArithS.Cells.DupocMirror
 import ArithS.Neg
 import ArithS.Agent
 import ArithS.AgentConverse

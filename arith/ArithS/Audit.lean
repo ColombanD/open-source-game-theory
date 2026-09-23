@@ -65,6 +65,7 @@ import ArithS.Necessitation.Assemble
 import ArithS.Necessitation.Verify5
 import ArithS.Necessitation.Package
 import ArithS.Necessitation.ClosedNec
+import ArithS.Cells.DupocMirror
 
 /-!
 # ArithS.Audit — the axiom census of the arithmetized layer
@@ -1987,5 +1988,40 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms closedInnerNec_of_kit
 #print axioms closedInnerNec_sixteen
 #print axioms closedInnerNec_sixteen'
+
+-- Route B Phase 2, cell 1 — Dupoc × Mirror `(C, C)` and Cupod × Mirror `(D, D)` in PA-`S'` (Cells/DupocMirror,
+-- 2026-09-23), the first Löb family after self-play, on the family-parametric assembly: Mirror in every model
+-- (`MirrorV = pSim pOpp pSelf`, τ-fixed, closed description; the sim step `mirror_step_V`), the guards as
+-- `k`-instances of the FIXED formulas `qDM`/`qCM = lMap swap qDM` (instance equations on codes in every model,
+-- nothing in `Instance*`/`Guard`/`Template` generalized), the truth equations in both readings ("Mirror plays C
+-- against Dupoc k" / "D against Cupod k"), the search clauses at fuel 2, the conjunction family `pDM = qDM ⋏ qCM`
+-- (∧-elimination on codes: both searchers find their guards; Mirror COPIES at fuel 3), `loebSound_pDM :
+-- LoebSound pDM 7 8`, and the cells from `family_found pDM`: conditional on `BoundedInnerNec d`, then
+-- UNCONDITIONAL at `boundedInnerNec_sixteen` — for all large `k`, `Dupoc k` cooperates with Mirror and Mirror
+-- copies (`(C, C)`), `Cupod k` defects against Mirror and Mirror copies (`(D, D)`), and both FIND their guards.
+#print axioms mirror_step_V
+#print axioms guardCode_DupocV_MirrorV_eq_instB
+#print axioms guardCode_CupodV_MirrorV_eq_instB
+#print axioms eval_qDM_iff_V
+#print axioms eval_qCM_iff_V
+#print axioms eval_qDM_swap_iff_V
+#print axioms eval_qCM_swap_iff_V
+#print axioms dupoc_mirror_search_V
+#print axioms cupod_mirror_search_V
+#print axioms instB_quote_pDM
+#print axioms pDM_both_V
+#print axioms pDM_guards_V
+#print axioms eval_pDM_iff_std
+#print axioms eval_pDM_iff_swap
+#print axioms loebSound_pDM
+#print axioms dupoc_mirror_cell_core
+#print axioms dupoc_mirror_coop
+#print axioms cupod_mirror_defect
+#print axioms dupoc_finds_guard_vs_mirror
+#print axioms cupod_finds_guard_vs_mirror
+#print axioms dupoc_mirror_coop_unconditional
+#print axioms cupod_mirror_defect_unconditional
+#print axioms dupoc_finds_guard_vs_mirror_unconditional
+#print axioms cupod_finds_guard_vs_mirror_unconditional
 
 end ArithS
