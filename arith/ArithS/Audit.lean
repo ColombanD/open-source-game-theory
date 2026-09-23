@@ -2026,8 +2026,8 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms dupoc_finds_guard_vs_mirror_unconditional
 #print axioms cupod_finds_guard_vs_mirror_unconditional
 
--- Route B Phase 2, the DIMCID family — DIMCID × DIMCID `(D, D)` and DIMCID × Mirror `(D, D)` in PA-`S'`
--- (Cells/DIMCID, 2026-09-23), the first family whose guard is the GENERAL translation `tmpl` (an `.impl` of two
+-- Route B Phase 2, the DIMCID family — DIMCID × DIMCID, DIMCID × Mirror and DIMCID × Cupod, all `(D, D)`, in
+-- PA-`S'` (Cells/DIMCID, 2026-09-23), the first family whose guard is the GENERAL translation `tmpl` (an `.impl` of two
 -- pronoun atoms, `tmplD := tmpl phiD`, a closed constant never evaluated; `pcode (PD.Bots.DIMCID k) = Dimcid k`).
 -- New: the truth of `tmpl` at the PRONOUN atoms `.plays .self .opp a` / `.plays .opp .self a` in every model
 -- (`eval_tmpl_plays_self_opp_V`/`_opp_self_V` — `Det.models_trAt_plays_V` covers only PROPER programs), hence
@@ -2072,6 +2072,30 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms dimcid_finds_guard_vs_mirror
 #print axioms dimcid_mirror_defect_unconditional
 #print axioms dimcid_finds_guard_vs_mirror_unconditional
+-- Cell 3, the MUTUAL family DIMCID × Cupod `(D, D)` (engine `mutual_pblt_engine_id`): Cupod's description
+-- (`dU_CupodV`/`dW_CupodV`), the hand-written template filled with two arbitrary triples (`qG`, the generic
+-- `guardCode_GtmplA_eq_instB`/`_swap_eq_instB`, `eval_qG_iff_V`), Cupod's guard against DIMCID `qCD`, the four-guard
+-- family `pDC = pG TD uC wC ⋏ (qCD ⋏ τqCD)` with the two-level ∧-elimination at slack `(14, 16)` (`pDC_all_V`),
+-- `loebSound_pDC : LoebSound pDC 14 16`, then the cell: both defect at fuel 2, both find their guards.
+#print axioms dU_CupodV
+#print axioms dW_CupodV
+#print axioms guardCode_GtmplA_eq_instB
+#print axioms guardCode_GtmplA_swap_eq_instB
+#print axioms eval_qG_iff_V
+#print axioms guardCode_CupodV_DimcidV_eq_instB
+#print axioms guardCode_DupocV_DimcidTV_eq_instB
+#print axioms eval_qCD_iff_V
+#print axioms eval_qCD_swapped_iff_V
+#print axioms pDC_all_V
+#print axioms pDC_guards_V
+#print axioms eval_pDC_iff_std
+#print axioms eval_pDC_iff_swap
+#print axioms loebSound_pDC
+#print axioms dimcid_cupod_cell_core
+#print axioms dimcid_cupod_defect
+#print axioms dimcid_cupod_find_guards
+#print axioms dimcid_cupod_defect_unconditional
+#print axioms dimcid_cupod_find_guards_unconditional
 
 -- Route B Phase 2, the JustBot family (Cells/JustBot, 2026-09-23) — the frozen-`.bot` Löb families. `pBot p` runs `p`
 -- in the SAME frame (`EvalGraph.bot_iff`) and the canonical description commutes with it (`dnum_pBot`/`dU_pBot`/

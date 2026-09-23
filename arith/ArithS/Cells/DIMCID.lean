@@ -3,11 +3,12 @@ import ArithS.Necessitation.Package
 import PrisonersDilemma.Bots.LlmGenerations.DIMCID
 
 /-!
-# ArithS.Cells.DIMCID — DIMCID × DIMCID `(D, D)` and DIMCID × Mirror `(D, D)` in PA-`S'`
+# ArithS.Cells.DIMCID — DIMCID × DIMCID, DIMCID × Mirror and DIMCID × Cupod, all `(D, D)`, in PA-`S'`
 
 `Research/Notes/ROUTE_B_SCOPE.md` §3 Phase 2 (2026-09-23): the DIMCID family — the arithmetized
-twins of the engine's `llm_outcome_DIMCID_vs_DIMCID = (D, D)` (`pblt_engine`) and
-`llm_outcome_DIMCID_vs_MirrorBot = (D, D)`. The engine's bot is
+twins of the engine's `llm_outcome_DIMCID_vs_DIMCID = (D, D)` (`pblt_engine`),
+`llm_outcome_DIMCID_vs_MirrorBot = (D, D)` and `outcome_DIMCID_vs_CupodBot = (D, D)`
+(`mutual_pblt_engine_id`). The engine's bot is
 `DIMCID k := .search k (.impl (.plays .self .opp C) (.plays .opp .self D)) (.const D) (.const C)`
 ("if I can prove that my cooperating implies your defecting, defect; else cooperate"). Löb: a
 proof of the guard within the budget makes DIMCID DEFECT, which makes the guard's consequent
@@ -57,6 +58,21 @@ is then the five hypotheses for its opponent plus `LoebSound _ 7 8`:
   `MirrorV`, `mirror_step_V`); `qDMi`, `pDMi`, `loebSound_pDMi` (Mirror COPIES at fuel 3, the
   generic `mirror_copies_V`), **`dimcid_mirror_defect_unconditional`** (`Dimcid k` defects at fuel 2
   and Mirror defects back at fuel 3), `dimcid_finds_guard_vs_mirror_unconditional`.
+* **Cell 3 (§9), the MUTUAL family** (the engine's `outcome_DIMCID_vs_CupodBot = (D, D)`,
+  `mutual_pblt_engine_id`): `(TD, uC, wC)` describes `CupodV k` (`dU_CupodV`/`dW_CupodV`,
+  `dnum_CupodV_eq`, new here) and its transposition describes `DupocV k`. DIMCID's guard against
+  Cupod says "Cupod plays D against me", which Cupod only does if IT finds ITS guard ("DIMCID plays D
+  against me") — so the family is the four-guard conjunction `pDC := pG TD uC wC ⋏ pCD`, `pCD := qCD
+  ⋏ lMap swap qCD`, with `qCD := qG 1 TD uC wC TDi uDi wDi` Cupod's guard against DIMCID on the
+  hand-written template (`qG a X U W X' U' W' := GtmplA a ⇜ ![X, cl U, cl W, X', cl U', cl W']`, the
+  fully generic instance equation `guardCode_GtmplA_eq_instB` / `_swap_eq_instB` and truth equation
+  `eval_qG_iff_V`, both taking description hypotheses — `InstanceV` §4 / `DupocMirror` §2–3 with both
+  triples as parameters). A box of `pDC(k)` yields the four guard boxes by a TWO-level ∧-elimination
+  (`pDC_all_V`, slack `(14, 16)`: `slack4_le`/`slack4_nat`), so all four searchers commit at fuel 2 —
+  DIMCID defects against Cupod, Cupod defects against DIMCID, the transposed searcher cooperates with
+  Dupoc, Dupoc cooperates with it — which makes every conjunct true in both readings
+  (`loebSound_pDC : LoebSound pDC 14 16`); **`dimcid_cupod_defect_unconditional`** (both defect at
+  fuel 2) and `dimcid_cupod_find_guards_unconditional` (both boxes).
 
 Conventions (`HANDOVER_ARITHMETIZED_S.md` §5–6): every threshold and constant is EXISTENTIAL; `simp`
 never sees a closed quote of `tmplD`/`qDD`/`pDD` (the quote equations are for VARIABLE sentences,
@@ -984,5 +1000,538 @@ theorem dimcid_finds_guard_vs_mirror_unconditional :
   dimcid_finds_guard_vs_mirror boundedInnerNec_sixteen
 
 end mirrorCell
+
+/-! ### 9. Cell 3 — DIMCID × Cupod `(D, D)`, the MUTUAL family -/
+
+section cupodCell
+
+/-! #### Cupod's description, and the two searchers' search clauses against any opponent -/
+
+theorem swapcode_CupodV (k : V) : swapcode (CupodV k) = DupocV k := by
+  rw [← swapcode_DupocV, swapcode_swapcode]
+
+theorem dnum_CupodV_eq (k : V) : dnum (CupodV k) = dnum (DupocV k) := by
+  rw [← swapcode_DupocV, dnum_swapcode]
+
+theorem dU_CupodV (k : V) : dU (CupodV k) = (⌜uC⌝ : V) := by
+  unfold dU uC uD
+  rw [swapcode_CupodV]
+  by_cases h1 : innerD < innerC
+  · rw [if_neg (fun h ↦ lt_asymm ((DupocV_lt_CupodV_iff k).mpr h1) h), if_pos ((DupocV_lt_CupodV_iff k).mpr h1),
+      if_pos h1, lMap_swap_cterm_C, quote_cterm_D]
+  · rw [if_neg h1]
+    by_cases h2 : innerC < innerD
+    · rw [if_pos ((CupodV_lt_DupocV_iff k).mpr h2), if_pos h2, lMap_swap_cterm_D, quote_cterm_C]
+    · rw [if_neg (fun h ↦ h2 ((CupodV_lt_DupocV_iff k).mp h)), if_neg (fun h ↦ h1 ((DupocV_lt_CupodV_iff k).mp h)),
+        if_neg h2, lMap_swap_numT, quote_numT]
+      simp
+
+theorem dW_CupodV (k : V) : dW (CupodV k) = (⌜wC⌝ : V) := by
+  unfold dW wC wD
+  rw [swapcode_CupodV]
+  by_cases h1 : innerD < innerC
+  · rw [if_neg (fun h ↦ lt_asymm ((DupocV_lt_CupodV_iff k).mpr h1) h), if_pos ((DupocV_lt_CupodV_iff k).mpr h1),
+      if_pos h1, lMap_swap_cterm_D, quote_cterm_C]
+  · rw [if_neg h1]
+    by_cases h2 : innerC < innerD
+    · rw [if_pos ((CupodV_lt_DupocV_iff k).mpr h2), if_pos h2, lMap_swap_cterm_C, quote_cterm_D]
+    · rw [if_neg (fun h ↦ h2 ((CupodV_lt_DupocV_iff k).mp h)), if_neg (fun h ↦ h1 ((DupocV_lt_CupodV_iff k).mp h)),
+        if_neg h2, lMap_swap_numT, quote_numT]
+      simp
+
+/-- Cupod's triple `(TD, uC, wC)` describes `CupodV k` on codes: the `X`-hypothesis. -/
+lemma hX_cupod (k : V) :
+    termSubst LAct (bnum k ∷ (0 : V)) (⌜(Rew.emb TD : SyntacticSemiterm LAct 1)⌝ : V) =
+      progT (dnum (CupodV k)) := by
+  rw [quote_emb_TD, termSubst_tower, dnum_CupodV_eq, dnum_DupocV]
+
+lemma hU_cupod (k : V) : (⌜uC⌝ : V) = dU (CupodV k) := (dU_CupodV k).symm
+lemma hW_cupod (k : V) : (⌜wC⌝ : V) = dW (CupodV k) := (dW_CupodV k).symm
+
+/-- Cupod's triple describes `CupodV k` in `stdActV V`. -/
+lemma hopp_cupod (k : V) :
+    relabel (uC.val (s := stdActV V) ![] Empty.elim) (wC.val (s := stdActV V) ![] Empty.elim)
+      (TD.val (s := stdActV V) ![k] Empty.elim) = CupodV k := by
+  rw [val_TD_V]; exact relabel_val_uC_wC_V k
+
+/-- The transposed triple describes `DupocV k` in `stdActV V`. -/
+lemma hopp'_cupod (k : V) :
+    relabel ((Semiterm.lMap swap uC).val (s := stdActV V) ![] Empty.elim)
+      ((Semiterm.lMap swap wC).val (s := stdActV V) ![] Empty.elim)
+      ((Semiterm.lMap swap TD).val (s := stdActV V) ![k] Empty.elim) = DupocV k := by
+  unfold uC wC
+  rw [term_lMap_swap_swap, term_lMap_swap_swap, lMap_swap_TD, val_TD_V]
+  exact relabel_val_uD_wD_V k
+
+/-- Dupoc's own triple describes `DupocV k` on codes (as `hX_self`). -/
+lemma hX_dupoc (k : V) :
+    termSubst LAct (bnum k ∷ (0 : V)) (⌜(Rew.emb TD : SyntacticSemiterm LAct 1)⌝ : V) =
+      progT (dnum (DupocV k)) := by
+  rw [quote_emb_TD, termSubst_tower, dnum_DupocV]
+
+lemma hU_dupoc (k : V) : (⌜uD⌝ : V) = dU (DupocV k) := (dU_DupocV k).symm
+lemma hW_dupoc (k : V) : (⌜wD⌝ : V) = dW (DupocV k) := (dW_DupocV k).symm
+
+/-- **Cupod's search clause against ANY opponent in every model** (fuel `2`). -/
+theorem cupod_search_any_V (k opp : V) :
+    LenProvableV TAct k (guardCode (⌜GtmplA 1⌝ : V) (CupodV k) opp) →
+      EvalGraph 2 (CupodV k) opp (CupodV k) 1 := by
+  intro h
+  rw [show (2 : V) = 1 + 1 from one_add_one_eq_two.symm]
+  show EvalGraph (1 + 1) (CupodV k) opp (pSearch k (⌜GtmplA 1⌝ : V) (pConst 1) (pConst 0)) 1
+  rw [EvalGraph.search_iff]
+  left
+  refine ⟨h, ?_⟩
+  have e : EvalGraph (0 + 1) (CupodV k) opp (pConst 1) 1 := EvalGraph.const_iff.mpr rfl
+  rwa [zero_add] at e
+
+/-- **Dupoc's search clause against ANY opponent in every model** (fuel `2`). -/
+theorem dupoc_search_any_V (k opp : V) :
+    LenProvableV TAct k (guardCode (⌜GtmplA 0⌝ : V) (DupocV k) opp) →
+      EvalGraph 2 (DupocV k) opp (DupocV k) 0 := by
+  intro h
+  rw [show (2 : V) = 1 + 1 from one_add_one_eq_two.symm]
+  show EvalGraph (1 + 1) (DupocV k) opp (pSearch k (⌜GtmplA 0⌝ : V) (pConst 0) (pConst 1)) 0
+  rw [EvalGraph.search_iff]
+  left
+  refine ⟨h, ?_⟩
+  rw [show (1 : V) = 0 + 1 by simp, EvalGraph.const_iff]
+
+/-! #### The hand-written template `GtmplA a`, filled with two arbitrary description triples -/
+
+/-- The template instance `GtmplA a` filled with the triples `(X, U, W)` (me) and `(X', U', W')` (opp). -/
+noncomputable def qG (a : ℕ) (X : Semiterm LAct Empty 1) (U W : ClosedSemiterm LAct 0)
+    (X' : Semiterm LAct Empty 1) (U' W' : ClosedSemiterm LAct 0) : Semisentence LAct 1 :=
+  GtmplA a ⇜ ![X, cl U, cl W, X', cl U', cl W']
+
+lemma lMap_swap_qG (a : ℕ) (X : Semiterm LAct Empty 1) (U W : ClosedSemiterm LAct 0)
+    (X' : Semiterm LAct Empty 1) (U' W' : ClosedSemiterm LAct 0) :
+    Semiformula.lMap swap (qG a X U W X' U' W') =
+      qG (swapAct a) (Semiterm.lMap swap X) (Semiterm.lMap swap U) (Semiterm.lMap swap W)
+        (Semiterm.lMap swap X') (Semiterm.lMap swap U') (Semiterm.lMap swap W') := by
+  unfold qG
+  rw [Semiformula.lMap_subst, lMap_swap_GtmplA]
+  congr 1
+  funext i
+  fin_cases i <;> simp [lMap_swap_cl]
+
+/-- The six codes of the substituted terms of `qG`, as an internal vector. -/
+noncomputable def gVec (X : Semiterm LAct Empty 1) (U W : ClosedSemiterm LAct 0)
+    (X' : Semiterm LAct Empty 1) (U' W' : ClosedSemiterm LAct 0) : V :=
+  (⌜(Rew.emb X : SyntacticSemiterm LAct 1)⌝ : V) ∷
+    ⌜(Rew.emb (cl U : Semiterm LAct Empty 1) : SyntacticSemiterm LAct 1)⌝ ∷
+    ⌜(Rew.emb (cl W : Semiterm LAct Empty 1) : SyntacticSemiterm LAct 1)⌝ ∷
+    ⌜(Rew.emb X' : SyntacticSemiterm LAct 1)⌝ ∷
+    ⌜(Rew.emb (cl U' : Semiterm LAct Empty 1) : SyntacticSemiterm LAct 1)⌝ ∷
+    ⌜(Rew.emb (cl W' : Semiterm LAct Empty 1) : SyntacticSemiterm LAct 1)⌝ ∷ 0
+
+lemma semitermVec_val_gVec (X : Semiterm LAct Empty 1) (U W : ClosedSemiterm LAct 0)
+    (X' : Semiterm LAct Empty 1) (U' W' : ClosedSemiterm LAct 0) :
+    SemitermVec.val (fun i ↦ (⌜(Rew.emb ((![X, cl U, cl W, X', cl U', cl W'] :
+      Fin 6 → Semiterm LAct Empty 1) i) : SyntacticSemiterm LAct 1)⌝ : Bootstrapping.Semiterm V LAct 1)) =
+      gVec X U W X' U' W' := by
+  have hv : (fun i ↦ (⌜(Rew.emb ((![X, cl U, cl W, X', cl U', cl W'] :
+      Fin 6 → Semiterm LAct Empty 1) i) : SyntacticSemiterm LAct 1)⌝ : Bootstrapping.Semiterm V LAct 1)) =
+      ![⌜(Rew.emb X : SyntacticSemiterm LAct 1)⌝,
+        ⌜(Rew.emb (cl U : Semiterm LAct Empty 1) : SyntacticSemiterm LAct 1)⌝,
+        ⌜(Rew.emb (cl W : Semiterm LAct Empty 1) : SyntacticSemiterm LAct 1)⌝,
+        ⌜(Rew.emb X' : SyntacticSemiterm LAct 1)⌝,
+        ⌜(Rew.emb (cl U' : Semiterm LAct Empty 1) : SyntacticSemiterm LAct 1)⌝,
+        ⌜(Rew.emb (cl W' : Semiterm LAct Empty 1) : SyntacticSemiterm LAct 1)⌝] := by
+    funext i; fin_cases i <;> rfl
+  rw [hv]
+  simp only [SemitermVec.val_cons, SemitermVec.val_nil]
+  rfl
+
+theorem quote_qG (a : ℕ) (X : Semiterm LAct Empty 1) (U W : ClosedSemiterm LAct 0)
+    (X' : Semiterm LAct Empty 1) (U' W' : ClosedSemiterm LAct 0) :
+    (⌜qG a X U W X' U' W'⌝ : V) = subst LAct (gVec X U W X' U' W') (⌜GtmplA a⌝ : V) := by
+  unfold qG
+  rw [Sentence.quote_def, Semiformula.coe_subst_eq_subst_coe, Semiformula.quote_def,
+    Semiformula.typed_quote_substs, Bootstrapping.Semiformula.val_substs, ← Semiformula.quote_def,
+    ← Sentence.quote_def]
+  congr 1
+
+lemma gVec_semitermVec (X : Semiterm LAct Empty 1) (U W : ClosedSemiterm LAct 0)
+    (X' : Semiterm LAct Empty 1) (U' W' : ClosedSemiterm LAct 0) :
+    IsSemitermVec LAct 6 1 (gVec X U W X' U' W' : V) := by
+  rw [six_eq, gVec]
+  exact ((((((IsSemitermVec.nil 1).adjoin (semiterm_quote_emb₁ _)).adjoin (semiterm_quote_emb₁ _)).adjoin
+    (semiterm_quote_emb₁ _)).adjoin (semiterm_quote_emb₁ _)).adjoin (semiterm_quote_emb₁ _)).adjoin
+    (semiterm_quote_emb₁ _)
+
+/-- Substituting `bnum k` into the six codes gives the description vector of `(me, opp)`, given that
+the two triples describe `me` and `opp` on codes. -/
+theorem termSubstVec_gVec (k : V) (X : Semiterm LAct Empty 1) (U W : ClosedSemiterm LAct 0)
+    (X' : Semiterm LAct Empty 1) (U' W' : ClosedSemiterm LAct 0) {me opp : V}
+    (hX : termSubst LAct (bnum k ∷ (0 : V)) (⌜(Rew.emb X : SyntacticSemiterm LAct 1)⌝ : V) = progT (dnum me))
+    (hU : (⌜U⌝ : V) = dU me) (hW : (⌜W⌝ : V) = dW me)
+    (hX' : termSubst LAct (bnum k ∷ (0 : V)) (⌜(Rew.emb X' : SyntacticSemiterm LAct 1)⌝ : V) = progT (dnum opp))
+    (hU' : (⌜U'⌝ : V) = dU opp) (hW' : (⌜W'⌝ : V) = dW opp) :
+    termSubstVec LAct 6 (bnum k ∷ (0 : V)) (gVec X U W X' U' W') = descVec me opp := by
+  have h1 : IsUTerm LAct (⌜(Rew.emb X : SyntacticSemiterm LAct 1)⌝ : V) := (semiterm_quote_emb₁ _).isUTerm
+  have h2 : IsUTerm LAct (⌜(Rew.emb (cl U : Semiterm LAct Empty 1) : SyntacticSemiterm LAct 1)⌝ : V) :=
+    (semiterm_quote_emb₁ _).isUTerm
+  have h3 : IsUTerm LAct (⌜(Rew.emb (cl W : Semiterm LAct Empty 1) : SyntacticSemiterm LAct 1)⌝ : V) :=
+    (semiterm_quote_emb₁ _).isUTerm
+  have h4 : IsUTerm LAct (⌜(Rew.emb X' : SyntacticSemiterm LAct 1)⌝ : V) := (semiterm_quote_emb₁ _).isUTerm
+  have h5 : IsUTerm LAct (⌜(Rew.emb (cl U' : Semiterm LAct Empty 1) : SyntacticSemiterm LAct 1)⌝ : V) :=
+    (semiterm_quote_emb₁ _).isUTerm
+  have h6 : IsUTerm LAct (⌜(Rew.emb (cl W' : Semiterm LAct Empty 1) : SyntacticSemiterm LAct 1)⌝ : V) :=
+    (semiterm_quote_emb₁ _).isUTerm
+  have e0 : IsUTermVec LAct 0 (0 : V) := IsUTermVec.empty
+  have e1 := e0.adjoin h6
+  have e2 := e1.adjoin h5
+  have e3 := e2.adjoin h4
+  have e4 := e3.adjoin h3
+  have e5 := e4.adjoin h2
+  have sU : termSubst LAct (bnum k ∷ 0) (⌜(Rew.emb (cl U : Semiterm LAct Empty 1) : SyntacticSemiterm LAct 1)⌝ : V) =
+      dU me := by
+    rw [quote_emb_cl_V, termSubst_closed _ (semiterm_quote_emb₀ _), ← Semiterm.empty_quote_def, hU]
+  have sW : termSubst LAct (bnum k ∷ 0) (⌜(Rew.emb (cl W : Semiterm LAct Empty 1) : SyntacticSemiterm LAct 1)⌝ : V) =
+      dW me := by
+    rw [quote_emb_cl_V, termSubst_closed _ (semiterm_quote_emb₀ _), ← Semiterm.empty_quote_def, hW]
+  have sU' : termSubst LAct (bnum k ∷ 0) (⌜(Rew.emb (cl U' : Semiterm LAct Empty 1) : SyntacticSemiterm LAct 1)⌝ : V) =
+      dU opp := by
+    rw [quote_emb_cl_V, termSubst_closed _ (semiterm_quote_emb₀ _), ← Semiterm.empty_quote_def, hU']
+  have sW' : termSubst LAct (bnum k ∷ 0) (⌜(Rew.emb (cl W' : Semiterm LAct Empty 1) : SyntacticSemiterm LAct 1)⌝ : V) =
+      dW opp := by
+    rw [quote_emb_cl_V, termSubst_closed _ (semiterm_quote_emb₀ _), ← Semiterm.empty_quote_def, hW']
+  unfold gVec descVec
+  rw [six_eq, termSubstVec_cons h1 e5, termSubstVec_cons h2 e4, termSubstVec_cons h3 e3,
+    termSubstVec_cons h4 e2, termSubstVec_cons h5 e1, termSubstVec_cons h6 e0, termSubstVec_nil,
+    hX, sU, sW, hX', sU', sW']
+
+/-- **The instance equation on codes for the hand-written template, in every model**: the guard code
+of `me` against `opp` on `GtmplA a` is the `bnum k`-instance of `⌜qG a …⌝` whenever the two triples
+describe `me` and `opp` on codes. -/
+theorem guardCode_GtmplA_eq_instB (a : ℕ) (k : V) (X : Semiterm LAct Empty 1) (U W : ClosedSemiterm LAct 0)
+    (X' : Semiterm LAct Empty 1) (U' W' : ClosedSemiterm LAct 0) {me opp : V}
+    (hX : termSubst LAct (bnum k ∷ (0 : V)) (⌜(Rew.emb X : SyntacticSemiterm LAct 1)⌝ : V) = progT (dnum me))
+    (hU : (⌜U⌝ : V) = dU me) (hW : (⌜W⌝ : V) = dW me)
+    (hX' : termSubst LAct (bnum k ∷ (0 : V)) (⌜(Rew.emb X' : SyntacticSemiterm LAct 1)⌝ : V) = progT (dnum opp))
+    (hU' : (⌜U'⌝ : V) = dU opp) (hW' : (⌜W'⌝ : V) = dW opp) :
+    guardCode (⌜GtmplA a⌝ : V) me opp = instB (⌜qG a X U W X' U' W'⌝ : V) k := by
+  show guardCode (⌜GtmplA a⌝ : V) me opp = subst LAct (bnum k ∷ (0 : V)) (⌜qG a X U W X' U' W'⌝ : V)
+  rw [quote_qG, substs_substs (p := (⌜GtmplA a⌝ : V)) (l := 6)
+    (by simpa using Sentence.quote_isSemiformula (V := V) (GtmplA a))
+    (bnum_cons_semitermVec k) (gVec_semitermVec X U W X' U' W'),
+    termSubstVec_gVec k X U W X' U' W' hX hU hW hX' hU' hW']
+  rfl
+
+/-- The transposed instance equation: the guard code of `swapcode me` against `swapcode opp` on
+`GtmplA (swapAct a)` is the `bnum k`-instance of `⌜lMap swap (qG a …)⌝`. -/
+theorem guardCode_GtmplA_swap_eq_instB (a : ℕ) (k : V) (X : Semiterm LAct Empty 1) (U W : ClosedSemiterm LAct 0)
+    (X' : Semiterm LAct Empty 1) (U' W' : ClosedSemiterm LAct 0) {me opp : V}
+    (hX : termSubst LAct (bnum k ∷ (0 : V)) (⌜(Rew.emb X : SyntacticSemiterm LAct 1)⌝ : V) = progT (dnum me))
+    (hU : (⌜U⌝ : V) = dU me) (hW : (⌜W⌝ : V) = dW me)
+    (hX' : termSubst LAct (bnum k ∷ (0 : V)) (⌜(Rew.emb X' : SyntacticSemiterm LAct 1)⌝ : V) = progT (dnum opp))
+    (hU' : (⌜U'⌝ : V) = dU opp) (hW' : (⌜W'⌝ : V) = dW opp) :
+    guardCode (⌜GtmplA (swapAct a)⌝ : V) (swapcode me) (swapcode opp) =
+      instB (⌜Semiformula.lMap swap (qG a X U W X' U' W')⌝ : V) k := by
+  have hg0 : IsSemiformula LAct 6 (⌜GtmplA a⌝ : V) := by
+    simpa using Sentence.quote_isSemiformula (V := V) (GtmplA a)
+  have hg1 : IsSemiformula LAct 6 (⌜GtmplA (swapAct a)⌝ : V) := by
+    simpa using Sentence.quote_isSemiformula (V := V) (GtmplA (swapAct a))
+  rw [← gsubst_of_template hg1, ← relabelTemplate_quote_GtmplA_V, ← relabelTemplate_gsubst, gsubst_of_template hg0,
+    guardCode_GtmplA_eq_instB a k X U W X' U' W' hX hU hW hX' hU' hW']
+  unfold instB
+  rw [relabelTemplate_subst isAct_one isAct_zero (Sentence.quote_isSemiformul₁ (qG a X U W X' U' W'))
+    (bnum_cons_semitermVec k), relabelTemplate_quote_sentence_V]
+  congr 1
+  rw [show (1 : V) = 0 + 1 by simp, termRelabelVec_cons (bnum_term_LAct k).isUTerm IsUTermVec.empty,
+    termRelabelVec_nil, termRelabel_bnum]
+
+/-- **The truth equation of `qG a …` in every model** (standard reading), given that the triples
+describe `me` and `opp`: "`opp` plays `a` against `me`". -/
+theorem eval_qG_iff_V (a : ℕ) (k : V) (X : Semiterm LAct Empty 1) (U W : ClosedSemiterm LAct 0)
+    (X' : Semiterm LAct Empty 1) (U' W' : ClosedSemiterm LAct 0) {me opp : V}
+    (hme : relabel (U.val (s := stdActV V) ![] Empty.elim) (W.val (s := stdActV V) ![] Empty.elim)
+      (X.val (s := stdActV V) ![k] Empty.elim) = me)
+    (hopp : relabel (U'.val (s := stdActV V) ![] Empty.elim) (W'.val (s := stdActV V) ![] Empty.elim)
+      (X'.val (s := stdActV V) ![k] Empty.elim) = opp) :
+    Semiformula.Eval (s := stdActV V) ![k] Empty.elim (qG a X U W X' U' W') ↔
+      ∃ n, EvalGraph n opp me opp (a : V) := by
+  unfold qG GtmplA Gtmpl
+  rw [Semiformula.eval_substs, Semiformula.eval_substs, Semiformula.eval_lMap, stdActV_lMap_emb]
+  have h0 : (Semiterm.val (s := stdActV V) ![k] Empty.elim ∘ ![X, cl U, cl W, X', cl U', cl W']) =
+      ![X.val (s := stdActV V) ![k] Empty.elim, U.val (s := stdActV V) ![] Empty.elim,
+        W.val (s := stdActV V) ![] Empty.elim, X'.val (s := stdActV V) ![k] Empty.elim,
+        U'.val (s := stdActV V) ![] Empty.elim, W'.val (s := stdActV V) ![] Empty.elim] := by
+    funext i; fin_cases i <;> simp [val_cl_V]
+  rw [h0]
+  have h1 : (Semiterm.val (s := stdActV V)
+      ![X.val (s := stdActV V) ![k] Empty.elim, U.val (s := stdActV V) ![] Empty.elim,
+        W.val (s := stdActV V) ![] Empty.elim, X'.val (s := stdActV V) ![k] Empty.elim,
+        U'.val (s := stdActV V) ![] Empty.elim, W'.val (s := stdActV V) ![] Empty.elim]
+      Empty.elim ∘ ![#0, #1, #2, #3, #4, #5, actT6 a]) =
+      ![X.val (s := stdActV V) ![k] Empty.elim, U.val (s := stdActV V) ![] Empty.elim,
+        W.val (s := stdActV V) ![] Empty.elim, X'.val (s := stdActV V) ![k] Empty.elim,
+        U'.val (s := stdActV V) ![] Empty.elim, W'.val (s := stdActV V) ![] Empty.elim, (a : V)] := by
+    funext i; fin_cases i <;> simp [val_actT6_V]
+  rw [h1]
+  refine (eval_gtmpl (V := V) _).trans ?_
+  simp only [Matrix.cons_val]
+  rw [hme, hopp]
+
+/-! #### Cupod's guard against DIMCID, its transposition, and the mutual family -/
+
+/-- **Cupod's guard against DIMCID**: `qCD(k)` says "`DimcidV k` plays D against `CupodV k`". -/
+noncomputable def qCD : Semisentence LAct 1 := qG 1 TD uC wC TDi uDi wDi
+
+lemma qCD_def : qCD = qG 1 TD uC wC TDi uDi wDi := rfl
+
+/-- **The instance equation on codes**: Cupod's guard code against `DimcidV k`. -/
+theorem guardCode_CupodV_DimcidV_eq_instB (k : V) :
+    guardCode (⌜GtmplA 1⌝ : V) (CupodV k) (DimcidV k) = instB (⌜qCD⌝ : V) k :=
+  guardCode_GtmplA_eq_instB 1 k TD uC wC TDi uDi wDi (hX_cupod k) (hU_cupod k) (hW_cupod k)
+    (hX_self k) (hU_self k) (hW_self k)
+
+/-- **The transposed instance equation**: Dupoc's guard code against `DimcidTV k` is the
+`bnum k`-instance of `⌜lMap swap qCD⌝`. -/
+theorem guardCode_DupocV_DimcidTV_eq_instB (k : V) :
+    guardCode (⌜GtmplA 0⌝ : V) (DupocV k) (DimcidTV k) = instB (⌜Semiformula.lMap swap qCD⌝ : V) k := by
+  have h := guardCode_GtmplA_swap_eq_instB 1 k TD uC wC TDi uDi wDi (hX_cupod k) (hU_cupod k) (hW_cupod k)
+    (hX_self k) (hU_self k) (hW_self k)
+  rwa [swapAct_one, swapcode_CupodV, swapcode_DimcidV] at h
+
+/-- **The truth equation of `qCD` in every model** (standard reading). -/
+theorem eval_qCD_iff_V (k : V) :
+    Semiformula.Eval (s := stdActV V) ![k] Empty.elim qCD ↔
+      ∃ n, EvalGraph n (DimcidV k) (CupodV k) (DimcidV k) 1 := by
+  have h := eval_qG_iff_V 1 k TD uC wC TDi uDi wDi (hopp_cupod k) (hopp_self k)
+  rwa [Nat.cast_one] at h
+
+/-- **The truth equation of `lMap swap qCD` in every model** (standard reading): "`DimcidTV k` plays C
+against `DupocV k`". -/
+theorem eval_qCD_swapped_iff_V (k : V) :
+    Semiformula.Eval (s := stdActV V) ![k] Empty.elim (Semiformula.lMap swap qCD) ↔
+      ∃ n, EvalGraph n (DimcidTV k) (DupocV k) (DimcidTV k) 0 := by
+  rw [qCD_def, lMap_swap_qG, swapAct_one]
+  have h := eval_qG_iff_V 0 k _ _ _ _ _ _ (hopp'_cupod k) (hopp'_self k)
+  rwa [Nat.cast_zero] at h
+
+/-- The two-sided conjunct of the mutual family: Cupod's guard against DIMCID and its transposition. -/
+noncomputable def pCD : Semisentence LAct 1 := qCD ⋏ Semiformula.lMap swap qCD
+
+lemma pCD_def : pCD = qCD ⋏ Semiformula.lMap swap qCD := rfl
+
+lemma lMap_swap_pCD : Semiformula.lMap swap pCD = Semiformula.lMap swap qCD ⋏ qCD := by
+  rw [pCD_def, LogicalConnective.HomClass.map_and, lMap_swap_swap]
+
+/-- **The MUTUAL Löb family of the DIMCID × Cupod cell**: DIMCID's family against Cupod's triple
+(and the transposed searcher's against Dupoc's) AND Cupod's guard against DIMCID (and its
+transposition) — four guards, each searcher's box supplied by the same conjunction. -/
+noncomputable def pDC : Semisentence LAct 1 := pG TD uC wC ⋏ pCD
+
+lemma pDC_def : pDC = pG TD uC wC ⋏ pCD := rfl
+
+theorem instB_quote_pCD (k : V) :
+    instB (⌜pCD⌝ : V) k = instB (⌜qCD⌝ : V) k ^⋏ instB (⌜Semiformula.lMap swap qCD⌝ : V) k :=
+  instB_quote_and _ _ k
+
+theorem instB_quote_pDC (k : V) :
+    instB (⌜pDC⌝ : V) k = instB (⌜pG TD uC wC⌝ : V) k ^⋏ instB (⌜pCD⌝ : V) k :=
+  instB_quote_and _ _ k
+
+lemma formulaLen_instB_pCD (k : V) :
+    formulaLen LAct (instB (⌜pCD⌝ : V) k) =
+      formulaLen LAct (instB (⌜qCD⌝ : V) k) + formulaLen LAct (instB (⌜Semiformula.lMap swap qCD⌝ : V) k) + 1 := by
+  rw [instB_quote_pCD,
+    formulaLen_and (isFormula_instB_quote _ k).isUFormula (isFormula_instB_quote _ k).isUFormula]
+
+lemma formulaLen_instB_pDC (k : V) :
+    formulaLen LAct (instB (⌜pDC⌝ : V) k) =
+      formulaLen LAct (instB (⌜pG TD uC wC⌝ : V) k) + formulaLen LAct (instB (⌜pCD⌝ : V) k) + 1 := by
+  rw [instB_quote_pDC,
+    formulaLen_and (isFormula_instB_quote _ k).isUFormula (isFormula_instB_quote _ k).isUFormula]
+
+/-! #### The slack of a two-level ∧-elimination: `(14, 16)` -/
+
+/-- Two ∧-eliminations (`8·(x+y)+7` then `8·(u+v)+7`, with `x = u + v + 1`) are below the family slack
+`(14, 16)` at `z = x + y + 1` (for VARIABLE lengths, so that `push_cast` never sees a quote). -/
+lemma slack4_le (a x y u v z : V) (hx : x = u + v + 1) (hz : z = x + y + 1) :
+    a + 8 * (x + y) + 7 + 8 * (u + v) + 7 ≤ a + ((14 : ℕ) : V) + ((16 : ℕ) : V) * z := by
+  have huv : u + v ≤ x + y := by subst hx; exact le_trans le_self_add le_self_add
+  subst hz
+  push_cast
+  calc a + 8 * (x + y) + 7 + 8 * (u + v) + 7 ≤ a + 8 * (x + y) + 7 + 8 * (x + y) + 7 := by gcongr
+    _ = a + 14 + 16 * (x + y) := by ring
+    _ ≤ a + 14 + 16 * (x + y + 1) := by gcongr a + 14 + 16 * ?_; exact le_self_add
+
+/-- The same with the inner conjunction on the RIGHT (`y = u + v + 1`). -/
+lemma slack4_le' (a x y u v z : V) (hy : y = u + v + 1) (hz : z = x + y + 1) :
+    a + 8 * (x + y) + 7 + 8 * (u + v) + 7 ≤ a + ((14 : ℕ) : V) + ((16 : ℕ) : V) * z := by
+  have huv : u + v ≤ x + y := by subst hy; exact le_trans le_self_add le_add_self
+  subst hz
+  push_cast
+  calc a + 8 * (x + y) + 7 + 8 * (u + v) + 7 ≤ a + 8 * (x + y) + 7 + 8 * (x + y) + 7 := by gcongr
+    _ = a + 14 + 16 * (x + y) := by ring
+    _ ≤ a + 14 + 16 * (x + y + 1) := by gcongr a + 14 + 16 * ?_; exact le_self_add
+
+/-- The same at `ℕ`, in the `le_def` shape. -/
+lemma slack4_nat (a x y u v z k : ℕ) (hx : x = u + v + 1) (hz : z = x + y + 1) (h : a + 14 + 16 * z ≤ k) :
+    a + 8 * (x + y) + 7 + 8 * (u + v) + 7 = k ∨ a + 8 * (x + y) + 7 + 8 * (u + v) + 7 < k := by
+  subst hx hz; omega
+
+lemma slack4_nat' (a x y u v z k : ℕ) (hy : y = u + v + 1) (hz : z = x + y + 1) (h : a + 14 + 16 * z ≤ k) :
+    a + 8 * (x + y) + 7 + 8 * (u + v) + 7 = k ∨ a + 8 * (x + y) + 7 + 8 * (u + v) + 7 < k := by
+  subst hy hz; omega
+
+/-- **All four searchers find their guards from a box of the mutual family** (fuel 2): DIMCID defects
+against Cupod, the transposed searcher cooperates with Dupoc, Cupod defects against DIMCID, Dupoc
+cooperates with the transposed searcher. -/
+theorem pDC_all_V (k a : V)
+    (ha₁ : a + 8 * (formulaLen LAct (instB (⌜pG TD uC wC⌝ : V) k) + formulaLen LAct (instB (⌜pCD⌝ : V) k)) + 7 +
+      8 * (formulaLen LAct (instB (⌜qDG TD uC wC⌝ : V) k) +
+        formulaLen LAct (instB (⌜qTG (Semiterm.lMap swap TD) (Semiterm.lMap swap uC) (Semiterm.lMap swap wC)⌝ : V) k))
+      + 7 ≤ k)
+    (ha₂ : a + 8 * (formulaLen LAct (instB (⌜pG TD uC wC⌝ : V) k) + formulaLen LAct (instB (⌜pCD⌝ : V) k)) + 7 +
+      8 * (formulaLen LAct (instB (⌜qCD⌝ : V) k) + formulaLen LAct (instB (⌜Semiformula.lMap swap qCD⌝ : V) k))
+      + 7 ≤ k)
+    (h : LenDerivable TAct a (instB (⌜pDC⌝ : V) k)) :
+    (EvalGraph 2 (DimcidV k) (CupodV k) (DimcidV k) 1 ∧ EvalGraph 2 (DimcidTV k) (DupocV k) (DimcidTV k) 0) ∧
+    (EvalGraph 2 (CupodV k) (DimcidV k) (CupodV k) 1 ∧ EvalGraph 2 (DupocV k) (DimcidTV k) (DupocV k) 0) := by
+  rw [instB_quote_pDC] at h
+  have hx := isFormula_instB_quote (pG TD uC wC) k
+  have hy := isFormula_instB_quote pCD k
+  have h₁ := lenDerivable_andL_V hx hy h
+  have h₂ := lenDerivable_andR_V hx hy h
+  obtain ⟨g1, g2⟩ := pG_both_V k TD uC wC (hX_cupod k) (hU_cupod k) (hW_cupod k) _ ha₁ h₁
+  rw [swapcode_CupodV] at g2
+  have hx' := isFormula_instB_quote qCD k
+  have hy' := isFormula_instB_quote (Semiformula.lMap swap qCD) k
+  have h₂' : LenDerivable TAct
+      (a + 8 * (formulaLen LAct (instB (⌜pG TD uC wC⌝ : V) k) + formulaLen LAct (instB (⌜pCD⌝ : V) k)) + 7)
+      (instB (⌜qCD⌝ : V) k ^⋏ instB (⌜Semiformula.lMap swap qCD⌝ : V) k) := by
+    rw [← instB_quote_pCD]; exact h₂
+  have c1 := lenDerivable_mono_V ha₂ (lenDerivable_andL_V hx' hy' h₂')
+  have c2 := lenDerivable_mono_V ha₂ (lenDerivable_andR_V hx' hy' h₂')
+  rw [lenDerivable_iff_lenProvableV, ← guardCode_CupodV_DimcidV_eq_instB] at c1
+  rw [lenDerivable_iff_lenProvableV, ← guardCode_DupocV_DimcidTV_eq_instB] at c2
+  exact ⟨⟨g1, g2⟩, ⟨cupod_search_any_V k _ c1, dupoc_search_any_V k _ c2⟩⟩
+
+/-- **The box form**: the two guards of the cell are provable within `k`. -/
+theorem pDC_guards_V (k a : V)
+    (ha₁ : a + 8 * (formulaLen LAct (instB (⌜pG TD uC wC⌝ : V) k) + formulaLen LAct (instB (⌜pCD⌝ : V) k)) + 7 +
+      8 * (formulaLen LAct (instB (⌜qDG TD uC wC⌝ : V) k) +
+        formulaLen LAct (instB (⌜qTG (Semiterm.lMap swap TD) (Semiterm.lMap swap uC) (Semiterm.lMap swap wC)⌝ : V) k))
+      + 7 ≤ k)
+    (ha₂ : a + 8 * (formulaLen LAct (instB (⌜pG TD uC wC⌝ : V) k) + formulaLen LAct (instB (⌜pCD⌝ : V) k)) + 7 +
+      8 * (formulaLen LAct (instB (⌜qCD⌝ : V) k) + formulaLen LAct (instB (⌜Semiformula.lMap swap qCD⌝ : V) k))
+      + 7 ≤ k)
+    (h : LenDerivable TAct a (instB (⌜pDC⌝ : V) k)) :
+    LenProvableV TAct k (guardCode (⌜tmplD⌝ : V) (DimcidV k) (CupodV k)) ∧
+    LenProvableV TAct k (guardCode (⌜GtmplA 1⌝ : V) (CupodV k) (DimcidV k)) := by
+  rw [instB_quote_pDC] at h
+  have hx := isFormula_instB_quote (pG TD uC wC) k
+  have hy := isFormula_instB_quote pCD k
+  have h₁ := lenDerivable_andL_V hx hy h
+  have h₂ := lenDerivable_andR_V hx hy h
+  obtain ⟨g1, _⟩ := pG_guards_V k TD uC wC (hX_cupod k) (hU_cupod k) (hW_cupod k) _ ha₁ h₁
+  have hx' := isFormula_instB_quote qCD k
+  have hy' := isFormula_instB_quote (Semiformula.lMap swap qCD) k
+  have h₂' : LenDerivable TAct
+      (a + 8 * (formulaLen LAct (instB (⌜pG TD uC wC⌝ : V) k) + formulaLen LAct (instB (⌜pCD⌝ : V) k)) + 7)
+      (instB (⌜qCD⌝ : V) k ^⋏ instB (⌜Semiformula.lMap swap qCD⌝ : V) k) := by
+    rw [← instB_quote_pCD]; exact h₂
+  have c1 := lenDerivable_mono_V ha₂ (lenDerivable_andL_V hx' hy' h₂')
+  rw [lenDerivable_iff_lenProvableV, ← guardCode_CupodV_DimcidV_eq_instB] at c1
+  exact ⟨g1, c1⟩
+
+/-! #### `pDC` in both readings -/
+
+/-- `pDC(k)` in the standard reading. -/
+theorem eval_pDC_iff_std (k : V) :
+    Semiformula.Eval (s := stdActV V) ![k] Empty.elim pDC ↔
+      (((∃ n, EvalGraph n (DimcidV k) (CupodV k) (DimcidV k) 0) → (∃ n, EvalGraph n (CupodV k) (DimcidV k) (CupodV k) 1)) ∧
+       ((∃ n, EvalGraph n (DimcidTV k) (DupocV k) (DimcidTV k) 1) → (∃ n, EvalGraph n (DupocV k) (DimcidTV k) (DupocV k) 0))) ∧
+      ((∃ n, EvalGraph n (DimcidV k) (CupodV k) (DimcidV k) 1) ∧ (∃ n, EvalGraph n (DimcidTV k) (DupocV k) (DimcidTV k) 0)) := by
+  rw [pDC_def, pCD_def]
+  simp only [LogicalConnective.HomClass.map_and, LogicalConnective.Prop.and_eq]
+  rw [eval_pG_iff_std k TD uC wC (hopp_cupod k) (hopp'_cupod k), eval_qCD_iff_V, eval_qCD_swapped_iff_V]
+
+/-- `pDC(k)` in the swapped reading: the SAME content (the conjuncts exchange roles). -/
+theorem eval_pDC_iff_swap (k : V) :
+    Semiformula.Eval (s := swapActS V) ![k] Empty.elim pDC ↔
+      (((∃ n, EvalGraph n (DimcidV k) (CupodV k) (DimcidV k) 0) → (∃ n, EvalGraph n (CupodV k) (DimcidV k) (CupodV k) 1)) ∧
+       ((∃ n, EvalGraph n (DimcidTV k) (DupocV k) (DimcidTV k) 1) → (∃ n, EvalGraph n (DupocV k) (DimcidTV k) (DupocV k) 0))) ∧
+      ((∃ n, EvalGraph n (DimcidV k) (CupodV k) (DimcidV k) 1) ∧ (∃ n, EvalGraph n (DimcidTV k) (DupocV k) (DimcidTV k) 0)) := by
+  rw [eval_swapActS, pDC_def, LogicalConnective.HomClass.map_and, lMap_swap_pG, lMap_swap_pCD, ← stdActV_eq_stdActS]
+  simp only [LogicalConnective.HomClass.map_and, LogicalConnective.Prop.and_eq]
+  rw [eval_qDG_iff_V k TD uC wC (hopp_cupod k), eval_qTG_iff_V k _ _ _ (hopp'_cupod k), eval_qCD_iff_V,
+    eval_qCD_swapped_iff_V, and_comm (a := ∃ n, EvalGraph n (DimcidTV k) (DupocV k) (DimcidTV k) 0),
+    and_comm (a := (∃ n, EvalGraph n (DimcidTV k) (DupocV k) (DimcidTV k) 1) → _)]
+
+theorem eval_pDC_iff_stdActS (k : V) :
+    Semiformula.Eval (s := stdActS V) ![k] Empty.elim pDC ↔
+      (((∃ n, EvalGraph n (DimcidV k) (CupodV k) (DimcidV k) 0) → (∃ n, EvalGraph n (CupodV k) (DimcidV k) (CupodV k) 1)) ∧
+       ((∃ n, EvalGraph n (DimcidTV k) (DupocV k) (DimcidTV k) 1) → (∃ n, EvalGraph n (DupocV k) (DimcidTV k) (DupocV k) 0))) ∧
+      ((∃ n, EvalGraph n (DimcidV k) (CupodV k) (DimcidV k) 1) ∧ (∃ n, EvalGraph n (DimcidTV k) (DupocV k) (DimcidTV k) 0)) := by
+  rw [← stdActV_eq_stdActS]; exact eval_pDC_iff_std k
+
+/-! #### The Löb premise and the cells -/
+
+/-- **The bounded Löb premise of the mutual family, slack `(14, 16)`**: a box of `pDC(k)` makes all four
+searchers find their guards (fuel 2); DIMCID's implications hold because Cupod/Dupoc actually play the
+consequents, and Cupod's/Dupoc's guards are the plays of DIMCID/its transposition — true in both
+readings. -/
+theorem loebSound_pDC : LoebSound pDC 14 16 := by
+  intro V _ _ k a ha h
+  have : V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
+  have ha₁ := le_trans (slack4_le a _ _ _ _ _ (formulaLen_instB_pG TD uC wC k) (formulaLen_instB_pDC k)) ha
+  have ha₂ := le_trans (slack4_le' a _ _ _ _ _ (formulaLen_instB_pCD k) (formulaLen_instB_pDC k)) ha
+  obtain ⟨⟨g1, g2⟩, ⟨c1, c2⟩⟩ := pDC_all_V k a ha₁ ha₂ h
+  exact ⟨(eval_pDC_iff_stdActS k).mpr ⟨⟨fun _ ↦ ⟨2, c1⟩, fun _ ↦ ⟨2, c2⟩⟩, ⟨⟨2, g1⟩, ⟨2, g2⟩⟩⟩,
+    (eval_pDC_iff_swap k).mpr ⟨⟨fun _ ↦ ⟨2, c1⟩, fun _ ↦ ⟨2, c2⟩⟩, ⟨⟨2, g1⟩, ⟨2, g2⟩⟩⟩⟩
+
+/-- **The DIMCID × Cupod cell, packaged**: for all large `k`, DIMCID defects against Cupod and Cupod
+defects against DIMCID (fuel 2), and both guard boxes hold. -/
+theorem dimcid_cupod_cell_core {d : ℕ} (hE : BoundedInnerNec d) :
+    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
+      (EvalGraph 2 (Dimcid k) (Cupod k) (Dimcid k) 1 ∧ EvalGraph 2 (Cupod k) (Dimcid k) (Cupod k) 1) ∧
+      (LenProvableV TAct k (guardCode (⌜tmplD⌝ : ℕ) (Dimcid k) (Cupod k)) ∧
+        LenProvableV TAct k (guardCode (⌜GtmplA 1⌝ : ℕ) (Cupod k) (Dimcid k))) := by
+  obtain ⟨k₀, h⟩ := family_found pDC hE loebSound_pDC
+  refine ⟨k₀, fun k hk ↦ ?_⟩
+  obtain ⟨a, ha, hpc⟩ := h k hk
+  have ha₁ := le_def.mpr (slack4_nat a _ _ _ _ _ k (formulaLen_instB_pG (V := ℕ) TD uC wC k)
+    (formulaLen_instB_pDC (V := ℕ) k) ha)
+  have ha₂ := le_def.mpr (slack4_nat' a _ _ _ _ _ k (formulaLen_instB_pCD (V := ℕ) k)
+    (formulaLen_instB_pDC (V := ℕ) k) ha)
+  obtain ⟨⟨g1, _⟩, ⟨c1, _⟩⟩ := pDC_all_V (V := ℕ) k a ha₁ ha₂ hpc
+  exact ⟨⟨g1, c1⟩, pDC_guards_V (V := ℕ) k a ha₁ ha₂ hpc⟩
+
+/-- **DIMCID × Cupod is `(D, D)` in PA-`S'`, conditional on bounded inner necessitation**: for all
+large `k`, `Dimcid k` defects against `Cupod k` and `Cupod k` defects against `Dimcid k` (fuel 2). -/
+theorem dimcid_cupod_defect {d : ℕ} (hE : BoundedInnerNec d) :
+    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
+      EvalGraph 2 (Dimcid k) (Cupod k) (Dimcid k) 1 ∧ EvalGraph 2 (Cupod k) (Dimcid k) (Cupod k) 1 := by
+  obtain ⟨k₀, h⟩ := dimcid_cupod_cell_core hE
+  exact ⟨k₀, fun k hk ↦ (h k hk).1⟩
+
+/-- **The box form**: for all large `k`, both DIMCID and Cupod FIND their guards against each other
+within the budget `k` (conditional). -/
+theorem dimcid_cupod_find_guards {d : ℕ} (hE : BoundedInnerNec d) :
+    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
+      LenProvableV TAct k (guardCode (⌜tmplD⌝ : ℕ) (Dimcid k) (Cupod k)) ∧
+      LenProvableV TAct k (guardCode (⌜GtmplA 1⌝ : ℕ) (Cupod k) (Dimcid k)) := by
+  obtain ⟨k₀, h⟩ := dimcid_cupod_cell_core hE
+  exact ⟨k₀, fun k hk ↦ (h k hk).2⟩
+
+/-- **DIMCID × Cupod `(D, D)` in PA-`S'`, unconditional.** -/
+theorem dimcid_cupod_defect_unconditional :
+    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
+      EvalGraph 2 (Dimcid k) (Cupod k) (Dimcid k) 1 ∧ EvalGraph 2 (Cupod k) (Dimcid k) (Cupod k) 1 :=
+  dimcid_cupod_defect boundedInnerNec_sixteen
+
+/-- **DIMCID and Cupod find their guards against each other, unconditional.** -/
+theorem dimcid_cupod_find_guards_unconditional :
+    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
+      LenProvableV TAct k (guardCode (⌜tmplD⌝ : ℕ) (Dimcid k) (Cupod k)) ∧
+      LenProvableV TAct k (guardCode (⌜GtmplA 1⌝ : ℕ) (Cupod k) (Dimcid k)) :=
+  dimcid_cupod_find_guards boundedInnerNec_sixteen
+
+end cupodCell
 
 end ArithS
