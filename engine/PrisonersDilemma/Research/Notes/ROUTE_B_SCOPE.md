@@ -153,3 +153,53 @@ no polynomial budget-preserving embedding of the citation rule exists.*
   `LoebSound` proof. IN FLIGHT: `Cells/DIMCID.lean` (the `.impl` guard via `tmpl`: DIMCID×DIMCID,
   DIMCID×Mirror, then DIMCID×Cupod mutual) and `Cells/JustBot.lean` (the frozen `.bot (Dupoc k)`
   guard: bot-wrapped Dupoc self-coop, Just×Just, Just×Mirror, then Just×Dupoc mutual).
+
+## 7. FINDING (2026-09-23): budget-dependent snapshots inside a guard are not `bnum k`-instances
+
+`Cells/JustBot.lean` (`8df39b4`, `b9d0dcf`) landed the bot-wrapped Dupoc self-cooperation
+(`botDupoc_self_coop_unconditional : ∃ k₀, ∀ k > k₀, EvalGraph 3 (pBot (Dupoc k)) (pBot (Dupoc k))
+(pBot (Dupoc k)) 0`, twin `botCupod_self_defect_unconditional`) and **Just × Mirror = (C, C)**
+(`just_mirror_coop_unconditional : … EvalGraph 2 (Just k) Mirror (Just k) 0 ∧ EvalGraph 3 Mirror (Just k)
+Mirror 0`), unconditional, plus a GENERIC instance equation `guardCode_eq_instB_of` and generic truth
+equation `eval_GtmplA_subst_iff` that make each new instance equation a one-liner. Build 3301 jobs, census
+1059 all standard.
+
+**Just × Just and Just × Dupoc did NOT go through, for a structural reason, not for lack of time.**
+`JustBot k := .search k (.plays .opp (.bot (DupocBot k)) C)` carries the budget `k` TWICE: as its search
+budget and INSIDE its guard, in the frozen snapshot `DupocBot k`. Its arithmetized code
+`JustV k = pSearch k (gJ k) …` therefore stores a template `gJ k = subst (jVec k) ⌜GtmplA 0⌝` whose CODE
+depends on `k`, and the canonical description `progT (dnum (JustV k))` has the leaf `bnum (gJ k)` — the
+binary numeral of a `k`-dependent formula code, which is NOT `termSubst (bnum k ∷ 0)` of any fixed term.
+So a guard that DESCRIBES `Just k` ("Just k plays C against …") is not `instB ⌜q⌝ k` for any fixed
+`q : Semisentence LAct 1`, and `Assembly/Family.family_found` (Critch's uniform argument, which needs
+the family to be the `bnum k`-instance of ONE formula) does not apply. Dupoc/Cupod/Mirror never hit this
+because their stored templates are CONSTANTS (`⌜GtmplA a⌝`) — the M4 brief's `ppair` fix (§2 there) made
+the PROGRAM description a term in `k`, but a `k`-dependent TEMPLATE inside the program is the same
+mismatch one level down. The engine never sees it: `search_t` CITES the fact at `O(log k)`.
+
+Affected in-scope cells: Just × Just, Just × Dupoc, CIMCIC × Just (everything that describes `Just k`),
+and any future bot whose guard freezes a budget-carrying snapshot. Not affected: every bot whose stored
+templates are budget-free (Dupoc, Cupod, Mirror-facing cells, DIMCID/CIMCIC self and vs constants,
+PrudentBot's `.bot DefectBot` snapshot is constant).
+
+Three routes (USER DECISION):
+ (a) **The transparency lift** — PA proves, at polynomial cost, the evaluation of the Σ₁ description
+     of `Just k` (bounded-length Σ₁-evaluation of closed description terms and of `subst` on codes +
+     inner necessitation + a uniform transparency theorem cut): the `S'` twin of the engine's `search_t`
+     certificate, the "POS" mechanism of §2. New infrastructure (the U10 walk/dossier kit is the
+     natural substrate), days.
+ (b) **Fix the snapshot's budget** — the engine's own two-tier `JustBot2 K k` (`JustBot k = JustBot2 k k`,
+     the FREEZE TRICK): at a FIXED snapshot budget `k₀` the template is a constant and `JustBot2 K k₀`
+     IS a `bnum K`-instance of a fixed formula, so the family machinery applies verbatim and gives
+     "for all large `K`" cells at each fixed `k₀` (with `k₀` large enough for the snapshot's own Löb).
+     Honest, cheap, matches the engine's `outcome_JustBot2_vs_*` variants — but it is a statement
+     about `JustBot2`, not the same-`k` `JustBot k` cell.
+ (c) **Templates with a budget SLOT** (the "node data" fix of `FitBox`, one level down): let `pSearch`
+     store a template with a free budget variable filled at instantiation, so `gJ` is constant and the
+     snapshot's budget is a term — a re-coding of `Prog.lean`/`Template.lean`; faithful, touches the
+     trusted base (`SPRIME_DESIGN_RATIONALE.md`), every code equation re-proved.
+Recommendation: (b) now for the Just cells (one agent-day), (a) or (c) as the general fix decided
+together with the LegibleBot node-data question (Phase 5) — they are the same design decision.
+
+* 2026-09-23 (later): **Phase 2 JustBot family**: cells (1) bot-wrapped Dupoc self-coop and (3)
+  Just × Mirror DONE unconditional (`8df39b4`, `b9d0dcf`); Just × Just / Just × Dupoc blocked by §7.
