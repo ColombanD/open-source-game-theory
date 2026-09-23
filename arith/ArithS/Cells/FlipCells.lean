@@ -561,4 +561,269 @@ theorem dimcid_finds_guard_vs_Guardian :
 
 end cell2
 
+/-! ### 6. The `.neg` family `q ⋏ τq`, and cells 3, 4 — WaryBot × MirrorBot, WaryBot × WaryBot -/
+
+section negFamily
+
+/-- **The two-guard family of a single searcher's cell**: its guard's fixed formula `q` AND the transposed
+searcher's `τq` — one box, ∧-elimination on codes, the same slack `(7, 8)` as `pConj`. -/
+noncomputable def pQ (q : Semisentence LAct 1) : Semisentence LAct 1 := q ⋏ Semiformula.lMap swap q
+
+lemma pQ_def (q : Semisentence LAct 1) : pQ q = q ⋏ Semiformula.lMap swap q := rfl
+
+lemma lMap_swap_pQ (q : Semisentence LAct 1) :
+    Semiformula.lMap swap (pQ q) = Semiformula.lMap swap q ⋏ q := by
+  rw [pQ_def, LogicalConnective.HomClass.map_and, lMap_swap_swap]
+
+theorem instB_quote_pQ (q : Semisentence LAct 1) (k : V) :
+    instB (⌜pQ q⌝ : V) k = instB (⌜q⌝ : V) k ^⋏ instB (⌜Semiformula.lMap swap q⌝ : V) k :=
+  instB_quote_and _ _ k
+
+lemma formulaLen_instB_pQ (q : Semisentence LAct 1) (k : V) :
+    formulaLen LAct (instB (⌜pQ q⌝ : V) k) =
+      formulaLen LAct (instB (⌜q⌝ : V) k) + formulaLen LAct (instB (⌜Semiformula.lMap swap q⌝ : V) k) + 1 := by
+  rw [instB_quote_pQ,
+    formulaLen_and (isFormula_instB_quote _ k).isUFormula (isFormula_instB_quote _ k).isUFormula]
+
+/-- **Both instances are provable within `k` from a box of the family with the slack** (∧-elimination on
+codes, `pG_guards_V`'s shape for an arbitrary `q`). -/
+theorem pQ_both_V (q : Semisentence LAct 1) (k a : V)
+    (ha : a + 8 * (formulaLen LAct (instB (⌜q⌝ : V) k) + formulaLen LAct (instB (⌜Semiformula.lMap swap q⌝ : V) k))
+      + 7 ≤ k)
+    (h : LenDerivable TAct a (instB (⌜pQ q⌝ : V) k)) :
+    LenProvableV TAct k (instB (⌜q⌝ : V) k) ∧ LenProvableV TAct k (instB (⌜Semiformula.lMap swap q⌝ : V) k) := by
+  rw [instB_quote_pQ] at h
+  have hx := isFormula_instB_quote q k
+  have hy := isFormula_instB_quote (Semiformula.lMap swap q) k
+  exact ⟨(lenDerivable_iff_lenProvableV _ _).mp (lenDerivable_mono_V ha (lenDerivable_andL_V hx hy h)),
+    (lenDerivable_iff_lenProvableV _ _).mp (lenDerivable_mono_V ha (lenDerivable_andR_V hx hy h))⟩
+
+omit [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] in
+/-- `pQ q (k)` in the standard reading: both conjuncts. -/
+theorem eval_pQ_std (q : Semisentence LAct 1) (k : V) :
+    Semiformula.Eval (s := stdActS V) ![k] Empty.elim (pQ q) ↔
+      Semiformula.Eval (s := stdActS V) ![k] Empty.elim q ∧
+      Semiformula.Eval (s := stdActS V) ![k] Empty.elim (Semiformula.lMap swap q) := by
+  rw [pQ_def]
+  simp only [LogicalConnective.HomClass.map_and, LogicalConnective.Prop.and_eq]
+
+omit [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] in
+/-- `pQ q (k)` in the swapped reading: the conjuncts exchange roles. -/
+theorem eval_pQ_swap (q : Semisentence LAct 1) (k : V) :
+    Semiformula.Eval (s := swapActS V) ![k] Empty.elim (pQ q) ↔
+      Semiformula.Eval (s := stdActS V) ![k] Empty.elim (Semiformula.lMap swap q) ∧
+      Semiformula.Eval (s := stdActS V) ![k] Empty.elim q := by
+  rw [eval_swapActS, lMap_swap_pQ]
+  simp only [LogicalConnective.HomClass.map_and, LogicalConnective.Prop.and_eq]
+
+/-- **The search clause of the generic engine searcher in every model** (fuel 2): found ⇒ the then-branch. -/
+theorem SV_search_V (g : Semisentence LAct 6) (a : ℕ) (k opp : V)
+    (h : LenProvableV TAct k (guardCode (⌜g⌝ : V) (SV g a k) opp)) :
+    EvalGraph 2 (SV g a k) opp (SV g a k) (a : V) := by
+  rw [show (2 : V) = 1 + 1 from one_add_one_eq_two.symm]
+  show EvalGraph (1 + 1) (SV g a k) opp (pSearch k (⌜g⌝ : V) (pConst (a : V)) (pConst ((1 - a : ℕ) : V))) (a : V)
+  rw [EvalGraph.search_iff₆ (isSemiformula_quote₆ g)]
+  left
+  refine ⟨h, ?_⟩
+  have e : EvalGraph (0 + 1) (SV g a k) opp (pConst (a : V)) (a : V) := EvalGraph.const_iff.mpr rfl
+  rwa [zero_add] at e
+
+/-! #### Wary's fixed formulas against Mirror and against itself -/
+
+/-- The transposed Wary triple describes the transposed searcher `SV gWT 0 k` (values). -/
+lemma hme_WT (k : V) :
+    relabel ((Semiterm.lMap swap (uS gW 1)).val (s := stdActV V) ![] Empty.elim)
+      ((Semiterm.lMap swap (wS gW 1)).val (s := stdActV V) ![] Empty.elim)
+      ((Semiterm.lMap swap (TS gW 1)).val (s := stdActV V) ![k] Empty.elim) = SV gWT 0 k := by
+  have := hme_SVT gW 1 (Or.inr rfl) k
+  rwa [lMap_swap_gW] at this
+
+/-- Wary's guard against Mirror: "Mirror does NOT play C against `Wary(k)`". -/
+noncomputable def qWM : Semisentence LAct 1 :=
+  qT gW (TS gW 1) (uS gW 1) (wS gW 1) (cl TM) (numT 0) (numT 1)
+
+lemma qWM_swap :
+    Semiformula.lMap swap qWM =
+      qT gWT (Semiterm.lMap swap (TS gW 1)) (Semiterm.lMap swap (uS gW 1)) (Semiterm.lMap swap (wS gW 1))
+        (cl TM) (numT 0) (numT 1) := by
+  unfold qWM
+  rw [lMap_swap_qT, lMap_swap_gW, lMap_swap_cl, lMap_swap_TM, lMap_swap_numT, lMap_swap_numT]
+
+theorem guardCode_WM (k : V) : guardCode (⌜gW⌝ : V) (SV gW 1 k) MirrorV = instB (⌜qWM⌝ : V) k :=
+  guardCode_qT_eq_instB gW k _ _ _ _ _ _ (hX_SV gW 1 (Or.inr rfl) k) (hU_SV gW 1 (Or.inr rfl) k)
+    (hW_SV gW 1 (Or.inr rfl) k) (hX_mirror k) hU_mirror hW_mirror
+
+theorem guardCode_WMT (k : V) :
+    guardCode (⌜gWT⌝ : V) (SV gWT 0 k) MirrorV = instB (⌜Semiformula.lMap swap qWM⌝ : V) k := by
+  have := guardCode_qT_swap_eq_instB gW k _ _ _ _ _ _ (hX_SV gW 1 (Or.inr rfl) k) (hU_SV gW 1 (Or.inr rfl) k)
+    (hW_SV gW 1 (Or.inr rfl) k) (hX_mirror k) hU_mirror hW_mirror
+  rwa [swapcode_SV gW 1 (Or.inr rfl), lMap_swap_gW, swapcode_MirrorV] at this
+
+theorem eval_qWM_iff (k : V) :
+    Semiformula.Eval (s := stdActV V) ![k] Empty.elim qWM ↔ ¬ ∃ n, EvalGraph n MirrorV (SV gW 1 k) MirrorV 0 := by
+  rw [qWM, eval_qT_neg_plays_opp_self .C _ _ _ _ _ _ k (hme_SV gW 1 (Or.inr rfl) k) (hopp_mirror k), actCode_C_cast]
+
+theorem eval_qWMT_iff (k : V) :
+    Semiformula.Eval (s := stdActV V) ![k] Empty.elim (Semiformula.lMap swap qWM) ↔
+      ¬ ∃ n, EvalGraph n MirrorV (SV gWT 0 k) MirrorV 1 := by
+  rw [qWM_swap, eval_qT_neg_plays_opp_self .D _ _ _ _ _ _ k (hme_WT k) (hopp_mirror k), actCode_D_cast]
+
+/-- Wary's guard against itself: "`Wary(k)` does NOT play C against `Wary(k)`". -/
+noncomputable def qWW : Semisentence LAct 1 :=
+  qT gW (TS gW 1) (uS gW 1) (wS gW 1) (TS gW 1) (uS gW 1) (wS gW 1)
+
+lemma qWW_swap :
+    Semiformula.lMap swap qWW =
+      qT gWT (Semiterm.lMap swap (TS gW 1)) (Semiterm.lMap swap (uS gW 1)) (Semiterm.lMap swap (wS gW 1))
+        (Semiterm.lMap swap (TS gW 1)) (Semiterm.lMap swap (uS gW 1)) (Semiterm.lMap swap (wS gW 1)) := by
+  unfold qWW
+  rw [lMap_swap_qT, lMap_swap_gW]
+
+theorem guardCode_WW (k : V) : guardCode (⌜gW⌝ : V) (SV gW 1 k) (SV gW 1 k) = instB (⌜qWW⌝ : V) k :=
+  guardCode_qT_eq_instB gW k _ _ _ _ _ _ (hX_SV gW 1 (Or.inr rfl) k) (hU_SV gW 1 (Or.inr rfl) k)
+    (hW_SV gW 1 (Or.inr rfl) k) (hX_SV gW 1 (Or.inr rfl) k) (hU_SV gW 1 (Or.inr rfl) k) (hW_SV gW 1 (Or.inr rfl) k)
+
+theorem guardCode_WWT (k : V) :
+    guardCode (⌜gWT⌝ : V) (SV gWT 0 k) (SV gWT 0 k) = instB (⌜Semiformula.lMap swap qWW⌝ : V) k := by
+  have := guardCode_qT_swap_eq_instB gW k _ _ _ _ _ _ (hX_SV gW 1 (Or.inr rfl) k) (hU_SV gW 1 (Or.inr rfl) k)
+    (hW_SV gW 1 (Or.inr rfl) k) (hX_SV gW 1 (Or.inr rfl) k) (hU_SV gW 1 (Or.inr rfl) k) (hW_SV gW 1 (Or.inr rfl) k)
+  rwa [swapcode_SV gW 1 (Or.inr rfl), lMap_swap_gW] at this
+
+theorem eval_qWW_iff (k : V) :
+    Semiformula.Eval (s := stdActV V) ![k] Empty.elim qWW ↔
+      ¬ ∃ n, EvalGraph n (SV gW 1 k) (SV gW 1 k) (SV gW 1 k) 0 := by
+  rw [qWW, eval_qT_neg_plays_opp_self .C _ _ _ _ _ _ k (hme_SV gW 1 (Or.inr rfl) k) (hme_SV gW 1 (Or.inr rfl) k),
+    actCode_C_cast]
+
+theorem eval_qWWT_iff (k : V) :
+    Semiformula.Eval (s := stdActV V) ![k] Empty.elim (Semiformula.lMap swap qWW) ↔
+      ¬ ∃ n, EvalGraph n (SV gWT 0 k) (SV gWT 0 k) (SV gWT 0 k) 1 := by
+  rw [qWW_swap, eval_qT_neg_plays_opp_self .D _ _ _ _ _ _ k (hme_WT k) (hme_WT k), actCode_D_cast]
+
+/-! #### The Löb premises: the `.neg` guard is self-fulfilling against a copier -/
+
+/-- **Wary's Löb premise against Mirror, slack `(7, 8)`**: a box of the family makes Wary FIND its guard, so
+Wary defects (fuel 2), so Mirror copies the defection (fuel 3), so "Mirror plays C against Wary" is FALSE by
+determinism — the guard "¬(Mirror plays C against me)" is TRUE; the transposed searcher cooperates and Mirror
+copies that, so "¬(Mirror plays D against me)" is true too. Both readings. -/
+theorem loebSound_pWM : LoebSound (pQ qWM) 7 8 := by
+  intro V _ _ k a ha hp
+  have : V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
+  have ha' : a + 8 * (formulaLen LAct (instB (⌜qWM⌝ : V) k) +
+      formulaLen LAct (instB (⌜Semiformula.lMap swap qWM⌝ : V) k)) + 7 ≤ k :=
+    le_trans (pConj_slack_le a _ _ _ (formulaLen_instB_pQ qWM k)) ha
+  obtain ⟨h1, h2⟩ := pQ_both_V qWM k a ha' hp
+  rw [← guardCode_WM] at h1
+  rw [← guardCode_WMT] at h2
+  have e1 := mirror_copies_V _ _ (SV_search_V gW 1 k MirrorV h1)
+  have e2 := mirror_copies_V _ _ (SV_search_V gWT 0 k MirrorV h2)
+  rw [Nat.cast_one] at e1
+  rw [Nat.cast_zero] at e2
+  have hA : ¬ ∃ n, EvalGraph n MirrorV (SV gW 1 k) MirrorV 0 := by
+    rintro ⟨n, hn⟩
+    exact _root_.zero_ne_one (EvalGraph.unique_V' n 3 _ _ _ _ _ hn e1)
+  have hB : ¬ ∃ n, EvalGraph n MirrorV (SV gWT 0 k) MirrorV 1 := by
+    rintro ⟨n, hn⟩
+    exact _root_.one_ne_zero (EvalGraph.unique_V' n 3 _ _ _ _ _ hn e2)
+  refine ⟨?_, ?_⟩
+  · rw [eval_pQ_std, ← stdActV_eq_stdActS, eval_qWM_iff, eval_qWMT_iff]
+    exact ⟨hA, hB⟩
+  · rw [eval_pQ_swap, ← stdActV_eq_stdActS, eval_qWMT_iff, eval_qWM_iff]
+    exact ⟨hB, hA⟩
+
+/-- **Wary's Löb premise against itself, slack `(7, 8)`**: found ⇒ Wary defects against Wary ⇒ "Wary plays C
+against Wary" is FALSE ⇒ the guard is true; the transposed searcher likewise. -/
+theorem loebSound_pWW : LoebSound (pQ qWW) 7 8 := by
+  intro V _ _ k a ha hp
+  have : V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
+  have ha' : a + 8 * (formulaLen LAct (instB (⌜qWW⌝ : V) k) +
+      formulaLen LAct (instB (⌜Semiformula.lMap swap qWW⌝ : V) k)) + 7 ≤ k :=
+    le_trans (pConj_slack_le a _ _ _ (formulaLen_instB_pQ qWW k)) ha
+  obtain ⟨h1, h2⟩ := pQ_both_V qWW k a ha' hp
+  rw [← guardCode_WW] at h1
+  rw [← guardCode_WWT] at h2
+  have e1 := SV_search_V gW 1 k (SV gW 1 k) h1
+  have e2 := SV_search_V gWT 0 k (SV gWT 0 k) h2
+  rw [Nat.cast_one] at e1
+  rw [Nat.cast_zero] at e2
+  have hA : ¬ ∃ n, EvalGraph n (SV gW 1 k) (SV gW 1 k) (SV gW 1 k) 0 := by
+    rintro ⟨n, hn⟩
+    exact _root_.zero_ne_one (EvalGraph.unique_V' n 2 _ _ _ _ _ hn e1)
+  have hB : ¬ ∃ n, EvalGraph n (SV gWT 0 k) (SV gWT 0 k) (SV gWT 0 k) 1 := by
+    rintro ⟨n, hn⟩
+    exact _root_.one_ne_zero (EvalGraph.unique_V' n 2 _ _ _ _ _ hn e2)
+  refine ⟨?_, ?_⟩
+  · rw [eval_pQ_std, ← stdActV_eq_stdActS, eval_qWW_iff, eval_qWWT_iff]
+    exact ⟨hA, hB⟩
+  · rw [eval_pQ_swap, ← stdActV_eq_stdActS, eval_qWWT_iff, eval_qWW_iff]
+    exact ⟨hB, hA⟩
+
+/-! #### Cells 3 and 4 -/
+
+/-- **Wary defects against Mirror and FINDS its `.neg` guard, for all large `k`**, unconditional. -/
+theorem wary_vs_mirror_core :
+    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
+      EvalGraph 2 (pcode (WaryBot k)) (pcode MirrorBot) (pcode (WaryBot k)) 1 ∧
+      LenProvableV TAct k (guardCode (tcode phiW) (pcode (WaryBot k)) (pcode MirrorBot)) := by
+  obtain ⟨k₀, hf⟩ := family_found (pQ qWM) boundedInnerNec_sixteen loebSound_pWM
+  refine ⟨k₀, fun k hk ↦ ?_⟩
+  obtain ⟨a, ha, hpc⟩ := hf k hk
+  have ha' := le_def.mpr (pConj_slack_nat a _ _ _ k (formulaLen_instB_pQ (V := ℕ) qWM k) ha)
+  have h1 := (pQ_both_V (V := ℕ) qWM k a ha' hpc).1
+  rw [← guardCode_WM] at h1
+  rw [pcode_WaryBot_SV, pcode_MirrorBot, ← MirrorV_nat]
+  exact ⟨SV_search_V (V := ℕ) gW 1 k MirrorV h1, h1⟩
+
+/-- **WaryBot × MirrorBot is `(D, D)` in PA-`S'`**, for all large `k`, unconditional. The engine proves `(C, C)`
+at EVERY `k` by a `.neg`-guard valuation census (`outcome_WaryBot_vs_MirrorBot`, pad 3); in `S'` the value is
+`(D, D)` because Wary's guard "¬(Mirror plays C against me)" is SELF-FULFILLING against a copier (its proof
+makes Wary defect, Mirror copies, so Mirror indeed does not cooperate) and bounded Löb finds it. -/
+theorem loeb_WaryBot_vs_MirrorBot :
+    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
+      EvalGraph 3 (pcode (WaryBot k)) (pcode MirrorBot) (pcode (WaryBot k)) (actCode .D) ∧
+      EvalGraph 3 (pcode MirrorBot) (pcode (WaryBot k)) (pcode MirrorBot) (actCode .D) := by
+  obtain ⟨k₀, h⟩ := wary_vs_mirror_core
+  exact ⟨k₀, fun k hk ↦ ⟨EvalGraph.mono_le (by omega) (h k hk).1, mirror_copies (h k hk).1⟩⟩
+
+/-- **The box form of cell 3**: Wary FINDS its `.neg` guard against Mirror within its budget. -/
+theorem wary_finds_guard_vs_Mirror :
+    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
+      LenProvableV TAct k (guardCode (tcode phiW) (pcode (WaryBot k)) (pcode MirrorBot)) := by
+  obtain ⟨k₀, h⟩ := wary_vs_mirror_core
+  exact ⟨k₀, fun k hk ↦ (h k hk).2⟩
+
+/-- **Wary defects against itself and FINDS its `.neg` guard, for all large `k`**, unconditional. -/
+theorem wary_vs_wary_core :
+    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
+      EvalGraph 2 (pcode (WaryBot k)) (pcode (WaryBot k)) (pcode (WaryBot k)) 1 ∧
+      LenProvableV TAct k (guardCode (tcode phiW) (pcode (WaryBot k)) (pcode (WaryBot k))) := by
+  obtain ⟨k₀, hf⟩ := family_found (pQ qWW) boundedInnerNec_sixteen loebSound_pWW
+  refine ⟨k₀, fun k hk ↦ ?_⟩
+  obtain ⟨a, ha, hpc⟩ := hf k hk
+  have ha' := le_def.mpr (pConj_slack_nat a _ _ _ k (formulaLen_instB_pQ (V := ℕ) qWW k) ha)
+  have h1 := (pQ_both_V (V := ℕ) qWW k a ha' hpc).1
+  rw [← guardCode_WW] at h1
+  rw [pcode_WaryBot_SV]
+  exact ⟨SV_search_V (V := ℕ) gW 1 k (SV gW 1 k) h1, h1⟩
+
+/-- **WaryBot × WaryBot is `(D, D)` in PA-`S'`**, for all large `k`, unconditional. The engine proves `(C, C)`
+at EVERY `k` by a `.neg`-guard valuation census (`outcome_WaryBot_vs_WaryBot`, pad 2); in `S'` the value is
+`(D, D)` because Wary's guard "¬(Wary plays C against me)" is SELF-FULFILLING in self-play (its proof makes
+Wary defect against itself) and bounded Löb finds it. -/
+theorem loeb_WaryBot_vs_WaryBot :
+    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
+      EvalGraph 2 (pcode (WaryBot k)) (pcode (WaryBot k)) (pcode (WaryBot k)) (actCode .D) ∧
+      EvalGraph 2 (pcode (WaryBot k)) (pcode (WaryBot k)) (pcode (WaryBot k)) (actCode .D) := by
+  obtain ⟨k₀, h⟩ := wary_vs_wary_core
+  exact ⟨k₀, fun k hk ↦ ⟨(h k hk).1, (h k hk).1⟩⟩
+
+/-- **The box form of cell 4**: Wary FINDS its `.neg` guard against itself within its budget. -/
+theorem wary_finds_guard_vs_self :
+    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
+      LenProvableV TAct k (guardCode (tcode phiW) (pcode (WaryBot k)) (pcode (WaryBot k))) := by
+  obtain ⟨k₀, h⟩ := wary_vs_wary_core
+  exact ⟨k₀, fun k hk ↦ (h k hk).2⟩
+
+end negFamily
+
 end ArithS

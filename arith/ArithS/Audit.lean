@@ -2668,4 +2668,21 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms loeb_GuardianBot_vs_DIMCID
 #print axioms dimcid_finds_guard_vs_Guardian
 
+-- Cells 3, 4: the `.neg` family `pQ q := q ⋏ τq` (`pQ_both_V`, ∧-elimination on codes, slack `(7, 8)`), the search
+-- clause of the generic engine searcher in every model (`SV_search_V`), and `loeb_WaryBot_vs_MirrorBot` /
+-- `loeb_WaryBot_vs_WaryBot` — WaryBot × MirrorBot and WaryBot × WaryBot are `(D, D)` in `S'` (engine
+-- `outcome_WaryBot_vs_MirrorBot`/`outcome_WaryBot_vs_WaryBot = (C, C)` at every `k`, `.neg`-guard valuation
+-- censuses): "¬(you cooperate with me)" against a copier is SELF-FULFILLING — found ⇒ Wary defects ⇒ the copier
+-- defects (`loebSound_pWM`, `loebSound_pWW`), bounded Löb finds it.
+#print axioms pQ_both_V
+#print axioms SV_search_V
+#print axioms loebSound_pWM
+#print axioms loebSound_pWW
+#print axioms wary_vs_mirror_core
+#print axioms loeb_WaryBot_vs_MirrorBot
+#print axioms wary_finds_guard_vs_Mirror
+#print axioms wary_vs_wary_core
+#print axioms loeb_WaryBot_vs_WaryBot
+#print axioms wary_finds_guard_vs_self
+
 end ArithS
