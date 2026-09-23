@@ -575,5 +575,423 @@ theorem botDupoc_finds_guard_unconditional :
   botDupoc_finds_guard boundedInnerNec_sixteen
 
 end botSelf
+/-! ### 5. JustV: the searcher on the pre-filled template -/
+
+section just
+
+/-- The pre-filled substitution vector: the description of `pBot (DupocV k)` in the me-slots,
+the frame variables `^#3 ^#4 ^#5` in the opp-slots. -/
+noncomputable def jVec (k : V) : V :=
+  progT (dnum (pBot (DupocV k))) ∷ dU (pBot (DupocV k)) ∷ dW (pBot (DupocV k)) ∷ ^#3 ∷ ^#4 ∷ ^#5 ∷ 0
+
+/-- **Just's stored template**: `GtmplA 0` with its me-slots pre-filled by the closed description
+of `pBot (DupocV k)` — "the opponent plays C against `pBot (Dupoc k)`". -/
+noncomputable def gJ (k : V) : V := subst LAct (jVec k) (⌜GtmplA 0⌝ : V)
+
+/-- **JustBot in every model**: `pSearch k (gJ k) (pConst 0) (pConst 1)`. -/
+noncomputable def JustV (k : V) : V := pSearch k (gJ k) (pConst 0) (pConst 1)
+
+lemma jVec_semitermVec (k : V) : IsSemitermVec LAct 6 6 (jVec k) := by
+  have h3 : IsSemiterm LAct 6 (^#3 : V) := IsSemiterm.bvar.mpr (by norm_num)
+  have h4 : IsSemiterm LAct 6 (^#4 : V) := IsSemiterm.bvar.mpr (by norm_num)
+  have h5 : IsSemiterm LAct 6 (^#5 : V) := IsSemiterm.bvar.mpr (by norm_num)
+  have := ((((((IsSemitermVec.nil 6).adjoin h5).adjoin h4).adjoin h3).adjoin (dW_semiterm 6 (pBot (DupocV k)))).adjoin
+    (dU_semiterm 6 (pBot (DupocV k)))).adjoin (progT_semiterm_LAct 6 (dnum (pBot (DupocV k))))
+  rwa [← six_eq] at this
+
+lemma nth_descVec_three (me opp : V) : (descVec me opp).[3] = progT (dnum opp) := by
+  unfold descVec
+  rw [show (3 : V) = 2 + 1 by norm_num, nth_adjoin_succ, nth_adjoin_two, nth_adjoin_one, nth_adjoin_zero]
+
+lemma nth_descVec_four (me opp : V) : (descVec me opp).[4] = dU opp := by
+  unfold descVec
+  rw [show (4 : V) = 3 + 1 by norm_num, nth_adjoin_succ, show (3 : V) = 2 + 1 by norm_num, nth_adjoin_succ,
+    nth_adjoin_two, nth_adjoin_one, nth_adjoin_zero]
+
+lemma nth_descVec_five (me opp : V) : (descVec me opp).[5] = dW opp := by
+  unfold descVec
+  rw [show (5 : V) = 4 + 1 by norm_num, nth_adjoin_succ, show (4 : V) = 3 + 1 by norm_num, nth_adjoin_succ,
+    show (3 : V) = 2 + 1 by norm_num, nth_adjoin_succ, nth_adjoin_two, nth_adjoin_one, nth_adjoin_zero]
+
+/-- Filling the frame variables of `jVec k` with the descriptions of `(me, opp)` gives the
+description vector of `(pBot (DupocV k), opp)`: the frame's `me` is unused. -/
+theorem termSubstVec_jVec (k me opp : V) :
+    termSubstVec LAct 6 (descVec me opp) (jVec k) = descVec (pBot (DupocV k)) opp := by
+  have hT : IsUTerm LAct (progT (dnum (pBot (DupocV k)))) := (progT_semiterm_LAct 6 _).isUTerm
+  have hU : IsUTerm LAct (dU (pBot (DupocV k))) := (dU_semiterm 6 _).isUTerm
+  have hW : IsUTerm LAct (dW (pBot (DupocV k))) := (dW_semiterm 6 _).isUTerm
+  have h3 : IsUTerm LAct (^#3 : V) := (IsSemiterm.bvar.mpr (by norm_num : (3 : V) < 6)).isUTerm
+  have h4 : IsUTerm LAct (^#4 : V) := (IsSemiterm.bvar.mpr (by norm_num : (4 : V) < 6)).isUTerm
+  have h5 : IsUTerm LAct (^#5 : V) := (IsSemiterm.bvar.mpr (by norm_num : (5 : V) < 6)).isUTerm
+  have e0 : IsUTermVec LAct 0 (0 : V) := IsUTermVec.empty
+  have e1 := e0.adjoin h5
+  have e2 := e1.adjoin h4
+  have e3 := e2.adjoin h3
+  have e4 := e3.adjoin hW
+  have e5 := e4.adjoin hU
+  unfold jVec
+  rw [six_eq, termSubstVec_cons hT e5, termSubstVec_cons hU e4, termSubstVec_cons hW e3,
+    termSubstVec_cons h3 e2, termSubstVec_cons h4 e1, termSubstVec_cons h5 e0, termSubstVec_nil,
+    termSubst_closed _ (progT_semiterm_LAct 0 _), termSubst_closed _ (dU_semiterm 0 _),
+    termSubst_closed _ (dW_semiterm 0 _), termSubst_bvar, termSubst_bvar, termSubst_bvar,
+    nth_descVec_three, nth_descVec_four, nth_descVec_five]
+  rfl
+
+/-- **Just's guard is Dupoc-in-bot's guard**: in the frame `(me, opp)`, `JustV k` searches exactly
+what `pBot (DupocV k)` searches in the frame `(pBot (DupocV k), opp)` — "`opp` plays C against
+`pBot (Dupoc k)`", the frame's `me` unused (the engine's `Formula.subst` on
+`.plays .opp (.bot (DupocBot k)) C`). -/
+theorem guardCode_JustV (k me opp : V) :
+    guardCode (gJ k) me opp = guardCode (⌜GtmplA 0⌝ : V) (pBot (DupocV k)) opp := by
+  have hg0 : IsSemiformula LAct 6 (⌜GtmplA 0⌝ : V) := by
+    simpa using Sentence.quote_isSemiformula (V := V) (GtmplA 0)
+  unfold guardCode gJ
+  rw [substs_substs hg0 (descVec_semitermVec me opp) (jVec_semitermVec k), termSubstVec_jVec]
+
+/-- **Just's search clause in every model** (fuel 2): if "`opp` plays C against `pBot (Dupoc k)`"
+is provable within `k`, `JustV k` cooperates with `opp`. -/
+theorem just_search_V (k opp : V) :
+    LenProvableV TAct k (guardCode (⌜GtmplA 0⌝ : V) (pBot (DupocV k)) opp) →
+      EvalGraph 2 (JustV k) opp (JustV k) 0 := by
+  intro h
+  rw [show (2 : V) = 1 + 1 from one_add_one_eq_two.symm]
+  show EvalGraph (1 + 1) (JustV k) opp (pSearch k (gJ k) (pConst 0) (pConst 1)) 0
+  rw [EvalGraph.search_iff, guardCode_JustV]
+  left
+  refine ⟨h, ?_⟩
+  rw [show (1 : V) = 0 + 1 by simp, EvalGraph.const_iff]
+
+/-! #### The meta template at ℕ -/
+
+/-- **Just's template as a meta sentence** (`ℕ`): `GtmplA 0` with the me-slots filled by the closed
+description terms of `pBot (Dupoc k)` and the opp-slots kept as the frame variables. -/
+noncomputable def GtmplJ (k : ℕ) : Semisentence LAct 6 :=
+  GtmplA 0 ⇜ ![cl (dnumT (pBot (Dupoc k))), cl (dUT (pBot (Dupoc k))), cl (dWT (pBot (Dupoc k))), #3, #4, #5]
+
+/-- **JustBot at ℕ**: the searcher of budget `k` on the template `⌜GtmplJ k⌝`. -/
+noncomputable def Just (k : ℕ) : ℕ := pSearch k (⌜GtmplJ k⌝ : ℕ) (pConst 0) (pConst 1)
+
+lemma quote_emb_cl6_dnumT (x : ℕ) :
+    (⌜(Rew.emb (cl (dnumT x) : Semiterm LAct Empty 6) : SyntacticSemiterm LAct 6)⌝ : ℕ) = progT (dnum x) := by
+  rw [quote_emb_cl, ← Semiterm.empty_quote_def, quote_dnumT]
+
+lemma quote_emb_cl6_dUT (x : ℕ) :
+    (⌜(Rew.emb (cl (dUT x) : Semiterm LAct Empty 6) : SyntacticSemiterm LAct 6)⌝ : ℕ) = dU x := by
+  rw [quote_emb_cl, ← Semiterm.empty_quote_def, quote_dUT]
+
+lemma quote_emb_cl6_dWT (x : ℕ) :
+    (⌜(Rew.emb (cl (dWT x) : Semiterm LAct Empty 6) : SyntacticSemiterm LAct 6)⌝ : ℕ) = dW x := by
+  rw [quote_emb_cl, ← Semiterm.empty_quote_def, quote_dWT]
+
+lemma quote_emb_bvar6 (i : Fin 6) :
+    (⌜(Rew.emb (#i : Semiterm LAct Empty 6) : SyntacticSemiterm LAct 6)⌝ : ℕ) = ^#(i : ℕ) := by
+  simp [Rew.emb]
+
+/-- **The code of the meta template is the internal pre-filled template.** -/
+theorem quote_GtmplJ (k : ℕ) : (⌜GtmplJ k⌝ : ℕ) = gJ k := by
+  unfold GtmplJ gJ
+  rw [Sentence.quote_def, Semiformula.coe_subst_eq_subst_coe, Semiformula.quote_def,
+    Semiformula.typed_quote_substs, Bootstrapping.Semiformula.val_substs, ← Semiformula.quote_def,
+    ← Sentence.quote_def]
+  congr 1
+  have hv : (fun i ↦ (⌜(Rew.emb ((![cl (dnumT (pBot (Dupoc k))), cl (dUT (pBot (Dupoc k))), cl (dWT (pBot (Dupoc k))),
+      #3, #4, #5] : Fin 6 → Semiterm LAct Empty 6) i) : SyntacticSemiterm LAct 6)⌝ : Bootstrapping.Semiterm ℕ LAct 6)) =
+      ![⌜(Rew.emb (cl (dnumT (pBot (Dupoc k))) : Semiterm LAct Empty 6) : SyntacticSemiterm LAct 6)⌝,
+        ⌜(Rew.emb (cl (dUT (pBot (Dupoc k))) : Semiterm LAct Empty 6) : SyntacticSemiterm LAct 6)⌝,
+        ⌜(Rew.emb (cl (dWT (pBot (Dupoc k))) : Semiterm LAct Empty 6) : SyntacticSemiterm LAct 6)⌝,
+        ⌜(Rew.emb (#3 : Semiterm LAct Empty 6) : SyntacticSemiterm LAct 6)⌝,
+        ⌜(Rew.emb (#4 : Semiterm LAct Empty 6) : SyntacticSemiterm LAct 6)⌝,
+        ⌜(Rew.emb (#5 : Semiterm LAct Empty 6) : SyntacticSemiterm LAct 6)⌝] := by
+    funext i; fin_cases i <;> rfl
+  rw [hv]
+  simp only [SemitermVec.val_cons, SemitermVec.val_nil]
+  show (⌜(Rew.emb (cl (dnumT (pBot (Dupoc k))) : Semiterm LAct Empty 6) : SyntacticSemiterm LAct 6)⌝ : ℕ) ∷
+    (⌜(Rew.emb (cl (dUT (pBot (Dupoc k))) : Semiterm LAct Empty 6) : SyntacticSemiterm LAct 6)⌝ : ℕ) ∷
+    (⌜(Rew.emb (cl (dWT (pBot (Dupoc k))) : Semiterm LAct Empty 6) : SyntacticSemiterm LAct 6)⌝ : ℕ) ∷
+    (⌜(Rew.emb (#3 : Semiterm LAct Empty 6) : SyntacticSemiterm LAct 6)⌝ : ℕ) ∷
+    (⌜(Rew.emb (#4 : Semiterm LAct Empty 6) : SyntacticSemiterm LAct 6)⌝ : ℕ) ∷
+    (⌜(Rew.emb (#5 : Semiterm LAct Empty 6) : SyntacticSemiterm LAct 6)⌝ : ℕ) ∷ 0 = jVec k
+  rw [quote_emb_cl6_dnumT, quote_emb_cl6_dUT, quote_emb_cl6_dWT, quote_emb_bvar6, quote_emb_bvar6, quote_emb_bvar6]
+  rfl
+
+/-- **The bridge**: `JustV` at `V = ℕ` is `Just`. -/
+theorem JustV_nat (k : ℕ) : JustV (V := ℕ) k = Just k := by
+  unfold JustV Just
+  rw [quote_GtmplJ]
+
+end just
+/-! ### 6. Family (3): Just × Mirror -/
+
+section justMirror
+
+/-- **The fixed formula of Just's guard against Mirror**: "Mirror plays C against
+`pBot (Dupoc k)`" — `GtmplA 0` with the bot tower in the me-slots and Mirror's closed description
+in the opp-slots. -/
+noncomputable def qJM : Semisentence LAct 1 :=
+  GtmplA 0 ⇜ ![TBD, cl uD, cl wD, cl TM, cl (numT 0), cl (numT 1)]
+
+lemma qJM_eq : qJM = GtmplA 0 ⇜ ![TBD, cl uD, cl wD, cl TM, cl (numT 0), cl (numT 1)] := rfl
+
+/-- The transposition: "Mirror plays D against `pBot (Cupod k)`". -/
+noncomputable def qJC : Semisentence LAct 1 := Semiformula.lMap swap qJM
+
+lemma lMap_swap_qJM : Semiformula.lMap swap qJM = qJC := rfl
+
+lemma lMap_swap_qJC : Semiformula.lMap swap qJC = qJM := lMap_swap_swap _
+
+lemma termSubst_cl_TM (k : V) :
+    termSubst LAct (bnum k ∷ (0 : V)) (⌜(Rew.emb (cl TM : Semiterm LAct Empty 1) : SyntacticSemiterm LAct 1)⌝ : V) =
+      progT (dnum MirrorV) := by
+  rw [quote_emb_cl_V, termSubst_closed _ (semiterm_quote_emb₀ _), quote_emb_TM, dnum_MirrorV]
+
+lemma quote_emb_numT_zero_dU : (⌜(Rew.emb (numT 0) : SyntacticSemiterm LAct 0)⌝ : V) = dU MirrorV := by
+  rw [quote_emb_numT, dU_MirrorV, Nat.cast_zero]
+
+lemma quote_emb_numT_one_dW : (⌜(Rew.emb (numT 1) : SyntacticSemiterm LAct 0)⌝ : V) = dW MirrorV := by
+  rw [quote_emb_numT, dW_MirrorV, Nat.cast_one]
+
+/-- **The instance equation on codes of Dupoc-in-bot's guard against Mirror, in every model.** -/
+theorem guardCode_botDupocV_MirrorV_eq_instB (k : V) :
+    guardCode (⌜GtmplA 0⌝ : V) (pBot (DupocV k)) MirrorV = instB (⌜qJM⌝ : V) k :=
+  guardCode_eq_instB_of 0 (termSubst_TBD k) (quote_emb_uD_botDupocV k) (quote_emb_wD_botDupocV k)
+    (termSubst_cl_TM k) quote_emb_numT_zero_dU quote_emb_numT_one_dW
+
+lemma relabelTemplate_quote_qJM_V : relabelTemplate 1 0 (⌜qJM⌝ : V) = ⌜qJC⌝ :=
+  relabelTemplate_quote_sentence_V qJM
+
+lemma guardCode_botCupodV_MirrorV_eq_relabel (k : V) :
+    guardCode (⌜GtmplA 1⌝ : V) (pBot (CupodV k)) MirrorV =
+      relabelTemplate 1 0 (guardCode (⌜GtmplA 0⌝ : V) (pBot (DupocV k)) MirrorV) := by
+  have hg0 : IsSemiformula LAct 6 (⌜GtmplA 0⌝ : V) := by
+    simpa using Sentence.quote_isSemiformula (V := V) (GtmplA 0)
+  have hg1 : IsSemiformula LAct 6 (⌜GtmplA 1⌝ : V) := by
+    simpa using Sentence.quote_isSemiformula (V := V) (GtmplA 1)
+  rw [← gsubst_of_template hg0, relabelTemplate_gsubst, swapcode_pBot_DupocV, swapcode_MirrorV,
+    relabelTemplate_quote_GtmplA_V, swapAct_zero, gsubst_of_template hg1]
+
+/-- **The instance equation on codes of Cupod-in-bot's guard against Mirror, in every model.** -/
+theorem guardCode_botCupodV_MirrorV_eq_instB (k : V) :
+    guardCode (⌜GtmplA 1⌝ : V) (pBot (CupodV k)) MirrorV = instB (⌜qJC⌝ : V) k := by
+  rw [guardCode_botCupodV_MirrorV_eq_relabel, guardCode_botDupocV_MirrorV_eq_instB]
+  unfold instB
+  rw [relabelTemplate_subst isAct_one isAct_zero (Sentence.quote_isSemiformul₁ qJM)
+    (bnum_cons_semitermVec k), relabelTemplate_quote_qJM_V]
+  congr 1
+  rw [show (1 : V) = 0 + 1 by simp, termRelabelVec_cons (bnum_term_LAct k).isUTerm IsUTermVec.empty,
+    termRelabelVec_nil, termRelabel_bnum]
+
+/-! #### The truth equations -/
+
+theorem qJC_eq : qJC = GtmplA 1 ⇜ ![TBD, cl uC, cl wC, cl TM, cl (numT 0), cl (numT 1)] := by
+  unfold qJC qJM
+  rw [Semiformula.lMap_subst, lMap_swap_GtmplA, swapAct_zero]
+  congr 1
+  funext i
+  fin_cases i <;> simp [lMap_swap_TBD, lMap_swap_cl, uC, wC, lMap_swap_TM, lMap_swap_numT]
+
+/-- **The truth equation of Just's guard against Mirror** (standard reading): `qJM(k)` holds iff
+Mirror plays `C` against `pBot (DupocV k)`. -/
+theorem eval_qJM_iff_V (k : V) :
+    Semiformula.Eval (s := stdActV V) ![k] Empty.elim qJM ↔
+      ∃ n, EvalGraph n MirrorV (pBot (DupocV k)) MirrorV 0 := by
+  rw [qJM_eq, eval_GtmplA_subst_iff]
+  simp only [val_TBD_V, val_cl_V, val_TM_V, val_numT_V, Nat.cast_zero, Nat.cast_one, relabel_zero_one,
+    dnum_pBot, relabel_bot, relabel_val_uD_wD_V]
+
+/-- `qJC(k)` holds iff Mirror plays `D` against `pBot (CupodV k)`. -/
+theorem eval_qJC_iff_V (k : V) :
+    Semiformula.Eval (s := stdActV V) ![k] Empty.elim qJC ↔
+      ∃ n, EvalGraph n MirrorV (pBot (CupodV k)) MirrorV 1 := by
+  rw [qJC_eq, eval_GtmplA_subst_iff]
+  simp only [val_TBD_V, val_cl_V, val_TM_V, val_numT_V, Nat.cast_zero, Nat.cast_one, relabel_zero_one,
+    dnum_pBot, relabel_bot, relabel_val_uC_wC_V]
+
+theorem eval_qJM_swap_iff_V (k : V) :
+    Semiformula.Eval (s := swapActS V) ![k] Empty.elim qJM ↔
+      ∃ n, EvalGraph n MirrorV (pBot (CupodV k)) MirrorV 1 := by
+  rw [eval_swapActS, lMap_swap_qJM, ← stdActV_eq_stdActS]
+  exact eval_qJC_iff_V k
+
+theorem eval_qJC_swap_iff_V (k : V) :
+    Semiformula.Eval (s := swapActS V) ![k] Empty.elim qJC ↔
+      ∃ n, EvalGraph n MirrorV (pBot (DupocV k)) MirrorV 0 := by
+  rw [eval_swapActS, lMap_swap_qJC, ← stdActV_eq_stdActS]
+  exact eval_qJM_iff_V k
+
+/-! #### The search clauses and Mirror's copy -/
+
+/-- **Dupoc-in-bot's search clause against Mirror** (fuel 3). -/
+theorem botDupoc_mirror_search_V (k : V) :
+    LenProvableV TAct k (guardCode (⌜GtmplA 0⌝ : V) (pBot (DupocV k)) MirrorV) →
+      EvalGraph 3 (pBot (DupocV k)) MirrorV (pBot (DupocV k)) 0 :=
+  botDupoc_frame_search_V k _ _
+
+theorem botCupod_mirror_search_V (k : V) :
+    LenProvableV TAct k (guardCode (⌜GtmplA 1⌝ : V) (pBot (CupodV k)) MirrorV) →
+      EvalGraph 3 (pBot (CupodV k)) MirrorV (pBot (CupodV k)) 1 :=
+  botCupod_frame_search_V k _ _
+
+/-- Mirror copies the bot-wrapped Dupoc: C at fuel 3 ⇒ Mirror plays C at fuel 4. -/
+theorem mirror_copies_botDupoc_V (k : V) (h : EvalGraph 3 (pBot (DupocV k)) MirrorV (pBot (DupocV k)) 0) :
+    EvalGraph 4 MirrorV (pBot (DupocV k)) MirrorV 0 := by
+  rw [show (4 : V) = 3 + 1 from three_add_one_eq_four.symm]
+  exact (mirror_step_V 3 (pBot (DupocV k)) 0).mpr h
+
+theorem mirror_copies_botCupod_V (k : V) (h : EvalGraph 3 (pBot (CupodV k)) MirrorV (pBot (CupodV k)) 1) :
+    EvalGraph 4 MirrorV (pBot (CupodV k)) MirrorV 1 := by
+  rw [show (4 : V) = 3 + 1 from three_add_one_eq_four.symm]
+  exact (mirror_step_V 3 (pBot (CupodV k)) 1).mpr h
+
+/-! #### The conjunction family -/
+
+/-- **The Löb family of the Just × Mirror cell.** -/
+noncomputable def pJM : Semisentence LAct 1 := qJM ⋏ qJC
+
+lemma pJM_def : pJM = qJM ⋏ qJC := rfl
+
+lemma lMap_swap_pJM : Semiformula.lMap swap pJM = qJC ⋏ qJM := by
+  rw [pJM_def, LogicalConnective.HomClass.map_and, lMap_swap_qJM, lMap_swap_qJC]
+
+theorem instB_quote_pJM (k : V) :
+    instB (⌜pJM⌝ : V) k = instB (⌜qJM⌝ : V) k ^⋏ instB (⌜qJC⌝ : V) k :=
+  instB_quote_and qJM qJC k
+
+lemma formulaLen_instB_pJM (k : V) :
+    formulaLen LAct (instB (⌜pJM⌝ : V) k) =
+      formulaLen LAct (instB (⌜qJM⌝ : V) k) + formulaLen LAct (instB (⌜qJC⌝ : V) k) + 1 := by
+  rw [instB_quote_pJM,
+    formulaLen_and (isFormula_instB_quote qJM k).isUFormula (isFormula_instB_quote qJC k).isUFormula]
+
+/-- **Both bot-wrapped searchers find their guards against Mirror from a box of the conjunction**
+(fuel 3). -/
+theorem pJM_both_V (k : V) : ∀ a : V,
+    a + 8 * (formulaLen LAct (instB (⌜qJM⌝ : V) k) + formulaLen LAct (instB (⌜qJC⌝ : V) k)) + 7 ≤ k →
+    LenDerivable TAct a (instB (⌜pJM⌝ : V) k) →
+    EvalGraph 3 (pBot (DupocV k)) MirrorV (pBot (DupocV k)) 0 ∧
+      EvalGraph 3 (pBot (CupodV k)) MirrorV (pBot (CupodV k)) 1 := by
+  intro a ha h
+  rw [instB_quote_pJM] at h
+  have hx := isFormula_instB_quote qJM k
+  have hy := isFormula_instB_quote qJC k
+  have h₁ := lenDerivable_mono_V ha (lenDerivable_andL_V hx hy h)
+  have h₂ := lenDerivable_mono_V ha (lenDerivable_andR_V hx hy h)
+  rw [lenDerivable_iff_lenProvableV, ← guardCode_botDupocV_MirrorV_eq_instB] at h₁
+  rw [lenDerivable_iff_lenProvableV, ← guardCode_botCupodV_MirrorV_eq_instB] at h₂
+  exact ⟨botDupoc_mirror_search_V k h₁, botCupod_mirror_search_V k h₂⟩
+
+/-- The box form of `pJM_both_V`. -/
+theorem pJM_guards_V (k : V) (a : V)
+    (ha : a + 8 * (formulaLen LAct (instB (⌜qJM⌝ : V) k) + formulaLen LAct (instB (⌜qJC⌝ : V) k)) + 7 ≤ k)
+    (hpc : LenDerivable TAct a (instB (⌜pJM⌝ : V) k)) :
+    LenProvableV TAct k (guardCode (⌜GtmplA 0⌝ : V) (pBot (DupocV k)) MirrorV) ∧
+    LenProvableV TAct k (guardCode (⌜GtmplA 1⌝ : V) (pBot (CupodV k)) MirrorV) := by
+  rw [instB_quote_pJM] at hpc
+  have hx := isFormula_instB_quote qJM k
+  have hy := isFormula_instB_quote qJC k
+  have h₁ := lenDerivable_mono_V ha (lenDerivable_andL_V hx hy hpc)
+  have h₂ := lenDerivable_mono_V ha (lenDerivable_andR_V hx hy hpc)
+  rw [lenDerivable_iff_lenProvableV, ← guardCode_botDupocV_MirrorV_eq_instB] at h₁
+  rw [lenDerivable_iff_lenProvableV, ← guardCode_botCupodV_MirrorV_eq_instB] at h₂
+  exact ⟨h₁, h₂⟩
+
+theorem eval_pJM_iff_std (k : V) :
+    Semiformula.Eval (s := stdActV V) ![k] Empty.elim pJM ↔
+      (∃ n, EvalGraph n MirrorV (pBot (DupocV k)) MirrorV 0) ∧
+      (∃ n, EvalGraph n MirrorV (pBot (CupodV k)) MirrorV 1) := by
+  rw [pJM_def]
+  simp only [LogicalConnective.HomClass.map_and, LogicalConnective.Prop.and_eq]
+  rw [eval_qJM_iff_V, eval_qJC_iff_V]
+
+theorem eval_pJM_iff_swap (k : V) :
+    Semiformula.Eval (s := swapActS V) ![k] Empty.elim pJM ↔
+      (∃ n, EvalGraph n MirrorV (pBot (DupocV k)) MirrorV 0) ∧
+      (∃ n, EvalGraph n MirrorV (pBot (CupodV k)) MirrorV 1) := by
+  rw [eval_swapActS, lMap_swap_pJM, ← stdActV_eq_stdActS]
+  simp only [LogicalConnective.HomClass.map_and, LogicalConnective.Prop.and_eq]
+  rw [eval_qJM_iff_V, eval_qJC_iff_V, and_comm]
+
+theorem eval_pJM_iff_stdActS (k : V) :
+    Semiformula.Eval (s := stdActS V) ![k] Empty.elim pJM ↔
+      (∃ n, EvalGraph n MirrorV (pBot (DupocV k)) MirrorV 0) ∧
+      (∃ n, EvalGraph n MirrorV (pBot (CupodV k)) MirrorV 1) := by
+  rw [← stdActV_eq_stdActS]; exact eval_pJM_iff_std k
+
+/-- **The bounded Löb premise of the Just × Mirror family, slack `(7, 8)`**: a proof of `pJM(k)`
+within the budget makes both bot-wrapped searchers find their guards against Mirror, Mirror
+COPIES at fuel 4, and `pJM(k)` is true in both readings. -/
+theorem loebSound_pJM : LoebSound pJM 7 8 := by
+  intro V _ _ k a ha h
+  have : V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
+  have ha' : a + 8 * (formulaLen LAct (instB (⌜qJM⌝ : V) k) + formulaLen LAct (instB (⌜qJC⌝ : V) k)) + 7 ≤ k :=
+    le_trans (pConj_slack_le a _ _ _ (formulaLen_instB_pJM k)) ha
+  obtain ⟨h1, h2⟩ := pJM_both_V k a ha' h
+  exact ⟨(eval_pJM_iff_stdActS k).mpr ⟨⟨4, mirror_copies_botDupoc_V k h1⟩, ⟨4, mirror_copies_botCupod_V k h2⟩⟩,
+    (eval_pJM_iff_swap k).mpr ⟨⟨4, mirror_copies_botDupoc_V k h1⟩, ⟨4, mirror_copies_botCupod_V k h2⟩⟩⟩
+
+/-! #### The cells at ℕ -/
+
+/-- **The Just × Mirror family, packaged**: for all large `k`, both bot-wrapped searchers find
+their guards against Mirror (fuel 3) and both guard boxes hold — `family_found pJM`, the
+arithmetized `jm_guard_true`. -/
+theorem just_mirror_cell_core {d : ℕ} (hE : BoundedInnerNec d) :
+    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
+      (EvalGraph 3 (pBot (Dupoc k)) Mirror (pBot (Dupoc k)) 0 ∧
+        EvalGraph 3 (pBot (Cupod k)) Mirror (pBot (Cupod k)) 1) ∧
+      (LenProvableV TAct k (guardCode (⌜GtmplA 0⌝ : ℕ) (pBot (Dupoc k)) Mirror) ∧
+        LenProvableV TAct k (guardCode (⌜GtmplA 1⌝ : ℕ) (pBot (Cupod k)) Mirror)) := by
+  obtain ⟨k₀, h⟩ := family_found pJM hE loebSound_pJM
+  refine ⟨k₀, fun k hk ↦ ?_⟩
+  obtain ⟨a, ha, hpc⟩ := h k hk
+  have ha' := le_def.mpr (pConj_slack_nat a _ _ _ k (formulaLen_instB_pJM (V := ℕ) k) ha)
+  exact ⟨pJM_both_V k a ha' hpc, pJM_guards_V k a ha' hpc⟩
+
+/-- **Just × Mirror is `(C, C)` in PA-`S'`, conditional on bounded inner necessitation**: for all
+large `k`, `Just k` cooperates with Mirror (fuel 2: Just's OUTER search fires on the box of
+"Mirror plays C against `pBot (Dupoc k)`") and Mirror copies (fuel 3). -/
+theorem just_mirror_coop {d : ℕ} (hE : BoundedInnerNec d) :
+    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
+      EvalGraph 2 (Just k) Mirror (Just k) 0 ∧ EvalGraph 3 Mirror (Just k) Mirror 0 := by
+  obtain ⟨k₀, h⟩ := just_mirror_cell_core hE
+  refine ⟨k₀, fun k hk ↦ ?_⟩
+  have hJ : EvalGraph 2 (JustV (V := ℕ) k) Mirror (JustV (V := ℕ) k) 0 := just_search_V k Mirror (h k hk).2.1
+  rw [JustV_nat] at hJ
+  exact ⟨hJ, (mirror_step_V (V := ℕ) 2 (Just k) 0).mpr hJ⟩
+
+/-- **The bot-wrapped Dupoc × Mirror `(C, C)`, conditional**: fuel 3 for `pBot (Dupoc k)`, fuel 4
+for Mirror. -/
+theorem botDupoc_mirror_coop {d : ℕ} (hE : BoundedInnerNec d) :
+    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
+      EvalGraph 3 (pBot (Dupoc k)) Mirror (pBot (Dupoc k)) 0 ∧ EvalGraph 4 Mirror (pBot (Dupoc k)) Mirror 0 := by
+  obtain ⟨k₀, h⟩ := just_mirror_cell_core hE
+  exact ⟨k₀, fun k hk ↦ ⟨(h k hk).1.1, mirror_copies_botDupoc_V (V := ℕ) k (h k hk).1.1⟩⟩
+
+/-- **The box form**: for all large `k`, Just actually FINDS a proof of its guard against Mirror
+within its budget `k` (conditional). -/
+theorem just_finds_guard_vs_mirror {d : ℕ} (hE : BoundedInnerNec d) :
+    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k → LenProvableV TAct k (guardCode (gJ k) (Just k) Mirror) := by
+  obtain ⟨k₀, h⟩ := just_mirror_cell_core hE
+  refine ⟨k₀, fun k hk ↦ ?_⟩
+  rw [guardCode_JustV]
+  exact (h k hk).2.1
+
+/-- **Just × Mirror `(C, C)` in PA-`S'`, unconditional**: for all large `k`, `Just k` cooperates
+with Mirror (fuel 2) and Mirror copies (fuel 3). -/
+theorem just_mirror_coop_unconditional :
+    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
+      EvalGraph 2 (Just k) Mirror (Just k) 0 ∧ EvalGraph 3 Mirror (Just k) Mirror 0 :=
+  just_mirror_coop boundedInnerNec_sixteen
+
+/-- **The bot-wrapped Dupoc × Mirror `(C, C)`, unconditional.** -/
+theorem botDupoc_mirror_coop_unconditional :
+    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
+      EvalGraph 3 (pBot (Dupoc k)) Mirror (pBot (Dupoc k)) 0 ∧ EvalGraph 4 Mirror (pBot (Dupoc k)) Mirror 0 :=
+  botDupoc_mirror_coop boundedInnerNec_sixteen
+
+/-- **Just finds its guard against Mirror, unconditional.** -/
+theorem just_finds_guard_vs_mirror_unconditional :
+    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k → LenProvableV TAct k (guardCode (gJ k) (Just k) Mirror) :=
+  just_finds_guard_vs_mirror boundedInnerNec_sixteen
+
+end justMirror
 
 end ArithS
