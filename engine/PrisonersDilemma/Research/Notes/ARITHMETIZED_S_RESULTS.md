@@ -371,3 +371,13 @@ uniform only above a standard threshold `KP`, absorbed by the family slack. **Ro
 cells unconditional in PA-`S'`** (Dupoc/Cupod × Mirror, bot-Dupoc self, Just × Mirror, DIMCID × DIMCID /
 Mirror / Cupod, CIMCIC × Dupoc / Mirror / CIMCIC, Prudent × Mirror and its τ-twin), plus Dupoc/Cupod
 self-play from M5; 11 of the 14 in-scope Löbian cells of `ROUTE_B_CENSUS.md`.
+**Route (c) (2026-09-23 night, `271f6d7` + `f2cf619`).** Templates may read the searching node's own
+budget through a seventh slot (`guardCodeB g me opp k := subst (descVec me opp ++ [bnum k]) g`; the
+evaluator's `search` clause consults it); the gate lemma `guardCodeB_of_template` proves a six-variable
+template never reads the extra entry, so every earlier statement is byte-identical. With it `JustBot`'s
+frozen snapshot is a term in the slot, the stored template is a constant, and **Just × Just = (C, C)**,
+**Just × Dupoc = (C, C)** (a three-guard mutual family) and **CIMCIC × Just = (C, C)** are unconditional in
+PA-`S'` on the constant-template diagonal `Just7 k` (same play as `Just k` in every frame). With
+`Cells/SearchFree.lean` (28 cells by transfer at the engine's own fuel — `eval` and `EvalGraph` step in
+lockstep on the search-free constructors): **43 cells of the engine's matrix hold in PA-`S'`, all 14
+in-scope Löbian cells among them; three standard axioms; census 1301.**

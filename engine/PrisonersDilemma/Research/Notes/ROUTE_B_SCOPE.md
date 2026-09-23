@@ -276,3 +276,31 @@ alongside (c)); SND/POS wait for (c) to settle.
   `GuardAgree` too). `AgentConverse.eval_iff_evalGraph` quantifies `GuardAgree` over ALL formulas, so it
   cannot be discharged for search-free players; the search-free induction was redone with `Agent.Inv`
   at `sf = true`. Gate: 3339 jobs, census 1228 standard. **Tally: 12 Löbian/POS + 28 SF = 40 cells in `S'`.**
+* 2026-09-23 (night): **ROUTE (c) DONE** — `271f6d7` (trusted base) + `f2cf619` (`Cells/JustSlot.lean`).
+  THE GATE LEMMA IS A THEOREM: `guardCodeB_of_template : IsSemiformula LAct 6 g → guardCodeB g me opp k =
+  guardCode g me opp` (a seventh entry is never read; via the identity vector `idVec6`, `subst_eq_self`,
+  `substs_substs`). Representation: the budget slot is `#6`, LAST (`descVecB me opp k = descVec me opp ++
+  [bnum k]`), so every six-variable template, `descVec`, `guardCode`, `gsubst`, `psubst` are
+  byte-identical; the evaluator's `search` clause (Phi, Δ₁ blueprint, `case_iff`, `EvalN.search_iff`)
+  now consults `guardCodeB g me opp k`; `search_iff₆` is the old reading on six-variable templates. Blast
+  radius: 14 files, 34 sites, each one rewrite; **`Necessitation/` untouched** (rebuilt, green). The
+  three parked cells, all unconditional on the constant-template diagonal `Just7 k := pSearch k ⌜GtmplJ7⌝
+  …` (`evalGraph_JustV7_iff`: identical PLAY to `Just k` in every frame at every fuel — an opponent's guard
+  that DESCRIBES the code is what differs, by design): `just7_self_coop_unconditional` (`(C, C)`),
+  `just7_dupoc_coop_unconditional` (`(C, C)`, a THREE-guard mutual family, three-level ∧-elimination at
+  slack `(21, 24)`), `cimcic_just7_coop_unconditional` (`(C, C)`). **FINAL GATE on `f2cf619`: 3340 jobs,
+  0 errors, census 1301 standard. Tally: 43 cells in `S'` (15 Löbian/POS + 28 SF); ALL 14 in-scope
+  LOEB-FF cells of the census are done.**
+  DESIGN DEBT (record, not done): a seven-variable template is not `IsSemiformula LAct 6`, so `gsubst`
+  leaves it and `psubst` never fills its frame slots — the evaluator is faithful for every program that
+  never `.sim`s a seven-variable searcher (none of the three cells does); for a `.sim`-wrapped `Just7`
+  the inner guard would read the INNER frame. The faithful extension (~150 lines): a middle case in
+  `gsubst` — `IsSemiformula LAct 7 g ↦ subst (descVec me opp ++ [^#6]) g`, keeping `#6` — which changes
+  the hypothesis of `gsubst_of_not` to `¬IsSemiformula LAct 7 g` and the middle case of
+  `gsubstGraph`/`relabelTemplate_gsubst`. Do it before any `.sim`-of-Just cell.
+  Note: `SPRIME_DESIGN_RATIONALE.md` does not exist on this branch (the trusted-base description lives in
+  `HANDOVER_ARITHMETIZED_S.md` §1/§6 and the module docstrings) — write it or drop the reference.
+  TRAPS (JustSlot): `IsSemiterm LAct n t` with `n : ℕ` silently forces `V = ℕ` (cast the arity);
+  `nth_adjoin_one/two` SHIFT (`(x ∷ v).[1] = v.[0]`); `rw [show (4:V) = 0+1+1+1+1]` also rewrites the `4`
+  inside `^#4`; `LogicalConnective.HomClass.map_and` fires on `Semiformula.Eval` (unfold the family defs,
+  `simp only`); a `-/` inside prose (`four-/seven-`) closes a docstring.
