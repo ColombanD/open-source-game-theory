@@ -120,3 +120,7 @@ no polynomial budget-preserving embedding of the citation rule exists.*
 * 2026-09-23: decided B; branch `colomban-route-b`; Phase 0 (U10 re-packaging, census) and Phase 1
   (the family-parametric assembly) started. Census DONE (`ROUTE_B_CENSUS.md`): the SND class found (36
   cells closed by soundness, not floors); 10 unreadability cells flagged as possibly DIFFERENT in `S'`.
+* 2026-09-23 (later): **Phase 1 DONE** (`173bfa5`, `Assembly/Family.lean`): `LoebSound p S₀ S₁`,
+  `pblt_uniformF`, `family_found` (the arithmetized `pblt_engine`); Uniform/Cell = the `pConj` instance,
+  53/53 statements byte-identical, `Package.lean`/`Prep.lean` untouched, census 926 all standard.
+  Deviation: `theta/psi/psi_fixed_point` stay in `Prep.lean`, bridged by `rfl` (`psi = psiF pConj`).
