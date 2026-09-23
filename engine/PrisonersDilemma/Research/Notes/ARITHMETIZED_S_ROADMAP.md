@@ -1161,7 +1161,7 @@ same-`k` floor cells are OPEN in PA and are reported as such. Not thesis scope.
 | Löbian cells at same `k`, large `k` | expected to hold | M4–M5, parametric PBLT, re-proved |
 | Staggered cells `(2k+64, k)` | hold with POLYNOMIAL stagger | M5 |
 | Floor cells `(D, C)` by `search_f` | OPEN until a lower bound is proved | M6 |
-| Censuses (`no_provable_*`) | do not transfer; PA reads source for free (Σ₁-completeness), so PA-`S` is STRONGER than `Pf` and negatives are weaker | — |
+| Censuses (`no_provable_*`) | do not transfer; PA reads source for free (Σ₁-completeness), so PA-`S` is STRONGER than `Pf` and negatives are weaker — CONFIRMED 2026-09-23: 6 of the 10 unreadability cells FLIP in `S'`, `DIMCID × CooperateBot (C, C) → (D, C)` PROVED (`loeb_DIMCID_vs_CooperateBot`, results record) | route B |
 
 The rule set `Pf` stays: it is the proof-search-friendly calculus the LLM pipeline targets,
 and after M3 it is certified sound for PA-`S`. Nothing in the engine is replaced.
