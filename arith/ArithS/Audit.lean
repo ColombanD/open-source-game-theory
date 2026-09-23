@@ -73,6 +73,7 @@ import ArithS.Cells.CIMCIC
 import ArithS.Cells.SearchFree
 import ArithS.Cells.JustSlot
 import ArithS.Cells.SoundnessCells
+import ArithS.Cells.PositiveCells
 
 /-!
 # ArithS.Audit — the axiom census of the arithmetized layer
@@ -2541,5 +2542,80 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms pos_GuardianBot_vs_DBot
 #print axioms snd_GuardianBot_vs_EBot
 #print axioms snd_GuardianBot_vs_OBot
+
+
+-- Route B Phase 4, the POS class (Cells/PositiveCells, 2026-09-23) — cells whose searcher FINDS its guard without Löb,
+-- in PA-`S'` at ℕ for all large `k`, unconditional (no `BoundedInnerNec`): the `S'` twin of the engine's `search_t` on
+-- a search-free atom / `weakenImpl` / `atomNeg`. The mechanism (`cimcic_self_coop`'s, generic): the guard against a
+-- CONSTANT opponent (`pConst 0`, `pConst 1`, `pBot (pConst 0)`, `pBot (pConst 1)` — their canonical triples in §1) is
+-- the `bnum k`-instance of a FIXED one-variable formula `q` (`guardCode_qT_eq_instB` with the searcher's own
+-- description triple), `q(k)` is true in BOTH standard readings of every model (the play of a constant is a fixed
+-- clause: `const_play_V`/`bot_const_play_V`, and its negation by determinism for Wary's `.neg` guard:
+-- `const_not_play_V`), so `TAct ⊢ ∀¹ q` by completeness (`tact_all_of_both`), and the instance at `bnum k` costs
+-- `K₀ + K₁·size k ≤ k` for all large `k` (`found_of_all`). The GENERIC engine-searcher description layer
+-- (`SV g a k := pSearch k ⌜g⌝ (pConst a) (pConst (1 - a))`, `swapcode_SV`, `dnum_SV`/`dU_SV`/`dW_SV`, the tower
+-- `TS`, `hX_SV`, `relabel_val_uS_wS_V`/`_uST_wST_V`) puts Dupoc's, Cupod's and Wary's ENGINE codes (`pcode (DupocBot k)`
+-- etc., not the `GtmplA` twins) on the same footing as CIMCIC/DIMCID, and the bot tower `TBS` describes the frozen
+-- snapshot `pBot (pcode (DupocBot k))` of JustBot's guard (`guardCode_JustBot_eq`: Just's consulted guard IS Dupoc's
+-- engine guard in the snapshot's frame). The cells: `pos_DupocBot_vs_CooperateBot` `(C, C)`,
+-- `pos_CupodBot_vs_DefectBot` `(D, D)`, `pos_CIMCIC_vs_CooperateBot` `(C, C)`, `pos_DIMCID_vs_DefectBot` `(D, D)`,
+-- `pos_JustBot_vs_CooperateBot` `(C, C)` (on the engine's own code), `pos_WaryBot_vs_DefectBot` `(D, D)` (the `.neg`
+-- guard: a Π₁ truth by determinism), and the SND cells with a positive sub-fact `snd_CupodBot_vs_DBot`/`_EBot` `(C, C)`
+-- (Cupod finds "`.bot DefectBot` defects against me") and `snd_WaryBot_vs_DBot`/`_EBot` `(C, C)`.
+#print axioms dnum_pConst_zero
+#print axioms dnum_pConst_one
+#print axioms hX_const_zero
+#print axioms hX_const_one
+#print axioms hX_bot_zero
+#print axioms hX_bot_one
+#print axioms val_desc_const_zero
+#print axioms val_desc_const_one
+#print axioms swapcode_SV
+#print axioms dnum_SV
+#print axioms dU_SV
+#print axioms dW_SV
+#print axioms val_TS_V
+#print axioms hX_SV
+#print axioms relabel_val_uS_wS_V
+#print axioms relabel_val_uST_wST_V
+#print axioms tact_all_of_both
+#print axioms found_of_all
+#print axioms eval_qT_plays_opp_self
+#print axioms eval_qT_neg_plays_opp_self
+#print axioms eval_qT_swap
+#print axioms hme_SV
+#print axioms hme_SVT
+#print axioms termSubst_TBS
+#print axioms hme_botSV
+#print axioms hme_botSVT
+#print axioms guardCode_JustBot_eq
+#print axioms guardCode_Du0
+#print axioms tact_qDu0
+#print axioms pos_DupocBot_vs_CooperateBot
+#print axioms guardCode_Cu1
+#print axioms tact_qCu1
+#print axioms pos_CupodBot_vs_DefectBot
+#print axioms guardCode_CuB1
+#print axioms tact_qCuB1
+#print axioms cupod_vs_botDB_found
+#print axioms snd_CupodBot_vs_DBot
+#print axioms snd_CupodBot_vs_EBot
+#print axioms guardCode_Ci0
+#print axioms tact_qCi0
+#print axioms pos_CIMCIC_vs_CooperateBot
+#print axioms guardCode_Di1
+#print axioms tact_qDi1
+#print axioms pos_DIMCID_vs_DefectBot
+#print axioms guardCode_J0
+#print axioms tact_qJ0
+#print axioms pos_JustBot_vs_CooperateBot
+#print axioms guardCode_W1
+#print axioms tact_qW1
+#print axioms pos_WaryBot_vs_DefectBot
+#print axioms guardCode_WB1
+#print axioms tact_qWB1
+#print axioms wary_vs_botDB_found
+#print axioms snd_WaryBot_vs_DBot
+#print axioms snd_WaryBot_vs_EBot
 
 end ArithS

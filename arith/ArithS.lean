@@ -96,6 +96,7 @@ import ArithS.Cells.CIMCIC
 import ArithS.Cells.SearchFree
 import ArithS.Cells.JustSlot
 import ArithS.Cells.SoundnessCells
+import ArithS.Cells.PositiveCells
 import ArithS.Neg
 import ArithS.Agent
 import ArithS.AgentConverse

@@ -233,9 +233,9 @@ def phiW : PD.Formula := .neg (.plays .opp .self .C)
 /-- Just's guard. -/
 def phiJ (k : ℕ) : PD.Formula := .plays .opp (.bot (DupocBot k)) .C
 /-- Prudent's outer guard. -/
-def phiP1 : PD.Formula := .plays .opp .self .C
+def phiPo : PD.Formula := .plays .opp .self .C
 /-- Prudent's inner (prudence) guard. -/
-def phiP2 : PD.Formula := .plays .opp (.bot DefectBot) .D
+def phiPi : PD.Formula := .plays .opp (.bot DefectBot) .D
 
 lemma pcode_GuardianBot (k : ℕ) :
     pcode (GuardianBot k) = pSearch k (tcode phiG) (pConst 1) (pConst 0) := by
@@ -257,8 +257,8 @@ lemma pcode_JustBot (k : ℕ) :
   simp [JustBot, phiJ, actCode]
 lemma pcode_PrudentBot' (k : ℕ) :
     pcode (PrudentBot k) =
-      pSearch k (tcode phiP1) (pSearch k (tcode phiP2) (pConst 0) (pConst 1)) (pConst 1) := by
-  simp [PrudentBot, phiP1, phiP2, actCode]
+      pSearch k (tcode phiPo) (pSearch k (tcode phiPi) (pConst 0) (pConst 1)) (pConst 1) := by
+  simp [PrudentBot, phiPo, phiPi, actCode]
 
 lemma pcode_botCB : pcode (PD.Prog.bot CooperateBot) = pBot (pConst 0) := by simp [CooperateBot, actCode]
 lemma pcode_botDB : pcode (PD.Prog.bot DefectBot) = pBot (pConst 1) := by simp [DefectBot, actCode]
@@ -586,7 +586,7 @@ theorem prudent_D_of_probe (k : ℕ) {opp : PD.Prog} (hopp : Proper opp) {N : �
     EvalGraph 2 (pcode (PrudentBot k)) (pcode opp) (pcode (PrudentBot k)) 1 := by
   have hn := not_found_opp_self (proper_PrudentBot k) hopp .C (b := .D) (by decide) h k
   rw [pcode_PrudentBot'] at hn ⊢
-  exact search_else phiP1 hn (const_play _ _ _ _)
+  exact search_else phiPo hn (const_play _ _ _ _)
 
 /-- Prudent defects against an opponent that cooperates with `.bot DefectBot` (the prudence guard
 fails; the outer verdict is irrelevant). -/
@@ -596,7 +596,7 @@ theorem prudent_D_of_inner (k : ℕ) {opp : PD.Prog} (hopp : Proper opp) {N : �
   have hn := not_found_opp_bot (proper_PrudentBot k) hopp (P := DefectBot) rfl .D (b := .C) (by decide)
     (by rw [pcode_DB]; exact h) k
   rw [pcode_PrudentBot'] at hn ⊢
-  exact search_either phiP1 (search_else phiP2 hn (const_play _ _ _ _)) (const_play _ _ _ _)
+  exact search_either phiPo (search_else phiPi hn (const_play _ _ _ _)) (const_play _ _ _ _)
 
 /-- Prudent defects against `.bot DefectBot` and against `.bot CooperateBot`. -/
 theorem prudent_vs_botDB (k : ℕ) :
