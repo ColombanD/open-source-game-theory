@@ -17,6 +17,7 @@ import ArithS.Instance
 import ArithS.InstanceV
 import ArithS.Transparency
 import ArithS.Assembly.Prep
+import ArithS.Assembly.Family
 import ArithS.Assembly.Uniform
 import ArithS.Assembly.Cell
 import ArithS.Necessitation.Primitives
@@ -279,6 +280,28 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms cell_core
 #print axioms dupoc_self_coop
 #print axioms dupoc_finds_guard
+
+-- Route B Phase 1 — the family-parametric assembly (Assembly/Family, 2026-09-23): everything U8/U9
+-- did for the one family `pConj` is done for an ARBITRARY target `p : Semisentence LAct 1` with a
+-- slack `(S₀, S₁)` (the budget the consumer needs after the box of `p(k)`, `S₀ + S₁·|p(k)|`):
+-- `psiF p = tactFixedpoint (boxCoreA 🡒 (p ⇜ ![#1]))` with its fixed point in `TAct`, the chain
+-- `chain_core_VF` with the polynomial budget `chainBoundF`, and the bounded Löb premise as ONE
+-- named hypothesis `LoebSound p S₀ S₁` ("a proof of the `k`-instance of `p` within budget `k`,
+-- minus the slack, makes `p(k)` true in both readings" — □p → p). Outputs: `pblt_uniformF`
+-- (`TAct ⊢ ∀ k, (k̂ ≤ k → psiF p (k))`) and `family_found`, the arithmetized `pblt_engine` (the
+-- family's box found within its budget with the slack to spare, for all large `k : ℕ`), both
+-- conditional on `BoundedInnerNec d` + `LoebSound p S₀ S₁`. `loebSound_pConj : LoebSound pConj 7 8`
+-- (∧-elimination + search clauses + truth equations) makes Uniform/Cell the `pConj` instance:
+-- `psi = psiF pConj` by `rfl`, every U8/U9 statement above byte-identical, `Package.lean` untouched.
+#print axioms thetaF_subst_code
+#print axioms psiF_fixed_point
+#print axioms chain_core_VF
+#print axioms chainBoundF_poly
+#print axioms psiF_true_V
+#print axioms pblt_uniformF
+#print axioms exists_psiF_instance_length
+#print axioms family_found
+#print axioms loebSound_pConj
 
 -- T2-CORE: the modal-propositional core is sound over PA (budget erased).
 #print axioms Core.Pf_core_sound

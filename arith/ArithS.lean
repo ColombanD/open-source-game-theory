@@ -38,6 +38,7 @@ import ArithS.Instance
 import ArithS.InstanceV
 import ArithS.Transparency
 import ArithS.Assembly.Prep
+import ArithS.Assembly.Family
 import ArithS.Assembly.Uniform
 import ArithS.Assembly.Cell
 import ArithS.Necessitation.Primitives
