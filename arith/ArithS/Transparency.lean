@@ -155,7 +155,7 @@ theorem dupoc_search_V (k : V) :
   intro h
   rw [show (2 : V) = 1 + 1 from one_add_one_eq_two.symm]
   show EvalGraph (1 + 1) (DupocV k) (DupocV k) (pSearch k (⌜GtmplA 0⌝ : V) (pConst 0) (pConst 1)) 0
-  rw [EvalGraph.search_iff]
+  rw [EvalGraph.search_iff₆ (isSemiformula_quote₆ (GtmplA 0))]
   left
   refine ⟨h, ?_⟩
   rw [show (1 : V) = 0 + 1 by simp, EvalGraph.const_iff]

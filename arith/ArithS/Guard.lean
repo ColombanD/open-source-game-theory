@@ -179,4 +179,46 @@ instance guardCode.definable : 𝚺₁-Function₃ (guardCode : V → V → V �
 instance guardCode.definable' : Γ-[m + 1]-Function₃ (guardCode : V → V → V → V) :=
   guardCode.definable.of_sigmaOne
 
+/-! ### The guard code with the node budget (route c, 2026-09-23)
+
+`ROUTE_B_SCOPE.md` §8: a stored template may refer to the searching node's OWN budget through a
+SEVENTH free variable `#6`. The evaluator's `search` clause (`ArithS.Eval`) fills the template with
+`descVecB me opp k` — the six descriptions of the frame in `#0..#5` and the binary numeral of the
+node's budget in `#6` — so a frozen snapshot whose budget equals the searcher's is described by a TERM
+in the slot and the stored template is a CONSTANT (`Cells/JustSlot`). The budget slot is LAST so that
+every six-variable template is literally unchanged: it never reads `#6`
+(`guardCodeB_of_template`, `ArithS.Subst`, the gate lemma of the design). -/
+
+/-- The description vector with the node budget: `descVec me opp` extended by `bnum k` in the
+seventh slot. -/
+noncomputable def descVecB (me opp k : V) : V :=
+  progT (dnum me) ∷ dU me ∷ dW me ∷ progT (dnum opp) ∷ dU opp ∷ dW opp ∷ bnum k ∷ 0
+
+/-- Fill the template `g` with the descriptions of `me`, `opp` and the node budget `k`. -/
+noncomputable def guardCodeB (g me opp k : V) : V := subst LAct (descVecB me opp k) g
+
+noncomputable def descVecBGraph : 𝚺₁.Semisentence 4 := .mkSigma
+  “y me opp k. ∃ n₁, !dnumGraph n₁ me ∧ ∃ t₁, !progTGraph t₁ n₁ ∧ ∃ u₁, !dUGraph u₁ me ∧ ∃ w₁, !dWGraph w₁ me ∧
+    ∃ n₂, !dnumGraph n₂ opp ∧ ∃ t₂, !progTGraph t₂ n₂ ∧ ∃ u₂, !dUGraph u₂ opp ∧ ∃ w₂, !dWGraph w₂ opp ∧
+    ∃ b, !bnumGraph b k ∧
+    ∃ v₆, !adjoinDef v₆ b 0 ∧ ∃ v₅, !adjoinDef v₅ w₂ v₆ ∧ ∃ v₄, !adjoinDef v₄ u₂ v₅ ∧
+    ∃ v₃, !adjoinDef v₃ t₂ v₄ ∧ ∃ v₂, !adjoinDef v₂ w₁ v₃ ∧ ∃ v₁, !adjoinDef v₁ u₁ v₂ ∧ !adjoinDef y t₁ v₁”
+
+instance descVecB.defined : 𝚺₁-Function₃ (descVecB : V → V → V → V) via descVecBGraph := .mk fun v ↦ by
+  simp [descVecBGraph, descVecB]
+
+instance descVecB.definable : 𝚺₁-Function₃ (descVecB : V → V → V → V) := descVecB.defined.to_definable
+
+noncomputable def guardCodeBGraph : 𝚺₁.Semisentence 5 := .mkSigma
+  “y g me opp k. ∃ w, !descVecBGraph w me opp k ∧ !(substsGraph LAct) y w g”
+
+instance guardCodeB.defined : 𝚺₁-Function₄ (guardCodeB : V → V → V → V → V) via guardCodeBGraph :=
+  .mk fun v ↦ by simp [guardCodeBGraph, guardCodeB]
+
+instance guardCodeB.definable : 𝚺₁-Function₄ (guardCodeB : V → V → V → V → V) :=
+  guardCodeB.defined.to_definable
+
+instance guardCodeB.definable' : Γ-[m + 1]-Function₄ (guardCodeB : V → V → V → V → V) :=
+  guardCodeB.definable.of_sigmaOne
+
 end ArithS

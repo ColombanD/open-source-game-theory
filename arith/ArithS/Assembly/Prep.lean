@@ -126,7 +126,7 @@ theorem cupod_search_V (k : V) :
   intro h
   rw [show (2 : V) = 1 + 1 from one_add_one_eq_two.symm]
   show EvalGraph (1 + 1) (CupodV k) (CupodV k) (pSearch k (⌜GtmplA 1⌝ : V) (pConst 1) (pConst 0)) 1
-  rw [EvalGraph.search_iff]
+  rw [EvalGraph.search_iff₆ (isSemiformula_quote₆ (GtmplA 1))]
   left
   refine ⟨h, ?_⟩
   have e : EvalGraph (0 + 1) (CupodV k) (CupodV k) (pConst 1) 1 := EvalGraph.const_iff.mpr rfl

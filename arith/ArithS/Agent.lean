@@ -329,14 +329,14 @@ theorem playsProof_evalGraph_core (sf : Bool) (hag : sf = false → GuardAgreeT)
     obtain ⟨hsf, hIp, _⟩ := Inv.search hI
     obtain ⟨N, hN⟩ := ih hIp
     refine ⟨N + 1, ?_⟩
-    rw [pcode_search, EvalGraph.search_iff]
+    rw [pcode_search, EvalGraph.search_iff₆ (isSemiformula_tcode φ)]
     exact Or.inl ⟨hag hsf φ me opp k hg, hN⟩
   · -- search_f
     intro m me opp q a n k φ p hg _ ih hI
     obtain ⟨hsf, _, hIq⟩ := Inv.search hI
     obtain ⟨N, hN⟩ := ih hIq
     refine ⟨N + 1, ?_⟩
-    rw [pcode_search, EvalGraph.search_iff]
+    rw [pcode_search, EvalGraph.search_iff₆ (isSemiformula_tcode φ)]
     exact Or.inr ⟨hneg hsf φ me opp k m hg, hN⟩
   · -- voteZero_t
     intro me opp p q a n v _ _ hI

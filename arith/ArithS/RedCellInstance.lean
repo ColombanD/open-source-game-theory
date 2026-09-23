@@ -28,7 +28,7 @@ theorem dupoc_fires (k : ℕ)
     EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 0 := by
   rw [quote_guardSentenceA] at h
   show EvalGraph (1 + 1) (Dupoc k) (Cupod k) (pSearch k (⌜GtmplA 0⌝ : ℕ) (pConst 0) (pConst 1)) 0
-  rw [EvalGraph.search_iff]
+  rw [EvalGraph.search_iff₆ (isSemiformula_quote₆ (GtmplA 0))]
   exact Or.inl ⟨h, (EvalGraph.const_iff (n := 0)).mpr rfl⟩
 
 /-- Dupoc's else-branch: no such proof makes Dupoc defect (fuel 2). -/
@@ -37,7 +37,7 @@ theorem dupoc_else (k : ℕ)
     EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 := by
   rw [quote_guardSentenceA] at h
   show EvalGraph (1 + 1) (Dupoc k) (Cupod k) (pSearch k (⌜GtmplA 0⌝ : ℕ) (pConst 0) (pConst 1)) 1
-  rw [EvalGraph.search_iff]
+  rw [EvalGraph.search_iff₆ (isSemiformula_quote₆ (GtmplA 0))]
   exact Or.inr ⟨h, (EvalGraph.const_iff (n := 0)).mpr rfl⟩
 
 /-- Cupod's guard fires: a proof of `guardSentenceA 1 (Cupod k) (Dupoc k)` within `k`
@@ -47,7 +47,7 @@ theorem cupod_fires (k : ℕ)
     EvalGraph 2 (Cupod k) (Dupoc k) (Cupod k) 1 := by
   rw [quote_guardSentenceA] at h
   show EvalGraph (1 + 1) (Cupod k) (Dupoc k) (pSearch k (⌜GtmplA 1⌝ : ℕ) (pConst 1) (pConst 0)) 1
-  rw [EvalGraph.search_iff]
+  rw [EvalGraph.search_iff₆ (isSemiformula_quote₆ (GtmplA 1))]
   exact Or.inl ⟨h, (EvalGraph.const_iff (n := 0)).mpr rfl⟩
 
 /-- Cupod's else-branch: no such proof makes Cupod cooperate (fuel 2). -/
@@ -56,7 +56,7 @@ theorem cupod_else (k : ℕ)
     EvalGraph 2 (Cupod k) (Dupoc k) (Cupod k) 0 := by
   rw [quote_guardSentenceA] at h
   show EvalGraph (1 + 1) (Cupod k) (Dupoc k) (pSearch k (⌜GtmplA 1⌝ : ℕ) (pConst 1) (pConst 0)) 0
-  rw [EvalGraph.search_iff]
+  rw [EvalGraph.search_iff₆ (isSemiformula_quote₆ (GtmplA 1))]
   exact Or.inr ⟨h, (EvalGraph.const_iff (n := 0)).mpr rfl⟩
 
 /-- **The arithmetized instance** of the red-cell package: `LenProvableV TAct` over

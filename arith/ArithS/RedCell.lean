@@ -121,17 +121,17 @@ theorem red_cell (k : ℕ) :
     -- But Dupoc, finding its proof, cooperates.
     have hcoop : EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 0 := by
       show EvalGraph (1 + 1) (Dupoc k) (Cupod k) (pSearch k (⌜GtmplA 0⌝ : ℕ) (pConst 0) (pConst 1)) 0
-      rw [EvalGraph.search_iff]
+      rw [EvalGraph.search_iff₆ (isSemiformula_quote₆ (GtmplA 0))]
       exact Or.inl ⟨hD, (EvalGraph.const_iff (n := 0)).mpr rfl⟩
     exact absurd (EvalGraph.unique' hn hcoop) (by decide)
   have hG' : ¬LenProvableV TAct k (guardCode (⌜GtmplA 1⌝ : ℕ) (Cupod k) (Dupoc k)) :=
     fun h ↦ hG ((guard_Dupoc_iff_guard_Cupod k).mpr h)
   constructor
   · show EvalGraph (1 + 1) (Dupoc k) (Cupod k) (pSearch k (⌜GtmplA 0⌝ : ℕ) (pConst 0) (pConst 1)) 1
-    rw [EvalGraph.search_iff]
+    rw [EvalGraph.search_iff₆ (isSemiformula_quote₆ (GtmplA 0))]
     exact Or.inr ⟨hG, (EvalGraph.const_iff (n := 0)).mpr rfl⟩
   · show EvalGraph (1 + 1) (Cupod k) (Dupoc k) (pSearch k (⌜GtmplA 1⌝ : ℕ) (pConst 1) (pConst 0)) 0
-    rw [EvalGraph.search_iff]
+    rw [EvalGraph.search_iff₆ (isSemiformula_quote₆ (GtmplA 1))]
     exact Or.inr ⟨hG', (EvalGraph.const_iff (n := 0)).mpr rfl⟩
 
 /-- The outcome is the same at every fuel `≥ 2`, and no other outcome exists at any fuel. -/

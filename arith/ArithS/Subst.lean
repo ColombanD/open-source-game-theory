@@ -184,6 +184,116 @@ lemma guardCode_of_sentence {g : V} (hg : IsSemiformula LAct 0 g) (me opp : V) :
     guardCode g me opp = g :=
   subst_eq_self_of_le hg (descVec_utermVec me opp) (by simp) (by simp)
 
+/-! ### The guard code with the node budget (route c): the gate lemma
+
+`guardCodeB g me opp k` (`ArithS.Guard`) fills `#0..#5` with the frame's descriptions and `#6` with
+`bnum k`. The GATE LEMMA of the design: a six-variable template never reads the seventh entry, so on
+every existing template `guardCodeB` IS `guardCode` (`guardCodeB_of_template`) — proved through the
+identity vector `idVec6` (`subst_eq_self` at `(6, 6)`, then `substs_substs` at `(6, 7)`, then the
+seven-entry `termSubstVec` computed entry by entry). -/
+
+lemma seven_eq : (7 : V) = 0 + 1 + 1 + 1 + 1 + 1 + 1 + 1 := by norm_num
+
+/-- The description vector with the budget is a vector of seven closed terms. -/
+lemma descVecB_semitermVec (me opp k : V) : IsSemitermVec LAct 7 0 (descVecB me opp k) := by
+  rw [seven_eq, descVecB]
+  exact (((((((IsSemitermVec.nil 0).adjoin (bnum_semiterm_LAct 0 k)).adjoin (dW_semiterm 0 opp)).adjoin
+    (dU_semiterm 0 opp)).adjoin (progT_semiterm_LAct 0 (dnum opp))).adjoin (dW_semiterm 0 me)).adjoin
+    (dU_semiterm 0 me)).adjoin (progT_semiterm_LAct 0 (dnum me))
+
+lemma len_descVecB (me opp k : V) : len (descVecB me opp k) = 7 := (descVecB_semitermVec me opp k).lh
+
+lemma descVecB_utermVec (me opp k : V) :
+    IsUTermVec LAct (len (descVecB me opp k)) (descVecB me opp k) := by
+  rw [len_descVecB]; exact (descVecB_semitermVec me opp k).isUTerm
+
+/-- Instantiating a seven-variable template with the budget gives a sentence. -/
+lemma isSemiformula_guardCodeB {g : V} (hg : IsSemiformula LAct 7 g) (me opp k : V) :
+    IsSemiformula LAct 0 (guardCodeB g me opp k) :=
+  hg.subst (descVecB_semitermVec me opp k)
+
+/-- A sentence is fixed by `guardCodeB`. -/
+lemma guardCodeB_of_sentence {g : V} (hg : IsSemiformula LAct 0 g) (me opp k : V) :
+    guardCodeB g me opp k = g :=
+  subst_eq_self_of_le hg (descVecB_utermVec me opp k) (by simp) (by simp)
+
+/-- The identity vector on the six frame variables. -/
+noncomputable def idVec6 : V := ^#0 ∷ ^#1 ∷ ^#2 ∷ ^#3 ∷ ^#4 ∷ ^#5 ∷ 0
+
+lemma idVec6_semitermVec {n : V} (hn : 6 ≤ n) : IsSemitermVec LAct 6 n (idVec6 : V) := by
+  have h0 : IsSemiterm LAct n (^#0 : V) := IsSemiterm.bvar.mpr (lt_of_lt_of_le (by norm_num) hn)
+  have h1 : IsSemiterm LAct n (^#1 : V) := IsSemiterm.bvar.mpr (lt_of_lt_of_le (by norm_num) hn)
+  have h2 : IsSemiterm LAct n (^#2 : V) := IsSemiterm.bvar.mpr (lt_of_lt_of_le (by norm_num) hn)
+  have h3 : IsSemiterm LAct n (^#3 : V) := IsSemiterm.bvar.mpr (lt_of_lt_of_le (by norm_num) hn)
+  have h4 : IsSemiterm LAct n (^#4 : V) := IsSemiterm.bvar.mpr (lt_of_lt_of_le (by norm_num) hn)
+  have h5 : IsSemiterm LAct n (^#5 : V) := IsSemiterm.bvar.mpr (lt_of_lt_of_le (by norm_num) hn)
+  have := ((((((IsSemitermVec.nil n).adjoin h5).adjoin h4).adjoin h3).adjoin h2).adjoin h1).adjoin h0
+  rwa [← six_eq] at this
+
+lemma nth_idVec6 : ∀ i < (6 : V), (idVec6 : V).[i] = ^#i := by
+  intro i hi
+  unfold idVec6
+  rcases zero_or_succ i with rfl | ⟨i, rfl⟩
+  · simp
+  rw [nth_adjoin_succ]
+  rcases zero_or_succ i with rfl | ⟨i, rfl⟩
+  · simp
+  rw [nth_adjoin_succ]
+  rcases zero_or_succ i with rfl | ⟨i, rfl⟩
+  · simp; norm_num
+  rw [nth_adjoin_succ]
+  rcases zero_or_succ i with rfl | ⟨i, rfl⟩
+  · simp; norm_num
+  rw [nth_adjoin_succ]
+  rcases zero_or_succ i with rfl | ⟨i, rfl⟩
+  · simp; norm_num
+  rw [nth_adjoin_succ]
+  rcases zero_or_succ i with rfl | ⟨i, rfl⟩
+  · simp; norm_num
+  exfalso
+  have e6 : i + 1 + 1 + 1 + 1 + 1 + 1 = i + 6 := by ring
+  rw [e6] at hi
+  exact absurd hi (not_lt.mpr le_add_self)
+
+/-- The seven-entry substitution restricted to the six frame variables is the description vector. -/
+lemma termSubstVec_descVecB_idVec6 (me opp k : V) :
+    termSubstVec LAct 6 (descVecB me opp k) (idVec6 : V) = descVec me opp := by
+  have h0 : IsUTerm LAct (^#0 : V) := (IsSemiterm.bvar.mpr (by norm_num : (0 : V) < 6)).isUTerm
+  have h1 : IsUTerm LAct (^#1 : V) := (IsSemiterm.bvar.mpr (by norm_num : (1 : V) < 6)).isUTerm
+  have h2 : IsUTerm LAct (^#2 : V) := (IsSemiterm.bvar.mpr (by norm_num : (2 : V) < 6)).isUTerm
+  have h3 : IsUTerm LAct (^#3 : V) := (IsSemiterm.bvar.mpr (by norm_num : (3 : V) < 6)).isUTerm
+  have h4 : IsUTerm LAct (^#4 : V) := (IsSemiterm.bvar.mpr (by norm_num : (4 : V) < 6)).isUTerm
+  have h5 : IsUTerm LAct (^#5 : V) := (IsSemiterm.bvar.mpr (by norm_num : (5 : V) < 6)).isUTerm
+  have e0 : IsUTermVec LAct 0 (0 : V) := IsUTermVec.empty
+  have e1 := e0.adjoin h5
+  have e2 := e1.adjoin h4
+  have e3 := e2.adjoin h3
+  have e4 := e3.adjoin h2
+  have e5 := e4.adjoin h1
+  unfold idVec6 descVecB descVec
+  rw [six_eq, termSubstVec_cons h0 e5, termSubstVec_cons h1 e4, termSubstVec_cons h2 e3,
+    termSubstVec_cons h3 e2, termSubstVec_cons h4 e1, termSubstVec_cons h5 e0, termSubstVec_nil,
+    termSubst_bvar, termSubst_bvar, termSubst_bvar, termSubst_bvar, termSubst_bvar, termSubst_bvar]
+  simp only [nth_adjoin_zero, nth_adjoin_one, nth_adjoin_two]
+  rw [show (3 : V) = 2 + 1 by norm_num, nth_adjoin_succ, nth_adjoin_two,
+    show (4 : V) = 2 + 1 + 1 by norm_num, nth_adjoin_succ, nth_adjoin_succ, nth_adjoin_two,
+    show (5 : V) = 2 + 1 + 1 + 1 by norm_num, nth_adjoin_succ, nth_adjoin_succ, nth_adjoin_succ, nth_adjoin_two]
+  simp only [nth_adjoin_zero, nth_adjoin_one]
+
+/-- **The gate lemma of route (c)**: a six-variable template never reads the budget slot — on every
+existing template the guard code with the node budget IS the guard code. -/
+theorem guardCodeB_of_template {g : V} (hg : IsSemiformula LAct 6 g) (me opp k : V) :
+    guardCodeB g me opp k = guardCode g me opp := by
+  have hid6 : IsSemitermVec LAct 6 6 (idVec6 : V) := idVec6_semitermVec (le_refl _)
+  have hid7 : IsSemitermVec LAct 6 7 (idVec6 : V) := idVec6_semitermVec (by norm_num)
+  have e : subst LAct (idVec6 : V) g = g := subst_eq_self hg hid6 nth_idVec6
+  unfold guardCodeB guardCode
+  calc subst LAct (descVecB me opp k) g
+      = subst LAct (descVecB me opp k) (subst LAct (idVec6 : V) g) := by rw [e]
+    _ = subst LAct (termSubstVec LAct 6 (descVecB me opp k) (idVec6 : V)) g :=
+        substs_substs hg (descVecB_semitermVec me opp k) hid7
+    _ = subst LAct (descVec me opp) g := by rw [termSubstVec_descVecB_idVec6]
+
 /-! ### `gsubst`: instantiate a template with the outer descriptions -/
 
 open scoped Classical in
@@ -208,6 +318,11 @@ the evaluator in ANY later frame `(me', opp')` is the instantiation by the OUTER
 theorem guardCode_gsubst {g : V} (hg : IsSemiformula LAct 6 g) (me opp me' opp' : V) :
     guardCode (gsubst me opp g) me' opp' = gsubst me opp g :=
   guardCode_of_sentence (isSemiformula_gsubst hg me opp) me' opp'
+
+/-- The same for the guard code with the node budget: an instantiated template is a sentence. -/
+theorem guardCodeB_gsubst {g : V} (hg : IsSemiformula LAct 6 g) (me opp me' opp' k : V) :
+    guardCodeB (gsubst me opp g) me' opp' k = gsubst me opp g :=
+  guardCodeB_of_sentence (isSemiformula_gsubst hg me opp) me' opp' k
 
 noncomputable def gsubstGraph : 𝚺₁.Semisentence 4 := .mkSigma
   “y me opp g. (!(isSemiformula LAct).sigma 6 g ∧ !guardCodeGraph y g me opp) ∨

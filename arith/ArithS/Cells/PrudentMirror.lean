@@ -691,10 +691,10 @@ theorem prudent_search_V (k : V)
     EvalGraph 3 (PrudentV k) MirrorV (PrudentV k) 0 := by
   have e0 : EvalGraph (0 + 1) (PrudentV k) MirrorV (pConst 0) (0 : V) := EvalGraph.const_iff.mpr rfl
   have e1 : EvalGraph (0 + 1 + 1) (PrudentV k) MirrorV (pSearch k (⌜tmplP2⌝ : V) (pConst 0) (pConst 1)) 0 :=
-    EvalGraph.search_iff.mpr (Or.inl ⟨h2, e0⟩)
+    (EvalGraph.search_iff₆ (isSemiformula_quote₆ tmplP2)).mpr (Or.inl ⟨h2, e0⟩)
   have e2 : EvalGraph (0 + 1 + 1 + 1) (PrudentV k) MirrorV
       (pSearch k (⌜tmplP1⌝ : V) (pSearch k (⌜tmplP2⌝ : V) (pConst 0) (pConst 1)) (pConst 1)) 0 :=
-    EvalGraph.search_iff.mpr (Or.inl ⟨h1, e1⟩)
+    (EvalGraph.search_iff₆ (isSemiformula_quote₆ tmplP1)).mpr (Or.inl ⟨h1, e1⟩)
   rwa [show (0 : V) + 1 + 1 + 1 = 3 by norm_num] at e2
 
 /-- **The transposed searcher's search clause against Mirror** (fuel 3): both guards ⇒ `D`. -/
@@ -704,10 +704,10 @@ theorem prudentT_search_V (k : V)
     EvalGraph 3 (PrudentTV k) MirrorV (PrudentTV k) 1 := by
   have e0 : EvalGraph (0 + 1) (PrudentTV k) MirrorV (pConst 1) (1 : V) := EvalGraph.const_iff.mpr rfl
   have e1 : EvalGraph (0 + 1 + 1) (PrudentTV k) MirrorV (pSearch k (⌜tmplP2T⌝ : V) (pConst 1) (pConst 0)) 1 :=
-    EvalGraph.search_iff.mpr (Or.inl ⟨h2, e0⟩)
+    (EvalGraph.search_iff₆ (isSemiformula_quote₆ tmplP2T)).mpr (Or.inl ⟨h2, e0⟩)
   have e2 : EvalGraph (0 + 1 + 1 + 1) (PrudentTV k) MirrorV
       (pSearch k (⌜tmplP1T⌝ : V) (pSearch k (⌜tmplP2T⌝ : V) (pConst 1) (pConst 0)) (pConst 0)) 1 :=
-    EvalGraph.search_iff.mpr (Or.inl ⟨h1, e1⟩)
+    (EvalGraph.search_iff₆ (isSemiformula_quote₆ tmplP1T)).mpr (Or.inl ⟨h1, e1⟩)
   rwa [show (0 : V) + 1 + 1 + 1 = 3 by norm_num] at e2
 
 /-- Mirror copies a fuel-3 play at fuel 4. -/

@@ -52,9 +52,21 @@ lemma EvalGraph.ite_iff {n me opp b a' p q a : V} :
 
 lemma EvalGraph.search_iff {n me opp k g p q a : V} :
     EvalGraph (n + 1) me opp (pSearch k g p q) a ↔
+    ((LenProvableV TAct k (guardCodeB g me opp k) ∧ EvalGraph n me opp p a) ∨
+     (¬LenProvableV TAct k (guardCodeB g me opp k) ∧ EvalGraph n me opp q a)) := by
+  rw [EvalGraph.case_iff]; simp
+
+/-- The code of a six-variable semisentence is a six-variable template. -/
+lemma isSemiformula_quote₆ (φ : Semisentence LAct 6) : IsSemiformula LAct 6 (⌜φ⌝ : V) := by
+  simpa using Sentence.quote_isSemiformula (V := V) φ
+
+/-- **The search clause on a six-variable template**: the budget slot is never read
+(`guardCodeB_of_template`), so the guard is `guardCode g me opp` — the pre-route-(c) reading. -/
+lemma EvalGraph.search_iff₆ {n me opp k g p q a : V} (hg : IsSemiformula LAct 6 g) :
+    EvalGraph (n + 1) me opp (pSearch k g p q) a ↔
     ((LenProvableV TAct k (guardCode g me opp) ∧ EvalGraph n me opp p a) ∨
      (¬LenProvableV TAct k (guardCode g me opp) ∧ EvalGraph n me opp q a)) := by
-  rw [EvalGraph.case_iff]; simp
+  rw [EvalGraph.search_iff, guardCodeB_of_template hg]
 
 end inversion
 

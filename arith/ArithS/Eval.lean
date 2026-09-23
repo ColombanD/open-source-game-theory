@@ -9,9 +9,10 @@ clause for clause:
 
 * `const a` plays `a`; `self` runs `me` in the same frame; `opp` runs `opp` in the same frame;
   `bot p` runs `p`; `ite b a' p q` runs `b`, then `p` if it played `a'`, else `q`;
-* `search k g p q` runs `p` if `TAct ⊢_k guardCode g me opp` (the runtime guard sentence of
-  `ArithS.Guard`: the six-variable template `g` filled with the descriptions of the frame,
-  provability by a proof of length `≤ k`), else `q`;
+* `search k g p q` runs `p` if `TAct ⊢_k guardCodeB g me opp k` (the runtime guard sentence of
+  `ArithS.Guard`: the template `g` filled with the descriptions of the frame in `#0..#5` AND the
+  node's own budget `bnum k` in `#6` — route (c), 2026-09-23; on a six-variable template this is
+  `guardCode g me opp`, `guardCodeB_of_template` — provability by a proof of length `≤ k`), else `q`;
 * `sim p q` substitutes the frame into `p` and `q` (`psubst`, `ArithS.Subst`: `pSelf ↦ me`,
   `pOpp ↦ opp`, `pBot` frozen, stored templates instantiated with the OUTER descriptions) and
   runs `p'` in the frame `(p', q')` — the engine's `.sim` clause, roadmap M3 step (b);
@@ -44,8 +45,8 @@ def Phi (C : Set V) (pr : V) : Prop :=
     ((r = a' ∧ ⟪n, me, opp, p, a⟫ ∈ C) ∨ (r ≠ a' ∧ ⟪n, me, opp, q, a⟫ ∈ C)) ∧
     pr = ⟪n + 1, me, opp, pIte b a' p q, a⟫) ∨
   (∃ n me opp k g p q a,
-    ((LenProvableV TAct k (guardCode g me opp) ∧ ⟪n, me, opp, p, a⟫ ∈ C) ∨
-      (¬LenProvableV TAct k (guardCode g me opp) ∧ ⟪n, me, opp, q, a⟫ ∈ C)) ∧
+    ((LenProvableV TAct k (guardCodeB g me opp k) ∧ ⟪n, me, opp, p, a⟫ ∈ C) ∨
+      (¬LenProvableV TAct k (guardCodeB g me opp k) ∧ ⟪n, me, opp, q, a⟫ ∈ C)) ∧
     pr = ⟪n + 1, me, opp, pSearch k g p q, a⟫)
 
 noncomputable def blueprint : Fixpoint.Blueprint 0 := ⟨.mkDelta
@@ -63,7 +64,7 @@ noncomputable def blueprint : Fixpoint.Blueprint 0 := ⟨.mkDelta
           ((r = a' ∧ ∃ t, !pair₅Def t n me opp p' a ∧ t ∈ C) ∨
            (r ≠ a' ∧ ∃ t, !pair₅Def t n me opp q a ∧ t ∈ C))) ∨
       (∃ k < p, ∃ g < p, ∃ p' < p, ∃ q < p, !pSearchGraph p k g p' q ∧
-        ∃ gc, !guardCodeGraph gc g me opp ∧
+        ∃ gc, !guardCodeBGraph gc g me opp k ∧
           ((!(lenProvableV TAct).sigma k gc ∧ ∃ t, !pair₅Def t n me opp p' a ∧ t ∈ C) ∨
            (¬!(lenProvableV TAct).pi k gc ∧ ∃ t, !pair₅Def t n me opp q a ∧ t ∈ C))) )”)
   (.mkPi “pr C.
@@ -80,7 +81,7 @@ noncomputable def blueprint : Fixpoint.Blueprint 0 := ⟨.mkDelta
           ((r = a' ∧ ∀ t, !pair₅Def t n me opp p' a → t ∈ C) ∨
            (r ≠ a' ∧ ∀ t, !pair₅Def t n me opp q a → t ∈ C))) ∨
       (∃ k < p, ∃ g < p, ∃ p' < p, ∃ q < p, !pSearchGraph p k g p' q ∧
-        ∀ gc, !guardCodeGraph gc g me opp →
+        ∀ gc, !guardCodeBGraph gc g me opp k →
           ((!(lenProvableV TAct).pi k gc ∧ ∀ t, !pair₅Def t n me opp p' a → t ∈ C) ∨
            (¬!(lenProvableV TAct).sigma k gc ∧ ∀ t, !pair₅Def t n me opp q a → t ∈ C))) )”)⟩
 
@@ -113,8 +114,8 @@ private lemma phi_iff (C pr : V) :
         ∃ r < pr + C + 1, ⟪n, me, opp, b, r⟫ ∈ C ∧
           ((r = a' ∧ ⟪n, me, opp, p', a⟫ ∈ C) ∨ (r ≠ a' ∧ ⟪n, me, opp, q, a⟫ ∈ C))) ∨
       (∃ k < p, ∃ g < p, ∃ p' < p, ∃ q < p, p = pSearch k g p' q ∧
-        ((LenProvableV TAct k (guardCode g me opp) ∧ ⟪n, me, opp, p', a⟫ ∈ C) ∨
-         (¬LenProvableV TAct k (guardCode g me opp) ∧ ⟪n, me, opp, q, a⟫ ∈ C))) ) := by
+        ((LenProvableV TAct k (guardCodeB g me opp k) ∧ ⟪n, me, opp, p', a⟫ ∈ C) ∨
+         (¬LenProvableV TAct k (guardCodeB g me opp k) ∧ ⟪n, me, opp, q, a⟫ ∈ C))) ) := by
   constructor
   · rintro (⟨n, me, opp, a, rfl⟩ | ⟨n, me, opp, a, h, rfl⟩ | ⟨n, me, opp, a, h, rfl⟩ |
       ⟨n, me, opp, p, a, h, rfl⟩ | ⟨n, me, opp, p, q, a, h, rfl⟩ |
@@ -238,8 +239,8 @@ lemma EvalGraph.case_iff {n me opp p a : V} :
       (∃ b a' p' q r, p = pIte b a' p' q ∧ EvalGraph n' me opp b r ∧
         ((r = a' ∧ EvalGraph n' me opp p' a) ∨ (r ≠ a' ∧ EvalGraph n' me opp q a))) ∨
       (∃ k g p' q, p = pSearch k g p' q ∧
-        ((LenProvableV TAct k (guardCode g me opp) ∧ EvalGraph n' me opp p' a) ∨
-         (¬LenProvableV TAct k (guardCode g me opp) ∧ EvalGraph n' me opp q a))) ) := by
+        ((LenProvableV TAct k (guardCodeB g me opp k) ∧ EvalGraph n' me opp p' a) ∨
+         (¬LenProvableV TAct k (guardCodeB g me opp k) ∧ EvalGraph n' me opp q a))) ) := by
   rw [EvalGraph, EvalFix.construction.case]
   simp only [EvalFix.construction, EvalFix.Phi, Set.mem_setOf_eq, pair_ext_iff]
   constructor

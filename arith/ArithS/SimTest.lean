@@ -54,7 +54,7 @@ theorem sim_search_outer_guard (n k g p q me opp a : ℕ) (hg : IsSemiformula LA
       (¬LenProvableV TAct k (guardCode g me opp) ∧
         EvalGraph n (pSearch k (gsubst me opp g) (psubst me opp p) (psubst me opp q)) me
           (psubst me opp q) a)) := by
-  rw [EvalGraph.sim_iff, psubst_search, psubst_self, EvalGraph.search_iff, guardCode_gsubst hg,
+  rw [EvalGraph.sim_iff, psubst_search, psubst_self, EvalGraph.search_iff, guardCodeB_gsubst hg,
     gsubst_of_template hg]
 
 end ArithS

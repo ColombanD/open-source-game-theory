@@ -515,7 +515,7 @@ theorem cimcic_search_V (k opp : V) :
   intro h
   rw [show (2 : V) = 1 + 1 from one_add_one_eq_two.symm]
   show EvalGraph (1 + 1) (CimcicV k) opp (pSearch k (⌜tmplC⌝ : V) (pConst 0) (pConst 1)) 0
-  rw [EvalGraph.search_iff]
+  rw [EvalGraph.search_iff₆ (isSemiformula_quote₆ tmplC)]
   left
   refine ⟨h, ?_⟩
   rw [show (1 : V) = 0 + 1 by simp, EvalGraph.const_iff]
@@ -527,7 +527,7 @@ theorem cimcicT_search_V (k opp : V) :
   intro h
   rw [show (2 : V) = 1 + 1 from one_add_one_eq_two.symm]
   show EvalGraph (1 + 1) (CimcicTV k) opp (pSearch k (⌜tmplCT⌝ : V) (pConst 1) (pConst 0)) 1
-  rw [EvalGraph.search_iff]
+  rw [EvalGraph.search_iff₆ (isSemiformula_quote₆ tmplCT)]
   left
   refine ⟨h, ?_⟩
   have e : EvalGraph (0 + 1) (CimcicTV k) opp (pConst 1) 1 := EvalGraph.const_iff.mpr rfl

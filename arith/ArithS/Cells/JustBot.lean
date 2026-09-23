@@ -105,7 +105,7 @@ theorem dupoc_frame_search_V (k me opp : V) :
   intro h
   rw [show (2 : V) = 1 + 1 from one_add_one_eq_two.symm]
   show EvalGraph (1 + 1) me opp (pSearch k (⌜GtmplA 0⌝ : V) (pConst 0) (pConst 1)) 0
-  rw [EvalGraph.search_iff]
+  rw [EvalGraph.search_iff₆ (isSemiformula_quote₆ (GtmplA 0))]
   left
   refine ⟨h, ?_⟩
   rw [show (1 : V) = 0 + 1 by simp, EvalGraph.const_iff]
@@ -116,7 +116,7 @@ theorem cupod_frame_search_V (k me opp : V) :
   intro h
   rw [show (2 : V) = 1 + 1 from one_add_one_eq_two.symm]
   show EvalGraph (1 + 1) me opp (pSearch k (⌜GtmplA 1⌝ : V) (pConst 1) (pConst 0)) 1
-  rw [EvalGraph.search_iff]
+  rw [EvalGraph.search_iff₆ (isSemiformula_quote₆ (GtmplA 1))]
   left
   refine ⟨h, ?_⟩
   have e : EvalGraph (0 + 1) me opp (pConst 1) 1 := EvalGraph.const_iff.mpr rfl
@@ -656,7 +656,8 @@ theorem just_search_V (k opp : V) :
   intro h
   rw [show (2 : V) = 1 + 1 from one_add_one_eq_two.symm]
   show EvalGraph (1 + 1) (JustV k) opp (pSearch k (gJ k) (pConst 0) (pConst 1)) 0
-  rw [EvalGraph.search_iff, guardCode_JustV]
+  have hgJ : IsSemiformula LAct 6 (gJ k) := (isSemiformula_quote₆ (GtmplA 0)).subst (jVec_semitermVec k)
+  rw [EvalGraph.search_iff₆ hgJ, guardCode_JustV]
   left
   refine ⟨h, ?_⟩
   rw [show (1 : V) = 0 + 1 by simp, EvalGraph.const_iff]

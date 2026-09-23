@@ -183,12 +183,12 @@ theorem evalGraph_of_eval_core (hga : GuardAgree) :
       · rw [if_pos hg] at h
         obtain ⟨N, hN⟩ := ih me opp p a hIp h
         refine ⟨N + 1, ?_⟩
-        rw [pcode_search, EvalGraph.search_iff, guardCode_tcode_pcode]
+        rw [pcode_search, EvalGraph.search_iff₆ (isSemiformula_tcode φ), guardCode_tcode_pcode]
         exact Or.inl ⟨(hga.at_node hI).mp ((PD.BaseTheorems.proofSearch_spec k _).mp hg), hN⟩
       · rw [if_neg hg] at h
         obtain ⟨N, hN⟩ := ih me opp q a hIq h
         refine ⟨N + 1, ?_⟩
-        rw [pcode_search, EvalGraph.search_iff, guardCode_tcode_pcode]
+        rw [pcode_search, EvalGraph.search_iff₆ (isSemiformula_tcode φ), guardCode_tcode_pcode]
         exact Or.inr ⟨fun hl ↦ hg ((PD.BaseTheorems.proofSearch_spec k _).mpr
           ((hga.at_node hI).mpr hl)), hN⟩
     | tvote v θ p q => exact (Inv.tvote hI).elim
@@ -262,7 +262,7 @@ theorem eval_of_evalGraph_core (hga : GuardAgree) :
         exact PD.BaseTheorems.eval_mono_le h₂ _ (le_max_right _ _)
     | search k φ p q =>
       obtain ⟨_, hIp, hIq⟩ := Inv.search hI
-      rw [pcode_search, EvalGraph.search_iff, guardCode_tcode_pcode] at h
+      rw [pcode_search, EvalGraph.search_iff₆ (isSemiformula_tcode φ), guardCode_tcode_pcode] at h
       rcases h with ⟨hl, hp⟩ | ⟨hl, hq⟩
       · obtain ⟨a, rfl, n, hn⟩ := ih me opp p r hIp hp
         have hg : PD.proofSearch k (φ.subst me opp) = true :=

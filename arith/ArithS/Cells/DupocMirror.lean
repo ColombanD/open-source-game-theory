@@ -277,7 +277,7 @@ theorem dupoc_mirror_search_V (k : V) :
   intro h
   rw [show (2 : V) = 1 + 1 from one_add_one_eq_two.symm]
   show EvalGraph (1 + 1) (DupocV k) MirrorV (pSearch k (⌜GtmplA 0⌝ : V) (pConst 0) (pConst 1)) 0
-  rw [EvalGraph.search_iff]
+  rw [EvalGraph.search_iff₆ (isSemiformula_quote₆ (GtmplA 0))]
   left
   refine ⟨h, ?_⟩
   rw [show (1 : V) = 0 + 1 by simp, EvalGraph.const_iff]
@@ -290,7 +290,7 @@ theorem cupod_mirror_search_V (k : V) :
   intro h
   rw [show (2 : V) = 1 + 1 from one_add_one_eq_two.symm]
   show EvalGraph (1 + 1) (CupodV k) MirrorV (pSearch k (⌜GtmplA 1⌝ : V) (pConst 1) (pConst 0)) 1
-  rw [EvalGraph.search_iff]
+  rw [EvalGraph.search_iff₆ (isSemiformula_quote₆ (GtmplA 1))]
   left
   refine ⟨h, ?_⟩
   have e : EvalGraph (0 + 1) (CupodV k) MirrorV (pConst 1) 1 := EvalGraph.const_iff.mpr rfl

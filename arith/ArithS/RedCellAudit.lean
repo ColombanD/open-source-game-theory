@@ -74,7 +74,7 @@ theorem guards_both_fail (k : ℕ) :
     obtain ⟨n, hn⟩ := evalGraph_of_guard ((guard_Dupoc_iff_guard_Cupod k).mp hD)
     have hcoop : EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 0 := by
       show EvalGraph (1 + 1) (Dupoc k) (Cupod k) (pSearch k (⌜GtmplA 0⌝ : ℕ) (pConst 0) (pConst 1)) 0
-      rw [EvalGraph.search_iff]
+      rw [EvalGraph.search_iff₆ (isSemiformula_quote₆ (GtmplA 0))]
       exact Or.inl ⟨hD, (EvalGraph.const_iff (n := 0)).mpr rfl⟩
     exact dupoc_not_coop k 2 hcoop
   exact ⟨hD, fun h ↦ hD ((guard_Dupoc_iff_guard_Cupod k).mpr h)⟩
