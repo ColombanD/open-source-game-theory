@@ -70,6 +70,7 @@ import ArithS.Cells.JustBot
 import ArithS.Cells.DIMCID
 import ArithS.Cells.PrudentMirror
 import ArithS.Cells.CIMCIC
+import ArithS.Cells.SearchFree
 
 /-!
 # ArithS.Audit — the axiom census of the arithmetized layer
@@ -2277,5 +2278,85 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms prudent_mirror_coop_unconditional
 #print axioms prudentT_mirror_defect_unconditional
 #print axioms prudent_finds_guards_vs_mirror_unconditional
+
+
+-- Route B Phase 4, the SEARCH-FREE class (Cells/SearchFree, 2026-09-23) — the 28 SF cells of `ROUTE_B_CENSUS.md`
+-- (both players in {CooperateBot, DefectBot, MirrorBot, TitForTatBot, DBot, EBot, OBot}: `const/sim/ite` only) in
+-- PA-`S'` at ℕ, UNCONDITIONAL (no oracle, no Löb, no floor, no budget: the evaluator never consults `□_k`). The
+-- engine's `OutcomeSpec .nobudget pad` theorems are TRANSFERRED at the SAME fuel: `evalGraph_of_eval_searchFree`
+-- (the `Inv true` clause-by-clause induction of `AgentConverse.evalGraph_of_eval_core`, fuels coinciding, the
+-- `.search` arm vacuous), the bridge `outcome_evalGraph_of_searchFree` / `outcomeSpec_evalGraph_of_searchFree`
+-- (an engine outcome at fuel `n` on search-free proper modest players = the pair of arithmetized plays at fuel
+-- `n`), the seven players as `SearchFreePlayer`, the 27 terminating cells `sf_<L>_vs_<R> : EvalGraph pad ⌜L⌝ ⌜R⌝
+-- ⌜L⌝ a ∧ EvalGraph pad ⌜R⌝ ⌜L⌝ ⌜R⌝ b` at the engine's pads (1–11), the `none` cell `sf_MirrorBot_vs_MirrorBot`
+-- as NON-termination at every fuel (`SimTest.mirror_vs_mirror`), PA proving every positive atom
+-- (`pa_proves_trAt_of_evalGraph`: an arithmetized play at ℕ ⇒ the instantiated atom sentence is a PA theorem by
+-- Σ₁-completeness, no engine certificate; `pa_<L>_vs_<R> : 𝗣𝗔 ⊢ Aι L R a ∧ 𝗣𝗔 ⊢ Aι R L b`), and the census in one
+-- line each: `searchFree_census` (28 cells), `searchFree_pa_census` (54 atoms).
+#print axioms evalGraph_of_eval_searchFree_core
+#print axioms evalGraph_of_eval_searchFree
+#print axioms play_evalGraph_of_searchFree
+#print axioms outcome_evalGraph_of_searchFree
+#print axioms outcomeSpec_evalGraph_of_searchFree
+#print axioms pa_proves_trAt_of_evalGraph
+#print axioms pa_cell_of_evalGraph
+#print axioms pcode_MirrorBot
+#print axioms sf_CooperateBot_vs_CooperateBot
+#print axioms sf_CooperateBot_vs_DefectBot
+#print axioms sf_DBot_vs_CooperateBot
+#print axioms sf_DBot_vs_DBot
+#print axioms sf_DBot_vs_DefectBot
+#print axioms sf_DefectBot_vs_DefectBot
+#print axioms sf_EBot_vs_CooperateBot
+#print axioms sf_EBot_vs_DBot
+#print axioms sf_EBot_vs_DefectBot
+#print axioms sf_EBot_vs_EBot
+#print axioms sf_EBot_vs_MirrorBot
+#print axioms sf_EBot_vs_OBot
+#print axioms sf_EBot_vs_TitForTatBot
+#print axioms sf_MirrorBot_vs_CooperateBot
+#print axioms sf_MirrorBot_vs_DBot
+#print axioms sf_MirrorBot_vs_DefectBot
+#print axioms sf_MirrorBot_vs_MirrorBot
+#print axioms sf_MirrorBot_vs_OBot
+#print axioms sf_MirrorBot_vs_TitForTatBot
+#print axioms sf_OBot_vs_CooperateBot
+#print axioms sf_OBot_vs_DBot
+#print axioms sf_OBot_vs_DefectBot
+#print axioms sf_OBot_vs_OBot
+#print axioms sf_OBot_vs_TitForTatBot
+#print axioms sf_TitForTatBot_vs_CooperateBot
+#print axioms sf_TitForTatBot_vs_DBot
+#print axioms sf_TitForTatBot_vs_DefectBot
+#print axioms sf_TitForTatBot_vs_TitForTatBot
+#print axioms pa_CooperateBot_vs_CooperateBot
+#print axioms pa_CooperateBot_vs_DefectBot
+#print axioms pa_DBot_vs_CooperateBot
+#print axioms pa_DBot_vs_DBot
+#print axioms pa_DBot_vs_DefectBot
+#print axioms pa_DefectBot_vs_DefectBot
+#print axioms pa_EBot_vs_CooperateBot
+#print axioms pa_EBot_vs_DBot
+#print axioms pa_EBot_vs_DefectBot
+#print axioms pa_EBot_vs_EBot
+#print axioms pa_EBot_vs_MirrorBot
+#print axioms pa_EBot_vs_OBot
+#print axioms pa_EBot_vs_TitForTatBot
+#print axioms pa_MirrorBot_vs_CooperateBot
+#print axioms pa_MirrorBot_vs_DBot
+#print axioms pa_MirrorBot_vs_DefectBot
+#print axioms pa_MirrorBot_vs_OBot
+#print axioms pa_MirrorBot_vs_TitForTatBot
+#print axioms pa_OBot_vs_CooperateBot
+#print axioms pa_OBot_vs_DBot
+#print axioms pa_OBot_vs_DefectBot
+#print axioms pa_OBot_vs_OBot
+#print axioms pa_OBot_vs_TitForTatBot
+#print axioms pa_TitForTatBot_vs_CooperateBot
+#print axioms pa_TitForTatBot_vs_DBot
+#print axioms pa_TitForTatBot_vs_DefectBot
+#print axioms pa_TitForTatBot_vs_TitForTatBot
+#print axioms searchFree_census
+#print axioms searchFree_pa_census
 
 end ArithS
