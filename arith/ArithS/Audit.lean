@@ -68,6 +68,7 @@ import ArithS.Necessitation.ClosedNec
 import ArithS.Cells.DupocMirror
 import ArithS.Cells.JustBot
 import ArithS.Cells.DIMCID
+import ArithS.Cells.PrudentMirror
 import ArithS.Cells.CIMCIC
 
 /-!
@@ -2220,5 +2221,61 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms cimcic_self_finds_guard
 #print axioms cimcic_self_coop
 #print axioms cimcic_finds_guardOf_self
+
+-- Route B Phase 2, the PrudentBot family (Cells/PrudentMirror, 2026-09-23) — the NESTED-search Löb family. STEP 0:
+-- `PrudentBot k`'s two stored templates are budget-free constants (`tmplP1`/`tmplP2`; `.bot DefectBot` is closed), so
+-- `PrudentV k` is a `bnum k`-instance of a fixed two-`#0` term (`TP`, `termSubst_tower'`/`termSubst_TP`) — NOT the JustBot
+-- obstruction; the bridge is `pcode_PrudentBot`. The cost of the nesting: the canonical description compares two
+-- `k`-dependent codes, so `dnum/dU/dW` are `k`-uniform only above the standard threshold `KP` (`nested_search_lt`, an
+-- ordered-semiring argument on `ppair`; `dnum_PrudentV`), and the family's slack `S₀ = 14 + KP` supplies it inside the
+-- Löb premise. Generic template instances for an ARBITRARY six-variable template (`guardCode_qT_eq_instB`, its swap,
+-- `eval_qT_iff`) and the atom over a closed program (`eval_tmpl_plays_opp_closed_V`). The family `pPM = (qPM ⋏ qPP) ⋏
+-- (qPMT ⋏ qPPT)` carries the PRUDENCE guard as a conjunct: the engine's inner-search citation (`searchThenSearch_t` +
+-- `prudence_provable`) becomes an ∧-elimination from the same box (`pPM_all_V`), prudence itself being a closed true
+-- Σ₁ fact in every model (`mirror_bot_defect_V`). `loebSound_pPM : LoebSound pPM (14 + KP) 16`, then the cells:
+-- **`prudent_mirror_coop_unconditional`** — `EvalGraph 3 (Prudent k) Mirror (Prudent k) 0 ∧ EvalGraph 4 Mirror (Prudent k)
+-- Mirror 0` for all large `k`, the `(C, C)` cell (engine `outcome_PrudentBot_vs_MirrorBot`) — and the transposed
+-- searcher's `(D, D)` twin, plus the box forms (Prudent FINDS both its guards within `k`).
+#print axioms pcode_PrudentBot
+#print axioms swapcode_PrudentV
+#print axioms nested_search_lt
+#print axioms innerP2_ne_innerT2
+#print axioms PrudentV_lt_PrudentTV
+#print axioms dnum_PrudentV
+#print axioms dU_PrudentV
+#print axioms dW_PrudentV
+#print axioms relabel_val_uP_wP_V
+#print axioms relabel_val_uPT_wPT_V
+#print axioms termSubst_tower'
+#print axioms val_TP_V
+#print axioms termSubst_TP
+#print axioms guardCode_qT_eq_instB
+#print axioms guardCode_qT_swap_eq_instB
+#print axioms eval_qT_iff
+#print axioms eval_tmpl_plays_opp_closed_V
+#print axioms guardCode_PrudentV_MirrorV_eq_instB
+#print axioms guardCode_PrudentV_MirrorV_inner_eq_instB
+#print axioms guardCode_PrudentTV_MirrorV_eq_instB
+#print axioms guardCode_PrudentTV_MirrorV_inner_eq_instB
+#print axioms eval_qPM_iff_V
+#print axioms eval_qPP_iff_V
+#print axioms eval_qPMT_iff_V
+#print axioms eval_qPPT_iff_V
+#print axioms mirror_bot_defect_V
+#print axioms mirror_bot_coop_V
+#print axioms prudent_search_V
+#print axioms prudentT_search_V
+#print axioms pPM_all_V
+#print axioms pPM_guards_V
+#print axioms eval_pPM_iff_std
+#print axioms eval_pPM_iff_swap
+#print axioms loebSound_pPM
+#print axioms prudent_mirror_cell_core
+#print axioms prudent_mirror_coop
+#print axioms prudentT_mirror_defect
+#print axioms prudent_finds_guards_vs_mirror
+#print axioms prudent_mirror_coop_unconditional
+#print axioms prudentT_mirror_defect_unconditional
+#print axioms prudent_finds_guards_vs_mirror_unconditional
 
 end ArithS

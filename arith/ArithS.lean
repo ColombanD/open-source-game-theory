@@ -91,6 +91,7 @@ import ArithS.Necessitation.ClosedNec
 import ArithS.Cells.DupocMirror
 import ArithS.Cells.JustBot
 import ArithS.Cells.DIMCID
+import ArithS.Cells.PrudentMirror
 import ArithS.Cells.CIMCIC
 import ArithS.Neg
 import ArithS.Agent
