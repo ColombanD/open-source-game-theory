@@ -4,7 +4,44 @@ import ArithS.Cells.JustBot
 import ArithS.Cells.PrudentMirror
 
 /-!
-# ArithS.Cells.PositiveCells — the POS class of the census in PA-`S'` (draft)
+# ArithS.Cells.PositiveCells — the POS class of the census in PA-`S'`, and the unreadability cells re-evaluated
+
+`Research/Notes/ROUTE_B_SCOPE.md` §3 Phase 4, class **POS** of `ROUTE_B_CENSUS.md` (2026-09-23): cells whose
+searcher FINDS its guard without Löb (the engine's `search_t` on a search-free atom, `weakenImpl`, `atomNeg`),
+unconditional in `S'` (no `BoundedInnerNec`), for all large `k`. The mechanism is `cimcic_self_coop`'s, made
+generic: the guard is the `bnum k`-instance of a FIXED one-variable formula `q` (`guardCode_qT_eq_instB` with
+the searcher's description triple), `q(k)` is true in BOTH standard readings of every model, so `TAct ⊢ ∀¹ q`
+by completeness (`tact_all_of_both`), and the instance at `bnum k` costs `K₀ + K₁·size k ≤ k` (`found_of_all`).
+
+1. **The constant opponents** `pConst 0`, `pConst 1`, `pBot (pConst 0)`, `pBot (pConst 1)`: canonical codes,
+   re-valuation terms, closed structural terms `T0`/`TB0`, the code hypotheses `hX_const_*`/`hU_*`/`hW_*` and the
+   value equations `val_desc_*`.
+2. **The generic engine-searcher description layer**: `SV g a k := pSearch k ⌜g⌝ (pConst a) (pConst (1 - a))`,
+   `swapcode_SV`, the canonical triple `dnum_SV`/`dU_SV`/`dW_SV` (`Cells/CIMCIC.lean` §2 with the template and
+   branch as parameters), the tower `TS`, `hX_SV`, and the reconstructions `relabel_val_uS_wS_V`/`_uST_wST_V`.
+   It puts the ENGINE codes `pcode (DupocBot k)`, `pcode (CupodBot k)`, `pcode (WaryBot k)` on the same footing as
+   `Cimcic k`/`Dimcid k`; the bot tower `TBS` describes the frozen snapshot `pBot (pcode (DupocBot k))`, and
+   `guardCode_JustBot_eq` shows Just's consulted guard IS Dupoc's engine guard in the snapshot's frame.
+3. **The closure**: `tact_all_of_both`, `found_of_all`; the generic truth of a play-atom template instance in
+   both triples (`eval_qT_plays_opp_self`, `eval_qT_neg_plays_opp_self`, `eval_qT_swap`), the plays of constants
+   in every model and their negations by determinism (`const_play_V`, `bot_const_play_V`, `const_not_play_V`).
+4. **The cells**: `pos_DupocBot_vs_CooperateBot` `(C, C)`, `pos_CupodBot_vs_DefectBot` `(D, D)`,
+   `pos_CIMCIC_vs_CooperateBot` `(C, C)`, `pos_DIMCID_vs_DefectBot` `(D, D)`, `pos_JustBot_vs_CooperateBot` `(C, C)`
+   (on the engine's own code), `pos_WaryBot_vs_DefectBot` `(D, D)` (the `.neg` guard is a Π₁ truth by
+   determinism — the `S'` twin of `Pf.atomNeg`), and the SND cells whose positive sub-fact is the searcher finding
+   its guard against `.bot DefectBot`: `snd_CupodBot_vs_DBot`/`_EBot` and `snd_WaryBot_vs_DBot`/`_EBot`, all `(C, C)`.
+5. **The unreadability cells re-evaluated** (census classes FLOOR(cenU)/OTHER, where PA reads every source):
+   * CIMCIC's guard against an opponent that defects against it is SELF-REFUTING (found ⇒ CIMCIC cooperates ⇒ by
+     soundness the opponent cooperates — against the fact): `cimcic_selfref_not_found`, so
+     `snd_CIMCIC_vs_DefectBot` `(D, D)` at EVERY `k` and `snd_CIMCIC_vs_OBot` `(D, D)` for large `k` keep the
+     engine's values by soundness instead of the unreadability census.
+   * **DIMCID × CooperateBot FLIPS**: the engine's `(C, C)` becomes `(D, C)` — DIMCID's guard "I play C against
+     CooperateBot ⇒ CooperateBot plays D against me" has a false consequent, so it says "I do not cooperate"; a
+     proof of it makes DIMCID defect, which makes it TRUE, and bounded Löb (`family_found` on the family
+     `pG (cl T0) (cterm C) (cterm D)`, `loebSound_pDi0`) finds it: `loeb_DIMCID_vs_CooperateBot`.
+
+Conventions: every threshold EXISTENTIAL; `simp` never sees a closed quote (`innerS` is irreducible); `omega` is
+never asked about `V`; `≤` at ℕ bridged by `le_def`.
 -/
 
 set_option linter.constructorNameAsVariable false
@@ -882,5 +919,146 @@ theorem snd_WaryBot_vs_EBot :
   exact ⟨EvalGraph.mono_le (by omega) (wary_C_of_probe k sfp_EBot.1 hE), hE⟩
 
 end cells
+
+/-! ### 7. The UNREADABILITY cells re-evaluated in `S'` (census class FLOOR(cenU)/OTHER) -/
+
+section unreadability
+
+lemma pcode_CIMCIC' (k : ℕ) : pcode (CIMCIC k) = pSearch k (tcode phiC) (pConst 0) (pConst 1) := by
+  simp [CIMCIC, phiC, actCode]
+lemma proper_CIMCIC (k : ℕ) : Proper (CIMCIC k) := ⟨by simp [CIMCIC], by simp [CIMCIC]⟩
+
+/-- **CIMCIC's guard against an opponent that defects against it is SELF-REFUTING**: a proof of
+"I play C against `opp` ⇒ `opp` plays C against me" makes CIMCIC cooperate, so by soundness `opp`
+cooperates — against the fact. So it is never found (the red cell's argument, one level up). -/
+theorem cimcic_selfref_not_found (k : ℕ) {opp : PD.Prog} (hopp : Proper opp) {N : ℕ}
+    (h : EvalGraph N (pcode opp) (pcode (CIMCIC k)) (pcode opp) 1) :
+    ¬ LenProvableV TAct k (guardCode (tcode phiC) (pcode (CIMCIC k)) (pcode opp)) := by
+  intro hf
+  have hC : EvalGraph 2 (pcode (CIMCIC k)) (pcode opp) (pcode (CIMCIC k)) 0 := by
+    rw [pcode_CIMCIC'] at hf ⊢
+    exact search_then phiC hf (const_play _ _ _ _)
+  have hT : ℕ↓[LAct] ⊧ trAt (CIMCIC k) opp phiC :=
+    models_trAt_of_lenProvableV (φ := phiC) (me := CIMCIC k) (opp := opp) hf
+  rw [← trAt_subst (CIMCIC k) opp (proper_CIMCIC k) hopp phiC rfl] at hT
+  change ℕ↓[LAct] ⊧ trAt (CIMCIC k) opp (.impl (.plays (CIMCIC k) opp .C) (.plays opp (CIMCIC k) .C)) at hT
+  rw [models_trAt_impl, models_trAt_plays _ _ _ _ _ (proper_CIMCIC k) hopp,
+    models_trAt_plays _ _ _ _ _ hopp (proper_CIMCIC k)] at hT
+  obtain ⟨N', hN'⟩ := hT ⟨2, hC⟩
+  exact absurd (EvalGraph.unique' hN' h) (by decide)
+
+/-- `CIMCIC × DefectBot = (D, D)` (engine `outcome_CIMCIC_vs_DefectBot`, pad 2) at EVERY `k`: in `S'` the
+guard is true but self-refuting, hence never found — the census's unreadability argument replaced by
+soundness. -/
+theorem snd_CIMCIC_vs_DefectBot (k : ℕ) :
+    EvalGraph 2 (pcode (CIMCIC k)) (pcode DefectBot) (pcode (CIMCIC k)) (actCode .D) ∧
+    EvalGraph 2 (pcode DefectBot) (pcode (CIMCIC k)) (pcode DefectBot) (actCode .D) := by
+  have hn := cimcic_selfref_not_found k sfp_DefectBot.1 (N := 1) (by rw [pcode_DB]; exact const_play 0 _ _ _)
+  rw [pcode_CIMCIC'] at hn ⊢
+  exact ⟨search_else phiC hn (const_play _ _ _ _), by rw [pcode_DB]; exact const_play 1 _ _ _⟩
+
+/-- CIMCIC defects against `.bot DefectBot` at every `k` (self-refuting guard). -/
+theorem cimcic_vs_botDB (k : ℕ) :
+    EvalGraph 2 (pcode (CIMCIC k)) (pBot (pConst 1)) (pcode (CIMCIC k)) 1 := by
+  have hn := cimcic_selfref_not_found k (opp := .bot DefectBot) proper_botDB (N := 2)
+    (by rw [pcode_botDB]; exact bot_const_play 0 _ _ _)
+  rw [pcode_botDB] at hn
+  rw [pcode_CIMCIC'] at hn ⊢
+  exact search_else phiC hn (const_play _ _ _ _)
+
+/-- CIMCIC's guard against `.bot CooperateBot`: the consequent "`.bot CooperateBot` plays C against me" is
+a closed truth, so the implication is a `TAct`-theorem in `k`. -/
+noncomputable def qCiB0 : Semisentence LAct 1 := qCG (cl TB0) (cterm Act.C) (cterm Act.D)
+
+theorem guardCode_CiB0 (k : V) :
+    guardCode (⌜tmplC⌝ : V) (CimcicV k) (pBot (pConst 0)) = instB (⌜qCiB0⌝ : V) k :=
+  guardCode_CimcicV_eq_instB k (cl TB0) _ _ (hX_bot_zero k) hU_C_bot_zero hW_D_bot_zero
+
+theorem tact_qCiB0 : TAct ⊢ ∀¹ qCiB0 := by
+  refine tact_all_of_both _ (fun M _ _ x ↦ ?_) (fun M _ _ x ↦ ?_)
+  · have : M↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
+    rw [qCiB0, eval_qCG_iff_V x _ _ _ (val_desc_bot_zero x)]
+    exact fun _ ↦ bot_const_play_V _ _ _
+  · have : M↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
+    rw [qCiB0, eval_qCG_swap_iff_V, lMap_swap_cl, lMap_swap_TB0, lMap_swap_cterm_C, lMap_swap_cterm_D,
+      eval_qCTG_iff_V x _ _ _ (val_desc_bot_one x)]
+    exact fun _ ↦ bot_const_play_V _ _ _
+
+/-- CIMCIC cooperates with `.bot CooperateBot` for all large `k` (its guard is found). -/
+theorem cimcic_vs_botCB_found :
+    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k → EvalGraph 2 (pcode (CIMCIC k)) (pBot (pConst 0)) (pcode (CIMCIC k)) 0 := by
+  obtain ⟨k₀, h⟩ := found_of_all tact_qCiB0
+    (fun k ↦ guardCode (⌜tmplC⌝ : ℕ) (Cimcic k) (pBot (pConst 0))) (fun k ↦ guardCode_CiB0 (V := ℕ) k)
+  refine ⟨k₀, fun k hk ↦ ?_⟩
+  rw [pcode_CIMCIC]
+  exact cimcic_search_V (V := ℕ) k (pBot (pConst 0)) (h k hk)
+
+/-- `CIMCIC × OBot = (D, D)` (engine `outcome_CIMCIC_vs_OBot`, pad 5) for all large `k`: OBot sees CIMCIC
+cooperate with `.bot CooperateBot` (found) but defect against `.bot DefectBot` (self-refuting), and defects;
+CIMCIC's guard against OBot is then self-refuting too. -/
+theorem snd_CIMCIC_vs_OBot :
+    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
+      EvalGraph 5 (pcode (CIMCIC k)) (pcode OBot) (pcode (CIMCIC k)) (actCode .D) ∧
+      EvalGraph 5 (pcode OBot) (pcode (CIMCIC k)) (pcode OBot) (actCode .D) := by
+  obtain ⟨k₀, h⟩ := cimcic_vs_botCB_found
+  refine ⟨k₀, fun k hk ↦ ?_⟩
+  have hO := obot_D_of_probes (h k hk) (cimcic_vs_botDB k)
+  have hn := cimcic_selfref_not_found k sfp_OBot.1 hO
+  refine ⟨?_, hO⟩
+  rw [pcode_CIMCIC'] at hn ⊢
+  exact search_else phiC hn (const_play 3 _ _ _)
+
+/-! #### DIMCID × CooperateBot: the value FLIPS in `S'` — a self-fulfilling refutation is Löb-provable -/
+
+lemma pcode_DIMCID' (k : ℕ) : pcode (DIMCID k) = pSearch k (tcode phiD) (pConst 1) (pConst 0) := by
+  simp [DIMCID, phiD, actCode]
+
+/-- **The bounded Löb premise of DIMCID against CooperateBot, slack `(7, 8)`**: a box of the family makes
+DIMCID defect against CooperateBot and the transposed searcher cooperate with DefectBot, so the
+antecedents "I play C against CooperateBot" / "I play D against DefectBot" are false and both
+implications hold, in both readings. -/
+theorem loebSound_pDi0 : LoebSound (pG (cl T0) (cterm Act.C) (cterm Act.D)) 7 8 := by
+  intro V _ _ k a ha h
+  have : V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
+  have ha' : a + 8 * (formulaLen LAct (instB (⌜qDG (cl T0) (cterm Act.C) (cterm Act.D)⌝ : V) k) +
+      formulaLen LAct (instB (⌜qTG (Semiterm.lMap swap (cl T0 : Semiterm LAct Empty 1))
+        (Semiterm.lMap swap (cterm Act.C)) (Semiterm.lMap swap (cterm Act.D))⌝ : V) k)) + 7 ≤ k :=
+    le_trans (pConj_slack_le a _ _ _ (formulaLen_instB_pG (cl T0) (cterm Act.C) (cterm Act.D) k)) ha
+  obtain ⟨h1, h2⟩ := pG_both_V k (cl T0) (cterm Act.C) (cterm Act.D) (hX_const_zero k) hU_C_zero hW_D_zero a ha' h
+  rw [swapcode_pConst_zero] at h2
+  have hopp' : relabel ((Semiterm.lMap swap (cterm Act.C : ClosedSemiterm LAct 0)).val (s := stdActV V) ![] Empty.elim)
+      ((Semiterm.lMap swap (cterm Act.D : ClosedSemiterm LAct 0)).val (s := stdActV V) ![] Empty.elim)
+      ((Semiterm.lMap swap (cl T0 : Semiterm LAct Empty 1)).val (s := stdActV V) ![k] Empty.elim) = pConst 1 := by
+    rw [lMap_swap_cl, lMap_swap_T0, lMap_swap_cterm_C, lMap_swap_cterm_D]
+    exact val_desc_const_one k
+  have hA : ¬ ∃ n, EvalGraph n (DimcidV k) (pConst 0) (DimcidV k) 0 := by
+    rintro ⟨n, hn⟩
+    exact _root_.zero_ne_one (EvalGraph.unique_V' n 2 _ _ _ _ _ hn h1)
+  have hB : ¬ ∃ n, EvalGraph n (DimcidTV k) (pConst 1) (DimcidTV k) 1 := by
+    rintro ⟨n, hn⟩
+    exact _root_.one_ne_zero (EvalGraph.unique_V' n 2 _ _ _ _ _ hn h2)
+  exact ⟨(eval_pG_iff_stdActS k (cl T0) (cterm Act.C) (cterm Act.D) (val_desc_const_zero k) hopp').mpr
+      ⟨fun h ↦ absurd h hA, fun h ↦ absurd h hB⟩,
+    (eval_pG_iff_swap k (cl T0) (cterm Act.C) (cterm Act.D) (val_desc_const_zero k) hopp').mpr
+      ⟨fun h ↦ absurd h hA, fun h ↦ absurd h hB⟩⟩
+
+/-- **DIMCID × CooperateBot is `(D, C)` in PA-`S'`**, for all large `k`, unconditional — the engine's cell is
+`(C, C)` (`outcome_DIMCID_vs_CooperateBot`, an unreadability census). In `S'` the guard "I play C against
+CooperateBot ⇒ CooperateBot plays D against me" has a false consequent, so it says "I do not cooperate":
+a proof of it makes DIMCID defect, which makes it TRUE — bounded Löb (`family_found`) then finds it. -/
+theorem loeb_DIMCID_vs_CooperateBot :
+    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
+      EvalGraph 2 (pcode (DIMCID k)) (pcode CooperateBot) (pcode (DIMCID k)) (actCode .D) ∧
+      EvalGraph 2 (pcode CooperateBot) (pcode (DIMCID k)) (pcode CooperateBot) (actCode .C) := by
+  obtain ⟨k₀, h⟩ := family_found (pG (cl T0) (cterm Act.C) (cterm Act.D)) boundedInnerNec_sixteen loebSound_pDi0
+  refine ⟨k₀, fun k hk ↦ ⟨?_, by rw [pcode_CB]; exact const_play 1 _ _ _⟩⟩
+  obtain ⟨a, ha, hpc⟩ := h k hk
+  have ha' := le_def.mpr (pConj_slack_nat a _ _ _ k
+    (formulaLen_instB_pG (V := ℕ) (cl T0) (cterm Act.C) (cterm Act.D) k) ha)
+  have h1 := pG_both_V (V := ℕ) k (cl T0) (cterm Act.C) (cterm Act.D) (hX_const_zero k) hU_C_zero hW_D_zero a ha' hpc
+  rw [pcode_DIMCID, pcode_CB]
+  exact h1.1
+
+end unreadability
 
 end ArithS

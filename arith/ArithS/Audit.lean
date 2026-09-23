@@ -2618,4 +2618,19 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms snd_WaryBot_vs_DBot
 #print axioms snd_WaryBot_vs_EBot
 
+-- (the unreadability cells re-evaluated) CIMCIC's guard against an opponent that defects against it is
+-- SELF-REFUTING (`cimcic_selfref_not_found`): `snd_CIMCIC_vs_DefectBot` `(D, D)` at every `k`, `snd_CIMCIC_vs_OBot`
+-- `(D, D)` for large `k` — the engine's values, by soundness instead of the unreadability census. And the FIRST
+-- FLIPPED cell: `loeb_DIMCID_vs_CooperateBot` — DIMCID × CooperateBot is `(D, C)` in `S'` (engine: `(C, C)`), the
+-- self-fulfilling refutation "I do not cooperate" found by bounded Löb (`loebSound_pDi0`, `family_found`).
+#print axioms cimcic_selfref_not_found
+#print axioms snd_CIMCIC_vs_DefectBot
+#print axioms cimcic_vs_botDB
+#print axioms guardCode_CiB0
+#print axioms tact_qCiB0
+#print axioms cimcic_vs_botCB_found
+#print axioms snd_CIMCIC_vs_OBot
+#print axioms loebSound_pDi0
+#print axioms loeb_DIMCID_vs_CooperateBot
+
 end ArithS

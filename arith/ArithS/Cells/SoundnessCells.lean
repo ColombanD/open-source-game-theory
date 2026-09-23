@@ -10,7 +10,42 @@ import PrisonersDilemma.Bots.LlmGenerations.JustBot
 import PrisonersDilemma.Bots.CupodTrollBot
 
 /-!
-# ArithS.Cells.SoundnessCells — the SND and POS classes of the census in PA-`S'` (draft)
+# ArithS.Cells.SoundnessCells — the SND class of the census in PA-`S'`, and Guardian's positive cells
+
+`Research/Notes/ROUTE_B_SCOPE.md` §3 Phase 4, class **SND** of `ROUTE_B_CENSUS.md` (2026-09-23): the 36 cells
+whose searcher takes its ELSE branch because its guard is semantically FALSE — the red cell's argument
+(`RedCell.lean`), cell by cell, with no oracle, no Löb, no floor and no budget threshold (every `k`, or all large
+`k` where a positive sub-fact is needed).
+
+1. **The general SND lemma** `snd_else_of_false : ¬ (ℕ ⊨ trAt me opp φ) → ¬ LenProvableV TAct k (guardOf φ me opp)`
+   (`TAct` is sound in ℕ, `models_trAt_of_lenProvableV`), and the realization of a fragment guard in a proper
+   frame as the realization of its CLOSED instantiation in any frame, `trAt_subst` (`tmpl_subst` + the closed
+   description terms are fixed by every rewriter). Truth equations for the guard shapes that were missing:
+   `models_trAt_neg`, `models_trAt_impl`, `models_trAt_eq` (the `.eq` atom is code equality).
+2. **The "not found" lemmas per guard shape** (`not_found_opp_self`, `_opp_bot`, `_neg_opp_self`, `_eq_opp`):
+   the arithmetized sub-play of the OTHER program, by determinism (`EvalGraph.unique'`), refutes the guard.
+3. **The closed-atom positive kit**: `tact_proves_plays_closed` (a true closed atom about search-free players is
+   a `TAct`-theorem: Σ₁-completeness of PA at ℕ in both readings — `lMap_swap_trAt_plays` needs no atomicity,
+   the transposed play comes from the engine's `decide` through the search-free lockstep transfer — and
+   `tact_complete'`), `found_of_tact` (found above the proof length).
+4. **The engine's codes** (`pcode_GuardianBot`, …, `pcode_PrudentBot'`), the search clause on engine templates
+   (`search_else`/`search_then`/`search_either` — a node whose two branches agree needs NO verdict: Prudent's
+   outer guard, Dupoc's and Just's probe against `.bot CooperateBot` inside OBot), and the search-free probers'
+   plays from their probe results (`dbot_*`, `tft_*`, `obot_*`, `ebot_*`, `mirror_copies`).
+5. **Template disjointness** for CupodTroll's `.eq` guard is SEMANTIC (`tcode_ne_of_models`: two guards whose
+   realizations differ in truth at ONE frame have different codes) — Guardian vs Cupod at `(TitForTatBot, DBot)`,
+   CupodTroll vs Cupod at `(CooperateBot, CupodBot k)`, Wary vs Cupod at the NON-TERMINATING frame
+   `(MirrorBot, MirrorBot)` (a terminating frame never separates `¬(plays C)` from `plays D`).
+6. **The cells** `snd_<L>_vs_<R>`, at the engine's pads, stated on the engine's own codes `pcode (L k)`:
+   Guardian 8 (`× EBot`/`× OBot` need Guardian's guard FOUND against `.bot DefectBot`: its guard names no `.self`,
+   so against a closed opponent its realization is a FIXED closed atom, `guardian_found`), CupodTroll 8,
+   Prudent 6, Wary 4, Cupod 2, Dupoc 2, Just 2 (on `pcode (JustBot k)`, the frozen snapshot evaluated as Dupoc's
+   body in its own frame). Plus the two Guardian POS cells `pos_GuardianBot_vs_DefectBot`/`_DBot`.
+   Wary's `× DBot`/`× EBot` and Cupod's `× DBot`/`× EBot` need the searcher's OWN description (a `.self` guard
+   found against `.bot DefectBot`): `Cells/PositiveCells.lean`.
+
+Conventions: every threshold EXISTENTIAL; `simp` never sees a closed quote; the `≤` at ℕ is `Nat.le`;
+statements pin the fuel to the engine's pad (`EvalGraph.mono_le` lifts).
 -/
 
 set_option linter.constructorNameAsVariable false
