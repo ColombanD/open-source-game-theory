@@ -21,13 +21,33 @@ bounded inner necessitation with polynomial expansion (degree 16), **proved** ra
 assumed. Its proof is the `Necessitation/` directory: a verification proof built as a derivation
 code inside every model of IΣ₁, never writing a code as a numeral.
 
+## The matrix in PA-`S'` (route B, 2026-09-23/24)
+
+`ArithS/Cells/*.lean`: **112 of the engine's 155 cells have an `S'` statement; 97 agree with the
+engine, 15 disagree** — all unconditional, all three standard axioms. By mechanism: the 14 in-scope
+Löbian cells (single Löb, MUTUAL Löb as a conjunction family, nested searches, frozen `.bot`
+snapshots), 28 search-free cells (transferred from the engine at the same fuel), 36 cells closed by
+soundness (the guard is false, so no proof of any length exists), 14 positive cells (the guard is a
+`TAct`-theorem, found by instantiation, no Löb), and the disagreements. The ledger and the plan:
+`../engine/PrisonersDilemma/Research/Notes/ROUTE_B_SCOPE.md`, `ROUTE_B_CENSUS.md`.
+
+**The disagreements are theorems.** The engine closes them by censuses that rest on a player being
+unreadable by `S`'s rules; PA reads every source. `ArithS.dimcid_vs_closed` (`Cells/DimcidFlips.lean`):
+in `S'`, DIMCID defects against every closed program — its guard "my cooperating implies X" is
+self-fulfilling for any `X` — while the engine has it cooperating in thirteen cells, including the
+universal `outcome_DIMCID_vs_DupocBot = (C, D)`, contradicted in `S'` for all large `k`
+(`ArithS.loeb_DIMCID_vs_DupocBot`). Deliberately outside `S'`: floors (a proof-length lower bound in
+PA, dropped), LegibleBot (a box inside a guard), OptimBot, WaryBot's floor cells, the tau constructors.
+
 ## What a reader must accept by eye (the trusted base)
 
-Eight definitions, under 300 lines in total: the theory `TAct` (PA plus two action constants,
+Nine definitions, under 350 lines in total: the theory `TAct` (PA plus two action constants,
 distinct and equal to 0/1 in some order — `TheoryAct.lean`), the length measure `dlen`
 (`DerivationLength.lean`), the bounded box `LenProvableV` (`BewV.lean`), the program codes
-(`Prog.lean`), the guard template and program descriptions (`Template.lean`, `Guard.lean`), and
-the evaluator `EvalGraph` (`Eval.lean`). Everything else is a theorem about these. Why each is
+(`Prog.lean`), the guard template and program descriptions (`Template.lean`, `Guard.lean`),
+the budget slot `guardCodeB` a template may read (`Guard.lean`, route (c), 2026-09-23 — with the
+gate lemma `guardCodeB_of_template` proving a six-variable template never reads it), the
+substitution `psubst`/`gsubst` (`Subst.lean`), and the evaluator `EvalGraph` (`Eval.lean`). Everything else is a theorem about these. Why each is
 what it is, the alternative, and what breaks without it:
 `../engine/PrisonersDilemma/Research/Notes/SPRIME_DESIGN_RATIONALE.md`.
 
@@ -44,10 +64,13 @@ against an abstract hypothesis package, then instantiated with the engine's `S` 
 
 ## Relation to the engine's rule system
 
-The engine's `S` is this system plus one rule: a free citation of an existing proof (its box
-rules are additive; PA's verification is polynomial). No matrix result depends on that rule
-(`../engine/PrisonersDilemma/Research/Notes/BOXCOST_SPIKE.md`); how the two systems should be
-related in the paper is the open decision in `MERGE_CROSSROAD.md` in the same directory.
+The engine's `S` is this system plus one rule — a free citation of an existing proof (its box
+rules are additive; PA's verification is polynomial, `BOXCOST_SPIKE.md`) — and MINUS the reading
+of sources its rules do not cover, which is where the 15 disagreements come from. A rule-by-rule
+bridge `S → S'` at polynomial budgets is impossible (citation composes doubly-exponentially
+through nested boxes: `MERGE_CROSSROAD.md`); the decision (2026-09-23) was route B — re-prove the
+cells directly (`ROUTE_B_SCOPE.md`). The T2 bridge modules (`Core/`, `Agent`, `AgentConverse`,
+`Inst`, `Det`) are frozen.
 
 ## Building
 
@@ -59,12 +82,14 @@ lake build --try-cache ArithS     # first time: downloads Foundation's prebuilt 
 lake env lean ArithS/Audit.lean    # prints the axiom census
 ```
 
-A full incremental build is about 3300 jobs; a single file check needs ~5 GB of imports.
+A full incremental build is about 3350 jobs; a single file check needs ~5 GB of imports.
 
 ## Reading order
 
 1. `../engine/PrisonersDilemma/Research/Notes/ARITHMETIZED_S_RESULTS.md` — what is proved.
 2. `SPRIME_DESIGN_RATIONALE.md` — why the definitions are what they are.
 3. `RED_CELL_AUDIT.md` — how the meaning is pinned; then the three audit files above.
-4. `MERGE_CROSSROAD.md`, `BOXCOST_SPIKE.md` — the engine/PA relation and the open decision.
-5. `ARITHMETIZED_S_ROADMAP.md` — the full construction log (M1 → U10), for the details.
+4. `ROUTE_B_SCOPE.md`, `ROUTE_B_CENSUS.md` — the matrix programme, its ledger, the flips, the traps.
+5. `MERGE_CROSSROAD.md`, `BOXCOST_SPIKE.md` — why there is no rule bridge, and the engine's box cost.
+6. `ARITHMETIZED_S_ROADMAP.md` — the full construction log (M1 → U10 → route B), for the details.
+7. `HANDOVER_ARITHMETIZED_S.md` — build recipe, agent workflow, and the trap lists.

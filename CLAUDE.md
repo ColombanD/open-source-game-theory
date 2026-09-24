@@ -10,6 +10,10 @@ halves, in dependency order:
    sits on top of it.**
 2. **`app/`** — a Python service (`pd_runner`) that drives an LLM to generate bots from
    natural language and prove their outcomes against the engine.
+3. **`arith/`** — the arithmetized system **PA-`S'`** on Foundation: the engine's `S`
+   replaced by Peano Arithmetic with a length-bounded box, Critch's PBLT proved
+   unconditionally, and the matrix re-proved cell by cell (Part III). Standalone package;
+   requires the engine, never imported by it.
 
 Other top-level: `latex/` (paper), `Research/` notes live under the engine, `README.md`,
 `critch22.pdf` (the source paper), `Pipeline Figure.jpeg`.
@@ -695,3 +699,60 @@ raises); `test_faces_hawk_dove` asserted exact float equality on a linear-solve 
 0.3 to 0.8 takes extreme NE 43→25, stable faces 4→2, and SCCs 5→7. No pure ESS exists
 on any zoo tried so far, reproducing the standalone repo's qualitative finding on
 different (certified) data.
+
+---
+
+# Part III — PA-`S'`: the arithmetized proof system (`arith/ArithS`, since 2026-09-09)
+
+**What it is.** The engine's `S` is a STIPULATED rule set (33 `Pf` constructors). `arith/` builds the
+system Critch actually describes — **Peano Arithmetic with a provability predicate bounded by proof
+LENGTH** — on the Foundation library (FormalizedFormalLogic), and re-proves the engine's results in
+it. It is a standalone lake package (`cd arith && lake build ArithS`, ~3350 jobs; the engine is a path
+dependency, the engine never imports it). Three standard axioms end to end; the census is every
+`#print axioms` the build runs (`ArithS/Audit.lean` + three audit files; ~1580 lines, all
+`[propext, Classical.choice, Quot.sound]` but four pre-existing subsets). **Read first:**
+`Research/Notes/SPRIME_DESIGN_RATIONALE.md` (the trusted base: what a reader accepts by eye),
+`ARITHMETIZED_S_RESULTS.md` (what is proved), `ROUTE_B_SCOPE.md` + `ROUTE_B_CENSUS.md` (the
+cell-by-cell programme and its ledger), `HANDOVER_ARITHMETIZED_S.md` §1 (build recipe, traps —
+there are MANY, and they are the reason single-file checks and existential thresholds are the norm).
+
+| Layer | File(s) | What it defines |
+|---|---|---|
+| **Theory** | `LangAct`, `TheoryAct` | `LAct = ℒₒᵣ + {c_C, c_D}`; `TAct = PA ∪ {c_C ≠ c_D, c_D ≠ c_C, axAct}` (the constants are `0/1` in one of two orders); τ = the constant swap, a language automorphism; the two standard readings `stdActS`/`swapActS` and `tact_complete'` (completeness over exactly those) — the whole positive method; soundness in ℕ — the whole negative method. |
+| **Length** | `Length`, `SequentLength`, `DerivationLength`, `MetaLength`, `Proper` | `dlen`: the STRUCTURAL symbol count of a coded derivation (symbol-blind, so τ preserves it EXACTLY; weakening and ∃-witnesses charged so it is PROPER: `fbound k = exp³(12k)+1`); `dlen ⌜d⌝ = mlen d`. Residue: unary variable indices. |
+| **The box** | `Bew`, `BewV`, `CutV`, `ProperV` | `□_k σ := ∃ d < fbound k, Proof TAct d ⌜σ⌝ ∧ dlen d ≤ k` (`LenProvableV`, Δ₁, the evaluator's box) and `LenDerivable` (Σ₁, no code bound, the Löb argument's box), equal in every model (`ProperV`). Bounded D2 with length accounting (`CutV`). |
+| **Agents** | `Prog`, `ProgT`, `RelabelTemplate`, `Bnum`, `Template`, `Guard`, `Subst`, `Code` | Program codes on the polynomial pairing `ppair` (term-expressible, unlike Foundation's `pair`); descriptions are TERMS in binary numerals (`progT`, Critch's (b)); templates: the six-variable `GtmplA` and the general translation `tmpl : PD.Formula → Semisentence LAct 6`; `psubst`/`gsubst` = the engine's one-shot `Prog.subst` (`.bot` frozen, guards read the OUTER players); **route (c), 2026-09-23**: a SEVENTH template slot `#6` filled with the node's own budget at guard time (`descVecB`/`guardCodeB`; gate lemma `guardCodeB_of_template`: a six-variable template never reads it) — a bot whose guard freezes a budget-carrying snapshot (`JustBot k` with `DupocBot k` inside, `CupodTrollBot k` with `CupodBot k`) is otherwise NOT a `bnum k`-instance of any fixed formula (`ROUTE_B_SCOPE.md` §7); the constant-template twins `Just7`/`CupodTroll7` play identically in every frame. |
+| **Evaluator** | `Eval`, `EvalN`, `SimTest`, `Transparency`, `Det`, `Agent`, `AgentConverse`, `Inst` | `EvalGraph n me opp p a`: a Σ₁ fixpoint mirroring the engine's `eval` clause by clause; `search` consults `LenProvableV TAct k (guardCodeB g me opp k)`; deterministic and fuel-monotone; in LOCKSTEP with the engine's `eval` on search-free constructors (same fuel). Truth equations ("the sentence says what the program does"). T2 (2026-09-10, FROZEN): the engine's Löbian core is a fragment of GL over PA (`Core/`), evaluation certificates are arithmetized runs (`Agent`). |
+| **PBLT** | `Diag`, `InstV`, `NumeralFacts`, `Assembly/{Prep,Family,Cell}`, `Necessitation/*`, `Necessitation/{Package,ClosedNec}` | The parametric diagonal lemma over `TAct`; Critch 2019's UNIFORM proof of the parametric bounded Löb theorem, **family-parametric** since 2026-09-23 (`LoebSound p S₀ S₁` — a proof of `p(k)` within the budget makes `p(k)` true in both readings — and `family_found`, the arithmetized `pblt_engine`); its one hypothesis, bounded inner necessitation (Critch's (d)), is a THEOREM: `boundedInnerNec_sixteen` (U10, 2026-09-16, degree 16 — a verification proof built as a derivation code in every model, never writing a code as a numeral; ~35 modules) and `closedInnerNec_sixteen` (any budget, any closed sentence). `pblt_unconditional`, `dupoc_self_coop_unconditional`. |
+| **Cells** | `RedCell`, `Cells/*` | The engine's matrix re-proved in `S'` (route B, 2026-09-23/24): `red_cell` (every `k`, τ-symmetry + soundness, no Löb); `Cells/{DupocMirror,JustBot,DIMCID,CIMCIC,PrudentMirror,JustSlot,KhatCells}` (all 14 in-scope Löbian cells: single, MUTUAL as a conjunction family, nested searches, frozen `.bot`), `SearchFree` (28, by transfer at the engine's fuel), `SoundnessCells` (36 SND: guard false ⇒ else branch by soundness), `PositiveCells` (14 POS: `TAct ⊢ ∀¹ q` by completeness + instantiation, Löb-free), `FlipCells`/`DimcidFlips` (the DISAGREEMENTS). |
+
+**The ledger (2026-09-24): 112 of the engine's 155 cells have an `S'` statement; 97 agree, 15
+DISAGREE.** The disagreements are theorems, not gaps: the engine closes them by censuses that rest on a
+player being UNREADABLE by `S`'s rules (`no_provable_tailTo_unreadable`, the WV valuation censuses),
+and PA reads every source. `dimcid_vs_closed`: **in `S'`, DIMCID defects against every closed
+program** — its guard "my cooperating implies X" is self-fulfilling for any `X` — while the engine has
+it cooperating in thirteen cells, including the UNIVERSAL `outcome_DIMCID_vs_DupocBot = (C, D)`, which
+`S'` contradicts for all large `k`. Sentence for the paper: *the engine's `S` is PA plus free citation
+(its box rules are additive; PA's verification is polynomial — U10) and MINUS the reading of sources its
+rules do not cover; the two departures pull in opposite directions, and the second changes outcomes.*
+The natural next engine step is a sound reading rule that closes the blind spot (the Tier-2 constructor
+flow; the `S'` proofs are its soundness certificates).
+
+**Deliberately outside `S'`:** floors (`search_f`: a proof-length LOWER bound in PA, Pudlák-grade —
+DROPPED 2026-09-23, the 32 FLOOR(cen) cells and the 4 companions stay the engine's results); LegibleBot
+(a box INSIDE a guard: `box_guard_never_fits` — a body slot, like route (c), would fix it); OptimBot;
+WaryBot's floor cells; the tau constructors. **T2 (`Core/`, `Agent`, `AgentConverse`, `Inst`, `Det`) is
+frozen** — the rule bridge `S → S'` was shown IMPOSSIBLE at polynomial budgets (`MERGE_CROSSROAD.md`:
+citation composes doubly-exponentially through nested boxes; `search_t` cites at `log k`); route B
+re-proves cells directly instead.
+
+**Working conventions (binding, from two months of traps):** all results "for all large `k`" with
+EXISTENTIAL thresholds (Cantor coding makes every constant astronomical — never quote one); `simp` must
+never see a closed Gödel quote (state for a variable sentence, bridge by `rfl`); `omega` is useless on
+`V` (`le_self_add`/`gcongr` under `open PeanoMinus`); at `V = ℕ` `<` is Nat's but `≤` is `le_def`;
+never compile Foundation or mathlib (`lake build --try-cache`; `arith/.lake` is a symlink outside
+OneDrive); ONE lake build on the machine at a time; single-file checks with `timeout 900 lake env lean`
+and CHECK THE EXIT CODE (`${pipestatus[1]}` in zsh); agents: one `Cells/<Bot>.lean` per family, targeted
+builds per agent, the coordinator runs the one full build, commit by file name only; every new module is
+imported in BOTH `ArithS.lean` and `Audit.lean`. The per-file trap lists live in `ROUTE_B_SCOPE.md` §6
+and `HANDOVER_ARITHMETIZED_S.md` §1/§6.
