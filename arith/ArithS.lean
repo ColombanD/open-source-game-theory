@@ -93,6 +93,7 @@ import ArithS.Cells.Common.Bots
 import ArithS.Cells.Common.Templates
 import ArithS.Cells.Common.Probers
 import ArithS.Cells.Common.Families
+import ArithS.Cells.Common.Khat
 import ArithS.Cells.DupocMirror
 import ArithS.Cells.JustBot
 import ArithS.Cells.DIMCID

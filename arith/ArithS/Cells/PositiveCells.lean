@@ -74,63 +74,6 @@ end searcher
 
 section closure
 
-/-- **A `TAct`-theorem `∀¹ q` true in both readings, by completeness** (`tact_proves_qCC`'s shape). -/
-theorem tact_all_of_both (q : Semisentence LAct 1)
-    (hstd : ∀ (M : Type) [ORingStructure M] [M↓[ℒₒᵣ] ⊧* 𝗣𝗔] (x : M),
-      Semiformula.Eval (s := stdActV M) ![x] Empty.elim q)
-    (hswap : ∀ (M : Type) [ORingStructure M] [M↓[ℒₒᵣ] ⊧* 𝗣𝗔] (x : M),
-      Semiformula.Eval (s := swapActS M) ![x] Empty.elim q) :
-    TAct ⊢ ∀¹ q := by
-  refine tact_complete' _ fun M _ _ ↦ ?_
-  have : M↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
-  constructor
-  · simp only [Semiformula.eval_all]
-    intro x
-    rw [← stdActV_eq_stdActS]
-    exact hstd M x
-  · simp only [Semiformula.eval_all]
-    intro x
-    exact hswap M x
-
-/-- **The instance of a `TAct`-theorem `∀¹ q` at `bnum k` fits the budget `k` for all large `k`**
-(`cimcic_self_finds_guard`'s body, generic in `q` and in the guard-code family `G`): the instance
-costs `K₀ + K₁·size k` (`lenProvable_inst_size` + `flen_subst_bnumT_le`), below `k` eventually
-(`linear_size_le_eventually`). -/
-theorem found_of_all {q : Semisentence LAct 1} (hq : TAct ⊢ ∀¹ q) (G : ℕ → ℕ)
-    (hG : ∀ k, G k = instB (⌜q⌝ : ℕ) k) :
-    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k → LenProvableV TAct k (G k) := by
-  obtain ⟨N₃, hN₃⟩ := lenProvable_of_provable hq
-  obtain ⟨kHat, hkHat⟩ :=
-    linear_size_le_eventually (N₃ + 13 * flen (q : Semiproposition LAct 1) + 8 + 30 * flen (q : Semiproposition LAct 1) + 6)
-  refine ⟨kHat + 1, fun k hk ↦ ?_⟩
-  have h1 := lenProvable_inst_size q k hN₃
-  have hqt := flen_subst_bnumT_le q k
-  set fq := flen (q : Semiproposition LAct 1) with hfq
-  set s := Nat.size k with hs
-  have hs1 : 0 < s := Nat.lt_size.mpr (by rw [pow_zero]; omega)
-  have hpoly := hkHat ℕ k (le_def.mpr (Or.inr (by rw [natCast_nat]; omega)))
-  rw [natCast_nat, ← size_eq_length] at hpoly
-  have hpoly' : (N₃ + 13 * fq + 8 + 30 * fq + 6) * s ≤ k := by
-    rcases le_def.mp hpoly with h | h
-    · exact Nat.le_of_eq h
-    · exact Nat.le_of_lt h
-  have hle : N₃ + 5 * flen ((q ⇜ ![Semiterm.lMap emb (bnumT k)] : Sentence LAct) : Proposition LAct)
-      + 3 * fq + 6 * s + 8 ≤ k := by
-    calc N₃ + 5 * flen ((q ⇜ ![Semiterm.lMap emb (bnumT k)] : Sentence LAct) : Proposition LAct)
-          + 3 * fq + 6 * s + 8
-        ≤ N₃ + 5 * (fq * (6 * s + 2)) + 3 * fq + 6 * s + 8 := by gcongr
-      _ = (N₃ + 13 * fq + 8) + (30 * fq + 6) * s := by ring
-      _ ≤ (N₃ + 13 * fq + 8) * s + (30 * fq + 6) * s := by
-          gcongr; exact Nat.le_mul_of_pos_right _ hs1
-      _ = (N₃ + 13 * fq + 8 + 30 * fq + 6) * s := by ring
-      _ ≤ k := hpoly'
-  have h2 := lenProvable_fbound_mono hle h1
-  rw [← lenProvableV_nat] at h2
-  have hq' : instB (⌜q⌝ : ℕ) k = ⌜(q ⇜ ![Semiterm.lMap emb (bnumT k)] : Sentence LAct)⌝ := by
-    have := quote_instB (V := ℕ) q k
-    rwa [natCast_nat] at this
-  rw [hG, hq']
-  exact h2
 
 end closure
 

@@ -1121,55 +1121,13 @@ theorem qCC_inst_V {N : V} (h : LenDerivable TAct N (⌜(∀¹ qCC : Sentence LA
   rw [guardCode_CimcicV_self_eq_instB]
   exact lenDerivable_instB_V (Sentence.quote_isSemiformul₁ qCC) h
 
-/-- **Linear functions of the bit length are eventually below `k`** (`poly_size_le_eventually` at
-degree 1, with the `^ 1` removed in the V-generic instance — at ℕ the two `Monoid` instances on
-`‖k‖ ^ 1` do not match syntactically). -/
-theorem linear_size_le_eventually (C : ℕ) :
-    ∃ kHat : ℕ, ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] (k : V),
-      (kHat : V) ≤ k → (C : V) * ‖k‖ ≤ k := by
-  obtain ⟨kHat, h⟩ := poly_size_le_eventually C 1
-  exact ⟨kHat, fun V _ _ k hk ↦ by have := h V k hk; rwa [pow_one] at this⟩
 
 /-- **CIMCIC finds its guard against itself, for all large `k`, with NO hypothesis**: at ℕ the instance
 of the tautology costs `K₀ + K₁·size k` (`lenProvable_inst_size` + `flen_subst_bnumT_le`), below `k`
-for all large `k` (`linear_size_le_eventually`). -/
+for all large `k` (`linear_size_le_eventually`) — `Common/Khat.found_of_all`, the generic form of this argument. -/
 theorem cimcic_self_finds_guard :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k → LenProvableV TAct k (guardCode (⌜tmplC⌝ : ℕ) (Cimcic k) (Cimcic k)) := by
-  obtain ⟨N₃, hN₃⟩ := lenProvable_of_provable tact_proves_qCC
-  obtain ⟨kHat, hkHat⟩ :=
-    linear_size_le_eventually (N₃ + 13 * flen (qCC : Semiproposition LAct 1) + 8 + 30 * flen (qCC : Semiproposition LAct 1) + 6)
-  refine ⟨kHat + 1, fun k hk ↦ ?_⟩
-  -- the instance at `bnumT k`, with its length
-  have h1 := lenProvable_inst_size qCC k hN₃
-  have hqt := flen_subst_bnumT_le qCC k
-  set fq := flen (qCC : Semiproposition LAct 1) with hfq
-  set s := Nat.size k with hs
-  have hs1 : 0 < s := Nat.lt_size.mpr (by rw [pow_zero]; omega)
-  -- the linear bound is below `k`
-  have hpoly := hkHat ℕ k (le_def.mpr (Or.inr (by rw [natCast_nat]; omega)))
-  rw [natCast_nat, ← size_eq_length] at hpoly
-  have hpoly' : (N₃ + 13 * fq + 8 + 30 * fq + 6) * s ≤ k := by
-    rcases le_def.mp hpoly with h | h
-    · exact Nat.le_of_eq h
-    · exact Nat.le_of_lt h
-  have hle : N₃ + 5 * flen ((qCC ⇜ ![Semiterm.lMap emb (bnumT k)] : Sentence LAct) : Proposition LAct)
-      + 3 * fq + 6 * s + 8 ≤ k := by
-    calc N₃ + 5 * flen ((qCC ⇜ ![Semiterm.lMap emb (bnumT k)] : Sentence LAct) : Proposition LAct)
-          + 3 * fq + 6 * s + 8
-        ≤ N₃ + 5 * (fq * (6 * s + 2)) + 3 * fq + 6 * s + 8 := by gcongr
-      _ = (N₃ + 13 * fq + 8) + (30 * fq + 6) * s := by ring
-      _ ≤ (N₃ + 13 * fq + 8) * s + (30 * fq + 6) * s := by
-          gcongr; exact Nat.le_mul_of_pos_right _ hs1
-      _ = (N₃ + 13 * fq + 8 + 30 * fq + 6) * s := by ring
-      _ ≤ k := hpoly'
-  have h2 := lenProvable_fbound_mono hle h1
-  rw [← lenProvableV_nat] at h2
-  have hq : instB (⌜qCC⌝ : ℕ) k = ⌜(qCC ⇜ ![Semiterm.lMap emb (bnumT k)] : Sentence LAct)⌝ := by
-    have := quote_instB (V := ℕ) qCC k
-    rwa [natCast_nat] at this
-  show LenProvableV TAct k (guardCode (⌜tmplC⌝ : ℕ) (CimcicV k) (CimcicV k))
-  rw [guardCode_CimcicV_self_eq_instB, hq]
-  exact h2
+  exact found_of_all tact_proves_qCC _ fun k ↦ guardCode_CimcicV_self_eq_instB (V := ℕ) k
 
 /-- **CIMCIC × CIMCIC `(C, C)` in PA-`S'`, unconditional and Löb-free**: for all large `k`,
 `Cimcic k` cooperates with itself (fuel 2). -/

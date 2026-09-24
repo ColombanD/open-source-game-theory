@@ -70,6 +70,7 @@ import ArithS.Cells.Common.Bots
 import ArithS.Cells.Common.Templates
 import ArithS.Cells.Common.Probers
 import ArithS.Cells.Common.Families
+import ArithS.Cells.Common.Khat
 import ArithS.Cells.DupocMirror
 import ArithS.Cells.JustBot
 import ArithS.Cells.DIMCID
@@ -2199,9 +2200,6 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 -- slack_depth_le (slack4_*/slack6_* are corollaries, in place); loebSound_pG_of/_of_above moved into DIMCID after
 -- pG with the NEW describes_dimcid/describes_mirror (DIMCID) and describes_CB (Common/Templates) making
 -- loebSound_pDD/_pDMi/_pDi0 corollaries. Only the names not already printed elsewhere.
-#print axioms nat_le_of_le_def
-#print axioms pQ_def
-#print axioms lMap_swap_pQ
 #print axioms instB_quote_pQ
 #print axioms formulaLen_instB_pQ
 #print axioms eval_pQ_std
@@ -2211,6 +2209,11 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms describes_CB
 #print axioms describes_dimcid
 #print axioms describes_mirror
+
+-- Consolidation stage 6 (Cells/Common/Khat, 2026-09-24): the k̂-chain — linear_size_le_eventually (ex-CIMCIC),
+-- tact_all_of_both/found_of_all (ex-PositiveCells; cimcic_self_finds_guard is now found_of_all tact_proves_qCC),
+-- found_of_all_V/tact_all_above_of_both/exists_instance_length_above/found_of_all_above (ex-KhatCells), BoxConseq
+-- & co (ex-FlipCells) — MOVED unchanged. Only the theorems not already printed elsewhere.
 
 -- Route B Phase 2, cell 1 — Dupoc × Mirror `(C, C)` and Cupod × Mirror `(D, D)` in PA-`S'` (Cells/DupocMirror,
 -- 2026-09-23), the first Löb family after self-play, on the family-parametric assembly: Mirror in every model
