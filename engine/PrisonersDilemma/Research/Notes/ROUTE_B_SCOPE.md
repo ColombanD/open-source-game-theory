@@ -414,3 +414,8 @@ alongside (c)); SND/POS wait for (c) to settle.
   `Nat.cast_id` does not fire on that cast either (`natCast_nat` does); `Template.lMap_swap_dnumT` already
   exists with the OTHER normal form (`dnumT (swapcode x)`) — a same-named local lemma is silently shadowed
   by the import and the `rw` picks the import's.
+* 2026-09-24 (housekeeping, Colomban's "3 first"): `CLAUDE.md` Part III (the `arith/` layer table, the
+  ledger, conventions) — `c076838`; `arith/README.md` refreshed for route B; `ARITH_TRAPS.md` (the
+  consolidated trap list) and `HANDOVER` §1/§9 — `778c062`. IN FLIGHT: a read-only survey of the
+  duplicated machinery across `Cells/*.lean` → the consolidation refactor (`Cells/Common/*`, gate:
+  every theorem name and statement byte-identical).

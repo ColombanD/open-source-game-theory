@@ -754,5 +754,5 @@ never compile Foundation or mathlib (`lake build --try-cache`; `arith/.lake` is 
 OneDrive); ONE lake build on the machine at a time; single-file checks with `timeout 900 lake env lean`
 and CHECK THE EXIT CODE (`${pipestatus[1]}` in zsh); agents: one `Cells/<Bot>.lean` per family, targeted
 builds per agent, the coordinator runs the one full build, commit by file name only; every new module is
-imported in BOTH `ArithS.lean` and `Audit.lean`. The per-file trap lists live in `ROUTE_B_SCOPE.md` §6
-and `HANDOVER_ARITHMETIZED_S.md` §1/§6.
+imported in BOTH `ArithS.lean` and `Audit.lean`. The consolidated trap list is `Research/Notes/ARITH_TRAPS.md` (read it before writing a line
+of `ArithS`); the per-session originals stay in `ROUTE_B_SCOPE.md` §6 and `HANDOVER_ARITHMETIZED_S.md` §6.
