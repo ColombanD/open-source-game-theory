@@ -419,3 +419,28 @@ alongside (c)); SND/POS wait for (c) to settle.
   consolidated trap list) and `HANDOVER` §1/§9 — `778c062`. IN FLIGHT: a read-only survey of the
   duplicated machinery across `Cells/*.lean` → the consolidation refactor (`Cells/Common/*`, gate:
   every theorem name and statement byte-identical).
+* 2026-09-24 (evening): **THE CONSOLIDATION REFACTOR LANDED** — seven staged commits on `colomban-route-b`
+  (`Cells/Common/{Syntax,Bots,Templates,Probers,Families,Khat}` + the alias layer `Cells/Names`), the gate
+  (`ROUTE_B_CELLS_MAP.md`) held at every stage: every existing theorem/lemma/def NAME and STATEMENT
+  byte-identical (script over the `^(theorem|lemma|def|…) <name> … :=` headers of ALL `ArithS/**/*.lean`: 0
+  missing, 0 changed), no definition body changed (`Describes`, `SV` with its `variable (g) (a)` block,
+  `descVal`, `qT`, `qG`, `pQ`, `gVec`/`tmplVec`, the bot codes and towers all verbatim), `lake build ArithS`
+  green after every stage (3351 → 3357 jobs), census 1579 → 1757 (+178 prints of moved names, no line lost,
+  all standard but the 4 pre-existing subsets). The duplicates are gone as duplicates: FlipCells' `TFTV`/
+  `TFTTV`/`TTFT` keep their bodies but sit next to the `Tft` block with `rfl` bridges and one-liner lemmas;
+  `tmplVec_eq_gVec : … := rfl`; `DimcidV_eq_SV`/`CimcicV_eq_SV` bridge the two searcher towers to the generic
+  `SV` (`DupocV` deliberately NOT — the hand template). Generic-first: `search_then_V₆`/`search_else_V₆`,
+  `loebSound_pQ_of` (Wary's two premises are corollaries), `slack_depth_le` (the `(7d, 8d)` slack at any depth;
+  `slack4_*`/`slack6_*` corollaries in place; `pConj_slack_nat` untouched — `Assembly/Cell` is upstream),
+  `loebSound_pG_of(_above)` moved next to `pG` with `describes_dimcid`/`describes_mirror`/`describes_CB` so
+  `loebSound_pDD/_pDMi/_pDi0` are one-liners, `cimcic_self_finds_guard := found_of_all tact_proves_qCC`.
+  Placement fixes: `just7_else_V`/`just7_D_of_probe` → JustSlot, `ebot_D_of_probes_D` → SoundnessCells.
+  `Cells/Names.lean`: 169 `alias` lines under `<method>_<L>_vs_<R>[_suffix]` (the scheme's paragraph is its
+  module docstring; `_core` added to the suffix set for "play AND found guard"); the old names stay primary.
+  TRAPS (this refactor): a `#print axioms` of a lemma proved without choice prints a SUBSET of the standard
+  triple (`pQ_def`, `lMap_swap_pQ`, `nat_le_of_le_def`) — the census gate reads that as non-standard, so print
+  theorems, not `rfl`/`omega` lemmas; `zsh` aborts an `&&` chain on an unmatched glob (`rm -f dir/*.txt`) BEFORE
+  the heredoc that follows — the spec file was never written and the move silently did nothing; cut ranges by
+  ORIGINAL line numbers in one pass per file (the mover deletes descending); `gcongr`/`ring`/`push_cast` are
+  enough for the depth-`d` slack on `V`, and the ℕ forms follow from the `V` ones by `le_def.mp` +
+  `simp only [natCast_nat]` + `le_def_trans` (no cast trap when the `V`-lemma is instantiated, not restated).

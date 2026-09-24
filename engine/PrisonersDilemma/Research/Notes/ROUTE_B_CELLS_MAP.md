@@ -19,7 +19,56 @@ depend on them); `variable`-dependent sections (the `SV` block) keep binder name
   documents it). Same for `Cupod` vs `CupodBot`, `Just`/`Just7` vs `pcode (JustBot k)`. Never merge them;
   bridging lemmas (`DimcidV_eq_SV`, `CimcicV_eq_SV` — these two ARE equal up to a cast) may be ADDED.
 
-## Current import DAG
+## Import DAG (FINAL state, after the consolidation refactor of 2026-09-24 — stages 1–7 landed)
+
+```
+InstanceV ─► Transparency ─► Assembly/Prep ─► Family ─► Uniform ─► Cell ─► Necessitation/Package
+Cells/Common/Syntax     ← Assembly/Prep, InstanceV, SimTest, Template, EvalN   (quotes/relabel ₄₆₇, descVec entries,
+                                                                                tower substitution, casts, pBot/pConst algebra)
+Cells/Common/Bots       ← Common/Syntax, Assembly/Prep, SimTest                 (MirrorV/TM, Tft + FlipCells' TFTV twins
+                                                                                with rfl bridges, T0/TB0, the SV section
+                                                                                (variable block verbatim), botT1, gDu…gWT, TBS)
+Cells/Common/Templates  ← Common/Bots                                           (qG/gVec, qT, tmplVec (+ tmplVec_eq_gVec),
+                                                                                atom truths, TD/TBD towers, descVal/Describes/
+                                                                                DescribesAbove, describes_closed/_CB/_botCB/
+                                                                                _TFT/_SV/_botSV/_dupocV/_botDupoc)
+Cells/Common/Probers    ← Common/Bots, EvalN                                    (search_then/else_V₆, SV_then_V, SV_search_V,
+                                                                                *_frame_search_V, *_search_any_V, mirror_step_V,
+                                                                                mirror_copies(3)_V, mirror_bot_*, tft_*_V, const_*)
+Cells/Common/Families   ← Common/Templates, Assembly/Uniform                    (pQ + lemmas, loebSound_pQ_of, slack_depth_le,
+                                                                                nat_le_of_le_def)
+Cells/Common/Khat       ← Common/Families, Necessitation/Package                (linear_size_le_eventually, tact_all_of_both,
+                                                                                found_of_all(_V/_above), tact_all_above_of_both,
+                                                                                exists_instance_length_above, BoxConseq & co)
+Cells/DupocMirror   ← Common/{Templates,Probers,Families,Khat}, Assembly/Cell, SimTest, Necessitation/Package
+Cells/JustBot       ← DupocMirror
+Cells/DIMCID        ← DupocMirror, Necessitation/Package, PD.DIMCID      (now also holds loebSound_pG_of/_of_above, describes_dimcid/_mirror)
+Cells/CIMCIC        ← DIMCID
+Cells/PrudentMirror ← DIMCID
+Cells/JustSlot      ← JustBot, CIMCIC                                     (now also holds just7_else_V/just7_D_of_probe)
+Cells/SimSlot       ← JustSlot
+Cells/SearchFree    ← Inst, SimTest, PD theorems           (separate branch: no Assembly, no LoebSound)
+Cells/SoundnessCells← SearchFree, Det, InstanceV, NumeralFacts, Diag      (now also holds ebot_D_of_probes_D)
+Cells/PositiveCells ← SoundnessCells, CIMCIC, JustBot, PrudentMirror   (the two branches merge here)
+Cells/KhatCells     ← PositiveCells, JustSlot
+Cells/FlipCells     ← PositiveCells, DIMCID, KhatCells
+Cells/DimcidFlips   ← FlipCells
+Cells/Names         ← every Cells file                                    (the ALIAS layer only; imported by ArithS.lean, not Audit)
+```
+`ArithS.lean` imports every Common module, every Cells file and `Cells/Names`; `Audit.lean` imports the Common
+modules and prints, per module, the moved names that were not already printed (Syntax 33, Bots 81 incl. the
+four `*_eq_SV` bridges, Templates 42, Probers 14, Families 9, Khat 0 — every Khat theorem was already printed).
+The gate held at every stage: 0 headers missing/changed, 15 added (the new lemmas below), 0 definition bodies
+changed; final `lake build ArithS` 3357 jobs; census 1757 (baseline 1579 + 178), all standard but the 4
+pre-existing subsets. NEW declarations (all additive): `TFTV_eq_TftV`, `TFTTV_eq_TftTV`, `TTFT_eq_TTft`,
+`DimcidV_eq_SV`, `DimcidTV_eq_SV`, `CimcicV_eq_SV`, `CimcicTV_eq_SV`, `tmplVec_eq_gVec`, `search_then_V₆`,
+`search_else_V₆`, `loebSound_pQ_of`, `slack_depth_le`, `describes_CB`, `describes_dimcid`, `describes_mirror`;
+proofs turned into corollaries in place: `loebSound_pDD/_pDMi/_pDi0` (of `loebSound_pG_of`), `loebSound_pWM/_pWW`
+(of `loebSound_pQ_of`), `slack4_*`/`slack6_*` (of `slack_depth_le`), `cimcic_self_finds_guard` (of `found_of_all`),
+FlipCells' `TFTV` lemmas (of the `Tft` ones). NOT done: `pConj_slack_nat` stays as is (`Assembly/Cell` is
+upstream of `Common/Families` and off-limits); `DupocV`/`Dupoc` are NOT bridged to `SV` (the trap below).
+
+## Import DAG before the refactor (survey state, 2026-09-24 morning)
 
 ```
 InstanceV ─► Transparency ─► Assembly/Prep ─► Family ─► Uniform ─► Cell ─► Necessitation/Package
