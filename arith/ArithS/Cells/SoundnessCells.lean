@@ -457,6 +457,26 @@ theorem ebot_C_of_probes {x n : ℕ} (h1 : EvalGraph n x (pBot (pConst 1)) x 1)
     rw [EvalGraph.sim_iff, psubst_opp, psubst_bot]
     exact h2
 
+/-- `EBot` defects against `x` when `x` defects against all three frozen probes `.bot DefectBot`,
+`.bot CooperateBot`, `.bot MirrorBot` (the end of its ladder). -/
+theorem ebot_D_of_probes_D {x n : ℕ} (h1 : EvalGraph n x (pBot (pConst 1)) x 1)
+    (h2 : EvalGraph n x (pBot (pConst 0)) x 1) (h3 : EvalGraph n x (pBot Mirror) x 1) :
+    EvalGraph (n + 1 + 1 + 1 + 1) (pcode EBot) x (pcode EBot) 1 := by
+  simp only [EBot, CooperateBot, DefectBot, MirrorBot, pcode_ite, pcode_sim, pcode_opp, pcode_self, pcode_bot,
+    pcode_const, actCode]
+  rw [EvalGraph.ite_iff]
+  refine ⟨1, ?_, Or.inr ⟨by decide, ?_⟩⟩
+  · rw [EvalGraph.sim_iff, psubst_opp, psubst_bot]
+    exact EvalGraph.mono_le (by omega) h1
+  · rw [EvalGraph.ite_iff]
+    refine ⟨1, ?_, Or.inr ⟨by decide, ?_⟩⟩
+    · rw [EvalGraph.sim_iff, psubst_opp, psubst_bot]
+      exact EvalGraph.mono_le (by omega) h2
+    · rw [EvalGraph.ite_iff]
+      refine ⟨1, ?_, Or.inr ⟨by decide, const_play _ _ _ _⟩⟩
+      rw [EvalGraph.sim_iff, psubst_opp, psubst_bot]
+      exact h3
+
 end steps
 
 /-! ### 6. Code disjointness (for the `.eq` guard of CupodTrollBot) -/

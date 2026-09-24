@@ -193,41 +193,6 @@ end chain
 section tft
 
 
-/-- **TFT cooperates with `x` when `x` cooperates with `.bot CooperateBot`, in every model** (fuel `+2`). -/
-theorem tft_C_of_probe_C_V {x n : V} (h : EvalGraph n x (pBot (pConst 0)) x 0) :
-    EvalGraph (n + 1 + 1) TftV x TftV 0 := by
-  unfold TftV
-  rw [EvalGraph.ite_iff]
-  refine ⟨0, ?_, Or.inl ⟨rfl, EvalGraph.const_iff.mpr rfl⟩⟩
-  rw [EvalGraph.sim_iff, psubst_opp, psubst_bot]
-  exact h
-
-/-- **The transposed TFT defects against `x` when `x` defects against `.bot DefectBot`** (fuel `+2`). -/
-theorem tftT_D_of_probe_D_V {x n : V} (h : EvalGraph n x (pBot (pConst 1)) x 1) :
-    EvalGraph (n + 1 + 1) TftTV x TftTV 1 := by
-  unfold TftTV
-  rw [EvalGraph.ite_iff]
-  refine ⟨1, ?_, Or.inl ⟨rfl, EvalGraph.const_iff.mpr rfl⟩⟩
-  rw [EvalGraph.sim_iff, psubst_opp, psubst_bot]
-  exact h
-
-/-- **The generic searcher's then-clause in ANY frame** (fuel 2): a proof of `guardCode ⌜g⌝ me opp`
-within `k` makes `SV g a k` play `a`. -/
-theorem SV_then_V (g : Semisentence LAct 6) (a : ℕ) (k me opp : V)
-    (h : LenProvableV TAct k (guardCode (⌜g⌝ : V) me opp)) : EvalGraph 2 me opp (SV g a k) (a : V) := by
-  rw [show (2 : V) = 1 + 1 from one_add_one_eq_two.symm]
-  show EvalGraph (1 + 1) me opp (pSearch k (⌜g⌝ : V) (pConst (a : V)) (pConst ((1 - a : ℕ) : V))) (a : V)
-  rw [EvalGraph.search_iff₆ (isSemiformula_quote₆ g)]
-  left
-  refine ⟨h, ?_⟩
-  rw [show (1 : V) = 0 + 1 by simp, EvalGraph.const_iff]
-
-/-- The bot-wrapped generic searcher's then-clause in any frame (fuel 3). -/
-theorem botSV_then_V (g : Semisentence LAct 6) (a : ℕ) (k me opp : V)
-    (h : LenProvableV TAct k (guardCode (⌜g⌝ : V) me opp)) : EvalGraph 3 me opp (pBot (SV g a k)) (a : V) := by
-  rw [show (3 : V) = 2 + 1 from two_add_one_eq_three.symm, EvalGraph.bot_iff]
-  exact SV_then_V g a k me opp h
-
 end tft
 
 /-! ### 3. The probes against `.bot CooperateBot`/`.bot DefectBot`, found in every model above `k̂` -/

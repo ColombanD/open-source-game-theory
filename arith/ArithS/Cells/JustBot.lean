@@ -70,44 +70,6 @@ variable {V : Type*} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
 section bot
 
 
-/-- **Dupoc's search clause in ANY frame** (fuel 2): `DupocV k` run in the frame `(me, opp)` plays
-`C` if `guardCode ⌜GtmplA 0⌝ me opp` is provable within `k`. -/
-theorem dupoc_frame_search_V (k me opp : V) :
-    LenProvableV TAct k (guardCode (⌜GtmplA 0⌝ : V) me opp) → EvalGraph 2 me opp (DupocV k) 0 := by
-  intro h
-  rw [show (2 : V) = 1 + 1 from one_add_one_eq_two.symm]
-  show EvalGraph (1 + 1) me opp (pSearch k (⌜GtmplA 0⌝ : V) (pConst 0) (pConst 1)) 0
-  rw [EvalGraph.search_iff₆ (isSemiformula_quote₆ (GtmplA 0))]
-  left
-  refine ⟨h, ?_⟩
-  rw [show (1 : V) = 0 + 1 by simp, EvalGraph.const_iff]
-
-/-- **Cupod's search clause in ANY frame** (fuel 2). -/
-theorem cupod_frame_search_V (k me opp : V) :
-    LenProvableV TAct k (guardCode (⌜GtmplA 1⌝ : V) me opp) → EvalGraph 2 me opp (CupodV k) 1 := by
-  intro h
-  rw [show (2 : V) = 1 + 1 from one_add_one_eq_two.symm]
-  show EvalGraph (1 + 1) me opp (pSearch k (⌜GtmplA 1⌝ : V) (pConst 1) (pConst 0)) 1
-  rw [EvalGraph.search_iff₆ (isSemiformula_quote₆ (GtmplA 1))]
-  left
-  refine ⟨h, ?_⟩
-  have e : EvalGraph (0 + 1) me opp (pConst 1) 1 := EvalGraph.const_iff.mpr rfl
-  rwa [zero_add] at e
-
-/-- **The bot-wrapped Dupoc's search clause in any frame** (fuel 3: the bot step, the search step,
-the constant). -/
-theorem botDupoc_frame_search_V (k me opp : V) :
-    LenProvableV TAct k (guardCode (⌜GtmplA 0⌝ : V) me opp) → EvalGraph 3 me opp (pBot (DupocV k)) 0 := by
-  intro h
-  rw [show (3 : V) = 2 + 1 from two_add_one_eq_three.symm, EvalGraph.bot_iff]
-  exact dupoc_frame_search_V k me opp h
-
-theorem botCupod_frame_search_V (k me opp : V) :
-    LenProvableV TAct k (guardCode (⌜GtmplA 1⌝ : V) me opp) → EvalGraph 3 me opp (pBot (CupodV k)) 1 := by
-  intro h
-  rw [show (3 : V) = 2 + 1 from two_add_one_eq_three.symm, EvalGraph.bot_iff]
-  exact cupod_frame_search_V k me opp h
-
 end bot
 
 /-! ### 2. The description tower of `pBot (Dupoc k)` -/

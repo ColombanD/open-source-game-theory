@@ -506,17 +506,6 @@ theorem eval_pQ_swap (q : Semisentence LAct 1) (k : V) :
   rw [eval_swapActS, lMap_swap_pQ]
   simp only [LogicalConnective.HomClass.map_and, LogicalConnective.Prop.and_eq]
 
-/-- **The search clause of the generic engine searcher in every model** (fuel 2): found ⇒ the then-branch. -/
-theorem SV_search_V (g : Semisentence LAct 6) (a : ℕ) (k opp : V)
-    (h : LenProvableV TAct k (guardCode (⌜g⌝ : V) (SV g a k) opp)) :
-    EvalGraph 2 (SV g a k) opp (SV g a k) (a : V) := by
-  rw [show (2 : V) = 1 + 1 from one_add_one_eq_two.symm]
-  show EvalGraph (1 + 1) (SV g a k) opp (pSearch k (⌜g⌝ : V) (pConst (a : V)) (pConst ((1 - a : ℕ) : V))) (a : V)
-  rw [EvalGraph.search_iff₆ (isSemiformula_quote₆ g)]
-  left
-  refine ⟨h, ?_⟩
-  have e : EvalGraph (0 + 1) (SV g a k) opp (pConst (a : V)) (a : V) := EvalGraph.const_iff.mpr rfl
-  rwa [zero_add] at e
 
 /-! #### Wary's fixed formulas against Mirror and against itself -/
 

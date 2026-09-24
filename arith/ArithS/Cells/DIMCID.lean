@@ -833,12 +833,6 @@ end selfCell
 
 section mirrorCell
 
-/-- Mirror copies, in every model: a fuel-2 play of `opp` against Mirror is Mirror's fuel-3 play
-against `opp` (`mirror_step_V`). -/
-theorem mirror_copies_V (opp a : V) (h : EvalGraph 2 opp MirrorV opp a) :
-    EvalGraph 3 MirrorV opp MirrorV a := by
-  rw [show (3 : V) = 2 + 1 from two_add_one_eq_three.symm]
-  exact (mirror_step_V 2 opp a).mpr h
 
 /-- Mirror's closed triple describes `MirrorV` on codes: the `X`-hypothesis. -/
 lemma hX_mirror (k : V) :
@@ -965,31 +959,6 @@ section cupodCell
 
 /-! #### Cupod's description, and the two searchers' search clauses against any opponent -/
 
-
-/-- **Cupod's search clause against ANY opponent in every model** (fuel `2`). -/
-theorem cupod_search_any_V (k opp : V) :
-    LenProvableV TAct k (guardCode (⌜GtmplA 1⌝ : V) (CupodV k) opp) →
-      EvalGraph 2 (CupodV k) opp (CupodV k) 1 := by
-  intro h
-  rw [show (2 : V) = 1 + 1 from one_add_one_eq_two.symm]
-  show EvalGraph (1 + 1) (CupodV k) opp (pSearch k (⌜GtmplA 1⌝ : V) (pConst 1) (pConst 0)) 1
-  rw [EvalGraph.search_iff₆ (isSemiformula_quote₆ (GtmplA 1))]
-  left
-  refine ⟨h, ?_⟩
-  have e : EvalGraph (0 + 1) (CupodV k) opp (pConst 1) 1 := EvalGraph.const_iff.mpr rfl
-  rwa [zero_add] at e
-
-/-- **Dupoc's search clause against ANY opponent in every model** (fuel `2`). -/
-theorem dupoc_search_any_V (k opp : V) :
-    LenProvableV TAct k (guardCode (⌜GtmplA 0⌝ : V) (DupocV k) opp) →
-      EvalGraph 2 (DupocV k) opp (DupocV k) 0 := by
-  intro h
-  rw [show (2 : V) = 1 + 1 from one_add_one_eq_two.symm]
-  show EvalGraph (1 + 1) (DupocV k) opp (pSearch k (⌜GtmplA 0⌝ : V) (pConst 0) (pConst 1)) 0
-  rw [EvalGraph.search_iff₆ (isSemiformula_quote₆ (GtmplA 0))]
-  left
-  refine ⟨h, ?_⟩
-  rw [show (1 : V) = 0 + 1 by simp, EvalGraph.const_iff]
 
 /-! #### The hand-written template `GtmplA a`, filled with two arbitrary description triples -/
 

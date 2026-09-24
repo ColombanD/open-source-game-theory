@@ -541,24 +541,6 @@ theorem eval_qPPT_iff_V (k : V) :
 
 /-! #### The prudence facts, the search clauses, Mirror's copy -/
 
-/-- **Prudence is a true closed Σ₁ fact in every model**: Mirror plays D against `.bot DefectBot`
-(fuel 3: the sim step, the bot step, the constant). -/
-theorem mirror_bot_defect_V : EvalGraph 3 MirrorV (pBot (pConst 1)) MirrorV (1 : V) := by
-  have e0 : EvalGraph (0 + 1) (pBot (pConst 1)) MirrorV (pConst 1) (1 : V) := EvalGraph.const_iff.mpr rfl
-  rw [zero_add] at e0
-  have e1 : EvalGraph (1 + 1) (pBot (pConst 1)) MirrorV (pBot (pConst 1)) (1 : V) := EvalGraph.bot_iff.mpr e0
-  rw [one_add_one_eq_two] at e1
-  have e2 := (mirror_step_V 2 (pBot (pConst 1)) 1).mpr e1
-  rwa [two_add_one_eq_three] at e2
-
-/-- The transposed prudence fact: Mirror plays C against `.bot CooperateBot`. -/
-theorem mirror_bot_coop_V : EvalGraph 3 MirrorV (pBot (pConst 0)) MirrorV (0 : V) := by
-  have e0 : EvalGraph (0 + 1) (pBot (pConst 0)) MirrorV (pConst 0) (0 : V) := EvalGraph.const_iff.mpr rfl
-  rw [zero_add] at e0
-  have e1 : EvalGraph (1 + 1) (pBot (pConst 0)) MirrorV (pBot (pConst 0)) (0 : V) := EvalGraph.bot_iff.mpr e0
-  rw [one_add_one_eq_two] at e1
-  have e2 := (mirror_step_V 2 (pBot (pConst 0)) 0).mpr e1
-  rwa [two_add_one_eq_three] at e2
 
 /-- **Prudent's search clause against Mirror** (fuel 3): both guards provable within `k` ⇒ `C`. -/
 theorem prudent_search_V (k : V)
@@ -586,11 +568,6 @@ theorem prudentT_search_V (k : V)
     (EvalGraph.search_iff₆ (isSemiformula_quote₆ tmplP1T)).mpr (Or.inl ⟨h1, e1⟩)
   rwa [show (0 : V) + 1 + 1 + 1 = 3 by norm_num] at e2
 
-/-- Mirror copies a fuel-3 play at fuel 4. -/
-theorem mirror_copies3_V (opp a : V) (h : EvalGraph 3 opp MirrorV opp a) :
-    EvalGraph 4 MirrorV opp MirrorV a := by
-  rw [show (4 : V) = 3 + 1 by norm_num]
-  exact (mirror_step_V 3 opp a).mpr h
 
 end fixedFormulas
 

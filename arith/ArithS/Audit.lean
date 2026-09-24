@@ -68,6 +68,7 @@ import ArithS.Necessitation.ClosedNec
 import ArithS.Cells.Common.Syntax
 import ArithS.Cells.Common.Bots
 import ArithS.Cells.Common.Templates
+import ArithS.Cells.Common.Probers
 import ArithS.Cells.DupocMirror
 import ArithS.Cells.JustBot
 import ArithS.Cells.DIMCID
@@ -2173,6 +2174,24 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms descVal_dupocV_T
 #print axioms descVal_botDupoc
 #print axioms descVal_botDupoc_T
+
+-- Consolidation stage 4 (Cells/Common/Probers, 2026-09-24): the search clauses in any frame, Mirror's step and
+-- copies, TFT's probe steps, the constants — MOVED unchanged; NEW roots search_then_V₆/search_else_V₆ (the two
+-- directions of EvalGraph.search_iff₆). Only the names not already printed elsewhere.
+#print axioms search_then_V₆
+#print axioms search_else_V₆
+#print axioms botSV_then_V
+#print axioms cupod_frame_search_V
+#print axioms botCupod_frame_search_V
+#print axioms cupod_search_any_V
+#print axioms dupoc_search_any_V
+#print axioms mirror_copies_V
+#print axioms mirror_copies3_V
+#print axioms tftT_D_of_probe_D_V
+#print axioms const_play_V
+#print axioms bot_const_play_V
+#print axioms const_not_play_V
+#print axioms bot_const_not_play_V
 
 -- Route B Phase 2, cell 1 — Dupoc × Mirror `(C, C)` and Cupod × Mirror `(D, D)` in PA-`S'` (Cells/DupocMirror,
 -- 2026-09-23), the first Löb family after self-play, on the family-parametric assembly: Mirror in every model

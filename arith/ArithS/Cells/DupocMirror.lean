@@ -1,4 +1,5 @@
 import ArithS.Cells.Common.Templates
+import ArithS.Cells.Common.Probers
 import ArithS.Assembly.Cell
 import ArithS.SimTest
 import ArithS.Necessitation.Package
@@ -71,13 +72,6 @@ variable {V : Type*} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
 
 section mirror
 
-/-- **Mirror's sim step in every model**: Mirror in the frame `(Mirror, opp)` runs `opp` in the
-frame `(opp, Mirror)` (`EvalGraph.sim_iff` + `psubst_opp`/`psubst_self`). -/
-theorem mirror_step_V (n opp a : V) :
-    EvalGraph (n + 1) MirrorV opp MirrorV a ↔ EvalGraph n opp MirrorV opp a := by
-  have h := EvalGraph.sim_iff (n := n) (me := MirrorV) (opp := opp) (p := pOpp) (q := pSelf) (a := a)
-  rw [psubst_opp, psubst_self] at h
-  exact h
 
 /-- Mirror copies Dupoc: if `DupocV k` plays C against Mirror at fuel 2, Mirror plays C against
 `DupocV k` at fuel 3. -/

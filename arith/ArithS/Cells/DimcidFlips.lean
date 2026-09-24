@@ -301,47 +301,6 @@ end defections
 
 section replies
 
-/-- `EBot` defects against `x` when `x` defects against all three frozen probes `.bot DefectBot`,
-`.bot CooperateBot`, `.bot MirrorBot` (the end of its ladder). -/
-theorem ebot_D_of_probes_D {x n : ℕ} (h1 : EvalGraph n x (pBot (pConst 1)) x 1)
-    (h2 : EvalGraph n x (pBot (pConst 0)) x 1) (h3 : EvalGraph n x (pBot Mirror) x 1) :
-    EvalGraph (n + 1 + 1 + 1 + 1) (pcode EBot) x (pcode EBot) 1 := by
-  simp only [EBot, CooperateBot, DefectBot, MirrorBot, pcode_ite, pcode_sim, pcode_opp, pcode_self, pcode_bot,
-    pcode_const, actCode]
-  rw [EvalGraph.ite_iff]
-  refine ⟨1, ?_, Or.inr ⟨by decide, ?_⟩⟩
-  · rw [EvalGraph.sim_iff, psubst_opp, psubst_bot]
-    exact EvalGraph.mono_le (by omega) h1
-  · rw [EvalGraph.ite_iff]
-    refine ⟨1, ?_, Or.inr ⟨by decide, ?_⟩⟩
-    · rw [EvalGraph.sim_iff, psubst_opp, psubst_bot]
-      exact EvalGraph.mono_le (by omega) h2
-    · rw [EvalGraph.ite_iff]
-      refine ⟨1, ?_, Or.inr ⟨by decide, const_play _ _ _ _⟩⟩
-      rw [EvalGraph.sim_iff, psubst_opp, psubst_bot]
-      exact h3
-
-/-- **The else branch of the budget-slot Just in any frame** (fuel 2): the guard "`opp` plays C against
-`pBot (Dupoc k)`" not found ⇒ `D`. -/
-theorem just7_else_V (k me opp : V) :
-    ¬ LenProvableV TAct k (guardCode (⌜GtmplA 0⌝ : V) (pBot (DupocV k)) opp) →
-      EvalGraph 2 me opp (JustV7 k) 1 := by
-  intro h
-  rw [show (2 : V) = 1 + 1 from one_add_one_eq_two.symm]
-  show EvalGraph (1 + 1) me opp (pSearch k (⌜GtmplJ7⌝ : V) (pConst 0) (pConst 1)) 1
-  rw [EvalGraph.search_iff, guardCodeB_GtmplJ7]
-  right
-  refine ⟨h, ?_⟩
-  have e : EvalGraph (0 + 1) me opp (pConst 1) 1 := EvalGraph.const_iff.mpr rfl
-  rwa [zero_add] at e
-
-/-- **`Just7 k` defects against an opponent that defects against `pBot (Dupoc k)`** (soundness of a found
-guard, `evalGraph_of_guard`, against the arithmetized sub-play). -/
-theorem just7_D_of_probe (k : ℕ) {opp : ℕ} {N : ℕ} (h : EvalGraph N opp (pBot (Dupoc k)) opp 1) :
-    EvalGraph 2 (Just7 k) opp (Just7 k) 1 := by
-  refine just7_else_V (V := ℕ) k (Just7 k) opp fun hf ↦ ?_
-  obtain ⟨n, hn⟩ := evalGraph_of_guard hf
-  exact absurd (EvalGraph.unique' hn h) (by decide)
 
 end replies
 

@@ -139,25 +139,6 @@ end closure
 section truth
 
 
-/-- A constant plays itself against anything, in every model (fuel 1). -/
-lemma const_play_V (me opp a : V) : ∃ n : V, EvalGraph n me opp (pConst a) a :=
-  ⟨0 + 1, EvalGraph.const_iff.mpr rfl⟩
-
-/-- A frozen constant plays itself against anything, in every model (fuel 2). -/
-lemma bot_const_play_V (me opp a : V) : ∃ n : V, EvalGraph n me opp (pBot (pConst a)) a :=
-  ⟨0 + 1 + 1, EvalGraph.bot_iff.mpr (EvalGraph.const_iff.mpr rfl)⟩
-
-/-- A constant never plays the other value, in every model (determinism). -/
-lemma const_not_play_V (me opp : V) {a b : V} (hab : a ≠ b) : ¬ ∃ n : V, EvalGraph n me opp (pConst a) b := by
-  rintro ⟨n, hn⟩
-  obtain ⟨m, hm⟩ := const_play_V me opp a
-  exact hab (EvalGraph.unique_V' m n _ _ _ _ _ hm hn)
-
-lemma bot_const_not_play_V (me opp : V) {a b : V} (hab : a ≠ b) : ¬ ∃ n : V, EvalGraph n me opp (pBot (pConst a)) b := by
-  rintro ⟨n, hn⟩
-  obtain ⟨m, hm⟩ := bot_const_play_V me opp a
-  exact hab (EvalGraph.unique_V' m n _ _ _ _ _ hm hn)
-
 end truth
 
 /-! ### 5. The engine searchers as `SV` instances, and the bot-wrapped snapshot -/
