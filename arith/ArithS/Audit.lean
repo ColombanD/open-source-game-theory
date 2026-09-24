@@ -66,6 +66,7 @@ import ArithS.Necessitation.Verify5
 import ArithS.Necessitation.Package
 import ArithS.Necessitation.ClosedNec
 import ArithS.Cells.Common.Syntax
+import ArithS.Cells.Common.Bots
 import ArithS.Cells.DupocMirror
 import ArithS.Cells.JustBot
 import ArithS.Cells.DIMCID
@@ -2038,6 +2039,92 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms dW_pConst_zero
 #print axioms dU_pConst_one
 #print axioms dW_pConst_one
+
+-- Consolidation stage 2 (Cells/Common/Bots, 2026-09-24): Mirror/TM, the Tft block and FlipCells' TFTV twins (now
+-- one-liners over it: TFTV_eq_TftV/TFTTV_eq_TftTV/TTFT_eq_TTft), T0/TB0, the generic searcher SV with its
+-- variable block, gDu/gCu/gW/gWT, TBS — MOVED unchanged; plus the NEW bridges DimcidV_eq_SV/CimcicV_eq_SV
+-- (Cells/DIMCID, Cells/CIMCIC). Only the names not already printed elsewhere.
+#print axioms MirrorV_nat
+#print axioms cast_Mirror
+#print axioms swapcode_MirrorV
+#print axioms dnum_MirrorV
+#print axioms dU_MirrorV
+#print axioms dW_MirrorV
+#print axioms lMap_swap_TM
+#print axioms val_TM_V
+#print axioms quote_emb_TM
+#print axioms pcode_TFT
+#print axioms TftV_nat
+#print axioms cast_Tft
+#print axioms swapcode_TftV
+#print axioms swapcode_TftTV
+#print axioms dnum_TftV
+#print axioms dU_TftV
+#print axioms dW_TftV
+#print axioms lMap_swap_TTft
+#print axioms val_TTft_V
+#print axioms quote_emb_TTft
+#print axioms hX_tft
+#print axioms hU_tft
+#print axioms hW_tft
+#print axioms val_desc_tft_swap
+#print axioms TFTV_eq_TftV
+#print axioms TFTTV_eq_TftTV
+#print axioms cast_TFT
+#print axioms TFTV_nat
+#print axioms swapcode_TFTV
+#print axioms dnum_TFTV
+#print axioms dU_TFTV
+#print axioms dW_TFTV
+#print axioms TTFT_eq_TTft
+#print axioms lMap_swap_TTFT
+#print axioms val_TTFT_V
+#print axioms quote_emb_TTFT
+#print axioms lMap_swap_T0
+#print axioms val_T0_V
+#print axioms quote_emb_T0
+#print axioms lMap_swap_TB0
+#print axioms val_TB0_V
+#print axioms quote_emb_TB0
+#print axioms hU_C_zero
+#print axioms hW_D_zero
+#print axioms hU_D_one
+#print axioms hW_C_one
+#print axioms hU_C_bot_zero
+#print axioms hW_D_bot_zero
+#print axioms hU_D_bot_one
+#print axioms hW_C_bot_one
+#print axioms val_desc_bot_zero
+#print axioms val_desc_bot_one
+#print axioms SV_nat
+#print axioms innerS_def
+#print axioms cast_innerS
+#print axioms SV_eq_inner
+#print axioms swapAct_cast
+#print axioms swapAct_cast'
+#print axioms one_sub_one_sub
+#print axioms SV_lt_SVT_iff
+#print axioms SVT_lt_SV_iff
+#print axioms SV_eq_cast
+#print axioms SVT_eq_cast
+#print axioms lMap_swap_TS
+#print axioms quote_emb_TS
+#print axioms hU_SV
+#print axioms hW_SV
+#print axioms val_botT1_V
+#print axioms quote_emb_botT1
+#print axioms lMap_swap_gDu
+#print axioms lMap_swap_gCu
+#print axioms lMap_swap_gW
+#print axioms lMap_swap_TBS
+#print axioms val_TBS_V
+#print axioms quote_emb_TBS
+#print axioms hU_botSV
+#print axioms hW_botSV
+#print axioms DimcidV_eq_SV
+#print axioms DimcidTV_eq_SV
+#print axioms CimcicV_eq_SV
+#print axioms CimcicTV_eq_SV
 
 -- Route B Phase 2, cell 1 — Dupoc × Mirror `(C, C)` and Cupod × Mirror `(D, D)` in PA-`S'` (Cells/DupocMirror,
 -- 2026-09-23), the first Löb family after self-play, on the family-parametric assembly: Mirror in every model

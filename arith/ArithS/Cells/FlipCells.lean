@@ -155,50 +155,6 @@ theorem describes_botCB : Describes (cl TB0) (cterm Act.C) (cterm Act.D) where
   hW := by intro V _ _ k; rw [descVal_botCB]; exact hW_D_bot_zero
   hT := by intro V _ _ k; rw [descVal_botCB_T, descVal_botCB, swapcode_pBot, swapcode_pConst_zero]
 
-/-! #### TitForTatBot -/
-
-/-- TitForTatBot in every model: "if `opp` plays C against `.bot CooperateBot` then C else D". -/
-noncomputable def TFTV : V := pIte (pSim pOpp (pBot (pConst 0))) 0 (pConst 0) (pConst 1)
-/-- Its transposition: "if `opp` plays D against `.bot DefectBot` then D else C". -/
-noncomputable def TFTTV : V := pIte (pSim pOpp (pBot (pConst 1))) 1 (pConst 1) (pConst 0)
-
-lemma cast_TFT : ((pcode TitForTatBot : ℕ) : V) = TFTV := by
-  simp only [TitForTatBot, CooperateBot, pcode_ite, pcode_sim, pcode_opp, pcode_bot, pcode_const, actCode]
-  rw [cast_pIte, cast_pSim, cast_pOpp, cast_pBot, cast_pConst, cast_pConst]
-  simp [TFTV]
-
-lemma TFTV_nat : TFTV (V := ℕ) = pcode TitForTatBot := by
-  rw [← cast_TFT, natCast_nat]
-
-theorem swapcode_TFTV : swapcode (TFTV : V) = TFTTV := by
-  unfold TFTV TFTTV swapcode
-  simp [relabelAct]
-
-/-- The code of TFT is below the code of its transposition (the probe `.bot CooperateBot` is the smaller). -/
-theorem TFTV_lt_TFTTV : (TFTV : V) < TFTTV := by
-  unfold TFTV TFTTV pIte pSim pBot pConst pOpp ppair
-  norm_num
-
-lemma dnum_TFTV : dnum (TFTV : V) = TFTV := dnum_of_lt (by rw [swapcode_TFTV]; exact TFTV_lt_TFTTV)
-
-lemma dU_TFTV : dU (TFTV : V) = csym 0 := by
-  unfold dU; rw [swapcode_TFTV, if_pos TFTV_lt_TFTTV]
-
-lemma dW_TFTV : dW (TFTV : V) = csym 1 := by
-  unfold dW; rw [swapcode_TFTV, if_pos TFTV_lt_TFTTV]
-
-/-- The closed structural term of TitForTatBot's code. -/
-noncomputable def TTFT : ClosedSemiterm LAct 0 := Semiterm.lMap emb (progTT (pcode TitForTatBot))
-
-lemma lMap_swap_TTFT : Semiterm.lMap swap TTFT = TTFT := term_lMap_swap_emb _
-
-theorem val_TTFT_V : TTFT.val (s := stdActV V) ![] Empty.elim = TFTV := by
-  unfold TTFT
-  rw [Semiterm.val_lMap, stdActV_lMap_emb, val_progTT_V, cast_TFT]
-
-theorem quote_emb_TTFT : (⌜(Rew.emb TTFT : SyntacticSemiterm LAct 0)⌝ : V) = progT TFTV := by
-  unfold TTFT
-  rw [term_emb_lMap_emb, quote_term_lMap_emb, ← Semiterm.empty_quote_def, quote_progTT, cast_TFT]
 
 lemma descVal_TFT (k : V) : descVal (cl TTFT) (cterm Act.C) (cterm Act.D) k = TFTV := by
   rw [descVal_def, val_cl_V, val_TTFT_V, val_cterm_C_V, val_cterm_D_V, relabel_zero_one]

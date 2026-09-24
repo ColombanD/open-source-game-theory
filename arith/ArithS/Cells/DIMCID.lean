@@ -129,6 +129,14 @@ noncomputable def DimcidV (k : V) : V := pSearch k (⌜tmplD⌝ : V) (pConst 1) 
 /-- The transposed searcher (τ(DIMCID)): its guard is the transposed template, found ⇒ `C`. -/
 noncomputable def DimcidTV (k : V) : V := pSearch k (⌜tmplDT⌝ : V) (pConst 0) (pConst 1)
 
+/-- `DimcidV` IS the generic engine searcher `SV tmplD 1` of `Cells/Common/Bots` (up to the casts of the
+branch constants) — the bridge the consolidation map asks for; `DupocV` has NO such bridge. -/
+lemma DimcidV_eq_SV (k : V) : DimcidV k = SV tmplD 1 k := by
+  unfold DimcidV SV; norm_num
+
+lemma DimcidTV_eq_SV (k : V) : DimcidTV k = SV tmplDT 0 k := by
+  unfold DimcidTV SV; norm_num
+
 /-- `DIMCID k` at `ℕ`. -/
 noncomputable def Dimcid (k : ℕ) : ℕ := DimcidV (V := ℕ) k
 

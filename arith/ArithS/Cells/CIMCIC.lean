@@ -96,6 +96,14 @@ noncomputable def CimcicV (k : V) : V := pSearch k (⌜tmplC⌝ : V) (pConst 0) 
 /-- The transposed searcher (τ(CIMCIC)): its guard is the transposed template, found ⇒ `D`. -/
 noncomputable def CimcicTV (k : V) : V := pSearch k (⌜tmplCT⌝ : V) (pConst 1) (pConst 0)
 
+/-- `CimcicV` IS the generic engine searcher `SV tmplC 0` of `Cells/Common/Bots` (up to the casts of the
+branch constants). -/
+lemma CimcicV_eq_SV (k : V) : CimcicV k = SV tmplC 0 k := by
+  unfold CimcicV SV; norm_num
+
+lemma CimcicTV_eq_SV (k : V) : CimcicTV k = SV tmplCT 1 k := by
+  unfold CimcicTV SV; norm_num
+
 /-- `CIMCIC k` at `ℕ`. -/
 noncomputable def Cimcic (k : ℕ) : ℕ := CimcicV (V := ℕ) k
 

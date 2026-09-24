@@ -114,23 +114,6 @@ end bot
 
 section tower
 
-/-- The one-variable structural term of a bot-wrapped program. -/
-noncomputable def botT1 (t : Semiterm ℒₒᵣ Empty 1) : Semiterm ℒₒᵣ Empty 1 :=
-  succT1 (ppairT1 (Rew.bShift (bnumT 3)) t)
-
-lemma val_botT1_V (t : Semiterm ℒₒᵣ Empty 1) (k : V) :
-    (botT1 t).val (s := standardModel V) ![k] Empty.elim = pBot (t.val (s := standardModel V) ![k] Empty.elim) := by
-  rw [botT1, val_succT1_V, val_ppairT1_V, val_bShift₁_V, val_bnumT_V]
-  unfold pBot
-  push_cast
-  rfl
-
-lemma quote_emb_botT1 (t : Semiterm ℒₒᵣ Empty 1) :
-    (⌜(Rew.emb (botT1 t) : SyntacticSemiterm ℒₒᵣ 1)⌝ : V) =
-    ppairT (bnum 3) (⌜(Rew.emb t : SyntacticSemiterm ℒₒᵣ 1)⌝ : V) ^+ 𝟏 := by
-  rw [botT1, quote_emb_succT1, quote_emb_ppairT1, quote_emb_bShift, ← Semiterm.empty_quote_def, quote_bnumT]
-  push_cast
-  rfl
 
 /-- **The one-variable description term of `pBot (Dupoc k)`**, over `LAct`. -/
 noncomputable def TBD : Semiterm LAct Empty 1 := Semiterm.lMap emb (botT1 (searchT1 gD pD qD))

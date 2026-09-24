@@ -1,4 +1,4 @@
-import ArithS.Cells.Common.Syntax
+import ArithS.Cells.Common.Bots
 import ArithS.Assembly.Cell
 import ArithS.SimTest
 import ArithS.Necessitation.Package
@@ -71,28 +71,6 @@ variable {V : Type*} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
 
 section mirror
 
-/-- `Mirror` in an arbitrary model (`SimTest.Mirror` is `MirrorV` at `V = ℕ`). -/
-noncomputable def MirrorV : V := pSim pOpp pSelf
-
-lemma MirrorV_nat : MirrorV (V := ℕ) = Mirror := rfl
-
-lemma cast_Mirror : ((Mirror : ℕ) : V) = MirrorV := by
-  unfold Mirror MirrorV
-  rw [cast_pSim, cast_pOpp, cast_pSelf]
-
-theorem swapcode_MirrorV : swapcode (MirrorV : V) = MirrorV := by
-  unfold MirrorV swapcode; simp
-
-lemma dnum_MirrorV : dnum (MirrorV : V) = MirrorV := dnum_of_eq swapcode_MirrorV.symm
-
-lemma dU_MirrorV : dU (MirrorV : V) = numeral 0 := by
-  unfold dU
-  rw [swapcode_MirrorV, if_neg (_root_.lt_irrefl _), if_neg (_root_.lt_irrefl _)]
-
-lemma dW_MirrorV : dW (MirrorV : V) = numeral 1 := by
-  unfold dW
-  rw [swapcode_MirrorV, if_neg (_root_.lt_irrefl _), if_neg (_root_.lt_irrefl _)]
-
 /-- **Mirror's sim step in every model**: Mirror in the frame `(Mirror, opp)` runs `opp` in the
 frame `(opp, Mirror)` (`EvalGraph.sim_iff` + `psubst_opp`/`psubst_self`). -/
 theorem mirror_step_V (n opp a : V) :
@@ -119,21 +97,6 @@ end mirror
 /-! ### 2. The fixed formulas and their instance equations on codes -/
 
 section instanceEq
-
-/-- **Mirror's closed description term** (over `LAct`): the structural term of its code. -/
-noncomputable def TM : ClosedSemiterm LAct 0 := Semiterm.lMap emb (progTT Mirror)
-
-lemma lMap_swap_TM : Semiterm.lMap swap TM = TM := term_lMap_swap_emb _
-
-/-- `TM` denotes `MirrorV` in every model. -/
-theorem val_TM_V : TM.val (s := stdActV V) ![] Empty.elim = MirrorV := by
-  unfold TM
-  rw [Semiterm.val_lMap, stdActV_lMap_emb, val_progTT_V, cast_Mirror]
-
-/-- The code of `TM` is the structural term code of `MirrorV`. -/
-theorem quote_emb_TM : (⌜(Rew.emb TM : SyntacticSemiterm LAct 0)⌝ : V) = progT MirrorV := by
-  unfold TM
-  rw [term_emb_lMap_emb, quote_term_lMap_emb, ← Semiterm.empty_quote_def, quote_progTT, cast_Mirror]
 
 
 /-- **The fixed formula of Dupoc vs Mirror**: the template instance `GtmplA 0` filled with
