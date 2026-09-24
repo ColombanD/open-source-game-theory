@@ -587,13 +587,9 @@ section slack
 /-- Two-level elimination under the `(21, 24)` budget (the left conjunct split). -/
 lemma slack6_le₁ (a x y u v z : V) (hx : x = u + v + 1) (hz : z = x + y + 1) :
     a + 8 * (x + y) + 7 + 8 * (u + v) + 7 ≤ a + ((21 : ℕ) : V) + ((24 : ℕ) : V) * z := by
-  have huv : u + v ≤ x + y := by subst hx; exact le_trans le_self_add le_self_add
-  subst hz
+  refine le_trans (slack4_le a x y u v z hx hz) ?_
   push_cast
-  calc a + 8 * (x + y) + 7 + 8 * (u + v) + 7 ≤ a + 8 * (x + y) + 7 + 8 * (x + y) + 7 := by gcongr
-    _ ≤ a + 8 * (x + y) + 7 + 8 * (x + y) + 7 + (8 * (x + y) + 7) := le_self_add
-    _ = a + 21 + 24 * (x + y) := by ring
-    _ ≤ a + 21 + 24 * (x + y + 1) := by gcongr a + 21 + 24 * ?_; exact le_self_add
+  gcongr <;> norm_num
 
 /-- Three-level elimination: the right conjunct `y = y₁ + y₂ + 1` split, then its LEFT part
 `y₁ = s + t + 1`. -/
@@ -606,12 +602,17 @@ lemma slack6_le (a x y y₁ y₂ s t z : V) (hy : y = y₁ + y₂ + 1) (hs : y�
       _ ≤ s + t + 1 + y₂ := le_self_add
       _ ≤ s + t + 1 + y₂ + 1 := le_self_add
       _ ≤ x + (s + t + 1 + y₂ + 1) := le_add_self
-  subst hz
-  push_cast
-  calc a + 8 * (x + y) + 7 + 8 * (y₁ + y₂) + 7 + 8 * (s + t) + 7
-      ≤ a + 8 * (x + y) + 7 + 8 * (x + y) + 7 + 8 * (x + y) + 7 := by gcongr
-    _ = a + 21 + 24 * (x + y) := by ring
-    _ ≤ a + 21 + 24 * (x + y + 1) := by gcongr a + 21 + 24 * ?_; exact le_self_add
+  have h := slack_depth_le a z [(x, y), (y₁, y₂), (s, t)] (by
+    intro p hp
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
+    rcases hp with rfl | rfl | rfl
+    · subst hz; exact le_self_add
+    · subst hz; exact le_trans h1 le_self_add
+    · subst hz; exact le_trans h2 le_self_add)
+  simp only [List.map_cons, List.map_nil, List.sum_cons, List.sum_nil, List.length_cons, List.length_nil,
+    add_zero] at h
+  push_cast at h ⊢
+  exact le_trans (le_of_eq (by ring)) (le_trans h (le_of_eq (by ring)))
 
 /-- Three-level elimination, the right conjunct's RIGHT part `y₂ = s + t + 1`. -/
 lemma slack6_le' (a x y y₁ y₂ s t z : V) (hy : y = y₁ + y₂ + 1) (hs : y₂ = s + t + 1) (hz : z = x + y + 1) :
@@ -623,28 +624,39 @@ lemma slack6_le' (a x y y₁ y₂ s t z : V) (hy : y = y₁ + y₂ + 1) (hs : y�
       _ ≤ y₁ + (s + t + 1) := le_add_self
       _ ≤ y₁ + (s + t + 1) + 1 := le_self_add
       _ ≤ x + (y₁ + (s + t + 1) + 1) := le_add_self
-  subst hz
-  push_cast
-  calc a + 8 * (x + y) + 7 + 8 * (y₁ + y₂) + 7 + 8 * (s + t) + 7
-      ≤ a + 8 * (x + y) + 7 + 8 * (x + y) + 7 + 8 * (x + y) + 7 := by gcongr
-    _ = a + 21 + 24 * (x + y) := by ring
-    _ ≤ a + 21 + 24 * (x + y + 1) := by gcongr a + 21 + 24 * ?_; exact le_self_add
+  have h := slack_depth_le a z [(x, y), (y₁, y₂), (s, t)] (by
+    intro p hp
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
+    rcases hp with rfl | rfl | rfl
+    · subst hz; exact le_self_add
+    · subst hz; exact le_trans h1 le_self_add
+    · subst hz; exact le_trans h2 le_self_add)
+  simp only [List.map_cons, List.map_nil, List.sum_cons, List.sum_nil, List.length_cons, List.length_nil,
+    add_zero] at h
+  push_cast at h ⊢
+  exact le_trans (le_of_eq (by ring)) (le_trans h (le_of_eq (by ring)))
 
 lemma slack6_nat₁ (a x y u v z k : ℕ) (hx : x = u + v + 1) (hz : z = x + y + 1) (h : a + 21 + 24 * z ≤ k) :
     a + 8 * (x + y) + 7 + 8 * (u + v) + 7 = k ∨ a + 8 * (x + y) + 7 + 8 * (u + v) + 7 < k := by
-  subst hx hz; omega
+  have h1 := le_def.mp (slack6_le₁ (V := ℕ) a x y u v z hx hz)
+  simp only [natCast_nat] at h1
+  exact le_def_trans h1 (Nat.eq_or_lt_of_le h)
 
 lemma slack6_nat (a x y y₁ y₂ s t z k : ℕ) (hy : y = y₁ + y₂ + 1) (hs : y₁ = s + t + 1) (hz : z = x + y + 1)
     (h : a + 21 + 24 * z ≤ k) :
     a + 8 * (x + y) + 7 + 8 * (y₁ + y₂) + 7 + 8 * (s + t) + 7 = k ∨
       a + 8 * (x + y) + 7 + 8 * (y₁ + y₂) + 7 + 8 * (s + t) + 7 < k := by
-  subst hy hs hz; omega
+  have h1 := le_def.mp (slack6_le (V := ℕ) a x y y₁ y₂ s t z hy hs hz)
+  simp only [natCast_nat] at h1
+  exact le_def_trans h1 (Nat.eq_or_lt_of_le h)
 
 lemma slack6_nat' (a x y y₁ y₂ s t z k : ℕ) (hy : y = y₁ + y₂ + 1) (hs : y₂ = s + t + 1) (hz : z = x + y + 1)
     (h : a + 21 + 24 * z ≤ k) :
     a + 8 * (x + y) + 7 + 8 * (y₁ + y₂) + 7 + 8 * (s + t) + 7 = k ∨
       a + 8 * (x + y) + 7 + 8 * (y₁ + y₂) + 7 + 8 * (s + t) + 7 < k := by
-  subst hy hs hz; omega
+  have h1 := le_def.mp (slack6_le' (V := ℕ) a x y y₁ y₂ s t z hy hs hz)
+  simp only [natCast_nat] at h1
+  exact le_def_trans h1 (Nat.eq_or_lt_of_le h)
 
 end slack
 

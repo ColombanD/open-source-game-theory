@@ -584,29 +584,7 @@ DIMCID defect against CooperateBot and the transposed searcher cooperate with De
 antecedents "I play C against CooperateBot" / "I play D against DefectBot" are false and both
 implications hold, in both readings. -/
 theorem loebSound_pDi0 : LoebSound (pG (cl T0) (cterm Act.C) (cterm Act.D)) 7 8 := by
-  intro V _ _ k a ha h
-  have : V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
-  have ha' : a + 8 * (formulaLen LAct (instB (⌜qDG (cl T0) (cterm Act.C) (cterm Act.D)⌝ : V) k) +
-      formulaLen LAct (instB (⌜qTG (Semiterm.lMap swap (cl T0 : Semiterm LAct Empty 1))
-        (Semiterm.lMap swap (cterm Act.C)) (Semiterm.lMap swap (cterm Act.D))⌝ : V) k)) + 7 ≤ k :=
-    le_trans (pConj_slack_le a _ _ _ (formulaLen_instB_pG (cl T0) (cterm Act.C) (cterm Act.D) k)) ha
-  obtain ⟨h1, h2⟩ := pG_both_V k (cl T0) (cterm Act.C) (cterm Act.D) (hX_const_zero k) hU_C_zero hW_D_zero a ha' h
-  rw [swapcode_pConst_zero] at h2
-  have hopp' : relabel ((Semiterm.lMap swap (cterm Act.C : ClosedSemiterm LAct 0)).val (s := stdActV V) ![] Empty.elim)
-      ((Semiterm.lMap swap (cterm Act.D : ClosedSemiterm LAct 0)).val (s := stdActV V) ![] Empty.elim)
-      ((Semiterm.lMap swap (cl T0 : Semiterm LAct Empty 1)).val (s := stdActV V) ![k] Empty.elim) = pConst 1 := by
-    rw [lMap_swap_cl, lMap_swap_T0, lMap_swap_cterm_C, lMap_swap_cterm_D]
-    exact val_desc_const_one k
-  have hA : ¬ ∃ n, EvalGraph n (DimcidV k) (pConst 0) (DimcidV k) 0 := by
-    rintro ⟨n, hn⟩
-    exact _root_.zero_ne_one (EvalGraph.unique_V' n 2 _ _ _ _ _ hn h1)
-  have hB : ¬ ∃ n, EvalGraph n (DimcidTV k) (pConst 1) (DimcidTV k) 1 := by
-    rintro ⟨n, hn⟩
-    exact _root_.one_ne_zero (EvalGraph.unique_V' n 2 _ _ _ _ _ hn h2)
-  exact ⟨(eval_pG_iff_stdActS k (cl T0) (cterm Act.C) (cterm Act.D) (val_desc_const_zero k) hopp').mpr
-      ⟨fun h ↦ absurd h hA, fun h ↦ absurd h hB⟩,
-    (eval_pG_iff_swap k (cl T0) (cterm Act.C) (cterm Act.D) (val_desc_const_zero k) hopp').mpr
-      ⟨fun h ↦ absurd h hA, fun h ↦ absurd h hB⟩⟩
+  exact loebSound_pG_of describes_CB
 
 /-- **DIMCID × CooperateBot is `(D, C)` in PA-`S'`**, for all large `k`, unconditional — the engine's cell is
 `(C, C)` (`outcome_DIMCID_vs_CooperateBot`, an unreadability census). In `S'` the guard "I play C against

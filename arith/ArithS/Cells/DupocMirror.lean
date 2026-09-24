@@ -1,5 +1,6 @@
 import ArithS.Cells.Common.Templates
 import ArithS.Cells.Common.Probers
+import ArithS.Cells.Common.Families
 import ArithS.Assembly.Cell
 import ArithS.SimTest
 import ArithS.Necessitation.Package

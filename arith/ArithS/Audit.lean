@@ -69,6 +69,7 @@ import ArithS.Cells.Common.Syntax
 import ArithS.Cells.Common.Bots
 import ArithS.Cells.Common.Templates
 import ArithS.Cells.Common.Probers
+import ArithS.Cells.Common.Families
 import ArithS.Cells.DupocMirror
 import ArithS.Cells.JustBot
 import ArithS.Cells.DIMCID
@@ -2192,6 +2193,24 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms bot_const_play_V
 #print axioms const_not_play_V
 #print axioms bot_const_not_play_V
+
+-- Consolidation stage 5 (Cells/Common/Families, 2026-09-24): the family pQ q := q ⋏ τq and its lemmas (MOVED from
+-- FlipCells), nat_le_of_le_def (MOVED), NEW loebSound_pQ_of (loebSound_pWM/pWW are corollaries) and NEW
+-- slack_depth_le (slack4_*/slack6_* are corollaries, in place); loebSound_pG_of/_of_above moved into DIMCID after
+-- pG with the NEW describes_dimcid/describes_mirror (DIMCID) and describes_CB (Common/Templates) making
+-- loebSound_pDD/_pDMi/_pDi0 corollaries. Only the names not already printed elsewhere.
+#print axioms nat_le_of_le_def
+#print axioms pQ_def
+#print axioms lMap_swap_pQ
+#print axioms instB_quote_pQ
+#print axioms formulaLen_instB_pQ
+#print axioms eval_pQ_std
+#print axioms eval_pQ_swap
+#print axioms loebSound_pQ_of
+#print axioms slack_depth_le
+#print axioms describes_CB
+#print axioms describes_dimcid
+#print axioms describes_mirror
 
 -- Route B Phase 2, cell 1 — Dupoc × Mirror `(C, C)` and Cupod × Mirror `(D, D)` in PA-`S'` (Cells/DupocMirror,
 -- 2026-09-23), the first Löb family after self-play, on the family-parametric assembly: Mirror in every model

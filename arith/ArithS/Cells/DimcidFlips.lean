@@ -93,32 +93,6 @@ end closed
 section above
 
 
-/-- **DIMCID's Löb premise against an opponent described above `K`, slack `(7 + K, 8)`**
-(`loebSound_pG_of`, with the threshold supplied by the slack as in `loebSound_pPM`). -/
-theorem loebSound_pG_of_above {K : ℕ} {X : Semiterm LAct Empty 1} {U W : ClosedSemiterm LAct 0}
-    (h : DescribesAbove K X U W) : LoebSound (pG X U W) (7 + K) 8 := by
-  intro V _ _ k a ha hp
-  have : V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
-  have hk : (K : V) ≤ k :=
-    le_trans (Nat.cast_le.mpr (Nat.le_add_left K 7)) (le_trans le_add_self (le_trans le_self_add ha))
-  have h7 : ((7 : ℕ) : V) ≤ ((7 + K : ℕ) : V) := Nat.cast_le.mpr (Nat.le_add_right 7 K)
-  have hb : a + ((7 : ℕ) : V) + ((8 : ℕ) : V) * formulaLen LAct (instB (⌜pG X U W⌝ : V) k) ≤
-      a + ((7 + K : ℕ) : V) + ((8 : ℕ) : V) * formulaLen LAct (instB (⌜pG X U W⌝ : V) k) :=
-    _root_.add_le_add_left (_root_.add_le_add_right h7 a) _
-  have ha' : a + 8 * (formulaLen LAct (instB (⌜qDG X U W⌝ : V) k) +
-      formulaLen LAct (instB (⌜qTG (Semiterm.lMap swap X) (Semiterm.lMap swap U) (Semiterm.lMap swap W)⌝ : V) k))
-      + 7 ≤ k :=
-    le_trans (pConj_slack_le a _ _ _ (formulaLen_instB_pG X U W k)) (le_trans hb ha)
-  obtain ⟨h1, h2⟩ := pG_both_V k X U W (h.hX V k hk) (h.hU V k hk) (h.hW V k hk) a ha' hp
-  have hA : ¬ ∃ n, EvalGraph n (DimcidV k) (descVal X U W k) (DimcidV k) 0 := by
-    rintro ⟨n, hn⟩
-    exact _root_.zero_ne_one (EvalGraph.unique_V' n 2 _ _ _ _ _ hn h1)
-  have hB : ¬ ∃ n, EvalGraph n (DimcidTV k) (swapcode (descVal X U W k)) (DimcidTV k) 1 := by
-    rintro ⟨n, hn⟩
-    exact _root_.one_ne_zero (EvalGraph.unique_V' n 2 _ _ _ _ _ hn h2)
-  exact ⟨(eval_pG_iff_stdActS k X U W rfl (h.hT V k hk)).mpr ⟨fun h ↦ absurd h hA, fun h ↦ absurd h hB⟩,
-    (eval_pG_iff_swap k X U W rfl (h.hT V k hk)).mpr ⟨fun h ↦ absurd h hA, fun h ↦ absurd h hB⟩⟩
-
 /-- **DIMCID defects against every opponent described above `K`, and FINDS its guard, for all large `k`**
 (`dimcid_vs_described` above a threshold; the threshold `k₀ + K` keeps `K ≤ k`). -/
 theorem dimcid_vs_described_above {K : ℕ} {X : Semiterm LAct Empty 1} {U W : ClosedSemiterm LAct 0}

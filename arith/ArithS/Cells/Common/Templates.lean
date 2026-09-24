@@ -816,6 +816,17 @@ lemma descVal_botCB_T (k : V) :
   rw [descVal_def, lMap_swap_cl, lMap_swap_TB0, lMap_swap_cterm_C, lMap_swap_cterm_D]
   exact val_desc_bot_one k
 
+/-- The triple `(cl T0, C, D)` describes `CooperateBot`'s code `pConst 0` in every model (the `T0` tower,
+`val_desc_const_zero/one`; consolidation stage 5 — `loebSound_pDi0` is `loebSound_pG_of` of it). -/
+theorem describes_CB : Describes (cl T0) (cterm Act.C) (cterm Act.D) where
+  hX := by intro V _ _ k; rw [descVal_def, val_desc_const_zero]; exact hX_const_zero k
+  hU := by intro V _ _ k; rw [descVal_def, val_desc_const_zero]; exact hU_C_zero
+  hW := by intro V _ _ k; rw [descVal_def, val_desc_const_zero]; exact hW_D_zero
+  hT := by
+    intro V _ _ k
+    rw [descVal_def, descVal_def, lMap_swap_cl, lMap_swap_T0, lMap_swap_cterm_C, lMap_swap_cterm_D,
+      val_desc_const_one, val_desc_const_zero, swapcode_pConst_zero]
+
 /-- The triple `(cl TB0, C, D)` describes `.bot CooperateBot` in every model. -/
 theorem describes_botCB : Describes (cl TB0) (cterm Act.C) (cterm Act.D) where
   hX := by intro V _ _ k; rw [descVal_botCB]; exact hX_bot_zero k

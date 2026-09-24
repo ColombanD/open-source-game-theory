@@ -72,29 +72,6 @@ variable {V : Type*} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
 section described
 
 
-/-- **DIMCID's Löb premise against ANY described opponent, slack `(7, 8)`** (`loebSound_pDi0`, made
-generic): a box of the family makes `DimcidV k` defect against the opponent and the transposed searcher
-cooperate with the transposed opponent, so the antecedents "I play C" / "I play D" are FALSE and both
-implications hold in both readings — whatever the consequents say. This is the self-fulfilling refutation:
-the guard "I cooperate ⇒ …" is made true by the defection its own proof triggers. -/
-theorem loebSound_pG_of {X : Semiterm LAct Empty 1} {U W : ClosedSemiterm LAct 0} (h : Describes X U W) :
-    LoebSound (pG X U W) 7 8 := by
-  intro V _ _ k a ha hp
-  have : V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
-  have ha' : a + 8 * (formulaLen LAct (instB (⌜qDG X U W⌝ : V) k) +
-      formulaLen LAct (instB (⌜qTG (Semiterm.lMap swap X) (Semiterm.lMap swap U) (Semiterm.lMap swap W)⌝ : V) k))
-      + 7 ≤ k :=
-    le_trans (pConj_slack_le a _ _ _ (formulaLen_instB_pG X U W k)) ha
-  obtain ⟨h1, h2⟩ := pG_both_V k X U W (h.hX V k) (h.hU V k) (h.hW V k) a ha' hp
-  have hA : ¬ ∃ n, EvalGraph n (DimcidV k) (descVal X U W k) (DimcidV k) 0 := by
-    rintro ⟨n, hn⟩
-    exact _root_.zero_ne_one (EvalGraph.unique_V' n 2 _ _ _ _ _ hn h1)
-  have hB : ¬ ∃ n, EvalGraph n (DimcidTV k) (swapcode (descVal X U W k)) (DimcidTV k) 1 := by
-    rintro ⟨n, hn⟩
-    exact _root_.one_ne_zero (EvalGraph.unique_V' n 2 _ _ _ _ _ hn h2)
-  exact ⟨(eval_pG_iff_stdActS k X U W rfl (h.hT V k)).mpr ⟨fun h ↦ absurd h hA, fun h ↦ absurd h hB⟩,
-    (eval_pG_iff_swap k X U W rfl (h.hT V k)).mpr ⟨fun h ↦ absurd h hA, fun h ↦ absurd h hB⟩⟩
-
 /-- **DIMCID defects against every described opponent, and FINDS its guard, for all large `k`**,
 unconditional: `family_found` on `pG X U W` (the arithmetized `pblt_engine`), then ∧-elimination on codes
 (`pG_both_V`, `pG_guards_V`). -/
@@ -220,9 +197,6 @@ theorem box_conseq_uniform (p : Semisentence LAct 1) {S₀ S₁ d : ℕ} (hE : B
     rw [eval_Box_g_iff_swap] at hbox
     exact (key x ((eval_leF_numeral_bvar _ swapActS_lMap_emb _ x).mp hx) hbox).2
 
-/-- Foundation's `≤` at ℕ (`le_def`) read as `Nat.le`, with the sides inferred (never restate a term that
-carries `‖k‖ ^ d`: the pow instance at ℕ is `instCommSemiring_foundation`'s, not `Nat.instMonoid`'s). -/
-lemma nat_le_of_le_def {a b : ℕ} (h : a = b ∨ a < b) : a ≤ b := by omega
 
 /-- Substitution distributes over the implication. -/
 lemma substs_imp (φ ψ : Semisentence LAct 1) (t : ClosedSemiterm LAct 0) :
@@ -455,57 +429,6 @@ end cell2
 
 section negFamily
 
-/-- **The two-guard family of a single searcher's cell**: its guard's fixed formula `q` AND the transposed
-searcher's `τq` — one box, ∧-elimination on codes, the same slack `(7, 8)` as `pConj`. -/
-noncomputable def pQ (q : Semisentence LAct 1) : Semisentence LAct 1 := q ⋏ Semiformula.lMap swap q
-
-lemma pQ_def (q : Semisentence LAct 1) : pQ q = q ⋏ Semiformula.lMap swap q := rfl
-
-lemma lMap_swap_pQ (q : Semisentence LAct 1) :
-    Semiformula.lMap swap (pQ q) = Semiformula.lMap swap q ⋏ q := by
-  rw [pQ_def, LogicalConnective.HomClass.map_and, lMap_swap_swap]
-
-theorem instB_quote_pQ (q : Semisentence LAct 1) (k : V) :
-    instB (⌜pQ q⌝ : V) k = instB (⌜q⌝ : V) k ^⋏ instB (⌜Semiformula.lMap swap q⌝ : V) k :=
-  instB_quote_and _ _ k
-
-lemma formulaLen_instB_pQ (q : Semisentence LAct 1) (k : V) :
-    formulaLen LAct (instB (⌜pQ q⌝ : V) k) =
-      formulaLen LAct (instB (⌜q⌝ : V) k) + formulaLen LAct (instB (⌜Semiformula.lMap swap q⌝ : V) k) + 1 := by
-  rw [instB_quote_pQ,
-    formulaLen_and (isFormula_instB_quote _ k).isUFormula (isFormula_instB_quote _ k).isUFormula]
-
-/-- **Both instances are provable within `k` from a box of the family with the slack** (∧-elimination on
-codes, `pG_guards_V`'s shape for an arbitrary `q`). -/
-theorem pQ_both_V (q : Semisentence LAct 1) (k a : V)
-    (ha : a + 8 * (formulaLen LAct (instB (⌜q⌝ : V) k) + formulaLen LAct (instB (⌜Semiformula.lMap swap q⌝ : V) k))
-      + 7 ≤ k)
-    (h : LenDerivable TAct a (instB (⌜pQ q⌝ : V) k)) :
-    LenProvableV TAct k (instB (⌜q⌝ : V) k) ∧ LenProvableV TAct k (instB (⌜Semiformula.lMap swap q⌝ : V) k) := by
-  rw [instB_quote_pQ] at h
-  have hx := isFormula_instB_quote q k
-  have hy := isFormula_instB_quote (Semiformula.lMap swap q) k
-  exact ⟨(lenDerivable_iff_lenProvableV _ _).mp (lenDerivable_mono_V ha (lenDerivable_andL_V hx hy h)),
-    (lenDerivable_iff_lenProvableV _ _).mp (lenDerivable_mono_V ha (lenDerivable_andR_V hx hy h))⟩
-
-omit [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] in
-/-- `pQ q (k)` in the standard reading: both conjuncts. -/
-theorem eval_pQ_std (q : Semisentence LAct 1) (k : V) :
-    Semiformula.Eval (s := stdActS V) ![k] Empty.elim (pQ q) ↔
-      Semiformula.Eval (s := stdActS V) ![k] Empty.elim q ∧
-      Semiformula.Eval (s := stdActS V) ![k] Empty.elim (Semiformula.lMap swap q) := by
-  rw [pQ_def]
-  simp only [LogicalConnective.HomClass.map_and, LogicalConnective.Prop.and_eq]
-
-omit [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] in
-/-- `pQ q (k)` in the swapped reading: the conjuncts exchange roles. -/
-theorem eval_pQ_swap (q : Semisentence LAct 1) (k : V) :
-    Semiformula.Eval (s := swapActS V) ![k] Empty.elim (pQ q) ↔
-      Semiformula.Eval (s := stdActS V) ![k] Empty.elim (Semiformula.lMap swap q) ∧
-      Semiformula.Eval (s := stdActS V) ![k] Empty.elim q := by
-  rw [eval_swapActS, lMap_swap_pQ]
-  simp only [LogicalConnective.HomClass.map_and, LogicalConnective.Prop.and_eq]
-
 
 /-! #### Wary's fixed formulas against Mirror and against itself -/
 
@@ -586,12 +509,7 @@ Wary defects (fuel 2), so Mirror copies the defection (fuel 3), so "Mirror plays
 determinism — the guard "¬(Mirror plays C against me)" is TRUE; the transposed searcher cooperates and Mirror
 copies that, so "¬(Mirror plays D against me)" is true too. Both readings. -/
 theorem loebSound_pWM : LoebSound (pQ qWM) 7 8 := by
-  intro V _ _ k a ha hp
-  have : V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
-  have ha' : a + 8 * (formulaLen LAct (instB (⌜qWM⌝ : V) k) +
-      formulaLen LAct (instB (⌜Semiformula.lMap swap qWM⌝ : V) k)) + 7 ≤ k :=
-    le_trans (pConj_slack_le a _ _ _ (formulaLen_instB_pQ qWM k)) ha
-  obtain ⟨h1, h2⟩ := pQ_both_V qWM k a ha' hp
+  refine loebSound_pQ_of qWM fun V _ _ k h1 h2 ↦ ?_
   rw [← guardCode_WM] at h1
   rw [← guardCode_WMT] at h2
   have e1 := mirror_copies_V _ _ (SV_search_V gW 1 k MirrorV h1)
@@ -604,21 +522,13 @@ theorem loebSound_pWM : LoebSound (pQ qWM) 7 8 := by
   have hB : ¬ ∃ n, EvalGraph n MirrorV (SV gWT 0 k) MirrorV 1 := by
     rintro ⟨n, hn⟩
     exact _root_.one_ne_zero (EvalGraph.unique_V' n 3 _ _ _ _ _ hn e2)
-  refine ⟨?_, ?_⟩
-  · rw [eval_pQ_std, ← stdActV_eq_stdActS, eval_qWM_iff, eval_qWMT_iff]
-    exact ⟨hA, hB⟩
-  · rw [eval_pQ_swap, ← stdActV_eq_stdActS, eval_qWMT_iff, eval_qWM_iff]
-    exact ⟨hB, hA⟩
+  rw [← stdActV_eq_stdActS, eval_qWM_iff, eval_qWMT_iff]
+  exact ⟨hA, hB⟩
 
 /-- **Wary's Löb premise against itself, slack `(7, 8)`**: found ⇒ Wary defects against Wary ⇒ "Wary plays C
 against Wary" is FALSE ⇒ the guard is true; the transposed searcher likewise. -/
 theorem loebSound_pWW : LoebSound (pQ qWW) 7 8 := by
-  intro V _ _ k a ha hp
-  have : V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
-  have ha' : a + 8 * (formulaLen LAct (instB (⌜qWW⌝ : V) k) +
-      formulaLen LAct (instB (⌜Semiformula.lMap swap qWW⌝ : V) k)) + 7 ≤ k :=
-    le_trans (pConj_slack_le a _ _ _ (formulaLen_instB_pQ qWW k)) ha
-  obtain ⟨h1, h2⟩ := pQ_both_V qWW k a ha' hp
+  refine loebSound_pQ_of qWW fun V _ _ k h1 h2 ↦ ?_
   rw [← guardCode_WW] at h1
   rw [← guardCode_WWT] at h2
   have e1 := SV_search_V gW 1 k (SV gW 1 k) h1
@@ -631,11 +541,8 @@ theorem loebSound_pWW : LoebSound (pQ qWW) 7 8 := by
   have hB : ¬ ∃ n, EvalGraph n (SV gWT 0 k) (SV gWT 0 k) (SV gWT 0 k) 1 := by
     rintro ⟨n, hn⟩
     exact _root_.one_ne_zero (EvalGraph.unique_V' n 2 _ _ _ _ _ hn e2)
-  refine ⟨?_, ?_⟩
-  · rw [eval_pQ_std, ← stdActV_eq_stdActS, eval_qWW_iff, eval_qWWT_iff]
-    exact ⟨hA, hB⟩
-  · rw [eval_pQ_swap, ← stdActV_eq_stdActS, eval_qWWT_iff, eval_qWW_iff]
-    exact ⟨hB, hA⟩
+  rw [← stdActV_eq_stdActS, eval_qWW_iff, eval_qWWT_iff]
+  exact ⟨hA, hB⟩
 
 /-! #### Cells 3 and 4 -/
 

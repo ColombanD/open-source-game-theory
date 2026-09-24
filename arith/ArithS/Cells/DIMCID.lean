@@ -694,6 +694,57 @@ theorem eval_pG_iff_stdActS (k : V) (X : Semiterm LAct Empty 1) (U W : ClosedSem
       ((∃ n, EvalGraph n (DimcidTV k) opp' (DimcidTV k) 1) → (∃ n, EvalGraph n opp' (DimcidTV k) opp' 0)) := by
   rw [← stdActV_eq_stdActS]; exact eval_pG_iff_std k X U W hopp hopp'
 
+/-! #### The Löb premise against ANY described opponent (the self-fulfilling refutation) -/
+
+/-- **DIMCID's Löb premise against ANY described opponent, slack `(7, 8)`** (`loebSound_pDi0`, made
+generic): a box of the family makes `DimcidV k` defect against the opponent and the transposed searcher
+cooperate with the transposed opponent, so the antecedents "I play C" / "I play D" are FALSE and both
+implications hold in both readings — whatever the consequents say. This is the self-fulfilling refutation:
+the guard "I cooperate ⇒ …" is made true by the defection its own proof triggers. -/
+theorem loebSound_pG_of {X : Semiterm LAct Empty 1} {U W : ClosedSemiterm LAct 0} (h : Describes X U W) :
+    LoebSound (pG X U W) 7 8 := by
+  intro V _ _ k a ha hp
+  have : V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
+  have ha' : a + 8 * (formulaLen LAct (instB (⌜qDG X U W⌝ : V) k) +
+      formulaLen LAct (instB (⌜qTG (Semiterm.lMap swap X) (Semiterm.lMap swap U) (Semiterm.lMap swap W)⌝ : V) k))
+      + 7 ≤ k :=
+    le_trans (pConj_slack_le a _ _ _ (formulaLen_instB_pG X U W k)) ha
+  obtain ⟨h1, h2⟩ := pG_both_V k X U W (h.hX V k) (h.hU V k) (h.hW V k) a ha' hp
+  have hA : ¬ ∃ n, EvalGraph n (DimcidV k) (descVal X U W k) (DimcidV k) 0 := by
+    rintro ⟨n, hn⟩
+    exact _root_.zero_ne_one (EvalGraph.unique_V' n 2 _ _ _ _ _ hn h1)
+  have hB : ¬ ∃ n, EvalGraph n (DimcidTV k) (swapcode (descVal X U W k)) (DimcidTV k) 1 := by
+    rintro ⟨n, hn⟩
+    exact _root_.one_ne_zero (EvalGraph.unique_V' n 2 _ _ _ _ _ hn h2)
+  exact ⟨(eval_pG_iff_stdActS k X U W rfl (h.hT V k)).mpr ⟨fun h ↦ absurd h hA, fun h ↦ absurd h hB⟩,
+    (eval_pG_iff_swap k X U W rfl (h.hT V k)).mpr ⟨fun h ↦ absurd h hA, fun h ↦ absurd h hB⟩⟩
+
+/-- **DIMCID's Löb premise against an opponent described above `K`, slack `(7 + K, 8)`**
+(`loebSound_pG_of`, with the threshold supplied by the slack as in `loebSound_pPM`). -/
+theorem loebSound_pG_of_above {K : ℕ} {X : Semiterm LAct Empty 1} {U W : ClosedSemiterm LAct 0}
+    (h : DescribesAbove K X U W) : LoebSound (pG X U W) (7 + K) 8 := by
+  intro V _ _ k a ha hp
+  have : V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
+  have hk : (K : V) ≤ k :=
+    le_trans (Nat.cast_le.mpr (Nat.le_add_left K 7)) (le_trans le_add_self (le_trans le_self_add ha))
+  have h7 : ((7 : ℕ) : V) ≤ ((7 + K : ℕ) : V) := Nat.cast_le.mpr (Nat.le_add_right 7 K)
+  have hb : a + ((7 : ℕ) : V) + ((8 : ℕ) : V) * formulaLen LAct (instB (⌜pG X U W⌝ : V) k) ≤
+      a + ((7 + K : ℕ) : V) + ((8 : ℕ) : V) * formulaLen LAct (instB (⌜pG X U W⌝ : V) k) :=
+    _root_.add_le_add_left (_root_.add_le_add_right h7 a) _
+  have ha' : a + 8 * (formulaLen LAct (instB (⌜qDG X U W⌝ : V) k) +
+      formulaLen LAct (instB (⌜qTG (Semiterm.lMap swap X) (Semiterm.lMap swap U) (Semiterm.lMap swap W)⌝ : V) k))
+      + 7 ≤ k :=
+    le_trans (pConj_slack_le a _ _ _ (formulaLen_instB_pG X U W k)) (le_trans hb ha)
+  obtain ⟨h1, h2⟩ := pG_both_V k X U W (h.hX V k hk) (h.hU V k hk) (h.hW V k hk) a ha' hp
+  have hA : ¬ ∃ n, EvalGraph n (DimcidV k) (descVal X U W k) (DimcidV k) 0 := by
+    rintro ⟨n, hn⟩
+    exact _root_.zero_ne_one (EvalGraph.unique_V' n 2 _ _ _ _ _ hn h1)
+  have hB : ¬ ∃ n, EvalGraph n (DimcidTV k) (swapcode (descVal X U W k)) (DimcidTV k) 1 := by
+    rintro ⟨n, hn⟩
+    exact _root_.one_ne_zero (EvalGraph.unique_V' n 2 _ _ _ _ _ hn h2)
+  exact ⟨(eval_pG_iff_stdActS k X U W rfl (h.hT V k hk)).mpr ⟨fun h ↦ absurd h hA, fun h ↦ absurd h hB⟩,
+    (eval_pG_iff_swap k X U W rfl (h.hT V k hk)).mpr ⟨fun h ↦ absurd h hA, fun h ↦ absurd h hB⟩⟩
+
 end conj
 
 /-! ### 7. Cell 1 — DIMCID × DIMCID `(D, D)` -/
@@ -755,21 +806,20 @@ noncomputable def pDD : Semisentence LAct 1 := pG TDi uDi wDi
 
 lemma pDD_def : pDD = pG TDi uDi wDi := rfl
 
+/-- **DIMCID's canonical triple describes `DimcidV k` in every model** (`hX/hU/hW_self`, `hopp/hopp'_self`,
+packaged as a `Describes`; consolidation stage 5). -/
+theorem describes_dimcid : Describes TDi uDi wDi where
+  hX := by intro V _ _ k; rw [descVal_def, hopp_self]; exact hX_self k
+  hU := by intro V _ _ k; rw [descVal_def, hopp_self]; exact hU_self k
+  hW := by intro V _ _ k; rw [descVal_def, hopp_self]; exact hW_self k
+  hT := by intro V _ _ k; rw [descVal_def, descVal_def, hopp'_self, hopp_self, swapcode_DimcidV]
+
 /-- **The bounded Löb premise of the self-play family, slack `(7, 8)`**: a proof code of `pDD(k)` of
 length `a` with `a + 7 + 8·|pDD(k)| ≤ k` makes both searchers find their guards, so `DimcidV k`
 defects and `DimcidTV k` cooperates (fuel 2), which makes both implications TRUE (their
 consequents hold) in both readings. -/
 theorem loebSound_pDD : LoebSound pDD 7 8 := by
-  intro V _ _ k a ha h
-  have : V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
-  have ha' : a + 8 * (formulaLen LAct (instB (⌜qDG TDi uDi wDi⌝ : V) k) +
-      formulaLen LAct (instB (⌜qTG (Semiterm.lMap swap TDi) (Semiterm.lMap swap uDi) (Semiterm.lMap swap wDi)⌝ : V) k))
-      + 7 ≤ k :=
-    le_trans (pConj_slack_le a _ _ _ (formulaLen_instB_pG TDi uDi wDi k)) ha
-  obtain ⟨h1, h2⟩ := pG_both_V k TDi uDi wDi (hX_self k) (hU_self k) (hW_self k) a ha' h
-  rw [swapcode_DimcidV] at h2
-  exact ⟨(eval_pG_iff_stdActS k TDi uDi wDi (hopp_self k) (hopp'_self k)).mpr ⟨fun _ ↦ ⟨2, h1⟩, fun _ ↦ ⟨2, h2⟩⟩,
-    (eval_pG_iff_swap k TDi uDi wDi (hopp_self k) (hopp'_self k)).mpr ⟨fun _ ↦ ⟨2, h1⟩, fun _ ↦ ⟨2, h2⟩⟩⟩
+  rw [pDD_def]; exact loebSound_pG_of describes_dimcid
 
 /-- **The self-play cell, packaged**: for all large `k`, both searchers find their guards against
 themselves (fuel 2) and both guard boxes hold — `family_found pDD` (the arithmetized `pblt_engine`)
@@ -891,22 +941,19 @@ noncomputable def pDMi : Semisentence LAct 1 := pG (cl TM) (numT 0) (numT 1)
 
 lemma pDMi_def : pDMi = pG (cl TM) (numT 0) (numT 1) := rfl
 
+/-- **Mirror's closed triple `(cl TM, 0, 1)` describes `MirrorV` in every model** (`hX/hU/hW_mirror`,
+`hopp/hopp'_mirror`, packaged; consolidation stage 5). -/
+theorem describes_mirror : Describes (cl TM) (numT 0) (numT 1) where
+  hX := by intro V _ _ k; rw [descVal_def, hopp_mirror]; exact hX_mirror k
+  hU := by intro V _ _ k; rw [descVal_def, hopp_mirror]; exact hU_mirror
+  hW := by intro V _ _ k; rw [descVal_def, hopp_mirror]; exact hW_mirror
+  hT := by intro V _ _ k; rw [descVal_def, descVal_def, hopp'_mirror, hopp_mirror, swapcode_MirrorV]
+
 /-- **The bounded Löb premise of the Mirror family, slack `(7, 8)`**: a box of `pDMi(k)` makes both
 searchers find their guards against Mirror, `DimcidV k` defects and `DimcidTV k` cooperates
 (fuel 2), Mirror COPIES (fuel 3), so both implications are true in both readings. -/
 theorem loebSound_pDMi : LoebSound pDMi 7 8 := by
-  intro V _ _ k a ha h
-  have : V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
-  have ha' : a + 8 * (formulaLen LAct (instB (⌜qDG (cl TM) (numT 0) (numT 1)⌝ : V) k) +
-      formulaLen LAct (instB (⌜qTG (Semiterm.lMap swap (cl TM : Semiterm LAct Empty 1))
-        (Semiterm.lMap swap (numT 0)) (Semiterm.lMap swap (numT 1))⌝ : V) k)) + 7 ≤ k :=
-    le_trans (pConj_slack_le a _ _ _ (formulaLen_instB_pG (cl TM) (numT 0) (numT 1) k)) ha
-  obtain ⟨h1, h2⟩ := pG_both_V k (cl TM) (numT 0) (numT 1) (hX_mirror k) hU_mirror hW_mirror a ha' h
-  rw [swapcode_MirrorV] at h2
-  exact ⟨(eval_pG_iff_stdActS k (cl TM) (numT 0) (numT 1) (hopp_mirror k) (hopp'_mirror k)).mpr
-      ⟨fun _ ↦ ⟨3, mirror_copies_V _ _ h1⟩, fun _ ↦ ⟨3, mirror_copies_V _ _ h2⟩⟩,
-    (eval_pG_iff_swap k (cl TM) (numT 0) (numT 1) (hopp_mirror k) (hopp'_mirror k)).mpr
-      ⟨fun _ ↦ ⟨3, mirror_copies_V _ _ h1⟩, fun _ ↦ ⟨3, mirror_copies_V _ _ h2⟩⟩⟩
+  rw [pDMi_def]; exact loebSound_pG_of describes_mirror
 
 /-- **The Mirror cell, packaged**: for all large `k`, both searchers find their guards against
 Mirror (fuel 2) and both guard boxes hold. -/
@@ -1041,31 +1088,43 @@ lemma formulaLen_instB_pDC (k : V) :
 `(14, 16)` at `z = x + y + 1` (for VARIABLE lengths, so that `push_cast` never sees a quote). -/
 lemma slack4_le (a x y u v z : V) (hx : x = u + v + 1) (hz : z = x + y + 1) :
     a + 8 * (x + y) + 7 + 8 * (u + v) + 7 ≤ a + ((14 : ℕ) : V) + ((16 : ℕ) : V) * z := by
-  have huv : u + v ≤ x + y := by subst hx; exact le_trans le_self_add le_self_add
-  subst hz
-  push_cast
-  calc a + 8 * (x + y) + 7 + 8 * (u + v) + 7 ≤ a + 8 * (x + y) + 7 + 8 * (x + y) + 7 := by gcongr
-    _ = a + 14 + 16 * (x + y) := by ring
-    _ ≤ a + 14 + 16 * (x + y + 1) := by gcongr a + 14 + 16 * ?_; exact le_self_add
+  have h := slack_depth_le a z [(x, y), (u, v)] (by
+    intro p hp
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
+    rcases hp with rfl | rfl
+    · subst hz; exact le_self_add
+    · subst hx hz; exact le_trans le_self_add (le_trans le_self_add le_self_add))
+  simp only [List.map_cons, List.map_nil, List.sum_cons, List.sum_nil, List.length_cons, List.length_nil,
+    add_zero] at h
+  push_cast at h ⊢
+  exact le_trans (le_of_eq (by ring)) (le_trans h (le_of_eq (by ring)))
 
 /-- The same with the inner conjunction on the RIGHT (`y = u + v + 1`). -/
 lemma slack4_le' (a x y u v z : V) (hy : y = u + v + 1) (hz : z = x + y + 1) :
     a + 8 * (x + y) + 7 + 8 * (u + v) + 7 ≤ a + ((14 : ℕ) : V) + ((16 : ℕ) : V) * z := by
-  have huv : u + v ≤ x + y := by subst hy; exact le_trans le_self_add le_add_self
-  subst hz
-  push_cast
-  calc a + 8 * (x + y) + 7 + 8 * (u + v) + 7 ≤ a + 8 * (x + y) + 7 + 8 * (x + y) + 7 := by gcongr
-    _ = a + 14 + 16 * (x + y) := by ring
-    _ ≤ a + 14 + 16 * (x + y + 1) := by gcongr a + 14 + 16 * ?_; exact le_self_add
+  have h := slack_depth_le a z [(x, y), (u, v)] (by
+    intro p hp
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
+    rcases hp with rfl | rfl
+    · subst hz; exact le_self_add
+    · subst hy hz; exact le_trans le_self_add (le_trans le_add_self le_self_add))
+  simp only [List.map_cons, List.map_nil, List.sum_cons, List.sum_nil, List.length_cons, List.length_nil,
+    add_zero] at h
+  push_cast at h ⊢
+  exact le_trans (le_of_eq (by ring)) (le_trans h (le_of_eq (by ring)))
 
 /-- The same at `ℕ`, in the `le_def` shape. -/
 lemma slack4_nat (a x y u v z k : ℕ) (hx : x = u + v + 1) (hz : z = x + y + 1) (h : a + 14 + 16 * z ≤ k) :
     a + 8 * (x + y) + 7 + 8 * (u + v) + 7 = k ∨ a + 8 * (x + y) + 7 + 8 * (u + v) + 7 < k := by
-  subst hx hz; omega
+  have h1 := le_def.mp (slack4_le (V := ℕ) a x y u v z hx hz)
+  simp only [natCast_nat] at h1
+  exact le_def_trans h1 (Nat.eq_or_lt_of_le h)
 
 lemma slack4_nat' (a x y u v z k : ℕ) (hy : y = u + v + 1) (hz : z = x + y + 1) (h : a + 14 + 16 * z ≤ k) :
     a + 8 * (x + y) + 7 + 8 * (u + v) + 7 = k ∨ a + 8 * (x + y) + 7 + 8 * (u + v) + 7 < k := by
-  subst hy hz; omega
+  have h1 := le_def.mp (slack4_le' (V := ℕ) a x y u v z hy hz)
+  simp only [natCast_nat] at h1
+  exact le_def_trans h1 (Nat.eq_or_lt_of_le h)
 
 /-- **All four searchers find their guards from a box of the mutual family** (fuel 2): DIMCID defects
 against Cupod, the transposed searcher cooperates with Dupoc, Cupod defects against DIMCID, Dupoc
