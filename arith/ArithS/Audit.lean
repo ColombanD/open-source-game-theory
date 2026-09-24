@@ -65,6 +65,7 @@ import ArithS.Necessitation.Assemble
 import ArithS.Necessitation.Verify5
 import ArithS.Necessitation.Package
 import ArithS.Necessitation.ClosedNec
+import ArithS.Cells.Common.Syntax
 import ArithS.Cells.DupocMirror
 import ArithS.Cells.JustBot
 import ArithS.Cells.DIMCID
@@ -2000,6 +2001,43 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms closedInnerNec_of_kit
 #print axioms closedInnerNec_sixteen
 #print axioms closedInnerNec_sixteen'
+
+-- Consolidation stage 1 (Cells/Common/Syntax, 2026-09-24): the arity-generic syntax lemmas shared by every
+-- cell file, MOVED out of JustSlot/DIMCID/JustBot/PrudentMirror/DimcidFlips/DupocMirror/PositiveCells unchanged
+-- (names, statements, proofs). Only the names not already printed by the blocks below.
+#print axioms semiterm_quote_emb_n
+#print axioms semiterm_quote_emb₄
+#print axioms semiterm_quote_emb₇
+#print axioms isSemiformula_quote₄
+#print axioms isSemiformula_quote₇
+#print axioms four_eq
+#print axioms coe_quote_sentence₆
+#print axioms relabelTemplate_quote_sentence₆_V
+#print axioms nth_descVec_three
+#print axioms nth_descVec_four
+#print axioms nth_descVec_five
+#print axioms nth_descVecB_zero
+#print axioms nth_descVecB_one
+#print axioms nth_descVecB_two
+#print axioms nth_descVecB_three
+#print axioms nth_descVecB_four
+#print axioms nth_descVecB_five
+#print axioms nth_descVecB_six
+#print axioms coe_quote_sentence₇
+#print axioms quote_emb_numT
+#print axioms pBot_le_pBot_iff
+#print axioms pBot_lt_pBot_iff
+#print axioms swapcode_pBot
+#print axioms dU_pBot
+#print axioms dW_pBot
+#print axioms swapcode_pBot_DupocV
+#print axioms pConst_zero_lt_one
+#print axioms swapcode_pConst_zero
+#print axioms swapcode_pConst_one
+#print axioms dU_pConst_zero
+#print axioms dW_pConst_zero
+#print axioms dU_pConst_one
+#print axioms dW_pConst_one
 
 -- Route B Phase 2, cell 1 — Dupoc × Mirror `(C, C)` and Cupod × Mirror `(D, D)` in PA-`S'` (Cells/DupocMirror,
 -- 2026-09-23), the first Löb family after self-play, on the family-parametric assembly: Mirror in every model

@@ -74,15 +74,6 @@ variable {V : Type*} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
 
 section closed
 
-/-- `swapcode` is absolute (it is `relabel 1 0`, a Σ₁-definable function: `cast_relabel`). -/
-lemma cast_swapcode (x : ℕ) : ((swapcode x : ℕ) : V) = swapcode (x : V) := by
-  have := cast_relabel (V := V) 1 0 x
-  rwa [Nat.cast_one, Nat.cast_zero] at this
-
-/-- `dnum` is absolute (a Σ₁-definable function). -/
-lemma cast_dnum (x : ℕ) : ((dnum x : ℕ) : V) = dnum (x : V) := by
-  have := DefinedFunction.shigmaOne_absolute_func V (dnum.defined (V := ℕ)) (dnum.defined (V := V)) ![x]
-  simpa [Function.comp_def] using this
 
 lemma lMap_swap_dnumT' (P : ℕ) : Semiterm.lMap swap (dnumT P) = dnumT P := term_lMap_swap_emb _
 

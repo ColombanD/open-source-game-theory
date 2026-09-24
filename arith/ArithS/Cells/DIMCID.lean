@@ -115,19 +115,6 @@ lemma lMap_swap_tmplD : Semiformula.lMap swap tmplD = tmplDT := lMap_swap_tmpl p
 lemma lMap_swap_tmplDT : Semiformula.lMap swap tmplDT = tmplD := by
   rw [← lMap_swap_tmplD, lMap_swap_swap]
 
-lemma coe_quote_sentence₆ (σ : Semisentence LAct 6) : ((⌜σ⌝ : ℕ) : V) = ⌜σ⌝ := by
-  rw [Sentence.quote_def, Sentence.quote_def, Semiformula.coe_quote_eq_quote]
-
-/-- The code-level τ of a six-variable template code, in every model (as
-`Prep.relabelTemplate_quote_sentence_V`). -/
-lemma relabelTemplate_quote_sentence₆_V (σ : Semisentence LAct 6) :
-    relabelTemplate 1 0 (⌜σ⌝ : V) = ⌜Semiformula.lMap swap σ⌝ := by
-  have h := DefinedFunction.shigmaOne_absolute_func V (relabelTemplate.defined (V := ℕ))
-    (relabelTemplate.defined (V := V)) ![1, 0, (⌜σ⌝ : ℕ)]
-  simp only [Function.comp_def, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
-    Matrix.cons_val_succ, Matrix.vecHead, Matrix.vecTail, Nat.cast_one, Nat.cast_zero] at h
-  rw [relabelTemplate_quote_sentence, coe_quote_sentence₆, coe_quote_sentence₆] at h
-  exact h.symm
 
 end template
 

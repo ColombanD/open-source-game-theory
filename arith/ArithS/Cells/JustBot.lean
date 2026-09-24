@@ -69,34 +69,6 @@ variable {V : Type*} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
 
 section bot
 
-lemma pBot_le_pBot_iff {p q : V} : pBot p ≤ pBot q ↔ p ≤ q := by
-  unfold pBot
-  rw [add_le_add_iff_right, ppair_le_ppair_right_iff]
-
-lemma pBot_lt_pBot_iff {p q : V} : pBot p < pBot q ↔ p < q := by
-  rw [← not_le, ← not_le, pBot_le_pBot_iff]
-
-lemma swapcode_pBot (p : V) : swapcode (pBot p) = pBot (swapcode p) := by
-  unfold swapcode; simp
-
-/-- The canonical numeral commutes with bot-wrapping (`pBot` is strictly monotone). -/
-lemma dnum_pBot (p : V) : dnum (pBot p) = pBot (dnum p) := by
-  unfold dnum
-  rw [swapcode_pBot]
-  simp only [pBot_le_pBot_iff, apply_ite pBot]
-
-lemma dU_pBot (p : V) : dU (pBot p) = dU p := by
-  unfold dU
-  rw [swapcode_pBot]
-  simp only [pBot_lt_pBot_iff]
-
-lemma dW_pBot (p : V) : dW (pBot p) = dW p := by
-  unfold dW
-  rw [swapcode_pBot]
-  simp only [pBot_lt_pBot_iff]
-
-lemma swapcode_pBot_DupocV (k : V) : swapcode (pBot (DupocV k)) = pBot (CupodV k) := by
-  rw [swapcode_pBot, swapcode_DupocV]
 
 /-- **Dupoc's search clause in ANY frame** (fuel 2): `DupocV k` run in the frame `(me, opp)` plays
 `C` if `guardCode ⌜GtmplA 0⌝ me opp` is provable within `k`. -/
@@ -599,19 +571,6 @@ lemma jVec_semitermVec (k : V) : IsSemitermVec LAct 6 6 (jVec k) := by
     (dU_semiterm 6 (pBot (DupocV k)))).adjoin (progT_semiterm_LAct 6 (dnum (pBot (DupocV k))))
   rwa [← six_eq] at this
 
-lemma nth_descVec_three (me opp : V) : (descVec me opp).[3] = progT (dnum opp) := by
-  unfold descVec
-  rw [show (3 : V) = 2 + 1 by norm_num, nth_adjoin_succ, nth_adjoin_two, nth_adjoin_one, nth_adjoin_zero]
-
-lemma nth_descVec_four (me opp : V) : (descVec me opp).[4] = dU opp := by
-  unfold descVec
-  rw [show (4 : V) = 3 + 1 by norm_num, nth_adjoin_succ, show (3 : V) = 2 + 1 by norm_num, nth_adjoin_succ,
-    nth_adjoin_two, nth_adjoin_one, nth_adjoin_zero]
-
-lemma nth_descVec_five (me opp : V) : (descVec me opp).[5] = dW opp := by
-  unfold descVec
-  rw [show (5 : V) = 4 + 1 by norm_num, nth_adjoin_succ, show (4 : V) = 3 + 1 by norm_num, nth_adjoin_succ,
-    show (3 : V) = 2 + 1 by norm_num, nth_adjoin_succ, nth_adjoin_two, nth_adjoin_one, nth_adjoin_zero]
 
 /-- Filling the frame variables of `jVec k` with the descriptions of `(me, opp)` gives the
 description vector of `(pBot (DupocV k), opp)`: the frame's `me` is unused. -/

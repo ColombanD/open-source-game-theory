@@ -1,3 +1,4 @@
+import ArithS.Cells.Common.Syntax
 import ArithS.Assembly.Cell
 import ArithS.SimTest
 import ArithS.Necessitation.Package
@@ -134,8 +135,6 @@ theorem quote_emb_TM : (⌜(Rew.emb TM : SyntacticSemiterm LAct 0)⌝ : V) = pro
   unfold TM
   rw [term_emb_lMap_emb, quote_term_lMap_emb, ← Semiterm.empty_quote_def, quote_progTT, cast_Mirror]
 
-lemma quote_emb_numT (a : ℕ) : (⌜(Rew.emb (numT a) : SyntacticSemiterm LAct 0)⌝ : V) = numeral (a : V) := by
-  rw [← Semiterm.empty_quote_def, quote_numT]
 
 /-- **The fixed formula of Dupoc vs Mirror**: the template instance `GtmplA 0` filled with
 Dupoc's one-variable description (me-slots) and Mirror's closed description (opp-slots). -/

@@ -387,28 +387,6 @@ lemma quote_emb_searchT1' (g : ℕ) (P : Semiterm ℒₒᵣ Empty 1) (q : ℕ) :
   push_cast
   rfl
 
-/-- **Filling the budget slot of a two-level tower**: the then-slot holds a term code `P` whose own
-`bnum k`-instance is the structural term of `p`. -/
-theorem termSubst_tower' (k g q : V) {P p : V} (hP : IsUTerm LAct P)
-    (hPs : termSubst LAct (bnum k ∷ (0 : V)) P = progT p) :
-    termSubst LAct (bnum k ∷ (0 : V))
-      (ppairT (bnum 6) (ppairT (^#0) (ppairT (bnum g) (ppairT P (progT q)))) ^+ 𝟏) =
-    progT (pSearch k g p q) := by
-  have hb6 : IsUTerm LAct (bnum (6 : V)) := (bnum_semiterm_LAct 0 _).isUTerm
-  have hbg : IsUTerm LAct (bnum g) := (bnum_semiterm_LAct 0 _).isUTerm
-  have hq : IsUTerm LAct (progT q) := (progT_semiterm_LAct 0 _).isUTerm
-  have h1 : IsUTerm LAct (ppairT P (progT q)) := ppairT_uterm_LAct hP hq
-  have h2 : IsUTerm LAct (ppairT (bnum g) (ppairT P (progT q))) := ppairT_uterm_LAct hbg h1
-  have h3 : IsUTerm LAct (ppairT (^#0) (ppairT (bnum g) (ppairT P (progT q)))) :=
-    ppairT_uterm_LAct bvar_zero_uterm h2
-  have h4 : IsUTerm LAct (ppairT (bnum 6) (ppairT (^#0) (ppairT (bnum g) (ppairT P (progT q))))) :=
-    ppairT_uterm_LAct hb6 h3
-  have hone : IsUTerm LAct (𝟏 : V) := (IsSemiterm.LAct_of_LOR (one_semiterm (n := 0))).isUTerm
-  rw [termSubst_qqAdd _ h4 hone, termSubst_ppairT _ hb6 h3, termSubst_ppairT _ bvar_zero_uterm h2,
-    termSubst_ppairT _ hbg h1, termSubst_ppairT _ hP hq, termSubst_bvar, nth_adjoin_zero,
-    termSubst_closed _ (bnum_semiterm_LAct 0 _), termSubst_closed _ (bnum_semiterm_LAct 0 _),
-    termSubst_closed _ (progT_semiterm_LAct 0 _),
-    termSubst_closed _ (IsSemiterm.LAct_of_LOR one_semiterm), hPs, progT_search]
 
 /-- **The one-variable description term of `PrudentV k`**, over `LAct`: the searcher tower whose
 then-slot is the inner searcher tower. -/

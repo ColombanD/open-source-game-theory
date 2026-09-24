@@ -60,32 +60,6 @@ variable {V : Type*} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
 
 section constants
 
-lemma pConst_zero_lt_one : pConst (0 : V) < pConst 1 := by
-  unfold pConst ppair; norm_num
-
-lemma swapcode_pConst_zero : swapcode (pConst (0 : V)) = pConst 1 := by
-  unfold swapcode; rw [relabel_const]; simp [relabelAct]
-
-lemma swapcode_pConst_one : swapcode (pConst (1 : V)) = pConst 0 := by
-  unfold swapcode; rw [relabel_const]; simp [relabelAct]
-
-lemma dnum_pConst_zero : dnum (pConst (0 : V)) = pConst 0 :=
-  dnum_of_lt (by rw [swapcode_pConst_zero]; exact pConst_zero_lt_one)
-
-lemma dnum_pConst_one : dnum (pConst (1 : V)) = pConst 0 := by
-  rw [dnum_of_gt (by rw [swapcode_pConst_one]; exact pConst_zero_lt_one), swapcode_pConst_one]
-
-lemma dU_pConst_zero : dU (pConst (0 : V)) = csym 0 := by
-  unfold dU; rw [swapcode_pConst_zero, if_pos pConst_zero_lt_one]
-
-lemma dW_pConst_zero : dW (pConst (0 : V)) = csym 1 := by
-  unfold dW; rw [swapcode_pConst_zero, if_pos pConst_zero_lt_one]
-
-lemma dU_pConst_one : dU (pConst (1 : V)) = csym 1 := by
-  unfold dU; rw [swapcode_pConst_one, if_neg (lt_asymm pConst_zero_lt_one), if_pos pConst_zero_lt_one]
-
-lemma dW_pConst_one : dW (pConst (1 : V)) = csym 0 := by
-  unfold dW; rw [swapcode_pConst_one, if_neg (lt_asymm pConst_zero_lt_one), if_pos pConst_zero_lt_one]
 
 /-- The closed structural term of the code `pConst 0` (the canonical code of both constants). -/
 noncomputable def T0 : ClosedSemiterm LAct 0 := Semiterm.lMap emb (progTT (pConst 0))
