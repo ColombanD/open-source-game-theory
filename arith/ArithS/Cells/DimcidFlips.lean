@@ -75,66 +75,6 @@ variable {V : Type*} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
 section closed
 
 
-lemma lMap_swap_dnumT' (P : ℕ) : Semiterm.lMap swap (dnumT P) = dnumT P := term_lMap_swap_emb _
-
-/-- The code of the closed structural term of the canonical code of `P`, in every model. -/
-theorem quote_emb_dnumT (P : ℕ) :
-    (⌜(Rew.emb (dnumT P) : SyntacticSemiterm LAct 0)⌝ : V) = progT (dnum (P : V)) := by
-  unfold dnumT
-  rw [term_emb_lMap_emb, quote_term_lMap_emb, ← Semiterm.empty_quote_def, quote_progTT, cast_dnum]
-
-/-- The generic closed triple denotes `P` itself (`relabel_val_desc_V`). -/
-lemma descVal_closed (P : ℕ) (k : V) : descVal (cl (dnumT P)) (dUT P) (dWT P) k = (P : V) := by
-  rw [descVal_def, val_cl_V, val_dnumT_V, relabel_val_desc_V]
-
-/-- The transposed generic triple denotes the transposed program. -/
-lemma descVal_closed_T (P : ℕ) (k : V) :
-    descVal (Semiterm.lMap swap (cl (dnumT P))) (Semiterm.lMap swap (dUT P)) (Semiterm.lMap swap (dWT P)) k =
-      swapcode (P : V) := by
-  rw [descVal_def, lMap_swap_cl, lMap_swap_dnumT', val_cl_V, val_dnumT_V]
-  unfold dUT dWT
-  rcases lt_trichotomy P (swapcode P) with h | h | h
-  · rw [if_pos h, if_pos h, lMap_swap_cterm_C, lMap_swap_cterm_D, val_cterm_D_V, val_cterm_C_V, dnum_of_lt h]
-  · have hs : swapcode P = P := h.symm
-    rw [hs, if_neg (_root_.lt_irrefl _), if_neg (_root_.lt_irrefl _), if_neg (_root_.lt_irrefl _),
-      if_neg (_root_.lt_irrefl _), lMap_swap_numT, lMap_swap_numT, val_numT_V, val_numT_V, Nat.cast_zero,
-      Nat.cast_one, dnum_of_eq h, relabel_zero_one, ← cast_swapcode, hs]
-  · rw [if_neg (lt_asymm h), if_pos h, if_neg (lt_asymm h), if_pos h, lMap_swap_cterm_D, lMap_swap_cterm_C,
-      val_cterm_C_V, val_cterm_D_V, dnum_of_gt h, relabel_zero_one, cast_swapcode]
-
-/-- **Every closed code is described in every model**: the generic triple `(cl (dnumT P), dUT P, dWT P)`. -/
-theorem describes_closed (P : ℕ) : Describes (cl (dnumT P)) (dUT P) (dWT P) where
-  hX := by
-    intro V _ _ k
-    rw [descVal_closed, quote_emb_cl_V, termSubst_closed _ (semiterm_quote_emb₀ _), quote_emb_dnumT]
-  hU := by
-    intro V _ _ k
-    rw [descVal_closed]
-    unfold dUT dU
-    rcases lt_trichotomy P (swapcode P) with h | h | h
-    · have h' : (P : V) < swapcode (P : V) := by rw [← cast_swapcode]; exact Nat.cast_lt.mpr h
-      rw [if_pos h, if_pos h', quote_cterm_C]
-    · have hs : swapcode P = P := h.symm
-      have hs' : swapcode (P : V) = (P : V) := by rw [← cast_swapcode, hs]
-      rw [hs, hs', if_neg (_root_.lt_irrefl _), if_neg (_root_.lt_irrefl _), if_neg (_root_.lt_irrefl _),
-        if_neg (_root_.lt_irrefl _), quote_numT, Nat.cast_zero]
-    · have h' : swapcode (P : V) < (P : V) := by rw [← cast_swapcode]; exact Nat.cast_lt.mpr h
-      rw [if_neg (lt_asymm h), if_pos h, if_neg (lt_asymm h'), if_pos h', quote_cterm_D]
-  hW := by
-    intro V _ _ k
-    rw [descVal_closed]
-    unfold dWT dW
-    rcases lt_trichotomy P (swapcode P) with h | h | h
-    · have h' : (P : V) < swapcode (P : V) := by rw [← cast_swapcode]; exact Nat.cast_lt.mpr h
-      rw [if_pos h, if_pos h', quote_cterm_D]
-    · have hs : swapcode P = P := h.symm
-      have hs' : swapcode (P : V) = (P : V) := by rw [← cast_swapcode, hs]
-      rw [hs, hs', if_neg (_root_.lt_irrefl _), if_neg (_root_.lt_irrefl _), if_neg (_root_.lt_irrefl _),
-        if_neg (_root_.lt_irrefl _), quote_numT, Nat.cast_one]
-    · have h' : swapcode (P : V) < (P : V) := by rw [← cast_swapcode]; exact Nat.cast_lt.mpr h
-      rw [if_neg (lt_asymm h), if_pos h, if_neg (lt_asymm h'), if_pos h', quote_cterm_C]
-  hT := by intro V _ _ k; rw [descVal_closed_T, descVal_closed]
-
 /-- **DIMCID defects against EVERY closed code and FINDS its guard, for all large `k`** — the row theorem
 for the closed opponents (every search-free bot, every frozen `.bot` probe). -/
 theorem dimcid_vs_closed (P : ℕ) :
@@ -152,25 +92,6 @@ end closed
 
 section above
 
-/-- **A triple describes its value in every model ABOVE a standard threshold `K`** (`Describes` with the
-hypothesis `K ≤ k` on every field): PrudentBot's canonical description (`Cells/PrudentMirror.lean` §2,
-`KP ≤ k`). -/
-structure DescribesAbove (K : ℕ) (X : Semiterm LAct Empty 1) (U W : ClosedSemiterm LAct 0) : Prop where
-  hX : ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] (k : V), (K : V) ≤ k →
-    termSubst LAct (bnum k ∷ (0 : V)) (⌜(Rew.emb X : SyntacticSemiterm LAct 1)⌝ : V) =
-      progT (dnum (descVal X U W k))
-  hU : ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] (k : V), (K : V) ≤ k → (⌜U⌝ : V) = dU (descVal X U W k)
-  hW : ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] (k : V), (K : V) ≤ k → (⌜W⌝ : V) = dW (descVal X U W k)
-  hT : ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] (k : V), (K : V) ≤ k →
-    descVal (Semiterm.lMap swap X) (Semiterm.lMap swap U) (Semiterm.lMap swap W) k = swapcode (descVal X U W k)
-
-/-- A description everywhere is a description above `0`. -/
-theorem Describes.above {X : Semiterm LAct Empty 1} {U W : ClosedSemiterm LAct 0} (h : Describes X U W) :
-    DescribesAbove 0 X U W where
-  hX := fun V _ _ k _ ↦ h.hX V k
-  hU := fun V _ _ k _ ↦ h.hU V k
-  hW := fun V _ _ k _ ↦ h.hW V k
-  hT := fun V _ _ k _ ↦ h.hT V k
 
 /-- **DIMCID's Löb premise against an opponent described above `K`, slack `(7 + K, 8)`**
 (`loebSound_pG_of`, with the threshold supplied by the slack as in `loebSound_pPM`). -/
@@ -220,54 +141,6 @@ end above
 
 section instances
 
-/-! #### The bot-wrapped engine searcher `pBot (SV g a k)` (`.bot (DupocBot k)`, Just's frozen snapshot) -/
-
-lemma descVal_botSV (g : Semisentence LAct 6) (a : ℕ) (ha : a = 0 ∨ a = 1) (k : V) :
-    descVal (TBS g a) (uS g a) (wS g a) k = pBot (SV g a k) := hme_botSV g a ha k
-
-lemma descVal_botSV_T (g : Semisentence LAct 6) (a : ℕ) (ha : a = 0 ∨ a = 1) (k : V) :
-    descVal (Semiterm.lMap swap (TBS g a)) (Semiterm.lMap swap (uS g a)) (Semiterm.lMap swap (wS g a)) k =
-      pBot (SV (Semiformula.lMap swap g) (1 - a) k) := hme_botSVT g a ha k
-
-/-- **The bot tower of an engine searcher describes `pBot (SV g a k)` in every model** (`PositiveCells` §5). -/
-theorem describes_botSV (g : Semisentence LAct 6) (a : ℕ) (ha : a = 0 ∨ a = 1) :
-    Describes (TBS g a) (uS g a) (wS g a) where
-  hX := by intro V _ _ k; rw [descVal_botSV g a ha]; exact termSubst_TBS g a ha k
-  hU := by intro V _ _ k; rw [descVal_botSV g a ha]; exact hU_botSV g a ha k
-  hW := by intro V _ _ k; rw [descVal_botSV g a ha]; exact hW_botSV g a ha k
-  hT := by intro V _ _ k; rw [descVal_botSV_T g a ha, descVal_botSV g a ha, swapcode_pBot, swapcode_SV g a ha]
-
-/-! #### The hand-written Dupoc `DupocV k` (the `TD` tower) and its bot-wrapping (the `TBD` tower) -/
-
-lemma descVal_dupocV (k : V) : descVal TD uD wD k = DupocV k := by
-  rw [descVal_def, val_TD_V, relabel_val_uD_wD_V]
-
-lemma descVal_dupocV_T (k : V) :
-    descVal (Semiterm.lMap swap TD) (Semiterm.lMap swap uD) (Semiterm.lMap swap wD) k = CupodV k := by
-  rw [descVal_def, lMap_swap_TD, val_TD_V]
-  have h := relabel_val_uC_wC_V (V := V) k
-  unfold uC wC at h
-  exact h
-
-/-- **The `TD` tower describes `DupocV k` in every model.** -/
-theorem describes_dupocV : Describes TD uD wD where
-  hX := by intro V _ _ k; rw [descVal_dupocV]; exact hX_dupoc k
-  hU := by intro V _ _ k; rw [descVal_dupocV]; exact hU_dupoc k
-  hW := by intro V _ _ k; rw [descVal_dupocV]; exact hW_dupoc k
-  hT := by intro V _ _ k; rw [descVal_dupocV_T, descVal_dupocV, swapcode_DupocV]
-
-lemma descVal_botDupoc (k : V) : descVal TBD uD wD k = pBot (DupocV k) := hme_bot k
-
-lemma descVal_botDupoc_T (k : V) :
-    descVal (Semiterm.lMap swap TBD) (Semiterm.lMap swap uD) (Semiterm.lMap swap wD) k = pBot (CupodV k) :=
-  hme'_bot k
-
-/-- **The `TBD` tower describes `pBot (DupocV k)` in every model** (`JustSlot` §3). -/
-theorem describes_botDupoc : Describes TBD uD wD where
-  hX := by intro V _ _ k; rw [descVal_botDupoc]; exact hX_bot k
-  hU := by intro V _ _ k; rw [descVal_botDupoc]; exact hU_bot k
-  hW := by intro V _ _ k; rw [descVal_botDupoc]; exact hW_bot k
-  hT := by intro V _ _ k; rw [descVal_botDupoc_T, descVal_botDupoc, swapcode_pBot_DupocV]
 
 /-! #### The budget-slot `Just7 k` -/
 

@@ -138,44 +138,6 @@ end closure
 
 section truth
 
-/-- **`qT (tmpl (.plays .opp .self a')) X U W X' U' W'` at `k`**: "the program the opp-triple
-describes plays `a'` against the one the me-triple describes". -/
-theorem eval_qT_plays_opp_self (a' : PD.Action) (X : Semiterm LAct Empty 1) (U W : ClosedSemiterm LAct 0)
-    (X' : Semiterm LAct Empty 1) (U' W' : ClosedSemiterm LAct 0) (k : V) {me opp : V}
-    (hme : relabel (U.val (s := stdActV V) ![] Empty.elim) (W.val (s := stdActV V) ![] Empty.elim)
-      (X.val (s := stdActV V) ![k] Empty.elim) = me)
-    (hopp : relabel (U'.val (s := stdActV V) ![] Empty.elim) (W'.val (s := stdActV V) ![] Empty.elim)
-      (X'.val (s := stdActV V) ![k] Empty.elim) = opp) :
-    Semiformula.Eval (s := stdActV V) ![k] Empty.elim (qT (tmpl (.plays .opp .self a')) X U W X' U' W') ↔
-      ∃ n, EvalGraph n opp me opp (actCode a' : V) := by
-  rw [eval_qT_iff, eval_tmpl_plays_opp_self_V]
-  simp only [Matrix.cons_val]
-  rw [hme, hopp]
-
-/-- The negated atom: "the opp-program does NOT play `a'` against the me-program". -/
-theorem eval_qT_neg_plays_opp_self (a' : PD.Action) (X : Semiterm LAct Empty 1) (U W : ClosedSemiterm LAct 0)
-    (X' : Semiterm LAct Empty 1) (U' W' : ClosedSemiterm LAct 0) (k : V) {me opp : V}
-    (hme : relabel (U.val (s := stdActV V) ![] Empty.elim) (W.val (s := stdActV V) ![] Empty.elim)
-      (X.val (s := stdActV V) ![k] Empty.elim) = me)
-    (hopp : relabel (U'.val (s := stdActV V) ![] Empty.elim) (W'.val (s := stdActV V) ![] Empty.elim)
-      (X'.val (s := stdActV V) ![k] Empty.elim) = opp) :
-    Semiformula.Eval (s := stdActV V) ![k] Empty.elim (qT (tmpl (.neg (.plays .opp .self a'))) X U W X' U' W') ↔
-      ¬ ∃ n, EvalGraph n opp me opp (actCode a' : V) := by
-  rw [eval_qT_iff, tmpl_neg]
-  simp only [LogicalConnective.HomClass.map_neg, LogicalConnective.Prop.neg_eq]
-  rw [eval_tmpl_plays_opp_self_V]
-  simp only [Matrix.cons_val]
-  rw [hme, hopp]
-
-/-- The swapped reading of a `qT` instance is the standard reading of the transposed instance. -/
-theorem eval_qT_swap (g : Semisentence LAct 6) (X : Semiterm LAct Empty 1) (U W : ClosedSemiterm LAct 0)
-    (X' : Semiterm LAct Empty 1) (U' W' : ClosedSemiterm LAct 0) (k : V) :
-    Semiformula.Eval (s := swapActS V) ![k] Empty.elim (qT g X U W X' U' W') ↔
-      Semiformula.Eval (s := stdActV V) ![k] Empty.elim
-        (qT (Semiformula.lMap swap g) (Semiterm.lMap swap X) (Semiterm.lMap swap U) (Semiterm.lMap swap W)
-          (Semiterm.lMap swap X') (Semiterm.lMap swap U') (Semiterm.lMap swap W')) := by
-  rw [eval_swapActS, lMap_swap_qT, ← stdActV_eq_stdActS]
-
 
 /-- A constant plays itself against anything, in every model (fuel 1). -/
 lemma const_play_V (me opp a : V) : ∃ n : V, EvalGraph n me opp (pConst a) a :=

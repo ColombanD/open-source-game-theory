@@ -67,6 +67,7 @@ import ArithS.Necessitation.Package
 import ArithS.Necessitation.ClosedNec
 import ArithS.Cells.Common.Syntax
 import ArithS.Cells.Common.Bots
+import ArithS.Cells.Common.Templates
 import ArithS.Cells.DupocMirror
 import ArithS.Cells.JustBot
 import ArithS.Cells.DIMCID
@@ -2125,6 +2126,53 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms DimcidTV_eq_SV
 #print axioms CimcicV_eq_SV
 #print axioms CimcicTV_eq_SV
+
+-- Consolidation stage 3 (Cells/Common/Templates, 2026-09-24): qG/gVec, qT, JustBot's tmplVec form (tmplVec_eq_gVec
+-- NEW, rfl), the atom truths, the Dupoc towers (TD/TBD description hypotheses) and the Describes layer
+-- (descVal/Describes/DescribesAbove, describes_closed and the instances) — MOVED unchanged. Only the names not
+-- already printed elsewhere.
+#print axioms lMap_swap_qG
+#print axioms semitermVec_val_gVec
+#print axioms quote_qG
+#print axioms gVec_semitermVec
+#print axioms termSubstVec_gVec
+#print axioms lMap_swap_qT
+#print axioms quote_qT
+#print axioms quote_GtmplA_subst
+#print axioms tmplVec_semitermVec
+#print axioms termSubstVec_tmplVec
+#print axioms tmplVec_eq_gVec
+#print axioms swapcode_CupodV
+#print axioms dnum_CupodV_eq
+#print axioms hX_cupod
+#print axioms hU_cupod
+#print axioms hW_cupod
+#print axioms hopp_cupod
+#print axioms hopp'_cupod
+#print axioms hX_dupoc
+#print axioms hU_dupoc
+#print axioms hW_dupoc
+#print axioms lMap_swap_TBD
+#print axioms quote_emb_TBD
+#print axioms quote_emb_uD_botDupocV
+#print axioms quote_emb_wD_botDupocV
+#print axioms hX_bot
+#print axioms hU_bot
+#print axioms hW_bot
+#print axioms descVal_def
+#print axioms lMap_swap_dnumT'
+#print axioms descVal_botCB
+#print axioms descVal_botCB_T
+#print axioms descVal_TFT
+#print axioms descVal_TFT_T
+#print axioms descVal_SV
+#print axioms descVal_SV_T
+#print axioms descVal_botSV
+#print axioms descVal_botSV_T
+#print axioms descVal_dupocV
+#print axioms descVal_dupocV_T
+#print axioms descVal_botDupoc
+#print axioms descVal_botDupoc_T
 
 -- Route B Phase 2, cell 1 — Dupoc × Mirror `(C, C)` and Cupod × Mirror `(D, D)` in PA-`S'` (Cells/DupocMirror,
 -- 2026-09-23), the first Löb family after self-play, on the family-parametric assembly: Mirror in every model

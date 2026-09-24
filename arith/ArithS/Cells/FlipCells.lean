@@ -71,28 +71,6 @@ variable {V : Type*} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
 
 section described
 
-/-- **The program a description triple denotes at the budget `k`** (`X` the one-variable structural term,
-`U W` the two closed re-valuation terms). -/
-noncomputable def descVal (X : Semiterm LAct Empty 1) (U W : ClosedSemiterm LAct 0) (k : V) : V :=
-  relabel (U.val (s := stdActV V) ![] Empty.elim) (W.val (s := stdActV V) ![] Empty.elim)
-    (X.val (s := stdActV V) ![k] Empty.elim)
-
-lemma descVal_def (X : Semiterm LAct Empty 1) (U W : ClosedSemiterm LAct 0) (k : V) :
-    descVal X U W k =
-      relabel (U.val (s := stdActV V) ![] Empty.elim) (W.val (s := stdActV V) ![] Empty.elim)
-        (X.val (s := stdActV V) ![k] Empty.elim) := rfl
-
-/-- **A triple describes its value in every model**: the three code hypotheses of the instance equations
-(`guardCode_qT_eq_instB`, `guardCode_DimcidV_eq_instB`) and "the transposed triple denotes the transposed
-program". Every zoo opponent's triple is one (`describes_botCB`, `describes_TFT`, `describes_Guardian`). -/
-structure Describes (X : Semiterm LAct Empty 1) (U W : ClosedSemiterm LAct 0) : Prop where
-  hX : ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] (k : V),
-    termSubst LAct (bnum k ∷ (0 : V)) (⌜(Rew.emb X : SyntacticSemiterm LAct 1)⌝ : V) =
-      progT (dnum (descVal X U W k))
-  hU : ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] (k : V), (⌜U⌝ : V) = dU (descVal X U W k)
-  hW : ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] (k : V), (⌜W⌝ : V) = dW (descVal X U W k)
-  hT : ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] (k : V),
-    descVal (Semiterm.lMap swap X) (Semiterm.lMap swap U) (Semiterm.lMap swap W) k = swapcode (descVal X U W k)
 
 /-- **DIMCID's Löb premise against ANY described opponent, slack `(7, 8)`** (`loebSound_pDi0`, made
 generic): a box of the family makes `DimcidV k` defect against the opponent and the transposed searcher
@@ -137,43 +115,6 @@ end described
 
 section closedOpponents
 
-/-! #### `.bot CooperateBot` -/
-
-lemma descVal_botCB (k : V) : descVal (cl TB0) (cterm Act.C) (cterm Act.D) k = pBot (pConst 0) :=
-  val_desc_bot_zero k
-
-lemma descVal_botCB_T (k : V) :
-    descVal (Semiterm.lMap swap (cl TB0)) (Semiterm.lMap swap (cterm Act.C)) (Semiterm.lMap swap (cterm Act.D)) k =
-      pBot (pConst 1) := by
-  rw [descVal_def, lMap_swap_cl, lMap_swap_TB0, lMap_swap_cterm_C, lMap_swap_cterm_D]
-  exact val_desc_bot_one k
-
-/-- The triple `(cl TB0, C, D)` describes `.bot CooperateBot` in every model. -/
-theorem describes_botCB : Describes (cl TB0) (cterm Act.C) (cterm Act.D) where
-  hX := by intro V _ _ k; rw [descVal_botCB]; exact hX_bot_zero k
-  hU := by intro V _ _ k; rw [descVal_botCB]; exact hU_C_bot_zero
-  hW := by intro V _ _ k; rw [descVal_botCB]; exact hW_D_bot_zero
-  hT := by intro V _ _ k; rw [descVal_botCB_T, descVal_botCB, swapcode_pBot, swapcode_pConst_zero]
-
-
-lemma descVal_TFT (k : V) : descVal (cl TTFT) (cterm Act.C) (cterm Act.D) k = TFTV := by
-  rw [descVal_def, val_cl_V, val_TTFT_V, val_cterm_C_V, val_cterm_D_V, relabel_zero_one]
-
-lemma descVal_TFT_T (k : V) :
-    descVal (Semiterm.lMap swap (cl TTFT)) (Semiterm.lMap swap (cterm Act.C)) (Semiterm.lMap swap (cterm Act.D)) k =
-      TFTTV := by
-  rw [descVal_def, lMap_swap_cl, lMap_swap_TTFT, lMap_swap_cterm_C, lMap_swap_cterm_D, val_cl_V, val_TTFT_V,
-    val_cterm_C_V, val_cterm_D_V]
-  exact swapcode_TFTV
-
-/-- The triple `(cl TTFT, C, D)` describes TitForTatBot in every model. -/
-theorem describes_TFT : Describes (cl TTFT) (cterm Act.C) (cterm Act.D) where
-  hX := by
-    intro V _ _ k
-    rw [descVal_TFT, quote_emb_cl_V, termSubst_closed _ (semiterm_quote_emb₀ _), quote_emb_TTFT, dnum_TFTV]
-  hU := by intro V _ _ k; rw [descVal_TFT, quote_cterm_C, dU_TFTV]
-  hW := by intro V _ _ k; rw [descVal_TFT, quote_cterm_D, dW_TFTV]
-  hT := by intro V _ _ k; rw [descVal_TFT_T, descVal_TFT, swapcode_TFTV]
 
 end closedOpponents
 
@@ -420,21 +361,6 @@ lemma lMap_swap_gG : Semiformula.lMap swap gG = gGT := lMap_swap_tmpl _ rfl
 lemma pcode_GuardianBot_SV (k : ℕ) : pcode (GuardianBot k) = SV (V := ℕ) gG 1 k := by
   rw [pcode_GuardianBot, SV_nat]; rfl
 
-/-! #### The `SV` layer describes the engine searchers -/
-
-lemma descVal_SV (g : Semisentence LAct 6) (a : ℕ) (ha : a = 0 ∨ a = 1) (k : V) :
-    descVal (TS g a) (uS g a) (wS g a) k = SV g a k := hme_SV g a ha k
-
-lemma descVal_SV_T (g : Semisentence LAct 6) (a : ℕ) (ha : a = 0 ∨ a = 1) (k : V) :
-    descVal (Semiterm.lMap swap (TS g a)) (Semiterm.lMap swap (uS g a)) (Semiterm.lMap swap (wS g a)) k =
-      SV (Semiformula.lMap swap g) (1 - a) k := hme_SVT g a ha k
-
-/-- **The canonical triple of an engine searcher describes it in every model** (`PositiveCells` §2, packaged). -/
-theorem describes_SV (g : Semisentence LAct 6) (a : ℕ) (ha : a = 0 ∨ a = 1) : Describes (TS g a) (uS g a) (wS g a) where
-  hX := by intro V _ _ k; rw [descVal_SV g a ha]; exact hX_SV g a ha k
-  hU := by intro V _ _ k; rw [descVal_SV g a ha]; exact hU_SV g a ha k
-  hW := by intro V _ _ k; rw [descVal_SV g a ha]; exact hW_SV g a ha k
-  hT := by intro V _ _ k; rw [descVal_SV_T g a ha, descVal_SV g a ha, swapcode_SV g a ha]
 
 /-! #### Guardian's guard against DIMCID as a fixed formula, its instance and truth equations -/
 

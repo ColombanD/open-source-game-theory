@@ -555,29 +555,6 @@ lemma hopp'_just7 (k : V) :
       ((Semiterm.lMap swap TJ).val (s := stdActV V) ![k] Empty.elim) = JustTV7 k := by
   rw [lMap_swap_TJ, val_TJ_V]; exact relabel_val_uJT_wJT_V k
 
-/-- The bot tower's triple `(TBD, uD, wD)` describes `pBot (DupocV k)` on codes (`X`-hypothesis). -/
-lemma hX_bot (k : V) :
-    termSubst LAct (bnum k ∷ (0 : V)) (⌜(Rew.emb TBD : SyntacticSemiterm LAct 1)⌝ : V) =
-      progT (dnum (pBot (DupocV k))) := termSubst_TBD k
-
-lemma hU_bot (k : V) : (⌜uD⌝ : V) = dU (pBot (DupocV k)) := quote_emb_uD_botDupocV k
-lemma hW_bot (k : V) : (⌜wD⌝ : V) = dW (pBot (DupocV k)) := quote_emb_wD_botDupocV k
-
-/-- The bot tower's triple describes `pBot (DupocV k)` in `stdActV V`. -/
-lemma hme_bot (k : V) :
-    relabel (uD.val (s := stdActV V) ![] Empty.elim) (wD.val (s := stdActV V) ![] Empty.elim)
-      (TBD.val (s := stdActV V) ![k] Empty.elim) = pBot (DupocV k) := by
-  rw [val_TBD_V, dnum_pBot, relabel_bot, relabel_val_uD_wD_V]
-
-/-- The transposed bot triple describes `pBot (CupodV k)` in `stdActV V`. -/
-lemma hme'_bot (k : V) :
-    relabel ((Semiterm.lMap swap uD).val (s := stdActV V) ![] Empty.elim)
-      ((Semiterm.lMap swap wD).val (s := stdActV V) ![] Empty.elim)
-      ((Semiterm.lMap swap TBD).val (s := stdActV V) ![k] Empty.elim) = pBot (CupodV k) := by
-  rw [lMap_swap_TBD, val_TBD_V, dnum_pBot, relabel_bot]
-  have h := relabel_val_uC_wC_V (V := V) k
-  unfold uC wC at h
-  rw [h]
 
 end canonical
 

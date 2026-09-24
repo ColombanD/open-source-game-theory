@@ -1,4 +1,4 @@
-import ArithS.Cells.Common.Bots
+import ArithS.Cells.Common.Templates
 import ArithS.Assembly.Cell
 import ArithS.SimTest
 import ArithS.Necessitation.Package
