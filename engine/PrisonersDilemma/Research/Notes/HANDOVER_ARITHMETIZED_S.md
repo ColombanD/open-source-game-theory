@@ -34,7 +34,7 @@ is to be pushed for, on its own branch.**
 
 | Folder | Branch | Content | Engine toolchain |
 |---|---|---|---|
-| `~/wt/osgt-arith-m3` (a git WORKTREE, outside OneDrive) | **`colomban-arith-u10` — CANONICAL, checked out** | everything below + the U10 work in `arith/ArithS/Necessitation/` | Lean v4.33.1, mathlib `0df444a360ea` |
+| `~/wt/osgt-arith-m3` (a git WORKTREE, outside OneDrive) | **`colomban-route-b` — CANONICAL since 2026-09-23, checked out** (off `colomban-recost` off `colomban-arith-u10`) | everything below + U10 (complete) + the atom re-cost + route B (`Cells/*`, the budget slot) | Lean v4.33.1, mathlib `0df444a360ea` |
 | same worktree | `colomban-arith-m3` — FROZEN at `15b015a` (the M4 milestone) | engine bumped + M1–M4 results + notes through the milestone | same |
 | the OneDrive checkout (`.../workspace/open-source-game-theory`) | `colomban-arith-s` | arith as of the M3 merge; notes copied by hand up to 2026-09-11 (NOT synced since) | Lean v4.28.0 (old) |
 
@@ -298,3 +298,17 @@ corrupted probes); *discard and rewrite rather than patch*. *Only a must-fail pr
 real edit from a stale olean.* *`exit 124` with an empty log is a stall; a truncation prefix's
 `unexpected end of input` is an artefact.* *Never end a turn with uncommitted text or at a red
 boundary — reach the boundary by banking a piece, not by declining to start one.*
+
+## 9. State at 2026-09-24 (route B, day 2 — supersedes §8 for "where things are")
+
+Branch `colomban-route-b` (pushed by the user). Gate: `lake build ArithS` 3350 jobs, 0 errors; census
+1575 standard (+4 pre-existing subsets, 4 axiom-free). U10 is COMPLETE and unconditional
+(`boundedInnerNec_sixteen`, `closedInnerNec_sixteen`); the rule bridge `S → S'` is ABANDONED
+(`MERGE_CROSSROAD.md`); the matrix is re-proved cell by cell (`ROUTE_B_SCOPE.md`, `ROUTE_B_CENSUS.md`):
+112 of 155 cells have an `S'` statement, 97 agree, 15 disagree (`ARITHMETIZED_S_RESULTS.md`, the last
+three addenda — DIMCID's row). Route (c) landed: templates may read the node budget (`guardCodeB`, slot
+`#6`), `gsubst`'s seven-variable middle case discharged the `.sim` debt. Floors are DROPPED from `S'`
+(user decision 2026-09-23). The trusted base is described in `SPRIME_DESIGN_RATIONALE.md`; the traps in
+`ARITH_TRAPS.md`; the layer table in the repo's `CLAUDE.md` Part III. Next, when resumed: port the
+flips back into the engine as a sound reading rule (Tier-2 constructor flow), or a body slot for
+LegibleBot, or the paper section — the user's call (see the end of `ROUTE_B_SCOPE.md`).
