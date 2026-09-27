@@ -394,22 +394,34 @@ the Löb premise a cell must prove, and its meaning is fixed by `Box_g` (`Assemb
   box budgets), not done; LegibleBot/OptimBot are therefore outside `S'`.
 * **The tau constructors** `.tvote/.sys/.selfIdx` map to code `0` (`Code.lean`); `.diag ↦ ⊥`. The
   tau layer stays a property of the engine.
-* **Floors.** `ROUTE_B_SCOPE.md` §8 decision 2 (2026-09-23): no `BoundedReflection`, no Phase 3;
-  the FLOOR(cen) cells, the floor-paying Löb cells and the staggered companions remain the
-  ENGINE's results, with the reflection assumption stated in prose. `S'` is the positive theory;
-  a same-`k` floor cell is neither claimed nor refuted in it. WaryBot's `.neg` guards enter only
-  where the else branch follows by soundness or the guard is a Π₁ truth by determinism
-  (`pos_WaryBot_vs_DefectBot`, the `S'` twin of `Pf.atomNeg`).
-* **The one place `S'` disagrees with the engine.** The results note's addendum "THE FINDING"
-  (2026-09-23): the engine closes ten cells by censuses that rest on a player being UNREADABLE by
-  `S`'s rules; in PA every source is readable (Σ₁-completeness), and six of the ten flip.
-  `loeb_DIMCID_vs_CooperateBot` (`Cells/PositiveCells.lean`, THM): DIMCID × CooperateBot is
-  `(D, C)` in `S'` against the engine's `(C, C)` — a negative-Löb guard ("I do not cooperate") is
-  self-fulfilling under a real proof predicate and bounded Löb finds it. Two cells keep the
-  engine's value by soundness instead (`cimcic_selfref_not_found`), two are genuine floors, four
-  more flips are verdict-only. Roadmap §4 predicted the direction ("PA reads source for free
-  … negatives are weaker"). This is not a defect of either system; it is the paper's example of
-  a cell whose value is a property of the proof system, not of the bots.
+* **Floors.** `ROUTE_B_SCOPE.md` §8 decision 2 (2026-09-23): no `BoundedReflection`, no conditional
+  values — `S'` is the positive theory. The verdict pass of 2026-09-27 (`Cells/FloorVerdicts.lean`,
+  THM) found every remaining engine floor cell GENUINE: its guard is a true Σ₁ play whose only witness
+  runs through the ELSE branch of a search on a guard `σ` FALSE in ℕ, so "found within budget" is
+  inter-derivable with bounded consistency `Con_TAct(k ± c)` — ONE proof-complexity question, the
+  linear regime of finite consistency (Pudlák: lower bound `k^ε`, polynomial upper, sub-linear OPEN),
+  and the two answers give DIFFERENT cell values; the engine's `search_f` stipulates `+k`, the
+  negative side. Each of the 26 cells is therefore stated as a hypothesis-FREE DICHOTOMY
+  `dich_<L>_vs_<R>` (`Cells/FloorDichotomy.lean`, THM): `¬A_k →` the engine's value, `A_k →` the other,
+  with the hinge `A_k = LenProvableV TAct k (the outer guard)` written INLINE (nested for the seven
+  bistable pairs), and `hinge_reduces_to_bounded_consistency_DupocBot_vs_DBot` (+ converse) exhibits
+  the hinge as bounded consistency up to `C₀ + C₁·size k` (the ∨/∧ gap between the two directions is
+  the τ-invariance of `□_k` that `TAct` does not internalize). NEVER admit the hinge as an axiom.
+  WaryBot's `.neg` guards enter only where the else branch follows by soundness or the guard is a
+  Π₁ truth by determinism (`pos_WaryBot_vs_DefectBot`, the `S'` twin of `Pf.atomNeg`).
+* **Where `S'` disagrees with the engine — thirteen cells, all theorems.** The engine closes them
+  by censuses that rest on a player being UNREADABLE by `S`'s rules (`no_provable_tailTo_unreadable`,
+  the WV valuation censuses, the floor censuses on DIMCID's guard); in PA every source is readable
+  (Σ₁-completeness). `dimcid_vs_closed` (`Cells/DimcidFlips.lean`, THM): DIMCID DEFECTS against every
+  closed program in `S'` — its guard "my cooperating implies X" is self-fulfilling for any `X` — while
+  the engine has it cooperating in thirteen cells, including the UNIVERSAL `outcome_DIMCID_vs_DupocBot
+  = (C, D)`, contradicted by `loeb_DIMCID_vs_DupocBot` for all large `k`; the Wary × Mirror / Wary
+  pair and Guardian × DIMCID flip the same way (`Cells/FlipCells.lean`). Two CIMCIC cells keep the
+  engine's value by soundness (`cimcic_selfref_not_found`). Roadmap §4 predicted the direction ("PA
+  reads source for free … negatives are weaker"). This is not a defect of either system; it is the
+  paper's example of a cell whose value is a property of the proof system, not of the bots — and,
+  with the floors, the precise statement of how `S` departs from PA: plus free citation, minus the
+  reading of uncovered sources, plus a stipulated answer to an open proof-complexity question.
 
 ## 9. Why the definitions are not vacuous — the mutation evidence
 
