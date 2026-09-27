@@ -53,6 +53,7 @@ Cells/PositiveCells ← SoundnessCells, CIMCIC, JustBot, PrudentMirror   (the tw
 Cells/KhatCells     ← PositiveCells, JustSlot
 Cells/FlipCells     ← PositiveCells, DIMCID, KhatCells
 Cells/DimcidFlips   ← FlipCells
+Cells/FloorVerdicts ← DimcidFlips                                         (2026-09-27: the settled halves / true guards of the 26 genuine floors; method prefix `floor`)
 Cells/Names         ← every Cells file                                    (the ALIAS layer only; imported by ArithS.lean, not Audit)
 ```
 `ArithS.lean` imports every Common module, every Cells file and `Cells/Names`; `Audit.lean` imports the Common

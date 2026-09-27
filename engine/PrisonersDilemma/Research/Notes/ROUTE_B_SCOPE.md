@@ -453,3 +453,9 @@ alongside (c)); SND/POS wait for (c) to settle.
   (polynomial staggers natively), the polynomial `BoundedGL` model + "no PA model of the additive
   interface", binary variable indices (degree 16 → ~12, a week, trusted base — deferred), tau
   constructors (weeks), hygiene (dead `SizeOracle` path, `Names` flip).
+* 2026-09-27 (later): **THE FLOOR VERDICT PASS DONE** (`620a2b5`, `Cells/FloorVerdicts.lean`): all 24 worklist cells +
+  CIMCIC × DBot/EBot are GENUINE floors on at least one side — the floor guard is true, its only witness runs through
+  an else-branch on a false guard σ, and `¬□_k σ` is `Con_TAct(k ± c)` up to constants (Pudlák; the linear case open).
+  No (F)/(P) cell, 0 new flips; proved: 13 settled halves + 17 true guards + `floor_settled_census`. Cell-exact
+  tally (script over the 155 rows, `ROUTE_B_CENSUS.md` "S' status per cell"): 107 stated, 94 agree, 13 flip, 26
+  genuine floors, 22 excluded. Gate 3358 jobs, census 1792 (1788 standard + the 4 subsets).

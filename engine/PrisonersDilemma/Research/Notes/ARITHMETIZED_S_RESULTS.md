@@ -457,3 +457,52 @@ for the searchers. Row summary: `dimcid_flips_census`. With `loeb_DIMCID_vs_Coop
 its row is D against every described opponent, and the engine's thirteen cooperative DIMCID-related cells are
 census artifacts.** **Tally: 112 cells of the engine's 155 have an `S'` statement; 97 agree with the engine, 15
 DISAGREE (13 flips + 2 CIMCIC cells kept for a different reason).**
+
+**The floor verdict pass (2026-09-27, `Cells/FloorVerdicts.lean`, `620a2b5`; gate 3358 jobs, census 1792, 1788
+standard + the 4 pre-existing subsets).** Every remaining engine "floor" cell without an `S'` statement — the 24
+FLOOR(cen)/FLOOR(cen+cenU)/LOEB-FP cells with OptimBot/LegibleBot and the four staggered companions excluded, plus
+the two `cenU` cells CIMCIC × DBot/EBot — was classified by the trichotomy (guard FALSE ⇒ soundness; TRUE and
+PROVABLE ⇒ found, possibly a flip; TRUE and only long proofs ⇒ a genuine floor). **The numbers: (F) 0 cells,
+(P) 0 cells, (G) 26 cells; 0 new flips.** Per side, (F) holds on one side of 8 cells (Guardian × CIMCIC/Dupoc/Just,
+the three CupodTroll cells, and the search-free reactors), (P) on the prudence guard of Cupod × Prudent (both
+orders), Wary × Prudent, Guardian × Prudent; but in every cell at least one guard is (G), so no cell theorem
+exists. **The cell-exact tally** (`ROUTE_B_CENSUS.md`, "S' status per cell", script-generated over the 155 rows
+and superseding the hand-kept 112/97/15): **107 cells stated in `S'`, 94 agree with the engine, 13 disagree**
+(the twelve DIMCID flips and Wary × Mirror/Wary), 26 genuine floors, 22 excluded.
+
+*Why they are all (G), in one sentence.* In each cell the floor guard is a TRUE Σ₁ sentence "X plays a against Y"
+whose only evaluation witness passes through the ELSE branch of a search node whose guard σ is FALSE in ℕ; the else
+clause is `¬ LenProvableV TAct k ⌜σ⌝`, and because `TAct ⊢ ¬σ` cheaply (evaluator determinism), that statement is
+inter-derivable with additive-constant overhead with the bounded consistency statement `Con_TAct(k ± c)`. So the
+whole residue of the floor class in `S'` is ONE proof-complexity question — *does `TAct` prove its own bounded
+consistency `Con_TAct(k)` with proofs of length ≤ k?* — Pudlák's question (lower bound `k^ε`, polynomial upper
+bound, the linear regime open). The engine's `+k` floor (`search_f` pays the failed budget) is its stipulated
+answer; the DIMCID row was the exception precisely because DIMCID's guard is self-fulfilling WITHOUT the negative
+(the found box refutes the antecedent directly), which is why it flipped and these do not.
+
+*What is unconditional* (all on the engine's codes at its pads, three standard axioms): the SETTLED HALVES
+`floor_<L>_vs_<R>_left/_right` of the 13 single-floor cells — DBot cooperates with Dupoc/Just/CIMCIC at every `k`,
+EBot cooperates with Dupoc/Just/CIMCIC for all large `k`, CupodTroll cooperates with Dupoc/Just/CIMCIC at every `k`,
+Guardian cooperates with CIMCIC/Dupoc/Just for all large `k`, OBot defects against Cupod for all large `k`
+(`floor_settled_census` at one threshold) — and the TRUE GUARDS `floor_<L>_vs_<R>_true` (17 statements: the
+floor side's consulted sentence `trAt me opp φ` holds in ℕ, so the residue is exactly its provability within `k`).
+New sub-plays: `dupoc_vs_botCB_found`, `botDupoc_vs_botCB_found`, `just_vs_botDB`.
+
+*The genuine floors and their lower-bound sub-facts* (each `σ` a FALSE guard; the sub-fact is
+`TAct ⊢ ¬ LenProvableV TAct k ⌜σ⌝` within length ≤ k, i.e. `Con_TAct(k ± c)` within budget):
+| cell(s) | floor guard (TRUE) | the else-play it runs through (σ FALSE) |
+|---|---|---|
+| Dupoc × DBot, Dupoc × EBot, Prudent × Dupoc (prudence), Guardian × Dupoc | "DBot/EBot/Guardian plays C vs Dupoc k", "Dupoc plays D vs `.bot DefectBot`" | Dupoc's guard vs `.bot DefectBot` / vs Guardian: "… plays C against me" |
+| Just × DBot, Just × EBot, Just × Prudent (prudence), Guardian × Just | the same with the snapshot `.bot (DupocBot k)` in Dupoc's place | the snapshot's guard vs `.bot DefectBot`; Guardian's guard vs the snapshot |
+| CIMCIC × DBot, CIMCIC × EBot, CIMCIC × Prudent (prudence), Guardian × CIMCIC | "DBot/EBot/Guardian plays C vs CIMCIC k", "CIMCIC plays D vs `.bot DefectBot`" | CIMCIC's SELF-REFUTING guard vs `.bot DefectBot` (found ⇒ `.bot DefectBot` cooperates); Guardian's guard vs CIMCIC |
+| Dupoc/Just/CIMCIC × CupodTroll | "CupodTroll plays C vs me / vs the snapshot" | CupodTroll's `.eq` guard, a false closed equation |
+| Cupod × OBot | "OBot plays D vs Cupod k" | Cupod's guard vs `.bot CooperateBot` |
+| Guardian × Prudent | Guardian: "Prudent plays D vs `.bot CooperateBot`"; Prudent outer: "Guardian plays C vs me" | Prudent's prudence guard vs `.bot CooperateBot`; Guardian's guard vs Prudent |
+| Prudent × Prudent | prudence: "Prudent plays D vs `.bot DefectBot`" | Prudent's outer guard vs `.bot DefectBot` |
+| Prudent × EBot | outer: "EBot plays C vs Prudent k" | Prudent's outer guard vs `.bot DefectBot` (EBot's rung 1); EBot's C itself needs Prudent × `.bot MirrorBot` by Löb, not built |
+| Wary × Dupoc, Wary × Just, Wary × Prudent, Cupod × Prudent (both orders), Just × Cupod, CIMCIC × Cupod | BISTABLE MODULO REFLECTION: each guard is true only in the scenario where the other is not found, and each Löb closure needs the cheap negative on the other | the partner's guard, in every scenario |
+
+Sentence for the paper: *in PA-`S'` the engine's thirty-two floor cells split into the seven DIMCID cells, whose
+"else-play" is a found self-fulfilling guard (the flips), and twenty-six cells whose value hinges on a single
+proof-complexity fact — the length of `TAct`'s own bounded consistency proof relative to the budget — which the
+engine stipulates (`+k`) and `S'` leaves open; the half of each cell that does not depend on it is a theorem.*

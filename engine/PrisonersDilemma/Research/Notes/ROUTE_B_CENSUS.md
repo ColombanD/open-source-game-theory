@@ -252,3 +252,252 @@ POS 1, OTHER 2).
 | COMP outcome_JustBot_vs_CupodTrollBot_staggered | JustBot | CupodTrollBot | CC | universal, stag | FLOOR(pay) | - | PlaysProof.search_f + Pf.eqNeg (in the cell body) | no | |
 | COMP outcome_JustBot_vs_PrudentBot_staggered | JustBot | PrudentBot | CC | eventual, stag | LOEB-FP(pay) | mutual_pblt_engine_staggered | atomNeg (neg_botDefect_C_vs_botDupoc), atom_search_f_top (justbot_prudence), atom_search_f_bot_top (prudence_botdupoc) | yes (prudent_botdupoc_legPD) | |
 | COMP outcome_PrudentBot_vs_DupocBot_staggered | PrudentBot | DupocBot | CC | eventual, stag | LOEB-FP(pay) | mutual_pblt_engine_staggered | atomNeg + atom_search_f_top (prudence_dupoc) | yes (prudent_dupoc_legPD) | |
+
+## S' status per cell (2026-09-27)
+
+*The floor verdict pass (`arith/ArithS/Cells/FloorVerdicts.lean`, commit `620a2b5`). Every one of the 155 cells
+with its engine value, its PA-`S'` value (`—` = no `S'` statement), its `S'` class and the theorem that states
+it or the reason there is none. Script-generated from the table above (`table.py` over the 155 rows: the
+earlier running tallies, 112/97/15, were kept by hand and counted some non-cell statements — the τ-twins and
+bot-wrapped companions; this table is the cell-exact count).*
+
+**Classes.** `SF`/`POS`/`SND`/`LOEB` = the `S'` proof method, value = the engine's; `FLIP` = stated in `S'` with a
+value that CONTRADICTS the engine's (13 cells, all on a self-fulfilling negative guard: DIMCID's twelve and
+Wary × Mirror/Wary, Guardian × DIMCID counted on DIMCID's side); `GENUINE-FLOOR` = the trichotomy's case (G),
+no `S'` statement (26 cells, see the verdict pass below); `EXCLUDED` = OptimBot/LegibleBot (22 cells, out of
+coverage: `box_guard_never_fits`, the seven-search Löb premise).
+
+**Counts.** 155 = 28 SF + 39 SND (36 census-SND + CIMCIC × DefectBot/OBot kept by soundness + the red cell) +
+13 POS (incl. the four `k̂`-chain cells) + 14 LOEB (CIMCIC × Mirror is POS in the engine, Löb in `S'`) + 13 FLIP
++ 26 GENUINE-FLOOR + 22 EXCLUDED. **Stated in `S'`: 107; agree with the engine: 94; disagree: 13.**
+
+**The verdict pass (the 24 worklist cells + the 2 `cenU` cells).** Worklist = every FLOOR(cen), FLOOR(cen+cenU)
+or LOEB-FP cell without an `S'` theorem, Optim/Legible and the four staggered companions excluded: Dupoc ×
+DBot/EBot/CupodTroll, Just × DBot/EBot/CupodTroll/Cupod/Prudent, CIMCIC × CupodTroll/Cupod/Prudent, Guardian ×
+CIMCIC/Dupoc/Just/Prudent, Wary × Dupoc/Just/Prudent, Cupod × OBot/Prudent, Prudent × Cupod/Dupoc/Prudent/EBot
+(24); plus the two `cenU` cells CIMCIC × DBot/EBot flagged "genuine floor" on 2026-09-23. **Verdict: all 26 are
+(G) on at least one side; no (F) or (P) cell; 0 flips.** The uniform reason: the floor guard is a TRUE Σ₁ sentence
+"X plays a against Y" whose only evaluation witness runs through the ELSE branch of a search node whose guard σ is
+FALSE in ℕ; the else clause is `¬ LenProvableV TAct k ⌜σ⌝`, and since `TAct ⊢ ¬σ` cheaply (evaluator determinism)
+that statement is inter-derivable, with additive-constant overhead, with the bounded consistency statement
+`Con_TAct(k ± c)` (a proof of σ of length ≤ k gives a contradiction of length ≤ k + c; a contradiction of length
+≤ k − c gives σ by ex falso). Whether `TAct` proves `Con_TAct(k)` in length ≤ k is Pudlák's question (lower bound
+`k^ε`, polynomial upper bound; the linear regime open) — a genuine lower-bound question. The Löb route is blocked
+for the same reason: `□G → G` would need the cheap negative (`¬G' → ¬□G'`, a bounded reflection instance) on the
+partner's guard. Per side: (F) = the guard is false, the side is settled (`floor_…_left`); (P) = found (the
+prudence guard against Cupod/Wary/Guardian — the `k̂`-chain through the partner's found box, verdict only);
+(G) = as above. The two-searcher cells whose guards are each true only through the other's else-play (Wary ×
+Dupoc/Just/Prudent, Cupod × Prudent both ways, Just × Cupod, CIMCIC × Cupod) are BISTABLE MODULO REFLECTION —
+three consistent scenarios, e.g. Wary × Dupoc: `(D, D)` if Wary's guard is found, `(C, C)` if Dupoc's, `(C, D)`
+if neither — no side settled. What `FloorVerdicts` proves unconditionally: the settled halves (13 cells) and
+the truth in ℕ of the floor guards (17 statements); Prudent × EBot's EBot half needs Prudent × `.bot MirrorBot`
+by Löb (`PrudentMirror`'s family at the closed code via `describes_closed`) and is not built.
+
+| cell | engine | `S'` | `S'` class | theorem or reason |
+|---|---|---|---|---|
+| llm_outcome_CIMCIC_vs_CIMCIC | (C, C) | (C, C) | POS | cimcic_self_coop |
+| llm_outcome_CIMCIC_vs_CupodTrollBot | (D, C) | — | GENUINE-FLOOR | CIMCIC's guard TRUE (consequent = CupodTroll's else-play). Settled: `floor_CIMCIC_vs_CupodTrollBot_right`, `_true` |
+| llm_outcome_CIMCIC_vs_DBot | (D, C) | — | GENUINE-FLOOR | cenU; CIMCIC's guard TRUE (DBot cooperates: CIMCIC's self-refuting else-play vs `.bot DefectBot`). Settled: `floor_CIMCIC_vs_DBot_right`, `_true` |
+| llm_outcome_CIMCIC_vs_DIMCID | (D, C) | (D, D) | FLIP | loeb_CIMCIC_vs_DIMCID |
+| llm_outcome_CIMCIC_vs_DupocBot | (C, C) | (C, C) | LOEB | cimcic_dupoc_coop_unconditional |
+| llm_outcome_CIMCIC_vs_EBot | (D, C) | — | GENUINE-FLOOR | cenU; CIMCIC's guard TRUE (EBot's rung 1 = CIMCIC's else-play vs `.bot DefectBot`). Settled: `floor_CIMCIC_vs_EBot_right`, `_true` |
+| llm_outcome_CIMCIC_vs_JustBot | (C, C) | (C, C) | LOEB | cimcic_just7_coop_unconditional (on `Just7 k`) |
+| llm_outcome_CIMCIC_vs_MirrorBot | (C, C) | (C, C) | LOEB | cimcic_mirror_coop_unconditional |
+| llm_outcome_CIMCIC_vs_OptimBot | (D, C) | — | EXCLUDED | OptimBot/LegibleBot out of coverage |
+| llm_outcome_CIMCIC_vs_PrudentBot | (D, D) | — | GENUINE-FLOOR | prudence guard TRUE via CIMCIC's self-refuting else-play — `floor_CIMCIC_vs_PrudentBot_true`; if not found CIMCIC's guard is self-refuting ⇒ `(D, D)` |
+| llm_outcome_CIMCIC_vs_TitForTatBot | (C, C) | (C, C) | POS | khat_CIMCIC_vs_TitForTatBot |
+| llm_outcome_DIMCID_vs_CupodTrollBot | (C, C) | (D, C) | FLIP | loeb_DIMCID_vs_CupodTrollBot (on `CupodTroll7 k`) |
+| llm_outcome_DIMCID_vs_DBot | (C, C) | (D, C) | FLIP | loeb_DIMCID_vs_DBot |
+| llm_outcome_DIMCID_vs_DIMCID | (D, D) | (D, D) | LOEB | dimcid_self_defect_unconditional |
+| llm_outcome_DIMCID_vs_EBot | (C, C) | (D, D) | FLIP | loeb_DIMCID_vs_EBot |
+| llm_outcome_DIMCID_vs_JustBot | (C, D) | (D, D) | FLIP | loeb_DIMCID_vs_JustBot (on `Just7 k`; Just half also `just_engine_vs_DIMCID_defects`) |
+| llm_outcome_DIMCID_vs_MirrorBot | (D, D) | (D, D) | LOEB | dimcid_mirror_defect_unconditional |
+| llm_outcome_DIMCID_vs_OBot | (C, D) | (D, D) | FLIP | loeb_DIMCID_vs_OBot |
+| llm_outcome_DIMCID_vs_PrudentBot | (C, D) | (D, D) | FLIP | loeb_DIMCID_vs_PrudentBot |
+| llm_outcome_DIMCID_vs_TitForTatBot | (C, C) | (D, D) | FLIP | loeb_DIMCID_vs_TitForTatBot |
+| llm_outcome_GuardianBot_vs_CIMCIC | (C, D) | — | GENUINE-FLOOR | Guardian side (F): guard false (CIMCIC × `.bot CooperateBot` found) — `floor_GuardianBot_vs_CIMCIC_left`; CIMCIC side (G): guard TRUE via Guardian's else-play — `_true` |
+| llm_outcome_GuardianBot_vs_CupodBot | (C, C) | (C, C) | SND | snd_GuardianBot_vs_CupodBot |
+| llm_outcome_GuardianBot_vs_CupodTrollBot | (C, C) | (C, C) | SND | snd_GuardianBot_vs_CupodTrollBot |
+| llm_outcome_GuardianBot_vs_DBot | (D, C) | (D, C) | POS | pos_GuardianBot_vs_DBot |
+| llm_outcome_GuardianBot_vs_DIMCID | (C, C) | (D, D) | FLIP | loeb_GuardianBot_vs_DIMCID |
+| llm_outcome_GuardianBot_vs_DupocBot | (C, D) | — | GENUINE-FLOOR | Guardian side (F) — `floor_GuardianBot_vs_DupocBot_left`; Dupoc side (G): guard TRUE via Guardian's else-play — `_true` |
+| llm_outcome_GuardianBot_vs_EBot | (D, C) | (D, C) | SND | snd_GuardianBot_vs_EBot |
+| llm_outcome_GuardianBot_vs_GuardianBot | (C, C) | (C, C) | SND | snd_GuardianBot_vs_GuardianBot |
+| llm_outcome_GuardianBot_vs_JustBot | (C, D) | — | GENUINE-FLOOR | Guardian side (F) — `floor_GuardianBot_vs_JustBot_left`; Just side (G): Guardian's else-play vs the snapshot — `_true` |
+| llm_outcome_GuardianBot_vs_OBot | (C, D) | (C, D) | SND | snd_GuardianBot_vs_OBot |
+| llm_outcome_GuardianBot_vs_PrudentBot | (C, D) | — | GENUINE-FLOOR | Guardian side (G): guard TRUE (Prudent's else-play vs `.bot CooperateBot`) — `floor_GuardianBot_vs_PrudentBot_true`; Prudent outer (G) via Guardian's else-play, prudence (P) found |
+| llm_outcome_GuardianBot_vs_TitForTatBot | (C, C) | (C, C) | SND | snd_GuardianBot_vs_TitForTatBot |
+| llm_outcome_JustBot_vs_MirrorBot | (C, C) | (C, C) | LOEB | just_mirror_coop_unconditional |
+| llm_outcome_LegibleBot_vs_CupodBot | (C, C) | — | EXCLUDED | OptimBot/LegibleBot out of coverage |
+| llm_outcome_LegibleBot_vs_DupocBot | (C, C) | — | EXCLUDED | OptimBot/LegibleBot out of coverage |
+| llm_outcome_LegibleBot_vs_GuardianBot | (C, C) | — | EXCLUDED | OptimBot/LegibleBot out of coverage |
+| llm_outcome_LegibleBot_vs_JustBot | (C, C) | — | EXCLUDED | OptimBot/LegibleBot out of coverage |
+| llm_outcome_LegibleBot_vs_PrudentBot | (C, D) | — | EXCLUDED | OptimBot/LegibleBot out of coverage |
+| llm_outcome_OptimBot_vs_CooperateBot | (D, C) | — | EXCLUDED | OptimBot/LegibleBot out of coverage |
+| llm_outcome_OptimBot_vs_DBot | (C, C) | — | EXCLUDED | OptimBot/LegibleBot out of coverage |
+| llm_outcome_OptimBot_vs_DefectBot | (D, D) | — | EXCLUDED | OptimBot/LegibleBot out of coverage |
+| llm_outcome_OptimBot_vs_TitForTatBot | (D, D) | — | EXCLUDED | OptimBot/LegibleBot out of coverage |
+| llm_outcome_WaryBot_vs_DupocBot | (C, D) | — | GENUINE-FLOOR | bistable modulo reflection: each guard's Löb closure needs the cheap negative on the other (three consistent scenarios: `(D,D)`/`(C,C)`/`(C,D)`); no side settled |
+| llm_outcome_WaryBot_vs_GuardianBot | (C, C) | (C, C) | SND | snd_WaryBot_vs_GuardianBot |
+| llm_outcome_WaryBot_vs_JustBot | (C, D) | — | GENUINE-FLOOR | as Wary × Dupoc in the snapshot's frame; no side settled |
+| llm_outcome_WaryBot_vs_OptimBot | (C, C) | — | EXCLUDED | OptimBot/LegibleBot out of coverage |
+| llm_outcome_WaryBot_vs_PrudentBot | (C, D) | — | GENUINE-FLOOR | prudence (P) found (Wary × `.bot DefectBot` found); outer/Wary guards bistable modulo reflection; no side settled |
+| outcome_CIMCIC_vs_CooperateBot | (C, C) | (C, C) | POS | pos_CIMCIC_vs_CooperateBot |
+| outcome_CIMCIC_vs_CupodBot | (D, C) | — | GENUINE-FLOOR | as Just × Cupod; no side settled |
+| outcome_CIMCIC_vs_DefectBot | (D, D) | (D, D) | SND (unreadability census → self-refuting guard, soundness) | snd_CIMCIC_vs_DefectBot |
+| outcome_CIMCIC_vs_OBot | (D, D) | (D, D) | SND (unreadability census → self-refuting guard, soundness) | snd_CIMCIC_vs_OBot |
+| outcome_CooperateBot_vs_CooperateBot | (C, C) | (C, C) | SF | sf_CooperateBot_vs_CooperateBot |
+| outcome_CooperateBot_vs_DefectBot | (C, D) | (C, D) | SF | sf_CooperateBot_vs_DefectBot |
+| outcome_CupodBot_vs_CooperateBot | (C, C) | (C, C) | SND | snd_CupodBot_vs_CooperateBot |
+| outcome_CupodBot_vs_CupodBot | (D, D) | (D, D) | LOEB | dupoc_self_coop_unconditional |
+| outcome_CupodBot_vs_DBot | (C, C) | (C, C) | SND | snd_CupodBot_vs_DBot |
+| outcome_CupodBot_vs_DefectBot | (D, D) | (D, D) | POS | pos_CupodBot_vs_DefectBot |
+| outcome_CupodBot_vs_EBot | (C, C) | (C, C) | SND | snd_CupodBot_vs_EBot |
+| outcome_CupodBot_vs_MirrorBot | (D, D) | (D, D) | LOEB | cupod_mirror_defect_unconditional |
+| outcome_CupodBot_vs_OBot | (C, D) | — | GENUINE-FLOOR | Cupod's guard TRUE (OBot's D needs Cupod's else-play vs `.bot CooperateBot`). Settled: `floor_CupodBot_vs_OBot_right`, `_true` |
+| outcome_CupodBot_vs_PrudentBot | (C, D) | — | GENUINE-FLOOR | prudence (P) found (Cupod × `.bot DefectBot` found); Cupod's guard / Prudent's outer bistable modulo reflection; no side settled |
+| outcome_CupodBot_vs_TitForTatBot | (C, C) | (C, C) | SND | snd_CupodBot_vs_TitForTatBot |
+| outcome_CupodTrollBot_vs_CooperateBot | (C, C) | (C, C) | SND | snd_CupodTrollBot_vs_CooperateBot |
+| outcome_CupodTrollBot_vs_CupodBot | (D, D) | (D, D) | POS | khat_CupodTrollBot_vs_CupodBot |
+| outcome_CupodTrollBot_vs_CupodTrollBot | (C, C) | (C, C) | SND | snd_CupodTrollBot_vs_CupodTrollBot |
+| outcome_CupodTrollBot_vs_DBot | (C, D) | (C, D) | SND | snd_CupodTrollBot_vs_DBot |
+| outcome_CupodTrollBot_vs_DefectBot | (C, D) | (C, D) | SND | snd_CupodTrollBot_vs_DefectBot |
+| outcome_CupodTrollBot_vs_EBot | (C, D) | (C, D) | SND | snd_CupodTrollBot_vs_EBot |
+| outcome_CupodTrollBot_vs_MirrorBot | (C, C) | (C, C) | SND | snd_CupodTrollBot_vs_MirrorBot |
+| outcome_CupodTrollBot_vs_OBot | (C, C) | (C, C) | SND | snd_CupodTrollBot_vs_OBot |
+| outcome_CupodTrollBot_vs_TitForTatBot | (C, C) | (C, C) | SND | snd_CupodTrollBot_vs_TitForTatBot |
+| outcome_DBot_vs_CooperateBot | (D, C) | (D, C) | SF | sf_DBot_vs_CooperateBot |
+| outcome_DBot_vs_DBot | (D, D) | (D, D) | SF | sf_DBot_vs_DBot |
+| outcome_DBot_vs_DefectBot | (C, D) | (C, D) | SF | sf_DBot_vs_DefectBot |
+| outcome_DIMCID_vs_CooperateBot | (C, C) | (D, C) | FLIP | loeb_DIMCID_vs_CooperateBot |
+| outcome_DIMCID_vs_CupodBot | (D, D) | (D, D) | LOEB | dimcid_cupod_defect_unconditional |
+| outcome_DIMCID_vs_DefectBot | (D, D) | (D, D) | POS | pos_DIMCID_vs_DefectBot |
+| outcome_DIMCID_vs_DupocBot | (C, D) | (D, D) | FLIP | loeb_DIMCID_vs_DupocBot (engine UNIVERSAL `(C, D)`) |
+| outcome_DefectBot_vs_DefectBot | (D, D) | (D, D) | SF | sf_DefectBot_vs_DefectBot |
+| outcome_DupocBot_vs_CooperateBot | (C, C) | (C, C) | POS | pos_DupocBot_vs_CooperateBot |
+| outcome_DupocBot_vs_CupodBot | (D, C) | (D, C) | SND (τ-symmetry + soundness) | red_cell |
+| outcome_DupocBot_vs_CupodTrollBot | (D, C) | — | GENUINE-FLOOR | Dupoc's guard TRUE (CupodTroll's else-play: a false `.eq`). Settled: `floor_DupocBot_vs_CupodTrollBot_right`, `_true` |
+| outcome_DupocBot_vs_DBot | (D, C) | — | GENUINE-FLOOR | Dupoc's guard TRUE (DBot cooperates: Dupoc's else-play vs `.bot DefectBot`); residue `Con_TAct(k+c)`. Settled: `floor_DupocBot_vs_DBot_right`, `_true` |
+| outcome_DupocBot_vs_DefectBot | (D, D) | (D, D) | SND | snd_DupocBot_vs_DefectBot |
+| outcome_DupocBot_vs_DupocBot | (C, C) | (C, C) | LOEB | dupoc_self_coop_unconditional |
+| outcome_DupocBot_vs_EBot | (D, C) | — | GENUINE-FLOOR | Dupoc's guard TRUE (EBot's rung 1 = Dupoc's else-play vs `.bot DefectBot`). Settled: `floor_DupocBot_vs_EBot_right`, `_true` |
+| outcome_DupocBot_vs_MirrorBot | (C, C) | (C, C) | LOEB | dupoc_mirror_coop_unconditional |
+| outcome_DupocBot_vs_OBot | (D, D) | (D, D) | SND | snd_DupocBot_vs_OBot |
+| outcome_DupocBot_vs_TitForTatBot | (C, C) | (C, C) | POS | khat_DupocBot_vs_TitForTatBot |
+| outcome_EBot_vs_CooperateBot | (D, C) | (D, C) | SF | sf_EBot_vs_CooperateBot |
+| outcome_EBot_vs_DBot | (D, C) | (D, C) | SF | sf_EBot_vs_DBot |
+| outcome_EBot_vs_DefectBot | (D, D) | (D, D) | SF | sf_EBot_vs_DefectBot |
+| outcome_EBot_vs_EBot | (C, C) | (C, C) | SF | sf_EBot_vs_EBot |
+| outcome_EBot_vs_MirrorBot | (C, C) | (C, C) | SF | sf_EBot_vs_MirrorBot |
+| outcome_EBot_vs_OBot | (C, D) | (C, D) | SF | sf_EBot_vs_OBot |
+| outcome_EBot_vs_TitForTatBot | (C, D) | (C, D) | SF | sf_EBot_vs_TitForTatBot |
+| outcome_GuardianBot_vs_CooperateBot | (C, C) | (C, C) | SND | snd_GuardianBot_vs_CooperateBot |
+| outcome_GuardianBot_vs_DefectBot | (D, D) | (D, D) | POS | pos_GuardianBot_vs_DefectBot |
+| outcome_GuardianBot_vs_MirrorBot | (C, C) | (C, C) | SND | snd_GuardianBot_vs_MirrorBot |
+| outcome_JustBot_vs_CooperateBot | (C, C) | (C, C) | POS | pos_JustBot_vs_CooperateBot |
+| outcome_JustBot_vs_CupodBot | (D, C) | — | GENUINE-FLOOR | both guards true only through the other's else-play; bistable modulo reflection; no side settled |
+| outcome_JustBot_vs_CupodTrollBot | (D, C) | — | GENUINE-FLOOR | Just's guard TRUE (CupodTroll's else-play vs the snapshot). Settled: `floor_JustBot_vs_CupodTrollBot_right`, `_true` |
+| outcome_JustBot_vs_DBot | (D, C) | — | GENUINE-FLOOR | Just's guard TRUE (DBot cooperates with the snapshot: its else-play vs `.bot DefectBot`). Settled: `floor_JustBot_vs_DBot_right`, `_true` |
+| outcome_JustBot_vs_DefectBot | (D, D) | (D, D) | SND | snd_JustBot_vs_DefectBot |
+| outcome_JustBot_vs_DupocBot | (C, C) | (C, C) | LOEB | just7_dupoc_coop_unconditional (on `Just7 k`) |
+| outcome_JustBot_vs_EBot | (D, C) | — | GENUINE-FLOOR | Just's guard TRUE (EBot's rung 1 on the snapshot = an else-play). Settled: `floor_JustBot_vs_EBot_right`, `_true` |
+| outcome_JustBot_vs_JustBot | (C, C) | (C, C) | LOEB | just7_self_coop_unconditional (on `Just7 k`) |
+| outcome_JustBot_vs_OBot | (D, D) | (D, D) | SND | snd_JustBot_vs_OBot |
+| outcome_JustBot_vs_PrudentBot | (D, D) | — | GENUINE-FLOOR | prudence guard TRUE via Just's else-play vs `.bot DefectBot` — `floor_JustBot_vs_PrudentBot_true`; if not found `(D, D)` follows |
+| outcome_JustBot_vs_TitForTatBot | (C, C) | (C, C) | POS | khat_JustBot_vs_TitForTatBot |
+| outcome_LegibleBot_vs_CIMCIC | (C, C) | — | EXCLUDED | OptimBot/LegibleBot out of coverage |
+| outcome_LegibleBot_vs_CooperateBot | (C, C) | — | EXCLUDED | OptimBot/LegibleBot out of coverage |
+| outcome_LegibleBot_vs_CupodTrollBot | (C, C) | — | EXCLUDED | OptimBot/LegibleBot out of coverage |
+| outcome_LegibleBot_vs_DBot | (C, D) | — | EXCLUDED | OptimBot/LegibleBot out of coverage |
+| outcome_LegibleBot_vs_DIMCID | (C, C) | — | EXCLUDED | OptimBot/LegibleBot out of coverage |
+| outcome_LegibleBot_vs_DefectBot | (C, D) | — | EXCLUDED | OptimBot/LegibleBot out of coverage |
+| outcome_LegibleBot_vs_EBot | (C, D) | — | EXCLUDED | OptimBot/LegibleBot out of coverage |
+| outcome_LegibleBot_vs_LegibleBot | (C, C) | — | EXCLUDED | OptimBot/LegibleBot out of coverage |
+| outcome_LegibleBot_vs_MirrorBot | (C, C) | — | EXCLUDED | OptimBot/LegibleBot out of coverage |
+| outcome_LegibleBot_vs_OBot | (C, C) | — | EXCLUDED | OptimBot/LegibleBot out of coverage |
+| outcome_LegibleBot_vs_TitForTatBot | (C, C) | — | EXCLUDED | OptimBot/LegibleBot out of coverage |
+| outcome_MirrorBot_vs_CooperateBot | (C, C) | (C, C) | SF | sf_MirrorBot_vs_CooperateBot |
+| outcome_MirrorBot_vs_DBot | (C, C) | (C, C) | SF | sf_MirrorBot_vs_DBot |
+| outcome_MirrorBot_vs_DefectBot | (D, D) | (D, D) | SF | sf_MirrorBot_vs_DefectBot |
+| outcome_MirrorBot_vs_MirrorBot | none | none | SF | sf_MirrorBot_vs_MirrorBot |
+| outcome_MirrorBot_vs_OBot | (D, D) | (D, D) | SF | sf_MirrorBot_vs_OBot |
+| outcome_MirrorBot_vs_TitForTatBot | (C, C) | (C, C) | SF | sf_MirrorBot_vs_TitForTatBot |
+| outcome_OBot_vs_CooperateBot | (C, C) | (C, C) | SF | sf_OBot_vs_CooperateBot |
+| outcome_OBot_vs_DBot | (D, C) | (D, C) | SF | sf_OBot_vs_DBot |
+| outcome_OBot_vs_DefectBot | (D, D) | (D, D) | SF | sf_OBot_vs_DefectBot |
+| outcome_OBot_vs_OBot | (D, D) | (D, D) | SF | sf_OBot_vs_OBot |
+| outcome_OBot_vs_TitForTatBot | (D, C) | (D, C) | SF | sf_OBot_vs_TitForTatBot |
+| outcome_PrudentBot_vs_CooperateBot | (D, C) | (D, C) | SND | snd_PrudentBot_vs_CooperateBot |
+| outcome_PrudentBot_vs_CupodBot | (D, C) | — | GENUINE-FLOOR | same pair as Cupod × Prudent; no side settled |
+| outcome_PrudentBot_vs_CupodTrollBot | (D, C) | (D, C) | SND | snd_PrudentBot_vs_CupodTrollBot |
+| outcome_PrudentBot_vs_DBot | (D, C) | (D, C) | SND | snd_PrudentBot_vs_DBot |
+| outcome_PrudentBot_vs_DefectBot | (D, D) | (D, D) | SND | snd_PrudentBot_vs_DefectBot |
+| outcome_PrudentBot_vs_DupocBot | (D, D) | — | GENUINE-FLOOR | prudence guard TRUE via Dupoc's else-play — `floor_PrudentBot_vs_DupocBot_true`; if not found `(D, D)`, if found the mutual Löb `(C, C)` (the staggered companion's value) |
+| outcome_PrudentBot_vs_EBot | (D, C) | — | GENUINE-FLOOR | LOEB-FP: Prudent's outer guard TRUE only through EBot's rung 1 (Prudent's else-play vs `.bot DefectBot`); EBot's C needs Prudent × `.bot MirrorBot` Löb (not built) |
+| outcome_PrudentBot_vs_MirrorBot | (C, C) | (C, C) | LOEB | prudent_mirror_coop_unconditional |
+| outcome_PrudentBot_vs_OBot | (D, D) | (D, D) | SND | snd_PrudentBot_vs_OBot |
+| outcome_PrudentBot_vs_PrudentBot | (D, D) | — | GENUINE-FLOOR | prudence guard TRUE via Prudent's else-play — `floor_PrudentBot_vs_PrudentBot_true` |
+| outcome_PrudentBot_vs_TitForTatBot | (D, D) | (D, D) | SND | snd_PrudentBot_vs_TitForTatBot |
+| outcome_TitForTatBot_vs_CooperateBot | (C, C) | (C, C) | SF | sf_TitForTatBot_vs_CooperateBot |
+| outcome_TitForTatBot_vs_DBot | (D, C) | (D, C) | SF | sf_TitForTatBot_vs_DBot |
+| outcome_TitForTatBot_vs_DefectBot | (D, D) | (D, D) | SF | sf_TitForTatBot_vs_DefectBot |
+| outcome_TitForTatBot_vs_TitForTatBot | (C, C) | (C, C) | SF | sf_TitForTatBot_vs_TitForTatBot |
+| outcome_WaryBot_vs_CooperateBot | (C, C) | (C, C) | SND | snd_WaryBot_vs_CooperateBot |
+| outcome_WaryBot_vs_CupodTrollBot | (C, C) | (C, C) | SND | snd_WaryBot_vs_CupodTrollBot |
+| outcome_WaryBot_vs_DBot | (C, C) | (C, C) | SND | snd_WaryBot_vs_DBot |
+| outcome_WaryBot_vs_DefectBot | (D, D) | (D, D) | POS | pos_WaryBot_vs_DefectBot |
+| outcome_WaryBot_vs_EBot | (C, C) | (C, C) | SND | snd_WaryBot_vs_EBot |
+| outcome_WaryBot_vs_MirrorBot | (C, C) | (D, D) | FLIP | loeb_WaryBot_vs_MirrorBot |
+| outcome_WaryBot_vs_TitForTatBot | (C, C) | (C, C) | SND | snd_WaryBot_vs_TitForTatBot |
+| outcome_WaryBot_vs_WaryBot | (C, C) | (D, D) | FLIP | loeb_WaryBot_vs_WaryBot |
+
+The per-side verdict table of the pass (cell | side | F/P/G | reason | proved?):
+
+| cell | side | verdict | reason | proved |
+|---|---|---|---|---|
+| Dupoc × DBot | Dupoc | G | guard "DBot plays C vs me" true; DBot's C runs through Dupoc's else-play vs `.bot DefectBot` | `_true` |
+| Dupoc × DBot | DBot | F/settled | search-free; sees Dupoc defect vs `.bot DefectBot` | `_right` (every `k`) |
+| Dupoc × EBot | Dupoc | G | EBot's C runs through Dupoc's else-play (rung 1) | `_true` |
+| Dupoc × EBot | EBot | settled | D vs `.bot DefectBot` (else), C vs `.bot CooperateBot` (found) | `_right` (large `k`) |
+| Dupoc × CupodTroll | Dupoc | G | CupodTroll's C is its else-play on a false `.eq` | `_true` |
+| Dupoc × CupodTroll | CupodTroll | F | `.eq` guard false (`pcode_DupocBot_ne_CupodBot`) | `_right` (every `k`) |
+| Just × DBot | Just | G | DBot's C vs the snapshot runs through the snapshot's else-play | `_true` |
+| Just × DBot | DBot | settled | Just defects vs `.bot DefectBot` (`just_vs_botDB`) | `_right` |
+| Just × EBot | Just | G | as Dupoc × EBot in the snapshot's frame | `_true` |
+| Just × EBot | EBot | settled | Just: D vs `.bot DefectBot`, C vs `.bot CooperateBot` (`just_botCB_found`) | `_right` |
+| Just × CupodTroll | Just | G | CupodTroll's C vs the snapshot is an else-play | `_true` |
+| Just × CupodTroll | CupodTroll | F | `.eq` guard false | `_right` |
+| Just × Cupod | both | G | each guard true only through the other's else-play; bistable modulo reflection | — |
+| Just × Prudent | Prudent (prudence) | G | "Just plays D vs `.bot DefectBot`" true via Just's else-play | `_true` |
+| Just × Prudent | Just / Prudent outer | G | conditional on the prudence verdict | — |
+| CIMCIC × CupodTroll | CIMCIC | G | consequent "CupodTroll plays C vs me" is an else-play | `_true` |
+| CIMCIC × CupodTroll | CupodTroll | F | `.eq` guard false (`pcode_CIMCIC_ne_CupodBot`) | `_right` |
+| CIMCIC × DBot (cenU) | CIMCIC | G | DBot's C runs through CIMCIC's self-refuting else-play vs `.bot DefectBot` | `_true` |
+| CIMCIC × DBot (cenU) | DBot | settled | `cimcic_vs_botDB` | `_right` |
+| CIMCIC × EBot (cenU) | CIMCIC | G | EBot's rung 1 = CIMCIC's else-play | `_true` |
+| CIMCIC × EBot (cenU) | EBot | settled | D vs `.bot DefectBot`, C vs `.bot CooperateBot` (found) | `_right` |
+| CIMCIC × Cupod | both | G | bistable modulo reflection | — |
+| CIMCIC × Prudent | Prudent (prudence) | G | "CIMCIC plays D vs `.bot DefectBot`" true via the self-refuting else-play | `_true` |
+| CIMCIC × Prudent | CIMCIC | (F given the floor) | if Prudent defects, CIMCIC's guard is self-refuting — conditional | — |
+| Guardian × CIMCIC | Guardian | F | guard "CIMCIC plays D vs `.bot CooperateBot`" false (found guard, C) | `_left` (large `k`) |
+| Guardian × CIMCIC | CIMCIC | G | consequent "Guardian plays C vs me" is Guardian's else-play | `_true` |
+| Guardian × Dupoc | Guardian | F | Dupoc cooperates with `.bot CooperateBot` (`dupoc_vs_botCB_found`) | `_left` |
+| Guardian × Dupoc | Dupoc | G | "Guardian plays C vs me" is an else-play | `_true` |
+| Guardian × Just | Guardian | F | Just cooperates with `.bot CooperateBot` | `_left` |
+| Guardian × Just | Just | G | Guardian's C vs the snapshot is an else-play | `_true` |
+| Guardian × Prudent | Guardian | G | "Prudent plays D vs `.bot CooperateBot`" true via Prudent's inner else-play | `_true` |
+| Guardian × Prudent | Prudent outer | G | "Guardian plays C vs me" is an else-play (if Guardian's guard is not found) | — |
+| Guardian × Prudent | Prudent prudence | P | Guardian defects vs `.bot DefectBot` (found) — found via the partner's box | verdict only |
+| Wary × Dupoc | both | G | bistable modulo reflection (`(D,D)`/`(C,C)`/`(C,D)`) | — |
+| Wary × Just | both | G | idem in the snapshot's frame | — |
+| Wary × Prudent | Prudent prudence | P | Wary defects vs `.bot DefectBot` (`wary_vs_botDB_found`) | verdict only |
+| Wary × Prudent | Wary / Prudent outer | G | bistable modulo reflection | — |
+| Cupod × OBot | Cupod | G | OBot's D runs through Cupod's else-play vs `.bot CooperateBot` | `_true` |
+| Cupod × OBot | OBot | settled | C vs `.bot CooperateBot` (else), D vs `.bot DefectBot` (found) | `_right` |
+| Cupod × Prudent, Prudent × Cupod | Prudent prudence | P | Cupod defects vs `.bot DefectBot` (found) | verdict only |
+| Cupod × Prudent, Prudent × Cupod | Cupod / Prudent outer | G | bistable modulo reflection | — |
+| Prudent × Dupoc | Prudent prudence | G | "Dupoc plays D vs `.bot DefectBot`" true via Dupoc's else-play | `_true` |
+| Prudent × Dupoc | outer / Dupoc | G | if the prudence guard is not found `(D, D)`; if found, mutual Löb `(C, C)` (the companion's value) | — |
+| Prudent × Prudent | prudence | G | true via Prudent's own else-play vs `.bot DefectBot` | `_true` |
+| Prudent × EBot | Prudent outer | G | EBot's C runs through Prudent's else-play (rung 1) | — |
+| Prudent × EBot | EBot | Löb (not built) | needs Prudent × `.bot MirrorBot` by Löb; two rungs proved (`prudent_vs_botDB/_botCB`) | — |
