@@ -85,6 +85,7 @@ import ArithS.Cells.KhatCells
 import ArithS.Cells.FlipCells
 import ArithS.Cells.DimcidFlips
 import ArithS.Cells.FloorVerdicts
+import ArithS.Cells.FloorDichotomy
 
 /-!
 # ArithS.Audit — the axiom census of the arithmetized layer
@@ -3145,5 +3146,85 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms floor_JustBot_vs_PrudentBot_true
 #print axioms floor_CIMCIC_vs_PrudentBot_true
 #print axioms floor_settled_census
+
+-- THE DICHOTOMY THEOREMS (Cells/FloorDichotomy, 2026-09-27) — the 26 genuine floors, hypothesis-free: for each cell,
+-- with the HINGE `A_k = LenProvableV TAct k (guardCodeB (tcode φ) (pcode me) (pcode opp) k)` (the evaluator's literal
+-- guard clause for the floor side's outermost search node, written INLINE), `dich_<L>_vs_<R> : ∃ k₀, ∀ k > k₀,
+-- (¬A_k → the engine's value) ∧ (A_k → the found-branch value)`, both worlds at the engine's fuel on the engine's codes.
+-- The ELSE world is the verdict pass's settled half + the search-else clause; the THEN world is the then-branch + the
+-- partner's play, recovered where needed by SOUNDNESS of the found hinge and the evaluator's determinism
+-- (`found_of_search_play`, `play_of_found_*`). Two- and three-hinge cells (the bistable pairs Wary × Dupoc/Just/Prudent,
+-- Cupod × Prudent both ways, Just × Cupod, CIMCIC × Cupod; the prudence floors Just/CIMCIC/Guardian × Prudent) are NESTED
+-- dichotomies with every determined case proved; Prudent's prudence guard is a hinge of its own where the verdict pass
+-- rated it (P) (its `k̂`-chain is not built), proved FOUND against EBot (`prudence_found_vs_EBot`); Prudent × EBot's ELSE
+-- world settles Prudent's side only (EBot's C there is the unbuilt Löb Prudent × `.bot MirrorBot`). THE REDUCTION
+-- (`hinge_reduces_to_bounded_consistency_DupocBot_vs_DBot`): the hinge of Dupoc × DBot within `k` gives a `TAct`-proof
+-- within `k + C₀ + C₁·size k` of `negTwin(k)` = "σ_k or its τ-twin is not provable within `k`" (σ_k = Dupoc's guard
+-- against `.bot DefectBot`, FALSE in ℕ; at ℕ the disjuncts coincide, `negTwin_true_iff`, so the sentence says `¬□_k σ_k`
+-- — a bounded-consistency instance); the CONVERSE from the conjunction (`bounded_consistency_reduces_to_hinge_…`), by the
+-- evaluator's determinism inside `TAct` (`tact_conjTwin_imp_rDB`). No side taken: `S'` proves the dependence.
+#print axioms hingeB
+#print axioms found_of_search_play
+#print axioms not_found_of_search_play
+#print axioms play_of_found_opp_self
+#print axioms play_of_found_opp_bot
+#print axioms play_of_found_neg
+#print axioms play_of_found_cimcic
+#print axioms prudent_total
+#print axioms cimcic_total
+#print axioms ebot_total
+#print axioms dich_DupocBot_vs_DBot
+#print axioms dich_DupocBot_vs_EBot
+#print axioms dich_DupocBot_vs_CupodTrollBot
+#print axioms dich_JustBot_vs_DBot
+#print axioms dich_JustBot_vs_EBot
+#print axioms dich_JustBot_vs_CupodTrollBot
+#print axioms dich_CIMCIC_vs_CupodTrollBot
+#print axioms dich_CIMCIC_vs_DBot
+#print axioms dich_CIMCIC_vs_EBot
+#print axioms dich_GuardianBot_vs_CIMCIC
+#print axioms dich_GuardianBot_vs_DupocBot
+#print axioms dich_GuardianBot_vs_JustBot
+#print axioms dich_CupodBot_vs_OBot
+#print axioms dich_PrudentBot_vs_DupocBot
+#print axioms dich_PrudentBot_vs_PrudentBot
+#print axioms prudent_of_verdicts
+#print axioms dich_JustBot_vs_PrudentBot
+#print axioms dich_CIMCIC_vs_PrudentBot
+#print axioms dich_GuardianBot_vs_PrudentBot
+#print axioms tact_EBot_D_vs_botDB
+#print axioms prudence_found_closed
+#print axioms prudence_found_vs_EBot
+#print axioms dich_PrudentBot_vs_EBot
+#print axioms dich_WaryBot_vs_DupocBot
+#print axioms dich_WaryBot_vs_JustBot
+#print axioms dich_WaryBot_vs_PrudentBot
+#print axioms dich_CupodBot_PrudentBot_core
+#print axioms dich_CupodBot_vs_PrudentBot
+#print axioms dich_PrudentBot_vs_CupodBot
+#print axioms dich_JustBot_vs_CupodBot
+#print axioms dich_CIMCIC_vs_CupodBot
+#print axioms cast_DBot
+#print axioms swapcode_DBotV
+#print axioms dbot_C_of_probe_D_V
+#print axioms dbotT_D_of_probe_C_V
+#print axioms probe_of_dbot_C_V
+#print axioms probe_of_dbotT_D_V
+#print axioms not_found_of_SV_play
+#print axioms dupoc_else_V
+#print axioms cupod_else_V
+#print axioms guardCode_DuB1
+#print axioms guardCode_DuB1_swap
+#print axioms guardCode_rDB
+#print axioms eval_boxK_iff
+#print axioms eval_negTwin_iff
+#print axioms eval_conjTwin_iff
+#print axioms tact_rDB_imp_negTwin
+#print axioms tact_conjTwin_imp_rDB
+#print axioms hinge_DupocBot_vs_DBot_eq
+#print axioms hinge_reduces_to_bounded_consistency_DupocBot_vs_DBot
+#print axioms bounded_consistency_reduces_to_hinge_DupocBot_vs_DBot
+#print axioms substs_lMap_swap_bnumT
+#print axioms negTwin_true_iff
 
 end ArithS

@@ -108,6 +108,7 @@ import ArithS.Cells.KhatCells
 import ArithS.Cells.FlipCells
 import ArithS.Cells.DimcidFlips
 import ArithS.Cells.FloorVerdicts
+import ArithS.Cells.FloorDichotomy
 import ArithS.Cells.Names
 import ArithS.Neg
 import ArithS.Agent

@@ -979,4 +979,391 @@ theorem dich_CIMCIC_vs_CupodBot :
 
 end bistable
 
+/-! ### 5. The reduction theorem: the hinge of Dupoc × DBot is at least as hard as bounded consistency
+
+The hinge `A_k` = `□_k` "DBot plays C against `DupocBot k`". DBot's C is the else-branch of its probe: DBot plays C
+iff its opponent does NOT cooperate with `.bot DefectBot`, and Dupoc does not cooperate with `.bot DefectBot` iff its
+guard `σ_k` = "`.bot DefectBot` plays C against `DupocBot k`" (FALSE in ℕ) is NOT provable within `k`. So, in every
+model of `TAct` and in both standard readings, "DBot plays C against `DupocBot k`" ENTAILS "`σ_k` is not provable
+within `k`" — in the standard reading for `σ_k`, in the swapped reading for its τ-twin. Completeness turns this
+into a uniform `TAct`-theorem `∀ k, r(k) → (¬□_k σ_k ∨ ¬□_k τσ_k)`, whose instance at `bnum k` cut against `A_k`
+yields the conclusion within `k + C₀ + C₁·size k`. The τ-symmetrized disjunction is what `TAct` proves: it cannot
+tell its two readings apart, and internal τ-invariance of `□_k` is not available; at ℕ the two disjuncts are
+equivalent (`lenProvable_fbound_swap_iff`), so the sentence is TRUE at `k` iff `¬□_k σ_k` (`negTwin_true_iff`).
+The CONVERSE takes the conjunction: from "neither `σ_k` nor `τσ_k` is provable within `k`", Dupoc's else-branch and
+DBot's probe give `r(k)` in both readings — the evaluator's determinism inside `TAct`. -/
+
+section reduction
+
+variable {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
+
+/-! #### 5.1 DBot in every model, its probe step and its inverse -/
+
+/-- DBot's code in every model: `ite (sim opp (bot DefectBot)) C (const D) (const C)`. -/
+noncomputable def DBotV : V := pIte (pSim pOpp (pBot (pConst 1))) 0 (pConst 1) (pConst 0)
+
+/-- The transposed DBot: `ite (sim opp (bot CooperateBot)) D (const C) (const D)`. -/
+noncomputable def DBotTV : V := pIte (pSim pOpp (pBot (pConst 0))) 1 (pConst 0) (pConst 1)
+
+lemma pcode_DBot_eq : pcode DBot = pIte (pSim pOpp (pBot (pConst 1))) 0 (pConst 1) (pConst 0) := by
+  simp [DBot, DefectBot, actCode]
+
+lemma cast_DBot : ((pcode DBot : ℕ) : V) = DBotV := by
+  rw [pcode_DBot_eq, cast_pIte, cast_pSim, cast_pOpp, cast_pBot, cast_pConst, cast_pConst]
+  simp [DBotV]
+
+theorem swapcode_DBotV : swapcode (DBotV : V) = DBotTV := by
+  unfold DBotV DBotTV swapcode
+  simp [relabelAct]
+
+/-- DBot cooperates with `x` when `x` defects against `.bot DefectBot`, in every model (fuel `+2`). -/
+theorem dbot_C_of_probe_D_V {x n : V} (h : EvalGraph n x (pBot (pConst 1)) x 1) :
+    EvalGraph (n + 1 + 1) DBotV x DBotV 0 := by
+  unfold DBotV
+  rw [EvalGraph.ite_iff]
+  refine ⟨1, ?_, Or.inr ⟨_root_.one_ne_zero, EvalGraph.const_iff.mpr rfl⟩⟩
+  rw [EvalGraph.sim_iff, psubst_opp, psubst_bot]
+  exact h
+
+/-- The transposed DBot defects against `x` when `x` cooperates with `.bot CooperateBot`, in every model. -/
+theorem dbotT_D_of_probe_C_V {x n : V} (h : EvalGraph n x (pBot (pConst 0)) x 0) :
+    EvalGraph (n + 1 + 1) DBotTV x DBotTV 1 := by
+  unfold DBotTV
+  rw [EvalGraph.ite_iff]
+  refine ⟨0, ?_, Or.inr ⟨_root_.zero_ne_one, EvalGraph.const_iff.mpr rfl⟩⟩
+  rw [EvalGraph.sim_iff, psubst_opp, psubst_bot]
+  exact h
+
+/-- **The inverse**: DBot's cooperation with `x` means `x` did NOT cooperate with `.bot DefectBot` (in every
+model, by the evaluator's determinism on the constant branches). -/
+theorem probe_of_dbot_C_V {x n : V} (h : EvalGraph n DBotV x DBotV 0) :
+    ∃ m r : V, EvalGraph m x (pBot (pConst 1)) x r ∧ r ≠ 0 := by
+  obtain ⟨n', rfl, _⟩ := EvalGraph.case_iff.mp h
+  unfold DBotV at h
+  obtain ⟨r, hb, hpq⟩ := EvalGraph.ite_iff.mp h
+  obtain ⟨n'', rfl, _⟩ := EvalGraph.case_iff.mp hb
+  rw [EvalGraph.sim_iff, psubst_opp, psubst_bot] at hb
+  refine ⟨n'', r, hb, ?_⟩
+  rcases hpq with ⟨_, hc⟩ | ⟨hr, _⟩
+  · exact absurd (EvalGraph.const_iff.mp hc) _root_.zero_ne_one
+  · exact hr
+
+/-- The transposed inverse: the transposed DBot's defection means `x` did NOT defect against `.bot CooperateBot`. -/
+theorem probe_of_dbotT_D_V {x n : V} (h : EvalGraph n DBotTV x DBotTV 1) :
+    ∃ m r : V, EvalGraph m x (pBot (pConst 0)) x r ∧ r ≠ 1 := by
+  obtain ⟨n', rfl, _⟩ := EvalGraph.case_iff.mp h
+  unfold DBotTV at h
+  obtain ⟨r, hb, hpq⟩ := EvalGraph.ite_iff.mp h
+  obtain ⟨n'', rfl, _⟩ := EvalGraph.case_iff.mp hb
+  rw [EvalGraph.sim_iff, psubst_opp, psubst_bot] at hb
+  refine ⟨n'', r, hb, ?_⟩
+  rcases hpq with ⟨_, hc⟩ | ⟨hr, _⟩
+  · exact absurd (EvalGraph.const_iff.mp hc) _root_.one_ne_zero
+  · exact hr
+
+/-! #### 5.2 The generic searcher's else-clause and its inverse, in every model -/
+
+/-- A play of the generic searcher that differs from its then-constant means its guard was NOT found. -/
+theorem not_found_of_SV_play {g : Semisentence LAct 6} {a : ℕ} {x y r n : V}
+    (h : EvalGraph n (SV g a x) y (SV g a x) r) (hr : r ≠ (a : V)) :
+    ¬ LenProvableV TAct x (guardCode (⌜g⌝ : V) (SV g a x) y) := by
+  obtain ⟨n', rfl, _⟩ := EvalGraph.case_iff.mp h
+  change EvalGraph (n' + 1) (SV g a x) y (pSearch x (⌜g⌝ : V) (pConst (a : V)) (pConst ((1 - a : ℕ) : V))) r at h
+  rcases (EvalGraph.search_iff₆ (isSemiformula_quote₆ g)).mp h with ⟨_, hp⟩ | ⟨hn, _⟩
+  · obtain ⟨m, rfl, _⟩ := EvalGraph.case_iff.mp hp
+    exact absurd (EvalGraph.const_iff.mp hp) hr
+  · exact hn
+
+/-- Dupoc's else-clause in every model: guard not found ⇒ D (fuel 2). -/
+theorem dupoc_else_V (x y : V) (h : ¬ LenProvableV TAct x (guardCode (⌜gDu⌝ : V) (SV gDu 0 x) y)) :
+    EvalGraph 2 (SV gDu 0 x) y (SV gDu 0 x) 1 := by
+  rw [show (2 : V) = 1 + 1 from one_add_one_eq_two.symm]
+  show EvalGraph (1 + 1) (SV gDu 0 x) y (pSearch x (⌜gDu⌝ : V) (pConst ((0 : ℕ) : V)) (pConst ((1 - 0 : ℕ) : V))) 1
+  rw [EvalGraph.search_iff₆ (isSemiformula_quote₆ gDu)]
+  right
+  refine ⟨h, ?_⟩
+  have e : EvalGraph (0 + 1) (SV gDu 0 x) y (pConst ((1 - 0 : ℕ) : V)) 1 := EvalGraph.const_iff.mpr (by simp)
+  rwa [zero_add] at e
+
+/-- Cupod's else-clause in every model: guard not found ⇒ C (fuel 2). -/
+theorem cupod_else_V (x y : V) (h : ¬ LenProvableV TAct x (guardCode (⌜gCu⌝ : V) (SV gCu 1 x) y)) :
+    EvalGraph 2 (SV gCu 1 x) y (SV gCu 1 x) 0 := by
+  rw [show (2 : V) = 1 + 1 from one_add_one_eq_two.symm]
+  show EvalGraph (1 + 1) (SV gCu 1 x) y (pSearch x (⌜gCu⌝ : V) (pConst ((1 : ℕ) : V)) (pConst ((1 - 1 : ℕ) : V))) 0
+  rw [EvalGraph.search_iff₆ (isSemiformula_quote₆ gCu)]
+  right
+  refine ⟨h, ?_⟩
+  have e : EvalGraph (0 + 1) (SV gCu 1 x) y (pConst ((1 - 1 : ℕ) : V)) 0 := EvalGraph.const_iff.mpr (by simp)
+  rwa [zero_add] at e
+
+/-! #### 5.3 The formulas: the hinge `r`, the false guard `σ`, the budget box `boxK` -/
+
+/-- Dupoc's guard against `.bot DefectBot` as a fixed formula: "`.bot DefectBot` plays C against `DupocBot k`"
+— the FALSE guard `σ_k` through whose else-branch the hinge's witness runs. -/
+noncomputable def qDuB1 : Semisentence LAct 1 :=
+  qT gDu (TS gDu 0) (uS gDu 0) (wS gDu 0) (cl TB0) (cterm Act.D) (cterm Act.C)
+
+theorem guardCode_DuB1 (k : V) :
+    guardCode (⌜gDu⌝ : V) (SV gDu 0 k) (pBot (pConst 1)) = instB (⌜qDuB1⌝ : V) k :=
+  guardCode_qT_eq_instB gDu k _ _ _ _ _ _ (hX_SV gDu 0 (Or.inl rfl) k) (hU_SV gDu 0 (Or.inl rfl) k)
+    (hW_SV gDu 0 (Or.inl rfl) k) (hX_bot_one k) hU_D_bot_one hW_C_bot_one
+
+/-- The τ-twin: Cupod's guard against `.bot CooperateBot` is the `bnum k`-instance of `τ qDuB1`. -/
+theorem guardCode_DuB1_swap (k : V) :
+    guardCode (⌜gCu⌝ : V) (SV gCu 1 k) (pBot (pConst 0)) = instB (⌜Semiformula.lMap swap qDuB1⌝ : V) k := by
+  have h := guardCode_qT_swap_eq_instB gDu k (TS gDu 0) (uS gDu 0) (wS gDu 0) (cl TB0) (cterm Act.D) (cterm Act.C)
+    (hX_SV gDu 0 (Or.inl rfl) k) (hU_SV gDu 0 (Or.inl rfl) k) (hW_SV gDu 0 (Or.inl rfl) k) (hX_bot_one k)
+    hU_D_bot_one hW_C_bot_one
+  rw [swapcode_SV gDu 0 (Or.inl rfl), lMap_swap_gDu, swapcode_pBot, swapcode_pConst_one] at h
+  exact h
+
+/-- The hinge as a fixed formula: "DBot plays C against `DupocBot k`" (DBot by its generic closed description,
+`describes_closed`). -/
+noncomputable def rDB : Semisentence LAct 1 :=
+  qT gDu (TS gDu 0) (uS gDu 0) (wS gDu 0) (cl (dnumT (pcode DBot))) (dUT (pcode DBot)) (dWT (pcode DBot))
+
+theorem guardCode_rDB (k : V) :
+    guardCode (⌜gDu⌝ : V) (SV gDu 0 k) ((pcode DBot : ℕ) : V) = instB (⌜rDB⌝ : V) k :=
+  guardCode_qT_eq_instB gDu k _ _ _ _ _ _ (hX_SV gDu 0 (Or.inl rfl) k) (hU_SV gDu 0 (Or.inl rfl) k)
+    (hW_SV gDu 0 (Or.inl rfl) k)
+    (by have := (describes_closed (pcode DBot)).hX V k; rwa [descVal_closed] at this)
+    (by have := (describes_closed (pcode DBot)).hU V k; rwa [descVal_closed] at this)
+    (by have := (describes_closed (pcode DBot)).hW V k; rwa [descVal_closed] at this)
+
+/-- **The budget box**: `boxCoreK (n, k) := bewB k n k`, i.e. `LenDerivable TAct k (instB n k)` — the `k`-instance of
+the code `n` is provable within the budget `k` ITSELF (`Box_g` has the polylog `gBudget k` here). -/
+noncomputable def boxCoreK : Semisentence ℒₒᵣ 2 := “n k. !bewBDef k n k”
+
+noncomputable def boxCoreKA : Semisentence LAct 2 := Semiformula.lMap emb boxCoreK
+
+/-- `boxK χ (k) := □_k χ(k)`, the code `⌜χ⌝` as Foundation's Gödel numeral (a constant, never evaluated). -/
+noncomputable def boxK (χ : Semisentence LAct 1) : Semisentence LAct 1 :=
+  boxCoreKA ⇜ ![Semiterm.lMap emb (⌜χ⌝ : ArithmeticSemiterm Empty 1), #0]
+
+lemma eval_boxCoreK (n k : V) :
+    Semiformula.Eval (s := standardModel V) ![n, k] Empty.elim boxCoreK ↔ LenDerivable TAct k (instB n k) := by
+  simp [boxCoreK, bewB]
+
+/-- **The semantics of `boxK`** in every `LAct`-structure on `V` whose `ℒₒᵣ`-reduct is standard: reading-independent. -/
+theorem eval_boxK_iff (χ : Semisentence LAct 1) (S : Structure LAct V)
+    (hS : Structure.lMap emb S = standardModel V) (k : V) :
+    Semiformula.Eval (s := S) ![k] Empty.elim (boxK χ) ↔ LenDerivable TAct k (instB (⌜χ⌝ : V) k) := by
+  rw [boxK, Semiformula.eval_substs, val_vec_gödel S hS χ k]
+  unfold boxCoreKA
+  rw [Semiformula.eval_lMap, hS]
+  exact eval_boxCoreK _ _
+
+/-- "`σ_k` or its τ-twin is not provable within `k`" — the τ-symmetrized bounded-consistency instance. -/
+noncomputable def negTwin : Semisentence LAct 1 := ∼ boxK qDuB1 ⋎ ∼ boxK (Semiformula.lMap swap qDuB1)
+
+/-- "Neither `σ_k` nor its τ-twin is provable within `k`". -/
+noncomputable def conjTwin : Semisentence LAct 1 := ∼ boxK qDuB1 ⋏ ∼ boxK (Semiformula.lMap swap qDuB1)
+
+theorem eval_negTwin_iff (S : Structure LAct V) (hS : Structure.lMap emb S = standardModel V) (k : V) :
+    Semiformula.Eval (s := S) ![k] Empty.elim negTwin ↔
+      (¬ LenDerivable TAct k (instB (⌜qDuB1⌝ : V) k) ∨
+        ¬ LenDerivable TAct k (instB (⌜Semiformula.lMap swap qDuB1⌝ : V) k)) := by
+  unfold negTwin
+  simp only [LogicalConnective.HomClass.map_or, LogicalConnective.HomClass.map_neg, LogicalConnective.Prop.or_eq,
+    LogicalConnective.Prop.neg_eq]
+  rw [eval_boxK_iff _ S hS, eval_boxK_iff _ S hS]
+
+theorem eval_conjTwin_iff (S : Structure LAct V) (hS : Structure.lMap emb S = standardModel V) (k : V) :
+    Semiformula.Eval (s := S) ![k] Empty.elim conjTwin ↔
+      (¬ LenDerivable TAct k (instB (⌜qDuB1⌝ : V) k) ∧
+        ¬ LenDerivable TAct k (instB (⌜Semiformula.lMap swap qDuB1⌝ : V) k)) := by
+  unfold conjTwin
+  simp only [LogicalConnective.HomClass.map_and, LogicalConnective.HomClass.map_neg, LogicalConnective.Prop.and_eq,
+    LogicalConnective.Prop.neg_eq]
+  rw [eval_boxK_iff _ S hS, eval_boxK_iff _ S hS]
+
+/-! #### 5.4 The two uniform theorems -/
+
+/-- **`TAct ⊢ ∀ k, r(k) → negTwin(k)`**: in every model and both readings, DBot's cooperation with `DupocBot k` means
+Dupoc did not cooperate with `.bot DefectBot`, i.e. its guard `σ_k` (standard reading) or the τ-twin (swapped
+reading) was not found within `k`. -/
+theorem tact_rDB_imp_negTwin : TAct ⊢ ∀¹ (rDB 🡒 negTwin) := by
+  refine tact_all_of_both _ (fun M _ _ x ↦ ?_) (fun M _ _ x ↦ ?_)
+  · have : M↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
+    simp only [LogicalConnective.HomClass.map_imply, LogicalConnective.Prop.arrow_eq]
+    intro hr
+    rw [rDB, eval_qT_plays_opp_self .C _ _ _ _ _ _ x (hme_SV gDu 0 (Or.inl rfl) x) (descVal_closed (pcode DBot) x),
+      actCode_C_cast, cast_DBot] at hr
+    rw [eval_negTwin_iff _ (by rw [stdActV_eq_stdActS]; exact stdActS_lMap_emb)]
+    left
+    obtain ⟨n, hn⟩ := hr
+    obtain ⟨m, r, hm, hr0⟩ := probe_of_dbot_C_V hn
+    rw [lenDerivable_iff_lenProvableV, ← guardCode_DuB1]
+    exact not_found_of_SV_play hm (by simpa using hr0)
+  · have : M↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
+    simp only [LogicalConnective.HomClass.map_imply, LogicalConnective.Prop.arrow_eq]
+    intro hr
+    rw [rDB, eval_qT_swap, lMap_swap_gDu, eval_qT_plays_opp_self .D _ _ _ _ _ _ x (hme_SVT gDu 0 (Or.inl rfl) x)
+      (descVal_closed_T (pcode DBot) x), actCode_D_cast, cast_DBot, swapcode_DBotV, lMap_swap_gDu] at hr
+    rw [eval_negTwin_iff _ swapActS_lMap_emb]
+    right
+    obtain ⟨n, hn⟩ := hr
+    obtain ⟨m, r, hm, hr1⟩ := probe_of_dbotT_D_V hn
+    rw [lenDerivable_iff_lenProvableV, ← guardCode_DuB1_swap]
+    exact not_found_of_SV_play hm (by simpa using hr1)
+
+/-- **`TAct ⊢ ∀ k, conjTwin(k) → r(k)`**: neither guard found ⇒ Dupoc's else-branch (D against `.bot DefectBot`,
+C for Cupod against `.bot CooperateBot` in the swapped reading) ⇒ DBot's probe fails ⇒ DBot cooperates. -/
+theorem tact_conjTwin_imp_rDB : TAct ⊢ ∀¹ (conjTwin 🡒 rDB) := by
+  refine tact_all_of_both _ (fun M _ _ x ↦ ?_) (fun M _ _ x ↦ ?_)
+  · have : M↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
+    simp only [LogicalConnective.HomClass.map_imply, LogicalConnective.Prop.arrow_eq]
+    intro h
+    obtain ⟨h1, _⟩ := (eval_conjTwin_iff _ (by rw [stdActV_eq_stdActS]; exact stdActS_lMap_emb) x).mp h
+    rw [lenDerivable_iff_lenProvableV, ← guardCode_DuB1] at h1
+    rw [rDB, eval_qT_plays_opp_self .C _ _ _ _ _ _ x (hme_SV gDu 0 (Or.inl rfl) x) (descVal_closed (pcode DBot) x),
+      actCode_C_cast, cast_DBot]
+    exact ⟨_, dbot_C_of_probe_D_V (dupoc_else_V x _ h1)⟩
+  · have : M↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
+    simp only [LogicalConnective.HomClass.map_imply, LogicalConnective.Prop.arrow_eq]
+    intro h
+    obtain ⟨_, h2⟩ := (eval_conjTwin_iff _ swapActS_lMap_emb x).mp h
+    rw [lenDerivable_iff_lenProvableV, ← guardCode_DuB1_swap] at h2
+    rw [rDB, eval_qT_swap, lMap_swap_gDu, eval_qT_plays_opp_self .D _ _ _ _ _ _ x (hme_SVT gDu 0 (Or.inl rfl) x)
+      (descVal_closed_T (pcode DBot) x), actCode_D_cast, cast_DBot, swapcode_DBotV, lMap_swap_gDu]
+    exact ⟨_, dbotT_D_of_probe_C_V (cupod_else_V x _ h2)⟩
+
+/-! #### 5.5 At ℕ: the hinge code is the instance of `r`; the reduction and its converse -/
+
+/-- The hinge of Dupoc × DBot, as consulted by the evaluator, is the `bnum k`-instance of `rDB`. -/
+theorem hinge_DupocBot_vs_DBot_eq (k : ℕ) :
+    guardCodeB (tcode phiDu) (pcode (DupocBot k)) (pcode DBot) k =
+      (⌜(rDB ⇜ ![Semiterm.lMap emb (bnumT k)] : Sentence LAct)⌝ : ℕ) := by
+  rw [hingeB, pcode_DupocBot_SV]
+  have e := guardCode_rDB (V := ℕ) k
+  rw [natCast_nat] at e
+  have hq : instB (⌜rDB⌝ : ℕ) k = ⌜(rDB ⇜ ![Semiterm.lMap emb (bnumT k)] : Sentence LAct)⌝ := by
+    have := quote_instB (V := ℕ) rDB k
+    rwa [natCast_nat] at this
+  rw [← hq]
+  exact e
+
+/-- **THE REDUCTION.** If the hinge of Dupoc × DBot holds — "DBot plays C against `DupocBot k`" is `TAct`-provable
+within `k` — then "`σ_k` or its τ-twin is NOT provable within `k`" (`σ_k` = Dupoc's guard against `.bot DefectBot`,
+FALSE in ℕ; `negTwin_true_iff`) is `TAct`-provable within `k + C₀ + C₁·size k`: one instantiation of the uniform
+theorem `tact_rDB_imp_negTwin` at `bnum k` and one modus ponens (`lenProvable_mp`), whose cut formulas carry the
+binary numeral of `k`. The hinge is at least as hard as bounded consistency at `k`, up to this additive overhead. -/
+theorem hinge_reduces_to_bounded_consistency_DupocBot_vs_DBot :
+    ∃ C₀ C₁ : ℕ, ∀ k : ℕ,
+      LenProvableV TAct k (guardCodeB (tcode phiDu) (pcode (DupocBot k)) (pcode DBot) k) →
+      LenProvableV TAct (k + C₀ + C₁ * Nat.size k)
+        (⌜(negTwin ⇜ ![Semiterm.lMap emb (bnumT k)] : Sentence LAct)⌝ : ℕ) := by
+  obtain ⟨N₃, hN₃⟩ := lenProvable_of_provable tact_rDB_imp_negTwin
+  refine ⟨N₃ + 13 * flen ((rDB 🡒 negTwin : Semisentence LAct 1) : Semiproposition LAct 1) + 8
+      + 20 * flen (rDB : Semiproposition LAct 1) + 20 * flen (negTwin : Semiproposition LAct 1) + 9,
+    30 * flen ((rDB 🡒 negTwin : Semisentence LAct 1) : Semiproposition LAct 1) + 6
+      + 60 * flen (rDB : Semiproposition LAct 1) + 60 * flen (negTwin : Semiproposition LAct 1),
+    fun k hA ↦ ?_⟩
+  rw [hinge_DupocBot_vs_DBot_eq, lenProvableV_nat] at hA
+  have h1 := lenProvable_inst_size (rDB 🡒 negTwin) k hN₃
+  have hχt := flen_subst_bnumT_le (rDB 🡒 negTwin) k
+  have hrt := flen_subst_bnumT_le rDB k
+  have hnt := flen_subst_bnumT_le negTwin k
+  set t : ClosedSemiterm LAct 0 := Semiterm.lMap emb (bnumT k) with ht
+  set s := Nat.size k with hs
+  set fχ := flen ((rDB 🡒 negTwin : Semisentence LAct 1) : Semiproposition LAct 1) with hfχ
+  set fr := flen (rDB : Semiproposition LAct 1) with hfr
+  set fn := flen (negTwin : Semiproposition LAct 1) with hfn
+  have h1' : LenProvable (fbound : ℕ → ℕ) (N₃ + 5 * (fχ * (6 * s + 2)) + 3 * fχ + 6 * s + 8) TAct
+      (⌜((rDB 🡒 negTwin) ⇜ ![t] : Sentence LAct)⌝ : ℕ) :=
+    lenProvable_fbound_mono (by omega) h1
+  rw [substs_imp] at h1'
+  have h3 := lenProvable_mp h1' hA
+  rw [lenProvableV_nat]
+  refine lenProvable_fbound_mono ?_ h3
+  calc _ ≤ N₃ + 5 * (fχ * (6 * s + 2)) + 3 * fχ + 6 * s + 8 + k
+        + 10 * (fr * (6 * s + 2) + fn * (6 * s + 2)) + 9 := by gcongr
+    _ = k + (N₃ + 13 * fχ + 8 + 20 * fr + 20 * fn + 9) + (30 * fχ + 6 + 60 * fr + 60 * fn) * s := by ring
+
+/-- **THE CONVERSE.** A `TAct`-proof within `m` of "neither `σ_k` nor its τ-twin is provable within `k`" yields the
+hinge — "DBot plays C against `DupocBot k`" — within `m + C₀ + C₁·size k`, by the evaluator's determinism inside
+`TAct` (`tact_conjTwin_imp_rDB`): the conjunction, not the disjunction, because each reading needs its own twin. -/
+theorem bounded_consistency_reduces_to_hinge_DupocBot_vs_DBot :
+    ∃ C₀ C₁ : ℕ, ∀ k m : ℕ,
+      LenProvableV TAct m (⌜(conjTwin ⇜ ![Semiterm.lMap emb (bnumT k)] : Sentence LAct)⌝ : ℕ) →
+      LenProvableV TAct (m + C₀ + C₁ * Nat.size k)
+        (guardCodeB (tcode phiDu) (pcode (DupocBot k)) (pcode DBot) k) := by
+  obtain ⟨N₃, hN₃⟩ := lenProvable_of_provable tact_conjTwin_imp_rDB
+  refine ⟨N₃ + 13 * flen ((conjTwin 🡒 rDB : Semisentence LAct 1) : Semiproposition LAct 1) + 8
+      + 20 * flen (conjTwin : Semiproposition LAct 1) + 20 * flen (rDB : Semiproposition LAct 1) + 9,
+    30 * flen ((conjTwin 🡒 rDB : Semisentence LAct 1) : Semiproposition LAct 1) + 6
+      + 60 * flen (conjTwin : Semiproposition LAct 1) + 60 * flen (rDB : Semiproposition LAct 1),
+    fun k m hC ↦ ?_⟩
+  rw [lenProvableV_nat] at hC
+  have h1 := lenProvable_inst_size (conjTwin 🡒 rDB) k hN₃
+  have hχt := flen_subst_bnumT_le (conjTwin 🡒 rDB) k
+  have hct := flen_subst_bnumT_le conjTwin k
+  have hrt := flen_subst_bnumT_le rDB k
+  set t : ClosedSemiterm LAct 0 := Semiterm.lMap emb (bnumT k) with ht
+  set s := Nat.size k with hs
+  set fχ := flen ((conjTwin 🡒 rDB : Semisentence LAct 1) : Semiproposition LAct 1) with hfχ
+  set fc := flen (conjTwin : Semiproposition LAct 1) with hfc
+  set fr := flen (rDB : Semiproposition LAct 1) with hfr
+  have h1' : LenProvable (fbound : ℕ → ℕ) (N₃ + 5 * (fχ * (6 * s + 2)) + 3 * fχ + 6 * s + 8) TAct
+      (⌜((conjTwin 🡒 rDB) ⇜ ![t] : Sentence LAct)⌝ : ℕ) :=
+    lenProvable_fbound_mono (by omega) h1
+  rw [substs_imp] at h1'
+  have h3 := lenProvable_mp h1' hC
+  rw [hinge_DupocBot_vs_DBot_eq, lenProvableV_nat]
+  refine lenProvable_fbound_mono ?_ h3
+  calc _ ≤ N₃ + 5 * (fχ * (6 * s + 2)) + 3 * fχ + 6 * s + 8 + m
+        + 10 * (fc * (6 * s + 2) + fr * (6 * s + 2)) + 9 := by gcongr
+    _ = m + (N₃ + 13 * fχ + 8 + 20 * fc + 20 * fr + 9) + (30 * fχ + 6 + 60 * fc + 60 * fr) * s := by ring
+
+/-! #### 5.6 What the conclusion SAYS at ℕ -/
+
+/-- The `bnum k`-instance of the τ-twin is the τ-image of the instance (the numeral is an `ℒₒᵣ`-term, fixed by τ). -/
+lemma substs_lMap_swap_bnumT (φ : Semisentence LAct 1) (k : ℕ) :
+    ((Semiformula.lMap swap φ) ⇜ ![Semiterm.lMap emb (bnumT k)] : Sentence LAct) =
+      Semiformula.lMap swap (φ ⇜ ![Semiterm.lMap emb (bnumT k)] : Sentence LAct) := by
+  rw [Semiformula.lMap_subst]
+  congr 1
+  funext i
+  fin_cases i
+  simp [term_lMap_swap_emb]
+
+/-- **At ℕ, `negTwin(k)` says exactly "Dupoc's guard against `.bot DefectBot` is not provable within `k`"**: the two
+disjuncts are equivalent by the τ-symmetry of `TAct`'s proofs (`lenProvable_fbound_swap_iff`, exact in length). So
+the reduction's conclusion is the bounded-consistency-type statement `¬□_k σ_k` — TRUE at every `k` (`σ_k` is false
+and `TAct` is sound), and the question is only whether `TAct` PROVES it within `k + c`. -/
+theorem negTwin_true_iff (k : ℕ) :
+    ℕ↓[LAct] ⊧ (negTwin ⇜ ![Semiterm.lMap emb (bnumT k)] : Sentence LAct) ↔
+      ¬ LenProvableV TAct k (guardCode (tcode phiDu) (pcode (DupocBot k)) (pBot (pConst 1))) := by
+  rw [models_iff]
+  unfold Semiformula.Realize
+  rw [Semiformula.eval_substs]
+  have hv : (Semiterm.val (s := stdAct) ![] Empty.elim ∘ ![Semiterm.lMap emb (bnumT k)]) = ![(k : ℕ)] := by
+    funext i
+    fin_cases i
+    show Semiterm.val (s := stdAct) ![] Empty.elim (Semiterm.lMap emb (bnumT k)) = k
+    rw [Semiterm.val_lMap, stdAct_lMap_emb]
+    have := val_bnumT_V (V := ℕ) k
+    rwa [natCast_nat] at this
+  rw [hv, eval_negTwin_iff stdAct stdAct_lMap_emb k, lenDerivable_iff_lenProvableV, lenDerivable_iff_lenProvableV,
+    pcode_DupocBot_SV]
+  have e1 := guardCode_DuB1 (V := ℕ) k
+  have e2 := guardCode_DuB1_swap (V := ℕ) k
+  have hq1 : instB (⌜qDuB1⌝ : ℕ) k = ⌜(qDuB1 ⇜ ![Semiterm.lMap emb (bnumT k)] : Sentence LAct)⌝ := by
+    have := quote_instB (V := ℕ) qDuB1 k
+    rwa [natCast_nat] at this
+  have hq2 : instB (⌜Semiformula.lMap swap qDuB1⌝ : ℕ) k =
+      ⌜((Semiformula.lMap swap qDuB1) ⇜ ![Semiterm.lMap emb (bnumT k)] : Sentence LAct)⌝ := by
+    have := quote_instB (V := ℕ) (Semiformula.lMap swap qDuB1) k
+    rwa [natCast_nat] at this
+  have hsym : LenProvableV TAct k (instB (⌜Semiformula.lMap swap qDuB1⌝ : ℕ) k) ↔
+      LenProvableV TAct k (instB (⌜qDuB1⌝ : ℕ) k) := by
+    rw [hq1, hq2, lenProvableV_nat, lenProvableV_nat, substs_lMap_swap_bnumT]
+    exact (lenProvable_fbound_swap_iff k _).symm
+  rw [hsym, ← e1]
+  constructor
+  · rintro (h | h) <;> exact h
+  · exact fun h ↦ Or.inl h
+
+end reduction
+
 end ArithS
