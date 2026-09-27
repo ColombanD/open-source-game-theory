@@ -153,6 +153,16 @@ no polynomial budget-preserving embedding of the citation rule exists.*
   `LoebSound` proof. IN FLIGHT: `Cells/DIMCID.lean` (the `.impl` guard via `tmpl`: DIMCID×DIMCID,
   DIMCID×Mirror, then DIMCID×Cupod mutual) and `Cells/JustBot.lean` (the frozen `.bot (Dupoc k)`
   guard: bot-wrapped Dupoc self-coop, Just×Just, Just×Mirror, then Just×Dupoc mutual).
+* 2026-09-27 (hygiene, three commits): (1) the dead `Assemble.SizeOracle` path deleted — `SizeOracle`,
+  `kitPackage'''_of_size`, `boundedInnerNec_sixteen_of_size`, `dupoc_self_coop_of_size` (the formulation
+  machine-checked UNPROVABLE on 2026-09-15 and bypassed by `Package.lean`'s `SizeThm` since 2026-09-16) and
+  their three Audit prints; the duplicate `sizeThmAll_holds` print dropped; the stale "conditional"/"in
+  flight"/"pending" docstrings of `Assemble`/`Package`/`Verify5`/`Top`/`Verify`/`Prologue` rewritten to the
+  live path. (2) The naming scheme `<method>_<L>_vs_<R>[_<suffix>]` made PRIMARY: 166 declarations renamed
+  in place (statements byte-identical modulo the map, header diff 0 changed), `Cells/Names.lean` turned into
+  the deprecation layer, Audit prints on the new names; `dupoc_self_coop_unconditional` deliberately not
+  flipped. (3) Reading orders updated (`SPRIME_DESIGN_RATIONALE.md` §10, `arith/README.md`). Census: 1860 →
+  1856 prints (the four deliberate deletions), all standard but the 4 pre-existing subsets.
 
 ## 7. FINDING (2026-09-23): budget-dependent snapshots inside a guard are not `bnum k`-instances
 

@@ -93,3 +93,9 @@ A full incremental build is about 3350 jobs; a single file check needs ~5 GB of 
 5. `MERGE_CROSSROAD.md`, `BOXCOST_SPIKE.md` — why there is no rule bridge, and the engine's box cost.
 6. `ARITHMETIZED_S_ROADMAP.md` — the full construction log (M1 → U10 → route B), for the details.
 7. `HANDOVER_ARITHMETIZED_S.md` — build recipe, agent workflow, and the trap lists.
+8. The code, in `SPRIME_DESIGN_RATIONALE.md` §10's order; for the cells: `ArithS/Cells/Common/*`
+   (the shared substrate), the cell files, `ArithS/Cells/FloorVerdicts.lean` and
+   `ArithS/Cells/FloorDichotomy.lean` (the 26 genuine floors: settled halves, then the
+   hypothesis-free dichotomies), and `ArithS/Cells/Names.lean` — the naming scheme
+   `<method>_<L>_vs_<R>[_<suffix>]` (primary since 2026-09-27; the old names are deprecated
+   aliases there) — `ROUTE_B_CELLS_MAP.md` has the map.

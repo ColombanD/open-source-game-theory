@@ -479,7 +479,13 @@ Read in this order, docstrings first (each file's header says what it defines an
    `Assembly/Family.lean` — the Löb vocabulary: `instB`, `bewB`, `Box_g`, `gBudget`, `LoebSound`,
    `family_found` (§3, §7). `Necessitation/Package.lean` states the unconditional headline
    theorems; the directory behind it is proof, not definition.
-10. `Cells/*.lean` — the route-B cells; `Cells/SearchFree.lean` for the lockstep transfer,
-    `Cells/JustSlot.lean` for the budget slot in use, `Cells/SoundnessCells.lean` and
-    `Cells/PositiveCells.lean` for the SND/POS mechanisms and the flips (§7–§8).
+10. `Cells/Common/*.lean` first (`Syntax`, `Bots`, `Templates`, `Probers`, `Families`, `Khat`: the
+    bot codes and description towers, the templates and truth equations, the prober lemmas, the
+    conjunction families, the `k̂`-chain — shared by every cell file), then `Cells/*.lean` — the
+    route-B cells; `Cells/SearchFree.lean` for the lockstep transfer, `Cells/JustSlot.lean` for the
+    budget slot in use, `Cells/SoundnessCells.lean` and `Cells/PositiveCells.lean` for the SND/POS
+    mechanisms and the flips (§7–§8); `Cells/FloorVerdicts.lean` (the settled halves and true
+    guards of the 26 genuine floors) and `Cells/FloorDichotomy.lean` (their hypothesis-free
+    dichotomies `dich_<L>_vs_<R>`, §8); `Cells/Names.lean` — the naming scheme
+    `<method>_<L>_vs_<R>[_<suffix>]` (primary since 2026-09-27) and the deprecated old names.
 11. `Audit.lean` — the census; `arith/README.md` — the one-page summary.
