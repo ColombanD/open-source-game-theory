@@ -271,3 +271,109 @@ a refactor candidate). Arith 3295 jobs, census 917. The July note (dupoc_vs_cupo
 symmetric-axiom assumption (its (H1), Remark 3.4); its theory lacks `axAct`, so by its own Prop 6.2 it cannot
 prove positive guard instances (Löbian cooperation unprovable there) — our `axAct` is the minimal symmetric fix.
 Design rationale for every trusted definition: `SPRIME_DESIGN_RATIONALE.md`.
+**2026-09-23 — ROUTE B DECIDED (Colomban), branch `colomban-route-b` off `colomban-recost`, note
+`Research/Notes/ROUTE_B_SCOPE.md` (phases 0–5, census by mechanism, `BoundedReflection` hypothesis, gates).**
+B = no rule bridge; each cell re-proved directly in PA-`S'` on the M5 pattern; the citation problem is
+SIDESTEPPED (Critch's uniform argument necessitates only constant-length proofs and inner-necessitates at the
+polylog subscript), not solved; floors (`search_f` twin) = ONE named hypothesis, discharge OUT (Pudlák);
+`search_t`'s `S'` floor is the polynomial inner necessitation, PROVEN (U10) — asymmetric cells need POLYNOMIAL
+staggers. Route D (engine box re-cost, spike positive) recommended separately, NOT landed. Excluded: WaryBot
+(`.neg` floors), LegibleBot (`box_guard_never_fits`, node-data fix = optional Phase 5), OptimBot, tau bots.
+Phase 0 agent: `Necessitation/ClosedNec.lean` (U10 closed-sentence arbitrary-budget form); Phase 1 agent:
+`Assembly/Family.lean` (psiF/chiF/chainBoundF/LoebSound p S₀ S₁/pblt_uniformF/family_found; Uniform/Cell =
+pConj instance, statements byte-identical, Package.lean untouched — THE GATE); census agent (read-only) →
+per-cell table for §2 of the note. Lesson recorded in the note: the bridge obstruction is about COMPOSITION
+through nested boxes — check composition, not per-rule.
+**2026-09-23 (later) — route B progress on `colomban-route-b` (NOT pushed):** census DONE (`ROUTE_B_CENSUS.md`:
+SF 28 / POS 14 / SND 36 / LOEB-FF 29 / LOEB-FP 5 / FLOOR 38 / OTHER 5 — SND = guard semantically false, closed by
+SOUNDNESS at ℕ like the red cell, NOT a floor; the 10 unreadability censuses (cenU + WV) do NOT transfer to S',
+values may differ). Phase 1 DONE 173bfa5 (`Assembly/Family.lean`: `LoebSound p S₀ S₁`, `pblt_uniformF`,
+`family_found` = arithmetized pblt_engine; Uniform/Cell = pConj instance, 53/53 statements byte-identical,
+Package/Prep untouched). Phase 0 DONE 715851b (`Necessitation/ClosedNec.lean`: `closedInnerNec_sixteen`, kit
+reused verbatim, new row `lenDerCong`, degree 16). MERGED BUILD 3297 jobs green, census 957 standard. In flight:
+`Cells/DupocMirror.lean` (pDM = qDM ⋏ qCM → Dupoc×Mirror (C,C), Cupod×Mirror (D,D)). Shared-tree agent
+discipline that worked: targeted builds + single-file checks per agent, the coordinator runs the ONE full build
+and census; commit by file name only. Next families: CIMCIC×Dupoc, Just×Dupoc (mutual Löb; need the bots'
+codes + truth equations in V), Just×Mirror (frozen .bot).
+**2026-09-23 (end of day) — route B Phase 2: 12 cells unconditional in PA-S'** (`Cells/{DupocMirror,JustBot,
+DIMCID,CIMCIC,PrudentMirror}.lean`, final gate `9a71612`: 3305 jobs, census 1163 standard; NOT pushed).
+11 of 14 in-scope LOEB-FF cells done; mutual Löb = conjunction of both guards (two-level ∧-elimination,
+slack (14,16)); CIMCIC self = Löb-FREE (A→A by completeness, linear instance) = the POS mechanism; nested
+searches (Prudent) are fine (templates budget-free; price = a k-uniform description only above threshold KP).
+**FINDING §7 (user decision pending): a guard that freezes a BUDGET-CARRYING snapshot (JustBot's
+`.bot (DupocBot k)`) is not a bnum-k-instance of a fixed formula — Just×Just, Just×Dupoc, CIMCIC×Just
+blocked; routes (a) transparency lift, (b) JustBot2 fixed snapshot (recommended now), (c) budget-slot
+templates (same decision as LegibleBot node-data).** Agent pattern that worked all day: one Cells/<Bot>.lean
+per family, DupocMirror as template, targeted builds + single-file checks per agent, coordinator runs the
+one full build; commit by file name. New traps in ROUTE_B_SCOPE §6 (getElem closed index, pow_one at ℕ,
+add_le_add_left/right swapped, V-pinning, pipestatus).
+**DECISIONS 2026-09-23 evening (Colomban):** §7 → try (c) BUDGET-SLOT templates (7th template variable filled
+with the node's own budget by the evaluator's search clause; spike must first prove `subst` ignores extra
+entries; blast radius = files unfolding `EvalGraph.search_iff`), fallback (a) transparency lift. FLOORS DROPPED
+from S' for now (no BoundedReflection/Phase 3; S' = the positive theory). User pushes the branch. Thesis DONE.
+**2026-09-23 night — ROUTE (c) DONE (271f6d7 + f2cf619): budget-slot templates.** `guardCodeB g me opp k`
+(7th slot `#6`, LAST; gate lemma `guardCodeB_of_template` = a 6-var template never reads it ⇒ everything
+byte-identical; evaluator search clause consults it; 14 files/34 sites one rewrite each; Necessitation
+untouched). Just×Just, Just×Dupoc (3-guard mutual, slack (21,24)), CIMCIC×Just unconditional on `Just7 k`
+(constant template; same PLAY as `Just k`, `evalGraph_JustV7_iff`). SearchFree 28 cells by transfer at the
+SAME fuel (eval/EvalGraph lockstep). **43 cells in S' (15 Löbian/POS + 28 SF), all 14 in-scope LOEB-FF done;
+gate 3340 jobs, census 1301.** DESIGN DEBT: `.sim` of a 7-var searcher not faithful (gsubst middle case,
+~150 lines) — do before any .sim-of-Just cell. `SPRIME_DESIGN_RATIONALE.md` does NOT exist on this branch.
+NEXT: SND (36) + POS (13 left) census pass; the 10 unreadability cells; floors dropped (user).
+**2026-09-23 END — Phase 4 DONE: 92 of 155 cells in S'** (Cells/SoundnessCells 36 SND on engine codes, Cells/
+PositiveCells 10/13 POS Löb-free; 4 POS need the k̂-chain instantiation). Final gate 3346 jobs, census 1428
+standard (+`sfp_transpose` [propext] subset). **FINDING (paper-grade): 6 of the 10 unreadability cells FLIP in
+S' — DIMCID × CooperateBot (C,C)→(D,C) PROVED (`loeb_DIMCID_vs_CooperateBot`): a negative-Löb guard ("I do not
+cooperate") is SELF-FULFILLING under a real proof predicate; Wary×Mirror/Wary×Wary/Guardian×DIMCID/DIMCID×TFT/
+DIMCID×CTB flip (verdicts); CIMCIC×Defect/OBot kept by soundness (self-refuting guard); CIMCIC×DBot/EBot genuine
+floors.** S = PA + free citation − reading of uncovered sources; the two departures pull opposite ways.
+Remaining: 4 k̂-chain POS cells, 5 flip proofs, .sim debt (gsubst middle case), SPRIME_DESIGN_RATIONALE.md to
+write; floors dropped; Legible/Optim/Wary-floor excluded. Branch colomban-route-b, user pushes.
+**2026-09-24 — flips are THEOREMS (Cells/FlipCells), k̂-chain cells + CupodTroll7 (Cells/KhatCells), POS 14/14;
+gate 3348 jobs, census 1512. `dimcid_vs_described`: DIMCID defects vs EVERY described opponent in S' (Löb
+never uses the consequent) — the engine's six DIMCID-cooperates cells (incl. FLOOR-class DIMCID×DBot/EBot)
+are all census artifacts. 105 cells stated in S', 8 disagree. SPRIME_DESIGN_RATIONALE.md written (census =
+every #print axioms in the build, 1411 Audit + 21 elsewhere). In flight: gsubst .sim debt + Package.lean
+docstring; then DIMCID×DBot/EBot flips.**
+**2026-09-24 — gsubst .sim debt DISCHARGED (8d4009b): gsubst three-case (6-template → guardCode; 7-template →
+guardCodeSlot keeping #6; else id); only gsubst_of_not's hypothesis (¬IsSemiformula 7) and gsubstGraph changed;
+guardCodeB_gsubst₇ + Cells/SimSlot.lean (evalGraph_sim_JustV7: .sim of Just7 reads the OUTER frame). Package.lean
+docstring fixed (8bec597). Gate 3349 jobs, census 1526 standard. In flight: Cells/DimcidFlips (7 engine cells
+where DIMCID cooperates — incl. the UNIVERSAL outcome_DIMCID_vs_DupocBot (C,D) — expected (D,·) in S').**
+**2026-09-24 END — ALL "next steps" LANDED. Cells/DimcidFlips (614144b + docs 1303d1e): DIMCID's seven
+cooperative engine cells flip in S' incl. the UNIVERSAL outcome_DIMCID_vs_DupocBot (C,D) → (D,D) for all large
+k; `dimcid_vs_closed P`: DIMCID defects against EVERY closed code (generic `describes_closed`); `DescribesAbove K`
+for threshold-described opponents (Prudent). Tally: 112 cells stated in S', 97 agree, 15 DISAGREE (13 flips +
+2 CIMCIC kept for a different reason). DIMCID cooperates NOWHERE in S'. Branch colomban-route-b; user pushes.
+Remaining honest gaps: floors dropped (32 FLOOR cen + companions), Legible/Optim/Wary-floor excluded.**
+**2026-09-24 housekeeping (user: "3 first, then 1"):** CLAUDE.md Part III = the arith/ layer table + ledger +
+conventions (c076838); arith/README refreshed; ARITH_TRAPS.md = THE trap list (read before any ArithS work);
+HANDOVER §1 branch table → colomban-route-b canonical, §9 state. In flight: Cells/ consolidation (survey →
+Cells/Common/*, gate byte-identical statements). NEXT after that (user-chosen order): port the flips back
+into the engine as a sound reading rule via the Tier-2 constructor flow.
+**2026-09-24 — Cells/ CONSOLIDATION DONE (7d5596e…a31f1c2, 8 staged commits):** Cells/Common/{Syntax,Bots,Templates,
+Probers,Families,Khat} + Cells/Names (169 aliases, scheme `<method>_<L>_vs_<R>[_suffix]`, method ∈ sf/pa/snd/pos/
+loeb/khat, L/R = engine constructor iff the statement has `pcode`, arith code name otherwise). Gate held at every
+stage: 0 headers missing/changed, 0 def bodies changed, census no line lost. New generic pieces: loebSound_pQ_of,
+slack_depth_le, search_then/else_V₆, describes_dimcid/mirror/CB, DimcidV_eq_SV/CimcicV_eq_SV (DupocV is NOT SV —
+hand template; never bridge). Map: ROUTE_B_CELLS_MAP.md. Housekeeping (item 3) COMPLETE; next = item 1 (port the
+flips into the engine as a sound reading rule).
+**2026-09-27 — FLOOR VERDICT PASS DONE (620a2b5 + docs 1c3f03a, Cells/FloorVerdicts.lean): all 26 remaining floor
+cells are GENUINE (0 new flips): every floor guard is a true Σ₁ play whose witness runs through the ELSE branch
+of a search on a guard σ FALSE in ℕ, so "no ≤k-proof of σ" ≡ Con_TAct(k±c) within budget — ONE Pudlák question;
+the engine stipulates +k. Settled halves + guard truths are theorems (floor_*_right/_left/_true). SCRIPT-EXACT
+tally over the 155 rows (supersedes the hand 112/97/15): 107 stated / 94 agree / 13 FLIP / 26 genuine floors /
+22 excluded. Gate 3358 jobs, census 1788 standard. User: S'-only from now; floors stay dropped. Next backlog:
+LegibleBot body slot (+16), OptimBot in S', polynomial BoundedGL, binary var indices (deferred), tau, hygiene.**
+**2026-09-27 — FLOOR DICHOTOMIES DONE (1704ad6, 5e5bde0, docs d3b7a82; Cells/FloorDichotomy.lean, 26 theorems
+`dich_<L>_vs_<R>`, hypothesis-FREE, hinge `A_k = LenProvableV TAct k (outer guard)` INLINE; bistable pairs as
+NESTED dichotomies; reduction `hinge_reduces_to_bounded_consistency_DupocBot_vs_DBot` (+ converse; τ-symmetrized
+∨/∧ gap = TAct does not internalize τ-invariance of □_k; cost C₀ + C₁·size k, no pure additive constant in this
+length model). Gate 3359 jobs, census 1851 standard. USER DECISION: NEVER admit the hinge as an axiom (open both
+ways; the two answers give different cell values; the engine's +k = the negative side). Not built: Prudent's
+prudence-guard k̂-chain (5 cells carry B explicitly), Prudent×EBot's EBot-C via Prudent×.bot Mirror Löb.**
+**2026-09-27 — LegibleBot spike BLOCKED (nothing landed): the exponential numeral is the inner BUDGET (not the
+body); lengths fixable in route (c) via inner budget `gBudget #6` (polylog; linear stagger impossible in S');
+BLOCKER = bounded inner necessitation for a FRAME-COMPUTED box body — a THIRD U10-kit instance (descVec-
+substitution pin or bnum-body pin), days-to-weeks, same decision as OptimBot; a body slot does not help. If
+unblocked: 15 cells at polylog stagger + Legible×DIMCID FLIPS to (C,D). Do not re-spike. ROUTE_B_SCOPE §9.**
