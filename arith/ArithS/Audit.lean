@@ -84,6 +84,7 @@ import ArithS.Cells.PositiveCells
 import ArithS.Cells.KhatCells
 import ArithS.Cells.FlipCells
 import ArithS.Cells.DimcidFlips
+import ArithS.Cells.FloorVerdicts
 
 /-!
 # ArithS.Audit — the axiom census of the arithmetized layer
@@ -3095,5 +3096,54 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms dimcid_finds_guard_vs_CIMCIC
 #print axioms cimcic_guard_vs_DIMCID_not_found
 #print axioms dimcid_flips_census
+
+-- THE FLOOR VERDICT PASS (Cells/FloorVerdicts, 2026-09-27) — every remaining engine floor cell without an `S'`
+-- statement (24 cells: Dupoc × DBot/EBot/CupodTroll, Just × DBot/EBot/CupodTroll/Cupod/Prudent, CIMCIC ×
+-- CupodTroll/Cupod/Prudent, Guardian × CIMCIC/Dupoc/Just/Prudent, Wary × Dupoc/Just/Prudent, Cupod × OBot/Prudent,
+-- Prudent × Cupod/Dupoc/Prudent/EBot; plus the two `cenU` cells CIMCIC × DBot/EBot) is a GENUINE floor on at least one
+-- side: the floor guard is a TRUE Σ₁ sentence whose only evaluation witness runs through the ELSE branch of a search
+-- node with a FALSE guard σ, and `¬ LenProvableV TAct k ⌜σ⌝` is, up to an additive constant, the bounded consistency
+-- statement `Con_TAct(k + c)` — a Pudlák-type lower-bound question (`k^ε` ≤ · ≤ poly(k); the linear case open), not
+-- a fact this development settles. No (F)/(P) CELL, hence no cell theorem; what is unconditional: the SETTLED HALVES
+-- (`floor_<L>_vs_<R>_left/_right`, the non-floor side's play at the engine's fuel) and the TRUE GUARDS
+-- (`floor_<L>_vs_<R>_true`, the floor side's consulted sentence is true in ℕ — the residue is exactly its provability
+-- within `k`). The two-searcher bistable cells (Wary × Dupoc/Just/Prudent, Cupod × Prudent both ways, Just × Cupod,
+-- CIMCIC × Cupod) have no settled side; the four prudence floors record the inner guard's truth. Prudent × EBot:
+-- EBot's cooperation needs Prudent's Löb cooperation with `.bot MirrorBot` (not built). Summary: `floor_settled_census`.
+#print axioms dupoc_vs_botCB_found
+#print axioms botDupoc_vs_botCB_found
+#print axioms just_vs_botDB
+#print axioms floor_DupocBot_vs_DBot_right
+#print axioms floor_DupocBot_vs_DBot_true
+#print axioms floor_DupocBot_vs_EBot_right
+#print axioms floor_DupocBot_vs_EBot_true
+#print axioms floor_DupocBot_vs_CupodTrollBot_right
+#print axioms floor_DupocBot_vs_CupodTrollBot_true
+#print axioms floor_JustBot_vs_DBot_right
+#print axioms floor_JustBot_vs_DBot_true
+#print axioms floor_JustBot_vs_EBot_right
+#print axioms floor_JustBot_vs_EBot_true
+#print axioms floor_JustBot_vs_CupodTrollBot_right
+#print axioms floor_JustBot_vs_CupodTrollBot_true
+#print axioms floor_CIMCIC_vs_CupodTrollBot_right
+#print axioms floor_CIMCIC_vs_CupodTrollBot_true
+#print axioms floor_CIMCIC_vs_DBot_right
+#print axioms floor_CIMCIC_vs_DBot_true
+#print axioms floor_CIMCIC_vs_EBot_right
+#print axioms floor_CIMCIC_vs_EBot_true
+#print axioms floor_GuardianBot_vs_CIMCIC_left
+#print axioms floor_GuardianBot_vs_CIMCIC_true
+#print axioms floor_GuardianBot_vs_DupocBot_left
+#print axioms floor_GuardianBot_vs_DupocBot_true
+#print axioms floor_GuardianBot_vs_JustBot_left
+#print axioms floor_GuardianBot_vs_JustBot_true
+#print axioms floor_GuardianBot_vs_PrudentBot_true
+#print axioms floor_CupodBot_vs_OBot_right
+#print axioms floor_CupodBot_vs_OBot_true
+#print axioms floor_PrudentBot_vs_DupocBot_true
+#print axioms floor_PrudentBot_vs_PrudentBot_true
+#print axioms floor_JustBot_vs_PrudentBot_true
+#print axioms floor_CIMCIC_vs_PrudentBot_true
+#print axioms floor_settled_census
 
 end ArithS
