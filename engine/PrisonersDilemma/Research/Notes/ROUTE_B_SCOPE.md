@@ -444,3 +444,12 @@ alongside (c)); SND/POS wait for (c) to settle.
   ORIGINAL line numbers in one pass per file (the mover deletes descending); `gcongr`/`ring`/`push_cast` are
   enough for the depth-`d` slack on `V`, and the ℕ forms follow from the `V` ones by `le_def.mp` +
   `simp only [natCast_nat]` + `le_def_trans` (no cast trap when the `V`-lemma is instantiated, not restated).
+* 2026-09-27 (Colomban: work on `S'` only; floors stay DROPPED): **the FLOOR VERDICT PASS started** —
+  every remaining engine "floor" cell without an `S'` statement (~25, Optim/Legible and the staggered
+  companions excluded) classified by the trichotomy (guard FALSE ⇒ soundness; TRUE and PROVABLE ⇒ found,
+  possibly a FLIP; TRUE and only long proofs ⇒ a GENUINE floor, no theorem), the first two kinds proved
+  in `Cells/FloorVerdicts.lean`, and an "S' status per cell" table over all 155 cells appended to
+  `ROUTE_B_CENSUS.md`. Ranked S'-only backlog after it: LegibleBot body slot (+16), OptimBot in `S'`
+  (polynomial staggers natively), the polynomial `BoundedGL` model + "no PA model of the additive
+  interface", binary variable indices (degree 16 → ~12, a week, trusted base — deferred), tau
+  constructors (weeks), hygiene (dead `SizeOracle` path, `Names` flip).
