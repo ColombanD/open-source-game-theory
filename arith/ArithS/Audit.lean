@@ -3260,4 +3260,44 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms dich_CupodBot_vs_PrudentBot_prudenceFound
 #print axioms dich_PrudentBot_vs_CupodBot_prudenceFound
 
+
+-- PRUDENT × `.bot MirrorBot` BY LÖB (Cells/PrudentLoose §4, 2026-09-27) — Cells/PrudentMirror's family at the CLOSED
+-- opponent `pBot Mirror` (`describes_closed`): `qPB1` ("`.bot MirrorBot` plays C against Prudent k"), `qPB2` (the prudence
+-- conjunct "`.bot MirrorBot` plays D against `.bot DefectBot`", a closed Σ₁ fact), their τ-twins, the family
+-- `pPB = (qPB1 ⋏ qPB2) ⋏ (τqPB1 ⋏ τqPB2)`, `loebSound_pPB : LoebSound pPB (14 + KP) 16` (∧-elimination hands each searcher
+-- both guards; `.bot MirrorBot` copies at fuel 5 — the `.bot` step + Mirror's sim step, `botMirror_step_V`; the prudence
+-- facts at fuel 4), `family_found` at `boundedInnerNec_sixteen`. `loeb_PrudentBot_vs_botMirror`: for all large `k`,
+-- `EvalGraph 3 (pcode (PrudentBot k)) (pBot Mirror) … C ∧ EvalGraph 5 (pBot Mirror) (pcode (PrudentBot k)) … C` — the `S'`
+-- twin of the engine's `prudent_botmirror_coop`; the box form of both guards; the τ-twin `(D, D)`.
+#print axioms botMirror_step_V
+#print axioms botMirror_copies3_V
+#print axioms botMirror_botDB_V
+#print axioms botMirror_botCB_V
+#print axioms prudent_search_any_V
+#print axioms prudentT_search_any_V
+#print axioms guardCode_PB1
+#print axioms guardCode_PB2
+#print axioms guardCode_PB1T
+#print axioms guardCode_PB2T
+#print axioms eval_qPB1_iff_V
+#print axioms eval_qPB2_iff_V
+#print axioms eval_qPB1T_iff_V
+#print axioms eval_qPB2T_iff_V
+#print axioms pPB_all_V
+#print axioms pPB_guards_V
+#print axioms loebSound_pPB
+#print axioms loeb_Prudent_vs_botMirror_core
+#print axioms loeb_PrudentBot_vs_botMirror
+#print axioms loeb_PrudentBot_vs_botMirror_guards
+#print axioms loeb_PrudentT_vs_botMirror
+
+-- PRUDENT × EBOT CLOSED IN BOTH WORLDS (Cells/PrudentLoose §5, 2026-09-27) — EBot's ladder against `PrudentBot k`: rung 1
+-- (`.bot DefectBot`) and rung 2 (`.bot CooperateBot`) Prudent defects (SND), rung 3 (`.bot MirrorBot`) Prudent COOPERATES
+-- (the Löb above), so EBot cooperates (`ebot_C_of_probes3`) whatever Prudent's outer verdict: `floor_PrudentBot_vs_EBot_right`
+-- (the settled half, pad 7) and `dich_PrudentBot_vs_EBot_full : ∃ k₀, ∀ k > k₀, (¬A_k → (D, C)) ∧ (A_k → (C, C))` — the
+-- `¬A_k` world is now the engine's full `(D, C)` (`dich_PrudentBot_vs_EBot` had Prudent's side only).
+#print axioms ebot_C_of_probes3
+#print axioms floor_PrudentBot_vs_EBot_right
+#print axioms dich_PrudentBot_vs_EBot_full
+
 end ArithS
