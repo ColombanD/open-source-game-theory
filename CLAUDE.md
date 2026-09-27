@@ -751,7 +751,10 @@ value, `A_k →` the other value, with the hinge `A_k = LenProvableV TAct k (the
 at `k` up to an additive `C₀ + C₁·size k`. NEVER admit the hinge as an axiom: it is the linear-regime
 finite-consistency question, open in BOTH directions, and the two answers give DIFFERENT cell values —
 the engine's `+k` stipulates the negative side. The 26 cells stay the engine's results; LegibleBot
-(a box INSIDE a guard: `box_guard_never_fits` — a body slot, like route (c), would fix it); OptimBot;
+(a box INSIDE a guard: `box_guard_never_fits` — the LENGTH is fixable inside route (c) with a polylog inner
+budget `gBudget #6`, but the cells need bounded inner necessitation for a box whose body is COMPUTED FROM
+THE FRAME — a third instance of the U10 kit, `ROUTE_B_SCOPE.md` §9; a body slot alone does NOT help); OptimBot
+(the same decision);
 WaryBot's floor cells; the tau constructors. **T2 (`Core/`, `Agent`, `AgentConverse`, `Inst`, `Det`) is
 frozen** — the rule bridge `S → S'` was shown IMPOSSIBLE at polynomial budgets (`MERGE_CROSSROAD.md`:
 citation composes doubly-exponentially through nested boxes; `search_t` cites at `log k`); route B

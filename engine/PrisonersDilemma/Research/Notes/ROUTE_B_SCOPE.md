@@ -488,3 +488,33 @@ alongside (c)); SND/POS wait for (c) to settle.
   needs the τ-symmetrized (∨) form — take the ∧ form for the converse; `Describes` fields force `{V : Type}` (not
   `Type*`) on the section; `set` the `flen` atoms AFTER `lenProvable_inst_size`/`flen_subst_bnumT_le` so `omega`/`gcongr`
   see one atom.
+
+## 9. FINDING (2026-09-27): LegibleBot is blocked on a THIRD necessitation, not on lengths
+
+Spike (no commit, tree clean). Two corrections to §6/`CLAUDE.md`'s earlier line "a body slot would fix it":
+1. **What is exponential is the box BUDGET's numeral, not the body's.** `tmpl (.box k ψ)` carries `cl (numTB k)`
+   and `cl (numTB (tcode ψ))`; `FitBox`'s negative half is indexed by the BUDGET: the searcher's own description
+   contains `bnum kIn ≥ 2^(kIn+1)`, so the box body "me plays C vs opp" is longer than `kIn` and `□_kIn σ` is
+   vacuously false at every outer budget (`legibleBot_staggered_guard_never_fits`). The body numeral is a
+   `k`-INDEPENDENT constant — astronomical but harmless in the existential-threshold regime.
+2. **Lengths ARE fixable inside route (c), with no trusted-base change:** the inner budget as a Δ₁ function of
+   the node's own slot written inside the template, `∃ a, gGraph a #6 ∧ lenProvG ⇜ ![a, g]` (inner budget
+   `gBudget #6 = ‖#6‖³`, polylog) — the `S'` analogue of the engine's one-parameter family `fun k => LegibleBot
+   (2k+64) k`. A LINEAR stagger is impossible in `S'` (necessitation is polynomial, degree 16): the honest
+   stagger is polylog-inner / any-outer. `#6` itself cannot serve (same-budget Legible is a hinge).
+**The blocker:** every Legible cell is a two-box Löb needing bounded inner necessitation for a box whose BODY
+is COMPUTED FROM THE FRAME (`∃ g, guardCodeG g ⌜tmpl ψ⌝ me opp ∧ lenProvG h g`, me/opp rebuilt from the
+description triples). The two certified necessitations do not have that shape: `boundedInnerNec_sixteen` boxes
+the `bnum K`-instance of a FIXED formula named by its Gödel numeral (the pin certifies ONE term substitution);
+`closedInnerNec_sixteen` boxes a CLOSED sentence by its unary numeral (never fits a `K`-family). Reusing the
+first verbatim is syntactically CIRCULAR (`GL = Box_g p_X ⇜ ![#6]` with `p_X` describing `pSearch #0 ⌜GL⌝ …`).
+A body slot does not help: `#7 ↦ numeral ⌜σ_K⌝` is ClosedNec's sentence; `#7 ↦ bnum ⌜σ_K⌝` fits but has NO
+necessitation theorem — a `bnum`-body pin is the same new kit work. The `k̂`-chain/completeness route does not
+avoid it (`LoebSound` needs the guard proved within `K` in every model — the necessitation itself). **What it
+takes: a third instance of the U10 kit** — a `descVec`-substitution pin for the frame-computed box (or a
+`bnum`-body pin for an evaluator-filled body slot, the smaller variant; still body-template node data unless
+computed from `g`). `ClosedNec`, the smaller earlier variant, took a full session; this is days-to-weeks, and
+it is the SAME decision as OptimBot. Expected values if unblocked: the 15 LOEB-FF cells at the polylog stagger,
+Legible's side C; **Legible × DIMCID a FLIP `(C, C)` → `(C, D)`** (`dimcid_vs_described`: `LegV K` is a
+described searcher). Blast radius of an 8th slot if ever wanted: 25 files, ~345 sites, all one-rewrite
+(`guardCodeBB_of_template₇` is `guardCodeB_of_template` one slot further). Decision: USER.

@@ -590,3 +590,10 @@ Sentence for the paper: *the engine's floor rule stipulates the negative side of
 question; `S'` proves the dependence and takes no side — each of the twenty-six genuine floors is a theorem
 `(¬A_k → engine value) ∧ (A_k → the other value)` with `A_k` the hinge written inline, and for the simplest cell the hinge is
 shown inter-derivable, up to an additive polylog overhead, with the bounded consistency of `TAct` at `k`.*
+**LegibleBot (2026-09-27, spike, nothing landed).** Not a length problem after all: the exponential numeral is
+the inner box's BUDGET inside the searcher's own description, and it is fixable within route (c) by writing the
+inner budget as `gBudget #6` (polylog) — a linear stagger is impossible in `S'`, where necessitation is
+polynomial. The block is that the box's body is COMPUTED FROM THE FRAME, and neither certified necessitation
+(`boundedInnerNec_sixteen`: the `bnum K`-instance of a fixed formula; `closedInnerNec_sixteen`: a closed
+sentence) has that shape; a third instance of the U10 kit is needed (`ROUTE_B_SCOPE.md` §9). Expected, unproven:
+15 cells at the polylog stagger, and Legible × DIMCID a flip to `(C, D)`.
