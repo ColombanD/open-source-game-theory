@@ -528,3 +528,9 @@ it is the SAME decision as OptimBot. Expected values if unblocked: the 15 LOEB-F
 Legible's side C; **Legible × DIMCID a FLIP `(C, C)` → `(C, D)`** (`dimcid_vs_described`: `LegV K` is a
 described searcher). Blast radius of an 8th slot if ever wanted: 25 files, ~345 sites, all one-rewrite
 (`guardCodeBB_of_template₇` is `guardCodeB_of_template` one slot further). Decision: USER.
+* 2026-09-27 (later; Colomban: "Prudent loose ends"): IN FLIGHT `Cells/PrudentLoose.lean` — (a) the prudence
+  `k̂`-chain: Prudent's inner guard "the opponent defects against `.bot DefectBot`" FOUND for large `k` against
+  Just/CIMCIC/Guardian/Wary/Cupod (`prudence_found_vs_<X>`, via `tact_all_above_of_both` + `found_of_all_above`),
+  so the five nested dichotomies collapse to their remaining hinge(s) (`dich_<X>_vs_PrudentBot_prudenceFound`);
+  (b) `loeb_PrudentBot_vs_botMirror` (PrudentMirror's family at the closed opponent `pBot Mirror`), closing
+  EBot's side of Prudent × EBot in both worlds (`dich_PrudentBot_vs_EBot_full`). Originals untouched.
