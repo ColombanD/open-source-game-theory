@@ -6,7 +6,7 @@ import ArithS.Cells.DupocMirror
 `Research/Notes/ROUTE_B_SCOPE.md` §3 Phase 2 (2026-09-23), the JustBot family. The engine's
 `JustBot k := .search k (.plays .opp (.bot (DupocBot k)) C) (.const C) (.const D)` — "cooperate
 iff I can prove the opponent cooperates with a FROZEN snapshot of Dupoc k". Every JustBot cell
-rests on the bot-wrapped Dupoc self-cooperation (`Theorems/JustBot/Helpers.botDupoc_self_coop`).
+rests on the bot-wrapped Dupoc self-cooperation (`Theorems/JustBot/Helpers.loeb_botDupoc_vs_botDupoc_of_nec`).
 V-generic (every model of `𝗜𝚺₁`, budgets `k : V` possibly nonstandard) unless a statement says `ℕ`.
 
 1. **Bot-wrapping.** `pBot p` runs `p` in the SAME frame (`EvalGraph.bot_iff`) and is FROZEN under
@@ -23,9 +23,9 @@ V-generic (every model of `𝗜𝚺₁`, budgets `k : V` possibly nonstandard) u
    `eval_GtmplA_subst_iff`): the six per-cell substitution computations of `InstanceV`/
    `Cells/DupocMirror` factored once.
 4. **Family (1): the bot-wrapped self-play** `pBD := qBD ⋏ qBC` (`qBD = GtmplA 0 ⇜ ![TBD, cl uD, cl wD,
-   TBD, cl uD, cl wD]`, `qBC = lMap swap qBD`): `botDupoc_self_coop_unconditional` — for all large
+   TBD, cl uD, cl wD]`, `qBC = lMap swap qBD`): `loeb_botDupoc_vs_botDupoc` — for all large
    `k`, `EvalGraph 3 (pBot (Dupoc k)) (pBot (Dupoc k)) (pBot (Dupoc k)) 0` (fuel 3: bot, search,
-   const) — and `botCupod_self_defect_unconditional`.
+   const) — and `loeb_botCupod_vs_botCupod`.
 5. **JustV.** `JustV k := pSearch k (gJ k) (pConst 0) (pConst 1)` with the stored template
    `gJ k := subst (jVec k) ⌜GtmplA 0⌝` — `GtmplA 0` PRE-FILLED in its me-slots with the closed
    description of `pBot (DupocV k)`, the opp-slots left as the frame variables `^#3 ^#4 ^#5`.
@@ -37,7 +37,7 @@ V-generic (every model of `𝗜𝚺₁`, budgets `k : V` possibly nonstandard) u
    cl (numT 0), cl (numT 1)]`, "Mirror plays C against `pBot (Dupoc k)`"): a proof of `qJM(k)` within
    budget makes Dupoc-in-bot cooperate with Mirror (fuel 3), Mirror copies (fuel 4), so it is true;
    `family_found pJM` then fires Just's OUTER search by the same box:
-   `just_mirror_coop_unconditional` — `EvalGraph 2 (Just k) Mirror (Just k) 0 ∧ EvalGraph 3 Mirror
+   `loeb_Just_vs_Mirror` — `EvalGraph 2 (Just k) Mirror (Just k) 0 ∧ EvalGraph 3 Mirror
    (Just k) Mirror 0`, the `(C, C)` cell.
 
 **Not here — Just × Just and Just × Dupoc (the engine's `outcome_JustBot_vs_JustBot`,
@@ -267,8 +267,8 @@ theorem loebSound_pBD : LoebSound pBD 7 8 := by
 
 /-- **The bot-wrapped self-play cells, packaged**: for all large `k`, both bot-wrapped searchers
 find their guards (fuel 3) and both guard boxes hold — `family_found pBD`, the arithmetized
-`botDupoc_self_coop`. -/
-theorem botDupoc_cell_core {d : ℕ} (hE : BoundedInnerNec d) :
+`loeb_botDupoc_vs_botDupoc_of_nec`. -/
+theorem loeb_botDupoc_vs_botDupoc_core_of_nec {d : ℕ} (hE : BoundedInnerNec d) :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       (EvalGraph 3 (pBot (Dupoc k)) (pBot (Dupoc k)) (pBot (Dupoc k)) 0 ∧
         EvalGraph 3 (pBot (Cupod k)) (pBot (Cupod k)) (pBot (Cupod k)) 1) ∧
@@ -281,41 +281,41 @@ theorem botDupoc_cell_core {d : ℕ} (hE : BoundedInnerNec d) :
   exact ⟨pBD_both_V k a ha' hpc, pBD_guards_V k a ha' hpc⟩
 
 /-- **The bot-wrapped Dupoc cooperates with itself in PA-`S'`** (the engine's
-`botDupoc_self_coop`), conditional on bounded inner necessitation: fuel 3. -/
-theorem botDupoc_self_coop {d : ℕ} (hE : BoundedInnerNec d) :
+`loeb_botDupoc_vs_botDupoc_of_nec`), conditional on bounded inner necessitation: fuel 3. -/
+theorem loeb_botDupoc_vs_botDupoc_of_nec {d : ℕ} (hE : BoundedInnerNec d) :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k → EvalGraph 3 (pBot (Dupoc k)) (pBot (Dupoc k)) (pBot (Dupoc k)) 0 := by
-  obtain ⟨k₀, h⟩ := botDupoc_cell_core hE
+  obtain ⟨k₀, h⟩ := loeb_botDupoc_vs_botDupoc_core_of_nec hE
   exact ⟨k₀, fun k hk ↦ (h k hk).1.1⟩
 
-theorem botCupod_self_defect {d : ℕ} (hE : BoundedInnerNec d) :
+theorem loeb_botCupod_vs_botCupod_of_nec {d : ℕ} (hE : BoundedInnerNec d) :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k → EvalGraph 3 (pBot (Cupod k)) (pBot (Cupod k)) (pBot (Cupod k)) 1 := by
-  obtain ⟨k₀, h⟩ := botDupoc_cell_core hE
+  obtain ⟨k₀, h⟩ := loeb_botDupoc_vs_botDupoc_core_of_nec hE
   exact ⟨k₀, fun k hk ↦ (h k hk).1.2⟩
 
 /-- **The box form**: for all large `k`, the bot-wrapped Dupoc FINDS a proof of its guard against
 itself within its budget `k` (conditional). -/
-theorem botDupoc_finds_guard {d : ℕ} (hE : BoundedInnerNec d) :
+theorem loeb_botDupoc_vs_botDupoc_guard_of_nec {d : ℕ} (hE : BoundedInnerNec d) :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       LenProvableV TAct k (guardCode (⌜GtmplA 0⌝ : ℕ) (pBot (Dupoc k)) (pBot (Dupoc k))) := by
-  obtain ⟨k₀, h⟩ := botDupoc_cell_core hE
+  obtain ⟨k₀, h⟩ := loeb_botDupoc_vs_botDupoc_core_of_nec hE
   exact ⟨k₀, fun k hk ↦ (h k hk).2.1⟩
 
 /-- **The bot-wrapped Dupoc self-cooperation in PA-`S'`, unconditional**: for all large `k`,
 `pBot (Dupoc k)` cooperates with itself at fuel 3 (bot, search, const). -/
-theorem botDupoc_self_coop_unconditional :
+theorem loeb_botDupoc_vs_botDupoc :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k → EvalGraph 3 (pBot (Dupoc k)) (pBot (Dupoc k)) (pBot (Dupoc k)) 0 :=
-  botDupoc_self_coop boundedInnerNec_sixteen
+  loeb_botDupoc_vs_botDupoc_of_nec boundedInnerNec_sixteen
 
 /-- **The bot-wrapped Cupod self-defection in PA-`S'`, unconditional.** -/
-theorem botCupod_self_defect_unconditional :
+theorem loeb_botCupod_vs_botCupod :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k → EvalGraph 3 (pBot (Cupod k)) (pBot (Cupod k)) (pBot (Cupod k)) 1 :=
-  botCupod_self_defect boundedInnerNec_sixteen
+  loeb_botCupod_vs_botCupod_of_nec boundedInnerNec_sixteen
 
 /-- **The bot-wrapped Dupoc finds its guard, unconditional.** -/
-theorem botDupoc_finds_guard_unconditional :
+theorem loeb_botDupoc_vs_botDupoc_guard :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       LenProvableV TAct k (guardCode (⌜GtmplA 0⌝ : ℕ) (pBot (Dupoc k)) (pBot (Dupoc k))) :=
-  botDupoc_finds_guard boundedInnerNec_sixteen
+  loeb_botDupoc_vs_botDupoc_guard_of_nec boundedInnerNec_sixteen
 
 end botSelf
 /-! ### 5. JustV: the searcher on the pre-filled template -/
@@ -664,7 +664,7 @@ theorem loebSound_pJM : LoebSound pJM 7 8 := by
 /-- **The Just × Mirror family, packaged**: for all large `k`, both bot-wrapped searchers find
 their guards against Mirror (fuel 3) and both guard boxes hold — `family_found pJM`, the
 arithmetized `jm_guard_true`. -/
-theorem just_mirror_cell_core {d : ℕ} (hE : BoundedInnerNec d) :
+theorem loeb_Just_vs_Mirror_core_of_nec {d : ℕ} (hE : BoundedInnerNec d) :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       (EvalGraph 3 (pBot (Dupoc k)) Mirror (pBot (Dupoc k)) 0 ∧
         EvalGraph 3 (pBot (Cupod k)) Mirror (pBot (Cupod k)) 1) ∧
@@ -679,10 +679,10 @@ theorem just_mirror_cell_core {d : ℕ} (hE : BoundedInnerNec d) :
 /-- **Just × Mirror is `(C, C)` in PA-`S'`, conditional on bounded inner necessitation**: for all
 large `k`, `Just k` cooperates with Mirror (fuel 2: Just's OUTER search fires on the box of
 "Mirror plays C against `pBot (Dupoc k)`") and Mirror copies (fuel 3). -/
-theorem just_mirror_coop {d : ℕ} (hE : BoundedInnerNec d) :
+theorem loeb_Just_vs_Mirror_of_nec {d : ℕ} (hE : BoundedInnerNec d) :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 2 (Just k) Mirror (Just k) 0 ∧ EvalGraph 3 Mirror (Just k) Mirror 0 := by
-  obtain ⟨k₀, h⟩ := just_mirror_cell_core hE
+  obtain ⟨k₀, h⟩ := loeb_Just_vs_Mirror_core_of_nec hE
   refine ⟨k₀, fun k hk ↦ ?_⟩
   have hJ : EvalGraph 2 (JustV (V := ℕ) k) Mirror (JustV (V := ℕ) k) 0 := just_search_V k Mirror (h k hk).2.1
   rw [JustV_nat] at hJ
@@ -690,38 +690,38 @@ theorem just_mirror_coop {d : ℕ} (hE : BoundedInnerNec d) :
 
 /-- **The bot-wrapped Dupoc × Mirror `(C, C)`, conditional**: fuel 3 for `pBot (Dupoc k)`, fuel 4
 for Mirror. -/
-theorem botDupoc_mirror_coop {d : ℕ} (hE : BoundedInnerNec d) :
+theorem loeb_botDupoc_vs_Mirror_of_nec {d : ℕ} (hE : BoundedInnerNec d) :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 3 (pBot (Dupoc k)) Mirror (pBot (Dupoc k)) 0 ∧ EvalGraph 4 Mirror (pBot (Dupoc k)) Mirror 0 := by
-  obtain ⟨k₀, h⟩ := just_mirror_cell_core hE
+  obtain ⟨k₀, h⟩ := loeb_Just_vs_Mirror_core_of_nec hE
   exact ⟨k₀, fun k hk ↦ ⟨(h k hk).1.1, mirror_copies_botDupoc_V (V := ℕ) k (h k hk).1.1⟩⟩
 
 /-- **The box form**: for all large `k`, Just actually FINDS a proof of its guard against Mirror
 within its budget `k` (conditional). -/
-theorem just_finds_guard_vs_mirror {d : ℕ} (hE : BoundedInnerNec d) :
+theorem loeb_Just_vs_Mirror_guard_of_nec {d : ℕ} (hE : BoundedInnerNec d) :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k → LenProvableV TAct k (guardCode (gJ k) (Just k) Mirror) := by
-  obtain ⟨k₀, h⟩ := just_mirror_cell_core hE
+  obtain ⟨k₀, h⟩ := loeb_Just_vs_Mirror_core_of_nec hE
   refine ⟨k₀, fun k hk ↦ ?_⟩
   rw [guardCode_JustV]
   exact (h k hk).2.1
 
 /-- **Just × Mirror `(C, C)` in PA-`S'`, unconditional**: for all large `k`, `Just k` cooperates
 with Mirror (fuel 2) and Mirror copies (fuel 3). -/
-theorem just_mirror_coop_unconditional :
+theorem loeb_Just_vs_Mirror :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 2 (Just k) Mirror (Just k) 0 ∧ EvalGraph 3 Mirror (Just k) Mirror 0 :=
-  just_mirror_coop boundedInnerNec_sixteen
+  loeb_Just_vs_Mirror_of_nec boundedInnerNec_sixteen
 
 /-- **The bot-wrapped Dupoc × Mirror `(C, C)`, unconditional.** -/
-theorem botDupoc_mirror_coop_unconditional :
+theorem loeb_botDupoc_vs_Mirror :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 3 (pBot (Dupoc k)) Mirror (pBot (Dupoc k)) 0 ∧ EvalGraph 4 Mirror (pBot (Dupoc k)) Mirror 0 :=
-  botDupoc_mirror_coop boundedInnerNec_sixteen
+  loeb_botDupoc_vs_Mirror_of_nec boundedInnerNec_sixteen
 
 /-- **Just finds its guard against Mirror, unconditional.** -/
-theorem just_finds_guard_vs_mirror_unconditional :
+theorem loeb_Just_vs_Mirror_guard :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k → LenProvableV TAct k (guardCode (gJ k) (Just k) Mirror) :=
-  just_finds_guard_vs_mirror boundedInnerNec_sixteen
+  loeb_Just_vs_Mirror_guard_of_nec boundedInnerNec_sixteen
 
 end justMirror
 

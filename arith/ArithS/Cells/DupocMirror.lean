@@ -47,12 +47,12 @@ budgets `k : V` possibly nonstandard) unless a statement says `ℕ`.
    `mirror_step_V`), and in the swap reading the roles exchange, so the content is the same.
 6. **The Löb premise and the cells.** `loebSound_pDM : LoebSound pDM 7 8` (as `loebSound_pConj`),
    then the engine `family_found pDM` (the arithmetized `pblt_engine`) at ℕ: the conditional
-   forms `dupoc_mirror_coop`/`cupod_mirror_defect`/`dupoc_finds_guard_vs_mirror`/
-   `cupod_finds_guard_vs_mirror` (`hE : BoundedInnerNec d`, as `Cell.lean`), and their
+   forms `loeb_Dupoc_vs_Mirror_of_nec`/`loeb_Cupod_vs_Mirror_of_nec`/`loeb_Dupoc_vs_Mirror_guard_of_nec`/
+   `loeb_Cupod_vs_Mirror_guard_of_nec` (`hE : BoundedInnerNec d`, as `Cell.lean`), and their
    UNCONDITIONAL twins at `boundedInnerNec_sixteen` (`Necessitation/Package.lean`):
-   **`dupoc_mirror_coop_unconditional`** — for all large `k`, `Dupoc k` cooperates with Mirror
+   **`loeb_Dupoc_vs_Mirror`** — for all large `k`, `Dupoc k` cooperates with Mirror
    (fuel 2) and Mirror copies (fuel 3): the `(C, C)` cell — and
-   **`cupod_mirror_defect_unconditional`** — the `(D, D)` cell.
+   **`loeb_Cupod_vs_Mirror`** — the `(D, D)` cell.
 
 Conventions (`HANDOVER_ARITHMETIZED_S.md` §5–6): every threshold and constant is EXISTENTIAL;
 `simp` never sees a closed quote of `qDM`/`pDM`/`psiF pDM` (the quote equations are for
@@ -448,7 +448,7 @@ theorem loebSound_pDM : LoebSound pDM 7 8 := by
 /-- **The Mirror cells, packaged**: for all large `k`, both searchers find their guards against
 Mirror (fuel 2) and both guard boxes hold — `family_found pDM` (the arithmetized `pblt_engine`)
 then the ∧-elimination on codes. -/
-theorem dupoc_mirror_cell_core {d : ℕ} (hE : BoundedInnerNec d) :
+theorem loeb_Dupoc_vs_Mirror_core_of_nec {d : ℕ} (hE : BoundedInnerNec d) :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       (EvalGraph 2 (Dupoc k) Mirror (Dupoc k) 0 ∧ EvalGraph 2 (Cupod k) Mirror (Cupod k) 1) ∧
       (LenProvableV TAct k (guardCode (⌜GtmplA 0⌝ : ℕ) (Dupoc k) Mirror) ∧
@@ -461,59 +461,59 @@ theorem dupoc_mirror_cell_core {d : ℕ} (hE : BoundedInnerNec d) :
 
 /-- **Dupoc × Mirror is `(C, C)` in PA-`S'`, conditional on bounded inner necessitation**: for all
 large `k`, `Dupoc k` cooperates with Mirror (fuel 2) and Mirror copies (fuel 3). -/
-theorem dupoc_mirror_coop {d : ℕ} (hE : BoundedInnerNec d) :
+theorem loeb_Dupoc_vs_Mirror_of_nec {d : ℕ} (hE : BoundedInnerNec d) :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 2 (Dupoc k) Mirror (Dupoc k) 0 ∧ EvalGraph 3 Mirror (Dupoc k) Mirror 0 := by
-  obtain ⟨k₀, h⟩ := dupoc_mirror_cell_core hE
+  obtain ⟨k₀, h⟩ := loeb_Dupoc_vs_Mirror_core_of_nec hE
   exact ⟨k₀, fun k hk ↦ ⟨(h k hk).1.1, mirror_copies_dupoc_V (V := ℕ) k (h k hk).1.1⟩⟩
 
 /-- **Cupod × Mirror is `(D, D)` in PA-`S'`, conditional on bounded inner necessitation**: for all
 large `k`, `Cupod k` defects against Mirror (fuel 2) and Mirror copies (fuel 3). -/
-theorem cupod_mirror_defect {d : ℕ} (hE : BoundedInnerNec d) :
+theorem loeb_Cupod_vs_Mirror_of_nec {d : ℕ} (hE : BoundedInnerNec d) :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 2 (Cupod k) Mirror (Cupod k) 1 ∧ EvalGraph 3 Mirror (Cupod k) Mirror 1 := by
-  obtain ⟨k₀, h⟩ := dupoc_mirror_cell_core hE
+  obtain ⟨k₀, h⟩ := loeb_Dupoc_vs_Mirror_core_of_nec hE
   exact ⟨k₀, fun k hk ↦ ⟨(h k hk).1.2, mirror_copies_cupod_V (V := ℕ) k (h k hk).1.2⟩⟩
 
 /-- **The box form**: for all large `k`, Dupoc actually FINDS a proof of its guard against Mirror
 within its budget `k` (conditional). -/
-theorem dupoc_finds_guard_vs_mirror {d : ℕ} (hE : BoundedInnerNec d) :
+theorem loeb_Dupoc_vs_Mirror_guard_of_nec {d : ℕ} (hE : BoundedInnerNec d) :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k → LenProvableV TAct k (guardCode (⌜GtmplA 0⌝ : ℕ) (Dupoc k) Mirror) := by
-  obtain ⟨k₀, h⟩ := dupoc_mirror_cell_core hE
+  obtain ⟨k₀, h⟩ := loeb_Dupoc_vs_Mirror_core_of_nec hE
   exact ⟨k₀, fun k hk ↦ (h k hk).2.1⟩
 
 /-- **The box form**: for all large `k`, Cupod FINDS a proof of its guard against Mirror within
 its budget `k` (conditional). -/
-theorem cupod_finds_guard_vs_mirror {d : ℕ} (hE : BoundedInnerNec d) :
+theorem loeb_Cupod_vs_Mirror_guard_of_nec {d : ℕ} (hE : BoundedInnerNec d) :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k → LenProvableV TAct k (guardCode (⌜GtmplA 1⌝ : ℕ) (Cupod k) Mirror) := by
-  obtain ⟨k₀, h⟩ := dupoc_mirror_cell_core hE
+  obtain ⟨k₀, h⟩ := loeb_Dupoc_vs_Mirror_core_of_nec hE
   exact ⟨k₀, fun k hk ↦ (h k hk).2.2⟩
 
 /-! #### Unconditional, at `boundedInnerNec_sixteen` -/
 
 /-- **Dupoc × Mirror `(C, C)` in PA-`S'`, unconditional**: for all large `k`, `Dupoc k` cooperates
 with Mirror and Mirror copies. -/
-theorem dupoc_mirror_coop_unconditional :
+theorem loeb_Dupoc_vs_Mirror :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 2 (Dupoc k) Mirror (Dupoc k) 0 ∧ EvalGraph 3 Mirror (Dupoc k) Mirror 0 :=
-  dupoc_mirror_coop boundedInnerNec_sixteen
+  loeb_Dupoc_vs_Mirror_of_nec boundedInnerNec_sixteen
 
 /-- **Cupod × Mirror `(D, D)` in PA-`S'`, unconditional**: for all large `k`, `Cupod k` defects
 against Mirror and Mirror copies. -/
-theorem cupod_mirror_defect_unconditional :
+theorem loeb_Cupod_vs_Mirror :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 2 (Cupod k) Mirror (Cupod k) 1 ∧ EvalGraph 3 Mirror (Cupod k) Mirror 1 :=
-  cupod_mirror_defect boundedInnerNec_sixteen
+  loeb_Cupod_vs_Mirror_of_nec boundedInnerNec_sixteen
 
 /-- **Dupoc finds its guard against Mirror, unconditional.** -/
-theorem dupoc_finds_guard_vs_mirror_unconditional :
+theorem loeb_Dupoc_vs_Mirror_guard :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k → LenProvableV TAct k (guardCode (⌜GtmplA 0⌝ : ℕ) (Dupoc k) Mirror) :=
-  dupoc_finds_guard_vs_mirror boundedInnerNec_sixteen
+  loeb_Dupoc_vs_Mirror_guard_of_nec boundedInnerNec_sixteen
 
 /-- **Cupod finds its guard against Mirror, unconditional.** -/
-theorem cupod_finds_guard_vs_mirror_unconditional :
+theorem loeb_Cupod_vs_Mirror_guard :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k → LenProvableV TAct k (guardCode (⌜GtmplA 1⌝ : ℕ) (Cupod k) Mirror) :=
-  cupod_finds_guard_vs_mirror boundedInnerNec_sixteen
+  loeb_Cupod_vs_Mirror_guard_of_nec boundedInnerNec_sixteen
 
 end cells
 

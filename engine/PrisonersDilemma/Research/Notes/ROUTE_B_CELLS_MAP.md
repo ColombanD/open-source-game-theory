@@ -54,7 +54,8 @@ Cells/KhatCells     ← PositiveCells, JustSlot
 Cells/FlipCells     ← PositiveCells, DIMCID, KhatCells
 Cells/DimcidFlips   ← FlipCells
 Cells/FloorVerdicts ← DimcidFlips                                         (2026-09-27: the settled halves / true guards of the 26 genuine floors; method prefix `floor`)
-Cells/Names         ← every Cells file                                    (the ALIAS layer only; imported by ArithS.lean, not Audit)
+Cells/FloorDichotomy← FloorVerdicts                                        (2026-09-27: the hypothesis-free dichotomies `dich_<L>_vs_<R>` of the 26 genuine floors)
+Cells/Names         ← every Cells file                                    (since 2026-09-27 the DEPRECATION layer: `@[deprecated]` aliases of the OLD names; imported by ArithS.lean, not Audit)
 ```
 `ArithS.lean` imports every Common module, every Cells file and `Cells/Names`; `Audit.lean` imports the Common
 modules and prints, per module, the moved names that were not already printed (Syntax 33, Bots 81 incl. the
@@ -148,6 +149,22 @@ Dependency check: PositiveCells' SV section (61–360) uses only `coe_quote_sent
 
 ## Audit counts (Cells): DupocMirror 24, DIMCID 53, JustBot 37, JustSlot 68, SimSlot 3, CIMCIC 51, PrudentMirror 41, SearchFree 65, SoundnessCells 64, PositiveCells 64, FlipCells 36, KhatCells 48, DimcidFlips 49 = 603; Assembly Prep 23 / Family 13 / Cell 4 / Uniform 9. No Cells/Assembly lemma printed twice.
 
-## Naming (an ALIAS layer, not renames — the gate)
+## Naming (FLIPPED 2026-09-27: the scheme is primary, the old names are deprecated aliases)
+
+**Status.** The 2026-09-24 layer below made the scheme a set of aliases over the original names (the gate: every
+original name and statement byte-identical). On 2026-09-27 the gate was relaxed and the flip executed: 166 declarations
+renamed in their home files (the 169 `alias new := old` pairs of the layer = 163 distinct old names, six of them
+doubled by a `*_finds_guards*` spelling, minus `dupoc_self_coop_unconditional` —
+the headline theorem of `Necessitation/Package`, a Necessitation statement, NOT flipped, `loeb_Dupoc_vs_Dupoc` stays a
+plain alias of it — plus the four non-scheme names of the newer floor modules: `dupoc_vs_botCB_found` →
+`pos_DupocBot_vs_botCB`, `botDupoc_vs_botCB_found` → `pos_botDupocBot_vs_botCB`, `just_vs_botDB` →
+`snd_JustBot_vs_botDB`, `dich_CupodBot_PrudentBot_core` → `dich_CupodBot_vs_PrudentBot_core`; `floor_*`/`dich_*` are
+method prefixes in the scheme's spirit and use engine head symbols, as their statements have `pcode`); statements
+byte-identical modulo the rename map (header diff: 0 changed); every use site and every `#print axioms` line of
+`Audit.lean` updated (the census count unchanged); `Cells/Names.lean` is now the DEPRECATION layer —
+`@[deprecated new (since := "2026-09-27")] alias old := new` for every pair (the six `*_finds_guards*` spellings of
+the old layer that doubled a scheme name are kept as plain aliases). The survey paragraph below is the 2026-09-24
+record and reads "old → new".
+
 Inconsistencies: two worlds of codes (`Dimcid k = pcode (DIMCID k)` but `Dupoc ≠ pcode DupocBot`, `Cupod ≠ pcode CupodBot`, `Just ≠ pcode JustBot`) invisible in cell names; `Just/JustV` vs `Just7/JustV7`; `TftV` vs `TFTV`; `hopp_`/`hme_` mixed; `_search_V/_then_V/_frame_search_V/_search_any_V`; `_both_V/_all_V/_boxes_V`, `_guards_V` vs `pJJ_guard_V`; `find_guards`/`finds_guard`/`finds_guards`; `_vs_TFT` vs `_vs_TitForTatBot`, `_vs_Mirror` vs `_vs_mirror`; method prefixes not matching shape (`snd_` on eventually statements, `pos_Guardian*` in SoundnessCells, loose names `botDupoc_vs_botDB`, `dimcid_vs_*_defects`, …); `cimcic_self_coop` Löb-free without `_unconditional`; primed `pcode_X'`.
 Scheme: `<method>_<L>_vs_<R>[_<suffix>]`, method ∈ {sf, pa, snd, pos, loeb, khat} = the PROOF METHOD; L/R = the exact head symbol (engine constructor when the statement has `pcode (X k)`, arith code name `Dupoc/Cupod/Dimcid/Cimcic/Just/Just7/Prudent/PrudentT/Mirror/botDupoc` when it has the ℕ-code); suffix ∈ {∅, `_guard`, `_guards`, `_guardOf`, `_notFound`, `_engine`, `_of_nec`, `_core_of_nec`}. Examples: `dupoc_mirror_coop_unconditional` → `loeb_Dupoc_vs_Mirror`; `dupoc_mirror_coop` → `loeb_Dupoc_vs_Mirror_of_nec`; `dimcid_cupod_find_guards_unconditional` → `loeb_Dimcid_vs_Cupod_guards`; `cimcic_self_coop` → `pos_Cimcic_vs_Cimcic`; `snd_CupodBot_vs_DBot` → `pos_CupodBot_vs_DBot`. Implementation: ONE module `Cells/Names.lean` importing all Cells files, containing only `alias <new> := <old>` lines (~31 `_unconditional` + `_of_nec`/`_core_of_nec` companions + ~15 loose cells + helper renames `hopp_*/hme_*` → `desc_*`, `hX_self` → `hX_dimcid`, `hX_bot` → `hX_botDupoc`, `pJJ_guard_V` → `pJJ_guards_V`, `pJD_boxes_V` → `pJD_guards_V`, `*_find_guards*` → `*_finds_guards*`, `pcode_X'` → `pcode_X_search`, `mirror_copies_V` → `mirror_copies2_V`; `TFTV`/`TTFT` re-defined as `TftV`/`TTft`); imported by `ArithS.lean`; no Audit prints needed for aliases. Flip primary/deprecated only after the gate is relaxed.

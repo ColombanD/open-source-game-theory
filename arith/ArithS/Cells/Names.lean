@@ -11,32 +11,40 @@ import ArithS.Cells.PositiveCells
 import ArithS.Cells.KhatCells
 import ArithS.Cells.FlipCells
 import ArithS.Cells.DimcidFlips
+import ArithS.Cells.FloorVerdicts
+import ArithS.Cells.FloorDichotomy
 
 /-!
-# ArithS.Cells.Names — the ALIAS layer: one naming scheme over the cell theorems
+# ArithS.Cells.Names — the DEPRECATION layer: the old names of the cell theorems
 
-Consolidation stage 7 (`Research/Notes/ROUTE_B_CELLS_MAP.md`, 2026-09-24). This module contains ONLY
-`alias <new> := <old>` lines: every original name and statement stays where it is (the refactor's gate),
-and every cell gets a second name under ONE scheme —
+Consolidation stage 7 (`Research/Notes/ROUTE_B_CELLS_MAP.md`, 2026-09-24) introduced ONE naming scheme for the cell
+theorems as an alias layer over the original names; on 2026-09-27 the scheme was made PRIMARY (the gate — every
+original name and statement byte-identical — was relaxed): every declaration was renamed in its home file, the
+statements unchanged (verified by a header diff modulo the rename map: 0 changed), and this module now contains
+ONLY `@[deprecated <new> (since := "2026-09-27")] alias <old> := <new>` lines, so the old names keep working with a
+warning. The scheme —
 
   `<method>_<L>_vs_<R>[_<suffix>]`
 
-`method ∈ {sf, pa, snd, pos, loeb, khat}` is the PROOF METHOD (search-free transfer, PA-completeness,
-soundness/else-branch, positive/found without Löb, bounded Löb, the `k̂`-chain); `L`/`R` are the exact
-head symbols of the statement — the ENGINE constructor (`DIMCID`, `DupocBot`, `TitForTatBot`, …) when the
-statement has `pcode (X k)`, the ARITH code name (`Dupoc`, `Cupod`, `Dimcid`, `Cimcic`, `Just`, `Just7`,
-`Prudent`, `PrudentT`, `Mirror`, `botDupoc`, `CupodTroll7`) when it has the ℕ-code, `botCB`/`botDB`/
-`botMirror` for the frozen `.bot` probes; `suffix ∈ {∅, _guard, _guards, _guardOf, _notFound, _engine,
-_core, _of_nec, _core_of_nec}` (`_core` = the play AND the found guard in one statement, `_of_nec` = the
-version still premised on `BoundedInnerNec d`, `_core_of_nec` = its core). Examples:
-`dupoc_mirror_coop_unconditional` → `loeb_Dupoc_vs_Mirror`, `dupoc_mirror_coop` →
-`loeb_Dupoc_vs_Mirror_of_nec`, `dimcid_cupod_find_guards_unconditional` → `loeb_Dimcid_vs_Cupod_guards`,
-`cimcic_self_coop` → `pos_Cimcic_vs_Cimcic`, `snd_CupodBot_vs_DBot` → `pos_CupodBot_vs_DBot` (its proof
-needs a positive sub-fact). The helper renames at the end: `hopp_*`/`hme_*` → `desc_*`/`descT_*`,
-`hX_self` → `hX_dimcid`, `hX_bot` → `hX_botDupoc`, `pJJ_guard_V` → `pJJ_guards_V`, `pJD_boxes_V` →
-`pJD_guards_V`, `*_find_guards*` → `*_finds_guards*`, `pcode_X'` → `pcode_X_search`, `mirror_copies_V` →
-`mirror_copies2_V`. (`TFTV`/`TTFT` are handled by the `rfl` bridges of `Common/Bots`.) The old names remain
-primary until the gate is relaxed; no `#print axioms` here (an alias adds no axioms).
+`method ∈ {sf, pa, snd, pos, loeb, khat, floor, dich}` is the PROOF METHOD (search-free transfer, PA-completeness,
+soundness/else-branch, positive/found without Löb, bounded Löb, the `k̂`-chain, the settled floor half, the
+hypothesis-free floor dichotomy); `L`/`R` are the exact head symbols of the statement — the ENGINE constructor
+(`DIMCID`, `DupocBot`, `TitForTatBot`, …) when the statement has `pcode (X k)`, the ARITH code name (`Dupoc`,
+`Cupod`, `Dimcid`, `Cimcic`, `Just`, `Just7`, `Prudent`, `PrudentT`, `Mirror`, `botDupoc`, `CupodTroll7`) when it
+has the ℕ-code, `botCB`/`botDB`/`botMirror` for the frozen `.bot` probes; `suffix ∈ {∅, _guard, _guards, _guardOf,
+_notFound, _engine, _core, _of_nec, _core_of_nec, _left, _right, _true}` (`_core` = the play AND the found guard in
+one statement, `_of_nec` = the version still premised on `BoundedInnerNec d`, `_core_of_nec` = its core;
+`_left`/`_right`/`_true` are `Cells/FloorVerdicts`' settled halves and true guards). Examples (old → new):
+`dupoc_mirror_coop_unconditional` → `loeb_Dupoc_vs_Mirror`, `dupoc_mirror_coop` → `loeb_Dupoc_vs_Mirror_of_nec`,
+`dimcid_cupod_find_guards_unconditional` → `loeb_Dimcid_vs_Cupod_guards`, `cimcic_self_coop` →
+`pos_Cimcic_vs_Cimcic`, `snd_CupodBot_vs_DBot` → `pos_CupodBot_vs_DBot` (its proof needs a positive sub-fact).
+The helper renames at the end: `hopp_*`/`hme_*` → `desc_*`/`descT_*`, `hX_self` → `hX_dimcid`, `hX_bot` →
+`hX_botDupoc`, `pJJ_guard_V` → `pJJ_guards_V`, `pJD_boxes_V` → `pJD_guards_V`, `pcode_X'` → `pcode_X_search`,
+`mirror_copies_V` → `mirror_copies2_V`; the `*_finds_guards*` spellings of the 2026-09-24 layer are kept as plain
+aliases of the scheme names. (`TFTV`/`TTFT` are handled by the `rfl` bridges of `Common/Bots`.) The one name NOT
+flipped: `dupoc_self_coop_unconditional` (`Necessitation/Package`, the headline theorem — a Necessitation statement,
+left as is; `loeb_Dupoc_vs_Dupoc` stays a plain alias of it). No `#print axioms` here (an alias adds no axioms);
+`Audit.lean` prints the new names.
 -/
 
 namespace ArithS
@@ -44,195 +52,204 @@ namespace ArithS
 /-! ### The Löb cells on the arith codes (`Cells/DupocMirror`, `JustBot`, `DIMCID`, `CIMCIC`, `JustSlot`,
 `PrudentMirror`; `dupoc_self_coop_unconditional` from `Necessitation/Package`) -/
 
+/-- Not flipped: the headline theorem of `Necessitation/Package` keeps its name. -/
 alias loeb_Dupoc_vs_Dupoc := dupoc_self_coop_unconditional
 
-alias loeb_Dupoc_vs_Mirror := dupoc_mirror_coop_unconditional
-alias loeb_Dupoc_vs_Mirror_of_nec := dupoc_mirror_coop
-alias loeb_Dupoc_vs_Mirror_core_of_nec := dupoc_mirror_cell_core
-alias loeb_Dupoc_vs_Mirror_guard := dupoc_finds_guard_vs_mirror_unconditional
-alias loeb_Dupoc_vs_Mirror_guard_of_nec := dupoc_finds_guard_vs_mirror
-alias loeb_Cupod_vs_Mirror := cupod_mirror_defect_unconditional
-alias loeb_Cupod_vs_Mirror_of_nec := cupod_mirror_defect
-alias loeb_Cupod_vs_Mirror_guard := cupod_finds_guard_vs_mirror_unconditional
-alias loeb_Cupod_vs_Mirror_guard_of_nec := cupod_finds_guard_vs_mirror
+@[deprecated loeb_Dupoc_vs_Mirror (since := "2026-09-27")] alias dupoc_mirror_coop_unconditional := loeb_Dupoc_vs_Mirror
+@[deprecated loeb_Dupoc_vs_Mirror_of_nec (since := "2026-09-27")] alias dupoc_mirror_coop := loeb_Dupoc_vs_Mirror_of_nec
+@[deprecated loeb_Dupoc_vs_Mirror_core_of_nec (since := "2026-09-27")] alias dupoc_mirror_cell_core := loeb_Dupoc_vs_Mirror_core_of_nec
+@[deprecated loeb_Dupoc_vs_Mirror_guard (since := "2026-09-27")] alias dupoc_finds_guard_vs_mirror_unconditional := loeb_Dupoc_vs_Mirror_guard
+@[deprecated loeb_Dupoc_vs_Mirror_guard_of_nec (since := "2026-09-27")] alias dupoc_finds_guard_vs_mirror := loeb_Dupoc_vs_Mirror_guard_of_nec
+@[deprecated loeb_Cupod_vs_Mirror (since := "2026-09-27")] alias cupod_mirror_defect_unconditional := loeb_Cupod_vs_Mirror
+@[deprecated loeb_Cupod_vs_Mirror_of_nec (since := "2026-09-27")] alias cupod_mirror_defect := loeb_Cupod_vs_Mirror_of_nec
+@[deprecated loeb_Cupod_vs_Mirror_guard (since := "2026-09-27")] alias cupod_finds_guard_vs_mirror_unconditional := loeb_Cupod_vs_Mirror_guard
+@[deprecated loeb_Cupod_vs_Mirror_guard_of_nec (since := "2026-09-27")] alias cupod_finds_guard_vs_mirror := loeb_Cupod_vs_Mirror_guard_of_nec
 
-alias loeb_botDupoc_vs_botDupoc := botDupoc_self_coop_unconditional
-alias loeb_botDupoc_vs_botDupoc_of_nec := botDupoc_self_coop
-alias loeb_botDupoc_vs_botDupoc_core_of_nec := botDupoc_cell_core
-alias loeb_botDupoc_vs_botDupoc_guard := botDupoc_finds_guard_unconditional
-alias loeb_botDupoc_vs_botDupoc_guard_of_nec := botDupoc_finds_guard
-alias loeb_botCupod_vs_botCupod := botCupod_self_defect_unconditional
-alias loeb_botCupod_vs_botCupod_of_nec := botCupod_self_defect
+@[deprecated loeb_botDupoc_vs_botDupoc (since := "2026-09-27")] alias botDupoc_self_coop_unconditional := loeb_botDupoc_vs_botDupoc
+@[deprecated loeb_botDupoc_vs_botDupoc_of_nec (since := "2026-09-27")] alias botDupoc_self_coop := loeb_botDupoc_vs_botDupoc_of_nec
+@[deprecated loeb_botDupoc_vs_botDupoc_core_of_nec (since := "2026-09-27")] alias botDupoc_cell_core := loeb_botDupoc_vs_botDupoc_core_of_nec
+@[deprecated loeb_botDupoc_vs_botDupoc_guard (since := "2026-09-27")] alias botDupoc_finds_guard_unconditional := loeb_botDupoc_vs_botDupoc_guard
+@[deprecated loeb_botDupoc_vs_botDupoc_guard_of_nec (since := "2026-09-27")] alias botDupoc_finds_guard := loeb_botDupoc_vs_botDupoc_guard_of_nec
+@[deprecated loeb_botCupod_vs_botCupod (since := "2026-09-27")] alias botCupod_self_defect_unconditional := loeb_botCupod_vs_botCupod
+@[deprecated loeb_botCupod_vs_botCupod_of_nec (since := "2026-09-27")] alias botCupod_self_defect := loeb_botCupod_vs_botCupod_of_nec
 
-alias loeb_Just_vs_Mirror := just_mirror_coop_unconditional
-alias loeb_Just_vs_Mirror_of_nec := just_mirror_coop
-alias loeb_Just_vs_Mirror_core_of_nec := just_mirror_cell_core
-alias loeb_Just_vs_Mirror_guard := just_finds_guard_vs_mirror_unconditional
-alias loeb_Just_vs_Mirror_guard_of_nec := just_finds_guard_vs_mirror
-alias loeb_botDupoc_vs_Mirror := botDupoc_mirror_coop_unconditional
-alias loeb_botDupoc_vs_Mirror_of_nec := botDupoc_mirror_coop
+@[deprecated loeb_Just_vs_Mirror (since := "2026-09-27")] alias just_mirror_coop_unconditional := loeb_Just_vs_Mirror
+@[deprecated loeb_Just_vs_Mirror_of_nec (since := "2026-09-27")] alias just_mirror_coop := loeb_Just_vs_Mirror_of_nec
+@[deprecated loeb_Just_vs_Mirror_core_of_nec (since := "2026-09-27")] alias just_mirror_cell_core := loeb_Just_vs_Mirror_core_of_nec
+@[deprecated loeb_Just_vs_Mirror_guard (since := "2026-09-27")] alias just_finds_guard_vs_mirror_unconditional := loeb_Just_vs_Mirror_guard
+@[deprecated loeb_Just_vs_Mirror_guard_of_nec (since := "2026-09-27")] alias just_finds_guard_vs_mirror := loeb_Just_vs_Mirror_guard_of_nec
+@[deprecated loeb_botDupoc_vs_Mirror (since := "2026-09-27")] alias botDupoc_mirror_coop_unconditional := loeb_botDupoc_vs_Mirror
+@[deprecated loeb_botDupoc_vs_Mirror_of_nec (since := "2026-09-27")] alias botDupoc_mirror_coop := loeb_botDupoc_vs_Mirror_of_nec
 
-alias loeb_Dimcid_vs_Dimcid := dimcid_self_defect_unconditional
-alias loeb_Dimcid_vs_Dimcid_of_nec := dimcid_self_defect
-alias loeb_Dimcid_vs_Dimcid_core_of_nec := dimcid_self_cell_core
-alias loeb_Dimcid_vs_Dimcid_guard := dimcid_finds_guard_unconditional
-alias loeb_Dimcid_vs_Dimcid_guard_of_nec := dimcid_finds_guard
-alias loeb_DIMCID_vs_DIMCID_guardOf := dimcid_finds_guardOf_unconditional
-alias loeb_Dimcid_vs_Mirror := dimcid_mirror_defect_unconditional
-alias loeb_Dimcid_vs_Mirror_of_nec := dimcid_mirror_defect
-alias loeb_Dimcid_vs_Mirror_core_of_nec := dimcid_mirror_cell_core
-alias loeb_Dimcid_vs_Mirror_guard := dimcid_finds_guard_vs_mirror_unconditional
-alias loeb_Dimcid_vs_Mirror_guard_of_nec := dimcid_finds_guard_vs_mirror
-alias loeb_Dimcid_vs_Cupod := dimcid_cupod_defect_unconditional
-alias loeb_Dimcid_vs_Cupod_of_nec := dimcid_cupod_defect
-alias loeb_Dimcid_vs_Cupod_core_of_nec := dimcid_cupod_cell_core
-alias loeb_Dimcid_vs_Cupod_guards := dimcid_cupod_find_guards_unconditional
-alias loeb_Dimcid_vs_Cupod_guards_of_nec := dimcid_cupod_find_guards
+@[deprecated loeb_Dimcid_vs_Dimcid (since := "2026-09-27")] alias dimcid_self_defect_unconditional := loeb_Dimcid_vs_Dimcid
+@[deprecated loeb_Dimcid_vs_Dimcid_of_nec (since := "2026-09-27")] alias dimcid_self_defect := loeb_Dimcid_vs_Dimcid_of_nec
+@[deprecated loeb_Dimcid_vs_Dimcid_core_of_nec (since := "2026-09-27")] alias dimcid_self_cell_core := loeb_Dimcid_vs_Dimcid_core_of_nec
+@[deprecated loeb_Dimcid_vs_Dimcid_guard (since := "2026-09-27")] alias dimcid_finds_guard_unconditional := loeb_Dimcid_vs_Dimcid_guard
+@[deprecated loeb_Dimcid_vs_Dimcid_guard_of_nec (since := "2026-09-27")] alias dimcid_finds_guard := loeb_Dimcid_vs_Dimcid_guard_of_nec
+@[deprecated loeb_DIMCID_vs_DIMCID_guardOf (since := "2026-09-27")] alias dimcid_finds_guardOf_unconditional := loeb_DIMCID_vs_DIMCID_guardOf
+@[deprecated loeb_Dimcid_vs_Mirror (since := "2026-09-27")] alias dimcid_mirror_defect_unconditional := loeb_Dimcid_vs_Mirror
+@[deprecated loeb_Dimcid_vs_Mirror_of_nec (since := "2026-09-27")] alias dimcid_mirror_defect := loeb_Dimcid_vs_Mirror_of_nec
+@[deprecated loeb_Dimcid_vs_Mirror_core_of_nec (since := "2026-09-27")] alias dimcid_mirror_cell_core := loeb_Dimcid_vs_Mirror_core_of_nec
+@[deprecated loeb_Dimcid_vs_Mirror_guard (since := "2026-09-27")] alias dimcid_finds_guard_vs_mirror_unconditional := loeb_Dimcid_vs_Mirror_guard
+@[deprecated loeb_Dimcid_vs_Mirror_guard_of_nec (since := "2026-09-27")] alias dimcid_finds_guard_vs_mirror := loeb_Dimcid_vs_Mirror_guard_of_nec
+@[deprecated loeb_Dimcid_vs_Cupod (since := "2026-09-27")] alias dimcid_cupod_defect_unconditional := loeb_Dimcid_vs_Cupod
+@[deprecated loeb_Dimcid_vs_Cupod_of_nec (since := "2026-09-27")] alias dimcid_cupod_defect := loeb_Dimcid_vs_Cupod_of_nec
+@[deprecated loeb_Dimcid_vs_Cupod_core_of_nec (since := "2026-09-27")] alias dimcid_cupod_cell_core := loeb_Dimcid_vs_Cupod_core_of_nec
+@[deprecated loeb_Dimcid_vs_Cupod_guards (since := "2026-09-27")] alias dimcid_cupod_find_guards_unconditional := loeb_Dimcid_vs_Cupod_guards
+@[deprecated loeb_Dimcid_vs_Cupod_guards_of_nec (since := "2026-09-27")] alias dimcid_cupod_find_guards := loeb_Dimcid_vs_Cupod_guards_of_nec
 
-alias loeb_Cimcic_vs_Dupoc := cimcic_dupoc_coop_unconditional
-alias loeb_Cimcic_vs_Dupoc_of_nec := cimcic_dupoc_coop
-alias loeb_Cimcic_vs_Dupoc_core_of_nec := cimcic_dupoc_cell_core
-alias loeb_Cimcic_vs_Dupoc_guards := cimcic_dupoc_find_guards_unconditional
-alias loeb_Cimcic_vs_Dupoc_guards_of_nec := cimcic_dupoc_find_guards
-alias loeb_Cimcic_vs_Mirror := cimcic_mirror_coop_unconditional
-alias loeb_Cimcic_vs_Mirror_of_nec := cimcic_mirror_coop
-alias loeb_Cimcic_vs_Mirror_core_of_nec := cimcic_mirror_cell_core
-alias loeb_Cimcic_vs_Mirror_guard := cimcic_finds_guard_vs_mirror_unconditional
-alias loeb_Cimcic_vs_Mirror_guard_of_nec := cimcic_finds_guard_vs_mirror
-alias pos_Cimcic_vs_Cimcic := cimcic_self_coop
-alias pos_Cimcic_vs_Cimcic_guard := cimcic_self_finds_guard
-alias pos_CIMCIC_vs_CIMCIC_guardOf := cimcic_finds_guardOf_self
+@[deprecated loeb_Cimcic_vs_Dupoc (since := "2026-09-27")] alias cimcic_dupoc_coop_unconditional := loeb_Cimcic_vs_Dupoc
+@[deprecated loeb_Cimcic_vs_Dupoc_of_nec (since := "2026-09-27")] alias cimcic_dupoc_coop := loeb_Cimcic_vs_Dupoc_of_nec
+@[deprecated loeb_Cimcic_vs_Dupoc_core_of_nec (since := "2026-09-27")] alias cimcic_dupoc_cell_core := loeb_Cimcic_vs_Dupoc_core_of_nec
+@[deprecated loeb_Cimcic_vs_Dupoc_guards (since := "2026-09-27")] alias cimcic_dupoc_find_guards_unconditional := loeb_Cimcic_vs_Dupoc_guards
+@[deprecated loeb_Cimcic_vs_Dupoc_guards_of_nec (since := "2026-09-27")] alias cimcic_dupoc_find_guards := loeb_Cimcic_vs_Dupoc_guards_of_nec
+@[deprecated loeb_Cimcic_vs_Mirror (since := "2026-09-27")] alias cimcic_mirror_coop_unconditional := loeb_Cimcic_vs_Mirror
+@[deprecated loeb_Cimcic_vs_Mirror_of_nec (since := "2026-09-27")] alias cimcic_mirror_coop := loeb_Cimcic_vs_Mirror_of_nec
+@[deprecated loeb_Cimcic_vs_Mirror_core_of_nec (since := "2026-09-27")] alias cimcic_mirror_cell_core := loeb_Cimcic_vs_Mirror_core_of_nec
+@[deprecated loeb_Cimcic_vs_Mirror_guard (since := "2026-09-27")] alias cimcic_finds_guard_vs_mirror_unconditional := loeb_Cimcic_vs_Mirror_guard
+@[deprecated loeb_Cimcic_vs_Mirror_guard_of_nec (since := "2026-09-27")] alias cimcic_finds_guard_vs_mirror := loeb_Cimcic_vs_Mirror_guard_of_nec
+@[deprecated pos_Cimcic_vs_Cimcic (since := "2026-09-27")] alias cimcic_self_coop := pos_Cimcic_vs_Cimcic
+@[deprecated pos_Cimcic_vs_Cimcic_guard (since := "2026-09-27")] alias cimcic_self_finds_guard := pos_Cimcic_vs_Cimcic_guard
+@[deprecated pos_CIMCIC_vs_CIMCIC_guardOf (since := "2026-09-27")] alias cimcic_finds_guardOf_self := pos_CIMCIC_vs_CIMCIC_guardOf
 
-alias loeb_Just7_vs_Mirror := just7_mirror_coop_unconditional
-alias loeb_Just7_vs_Just7 := just7_self_coop_unconditional
-alias loeb_Just7_vs_Just7_of_nec := just7_self_coop
-alias loeb_Just7_vs_Just7_core_of_nec := just7_self_cell_core
-alias loeb_Just7_vs_Just7_guard := just7_finds_guard_vs_self_unconditional
-alias loeb_Just7_vs_Dupoc := just7_dupoc_coop_unconditional
-alias loeb_Just7_vs_Dupoc_of_nec := just7_dupoc_coop
-alias loeb_Just7_vs_Dupoc_core_of_nec := just7_dupoc_cell_core
-alias loeb_Just7_vs_Dupoc_guards := just7_dupoc_find_guards_unconditional
-alias loeb_Cimcic_vs_Just7 := cimcic_just7_coop_unconditional
-alias loeb_Cimcic_vs_Just7_of_nec := cimcic_just7_coop
-alias loeb_Cimcic_vs_Just7_core_of_nec := cimcic_just7_cell_core
-alias loeb_Cimcic_vs_Just7_guards := cimcic_just7_find_guards_unconditional
+@[deprecated loeb_Just7_vs_Mirror (since := "2026-09-27")] alias just7_mirror_coop_unconditional := loeb_Just7_vs_Mirror
+@[deprecated loeb_Just7_vs_Just7 (since := "2026-09-27")] alias just7_self_coop_unconditional := loeb_Just7_vs_Just7
+@[deprecated loeb_Just7_vs_Just7_of_nec (since := "2026-09-27")] alias just7_self_coop := loeb_Just7_vs_Just7_of_nec
+@[deprecated loeb_Just7_vs_Just7_core_of_nec (since := "2026-09-27")] alias just7_self_cell_core := loeb_Just7_vs_Just7_core_of_nec
+@[deprecated loeb_Just7_vs_Just7_guard (since := "2026-09-27")] alias just7_finds_guard_vs_self_unconditional := loeb_Just7_vs_Just7_guard
+@[deprecated loeb_Just7_vs_Dupoc (since := "2026-09-27")] alias just7_dupoc_coop_unconditional := loeb_Just7_vs_Dupoc
+@[deprecated loeb_Just7_vs_Dupoc_of_nec (since := "2026-09-27")] alias just7_dupoc_coop := loeb_Just7_vs_Dupoc_of_nec
+@[deprecated loeb_Just7_vs_Dupoc_core_of_nec (since := "2026-09-27")] alias just7_dupoc_cell_core := loeb_Just7_vs_Dupoc_core_of_nec
+@[deprecated loeb_Just7_vs_Dupoc_guards (since := "2026-09-27")] alias just7_dupoc_find_guards_unconditional := loeb_Just7_vs_Dupoc_guards
+@[deprecated loeb_Cimcic_vs_Just7 (since := "2026-09-27")] alias cimcic_just7_coop_unconditional := loeb_Cimcic_vs_Just7
+@[deprecated loeb_Cimcic_vs_Just7_of_nec (since := "2026-09-27")] alias cimcic_just7_coop := loeb_Cimcic_vs_Just7_of_nec
+@[deprecated loeb_Cimcic_vs_Just7_core_of_nec (since := "2026-09-27")] alias cimcic_just7_cell_core := loeb_Cimcic_vs_Just7_core_of_nec
+@[deprecated loeb_Cimcic_vs_Just7_guards (since := "2026-09-27")] alias cimcic_just7_find_guards_unconditional := loeb_Cimcic_vs_Just7_guards
 
-alias loeb_Prudent_vs_Mirror := prudent_mirror_coop_unconditional
-alias loeb_Prudent_vs_Mirror_of_nec := prudent_mirror_coop
-alias loeb_Prudent_vs_Mirror_core_of_nec := prudent_mirror_cell_core
-alias loeb_Prudent_vs_Mirror_guards := prudent_finds_guards_vs_mirror_unconditional
-alias loeb_Prudent_vs_Mirror_guards_of_nec := prudent_finds_guards_vs_mirror
-alias loeb_PrudentT_vs_Mirror := prudentT_mirror_defect_unconditional
-alias loeb_PrudentT_vs_Mirror_of_nec := prudentT_mirror_defect
+@[deprecated loeb_Prudent_vs_Mirror (since := "2026-09-27")] alias prudent_mirror_coop_unconditional := loeb_Prudent_vs_Mirror
+@[deprecated loeb_Prudent_vs_Mirror_of_nec (since := "2026-09-27")] alias prudent_mirror_coop := loeb_Prudent_vs_Mirror_of_nec
+@[deprecated loeb_Prudent_vs_Mirror_core_of_nec (since := "2026-09-27")] alias prudent_mirror_cell_core := loeb_Prudent_vs_Mirror_core_of_nec
+@[deprecated loeb_Prudent_vs_Mirror_guards (since := "2026-09-27")] alias prudent_finds_guards_vs_mirror_unconditional := loeb_Prudent_vs_Mirror_guards
+@[deprecated loeb_Prudent_vs_Mirror_guards_of_nec (since := "2026-09-27")] alias prudent_finds_guards_vs_mirror := loeb_Prudent_vs_Mirror_guards_of_nec
+@[deprecated loeb_PrudentT_vs_Mirror (since := "2026-09-27")] alias prudentT_mirror_defect_unconditional := loeb_PrudentT_vs_Mirror
+@[deprecated loeb_PrudentT_vs_Mirror_of_nec (since := "2026-09-27")] alias prudentT_mirror_defect := loeb_PrudentT_vs_Mirror_of_nec
 
 /-! ### The flip cells on the engine codes (`Cells/FlipCells`, `Cells/DimcidFlips`): DIMCID's halves
 (`_core` = defection AND found guard), the found guards, the refuted guards -/
 
-alias loeb_DIMCID_vs_botCB := dimcid_vs_botCB_defects
-alias loeb_DIMCID_vs_botDB := dimcid_vs_botDB_defects
-alias loeb_DIMCID_vs_botMirror := dimcid_vs_botMirror_defects
-alias loeb_DIMCID_vs_Dupoc := dimcid_vs_dupocV_defects
-alias loeb_DIMCID_vs_botDupocBot := dimcid_vs_botDupocBot_defects
-alias loeb_DIMCID_vs_botDupoc := dimcid_vs_botDupocV_defects
-alias loeb_DIMCID_vs_Just7 := dimcid_vs_just7_defects
-alias loeb_DIMCID_vs_CupodTroll7 := dimcid_vs_troll7_defects
-alias loeb_DIMCID_vs_TitForTatBot_core := dimcid_vs_TFT_defects
-alias loeb_DIMCID_vs_GuardianBot_core := dimcid_vs_Guardian_defects
-alias loeb_DIMCID_vs_DBot_core := dimcid_vs_DBot_defects
-alias loeb_DIMCID_vs_EBot_core := dimcid_vs_EBot_defects
-alias loeb_DIMCID_vs_OBot_core := dimcid_vs_OBot_defects
-alias loeb_DIMCID_vs_DupocBot_core := dimcid_vs_DupocBot_defects
-alias loeb_DIMCID_vs_PrudentBot_core := dimcid_vs_PrudentBot_defects
-alias loeb_DIMCID_vs_CIMCIC_core := dimcid_vs_CIMCIC_defects
-alias loeb_DIMCID_vs_TitForTatBot_guard := dimcid_finds_guard_vs_TFT
-alias loeb_DIMCID_vs_GuardianBot_guard := dimcid_finds_guard_vs_Guardian
-alias loeb_DIMCID_vs_CupodTroll7_guard := dimcid_finds_guard_vs_troll7
-alias loeb_DIMCID_vs_DBot_guard := dimcid_finds_guard_vs_DBot
-alias loeb_DIMCID_vs_EBot_guard := dimcid_finds_guard_vs_EBot
-alias loeb_DIMCID_vs_OBot_guard := dimcid_finds_guard_vs_OBot
-alias loeb_DIMCID_vs_DupocBot_guard := dimcid_finds_guard_vs_DupocBot
-alias loeb_DIMCID_vs_Just7_guard := dimcid_finds_guard_vs_just7
-alias loeb_DIMCID_vs_PrudentBot_guard := dimcid_finds_guard_vs_PrudentBot
-alias loeb_DIMCID_vs_CIMCIC_guard := dimcid_finds_guard_vs_CIMCIC
-alias snd_DupocBot_vs_DIMCID_notFound := dupoc_guard_vs_DIMCID_not_found
-alias snd_CIMCIC_vs_DIMCID_notFound := cimcic_guard_vs_DIMCID_not_found
-alias snd_JustBot_vs_DIMCID_engine := just_engine_vs_DIMCID_defects
-alias snd_CupodTroll7_vs_DIMCID := troll7_vs_DIMCID
-alias loeb_WaryBot_vs_MirrorBot_core := wary_vs_mirror_core
-alias loeb_WaryBot_vs_MirrorBot_guard := wary_finds_guard_vs_Mirror
-alias loeb_WaryBot_vs_WaryBot_core := wary_vs_wary_core
-alias loeb_WaryBot_vs_WaryBot_guard := wary_finds_guard_vs_self
+@[deprecated loeb_DIMCID_vs_botCB (since := "2026-09-27")] alias dimcid_vs_botCB_defects := loeb_DIMCID_vs_botCB
+@[deprecated loeb_DIMCID_vs_botDB (since := "2026-09-27")] alias dimcid_vs_botDB_defects := loeb_DIMCID_vs_botDB
+@[deprecated loeb_DIMCID_vs_botMirror (since := "2026-09-27")] alias dimcid_vs_botMirror_defects := loeb_DIMCID_vs_botMirror
+@[deprecated loeb_DIMCID_vs_Dupoc (since := "2026-09-27")] alias dimcid_vs_dupocV_defects := loeb_DIMCID_vs_Dupoc
+@[deprecated loeb_DIMCID_vs_botDupocBot (since := "2026-09-27")] alias dimcid_vs_botDupocBot_defects := loeb_DIMCID_vs_botDupocBot
+@[deprecated loeb_DIMCID_vs_botDupoc (since := "2026-09-27")] alias dimcid_vs_botDupocV_defects := loeb_DIMCID_vs_botDupoc
+@[deprecated loeb_DIMCID_vs_Just7 (since := "2026-09-27")] alias dimcid_vs_just7_defects := loeb_DIMCID_vs_Just7
+@[deprecated loeb_DIMCID_vs_CupodTroll7 (since := "2026-09-27")] alias dimcid_vs_troll7_defects := loeb_DIMCID_vs_CupodTroll7
+@[deprecated loeb_DIMCID_vs_TitForTatBot_core (since := "2026-09-27")] alias dimcid_vs_TFT_defects := loeb_DIMCID_vs_TitForTatBot_core
+@[deprecated loeb_DIMCID_vs_GuardianBot_core (since := "2026-09-27")] alias dimcid_vs_Guardian_defects := loeb_DIMCID_vs_GuardianBot_core
+@[deprecated loeb_DIMCID_vs_DBot_core (since := "2026-09-27")] alias dimcid_vs_DBot_defects := loeb_DIMCID_vs_DBot_core
+@[deprecated loeb_DIMCID_vs_EBot_core (since := "2026-09-27")] alias dimcid_vs_EBot_defects := loeb_DIMCID_vs_EBot_core
+@[deprecated loeb_DIMCID_vs_OBot_core (since := "2026-09-27")] alias dimcid_vs_OBot_defects := loeb_DIMCID_vs_OBot_core
+@[deprecated loeb_DIMCID_vs_DupocBot_core (since := "2026-09-27")] alias dimcid_vs_DupocBot_defects := loeb_DIMCID_vs_DupocBot_core
+@[deprecated loeb_DIMCID_vs_PrudentBot_core (since := "2026-09-27")] alias dimcid_vs_PrudentBot_defects := loeb_DIMCID_vs_PrudentBot_core
+@[deprecated loeb_DIMCID_vs_CIMCIC_core (since := "2026-09-27")] alias dimcid_vs_CIMCIC_defects := loeb_DIMCID_vs_CIMCIC_core
+@[deprecated loeb_DIMCID_vs_TitForTatBot_guard (since := "2026-09-27")] alias dimcid_finds_guard_vs_TFT := loeb_DIMCID_vs_TitForTatBot_guard
+@[deprecated loeb_DIMCID_vs_GuardianBot_guard (since := "2026-09-27")] alias dimcid_finds_guard_vs_Guardian := loeb_DIMCID_vs_GuardianBot_guard
+@[deprecated loeb_DIMCID_vs_CupodTroll7_guard (since := "2026-09-27")] alias dimcid_finds_guard_vs_troll7 := loeb_DIMCID_vs_CupodTroll7_guard
+@[deprecated loeb_DIMCID_vs_DBot_guard (since := "2026-09-27")] alias dimcid_finds_guard_vs_DBot := loeb_DIMCID_vs_DBot_guard
+@[deprecated loeb_DIMCID_vs_EBot_guard (since := "2026-09-27")] alias dimcid_finds_guard_vs_EBot := loeb_DIMCID_vs_EBot_guard
+@[deprecated loeb_DIMCID_vs_OBot_guard (since := "2026-09-27")] alias dimcid_finds_guard_vs_OBot := loeb_DIMCID_vs_OBot_guard
+@[deprecated loeb_DIMCID_vs_DupocBot_guard (since := "2026-09-27")] alias dimcid_finds_guard_vs_DupocBot := loeb_DIMCID_vs_DupocBot_guard
+@[deprecated loeb_DIMCID_vs_Just7_guard (since := "2026-09-27")] alias dimcid_finds_guard_vs_just7 := loeb_DIMCID_vs_Just7_guard
+@[deprecated loeb_DIMCID_vs_PrudentBot_guard (since := "2026-09-27")] alias dimcid_finds_guard_vs_PrudentBot := loeb_DIMCID_vs_PrudentBot_guard
+@[deprecated loeb_DIMCID_vs_CIMCIC_guard (since := "2026-09-27")] alias dimcid_finds_guard_vs_CIMCIC := loeb_DIMCID_vs_CIMCIC_guard
+@[deprecated snd_DupocBot_vs_DIMCID_notFound (since := "2026-09-27")] alias dupoc_guard_vs_DIMCID_not_found := snd_DupocBot_vs_DIMCID_notFound
+@[deprecated snd_CIMCIC_vs_DIMCID_notFound (since := "2026-09-27")] alias cimcic_guard_vs_DIMCID_not_found := snd_CIMCIC_vs_DIMCID_notFound
+@[deprecated snd_JustBot_vs_DIMCID_engine (since := "2026-09-27")] alias just_engine_vs_DIMCID_defects := snd_JustBot_vs_DIMCID_engine
+@[deprecated snd_CupodTroll7_vs_DIMCID (since := "2026-09-27")] alias troll7_vs_DIMCID := snd_CupodTroll7_vs_DIMCID
+@[deprecated loeb_WaryBot_vs_MirrorBot_core (since := "2026-09-27")] alias wary_vs_mirror_core := loeb_WaryBot_vs_MirrorBot_core
+@[deprecated loeb_WaryBot_vs_MirrorBot_guard (since := "2026-09-27")] alias wary_finds_guard_vs_Mirror := loeb_WaryBot_vs_MirrorBot_guard
+@[deprecated loeb_WaryBot_vs_WaryBot_core (since := "2026-09-27")] alias wary_vs_wary_core := loeb_WaryBot_vs_WaryBot_core
+@[deprecated loeb_WaryBot_vs_WaryBot_guard (since := "2026-09-27")] alias wary_finds_guard_vs_self := loeb_WaryBot_vs_WaryBot_guard
 
 /-! ### The `k̂`-chain and the probe sub-plays (`Cells/KhatCells`, `PositiveCells`, `SoundnessCells`) -/
 
-alias khat_CupodTrollBot_vs_CupodBot_guard := troll_finds_guard_vs_cupod
-alias pos_JustBot_vs_botCB := just_botCB_found
-alias pos_CupodBot_vs_botDB := cupod_vs_botDB_found
-alias pos_WaryBot_vs_botDB := wary_vs_botDB_found
-alias pos_CIMCIC_vs_botCB := cimcic_vs_botCB_found
-alias pos_GuardianBot_vs_botDB := guardian_vs_botDB_eventually
-alias snd_CIMCIC_vs_botDB := cimcic_vs_botDB
-alias snd_GuardianBot_vs_botCB := guardian_vs_botCB
-alias snd_CupodBot_vs_botCB := cupod_vs_botCB
-alias snd_DupocBot_vs_botDB := dupoc_vs_botDB
-alias snd_CupodTrollBot_vs_botCB := ctb_vs_botCB
-alias snd_CupodTrollBot_vs_botDB := ctb_vs_botDB
-alias snd_WaryBot_vs_botCB := wary_vs_botCB
-alias snd_PrudentBot_vs_botDB := prudent_vs_botDB
-alias snd_PrudentBot_vs_botCB := prudent_vs_botCB
-alias snd_botDupocBot_vs_botDB := botDupoc_vs_botDB
+@[deprecated khat_CupodTrollBot_vs_CupodBot_guard (since := "2026-09-27")] alias troll_finds_guard_vs_cupod := khat_CupodTrollBot_vs_CupodBot_guard
+@[deprecated pos_JustBot_vs_botCB (since := "2026-09-27")] alias just_botCB_found := pos_JustBot_vs_botCB
+@[deprecated pos_CupodBot_vs_botDB (since := "2026-09-27")] alias cupod_vs_botDB_found := pos_CupodBot_vs_botDB
+@[deprecated pos_WaryBot_vs_botDB (since := "2026-09-27")] alias wary_vs_botDB_found := pos_WaryBot_vs_botDB
+@[deprecated pos_CIMCIC_vs_botCB (since := "2026-09-27")] alias cimcic_vs_botCB_found := pos_CIMCIC_vs_botCB
+@[deprecated pos_GuardianBot_vs_botDB (since := "2026-09-27")] alias guardian_vs_botDB_eventually := pos_GuardianBot_vs_botDB
+@[deprecated snd_CIMCIC_vs_botDB (since := "2026-09-27")] alias cimcic_vs_botDB := snd_CIMCIC_vs_botDB
+@[deprecated snd_GuardianBot_vs_botCB (since := "2026-09-27")] alias guardian_vs_botCB := snd_GuardianBot_vs_botCB
+@[deprecated snd_CupodBot_vs_botCB (since := "2026-09-27")] alias cupod_vs_botCB := snd_CupodBot_vs_botCB
+@[deprecated snd_DupocBot_vs_botDB (since := "2026-09-27")] alias dupoc_vs_botDB := snd_DupocBot_vs_botDB
+@[deprecated snd_CupodTrollBot_vs_botCB (since := "2026-09-27")] alias ctb_vs_botCB := snd_CupodTrollBot_vs_botCB
+@[deprecated snd_CupodTrollBot_vs_botDB (since := "2026-09-27")] alias ctb_vs_botDB := snd_CupodTrollBot_vs_botDB
+@[deprecated snd_WaryBot_vs_botCB (since := "2026-09-27")] alias wary_vs_botCB := snd_WaryBot_vs_botCB
+@[deprecated snd_PrudentBot_vs_botDB (since := "2026-09-27")] alias prudent_vs_botDB := snd_PrudentBot_vs_botDB
+@[deprecated snd_PrudentBot_vs_botCB (since := "2026-09-27")] alias prudent_vs_botCB := snd_PrudentBot_vs_botCB
+@[deprecated snd_botDupocBot_vs_botDB (since := "2026-09-27")] alias botDupoc_vs_botDB := snd_botDupocBot_vs_botDB
 
 /-! ### Method prefixes that did not match the proof method (the six large-`k` SND-class cells that need
 a positive sub-fact are POS) -/
 
-alias pos_CupodBot_vs_DBot := snd_CupodBot_vs_DBot
-alias pos_CupodBot_vs_EBot := snd_CupodBot_vs_EBot
-alias pos_WaryBot_vs_DBot := snd_WaryBot_vs_DBot
-alias pos_WaryBot_vs_EBot := snd_WaryBot_vs_EBot
-alias pos_GuardianBot_vs_EBot := snd_GuardianBot_vs_EBot
-alias pos_GuardianBot_vs_OBot := snd_GuardianBot_vs_OBot
+@[deprecated pos_CupodBot_vs_DBot (since := "2026-09-27")] alias snd_CupodBot_vs_DBot := pos_CupodBot_vs_DBot
+@[deprecated pos_CupodBot_vs_EBot (since := "2026-09-27")] alias snd_CupodBot_vs_EBot := pos_CupodBot_vs_EBot
+@[deprecated pos_WaryBot_vs_DBot (since := "2026-09-27")] alias snd_WaryBot_vs_DBot := pos_WaryBot_vs_DBot
+@[deprecated pos_WaryBot_vs_EBot (since := "2026-09-27")] alias snd_WaryBot_vs_EBot := pos_WaryBot_vs_EBot
+@[deprecated pos_GuardianBot_vs_EBot (since := "2026-09-27")] alias snd_GuardianBot_vs_EBot := pos_GuardianBot_vs_EBot
+@[deprecated pos_GuardianBot_vs_OBot (since := "2026-09-27")] alias snd_GuardianBot_vs_OBot := pos_GuardianBot_vs_OBot
 
 /-! ### Helper renames -/
 
-alias desc_dimcid := hopp_self
-alias descT_dimcid := hopp'_self
-alias desc_mirror := hopp_mirror
-alias descT_mirror := hopp'_mirror
-alias desc_cupod := hopp_cupod
-alias descT_cupod := hopp'_cupod
-alias desc_dupoc := hopp_dupoc
-alias descT_dupoc := hopp'_dupoc
-alias desc_cimcic := hopp_cimcic
-alias descT_cimcic := hopp'_cimcic
-alias desc_just7 := hopp_just7
-alias descT_just7 := hopp'_just7
-alias desc_troll7 := hopp_troll7
-alias descT_troll7 := hopp'_troll7
-alias desc_SV := hme_SV
-alias descT_SV := hme_SVT
-alias desc_botSV := hme_botSV
-alias descT_botSV := hme_botSVT
-alias desc_botDupoc := hme_bot
-alias descT_botDupoc := hme'_bot
-alias desc_WT := hme_WT
-alias hX_dimcid := hX_self
-alias hU_dimcid := hU_self
-alias hW_dimcid := hW_self
-alias hX_botDupoc := hX_bot
-alias hU_botDupoc := hU_bot
-alias hW_botDupoc := hW_bot
-alias pJJ_guards_V := pJJ_guard_V
-alias pJD_guards_V := pJD_boxes_V
-alias dimcid_cupod_finds_guards := dimcid_cupod_find_guards
-alias dimcid_cupod_finds_guards_unconditional := dimcid_cupod_find_guards_unconditional
-alias cimcic_dupoc_finds_guards := cimcic_dupoc_find_guards
-alias cimcic_dupoc_finds_guards_unconditional := cimcic_dupoc_find_guards_unconditional
-alias just7_dupoc_finds_guards_unconditional := just7_dupoc_find_guards_unconditional
-alias cimcic_just7_finds_guards_unconditional := cimcic_just7_find_guards_unconditional
-alias pcode_DupocBot_search := pcode_DupocBot'
-alias pcode_PrudentBot_search := pcode_PrudentBot'
-alias pcode_CIMCIC_search := pcode_CIMCIC'
-alias pcode_DIMCID_search := pcode_DIMCID'
-alias mirror_copies2_V := mirror_copies_V
+@[deprecated desc_dimcid (since := "2026-09-27")] alias hopp_self := desc_dimcid
+@[deprecated descT_dimcid (since := "2026-09-27")] alias hopp'_self := descT_dimcid
+@[deprecated desc_mirror (since := "2026-09-27")] alias hopp_mirror := desc_mirror
+@[deprecated descT_mirror (since := "2026-09-27")] alias hopp'_mirror := descT_mirror
+@[deprecated desc_cupod (since := "2026-09-27")] alias hopp_cupod := desc_cupod
+@[deprecated descT_cupod (since := "2026-09-27")] alias hopp'_cupod := descT_cupod
+@[deprecated desc_dupoc (since := "2026-09-27")] alias hopp_dupoc := desc_dupoc
+@[deprecated descT_dupoc (since := "2026-09-27")] alias hopp'_dupoc := descT_dupoc
+@[deprecated desc_cimcic (since := "2026-09-27")] alias hopp_cimcic := desc_cimcic
+@[deprecated descT_cimcic (since := "2026-09-27")] alias hopp'_cimcic := descT_cimcic
+@[deprecated desc_just7 (since := "2026-09-27")] alias hopp_just7 := desc_just7
+@[deprecated descT_just7 (since := "2026-09-27")] alias hopp'_just7 := descT_just7
+@[deprecated desc_troll7 (since := "2026-09-27")] alias hopp_troll7 := desc_troll7
+@[deprecated descT_troll7 (since := "2026-09-27")] alias hopp'_troll7 := descT_troll7
+@[deprecated desc_SV (since := "2026-09-27")] alias hme_SV := desc_SV
+@[deprecated descT_SV (since := "2026-09-27")] alias hme_SVT := descT_SV
+@[deprecated desc_botSV (since := "2026-09-27")] alias hme_botSV := desc_botSV
+@[deprecated descT_botSV (since := "2026-09-27")] alias hme_botSVT := descT_botSV
+@[deprecated desc_botDupoc (since := "2026-09-27")] alias hme_bot := desc_botDupoc
+@[deprecated descT_botDupoc (since := "2026-09-27")] alias hme'_bot := descT_botDupoc
+@[deprecated desc_WT (since := "2026-09-27")] alias hme_WT := desc_WT
+@[deprecated hX_dimcid (since := "2026-09-27")] alias hX_self := hX_dimcid
+@[deprecated hU_dimcid (since := "2026-09-27")] alias hU_self := hU_dimcid
+@[deprecated hW_dimcid (since := "2026-09-27")] alias hW_self := hW_dimcid
+@[deprecated hX_botDupoc (since := "2026-09-27")] alias hX_bot := hX_botDupoc
+@[deprecated hU_botDupoc (since := "2026-09-27")] alias hU_bot := hU_botDupoc
+@[deprecated hW_botDupoc (since := "2026-09-27")] alias hW_bot := hW_botDupoc
+@[deprecated pJJ_guards_V (since := "2026-09-27")] alias pJJ_guard_V := pJJ_guards_V
+@[deprecated pJD_guards_V (since := "2026-09-27")] alias pJD_boxes_V := pJD_guards_V
+alias dimcid_cupod_finds_guards := loeb_Dimcid_vs_Cupod_guards_of_nec   -- secondary spelling of the 2026-09-24 layer
+alias dimcid_cupod_finds_guards_unconditional := loeb_Dimcid_vs_Cupod_guards   -- secondary spelling of the 2026-09-24 layer
+alias cimcic_dupoc_finds_guards := loeb_Cimcic_vs_Dupoc_guards_of_nec   -- secondary spelling of the 2026-09-24 layer
+alias cimcic_dupoc_finds_guards_unconditional := loeb_Cimcic_vs_Dupoc_guards   -- secondary spelling of the 2026-09-24 layer
+alias just7_dupoc_finds_guards_unconditional := loeb_Just7_vs_Dupoc_guards   -- secondary spelling of the 2026-09-24 layer
+alias cimcic_just7_finds_guards_unconditional := loeb_Cimcic_vs_Just7_guards   -- secondary spelling of the 2026-09-24 layer
+@[deprecated pcode_DupocBot_search (since := "2026-09-27")] alias pcode_DupocBot' := pcode_DupocBot_search
+@[deprecated pcode_PrudentBot_search (since := "2026-09-27")] alias pcode_PrudentBot' := pcode_PrudentBot_search
+@[deprecated pcode_CIMCIC_search (since := "2026-09-27")] alias pcode_CIMCIC' := pcode_CIMCIC_search
+@[deprecated pcode_DIMCID_search (since := "2026-09-27")] alias pcode_DIMCID' := pcode_DIMCID_search
+@[deprecated mirror_copies2_V (since := "2026-09-27")] alias mirror_copies_V := mirror_copies2_V
+
+/-! ### The floor modules (`Cells/FloorVerdicts`, `Cells/FloorDichotomy`, written after the alias layer): the four
+names that did not follow the scheme -/
+
+@[deprecated pos_DupocBot_vs_botCB (since := "2026-09-27")] alias dupoc_vs_botCB_found := pos_DupocBot_vs_botCB
+@[deprecated pos_botDupocBot_vs_botCB (since := "2026-09-27")] alias botDupoc_vs_botCB_found := pos_botDupocBot_vs_botCB
+@[deprecated snd_JustBot_vs_botDB (since := "2026-09-27")] alias just_vs_botDB := snd_JustBot_vs_botDB
+@[deprecated dich_CupodBot_vs_PrudentBot_core (since := "2026-09-27")] alias dich_CupodBot_PrudentBot_core := dich_CupodBot_vs_PrudentBot_core
 
 end ArithS

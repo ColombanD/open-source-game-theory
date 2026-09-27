@@ -52,8 +52,8 @@ What IS unconditional, and proved here — the machine-checked shape of each res
 
 Naming: the method prefix `floor` (added to the scheme of `Cells/Names.lean`) marks the residue of a genuine
 floor cell; `L`/`R` are the engine constructors (every statement is on `pcode (X k)`); suffixes `_left`/`_right`
-= the settled play of that player, `_true` = the floor guard's truth in ℕ. New sub-plays: `dupoc_vs_botCB_found`,
-`botDupoc_vs_botCB_found` (the `k̂`-chain lemmas of `Cells/KhatCells` at ℕ), `just_vs_botDB`; the code
+= the settled play of that player, `_true` = the floor guard's truth in ℕ. New sub-plays: `pos_DupocBot_vs_botCB`,
+`pos_botDupocBot_vs_botCB` (the `k̂`-chain lemmas of `Cells/KhatCells` at ℕ), `snd_JustBot_vs_botDB`; the code
 inequalities `pcode_DupocBot/JustBot/CIMCIC_ne_CupodBot` (CupodTroll's `.eq` guard is false against them).
 
 Conventions: every threshold EXISTENTIAL; `simp` never sees a closed quote; statements pin the fuel to the
@@ -76,7 +76,7 @@ section codes
 lemma pConst_zero_ne_one : pConst (0 : ℕ) ≠ pConst 1 := fun h ↦ absurd (pConst_inj h) (by decide)
 
 lemma pcode_DupocBot_ne_CupodBot (k : ℕ) : pcode (DupocBot k) ≠ pcode (CupodBot k) := by
-  rw [pcode_DupocBot', pcode_CupodBot]
+  rw [pcode_DupocBot_search, pcode_CupodBot]
   intro e
   exact pConst_zero_ne_one (pSearch_inj e).2.2.1
 
@@ -86,7 +86,7 @@ lemma pcode_JustBot_ne_CupodBot (k : ℕ) : pcode (JustBot k) ≠ pcode (CupodBo
   exact pConst_zero_ne_one (pSearch_inj e).2.2.1
 
 lemma pcode_CIMCIC_ne_CupodBot (k : ℕ) : pcode (CIMCIC k) ≠ pcode (CupodBot k) := by
-  rw [pcode_CIMCIC', pcode_CupodBot]
+  rw [pcode_CIMCIC_search, pcode_CupodBot]
   intro e
   exact pConst_zero_ne_one (pSearch_inj e).2.2.1
 
@@ -102,7 +102,7 @@ section subplays
 
 /-- Dupoc cooperates with `.bot CooperateBot` for all large `k` (its guard is a true closed atom, found:
 `dupoc_botCB_V` at ℕ). -/
-theorem dupoc_vs_botCB_found :
+theorem pos_DupocBot_vs_botCB :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k → EvalGraph 2 (pcode (DupocBot k)) (pBot (pConst 0)) (pcode (DupocBot k)) 0 := by
   obtain ⟨kHat, h⟩ := dupoc_botCB_V
   refine ⟨kHat, fun k hk ↦ ?_⟩
@@ -111,7 +111,7 @@ theorem dupoc_vs_botCB_found :
 
 /-- The frozen snapshot `.bot (DupocBot k)` cooperates with `.bot CooperateBot` for all large `k`
 (`botDupoc_botCB_V` at ℕ). -/
-theorem botDupoc_vs_botCB_found :
+theorem pos_botDupocBot_vs_botCB :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 3 (pBot (pcode (DupocBot k))) (pBot (pConst 0)) (pBot (pcode (DupocBot k))) 0 := by
   obtain ⟨kHat, h⟩ := botDupoc_botCB_V
@@ -121,7 +121,7 @@ theorem botDupoc_vs_botCB_found :
 
 /-- Just defects against `.bot DefectBot` at every `k` (its guard "`.bot DefectBot` plays C against the
 snapshot" is false). -/
-theorem just_vs_botDB (k : ℕ) :
+theorem snd_JustBot_vs_botDB (k : ℕ) :
     EvalGraph 2 (pcode (JustBot k)) (pBot (pConst 1)) (pcode (JustBot k)) 1 := by
   have := just_D_of_probe k (opp := .bot DefectBot) proper_botDB (N := 2)
     (by rw [pcode_botDB]; exact bot_const_play 0 _ _ _)
@@ -138,7 +138,7 @@ section dupoc
 does not punish it. -/
 theorem floor_DupocBot_vs_DBot_right (k : ℕ) :
     EvalGraph 4 (pcode DBot) (pcode (DupocBot k)) (pcode DBot) (actCode .C) :=
-  dbot_C_of_probe_D (dupoc_vs_botDB k)
+  dbot_C_of_probe_D (snd_DupocBot_vs_botDB k)
 
 /-- **Dupoc's guard against DBot is TRUE in ℕ** at every `k`: the residue of the cell is its provability within
 `k`, i.e. a proof of DBot's run, which passes through Dupoc's else-branch against `.bot DefectBot`
@@ -154,8 +154,8 @@ engine `(D, C)` by the floor `no_provable_EBot_C_tail`): Dupoc defects against `
 and cooperates with `.bot CooperateBot` (guard found). -/
 theorem floor_DupocBot_vs_EBot_right :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k → EvalGraph 5 (pcode EBot) (pcode (DupocBot k)) (pcode EBot) (actCode .C) := by
-  obtain ⟨k₀, h⟩ := dupoc_vs_botCB_found
-  exact ⟨k₀, fun k hk ↦ ebot_C_of_probes (dupoc_vs_botDB k) (h k hk)⟩
+  obtain ⟨k₀, h⟩ := pos_DupocBot_vs_botCB
+  exact ⟨k₀, fun k hk ↦ ebot_C_of_probes (snd_DupocBot_vs_botDB k) (h k hk)⟩
 
 /-- **Dupoc's guard against EBot is TRUE in ℕ** for all large `k` (residue: EBot's run through Dupoc's
 else-branch against `.bot DefectBot`). -/
@@ -194,7 +194,7 @@ section just
 `(D, C)` by the floor `probeFirst_tail_botOpp`): Just defects against `.bot DefectBot`. -/
 theorem floor_JustBot_vs_DBot_right (k : ℕ) :
     EvalGraph 4 (pcode DBot) (pcode (JustBot k)) (pcode DBot) (actCode .C) :=
-  dbot_C_of_probe_D (just_vs_botDB k)
+  dbot_C_of_probe_D (snd_JustBot_vs_botDB k)
 
 /-- **Just's guard against DBot is TRUE in ℕ** at every `k`: DBot cooperates with the snapshot
 `.bot (DupocBot k)`, which defects against `.bot DefectBot` (residue: that else-branch). -/
@@ -202,26 +202,26 @@ theorem floor_JustBot_vs_DBot_true (k : ℕ) : ℕ↓[LAct] ⊧ trAt (JustBot k)
   rw [← trAt_subst (JustBot k) DBot (proper_JustBot k) sfp_DBot.1 (phiJ k) rfl]
   show ℕ↓[LAct] ⊧ trAt (JustBot k) DBot (.plays DBot (.bot (DupocBot k)) .C)
   rw [models_trAt_plays _ _ _ _ _ sfp_DBot.1 (proper_bot _), pcode_bot]
-  exact ⟨5, dbot_C_of_probe_D (botDupoc_vs_botDB k)⟩
+  exact ⟨5, dbot_C_of_probe_D (snd_botDupocBot_vs_botDB k)⟩
 
 /-- **EBot cooperates with `JustBot k` for all large `k`** (the settled half of `outcome_JustBot_vs_EBot`,
 engine `(D, C)` by the floor `probeFirst_tail_botOpp`): Just defects against `.bot DefectBot` and cooperates
 with `.bot CooperateBot` (found). -/
 theorem floor_JustBot_vs_EBot_right :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k → EvalGraph 5 (pcode EBot) (pcode (JustBot k)) (pcode EBot) (actCode .C) := by
-  obtain ⟨k₀, h⟩ := just_botCB_found
-  exact ⟨k₀, fun k hk ↦ ebot_C_of_probes (just_vs_botDB k) (h k hk)⟩
+  obtain ⟨k₀, h⟩ := pos_JustBot_vs_botCB
+  exact ⟨k₀, fun k hk ↦ ebot_C_of_probes (snd_JustBot_vs_botDB k) (h k hk)⟩
 
 /-- **Just's guard against EBot is TRUE in ℕ** for all large `k`: EBot cooperates with the snapshot
 `.bot (DupocBot k)` (defects against `.bot DefectBot`, cooperates with `.bot CooperateBot`). -/
 theorem floor_JustBot_vs_EBot_true :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k → ℕ↓[LAct] ⊧ trAt (JustBot k) EBot (phiJ k) := by
-  obtain ⟨k₀, h⟩ := botDupoc_vs_botCB_found
+  obtain ⟨k₀, h⟩ := pos_botDupocBot_vs_botCB
   refine ⟨k₀, fun k hk ↦ ?_⟩
   rw [← trAt_subst (JustBot k) EBot (proper_JustBot k) sfp_EBot.1 (phiJ k) rfl]
   show ℕ↓[LAct] ⊧ trAt (JustBot k) EBot (.plays EBot (.bot (DupocBot k)) .C)
   rw [models_trAt_plays _ _ _ _ _ sfp_EBot.1 (proper_bot _), pcode_bot]
-  exact ⟨6, ebot_C_of_probes (botDupoc_vs_botDB k) (h k hk)⟩
+  exact ⟨6, ebot_C_of_probes (snd_botDupocBot_vs_botDB k) (h k hk)⟩
 
 /-- **CupodTroll cooperates with `JustBot k` at every `k`** (the settled half of
 `outcome_JustBot_vs_CupodTrollBot`, engine `(D, C)` by the floor `no_provable_searcherElse_tail`). -/
@@ -265,7 +265,7 @@ theorem floor_CIMCIC_vs_CupodTrollBot_true (k : ℕ) :
 there. -/
 theorem floor_CIMCIC_vs_DBot_right (k : ℕ) :
     EvalGraph 4 (pcode DBot) (pcode (CIMCIC k)) (pcode DBot) (actCode .C) :=
-  dbot_C_of_probe_D (cimcic_vs_botDB k)
+  dbot_C_of_probe_D (snd_CIMCIC_vs_botDB k)
 
 /-- **CIMCIC's guard against DBot is TRUE in ℕ** at every `k` (residue: DBot's run through CIMCIC's
 else-branch against `.bot DefectBot` — the self-refuting guard's non-provability, a bounded-consistency
@@ -281,8 +281,8 @@ engine `(D, C)`): CIMCIC defects against `.bot DefectBot` (self-refuting guard) 
 `.bot CooperateBot` (found). -/
 theorem floor_CIMCIC_vs_EBot_right :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k → EvalGraph 5 (pcode EBot) (pcode (CIMCIC k)) (pcode EBot) (actCode .C) := by
-  obtain ⟨k₀, h⟩ := cimcic_vs_botCB_found
-  exact ⟨k₀, fun k hk ↦ ebot_C_of_probes (cimcic_vs_botDB k) (h k hk)⟩
+  obtain ⟨k₀, h⟩ := pos_CIMCIC_vs_botCB
+  exact ⟨k₀, fun k hk ↦ ebot_C_of_probes (snd_CIMCIC_vs_botDB k) (h k hk)⟩
 
 /-- **CIMCIC's guard against EBot is TRUE in ℕ** for all large `k`. -/
 theorem floor_CIMCIC_vs_EBot_true :
@@ -306,7 +306,7 @@ with `.bot CooperateBot` (guard found), so Guardian's guard is FALSE — an SND 
 theorem floor_GuardianBot_vs_CIMCIC_left :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 2 (pcode (GuardianBot k)) (pcode (CIMCIC k)) (pcode (GuardianBot k)) (actCode .C) := by
-  obtain ⟨k₀, h⟩ := cimcic_vs_botCB_found
+  obtain ⟨k₀, h⟩ := pos_CIMCIC_vs_botCB
   exact ⟨k₀, fun k hk ↦ guardian_C_of_probe k (proper_CIMCIC k) (h k hk)⟩
 
 /-- **CIMCIC's guard against Guardian is TRUE in ℕ** for all large `k` (residue: Guardian's run through its
@@ -327,7 +327,7 @@ with `.bot CooperateBot` (found), so Guardian's guard is FALSE. -/
 theorem floor_GuardianBot_vs_DupocBot_left :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 2 (pcode (GuardianBot k)) (pcode (DupocBot k)) (pcode (GuardianBot k)) (actCode .C) := by
-  obtain ⟨k₀, h⟩ := dupoc_vs_botCB_found
+  obtain ⟨k₀, h⟩ := pos_DupocBot_vs_botCB
   exact ⟨k₀, fun k hk ↦ guardian_C_of_probe k (proper_DupocBot k) (h k hk)⟩
 
 /-- **Dupoc's guard against Guardian is TRUE in ℕ** for all large `k`. -/
@@ -346,14 +346,14 @@ Just cooperates with `.bot CooperateBot` (found), so Guardian's guard is FALSE. 
 theorem floor_GuardianBot_vs_JustBot_left :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 2 (pcode (GuardianBot k)) (pcode (JustBot k)) (pcode (GuardianBot k)) (actCode .C) := by
-  obtain ⟨k₀, h⟩ := just_botCB_found
+  obtain ⟨k₀, h⟩ := pos_JustBot_vs_botCB
   exact ⟨k₀, fun k hk ↦ guardian_C_of_probe k (proper_JustBot k) (h k hk)⟩
 
 /-- **Just's guard against Guardian is TRUE in ℕ** for all large `k`: Guardian cooperates with the snapshot
 `.bot (DupocBot k)` (which cooperates with `.bot CooperateBot`, found). -/
 theorem floor_GuardianBot_vs_JustBot_true :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k → ℕ↓[LAct] ⊧ trAt (JustBot k) (GuardianBot k) (phiJ k) := by
-  obtain ⟨k₀, h⟩ := botDupoc_vs_botCB_found
+  obtain ⟨k₀, h⟩ := pos_botDupocBot_vs_botCB
   refine ⟨k₀, fun k hk ↦ ?_⟩
   rw [← trAt_subst (JustBot k) (GuardianBot k) (proper_JustBot k) (proper_GuardianBot k) (phiJ k) rfl]
   show ℕ↓[LAct] ⊧ trAt (JustBot k) (GuardianBot k) (.plays (GuardianBot k) (.bot (DupocBot k)) .C)
@@ -372,7 +372,7 @@ theorem floor_GuardianBot_vs_PrudentBot_true (k : ℕ) :
   rw [← trAt_subst (GuardianBot k) (PrudentBot k) (proper_GuardianBot k) (proper_PrudentBot k) phiG rfl]
   show ℕ↓[LAct] ⊧ trAt (GuardianBot k) (PrudentBot k) (.plays (PrudentBot k) (.bot CooperateBot) .D)
   rw [models_trAt_plays _ _ _ _ _ (proper_PrudentBot k) proper_botCB, pcode_botCB]
-  exact ⟨3, prudent_vs_botCB k⟩
+  exact ⟨3, snd_PrudentBot_vs_botCB k⟩
 
 end guardian
 
@@ -385,8 +385,8 @@ engine `(C, D)` by the floor `no_provable_OBot_D_tail`): Cupod cooperates with `
 false) but defects against `.bot DefectBot` (guard found) — the opportunist OBot detects. -/
 theorem floor_CupodBot_vs_OBot_right :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k → EvalGraph 5 (pcode OBot) (pcode (CupodBot k)) (pcode OBot) (actCode .D) := by
-  obtain ⟨k₀, h⟩ := cupod_vs_botDB_found
-  exact ⟨k₀, fun k hk ↦ obot_D_of_probes (cupod_vs_botCB k) (h k hk)⟩
+  obtain ⟨k₀, h⟩ := pos_CupodBot_vs_botDB
+  exact ⟨k₀, fun k hk ↦ obot_D_of_probes (snd_CupodBot_vs_botCB k) (h k hk)⟩
 
 /-- **Cupod's guard against OBot is TRUE in ℕ** for all large `k` (residue: OBot's run through Cupod's
 else-branch against `.bot CooperateBot`). -/
@@ -415,7 +415,7 @@ theorem floor_PrudentBot_vs_DupocBot_true (k : ℕ) :
   rw [← trAt_subst (PrudentBot k) (DupocBot k) (proper_PrudentBot k) (proper_DupocBot k) phiPi rfl]
   show ℕ↓[LAct] ⊧ trAt (PrudentBot k) (DupocBot k) (.plays (DupocBot k) (.bot DefectBot) .D)
   rw [models_trAt_plays _ _ _ _ _ (proper_DupocBot k) proper_botDB, pcode_botDB]
-  exact ⟨2, dupoc_vs_botDB k⟩
+  exact ⟨2, snd_DupocBot_vs_botDB k⟩
 
 /-- **Prudent's prudence guard against `PrudentBot k` is TRUE in ℕ** at every `k`
 (`outcome_PrudentBot_vs_PrudentBot`, engine `(D, D)` by the floor `no_provable_prudence_self_tail`). -/
@@ -424,7 +424,7 @@ theorem floor_PrudentBot_vs_PrudentBot_true (k : ℕ) :
   rw [← trAt_subst (PrudentBot k) (PrudentBot k) (proper_PrudentBot k) (proper_PrudentBot k) phiPi rfl]
   show ℕ↓[LAct] ⊧ trAt (PrudentBot k) (PrudentBot k) (.plays (PrudentBot k) (.bot DefectBot) .D)
   rw [models_trAt_plays _ _ _ _ _ (proper_PrudentBot k) proper_botDB, pcode_botDB]
-  exact ⟨2, prudent_vs_botDB k⟩
+  exact ⟨2, snd_PrudentBot_vs_botDB k⟩
 
 /-- **Prudent's prudence guard against `JustBot k` is TRUE in ℕ** at every `k` (`outcome_JustBot_vs_PrudentBot`,
 engine `(D, D)` by the floor `no_provable_botSearcherElse_tail`). -/
@@ -433,7 +433,7 @@ theorem floor_JustBot_vs_PrudentBot_true (k : ℕ) :
   rw [← trAt_subst (PrudentBot k) (JustBot k) (proper_PrudentBot k) (proper_JustBot k) phiPi rfl]
   show ℕ↓[LAct] ⊧ trAt (PrudentBot k) (JustBot k) (.plays (JustBot k) (.bot DefectBot) .D)
   rw [models_trAt_plays _ _ _ _ _ (proper_JustBot k) proper_botDB, pcode_botDB]
-  exact ⟨2, just_vs_botDB k⟩
+  exact ⟨2, snd_JustBot_vs_botDB k⟩
 
 /-- **Prudent's prudence guard against `CIMCIC k` is TRUE in ℕ** at every `k` (`llm_outcome_CIMCIC_vs_PrudentBot`,
 engine `(D, D)` by the floor `cimcic_pb_prudence_unprovable_tail`): CIMCIC's guard against `.bot DefectBot`
@@ -443,7 +443,7 @@ theorem floor_CIMCIC_vs_PrudentBot_true (k : ℕ) :
   rw [← trAt_subst (PrudentBot k) (CIMCIC k) (proper_PrudentBot k) (proper_CIMCIC k) phiPi rfl]
   show ℕ↓[LAct] ⊧ trAt (PrudentBot k) (CIMCIC k) (.plays (CIMCIC k) (.bot DefectBot) .D)
   rw [models_trAt_plays _ _ _ _ _ (proper_CIMCIC k) proper_botDB, pcode_botDB]
-  exact ⟨2, cimcic_vs_botDB k⟩
+  exact ⟨2, snd_CIMCIC_vs_botDB k⟩
 
 end prudence
 

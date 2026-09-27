@@ -41,10 +41,10 @@ slack `S₀ = 14 + KP` supplies it inside the Löb premise.
    Mirror copies at fuel 4. "Prudence" in `S'` is thus neither a `SND` soundness fact nor a separate
    Σ₁-completeness/instantiation certificate: it is the truth of a closed Σ₁ sentence in every model
    (`mirror_bot_defect_V`, fuel 3), carried by the family (`loebSound_pPM`).
-6. **The cells at ℕ**: `family_found pPM` then the eliminations — `prudent_mirror_coop` (conditional)
-   and **`prudent_mirror_coop_unconditional`**: for all large `k`, `EvalGraph 3 (Prudent k) Mirror
+6. **The cells at ℕ**: `family_found pPM` then the eliminations — `loeb_Prudent_vs_Mirror_of_nec` (conditional)
+   and **`loeb_Prudent_vs_Mirror`**: for all large `k`, `EvalGraph 3 (Prudent k) Mirror
    (Prudent k) 0 ∧ EvalGraph 4 Mirror (Prudent k) Mirror 0` — the `(C, C)` cell; the transposed
-   searcher's `(D, D)` twin `prudentT_mirror_defect_unconditional`; the box forms.
+   searcher's `(D, D)` twin `loeb_PrudentT_vs_Mirror`; the box forms.
 
 Conventions (`HANDOVER_ARITHMETIZED_S.md` §5–6): thresholds and constants are named `ℕ`-constants
 or existentials and NEVER evaluated (`KP`, `innerP2`, `innerT2` are irreducible; `simp` never sees a
@@ -507,7 +507,7 @@ theorem eval_qPM_iff_V {k : V} (hk : (KP : V) ≤ k) :
   unfold qPM tmplP1 phiP1
   rw [eval_qT_iff, eval_tmpl_plays_opp_self_V]
   simp only [Matrix.cons_val, actCode, Nat.cast_zero]
-  rw [val_TP_V hk, relabel_val_uP_wP_V hk, hopp_mirror k]
+  rw [val_TP_V hk, relabel_val_uP_wP_V hk, desc_mirror k]
 
 /-- `qPP(k)` holds in `stdActV V` iff Mirror plays D against `.bot DefectBot` (`pBot (pConst 1)`). -/
 theorem eval_qPP_iff_V (k : V) :
@@ -517,7 +517,7 @@ theorem eval_qPP_iff_V (k : V) :
   rw [eval_qT_iff, eval_tmpl_plays_opp_closed_V _ (by intro h; cases h) (by intro h; cases h)]
   simp only [Matrix.cons_val, actCode, Nat.cast_one, pcode_bot, pcode_const, PD.Bots.DefectBot, cast_pBot,
     cast_pConst]
-  rw [hopp_mirror k]
+  rw [desc_mirror k]
 
 /-- `qPMT(k)` holds in `stdActV V` iff Mirror plays D against `PrudentTV k`. -/
 theorem eval_qPMT_iff_V {k : V} (hk : (KP : V) ≤ k) :
@@ -527,7 +527,7 @@ theorem eval_qPMT_iff_V {k : V} (hk : (KP : V) ≤ k) :
   unfold tmplP1T
   rw [eval_qT_iff, eval_tmpl_plays_opp_self_V]
   simp only [Matrix.cons_val, actCode, Nat.cast_one]
-  rw [val_TP_V hk, relabel_val_uPT_wPT_V hk, hopp_mirror k]
+  rw [val_TP_V hk, relabel_val_uPT_wPT_V hk, desc_mirror k]
 
 /-- `qPPT(k)` holds in `stdActV V` iff Mirror plays C against `.bot CooperateBot` (`pBot (pConst 0)`). -/
 theorem eval_qPPT_iff_V (k : V) :
@@ -537,7 +537,7 @@ theorem eval_qPPT_iff_V (k : V) :
   unfold tmplP2T
   rw [eval_qT_iff, eval_tmpl_plays_opp_closed_V _ (by intro h; cases h) (by intro h; cases h)]
   simp only [Matrix.cons_val, actCode, Nat.cast_zero, pcode_bot, pcode_const, cast_pBot, cast_pConst]
-  rw [hopp_mirror k]
+  rw [desc_mirror k]
 
 /-! #### The prudence facts, the search clauses, Mirror's copy -/
 
@@ -730,7 +730,7 @@ section cells
 /-- **The Prudent × Mirror cell, packaged**: for all large `k`, Prudent cooperates with Mirror and
 its transposition defects (fuel 3), and both of Prudent's guard boxes hold — `family_found pPM` then
 the two-level ∧-elimination. -/
-theorem prudent_mirror_cell_core {d : ℕ} (hE : BoundedInnerNec d) :
+theorem loeb_Prudent_vs_Mirror_core_of_nec {d : ℕ} (hE : BoundedInnerNec d) :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       (EvalGraph 3 (Prudent k) Mirror (Prudent k) 0 ∧ EvalGraph 3 (PrudentT k) Mirror (PrudentT k) 1) ∧
       (LenProvableV TAct k (guardCode (⌜tmplP1⌝ : ℕ) (Prudent k) Mirror) ∧
@@ -747,50 +747,50 @@ theorem prudent_mirror_cell_core {d : ℕ} (hE : BoundedInnerNec d) :
 
 /-- **PrudentBot × Mirror is `(C, C)` in PA-`S'`, conditional on bounded inner necessitation**: for
 all large `k`, `Prudent k` cooperates with Mirror (fuel 3) and Mirror copies (fuel 4). -/
-theorem prudent_mirror_coop {d : ℕ} (hE : BoundedInnerNec d) :
+theorem loeb_Prudent_vs_Mirror_of_nec {d : ℕ} (hE : BoundedInnerNec d) :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 3 (Prudent k) Mirror (Prudent k) 0 ∧ EvalGraph 4 Mirror (Prudent k) Mirror 0 := by
-  obtain ⟨k₀, h⟩ := prudent_mirror_cell_core hE
+  obtain ⟨k₀, h⟩ := loeb_Prudent_vs_Mirror_core_of_nec hE
   exact ⟨k₀, fun k hk ↦ ⟨(h k hk).1.1, mirror_copies3_V (V := ℕ) _ _ (h k hk).1.1⟩⟩
 
 /-- **τ(PrudentBot) × Mirror is `(D, D)`**, conditional: the transposed searcher defects against
 Mirror (fuel 3) and Mirror copies (fuel 4). -/
-theorem prudentT_mirror_defect {d : ℕ} (hE : BoundedInnerNec d) :
+theorem loeb_PrudentT_vs_Mirror_of_nec {d : ℕ} (hE : BoundedInnerNec d) :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 3 (PrudentT k) Mirror (PrudentT k) 1 ∧ EvalGraph 4 Mirror (PrudentT k) Mirror 1 := by
-  obtain ⟨k₀, h⟩ := prudent_mirror_cell_core hE
+  obtain ⟨k₀, h⟩ := loeb_Prudent_vs_Mirror_core_of_nec hE
   exact ⟨k₀, fun k hk ↦ ⟨(h k hk).1.2, mirror_copies3_V (V := ℕ) _ _ (h k hk).1.2⟩⟩
 
 /-- **The box form**: for all large `k`, Prudent FINDS proofs of BOTH its guards against Mirror
 within its budget `k` (conditional). -/
-theorem prudent_finds_guards_vs_mirror {d : ℕ} (hE : BoundedInnerNec d) :
+theorem loeb_Prudent_vs_Mirror_guards_of_nec {d : ℕ} (hE : BoundedInnerNec d) :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       LenProvableV TAct k (guardCode (⌜tmplP1⌝ : ℕ) (Prudent k) Mirror) ∧
       LenProvableV TAct k (guardCode (⌜tmplP2⌝ : ℕ) (Prudent k) Mirror) := by
-  obtain ⟨k₀, h⟩ := prudent_mirror_cell_core hE
+  obtain ⟨k₀, h⟩ := loeb_Prudent_vs_Mirror_core_of_nec hE
   exact ⟨k₀, fun k hk ↦ (h k hk).2⟩
 
 /-! #### Unconditional, at `boundedInnerNec_sixteen` -/
 
 /-- **PrudentBot × Mirror `(C, C)` in PA-`S'`, unconditional**: for all large `k`, `Prudent k`
 cooperates with Mirror (fuel 3: outer search, inner search, constant) and Mirror copies (fuel 4). -/
-theorem prudent_mirror_coop_unconditional :
+theorem loeb_Prudent_vs_Mirror :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 3 (Prudent k) Mirror (Prudent k) 0 ∧ EvalGraph 4 Mirror (Prudent k) Mirror 0 :=
-  prudent_mirror_coop boundedInnerNec_sixteen
+  loeb_Prudent_vs_Mirror_of_nec boundedInnerNec_sixteen
 
 /-- **τ(PrudentBot) × Mirror `(D, D)` in PA-`S'`, unconditional.** -/
-theorem prudentT_mirror_defect_unconditional :
+theorem loeb_PrudentT_vs_Mirror :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 3 (PrudentT k) Mirror (PrudentT k) 1 ∧ EvalGraph 4 Mirror (PrudentT k) Mirror 1 :=
-  prudentT_mirror_defect boundedInnerNec_sixteen
+  loeb_PrudentT_vs_Mirror_of_nec boundedInnerNec_sixteen
 
 /-- **Prudent finds both its guards against Mirror, unconditional.** -/
-theorem prudent_finds_guards_vs_mirror_unconditional :
+theorem loeb_Prudent_vs_Mirror_guards :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       LenProvableV TAct k (guardCode (⌜tmplP1⌝ : ℕ) (Prudent k) Mirror) ∧
       LenProvableV TAct k (guardCode (⌜tmplP2⌝ : ℕ) (Prudent k) Mirror) :=
-  prudent_finds_guards_vs_mirror boundedInnerNec_sixteen
+  loeb_Prudent_vs_Mirror_guards_of_nec boundedInnerNec_sixteen
 
 end cells
 

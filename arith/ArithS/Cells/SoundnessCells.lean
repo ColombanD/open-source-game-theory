@@ -28,7 +28,7 @@ whose searcher takes its ELSE branch because its guard is semantically FALSE —
    a `TAct`-theorem: Σ₁-completeness of PA at ℕ in both readings — `lMap_swap_trAt_plays` needs no atomicity,
    the transposed play comes from the engine's `decide` through the search-free lockstep transfer — and
    `tact_complete'`), `found_of_tact` (found above the proof length).
-4. **The engine's codes** (`pcode_GuardianBot`, …, `pcode_PrudentBot'`), the search clause on engine templates
+4. **The engine's codes** (`pcode_GuardianBot`, …, `pcode_PrudentBot_search`), the search clause on engine templates
    (`search_else`/`search_then`/`search_either` — a node whose two branches agree needs NO verdict: Prudent's
    outer guard, Dupoc's and Just's probe against `.bot CooperateBot` inside OBot), and the search-free probers'
    plays from their probe results (`dbot_*`, `tft_*`, `obot_*`, `ebot_*`, `mirror_copies`).
@@ -278,7 +278,7 @@ lemma pcode_GuardianBot (k : ℕ) :
 lemma pcode_CupodBot (k : ℕ) :
     pcode (CupodBot k) = pSearch k (tcode phiCu) (pConst 1) (pConst 0) := by
   simp [CupodBot, phiCu, actCode]
-lemma pcode_DupocBot' (k : ℕ) :
+lemma pcode_DupocBot_search (k : ℕ) :
     pcode (DupocBot k) = pSearch k (tcode phiDu) (pConst 0) (pConst 1) := by
   simp [DupocBot, phiDu, actCode]
 lemma pcode_CupodTrollBot (k : ℕ) :
@@ -290,7 +290,7 @@ lemma pcode_WaryBot (k : ℕ) :
 lemma pcode_JustBot (k : ℕ) :
     pcode (JustBot k) = pSearch k (tcode (phiJ k)) (pConst 0) (pConst 1) := by
   simp [JustBot, phiJ, actCode]
-lemma pcode_PrudentBot' (k : ℕ) :
+lemma pcode_PrudentBot_search (k : ℕ) :
     pcode (PrudentBot k) =
       pSearch k (tcode phiPo) (pSearch k (tcode phiPi) (pConst 0) (pConst 1)) (pConst 1) := by
   simp [PrudentBot, phiPo, phiPi, actCode]
@@ -532,7 +532,7 @@ theorem guardian_D_of_found (k : ℕ) {opp : PD.Prog}
   exact search_then phiG hy (const_play _ _ _ _)
 
 /-- Guardian cooperates with `.bot CooperateBot`. -/
-theorem guardian_vs_botCB (k : ℕ) :
+theorem snd_GuardianBot_vs_botCB (k : ℕ) :
     EvalGraph 2 (pcode (GuardianBot k)) (pBot (pConst 0)) (pcode (GuardianBot k)) 0 := by
   have := guardian_C_of_probe k (opp := .bot CooperateBot) proper_botCB (N := 2)
     (by rw [pcode_botCB]; exact bot_const_play 0 _ _ _)
@@ -552,7 +552,7 @@ theorem snd_CupodBot_vs_CooperateBot_aux (k : ℕ) :
   cupod_C_of_probe k sfp_CooperateBot.1 (by rw [pcode_CB]; exact const_play 0 _ _ 0)
 
 /-- Cupod cooperates with `.bot CooperateBot`. -/
-theorem cupod_vs_botCB (k : ℕ) :
+theorem snd_CupodBot_vs_botCB (k : ℕ) :
     EvalGraph 2 (pcode (CupodBot k)) (pBot (pConst 0)) (pcode (CupodBot k)) 0 := by
   have := cupod_C_of_probe k (opp := .bot CooperateBot) proper_botCB (N := 2)
     (by rw [pcode_botCB]; exact bot_const_play 0 _ _ _)
@@ -563,7 +563,7 @@ theorem dupoc_D_of_probe (k : ℕ) {opp : PD.Prog} (hopp : Proper opp) {N : ℕ}
     (h : EvalGraph N (pcode opp) (pcode (DupocBot k)) (pcode opp) 1) :
     EvalGraph 2 (pcode (DupocBot k)) (pcode opp) (pcode (DupocBot k)) 1 := by
   have hn := not_found_opp_self (proper_DupocBot k) hopp .C (b := .D) (by decide) h k
-  rw [pcode_DupocBot'] at hn ⊢
+  rw [pcode_DupocBot_search] at hn ⊢
   exact search_else phiDu hn (const_play _ _ _ _)
 
 /-- Dupoc's BODY, in any proper frame whose opponent defects against the frame's `me`, defects
@@ -572,19 +572,19 @@ theorem dupoc_body_D_of_probe (k : ℕ) {me opp : PD.Prog} (hme : Proper me) (ho
     (h : EvalGraph N (pcode opp) (pcode me) (pcode opp) 1) :
     EvalGraph 2 (pcode me) (pcode opp) (pcode (DupocBot k)) 1 := by
   have hn := not_found_opp_self hme hopp .C (b := .D) (by decide) h k
-  rw [pcode_DupocBot']
+  rw [pcode_DupocBot_search]
   exact search_else phiDu hn (const_play _ _ _ _)
 
 /-- Dupoc's body always plays in a proper frame (fuel 2), whatever the verdict. -/
 theorem dupoc_body_total (k : ℕ) (me opp : PD.Prog) :
     ∃ r, EvalGraph 2 (pcode me) (pcode opp) (pcode (DupocBot k)) r := by
-  rw [pcode_DupocBot']
+  rw [pcode_DupocBot_search]
   by_cases hg : LenProvableV TAct k (guardCode (tcode phiDu) (pcode me) (pcode opp))
   · exact ⟨0, search_then phiDu hg (const_play _ _ _ _)⟩
   · exact ⟨1, search_else phiDu hg (const_play _ _ _ _)⟩
 
 /-- Dupoc defects against `.bot DefectBot`. -/
-theorem dupoc_vs_botDB (k : ℕ) :
+theorem snd_DupocBot_vs_botDB (k : ℕ) :
     EvalGraph 2 (pcode (DupocBot k)) (pBot (pConst 1)) (pcode (DupocBot k)) 1 := by
   have := dupoc_D_of_probe k (opp := .bot DefectBot) proper_botDB (N := 2)
     (by rw [pcode_botDB]; exact bot_const_play 0 _ _ _)
@@ -599,14 +599,14 @@ theorem ctb_C_of_ne (k : ℕ) {opp : PD.Prog} (hopp : Proper opp)
   exact search_else (phiT k) hn (const_play _ _ _ _)
 
 /-- CupodTroll cooperates with `.bot CooperateBot`. -/
-theorem ctb_vs_botCB (k : ℕ) :
+theorem snd_CupodTrollBot_vs_botCB (k : ℕ) :
     EvalGraph 2 (pcode (CupodTrollBot k)) (pBot (pConst 0)) (pcode (CupodTrollBot k)) 0 := by
   have := ctb_C_of_ne k (opp := .bot CooperateBot) proper_botCB
     (by rw [pcode_botCB, pcode_CupodBot]; exact pBot_ne_pSearch _ _ _ _ _)
   rwa [pcode_botCB] at this
 
 /-- CupodTroll cooperates with `.bot DefectBot`. -/
-theorem ctb_vs_botDB (k : ℕ) :
+theorem snd_CupodTrollBot_vs_botDB (k : ℕ) :
     EvalGraph 2 (pcode (CupodTrollBot k)) (pBot (pConst 1)) (pcode (CupodTrollBot k)) 0 := by
   have := ctb_C_of_ne k (opp := .bot DefectBot) proper_botDB
     (by rw [pcode_botDB, pcode_CupodBot]; exact pBot_ne_pSearch _ _ _ _ _)
@@ -621,7 +621,7 @@ theorem wary_C_of_probe (k : ℕ) {opp : PD.Prog} (hopp : Proper opp) {N : ℕ}
   exact search_else phiW hn (const_play _ _ _ _)
 
 /-- Wary cooperates with `.bot CooperateBot`. -/
-theorem wary_vs_botCB (k : ℕ) :
+theorem snd_WaryBot_vs_botCB (k : ℕ) :
     EvalGraph 2 (pcode (WaryBot k)) (pBot (pConst 0)) (pcode (WaryBot k)) 0 := by
   have := wary_C_of_probe k (opp := .bot CooperateBot) proper_botCB (N := 2)
     (by rw [pcode_botCB]; exact bot_const_play 0 _ _ _)
@@ -640,7 +640,7 @@ theorem prudent_D_of_probe (k : ℕ) {opp : PD.Prog} (hopp : Proper opp) {N : �
     (h : EvalGraph N (pcode opp) (pcode (PrudentBot k)) (pcode opp) 1) :
     EvalGraph 2 (pcode (PrudentBot k)) (pcode opp) (pcode (PrudentBot k)) 1 := by
   have hn := not_found_opp_self (proper_PrudentBot k) hopp .C (b := .D) (by decide) h k
-  rw [pcode_PrudentBot'] at hn ⊢
+  rw [pcode_PrudentBot_search] at hn ⊢
   exact search_else phiPo hn (const_play _ _ _ _)
 
 /-- Prudent defects against an opponent that cooperates with `.bot DefectBot` (the prudence guard
@@ -650,17 +650,17 @@ theorem prudent_D_of_inner (k : ℕ) {opp : PD.Prog} (hopp : Proper opp) {N : �
     EvalGraph 3 (pcode (PrudentBot k)) (pcode opp) (pcode (PrudentBot k)) 1 := by
   have hn := not_found_opp_bot (proper_PrudentBot k) hopp (P := DefectBot) rfl .D (b := .C) (by decide)
     (by rw [pcode_DB]; exact h) k
-  rw [pcode_PrudentBot'] at hn ⊢
+  rw [pcode_PrudentBot_search] at hn ⊢
   exact search_either phiPo (search_else phiPi hn (const_play _ _ _ _)) (const_play _ _ _ _)
 
 /-- Prudent defects against `.bot DefectBot` and against `.bot CooperateBot`. -/
-theorem prudent_vs_botDB (k : ℕ) :
+theorem snd_PrudentBot_vs_botDB (k : ℕ) :
     EvalGraph 2 (pcode (PrudentBot k)) (pBot (pConst 1)) (pcode (PrudentBot k)) 1 := by
   have := prudent_D_of_probe k (opp := .bot DefectBot) proper_botDB (N := 2)
     (by rw [pcode_botDB]; exact bot_const_play 0 _ _ _)
   rwa [pcode_botDB] at this
 
-theorem prudent_vs_botCB (k : ℕ) :
+theorem snd_PrudentBot_vs_botCB (k : ℕ) :
     EvalGraph 3 (pcode (PrudentBot k)) (pBot (pConst 0)) (pcode (PrudentBot k)) 1 := by
   have := prudent_D_of_inner k (opp := .bot CooperateBot) proper_botCB (N := 2)
     (by rw [pcode_botCB]; exact bot_const_play 0 _ _ _)
@@ -732,7 +732,7 @@ lemma pcode_WaryBot_ne_CupodBot (k : ℕ) : pcode (WaryBot k) ≠ pcode (CupodBo
   exact tcode_phiW_ne_phiCu (pSearch_inj e).2.1
 
 lemma pcode_PrudentBot_ne_CupodBot (k : ℕ) : pcode (PrudentBot k) ≠ pcode (CupodBot k) := by
-  rw [pcode_PrudentBot', pcode_CupodBot]
+  rw [pcode_PrudentBot_search, pcode_CupodBot]
   intro e
   exact pConst_ne_pSearch _ _ _ _ _ (pSearch_inj e).2.2.1.symm
 
@@ -768,22 +768,22 @@ section sndCells
 theorem snd_GuardianBot_vs_CupodBot (k : ℕ) :
     EvalGraph 2 (pcode (GuardianBot k)) (pcode (CupodBot k)) (pcode (GuardianBot k)) (actCode .C) ∧
     EvalGraph 2 (pcode (CupodBot k)) (pcode (GuardianBot k)) (pcode (CupodBot k)) (actCode .C) := by
-  have hG := guardian_C_of_probe k (proper_CupodBot k) (cupod_vs_botCB k)
+  have hG := guardian_C_of_probe k (proper_CupodBot k) (snd_CupodBot_vs_botCB k)
   exact ⟨hG, cupod_C_of_probe k (proper_GuardianBot k) hG⟩
 
 /-- `GuardianBot × CupodTrollBot = (C, C)` (engine `llm_outcome_GuardianBot_vs_CupodTrollBot`, pad 2). -/
 theorem snd_GuardianBot_vs_CupodTrollBot (k : ℕ) :
     EvalGraph 2 (pcode (GuardianBot k)) (pcode (CupodTrollBot k)) (pcode (GuardianBot k)) (actCode .C) ∧
     EvalGraph 2 (pcode (CupodTrollBot k)) (pcode (GuardianBot k)) (pcode (CupodTrollBot k)) (actCode .C) :=
-  ⟨guardian_C_of_probe k (proper_CupodTrollBot k) (ctb_vs_botCB k),
+  ⟨guardian_C_of_probe k (proper_CupodTrollBot k) (snd_CupodTrollBot_vs_botCB k),
    ctb_C_of_ne k (proper_GuardianBot k) (pcode_GuardianBot_ne_CupodBot k)⟩
 
 /-- `GuardianBot × GuardianBot = (C, C)` (engine `llm_outcome_GuardianBot_vs_GuardianBot`, pad 2). -/
 theorem snd_GuardianBot_vs_GuardianBot (k : ℕ) :
     EvalGraph 2 (pcode (GuardianBot k)) (pcode (GuardianBot k)) (pcode (GuardianBot k)) (actCode .C) ∧
     EvalGraph 2 (pcode (GuardianBot k)) (pcode (GuardianBot k)) (pcode (GuardianBot k)) (actCode .C) :=
-  ⟨guardian_C_of_probe k (proper_GuardianBot k) (guardian_vs_botCB k),
-   guardian_C_of_probe k (proper_GuardianBot k) (guardian_vs_botCB k)⟩
+  ⟨guardian_C_of_probe k (proper_GuardianBot k) (snd_GuardianBot_vs_botCB k),
+   guardian_C_of_probe k (proper_GuardianBot k) (snd_GuardianBot_vs_botCB k)⟩
 
 /-- `GuardianBot × TitForTatBot = (C, C)` (engine `llm_outcome_GuardianBot_vs_TitForTatBot`, pad 4). -/
 theorem snd_GuardianBot_vs_TitForTatBot (k : ℕ) :
@@ -791,7 +791,7 @@ theorem snd_GuardianBot_vs_TitForTatBot (k : ℕ) :
     EvalGraph 4 (pcode TitForTatBot) (pcode (GuardianBot k)) (pcode TitForTatBot) (actCode .C) :=
   ⟨EvalGraph.mono_le (by omega) (guardian_C_of_probe k sfp_TitForTatBot.1
       (tft_C_of_probe_C (bot_const_play 0 _ _ 0))),
-   tft_C_of_probe_C (guardian_vs_botCB k)⟩
+   tft_C_of_probe_C (snd_GuardianBot_vs_botCB k)⟩
 
 /-- `GuardianBot × CooperateBot = (C, C)` (engine `outcome_GuardianBot_vs_CooperateBot`, pad 2). -/
 theorem snd_GuardianBot_vs_CooperateBot (k : ℕ) :
@@ -827,7 +827,7 @@ theorem snd_CupodTrollBot_vs_DBot (k : ℕ) :
     EvalGraph 4 (pcode (CupodTrollBot k)) (pcode DBot) (pcode (CupodTrollBot k)) (actCode .C) ∧
     EvalGraph 4 (pcode DBot) (pcode (CupodTrollBot k)) (pcode DBot) (actCode .D) :=
   ⟨EvalGraph.mono_le (by omega) (ctb_C_of_ne k sfp_DBot.1 (pcode_DBot_ne_CupodBot k)),
-   dbot_D_of_probe_C (ctb_vs_botDB k)⟩
+   dbot_D_of_probe_C (snd_CupodTrollBot_vs_botDB k)⟩
 
 /-- `CupodTrollBot × DefectBot = (C, D)` (engine `outcome_CupodTrollBot_vs_DefectBot`, pad 2). -/
 theorem snd_CupodTrollBot_vs_DefectBot (k : ℕ) :
@@ -840,7 +840,7 @@ theorem snd_CupodTrollBot_vs_EBot (k : ℕ) :
     EvalGraph 4 (pcode (CupodTrollBot k)) (pcode EBot) (pcode (CupodTrollBot k)) (actCode .C) ∧
     EvalGraph 4 (pcode EBot) (pcode (CupodTrollBot k)) (pcode EBot) (actCode .D) :=
   ⟨EvalGraph.mono_le (by omega) (ctb_C_of_ne k sfp_EBot.1 (pcode_EBot_ne_CupodBot k)),
-   ebot_D_of_probe1_C (ctb_vs_botDB k)⟩
+   ebot_D_of_probe1_C (snd_CupodTrollBot_vs_botDB k)⟩
 
 /-- `CupodTrollBot × MirrorBot = (C, C)` (engine `outcome_CupodTrollBot_vs_MirrorBot`, pad 3). -/
 theorem snd_CupodTrollBot_vs_MirrorBot (k : ℕ) :
@@ -854,14 +854,14 @@ theorem snd_CupodTrollBot_vs_OBot (k : ℕ) :
     EvalGraph 5 (pcode (CupodTrollBot k)) (pcode OBot) (pcode (CupodTrollBot k)) (actCode .C) ∧
     EvalGraph 5 (pcode OBot) (pcode (CupodTrollBot k)) (pcode OBot) (actCode .C) :=
   ⟨EvalGraph.mono_le (by omega) (ctb_C_of_ne k sfp_OBot.1 (pcode_OBot_ne_CupodBot k)),
-   obot_C_of_probes (ctb_vs_botCB k) (ctb_vs_botDB k)⟩
+   obot_C_of_probes (snd_CupodTrollBot_vs_botCB k) (snd_CupodTrollBot_vs_botDB k)⟩
 
 /-- `CupodTrollBot × TitForTatBot = (C, C)` (engine `outcome_CupodTrollBot_vs_TitForTatBot`, pad 4). -/
 theorem snd_CupodTrollBot_vs_TitForTatBot (k : ℕ) :
     EvalGraph 4 (pcode (CupodTrollBot k)) (pcode TitForTatBot) (pcode (CupodTrollBot k)) (actCode .C) ∧
     EvalGraph 4 (pcode TitForTatBot) (pcode (CupodTrollBot k)) (pcode TitForTatBot) (actCode .C) :=
   ⟨EvalGraph.mono_le (by omega) (ctb_C_of_ne k sfp_TitForTatBot.1 (pcode_TFT_ne_CupodBot k)),
-   tft_C_of_probe_C (ctb_vs_botCB k)⟩
+   tft_C_of_probe_C (snd_CupodTrollBot_vs_botCB k)⟩
 
 /-! #### PrudentBot (6 of 6) -/
 
@@ -877,7 +877,7 @@ theorem snd_PrudentBot_vs_CooperateBot (k : ℕ) :
 theorem snd_PrudentBot_vs_CupodTrollBot (k : ℕ) :
     EvalGraph 3 (pcode (PrudentBot k)) (pcode (CupodTrollBot k)) (pcode (PrudentBot k)) (actCode .D) ∧
     EvalGraph 3 (pcode (CupodTrollBot k)) (pcode (PrudentBot k)) (pcode (CupodTrollBot k)) (actCode .C) :=
-  ⟨prudent_D_of_inner k (proper_CupodTrollBot k) (ctb_vs_botDB k),
+  ⟨prudent_D_of_inner k (proper_CupodTrollBot k) (snd_CupodTrollBot_vs_botDB k),
    EvalGraph.mono_le (by omega) (ctb_C_of_ne k (proper_PrudentBot k) (pcode_PrudentBot_ne_CupodBot k))⟩
 
 /-- `PrudentBot × DBot = (D, C)` (engine `outcome_PrudentBot_vs_DBot`, pad 7). -/
@@ -885,7 +885,7 @@ theorem snd_PrudentBot_vs_DBot (k : ℕ) :
     EvalGraph 7 (pcode (PrudentBot k)) (pcode DBot) (pcode (PrudentBot k)) (actCode .D) ∧
     EvalGraph 7 (pcode DBot) (pcode (PrudentBot k)) (pcode DBot) (actCode .C) :=
   ⟨EvalGraph.mono_le (by omega) (prudent_D_of_inner k sfp_DBot.1 (dbot_C_of_probe_D (bot_const_play 0 _ _ 1))),
-   EvalGraph.mono_le (by omega) (dbot_C_of_probe_D (prudent_vs_botDB k))⟩
+   EvalGraph.mono_le (by omega) (dbot_C_of_probe_D (snd_PrudentBot_vs_botDB k))⟩
 
 /-- `PrudentBot × DefectBot = (D, D)` (engine `outcome_PrudentBot_vs_DefectBot`, pad 2). -/
 theorem snd_PrudentBot_vs_DefectBot (k : ℕ) :
@@ -898,14 +898,14 @@ theorem snd_PrudentBot_vs_DefectBot (k : ℕ) :
 theorem snd_PrudentBot_vs_OBot (k : ℕ) :
     EvalGraph 6 (pcode (PrudentBot k)) (pcode OBot) (pcode (PrudentBot k)) (actCode .D) ∧
     EvalGraph 6 (pcode OBot) (pcode (PrudentBot k)) (pcode OBot) (actCode .D) := by
-  have hO := obot_D_of_probe1_D (prudent_vs_botCB k) (by decide)
+  have hO := obot_D_of_probe1_D (snd_PrudentBot_vs_botCB k) (by decide)
   exact ⟨EvalGraph.mono_le (by omega) (prudent_D_of_probe k sfp_OBot.1 hO), EvalGraph.mono_le (by omega) hO⟩
 
 /-- `PrudentBot × TitForTatBot = (D, D)` (engine `outcome_PrudentBot_vs_TitForTatBot`, pad 6). -/
 theorem snd_PrudentBot_vs_TitForTatBot (k : ℕ) :
     EvalGraph 6 (pcode (PrudentBot k)) (pcode TitForTatBot) (pcode (PrudentBot k)) (actCode .D) ∧
     EvalGraph 6 (pcode TitForTatBot) (pcode (PrudentBot k)) (pcode TitForTatBot) (actCode .D) := by
-  have hT := tft_D_of_probe_D (prudent_vs_botCB k)
+  have hT := tft_D_of_probe_D (snd_PrudentBot_vs_botCB k)
   exact ⟨EvalGraph.mono_le (by omega) (prudent_D_of_probe k sfp_TitForTatBot.1 hT),
     EvalGraph.mono_le (by omega) hT⟩
 
@@ -929,14 +929,14 @@ theorem snd_WaryBot_vs_CupodTrollBot (k : ℕ) :
 theorem snd_WaryBot_vs_GuardianBot (k : ℕ) :
     EvalGraph 2 (pcode (WaryBot k)) (pcode (GuardianBot k)) (pcode (WaryBot k)) (actCode .C) ∧
     EvalGraph 2 (pcode (GuardianBot k)) (pcode (WaryBot k)) (pcode (GuardianBot k)) (actCode .C) := by
-  have hG := guardian_C_of_probe k (proper_WaryBot k) (wary_vs_botCB k)
+  have hG := guardian_C_of_probe k (proper_WaryBot k) (snd_WaryBot_vs_botCB k)
   exact ⟨wary_C_of_probe k (proper_GuardianBot k) hG, hG⟩
 
 /-- `WaryBot × TitForTatBot = (C, C)` (engine `outcome_WaryBot_vs_TitForTatBot`, pad 4). -/
 theorem snd_WaryBot_vs_TitForTatBot (k : ℕ) :
     EvalGraph 4 (pcode (WaryBot k)) (pcode TitForTatBot) (pcode (WaryBot k)) (actCode .C) ∧
     EvalGraph 4 (pcode TitForTatBot) (pcode (WaryBot k)) (pcode TitForTatBot) (actCode .C) := by
-  have hT := tft_C_of_probe_C (wary_vs_botCB k)
+  have hT := tft_C_of_probe_C (snd_WaryBot_vs_botCB k)
   exact ⟨EvalGraph.mono_le (by omega) (wary_C_of_probe k sfp_TitForTatBot.1 hT), hT⟩
 
 /-! #### CupodBot (2 of 4; `× DBot` and `× EBot` need Cupod's positive guard against `.bot DefectBot`) -/
@@ -952,7 +952,7 @@ theorem snd_CupodBot_vs_CooperateBot (k : ℕ) :
 theorem snd_CupodBot_vs_TitForTatBot (k : ℕ) :
     EvalGraph 4 (pcode (CupodBot k)) (pcode TitForTatBot) (pcode (CupodBot k)) (actCode .C) ∧
     EvalGraph 4 (pcode TitForTatBot) (pcode (CupodBot k)) (pcode TitForTatBot) (actCode .C) := by
-  have hT := tft_C_of_probe_C (cupod_vs_botCB k)
+  have hT := tft_C_of_probe_C (snd_CupodBot_vs_botCB k)
   exact ⟨EvalGraph.mono_le (by omega) (cupod_C_of_probe k sfp_TitForTatBot.1 hT), hT⟩
 
 /-! #### DupocBot (2 of 2) -/
@@ -971,7 +971,7 @@ theorem snd_DupocBot_vs_OBot (k : ℕ) :
     EvalGraph 5 (pcode OBot) (pcode (DupocBot k)) (pcode OBot) (actCode .D) := by
   obtain ⟨r, hr⟩ := dupoc_body_total k (DupocBot k) (.bot CooperateBot)
   rw [pcode_botCB] at hr
-  have hO := obot_D_of_any hr (dupoc_vs_botDB k)
+  have hO := obot_D_of_any hr (snd_DupocBot_vs_botDB k)
   exact ⟨EvalGraph.mono_le (by omega) (dupoc_D_of_probe k sfp_OBot.1 hO), hO⟩
 
 /-! #### JustBot (2 of 2), on the engine's own code `pcode (JustBot k)` -/
@@ -984,7 +984,7 @@ theorem snd_JustBot_vs_DefectBot (k : ℕ) :
    by rw [pcode_DB]; exact const_play 1 _ _ _⟩
 
 /-- The frozen snapshot `.bot (DupocBot k)` defects against `.bot DefectBot` (fuel 3). -/
-theorem botDupoc_vs_botDB (k : ℕ) :
+theorem snd_botDupocBot_vs_botDB (k : ℕ) :
     EvalGraph 3 (pBot (pcode (DupocBot k))) (pBot (pConst 1)) (pBot (pcode (DupocBot k))) 1 := by
   show EvalGraph (2 + 1) _ _ _ _
   rw [EvalGraph.bot_iff]
@@ -1006,7 +1006,7 @@ theorem snd_JustBot_vs_OBot (k : ℕ) :
     EvalGraph 6 (pcode OBot) (pcode (JustBot k)) (pcode OBot) (actCode .D) := by
   obtain ⟨r, hr⟩ := botDupoc_vs_botCB_total k
   have hOb : EvalGraph 6 (pcode OBot) (pBot (pcode (DupocBot k))) (pcode OBot) 1 :=
-    obot_D_of_any hr (botDupoc_vs_botDB k)
+    obot_D_of_any hr (snd_botDupocBot_vs_botDB k)
   have hJ := just_D_of_probe k sfp_OBot.1 hOb
   refine ⟨EvalGraph.mono_le (by omega) hJ, ?_⟩
   -- OBot against Just: Just cooperates with neither probe … it defects against `.bot DefectBot`,
@@ -1083,7 +1083,7 @@ theorem tact_EBot_D_vs_botCB : TAct ⊢ trAt EBot (.bot CooperateBot) (.plays EB
       (sfp_transpose sfp_botCB (by decide) (by decide)))
 
 /-- Guardian defects against `.bot DefectBot` for all large `k`. -/
-theorem guardian_vs_botDB_eventually :
+theorem pos_GuardianBot_vs_botDB :
     ∃ L : ℕ, ∀ k : ℕ, L ≤ k → EvalGraph 2 (pcode (GuardianBot k)) (pBot (pConst 1)) (pcode (GuardianBot k)) 1 := by
   obtain ⟨L, hL⟩ := guardian_found (X := .bot DefectBot) proper_botDB tact_botDB_D_vs_botCB
   refine ⟨L, fun k hk ↦ ?_⟩
@@ -1105,35 +1105,35 @@ theorem pos_GuardianBot_vs_DBot :
       EvalGraph 4 (pcode (GuardianBot k)) (pcode DBot) (pcode (GuardianBot k)) (actCode .D) ∧
       EvalGraph 4 (pcode DBot) (pcode (GuardianBot k)) (pcode DBot) (actCode .C) := by
   obtain ⟨L₁, hL₁⟩ := guardian_found (X := DBot) sfp_DBot.1 tact_DBot_D_vs_botCB
-  obtain ⟨L₂, hL₂⟩ := guardian_vs_botDB_eventually
+  obtain ⟨L₂, hL₂⟩ := pos_GuardianBot_vs_botDB
   refine ⟨L₁ + L₂, fun k hk ↦ ⟨EvalGraph.mono_le (by omega) (guardian_D_of_found k (hL₁ k (by omega))), ?_⟩⟩
   exact dbot_C_of_probe_D (hL₂ k (by omega))
 
 /-- `GuardianBot × EBot = (D, C)` (engine `llm_outcome_GuardianBot_vs_EBot`, pad 6), for all large `k`: Guardian
 finds "EBot defects against `.bot CooperateBot`"; EBot sees Guardian defect against `.bot DefectBot` (found) and
 cooperate with `.bot CooperateBot` (guard false). -/
-theorem snd_GuardianBot_vs_EBot :
+theorem pos_GuardianBot_vs_EBot :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 6 (pcode (GuardianBot k)) (pcode EBot) (pcode (GuardianBot k)) (actCode .D) ∧
       EvalGraph 6 (pcode EBot) (pcode (GuardianBot k)) (pcode EBot) (actCode .C) := by
   obtain ⟨L₁, hL₁⟩ := guardian_found (X := EBot) sfp_EBot.1 tact_EBot_D_vs_botCB
-  obtain ⟨L₂, hL₂⟩ := guardian_vs_botDB_eventually
+  obtain ⟨L₂, hL₂⟩ := pos_GuardianBot_vs_botDB
   refine ⟨L₁ + L₂, fun k hk ↦ ⟨EvalGraph.mono_le (by omega) (guardian_D_of_found k (hL₁ k (by omega))), ?_⟩⟩
-  exact EvalGraph.mono_le (by omega) (ebot_C_of_probes (hL₂ k (by omega)) (guardian_vs_botCB k))
+  exact EvalGraph.mono_le (by omega) (ebot_C_of_probes (hL₂ k (by omega)) (snd_GuardianBot_vs_botCB k))
 
 /-- `GuardianBot × OBot = (C, D)` (engine `llm_outcome_GuardianBot_vs_OBot`, pad 7), for all large `k`: OBot
 cooperates with `.bot CooperateBot`, so Guardian's guard is false; OBot sees Guardian cooperate with
 `.bot CooperateBot` but defect against `.bot DefectBot` (found), and defects. -/
-theorem snd_GuardianBot_vs_OBot :
+theorem pos_GuardianBot_vs_OBot :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 7 (pcode (GuardianBot k)) (pcode OBot) (pcode (GuardianBot k)) (actCode .C) ∧
       EvalGraph 7 (pcode OBot) (pcode (GuardianBot k)) (pcode OBot) (actCode .D) := by
-  obtain ⟨L₂, hL₂⟩ := guardian_vs_botDB_eventually
+  obtain ⟨L₂, hL₂⟩ := pos_GuardianBot_vs_botDB
   refine ⟨L₂, fun k hk ↦ ⟨?_, ?_⟩⟩
   · have hO : EvalGraph 5 (pcode OBot) (pBot (pConst 0)) (pcode OBot) 0 :=
       obot_C_of_probes (bot_const_play 0 _ _ 0) (bot_const_play 0 _ _ 0)
     exact EvalGraph.mono_le (by omega) (guardian_C_of_probe k sfp_OBot.1 hO)
-  · exact EvalGraph.mono_le (by omega) (obot_D_of_probes (guardian_vs_botCB k) (hL₂ k (Nat.le_of_lt hk)))
+  · exact EvalGraph.mono_le (by omega) (obot_D_of_probes (snd_GuardianBot_vs_botCB k) (hL₂ k (Nat.le_of_lt hk)))
 
 end guardianPos
 

@@ -19,9 +19,9 @@ unchanged (names, statements, definition bodies) out of `Cells/DIMCID`, `Cells/P
 4. **The atom truths**: `eval_tmpl_plays_self_opp_V`/`_opp_self_V` and the `qT`-level
    `eval_qT_plays_opp_self`/`eval_qT_neg_plays_opp_self`/`eval_qT_swap`.
 5. **The Dupoc towers**: Cupod's description on the `TD` tower (`swapcode_CupodV`, `dU/dW_CupodV`,
-   `hX/hU/hW_cupod`, `hopp/hopp'_cupod`, `hX/hU/hW_dupoc`) and the bot tower `TBD` of `pBot (DupocV k)`
-   (`val_TBD_V`, `quote_emb_TBD`, `termSubst_TBD`, `quote_emb_uD/wD_botDupocV`, `hX/hU/hW_bot`,
-   `hme/hme'_bot`).
+   `hX/hU/hW_cupod`, `hopp/descT_cupod`, `hX/hU/hW_dupoc`) and the bot tower `TBD` of `pBot (DupocV k)`
+   (`val_TBD_V`, `quote_emb_TBD`, `termSubst_TBD`, `quote_emb_uD/wD_botDupocV`, `hX/hU/hW_botDupoc`,
+   `hme/descT_botDupoc`).
 6. **The `Describes` layer**: `descVal`, `Describes`, `DescribesAbove`, `Describes.above`; every closed
    code is described (`describes_closed`); the instances `describes_botCB`, `describes_TFT`,
    `describes_SV`, `describes_botSV`, `describes_dupocV`, `describes_botDupoc`. The tower-specific
@@ -595,13 +595,13 @@ lemma hU_cupod (k : V) : (⌜uC⌝ : V) = dU (CupodV k) := (dU_CupodV k).symm
 lemma hW_cupod (k : V) : (⌜wC⌝ : V) = dW (CupodV k) := (dW_CupodV k).symm
 
 /-- Cupod's triple describes `CupodV k` in `stdActV V`. -/
-lemma hopp_cupod (k : V) :
+lemma desc_cupod (k : V) :
     relabel (uC.val (s := stdActV V) ![] Empty.elim) (wC.val (s := stdActV V) ![] Empty.elim)
       (TD.val (s := stdActV V) ![k] Empty.elim) = CupodV k := by
   rw [val_TD_V]; exact relabel_val_uC_wC_V k
 
 /-- The transposed triple describes `DupocV k` in `stdActV V`. -/
-lemma hopp'_cupod (k : V) :
+lemma descT_cupod (k : V) :
     relabel ((Semiterm.lMap swap uC).val (s := stdActV V) ![] Empty.elim)
       ((Semiterm.lMap swap wC).val (s := stdActV V) ![] Empty.elim)
       ((Semiterm.lMap swap TD).val (s := stdActV V) ![k] Empty.elim) = DupocV k := by
@@ -609,7 +609,7 @@ lemma hopp'_cupod (k : V) :
   rw [term_lMap_swap_swap, term_lMap_swap_swap, lMap_swap_TD, val_TD_V]
   exact relabel_val_uD_wD_V k
 
-/-- Dupoc's own triple describes `DupocV k` on codes (as `hX_self`). -/
+/-- Dupoc's own triple describes `DupocV k` on codes (as `hX_dimcid`). -/
 lemma hX_dupoc (k : V) :
     termSubst LAct (bnum k ∷ (0 : V)) (⌜(Rew.emb TD : SyntacticSemiterm LAct 1)⌝ : V) =
       progT (dnum (DupocV k)) := by
@@ -669,21 +669,21 @@ lemma quote_emb_wD_botDupocV (k : V) :
   rw [dW_pBot, dW_DupocV, Semiterm.empty_quote_def]
 
 /-- The bot tower's triple `(TBD, uD, wD)` describes `pBot (DupocV k)` on codes (`X`-hypothesis). -/
-lemma hX_bot (k : V) :
+lemma hX_botDupoc (k : V) :
     termSubst LAct (bnum k ∷ (0 : V)) (⌜(Rew.emb TBD : SyntacticSemiterm LAct 1)⌝ : V) =
       progT (dnum (pBot (DupocV k))) := termSubst_TBD k
 
-lemma hU_bot (k : V) : (⌜uD⌝ : V) = dU (pBot (DupocV k)) := quote_emb_uD_botDupocV k
-lemma hW_bot (k : V) : (⌜wD⌝ : V) = dW (pBot (DupocV k)) := quote_emb_wD_botDupocV k
+lemma hU_botDupoc (k : V) : (⌜uD⌝ : V) = dU (pBot (DupocV k)) := quote_emb_uD_botDupocV k
+lemma hW_botDupoc (k : V) : (⌜wD⌝ : V) = dW (pBot (DupocV k)) := quote_emb_wD_botDupocV k
 
 /-- The bot tower's triple describes `pBot (DupocV k)` in `stdActV V`. -/
-lemma hme_bot (k : V) :
+lemma desc_botDupoc (k : V) :
     relabel (uD.val (s := stdActV V) ![] Empty.elim) (wD.val (s := stdActV V) ![] Empty.elim)
       (TBD.val (s := stdActV V) ![k] Empty.elim) = pBot (DupocV k) := by
   rw [val_TBD_V, dnum_pBot, relabel_bot, relabel_val_uD_wD_V]
 
 /-- The transposed bot triple describes `pBot (CupodV k)` in `stdActV V`. -/
-lemma hme'_bot (k : V) :
+lemma descT_botDupoc (k : V) :
     relabel ((Semiterm.lMap swap uD).val (s := stdActV V) ![] Empty.elim)
       ((Semiterm.lMap swap wD).val (s := stdActV V) ![] Empty.elim)
       ((Semiterm.lMap swap TBD).val (s := stdActV V) ![k] Empty.elim) = pBot (CupodV k) := by
@@ -857,11 +857,11 @@ theorem describes_TFT : Describes (cl TTFT) (cterm Act.C) (cterm Act.D) where
 /-! #### The `SV` layer describes the engine searchers -/
 
 lemma descVal_SV (g : Semisentence LAct 6) (a : ℕ) (ha : a = 0 ∨ a = 1) (k : V) :
-    descVal (TS g a) (uS g a) (wS g a) k = SV g a k := hme_SV g a ha k
+    descVal (TS g a) (uS g a) (wS g a) k = SV g a k := desc_SV g a ha k
 
 lemma descVal_SV_T (g : Semisentence LAct 6) (a : ℕ) (ha : a = 0 ∨ a = 1) (k : V) :
     descVal (Semiterm.lMap swap (TS g a)) (Semiterm.lMap swap (uS g a)) (Semiterm.lMap swap (wS g a)) k =
-      SV (Semiformula.lMap swap g) (1 - a) k := hme_SVT g a ha k
+      SV (Semiformula.lMap swap g) (1 - a) k := descT_SV g a ha k
 
 /-- **The canonical triple of an engine searcher describes it in every model** (`PositiveCells` §2, packaged). -/
 theorem describes_SV (g : Semisentence LAct 6) (a : ℕ) (ha : a = 0 ∨ a = 1) : Describes (TS g a) (uS g a) (wS g a) where
@@ -873,11 +873,11 @@ theorem describes_SV (g : Semisentence LAct 6) (a : ℕ) (ha : a = 0 ∨ a = 1) 
 /-! #### The bot-wrapped engine searcher `pBot (SV g a k)` (`.bot (DupocBot k)`, Just's frozen snapshot) -/
 
 lemma descVal_botSV (g : Semisentence LAct 6) (a : ℕ) (ha : a = 0 ∨ a = 1) (k : V) :
-    descVal (TBS g a) (uS g a) (wS g a) k = pBot (SV g a k) := hme_botSV g a ha k
+    descVal (TBS g a) (uS g a) (wS g a) k = pBot (SV g a k) := desc_botSV g a ha k
 
 lemma descVal_botSV_T (g : Semisentence LAct 6) (a : ℕ) (ha : a = 0 ∨ a = 1) (k : V) :
     descVal (Semiterm.lMap swap (TBS g a)) (Semiterm.lMap swap (uS g a)) (Semiterm.lMap swap (wS g a)) k =
-      pBot (SV (Semiformula.lMap swap g) (1 - a) k) := hme_botSVT g a ha k
+      pBot (SV (Semiformula.lMap swap g) (1 - a) k) := descT_botSV g a ha k
 
 /-- **The bot tower of an engine searcher describes `pBot (SV g a k)` in every model** (`PositiveCells` §5). -/
 theorem describes_botSV (g : Semisentence LAct 6) (a : ℕ) (ha : a = 0 ∨ a = 1) :
@@ -906,17 +906,17 @@ theorem describes_dupocV : Describes TD uD wD where
   hW := by intro V _ _ k; rw [descVal_dupocV]; exact hW_dupoc k
   hT := by intro V _ _ k; rw [descVal_dupocV_T, descVal_dupocV, swapcode_DupocV]
 
-lemma descVal_botDupoc (k : V) : descVal TBD uD wD k = pBot (DupocV k) := hme_bot k
+lemma descVal_botDupoc (k : V) : descVal TBD uD wD k = pBot (DupocV k) := desc_botDupoc k
 
 lemma descVal_botDupoc_T (k : V) :
     descVal (Semiterm.lMap swap TBD) (Semiterm.lMap swap uD) (Semiterm.lMap swap wD) k = pBot (CupodV k) :=
-  hme'_bot k
+  descT_botDupoc k
 
 /-- **The `TBD` tower describes `pBot (DupocV k)` in every model** (`JustSlot` §3). -/
 theorem describes_botDupoc : Describes TBD uD wD where
-  hX := by intro V _ _ k; rw [descVal_botDupoc]; exact hX_bot k
-  hU := by intro V _ _ k; rw [descVal_botDupoc]; exact hU_bot k
-  hW := by intro V _ _ k; rw [descVal_botDupoc]; exact hW_bot k
+  hX := by intro V _ _ k; rw [descVal_botDupoc]; exact hX_botDupoc k
+  hU := by intro V _ _ k; rw [descVal_botDupoc]; exact hU_botDupoc k
+  hW := by intro V _ _ k; rw [descVal_botDupoc]; exact hW_botDupoc k
   hT := by intro V _ _ k; rw [descVal_botDupoc_T, descVal_botDupoc, swapcode_pBot_DupocV]
 
 end describes

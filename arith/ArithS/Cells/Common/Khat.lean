@@ -12,7 +12,7 @@ unchanged (names, statements, proofs) from `Cells/CIMCIC`, `Cells/PositiveCells`
 1. `linear_size_le_eventually` (ex-CIMCIC; `poly_size_le_eventually` at degree 1, the `^ 1` removed).
 2. **The `k̂ = 0` case**: `tact_all_of_both` (a `∀¹ q` true in both readings is a `TAct`-theorem) and
    `found_of_all` (its instance at `bnum k` fits `k` for all large `k`, cost `K₀ + K₁·size k`) — the body
-   of `cimcic_self_finds_guard`, which is now `found_of_all tact_proves_qCC`.
+   of `pos_Cimcic_vs_Cimcic_guard`, which is now `found_of_all tact_proves_qCC`.
 3. **The `k̂`-chain**: `found_of_all_V` (in EVERY model), `tact_all_above_of_both`,
    `exists_instance_length_above`, `found_of_all_above` (a guard true only above a threshold is found
    for all large `k`, cost `K₀ + K₁·size k + K₂·size k²`).
@@ -64,7 +64,7 @@ theorem tact_all_of_both (q : Semisentence LAct 1)
     exact hswap M x
 
 /-- **The instance of a `TAct`-theorem `∀¹ q` at `bnum k` fits the budget `k` for all large `k`**
-(`cimcic_self_finds_guard`'s body, generic in `q` and in the guard-code family `G`): the instance
+(`pos_Cimcic_vs_Cimcic_guard`'s body, generic in `q` and in the guard-code family `G`): the instance
 costs `K₀ + K₁·size k` (`lenProvable_inst_size` + `flen_subst_bnumT_le`), below `k` eventually
 (`linear_size_le_eventually`). -/
 theorem found_of_all {q : Semisentence LAct 1} (hq : TAct ⊢ ∀¹ q) (G : ℕ → ℕ)

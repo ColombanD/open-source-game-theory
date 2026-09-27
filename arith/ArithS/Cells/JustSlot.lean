@@ -29,24 +29,24 @@ guard mentioning `JustV7 k` is `instB ⌜q⌝ k` for a fixed `q`.
    bot-wrapped Dupoc against `opp`, the frame's `me` unused (as `guardCode_JustV`); the transposed
    template `GtmplJ7A 1 uC wC = lMap swap GtmplJ7` gives `guardCode ⌜GtmplA 1⌝ (pBot (CupodV k)) opp`.
 2. **`JustV7` plays exactly as `JustV`** in every frame and at every fuel (`evalGraph_JustV7_iff`), so
-   `just_mirror_coop_unconditional` transfers (`just7_mirror_coop_unconditional`).
+   `loeb_Just_vs_Mirror` transfers (`loeb_Just7_vs_Mirror`).
 3. **The description layer** of `JustV7 k` (`Cells/CIMCIC.lean` §2 re-run): `dnum (JustV7 k) = pSearch k
-   gJd pJd qJd`, `TJ`, `uJ`, `wJ`, and the description hypotheses `hX_just7`/`hopp_just7` (+ transposed).
+   gJd pJd qJd`, `TJ`, `uJ`, `wJ`, and the description hypotheses `hX_just7`/`desc_just7` (+ transposed).
 4. **Just × Just `(C, C)`** (`llm_outcome_JustBot_vs_JustBot`): Just's guard against Just is "Just plays C
    against `pBot (Dupoc k)`" (`qJJ`), whose truth needs the box of the bot-wrapped self-play guard
-   `qBD` — the family `pJJ := (qJJ ⋏ τqJJ) ⋏ pBD`, slack `(14, 16)`: **`just7_self_coop_unconditional`**.
+   `qBD` — the family `pJJ := (qJJ ⋏ τqJJ) ⋏ pBD`, slack `(14, 16)`: **`loeb_Just7_vs_Just7`**.
 5. **Just × Dupoc `(C, C)`** (`llm_outcome_JustBot_vs_DupocBot`, the engine's mutual Löb): three guards
    chase each other — Just's against Dupoc `qJD` ("Dupoc plays C against `pBot (Dupoc k)`"), whose truth
    needs Dupoc's guard against `pBot (Dupoc k)` `qBDD` ("`pBot (Dupoc k)` plays C against Dupoc"), whose
    truth needs `qJD` again; and Dupoc's guard against Just `qDJ` ("Just plays C against Dupoc"), whose
    truth needs `qJD`. The family `pJD := (qJD ⋏ τ) ⋏ ((qBDD ⋏ τ) ⋏ (qDJ ⋏ τ))`, a THREE-level
-   ∧-elimination at slack `(21, 24)`: **`just7_dupoc_coop_unconditional`** (both cooperate at fuel 2).
+   ∧-elimination at slack `(21, 24)`: **`loeb_Just7_vs_Dupoc`** (both cooperate at fuel 2).
 6. **CIMCIC × Just `(C, C)`** (`llm_outcome_CIMCIC_vs_JustBot`): CIMCIC's guard against Just `qCG TJ uJ wJ`
    (consequent: Just plays C against CIMCIC), Just's guard against CIMCIC `qJCi` ("CIMCIC plays C against
    `pBot (Dupoc k)`"), and CIMCIC's guard against `pBot (Dupoc k)` `qCG TBD uD wD` (consequent: the
    bot-wrapped Dupoc plays C against CIMCIC, which is Dupoc's guard against CIMCIC = `qJCi`). The family
    `pCJ := pGC TJ uJ wJ ⋏ ((qJCi ⋏ τ) ⋏ pGC TBD uD wD)`, slack `(21, 24)`:
-   **`cimcic_just7_coop_unconditional`**.
+   **`loeb_Cimcic_vs_Just7`**.
 
 `JustBot k = JustBot2 k k`: `Just7 k` is the DIAGONAL — the snapshot's budget equals the searcher's,
 read from the slot. Conventions (`HANDOVER_ARITHMETIZED_S.md` §5–6): every threshold EXISTENTIAL; `simp`
@@ -368,10 +368,10 @@ theorem evalGraph_Just7_iff (n me opp a k : ℕ) :
 
 /-- **Just × Mirror `(C, C)` transfers to the constant-template Just** (unconditional): fuel 2 for Just,
 fuel 3 for Mirror. -/
-theorem just7_mirror_coop_unconditional :
+theorem loeb_Just7_vs_Mirror :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 2 (Just7 k) Mirror (Just7 k) 0 ∧ EvalGraph 3 Mirror (Just7 k) Mirror 0 := by
-  obtain ⟨k₀, h⟩ := just_mirror_cell_core boundedInnerNec_sixteen
+  obtain ⟨k₀, h⟩ := loeb_Just_vs_Mirror_core_of_nec boundedInnerNec_sixteen
   refine ⟨k₀, fun k hk ↦ ?_⟩
   have hJ : EvalGraph 2 (Just7 k) Mirror (Just7 k) 0 := just7_search_V (V := ℕ) k _ Mirror (h k hk).2.1
   exact ⟨hJ, (mirror_step_V (V := ℕ) 2 (Just7 k) 0).mpr hJ⟩
@@ -565,13 +565,13 @@ lemma hU_just7 (k : V) : (⌜uJ⌝ : V) = dU (JustV7 k) := (dU_JustV7 k).symm
 lemma hW_just7 (k : V) : (⌜wJ⌝ : V) = dW (JustV7 k) := (dW_JustV7 k).symm
 
 /-- Just's own triple describes `JustV7 k` in `stdActV V`. -/
-lemma hopp_just7 (k : V) :
+lemma desc_just7 (k : V) :
     relabel (uJ.val (s := stdActV V) ![] Empty.elim) (wJ.val (s := stdActV V) ![] Empty.elim)
       (TJ.val (s := stdActV V) ![k] Empty.elim) = JustV7 k := by
   rw [val_TJ_V]; exact relabel_val_uJ_wJ_V k
 
 /-- The transposed triple describes `JustTV7 k` in `stdActV V`. -/
-lemma hopp'_just7 (k : V) :
+lemma descT_just7 (k : V) :
     relabel ((Semiterm.lMap swap uJ).val (s := stdActV V) ![] Empty.elim)
       ((Semiterm.lMap swap wJ).val (s := stdActV V) ![] Empty.elim)
       ((Semiterm.lMap swap TJ).val (s := stdActV V) ![k] Empty.elim) = JustTV7 k := by
@@ -672,12 +672,12 @@ lemma qJJ_def : qJJ = qG 0 TBD uD wD TJ uJ wJ := rfl
 /-- **The instance equation on codes**: Just's guard code against `JustV7 k`. -/
 theorem guardCode_botDupocV_JustV7_eq_instB (k : V) :
     guardCode (⌜GtmplA 0⌝ : V) (pBot (DupocV k)) (JustV7 k) = instB (⌜qJJ⌝ : V) k :=
-  guardCode_GtmplA_eq_instB 0 k TBD uD wD TJ uJ wJ (hX_bot k) (hU_bot k) (hW_bot k) (hX_just7 k) (hU_just7 k)
+  guardCode_GtmplA_eq_instB 0 k TBD uD wD TJ uJ wJ (hX_botDupoc k) (hU_botDupoc k) (hW_botDupoc k) (hX_just7 k) (hU_just7 k)
     (hW_just7 k)
 
 theorem guardCode_botCupodV_JustTV7_eq_instB (k : V) :
     guardCode (⌜GtmplA 1⌝ : V) (pBot (CupodV k)) (JustTV7 k) = instB (⌜Semiformula.lMap swap qJJ⌝ : V) k := by
-  have h := guardCode_GtmplA_swap_eq_instB 0 k TBD uD wD TJ uJ wJ (hX_bot k) (hU_bot k) (hW_bot k) (hX_just7 k)
+  have h := guardCode_GtmplA_swap_eq_instB 0 k TBD uD wD TJ uJ wJ (hX_botDupoc k) (hU_botDupoc k) (hW_botDupoc k) (hX_just7 k)
     (hU_just7 k) (hW_just7 k)
   rwa [swapAct_zero, swapcode_pBot_DupocV, swapcode_JustV7] at h
 
@@ -685,14 +685,14 @@ theorem guardCode_botCupodV_JustTV7_eq_instB (k : V) :
 theorem eval_qJJ_iff_V (k : V) :
     Semiformula.Eval (s := stdActV V) ![k] Empty.elim qJJ ↔
       ∃ n, EvalGraph n (JustV7 k) (pBot (DupocV k)) (JustV7 k) 0 := by
-  have h := eval_qG_iff_V 0 k TBD uD wD TJ uJ wJ (hme_bot k) (hopp_just7 k)
+  have h := eval_qG_iff_V 0 k TBD uD wD TJ uJ wJ (desc_botDupoc k) (desc_just7 k)
   rwa [Nat.cast_zero] at h
 
 theorem eval_qJJ_swapped_iff_V (k : V) :
     Semiformula.Eval (s := stdActV V) ![k] Empty.elim (Semiformula.lMap swap qJJ) ↔
       ∃ n, EvalGraph n (JustTV7 k) (pBot (CupodV k)) (JustTV7 k) 1 := by
   rw [qJJ_def, lMap_swap_qG, swapAct_zero]
-  have h := eval_qG_iff_V 1 k _ _ _ _ _ _ (hme'_bot k) (hopp'_just7 k)
+  have h := eval_qG_iff_V 1 k _ _ _ _ _ _ (descT_botDupoc k) (descT_just7 k)
   rwa [Nat.cast_one] at h
 
 /-- The two-sided conjunct: Just's guard against Just and its transposition. -/
@@ -764,7 +764,7 @@ theorem pJJ_all_V (k a : V)
     ⟨just7_search_V k _ _ hg.1, just7T_search_V k _ _ hg.2⟩, hb⟩
 
 /-- **The box form**: Just's guard against Just is provable within `k`. -/
-theorem pJJ_guard_V (k a : V)
+theorem pJJ_guards_V (k a : V)
     (ha₁ : a + 8 * (formulaLen LAct (instB (⌜pJJ2⌝ : V) k) + formulaLen LAct (instB (⌜pBD⌝ : V) k)) + 7 +
       8 * (formulaLen LAct (instB (⌜qJJ⌝ : V) k) + formulaLen LAct (instB (⌜Semiformula.lMap swap qJJ⌝ : V) k))
       + 7 ≤ k)
@@ -830,7 +830,7 @@ theorem loebSound_pJJ : LoebSound pJJ 14 16 := by
 
 /-- **The Just × Just cell, packaged**: for all large `k`, `Just7 k` cooperates with itself (fuel 2)
 and finds its guard against itself. -/
-theorem just7_self_cell_core {d : ℕ} (hE : BoundedInnerNec d) :
+theorem loeb_Just7_vs_Just7_core_of_nec {d : ℕ} (hE : BoundedInnerNec d) :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 2 (Just7 k) (Just7 k) (Just7 k) 0 ∧
       LenProvableV TAct k (guardCode (⌜GtmplA 0⌝ : ℕ) (pBot (Dupoc k)) (Just7 k)) := by
@@ -841,25 +841,25 @@ theorem just7_self_cell_core {d : ℕ} (hE : BoundedInnerNec d) :
     (formulaLen_instB_pJJ (V := ℕ) k) ha)
   have ha₂ := le_def.mpr (slack4_nat' a _ _ _ _ _ k (formulaLen_instB_pBD (V := ℕ) k)
     (formulaLen_instB_pJJ (V := ℕ) k) ha)
-  exact ⟨(pJJ_all_V (V := ℕ) k a ha₁ ha₂ hpc).1.1, pJJ_guard_V (V := ℕ) k a ha₁ hpc⟩
+  exact ⟨(pJJ_all_V (V := ℕ) k a ha₁ ha₂ hpc).1.1, pJJ_guards_V (V := ℕ) k a ha₁ hpc⟩
 
 /-- **Just × Just is `(C, C)` in PA-`S'`, conditional on bounded inner necessitation** (fuel 2). -/
-theorem just7_self_coop {d : ℕ} (hE : BoundedInnerNec d) :
+theorem loeb_Just7_vs_Just7_of_nec {d : ℕ} (hE : BoundedInnerNec d) :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k → EvalGraph 2 (Just7 k) (Just7 k) (Just7 k) 0 := by
-  obtain ⟨k₀, h⟩ := just7_self_cell_core hE
+  obtain ⟨k₀, h⟩ := loeb_Just7_vs_Just7_core_of_nec hE
   exact ⟨k₀, fun k hk ↦ (h k hk).1⟩
 
 /-- **Just × Just `(C, C)` in PA-`S'`, unconditional**: for all large `k`, `Just7 k` cooperates with
 itself at fuel 2 — the engine's `outcome_JustBot_vs_JustBot`. -/
-theorem just7_self_coop_unconditional :
+theorem loeb_Just7_vs_Just7 :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k → EvalGraph 2 (Just7 k) (Just7 k) (Just7 k) 0 :=
-  just7_self_coop boundedInnerNec_sixteen
+  loeb_Just7_vs_Just7_of_nec boundedInnerNec_sixteen
 
 /-- **The box form, unconditional**: Just FINDS its guard against itself within its budget — stated
 with the node-budget guard code of the constant template. -/
-theorem just7_finds_guard_vs_self_unconditional :
+theorem loeb_Just7_vs_Just7_guard :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k → LenProvableV TAct k (guardCodeB (⌜GtmplJ7⌝ : ℕ) (Just7 k) (Just7 k) k) := by
-  obtain ⟨k₀, h⟩ := just7_self_cell_core boundedInnerNec_sixteen
+  obtain ⟨k₀, h⟩ := loeb_Just7_vs_Just7_core_of_nec boundedInnerNec_sixteen
   refine ⟨k₀, fun k hk ↦ ?_⟩
   rw [guardCodeB_GtmplJ7]
   exact (h k hk).2
@@ -885,24 +885,24 @@ lemma qDJ_def : qDJ = qG 0 TD uD wD TJ uJ wJ := rfl
 
 theorem guardCode_botDupocV_DupocV_eq_instB (k : V) :
     guardCode (⌜GtmplA 0⌝ : V) (pBot (DupocV k)) (DupocV k) = instB (⌜qJD⌝ : V) k :=
-  guardCode_GtmplA_eq_instB 0 k TBD uD wD TD uD wD (hX_bot k) (hU_bot k) (hW_bot k) (hX_dupoc k) (hU_dupoc k)
+  guardCode_GtmplA_eq_instB 0 k TBD uD wD TD uD wD (hX_botDupoc k) (hU_botDupoc k) (hW_botDupoc k) (hX_dupoc k) (hU_dupoc k)
     (hW_dupoc k)
 
 theorem guardCode_botCupodV_CupodV_eq_instB (k : V) :
     guardCode (⌜GtmplA 1⌝ : V) (pBot (CupodV k)) (CupodV k) = instB (⌜Semiformula.lMap swap qJD⌝ : V) k := by
-  have h := guardCode_GtmplA_swap_eq_instB 0 k TBD uD wD TD uD wD (hX_bot k) (hU_bot k) (hW_bot k) (hX_dupoc k)
+  have h := guardCode_GtmplA_swap_eq_instB 0 k TBD uD wD TD uD wD (hX_botDupoc k) (hU_botDupoc k) (hW_botDupoc k) (hX_dupoc k)
     (hU_dupoc k) (hW_dupoc k)
   rwa [swapAct_zero, swapcode_pBot_DupocV, swapcode_DupocV] at h
 
 theorem guardCode_DupocV_botDupocV_eq_instB (k : V) :
     guardCode (⌜GtmplA 0⌝ : V) (DupocV k) (pBot (DupocV k)) = instB (⌜qBDD⌝ : V) k :=
-  guardCode_GtmplA_eq_instB 0 k TD uD wD TBD uD wD (hX_dupoc k) (hU_dupoc k) (hW_dupoc k) (hX_bot k) (hU_bot k)
-    (hW_bot k)
+  guardCode_GtmplA_eq_instB 0 k TD uD wD TBD uD wD (hX_dupoc k) (hU_dupoc k) (hW_dupoc k) (hX_botDupoc k) (hU_botDupoc k)
+    (hW_botDupoc k)
 
 theorem guardCode_CupodV_botCupodV_eq_instB (k : V) :
     guardCode (⌜GtmplA 1⌝ : V) (CupodV k) (pBot (CupodV k)) = instB (⌜Semiformula.lMap swap qBDD⌝ : V) k := by
-  have h := guardCode_GtmplA_swap_eq_instB 0 k TD uD wD TBD uD wD (hX_dupoc k) (hU_dupoc k) (hW_dupoc k) (hX_bot k)
-    (hU_bot k) (hW_bot k)
+  have h := guardCode_GtmplA_swap_eq_instB 0 k TD uD wD TBD uD wD (hX_dupoc k) (hU_dupoc k) (hW_dupoc k) (hX_botDupoc k)
+    (hU_botDupoc k) (hW_botDupoc k)
   rwa [swapAct_zero, swapcode_pBot_DupocV, swapcode_DupocV] at h
 
 theorem guardCode_DupocV_JustV7_eq_instB (k : V) :
@@ -921,40 +921,40 @@ theorem guardCode_CupodV_JustTV7_eq_instB (k : V) :
 theorem eval_qJD_iff_V (k : V) :
     Semiformula.Eval (s := stdActV V) ![k] Empty.elim qJD ↔
       ∃ n, EvalGraph n (DupocV k) (pBot (DupocV k)) (DupocV k) 0 := by
-  have h := eval_qG_iff_V 0 k TBD uD wD TD uD wD (hme_bot k) (hopp_dupoc k)
+  have h := eval_qG_iff_V 0 k TBD uD wD TD uD wD (desc_botDupoc k) (desc_dupoc k)
   rwa [Nat.cast_zero] at h
 
 theorem eval_qJD_swapped_iff_V (k : V) :
     Semiformula.Eval (s := stdActV V) ![k] Empty.elim (Semiformula.lMap swap qJD) ↔
       ∃ n, EvalGraph n (CupodV k) (pBot (CupodV k)) (CupodV k) 1 := by
   rw [qJD_def, lMap_swap_qG, swapAct_zero]
-  have h := eval_qG_iff_V 1 k _ _ _ _ _ _ (hme'_bot k) (hopp'_dupoc k)
+  have h := eval_qG_iff_V 1 k _ _ _ _ _ _ (descT_botDupoc k) (descT_dupoc k)
   rwa [Nat.cast_one] at h
 
 theorem eval_qBDD_iff_V (k : V) :
     Semiformula.Eval (s := stdActV V) ![k] Empty.elim qBDD ↔
       ∃ n, EvalGraph n (pBot (DupocV k)) (DupocV k) (pBot (DupocV k)) 0 := by
-  have h := eval_qG_iff_V 0 k TD uD wD TBD uD wD (hopp_dupoc k) (hme_bot k)
+  have h := eval_qG_iff_V 0 k TD uD wD TBD uD wD (desc_dupoc k) (desc_botDupoc k)
   rwa [Nat.cast_zero] at h
 
 theorem eval_qBDD_swapped_iff_V (k : V) :
     Semiformula.Eval (s := stdActV V) ![k] Empty.elim (Semiformula.lMap swap qBDD) ↔
       ∃ n, EvalGraph n (pBot (CupodV k)) (CupodV k) (pBot (CupodV k)) 1 := by
   rw [qBDD_def, lMap_swap_qG, swapAct_zero]
-  have h := eval_qG_iff_V 1 k _ _ _ _ _ _ (hopp'_dupoc k) (hme'_bot k)
+  have h := eval_qG_iff_V 1 k _ _ _ _ _ _ (descT_dupoc k) (descT_botDupoc k)
   rwa [Nat.cast_one] at h
 
 theorem eval_qDJ_iff_V (k : V) :
     Semiformula.Eval (s := stdActV V) ![k] Empty.elim qDJ ↔
       ∃ n, EvalGraph n (JustV7 k) (DupocV k) (JustV7 k) 0 := by
-  have h := eval_qG_iff_V 0 k TD uD wD TJ uJ wJ (hopp_dupoc k) (hopp_just7 k)
+  have h := eval_qG_iff_V 0 k TD uD wD TJ uJ wJ (desc_dupoc k) (desc_just7 k)
   rwa [Nat.cast_zero] at h
 
 theorem eval_qDJ_swapped_iff_V (k : V) :
     Semiformula.Eval (s := stdActV V) ![k] Empty.elim (Semiformula.lMap swap qDJ) ↔
       ∃ n, EvalGraph n (JustTV7 k) (CupodV k) (JustTV7 k) 1 := by
   rw [qDJ_def, lMap_swap_qG, swapAct_zero]
-  have h := eval_qG_iff_V 1 k _ _ _ _ _ _ (hopp'_dupoc k) (hopp'_just7 k)
+  have h := eval_qG_iff_V 1 k _ _ _ _ _ _ (descT_dupoc k) (descT_just7 k)
   rwa [Nat.cast_one] at h
 
 /-! #### The mutual family -/
@@ -1017,7 +1017,7 @@ lemma formulaLen_instB_pJD (k : V) :
   rw [instB_quote_pJD, formulaLen_and (isFormula_instB_quote _ k).isUFormula (isFormula_instB_quote _ k).isUFormula]
 
 /-- **The six guard boxes from a box of the family** (three-level ∧-elimination). -/
-theorem pJD_boxes_V (k a : V)
+theorem pJD_guards_V (k a : V)
     (ha₁ : a + 8 * (formulaLen LAct (instB (⌜pJD2⌝ : V) k) + formulaLen LAct (instB (⌜pJDR⌝ : V) k)) + 7 +
       8 * (formulaLen LAct (instB (⌜qJD⌝ : V) k) + formulaLen LAct (instB (⌜Semiformula.lMap swap qJD⌝ : V) k))
       + 7 ≤ k)
@@ -1155,7 +1155,7 @@ theorem loebSound_pJD : LoebSound pJD 21 24 := by
     (formulaLen_instB_pJD k)) ha
   have ha₃ := le_trans (slack6_le' a _ _ _ _ _ _ _ (formulaLen_instB_pJDR k) (formulaLen_instB_pDJ2 k)
     (formulaLen_instB_pJD k)) ha
-  obtain ⟨⟨j1, j2⟩, _, ⟨d1, d2⟩, ⟨b1, b2⟩⟩ := pJD_all_V k (pJD_boxes_V k a ha₁ ha₂ ha₃ h)
+  obtain ⟨⟨j1, j2⟩, _, ⟨d1, d2⟩, ⟨b1, b2⟩⟩ := pJD_all_V k (pJD_guards_V k a ha₁ ha₂ ha₃ h)
   exact ⟨(eval_pJD_iff_stdActS k).mpr ⟨⟨⟨2, d1⟩, ⟨2, d2⟩⟩, ⟨⟨3, b1⟩, ⟨3, b2⟩⟩, ⟨⟨2, j1⟩, ⟨2, j2⟩⟩⟩,
     (eval_pJD_iff_swap k).mpr ⟨⟨⟨2, d1⟩, ⟨2, d2⟩⟩, ⟨⟨3, b1⟩, ⟨3, b2⟩⟩, ⟨⟨2, j1⟩, ⟨2, j2⟩⟩⟩⟩
 
@@ -1163,7 +1163,7 @@ theorem loebSound_pJD : LoebSound pJD 21 24 := by
 
 /-- **The Just × Dupoc cell, packaged**: for all large `k`, Just cooperates with Dupoc and Dupoc
 cooperates with Just (fuel 2), and both guard boxes hold. -/
-theorem just7_dupoc_cell_core {d : ℕ} (hE : BoundedInnerNec d) :
+theorem loeb_Just7_vs_Dupoc_core_of_nec {d : ℕ} (hE : BoundedInnerNec d) :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       (EvalGraph 2 (Just7 k) (Dupoc k) (Just7 k) 0 ∧ EvalGraph 2 (Dupoc k) (Just7 k) (Dupoc k) 0) ∧
       (LenProvableV TAct k (guardCode (⌜GtmplA 0⌝ : ℕ) (pBot (Dupoc k)) (Dupoc k)) ∧
@@ -1177,32 +1177,32 @@ theorem just7_dupoc_cell_core {d : ℕ} (hE : BoundedInnerNec d) :
     (formulaLen_instB_pBDD2 (V := ℕ) k) (formulaLen_instB_pJD (V := ℕ) k) ha)
   have ha₃ := le_def.mpr (slack6_nat' a _ _ _ _ _ _ _ k (formulaLen_instB_pJDR (V := ℕ) k)
     (formulaLen_instB_pDJ2 (V := ℕ) k) (formulaLen_instB_pJD (V := ℕ) k) ha)
-  have hb := pJD_boxes_V (V := ℕ) k a ha₁ ha₂ ha₃ hpc
+  have hb := pJD_guards_V (V := ℕ) k a ha₁ ha₂ ha₃ hpc
   obtain ⟨⟨j1, _⟩, ⟨d1, _⟩, _, _⟩ := pJD_all_V (V := ℕ) k hb
   exact ⟨⟨j1, d1⟩, hb.1.1, hb.2.2.1⟩
 
 /-- **Just × Dupoc is `(C, C)` in PA-`S'`, conditional on bounded inner necessitation** (fuel 2). -/
-theorem just7_dupoc_coop {d : ℕ} (hE : BoundedInnerNec d) :
+theorem loeb_Just7_vs_Dupoc_of_nec {d : ℕ} (hE : BoundedInnerNec d) :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 2 (Just7 k) (Dupoc k) (Just7 k) 0 ∧ EvalGraph 2 (Dupoc k) (Just7 k) (Dupoc k) 0 := by
-  obtain ⟨k₀, h⟩ := just7_dupoc_cell_core hE
+  obtain ⟨k₀, h⟩ := loeb_Just7_vs_Dupoc_core_of_nec hE
   exact ⟨k₀, fun k hk ↦ (h k hk).1⟩
 
 /-- **Just × Dupoc `(C, C)` in PA-`S'`, unconditional**: for all large `k`, `Just7 k` cooperates with
 `Dupoc k` and `Dupoc k` cooperates with `Just7 k` (fuel 2) — the engine's `outcome_JustBot_vs_DupocBot`,
 the mutual Löb cell. -/
-theorem just7_dupoc_coop_unconditional :
+theorem loeb_Just7_vs_Dupoc :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 2 (Just7 k) (Dupoc k) (Just7 k) 0 ∧ EvalGraph 2 (Dupoc k) (Just7 k) (Dupoc k) 0 :=
-  just7_dupoc_coop boundedInnerNec_sixteen
+  loeb_Just7_vs_Dupoc_of_nec boundedInnerNec_sixteen
 
 /-- **The box forms, unconditional**: Just finds its guard against Dupoc (the node-budget guard code of
 the constant template) and Dupoc finds its guard against Just. -/
-theorem just7_dupoc_find_guards_unconditional :
+theorem loeb_Just7_vs_Dupoc_guards :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       LenProvableV TAct k (guardCodeB (⌜GtmplJ7⌝ : ℕ) (Just7 k) (Dupoc k) k) ∧
       LenProvableV TAct k (guardCode (⌜GtmplA 0⌝ : ℕ) (Dupoc k) (Just7 k)) := by
-  obtain ⟨k₀, h⟩ := just7_dupoc_cell_core boundedInnerNec_sixteen
+  obtain ⟨k₀, h⟩ := loeb_Just7_vs_Dupoc_core_of_nec boundedInnerNec_sixteen
   refine ⟨k₀, fun k hk ↦ ?_⟩
   rw [guardCodeB_GtmplJ7]
   exact (h k hk).2
@@ -1221,26 +1221,26 @@ lemma qJCi_def : qJCi = qG 0 TBD uD wD TCi uCi wCi := rfl
 
 theorem guardCode_botDupocV_CimcicV_eq_instB (k : V) :
     guardCode (⌜GtmplA 0⌝ : V) (pBot (DupocV k)) (CimcicV k) = instB (⌜qJCi⌝ : V) k :=
-  guardCode_GtmplA_eq_instB 0 k TBD uD wD TCi uCi wCi (hX_bot k) (hU_bot k) (hW_bot k) (hX_cimcic k)
+  guardCode_GtmplA_eq_instB 0 k TBD uD wD TCi uCi wCi (hX_botDupoc k) (hU_botDupoc k) (hW_botDupoc k) (hX_cimcic k)
     (hU_cimcic k) (hW_cimcic k)
 
 theorem guardCode_botCupodV_CimcicTV_eq_instB (k : V) :
     guardCode (⌜GtmplA 1⌝ : V) (pBot (CupodV k)) (CimcicTV k) = instB (⌜Semiformula.lMap swap qJCi⌝ : V) k := by
-  have h := guardCode_GtmplA_swap_eq_instB 0 k TBD uD wD TCi uCi wCi (hX_bot k) (hU_bot k) (hW_bot k)
+  have h := guardCode_GtmplA_swap_eq_instB 0 k TBD uD wD TCi uCi wCi (hX_botDupoc k) (hU_botDupoc k) (hW_botDupoc k)
     (hX_cimcic k) (hU_cimcic k) (hW_cimcic k)
   rwa [swapAct_zero, swapcode_pBot_DupocV, swapcode_CimcicV] at h
 
 theorem eval_qJCi_iff_V (k : V) :
     Semiformula.Eval (s := stdActV V) ![k] Empty.elim qJCi ↔
       ∃ n, EvalGraph n (CimcicV k) (pBot (DupocV k)) (CimcicV k) 0 := by
-  have h := eval_qG_iff_V 0 k TBD uD wD TCi uCi wCi (hme_bot k) (hopp_cimcic k)
+  have h := eval_qG_iff_V 0 k TBD uD wD TCi uCi wCi (desc_botDupoc k) (desc_cimcic k)
   rwa [Nat.cast_zero] at h
 
 theorem eval_qJCi_swapped_iff_V (k : V) :
     Semiformula.Eval (s := stdActV V) ![k] Empty.elim (Semiformula.lMap swap qJCi) ↔
       ∃ n, EvalGraph n (CimcicTV k) (pBot (CupodV k)) (CimcicTV k) 1 := by
   rw [qJCi_def, lMap_swap_qG, swapAct_zero]
-  have h := eval_qG_iff_V 1 k _ _ _ _ _ _ (hme'_bot k) (hopp'_cimcic k)
+  have h := eval_qG_iff_V 1 k _ _ _ _ _ _ (descT_botDupoc k) (descT_cimcic k)
   rwa [Nat.cast_one] at h
 
 /-! #### The mutual family -/
@@ -1336,7 +1336,7 @@ theorem pCJ_all_V (k a : V)
   have c1' := lenDerivable_mono_V ha₂ (lenDerivable_andR_V hx₃ hy₃ h₂₁')
   rw [lenDerivable_iff_lenProvableV, ← guardCode_botDupocV_CimcicV_eq_instB] at c1
   rw [lenDerivable_iff_lenProvableV, ← guardCode_botCupodV_CimcicTV_eq_instB] at c1'
-  obtain ⟨b1, b2⟩ := pGC_both_V k TBD uD wD (hX_bot k) (hU_bot k) (hW_bot k) _ ha₃ h₂₂
+  obtain ⟨b1, b2⟩ := pGC_both_V k TBD uD wD (hX_botDupoc k) (hU_botDupoc k) (hW_botDupoc k) _ ha₃ h₂₂
   rw [swapcode_pBot_DupocV] at b2
   exact ⟨⟨g1, g2⟩, ⟨just7_search_V k _ _ c1, just7T_search_V k _ _ c1'⟩, ⟨b1, b2⟩,
     ⟨botDupoc_frame_search_V k _ _ c1, botCupod_frame_search_V k _ _ c1'⟩, ⟨gb1, c1⟩⟩
@@ -1355,8 +1355,8 @@ theorem eval_pCJ_iff_std (k : V) :
           (∃ n, EvalGraph n (pBot (CupodV k)) (CimcicTV k) (pBot (CupodV k)) 1))) := by
   rw [pCJ_def, pCJR_def, pJCi2_def]
   simp only [LogicalConnective.HomClass.map_and, LogicalConnective.Prop.and_eq]
-  rw [eval_pGC_iff_std k TJ uJ wJ (hopp_just7 k) (hopp'_just7 k), eval_qJCi_iff_V, eval_qJCi_swapped_iff_V,
-    eval_pGC_iff_std k TBD uD wD (hme_bot k) (hme'_bot k)]
+  rw [eval_pGC_iff_std k TJ uJ wJ (desc_just7 k) (descT_just7 k), eval_qJCi_iff_V, eval_qJCi_swapped_iff_V,
+    eval_pGC_iff_std k TBD uD wD (desc_botDupoc k) (descT_botDupoc k)]
 
 theorem eval_pCJ_iff_swap (k : V) :
     Semiformula.Eval (s := swapActS V) ![k] Empty.elim pCJ ↔
@@ -1370,8 +1370,8 @@ theorem eval_pCJ_iff_swap (k : V) :
           (∃ n, EvalGraph n (pBot (CupodV k)) (CimcicTV k) (pBot (CupodV k)) 1))) := by
   rw [eval_swapActS, pCJ_def, pCJR_def, pJCi2_def, ← stdActV_eq_stdActS]
   simp only [LogicalConnective.HomClass.map_and, lMap_swap_swap, lMap_swap_pGC, LogicalConnective.Prop.and_eq]
-  rw [eval_qCG_iff_V k TJ uJ wJ (hopp_just7 k), eval_qCTG_iff_V k _ _ _ (hopp'_just7 k), eval_qJCi_iff_V,
-    eval_qJCi_swapped_iff_V, eval_qCG_iff_V k TBD uD wD (hme_bot k), eval_qCTG_iff_V k _ _ _ (hme'_bot k)]
+  rw [eval_qCG_iff_V k TJ uJ wJ (desc_just7 k), eval_qCTG_iff_V k _ _ _ (descT_just7 k), eval_qJCi_iff_V,
+    eval_qJCi_swapped_iff_V, eval_qCG_iff_V k TBD uD wD (desc_botDupoc k), eval_qCTG_iff_V k _ _ _ (descT_botDupoc k)]
   constructor
   · rintro ⟨⟨a, b⟩, ⟨c, d⟩, ⟨e, f⟩⟩; exact ⟨⟨b, a⟩, ⟨d, c⟩, ⟨f, e⟩⟩
   · rintro ⟨⟨a, b⟩, ⟨c, d⟩, ⟨e, f⟩⟩; exact ⟨⟨b, a⟩, ⟨d, c⟩, ⟨f, e⟩⟩
@@ -1407,7 +1407,7 @@ theorem loebSound_pCJ : LoebSound pCJ 21 24 := by
 
 /-- **The CIMCIC × Just cell, packaged**: for all large `k`, CIMCIC cooperates with Just and Just
 cooperates with CIMCIC (fuel 2), and both guard boxes hold. -/
-theorem cimcic_just7_cell_core {d : ℕ} (hE : BoundedInnerNec d) :
+theorem loeb_Cimcic_vs_Just7_core_of_nec {d : ℕ} (hE : BoundedInnerNec d) :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       (EvalGraph 2 (Cimcic k) (Just7 k) (Cimcic k) 0 ∧ EvalGraph 2 (Just7 k) (Cimcic k) (Just7 k) 0) ∧
       (LenProvableV TAct k (guardCode (⌜tmplC⌝ : ℕ) (Cimcic k) (Just7 k)) ∧
@@ -1425,27 +1425,27 @@ theorem cimcic_just7_cell_core {d : ℕ} (hE : BoundedInnerNec d) :
   exact ⟨⟨g1, j1⟩, hb⟩
 
 /-- **CIMCIC × Just is `(C, C)` in PA-`S'`, conditional on bounded inner necessitation** (fuel 2). -/
-theorem cimcic_just7_coop {d : ℕ} (hE : BoundedInnerNec d) :
+theorem loeb_Cimcic_vs_Just7_of_nec {d : ℕ} (hE : BoundedInnerNec d) :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 2 (Cimcic k) (Just7 k) (Cimcic k) 0 ∧ EvalGraph 2 (Just7 k) (Cimcic k) (Just7 k) 0 := by
-  obtain ⟨k₀, h⟩ := cimcic_just7_cell_core hE
+  obtain ⟨k₀, h⟩ := loeb_Cimcic_vs_Just7_core_of_nec hE
   exact ⟨k₀, fun k hk ↦ (h k hk).1⟩
 
 /-- **CIMCIC × Just `(C, C)` in PA-`S'`, unconditional**: for all large `k`, `Cimcic k` cooperates with
 `Just7 k` and `Just7 k` cooperates with `Cimcic k` (fuel 2) — the engine's
 `llm_outcome_CIMCIC_vs_JustBot`. -/
-theorem cimcic_just7_coop_unconditional :
+theorem loeb_Cimcic_vs_Just7 :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 2 (Cimcic k) (Just7 k) (Cimcic k) 0 ∧ EvalGraph 2 (Just7 k) (Cimcic k) (Just7 k) 0 :=
-  cimcic_just7_coop boundedInnerNec_sixteen
+  loeb_Cimcic_vs_Just7_of_nec boundedInnerNec_sixteen
 
 /-- **The box forms, unconditional**: CIMCIC finds its guard against Just, and Just finds its guard
 against CIMCIC (the node-budget guard code of the constant template). -/
-theorem cimcic_just7_find_guards_unconditional :
+theorem loeb_Cimcic_vs_Just7_guards :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       LenProvableV TAct k (guardCode (⌜tmplC⌝ : ℕ) (Cimcic k) (Just7 k)) ∧
       LenProvableV TAct k (guardCodeB (⌜GtmplJ7⌝ : ℕ) (Just7 k) (Cimcic k) k) := by
-  obtain ⟨k₀, h⟩ := cimcic_just7_cell_core boundedInnerNec_sixteen
+  obtain ⟨k₀, h⟩ := loeb_Cimcic_vs_Just7_core_of_nec boundedInnerNec_sixteen
   refine ⟨k₀, fun k hk ↦ ?_⟩
   rw [guardCodeB_GtmplJ7]
   exact (h k hk).2

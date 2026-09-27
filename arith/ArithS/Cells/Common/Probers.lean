@@ -13,7 +13,7 @@ proofs) from `Cells/DupocMirror`, `Cells/DIMCID`, `Cells/PrudentMirror`, `Cells/
 1. **Search clauses in any frame**: the generic searcher's then-clause `SV_then_V`/`botSV_then_V`, its
    self-frame form `SV_search_V`, the hand-written Dupoc/Cupod clauses `dupoc/cupod_frame_search_V`,
    `botDupoc/botCupod_frame_search_V`, `dupoc/cupod_search_any_V`.
-2. **Mirror**: the sim step `mirror_step_V`, the copies `mirror_copies_V` (2 → 3) and `mirror_copies3_V`
+2. **Mirror**: the sim step `mirror_step_V`, the copies `mirror_copies2_V` (2 → 3) and `mirror_copies3_V`
    (3 → 4), the prudence facts `mirror_bot_defect_V`/`mirror_bot_coop_V`.
 3. **TitForTat**: `tft_C_of_probe_C_V`, `tftT_D_of_probe_D_V`.
 4. **Constants**: `const_play_V`, `bot_const_play_V`, `const_not_play_V`, `bot_const_not_play_V`.
@@ -166,7 +166,7 @@ theorem mirror_step_V (n opp a : V) :
 
 /-- Mirror copies, in every model: a fuel-2 play of `opp` against Mirror is Mirror's fuel-3 play
 against `opp` (`mirror_step_V`). -/
-theorem mirror_copies_V (opp a : V) (h : EvalGraph 2 opp MirrorV opp a) :
+theorem mirror_copies2_V (opp a : V) (h : EvalGraph 2 opp MirrorV opp a) :
     EvalGraph 3 MirrorV opp MirrorV a := by
   rw [show (3 : V) = 2 + 1 from two_add_one_eq_three.symm]
   exact (mirror_step_V 2 opp a).mpr h

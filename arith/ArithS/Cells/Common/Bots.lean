@@ -23,9 +23,9 @@ unchanged (names, statements, definition bodies) out of `Cells/DupocMirror`, `Ce
 4. **The generic engine searcher** `SV g a k := pSearch k ⌜g⌝ (pConst a) (pConst (1 - a))` with its
    `variable (g) (a)` block kept verbatim (binder names and order — the `rfl`-bridges downstream depend
    on it): `innerS`, `swapcode_SV`, the canonical triple `gS/pS/qS/uS/wS`, `dnum/dU/dW_SV`, the tower
-   `TS`, `hX/hU/hW_SV`, the value reconstructions; then `hme_SV`/`hme_SVT`.
+   `TS`, `hX/hU/hW_SV`, the value reconstructions; then `desc_SV`/`descT_SV`.
 5. **The explicit engine templates** `gDu/gCu/gW/gWT` and the bot-wrapped searcher's tower `TBS`
-   (`termSubst_TBS`, `hU/hW_botSV`, `hme_botSV`/`hme_botSVT`). The engine-code bridges
+   (`termSubst_TBS`, `hU/hW_botSV`, `desc_botSV`/`descT_botSV`). The engine-code bridges
    `pcode_DupocBot_SV`/`pcode_CupodBot_SV`/`pcode_WaryBot_SV` stay in `Cells/PositiveCells` (they need
    the ℕ-branch's `pcode_*` lemmas). The bridges `DimcidV_eq_SV`/`CimcicV_eq_SV` live next to
    `DimcidV`/`CimcicV` (`Cells/DIMCID`, `Cells/CIMCIC`); `DupocV`/`CupodV` are NOT `SV` instances
@@ -489,13 +489,13 @@ end searcher
 section values
 
 /-- The searcher's triple describes it (values). -/
-theorem hme_SV (g : Semisentence LAct 6) (a : ℕ) (ha : a = 0 ∨ a = 1) (k : V) :
+theorem desc_SV (g : Semisentence LAct 6) (a : ℕ) (ha : a = 0 ∨ a = 1) (k : V) :
     relabel ((uS g a).val (s := stdActV V) ![] Empty.elim) ((wS g a).val (s := stdActV V) ![] Empty.elim)
       ((TS g a).val (s := stdActV V) ![k] Empty.elim) = SV g a k := by
   rw [val_TS_V g a ha, relabel_val_uS_wS_V g a ha]
 
 /-- The transposed triple describes the transposed searcher (values). -/
-theorem hme_SVT (g : Semisentence LAct 6) (a : ℕ) (ha : a = 0 ∨ a = 1) (k : V) :
+theorem descT_SV (g : Semisentence LAct 6) (a : ℕ) (ha : a = 0 ∨ a = 1) (k : V) :
     relabel ((Semiterm.lMap swap (uS g a)).val (s := stdActV V) ![] Empty.elim)
       ((Semiterm.lMap swap (wS g a)).val (s := stdActV V) ![] Empty.elim)
       ((Semiterm.lMap swap (TS g a)).val (s := stdActV V) ![k] Empty.elim) = SV (Semiformula.lMap swap g) (1 - a) k := by
@@ -591,12 +591,12 @@ lemma hU_botSV (g : Semisentence LAct 6) (a : ℕ) (ha : a = 0 ∨ a = 1) (k : V
 lemma hW_botSV (g : Semisentence LAct 6) (a : ℕ) (ha : a = 0 ∨ a = 1) (k : V) :
     (⌜wS g a⌝ : V) = dW (pBot (SV g a k)) := by rw [dW_pBot]; exact hW_SV g a ha k
 
-theorem hme_botSV (g : Semisentence LAct 6) (a : ℕ) (ha : a = 0 ∨ a = 1) (k : V) :
+theorem desc_botSV (g : Semisentence LAct 6) (a : ℕ) (ha : a = 0 ∨ a = 1) (k : V) :
     relabel ((uS g a).val (s := stdActV V) ![] Empty.elim) ((wS g a).val (s := stdActV V) ![] Empty.elim)
       ((TBS g a).val (s := stdActV V) ![k] Empty.elim) = pBot (SV g a k) := by
   rw [val_TBS_V g a ha, dnum_pBot, relabel_bot, relabel_val_uS_wS_V g a ha]
 
-theorem hme_botSVT (g : Semisentence LAct 6) (a : ℕ) (ha : a = 0 ∨ a = 1) (k : V) :
+theorem descT_botSV (g : Semisentence LAct 6) (a : ℕ) (ha : a = 0 ∨ a = 1) (k : V) :
     relabel ((Semiterm.lMap swap (uS g a)).val (s := stdActV V) ![] Empty.elim)
       ((Semiterm.lMap swap (wS g a)).val (s := stdActV V) ![] Empty.elim)
       ((Semiterm.lMap swap (TBS g a)).val (s := stdActV V) ![k] Empty.elim) =

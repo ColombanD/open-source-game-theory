@@ -42,7 +42,7 @@ standard axioms), with the box form, and the row summary.
      code `pcode (JustBot k)`, `ROUTE_B_SCOPE.md` §7: its stored template carries `k`); Just's guard "DIMCID
      cooperates with `.bot (Dupoc k)`" is FALSE (DIMCID defects against the described `pBot (DupocV k)`),
      never found, so Just defects (`just7_else_V` + `evalGraph_of_guard`). Just's half is ALSO stated on the
-     engine's own code (`just_engine_vs_DIMCID_defects`, via `.bot (DupocBot k) = pBot (SV gDu 0 k)`).
+     engine's own code (`snd_JustBot_vs_DIMCID_engine`, via `.bot (DupocBot k) = pBot (SV gDu 0 k)`).
    * `loeb_DIMCID_vs_PrudentBot`: `(C, D)` → **`(D, D)`** — DIMCID defects against the described Prudent
      (above `KP`); Prudent's outer guard "DIMCID cooperates with me" is FALSE, so Prudent defects.
    * `loeb_CIMCIC_vs_DIMCID`: `(D, C)` → **`(D, D)`** — DIMCID's side flips; CIMCIC's guard "I cooperate ⇒
@@ -118,11 +118,11 @@ section instances
 
 /-! #### The budget-slot `Just7 k` -/
 
-lemma descVal_just7 (k : V) : descVal TJ uJ wJ k = JustV7 k := hopp_just7 k
+lemma descVal_just7 (k : V) : descVal TJ uJ wJ k = JustV7 k := desc_just7 k
 
 lemma descVal_just7_T (k : V) :
     descVal (Semiterm.lMap swap TJ) (Semiterm.lMap swap uJ) (Semiterm.lMap swap wJ) k = JustTV7 k :=
-  hopp'_just7 k
+  descT_just7 k
 
 /-- **The canonical triple of the budget-slot Just describes it in every model** (`JustSlot` §3). -/
 theorem describes_just7 : Describes TJ uJ wJ where
@@ -157,35 +157,35 @@ end instances
 section defections
 
 /-- **DIMCID defects against `.bot DefectBot` for all large `k`** (the closed code `pBot (pConst 1)`). -/
-theorem dimcid_vs_botDB_defects :
+theorem loeb_DIMCID_vs_botDB :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 2 (pcode (DIMCID k)) (pBot (pConst 1)) (pcode (DIMCID k)) 1 ∧
       LenProvableV TAct k (guardCode (tcode phiD) (pcode (DIMCID k)) (pBot (pConst 1))) :=
   dimcid_vs_closed _
 
 /-- **DIMCID defects against `.bot MirrorBot` for all large `k`** (EBot's third probe). -/
-theorem dimcid_vs_botMirror_defects :
+theorem loeb_DIMCID_vs_botMirror :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 2 (pcode (DIMCID k)) (pBot Mirror) (pcode (DIMCID k)) 1 ∧
       LenProvableV TAct k (guardCode (tcode phiD) (pcode (DIMCID k)) (pBot Mirror)) :=
   dimcid_vs_closed _
 
 /-- **DIMCID defects against DBot and FINDS its guard, for all large `k`.** -/
-theorem dimcid_vs_DBot_defects :
+theorem loeb_DIMCID_vs_DBot_core :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 2 (pcode (DIMCID k)) (pcode DBot) (pcode (DIMCID k)) 1 ∧
       LenProvableV TAct k (guardCode (tcode phiD) (pcode (DIMCID k)) (pcode DBot)) :=
   dimcid_vs_closed _
 
 /-- **DIMCID defects against EBot and FINDS its guard, for all large `k`.** -/
-theorem dimcid_vs_EBot_defects :
+theorem loeb_DIMCID_vs_EBot_core :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 2 (pcode (DIMCID k)) (pcode EBot) (pcode (DIMCID k)) 1 ∧
       LenProvableV TAct k (guardCode (tcode phiD) (pcode (DIMCID k)) (pcode EBot)) :=
   dimcid_vs_closed _
 
 /-- **DIMCID defects against OBot and FINDS its guard, for all large `k`.** -/
-theorem dimcid_vs_OBot_defects :
+theorem loeb_DIMCID_vs_OBot_core :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 2 (pcode (DIMCID k)) (pcode OBot) (pcode (DIMCID k)) 1 ∧
       LenProvableV TAct k (guardCode (tcode phiD) (pcode (DIMCID k)) (pcode OBot)) :=
@@ -193,7 +193,7 @@ theorem dimcid_vs_OBot_defects :
 
 /-- **DIMCID defects against the engine's `DupocBot k` and FINDS its guard, for all large `k`** (the
 `SV`-described engine searcher, `pcode_DupocBot_SV`). -/
-theorem dimcid_vs_DupocBot_defects :
+theorem loeb_DIMCID_vs_DupocBot_core :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 2 (pcode (DIMCID k)) (pcode (DupocBot k)) (pcode (DIMCID k)) 1 ∧
       LenProvableV TAct k (guardCode (tcode phiD) (pcode (DIMCID k)) (pcode (DupocBot k))) := by
@@ -203,7 +203,7 @@ theorem dimcid_vs_DupocBot_defects :
   rwa [descVal_SV gDu 0 (Or.inl rfl), ← pcode_DupocBot_SV, ← pcode_DIMCID] at this
 
 /-- **DIMCID defects against the hand-written `DupocV k` too** (the `TD` tower). -/
-theorem dimcid_vs_dupocV_defects :
+theorem loeb_DIMCID_vs_Dupoc :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 2 (pcode (DIMCID k)) (Dupoc k) (pcode (DIMCID k)) 1 ∧
       LenProvableV TAct k (guardCode (tcode phiD) (pcode (DIMCID k)) (Dupoc k)) := by
@@ -214,7 +214,7 @@ theorem dimcid_vs_dupocV_defects :
 
 /-- **DIMCID defects against the frozen snapshot `.bot (DupocBot k)` and FINDS its guard, for all large
 `k`** — the engine code `pBot (SV gDu 0 k)`, Just's probe. -/
-theorem dimcid_vs_botDupocBot_defects :
+theorem loeb_DIMCID_vs_botDupocBot :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 2 (pcode (DIMCID k)) (pBot (pcode (DupocBot k))) (pcode (DIMCID k)) 1 ∧
       LenProvableV TAct k (guardCode (tcode phiD) (pcode (DIMCID k)) (pBot (pcode (DupocBot k)))) := by
@@ -224,7 +224,7 @@ theorem dimcid_vs_botDupocBot_defects :
   rwa [descVal_botSV gDu 0 (Or.inl rfl), ← pcode_DupocBot_SV, ← pcode_DIMCID] at this
 
 /-- **DIMCID defects against the hand-written snapshot `pBot (DupocV k)`** (the `TBD` tower, Just7's probe). -/
-theorem dimcid_vs_botDupocV_defects :
+theorem loeb_DIMCID_vs_botDupoc :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 2 (pcode (DIMCID k)) (pBot (Dupoc k)) (pcode (DIMCID k)) 1 ∧
       LenProvableV TAct k (guardCode (tcode phiD) (pcode (DIMCID k)) (pBot (Dupoc k))) := by
@@ -234,7 +234,7 @@ theorem dimcid_vs_botDupocV_defects :
   rwa [descVal_botDupoc, DupocV_nat, ← pcode_DIMCID] at this
 
 /-- **DIMCID defects against `Just7 k` and FINDS its guard, for all large `k`.** -/
-theorem dimcid_vs_just7_defects :
+theorem loeb_DIMCID_vs_Just7 :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 2 (pcode (DIMCID k)) (Just7 k) (pcode (DIMCID k)) 1 ∧
       LenProvableV TAct k (guardCode (tcode phiD) (pcode (DIMCID k)) (Just7 k)) := by
@@ -245,7 +245,7 @@ theorem dimcid_vs_just7_defects :
 
 /-- **DIMCID defects against the engine's `PrudentBot k` and FINDS its guard, for all large `k`** (the
 description above `KP`; `pcode_PrudentBot`). -/
-theorem dimcid_vs_PrudentBot_defects :
+theorem loeb_DIMCID_vs_PrudentBot_core :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 2 (pcode (DIMCID k)) (pcode (PrudentBot k)) (pcode (DIMCID k)) 1 ∧
       LenProvableV TAct k (guardCode (tcode phiD) (pcode (DIMCID k)) (pcode (PrudentBot k))) := by
@@ -256,11 +256,11 @@ theorem dimcid_vs_PrudentBot_defects :
     PrudentV_nat, ← pcode_PrudentBot, ← pcode_DIMCID] at this
 
 lemma pcode_CIMCIC_SV (k : ℕ) : pcode (CIMCIC k) = SV (V := ℕ) tmplC 0 k := by
-  rw [pcode_CIMCIC', SV_nat]; rfl
+  rw [pcode_CIMCIC_search, SV_nat]; rfl
 
 /-- **DIMCID defects against the engine's `CIMCIC k` and FINDS its guard, for all large `k`** (the
 `SV`-described engine searcher). -/
-theorem dimcid_vs_CIMCIC_defects :
+theorem loeb_DIMCID_vs_CIMCIC_core :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 2 (pcode (DIMCID k)) (pcode (CIMCIC k)) (pcode (DIMCID k)) 1 ∧
       LenProvableV TAct k (guardCode (tcode phiD) (pcode (DIMCID k)) (pcode (CIMCIC k))) := by
@@ -285,19 +285,19 @@ section cells
 /-- **DIMCID × DBot is `(D, C)` in PA-`S'`**, for all large `k`, unconditional. The engine proves `(C, C)` by
 a floor census (`llm_outcome_DIMCID_vs_DBot`, `no_provable_tailToS_floor`); in `S'` DIMCID's guard against
 DBot is self-fulfilling and found, so DIMCID defects; DBot punishes only those who cooperate with
-`.bot DefectBot`, and DIMCID defects against that probe too (`dimcid_vs_botDB_defects`), so DBot cooperates. -/
+`.bot DefectBot`, and DIMCID defects against that probe too (`loeb_DIMCID_vs_botDB`), so DBot cooperates. -/
 theorem loeb_DIMCID_vs_DBot :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 2 (pcode (DIMCID k)) (pcode DBot) (pcode (DIMCID k)) (actCode .D) ∧
       EvalGraph 4 (pcode DBot) (pcode (DIMCID k)) (pcode DBot) (actCode .C) := by
-  obtain ⟨k₁, h₁⟩ := dimcid_vs_DBot_defects
-  obtain ⟨k₂, h₂⟩ := dimcid_vs_botDB_defects
+  obtain ⟨k₁, h₁⟩ := loeb_DIMCID_vs_DBot_core
+  obtain ⟨k₂, h₂⟩ := loeb_DIMCID_vs_botDB
   exact ⟨k₁ + k₂, fun k hk ↦ ⟨(h₁ k (by omega)).1, dbot_C_of_probe_D (h₂ k (by omega)).1⟩⟩
 
 /-- **The box form**: DIMCID FINDS its guard against DBot within its budget. -/
-theorem dimcid_finds_guard_vs_DBot :
+theorem loeb_DIMCID_vs_DBot_guard :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k → LenProvableV TAct k (guardCode (tcode phiD) (pcode (DIMCID k)) (pcode DBot)) := by
-  obtain ⟨k₀, h⟩ := dimcid_vs_DBot_defects
+  obtain ⟨k₀, h⟩ := loeb_DIMCID_vs_DBot_core
   exact ⟨k₀, fun k hk ↦ (h k hk).2⟩
 
 /-- **DIMCID × EBot is `(D, D)` in PA-`S'`**, for all large `k`, unconditional. The engine proves `(C, C)` by a
@@ -308,17 +308,17 @@ theorem loeb_DIMCID_vs_EBot :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 2 (pcode (DIMCID k)) (pcode EBot) (pcode (DIMCID k)) (actCode .D) ∧
       EvalGraph 6 (pcode EBot) (pcode (DIMCID k)) (pcode EBot) (actCode .D) := by
-  obtain ⟨k₁, h₁⟩ := dimcid_vs_EBot_defects
-  obtain ⟨k₂, h₂⟩ := dimcid_vs_botDB_defects
-  obtain ⟨k₃, h₃⟩ := dimcid_vs_botCB_defects
-  obtain ⟨k₄, h₄⟩ := dimcid_vs_botMirror_defects
+  obtain ⟨k₁, h₁⟩ := loeb_DIMCID_vs_EBot_core
+  obtain ⟨k₂, h₂⟩ := loeb_DIMCID_vs_botDB
+  obtain ⟨k₃, h₃⟩ := loeb_DIMCID_vs_botCB
+  obtain ⟨k₄, h₄⟩ := loeb_DIMCID_vs_botMirror
   exact ⟨k₁ + k₂ + k₃ + k₄, fun k hk ↦ ⟨(h₁ k (by omega)).1,
     ebot_D_of_probes_D (h₂ k (by omega)).1 (h₃ k (by omega)).1 (h₄ k (by omega)).1⟩⟩
 
 /-- **The box form**: DIMCID FINDS its guard against EBot within its budget. -/
-theorem dimcid_finds_guard_vs_EBot :
+theorem loeb_DIMCID_vs_EBot_guard :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k → LenProvableV TAct k (guardCode (tcode phiD) (pcode (DIMCID k)) (pcode EBot)) := by
-  obtain ⟨k₀, h⟩ := dimcid_vs_EBot_defects
+  obtain ⟨k₀, h⟩ := loeb_DIMCID_vs_EBot_core
   exact ⟨k₀, fun k hk ↦ (h k hk).2⟩
 
 /-- **DIMCID × OBot is `(D, D)` in PA-`S'`**, for all large `k`, unconditional. The engine proves `(C, D)` by a
@@ -328,21 +328,21 @@ theorem loeb_DIMCID_vs_OBot :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 2 (pcode (DIMCID k)) (pcode OBot) (pcode (DIMCID k)) (actCode .D) ∧
       EvalGraph 4 (pcode OBot) (pcode (DIMCID k)) (pcode OBot) (actCode .D) := by
-  obtain ⟨k₁, h₁⟩ := dimcid_vs_OBot_defects
-  obtain ⟨k₂, h₂⟩ := dimcid_vs_botCB_defects
+  obtain ⟨k₁, h₁⟩ := loeb_DIMCID_vs_OBot_core
+  obtain ⟨k₂, h₂⟩ := loeb_DIMCID_vs_botCB
   exact ⟨k₁ + k₂, fun k hk ↦ ⟨(h₁ k (by omega)).1, obot_D_of_probe1_D (h₂ k (by omega)).1 (by decide)⟩⟩
 
 /-- **The box form**: DIMCID FINDS its guard against OBot within its budget. -/
-theorem dimcid_finds_guard_vs_OBot :
+theorem loeb_DIMCID_vs_OBot_guard :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k → LenProvableV TAct k (guardCode (tcode phiD) (pcode (DIMCID k)) (pcode OBot)) := by
-  obtain ⟨k₀, h⟩ := dimcid_vs_OBot_defects
+  obtain ⟨k₀, h⟩ := loeb_DIMCID_vs_OBot_core
   exact ⟨k₀, fun k hk ↦ (h k hk).2⟩
 
 /-- **DIMCID × DupocBot is `(D, D)` in PA-`S'`**, for all large `k`, unconditional, on the engine's own codes.
 **The engine proves `(C, D)` at EVERY `k`** (`outcome_DIMCID_vs_DupocBot`, a universal theorem, by the two
 else-play floors `no_provable_DIMCID_C_tail`/`no_provable_DupocBot_D_tail`); **`S'` proves `(D, D)` for all
 large `k`**: DIMCID's guard "I play C against Dupoc ⇒ Dupoc plays D against me" is self-fulfilling and
-found, so DIMCID defects (`dimcid_vs_DupocBot_defects`); Dupoc's guard "DIMCID plays C against me" is then
+found, so DIMCID defects (`loeb_DIMCID_vs_DupocBot_core`); Dupoc's guard "DIMCID plays C against me" is then
 FALSE in ℕ, so by soundness it is never found and Dupoc defects (`dupoc_D_of_probe`). The engine's floor on
 DIMCID's else-play is what `S'` cannot see — under a real proof predicate the guard is not an else-play at
 all, it is FOUND. -/
@@ -350,53 +350,53 @@ theorem loeb_DIMCID_vs_DupocBot :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 2 (pcode (DIMCID k)) (pcode (DupocBot k)) (pcode (DIMCID k)) (actCode .D) ∧
       EvalGraph 2 (pcode (DupocBot k)) (pcode (DIMCID k)) (pcode (DupocBot k)) (actCode .D) := by
-  obtain ⟨k₀, h⟩ := dimcid_vs_DupocBot_defects
+  obtain ⟨k₀, h⟩ := loeb_DIMCID_vs_DupocBot_core
   exact ⟨k₀, fun k hk ↦ ⟨(h k hk).1, dupoc_D_of_probe k (proper_DIMCID k) (h k hk).1⟩⟩
 
 /-- **The box form**: DIMCID FINDS its guard against `DupocBot k` within its budget. -/
-theorem dimcid_finds_guard_vs_DupocBot :
+theorem loeb_DIMCID_vs_DupocBot_guard :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       LenProvableV TAct k (guardCode (tcode phiD) (pcode (DIMCID k)) (pcode (DupocBot k))) := by
-  obtain ⟨k₀, h⟩ := dimcid_vs_DupocBot_defects
+  obtain ⟨k₀, h⟩ := loeb_DIMCID_vs_DupocBot_core
   exact ⟨k₀, fun k hk ↦ (h k hk).2⟩
 
 /-- **Dupoc's guard against DIMCID is never found** (the SND half of the Dupoc cell, on the engine's codes). -/
-theorem dupoc_guard_vs_DIMCID_not_found :
+theorem snd_DupocBot_vs_DIMCID_notFound :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       ¬ LenProvableV TAct k (guardCode (tcode phiDu) (pcode (DupocBot k)) (pcode (DIMCID k))) := by
-  obtain ⟨k₀, h⟩ := dimcid_vs_DupocBot_defects
+  obtain ⟨k₀, h⟩ := loeb_DIMCID_vs_DupocBot_core
   exact ⟨k₀, fun k hk ↦ not_found_opp_self (proper_DupocBot k) (proper_DIMCID k) .C (b := .D) (by decide)
     (h k hk).1 k⟩
 
 /-- **The engine's `JustBot k` defects against DIMCID for all large `k`** (Just's half on the engine's own
 code: its guard "DIMCID plays C against `.bot (DupocBot k)`" is FALSE — DIMCID defects against the described
 snapshot `pBot (SV gDu 0 k)` — so by soundness it is never found). -/
-theorem just_engine_vs_DIMCID_defects :
+theorem snd_JustBot_vs_DIMCID_engine :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 2 (pcode (JustBot k)) (pcode (DIMCID k)) (pcode (JustBot k)) (actCode .D) := by
-  obtain ⟨k₀, h⟩ := dimcid_vs_botDupocBot_defects
+  obtain ⟨k₀, h⟩ := loeb_DIMCID_vs_botDupocBot
   exact ⟨k₀, fun k hk ↦ just_D_of_probe k (proper_DIMCID k) (h k hk).1⟩
 
 /-- **DIMCID × JustBot is `(D, D)` in PA-`S'`**, for all large `k`, unconditional, on the budget-slot `Just7 k`
 (the same play as the engine's `JustBot k` in every frame, `evalGraph_Just7_iff`; a `Describes` instance for
 the engine code `pcode (JustBot k)` cannot be built — its stored template carries `k`, `ROUTE_B_SCOPE.md` §7 —
 so DIMCID's half is stated against `Just7 k`, and Just's half both on `Just7 k` and on the engine code,
-`just_engine_vs_DIMCID_defects`). The engine proves `(C, D)` by a floor census (`llm_outcome_DIMCID_vs_JustBot`);
+`snd_JustBot_vs_DIMCID_engine`). The engine proves `(C, D)` by a floor census (`llm_outcome_DIMCID_vs_JustBot`);
 in `S'` DIMCID's guard against the described Just is self-fulfilling and found, so DIMCID defects; Just's guard
 "DIMCID plays C against `pBot (Dupoc k)`" is FALSE (DIMCID defects against the described snapshot,
-`dimcid_vs_botDupocV_defects`), never found by soundness, so Just defects. -/
+`loeb_DIMCID_vs_botDupoc`), never found by soundness, so Just defects. -/
 theorem loeb_DIMCID_vs_JustBot :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 2 (pcode (DIMCID k)) (Just7 k) (pcode (DIMCID k)) (actCode .D) ∧
       EvalGraph 2 (Just7 k) (pcode (DIMCID k)) (Just7 k) (actCode .D) := by
-  obtain ⟨k₁, h₁⟩ := dimcid_vs_just7_defects
-  obtain ⟨k₂, h₂⟩ := dimcid_vs_botDupocV_defects
+  obtain ⟨k₁, h₁⟩ := loeb_DIMCID_vs_Just7
+  obtain ⟨k₂, h₂⟩ := loeb_DIMCID_vs_botDupoc
   exact ⟨k₁ + k₂, fun k hk ↦ ⟨(h₁ k (by omega)).1, just7_D_of_probe k (h₂ k (by omega)).1⟩⟩
 
 /-- **The box form**: DIMCID FINDS its guard against `Just7 k` within its budget. -/
-theorem dimcid_finds_guard_vs_just7 :
+theorem loeb_DIMCID_vs_Just7_guard :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k → LenProvableV TAct k (guardCode (tcode phiD) (pcode (DIMCID k)) (Just7 k)) := by
-  obtain ⟨k₀, h⟩ := dimcid_vs_just7_defects
+  obtain ⟨k₀, h⟩ := loeb_DIMCID_vs_Just7
   exact ⟨k₀, fun k hk ↦ (h k hk).2⟩
 
 /-- **DIMCID × PrudentBot is `(D, D)` in PA-`S'`**, for all large `k`, unconditional, on the engine's own codes.
@@ -408,14 +408,14 @@ theorem loeb_DIMCID_vs_PrudentBot :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 2 (pcode (DIMCID k)) (pcode (PrudentBot k)) (pcode (DIMCID k)) (actCode .D) ∧
       EvalGraph 2 (pcode (PrudentBot k)) (pcode (DIMCID k)) (pcode (PrudentBot k)) (actCode .D) := by
-  obtain ⟨k₀, h⟩ := dimcid_vs_PrudentBot_defects
+  obtain ⟨k₀, h⟩ := loeb_DIMCID_vs_PrudentBot_core
   exact ⟨k₀, fun k hk ↦ ⟨(h k hk).1, prudent_D_of_probe k (proper_DIMCID k) (h k hk).1⟩⟩
 
 /-- **The box form**: DIMCID FINDS its guard against `PrudentBot k` within its budget. -/
-theorem dimcid_finds_guard_vs_PrudentBot :
+theorem loeb_DIMCID_vs_PrudentBot_guard :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       LenProvableV TAct k (guardCode (tcode phiD) (pcode (DIMCID k)) (pcode (PrudentBot k))) := by
-  obtain ⟨k₀, h⟩ := dimcid_vs_PrudentBot_defects
+  obtain ⟨k₀, h⟩ := loeb_DIMCID_vs_PrudentBot_core
   exact ⟨k₀, fun k hk ↦ (h k hk).2⟩
 
 /-- **CIMCIC × DIMCID is `(D, D)` in PA-`S'`**, for all large `k`, unconditional, on the engine's own codes.
@@ -428,24 +428,24 @@ theorem loeb_CIMCIC_vs_DIMCID :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 2 (pcode (CIMCIC k)) (pcode (DIMCID k)) (pcode (CIMCIC k)) (actCode .D) ∧
       EvalGraph 2 (pcode (DIMCID k)) (pcode (CIMCIC k)) (pcode (DIMCID k)) (actCode .D) := by
-  obtain ⟨k₀, h⟩ := dimcid_vs_CIMCIC_defects
+  obtain ⟨k₀, h⟩ := loeb_DIMCID_vs_CIMCIC_core
   refine ⟨k₀, fun k hk ↦ ⟨?_, (h k hk).1⟩⟩
   have hn := cimcic_selfref_not_found k (proper_DIMCID k) (h k hk).1
-  rw [pcode_CIMCIC'] at hn ⊢
+  rw [pcode_CIMCIC_search] at hn ⊢
   exact search_else phiC hn (const_play _ _ _ _)
 
 /-- **The box form**: DIMCID FINDS its guard against `CIMCIC k` within its budget. -/
-theorem dimcid_finds_guard_vs_CIMCIC :
+theorem loeb_DIMCID_vs_CIMCIC_guard :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       LenProvableV TAct k (guardCode (tcode phiD) (pcode (DIMCID k)) (pcode (CIMCIC k))) := by
-  obtain ⟨k₀, h⟩ := dimcid_vs_CIMCIC_defects
+  obtain ⟨k₀, h⟩ := loeb_DIMCID_vs_CIMCIC_core
   exact ⟨k₀, fun k hk ↦ (h k hk).2⟩
 
 /-- **CIMCIC's guard against DIMCID is never found** (the self-refutation, for all large `k`). -/
-theorem cimcic_guard_vs_DIMCID_not_found :
+theorem snd_CIMCIC_vs_DIMCID_notFound :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       ¬ LenProvableV TAct k (guardCode (tcode phiC) (pcode (CIMCIC k)) (pcode (DIMCID k))) := by
-  obtain ⟨k₀, h⟩ := dimcid_vs_CIMCIC_defects
+  obtain ⟨k₀, h⟩ := loeb_DIMCID_vs_CIMCIC_core
   exact ⟨k₀, fun k hk ↦ cimcic_selfref_not_found k (proper_DIMCID k) (h k hk).1⟩
 
 end cells
@@ -482,7 +482,7 @@ theorem dimcid_flips_census :
   obtain ⟨k₃, h₃⟩ := loeb_DIMCID_vs_OBot
   obtain ⟨k₄, h₄⟩ := loeb_DIMCID_vs_DupocBot
   obtain ⟨k₅, h₅⟩ := loeb_DIMCID_vs_JustBot
-  obtain ⟨k₅', h₅'⟩ := just_engine_vs_DIMCID_defects
+  obtain ⟨k₅', h₅'⟩ := snd_JustBot_vs_DIMCID_engine
   obtain ⟨k₆, h₆⟩ := loeb_DIMCID_vs_PrudentBot
   obtain ⟨k₇, h₇⟩ := loeb_CIMCIC_vs_DIMCID
   refine ⟨k₁ + k₂ + k₃ + k₄ + k₅ + k₅' + k₆ + k₇, fun k hk ↦ ?_⟩

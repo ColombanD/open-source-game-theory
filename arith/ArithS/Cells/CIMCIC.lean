@@ -26,12 +26,12 @@ conjunction family `pGC X U W := qCG X U W ⋏ qCTG (swap X) (swap U) (swap W)` 
   Dupoc cooperates with CIMCIC, the transposed searcher defects against Cupod and Cupod defects against
   it — so CIMCIC's implications have TRUE consequents and Dupoc's/Cupod's atoms are TRUE, in both
   readings (`loebSound_pCiD : LoebSound pCiD 14 16`); `family_found` then gives
-  **`cimcic_dupoc_coop_unconditional`** (both cooperate at fuel 2) and
-  `cimcic_dupoc_find_guards_unconditional` (both boxes). The swap reading is τ(CIMCIC) × Cupod, not a
+  **`loeb_Cimcic_vs_Dupoc`** (both cooperate at fuel 2) and
+  `loeb_Cimcic_vs_Dupoc_guards` (both boxes). The swap reading is τ(CIMCIC) × Cupod, not a
   zoo cell, and is handled by the transposed code exactly as DIMCID's.
 * **Cell 2 (§8), CIMCIC × Mirror `(C, C)`**: Mirror's closed triple; a box of `pCMi := pGC (cl TM) (numT 0)
-  (numT 1)` makes `CimcicV k` cooperate (fuel 2), Mirror COPIES (fuel 3, `mirror_copies_V`), so the
-  implication's consequent holds; **`cimcic_mirror_coop_unconditional`**.
+  (numT 1)` makes `CimcicV k` cooperate (fuel 2), Mirror COPIES (fuel 3, `mirror_copies2_V`), so the
+  implication's consequent holds; **`loeb_Cimcic_vs_Mirror`**.
 * **Cell 3 (§9), CIMCIC × CIMCIC `(C, C)` — NO Löb**: the guard at the frame `(CimcicV k, CimcicV k)` is
   `qCC := qCG TCi uCi wCi`, whose two atoms coincide ("`CimcicV k` plays C against `CimcicV k`" twice), so
   `qCC(k)` is a tautology in both readings and `TAct ⊢ ∀¹ qCC` by completeness (`tact_proves_qCC`) —
@@ -39,7 +39,7 @@ conjunction family `pGC X U W := qCG X U W ⋏ qCTG (swap X) (swap U) (swap W)` 
   a proof code of `∀¹ qCC` of some standard length `N` in every model (`exists_qCC_length`), instantiated
   at `bnum k` (`qCC_inst_V`, length `N + 5|qCC(k)| + 3|qCC| + |bnum k| + 7`); at ℕ the instance costs
   `K₀ + K₁·size k` (`lenProvable_inst_size` + `flen_subst_bnumT_le`), below `k` for all large `k`
-  (`poly_size_le_eventually`): **`cimcic_self_finds_guard`** and **`cimcic_self_coop`** — with NO
+  (`poly_size_le_eventually`): **`pos_Cimcic_vs_Cimcic_guard`** and **`pos_Cimcic_vs_Cimcic`** — with NO
   `BoundedInnerNec` hypothesis at all.
 
 Conventions (`HANDOVER_ARITHMETIZED_S.md` §5–6): every threshold and constant is EXISTENTIAL; `simp`
@@ -678,26 +678,26 @@ lemma hU_cimcic (k : V) : (⌜uCi⌝ : V) = dU (CimcicV k) := (dU_CimcicV k).sym
 lemma hW_cimcic (k : V) : (⌜wCi⌝ : V) = dW (CimcicV k) := (dW_CimcicV k).symm
 
 /-- CIMCIC's own triple describes `CimcicV k` in `stdActV V`. -/
-lemma hopp_cimcic (k : V) :
+lemma desc_cimcic (k : V) :
     relabel (uCi.val (s := stdActV V) ![] Empty.elim) (wCi.val (s := stdActV V) ![] Empty.elim)
       (TCi.val (s := stdActV V) ![k] Empty.elim) = CimcicV k := by
   rw [val_TCi_V]; exact relabel_val_uCi_wCi_V k
 
 /-- The transposed triple describes `CimcicTV k` in `stdActV V`. -/
-lemma hopp'_cimcic (k : V) :
+lemma descT_cimcic (k : V) :
     relabel ((Semiterm.lMap swap uCi).val (s := stdActV V) ![] Empty.elim)
       ((Semiterm.lMap swap wCi).val (s := stdActV V) ![] Empty.elim)
       ((Semiterm.lMap swap TCi).val (s := stdActV V) ![k] Empty.elim) = CimcicTV k := by
   rw [lMap_swap_TCi, val_TCi_V]; exact relabel_val_uCiT_wCiT_V k
 
 /-- Dupoc's triple `(TD, uD, wD)` describes `DupocV k` in `stdActV V`. -/
-lemma hopp_dupoc (k : V) :
+lemma desc_dupoc (k : V) :
     relabel (uD.val (s := stdActV V) ![] Empty.elim) (wD.val (s := stdActV V) ![] Empty.elim)
       (TD.val (s := stdActV V) ![k] Empty.elim) = DupocV k := by
   rw [val_TD_V]; exact relabel_val_uD_wD_V k
 
 /-- The transposed triple describes `CupodV k` in `stdActV V` (`uC = swap uD`, `wC = swap wD`). -/
-lemma hopp'_dupoc (k : V) :
+lemma descT_dupoc (k : V) :
     relabel ((Semiterm.lMap swap uD).val (s := stdActV V) ![] Empty.elim)
       ((Semiterm.lMap swap wD).val (s := stdActV V) ![] Empty.elim)
       ((Semiterm.lMap swap TD).val (s := stdActV V) ![k] Empty.elim) = CupodV k := by
@@ -721,7 +721,7 @@ theorem guardCode_CimcicV_DupocV_eq_instB (k : V) :
 theorem eval_qCDu_iff_V (k : V) :
     Semiformula.Eval (s := stdActV V) ![k] Empty.elim qCDu ↔
       ((∃ n, EvalGraph n (CimcicV k) (DupocV k) (CimcicV k) 0) → (∃ n, EvalGraph n (DupocV k) (CimcicV k) (DupocV k) 0)) :=
-  eval_qCG_iff_V k TD uD wD (hopp_dupoc k)
+  eval_qCG_iff_V k TD uD wD (desc_dupoc k)
 
 /-- **The truth equation of `qCDu` in the swapped reading**: the transposed searcher against Cupod,
 "D implies Cupod plays D". -/
@@ -729,7 +729,7 @@ theorem eval_qCDu_swap_iff_V (k : V) :
     Semiformula.Eval (s := swapActS V) ![k] Empty.elim qCDu ↔
       ((∃ n, EvalGraph n (CimcicTV k) (CupodV k) (CimcicTV k) 1) → (∃ n, EvalGraph n (CupodV k) (CimcicTV k) (CupodV k) 1)) := by
   rw [qCDu_def, eval_qCG_swap_iff_V]
-  exact eval_qCTG_iff_V k _ _ _ (hopp'_dupoc k)
+  exact eval_qCTG_iff_V k _ _ _ (descT_dupoc k)
 
 /-- **Dupoc's guard against CIMCIC**: `qDCi(k)` says "`CimcicV k` plays C against `DupocV k`" — the
 hand-written template `GtmplA 0` filled with Dupoc's triple (me) and CIMCIC's triple (opp). -/
@@ -755,7 +755,7 @@ theorem guardCode_CupodV_CimcicTV_eq_instB (k : V) :
 theorem eval_qDCi_iff_V (k : V) :
     Semiformula.Eval (s := stdActV V) ![k] Empty.elim qDCi ↔
       ∃ n, EvalGraph n (CimcicV k) (DupocV k) (CimcicV k) 0 := by
-  have h := eval_qG_iff_V 0 k TD uD wD TCi uCi wCi (hopp_dupoc k) (hopp_cimcic k)
+  have h := eval_qG_iff_V 0 k TD uD wD TCi uCi wCi (desc_dupoc k) (desc_cimcic k)
   rwa [Nat.cast_zero] at h
 
 /-- **The truth equation of `lMap swap qDCi` in every model** (standard reading): "`CimcicTV k` plays
@@ -764,7 +764,7 @@ theorem eval_qDCi_swapped_iff_V (k : V) :
     Semiformula.Eval (s := stdActV V) ![k] Empty.elim (Semiformula.lMap swap qDCi) ↔
       ∃ n, EvalGraph n (CimcicTV k) (CupodV k) (CimcicTV k) 1 := by
   rw [qDCi_def, lMap_swap_qG, swapAct_zero]
-  have h := eval_qG_iff_V 1 k _ _ _ _ _ _ (hopp'_dupoc k) (hopp'_cimcic k)
+  have h := eval_qG_iff_V 1 k _ _ _ _ _ _ (descT_dupoc k) (descT_cimcic k)
   rwa [Nat.cast_one] at h
 
 /-! #### The mutual family -/
@@ -875,7 +875,7 @@ theorem eval_pCiD_iff_std (k : V) :
       ((∃ n, EvalGraph n (CimcicV k) (DupocV k) (CimcicV k) 0) ∧ (∃ n, EvalGraph n (CimcicTV k) (CupodV k) (CimcicTV k) 1)) := by
   rw [pCiD_def, pDCi_def]
   simp only [LogicalConnective.HomClass.map_and, LogicalConnective.Prop.and_eq]
-  rw [eval_pGC_iff_std k TD uD wD (hopp_dupoc k) (hopp'_dupoc k), eval_qDCi_iff_V, eval_qDCi_swapped_iff_V]
+  rw [eval_pGC_iff_std k TD uD wD (desc_dupoc k) (descT_dupoc k), eval_qDCi_iff_V, eval_qDCi_swapped_iff_V]
 
 /-- `pCiD(k)` in the swapped reading: the SAME content (the conjuncts exchange roles). -/
 theorem eval_pCiD_iff_swap (k : V) :
@@ -885,7 +885,7 @@ theorem eval_pCiD_iff_swap (k : V) :
       ((∃ n, EvalGraph n (CimcicV k) (DupocV k) (CimcicV k) 0) ∧ (∃ n, EvalGraph n (CimcicTV k) (CupodV k) (CimcicTV k) 1)) := by
   rw [eval_swapActS, pCiD_def, LogicalConnective.HomClass.map_and, lMap_swap_pGC, lMap_swap_pDCi, ← stdActV_eq_stdActS]
   simp only [LogicalConnective.HomClass.map_and, LogicalConnective.Prop.and_eq]
-  rw [eval_qCG_iff_V k TD uD wD (hopp_dupoc k), eval_qCTG_iff_V k _ _ _ (hopp'_dupoc k), eval_qDCi_iff_V,
+  rw [eval_qCG_iff_V k TD uD wD (desc_dupoc k), eval_qCTG_iff_V k _ _ _ (descT_dupoc k), eval_qDCi_iff_V,
     eval_qDCi_swapped_iff_V, and_comm (a := ∃ n, EvalGraph n (CimcicTV k) (CupodV k) (CimcicTV k) 1),
     and_comm (a := (∃ n, EvalGraph n (CimcicTV k) (CupodV k) (CimcicTV k) 1) → _)]
 
@@ -913,7 +913,7 @@ theorem loebSound_pCiD : LoebSound pCiD 14 16 := by
 
 /-- **The CIMCIC × Dupoc cell, packaged**: for all large `k`, CIMCIC cooperates with Dupoc and Dupoc
 cooperates with CIMCIC (fuel 2), and both guard boxes hold. -/
-theorem cimcic_dupoc_cell_core {d : ℕ} (hE : BoundedInnerNec d) :
+theorem loeb_Cimcic_vs_Dupoc_core_of_nec {d : ℕ} (hE : BoundedInnerNec d) :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       (EvalGraph 2 (Cimcic k) (Dupoc k) (Cimcic k) 0 ∧ EvalGraph 2 (Dupoc k) (Cimcic k) (Dupoc k) 0) ∧
       (LenProvableV TAct k (guardCode (⌜tmplC⌝ : ℕ) (Cimcic k) (Dupoc k)) ∧
@@ -930,33 +930,33 @@ theorem cimcic_dupoc_cell_core {d : ℕ} (hE : BoundedInnerNec d) :
 
 /-- **CIMCIC × Dupoc is `(C, C)` in PA-`S'`, conditional on bounded inner necessitation**: for all
 large `k`, `Cimcic k` cooperates with `Dupoc k` and `Dupoc k` cooperates with `Cimcic k` (fuel 2). -/
-theorem cimcic_dupoc_coop {d : ℕ} (hE : BoundedInnerNec d) :
+theorem loeb_Cimcic_vs_Dupoc_of_nec {d : ℕ} (hE : BoundedInnerNec d) :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 2 (Cimcic k) (Dupoc k) (Cimcic k) 0 ∧ EvalGraph 2 (Dupoc k) (Cimcic k) (Dupoc k) 0 := by
-  obtain ⟨k₀, h⟩ := cimcic_dupoc_cell_core hE
+  obtain ⟨k₀, h⟩ := loeb_Cimcic_vs_Dupoc_core_of_nec hE
   exact ⟨k₀, fun k hk ↦ (h k hk).1⟩
 
 /-- **The box form**: for all large `k`, both CIMCIC and Dupoc FIND their guards against each other
 within the budget `k` (conditional). -/
-theorem cimcic_dupoc_find_guards {d : ℕ} (hE : BoundedInnerNec d) :
+theorem loeb_Cimcic_vs_Dupoc_guards_of_nec {d : ℕ} (hE : BoundedInnerNec d) :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       LenProvableV TAct k (guardCode (⌜tmplC⌝ : ℕ) (Cimcic k) (Dupoc k)) ∧
       LenProvableV TAct k (guardCode (⌜GtmplA 0⌝ : ℕ) (Dupoc k) (Cimcic k)) := by
-  obtain ⟨k₀, h⟩ := cimcic_dupoc_cell_core hE
+  obtain ⟨k₀, h⟩ := loeb_Cimcic_vs_Dupoc_core_of_nec hE
   exact ⟨k₀, fun k hk ↦ (h k hk).2⟩
 
 /-- **CIMCIC × Dupoc `(C, C)` in PA-`S'`, unconditional.** -/
-theorem cimcic_dupoc_coop_unconditional :
+theorem loeb_Cimcic_vs_Dupoc :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 2 (Cimcic k) (Dupoc k) (Cimcic k) 0 ∧ EvalGraph 2 (Dupoc k) (Cimcic k) (Dupoc k) 0 :=
-  cimcic_dupoc_coop boundedInnerNec_sixteen
+  loeb_Cimcic_vs_Dupoc_of_nec boundedInnerNec_sixteen
 
 /-- **CIMCIC and Dupoc find their guards against each other, unconditional.** -/
-theorem cimcic_dupoc_find_guards_unconditional :
+theorem loeb_Cimcic_vs_Dupoc_guards :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       LenProvableV TAct k (guardCode (⌜tmplC⌝ : ℕ) (Cimcic k) (Dupoc k)) ∧
       LenProvableV TAct k (guardCode (⌜GtmplA 0⌝ : ℕ) (Dupoc k) (Cimcic k)) :=
-  cimcic_dupoc_find_guards boundedInnerNec_sixteen
+  loeb_Cimcic_vs_Dupoc_guards_of_nec boundedInnerNec_sixteen
 
 end dupocCell
 
@@ -980,7 +980,7 @@ theorem guardCode_CimcicV_MirrorV_eq_instB (k : V) :
 theorem eval_qCMi_iff_V (k : V) :
     Semiformula.Eval (s := stdActV V) ![k] Empty.elim qCMi ↔
       ((∃ n, EvalGraph n (CimcicV k) MirrorV (CimcicV k) 0) → (∃ n, EvalGraph n MirrorV (CimcicV k) MirrorV 0)) :=
-  eval_qCG_iff_V k (cl TM) (numT 0) (numT 1) (hopp_mirror k)
+  eval_qCG_iff_V k (cl TM) (numT 0) (numT 1) (desc_mirror k)
 
 /-- **The truth equation of `qCMi` in the swapped reading**: the transposed searcher against Mirror,
 "D implies Mirror plays D". -/
@@ -988,7 +988,7 @@ theorem eval_qCMi_swap_iff_V (k : V) :
     Semiformula.Eval (s := swapActS V) ![k] Empty.elim qCMi ↔
       ((∃ n, EvalGraph n (CimcicTV k) MirrorV (CimcicTV k) 1) → (∃ n, EvalGraph n MirrorV (CimcicTV k) MirrorV 1)) := by
   rw [qCMi_def, eval_qCG_swap_iff_V]
-  exact eval_qCTG_iff_V k _ _ _ (hopp'_mirror k)
+  exact eval_qCTG_iff_V k _ _ _ (descT_mirror k)
 
 /-- **The Löb family of the Mirror cell**: `pCMi := qCMi ⋏ (its transposition)`. -/
 noncomputable def pCMi : Semisentence LAct 1 := pGC (cl TM) (numT 0) (numT 1)
@@ -1007,14 +1007,14 @@ theorem loebSound_pCMi : LoebSound pCMi 7 8 := by
     le_trans (pConj_slack_le a _ _ _ (formulaLen_instB_pGC (cl TM) (numT 0) (numT 1) k)) ha
   obtain ⟨h1, h2⟩ := pGC_both_V k (cl TM) (numT 0) (numT 1) (hX_mirror k) hU_mirror hW_mirror a ha' h
   rw [swapcode_MirrorV] at h2
-  exact ⟨(eval_pGC_iff_stdActS k (cl TM) (numT 0) (numT 1) (hopp_mirror k) (hopp'_mirror k)).mpr
-      ⟨fun _ ↦ ⟨3, mirror_copies_V _ _ h1⟩, fun _ ↦ ⟨3, mirror_copies_V _ _ h2⟩⟩,
-    (eval_pGC_iff_swap k (cl TM) (numT 0) (numT 1) (hopp_mirror k) (hopp'_mirror k)).mpr
-      ⟨fun _ ↦ ⟨3, mirror_copies_V _ _ h1⟩, fun _ ↦ ⟨3, mirror_copies_V _ _ h2⟩⟩⟩
+  exact ⟨(eval_pGC_iff_stdActS k (cl TM) (numT 0) (numT 1) (desc_mirror k) (descT_mirror k)).mpr
+      ⟨fun _ ↦ ⟨3, mirror_copies2_V _ _ h1⟩, fun _ ↦ ⟨3, mirror_copies2_V _ _ h2⟩⟩,
+    (eval_pGC_iff_swap k (cl TM) (numT 0) (numT 1) (desc_mirror k) (descT_mirror k)).mpr
+      ⟨fun _ ↦ ⟨3, mirror_copies2_V _ _ h1⟩, fun _ ↦ ⟨3, mirror_copies2_V _ _ h2⟩⟩⟩
 
 /-- **The Mirror cell, packaged**: for all large `k`, both searchers find their guards against
 Mirror (fuel 2) and both guard boxes hold. -/
-theorem cimcic_mirror_cell_core {d : ℕ} (hE : BoundedInnerNec d) :
+theorem loeb_Cimcic_vs_Mirror_core_of_nec {d : ℕ} (hE : BoundedInnerNec d) :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       (EvalGraph 2 (Cimcic k) Mirror (Cimcic k) 0 ∧ EvalGraph 2 (CimcicTV (V := ℕ) k) Mirror (CimcicTV k) 1) ∧
       (LenProvableV TAct k (guardCode (⌜tmplC⌝ : ℕ) (Cimcic k) Mirror) ∧
@@ -1030,30 +1030,30 @@ theorem cimcic_mirror_cell_core {d : ℕ} (hE : BoundedInnerNec d) :
 
 /-- **CIMCIC × Mirror is `(C, C)` in PA-`S'`, conditional on bounded inner necessitation**: for all
 large `k`, `Cimcic k` cooperates with Mirror (fuel 2) and Mirror copies (fuel 3). -/
-theorem cimcic_mirror_coop {d : ℕ} (hE : BoundedInnerNec d) :
+theorem loeb_Cimcic_vs_Mirror_of_nec {d : ℕ} (hE : BoundedInnerNec d) :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 2 (Cimcic k) Mirror (Cimcic k) 0 ∧ EvalGraph 3 Mirror (Cimcic k) Mirror 0 := by
-  obtain ⟨k₀, h⟩ := cimcic_mirror_cell_core hE
-  exact ⟨k₀, fun k hk ↦ ⟨(h k hk).1.1, mirror_copies_V (V := ℕ) (Cimcic k) 0 (h k hk).1.1⟩⟩
+  obtain ⟨k₀, h⟩ := loeb_Cimcic_vs_Mirror_core_of_nec hE
+  exact ⟨k₀, fun k hk ↦ ⟨(h k hk).1.1, mirror_copies2_V (V := ℕ) (Cimcic k) 0 (h k hk).1.1⟩⟩
 
 /-- **The box form**: for all large `k`, CIMCIC FINDS a proof of its guard against Mirror within its
 budget `k` (conditional). -/
-theorem cimcic_finds_guard_vs_mirror {d : ℕ} (hE : BoundedInnerNec d) :
+theorem loeb_Cimcic_vs_Mirror_guard_of_nec {d : ℕ} (hE : BoundedInnerNec d) :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k → LenProvableV TAct k (guardCode (⌜tmplC⌝ : ℕ) (Cimcic k) Mirror) := by
-  obtain ⟨k₀, h⟩ := cimcic_mirror_cell_core hE
+  obtain ⟨k₀, h⟩ := loeb_Cimcic_vs_Mirror_core_of_nec hE
   exact ⟨k₀, fun k hk ↦ (h k hk).2.1⟩
 
 /-- **CIMCIC × Mirror `(C, C)` in PA-`S'`, unconditional**: for all large `k`, `Cimcic k` cooperates
 with Mirror and Mirror copies. -/
-theorem cimcic_mirror_coop_unconditional :
+theorem loeb_Cimcic_vs_Mirror :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 2 (Cimcic k) Mirror (Cimcic k) 0 ∧ EvalGraph 3 Mirror (Cimcic k) Mirror 0 :=
-  cimcic_mirror_coop boundedInnerNec_sixteen
+  loeb_Cimcic_vs_Mirror_of_nec boundedInnerNec_sixteen
 
 /-- **CIMCIC finds its guard against Mirror, unconditional.** -/
-theorem cimcic_finds_guard_vs_mirror_unconditional :
+theorem loeb_Cimcic_vs_Mirror_guard :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k → LenProvableV TAct k (guardCode (⌜tmplC⌝ : ℕ) (Cimcic k) Mirror) :=
-  cimcic_finds_guard_vs_mirror boundedInnerNec_sixteen
+  loeb_Cimcic_vs_Mirror_guard_of_nec boundedInnerNec_sixteen
 
 end mirrorCell
 
@@ -1078,7 +1078,7 @@ theorem eval_qCC_iff_V (k : V) :
     Semiformula.Eval (s := stdActV V) ![k] Empty.elim qCC ↔
       ((∃ n, EvalGraph n (CimcicV k) (CimcicV k) (CimcicV k) 0) →
         (∃ n, EvalGraph n (CimcicV k) (CimcicV k) (CimcicV k) 0)) :=
-  eval_qCG_iff_V k TCi uCi wCi (hopp_cimcic k)
+  eval_qCG_iff_V k TCi uCi wCi (desc_cimcic k)
 
 /-- **The truth equation of `qCC` in the swapped reading**: the transposed searcher against itself,
 again `A → A`. -/
@@ -1087,7 +1087,7 @@ theorem eval_qCC_swap_iff_V (k : V) :
       ((∃ n, EvalGraph n (CimcicTV k) (CimcicTV k) (CimcicTV k) 1) →
         (∃ n, EvalGraph n (CimcicTV k) (CimcicTV k) (CimcicTV k) 1)) := by
   rw [qCC_def, eval_qCG_swap_iff_V]
-  exact eval_qCTG_iff_V k _ _ _ (hopp'_cimcic k)
+  exact eval_qCTG_iff_V k _ _ _ (descT_cimcic k)
 
 /-- **`TAct ⊢ ∀ k, qCC(k)`** — the guard is a tautology in both readings (the `S'` twin of the
 engine's `Pf.implRefl`), by completeness over the two standard readings. -/
@@ -1125,15 +1125,15 @@ theorem qCC_inst_V {N : V} (h : LenDerivable TAct N (⌜(∀¹ qCC : Sentence LA
 /-- **CIMCIC finds its guard against itself, for all large `k`, with NO hypothesis**: at ℕ the instance
 of the tautology costs `K₀ + K₁·size k` (`lenProvable_inst_size` + `flen_subst_bnumT_le`), below `k`
 for all large `k` (`linear_size_le_eventually`) — `Common/Khat.found_of_all`, the generic form of this argument. -/
-theorem cimcic_self_finds_guard :
+theorem pos_Cimcic_vs_Cimcic_guard :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k → LenProvableV TAct k (guardCode (⌜tmplC⌝ : ℕ) (Cimcic k) (Cimcic k)) := by
   exact found_of_all tact_proves_qCC _ fun k ↦ guardCode_CimcicV_self_eq_instB (V := ℕ) k
 
 /-- **CIMCIC × CIMCIC `(C, C)` in PA-`S'`, unconditional and Löb-free**: for all large `k`,
 `Cimcic k` cooperates with itself (fuel 2). -/
-theorem cimcic_self_coop :
+theorem pos_Cimcic_vs_Cimcic :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k → EvalGraph 2 (Cimcic k) (Cimcic k) (Cimcic k) 0 := by
-  obtain ⟨k₀, h⟩ := cimcic_self_finds_guard
+  obtain ⟨k₀, h⟩ := pos_Cimcic_vs_Cimcic_guard
   exact ⟨k₀, fun k hk ↦ cimcic_search_V (V := ℕ) k (Cimcic k) (h k hk)⟩
 
 /-- The consulted guard of the engine's `CIMCIC k` against itself (`Agent.guardOf`) is the guard
@@ -1144,9 +1144,9 @@ lemma guardOf_CIMCIC (k : ℕ) :
 
 /-- **The engine-facing form**: for all large `k`, the guard the arithmetized evaluator consults for
 the engine's `CIMCIC k` against itself has a `TAct`-proof within the budget `k`. -/
-theorem cimcic_finds_guardOf_self :
+theorem pos_CIMCIC_vs_CIMCIC_guardOf :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k → LenProvableV TAct k (guardOf phiC (PD.Bots.CIMCIC k) (PD.Bots.CIMCIC k)) := by
-  obtain ⟨k₀, h⟩ := cimcic_self_finds_guard
+  obtain ⟨k₀, h⟩ := pos_Cimcic_vs_Cimcic_guard
   exact ⟨k₀, fun k hk ↦ by rw [guardOf_CIMCIC]; exact h k hk⟩
 
 end selfCell

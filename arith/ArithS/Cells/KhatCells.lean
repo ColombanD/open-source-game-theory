@@ -33,7 +33,7 @@ conditional form `∀¹ (k̂ ≤ #0 🡒 q)` (`tact_all_above_of_both`), and its
    equation `eval_eqTmpl_V` ("`opp = SV gCu 1 k`"), the engine bridge `guardCodeB_GtmplT7_nat` (the same
    CODE as the engine's guard `guardCode (tcode (phiT k)) me opp`, through the typed equality
    `eqTmpl_subst_eq_tmpl_eq`), hence `evalGraph_CupodTroll7_iff` (the same play as `pcode (CupodTrollBot k)`
-   in every frame at every fuel), and the description layer `TT/uT/wT`, `hX_troll7`/`hopp_troll7`.
+   in every frame at every fuel), and the description layer `TT/uT/wT`, `hX_troll7`/`desc_troll7`.
 5. **CupodTroll × Cupod `(D, D)`** (`outcome_CupodTrollBot_vs_CupodBot`): CupodTroll's guard against
    `Cupod k` is the true equation `SV gCu 1 k = SV gCu 1 k` in both readings (`tact_qTC`), found for all
    large `k` (`found_of_all`, `tact_qEqSelf`), so CupodTroll plays its then-branch D; Cupod's guard "CupodTroll plays D
@@ -86,12 +86,12 @@ theorem guardCode_DuB0 (k : V) :
 theorem tact_qDuB0 : TAct ⊢ ∀¹ qDuB0 := by
   refine tact_all_of_both _ (fun M _ _ x ↦ ?_) (fun M _ _ x ↦ ?_)
   · have : M↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
-    rw [qDuB0, eval_qT_plays_opp_self .C _ _ _ _ _ _ x (hme_SV gDu 0 (Or.inl rfl) x) (val_desc_bot_zero x),
+    rw [qDuB0, eval_qT_plays_opp_self .C _ _ _ _ _ _ x (desc_SV gDu 0 (Or.inl rfl) x) (val_desc_bot_zero x),
       actCode_C_cast]
     exact bot_const_play_V _ _ _
   · have : M↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
     rw [qDuB0, eval_qT_swap, lMap_swap_gDu, lMap_swap_cl, lMap_swap_TB0, lMap_swap_cterm_C, lMap_swap_cterm_D,
-      eval_qT_plays_opp_self .D _ _ _ _ _ _ x (hme_SVT gDu 0 (Or.inl rfl) x) (val_desc_bot_one x),
+      eval_qT_plays_opp_self .D _ _ _ _ _ _ x (descT_SV gDu 0 (Or.inl rfl) x) (val_desc_bot_one x),
       actCode_D_cast]
     exact bot_const_play_V _ _ _
 
@@ -125,12 +125,12 @@ theorem guardCode_JB0 (k : V) :
 theorem tact_qJB0 : TAct ⊢ ∀¹ qJB0 := by
   refine tact_all_of_both _ (fun M _ _ x ↦ ?_) (fun M _ _ x ↦ ?_)
   · have : M↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
-    rw [qJB0, eval_qT_plays_opp_self .C _ _ _ _ _ _ x (hme_botSV gDu 0 (Or.inl rfl) x) (val_desc_bot_zero x),
+    rw [qJB0, eval_qT_plays_opp_self .C _ _ _ _ _ _ x (desc_botSV gDu 0 (Or.inl rfl) x) (val_desc_bot_zero x),
       actCode_C_cast]
     exact bot_const_play_V _ _ _
   · have : M↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
     rw [qJB0, eval_qT_swap, lMap_swap_gDu, lMap_swap_cl, lMap_swap_TB0, lMap_swap_cterm_C, lMap_swap_cterm_D,
-      eval_qT_plays_opp_self .D _ _ _ _ _ _ x (hme_botSVT gDu 0 (Or.inl rfl) x) (val_desc_bot_one x),
+      eval_qT_plays_opp_self .D _ _ _ _ _ _ x (descT_botSV gDu 0 (Or.inl rfl) x) (val_desc_bot_one x),
       actCode_D_cast]
     exact bot_const_play_V _ _ _
 
@@ -146,12 +146,12 @@ theorem guardCode_JB1 (k : V) :
 theorem tact_qJB1 : TAct ⊢ ∀¹ qJB1 := by
   refine tact_all_of_both _ (fun M _ _ x ↦ ?_) (fun M _ _ x ↦ ?_)
   · have : M↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
-    rw [qJB1, eval_qT_plays_opp_self .D _ _ _ _ _ _ x (hme_botSV gCu 1 (Or.inr rfl) x) (val_desc_bot_one x),
+    rw [qJB1, eval_qT_plays_opp_self .D _ _ _ _ _ _ x (desc_botSV gCu 1 (Or.inr rfl) x) (val_desc_bot_one x),
       actCode_D_cast]
     exact bot_const_play_V _ _ _
   · have : M↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
     rw [qJB1, eval_qT_swap, lMap_swap_gCu, lMap_swap_cl, lMap_swap_TB0, lMap_swap_cterm_C, lMap_swap_cterm_D,
-      eval_qT_plays_opp_self .C _ _ _ _ _ _ x (hme_botSVT gCu 1 (Or.inr rfl) x) (val_desc_bot_zero x),
+      eval_qT_plays_opp_self .C _ _ _ _ _ _ x (descT_botSV gCu 1 (Or.inr rfl) x) (val_desc_bot_zero x),
       actCode_C_cast]
     exact bot_const_play_V _ _ _
 
@@ -230,12 +230,12 @@ theorem tact_qDT_above : ∃ kHat : ℕ, TAct ⊢ ∀¹ ((leF (↑kHat) #0 : Sem
   obtain ⟨k₂, h₂⟩ := cupod_botDB_V
   refine ⟨k₁ + k₂, tact_all_above_of_both _ _ (fun M _ _ x hx ↦ ?_) (fun M _ _ x hx ↦ ?_)⟩
   · have : M↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
-    rw [qDT, eval_qT_plays_opp_self .C _ _ _ _ _ _ x (hme_SV gDu 0 (Or.inl rfl) x) (val_desc_tft x),
+    rw [qDT, eval_qT_plays_opp_self .C _ _ _ _ _ _ x (desc_SV gDu 0 (Or.inl rfl) x) (val_desc_tft x),
       actCode_C_cast]
     exact ⟨_, tft_C_of_probe_C_V (h₁ M x (le_trans (by push_cast; exact le_self_add) hx))⟩
   · have : M↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
     rw [qDT, eval_qT_swap, lMap_swap_gDu, lMap_swap_cl, lMap_swap_TTft, lMap_swap_cterm_C, lMap_swap_cterm_D,
-      eval_qT_plays_opp_self .D _ _ _ _ _ _ x (hme_SVT gDu 0 (Or.inl rfl) x) (val_desc_tft_swap x),
+      eval_qT_plays_opp_self .D _ _ _ _ _ _ x (descT_SV gDu 0 (Or.inl rfl) x) (val_desc_tft_swap x),
       actCode_D_cast, lMap_swap_gDu]
     exact ⟨_, tftT_D_of_probe_D_V (h₂ M x (le_trans (by push_cast; exact le_add_self) hx))⟩
 
@@ -253,7 +253,7 @@ theorem khat_DupocBot_vs_TitForTatBot :
   obtain ⟨k₁, h₁⟩ := dupoc_botCB_V
   refine ⟨k₀ + k₁, fun k hk ↦ ⟨?_, ?_⟩⟩
   · have hg := h k (by omega)
-    rw [pcode_DupocBot'] at hg ⊢
+    rw [pcode_DupocBot_search] at hg ⊢
     refine EvalGraph.mono_le (n := 0 + 1 + 1) (by omega) ?_
     exact search_then phiDu hg (const_play _ _ _ _)
   · have hp := h₁ ℕ k (le_def.mpr (Or.inr (by rw [natCast_nat]; omega)))
@@ -272,7 +272,7 @@ theorem guardCode_JT (k : V) : guardCode (⌜gDu⌝ : V) (pBot (SV gDu 0 k)) Tft
 
 /-- Just cooperates with `.bot CooperateBot` for all large `k`, on the engine's own code (the consulted guard is
 the snapshot's, `guardCode_JustBot_eq`, the `bnum k`-instance of `qJB0`). -/
-theorem just_botCB_found :
+theorem pos_JustBot_vs_botCB :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k → EvalGraph 2 (pcode (JustBot k)) (pBot (pConst 0)) (pcode (JustBot k)) 0 := by
   obtain ⟨k₀, h⟩ := found_of_all tact_qJB0
     (fun k ↦ guardCode (tcode (phiJ k)) (pcode (JustBot k)) (pBot (pConst 0)))
@@ -289,12 +289,12 @@ theorem tact_qJT_above : ∃ kHat : ℕ, TAct ⊢ ∀¹ ((leF (↑kHat) #0 : Sem
   obtain ⟨k₂, h₂⟩ := botCupod_botDB_V
   refine ⟨k₁ + k₂, tact_all_above_of_both _ _ (fun M _ _ x hx ↦ ?_) (fun M _ _ x hx ↦ ?_)⟩
   · have : M↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
-    rw [qJT, eval_qT_plays_opp_self .C _ _ _ _ _ _ x (hme_botSV gDu 0 (Or.inl rfl) x) (val_desc_tft x),
+    rw [qJT, eval_qT_plays_opp_self .C _ _ _ _ _ _ x (desc_botSV gDu 0 (Or.inl rfl) x) (val_desc_tft x),
       actCode_C_cast]
     exact ⟨_, tft_C_of_probe_C_V (h₁ M x (le_trans (by push_cast; exact le_self_add) hx))⟩
   · have : M↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
     rw [qJT, eval_qT_swap, lMap_swap_gDu, lMap_swap_cl, lMap_swap_TTft, lMap_swap_cterm_C, lMap_swap_cterm_D,
-      eval_qT_plays_opp_self .D _ _ _ _ _ _ x (hme_botSVT gDu 0 (Or.inl rfl) x) (val_desc_tft_swap x),
+      eval_qT_plays_opp_self .D _ _ _ _ _ _ x (descT_botSV gDu 0 (Or.inl rfl) x) (val_desc_tft_swap x),
       actCode_D_cast, lMap_swap_gDu]
     exact ⟨_, tftT_D_of_probe_D_V (h₂ M x (le_trans (by push_cast; exact le_add_self) hx))⟩
 
@@ -312,7 +312,7 @@ theorem khat_JustBot_vs_TitForTatBot :
     (fun k ↦ by
       rw [guardCode_JustBot_eq k sfp_TitForTatBot.1, ← TftV_nat, pcode_DupocBot_SV]
       exact guardCode_JT (V := ℕ) k)
-  obtain ⟨k₁, h₁⟩ := just_botCB_found
+  obtain ⟨k₁, h₁⟩ := pos_JustBot_vs_botCB
   refine ⟨k₀ + k₁, fun k hk ↦ ⟨?_, ?_⟩⟩
   · have hg := h k (by omega)
     rw [pcode_JustBot] at hg ⊢
@@ -856,13 +856,13 @@ lemma hU_troll7 (k : V) : (⌜uT⌝ : V) = dU (CupodTrollV7 k) := (dU_CupodTroll
 lemma hW_troll7 (k : V) : (⌜wT⌝ : V) = dW (CupodTrollV7 k) := (dW_CupodTrollV7 k).symm
 
 /-- CupodTroll's own triple describes `CupodTrollV7 k` in `stdActV V`. -/
-lemma hopp_troll7 (k : V) :
+lemma desc_troll7 (k : V) :
     relabel (uT.val (s := stdActV V) ![] Empty.elim) (wT.val (s := stdActV V) ![] Empty.elim)
       (TT.val (s := stdActV V) ![k] Empty.elim) = CupodTrollV7 k := by
   rw [val_TT_V]; exact relabel_val_uT_wT_V k
 
 /-- The transposed triple describes `CupodTrollTV7 k` in `stdActV V`. -/
-lemma hopp'_troll7 (k : V) :
+lemma descT_troll7 (k : V) :
     relabel ((Semiterm.lMap swap uT).val (s := stdActV V) ![] Empty.elim)
       ((Semiterm.lMap swap wT).val (s := stdActV V) ![] Empty.elim)
       ((Semiterm.lMap swap TT).val (s := stdActV V) ![k] Empty.elim) = CupodTrollTV7 k := by
@@ -925,19 +925,19 @@ theorem tact_qCuT7_above : ∃ kHat : ℕ, TAct ⊢ ∀¹ ((leF (↑kHat) #0 : S
   obtain ⟨k₂, h₂⟩ := troll7T_vs_dupoc_C_V
   refine ⟨k₁ + k₂, tact_all_above_of_both _ _ (fun M _ _ x hx ↦ ?_) (fun M _ _ x hx ↦ ?_)⟩
   · have : M↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
-    rw [qCuT7, eval_qT_plays_opp_self .D _ _ _ _ _ _ x (hme_SV gCu 1 (Or.inr rfl) x) (hopp_troll7 x),
+    rw [qCuT7, eval_qT_plays_opp_self .D _ _ _ _ _ _ x (desc_SV gCu 1 (Or.inr rfl) x) (desc_troll7 x),
       actCode_D_cast]
     exact ⟨_, h₁ M x (le_trans (by push_cast; exact le_self_add) hx)⟩
   · have : M↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
     rw [qCuT7, eval_qT_swap, lMap_swap_gCu,
-      eval_qT_plays_opp_self .C _ _ _ _ _ _ x (hme_SVT gCu 1 (Or.inr rfl) x) (hopp'_troll7 x),
+      eval_qT_plays_opp_self .C _ _ _ _ _ _ x (descT_SV gCu 1 (Or.inr rfl) x) (descT_troll7 x),
       actCode_C_cast, lMap_swap_gCu]
     exact ⟨_, h₂ M x (le_trans (by push_cast; exact le_add_self) hx)⟩
 
 /-- **CupodTroll's guard against `CupodBot k` is found within the budget, for all large `k`** (the box form,
 on the engine's own codes: the consulted guard is `eqTmpl` in the frame `(CupodBot k, CupodBot k)`,
 `guardCodeB_GtmplT7_nat`). -/
-theorem troll_finds_guard_vs_cupod :
+theorem khat_CupodTrollBot_vs_CupodBot_guard :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       LenProvableV TAct k (guardCode (tcode (phiT k)) (pcode (CupodTrollBot k)) (pcode (CupodBot k))) :=
   found_of_all (tact_qEqSelf gCu 1) _ (fun k ↦ by
@@ -970,7 +970,7 @@ theorem khat_CupodTrollBot_vs_CupodBot :
 theorem khat_CupodTrollBot_vs_CupodBot_engine :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 2 (pcode (CupodTrollBot k)) (pcode (CupodBot k)) (pcode (CupodTrollBot k)) (actCode .D) := by
-  obtain ⟨k₀, h⟩ := troll_finds_guard_vs_cupod
+  obtain ⟨k₀, h⟩ := khat_CupodTrollBot_vs_CupodBot_guard
   refine ⟨k₀, fun k hk ↦ ?_⟩
   have hg := h k hk
   rw [pcode_CupodTrollBot] at hg ⊢

@@ -132,7 +132,7 @@ theorem play_of_found_cimcic (k : ℕ) {opp : PD.Prog} (hopp : Proper opp)
     EvalGraph 2 (pcode (CIMCIC k)) (pcode opp) (pcode (CIMCIC k)) 0 ∧
     ∃ N, EvalGraph N (pcode opp) (pcode (CIMCIC k)) (pcode opp) 0 := by
   have hC : EvalGraph 2 (pcode (CIMCIC k)) (pcode opp) (pcode (CIMCIC k)) 0 := by
-    rw [pcode_CIMCIC'] at h ⊢
+    rw [pcode_CIMCIC_search] at h ⊢
     exact search_then phiC h (const_play _ _ _ _)
   have hT : ℕ↓[LAct] ⊧ trAt (CIMCIC k) opp phiC :=
     models_trAt_of_lenProvableV (φ := phiC) (me := CIMCIC k) (opp := opp) h
@@ -144,7 +144,7 @@ theorem play_of_found_cimcic (k : ℕ) {opp : PD.Prog} (hopp : Proper opp)
 
 /-- Prudent always plays in a proper frame (fuel 3), whatever the two verdicts. -/
 theorem prudent_total (k x : ℕ) : ∃ r, EvalGraph 3 (pcode (PrudentBot k)) x (pcode (PrudentBot k)) r := by
-  rw [pcode_PrudentBot']
+  rw [pcode_PrudentBot_search]
   by_cases ho : LenProvableV TAct k (guardCode (tcode phiPo)
       (pSearch k (tcode phiPo) (pSearch k (tcode phiPi) (pConst 0) (pConst 1)) (pConst 1)) x)
   · by_cases hi : LenProvableV TAct k (guardCode (tcode phiPi)
@@ -155,7 +155,7 @@ theorem prudent_total (k x : ℕ) : ∃ r, EvalGraph 3 (pcode (PrudentBot k)) x 
 
 /-- CIMCIC always plays in a proper frame (fuel 2). -/
 theorem cimcic_total (k x : ℕ) : ∃ r, EvalGraph 2 (pcode (CIMCIC k)) x (pcode (CIMCIC k)) r := by
-  rw [pcode_CIMCIC']
+  rw [pcode_CIMCIC_search]
   by_cases hg : LenProvableV TAct k (guardCode (tcode phiC) (pSearch k (tcode phiC) (pConst 0) (pConst 1)) x)
   · exact ⟨0, search_then phiC hg (const_play 0 _ _ _)⟩
   · exact ⟨1, search_else phiC hg (const_play 0 _ _ _)⟩
@@ -232,11 +232,11 @@ theorem dich_DupocBot_vs_DBot :
   constructor
   · intro hn
     refine ⟨?_, floor_DupocBot_vs_DBot_right k⟩
-    rw [pcode_DupocBot'] at hn ⊢
+    rw [pcode_DupocBot_search] at hn ⊢
     exact EvalGraph.mono_le (by omega) (search_else phiDu hn (const_play 0 _ _ _))
   · intro hf
     refine ⟨?_, floor_DupocBot_vs_DBot_right k⟩
-    rw [pcode_DupocBot'] at hf ⊢
+    rw [pcode_DupocBot_search] at hf ⊢
     exact EvalGraph.mono_le (by omega) (search_then phiDu hf (const_play 0 _ _ _))
 
 /-- **Dupoc × EBot** (engine `(D, C)`, pad 5). Hinge: Dupoc's guard "EBot plays C against me". -/
@@ -254,11 +254,11 @@ theorem dich_DupocBot_vs_EBot :
   constructor
   · intro hn
     refine ⟨?_, hE k hk⟩
-    rw [pcode_DupocBot'] at hn ⊢
+    rw [pcode_DupocBot_search] at hn ⊢
     exact EvalGraph.mono_le (by omega) (search_else phiDu hn (const_play 0 _ _ _))
   · intro hf
     refine ⟨?_, hE k hk⟩
-    rw [pcode_DupocBot'] at hf ⊢
+    rw [pcode_DupocBot_search] at hf ⊢
     exact EvalGraph.mono_le (by omega) (search_then phiDu hf (const_play 0 _ _ _))
 
 /-- **Dupoc × CupodTroll** (engine `(D, C)`, pad 2). Hinge: Dupoc's guard "CupodTroll plays C against me". -/
@@ -275,11 +275,11 @@ theorem dich_DupocBot_vs_CupodTrollBot :
   constructor
   · intro hn
     refine ⟨?_, floor_DupocBot_vs_CupodTrollBot_right k⟩
-    rw [pcode_DupocBot'] at hn ⊢
+    rw [pcode_DupocBot_search] at hn ⊢
     exact search_else phiDu hn (const_play 0 _ _ _)
   · intro hf
     refine ⟨?_, floor_DupocBot_vs_CupodTrollBot_right k⟩
-    rw [pcode_DupocBot'] at hf ⊢
+    rw [pcode_DupocBot_search] at hf ⊢
     exact search_then phiDu hf (const_play 0 _ _ _)
 
 /-- **Just × DBot** (engine `(D, C)`, pad 4). Hinge: Just's guard "DBot plays C against `.bot (DupocBot k)`". -/
@@ -361,11 +361,11 @@ theorem dich_CIMCIC_vs_CupodTrollBot :
   constructor
   · intro hn
     refine ⟨?_, floor_CIMCIC_vs_CupodTrollBot_right k⟩
-    rw [pcode_CIMCIC'] at hn ⊢
+    rw [pcode_CIMCIC_search] at hn ⊢
     exact search_else phiC hn (const_play 0 _ _ _)
   · intro hf
     refine ⟨?_, floor_CIMCIC_vs_CupodTrollBot_right k⟩
-    rw [pcode_CIMCIC'] at hf ⊢
+    rw [pcode_CIMCIC_search] at hf ⊢
     exact search_then phiC hf (const_play 0 _ _ _)
 
 /-- **CIMCIC × DBot** (engine `(D, C)`, pad 4; the `cenU` cell). Hinge: CIMCIC's guard against DBot. -/
@@ -382,11 +382,11 @@ theorem dich_CIMCIC_vs_DBot :
   constructor
   · intro hn
     refine ⟨?_, floor_CIMCIC_vs_DBot_right k⟩
-    rw [pcode_CIMCIC'] at hn ⊢
+    rw [pcode_CIMCIC_search] at hn ⊢
     exact EvalGraph.mono_le (by omega) (search_else phiC hn (const_play 0 _ _ _))
   · intro hf
     refine ⟨?_, floor_CIMCIC_vs_DBot_right k⟩
-    rw [pcode_CIMCIC'] at hf ⊢
+    rw [pcode_CIMCIC_search] at hf ⊢
     exact EvalGraph.mono_le (by omega) (search_then phiC hf (const_play 0 _ _ _))
 
 /-- **CIMCIC × EBot** (engine `(D, C)`, pad 5; the `cenU` cell). Hinge: CIMCIC's guard against EBot. -/
@@ -404,11 +404,11 @@ theorem dich_CIMCIC_vs_EBot :
   constructor
   · intro hn
     refine ⟨?_, hE k hk⟩
-    rw [pcode_CIMCIC'] at hn ⊢
+    rw [pcode_CIMCIC_search] at hn ⊢
     exact EvalGraph.mono_le (by omega) (search_else phiC hn (const_play 0 _ _ _))
   · intro hf
     refine ⟨?_, hE k hk⟩
-    rw [pcode_CIMCIC'] at hf ⊢
+    rw [pcode_CIMCIC_search] at hf ⊢
     exact EvalGraph.mono_le (by omega) (search_then phiC hf (const_play 0 _ _ _))
 
 /-- **Guardian × CIMCIC** (engine `(C, D)`, pad 2). Guardian's C is settled (its guard is FALSE,
@@ -428,11 +428,11 @@ theorem dich_GuardianBot_vs_CIMCIC :
   constructor
   · intro hn
     refine ⟨hG k hk, ?_⟩
-    rw [pcode_CIMCIC'] at hn ⊢
+    rw [pcode_CIMCIC_search] at hn ⊢
     exact search_else phiC hn (const_play 0 _ _ _)
   · intro hf
     refine ⟨hG k hk, ?_⟩
-    rw [pcode_CIMCIC'] at hf ⊢
+    rw [pcode_CIMCIC_search] at hf ⊢
     exact search_then phiC hf (const_play 0 _ _ _)
 
 /-- **Guardian × Dupoc** (engine `(C, D)`, pad 2). Guardian's C is settled; hinge: Dupoc's guard "Guardian plays C
@@ -451,11 +451,11 @@ theorem dich_GuardianBot_vs_DupocBot :
   constructor
   · intro hn
     refine ⟨hG k hk, ?_⟩
-    rw [pcode_DupocBot'] at hn ⊢
+    rw [pcode_DupocBot_search] at hn ⊢
     exact search_else phiDu hn (const_play 0 _ _ _)
   · intro hf
     refine ⟨hG k hk, ?_⟩
-    rw [pcode_DupocBot'] at hf ⊢
+    rw [pcode_DupocBot_search] at hf ⊢
     exact search_then phiDu hf (const_play 0 _ _ _)
 
 /-- **Guardian × Just** (engine `(C, D)`, pad 2). Guardian's C is settled; hinge: Just's guard "Guardian plays C
@@ -528,25 +528,25 @@ theorem dich_PrudentBot_vs_DupocBot :
   constructor
   · intro hn
     have hP : EvalGraph 2 (pcode (PrudentBot k)) (pcode (DupocBot k)) (pcode (PrudentBot k)) 1 := by
-      rw [pcode_PrudentBot'] at hn ⊢
+      rw [pcode_PrudentBot_search] at hn ⊢
       exact search_else phiPo hn (const_play 0 _ _ _)
     exact ⟨EvalGraph.mono_le (by omega) hP,
       EvalGraph.mono_le (by omega) (dupoc_D_of_probe k (proper_PrudentBot k) hP)⟩
   · intro hf
     obtain ⟨N, hDC⟩ := play_of_found_opp_self (proper_PrudentBot k) (proper_DupocBot k) .C hf
     have hDf : LenProvableV TAct k (guardCode (tcode phiDu) (pcode (DupocBot k)) (pcode (PrudentBot k))) := by
-      rw [pcode_DupocBot'] at hDC ⊢
+      rw [pcode_DupocBot_search] at hDC ⊢
       exact (found_of_search_play phiDu hDC (by decide)).1
     obtain ⟨N', hPC⟩ := play_of_found_opp_self (proper_DupocBot k) (proper_PrudentBot k) .C hDf
     have hPi : LenProvableV TAct k (guardCode (tcode phiPi) (pcode (PrudentBot k)) (pcode (DupocBot k))) := by
-      rw [pcode_PrudentBot'] at hPC ⊢
+      rw [pcode_PrudentBot_search] at hPC ⊢
       obtain ⟨_, N'', hin⟩ := found_of_search_play phiPo hPC (by decide)
       exact (found_of_search_play phiPi hin (by decide)).1
     have hP : EvalGraph 3 (pcode (PrudentBot k)) (pcode (DupocBot k)) (pcode (PrudentBot k)) 0 := by
-      rw [pcode_PrudentBot'] at hf hPi ⊢
+      rw [pcode_PrudentBot_search] at hf hPi ⊢
       exact search_then phiPo hf (search_then phiPi hPi (const_play 0 _ _ _))
     have hD : EvalGraph 2 (pcode (DupocBot k)) (pcode (PrudentBot k)) (pcode (DupocBot k)) 0 := by
-      rw [pcode_DupocBot'] at hDf ⊢
+      rw [pcode_DupocBot_search] at hDf ⊢
       exact search_then phiDu hDf (const_play 0 _ _ _)
     exact ⟨hP, EvalGraph.mono_le (by omega) hD⟩
 
@@ -566,17 +566,17 @@ theorem dich_PrudentBot_vs_PrudentBot :
   constructor
   · intro hn
     have hP : EvalGraph 3 (pcode (PrudentBot k)) (pcode (PrudentBot k)) (pcode (PrudentBot k)) 1 := by
-      rw [pcode_PrudentBot'] at hn ⊢
+      rw [pcode_PrudentBot_search] at hn ⊢
       exact search_else phiPo hn (const_play 1 _ _ _)
     exact ⟨hP, hP⟩
   · intro hf
     obtain ⟨N, hPC⟩ := play_of_found_opp_self (proper_PrudentBot k) (proper_PrudentBot k) .C hf
     have hPi : LenProvableV TAct k (guardCode (tcode phiPi) (pcode (PrudentBot k)) (pcode (PrudentBot k))) := by
-      rw [pcode_PrudentBot'] at hPC ⊢
+      rw [pcode_PrudentBot_search] at hPC ⊢
       obtain ⟨_, N'', hin⟩ := found_of_search_play phiPo hPC (by decide)
       exact (found_of_search_play phiPi hin (by decide)).1
     have hP : EvalGraph 3 (pcode (PrudentBot k)) (pcode (PrudentBot k)) (pcode (PrudentBot k)) 0 := by
-      rw [pcode_PrudentBot'] at hf hPi ⊢
+      rw [pcode_PrudentBot_search] at hf hPi ⊢
       exact search_then phiPo hf (search_then phiPi hPi (const_play 0 _ _ _))
     exact ⟨hP, hP⟩
 
@@ -589,7 +589,7 @@ theorem prudent_of_verdicts (k : ℕ) (x : ℕ) :
       EvalGraph 3 (pcode (PrudentBot k)) x (pcode (PrudentBot k)) 1) ∧
     (¬ LenProvableV TAct k (guardCode (tcode phiPi) (pcode (PrudentBot k)) x) →
       EvalGraph 3 (pcode (PrudentBot k)) x (pcode (PrudentBot k)) 1) := by
-  rw [pcode_PrudentBot']
+  rw [pcode_PrudentBot_search]
   refine ⟨fun ho hi ↦ search_then phiPo ho (search_then phiPi hi (const_play 0 _ _ _)),
     fun ho ↦ search_else phiPo ho (const_play 1 _ _ _),
     fun hi ↦ search_either phiPo (search_else phiPi hi (const_play 0 _ _ _)) (const_play 1 _ _ _)⟩
@@ -649,12 +649,12 @@ theorem dich_CIMCIC_vs_PrudentBot :
     have hP := hPo hn
     have hC := cimcic_selfref_not_found k (proper_PrudentBot k) hP
     refine ⟨?_, hP⟩
-    rw [pcode_CIMCIC'] at hC ⊢
+    rw [pcode_CIMCIC_search] at hC ⊢
     exact EvalGraph.mono_le (by omega) (search_else phiC hC (const_play 0 _ _ _))
   · intro hf
     obtain ⟨N, hCC⟩ := play_of_found_opp_self (proper_PrudentBot k) (proper_CIMCIC k) .C hf
     refine ⟨?_, hPi, hPC hf⟩
-    rw [pcode_CIMCIC'] at hCC ⊢
+    rw [pcode_CIMCIC_search] at hCC ⊢
     exact EvalGraph.mono_le (by omega)
       (search_then phiC (found_of_search_play phiC hCC (by decide)).1 (const_play 0 _ _ _))
 
@@ -739,7 +739,7 @@ theorem dich_PrudentBot_vs_EBot :
     refine ⟨EvalGraph.mono_le (by omega) (hPC hf (hB k hk)), ?_⟩
     obtain ⟨N, hEC⟩ := play_of_found_opp_self (proper_PrudentBot k) sfp_EBot.1 .C hf
     obtain ⟨r, hr⟩ := prudent_total k (pBot Mirror)
-    obtain ⟨r', hE⟩ := ebot_total (EvalGraph.mono_le (by omega) (prudent_vs_botDB k)) (prudent_vs_botCB k) hr
+    obtain ⟨r', hE⟩ := ebot_total (EvalGraph.mono_le (by omega) (snd_PrudentBot_vs_botDB k)) (snd_PrudentBot_vs_botCB k) hr
     have := EvalGraph.unique' hE hEC
     subst this
     exact hE
@@ -777,9 +777,9 @@ theorem dich_WaryBot_vs_DupocBot :
     refine ⟨?_, fun hA ↦ ?_, fun hA ↦ ?_⟩
     · rw [pcode_WaryBot] at hn ⊢
       exact search_else phiW hn (const_play 0 _ _ _)
-    · rw [pcode_DupocBot'] at hA ⊢
+    · rw [pcode_DupocBot_search] at hA ⊢
       exact search_else phiDu hA (const_play 0 _ _ _)
-    · rw [pcode_DupocBot'] at hA ⊢
+    · rw [pcode_DupocBot_search] at hA ⊢
       exact search_then phiDu hA (const_play 0 _ _ _)
 
 /-- **Wary × Just** (engine `llm_outcome_WaryBot_vs_JustBot = (C, D)`, pad 2). Two hinges, NESTED: `J` = Just's
@@ -850,7 +850,7 @@ theorem dich_WaryBot_vs_PrudentBot :
 against me" (outer split); Prudent's outer guard `A` "Cupod plays C against me" and prudence guard `B` "Cupod plays D
 against `.bot DefectBot`" (rated (P)). `Cu ⇒ (D, D)` (Cupod defects, so `A` is false); `¬Cu ⇒` Cupod C, Prudent C iff
 `A ∧ B` — the engine's `(C, D)` is `¬Cu` with `A ∧ B` failing. -/
-theorem dich_CupodBot_PrudentBot_core (k : ℕ) :
+theorem dich_CupodBot_vs_PrudentBot_core (k : ℕ) :
     (LenProvableV TAct k (guardCode (tcode phiCu) (pcode (CupodBot k)) (pcode (PrudentBot k))) →
       EvalGraph 3 (pcode (CupodBot k)) (pcode (PrudentBot k)) (pcode (CupodBot k)) (actCode .D) ∧
       EvalGraph 3 (pcode (PrudentBot k)) (pcode (CupodBot k)) (pcode (PrudentBot k)) (actCode .D)) ∧
@@ -875,7 +875,7 @@ theorem dich_CupodBot_PrudentBot_core (k : ℕ) :
     rw [pcode_CupodBot] at hn ⊢
     exact EvalGraph.mono_le (by omega) (search_else phiCu hn (const_play 0 _ _ _))
 
-/-- **Cupod × Prudent** (engine `outcome_CupodBot_vs_PrudentBot = (C, D)`, pad 3): `dich_CupodBot_PrudentBot_core`
+/-- **Cupod × Prudent** (engine `outcome_CupodBot_vs_PrudentBot = (C, D)`, pad 3): `dich_CupodBot_vs_PrudentBot_core`
 with the hinges written as the evaluator consults them. -/
 theorem dich_CupodBot_vs_PrudentBot :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
@@ -892,7 +892,7 @@ theorem dich_CupodBot_vs_PrudentBot :
           EvalGraph 3 (pcode (PrudentBot k)) (pcode (CupodBot k)) (pcode (PrudentBot k)) (actCode .C))) := by
   refine ⟨0, fun k _ ↦ ?_⟩
   simp only [hingeB]
-  exact dich_CupodBot_PrudentBot_core k
+  exact dich_CupodBot_vs_PrudentBot_core k
 
 /-- **Prudent × Cupod** (engine `outcome_PrudentBot_vs_CupodBot = (D, C)`, pad 3): the same pair, Prudent's side
 first. -/
@@ -911,7 +911,7 @@ theorem dich_PrudentBot_vs_CupodBot :
           EvalGraph 3 (pcode (PrudentBot k)) (pcode (CupodBot k)) (pcode (PrudentBot k)) (actCode .C))) := by
   refine ⟨0, fun k _ ↦ ?_⟩
   simp only [hingeB]
-  obtain ⟨h1, h2⟩ := dich_CupodBot_PrudentBot_core k
+  obtain ⟨h1, h2⟩ := dich_CupodBot_vs_PrudentBot_core k
   exact ⟨fun hCu ↦ ⟨(h1 hCu).2, (h1 hCu).1⟩, h2⟩
 
 /-- **Just × Cupod** (engine `outcome_JustBot_vs_CupodBot = (D, C)`, pad 2). Two hinges, NESTED: `J` = Just's guard
@@ -965,12 +965,12 @@ theorem dich_CIMCIC_vs_CupodBot :
   constructor
   · intro hG
     have hCC : EvalGraph 2 (pcode (CIMCIC k)) (pcode (CupodBot k)) (pcode (CIMCIC k)) 0 := by
-      rw [pcode_CIMCIC'] at hG ⊢
+      rw [pcode_CIMCIC_search] at hG ⊢
       exact search_then phiC hG (const_play 0 _ _ _)
     exact ⟨hCC, cupod_C_of_probe k (proper_CIMCIC k) hCC⟩
   · intro hn
     refine ⟨?_, fun hCu ↦ ?_, fun hCu ↦ ?_⟩
-    · rw [pcode_CIMCIC'] at hn ⊢
+    · rw [pcode_CIMCIC_search] at hn ⊢
       exact search_else phiC hn (const_play 0 _ _ _)
     · rw [pcode_CupodBot] at hCu ⊢
       exact search_then phiCu hCu (const_play 0 _ _ _)
@@ -1187,7 +1187,7 @@ theorem tact_rDB_imp_negTwin : TAct ⊢ ∀¹ (rDB 🡒 negTwin) := by
   · have : M↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
     simp only [LogicalConnective.HomClass.map_imply, LogicalConnective.Prop.arrow_eq]
     intro hr
-    rw [rDB, eval_qT_plays_opp_self .C _ _ _ _ _ _ x (hme_SV gDu 0 (Or.inl rfl) x) (descVal_closed (pcode DBot) x),
+    rw [rDB, eval_qT_plays_opp_self .C _ _ _ _ _ _ x (desc_SV gDu 0 (Or.inl rfl) x) (descVal_closed (pcode DBot) x),
       actCode_C_cast, cast_DBot] at hr
     rw [eval_negTwin_iff _ (by rw [stdActV_eq_stdActS]; exact stdActS_lMap_emb)]
     left
@@ -1198,7 +1198,7 @@ theorem tact_rDB_imp_negTwin : TAct ⊢ ∀¹ (rDB 🡒 negTwin) := by
   · have : M↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
     simp only [LogicalConnective.HomClass.map_imply, LogicalConnective.Prop.arrow_eq]
     intro hr
-    rw [rDB, eval_qT_swap, lMap_swap_gDu, eval_qT_plays_opp_self .D _ _ _ _ _ _ x (hme_SVT gDu 0 (Or.inl rfl) x)
+    rw [rDB, eval_qT_swap, lMap_swap_gDu, eval_qT_plays_opp_self .D _ _ _ _ _ _ x (descT_SV gDu 0 (Or.inl rfl) x)
       (descVal_closed_T (pcode DBot) x), actCode_D_cast, cast_DBot, swapcode_DBotV, lMap_swap_gDu] at hr
     rw [eval_negTwin_iff _ swapActS_lMap_emb]
     right
@@ -1216,7 +1216,7 @@ theorem tact_conjTwin_imp_rDB : TAct ⊢ ∀¹ (conjTwin 🡒 rDB) := by
     intro h
     obtain ⟨h1, _⟩ := (eval_conjTwin_iff _ (by rw [stdActV_eq_stdActS]; exact stdActS_lMap_emb) x).mp h
     rw [lenDerivable_iff_lenProvableV, ← guardCode_DuB1] at h1
-    rw [rDB, eval_qT_plays_opp_self .C _ _ _ _ _ _ x (hme_SV gDu 0 (Or.inl rfl) x) (descVal_closed (pcode DBot) x),
+    rw [rDB, eval_qT_plays_opp_self .C _ _ _ _ _ _ x (desc_SV gDu 0 (Or.inl rfl) x) (descVal_closed (pcode DBot) x),
       actCode_C_cast, cast_DBot]
     exact ⟨_, dbot_C_of_probe_D_V (dupoc_else_V x _ h1)⟩
   · have : M↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
@@ -1224,7 +1224,7 @@ theorem tact_conjTwin_imp_rDB : TAct ⊢ ∀¹ (conjTwin 🡒 rDB) := by
     intro h
     obtain ⟨_, h2⟩ := (eval_conjTwin_iff _ swapActS_lMap_emb x).mp h
     rw [lenDerivable_iff_lenProvableV, ← guardCode_DuB1_swap] at h2
-    rw [rDB, eval_qT_swap, lMap_swap_gDu, eval_qT_plays_opp_self .D _ _ _ _ _ _ x (hme_SVT gDu 0 (Or.inl rfl) x)
+    rw [rDB, eval_qT_swap, lMap_swap_gDu, eval_qT_plays_opp_self .D _ _ _ _ _ _ x (descT_SV gDu 0 (Or.inl rfl) x)
       (descVal_closed_T (pcode DBot) x), actCode_D_cast, cast_DBot, swapcode_DBotV, lMap_swap_gDu]
     exact ⟨_, dbotT_D_of_probe_C_V (cupod_else_V x _ h2)⟩
 

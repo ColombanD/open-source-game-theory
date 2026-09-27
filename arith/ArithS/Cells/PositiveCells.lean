@@ -8,7 +8,7 @@ import ArithS.Cells.PrudentMirror
 
 `Research/Notes/ROUTE_B_SCOPE.md` §3 Phase 4, class **POS** of `ROUTE_B_CENSUS.md` (2026-09-23): cells whose
 searcher FINDS its guard without Löb (the engine's `search_t` on a search-free atom, `weakenImpl`, `atomNeg`),
-unconditional in `S'` (no `BoundedInnerNec`), for all large `k`. The mechanism is `cimcic_self_coop`'s, made
+unconditional in `S'` (no `BoundedInnerNec`), for all large `k`. The mechanism is `pos_Cimcic_vs_Cimcic`'s, made
 generic: the guard is the `bnum k`-instance of a FIXED one-variable formula `q` (`guardCode_qT_eq_instB` with
 the searcher's description triple), `q(k)` is true in BOTH standard readings of every model, so `TAct ⊢ ∀¹ q`
 by completeness (`tact_all_of_both`), and the instance at `bnum k` costs `K₀ + K₁·size k ≤ k` (`found_of_all`).
@@ -29,7 +29,7 @@ by completeness (`tact_all_of_both`), and the instance at `bnum k` costs `K₀ +
    `pos_CIMCIC_vs_CooperateBot` `(C, C)`, `pos_DIMCID_vs_DefectBot` `(D, D)`, `pos_JustBot_vs_CooperateBot` `(C, C)`
    (on the engine's own code), `pos_WaryBot_vs_DefectBot` `(D, D)` (the `.neg` guard is a Π₁ truth by
    determinism — the `S'` twin of `Pf.atomNeg`), and the SND cells whose positive sub-fact is the searcher finding
-   its guard against `.bot DefectBot`: `snd_CupodBot_vs_DBot`/`_EBot` and `snd_WaryBot_vs_DBot`/`_EBot`, all `(C, C)`.
+   its guard against `.bot DefectBot`: `pos_CupodBot_vs_DBot`/`_EBot` and `pos_WaryBot_vs_DBot`/`_EBot`, all `(C, C)`.
 5. **The unreadability cells re-evaluated** (census classes FLOOR(cenU)/OTHER, where PA reads every source):
    * CIMCIC's guard against an opponent that defects against it is SELF-REFUTING (found ⇒ CIMCIC cooperates ⇒ by
      soundness the opponent cooperates — against the fact): `cimcic_selfref_not_found`, so
@@ -90,7 +90,7 @@ section instances
 
 
 lemma pcode_DupocBot_SV (k : ℕ) : pcode (DupocBot k) = SV (V := ℕ) gDu 0 k := by
-  rw [pcode_DupocBot', SV_nat]; rfl
+  rw [pcode_DupocBot_search, SV_nat]; rfl
 lemma pcode_CupodBot_SV (k : ℕ) : pcode (CupodBot k) = SV (V := ℕ) gCu 1 k := by
   rw [pcode_CupodBot, SV_nat]; rfl
 lemma pcode_WaryBot_SV (k : ℕ) : pcode (WaryBot k) = SV (V := ℕ) gW 1 k := by
@@ -129,12 +129,12 @@ theorem guardCode_Du0 (k : V) : guardCode (⌜gDu⌝ : V) (SV gDu 0 k) (pConst 0
 theorem tact_qDu0 : TAct ⊢ ∀¹ qDu0 := by
   refine tact_all_of_both _ (fun M _ _ x ↦ ?_) (fun M _ _ x ↦ ?_)
   · have : M↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
-    rw [qDu0, eval_qT_plays_opp_self .C _ _ _ _ _ _ x (hme_SV gDu 0 (Or.inl rfl) x) (val_desc_const_zero x),
+    rw [qDu0, eval_qT_plays_opp_self .C _ _ _ _ _ _ x (desc_SV gDu 0 (Or.inl rfl) x) (val_desc_const_zero x),
       actCode_C_cast]
     exact const_play_V _ _ _
   · have : M↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
     rw [qDu0, eval_qT_swap, lMap_swap_gDu, lMap_swap_cl, lMap_swap_T0, lMap_swap_cterm_C, lMap_swap_cterm_D,
-      eval_qT_plays_opp_self .D _ _ _ _ _ _ x (hme_SVT gDu 0 (Or.inl rfl) x) (val_desc_const_one x),
+      eval_qT_plays_opp_self .D _ _ _ _ _ _ x (descT_SV gDu 0 (Or.inl rfl) x) (val_desc_const_one x),
       actCode_D_cast]
     exact const_play_V _ _ _
 
@@ -150,7 +150,7 @@ theorem pos_DupocBot_vs_CooperateBot :
     (fun k ↦ by rw [pcode_CB, pcode_DupocBot_SV]; exact guardCode_Du0 (V := ℕ) k)
   refine ⟨k₀, fun k hk ↦ ⟨?_, by rw [pcode_CB]; exact const_play 1 _ _ _⟩⟩
   have hg := h k hk
-  rw [pcode_DupocBot'] at hg ⊢
+  rw [pcode_DupocBot_search] at hg ⊢
   exact search_then phiDu hg (const_play _ _ _ _)
 
 /-! #### CupodBot × DefectBot `(D, D)`, and Cupod's positive guard against `.bot DefectBot` -/
@@ -166,12 +166,12 @@ theorem guardCode_Cu1 (k : V) : guardCode (⌜gCu⌝ : V) (SV gCu 1 k) (pConst 1
 theorem tact_qCu1 : TAct ⊢ ∀¹ qCu1 := by
   refine tact_all_of_both _ (fun M _ _ x ↦ ?_) (fun M _ _ x ↦ ?_)
   · have : M↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
-    rw [qCu1, eval_qT_plays_opp_self .D _ _ _ _ _ _ x (hme_SV gCu 1 (Or.inr rfl) x) (val_desc_const_one x),
+    rw [qCu1, eval_qT_plays_opp_self .D _ _ _ _ _ _ x (desc_SV gCu 1 (Or.inr rfl) x) (val_desc_const_one x),
       actCode_D_cast]
     exact const_play_V _ _ _
   · have : M↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
     rw [qCu1, eval_qT_swap, lMap_swap_gCu, lMap_swap_cl, lMap_swap_T0, lMap_swap_cterm_C, lMap_swap_cterm_D,
-      eval_qT_plays_opp_self .C _ _ _ _ _ _ x (hme_SVT gCu 1 (Or.inr rfl) x) (val_desc_const_zero x),
+      eval_qT_plays_opp_self .C _ _ _ _ _ _ x (descT_SV gCu 1 (Or.inr rfl) x) (val_desc_const_zero x),
       actCode_C_cast]
     exact const_play_V _ _ _
 
@@ -200,17 +200,17 @@ theorem guardCode_CuB1 (k : V) :
 theorem tact_qCuB1 : TAct ⊢ ∀¹ qCuB1 := by
   refine tact_all_of_both _ (fun M _ _ x ↦ ?_) (fun M _ _ x ↦ ?_)
   · have : M↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
-    rw [qCuB1, eval_qT_plays_opp_self .D _ _ _ _ _ _ x (hme_SV gCu 1 (Or.inr rfl) x) (val_desc_bot_one x),
+    rw [qCuB1, eval_qT_plays_opp_self .D _ _ _ _ _ _ x (desc_SV gCu 1 (Or.inr rfl) x) (val_desc_bot_one x),
       actCode_D_cast]
     exact bot_const_play_V _ _ _
   · have : M↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
     rw [qCuB1, eval_qT_swap, lMap_swap_gCu, lMap_swap_cl, lMap_swap_TB0, lMap_swap_cterm_C, lMap_swap_cterm_D,
-      eval_qT_plays_opp_self .C _ _ _ _ _ _ x (hme_SVT gCu 1 (Or.inr rfl) x) (val_desc_bot_zero x),
+      eval_qT_plays_opp_self .C _ _ _ _ _ _ x (descT_SV gCu 1 (Or.inr rfl) x) (val_desc_bot_zero x),
       actCode_C_cast]
     exact bot_const_play_V _ _ _
 
 /-- Cupod defects against `.bot DefectBot` for all large `k` (its guard is found). -/
-theorem cupod_vs_botDB_found :
+theorem pos_CupodBot_vs_botDB :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k → EvalGraph 2 (pcode (CupodBot k)) (pBot (pConst 1)) (pcode (CupodBot k)) 1 := by
   obtain ⟨k₀, h⟩ := found_of_all tact_qCuB1
     (fun k ↦ guardCode (tcode phiCu) (pcode (CupodBot k)) (pBot (pConst 1)))
@@ -222,23 +222,23 @@ theorem cupod_vs_botDB_found :
 
 /-- `CupodBot × DBot = (C, C)` (engine `outcome_CupodBot_vs_DBot`, pad 4), for all large `k`: DBot sees Cupod
 defect against `.bot DefectBot` (found) and cooperates; Cupod's guard against DBot is then false. -/
-theorem snd_CupodBot_vs_DBot :
+theorem pos_CupodBot_vs_DBot :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 4 (pcode (CupodBot k)) (pcode DBot) (pcode (CupodBot k)) (actCode .C) ∧
       EvalGraph 4 (pcode DBot) (pcode (CupodBot k)) (pcode DBot) (actCode .C) := by
-  obtain ⟨k₀, h⟩ := cupod_vs_botDB_found
+  obtain ⟨k₀, h⟩ := pos_CupodBot_vs_botDB
   refine ⟨k₀, fun k hk ↦ ?_⟩
   have hD := dbot_C_of_probe_D (h k hk)
   exact ⟨EvalGraph.mono_le (by omega) (cupod_C_of_probe k sfp_DBot.1 hD), hD⟩
 
 /-- `CupodBot × EBot = (C, C)` (engine `outcome_CupodBot_vs_EBot`, pad 5), for all large `k`. -/
-theorem snd_CupodBot_vs_EBot :
+theorem pos_CupodBot_vs_EBot :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 5 (pcode (CupodBot k)) (pcode EBot) (pcode (CupodBot k)) (actCode .C) ∧
       EvalGraph 5 (pcode EBot) (pcode (CupodBot k)) (pcode EBot) (actCode .C) := by
-  obtain ⟨k₀, h⟩ := cupod_vs_botDB_found
+  obtain ⟨k₀, h⟩ := pos_CupodBot_vs_botDB
   refine ⟨k₀, fun k hk ↦ ?_⟩
-  have hE := ebot_C_of_probes (h k hk) (cupod_vs_botCB k)
+  have hE := ebot_C_of_probes (h k hk) (snd_CupodBot_vs_botCB k)
   exact ⟨EvalGraph.mono_le (by omega) (cupod_C_of_probe k sfp_EBot.1 hE), hE⟩
 
 /-! #### CIMCIC × CooperateBot `(C, C)` -/
@@ -313,12 +313,12 @@ theorem guardCode_J0 (k : V) : guardCode (⌜gDu⌝ : V) (pBot (SV gDu 0 k)) (pC
 theorem tact_qJ0 : TAct ⊢ ∀¹ qJ0 := by
   refine tact_all_of_both _ (fun M _ _ x ↦ ?_) (fun M _ _ x ↦ ?_)
   · have : M↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
-    rw [qJ0, eval_qT_plays_opp_self .C _ _ _ _ _ _ x (hme_botSV gDu 0 (Or.inl rfl) x) (val_desc_const_zero x),
+    rw [qJ0, eval_qT_plays_opp_self .C _ _ _ _ _ _ x (desc_botSV gDu 0 (Or.inl rfl) x) (val_desc_const_zero x),
       actCode_C_cast]
     exact const_play_V _ _ _
   · have : M↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
     rw [qJ0, eval_qT_swap, lMap_swap_gDu, lMap_swap_cl, lMap_swap_T0, lMap_swap_cterm_C, lMap_swap_cterm_D,
-      eval_qT_plays_opp_self .D _ _ _ _ _ _ x (hme_botSVT gDu 0 (Or.inl rfl) x) (val_desc_const_one x),
+      eval_qT_plays_opp_self .D _ _ _ _ _ _ x (descT_botSV gDu 0 (Or.inl rfl) x) (val_desc_const_one x),
       actCode_D_cast]
     exact const_play_V _ _ _
 
@@ -352,12 +352,12 @@ theorem guardCode_W1 (k : V) : guardCode (⌜gW⌝ : V) (SV gW 1 k) (pConst 1) =
 theorem tact_qW1 : TAct ⊢ ∀¹ qW1 := by
   refine tact_all_of_both _ (fun M _ _ x ↦ ?_) (fun M _ _ x ↦ ?_)
   · have : M↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
-    rw [qW1, eval_qT_neg_plays_opp_self .C _ _ _ _ _ _ x (hme_SV gW 1 (Or.inr rfl) x) (val_desc_const_one x),
+    rw [qW1, eval_qT_neg_plays_opp_self .C _ _ _ _ _ _ x (desc_SV gW 1 (Or.inr rfl) x) (val_desc_const_one x),
       actCode_C_cast]
     exact const_not_play_V _ _ _root_.one_ne_zero
   · have : M↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
     rw [qW1, eval_qT_swap, lMap_swap_gW, lMap_swap_cl, lMap_swap_T0, lMap_swap_cterm_C, lMap_swap_cterm_D,
-      eval_qT_neg_plays_opp_self .D _ _ _ _ _ _ x (hme_SVT gW 1 (Or.inr rfl) x) (val_desc_const_zero x),
+      eval_qT_neg_plays_opp_self .D _ _ _ _ _ _ x (descT_SV gW 1 (Or.inr rfl) x) (val_desc_const_zero x),
       actCode_D_cast]
     exact const_not_play_V _ _ _root_.zero_ne_one
 
@@ -387,17 +387,17 @@ theorem guardCode_WB1 (k : V) : guardCode (⌜gW⌝ : V) (SV gW 1 k) (pBot (pCon
 theorem tact_qWB1 : TAct ⊢ ∀¹ qWB1 := by
   refine tact_all_of_both _ (fun M _ _ x ↦ ?_) (fun M _ _ x ↦ ?_)
   · have : M↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
-    rw [qWB1, eval_qT_neg_plays_opp_self .C _ _ _ _ _ _ x (hme_SV gW 1 (Or.inr rfl) x) (val_desc_bot_one x),
+    rw [qWB1, eval_qT_neg_plays_opp_self .C _ _ _ _ _ _ x (desc_SV gW 1 (Or.inr rfl) x) (val_desc_bot_one x),
       actCode_C_cast]
     exact bot_const_not_play_V _ _ _root_.one_ne_zero
   · have : M↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
     rw [qWB1, eval_qT_swap, lMap_swap_gW, lMap_swap_cl, lMap_swap_TB0, lMap_swap_cterm_C, lMap_swap_cterm_D,
-      eval_qT_neg_plays_opp_self .D _ _ _ _ _ _ x (hme_SVT gW 1 (Or.inr rfl) x) (val_desc_bot_zero x),
+      eval_qT_neg_plays_opp_self .D _ _ _ _ _ _ x (descT_SV gW 1 (Or.inr rfl) x) (val_desc_bot_zero x),
       actCode_D_cast]
     exact bot_const_not_play_V _ _ _root_.zero_ne_one
 
 /-- Wary defects against `.bot DefectBot` for all large `k` (its `.neg` guard is found). -/
-theorem wary_vs_botDB_found :
+theorem pos_WaryBot_vs_botDB :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k → EvalGraph 2 (pcode (WaryBot k)) (pBot (pConst 1)) (pcode (WaryBot k)) 1 := by
   obtain ⟨k₀, h⟩ := found_of_all tact_qWB1
     (fun k ↦ guardCode (tcode phiW) (pcode (WaryBot k)) (pBot (pConst 1)))
@@ -408,23 +408,23 @@ theorem wary_vs_botDB_found :
   exact search_then phiW hg (const_play _ _ _ _)
 
 /-- `WaryBot × DBot = (C, C)` (engine `outcome_WaryBot_vs_DBot`, pad 4), for all large `k`. -/
-theorem snd_WaryBot_vs_DBot :
+theorem pos_WaryBot_vs_DBot :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 4 (pcode (WaryBot k)) (pcode DBot) (pcode (WaryBot k)) (actCode .C) ∧
       EvalGraph 4 (pcode DBot) (pcode (WaryBot k)) (pcode DBot) (actCode .C) := by
-  obtain ⟨k₀, h⟩ := wary_vs_botDB_found
+  obtain ⟨k₀, h⟩ := pos_WaryBot_vs_botDB
   refine ⟨k₀, fun k hk ↦ ?_⟩
   have hD := dbot_C_of_probe_D (h k hk)
   exact ⟨EvalGraph.mono_le (by omega) (wary_C_of_probe k sfp_DBot.1 hD), hD⟩
 
 /-- `WaryBot × EBot = (C, C)` (engine `outcome_WaryBot_vs_EBot`, pad 5), for all large `k`. -/
-theorem snd_WaryBot_vs_EBot :
+theorem pos_WaryBot_vs_EBot :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 5 (pcode (WaryBot k)) (pcode EBot) (pcode (WaryBot k)) (actCode .C) ∧
       EvalGraph 5 (pcode EBot) (pcode (WaryBot k)) (pcode EBot) (actCode .C) := by
-  obtain ⟨k₀, h⟩ := wary_vs_botDB_found
+  obtain ⟨k₀, h⟩ := pos_WaryBot_vs_botDB
   refine ⟨k₀, fun k hk ↦ ?_⟩
-  have hE := ebot_C_of_probes (h k hk) (wary_vs_botCB k)
+  have hE := ebot_C_of_probes (h k hk) (snd_WaryBot_vs_botCB k)
   exact ⟨EvalGraph.mono_le (by omega) (wary_C_of_probe k sfp_EBot.1 hE), hE⟩
 
 end cells
@@ -433,7 +433,7 @@ end cells
 
 section unreadability
 
-lemma pcode_CIMCIC' (k : ℕ) : pcode (CIMCIC k) = pSearch k (tcode phiC) (pConst 0) (pConst 1) := by
+lemma pcode_CIMCIC_search (k : ℕ) : pcode (CIMCIC k) = pSearch k (tcode phiC) (pConst 0) (pConst 1) := by
   simp [CIMCIC, phiC, actCode]
 lemma proper_CIMCIC (k : ℕ) : Proper (CIMCIC k) := ⟨by simp [CIMCIC], by simp [CIMCIC]⟩
 
@@ -445,7 +445,7 @@ theorem cimcic_selfref_not_found (k : ℕ) {opp : PD.Prog} (hopp : Proper opp) {
     ¬ LenProvableV TAct k (guardCode (tcode phiC) (pcode (CIMCIC k)) (pcode opp)) := by
   intro hf
   have hC : EvalGraph 2 (pcode (CIMCIC k)) (pcode opp) (pcode (CIMCIC k)) 0 := by
-    rw [pcode_CIMCIC'] at hf ⊢
+    rw [pcode_CIMCIC_search] at hf ⊢
     exact search_then phiC hf (const_play _ _ _ _)
   have hT : ℕ↓[LAct] ⊧ trAt (CIMCIC k) opp phiC :=
     models_trAt_of_lenProvableV (φ := phiC) (me := CIMCIC k) (opp := opp) hf
@@ -463,16 +463,16 @@ theorem snd_CIMCIC_vs_DefectBot (k : ℕ) :
     EvalGraph 2 (pcode (CIMCIC k)) (pcode DefectBot) (pcode (CIMCIC k)) (actCode .D) ∧
     EvalGraph 2 (pcode DefectBot) (pcode (CIMCIC k)) (pcode DefectBot) (actCode .D) := by
   have hn := cimcic_selfref_not_found k sfp_DefectBot.1 (N := 1) (by rw [pcode_DB]; exact const_play 0 _ _ _)
-  rw [pcode_CIMCIC'] at hn ⊢
+  rw [pcode_CIMCIC_search] at hn ⊢
   exact ⟨search_else phiC hn (const_play _ _ _ _), by rw [pcode_DB]; exact const_play 1 _ _ _⟩
 
 /-- CIMCIC defects against `.bot DefectBot` at every `k` (self-refuting guard). -/
-theorem cimcic_vs_botDB (k : ℕ) :
+theorem snd_CIMCIC_vs_botDB (k : ℕ) :
     EvalGraph 2 (pcode (CIMCIC k)) (pBot (pConst 1)) (pcode (CIMCIC k)) 1 := by
   have hn := cimcic_selfref_not_found k (opp := .bot DefectBot) proper_botDB (N := 2)
     (by rw [pcode_botDB]; exact bot_const_play 0 _ _ _)
   rw [pcode_botDB] at hn
-  rw [pcode_CIMCIC'] at hn ⊢
+  rw [pcode_CIMCIC_search] at hn ⊢
   exact search_else phiC hn (const_play _ _ _ _)
 
 /-- CIMCIC's guard against `.bot CooperateBot`: the consequent "`.bot CooperateBot` plays C against me" is
@@ -494,7 +494,7 @@ theorem tact_qCiB0 : TAct ⊢ ∀¹ qCiB0 := by
     exact fun _ ↦ bot_const_play_V _ _ _
 
 /-- CIMCIC cooperates with `.bot CooperateBot` for all large `k` (its guard is found). -/
-theorem cimcic_vs_botCB_found :
+theorem pos_CIMCIC_vs_botCB :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k → EvalGraph 2 (pcode (CIMCIC k)) (pBot (pConst 0)) (pcode (CIMCIC k)) 0 := by
   obtain ⟨k₀, h⟩ := found_of_all tact_qCiB0
     (fun k ↦ guardCode (⌜tmplC⌝ : ℕ) (Cimcic k) (pBot (pConst 0))) (fun k ↦ guardCode_CiB0 (V := ℕ) k)
@@ -509,17 +509,17 @@ theorem snd_CIMCIC_vs_OBot :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 5 (pcode (CIMCIC k)) (pcode OBot) (pcode (CIMCIC k)) (actCode .D) ∧
       EvalGraph 5 (pcode OBot) (pcode (CIMCIC k)) (pcode OBot) (actCode .D) := by
-  obtain ⟨k₀, h⟩ := cimcic_vs_botCB_found
+  obtain ⟨k₀, h⟩ := pos_CIMCIC_vs_botCB
   refine ⟨k₀, fun k hk ↦ ?_⟩
-  have hO := obot_D_of_probes (h k hk) (cimcic_vs_botDB k)
+  have hO := obot_D_of_probes (h k hk) (snd_CIMCIC_vs_botDB k)
   have hn := cimcic_selfref_not_found k sfp_OBot.1 hO
   refine ⟨?_, hO⟩
-  rw [pcode_CIMCIC'] at hn ⊢
+  rw [pcode_CIMCIC_search] at hn ⊢
   exact search_else phiC hn (const_play 3 _ _ _)
 
 /-! #### DIMCID × CooperateBot: the value FLIPS in `S'` — a self-fulfilling refutation is Löb-provable -/
 
-lemma pcode_DIMCID' (k : ℕ) : pcode (DIMCID k) = pSearch k (tcode phiD) (pConst 1) (pConst 0) := by
+lemma pcode_DIMCID_search (k : ℕ) : pcode (DIMCID k) = pSearch k (tcode phiD) (pConst 1) (pConst 0) := by
   simp [DIMCID, phiD, actCode]
 
 /-- **The bounded Löb premise of DIMCID against CooperateBot, slack `(7, 8)`**: a box of the family makes

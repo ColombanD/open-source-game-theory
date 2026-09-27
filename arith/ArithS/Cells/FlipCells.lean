@@ -28,7 +28,7 @@ no reader for a searcher's own else-play inside a negative), so its censuses ret
    TitForTatBot (`TFTV`, its transposition, `TFTV_lt_TFTTV`, the closed term `TTFT`, `describes_TFT`).
 3. **Cell 1 — DIMCID × TitForTatBot `(D, D)`** (`loeb_DIMCID_vs_TitForTatBot`; engine
    `llm_outcome_DIMCID_vs_TitForTatBot = (C, C)`, pad 4): DIMCID's guard against TFT is self-fulfilling; TFT
-   defects because DIMCID defects against `.bot CooperateBot` (the same Löb, `dimcid_vs_botCB_defects`).
+   defects because DIMCID defects against `.bot CooperateBot` (the same Löb, `loeb_DIMCID_vs_botCB`).
 4. **The box-consequence lemma** (`BoxConseq`, `box_conseq_uniform`, `found_of_box_conseq`): the general
    "`k̂`-chain" for a guard whose truth needs ANOTHER searcher's Löb-found guard. `TAct ⊢ ∀ k ≥ k̂,
    Box_g(psiF p)(k) → q(k)` by completeness (the chain `chain_core_VF` runs in every model), instantiated at
@@ -101,7 +101,7 @@ section cell1
 
 /-- **DIMCID defects against `.bot CooperateBot` for all large `k`** (the self-fulfilling Löb of
 `loeb_DIMCID_vs_CooperateBot`, against the frozen probe), with the box form. -/
-theorem dimcid_vs_botCB_defects :
+theorem loeb_DIMCID_vs_botCB :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 2 (pcode (DIMCID k)) (pBot (pConst 0)) (pcode (DIMCID k)) 1 ∧
       LenProvableV TAct k (guardCode (tcode phiD) (pcode (DIMCID k)) (pBot (pConst 0))) := by
@@ -111,7 +111,7 @@ theorem dimcid_vs_botCB_defects :
   rwa [descVal_botCB, ← pcode_DIMCID] at this
 
 /-- **DIMCID defects against TitForTatBot and FINDS its guard, for all large `k`.** -/
-theorem dimcid_vs_TFT_defects :
+theorem loeb_DIMCID_vs_TitForTatBot_core :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 2 (pcode (DIMCID k)) (pcode TitForTatBot) (pcode (DIMCID k)) 1 ∧
       LenProvableV TAct k (guardCode (tcode phiD) (pcode (DIMCID k)) (pcode TitForTatBot)) := by
@@ -129,17 +129,17 @@ theorem loeb_DIMCID_vs_TitForTatBot :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 4 (pcode (DIMCID k)) (pcode TitForTatBot) (pcode (DIMCID k)) (actCode .D) ∧
       EvalGraph 4 (pcode TitForTatBot) (pcode (DIMCID k)) (pcode TitForTatBot) (actCode .D) := by
-  obtain ⟨k₁, h₁⟩ := dimcid_vs_TFT_defects
-  obtain ⟨k₂, h₂⟩ := dimcid_vs_botCB_defects
+  obtain ⟨k₁, h₁⟩ := loeb_DIMCID_vs_TitForTatBot_core
+  obtain ⟨k₂, h₂⟩ := loeb_DIMCID_vs_botCB
   refine ⟨k₁ + k₂, fun k hk ↦ ⟨?_, ?_⟩⟩
   · exact EvalGraph.mono_le (by omega) (h₁ k (by omega)).1
   · exact EvalGraph.mono_le (by omega) (tft_D_of_probe_D (h₂ k (by omega)).1)
 
 /-- **The box form of cell 1**: DIMCID FINDS its guard against TitForTatBot within its budget, for all large `k`. -/
-theorem dimcid_finds_guard_vs_TFT :
+theorem loeb_DIMCID_vs_TitForTatBot_guard :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       LenProvableV TAct k (guardCode (tcode phiD) (pcode (DIMCID k)) (pcode TitForTatBot)) := by
-  obtain ⟨k₀, h⟩ := dimcid_vs_TFT_defects
+  obtain ⟨k₀, h⟩ := loeb_DIMCID_vs_TitForTatBot_core
   exact ⟨k₀, fun k hk ↦ (h k hk).2⟩
 
 end cell1
@@ -173,7 +173,7 @@ noncomputable def qGD : Semisentence LAct 1 := qT gG (TS gG 1) (uS gG 1) (wS gG 
 
 theorem guardCode_GD (k : V) : guardCode (⌜gG⌝ : V) (SV gG 1 k) (DimcidV k) = instB (⌜qGD⌝ : V) k :=
   guardCode_qT_eq_instB gG k _ _ _ _ _ _ (hX_SV gG 1 (Or.inr rfl) k) (hU_SV gG 1 (Or.inr rfl) k)
-    (hW_SV gG 1 (Or.inr rfl) k) (hX_self k) (hU_self k) (hW_self k)
+    (hW_SV gG 1 (Or.inr rfl) k) (hX_dimcid k) (hU_dimcid k) (hW_dimcid k)
 
 /-- `qGD(k)` in the standard reading: `DimcidV k` plays D against `pBot (pConst 0)`. -/
 theorem eval_qGD_iff (k : V) :
@@ -183,7 +183,7 @@ theorem eval_qGD_iff (k : V) :
   rw [eval_qT_iff, eval_tmpl_plays_opp_closed_V _ (by intro h; cases h) (by intro h; cases h)]
   simp only [Matrix.cons_val, actCode, Nat.cast_one, pcode_bot, pcode_const, PD.Bots.CooperateBot, cast_pBot,
     cast_pConst, Nat.cast_zero]
-  rw [hopp_self k]
+  rw [desc_dimcid k]
 
 /-- `qGD(k)` in the swapped reading: `DimcidTV k` plays C against `pBot (pConst 1)`. -/
 theorem eval_qGD_swap_iff (k : V) :
@@ -194,7 +194,7 @@ theorem eval_qGD_swap_iff (k : V) :
     eval_tmpl_plays_opp_closed_V _ (by intro h; cases h) (by intro h; cases h)]
   simp only [Matrix.cons_val, actCode, Nat.cast_zero, pcode_bot, pcode_const, PD.Bots.DefectBot, cast_pBot,
     cast_pConst, Nat.cast_one]
-  rw [hopp'_self k]
+  rw [descT_dimcid k]
 
 /-- **Guardian's guard against DIMCID is a box consequence of DIMCID's family against `.bot CooperateBot`**:
 a proof of `pG (cl TB0) C D (k)` with the slack makes `DimcidV k` defect against `.bot CooperateBot` and
@@ -223,7 +223,7 @@ theorem guardian_finds_DIMCID :
 
 /-- **DIMCID defects against Guardian and FINDS its guard, for all large `k`** (the self-fulfilling refutation
 against the `SV`-described Guardian). -/
-theorem dimcid_vs_Guardian_defects :
+theorem loeb_DIMCID_vs_GuardianBot_core :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 2 (pcode (DIMCID k)) (pcode (GuardianBot k)) (pcode (DIMCID k)) 1 ∧
       LenProvableV TAct k (guardCode (tcode phiD) (pcode (DIMCID k)) (pcode (GuardianBot k))) := by
@@ -243,14 +243,14 @@ theorem loeb_GuardianBot_vs_DIMCID :
       EvalGraph 2 (pcode (GuardianBot k)) (pcode (DIMCID k)) (pcode (GuardianBot k)) (actCode .D) ∧
       EvalGraph 2 (pcode (DIMCID k)) (pcode (GuardianBot k)) (pcode (DIMCID k)) (actCode .D) := by
   obtain ⟨k₁, h₁⟩ := guardian_finds_DIMCID
-  obtain ⟨k₂, h₂⟩ := dimcid_vs_Guardian_defects
+  obtain ⟨k₂, h₂⟩ := loeb_DIMCID_vs_GuardianBot_core
   exact ⟨k₁ + k₂, fun k hk ↦ ⟨guardian_D_of_found k (h₁ k (by omega)), (h₂ k (by omega)).1⟩⟩
 
 /-- **The box form of cell 2, DIMCID's side**: DIMCID FINDS its guard against Guardian within its budget. -/
-theorem dimcid_finds_guard_vs_Guardian :
+theorem loeb_DIMCID_vs_GuardianBot_guard :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       LenProvableV TAct k (guardCode (tcode phiD) (pcode (DIMCID k)) (pcode (GuardianBot k))) := by
-  obtain ⟨k₀, h⟩ := dimcid_vs_Guardian_defects
+  obtain ⟨k₀, h⟩ := loeb_DIMCID_vs_GuardianBot_core
   exact ⟨k₀, fun k hk ↦ (h k hk).2⟩
 
 end cell2
@@ -263,11 +263,11 @@ section negFamily
 /-! #### Wary's fixed formulas against Mirror and against itself -/
 
 /-- The transposed Wary triple describes the transposed searcher `SV gWT 0 k` (values). -/
-lemma hme_WT (k : V) :
+lemma desc_WT (k : V) :
     relabel ((Semiterm.lMap swap (uS gW 1)).val (s := stdActV V) ![] Empty.elim)
       ((Semiterm.lMap swap (wS gW 1)).val (s := stdActV V) ![] Empty.elim)
       ((Semiterm.lMap swap (TS gW 1)).val (s := stdActV V) ![k] Empty.elim) = SV gWT 0 k := by
-  have := hme_SVT gW 1 (Or.inr rfl) k
+  have := descT_SV gW 1 (Or.inr rfl) k
   rwa [lMap_swap_gW] at this
 
 /-- Wary's guard against Mirror: "Mirror does NOT play C against `Wary(k)`". -/
@@ -293,12 +293,12 @@ theorem guardCode_WMT (k : V) :
 
 theorem eval_qWM_iff (k : V) :
     Semiformula.Eval (s := stdActV V) ![k] Empty.elim qWM ↔ ¬ ∃ n, EvalGraph n MirrorV (SV gW 1 k) MirrorV 0 := by
-  rw [qWM, eval_qT_neg_plays_opp_self .C _ _ _ _ _ _ k (hme_SV gW 1 (Or.inr rfl) k) (hopp_mirror k), actCode_C_cast]
+  rw [qWM, eval_qT_neg_plays_opp_self .C _ _ _ _ _ _ k (desc_SV gW 1 (Or.inr rfl) k) (desc_mirror k), actCode_C_cast]
 
 theorem eval_qWMT_iff (k : V) :
     Semiformula.Eval (s := stdActV V) ![k] Empty.elim (Semiformula.lMap swap qWM) ↔
       ¬ ∃ n, EvalGraph n MirrorV (SV gWT 0 k) MirrorV 1 := by
-  rw [qWM_swap, eval_qT_neg_plays_opp_self .D _ _ _ _ _ _ k (hme_WT k) (hopp_mirror k), actCode_D_cast]
+  rw [qWM_swap, eval_qT_neg_plays_opp_self .D _ _ _ _ _ _ k (desc_WT k) (desc_mirror k), actCode_D_cast]
 
 /-- Wary's guard against itself: "`Wary(k)` does NOT play C against `Wary(k)`". -/
 noncomputable def qWW : Semisentence LAct 1 :=
@@ -324,13 +324,13 @@ theorem guardCode_WWT (k : V) :
 theorem eval_qWW_iff (k : V) :
     Semiformula.Eval (s := stdActV V) ![k] Empty.elim qWW ↔
       ¬ ∃ n, EvalGraph n (SV gW 1 k) (SV gW 1 k) (SV gW 1 k) 0 := by
-  rw [qWW, eval_qT_neg_plays_opp_self .C _ _ _ _ _ _ k (hme_SV gW 1 (Or.inr rfl) k) (hme_SV gW 1 (Or.inr rfl) k),
+  rw [qWW, eval_qT_neg_plays_opp_self .C _ _ _ _ _ _ k (desc_SV gW 1 (Or.inr rfl) k) (desc_SV gW 1 (Or.inr rfl) k),
     actCode_C_cast]
 
 theorem eval_qWWT_iff (k : V) :
     Semiformula.Eval (s := stdActV V) ![k] Empty.elim (Semiformula.lMap swap qWW) ↔
       ¬ ∃ n, EvalGraph n (SV gWT 0 k) (SV gWT 0 k) (SV gWT 0 k) 1 := by
-  rw [qWW_swap, eval_qT_neg_plays_opp_self .D _ _ _ _ _ _ k (hme_WT k) (hme_WT k), actCode_D_cast]
+  rw [qWW_swap, eval_qT_neg_plays_opp_self .D _ _ _ _ _ _ k (desc_WT k) (desc_WT k), actCode_D_cast]
 
 /-! #### The Löb premises: the `.neg` guard is self-fulfilling against a copier -/
 
@@ -342,8 +342,8 @@ theorem loebSound_pWM : LoebSound (pQ qWM) 7 8 := by
   refine loebSound_pQ_of qWM fun V _ _ k h1 h2 ↦ ?_
   rw [← guardCode_WM] at h1
   rw [← guardCode_WMT] at h2
-  have e1 := mirror_copies_V _ _ (SV_search_V gW 1 k MirrorV h1)
-  have e2 := mirror_copies_V _ _ (SV_search_V gWT 0 k MirrorV h2)
+  have e1 := mirror_copies2_V _ _ (SV_search_V gW 1 k MirrorV h1)
+  have e2 := mirror_copies2_V _ _ (SV_search_V gWT 0 k MirrorV h2)
   rw [Nat.cast_one] at e1
   rw [Nat.cast_zero] at e2
   have hA : ¬ ∃ n, EvalGraph n MirrorV (SV gW 1 k) MirrorV 0 := by
@@ -377,7 +377,7 @@ theorem loebSound_pWW : LoebSound (pQ qWW) 7 8 := by
 /-! #### Cells 3 and 4 -/
 
 /-- **Wary defects against Mirror and FINDS its `.neg` guard, for all large `k`**, unconditional. -/
-theorem wary_vs_mirror_core :
+theorem loeb_WaryBot_vs_MirrorBot_core :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 2 (pcode (WaryBot k)) (pcode MirrorBot) (pcode (WaryBot k)) 1 ∧
       LenProvableV TAct k (guardCode (tcode phiW) (pcode (WaryBot k)) (pcode MirrorBot)) := by
@@ -398,18 +398,18 @@ theorem loeb_WaryBot_vs_MirrorBot :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 3 (pcode (WaryBot k)) (pcode MirrorBot) (pcode (WaryBot k)) (actCode .D) ∧
       EvalGraph 3 (pcode MirrorBot) (pcode (WaryBot k)) (pcode MirrorBot) (actCode .D) := by
-  obtain ⟨k₀, h⟩ := wary_vs_mirror_core
+  obtain ⟨k₀, h⟩ := loeb_WaryBot_vs_MirrorBot_core
   exact ⟨k₀, fun k hk ↦ ⟨EvalGraph.mono_le (by omega) (h k hk).1, mirror_copies (h k hk).1⟩⟩
 
 /-- **The box form of cell 3**: Wary FINDS its `.neg` guard against Mirror within its budget. -/
-theorem wary_finds_guard_vs_Mirror :
+theorem loeb_WaryBot_vs_MirrorBot_guard :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       LenProvableV TAct k (guardCode (tcode phiW) (pcode (WaryBot k)) (pcode MirrorBot)) := by
-  obtain ⟨k₀, h⟩ := wary_vs_mirror_core
+  obtain ⟨k₀, h⟩ := loeb_WaryBot_vs_MirrorBot_core
   exact ⟨k₀, fun k hk ↦ (h k hk).2⟩
 
 /-- **Wary defects against itself and FINDS its `.neg` guard, for all large `k`**, unconditional. -/
-theorem wary_vs_wary_core :
+theorem loeb_WaryBot_vs_WaryBot_core :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 2 (pcode (WaryBot k)) (pcode (WaryBot k)) (pcode (WaryBot k)) 1 ∧
       LenProvableV TAct k (guardCode (tcode phiW) (pcode (WaryBot k)) (pcode (WaryBot k))) := by
@@ -430,14 +430,14 @@ theorem loeb_WaryBot_vs_WaryBot :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 2 (pcode (WaryBot k)) (pcode (WaryBot k)) (pcode (WaryBot k)) (actCode .D) ∧
       EvalGraph 2 (pcode (WaryBot k)) (pcode (WaryBot k)) (pcode (WaryBot k)) (actCode .D) := by
-  obtain ⟨k₀, h⟩ := wary_vs_wary_core
+  obtain ⟨k₀, h⟩ := loeb_WaryBot_vs_WaryBot_core
   exact ⟨k₀, fun k hk ↦ ⟨(h k hk).1, (h k hk).1⟩⟩
 
 /-- **The box form of cell 4**: Wary FINDS its `.neg` guard against itself within its budget. -/
-theorem wary_finds_guard_vs_self :
+theorem loeb_WaryBot_vs_WaryBot_guard :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       LenProvableV TAct k (guardCode (tcode phiW) (pcode (WaryBot k)) (pcode (WaryBot k))) := by
-  obtain ⟨k₀, h⟩ := wary_vs_wary_core
+  obtain ⟨k₀, h⟩ := loeb_WaryBot_vs_WaryBot_core
   exact ⟨k₀, fun k hk ↦ (h k hk).2⟩
 
 end negFamily
@@ -468,13 +468,13 @@ lemma tcode_phiD_ne_phiCu : tcode phiD ≠ tcode phiCu := by
     exact absurd (EvalGraph.unique' hN (const_play 0 _ _ 0)) (by decide)
 
 lemma pcode_DIMCID_ne_CupodBot (k : ℕ) : pcode (DIMCID k) ≠ pcode (CupodBot k) := by
-  rw [pcode_DIMCID', pcode_CupodBot]
+  rw [pcode_DIMCID_search, pcode_CupodBot]
   intro e
   exact tcode_phiD_ne_phiCu (pSearch_inj e).2.1
 
 /-- **CupodTroll's `.eq` guard against DIMCID is FALSE, hence never found (soundness): `CupodTroll7 k`
 cooperates with `DIMCID k` at EVERY `k`** (the SND mechanism on the budget-slot code). -/
-theorem troll7_vs_DIMCID (k : ℕ) : EvalGraph 2 (CupodTroll7 k) (pcode (DIMCID k)) (CupodTroll7 k) 0 := by
+theorem snd_CupodTroll7_vs_DIMCID (k : ℕ) : EvalGraph 2 (CupodTroll7 k) (pcode (DIMCID k)) (CupodTroll7 k) 0 := by
   have hn := not_found_eq_opp (proper_CupodTrollBot k) (proper_DIMCID k) (Q := CupodBot k) rfl
     (pcode_DIMCID_ne_CupodBot k) k
   rw [← guardCode_eqTmpl_eq_tcode (CupodBot k) (pcode (CupodTrollBot k)) (pcode (DIMCID k)), pcode_CupodBot_SV] at hn
@@ -485,11 +485,11 @@ theorem snd_CupodTrollBot_vs_DIMCID_engine (k : ℕ) :
     EvalGraph 2 (pcode (CupodTrollBot k)) (pcode (DIMCID k)) (pcode (CupodTrollBot k)) (actCode .C) :=
   ctb_C_of_ne k (proper_DIMCID k) (pcode_DIMCID_ne_CupodBot k)
 
-lemma descVal_troll7 (k : V) : descVal TT uT wT k = CupodTrollV7 k := hopp_troll7 k
+lemma descVal_troll7 (k : V) : descVal TT uT wT k = CupodTrollV7 k := desc_troll7 k
 
 lemma descVal_troll7_T (k : V) :
     descVal (Semiterm.lMap swap TT) (Semiterm.lMap swap uT) (Semiterm.lMap swap wT) k = CupodTrollTV7 k :=
-  hopp'_troll7 k
+  descT_troll7 k
 
 /-- The canonical triple of the budget-slot CupodTroll describes it in every model (`KhatCells` §7). -/
 theorem describes_troll7 : Describes TT uT wT where
@@ -500,7 +500,7 @@ theorem describes_troll7 : Describes TT uT wT where
 
 /-- **DIMCID defects against `CupodTroll7 k` and FINDS its guard, for all large `k`** (the self-fulfilling
 refutation against the described CupodTroll). -/
-theorem dimcid_vs_troll7_defects :
+theorem loeb_DIMCID_vs_CupodTroll7 :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 2 (pcode (DIMCID k)) (CupodTroll7 k) (pcode (DIMCID k)) 1 ∧
       LenProvableV TAct k (guardCode (tcode phiD) (pcode (DIMCID k)) (CupodTroll7 k)) := by
@@ -520,14 +520,14 @@ theorem loeb_DIMCID_vs_CupodTrollBot :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 2 (pcode (DIMCID k)) (CupodTroll7 k) (pcode (DIMCID k)) (actCode .D) ∧
       EvalGraph 2 (CupodTroll7 k) (pcode (DIMCID k)) (CupodTroll7 k) (actCode .C) := by
-  obtain ⟨k₀, h⟩ := dimcid_vs_troll7_defects
-  exact ⟨k₀, fun k hk ↦ ⟨(h k hk).1, troll7_vs_DIMCID k⟩⟩
+  obtain ⟨k₀, h⟩ := loeb_DIMCID_vs_CupodTroll7
+  exact ⟨k₀, fun k hk ↦ ⟨(h k hk).1, snd_CupodTroll7_vs_DIMCID k⟩⟩
 
 /-- **The box form of cell 5**: DIMCID FINDS its guard against `CupodTroll7 k` within its budget. -/
-theorem dimcid_finds_guard_vs_troll7 :
+theorem loeb_DIMCID_vs_CupodTroll7_guard :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       LenProvableV TAct k (guardCode (tcode phiD) (pcode (DIMCID k)) (CupodTroll7 k)) := by
-  obtain ⟨k₀, h⟩ := dimcid_vs_troll7_defects
+  obtain ⟨k₀, h⟩ := loeb_DIMCID_vs_CupodTroll7
   exact ⟨k₀, fun k hk ↦ (h k hk).2⟩
 
 end cell5
