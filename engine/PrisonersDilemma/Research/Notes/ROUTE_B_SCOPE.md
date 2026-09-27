@@ -459,3 +459,11 @@ alongside (c)); SND/POS wait for (c) to settle.
   No (F)/(P) cell, 0 new flips; proved: 13 settled halves + 17 true guards + `floor_settled_census`. Cell-exact
   tally (script over the 155 rows, `ROUTE_B_CENSUS.md` "S' status per cell"): 107 stated, 94 agree, 13 flip, 26
   genuine floors, 22 excluded. Gate 3358 jobs, census 1792 (1788 standard + the 4 subsets).
+* 2026-09-27 (later; Colomban): the floor residue is NOT to be admitted as an axiom — the hinge is the
+  linear-regime finite-consistency question (sub-`k` proofs of `Con_TAct(k)`-type instances), OPEN in both
+  directions, and the two answers give DIFFERENT cell values; the engine's `+k` stipulates the negative
+  side. Decision: **dichotomy theorems, hypothesis-free** (`Cells/FloorDichotomy.lean`, in flight): per
+  genuine floor cell `∃ k₀, ∀ k > k₀, (¬A_k → engine value) ∧ (A_k → the other value)` with the hinge
+  `A_k = LenProvableV TAct k (the outer guard)` stated INLINE; no named hypothesis, no conditional value
+  in the ledger (that was door (2), declined). Plus one reduction theorem (Dupoc × DBot): the hinge is at
+  least as hard as bounded consistency at `k`.
