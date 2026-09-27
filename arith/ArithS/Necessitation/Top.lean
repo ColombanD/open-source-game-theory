@@ -749,7 +749,7 @@ chain `{x}` deliver (`rootSteps_ok`, §4): the walk dossier of `x` at `&(i + 2)`
 `walkPieces`; the kit's discharger converts it to `Layout`'s `DossierAt` with `dossierAt_of_dossF`),
 `IsSemiformula 0 &(i + 2)`, the chain `&(i + 1) = insert &(i + 2) 𝟎` with `IsFormulaSet &(i + 1)`,
 `&(i + 2) ∈ &(i + 1)`, and the length OBJECT `&i = setLen &(i + 1)`. NOT included (an honest gap):
-the NUMERIC length `leFact &i (bnum |x|)`, which `lenSteps` (in flight in `Cert`) derives from the
+the NUMERIC length `leFact &i (bnum |x|)`, which `Cert.lenSteps` derives from the
 dossier — the kit's discharger produces it inside the root node's prologue. -/
 def RootLayout (Γ x i : V) : Prop :=
   DossF walkPieces Γ 0 x (i + 2) ∧
@@ -823,7 +823,7 @@ closed code `⌜χ⌝` enters the object proof. From a context holding the root 
 final context, `π = shiftsV P`. Inside it: `describeT`/`bnumZero/One/Even/OddCert` certifying
 `bnumGraph t̂ (bnum k)` along the bits of `k` (`O(‖k‖)`), `adjoinTotal`, the per-`χ` closed shape rows
 of the numeral `⌜χ⌝` (`O(|χ|)` `sLemma` steps with STANDARD derivations — the constant `Cχ`), the
-certified substitution `certSubst` (in flight in `Cert`), and `instBIntro`. Sizes: `≤ Cχ·(‖k‖ + 1)`
+certified substitution `Cert.certSubst`, and `instBIntro`. Sizes: `≤ Cχ·(‖k‖ + 1)`
 steps and shifts (`|instB ⌜χ⌝ k| ≤ |χ|·|bnum k|`), the cost polynomial of §5 in `‖k‖`, and the
 context bounds at the end, all with the `χ`-dependent constant `Cχ` — this is why `BoundedInnerNec`
 has its `∃ C` AFTER `∀ χ`. The cap requirement `Cχ·(‖k‖ + i + 1) ≤ E` covers the witnesses

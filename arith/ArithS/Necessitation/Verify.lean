@@ -588,8 +588,9 @@ code `ρ`. The key is the pair `⟪ρ, L⟫` (the `DlenGraph` pattern, `Derivati
 copy-in / chain / re-description producers of §3.3–§3.6 that establish the CHILD's canonical
 layout. Of those, `copySteps`, `chainSteps` and `eqSteps` have landed (`Layout.lean`), but
 `certNeg/certShift/certSubst/certFree`, `lenSteps`, `memberList` and `numProof`'s layout
-callers have not (`Cert.lean`, in flight; `DESIGN_fragments.md` §8.3). Assembling a prologue
-out of half a kit would freeze the wrong interface. So this file defines the recursion with the
+callers had not when this file was written (they have since: `Cert.lean`, `Members.lean`;
+`DESIGN_fragments.md` §8.3). Assembling a prologue out of half a kit would have frozen the wrong
+interface, so the design below was kept: the computed prologues live in `Verify2`'s `VerifyGraph'`. So this file defines the recursion with the
 prologues as the Σ₁ parameters `pro₁ pro₂ : V` of the clause, existentially quantified and
 constrained ONLY by their own membership in the concatenation — i.e. `VerifyGraph` relates `ρ`
 to EVERY list of the right shape, and the uniqueness of §6.2 is therefore NOT claimed for it.
@@ -1143,7 +1144,10 @@ better tactics would close:
 
 * the clause leaves the prologue `pro` and every index argument `is il ir …` EXISTENTIALLY free,
   because the prologue producers of `DESIGN_fragments.md` §3.3–§3.6 (`certNeg`/`certShift`/
-  `certSubst`/`certFree`, `lenSteps`, `memberList`) have not landed (`Cert.lean`, in flight);
+  `certSubst`/`certFree`, `lenSteps`, `memberList`) had not landed when this file was written
+  (they have since, in `Cert.lean`/`Members.lean`; `Verify2`'s `VerifyGraph'` is the relation with
+  computed prologues, and the package is built on it — this file's `VerifyGraph` is the historical
+  first relation);
 * so for a single `ρ` there are MANY lists `L` with `VerifyGraph W tblN ρ L` — one per choice of
   `pro` (e.g. `appendV 0 F` and `appendV ?[x] F` both qualify) — and `∃! L` is FALSE, not merely
   unproved. Writing `Classical.choose!` against it would be writing down a function that does not

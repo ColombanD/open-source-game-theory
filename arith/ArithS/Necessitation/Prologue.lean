@@ -29,7 +29,9 @@ wrapper is self-contained and becomes deletable the day the tables are unified.
 * §1 `Layout` — the canonical layout of a sequent (one predicate, one transport lemma).
 * §2 `layoutSteps` — the layout builder (member walks + lengths, the chain, the length fold).
 * §3 the leaves `axL`/`verumIntro`.
-* §4 (pending) the identification of an `insert` object with a chain; `and`/`or`/`cut`; `wk`; `shift`.
+* §4 the identification of an `insert` object with a chain; §5–§18 the children (`ins`, `cut`, `wk`, `or`,
+  `shift`, `all`, `exs`, the empty sequent, `proIns0`), their sizes and costs, and the lengths/shifts of the
+  prologues — all landed; the dated log `## 8. What remains (2026-09-15, evening)` near the end is historical.
 -/
 
 namespace ArithS

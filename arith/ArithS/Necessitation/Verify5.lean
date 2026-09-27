@@ -6,23 +6,26 @@ import ArithS.Necessitation.Bounds
 # ArithS.Necessitation.Verify5 — the size half of the verification list
 
 `Verify4.verifyGraph''_ok4` tracks `ListOK`/`NoDrop'`/`shiftsV`/the goal fact of a `VerifyGraph''` list, but NOT
-`len` and NOT `SizeOK`. `Assemble.lean` §6 names that gap `VerifySizeOracle` and §8 packages it as `SizeOracle`,
-the last hypothesis of `boundedInnerNec_sixteen_of_size` / `dupoc_self_coop_of_size`.
+`len` and NOT `SizeOK`. `Assemble.lean` §6 names that gap `VerifySizeOracle`; this file DISCHARGES it, and
+`Necessitation/Package.lean` consumes it as the carrying size theorem `SizeThm` (unconditional since 2026-09-16, U10).
 
-**`SizeOracle` as stated in `Assemble.lean` §8 is NOT PROVABLE** (machine-checked, 2026-09-15): it binds the numeral
-table `T` universally with NO `NumTableOK T N' B'` hypothesis, while every prologue size lemma
+**The hypothesis the size half needs, and why it is carried.** Every prologue size lemma
 (`Prologue.sizeOK_layoutSteps`, `sizeOK_proIns`, `sizeOK_proOr`, `sizeOK_proWk`, `sizeOK_proShift`, `sizeOK_proSS`,
-`sizeOK_proAll`, `sizeOK_proExs`, `sizeOK_proIns0`) REQUIRES one and lands in the class
-`(layQ B B' D, layD N' B' D)`, whose only route to the kit class `(kitQ Cz B E, kitD Cz d)` is `Assemble.layQ_le` /
-`layD_le` — and those need `N'`, `B'` as NUMBERS. With `T` free Lean cannot even elaborate the application:
-`don't know how to synthesize implicit argument N'`. `Assemble.vList_full` escapes exactly because it CARRIES
-`htblN : NumTableOK T (N' : V) (B' : V)` as a hypothesis (it proves `layQ_le`/`layD_le` for its own `layoutSteps {x}`
-block that way) and consumes the oracle's output already in kit shape.
+`sizeOK_proAll`, `sizeOK_proExs`, `sizeOK_proIns0`) REQUIRES `NumTableOK T N' B'` for the numeral table `T` and lands
+in the class `(layQ B B' D, layD N' B' D)`, whose only route to the kit class `(kitQ Cz B E, kitD Cz d)` is
+`Assemble.layQ_le` / `layD_le` — and those need `N'`, `B'` as NUMBERS. With `T` free Lean cannot even elaborate the
+application (`don't know how to synthesize implicit argument N'`). `Assemble.vList_full` goes through exactly because
+it CARRIES `htblN : NumTableOK T (N' : V) (B' : V)` (it proves `layQ_le`/`layD_le` for its own `layoutSteps {x}` block
+that way). So `verifySizeOracle_of_arms` (§2) and `verifyGraph''_size4_of_arms` (§9) state the size half WITH
+`NumTableOK`, and the package applies it at the CANONICAL numeral table of `NumSteps.exists_numTable`, where
+`N'`/`B'` ARE fixed naturals (so the constant `Cz` may depend on them — the quantifier order of `Package.SizeThmAll`).
+History (one sentence): a first formulation, `Assemble.SizeOracle`, bound `T` with NO `NumTableOK` and was
+machine-checked UNPROVABLE as stated (2026-09-15); it and its `_of_size` consumers were deleted 2026-09-27.
 
-So this file proves the `NumTableOK`-CARRYING variant `verifySizeOracle_of` — the same content, with the hypothesis
-its own proof obligations require — and then BYPASSES `SizeOracle` by re-assembling the package locally: the only
-consumer, `Assemble.kitPackage'''_of_size`, applies the oracle at the CANONICAL numeral table of
-`NumSteps.exists_numTable`, where `N'`/`B'` ARE fixed naturals. The headline theorems are unchanged.
+Contents: §1 monotonicity of the layout class; §2 the size invariant and its ten-arm scaffold `ArmHyps`; §3–§26 the
+arms' ingredients (node codes' lengths, the landing lemmas, the per-tag prologue/fragment sizes); §27 the ten arms
+discharged (`armHyps_of_arms`); §28 the constant chosen (`armHypsAll_of_arms`, `Cz := 8·Cn`); §9 the shape the
+package consumes.
 -/
 
 namespace ArithS
@@ -101,13 +104,10 @@ def ArmHyps (tbl B Wl Wc W₁ W₂ W T : V) (Cv Cz : ℕ) : Prop :=
     len L ≤ (Cz : V) * (dlen TAct ρ + 1) ^ 4 ∧
       SizeOK (kitQ (Cz : V) B E) (kitD (Cz : V) (dlen TAct ρ)) L
 
-/-- **The size oracle, with the numeral-table hypothesis its proof requires.**
-
-`Assemble.SizeOracle` binds the numeral table `T` with no `NumTableOK`, which makes it unprovable
-(see this file's header); this is the same statement with `NumTableOK T N' B'` restored, so `Cz`
-may depend on the fixed naturals `N'`, `B'`. Its only consumer, `Assemble.kitPackage'''_of_size`,
-applies the oracle at the canonical numeral table of `NumSteps.exists_numTable`, where `N'` and
-`B'` are fixed. -/
+/-- **The size half of the verify list, from the ten arms.** `Assemble.VerifySizeOracle` at a numeral table `T`
+that carries `NumTableOK T N' B'` (the hypothesis this file's header explains; `Cz` may therefore depend on the
+fixed naturals `N'`, `B'`). The arms are discharged in §27 (`armHyps_of_arms`); the package applies the result at
+the canonical numeral table of `NumSteps.exists_numTable` (`Package.kitPackage'''_of_size'`). -/
 theorem verifySizeOracle_of_arms {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
     {tbl B T : V} {Cv Cz : ℕ}
     (harms : ArmHyps tbl B layoutPieces certPieces frag1Pieces frag2Pieces proPieces T Cv Cz) :
@@ -651,7 +651,7 @@ end nodeCodeKit
 
 `Package.lean` §1 names the statement the size glue must deliver: `SizeThm N' B' Cz`, i.e.
 `VerifySizeOracle` universally quantified over the models and the tables with `NumTableOK T (N' : V) (B' : V)`
-RESTORED — the hypothesis `Assemble.SizeOracle` drops and every prologue size lemma needs. `SizeThmAll` is
+— the hypothesis every prologue size lemma needs (this file's header). `SizeThmAll` is
 `∀ N' B', ∃ Cz, SizeThm N' B' Cz`; the quantifier ORDER is the bypass (`N'`, `B'` fixed first by
 `NumSteps.exists_numTable`, `Cz` chosen after, so `Cz` may depend on them).
 

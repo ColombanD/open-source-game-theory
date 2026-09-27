@@ -17,30 +17,18 @@ uniform parametric bounded Löb theorem) with no hypothesis. The `_of_sizeThm` f
 same theorems with `SizeThmAll` still a binder; they are kept because they document WHAT the size
 glue has to deliver, and §4 is their instantiation at `sizeThmAll_holds`.
 
-Historical: why `SizeThmAll` and not `Assemble.SizeOracle`. `SizeOracle` (`Assemble` §8) is
-UNPROVABLE as stated — it binds the numeral table with no `NumTableOK`, which every prologue size
-lemma needs and which is never a conclusion — so this file BYPASSES it. The quantifier order is the
-repair: `exists_numTable` fixes `N'`/`B'` FIRST, and only then is the size constant `Cz` chosen,
-which the layout class `(layQ B B' D, layD N' B' D)` requires.
+The live path, top to bottom: §1 states the CARRYING size theorem `SizeThm N N' B' Cv Cz` — `Assemble.VerifySizeOracle`
+universally quantified over the models and the tables WITH `NumTableOK T N' B'` (the hypothesis every prologue size
+lemma needs: they land in the layout class `(layQ B B' D, layD N' B' D)`, whose only route to the kit class is
+`Assemble.layQ_le`/`layD_le`, and those need `N'`, `B'` as NUMBERS) — and `SizeThmAll := ∀ N N' B' Cv, ∃ Cz, SizeThm …`;
+the quantifier ORDER is the point: `exists_numTable` fixes `N'`/`B'` FIRST, and only then is `Cz` chosen, so `Cz`
+may depend on them. §2 assembles `KitPackage''' … 4` from `SizeThmAll` (`kitPackage'''_of_size'`, applying the size
+theorem at the canonical numeral table `tblN`, where `NumTableOK tblN N' B'` is in hand); §2.5 proves `SizeThmAll`
+(`sizeThmAll_holds`); §3 draws the headline theorems with `SizeThmAll` still a binder; §4 instantiates.
 
-`Assemble.lean` §8 closes at `boundedInnerNec_sixteen_of_size (Cz) (hsz : SizeOracle Cz) : BoundedInnerNec 16`
-and `dupoc_self_coop_of_size`, conditional on ONE hypothesis, `Assemble.SizeOracle`.
-
-**`Assemble.SizeOracle` is not provable as stated** (machine-checked, 2026-09-15; the diagnosis is in
-`Verify5.lean`'s header): it binds the numeral table `T` universally with NO `NumTableOK T N' B'`, while every
-prologue size lemma (`Prologue.sizeOK_layoutSteps`, `sizeOK_proIns`, …) requires one and lands in the class
-`(layQ B B' D, layD N' B' D)`, whose only route to the kit class is `Assemble.layQ_le`/`layD_le` — and those need
-`N'`, `B'` as NUMBERS. `NumTableOK` is never a conclusion anywhere, so the hypothesis cannot be recovered inside.
-
-This file does not prove `SizeOracle`; it BYPASSES it. The observation is that `SizeOracle`'s ONLY consumer,
-`Assemble.kitPackage'''_of_size`, instantiates it at the CANONICAL numeral table of `NumSteps.exists_numTable`,
-where `N'` and `B'` are fixed naturals — so a `NumTableOK`-CARRYING size theorem suffices, and `Cz` is allowed to
-depend on those two naturals. §1 states that carrying theorem (`SizeThm`, the statement the size glue proves),
-§2 re-derives the package from it exactly as `kitPackage'''_of_size` does, §3 draws the headline theorems
-with `SizeThmAll` as a binder, §2.5 proves `SizeThmAll` and §4 instantiates.
-
-The results are `Assemble.lean`'s, with the unprovable hypothesis replaced by the provable one — and the
-provable one proved.
+History (one sentence): an earlier closing of `Assemble.lean` §8 took the size half as a hypothesis `SizeOracle` that
+bound the numeral table with NO `NumTableOK`, which is UNPROVABLE as stated (machine-checked 2026-09-15, the diagnosis
+in `Verify5.lean`'s header); this file's `SizeThm` replaced it, and the dead `SizeOracle` path was deleted 2026-09-27.
 -/
 
 namespace ArithS
@@ -65,7 +53,7 @@ section carrying
 /-- **The size theorem of the verification list, with the numeral-table hypothesis its proof requires.**
 
 This is `Assemble.VerifySizeOracle` universally quantified over the models and the tables, with
-`NumTableOK T (N' : V) (B' : V)` RESTORED — the one hypothesis `Assemble.SizeOracle` drops and every prologue size
+`NumTableOK T (N' : V) (B' : V)` CARRIED — the one hypothesis every prologue size
 lemma needs (`Verify5.verifySizeOracle_of_arms` is the same interface in its per-model form). The constant `Cz` may
 therefore depend on the fixed naturals `N'`, `B'`, which is exactly what the layout class `(layQ B B' D, layD N' B' D)`
 requires, and is harmless at the use site: the package fixes `N'`, `B'` first (`NumSteps.exists_numTable`) and only
@@ -106,12 +94,14 @@ end carrying
 
 section package
 
-/-- **The package holds at `m = 4`, from the CARRYING size theorem** — `Assemble.kitPackage'''_of_size` with
-`SizeOracle` replaced by `SizeThm`.
+/-- **The package holds at `m = 4`, from the CARRYING size theorem**: ONE table per model (`IndRecTable ⇒ ProAxmTable
+⇒ NumIdTable ⇒ ProTable ⇒ TopTable`, `Assemble.exists_indRecTableB`), the row-body bound `B` enlarged by the three
+predicate lengths, the numeral tables, the graph's existence half from `verifyGraph''_exists_unconditional` (the `axm`
+case unconditional: `IndRec`'s recognizer, `Cv = C`), the kit from `verifyKit'''_of`, the pins from `pinKit'_of`.
 
-The proof is `kitPackage'''_of_size`'s, in the one order that makes the bypass work: `exists_numTable` FIRST (it
-fixes `N'`, `B'` as naturals), then the size theorem AT those naturals, then `verifyKit'''_of N' B' Cz C` — so the
-size constant is applied at the canonical numeral table `tblN`, where `NumTableOK tblN N' B'` is in hand. -/
+The order is the one that makes the size theorem applicable: `exists_numTable` FIRST (it fixes `N'`, `B'` as
+naturals), then the size theorem AT those naturals, then `verifyKit'''_of N' B' Cz C` — so the size constant is
+applied at the canonical numeral table `tblN`, where `NumTableOK tblN N' B'` is in hand. -/
 theorem kitPackage'''_of_size' (hsz : SizeThmAll) :
     ∃ (N B N' B' N₂ B₂ N₃ B₃ Ck Cv : ℕ) (Cχ : Semisentence LAct 1 → ℕ),
       KitPackage''' N B N' B' N₂ B₂ N₃ B₃ Ck Cv Cχ 4 := by
@@ -164,8 +154,8 @@ theorem sizeThmAll_holds : SizeThmAll := by
 
 section headline
 
-/-- **`BoundedInnerNec 16`** (`deg 4 = 16`) from the carrying size theorem — `Assemble`'s
-`boundedInnerNec_sixteen_of_size` with the unprovable `SizeOracle` replaced. -/
+/-- **`BoundedInnerNec 16`** (`deg 4 = 16`) from the carrying size theorem (`Assemble.boundedInnerNec_of_kit'''`
+at `m = 4` on the package). -/
 theorem boundedInnerNec_sixteen_of_sizeThm (hsz : SizeThmAll) : BoundedInnerNec 16 := by
   obtain ⟨N, B, N', B', N₂, B₂, N₃, B₃, Ck, Cv, Cχ, hpkg⟩ := kitPackage'''_of_size' hsz
   exact boundedInnerNec_of_kit''' 4 (by norm_num) hpkg

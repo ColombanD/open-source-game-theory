@@ -12,8 +12,9 @@ import ArithS.Assembly.Cell
 `Top.lean`'s kits quantify over the OLD relation `VerifyGraph W tblN` (`Verify.lean`), which `Verify2.lean`
 superseded by `VerifyGraph' Ww Wl Wc W₁ W₂ W T A` (computed prologues, the `axm` certificate table `A`).
 This file restates the verify kit over the new relation (`VerifyKit'''`), bridges the top's ROOT layout to
-the node layout `verifyGraph'_ok` expects, discharges the kit from `verifyGraph''_ok_pow4`, and assembles
-`BoundedInnerNec 24` conditional on the named oracles.
+the node layout `verifyGraph'_ok` expects, discharges the kit from `verifyGraph''_ok_pow4`, and supplies
+the glue `Necessitation/Package.lean` assembles into the UNCONDITIONAL `BoundedInnerNec 16` (§7 the kit and
+`boundedInnerNec_of_kit'''`, §8 the tables and constants the package needs).
 
 **Why the kit cannot live in `Top.lean`:** `Verify2.lean` imports `Top.lean` (for `RootLayout`, `kitQ`, …),
 so a kit mentioning `VerifyGraph'` has to sit ABOVE `Verify2` — here.
@@ -477,14 +478,13 @@ end goalLen
 
 section sizeHalf
 
-/-- **The size oracle** — the ONE remaining proof debt of the verify list (named, explicit): every graph list is
-`≤ Cz·(dlen ρ + 1)^6` long and size-disciplined at the kit's `Q = kitQ Cz B E`, `D = kitD Cz (dlen ρ)`.
-`verifyGraph'_ok` (`Verify2.lean` §8) proves `ListOK`/`NoDrop'`/`shiftsV`/the goal fact but NOT `len`/`SizeOK`; the
-per-tag `sizeOK_pro<Tag>` lemmas of `Prologue.lean` §11 take `Layout` hypotheses (the identification loops' Horn-only
-status is only known through their `ok` lemmas), so discharging this needs a second `Derivation.induction1 𝚷` glue
-carrying the node layouts — `Verify2.lean` §8.9 with `SizeOK ∧ len` conjuncts (the `axm` entries' `SizeOK Cv Cv` come
-from `AxmTableOK`). Morally true (every payload is a numeral fact of a `NumSteps` derivation or a goal fact), not yet
-machine-checked. -/
+/-- **The size half of the verify list** (the interface `verifyKit'''_of` consumes): every graph list is
+`≤ Cz·(dlen ρ + 1)^4` long and size-disciplined at the kit's `Q = kitQ Cz B E`, `D = kitD Cz (dlen ρ)`.
+`verifyGraph''_ok4` (`Verify4.lean`) proves `ListOK`/`NoDrop'`/`shiftsV`/the goal fact but NOT `len`/`SizeOK`; this
+predicate names the missing half. It is DISCHARGED by `Verify5.verifySizeOracle_of_arms` (a second
+`Derivation.induction1 𝚷` glue over the node layouts, the ten arms of `Verify5` §27, U10 2026-09-16) — at a numeral
+table `T` carrying `NumTableOK T N' B'`, which is how `Package.SizeThm` quantifies it (`Package.verifySizeOracle_of_sizeThm`
+is this predicate at a fixed table). -/
 def VerifySizeOracle (tbl B Wl Wc W₁ W₂ W T : V) (Cv Cz : ℕ) : Prop :=
   ∀ {E A ρ L : V}, AxmTableOK' tbl E walkPieces A (Cv : V) → Derivation TAct ρ →
     VerifyGraph'' walkPieces Wl Wc W₁ W₂ W T A ρ L →
@@ -1274,17 +1274,18 @@ theorem boundedInnerNec_of_kit''' (m : ℕ) (hm3 : 3 ≤ m) {N B N' B' N₂ B₂
 
 
 
-/-! ## 8. THE THEOREM: `BoundedInnerNec 24` and Dupoc's self-cooperation, conditional on the two named oracles -/
+/-! ## 8. The tables and constants the package needs (`Necessitation/Package.lean` §2 assembles them)
 
-section theorem24
+The three predicate lengths below `B`, the `IndRec` table with its row-body bound in every model, and
+`deg 4 = 16`. The package itself — `KitPackage''' … 4` from the carrying size theorem `Package.SizeThm`,
+in the quantifier order `exists_numTable` FIRST (fixing `N'`, `B'` as naturals), the size constant `Cz`
+AFTER — is `Package.kitPackage'''_of_size'`, and the headline theorems `boundedInnerNec_sixteen`,
+`dupoc_self_coop_unconditional`, `pblt_unconditional` are unconditional there. History: this section
+once closed on a hypothesis `SizeOracle` that bound the numeral table with no `NumTableOK` — machine-checked
+UNPROVABLE as stated (2026-09-15, `Verify5.lean`'s header) — and its three `_of_size` consumers; that dead
+path was deleted 2026-09-27, `Package.lean`'s `SizeThm` path being the live one. -/
 
-/-- **The size oracle** at the package's tables (`VerifySizeOracle` for every `IndRec` table with its row-body
-bound, at the canonical piece tables) — THE ONE remaining hypothesis of the theorem (`Verify4`'s
-`verifyGraph''_ok_pow4` gives `ListOK`/`NoDrop'`/`shiftsV`/the goal fact, not `len`/`SizeOK`). -/
-def SizeOracle (Cv Cz : ℕ) : Prop :=
-  ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] (tbl B T : V), IndRecTable tbl →
-    (∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ B) →
-    VerifySizeOracle tbl B layoutPieces certPieces frag1Pieces frag2Pieces proPieces T Cv Cz
+section packageGlue
 
 /-- The standard lengths of the three predicate codes the closing block needs below `B`. -/
 noncomputable def cPlength : ℕ := flen (Rewriting.emb (Semiformula.lMap emb (↑lengthDef : ArithmeticSemisentence 2)) : Semiproposition LAct 2)
@@ -1319,56 +1320,8 @@ theorem exists_indRecTableB : ∃ N B : ℕ, ∀ (V : Type) [ORingStructure V] [
     rw [nth_vecOf rows i h', (hidx i h h').2, ← Sentence.coe_quote_eq_quote (V := V), flN_cast]
     exact_mod_cast flN_le_rowsB indRecRows i h
 
-/-- **The package holds at `m = 4`, given the size oracle**: ONE table per model (`IndRecTable ⇒ ProAxmTable ⇒
-NumIdTable ⇒ ProTable ⇒ TopTable`, `exists_indRecTableB`), the row-body bound `B` enlarged by the three predicate
-lengths, the numeral tables, the graph's existence half from `verifyGraph''_exists_unconditional` (the `axm` case
-UNCONDITIONAL: `IndRec`'s recognizer, `Cv = C`), the kit from `verifyKit'''_of`, the pins from `pinKit'_of`. -/
-theorem kitPackage'''_of_size (Cz : ℕ) (hsz : ∀ Cv : ℕ, SizeOracle Cv Cz) :
-    ∃ (N B N' B' N₂ B₂ N₃ B₃ Ck Cv : ℕ) (Cχ : Semisentence LAct 1 → ℕ),
-      KitPackage''' N B N' B' N₂ B₂ N₃ B₃ Ck Cv Cχ 4 := by
-  obtain ⟨N, B₀, hTab⟩ := exists_indRecTableB
-  obtain ⟨N', B', hNum⟩ := exists_numTable
-  obtain ⟨N₂, B₂, hLen⟩ := exists_lenTable
-  obtain ⟨N₃, B₃, hMul⟩ := exists_mulTable
-  obtain ⟨C, hex⟩ := verifyGraph''_exists_unconditional
-  obtain ⟨Ck, hkit⟩ := verifyKit'''_of N' B' Cz C
-  refine ⟨N, B₀ + cPlength + cPeq + cPle, N', B', N₂, B₂, N₃, B₃, Ck, C,
-    fun χ ↦ Classical.choose (pinKit'_of χ N' B'), fun V _ _ ↦ ?_⟩
-  obtain ⟨tbl, htbl, hPA, hB₀⟩ := hTab V
-  obtain ⟨tblN, hN⟩ := hNum V
-  obtain ⟨tblL, hL⟩ := hLen V
-  obtain ⟨tblM, hM⟩ := hMul V
-  have hB : ∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ ((B₀ + cPlength + cPeq + cPle : ℕ) : V) := fun j hj ↦
-    le_trans (hB₀ j hj) (by exact_mod_cast (by omega : B₀ ≤ B₀ + cPlength + cPeq + cPle))
-  have hPl : formulaLen LAct (Plength : V) ≤ ((B₀ + cPlength + cPeq + cPle : ℕ) : V) := by
-    rw [formulaLen_Plength_eq]; exact_mod_cast (by omega : cPlength ≤ B₀ + cPlength + cPeq + cPle)
-  have hPeq : formulaLen LAct (Peq : V) ≤ ((B₀ + cPlength + cPeq + cPle : ℕ) : V) := by
-    rw [formulaLen_Peq_eq]; exact_mod_cast (by omega : cPeq ≤ B₀ + cPlength + cPeq + cPle)
-  have hPle : formulaLen LAct (Ple : V) ≤ ((B₀ + cPlength + cPeq + cPle : ℕ) : V) := by
-    rw [formulaLen_Ple_eq]; exact_mod_cast (by omega : cPle ≤ B₀ + cPlength + cPeq + cPle)
-  refine ⟨tbl, layoutPieces, certPieces, frag1Pieces, frag2Pieces, proPieces, tblN, tblL, tblM, htbl,
-    hPA.proTable.topTable, hB, hPl, hPeq, hPle, hN, hL, hM, ?_, ?_, ?_⟩
-  · intro ρ E hd hE
-    exact hex V htbl hPA rfl rfl rfl hd hE
-  · exact hkit V htbl hPA.proTable hB hPle hN rfl rfl rfl rfl rfl (hsz C V tbl _ tblN hPA hB)
-  · intro χ
-    exact Classical.choose_spec (pinKit'_of χ N' B') V htbl hPA.numIdTable hB hN
-
 lemma deg_four : deg 4 = 16 := rfl
 
-/-- **`BoundedInnerNec 16`** (`deg 4 = 16`), conditional on the size oracle ONLY (the `axm` case is unconditional
-since `Verify3`/`IndRec`). -/
-theorem boundedInnerNec_sixteen_of_size (Cz : ℕ) (hsz : ∀ Cv : ℕ, SizeOracle Cv Cz) : BoundedInnerNec 16 := by
-  obtain ⟨N, B, N', B', N₂, B₂, N₃, B₃, Ck, Cv, Cχ, hpkg⟩ := kitPackage'''_of_size Cz hsz
-  exact boundedInnerNec_of_kit''' 4 (by norm_num) hpkg
-
-/-- **Critch's Theorem 3.7 in PA-`S`, conditional on the size oracle**: for all large `k`, `Dupoc k` cooperates
-with itself and `Cupod k` defects against itself (`Assembly/Cell.dupoc_self_coop` at `d = 16`). -/
-theorem dupoc_self_coop_of_size (Cz : ℕ) (hsz : ∀ Cv : ℕ, SizeOracle Cv Cz) :
-    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
-      EvalGraph 2 (Dupoc k) (Dupoc k) (Dupoc k) 0 ∧ EvalGraph 2 (Cupod k) (Cupod k) (Cupod k) 1 :=
-  dupoc_self_coop (boundedInnerNec_sixteen_of_size Cz hsz)
-
-end theorem24
+end packageGlue
 
 end ArithS

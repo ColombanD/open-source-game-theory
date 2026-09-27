@@ -1341,10 +1341,11 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 -- `vList = layoutSteps {x} ++ identRoot ++ L ++ retargetRoot` with `vList_full` (ok + len + SizeOK, `Ck = (asmCk … + cG)·(Cv+1)`
 -- over `Verify4.verifyGraph''_ok_pow4` at exponent 4), `VerifyKit'''` (Top's `VerifyKit''` over `VerifyGraph''`/`AxmTableOK'`
 -- with the bridge folded in), `verifyKit'''_of`, `KitPackage'''`, `top_main'''`/`boundedInnerNec_of_kit''' (m ≥ 3)`,
--- `exists_indRecTableB`, `kitPackage'''_of_size` (the `axm` case UNCONDITIONAL via `verifyGraph''_exists_unconditional`),
--- **`boundedInnerNec_sixteen_of_size : SizeOracle Cz → BoundedInnerNec 16`** and **`dupoc_self_coop_of_size`** — conditional
--- on ONE named hypothesis, `SizeOracle` (`len L ≤ Cz·(dlen ρ+1)^4 ∧ SizeOK (kitQ …) (kitD …) L` for the graph's lists; the
--- glue `verifyGraph''_ok4` does not track `len`/`SizeOK`). TRAP: `exists_cGoal` — a `def` of `4·(cDer + …)` (`flen`s of the
+-- `exists_indRecTableB` and `deg_four` (§8: the tables and constants `Package.kitPackage'''_of_size'` assembles; the
+-- `axm` case UNCONDITIONAL via `verifyGraph''_exists_unconditional`). The size half `VerifySizeOracle` (`len L ≤
+-- Cz·(dlen ρ+1)^4 ∧ SizeOK (kitQ …) (kitD …) L` for the graph's lists; the glue `verifyGraph''_ok4` does not track
+-- `len`/`SizeOK`) is discharged in `Verify5` and consumed by `Package` as `SizeThm`. (The unprovable `SizeOracle`
+-- formulation and its three `_of_size` consumers were deleted 2026-09-27.) TRAP: `exists_cGoal` — a `def` of `4·(cDer + …)` (`flen`s of the
 -- giant `derivation` sentence) stalls every `push_cast`/`omega` that touches it; packaged existentially, cast identity by `rw`.
 #print axioms len_memberList_single
 #print axioms layout_single
@@ -1361,10 +1362,7 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms top_main'''
 #print axioms boundedInnerNec_of_kit'''
 #print axioms exists_indRecTableB
-#print axioms kitPackage'''_of_size
 #print axioms deg_four
-#print axioms boundedInnerNec_sixteen_of_size
-#print axioms dupoc_self_coop_of_size
 
 -- U10 (Necessitation/Verify5, 2026-09-15): THE SIZE HALF, PART 1 — the layout size class is MONOTONE
 -- (`layQ_mono`/`layD_mono` from `lenQ`/`lenD`/`sum2Q`/`sum2D`), and the NODE CODES' derivation lengths land in it:
@@ -1372,10 +1370,10 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 -- `codeK N' B' Dz = (‖Dz‖+1)(‖Dz‖+2)·nodeCost N' B' (18‖Dz‖+7)` and the summand bounds `dlen_succCode_le_codeK`,
 -- `dlen_addCode_le_codeK`, `dlen_leCode_le_codeK` (modelled on `Prologue.dlen_sum2Code_le'`). These discharge the
 -- `dlen TAct (leafCode …) ≤ D` hypotheses of `Frag1`/`Frag2`'s `sizeOK_frag*`/`sizeOK_node*`, which NO caller in the
--- tree had ever discharged. NOTE: `Assemble.SizeOracle` is NOT PROVABLE as stated (it binds the numeral table `T`
--- with no `NumTableOK`, while every prologue size lemma needs one and lands at `layD N' B' D`; machine-checked:
--- `sizeOK_layoutSteps` cannot even be elaborated with `T` free). `verifySizeOracle_of_arms` is the
--- `NumTableOK`-carrying interface; the ten induction arms are still the named hypothesis `ArmHyps`.
+-- tree had ever discharged. NOTE: every prologue size lemma needs `NumTableOK T N' B'` for the numeral table and
+-- lands at `layD N' B' D` (`sizeOK_layoutSteps` cannot even be elaborated with `T` free), which is why
+-- `verifySizeOracle_of_arms` CARRIES it (the first formulation without it, `Assemble.SizeOracle`, was machine-checked
+-- unprovable and is deleted); the ten induction arms are the named hypothesis `ArmHyps`, discharged in §27 below.
 #print axioms lenQ_mono
 #print axioms lenD_mono
 #print axioms sum2Q_mono
@@ -1472,7 +1470,7 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 -- U10 (Necessitation/Verify5, 2026-09-16): THE SIZE HALF, PART 6 — the statement in the shape the package consumes.
 -- `Package.lean` §1 names what the size glue must deliver: `SizeThm N' B' Cz`, i.e. `Assemble.VerifySizeOracle`
 -- quantified over the models and tables with `NumTableOK T (N' : V) (B' : V)` RESTORED (the hypothesis
--- `Assemble.SizeOracle` drops and every prologue size lemma needs); `SizeThmAll` is `∀ N' B', ∃ Cz, SizeThm N' B' Cz`,
+-- every prologue size lemma needs); `SizeThmAll` is `∀ N N' B' Cv, ∃ Cz, SizeThm N N' B' Cv Cz`,
 -- the quantifier ORDER being the bypass. `ArmHypsAll` lifts §2's named per-model hypothesis `ArmHyps` uniformly over
 -- the models at a FIXED numeral table, and `verifyGraph''_size4_of_arms` IS `Package.SizeThm N' B' Cz` modulo it.
 -- ARMS PROVED so far: `axm` (§4), `axL`/`verumIntro` (§5). The reusable machinery for the remaining seven is in
@@ -1932,17 +1930,16 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms cut_input
 #print axioms cut_trans
 
--- U10 (Necessitation/Package, 2026-09-15): THE PACKAGE AND THE HEADLINE THEOREMS, with `Assemble.SizeOracle`
--- BYPASSED. `SizeOracle` is NOT PROVABLE as stated (it binds the numeral table `T` with no `NumTableOK T N' B'`,
--- while every prologue size lemma requires one and lands at `layQ B B' D`/`layD N' B' D`; `NumTableOK` is never a
--- conclusion anywhere). It is not proved here but bypassed: its ONLY consumer, `Assemble.kitPackage'''_of_size`,
--- instantiates it at the CANONICAL numeral table of `NumSteps.exists_numTable`, where `N'`/`B'` ARE fixed naturals,
--- so the `NumTableOK`-CARRYING statement `SizeThm N' B' Cz` suffices. `SizeThmAll` (= `∀ N' B', ∃ Cz, SizeThm N' B' Cz`)
--- is the shape the size glue delivers; the quantifier ORDER is the whole point (`N'`, `B'` fixed first, `Cz` chosen
--- after, so `Cz` may depend on them). `kitPackage'''_of_size'` re-derives the package from it exactly as
--- `kitPackage'''_of_size` does, and the three headline theorems follow: `BoundedInnerNec 16` (`deg 4 = 16`),
--- Dupoc's self-cooperation (`Assembly/Cell.dupoc_self_coop` at `d = 16`) and the uniform PBLT
--- (`Assembly/Uniform.pblt_uniform` at `d = 16`) — each conditional ONLY on `SizeThmAll`.
+-- U10 (Necessitation/Package, 2026-09-15): THE PACKAGE AND THE HEADLINE THEOREMS. The size half enters as the
+-- `NumTableOK`-CARRYING statement `SizeThm N N' B' Cv Cz` (every prologue size lemma requires `NumTableOK T N' B'` and
+-- lands at `layQ B B' D`/`layD N' B' D`; `NumTableOK` is never a conclusion anywhere, so it must be carried) and
+-- `SizeThmAll` (= `∀ N N' B' Cv, ∃ Cz, SizeThm …`), the shape the size glue delivers; the quantifier ORDER is the whole
+-- point (`N'`, `B'` fixed first by `NumSteps.exists_numTable`, `Cz` chosen after, so `Cz` may depend on them).
+-- `kitPackage'''_of_size'` assembles the package from it at the CANONICAL numeral table, and the three headline
+-- theorems follow: `BoundedInnerNec 16` (`deg 4 = 16`), Dupoc's self-cooperation (`Assembly/Cell.dupoc_self_coop` at
+-- `d = 16`) and the uniform PBLT (`Assembly/Uniform.pblt_uniform` at `d = 16`) — the `_of_sizeThm` forms conditional
+-- ONLY on `SizeThmAll`, which the next block discharges. (History: a first formulation, `Assemble.SizeOracle`, bound
+-- the numeral table with no `NumTableOK` and was machine-checked unprovable; deleted 2026-09-27.)
 #print axioms SizeThm
 #print axioms SizeThmAll
 #print axioms verifySizeOracle_of_sizeThm
@@ -1979,11 +1976,10 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 -- TRAP: `ArmHyps` binds `{E A ρ L}` IMPLICITLY; the arm goal is reached by the tactic `intro E A rho L hA hd hL
 -- hEcap`, mirroring `verifySizeOracle_of_arms`. A term-mode `fun … ↦` binds the wrong slots and shifts the context
 -- by one, silently.
--- With `sizeThmAll_holds`, `boundedInnerNec_sixteen_of_sizeThm`, `dupoc_self_coop_of_sizeThm` and `pblt_of_sizeThm`
--- are UNCONDITIONAL: `BoundedInnerNec 16`, Critch's Theorem 3.7 in PA-`S` (Dupoc's self-cooperation) and the uniform
--- PBLT each hold outright on [propext, Classical.choice, Quot.sound].
+-- With `sizeThmAll_holds` (printed above, once), `boundedInnerNec_sixteen_of_sizeThm`, `dupoc_self_coop_of_sizeThm`
+-- and `pblt_of_sizeThm` are UNCONDITIONAL: `BoundedInnerNec 16`, Critch's Theorem 3.7 in PA-`S` (Dupoc's
+-- self-cooperation) and the uniform PBLT each hold outright on [propext, Classical.choice, Quot.sound].
 #print axioms armHypsAll_of_arms
-#print axioms sizeThmAll_holds
 
 -- Route B Phase 0 — U10 in CLOSED-SENTENCE, ARBITRARY-BUDGET form (Necessitation/ClosedNec, 2026-09-23):
 -- `closedInnerNec_sixteen : ∀ σ : Sentence LAct, ∃ C, ∀ V b, LenDerivable TAct b ⌜σ⌝ →
