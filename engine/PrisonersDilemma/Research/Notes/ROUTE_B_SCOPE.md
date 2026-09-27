@@ -467,3 +467,24 @@ alongside (c)); SND/POS wait for (c) to settle.
   `A_k = LenProvableV TAct k (the outer guard)` stated INLINE; no named hypothesis, no conditional value
   in the ledger (that was door (2), declined). Plus one reduction theorem (Dupoc × DBot): the hinge is at
   least as hard as bounded consistency at `k`.
+* 2026-09-27 (later): **THE DICHOTOMY THEOREMS DONE** (`1704ad6`, `5e5bde0`; `Cells/FloorDichotomy.lean`, ~1000 lines):
+  all 26 genuine floors as hypothesis-free dichotomies `dich_<L>_vs_<R> : ∃ k₀, ∀ k > k₀, (¬A_k → engine value) ∧
+  (A_k → the found-branch value)`, the hinge `A_k = LenProvableV TAct k (guardCodeB (tcode φ) (pcode me) (pcode opp) k)`
+  INLINE (the evaluator's literal clause; `hingeB` bridges to `guardCode`), both worlds at the engine's fuel on the
+  engine's codes; nested over two/three hinges for the 7 bistable pairs and the 3 prudence floors (every determined
+  case proved; Prudent's prudence guard stays a hinge where rated (P), FOUND vs EBot by `prudence_found_vs_EBot`;
+  Prudent × EBot's else world states Prudent's side only). Machinery: `found_of_search_play`/`not_found_of_search_play`
+  (a play through a search node with a constant branch it differs from decides the guard), `play_of_found_*`
+  (soundness of a found hinge as the partner's play), `prudent_of_verdicts`, `prudent/cimcic/ebot_total`. THE
+  REDUCTION for Dupoc × DBot: `hinge_reduces_to_bounded_consistency_DupocBot_vs_DBot` (hinge within `k` ⇒ `TAct` proves
+  within `k + C₀ + C₁·size k` that `σ_k` or its τ-twin is not provable within `k`; `negTwin_true_iff`: at ℕ that sentence
+  is `¬□_k σ_k`) and the converse `bounded_consistency_reduces_to_hinge_DupocBot_vs_DBot` from the conjunction; the
+  budget box `boxK χ (k) := □_k χ(k)`, DBot in every model (`DBotV`/`DBotTV`, `probe_of_dbot_C_V`), the generic
+  `not_found_of_SV_play`. GATE: `lake build ArithS` 3359 jobs, 0 errors; census 1855 (1851 standard + the 4 subsets).
+  Docs: `ARITHMETIZED_S_RESULTS.md` "The floors as dichotomies" (the per-cell hinge table, the reduction), the census
+  table's last column. TRAPS: the swapped reading of a play atom over a CLOSED opponent needs `descVal_closed_T` and the
+  transposed program's code (`swapcode_DBotV`); `lMap_swap_gDu` must be re-applied after `hme_SVT` re-introduces
+  `lMap swap gDu`; internal τ-invariance of `□_k` is NOT available, so a uniform implication whose consequent is a box
+  needs the τ-symmetrized (∨) form — take the ∧ form for the converse; `Describes` fields force `{V : Type}` (not
+  `Type*`) on the section; `set` the `flen` atoms AFTER `lenProvable_inst_size`/`flen_subst_bnumT_le` so `omega`/`gcongr`
+  see one atom.

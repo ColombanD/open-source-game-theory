@@ -506,3 +506,87 @@ Sentence for the paper: *in PA-`S'` the engine's thirty-two floor cells split in
 "else-play" is a found self-fulfilling guard (the flips), and twenty-six cells whose value hinges on a single
 proof-complexity fact — the length of `TAct`'s own bounded consistency proof relative to the budget — which the
 engine stipulates (`+k`) and `S'` leaves open; the half of each cell that does not depend on it is a theorem.*
+
+**The floors as dichotomies (2026-09-27, `Cells/FloorDichotomy.lean`, `1704ad6` + `5e5bde0`; gate 3359 jobs, census 1855
+= 1851 standard + the 4 pre-existing subsets).** The 26 genuine floors are not admitted, not stipulated and not left as
+prose: each is now a HYPOTHESIS-FREE theorem that proves the DEPENDENCE of the cell on its hinge without taking a side.
+With `A_k` the cell's hinge — the Lean proposition `LenProvableV TAct k (guardCodeB (tcode φ) (pcode me) (pcode opp) k)`,
+the evaluator's literal guard clause for the floor side's outermost search node at its own budget, written INLINE in the
+statement (no structure, no named hypothesis, no conditional value in the ledger) —
+
+  `dich_<L>_vs_<R> : ∃ k₀, ∀ k > k₀, (¬ A_k → ⟨the engine's value⟩) ∧ (A_k → ⟨the found-branch value⟩)`
+
+both worlds at the engine's fuel on the engine's own codes. The ELSE world is the verdict pass's settled half plus the
+search-else clause; the THEN world is the then-branch plus the partner's play — where the partner is a searcher whose guard
+speaks about the floor side, SOUNDNESS of the found hinge and the evaluator's determinism recover its verdict
+(`found_of_search_play`: a play through a search node with a constant else-branch it differs from means the guard was
+found and the then-branch played; `play_of_found_opp_self/_opp_bot/_neg/_cimcic`). Cells with two or three hinges are
+NESTED dichotomies (outer split on the hinge that settles the most), every determined case proved, the inconsistent
+combinations absorbed by soundness. Prudent's prudence guard `B_k` stays a hinge of its own where the verdict pass rated
+it (P) (five cells; its `k̂`-chain is not built), and is proved FOUND against EBot (`prudence_found_vs_EBot`).
+
+| cell (engine value) | hinge(s) `A_k` = `□_k` of … (frame) | `¬A_k` world | `A_k` world | theorem (fuel) |
+|---|---|---|---|---|
+| Dupoc × DBot `(D, C)` | "DBot plays C vs me" (Dupoc, DBot) | `(D, C)` | `(C, C)` | `dich_DupocBot_vs_DBot` (4) |
+| Dupoc × EBot `(D, C)` | "EBot plays C vs me" | `(D, C)` | `(C, C)` | `dich_DupocBot_vs_EBot` (5) |
+| Dupoc × CupodTroll `(D, C)` | "CupodTroll plays C vs me" | `(D, C)` | `(C, C)` | `dich_DupocBot_vs_CupodTrollBot` (2) |
+| Just × DBot `(D, C)` | "DBot plays C vs `.bot (Dupoc k)`" (Just, DBot) | `(D, C)` | `(C, C)` | `dich_JustBot_vs_DBot` (4) |
+| Just × EBot `(D, C)` | "EBot plays C vs the snapshot" | `(D, C)` | `(C, C)` | `dich_JustBot_vs_EBot` (5) |
+| Just × CupodTroll `(D, C)` | "CupodTroll plays C vs the snapshot" | `(D, C)` | `(C, C)` | `dich_JustBot_vs_CupodTrollBot` (2) |
+| CIMCIC × CupodTroll `(D, C)` | "I coop with CupodTroll ⇒ it coops with me" (CIMCIC, CupodTroll) | `(D, C)` | `(C, C)` | `dich_CIMCIC_vs_CupodTrollBot` (2) |
+| CIMCIC × DBot `(D, C)` | CIMCIC's guard vs DBot | `(D, C)` | `(C, C)` | `dich_CIMCIC_vs_DBot` (4) |
+| CIMCIC × EBot `(D, C)` | CIMCIC's guard vs EBot | `(D, C)` | `(C, C)` | `dich_CIMCIC_vs_EBot` (5) |
+| Guardian × CIMCIC `(C, D)` | CIMCIC's guard vs Guardian (CIMCIC, Guardian); Guardian's C settled | `(C, D)` | `(C, C)` | `dich_GuardianBot_vs_CIMCIC` (2) |
+| Guardian × Dupoc `(C, D)` | "Guardian plays C vs me" (Dupoc, Guardian) | `(C, D)` | `(C, C)` | `dich_GuardianBot_vs_DupocBot` (2) |
+| Guardian × Just `(C, D)` | "Guardian plays C vs the snapshot" (Just, Guardian) | `(C, D)` | `(C, C)` | `dich_GuardianBot_vs_JustBot` (2) |
+| Cupod × OBot `(C, D)` | "OBot plays D vs me" (Cupod, OBot); OBot's D settled | `(C, D)` | `(D, D)` | `dich_CupodBot_vs_OBot` (5) |
+| Prudent × Dupoc `(D, D)` | Prudent's OUTER guard "Dupoc plays C vs me" (Prudent, Dupoc) | `(D, D)` | `(C, C)` (soundness twice ⇒ Dupoc's guard and the prudence guard found — the companion's mutual-Löb world) | `dich_PrudentBot_vs_DupocBot` (3) |
+| Prudent × Prudent `(D, D)` | the outer guard in self-play (one sentence, both sides) | `(D, D)` | `(C, C)` | `dich_PrudentBot_vs_PrudentBot` (3) |
+| Prudent × EBot `(D, C)` | Prudent's outer guard "EBot plays C vs me"; prudence guard FOUND | Prudent D (EBot's C = the unbuilt Löb Prudent × `.bot Mirror`) | `(C, C)` | `dich_PrudentBot_vs_EBot` (7) |
+| Just × Prudent `(D, D)` | NESTED: `J` = Just's guard "Prudent plays C vs the snapshot"; then Prudent's outer `A` "Just plays C vs me" and prudence `B` "Just plays D vs `.bot DefectBot`" (TRUE) | `¬J ⇒ (D, D)` | `J ⇒` Just C; Prudent C iff `A ∧ B` | `dich_JustBot_vs_PrudentBot` (3) |
+| CIMCIC × Prudent `(D, D)` | NESTED: Prudent's outer `A` "CIMCIC plays C vs me"; then prudence `B` (TRUE) | `¬A ⇒ (D, D)` (CIMCIC's guard self-refuting) | `A ⇒` CIMCIC C; Prudent C iff `B` | `dich_CIMCIC_vs_PrudentBot` (3) |
+| Guardian × Prudent `(C, D)` | NESTED: `G` = Guardian's guard "Prudent plays D vs `.bot CooperateBot`" (TRUE); then Prudent's `A` "Guardian plays C vs me", `B` (P) | `G ⇒ (D, D)`; `¬G ∧ ¬(A ∧ B) ⇒ (C, D)` | `¬G ∧ A ∧ B ⇒ (C, C)` | `dich_GuardianBot_vs_PrudentBot` (3) |
+| Wary × Dupoc `(C, D)` | NESTED: `W` = Wary's `.neg` guard "¬(Dupoc plays C vs me)"; then Dupoc's `A` "Wary plays C vs me" | `W ⇒ (D, D)`; `¬W ∧ ¬A ⇒ (C, D)` | `¬W ∧ A ⇒ (C, C)` | `dich_WaryBot_vs_DupocBot` (2) |
+| Wary × Just `(C, D)` | NESTED: `J` = Just's guard "Wary plays C vs the snapshot"; then `W` "¬(Just plays C vs me)" | `¬J ∧ ¬W ⇒ (C, D)`; `¬J ∧ W ⇒ (D, D)` | `J ⇒ (C, C)` | `dich_WaryBot_vs_JustBot` (2) |
+| Wary × Prudent `(C, D)` | NESTED: Prudent's `A ∧ B` ("Wary plays C vs me", "Wary plays D vs `.bot DefectBot`" (P)); then `W` | `¬(A ∧ B) ∧ ¬W ⇒ (C, D)`; `¬(A ∧ B) ∧ W ⇒ (D, D)` | `A ∧ B ⇒ (C, C)` | `dich_WaryBot_vs_PrudentBot` (3) |
+| Cupod × Prudent `(C, D)`, Prudent × Cupod `(D, C)` | NESTED: `Cu` = Cupod's guard "Prudent plays D vs me"; then Prudent's `A` "Cupod plays C vs me", `B` (P) | `Cu ⇒ (D, D)`; `¬Cu ∧ ¬(A ∧ B) ⇒ (C, D)` | `¬Cu ∧ A ∧ B ⇒ (C, C)` | `dich_CupodBot_vs_PrudentBot`, `dich_PrudentBot_vs_CupodBot` (3) |
+| Just × Cupod `(D, C)` | NESTED: `J` = Just's guard "Cupod plays C vs the snapshot"; then `Cu` "Just plays D vs me" | `¬J ∧ ¬Cu ⇒ (D, C)`; `¬J ∧ Cu ⇒ (D, D)` | `J ⇒ (C, C)` | `dich_JustBot_vs_CupodBot` (2) |
+| CIMCIC × Cupod `(D, C)` | NESTED: `G` = CIMCIC's guard; then `Cu` "CIMCIC plays D vs me" | `¬G ∧ ¬Cu ⇒ (D, C)`; `¬G ∧ Cu ⇒ (D, D)` | `G ⇒ (C, C)` | `dich_CIMCIC_vs_CupodBot` (2) |
+
+(Values are (left, right) in the cell's order; the world columns list the determined scenarios of the nested split.)
+
+**The reduction theorem** — the hinge is at least as hard as bounded consistency at `k`. For the simplest cell:
+```
+hinge_reduces_to_bounded_consistency_DupocBot_vs_DBot :
+  ∃ C₀ C₁ : ℕ, ∀ k : ℕ,
+    LenProvableV TAct k (guardCodeB (tcode phiDu) (pcode (DupocBot k)) (pcode DBot) k) →
+    LenProvableV TAct (k + C₀ + C₁ * Nat.size k) ⌜negTwin ⇜ ![bnumT k]⌝
+```
+where `negTwin := ∼ boxK qDuB1 ⋎ ∼ boxK (τ qDuB1)`, `boxK χ (k) := □_k χ(k)` (the budget box at the budget ITSELF —
+`Box_g` has `gBudget k`), and `qDuB1(k)` = `σ_k` = Dupoc's guard against `.bot DefectBot`, "`.bot DefectBot` plays C
+against `DupocBot k`", FALSE in ℕ. So: the hinge within `k` ⇒ "`σ_k` or its τ-twin is not provable within `k`" within
+`k + C₀ + C₁·size k` — one instantiation of the uniform theorem `tact_rDB_imp_negTwin : TAct ⊢ ∀ k, r(k) → negTwin(k)`
+at `bnum k` (`lenProvable_inst_size`) and one modus ponens (`lenProvable_mp`), whose cut formulas carry the binary
+numeral of `k`: the additive overhead `C₀ + C₁·size k` is a constant plus the formula lengths at `k`. The uniform theorem
+is completeness (`tact_all_of_both`): in every model of `TAct` and both readings, DBot's cooperation means Dupoc did not
+cooperate with `.bot DefectBot` (`probe_of_dbot_C_V`, determinism on the constant branches), hence Dupoc's guard was not
+found (`not_found_of_SV_play`) — `σ_k` in the standard reading, its τ-twin in the swapped one. The DISJUNCTION is what
+`TAct` proves: it cannot tell its two readings apart and internal τ-invariance of `□_k` is not available; at ℕ the two
+disjuncts are equivalent by the exact τ-symmetry of `TAct`'s proofs (`lenProvable_fbound_swap_iff`), so
+`negTwin_true_iff : ℕ ⊧ negTwin(k̄) ↔ ¬ LenProvableV TAct k (guardCode (tcode phiDu) (pcode (DupocBot k)) (pBot (pConst 1)))`
+— the sentence SAYS `¬□_k σ_k`, a bounded-consistency instance (`TAct ⊢ ¬σ_k` cheaply, so `□_k σ_k → □_{k+c} ⊥`). The
+CONVERSE is cheap and proved from the conjunction (`conjTwin := ∼ boxK qDuB1 ⋏ ∼ boxK (τ qDuB1)`):
+```
+bounded_consistency_reduces_to_hinge_DupocBot_vs_DBot :
+  ∃ C₀ C₁ : ℕ, ∀ k m : ℕ,
+    LenProvableV TAct m ⌜conjTwin ⇜ ![bnumT k]⌝ →
+    LenProvableV TAct (m + C₀ + C₁ * Nat.size k) (guardCodeB (tcode phiDu) (pcode (DupocBot k)) (pcode DBot) k)
+```
+by the evaluator's determinism inside `TAct` (`tact_conjTwin_imp_rDB`: neither guard found ⇒ Dupoc's else-branch ⇒
+DBot's probe fails ⇒ DBot cooperates, in both readings — `EvalGraph.search_iff₆`, `EvalGraph.unique_V'`-free, only the
+constant branches). The ∨/∧ gap between the two directions is exactly the τ-symmetry `TAct` does not internalize.
+
+Sentence for the paper: *the engine's floor rule stipulates the negative side of the linear-regime finite-consistency
+question; `S'` proves the dependence and takes no side — each of the twenty-six genuine floors is a theorem
+`(¬A_k → engine value) ∧ (A_k → the other value)` with `A_k` the hinge written inline, and for the simplest cell the hinge is
+shown inter-derivable, up to an additive polylog overhead, with the bounded consistency of `TAct` at `k`.*
