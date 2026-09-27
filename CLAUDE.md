@@ -744,7 +744,13 @@ found every remaining one GENUINE: in each, the floor guard is a true Σ₁ sent
 witness runs through the ELSE branch of a search on a guard σ that is FALSE in ℕ, so its provability
 within budget is inter-derivable with bounded consistency `Con_TAct(k ± c)` — ONE proof-complexity
 question (Pudlák: lower bound `k^ε`, linear regime open); the engine stipulates `+k`. The settled halves
-and the guards' truth are theorems (`floor_*_right/_left/_true`); the 26 cells stay the engine's results; LegibleBot
+and the guards' truth are theorems (`floor_*_right/_left/_true`), and each of the 26 cells is a
+hypothesis-free DICHOTOMY `dich_<L>_vs_<R>` (`Cells/FloorDichotomy.lean`, 2026-09-27): `¬A_k →` the engine's
+value, `A_k →` the other value, with the hinge `A_k = LenProvableV TAct k (the outer guard)` written INLINE;
+`hinge_reduces_to_bounded_consistency_DupocBot_vs_DBot` (+ converse) shows the hinge is bounded consistency
+at `k` up to an additive `C₀ + C₁·size k`. NEVER admit the hinge as an axiom: it is the linear-regime
+finite-consistency question, open in BOTH directions, and the two answers give DIFFERENT cell values —
+the engine's `+k` stipulates the negative side. The 26 cells stay the engine's results; LegibleBot
 (a box INSIDE a guard: `box_guard_never_fits` — a body slot, like route (c), would fix it); OptimBot;
 WaryBot's floor cells; the tau constructors. **T2 (`Core/`, `Agent`, `AgentConverse`, `Inst`, `Det`) is
 frozen** — the rule bridge `S → S'` was shown IMPOSSIBLE at polynomial budgets (`MERGE_CROSSROAD.md`:
