@@ -528,9 +528,20 @@ it is the SAME decision as OptimBot. Expected values if unblocked: the 15 LOEB-F
 Legible's side C; **Legible × DIMCID a FLIP `(C, C)` → `(C, D)`** (`dimcid_vs_described`: `LegV K` is a
 described searcher). Blast radius of an 8th slot if ever wanted: 25 files, ~345 sites, all one-rewrite
 (`guardCodeBB_of_template₇` is `guardCodeB_of_template` one slot further). Decision: USER.
-* 2026-09-27 (later; Colomban: "Prudent loose ends"): IN FLIGHT `Cells/PrudentLoose.lean` — (a) the prudence
-  `k̂`-chain: Prudent's inner guard "the opponent defects against `.bot DefectBot`" FOUND for large `k` against
-  Just/CIMCIC/Guardian/Wary/Cupod (`prudence_found_vs_<X>`, via `tact_all_above_of_both` + `found_of_all_above`),
-  so the five nested dichotomies collapse to their remaining hinge(s) (`dich_<X>_vs_PrudentBot_prudenceFound`);
-  (b) `loeb_PrudentBot_vs_botMirror` (PrudentMirror's family at the closed opponent `pBot Mirror`), closing
-  EBot's side of Prudent × EBot in both worlds (`dich_PrudentBot_vs_EBot_full`). Originals untouched.
+* 2026-09-27 (later; Colomban: "Prudent loose ends"): **DONE** (`cefdb43`, `4e21d83`; `Cells/PrudentLoose.lean`, imported by
+  `ArithS.lean` and `Audit.lean`). (a) The prudence `k̂`-chain, where the verdict pass rated it (P): against an engine
+  searcher `SV g a k` the prudence guard is the `bnum k`-instance of the fixed formula `qPiS g a`, TRUE in every model above a
+  threshold when the opponent's defection against `.bot DefectBot` is its THEN-branch, hence a `TAct`-theorem `∀¹ (k̂ ≤ #0 🡒 …)`
+  by completeness and FOUND for all large `k` (`prudence_found_of_SV`; new V-generic probes `guardian_botDB_V`,
+  `guardianT_botCB_V`, `wary_botDB_V`, `waryT_botCB_V`): `prudence_found_vs_GuardianBot/_WaryBot/_CupodBot`, and the four nested
+  dichotomies restated with `B` gone (`dich_GuardianBot_vs_PrudentBot_prudenceFound`, `dich_WaryBot_vs_PrudentBot_prudenceFound`,
+  `dich_CupodBot_vs_PrudentBot_prudenceFound`, `dich_PrudentBot_vs_CupodBot_prudenceFound`; originals byte-identical). NOT
+  discharged, by design: Just × Prudent and CIMCIC × Prudent — there the defection against the probe is an ELSE-branch, so
+  `B_k` is a bounded-consistency-type sentence (true in ℕ, not in every model of `TAct`), the (G) residue itself; Just is also
+  §7-blocked. (b) `loeb_PrudentBot_vs_botMirror` (PrudentMirror's family at the closed opponent `pBot Mirror`, slack
+  `(14 + KP, 16)`, fuels 3/5), its box form and τ-twin; then `ebot_C_of_probes3`, `floor_PrudentBot_vs_EBot_right` and
+  `dich_PrudentBot_vs_EBot_full : (¬A_k → (D, C)) ∧ (A_k → (C, C))` at fuel 7. GATE: `lake build ArithS` 3360 jobs, 0 errors;
+  census all standard but the 4 pre-existing subsets. TRAPS: `Describes`/`LoebSound` force `{V : Type}` on the section (a
+  `Type*` file variable fails at `describes_closed`); `EvalGraph.const_iff` wants the fuel as `n + 1` — build `e0 : EvalGraph
+  (0 + 1) …` and `rwa [show (0 : V) + 1 + … = 4 by norm_num]`, never `rw [show (4 : V) = …]` on a goal with other literals;
+  a docstring on a `variable` line is a parse error.

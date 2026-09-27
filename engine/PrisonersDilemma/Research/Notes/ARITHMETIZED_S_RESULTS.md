@@ -597,3 +597,49 @@ polynomial. The block is that the box's body is COMPUTED FROM THE FRAME, and nei
 (`boundedInnerNec_sixteen`: the `bnum K`-instance of a fixed formula; `closedInnerNec_sixteen`: a closed
 sentence) has that shape; a third instance of the U10 kit is needed (`ROUTE_B_SCOPE.md` §9). Expected, unproven:
 15 cells at the polylog stagger, and Legible × DIMCID a flip to `(C, D)`.
+
+**The Prudent loose ends (2026-09-27, `Cells/PrudentLoose.lean`, `cefdb43` + `4e21d83`; gate 3360 jobs, census all standard but
+the 4 pre-existing subsets).** Two of the dichotomy addendum's open items are closed, one is recorded as NOT closable.
+* **The prudence hinge discharged where it was rated (P).** Against an engine searcher `SV g a k` (constant template, the
+  budget in the search slot) Prudent's prudence guard `B_k` = "opp defects against `.bot DefectBot`" is the `bnum k`-instance
+  of ONE fixed formula `qPiS g a` (Prudent above `KP`, the opponent by its `SV` triple; the me-slots inert). When the opponent's
+  defection against the probe is its THEN-branch — its guard against the closed probe is a positive fact, found in every model
+  above a threshold — `qPiS g a (k)` is true in every model of `TAct` above a threshold in both readings, so
+  `TAct ⊢ ∀¹ (k̂ ≤ #0 🡒 qPiS g a)` by completeness and the instance fits `k` for all large `k` (`prudence_found_of_SV`, the
+  `k̂`-chain): `prudence_found_vs_GuardianBot` (Guardian's guard "`.bot DefectBot` defects against `.bot CooperateBot`", a true
+  closed atom; `guardian_botDB_V`), `prudence_found_vs_WaryBot` (Wary's `.neg` guard is a Π₁ truth by determinism; `wary_botDB_V`),
+  `prudence_found_vs_CupodBot` (`cupod_botDB_V`), each `∃ k₀, ∀ k > k₀, LenProvableV TAct k (guardCode (tcode phiPi)
+  (pcode (PrudentBot k)) (pcode (X k)))`, the τ-twins (`guardianT_botCB_V`, `waryT_botCB_V`, `dupoc_botCB_V`) supplying the
+  swapped reading. The restated cells, originals untouched:
+
+  | cell (engine value) | hinges now | `¬`-world / found world | theorem (fuel 3) |
+  |---|---|---|---|
+  | Guardian × Prudent `(C, D)` | `G` (Guardian's guard), then Prudent's outer `A` | `G ⇒ (D, D)`; `¬G ∧ ¬A ⇒ (C, D)`; `¬G ∧ A ⇒ (C, C)` | `dich_GuardianBot_vs_PrudentBot_prudenceFound` |
+  | Wary × Prudent `(C, D)` | Prudent's outer `A`, then Wary's `W` | `A ⇒ (C, C)`; `¬A ∧ W ⇒ (D, D)`; `¬A ∧ ¬W ⇒ (C, D)` | `dich_WaryBot_vs_PrudentBot_prudenceFound` |
+  | Cupod × Prudent `(C, D)`, Prudent × Cupod `(D, C)` | `Cu` (Cupod's guard), then Prudent's outer `A` | `Cu ⇒ (D, D)`; `¬Cu ∧ ¬A ⇒ (C, D)`; `¬Cu ∧ A ⇒ (C, C)` | `dich_CupodBot_vs_PrudentBot_prudenceFound`, `dich_PrudentBot_vs_CupodBot_prudenceFound` |
+
+* **NOT discharged: Just × Prudent and CIMCIC × Prudent** (the table's "(TRUE)" prudence entries). There the opponent's
+  defection against `.bot DefectBot` is its ELSE-branch (Just's guard "`.bot DefectBot` cooperates with `.bot (DupocBot k)`" is
+  false; CIMCIC's guard against the probe is self-refuting), so `B_k` says "`TAct` does not prove the opponent's guard within
+  `k`" — true in ℕ, but NOT in every model of `TAct` (a nonstandard proof of the false guard makes the searcher take its
+  then-branch), so completeness cannot make it a `TAct`-theorem: `B_k` is itself the (G) residue of the verdict pass
+  (`floor_JustBot_vs_PrudentBot_true`, `floor_CIMCIC_vs_PrudentBot_true` are its truth halves). For Just there is also §7: no
+  fixed formula has the guard describing `pcode (JustBot k)` as its `bnum k`-instance. Both cells keep `B` as a hinge
+  (`dich_JustBot_vs_PrudentBot`, `dich_CIMCIC_vs_PrudentBot` stand as stated).
+* **Prudent × `.bot MirrorBot` by Löb** — the unbuilt piece of Prudent × EBot's `¬A` world. `Cells/PrudentMirror`'s family
+  re-instantiated at the closed opponent `pBot Mirror` (`describes_closed`): `qPB1` ("`.bot MirrorBot` plays C against
+  `Prudent k`"), `qPB2` (the prudence conjunct "`.bot MirrorBot` plays D against `.bot DefectBot`", a closed Σ₁ fact at fuel 4),
+  their τ-twins, `pPB = (qPB1 ⋏ qPB2) ⋏ (τqPB1 ⋏ τqPB2)`, `loebSound_pPB : LoebSound pPB (14 + KP) 16` (`.bot MirrorBot` copies at
+  fuel 5 = the `.bot` step + Mirror's sim step + Prudent's 3, `botMirror_step_V`), `family_found`:
+  ```
+  loeb_PrudentBot_vs_botMirror :
+    ∃ k₀, ∀ k > k₀, EvalGraph 3 (pcode (PrudentBot k)) (pBot Mirror) (pcode (PrudentBot k)) (actCode .C) ∧
+                    EvalGraph 5 (pBot Mirror) (pcode (PrudentBot k)) (pBot Mirror) (actCode .C)
+  ```
+  (fuel 3 as against Mirror: outer search, inner search, constant), the box form `loeb_PrudentBot_vs_botMirror_guards` (both
+  guards, the outer one the `S'` twin of the engine's `prudent_botmirror_coop`), the τ-twin `loeb_PrudentT_vs_botMirror` `(D, D)`.
+* **Prudent × EBot closed in both worlds.** EBot's ladder: rung 1 (`.bot DefectBot`) and rung 2 (`.bot CooperateBot`) Prudent
+  defects (SND), rung 3 (`.bot MirrorBot`) Prudent cooperates (above), so EBot cooperates whatever Prudent's outer verdict
+  (`ebot_C_of_probes3`, `floor_PrudentBot_vs_EBot_right`, pad 7), and
+  `dich_PrudentBot_vs_EBot_full : ∃ k₀, ∀ k > k₀, (¬A_k → (D, C)) ∧ (A_k → (C, C))` at fuel 7 — the `¬A_k` world is now the
+  engine's full `(D, C)`; the cell stays a genuine floor on Prudent's outer hinge alone.
