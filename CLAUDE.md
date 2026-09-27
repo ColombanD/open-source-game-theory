@@ -726,8 +726,9 @@ there are MANY, and they are the reason single-file checks and existential thres
 | **PBLT** | `Diag`, `InstV`, `NumeralFacts`, `Assembly/{Prep,Family,Cell}`, `Necessitation/*`, `Necessitation/{Package,ClosedNec}` | The parametric diagonal lemma over `TAct`; Critch 2019's UNIFORM proof of the parametric bounded Löb theorem, **family-parametric** since 2026-09-23 (`LoebSound p S₀ S₁` — a proof of `p(k)` within the budget makes `p(k)` true in both readings — and `family_found`, the arithmetized `pblt_engine`); its one hypothesis, bounded inner necessitation (Critch's (d)), is a THEOREM: `boundedInnerNec_sixteen` (U10, 2026-09-16, degree 16 — a verification proof built as a derivation code in every model, never writing a code as a numeral; ~35 modules) and `closedInnerNec_sixteen` (any budget, any closed sentence). `pblt_unconditional`, `dupoc_self_coop_unconditional`. |
 | **Cells** | `RedCell`, `Cells/*` | The engine's matrix re-proved in `S'` (route B, 2026-09-23/24): `red_cell` (every `k`, τ-symmetry + soundness, no Löb); `Cells/{DupocMirror,JustBot,DIMCID,CIMCIC,PrudentMirror,JustSlot,KhatCells}` (all 14 in-scope Löbian cells: single, MUTUAL as a conjunction family, nested searches, frozen `.bot`), `SearchFree` (28, by transfer at the engine's fuel), `SoundnessCells` (36 SND: guard false ⇒ else branch by soundness), `PositiveCells` (14 POS: `TAct ⊢ ∀¹ q` by completeness + instantiation, Löb-free), `FlipCells`/`DimcidFlips` (the DISAGREEMENTS). |
 
-**The ledger (2026-09-24): 112 of the engine's 155 cells have an `S'` statement; 97 agree, 15
-DISAGREE.** The disagreements are theorems, not gaps: the engine closes them by censuses that rest on a
+**The ledger (2026-09-27, script-exact over the 155 census rows): 107 cells have an `S'` statement —
+94 agree with the engine, 13 FLIP; 26 are GENUINE floors (no statement, by decision); 22 are excluded
+(Legible/Optim/Wary-floor).** The disagreements are theorems, not gaps: the engine closes them by censuses that rest on a
 player being UNREADABLE by `S`'s rules (`no_provable_tailTo_unreadable`, the WV valuation censuses),
 and PA reads every source. `dimcid_vs_closed`: **in `S'`, DIMCID defects against every closed
 program** — its guard "my cooperating implies X" is self-fulfilling for any `X` — while the engine has
@@ -738,8 +739,12 @@ rules do not cover; the two departures pull in opposite directions, and the seco
 The natural next engine step is a sound reading rule that closes the blind spot (the Tier-2 constructor
 flow; the `S'` proofs are its soundness certificates).
 
-**Deliberately outside `S'`:** floors (`search_f`: a proof-length LOWER bound in PA, Pudlák-grade —
-DROPPED 2026-09-23, the 32 FLOOR(cen) cells and the 4 companions stay the engine's results); LegibleBot
+**Deliberately outside `S'`:** floors — the verdict pass of 2026-09-27 (`Cells/FloorVerdicts.lean`)
+found every remaining one GENUINE: in each, the floor guard is a true Σ₁ sentence whose only evaluation
+witness runs through the ELSE branch of a search on a guard σ that is FALSE in ℕ, so its provability
+within budget is inter-derivable with bounded consistency `Con_TAct(k ± c)` — ONE proof-complexity
+question (Pudlák: lower bound `k^ε`, linear regime open); the engine stipulates `+k`. The settled halves
+and the guards' truth are theorems (`floor_*_right/_left/_true`); the 26 cells stay the engine's results; LegibleBot
 (a box INSIDE a guard: `box_guard_never_fits` — a body slot, like route (c), would fix it); OptimBot;
 WaryBot's floor cells; the tau constructors. **T2 (`Core/`, `Agent`, `AgentConverse`, `Inst`, `Det`) is
 frozen** — the rule bridge `S → S'` was shown IMPOSSIBLE at polynomial budgets (`MERGE_CROSSROAD.md`:
