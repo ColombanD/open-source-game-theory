@@ -86,6 +86,7 @@ import ArithS.Cells.FlipCells
 import ArithS.Cells.DimcidFlips
 import ArithS.Cells.FloorVerdicts
 import ArithS.Cells.FloorDichotomy
+import ArithS.Cells.PrudentLoose
 
 /-!
 # ArithS.Audit — the axiom census of the arithmetized layer
@@ -3222,5 +3223,41 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms bounded_consistency_reduces_to_hinge_DupocBot_vs_DBot
 #print axioms substs_lMap_swap_bnumT
 #print axioms negTwin_true_iff
+
+
+-- THE PRUDENCE `k̂`-CHAIN (Cells/PrudentLoose §1–3, 2026-09-27) — Prudent's prudence guard `B_k` ("the opponent defects
+-- against `.bot DefectBot`") DISCHARGED where the verdict pass rated it (P): against an engine searcher `SV g a k` the
+-- guard is the `bnum k`-instance of the fixed formula `qPiS g a` (Prudent described above `KP`, the opponent by its
+-- canonical `SV` triple; the me-slots inert), TRUE in every model above a threshold when the opponent's defection
+-- against the probe is its THEN-branch (Guardian: a true closed atom, `guardian_botDB_V`; Wary: the Π₁ truth of its
+-- `.neg` guard, `wary_botDB_V`; Cupod: `cupod_botDB_V`; the τ-twins `guardianT/waryT_botCB_V`, `dupoc_botCB_V` for the
+-- swapped reading), so `TAct ⊢ ∀¹ (k̂ ≤ #0 🡒 qPiS g a)` by completeness and the instance fits `k` for all large `k`
+-- (`prudence_found_of_SV`, `found_of_all_above`). Engine-code forms `prudence_found_vs_GuardianBot/_WaryBot/_CupodBot`;
+-- the four nested dichotomies RESTATED with `B` gone (`dich_…_prudenceFound`, only the remaining hinge(s) inline; the
+-- originals in Cells/FloorDichotomy untouched). NOT discharged, on purpose: Just × Prudent and CIMCIC × Prudent — there
+-- the opponent's defection against `.bot DefectBot` is its ELSE-branch, so `B_k` is a bounded-consistency-type sentence
+-- (true in ℕ, NOT in every model of `TAct`), the (G) residue of the verdict pass; for Just there is also §7 (no fixed
+-- formula describes `pcode (JustBot k)`). Both keep `B` as a hinge.
+#print axioms qGB1
+#print axioms guardCode_GB1
+#print axioms tact_qGB1
+#print axioms guardian_botDB_V
+#print axioms tact_qGTB0
+#print axioms guardianT_botCB_V
+#print axioms wary_botDB_V
+#print axioms tact_qWTB0
+#print axioms waryT_botCB_V
+#print axioms guardCode_PiS
+#print axioms eval_qPiS_iff_V
+#print axioms eval_qPiS_swap_iff_V
+#print axioms tact_qPiS_above
+#print axioms prudence_found_of_SV
+#print axioms prudence_found_vs_GuardianBot
+#print axioms prudence_found_vs_WaryBot
+#print axioms prudence_found_vs_CupodBot
+#print axioms dich_GuardianBot_vs_PrudentBot_prudenceFound
+#print axioms dich_WaryBot_vs_PrudentBot_prudenceFound
+#print axioms dich_CupodBot_vs_PrudentBot_prudenceFound
+#print axioms dich_PrudentBot_vs_CupodBot_prudenceFound
 
 end ArithS
