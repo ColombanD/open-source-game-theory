@@ -6,13 +6,14 @@ proves a 155-cell outcome matrix. This package builds the system Critch actually
 **PA with a provability predicate bounded by proof length in characters** — on the
 [Foundation](https://github.com/FormalizedFormalLogic/Foundation) library, and proves his
 central results in it. Everything rests on Lean's three standard axioms; there is no `axiom`,
-`sorry`, or `native_decide` in the package (`ArithS/Audit.lean` prints the census).
+`sorry`, or `native_decide` in the package (`ArithS/Audit.lean` — nine per-layer files `ArithS/Audit/<Layer>.lean`
+since the 2026-09-28 reorganization, map in `PATHS.md` — prints the census).
 
 ## The three results
 
 | Theorem | Statement | File |
 |---|---|---|
-| `ArithS.red_cell` | Dupoc k vs Cupod k = (D, C) at **every** budget k — the cell Critch et al. leave open | `ArithS/RedCell.lean` |
+| `ArithS.red_cell` | Dupoc k vs Cupod k = (D, C) at **every** budget k — the cell Critch et al. leave open | `ArithS/Cells/RedCell.lean` |
 | `ArithS.dupoc_self_coop_unconditional` | Dupoc k cooperates with itself (and Cupod k defects against itself) at every sufficiently large k — Critch's Theorem 3.7 | `ArithS/Necessitation/Package.lean` |
 | `ArithS.pblt_unconditional` | the parametric bounded Löb theorem, uniform in the budget — Critch's Lemma 3.6 | `ArithS/Necessitation/Package.lean` |
 
@@ -42,25 +43,25 @@ PA, dropped), LegibleBot (a box inside a guard), OptimBot, WaryBot's floor cells
 ## What a reader must accept by eye (the trusted base)
 
 Nine definitions, under 350 lines in total: the theory `TAct` (PA plus two action constants,
-distinct and equal to 0/1 in some order — `TheoryAct.lean`), the length measure `dlen`
-(`DerivationLength.lean`), the bounded box `LenProvableV` (`BewV.lean`), the program codes
-(`Prog.lean`), the guard template and program descriptions (`Template.lean`, `Guard.lean`),
-the budget slot `guardCodeB` a template may read (`Guard.lean`, route (c), 2026-09-23 — with the
+distinct and equal to 0/1 in some order — `Theory/TheoryAct.lean`), the length measure `dlen`
+(`Length/DerivationLength.lean`), the bounded box `LenProvableV` (`Box/BewV.lean`), the program codes
+(`Agents/Prog.lean`), the guard template and program descriptions (`Agents/Template.lean`, `Agents/Guard.lean`),
+the budget slot `guardCodeB` a template may read (`Agents/Guard.lean`, route (c), 2026-09-23 — with the
 gate lemma `guardCodeB_of_template` proving a six-variable template never reads it), the
-substitution `psubst`/`gsubst` (`Subst.lean`), and the evaluator `EvalGraph` (`Eval.lean`). Everything else is a theorem about these. Why each is
+substitution `psubst`/`gsubst` (`Agents/Subst.lean`), and the evaluator `EvalGraph` (`Eval/Eval.lean`). Everything else is a theorem about these. Why each is
 what it is, the alternative, and what breaks without it:
 `../engine/PrisonersDilemma/Research/Notes/SPRIME_DESIGN_RATIONALE.md`.
 
 ## How to check that the definitions mean what we claim
 
 `../engine/PrisonersDilemma/Research/Notes/RED_CELL_AUDIT.md`, with its executable companions:
-`ArithS/RedCellAudit.lean` (negative controls, determinism, fuel-independence, the truth
-equation, non-vacuity), `ArithS/RedCellUnsound.lean` (the "drop soundness" mutation as a
+`ArithS/Audit/RedCellAudit.lean` (negative controls, determinism, fuel-independence, the truth
+equation, non-vacuity), `ArithS/Audit/RedCellUnsound.lean` (the "drop soundness" mutation as a
 theorem: an inconsistent theory flips the cell to (C, D)), and
 `../engine/PrisonersDilemma/Base/RedCellFramework.lean` (the red cell proved once, axiom-free,
 against an abstract hypothesis package, then instantiated with the engine's `S` in
 `../engine/PrisonersDilemma/Theorems/DupocBot/RedCellInstance.lean` and with this package in
-`ArithS/RedCellInstance.lean`).
+`ArithS/Audit/RedCellInstance.lean`).
 
 ## Relation to the engine's rule system
 
@@ -69,8 +70,8 @@ rules are additive; PA's verification is polynomial, `BOXCOST_SPIKE.md`) — and
 of sources its rules do not cover, which is where the 15 disagreements come from. A rule-by-rule
 bridge `S → S'` at polynomial budgets is impossible (citation composes doubly-exponentially
 through nested boxes: `MERGE_CROSSROAD.md`); the decision (2026-09-23) was route B — re-prove the
-cells directly (`ROUTE_B_SCOPE.md`). The T2 bridge modules (`Core/`, `Agent`, `AgentConverse`,
-`Inst`, `Det`) are frozen.
+cells directly (`ROUTE_B_SCOPE.md`). The T2 bridge modules (`Bridge/Core/`, `Bridge/Agent`, `Bridge/AgentConverse`,
+`Bridge/Inst`, `Eval/Det`) are frozen.
 
 ## Building
 
@@ -79,7 +80,8 @@ Lean toolchain as pinned in `lean-toolchain`; Foundation and the engine are reso
 ```
 cd arith
 lake build --try-cache ArithS     # first time: downloads Foundation's prebuilt artifacts
-lake env lean ArithS/Audit.lean    # prints the axiom census
+lake build ArithS                 # also prints the axiom census (the `#print axioms` of ArithS/Audit/*.lean, replayed)
+lake env lean ArithS/Audit/Cells.lean  # one layer's census on its own (Theory, Length, Box, Agents, Eval, Loeb, Necessitation, Bridge, Cells)
 ```
 
 A full incremental build is about 3350 jobs; a single file check needs ~5 GB of imports.

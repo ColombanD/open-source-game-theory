@@ -19,8 +19,8 @@ prose claims. The trusted base is the set of definitions whose MEANING the reade
 establish by reading them, because every headline statement (`red_cell`,
 `dupoc_self_coop_unconditional`, `pblt_unconditional`, the 92 route-B cells) is phrased in them:
 
-> the theory `TAct` (`TheoryAct.lean`, with the language `LAct` and the transposition `swap` of
-> `LangAct.lean`); the length measure `dlen` (`Length`, `SequentLength`, `DerivationLength`;
+> the theory `TAct` (`Theory/TheoryAct.lean`, with the language `LAct` and the transposition `swap` of
+> `Theory/LangAct.lean`); the length measure `dlen` (`Length`, `SequentLength`, `DerivationLength`;
 > meta twins in `MetaLength`); the bounded boxes `LenProvable`/`LenProvableV`/`LenDerivable`
 > (`Bew`, `BewV`, `CutV`) with the code bound `fbound` (`Proper`); program codes on `ppair`
 > (`Prog`) and their description terms (`ProgT`, `Bnum`); the guard template `gtmpl`/`GtmplA`
@@ -32,7 +32,7 @@ establish by reading them, because every headline statement (`red_cell`,
 Everything else in the package is a theorem about these, and `Audit.lean` — rebuilt by every
 `lake build ArithS`, its own import list, `#print axioms` on every headline theorem plus
 `example`s that fail to compile if a theorem is renamed — is the census, together with the 21
-`#print axioms` in `RedCellUnsound.lean`, `Det.lean` and `FitBox.lean` (the census is every
+`#print axioms` in `Audit/RedCellUnsound.lean`, `Eval/Det.lean` and `Agents/FitBox.lean` (the census is every
 `#print axioms` the build runs, 1436 at `a63037b`: 1411 in `Audit.lean` + 21 elsewhere). The full build
 at `a63037b` prints 1436 axiom lines, 1428 of them the triple
 `[propext, Classical.choice, Quot.sound]`, the rest pre-existing subsets or axiom-free lines
@@ -48,14 +48,14 @@ lines of definitions, and route (c) added two (`descVecB`, `guardCodeB`).
 
 ## 1. The theory `TAct = PA + {c_C, c_D}`
 
-**The language (DEF, `LangAct.lean`).** `LAct := ℒₒᵣ + Language.constant Act` with
+**The language (DEF, `Theory/LangAct.lean`).** `LAct := ℒₒᵣ + Language.constant Act` with
 `inductive Act` = `C | D`; the constants are `const Act.C`, `const Act.D` (terms `cterm Act.C`,
 `cterm Act.D`). The Gödel encoding is written by hand so that "an `ℒₒᵣ`-formula has the SAME code
 in both languages", which is what lets PA's Δ₁ axiom class be reused. `emb : ℒₒᵣ →ᵥ LAct` is the
 inclusion; `swap : LAct →ᵥ LAct` exchanges the two constants and fixes everything else — τ IS a
 language automorphism, not an operation on codes.
 
-**The axioms (DEF, `TheoryAct.lean`).** `TAct := insert axAct (insert axAct' (insert axNe
+**The axioms (DEF, `Theory/TheoryAct.lean`).** `TAct := insert axAct (insert axAct' (insert axNe
 (insert axNe' (Theory.lMap emb 𝗣𝗔))))`, i.e. PA transported along `emb` plus four closed
 sentences: `axNe : c_C ≠ c_D`, its transpose `axNe'`, and `axAct : (c_C = 0 ∧ c_D = 1) ∨ (c_C = 1
 ∧ c_D = 0)` with its transpose `axAct'`. Each axiom is present in BOTH orientations so that the
@@ -67,9 +67,9 @@ predicate needs.
 **Why constants and not numerals.** Roadmap §2.4: a numeral is rigid — a derivation may reason
 about it arithmetically, so "swap the codes of C and D" is not a symbol substitution and does not
 transport derivations. With the actions as fresh constants, τ = `swap` acts on derivations node
-for node (`Transpose.lean`: `mlen_lMapT`, `transpose_exists` — a `TAct`-proof of `φ` has a twin
+for node (`Theory/Transpose.lean`: `mlen_lMapT`, `transpose_exists` — a `TAct`-proof of `φ` has a twin
 proof of `swap φ` of the SAME length, THM) and the engine's 47-arm `Pf.transpose` becomes one
-theorem about codes, `lenProvable_fbound_swap_iff` (`Symmetry.lean`, THM). Audit item inherited
+theorem about codes, `lenProvable_fbound_swap_iff` (`Theory/Symmetry.lean`, THM). Audit item inherited
 from the roadmap: NO action numeral in any axiom or agent-facing definition — actions enter
 sentences through `cterm`/`actT`, programs through the re-valuation terms `dU`/`dW` (§4).
 
@@ -77,32 +77,32 @@ sentences through `cterm`/`actT`, programs through the re-valuation terms `dU`/`
 could then read the constants as any distinct pair; the guard sentences feed the constants as
 action VALUES into `relabel` (§4), which is meaningful only on `{0, 1}`, so in such a model the
 described program is garbage and every guard sentence is false — `TAct ⊬ guard` for every `k`,
-and nothing Löbian was ever `TAct`-provable. `axAct` is the repair (`TheoryAct.lean` docstring;
+and nothing Löbian was ever `TAct`-provable. `axAct` is the repair (`Theory/TheoryAct.lean` docstring;
 results note §4 boundary 2). It is τ-symmetric, so the swap-closure above survives.
 
 **The two readings, and why completeness over exactly those is the method (THM).**
 `stdActS M` reads `c_C ↦ 0, c_D ↦ 1` on any `ORingStructure M`; `swapActS M` reads them the other
-way (`stdActS_nat : stdActS ℕ = stdAct`; `stdActV V` of `Det.lean` is the same structure as a
+way (`stdActS_nat : stdActS ℕ = stdAct`; `stdActV V` of `Eval/Det.lean` is the same structure as a
 pull-back). `structure_eq_of_axAct`: every real-equality `LAct`-structure satisfying `axAct` IS
-one of the two. Hence `tact_complete'` (`Diag.lean`): a sentence true in `stdActS M` AND
+one of the two. Hence `tact_complete'` (`Loeb/Diag.lean`): a sentence true in `stdActS M` AND
 `swapActS M` for every `M ⊧ PA` is a `TAct`-theorem (Foundation's
 `Theory.Proof.complete_on_eq_models`, needing `eqAxiom_weakerThan_TAct`). This is the whole
 positive method of the package: a guard is shown `TAct`-provable never by exhibiting a
 derivation but by proving its truth in both readings of every model — the swap reading being,
 by the truth equations of §7, the cell of the TRANSPOSED programs. Soundness in ℕ (`stdAct` is a
-model) is the whole negative method: `models_trAt_of_lenProvableV` (`Agent.lean`), a found
+model) is the whole negative method: `models_trAt_of_lenProvableV` (`Bridge/Agent.lean`), a found
 guard is true, is what closes the red cell and the 36 SND cells.
 
 ## 2. The length `dlen`
 
-**Terms and formulas (DEF, `Length.lean`).** `termLen`/`formulaLen` are Σ₁ functions on
+**Terms and formulas (DEF, `Length/Length.lean`).** `termLen`/`formulaLen` are Σ₁ functions on
 Foundation's codes, defined by its `TermRec`/`UformulaRec1` recursion schemes: the number of
 symbols of the decoded syntax tree. Two commitments from the docstring: "it is STRUCTURAL — a
 function symbol or relation symbol counts `1` whatever its code, so swapping two constant
 symbols preserves it exactly"; and "variable indices are charged unary". Symbol-blindness is
-what makes `tlen`/`flen` invariant under ANY language hom (`LangAct.lean`), hence under `swap`.
+what makes `tlen`/`flen` invariant under ANY language hom (`Theory/LangAct.lean`), hence under `swap`.
 
-**Sequents and derivations (DEF, `SequentLength.lean`, `DerivationLength.lean`).** `setLen s`
+**Sequents and derivations (DEF, `Length/SequentLength.lean`, `Length/DerivationLength.lean`).** `setLen s`
 sums `formulaLen` over the bit-set `s`; `dlen d` is the graph of a `Fixpoint` on pairs and reads,
 per the docstring, "`Σ_{nodes} (1 + setLen (sequent at the node)) + Σ_{exsIntro nodes} termLen
 (witness)`: the length of the derivation written out as its list of sequents, plus the witness
@@ -111,15 +111,15 @@ formulas, so the target sequent must be charged; an ∃-witness with `#0` not oc
 would otherwise be unconstrained. `dlen` is defined on all codes of the right shape; validity
 (`Derivation T d`) is combined with it only in `Bew`.
 
-**The meta twins (THM, `MetaLength.lean`, `ProofLength.lean`).** `tlen`/`flen`/`sqlen`/`mlen` are
+**The meta twins (THM, `Length/MetaLength.lean`, `Length/ProofLength.lean`).** `tlen`/`flen`/`sqlen`/`mlen` are
 the same counts on Foundation's meta syntax by structural recursion; `termLen_quote`,
 `formulaLen_quote` and `dlen_quote : dlen T ⌜d⌝ = mlen d` say the coded functions compute them on
 Gödel codes in every model. `flen_le_mlen`: a derivation is at least as long as any formula of
 its conclusion (every node charges its whole sequent) — the fact behind "a PA proof of a
 sentence that writes a program's code is at least as long as that code".
 
-**Properness (DEF `Proper` in `Bew.lean`; THM `quote_derivation_le` in `Proper.lean` at ℕ,
-`properV_TAct` in `ProperV.lean` in every model).** `fbound k := Exp.exp (Exp.exp (Exp.exp (12 *
+**Properness (DEF `Proper` in `Box/Bew.lean`; THM `quote_derivation_le` in `Length/Proper.lean` at ℕ,
+`properV_TAct` in `Box/ProperV.lean` in every model).** `fbound k := Exp.exp (Exp.exp (Exp.exp (12 *
 k))) + 1`, a tower of three exponentials in a fixed multiple of `k`, is a Σ₁-definable function
 such that every derivation of length `≤ k` has code `< fbound k`. It is a coding estimate, not a
 threshold the reader should interpret; its only job is §3.
@@ -137,24 +137,24 @@ both are recorded rather than hidden.
 
 Three boxes, one meaning (DEF):
 
-* `LenProvable f k T φ := ∃ d < f (numeral k), Proof T d φ ∧ dlen T d ≤ numeral k` (`Bew.lean`):
+* `LenProvable f k T φ := ∃ d < f (numeral k), Proof T d φ ∧ dlen T d ≤ numeral k` (`Box/Bew.lean`):
   meta budget `k : ℕ`, parametric in the bounding function `f`, written as the Π₁ semisentence
   `lenProvable`. Foundation's `Theory.RestrictedProvable` with the LENGTH conjunct added —
   Critch's Notation 3.5 with `dlen` as "characters".
-* `LenProvableV T k φ := ∃ d < fbound k, Proof T d φ ∧ dlen T d ≤ k` (`BewV.lean`): the same
+* `LenProvableV T k φ := ∃ d < fbound k, Proof T d φ ∧ dlen T d ≤ k` (`Box/BewV.lean`): the same
   with `k : V` an object element, written as the Δ₁ semisentence `lenProvableV`. This is the box
   the evaluator's `search` clause consults (§6), because the budget is stored in the program
   code. "Δ₁: the code bound `fbound k` makes the search bounded; properness is what makes the
   bound invisible."
-* `LenDerivable T k φ := ∃ d, Proof T d φ ∧ dlen T d ≤ k` (`CutV.lean`): Σ₁, NO code bound. This
-  is the box of the Löb argument (`bewB a n k := LenDerivable TAct a (instB n k)`, `InstV.lean`;
+* `LenDerivable T k φ := ∃ d, Proof T d φ ∧ dlen T d ≤ k` (`Box/CutV.lean`): Σ₁, NO code bound. This
+  is the box of the Löb argument (`bewB a n k := LenDerivable TAct a (instB n k)`, `Loeb/InstV.lean`;
   `Box_g`, §4 of `Prep.lean`), because bounded D2 and inner necessitation are proved by
   constructing derivation CODES inside arbitrary models, where the code bound would be an
   obstacle.
 
 The tie (THM): `lenDerivable_iff_lenProvableV : LenDerivable TAct k φ ↔ LenProvableV TAct k φ`
-(`ProperV.lean`), in every model of IΣ₁ — the Löb argument's Σ₁ box and the evaluator's Δ₁ box
-coincide. Properness "never bites" is therefore a theorem, not a hope; `Proper` in `Bew.lean`
+(`Box/ProperV.lean`), in every model of IΣ₁ — the Löb argument's Σ₁ box and the evaluator's Δ₁ box
+coincide. Properness "never bites" is therefore a theorem, not a hope; `Proper` in `Box/Bew.lean`
 is the hypothesis form kept for the M1 gate (`lower_bound_dlen_proof_lenGödel`, THM: every
 proof of the length-restricted Gödel sentence is longer than `k`).
 
@@ -164,7 +164,7 @@ package is sensitive to the choice of `fbound` beyond properness.
 
 ## 4. Programs as codes; descriptions; templates; the budget slot
 
-**Codes (DEF, `Prog.lean`).** `ppair x y := (x + y) * (x + y) + y`, and
+**Codes (DEF, `Agents/Prog.lean`).** `ppair x y := (x + y) * (x + y) + y`, and
 `pConst a = ppair 0 a + 1`, `pSelf = ppair 1 0 + 1`, `pOpp = ppair 2 0 + 1`, `pBot p = ppair 3
 p + 1`, `pSim p q = ppair 4 (ppair p q) + 1`, `pIte b a p q = ppair 5 (ppair b (ppair a (ppair
 p q))) + 1`, `pSearch k g p q = ppair 6 (ppair k (ppair g (ppair p q))) + 1`. Actions are the
@@ -176,19 +176,19 @@ pair is defined by an `if` that no ℒₒᵣ-term denotes. The parametric bounde
 searcher's guard to be the `bnum k`-instance of ONE fixed formula — Critch's "source with `k`
 written in binary" — which requires the description of `pSearch k g p q` to be a TERM with `k`
 as a leaf. `ppair` is injective, Δ₀-decodable, monotone and term-expressible (`ppairT` on term
-codes, `ppairTT` on meta terms, `ProgT.lean`); the price is term duplication by a constant factor
+codes, `ppairTT` on meta terms, `Agents/ProgT.lean`); the price is term duplication by a constant factor
 per nesting level, harmless at the zoo's constant depth. Rejected: structural descriptions as
 formulas (reshapes every bridge module), indexing the family by the whole code (the final
 instantiation would have to decode a numeral inside PA), a `pair` symbol in `LAct` with a
-defining axiom (kills the instantiation hom `inst : LAct →ᵥ ℒₒᵣ` of `Inst.lean`).
+defining axiom (kills the instantiation hom `inst : LAct →ᵥ ℒₒᵣ` of `Bridge/Inst.lean`).
 
 **τ on codes (DEF `relabel`, `swapcode`; THM `swapcode_swapcode`).** `relabel u w x` re-values
 every action occurrence of `x` (`pConst`/`pIte` values, and stored templates through
-`relabelTemplate`, `RelabelTemplate.lean`, the symbol map `c_C ↦ …, c_D ↦ …` on `^func` nodes);
+`relabelTemplate`, `Agents/RelabelTemplate.lean`, the symbol map `c_C ↦ …, c_D ↦ …` on `^func` nodes);
 `swapcode := relabel 1 0` is an involution. `relabelTemplate 1 0 ⌜φ⌝ = ⌜lMap swap φ⌝`
 (`relabelTemplate_quote`, THM): the code-level τ IS the syntactic `swap`.
 
-**Descriptions (DEF, `Guard.lean`, `Template.lean`, `ProgT.lean`, `Bnum.lean`).** A program `x`
+**Descriptions (DEF, `Agents/Guard.lean`, `Agents/Template.lean`, `Agents/ProgT.lean`, `Agents/Bnum.lean`).** A program `x`
 enters a sentence as the triple `(progT (dnum x), dU x, dW x)`, meaning `relabel (dU x) (dW x)
 (dnum x)`: `dnum x` is the canonical member of the τ-orbit, `if x ≤ swapcode x then x else
 swapcode x`; `dU x`/`dW x` are the constants `c_C`/`c_D` in the order that reconstructs `x`
@@ -199,10 +199,10 @@ with `⌜progTT x⌝ = progT x` in every model and the truth equation `val_progT
 constants turns the description of `x` into that of `swapcode x` SYNTACTICALLY, in every case,
 and a description has length `O(log x)` — Critch's (b) for codes. The retired `Vacuity.lean`
 (commit 470ee43) proved that with Foundation's unary numerals NO top-level search could ever
-succeed (`search_never_found`); `guard_fits` (`Fit.lean`, THM) is the positive replacement: for
+succeed (`search_never_found`); `guard_fits` (`Agents/Fit.lean`, THM) is the positive replacement: for
 all large `k` the searcher's own guard sentence is shorter than `k`.
 
-**The six-variable template (DEF, `Template.lean`).** `gtmpl : 𝚺₁.Semisentence 7` reads
+**The six-variable template (DEF, `Agents/Template.lean`).** `gtmpl : 𝚺₁.Semisentence 7` reads
 `x₁ u₁ w₁ x₂ u₂ w₂ t ↦ ∃ me, relabelDef me u₁ w₁ x₁ ∧ ∃ opp, relabelDef opp u₂ w₂ x₂ ∧ ∃ n,
 evalGraphDef n opp me opp t` — "the program described by `(x₂, u₂, w₂)` plays `t` against the one
 described by `(x₁, u₁, w₁)`"; note the run is `EvalGraph n opp me opp t`, the OPPONENT's play.
@@ -211,10 +211,10 @@ fixes the action as the constant `c_a`; `descVec me opp` is the six-entry descri
 `guardCode g me opp := subst LAct (descVec me opp) g`, and the meta sentence `guardSentenceA a
 me opp := GtmplA a ⇜ descTerms me opp` has code `guardCode ⌜GtmplA a⌝ me opp`
 (`quote_guardSentenceA`, THM). Dupoc is `Dupoc k := pSearch k ⌜GtmplA 0⌝ (pConst 0) (pConst 1)`
-(`RedCell.lean`); compare by eye with the engine's `DupocBot k := .search k (.plays .opp .self
+(`Cells/RedCell.lean`); compare by eye with the engine's `DupocBot k := .search k (.plays .opp .self
 Action.C) (.const C) (.const D)`.
 
-**The general translation (DEF, `Code.lean`).** `pcode : PD.Prog → ℕ` and `tmpl : PD.Formula →
+**The general translation (DEF, `Agents/Code.lean`).** `pcode : PD.Prog → ℕ` and `tmpl : PD.Formula →
 Semisentence LAct 6` are mutually recursive like `Prog`/`Formula`; `tcode φ := ⌜tmpl φ⌝` is what
 `pcode (.search k φ p q)` stores. Clauses: `.plays p q a ↦ ∃ x y n, D_p(x) ∧ D_q(y) ∧ EvalGraph n
 x y x c_a` (the engine's `play`), with a placeholder described by the frame triple and any other
@@ -230,7 +230,7 @@ name a placeholder or a `closedP` program, no box inside a template, no tau), `m
 `.sim` argument a placeholder or closed — true of the whole zoo), `Proper` (a player is not a
 bare pronoun).
 
-**Route (c): the seventh budget slot (DEF, `Guard.lean`, 2026-09-23).** `descVecB me opp k :=
+**Route (c): the seventh budget slot (DEF, `Agents/Guard.lean`, 2026-09-23).** `descVecB me opp k :=
 descVec me opp` extended by `bnum k` in the seventh entry, and `guardCodeB g me opp k := subst
 LAct (descVecB me opp k) g`. The evaluator's `search` clause consults `guardCodeB g me opp k`
 with the NODE'S OWN budget. Why: `JustBot k := .search k (.plays .opp (.bot (DupocBot k)) C) …`
@@ -242,20 +242,20 @@ the template is the constant `GtmplJ7` (`Cells/JustSlot.lean`); `JustV7 k := pSe
 (`evalGraph_JustV7_iff`, THM), and `guardCodeB_GtmplJ7` (THM) says its guard against `opp` is the
 bot-wrapped Dupoc's guard against `opp`. Why LAST: so that every six-variable template is
 literally untouched — the gate lemma `guardCodeB_of_template : IsSemiformula LAct 6 g →
-guardCodeB g me opp k = guardCode g me opp` (`Subst.lean`, THM, via `idVec6`, `subst_eq_self`,
+guardCodeB g me opp k = guardCode g me opp` (`Agents/Subst.lean`, THM, via `idVec6`, `subst_eq_self`,
 `substs_substs`, `termSubstVec_descVecB_idVec6`) makes every earlier statement byte-identical;
 `EvalGraph.search_iff₆` is the old reading on six-variable templates. This is the "node data"
-fix `FitBox.lean` describes for box budgets, applied one level down.
+fix `Agents/FitBox.lean` describes for box budgets, applied one level down.
 
 **The `.sim` debt, DISCHARGED (2026-09-24; `ROUTE_B_SCOPE.md` §6).** Until then `gsubst` (§5)
 instantiated a template iff `IsSemiformula LAct 6 g`; a seven-variable template failed that test,
 so `gsubst` left it unchanged and `psubst` never filled its frame slots — faithful for every
 program that never `.sim`s a seven-variable searcher, but a `.sim`-wrapped `Just7` would have read
-the INNER frame, against the engine's `Prog.subst`. Now (DEF, `Guard.lean`): `descVecSlot me opp`
+the INNER frame, against the engine's `Prog.subst`. Now (DEF, `Agents/Guard.lean`): `descVecSlot me opp`
 is `descVec me opp` extended by the VARIABLE `^#6`, and `guardCodeSlot g me opp := subst LAct
 (descVecSlot me opp) g` fills `#0..#5` with the outer descriptions and keeps the slot (both Σ₁,
 `descVecSlotGraph`/`guardCodeSlotGraph`); `gsubst` applies it as its middle case (§5). THM
-(`Subst.lean`): `guardCodeB_gsubst₇ : IsSemiformula LAct 7 g → guardCodeB (gsubst me opp g) me'
+(`Agents/Subst.lean`): `guardCodeB_gsubst₇ : IsSemiformula LAct 7 g → guardCodeB (gsubst me opp g) me'
 opp' k = guardCodeB g me opp k` — a seven-variable guard inside a simulated program is evaluated
 against the OUTER players at the RUNNING node's budget, the seven-variable twin of
 `guardCode_gsubst` (`substs_substs` at `(7, 7, 0)`, `termSubstVec_descVecB_descVecSlot`: the six
@@ -271,7 +271,7 @@ in `(me, opp)` runs Just's guard `guardCode ⌜GtmplA 0⌝ (pBot (DupocV k)) opp
 guard through `Formula.subst`, so a guard inside a simulated program refers to the OUTER players;
 `.eq` substitutes only its probe side, `.diag` is frozen.
 
-**On codes (DEF, `Subst.lean`).** `gsubst me opp g := if IsSemiformula LAct 6 g then guardCode g
+**On codes (DEF, `Agents/Subst.lean`).** `gsubst me opp g := if IsSemiformula LAct 6 g then guardCode g
 me opp else if IsSemiformula LAct 7 g then guardCodeSlot g me opp else g` (the middle case since
 2026-09-24, §4; before it, the identity on seven-variable templates — the `.sim` debt); `psubst me
 opp p` is the Δ₁ fixpoint on pairs with parameters, `pConst a ↦ pConst
@@ -295,7 +295,7 @@ the middle case; `relabelTemplate_gsubst`'s middle case is `termRelabelVec_descV
 fixes `^#6`). The former restriction to SIX variables was the source of the `.sim` debt of §4,
 discharged.
 
-**Agreement with the engine (THM, `Code.lean`).** `pcode_subst : pcode (p.subst me opp) = psubst
+**Agreement with the engine (THM, `Agents/Code.lean`).** `pcode_subst : pcode (p.subst me opp) = psubst
 (pcode me) (pcode opp) (pcode p)` and `tcode_subst : tcode (ψ.subst me opp) = gsubst (pcode me)
 (pcode opp) (tcode ψ)` on the fragment `fragP`/`fragF` with proper players, through the meta
 equation `tmpl_subst`. `.box` is excluded there for a reason the docstring states exactly: the
@@ -305,7 +305,7 @@ is not invariant under provable equivalence (results note §4 boundary 1).
 
 ## 6. The evaluator `EvalGraph`
 
-**Definition (DEF, `Eval.lean`).** `EvalGraph n me opp p a := EvalFix.construction.Fixpoint ![]
+**Definition (DEF, `Eval/Eval.lean`).** `EvalGraph n me opp p a := EvalFix.construction.Fixpoint ![]
 ⟪n, me, opp, p, a⟫`, the least fixed point of the operator `EvalFix.Phi` on tuples, with
 `evalGraphDef : 𝚺₁.Semisentence 5` its Σ₁ graph. The clauses of `Phi`, to be read against the
 engine's `eval` (`Dynamics.lean`):
@@ -326,11 +326,11 @@ polarities; sub-calls decrease the fuel but may grow the other components, so th
 `Finite`, not `StrongFinite`, and functionality is not part of the construction.
 
 **What is V-generic and what is at ℕ (THM).** The clause inversions `EvalGraph.const_iff` …
-`EvalGraph.search_iff` (`EvalN.lean`) and `EvalGraph.case_iff` (`Eval.lean`) hold in every model
+`EvalGraph.search_iff` (`Eval/EvalN.lean`) and `EvalGraph.case_iff` (`Eval/Eval.lean`) hold in every model
 of IΣ₁. Determinism and fuel monotonicity are proved at ℕ by ordinary induction on the fuel
-(`EvalGraph.unique`, `EvalGraph.unique'`, `EvalGraph.mono`, `EvalGraph.mono_le`, `EvalN.lean`;
+(`EvalGraph.unique`, `EvalGraph.unique'`, `EvalGraph.mono`, `EvalGraph.mono_le`, `Eval/EvalN.lean`;
 `evalN` packages the graph as a partial function), and determinism again INSIDE every model by
-Π₁-induction (`EvalGraph.unique_V'`, `Det.lean`). The evaluator's theory is HARDWIRED: `TAct`
+Π₁-induction (`EvalGraph.unique_V'`, `Eval/Det.lean`). The evaluator's theory is HARDWIRED: `TAct`
 sits in `Phi` and in the blueprint's `!(lenProvableV TAct)` literal; making it a parameter would
 touch every consumer, which is why the mutation of §9 is a verbatim copy.
 
@@ -340,7 +340,7 @@ touch every consumer, which is why the mutation of §9 is a verbatim copy.
 `AgentConverse.evalGraph_of_eval`'s existential fuel, and the basis of the 28 SF cells
 transferred from the engine's `OutcomeSpec` theorems (`outcomeSpec_evalGraph_of_searchFree`).
 With a search node the two evaluators agree exactly when their boxes agree on the consulted
-guards: the named two-sided hypothesis `GuardAgree` (`AgentConverse.lean`) gives
+guards: the named two-sided hypothesis `GuardAgree` (`Bridge/AgentConverse.lean`) gives
 `eval_iff_evalGraph`, and `GuardAgree` is bounded D1 and its converse — never assumed anywhere
 in the route-B cells, which are proved directly in `S'`.
 
@@ -352,14 +352,14 @@ The reader checks the DEFINITION of `gtmpl` (§4) and the description terms once
 are theorems:
 
 * `models_guardSentenceA_iff : ℕ↓[LAct] ⊧ guardSentenceA a me opp ↔ ∃ n, EvalGraph n opp me opp
-  a` (`Template.lean`, at ℕ) — the descriptions denote the codes (`val_progTT_V`, the
+  a` (`Agents/Template.lean`, at ℕ) — the descriptions denote the codes (`val_progTT_V`, the
   `relabel_val_desc` reconstructions) and `Gtmpl`'s body is `evalGraphDef`.
 * `eval_qDupoc_iff_V : (stdActV V ⊧ qDupoc [k]) ↔ ∃ n, EvalGraph n (DupocV k) (DupocV k)
-  (DupocV k) 0` (`Transparency.lean`): the same in EVERY model of IΣ₁ at a possibly nonstandard
-  budget, for the one-variable family formula `qDupoc` (`Instance.lean`: Dupoc's guard is the
+  (DupocV k) 0` (`Eval/Transparency.lean`): the same in EVERY model of IΣ₁ at a possibly nonstandard
+  budget, for the one-variable family formula `qDupoc` (`Agents/Instance.lean`: Dupoc's guard is the
   `bnum k`-instance of ONE fixed formula, `exists_dupoc_instance`, `guardCode_DupocV_eq_instB`).
 * `models_trAt_plays : ℕ↓[LAct] ⊧ trAt me' opp' (.plays me opp a) ↔ ∃ N, EvalGraph N (pcode me)
-  (pcode opp) (pcode me) (actCode a)` (`Agent.lean`, proper players — the frame is irrelevant);
+  (pcode opp) (pcode me) (actCode a)` (`Bridge/Agent.lean`, proper players — the frame is irrelevant);
   `models_trAt_neg`/`models_trAt_impl`/`models_trAt_eq` (`Cells/SoundnessCells.lean`) for the
   other guard shapes, and `trAt_subst` (the realization of a fragment guard in a proper frame is
   the realization of its closed instantiation).
@@ -368,7 +368,7 @@ are theorems:
   (`Cells/PrudentMirror.lean`), and the generic instance/truth pair for an arbitrary
   six-variable template, `guardCode_qT_eq_instB`/`eval_qT_iff` (`Cells/PrudentMirror.lean`) and
   `guardCode_eq_instB_of`/`eval_GtmplA_subst_iff` (`Cells/JustBot.lean`).
-* The swap reading: `lMap_swap_guardSentenceA` (`Template.lean`) sends the guard of `(a, me,
+* The swap reading: `lMap_swap_guardSentenceA` (`Agents/Template.lean`) sends the guard of `(a, me,
   opp)` to that of `(swapAct a, swapcode me, swapcode opp)`, so truth in `swapActS` is the
   transposed cell — which is how one `LoebSound` proof covers a cell and its τ-twin.
 
@@ -387,12 +387,12 @@ the Löb premise a cell must prove, and its meaning is fixed by `Box_g` (`Assemb
 ## 8. What is deliberately outside
 
 * **`.box` inside guards.** `tmpl (.box k ψ)` is defined, but `box_guard_never_fits`
-  (`FitBox.lean`, THM): under the present coding a searcher whose guard mentions `□_k` can never
+  (`Agents/FitBox.lean`, THM): under the present coding a searcher whose guard mentions `□_k` can never
   find its guard within `k`, because the Cantor-pair CODE of a binary numeral has more bits than
   the numeral has value (`size_bnum_ge`), and the box writes its body's code as a numeral.
   Instances `legibleBot_guard_never_fits`. The fix is the node-data one (§4, route (c) applied to
   box budgets), not done; LegibleBot/OptimBot are therefore outside `S'`.
-* **The tau constructors** `.tvote/.sys/.selfIdx` map to code `0` (`Code.lean`); `.diag ↦ ⊥`. The
+* **The tau constructors** `.tvote/.sys/.selfIdx` map to code `0` (`Agents/Code.lean`); `.diag ↦ ⊥`. The
   tau layer stays a property of the engine.
 * **Floors.** `ROUTE_B_SCOPE.md` §8 decision 2 (2026-09-23): no `BoundedReflection`, no conditional
   values — `S'` is the positive theory. The verdict pass of 2026-09-27 (`Cells/FloorVerdicts.lean`,
@@ -429,7 +429,7 @@ The trusted base is small, but a wrong definition can compile. The evidence that
 carry their intended meaning is the deliberate-break protocol of `RED_CELL_AUDIT.md` §4 and its
 executable companions, all THM:
 
-* **Negative controls and pins** (`RedCellAudit.lean`): `dupoc_not_coop`/`cupod_not_defect` (the
+* **Negative controls and pins** (`Audit/RedCellAudit.lean`): `dupoc_not_coop`/`cupod_not_defect` (the
   opposite outcomes are REFUTED at every fuel — an under-determined evaluator could not refute
   them), `red_cell_deterministic`, `red_cell_any_fuel`, `guard_is_about_the_run` (a provable guard
   is a true statement about the run — if `gtmpl` were misread this would not compile),
@@ -438,7 +438,7 @@ executable companions, all THM:
 * **The executed mutations.** Swapping Dupoc's continuations breaks `swapcode_Dupoc` and
   `red_cell` (executed 2026-09-16, audit §4); dropping `dlen` from the box trivializes
   `guard_fits` and breaks the M1 gate. **Dropping soundness is a theorem**
-  (`RedCellUnsound.lean`): `TBad := insert axEq (insert axEq' TAct)` adds `c_C = c_D` and its
+  (`Audit/RedCellUnsound.lean`): `TBad := insert axEq (insert axEq' TAct)` adds `c_C = c_D` and its
   transpose; `tbad_inconsistent`; every sentence gets a three-node proof
   (`lenProvable_TBad_of_flen`); `EvalGraphBad` is a verbatim copy of `EvalGraph` with the theory
   swapped in the `search` clause and nowhere else; and `red_cell_flips_when_unsound`: for all
@@ -462,20 +462,20 @@ executable companions, all THM:
 
 Read in this order, docstrings first (each file's header says what it defines and why):
 
-1. `LangAct.lean`, `TheoryAct.lean` — the language, `swap`, `TAct`, the two readings (§1).
-2. `Length.lean`, `SequentLength.lean`, `DerivationLength.lean`, `MetaLength.lean`,
-   `ProofLength.lean` — `dlen` and its meta twins (§2).
-3. `Bew.lean`, `BewV.lean`, `Proper.lean`, `CutV.lean` (the `LenDerivable` definition only),
-   `ProperV.lean` (the `lenDerivable_iff_lenProvableV` bridge) — the three boxes (§3).
-4. `Prog.lean`, `Bnum.lean`, `ProgT.lean`, `RelabelTemplate.lean`, `Guard.lean`, `Template.lean`
+1. `Theory/LangAct.lean`, `Theory/TheoryAct.lean` — the language, `swap`, `TAct`, the two readings (§1).
+2. `Length/Length.lean`, `Length/SequentLength.lean`, `Length/DerivationLength.lean`, `Length/MetaLength.lean`,
+   `Length/ProofLength.lean` — `dlen` and its meta twins (§2).
+3. `Box/Bew.lean`, `Box/BewV.lean`, `Length/Proper.lean`, `Box/CutV.lean` (the `LenDerivable` definition only),
+   `Box/ProperV.lean` (the `lenDerivable_iff_lenProvableV` bridge) — the three boxes (§3).
+4. `Agents/Prog.lean`, `Agents/Bnum.lean`, `Agents/ProgT.lean`, `Agents/RelabelTemplate.lean`, `Agents/Guard.lean`, `Agents/Template.lean`
    — codes, descriptions, the six-variable template, the budget slot (§4).
-5. `Subst.lean` — `gsubst`, `psubst`, the gate lemma `guardCodeB_of_template` (§4–§5).
-6. `Eval.lean`, `EvalN.lean` — the evaluator and its ℕ facts (§6); `SimTest.lean` for `Mirror`.
-7. `Code.lean`, `Agent.lean` (the definitions `trAt`, `modestP`, `Proper`, `GuardAgree` in
-   `AgentConverse.lean`) — the general translation and the engine bridge (§4, §6).
-8. `RedCell.lean`, `Fit.lean`, `RedCellAudit.lean`, `RedCellUnsound.lean`, `RedCellInstance.lean`
+5. `Agents/Subst.lean` — `gsubst`, `psubst`, the gate lemma `guardCodeB_of_template` (§4–§5).
+6. `Eval/Eval.lean`, `Eval/EvalN.lean` — the evaluator and its ℕ facts (§6); `Eval/SimTest.lean` for `Mirror`.
+7. `Agents/Code.lean`, `Bridge/Agent.lean` (the definitions `trAt`, `modestP`, `Proper`, `GuardAgree` in
+   `Bridge/AgentConverse.lean`) — the general translation and the engine bridge (§4, §6).
+8. `Cells/RedCell.lean`, `Agents/Fit.lean`, `Audit/RedCellAudit.lean`, `Audit/RedCellUnsound.lean`, `Audit/RedCellInstance.lean`
    — the anchor result and its audit (§9).
-9. `Instance.lean`, `InstV.lean`, `Diag.lean`, `Transparency.lean`, `Assembly/Prep.lean` §4–§6,
+9. `Agents/Instance.lean`, `Loeb/InstV.lean`, `Loeb/Diag.lean`, `Eval/Transparency.lean`, `Assembly/Prep.lean` §4–§6,
    `Assembly/Family.lean` — the Löb vocabulary: `instB`, `bewB`, `Box_g`, `gBudget`, `LoebSound`,
    `family_found` (§3, §7). `Necessitation/Package.lean` states the unconditional headline
    theorems; the directory behind it is proof, not definition.
@@ -488,4 +488,7 @@ Read in this order, docstrings first (each file's header says what it defines an
     guards of the 26 genuine floors) and `Cells/FloorDichotomy.lean` (their hypothesis-free
     dichotomies `dich_<L>_vs_<R>`, §8); `Cells/Names.lean` — the naming scheme
     `<method>_<L>_vs_<R>[_<suffix>]` (primary since 2026-09-27) and the deprecated old names.
-11. `Audit.lean` — the census; `arith/README.md` — the one-page summary.
+11. `Audit.lean` and the nine per-layer files it imports, `Audit/{Theory,Length,Box,Agents,Eval,Loeb,
+    Necessitation,Bridge,Cells}.lean` — the census; `arith/README.md` — the one-page summary.
+    (File paths in this note follow the 2026-09-28 reorganization of `ArithS/`; the old→new map is
+    `arith/PATHS.md`.)

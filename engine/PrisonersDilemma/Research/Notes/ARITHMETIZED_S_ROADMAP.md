@@ -1,5 +1,7 @@
 # ARITHMETIZED_S_ROADMAP — from the rule set `Pf` to length-bounded provability over PA (2026-09-09)
 
+*File paths in this note predate the 2026-09-28 reorganization of `ArithS/` (map: `arith/PATHS.md`).*
+
 *Companion to `DESIGN_CHOICES.md` ("Why `S` is a RULE SET", 2026-08-20; the `BoundedGL`
 interface entry, 2026-08-27). This note is the executable plan for the obligation those
 entries leave open: an ARITHMETIZED instance of `S`, built on Foundation

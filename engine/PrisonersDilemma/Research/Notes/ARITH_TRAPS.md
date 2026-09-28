@@ -93,14 +93,16 @@ an agent-hour or more. Add to it when you lose one. Grouped by where it bites.*
   exit 124 + an EMPTY log is a stall. Check the exit code of `lake env lean` ITSELF: in zsh
   `${pipestatus[1]}`, not `${PIPESTATUS[0]}`; a `timeout` kill upstream of `tail`/`grep` looks green.
 * A full `lake build ArithS` rebuilds everything downstream of an edited trusted-base file
-  (`Guard`/`Subst`/`Eval`: ~3350 jobs, 10–30 min) — targeted `lake build ArithS.<Module>` and
+  (`Agents/Guard`/`Agents/Subst`/`Eval/Eval`: ~3350 jobs, 10–30 min) — targeted `lake build ArithS.<Module>` and
   single-file checks per agent; the coordinator runs the one full build.
 * BSD `sed` has no `\b` (`perl -pi`); python heredocs die on `'''` inside Lean text (`VerifyKit'''`) —
   write Lean and notes via SHELL heredocs; a `-/` inside prose (`four-/seven-`) closes a docstring.
 * Agents stall on open-ended background waits — bounded polling (≤ 60 s, ≤ 900 s per call), never end
   a turn while your own check runs; resume a stalled agent by message, its commits are usually on disk.
-* Every new module is imported in BOTH `ArithS.lean` and `Audit.lean` (Audit has its own import list);
-  the census is every `#print axioms` the build runs, not `Audit.lean` alone.
+* Every new module is imported in BOTH `ArithS.lean` and the relevant `ArithS/Audit/<Layer>.lean` (nine
+  per-layer census files since 2026-09-28, each with its own minimal import list, imported by the thin
+  `Audit.lean`); the census is every `#print axioms` the build runs, not `Audit/` alone. The top level of
+  `ArithS/` is grouped into layer folders since the same day — old→new map in `arith/PATHS.md`.
 
 ## 6. Generated files
 

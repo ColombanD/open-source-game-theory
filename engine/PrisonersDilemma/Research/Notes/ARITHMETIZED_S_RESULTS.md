@@ -1,5 +1,7 @@
 # ARITHMETIZED_S_RESULTS — what the arithmetized layer proves (2026-09-10)
 
+*File paths in this note predate the 2026-09-28 reorganization of `ArithS/` (map: `arith/PATHS.md`).*
+
 *Results record for the paper/thesis. Companion to `ARITHMETIZED_S_ROADMAP.md` (the plan and
 its status log) and `M3_TRANSFER/` (design materials). Every statement below is a Lean theorem
 in `arith/ArithS/` on branch `colomban-arith-m3`, with `#print axioms` = `[propext,

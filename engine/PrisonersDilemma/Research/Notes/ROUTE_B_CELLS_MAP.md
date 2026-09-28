@@ -15,7 +15,7 @@ depend on them); `variable`-dependent sections (the `SV` block) keep binder name
   DOWNSTREAM: `pQ` (FlipCells), `qT` (PrudentMirror), `SV` (PositiveCells), `Describes` (FlipCells),
   `found_of_all_above` (KhatCells), `mirror_step_V` (DupocMirror), `SV_then_V` (KhatCells).
 * **TRAP: `DupocV`/`Dupoc` and `SV gDu 0`/`pcode (DupocBot k)` are DIFFERENT programs** — the first
-  stores the hand template `GtmplA 0`, the second `tmpl (.plays .opp .self .C)` (`Code.lean:699`
+  stores the hand template `GtmplA 0`, the second `tmpl (.plays .opp .self .C)` (`Agents/Code.lean:699`
   documents it). Same for `Cupod` vs `CupodBot`, `Just`/`Just7` vs `pcode (JustBot k)`. Never merge them;
   bridging lemmas (`DimcidV_eq_SV`, `CimcicV_eq_SV` — these two ARE equal up to a cast) may be ADDED.
 
@@ -135,12 +135,12 @@ Generic `mirror_step_V` DupocMirror:97; `mirror_copies_V` DIMCID:880 (2→3), `m
 
 ## Proposed target modules and import DAG
 ```
-InstanceV, SimTest, Template, EvalN
+Agents/InstanceV, Eval/SimTest, Agents/Template, Eval/EvalN      (paths after the 2026-09-28 reorganization, arith/PATHS.md)
    └─► Cells/Common/Syntax.lean      (arity-generic quote/relabel lemmas, pBot algebra, pConst facts, tower substitution, descVec indexing, casts)
          └─► Assembly/Prep ─► Family ─► Uniform ─► Cell        (option B: Syntax imports Prep and leaves Prep's ₁ lemmas untouched — PREFERRED)
-Cells/Common/Bots.lean       imports Common/Syntax, Assembly/Prep, SimTest   (MirrorV/TM, Tft block, T0/TB0, the SV section with its variable block, TBS, bridging lemmas DimcidV_eq_SV/CimcicV_eq_SV)
+Cells/Common/Bots.lean       imports Common/Syntax, Assembly/Prep, Eval/SimTest   (MirrorV/TM, Tft block, T0/TB0, the SV section with its variable block, TBS, bridging lemmas DimcidV_eq_SV/CimcicV_eq_SV)
 Cells/Common/Templates.lean  imports Common/Bots                              (gVec, qT + its four lemmas, qG + four, guardCode_eq_instB_of/eval_GtmplA_subst_iff, the atom truths, descVal/Describes/DescribesAbove/describes_closed/_SV/_botSV/_dupocV/_botDupoc/_TFT/_botCB)
-Cells/Common/Probers.lean    imports Common/Bots, EvalN                       (search_then_V₆/search_else_V₆ NEW, SV_then_V, botSV_then_V, SV_search_V, the frame/any search lemmas, mirror_step_V/copies/copies3, mirror_bot_*, tft_*_V, const_play_V…)
+Cells/Common/Probers.lean    imports Common/Bots, Eval/EvalN                       (search_then_V₆/search_else_V₆ NEW, SV_then_V, botSV_then_V, SV_search_V, the frame/any search lemmas, mirror_step_V/copies/copies3, mirror_bot_*, tft_*_V, const_play_V…)
 Cells/Common/Families.lean   imports Common/Templates, Assembly/Family        (pQ + its lemmas, loebSound_pQ_of NEW, a depth-d slack lemma NEW with slack4/slack6/pConj_slack_nat as corollaries, nat_le_of_le_def, loebSound_pG_of/_of_above)
 Cells/Common/Khat.lean       imports Assembly/Family                          (tact_all_of_both, found_of_all, found_of_all_V, tact_all_above_of_both, exists_instance_length_above, found_of_all_above, BoxConseq & co, linear_size_le_eventually)
 Cells/DupocMirror            imports Assembly/Cell, Necessitation/Package, Common/{Families,Probers,Khat}; everything downstream unchanged; SearchFree/SoundnessCells keep their separate branch (ℕ probers stay there).

@@ -26,7 +26,7 @@ the rule-based `Pf` comes later.*
 Decisions the user fixed (do not re-litigate): measure = proof LENGTH, not Gödel-number
 magnitude; standalone package pinned to a Foundation commit; work on branches, never on
 `main`; tau bots stay OUTSIDE the arithmetized layer; the paper is handled separately by the
-user; **the T2 bridge (engine `Pf` ↔ PA-`S`) is DEFERRED — do not extend `Core/`, `Agent`,
+user; **the T2 bridge (engine `Pf` ↔ PA-`S`) is DEFERRED — do not extend `Bridge/Core/`, `Bridge/Agent`,
 `AgentConverse`, `Inst`, `Det`**; **the one remaining obligation of M4 (`BoundedInnerNec`, §4)
 is to be pushed for, on its own branch.**
 
@@ -63,10 +63,12 @@ EXIT CODE of `lake env lean` itself (a `timeout` kill upstream of `grep` looks l
 Probes/scratch files go in the session scratchpad, never in the package.
 
 The axiom census: building `ArithS` prints `#print axioms` for the headline theorems listed in
-`arith/ArithS/Audit.lean` (292 lines as of 45c8844); every line must be
+`arith/ArithS/Audit.lean` (292 lines as of 45c8844; since 2026-09-28 a thin module importing the nine
+per-layer files `ArithS/Audit/<Layer>.lean` — the top level of `ArithS/` was grouped into layer folders
+that day, old→new map in `arith/PATHS.md`); every line must be
 `[propext, Classical.choice, Quot.sound]` (one pre-existing line, `substs_leF_imp`, prints the
 SUBSET `[propext, Quot.sound]` — fine). `Audit.lean` has its OWN import list (it does not import
-the root): a new module must be imported in BOTH `ArithS.lean` and `Audit.lean`.
+the root): a new module must be imported in BOTH `ArithS.lean` and the relevant `ArithS/Audit/<Layer>.lean`.
 
 ## 2. Read next, in this order
 
@@ -93,8 +95,8 @@ the root): a new module must be imported in BOTH `ArithS.lean` and `Audit.lean`.
 
 **M1 — the predicate.** Structural `len` on Foundation's codes (Δ₁), meta twins, `dlen ⌜d⌝ = mlen d`;
 `LenProvable`/`LenProvableV` (`□_k`), Δ₁ via PROPERNESS (`fbound k = exp³(12k)+1`); the
-length-restricted Gödel sentence true, provable, with a length lower bound. Files `Length,
-SequentLength, DerivationLength, Bew, MetaLength, Proper`.
+length-restricted Gödel sentence true, provable, with a length lower bound. Files `Length/{Length,
+SequentLength, DerivationLength, MetaLength, Proper}, Box/Bew`.
 
 **M2 — agents and the red cell (T1).** `LAct = ℒₒᵣ + {c_C, c_D}`; `TAct = PA ∪ {c_C ≠ c_D,
 c_D ≠ c_C}` **∪ {axAct, axAct'}** (since 2026-09-12: the constants are `0` and `1` in one of the
@@ -105,9 +107,9 @@ two orders — without it no guard sentence was `TAct`-provable, a vacuity found
 `progT`/`progTT` built from `ppair` and binary numerals** (so a searcher's guard is the
 `bnum k`-instance of a fixed formula: `guardCode_DupocV_eq_instB`, `exists_dupoc_instance`);
 `guardCode`, the Σ₁ fixpoint evaluator `EvalGraph`. `red_cell : (Dupoc k, Cupod k) = (D, C)` at
-every `k`, non-vacuous (`guard_fits`). Files `LangAct, TheoryAct, Transpose, Sound, Symmetry,
-ProofLength, Cut, Prog, RelabelTemplate, Bnum, ProgT, BewV, Guard, Subst, Eval, EvalN, SimTest,
-Template, RedCell, Fit, Instance, InstanceV`.
+every `k`, non-vacuous (`guard_fits`). Files `Theory/{LangAct, TheoryAct, Transpose, Sound, Symmetry},
+Length/ProofLength, Box/{Cut, BewV}, Agents/{Prog, RelabelTemplate, Bnum, ProgT, Guard, Subst, Template,
+Fit, Instance, InstanceV}, Eval/{Eval, EvalN, SimTest}, Cells/RedCell`.
 
 **M3 — `S` relative to PA (T2), as three theorems (DEFERRED, do not extend).** T2-CORE
 `Core.Pf_core_sound`, T2-NEG `no_budget_keeping_transfer`, T2-AGENT `eval_iff_evalGraph` +
@@ -242,7 +244,7 @@ user's choice among the three shapes A/B/C recorded in the roadmap.
   `OutcomeCheck`; export byte-identical (155 cells / 4 companions / 18 tau rows: values, regimes,
   pads unchanged); ~120 budget-arithmetic repairs across 61 theorem files, statement changes
   listed in the results record §5 (the WaryBot "defended" companion moved from budget 16 to 32).
-  `ArithS/Neg.lean`: T2-NEG RETIRED (its witness is no longer an engine theorem), replaced by
+  `ArithS/Bridge/Neg.lean`: T2-NEG RETIRED (its witness is no longer an engine theorem), replaced by
   `no_budget_keeping_witness_pays` and `pf_size : Pf k φ → φ.size ≤ k`. Arith **3271 jobs, census
   908 lines**, all standard axioms; zero `sorry`/`axiom`/`native_decide`.
 * Step 2: cut and instantiation are at explicit budgets; the diagonal lemma is not (wrapper
@@ -277,7 +279,7 @@ prologues (`Prologue`, `ProAxm`, `IndRec`) → the recursion (`Verify2`/`Verify3
 1. *Lower the degree* (16 → 3 is the design's target; nothing downstream needs it, since the M4
    results are parametric in `d`). In increasing cost: redesign the substitution certificate to
    take one `qVec` step per depth; fine occurrence accounting (`fvOccF`) instead of full-length
-   charging in the per-step cost; **binary variable-index charging in `Length.lean`** — the root
+   charging in the per-step cost; **binary variable-index charging in `Length/Length.lean`** — the root
    cause of every loss, but it touches the M1 constants and the whole census.
 2. *Cosmetic in `Package.lean`*: `SizeThm`'s docstring still calls the headline theorems
    conditional, and `boundedInnerNec_sixteen_of_sizeThm` still takes `hsz` (harmless — §4 discharges
