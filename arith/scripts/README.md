@@ -1,22 +1,29 @@
-# arith/scripts
+# arith/scripts — the generators of the U10 row tables
 
-`gen_rowinst.py` regenerates `arith/ArithS/Necessitation/RowInst.lean` (the row-shape and
-instantiation lemmas of the verification proof's formula walk, 2026-09-13):
+U10 (bounded inner necessitation, `ArithS/Necessitation/`) is assembled from ROW TABLES: universal
+lemma-sentences and per-rule fragments, each row a DSL formula plus the same ~25-line block of shape,
+formula-ness and instantiation lemmas. Nine Python generators write nine `*Rows.lean` files (~27k lines)
+from spec tables; the generated files are CHECKED IN and carry a `GENERATED` marker. The rule:
 
-    python3 arith/scripts/gen_rowinst.py arith/ArithS/Necessitation/RowInst.lean
+> **Never edit a generated `.lean` by hand.** Edit the generator (or its `.head`), regenerate, run
+> `scripts/regen_all.sh` (regenerates all nine and diffs them against the tracked files — exit 0 iff
+> all in sync; never runs `lake`), rebuild `ArithS`, re-check the census.
 
-It reads the hand-written header `<out>.head` — kept here as `RowInst.lean.head`; copy it next to
-the output (or symlink) before running. The generated file is checked in; regenerate only when
-a row's shape changes, then rebuild `ArithS` and re-check the census.
+The one violation so far (2026-09-13, `6185743`: 154 lines appended to `RowInst.lean` after generation)
+was split off into the hand-written `Necessitation/RowInstC.lean` on 2026-09-28.
 
-`gen_frag.py` generates BOTH `arith/ArithS/Necessitation/Lib/Frag.lean` (the fragment rows of
-`DESIGN_fragments.md` §8.1: bodies, `models_`, `pa_proves_`, `lib_`) and
-`arith/ArithS/Necessitation/RowInstB.lean` (their predicate/fact codes, row-shape and `inst_` lemmas)
-from ONE row table (2026-09-13):
+| generator | writes | header | invocation (from `arith/`) |
+|---|---|---|---|
+| `gen_rowinst.py` | `Necessitation/RowInst.lean` (87 rows) | `RowInst.lean.head`, read as `<out>.head` — copy it next to the output first | `cp scripts/RowInst.lean.head ArithS/Necessitation/RowInst.lean.head && python3 scripts/gen_rowinst.py ArithS/Necessitation/RowInst.lean [subset]; rm ArithS/Necessitation/RowInst.lean.head` |
+| `gen_frag.py` | `Necessitation/Lib/Frag.lean` AND `Necessitation/RowInstB.lean` (207 rows, one table) | `Frag.lean.head`, `RowInstB.lean.head` (read from this directory) | `python3 scripts/gen_frag.py ArithS/Necessitation/Lib/Frag.lean ArithS/Necessitation/RowInstB.lean [group,…]` |
+| `gen_cert.py` | `Necessitation/CertRows.lean` (87) | inline | `python3 scripts/gen_cert.py` |
+| `gen_frag1.py` | `Necessitation/Frag1Rows.lean` (39) | inline | `python3 scripts/gen_frag1.py` |
+| `gen_frag2.py` | `Necessitation/Frag2Rows.lean` (24) | inline | `python3 scripts/gen_frag2.py` |
+| `gen_indrec.py` | `Necessitation/IndRecRows.lean` (34) | `IndRecRows.lean.head` (this directory) | `python3 scripts/gen_indrec.py` |
+| `gen_numid.py` | `Necessitation/NumIdRows.lean` (6) | inline | `python3 scripts/gen_numid.py` |
+| `gen_proaxm.py` | `Necessitation/ProAxmRows.lean` (1) | inline | `python3 scripts/gen_proaxm.py` |
+| `gen_prologue.py` | `Necessitation/PrologueRows.lean` | inline | `python3 scripts/gen_prologue.py` |
 
-    python3 arith/scripts/gen_frag.py arith/ArithS/Necessitation/Lib/Frag.lean arith/ArithS/Necessitation/RowInstB.lean [group,group,…]
-
-The hand-written headers `Frag.lean.head` / `RowInstB.lean.head` are read from this directory
-(no copying). The optional third argument restricts both outputs to the listed groups
-(`copy,ident,fun,sets,fstIdx,nodes,lengths,cert,num,axm`) — for checking a group in isolation;
-the checked-in files are the full generation. Per-row proofs live in the table as Lean strings.
+The in-place writers must run from `arith/` (relative paths). Per-row proofs live in the tables as Lean
+strings; the design is `Research/Notes/M4_BOUNDED_HBL/DESIGN_fragments.md` §8.1. Verified in sync on
+2026-09-28 (`regen_all.sh`: all nine `ok`).

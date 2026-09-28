@@ -1,4 +1,5 @@
 import ArithS.Necessitation.IndRecRows
+import ArithS.Necessitation.RowInstC
 
 /-!
 # ArithS.Necessitation.IndRec — case (ii) of the `axm` prologue: the induction-instance recognizer

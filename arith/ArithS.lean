@@ -56,6 +56,7 @@ import ArithS.Necessitation.Lib.Frag
 import ArithS.Necessitation.Steps
 import ArithS.Necessitation.WalkLemmas
 import ArithS.Necessitation.RowInst
+import ArithS.Necessitation.RowInstC
 import ArithS.Necessitation.RowInstB
 import ArithS.Necessitation.Chain
 import ArithS.Necessitation.ChainOcc
