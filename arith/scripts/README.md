@@ -27,3 +27,11 @@ was split off into the hand-written `Necessitation/RowInstC.lean` on 2026-09-28.
 The in-place writers must run from `arith/` (relative paths). Per-row proofs live in the tables as Lean
 strings; the design is `Research/Notes/M4_BOUNDED_HBL/DESIGN_fragments.md` §8.1. Verified in sync on
 2026-09-28 (`regen_all.sh`: all nine `ok`).
+
+## `DeadCode.lean` — the reachability audit
+
+`lake env lean --run scripts/DeadCode.lean scripts/roots.txt <out.tsv>` (≈3 min on a built package) marks
+every `ArithS` constant ROOT (in the `#print axioms` census, `roots.txt`; refresh it with
+`grep -rhoE '^\s*#print axioms\s+\S+' ArithS | awk '{print $3}' | sort -u > scripts/roots.txt`),
+LIVE (reachable from a root through types and proof terms) or DEAD. Report and tiers:
+`engine/PrisonersDilemma/Research/Notes/ARITH_DEAD_CODE_AUDIT.md` (2026-09-28). The TSV is not committed.
