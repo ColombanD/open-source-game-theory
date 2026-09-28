@@ -1,0 +1,41 @@
+import ArithS.Eval.Transparency
+
+/-!
+# ArithS.Audit.Eval — the axiom census of the arithmetized layer: Eval
+
+This file covers the evaluator layer (`Eval/`): Dupoc transparency in every model
+(`Transparency`) and determinism (`Det`).
+
+Split out of the former single `ArithS/Audit.lean` on 2026-09-28; every `#print axioms` line and its
+comment block are verbatim (the comment blocks are the historical record). `ArithS/Audit.lean` imports
+the nine per-layer files; each line must read `[propext, Classical.choice, Quot.sound]`.
+-/
+
+namespace ArithS
+
+-- M4 U7 — Dupoc transparency (Critch's step 0) in EVERY model of IΣ₁, at every (possibly
+-- nonstandard) budget `k : V`, in the `LAct`-structure `stdActV V` (`c_C ↦ 0`, `c_D ↦ 1`): the
+-- description term denotes the canonical code, the truth equation of `qDupoc` ("Dupoc plays C
+-- against itself"), the search clause at fuel 2, the Löb premise `bewB k ⌜qDupoc⌝ k → qDupoc(k)`
+-- under `ProperV V TAct` (unconditional at ℕ), and the uniform ℒₒᵣ-sentence with the Δ₁ box,
+-- provable in IΣ₁/PA (completeness) and in TAct along `emb`.
+#print axioms val_TD_V
+#print axioms eval_qDupoc_iff_V
+#print axioms dupoc_search_V
+#print axioms dupoc_search_instB_V
+#print axioms dupoc_loeb_premise_V
+#print axioms dupoc_loeb_premise_nat
+#print axioms dupoc_loeb_premise_guardSentence
+#print axioms dupoc_loeb_premise_evalGraph
+#print axioms isigma1_proves_dupocPremise
+#print axioms pa_proves_dupocPremise
+#print axioms tact_proves_dupocPremise
+
+-- Det: determinism in every model of IΣ₁; the negative atom; the atomNeg leaf of T2-CORE.
+#print axioms EvalGraph.unique_V'
+#print axioms models_trAt_plays_V
+#print axioms pa_proves_neg_trAt_inst
+#print axioms leaf_atomNeg_sound
+#print axioms leaf_atomNeg_sound_searchFree
+
+end ArithS
