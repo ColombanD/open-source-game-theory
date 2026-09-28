@@ -48,9 +48,6 @@ noncomputable def csymGraph : 𝚺₁.Semisentence 2 := .mkSigma “y u. !qqFunc
 instance csym.defined : 𝚺₁-Function₁[V] csym via csymGraph := .mk fun v ↦ by
   simp [csymGraph, csym]
 
-instance csym.definable : 𝚺₁-Function₁[V] csym := csym.defined.to_definable
-instance csym.definable' : Γ-[m + 1]-Function₁[V] csym := csym.definable.of_sigmaOne
-
 /-! ### Canonical descriptions -/
 
 /-- The canonical numeral of the τ-orbit of `x`. -/
@@ -84,9 +81,6 @@ instance dnum.defined : 𝚺₁-Function₁[V] dnum via dnumGraph := .mk fun v �
   · rw [if_neg (not_le.mpr h)]
     exact ⟨fun H ↦ H.2 h, fun H ↦ ⟨fun h' ↦ absurd h' (not_le.mpr h), fun _ ↦ H⟩⟩
 
-instance dnum.definable : 𝚺₁-Function₁[V] dnum := dnum.defined.to_definable
-instance dnum.definable' : Γ-[m + 1]-Function₁[V] dnum := dnum.definable.of_sigmaOne
-
 noncomputable def dUGraph : 𝚺₁.Semisentence 2 := .mkSigma
   “y x. ∃ s, !relabelDef s 1 0 x ∧ ∃ c0, !csymGraph c0 0 ∧ ∃ c1, !csymGraph c1 1 ∧ ∃ z, !numeralGraph z 0 ∧
     (x < s → y = c0) ∧ (s < x → y = c1) ∧ (x = s → y = z)”
@@ -103,9 +97,6 @@ instance dU.defined : 𝚺₁-Function₁[V] dU via dUGraph := .mk fun v ↦ by
     exact ⟨fun H ↦ H.2.2 rfl, fun H ↦ ⟨fun h' ↦ absurd h' (_root_.lt_irrefl _), fun h' ↦ absurd h' (_root_.lt_irrefl _), fun _ ↦ H⟩⟩
   · rw [if_neg (lt_asymm h), if_pos h]
     exact ⟨fun H ↦ H.2.1 h, fun H ↦ ⟨fun h' ↦ absurd h' (lt_asymm h), fun _ ↦ H, fun h' ↦ absurd h' h.ne'⟩⟩
-
-instance dU.definable : 𝚺₁-Function₁[V] dU := dU.defined.to_definable
-instance dU.definable' : Γ-[m + 1]-Function₁[V] dU := dU.definable.of_sigmaOne
 
 noncomputable def dWGraph : 𝚺₁.Semisentence 2 := .mkSigma
   “y x. ∃ s, !relabelDef s 1 0 x ∧ ∃ c0, !csymGraph c0 0 ∧ ∃ c1, !csymGraph c1 1 ∧ ∃ z, !numeralGraph z 1 ∧
@@ -124,9 +115,6 @@ instance dW.defined : 𝚺₁-Function₁[V] dW via dWGraph := .mk fun v ↦ by
   · rw [if_neg (lt_asymm h), if_pos h]
     exact ⟨fun H ↦ H.2.1 h, fun H ↦ ⟨fun h' ↦ absurd h' (lt_asymm h), fun _ ↦ H, fun h' ↦ absurd h' h.ne'⟩⟩
 
-instance dW.definable : 𝚺₁-Function₁[V] dW := dW.defined.to_definable
-instance dW.definable' : Γ-[m + 1]-Function₁[V] dW := dW.definable.of_sigmaOne
-
 noncomputable def actTermCodeGraph : 𝚺₁.Semisentence 2 := .mkSigma
   “y a. ∃ c0, !csymGraph c0 0 ∧ ∃ c1, !csymGraph c1 1 ∧ ∃ z, !numeralGraph z a ∧
     (a = 0 → y = c0) ∧ (a = 1 → y = c1) ∧ (a ≠ 0 → a ≠ 1 → y = z)”
@@ -140,10 +128,6 @@ instance actTermCode.defined : 𝚺₁-Function₁[V] actTermCode via actTermCod
   · by_cases h1 : v 1 = 1
     · simp [h0, h1]
     · simp [h0, h1]
-
-instance actTermCode.definable : 𝚺₁-Function₁[V] actTermCode := actTermCode.defined.to_definable
-instance actTermCode.definable' : Γ-[m + 1]-Function₁[V] actTermCode :=
-  actTermCode.definable.of_sigmaOne
 
 end definability
 
@@ -165,19 +149,11 @@ noncomputable def descVecGraph : 𝚺₁.Semisentence 3 := .mkSigma
 instance descVec.defined : 𝚺₁-Function₂ (descVec : V → V → V) via descVecGraph := .mk fun v ↦ by
   simp [descVecGraph, descVec]
 
-instance descVec.definable : 𝚺₁-Function₂ (descVec : V → V → V) := descVec.defined.to_definable
-
 noncomputable def guardCodeGraph : 𝚺₁.Semisentence 4 := .mkSigma
   “y g me opp. ∃ w, !descVecGraph w me opp ∧ !(substsGraph LAct) y w g”
 
 instance guardCode.defined : 𝚺₁-Function₃ (guardCode : V → V → V → V) via guardCodeGraph :=
   .mk fun v ↦ by simp [guardCodeGraph, guardCode]
-
-instance guardCode.definable : 𝚺₁-Function₃ (guardCode : V → V → V → V) :=
-  guardCode.defined.to_definable
-
-instance guardCode.definable' : Γ-[m + 1]-Function₃ (guardCode : V → V → V → V) :=
-  guardCode.definable.of_sigmaOne
 
 /-! ### The guard code with the node budget (route c, 2026-09-23)
 
@@ -207,19 +183,11 @@ noncomputable def descVecBGraph : 𝚺₁.Semisentence 4 := .mkSigma
 instance descVecB.defined : 𝚺₁-Function₃ (descVecB : V → V → V → V) via descVecBGraph := .mk fun v ↦ by
   simp [descVecBGraph, descVecB]
 
-instance descVecB.definable : 𝚺₁-Function₃ (descVecB : V → V → V → V) := descVecB.defined.to_definable
-
 noncomputable def guardCodeBGraph : 𝚺₁.Semisentence 5 := .mkSigma
   “y g me opp k. ∃ w, !descVecBGraph w me opp k ∧ !(substsGraph LAct) y w g”
 
 instance guardCodeB.defined : 𝚺₁-Function₄ (guardCodeB : V → V → V → V → V) via guardCodeBGraph :=
   .mk fun v ↦ by simp [guardCodeBGraph, guardCodeB]
-
-instance guardCodeB.definable : 𝚺₁-Function₄ (guardCodeB : V → V → V → V → V) :=
-  guardCodeB.defined.to_definable
-
-instance guardCodeB.definable' : Γ-[m + 1]-Function₄ (guardCodeB : V → V → V → V → V) :=
-  guardCodeB.definable.of_sigmaOne
 
 /-! ### The guard code with the budget slot KEPT (the `.sim` debt of route c, discharged 2026-09-24)
 
@@ -250,18 +218,10 @@ noncomputable def descVecSlotGraph : 𝚺₁.Semisentence 3 := .mkSigma
 instance descVecSlot.defined : 𝚺₁-Function₂ (descVecSlot : V → V → V) via descVecSlotGraph := .mk fun v ↦ by
   simp [descVecSlotGraph, descVecSlot, numeral_eq_natCast]
 
-instance descVecSlot.definable : 𝚺₁-Function₂ (descVecSlot : V → V → V) := descVecSlot.defined.to_definable
-
 noncomputable def guardCodeSlotGraph : 𝚺₁.Semisentence 4 := .mkSigma
   “y g me opp. ∃ w, !descVecSlotGraph w me opp ∧ !(substsGraph LAct) y w g”
 
 instance guardCodeSlot.defined : 𝚺₁-Function₃ (guardCodeSlot : V → V → V → V) via guardCodeSlotGraph :=
   .mk fun v ↦ by simp [guardCodeSlotGraph, guardCodeSlot]
-
-instance guardCodeSlot.definable : 𝚺₁-Function₃ (guardCodeSlot : V → V → V → V) :=
-  guardCodeSlot.defined.to_definable
-
-instance guardCodeSlot.definable' : Γ-[m + 1]-Function₃ (guardCodeSlot : V → V → V → V) :=
-  guardCodeSlot.definable.of_sigmaOne
 
 end ArithS

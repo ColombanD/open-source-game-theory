@@ -115,9 +115,6 @@ theorem quote_row_formulaLenVerum : (⌜Semiformula.lMap emb formulaLenVerumB⌝
   unfold formulaLenVerumB row_formulaLenVerum_as row_formulaLenVerum_c PeqB PflenG Pverum
   all_goals row_shapeB
 
-lemma isSemiformula_formulaLenVerum_as : ∀ A ∈ row_formulaLenVerum_as, IsSemiformula LAct ((2 : ℕ) : V) A := by
-  unfold row_formulaLenVerum_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pverum _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PflenG _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_formulaLenVerum_c : IsSemiformula LAct ((2 : ℕ) : V) row_formulaLenVerum_c := by
   unfold row_formulaLenVerum_c
   exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
@@ -142,9 +139,6 @@ theorem quote_row_formulaLenFalsum : (⌜Semiformula.lMap emb formulaLenFalsumB�
   unfold formulaLenFalsumB row_formulaLenFalsum_as row_formulaLenFalsum_c PeqB Pfalsum PflenG
   all_goals row_shapeB
 
-lemma isSemiformula_formulaLenFalsum_as : ∀ A ∈ row_formulaLenFalsum_as, IsSemiformula LAct ((2 : ℕ) : V) A := by
-  unfold row_formulaLenFalsum_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pfalsum _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PflenG _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_formulaLenFalsum_c : IsSemiformula LAct ((2 : ℕ) : V) row_formulaLenFalsum_c := by
   unfold row_formulaLenFalsum_c
   exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
@@ -169,9 +163,6 @@ theorem quote_row_formulaLenAnd : (⌜Semiformula.lMap emb formulaLenAndB⌝ : V
   unfold formulaLenAndB row_formulaLenAnd_as row_formulaLenAnd_c Pand PeqB PflenG Ppi
   all_goals row_shapeB
 
-lemma isSemiformula_formulaLenAnd_as : ∀ A ∈ row_formulaLenAnd_as, IsSemiformula LAct ((7 : ℕ) : V) A := by
-  unfold row_formulaLenAnd_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Ppi _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Ppi _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pand _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PflenG _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PflenG _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PflenG _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩⟩⟩⟩)
 lemma isSemiformula_formulaLenAnd_c : IsSemiformula LAct ((7 : ℕ) : V) row_formulaLenAnd_c := by
   unfold row_formulaLenAnd_c
   exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
@@ -196,9 +187,6 @@ theorem quote_row_formulaLenOr : (⌜Semiformula.lMap emb formulaLenOrB⌝ : V) 
   unfold formulaLenOrB row_formulaLenOr_as row_formulaLenOr_c PeqB PflenG Por Ppi
   all_goals row_shapeB
 
-lemma isSemiformula_formulaLenOr_as : ∀ A ∈ row_formulaLenOr_as, IsSemiformula LAct ((7 : ℕ) : V) A := by
-  unfold row_formulaLenOr_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Ppi _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Ppi _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Por _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PflenG _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PflenG _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PflenG _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩⟩⟩⟩)
 lemma isSemiformula_formulaLenOr_c : IsSemiformula LAct ((7 : ℕ) : V) row_formulaLenOr_c := by
   unfold row_formulaLenOr_c
   exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
@@ -223,9 +211,6 @@ theorem quote_row_formulaLenAll : (⌜Semiformula.lMap emb formulaLenAllB⌝ : V
   unfold formulaLenAllB row_formulaLenAll_as row_formulaLenAll_c Pall PeqB PflenG Ppi
   all_goals row_shapeB
 
-lemma isSemiformula_formulaLenAll_as : ∀ A ∈ row_formulaLenAll_as, IsSemiformula LAct ((5 : ℕ) : V) A := by
-  unfold row_formulaLenAll_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Ppi _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pall _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PflenG _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PflenG _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩⟩)
 lemma isSemiformula_formulaLenAll_c : IsSemiformula LAct ((5 : ℕ) : V) row_formulaLenAll_c := by
   unfold row_formulaLenAll_c
   exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
@@ -250,9 +235,6 @@ theorem quote_row_formulaLenExs : (⌜Semiformula.lMap emb formulaLenExsB⌝ : V
   unfold formulaLenExsB row_formulaLenExs_as row_formulaLenExs_c PeqB Pexs PflenG Ppi
   all_goals row_shapeB
 
-lemma isSemiformula_formulaLenExs_as : ∀ A ∈ row_formulaLenExs_as, IsSemiformula LAct ((5 : ℕ) : V) A := by
-  unfold row_formulaLenExs_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Ppi _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pexs _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PflenG _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PflenG _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩⟩)
 lemma isSemiformula_formulaLenExs_c : IsSemiformula LAct ((5 : ℕ) : V) row_formulaLenExs_c := by
   unfold row_formulaLenExs_c
   exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
@@ -277,9 +259,6 @@ theorem quote_row_termLenBvar : (⌜Semiformula.lMap emb termLenBvarB⌝ : V) = 
   unfold termLenBvarB row_termLenBvar_as row_termLenBvar_c Pbvar PeqB PtlenG
   all_goals row_shapeB
 
-lemma isSemiformula_termLenBvar_as : ∀ A ∈ row_termLenBvar_as, IsSemiformula LAct ((3 : ℕ) : V) A := by
-  unfold row_termLenBvar_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pbvar _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PtlenG _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_termLenBvar_c : IsSemiformula LAct ((3 : ℕ) : V) row_termLenBvar_c := by
   unfold row_termLenBvar_c
   exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
@@ -304,9 +283,6 @@ theorem quote_row_termLenFvar : (⌜Semiformula.lMap emb termLenFvarB⌝ : V) = 
   unfold termLenFvarB row_termLenFvar_as row_termLenFvar_c PeqB Pfvar PtlenG
   all_goals row_shapeB
 
-lemma isSemiformula_termLenFvar_as : ∀ A ∈ row_termLenFvar_as, IsSemiformula LAct ((3 : ℕ) : V) A := by
-  unfold row_termLenFvar_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pfvar _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PtlenG _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_termLenFvar_c : IsSemiformula LAct ((3 : ℕ) : V) row_termLenFvar_c := by
   unfold row_termLenFvar_c
   exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
@@ -333,17 +309,8 @@ theorem quote_row_formulaLenTotal : (⌜Semiformula.lMap emb formulaLenTotalB⌝
   unfold formulaLenTotalB row_formulaLenTotal_as row_formulaLenTotal_c row_formulaLenTotal_R row_formulaLenTotal_body PflenG
   all_goals row_shapeB
 
-lemma isSemiformula_formulaLenTotal_as : ∀ A ∈ row_formulaLenTotal_as, IsSemiformula LAct ((1 : ℕ) : V) A := by
-  unfold row_formulaLenTotal_as
-  exact (List.forall_mem_nil _)
-lemma isSemiformula_formulaLenTotal_c : IsSemiformula LAct ((1 : ℕ) : V) row_formulaLenTotal_c := by
-  unfold row_formulaLenTotal_c row_formulaLenTotal_R row_formulaLenTotal_body
-  exact isSemiformula_exs_cast (isSemiformula_substRow isSemiformula_PflenG _ (by rfl) (by row_entriesB))
 lemma isSemiformula_formulaLenTotal_R : IsSemiformula LAct ((2 : ℕ) : V) row_formulaLenTotal_R := by
   unfold row_formulaLenTotal_R row_formulaLenTotal_body
-  exact isSemiformula_substRow isSemiformula_PflenG _ (by rfl) (by row_entriesB)
-lemma isSemiformula_formulaLenTotal_body : IsSemiformula LAct ((2 : ℕ) : V) row_formulaLenTotal_body := by
-  unfold row_formulaLenTotal_body
   exact isSemiformula_substRow isSemiformula_PflenG _ (by rfl) (by row_entriesB)
 lemma row_formulaLenTotal_R_eq : (row_formulaLenTotal_R : V) = exsIter 0 row_formulaLenTotal_body := rfl
 
@@ -373,17 +340,8 @@ theorem quote_row_termLenTotal : (⌜Semiformula.lMap emb termLenTotalB⌝ : V) 
   unfold termLenTotalB row_termLenTotal_as row_termLenTotal_c row_termLenTotal_R row_termLenTotal_body PtlenG
   all_goals row_shapeB
 
-lemma isSemiformula_termLenTotal_as : ∀ A ∈ row_termLenTotal_as, IsSemiformula LAct ((1 : ℕ) : V) A := by
-  unfold row_termLenTotal_as
-  exact (List.forall_mem_nil _)
-lemma isSemiformula_termLenTotal_c : IsSemiformula LAct ((1 : ℕ) : V) row_termLenTotal_c := by
-  unfold row_termLenTotal_c row_termLenTotal_R row_termLenTotal_body
-  exact isSemiformula_exs_cast (isSemiformula_substRow isSemiformula_PtlenG _ (by rfl) (by row_entriesB))
 lemma isSemiformula_termLenTotal_R : IsSemiformula LAct ((2 : ℕ) : V) row_termLenTotal_R := by
   unfold row_termLenTotal_R row_termLenTotal_body
-  exact isSemiformula_substRow isSemiformula_PtlenG _ (by rfl) (by row_entriesB)
-lemma isSemiformula_termLenTotal_body : IsSemiformula LAct ((2 : ℕ) : V) row_termLenTotal_body := by
-  unfold row_termLenTotal_body
   exact isSemiformula_substRow isSemiformula_PtlenG _ (by rfl) (by row_entriesB)
 lemma row_termLenTotal_R_eq : (row_termLenTotal_R : V) = exsIter 0 row_termLenTotal_body := rfl
 
@@ -407,28 +365,6 @@ lemma inst_termLenTotal {wt : V} (hwt : IsSemiterm LAct 0 wt) :
 noncomputable def row_congAdd_as : List V := [subst LAct (listToVec [bv 3, bv 2]) PeqB, subst LAct (listToVec [bv 1, bv 0]) PeqB]
 noncomputable def row_congAdd_c : V := subst LAct (listToVec [(bv 3 ^+ bv 1), (bv 2 ^+ bv 0)]) PeqB
 
-theorem quote_row_congAdd : (⌜Semiformula.lMap emb congAddB⌝ : V) = impChain LAct row_congAdd_as row_congAdd_c := by
-  unfold congAddB row_congAdd_as row_congAdd_c PeqB
-  all_goals row_shapeB
-
-lemma isSemiformula_congAdd_as : ∀ A ∈ row_congAdd_as, IsSemiformula LAct ((4 : ℕ) : V) A := by
-  unfold row_congAdd_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
-lemma isSemiformula_congAdd_c : IsSemiformula LAct ((4 : ℕ) : V) row_congAdd_c := by
-  unfold row_congAdd_c
-  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
-
-/-- `congAdd` at the witnesses `[wx, wxp, wy, wyp]` (the DSL variables right-to-left). -/
-lemma inst_congAdd {wx wxp wy wyp : V} (hwx : IsSemiterm LAct 0 wx) (hwxp : IsSemiterm LAct 0 wxp) (hwy : IsSemiterm LAct 0 wy) (hwyp : IsSemiterm LAct 0 wyp) :
-    row_congAdd_as.map (instOuter LAct [wx, wxp, wy, wyp]) = [eqFactB wx wxp, eqFactB wy wyp] ∧
-    instOuter LAct [wx, wxp, wy, wyp] row_congAdd_c = eqFactB (wx ^+ wy) (wxp ^+ wyp) := by
-  have hes : ∀ e ∈ ([wx, wxp, wy, wyp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwx, List.forall_mem_cons.mpr ⟨hwxp, List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_cons.mpr ⟨hwyp, List.forall_mem_nil _⟩⟩⟩⟩)
-  unfold row_congAdd_as row_congAdd_c
-  simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
-  all_goals try row_entries_simpB
-  row_finish
-
 /-! ### `congSucc` — `“x' x. …”`, `m = 2` -/
 
 noncomputable def row_congSucc_as : List V := [subst LAct (listToVec [bv 1, bv 0]) PeqB]
@@ -438,9 +374,6 @@ theorem quote_row_congSucc : (⌜Semiformula.lMap emb congSuccB⌝ : V) = impCha
   unfold congSuccB row_congSucc_as row_congSucc_c PeqB
   all_goals row_shapeB
 
-lemma isSemiformula_congSucc_as : ∀ A ∈ row_congSucc_as, IsSemiformula LAct ((2 : ℕ) : V) A := by
-  unfold row_congSucc_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩)
 lemma isSemiformula_congSucc_c : IsSemiformula LAct ((2 : ℕ) : V) row_congSucc_c := by
   unfold row_congSucc_c
   exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
@@ -465,9 +398,6 @@ theorem quote_row_listSumAdjI : (⌜Semiformula.lMap emb listSumAdjIB⌝ : V) = 
   unfold listSumAdjIB row_listSumAdjI_as row_listSumAdjI_c Padjoin PeqB PlistSum
   all_goals row_shapeB
 
-lemma isSemiformula_listSumAdjI_as : ∀ A ∈ row_listSumAdjI_as, IsSemiformula LAct ((5 : ℕ) : V) A := by
-  unfold row_listSumAdjI_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PlistSum _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Padjoin _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩)
 lemma isSemiformula_listSumAdjI_c : IsSemiformula LAct ((5 : ℕ) : V) row_listSumAdjI_c := by
   unfold row_listSumAdjI_c
   exact isSemiformula_substRow isSemiformula_PlistSum _ (by rfl) (by row_entriesB)
@@ -492,9 +422,6 @@ theorem quote_row_congTSubstL : (⌜Semiformula.lMap emb congTSubstLB⌝ : V) = 
   unfold congTSubstLB row_congTSubstL_as row_congTSubstL_c PeqB PtsG
   all_goals row_shapeB
 
-lemma isSemiformula_congTSubstL_as : ∀ A ∈ row_congTSubstL_as, IsSemiformula LAct ((4 : ℕ) : V) A := by
-  unfold row_congTSubstL_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PtsG _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_congTSubstL_c : IsSemiformula LAct ((4 : ℕ) : V) row_congTSubstL_c := by
   unfold row_congTSubstL_c
   exact isSemiformula_substRow isSemiformula_PtsG _ (by rfl) (by row_entriesB)
@@ -538,26 +465,16 @@ def cIdx_termShiftBvarCert : ℕ := 118
 def cIdx_termShiftFvarCert : ℕ := 119
 def cIdx_termShiftFuncCert : ℕ := 120
 def cIdx_eqRefl : ℕ := 121
-def cIdx_eqSymm : ℕ := 122
 def cIdx_eqTrans : ℕ := 123
 def cIdx_eqOfBvar : ℕ := 124
 def cIdx_eqOfFvar : ℕ := 125
 def cIdx_eqOfFunc : ℕ := 126
 def cIdx_eqOfAdj : ℕ := 127
-def cIdx_eqOfRel : ℕ := 128
-def cIdx_eqOfNRel : ℕ := 129
-def cIdx_eqOfAnd : ℕ := 130
-def cIdx_eqOfOr : ℕ := 131
-def cIdx_eqOfAll : ℕ := 132
-def cIdx_eqOfExs : ℕ := 133
-def cIdx_eqOfVerum : ℕ := 134
-def cIdx_eqOfFalsum : ℕ := 135
 def cIdx_congRel : ℕ := 136
 def cIdx_congNRel : ℕ := 137
 def cIdx_termLenVecNil : ℕ := 138
 def cIdx_termLenVecAdj : ℕ := 139
 def cIdx_listSumNil : ℕ := 140
-def cIdx_listSumAdj : ℕ := 141
 def cIdx_formulaLenRelCert : ℕ := 142
 def cIdx_formulaLenNRelCert : ℕ := 143
 def cIdx_termLenFuncCert : ℕ := 144
@@ -593,13 +510,9 @@ def cIdx_termBShiftBvarCert : ℕ := 173
 def cIdx_termBShiftFvarCert : ℕ := 174
 def cIdx_termBShiftFuncCert : ℕ := 175
 def cIdx_qVecCert : ℕ := 176
-def cIdx_qVecNth0 : ℕ := 177
-def cIdx_qVecNthSucc : ℕ := 178
 def cIdx_nthAdjoinZero : ℕ := 179
 def cIdx_nthAdjoinSucc : ℕ := 180
 def cIdx_tsvAdjCert : ℕ := 181
-def cIdx_congAdj : ℕ := 182
-def cIdx_congAdd : ℕ := 183
 def cIdx_congSucc : ℕ := 184
 def cIdx_listSumAdjI : ℕ := 185
 def cIdx_congTSubstL : ℕ := 186
@@ -720,19 +633,6 @@ lemma CertTable.walkTable {tbl : V} (h : CertTable tbl) : WalkTable tbl := by
     rw [certRows_length]; exact lt_of_lt_of_le (walkRows_length ▸ hi) (by decide)
   have := h.2 i hi'
   rwa [show certRows[i] = walkRows[i] from List.getElem_append_left hi] at this
-
-/-- **The certification proof table exists in every model, with one standard length bound.** -/
-theorem exists_certTable : ∃ N : ℕ, ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁],
-    ∃ tbl : V, TableOK tbl (N : V) ∧ CertTable tbl := by
-  obtain ⟨N, hN⟩ := exists_rows certRows
-  refine ⟨N, fun V _ _ ↦ ?_⟩
-  obtain ⟨rows, hlen, hok, hidx⟩ := hN V
-  refine ⟨vecOf rows, tableOK_vecOf rows hok, ?_, ?_⟩
-  · rw [len_vecOf, hlen, certRows_length]
-  · intro i h
-    have h' : i < rows.length := by rw [hlen]; exact h
-    rw [nth_vecOf rows i h']
-    exact hidx i h h'
 
 lemma certTable_len {tbl : V} (h : CertTable tbl) (i : ℕ) (hi : i < certRowCount) : ((i : ℕ) : V) < len tbl :=
   lt_of_lt_of_le (by exact_mod_cast hi) h.1
@@ -937,15 +837,6 @@ lemma certTable_eqRefl {tbl : V} (h : CertTable tbl) :
   refine ⟨this.1, ?_⟩
   rw [impChainV_vecOf, this.2, quote_row_eqRefl]
 
-lemma certTable_eqSymm {tbl : V} (h : CertTable tbl) :
-    rowM tbl.[((cIdx_eqSymm : ℕ) : V)] = ((2 : ℕ) : V) ∧
-    rowB tbl.[((cIdx_eqSymm : ℕ) : V)] = impChainV LAct (vecOf row_eqSymm_as) row_eqSymm_c := by
-  have this : rowM tbl.[((cIdx_eqSymm : ℕ) : V)] = ((2 : ℕ) : V) ∧
-      rowB tbl.[((cIdx_eqSymm : ℕ) : V)] = ⌜Semiformula.lMap emb eqSymmB⌝ :=
-    h.2 cIdx_eqSymm (Nat.lt_of_sub_eq_succ rfl)
-  refine ⟨this.1, ?_⟩
-  rw [impChainV_vecOf, this.2, quote_row_eqSymm]
-
 lemma certTable_eqTrans {tbl : V} (h : CertTable tbl) :
     rowM tbl.[((cIdx_eqTrans : ℕ) : V)] = ((3 : ℕ) : V) ∧
     rowB tbl.[((cIdx_eqTrans : ℕ) : V)] = impChainV LAct (vecOf row_eqTrans_as) row_eqTrans_c := by
@@ -991,78 +882,6 @@ lemma certTable_eqOfAdj {tbl : V} (h : CertTable tbl) :
   refine ⟨this.1, ?_⟩
   rw [impChainV_vecOf, this.2, quote_row_eqOfAdj]
 
-lemma certTable_eqOfRel {tbl : V} (h : CertTable tbl) :
-    rowM tbl.[((cIdx_eqOfRel : ℕ) : V)] = ((6 : ℕ) : V) ∧
-    rowB tbl.[((cIdx_eqOfRel : ℕ) : V)] = impChainV LAct (vecOf row_eqOfRel_as) row_eqOfRel_c := by
-  have this : rowM tbl.[((cIdx_eqOfRel : ℕ) : V)] = ((6 : ℕ) : V) ∧
-      rowB tbl.[((cIdx_eqOfRel : ℕ) : V)] = ⌜Semiformula.lMap emb eqOfRelB⌝ :=
-    h.2 cIdx_eqOfRel (Nat.lt_of_sub_eq_succ rfl)
-  refine ⟨this.1, ?_⟩
-  rw [impChainV_vecOf, this.2, quote_row_eqOfRel]
-
-lemma certTable_eqOfNRel {tbl : V} (h : CertTable tbl) :
-    rowM tbl.[((cIdx_eqOfNRel : ℕ) : V)] = ((6 : ℕ) : V) ∧
-    rowB tbl.[((cIdx_eqOfNRel : ℕ) : V)] = impChainV LAct (vecOf row_eqOfNRel_as) row_eqOfNRel_c := by
-  have this : rowM tbl.[((cIdx_eqOfNRel : ℕ) : V)] = ((6 : ℕ) : V) ∧
-      rowB tbl.[((cIdx_eqOfNRel : ℕ) : V)] = ⌜Semiformula.lMap emb eqOfNRelB⌝ :=
-    h.2 cIdx_eqOfNRel (Nat.lt_of_sub_eq_succ rfl)
-  refine ⟨this.1, ?_⟩
-  rw [impChainV_vecOf, this.2, quote_row_eqOfNRel]
-
-lemma certTable_eqOfAnd {tbl : V} (h : CertTable tbl) :
-    rowM tbl.[((cIdx_eqOfAnd : ℕ) : V)] = ((6 : ℕ) : V) ∧
-    rowB tbl.[((cIdx_eqOfAnd : ℕ) : V)] = impChainV LAct (vecOf row_eqOfAnd_as) row_eqOfAnd_c := by
-  have this : rowM tbl.[((cIdx_eqOfAnd : ℕ) : V)] = ((6 : ℕ) : V) ∧
-      rowB tbl.[((cIdx_eqOfAnd : ℕ) : V)] = ⌜Semiformula.lMap emb eqOfAndB⌝ :=
-    h.2 cIdx_eqOfAnd (Nat.lt_of_sub_eq_succ rfl)
-  refine ⟨this.1, ?_⟩
-  rw [impChainV_vecOf, this.2, quote_row_eqOfAnd]
-
-lemma certTable_eqOfOr {tbl : V} (h : CertTable tbl) :
-    rowM tbl.[((cIdx_eqOfOr : ℕ) : V)] = ((6 : ℕ) : V) ∧
-    rowB tbl.[((cIdx_eqOfOr : ℕ) : V)] = impChainV LAct (vecOf row_eqOfOr_as) row_eqOfOr_c := by
-  have this : rowM tbl.[((cIdx_eqOfOr : ℕ) : V)] = ((6 : ℕ) : V) ∧
-      rowB tbl.[((cIdx_eqOfOr : ℕ) : V)] = ⌜Semiformula.lMap emb eqOfOrB⌝ :=
-    h.2 cIdx_eqOfOr (Nat.lt_of_sub_eq_succ rfl)
-  refine ⟨this.1, ?_⟩
-  rw [impChainV_vecOf, this.2, quote_row_eqOfOr]
-
-lemma certTable_eqOfAll {tbl : V} (h : CertTable tbl) :
-    rowM tbl.[((cIdx_eqOfAll : ℕ) : V)] = ((4 : ℕ) : V) ∧
-    rowB tbl.[((cIdx_eqOfAll : ℕ) : V)] = impChainV LAct (vecOf row_eqOfAll_as) row_eqOfAll_c := by
-  have this : rowM tbl.[((cIdx_eqOfAll : ℕ) : V)] = ((4 : ℕ) : V) ∧
-      rowB tbl.[((cIdx_eqOfAll : ℕ) : V)] = ⌜Semiformula.lMap emb eqOfAllB⌝ :=
-    h.2 cIdx_eqOfAll (Nat.lt_of_sub_eq_succ rfl)
-  refine ⟨this.1, ?_⟩
-  rw [impChainV_vecOf, this.2, quote_row_eqOfAll]
-
-lemma certTable_eqOfExs {tbl : V} (h : CertTable tbl) :
-    rowM tbl.[((cIdx_eqOfExs : ℕ) : V)] = ((4 : ℕ) : V) ∧
-    rowB tbl.[((cIdx_eqOfExs : ℕ) : V)] = impChainV LAct (vecOf row_eqOfExs_as) row_eqOfExs_c := by
-  have this : rowM tbl.[((cIdx_eqOfExs : ℕ) : V)] = ((4 : ℕ) : V) ∧
-      rowB tbl.[((cIdx_eqOfExs : ℕ) : V)] = ⌜Semiformula.lMap emb eqOfExsB⌝ :=
-    h.2 cIdx_eqOfExs (Nat.lt_of_sub_eq_succ rfl)
-  refine ⟨this.1, ?_⟩
-  rw [impChainV_vecOf, this.2, quote_row_eqOfExs]
-
-lemma certTable_eqOfVerum {tbl : V} (h : CertTable tbl) :
-    rowM tbl.[((cIdx_eqOfVerum : ℕ) : V)] = ((2 : ℕ) : V) ∧
-    rowB tbl.[((cIdx_eqOfVerum : ℕ) : V)] = impChainV LAct (vecOf row_eqOfVerum_as) row_eqOfVerum_c := by
-  have this : rowM tbl.[((cIdx_eqOfVerum : ℕ) : V)] = ((2 : ℕ) : V) ∧
-      rowB tbl.[((cIdx_eqOfVerum : ℕ) : V)] = ⌜Semiformula.lMap emb eqOfVerumB⌝ :=
-    h.2 cIdx_eqOfVerum (Nat.lt_of_sub_eq_succ rfl)
-  refine ⟨this.1, ?_⟩
-  rw [impChainV_vecOf, this.2, quote_row_eqOfVerum]
-
-lemma certTable_eqOfFalsum {tbl : V} (h : CertTable tbl) :
-    rowM tbl.[((cIdx_eqOfFalsum : ℕ) : V)] = ((2 : ℕ) : V) ∧
-    rowB tbl.[((cIdx_eqOfFalsum : ℕ) : V)] = impChainV LAct (vecOf row_eqOfFalsum_as) row_eqOfFalsum_c := by
-  have this : rowM tbl.[((cIdx_eqOfFalsum : ℕ) : V)] = ((2 : ℕ) : V) ∧
-      rowB tbl.[((cIdx_eqOfFalsum : ℕ) : V)] = ⌜Semiformula.lMap emb eqOfFalsumB⌝ :=
-    h.2 cIdx_eqOfFalsum (Nat.lt_of_sub_eq_succ rfl)
-  refine ⟨this.1, ?_⟩
-  rw [impChainV_vecOf, this.2, quote_row_eqOfFalsum]
-
 lemma certTable_congRel {tbl : V} (h : CertTable tbl) :
     rowM tbl.[((cIdx_congRel : ℕ) : V)] = ((6 : ℕ) : V) ∧
     rowB tbl.[((cIdx_congRel : ℕ) : V)] = impChainV LAct (vecOf row_congRel_as) row_congRel_c := by
@@ -1107,15 +926,6 @@ lemma certTable_listSumNil {tbl : V} (h : CertTable tbl) :
     h.2 cIdx_listSumNil (Nat.lt_of_sub_eq_succ rfl)
   refine ⟨this.1, ?_⟩
   rw [impChainV_vecOf, this.2, quote_row_listSumNil]
-
-lemma certTable_listSumAdj {tbl : V} (h : CertTable tbl) :
-    rowM tbl.[((cIdx_listSumAdj : ℕ) : V)] = ((5 : ℕ) : V) ∧
-    rowB tbl.[((cIdx_listSumAdj : ℕ) : V)] = impChainV LAct (vecOf row_listSumAdj_as) row_listSumAdj_c := by
-  have this : rowM tbl.[((cIdx_listSumAdj : ℕ) : V)] = ((5 : ℕ) : V) ∧
-      rowB tbl.[((cIdx_listSumAdj : ℕ) : V)] = ⌜Semiformula.lMap emb listSumAdjB⌝ :=
-    h.2 cIdx_listSumAdj (Nat.lt_of_sub_eq_succ rfl)
-  refine ⟨this.1, ?_⟩
-  rw [impChainV_vecOf, this.2, quote_row_listSumAdj]
 
 lemma certTable_formulaLenRelCert {tbl : V} (h : CertTable tbl) :
     rowM tbl.[((cIdx_formulaLenRelCert : ℕ) : V)] = ((7 : ℕ) : V) ∧
@@ -1434,25 +1244,6 @@ lemma certTable_qVecCert {tbl : V} (h : CertTable tbl) :
   refine ⟨this.1, ?_⟩
   rw [impChainV_vecOf, this.2, quote_row_qVecCert]
 
-lemma certTable_qVecNth0 {tbl : V} (h : CertTable tbl) :
-    rowM tbl.[((cIdx_qVecNth0 : ℕ) : V)] = ((2 : ℕ) : V) ∧
-    rowB tbl.[((cIdx_qVecNth0 : ℕ) : V)] = impChainV LAct (vecOf row_qVecNth0_as) (^∃ row_qVecNth0_R) := by
-  have this : rowM tbl.[((cIdx_qVecNth0 : ℕ) : V)] = ((2 : ℕ) : V) ∧
-      rowB tbl.[((cIdx_qVecNth0 : ℕ) : V)] = ⌜Semiformula.lMap emb qVecNth0B⌝ :=
-    h.2 cIdx_qVecNth0 (Nat.lt_of_sub_eq_succ rfl)
-  refine ⟨this.1, ?_⟩
-  rw [impChainV_vecOf, this.2, quote_row_qVecNth0]
-  rfl
-
-lemma certTable_qVecNthSucc {tbl : V} (h : CertTable tbl) :
-    rowM tbl.[((cIdx_qVecNthSucc : ℕ) : V)] = ((6 : ℕ) : V) ∧
-    rowB tbl.[((cIdx_qVecNthSucc : ℕ) : V)] = impChainV LAct (vecOf row_qVecNthSucc_as) row_qVecNthSucc_c := by
-  have this : rowM tbl.[((cIdx_qVecNthSucc : ℕ) : V)] = ((6 : ℕ) : V) ∧
-      rowB tbl.[((cIdx_qVecNthSucc : ℕ) : V)] = ⌜Semiformula.lMap emb qVecNthSuccB⌝ :=
-    h.2 cIdx_qVecNthSucc (Nat.lt_of_sub_eq_succ rfl)
-  refine ⟨this.1, ?_⟩
-  rw [impChainV_vecOf, this.2, quote_row_qVecNthSucc]
-
 lemma certTable_nthAdjoinZero {tbl : V} (h : CertTable tbl) :
     rowM tbl.[((cIdx_nthAdjoinZero : ℕ) : V)] = ((3 : ℕ) : V) ∧
     rowB tbl.[((cIdx_nthAdjoinZero : ℕ) : V)] = impChainV LAct (vecOf row_nthAdjoinZero_as) row_nthAdjoinZero_c := by
@@ -1479,24 +1270,6 @@ lemma certTable_tsvAdjCert {tbl : V} (h : CertTable tbl) :
     h.2 cIdx_tsvAdjCert (Nat.lt_of_sub_eq_succ rfl)
   refine ⟨this.1, ?_⟩
   rw [impChainV_vecOf, this.2, quote_row_tsvAdjCert]
-
-lemma certTable_congAdj {tbl : V} (h : CertTable tbl) :
-    rowM tbl.[((cIdx_congAdj : ℕ) : V)] = ((6 : ℕ) : V) ∧
-    rowB tbl.[((cIdx_congAdj : ℕ) : V)] = impChainV LAct (vecOf row_congAdj_as) row_congAdj_c := by
-  have this : rowM tbl.[((cIdx_congAdj : ℕ) : V)] = ((6 : ℕ) : V) ∧
-      rowB tbl.[((cIdx_congAdj : ℕ) : V)] = ⌜Semiformula.lMap emb congAdjB⌝ :=
-    h.2 cIdx_congAdj (Nat.lt_of_sub_eq_succ rfl)
-  refine ⟨this.1, ?_⟩
-  rw [impChainV_vecOf, this.2, quote_row_congAdj]
-
-lemma certTable_congAdd {tbl : V} (h : CertTable tbl) :
-    rowM tbl.[((cIdx_congAdd : ℕ) : V)] = ((4 : ℕ) : V) ∧
-    rowB tbl.[((cIdx_congAdd : ℕ) : V)] = impChainV LAct (vecOf row_congAdd_as) row_congAdd_c := by
-  have this : rowM tbl.[((cIdx_congAdd : ℕ) : V)] = ((4 : ℕ) : V) ∧
-      rowB tbl.[((cIdx_congAdd : ℕ) : V)] = ⌜Semiformula.lMap emb congAddB⌝ :=
-    h.2 cIdx_congAdd (Nat.lt_of_sub_eq_succ rfl)
-  refine ⟨this.1, ?_⟩
-  rw [impChainV_vecOf, this.2, quote_row_congAdd]
 
 lemma certTable_congSucc {tbl : V} (h : CertTable tbl) :
     rowM tbl.[((cIdx_congSucc : ℕ) : V)] = ((2 : ℕ) : V) ∧
@@ -2055,21 +1828,6 @@ lemma ctag_eqRefl {W : V} (hWp : W = certPieces) (ev : V) : sTag (mkStep W (121 
   have hk : ((cIdx_eqRefl : ℕ) : V) = (121 : V) := by simp [cIdx_eqRefl]
   rw [← hk, cmk_eqRefl]; simp
 
-lemma certPieces_eqSymm : (certPieces : V).[((cIdx_eqSymm : ℕ) : V)] = cpiece_eqSymm := by
-  unfold certPieces
-  rw [nth_vecOf _ cIdx_eqSymm (Nat.lt_of_sub_eq_succ rfl)]
-  rfl
-
-lemma cmk_eqSymm (ev : V) :
-    mkStep certPieces ((cIdx_eqSymm : ℕ) : V) ev = sUseHorn ((cIdx_eqSymm : ℕ) : V) ev (vecOf row_eqSymm_as) row_eqSymm_c := by
-  rw [mkStep, certPieces_eqSymm]
-  simp [cpiece_eqSymm, sUseHorn]
-
-lemma ctag_eqSymm {W : V} (hWp : W = certPieces) (ev : V) : sTag (mkStep W (122 : V) ev) = 0 := by
-  subst hWp
-  have hk : ((cIdx_eqSymm : ℕ) : V) = (122 : V) := by simp [cIdx_eqSymm]
-  rw [← hk, cmk_eqSymm]; simp
-
 lemma certPieces_eqTrans : (certPieces : V).[((cIdx_eqTrans : ℕ) : V)] = cpiece_eqTrans := by
   unfold certPieces
   rw [nth_vecOf _ cIdx_eqTrans (Nat.lt_of_sub_eq_succ rfl)]
@@ -2145,126 +1903,6 @@ lemma ctag_eqOfAdj {W : V} (hWp : W = certPieces) (ev : V) : sTag (mkStep W (127
   have hk : ((cIdx_eqOfAdj : ℕ) : V) = (127 : V) := by simp [cIdx_eqOfAdj]
   rw [← hk, cmk_eqOfAdj]; simp
 
-lemma certPieces_eqOfRel : (certPieces : V).[((cIdx_eqOfRel : ℕ) : V)] = cpiece_eqOfRel := by
-  unfold certPieces
-  rw [nth_vecOf _ cIdx_eqOfRel (Nat.lt_of_sub_eq_succ rfl)]
-  rfl
-
-lemma cmk_eqOfRel (ev : V) :
-    mkStep certPieces ((cIdx_eqOfRel : ℕ) : V) ev = sUseHorn ((cIdx_eqOfRel : ℕ) : V) ev (vecOf row_eqOfRel_as) row_eqOfRel_c := by
-  rw [mkStep, certPieces_eqOfRel]
-  simp [cpiece_eqOfRel, sUseHorn]
-
-lemma ctag_eqOfRel {W : V} (hWp : W = certPieces) (ev : V) : sTag (mkStep W (128 : V) ev) = 0 := by
-  subst hWp
-  have hk : ((cIdx_eqOfRel : ℕ) : V) = (128 : V) := by simp [cIdx_eqOfRel]
-  rw [← hk, cmk_eqOfRel]; simp
-
-lemma certPieces_eqOfNRel : (certPieces : V).[((cIdx_eqOfNRel : ℕ) : V)] = cpiece_eqOfNRel := by
-  unfold certPieces
-  rw [nth_vecOf _ cIdx_eqOfNRel (Nat.lt_of_sub_eq_succ rfl)]
-  rfl
-
-lemma cmk_eqOfNRel (ev : V) :
-    mkStep certPieces ((cIdx_eqOfNRel : ℕ) : V) ev = sUseHorn ((cIdx_eqOfNRel : ℕ) : V) ev (vecOf row_eqOfNRel_as) row_eqOfNRel_c := by
-  rw [mkStep, certPieces_eqOfNRel]
-  simp [cpiece_eqOfNRel, sUseHorn]
-
-lemma ctag_eqOfNRel {W : V} (hWp : W = certPieces) (ev : V) : sTag (mkStep W (129 : V) ev) = 0 := by
-  subst hWp
-  have hk : ((cIdx_eqOfNRel : ℕ) : V) = (129 : V) := by simp [cIdx_eqOfNRel]
-  rw [← hk, cmk_eqOfNRel]; simp
-
-lemma certPieces_eqOfAnd : (certPieces : V).[((cIdx_eqOfAnd : ℕ) : V)] = cpiece_eqOfAnd := by
-  unfold certPieces
-  rw [nth_vecOf _ cIdx_eqOfAnd (Nat.lt_of_sub_eq_succ rfl)]
-  rfl
-
-lemma cmk_eqOfAnd (ev : V) :
-    mkStep certPieces ((cIdx_eqOfAnd : ℕ) : V) ev = sUseHorn ((cIdx_eqOfAnd : ℕ) : V) ev (vecOf row_eqOfAnd_as) row_eqOfAnd_c := by
-  rw [mkStep, certPieces_eqOfAnd]
-  simp [cpiece_eqOfAnd, sUseHorn]
-
-lemma ctag_eqOfAnd {W : V} (hWp : W = certPieces) (ev : V) : sTag (mkStep W (130 : V) ev) = 0 := by
-  subst hWp
-  have hk : ((cIdx_eqOfAnd : ℕ) : V) = (130 : V) := by simp [cIdx_eqOfAnd]
-  rw [← hk, cmk_eqOfAnd]; simp
-
-lemma certPieces_eqOfOr : (certPieces : V).[((cIdx_eqOfOr : ℕ) : V)] = cpiece_eqOfOr := by
-  unfold certPieces
-  rw [nth_vecOf _ cIdx_eqOfOr (Nat.lt_of_sub_eq_succ rfl)]
-  rfl
-
-lemma cmk_eqOfOr (ev : V) :
-    mkStep certPieces ((cIdx_eqOfOr : ℕ) : V) ev = sUseHorn ((cIdx_eqOfOr : ℕ) : V) ev (vecOf row_eqOfOr_as) row_eqOfOr_c := by
-  rw [mkStep, certPieces_eqOfOr]
-  simp [cpiece_eqOfOr, sUseHorn]
-
-lemma ctag_eqOfOr {W : V} (hWp : W = certPieces) (ev : V) : sTag (mkStep W (131 : V) ev) = 0 := by
-  subst hWp
-  have hk : ((cIdx_eqOfOr : ℕ) : V) = (131 : V) := by simp [cIdx_eqOfOr]
-  rw [← hk, cmk_eqOfOr]; simp
-
-lemma certPieces_eqOfAll : (certPieces : V).[((cIdx_eqOfAll : ℕ) : V)] = cpiece_eqOfAll := by
-  unfold certPieces
-  rw [nth_vecOf _ cIdx_eqOfAll (Nat.lt_of_sub_eq_succ rfl)]
-  rfl
-
-lemma cmk_eqOfAll (ev : V) :
-    mkStep certPieces ((cIdx_eqOfAll : ℕ) : V) ev = sUseHorn ((cIdx_eqOfAll : ℕ) : V) ev (vecOf row_eqOfAll_as) row_eqOfAll_c := by
-  rw [mkStep, certPieces_eqOfAll]
-  simp [cpiece_eqOfAll, sUseHorn]
-
-lemma ctag_eqOfAll {W : V} (hWp : W = certPieces) (ev : V) : sTag (mkStep W (132 : V) ev) = 0 := by
-  subst hWp
-  have hk : ((cIdx_eqOfAll : ℕ) : V) = (132 : V) := by simp [cIdx_eqOfAll]
-  rw [← hk, cmk_eqOfAll]; simp
-
-lemma certPieces_eqOfExs : (certPieces : V).[((cIdx_eqOfExs : ℕ) : V)] = cpiece_eqOfExs := by
-  unfold certPieces
-  rw [nth_vecOf _ cIdx_eqOfExs (Nat.lt_of_sub_eq_succ rfl)]
-  rfl
-
-lemma cmk_eqOfExs (ev : V) :
-    mkStep certPieces ((cIdx_eqOfExs : ℕ) : V) ev = sUseHorn ((cIdx_eqOfExs : ℕ) : V) ev (vecOf row_eqOfExs_as) row_eqOfExs_c := by
-  rw [mkStep, certPieces_eqOfExs]
-  simp [cpiece_eqOfExs, sUseHorn]
-
-lemma ctag_eqOfExs {W : V} (hWp : W = certPieces) (ev : V) : sTag (mkStep W (133 : V) ev) = 0 := by
-  subst hWp
-  have hk : ((cIdx_eqOfExs : ℕ) : V) = (133 : V) := by simp [cIdx_eqOfExs]
-  rw [← hk, cmk_eqOfExs]; simp
-
-lemma certPieces_eqOfVerum : (certPieces : V).[((cIdx_eqOfVerum : ℕ) : V)] = cpiece_eqOfVerum := by
-  unfold certPieces
-  rw [nth_vecOf _ cIdx_eqOfVerum (Nat.lt_of_sub_eq_succ rfl)]
-  rfl
-
-lemma cmk_eqOfVerum (ev : V) :
-    mkStep certPieces ((cIdx_eqOfVerum : ℕ) : V) ev = sUseHorn ((cIdx_eqOfVerum : ℕ) : V) ev (vecOf row_eqOfVerum_as) row_eqOfVerum_c := by
-  rw [mkStep, certPieces_eqOfVerum]
-  simp [cpiece_eqOfVerum, sUseHorn]
-
-lemma ctag_eqOfVerum {W : V} (hWp : W = certPieces) (ev : V) : sTag (mkStep W (134 : V) ev) = 0 := by
-  subst hWp
-  have hk : ((cIdx_eqOfVerum : ℕ) : V) = (134 : V) := by simp [cIdx_eqOfVerum]
-  rw [← hk, cmk_eqOfVerum]; simp
-
-lemma certPieces_eqOfFalsum : (certPieces : V).[((cIdx_eqOfFalsum : ℕ) : V)] = cpiece_eqOfFalsum := by
-  unfold certPieces
-  rw [nth_vecOf _ cIdx_eqOfFalsum (Nat.lt_of_sub_eq_succ rfl)]
-  rfl
-
-lemma cmk_eqOfFalsum (ev : V) :
-    mkStep certPieces ((cIdx_eqOfFalsum : ℕ) : V) ev = sUseHorn ((cIdx_eqOfFalsum : ℕ) : V) ev (vecOf row_eqOfFalsum_as) row_eqOfFalsum_c := by
-  rw [mkStep, certPieces_eqOfFalsum]
-  simp [cpiece_eqOfFalsum, sUseHorn]
-
-lemma ctag_eqOfFalsum {W : V} (hWp : W = certPieces) (ev : V) : sTag (mkStep W (135 : V) ev) = 0 := by
-  subst hWp
-  have hk : ((cIdx_eqOfFalsum : ℕ) : V) = (135 : V) := by simp [cIdx_eqOfFalsum]
-  rw [← hk, cmk_eqOfFalsum]; simp
-
 lemma certPieces_congRel : (certPieces : V).[((cIdx_congRel : ℕ) : V)] = cpiece_congRel := by
   unfold certPieces
   rw [nth_vecOf _ cIdx_congRel (Nat.lt_of_sub_eq_succ rfl)]
@@ -2339,21 +1977,6 @@ lemma ctag_listSumNil {W : V} (hWp : W = certPieces) (ev : V) : sTag (mkStep W (
   subst hWp
   have hk : ((cIdx_listSumNil : ℕ) : V) = (140 : V) := by simp [cIdx_listSumNil]
   rw [← hk, cmk_listSumNil]; simp
-
-lemma certPieces_listSumAdj : (certPieces : V).[((cIdx_listSumAdj : ℕ) : V)] = cpiece_listSumAdj := by
-  unfold certPieces
-  rw [nth_vecOf _ cIdx_listSumAdj (Nat.lt_of_sub_eq_succ rfl)]
-  rfl
-
-lemma cmk_listSumAdj (ev : V) :
-    mkStep certPieces ((cIdx_listSumAdj : ℕ) : V) ev = sUseHorn ((cIdx_listSumAdj : ℕ) : V) ev (vecOf row_listSumAdj_as) row_listSumAdj_c := by
-  rw [mkStep, certPieces_listSumAdj]
-  simp [cpiece_listSumAdj, sUseHorn]
-
-lemma ctag_listSumAdj {W : V} (hWp : W = certPieces) (ev : V) : sTag (mkStep W (141 : V) ev) = 0 := by
-  subst hWp
-  have hk : ((cIdx_listSumAdj : ℕ) : V) = (141 : V) := by simp [cIdx_listSumAdj]
-  rw [← hk, cmk_listSumAdj]; simp
 
 lemma certPieces_formulaLenRelCert : (certPieces : V).[((cIdx_formulaLenRelCert : ℕ) : V)] = cpiece_formulaLenRelCert := by
   unfold certPieces
@@ -2590,11 +2213,6 @@ lemma cmk_substsRelCert (ev : V) :
   rw [mkStep, certPieces_substsRelCert]
   simp [cpiece_substsRelCert, sUseHorn]
 
-lemma ctag_substsRelCert {W : V} (hWp : W = certPieces) (ev : V) : sTag (mkStep W (157 : V) ev) = 0 := by
-  subst hWp
-  have hk : ((cIdx_substsRelCert : ℕ) : V) = (157 : V) := by simp [cIdx_substsRelCert]
-  rw [← hk, cmk_substsRelCert]; simp
-
 lemma certPieces_substsNRelCert : (certPieces : V).[((cIdx_substsNRelCert : ℕ) : V)] = cpiece_substsNRelCert := by
   unfold certPieces
   rw [nth_vecOf _ cIdx_substsNRelCert (Nat.lt_of_sub_eq_succ rfl)]
@@ -2604,11 +2222,6 @@ lemma cmk_substsNRelCert (ev : V) :
     mkStep certPieces ((cIdx_substsNRelCert : ℕ) : V) ev = sUseHorn ((cIdx_substsNRelCert : ℕ) : V) ev (vecOf row_substsNRelCert_as) row_substsNRelCert_c := by
   rw [mkStep, certPieces_substsNRelCert]
   simp [cpiece_substsNRelCert, sUseHorn]
-
-lemma ctag_substsNRelCert {W : V} (hWp : W = certPieces) (ev : V) : sTag (mkStep W (158 : V) ev) = 0 := by
-  subst hWp
-  have hk : ((cIdx_substsNRelCert : ℕ) : V) = (158 : V) := by simp [cIdx_substsNRelCert]
-  rw [← hk, cmk_substsNRelCert]; simp
 
 lemma certPieces_substsVerumCert : (certPieces : V).[((cIdx_substsVerumCert : ℕ) : V)] = cpiece_substsVerumCert := by
   unfold certPieces
@@ -2620,11 +2233,6 @@ lemma cmk_substsVerumCert (ev : V) :
   rw [mkStep, certPieces_substsVerumCert]
   simp [cpiece_substsVerumCert, sUseHorn]
 
-lemma ctag_substsVerumCert {W : V} (hWp : W = certPieces) (ev : V) : sTag (mkStep W (159 : V) ev) = 0 := by
-  subst hWp
-  have hk : ((cIdx_substsVerumCert : ℕ) : V) = (159 : V) := by simp [cIdx_substsVerumCert]
-  rw [← hk, cmk_substsVerumCert]; simp
-
 lemma certPieces_substsFalsumCert : (certPieces : V).[((cIdx_substsFalsumCert : ℕ) : V)] = cpiece_substsFalsumCert := by
   unfold certPieces
   rw [nth_vecOf _ cIdx_substsFalsumCert (Nat.lt_of_sub_eq_succ rfl)]
@@ -2634,11 +2242,6 @@ lemma cmk_substsFalsumCert (ev : V) :
     mkStep certPieces ((cIdx_substsFalsumCert : ℕ) : V) ev = sUseHorn ((cIdx_substsFalsumCert : ℕ) : V) ev (vecOf row_substsFalsumCert_as) row_substsFalsumCert_c := by
   rw [mkStep, certPieces_substsFalsumCert]
   simp [cpiece_substsFalsumCert, sUseHorn]
-
-lemma ctag_substsFalsumCert {W : V} (hWp : W = certPieces) (ev : V) : sTag (mkStep W (160 : V) ev) = 0 := by
-  subst hWp
-  have hk : ((cIdx_substsFalsumCert : ℕ) : V) = (160 : V) := by simp [cIdx_substsFalsumCert]
-  rw [← hk, cmk_substsFalsumCert]; simp
 
 lemma certPieces_substsAndCert : (certPieces : V).[((cIdx_substsAndCert : ℕ) : V)] = cpiece_substsAndCert := by
   unfold certPieces
@@ -2650,11 +2253,6 @@ lemma cmk_substsAndCert (ev : V) :
   rw [mkStep, certPieces_substsAndCert]
   simp [cpiece_substsAndCert, sUseHorn]
 
-lemma ctag_substsAndCert {W : V} (hWp : W = certPieces) (ev : V) : sTag (mkStep W (161 : V) ev) = 0 := by
-  subst hWp
-  have hk : ((cIdx_substsAndCert : ℕ) : V) = (161 : V) := by simp [cIdx_substsAndCert]
-  rw [← hk, cmk_substsAndCert]; simp
-
 lemma certPieces_substsOrCert : (certPieces : V).[((cIdx_substsOrCert : ℕ) : V)] = cpiece_substsOrCert := by
   unfold certPieces
   rw [nth_vecOf _ cIdx_substsOrCert (Nat.lt_of_sub_eq_succ rfl)]
@@ -2664,11 +2262,6 @@ lemma cmk_substsOrCert (ev : V) :
     mkStep certPieces ((cIdx_substsOrCert : ℕ) : V) ev = sUseHorn ((cIdx_substsOrCert : ℕ) : V) ev (vecOf row_substsOrCert_as) row_substsOrCert_c := by
   rw [mkStep, certPieces_substsOrCert]
   simp [cpiece_substsOrCert, sUseHorn]
-
-lemma ctag_substsOrCert {W : V} (hWp : W = certPieces) (ev : V) : sTag (mkStep W (162 : V) ev) = 0 := by
-  subst hWp
-  have hk : ((cIdx_substsOrCert : ℕ) : V) = (162 : V) := by simp [cIdx_substsOrCert]
-  rw [← hk, cmk_substsOrCert]; simp
 
 lemma certPieces_substsAllCert : (certPieces : V).[((cIdx_substsAllCert : ℕ) : V)] = cpiece_substsAllCert := by
   unfold certPieces
@@ -2680,11 +2273,6 @@ lemma cmk_substsAllCert (ev : V) :
   rw [mkStep, certPieces_substsAllCert]
   simp [cpiece_substsAllCert, sUseHorn]
 
-lemma ctag_substsAllCert {W : V} (hWp : W = certPieces) (ev : V) : sTag (mkStep W (163 : V) ev) = 0 := by
-  subst hWp
-  have hk : ((cIdx_substsAllCert : ℕ) : V) = (163 : V) := by simp [cIdx_substsAllCert]
-  rw [← hk, cmk_substsAllCert]; simp
-
 lemma certPieces_substsExsCert : (certPieces : V).[((cIdx_substsExsCert : ℕ) : V)] = cpiece_substsExsCert := by
   unfold certPieces
   rw [nth_vecOf _ cIdx_substsExsCert (Nat.lt_of_sub_eq_succ rfl)]
@@ -2694,11 +2282,6 @@ lemma cmk_substsExsCert (ev : V) :
     mkStep certPieces ((cIdx_substsExsCert : ℕ) : V) ev = sUseHorn ((cIdx_substsExsCert : ℕ) : V) ev (vecOf row_substsExsCert_as) row_substsExsCert_c := by
   rw [mkStep, certPieces_substsExsCert]
   simp [cpiece_substsExsCert, sUseHorn]
-
-lemma ctag_substsExsCert {W : V} (hWp : W = certPieces) (ev : V) : sTag (mkStep W (164 : V) ev) = 0 := by
-  subst hWp
-  have hk : ((cIdx_substsExsCert : ℕ) : V) = (164 : V) := by simp [cIdx_substsExsCert]
-  rw [← hk, cmk_substsExsCert]; simp
 
 lemma certPieces_freeCert : (certPieces : V).[((cIdx_freeCert : ℕ) : V)] = cpiece_freeCert := by
   unfold certPieces
@@ -2710,11 +2293,6 @@ lemma cmk_freeCert (ev : V) :
   rw [mkStep, certPieces_freeCert]
   simp [cpiece_freeCert, sUseHorn]
 
-lemma ctag_freeCert {W : V} (hWp : W = certPieces) (ev : V) : sTag (mkStep W (165 : V) ev) = 0 := by
-  subst hWp
-  have hk : ((cIdx_freeCert : ℕ) : V) = (165 : V) := by simp [cIdx_freeCert]
-  rw [← hk, cmk_freeCert]; simp
-
 lemma certPieces_substsSubsts1 : (certPieces : V).[((cIdx_substsSubsts1 : ℕ) : V)] = cpiece_substsSubsts1 := by
   unfold certPieces
   rw [nth_vecOf _ cIdx_substsSubsts1 (Nat.lt_of_sub_eq_succ rfl)]
@@ -2724,11 +2302,6 @@ lemma cmk_substsSubsts1 (ev : V) :
     mkStep certPieces ((cIdx_substsSubsts1 : ℕ) : V) ev = sUseHorn ((cIdx_substsSubsts1 : ℕ) : V) ev (vecOf row_substsSubsts1_as) row_substsSubsts1_c := by
   rw [mkStep, certPieces_substsSubsts1]
   simp [cpiece_substsSubsts1, sUseHorn]
-
-lemma ctag_substsSubsts1 {W : V} (hWp : W = certPieces) (ev : V) : sTag (mkStep W (166 : V) ev) = 0 := by
-  subst hWp
-  have hk : ((cIdx_substsSubsts1 : ℕ) : V) = (166 : V) := by simp [cIdx_substsSubsts1]
-  rw [← hk, cmk_substsSubsts1]; simp
 
 lemma certPieces_tsvNilCert : (certPieces : V).[((cIdx_tsvNilCert : ℕ) : V)] = cpiece_tsvNilCert := by
   unfold certPieces
@@ -2875,41 +2448,6 @@ lemma cmk_qVecCert (ev : V) :
   rw [mkStep, certPieces_qVecCert]
   simp [cpiece_qVecCert, sUseHorn]
 
-lemma ctag_qVecCert {W : V} (hWp : W = certPieces) (ev : V) : sTag (mkStep W (176 : V) ev) = 0 := by
-  subst hWp
-  have hk : ((cIdx_qVecCert : ℕ) : V) = (176 : V) := by simp [cIdx_qVecCert]
-  rw [← hk, cmk_qVecCert]; simp
-
-lemma certPieces_qVecNth0 : (certPieces : V).[((cIdx_qVecNth0 : ℕ) : V)] = cpiece_qVecNth0 := by
-  unfold certPieces
-  rw [nth_vecOf _ cIdx_qVecNth0 (Nat.lt_of_sub_eq_succ rfl)]
-  rfl
-
-lemma cmk_qVecNth0 (ev : V) :
-    mkStep certPieces ((cIdx_qVecNth0 : ℕ) : V) ev = sIntroFact ((cIdx_qVecNth0 : ℕ) : V) ev (vecOf row_qVecNth0_as) row_qVecNth0_R := by
-  rw [mkStep, certPieces_qVecNth0]
-  simp [cpiece_qVecNth0, sIntroFact]
-
-lemma ctag_qVecNth0 {W : V} (hWp : W = certPieces) (ev : V) : sTag (mkStep W (177 : V) ev) = 2 := by
-  subst hWp
-  have hk : ((cIdx_qVecNth0 : ℕ) : V) = (177 : V) := by simp [cIdx_qVecNth0]
-  rw [← hk, cmk_qVecNth0]; simp
-
-lemma certPieces_qVecNthSucc : (certPieces : V).[((cIdx_qVecNthSucc : ℕ) : V)] = cpiece_qVecNthSucc := by
-  unfold certPieces
-  rw [nth_vecOf _ cIdx_qVecNthSucc (Nat.lt_of_sub_eq_succ rfl)]
-  rfl
-
-lemma cmk_qVecNthSucc (ev : V) :
-    mkStep certPieces ((cIdx_qVecNthSucc : ℕ) : V) ev = sUseHorn ((cIdx_qVecNthSucc : ℕ) : V) ev (vecOf row_qVecNthSucc_as) row_qVecNthSucc_c := by
-  rw [mkStep, certPieces_qVecNthSucc]
-  simp [cpiece_qVecNthSucc, sUseHorn]
-
-lemma ctag_qVecNthSucc {W : V} (hWp : W = certPieces) (ev : V) : sTag (mkStep W (178 : V) ev) = 0 := by
-  subst hWp
-  have hk : ((cIdx_qVecNthSucc : ℕ) : V) = (178 : V) := by simp [cIdx_qVecNthSucc]
-  rw [← hk, cmk_qVecNthSucc]; simp
-
 lemma certPieces_nthAdjoinZero : (certPieces : V).[((cIdx_nthAdjoinZero : ℕ) : V)] = cpiece_nthAdjoinZero := by
   unfold certPieces
   rw [nth_vecOf _ cIdx_nthAdjoinZero (Nat.lt_of_sub_eq_succ rfl)]
@@ -2954,36 +2492,6 @@ lemma ctag_tsvAdjCert {W : V} (hWp : W = certPieces) (ev : V) : sTag (mkStep W (
   subst hWp
   have hk : ((cIdx_tsvAdjCert : ℕ) : V) = (181 : V) := by simp [cIdx_tsvAdjCert]
   rw [← hk, cmk_tsvAdjCert]; simp
-
-lemma certPieces_congAdj : (certPieces : V).[((cIdx_congAdj : ℕ) : V)] = cpiece_congAdj := by
-  unfold certPieces
-  rw [nth_vecOf _ cIdx_congAdj (Nat.lt_of_sub_eq_succ rfl)]
-  rfl
-
-lemma cmk_congAdj (ev : V) :
-    mkStep certPieces ((cIdx_congAdj : ℕ) : V) ev = sUseHorn ((cIdx_congAdj : ℕ) : V) ev (vecOf row_congAdj_as) row_congAdj_c := by
-  rw [mkStep, certPieces_congAdj]
-  simp [cpiece_congAdj, sUseHorn]
-
-lemma ctag_congAdj {W : V} (hWp : W = certPieces) (ev : V) : sTag (mkStep W (182 : V) ev) = 0 := by
-  subst hWp
-  have hk : ((cIdx_congAdj : ℕ) : V) = (182 : V) := by simp [cIdx_congAdj]
-  rw [← hk, cmk_congAdj]; simp
-
-lemma certPieces_congAdd : (certPieces : V).[((cIdx_congAdd : ℕ) : V)] = cpiece_congAdd := by
-  unfold certPieces
-  rw [nth_vecOf _ cIdx_congAdd (Nat.lt_of_sub_eq_succ rfl)]
-  rfl
-
-lemma cmk_congAdd (ev : V) :
-    mkStep certPieces ((cIdx_congAdd : ℕ) : V) ev = sUseHorn ((cIdx_congAdd : ℕ) : V) ev (vecOf row_congAdd_as) row_congAdd_c := by
-  rw [mkStep, certPieces_congAdd]
-  simp [cpiece_congAdd, sUseHorn]
-
-lemma ctag_congAdd {W : V} (hWp : W = certPieces) (ev : V) : sTag (mkStep W (183 : V) ev) = 0 := by
-  subst hWp
-  have hk : ((cIdx_congAdd : ℕ) : V) = (183 : V) := by simp [cIdx_congAdd]
-  rw [← hk, cmk_congAdd]; simp
 
 lemma certPieces_congSucc : (certPieces : V).[((cIdx_congSucc : ℕ) : V)] = cpiece_congSucc := by
   unfold certPieces
@@ -3450,25 +2958,6 @@ lemma cok_eqRefl {tbl N E Γ W : V} {wx : V} (htbl : TableOK tbl N) (hC : CertTa
   · exact neg_mem_of_map hinst.1 (List.forall_mem_nil _)
   · rw [ctxAfter_useHorn [wx] row_eqRefl_as isSemiformula_eqRefl_c (fun e he ↦ (hes e he).1), hinst.2]
 
-/-- Row `eqSymm` as a step. -/
-lemma cok_eqSymm {tbl N E Γ W : V} {wx wy : V} (htbl : TableOK tbl N) (hC : CertTable tbl) (hWp : W = certPieces)
-    (hΓ : IsFormulaSet LAct Γ) (hwx : IsSemiterm LAct 0 wx) (hEwx : termLen LAct wx ≤ E) (hwy : IsSemiterm LAct 0 wy) (hEwy : termLen LAct wy ≤ E) (hmem0 : neg LAct (eqFactB wx wy) ∈ Γ) :
-    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 122 ?[wx, wy]) ∧ sTag (mkStep W 122 ?[wx, wy]) = 0 ∧
-    ctxAfter Γ (mkStep W 122 ?[wx, wy]) = insert (neg LAct (eqFactB wy wx)) Γ := by
-  subst hWp
-  have hk : ((cIdx_eqSymm : ℕ) : V) = (122 : V) := by simp [cIdx_eqSymm]
-  have hstep := cmk_eqSymm (V := V) ?[wx, wy]
-  have hlen := certTable_len hC cIdx_eqSymm (by decide)
-  have hrow := certTable_eqSymm hC
-  rw [hk] at hstep hlen hrow
-  have hes : ∀ e ∈ [wx, wy], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E := List.forall_mem_cons.mpr ⟨⟨hwx, hEwx⟩, List.forall_mem_cons.mpr ⟨⟨hwy, hEwy⟩, List.forall_mem_nil _⟩⟩
-  have hinst := inst_eqSymm hwx hwy
-  rw [hstep, show (?[wx, wy] : V) = vecOf [wx, wy] from rfl]
-  refine ⟨stepOK_useHorn htbl [wx, wy] row_eqSymm_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : 2 ≤ 8))
-    (by rw [show row_eqSymm_as.length = 1 from rfl]; exact_mod_cast (by decide : 1 ≤ 8)) hes ?_, by simp, ?_⟩
-  · exact neg_mem_of_map hinst.1 (List.forall_mem_cons.mpr ⟨hmem0, List.forall_mem_nil _⟩)
-  · rw [ctxAfter_useHorn [wx, wy] row_eqSymm_as isSemiformula_eqSymm_c (fun e he ↦ (hes e he).1), hinst.2]
-
 /-- Row `eqTrans` as a step. -/
 lemma cok_eqTrans {tbl N E Γ W : V} {wx wy wz : V} (htbl : TableOK tbl N) (hC : CertTable tbl) (hWp : W = certPieces)
     (hΓ : IsFormulaSet LAct Γ) (hwx : IsSemiterm LAct 0 wx) (hEwx : termLen LAct wx ≤ E) (hwy : IsSemiterm LAct 0 wy) (hEwy : termLen LAct wy ≤ E) (hwz : IsSemiterm LAct 0 wz) (hEwz : termLen LAct wz ≤ E) (hmem0 : neg LAct (eqFactB wx wy) ∈ Γ) (hmem1 : neg LAct (eqFactB wy wz) ∈ Γ) :
@@ -3564,158 +3053,6 @@ lemma cok_eqOfAdj {tbl N E Γ W : V} {wt wv ww wtp wvp wwp : V} (htbl : TableOK 
   · exact neg_mem_of_map hinst.1 (List.forall_mem_cons.mpr ⟨hmem0, List.forall_mem_cons.mpr ⟨hmem1, List.forall_mem_cons.mpr ⟨hmem2, List.forall_mem_cons.mpr ⟨hmem3, List.forall_mem_nil _⟩⟩⟩⟩)
   · rw [ctxAfter_useHorn [wt, wv, ww, wtp, wvp, wwp] row_eqOfAdj_as isSemiformula_eqOfAdj_c (fun e he ↦ (hes e he).1), hinst.2]
 
-/-- Row `eqOfRel` as a step. -/
-lemma cok_eqOfRel {tbl N E Γ W : V} {wx wk wR wv wvp wy : V} (htbl : TableOK tbl N) (hC : CertTable tbl) (hWp : W = certPieces)
-    (hΓ : IsFormulaSet LAct Γ) (hwx : IsSemiterm LAct 0 wx) (hEwx : termLen LAct wx ≤ E) (hwk : IsSemiterm LAct 0 wk) (hEwk : termLen LAct wk ≤ E) (hwR : IsSemiterm LAct 0 wR) (hEwR : termLen LAct wR ≤ E) (hwv : IsSemiterm LAct 0 wv) (hEwv : termLen LAct wv ≤ E) (hwvp : IsSemiterm LAct 0 wvp) (hEwvp : termLen LAct wvp ≤ E) (hwy : IsSemiterm LAct 0 wy) (hEwy : termLen LAct wy ≤ E) (hmem0 : neg LAct (relFact wx wk wR wv) ∈ Γ) (hmem1 : neg LAct (relFact wy wk wR wvp) ∈ Γ) (hmem2 : neg LAct (eqFactB wv wvp) ∈ Γ) :
-    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 128 ?[wx, wk, wR, wv, wvp, wy]) ∧ sTag (mkStep W 128 ?[wx, wk, wR, wv, wvp, wy]) = 0 ∧
-    ctxAfter Γ (mkStep W 128 ?[wx, wk, wR, wv, wvp, wy]) = insert (neg LAct (eqFactB wx wy)) Γ := by
-  subst hWp
-  have hk : ((cIdx_eqOfRel : ℕ) : V) = (128 : V) := by simp [cIdx_eqOfRel]
-  have hstep := cmk_eqOfRel (V := V) ?[wx, wk, wR, wv, wvp, wy]
-  have hlen := certTable_len hC cIdx_eqOfRel (by decide)
-  have hrow := certTable_eqOfRel hC
-  rw [hk] at hstep hlen hrow
-  have hes : ∀ e ∈ [wx, wk, wR, wv, wvp, wy], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E := List.forall_mem_cons.mpr ⟨⟨hwx, hEwx⟩, List.forall_mem_cons.mpr ⟨⟨hwk, hEwk⟩, List.forall_mem_cons.mpr ⟨⟨hwR, hEwR⟩, List.forall_mem_cons.mpr ⟨⟨hwv, hEwv⟩, List.forall_mem_cons.mpr ⟨⟨hwvp, hEwvp⟩, List.forall_mem_cons.mpr ⟨⟨hwy, hEwy⟩, List.forall_mem_nil _⟩⟩⟩⟩⟩⟩
-  have hinst := inst_eqOfRel hwx hwk hwR hwv hwvp hwy
-  rw [hstep, show (?[wx, wk, wR, wv, wvp, wy] : V) = vecOf [wx, wk, wR, wv, wvp, wy] from rfl]
-  refine ⟨stepOK_useHorn htbl [wx, wk, wR, wv, wvp, wy] row_eqOfRel_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : 6 ≤ 8))
-    (by rw [show row_eqOfRel_as.length = 3 from rfl]; exact_mod_cast (by decide : 3 ≤ 8)) hes ?_, by simp, ?_⟩
-  · exact neg_mem_of_map hinst.1 (List.forall_mem_cons.mpr ⟨hmem0, List.forall_mem_cons.mpr ⟨hmem1, List.forall_mem_cons.mpr ⟨hmem2, List.forall_mem_nil _⟩⟩⟩)
-  · rw [ctxAfter_useHorn [wx, wk, wR, wv, wvp, wy] row_eqOfRel_as isSemiformula_eqOfRel_c (fun e he ↦ (hes e he).1), hinst.2]
-
-/-- Row `eqOfNRel` as a step. -/
-lemma cok_eqOfNRel {tbl N E Γ W : V} {wx wk wR wv wvp wy : V} (htbl : TableOK tbl N) (hC : CertTable tbl) (hWp : W = certPieces)
-    (hΓ : IsFormulaSet LAct Γ) (hwx : IsSemiterm LAct 0 wx) (hEwx : termLen LAct wx ≤ E) (hwk : IsSemiterm LAct 0 wk) (hEwk : termLen LAct wk ≤ E) (hwR : IsSemiterm LAct 0 wR) (hEwR : termLen LAct wR ≤ E) (hwv : IsSemiterm LAct 0 wv) (hEwv : termLen LAct wv ≤ E) (hwvp : IsSemiterm LAct 0 wvp) (hEwvp : termLen LAct wvp ≤ E) (hwy : IsSemiterm LAct 0 wy) (hEwy : termLen LAct wy ≤ E) (hmem0 : neg LAct (nrelFact wx wk wR wv) ∈ Γ) (hmem1 : neg LAct (nrelFact wy wk wR wvp) ∈ Γ) (hmem2 : neg LAct (eqFactB wv wvp) ∈ Γ) :
-    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 129 ?[wx, wk, wR, wv, wvp, wy]) ∧ sTag (mkStep W 129 ?[wx, wk, wR, wv, wvp, wy]) = 0 ∧
-    ctxAfter Γ (mkStep W 129 ?[wx, wk, wR, wv, wvp, wy]) = insert (neg LAct (eqFactB wx wy)) Γ := by
-  subst hWp
-  have hk : ((cIdx_eqOfNRel : ℕ) : V) = (129 : V) := by simp [cIdx_eqOfNRel]
-  have hstep := cmk_eqOfNRel (V := V) ?[wx, wk, wR, wv, wvp, wy]
-  have hlen := certTable_len hC cIdx_eqOfNRel (by decide)
-  have hrow := certTable_eqOfNRel hC
-  rw [hk] at hstep hlen hrow
-  have hes : ∀ e ∈ [wx, wk, wR, wv, wvp, wy], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E := List.forall_mem_cons.mpr ⟨⟨hwx, hEwx⟩, List.forall_mem_cons.mpr ⟨⟨hwk, hEwk⟩, List.forall_mem_cons.mpr ⟨⟨hwR, hEwR⟩, List.forall_mem_cons.mpr ⟨⟨hwv, hEwv⟩, List.forall_mem_cons.mpr ⟨⟨hwvp, hEwvp⟩, List.forall_mem_cons.mpr ⟨⟨hwy, hEwy⟩, List.forall_mem_nil _⟩⟩⟩⟩⟩⟩
-  have hinst := inst_eqOfNRel hwx hwk hwR hwv hwvp hwy
-  rw [hstep, show (?[wx, wk, wR, wv, wvp, wy] : V) = vecOf [wx, wk, wR, wv, wvp, wy] from rfl]
-  refine ⟨stepOK_useHorn htbl [wx, wk, wR, wv, wvp, wy] row_eqOfNRel_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : 6 ≤ 8))
-    (by rw [show row_eqOfNRel_as.length = 3 from rfl]; exact_mod_cast (by decide : 3 ≤ 8)) hes ?_, by simp, ?_⟩
-  · exact neg_mem_of_map hinst.1 (List.forall_mem_cons.mpr ⟨hmem0, List.forall_mem_cons.mpr ⟨hmem1, List.forall_mem_cons.mpr ⟨hmem2, List.forall_mem_nil _⟩⟩⟩)
-  · rw [ctxAfter_useHorn [wx, wk, wR, wv, wvp, wy] row_eqOfNRel_as isSemiformula_eqOfNRel_c (fun e he ↦ (hes e he).1), hinst.2]
-
-/-- Row `eqOfAnd` as a step. -/
-lemma cok_eqOfAnd {tbl N E Γ W : V} {wx wp wq wpp wqp wy : V} (htbl : TableOK tbl N) (hC : CertTable tbl) (hWp : W = certPieces)
-    (hΓ : IsFormulaSet LAct Γ) (hwx : IsSemiterm LAct 0 wx) (hEwx : termLen LAct wx ≤ E) (hwp : IsSemiterm LAct 0 wp) (hEwp : termLen LAct wp ≤ E) (hwq : IsSemiterm LAct 0 wq) (hEwq : termLen LAct wq ≤ E) (hwpp : IsSemiterm LAct 0 wpp) (hEwpp : termLen LAct wpp ≤ E) (hwqp : IsSemiterm LAct 0 wqp) (hEwqp : termLen LAct wqp ≤ E) (hwy : IsSemiterm LAct 0 wy) (hEwy : termLen LAct wy ≤ E) (hmem0 : neg LAct (andFact wx wp wq) ∈ Γ) (hmem1 : neg LAct (andFact wy wpp wqp) ∈ Γ) (hmem2 : neg LAct (eqFactB wp wpp) ∈ Γ) (hmem3 : neg LAct (eqFactB wq wqp) ∈ Γ) :
-    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 130 ?[wx, wp, wq, wpp, wqp, wy]) ∧ sTag (mkStep W 130 ?[wx, wp, wq, wpp, wqp, wy]) = 0 ∧
-    ctxAfter Γ (mkStep W 130 ?[wx, wp, wq, wpp, wqp, wy]) = insert (neg LAct (eqFactB wx wy)) Γ := by
-  subst hWp
-  have hk : ((cIdx_eqOfAnd : ℕ) : V) = (130 : V) := by simp [cIdx_eqOfAnd]
-  have hstep := cmk_eqOfAnd (V := V) ?[wx, wp, wq, wpp, wqp, wy]
-  have hlen := certTable_len hC cIdx_eqOfAnd (by decide)
-  have hrow := certTable_eqOfAnd hC
-  rw [hk] at hstep hlen hrow
-  have hes : ∀ e ∈ [wx, wp, wq, wpp, wqp, wy], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E := List.forall_mem_cons.mpr ⟨⟨hwx, hEwx⟩, List.forall_mem_cons.mpr ⟨⟨hwp, hEwp⟩, List.forall_mem_cons.mpr ⟨⟨hwq, hEwq⟩, List.forall_mem_cons.mpr ⟨⟨hwpp, hEwpp⟩, List.forall_mem_cons.mpr ⟨⟨hwqp, hEwqp⟩, List.forall_mem_cons.mpr ⟨⟨hwy, hEwy⟩, List.forall_mem_nil _⟩⟩⟩⟩⟩⟩
-  have hinst := inst_eqOfAnd hwx hwp hwq hwpp hwqp hwy
-  rw [hstep, show (?[wx, wp, wq, wpp, wqp, wy] : V) = vecOf [wx, wp, wq, wpp, wqp, wy] from rfl]
-  refine ⟨stepOK_useHorn htbl [wx, wp, wq, wpp, wqp, wy] row_eqOfAnd_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : 6 ≤ 8))
-    (by rw [show row_eqOfAnd_as.length = 4 from rfl]; exact_mod_cast (by decide : 4 ≤ 8)) hes ?_, by simp, ?_⟩
-  · exact neg_mem_of_map hinst.1 (List.forall_mem_cons.mpr ⟨hmem0, List.forall_mem_cons.mpr ⟨hmem1, List.forall_mem_cons.mpr ⟨hmem2, List.forall_mem_cons.mpr ⟨hmem3, List.forall_mem_nil _⟩⟩⟩⟩)
-  · rw [ctxAfter_useHorn [wx, wp, wq, wpp, wqp, wy] row_eqOfAnd_as isSemiformula_eqOfAnd_c (fun e he ↦ (hes e he).1), hinst.2]
-
-/-- Row `eqOfOr` as a step. -/
-lemma cok_eqOfOr {tbl N E Γ W : V} {wx wp wq wpp wqp wy : V} (htbl : TableOK tbl N) (hC : CertTable tbl) (hWp : W = certPieces)
-    (hΓ : IsFormulaSet LAct Γ) (hwx : IsSemiterm LAct 0 wx) (hEwx : termLen LAct wx ≤ E) (hwp : IsSemiterm LAct 0 wp) (hEwp : termLen LAct wp ≤ E) (hwq : IsSemiterm LAct 0 wq) (hEwq : termLen LAct wq ≤ E) (hwpp : IsSemiterm LAct 0 wpp) (hEwpp : termLen LAct wpp ≤ E) (hwqp : IsSemiterm LAct 0 wqp) (hEwqp : termLen LAct wqp ≤ E) (hwy : IsSemiterm LAct 0 wy) (hEwy : termLen LAct wy ≤ E) (hmem0 : neg LAct (orFact wx wp wq) ∈ Γ) (hmem1 : neg LAct (orFact wy wpp wqp) ∈ Γ) (hmem2 : neg LAct (eqFactB wp wpp) ∈ Γ) (hmem3 : neg LAct (eqFactB wq wqp) ∈ Γ) :
-    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 131 ?[wx, wp, wq, wpp, wqp, wy]) ∧ sTag (mkStep W 131 ?[wx, wp, wq, wpp, wqp, wy]) = 0 ∧
-    ctxAfter Γ (mkStep W 131 ?[wx, wp, wq, wpp, wqp, wy]) = insert (neg LAct (eqFactB wx wy)) Γ := by
-  subst hWp
-  have hk : ((cIdx_eqOfOr : ℕ) : V) = (131 : V) := by simp [cIdx_eqOfOr]
-  have hstep := cmk_eqOfOr (V := V) ?[wx, wp, wq, wpp, wqp, wy]
-  have hlen := certTable_len hC cIdx_eqOfOr (by decide)
-  have hrow := certTable_eqOfOr hC
-  rw [hk] at hstep hlen hrow
-  have hes : ∀ e ∈ [wx, wp, wq, wpp, wqp, wy], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E := List.forall_mem_cons.mpr ⟨⟨hwx, hEwx⟩, List.forall_mem_cons.mpr ⟨⟨hwp, hEwp⟩, List.forall_mem_cons.mpr ⟨⟨hwq, hEwq⟩, List.forall_mem_cons.mpr ⟨⟨hwpp, hEwpp⟩, List.forall_mem_cons.mpr ⟨⟨hwqp, hEwqp⟩, List.forall_mem_cons.mpr ⟨⟨hwy, hEwy⟩, List.forall_mem_nil _⟩⟩⟩⟩⟩⟩
-  have hinst := inst_eqOfOr hwx hwp hwq hwpp hwqp hwy
-  rw [hstep, show (?[wx, wp, wq, wpp, wqp, wy] : V) = vecOf [wx, wp, wq, wpp, wqp, wy] from rfl]
-  refine ⟨stepOK_useHorn htbl [wx, wp, wq, wpp, wqp, wy] row_eqOfOr_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : 6 ≤ 8))
-    (by rw [show row_eqOfOr_as.length = 4 from rfl]; exact_mod_cast (by decide : 4 ≤ 8)) hes ?_, by simp, ?_⟩
-  · exact neg_mem_of_map hinst.1 (List.forall_mem_cons.mpr ⟨hmem0, List.forall_mem_cons.mpr ⟨hmem1, List.forall_mem_cons.mpr ⟨hmem2, List.forall_mem_cons.mpr ⟨hmem3, List.forall_mem_nil _⟩⟩⟩⟩)
-  · rw [ctxAfter_useHorn [wx, wp, wq, wpp, wqp, wy] row_eqOfOr_as isSemiformula_eqOfOr_c (fun e he ↦ (hes e he).1), hinst.2]
-
-/-- Row `eqOfAll` as a step. -/
-lemma cok_eqOfAll {tbl N E Γ W : V} {wx wp wpp wy : V} (htbl : TableOK tbl N) (hC : CertTable tbl) (hWp : W = certPieces)
-    (hΓ : IsFormulaSet LAct Γ) (hwx : IsSemiterm LAct 0 wx) (hEwx : termLen LAct wx ≤ E) (hwp : IsSemiterm LAct 0 wp) (hEwp : termLen LAct wp ≤ E) (hwpp : IsSemiterm LAct 0 wpp) (hEwpp : termLen LAct wpp ≤ E) (hwy : IsSemiterm LAct 0 wy) (hEwy : termLen LAct wy ≤ E) (hmem0 : neg LAct (allFact wx wp) ∈ Γ) (hmem1 : neg LAct (allFact wy wpp) ∈ Γ) (hmem2 : neg LAct (eqFactB wp wpp) ∈ Γ) :
-    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 132 ?[wx, wp, wpp, wy]) ∧ sTag (mkStep W 132 ?[wx, wp, wpp, wy]) = 0 ∧
-    ctxAfter Γ (mkStep W 132 ?[wx, wp, wpp, wy]) = insert (neg LAct (eqFactB wx wy)) Γ := by
-  subst hWp
-  have hk : ((cIdx_eqOfAll : ℕ) : V) = (132 : V) := by simp [cIdx_eqOfAll]
-  have hstep := cmk_eqOfAll (V := V) ?[wx, wp, wpp, wy]
-  have hlen := certTable_len hC cIdx_eqOfAll (by decide)
-  have hrow := certTable_eqOfAll hC
-  rw [hk] at hstep hlen hrow
-  have hes : ∀ e ∈ [wx, wp, wpp, wy], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E := List.forall_mem_cons.mpr ⟨⟨hwx, hEwx⟩, List.forall_mem_cons.mpr ⟨⟨hwp, hEwp⟩, List.forall_mem_cons.mpr ⟨⟨hwpp, hEwpp⟩, List.forall_mem_cons.mpr ⟨⟨hwy, hEwy⟩, List.forall_mem_nil _⟩⟩⟩⟩
-  have hinst := inst_eqOfAll hwx hwp hwpp hwy
-  rw [hstep, show (?[wx, wp, wpp, wy] : V) = vecOf [wx, wp, wpp, wy] from rfl]
-  refine ⟨stepOK_useHorn htbl [wx, wp, wpp, wy] row_eqOfAll_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : 4 ≤ 8))
-    (by rw [show row_eqOfAll_as.length = 3 from rfl]; exact_mod_cast (by decide : 3 ≤ 8)) hes ?_, by simp, ?_⟩
-  · exact neg_mem_of_map hinst.1 (List.forall_mem_cons.mpr ⟨hmem0, List.forall_mem_cons.mpr ⟨hmem1, List.forall_mem_cons.mpr ⟨hmem2, List.forall_mem_nil _⟩⟩⟩)
-  · rw [ctxAfter_useHorn [wx, wp, wpp, wy] row_eqOfAll_as isSemiformula_eqOfAll_c (fun e he ↦ (hes e he).1), hinst.2]
-
-/-- Row `eqOfExs` as a step. -/
-lemma cok_eqOfExs {tbl N E Γ W : V} {wx wp wpp wy : V} (htbl : TableOK tbl N) (hC : CertTable tbl) (hWp : W = certPieces)
-    (hΓ : IsFormulaSet LAct Γ) (hwx : IsSemiterm LAct 0 wx) (hEwx : termLen LAct wx ≤ E) (hwp : IsSemiterm LAct 0 wp) (hEwp : termLen LAct wp ≤ E) (hwpp : IsSemiterm LAct 0 wpp) (hEwpp : termLen LAct wpp ≤ E) (hwy : IsSemiterm LAct 0 wy) (hEwy : termLen LAct wy ≤ E) (hmem0 : neg LAct (exsFact wx wp) ∈ Γ) (hmem1 : neg LAct (exsFact wy wpp) ∈ Γ) (hmem2 : neg LAct (eqFactB wp wpp) ∈ Γ) :
-    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 133 ?[wx, wp, wpp, wy]) ∧ sTag (mkStep W 133 ?[wx, wp, wpp, wy]) = 0 ∧
-    ctxAfter Γ (mkStep W 133 ?[wx, wp, wpp, wy]) = insert (neg LAct (eqFactB wx wy)) Γ := by
-  subst hWp
-  have hk : ((cIdx_eqOfExs : ℕ) : V) = (133 : V) := by simp [cIdx_eqOfExs]
-  have hstep := cmk_eqOfExs (V := V) ?[wx, wp, wpp, wy]
-  have hlen := certTable_len hC cIdx_eqOfExs (by decide)
-  have hrow := certTable_eqOfExs hC
-  rw [hk] at hstep hlen hrow
-  have hes : ∀ e ∈ [wx, wp, wpp, wy], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E := List.forall_mem_cons.mpr ⟨⟨hwx, hEwx⟩, List.forall_mem_cons.mpr ⟨⟨hwp, hEwp⟩, List.forall_mem_cons.mpr ⟨⟨hwpp, hEwpp⟩, List.forall_mem_cons.mpr ⟨⟨hwy, hEwy⟩, List.forall_mem_nil _⟩⟩⟩⟩
-  have hinst := inst_eqOfExs hwx hwp hwpp hwy
-  rw [hstep, show (?[wx, wp, wpp, wy] : V) = vecOf [wx, wp, wpp, wy] from rfl]
-  refine ⟨stepOK_useHorn htbl [wx, wp, wpp, wy] row_eqOfExs_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : 4 ≤ 8))
-    (by rw [show row_eqOfExs_as.length = 3 from rfl]; exact_mod_cast (by decide : 3 ≤ 8)) hes ?_, by simp, ?_⟩
-  · exact neg_mem_of_map hinst.1 (List.forall_mem_cons.mpr ⟨hmem0, List.forall_mem_cons.mpr ⟨hmem1, List.forall_mem_cons.mpr ⟨hmem2, List.forall_mem_nil _⟩⟩⟩)
-  · rw [ctxAfter_useHorn [wx, wp, wpp, wy] row_eqOfExs_as isSemiformula_eqOfExs_c (fun e he ↦ (hes e he).1), hinst.2]
-
-/-- Row `eqOfVerum` as a step. -/
-lemma cok_eqOfVerum {tbl N E Γ W : V} {wx wy : V} (htbl : TableOK tbl N) (hC : CertTable tbl) (hWp : W = certPieces)
-    (hΓ : IsFormulaSet LAct Γ) (hwx : IsSemiterm LAct 0 wx) (hEwx : termLen LAct wx ≤ E) (hwy : IsSemiterm LAct 0 wy) (hEwy : termLen LAct wy ≤ E) (hmem0 : neg LAct (verumFact wx) ∈ Γ) (hmem1 : neg LAct (verumFact wy) ∈ Γ) :
-    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 134 ?[wx, wy]) ∧ sTag (mkStep W 134 ?[wx, wy]) = 0 ∧
-    ctxAfter Γ (mkStep W 134 ?[wx, wy]) = insert (neg LAct (eqFactB wx wy)) Γ := by
-  subst hWp
-  have hk : ((cIdx_eqOfVerum : ℕ) : V) = (134 : V) := by simp [cIdx_eqOfVerum]
-  have hstep := cmk_eqOfVerum (V := V) ?[wx, wy]
-  have hlen := certTable_len hC cIdx_eqOfVerum (by decide)
-  have hrow := certTable_eqOfVerum hC
-  rw [hk] at hstep hlen hrow
-  have hes : ∀ e ∈ [wx, wy], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E := List.forall_mem_cons.mpr ⟨⟨hwx, hEwx⟩, List.forall_mem_cons.mpr ⟨⟨hwy, hEwy⟩, List.forall_mem_nil _⟩⟩
-  have hinst := inst_eqOfVerum hwx hwy
-  rw [hstep, show (?[wx, wy] : V) = vecOf [wx, wy] from rfl]
-  refine ⟨stepOK_useHorn htbl [wx, wy] row_eqOfVerum_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : 2 ≤ 8))
-    (by rw [show row_eqOfVerum_as.length = 2 from rfl]; exact_mod_cast (by decide : 2 ≤ 8)) hes ?_, by simp, ?_⟩
-  · exact neg_mem_of_map hinst.1 (List.forall_mem_cons.mpr ⟨hmem0, List.forall_mem_cons.mpr ⟨hmem1, List.forall_mem_nil _⟩⟩)
-  · rw [ctxAfter_useHorn [wx, wy] row_eqOfVerum_as isSemiformula_eqOfVerum_c (fun e he ↦ (hes e he).1), hinst.2]
-
-/-- Row `eqOfFalsum` as a step. -/
-lemma cok_eqOfFalsum {tbl N E Γ W : V} {wx wy : V} (htbl : TableOK tbl N) (hC : CertTable tbl) (hWp : W = certPieces)
-    (hΓ : IsFormulaSet LAct Γ) (hwx : IsSemiterm LAct 0 wx) (hEwx : termLen LAct wx ≤ E) (hwy : IsSemiterm LAct 0 wy) (hEwy : termLen LAct wy ≤ E) (hmem0 : neg LAct (falsumFact wx) ∈ Γ) (hmem1 : neg LAct (falsumFact wy) ∈ Γ) :
-    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 135 ?[wx, wy]) ∧ sTag (mkStep W 135 ?[wx, wy]) = 0 ∧
-    ctxAfter Γ (mkStep W 135 ?[wx, wy]) = insert (neg LAct (eqFactB wx wy)) Γ := by
-  subst hWp
-  have hk : ((cIdx_eqOfFalsum : ℕ) : V) = (135 : V) := by simp [cIdx_eqOfFalsum]
-  have hstep := cmk_eqOfFalsum (V := V) ?[wx, wy]
-  have hlen := certTable_len hC cIdx_eqOfFalsum (by decide)
-  have hrow := certTable_eqOfFalsum hC
-  rw [hk] at hstep hlen hrow
-  have hes : ∀ e ∈ [wx, wy], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E := List.forall_mem_cons.mpr ⟨⟨hwx, hEwx⟩, List.forall_mem_cons.mpr ⟨⟨hwy, hEwy⟩, List.forall_mem_nil _⟩⟩
-  have hinst := inst_eqOfFalsum hwx hwy
-  rw [hstep, show (?[wx, wy] : V) = vecOf [wx, wy] from rfl]
-  refine ⟨stepOK_useHorn htbl [wx, wy] row_eqOfFalsum_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : 2 ≤ 8))
-    (by rw [show row_eqOfFalsum_as.length = 2 from rfl]; exact_mod_cast (by decide : 2 ≤ 8)) hes ?_, by simp, ?_⟩
-  · exact neg_mem_of_map hinst.1 (List.forall_mem_cons.mpr ⟨hmem0, List.forall_mem_cons.mpr ⟨hmem1, List.forall_mem_nil _⟩⟩)
-  · rw [ctxAfter_useHorn [wx, wy] row_eqOfFalsum_as isSemiformula_eqOfFalsum_c (fun e he ↦ (hes e he).1), hinst.2]
-
 /-- Row `congRel` as a step. -/
 lemma cok_congRel {tbl N E Γ W : V} {wr wk wR wv wrp wvp : V} (htbl : TableOK tbl N) (hC : CertTable tbl) (hWp : W = certPieces)
     (hΓ : IsFormulaSet LAct Γ) (hwr : IsSemiterm LAct 0 wr) (hEwr : termLen LAct wr ≤ E) (hwk : IsSemiterm LAct 0 wk) (hEwk : termLen LAct wk ≤ E) (hwR : IsSemiterm LAct 0 wR) (hEwR : termLen LAct wR ≤ E) (hwv : IsSemiterm LAct 0 wv) (hEwv : termLen LAct wv ≤ E) (hwrp : IsSemiterm LAct 0 wrp) (hEwrp : termLen LAct wrp ≤ E) (hwvp : IsSemiterm LAct 0 wvp) (hEwvp : termLen LAct wvp ≤ E) (hmem0 : neg LAct (eqFactB wrp wr) ∈ Γ) (hmem1 : neg LAct (eqFactB wvp wv) ∈ Γ) (hmem2 : neg LAct (relFact wr wk wR wv) ∈ Γ) :
@@ -3810,25 +3147,6 @@ lemma cok_listSumNil {tbl N E Γ W : V} {wx : V} (htbl : TableOK tbl N) (hC : Ce
     (by rw [show row_listSumNil_as.length = 0 from rfl]; exact_mod_cast (by decide : 0 ≤ 8)) hes ?_, by simp, ?_⟩
   · exact neg_mem_of_map hinst.1 (List.forall_mem_nil _)
   · rw [ctxAfter_useHorn [wx] row_listSumNil_as isSemiformula_listSumNil_c (fun e he ↦ (hes e he).1), hinst.2]
-
-/-- Row `listSumAdj` as a step. -/
-lemma cok_listSumAdj {tbl N E Γ W : V} {wMp wM wl ws wsp : V} (htbl : TableOK tbl N) (hC : CertTable tbl) (hWp : W = certPieces)
-    (hΓ : IsFormulaSet LAct Γ) (hwMp : IsSemiterm LAct 0 wMp) (hEwMp : termLen LAct wMp ≤ E) (hwM : IsSemiterm LAct 0 wM) (hEwM : termLen LAct wM ≤ E) (hwl : IsSemiterm LAct 0 wl) (hEwl : termLen LAct wl ≤ E) (hws : IsSemiterm LAct 0 ws) (hEws : termLen LAct ws ≤ E) (hwsp : IsSemiterm LAct 0 wsp) (hEwsp : termLen LAct wsp ≤ E) (hmem0 : neg LAct (listSumFact ws wM) ∈ Γ) (hmem1 : neg LAct (adjFact wMp wl wM) ∈ Γ) (hmem2 : neg LAct (listSumFact wsp wMp) ∈ Γ) :
-    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 141 ?[wMp, wM, wl, ws, wsp]) ∧ sTag (mkStep W 141 ?[wMp, wM, wl, ws, wsp]) = 0 ∧
-    ctxAfter Γ (mkStep W 141 ?[wMp, wM, wl, ws, wsp]) = insert (neg LAct (eqFactB wsp (wl ^+ ws))) Γ := by
-  subst hWp
-  have hk : ((cIdx_listSumAdj : ℕ) : V) = (141 : V) := by simp [cIdx_listSumAdj]
-  have hstep := cmk_listSumAdj (V := V) ?[wMp, wM, wl, ws, wsp]
-  have hlen := certTable_len hC cIdx_listSumAdj (by decide)
-  have hrow := certTable_listSumAdj hC
-  rw [hk] at hstep hlen hrow
-  have hes : ∀ e ∈ [wMp, wM, wl, ws, wsp], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E := List.forall_mem_cons.mpr ⟨⟨hwMp, hEwMp⟩, List.forall_mem_cons.mpr ⟨⟨hwM, hEwM⟩, List.forall_mem_cons.mpr ⟨⟨hwl, hEwl⟩, List.forall_mem_cons.mpr ⟨⟨hws, hEws⟩, List.forall_mem_cons.mpr ⟨⟨hwsp, hEwsp⟩, List.forall_mem_nil _⟩⟩⟩⟩⟩
-  have hinst := inst_listSumAdj hwMp hwM hwl hws hwsp
-  rw [hstep, show (?[wMp, wM, wl, ws, wsp] : V) = vecOf [wMp, wM, wl, ws, wsp] from rfl]
-  refine ⟨stepOK_useHorn htbl [wMp, wM, wl, ws, wsp] row_listSumAdj_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : 5 ≤ 8))
-    (by rw [show row_listSumAdj_as.length = 3 from rfl]; exact_mod_cast (by decide : 3 ≤ 8)) hes ?_, by simp, ?_⟩
-  · exact neg_mem_of_map hinst.1 (List.forall_mem_cons.mpr ⟨hmem0, List.forall_mem_cons.mpr ⟨hmem1, List.forall_mem_cons.mpr ⟨hmem2, List.forall_mem_nil _⟩⟩⟩)
-  · rw [ctxAfter_useHorn [wMp, wM, wl, ws, wsp] row_listSumAdj_as isSemiformula_listSumAdj_c (fun e he ↦ (hes e he).1), hinst.2]
 
 /-- Row `formulaLenRelCert` as a step. -/
 lemma cok_formulaLenRelCert {tbl N E Γ W : V} {wk wR wv wp wM ws wl : V} (htbl : TableOK tbl N) (hC : CertTable tbl) (hWp : W = certPieces)
@@ -4497,45 +3815,6 @@ lemma cok_qVecCert {tbl N E Γ W : V} {wk ww wz wsw wu : V} (htbl : TableOK tbl 
   · exact neg_mem_of_map hinst.1 (List.forall_mem_cons.mpr ⟨hmem0, List.forall_mem_cons.mpr ⟨hmem1, List.forall_mem_cons.mpr ⟨hmem2, List.forall_mem_cons.mpr ⟨hmem3, List.forall_mem_nil _⟩⟩⟩⟩)
   · rw [ctxAfter_useHorn [wk, ww, wz, wsw, wu] row_qVecCert_as isSemiformula_qVecCert_c (fun e he ↦ (hes e he).1), hinst.2]
 
-/-- Row `qVecNth0` as a step. -/
-lemma cok_qVecNth0 {tbl N E Γ W : V} {ww wu : V} (htbl : TableOK tbl N) (hC : CertTable tbl) (hWp : W = certPieces)
-    (hΓ : IsFormulaSet LAct Γ) (hww : IsSemiterm LAct 0 ww) (hEww : termLen LAct ww ≤ E) (hwu : IsSemiterm LAct 0 wu) (hEwu : termLen LAct wu ≤ E) (hmem0 : neg LAct (qVecFact wu ww) ∈ Γ) :
-    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 177 ?[ww, wu]) ∧ sTag (mkStep W 177 ?[ww, wu]) = 2 ∧
-    ctxAfter Γ (mkStep W 177 ?[ww, wu]) = insert (neg LAct (bvarFact (^&((0 : ℕ) : V)) (𝟎 : V) ^⋏ (nthFact (^&((0 : ℕ) : V)) (termShift LAct wu) (𝟎 : V)))) (setShift LAct Γ) := by
-  subst hWp
-  have hk : ((cIdx_qVecNth0 : ℕ) : V) = (177 : V) := by simp [cIdx_qVecNth0]
-  have hstep := cmk_qVecNth0 (V := V) ?[ww, wu]
-  have hlen := certTable_len hC cIdx_qVecNth0 (by decide)
-  have hrow := certTable_qVecNth0 hC
-  rw [hk] at hstep hlen hrow
-  have hes : ∀ e ∈ [ww, wu], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E := List.forall_mem_cons.mpr ⟨⟨hww, hEww⟩, List.forall_mem_cons.mpr ⟨⟨hwu, hEwu⟩, List.forall_mem_nil _⟩⟩
-  have hinst := inst_qVecNth0 hww hwu
-  rw [hstep, show (?[ww, wu] : V) = vecOf [ww, wu] from rfl]
-  refine ⟨stepOK_introFact htbl [ww, wu] row_qVecNth0_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : 2 ≤ 8))
-    (by rw [show row_qVecNth0_as.length = 1 from rfl]; exact_mod_cast (by decide : 1 ≤ 8)) hes ?_, by simp, ?_⟩
-  · exact neg_mem_of_map hinst.1 (List.forall_mem_cons.mpr ⟨hmem0, List.forall_mem_nil _⟩)
-  · rw [ctxAfter_introFact [ww, wu] row_qVecNth0_as (by rw [← Nat.cast_succ]; exact isSemiformula_qVecNth0_R) (fun e he ↦ (hes e he).1),
-      show row_qVecNth0_R = row_qVecNth0_body from rfl, ← freeIter_one, hinst.2]
-
-/-- Row `qVecNthSucc` as a step. -/
-lemma cok_qVecNthSucc {tbl N E Γ W : V} {wk wi ww wu we wep : V} (htbl : TableOK tbl N) (hC : CertTable tbl) (hWp : W = certPieces)
-    (hΓ : IsFormulaSet LAct Γ) (hwk : IsSemiterm LAct 0 wk) (hEwk : termLen LAct wk ≤ E) (hwi : IsSemiterm LAct 0 wi) (hEwi : termLen LAct wi ≤ E) (hww : IsSemiterm LAct 0 ww) (hEww : termLen LAct ww ≤ E) (hwu : IsSemiterm LAct 0 wu) (hEwu : termLen LAct wu ≤ E) (hwe : IsSemiterm LAct 0 we) (hEwe : termLen LAct we ≤ E) (hwep : IsSemiterm LAct 0 wep) (hEwep : termLen LAct wep ≤ E) (hmem0 : neg LAct (utvPiFact wk ww) ∈ Γ) (hmem1 : neg LAct (ltFact wi wk) ∈ Γ) (hmem2 : neg LAct (qVecFact wu ww) ∈ Γ) (hmem3 : neg LAct (nthFact we ww wi) ∈ Γ) (hmem4 : neg LAct (tbshFact wep we) ∈ Γ) :
-    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 178 ?[wk, wi, ww, wu, we, wep]) ∧ sTag (mkStep W 178 ?[wk, wi, ww, wu, we, wep]) = 0 ∧
-    ctxAfter Γ (mkStep W 178 ?[wk, wi, ww, wu, we, wep]) = insert (neg LAct (nthFact wep wu (wi ^+ (𝟏 : V)))) Γ := by
-  subst hWp
-  have hk : ((cIdx_qVecNthSucc : ℕ) : V) = (178 : V) := by simp [cIdx_qVecNthSucc]
-  have hstep := cmk_qVecNthSucc (V := V) ?[wk, wi, ww, wu, we, wep]
-  have hlen := certTable_len hC cIdx_qVecNthSucc (by decide)
-  have hrow := certTable_qVecNthSucc hC
-  rw [hk] at hstep hlen hrow
-  have hes : ∀ e ∈ [wk, wi, ww, wu, we, wep], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E := List.forall_mem_cons.mpr ⟨⟨hwk, hEwk⟩, List.forall_mem_cons.mpr ⟨⟨hwi, hEwi⟩, List.forall_mem_cons.mpr ⟨⟨hww, hEww⟩, List.forall_mem_cons.mpr ⟨⟨hwu, hEwu⟩, List.forall_mem_cons.mpr ⟨⟨hwe, hEwe⟩, List.forall_mem_cons.mpr ⟨⟨hwep, hEwep⟩, List.forall_mem_nil _⟩⟩⟩⟩⟩⟩
-  have hinst := inst_qVecNthSucc hwk hwi hww hwu hwe hwep
-  rw [hstep, show (?[wk, wi, ww, wu, we, wep] : V) = vecOf [wk, wi, ww, wu, we, wep] from rfl]
-  refine ⟨stepOK_useHorn htbl [wk, wi, ww, wu, we, wep] row_qVecNthSucc_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : 6 ≤ 8))
-    (by rw [show row_qVecNthSucc_as.length = 5 from rfl]; exact_mod_cast (by decide : 5 ≤ 8)) hes ?_, by simp, ?_⟩
-  · exact neg_mem_of_map hinst.1 (List.forall_mem_cons.mpr ⟨hmem0, List.forall_mem_cons.mpr ⟨hmem1, List.forall_mem_cons.mpr ⟨hmem2, List.forall_mem_cons.mpr ⟨hmem3, List.forall_mem_cons.mpr ⟨hmem4, List.forall_mem_nil _⟩⟩⟩⟩⟩)
-  · rw [ctxAfter_useHorn [wk, wi, ww, wu, we, wep] row_qVecNthSucc_as isSemiformula_qVecNthSucc_c (fun e he ↦ (hes e he).1), hinst.2]
-
 /-- Row `nthAdjoinZero` as a step. -/
 lemma cok_nthAdjoinZero {tbl N E Γ W : V} {wv wt ww : V} (htbl : TableOK tbl N) (hC : CertTable tbl) (hWp : W = certPieces)
     (hΓ : IsFormulaSet LAct Γ) (hwv : IsSemiterm LAct 0 wv) (hEwv : termLen LAct wv ≤ E) (hwt : IsSemiterm LAct 0 wt) (hEwt : termLen LAct wt ≤ E) (hww : IsSemiterm LAct 0 ww) (hEww : termLen LAct ww ≤ E) (hmem0 : neg LAct (adjFact ww wt wv) ∈ Γ) :
@@ -4592,44 +3871,6 @@ lemma cok_tsvAdjCert {tbl N E Γ W : V} {wn wk ww wv wvp wt we wu wup : V} (htbl
     (by rw [show row_tsvAdjCert_as.length = 6 from rfl]; exact_mod_cast (by decide : 6 ≤ 9)) hes ?_, by simp, ?_⟩
   · exact neg_mem_of_map hinst.1 (List.forall_mem_cons.mpr ⟨hmem0, List.forall_mem_cons.mpr ⟨hmem1, List.forall_mem_cons.mpr ⟨hmem2, List.forall_mem_cons.mpr ⟨hmem3, List.forall_mem_cons.mpr ⟨hmem4, List.forall_mem_cons.mpr ⟨hmem5, List.forall_mem_nil _⟩⟩⟩⟩⟩⟩)
   · rw [ctxAfter_useHorn [wn, wk, ww, wv, wvp, wt, we, wu, wup] row_tsvAdjCert_as isSemiformula_tsvAdjCert_c (fun e he ↦ (hes e he).1), hinst.2]
-
-/-- Row `congAdj` as a step. -/
-lemma cok_congAdj {tbl N E Γ W : V} {wt wv ww wtp wvp wwp : V} (htbl : TableOK tbl N) (hC : CertTable tbl) (hWp : W = certPieces)
-    (hΓ : IsFormulaSet LAct Γ) (hwt : IsSemiterm LAct 0 wt) (hEwt : termLen LAct wt ≤ E) (hwv : IsSemiterm LAct 0 wv) (hEwv : termLen LAct wv ≤ E) (hww : IsSemiterm LAct 0 ww) (hEww : termLen LAct ww ≤ E) (hwtp : IsSemiterm LAct 0 wtp) (hEwtp : termLen LAct wtp ≤ E) (hwvp : IsSemiterm LAct 0 wvp) (hEwvp : termLen LAct wvp ≤ E) (hwwp : IsSemiterm LAct 0 wwp) (hEwwp : termLen LAct wwp ≤ E) (hmem0 : neg LAct (eqFactB wwp ww) ∈ Γ) (hmem1 : neg LAct (eqFactB wtp wt) ∈ Γ) (hmem2 : neg LAct (eqFactB wvp wv) ∈ Γ) (hmem3 : neg LAct (adjFact ww wt wv) ∈ Γ) :
-    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 182 ?[wt, wv, ww, wtp, wvp, wwp]) ∧ sTag (mkStep W 182 ?[wt, wv, ww, wtp, wvp, wwp]) = 0 ∧
-    ctxAfter Γ (mkStep W 182 ?[wt, wv, ww, wtp, wvp, wwp]) = insert (neg LAct (adjFact wwp wtp wvp)) Γ := by
-  subst hWp
-  have hk : ((cIdx_congAdj : ℕ) : V) = (182 : V) := by simp [cIdx_congAdj]
-  have hstep := cmk_congAdj (V := V) ?[wt, wv, ww, wtp, wvp, wwp]
-  have hlen := certTable_len hC cIdx_congAdj (by decide)
-  have hrow := certTable_congAdj hC
-  rw [hk] at hstep hlen hrow
-  have hes : ∀ e ∈ [wt, wv, ww, wtp, wvp, wwp], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E := List.forall_mem_cons.mpr ⟨⟨hwt, hEwt⟩, List.forall_mem_cons.mpr ⟨⟨hwv, hEwv⟩, List.forall_mem_cons.mpr ⟨⟨hww, hEww⟩, List.forall_mem_cons.mpr ⟨⟨hwtp, hEwtp⟩, List.forall_mem_cons.mpr ⟨⟨hwvp, hEwvp⟩, List.forall_mem_cons.mpr ⟨⟨hwwp, hEwwp⟩, List.forall_mem_nil _⟩⟩⟩⟩⟩⟩
-  have hinst := inst_congAdj hwt hwv hww hwtp hwvp hwwp
-  rw [hstep, show (?[wt, wv, ww, wtp, wvp, wwp] : V) = vecOf [wt, wv, ww, wtp, wvp, wwp] from rfl]
-  refine ⟨stepOK_useHorn htbl [wt, wv, ww, wtp, wvp, wwp] row_congAdj_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : 6 ≤ 8))
-    (by rw [show row_congAdj_as.length = 4 from rfl]; exact_mod_cast (by decide : 4 ≤ 8)) hes ?_, by simp, ?_⟩
-  · exact neg_mem_of_map hinst.1 (List.forall_mem_cons.mpr ⟨hmem0, List.forall_mem_cons.mpr ⟨hmem1, List.forall_mem_cons.mpr ⟨hmem2, List.forall_mem_cons.mpr ⟨hmem3, List.forall_mem_nil _⟩⟩⟩⟩)
-  · rw [ctxAfter_useHorn [wt, wv, ww, wtp, wvp, wwp] row_congAdj_as isSemiformula_congAdj_c (fun e he ↦ (hes e he).1), hinst.2]
-
-/-- Row `congAdd` as a step. -/
-lemma cok_congAdd {tbl N E Γ W : V} {wx wxp wy wyp : V} (htbl : TableOK tbl N) (hC : CertTable tbl) (hWp : W = certPieces)
-    (hΓ : IsFormulaSet LAct Γ) (hwx : IsSemiterm LAct 0 wx) (hEwx : termLen LAct wx ≤ E) (hwxp : IsSemiterm LAct 0 wxp) (hEwxp : termLen LAct wxp ≤ E) (hwy : IsSemiterm LAct 0 wy) (hEwy : termLen LAct wy ≤ E) (hwyp : IsSemiterm LAct 0 wyp) (hEwyp : termLen LAct wyp ≤ E) (hmem0 : neg LAct (eqFactB wx wxp) ∈ Γ) (hmem1 : neg LAct (eqFactB wy wyp) ∈ Γ) :
-    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 183 ?[wx, wxp, wy, wyp]) ∧ sTag (mkStep W 183 ?[wx, wxp, wy, wyp]) = 0 ∧
-    ctxAfter Γ (mkStep W 183 ?[wx, wxp, wy, wyp]) = insert (neg LAct (eqFactB (wx ^+ wy) (wxp ^+ wyp))) Γ := by
-  subst hWp
-  have hk : ((cIdx_congAdd : ℕ) : V) = (183 : V) := by simp [cIdx_congAdd]
-  have hstep := cmk_congAdd (V := V) ?[wx, wxp, wy, wyp]
-  have hlen := certTable_len hC cIdx_congAdd (by decide)
-  have hrow := certTable_congAdd hC
-  rw [hk] at hstep hlen hrow
-  have hes : ∀ e ∈ [wx, wxp, wy, wyp], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E := List.forall_mem_cons.mpr ⟨⟨hwx, hEwx⟩, List.forall_mem_cons.mpr ⟨⟨hwxp, hEwxp⟩, List.forall_mem_cons.mpr ⟨⟨hwy, hEwy⟩, List.forall_mem_cons.mpr ⟨⟨hwyp, hEwyp⟩, List.forall_mem_nil _⟩⟩⟩⟩
-  have hinst := inst_congAdd hwx hwxp hwy hwyp
-  rw [hstep, show (?[wx, wxp, wy, wyp] : V) = vecOf [wx, wxp, wy, wyp] from rfl]
-  refine ⟨stepOK_useHorn htbl [wx, wxp, wy, wyp] row_congAdd_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : 4 ≤ 8))
-    (by rw [show row_congAdd_as.length = 2 from rfl]; exact_mod_cast (by decide : 2 ≤ 8)) hes ?_, by simp, ?_⟩
-  · exact neg_mem_of_map hinst.1 (List.forall_mem_cons.mpr ⟨hmem0, List.forall_mem_cons.mpr ⟨hmem1, List.forall_mem_nil _⟩⟩)
-  · rw [ctxAfter_useHorn [wx, wxp, wy, wyp] row_congAdd_as isSemiformula_congAdd_c (fun e he ↦ (hes e he).1), hinst.2]
 
 /-- Row `congSucc` as a step. -/
 lemma cok_congSucc {tbl N E Γ W : V} {wx wxp : V} (htbl : TableOK tbl N) (hC : CertTable tbl) (hWp : W = certPieces)

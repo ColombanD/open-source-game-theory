@@ -758,10 +758,6 @@ theorem dlen_wkToCode {Γ Γ' d : V} (hΓ : IsFormulaSet L Γ) (h : Γ' ⊆ Γ)
     (hd : DerivationOf T d Γ') : dlen T (wkToCode Γ d) = setLen L Γ + dlen T d + 1 :=
   dlen_eq_of_graph (wkToCode_proof hΓ h hd).2 (DlenGraph.wkRule_iff.mpr ⟨_, dlen_graph hd.2, rfl⟩)
 
-theorem dlen_wkToCode_le {Γ Γ' d : V} (hΓ : IsFormulaSet L Γ) (h : Γ' ⊆ Γ)
-    (hd : DerivationOf T d Γ') : dlen T (wkToCode Γ d) ≤ dlen T d + setLen L Γ + 1 := by
-  rw [dlen_wkToCode hΓ h hd, add_comm (setLen L Γ)]
-
 end steps
 
 /-! ### The entries of `qVecIter n (e ∷ 0)`: `?[#0, …, #(n-1), e]` -/
@@ -835,23 +831,14 @@ lemma subOuter_subst {n : ℕ} {k P W e : V} (hP : IsSemiformula L k P)
   unfold subOuter
   exact substs_substs hP (isSemitermVec_qVecIter_single he) hW
 
-lemma isSemitermVec_natCast_cons_iff {k : ℕ} {n t w : V} :
-    IsSemitermVec L ((k + 1 : ℕ) : V) n (t ∷ w) ↔ IsSemiterm L n t ∧ IsSemitermVec L (k : V) n w := by
-  rw [Nat.cast_succ, IsSemitermVec.cons_iff]
-
 lemma termSubstVec_natCast_cons {k : ℕ} {w t ts : V} (ht : IsUTerm L t) (hts : IsUTermVec L (k : V) ts) :
     termSubstVec L ((k + 1 : ℕ) : V) w (t ∷ ts) = termSubst L w t ∷ termSubstVec L (k : V) w ts := by
   rw [Nat.cast_succ, termSubstVec_cons ht hts]
-
 
 /-! ### Level monotonicity, standard indices, `listToVec` -/
 
 lemma isSemiterm_of_le {n m t : V} (h : IsSemiterm L n t) (hnm : n ≤ m) : IsSemiterm L m t :=
   IsSemiterm.def.mpr ⟨(IsSemiterm.def.mp h).1, le_trans (IsSemiterm.def.mp h).2 hnm⟩
-
-lemma isSemitermVec_of_le {k n m v : V} (h : IsSemitermVec L k n v) (hnm : n ≤ m) :
-    IsSemitermVec L k m v :=
-  IsSemitermVec.iff.mpr ⟨h.lh, fun _ hi ↦ isSemiterm_of_le (h.nth hi) hnm⟩
 
 /-- Elements below a standard numeral are standard. -/
 lemma exists_natCast_of_lt_natCast : ∀ (n : ℕ) (i : V), i < (n : V) → ∃ i' : ℕ, i = (i' : V) ∧ i' < n
@@ -1089,7 +1076,6 @@ lemma isSemiformula_Ppi : IsSemiformula LAct ((2 : ℕ) : V) Ppi := Sentence.quo
 lemma isSemiformula_Psigma : IsSemiformula LAct ((2 : ℕ) : V) Psigma := Sentence.quote_isSemiformula _
 lemma isSemiformula_Pand : IsSemiformula LAct ((3 : ℕ) : V) Pand := Sentence.quote_isSemiformula _
 lemma shift_Ppi : shift LAct (Ppi : V) = Ppi := shift_quote_sentence _
-lemma shift_Psigma : shift LAct (Psigma : V) = Psigma := shift_quote_sentence _
 lemma shift_Pand : shift LAct (Pand : V) = Pand := shift_quote_sentence _
 
 /-- **Canonical fact codes**: the predicate's code substituted at the witnesses in ITS variable

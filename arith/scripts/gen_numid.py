@@ -11,6 +11,9 @@ stated against EXPLICIT table readings (`hlen`, `hrow`) — `NumIdTable` lives i
 Run from arith/: python3 scripts/gen_numid.py
 """
 import sys, re, os, types
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+from prune import prune  # drops the audit's DEAD declarations (scripts/pruned/<module>.txt)
 HERE = os.path.dirname(os.path.abspath(__file__))
 _src = open(os.path.join(HERE, 'gen_frag.py')).read()
 _src = _src[:_src.index('\ngen_frag()\ngen_rowinstb()')].replace("if len(sys.argv) > 3:", "if False:")
@@ -238,5 +241,5 @@ footer = '''
 end ArithS
 '''
 out_path = os.path.join(HERE, '..', 'ArithS', 'Necessitation', 'NumIdRows.lean')
-open(out_path, 'w').write(header + lib_blocks + mid + new_blocks + mid2 + table_part + footer)
+open(out_path, 'w').write(prune(header + lib_blocks + mid + new_blocks + mid2 + table_part + footer, 'Necessitation.NumIdRows'))
 print('wrote', out_path, 'rows:', TABLE)

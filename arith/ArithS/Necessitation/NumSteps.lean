@@ -58,7 +58,6 @@ lemma isSemiformula_Peq : IsSemiformula LAct ((2 : ℕ) : V) Peq := Sentence.quo
 noncomputable def eqFact (a b : V) : V := subst LAct (listToVec [a, b]) Peq
 noncomputable def eqFactDef : 𝚺₁.Semisentence 3 := fact2Def eqS
 instance eqFact_defined : 𝚺₁-Function₂ (eqFact : V → V → V) via eqFactDef := fact2_defined eqS
-instance eqFact_definable : 𝚺₁-Function₂ (eqFact : V → V → V) := eqFact_defined.to_definable
 
 lemma isFormula_eqFact {a b : V} (ha : IsSemiterm LAct 0 a) (hb : IsSemiterm LAct 0 b) : IsFormula LAct (eqFact a b) :=
   isFormula_fact isSemiformula_Peq _ rfl (List.forall_mem_cons.mpr ⟨ha, List.forall_mem_cons.mpr ⟨hb, List.forall_mem_nil _⟩⟩)
@@ -182,8 +181,6 @@ lemma termSubst_qqTwo' (w : V) : termSubst LAct w (𝟐 : V) = 𝟐 := by
 
 lemma isSemiterm_bnum_LAct (n a : V) : IsSemiterm LAct n (bnum a) := IsSemiterm.LAct_of_LOR (bnum_semiterm n a)
 
-lemma isSemiterm_bv' {i n : ℕ} (h : i < n) : IsSemiterm LAct (n : V) (bv i) := isSemiterm_bv h
-
 /-! ### Lengths of numeral codes (`Assembly/Uniform` has these at `V : Type` only) -/
 
 lemma termLen_qqMulL {x y : V} (hx : IsUTerm LAct x) (hy : IsUTerm LAct y) :
@@ -216,14 +213,6 @@ lemma termLen_bnum_zero : termLen LAct (bnum (0 : V)) = 1 := by
   rw [bnum_zero, termLen_qqZero isFunc_LAct_zeroIndex]
 lemma termLen_bnum_one : termLen LAct (bnum (1 : V)) = 1 := by
   rw [bnum_one, termLen_qqOne isFunc_LAct_oneIndex]
-
-lemma one_le_termLen_bnum (a : V) : 1 ≤ termLen LAct (bnum a) := by
-  rcases zero_one_or_two_le a with rfl | rfl | h2
-  · rw [termLen_bnum_zero]
-  · rw [termLen_bnum_one]
-  · obtain ⟨hm, _, he | ho⟩ := two_le_cases h2
-    · rw [he, termLen_bnum_two_mul hm]; exact le_trans (by norm_num) le_add_self
-    · rw [ho, termLen_bnum_two_mul_add_one hm]; exact le_trans (by norm_num) le_add_self
 
 end syntaxCodes
 
@@ -1146,7 +1135,6 @@ theorem exists_numTable : ∃ N B : ℕ, ∀ (V : Type) [ORingStructure V] [V↓
 
 end table
 
-
 /-! ## 4. The combinators: the goal leaf, the lemma cut, a table-driven Horn use, the step shapes
 
 A closed fact `A` is derived in the singleton context `sing A = {A}` (the goal, positive; a known
@@ -1452,7 +1440,6 @@ theorem dlen_step2_le {tbl : V} {i : ℕ} {N B : V} {m : ℕ} {as : List V} {c :
 
 end combinators
 
-
 /-! ## 5. The successor chain: `succFact z := bnum z + 1 = bnum (z + 1)`
 
 `succCode tbl z` — a `Fixpoint` on `⟪z, d⟫` (parameter `tbl`): `z = 0` by row `zeroOne`, `z = 1` by
@@ -1736,10 +1723,8 @@ instance succCode_defined : 𝚺₁-Function₂ (succCode : V → V → V) via s
   constructor
   · intro h; exact (succCode_eq_of_graph h).symm
   · intro h; rw [h]; exact succCode_graph _ _
-instance succCode_definable : 𝚺₁-Function₂ (succCode : V → V → V) := succCode_defined.to_definable
 
 end succ
-
 
 /-! ## 6. Soundness and length of `succCode`; its `sLemma` packaging -/
 
@@ -1878,17 +1863,7 @@ theorem lemmaOK_succ {tbl N B : V} (htbl : NumTableOK tbl N B) (z : V) :
     simp only [sLemma, pi₂_pair, pi₁_pair]
     exact succCode_proof htbl z
 
-/-- … and its cost: `stepCost N' E Γ (sLemma A dA) = dlen dA + 2|Γ| + 2|A| + 2` with `dlen dA ≤ succBound`. -/
-theorem stepCost_lemma_succ {tbl N B N' E Γ : V} (htbl : NumTableOK tbl N B) (z : V) :
-    stepCost N' E Γ (sLemma (succFact z) (succCode tbl z)) ≤
-      succBound N B z + 2 * setLen LAct Γ + 2 * formulaLen LAct (succFact z) + 2 := by
-  rw [stepCost_tag7 (by simp [sTag, sLemma])]
-  simp only [sLemA, sLemD, sLemma, pi₂_pair, pi₁_pair]
-  gcongr
-  exact dlen_succCode_le htbl z
-
 end succSound
-
 
 /-! ## 7. Addition: `addFact a b := bnum a + bnum b = bnum (a + b)`
 
@@ -2185,7 +2160,6 @@ lemma AddGraph.case_iff {tbl a b d : V} :
 
 end add
 
-
 section addInv
 
 /-! ### Inversion, existence, uniqueness, `addCode` -/
@@ -2193,14 +2167,10 @@ section addInv
 lemma not_one_le_zero : ¬ (1 : V) ≤ 0 := not_le.mpr Arithmetic.zero_lt_one
 lemma not_two_le_one : ¬ (2 : V) ≤ 1 := not_le.mpr one_lt_two
 lemma not_two_le_zero : ¬ (2 : V) ≤ 0 := not_le.mpr (lt_of_lt_of_le Arithmetic.zero_lt_one one_le_two)
-lemma two_mul_ne_one' (m : V) : 2 * m ≠ 1 := two_mul_ne_one m
 lemma one_ne_two_mul {m : V} (hm : 1 ≤ m) : (1 : V) ≠ 2 * m := fun h ↦ two_mul_ne_one m h.symm
 lemma one_ne_two_mul_add_one {m : V} (hm : 1 ≤ m) : (1 : V) ≠ 2 * m + 1 := fun h ↦ two_mul_add_one_ne_one hm h.symm
 lemma zero_ne_two_mul {m : V} (hm : 1 ≤ m) : (0 : V) ≠ 2 * m := fun h ↦ two_mul_ne_zero hm h.symm
 lemma zero_ne_two_mul_add_one (m : V) : (0 : V) ≠ 2 * m + 1 := fun h ↦ two_mul_add_one_ne_zero m h.symm
-lemma two_le_two_mul {m : V} (hm : 1 ≤ m) : 2 ≤ 2 * m := by
-  rw [two_mul, ← one_add_one_eq_two]; exact add_le_add hm hm
-lemma two_le_two_mul_add_one {m : V} (hm : 1 ≤ m) : 2 ≤ 2 * m + 1 := le_trans (two_le_two_mul hm) le_self_add
 
 /-- The pieces of the eight-way case analysis that a situation `(a, b)` excludes, in one place. -/
 lemma AddGraph.zero_left_iff {tbl b d : V} :
@@ -2438,10 +2408,8 @@ instance addCode_defined : 𝚺₁-Function₃ (addCode : V → V → V → V) v
   constructor
   · intro h; exact (addCode_eq_of_graph h).symm
   · intro h; rw [h]; exact addCode_graph _ _ _
-instance addCode_definable : 𝚺₁-Function₃ (addCode : V → V → V → V) := addCode_defined.to_definable
 
 end addInv
-
 
 /-! ## 8. Soundness and length of `addCode`; its `sLemma` packaging -/
 
@@ -2741,16 +2709,7 @@ theorem lemmaOK_add {tbl N B : V} (htbl : NumTableOK tbl N B) (a b : V) :
     simp only [sLemma, pi₂_pair, pi₁_pair]
     exact addCode_proof htbl a b
 
-theorem stepCost_lemma_add {tbl N B N' E Γ : V} (htbl : NumTableOK tbl N B) (a b : V) :
-    stepCost N' E Γ (sLemma (addFact a b) (addCode tbl a b)) ≤
-      addBound N B a b + 2 * setLen LAct Γ + 2 * formulaLen LAct (addFact a b) + 2 := by
-  rw [stepCost_tag7 (by simp [sTag, sLemma])]
-  simp only [sLemA, sLemD, sLemma, pi₂_pair, pi₁_pair]
-  gcongr
-  exact dlen_addCode_le htbl a b
-
 end addSound
-
 
 /-! ## 9. The composite facts: `≤`, `<`, and the node bookkeeping — one shape `stepL` with `j ≤ 4` cuts -/
 
@@ -3061,7 +3020,6 @@ theorem dlen_ltCode_le {tbl N B : V} (htbl : NumTableOK tbl N B) {a b : V} (hab 
   simpa [add_assoc] using h
 
 end leLt
-
 
 /-! ## 10. N3 (fixed arities): the node bookkeeping facts; N7; N6 the chain numeral; the `sLemma` packaging -/
 
@@ -3433,7 +3391,6 @@ theorem oneLe_proof {tbl N B : V} (htbl : NumTableOK tbl N B) {a : V} (ha : 1 �
 
 end bookkeeping
 
-
 /-! ## 11. N6: the chain numeral `cT z` — `cTEqCode z : cT z = bnum z` (a `PR` on `z`) and `cTLeCode` -/
 
 section chainNumeral
@@ -3620,29 +3577,7 @@ theorem cTLeCode_proof {tbl N B : V} (htbl : NumTableOK tbl N B) (z : V) :
     (by rw [(inst_nLeOfEq hc0 ht0).1]; rfl) (inst_nLeOfEq hc0 ht0).2
   rwa [cast_rLeOfEq] at hpf
 
-theorem dlen_cTLeCode_le {tbl N B : V} (htbl : NumTableOK tbl N B) (z : V) :
-    dlen TAct (cTLeCode tbl z) ≤ dlen TAct (cTEqCode tbl z) + nodeCost N B (cTE z) := by
-  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hr18, hPeq, hPle, -, hB⟩ := id htbl
-  have hc0 : IsSemiterm LAct 0 (cTV z) := cTV_semiterm_LAct 0 z
-  have ht0 : IsSemiterm LAct 0 (bnum z) := isSemiterm_bnum_LAct 0 _
-  have hes : ∀ e ∈ [bnum z, cTV z], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ cTE z := by
-    intro e he
-    simp only [List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false] at he
-    rcases he with rfl | rfl
-    · exact ⟨ht0, termLen_bnum_le_E' le_self_add (addE_le_cTE z)⟩
-    · exact ⟨hc0, termLen_cTV_le_cTE z⟩
-  have hh := dlen_stepL_le hr18 [(cTEqFact z, cTEqCode tbl z)] [bnum z, cTV z] rfl hes (one_le_cTE z) hB
-    (isFormula_cTLeFact z) (by simp only [List.mem_singleton, forall_eq]; exact ⟨isFormula_cTEqFact z, cTEqCode_proof htbl z⟩)
-    (by rw [(inst_nLeOfEq hc0 ht0).1]; rfl) (inst_nLeOfEq hc0 ht0).2 (by norm_num) (by simp [nLeOfEq_as])
-    (le_trans (formulaLen_leFact_le (one_le_cTE z) hc0 ht0 (termLen_cTV_le_cTE z)
-      (termLen_bnum_le_E' le_self_add (addE_le_cTE z))) (mul_le_mul_of_nonneg_right hPle zero_le))
-    (by simp only [List.mem_singleton, forall_eq]; exact formulaLen_cTEqFact_le hPeq)
-  rw [cast_rLeOfEq] at hh
-  unfold cTLeCode
-  simpa using hh
-
 end chainNumeral
-
 
 /-! ## 12. The `sLemma` packaging of every fact, and the Σ₁ instances of the composites -/
 
@@ -3662,12 +3597,6 @@ lemma stepCost_sLemma (N' E Γ A dA : V) :
   rw [stepCost_tag7 (by simp [sTag, sLemma])]
   simp only [sLemA, sLemD, sLemma, pi₂_pair, pi₁_pair]
 
-theorem lemmaOK_le {tbl N B : V} (htbl : NumTableOK tbl N B) {a b : V} (h : a ≤ b) :
-    LemmaOK (sLemma (leFact (bnum a) (bnum b)) (leCode tbl a b)) :=
-  lemmaOK_of (isFormula_leFact_bnum a b) (leCode_proof htbl h)
-theorem lemmaOK_lt {tbl N B : V} (htbl : NumTableOK tbl N B) {a b : V} (h : a < b) :
-    LemmaOK (sLemma (ltFact (bnum a) (bnum b)) (ltCode tbl a b)) :=
-  lemmaOK_of (isFormula_ltFact_bnum a b) (ltCode_proof htbl h)
 theorem lemmaOK_leaf {tbl N B : V} (htbl : NumTableOK tbl N B) {a n : V} (h : a + 1 ≤ n) :
     LemmaOK (sLemma (leafFact a n) (leafCode tbl a n)) :=
   lemmaOK_of (isFormula_leafFact a n) (leafCode_proof htbl h)
@@ -3683,9 +3612,6 @@ theorem lemmaOK_bin3 {tbl N B : V} (htbl : NumTableOK tbl N B) {a b c n : V} (h 
 theorem lemmaOK_cTEq {tbl N B : V} (htbl : NumTableOK tbl N B) (z : V) :
     LemmaOK (sLemma (cTEqFact z) (cTEqCode tbl z)) :=
   lemmaOK_of (isFormula_cTEqFact z) (cTEqCode_proof htbl z)
-theorem lemmaOK_cTLe {tbl N B : V} (htbl : NumTableOK tbl N B) (z : V) :
-    LemmaOK (sLemma (cTLeFact z) (cTLeCode tbl z)) :=
-  lemmaOK_of (isFormula_cTLeFact z) (cTLeCode_proof htbl z)
 
 /-- **The closed-form cost of the binary node's bookkeeping lemma** (the headline the fragments consume):
 `stepCost N' E Γ (sLemma (bin3Fact a b c n) (bin3Code tbl a b c n)) ≤ 2|Γ| + 2|bin3Fact| + 2 + …`, the `…`
@@ -3798,7 +3724,6 @@ noncomputable def leCodeDef : 𝚺₁.Semisentence 4 := .mkSigma
 instance leCode_defined : 𝚺₁-Function₃ (leCode : V → V → V → V) via leCodeDef := .mk fun v ↦ by
   simp [leCodeDef, sub_defined.iff, addFact_defined.iff, addCode_defined.iff, bnum.defined.iff, leFact_defined.iff,
     step1_defined.iff, leCode, stepL_one, numeral_eq_natCast]
-instance leCode_definable : 𝚺₁-Function₃ (leCode : V → V → V → V) := leCode_defined.to_definable
 
 noncomputable def ltCodeDef : 𝚺₁.Semisentence 4 := .mkSigma
   “y tbl a b. ∃ F, !succFactDef F a ∧ ∃ dF, !succCodeDef dF tbl a ∧ ∃ ta1, !bnumGraph ta1 (a + 1) ∧ ∃ tb, !bnumGraph tb b ∧
@@ -3808,7 +3733,6 @@ noncomputable def ltCodeDef : 𝚺₁.Semisentence 4 := .mkSigma
 instance ltCode_defined : 𝚺₁-Function₃ (ltCode : V → V → V → V) via ltCodeDef := .mk fun v ↦ by
   simp [ltCodeDef, succFact_defined.iff, succCode_defined.iff, bnum.defined.iff, leFact_defined.iff, leCode_defined.iff,
     ltFact_defined'.iff, step2_defined.iff, ltCode, stepL_two, numeral_eq_natCast]
-instance ltCode_definable : 𝚺₁-Function₃ (ltCode : V → V → V → V) := ltCode_defined.to_definable
 
 noncomputable def leafCodeDef : 𝚺₁.Semisentence 4 := .mkSigma
   “y tbl a n. ∃ F, !succFactDef F a ∧ ∃ dF, !succCodeDef dF tbl a ∧ ∃ ta1, !bnumGraph ta1 (a + 1) ∧ ∃ tn, !bnumGraph tn n ∧
@@ -3818,7 +3742,6 @@ noncomputable def leafCodeDef : 𝚺₁.Semisentence 4 := .mkSigma
 instance leafCode_defined : 𝚺₁-Function₃ (leafCode : V → V → V → V) via leafCodeDef := .mk fun v ↦ by
   simp [leafCodeDef, succFact_defined.iff, succCode_defined.iff, bnum.defined.iff, leFact_defined.iff, leCode_defined.iff,
     qqAdd_defined.iff, step2_defined.iff, leafCode, leafFact, stepL_two, numeral_eq_natCast]
-instance leafCode_definable : 𝚺₁-Function₃ (leafCode : V → V → V → V) := leafCode_defined.to_definable
 
 noncomputable def sum2CodeDef : 𝚺₁.Semisentence 5 := .mkSigma
   “y tbl a b n. ∃ F, !addFactDef F a b ∧ ∃ dF, !addCodeDef dF tbl a b ∧ ∃ ts, !bnumGraph ts (a + b) ∧ ∃ tn, !bnumGraph tn n ∧
@@ -3828,7 +3751,6 @@ noncomputable def sum2CodeDef : 𝚺₁.Semisentence 5 := .mkSigma
 instance sum2Code_defined : 𝚺₁-Function₄ (sum2Code : V → V → V → V → V) via sum2CodeDef := .mk fun v ↦ by
   simp [sum2CodeDef, addFact_defined.iff, addCode_defined.iff, bnum.defined.iff, leFact_defined.iff, leCode_defined.iff,
     qqAdd_defined.iff, step2_defined.iff, sum2Code, sum2Fact, stepL_two, numeral_eq_natCast]
-instance sum2Code_definable : 𝚺₁-Function₄ (sum2Code : V → V → V → V → V) := sum2Code_defined.to_definable
 
 noncomputable def bin2CodeDef : 𝚺₁.Semisentence 5 := .mkSigma
   “y tbl a b n. ∃ F, !addFactDef F a b ∧ ∃ dF, !addCodeDef dF tbl a b ∧ ∃ G, !succFactDef G (a + b) ∧
@@ -3842,7 +3764,6 @@ instance bin2Code_defined : 𝚺₁-Function₄ (bin2Code : V → V → V → V 
   simp [bin2CodeDef, addFact_defined.iff, addCode_defined.iff, succFact_defined.iff, succCode_defined.iff, bnum.defined.iff,
     leFact_defined.iff, leCode_defined.iff, qqAdd_defined.iff, step3_defined.iff, bin2Code, bin2Fact, stepL_three,
     numeral_eq_natCast]
-instance bin2Code_definable : 𝚺₁-Function₄ (bin2Code : V → V → V → V → V) := bin2Code_defined.to_definable
 
 noncomputable def bin3CodeDef : 𝚺₁.Semisentence 6 := .mkSigma
   “y tbl a b c n. ∃ F, !addFactDef F a b ∧ ∃ dF, !addCodeDef dF tbl a b ∧ ∃ G, !addFactDef G (a + b) c ∧
@@ -3859,16 +3780,6 @@ instance bin3Code_defined : 𝚺₁-Function₅ (bin3Code : V → V → V → V 
   simp [bin3CodeDef, addFact_defined.iff, addCode_defined.iff, succFact_defined.iff, succCode_defined.iff, bnum.defined.iff,
     leFact_defined.iff, leCode_defined.iff, qqAdd_defined.iff, step4_defined.iff, bin3Code, bin3Fact, stepL_four,
     numeral_eq_natCast]
-instance bin3Code_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 5 → V ↦ bin3Code (v 0) (v 1) (v 2) (v 3) (v 4)) := bin3Code_defined.to_definable
-
-noncomputable def cTLeCodeDef : 𝚺₁.Semisentence 3 := .mkSigma
-  “y tbl z. ∃ F, !cTEqFactDef F z ∧ ∃ dF, !cTEqCodeDef dF tbl z ∧ ∃ c, !cTVGraph c z ∧ ∃ t, !bnumGraph t z ∧
-    ∃ v0, !adjoinDef v0 c 0 ∧ ∃ ev, !adjoinDef ev t v0 ∧ ∃ A, !leFactDef A c t ∧ !step1Def y tbl 18 F dF ev A”
-instance cTLeCode_defined : 𝚺₁-Function₂ (cTLeCode : V → V → V) via cTLeCodeDef := .mk fun v ↦ by
-  simp [cTLeCodeDef, cTEqFact_defined.iff, cTEqCode_defined.iff, cTV.defined.iff, bnum.defined.iff, leFact_defined.iff,
-    step1_defined.iff, cTLeCode, cTLeFact, stepL_one, numeral_eq_natCast]
-instance cTLeCode_definable : 𝚺₁-Function₂ (cTLeCode : V → V → V) := cTLeCode_defined.to_definable
 
 end composites
 

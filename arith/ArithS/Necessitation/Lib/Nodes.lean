@@ -37,7 +37,6 @@ open LAct
 
 variable {V : Type*} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
 
-
 /-! ### `Intro_tag` — the ten introduction clauses (`Derivation.axL … axm` on codes) -/
 
 /-- `Intro_axL`: `IsFormulaSet s → p ∈ s → neg p ∈ s → derivation (axL s p)`. -/
@@ -465,16 +464,6 @@ theorem lib_dlenAxm : Lib dlenAxm := Lib.of_pa pa_proves_dlenAxm
 
 /-! ### Properness bridges (`.sigma ↔ .pi`) for `derivation`, `dlenGraphDef`, `Δ₁ch` -/
 
-noncomputable def derivationSigmaPiB : ArithmeticSemisentence 1 :=
-  “d. !(derivation TAct).sigma d → !(derivation TAct).pi d”
-noncomputable def derivationSigmaPi : ArithmeticSentence := ∀¹* derivationSigmaPiB
-lemma models_derivationSigmaPi :
-    V↓[ℒₒᵣ] ⊧ derivationSigmaPi ↔ ∀ d : V, Derivation TAct d → Derivation TAct d := by
-  simp [derivationSigmaPi, derivationSigmaPiB, models_iff]
-theorem pa_proves_derivationSigmaPi : 𝗣𝗔 ⊢ derivationSigmaPi :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_derivationSigmaPi.mpr fun _ h ↦ h
-theorem lib_derivationSigmaPi : Lib derivationSigmaPi := Lib.of_pa pa_proves_derivationSigmaPi
-
 noncomputable def derivationPiSigmaB : ArithmeticSemisentence 1 :=
   “d. !(derivation TAct).pi d → !(derivation TAct).sigma d”
 noncomputable def derivationPiSigma : ArithmeticSentence := ∀¹* derivationPiSigmaB
@@ -484,46 +473,6 @@ lemma models_derivationPiSigma :
 theorem pa_proves_derivationPiSigma : 𝗣𝗔 ⊢ derivationPiSigma :=
   Lib.pa_proves_of_models fun _ _ _ ↦ models_derivationPiSigma.mpr fun _ h ↦ h
 theorem lib_derivationPiSigma : Lib derivationPiSigma := Lib.of_pa pa_proves_derivationPiSigma
-
-noncomputable def dlenGraphSigmaPiB : ArithmeticSemisentence 2 :=
-  “n d. !(dlenGraphDef LAct).sigma d n → !(dlenGraphDef LAct).pi d n”
-noncomputable def dlenGraphSigmaPi : ArithmeticSentence := ∀¹* dlenGraphSigmaPiB
-lemma models_dlenGraphSigmaPi :
-    V↓[ℒₒᵣ] ⊧ dlenGraphSigmaPi ↔ ∀ n d : V, DlenGraph LAct d n → DlenGraph LAct d n := by
-  simp [dlenGraphSigmaPi, dlenGraphSigmaPiB, models_iff]
-theorem pa_proves_dlenGraphSigmaPi : 𝗣𝗔 ⊢ dlenGraphSigmaPi :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_dlenGraphSigmaPi.mpr fun _ _ h ↦ h
-theorem lib_dlenGraphSigmaPi : Lib dlenGraphSigmaPi := Lib.of_pa pa_proves_dlenGraphSigmaPi
-
-noncomputable def dlenGraphPiSigmaB : ArithmeticSemisentence 2 :=
-  “n d. !(dlenGraphDef LAct).pi d n → !(dlenGraphDef LAct).sigma d n”
-noncomputable def dlenGraphPiSigma : ArithmeticSentence := ∀¹* dlenGraphPiSigmaB
-lemma models_dlenGraphPiSigma :
-    V↓[ℒₒᵣ] ⊧ dlenGraphPiSigma ↔ ∀ n d : V, DlenGraph LAct d n → DlenGraph LAct d n := by
-  simp [dlenGraphPiSigma, dlenGraphPiSigmaB, models_iff]
-theorem pa_proves_dlenGraphPiSigma : 𝗣𝗔 ⊢ dlenGraphPiSigma :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_dlenGraphPiSigma.mpr fun _ _ h ↦ h
-theorem lib_dlenGraphPiSigma : Lib dlenGraphPiSigma := Lib.of_pa pa_proves_dlenGraphPiSigma
-
-noncomputable def axSigmaPiB : ArithmeticSemisentence 1 :=
-  “p. !(Theory.Δ₁ch TAct).sigma p → !(Theory.Δ₁ch TAct).pi p”
-noncomputable def axSigmaPi : ArithmeticSentence := ∀¹* axSigmaPiB
-lemma models_axSigmaPi :
-    V↓[ℒₒᵣ] ⊧ axSigmaPi ↔ ∀ p : V, p ∈ TAct.Δ₁Class → p ∈ TAct.Δ₁Class := by
-  simp [axSigmaPi, axSigmaPiB, models_iff]
-theorem pa_proves_axSigmaPi : 𝗣𝗔 ⊢ axSigmaPi :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_axSigmaPi.mpr fun _ h ↦ h
-theorem lib_axSigmaPi : Lib axSigmaPi := Lib.of_pa pa_proves_axSigmaPi
-
-noncomputable def axPiSigmaB : ArithmeticSemisentence 1 :=
-  “p. !(Theory.Δ₁ch TAct).pi p → !(Theory.Δ₁ch TAct).sigma p”
-noncomputable def axPiSigma : ArithmeticSentence := ∀¹* axPiSigmaB
-lemma models_axPiSigma :
-    V↓[ℒₒᵣ] ⊧ axPiSigma ↔ ∀ p : V, p ∈ TAct.Δ₁Class → p ∈ TAct.Δ₁Class := by
-  simp [axPiSigma, axPiSigmaB, models_iff]
-theorem pa_proves_axPiSigma : 𝗣𝗔 ⊢ axPiSigma :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_axPiSigma.mpr fun _ h ↦ h
-theorem lib_axPiSigma : Lib axPiSigma := Lib.of_pa pa_proves_axPiSigma
 
 /-! ### The axiom recognizer (i): every axiom of `TAct` by its code -/
 
@@ -547,17 +496,10 @@ theorem lib_axiomRec {σ : Sentence LAct} (h : σ ∈ TAct) : Lib (axiomRec σ) 
 
 /-- The four action axioms. -/
 theorem lib_axiomRec_axAct : Lib (axiomRec axAct) := lib_axiomRec axAct_mem_TAct
-theorem lib_axiomRec_axAct' : Lib (axiomRec axAct') := lib_axiomRec axAct'_mem_TAct
-theorem lib_axiomRec_axNe : Lib (axiomRec axNe) := lib_axiomRec axNe_mem_TAct
-theorem lib_axiomRec_axNe' : Lib (axiomRec axNe') := lib_axiomRec axNe'_mem_TAct
 
 /-- Every `𝗣𝗔`-axiom (the finitely many `𝗣𝗔⁻` ones and every induction instance), embedded. -/
 theorem lib_axiomRec_pa {σ : Sentence ℒₒᵣ} (h : σ ∈ 𝗣𝗔) : Lib (axiomRec (Semiformula.lMap emb σ)) :=
   lib_axiomRec (lMap_emb_mem_TAct h)
-
-theorem lib_axiomRec_paMinus {σ : Sentence ℒₒᵣ} (h : σ ∈ 𝗣𝗔⁻) :
-    Lib (axiomRec (Semiformula.lMap emb σ)) :=
-  lib_axiomRec_pa (Set.mem_union_left _ h)
 
 /-! ### The axiom recognizer (ii): the induction scheme
 
@@ -628,15 +570,6 @@ theorem pa_proves_indRec : 𝗣𝗔 ⊢ indRec :=
       rw [hind]; exact le_indBodyVal K
 
 theorem lib_indRec : Lib indRec := Lib.of_pa pa_proves_indRec
-
-/-- Totality of the induction-body graph: `∀ K, ∃ p, indBodyValGraph p K`. -/
-noncomputable def totIndBodyB : ArithmeticSemisentence 1 := “K. ∃ p, !indBodyValGraph p K”
-noncomputable def totIndBody : ArithmeticSentence := ∀¹* totIndBodyB
-lemma models_totIndBody : V↓[ℒₒᵣ] ⊧ totIndBody ↔ ∀ K : V, ∃ p, p = indBodyVal K := by
-  simp [totIndBody, totIndBodyB, models_iff]
-theorem pa_proves_totIndBody : 𝗣𝗔 ⊢ totIndBody :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_totIndBody.mpr fun _ ↦ ⟨_, rfl⟩
-theorem lib_totIndBody : Lib totIndBody := Lib.of_pa pa_proves_totIndBody
 
 end indRec
 

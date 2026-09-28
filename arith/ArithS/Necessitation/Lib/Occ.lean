@@ -56,31 +56,6 @@ theorem pa_proves_fvOccTotal : 𝗣𝗔 ⊢ fvOccTotal :=
 
 theorem lib_fvOccTotal : Lib fvOccTotal := Lib.of_pa pa_proves_fvOccTotal
 
-/-- `∀ k v, ∃ M, M = fvOccVec k v`. -/
-noncomputable def fvOccVecTotalB : ArithmeticSemisentence 2 := “v k. ∃ M, !(fvOccVecGraph LAct) M k v”
-noncomputable def fvOccVecTotal : ArithmeticSentence := ∀¹* fvOccVecTotalB
-
-lemma models_fvOccVecTotal :
-    V↓[ℒₒᵣ] ⊧ fvOccVecTotal ↔ ∀ v k : V, ∃ M, M = fvOccVec LAct k v := by
-  simp [fvOccVecTotal, fvOccVecTotalB, models_iff, fvOccVec.defined.iff]
-
-theorem pa_proves_fvOccVecTotal : 𝗣𝗔 ⊢ fvOccVecTotal :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_fvOccVecTotal.mpr fun _ _ ↦ ⟨_, rfl⟩
-
-theorem lib_fvOccVecTotal : Lib fvOccVecTotal := Lib.of_pa pa_proves_fvOccVecTotal
-
-/-- `∀ p, ∃ o, o = fvOccF p`. -/
-noncomputable def fvOccFTotalB : ArithmeticSemisentence 1 := “p. ∃ o, !(fvOccFGraph LAct) o p”
-noncomputable def fvOccFTotal : ArithmeticSentence := ∀¹* fvOccFTotalB
-
-lemma models_fvOccFTotal : V↓[ℒₒᵣ] ⊧ fvOccFTotal ↔ ∀ p : V, ∃ o, o = fvOccF LAct p := by
-  simp [fvOccFTotal, fvOccFTotalB, models_iff, fvOccF.defined.iff]
-
-theorem pa_proves_fvOccFTotal : 𝗣𝗔 ⊢ fvOccFTotal :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_fvOccFTotal.mpr fun _ ↦ ⟨_, rfl⟩
-
-theorem lib_fvOccFTotal : Lib fvOccFTotal := Lib.of_pa pa_proves_fvOccFTotal
-
 /-- `∀ s, ∃ o, o = fvOccS s`. -/
 noncomputable def fvOccSTotalB : ArithmeticSemisentence 1 := “s. ∃ o, !(fvOccSDef LAct) o s”
 noncomputable def fvOccSTotal : ArithmeticSentence := ∀¹* fvOccSTotalB
@@ -107,36 +82,6 @@ theorem lib_bvOccFTotal : Lib bvOccFTotal := Lib.of_pa pa_proves_bvOccFTotal
 
 /-! ### 2. Per constructor -/
 
-/-- `fvOcc #z = 0`. -/
-noncomputable def fvOccBvarB : ArithmeticSemisentence 3 :=
-  “o t z. !qqBvarDef t z → !(fvOccGraph LAct) o t → o = 0”
-noncomputable def fvOccBvar : ArithmeticSentence := ∀¹* fvOccBvarB
-
-lemma models_fvOccBvar :
-    V↓[ℒₒᵣ] ⊧ fvOccBvar ↔ ∀ o t z : V, t = qqBvar z → o = fvOcc LAct t → o = 0 := by
-  simp [fvOccBvar, fvOccBvarB, models_iff, Matrix.vecForall_iff, fvOcc.defined.iff]
-
-theorem pa_proves_fvOccBvar : 𝗣𝗔 ⊢ fvOccBvar :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_fvOccBvar.mpr fun _ _ z ht ho ↦ by
-    subst ht; subst ho; exact fvOcc_bvar z
-
-theorem lib_fvOccBvar : Lib fvOccBvar := Lib.of_pa pa_proves_fvOccBvar
-
-/-- `fvOcc &x = 1`. -/
-noncomputable def fvOccFvarB : ArithmeticSemisentence 3 :=
-  “o t x. !qqFvarDef t x → !(fvOccGraph LAct) o t → o = 1”
-noncomputable def fvOccFvar : ArithmeticSentence := ∀¹* fvOccFvarB
-
-lemma models_fvOccFvar :
-    V↓[ℒₒᵣ] ⊧ fvOccFvar ↔ ∀ o t x : V, t = qqFvar x → o = fvOcc LAct t → o = 1 := by
-  simp [fvOccFvar, fvOccFvarB, models_iff, Matrix.vecForall_iff, fvOcc.defined.iff]
-
-theorem pa_proves_fvOccFvar : 𝗣𝗔 ⊢ fvOccFvar :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_fvOccFvar.mpr fun _ _ x ht ho ↦ by
-    subst ht; subst ho; exact fvOcc_fvar x
-
-theorem lib_fvOccFvar : Lib fvOccFvar := Lib.of_pa pa_proves_fvOccFvar
-
 /-- `fvOcc (func k f v) = listSum (fvOccVec k v)`. -/
 noncomputable def fvOccFuncB : ArithmeticSemisentence 5 :=
   “o t v f k. !LAct.isFunc k f → !(isUTermVec LAct).pi k v → !qqFuncDef t k f v →
@@ -156,74 +101,6 @@ theorem pa_proves_fvOccFunc : 𝗣𝗔 ⊢ fvOccFunc :=
 
 theorem lib_fvOccFunc : Lib fvOccFunc := Lib.of_pa pa_proves_fvOccFunc
 
-/-- `fvOccF (rel k R v) = listSum (fvOccVec k v)`. -/
-noncomputable def fvOccFRelB : ArithmeticSemisentence 5 :=
-  “o p v R k. !LAct.isRel k R → !(isUTermVec LAct).pi k v → !qqRelDef p k R v →
-    !(fvOccFGraph LAct) o p → ∃ M s, !(fvOccVecGraph LAct) M k v ∧ !listSumDef s M ∧ o = s”
-noncomputable def fvOccFRel : ArithmeticSentence := ∀¹* fvOccFRelB
-
-lemma models_fvOccFRel :
-    V↓[ℒₒᵣ] ⊧ fvOccFRel ↔
-    ∀ o p v R k : V, LAct.IsRel k R → IsUTermVec LAct k v → p = ^rel k R v → o = fvOccF LAct p →
-      ∃ M s, M = fvOccVec LAct k v ∧ s = listSum M ∧ o = s := by
-  simp [fvOccFRel, fvOccFRelB, models_iff, Matrix.vecForall_iff, fvOccF.defined.iff,
-    fvOccVec.defined.iff, listSum_defined.iff]
-
-theorem pa_proves_fvOccFRel : 𝗣𝗔 ⊢ fvOccFRel :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_fvOccFRel.mpr fun _ _ _ _ _ hR hv hp ho ↦ by
-    subst hp; subst ho; exact ⟨_, _, rfl, rfl, fvOccF_rel hR hv⟩
-
-theorem lib_fvOccFRel : Lib fvOccFRel := Lib.of_pa pa_proves_fvOccFRel
-
-/-- `fvOccF (nrel k R v) = listSum (fvOccVec k v)`. -/
-noncomputable def fvOccFNRelB : ArithmeticSemisentence 5 :=
-  “o p v R k. !LAct.isRel k R → !(isUTermVec LAct).pi k v → !qqNRelDef p k R v →
-    !(fvOccFGraph LAct) o p → ∃ M s, !(fvOccVecGraph LAct) M k v ∧ !listSumDef s M ∧ o = s”
-noncomputable def fvOccFNRel : ArithmeticSentence := ∀¹* fvOccFNRelB
-
-lemma models_fvOccFNRel :
-    V↓[ℒₒᵣ] ⊧ fvOccFNRel ↔
-    ∀ o p v R k : V, LAct.IsRel k R → IsUTermVec LAct k v → p = ^nrel k R v → o = fvOccF LAct p →
-      ∃ M s, M = fvOccVec LAct k v ∧ s = listSum M ∧ o = s := by
-  simp [fvOccFNRel, fvOccFNRelB, models_iff, Matrix.vecForall_iff, fvOccF.defined.iff,
-    fvOccVec.defined.iff, listSum_defined.iff]
-
-theorem pa_proves_fvOccFNRel : 𝗣𝗔 ⊢ fvOccFNRel :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_fvOccFNRel.mpr fun _ _ _ _ _ hR hv hp ho ↦ by
-    subst hp; subst ho; exact ⟨_, _, rfl, rfl, fvOccF_nrel hR hv⟩
-
-theorem lib_fvOccFNRel : Lib fvOccFNRel := Lib.of_pa pa_proves_fvOccFNRel
-
-/-- `fvOccF ⊤ = 0`. -/
-noncomputable def fvOccFVerumB : ArithmeticSemisentence 2 :=
-  “o p. !qqVerumDef p → !(fvOccFGraph LAct) o p → o = 0”
-noncomputable def fvOccFVerum : ArithmeticSentence := ∀¹* fvOccFVerumB
-
-lemma models_fvOccFVerum :
-    V↓[ℒₒᵣ] ⊧ fvOccFVerum ↔ ∀ o p : V, p = ^⊤ → o = fvOccF LAct p → o = 0 := by
-  simp [fvOccFVerum, fvOccFVerumB, models_iff, Matrix.vecForall_iff, fvOccF.defined.iff]
-
-theorem pa_proves_fvOccFVerum : 𝗣𝗔 ⊢ fvOccFVerum :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_fvOccFVerum.mpr fun _ _ hp ho ↦ by
-    subst hp; subst ho; exact fvOccF_verum
-
-theorem lib_fvOccFVerum : Lib fvOccFVerum := Lib.of_pa pa_proves_fvOccFVerum
-
-/-- `fvOccF ⊥ = 0`. -/
-noncomputable def fvOccFFalsumB : ArithmeticSemisentence 2 :=
-  “o p. !qqFalsumDef p → !(fvOccFGraph LAct) o p → o = 0”
-noncomputable def fvOccFFalsum : ArithmeticSentence := ∀¹* fvOccFFalsumB
-
-lemma models_fvOccFFalsum :
-    V↓[ℒₒᵣ] ⊧ fvOccFFalsum ↔ ∀ o p : V, p = ^⊥ → o = fvOccF LAct p → o = 0 := by
-  simp [fvOccFFalsum, fvOccFFalsumB, models_iff, Matrix.vecForall_iff, fvOccF.defined.iff]
-
-theorem pa_proves_fvOccFFalsum : 𝗣𝗔 ⊢ fvOccFFalsum :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_fvOccFFalsum.mpr fun _ _ hp ho ↦ by
-    subst hp; subst ho; exact fvOccF_falsum
-
-theorem lib_fvOccFFalsum : Lib fvOccFFalsum := Lib.of_pa pa_proves_fvOccFFalsum
-
 /-- `fvOccF (p ⋏ q) = fvOccF p + fvOccF q`. -/
 noncomputable def fvOccFAndB : ArithmeticSemisentence 7 :=
   “or oq op r q p n. !(isSemiformula LAct).pi n p → !(isSemiformula LAct).pi n q → !qqAndDef r p q →
@@ -241,60 +118,6 @@ theorem pa_proves_fvOccFAnd : 𝗣𝗔 ⊢ fvOccFAnd :=
     subst hr; subst h₁; subst h₂; subst h₃; exact fvOccF_and hp.isUFormula hq.isUFormula
 
 theorem lib_fvOccFAnd : Lib fvOccFAnd := Lib.of_pa pa_proves_fvOccFAnd
-
-/-- `fvOccF (p ⋎ q) = fvOccF p + fvOccF q`. -/
-noncomputable def fvOccFOrB : ArithmeticSemisentence 7 :=
-  “or oq op r q p n. !(isSemiformula LAct).pi n p → !(isSemiformula LAct).pi n q → !qqOrDef r p q →
-    !(fvOccFGraph LAct) op p → !(fvOccFGraph LAct) oq q → !(fvOccFGraph LAct) or r → or = op + oq”
-noncomputable def fvOccFOr : ArithmeticSentence := ∀¹* fvOccFOrB
-
-lemma models_fvOccFOr :
-    V↓[ℒₒᵣ] ⊧ fvOccFOr ↔
-    ∀ or oq op r q p n : V, IsSemiformula LAct n p → IsSemiformula LAct n q → r = p ^⋎ q →
-      op = fvOccF LAct p → oq = fvOccF LAct q → or = fvOccF LAct r → or = op + oq := by
-  simp [fvOccFOr, fvOccFOrB, models_iff, Matrix.vecForall_iff, fvOccF.defined.iff]
-
-theorem pa_proves_fvOccFOr : 𝗣𝗔 ⊢ fvOccFOr :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_fvOccFOr.mpr fun _ _ _ _ _ _ _ hp hq hr h₁ h₂ h₃ ↦ by
-    subst hr; subst h₁; subst h₂; subst h₃; exact fvOccF_or hp.isUFormula hq.isUFormula
-
-theorem lib_fvOccFOr : Lib fvOccFOr := Lib.of_pa pa_proves_fvOccFOr
-
-/-- `fvOccF (∀ p) = fvOccF p`. -/
-noncomputable def fvOccFAllB : ArithmeticSemisentence 5 :=
-  “oq op q p n. !(isSemiformula LAct).pi (n + 1) p → !qqAllDef q p →
-    !(fvOccFGraph LAct) op p → !(fvOccFGraph LAct) oq q → oq = op”
-noncomputable def fvOccFAll : ArithmeticSentence := ∀¹* fvOccFAllB
-
-lemma models_fvOccFAll :
-    V↓[ℒₒᵣ] ⊧ fvOccFAll ↔
-    ∀ oq op q p n : V, IsSemiformula LAct (n + 1) p → q = ^∀ p →
-      op = fvOccF LAct p → oq = fvOccF LAct q → oq = op := by
-  simp [fvOccFAll, fvOccFAllB, models_iff, Matrix.vecForall_iff, fvOccF.defined.iff]
-
-theorem pa_proves_fvOccFAll : 𝗣𝗔 ⊢ fvOccFAll :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_fvOccFAll.mpr fun _ _ _ _ _ hp hq h₁ h₂ ↦ by
-    subst hq; subst h₁; subst h₂; exact fvOccF_all hp.isUFormula
-
-theorem lib_fvOccFAll : Lib fvOccFAll := Lib.of_pa pa_proves_fvOccFAll
-
-/-- `fvOccF (∃ p) = fvOccF p`. -/
-noncomputable def fvOccFExsB : ArithmeticSemisentence 5 :=
-  “oq op q p n. !(isSemiformula LAct).pi (n + 1) p → !qqExsDef q p →
-    !(fvOccFGraph LAct) op p → !(fvOccFGraph LAct) oq q → oq = op”
-noncomputable def fvOccFExs : ArithmeticSentence := ∀¹* fvOccFExsB
-
-lemma models_fvOccFExs :
-    V↓[ℒₒᵣ] ⊧ fvOccFExs ↔
-    ∀ oq op q p n : V, IsSemiformula LAct (n + 1) p → q = ^∃ p →
-      op = fvOccF LAct p → oq = fvOccF LAct q → oq = op := by
-  simp [fvOccFExs, fvOccFExsB, models_iff, Matrix.vecForall_iff, fvOccF.defined.iff]
-
-theorem pa_proves_fvOccFExs : 𝗣𝗔 ⊢ fvOccFExs :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_fvOccFExs.mpr fun _ _ _ _ _ hp hq h₁ h₂ ↦ by
-    subst hq; subst h₁; subst h₂; exact fvOccF_exs hp.isUFormula
-
-theorem lib_fvOccFExs : Lib fvOccFExs := Lib.of_pa pa_proves_fvOccFExs
 
 /-- `fvOccS (insert x s) ≤ fvOccS s + fvOccF x`. -/
 noncomputable def fvOccSInsertLeB : ArithmeticSemisentence 6 :=
@@ -314,19 +137,6 @@ theorem pa_proves_fvOccSInsertLe : 𝗣𝗔 ⊢ fvOccSInsertLe :=
     subst ht; subst ho; subst hos; subst hox; exact fvOccS_insert_le x s
 
 theorem lib_fvOccSInsertLe : Lib fvOccSInsertLe := Lib.of_pa pa_proves_fvOccSInsertLe
-
-/-- `fvOccS ∅ = 0`. -/
-noncomputable def fvOccSEmptyB : ArithmeticSemisentence 1 := “o. !(fvOccSDef LAct) o 0 → o = 0”
-noncomputable def fvOccSEmpty : ArithmeticSentence := ∀¹* fvOccSEmptyB
-
-lemma models_fvOccSEmpty : V↓[ℒₒᵣ] ⊧ fvOccSEmpty ↔ ∀ o : V, o = fvOccS LAct 0 → o = 0 := by
-  simp [fvOccSEmpty, fvOccSEmptyB, models_iff, Matrix.vecForall_iff, fvOccS_defined.iff]
-
-theorem pa_proves_fvOccSEmpty : 𝗣𝗔 ⊢ fvOccSEmpty :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_fvOccSEmpty.mpr fun _ h ↦ by
-    subst h; exact fvOccS_empty
-
-theorem lib_fvOccSEmpty : Lib fvOccSEmpty := Lib.of_pa pa_proves_fvOccSEmpty
 
 /-! ### 3. The shift laws, the sanity bounds, `free`/`subst` -/
 
@@ -387,112 +197,6 @@ theorem pa_proves_setLenSetShiftLe : 𝗣𝗔 ⊢ setLenSetShiftLe :=
     subst hs'; subst hl; subst ho; subst hl'; exact setLen_setShift_le_occ hs
 
 theorem lib_setLenSetShiftLe : Lib setLenSetShiftLe := Lib.of_pa pa_proves_setLenSetShiftLe
-
-/-- `fvOccF (shift p) = fvOccF p` (`fvOccF_shift`), as a graph transport. -/
-noncomputable def fvOccFShiftB : ArithmeticSemisentence 3 :=
-  “q o p. !(isUFormula LAct).pi p → !(fvOccFGraph LAct) o p → !(shiftGraph LAct) q p →
-    !(fvOccFGraph LAct) o q”
-noncomputable def fvOccFShift : ArithmeticSentence := ∀¹* fvOccFShiftB
-
-lemma models_fvOccFShift :
-    V↓[ℒₒᵣ] ⊧ fvOccFShift ↔
-    ∀ q o p : V, IsUFormula LAct p → o = fvOccF LAct p → q = shift LAct p → o = fvOccF LAct q := by
-  simp [fvOccFShift, fvOccFShiftB, models_iff, Matrix.vecForall_iff, fvOccF.defined.iff,
-    shift.defined.iff]
-
-theorem pa_proves_fvOccFShift : 𝗣𝗔 ⊢ fvOccFShift :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_fvOccFShift.mpr fun _ _ _ hp ho hq ↦ by
-    subst ho; subst hq; exact (fvOccF_shift hp).symm
-
-theorem lib_fvOccFShift : Lib fvOccFShift := Lib.of_pa pa_proves_fvOccFShift
-
-/-- `fvOccS (setShift s) ≤ fvOccS s` (`fvOccS_setShift_le`). -/
-noncomputable def fvOccSSetShiftLeB : ArithmeticSemisentence 4 :=
-  “o' s' o s. !(isFormulaSet LAct).pi s → !(fvOccSDef LAct) o s → !(setShiftGraph LAct) s' s →
-    !(fvOccSDef LAct) o' s' → o' ≤ o”
-noncomputable def fvOccSSetShiftLe : ArithmeticSentence := ∀¹* fvOccSSetShiftLeB
-
-lemma models_fvOccSSetShiftLe :
-    V↓[ℒₒᵣ] ⊧ fvOccSSetShiftLe ↔
-    ∀ o' s' o s : V, IsFormulaSet LAct s → o = fvOccS LAct s → s' = setShift LAct s →
-      o' = fvOccS LAct s' → o' ≤ o := by
-  simp [fvOccSSetShiftLe, fvOccSSetShiftLeB, models_iff, Matrix.vecForall_iff, fvOccS_defined.iff,
-    setShift.defined.iff]
-
-theorem pa_proves_fvOccSSetShiftLe : 𝗣𝗔 ⊢ fvOccSSetShiftLe :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_fvOccSSetShiftLe.mpr fun _ _ _ _ hs ho hs' ho' ↦ by
-    subst ho; subst hs'; subst ho'; exact fvOccS_setShift_le hs
-
-theorem lib_fvOccSSetShiftLe : Lib fvOccSSetShiftLe := Lib.of_pa pa_proves_fvOccSSetShiftLe
-
-/-- `fvOcc (termShift t) = fvOcc t` (`fvOcc_termShift`), as a graph transport. -/
-noncomputable def fvOccTermShiftB : ArithmeticSemisentence 3 :=
-  “t' o t. !(isUTerm LAct).pi t → !(fvOccGraph LAct) o t → !(termShiftGraph LAct) t' t →
-    !(fvOccGraph LAct) o t'”
-noncomputable def fvOccTermShift : ArithmeticSentence := ∀¹* fvOccTermShiftB
-
-lemma models_fvOccTermShift :
-    V↓[ℒₒᵣ] ⊧ fvOccTermShift ↔
-    ∀ t' o t : V, IsUTerm LAct t → o = fvOcc LAct t → t' = termShift LAct t → o = fvOcc LAct t' := by
-  simp [fvOccTermShift, fvOccTermShiftB, models_iff, Matrix.vecForall_iff, fvOcc.defined.iff,
-    termShift.defined.iff]
-
-theorem pa_proves_fvOccTermShift : 𝗣𝗔 ⊢ fvOccTermShift :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_fvOccTermShift.mpr fun _ _ _ ht ho ht' ↦ by
-    subst ho; subst ht'; exact (fvOcc_termShift ht).symm
-
-theorem lib_fvOccTermShift : Lib fvOccTermShift := Lib.of_pa pa_proves_fvOccTermShift
-
-/-- `fvOcc t ≤ termLen t`. -/
-noncomputable def fvOccLeTermLenB : ArithmeticSemisentence 3 :=
-  “l o t. !(isUTerm LAct).pi t → !(fvOccGraph LAct) o t → !(termLenGraph LAct) l t → o ≤ l”
-noncomputable def fvOccLeTermLen : ArithmeticSentence := ∀¹* fvOccLeTermLenB
-
-lemma models_fvOccLeTermLen :
-    V↓[ℒₒᵣ] ⊧ fvOccLeTermLen ↔
-    ∀ l o t : V, IsUTerm LAct t → o = fvOcc LAct t → l = termLen LAct t → o ≤ l := by
-  simp [fvOccLeTermLen, fvOccLeTermLenB, models_iff, Matrix.vecForall_iff, fvOcc.defined.iff,
-    termLen.defined.iff]
-
-theorem pa_proves_fvOccLeTermLen : 𝗣𝗔 ⊢ fvOccLeTermLen :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_fvOccLeTermLen.mpr fun _ _ _ ht ho hl ↦ by
-    subst ho; subst hl; exact fvOcc_le_termLen ht
-
-theorem lib_fvOccLeTermLen : Lib fvOccLeTermLen := Lib.of_pa pa_proves_fvOccLeTermLen
-
-/-- `fvOccF p ≤ formulaLen p`. -/
-noncomputable def fvOccFLeFormulaLenB : ArithmeticSemisentence 3 :=
-  “l o p. !(isUFormula LAct).pi p → !(fvOccFGraph LAct) o p → !(formulaLenGraph LAct) l p → o ≤ l”
-noncomputable def fvOccFLeFormulaLen : ArithmeticSentence := ∀¹* fvOccFLeFormulaLenB
-
-lemma models_fvOccFLeFormulaLen :
-    V↓[ℒₒᵣ] ⊧ fvOccFLeFormulaLen ↔
-    ∀ l o p : V, IsUFormula LAct p → o = fvOccF LAct p → l = formulaLen LAct p → o ≤ l := by
-  simp [fvOccFLeFormulaLen, fvOccFLeFormulaLenB, models_iff, Matrix.vecForall_iff, fvOccF.defined.iff,
-    formulaLen.defined.iff]
-
-theorem pa_proves_fvOccFLeFormulaLen : 𝗣𝗔 ⊢ fvOccFLeFormulaLen :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_fvOccFLeFormulaLen.mpr fun _ _ _ hp ho hl ↦ by
-    subst ho; subst hl; exact fvOccF_le_formulaLen hp
-
-theorem lib_fvOccFLeFormulaLen : Lib fvOccFLeFormulaLen := Lib.of_pa pa_proves_fvOccFLeFormulaLen
-
-/-- `fvOccS s ≤ setLen s`. -/
-noncomputable def fvOccSLeSetLenB : ArithmeticSemisentence 3 :=
-  “l o s. !(isFormulaSet LAct).pi s → !(fvOccSDef LAct) o s → !(setLenDef LAct) l s → o ≤ l”
-noncomputable def fvOccSLeSetLen : ArithmeticSentence := ∀¹* fvOccSLeSetLenB
-
-lemma models_fvOccSLeSetLen :
-    V↓[ℒₒᵣ] ⊧ fvOccSLeSetLen ↔
-    ∀ l o s : V, IsFormulaSet LAct s → o = fvOccS LAct s → l = setLen LAct s → o ≤ l := by
-  simp [fvOccSLeSetLen, fvOccSLeSetLenB, models_iff, Matrix.vecForall_iff, fvOccS_defined.iff,
-    setLen_defined.iff]
-
-theorem pa_proves_fvOccSLeSetLen : 𝗣𝗔 ⊢ fvOccSLeSetLen :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_fvOccSLeSetLen.mpr fun _ _ _ hs ho hl ↦ by
-    subst ho; subst hl; exact fvOccS_le_setLen hs
-
-theorem lib_fvOccSLeSetLen : Lib fvOccSLeSetLen := Lib.of_pa pa_proves_fvOccSLeSetLen
 
 /-- `fvOccF (free p) ≤ fvOccF p + bvOccF p` (`fvOccF_free_le'`). Foundation has no graph for
 `free`; `free p = substs1 &0 (shift p)` is spelled out: `z = &0`, `sp = shift p`,
@@ -597,33 +301,6 @@ theorem pa_proves_dlenBinaryLe : 𝗣𝗔 ⊢ dlenBinaryLe :=
 
 theorem lib_dlenBinaryLe : Lib dlenBinaryLe := Lib.of_pa pa_proves_dlenBinaryLe
 
-/-- `a ≤ x → b ≤ y → c ≤ z → a + b + c ≤ x + y + z`. -/
-noncomputable def addLeAdd₃B : ArithmeticSemisentence 6 :=
-  “z y x c b a. a ≤ x → b ≤ y → c ≤ z → a + b + c ≤ x + y + z”
-noncomputable def addLeAdd₃ : ArithmeticSentence := ∀¹* addLeAdd₃B
-
-lemma models_addLeAdd₃ :
-    V↓[ℒₒᵣ] ⊧ addLeAdd₃ ↔ ∀ z y x c b a : V, a ≤ x → b ≤ y → c ≤ z → a + b + c ≤ x + y + z := by
-  simp [addLeAdd₃, addLeAdd₃B, models_iff, Matrix.vecForall_iff]
-
-theorem pa_proves_addLeAdd₃ : 𝗣𝗔 ⊢ addLeAdd₃ :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_addLeAdd₃.mpr fun _ _ _ _ _ _ h₁ h₂ h₃ ↦
-    add_le_add (add_le_add h₁ h₂) h₃
-
-theorem lib_addLeAdd₃ : Lib addLeAdd₃ := Lib.of_pa pa_proves_addLeAdd₃
-
-/-- `x = y → y ≤ z → x ≤ z` (rewrite a length equation into its bound). -/
-noncomputable def leOfEqLeB : ArithmeticSemisentence 3 := “z y x. x = y → y ≤ z → x ≤ z”
-noncomputable def leOfEqLe : ArithmeticSentence := ∀¹* leOfEqLeB
-
-lemma models_leOfEqLe : V↓[ℒₒᵣ] ⊧ leOfEqLe ↔ ∀ z y x : V, x = y → y ≤ z → x ≤ z := by
-  simp [leOfEqLe, leOfEqLeB, models_iff, Matrix.vecForall_iff]
-
-theorem pa_proves_leOfEqLe : 𝗣𝗔 ⊢ leOfEqLe :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_leOfEqLe.mpr fun _ _ _ e h ↦ e ▸ h
-
-theorem lib_leOfEqLe : Lib leOfEqLe := Lib.of_pa pa_proves_leOfEqLe
-
 /-- `x ≤ y + z → y ≤ a → z ≤ b → x ≤ a + b` (§4.2: `setLen s' ≤ setLen s + formulaLen p`
 with both summands bounded, in one use). -/
 noncomputable def leAddLeAddB : ArithmeticSemisentence 5 :=
@@ -639,18 +316,6 @@ theorem pa_proves_leAddLeAdd : 𝗣𝗔 ⊢ leAddLeAdd :=
     le_trans h (add_le_add h₁ h₂)
 
 theorem lib_leAddLeAdd : Lib leAddLeAdd := Lib.of_pa pa_proves_leAddLeAdd
-
-/-- `n ≤ y → n ≤ x + y` (the left twin of `leAddRight`). -/
-noncomputable def leAddLeftB : ArithmeticSemisentence 3 := “y x n. n ≤ y → n ≤ x + y”
-noncomputable def leAddLeft : ArithmeticSentence := ∀¹* leAddLeftB
-
-lemma models_leAddLeft : V↓[ℒₒᵣ] ⊧ leAddLeft ↔ ∀ y x n : V, n ≤ y → n ≤ x + y := by
-  simp [leAddLeft, leAddLeftB, models_iff, Matrix.vecForall_iff]
-
-theorem pa_proves_leAddLeft : 𝗣𝗔 ⊢ leAddLeft :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_leAddLeft.mpr fun _ _ _ h ↦ le_trans h le_add_self
-
-theorem lib_leAddLeft : Lib leAddLeft := Lib.of_pa pa_proves_leAddLeft
 
 /-- `x ≤ x`. -/
 noncomputable def leReflB : ArithmeticSemisentence 1 := “x. x ≤ x”

@@ -28,6 +28,9 @@ against EXPLICIT table readings — `IndRecTable` lives in `IndRec.lean`.
 Run from arith/: python3 scripts/gen_indrec.py
 """
 import sys, re, os, types
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+from prune import prune  # drops the audit's DEAD declarations (scripts/pruned/<module>.txt)
 HERE = os.path.dirname(os.path.abspath(__file__))
 _src = open(os.path.join(HERE, 'gen_frag.py')).read()
 _src = _src[:_src.index('\ngen_frag()\ngen_rowinstb()')].replace("if len(sys.argv) > 3:", "if False:")
@@ -424,5 +427,5 @@ footer = '''
 end ArithS
 '''
 out_path = os.path.join(HERE, '..', 'ArithS', 'Necessitation', 'IndRecRows.lean')
-open(out_path, 'w').write(header + mid1 + lib_blocks + mid2 + pred_blocks + mid3 + new_blocks + mid4 + table_part + footer)
+open(out_path, 'w').write(prune(header + mid1 + lib_blocks + mid2 + pred_blocks + mid3 + new_blocks + mid4 + table_part + footer, 'Necessitation.IndRecRows'))
 print('wrote', out_path, 'rows:', TABLE)

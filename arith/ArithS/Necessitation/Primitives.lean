@@ -113,13 +113,6 @@ lemma neg_allsIter {n : ℕ} {q : V} (hq : IsUFormula L q) :
   | zero => rfl
   | succ n ih => rw [allsIter_succ, neg_all (isUFormula_allsIter.mpr hq), ih, exsIter_succ]
 
-/-- `∼(∃^n q) = ∀^n (∼q)` on codes. -/
-lemma neg_exsIter {n : ℕ} {q : V} (hq : IsUFormula L q) :
-    neg L (exsIter n q) = allsIter n (neg L q) := by
-  induction n with
-  | zero => rfl
-  | succ n ih => rw [exsIter_succ, neg_ex (isUFormula_exsIter.mpr hq), ih, allsIter_succ]
-
 lemma formulaLen_exsIter {n : ℕ} {q : V} (hq : IsUFormula L q) :
     formulaLen L (exsIter n q) = formulaLen L q + (n : V) := by
   induction n with

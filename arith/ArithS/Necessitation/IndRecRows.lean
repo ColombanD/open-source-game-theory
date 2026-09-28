@@ -53,7 +53,6 @@ def BsT (n m t : V) : Prop := IsSemiterm ℒₒᵣ n t ∧ m = termBV ℒₒᵣ 
 noncomputable def bsTDef : 𝚺₁.Semisentence 3 := .mkSigma “n m t. !(isSemiterm ℒₒᵣ).sigma n t ∧ !(termBVGraph ℒₒᵣ) m t”
 instance bsT_defined : 𝚺₁-Relation₃ (BsT : V → V → V → Prop) via bsTDef := .mk fun v ↦ by
   simp [bsTDef, BsT, termBV.defined.iff]
-instance bsT_definable : 𝚺₁-Relation₃ (BsT : V → V → V → Prop) := bsT_defined.to_definable
 
 /-- `BsV n m k v`: `v` is an `ℒₒᵣ`-term vector (length `k`, bound `n`) with `listMax (termBVVec k v) = m`. -/
 def BsV (n m k v : V) : Prop := IsSemitermVec ℒₒᵣ k n v ∧ m = listMax (termBVVec ℒₒᵣ k v)
@@ -61,14 +60,12 @@ noncomputable def bsVDef : 𝚺₁.Semisentence 4 :=
   .mkSigma “n m k v. !(isSemitermVec ℒₒᵣ).sigma k n v ∧ ∃ M, !(termBVVecGraph ℒₒᵣ) M k v ∧ !listMaxDef m M”
 instance bsV_defined : 𝚺₁-Relation₄ (BsV : V → V → V → V → Prop) via bsVDef := .mk fun v ↦ by
   simp [bsVDef, BsV, termBVVec.defined.iff, listMax_defined.iff]
-instance bsV_definable : 𝚺₁-Relation₄ (BsV : V → V → V → V → Prop) := bsV_defined.to_definable
 
 /-- `BsF n m p`: `p` is an `ℒₒᵣ`-formula at bound `n` with `bv p = m`. -/
 def BsF (n m p : V) : Prop := IsSemiformula ℒₒᵣ n p ∧ m = Bootstrapping.bv ℒₒᵣ p
 noncomputable def bsFDef : 𝚺₁.Semisentence 3 := .mkSigma “n m p. !(isSemiformula ℒₒᵣ).sigma n p ∧ !(bvGraph ℒₒᵣ) m p”
 instance bsF_defined : 𝚺₁-Relation₃ (BsF : V → V → V → Prop) via bsFDef := .mk fun v ↦ by
   simp [bsFDef, BsF, bv.defined.iff]
-instance bsF_definable : 𝚺₁-Relation₃ (BsF : V → V → V → Prop) := bsF_defined.to_definable
 
 /-- `FvSeq w j m`: `w = ⟨&j, …, &(m-1)⟩`. -/
 def FvSeq (w j m : V) : Prop := j ≤ m ∧ len w + j = m ∧ ∀ i < len w, w.[i] = ^&(j + i)
@@ -76,14 +73,12 @@ noncomputable def fvSeqDef : 𝚺₁.Semisentence 3 :=
   .mkSigma “w j m. j ≤ m ∧ ∃ l, !lenDef l w ∧ l + j = m ∧ ∀ i < l, ∃ e, !nthDef e w i ∧ !qqFvarDef e (j + i)”
 instance fvSeq_defined : 𝚺₁-Relation₃ (FvSeq : V → V → V → Prop) via fvSeqDef := .mk fun v ↦ by
   simp [fvSeqDef, FvSeq]
-instance fvSeq_definable : 𝚺₁-Relation₃ (FvSeq : V → V → V → Prop) := fvSeq_defined.to_definable
 
 /-- `IsC0 c`: `c = ⟨⌜0⌝⟩`, the substitution vector of the base case. -/
 def IsC0 (c : V) : Prop := ∃ t, t = ^func 0 0 0 ∧ c = t ∷ 0
 noncomputable def isC0Def : 𝚺₁.Semisentence 1 := .mkSigma “c. ∃ t, !qqFuncDef t 0 0 0 ∧ !adjoinDef c t 0”
 instance isC0_defined : 𝚺₁-Predicate (IsC0 : V → Prop) via isC0Def := .mk fun v ↦ by
   simp [isC0Def, IsC0]
-instance isC0_definable : 𝚺₁-Predicate (IsC0 : V → Prop) := isC0_defined.to_definable
 
 /-- `IsC1 c`: `c = ⟨⌜#0 + 1⌝⟩`, the substitution vector of the step case. -/
 def IsC1 (c : V) : Prop :=
@@ -93,7 +88,6 @@ noncomputable def isC1Def : 𝚺₁.Semisentence 1 := .mkSigma
     !qqFuncDef t (0 + 1 + 1) 0 v2 ∧ !adjoinDef c t 0”
 instance isC1_defined : 𝚺₁-Predicate (IsC1 : V → Prop) via isC1Def := .mk fun v ↦ by
   simp [isC1Def, IsC1]
-instance isC1_definable : 𝚺₁-Predicate (IsC1 : V → Prop) := isC1_defined.to_definable
 
 /-- `BodyShape s x ns K`: `s = x ⋎ ((∃ (K ⋏ ns)) ⋎ (∀ K))`. -/
 def BodyShape (s x ns K : V) : Prop :=
@@ -102,7 +96,6 @@ noncomputable def bodyShapeDef : 𝚺₁.Semisentence 4 := .mkSigma
   “s x ns K. ∃ y u z n1, !qqOrDef s x y ∧ !qqOrDef y u z ∧ !qqExsDef u n1 ∧ !qqAndDef n1 K ns ∧ !qqAllDef z K”
 instance bodyShape_defined : 𝚺₁-Relation₄ (BodyShape : V → V → V → V → Prop) via bodyShapeDef := .mk fun v ↦ by
   simp [bodyShapeDef, BodyShape]
-instance bodyShape_definable : 𝚺₁-Relation₄ (BodyShape : V → V → V → V → Prop) := bodyShape_defined.to_definable
 
 /-- `IndBodyL s K`: `s` is the induction body of `K`, read in the `LAct` vocabulary. -/
 def IndBodyL (s K : V) : Prop :=
@@ -112,7 +105,6 @@ noncomputable def indBodyLDef : 𝚺₁.Semisentence 2 := .mkSigma
     !isC1Def c1 ∧ !(substsGraph LAct) ns c1 nk”
 instance indBodyL_defined : 𝚺₁-Relation (IndBodyL : V → V → Prop) via indBodyLDef := .mk fun v ↦ by
   simp [indBodyLDef, IndBodyL, bodyShape_defined.iff, isC0_defined.iff, isC1_defined.iff, neg.defined.iff, subst.defined.iff]
-instance indBodyL_definable : 𝚺₁-Relation (IndBodyL : V → V → Prop) := indBodyL_defined.to_definable
 
 /-! ### The codes of the small constants -/
 
@@ -543,214 +535,64 @@ section facts
 /-- The code of `bsT` (arity 3). -/
 noncomputable def PbsT : V := ⌜Semiformula.lMap emb (↑bsTDef : ArithmeticSemisentence 3)⌝
 lemma isSemiformula_PbsT : IsSemiformula LAct ((3 : ℕ) : V) PbsT := Sentence.quote_isSemiformula _
-lemma shift_PbsT : shift LAct (PbsT : V) = PbsT := shift_quote_sentence _
-lemma fvOccF_PbsT : fvOccF LAct (PbsT : V) = 0 := fvOccF_quote_sentence _
 
 /-- The code of `isFuncOR` (arity 2). -/
 noncomputable def PisFuncOR : V := ⌜Semiformula.lMap emb (↑(ℒₒᵣ).isFunc : ArithmeticSemisentence 2)⌝
 lemma isSemiformula_PisFuncOR : IsSemiformula LAct ((2 : ℕ) : V) PisFuncOR := Sentence.quote_isSemiformula _
-lemma shift_PisFuncOR : shift LAct (PisFuncOR : V) = PisFuncOR := shift_quote_sentence _
-lemma fvOccF_PisFuncOR : fvOccF LAct (PisFuncOR : V) = 0 := fvOccF_quote_sentence _
 
 /-- The code of `bsV` (arity 4). -/
 noncomputable def PbsV : V := ⌜Semiformula.lMap emb (↑bsVDef : ArithmeticSemisentence 4)⌝
 lemma isSemiformula_PbsV : IsSemiformula LAct ((4 : ℕ) : V) PbsV := Sentence.quote_isSemiformula _
-lemma shift_PbsV : shift LAct (PbsV : V) = PbsV := shift_quote_sentence _
-lemma fvOccF_PbsV : fvOccF LAct (PbsV : V) = 0 := fvOccF_quote_sentence _
 
 /-- The code of `isRelOR` (arity 2). -/
 noncomputable def PisRelOR : V := ⌜Semiformula.lMap emb (↑(ℒₒᵣ).isRel : ArithmeticSemisentence 2)⌝
 lemma isSemiformula_PisRelOR : IsSemiformula LAct ((2 : ℕ) : V) PisRelOR := Sentence.quote_isSemiformula _
-lemma shift_PisRelOR : shift LAct (PisRelOR : V) = PisRelOR := shift_quote_sentence _
-lemma fvOccF_PisRelOR : fvOccF LAct (PisRelOR : V) = 0 := fvOccF_quote_sentence _
 
 /-- The code of `bsF` (arity 3). -/
 noncomputable def PbsF : V := ⌜Semiformula.lMap emb (↑bsFDef : ArithmeticSemisentence 3)⌝
 lemma isSemiformula_PbsF : IsSemiformula LAct ((3 : ℕ) : V) PbsF := Sentence.quote_isSemiformula _
-lemma shift_PbsF : shift LAct (PbsF : V) = PbsF := shift_quote_sentence _
-lemma fvOccF_PbsF : fvOccF LAct (PbsF : V) = 0 := fvOccF_quote_sentence _
 
 /-- The code of `fvSeq` (arity 3). -/
 noncomputable def PfvSeq : V := ⌜Semiformula.lMap emb (↑fvSeqDef : ArithmeticSemisentence 3)⌝
 lemma isSemiformula_PfvSeq : IsSemiformula LAct ((3 : ℕ) : V) PfvSeq := Sentence.quote_isSemiformula _
-lemma shift_PfvSeq : shift LAct (PfvSeq : V) = PfvSeq := shift_quote_sentence _
-lemma fvOccF_PfvSeq : fvOccF LAct (PfvSeq : V) = 0 := fvOccF_quote_sentence _
 
 /-- The code of `isC0` (arity 1). -/
 noncomputable def PisC0 : V := ⌜Semiformula.lMap emb (↑isC0Def : ArithmeticSemisentence 1)⌝
 lemma isSemiformula_PisC0 : IsSemiformula LAct ((1 : ℕ) : V) PisC0 := Sentence.quote_isSemiformula _
-lemma shift_PisC0 : shift LAct (PisC0 : V) = PisC0 := shift_quote_sentence _
-lemma fvOccF_PisC0 : fvOccF LAct (PisC0 : V) = 0 := fvOccF_quote_sentence _
 
 /-- The code of `isC1` (arity 1). -/
 noncomputable def PisC1 : V := ⌜Semiformula.lMap emb (↑isC1Def : ArithmeticSemisentence 1)⌝
 lemma isSemiformula_PisC1 : IsSemiformula LAct ((1 : ℕ) : V) PisC1 := Sentence.quote_isSemiformula _
-lemma shift_PisC1 : shift LAct (PisC1 : V) = PisC1 := shift_quote_sentence _
-lemma fvOccF_PisC1 : fvOccF LAct (PisC1 : V) = 0 := fvOccF_quote_sentence _
 
 /-- The code of `bodyShape` (arity 4). -/
 noncomputable def PbodyShape : V := ⌜Semiformula.lMap emb (↑bodyShapeDef : ArithmeticSemisentence 4)⌝
 lemma isSemiformula_PbodyShape : IsSemiformula LAct ((4 : ℕ) : V) PbodyShape := Sentence.quote_isSemiformula _
-lemma shift_PbodyShape : shift LAct (PbodyShape : V) = PbodyShape := shift_quote_sentence _
-lemma fvOccF_PbodyShape : fvOccF LAct (PbodyShape : V) = 0 := fvOccF_quote_sentence _
 
 /-- The code of `indBodyL` (arity 2). -/
 noncomputable def PindBodyL : V := ⌜Semiformula.lMap emb (↑indBodyLDef : ArithmeticSemisentence 2)⌝
 lemma isSemiformula_PindBodyL : IsSemiformula LAct ((2 : ℕ) : V) PindBodyL := Sentence.quote_isSemiformula _
-lemma shift_PindBodyL : shift LAct (PindBodyL : V) = PindBodyL := shift_quote_sentence _
-lemma fvOccF_PindBodyL : fvOccF LAct (PindBodyL : V) = 0 := fvOccF_quote_sentence _
 
 /-! ### The facts: `subst (listToVec [witnesses]) P` in the predicate's own variable order -/
 
 noncomputable def bsTFact (n m t : V) : V := subst LAct (listToVec [n, m, t]) PbsT
-lemma isFormula_bsTFact {n m t : V} (hn : IsSemiterm LAct 0 n) (hm : IsSemiterm LAct 0 m) (ht : IsSemiterm LAct 0 t) : IsFormula LAct (bsTFact n m t) :=
-  isFormula_fact isSemiformula_PbsT _ rfl (List.forall_mem_cons.mpr ⟨hn, List.forall_mem_cons.mpr ⟨hm, List.forall_mem_cons.mpr ⟨ht, List.forall_mem_nil _⟩⟩⟩)
-lemma shift_bsTFact {n m t : V} (hn : IsSemiterm LAct 0 n) (hm : IsSemiterm LAct 0 m) (ht : IsSemiterm LAct 0 t) :
-    shift LAct (bsTFact n m t) = bsTFact (termShift LAct n) (termShift LAct m) (termShift LAct t) := by
-  unfold bsTFact
-  rw [shift_subst_listToVec [n, m, t] isSemiformula_PbsT shift_PbsT (n := 0) (List.forall_mem_cons.mpr ⟨hn, List.forall_mem_cons.mpr ⟨hm, List.forall_mem_cons.mpr ⟨ht, List.forall_mem_nil _⟩⟩⟩)]
-  rfl
-lemma formulaLen_bsTFact_le {B : V} (hB : 1 ≤ B) {n m t : V} (hn : IsSemiterm LAct 0 n) (hm : IsSemiterm LAct 0 m) (ht : IsSemiterm LAct 0 t) (hln : termLen LAct n ≤ B) (hlm : termLen LAct m ≤ B) (hlt : termLen LAct t ≤ B) :
-    formulaLen LAct (bsTFact n m t) ≤ formulaLen LAct (PbsT : V) * B :=
-  formulaLen_fact_le hB isSemiformula_PbsT _ rfl (List.forall_mem_cons.mpr ⟨⟨hn, hln⟩, List.forall_mem_cons.mpr ⟨⟨hm, hlm⟩, List.forall_mem_cons.mpr ⟨⟨ht, hlt⟩, List.forall_mem_nil _⟩⟩⟩)
-lemma fvOccF_bsTFact_le {M : V} {n m t : V} (hn : IsSemiterm LAct 0 n) (hm : IsSemiterm LAct 0 m) (ht : IsSemiterm LAct 0 t) (hon : fvOcc LAct n ≤ M) (hom : fvOcc LAct m ≤ M) (hot : fvOcc LAct t ≤ M) :
-    fvOccF LAct (bsTFact n m t) ≤ bvOccF LAct (PbsT : V) * M :=
-  fvOccF_fact_le isSemiformula_PbsT fvOccF_PbsT _ rfl (List.forall_mem_cons.mpr ⟨⟨hn, hon⟩, List.forall_mem_cons.mpr ⟨⟨hm, hom⟩, List.forall_mem_cons.mpr ⟨⟨ht, hot⟩, List.forall_mem_nil _⟩⟩⟩)
 
 noncomputable def isFuncORFact (k f : V) : V := subst LAct (listToVec [k, f]) PisFuncOR
-lemma isFormula_isFuncORFact {k f : V} (hk : IsSemiterm LAct 0 k) (hf : IsSemiterm LAct 0 f) : IsFormula LAct (isFuncORFact k f) :=
-  isFormula_fact isSemiformula_PisFuncOR _ rfl (List.forall_mem_cons.mpr ⟨hk, List.forall_mem_cons.mpr ⟨hf, List.forall_mem_nil _⟩⟩)
-lemma shift_isFuncORFact {k f : V} (hk : IsSemiterm LAct 0 k) (hf : IsSemiterm LAct 0 f) :
-    shift LAct (isFuncORFact k f) = isFuncORFact (termShift LAct k) (termShift LAct f) := by
-  unfold isFuncORFact
-  rw [shift_subst_listToVec [k, f] isSemiformula_PisFuncOR shift_PisFuncOR (n := 0) (List.forall_mem_cons.mpr ⟨hk, List.forall_mem_cons.mpr ⟨hf, List.forall_mem_nil _⟩⟩)]
-  rfl
-lemma formulaLen_isFuncORFact_le {B : V} (hB : 1 ≤ B) {k f : V} (hk : IsSemiterm LAct 0 k) (hf : IsSemiterm LAct 0 f) (hlk : termLen LAct k ≤ B) (hlf : termLen LAct f ≤ B) :
-    formulaLen LAct (isFuncORFact k f) ≤ formulaLen LAct (PisFuncOR : V) * B :=
-  formulaLen_fact_le hB isSemiformula_PisFuncOR _ rfl (List.forall_mem_cons.mpr ⟨⟨hk, hlk⟩, List.forall_mem_cons.mpr ⟨⟨hf, hlf⟩, List.forall_mem_nil _⟩⟩)
-lemma fvOccF_isFuncORFact_le {M : V} {k f : V} (hk : IsSemiterm LAct 0 k) (hf : IsSemiterm LAct 0 f) (hok : fvOcc LAct k ≤ M) (hof : fvOcc LAct f ≤ M) :
-    fvOccF LAct (isFuncORFact k f) ≤ bvOccF LAct (PisFuncOR : V) * M :=
-  fvOccF_fact_le isSemiformula_PisFuncOR fvOccF_PisFuncOR _ rfl (List.forall_mem_cons.mpr ⟨⟨hk, hok⟩, List.forall_mem_cons.mpr ⟨⟨hf, hof⟩, List.forall_mem_nil _⟩⟩)
 
 noncomputable def bsVFact (n m k v : V) : V := subst LAct (listToVec [n, m, k, v]) PbsV
-lemma isFormula_bsVFact {n m k v : V} (hn : IsSemiterm LAct 0 n) (hm : IsSemiterm LAct 0 m) (hk : IsSemiterm LAct 0 k) (hv : IsSemiterm LAct 0 v) : IsFormula LAct (bsVFact n m k v) :=
-  isFormula_fact isSemiformula_PbsV _ rfl (List.forall_mem_cons.mpr ⟨hn, List.forall_mem_cons.mpr ⟨hm, List.forall_mem_cons.mpr ⟨hk, List.forall_mem_cons.mpr ⟨hv, List.forall_mem_nil _⟩⟩⟩⟩)
-lemma shift_bsVFact {n m k v : V} (hn : IsSemiterm LAct 0 n) (hm : IsSemiterm LAct 0 m) (hk : IsSemiterm LAct 0 k) (hv : IsSemiterm LAct 0 v) :
-    shift LAct (bsVFact n m k v) = bsVFact (termShift LAct n) (termShift LAct m) (termShift LAct k) (termShift LAct v) := by
-  unfold bsVFact
-  rw [shift_subst_listToVec [n, m, k, v] isSemiformula_PbsV shift_PbsV (n := 0) (List.forall_mem_cons.mpr ⟨hn, List.forall_mem_cons.mpr ⟨hm, List.forall_mem_cons.mpr ⟨hk, List.forall_mem_cons.mpr ⟨hv, List.forall_mem_nil _⟩⟩⟩⟩)]
-  rfl
-lemma formulaLen_bsVFact_le {B : V} (hB : 1 ≤ B) {n m k v : V} (hn : IsSemiterm LAct 0 n) (hm : IsSemiterm LAct 0 m) (hk : IsSemiterm LAct 0 k) (hv : IsSemiterm LAct 0 v) (hln : termLen LAct n ≤ B) (hlm : termLen LAct m ≤ B) (hlk : termLen LAct k ≤ B) (hlv : termLen LAct v ≤ B) :
-    formulaLen LAct (bsVFact n m k v) ≤ formulaLen LAct (PbsV : V) * B :=
-  formulaLen_fact_le hB isSemiformula_PbsV _ rfl (List.forall_mem_cons.mpr ⟨⟨hn, hln⟩, List.forall_mem_cons.mpr ⟨⟨hm, hlm⟩, List.forall_mem_cons.mpr ⟨⟨hk, hlk⟩, List.forall_mem_cons.mpr ⟨⟨hv, hlv⟩, List.forall_mem_nil _⟩⟩⟩⟩)
-lemma fvOccF_bsVFact_le {M : V} {n m k v : V} (hn : IsSemiterm LAct 0 n) (hm : IsSemiterm LAct 0 m) (hk : IsSemiterm LAct 0 k) (hv : IsSemiterm LAct 0 v) (hon : fvOcc LAct n ≤ M) (hom : fvOcc LAct m ≤ M) (hok : fvOcc LAct k ≤ M) (hov : fvOcc LAct v ≤ M) :
-    fvOccF LAct (bsVFact n m k v) ≤ bvOccF LAct (PbsV : V) * M :=
-  fvOccF_fact_le isSemiformula_PbsV fvOccF_PbsV _ rfl (List.forall_mem_cons.mpr ⟨⟨hn, hon⟩, List.forall_mem_cons.mpr ⟨⟨hm, hom⟩, List.forall_mem_cons.mpr ⟨⟨hk, hok⟩, List.forall_mem_cons.mpr ⟨⟨hv, hov⟩, List.forall_mem_nil _⟩⟩⟩⟩)
 
 noncomputable def isRelORFact (k R : V) : V := subst LAct (listToVec [k, R]) PisRelOR
-lemma isFormula_isRelORFact {k R : V} (hk : IsSemiterm LAct 0 k) (hR : IsSemiterm LAct 0 R) : IsFormula LAct (isRelORFact k R) :=
-  isFormula_fact isSemiformula_PisRelOR _ rfl (List.forall_mem_cons.mpr ⟨hk, List.forall_mem_cons.mpr ⟨hR, List.forall_mem_nil _⟩⟩)
-lemma shift_isRelORFact {k R : V} (hk : IsSemiterm LAct 0 k) (hR : IsSemiterm LAct 0 R) :
-    shift LAct (isRelORFact k R) = isRelORFact (termShift LAct k) (termShift LAct R) := by
-  unfold isRelORFact
-  rw [shift_subst_listToVec [k, R] isSemiformula_PisRelOR shift_PisRelOR (n := 0) (List.forall_mem_cons.mpr ⟨hk, List.forall_mem_cons.mpr ⟨hR, List.forall_mem_nil _⟩⟩)]
-  rfl
-lemma formulaLen_isRelORFact_le {B : V} (hB : 1 ≤ B) {k R : V} (hk : IsSemiterm LAct 0 k) (hR : IsSemiterm LAct 0 R) (hlk : termLen LAct k ≤ B) (hlR : termLen LAct R ≤ B) :
-    formulaLen LAct (isRelORFact k R) ≤ formulaLen LAct (PisRelOR : V) * B :=
-  formulaLen_fact_le hB isSemiformula_PisRelOR _ rfl (List.forall_mem_cons.mpr ⟨⟨hk, hlk⟩, List.forall_mem_cons.mpr ⟨⟨hR, hlR⟩, List.forall_mem_nil _⟩⟩)
-lemma fvOccF_isRelORFact_le {M : V} {k R : V} (hk : IsSemiterm LAct 0 k) (hR : IsSemiterm LAct 0 R) (hok : fvOcc LAct k ≤ M) (hoR : fvOcc LAct R ≤ M) :
-    fvOccF LAct (isRelORFact k R) ≤ bvOccF LAct (PisRelOR : V) * M :=
-  fvOccF_fact_le isSemiformula_PisRelOR fvOccF_PisRelOR _ rfl (List.forall_mem_cons.mpr ⟨⟨hk, hok⟩, List.forall_mem_cons.mpr ⟨⟨hR, hoR⟩, List.forall_mem_nil _⟩⟩)
 
 noncomputable def bsFFact (n m p : V) : V := subst LAct (listToVec [n, m, p]) PbsF
-lemma isFormula_bsFFact {n m p : V} (hn : IsSemiterm LAct 0 n) (hm : IsSemiterm LAct 0 m) (hp : IsSemiterm LAct 0 p) : IsFormula LAct (bsFFact n m p) :=
-  isFormula_fact isSemiformula_PbsF _ rfl (List.forall_mem_cons.mpr ⟨hn, List.forall_mem_cons.mpr ⟨hm, List.forall_mem_cons.mpr ⟨hp, List.forall_mem_nil _⟩⟩⟩)
-lemma shift_bsFFact {n m p : V} (hn : IsSemiterm LAct 0 n) (hm : IsSemiterm LAct 0 m) (hp : IsSemiterm LAct 0 p) :
-    shift LAct (bsFFact n m p) = bsFFact (termShift LAct n) (termShift LAct m) (termShift LAct p) := by
-  unfold bsFFact
-  rw [shift_subst_listToVec [n, m, p] isSemiformula_PbsF shift_PbsF (n := 0) (List.forall_mem_cons.mpr ⟨hn, List.forall_mem_cons.mpr ⟨hm, List.forall_mem_cons.mpr ⟨hp, List.forall_mem_nil _⟩⟩⟩)]
-  rfl
-lemma formulaLen_bsFFact_le {B : V} (hB : 1 ≤ B) {n m p : V} (hn : IsSemiterm LAct 0 n) (hm : IsSemiterm LAct 0 m) (hp : IsSemiterm LAct 0 p) (hln : termLen LAct n ≤ B) (hlm : termLen LAct m ≤ B) (hlp : termLen LAct p ≤ B) :
-    formulaLen LAct (bsFFact n m p) ≤ formulaLen LAct (PbsF : V) * B :=
-  formulaLen_fact_le hB isSemiformula_PbsF _ rfl (List.forall_mem_cons.mpr ⟨⟨hn, hln⟩, List.forall_mem_cons.mpr ⟨⟨hm, hlm⟩, List.forall_mem_cons.mpr ⟨⟨hp, hlp⟩, List.forall_mem_nil _⟩⟩⟩)
-lemma fvOccF_bsFFact_le {M : V} {n m p : V} (hn : IsSemiterm LAct 0 n) (hm : IsSemiterm LAct 0 m) (hp : IsSemiterm LAct 0 p) (hon : fvOcc LAct n ≤ M) (hom : fvOcc LAct m ≤ M) (hop : fvOcc LAct p ≤ M) :
-    fvOccF LAct (bsFFact n m p) ≤ bvOccF LAct (PbsF : V) * M :=
-  fvOccF_fact_le isSemiformula_PbsF fvOccF_PbsF _ rfl (List.forall_mem_cons.mpr ⟨⟨hn, hon⟩, List.forall_mem_cons.mpr ⟨⟨hm, hom⟩, List.forall_mem_cons.mpr ⟨⟨hp, hop⟩, List.forall_mem_nil _⟩⟩⟩)
 
 noncomputable def fvSeqFact (w j m : V) : V := subst LAct (listToVec [w, j, m]) PfvSeq
-lemma isFormula_fvSeqFact {w j m : V} (hw : IsSemiterm LAct 0 w) (hj : IsSemiterm LAct 0 j) (hm : IsSemiterm LAct 0 m) : IsFormula LAct (fvSeqFact w j m) :=
-  isFormula_fact isSemiformula_PfvSeq _ rfl (List.forall_mem_cons.mpr ⟨hw, List.forall_mem_cons.mpr ⟨hj, List.forall_mem_cons.mpr ⟨hm, List.forall_mem_nil _⟩⟩⟩)
-lemma shift_fvSeqFact {w j m : V} (hw : IsSemiterm LAct 0 w) (hj : IsSemiterm LAct 0 j) (hm : IsSemiterm LAct 0 m) :
-    shift LAct (fvSeqFact w j m) = fvSeqFact (termShift LAct w) (termShift LAct j) (termShift LAct m) := by
-  unfold fvSeqFact
-  rw [shift_subst_listToVec [w, j, m] isSemiformula_PfvSeq shift_PfvSeq (n := 0) (List.forall_mem_cons.mpr ⟨hw, List.forall_mem_cons.mpr ⟨hj, List.forall_mem_cons.mpr ⟨hm, List.forall_mem_nil _⟩⟩⟩)]
-  rfl
-lemma formulaLen_fvSeqFact_le {B : V} (hB : 1 ≤ B) {w j m : V} (hw : IsSemiterm LAct 0 w) (hj : IsSemiterm LAct 0 j) (hm : IsSemiterm LAct 0 m) (hlw : termLen LAct w ≤ B) (hlj : termLen LAct j ≤ B) (hlm : termLen LAct m ≤ B) :
-    formulaLen LAct (fvSeqFact w j m) ≤ formulaLen LAct (PfvSeq : V) * B :=
-  formulaLen_fact_le hB isSemiformula_PfvSeq _ rfl (List.forall_mem_cons.mpr ⟨⟨hw, hlw⟩, List.forall_mem_cons.mpr ⟨⟨hj, hlj⟩, List.forall_mem_cons.mpr ⟨⟨hm, hlm⟩, List.forall_mem_nil _⟩⟩⟩)
-lemma fvOccF_fvSeqFact_le {M : V} {w j m : V} (hw : IsSemiterm LAct 0 w) (hj : IsSemiterm LAct 0 j) (hm : IsSemiterm LAct 0 m) (how : fvOcc LAct w ≤ M) (hoj : fvOcc LAct j ≤ M) (hom : fvOcc LAct m ≤ M) :
-    fvOccF LAct (fvSeqFact w j m) ≤ bvOccF LAct (PfvSeq : V) * M :=
-  fvOccF_fact_le isSemiformula_PfvSeq fvOccF_PfvSeq _ rfl (List.forall_mem_cons.mpr ⟨⟨hw, how⟩, List.forall_mem_cons.mpr ⟨⟨hj, hoj⟩, List.forall_mem_cons.mpr ⟨⟨hm, hom⟩, List.forall_mem_nil _⟩⟩⟩)
 
 noncomputable def isC0Fact (c : V) : V := subst LAct (listToVec [c]) PisC0
-lemma isFormula_isC0Fact {c : V} (hc : IsSemiterm LAct 0 c) : IsFormula LAct (isC0Fact c) :=
-  isFormula_fact isSemiformula_PisC0 _ rfl (List.forall_mem_cons.mpr ⟨hc, List.forall_mem_nil _⟩)
-lemma shift_isC0Fact {c : V} (hc : IsSemiterm LAct 0 c) :
-    shift LAct (isC0Fact c) = isC0Fact (termShift LAct c) := by
-  unfold isC0Fact
-  rw [shift_subst_listToVec [c] isSemiformula_PisC0 shift_PisC0 (n := 0) (List.forall_mem_cons.mpr ⟨hc, List.forall_mem_nil _⟩)]
-  rfl
-lemma formulaLen_isC0Fact_le {B : V} (hB : 1 ≤ B) {c : V} (hc : IsSemiterm LAct 0 c) (hlc : termLen LAct c ≤ B) :
-    formulaLen LAct (isC0Fact c) ≤ formulaLen LAct (PisC0 : V) * B :=
-  formulaLen_fact_le hB isSemiformula_PisC0 _ rfl (List.forall_mem_cons.mpr ⟨⟨hc, hlc⟩, List.forall_mem_nil _⟩)
-lemma fvOccF_isC0Fact_le {M : V} {c : V} (hc : IsSemiterm LAct 0 c) (hoc : fvOcc LAct c ≤ M) :
-    fvOccF LAct (isC0Fact c) ≤ bvOccF LAct (PisC0 : V) * M :=
-  fvOccF_fact_le isSemiformula_PisC0 fvOccF_PisC0 _ rfl (List.forall_mem_cons.mpr ⟨⟨hc, hoc⟩, List.forall_mem_nil _⟩)
 
 noncomputable def isC1Fact (c : V) : V := subst LAct (listToVec [c]) PisC1
-lemma isFormula_isC1Fact {c : V} (hc : IsSemiterm LAct 0 c) : IsFormula LAct (isC1Fact c) :=
-  isFormula_fact isSemiformula_PisC1 _ rfl (List.forall_mem_cons.mpr ⟨hc, List.forall_mem_nil _⟩)
-lemma shift_isC1Fact {c : V} (hc : IsSemiterm LAct 0 c) :
-    shift LAct (isC1Fact c) = isC1Fact (termShift LAct c) := by
-  unfold isC1Fact
-  rw [shift_subst_listToVec [c] isSemiformula_PisC1 shift_PisC1 (n := 0) (List.forall_mem_cons.mpr ⟨hc, List.forall_mem_nil _⟩)]
-  rfl
-lemma formulaLen_isC1Fact_le {B : V} (hB : 1 ≤ B) {c : V} (hc : IsSemiterm LAct 0 c) (hlc : termLen LAct c ≤ B) :
-    formulaLen LAct (isC1Fact c) ≤ formulaLen LAct (PisC1 : V) * B :=
-  formulaLen_fact_le hB isSemiformula_PisC1 _ rfl (List.forall_mem_cons.mpr ⟨⟨hc, hlc⟩, List.forall_mem_nil _⟩)
-lemma fvOccF_isC1Fact_le {M : V} {c : V} (hc : IsSemiterm LAct 0 c) (hoc : fvOcc LAct c ≤ M) :
-    fvOccF LAct (isC1Fact c) ≤ bvOccF LAct (PisC1 : V) * M :=
-  fvOccF_fact_le isSemiformula_PisC1 fvOccF_PisC1 _ rfl (List.forall_mem_cons.mpr ⟨⟨hc, hoc⟩, List.forall_mem_nil _⟩)
 
 noncomputable def bodyShapeFact (s x ns K : V) : V := subst LAct (listToVec [s, x, ns, K]) PbodyShape
-lemma isFormula_bodyShapeFact {s x ns K : V} (hs : IsSemiterm LAct 0 s) (hx : IsSemiterm LAct 0 x) (hns : IsSemiterm LAct 0 ns) (hK : IsSemiterm LAct 0 K) : IsFormula LAct (bodyShapeFact s x ns K) :=
-  isFormula_fact isSemiformula_PbodyShape _ rfl (List.forall_mem_cons.mpr ⟨hs, List.forall_mem_cons.mpr ⟨hx, List.forall_mem_cons.mpr ⟨hns, List.forall_mem_cons.mpr ⟨hK, List.forall_mem_nil _⟩⟩⟩⟩)
-lemma shift_bodyShapeFact {s x ns K : V} (hs : IsSemiterm LAct 0 s) (hx : IsSemiterm LAct 0 x) (hns : IsSemiterm LAct 0 ns) (hK : IsSemiterm LAct 0 K) :
-    shift LAct (bodyShapeFact s x ns K) = bodyShapeFact (termShift LAct s) (termShift LAct x) (termShift LAct ns) (termShift LAct K) := by
-  unfold bodyShapeFact
-  rw [shift_subst_listToVec [s, x, ns, K] isSemiformula_PbodyShape shift_PbodyShape (n := 0) (List.forall_mem_cons.mpr ⟨hs, List.forall_mem_cons.mpr ⟨hx, List.forall_mem_cons.mpr ⟨hns, List.forall_mem_cons.mpr ⟨hK, List.forall_mem_nil _⟩⟩⟩⟩)]
-  rfl
-lemma formulaLen_bodyShapeFact_le {B : V} (hB : 1 ≤ B) {s x ns K : V} (hs : IsSemiterm LAct 0 s) (hx : IsSemiterm LAct 0 x) (hns : IsSemiterm LAct 0 ns) (hK : IsSemiterm LAct 0 K) (hls : termLen LAct s ≤ B) (hlx : termLen LAct x ≤ B) (hlns : termLen LAct ns ≤ B) (hlK : termLen LAct K ≤ B) :
-    formulaLen LAct (bodyShapeFact s x ns K) ≤ formulaLen LAct (PbodyShape : V) * B :=
-  formulaLen_fact_le hB isSemiformula_PbodyShape _ rfl (List.forall_mem_cons.mpr ⟨⟨hs, hls⟩, List.forall_mem_cons.mpr ⟨⟨hx, hlx⟩, List.forall_mem_cons.mpr ⟨⟨hns, hlns⟩, List.forall_mem_cons.mpr ⟨⟨hK, hlK⟩, List.forall_mem_nil _⟩⟩⟩⟩)
-lemma fvOccF_bodyShapeFact_le {M : V} {s x ns K : V} (hs : IsSemiterm LAct 0 s) (hx : IsSemiterm LAct 0 x) (hns : IsSemiterm LAct 0 ns) (hK : IsSemiterm LAct 0 K) (hos : fvOcc LAct s ≤ M) (hox : fvOcc LAct x ≤ M) (hons : fvOcc LAct ns ≤ M) (hoK : fvOcc LAct K ≤ M) :
-    fvOccF LAct (bodyShapeFact s x ns K) ≤ bvOccF LAct (PbodyShape : V) * M :=
-  fvOccF_fact_le isSemiformula_PbodyShape fvOccF_PbodyShape _ rfl (List.forall_mem_cons.mpr ⟨⟨hs, hos⟩, List.forall_mem_cons.mpr ⟨⟨hx, hox⟩, List.forall_mem_cons.mpr ⟨⟨hns, hons⟩, List.forall_mem_cons.mpr ⟨⟨hK, hoK⟩, List.forall_mem_nil _⟩⟩⟩⟩)
 
 noncomputable def indBodyLFact (s K : V) : V := subst LAct (listToVec [s, K]) PindBodyL
-lemma isFormula_indBodyLFact {s K : V} (hs : IsSemiterm LAct 0 s) (hK : IsSemiterm LAct 0 K) : IsFormula LAct (indBodyLFact s K) :=
-  isFormula_fact isSemiformula_PindBodyL _ rfl (List.forall_mem_cons.mpr ⟨hs, List.forall_mem_cons.mpr ⟨hK, List.forall_mem_nil _⟩⟩)
-lemma shift_indBodyLFact {s K : V} (hs : IsSemiterm LAct 0 s) (hK : IsSemiterm LAct 0 K) :
-    shift LAct (indBodyLFact s K) = indBodyLFact (termShift LAct s) (termShift LAct K) := by
-  unfold indBodyLFact
-  rw [shift_subst_listToVec [s, K] isSemiformula_PindBodyL shift_PindBodyL (n := 0) (List.forall_mem_cons.mpr ⟨hs, List.forall_mem_cons.mpr ⟨hK, List.forall_mem_nil _⟩⟩)]
-  rfl
-lemma formulaLen_indBodyLFact_le {B : V} (hB : 1 ≤ B) {s K : V} (hs : IsSemiterm LAct 0 s) (hK : IsSemiterm LAct 0 K) (hls : termLen LAct s ≤ B) (hlK : termLen LAct K ≤ B) :
-    formulaLen LAct (indBodyLFact s K) ≤ formulaLen LAct (PindBodyL : V) * B :=
-  formulaLen_fact_le hB isSemiformula_PindBodyL _ rfl (List.forall_mem_cons.mpr ⟨⟨hs, hls⟩, List.forall_mem_cons.mpr ⟨⟨hK, hlK⟩, List.forall_mem_nil _⟩⟩)
-lemma fvOccF_indBodyLFact_le {M : V} {s K : V} (hs : IsSemiterm LAct 0 s) (hK : IsSemiterm LAct 0 K) (hos : fvOcc LAct s ≤ M) (hoK : fvOcc LAct K ≤ M) :
-    fvOccF LAct (indBodyLFact s K) ≤ bvOccF LAct (PindBodyL : V) * M :=
-  fvOccF_fact_le isSemiformula_PindBodyL fvOccF_PindBodyL _ rfl (List.forall_mem_cons.mpr ⟨⟨hs, hos⟩, List.forall_mem_cons.mpr ⟨⟨hK, hoK⟩, List.forall_mem_nil _⟩⟩)
 
 end facts
 
@@ -767,9 +609,6 @@ theorem quote_row_isFuncOR_zero : (⌜Semiformula.lMap emb isFuncOR_zeroB⌝ : V
   unfold isFuncOR_zeroB row_isFuncOR_zero_as row_isFuncOR_zero_c PisFuncOR
   all_goals row_shapeB
 
-lemma isSemiformula_isFuncOR_zero_as : ∀ A ∈ row_isFuncOR_zero_as, IsSemiformula LAct ((0 : ℕ) : V) A := by
-  unfold row_isFuncOR_zero_as
-  exact (List.forall_mem_nil _)
 lemma isSemiformula_isFuncOR_zero_c : IsSemiformula LAct ((0 : ℕ) : V) row_isFuncOR_zero_c := by
   unfold row_isFuncOR_zero_c
   exact isSemiformula_substRow isSemiformula_PisFuncOR _ (by rfl) (by row_entriesB)
@@ -794,9 +633,6 @@ theorem quote_row_isFuncOR_one : (⌜Semiformula.lMap emb isFuncOR_oneB⌝ : V) 
   unfold isFuncOR_oneB row_isFuncOR_one_as row_isFuncOR_one_c PisFuncOR
   all_goals row_shapeB
 
-lemma isSemiformula_isFuncOR_one_as : ∀ A ∈ row_isFuncOR_one_as, IsSemiformula LAct ((0 : ℕ) : V) A := by
-  unfold row_isFuncOR_one_as
-  exact (List.forall_mem_nil _)
 lemma isSemiformula_isFuncOR_one_c : IsSemiformula LAct ((0 : ℕ) : V) row_isFuncOR_one_c := by
   unfold row_isFuncOR_one_c
   exact isSemiformula_substRow isSemiformula_PisFuncOR _ (by rfl) (by row_entriesB)
@@ -821,9 +657,6 @@ theorem quote_row_isFuncOR_add : (⌜Semiformula.lMap emb isFuncOR_addB⌝ : V) 
   unfold isFuncOR_addB row_isFuncOR_add_as row_isFuncOR_add_c PisFuncOR
   all_goals row_shapeB
 
-lemma isSemiformula_isFuncOR_add_as : ∀ A ∈ row_isFuncOR_add_as, IsSemiformula LAct ((0 : ℕ) : V) A := by
-  unfold row_isFuncOR_add_as
-  exact (List.forall_mem_nil _)
 lemma isSemiformula_isFuncOR_add_c : IsSemiformula LAct ((0 : ℕ) : V) row_isFuncOR_add_c := by
   unfold row_isFuncOR_add_c
   exact isSemiformula_substRow isSemiformula_PisFuncOR _ (by rfl) (by row_entriesB)
@@ -848,9 +681,6 @@ theorem quote_row_isFuncOR_mul : (⌜Semiformula.lMap emb isFuncOR_mulB⌝ : V) 
   unfold isFuncOR_mulB row_isFuncOR_mul_as row_isFuncOR_mul_c PisFuncOR
   all_goals row_shapeB
 
-lemma isSemiformula_isFuncOR_mul_as : ∀ A ∈ row_isFuncOR_mul_as, IsSemiformula LAct ((0 : ℕ) : V) A := by
-  unfold row_isFuncOR_mul_as
-  exact (List.forall_mem_nil _)
 lemma isSemiformula_isFuncOR_mul_c : IsSemiformula LAct ((0 : ℕ) : V) row_isFuncOR_mul_c := by
   unfold row_isFuncOR_mul_c
   exact isSemiformula_substRow isSemiformula_PisFuncOR _ (by rfl) (by row_entriesB)
@@ -902,9 +732,6 @@ theorem quote_row_isRelOR_lt : (⌜Semiformula.lMap emb isRelOR_ltB⌝ : V) = im
   unfold isRelOR_ltB row_isRelOR_lt_as row_isRelOR_lt_c PisRelOR
   all_goals row_shapeB
 
-lemma isSemiformula_isRelOR_lt_as : ∀ A ∈ row_isRelOR_lt_as, IsSemiformula LAct ((0 : ℕ) : V) A := by
-  unfold row_isRelOR_lt_as
-  exact (List.forall_mem_nil _)
 lemma isSemiformula_isRelOR_lt_c : IsSemiformula LAct ((0 : ℕ) : V) row_isRelOR_lt_c := by
   unfold row_isRelOR_lt_c
   exact isSemiformula_substRow isSemiformula_PisRelOR _ (by rfl) (by row_entriesB)
@@ -929,9 +756,6 @@ theorem quote_row_bsBvar : (⌜Semiformula.lMap emb bsBvarB⌝ : V) = impChain L
   unfold bsBvarB row_bsBvar_as row_bsBvar_c PbsT Pbvar Plt
   all_goals row_shapeB
 
-lemma isSemiformula_bsBvar_as : ∀ A ∈ row_bsBvar_as, IsSemiformula LAct ((3 : ℕ) : V) A := by
-  unfold row_bsBvar_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Plt _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pbvar _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_bsBvar_c : IsSemiformula LAct ((3 : ℕ) : V) row_bsBvar_c := by
   unfold row_bsBvar_c
   exact isSemiformula_substRow isSemiformula_PbsT _ (by rfl) (by row_entriesB)
@@ -956,9 +780,6 @@ theorem quote_row_bsFvar : (⌜Semiformula.lMap emb bsFvarB⌝ : V) = impChain L
   unfold bsFvarB row_bsFvar_as row_bsFvar_c PbsT Pfvar
   all_goals row_shapeB
 
-lemma isSemiformula_bsFvar_as : ∀ A ∈ row_bsFvar_as, IsSemiformula LAct ((3 : ℕ) : V) A := by
-  unfold row_bsFvar_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pfvar _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩)
 lemma isSemiformula_bsFvar_c : IsSemiformula LAct ((3 : ℕ) : V) row_bsFvar_c := by
   unfold row_bsFvar_c
   exact isSemiformula_substRow isSemiformula_PbsT _ (by rfl) (by row_entriesB)
@@ -983,9 +804,6 @@ theorem quote_row_bsFunc : (⌜Semiformula.lMap emb bsFuncB⌝ : V) = impChain L
   unfold bsFuncB row_bsFunc_as row_bsFunc_c PbsT PbsV Pfunc PisFuncOR
   all_goals row_shapeB
 
-lemma isSemiformula_bsFunc_as : ∀ A ∈ row_bsFunc_as, IsSemiformula LAct ((6 : ℕ) : V) A := by
-  unfold row_bsFunc_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PisFuncOR _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PbsV _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pfunc _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩)
 lemma isSemiformula_bsFunc_c : IsSemiformula LAct ((6 : ℕ) : V) row_bsFunc_c := by
   unfold row_bsFunc_c
   exact isSemiformula_substRow isSemiformula_PbsT _ (by rfl) (by row_entriesB)
@@ -1010,9 +828,6 @@ theorem quote_row_bsVNil : (⌜Semiformula.lMap emb bsVNilB⌝ : V) = impChain L
   unfold bsVNilB row_bsVNil_as row_bsVNil_c PbsV
   all_goals row_shapeB
 
-lemma isSemiformula_bsVNil_as : ∀ A ∈ row_bsVNil_as, IsSemiformula LAct ((1 : ℕ) : V) A := by
-  unfold row_bsVNil_as
-  exact (List.forall_mem_nil _)
 lemma isSemiformula_bsVNil_c : IsSemiformula LAct ((1 : ℕ) : V) row_bsVNil_c := by
   unfold row_bsVNil_c
   exact isSemiformula_substRow isSemiformula_PbsV _ (by rfl) (by row_entriesB)
@@ -1037,9 +852,6 @@ theorem quote_row_bsVAdjL : (⌜Semiformula.lMap emb bsVAdjLB⌝ : V) = impChain
   unfold bsVAdjLB row_bsVAdjL_as row_bsVAdjL_c Padjoin PbsT PbsV Ple leS
   all_goals row_shapeB
 
-lemma isSemiformula_bsVAdjL_as : ∀ A ∈ row_bsVAdjL_as, IsSemiformula LAct ((7 : ℕ) : V) A := by
-  unfold row_bsVAdjL_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PbsT _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PbsV _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Padjoin _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Ple _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩⟩)
 lemma isSemiformula_bsVAdjL_c : IsSemiformula LAct ((7 : ℕ) : V) row_bsVAdjL_c := by
   unfold row_bsVAdjL_c
   exact isSemiformula_substRow isSemiformula_PbsV _ (by rfl) (by row_entriesB)
@@ -1064,9 +876,6 @@ theorem quote_row_bsVAdjR : (⌜Semiformula.lMap emb bsVAdjRB⌝ : V) = impChain
   unfold bsVAdjRB row_bsVAdjR_as row_bsVAdjR_c Padjoin PbsT PbsV Ple leS
   all_goals row_shapeB
 
-lemma isSemiformula_bsVAdjR_as : ∀ A ∈ row_bsVAdjR_as, IsSemiformula LAct ((7 : ℕ) : V) A := by
-  unfold row_bsVAdjR_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PbsT _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PbsV _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Padjoin _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Ple _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩⟩)
 lemma isSemiformula_bsVAdjR_c : IsSemiformula LAct ((7 : ℕ) : V) row_bsVAdjR_c := by
   unfold row_bsVAdjR_c
   exact isSemiformula_substRow isSemiformula_PbsV _ (by rfl) (by row_entriesB)
@@ -1091,9 +900,6 @@ theorem quote_row_bsRel : (⌜Semiformula.lMap emb bsRelB⌝ : V) = impChain LAc
   unfold bsRelB row_bsRel_as row_bsRel_c PbsF PbsV PisRelOR Prel
   all_goals row_shapeB
 
-lemma isSemiformula_bsRel_as : ∀ A ∈ row_bsRel_as, IsSemiformula LAct ((6 : ℕ) : V) A := by
-  unfold row_bsRel_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PisRelOR _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PbsV _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Prel _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩)
 lemma isSemiformula_bsRel_c : IsSemiformula LAct ((6 : ℕ) : V) row_bsRel_c := by
   unfold row_bsRel_c
   exact isSemiformula_substRow isSemiformula_PbsF _ (by rfl) (by row_entriesB)
@@ -1118,9 +924,6 @@ theorem quote_row_bsNRel : (⌜Semiformula.lMap emb bsNRelB⌝ : V) = impChain L
   unfold bsNRelB row_bsNRel_as row_bsNRel_c PbsF PbsV PisRelOR Pnrel
   all_goals row_shapeB
 
-lemma isSemiformula_bsNRel_as : ∀ A ∈ row_bsNRel_as, IsSemiformula LAct ((6 : ℕ) : V) A := by
-  unfold row_bsNRel_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PisRelOR _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PbsV _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pnrel _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩)
 lemma isSemiformula_bsNRel_c : IsSemiformula LAct ((6 : ℕ) : V) row_bsNRel_c := by
   unfold row_bsNRel_c
   exact isSemiformula_substRow isSemiformula_PbsF _ (by rfl) (by row_entriesB)
@@ -1145,9 +948,6 @@ theorem quote_row_bsVerum : (⌜Semiformula.lMap emb bsVerumB⌝ : V) = impChain
   unfold bsVerumB row_bsVerum_as row_bsVerum_c PbsF Pverum
   all_goals row_shapeB
 
-lemma isSemiformula_bsVerum_as : ∀ A ∈ row_bsVerum_as, IsSemiformula LAct ((2 : ℕ) : V) A := by
-  unfold row_bsVerum_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pverum _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩)
 lemma isSemiformula_bsVerum_c : IsSemiformula LAct ((2 : ℕ) : V) row_bsVerum_c := by
   unfold row_bsVerum_c
   exact isSemiformula_substRow isSemiformula_PbsF _ (by rfl) (by row_entriesB)
@@ -1172,9 +972,6 @@ theorem quote_row_bsFalsum : (⌜Semiformula.lMap emb bsFalsumB⌝ : V) = impCha
   unfold bsFalsumB row_bsFalsum_as row_bsFalsum_c PbsF Pfalsum
   all_goals row_shapeB
 
-lemma isSemiformula_bsFalsum_as : ∀ A ∈ row_bsFalsum_as, IsSemiformula LAct ((2 : ℕ) : V) A := by
-  unfold row_bsFalsum_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pfalsum _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩)
 lemma isSemiformula_bsFalsum_c : IsSemiformula LAct ((2 : ℕ) : V) row_bsFalsum_c := by
   unfold row_bsFalsum_c
   exact isSemiformula_substRow isSemiformula_PbsF _ (by rfl) (by row_entriesB)
@@ -1199,9 +996,6 @@ theorem quote_row_bsAndL : (⌜Semiformula.lMap emb bsAndLB⌝ : V) = impChain L
   unfold bsAndLB row_bsAndL_as row_bsAndL_c Pand PbsF Ple leS
   all_goals row_shapeB
 
-lemma isSemiformula_bsAndL_as : ∀ A ∈ row_bsAndL_as, IsSemiformula LAct ((6 : ℕ) : V) A := by
-  unfold row_bsAndL_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PbsF _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PbsF _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pand _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Ple _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩⟩)
 lemma isSemiformula_bsAndL_c : IsSemiformula LAct ((6 : ℕ) : V) row_bsAndL_c := by
   unfold row_bsAndL_c
   exact isSemiformula_substRow isSemiformula_PbsF _ (by rfl) (by row_entriesB)
@@ -1226,9 +1020,6 @@ theorem quote_row_bsAndR : (⌜Semiformula.lMap emb bsAndRB⌝ : V) = impChain L
   unfold bsAndRB row_bsAndR_as row_bsAndR_c Pand PbsF Ple leS
   all_goals row_shapeB
 
-lemma isSemiformula_bsAndR_as : ∀ A ∈ row_bsAndR_as, IsSemiformula LAct ((6 : ℕ) : V) A := by
-  unfold row_bsAndR_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PbsF _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PbsF _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pand _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Ple _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩⟩)
 lemma isSemiformula_bsAndR_c : IsSemiformula LAct ((6 : ℕ) : V) row_bsAndR_c := by
   unfold row_bsAndR_c
   exact isSemiformula_substRow isSemiformula_PbsF _ (by rfl) (by row_entriesB)
@@ -1253,9 +1044,6 @@ theorem quote_row_bsOrL : (⌜Semiformula.lMap emb bsOrLB⌝ : V) = impChain LAc
   unfold bsOrLB row_bsOrL_as row_bsOrL_c PbsF Ple Por leS
   all_goals row_shapeB
 
-lemma isSemiformula_bsOrL_as : ∀ A ∈ row_bsOrL_as, IsSemiformula LAct ((6 : ℕ) : V) A := by
-  unfold row_bsOrL_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PbsF _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PbsF _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Por _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Ple _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩⟩)
 lemma isSemiformula_bsOrL_c : IsSemiformula LAct ((6 : ℕ) : V) row_bsOrL_c := by
   unfold row_bsOrL_c
   exact isSemiformula_substRow isSemiformula_PbsF _ (by rfl) (by row_entriesB)
@@ -1280,9 +1068,6 @@ theorem quote_row_bsOrR : (⌜Semiformula.lMap emb bsOrRB⌝ : V) = impChain LAc
   unfold bsOrRB row_bsOrR_as row_bsOrR_c PbsF Ple Por leS
   all_goals row_shapeB
 
-lemma isSemiformula_bsOrR_as : ∀ A ∈ row_bsOrR_as, IsSemiformula LAct ((6 : ℕ) : V) A := by
-  unfold row_bsOrR_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PbsF _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PbsF _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Por _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Ple _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩⟩)
 lemma isSemiformula_bsOrR_c : IsSemiformula LAct ((6 : ℕ) : V) row_bsOrR_c := by
   unfold row_bsOrR_c
   exact isSemiformula_substRow isSemiformula_PbsF _ (by rfl) (by row_entriesB)
@@ -1307,9 +1092,6 @@ theorem quote_row_bsAllS : (⌜Semiformula.lMap emb bsAllSB⌝ : V) = impChain L
   unfold bsAllSB row_bsAllS_as row_bsAllS_c Pall PbsF
   all_goals row_shapeB
 
-lemma isSemiformula_bsAllS_as : ∀ A ∈ row_bsAllS_as, IsSemiformula LAct ((4 : ℕ) : V) A := by
-  unfold row_bsAllS_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PbsF _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pall _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_bsAllS_c : IsSemiformula LAct ((4 : ℕ) : V) row_bsAllS_c := by
   unfold row_bsAllS_c
   exact isSemiformula_substRow isSemiformula_PbsF _ (by rfl) (by row_entriesB)
@@ -1334,9 +1116,6 @@ theorem quote_row_bsAllZ : (⌜Semiformula.lMap emb bsAllZB⌝ : V) = impChain L
   unfold bsAllZB row_bsAllZ_as row_bsAllZ_c Pall PbsF
   all_goals row_shapeB
 
-lemma isSemiformula_bsAllZ_as : ∀ A ∈ row_bsAllZ_as, IsSemiformula LAct ((3 : ℕ) : V) A := by
-  unfold row_bsAllZ_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PbsF _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pall _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_bsAllZ_c : IsSemiformula LAct ((3 : ℕ) : V) row_bsAllZ_c := by
   unfold row_bsAllZ_c
   exact isSemiformula_substRow isSemiformula_PbsF _ (by rfl) (by row_entriesB)
@@ -1361,9 +1140,6 @@ theorem quote_row_bsExsS : (⌜Semiformula.lMap emb bsExsSB⌝ : V) = impChain L
   unfold bsExsSB row_bsExsS_as row_bsExsS_c PbsF Pexs
   all_goals row_shapeB
 
-lemma isSemiformula_bsExsS_as : ∀ A ∈ row_bsExsS_as, IsSemiformula LAct ((4 : ℕ) : V) A := by
-  unfold row_bsExsS_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PbsF _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pexs _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_bsExsS_c : IsSemiformula LAct ((4 : ℕ) : V) row_bsExsS_c := by
   unfold row_bsExsS_c
   exact isSemiformula_substRow isSemiformula_PbsF _ (by rfl) (by row_entriesB)
@@ -1388,9 +1164,6 @@ theorem quote_row_bsExsZ : (⌜Semiformula.lMap emb bsExsZB⌝ : V) = impChain L
   unfold bsExsZB row_bsExsZ_as row_bsExsZ_c PbsF Pexs
   all_goals row_shapeB
 
-lemma isSemiformula_bsExsZ_as : ∀ A ∈ row_bsExsZ_as, IsSemiformula LAct ((3 : ℕ) : V) A := by
-  unfold row_bsExsZ_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PbsF _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pexs _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_bsExsZ_c : IsSemiformula LAct ((3 : ℕ) : V) row_bsExsZ_c := by
   unfold row_bsExsZ_c
   exact isSemiformula_substRow isSemiformula_PbsF _ (by rfl) (by row_entriesB)
@@ -1415,9 +1188,6 @@ theorem quote_row_leSuccR : (⌜Semiformula.lMap emb leSuccRB⌝ : V) = impChain
   unfold leSuccRB row_leSuccR_as row_leSuccR_c Ple leS
   all_goals row_shapeB
 
-lemma isSemiformula_leSuccR_as : ∀ A ∈ row_leSuccR_as, IsSemiformula LAct ((2 : ℕ) : V) A := by
-  unfold row_leSuccR_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Ple _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩)
 lemma isSemiformula_leSuccR_c : IsSemiformula LAct ((2 : ℕ) : V) row_leSuccR_c := by
   unfold row_leSuccR_c
   exact isSemiformula_substRow isSemiformula_Ple _ (by rfl) (by row_entriesB)
@@ -1442,9 +1212,6 @@ theorem quote_row_fvSeqNil : (⌜Semiformula.lMap emb fvSeqNilB⌝ : V) = impCha
   unfold fvSeqNilB row_fvSeqNil_as row_fvSeqNil_c PfvSeq
   all_goals row_shapeB
 
-lemma isSemiformula_fvSeqNil_as : ∀ A ∈ row_fvSeqNil_as, IsSemiformula LAct ((1 : ℕ) : V) A := by
-  unfold row_fvSeqNil_as
-  exact (List.forall_mem_nil _)
 lemma isSemiformula_fvSeqNil_c : IsSemiformula LAct ((1 : ℕ) : V) row_fvSeqNil_c := by
   unfold row_fvSeqNil_c
   exact isSemiformula_substRow isSemiformula_PfvSeq _ (by rfl) (by row_entriesB)
@@ -1469,9 +1236,6 @@ theorem quote_row_fvSeqCons : (⌜Semiformula.lMap emb fvSeqConsB⌝ : V) = impC
   unfold fvSeqConsB row_fvSeqCons_as row_fvSeqCons_c Padjoin PfvSeq Pfvar
   all_goals row_shapeB
 
-lemma isSemiformula_fvSeqCons_as : ∀ A ∈ row_fvSeqCons_as, IsSemiformula LAct ((5 : ℕ) : V) A := by
-  unfold row_fvSeqCons_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PfvSeq _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pfvar _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Padjoin _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩)
 lemma isSemiformula_fvSeqCons_c : IsSemiformula LAct ((5 : ℕ) : V) row_fvSeqCons_c := by
   unfold row_fvSeqCons_c
   exact isSemiformula_substRow isSemiformula_PfvSeq _ (by rfl) (by row_entriesB)
@@ -1496,9 +1260,6 @@ theorem quote_row_c0Intro : (⌜Semiformula.lMap emb c0IntroB⌝ : V) = impChain
   unfold c0IntroB row_c0Intro_as row_c0Intro_c Padjoin Pfunc PisC0
   all_goals row_shapeB
 
-lemma isSemiformula_c0Intro_as : ∀ A ∈ row_c0Intro_as, IsSemiformula LAct ((2 : ℕ) : V) A := by
-  unfold row_c0Intro_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pfunc _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Padjoin _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_c0Intro_c : IsSemiformula LAct ((2 : ℕ) : V) row_c0Intro_c := by
   unfold row_c0Intro_c
   exact isSemiformula_substRow isSemiformula_PisC0 _ (by rfl) (by row_entriesB)
@@ -1523,9 +1284,6 @@ theorem quote_row_c1Intro : (⌜Semiformula.lMap emb c1IntroB⌝ : V) = impChain
   unfold c1IntroB row_c1Intro_as row_c1Intro_c Padjoin Pbvar Pfunc PisC1
   all_goals row_shapeB
 
-lemma isSemiformula_c1Intro_as : ∀ A ∈ row_c1Intro_as, IsSemiformula LAct ((6 : ℕ) : V) A := by
-  unfold row_c1Intro_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pfunc _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Padjoin _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pbvar _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Padjoin _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pfunc _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Padjoin _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩⟩⟩⟩)
 lemma isSemiformula_c1Intro_c : IsSemiformula LAct ((6 : ℕ) : V) row_c1Intro_c := by
   unfold row_c1Intro_c
   exact isSemiformula_substRow isSemiformula_PisC1 _ (by rfl) (by row_entriesB)
@@ -1550,9 +1308,6 @@ theorem quote_row_bodyIntro : (⌜Semiformula.lMap emb bodyIntroB⌝ : V) = impC
   unfold bodyIntroB row_bodyIntro_as row_bodyIntro_c Pall Pand PbodyShape PeqB Pexs Por
   all_goals row_shapeB
 
-lemma isSemiformula_bodyIntro_as : ∀ A ∈ row_bodyIntro_as, IsSemiformula LAct ((9 : ℕ) : V) A := by
-  unfold row_bodyIntro_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Por _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Por _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pexs _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pand _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pall _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩⟩⟩⟩)
 lemma isSemiformula_bodyIntro_c : IsSemiformula LAct ((9 : ℕ) : V) row_bodyIntro_c := by
   unfold row_bodyIntro_c
   exact isSemiformula_substRow isSemiformula_PbodyShape _ (by rfl) (by row_entriesB)
@@ -1577,9 +1332,6 @@ theorem quote_row_indBodyIntroL : (⌜Semiformula.lMap emb indBodyIntroLB⌝ : V
   unfold indBodyIntroLB row_indBodyIntroL_as row_indBodyIntroL_c PbodyShape PindBodyL PisC0 PisC1 PnegG PsubstsG
   all_goals row_shapeB
 
-lemma isSemiformula_indBodyIntroL_as : ∀ A ∈ row_indBodyIntroL_as, IsSemiformula LAct ((7 : ℕ) : V) A := by
-  unfold row_indBodyIntroL_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PbodyShape _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PnegG _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PisC0 _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PsubstsG _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PisC1 _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PsubstsG _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩⟩⟩⟩)
 lemma isSemiformula_indBodyIntroL_c : IsSemiformula LAct ((7 : ℕ) : V) row_indBodyIntroL_c := by
   unfold row_indBodyIntroL_c
   exact isSemiformula_substRow isSemiformula_PindBodyL _ (by rfl) (by row_entriesB)
@@ -1604,9 +1356,6 @@ theorem quote_row_indRecL : (⌜Semiformula.lMap emb indRecLB⌝ : V) = impChain
   unfold indRecLB row_indRecL_as row_indRecL_c Palls Paxch PbsF PfvSeq PindBodyL PshiftG PsubstsG
   all_goals row_shapeB
 
-lemma isSemiformula_indRecL_as : ∀ A ∈ row_indRecL_as, IsSemiformula LAct ((6 : ℕ) : V) A := by
-  unfold row_indRecL_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Palls _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PbsF _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PshiftG _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PfvSeq _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PsubstsG _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PindBodyL _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩⟩⟩⟩)
 lemma isSemiformula_indRecL_c : IsSemiformula LAct ((6 : ℕ) : V) row_indRecL_c := by
   unfold row_indRecL_c
   exact isSemiformula_substRow isSemiformula_Paxch _ (by rfl) (by row_entriesB)
@@ -1788,22 +1537,6 @@ noncomputable def indRecExtraPieceList : List V := [
 noncomputable def indRecPieces : V := vecOf (walkPieceList ++ layoutExtraPieceList ++ frag1ExtraPieceList ++ frag2ExtraPieceList ++ topExtraPieceList ++ proExtraPieceList ++ numIdPadPieceList ++ numIdExtraPieceList ++ proAxmExtraPieceList ++ indRecExtraPieceList)
 
 set_option maxHeartbeats 2000000 in
-lemma indRecPieces_nth_lt (i : ℕ) (hi : i < proAxmRowCount) : (indRecPieces : V).[(i : V)] = (proAxmPieces : V).[(i : V)] := by
-  unfold indRecPieces proAxmPieces
-  have h1 : i < (walkPieceList ++ layoutExtraPieceList ++ frag1ExtraPieceList ++ frag2ExtraPieceList ++ topExtraPieceList ++ proExtraPieceList ++ numIdPadPieceList ++ numIdExtraPieceList ++ proAxmExtraPieceList ++ indRecExtraPieceList : List V).length := by
-    rw [show (walkPieceList ++ layoutExtraPieceList ++ frag1ExtraPieceList ++ frag2ExtraPieceList ++ topExtraPieceList ++ proExtraPieceList ++ numIdPadPieceList ++ numIdExtraPieceList ++ proAxmExtraPieceList ++ indRecExtraPieceList : List V).length = indRecRowCount from rfl]
-    exact lt_of_lt_of_le hi (by simp only [indRecRowCount]; omega)
-  have h2 : i < (walkPieceList ++ layoutExtraPieceList ++ frag1ExtraPieceList ++ frag2ExtraPieceList ++ topExtraPieceList ++ proExtraPieceList ++ numIdPadPieceList ++ numIdExtraPieceList ++ proAxmExtraPieceList : List V).length := by
-    rw [show (walkPieceList ++ layoutExtraPieceList ++ frag1ExtraPieceList ++ frag2ExtraPieceList ++ topExtraPieceList ++ proExtraPieceList ++ numIdPadPieceList ++ numIdExtraPieceList ++ proAxmExtraPieceList : List V).length = proAxmRowCount from rfl]; exact hi
-  rw [nth_vecOf _ i h1, nth_vecOf _ i h2]
-  exact List.getElem_append_left h2
-
-/-- An `axm`-table step read from the recognizer pieces is the `axm` table's step. -/
-lemma mkStep_indRecPieces_lt (i : ℕ) (hi : i < proAxmRowCount) (ev : V) :
-    mkStep indRecPieces (i : V) ev = mkStep proAxmPieces (i : V) ev := by
-  rw [mkStep, mkStep, indRecPieces_nth_lt i hi]
-
-set_option maxHeartbeats 2000000 in
 lemma indRecPieces_qqAllsZero : (indRecPieces : V).[((iIdx_qqAllsZero : ℕ) : V)] = ipiece_qqAllsZero := by
   unfold indRecPieces
   rw [nth_vecOf _ iIdx_qqAllsZero (Nat.lt_of_sub_eq_succ rfl)]
@@ -1813,10 +1546,6 @@ lemma imk_qqAllsZero (ev : V) :
     mkStep indRecPieces ((iIdx_qqAllsZero : ℕ) : V) ev = sUseHorn ((iIdx_qqAllsZero : ℕ) : V) ev (vecOf row_qqAllsZero_as) row_qqAllsZero_c := by
   rw [mkStep, indRecPieces_qqAllsZero]
   simp [ipiece_qqAllsZero, sUseHorn]
-
-lemma itag_qqAllsZero {W : V} (hWp : W = indRecPieces) (ev : V) : sTag (mkStep W ((iIdx_qqAllsZero : ℕ) : V) ev) = 0 := by
-  subst hWp
-  rw [imk_qqAllsZero]; simp
 
 set_option maxHeartbeats 2000000 in
 lemma indRecPieces_qqAllsSucc : (indRecPieces : V).[((iIdx_qqAllsSucc : ℕ) : V)] = ipiece_qqAllsSucc := by
@@ -1829,10 +1558,6 @@ lemma imk_qqAllsSucc (ev : V) :
   rw [mkStep, indRecPieces_qqAllsSucc]
   simp [ipiece_qqAllsSucc, sUseHorn]
 
-lemma itag_qqAllsSucc {W : V} (hWp : W = indRecPieces) (ev : V) : sTag (mkStep W ((iIdx_qqAllsSucc : ℕ) : V) ev) = 0 := by
-  subst hWp
-  rw [imk_qqAllsSucc]; simp
-
 set_option maxHeartbeats 2000000 in
 lemma indRecPieces_isFuncOR_zero : (indRecPieces : V).[((iIdx_isFuncOR_zero : ℕ) : V)] = ipiece_isFuncOR_zero := by
   unfold indRecPieces
@@ -1843,10 +1568,6 @@ lemma imk_isFuncOR_zero (ev : V) :
     mkStep indRecPieces ((iIdx_isFuncOR_zero : ℕ) : V) ev = sUseHorn ((iIdx_isFuncOR_zero : ℕ) : V) ev (vecOf row_isFuncOR_zero_as) row_isFuncOR_zero_c := by
   rw [mkStep, indRecPieces_isFuncOR_zero]
   simp [ipiece_isFuncOR_zero, sUseHorn]
-
-lemma itag_isFuncOR_zero {W : V} (hWp : W = indRecPieces) (ev : V) : sTag (mkStep W ((iIdx_isFuncOR_zero : ℕ) : V) ev) = 0 := by
-  subst hWp
-  rw [imk_isFuncOR_zero]; simp
 
 set_option maxHeartbeats 2000000 in
 lemma indRecPieces_isFuncOR_one : (indRecPieces : V).[((iIdx_isFuncOR_one : ℕ) : V)] = ipiece_isFuncOR_one := by
@@ -1859,10 +1580,6 @@ lemma imk_isFuncOR_one (ev : V) :
   rw [mkStep, indRecPieces_isFuncOR_one]
   simp [ipiece_isFuncOR_one, sUseHorn]
 
-lemma itag_isFuncOR_one {W : V} (hWp : W = indRecPieces) (ev : V) : sTag (mkStep W ((iIdx_isFuncOR_one : ℕ) : V) ev) = 0 := by
-  subst hWp
-  rw [imk_isFuncOR_one]; simp
-
 set_option maxHeartbeats 2000000 in
 lemma indRecPieces_isFuncOR_add : (indRecPieces : V).[((iIdx_isFuncOR_add : ℕ) : V)] = ipiece_isFuncOR_add := by
   unfold indRecPieces
@@ -1873,10 +1590,6 @@ lemma imk_isFuncOR_add (ev : V) :
     mkStep indRecPieces ((iIdx_isFuncOR_add : ℕ) : V) ev = sUseHorn ((iIdx_isFuncOR_add : ℕ) : V) ev (vecOf row_isFuncOR_add_as) row_isFuncOR_add_c := by
   rw [mkStep, indRecPieces_isFuncOR_add]
   simp [ipiece_isFuncOR_add, sUseHorn]
-
-lemma itag_isFuncOR_add {W : V} (hWp : W = indRecPieces) (ev : V) : sTag (mkStep W ((iIdx_isFuncOR_add : ℕ) : V) ev) = 0 := by
-  subst hWp
-  rw [imk_isFuncOR_add]; simp
 
 set_option maxHeartbeats 2000000 in
 lemma indRecPieces_isFuncOR_mul : (indRecPieces : V).[((iIdx_isFuncOR_mul : ℕ) : V)] = ipiece_isFuncOR_mul := by
@@ -1889,10 +1602,6 @@ lemma imk_isFuncOR_mul (ev : V) :
   rw [mkStep, indRecPieces_isFuncOR_mul]
   simp [ipiece_isFuncOR_mul, sUseHorn]
 
-lemma itag_isFuncOR_mul {W : V} (hWp : W = indRecPieces) (ev : V) : sTag (mkStep W ((iIdx_isFuncOR_mul : ℕ) : V) ev) = 0 := by
-  subst hWp
-  rw [imk_isFuncOR_mul]; simp
-
 set_option maxHeartbeats 2000000 in
 lemma indRecPieces_isRelOR_eq : (indRecPieces : V).[((iIdx_isRelOR_eq : ℕ) : V)] = ipiece_isRelOR_eq := by
   unfold indRecPieces
@@ -1903,10 +1612,6 @@ lemma imk_isRelOR_eq (ev : V) :
     mkStep indRecPieces ((iIdx_isRelOR_eq : ℕ) : V) ev = sUseHorn ((iIdx_isRelOR_eq : ℕ) : V) ev (vecOf row_isRelOR_eq_as) row_isRelOR_eq_c := by
   rw [mkStep, indRecPieces_isRelOR_eq]
   simp [ipiece_isRelOR_eq, sUseHorn]
-
-lemma itag_isRelOR_eq {W : V} (hWp : W = indRecPieces) (ev : V) : sTag (mkStep W ((iIdx_isRelOR_eq : ℕ) : V) ev) = 0 := by
-  subst hWp
-  rw [imk_isRelOR_eq]; simp
 
 set_option maxHeartbeats 2000000 in
 lemma indRecPieces_isRelOR_lt : (indRecPieces : V).[((iIdx_isRelOR_lt : ℕ) : V)] = ipiece_isRelOR_lt := by
@@ -1919,10 +1624,6 @@ lemma imk_isRelOR_lt (ev : V) :
   rw [mkStep, indRecPieces_isRelOR_lt]
   simp [ipiece_isRelOR_lt, sUseHorn]
 
-lemma itag_isRelOR_lt {W : V} (hWp : W = indRecPieces) (ev : V) : sTag (mkStep W ((iIdx_isRelOR_lt : ℕ) : V) ev) = 0 := by
-  subst hWp
-  rw [imk_isRelOR_lt]; simp
-
 set_option maxHeartbeats 2000000 in
 lemma indRecPieces_bsBvar : (indRecPieces : V).[((iIdx_bsBvar : ℕ) : V)] = ipiece_bsBvar := by
   unfold indRecPieces
@@ -1933,10 +1634,6 @@ lemma imk_bsBvar (ev : V) :
     mkStep indRecPieces ((iIdx_bsBvar : ℕ) : V) ev = sUseHorn ((iIdx_bsBvar : ℕ) : V) ev (vecOf row_bsBvar_as) row_bsBvar_c := by
   rw [mkStep, indRecPieces_bsBvar]
   simp [ipiece_bsBvar, sUseHorn]
-
-lemma itag_bsBvar {W : V} (hWp : W = indRecPieces) (ev : V) : sTag (mkStep W ((iIdx_bsBvar : ℕ) : V) ev) = 0 := by
-  subst hWp
-  rw [imk_bsBvar]; simp
 
 set_option maxHeartbeats 2000000 in
 lemma indRecPieces_bsFvar : (indRecPieces : V).[((iIdx_bsFvar : ℕ) : V)] = ipiece_bsFvar := by
@@ -1949,10 +1646,6 @@ lemma imk_bsFvar (ev : V) :
   rw [mkStep, indRecPieces_bsFvar]
   simp [ipiece_bsFvar, sUseHorn]
 
-lemma itag_bsFvar {W : V} (hWp : W = indRecPieces) (ev : V) : sTag (mkStep W ((iIdx_bsFvar : ℕ) : V) ev) = 0 := by
-  subst hWp
-  rw [imk_bsFvar]; simp
-
 set_option maxHeartbeats 2000000 in
 lemma indRecPieces_bsFunc : (indRecPieces : V).[((iIdx_bsFunc : ℕ) : V)] = ipiece_bsFunc := by
   unfold indRecPieces
@@ -1963,10 +1656,6 @@ lemma imk_bsFunc (ev : V) :
     mkStep indRecPieces ((iIdx_bsFunc : ℕ) : V) ev = sUseHorn ((iIdx_bsFunc : ℕ) : V) ev (vecOf row_bsFunc_as) row_bsFunc_c := by
   rw [mkStep, indRecPieces_bsFunc]
   simp [ipiece_bsFunc, sUseHorn]
-
-lemma itag_bsFunc {W : V} (hWp : W = indRecPieces) (ev : V) : sTag (mkStep W ((iIdx_bsFunc : ℕ) : V) ev) = 0 := by
-  subst hWp
-  rw [imk_bsFunc]; simp
 
 set_option maxHeartbeats 2000000 in
 lemma indRecPieces_bsVNil : (indRecPieces : V).[((iIdx_bsVNil : ℕ) : V)] = ipiece_bsVNil := by
@@ -1979,10 +1668,6 @@ lemma imk_bsVNil (ev : V) :
   rw [mkStep, indRecPieces_bsVNil]
   simp [ipiece_bsVNil, sUseHorn]
 
-lemma itag_bsVNil {W : V} (hWp : W = indRecPieces) (ev : V) : sTag (mkStep W ((iIdx_bsVNil : ℕ) : V) ev) = 0 := by
-  subst hWp
-  rw [imk_bsVNil]; simp
-
 set_option maxHeartbeats 2000000 in
 lemma indRecPieces_bsVAdjL : (indRecPieces : V).[((iIdx_bsVAdjL : ℕ) : V)] = ipiece_bsVAdjL := by
   unfold indRecPieces
@@ -1993,10 +1678,6 @@ lemma imk_bsVAdjL (ev : V) :
     mkStep indRecPieces ((iIdx_bsVAdjL : ℕ) : V) ev = sUseHorn ((iIdx_bsVAdjL : ℕ) : V) ev (vecOf row_bsVAdjL_as) row_bsVAdjL_c := by
   rw [mkStep, indRecPieces_bsVAdjL]
   simp [ipiece_bsVAdjL, sUseHorn]
-
-lemma itag_bsVAdjL {W : V} (hWp : W = indRecPieces) (ev : V) : sTag (mkStep W ((iIdx_bsVAdjL : ℕ) : V) ev) = 0 := by
-  subst hWp
-  rw [imk_bsVAdjL]; simp
 
 set_option maxHeartbeats 2000000 in
 lemma indRecPieces_bsVAdjR : (indRecPieces : V).[((iIdx_bsVAdjR : ℕ) : V)] = ipiece_bsVAdjR := by
@@ -2009,10 +1690,6 @@ lemma imk_bsVAdjR (ev : V) :
   rw [mkStep, indRecPieces_bsVAdjR]
   simp [ipiece_bsVAdjR, sUseHorn]
 
-lemma itag_bsVAdjR {W : V} (hWp : W = indRecPieces) (ev : V) : sTag (mkStep W ((iIdx_bsVAdjR : ℕ) : V) ev) = 0 := by
-  subst hWp
-  rw [imk_bsVAdjR]; simp
-
 set_option maxHeartbeats 2000000 in
 lemma indRecPieces_bsRel : (indRecPieces : V).[((iIdx_bsRel : ℕ) : V)] = ipiece_bsRel := by
   unfold indRecPieces
@@ -2023,10 +1700,6 @@ lemma imk_bsRel (ev : V) :
     mkStep indRecPieces ((iIdx_bsRel : ℕ) : V) ev = sUseHorn ((iIdx_bsRel : ℕ) : V) ev (vecOf row_bsRel_as) row_bsRel_c := by
   rw [mkStep, indRecPieces_bsRel]
   simp [ipiece_bsRel, sUseHorn]
-
-lemma itag_bsRel {W : V} (hWp : W = indRecPieces) (ev : V) : sTag (mkStep W ((iIdx_bsRel : ℕ) : V) ev) = 0 := by
-  subst hWp
-  rw [imk_bsRel]; simp
 
 set_option maxHeartbeats 2000000 in
 lemma indRecPieces_bsNRel : (indRecPieces : V).[((iIdx_bsNRel : ℕ) : V)] = ipiece_bsNRel := by
@@ -2039,10 +1712,6 @@ lemma imk_bsNRel (ev : V) :
   rw [mkStep, indRecPieces_bsNRel]
   simp [ipiece_bsNRel, sUseHorn]
 
-lemma itag_bsNRel {W : V} (hWp : W = indRecPieces) (ev : V) : sTag (mkStep W ((iIdx_bsNRel : ℕ) : V) ev) = 0 := by
-  subst hWp
-  rw [imk_bsNRel]; simp
-
 set_option maxHeartbeats 2000000 in
 lemma indRecPieces_bsVerum : (indRecPieces : V).[((iIdx_bsVerum : ℕ) : V)] = ipiece_bsVerum := by
   unfold indRecPieces
@@ -2053,10 +1722,6 @@ lemma imk_bsVerum (ev : V) :
     mkStep indRecPieces ((iIdx_bsVerum : ℕ) : V) ev = sUseHorn ((iIdx_bsVerum : ℕ) : V) ev (vecOf row_bsVerum_as) row_bsVerum_c := by
   rw [mkStep, indRecPieces_bsVerum]
   simp [ipiece_bsVerum, sUseHorn]
-
-lemma itag_bsVerum {W : V} (hWp : W = indRecPieces) (ev : V) : sTag (mkStep W ((iIdx_bsVerum : ℕ) : V) ev) = 0 := by
-  subst hWp
-  rw [imk_bsVerum]; simp
 
 set_option maxHeartbeats 2000000 in
 lemma indRecPieces_bsFalsum : (indRecPieces : V).[((iIdx_bsFalsum : ℕ) : V)] = ipiece_bsFalsum := by
@@ -2069,10 +1734,6 @@ lemma imk_bsFalsum (ev : V) :
   rw [mkStep, indRecPieces_bsFalsum]
   simp [ipiece_bsFalsum, sUseHorn]
 
-lemma itag_bsFalsum {W : V} (hWp : W = indRecPieces) (ev : V) : sTag (mkStep W ((iIdx_bsFalsum : ℕ) : V) ev) = 0 := by
-  subst hWp
-  rw [imk_bsFalsum]; simp
-
 set_option maxHeartbeats 2000000 in
 lemma indRecPieces_bsAndL : (indRecPieces : V).[((iIdx_bsAndL : ℕ) : V)] = ipiece_bsAndL := by
   unfold indRecPieces
@@ -2083,10 +1744,6 @@ lemma imk_bsAndL (ev : V) :
     mkStep indRecPieces ((iIdx_bsAndL : ℕ) : V) ev = sUseHorn ((iIdx_bsAndL : ℕ) : V) ev (vecOf row_bsAndL_as) row_bsAndL_c := by
   rw [mkStep, indRecPieces_bsAndL]
   simp [ipiece_bsAndL, sUseHorn]
-
-lemma itag_bsAndL {W : V} (hWp : W = indRecPieces) (ev : V) : sTag (mkStep W ((iIdx_bsAndL : ℕ) : V) ev) = 0 := by
-  subst hWp
-  rw [imk_bsAndL]; simp
 
 set_option maxHeartbeats 2000000 in
 lemma indRecPieces_bsAndR : (indRecPieces : V).[((iIdx_bsAndR : ℕ) : V)] = ipiece_bsAndR := by
@@ -2099,10 +1756,6 @@ lemma imk_bsAndR (ev : V) :
   rw [mkStep, indRecPieces_bsAndR]
   simp [ipiece_bsAndR, sUseHorn]
 
-lemma itag_bsAndR {W : V} (hWp : W = indRecPieces) (ev : V) : sTag (mkStep W ((iIdx_bsAndR : ℕ) : V) ev) = 0 := by
-  subst hWp
-  rw [imk_bsAndR]; simp
-
 set_option maxHeartbeats 2000000 in
 lemma indRecPieces_bsOrL : (indRecPieces : V).[((iIdx_bsOrL : ℕ) : V)] = ipiece_bsOrL := by
   unfold indRecPieces
@@ -2113,10 +1766,6 @@ lemma imk_bsOrL (ev : V) :
     mkStep indRecPieces ((iIdx_bsOrL : ℕ) : V) ev = sUseHorn ((iIdx_bsOrL : ℕ) : V) ev (vecOf row_bsOrL_as) row_bsOrL_c := by
   rw [mkStep, indRecPieces_bsOrL]
   simp [ipiece_bsOrL, sUseHorn]
-
-lemma itag_bsOrL {W : V} (hWp : W = indRecPieces) (ev : V) : sTag (mkStep W ((iIdx_bsOrL : ℕ) : V) ev) = 0 := by
-  subst hWp
-  rw [imk_bsOrL]; simp
 
 set_option maxHeartbeats 2000000 in
 lemma indRecPieces_bsOrR : (indRecPieces : V).[((iIdx_bsOrR : ℕ) : V)] = ipiece_bsOrR := by
@@ -2129,10 +1778,6 @@ lemma imk_bsOrR (ev : V) :
   rw [mkStep, indRecPieces_bsOrR]
   simp [ipiece_bsOrR, sUseHorn]
 
-lemma itag_bsOrR {W : V} (hWp : W = indRecPieces) (ev : V) : sTag (mkStep W ((iIdx_bsOrR : ℕ) : V) ev) = 0 := by
-  subst hWp
-  rw [imk_bsOrR]; simp
-
 set_option maxHeartbeats 2000000 in
 lemma indRecPieces_bsAllS : (indRecPieces : V).[((iIdx_bsAllS : ℕ) : V)] = ipiece_bsAllS := by
   unfold indRecPieces
@@ -2143,10 +1788,6 @@ lemma imk_bsAllS (ev : V) :
     mkStep indRecPieces ((iIdx_bsAllS : ℕ) : V) ev = sUseHorn ((iIdx_bsAllS : ℕ) : V) ev (vecOf row_bsAllS_as) row_bsAllS_c := by
   rw [mkStep, indRecPieces_bsAllS]
   simp [ipiece_bsAllS, sUseHorn]
-
-lemma itag_bsAllS {W : V} (hWp : W = indRecPieces) (ev : V) : sTag (mkStep W ((iIdx_bsAllS : ℕ) : V) ev) = 0 := by
-  subst hWp
-  rw [imk_bsAllS]; simp
 
 set_option maxHeartbeats 2000000 in
 lemma indRecPieces_bsAllZ : (indRecPieces : V).[((iIdx_bsAllZ : ℕ) : V)] = ipiece_bsAllZ := by
@@ -2159,10 +1800,6 @@ lemma imk_bsAllZ (ev : V) :
   rw [mkStep, indRecPieces_bsAllZ]
   simp [ipiece_bsAllZ, sUseHorn]
 
-lemma itag_bsAllZ {W : V} (hWp : W = indRecPieces) (ev : V) : sTag (mkStep W ((iIdx_bsAllZ : ℕ) : V) ev) = 0 := by
-  subst hWp
-  rw [imk_bsAllZ]; simp
-
 set_option maxHeartbeats 2000000 in
 lemma indRecPieces_bsExsS : (indRecPieces : V).[((iIdx_bsExsS : ℕ) : V)] = ipiece_bsExsS := by
   unfold indRecPieces
@@ -2173,10 +1810,6 @@ lemma imk_bsExsS (ev : V) :
     mkStep indRecPieces ((iIdx_bsExsS : ℕ) : V) ev = sUseHorn ((iIdx_bsExsS : ℕ) : V) ev (vecOf row_bsExsS_as) row_bsExsS_c := by
   rw [mkStep, indRecPieces_bsExsS]
   simp [ipiece_bsExsS, sUseHorn]
-
-lemma itag_bsExsS {W : V} (hWp : W = indRecPieces) (ev : V) : sTag (mkStep W ((iIdx_bsExsS : ℕ) : V) ev) = 0 := by
-  subst hWp
-  rw [imk_bsExsS]; simp
 
 set_option maxHeartbeats 2000000 in
 lemma indRecPieces_bsExsZ : (indRecPieces : V).[((iIdx_bsExsZ : ℕ) : V)] = ipiece_bsExsZ := by
@@ -2189,10 +1822,6 @@ lemma imk_bsExsZ (ev : V) :
   rw [mkStep, indRecPieces_bsExsZ]
   simp [ipiece_bsExsZ, sUseHorn]
 
-lemma itag_bsExsZ {W : V} (hWp : W = indRecPieces) (ev : V) : sTag (mkStep W ((iIdx_bsExsZ : ℕ) : V) ev) = 0 := by
-  subst hWp
-  rw [imk_bsExsZ]; simp
-
 set_option maxHeartbeats 2000000 in
 lemma indRecPieces_leSuccR : (indRecPieces : V).[((iIdx_leSuccR : ℕ) : V)] = ipiece_leSuccR := by
   unfold indRecPieces
@@ -2203,10 +1832,6 @@ lemma imk_leSuccR (ev : V) :
     mkStep indRecPieces ((iIdx_leSuccR : ℕ) : V) ev = sUseHorn ((iIdx_leSuccR : ℕ) : V) ev (vecOf row_leSuccR_as) row_leSuccR_c := by
   rw [mkStep, indRecPieces_leSuccR]
   simp [ipiece_leSuccR, sUseHorn]
-
-lemma itag_leSuccR {W : V} (hWp : W = indRecPieces) (ev : V) : sTag (mkStep W ((iIdx_leSuccR : ℕ) : V) ev) = 0 := by
-  subst hWp
-  rw [imk_leSuccR]; simp
 
 set_option maxHeartbeats 2000000 in
 lemma indRecPieces_fvSeqNil : (indRecPieces : V).[((iIdx_fvSeqNil : ℕ) : V)] = ipiece_fvSeqNil := by
@@ -2219,10 +1844,6 @@ lemma imk_fvSeqNil (ev : V) :
   rw [mkStep, indRecPieces_fvSeqNil]
   simp [ipiece_fvSeqNil, sUseHorn]
 
-lemma itag_fvSeqNil {W : V} (hWp : W = indRecPieces) (ev : V) : sTag (mkStep W ((iIdx_fvSeqNil : ℕ) : V) ev) = 0 := by
-  subst hWp
-  rw [imk_fvSeqNil]; simp
-
 set_option maxHeartbeats 2000000 in
 lemma indRecPieces_fvSeqCons : (indRecPieces : V).[((iIdx_fvSeqCons : ℕ) : V)] = ipiece_fvSeqCons := by
   unfold indRecPieces
@@ -2233,10 +1854,6 @@ lemma imk_fvSeqCons (ev : V) :
     mkStep indRecPieces ((iIdx_fvSeqCons : ℕ) : V) ev = sUseHorn ((iIdx_fvSeqCons : ℕ) : V) ev (vecOf row_fvSeqCons_as) row_fvSeqCons_c := by
   rw [mkStep, indRecPieces_fvSeqCons]
   simp [ipiece_fvSeqCons, sUseHorn]
-
-lemma itag_fvSeqCons {W : V} (hWp : W = indRecPieces) (ev : V) : sTag (mkStep W ((iIdx_fvSeqCons : ℕ) : V) ev) = 0 := by
-  subst hWp
-  rw [imk_fvSeqCons]; simp
 
 set_option maxHeartbeats 2000000 in
 lemma indRecPieces_c0Intro : (indRecPieces : V).[((iIdx_c0Intro : ℕ) : V)] = ipiece_c0Intro := by
@@ -2249,10 +1866,6 @@ lemma imk_c0Intro (ev : V) :
   rw [mkStep, indRecPieces_c0Intro]
   simp [ipiece_c0Intro, sUseHorn]
 
-lemma itag_c0Intro {W : V} (hWp : W = indRecPieces) (ev : V) : sTag (mkStep W ((iIdx_c0Intro : ℕ) : V) ev) = 0 := by
-  subst hWp
-  rw [imk_c0Intro]; simp
-
 set_option maxHeartbeats 2000000 in
 lemma indRecPieces_c1Intro : (indRecPieces : V).[((iIdx_c1Intro : ℕ) : V)] = ipiece_c1Intro := by
   unfold indRecPieces
@@ -2263,10 +1876,6 @@ lemma imk_c1Intro (ev : V) :
     mkStep indRecPieces ((iIdx_c1Intro : ℕ) : V) ev = sUseHorn ((iIdx_c1Intro : ℕ) : V) ev (vecOf row_c1Intro_as) row_c1Intro_c := by
   rw [mkStep, indRecPieces_c1Intro]
   simp [ipiece_c1Intro, sUseHorn]
-
-lemma itag_c1Intro {W : V} (hWp : W = indRecPieces) (ev : V) : sTag (mkStep W ((iIdx_c1Intro : ℕ) : V) ev) = 0 := by
-  subst hWp
-  rw [imk_c1Intro]; simp
 
 set_option maxHeartbeats 2000000 in
 lemma indRecPieces_bodyIntro : (indRecPieces : V).[((iIdx_bodyIntro : ℕ) : V)] = ipiece_bodyIntro := by
@@ -2279,10 +1888,6 @@ lemma imk_bodyIntro (ev : V) :
   rw [mkStep, indRecPieces_bodyIntro]
   simp [ipiece_bodyIntro, sUseHorn]
 
-lemma itag_bodyIntro {W : V} (hWp : W = indRecPieces) (ev : V) : sTag (mkStep W ((iIdx_bodyIntro : ℕ) : V) ev) = 0 := by
-  subst hWp
-  rw [imk_bodyIntro]; simp
-
 set_option maxHeartbeats 2000000 in
 lemma indRecPieces_indBodyIntroL : (indRecPieces : V).[((iIdx_indBodyIntroL : ℕ) : V)] = ipiece_indBodyIntroL := by
   unfold indRecPieces
@@ -2294,10 +1899,6 @@ lemma imk_indBodyIntroL (ev : V) :
   rw [mkStep, indRecPieces_indBodyIntroL]
   simp [ipiece_indBodyIntroL, sUseHorn]
 
-lemma itag_indBodyIntroL {W : V} (hWp : W = indRecPieces) (ev : V) : sTag (mkStep W ((iIdx_indBodyIntroL : ℕ) : V) ev) = 0 := by
-  subst hWp
-  rw [imk_indBodyIntroL]; simp
-
 set_option maxHeartbeats 2000000 in
 lemma indRecPieces_indRecL : (indRecPieces : V).[((iIdx_indRecL : ℕ) : V)] = ipiece_indRecL := by
   unfold indRecPieces
@@ -2308,10 +1909,6 @@ lemma imk_indRecL (ev : V) :
     mkStep indRecPieces ((iIdx_indRecL : ℕ) : V) ev = sUseHorn ((iIdx_indRecL : ℕ) : V) ev (vecOf row_indRecL_as) row_indRecL_c := by
   rw [mkStep, indRecPieces_indRecL]
   simp [ipiece_indRecL, sUseHorn]
-
-lemma itag_indRecL {W : V} (hWp : W = indRecPieces) (ev : V) : sTag (mkStep W ((iIdx_indRecL : ℕ) : V) ev) = 0 := by
-  subst hWp
-  rw [imk_indRecL]; simp
 
 /-! ### The per-row applicability lemmas `iok_<row>` (against explicit table readings) -/
 

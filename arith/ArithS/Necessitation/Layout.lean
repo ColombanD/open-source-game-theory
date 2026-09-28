@@ -825,11 +825,6 @@ lemma lmk_congPi (ev : V) :
   rw [mkStep, layoutPieces_congPi]
   simp [lpiece_congPi, sUseHorn]
 
-lemma ltag_congPi {W : V} (hWp : W = layoutPieces) (ev : V) : sTag (mkStep W (44 : V) ev) = 0 := by
-  subst hWp
-  have hk : ((lIdx_congPi : ℕ) : V) = (44 : V) := by simp [lIdx_congPi]
-  rw [← hk, lmk_congPi]; simp
-
 lemma layoutPieces_congTPi : (layoutPieces : V).[((lIdx_congTPi : ℕ) : V)] = lpiece_congTPi := by
   unfold layoutPieces
   rw [nth_vecOf _ lIdx_congTPi (Nat.lt_of_sub_eq_succ rfl)]
@@ -839,11 +834,6 @@ lemma lmk_congTPi (ev : V) :
     mkStep layoutPieces ((lIdx_congTPi : ℕ) : V) ev = sUseHorn ((lIdx_congTPi : ℕ) : V) ev (vecOf row_congTPi_as) row_congTPi_c := by
   rw [mkStep, layoutPieces_congTPi]
   simp [lpiece_congTPi, sUseHorn]
-
-lemma ltag_congTPi {W : V} (hWp : W = layoutPieces) (ev : V) : sTag (mkStep W (45 : V) ev) = 0 := by
-  subst hWp
-  have hk : ((lIdx_congTPi : ℕ) : V) = (45 : V) := by simp [lIdx_congTPi]
-  rw [← hk, lmk_congTPi]; simp
 
 lemma layoutPieces_congTvPi : (layoutPieces : V).[((lIdx_congTvPi : ℕ) : V)] = lpiece_congTvPi := by
   unfold layoutPieces
@@ -855,11 +845,6 @@ lemma lmk_congTvPi (ev : V) :
   rw [mkStep, layoutPieces_congTvPi]
   simp [lpiece_congTvPi, sUseHorn]
 
-lemma ltag_congTvPi {W : V} (hWp : W = layoutPieces) (ev : V) : sTag (mkStep W (46 : V) ev) = 0 := by
-  subst hWp
-  have hk : ((lIdx_congTvPi : ℕ) : V) = (46 : V) := by simp [lIdx_congTvPi]
-  rw [← hk, lmk_congTvPi]; simp
-
 lemma layoutPieces_congUtvPi : (layoutPieces : V).[((lIdx_congUtvPi : ℕ) : V)] = lpiece_congUtvPi := by
   unfold layoutPieces
   rw [nth_vecOf _ lIdx_congUtvPi (Nat.lt_of_sub_eq_succ rfl)]
@@ -869,11 +854,6 @@ lemma lmk_congUtvPi (ev : V) :
     mkStep layoutPieces ((lIdx_congUtvPi : ℕ) : V) ev = sUseHorn ((lIdx_congUtvPi : ℕ) : V) ev (vecOf row_congUtvPi_as) row_congUtvPi_c := by
   rw [mkStep, layoutPieces_congUtvPi]
   simp [lpiece_congUtvPi, sUseHorn]
-
-lemma ltag_congUtvPi {W : V} (hWp : W = layoutPieces) (ev : V) : sTag (mkStep W (47 : V) ev) = 0 := by
-  subst hWp
-  have hk : ((lIdx_congUtvPi : ℕ) : V) = (47 : V) := by simp [lIdx_congUtvPi]
-  rw [← hk, lmk_congUtvPi]; simp
 
 lemma layoutPieces_congAnd : (layoutPieces : V).[((lIdx_congAnd : ℕ) : V)] = lpiece_congAnd := by
   unfold layoutPieces
@@ -885,11 +865,6 @@ lemma lmk_congAnd (ev : V) :
   rw [mkStep, layoutPieces_congAnd]
   simp [lpiece_congAnd, sUseHorn]
 
-lemma ltag_congAnd {W : V} (hWp : W = layoutPieces) (ev : V) : sTag (mkStep W (48 : V) ev) = 0 := by
-  subst hWp
-  have hk : ((lIdx_congAnd : ℕ) : V) = (48 : V) := by simp [lIdx_congAnd]
-  rw [← hk, lmk_congAnd]; simp
-
 lemma layoutPieces_congOr : (layoutPieces : V).[((lIdx_congOr : ℕ) : V)] = lpiece_congOr := by
   unfold layoutPieces
   rw [nth_vecOf _ lIdx_congOr (Nat.lt_of_sub_eq_succ rfl)]
@@ -899,11 +874,6 @@ lemma lmk_congOr (ev : V) :
     mkStep layoutPieces ((lIdx_congOr : ℕ) : V) ev = sUseHorn ((lIdx_congOr : ℕ) : V) ev (vecOf row_congOr_as) row_congOr_c := by
   rw [mkStep, layoutPieces_congOr]
   simp [lpiece_congOr, sUseHorn]
-
-lemma ltag_congOr {W : V} (hWp : W = layoutPieces) (ev : V) : sTag (mkStep W (49 : V) ev) = 0 := by
-  subst hWp
-  have hk : ((lIdx_congOr : ℕ) : V) = (49 : V) := by simp [lIdx_congOr]
-  rw [← hk, lmk_congOr]; simp
 
 lemma layoutPieces_congAll : (layoutPieces : V).[((lIdx_congAll : ℕ) : V)] = lpiece_congAll := by
   unfold layoutPieces
@@ -915,11 +885,6 @@ lemma lmk_congAll (ev : V) :
   rw [mkStep, layoutPieces_congAll]
   simp [lpiece_congAll, sUseHorn]
 
-lemma ltag_congAll {W : V} (hWp : W = layoutPieces) (ev : V) : sTag (mkStep W (50 : V) ev) = 0 := by
-  subst hWp
-  have hk : ((lIdx_congAll : ℕ) : V) = (50 : V) := by simp [lIdx_congAll]
-  rw [← hk, lmk_congAll]; simp
-
 lemma layoutPieces_congExs : (layoutPieces : V).[((lIdx_congExs : ℕ) : V)] = lpiece_congExs := by
   unfold layoutPieces
   rw [nth_vecOf _ lIdx_congExs (Nat.lt_of_sub_eq_succ rfl)]
@@ -929,11 +894,6 @@ lemma lmk_congExs (ev : V) :
     mkStep layoutPieces ((lIdx_congExs : ℕ) : V) ev = sUseHorn ((lIdx_congExs : ℕ) : V) ev (vecOf row_congExs_as) row_congExs_c := by
   rw [mkStep, layoutPieces_congExs]
   simp [lpiece_congExs, sUseHorn]
-
-lemma ltag_congExs {W : V} (hWp : W = layoutPieces) (ev : V) : sTag (mkStep W (51 : V) ev) = 0 := by
-  subst hWp
-  have hk : ((lIdx_congExs : ℕ) : V) = (51 : V) := by simp [lIdx_congExs]
-  rw [← hk, lmk_congExs]; simp
 
 lemma layoutPieces_congRel : (layoutPieces : V).[((lIdx_congRel : ℕ) : V)] = lpiece_congRel := by
   unfold layoutPieces
@@ -945,11 +905,6 @@ lemma lmk_congRel (ev : V) :
   rw [mkStep, layoutPieces_congRel]
   simp [lpiece_congRel, sUseHorn]
 
-lemma ltag_congRel {W : V} (hWp : W = layoutPieces) (ev : V) : sTag (mkStep W (52 : V) ev) = 0 := by
-  subst hWp
-  have hk : ((lIdx_congRel : ℕ) : V) = (52 : V) := by simp [lIdx_congRel]
-  rw [← hk, lmk_congRel]; simp
-
 lemma layoutPieces_congNRel : (layoutPieces : V).[((lIdx_congNRel : ℕ) : V)] = lpiece_congNRel := by
   unfold layoutPieces
   rw [nth_vecOf _ lIdx_congNRel (Nat.lt_of_sub_eq_succ rfl)]
@@ -959,11 +914,6 @@ lemma lmk_congNRel (ev : V) :
     mkStep layoutPieces ((lIdx_congNRel : ℕ) : V) ev = sUseHorn ((lIdx_congNRel : ℕ) : V) ev (vecOf row_congNRel_as) row_congNRel_c := by
   rw [mkStep, layoutPieces_congNRel]
   simp [lpiece_congNRel, sUseHorn]
-
-lemma ltag_congNRel {W : V} (hWp : W = layoutPieces) (ev : V) : sTag (mkStep W (53 : V) ev) = 0 := by
-  subst hWp
-  have hk : ((lIdx_congNRel : ℕ) : V) = (53 : V) := by simp [lIdx_congNRel]
-  rw [← hk, lmk_congNRel]; simp
 
 lemma layoutPieces_congVerum : (layoutPieces : V).[((lIdx_congVerum : ℕ) : V)] = lpiece_congVerum := by
   unfold layoutPieces
@@ -975,11 +925,6 @@ lemma lmk_congVerum (ev : V) :
   rw [mkStep, layoutPieces_congVerum]
   simp [lpiece_congVerum, sUseHorn]
 
-lemma ltag_congVerum {W : V} (hWp : W = layoutPieces) (ev : V) : sTag (mkStep W (54 : V) ev) = 0 := by
-  subst hWp
-  have hk : ((lIdx_congVerum : ℕ) : V) = (54 : V) := by simp [lIdx_congVerum]
-  rw [← hk, lmk_congVerum]; simp
-
 lemma layoutPieces_congFalsum : (layoutPieces : V).[((lIdx_congFalsum : ℕ) : V)] = lpiece_congFalsum := by
   unfold layoutPieces
   rw [nth_vecOf _ lIdx_congFalsum (Nat.lt_of_sub_eq_succ rfl)]
@@ -989,11 +934,6 @@ lemma lmk_congFalsum (ev : V) :
     mkStep layoutPieces ((lIdx_congFalsum : ℕ) : V) ev = sUseHorn ((lIdx_congFalsum : ℕ) : V) ev (vecOf row_congFalsum_as) row_congFalsum_c := by
   rw [mkStep, layoutPieces_congFalsum]
   simp [lpiece_congFalsum, sUseHorn]
-
-lemma ltag_congFalsum {W : V} (hWp : W = layoutPieces) (ev : V) : sTag (mkStep W (55 : V) ev) = 0 := by
-  subst hWp
-  have hk : ((lIdx_congFalsum : ℕ) : V) = (55 : V) := by simp [lIdx_congFalsum]
-  rw [← hk, lmk_congFalsum]; simp
 
 lemma layoutPieces_congFunc : (layoutPieces : V).[((lIdx_congFunc : ℕ) : V)] = lpiece_congFunc := by
   unfold layoutPieces
@@ -1005,11 +945,6 @@ lemma lmk_congFunc (ev : V) :
   rw [mkStep, layoutPieces_congFunc]
   simp [lpiece_congFunc, sUseHorn]
 
-lemma ltag_congFunc {W : V} (hWp : W = layoutPieces) (ev : V) : sTag (mkStep W (56 : V) ev) = 0 := by
-  subst hWp
-  have hk : ((lIdx_congFunc : ℕ) : V) = (56 : V) := by simp [lIdx_congFunc]
-  rw [← hk, lmk_congFunc]; simp
-
 lemma layoutPieces_congBvar : (layoutPieces : V).[((lIdx_congBvar : ℕ) : V)] = lpiece_congBvar := by
   unfold layoutPieces
   rw [nth_vecOf _ lIdx_congBvar (Nat.lt_of_sub_eq_succ rfl)]
@@ -1020,11 +955,6 @@ lemma lmk_congBvar (ev : V) :
   rw [mkStep, layoutPieces_congBvar]
   simp [lpiece_congBvar, sUseHorn]
 
-lemma ltag_congBvar {W : V} (hWp : W = layoutPieces) (ev : V) : sTag (mkStep W (57 : V) ev) = 0 := by
-  subst hWp
-  have hk : ((lIdx_congBvar : ℕ) : V) = (57 : V) := by simp [lIdx_congBvar]
-  rw [← hk, lmk_congBvar]; simp
-
 lemma layoutPieces_congFvar : (layoutPieces : V).[((lIdx_congFvar : ℕ) : V)] = lpiece_congFvar := by
   unfold layoutPieces
   rw [nth_vecOf _ lIdx_congFvar (Nat.lt_of_sub_eq_succ rfl)]
@@ -1034,11 +964,6 @@ lemma lmk_congFvar (ev : V) :
     mkStep layoutPieces ((lIdx_congFvar : ℕ) : V) ev = sUseHorn ((lIdx_congFvar : ℕ) : V) ev (vecOf row_congFvar_as) row_congFvar_c := by
   rw [mkStep, layoutPieces_congFvar]
   simp [lpiece_congFvar, sUseHorn]
-
-lemma ltag_congFvar {W : V} (hWp : W = layoutPieces) (ev : V) : sTag (mkStep W (58 : V) ev) = 0 := by
-  subst hWp
-  have hk : ((lIdx_congFvar : ℕ) : V) = (58 : V) := by simp [lIdx_congFvar]
-  rw [← hk, lmk_congFvar]; simp
 
 lemma layoutPieces_congAdj : (layoutPieces : V).[((lIdx_congAdj : ℕ) : V)] = lpiece_congAdj := by
   unfold layoutPieces
@@ -1065,11 +990,6 @@ lemma lmk_congLen (ev : V) :
   rw [mkStep, layoutPieces_congLen]
   simp [lpiece_congLen, sUseHorn]
 
-lemma ltag_congLen {W : V} (hWp : W = layoutPieces) (ev : V) : sTag (mkStep W (60 : V) ev) = 0 := by
-  subst hWp
-  have hk : ((lIdx_congLen : ℕ) : V) = (60 : V) := by simp [lIdx_congLen]
-  rw [← hk, lmk_congLen]; simp
-
 lemma layoutPieces_congTLen : (layoutPieces : V).[((lIdx_congTLen : ℕ) : V)] = lpiece_congTLen := by
   unfold layoutPieces
   rw [nth_vecOf _ lIdx_congTLen (Nat.lt_of_sub_eq_succ rfl)]
@@ -1079,11 +999,6 @@ lemma lmk_congTLen (ev : V) :
     mkStep layoutPieces ((lIdx_congTLen : ℕ) : V) ev = sUseHorn ((lIdx_congTLen : ℕ) : V) ev (vecOf row_congTLen_as) row_congTLen_c := by
   rw [mkStep, layoutPieces_congTLen]
   simp [lpiece_congTLen, sUseHorn]
-
-lemma ltag_congTLen {W : V} (hWp : W = layoutPieces) (ev : V) : sTag (mkStep W (61 : V) ev) = 0 := by
-  subst hWp
-  have hk : ((lIdx_congTLen : ℕ) : V) = (61 : V) := by simp [lIdx_congTLen]
-  rw [← hk, lmk_congTLen]; simp
 
 lemma layoutPieces_congMem : (layoutPieces : V).[((lIdx_congMem : ℕ) : V)] = lpiece_congMem := by
   unfold layoutPieces
@@ -1095,11 +1010,6 @@ lemma lmk_congMem (ev : V) :
   rw [mkStep, layoutPieces_congMem]
   simp [lpiece_congMem, sUseHorn]
 
-lemma ltag_congMem {W : V} (hWp : W = layoutPieces) (ev : V) : sTag (mkStep W (62 : V) ev) = 0 := by
-  subst hWp
-  have hk : ((lIdx_congMem : ℕ) : V) = (62 : V) := by simp [lIdx_congMem]
-  rw [← hk, lmk_congMem]; simp
-
 lemma layoutPieces_eqOfAnd : (layoutPieces : V).[((lIdx_eqOfAnd : ℕ) : V)] = lpiece_eqOfAnd := by
   unfold layoutPieces
   rw [nth_vecOf _ lIdx_eqOfAnd (Nat.lt_of_sub_eq_succ rfl)]
@@ -1109,11 +1019,6 @@ lemma lmk_eqOfAnd (ev : V) :
     mkStep layoutPieces ((lIdx_eqOfAnd : ℕ) : V) ev = sUseHorn ((lIdx_eqOfAnd : ℕ) : V) ev (vecOf row_eqOfAnd_as) row_eqOfAnd_c := by
   rw [mkStep, layoutPieces_eqOfAnd]
   simp [lpiece_eqOfAnd, sUseHorn]
-
-lemma ltag_eqOfAnd {W : V} (hWp : W = layoutPieces) (ev : V) : sTag (mkStep W (63 : V) ev) = 0 := by
-  subst hWp
-  have hk : ((lIdx_eqOfAnd : ℕ) : V) = (63 : V) := by simp [lIdx_eqOfAnd]
-  rw [← hk, lmk_eqOfAnd]; simp
 
 lemma layoutPieces_eqOfOr : (layoutPieces : V).[((lIdx_eqOfOr : ℕ) : V)] = lpiece_eqOfOr := by
   unfold layoutPieces
@@ -1125,11 +1030,6 @@ lemma lmk_eqOfOr (ev : V) :
   rw [mkStep, layoutPieces_eqOfOr]
   simp [lpiece_eqOfOr, sUseHorn]
 
-lemma ltag_eqOfOr {W : V} (hWp : W = layoutPieces) (ev : V) : sTag (mkStep W (64 : V) ev) = 0 := by
-  subst hWp
-  have hk : ((lIdx_eqOfOr : ℕ) : V) = (64 : V) := by simp [lIdx_eqOfOr]
-  rw [← hk, lmk_eqOfOr]; simp
-
 lemma layoutPieces_eqOfAll : (layoutPieces : V).[((lIdx_eqOfAll : ℕ) : V)] = lpiece_eqOfAll := by
   unfold layoutPieces
   rw [nth_vecOf _ lIdx_eqOfAll (Nat.lt_of_sub_eq_succ rfl)]
@@ -1139,11 +1039,6 @@ lemma lmk_eqOfAll (ev : V) :
     mkStep layoutPieces ((lIdx_eqOfAll : ℕ) : V) ev = sUseHorn ((lIdx_eqOfAll : ℕ) : V) ev (vecOf row_eqOfAll_as) row_eqOfAll_c := by
   rw [mkStep, layoutPieces_eqOfAll]
   simp [lpiece_eqOfAll, sUseHorn]
-
-lemma ltag_eqOfAll {W : V} (hWp : W = layoutPieces) (ev : V) : sTag (mkStep W (65 : V) ev) = 0 := by
-  subst hWp
-  have hk : ((lIdx_eqOfAll : ℕ) : V) = (65 : V) := by simp [lIdx_eqOfAll]
-  rw [← hk, lmk_eqOfAll]; simp
 
 lemma layoutPieces_eqOfExs : (layoutPieces : V).[((lIdx_eqOfExs : ℕ) : V)] = lpiece_eqOfExs := by
   unfold layoutPieces
@@ -1155,11 +1050,6 @@ lemma lmk_eqOfExs (ev : V) :
   rw [mkStep, layoutPieces_eqOfExs]
   simp [lpiece_eqOfExs, sUseHorn]
 
-lemma ltag_eqOfExs {W : V} (hWp : W = layoutPieces) (ev : V) : sTag (mkStep W (66 : V) ev) = 0 := by
-  subst hWp
-  have hk : ((lIdx_eqOfExs : ℕ) : V) = (66 : V) := by simp [lIdx_eqOfExs]
-  rw [← hk, lmk_eqOfExs]; simp
-
 lemma layoutPieces_eqOfRel : (layoutPieces : V).[((lIdx_eqOfRel : ℕ) : V)] = lpiece_eqOfRel := by
   unfold layoutPieces
   rw [nth_vecOf _ lIdx_eqOfRel (Nat.lt_of_sub_eq_succ rfl)]
@@ -1169,11 +1059,6 @@ lemma lmk_eqOfRel (ev : V) :
     mkStep layoutPieces ((lIdx_eqOfRel : ℕ) : V) ev = sUseHorn ((lIdx_eqOfRel : ℕ) : V) ev (vecOf row_eqOfRel_as) row_eqOfRel_c := by
   rw [mkStep, layoutPieces_eqOfRel]
   simp [lpiece_eqOfRel, sUseHorn]
-
-lemma ltag_eqOfRel {W : V} (hWp : W = layoutPieces) (ev : V) : sTag (mkStep W (67 : V) ev) = 0 := by
-  subst hWp
-  have hk : ((lIdx_eqOfRel : ℕ) : V) = (67 : V) := by simp [lIdx_eqOfRel]
-  rw [← hk, lmk_eqOfRel]; simp
 
 lemma layoutPieces_eqOfNRel : (layoutPieces : V).[((lIdx_eqOfNRel : ℕ) : V)] = lpiece_eqOfNRel := by
   unfold layoutPieces
@@ -1185,11 +1070,6 @@ lemma lmk_eqOfNRel (ev : V) :
   rw [mkStep, layoutPieces_eqOfNRel]
   simp [lpiece_eqOfNRel, sUseHorn]
 
-lemma ltag_eqOfNRel {W : V} (hWp : W = layoutPieces) (ev : V) : sTag (mkStep W (68 : V) ev) = 0 := by
-  subst hWp
-  have hk : ((lIdx_eqOfNRel : ℕ) : V) = (68 : V) := by simp [lIdx_eqOfNRel]
-  rw [← hk, lmk_eqOfNRel]; simp
-
 lemma layoutPieces_eqOfVerum : (layoutPieces : V).[((lIdx_eqOfVerum : ℕ) : V)] = lpiece_eqOfVerum := by
   unfold layoutPieces
   rw [nth_vecOf _ lIdx_eqOfVerum (Nat.lt_of_sub_eq_succ rfl)]
@@ -1200,11 +1080,6 @@ lemma lmk_eqOfVerum (ev : V) :
   rw [mkStep, layoutPieces_eqOfVerum]
   simp [lpiece_eqOfVerum, sUseHorn]
 
-lemma ltag_eqOfVerum {W : V} (hWp : W = layoutPieces) (ev : V) : sTag (mkStep W (69 : V) ev) = 0 := by
-  subst hWp
-  have hk : ((lIdx_eqOfVerum : ℕ) : V) = (69 : V) := by simp [lIdx_eqOfVerum]
-  rw [← hk, lmk_eqOfVerum]; simp
-
 lemma layoutPieces_eqOfFalsum : (layoutPieces : V).[((lIdx_eqOfFalsum : ℕ) : V)] = lpiece_eqOfFalsum := by
   unfold layoutPieces
   rw [nth_vecOf _ lIdx_eqOfFalsum (Nat.lt_of_sub_eq_succ rfl)]
@@ -1214,11 +1089,6 @@ lemma lmk_eqOfFalsum (ev : V) :
     mkStep layoutPieces ((lIdx_eqOfFalsum : ℕ) : V) ev = sUseHorn ((lIdx_eqOfFalsum : ℕ) : V) ev (vecOf row_eqOfFalsum_as) row_eqOfFalsum_c := by
   rw [mkStep, layoutPieces_eqOfFalsum]
   simp [lpiece_eqOfFalsum, sUseHorn]
-
-lemma ltag_eqOfFalsum {W : V} (hWp : W = layoutPieces) (ev : V) : sTag (mkStep W (70 : V) ev) = 0 := by
-  subst hWp
-  have hk : ((lIdx_eqOfFalsum : ℕ) : V) = (70 : V) := by simp [lIdx_eqOfFalsum]
-  rw [← hk, lmk_eqOfFalsum]; simp
 
 lemma layoutPieces_eqOfFunc : (layoutPieces : V).[((lIdx_eqOfFunc : ℕ) : V)] = lpiece_eqOfFunc := by
   unfold layoutPieces
@@ -1245,11 +1115,6 @@ lemma lmk_eqOfBvar (ev : V) :
   rw [mkStep, layoutPieces_eqOfBvar]
   simp [lpiece_eqOfBvar, sUseHorn]
 
-lemma ltag_eqOfBvar {W : V} (hWp : W = layoutPieces) (ev : V) : sTag (mkStep W (72 : V) ev) = 0 := by
-  subst hWp
-  have hk : ((lIdx_eqOfBvar : ℕ) : V) = (72 : V) := by simp [lIdx_eqOfBvar]
-  rw [← hk, lmk_eqOfBvar]; simp
-
 lemma layoutPieces_eqOfFvar : (layoutPieces : V).[((lIdx_eqOfFvar : ℕ) : V)] = lpiece_eqOfFvar := by
   unfold layoutPieces
   rw [nth_vecOf _ lIdx_eqOfFvar (Nat.lt_of_sub_eq_succ rfl)]
@@ -1260,11 +1125,6 @@ lemma lmk_eqOfFvar (ev : V) :
   rw [mkStep, layoutPieces_eqOfFvar]
   simp [lpiece_eqOfFvar, sUseHorn]
 
-lemma ltag_eqOfFvar {W : V} (hWp : W = layoutPieces) (ev : V) : sTag (mkStep W (73 : V) ev) = 0 := by
-  subst hWp
-  have hk : ((lIdx_eqOfFvar : ℕ) : V) = (73 : V) := by simp [lIdx_eqOfFvar]
-  rw [← hk, lmk_eqOfFvar]; simp
-
 lemma layoutPieces_eqOfAdj : (layoutPieces : V).[((lIdx_eqOfAdj : ℕ) : V)] = lpiece_eqOfAdj := by
   unfold layoutPieces
   rw [nth_vecOf _ lIdx_eqOfAdj (Nat.lt_of_sub_eq_succ rfl)]
@@ -1274,11 +1134,6 @@ lemma lmk_eqOfAdj (ev : V) :
     mkStep layoutPieces ((lIdx_eqOfAdj : ℕ) : V) ev = sUseHorn ((lIdx_eqOfAdj : ℕ) : V) ev (vecOf row_eqOfAdj_as) row_eqOfAdj_c := by
   rw [mkStep, layoutPieces_eqOfAdj]
   simp [lpiece_eqOfAdj, sUseHorn]
-
-lemma ltag_eqOfAdj {W : V} (hWp : W = layoutPieces) (ev : V) : sTag (mkStep W (74 : V) ev) = 0 := by
-  subst hWp
-  have hk : ((lIdx_eqOfAdj : ℕ) : V) = (74 : V) := by simp [lIdx_eqOfAdj]
-  rw [← hk, lmk_eqOfAdj]; simp
 
 lemma layoutPieces_subsetAntisymm : (layoutPieces : V).[((lIdx_subsetAntisymm : ℕ) : V)] = lpiece_subsetAntisymm := by
   unfold layoutPieces
@@ -2387,39 +2242,30 @@ instance piFact_defined : 𝚺₁-Function₂ (piFact : V → V → V) via piFac
 
 noncomputable def andFactDef : 𝚺₁.Semisentence 4 := fact3Def (Semiformula.lMap emb (↑qqAndDef : ArithmeticSemisentence 3))
 instance andFact_defined : 𝚺₁-Function₃ (andFact : V → V → V → V) via andFactDef := fact3_defined _
-instance andFact_definable' : 𝚺₁-Function₃ (andFact : V → V → V → V) := andFact_defined.to_definable
 
 noncomputable def orFactDef : 𝚺₁.Semisentence 4 := fact3Def (Semiformula.lMap emb (↑qqOrDef : ArithmeticSemisentence 3))
 instance orFact_defined : 𝚺₁-Function₃ (orFact : V → V → V → V) via orFactDef := fact3_defined _
-instance orFact_definable' : 𝚺₁-Function₃ (orFact : V → V → V → V) := orFact_defined.to_definable
 
 noncomputable def allFactDef : 𝚺₁.Semisentence 3 := fact2Def (Semiformula.lMap emb (↑qqAllDef : ArithmeticSemisentence 2))
 instance allFact_defined : 𝚺₁-Function₂ (allFact : V → V → V) via allFactDef := fact2_defined _
-instance allFact_definable' : 𝚺₁-Function₂ (allFact : V → V → V) := allFact_defined.to_definable
 
 noncomputable def exsFactDef : 𝚺₁.Semisentence 3 := fact2Def (Semiformula.lMap emb (↑qqExsDef : ArithmeticSemisentence 2))
 instance exsFact_defined : 𝚺₁-Function₂ (exsFact : V → V → V) via exsFactDef := fact2_defined _
-instance exsFact_definable' : 𝚺₁-Function₂ (exsFact : V → V → V) := exsFact_defined.to_definable
 
 noncomputable def relFactDef : 𝚺₁.Semisentence 5 := fact4Def (Semiformula.lMap emb (↑qqRelDef : ArithmeticSemisentence 4))
 instance relFact_defined : 𝚺₁-Function₄ (relFact : V → V → V → V → V) via relFactDef := fact4_defined _
-instance relFact_definable' : 𝚺₁-Function₄ (relFact : V → V → V → V → V) := relFact_defined.to_definable
 
 noncomputable def nrelFactDef : 𝚺₁.Semisentence 5 := fact4Def (Semiformula.lMap emb (↑qqNRelDef : ArithmeticSemisentence 4))
 instance nrelFact_defined : 𝚺₁-Function₄ (nrelFact : V → V → V → V → V) via nrelFactDef := fact4_defined _
-instance nrelFact_definable' : 𝚺₁-Function₄ (nrelFact : V → V → V → V → V) := nrelFact_defined.to_definable
 
 noncomputable def verumFactDef : 𝚺₁.Semisentence 2 := fact1Def (Semiformula.lMap emb (↑qqVerumDef : ArithmeticSemisentence 1))
 instance verumFact_defined : 𝚺₁-Function₁ (verumFact : V → V) via verumFactDef := fact1_defined _
-instance verumFact_definable' : 𝚺₁-Function₁ (verumFact : V → V) := verumFact_defined.to_definable
 
 noncomputable def falsumFactDef : 𝚺₁.Semisentence 2 := fact1Def (Semiformula.lMap emb (↑qqFalsumDef : ArithmeticSemisentence 1))
 instance falsumFact_defined : 𝚺₁-Function₁ (falsumFact : V → V) via falsumFactDef := fact1_defined _
-instance falsumFact_definable' : 𝚺₁-Function₁ (falsumFact : V → V) := falsumFact_defined.to_definable
 
 noncomputable def funcFactDef : 𝚺₁.Semisentence 5 := fact4Def (Semiformula.lMap emb (↑qqFuncDef : ArithmeticSemisentence 4))
 instance funcFact_defined : 𝚺₁-Function₄ (funcFact : V → V → V → V → V) via funcFactDef := fact4_defined _
-instance funcFact_definable' : 𝚺₁-Function₄ (funcFact : V → V → V → V → V) := funcFact_defined.to_definable
 
 noncomputable def bvarFactDef : 𝚺₁.Semisentence 3 := fact2Def (Semiformula.lMap emb (↑qqBvarDef : ArithmeticSemisentence 2))
 instance bvarFact_defined : 𝚺₁-Function₂ (bvarFact : V → V → V) via bvarFactDef := fact2_defined _
@@ -2429,7 +2275,6 @@ instance fvarFact_defined : 𝚺₁-Function₂ (fvarFact : V → V → V) via f
 
 noncomputable def adjFactDef : 𝚺₁.Semisentence 4 := fact3Def (Semiformula.lMap emb (↑adjoinDef : ArithmeticSemisentence 3))
 instance adjFact_defined : 𝚺₁-Function₃ (adjFact : V → V → V → V) via adjFactDef := fact3_defined _
-instance adjFact_definable' : 𝚺₁-Function₃ (adjFact : V → V → V → V) := adjFact_defined.to_definable
 
 noncomputable def tPiFactDef : 𝚺₁.Semisentence 3 := fact2Def (Semiformula.lMap emb (↑(isSemiterm LAct).pi : ArithmeticSemisentence 2))
 instance tPiFact_defined : 𝚺₁-Function₂ (tPiFact : V → V → V) via tPiFactDef := fact2_defined _
@@ -2439,7 +2284,6 @@ instance tvPiFact_defined : 𝚺₁-Function₃ (tvPiFact : V → V → V → V)
 
 noncomputable def utvPiFactDef : 𝚺₁.Semisentence 3 := fact2Def (Semiformula.lMap emb (↑(isUTermVec LAct).pi : ArithmeticSemisentence 2))
 instance utvPiFact_defined : 𝚺₁-Function₂ (utvPiFact : V → V → V) via utvPiFactDef := fact2_defined _
-instance utvPiFact_definable' : 𝚺₁-Function₂ (utvPiFact : V → V → V) := utvPiFact_defined.to_definable
 
 noncomputable def eqFactBDef : 𝚺₁.Semisentence 3 := fact2Def (Semiformula.lMap emb (Rewriting.emb (Semiformula.Operator.Eq.eq : Semiformula.Operator ℒₒᵣ 2).sentence : ArithmeticSemisentence 2))
 instance eqFactB_defined : 𝚺₁-Function₂ (eqFactB : V → V → V) via eqFactBDef := fact2_defined _
@@ -2447,19 +2291,13 @@ instance eqFactB_definable' : 𝚺₁-Function₂ (eqFactB : V → V → V) := e
 
 noncomputable def lenFactDef : 𝚺₁.Semisentence 3 := fact2Def (Semiformula.lMap emb (↑(formulaLenGraph LAct) : ArithmeticSemisentence 2))
 instance lenFact_defined : 𝚺₁-Function₂ (lenFact : V → V → V) via lenFactDef := fact2_defined _
-instance lenFact_definable' : 𝚺₁-Function₂ (lenFact : V → V → V) := lenFact_defined.to_definable
 
 noncomputable def tlenFactDef : 𝚺₁.Semisentence 3 := fact2Def (Semiformula.lMap emb (↑(termLenGraph LAct) : ArithmeticSemisentence 2))
 instance tlenFact_defined : 𝚺₁-Function₂ (tlenFact : V → V → V) via tlenFactDef := fact2_defined _
-instance tlenFact_definable' : 𝚺₁-Function₂ (tlenFact : V → V → V) := tlenFact_defined.to_definable
 
 noncomputable def memFactDef : 𝚺₁.Semisentence 3 := fact2Def (Semiformula.lMap emb (Rewriting.emb (Semiformula.Operator.Mem.mem : Semiformula.Operator ℒₒᵣ 2).sentence : ArithmeticSemisentence 2))
 instance memFact_defined : 𝚺₁-Function₂ (memFact : V → V → V) via memFactDef := fact2_defined _
 instance memFact_definable' : 𝚺₁-Function₂ (memFact : V → V → V) := memFact_defined.to_definable
-
-noncomputable def insFactDef : 𝚺₁.Semisentence 4 := fact3Def (Semiformula.lMap emb (↑insertDef : ArithmeticSemisentence 3))
-instance insFact_defined : 𝚺₁-Function₃ (insFact : V → V → V → V) via insFactDef := fact3_defined _
-instance insFact_definable' : 𝚺₁-Function₃ (insFact : V → V → V → V) := insFact_defined.to_definable
 
 noncomputable def subsetFactDef : 𝚺₁.Semisentence 3 := fact2Def (Semiformula.lMap emb (↑bitSubsetDef : ArithmeticSemisentence 2))
 instance subsetFact_defined : 𝚺₁-Function₂ (subsetFact : V → V → V) via subsetFactDef := fact2_defined _
@@ -2468,10 +2306,6 @@ instance subsetFact_definable' : 𝚺₁-Function₂ (subsetFact : V → V → V
 noncomputable def fsetPiFactDef : 𝚺₁.Semisentence 2 := fact1Def (Semiformula.lMap emb (↑(isFormulaSet LAct).pi : ArithmeticSemisentence 1))
 instance fsetPiFact_defined : 𝚺₁-Function₁ (fsetPiFact : V → V) via fsetPiFactDef := fact1_defined _
 instance fsetPiFact_definable' : 𝚺₁-Function₁ (fsetPiFact : V → V) := fsetPiFact_defined.to_definable
-
-noncomputable def fsetSigmaFactDef : 𝚺₁.Semisentence 2 := fact1Def (Semiformula.lMap emb (↑(isFormulaSet LAct).sigma : ArithmeticSemisentence 1))
-instance fsetSigmaFact_defined : 𝚺₁-Function₁ (fsetSigmaFact : V → V) via fsetSigmaFactDef := fact1_defined _
-instance fsetSigmaFact_definable' : 𝚺₁-Function₁ (fsetSigmaFact : V → V) := fsetSigmaFact_defined.to_definable
 
 noncomputable def setLenFactDef : 𝚺₁.Semisentence 3 := fact2Def (Semiformula.lMap emb (↑(setLenDef LAct) : ArithmeticSemisentence 2))
 instance setLenFact_defined : 𝚺₁-Function₂ (setLenFact : V → V → V) via setLenFactDef := fact2_defined _
@@ -2483,53 +2317,6 @@ explicit blueprints — `definability` does not go through an `ite`) -/
 /-- The number of witnesses a fact tag of kind `k` carries. -/
 noncomputable def tagAr (k : V) : V :=
   if k = 0 then 1 else if k = 1 then 4 else if k = 2 then 4 else if k = 3 then 2 else if k = 4 then 2 else if k = 5 then 4 else if k = 6 then 4 else if k = 7 then 0 else if k = 8 then 0 else if k = 9 then 1 else if k = 10 then 1 else if k = 11 then 1 else if k = 12 then 4 else if k = 13 then 1 else if k = 14 then 1 else if k = 15 then 1 else if k = 16 then 4 else if k = 17 then 2 else if k = 18 then 1 else 0
-
-noncomputable def tagArDef : 𝚺₁.Semisentence 2 := .mkSigma
-  “y k. (k = 0 → y = 1) ∧ (k = 1 → y = 4) ∧ (k = 2 → y = 4) ∧ (k = 3 → y = 2) ∧ (k = 4 → y = 2) ∧ (k = 5 → y = 4) ∧ (k = 6 → y = 4) ∧ (k = 7 → y = 0) ∧ (k = 8 → y = 0) ∧ (k = 9 → y = 1) ∧ (k = 10 → y = 1) ∧ (k = 11 → y = 1) ∧ (k = 12 → y = 4) ∧ (k = 13 → y = 1) ∧ (k = 14 → y = 1) ∧ (k = 15 → y = 1) ∧ (k = 16 → y = 4) ∧ (k = 17 → y = 2) ∧ (k = 18 → y = 1) ∧ (k ≠ 0 → k ≠ 1 → k ≠ 2 → k ≠ 3 → k ≠ 4 → k ≠ 5 → k ≠ 6 → k ≠ 7 → k ≠ 8 → k ≠ 9 → k ≠ 10 → k ≠ 11 → k ≠ 12 → k ≠ 13 → k ≠ 14 → k ≠ 15 → k ≠ 16 → k ≠ 17 → k ≠ 18 → y = 0)”
-
-instance tagAr_defined : 𝚺₁-Function₁ (tagAr : V → V) via tagArDef := .mk fun v ↦ by
-  simp [tagArDef, numeral_eq_natCast]
-  unfold tagAr
-  by_cases h0 : v 1 = 0
-  · simp [h0]
-  by_cases h1 : v 1 = 1
-  · simp [h1]
-  by_cases h2 : v 1 = 2
-  · simp [h2]
-  by_cases h3 : v 1 = 3
-  · simp [h3]
-  by_cases h4 : v 1 = 4
-  · simp [h4]
-  by_cases h5 : v 1 = 5
-  · simp [h5]
-  by_cases h6 : v 1 = 6
-  · simp [h6]
-  by_cases h7 : v 1 = 7
-  · simp [h7]
-  by_cases h8 : v 1 = 8
-  · simp [h8]
-  by_cases h9 : v 1 = 9
-  · simp [h9]
-  by_cases h10 : v 1 = 10
-  · simp [h10]
-  by_cases h11 : v 1 = 11
-  · simp [h11]
-  by_cases h12 : v 1 = 12
-  · simp [h12]
-  by_cases h13 : v 1 = 13
-  · simp [h13]
-  by_cases h14 : v 1 = 14
-  · simp [h14]
-  by_cases h15 : v 1 = 15
-  · simp [h15]
-  by_cases h16 : v 1 = 16
-  · simp [h16]
-  by_cases h17 : v 1 = 17
-  · simp [h17]
-  by_cases h18 : v 1 = 18
-  · simp [h18]
-  · simp [h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18]
-instance tagAr_definable : 𝚺₁-Function₁ (tagAr : V → V) := tagAr_defined.to_definable
 
 /-- The congruence step(s) copying the fact named by the tag `t` from the object `&i` (BEFORE the
 `eqTotal` shift: `&(i+1)` after it) onto the fresh `&0`; the tag's witnesses are shifted once. -/
@@ -2620,7 +2407,6 @@ instance tagSteps_defined : 𝚺₁-Function₃ (tagSteps : V → V → V → V)
   by_cases h18 : π₁ (v 3) = 18
   · simp [h18]
   · simp [h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18]
-instance tagSteps_definable : 𝚺₁-Function₃ (tagSteps : V → V → V → V) := tagSteps_defined.to_definable
 
 /-- The antecedent facts of a tag (about the source object `x`, in the frame BEFORE the copy). -/
 noncomputable def tagAnts (x t : V) : V :=
@@ -2644,73 +2430,6 @@ noncomputable def tagAnts (x t : V) : V :=
   else if π₁ t = 17 then ?[tvPiFact (π₂ t).[0] (π₂ t).[1] x]
   else if π₁ t = 18 then ?[utvPiFact (π₂ t).[0] x]
   else 0
-
-noncomputable def tagAntsDef : 𝚺₁.Semisentence 3 := .mkSigma
-  “y x t. ∃ k, !pi₁Def k t ∧ ∃ v, !pi₂Def v t ∧ ∃ a0, !nthDef a0 v 0 ∧ ∃ a1, !nthDef a1 v 1 ∧ ∃ a2, !nthDef a2 v 2 ∧ ∃ a3, !nthDef a3 v 3 ∧
-    (k = 0 → ∃ f0, !piFactDef f0 a0 x ∧ !adjoinDef y f0 0) ∧
-    (k = 1 → ∃ f0, !eqFactBDef f0 a2 a0 ∧ ∃ f1, !eqFactBDef f1 a3 a1 ∧ ∃ f2, !andFactDef f2 x a0 a1 ∧ ∃ l0, !adjoinDef l0 f2 0 ∧ ∃ l1, !adjoinDef l1 f1 l0 ∧ !adjoinDef y f0 l1) ∧
-    (k = 2 → ∃ f0, !eqFactBDef f0 a2 a0 ∧ ∃ f1, !eqFactBDef f1 a3 a1 ∧ ∃ f2, !orFactDef f2 x a0 a1 ∧ ∃ l0, !adjoinDef l0 f2 0 ∧ ∃ l1, !adjoinDef l1 f1 l0 ∧ !adjoinDef y f0 l1) ∧
-    (k = 3 → ∃ f0, !eqFactBDef f0 a1 a0 ∧ ∃ f1, !allFactDef f1 x a0 ∧ ∃ l0, !adjoinDef l0 f1 0 ∧ !adjoinDef y f0 l0) ∧
-    (k = 4 → ∃ f0, !eqFactBDef f0 a1 a0 ∧ ∃ f1, !exsFactDef f1 x a0 ∧ ∃ l0, !adjoinDef l0 f1 0 ∧ !adjoinDef y f0 l0) ∧
-    (k = 5 → ∃ f0, !eqFactBDef f0 a3 a2 ∧ ∃ f1, !relFactDef f1 x a0 a1 a2 ∧ ∃ l0, !adjoinDef l0 f1 0 ∧ !adjoinDef y f0 l0) ∧
-    (k = 6 → ∃ f0, !eqFactBDef f0 a3 a2 ∧ ∃ f1, !nrelFactDef f1 x a0 a1 a2 ∧ ∃ l0, !adjoinDef l0 f1 0 ∧ !adjoinDef y f0 l0) ∧
-    (k = 7 → ∃ f0, !verumFactDef f0 x ∧ !adjoinDef y f0 0) ∧
-    (k = 8 → ∃ f0, !falsumFactDef f0 x ∧ !adjoinDef y f0 0) ∧
-    (k = 9 → ∃ f0, !lenFactDef f0 a0 x ∧ !adjoinDef y f0 0) ∧
-    (k = 10 → ∃ f0, !memFactDef f0 x a0 ∧ !adjoinDef y f0 0) ∧
-    (k = 11 → ∃ f0, !tPiFactDef f0 a0 x ∧ !adjoinDef y f0 0) ∧
-    (k = 12 → ∃ f0, !eqFactBDef f0 a3 a2 ∧ ∃ f1, !funcFactDef f1 x a0 a1 a2 ∧ ∃ l0, !adjoinDef l0 f1 0 ∧ !adjoinDef y f0 l0) ∧
-    (k = 13 → ∃ f0, !bvarFactDef f0 x a0 ∧ !adjoinDef y f0 0) ∧
-    (k = 14 → ∃ f0, !fvarFactDef f0 x a0 ∧ !adjoinDef y f0 0) ∧
-    (k = 15 → ∃ f0, !tlenFactDef f0 a0 x ∧ !adjoinDef y f0 0) ∧
-    (k = 16 → ∃ f0, !eqFactBDef f0 a2 a0 ∧ ∃ f1, !eqFactBDef f1 a3 a1 ∧ ∃ f2, !adjFactDef f2 x a0 a1 ∧ ∃ l0, !adjoinDef l0 f2 0 ∧ ∃ l1, !adjoinDef l1 f1 l0 ∧ !adjoinDef y f0 l1) ∧
-    (k = 17 → ∃ f0, !tvPiFactDef f0 a0 a1 x ∧ !adjoinDef y f0 0) ∧
-    (k = 18 → ∃ f0, !utvPiFactDef f0 a0 x ∧ !adjoinDef y f0 0) ∧
-    (k ≠ 0 → k ≠ 1 → k ≠ 2 → k ≠ 3 → k ≠ 4 → k ≠ 5 → k ≠ 6 → k ≠ 7 → k ≠ 8 → k ≠ 9 → k ≠ 10 → k ≠ 11 → k ≠ 12 → k ≠ 13 → k ≠ 14 → k ≠ 15 → k ≠ 16 → k ≠ 17 → k ≠ 18 → y = 0)”
-
-instance tagAnts_defined : 𝚺₁-Function₂ (tagAnts : V → V → V) via tagAntsDef := .mk fun v ↦ by
-  simp [tagAntsDef, numeral_eq_natCast, adjFact_defined.iff, allFact_defined.iff, andFact_defined.iff, bvarFact_defined.iff, eqFactB_defined.iff, exsFact_defined.iff, falsumFact_defined.iff, funcFact_defined.iff, fvarFact_defined.iff, lenFact_defined.iff, memFact_defined.iff, nrelFact_defined.iff, orFact_defined.iff, piFact_defined.iff, relFact_defined.iff, tPiFact_defined.iff, tlenFact_defined.iff, tvPiFact_defined.iff, utvPiFact_defined.iff, verumFact_defined.iff]
-  unfold tagAnts
-  by_cases h0 : π₁ (v 2) = 0
-  · simp [h0]
-  by_cases h1 : π₁ (v 2) = 1
-  · simp [h1]
-  by_cases h2 : π₁ (v 2) = 2
-  · simp [h2]
-  by_cases h3 : π₁ (v 2) = 3
-  · simp [h3]
-  by_cases h4 : π₁ (v 2) = 4
-  · simp [h4]
-  by_cases h5 : π₁ (v 2) = 5
-  · simp [h5]
-  by_cases h6 : π₁ (v 2) = 6
-  · simp [h6]
-  by_cases h7 : π₁ (v 2) = 7
-  · simp [h7]
-  by_cases h8 : π₁ (v 2) = 8
-  · simp [h8]
-  by_cases h9 : π₁ (v 2) = 9
-  · simp [h9]
-  by_cases h10 : π₁ (v 2) = 10
-  · simp [h10]
-  by_cases h11 : π₁ (v 2) = 11
-  · simp [h11]
-  by_cases h12 : π₁ (v 2) = 12
-  · simp [h12]
-  by_cases h13 : π₁ (v 2) = 13
-  · simp [h13]
-  by_cases h14 : π₁ (v 2) = 14
-  · simp [h14]
-  by_cases h15 : π₁ (v 2) = 15
-  · simp [h15]
-  by_cases h16 : π₁ (v 2) = 16
-  · simp [h16]
-  by_cases h17 : π₁ (v 2) = 17
-  · simp [h17]
-  by_cases h18 : π₁ (v 2) = 18
-  · simp [h18]
-  · simp [h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18]
-instance tagAnts_definable : 𝚺₁-Function₂ (tagAnts : V → V → V) := tagAnts_defined.to_definable
 
 /-- The copied fact: about the fresh `&0`, with the tag's witnesses shifted once. -/
 noncomputable def tagFact (t : V) : V :=
@@ -3272,9 +2991,6 @@ def TagOK (E Γ x t : V) : Prop :=
   (∀ m < len (π₂ t), IsSemiterm LAct 0 (π₂ t).[m] ∧ termLen LAct (termShift LAct (π₂ t).[m]) ≤ E) ∧
   ∀ m < len (tagAnts x t), neg LAct (tagAnts x t).[m] ∈ Γ
 
-instance tagOK_definable : 𝚫₁-Relation₄ (TagOK : V → V → V → V → Prop) := by
-  unfold TagOK; definability
-
 namespace CopyAux
 
 noncomputable def blueprint : PR.Blueprint 3 where
@@ -3305,14 +3021,6 @@ instance copyAux_definable : 𝚺₁-Function₄ (copyAux : V → V → V → V 
 
 /-- **Copy-in**: `eqTotal [^&i]` (the fresh `&0`, one shift) followed by the congruence steps of every tag. -/
 noncomputable def copySteps (W i T : V) : V := appendV ?[mkStep W 40 ?[^&i]] (copyAux W i T (len T))
-
-noncomputable def copyStepsDef : 𝚺₁.Semisentence 4 := .mkSigma
-  “y W i T. ∃ x, !qqFvarDef x i ∧ ∃ e, !adjoinDef e x 0 ∧ ∃ s, !mkStepDef s W 40 e ∧ ∃ l, !adjoinDef l s 0 ∧
-    ∃ n, !lenDef n T ∧ ∃ c, !copyAuxDef c W i T n ∧ !appendVDef y l c”
-
-instance copySteps_defined : 𝚺₁-Function₃ (copySteps : V → V → V → V) via copyStepsDef := .mk
-  fun v ↦ by simp [copyStepsDef, copySteps, numeral_eq_natCast, mkStep_defined.iff, copyAux_defined.iff, appendV_defined.iff]
-instance copySteps_definable : 𝚺₁-Function₃ (copySteps : V → V → V → V) := copySteps_defined.to_definable
 
 /-- The tag lists are applicable one after the other (Π₁ induction on the number of tags folded). -/
 theorem copyAux_ok {tbl N : V} (htbl : TableOK tbl N) (hL : LayoutTable tbl) {W : V} (hWp : W = layoutPieces)
@@ -3427,7 +3135,6 @@ instance prevObj_defined : 𝚺₁-Function₁ (prevObj : V → V) via prevObjDe
   by_cases h0 : v 1 = 0
   · simp [h0]
   · simp [h0]
-instance prevObj_definable : 𝚺₁-Function₁ (prevObj : V → V) := prevObj_defined.to_definable
 
 /-- In a chain of `k` prefixes `s_i = insert x_i s_{i+1}` at `&i`: the set below `&i` — `𝟎` for the
 innermost (`i + 1 = k`), else `&(i+1)`. -/
@@ -3525,7 +3232,6 @@ noncomputable def chainPreDef : 𝚺₁.Semisentence 2 := .mkSigma
 
 instance chainPre_defined : 𝚺₁-Function₁ (chainPre : V → V) via chainPreDef := .mk
   fun v ↦ by simp [chainPreDef, chainPre, numeral_eq_natCast, cTV.defined.iff, cTV_zero, mkStep_defined.iff]
-instance chainPre_definable : 𝚺₁-Function₁ (chainPre : V → V) := chainPre_defined.to_definable
 
 /-- Phase A, member `c` from the end (`nthFromEnd xs c = x_{k−1−c}`): insert it onto `prevObj c`, then
 its formula-set facts. -/
@@ -3545,7 +3251,6 @@ noncomputable def chainNodeADef : 𝚺₁.Semisentence 4 := .mkSigma
 instance chainNodeA_defined : 𝚺₁-Function₃ (chainNodeA : V → V → V → V) via chainNodeADef := .mk
   fun v ↦ by simp [chainNodeADef, chainNodeA, numeral_eq_natCast, nthFromEnd_defined.iff, termShiftIterV_defined.iff,
     prevObj_defined.iff, prevAt_defined.iff, mkStep_defined.iff]
-instance chainNodeA_definable : 𝚺₁-Function₃ (chainNodeA : V → V → V → V) := chainNodeA_defined.to_definable
 
 namespace ChainA
 
@@ -3586,7 +3291,6 @@ noncomputable def chainBpreDef : 𝚺₁.Semisentence 4 := .mkSigma
 
 instance chainBpre_defined : 𝚺₁-Function₃ (chainBpre : V → V → V → V) via chainBpreDef := .mk
   fun v ↦ by simp [chainBpreDef, chainBpre, numeral_eq_natCast, termShiftIterV_defined.iff, prevAt_defined.iff, mkStep_defined.iff]
-instance chainBpre_definable : 𝚺₁-Function₃ (chainBpre : V → V → V → V) := chainBpre_defined.to_definable
 
 /-- Phase B, member `c + 1` (when `c + 1 < k`): `s_{c+1} ⊆ s_c`, `s_{c+1} ⊆ s`, `x_{c+1} ∈ s_{c+1}`,
 `x_{c+1} ∈ s`. -/
@@ -3618,7 +3322,6 @@ instance chainNodeB_defined : 𝚺₁-Function₄ (chainNodeB : V → V → V �
     · simp [h]
     · have h' := not_lt.mp h
       simp [h, h']
-instance chainNodeB_definable : 𝚺₁-Function₄ (chainNodeB : V → V → V → V → V) := chainNodeB_defined.to_definable
 
 namespace ChainB
 
@@ -3662,7 +3365,6 @@ noncomputable def chainStepsDef : 𝚺₁.Semisentence 3 := .mkSigma
 instance chainSteps_defined : 𝚺₁-Function₂ (chainSteps : V → V → V) via chainStepsDef := .mk
   fun v ↦ by simp [chainStepsDef, chainSteps, numeral_eq_natCast, chainPre_defined.iff, chainA_defined.iff,
     chainBpre_defined.iff, chainB_defined.iff, mkStep_defined.iff, appendV_defined.iff]
-instance chainSteps_definable : 𝚺₁-Function₂ (chainSteps : V → V → V) := chainSteps_defined.to_definable
 
 end chains
 
@@ -4117,7 +3819,6 @@ instance shiftTW_defined : 𝚺₁-Function₂ (shiftTW : V → V → V) via shi
   by_cases h1 : π₁ (v 1) = 1
   · simp [h1]
   · simp [h0, h1]
-instance shiftTW_definable : 𝚺₁-Function₂ (shiftTW : V → V → V) := shiftTW_defined.to_definable
 
 /-- Relocate a template witness: left offsets from `i`, right offsets from `j`. -/
 noncomputable def relocW (w i j : V) : V :=
@@ -4135,11 +3836,7 @@ instance relocW_defined : 𝚺₁-Function₃ (relocW : V → V → V → V) via
   by_cases h1 : π₁ (v 1) = 1
   · simp [h1]
   · simp [h0, h1]
-instance relocW_definable : 𝚺₁-Function₃ (relocW : V → V → V → V) := relocW_defined.to_definable
 
-@[simp] lemma shiftTW_tL (o δ : V) : shiftTW (tL o) δ = tL (o + δ) := by simp [shiftTW, tL]
-@[simp] lemma shiftTW_tR (o δ : V) : shiftTW (tR o) δ = tR (o + δ) := by simp [shiftTW, tR]
-@[simp] lemma shiftTW_tA (t δ : V) : shiftTW (tA t) δ = tA t := by simp [shiftTW, tA]
 @[simp] lemma relocW_tL (o i j : V) : relocW (tL o) i j = ^&(i + o) := by simp [relocW, tL]
 @[simp] lemma relocW_tR (o i j : V) : relocW (tR o) i j = ^&(j + o) := by simp [relocW, tR]
 @[simp] lemma relocW_tA (t i j : V) : relocW (tA t) i j = t := by simp [relocW, tA]
@@ -4244,13 +3941,6 @@ instance shiftTL_defined : 𝚺₁-Function₂ (shiftTL : V → V → V) via shi
   fun v ↦ by simp [ShiftTL.construction.eval_resultDef, shiftTLDef]; rfl
 instance shiftTL_definable : 𝚺₁-Function₂ (shiftTL : V → V → V) := shiftTL_defined.to_definable
 
-lemma shiftTL_appendV (δ : V) : ∀ A B : V, shiftTL (appendV A B) δ = appendV (shiftTL A δ) (shiftTL B δ) := by
-  intro A B
-  induction A using adjoin_ISigma1.sigma1_succ_induction with
-  | hP => definability
-  | nil => simp
-  | adjoin x A ih => rw [appendV_adjoin, shiftTL_adjoin, shiftTL_adjoin, ih, appendV_adjoin]
-
 namespace RelocS
 
 noncomputable def blueprint : VecRec.Blueprint 3 where
@@ -4343,7 +4033,6 @@ PARAMETER of the theorems. -/
 noncomputable def factPreds : V :=
   ?[Pand, Por, Pall, Pexs, Prel, Pnrel, Pverum, Pfalsum, Pfunc, Pbvar, Pfvar, Padjoin]
 
-
 section identNodes
 
 /-- The vector reference of a template: the literal `𝟎` for the empty vector, else the left offset `c`. -/
@@ -4362,14 +4051,12 @@ instance vRefT_defined : 𝚺₁-Function₂ (vRefT : V → V → V) via vRefTDe
   by_cases h : v 2 = 0
   · simp [h]
   · simp [h]
-instance vRefT_definable : 𝚺₁-Function₂ (vRefT : V → V → V) := vRefT_defined.to_definable
 instance vRefTp_defined : 𝚺₁-Function₂ (vRefT' : V → V → V) via vRefTpDef := .mk fun v ↦ by
   simp [vRefTpDef, numeral_eq_natCast, cTV.defined.iff, cTV_zero]
   unfold vRefT' tA tR
   by_cases h : v 2 = 0
   · simp [h]
   · simp [h]
-instance vRefTp_definable : 𝚺₁-Function₂ (vRefT' : V → V → V) := vRefTp_defined.to_definable
 
 /-! ### 4.3 The node templates (GENERATED by the session script `gen_layout4.py`) -/
 
@@ -4382,7 +4069,6 @@ noncomputable def bvarTDef : 𝚺₁.Semisentence 2 := .mkSigma
 
 instance bvarT_defined : 𝚺₁-Function₁ (bvarT : V → V) via bvarTDef := .mk
   fun v ↦ by simp [bvarTDef, bvarT, tL, tR, tA, numeral_eq_natCast, cTV.defined.iff, cTV_zero]
-instance bvarT_definable : 𝚺₁-Function₁ (bvarT : V → V) := bvarT_defined.to_definable
 
 /-- A free variable `&x`: fact `fvarFact &0 (cT x)`, step `eqOfFvar [cT x, L0, R0]`. -/
 noncomputable def fvarT (x : V) : V :=
@@ -4393,7 +4079,6 @@ noncomputable def fvarTDef : 𝚺₁.Semisentence 2 := .mkSigma
 
 instance fvarT_defined : 𝚺₁-Function₁ (fvarT : V → V) via fvarTDef := .mk
   fun v ↦ by simp [fvarTDef, fvarT, tL, tR, tA, numeral_eq_natCast, cTV.defined.iff, cTV_zero]
-instance fvarT_definable : 𝚺₁-Function₁ (fvarT : V → V) := fvarT_defined.to_definable
 
 /-- A function node over the vector template `d`: the vector at `1`, fact `funcFact`, step `eqOfFunc`. -/
 noncomputable def funcT (k f d : V) : V :=
@@ -4404,7 +4089,6 @@ noncomputable def funcTDef : 𝚺₁.Semisentence 4 := .mkSigma
 
 instance funcT_defined : 𝚺₁-Function₃ (funcT : V → V → V → V) via funcTDef := .mk
   fun v ↦ by simp [funcTDef, funcT, tL, tR, tA, numeral_eq_natCast, cTV.defined.iff, cTV_zero, shiftTL_defined.iff, appendV_defined.iff, vRefT_defined.iff, vRefTp_defined.iff]
-instance funcT_definable : 𝚺₁-Function₃ (funcT : V → V → V → V) := funcT_defined.to_definable
 
 /-- The empty vector: the literal `𝟎`, no fact, the step `eqRefl [𝟎]` (the dummy argument keeps it a function). -/
 noncomputable def nilT (w : V) : V :=
@@ -4415,7 +4099,6 @@ noncomputable def nilTDef : 𝚺₁.Semisentence 2 := .mkSigma
 
 instance nilT_defined : 𝚺₁-Function₁ (nilT : V → V) via nilTDef := .mk
   fun v ↦ by simp [nilTDef, nilT, tL, tR, tA, numeral_eq_natCast, cTV.defined.iff, cTV_zero]
-instance nilT_definable : 𝚺₁-Function₁ (nilT : V → V) := nilT_defined.to_definable
 
 /-- A vector node `t ∷ v` (`p` the entry template, `ih` the tail template of `j` entries): `t` at `1`, `v` at `count t + 1`; fact `adjFact`, step `eqOfAdj`. -/
 noncomputable def adjT (j p ih : V) : V :=
@@ -4426,7 +4109,6 @@ noncomputable def adjTDef : 𝚺₁.Semisentence 4 := .mkSigma
 
 instance adjT_defined : 𝚺₁-Function₃ (adjT : V → V → V → V) via adjTDef := .mk
   fun v ↦ by simp [adjTDef, adjT, tL, tR, tA, numeral_eq_natCast, cTV.defined.iff, cTV_zero, shiftTL_defined.iff, appendV_defined.iff, vRefT_defined.iff, vRefTp_defined.iff]
-instance adjT_definable : 𝚺₁-Function₃ (adjT : V → V → V → V) := adjT_defined.to_definable
 
 /-- A constant formula (`⊤`/`⊥`): its shape fact, the step `eqOfVerum`/`eqOfFalsum [L0, R0]`. -/
 noncomputable def constT (kind row : V) : V :=
@@ -4437,7 +4119,6 @@ noncomputable def constTDef : 𝚺₁.Semisentence 3 := .mkSigma
 
 instance constT_defined : 𝚺₁-Function₂ (constT : V → V → V) via constTDef := .mk
   fun v ↦ by simp [constTDef, constT, tL, tR, tA, numeral_eq_natCast, cTV.defined.iff, cTV_zero]
-instance constT_definable : 𝚺₁-Function₂ (constT : V → V → V) := constT_defined.to_definable
 
 /-- A binary node `p ⋏ q`/`p ⋎ q`: `q` at `1`, `p` at `count q + 1`; the shape fact, the step `eqOfAnd`/`eqOfOr`. -/
 noncomputable def binT (kind row yp yq : V) : V :=
@@ -4448,7 +4129,6 @@ noncomputable def binTDef : 𝚺₁.Semisentence 5 := .mkSigma
 
 instance binT_defined : 𝚺₁-Function₄ (binT : V → V → V → V → V) via binTDef := .mk
   fun v ↦ by simp [binTDef, binT, tL, tR, tA, numeral_eq_natCast, cTV.defined.iff, cTV_zero, shiftTL_defined.iff, appendV_defined.iff]
-instance binT_definable : 𝚺₁-Function₄ (binT : V → V → V → V → V) := binT_defined.to_definable
 
 /-- A quantifier node `∀p`/`∃p`: `p` at `1`; the shape fact, the step `eqOfAll`/`eqOfExs`. -/
 noncomputable def quantT (kind row yp : V) : V :=
@@ -4459,7 +4139,6 @@ noncomputable def quantTDef : 𝚺₁.Semisentence 4 := .mkSigma
 
 instance quantT_defined : 𝚺₁-Function₃ (quantT : V → V → V → V) via quantTDef := .mk
   fun v ↦ by simp [quantTDef, quantT, tL, tR, tA, numeral_eq_natCast, cTV.defined.iff, cTV_zero, shiftTL_defined.iff, appendV_defined.iff]
-instance quantT_definable : 𝚺₁-Function₃ (quantT : V → V → V → V) := quantT_defined.to_definable
 
 /-- An atom `rel k R v`/`nrel k R v` over the vector template `d`: the vector at `1`; the shape fact, the step `eqOfRel`/`eqOfNRel`. -/
 noncomputable def atomT (kind row k R d : V) : V :=
@@ -4470,7 +4149,6 @@ noncomputable def atomTDef : 𝚺₁.Semisentence 6 := .mkSigma
 
 instance atomT_defined : 𝚺₁-Function₅ (atomT : V → V → V → V → V → V) via atomTDef := .mk
   fun v ↦ by simp [atomTDef, atomT, tL, tR, tA, numeral_eq_natCast, cTV.defined.iff, cTV_zero, shiftTL_defined.iff, appendV_defined.iff, vRefT_defined.iff, vRefTp_defined.iff]
-
 
 /-! ### 4.4 The recursions: vectors (fold from the end), terms (`TermRec`), formulas (`UformulaRec1`) -/
 
@@ -4541,7 +4219,6 @@ instance eqT_defined : 𝚺₁-Function₁ (eqT : V → V) via eqTDef := .mk
 instance eqT_definable : 𝚺₁-Function₁ (eqT : V → V) := eqT_defined.to_definable
 instance eqTVec_defined : 𝚺₁-Function₂ (eqTVec : V → V → V) via eqTVecDef := .mk
   fun v ↦ by simp [eqTVecDef, EqT.construction.resultVec_defined.iff]; rfl
-instance eqTVec_definable : 𝚺₁-Function₂ (eqTVec : V → V → V) := eqTVec_defined.to_definable
 
 namespace EqF
 
@@ -4627,8 +4304,6 @@ def DossierAt (P Γ i r : V) : Prop := ∀ m < len (dossFacts P i r), neg LAct (
 
 instance eqCount_definable : 𝚺₁-Function₁ (eqCount : V → V) := by
   unfold eqCount; definability
-instance eqSteps_definable : 𝚺₁-Function₄ (eqSteps : V → V → V → V → V) := by
-  unfold eqSteps; definability
 instance dossFacts_definable : 𝚺₁-Function₃ (dossFacts : V → V → V → V) := by
   unfold dossFacts; definability
 instance dossierAt_definable : 𝚫₁-Relation₄ (DossierAt : V → V → V → V → Prop) := by
@@ -5314,8 +4989,6 @@ noncomputable def dossFactsT (P i t : V) : V := relocD (π₁ (π₂ (eqT t))) P
 noncomputable def dossFactsV (P i k v j : V) : V := relocD (π₁ (π₂ (eqVecAux (eqTVec k v) j))) P i
 /-- The eigenvariable count of a term's template. -/
 noncomputable def eqCountT (t : V) : V := π₁ (eqT t)
-/-- The eigenvariable count of the template of the last `j` entries of `v`. -/
-noncomputable def eqCountV (k v j : V) : V := π₁ (eqVecAux (eqTVec k v) j)
 /-- A term dossier is present. -/
 def DossierAtT (P Γ i t : V) : Prop := AllNeg Γ (dossFactsT P i t)
 /-- A vector dossier (the last `j` entries) is present. -/
@@ -5323,48 +4996,16 @@ def DossierAtV (P Γ i k v j : V) : Prop := AllNeg Γ (dossFactsV P i k v j)
 
 instance dossFactsT_definable : 𝚺₁-Function₃ (dossFactsT : V → V → V → V) := by
   unfold dossFactsT; definability
-instance dossFactsV_definable : 𝚺₁.Definable (fun v : Fin 6 → V ↦ dossFactsV (v 1) (v 2) (v 3) (v 4) (v 5) = v 0) := by
-  unfold dossFactsV; definability
-instance eqCountT_definable : 𝚺₁-Function₁ (eqCountT : V → V) := by
-  unfold eqCountT; definability
-instance eqCountV_definable : 𝚺₁-Function₃ (eqCountV : V → V → V → V) := by
-  unfold eqCountV; definability
-instance dossierAtT_definable : 𝚫₁-Relation₄ (DossierAtT : V → V → V → V → Prop) := by
-  unfold DossierAtT; definability
-instance dossierAtV_definable : 𝚫₁.Definable (fun v : Fin 6 → V ↦ DossierAtV (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) := by
-  unfold DossierAtV dossFactsV; definability
 
 lemma dossierAtT_iff (P Γ i t : V) : DossierAtT P Γ i t ↔ AllNeg Γ (dossFactsT P i t) := Iff.rfl
 lemma dossierAtV_iff (P Γ i k v j : V) : DossierAtV P Γ i k v j ↔ AllNeg Γ (dossFactsV P i k v j) := Iff.rfl
 
 /-! The counts at each node. -/
-lemma eqCountT_bvar (z : V) : eqCountT (^#z) = 1 := by rw [eqCountT, eqT_bvar, bvarT_count]
-lemma eqCountT_fvar (x : V) : eqCountT (^&x) = 1 := by rw [eqCountT, eqT_fvar, fvarT_count]
-lemma eqCountT_func {k f v : V} (hkf : LAct.IsFunc k f) (hv : IsUTermVec LAct k v) :
-    eqCountT (^func k f v) = eqCountV k v k + 1 := by rw [eqCountT, eqT_func hkf hv, funcT_count]; rfl
-lemma eqCountV_zero (k v : V) : eqCountV k v 0 = 0 := by rw [eqCountV, eqVecAux_zero, nilT_count]
 lemma nthFromEnd_eqTVec {k v j : V} (hv : IsUTermVec LAct k v) (hj : j + 1 ≤ k) :
     nthFromEnd (eqTVec k v) j = eqT v.[k - (j + 1)] := by
   have hk0 : (0 : V) < k := lt_of_lt_of_le (lt_of_lt_of_le _root_.zero_lt_one le_add_self) hj
   have hi : k - (j + 1) < k := tsub_lt_self hk0 (lt_of_lt_of_le _root_.zero_lt_one le_add_self)
   rw [nthFromEnd_eq (a := k - (j + 1)) (by rw [len_eqTVec hv, tsub_add_cancel_of_le hj]), nth_eqTVec hv hi]
-lemma eqCountV_succ {k v j : V} (hv : IsUTermVec LAct k v) (hj : j + 1 ≤ k) :
-    eqCountV k v (j + 1) = eqCountV k v j + eqCountT v.[k - (j + 1)] + 1 := by
-  rw [eqCountV, eqVecAux_succ, nthFromEnd_eqTVec hv hj, adjT_count]; rfl
-lemma eqCount_verum : eqCount (^⊤ : V) = 1 := by rw [eqCount, eqFT_verum, constT_count]
-lemma eqCount_falsum : eqCount (^⊥ : V) = 1 := by rw [eqCount, eqFT_falsum, constT_count]
-lemma eqCount_and {p q : V} (hp : IsUFormula LAct p) (hq : IsUFormula LAct q) :
-    eqCount (p ^⋏ q) = eqCount p + eqCount q + 1 := by rw [eqCount, eqFT_and hp hq, binT_count]; rfl
-lemma eqCount_or {p q : V} (hp : IsUFormula LAct p) (hq : IsUFormula LAct q) :
-    eqCount (p ^⋎ q) = eqCount p + eqCount q + 1 := by rw [eqCount, eqFT_or hp hq, binT_count]; rfl
-lemma eqCount_all {p : V} (hp : IsUFormula LAct p) : eqCount (^∀ p) = eqCount p + 1 := by
-  rw [eqCount, eqFT_all hp, quantT_count]; rfl
-lemma eqCount_exs {p : V} (hp : IsUFormula LAct p) : eqCount (^∃ p) = eqCount p + 1 := by
-  rw [eqCount, eqFT_exs hp, quantT_count]; rfl
-lemma eqCount_rel {k R v : V} (hR : LAct.IsRel k R) (hv : IsUTermVec LAct k v) :
-    eqCount (^rel k R v) = eqCountV k v k + 1 := by rw [eqCount, eqFT_rel hR hv, atomT_count]; rfl
-lemma eqCount_nrel {k R v : V} (hR : LAct.IsRel k R) (hv : IsUTermVec LAct k v) :
-    eqCount (^nrel k R v) = eqCountV k v k + 1 := by rw [eqCount, eqFT_nrel hR hv, atomT_count]; rfl
 
 /-! The fact lists at each node: the children's dossiers at their walk offsets (`q` at `1`, `p` at
 `count q + 1`; a quantifier body at `1`; an atom's vector at `1`; `t ∷ v` with `t` at `1` and `v` at

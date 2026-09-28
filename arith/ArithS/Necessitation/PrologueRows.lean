@@ -81,9 +81,6 @@ theorem quote_row_setLenSingLe : (⌜Semiformula.lMap emb setLenSingLeB⌝ : V) 
   unfold setLenSingLeB row_setLenSingLe_as row_setLenSingLe_c PflenG Pinsert Ple PsetLen leS
   all_goals row_shapeB
 
-lemma isSemiformula_setLenSingLe_as : ∀ A ∈ row_setLenSingLe_as, IsSemiformula LAct ((4 : ℕ) : V) A := by
-  unfold row_setLenSingLe_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pinsert _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PsetLen _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PflenG _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩)
 lemma isSemiformula_setLenSingLe_c : IsSemiformula LAct ((4 : ℕ) : V) row_setLenSingLe_c := by
   unfold row_setLenSingLe_c
   exact isSemiformula_substRow isSemiformula_Ple _ (by rfl) (by row_entriesB)
@@ -108,9 +105,6 @@ theorem quote_row_setLenEmptyLe : (⌜Semiformula.lMap emb setLenEmptyLeB⌝ : V
   unfold setLenEmptyLeB row_setLenEmptyLe_as row_setLenEmptyLe_c Ple PsetLen leS
   all_goals row_shapeB
 
-lemma isSemiformula_setLenEmptyLe_as : ∀ A ∈ row_setLenEmptyLe_as, IsSemiformula LAct ((1 : ℕ) : V) A := by
-  unfold row_setLenEmptyLe_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PsetLen _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩)
 lemma isSemiformula_setLenEmptyLe_c : IsSemiformula LAct ((1 : ℕ) : V) row_setLenEmptyLe_c := by
   unfold row_setLenEmptyLe_c
   exact isSemiformula_substRow isSemiformula_Ple _ (by rfl) (by row_entriesB)
@@ -135,9 +129,6 @@ theorem quote_row_leOfEqP : (⌜Semiformula.lMap emb leOfEqPB⌝ : V) = impChain
   unfold leOfEqPB row_leOfEqP_as row_leOfEqP_c PeqB Ple leS
   all_goals row_shapeB
 
-lemma isSemiformula_leOfEqP_as : ∀ A ∈ row_leOfEqP_as, IsSemiformula LAct ((2 : ℕ) : V) A := by
-  unfold row_leOfEqP_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩)
 lemma isSemiformula_leOfEqP_c : IsSemiformula LAct ((2 : ℕ) : V) row_leOfEqP_c := by
   unfold row_leOfEqP_c
   exact isSemiformula_substRow isSemiformula_Ple _ (by rfl) (by row_entriesB)
@@ -280,11 +271,6 @@ lemma pmk_leOfEqP (ev : V) :
     mkStep proPieces ((pIdx_leOfEqP : ℕ) : V) ev = sUseHorn ((pIdx_leOfEqP : ℕ) : V) ev (vecOf row_leOfEqP_as) row_leOfEqP_c := by
   rw [mkStep, proPieces_leOfEqP]
   simp [ppiece_leOfEqP, sUseHorn]
-
-lemma ptag_leOfEqP {W : V} (hWp : W = proPieces) (ev : V) : sTag (mkStep W (159 : V) ev) = 0 := by
-  subst hWp
-  have hk : ((pIdx_leOfEqP : ℕ) : V) = (159 : V) := by simp [pIdx_leOfEqP]
-  rw [← hk, pmk_leOfEqP]; simp
 
 /-! ### The per-row applicability lemmas `pok_<row>` (against explicit table readings) -/
 

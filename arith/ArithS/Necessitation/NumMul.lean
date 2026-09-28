@@ -575,21 +575,6 @@ lemma mulEqCode_graph (tblM tbl a b : V) : MulGraph tblM tbl a b (mulEqCode tblM
 lemma mulEqCode_eq_of_graph {tblM tbl a b d : V} (h : MulGraph tblM tbl a b d) : mulEqCode tblM tbl a b = d :=
   mulGraph_unique tblM tbl a b _ _ (mulEqCode_graph tblM tbl a b) h
 
-noncomputable def mulEqCodeDef : 𝚺₁.Semisentence 5 := .mkSigma “y tblM tbl a b. !mulGraphDef tblM tbl a b y”
-
-/-- The `succCode_defined` pattern: never a blanket `simp` through the fixpoint formula. -/
-instance mulEqCode_defined : 𝚺₁-Function₄ (mulEqCode : V → V → V → V → V) via mulEqCodeDef := .mk fun v ↦ by
-  simp only [mulEqCodeDef]
-  rw [HierarchySymbol.Semiformula.val_mkSigma, Semiformula.eval_substs ![#1, #2, #3, #4, #0] mulGraphDef.val,
-    mulGraph_defined.iff]
-  simp only [Function.comp_apply, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.head_cons, Matrix.cons_val_two,
-    Matrix.tail_cons, Matrix.cons_val_three, Matrix.cons_val_four, Semiterm.val_bvar, Fin.succ_zero_eq_one,
-    Fin.succ_one_eq_two]
-  constructor
-  · intro h; exact (mulEqCode_eq_of_graph h).symm
-  · intro h; rw [h]; exact mulEqCode_graph _ _ _ _
-instance mulEqCode_definable : 𝚺₁-Function₄ (mulEqCode : V → V → V → V → V) := mulEqCode_defined.to_definable
-
 end mulGraph
 
 /-! ## 5. Soundness and length of `mulEqCode`; its `sLemma` packaging

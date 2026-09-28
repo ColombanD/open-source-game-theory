@@ -71,9 +71,6 @@ def HInv (tbl E Γ P : V) : Prop :=
 instance hInv_definable : 𝚫₁-Relation₄ (HInv : V → V → V → V → Prop) := by
   unfold HInv; definability
 
-lemma HInv.nil (tbl E Γ : V) : HInv tbl E Γ 0 :=
-  ⟨listOK_nil _ _ _ _, noDrop'_nil, hornOnly_nil, shiftsV_nil⟩
-
 lemma HInv.append {tbl E Γ P₁ P₂ : V} (h₁ : HInv tbl E Γ P₁) (h₂ : HInv tbl E (finalCtx Γ P₁) P₂) :
     HInv tbl E Γ (appendV P₁ P₂) :=
   ⟨listOK_appendV h₁.1 h₂.1, noDrop'_appendV h₁.2.1 h₂.2.1, hornOnly_appendV h₁.2.2.1 h₂.2.2.1,
@@ -100,15 +97,10 @@ lemma HInv.isFormulaSet {tbl N E Γ P : V} (htbl : TableOK tbl N) (hΓ : IsFormu
 lemma HInv.dossF {tbl E Γ P W n r i : V} (h : HInv tbl E Γ P) (hD : DossF W Γ n r i) : DossF W (finalCtx Γ P) n r i := by
   have := dossF_transport' h.2.1 hD
   rwa [h.2.2.2, add_zero] at this
-lemma HInv.dossT {tbl E Γ P W n t i : V} (h : HInv tbl E Γ P) (hD : DossT W Γ n t i) : DossT W (finalCtx Γ P) n t i := by
-  have := dossT_transport' h.2.1 hD
-  rwa [h.2.2.2, add_zero] at this
 lemma HInv.dossV {tbl E Γ P W n k v j i : V} (h : HInv tbl E Γ P) (hD : DossV W Γ n k v j i) :
     DossV W (finalCtx Γ P) n k v j i := by
   have := dossV_transport' h.2.1 hD
   rwa [h.2.2.2, add_zero] at this
-
-lemma HInv.sizeOK {tbl E Γ P Q D : V} (h : HInv tbl E Γ P) : SizeOK Q D P := sizeOK_of_hornOnly h.2.2.1
 
 /-! ### Context monotonicity of shift-free Horn lists (`Cert` Part 0's `ctxAfter_mono`/`ctxVec_mono`, lifted to `ListOK`) -/
 
@@ -161,20 +153,8 @@ lemma len_single (s : V) : len (?[s] : V) = 1 := by simp
 
 /-! ### Definability of the fact codes used in the motives -/
 
-instance allsFact_definable : 𝚺₁-Function₃ (allsFact : V → V → V → V) := by
-  have : (allsFact : V → V → V → V) = fun p b m ↦ subst LAct (p ∷ b ∷ m ∷ 0) Palls := rfl
-  rw [this]; definability
 instance bsTFact_definable : 𝚺₁-Function₃ (bsTFact : V → V → V → V) := by
   have : (bsTFact : V → V → V → V) = fun n m t ↦ subst LAct (n ∷ m ∷ t ∷ 0) PbsT := rfl
-  rw [this]; definability
-instance bsVFact_definable : 𝚺₁-Function₄ (bsVFact : V → V → V → V → V) := by
-  have : (bsVFact : V → V → V → V → V) = fun n m k v ↦ subst LAct (n ∷ m ∷ k ∷ v ∷ 0) PbsV := rfl
-  rw [this]; definability
-instance bsFFact_definable : 𝚺₁-Function₃ (bsFFact : V → V → V → V) := by
-  have : (bsFFact : V → V → V → V) = fun n m p ↦ subst LAct (n ∷ m ∷ p ∷ 0) PbsF := rfl
-  rw [this]; definability
-instance fvSeqFact_definable : 𝚺₁-Function₃ (fvSeqFact : V → V → V → V) := by
-  have : (fvSeqFact : V → V → V → V) = fun w j m ↦ subst LAct (w ∷ j ∷ m ∷ 0) PfvSeq := rfl
   rw [this]; definability
 
 /-- `2 * j + 1 ≤ E` from `2 * m + 1 ≤ E` and `j ≤ m`. -/
@@ -470,10 +450,6 @@ def BsTInv (tbl E Γ B Bi n t : V) : Prop :=
   ∀ i ≤ Bi, i + 2 * termLen LAct t ≤ Bi → DossT walkPieces Γ n t i →
     ∃ P : V, HInv tbl E Γ P ∧ len P ≤ 4 * termLen LAct t * termLen LAct t * (B + 3) ∧
       neg LAct (bsTFact (cTV n) (cTV (termBV ℒₒᵣ t)) (^&i)) ∈ finalCtx Γ P
-
-instance bsTInv_definable :
-    𝚺₁.Definable (fun v : Fin 7 → V ↦ BsTInv (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) := by
-  unfold BsTInv; definability
 
 set_option maxHeartbeats 1000000 in
 /-- **The `bs` pass on the last `j` entries of a vector**, given the entries' term passes: from the dossier of the
@@ -1098,7 +1074,6 @@ theorem bsF_ok {tbl N E Γ B Bi : V} (htbl : TableOK tbl N) (hT : IndRecTable tb
         simp only [add_tsub_cancel_right]
         exact mem_insert_self'
 
-
 end bsPass
 
 /-! ## 4. The substitution instances: the walks, `fvSeq`, the caps -/
@@ -1370,8 +1345,6 @@ lemma gp_mono {G : V} (hG : 1 ≤ G) {a b : ℕ} (h : a ≤ b) : gp G a ≤ gp G
 lemma gp_add (G : V) (a : ℕ) : ∀ b : ℕ, gp G (a + b) = gp G a * gp G b
   | 0 => by simp
   | b + 1 => by rw [← Nat.add_assoc, gp_succ, gp_add G a b, gp_succ]; ring
-
-lemma le_gp_one (G : V) : G = gp G 1 := by simp
 
 /-- A list with eigenvariables: applicable at cap `9`, cut-admitting, Horn-only, with `σ` shifts. -/
 def WInv (tbl E Γ P σ : V) : Prop :=
@@ -1856,9 +1829,6 @@ lemma const_gp_le {Z : V} (c : V) (hZ : 1 ≤ Z) (k : ℕ) : c ≤ c * gp Z k :=
 
 lemma atom_gp_le {Z a : V} (ha : a ≤ Z) : a ≤ 1 * gp Z 1 := by rw [one_mul]; simpa using ha
 
-lemma coef_gp_le {Z a c c' : V} {k : ℕ} (ha : a ≤ c * gp Z k) (hc : c ≤ c') : a ≤ c' * gp Z k :=
-  le_trans ha (mul_le_mul_of_nonneg_right hc zero_le)
-
 end bodyDoss
 
 /-! ### 5.4 Stage A: the walks and the three substitution instances, with the size bounds -/
@@ -2176,7 +2146,6 @@ theorem stageA {tbl N E Γ p ip b m K Z : V} (htbl : TableOK tbl N) (hT : IndRec
 
 end stageA
 
-
 /-! ### 5.5 Stage B: the shift-free closing — `qqAlls`, `bs`, `shift`, `fvSeq`, `neg`, the identification, the rows -/
 
 section stageB
@@ -2304,10 +2273,6 @@ lemma HInv.mem_app {tbl E Γ P L x : V} (hL : HInv tbl E (finalCtx Γ P) L) (hx 
     x ∈ finalCtx Γ (appendV P L) := by rw [finalCtx_appendV]; exact hL.mem hx
 lemma HInv.new_app {tbl E Γ P L x : V} (_ : HInv tbl E (finalCtx Γ P) L) (hx : x ∈ finalCtx (finalCtx Γ P) L) :
     x ∈ finalCtx Γ (appendV P L) := by rw [finalCtx_appendV]; exact hx
-lemma HInv.dossF_app {tbl E Γ P L W n r i : V} (hL : HInv tbl E (finalCtx Γ P) L) (hD : DossF W (finalCtx Γ P) n r i) :
-    DossF W (finalCtx Γ (appendV P L)) n r i := by rw [finalCtx_appendV]; exact hL.dossF hD
-lemma HInv.dossV_app {tbl E Γ P L W n k v j i : V} (hL : HInv tbl E (finalCtx Γ P) L) (hD : DossV W (finalCtx Γ P) n k v j i) :
-    DossV W (finalCtx Γ (appendV P L)) n k v j i := by rw [finalCtx_appendV]; exact hL.dossV hD
 
 set_option maxHeartbeats 4000000 in
 /-- **Stage B**: at the context of stage A, the shift-free closing: the `qqAlls` walk, the `bs` pass, the shift and
@@ -2753,7 +2718,6 @@ lemma formulaLen_subst_fvarVec_le {m b : V} (hb : IsSemiformula LAct m b) :
   formulaLen_subst_le_var hb 0 _ (IsSemitermVec.LAct_of_LOR (fvarVec_isSemitermVec_LOR m)) (varInv_fvarVec m)
 
 end varInv
-
 
 /-! ### The substitution instances with the LINEAR length bound -/
 

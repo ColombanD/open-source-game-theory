@@ -78,13 +78,10 @@ noncomputable def binaryTDef : 𝚺₁.Semisentence 4 := .mkSigma
 
 instance leafT_defined : 𝚺₁-Function₁ (leafT : V → V) via leafTDef := .mk fun v ↦ by
   simp [leafTDef, leafT, numeral_eq_natCast]
-instance leafT_definable : 𝚺₁-Function₁ (leafT : V → V) := leafT_defined.to_definable
 instance unaryT_defined : 𝚺₁-Function₂ (unaryT : V → V → V) via unaryTDef := .mk fun v ↦ by
   simp [unaryTDef, unaryT, numeral_eq_natCast]
-instance unaryT_definable : 𝚺₁-Function₂ (unaryT : V → V → V) := unaryT_defined.to_definable
 instance binaryT_defined : 𝚺₁-Function₃ (binaryT : V → V → V → V) via binaryTDef := .mk fun v ↦ by
   simp [binaryTDef, binaryT, numeral_eq_natCast]
-instance binaryT_definable : 𝚺₁-Function₃ (binaryT : V → V → V → V) := binaryT_defined.to_definable
 
 noncomputable def leafFactDef : 𝚺₁.Semisentence 3 := .mkSigma
   “y a n. ∃ x, !bnumGraph x a ∧ ∃ z, !qqAddGraph z x ↑(𝟏 : ℕ) ∧ ∃ w, !bnumGraph w n ∧ !leFactDef y z w”
@@ -98,13 +95,10 @@ noncomputable def bin3FactDef : 𝚺₁.Semisentence 5 := .mkSigma
 
 instance leafFact_defined : 𝚺₁-Function₂ (leafFact : V → V → V) via leafFactDef := .mk fun v ↦ by
   simp [leafFactDef, leafFact, bnum.defined.iff, leFact_defined.iff, numeral_eq_natCast]
-instance leafFact_definable : 𝚺₁-Function₂ (leafFact : V → V → V) := leafFact_defined.to_definable
 instance bin2Fact_defined : 𝚺₁-Function₃ (bin2Fact : V → V → V → V) via bin2FactDef := .mk fun v ↦ by
   simp [bin2FactDef, bin2Fact, bnum.defined.iff, leFact_defined.iff, numeral_eq_natCast]
-instance bin2Fact_definable : 𝚺₁-Function₃ (bin2Fact : V → V → V → V) := bin2Fact_defined.to_definable
 instance bin3Fact_defined : 𝚺₁-Function₄ (bin3Fact : V → V → V → V → V) via bin3FactDef := .mk fun v ↦ by
   simp [bin3FactDef, bin3Fact, bnum.defined.iff, leFact_defined.iff, numeral_eq_natCast]
-instance bin3Fact_definable : 𝚺₁-Function₄ (bin3Fact : V → V → V → V → V) := bin3Fact_defined.to_definable
 
 /-! ### 2.2 The three `dlen` tails and the three goal tails
 
@@ -127,8 +121,6 @@ instance dlenLeafSteps_defined :
     𝚺₁-Function₅ (dlenLeafSteps : V → V → V → V → V → V) via dlenLeafStepsDef := .mk fun v ↦ by
   simp [dlenLeafStepsDef, dlenLeafSteps, leafT_defined.iff, leafFact_defined.iff, leafCode_defined.iff,
     bnum.defined.iff, mkStep_defined.iff, sLemma, numeral_eq_natCast]
-instance dlenLeafSteps_definable :
-    𝚺₁.DefinableFunction₅ (dlenLeafSteps : V → V → V → V → V → V) := dlenLeafSteps_defined.to_definable
 
 noncomputable def dlenUnaryStepsDef : 𝚺₁.Semisentence 8 := .mkSigma
   “y W tblN l n₁ L m₁ n. ∃ T, !unaryTDef T l n₁ ∧ ∃ e₁, !adjoinDef e₁ T 0 ∧ ∃ s₁, !mkStepDef s₁ W 41 e₁ ∧
@@ -147,9 +139,6 @@ instance dlenUnarySteps_defined :
       dlenUnaryStepsDef := .mk fun v ↦ by
   simp [dlenUnaryStepsDef, dlenUnarySteps, unaryT_defined.iff, bin2Fact_defined.iff, bin2Code_defined.iff,
     bnum.defined.iff, mkStep_defined.iff, sLemma, numeral_eq_natCast]
-instance dlenUnarySteps_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 7 → V ↦ dlenUnarySteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) :=
-  dlenUnarySteps_defined.to_definable
 
 noncomputable def dlenBinaryStepsDef : 𝚺₁.Semisentence 10 := .mkSigma
   “y W tblN l n₁ n₂ L m₁ m₂ n. ∃ T, !binaryTDef T l n₁ n₂ ∧ ∃ e₁, !adjoinDef e₁ T 0 ∧
@@ -173,10 +162,6 @@ instance dlenBinarySteps_defined :
       dlenBinaryStepsDef := .mk fun v ↦ by
   simp [dlenBinaryStepsDef, dlenBinarySteps, binaryT_defined.iff, bin3Fact_defined.iff, bin3Code_defined.iff,
     bnum.defined.iff, mkStep_defined.iff, sLemma, numeral_eq_natCast]
-instance dlenBinarySteps_definable :
-    𝚺₁.DefinableFunction
-      (fun v : Fin 9 → V ↦ dlenBinarySteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8)) :=
-  dlenBinarySteps_defined.to_definable
 
 noncomputable def goalTailLeafDef : 𝚺₁.Semisentence 7 := .mkSigma
   “y W tblN l L n s. ∃ D, !dlenLeafStepsDef D W tblN l L n ∧ ∃ z, !qqFvarDef z 0 ∧ ∃ T, !leafTDef T l ∧
@@ -188,9 +173,6 @@ instance goalTailLeaf_defined :
       goalTailLeafDef := .mk fun v ↦ by
   simp [goalTailLeafDef, goalTailLeaf, dlenLeafSteps_defined.iff, leafT_defined.iff, bnum.defined.iff,
     appendV_defined.iff, sGoal, numeral_eq_natCast]
-instance goalTailLeaf_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 6 → V ↦ goalTailLeaf (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) :=
-  goalTailLeaf_defined.to_definable
 
 noncomputable def goalTailUnaryDef : 𝚺₁.Semisentence 9 := .mkSigma
   “y W tblN l n₁ L m₁ n s. ∃ D, !dlenUnaryStepsDef D W tblN l n₁ L m₁ n ∧ ∃ z, !qqFvarDef z 0 ∧
@@ -203,10 +185,6 @@ instance goalTailUnary_defined :
       goalTailUnaryDef := .mk fun v ↦ by
   simp [goalTailUnaryDef, goalTailUnary, dlenUnarySteps_defined.iff, unaryT_defined.iff, bnum.defined.iff,
     appendV_defined.iff, sGoal, numeral_eq_natCast]
-instance goalTailUnary_definable :
-    𝚺₁.DefinableFunction
-      (fun v : Fin 8 → V ↦ goalTailUnary (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7)) :=
-  goalTailUnary_defined.to_definable
 
 noncomputable def goalTailBinaryDef : 𝚺₁.Semisentence 11 := .mkSigma
   “y W tblN l n₁ n₂ L m₁ m₂ n s. ∃ D, !dlenBinaryStepsDef D W tblN l n₁ n₂ L m₁ m₂ n ∧ ∃ z, !qqFvarDef z 0 ∧
@@ -221,11 +199,6 @@ instance goalTailBinary_defined :
       goalTailBinaryDef := .mk fun v ↦ by
   simp [goalTailBinaryDef, goalTailBinary, dlenBinarySteps_defined.iff, binaryT_defined.iff, bnum.defined.iff,
     appendV_defined.iff, sGoal, numeral_eq_natCast]
-instance goalTailBinary_definable :
-    𝚺₁.DefinableFunction
-      (fun v : Fin 10 → V ↦
-        goalTailBinary (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9)) :=
-  goalTailBinary_defined.to_definable
 
 /-! ### 2.3 The ten `node<Tag>Head` lists -/
 
@@ -244,9 +217,6 @@ noncomputable def fragAxLHeadDef : 𝚺₁.Semisentence 6 := .mkSigma
 instance fragAxLHead_defined :
     𝚺₁.DefinedFunction (fun v : Fin 5 → V ↦ fragAxLHead (v 0) (v 1) (v 2) (v 3) (v 4)) fragAxLHeadDef := .mk fun v ↦ by
   simp [fragAxLHeadDef, fragAxLHead, mkStep_defined.iff, numeral_eq_natCast]
-instance fragAxLHead_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 5 → V ↦ fragAxLHead (v 0) (v 1) (v 2) (v 3) (v 4)) := fragAxLHead_defined.to_definable
-
 
 noncomputable def fragVerumHeadDef : 𝚺₁.Semisentence 5 := .mkSigma
   “y W is il iv.
@@ -261,9 +231,6 @@ noncomputable def fragVerumHeadDef : 𝚺₁.Semisentence 5 := .mkSigma
 instance fragVerumHead_defined :
     𝚺₁.DefinedFunction (fun v : Fin 4 → V ↦ fragVerumHead (v 0) (v 1) (v 2) (v 3)) fragVerumHeadDef := .mk fun v ↦ by
   simp [fragVerumHeadDef, fragVerumHead, mkStep_defined.iff, numeral_eq_natCast]
-instance fragVerumHead_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 4 → V ↦ fragVerumHead (v 0) (v 1) (v 2) (v 3)) := fragVerumHead_defined.to_definable
-
 
 noncomputable def nodeAndHeadDef : 𝚺₁.Semisentence 13 := .mkSigma
   “y W is il ir ip iq id1 id2 icp icq in1 in2.
@@ -289,9 +256,6 @@ noncomputable def nodeAndHeadDef : 𝚺₁.Semisentence 13 := .mkSigma
 instance nodeAndHead_defined :
     𝚺₁.DefinedFunction (fun v : Fin 12 → V ↦ nodeAndHead (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10) (v 11)) nodeAndHeadDef := .mk fun v ↦ by
   simp [nodeAndHeadDef, nodeAndHead, mkStep_defined.iff, numeral_eq_natCast]
-instance nodeAndHead_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 12 → V ↦ nodeAndHead (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10) (v 11)) := nodeAndHead_defined.to_definable
-
 
 noncomputable def nodeOrHeadDef : 𝚺₁.Semisentence 11 := .mkSigma
   “y W is il ir ip iq id icq ic in1.
@@ -314,9 +278,6 @@ noncomputable def nodeOrHeadDef : 𝚺₁.Semisentence 11 := .mkSigma
 instance nodeOrHead_defined :
     𝚺₁.DefinedFunction (fun v : Fin 10 → V ↦ nodeOrHead (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9)) nodeOrHeadDef := .mk fun v ↦ by
   simp [nodeOrHeadDef, nodeOrHead, mkStep_defined.iff, numeral_eq_natCast]
-instance nodeOrHead_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 10 → V ↦ nodeOrHead (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9)) := nodeOrHead_defined.to_definable
-
 
 noncomputable def nodeWkHeadDef : 𝚺₁.Semisentence 7 := .mkSigma
   “y W is il ic id in1.
@@ -334,9 +295,6 @@ noncomputable def nodeWkHeadDef : 𝚺₁.Semisentence 7 := .mkSigma
 instance nodeWkHead_defined :
     𝚺₁.DefinedFunction (fun v : Fin 6 → V ↦ nodeWkHead (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) nodeWkHeadDef := .mk fun v ↦ by
   simp [nodeWkHeadDef, nodeWkHead, mkStep_defined.iff, numeral_eq_natCast]
-instance nodeWkHead_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 6 → V ↦ nodeWkHead (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) := nodeWkHead_defined.to_definable
-
 
 noncomputable def nodeCutHeadDef : 𝚺₁.Semisentence 12 := .mkSigma
   “y W is il ip inp id1 id2 ic1 ic2 in1 in2.
@@ -360,9 +318,6 @@ noncomputable def nodeCutHeadDef : 𝚺₁.Semisentence 12 := .mkSigma
 instance nodeCutHead_defined :
     𝚺₁.DefinedFunction (fun v : Fin 11 → V ↦ nodeCutHead (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10)) nodeCutHeadDef := .mk fun v ↦ by
   simp [nodeCutHeadDef, nodeCutHead, mkStep_defined.iff, numeral_eq_natCast]
-instance nodeCutHead_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 11 → V ↦ nodeCutHead (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10)) := nodeCutHead_defined.to_definable
-
 
 noncomputable def nodeShiftHeadDef : 𝚺₁.Semisentence 7 := .mkSigma
   “y W is il ic id in1.
@@ -380,9 +335,6 @@ noncomputable def nodeShiftHeadDef : 𝚺₁.Semisentence 7 := .mkSigma
 instance nodeShiftHead_defined :
     𝚺₁.DefinedFunction (fun v : Fin 6 → V ↦ nodeShiftHead (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) nodeShiftHeadDef := .mk fun v ↦ by
   simp [nodeShiftHeadDef, nodeShiftHead, mkStep_defined.iff, numeral_eq_natCast]
-instance nodeShiftHead_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 6 → V ↦ nodeShiftHead (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) := nodeShiftHead_defined.to_definable
-
 
 noncomputable def nodeAllHeadDef : 𝚺₁.Semisentence 11 := .mkSigma
   “y W is il ir ip ifp iss ic id in1.
@@ -404,9 +356,6 @@ noncomputable def nodeAllHeadDef : 𝚺₁.Semisentence 11 := .mkSigma
 instance nodeAllHead_defined :
     𝚺₁.DefinedFunction (fun v : Fin 10 → V ↦ nodeAllHead (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9)) nodeAllHeadDef := .mk fun v ↦ by
   simp [nodeAllHeadDef, nodeAllHead, mkStep_defined.iff, numeral_eq_natCast]
-instance nodeAllHead_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 10 → V ↦ nodeAllHead (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9)) := nodeAllHead_defined.to_definable
-
 
 noncomputable def nodeExsHeadDef : 𝚺₁.Semisentence 12 := .mkSigma
   “y W is il ir ip it ipt ic id ilt in1.
@@ -430,9 +379,6 @@ noncomputable def nodeExsHeadDef : 𝚺₁.Semisentence 12 := .mkSigma
 instance nodeExsHead_defined :
     𝚺₁.DefinedFunction (fun v : Fin 11 → V ↦ nodeExsHead (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10)) nodeExsHeadDef := .mk fun v ↦ by
   simp [nodeExsHeadDef, nodeExsHead, mkStep_defined.iff, numeral_eq_natCast]
-instance nodeExsHead_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 11 → V ↦ nodeExsHead (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10)) := nodeExsHead_defined.to_definable
-
 
 noncomputable def nodeAxmHeadDef : 𝚺₁.Semisentence 5 := .mkSigma
   “y W is il ip.
@@ -448,8 +394,6 @@ noncomputable def nodeAxmHeadDef : 𝚺₁.Semisentence 5 := .mkSigma
 instance nodeAxmHead_defined :
     𝚺₁.DefinedFunction (fun v : Fin 4 → V ↦ nodeAxmHead (v 0) (v 1) (v 2) (v 3)) nodeAxmHeadDef := .mk fun v ↦ by
   simp [nodeAxmHeadDef, nodeAxmHead, mkStep_defined.iff, numeral_eq_natCast]
-instance nodeAxmHead_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 4 → V ↦ nodeAxmHead (v 0) (v 1) (v 2) (v 3)) := nodeAxmHead_defined.to_definable
 
 /-! ### 2.4 The ten fragments -/
 
@@ -462,8 +406,6 @@ instance fragAxL_defined :
     𝚺₁.DefinedFunction (fun v : Fin 8 → V ↦ fragAxL (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7)) fragAxLDef := .mk fun v ↦ by
   simp [fragAxLDef, fragAxL, fragAxLHead_defined.iff, goalTailLeaf_defined.iff, appendV_defined.iff,
     numeral_eq_natCast]
-instance fragAxL_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 8 → V ↦ fragAxL (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7)) := fragAxL_defined.to_definable
 
 noncomputable def fragVerumDef : 𝚺₁.Semisentence 8 := .mkSigma
   “y W tblN is il iv L n.
@@ -474,8 +416,6 @@ instance fragVerum_defined :
     𝚺₁.DefinedFunction (fun v : Fin 7 → V ↦ fragVerum (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) fragVerumDef := .mk fun v ↦ by
   simp [fragVerumDef, fragVerum, fragVerumHead_defined.iff, goalTailLeaf_defined.iff, appendV_defined.iff,
     numeral_eq_natCast]
-instance fragVerum_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 7 → V ↦ fragVerum (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) := fragVerum_defined.to_definable
 
 noncomputable def nodeAndDef : 𝚺₁.Semisentence 18 := .mkSigma
   “y W tblN is il ir ip iq id1 id2 icp icq in1 in2 L m1 m2 n.
@@ -486,8 +426,6 @@ instance nodeAnd_defined :
     𝚺₁.DefinedFunction (fun v : Fin 17 → V ↦ nodeAnd (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10) (v 11) (v 12) (v 13) (v 14) (v 15) (v 16)) nodeAndDef := .mk fun v ↦ by
   simp [nodeAndDef, nodeAnd, nodeAndHead_defined.iff, goalTailBinary_defined.iff, appendV_defined.iff,
     numeral_eq_natCast]
-instance nodeAnd_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 17 → V ↦ nodeAnd (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10) (v 11) (v 12) (v 13) (v 14) (v 15) (v 16)) := nodeAnd_defined.to_definable
 
 noncomputable def nodeOrDef : 𝚺₁.Semisentence 15 := .mkSigma
   “y W tblN is il ir ip iq id icq ic in1 L m1 n.
@@ -498,8 +436,6 @@ instance nodeOr_defined :
     𝚺₁.DefinedFunction (fun v : Fin 14 → V ↦ nodeOr (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10) (v 11) (v 12) (v 13)) nodeOrDef := .mk fun v ↦ by
   simp [nodeOrDef, nodeOr, nodeOrHead_defined.iff, goalTailUnary_defined.iff, appendV_defined.iff,
     numeral_eq_natCast]
-instance nodeOr_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 14 → V ↦ nodeOr (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10) (v 11) (v 12) (v 13)) := nodeOr_defined.to_definable
 
 noncomputable def nodeWkDef : 𝚺₁.Semisentence 11 := .mkSigma
   “y W tblN is il ic id in1 L m1 n.
@@ -510,8 +446,6 @@ instance nodeWk_defined :
     𝚺₁.DefinedFunction (fun v : Fin 10 → V ↦ nodeWk (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9)) nodeWkDef := .mk fun v ↦ by
   simp [nodeWkDef, nodeWk, nodeWkHead_defined.iff, goalTailUnary_defined.iff, appendV_defined.iff,
     numeral_eq_natCast]
-instance nodeWk_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 10 → V ↦ nodeWk (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9)) := nodeWk_defined.to_definable
 
 noncomputable def nodeCutDef : 𝚺₁.Semisentence 17 := .mkSigma
   “y W tblN is il ip inp id1 id2 ic1 ic2 in1 in2 L m1 m2 n.
@@ -522,8 +456,6 @@ instance nodeCut_defined :
     𝚺₁.DefinedFunction (fun v : Fin 16 → V ↦ nodeCut (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10) (v 11) (v 12) (v 13) (v 14) (v 15)) nodeCutDef := .mk fun v ↦ by
   simp [nodeCutDef, nodeCut, nodeCutHead_defined.iff, goalTailBinary_defined.iff, appendV_defined.iff,
     numeral_eq_natCast]
-instance nodeCut_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 16 → V ↦ nodeCut (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10) (v 11) (v 12) (v 13) (v 14) (v 15)) := nodeCut_defined.to_definable
 
 noncomputable def nodeShiftDef : 𝚺₁.Semisentence 11 := .mkSigma
   “y W tblN is il ic id in1 L m1 n.
@@ -534,8 +466,6 @@ instance nodeShift_defined :
     𝚺₁.DefinedFunction (fun v : Fin 10 → V ↦ nodeShift (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9)) nodeShiftDef := .mk fun v ↦ by
   simp [nodeShiftDef, nodeShift, nodeShiftHead_defined.iff, goalTailUnary_defined.iff, appendV_defined.iff,
     numeral_eq_natCast]
-instance nodeShift_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 10 → V ↦ nodeShift (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9)) := nodeShift_defined.to_definable
 
 noncomputable def nodeAllDef : 𝚺₁.Semisentence 15 := .mkSigma
   “y W tblN is il ir ip ifp iss ic id in1 L m1 n.
@@ -546,8 +476,6 @@ instance nodeAll_defined :
     𝚺₁.DefinedFunction (fun v : Fin 14 → V ↦ nodeAll (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10) (v 11) (v 12) (v 13)) nodeAllDef := .mk fun v ↦ by
   simp [nodeAllDef, nodeAll, nodeAllHead_defined.iff, goalTailUnary_defined.iff, appendV_defined.iff,
     numeral_eq_natCast]
-instance nodeAll_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 14 → V ↦ nodeAll (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10) (v 11) (v 12) (v 13)) := nodeAll_defined.to_definable
 
 noncomputable def nodeExsDef : 𝚺₁.Semisentence 17 := .mkSigma
   “y W tblN is il ir ip it ipt ic id ilt in1 L Lt m1 n.
@@ -558,8 +486,6 @@ instance nodeExs_defined :
     𝚺₁.DefinedFunction (fun v : Fin 16 → V ↦ nodeExs (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10) (v 11) (v 12) (v 13) (v 14) (v 15)) nodeExsDef := .mk fun v ↦ by
   simp [nodeExsDef, nodeExs, nodeExsHead_defined.iff, goalTailBinary_defined.iff, appendV_defined.iff,
     numeral_eq_natCast]
-instance nodeExs_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 16 → V ↦ nodeExs (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10) (v 11) (v 12) (v 13) (v 14) (v 15)) := nodeExs_defined.to_definable
 
 noncomputable def nodeAxmDef : 𝚺₁.Semisentence 8 := .mkSigma
   “y W tblN is il ip L n.
@@ -570,8 +496,6 @@ instance nodeAxm_defined :
     𝚺₁.DefinedFunction (fun v : Fin 7 → V ↦ nodeAxm (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) nodeAxmDef := .mk fun v ↦ by
   simp [nodeAxmDef, nodeAxm, nodeAxmHead_defined.iff, goalTailLeaf_defined.iff, appendV_defined.iff,
     numeral_eq_natCast]
-instance nodeAxm_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 7 → V ↦ nodeAxm (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) := nodeAxm_defined.to_definable
 
 end definability
 
@@ -796,7 +720,6 @@ instance verifyGraph_defined : 𝚺₁-Relation₄ (VerifyGraph : V → V → V 
 
 instance verifyGraph_definable : 𝚺₁-Relation₄ (VerifyGraph : V → V → V → V → Prop) :=
   verifyGraph_defined.to_definable
-
 
 /-! ### 3.3 Case analysis and inversion (`DESIGN_fragments.md` §6.1) -/
 
@@ -1165,6 +1088,5 @@ Consequently §6.3's `verifySteps_ok` and §6.4's `dlen_verifySteps_le` are also
 they quantify over the function. Their statements can be phrased for an arbitrary `L` with
 `VerifyGraph W tblN ρ L` (as §6.1 itself suggests: "or — simpler for the theorems — never define
 the function"), but their PROOFS need the prologue's layout theorem, which is the `Cert` work. -/
-
 
 end ArithS

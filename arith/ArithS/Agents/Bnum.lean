@@ -334,8 +334,6 @@ instance bnum.defined : 𝚺₁-Function₁[V] bnum via bnumGraph := .mk fun v �
 
 instance bnum.definable : 𝚺₁-Function₁[V] bnum := bnum.defined.to_definable
 
-instance bnum.definable' : Γ-[m + 1]-Function₁[V] bnum := bnum.definable.of_sigmaOne
-
 /-! ### The equations -/
 
 @[simp] lemma bnum_zero : bnum (0 : V) = 𝟎 := bnum_eq_of_graph (BnumGraph.zero_iff.mpr rfl)

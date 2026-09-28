@@ -93,10 +93,6 @@ noncomputable def instBGraph : 𝚺₁.Semisentence 3 := .mkSigma
 instance instB.defined : 𝚺₁-Function₂ (instB : V → V → V) via instBGraph := .mk fun v ↦ by
   simp [instBGraph, instB]
 
-instance instB.definable : 𝚺₁-Function₂ (instB : V → V → V) := instB.defined.to_definable
-
-instance instB.definable' : Γ-[m + 1]-Function₂ (instB : V → V → V) := instB.definable.of_sigmaOne
-
 /-- The `k`-instance of a one-variable formula code is a sentence code. -/
 lemma isSemiformula_instB {n : V} (hn : IsSemiformula LAct 1 n) (k : V) :
     IsSemiformula LAct 0 (instB n k) :=
@@ -153,8 +149,6 @@ noncomputable def bewBDef : 𝚺₁.Semisentence 3 := .mkSigma
 
 instance bewB.defined : 𝚺₁-Relation₃[V] bewB via bewBDef := .mk fun v ↦ by
   simp [bewBDef, bewB, (LenDerivable.defined (V := V) TAct).iff]
-
-instance bewB.definable : 𝚺₁-Relation₃[V] bewB := bewB.defined.to_definable
 
 /-! ### U1 — the length of a substitution instance, inside `V`
 

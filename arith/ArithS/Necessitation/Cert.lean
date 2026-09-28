@@ -97,17 +97,10 @@ instance dossF_definable : 𝚫₁-Relation₅ (DossF : V → V → V → V → 
   unfold DossF; definability
 instance dossT_definable : 𝚫₁-Relation₅ (DossT : V → V → V → V → V → Prop) := by
   unfold DossT; definability
-instance dossV_definable : 𝚫₁.Definable (fun v : Fin 7 → V ↦ DossV (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) := by
-  unfold DossV; definability
 
 /-- A dossier survives a non-dropping list, moved up by its eigenvariable count. -/
 lemma dossF_transport {W Γ n r i S : V} (hS : NoDrop S) (h : DossF W Γ n r i) :
     DossF W (finalCtx Γ S) n r (i + shiftsV S) := by
-  intro f hf
-  rw [shiftIterV_add]
-  exact mem_finalCtx_of_mem hS (h f hf)
-lemma dossT_transport {W Γ n t i S : V} (hS : NoDrop S) (h : DossT W Γ n t i) :
-    DossT W (finalCtx Γ S) n t (i + shiftsV S) := by
   intro f hf
   rw [shiftIterV_add]
   exact mem_finalCtx_of_mem hS (h f hf)
@@ -143,18 +136,6 @@ end dossier
 
 section factIter
 
-lemma shiftIterV_sigmaFact {n a : V} (hn : IsSemiterm LAct 0 n) (ha : IsSemiterm LAct 0 a) :
-    ∀ m, shiftIterV (sigmaFact n a) m = sigmaFact (termShiftIterV n m) (termShiftIterV a m) := by
-  intro m
-  induction m using ISigma1.sigma1_succ_induction with
-  | hP => definability
-  | zero => simp
-  | succ m ih =>
-    rw [shiftIterV_succ, ih, shift_sigmaFact (isSemiterm_termShiftIterV hn m) (isSemiterm_termShiftIterV ha m), termShiftIterV_succ, termShiftIterV_succ]
-
-instance andFact_definable : 𝚺₁-Function₃ (andFact : V → V → V → V) := by
-  have : (andFact : V → V → V → V) = fun z a b ↦ subst LAct (z ∷ a ∷ b ∷ 0) Pand := rfl
-  rw [this]; definability
 lemma shiftIterV_andFact {z a b : V} (hz : IsSemiterm LAct 0 z) (ha : IsSemiterm LAct 0 a) (hb : IsSemiterm LAct 0 b) :
     ∀ m, shiftIterV (andFact z a b) m = andFact (termShiftIterV z m) (termShiftIterV a m) (termShiftIterV b m) := by
   intro m
@@ -164,9 +145,6 @@ lemma shiftIterV_andFact {z a b : V} (hz : IsSemiterm LAct 0 z) (ha : IsSemiterm
   | succ m ih =>
     rw [shiftIterV_succ, ih, shift_andFact (isSemiterm_termShiftIterV hz m) (isSemiterm_termShiftIterV ha m) (isSemiterm_termShiftIterV hb m), termShiftIterV_succ, termShiftIterV_succ, termShiftIterV_succ]
 
-instance orFact_definable : 𝚺₁-Function₃ (orFact : V → V → V → V) := by
-  have : (orFact : V → V → V → V) = fun z a b ↦ subst LAct (z ∷ a ∷ b ∷ 0) Por := rfl
-  rw [this]; definability
 lemma shiftIterV_orFact {z a b : V} (hz : IsSemiterm LAct 0 z) (ha : IsSemiterm LAct 0 a) (hb : IsSemiterm LAct 0 b) :
     ∀ m, shiftIterV (orFact z a b) m = orFact (termShiftIterV z m) (termShiftIterV a m) (termShiftIterV b m) := by
   intro m
@@ -200,9 +178,6 @@ lemma shiftIterV_exsFact {q p : V} (hq : IsSemiterm LAct 0 q) (hp : IsSemiterm L
   | succ m ih =>
     rw [shiftIterV_succ, ih, shift_exsFact (isSemiterm_termShiftIterV hq m) (isSemiterm_termShiftIterV hp m), termShiftIterV_succ, termShiftIterV_succ]
 
-instance relFact_definable : 𝚺₁-Function₄ (relFact : V → V → V → V → V) := by
-  have : (relFact : V → V → V → V → V) = fun p k R v ↦ subst LAct (p ∷ k ∷ R ∷ v ∷ 0) Prel := rfl
-  rw [this]; definability
 lemma shiftIterV_relFact {p k R v : V} (hp : IsSemiterm LAct 0 p) (hk : IsSemiterm LAct 0 k) (hR : IsSemiterm LAct 0 R) (hv : IsSemiterm LAct 0 v) :
     ∀ m, shiftIterV (relFact p k R v) m = relFact (termShiftIterV p m) (termShiftIterV k m) (termShiftIterV R m) (termShiftIterV v m) := by
   intro m
@@ -212,9 +187,6 @@ lemma shiftIterV_relFact {p k R v : V} (hp : IsSemiterm LAct 0 p) (hk : IsSemite
   | succ m ih =>
     rw [shiftIterV_succ, ih, shift_relFact (isSemiterm_termShiftIterV hp m) (isSemiterm_termShiftIterV hk m) (isSemiterm_termShiftIterV hR m) (isSemiterm_termShiftIterV hv m), termShiftIterV_succ, termShiftIterV_succ, termShiftIterV_succ, termShiftIterV_succ]
 
-instance nrelFact_definable : 𝚺₁-Function₄ (nrelFact : V → V → V → V → V) := by
-  have : (nrelFact : V → V → V → V → V) = fun p k R v ↦ subst LAct (p ∷ k ∷ R ∷ v ∷ 0) Pnrel := rfl
-  rw [this]; definability
 lemma shiftIterV_nrelFact {p k R v : V} (hp : IsSemiterm LAct 0 p) (hk : IsSemiterm LAct 0 k) (hR : IsSemiterm LAct 0 R) (hv : IsSemiterm LAct 0 v) :
     ∀ m, shiftIterV (nrelFact p k R v) m = nrelFact (termShiftIterV p m) (termShiftIterV k m) (termShiftIterV R m) (termShiftIterV v m) := by
   intro m
@@ -248,9 +220,6 @@ lemma shiftIterV_falsumFact {p : V} (hp : IsSemiterm LAct 0 p) :
   | succ m ih =>
     rw [shiftIterV_succ, ih, shift_falsumFact (isSemiterm_termShiftIterV hp m), termShiftIterV_succ]
 
-instance funcFact_definable : 𝚺₁-Function₄ (funcFact : V → V → V → V → V) := by
-  have : (funcFact : V → V → V → V → V) = fun t k f v ↦ subst LAct (t ∷ k ∷ f ∷ v ∷ 0) Pfunc := rfl
-  rw [this]; definability
 lemma shiftIterV_funcFact {t k f v : V} (ht : IsSemiterm LAct 0 t) (hk : IsSemiterm LAct 0 k) (hf : IsSemiterm LAct 0 f) (hv : IsSemiterm LAct 0 v) :
     ∀ m, shiftIterV (funcFact t k f v) m = funcFact (termShiftIterV t m) (termShiftIterV k m) (termShiftIterV f m) (termShiftIterV v m) := by
   intro m
@@ -278,9 +247,6 @@ lemma shiftIterV_fvarFact {t x : V} (ht : IsSemiterm LAct 0 t) (hx : IsSemiterm 
   | succ m ih =>
     rw [shiftIterV_succ, ih, shift_fvarFact (isSemiterm_termShiftIterV ht m) (isSemiterm_termShiftIterV hx m), termShiftIterV_succ, termShiftIterV_succ]
 
-instance adjFact_definable : 𝚺₁-Function₃ (adjFact : V → V → V → V) := by
-  have : (adjFact : V → V → V → V) = fun w t v ↦ subst LAct (w ∷ t ∷ v ∷ 0) Padjoin := rfl
-  rw [this]; definability
 lemma shiftIterV_adjFact {w t v : V} (hw : IsSemiterm LAct 0 w) (ht : IsSemiterm LAct 0 t) (hv : IsSemiterm LAct 0 v) :
     ∀ m, shiftIterV (adjFact w t v) m = adjFact (termShiftIterV w m) (termShiftIterV t m) (termShiftIterV v m) := by
   intro m
@@ -289,24 +255,6 @@ lemma shiftIterV_adjFact {w t v : V} (hw : IsSemiterm LAct 0 w) (ht : IsSemiterm
   | zero => simp
   | succ m ih =>
     rw [shiftIterV_succ, ih, shift_adjFact (isSemiterm_termShiftIterV hw m) (isSemiterm_termShiftIterV ht m) (isSemiterm_termShiftIterV hv m), termShiftIterV_succ, termShiftIterV_succ, termShiftIterV_succ]
-
-lemma shiftIterV_tSigmaFact {n t : V} (hn : IsSemiterm LAct 0 n) (ht : IsSemiterm LAct 0 t) :
-    ∀ m, shiftIterV (tSigmaFact n t) m = tSigmaFact (termShiftIterV n m) (termShiftIterV t m) := by
-  intro m
-  induction m using ISigma1.sigma1_succ_induction with
-  | hP => definability
-  | zero => simp
-  | succ m ih =>
-    rw [shiftIterV_succ, ih, shift_tSigmaFact (isSemiterm_termShiftIterV hn m) (isSemiterm_termShiftIterV ht m), termShiftIterV_succ, termShiftIterV_succ]
-
-lemma shiftIterV_tvSigmaFact {k n v : V} (hk : IsSemiterm LAct 0 k) (hn : IsSemiterm LAct 0 n) (hv : IsSemiterm LAct 0 v) :
-    ∀ m, shiftIterV (tvSigmaFact k n v) m = tvSigmaFact (termShiftIterV k m) (termShiftIterV n m) (termShiftIterV v m) := by
-  intro m
-  induction m using ISigma1.sigma1_succ_induction with
-  | hP => definability
-  | zero => simp
-  | succ m ih =>
-    rw [shiftIterV_succ, ih, shift_tvSigmaFact (isSemiterm_termShiftIterV hk m) (isSemiterm_termShiftIterV hn m) (isSemiterm_termShiftIterV hv m), termShiftIterV_succ, termShiftIterV_succ, termShiftIterV_succ]
 
 instance utvPiFact_definable : 𝚺₁-Function₂ (utvPiFact : V → V → V) := by
   have : (utvPiFact : V → V → V) = fun k v ↦ subst LAct (k ∷ v ∷ 0) PutvPi := rfl
@@ -319,18 +267,6 @@ lemma shiftIterV_utvPiFact {k v : V} (hk : IsSemiterm LAct 0 k) (hv : IsSemiterm
   | zero => simp
   | succ m ih =>
     rw [shiftIterV_succ, ih, shift_utvPiFact (isSemiterm_termShiftIterV hk m) (isSemiterm_termShiftIterV hv m), termShiftIterV_succ, termShiftIterV_succ]
-
-instance utvSigmaFact_definable : 𝚺₁-Function₂ (utvSigmaFact : V → V → V) := by
-  have : (utvSigmaFact : V → V → V) = fun k v ↦ subst LAct (k ∷ v ∷ 0) PutvSigma := rfl
-  rw [this]; definability
-lemma shiftIterV_utvSigmaFact {k v : V} (hk : IsSemiterm LAct 0 k) (hv : IsSemiterm LAct 0 v) :
-    ∀ m, shiftIterV (utvSigmaFact k v) m = utvSigmaFact (termShiftIterV k m) (termShiftIterV v m) := by
-  intro m
-  induction m using ISigma1.sigma1_succ_induction with
-  | hP => definability
-  | zero => simp
-  | succ m ih =>
-    rw [shiftIterV_succ, ih, shift_utvSigmaFact (isSemiterm_termShiftIterV hk m) (isSemiterm_termShiftIterV hv m), termShiftIterV_succ, termShiftIterV_succ]
 
 instance isRelFact_definable : 𝚺₁-Function₂ (isRelFact : V → V → V) := by
   have : (isRelFact : V → V → V) = fun k R ↦ subst LAct (k ∷ R ∷ 0) PisRel := rfl
@@ -356,15 +292,6 @@ lemma shiftIterV_isFuncFact {k f : V} (hk : IsSemiterm LAct 0 k) (hf : IsSemiter
   | succ m ih =>
     rw [shiftIterV_succ, ih, shift_isFuncFact (isSemiterm_termShiftIterV hk m) (isSemiterm_termShiftIterV hf m), termShiftIterV_succ, termShiftIterV_succ]
 
-lemma shiftIterV_ltFact {a b : V} (ha : IsSemiterm LAct 0 a) (hb : IsSemiterm LAct 0 b) :
-    ∀ m, shiftIterV (ltFact a b) m = ltFact (termShiftIterV a m) (termShiftIterV b m) := by
-  intro m
-  induction m using ISigma1.sigma1_succ_induction with
-  | hP => definability
-  | zero => simp
-  | succ m ih =>
-    rw [shiftIterV_succ, ih, shift_ltFact (isSemiterm_termShiftIterV ha m) (isSemiterm_termShiftIterV hb m), termShiftIterV_succ, termShiftIterV_succ]
-
 instance negFact_definable : 𝚺₁-Function₂ (negFact : V → V → V) := by
   have : (negFact : V → V → V) = fun y p ↦ subst LAct (y ∷ p ∷ 0) PnegG := rfl
   rw [this]; definability
@@ -380,18 +307,7 @@ lemma shiftIterV_negFact {y p : V} (hy : IsSemiterm LAct 0 y) (hp : IsSemiterm L
 instance shiftFact_definable : 𝚺₁-Function₂ (shiftFact : V → V → V) := by
   have : (shiftFact : V → V → V) = fun y p ↦ subst LAct (y ∷ p ∷ 0) PshiftG := rfl
   rw [this]; definability
-lemma shiftIterV_shiftFact {y p : V} (hy : IsSemiterm LAct 0 y) (hp : IsSemiterm LAct 0 p) :
-    ∀ m, shiftIterV (shiftFact y p) m = shiftFact (termShiftIterV y m) (termShiftIterV p m) := by
-  intro m
-  induction m using ISigma1.sigma1_succ_induction with
-  | hP => definability
-  | zero => simp
-  | succ m ih =>
-    rw [shiftIterV_succ, ih, shift_shiftFact (isSemiterm_termShiftIterV hy m) (isSemiterm_termShiftIterV hp m), termShiftIterV_succ, termShiftIterV_succ]
 
-instance substFact_definable : 𝚺₁-Function₃ (substFact : V → V → V → V) := by
-  have : (substFact : V → V → V → V) = fun y w p ↦ subst LAct (y ∷ w ∷ p ∷ 0) PsubstsG := rfl
-  rw [this]; definability
 lemma shiftIterV_substFact {y w p : V} (hy : IsSemiterm LAct 0 y) (hw : IsSemiterm LAct 0 w) (hp : IsSemiterm LAct 0 p) :
     ∀ m, shiftIterV (substFact y w p) m = substFact (termShiftIterV y m) (termShiftIterV w m) (termShiftIterV p m) := by
   intro m
@@ -401,9 +317,6 @@ lemma shiftIterV_substFact {y w p : V} (hy : IsSemiterm LAct 0 y) (hw : IsSemite
   | succ m ih =>
     rw [shiftIterV_succ, ih, shift_substFact (isSemiterm_termShiftIterV hy m) (isSemiterm_termShiftIterV hw m) (isSemiterm_termShiftIterV hp m), termShiftIterV_succ, termShiftIterV_succ, termShiftIterV_succ]
 
-instance substs1Fact_definable : 𝚺₁-Function₃ (substs1Fact : V → V → V → V) := by
-  have : (substs1Fact : V → V → V → V) = fun y t p ↦ subst LAct (y ∷ t ∷ p ∷ 0) Psubsts1G := rfl
-  rw [this]; definability
 lemma shiftIterV_substs1Fact {y t p : V} (hy : IsSemiterm LAct 0 y) (ht : IsSemiterm LAct 0 t) (hp : IsSemiterm LAct 0 p) :
     ∀ m, shiftIterV (substs1Fact y t p) m = substs1Fact (termShiftIterV y m) (termShiftIterV t m) (termShiftIterV p m) := by
   intro m
@@ -436,30 +349,6 @@ lemma shiftIterV_qVecFact {u w : V} (hu : IsSemiterm LAct 0 u) (hw : IsSemiterm 
   | zero => simp
   | succ m ih =>
     rw [shiftIterV_succ, ih, shift_qVecFact (isSemiterm_termShiftIterV hu m) (isSemiterm_termShiftIterV hw m), termShiftIterV_succ, termShiftIterV_succ]
-
-instance tsvFact_definable : 𝚺₁-Function₄ (tsvFact : V → V → V → V → V) := by
-  have : (tsvFact : V → V → V → V → V) = fun u k w v ↦ subst LAct (u ∷ k ∷ w ∷ v ∷ 0) PtsvG := rfl
-  rw [this]; definability
-lemma shiftIterV_tsvFact {u k w v : V} (hu : IsSemiterm LAct 0 u) (hk : IsSemiterm LAct 0 k) (hw : IsSemiterm LAct 0 w) (hv : IsSemiterm LAct 0 v) :
-    ∀ m, shiftIterV (tsvFact u k w v) m = tsvFact (termShiftIterV u m) (termShiftIterV k m) (termShiftIterV w m) (termShiftIterV v m) := by
-  intro m
-  induction m using ISigma1.sigma1_succ_induction with
-  | hP => definability
-  | zero => simp
-  | succ m ih =>
-    rw [shiftIterV_succ, ih, shift_tsvFact (isSemiterm_termShiftIterV hu m) (isSemiterm_termShiftIterV hk m) (isSemiterm_termShiftIterV hw m) (isSemiterm_termShiftIterV hv m), termShiftIterV_succ, termShiftIterV_succ, termShiftIterV_succ, termShiftIterV_succ]
-
-instance tshvFact_definable : 𝚺₁-Function₃ (tshvFact : V → V → V → V) := by
-  have : (tshvFact : V → V → V → V) = fun u k v ↦ subst LAct (u ∷ k ∷ v ∷ 0) PtshvG := rfl
-  rw [this]; definability
-lemma shiftIterV_tshvFact {u k v : V} (hu : IsSemiterm LAct 0 u) (hk : IsSemiterm LAct 0 k) (hv : IsSemiterm LAct 0 v) :
-    ∀ m, shiftIterV (tshvFact u k v) m = tshvFact (termShiftIterV u m) (termShiftIterV k m) (termShiftIterV v m) := by
-  intro m
-  induction m using ISigma1.sigma1_succ_induction with
-  | hP => definability
-  | zero => simp
-  | succ m ih =>
-    rw [shiftIterV_succ, ih, shift_tshvFact (isSemiterm_termShiftIterV hu m) (isSemiterm_termShiftIterV hk m) (isSemiterm_termShiftIterV hv m), termShiftIterV_succ, termShiftIterV_succ, termShiftIterV_succ]
 
 instance eqFactB_definable : 𝚺₁-Function₂ (eqFactB : V → V → V) := by
   have : (eqFactB : V → V → V) = fun a b ↦ subst LAct (a ∷ b ∷ 0) PeqB := rfl
@@ -497,9 +386,6 @@ lemma shiftIterV_tlenFact {l t : V} (hl : IsSemiterm LAct 0 l) (ht : IsSemiterm 
   | succ m ih =>
     rw [shiftIterV_succ, ih, shift_tlenFact (isSemiterm_termShiftIterV hl m) (isSemiterm_termShiftIterV ht m), termShiftIterV_succ, termShiftIterV_succ]
 
-instance tlvFact_definable : 𝚺₁-Function₃ (tlvFact : V → V → V → V) := by
-  have : (tlvFact : V → V → V → V) = fun M k v ↦ subst LAct (M ∷ k ∷ v ∷ 0) PtlvG := rfl
-  rw [this]; definability
 lemma shiftIterV_tlvFact {M k v : V} (hM : IsSemiterm LAct 0 M) (hk : IsSemiterm LAct 0 k) (hv : IsSemiterm LAct 0 v) :
     ∀ m, shiftIterV (tlvFact M k v) m = tlvFact (termShiftIterV M m) (termShiftIterV k m) (termShiftIterV v m) := by
   intro m
@@ -521,65 +407,13 @@ lemma shiftIterV_listSumFact {s M : V} (hs : IsSemiterm LAct 0 s) (hM : IsSemite
   | succ m ih =>
     rw [shiftIterV_succ, ih, shift_listSumFact (isSemiterm_termShiftIterV hs m) (isSemiterm_termShiftIterV hM m), termShiftIterV_succ, termShiftIterV_succ]
 
-instance nthFact_definable : 𝚺₁-Function₃ (nthFact : V → V → V → V) := by
-  have : (nthFact : V → V → V → V) = fun e w i ↦ subst LAct (e ∷ w ∷ i ∷ 0) Pnth := rfl
-  rw [this]; definability
-lemma shiftIterV_nthFact {e w i : V} (he : IsSemiterm LAct 0 e) (hw : IsSemiterm LAct 0 w) (hi : IsSemiterm LAct 0 i) :
-    ∀ m, shiftIterV (nthFact e w i) m = nthFact (termShiftIterV e m) (termShiftIterV w m) (termShiftIterV i m) := by
-  intro m
-  induction m using ISigma1.sigma1_succ_induction with
-  | hP => definability
-  | zero => simp
-  | succ m ih =>
-    rw [shiftIterV_succ, ih, shift_nthFact (isSemiterm_termShiftIterV he m) (isSemiterm_termShiftIterV hw m) (isSemiterm_termShiftIterV hi m), termShiftIterV_succ, termShiftIterV_succ, termShiftIterV_succ]
-
 instance tshFact_definable : 𝚺₁-Function₂ (tshFact : V → V → V) := by
   have : (tshFact : V → V → V) = fun t2 t ↦ subst LAct (t2 ∷ t ∷ 0) PtshG := rfl
   rw [this]; definability
-lemma shiftIterV_tshFact {t2 t : V} (ht2 : IsSemiterm LAct 0 t2) (ht : IsSemiterm LAct 0 t) :
-    ∀ m, shiftIterV (tshFact t2 t) m = tshFact (termShiftIterV t2 m) (termShiftIterV t m) := by
-  intro m
-  induction m using ISigma1.sigma1_succ_induction with
-  | hP => definability
-  | zero => simp
-  | succ m ih =>
-    rw [shiftIterV_succ, ih, shift_tshFact (isSemiterm_termShiftIterV ht2 m) (isSemiterm_termShiftIterV ht m), termShiftIterV_succ, termShiftIterV_succ]
-
-instance tsFact_definable : 𝚺₁-Function₃ (tsFact : V → V → V → V) := by
-  have : (tsFact : V → V → V → V) = fun e w t ↦ subst LAct (e ∷ w ∷ t ∷ 0) PtsG := rfl
-  rw [this]; definability
-lemma shiftIterV_tsFact {e w t : V} (he : IsSemiterm LAct 0 e) (hw : IsSemiterm LAct 0 w) (ht : IsSemiterm LAct 0 t) :
-    ∀ m, shiftIterV (tsFact e w t) m = tsFact (termShiftIterV e m) (termShiftIterV w m) (termShiftIterV t m) := by
-  intro m
-  induction m using ISigma1.sigma1_succ_induction with
-  | hP => definability
-  | zero => simp
-  | succ m ih =>
-    rw [shiftIterV_succ, ih, shift_tsFact (isSemiterm_termShiftIterV he m) (isSemiterm_termShiftIterV hw m) (isSemiterm_termShiftIterV ht m), termShiftIterV_succ, termShiftIterV_succ, termShiftIterV_succ]
 
 instance tbshFact_definable : 𝚺₁-Function₂ (tbshFact : V → V → V) := by
   have : (tbshFact : V → V → V) = fun e2 e ↦ subst LAct (e2 ∷ e ∷ 0) PtbshG := rfl
   rw [this]; definability
-lemma shiftIterV_tbshFact {e2 e : V} (he2 : IsSemiterm LAct 0 e2) (he : IsSemiterm LAct 0 e) :
-    ∀ m, shiftIterV (tbshFact e2 e) m = tbshFact (termShiftIterV e2 m) (termShiftIterV e m) := by
-  intro m
-  induction m using ISigma1.sigma1_succ_induction with
-  | hP => definability
-  | zero => simp
-  | succ m ih =>
-    rw [shiftIterV_succ, ih, shift_tbshFact (isSemiterm_termShiftIterV he2 m) (isSemiterm_termShiftIterV he m), termShiftIterV_succ, termShiftIterV_succ]
-
-instance tbshvFact_definable : 𝚺₁-Function₃ (tbshvFact : V → V → V → V) := by
-  have : (tbshvFact : V → V → V → V) = fun u k v ↦ subst LAct (u ∷ k ∷ v ∷ 0) PtbshvG := rfl
-  rw [this]; definability
-lemma shiftIterV_tbshvFact {u k v : V} (hu : IsSemiterm LAct 0 u) (hk : IsSemiterm LAct 0 k) (hv : IsSemiterm LAct 0 v) :
-    ∀ m, shiftIterV (tbshvFact u k v) m = tbshvFact (termShiftIterV u m) (termShiftIterV k m) (termShiftIterV v m) := by
-  intro m
-  induction m using ISigma1.sigma1_succ_induction with
-  | hP => definability
-  | zero => simp
-  | succ m ih =>
-    rw [shiftIterV_succ, ih, shift_tbshvFact (isSemiterm_termShiftIterV hu m) (isSemiterm_termShiftIterV hk m) (isSemiterm_termShiftIterV hv m), termShiftIterV_succ, termShiftIterV_succ, termShiftIterV_succ]
 
 end factIter
 
@@ -930,40 +764,6 @@ theorem dossT_func {Γ n k f v i : V} (hkf : LAct.IsFunc k f) (hv : IsSemitermVe
   intro g hg
   have := dossT_mem h (h4 g hg)
   rwa [shiftIterV_shift] at this
-
-/-- The closed-symbol fact the walk emits at a `func` node, read off the dossier
-(`dossT_func`'s missing fourth conjunct — the `isFuncFact` the certification rows need). -/
-theorem dossT_func_isFunc {Γ n k f v i : V} (hkf : LAct.IsFunc k f) (hv : IsSemitermVec LAct k n v)
-    (hSvSet : IsFormulaSet LAct (finalCtx 0 (π₂ (descVecAux W n (descTVec W n k v) k))))
-    (h : DossT W Γ n (^func k f v) i) : neg LAct (isFuncFact (cTV k) (cTV f)) ∈ Γ := by
-  have hS := describeT_func W n hkf hv.isUTerm
-  set Sv := π₂ (descVecAux W n (descTVec W n k v) k) with hSv
-  have hctx : finalCtx 0 (describeT W n (^func k f v)) =
-      ctxAfter (ctxAfter (ctxAfter (ctxAfter (ctxAfter (ctxAfter (finalCtx 0 Sv) (mkStep W (funcRow k f) 0))
-        (mkStep W 7 ?[cTV k, cTV f, vRef 0 k])) (mkStep W 8 ?[cTV n, cTV k, cTV f, vRef 1 k, ^&0]))
-        (mkStep W 4 ?[cTV n, ^&0])) (mkStep W 38 ?[cTV k, cTV n, vRef 1 k])) (mkStep W 39 ?[cTV k, vRef 1 k]) := by
-    rw [hS, finalCtx_six]
-  have hr0 : IsSemiterm LAct 0 (vRef 0 k) := isSemiterm_vRef _ _
-  have hr1 : IsSemiterm LAct 0 (vRef 1 k) := isSemiterm_vRef _ _
-  have h1 : neg LAct (isFuncFact (cTV k) (cTV f)) ∈ finalCtx 0 (describeT W n (^func k f v)) := by
-    rw [hctx]
-    refine mem_ctxAfter_of_noShift (Or.inl (tag_isUTermVecSigmaPiLAct hWp _))
-      (mem_ctxAfter_of_noShift (Or.inl (tag_isUTermVecOfSemitermVecLAct hWp _))
-      (mem_ctxAfter_of_noShift (Or.inl (tag_isSemitermSigmaPiLAct hWp _))
-      (mem_ctxAfter_of_noShift (Or.inl (tag_isSemitermFunc hWp _)) ?_)))
-    have hbase : neg LAct (isFuncFact (cTV k) (cTV f)) ∈
-        ctxAfter (finalCtx 0 Sv) (mkStep W (funcRow k f) 0) := by
-      rw [(funcConst_ok (Γ := finalCtx 0 Sv) htbl hW hWp hkf (E := (8 : V)) le_rfl hSvSet).2.2.1]
-      exact mem_insert_self'
-    have hsh := mem_ctxAfter_of_shift (s := mkStep W 7 ?[cTV k, cTV f, vRef 0 k])
-      (Or.inl (tag_qqFuncTotal hWp _)) hbase
-    rwa [shift_neg (isFormula_isFuncFact (cTV_semiterm_LAct 0 _) (cTV_semiterm_LAct 0 _)),
-      shift_isFuncFact (cTV_semiterm_LAct 0 _) (cTV_semiterm_LAct 0 _),
-      termShift_cTV, termShift_cTV] at hsh
-  have e1 := dossT_mem h h1
-  rwa [shiftIterV_neg (isFormula_isFuncFact (cTV_semiterm_LAct 0 _) (cTV_semiterm_LAct 0 _)),
-    shiftIterV_isFuncFact (cTV_semiterm_LAct 0 _) (cTV_semiterm_LAct 0 _),
-    termShiftIterV_cTV, termShiftIterV_cTV] at e1
 
 /-- The vector walk of `j + 1` entries at offset `i`: the entry `t := v.[k − (j+1)]` at `i + 1` (with
 `ct := descCountT t` eigenvariables), the tail vector at `i + 1 + ct`, and the node's facts
@@ -1410,7 +1210,6 @@ def tLeafRowDef : 𝚺₀.Semisentence 3 := .mkSigma
 instance tLeafRow_defined : 𝚺₀-Function₂ (tLeafRow : V → V → V) via tLeafRowDef := .mk fun v ↦ by
   simp [tLeafRowDef, tLeafRow, numeral_eq_natCast]
   by_cases hν : v 1 = 2 <;> by_cases hk : v 2 = 0 <;> simp [hν, hk]
-instance tLeafRow_definable : 𝚺₀-Function₂ (tLeafRow : V → V → V) := tLeafRow_defined.to_definable
 
 /-- The leaf certificate `[row [cT z, &i, &j]]`. -/
 noncomputable def tLeafSteps (W ν kind z i j : V) : V := ?[mkStep W (tLeafRow ν kind) ?[cTV z, ^&i, ^&j]]
@@ -1422,9 +1221,6 @@ noncomputable def tLeafStepsDef : 𝚺₁.Semisentence 7 := .mkSigma
 instance tLeafSteps_defined :
     𝚺₁.DefinedFunction (fun v : Fin 6 → V ↦ tLeafSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) tLeafStepsDef := .mk
   fun v ↦ by simp [tLeafStepsDef, tLeafSteps, numeral_eq_natCast, tLeafRow_defined.iff, cTV.defined.iff, mkStep_defined.iff]
-instance tLeafSteps_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 6 → V ↦ tLeafSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) :=
-  tLeafSteps_defined.to_definable
 
 /-- The function-node certificate after the vector pass `yv`: the closed symbol row, then
 `eqOfFunc`/`termShiftFuncCert [&i, cT k, cT f, ⟨v⟩ᵢ, ⟨v⟩ⱼ, &j]`. -/
@@ -1437,7 +1233,6 @@ def tFuncRowDef : 𝚺₀.Semisentence 2 := .mkSigma “y ν. (ν = 2 → y = 12
 instance tFuncRow_defined : 𝚺₀-Function₁ (tFuncRow : V → V) via tFuncRowDef := .mk fun v ↦ by
   simp [tFuncRowDef, tFuncRow, numeral_eq_natCast]
   by_cases hν : v 1 = 2 <;> simp [hν]
-instance tFuncRow_definable : 𝚺₀-Function₁ (tFuncRow : V → V) := tFuncRow_defined.to_definable
 
 lemma tFuncSteps_eq (W ν k f i j yv : V) : tFuncSteps W ν k f i j yv =
     appendV yv ?[mkStep W (funcRow k f) 0, mkStep W (tFuncRow ν) ?[^&i, cTV k, cTV f, vRef (i + 1) k, vRef (j + 1) k, ^&j]] := rfl
@@ -1454,9 +1249,6 @@ instance tFuncSteps_defined :
   fun v ↦ by
     simp [tFuncStepsDef, tFuncSteps_eq, numeral_eq_natCast, funcRow_defined.iff, tFuncRow_defined.iff, cTV.defined.iff,
       mkStep_defined.iff, vRef_defined.iff, appendV_defined.iff]
-instance tFuncSteps_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 7 → V ↦ tFuncSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) :=
-  tFuncSteps_defined.to_definable
 
 /-- The empty vector's certificate: `eqRefl [𝟎]` / `tshvNilCert [𝟎]`. -/
 noncomputable def vNilRow (ν : V) : V := if ν = 2 then 116 else 121
@@ -1464,14 +1256,12 @@ def vNilRowDef : 𝚺₀.Semisentence 2 := .mkSigma “y ν. (ν = 2 → y = 116
 instance vNilRow_defined : 𝚺₀-Function₁ (vNilRow : V → V) via vNilRowDef := .mk fun v ↦ by
   simp [vNilRowDef, vNilRow, numeral_eq_natCast]
   by_cases hν : v 1 = 2 <;> simp [hν]
-instance vNilRow_definable : 𝚺₀-Function₁ (vNilRow : V → V) := vNilRow_defined.to_definable
 
 noncomputable def vNilSteps (W ν : V) : V := ?[mkStep W (vNilRow ν) ?[(𝟎 : V)]]
 noncomputable def vNilStepsDef : 𝚺₁.Semisentence 3 := .mkSigma
   “y W ν. ∃ ρ, !vNilRowDef ρ ν ∧ ∃ e, !mkVec₁Def e ↑Arithmetic.zero ∧ ∃ s, !mkStepDef s W ρ e ∧ !mkVec₁Def y s”
 instance vNilSteps_defined : 𝚺₁-Function₂ (vNilSteps : V → V → V) via vNilStepsDef := .mk
   fun v ↦ by simp [vNilStepsDef, vNilSteps, numeral_eq_natCast, vNilRow_defined.iff, mkStep_defined.iff]
-instance vNilSteps_definable : 𝚺₁-Function₂ (vNilSteps : V → V → V) := vNilSteps_defined.to_definable
 
 /-- The witnesses of the adjoin certificate at a vector node with `m` tail entries and the entry's count `ct`:
 `tshvAdjCert [cT n, cT m, ⟨tail⟩ᵢ, &i, &(i+1), &(j+1), ⟨tail⟩ⱼ, &j]` (`ν = 2`), else
@@ -1493,16 +1283,12 @@ instance vAdjWits_defined :
   fun v ↦ by
     simp [vAdjWitsDef, vAdjWits, numeral_eq_natCast, cTV.defined.iff, vRef_defined.iff]
     by_cases hν : v 1 = 2 <;> simp [hν]
-instance vAdjWits_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 6 → V ↦ vAdjWits (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) :=
-  vAdjWits_defined.to_definable
 
 noncomputable def vAdjRow (ν : V) : V := if ν = 2 then 117 else 127
 def vAdjRowDef : 𝚺₀.Semisentence 2 := .mkSigma “y ν. (ν = 2 → y = 117) ∧ (ν ≠ 2 → y = 127)”
 instance vAdjRow_defined : 𝚺₀-Function₁ (vAdjRow : V → V) via vAdjRowDef := .mk fun v ↦ by
   simp [vAdjRowDef, vAdjRow, numeral_eq_natCast]
   by_cases hν : v 1 = 2 <;> simp [hν]
-instance vAdjRow_definable : 𝚺₀-Function₁ (vAdjRow : V → V) := vAdjRow_defined.to_definable
 
 /-- The vector node's certificate: the entry's pass `yt`, the tail's pass `yv`, the tail's `utvPi` bridge
 (rows 38/39 on the source tail), then the adjoin certificate. -/
@@ -1524,9 +1310,6 @@ instance vAdjSteps_defined :
   fun v ↦ by
     simp [vAdjStepsDef, vAdjSteps, numeral_eq_natCast, cTV.defined.iff, vRef_defined.iff, mkStep_defined.iff,
       vAdjRow_defined.iff, vAdjWits_defined.iff, appendV_defined.iff]
-instance vAdjSteps_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 9 → V ↦ vAdjSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8)) :=
-  vAdjSteps_defined.to_definable
 
 end termPass
 
@@ -1740,15 +1523,9 @@ noncomputable def passVGraphDef : 𝚺₁.Semisentence 9 := .mkSigma
 instance passTGraph_defined :
     𝚺₁.Defined (fun v : Fin 7 → V ↦ PassTGraph (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) passTGraphDef := .mk
   fun v ↦ by simp [passTGraphDef, passGraph_defined.iff, PassTGraph, numeral_eq_natCast]
-instance passTGraph_definable :
-    𝚺₁.Definable (fun v : Fin 7 → V ↦ PassTGraph (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) :=
-  passTGraph_defined.to_definable
 instance passVGraph_defined :
     𝚺₁.Defined (fun v : Fin 9 → V ↦ PassVGraph (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8)) passVGraphDef := .mk
   fun v ↦ by simp [passVGraphDef, passGraph_defined.iff, PassVGraph, numeral_eq_natCast]
-instance passVGraph_definable :
-    𝚺₁.Definable (fun v : Fin 9 → V ↦ PassVGraph (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8)) :=
-  passVGraph_defined.to_definable
 
 /-! ### 1.2 Case analysis, inversion, existence and uniqueness -/
 
@@ -2011,10 +1788,6 @@ instance passV_defined :
       (IsSemitermVec.defined (L := LAct)).proper.iff', (IsSemitermVec.defined (L := LAct)).df, passV,
       Classical.choose!_eq_iff_right]
 
-instance passV_definable :
-    𝚺₁.DefinedFunction (fun w : Fin 8 → V ↦ passV (w 0) (w 1) (w 2) (w 3) (w 4) (w 5) (w 6) (w 7)) passVDef :=
-  passV_defined
-
 lemma passTGraph_existsUnique_total (W ν n t i j : V) :
     ∃! y, (IsSemiterm LAct n t → PassTGraph W ν n t i j y) ∧ (¬IsSemiterm LAct n t → y = 0) := by
   by_cases h : IsSemiterm LAct n t
@@ -2029,9 +1802,6 @@ noncomputable def passT (W ν n t i j : V) : V := Classical.choose! (passTGraph_
 
 theorem passT_graph {W ν n t i j : V} (h : IsSemiterm LAct n t) : PassTGraph W ν n t i j (passT W ν n t i j) :=
   (Classical.choose!_spec (passTGraph_existsUnique_total W ν n t i j)).1 h
-
-theorem passT_of_not {W ν n t i j : V} (h : ¬IsSemiterm LAct n t) : passT W ν n t i j = 0 :=
-  (Classical.choose!_spec (passTGraph_existsUnique_total W ν n t i j)).2 h
 
 lemma passT_eq_of_graph {W ν n t i j y : V} (h : IsSemiterm LAct n t) (hy : PassTGraph W ν n t i j y) :
     passT W ν n t i j = y :=
@@ -2048,18 +1818,7 @@ instance passT_defined :
       (IsSemiterm.defined (L := LAct)).proper.iff', (IsSemiterm.defined (L := LAct)).df, passT,
       Classical.choose!_eq_iff_right]
 
-instance passT_definable :
-    𝚺₁.DefinedFunction (fun v : Fin 6 → V ↦ passT (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) passTDef :=
-  passT_defined
-
 /-! #### The equations of `passT` -/
-
-lemma passT_bvar (W ν n z i j : V) (hz : IsSemiterm LAct n (^#z)) :
-    passT W ν n (^#z) i j = tLeafSteps W ν 0 z i j :=
-  passT_eq_of_graph hz (PassTGraph.bvar_iff.mpr rfl)
-
-lemma passT_fvar (W ν n a i j : V) : passT W ν n (^&a) i j = tLeafSteps W ν 1 a i j :=
-  passT_eq_of_graph (by simp) (PassTGraph.fvar_iff.mpr rfl)
 
 /-! ## Part 2 — the formula-level certification pass (`ν = 1`: `neg`; `ν = 2`: `shift`)
 
@@ -2084,7 +1843,6 @@ def fRowDef : 𝚺₀.Semisentence 3 := .mkSigma
 instance fRow_defined : 𝚺₀-Function₂ (fRow : V → V → V) via fRowDef := .mk fun v ↦ by
   simp [fRowDef, fRow, numeral_eq_natCast]
   by_cases hν : v 1 = 1 <;> simp [hν]
-instance fRow_definable : 𝚺₀-Function₂ (fRow : V → V → V) := fRow_defined.to_definable
 
 /-- The certificate of a `verum` node: `[fRow ν 2 [&i, &j]]` (`negVerumCert`/`shiftVerumCert`). -/
 noncomputable def fConstSteps (W ν c i j : V) : V := ?[mkStep W (fRow ν c) ?[^&i, ^&j]]
@@ -2096,9 +1854,6 @@ noncomputable def fConstStepsDef : 𝚺₁.Semisentence 6 := .mkSigma
 instance fConstSteps_defined :
     𝚺₁.DefinedFunction (fun v : Fin 5 → V ↦ fConstSteps (v 0) (v 1) (v 2) (v 3) (v 4)) fConstStepsDef := .mk
   fun v ↦ by simp [fConstStepsDef, fConstSteps, numeral_eq_natCast, fRow_defined.iff, mkStep_defined.iff]
-instance fConstSteps_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 5 → V ↦ fConstSteps (v 0) (v 1) (v 2) (v 3) (v 4)) :=
-  fConstSteps_defined.to_definable
 
 /-- The certificate of a binary node after the two children's passes `yp` (LEFT) and `yq` (RIGHT):
 `[fRow ν c [cT n, &(i+cq+1), &(i+1), &i, &(j+dq+1), &(j+1), &j]]` — the walk puts the RIGHT child
@@ -2121,9 +1876,6 @@ instance fBinSteps_defined :
   fun v ↦ by
     simp [fBinStepsDef, fBinSteps, numeral_eq_natCast, fRow_defined.iff, cTV.defined.iff,
       mkStep_defined.iff, appendV_defined.iff]
-instance fBinSteps_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 10 → V ↦ fBinSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9)) :=
-  fBinSteps_defined.to_definable
 
 /-- The certificate of a quantifier node after the body's pass `yb`:
 `[fRow ν c [cT n, &(i+1), &i, &(j+1), &j]]` (`negAllCert`/`shiftAllCert` shape). -/
@@ -2141,9 +1893,6 @@ instance fQuantSteps_defined :
   fun v ↦ by
     simp [fQuantStepsDef, fQuantSteps, numeral_eq_natCast, fRow_defined.iff, cTV.defined.iff,
       mkStep_defined.iff, appendV_defined.iff]
-instance fQuantSteps_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 7 → V ↦ fQuantSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) :=
-  fQuantSteps_defined.to_definable
 
 /-- The row of the congruence step at a `neg` atom: `congNRel` (137) at a `rel` source (its image is
 an `nrel`), `congRel` (136) at an `nrel` source. -/
@@ -2152,7 +1901,6 @@ def congRowDef : 𝚺₀.Semisentence 2 := .mkSigma “y c. (c = 0 → y = 137) 
 instance congRow_defined : 𝚺₀-Function₁ (congRow : V → V) via congRowDef := .mk fun v ↦ by
   simp [congRowDef, congRow, numeral_eq_natCast]
   by_cases hc : v 1 = 0 <;> simp [hc]
-instance congRow_definable : 𝚺₀-Function₁ (congRow : V → V) := congRow_defined.to_definable
 
 /-- The certificate of an ATOM (`rel`/`nrel`), after the term-level vector pass `yv` at `(i+1, j+1)`:
 the closed relation-symbol row (`relRow R`, delivering `isRelFact`), then the family's row.
@@ -2193,9 +1941,6 @@ instance fAtomSteps_defined :
     simp [fAtomStepsDef, fAtomSteps, numeral_eq_natCast, fRow_defined.iff, relRow_defined.iff, congRow_defined.iff,
       cTV.defined.iff, vRef_defined.iff, mkStep_defined.iff, appendV_defined.iff]
     by_cases hν : v 2 = 1 <;> simp [hν]
-instance fAtomSteps_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 8 → V ↦ fAtomSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7)) :=
-  fAtomSteps_defined.to_definable
 
 end formulaPass
 
@@ -2221,7 +1966,6 @@ noncomputable def outCountDef : 𝚺₁.Semisentence 5 := .mkSigma
 
 instance outCount_defined : 𝚺₁-Function₄ (outCount : V → V → V → V → V) via outCountDef := .mk fun v ↦ by
   simp [outCountDef, outCount, imgF_defined.iff, descCountF_defined.iff]
-instance outCount_definable : 𝚺₁-Function₄ (outCount : V → V → V → V → V) := outCount_defined.to_definable
 
 /-! ### 2.1 The fixpoint on `⟪ν, n, r, i, j, y⟫` -/
 
@@ -2447,9 +2191,6 @@ noncomputable def passFGraphDef : 𝚺₁.Semisentence 7 := .mkSigma
 instance passFGraph_defined :
     𝚺₁.Defined (fun v : Fin 7 → V ↦ PassFGraph (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) passFGraphDef := .mk
   fun v ↦ by simp [passFGraphDef, passFPacked_defined.iff, PassFGraph]
-instance passFGraph_definable :
-    𝚺₁.Definable (fun v : Fin 7 → V ↦ PassFGraph (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) :=
-  passFGraph_defined.to_definable
 
 /-! ### 2.1b The missing `descCountF` equations and the OUTPUT-side counts -/
 
@@ -2696,10 +2437,6 @@ theorem passF_graph {W ν n r i j : V} (hν : ν = 1 ∨ ν = 2) (hr : IsSemifor
     PassFGraph W ν n r i j (passF W ν n r i j) :=
   (Classical.choose!_spec (passFGraph_existsUnique_total W ν n r i j)).1 ⟨hr, hν⟩
 
-theorem passF_of_not {W ν n r i j : V} (h : ¬(IsSemiformula LAct n r ∧ (ν = 1 ∨ ν = 2))) :
-    passF W ν n r i j = 0 :=
-  (Classical.choose!_spec (passFGraph_existsUnique_total W ν n r i j)).2 h
-
 lemma passF_eq_of_graph {W ν n r i j y : V} (hν : ν = 1 ∨ ν = 2) (hr : IsSemiformula LAct n r)
     (hy : PassFGraph W ν n r i j y) : passF W ν n r i j = y :=
   passFGraph_unique W ν hr i j _ _ (passF_graph hν hr) hy
@@ -2715,10 +2452,6 @@ instance passF_defined :
       (IsSemiformula.defined (L := LAct)).proper.iff', (IsSemiformula.defined (L := LAct)).df, passF,
       Classical.choose!_eq_iff_right]
 
-instance passF_definable :
-    𝚺₁.DefinedFunction (fun v : Fin 6 → V ↦ passF (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) passFDef :=
-  passF_defined
-
 /-! ### 2.4 The equations of `passF` -/
 
 section passFeq
@@ -2729,37 +2462,12 @@ lemma passF_rel (hν : ν = 1 ∨ ν = 2) {k R v : V} (hR : LAct.IsRel k R) (hv 
     passF W ν n (^rel k R v) i j = fAtomSteps W ν 0 k R i j (passV W ν n k v k (i + 1) (j + 1)) :=
   passF_eq_of_graph hν (by simp [hR, hv]) (PassFGraph.rel_iff.mpr rfl)
 
-lemma passF_nrel (hν : ν = 1 ∨ ν = 2) {k R v : V} (hR : LAct.IsRel k R) (hv : IsSemitermVec LAct k n v) (i j : V) :
-    passF W ν n (^nrel k R v) i j = fAtomSteps W ν 1 k R i j (passV W ν n k v k (i + 1) (j + 1)) :=
-  passF_eq_of_graph hν (by simp [hR, hv]) (PassFGraph.nrel_iff.mpr rfl)
-
-lemma passF_verum (hν : ν = 1 ∨ ν = 2) (i j : V) : passF W ν n ^⊤ i j = fConstSteps W ν 2 i j :=
-  passF_eq_of_graph hν (by simp) (PassFGraph.verum_iff.mpr rfl)
-
-lemma passF_falsum (hν : ν = 1 ∨ ν = 2) (i j : V) : passF W ν n ^⊥ i j = fConstSteps W ν 3 i j :=
-  passF_eq_of_graph hν (by simp) (PassFGraph.falsum_iff.mpr rfl)
-
 lemma passF_and (hν : ν = 1 ∨ ν = 2) {p q : V} (hp : IsSemiformula LAct n p) (hq : IsSemiformula LAct n q) (i j : V) :
     passF W ν n (p ^⋏ q) i j = fBinSteps W ν 4 n (descCountF W n q) (outCount W ν n q) i j
       (passF W ν n p (i + descCountF W n q + 1) (j + outCount W ν n q + 1)) (passF W ν n q (i + 1) (j + 1)) :=
   passF_eq_of_graph hν (by simp [hp, hq]) (PassFGraph.and_iff.mpr
     ⟨_, _, le_fBinSteps_left _ _ _ _ _ _ _ _ _ _, le_fBinSteps_right _ _ _ _ _ _ _ _ _ _,
       passF_graph hν hp, passF_graph hν hq, rfl⟩)
-
-lemma passF_or (hν : ν = 1 ∨ ν = 2) {p q : V} (hp : IsSemiformula LAct n p) (hq : IsSemiformula LAct n q) (i j : V) :
-    passF W ν n (p ^⋎ q) i j = fBinSteps W ν 5 n (descCountF W n q) (outCount W ν n q) i j
-      (passF W ν n p (i + descCountF W n q + 1) (j + outCount W ν n q + 1)) (passF W ν n q (i + 1) (j + 1)) :=
-  passF_eq_of_graph hν (by simp [hp, hq]) (PassFGraph.or_iff.mpr
-    ⟨_, _, le_fBinSteps_left _ _ _ _ _ _ _ _ _ _, le_fBinSteps_right _ _ _ _ _ _ _ _ _ _,
-      passF_graph hν hp, passF_graph hν hq, rfl⟩)
-
-lemma passF_all (hν : ν = 1 ∨ ν = 2) {p : V} (hp : IsSemiformula LAct (n + 1) p) (i j : V) :
-    passF W ν n (^∀ p) i j = fQuantSteps W ν 6 n i j (passF W ν (n + 1) p (i + 1) (j + 1)) :=
-  passF_eq_of_graph hν (by simp [hp]) (PassFGraph.all_iff.mpr ⟨_, le_fQuantSteps _ _ _ _ _ _ _, passF_graph hν hp, rfl⟩)
-
-lemma passF_exs (hν : ν = 1 ∨ ν = 2) {p : V} (hp : IsSemiformula LAct (n + 1) p) (i j : V) :
-    passF W ν n (^∃ p) i j = fQuantSteps W ν 7 n i j (passF W ν (n + 1) p (i + 1) (j + 1)) :=
-  passF_eq_of_graph hν (by simp [hp]) (PassFGraph.exs_iff.mpr ⟨_, le_fQuantSteps _ _ _ _ _ _ _, passF_graph hν hp, rfl⟩)
 
 end passFeq
 
@@ -2815,13 +2523,6 @@ lemma ctag_fRow {W : V} (hWp : W = certPieces) {ν c : V} (hν : ν = 1 ∨ ν =
   · exact ctag_shiftOrCert hWp ev
   · exact ctag_shiftAllCert hWp ev
   · exact ctag_shiftExsCert hWp ev
-
-/-- The two term-level closed-symbol / vector rows the ATOM case appends are Horn rows too. -/
-lemma ctag_vNilRow {W : V} (hWp : W = certPieces) {ν : V} (hν : ν = 1 ∨ ν = 2) (ev : V) :
-    sTag (mkStep W (vNilRow ν) ev) = 0 := by
-  rcases hν with rfl | rfl
-  · rw [show vNilRow (1 : V) = 121 by norm_num [vNilRow]]; exact ctag_eqRefl hWp ev
-  · rw [show vNilRow (2 : V) = 116 by norm_num [vNilRow]]; exact ctag_tshvNilCert hWp ev
 
 /-- The rows of the TERM-level pass are Horn rows too (whatever `ν`). -/
 lemma ctag_tLeafRow {W : V} (hWp : W = certPieces) (ν kind ev : V) :
@@ -3853,11 +3554,8 @@ lemma E_vRef_ct {i ct D E m : V} (hct : ct + 1 ≤ D) (h : i + D + 1 ≤ E) :
     (le_trans (add_le_add (add_le_add (le_refl i) hct) (le_refl (1 : V))) h))
 lemma E_zero_term {E : V} (h8 : (8 : V) ≤ E) : termLen LAct (𝟎 : V) ≤ E := by
   rw [← cTV_zero]; exact E_cT_le_two (by norm_num) h8
-lemma isSemiterm_zero_LAct : IsSemiterm LAct 0 (𝟎 : V) := by
-  rw [← cTV_zero]; exact cTV_semiterm_LAct 0 0
 
 end eBounds
-
 
 /-! ### 4.2 The term-level SHIFT pass is applicable and certifies `tshFact &j &i`
 
@@ -3876,8 +3574,6 @@ section termShiftOK
 /-- The side conditions of a pass: the cap `E` bounds the arity part and both offset parts. -/
 def PassPre (D n i j E Γ : V) : Prop :=
   2 * n + D + 8 ≤ E ∧ i + D + 1 ≤ E ∧ j + D + 1 ≤ E ∧ IsFormulaSet LAct Γ
-instance passPre_definable : 𝚫₁.Definable (fun v : Fin 6 → V ↦ PassPre (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) := by
-  unfold PassPre; definability
 
 /-- The conclusion of a pass: applicable at cap `8`, Horn-only, `neg F` in the final context. -/
 def PassPost (tbl E Γ y F : V) : Prop := ListOK tbl E ((8 : ℕ) : V) Γ y ∧ HornOnly y ∧ neg LAct F ∈ finalCtx Γ y
@@ -4126,7 +3822,6 @@ theorem passVGraph_shift_ok {tbl N : V} (htbl : TableOK tbl N) (hC : CertTable t
 
 end termShiftOK
 
-
 /-! ### 4.3 The term-level IDENTIFICATION pass is applicable and certifies `eqFactB &i &j`
 
 The same induction at every `ν ≠ 2`: two dossiers of the SAME term (at `i` and at `j`), the
@@ -4140,8 +3835,6 @@ section termEqOK
 def TEqOK (tbl Wd W ν n t : V) : Prop :=
   ∀ i j y E Γ : V, PassTGraph W ν n t i j y → PassPre (2 * termLen LAct t) n i j E Γ →
     DossT Wd Γ n t i → DossT Wd Γ n t j → PassPost tbl E Γ y (eqFactB (^&i) (^&j))
-instance tEqOK_definable : 𝚷₁.Definable (fun v : Fin 6 → V ↦ TEqOK (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) := by
-  unfold TEqOK; definability
 
 set_option maxHeartbeats 4000000 in
 /-- **The vector-level identification pass is applicable**, tail first. -/
@@ -4363,7 +4056,6 @@ theorem passVGraph_eq_ok {tbl N : V} (htbl : TableOK tbl N) (hC : CertTable tbl)
     (fun a ha ↦ passTGraph_eq_ok htbl hC hWd hWp hν n _ (hv.nth ha)) m hm).2
 
 end termEqOK
-
 
 /-! ### 4.4 The formula-level SHIFT pass is applicable and certifies `shiftFact &j &i`
 
@@ -4676,7 +4368,6 @@ theorem passFGraph_shift_ok {tbl N : V} (htbl : TableOK tbl N) (hC : CertTable t
     exact mem_insert_self'
 
 end formulaShiftOK
-
 
 /-! ### 4.5 The formula-level NEG pass is applicable and certifies `negFact &j &i`
 
@@ -5065,7 +4756,6 @@ theorem costSum_certNeg_le {tbl N E B Wd W n r i j Γ : V} (htbl : TableOK tbl N
 
 end certMain
 
-
 /-! ### 4.7 Status of the remaining §3.6 producers (2026-09-14, recorded here so the next session starts from facts)
 
 **`certSubst w` / `certFree` — NOT started; three obstacles, in order of size.**
@@ -5166,7 +4856,6 @@ noncomputable def lnConstStepsDef : 𝚺₁.Semisentence 4 := .mkSigma
 
 instance lnConstSteps_defined : 𝚺₁-Function₃ (lnConstSteps : V → V → V → V) via lnConstStepsDef := .mk
   fun v ↦ by simp [lnConstStepsDef, lnConstSteps, numeral_eq_natCast, mkStep_defined.iff, bnum.defined.iff]
-instance lnConstSteps_definable : 𝚺₁-Function₃ (lnConstSteps : V → V → V → V) := lnConstSteps_defined.to_definable
 
 /-- A binary node (`and` at row `149`, `or` at `150`) after the RIGHT child's list `yq` (offset `i + 1`,
 shifts `sq`) and the LEFT child's `yp` (offset `i + cq + 1 + sq`, shifts `sp`), `S = sq + sp`: introduce the
@@ -5209,9 +4898,6 @@ instance lnBinSteps_defined :
     simp [lnBinStepsDef, lnBinSteps, numeral_eq_natCast, mkStep_defined.iff, bnum.defined.iff, cTV.defined.iff,
       qqAdd_defined.iff, addFact_defined.iff, addCode_defined.iff, succFact_defined.iff, succCode_defined.iff,
       appendV_defined.iff, sLemma]
-instance lnBinSteps_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 12 → V ↦ lnBinSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10) (v 11)) :=
-  lnBinSteps_defined.to_definable
 
 /-- A quantifier node (`all` at row `151`, `exs` at `152`) after the body's list `yb` (offset `i + 1`, level
 `n + 1`, shifts `sb`): introduce the length at `&(i + sb)`, read `l = bnum lp + 1`, close by
@@ -5243,9 +4929,6 @@ instance lnQuantSteps_defined :
   fun v ↦ by
     simp [lnQuantStepsDef, lnQuantSteps, numeral_eq_natCast, mkStep_defined.iff, bnum.defined.iff, cTV.defined.iff,
       qqAdd_defined.iff, succFact_defined.iff, succCode_defined.iff, appendV_defined.iff, sLemma]
-instance lnQuantSteps_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 8 → V ↦ lnQuantSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7)) :=
-  lnQuantSteps_defined.to_definable
 
 /-- An atom (`rel` at row `142`, `nrel` at `143`) after the vector's list `yv` (offset `i + 1`, shifts `sv`,
 leaving the length vector at `&0` (`vRef 0 k`) and `listSumFact (bnum σ) ⟨M⟩`): the closed symbol row, the
@@ -5280,9 +4963,6 @@ instance lnAtomSteps_defined :
     simp [lnAtomStepsDef, lnAtomSteps, numeral_eq_natCast, mkStep_defined.iff, bnum.defined.iff, cTV.defined.iff,
       vRef_defined.iff, relRow_defined.iff, qqAdd_defined.iff, succFact_defined.iff, succCode_defined.iff,
       appendV_defined.iff, sLemma]
-instance lnAtomSteps_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 9 → V ↦ lnAtomSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8)) :=
-  lnAtomSteps_defined.to_definable
 
 /-- A term leaf (`bvar` at row `153`, `fvar` at `154`, index `z`): `termLenTotal`, the row reading
 `l = cT z + 1`, the closed `cTEqFact (z + 1)` (`cT (z + 1) = bnum (z + 1)`, and `cT (z + 1) = cT z + 1`
@@ -5310,9 +4990,6 @@ instance lnLeafSteps_defined :
   fun v ↦ by
     simp [lnLeafStepsDef, lnLeafSteps, numeral_eq_natCast, mkStep_defined.iff, bnum.defined.iff, cTV.defined.iff,
       cTEqFact_defined.iff, cTEqCode_defined.iff, sLemma]
-instance lnLeafSteps_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 5 → V ↦ lnLeafSteps (v 0) (v 1) (v 2) (v 3) (v 4)) :=
-  lnLeafSteps_defined.to_definable
 
 /-- A function node after the vector's list `yv` (as `lnAtomSteps`, with `termLenFuncCert` (row `144`) and
 `congTLenNum` (`146`)). -/
@@ -5345,9 +5022,6 @@ instance lnFuncSteps_defined :
     simp [lnFuncStepsDef, lnFuncSteps, numeral_eq_natCast, mkStep_defined.iff, bnum.defined.iff, cTV.defined.iff,
       vRef_defined.iff, funcRow_defined.iff, qqAdd_defined.iff, succFact_defined.iff, succCode_defined.iff,
       appendV_defined.iff, sLemma]
-instance lnFuncSteps_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 8 → V ↦ lnFuncSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7)) :=
-  lnFuncSteps_defined.to_definable
 
 /-- The empty vector: `termLenVecNil` (row `138`) and `listSumNil` (`140`), their dummy witness `cT 0`. -/
 noncomputable def lnNilSteps (W : V) : V := ?[mkStep W 138 ?[cTV 0], mkStep W 140 ?[cTV 0]]
@@ -5358,7 +5032,6 @@ noncomputable def lnNilStepsDef : 𝚺₁.Semisentence 2 := .mkSigma
 
 instance lnNilSteps_defined : 𝚺₁-Function₁ (lnNilSteps : V → V) via lnNilStepsDef := .mk
   fun v ↦ by simp [lnNilStepsDef, lnNilSteps, numeral_eq_natCast, mkStep_defined.iff, cTV.defined.iff]
-instance lnNilSteps_definable : 𝚺₁-Function₁ (lnNilSteps : V → V) := lnNilSteps_defined.to_definable
 
 /-- A vector node with `m` tail entries: the entry's list `yt` (offset `i + 1`, shifts `st`), the tail's `yv`
 (offset `i + 1 + ct + st`, shifts `sv`; its length vector at `&0` = `vRef 0 m`, sum `bnum σ'`), `S = st + sv + 1`:
@@ -5398,9 +5071,6 @@ instance lnAdjSteps_defined :
   fun v ↦ by
     simp [lnAdjStepsDef, lnAdjSteps, numeral_eq_natCast, mkStep_defined.iff, bnum.defined.iff, cTV.defined.iff,
       vRef_defined.iff, addFact_defined.iff, addCode_defined.iff, appendV_defined.iff, sLemma]
-instance lnAdjSteps_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 12 → V ↦ lnAdjSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10) (v 11)) :=
-  lnAdjSteps_defined.to_definable
 
 end lenBuilders
 
@@ -5606,8 +5276,6 @@ noncomputable def lenTGraphDef : 𝚺₁.Semisentence 6 := .mkSigma
 instance lenTGraph_defined :
     𝚺₁.Defined (fun v : Fin 6 → V ↦ LenTGraph (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) lenTGraphDef := .mk
   fun v ↦ by simp [lenTGraphDef, lenTPacked_defined.iff, LenTGraph]
-instance lenTGraph_definable :
-    𝚺₁.Definable (fun v : Fin 6 → V ↦ LenTGraph (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) := lenTGraph_defined.to_definable
 
 noncomputable def lenVGraphDef : 𝚺₁.Semisentence 8 := .mkSigma
   “W T n k v m i y. ∃ q₃, !pairDef q₃ i y ∧ ∃ x₁, !pairDef x₁ v m ∧ ∃ x, !pairDef x k x₁ ∧ ∃ q₂, !pairDef q₂ x q₃ ∧
@@ -5615,8 +5283,6 @@ noncomputable def lenVGraphDef : 𝚺₁.Semisentence 8 := .mkSigma
 instance lenVGraph_defined :
     𝚺₁.Defined (fun v : Fin 8 → V ↦ LenVGraph (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7)) lenVGraphDef := .mk
   fun v ↦ by simp [lenVGraphDef, lenTPacked_defined.iff, LenVGraph]
-instance lenVGraph_definable :
-    𝚺₁.Definable (fun v : Fin 8 → V ↦ LenVGraph (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7)) := lenVGraph_defined.to_definable
 
 /-! #### Case analysis and inversion -/
 
@@ -6178,8 +5844,6 @@ noncomputable def lenT (W T n t i : V) : V := Classical.choose! (lenTGraph_exist
 
 theorem lenT_graph {W T n t i : V} (h : IsSemiterm LAct n t) : LenTGraph W T n t i (lenT W T n t i) :=
   (Classical.choose!_spec (lenTGraph_existsUnique_total W T n t i)).1 h
-theorem lenT_of_not {W T n t i : V} (h : ¬IsSemiterm LAct n t) : lenT W T n t i = 0 :=
-  (Classical.choose!_spec (lenTGraph_existsUnique_total W T n t i)).2 h
 lemma lenT_eq_of_graph {W T n t i y : V} (h : IsSemiterm LAct n t) (hy : LenTGraph W T n t i y) : lenT W T n t i = y :=
   lenTGraph_unique W T n t h i _ _ (lenT_graph h) hy
 
@@ -6192,8 +5856,6 @@ instance lenT_defined :
     simp [lenTDef, HierarchySymbol.Semiformula.val_sigma, lenTGraph_defined.iff,
       (IsSemiterm.defined (L := LAct)).proper.iff', (IsSemiterm.defined (L := LAct)).df, lenT,
       Classical.choose!_eq_iff_right]
-instance lenT_definable :
-    𝚺₁.DefinedFunction (fun v : Fin 5 → V ↦ lenT (v 0) (v 1) (v 2) (v 3) (v 4)) lenTDef := lenT_defined
 
 lemma lenVGraph_existsUnique_total (W T n k v m i : V) :
     ∃! y, ((IsSemitermVec LAct k n v ∧ m ≤ k) → LenVGraph W T n k v m i y) ∧
@@ -6223,37 +5885,8 @@ instance lenV_defined :
     simp [lenVDef, HierarchySymbol.Semiformula.val_sigma, lenVGraph_defined.iff,
       (IsSemitermVec.defined (L := LAct)).proper.iff', (IsSemitermVec.defined (L := LAct)).df, lenV,
       Classical.choose!_eq_iff_right]
-instance lenV_definable :
-    𝚺₁.DefinedFunction (fun w : Fin 7 → V ↦ lenV (w 0) (w 1) (w 2) (w 3) (w 4) (w 5) (w 6)) lenVDef := lenV_defined
 
 /-! #### The equations -/
-
-lemma lenT_bvar (W T n z i : V) (hz : IsSemiterm LAct n (^#z)) : lenT W T n (^#z) i = lnLeafSteps W T 153 z i :=
-  lenT_eq_of_graph hz (LenTGraph.bvar_iff.mpr rfl)
-lemma lenT_fvar (W T n a i : V) : lenT W T n (^&a) i = lnLeafSteps W T 154 a i :=
-  lenT_eq_of_graph (by simp) (LenTGraph.fvar_iff.mpr rfl)
-lemma lenT_func (W T n : V) {k f v : V} (hkf : LAct.IsFunc k f) (hv : IsSemitermVec LAct k n v) (i : V) :
-    lenT W T n (^func k f v) i =
-      lnFuncSteps W T k f (listSum (termLenVec LAct k v)) i (shiftsV (lenV W T n k v k (i + 1))) (lenV W T n k v k (i + 1)) :=
-  lenT_eq_of_graph (by simp [hkf, hv]) (LenTGraph.func_iff.mpr ⟨_, le_lnFuncSteps _ _ _ _ _ _ _ _, lenV_graph hv le_rfl, rfl⟩)
-lemma lenV_zero (W T n k v i : V) (hv : IsSemitermVec LAct k n v) : lenV W T n k v 0 i = lnNilSteps W :=
-  lenV_eq_of_graph hv zero_le (LenVGraph.zero_iff.mpr rfl)
-lemma lenV_succ (W T n : V) {k v m : V} (hv : IsSemitermVec LAct k n v) (hm : m + 1 ≤ k) (i : V) :
-    lenV W T n k v (m + 1) i =
-      lnAdjSteps W T n m (descCountT W n (nthFromEnd v m)) (termLen LAct (nthFromEnd v m))
-        (listSum (termLenVec LAct m (takeLast v m))) i
-        (shiftsV (lenT W T n (nthFromEnd v m) (i + 1)))
-        (shiftsV (lenV W T n k v m (i + 1 + descCountT W n (nthFromEnd v m) + shiftsV (lenT W T n (nthFromEnd v m) (i + 1)))))
-        (lenT W T n (nthFromEnd v m) (i + 1))
-        (lenV W T n k v m (i + 1 + descCountT W n (nthFromEnd v m) + shiftsV (lenT W T n (nthFromEnd v m) (i + 1)))) := by
-  have hvlen : len v = k := hv.lh
-  have hk0 : (0 : V) < k := lt_of_lt_of_le (lt_of_lt_of_le _root_.zero_lt_one le_add_self) hm
-  have hlt : k - (m + 1) < k := tsub_lt_self hk0 (lt_of_lt_of_le _root_.zero_lt_one le_add_self)
-  have hnth' : nthFromEnd v m = v.[k - (m + 1)] :=
-    nthFromEnd_eq (a := k - (m + 1)) (by rw [hvlen, tsub_add_cancel_of_le hm])
-  have ht : IsSemiterm LAct n (nthFromEnd v m) := by rw [hnth']; exact hv.nth hlt
-  exact lenV_eq_of_graph hv hm (LenVGraph.succ_iff.mpr ⟨_, _, le_lnAdjSteps_left _ _ _ _ _ _ _ _ _ _ _ _,
-    le_lnAdjSteps_right _ _ _ _ _ _ _ _ _ _ _ _, lenT_graph ht, lenV_graph hv (le_trans le_self_add hm), rfl⟩)
 
 end lenTFun
 
@@ -6477,8 +6110,6 @@ noncomputable def lenFGraphDef : 𝚺₁.Semisentence 6 := .mkSigma
 instance lenFGraph_defined :
     𝚺₁.Defined (fun v : Fin 6 → V ↦ LenFGraph (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) lenFGraphDef := .mk
   fun v ↦ by simp [lenFGraphDef, lenFPacked_defined.iff, LenFGraph]
-instance lenFGraph_definable :
-    𝚺₁.Definable (fun v : Fin 6 → V ↦ LenFGraph (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) := lenFGraph_defined.to_definable
 
 lemma LenFGraph.case_iff {W T n r i y : V} :
     LenFGraph W T n r i y ↔
@@ -6886,8 +6517,6 @@ noncomputable def lenSteps (W T n r i : V) : V := Classical.choose! (lenFGraph_e
 
 theorem lenSteps_graph {W T n r i : V} (hr : IsSemiformula LAct n r) : LenFGraph W T n r i (lenSteps W T n r i) :=
   (Classical.choose!_spec (lenFGraph_existsUnique_total W T n r i)).1 hr
-theorem lenSteps_of_not {W T n r i : V} (h : ¬IsSemiformula LAct n r) : lenSteps W T n r i = 0 :=
-  (Classical.choose!_spec (lenFGraph_existsUnique_total W T n r i)).2 h
 lemma lenSteps_eq_of_graph {W T n r i y : V} (hr : IsSemiformula LAct n r) (hy : LenFGraph W T n r i y) :
     lenSteps W T n r i = y :=
   lenFGraph_unique W T hr i _ _ (lenSteps_graph hr) hy
@@ -6901,25 +6530,11 @@ instance lenSteps_defined :
     simp [lenStepsDef, HierarchySymbol.Semiformula.val_sigma, lenFGraph_defined.iff,
       (IsSemiformula.defined (L := LAct)).proper.iff', (IsSemiformula.defined (L := LAct)).df, lenSteps,
       Classical.choose!_eq_iff_right]
-instance lenSteps_definable :
-    𝚺₁.DefinedFunction (fun v : Fin 5 → V ↦ lenSteps (v 0) (v 1) (v 2) (v 3) (v 4)) lenStepsDef := lenSteps_defined
 
 /-! #### The equations of `lenSteps` -/
 
 variable {W T n : V}
 
-lemma lenSteps_rel {k R v : V} (hR : LAct.IsRel k R) (hv : IsSemitermVec LAct k n v) (i : V) :
-    lenSteps W T n (^rel k R v) i =
-      lnAtomSteps W T 142 k R (listSum (termLenVec LAct k v)) i (shiftsV (lenV W T n k v k (i + 1))) (lenV W T n k v k (i + 1)) :=
-  lenSteps_eq_of_graph (by simp [hR, hv]) (LenFGraph.rel_iff.mpr rfl)
-lemma lenSteps_nrel {k R v : V} (hR : LAct.IsRel k R) (hv : IsSemitermVec LAct k n v) (i : V) :
-    lenSteps W T n (^nrel k R v) i =
-      lnAtomSteps W T 143 k R (listSum (termLenVec LAct k v)) i (shiftsV (lenV W T n k v k (i + 1))) (lenV W T n k v k (i + 1)) :=
-  lenSteps_eq_of_graph (by simp [hR, hv]) (LenFGraph.nrel_iff.mpr rfl)
-lemma lenSteps_verum (i : V) : lenSteps W T n ^⊤ i = lnConstSteps W 147 i :=
-  lenSteps_eq_of_graph (by simp) (LenFGraph.verum_iff.mpr rfl)
-lemma lenSteps_falsum (i : V) : lenSteps W T n ^⊥ i = lnConstSteps W 148 i :=
-  lenSteps_eq_of_graph (by simp) (LenFGraph.falsum_iff.mpr rfl)
 lemma lenSteps_and {p q : V} (hp : IsSemiformula LAct n p) (hq : IsSemiformula LAct n q) (i : V) :
     lenSteps W T n (p ^⋏ q) i =
       lnBinSteps W T 149 n (descCountF W n q) (formulaLen LAct p) (formulaLen LAct q) i
@@ -6927,21 +6542,6 @@ lemma lenSteps_and {p q : V} (hp : IsSemiformula LAct n p) (hq : IsSemiformula L
         (lenSteps W T n q (i + 1)) (lenSteps W T n p (i + descCountF W n q + 1 + shiftsV (lenSteps W T n q (i + 1)))) :=
   lenSteps_eq_of_graph (by simp [hp, hq]) (LenFGraph.and_iff.mpr ⟨_, _, le_lnBinSteps_left _ _ _ _ _ _ _ _ _ _ _ _,
     le_lnBinSteps_right _ _ _ _ _ _ _ _ _ _ _ _, lenSteps_graph hq, lenSteps_graph hp, rfl⟩)
-lemma lenSteps_or {p q : V} (hp : IsSemiformula LAct n p) (hq : IsSemiformula LAct n q) (i : V) :
-    lenSteps W T n (p ^⋎ q) i =
-      lnBinSteps W T 150 n (descCountF W n q) (formulaLen LAct p) (formulaLen LAct q) i
-        (shiftsV (lenSteps W T n q (i + 1))) (shiftsV (lenSteps W T n p (i + descCountF W n q + 1 + shiftsV (lenSteps W T n q (i + 1)))))
-        (lenSteps W T n q (i + 1)) (lenSteps W T n p (i + descCountF W n q + 1 + shiftsV (lenSteps W T n q (i + 1)))) :=
-  lenSteps_eq_of_graph (by simp [hp, hq]) (LenFGraph.or_iff.mpr ⟨_, _, le_lnBinSteps_left _ _ _ _ _ _ _ _ _ _ _ _,
-    le_lnBinSteps_right _ _ _ _ _ _ _ _ _ _ _ _, lenSteps_graph hq, lenSteps_graph hp, rfl⟩)
-lemma lenSteps_all {p : V} (hp : IsSemiformula LAct (n + 1) p) (i : V) :
-    lenSteps W T n (^∀ p) i =
-      lnQuantSteps W T 151 n (formulaLen LAct p) i (shiftsV (lenSteps W T (n + 1) p (i + 1))) (lenSteps W T (n + 1) p (i + 1)) :=
-  lenSteps_eq_of_graph (by simp [hp]) (LenFGraph.all_iff.mpr ⟨_, le_lnQuantSteps _ _ _ _ _ _ _ _, lenSteps_graph hp, rfl⟩)
-lemma lenSteps_exs {p : V} (hp : IsSemiformula LAct (n + 1) p) (i : V) :
-    lenSteps W T n (^∃ p) i =
-      lnQuantSteps W T 152 n (formulaLen LAct p) i (shiftsV (lenSteps W T (n + 1) p (i + 1))) (lenSteps W T (n + 1) p (i + 1)) :=
-  lenSteps_eq_of_graph (by simp [hp]) (LenFGraph.exs_iff.mpr ⟨_, le_lnQuantSteps _ _ _ _ _ _ _ _, lenSteps_graph hp, rfl⟩)
 
 /-- The structural facts of the producer, packaged: `NoDrop'`, `shiftsV + 1 ≤ 2|r|`, `len ≤ 14|r|`. -/
 theorem lenSteps_struct {W : V} (hWp : W = certPieces) (T : V) {n r : V} (hr : IsSemiformula LAct n r) (i : V) :
@@ -6973,8 +6573,6 @@ instance lenPost_definable : 𝚫₁-Relation₅ (LenPost : V → V → V → V 
 /-- The vector conclusion: applicable, the length vector's graph fact and its sum fact in the final context. -/
 def LenPostV (tbl E Γ y F₁ F₂ : V) : Prop :=
   ListOK tbl E ((8 : ℕ) : V) Γ y ∧ neg LAct F₁ ∈ finalCtx Γ y ∧ neg LAct F₂ ∈ finalCtx Γ y
-instance lenPostV_definable : 𝚫₁.Definable (fun v : Fin 6 → V ↦ LenPostV (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) := by
-  unfold LenPostV; definability
 
 lemma isSemiterm_bnum_add (a b : V) : IsSemiterm LAct 0 (bnum a ^+ bnum b) := by simp [isSemiterm_bnum_LAct]
 lemma isSemiterm_bnum_succ (a : V) : IsSemiterm LAct 0 (bnum a ^+ (𝟏 : V)) := by simp [isSemiterm_bnum_LAct]
@@ -7002,9 +6600,6 @@ lemma E_bnum_add_succ {a b D E : V} (ha : a ≤ D) (hb : b ≤ D) (hE : 12 * D +
     _ = 12 * D + 5 := by ring
     _ ≤ E := hE
 
-/-- The bounds a `LenPre` hands to the witnesses. -/
-lemma LenPre.arity {D n i E Γ : V} (h : LenPre D n i E Γ) : 2 * n + 13 * D + 8 ≤ E := h.1
-lemma LenPre.off {D n i E Γ : V} (h : LenPre D n i E Γ) : i + 5 * D + 2 ≤ E := h.2.1
 lemma LenPre.fset {D n i E Γ : V} (h : LenPre D n i E Γ) : IsFormulaSet LAct Γ := h.2.2
 lemma LenPre.arityD {D n i E Γ : V} (h : LenPre D n i E Γ) : 13 * D + 8 ≤ E :=
   le_trans (by rw [add_assoc]; exact le_add_self) h.1
@@ -7100,8 +6695,6 @@ section lenTOK
 def TLenOK (tbl Wd W T n t : V) : Prop :=
   ∀ i y E Γ : V, LenTGraph W T n t i y → LenPre (termLen LAct t) n i E Γ → DossT Wd Γ n t i →
     LenPost tbl E Γ y (tlenFact (bnum (termLen LAct t)) (^&(i + shiftsV y)))
-instance tLenOK_definable : 𝚷₁.Definable (fun v : Fin 6 → V ↦ TLenOK (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) := by
-  unfold TLenOK LenTGraph; definability
 
 /-- The leaf lists are applicable (`bvar` at row 153 with `termLen_bvar`, `fvar` at 154 with `termLen_fvar`):
 the leaf's own shape fact is needed in the SHIFTED context (after `termLenTotal`). -/
@@ -7166,7 +6759,6 @@ lemma lnLeafSteps_ok {tbl N N' B' W T : V} (htbl : TableOK tbl N) (hC : CertTabl
     exact listOK_single ok₅
   · rw [lnLeafSteps, finalCtx_cons, cx₁, finalCtx_cons, cx₂, finalCtx_cons, cx₃, finalCtx_cons, cx₄, finalCtx_single, cx₅]
     exact mem_insert_self'
-
 
 /-- The tails of the vector/function lists, named (definitional unfoldings of the builders). -/
 noncomputable def lnAdjTail (W T n m ct lt σ' i st sv : V) : V :=
@@ -7354,7 +6946,6 @@ lemma lnAdjTail_ok {tbl N N' B' Wd W T : V} (htbl : TableOK tbl N) (hC : CertTab
   · rw [lnAdjTail, finalCtx_cons, cx₁, finalCtx_cons, cx₂, finalCtx_cons, cx₃, finalCtx_cons, cx₄, finalCtx_cons, cx₅,
       finalCtx_single, cx₆]
     exact mem_insert_self'
-
 
 /-- A leaf's shape fact, moved into the shifted context (after the node's `termLenTotal`). -/
 lemma bvarFact_setShift {Γ i z : V} (h : neg LAct (bvarFact (^&i) (cTV z)) ∈ Γ) :
@@ -8660,7 +8251,6 @@ noncomputable def ncZeroStepsDef : 𝚺₁.Semisentence 5 := .mkSigma
 
 instance ncZeroSteps_defined : 𝚺₁-Function₄ (ncZeroSteps : V → V → V → V → V) via ncZeroStepsDef := .mk
   fun v ↦ by simp [ncZeroStepsDef, ncZeroSteps, numeral_eq_natCast, vRef_defined.iff, mkStep_defined.iff]
-instance ncZeroSteps_definable : 𝚺₁-Function₄ (ncZeroSteps : V → V → V → V → V) := ncZeroSteps_defined.to_definable
 
 /-- The climbing step at the sub-vector `&off` after the deeper chain `y'`:
 `nthAdjoinSucc [cT d', ⟨tail⟩, &(off+1), &off, &e]` → `nthFact &e &off (cT d' + 1)`. -/
@@ -8678,9 +8268,6 @@ instance ncSuccSteps_defined :
   fun v ↦ by
     simp [ncSuccStepsDef, ncSuccSteps, numeral_eq_natCast, cTV.defined.iff, vRef_defined.iff, mkStep_defined.iff,
       appendV_defined.iff]
-instance ncSuccSteps_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 7 → V ↦ ncSuccSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) :=
-  ncSuccSteps_defined.to_definable
 
 lemma len_ncZeroSteps (W c off j' : V) : len (ncZeroSteps W c off j') = 1 := by simp [ncZeroSteps]
 lemma len_ncSuccSteps (W c off j' d' e y' : V) : len (ncSuccSteps W c off j' d' e y') = len y' + 1 := by
@@ -8814,9 +8401,6 @@ noncomputable def nthCGraphDef : 𝚺₁.Semisentence 9 := .mkSigma
 instance nthCGraph_defined :
     𝚺₁.Defined (fun v : Fin 9 → V ↦ NthCGraph (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8)) nthCGraphDef := .mk
   fun v ↦ by simp [nthCGraphDef, nthCPacked_defined.iff, NthCGraph]
-instance nthCGraph_definable :
-    𝚺₁.Definable (fun v : Fin 9 → V ↦ NthCGraph (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8)) :=
-  nthCGraph_defined.to_definable
 
 lemma NthCGraph.case_iff {W m w s j d off e y : V} :
     NthCGraph W m w s j d off e y ↔
@@ -8970,9 +8554,6 @@ instance nthChainP_defined :
     simp [nthChainPDef, HierarchySymbol.Semiformula.val_sigma, nthCGraph_defined.iff,
       (IsSemitermVec.defined (L := LAct)).proper.iff', (IsSemitermVec.defined (L := LAct)).df, nthChainP,
       Classical.choose!_eq_iff_right]
-instance nthChainP_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 7 → V ↦ nthChainP (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) :=
-  nthChainP_defined.to_definable
 
 noncomputable def nthChainEDef : 𝚺₁.Semisentence 8 := .mkSigma
   “e W m w s j d off. ∃ p, !nthChainPDef p W m w s j d off ∧ !pi₁Def e p”
@@ -8981,34 +8562,15 @@ noncomputable def nthChainLDef : 𝚺₁.Semisentence 8 := .mkSigma
 instance nthChainE_defined :
     𝚺₁.DefinedFunction (fun v : Fin 7 → V ↦ nthChainE (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) nthChainEDef := .mk
   fun v ↦ by simp [nthChainEDef, nthChainP_defined.iff, nthChainE]
-instance nthChainE_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 7 → V ↦ nthChainE (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) :=
-  nthChainE_defined.to_definable
 instance nthChainL_defined :
     𝚺₁.DefinedFunction (fun v : Fin 7 → V ↦ nthChainL (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) nthChainLDef := .mk
   fun v ↦ by simp [nthChainLDef, nthChainP_defined.iff, nthChainL]
-instance nthChainL_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 7 → V ↦ nthChainL (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) :=
-  nthChainL_defined.to_definable
 
 end nthChainFun
 
 /-! #### The equations, the structure and the applicability of the chain -/
 
 section nthChainOK
-
-lemma nthChain_zero {W m n w s j' off : V} (hv : IsSemitermVec LAct n m w) (hsj : s + (j' + 1) = n) :
-    nthChainE W m w s (j' + 1) 0 off = off + 1 ∧
-    nthChainL W m w s (j' + 1) 0 off = ncZeroSteps W (descCountT W m w.[s]) off j' :=
-  nthChain_eq_of_graph hv hsj (by simp) (NthCGraph.zero_iff.mpr ⟨j', rfl, rfl, rfl⟩)
-
-lemma nthChain_succ {W m n w s j' d' off : V} (hv : IsSemitermVec LAct n m w) (hsj : s + (j' + 1) = n) (hd : d' < j') :
-    nthChainE W m w s (j' + 1) (d' + 1) off = nthChainE W m w (s + 1) j' d' (off + 1 + descCountT W m w.[s]) ∧
-    nthChainL W m w s (j' + 1) (d' + 1) off =
-      ncSuccSteps W (descCountT W m w.[s]) off j' d' (nthChainE W m w (s + 1) j' d' (off + 1 + descCountT W m w.[s]))
-        (nthChainL W m w (s + 1) j' d' (off + 1 + descCountT W m w.[s])) :=
-  nthChain_eq_of_graph hv hsj (by simpa using hd) (NthCGraph.succ_iff.mpr ⟨j', _, rfl, le_appendV_left _ _,
-    nthChain_graph hv (by rw [← hsj]; ring) hd, rfl⟩)
 
 /-- The chain is Horn-only, shift-free, and has `d + 1` steps. -/
 lemma nthCGraph_struct {W : V} (hWp : W = certPieces) (m w : V) : ∀ d, ∀ s j off e y : V,
@@ -9038,9 +8600,6 @@ lemma nthCGraph_struct {W : V} (hWp : W = certPieces) (m w : V) : ∀ d, ∀ s j
 def NCRes (tbl Wd E Γ m w j s d off e y : V) : Prop :=
   PassPost tbl E Γ y (nthFact (^&e) (^&off) (cTV d)) ∧ DossT Wd Γ m w.[s + d] e ∧
   e + 2 * termLen LAct w.[s + d] + 1 ≤ off + 2 * listSum (termLenVec LAct j (takeLast w j)) + 2
-instance ncRes_definable :
-    𝚫₁.Definable (fun v : Fin 12 → V ↦ NCRes (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10) (v 11)) := by
-  unfold NCRes; definability
 
 /-- **The chain is applicable** and leaves `nthFact &e ⟨sub-vector⟩ (cT d)` (Π₁ motive on `d`). -/
 lemma nthCGraph_ok {tbl N : V} (htbl : TableOK tbl N) (hC : CertTable tbl) {Wd W : V} (hWd : Wd = walkPieces)
@@ -9166,7 +8725,6 @@ lemma nthCGraph_ok {tbl N : V} (htbl : TableOK tbl N) (hC : CertTable tbl) {Wd W
 
 end nthChainOK
 
-
 /-! ### 6.1 The term/vector pass `SubT` (`μ = 0`: `termSubst w`, the vector `w` walked at `&iw`; `μ = 1`: `termBShift`)
 
 A sibling of `PassT` (§1) with the substitution data as blueprint PARAMETERS `![W, w, iw, m]` (`w` the vector
@@ -9200,26 +8758,14 @@ def subArDef : 𝚺₀.Semisentence 4 := .mkSigma “y m μ n. (μ = 0 → y = m
 instance subAr_defined : 𝚺₀-Function₃ (subAr : V → V → V → V) via subArDef := .mk fun v ↦ by
   simp [subArDef, subAr]
   by_cases hμ : v 2 = 0 <;> simp [hμ]
-instance subAr_definable : 𝚺₀-Function₃ (subAr : V → V → V → V) := subAr_defined.to_definable
-
-noncomputable def subImgVecDef : 𝚺₁.Semisentence 5 := .mkSigma
-  “y w μ k v. (μ = 0 → !(termSubstVecGraph LAct) y k w v) ∧ (μ ≠ 0 → !(termBShiftVecGraph LAct) y k v)”
-instance subImgVec_defined : 𝚺₁-Function₄ (subImgVec : V → V → V → V → V) via subImgVecDef := .mk fun v ↦ by
-  simp [subImgVecDef, subImgVec, termSubstVec.defined.iff, termBShiftVec.defined.iff]
-  by_cases hμ : v 2 = 0 <;> simp [hμ]
-instance subImgVec_definable : 𝚺₁-Function₄ (subImgVec : V → V → V → V → V) := subImgVec_defined.to_definable
 
 noncomputable def subImgCountDef : 𝚺₁.Semisentence 7 := .mkSigma
   “y W w m μ n t. ∃ a, !subArDef a m μ n ∧ ∃ e, !subImgDef e w μ t ∧ !descCountTDef y W a e”
 instance subImgCount_defined :
     𝚺₁.DefinedFunction (fun v : Fin 6 → V ↦ subImgCount (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) subImgCountDef := .mk
   fun v ↦ by simp [subImgCountDef, subImgCount, subAr_defined.iff, subImg_defined.iff, descCountT_defined.iff]
-instance subImgCount_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 6 → V ↦ subImgCount (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) :=
-  subImgCount_defined.to_definable
 
 @[simp] lemma subImg_zero (w t : V) : subImg w 0 t = termSubst LAct w t := by simp [subImg]
-lemma subImg_one (w t : V) : subImg w 1 t = termBShift LAct t := by simp [subImg]
 @[simp] lemma subAr_zero (m n : V) : subAr m 0 n = m := by simp [subAr]
 lemma subAr_one (m n : V) : subAr m 1 n = n + 1 := by simp [subAr]
 @[simp] lemma subImgVec_zero (w k v : V) : subImgVec w 0 k v = termSubstVec LAct k w v := by simp [subImgVec]
@@ -9275,9 +8821,6 @@ instance sBvarSteps_defined :
     simp [sBvarStepsDef, sBvarSteps, numeral_eq_natCast, cTV.defined.iff, nthChainL_defined.iff, nthChainE_defined.iff,
       nth_defined.iff, passT_defined.iff, mkStep_defined.iff, appendV_defined.iff]
     by_cases hμ : v 5 = 0 <;> simp [hμ]
-instance sBvarSteps_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 9 → V ↦ sBvarSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8)) :=
-  sBvarSteps_defined.to_definable
 
 /-- The free-variable leaf: `termSubstFvarCert [&i, cT x, ⟨w⟩, &j]` / `termBShiftFvarCert [cT x, &i, &j]`. -/
 noncomputable def sFvarSteps (W iw μ n x i j : V) : V :=
@@ -9294,9 +8837,6 @@ instance sFvarSteps_defined :
   fun v ↦ by
     simp [sFvarStepsDef, sFvarSteps, numeral_eq_natCast, cTV.defined.iff, vRef_defined.iff, mkStep_defined.iff]
     by_cases hμ : v 3 = 0 <;> simp [hμ]
-instance sFvarSteps_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 7 → V ↦ sFvarSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) :=
-  sFvarSteps_defined.to_definable
 
 /-- The function node after the vector pass `yv`: the closed symbol row, then
 `termSubstFuncCert [⟨w⟩, &i, cT k, cT f, ⟨v⟩ᵢ, ⟨v⟩ⱼ, &j]` / `termBShiftFuncCert [&i, cT k, cT f, ⟨v⟩ᵢ, ⟨v⟩ⱼ, &j]`. -/
@@ -9305,7 +8845,6 @@ def sFuncRowDef : 𝚺₀.Semisentence 2 := .mkSigma “y μ. (μ = 0 → y = 17
 instance sFuncRow_defined : 𝚺₀-Function₁ (sFuncRow : V → V) via sFuncRowDef := .mk fun v ↦ by
   simp [sFuncRowDef, sFuncRow, numeral_eq_natCast]
   by_cases hμ : v 1 = 0 <;> simp [hμ]
-instance sFuncRow_definable : 𝚺₀-Function₁ (sFuncRow : V → V) := sFuncRow_defined.to_definable
 
 noncomputable def sFuncWits (iw μ n k f i j : V) : V :=
   if μ = 0 then ?[vRef iw n, ^&i, cTV k, cTV f, vRef (i + 1) k, vRef (j + 1) k, ^&j]
@@ -9322,9 +8861,6 @@ instance sFuncWits_defined :
   fun v ↦ by
     simp [sFuncWitsDef, sFuncWits, numeral_eq_natCast, cTV.defined.iff, vRef_defined.iff]
     by_cases hμ : v 2 = 0 <;> simp [hμ]
-instance sFuncWits_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 7 → V ↦ sFuncWits (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) :=
-  sFuncWits_defined.to_definable
 
 noncomputable def sFuncSteps (W iw μ n k f i j yv : V) : V :=
   appendV yv ?[mkStep W (funcRow k f) 0, mkStep W (sFuncRow μ) (sFuncWits iw μ n k f i j)]
@@ -9338,9 +8874,6 @@ instance sFuncSteps_defined :
   fun v ↦ by
     simp [sFuncStepsDef, sFuncSteps, numeral_eq_natCast, funcRow_defined.iff, sFuncRow_defined.iff, sFuncWits_defined.iff,
       mkStep_defined.iff, appendV_defined.iff]
-instance sFuncSteps_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 9 → V ↦ sFuncSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8)) :=
-  sFuncSteps_defined.to_definable
 
 /-- The empty vector: `tsvNilCert [⟨w⟩]` / `tbshvNilCert [cT 0]`. -/
 noncomputable def sNilSteps (W iw μ n : V) : V :=
@@ -9355,7 +8888,6 @@ instance sNilSteps_defined : 𝚺₁-Function₄ (sNilSteps : V → V → V → 
   fun v ↦ by
     simp [sNilStepsDef, sNilSteps, numeral_eq_natCast, cTV.defined.iff, vRef_defined.iff, mkStep_defined.iff]
     by_cases hμ : v 3 = 0 <;> simp [hμ]
-instance sNilSteps_definable : 𝚺₁-Function₄ (sNilSteps : V → V → V → V → V) := sNilSteps_defined.to_definable
 
 /-- The adjoin certificate's witnesses at a vector node with `m'` tail entries, source entry count `ct`, image
 entry count `ct'`: `tsvAdjCert [cT n, cT m', ⟨w⟩, ⟨tail⟩ᵢ, &i, &(i+1), &(j+1), ⟨tail⟩ⱼ, &j]` /
@@ -9378,16 +8910,12 @@ instance sAdjWits_defined :
   fun v ↦ by
     simp [sAdjWitsDef, sAdjWits, numeral_eq_natCast, cTV.defined.iff, vRef_defined.iff]
     by_cases hμ : v 2 = 0 <;> simp [hμ]
-instance sAdjWits_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 8 → V ↦ sAdjWits (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7)) :=
-  sAdjWits_defined.to_definable
 
 noncomputable def sAdjRow (μ : V) : V := if μ = 0 then 181 else 172
 def sAdjRowDef : 𝚺₀.Semisentence 2 := .mkSigma “y μ. (μ = 0 → y = 181) ∧ (μ ≠ 0 → y = 172)”
 instance sAdjRow_defined : 𝚺₀-Function₁ (sAdjRow : V → V) via sAdjRowDef := .mk fun v ↦ by
   simp [sAdjRowDef, sAdjRow, numeral_eq_natCast]
   by_cases hμ : v 1 = 0 <;> simp [hμ]
-instance sAdjRow_definable : 𝚺₀-Function₁ (sAdjRow : V → V) := sAdjRow_defined.to_definable
 
 /-- The vector node's certificate: the entry's pass `yt`, the tail's pass `yv`, the tail's `utvPi` bridge
 (rows 38/39 on the source tail), then the adjoin certificate. -/
@@ -9409,9 +8937,6 @@ instance sAdjSteps_defined :
   fun v ↦ by
     simp [sAdjStepsDef, sAdjSteps, numeral_eq_natCast, cTV.defined.iff, vRef_defined.iff, mkStep_defined.iff,
       sAdjRow_defined.iff, sAdjWits_defined.iff, appendV_defined.iff]
-instance sAdjSteps_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 11 → V ↦ sAdjSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10)) :=
-  sAdjSteps_defined.to_definable
 
 end subTermBuilders
 
@@ -9614,15 +9139,9 @@ noncomputable def subVGraphDef : 𝚺₁.Semisentence 12 := .mkSigma
 instance subTGraph_defined :
     𝚺₁.Defined (fun v : Fin 10 → V ↦ SubTGraph (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9)) subTGraphDef := .mk
   fun v ↦ by simp [subTGraphDef, subPacked_defined.iff, SubTGraph, numeral_eq_natCast]
-instance subTGraph_definable :
-    𝚺₁.Definable (fun v : Fin 10 → V ↦ SubTGraph (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9)) :=
-  subTGraph_defined.to_definable
 instance subVGraph_defined :
     𝚺₁.Defined (fun v : Fin 12 → V ↦ SubVGraph (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10) (v 11)) subVGraphDef := .mk
   fun v ↦ by simp [subVGraphDef, subPacked_defined.iff, SubVGraph, numeral_eq_natCast]
-instance subVGraph_definable :
-    𝚺₁.Definable (fun v : Fin 12 → V ↦ SubVGraph (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10) (v 11)) :=
-  subVGraph_defined.to_definable
 
 lemma SubTGraph.case_iff {W w iw m μ n t i j y : V} :
     SubTGraph W w iw m μ n t i j y ↔
@@ -9913,9 +9432,6 @@ instance subV_defined :
     simp [subVDef, HierarchySymbol.Semiformula.val_sigma, subVGraph_defined.iff,
       (IsSemitermVec.defined (L := LAct)).proper.iff', (IsSemitermVec.defined (L := LAct)).df, subV,
       Classical.choose!_eq_iff_right]
-instance subV_definable :
-    𝚺₁.DefinableFunction (fun x : Fin 11 → V ↦ subV (x 0) (x 1) (x 2) (x 3) (x 4) (x 5) (x 6) (x 7) (x 8) (x 9) (x 10)) :=
-  subV_defined.to_definable
 
 lemma subTGraph_existsUnique_total (W w iw m μ n t i j : V) :
     ∃! y, (((μ = 0 → IsSemitermVec LAct n m w) ∧ IsSemiterm LAct n t) → SubTGraph W w iw m μ n t i j y) ∧
@@ -9947,36 +9463,8 @@ instance subT_defined :
       (IsSemitermVec.defined (L := LAct)).proper.iff', (IsSemitermVec.defined (L := LAct)).df,
       (IsSemiterm.defined (L := LAct)).proper.iff', (IsSemiterm.defined (L := LAct)).df, subT,
       Classical.choose!_eq_iff_right]
-instance subT_definable :
-    𝚺₁.DefinableFunction (fun x : Fin 9 → V ↦ subT (x 0) (x 1) (x 2) (x 3) (x 4) (x 5) (x 6) (x 7) (x 8)) :=
-  subT_defined.to_definable
 
 /-! #### The equations -/
-
-lemma subT_bvar {W w iw m μ n z i j : V} (hw : μ = 0 → IsSemitermVec LAct n m w) (hz : z < n) :
-    subT W w iw m μ n (^#z) i j = sBvarSteps W w iw m μ n z i j :=
-  subT_eq_of_graph hw (by simp [hz]) (SubTGraph.bvar_iff.mpr rfl)
-lemma subT_fvar {W w iw m μ n a i j : V} (hw : μ = 0 → IsSemitermVec LAct n m w) :
-    subT W w iw m μ n (^&a) i j = sFvarSteps W iw μ n a i j :=
-  subT_eq_of_graph hw (by simp) (SubTGraph.fvar_iff.mpr rfl)
-lemma subT_func {W w iw m μ n k f v i j : V} (hw : μ = 0 → IsSemitermVec LAct n m w) (hkf : LAct.IsFunc k f)
-    (hv : IsSemitermVec LAct k n v) :
-    subT W w iw m μ n (^func k f v) i j = sFuncSteps W iw μ n k f i j (subV W w iw m μ n k v k (i + 1) (j + 1)) :=
-  subT_eq_of_graph hw (by simp [hkf, hv]) (SubTGraph.func_iff.mpr ⟨_, le_sFuncSteps _ _ _ _ _ _ _ _ _, subV_graph hw hv le_rfl, rfl⟩)
-lemma subV_zero {W w iw m μ n k v i j : V} (hw : μ = 0 → IsSemitermVec LAct n m w) (hv : IsSemitermVec LAct k n v) :
-    subV W w iw m μ n k v 0 i j = sNilSteps W iw μ n :=
-  subV_eq_of_graph hw hv zero_le (SubVGraph.zero_iff.mpr rfl)
-lemma subV_succ {W w iw m μ n k v m' i j : V} (hw : μ = 0 → IsSemitermVec LAct n m w) (hv : IsSemitermVec LAct k n v) (hm : m' + 1 ≤ k) :
-    subV W w iw m μ n k v (m' + 1) i j =
-      sAdjSteps W iw μ n m' (descCountT W n (nthFromEnd v m')) (subImgCount W w m μ n (nthFromEnd v m')) i j
-        (subT W w iw m μ n (nthFromEnd v m') (i + 1) (j + 1))
-        (subV W w iw m μ n k v m' (i + 1 + descCountT W n (nthFromEnd v m')) (j + 1 + subImgCount W w m μ n (nthFromEnd v m'))) := by
-  have hk0 : (0 : V) < k := lt_of_lt_of_le (lt_of_lt_of_le _root_.zero_lt_one le_add_self) hm
-  have hlt : k - (m' + 1) < k := tsub_lt_self hk0 (lt_of_lt_of_le _root_.zero_lt_one le_add_self)
-  have hnth' : nthFromEnd v m' = v.[k - (m' + 1)] := nthFromEnd_eq (a := k - (m' + 1)) (by rw [hv.lh, tsub_add_cancel_of_le hm])
-  refine subV_eq_of_graph hw hv hm (SubVGraph.succ_iff.mpr ⟨_, _, le_sAdjSteps_left _ _ _ _ _ _ _ _ _ _ _,
-    le_sAdjSteps_right _ _ _ _ _ _ _ _ _ _ _, subT_graph hw ?_, subV_graph hw hv (le_trans le_self_add hm), rfl⟩)
-  rw [hnth']; exact hv.nth hlt
 
 end subTermFun
 
@@ -10227,7 +9715,6 @@ lemma len_subTGraph_le {W : V} (hWp : W = certPieces) (iw μ : V) {n m w : V} (h
 
 end subTStruct
 
-
 /-! ### 6.2 The term/vector pass is applicable: `tsFact &j ⟨w⟩ &i` (`μ = 0`) / `tbshFact &j &i` (`μ = 1`)
 
 The invariant is stated over the GRAPH, parametric in the mode. `SubPre D D' n i j E Γ` packages the cap
@@ -10241,16 +9728,12 @@ section subTermOK
 /-- The cap conditions of the pass: the arity part, the source offset part (`D`), the image offset part (`D'`). -/
 def SubPre (D D' n i j E Γ : V) : Prop :=
   2 * n + D + 8 ≤ E ∧ i + D + 1 ≤ E ∧ j + D' + 1 ≤ E ∧ IsFormulaSet LAct Γ
-instance subPre_definable : 𝚫₁.Definable (fun v : Fin 7 → V ↦ SubPre (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) := by
-  unfold SubPre; definability
 
 /-- The substitution vector's data: a semiterm vector of length `n` and arity `m`, walked at `&iw`, with the caps
 its `nth` chains (`iw + 2Σ|w| + 2`) and identification passes (`2m + 2n + 2Σ|w| + 8`) need. -/
 def SubW (Wd Γ m n w iw E : V) : Prop :=
   IsSemitermVec LAct n m w ∧ DossV Wd Γ m n w n iw ∧ iw + 2 * listSum (termLenVec LAct n w) + 2 ≤ E ∧
   2 * m + 2 * n + 2 * listSum (termLenVec LAct n w) + 8 ≤ E
-instance subW_definable : 𝚫₁.Definable (fun v : Fin 7 → V ↦ SubW (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) := by
-  unfold SubW; definability
 
 /-- The conclusion: applicable at cap `9`, Horn-only, `neg F` in the final context. -/
 def SubPost (tbl E Γ y F : V) : Prop := ListOK tbl E ((9 : ℕ) : V) Γ y ∧ HornOnly y ∧ neg LAct F ∈ finalCtx Γ y
@@ -10260,18 +9743,12 @@ instance subPost_definable : 𝚫₁-Relation₅ (SubPost : V → V → V → V 
 lemma SubW.mono {Wd Γ Γ' m n w iw E : V} (h : SubW Wd Γ m n w iw E) (hsub : Γ ⊆ Γ') : SubW Wd Γ' m n w iw E :=
   ⟨h.1, h.2.1.mono hsub, h.2.2.1, h.2.2.2⟩
 
-lemma PassPost.toSub {tbl E Γ y F : V} (h : PassPost tbl E Γ y F) : SubPost tbl E Γ y F :=
-  ⟨h.1.mono (by exact_mod_cast (by decide : (8 : ℕ) ≤ 9)), h.2.1, h.2.2⟩
-
 /-- The term-level invariant (Π₁). -/
 def SubTOK (tbl Wd W w iw m μ n t : V) : Prop :=
   ∀ i j y E Γ : V, SubTGraph W w iw m μ n t i j y →
     SubPre (2 * termLen LAct t) (2 * termLen LAct (subImg w μ t)) n i j E Γ → (μ = 0 → SubW Wd Γ m n w iw E) →
     DossT Wd Γ n t i → DossT Wd Γ (subAr m μ n) (subImg w μ t) j →
     (μ = 0 → SubPost tbl E Γ y (tsFact (^&j) (vRef iw n) (^&i))) ∧ (μ ≠ 0 → SubPost tbl E Γ y (tbshFact (^&j) (^&i)))
-instance subTOK_definable :
-    𝚷₁.Definable (fun v : Fin 9 → V ↦ SubTOK (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8)) := by
-  unfold SubTOK; simp only [SubTGraph]; definability
 
 set_option maxHeartbeats 4000000 in
 /-- **The vector-level pass is applicable**, tail first: it certifies `tsvFact ⟨v⟩ⱼ (cT m') ⟨w⟩ ⟨v⟩ᵢ` /
@@ -10704,7 +10181,6 @@ theorem subVGraph_ok {tbl N : V} (htbl : TableOK tbl N) (hC : CertTable tbl) {Wd
 
 end subTermOK
 
-
 /-! ### 6.3 The formula pass `SubF` on `⟪n, m, w, iw, r, i, j, y⟫` (parameters `W`, `Wd`) — `certSubst`
 
 NOT shift-free: under a quantifier the substitution vector becomes `qVec w`, which the rows need as a walked
@@ -10734,9 +10210,6 @@ noncomputable def sfConstStepsDef : 𝚺₁.Semisentence 7 := .mkSigma
 instance sfConstSteps_defined :
     𝚺₁.DefinedFunction (fun v : Fin 6 → V ↦ sfConstSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) sfConstStepsDef := .mk
   fun v ↦ by simp [sfConstStepsDef, sfConstSteps, numeral_eq_natCast, vRef_defined.iff, mkStep_defined.iff]
-instance sfConstSteps_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 6 → V ↦ sfConstSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) :=
-  sfConstSteps_defined.to_definable
 
 /-- An atom after the mode-`0` vector pass `yv` at `(i+1, j+1)`: the closed relation-symbol row, then
 `substsRelCert/substsNRelCert [⟨w⟩, &i, cT k, cT R, ⟨v⟩ᵢ, ⟨v⟩ⱼ, &j]`. -/
@@ -10754,9 +10227,6 @@ instance sfAtomSteps_defined :
   fun v ↦ by
     simp [sfAtomStepsDef, sfAtomSteps, numeral_eq_natCast, relRow_defined.iff, cTV.defined.iff, vRef_defined.iff,
       mkStep_defined.iff, appendV_defined.iff]
-instance sfAtomSteps_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 9 → V ↦ sfAtomSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8)) :=
-  sfAtomSteps_defined.to_definable
 
 /-- A binary node after the RIGHT child's pass `yq` (shifts `sq`) and the LEFT child's `yp` (shifts `sp`), with the
 right child's counts `cq` (source) and `cq'` (image): `substsAndCert/substsOrCert [⟨w⟩', cT n, &p', &q', &r', &sp', &sq', &y']`
@@ -10776,9 +10246,6 @@ instance sfBinSteps_defined :
       sfBinStepsDef := .mk
   fun v ↦ by
     simp [sfBinStepsDef, sfBinSteps, numeral_eq_natCast, cTV.defined.iff, vRef_defined.iff, mkStep_defined.iff, appendV_defined.iff]
-instance sfBinSteps_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 12 → V ↦ sfBinSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10) (v 11)) :=
-  sfBinSteps_defined.to_definable
 
 /-- A quantifier node: the walk `Lu` of `qVec w` (`cu` shifts; `u = qVec w` at `&0`, its head `#0` at `&1`, its tail at
 `⟨tail⟩ = vRef 2 n`), the mode-`1` vector pass `Lb` of `w` (now at `&(iw + cu)`) against that tail, the two `utvPi`
@@ -10807,9 +10274,6 @@ instance sfQuantSteps_defined :
       sfQuantStepsDef := .mk
   fun v ↦ by
     simp [sfQuantStepsDef, sfQuantSteps, numeral_eq_natCast, cTV.defined.iff, vRef_defined.iff, mkStep_defined.iff, appendV_defined.iff]
-instance sfQuantSteps_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 12 → V ↦ sfQuantSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10) (v 11)) :=
-  sfQuantSteps_defined.to_definable
 
 lemma len_sfConstSteps (W c iw n i j : V) : len (sfConstSteps W c iw n i j) = 1 := by simp [sfConstSteps]
 lemma len_sfAtomSteps (W c k R iw n i j yv : V) : len (sfAtomSteps W c k R iw n i j yv) = len yv + 2 := by
@@ -10822,7 +10286,6 @@ lemma len_sfQuantSteps (W c n m iw i j cu Lu Lb sb yb : V) :
   rw [sfQuantSteps, len_appendV, len_appendV, len_appendV, len_appendV, len_adjoin, len_adjoin, len_adjoin, len_nil,
     len_adjoin, len_nil]; ring
 
-lemma le_sfAtomSteps (W c k R iw n i j yv : V) : yv ≤ sfAtomSteps W c k R iw n i j yv := le_appendV_left _ _
 lemma le_sfBinSteps_left (W c n cq cq' iw i j sq sp yq yp : V) : yq ≤ sfBinSteps W c n cq cq' iw i j sq sp yq yp := le_appendV_left _ _
 lemma le_sfBinSteps_right (W c n cq cq' iw i j sq sp yq yp : V) : yp ≤ sfBinSteps W c n cq cq' iw i j sq sp yq yp :=
   le_trans (le_appendV_left _ _) (le_appendV_right _ _)
@@ -11085,9 +10548,6 @@ noncomputable def subFGraphDef : 𝚺₁.Semisentence 10 := .mkSigma
 instance subFGraph_defined :
     𝚺₁.Defined (fun v : Fin 10 → V ↦ SubFGraph (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9)) subFGraphDef := .mk
   fun v ↦ by simp [subFGraphDef, subFPacked_defined.iff, SubFGraph]
-instance subFGraph_definable :
-    𝚺₁.Definable (fun v : Fin 10 → V ↦ SubFGraph (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9)) :=
-  subFGraph_defined.to_definable
 
 lemma SubFGraph.case_iff {W Wd n m w iw r i j y : V} :
     SubFGraph W Wd n m w iw r i j y ↔
@@ -11322,47 +10782,6 @@ lemma len_subVGraph_le' (W iw μ : V) {n m w : V} (hw : μ = 0 → IsSemitermVec
 end subLenPure
 
 section subFFun
-
-/-- The vector-level length bound, standalone. -/
-lemma len_subVGraph_le {W : V} (hWp : W = certPieces) (iw μ : V) {n m w : V} (hw : μ = 0 → IsSemitermVec LAct n m w)
-    {k v : V} (hv : IsSemitermVec LAct k n v) :
-    ∀ m' ≤ k, ∀ i j z : V, SubVGraph W w iw m μ n k v m' i j z →
-      len z + 2 ≤ 12 * listSum (termLenVec LAct m' (takeLast v m')) * (listSum (termLenVec LAct n w) + 1) + 4 := by
-  intro m'
-  induction m' using ISigma1.pi1_succ_induction with
-  | hP => simp only [SubTGraph, SubVGraph]; definability
-  | zero =>
-    intro _ i j z hz
-    rw [SubVGraph.zero_iff.mp hz, (sNilSteps_struct hWp iw μ n).2.2]
-    simp; norm_num
-  | succ m' ihm =>
-    intro hm i j z hz
-    obtain ⟨yt, yv, _, _, hyt, hyv, rfl⟩ := SubVGraph.succ_iff.mp hz
-    have hvlen : len v = k := hv.lh
-    have hjk : m' < len v := by rw [hvlen]; exact lt_of_lt_of_le (lt_add_one m') hm
-    have hk0 : (0 : V) < k := lt_of_lt_of_le (lt_of_lt_of_le _root_.zero_lt_one le_add_self) hm
-    have hlt : k - (m' + 1) < k := tsub_lt_self hk0 (lt_of_lt_of_le _root_.zero_lt_one le_add_self)
-    have ht : IsSemiterm LAct n v.[k - (m' + 1)] := hv.nth hlt
-    have hnth' : nthFromEnd v m' = v.[k - (m' + 1)] :=
-      nthFromEnd_eq (a := k - (m' + 1)) (by rw [hvlen, tsub_add_cancel_of_le hm])
-    rw [hnth'] at hyt hyv ⊢
-    have hU : IsUTermVec LAct m' (takeLast v m') := isUTermVec_takeLast hv m' (le_trans le_self_add hm)
-    have hl := ihm (le_trans le_self_add hm) _ _ yv hyv
-    have htake : takeLast v (m' + 1) = v.[k - (m' + 1)] ∷ takeLast v m' := by
-      rw [takeLast_succ_of_lt hjk, hvlen]
-    have h1 := len_subTGraph_le hWp iw μ hw _ ht (i + 1) (j + 1) yt hyt
-    obtain ⟨hnt, hst⟩ := subTGraph_noDrop_shifts W iw μ hWp hw _ ht _ _ _ hyt
-    obtain ⟨hnv, hsv⟩ := subVGraph_noDrop_shifts hWp hw hv m' (le_trans le_self_add hm) _ _ _ hyv
-    rw [(sAdjSteps_struct hWp iw μ n m' (descCountT W n v.[k - (m' + 1)]) (subImgCount W w m μ n v.[k - (m' + 1)]) i j yt yv
-        hnt hst hnv hsv).2.2, htake, termLenVec_cons ht.isUTerm hU, listSum_adjoin]
-    calc len yt + (len yv + 3) + 2
-        ≤ (len yv + 2) + (len yt + 4) := by
-          rw [show (len yv + 2) + (len yt + 4) = len yt + (len yv + 3) + 2 + 1 by ring]
-          exact le_self_add
-      _ ≤ (12 * listSum (termLenVec LAct m' (takeLast v m')) * (listSum (termLenVec LAct n w) + 1) + 4) +
-            12 * termLen LAct v.[k - (m' + 1)] * (listSum (termLenVec LAct n w) + 1) := add_le_add hl h1
-      _ = 12 * (termLen LAct v.[k - (m' + 1)] + listSum (termLenVec LAct m' (takeLast v m'))) *
-            (listSum (termLenVec LAct n w) + 1) + 4 := by ring
 
 /-- `qVecIterV w e` is a semiterm vector of length `n + e` and arity `m + e`. -/
 lemma isSemitermVec_qVecIterV {n m w : V} (hw : IsSemitermVec LAct n m w) :
@@ -11881,9 +11300,6 @@ noncomputable def certSubst (W Wd n m w iw r i j : V) : V := Classical.choose! (
 theorem certSubst_graph {W Wd n m w iw r i j : V} (hw : IsSemitermVec LAct n m w) (hr : IsSemiformula LAct n r) :
     SubFGraph W Wd n m w iw r i j (certSubst W Wd n m w iw r i j) :=
   (Classical.choose!_spec (subFGraph_existsUnique_total W Wd n m w iw r i j)).1 ⟨hw, hr⟩
-theorem certSubst_of_not {W Wd n m w iw r i j : V} (h : ¬(IsSemitermVec LAct n m w ∧ IsSemiformula LAct n r)) :
-    certSubst W Wd n m w iw r i j = 0 :=
-  (Classical.choose!_spec (subFGraph_existsUnique_total W Wd n m w iw r i j)).2 h
 lemma certSubst_eq_of_graph {W Wd n m w iw r i j y : V} (hw : IsSemitermVec LAct n m w) (hr : IsSemiformula LAct n r)
     (hy : SubFGraph W Wd n m w iw r i j y) : certSubst W Wd n m w iw r i j = y :=
   subFGraph_unique W Wd hr m w iw i j _ _ (certSubst_graph hw hr) hy
@@ -11899,66 +11315,10 @@ instance certSubst_defined :
       (IsSemitermVec.defined (L := LAct)).proper.iff', (IsSemitermVec.defined (L := LAct)).df,
       (IsSemiformula.defined (L := LAct)).proper.iff', (IsSemiformula.defined (L := LAct)).df, certSubst,
       Classical.choose!_eq_iff_right]
-instance certSubst_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 9 → V ↦ certSubst (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8)) :=
-  certSubst_defined.to_definable
 
 /-! #### The equations of `certSubst` -/
 
 variable {W Wd n m w : V}
-
-lemma certSubst_rel {k R v : V} (hw : IsSemitermVec LAct n m w) (hR : LAct.IsRel k R) (hv : IsSemitermVec LAct k n v) (iw i j : V) :
-    certSubst W Wd n m w iw (^rel k R v) i j = sfAtomSteps W 157 k R iw n i j (subV W w iw m 0 n k v k (i + 1) (j + 1)) :=
-  certSubst_eq_of_graph hw (by simp [hR, hv]) (SubFGraph.rel_iff.mpr rfl)
-lemma certSubst_nrel {k R v : V} (hw : IsSemitermVec LAct n m w) (hR : LAct.IsRel k R) (hv : IsSemitermVec LAct k n v) (iw i j : V) :
-    certSubst W Wd n m w iw (^nrel k R v) i j = sfAtomSteps W 158 k R iw n i j (subV W w iw m 0 n k v k (i + 1) (j + 1)) :=
-  certSubst_eq_of_graph hw (by simp [hR, hv]) (SubFGraph.nrel_iff.mpr rfl)
-lemma certSubst_verum (hw : IsSemitermVec LAct n m w) (iw i j : V) : certSubst W Wd n m w iw ^⊤ i j = sfConstSteps W 159 iw n i j :=
-  certSubst_eq_of_graph hw (by simp) (SubFGraph.verum_iff.mpr rfl)
-lemma certSubst_falsum (hw : IsSemitermVec LAct n m w) (iw i j : V) : certSubst W Wd n m w iw ^⊥ i j = sfConstSteps W 160 iw n i j :=
-  certSubst_eq_of_graph hw (by simp) (SubFGraph.falsum_iff.mpr rfl)
-lemma certSubst_and {p q : V} (hw : IsSemitermVec LAct n m w) (hp : IsSemiformula LAct n p) (hq : IsSemiformula LAct n q) (iw i j : V) :
-    certSubst W Wd n m w iw (p ^⋏ q) i j =
-      sfBinSteps W 161 n (descCountF Wd n q) (descCountF Wd m (subst LAct w q)) iw i j
-        (shiftsV (certSubst W Wd n m w iw q (i + 1) (j + 1)))
-        (shiftsV (certSubst W Wd n m w (iw + shiftsV (certSubst W Wd n m w iw q (i + 1) (j + 1))) p
-          (i + descCountF Wd n q + 1 + shiftsV (certSubst W Wd n m w iw q (i + 1) (j + 1)))
-          (j + descCountF Wd m (subst LAct w q) + 1 + shiftsV (certSubst W Wd n m w iw q (i + 1) (j + 1)))))
-        (certSubst W Wd n m w iw q (i + 1) (j + 1))
-        (certSubst W Wd n m w (iw + shiftsV (certSubst W Wd n m w iw q (i + 1) (j + 1))) p
-          (i + descCountF Wd n q + 1 + shiftsV (certSubst W Wd n m w iw q (i + 1) (j + 1)))
-          (j + descCountF Wd m (subst LAct w q) + 1 + shiftsV (certSubst W Wd n m w iw q (i + 1) (j + 1)))) :=
-  certSubst_eq_of_graph hw (by simp [hp, hq]) (SubFGraph.and_iff.mpr ⟨_, _, le_sfBinSteps_left _ _ _ _ _ _ _ _ _ _ _ _,
-    le_sfBinSteps_right _ _ _ _ _ _ _ _ _ _ _ _, certSubst_graph hw hq, certSubst_graph hw hp, rfl⟩)
-lemma certSubst_or {p q : V} (hw : IsSemitermVec LAct n m w) (hp : IsSemiformula LAct n p) (hq : IsSemiformula LAct n q) (iw i j : V) :
-    certSubst W Wd n m w iw (p ^⋎ q) i j =
-      sfBinSteps W 162 n (descCountF Wd n q) (descCountF Wd m (subst LAct w q)) iw i j
-        (shiftsV (certSubst W Wd n m w iw q (i + 1) (j + 1)))
-        (shiftsV (certSubst W Wd n m w (iw + shiftsV (certSubst W Wd n m w iw q (i + 1) (j + 1))) p
-          (i + descCountF Wd n q + 1 + shiftsV (certSubst W Wd n m w iw q (i + 1) (j + 1)))
-          (j + descCountF Wd m (subst LAct w q) + 1 + shiftsV (certSubst W Wd n m w iw q (i + 1) (j + 1)))))
-        (certSubst W Wd n m w iw q (i + 1) (j + 1))
-        (certSubst W Wd n m w (iw + shiftsV (certSubst W Wd n m w iw q (i + 1) (j + 1))) p
-          (i + descCountF Wd n q + 1 + shiftsV (certSubst W Wd n m w iw q (i + 1) (j + 1)))
-          (j + descCountF Wd m (subst LAct w q) + 1 + shiftsV (certSubst W Wd n m w iw q (i + 1) (j + 1)))) :=
-  certSubst_eq_of_graph hw (by simp [hp, hq]) (SubFGraph.or_iff.mpr ⟨_, _, le_sfBinSteps_left _ _ _ _ _ _ _ _ _ _ _ _,
-    le_sfBinSteps_right _ _ _ _ _ _ _ _ _ _ _ _, certSubst_graph hw hq, certSubst_graph hw hp, rfl⟩)
-lemma certSubst_all {p : V} (hw : IsSemitermVec LAct n m w) (hp : IsSemiformula LAct (n + 1) p) (iw i j : V) :
-    certSubst W Wd n m w iw (^∀ p) i j =
-      sfQuantSteps W 163 n m iw i j (π₁ (qWalkP Wd m n w)) (π₂ (qWalkP Wd m n w))
-        (subV W w (iw + π₁ (qWalkP Wd m n w)) m 1 m n w n (iw + π₁ (qWalkP Wd m n w)) 2)
-        (shiftsV (certSubst W Wd (n + 1) (m + 1) (qVec LAct w) 0 p (i + π₁ (qWalkP Wd m n w) + 1) (j + π₁ (qWalkP Wd m n w) + 1)))
-        (certSubst W Wd (n + 1) (m + 1) (qVec LAct w) 0 p (i + π₁ (qWalkP Wd m n w) + 1) (j + π₁ (qWalkP Wd m n w) + 1)) :=
-  certSubst_eq_of_graph hw (by simp [hp]) (SubFGraph.all_iff.mpr ⟨_, le_sfQuantSteps _ _ _ _ _ _ _ _ _ _ _ _,
-    certSubst_graph hw.qVec hp, rfl⟩)
-lemma certSubst_exs {p : V} (hw : IsSemitermVec LAct n m w) (hp : IsSemiformula LAct (n + 1) p) (iw i j : V) :
-    certSubst W Wd n m w iw (^∃ p) i j =
-      sfQuantSteps W 164 n m iw i j (π₁ (qWalkP Wd m n w)) (π₂ (qWalkP Wd m n w))
-        (subV W w (iw + π₁ (qWalkP Wd m n w)) m 1 m n w n (iw + π₁ (qWalkP Wd m n w)) 2)
-        (shiftsV (certSubst W Wd (n + 1) (m + 1) (qVec LAct w) 0 p (i + π₁ (qWalkP Wd m n w) + 1) (j + π₁ (qWalkP Wd m n w) + 1)))
-        (certSubst W Wd (n + 1) (m + 1) (qVec LAct w) 0 p (i + π₁ (qWalkP Wd m n w) + 1) (j + π₁ (qWalkP Wd m n w) + 1)) :=
-  certSubst_eq_of_graph hw (by simp [hp]) (SubFGraph.exs_iff.mpr ⟨_, le_sfQuantSteps _ _ _ _ _ _ _ _ _ _ _ _,
-    certSubst_graph hw.qVec hp, rfl⟩)
 
 end subFExists
 
@@ -12092,7 +11452,6 @@ lemma qVecFact_transport {Γ S n a c : V} (hS : NoDrop S) (h : neg LAct (qVecFac
 
 end subFOKHelpers
 
-
 /-! ## Part 6.5 — the formula pass is applicable: `subFGraph_ok`, `certSubst_ok`, `costSum_certSubst_le` -/
 
 /-! #### The invariant of the formula pass and `certSubst_ok`
@@ -12112,16 +11471,10 @@ def SubFPre (E Q n m w r i j iw Γ : V) : Prop :=
   i + 2 * formulaLen LAct r * (Q + 1) + 1 ≤ E ∧
   j + 2 * formulaLen LAct (subst LAct w r) + 2 * Q * formulaLen LAct r + 1 ≤ E ∧
   iw + 2 * Q * (formulaLen LAct r + 1) + 2 ≤ E ∧ IsFormulaSet LAct Γ
-instance subFPre_definable :
-    𝚫₁.Definable (fun v : Fin 10 → V ↦ SubFPre (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9)) := by
-  unfold SubFPre; definability
 
 def SubFPost (tbl E Γ y Q n r iw i j : V) : Prop :=
   ListOK tbl E ((9 : ℕ) : V) Γ y ∧ NoDrop y ∧ HornOnly y ∧ shiftsV y ≤ 2 * Q * formulaLen LAct r ∧
   neg LAct (substFact (^&(j + shiftsV y)) (vRef (iw + shiftsV y) n) (^&(i + shiftsV y))) ∈ finalCtx Γ y
-instance subFPost_definable :
-    𝚫₁.Definable (fun v : Fin 10 → V ↦ SubFPost (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9)) := by
-  unfold SubFPost; definability
 
 /-- The elementary consequences of the cap conditions. -/
 lemma SubFPre.h8 {E Q n m w r i j iw Γ : V} (h : SubFPre E Q n m w r i j iw Γ) : (8 : V) ≤ E :=
@@ -12172,35 +11525,16 @@ lemma atom_off_bound' {x a b Q E : V} (h : x + 2 * (a + 1) + 2 * Q * (b + 1) + 1
     _ ≤ x + 2 * (a + 1) + 1 + 2 * Q * (b + 1) := le_self_add
     _ = x + 2 * (a + 1) + 2 * Q * (b + 1) + 1 := by ring
     _ ≤ E := h
-/-- The fvar witness bound at an offset `x + c` with `c ≤ 2|r|(Q + 1)`. -/
-lemma fvar_off_bound {x c Q l E : V} (h : x + 2 * l * (Q + 1) + 1 ≤ E) (hc : c ≤ 2 * l * (Q + 1)) : termLen LAct (^&(x + c) : V) ≤ E :=
-  termLen_fvar_le (le_trans (add_le_add (add_le_add (le_refl x) hc) (le_refl 1)) h)
-
 
 lemma two_le_two_mul_succ_succ (a Q : V) : (2 : V) ≤ 2 * (a + 1) * (Q + 1) + 1 :=
   le_trans le_self_add (add_le_add (le_trans (le_mul_of_one_le_right zero_le le_add_self) (le_mul_of_one_le_right zero_le le_add_self)) (le_refl 1))
 lemma fvar_le_of {x c l Q E : V} (h : x + 2 * l * (Q + 1) + 1 ≤ E) (hc : c ≤ 2 * l * (Q + 1)) : x + c + 1 ≤ E :=
   le_trans (add_le_add (add_le_add (le_refl x) hc) (le_refl 1)) h
 
-lemma ctag_sfRow {W : V} (hWp : W = certPieces) {c : V}
-    (hc : c = 157 ∨ c = 158 ∨ c = 159 ∨ c = 160 ∨ c = 161 ∨ c = 162 ∨ c = 163 ∨ c = 164) (ev : V) : sTag (mkStep W c ev) = 0 := by
-  rcases hc with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · exact ctag_substsRelCert hWp ev
-  · exact ctag_substsNRelCert hWp ev
-  · exact ctag_substsVerumCert hWp ev
-  · exact ctag_substsFalsumCert hWp ev
-  · exact ctag_substsAndCert hWp ev
-  · exact ctag_substsOrCert hWp ev
-  · exact ctag_substsAllCert hWp ev
-  · exact ctag_substsExsCert hWp ev
-
 /-- The hypotheses of the formula pass, packaged (keeps the motive's goal count within `definability`'s reach). -/
 def SubFHyp (Wd E Q n m w r i j iw Γ : V) : Prop :=
   SubFPre E Q n m w r i j iw Γ ∧ IsSemitermVec LAct n m w ∧
   DossF Wd Γ n r i ∧ DossF Wd Γ m (subst LAct w r) j ∧ DossV Wd Γ m n w n iw
-instance subFHyp_definable :
-    𝚫₁.Definable (fun v : Fin 11 → V ↦ SubFHyp (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10)) := by
-  unfold SubFHyp; definability
 
 set_option maxHeartbeats 16000000 in
 /-- **The formula pass is applicable and certifies `substFact &j' ⟨w⟩' &i'` at the moved offsets.** -/
@@ -13134,7 +12468,6 @@ theorem costSum_certSubst_le {tbl N B Wd W n m w iw r i j E Γ Q L : V} (htbl : 
 
 end subFOK
 
-
 /-! ## Part 6.6 — `certFree`: the free instance `free p = substs1 &0 (shift p)` as `certSubst` at `⟨&0⟩`
 
 `certFree W Wd p ip isp ifp` (`p` with one bound variable at `&ip`, `shift p` at `&isp`, `free p` at `&ifp`):
@@ -13176,10 +12509,6 @@ noncomputable def certFree (W Wd p ip isp ifp : V) : V :=
           mkStep W 165 ?[^&(ip + freeCw Wd + freeS W Wd p isp ifp), ^&(freeS W Wd p isp ifp + 1),
             ^&(isp + freeCw Wd + freeS W Wd p isp ifp), ^&(ifp + freeCw Wd + freeS W Wd p isp ifp)]]))
 
-instance freeWalk_definable : 𝚺₁.DefinableFunction (fun v : Fin 1 → V ↦ freeWalk (v 0)) := by
-  unfold freeWalk; definability
-instance freeCw_definable : 𝚺₁.DefinableFunction (fun v : Fin 1 → V ↦ freeCw (v 0)) := by
-  unfold freeCw; definability
 /- NOTE: no `DefinableFunction` instance for `freeS`/`certFree` — `certSubst` is 9-ary and the `definability`
 composition rules stop below that arity (the 6-ary-wrapper trap); a consumer that needs `certFree` inside a
 blueprint ∃-wraps `SubFGraph` (as `certSubstDef` does) instead of composing the function. -/

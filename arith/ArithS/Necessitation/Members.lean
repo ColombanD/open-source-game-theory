@@ -147,12 +147,6 @@ lemma memberListAux_succ (s i : V) :
     memberListAux s (i + 1) = if i ∈ s then appendV (memberListAux s i) ?[i] else memberListAux s i := by
   simp [memberListAux, MemberList.construction]
 
-lemma memberListAux_succ_of_mem {s i : V} (h : i ∈ s) :
-    memberListAux s (i + 1) = appendV (memberListAux s i) ?[i] := by simp [memberListAux_succ, h]
-
-lemma memberListAux_succ_of_not_mem {s i : V} (h : i ∉ s) :
-    memberListAux s (i + 1) = memberListAux s i := by simp [memberListAux_succ, h]
-
 noncomputable def memberListAuxDef : 𝚺₁.Semisentence 3 :=
   MemberList.blueprint.resultDef |>.rew (Rew.subst ![#0, #2, #1])
 
@@ -170,17 +164,6 @@ instance memberList_defined : 𝚺₁-Function₁ (memberList : V → V) via mem
 instance memberList_definable : 𝚺₁-Function₁ (memberList : V → V) := memberList_defined.to_definable
 
 /-! ### 2.1 Length, membership, ascent (by induction on the index) -/
-
-lemma len_memberListAux_le (s : V) : ∀ i, len (memberListAux s i) ≤ i := by
-  intro i
-  induction i using ISigma1.pi1_succ_induction with
-  | hP => definability
-  | zero => simp
-  | succ i ih =>
-    rw [memberListAux_succ]
-    split_ifs with h
-    · rw [len_appendV, len_vec1]; exact add_le_add ih le_rfl
-    · exact le_trans ih le_self_add
 
 /-- Every entry is a member below the index. -/
 lemma nth_memberListAux (s : V) :
@@ -275,8 +258,6 @@ lemma memberList_nodup {s a b : V} (ha : a < len (memberList s)) (hb : b < len (
   · exact hab
   · exact absurd (memberList_sorted hb ha hab) (by rw [h]; exact _root_.lt_irrefl _)
 
-lemma len_memberList_le (s : V) : len (memberList s) ≤ s := len_memberListAux_le s s
-
 /-- A strictly ascending list dominates the index: `m ≤ L.[m]`. -/
 lemma le_nth_of_sorted {L : V} (hL : ∀ a < len L, ∀ b < len L, a < b → L.[a] < L.[b]) :
     ∀ m < len L, m ≤ L.[m] := by
@@ -320,10 +301,6 @@ lemma setLenAux_eq_listSum_flenVec (s : V) :
 /-- **The distinctness lemma**: the formula lengths of the listed members sum exactly to `setLen s`. -/
 theorem setLen_eq_listSum_memberList (s : V) : setLen LAct s = listSum (flenVec (memberList s)) :=
   setLenAux_eq_listSum_flenVec s s
-
-/-- The form the chain's `sLemma` needs: the sum of the walked lengths is bounded by `setLen s`. -/
-theorem listSum_flenVec_memberList_le (s : V) : listSum (flenVec (memberList s)) ≤ setLen LAct s :=
-  le_of_eq (setLen_eq_listSum_memberList s).symm
 
 /-- A formula set has at most `setLen s` members. -/
 theorem len_memberList_le_setLen {s : V} (hs : IsFormulaSet LAct s) : len (memberList s) ≤ setLen LAct s := by

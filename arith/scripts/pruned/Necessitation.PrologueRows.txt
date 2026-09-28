@@ -1,0 +1,7 @@
+# DEAD declarations of ArithS.Necessitation.PrologueRows per the 2026-09-28 reachability audit (ARITH_DEAD_CODE_AUDIT.md),
+# minus the rfl-lemmas and the names still mentioned in code (simp sets, macros) that the closure cannot
+# see; dropped by scripts/prune.py at generation time. Delete a line to resurrect the declaration.
+isSemiformula_leOfEqP_as
+isSemiformula_setLenEmptyLe_as
+isSemiformula_setLenSingLe_as
+ptag_leOfEqP

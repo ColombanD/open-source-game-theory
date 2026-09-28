@@ -24,9 +24,21 @@ was split off into the hand-written `Necessitation/RowInstC.lean` on 2026-09-28.
 | `gen_proaxm.py` | `Necessitation/ProAxmRows.lean` (1) | inline | `python3 scripts/gen_proaxm.py` |
 | `gen_prologue.py` | `Necessitation/PrologueRows.lean` | inline | `python3 scripts/gen_prologue.py` |
 
+**Pruning (2026-09-28, Tier B of the dead-code audit).** Every generator passes its output through
+`prune.py::prune(text, module)`, which drops the declarations listed in `pruned/<module>.txt` — the DEAD set
+of `ARITH_DEAD_CODE_AUDIT.md` (unused library members and their rows: ~7 600 lines). The lists are the only
+thing that says a row is unused; to resurrect one, delete its line and regenerate. The row TABLES themselves
+are untouched (indices are append-only, and every `⟨m, <row>B, lib_<row>⟩` entry stays), so a consumer
+generator whose producer row was pruned (`gen_cert`/`gen_frag1`/`gen_frag2` read `inst_<row>` from
+`RowInstB.lean`/`RowInst.lean`/`Frag1Rows.lean` as TEXT) keeps the table entry, reads the arity from
+`<row>B` in `Lib/*.lean`, and skips only the applicability lemma — asserting that lemma is in its own
+pruned list, so a wrong list fails at generation, not at build time. **Regeneration order matters**:
+producers first (`gen_frag`, `gen_rowinst`), then `gen_prologue`, `gen_cert`, `gen_frag1`, `gen_frag2`,
+`gen_indrec`, `gen_numid`, `gen_proaxm` (the consumers read the producers' files from disk).
+
 The in-place writers must run from `arith/` (relative paths). Per-row proofs live in the tables as Lean
 strings; the design is `Research/Notes/M4_BOUNDED_HBL/DESIGN_fragments.md` §8.1. Verified in sync on
-2026-09-28 (`regen_all.sh`: all nine `ok`).
+2026-09-28 after the pruning (`regen_all.sh`: all nine `ok`).
 
 ## `DeadCode.lean` — the reachability audit
 

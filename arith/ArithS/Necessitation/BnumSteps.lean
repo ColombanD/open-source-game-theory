@@ -90,9 +90,6 @@ instance bnEvenTail_defined :
   fun v ↦ by
     simp [bnEvenTailDef, bnEvenTail, numeral_eq_natCast, mkStep_defined.iff, bnum.defined.iff, cTV.defined.iff,
       leFact_defined.iff, leCode_defined.iff, sLemma, cT]
-instance bnEvenTail_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 6 → V ↦ bnEvenTail (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) :=
-  bnEvenTail_defined.to_definable
 
 noncomputable def bnOddTopDef : 𝚺₁.Semisentence 6 := .mkSigma
   “y Wn T ce m j.
@@ -109,9 +106,6 @@ instance bnOddTop_defined :
   fun v ↦ by
     simp [bnOddTopDef, bnOddTop, numeral_eq_natCast, mkStep_defined.iff, bnum.defined.iff,
       leFact_defined.iff, leCode_defined.iff, sLemma]
-instance bnOddTop_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 5 → V ↦ bnOddTop (v 0) (v 1) (v 2) (v 3) (v 4)) :=
-  bnOddTop_defined.to_definable
 
 lemma len_bnEvenTail (Wn T c₁ c₂ m j : V) : len (bnEvenTail Wn T c₁ c₂ m j) = 6 := by
   simp [bnEvenTail]; norm_num
@@ -223,15 +217,6 @@ instance bnPackedP_defined : 𝚺₁-Relation (BnPackedP : V → V → Prop) via
     | exact Iff.rfl
     | (constructor <;> intro h <;> convert h using 2 <;> funext i <;> fin_cases i <;> rfl)
 instance bnPackedP_definable : 𝚺₁-Relation (BnPackedP : V → V → Prop) := bnPackedP_defined.to_definable
-
-noncomputable def bnGraphDef : 𝚺₁.Semisentence 8 := .mkSigma
-  “Wn Wd T c₁ c₂ k j y. ∃ q₁, !pairDef q₁ j y ∧ ∃ pr, !pairDef pr k q₁ ∧
-    ∃ p₄, !pairDef p₄ c₁ c₂ ∧ ∃ p₃, !pairDef p₃ T p₄ ∧ ∃ p₂, !pairDef p₂ Wd p₃ ∧ ∃ P, !pairDef P Wn p₂ ∧ !bnPackedPDef P pr”
-instance bnGraph_defined :
-    𝚺₁.Defined (fun v : Fin 8 → V ↦ BnGraph (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7)) bnGraphDef := .mk
-  fun v ↦ by simp [bnGraphDef, bnPackedP_defined.iff, BnGraph]
-instance bnGraph_definable :
-    𝚺₁.Definable (fun v : Fin 8 → V ↦ BnGraph (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7)) := bnGraph_defined.to_definable
 
 lemma BnGraph.case_iff {Wn Wd T c₁ c₂ k j y : V} :
     BnGraph Wn Wd T c₁ c₂ k j y ↔

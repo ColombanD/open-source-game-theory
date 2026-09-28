@@ -105,14 +105,6 @@ theorem eval_boxSentence_iff (σ : Sentence LAct) (S : Structure LAct V)
   rw [Semiformula.eval_lMap, hS]
   simp [(LenDerivable.defined (V := V) TAct).iff]
 
-theorem eval_boxSentence_iff_std (σ : Sentence LAct) (b : V) :
-    Semiformula.Eval (s := stdActS V) ![b] Empty.elim (boxClosed σ) ↔ LenDerivable TAct b (⌜σ⌝ : V) :=
-  eval_boxSentence_iff σ _ stdActS_lMap_emb b
-
-theorem eval_boxSentence_iff_swap (σ : Sentence LAct) (b : V) :
-    Semiformula.Eval (s := swapActS V) ![b] Empty.elim (boxClosed σ) ↔ LenDerivable TAct b (⌜σ⌝ : V) :=
-  eval_boxSentence_iff σ _ swapActS_lMap_emb b
-
 /-- The unary numeral term of `⌜σ⌝` (the closed-sentence twin of `Top.qNum`). -/
 noncomputable def qNumS (σ : Sentence LAct) : V := numeral (⌜σ⌝ : V)
 
@@ -180,9 +172,6 @@ theorem boxSentenceCode_nat (σ : Sentence LAct) (k : ℕ) :
     boxSentenceCode σ (k : V) = ⌜(boxClosed σ ⇜ ![Semiterm.lMap emb (bnumT k)] : Sentence LAct)⌝ :=
   quote_instB (boxClosed σ) k
 
-lemma isFormula_boxSentenceCode (σ : Sentence LAct) (b : V) : IsFormula LAct (boxSentenceCode σ b) := by
-  rw [boxSentenceCode_eq]; exact isFormula_lenDerFact (isSemiterm_bnum_LAct 0 b) (isSemiterm_qNumS σ)
-
 lemma shiftIterV_lenDerFact {a g : V} (ha : IsSemiterm LAct 0 a) (hg : IsSemiterm LAct 0 g) (c : V) :
     shiftIterV (lenDerFact a g) c = lenDerFact (termShiftIterV a c) (termShiftIterV g c) :=
   shiftIterV_fact2 isSemiformula_PlenDer shift_PlenDer ha hg c
@@ -220,11 +209,6 @@ theorem quote_row_lenDerCong :
   unfold lenDerCongB row_lenDerCong_as row_lenDerCong_c PlenDer PeqB
   all_goals row_shapeB
 
-lemma isSemiformula_lenDerCong_as : ∀ A ∈ row_lenDerCong_as, IsSemiformula LAct ((3 : ℕ) : V) A := by
-  unfold row_lenDerCong_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PlenDer _ (by rfl) (by row_entriesB),
-    List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB),
-    List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_lenDerCong_c : IsSemiformula LAct ((3 : ℕ) : V) row_lenDerCong_c := by
   unfold row_lenDerCong_c
   exact isSemiformula_substRow isSemiformula_PlenDer _ (by rfl) (by row_entriesB)

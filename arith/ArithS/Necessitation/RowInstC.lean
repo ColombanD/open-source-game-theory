@@ -69,18 +69,6 @@ example : (“y p. !(isSemiformula LAct).pi 1 p” : ArithmeticSemisentence 2) =
 noncomputable def row_isSemiformulaSubsts1C_as : List V := [subst LAct (listToVec [bv 3, bv 2]) PtPi, subst LAct (listToVec [cT 1, bv 1]) Ppi, subst LAct (listToVec [bv 0, bv 2, bv 1]) Psubsts1G]
 noncomputable def row_isSemiformulaSubsts1C_c : V := subst LAct (listToVec [bv 3, bv 0]) Psigma
 
-theorem quote_row_isSemiformulaSubsts1C : (⌜Semiformula.lMap emb isSemiformulaSubsts1CB⌝ : V) = impChain LAct row_isSemiformulaSubsts1C_as row_isSemiformulaSubsts1C_c := by
-  unfold isSemiformulaSubsts1CB row_isSemiformulaSubsts1C_as row_isSemiformulaSubsts1C_c Ppi Psigma Psubsts1G PtPi
-  rw [cT_one]
-  all_goals row_shape
-
-lemma isSemiformula_isSemiformulaSubsts1C_as : ∀ A ∈ row_isSemiformulaSubsts1C_as, IsSemiformula LAct ((4 : ℕ) : V) A := by
-  unfold row_isSemiformulaSubsts1C_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PtPi _ (by rfl) (by row_entries), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Ppi _ (by rfl) (by row_entries), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Psubsts1G _ (by rfl) (by row_entries), List.forall_mem_nil _⟩⟩⟩)
-lemma isSemiformula_isSemiformulaSubsts1C_c : IsSemiformula LAct ((4 : ℕ) : V) row_isSemiformulaSubsts1C_c := by
-  unfold row_isSemiformulaSubsts1C_c
-  exact isSemiformula_substRow isSemiformula_Psigma _ (by rfl) (by row_entries)
-
 /-- `isSemiformulaSubsts1C` at the witnesses `[wn, wt, wp, wy]` (the DSL variables right-to-left). -/
 lemma inst_isSemiformulaSubsts1C {wn wt wp wy : V} (hwn : IsSemiterm LAct 0 wn) (hwt : IsSemiterm LAct 0 wt) (hwp : IsSemiterm LAct 0 wp) (hwy : IsSemiterm LAct 0 wy) :
     row_isSemiformulaSubsts1C_as.map (instOuter LAct [wn, wt, wp, wy]) = [tPiFact wn wt, piFact (cT 1) wp, substs1Fact wy wt wp] ∧
@@ -97,18 +85,6 @@ lemma inst_isSemiformulaSubsts1C {wn wt wp wy : V} (hwn : IsSemiterm LAct 0 wn) 
 noncomputable def row_isFormulaFreeC_as : List V := [subst LAct (listToVec [cT 1, bv 1]) Ppi, subst LAct (listToVec [bv 0, bv 1]) PfreeG]
 noncomputable def row_isFormulaFreeC_c : V := subst LAct (listToVec [(𝟎 : V), bv 0]) Psigma
 
-theorem quote_row_isFormulaFreeC : (⌜Semiformula.lMap emb isFormulaFreeCB⌝ : V) = impChain LAct row_isFormulaFreeC_as row_isFormulaFreeC_c := by
-  unfold isFormulaFreeCB row_isFormulaFreeC_as row_isFormulaFreeC_c PfreeG Ppi Psigma
-  rw [cT_one]
-  all_goals row_shape
-
-lemma isSemiformula_isFormulaFreeC_as : ∀ A ∈ row_isFormulaFreeC_as, IsSemiformula LAct ((2 : ℕ) : V) A := by
-  unfold row_isFormulaFreeC_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Ppi _ (by rfl) (by row_entries), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PfreeG _ (by rfl) (by row_entries), List.forall_mem_nil _⟩⟩)
-lemma isSemiformula_isFormulaFreeC_c : IsSemiformula LAct ((2 : ℕ) : V) row_isFormulaFreeC_c := by
-  unfold row_isFormulaFreeC_c
-  exact isSemiformula_substRow isSemiformula_Psigma _ (by rfl) (by row_entries)
-
 /-- `isFormulaFreeC` at the witnesses `[wp, wy]` (the DSL variables right-to-left). -/
 lemma inst_isFormulaFreeC {wp wy : V} (hwp : IsSemiterm LAct 0 wp) (hwy : IsSemiterm LAct 0 wy) :
     row_isFormulaFreeC_as.map (instOuter LAct [wp, wy]) = [piFact (cT 1) wp, freeFact wy wp] ∧
@@ -122,59 +98,7 @@ lemma inst_isFormulaFreeC {wp wy : V} (hwp : IsSemiterm LAct 0 wp) (hwy : IsSemi
 
 /-! ### `piArityOneToC` — `“p. …”`, `m = 1` -/
 
-noncomputable def row_piArityOneToC_as : List V := [subst LAct (listToVec [(𝟏 : V), bv 0]) Ppi]
-noncomputable def row_piArityOneToC_c : V := subst LAct (listToVec [cT 1, bv 0]) Psigma
-
-theorem quote_row_piArityOneToC : (⌜Semiformula.lMap emb piArityOneToCB⌝ : V) = impChain LAct row_piArityOneToC_as row_piArityOneToC_c := by
-  unfold piArityOneToCB row_piArityOneToC_as row_piArityOneToC_c Ppi Psigma
-  rw [cT_one]
-  all_goals row_shape
-
-lemma isSemiformula_piArityOneToC_as : ∀ A ∈ row_piArityOneToC_as, IsSemiformula LAct ((1 : ℕ) : V) A := by
-  unfold row_piArityOneToC_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Ppi _ (by rfl) (by row_entries), List.forall_mem_nil _⟩)
-lemma isSemiformula_piArityOneToC_c : IsSemiformula LAct ((1 : ℕ) : V) row_piArityOneToC_c := by
-  unfold row_piArityOneToC_c
-  exact isSemiformula_substRow isSemiformula_Psigma _ (by rfl) (by row_entries)
-
-/-- `piArityOneToC` at the witness `[wp]`: `piFact 𝟏 wp` to `sigmaFact (cT 1) wp`. -/
-lemma inst_piArityOneToC {wp : V} (hwp : IsSemiterm LAct 0 wp) :
-    row_piArityOneToC_as.map (instOuter LAct [wp]) = [piFact (𝟏 : V) wp] ∧
-    instOuter LAct [wp] row_piArityOneToC_c = sigmaFact (cT 1) wp := by
-  have hes : ∀ e ∈ ([wp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwp, List.forall_mem_nil _⟩)
-  unfold row_piArityOneToC_as row_piArityOneToC_c
-  simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Ppi (by rfl) _ hes (by row_entries), instOuter_subst_listToVec _ isSemiformula_Psigma (by rfl) _ hes (by row_entries)]
-  all_goals try row_entries_simp
-  row_finish
-
 /-! ### `piArityCToOne` — `“p. …”`, `m = 1` -/
-
-noncomputable def row_piArityCToOne_as : List V := [subst LAct (listToVec [cT 1, bv 0]) Ppi]
-noncomputable def row_piArityCToOne_c : V := subst LAct (listToVec [(𝟏 : V), bv 0]) Psigma
-
-theorem quote_row_piArityCToOne : (⌜Semiformula.lMap emb piArityCToOneB⌝ : V) = impChain LAct row_piArityCToOne_as row_piArityCToOne_c := by
-  unfold piArityCToOneB row_piArityCToOne_as row_piArityCToOne_c Ppi Psigma
-  rw [cT_one]
-  all_goals row_shape
-
-lemma isSemiformula_piArityCToOne_as : ∀ A ∈ row_piArityCToOne_as, IsSemiformula LAct ((1 : ℕ) : V) A := by
-  unfold row_piArityCToOne_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Ppi _ (by rfl) (by row_entries), List.forall_mem_nil _⟩)
-lemma isSemiformula_piArityCToOne_c : IsSemiformula LAct ((1 : ℕ) : V) row_piArityCToOne_c := by
-  unfold row_piArityCToOne_c
-  exact isSemiformula_substRow isSemiformula_Psigma _ (by rfl) (by row_entries)
-
-/-- `piArityCToOne` at the witness `[wp]`: `piFact (cT 1) wp` to `sigmaFact 𝟏 wp`. -/
-lemma inst_piArityCToOne {wp : V} (hwp : IsSemiterm LAct 0 wp) :
-    row_piArityCToOne_as.map (instOuter LAct [wp]) = [piFact (cT 1) wp] ∧
-    instOuter LAct [wp] row_piArityCToOne_c = sigmaFact (𝟏 : V) wp := by
-  have hes : ∀ e ∈ ([wp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwp, List.forall_mem_nil _⟩)
-  unfold row_piArityCToOne_as row_piArityCToOne_c
-  simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Ppi (by rfl) _ hes (by row_entries), instOuter_subst_listToVec _ isSemiformula_Psigma (by rfl) _ hes (by row_entries)]
-  all_goals try row_entries_simp
-  row_finish
 
 end rows
 

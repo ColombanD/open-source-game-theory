@@ -229,9 +229,6 @@ instance substNumeralParamsA.defined :
     𝚺₁-Function₂ (substNumeralParamsA : V → V → V) via ssnumParamsA := .mk fun v ↦ by
   simp [ssnumParamsA, substNumeralParamsA]
 
-instance substNumeralParamsA.definable : 𝚺₁-Function₂ (substNumeralParamsA : V → V → V) :=
-  substNumeralParamsA.defined.to_definable
-
 namespace Diag
 
 /-- The `n`-ary form of `ArithS.term_emb_lMap_emb` (`ArithS.Template`, stated at `n = 0`). -/

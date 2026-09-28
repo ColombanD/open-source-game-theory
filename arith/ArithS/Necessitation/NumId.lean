@@ -442,11 +442,6 @@ lemma mem_final0 {Γ S x : V} (hS : NoDrop' S) (h0 : shiftsV S = 0) (hx : x ∈ 
 lemma NumInv.mem {tbl E Γ P F x : V} {C : ℕ} (h : NumInv tbl E Γ C P F) (hx : x ∈ Γ) : x ∈ finalCtx Γ P :=
   mem_final0 h.2.1 h.2.2.1 hx
 
-lemma NumInv.dossT {tbl E Γ P F W n t i : V} {C : ℕ} (h : NumInv tbl E Γ C P F) (hD : DossT W Γ n t i) :
-    DossT W (finalCtx Γ P) n t i := by
-  have := dossT_transport' h.2.1 hD
-  rwa [h.2.2.1, add_zero] at this
-
 lemma NumInv.dossV {tbl E Γ P F W n k v j i : V} {C : ℕ} (h : NumInv tbl E Γ C P F) (hD : DossV W Γ n k v j i) :
     DossV W (finalCtx Γ P) n k v j i := by
   have := dossV_transport' h.2.1 hD
@@ -612,8 +607,6 @@ lemma cap_vRef {b d : ℕ} {c i E : V} (hc : c + 1 ≤ 2 * (d : V)) (hab : 1 + 2
     _ ≤ E := this
 
 lemma one_add_ne_zero (j : V) : j + 1 ≠ 0 := ne_of_gt (lt_of_lt_of_le _root_.zero_lt_one le_add_self)
-
-lemma le_nat_cast_of_le {a b : ℕ} (h : a ≤ b) : (a : V) ≤ (b : V) := (Nat.cast_le (α := V)).mpr h
 
 /-- The step of the vector invariant: the entry `v.[a]` (`a + (j+1) = k`) at `&(i+1)` (the term
 invariant), the shorter suffix at `&(i+1+ct)` (the vector invariant), the closed fact

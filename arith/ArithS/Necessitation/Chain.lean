@@ -115,7 +115,6 @@ def tailIterDef : 𝚺₁.Semisentence 3 := TailIter.blueprint.resultDef |>.rew 
 
 instance tailIter_defined : 𝚺₁-Function₂ (tailIter : V → V → V) via tailIterDef := .mk
   fun v ↦ by simp [TailIter.construction.result_defined_iff, tailIterDef]; rfl
-instance tailIter_definable : 𝚺₁-Function₂ (tailIter : V → V → V) := tailIter_defined.to_definable
 
 lemma tailIter_adjoin_natCast (x v : V) : ∀ k : ℕ, tailIter (x ∷ v) ((k : V) + 1) = tailIter v k
   | 0 => by rw [Nat.cast_zero, zero_add, ← zero_add 1, tailIter_succ, tailIter_zero, sndIdx_adjoin, tailIter_zero]
@@ -191,12 +190,10 @@ def qqExssDef : 𝚺₁.Semisentence 3 := QqExss.blueprint.resultDef |>.rew (Rew
 
 instance qqExss_defined : 𝚺₁-Function₂ (qqExss : V → V → V) via qqExssDef := .mk
   fun v ↦ by simp [QqExss.construction.result_defined_iff, qqExssDef]; rfl
-instance qqExss_definable : 𝚺₁-Function₂ (qqExss : V → V → V) := qqExss_defined.to_definable
 
 lemma qqExss_natCast (q : V) : ∀ n : ℕ, qqExss q (n : V) = exsIter n q
   | 0 => by simp
   | n + 1 => by rw [Nat.cast_succ, qqExss_succ, qqExss_natCast q n, exsIter_succ]
-
 
 /-! ### A.3 Horn matrices, instantiation maps, suffix chains on vectors -/
 
@@ -265,7 +262,6 @@ noncomputable def mapSubstDef : 𝚺₁.Semisentence 3 :=
 
 instance mapSubst_defined : 𝚺₁-Function₂[V] mapSubst L via mapSubstDef L := .mk
   fun v ↦ by simp [(MapSubst.construction L).eval_resultDef, mapSubstDef]; rfl
-instance mapSubst_definable : 𝚺₁-Function₂[V] mapSubst L := mapSubst_defined.to_definable
 
 lemma mapSubst_vecOf (w : V) : ∀ (as : List V), mapSubst L w (vecOf as) = vecOf (as.map (subst L w))
   | [] => by simp
@@ -299,7 +295,6 @@ variable (L) in
 noncomputable def mapNegDef : 𝚺₁.Semisentence 2 := (MapNeg.blueprint L).resultDef
 
 instance mapNeg_defined : 𝚺₁-Function₁[V] mapNeg L via mapNegDef L := (MapNeg.construction L).result_defined
-instance mapNeg_definable : 𝚺₁-Function₁[V] mapNeg L := mapNeg_defined.to_definable
 
 lemma mapNeg_vecOf : ∀ (as : List V), mapNeg L (vecOf as) = vecOf (as.map (neg L))
   | [] => by simp
@@ -336,7 +331,6 @@ noncomputable def sufChainsDef : 𝚺₁.Semisentence 3 := (SufChains.blueprint 
 
 instance sufChains_defined : 𝚺₁-Function₂[V] sufChains L via sufChainsDef L := .mk
   fun v ↦ by simp [(SufChains.construction L).eval_resultDef, sufChainsDef]; rfl
-instance sufChains_definable : 𝚺₁-Function₂[V] sufChains L := sufChains_defined.to_definable
 
 lemma sufChains_vecOf : ∀ (as : List V) (c : V),
     sufChains L (vecOf as) c = vecOf ((List.range (as.length + 1)).map fun i ↦ impChain L (as.drop i) c)
@@ -344,11 +338,6 @@ lemma sufChains_vecOf : ∀ (as : List V) (c : V),
   | a :: as, c => by
     rw [vecOf_cons, sufChains_adjoin, sufChains_vecOf as c]
     simp [List.range_succ_eq_map, Function.comp_def]
-
-lemma nth_sufChains_vecOf (as : List V) (c : V) (i : ℕ) (hi : i ≤ as.length) :
-    (sufChains L (vecOf as) c).[(i : V)] = impChain L (as.drop i) c := by
-  rw [sufChains_vecOf, nth_vecOf _ i (by simpa using Nat.lt_succ_of_le hi)]
-  simp
 
 /-! ### A.4 Context vectors and level formulas -/
 
@@ -378,7 +367,6 @@ def ctxChainDef : 𝚺₁.Semisentence 4 := CtxChain.blueprint.resultDef |>.rew 
 
 instance ctxChain_defined : 𝚺₁-Function₃ (ctxChain : V → V → V → V) via ctxChainDef := .mk
   fun v ↦ by simp [CtxChain.construction.result_defined_iff, ctxChainDef]; rfl
-instance ctxChain_definable : 𝚺₁-Function₃ (ctxChain : V → V → V → V) := ctxChain_defined.to_definable
 
 /-- The Lean-level context sequence: `ctxL fv S 0 = S`, `ctxL fv S (i + 1) = insert fv.[i] (ctxL fv S i)`. -/
 noncomputable def ctxL (fv S : V) : ℕ → V
@@ -460,13 +448,8 @@ noncomputable def levelFDef : 𝚺₁.Semisentence 4 :=
 
 instance levelF_defined : 𝚺₁-Function₃[V] levelF L via levelFDef L := .mk
   fun v ↦ by simp [(LevelF.construction L).result_defined_iff, levelFDef]; rfl
-instance levelF_definable : 𝚺₁-Function₃[V] levelF L := levelF_defined.to_definable
 
 @[simp] lemma levelFormula_zero (w q : V) : levelFormula L w q 0 = subst L w q := by simp [levelFormula, levelBody]
-
-lemma len_levelF_natCast (w q : V) : ∀ m : ℕ, len (levelF L w q (m : V)) = (m : V) + 1
-  | 0 => by simp
-  | m + 1 => by rw [Nat.cast_succ, levelF_succ, len_adjoin, len_levelF_natCast w q m]
 
 lemma nth_levelF_natCast (w q : V) : ∀ (m i : ℕ), i ≤ m →
     (levelF L w q (m : V)).[(i : V)] = levelFormula L w q ((m - i : ℕ) : V)
@@ -598,7 +581,6 @@ theorem instOuterAt_eq_subst (k : ℕ) : ∀ (es : List V) {q : V},
       isSemitermVec_qVecIter hW
     rw [substs_substs hq' (by simpa [Nat.cast_add] using hw) hv,
       termSubstVec_qVecIter_single hW he k, concat_vecOf, ← List.reverse_cons]
-
 
 /-! ### A.6 The `exsIntro` chain and the Horn closing chain on vectors -/
 
@@ -1026,7 +1008,6 @@ noncomputable def goalFactDef : 𝚺₁.Semisentence 3 := .mkSigma
   “y s u. ∃ b, !goalBodyDef b s u ∧ ∃ e1, !qqExsDef e1 b ∧ !qqExsDef y e1”
 instance goalFact_defined : 𝚺₁-Function₂ (goalFact : V → V → V) via goalFactDef := .mk
   fun v ↦ by simp [goalFactDef, goalBody_defined.iff, goalFact]
-instance goalFact_definable : 𝚺₁-Function₂ (goalFact : V → V → V) := goalFact_defined.to_definable
 
 noncomputable def goalInstDef : 𝚺₁.Semisentence 5 := .mkSigma
   “y e n s u. ∃ f1, !derFactDef f1 e ∧ ∃ f2, !fstIdxFactDef f2 s e ∧ ∃ f3, !dlenFactDef f3 e n ∧
@@ -1306,7 +1287,6 @@ theorem dlen_goalLeafCode_le {E Γ e n s u : V} (hE : 1 ≤ E)
         exact le_trans hcost (by gcongr)
     _ = _ := by ring
 
-
 /-- `{A} ⊆ insert A Γ`. -/
 lemma singleton_subset_insert (A Γ : V) : insert A (0 : V) ⊆ insert A Γ := by
   intro x hx
@@ -1337,7 +1317,6 @@ theorem dlen_lemmaCut_le {Γ A dA e : V} (hΓ : IsFormulaSet LAct Γ) (hA : IsFo
         have : dlen TAct e + (dlen TAct dA + 2 * setLen LAct Γ + 2 * formulaLen LAct A + 2) =
           (setLen LAct Γ + (setLen LAct Γ + formulaLen LAct A + dlen TAct dA + 1) + dlen TAct e + 1) + formulaLen LAct A := by ring
         rw [this]; exact le_self_add
-
 
 end partC
 
@@ -1386,11 +1365,9 @@ def TableOK (tbl N : V) : Prop :=
 
 /-- The step codes. -/
 noncomputable def sUseHorn (i ev as c : V) : V := ⟪0, i, ev, as, c⟫
-noncomputable def sUseHornAnd (i ev as c₁ c₂ : V) : V := ⟪1, i, ev, as, c₁, c₂⟫
 noncomputable def sIntroFact (i ev as R : V) : V := ⟪2, i, ev, as, R⟫
 noncomputable def sElimExs (P : V) : V := ⟪3, P⟫
 noncomputable def sSplit (p q : V) : V := ⟪4, p, q⟫
-noncomputable def sWkDrop (Γ' : V) : V := ⟪5, Γ'⟫
 /-- Part C: the goal-closing cut `⟪6, e, n, s, ū⟫` and the lemma cut `⟪7, A, dA⟫`. -/
 noncomputable def sGoal (e n s u : V) : V := ⟪6, e, n, s, u⟫
 noncomputable def sLemma (A dA : V) : V := ⟪7, A, dA⟫
@@ -1417,27 +1394,13 @@ noncomputable def sLemD (s : V) : V := π₂ (π₂ s)
 @[simp] lemma sEv_sUseHorn (i ev as c : V) : sEv (sUseHorn i ev as c) = ev := by simp [sEv, sUseHorn]
 @[simp] lemma sAs_sUseHorn (i ev as c : V) : sAs (sUseHorn i ev as c) = as := by simp [sAs, sUseHorn]
 @[simp] lemma sC_sUseHorn (i ev as c : V) : sC (sUseHorn i ev as c) = c := by simp [sC, sUseHorn]
-@[simp] lemma sTag_sUseHornAnd (i ev as c₁ c₂ : V) : sTag (sUseHornAnd i ev as c₁ c₂) = 1 := by
-  simp [sTag, sUseHornAnd]
-@[simp] lemma sRow_sUseHornAnd (i ev as c₁ c₂ : V) : sRow (sUseHornAnd i ev as c₁ c₂) = i := by
-  simp [sRow, sUseHornAnd]
-@[simp] lemma sEv_sUseHornAnd (i ev as c₁ c₂ : V) : sEv (sUseHornAnd i ev as c₁ c₂) = ev := by
-  simp [sEv, sUseHornAnd]
-@[simp] lemma sAs_sUseHornAnd (i ev as c₁ c₂ : V) : sAs (sUseHornAnd i ev as c₁ c₂) = as := by
-  simp [sAs, sUseHornAnd]
-@[simp] lemma sC_sUseHornAnd (i ev as c₁ c₂ : V) : sC (sUseHornAnd i ev as c₁ c₂) = ⟪c₁, c₂⟫ := by
-  simp [sC, sUseHornAnd]
 @[simp] lemma sTag_sIntroFact (i ev as R : V) : sTag (sIntroFact i ev as R) = 2 := by simp [sTag, sIntroFact]
 @[simp] lemma sRow_sIntroFact (i ev as R : V) : sRow (sIntroFact i ev as R) = i := by simp [sRow, sIntroFact]
 @[simp] lemma sEv_sIntroFact (i ev as R : V) : sEv (sIntroFact i ev as R) = ev := by simp [sEv, sIntroFact]
 @[simp] lemma sAs_sIntroFact (i ev as R : V) : sAs (sIntroFact i ev as R) = as := by simp [sAs, sIntroFact]
 @[simp] lemma sC_sIntroFact (i ev as R : V) : sC (sIntroFact i ev as R) = R := by simp [sC, sIntroFact]
 @[simp] lemma sTag_sElimExs (P : V) : sTag (sElimExs P) = 3 := by simp [sTag, sElimExs]
-@[simp] lemma pi₂_sElimExs (P : V) : π₂ (sElimExs P) = P := by simp [sElimExs]
 @[simp] lemma sTag_sSplit (p q : V) : sTag (sSplit p q) = 4 := by simp [sTag, sSplit]
-@[simp] lemma pi₂_sSplit (p q : V) : π₂ (sSplit p q) = ⟪p, q⟫ := by simp [sSplit]
-@[simp] lemma sTag_sWkDrop (Γ' : V) : sTag (sWkDrop Γ') = 5 := by simp [sTag, sWkDrop]
-@[simp] lemma pi₂_sWkDrop (Γ' : V) : π₂ (sWkDrop Γ') = Γ' := by simp [sWkDrop]
 @[simp] lemma sTag_sGoal (e n s u : V) : sTag (sGoal e n s u) = 6 := by simp [sTag, sGoal]
 @[simp] lemma sGoalE_sGoal (e n s u : V) : sGoalE (sGoal e n s u) = e := by simp [sGoalE, sGoal]
 @[simp] lemma sGoalN_sGoal (e n s u : V) : sGoalN (sGoal e n s u) = n := by simp [sGoalN, sGoal]
@@ -1497,8 +1460,6 @@ instance applyStep_defined : 𝚺₁-Function₄ (applyStep : V → V → V → 
     · simp [h7]
     · simp [h0, h1, h2, h3, h4, h6, h7]
 
-instance applyStep_definable : 𝚺₁-Function₄ (applyStep : V → V → V → V → V) := applyStep_defined.to_definable
-
 /-- **The context after a step** — the sequent the continuation must derive (the `hd` of the
 corresponding `_proof` theorem of `Steps.lean`). -/
 noncomputable def ctxAfter (Γ s : V) : V :=
@@ -1552,8 +1513,6 @@ instance ctxAfter_defined : 𝚺₁-Function₂ (ctxAfter : V → V → V) via c
     by_cases h7 : π₁ (v 2) = 7
     · simp [h7]
     · simp [h0, h1, h2, h3, h4, h6, h7]
-
-instance ctxAfter_definable : 𝚺₁-Function₂ (ctxAfter : V → V → V) := ctxAfter_defined.to_definable
 
 /-- The cost of a Horn use (`dlen_useHornCode_le` with `F := B·E` and `dlen dΛ ≤ N`):
 `N + (m+3)G + (m+1)²(BE + m) + B + mE + 2m + 3 + (2j+1)(G + (j+1)BE + 1)`. -/
@@ -1644,8 +1603,6 @@ instance stepCost_defined : 𝚺₁-Function₄ (stepCost : V → V → V → V 
     by_cases h7 : π₁ (v 4) = 7
     · simp [h7]
     · simp [h0, h1, h2, h3, h4, h6, h7]
-
-instance stepCost_definable : 𝚺₁-Function₄ (stepCost : V → V → V → V → V) := stepCost_defined.to_definable
 
 /-- The common hypotheses of the three Horn tags: a row index in range whose arity is the
 witness count, both vectors of length `≤ M` (the standardness cap that lets the list theorems
@@ -1816,13 +1773,6 @@ instance chainAux_defined : 𝚺₁-Function₅ (chainAux : V → V → V → V 
 instance chainAux_definable : 𝚺₁.DefinableFunction₅ (chainAux : V → V → V → V → V → V) :=
   chainAux_defined.to_definable
 
-noncomputable def chainCodeDef : 𝚺₁.Semisentence 5 := .mkSigma
-  “y tbl Γ₀ S d. ∃ C, !ctxVecDef C Γ₀ S ∧ ∃ n, !lenDef n S ∧ !chainAuxDef y tbl C S d n”
-
-instance chainCode_defined : 𝚺₁-Function₄ (chainCode : V → V → V → V → V) via chainCodeDef := .mk
-  fun v ↦ by simp [chainCodeDef, ctxVec_defined.iff, chainAux_defined.iff, chainCode]
-instance chainCode_definable : 𝚺₁-Function₄ (chainCode : V → V → V → V → V) := chainCode_defined.to_definable
-
 namespace CostSum
 
 noncomputable def blueprint : PR.Blueprint 4 where
@@ -1856,13 +1806,6 @@ instance costAux_defined : 𝚺₁-Function₅ (costAux : V → V → V → V �
   fun v ↦ by simp [CostSum.construction.result_defined_iff, costAuxDef]; rfl
 instance costAux_definable : 𝚺₁.DefinableFunction₅ (costAux : V → V → V → V → V → V) :=
   costAux_defined.to_definable
-
-noncomputable def costSumDef : 𝚺₁.Semisentence 5 := .mkSigma
-  “y N E Γ₀ S. ∃ C, !ctxVecDef C Γ₀ S ∧ ∃ n, !lenDef n S ∧ !costAuxDef y N E C S n”
-
-instance costSum_defined : 𝚺₁-Function₄ (costSum : V → V → V → V → V) via costSumDef := .mk
-  fun v ↦ by simp [costSumDef, ctxVec_defined.iff, costAux_defined.iff, costSum]
-instance costSum_definable : 𝚺₁-Function₄ (costSum : V → V → V → V → V) := costSum_defined.to_definable
 
 end chain
 

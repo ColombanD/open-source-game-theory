@@ -51,11 +51,6 @@ def ppairDef : 𝚺₀.Semisentence 3 := .mkSigma “z x y. z = (x + y) * (x + y
 instance ppair.defined : 𝚺₀-Function₂[V] ppair via ppairDef := .mk fun v ↦ by
   simp [ppairDef, ppair]
 
-instance ppair.definable : 𝚺₀-Function₂[V] ppair := ppair.defined.to_definable
-
-instance ppair.definable' (Γ m) : Γ-[m]-Function₂[V] ppair :=
-  HierarchySymbol.Definable.of_zero ppair.definable
-
 @[simp] lemma le_ppair_left (x y : V) : x ≤ ppair x y :=
   le_trans le_self_add (le_trans (le_mul_self _) le_self_add)
 
@@ -310,11 +305,6 @@ lemma lt_and_eq_succ_iff {a y : V} : (a < y ∧ y = a + 1) ↔ y = a + 1 :=
 
 instance IsShape.defined : 𝚺₀-Predicate[V] IsShape via isShape := .mk fun v ↦ by
   simp [isShape, isShape_iff, pSelfGraph, pOppGraph, pSelf, pOpp, lt_and_eq_succ_iff]
-
-instance IsShape.definable : 𝚺₀-Predicate[V] IsShape := IsShape.defined.to_definable
-
-instance IsShape.definable' (Γ m) : Γ-[m]-Predicate[V] IsShape :=
-  HierarchySymbol.Definable.of_zero IsShape.definable
 
 /-! ### Re-valuing every action of a program: a fixpoint on pairs `⟪x, y⟫` with parameters `u w`
 

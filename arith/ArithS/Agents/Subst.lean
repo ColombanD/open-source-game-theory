@@ -445,12 +445,6 @@ instance gsubst.defined : 𝚺₁-Function₃ (gsubst : V → V → V → V) via
   · simp [h6, isSemiformula_seven_of_six h6, gsubst]
   · by_cases h7 : IsSemiformula LAct 7 (v 3) <;> simp [h6, h7, gsubst]
 
-instance gsubst.definable : 𝚺₁-Function₃ (gsubst : V → V → V → V) := gsubst.defined.to_definable
-
-instance gsubst.definable' : Γ-[m + 1]-Function₃ (gsubst : V → V → V → V) :=
-  gsubst.definable.of_sigmaOne
-
-
 /-! ### `relabelTemplate` commutes with substitution
 
 For `u, w ∈ {0, 1}` (the only re-valuations τ uses), re-valuing the action constants of an
@@ -767,7 +761,6 @@ theorem relabelTemplate_gsubst (me opp g : V) :
       rw [relabelTemplate_subst isAct_one isAct_zero h7 (descVecSlot_semitermVec me opp),
         termRelabelVec_descVecSlot]
     · rw [gsubst_of_not h7, gsubst_of_not (fun h ↦ h7 (isSemiformula_relabelTemplate_swap_iff.mp h))]
-
 
 /-! ### `psubst`: a fixpoint on pairs `⟪x, y⟫` with parameters `me opp`
 

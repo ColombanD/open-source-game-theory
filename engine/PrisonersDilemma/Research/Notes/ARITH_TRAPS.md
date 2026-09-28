@@ -111,3 +111,12 @@ an agent-hour or more. Add to it when you lose one. Grouped by where it bites.*
   its `.head`, regenerate, run `arith/scripts/regen_all.sh` (diffs all nine against the tree), rebuild,
   re-check the census. Hand-written additions go in a SEPARATE module (`RowInstC.lean` is the precedent —
   the one drift found, 2026-09-28, was 154 lines appended after generation).
+* The generated tables are PRUNED at generation time (`scripts/prune.py`, lists in `scripts/pruned/`, the
+  dead set of `ARITH_DEAD_CODE_AUDIT.md`). A row missing from a table is not a generator bug: check the
+  list first. Consumers (`gen_cert`, `gen_frag1`, `gen_frag2`, `gen_prologue`, `gen_indrec`) read the
+  producers' `.lean` files as TEXT to copy `inst_<row>` statements, so regenerate producers
+  (`gen_frag`, `gen_rowinst`) BEFORE consumers; a pruned producer row keeps its table entry (indices are
+  append-only) and drops only the consumer's applicability lemma, with an assertion that it is pruned too.
+* `ConstantInfo.value?` returns `none` for THEOREMS unless `(allowOpaque := true)` — a reachability
+  script that forgets it sees only definition bodies and reports most of the library dead (the first
+  audit run: 57 %, all false). Cross-check any "dead" verdict textually before believing it.

@@ -23,6 +23,9 @@ The one optional argument restricts the generation to a comma-separated list of 
 optionally sliced `group@start-end` (row positions inside the group, end exclusive).
 """
 import sys
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+from prune import prune  # drops the audit's DEAD declarations (scripts/pruned/<module>.txt)
 
 # ----------------------------------------------------------------------------- predicates
 # key -> dict(dsl: args -> DSL atom text, sem: Lean semisentence (for the P code), ar, P, F, args,
@@ -1173,7 +1176,7 @@ gen_rowinstb()
 import os
 HERE = os.path.dirname(os.path.abspath(__file__))
 fh = open(os.path.join(HERE, 'Frag.lean.head')).read().replace('<<TABLE>>', table())
-open(sys.argv[1], 'w').write(fh + '\n'.join(frag) + '\n')
+open(sys.argv[1], 'w').write(prune(fh + '\n'.join(frag) + '\n', 'Necessitation.Lib.Frag'))
 rh = open(os.path.join(HERE, 'RowInstB.lean.head')).read()
-open(sys.argv[2], 'w').write(rh + '\n'.join(out) + '\nend ArithS\n')
+open(sys.argv[2], 'w').write(prune(rh + '\n'.join(out) + '\nend ArithS\n', 'Necessitation.RowInstB'))
 print('rows:', len(selected()), 'of', len(ROWS))

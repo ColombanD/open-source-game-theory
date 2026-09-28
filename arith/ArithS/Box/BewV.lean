@@ -34,11 +34,6 @@ instance LenProvableV.defined : 𝚫₁-Relation[V] (LenProvableV T) via lenProv
       simp [lenProvableV, HierarchySymbol.Semiformula.val_sigma, fbound_defined.iff,
         (Proof.defined (T := T)).df, dlen_defined.iff, LenProvableV]⟩
 
-instance LenProvableV.definable : 𝚫₁-Relation[V] (LenProvableV T) := (LenProvableV.defined T).to_definable
-
-instance LenProvableV.definable' : Γ-[m + 1]-Relation[V] (LenProvableV T) :=
-  (LenProvableV.definable T).of_deltaOne
-
 /-- At a meta budget, `LenProvableV` is `LenProvable fbound`. -/
 lemma lenProvableV_numeral (k : ℕ) (φ : V) :
     LenProvableV T (ORingStructure.numeral k) φ ↔ LenProvable (fbound : V → V) k T φ := Iff.rfl

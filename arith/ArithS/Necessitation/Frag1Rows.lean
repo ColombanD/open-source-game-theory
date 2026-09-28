@@ -47,17 +47,8 @@ theorem quote_row_totAxL : (⌜Semiformula.lMap emb totAxLB⌝ : V) = impChain L
   unfold totAxLB row_totAxL_as row_totAxL_c row_totAxL_R row_totAxL_body PaxL
   all_goals row_shapeB
 
-lemma isSemiformula_totAxL_as : ∀ A ∈ row_totAxL_as, IsSemiformula LAct ((2 : ℕ) : V) A := by
-  unfold row_totAxL_as
-  exact (List.forall_mem_nil _)
-lemma isSemiformula_totAxL_c : IsSemiformula LAct ((2 : ℕ) : V) row_totAxL_c := by
-  unfold row_totAxL_c row_totAxL_R row_totAxL_body
-  exact isSemiformula_exs_cast (isSemiformula_substRow isSemiformula_PaxL _ (by rfl) (by row_entriesB))
 lemma isSemiformula_totAxL_R : IsSemiformula LAct ((3 : ℕ) : V) row_totAxL_R := by
   unfold row_totAxL_R row_totAxL_body
-  exact isSemiformula_substRow isSemiformula_PaxL _ (by rfl) (by row_entriesB)
-lemma isSemiformula_totAxL_body : IsSemiformula LAct ((3 : ℕ) : V) row_totAxL_body := by
-  unfold row_totAxL_body
   exact isSemiformula_substRow isSemiformula_PaxL _ (by rfl) (by row_entriesB)
 lemma row_totAxL_R_eq : (row_totAxL_R : V) = exsIter 0 row_totAxL_body := rfl
 
@@ -87,17 +78,8 @@ theorem quote_row_totVerumIntro : (⌜Semiformula.lMap emb totVerumIntroB⌝ : V
   unfold totVerumIntroB row_totVerumIntro_as row_totVerumIntro_c row_totVerumIntro_R row_totVerumIntro_body PverumIntro
   all_goals row_shapeB
 
-lemma isSemiformula_totVerumIntro_as : ∀ A ∈ row_totVerumIntro_as, IsSemiformula LAct ((1 : ℕ) : V) A := by
-  unfold row_totVerumIntro_as
-  exact (List.forall_mem_nil _)
-lemma isSemiformula_totVerumIntro_c : IsSemiformula LAct ((1 : ℕ) : V) row_totVerumIntro_c := by
-  unfold row_totVerumIntro_c row_totVerumIntro_R row_totVerumIntro_body
-  exact isSemiformula_exs_cast (isSemiformula_substRow isSemiformula_PverumIntro _ (by rfl) (by row_entriesB))
 lemma isSemiformula_totVerumIntro_R : IsSemiformula LAct ((2 : ℕ) : V) row_totVerumIntro_R := by
   unfold row_totVerumIntro_R row_totVerumIntro_body
-  exact isSemiformula_substRow isSemiformula_PverumIntro _ (by rfl) (by row_entriesB)
-lemma isSemiformula_totVerumIntro_body : IsSemiformula LAct ((2 : ℕ) : V) row_totVerumIntro_body := by
-  unfold row_totVerumIntro_body
   exact isSemiformula_substRow isSemiformula_PverumIntro _ (by rfl) (by row_entriesB)
 lemma row_totVerumIntro_R_eq : (row_totVerumIntro_R : V) = exsIter 0 row_totVerumIntro_body := rfl
 
@@ -127,17 +109,8 @@ theorem quote_row_totAndIntro : (⌜Semiformula.lMap emb totAndIntroB⌝ : V) = 
   unfold totAndIntroB row_totAndIntro_as row_totAndIntro_c row_totAndIntro_R row_totAndIntro_body PandIntro
   all_goals row_shapeB
 
-lemma isSemiformula_totAndIntro_as : ∀ A ∈ row_totAndIntro_as, IsSemiformula LAct ((5 : ℕ) : V) A := by
-  unfold row_totAndIntro_as
-  exact (List.forall_mem_nil _)
-lemma isSemiformula_totAndIntro_c : IsSemiformula LAct ((5 : ℕ) : V) row_totAndIntro_c := by
-  unfold row_totAndIntro_c row_totAndIntro_R row_totAndIntro_body
-  exact isSemiformula_exs_cast (isSemiformula_substRow isSemiformula_PandIntro _ (by rfl) (by row_entriesB))
 lemma isSemiformula_totAndIntro_R : IsSemiformula LAct ((6 : ℕ) : V) row_totAndIntro_R := by
   unfold row_totAndIntro_R row_totAndIntro_body
-  exact isSemiformula_substRow isSemiformula_PandIntro _ (by rfl) (by row_entriesB)
-lemma isSemiformula_totAndIntro_body : IsSemiformula LAct ((6 : ℕ) : V) row_totAndIntro_body := by
-  unfold row_totAndIntro_body
   exact isSemiformula_substRow isSemiformula_PandIntro _ (by rfl) (by row_entriesB)
 lemma row_totAndIntro_R_eq : (row_totAndIntro_R : V) = exsIter 0 row_totAndIntro_body := rfl
 
@@ -167,17 +140,8 @@ theorem quote_row_totOrIntro : (⌜Semiformula.lMap emb totOrIntroB⌝ : V) = im
   unfold totOrIntroB row_totOrIntro_as row_totOrIntro_c row_totOrIntro_R row_totOrIntro_body PorIntro
   all_goals row_shapeB
 
-lemma isSemiformula_totOrIntro_as : ∀ A ∈ row_totOrIntro_as, IsSemiformula LAct ((4 : ℕ) : V) A := by
-  unfold row_totOrIntro_as
-  exact (List.forall_mem_nil _)
-lemma isSemiformula_totOrIntro_c : IsSemiformula LAct ((4 : ℕ) : V) row_totOrIntro_c := by
-  unfold row_totOrIntro_c row_totOrIntro_R row_totOrIntro_body
-  exact isSemiformula_exs_cast (isSemiformula_substRow isSemiformula_PorIntro _ (by rfl) (by row_entriesB))
 lemma isSemiformula_totOrIntro_R : IsSemiformula LAct ((5 : ℕ) : V) row_totOrIntro_R := by
   unfold row_totOrIntro_R row_totOrIntro_body
-  exact isSemiformula_substRow isSemiformula_PorIntro _ (by rfl) (by row_entriesB)
-lemma isSemiformula_totOrIntro_body : IsSemiformula LAct ((5 : ℕ) : V) row_totOrIntro_body := by
-  unfold row_totOrIntro_body
   exact isSemiformula_substRow isSemiformula_PorIntro _ (by rfl) (by row_entriesB)
 lemma row_totOrIntro_R_eq : (row_totOrIntro_R : V) = exsIter 0 row_totOrIntro_body := rfl
 
@@ -207,17 +171,8 @@ theorem quote_row_totWkRule : (⌜Semiformula.lMap emb totWkRuleB⌝ : V) = impC
   unfold totWkRuleB row_totWkRule_as row_totWkRule_c row_totWkRule_R row_totWkRule_body PwkRule
   all_goals row_shapeB
 
-lemma isSemiformula_totWkRule_as : ∀ A ∈ row_totWkRule_as, IsSemiformula LAct ((2 : ℕ) : V) A := by
-  unfold row_totWkRule_as
-  exact (List.forall_mem_nil _)
-lemma isSemiformula_totWkRule_c : IsSemiformula LAct ((2 : ℕ) : V) row_totWkRule_c := by
-  unfold row_totWkRule_c row_totWkRule_R row_totWkRule_body
-  exact isSemiformula_exs_cast (isSemiformula_substRow isSemiformula_PwkRule _ (by rfl) (by row_entriesB))
 lemma isSemiformula_totWkRule_R : IsSemiformula LAct ((3 : ℕ) : V) row_totWkRule_R := by
   unfold row_totWkRule_R row_totWkRule_body
-  exact isSemiformula_substRow isSemiformula_PwkRule _ (by rfl) (by row_entriesB)
-lemma isSemiformula_totWkRule_body : IsSemiformula LAct ((3 : ℕ) : V) row_totWkRule_body := by
-  unfold row_totWkRule_body
   exact isSemiformula_substRow isSemiformula_PwkRule _ (by rfl) (by row_entriesB)
 lemma row_totWkRule_R_eq : (row_totWkRule_R : V) = exsIter 0 row_totWkRule_body := rfl
 
@@ -247,17 +202,8 @@ theorem quote_row_totCutRule : (⌜Semiformula.lMap emb totCutRuleB⌝ : V) = im
   unfold totCutRuleB row_totCutRule_as row_totCutRule_c row_totCutRule_R row_totCutRule_body PcutRule
   all_goals row_shapeB
 
-lemma isSemiformula_totCutRule_as : ∀ A ∈ row_totCutRule_as, IsSemiformula LAct ((4 : ℕ) : V) A := by
-  unfold row_totCutRule_as
-  exact (List.forall_mem_nil _)
-lemma isSemiformula_totCutRule_c : IsSemiformula LAct ((4 : ℕ) : V) row_totCutRule_c := by
-  unfold row_totCutRule_c row_totCutRule_R row_totCutRule_body
-  exact isSemiformula_exs_cast (isSemiformula_substRow isSemiformula_PcutRule _ (by rfl) (by row_entriesB))
 lemma isSemiformula_totCutRule_R : IsSemiformula LAct ((5 : ℕ) : V) row_totCutRule_R := by
   unfold row_totCutRule_R row_totCutRule_body
-  exact isSemiformula_substRow isSemiformula_PcutRule _ (by rfl) (by row_entriesB)
-lemma isSemiformula_totCutRule_body : IsSemiformula LAct ((5 : ℕ) : V) row_totCutRule_body := by
-  unfold row_totCutRule_body
   exact isSemiformula_substRow isSemiformula_PcutRule _ (by rfl) (by row_entriesB)
 lemma row_totCutRule_R_eq : (row_totCutRule_R : V) = exsIter 0 row_totCutRule_body := rfl
 
@@ -285,9 +231,6 @@ theorem quote_row_introAxL : (⌜Semiformula.lMap emb introAxLB⌝ : V) = impCha
   unfold introAxLB row_introAxL_as row_introAxL_c PaxL Pderiv PfsetPi Pmem PnegG derivS
   all_goals row_shapeB
 
-lemma isSemiformula_introAxL_as : ∀ A ∈ row_introAxL_as, IsSemiformula LAct ((4 : ℕ) : V) A := by
-  unfold row_introAxL_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PfsetPi _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pmem _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PnegG _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pmem _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PaxL _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩⟩⟩)
 lemma isSemiformula_introAxL_c : IsSemiformula LAct ((4 : ℕ) : V) row_introAxL_c := by
   unfold row_introAxL_c
   exact isSemiformula_substRow isSemiformula_Pderiv _ (by rfl) (by row_entriesB)
@@ -312,9 +255,6 @@ theorem quote_row_introVerum : (⌜Semiformula.lMap emb introVerumB⌝ : V) = im
   unfold introVerumB row_introVerum_as row_introVerum_c Pderiv PfsetPi Pmem Pverum PverumIntro derivS
   all_goals row_shapeB
 
-lemma isSemiformula_introVerum_as : ∀ A ∈ row_introVerum_as, IsSemiformula LAct ((3 : ℕ) : V) A := by
-  unfold row_introVerum_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PfsetPi _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pverum _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pmem _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PverumIntro _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩⟩)
 lemma isSemiformula_introVerum_c : IsSemiformula LAct ((3 : ℕ) : V) row_introVerum_c := by
   unfold row_introVerum_c
   exact isSemiformula_substRow isSemiformula_Pderiv _ (by rfl) (by row_entriesB)
@@ -339,9 +279,6 @@ theorem quote_row_introAnd : (⌜Semiformula.lMap emb introAndB⌝ : V) = impCha
   unfold introAndB row_introAnd_as row_introAnd_c Pand PandIntro Pderiv PfstIdx Pinsert Pmem derivS fstIdxS
   all_goals row_shapeB
 
-lemma isSemiformula_introAnd_as : ∀ A ∈ row_introAnd_as, IsSemiformula LAct ((9 : ℕ) : V) A := by
-  unfold row_introAnd_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PandIntro _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pand _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pmem _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PfstIdx _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pinsert _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pderiv _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PfstIdx _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pinsert _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pderiv _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩⟩⟩⟩⟩⟩⟩)
 lemma isSemiformula_introAnd_c : IsSemiformula LAct ((9 : ℕ) : V) row_introAnd_c := by
   unfold row_introAnd_c
   exact isSemiformula_substRow isSemiformula_Pderiv _ (by rfl) (by row_entriesB)
@@ -366,9 +303,6 @@ theorem quote_row_introOr : (⌜Semiformula.lMap emb introOrB⌝ : V) = impChain
   unfold introOrB row_introOr_as row_introOr_c Pderiv PfstIdx Pinsert Pmem Por PorIntro derivS fstIdxS
   all_goals row_shapeB
 
-lemma isSemiformula_introOr_as : ∀ A ∈ row_introOr_as, IsSemiformula LAct ((8 : ℕ) : V) A := by
-  unfold row_introOr_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PorIntro _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Por _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pmem _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PfstIdx _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pinsert _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pinsert _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pderiv _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩⟩⟩⟩⟩)
 lemma isSemiformula_introOr_c : IsSemiformula LAct ((8 : ℕ) : V) row_introOr_c := by
   unfold row_introOr_c
   exact isSemiformula_substRow isSemiformula_Pderiv _ (by rfl) (by row_entriesB)
@@ -393,9 +327,6 @@ theorem quote_row_introWk : (⌜Semiformula.lMap emb introWkB⌝ : V) = impChain
   unfold introWkB row_introWk_as row_introWk_c Pderiv PfsetPi PfstIdx Psubset PwkRule derivS fstIdxS
   all_goals row_shapeB
 
-lemma isSemiformula_introWk_as : ∀ A ∈ row_introWk_as, IsSemiformula LAct ((4 : ℕ) : V) A := by
-  unfold row_introWk_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PfsetPi _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PfstIdx _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Psubset _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pderiv _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PwkRule _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩⟩⟩)
 lemma isSemiformula_introWk_c : IsSemiformula LAct ((4 : ℕ) : V) row_introWk_c := by
   unfold row_introWk_c
   exact isSemiformula_substRow isSemiformula_Pderiv _ (by rfl) (by row_entriesB)
@@ -420,9 +351,6 @@ theorem quote_row_introCut : (⌜Semiformula.lMap emb introCutB⌝ : V) = impCha
   unfold introCutB row_introCut_as row_introCut_c PcutRule Pderiv PfstIdx Pinsert PnegG derivS fstIdxS
   all_goals row_shapeB
 
-lemma isSemiformula_introCut_as : ∀ A ∈ row_introCut_as, IsSemiformula LAct ((9 : ℕ) : V) A := by
-  unfold row_introCut_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PcutRule _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PfstIdx _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pinsert _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pderiv _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PfstIdx _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PnegG _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pinsert _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pderiv _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩⟩⟩⟩⟩⟩)
 lemma isSemiformula_introCut_c : IsSemiformula LAct ((9 : ℕ) : V) row_introCut_c := by
   unfold row_introCut_c
   exact isSemiformula_substRow isSemiformula_Pderiv _ (by rfl) (by row_entriesB)
@@ -447,9 +375,6 @@ theorem quote_row_dlenAxL : (⌜Semiformula.lMap emb dlenAxLB⌝ : V) = impChain
   unfold dlenAxLB row_dlenAxL_as row_dlenAxL_c PaxL Pdlen PsetLen dlenS
   all_goals row_shapeB
 
-lemma isSemiformula_dlenAxL_as : ∀ A ∈ row_dlenAxL_as, IsSemiformula LAct ((4 : ℕ) : V) A := by
-  unfold row_dlenAxL_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PaxL _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PsetLen _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_dlenAxL_c : IsSemiformula LAct ((4 : ℕ) : V) row_dlenAxL_c := by
   unfold row_dlenAxL_c
   exact isSemiformula_substRow isSemiformula_Pdlen _ (by rfl) (by row_entriesB)
@@ -474,9 +399,6 @@ theorem quote_row_dlenVerum : (⌜Semiformula.lMap emb dlenVerumB⌝ : V) = impC
   unfold dlenVerumB row_dlenVerum_as row_dlenVerum_c Pdlen PsetLen PverumIntro dlenS
   all_goals row_shapeB
 
-lemma isSemiformula_dlenVerum_as : ∀ A ∈ row_dlenVerum_as, IsSemiformula LAct ((3 : ℕ) : V) A := by
-  unfold row_dlenVerum_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PverumIntro _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PsetLen _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_dlenVerum_c : IsSemiformula LAct ((3 : ℕ) : V) row_dlenVerum_c := by
   unfold row_dlenVerum_c
   exact isSemiformula_substRow isSemiformula_Pdlen _ (by rfl) (by row_entriesB)
@@ -501,9 +423,6 @@ theorem quote_row_dlenAnd : (⌜Semiformula.lMap emb dlenAndB⌝ : V) = impChain
   unfold dlenAndB row_dlenAnd_as row_dlenAnd_c PandIntro Pdlen PsetLen dlenS
   all_goals row_shapeB
 
-lemma isSemiformula_dlenAnd_as : ∀ A ∈ row_dlenAnd_as, IsSemiformula LAct ((9 : ℕ) : V) A := by
-  unfold row_dlenAnd_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PandIntro _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pdlen _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pdlen _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PsetLen _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩⟩)
 lemma isSemiformula_dlenAnd_c : IsSemiformula LAct ((9 : ℕ) : V) row_dlenAnd_c := by
   unfold row_dlenAnd_c
   exact isSemiformula_substRow isSemiformula_Pdlen _ (by rfl) (by row_entriesB)
@@ -528,9 +447,6 @@ theorem quote_row_dlenOr : (⌜Semiformula.lMap emb dlenOrB⌝ : V) = impChain L
   unfold dlenOrB row_dlenOr_as row_dlenOr_c Pdlen PorIntro PsetLen dlenS
   all_goals row_shapeB
 
-lemma isSemiformula_dlenOr_as : ∀ A ∈ row_dlenOr_as, IsSemiformula LAct ((7 : ℕ) : V) A := by
-  unfold row_dlenOr_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PorIntro _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pdlen _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PsetLen _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩)
 lemma isSemiformula_dlenOr_c : IsSemiformula LAct ((7 : ℕ) : V) row_dlenOr_c := by
   unfold row_dlenOr_c
   exact isSemiformula_substRow isSemiformula_Pdlen _ (by rfl) (by row_entriesB)
@@ -555,9 +471,6 @@ theorem quote_row_dlenWk : (⌜Semiformula.lMap emb dlenWkB⌝ : V) = impChain L
   unfold dlenWkB row_dlenWk_as row_dlenWk_c Pdlen PsetLen PwkRule dlenS
   all_goals row_shapeB
 
-lemma isSemiformula_dlenWk_as : ∀ A ∈ row_dlenWk_as, IsSemiformula LAct ((5 : ℕ) : V) A := by
-  unfold row_dlenWk_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PwkRule _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pdlen _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PsetLen _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩)
 lemma isSemiformula_dlenWk_c : IsSemiformula LAct ((5 : ℕ) : V) row_dlenWk_c := by
   unfold row_dlenWk_c
   exact isSemiformula_substRow isSemiformula_Pdlen _ (by rfl) (by row_entriesB)
@@ -582,9 +495,6 @@ theorem quote_row_dlenCut : (⌜Semiformula.lMap emb dlenCutB⌝ : V) = impChain
   unfold dlenCutB row_dlenCut_as row_dlenCut_c PcutRule Pdlen PsetLen dlenS
   all_goals row_shapeB
 
-lemma isSemiformula_dlenCut_as : ∀ A ∈ row_dlenCut_as, IsSemiformula LAct ((8 : ℕ) : V) A := by
-  unfold row_dlenCut_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PcutRule _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pdlen _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pdlen _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PsetLen _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩⟩)
 lemma isSemiformula_dlenCut_c : IsSemiformula LAct ((8 : ℕ) : V) row_dlenCut_c := by
   unfold row_dlenCut_c
   exact isSemiformula_substRow isSemiformula_Pdlen _ (by rfl) (by row_entriesB)
@@ -609,9 +519,6 @@ theorem quote_row_dlenLeafLe : (⌜Semiformula.lMap emb dlenLeafLeB⌝ : V) = im
   unfold dlenLeafLeB row_dlenLeafLe_as row_dlenLeafLe_c PeqB Ple leS
   all_goals row_shapeB
 
-lemma isSemiformula_dlenLeafLe_as : ∀ A ∈ row_dlenLeafLe_as, IsSemiformula LAct ((3 : ℕ) : V) A := by
-  unfold row_dlenLeafLe_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Ple _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_dlenLeafLe_c : IsSemiformula LAct ((3 : ℕ) : V) row_dlenLeafLe_c := by
   unfold row_dlenLeafLe_c
   exact isSemiformula_substRow isSemiformula_Ple _ (by rfl) (by row_entriesB)
@@ -636,9 +543,6 @@ theorem quote_row_dlenUnaryLe : (⌜Semiformula.lMap emb dlenUnaryLeB⌝ : V) = 
   unfold dlenUnaryLeB row_dlenUnaryLe_as row_dlenUnaryLe_c PeqB Ple leS
   all_goals row_shapeB
 
-lemma isSemiformula_dlenUnaryLe_as : ∀ A ∈ row_dlenUnaryLe_as, IsSemiformula LAct ((5 : ℕ) : V) A := by
-  unfold row_dlenUnaryLe_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Ple _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Ple _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩)
 lemma isSemiformula_dlenUnaryLe_c : IsSemiformula LAct ((5 : ℕ) : V) row_dlenUnaryLe_c := by
   unfold row_dlenUnaryLe_c
   exact isSemiformula_substRow isSemiformula_Ple _ (by rfl) (by row_entriesB)
@@ -663,9 +567,6 @@ theorem quote_row_dlenBinaryLe : (⌜Semiformula.lMap emb dlenBinaryLeB⌝ : V) 
   unfold dlenBinaryLeB row_dlenBinaryLe_as row_dlenBinaryLe_c PeqB Ple leS
   all_goals row_shapeB
 
-lemma isSemiformula_dlenBinaryLe_as : ∀ A ∈ row_dlenBinaryLe_as, IsSemiformula LAct ((7 : ℕ) : V) A := by
-  unfold row_dlenBinaryLe_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Ple _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Ple _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Ple _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩⟩)
 lemma isSemiformula_dlenBinaryLe_c : IsSemiformula LAct ((7 : ℕ) : V) row_dlenBinaryLe_c := by
   unfold row_dlenBinaryLe_c
   exact isSemiformula_substRow isSemiformula_Ple _ (by rfl) (by row_entriesB)
@@ -690,9 +591,6 @@ theorem quote_row_leAddLeAdd : (⌜Semiformula.lMap emb leAddLeAddB⌝ : V) = im
   unfold leAddLeAddB row_leAddLeAdd_as row_leAddLeAdd_c Ple leS
   all_goals row_shapeB
 
-lemma isSemiformula_leAddLeAdd_as : ∀ A ∈ row_leAddLeAdd_as, IsSemiformula LAct ((5 : ℕ) : V) A := by
-  unfold row_leAddLeAdd_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Ple _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Ple _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Ple _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩)
 lemma isSemiformula_leAddLeAdd_c : IsSemiformula LAct ((5 : ℕ) : V) row_leAddLeAdd_c := by
   unfold row_leAddLeAdd_c
   exact isSemiformula_substRow isSemiformula_Ple _ (by rfl) (by row_entriesB)
@@ -717,9 +615,6 @@ theorem quote_row_leRefl : (⌜Semiformula.lMap emb leReflB⌝ : V) = impChain L
   unfold leReflB row_leRefl_as row_leRefl_c Ple leS
   all_goals row_shapeB
 
-lemma isSemiformula_leRefl_as : ∀ A ∈ row_leRefl_as, IsSemiformula LAct ((1 : ℕ) : V) A := by
-  unfold row_leRefl_as
-  exact (List.forall_mem_nil _)
 lemma isSemiformula_leRefl_c : IsSemiformula LAct ((1 : ℕ) : V) row_leRefl_c := by
   unfold row_leRefl_c
   exact isSemiformula_substRow isSemiformula_Ple _ (by rfl) (by row_entriesB)
@@ -745,9 +640,6 @@ theorem quote_row_leTrans : (⌜Semiformula.lMap emb leTransB⌝ : V) = impChain
   unfold row_leTrans_as row_leTrans_c Ple leS
   all_goals row_shapeB
 
-lemma isSemiformula_leTrans_as : ∀ A ∈ row_leTrans_as, IsSemiformula LAct ((3 : ℕ) : V) A := by
-  unfold row_leTrans_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Ple _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Ple _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_leTrans_c : IsSemiformula LAct ((3 : ℕ) : V) row_leTrans_c := by
   unfold row_leTrans_c
   exact isSemiformula_substRow isSemiformula_Ple _ (by rfl) (by row_entriesB)
@@ -772,9 +664,6 @@ theorem quote_row_setLenInsertLe : (⌜Semiformula.lMap emb setLenInsertLeB⌝ :
   unfold setLenInsertLeB row_setLenInsertLe_as row_setLenInsertLe_c PflenG Pinsert Ple PsetLen leS
   all_goals row_shapeB
 
-lemma isSemiformula_setLenInsertLe_as : ∀ A ∈ row_setLenInsertLe_as, IsSemiformula LAct ((6 : ℕ) : V) A := by
-  unfold row_setLenInsertLe_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pinsert _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PsetLen _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PsetLen _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PflenG _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩⟩)
 lemma isSemiformula_setLenInsertLe_c : IsSemiformula LAct ((6 : ℕ) : V) row_setLenInsertLe_c := by
   unfold row_setLenInsertLe_c
   exact isSemiformula_substRow isSemiformula_Ple _ (by rfl) (by row_entriesB)
@@ -799,9 +688,6 @@ theorem quote_row_insertSubset : (⌜Semiformula.lMap emb insertSubsetB⌝ : V) 
   unfold insertSubsetB row_insertSubset_as row_insertSubset_c Pinsert Pmem Psubset
   all_goals row_shapeB
 
-lemma isSemiformula_insertSubset_as : ∀ A ∈ row_insertSubset_as, IsSemiformula LAct ((4 : ℕ) : V) A := by
-  unfold row_insertSubset_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Psubset _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pmem _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pinsert _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩)
 lemma isSemiformula_insertSubset_c : IsSemiformula LAct ((4 : ℕ) : V) row_insertSubset_c := by
   unfold row_insertSubset_c
   exact isSemiformula_substRow isSemiformula_Psubset _ (by rfl) (by row_entriesB)
@@ -826,9 +712,6 @@ theorem quote_row_memInsertOfMem : (⌜Semiformula.lMap emb memInsertOfMemB⌝ :
   unfold memInsertOfMemB row_memInsertOfMem_as row_memInsertOfMem_c Pinsert Pmem
   all_goals row_shapeB
 
-lemma isSemiformula_memInsertOfMem_as : ∀ A ∈ row_memInsertOfMem_as, IsSemiformula LAct ((4 : ℕ) : V) A := by
-  unfold row_memInsertOfMem_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pmem _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pinsert _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_memInsertOfMem_c : IsSemiformula LAct ((4 : ℕ) : V) row_memInsertOfMem_c := by
   unfold row_memInsertOfMem_c
   exact isSemiformula_substRow isSemiformula_Pmem _ (by rfl) (by row_entriesB)
@@ -848,28 +731,6 @@ lemma inst_memInsertOfMem {wx ws wy wt : V} (hwx : IsSemiterm LAct 0 wx) (hws : 
 
 noncomputable def row_insertEqOfMem_as : List V := [subst LAct (listToVec [bv 2, bv 1]) Pmem, subst LAct (listToVec [bv 0, bv 2, bv 1]) Pinsert]
 noncomputable def row_insertEqOfMem_c : V := subst LAct (listToVec [bv 0, bv 1]) PeqB
-
-theorem quote_row_insertEqOfMem : (⌜Semiformula.lMap emb insertEqOfMemB⌝ : V) = impChain LAct row_insertEqOfMem_as row_insertEqOfMem_c := by
-  unfold insertEqOfMemB row_insertEqOfMem_as row_insertEqOfMem_c PeqB Pinsert Pmem
-  all_goals row_shapeB
-
-lemma isSemiformula_insertEqOfMem_as : ∀ A ∈ row_insertEqOfMem_as, IsSemiformula LAct ((3 : ℕ) : V) A := by
-  unfold row_insertEqOfMem_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pmem _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pinsert _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
-lemma isSemiformula_insertEqOfMem_c : IsSemiformula LAct ((3 : ℕ) : V) row_insertEqOfMem_c := by
-  unfold row_insertEqOfMem_c
-  exact isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB)
-
-/-- `insertEqOfMem` at the witnesses `[wx, ws, wt]` (the DSL variables right-to-left). -/
-lemma inst_insertEqOfMem {wx ws wt : V} (hwx : IsSemiterm LAct 0 wx) (hws : IsSemiterm LAct 0 ws) (hwt : IsSemiterm LAct 0 wt) :
-    row_insertEqOfMem_as.map (instOuter LAct [wx, ws, wt]) = [memFact wx ws, insFact wt wx ws] ∧
-    instOuter LAct [wx, ws, wt] row_insertEqOfMem_c = eqFactB wt ws := by
-  have hes : ∀ e ∈ ([wx, ws, wt] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwx, List.forall_mem_cons.mpr ⟨hws, List.forall_mem_cons.mpr ⟨hwt, List.forall_mem_nil _⟩⟩⟩)
-  unfold row_insertEqOfMem_as row_insertEqOfMem_c
-  simp only [List.map_cons, List.map_nil]
-  rw [instOuter_subst_listToVec _ isSemiformula_Pmem (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pinsert (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
-  all_goals try row_entries_simpB
-  row_finish
 
 end frag1Rows
 
@@ -904,8 +765,6 @@ def fIdx_leTrans : ℕ := 110
 def fIdx_setLenInsertLe : ℕ := 111
 def fIdx_insertSubset : ℕ := 112
 def fIdx_memInsertOfMem : ℕ := 113
-def fIdx_insertEqOfMem : ℕ := 114
-def fIdx_negTotal : ℕ := 115
 def fIdx_fstIdxAxL : ℕ := 116
 def fIdx_fstIdxVerum : ℕ := 117
 def fIdx_fstIdxAnd : ℕ := 118
@@ -913,7 +772,6 @@ def fIdx_fstIdxOr : ℕ := 119
 def fIdx_fstIdxWk : ℕ := 120
 def fIdx_fstIdxCut : ℕ := 121
 def fIdx_congFstIdx : ℕ := 122
-def fIdx_congMemSet : ℕ := 123
 def fIdx_congSetLenR : ℕ := 124
 def fIdx_congInsertS : ℕ := 125
 def frag1RowCount : ℕ := 126
@@ -983,19 +841,6 @@ lemma Frag1Table.layoutTable {tbl : V} (h : Frag1Table tbl) : LayoutTable tbl :=
   rwa [show frag1Rows[i] = layoutRows[i] from List.getElem_append_left hi] at this
 
 lemma Frag1Table.walkTable {tbl : V} (h : Frag1Table tbl) : WalkTable tbl := h.layoutTable.walkTable
-
-/-- **The fragment proof table exists in every model, with one standard length bound.** -/
-theorem exists_frag1Table : ∃ N : ℕ, ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁],
-    ∃ tbl : V, TableOK tbl (N : V) ∧ Frag1Table tbl := by
-  obtain ⟨N, hN⟩ := exists_rows frag1Rows
-  refine ⟨N, fun V _ _ ↦ ?_⟩
-  obtain ⟨rows, hlen, hok, hidx⟩ := hN V
-  refine ⟨vecOf rows, tableOK_vecOf rows hok, ?_, ?_⟩
-  · rw [len_vecOf, hlen, frag1Rows_length]
-  · intro i h
-    have h' : i < rows.length := by rw [hlen]; exact h
-    rw [nth_vecOf rows i h']
-    exact hidx i h h'
 
 lemma frag1Table_len {tbl : V} (h : Frag1Table tbl) (i : ℕ) (hi : i < frag1RowCount) : ((i : ℕ) : V) < len tbl :=
   lt_of_lt_of_le (by exact_mod_cast hi) h.1
@@ -1251,25 +1096,6 @@ lemma frag1Table_memInsertOfMem {tbl : V} (h : Frag1Table tbl) :
   refine ⟨this.1, ?_⟩
   rw [impChainV_vecOf, this.2, quote_row_memInsertOfMem]
 
-lemma frag1Table_insertEqOfMem {tbl : V} (h : Frag1Table tbl) :
-    rowM tbl.[((fIdx_insertEqOfMem : ℕ) : V)] = ((3 : ℕ) : V) ∧
-    rowB tbl.[((fIdx_insertEqOfMem : ℕ) : V)] = impChainV LAct (vecOf row_insertEqOfMem_as) row_insertEqOfMem_c := by
-  have this : rowM tbl.[((fIdx_insertEqOfMem : ℕ) : V)] = ((3 : ℕ) : V) ∧
-      rowB tbl.[((fIdx_insertEqOfMem : ℕ) : V)] = ⌜Semiformula.lMap emb insertEqOfMemB⌝ :=
-    h.2 fIdx_insertEqOfMem (Nat.lt_of_sub_eq_succ rfl)
-  refine ⟨this.1, ?_⟩
-  rw [impChainV_vecOf, this.2, quote_row_insertEqOfMem]
-
-lemma frag1Table_negTotal {tbl : V} (h : Frag1Table tbl) :
-    rowM tbl.[((fIdx_negTotal : ℕ) : V)] = ((1 : ℕ) : V) ∧
-    rowB tbl.[((fIdx_negTotal : ℕ) : V)] = impChainV LAct (vecOf row_negTotal_as) (^∃ row_negTotal_R) := by
-  have this : rowM tbl.[((fIdx_negTotal : ℕ) : V)] = ((1 : ℕ) : V) ∧
-      rowB tbl.[((fIdx_negTotal : ℕ) : V)] = ⌜Semiformula.lMap emb negTotalB⌝ :=
-    h.2 fIdx_negTotal (Nat.lt_of_sub_eq_succ rfl)
-  refine ⟨this.1, ?_⟩
-  rw [impChainV_vecOf, this.2, quote_row_negTotal]
-  rfl
-
 lemma frag1Table_fstIdxAxL {tbl : V} (h : Frag1Table tbl) :
     rowM tbl.[((fIdx_fstIdxAxL : ℕ) : V)] = ((3 : ℕ) : V) ∧
     rowB tbl.[((fIdx_fstIdxAxL : ℕ) : V)] = impChainV LAct (vecOf row_fstIdxAxL_as) row_fstIdxAxL_c := by
@@ -1332,15 +1158,6 @@ lemma frag1Table_congFstIdx {tbl : V} (h : Frag1Table tbl) :
     h.2 fIdx_congFstIdx (Nat.lt_of_sub_eq_succ rfl)
   refine ⟨this.1, ?_⟩
   rw [impChainV_vecOf, this.2, quote_row_congFstIdx]
-
-lemma frag1Table_congMemSet {tbl : V} (h : Frag1Table tbl) :
-    rowM tbl.[((fIdx_congMemSet : ℕ) : V)] = ((3 : ℕ) : V) ∧
-    rowB tbl.[((fIdx_congMemSet : ℕ) : V)] = impChainV LAct (vecOf row_congMemSet_as) row_congMemSet_c := by
-  have this : rowM tbl.[((fIdx_congMemSet : ℕ) : V)] = ((3 : ℕ) : V) ∧
-      rowB tbl.[((fIdx_congMemSet : ℕ) : V)] = ⌜Semiformula.lMap emb congMemSetB⌝ :=
-    h.2 fIdx_congMemSet (Nat.lt_of_sub_eq_succ rfl)
-  refine ⟨this.1, ?_⟩
-  rw [impChainV_vecOf, this.2, quote_row_congMemSet]
 
 lemma frag1Table_congSetLenR {tbl : V} (h : Frag1Table tbl) :
     rowM tbl.[((fIdx_congSetLenR : ℕ) : V)] = ((3 : ℕ) : V) ∧
@@ -1862,41 +1679,6 @@ lemma fmk_memInsertOfMem (ev : V) :
   rw [mkStep, frag1Pieces_memInsertOfMem]
   simp [fpiece_memInsertOfMem, sUseHorn]
 
-lemma ftag_memInsertOfMem {W : V} (hWp : W = frag1Pieces) (ev : V) : sTag (mkStep W (113 : V) ev) = 0 := by
-  subst hWp
-  have hk : ((fIdx_memInsertOfMem : ℕ) : V) = (113 : V) := by simp [fIdx_memInsertOfMem]
-  rw [← hk, fmk_memInsertOfMem]; simp
-
-lemma frag1Pieces_insertEqOfMem : (frag1Pieces : V).[((fIdx_insertEqOfMem : ℕ) : V)] = fpiece_insertEqOfMem := by
-  unfold frag1Pieces
-  rw [nth_vecOf _ fIdx_insertEqOfMem (Nat.lt_of_sub_eq_succ rfl)]
-  rfl
-
-lemma fmk_insertEqOfMem (ev : V) :
-    mkStep frag1Pieces ((fIdx_insertEqOfMem : ℕ) : V) ev = sUseHorn ((fIdx_insertEqOfMem : ℕ) : V) ev (vecOf row_insertEqOfMem_as) row_insertEqOfMem_c := by
-  rw [mkStep, frag1Pieces_insertEqOfMem]
-  simp [fpiece_insertEqOfMem, sUseHorn]
-
-lemma ftag_insertEqOfMem {W : V} (hWp : W = frag1Pieces) (ev : V) : sTag (mkStep W (114 : V) ev) = 0 := by
-  subst hWp
-  have hk : ((fIdx_insertEqOfMem : ℕ) : V) = (114 : V) := by simp [fIdx_insertEqOfMem]
-  rw [← hk, fmk_insertEqOfMem]; simp
-
-lemma frag1Pieces_negTotal : (frag1Pieces : V).[((fIdx_negTotal : ℕ) : V)] = fpiece_negTotal := by
-  unfold frag1Pieces
-  rw [nth_vecOf _ fIdx_negTotal (Nat.lt_of_sub_eq_succ rfl)]
-  rfl
-
-lemma fmk_negTotal (ev : V) :
-    mkStep frag1Pieces ((fIdx_negTotal : ℕ) : V) ev = sIntroFact ((fIdx_negTotal : ℕ) : V) ev (vecOf row_negTotal_as) row_negTotal_R := by
-  rw [mkStep, frag1Pieces_negTotal]
-  simp [fpiece_negTotal, sIntroFact]
-
-lemma ftag_negTotal {W : V} (hWp : W = frag1Pieces) (ev : V) : sTag (mkStep W (115 : V) ev) = 2 := by
-  subst hWp
-  have hk : ((fIdx_negTotal : ℕ) : V) = (115 : V) := by simp [fIdx_negTotal]
-  rw [← hk, fmk_negTotal]; simp
-
 lemma frag1Pieces_fstIdxAxL : (frag1Pieces : V).[((fIdx_fstIdxAxL : ℕ) : V)] = fpiece_fstIdxAxL := by
   unfold frag1Pieces
   rw [nth_vecOf _ fIdx_fstIdxAxL (Nat.lt_of_sub_eq_succ rfl)]
@@ -2001,21 +1783,6 @@ lemma ftag_congFstIdx {W : V} (hWp : W = frag1Pieces) (ev : V) : sTag (mkStep W 
   subst hWp
   have hk : ((fIdx_congFstIdx : ℕ) : V) = (122 : V) := by simp [fIdx_congFstIdx]
   rw [← hk, fmk_congFstIdx]; simp
-
-lemma frag1Pieces_congMemSet : (frag1Pieces : V).[((fIdx_congMemSet : ℕ) : V)] = fpiece_congMemSet := by
-  unfold frag1Pieces
-  rw [nth_vecOf _ fIdx_congMemSet (Nat.lt_of_sub_eq_succ rfl)]
-  rfl
-
-lemma fmk_congMemSet (ev : V) :
-    mkStep frag1Pieces ((fIdx_congMemSet : ℕ) : V) ev = sUseHorn ((fIdx_congMemSet : ℕ) : V) ev (vecOf row_congMemSet_as) row_congMemSet_c := by
-  rw [mkStep, frag1Pieces_congMemSet]
-  simp [fpiece_congMemSet, sUseHorn]
-
-lemma ftag_congMemSet {W : V} (hWp : W = frag1Pieces) (ev : V) : sTag (mkStep W (123 : V) ev) = 0 := by
-  subst hWp
-  have hk : ((fIdx_congMemSet : ℕ) : V) = (123 : V) := by simp [fIdx_congMemSet]
-  rw [← hk, fmk_congMemSet]; simp
 
 lemma frag1Pieces_congSetLenR : (frag1Pieces : V).[((fIdx_congSetLenR : ℕ) : V)] = fpiece_congSetLenR := by
   unfold frag1Pieces
@@ -2568,45 +2335,6 @@ lemma fok_memInsertOfMem {tbl N E Γ W : V} {wx ws wy wt : V} (htbl : TableOK tb
   · exact neg_mem_of_map hinst.1 (List.forall_mem_cons.mpr ⟨hmem0, List.forall_mem_cons.mpr ⟨hmem1, List.forall_mem_nil _⟩⟩)
   · rw [ctxAfter_useHorn [wx, ws, wy, wt] row_memInsertOfMem_as isSemiformula_memInsertOfMem_c (fun e he ↦ (hes e he).1), hinst.2]
 
-/-- Row `insertEqOfMem` as a step. -/
-lemma fok_insertEqOfMem {tbl N E Γ W : V} {wx ws wt : V} (htbl : TableOK tbl N) (hF : Frag1Table tbl) (hWp : W = frag1Pieces)
-    (hΓ : IsFormulaSet LAct Γ) (hwx : IsSemiterm LAct 0 wx) (hEwx : termLen LAct wx ≤ E) (hws : IsSemiterm LAct 0 ws) (hEws : termLen LAct ws ≤ E) (hwt : IsSemiterm LAct 0 wt) (hEwt : termLen LAct wt ≤ E) (hmem0 : neg LAct (memFact wx ws) ∈ Γ) (hmem1 : neg LAct (insFact wt wx ws) ∈ Γ) :
-    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 114 ?[wx, ws, wt]) ∧ sTag (mkStep W 114 ?[wx, ws, wt]) = 0 ∧
-    ctxAfter Γ (mkStep W 114 ?[wx, ws, wt]) = insert (neg LAct (eqFactB wt ws)) Γ := by
-  subst hWp
-  have hk : ((fIdx_insertEqOfMem : ℕ) : V) = (114 : V) := by simp [fIdx_insertEqOfMem]
-  have hstep := fmk_insertEqOfMem (V := V) ?[wx, ws, wt]
-  have hlen := frag1Table_len hF fIdx_insertEqOfMem (by decide)
-  have hrow := frag1Table_insertEqOfMem hF
-  rw [hk] at hstep hlen hrow
-  have hes : ∀ e ∈ [wx, ws, wt], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E := List.forall_mem_cons.mpr ⟨⟨hwx, hEwx⟩, List.forall_mem_cons.mpr ⟨⟨hws, hEws⟩, List.forall_mem_cons.mpr ⟨⟨hwt, hEwt⟩, List.forall_mem_nil _⟩⟩⟩
-  have hinst := inst_insertEqOfMem hwx hws hwt
-  rw [hstep, show (?[wx, ws, wt] : V) = vecOf [wx, ws, wt] from rfl]
-  refine ⟨stepOK_useHorn htbl [wx, ws, wt] row_insertEqOfMem_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : 3 ≤ 8))
-    (by rw [show row_insertEqOfMem_as.length = 2 from rfl] <;> exact_mod_cast (by decide : 2 ≤ 8)) hes ?_, by simp, ?_⟩
-  · exact neg_mem_of_map hinst.1 (List.forall_mem_cons.mpr ⟨hmem0, List.forall_mem_cons.mpr ⟨hmem1, List.forall_mem_nil _⟩⟩)
-  · rw [ctxAfter_useHorn [wx, ws, wt] row_insertEqOfMem_as isSemiformula_insertEqOfMem_c (fun e he ↦ (hes e he).1), hinst.2]
-
-/-- Row `negTotal` as a step. -/
-lemma fok_negTotal {tbl N E Γ W : V} {wp : V} (htbl : TableOK tbl N) (hF : Frag1Table tbl) (hWp : W = frag1Pieces)
-    (hΓ : IsFormulaSet LAct Γ) (hwp : IsSemiterm LAct 0 wp) (hEwp : termLen LAct wp ≤ E)  :
-    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 115 ?[wp]) ∧ sTag (mkStep W 115 ?[wp]) = 2 ∧
-    ctxAfter Γ (mkStep W 115 ?[wp]) = insert (neg LAct (negFact (^&((0 : ℕ) : V)) (termShift LAct wp))) (setShift LAct Γ) := by
-  subst hWp
-  have hk : ((fIdx_negTotal : ℕ) : V) = (115 : V) := by simp [fIdx_negTotal]
-  have hstep := fmk_negTotal (V := V) ?[wp]
-  have hlen := frag1Table_len hF fIdx_negTotal (by decide)
-  have hrow := frag1Table_negTotal hF
-  rw [hk] at hstep hlen hrow
-  have hes : ∀ e ∈ [wp], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E := List.forall_mem_cons.mpr ⟨⟨hwp, hEwp⟩, List.forall_mem_nil _⟩
-  have hinst := inst_negTotal hwp
-  rw [hstep, show (?[wp] : V) = vecOf [wp] from rfl]
-  refine ⟨stepOK_introFact htbl [wp] row_negTotal_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : 1 ≤ 8))
-    (by rw [show row_negTotal_as.length = 0 from rfl] <;> exact_mod_cast (by decide : 0 ≤ 8)) hes ?_, by simp, ?_⟩
-  · exact neg_mem_of_map hinst.1 (List.forall_mem_nil _)
-  · rw [ctxAfter_introFact [wp] row_negTotal_as (by rw [← Nat.cast_succ]; exact isSemiformula_negTotal_R) (fun e he ↦ (hes e he).1),
-      show row_negTotal_R = row_negTotal_body from rfl, ← freeIter_one, hinst.2]
-
 /-- Row `fstIdxAxL` as a step. -/
 lemma fok_fstIdxAxL {tbl N E Γ W : V} {ws wp we : V} (htbl : TableOK tbl N) (hF : Frag1Table tbl) (hWp : W = frag1Pieces)
     (hΓ : IsFormulaSet LAct Γ) (hws : IsSemiterm LAct 0 ws) (hEws : termLen LAct ws ≤ E) (hwp : IsSemiterm LAct 0 wp) (hEwp : termLen LAct wp ≤ E) (hwe : IsSemiterm LAct 0 we) (hEwe : termLen LAct we ≤ E) (hmem0 : neg LAct (axLFact we ws wp) ∈ Γ) :
@@ -2740,25 +2468,6 @@ lemma fok_congFstIdx {tbl N E Γ W : V} {wd wt wtp : V} (htbl : TableOK tbl N) (
   · exact neg_mem_of_map hinst.1 (List.forall_mem_cons.mpr ⟨hmem0, List.forall_mem_cons.mpr ⟨hmem1, List.forall_mem_nil _⟩⟩)
   · rw [ctxAfter_useHorn [wd, wt, wtp] row_congFstIdx_as isSemiformula_congFstIdx_c (fun e he ↦ (hes e he).1), hinst.2]
 
-/-- Row `congMemSet` as a step. -/
-lemma fok_congMemSet {tbl N E Γ W : V} {wx ws wsp : V} (htbl : TableOK tbl N) (hF : Frag1Table tbl) (hWp : W = frag1Pieces)
-    (hΓ : IsFormulaSet LAct Γ) (hwx : IsSemiterm LAct 0 wx) (hEwx : termLen LAct wx ≤ E) (hws : IsSemiterm LAct 0 ws) (hEws : termLen LAct ws ≤ E) (hwsp : IsSemiterm LAct 0 wsp) (hEwsp : termLen LAct wsp ≤ E) (hmem0 : neg LAct (eqFactB wsp ws) ∈ Γ) (hmem1 : neg LAct (memFact wx ws) ∈ Γ) :
-    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 123 ?[wx, ws, wsp]) ∧ sTag (mkStep W 123 ?[wx, ws, wsp]) = 0 ∧
-    ctxAfter Γ (mkStep W 123 ?[wx, ws, wsp]) = insert (neg LAct (memFact wx wsp)) Γ := by
-  subst hWp
-  have hk : ((fIdx_congMemSet : ℕ) : V) = (123 : V) := by simp [fIdx_congMemSet]
-  have hstep := fmk_congMemSet (V := V) ?[wx, ws, wsp]
-  have hlen := frag1Table_len hF fIdx_congMemSet (by decide)
-  have hrow := frag1Table_congMemSet hF
-  rw [hk] at hstep hlen hrow
-  have hes : ∀ e ∈ [wx, ws, wsp], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E := List.forall_mem_cons.mpr ⟨⟨hwx, hEwx⟩, List.forall_mem_cons.mpr ⟨⟨hws, hEws⟩, List.forall_mem_cons.mpr ⟨⟨hwsp, hEwsp⟩, List.forall_mem_nil _⟩⟩⟩
-  have hinst := inst_congMemSet hwx hws hwsp
-  rw [hstep, show (?[wx, ws, wsp] : V) = vecOf [wx, ws, wsp] from rfl]
-  refine ⟨stepOK_useHorn htbl [wx, ws, wsp] row_congMemSet_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : 3 ≤ 8))
-    (by rw [show row_congMemSet_as.length = 2 from rfl] <;> exact_mod_cast (by decide : 2 ≤ 8)) hes ?_, by simp, ?_⟩
-  · exact neg_mem_of_map hinst.1 (List.forall_mem_cons.mpr ⟨hmem0, List.forall_mem_cons.mpr ⟨hmem1, List.forall_mem_nil _⟩⟩)
-  · rw [ctxAfter_useHorn [wx, ws, wsp] row_congMemSet_as isSemiformula_congMemSet_c (fun e he ↦ (hes e he).1), hinst.2]
-
 /-- Row `congSetLenR` as a step. -/
 lemma fok_congSetLenR {tbl N E Γ W : V} {ws wsp wl : V} (htbl : TableOK tbl N) (hF : Frag1Table tbl) (hWp : W = frag1Pieces)
     (hΓ : IsFormulaSet LAct Γ) (hws : IsSemiterm LAct 0 ws) (hEws : termLen LAct ws ≤ E) (hwsp : IsSemiterm LAct 0 wsp) (hEwsp : termLen LAct wsp ≤ E) (hwl : IsSemiterm LAct 0 wl) (hEwl : termLen LAct wl ≤ E) (hmem0 : neg LAct (eqFactB wsp ws) ∈ Γ) (hmem1 : neg LAct (setLenFact wl ws) ∈ Γ) :
@@ -2819,56 +2528,6 @@ lemma flok_eqSymm {tbl N E Γ W : V} {wx wy : V} (htbl : TableOK tbl N) (hF : Fr
   rw [e]
   exact lok_eqSymm htbl hF.layoutTable rfl hΓ hwx hEwx hwy hEwy hmem0
 
-lemma flok_insertTotalC {tbl N E Γ W : V} {wx ws : V} (htbl : TableOK tbl N) (hF : Frag1Table tbl) (hWp : W = frag1Pieces)
-    (hΓ : IsFormulaSet LAct Γ) (hwx : IsSemiterm LAct 0 wx) (hEwx : termLen LAct wx ≤ E) (hws : IsSemiterm LAct 0 ws) (hEws : termLen LAct ws ≤ E)  :
-    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 76 ?[wx, ws]) ∧ sTag (mkStep W 76 ?[wx, ws]) = 2 ∧
-    ctxAfter Γ (mkStep W 76 ?[wx, ws]) = insert (neg LAct (insFact (^&((0 : ℕ) : V)) (termShift LAct wx) (termShift LAct ws))) (setShift LAct Γ) := by
-  subst hWp
-  have e : ∀ ev : V, mkStep frag1Pieces (76 : V) ev = mkStep layoutPieces (76 : V) ev := fun ev ↦ by
-    have := mkStep_frag1Pieces_lt 76 (by decide) ev; simpa using this
-  rw [e]
-  exact lok_insertTotalC htbl hF.layoutTable rfl hΓ hwx hEwx hws hEws
-
-lemma flok_memInsertSelfC {tbl N E Γ W : V} {wx ws wt : V} (htbl : TableOK tbl N) (hF : Frag1Table tbl) (hWp : W = frag1Pieces)
-    (hΓ : IsFormulaSet LAct Γ) (hwx : IsSemiterm LAct 0 wx) (hEwx : termLen LAct wx ≤ E) (hws : IsSemiterm LAct 0 ws) (hEws : termLen LAct ws ≤ E) (hwt : IsSemiterm LAct 0 wt) (hEwt : termLen LAct wt ≤ E) (hmem0 : neg LAct (insFact wt wx ws) ∈ Γ) :
-    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 77 ?[wx, ws, wt]) ∧ sTag (mkStep W 77 ?[wx, ws, wt]) = 0 ∧
-    ctxAfter Γ (mkStep W 77 ?[wx, ws, wt]) = insert (neg LAct (memFact wx wt)) Γ := by
-  subst hWp
-  have e : ∀ ev : V, mkStep frag1Pieces (77 : V) ev = mkStep layoutPieces (77 : V) ev := fun ev ↦ by
-    have := mkStep_frag1Pieces_lt 77 (by decide) ev; simpa using this
-  rw [e]
-  exact lok_memInsertSelfC htbl hF.layoutTable rfl hΓ hwx hEwx hws hEws hwt hEwt hmem0
-
-lemma flok_subsetInsertC {tbl N E Γ W : V} {wx ws wt : V} (htbl : TableOK tbl N) (hF : Frag1Table tbl) (hWp : W = frag1Pieces)
-    (hΓ : IsFormulaSet LAct Γ) (hwx : IsSemiterm LAct 0 wx) (hEwx : termLen LAct wx ≤ E) (hws : IsSemiterm LAct 0 ws) (hEws : termLen LAct ws ≤ E) (hwt : IsSemiterm LAct 0 wt) (hEwt : termLen LAct wt ≤ E) (hmem0 : neg LAct (insFact wt wx ws) ∈ Γ) :
-    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 78 ?[wx, ws, wt]) ∧ sTag (mkStep W 78 ?[wx, ws, wt]) = 0 ∧
-    ctxAfter Γ (mkStep W 78 ?[wx, ws, wt]) = insert (neg LAct (subsetFact ws wt)) Γ := by
-  subst hWp
-  have e : ∀ ev : V, mkStep frag1Pieces (78 : V) ev = mkStep layoutPieces (78 : V) ev := fun ev ↦ by
-    have := mkStep_frag1Pieces_lt 78 (by decide) ev; simpa using this
-  rw [e]
-  exact lok_subsetInsertC htbl hF.layoutTable rfl hΓ hwx hEwx hws hEws hwt hEwt hmem0
-
-lemma flok_subsetTransC {tbl N E Γ W : V} {ws wt wu : V} (htbl : TableOK tbl N) (hF : Frag1Table tbl) (hWp : W = frag1Pieces)
-    (hΓ : IsFormulaSet LAct Γ) (hws : IsSemiterm LAct 0 ws) (hEws : termLen LAct ws ≤ E) (hwt : IsSemiterm LAct 0 wt) (hEwt : termLen LAct wt ≤ E) (hwu : IsSemiterm LAct 0 wu) (hEwu : termLen LAct wu ≤ E) (hmem0 : neg LAct (subsetFact ws wt) ∈ Γ) (hmem1 : neg LAct (subsetFact wt wu) ∈ Γ) :
-    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 79 ?[ws, wt, wu]) ∧ sTag (mkStep W 79 ?[ws, wt, wu]) = 0 ∧
-    ctxAfter Γ (mkStep W 79 ?[ws, wt, wu]) = insert (neg LAct (subsetFact ws wu)) Γ := by
-  subst hWp
-  have e : ∀ ev : V, mkStep frag1Pieces (79 : V) ev = mkStep layoutPieces (79 : V) ev := fun ev ↦ by
-    have := mkStep_frag1Pieces_lt 79 (by decide) ev; simpa using this
-  rw [e]
-  exact lok_subsetTransC htbl hF.layoutTable rfl hΓ hws hEws hwt hEwt hwu hEwu hmem0 hmem1
-
-lemma flok_subsetMemC {tbl N E Γ W : V} {ws wt wx : V} (htbl : TableOK tbl N) (hF : Frag1Table tbl) (hWp : W = frag1Pieces)
-    (hΓ : IsFormulaSet LAct Γ) (hws : IsSemiterm LAct 0 ws) (hEws : termLen LAct ws ≤ E) (hwt : IsSemiterm LAct 0 wt) (hEwt : termLen LAct wt ≤ E) (hwx : IsSemiterm LAct 0 wx) (hEwx : termLen LAct wx ≤ E) (hmem0 : neg LAct (subsetFact ws wt) ∈ Γ) (hmem1 : neg LAct (memFact wx ws) ∈ Γ) :
-    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 80 ?[ws, wt, wx]) ∧ sTag (mkStep W 80 ?[ws, wt, wx]) = 0 ∧
-    ctxAfter Γ (mkStep W 80 ?[ws, wt, wx]) = insert (neg LAct (memFact wx wt)) Γ := by
-  subst hWp
-  have e : ∀ ev : V, mkStep frag1Pieces (80 : V) ev = mkStep layoutPieces (80 : V) ev := fun ev ↦ by
-    have := mkStep_frag1Pieces_lt 80 (by decide) ev; simpa using this
-  rw [e]
-  exact lok_subsetMemC htbl hF.layoutTable rfl hΓ hws hEws hwt hEwt hwx hEwx hmem0 hmem1
-
 lemma flok_emptySubsetC {tbl N E Γ W : V} {ws : V} (htbl : TableOK tbl N) (hF : Frag1Table tbl) (hWp : W = frag1Pieces)
     (hΓ : IsFormulaSet LAct Γ) (hws : IsSemiterm LAct 0 ws) (hEws : termLen LAct ws ≤ E)  :
     StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 81 ?[ws]) ∧ sTag (mkStep W 81 ?[ws]) = 0 ∧
@@ -2878,46 +2537,6 @@ lemma flok_emptySubsetC {tbl N E Γ W : V} {ws : V} (htbl : TableOK tbl N) (hF :
     have := mkStep_frag1Pieces_lt 81 (by decide) ev; simpa using this
   rw [e]
   exact lok_emptySubsetC htbl hF.layoutTable rfl hΓ hws hEws
-
-lemma flok_isFormulaSetInsertC {tbl N E Γ W : V} {ws wp wt : V} (htbl : TableOK tbl N) (hF : Frag1Table tbl) (hWp : W = frag1Pieces)
-    (hΓ : IsFormulaSet LAct Γ) (hws : IsSemiterm LAct 0 ws) (hEws : termLen LAct ws ≤ E) (hwp : IsSemiterm LAct 0 wp) (hEwp : termLen LAct wp ≤ E) (hwt : IsSemiterm LAct 0 wt) (hEwt : termLen LAct wt ≤ E) (hmem0 : neg LAct (fsetPiFact ws) ∈ Γ) (hmem1 : neg LAct (piFact (𝟎 : V) wp) ∈ Γ) (hmem2 : neg LAct (insFact wt wp ws) ∈ Γ) :
-    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 83 ?[ws, wp, wt]) ∧ sTag (mkStep W 83 ?[ws, wp, wt]) = 0 ∧
-    ctxAfter Γ (mkStep W 83 ?[ws, wp, wt]) = insert (neg LAct (fsetSigmaFact wt)) Γ := by
-  subst hWp
-  have e : ∀ ev : V, mkStep frag1Pieces (83 : V) ev = mkStep layoutPieces (83 : V) ev := fun ev ↦ by
-    have := mkStep_frag1Pieces_lt 83 (by decide) ev; simpa using this
-  rw [e]
-  exact lok_isFormulaSetInsertC htbl hF.layoutTable rfl hΓ hws hEws hwp hEwp hwt hEwt hmem0 hmem1 hmem2
-
-lemma flok_fsetSigmaPiC {tbl N E Γ W : V} {ws : V} (htbl : TableOK tbl N) (hF : Frag1Table tbl) (hWp : W = frag1Pieces)
-    (hΓ : IsFormulaSet LAct Γ) (hws : IsSemiterm LAct 0 ws) (hEws : termLen LAct ws ≤ E) (hmem0 : neg LAct (fsetSigmaFact ws) ∈ Γ) :
-    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 84 ?[ws]) ∧ sTag (mkStep W 84 ?[ws]) = 0 ∧
-    ctxAfter Γ (mkStep W 84 ?[ws]) = insert (neg LAct (fsetPiFact ws)) Γ := by
-  subst hWp
-  have e : ∀ ev : V, mkStep frag1Pieces (84 : V) ev = mkStep layoutPieces (84 : V) ev := fun ev ↦ by
-    have := mkStep_frag1Pieces_lt 84 (by decide) ev; simpa using this
-  rw [e]
-  exact lok_fsetSigmaPiC htbl hF.layoutTable rfl hΓ hws hEws hmem0
-
-lemma flok_setLenTotalC {tbl N E Γ W : V} {ws : V} (htbl : TableOK tbl N) (hF : Frag1Table tbl) (hWp : W = frag1Pieces)
-    (hΓ : IsFormulaSet LAct Γ) (hws : IsSemiterm LAct 0 ws) (hEws : termLen LAct ws ≤ E)  :
-    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 85 ?[ws]) ∧ sTag (mkStep W 85 ?[ws]) = 2 ∧
-    ctxAfter Γ (mkStep W 85 ?[ws]) = insert (neg LAct (setLenFact (^&((0 : ℕ) : V)) (termShift LAct ws))) (setShift LAct Γ) := by
-  subst hWp
-  have e : ∀ ev : V, mkStep frag1Pieces (85 : V) ev = mkStep layoutPieces (85 : V) ev := fun ev ↦ by
-    have := mkStep_frag1Pieces_lt 85 (by decide) ev; simpa using this
-  rw [e]
-  exact lok_setLenTotalC htbl hF.layoutTable rfl hΓ hws hEws
-
-lemma flok_subsetReflC {tbl N E Γ W : V} {ws : V} (htbl : TableOK tbl N) (hF : Frag1Table tbl) (hWp : W = frag1Pieces)
-    (hΓ : IsFormulaSet LAct Γ) (hws : IsSemiterm LAct 0 ws) (hEws : termLen LAct ws ≤ E)  :
-    StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 86 ?[ws]) ∧ sTag (mkStep W 86 ?[ws]) = 0 ∧
-    ctxAfter Γ (mkStep W 86 ?[ws]) = insert (neg LAct (subsetFact ws ws)) Γ := by
-  subst hWp
-  have e : ∀ ev : V, mkStep frag1Pieces (86 : V) ev = mkStep layoutPieces (86 : V) ev := fun ev ↦ by
-    have := mkStep_frag1Pieces_lt 86 (by decide) ev; simpa using this
-  rw [e]
-  exact lok_subsetReflC htbl hF.layoutTable rfl hΓ hws hEws
 
 lemma flok_subsetAntisymm {tbl N E Γ W : V} {ws wt : V} (htbl : TableOK tbl N) (hF : Frag1Table tbl) (hWp : W = frag1Pieces)
     (hΓ : IsFormulaSet LAct Γ) (hws : IsSemiterm LAct 0 ws) (hEws : termLen LAct ws ≤ E) (hwt : IsSemiterm LAct 0 wt) (hEwt : termLen LAct wt ≤ E) (hmem0 : neg LAct (subsetFact ws wt) ∈ Γ) (hmem1 : neg LAct (subsetFact wt ws) ∈ Γ) :

@@ -60,9 +60,6 @@ theorem quote_row_bnumOddOfEven : (⌜Semiformula.lMap emb bnumOddOfEvenB⌝ : V
   unfold bnumOddOfEvenB row_bnumOddOfEven_as row_bnumOddOfEven_c Padjoin Pbnum Pfunc Ple leS
   all_goals row_shapeB
 
-lemma isSemiformula_bnumOddOfEven_as : ∀ A ∈ row_bnumOddOfEven_as, IsSemiformula LAct ((6 : ℕ) : V) A := by
-  unfold row_bnumOddOfEven_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Ple _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pbnum _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pfunc _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Padjoin _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Padjoin _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pfunc _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩⟩⟩⟩)
 lemma isSemiformula_bnumOddOfEven_c : IsSemiformula LAct ((6 : ℕ) : V) row_bnumOddOfEven_c := by
   unfold row_bnumOddOfEven_c
   exact isSemiformula_substRow isSemiformula_Pbnum _ (by rfl) (by row_entriesB)
@@ -161,10 +158,6 @@ lemma nmk_instBIntro (ev : V) :
   rw [mkStep, numIdPieces_instBIntro]
   simp [npiece_instBIntro, sUseHorn]
 
-lemma ntag_instBIntro {W : V} (hWp : W = numIdPieces) (ev : V) : sTag (mkStep W ((nIdx_instBIntro : ℕ) : V) ev) = 0 := by
-  subst hWp
-  rw [nmk_instBIntro]; simp
-
 lemma numIdPieces_congSubstArg : (numIdPieces : V).[((nIdx_congSubstArg : ℕ) : V)] = npiece_congSubstArg := by
   unfold numIdPieces
   rw [nth_vecOf _ nIdx_congSubstArg (Nat.lt_of_sub_eq_succ rfl)]
@@ -174,10 +167,6 @@ lemma nmk_congSubstArg (ev : V) :
     mkStep numIdPieces ((nIdx_congSubstArg : ℕ) : V) ev = sUseHorn ((nIdx_congSubstArg : ℕ) : V) ev (vecOf row_congSubstArg_as) row_congSubstArg_c := by
   rw [mkStep, numIdPieces_congSubstArg]
   simp [npiece_congSubstArg, sUseHorn]
-
-lemma ntag_congSubstArg {W : V} (hWp : W = numIdPieces) (ev : V) : sTag (mkStep W ((nIdx_congSubstArg : ℕ) : V) ev) = 0 := by
-  subst hWp
-  rw [nmk_congSubstArg]; simp
 
 lemma numIdPieces_bnumZeroCert : (numIdPieces : V).[((nIdx_bnumZeroCert : ℕ) : V)] = npiece_bnumZeroCert := by
   unfold numIdPieces

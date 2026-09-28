@@ -166,16 +166,6 @@ theorem pa_proves_congUtvPi : 𝗣𝗔 ⊢ congUtvPi :=
   Lib.pa_proves_of_models fun _ _ _ ↦ models_congUtvPi.mpr fun _ _ _ h1 h2 ↦ by subst_vars; first | rfl | assumption | trivial
 theorem lib_congUtvPi : Lib congUtvPi := Lib.of_pa pa_proves_congUtvPi
 
-/-- `y = x → IsUFormula x → IsUFormula y` (`.pi` on both sides: the recognizer consumes `.pi`). -/
-noncomputable def congUfPiB : ArithmeticSemisentence 2 :=
-  “y x. y = x → !(isUFormula LAct).pi x → !(isUFormula LAct).pi y”
-noncomputable def congUfPi : ArithmeticSentence := ∀¹* congUfPiB
-lemma models_congUfPi : V↓[ℒₒᵣ] ⊧ congUfPi ↔ ∀ y x : V, y = x → IsUFormula LAct x → IsUFormula LAct y := by
-  simp [congUfPi, congUfPiB, models_iff, Matrix.vecForall_iff]
-theorem pa_proves_congUfPi : 𝗣𝗔 ⊢ congUfPi :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_congUfPi.mpr fun _ _ h1 h2 ↦ by subst_vars; first | rfl | assumption | trivial
-theorem lib_congUfPi : Lib congUfPi := Lib.of_pa pa_proves_congUfPi
-
 /-- `r' = r → p' = p → q' = q → r = p ⋏ q → r' = p' ⋏ q'` (all arguments at once). -/
 noncomputable def congAndB : ArithmeticSemisentence 6 :=
   “q' p' r' q p r. r' = r → p' = p → q' = q → !qqAndDef r p q → !qqAndDef r' p' q'”
@@ -376,16 +366,6 @@ theorem pa_proves_congSubsetL : 𝗣𝗔 ⊢ congSubsetL :=
   Lib.pa_proves_of_models fun _ _ _ ↦ models_congSubsetL.mpr fun _ _ _ h1 h2 ↦ by subst_vars; first | rfl | assumption | trivial
 theorem lib_congSubsetL : Lib congSubsetL := Lib.of_pa pa_proves_congSubsetL
 
-/-- `t' = t → s ⊆ t → s ⊆ t'`. -/
-noncomputable def congSubsetRB : ArithmeticSemisentence 3 :=
-  “t' t s. t' = t → !bitSubsetDef s t → !bitSubsetDef s t'”
-noncomputable def congSubsetR : ArithmeticSentence := ∀¹* congSubsetRB
-lemma models_congSubsetR : V↓[ℒₒᵣ] ⊧ congSubsetR ↔ ∀ t' t s : V, t' = t → s ⊆ t → s ⊆ t' := by
-  simp [congSubsetR, congSubsetRB, models_iff, Matrix.vecForall_iff]
-theorem pa_proves_congSubsetR : 𝗣𝗔 ⊢ congSubsetR :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_congSubsetR.mpr fun _ _ _ h1 h2 ↦ by subst_vars; first | rfl | assumption | trivial
-theorem lib_congSubsetR : Lib congSubsetR := Lib.of_pa pa_proves_congSubsetR
-
 /-- `t' = t → t = setShift s → t' = setShift s`. -/
 noncomputable def congSetShiftLB : ArithmeticSemisentence 3 :=
   “s t' t. t' = t → !(setShiftGraph LAct) t s → !(setShiftGraph LAct) t' s”
@@ -416,16 +396,6 @@ theorem pa_proves_congShiftL : 𝗣𝗔 ⊢ congShiftL :=
   Lib.pa_proves_of_models fun _ _ _ ↦ models_congShiftL.mpr fun _ _ _ h1 h2 ↦ by subst_vars; first | rfl | assumption | trivial
 theorem lib_congShiftL : Lib congShiftL := Lib.of_pa pa_proves_congShiftL
 
-/-- `y' = y → y = neg x → y' = neg x`. -/
-noncomputable def congNegLB : ArithmeticSemisentence 3 :=
-  “x y' y. y' = y → !(negGraph LAct) y x → !(negGraph LAct) y' x”
-noncomputable def congNegL : ArithmeticSentence := ∀¹* congNegLB
-lemma models_congNegL : V↓[ℒₒᵣ] ⊧ congNegL ↔ ∀ x y' y : V, y' = y → y = neg LAct x → y' = neg LAct x := by
-  simp [congNegL, congNegLB, models_iff, Matrix.vecForall_iff]
-theorem pa_proves_congNegL : 𝗣𝗔 ⊢ congNegL :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_congNegL.mpr fun _ _ _ h1 h2 ↦ by subst_vars; first | rfl | assumption | trivial
-theorem lib_congNegL : Lib congNegL := Lib.of_pa pa_proves_congNegL
-
 /-- `n = n' → y = subst w n → y = subst w n'` (the top's `congSubstR`, §7.1). -/
 noncomputable def congSubstArgB : ArithmeticSemisentence 4 :=
   “n' n w y. n = n' → !(substsGraph LAct) y w n → !(substsGraph LAct) y w n'”
@@ -435,26 +405,6 @@ lemma models_congSubstArg : V↓[ℒₒᵣ] ⊧ congSubstArg ↔ ∀ n' n w y : 
 theorem pa_proves_congSubstArg : 𝗣𝗔 ⊢ congSubstArg :=
   Lib.pa_proves_of_models fun _ _ _ ↦ models_congSubstArg.mpr fun _ _ _ _ h1 h2 ↦ by subst_vars; first | rfl | assumption | trivial
 theorem lib_congSubstArg : Lib congSubstArg := Lib.of_pa pa_proves_congSubstArg
-
-/-- `y' = y → y = subst w n → y' = subst w n`. -/
-noncomputable def congSubstLB : ArithmeticSemisentence 4 :=
-  “n w y' y. y' = y → !(substsGraph LAct) y w n → !(substsGraph LAct) y' w n”
-noncomputable def congSubstL : ArithmeticSentence := ∀¹* congSubstLB
-lemma models_congSubstL : V↓[ℒₒᵣ] ⊧ congSubstL ↔ ∀ n w y' y : V, y' = y → y = subst LAct w n → y' = subst LAct w n := by
-  simp [congSubstL, congSubstLB, models_iff, Matrix.vecForall_iff, subst.defined.iff]
-theorem pa_proves_congSubstL : 𝗣𝗔 ⊢ congSubstL :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_congSubstL.mpr fun _ _ _ _ h1 h2 ↦ by subst_vars; first | rfl | assumption | trivial
-theorem lib_congSubstL : Lib congSubstL := Lib.of_pa pa_proves_congSubstL
-
-/-- `t' = t → t = insert x s → t' = insert x s`. -/
-noncomputable def congInsertLB : ArithmeticSemisentence 4 :=
-  “t' t x s. t' = t → !insertDef t x s → !insertDef t' x s”
-noncomputable def congInsertL : ArithmeticSentence := ∀¹* congInsertLB
-lemma models_congInsertL : V↓[ℒₒᵣ] ⊧ congInsertL ↔ ∀ t' t x s : V, t' = t → t = insert x s → t' = insert x s := by
-  simp [congInsertL, congInsertLB, models_iff, Matrix.vecForall_iff]
-theorem pa_proves_congInsertL : 𝗣𝗔 ⊢ congInsertL :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_congInsertL.mpr fun _ _ _ _ h1 h2 ↦ by subst_vars; first | rfl | assumption | trivial
-theorem lib_congInsertL : Lib congInsertL := Lib.of_pa pa_proves_congInsertL
 
 /-- `s' = s → t = insert x s → t = insert x s'`. -/
 noncomputable def congInsertSB : ArithmeticSemisentence 4 :=
@@ -475,16 +425,6 @@ lemma models_congSetLenR : V↓[ℒₒᵣ] ⊧ congSetLenR ↔ ∀ l s' s : V, s
 theorem pa_proves_congSetLenR : 𝗣𝗔 ⊢ congSetLenR :=
   Lib.pa_proves_of_models fun _ _ _ ↦ models_congSetLenR.mpr fun _ _ _ h1 h2 ↦ by subst_vars; first | rfl | assumption | trivial
 theorem lib_congSetLenR : Lib congSetLenR := Lib.of_pa pa_proves_congSetLenR
-
-/-- `s' = s → IsFormulaSet s → IsFormulaSet s'`. -/
-noncomputable def congIsFormulaSetB : ArithmeticSemisentence 2 :=
-  “s' s. s' = s → !(isFormulaSet LAct).pi s → !(isFormulaSet LAct).sigma s'”
-noncomputable def congIsFormulaSet : ArithmeticSentence := ∀¹* congIsFormulaSetB
-lemma models_congIsFormulaSet : V↓[ℒₒᵣ] ⊧ congIsFormulaSet ↔ ∀ s' s : V, s' = s → IsFormulaSet LAct s → IsFormulaSet LAct s' := by
-  simp [congIsFormulaSet, congIsFormulaSetB, models_iff, Matrix.vecForall_iff]
-theorem pa_proves_congIsFormulaSet : 𝗣𝗔 ⊢ congIsFormulaSet :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_congIsFormulaSet.mpr fun _ _ h1 h2 ↦ by subst_vars; first | rfl | assumption | trivial
-theorem lib_congIsFormulaSet : Lib congIsFormulaSet := Lib.of_pa pa_proves_congIsFormulaSet
 
 /-! ### B. Identification: the injectivity rows (§3.5) -/
 
@@ -620,116 +560,6 @@ theorem pa_proves_qqAndFun : 𝗣𝗔 ⊢ qqAndFun :=
   Lib.pa_proves_of_models fun _ _ _ ↦ models_qqAndFun.mpr fun _ _ _ _ h1 h2 ↦ by subst_vars; first | rfl | assumption | trivial
 theorem lib_qqAndFun : Lib qqAndFun := Lib.of_pa pa_proves_qqAndFun
 
-/-- functionality of `⋎`. -/
-noncomputable def qqOrFunB : ArithmeticSemisentence 4 :=
-  “y' p q y. !qqOrDef y p q → !qqOrDef y' p q → y = y'”
-noncomputable def qqOrFun : ArithmeticSentence := ∀¹* qqOrFunB
-lemma models_qqOrFun : V↓[ℒₒᵣ] ⊧ qqOrFun ↔ ∀ y' p q y : V, y = p ^⋎ q → y' = p ^⋎ q → y = y' := by
-  simp [qqOrFun, qqOrFunB, models_iff, Matrix.vecForall_iff]
-theorem pa_proves_qqOrFun : 𝗣𝗔 ⊢ qqOrFun :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_qqOrFun.mpr fun _ _ _ _ h1 h2 ↦ by subst_vars; first | rfl | assumption | trivial
-theorem lib_qqOrFun : Lib qqOrFun := Lib.of_pa pa_proves_qqOrFun
-
-/-- functionality of `∀`. -/
-noncomputable def qqAllFunB : ArithmeticSemisentence 3 :=
-  “y' p y. !qqAllDef y p → !qqAllDef y' p → y = y'”
-noncomputable def qqAllFun : ArithmeticSentence := ∀¹* qqAllFunB
-lemma models_qqAllFun : V↓[ℒₒᵣ] ⊧ qqAllFun ↔ ∀ y' p y : V, y = ^∀ p → y' = ^∀ p → y = y' := by
-  simp [qqAllFun, qqAllFunB, models_iff, Matrix.vecForall_iff]
-theorem pa_proves_qqAllFun : 𝗣𝗔 ⊢ qqAllFun :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_qqAllFun.mpr fun _ _ _ h1 h2 ↦ by subst_vars; first | rfl | assumption | trivial
-theorem lib_qqAllFun : Lib qqAllFun := Lib.of_pa pa_proves_qqAllFun
-
-/-- functionality of `∃`. -/
-noncomputable def qqExsFunB : ArithmeticSemisentence 3 :=
-  “y' p y. !qqExsDef y p → !qqExsDef y' p → y = y'”
-noncomputable def qqExsFun : ArithmeticSentence := ∀¹* qqExsFunB
-lemma models_qqExsFun : V↓[ℒₒᵣ] ⊧ qqExsFun ↔ ∀ y' p y : V, y = ^∃ p → y' = ^∃ p → y = y' := by
-  simp [qqExsFun, qqExsFunB, models_iff, Matrix.vecForall_iff]
-theorem pa_proves_qqExsFun : 𝗣𝗔 ⊢ qqExsFun :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_qqExsFun.mpr fun _ _ _ h1 h2 ↦ by subst_vars; first | rfl | assumption | trivial
-theorem lib_qqExsFun : Lib qqExsFun := Lib.of_pa pa_proves_qqExsFun
-
-/-- functionality of `rel`. -/
-noncomputable def qqRelFunB : ArithmeticSemisentence 5 :=
-  “y' k R v y. !qqRelDef y k R v → !qqRelDef y' k R v → y = y'”
-noncomputable def qqRelFun : ArithmeticSentence := ∀¹* qqRelFunB
-lemma models_qqRelFun : V↓[ℒₒᵣ] ⊧ qqRelFun ↔ ∀ y' k R v y : V, y = ^rel k R v → y' = ^rel k R v → y = y' := by
-  simp [qqRelFun, qqRelFunB, models_iff, Matrix.vecForall_iff]
-theorem pa_proves_qqRelFun : 𝗣𝗔 ⊢ qqRelFun :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_qqRelFun.mpr fun _ _ _ _ _ h1 h2 ↦ by subst_vars; first | rfl | assumption | trivial
-theorem lib_qqRelFun : Lib qqRelFun := Lib.of_pa pa_proves_qqRelFun
-
-/-- functionality of `nrel`. -/
-noncomputable def qqNRelFunB : ArithmeticSemisentence 5 :=
-  “y' k R v y. !qqNRelDef y k R v → !qqNRelDef y' k R v → y = y'”
-noncomputable def qqNRelFun : ArithmeticSentence := ∀¹* qqNRelFunB
-lemma models_qqNRelFun : V↓[ℒₒᵣ] ⊧ qqNRelFun ↔ ∀ y' k R v y : V, y = ^nrel k R v → y' = ^nrel k R v → y = y' := by
-  simp [qqNRelFun, qqNRelFunB, models_iff, Matrix.vecForall_iff]
-theorem pa_proves_qqNRelFun : 𝗣𝗔 ⊢ qqNRelFun :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_qqNRelFun.mpr fun _ _ _ _ _ h1 h2 ↦ by subst_vars; first | rfl | assumption | trivial
-theorem lib_qqNRelFun : Lib qqNRelFun := Lib.of_pa pa_proves_qqNRelFun
-
-/-- functionality of `⊤`. -/
-noncomputable def qqVerumFunB : ArithmeticSemisentence 2 :=
-  “y' y. !qqVerumDef y → !qqVerumDef y' → y = y'”
-noncomputable def qqVerumFun : ArithmeticSentence := ∀¹* qqVerumFunB
-lemma models_qqVerumFun : V↓[ℒₒᵣ] ⊧ qqVerumFun ↔ ∀ y' y : V, y = ^⊤ → y' = ^⊤ → y = y' := by
-  simp [qqVerumFun, qqVerumFunB, models_iff, Matrix.vecForall_iff]
-theorem pa_proves_qqVerumFun : 𝗣𝗔 ⊢ qqVerumFun :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_qqVerumFun.mpr fun _ _ h1 h2 ↦ by subst_vars; first | rfl | assumption | trivial
-theorem lib_qqVerumFun : Lib qqVerumFun := Lib.of_pa pa_proves_qqVerumFun
-
-/-- functionality of `⊥`. -/
-noncomputable def qqFalsumFunB : ArithmeticSemisentence 2 :=
-  “y' y. !qqFalsumDef y → !qqFalsumDef y' → y = y'”
-noncomputable def qqFalsumFun : ArithmeticSentence := ∀¹* qqFalsumFunB
-lemma models_qqFalsumFun : V↓[ℒₒᵣ] ⊧ qqFalsumFun ↔ ∀ y' y : V, y = ^⊥ → y' = ^⊥ → y = y' := by
-  simp [qqFalsumFun, qqFalsumFunB, models_iff, Matrix.vecForall_iff]
-theorem pa_proves_qqFalsumFun : 𝗣𝗔 ⊢ qqFalsumFun :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_qqFalsumFun.mpr fun _ _ h1 h2 ↦ by subst_vars; first | rfl | assumption | trivial
-theorem lib_qqFalsumFun : Lib qqFalsumFun := Lib.of_pa pa_proves_qqFalsumFun
-
-/-- functionality of `func`. -/
-noncomputable def qqFuncFunB : ArithmeticSemisentence 5 :=
-  “y' k f v y. !qqFuncDef y k f v → !qqFuncDef y' k f v → y = y'”
-noncomputable def qqFuncFun : ArithmeticSentence := ∀¹* qqFuncFunB
-lemma models_qqFuncFun : V↓[ℒₒᵣ] ⊧ qqFuncFun ↔ ∀ y' k f v y : V, y = ^func k f v → y' = ^func k f v → y = y' := by
-  simp [qqFuncFun, qqFuncFunB, models_iff, Matrix.vecForall_iff]
-theorem pa_proves_qqFuncFun : 𝗣𝗔 ⊢ qqFuncFun :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_qqFuncFun.mpr fun _ _ _ _ _ h1 h2 ↦ by subst_vars; first | rfl | assumption | trivial
-theorem lib_qqFuncFun : Lib qqFuncFun := Lib.of_pa pa_proves_qqFuncFun
-
-/-- functionality of `#z`. -/
-noncomputable def qqBvarFunB : ArithmeticSemisentence 3 :=
-  “y' z y. !qqBvarDef y z → !qqBvarDef y' z → y = y'”
-noncomputable def qqBvarFun : ArithmeticSentence := ∀¹* qqBvarFunB
-lemma models_qqBvarFun : V↓[ℒₒᵣ] ⊧ qqBvarFun ↔ ∀ y' z y : V, y = ^#z → y' = ^#z → y = y' := by
-  simp [qqBvarFun, qqBvarFunB, models_iff, Matrix.vecForall_iff]
-theorem pa_proves_qqBvarFun : 𝗣𝗔 ⊢ qqBvarFun :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_qqBvarFun.mpr fun _ _ _ h1 h2 ↦ by subst_vars; first | rfl | assumption | trivial
-theorem lib_qqBvarFun : Lib qqBvarFun := Lib.of_pa pa_proves_qqBvarFun
-
-/-- functionality of `&x`. -/
-noncomputable def qqFvarFunB : ArithmeticSemisentence 3 :=
-  “y' x y. !qqFvarDef y x → !qqFvarDef y' x → y = y'”
-noncomputable def qqFvarFun : ArithmeticSentence := ∀¹* qqFvarFunB
-lemma models_qqFvarFun : V↓[ℒₒᵣ] ⊧ qqFvarFun ↔ ∀ y' x y : V, y = ^&x → y' = ^&x → y = y' := by
-  simp [qqFvarFun, qqFvarFunB, models_iff, Matrix.vecForall_iff]
-theorem pa_proves_qqFvarFun : 𝗣𝗔 ⊢ qqFvarFun :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_qqFvarFun.mpr fun _ _ _ h1 h2 ↦ by subst_vars; first | rfl | assumption | trivial
-theorem lib_qqFvarFun : Lib qqFvarFun := Lib.of_pa pa_proves_qqFvarFun
-
-/-- functionality of `∷`. -/
-noncomputable def adjoinFunB : ArithmeticSemisentence 4 :=
-  “y' t v y. !adjoinDef y t v → !adjoinDef y' t v → y = y'”
-noncomputable def adjoinFun : ArithmeticSentence := ∀¹* adjoinFunB
-lemma models_adjoinFun : V↓[ℒₒᵣ] ⊧ adjoinFun ↔ ∀ y' t v y : V, y = t ∷ v → y' = t ∷ v → y = y' := by
-  simp [adjoinFun, adjoinFunB, models_iff, Matrix.vecForall_iff]
-theorem pa_proves_adjoinFun : 𝗣𝗔 ⊢ adjoinFun :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_adjoinFun.mpr fun _ _ _ _ h1 h2 ↦ by subst_vars; first | rfl | assumption | trivial
-theorem lib_adjoinFun : Lib adjoinFun := Lib.of_pa pa_proves_adjoinFun
-
 /-- functionality of `setShift`. -/
 noncomputable def setShiftFunB : ArithmeticSemisentence 3 :=
   “y' s y. !(setShiftGraph LAct) y s → !(setShiftGraph LAct) y' s → y = y'”
@@ -739,246 +569,6 @@ lemma models_setShiftFun : V↓[ℒₒᵣ] ⊧ setShiftFun ↔ ∀ y' s y : V, y
 theorem pa_proves_setShiftFun : 𝗣𝗔 ⊢ setShiftFun :=
   Lib.pa_proves_of_models fun _ _ _ ↦ models_setShiftFun.mpr fun _ _ _ h1 h2 ↦ by subst_vars; first | rfl | assumption | trivial
 theorem lib_setShiftFun : Lib setShiftFun := Lib.of_pa pa_proves_setShiftFun
-
-/-- functionality of `setLen`. -/
-noncomputable def setLenFunB : ArithmeticSemisentence 3 :=
-  “y' s y. !(setLenDef LAct) y s → !(setLenDef LAct) y' s → y = y'”
-noncomputable def setLenFun : ArithmeticSentence := ∀¹* setLenFunB
-lemma models_setLenFun : V↓[ℒₒᵣ] ⊧ setLenFun ↔ ∀ y' s y : V, y = setLen LAct s → y' = setLen LAct s → y = y' := by
-  simp [setLenFun, setLenFunB, models_iff, Matrix.vecForall_iff, setLen_defined.iff]
-theorem pa_proves_setLenFun : 𝗣𝗔 ⊢ setLenFun :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_setLenFun.mpr fun _ _ _ h1 h2 ↦ by subst_vars; first | rfl | assumption | trivial
-theorem lib_setLenFun : Lib setLenFun := Lib.of_pa pa_proves_setLenFun
-
-/-- functionality of `‖·‖`. -/
-noncomputable def lengthFunB : ArithmeticSemisentence 3 :=
-  “y' k y. !lengthDef y k → !lengthDef y' k → y = y'”
-noncomputable def lengthFun : ArithmeticSentence := ∀¹* lengthFunB
-lemma models_lengthFun : V↓[ℒₒᵣ] ⊧ lengthFun ↔ ∀ y' k y : V, y = ‖k‖ → y' = ‖k‖ → y = y' := by
-  simp [lengthFun, lengthFunB, models_iff, Matrix.vecForall_iff, length_defined.iff]
-theorem pa_proves_lengthFun : 𝗣𝗔 ⊢ lengthFun :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_lengthFun.mpr fun _ _ _ h1 h2 ↦ by subst_vars; first | rfl | assumption | trivial
-theorem lib_lengthFun : Lib lengthFun := Lib.of_pa pa_proves_lengthFun
-
-/-- functionality of `termLenVec`. -/
-noncomputable def termLenVecFunB : ArithmeticSemisentence 4 :=
-  “y' k v y. !(termLenVecGraph LAct) y k v → !(termLenVecGraph LAct) y' k v → y = y'”
-noncomputable def termLenVecFun : ArithmeticSentence := ∀¹* termLenVecFunB
-lemma models_termLenVecFun : V↓[ℒₒᵣ] ⊧ termLenVecFun ↔ ∀ y' k v y : V, y = termLenVec LAct k v → y' = termLenVec LAct k v → y = y' := by
-  simp [termLenVecFun, termLenVecFunB, models_iff, Matrix.vecForall_iff, termLenVec.defined.iff]
-theorem pa_proves_termLenVecFun : 𝗣𝗔 ⊢ termLenVecFun :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_termLenVecFun.mpr fun _ _ _ _ h1 h2 ↦ by subst_vars; first | rfl | assumption | trivial
-theorem lib_termLenVecFun : Lib termLenVecFun := Lib.of_pa pa_proves_termLenVecFun
-
-/-- functionality of `listSum`. -/
-noncomputable def listSumFunB : ArithmeticSemisentence 3 :=
-  “y' M y. !listSumDef y M → !listSumDef y' M → y = y'”
-noncomputable def listSumFun : ArithmeticSentence := ∀¹* listSumFunB
-lemma models_listSumFun : V↓[ℒₒᵣ] ⊧ listSumFun ↔ ∀ y' M y : V, y = listSum M → y' = listSum M → y = y' := by
-  simp [listSumFun, listSumFunB, models_iff, Matrix.vecForall_iff, listSum_defined.iff]
-theorem pa_proves_listSumFun : 𝗣𝗔 ⊢ listSumFun :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_listSumFun.mpr fun _ _ _ h1 h2 ↦ by subst_vars; first | rfl | assumption | trivial
-theorem lib_listSumFun : Lib listSumFun := Lib.of_pa pa_proves_listSumFun
-
-/-- functionality of `formulaLen`. -/
-noncomputable def formulaLenFunB : ArithmeticSemisentence 3 :=
-  “y' p y. !(formulaLenGraph LAct) y p → !(formulaLenGraph LAct) y' p → y = y'”
-noncomputable def formulaLenFun : ArithmeticSentence := ∀¹* formulaLenFunB
-lemma models_formulaLenFun : V↓[ℒₒᵣ] ⊧ formulaLenFun ↔ ∀ y' p y : V, y = formulaLen LAct p → y' = formulaLen LAct p → y = y' := by
-  simp [formulaLenFun, formulaLenFunB, models_iff, Matrix.vecForall_iff, formulaLen.defined.iff]
-theorem pa_proves_formulaLenFun : 𝗣𝗔 ⊢ formulaLenFun :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_formulaLenFun.mpr fun _ _ _ h1 h2 ↦ by subst_vars; first | rfl | assumption | trivial
-theorem lib_formulaLenFun : Lib formulaLenFun := Lib.of_pa pa_proves_formulaLenFun
-
-/-- functionality of `termLen`. -/
-noncomputable def termLenFunB : ArithmeticSemisentence 3 :=
-  “y' t y. !(termLenGraph LAct) y t → !(termLenGraph LAct) y' t → y = y'”
-noncomputable def termLenFun : ArithmeticSentence := ∀¹* termLenFunB
-lemma models_termLenFun : V↓[ℒₒᵣ] ⊧ termLenFun ↔ ∀ y' t y : V, y = termLen LAct t → y' = termLen LAct t → y = y' := by
-  simp [termLenFun, termLenFunB, models_iff, Matrix.vecForall_iff, termLen.defined.iff]
-theorem pa_proves_termLenFun : 𝗣𝗔 ⊢ termLenFun :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_termLenFun.mpr fun _ _ _ h1 h2 ↦ by subst_vars; first | rfl | assumption | trivial
-theorem lib_termLenFun : Lib termLenFun := Lib.of_pa pa_proves_termLenFun
-
-/-- functionality of `fstIdx`. -/
-noncomputable def fstIdxFunB : ArithmeticSemisentence 3 :=
-  “y' d y. !fstIdxDef y d → !fstIdxDef y' d → y = y'”
-noncomputable def fstIdxFun : ArithmeticSentence := ∀¹* fstIdxFunB
-lemma models_fstIdxFun : V↓[ℒₒᵣ] ⊧ fstIdxFun ↔ ∀ y' d y : V, y = fstIdx d → y' = fstIdx d → y = y' := by
-  simp [fstIdxFun, fstIdxFunB, models_iff, Matrix.vecForall_iff]
-theorem pa_proves_fstIdxFun : 𝗣𝗔 ⊢ fstIdxFun :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_fstIdxFun.mpr fun _ _ _ h1 h2 ↦ by subst_vars; first | rfl | assumption | trivial
-theorem lib_fstIdxFun : Lib fstIdxFun := Lib.of_pa pa_proves_fstIdxFun
-
-/-- functionality of `insert`. -/
-noncomputable def insertFunB : ArithmeticSemisentence 4 :=
-  “y' x s y. !insertDef y x s → !insertDef y' x s → y = y'”
-noncomputable def insertFun : ArithmeticSentence := ∀¹* insertFunB
-lemma models_insertFun : V↓[ℒₒᵣ] ⊧ insertFun ↔ ∀ y' x s y : V, y = insert x s → y' = insert x s → y = y' := by
-  simp [insertFun, insertFunB, models_iff, Matrix.vecForall_iff]
-theorem pa_proves_insertFun : 𝗣𝗔 ⊢ insertFun :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_insertFun.mpr fun _ _ _ _ h1 h2 ↦ by subst_vars; first | rfl | assumption | trivial
-theorem lib_insertFun : Lib insertFun := Lib.of_pa pa_proves_insertFun
-
-/-- functionality of `neg`. -/
-noncomputable def negFunB : ArithmeticSemisentence 3 :=
-  “y' p y. !(negGraph LAct) y p → !(negGraph LAct) y' p → y = y'”
-noncomputable def negFun : ArithmeticSentence := ∀¹* negFunB
-lemma models_negFun : V↓[ℒₒᵣ] ⊧ negFun ↔ ∀ y' p y : V, y = neg LAct p → y' = neg LAct p → y = y' := by
-  simp [negFun, negFunB, models_iff, Matrix.vecForall_iff]
-theorem pa_proves_negFun : 𝗣𝗔 ⊢ negFun :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_negFun.mpr fun _ _ _ h1 h2 ↦ by subst_vars; first | rfl | assumption | trivial
-theorem lib_negFun : Lib negFun := Lib.of_pa pa_proves_negFun
-
-/-- functionality of `shift`. -/
-noncomputable def shiftFunB : ArithmeticSemisentence 3 :=
-  “y' p y. !(shiftGraph LAct) y p → !(shiftGraph LAct) y' p → y = y'”
-noncomputable def shiftFun : ArithmeticSentence := ∀¹* shiftFunB
-lemma models_shiftFun : V↓[ℒₒᵣ] ⊧ shiftFun ↔ ∀ y' p y : V, y = shift LAct p → y' = shift LAct p → y = y' := by
-  simp [shiftFun, shiftFunB, models_iff, Matrix.vecForall_iff, shift.defined.iff]
-theorem pa_proves_shiftFun : 𝗣𝗔 ⊢ shiftFun :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_shiftFun.mpr fun _ _ _ h1 h2 ↦ by subst_vars; first | rfl | assumption | trivial
-theorem lib_shiftFun : Lib shiftFun := Lib.of_pa pa_proves_shiftFun
-
-/-- functionality of `subst`. -/
-noncomputable def substsFunB : ArithmeticSemisentence 4 :=
-  “y' w p y. !(substsGraph LAct) y w p → !(substsGraph LAct) y' w p → y = y'”
-noncomputable def substsFun : ArithmeticSentence := ∀¹* substsFunB
-lemma models_substsFun : V↓[ℒₒᵣ] ⊧ substsFun ↔ ∀ y' w p y : V, y = subst LAct w p → y' = subst LAct w p → y = y' := by
-  simp [substsFun, substsFunB, models_iff, Matrix.vecForall_iff, subst.defined.iff]
-theorem pa_proves_substsFun : 𝗣𝗔 ⊢ substsFun :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_substsFun.mpr fun _ _ _ _ h1 h2 ↦ by subst_vars; first | rfl | assumption | trivial
-theorem lib_substsFun : Lib substsFun := Lib.of_pa pa_proves_substsFun
-
-/-- functionality of `substs1`. -/
-noncomputable def substs1FunB : ArithmeticSemisentence 4 :=
-  “y' t p y. !(substs1Graph LAct) y t p → !(substs1Graph LAct) y' t p → y = y'”
-noncomputable def substs1Fun : ArithmeticSentence := ∀¹* substs1FunB
-lemma models_substs1Fun : V↓[ℒₒᵣ] ⊧ substs1Fun ↔ ∀ y' t p y : V, y = substs1 LAct t p → y' = substs1 LAct t p → y = y' := by
-  simp [substs1Fun, substs1FunB, models_iff, Matrix.vecForall_iff, substs1.defined.iff]
-theorem pa_proves_substs1Fun : 𝗣𝗔 ⊢ substs1Fun :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_substs1Fun.mpr fun _ _ _ _ h1 h2 ↦ by subst_vars; first | rfl | assumption | trivial
-theorem lib_substs1Fun : Lib substs1Fun := Lib.of_pa pa_proves_substs1Fun
-
-/-- functionality of `free`. -/
-noncomputable def freeFunB : ArithmeticSemisentence 3 :=
-  “y' p y. !(freeGraph LAct) y p → !(freeGraph LAct) y' p → y = y'”
-noncomputable def freeFun : ArithmeticSentence := ∀¹* freeFunB
-lemma models_freeFun : V↓[ℒₒᵣ] ⊧ freeFun ↔ ∀ y' p y : V, y = free LAct p → y' = free LAct p → y = y' := by
-  simp [freeFun, freeFunB, models_iff, Matrix.vecForall_iff, free.defined.iff]
-theorem pa_proves_freeFun : 𝗣𝗔 ⊢ freeFun :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_freeFun.mpr fun _ _ _ h1 h2 ↦ by subst_vars; first | rfl | assumption | trivial
-theorem lib_freeFun : Lib freeFun := Lib.of_pa pa_proves_freeFun
-
-/-- functionality of `bnum`. -/
-noncomputable def bnumFunB : ArithmeticSemisentence 3 :=
-  “y' k y. !bnumGraph y k → !bnumGraph y' k → y = y'”
-noncomputable def bnumFun : ArithmeticSentence := ∀¹* bnumFunB
-lemma models_bnumFun : V↓[ℒₒᵣ] ⊧ bnumFun ↔ ∀ y' k y : V, y = bnum k → y' = bnum k → y = y' := by
-  simp [bnumFun, bnumFunB, models_iff, Matrix.vecForall_iff, bnum.defined.iff]
-theorem pa_proves_bnumFun : 𝗣𝗔 ⊢ bnumFun :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_bnumFun.mpr fun _ _ _ h1 h2 ↦ by subst_vars; first | rfl | assumption | trivial
-theorem lib_bnumFun : Lib bnumFun := Lib.of_pa pa_proves_bnumFun
-
-/-- functionality of `nth`. -/
-noncomputable def nthFunB : ArithmeticSemisentence 4 :=
-  “y' w i y. !nthDef y w i → !nthDef y' w i → y = y'”
-noncomputable def nthFun : ArithmeticSentence := ∀¹* nthFunB
-lemma models_nthFun : V↓[ℒₒᵣ] ⊧ nthFun ↔ ∀ y' w i y : V, y = w.[i] → y' = w.[i] → y = y' := by
-  simp [nthFun, nthFunB, models_iff, Matrix.vecForall_iff, nth_defined.iff]
-theorem pa_proves_nthFun : 𝗣𝗔 ⊢ nthFun :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_nthFun.mpr fun _ _ _ _ h1 h2 ↦ by subst_vars; first | rfl | assumption | trivial
-theorem lib_nthFun : Lib nthFun := Lib.of_pa pa_proves_nthFun
-
-/-- functionality of `fvarVec`. -/
-noncomputable def fvarVecFunB : ArithmeticSemisentence 3 :=
-  “y' m y. !fvarVecDef y m → !fvarVecDef y' m → y = y'”
-noncomputable def fvarVecFun : ArithmeticSentence := ∀¹* fvarVecFunB
-lemma models_fvarVecFun : V↓[ℒₒᵣ] ⊧ fvarVecFun ↔ ∀ y' m y : V, y = fvarVec m → y' = fvarVec m → y = y' := by
-  simp [fvarVecFun, fvarVecFunB, models_iff, Matrix.vecForall_iff, fvarVec_defined.iff]
-theorem pa_proves_fvarVecFun : 𝗣𝗔 ⊢ fvarVecFun :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_fvarVecFun.mpr fun _ _ _ h1 h2 ↦ by subst_vars; first | rfl | assumption | trivial
-theorem lib_fvarVecFun : Lib fvarVecFun := Lib.of_pa pa_proves_fvarVecFun
-
-/-- functionality of `termShift`. -/
-noncomputable def termShiftFunB : ArithmeticSemisentence 3 :=
-  “y' t y. !(termShiftGraph LAct) y t → !(termShiftGraph LAct) y' t → y = y'”
-noncomputable def termShiftFun : ArithmeticSentence := ∀¹* termShiftFunB
-lemma models_termShiftFun : V↓[ℒₒᵣ] ⊧ termShiftFun ↔ ∀ y' t y : V, y = termShift LAct t → y' = termShift LAct t → y = y' := by
-  simp [termShiftFun, termShiftFunB, models_iff, Matrix.vecForall_iff, termShift.defined.iff]
-theorem pa_proves_termShiftFun : 𝗣𝗔 ⊢ termShiftFun :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_termShiftFun.mpr fun _ _ _ h1 h2 ↦ by subst_vars; first | rfl | assumption | trivial
-theorem lib_termShiftFun : Lib termShiftFun := Lib.of_pa pa_proves_termShiftFun
-
-/-- functionality of `termSubst`. -/
-noncomputable def termSubstFunB : ArithmeticSemisentence 4 :=
-  “y' w t y. !(termSubstGraph LAct) y w t → !(termSubstGraph LAct) y' w t → y = y'”
-noncomputable def termSubstFun : ArithmeticSentence := ∀¹* termSubstFunB
-lemma models_termSubstFun : V↓[ℒₒᵣ] ⊧ termSubstFun ↔ ∀ y' w t y : V, y = termSubst LAct w t → y' = termSubst LAct w t → y = y' := by
-  simp [termSubstFun, termSubstFunB, models_iff, Matrix.vecForall_iff, termSubst.defined.iff]
-theorem pa_proves_termSubstFun : 𝗣𝗔 ⊢ termSubstFun :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_termSubstFun.mpr fun _ _ _ _ h1 h2 ↦ by subst_vars; first | rfl | assumption | trivial
-theorem lib_termSubstFun : Lib termSubstFun := Lib.of_pa pa_proves_termSubstFun
-
-/-- functionality of `termBShift`. -/
-noncomputable def termBShiftFunB : ArithmeticSemisentence 3 :=
-  “y' t y. !(termBShiftGraph LAct) y t → !(termBShiftGraph LAct) y' t → y = y'”
-noncomputable def termBShiftFun : ArithmeticSentence := ∀¹* termBShiftFunB
-lemma models_termBShiftFun : V↓[ℒₒᵣ] ⊧ termBShiftFun ↔ ∀ y' t y : V, y = termBShift LAct t → y' = termBShift LAct t → y = y' := by
-  simp [termBShiftFun, termBShiftFunB, models_iff, Matrix.vecForall_iff, termBShift.defined.iff]
-theorem pa_proves_termBShiftFun : 𝗣𝗔 ⊢ termBShiftFun :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_termBShiftFun.mpr fun _ _ _ h1 h2 ↦ by subst_vars; first | rfl | assumption | trivial
-theorem lib_termBShiftFun : Lib termBShiftFun := Lib.of_pa pa_proves_termBShiftFun
-
-/-- functionality of `qqAlls`. -/
-noncomputable def qqAllsFunB : ArithmeticSemisentence 4 :=
-  “y' b m y. !qqAllsDef y b m → !qqAllsDef y' b m → y = y'”
-noncomputable def qqAllsFun : ArithmeticSentence := ∀¹* qqAllsFunB
-lemma models_qqAllsFun : V↓[ℒₒᵣ] ⊧ qqAllsFun ↔ ∀ y' b m y : V, y = qqAlls b m → y' = qqAlls b m → y = y' := by
-  simp [qqAllsFun, qqAllsFunB, models_iff, Matrix.vecForall_iff, qqAlls_defined.iff]
-theorem pa_proves_qqAllsFun : 𝗣𝗔 ⊢ qqAllsFun :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_qqAllsFun.mpr fun _ _ _ _ h1 h2 ↦ by subst_vars; first | rfl | assumption | trivial
-theorem lib_qqAllsFun : Lib qqAllsFun := Lib.of_pa pa_proves_qqAllsFun
-
-/-- functionality of `bv`. -/
-noncomputable def bvFunB : ArithmeticSemisentence 3 :=
-  “y' b y. !(bvGraph LAct) y b → !(bvGraph LAct) y' b → y = y'”
-noncomputable def bvFun : ArithmeticSentence := ∀¹* bvFunB
-lemma models_bvFun : V↓[ℒₒᵣ] ⊧ bvFun ↔ ∀ y' b y : V, y = Bootstrapping.bv LAct b → y' = Bootstrapping.bv LAct b → y = y' := by
-  simp [bvFun, bvFunB, models_iff, Matrix.vecForall_iff, bv.defined.iff]
-theorem pa_proves_bvFun : 𝗣𝗔 ⊢ bvFun :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_bvFun.mpr fun _ _ _ h1 h2 ↦ by subst_vars; first | rfl | assumption | trivial
-theorem lib_bvFun : Lib bvFun := Lib.of_pa pa_proves_bvFun
-
-/-- functionality of `qVec`. -/
-noncomputable def qVecFunB : ArithmeticSemisentence 3 :=
-  “y' w y. !(qVecGraph LAct) y w → !(qVecGraph LAct) y' w → y = y'”
-noncomputable def qVecFun : ArithmeticSentence := ∀¹* qVecFunB
-lemma models_qVecFun : V↓[ℒₒᵣ] ⊧ qVecFun ↔ ∀ y' w y : V, y = qVec LAct w → y' = qVec LAct w → y = y' := by
-  simp [qVecFun, qVecFunB, models_iff, Matrix.vecForall_iff, qVec.defined.iff]
-theorem pa_proves_qVecFun : 𝗣𝗔 ⊢ qVecFun :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_qVecFun.mpr fun _ _ _ h1 h2 ↦ by subst_vars; first | rfl | assumption | trivial
-theorem lib_qVecFun : Lib qVecFun := Lib.of_pa pa_proves_qVecFun
-
-/-- functionality of `termShiftVec`. -/
-noncomputable def termShiftVecFunB : ArithmeticSemisentence 4 :=
-  “y' k v y. !(termShiftVecGraph LAct) y k v → !(termShiftVecGraph LAct) y' k v → y = y'”
-noncomputable def termShiftVecFun : ArithmeticSentence := ∀¹* termShiftVecFunB
-lemma models_termShiftVecFun : V↓[ℒₒᵣ] ⊧ termShiftVecFun ↔ ∀ y' k v y : V, y = termShiftVec LAct k v → y' = termShiftVec LAct k v → y = y' := by
-  simp [termShiftVecFun, termShiftVecFunB, models_iff, Matrix.vecForall_iff, termShiftVec.defined.iff]
-theorem pa_proves_termShiftVecFun : 𝗣𝗔 ⊢ termShiftVecFun :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_termShiftVecFun.mpr fun _ _ _ _ h1 h2 ↦ by subst_vars; first | rfl | assumption | trivial
-theorem lib_termShiftVecFun : Lib termShiftVecFun := Lib.of_pa pa_proves_termShiftVecFun
-
-/-- functionality of `termSubstVec`. -/
-noncomputable def termSubstVecFunB : ArithmeticSemisentence 5 :=
-  “y' k w v y. !(termSubstVecGraph LAct) y k w v → !(termSubstVecGraph LAct) y' k w v → y = y'”
-noncomputable def termSubstVecFun : ArithmeticSentence := ∀¹* termSubstVecFunB
-lemma models_termSubstVecFun : V↓[ℒₒᵣ] ⊧ termSubstVecFun ↔ ∀ y' k w v y : V, y = termSubstVec LAct k w v → y' = termSubstVec LAct k w v → y = y' := by
-  simp [termSubstVecFun, termSubstVecFunB, models_iff, Matrix.vecForall_iff, termSubstVec.defined.iff]
-theorem pa_proves_termSubstVecFun : 𝗣𝗔 ⊢ termSubstVecFun :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_termSubstVecFun.mpr fun _ _ _ _ _ h1 h2 ↦ by subst_vars; first | rfl | assumption | trivial
-theorem lib_termSubstVecFun : Lib termSubstVecFun := Lib.of_pa pa_proves_termSubstVecFun
 
 /-! ### D. Sets: extensionality and `setShift` on a chain (§3.4, §4.5) -/
 
@@ -1146,26 +736,6 @@ theorem pa_proves_instBIntro : 𝗣𝗔 ⊢ instBIntro :=
   Lib.pa_proves_of_models fun _ _ _ ↦ models_instBIntro.mpr fun _ _ _ _ _ h1 h2 h3 ↦ by subst_vars; first | rfl | assumption | trivial
 theorem lib_instBIntro : Lib instBIntro := Lib.of_pa pa_proves_instBIntro
 
-/-- `l = ‖k‖ → a = l * l * l → a = gBudget k`. -/
-noncomputable def gIntroB : ArithmeticSemisentence 3 :=
-  “a l k. !lengthDef l k → a = ((l * l) * l) → !gGraph a k”
-noncomputable def gIntro : ArithmeticSentence := ∀¹* gIntroB
-lemma models_gIntro : V↓[ℒₒᵣ] ⊧ gIntro ↔ ∀ a l k : V, l = ‖k‖ → a = ((l * l) * l) → a = gBudget k := by
-  simp [gIntro, gIntroB, models_iff, Matrix.vecForall_iff, length_defined.iff, gBudget.defined.iff]
-theorem pa_proves_gIntro : 𝗣𝗔 ⊢ gIntro :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_gIntro.mpr fun _ _ _ h1 h2 ↦ by subst_vars; first | rfl | assumption | trivial
-theorem lib_gIntro : Lib gIntro := Lib.of_pa pa_proves_gIntro
-
-/-- `∀ k, ∃ l, l = ‖k‖`. -/
-noncomputable def lengthTotalB : ArithmeticSemisentence 1 :=
-  “k. ∃ l, !lengthDef l k”
-noncomputable def lengthTotal : ArithmeticSentence := ∀¹* lengthTotalB
-lemma models_lengthTotal : V↓[ℒₒᵣ] ⊧ lengthTotal ↔ ∀ k : V, ∃ l, l = ‖k‖ := by
-  simp [lengthTotal, lengthTotalB, models_iff, Matrix.vecForall_iff, length_defined.iff]
-theorem pa_proves_lengthTotal : 𝗣𝗔 ⊢ lengthTotal :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_lengthTotal.mpr fun _ ↦ ⟨_, rfl⟩
-theorem lib_lengthTotal : Lib lengthTotal := Lib.of_pa pa_proves_lengthTotal
-
 /-- `t = func 0 0 0 → t = bnum 0` (`𝟎` as the walk writes it). -/
 noncomputable def bnumZeroCertB : ArithmeticSemisentence 1 :=
   “t. !qqFuncDef t 0 0 0 → !bnumGraph t 0”
@@ -1199,12 +769,6 @@ theorem lib_bnumEvenCert : Lib bnumEvenCert := Lib.of_pa pa_proves_bnumEvenCert
 /-- `1 ≤ m → t = bnum m → u = (𝟐 ^* t) ^+ 𝟏 (as `func`/`∷` facts) → u = bnum (2 * m + 1)` (`bnum_two_mul_add_one`). -/
 noncomputable def bnumOddCertB : ArithmeticSemisentence 12 :=
   “u x x' s v v' two w w' one t m. 1 ≤ m → !bnumGraph t m → !qqFuncDef one 0 (0 + 1) 0 → !adjoinDef w' one 0 → !adjoinDef w one w' → !qqFuncDef two (0 + 1 + 1) 0 w → !adjoinDef v' t 0 → !adjoinDef v two v' → !qqFuncDef s (0 + 1 + 1) (0 + 1) v → !adjoinDef x' one 0 → !adjoinDef x s x' → !qqFuncDef u (0 + 1 + 1) 0 x → !bnumGraph u ((2 * m) + 1)”
-noncomputable def bnumOddCert : ArithmeticSentence := ∀¹* bnumOddCertB
-lemma models_bnumOddCert : V↓[ℒₒᵣ] ⊧ bnumOddCert ↔ ∀ u x x' s v v' two w w' one t m : V, (1 : V) ≤ m → t = bnum m → one = ^func (0 : V) ((0 : V) + 1) (0 : V) → w' = one ∷ (0 : V) → w = one ∷ w' → two = ^func ((0 : V) + 1 + 1) (0 : V) w → v' = t ∷ (0 : V) → v = two ∷ v' → s = ^func ((0 : V) + 1 + 1) ((0 : V) + 1) v → x' = one ∷ (0 : V) → x = s ∷ x' → u = ^func ((0 : V) + 1 + 1) (0 : V) x → u = bnum (((2 : V) * m) + (1 : V)) := by
-  simp [bnumOddCert, bnumOddCertB, models_iff, Matrix.vecForall_iff, bnum.defined.iff]
-theorem pa_proves_bnumOddCert : 𝗣𝗔 ⊢ bnumOddCert :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_bnumOddCert.mpr fun _ _ _ _ _ _ _ _ _ _ _ _ h₁ h₂ h₃ h₄ h₅ h₆ h₇ h₈ h₉ h10 h11 h12 ↦ by subst_vars; rw [bnum_two_mul_add_one h₁]; simp only [qqTwo, qqMul, qqAdd, coe_mulIndex_eq, coe_addIndex_eq, Arithmetic.one, qqFuncN_eq_qqFunc, qqFunc_absolute, coe_oneIndex_eq, Nat.cast_zero, zero_add, one_add_one_eq_two]
-theorem lib_bnumOddCert : Lib bnumOddCert := Lib.of_pa pa_proves_bnumOddCert
 
 /-! ### G. Lengths: `termLenVec`/`listSum` bottom-up, the atom lengths with universal `M, s` (§3.6) -/
 
@@ -1752,16 +1316,6 @@ theorem pa_proves_twoMulMul : 𝗣𝗔 ⊢ twoMulMul :=
   Lib.pa_proves_of_models fun _ _ _ ↦ models_twoMulMul.mpr fun _ _ ↦ mul_left_comm _ _ _
 theorem lib_twoMulMul : Lib twoMulMul := Lib.of_pa pa_proves_twoMulMul
 
-/-- `x * (2 * y + 1) = 2 * (x * y) + x` (N4, the odd bit). -/
-noncomputable def twoMulOneMulB : ArithmeticSemisentence 2 :=
-  “y x. (x * ((2 * y) + 1)) = ((2 * (x * y)) + x)”
-noncomputable def twoMulOneMul : ArithmeticSentence := ∀¹* twoMulOneMulB
-lemma models_twoMulOneMul : V↓[ℒₒᵣ] ⊧ twoMulOneMul ↔ ∀ y x : V, (x * (((2 : V) * y) + (1 : V))) = (((2 : V) * (x * y)) + x) := by
-  simp [twoMulOneMul, twoMulOneMulB, models_iff, Matrix.vecForall_iff]
-theorem pa_proves_twoMulOneMul : 𝗣𝗔 ⊢ twoMulOneMul :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_twoMulOneMul.mpr fun _ _ ↦ by rw [mul_add, mul_one, mul_left_comm]
-theorem lib_twoMulOneMul : Lib twoMulOneMul := Lib.of_pa pa_proves_twoMulOneMul
-
 /-- `‖0‖ = 0` (N5; dummy binder). -/
 noncomputable def lengthZeroB : ArithmeticSemisentence 1 :=
   “x. !lengthDef 0 0”
@@ -1781,26 +1335,6 @@ lemma models_lengthOne : V↓[ℒₒᵣ] ⊧ lengthOne ↔ ∀ x : V, (1 : V) = 
 theorem pa_proves_lengthOne : 𝗣𝗔 ⊢ lengthOne :=
   Lib.pa_proves_of_models fun _ _ _ ↦ models_lengthOne.mpr fun _ ↦ length_one.symm
 theorem lib_lengthOne : Lib lengthOne := Lib.of_pa pa_proves_lengthOne
-
-/-- `0 < x → ‖2x‖ = ‖x‖ + 1` (N5). -/
-noncomputable def lengthTwoMulB : ArithmeticSemisentence 2 :=
-  “l x. 0 < x → !lengthDef l x → !lengthDef (l + 1) (2 * x)”
-noncomputable def lengthTwoMul : ArithmeticSentence := ∀¹* lengthTwoMulB
-lemma models_lengthTwoMul : V↓[ℒₒᵣ] ⊧ lengthTwoMul ↔ ∀ l x : V, (0 : V) < x → l = ‖x‖ → (l + 1) = ‖((2 : V) * x)‖ := by
-  simp [lengthTwoMul, lengthTwoMulB, models_iff, Matrix.vecForall_iff, length_defined.iff]
-theorem pa_proves_lengthTwoMul : 𝗣𝗔 ⊢ lengthTwoMul :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_lengthTwoMul.mpr fun _ _ h₁ h₂ ↦ by subst_vars; exact (length_two_mul_of_pos h₁).symm
-theorem lib_lengthTwoMul : Lib lengthTwoMul := Lib.of_pa pa_proves_lengthTwoMul
-
-/-- `‖2x + 1‖ = ‖x‖ + 1` (N5). -/
-noncomputable def lengthTwoMulOneB : ArithmeticSemisentence 2 :=
-  “l x. !lengthDef l x → !lengthDef (l + 1) ((2 * x) + 1)”
-noncomputable def lengthTwoMulOne : ArithmeticSentence := ∀¹* lengthTwoMulOneB
-lemma models_lengthTwoMulOne : V↓[ℒₒᵣ] ⊧ lengthTwoMulOne ↔ ∀ l x : V, l = ‖x‖ → (l + 1) = ‖(((2 : V) * x) + (1 : V))‖ := by
-  simp [lengthTwoMulOne, lengthTwoMulOneB, models_iff, Matrix.vecForall_iff, length_defined.iff]
-theorem pa_proves_lengthTwoMulOne : 𝗣𝗔 ⊢ lengthTwoMulOne :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_lengthTwoMulOne.mpr fun _ _ h₁ ↦ by subst_vars; exact (length_two_mul_add_one _).symm
-theorem lib_lengthTwoMulOne : Lib lengthTwoMulOne := Lib.of_pa pa_proves_lengthTwoMulOne
 
 /-! ### J. `axm`(ii): `qqAlls`, `bv`, `termBV`, `listMax`, `fvarVec`, the `max`/`−` glue (§4.10(ii)) -/
 
@@ -1824,46 +1358,6 @@ theorem pa_proves_qqAllsSucc : 𝗣𝗔 ⊢ qqAllsSucc :=
   Lib.pa_proves_of_models fun _ _ _ ↦ models_qqAllsSucc.mpr fun _ _ _ _ h₁ h₂ ↦ by subst_vars; exact (qqAlls_succ _ _).symm
 theorem lib_qqAllsSucc : Lib qqAllsSucc := Lib.of_pa pa_proves_qqAllsSucc
 
-/-- `bv (rel k R v) = listMax (termBVVec k v)`. -/
-noncomputable def bvRelB : ArithmeticSemisentence 6 :=
-  “m M v R k p. !LAct.isRel k R → !(isUTermVec LAct).pi k v → !qqRelDef p k R v → !(termBVVecGraph LAct) M k v → !listMaxDef m M → !(bvGraph LAct) m p”
-noncomputable def bvRel : ArithmeticSentence := ∀¹* bvRelB
-lemma models_bvRel : V↓[ℒₒᵣ] ⊧ bvRel ↔ ∀ m M v R k p : V, LAct.IsRel k R → IsUTermVec LAct k v → p = ^rel k R v → M = termBVVec LAct k v → m = listMax M → m = Bootstrapping.bv LAct p := by
-  simp [bvRel, bvRelB, models_iff, Matrix.vecForall_iff, termBVVec.defined.iff, listMax_defined.iff, bv.defined.iff]
-theorem pa_proves_bvRel : 𝗣𝗔 ⊢ bvRel :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_bvRel.mpr fun _ _ _ _ _ _ h₁ h₂ h₃ h₄ h₅ ↦ by subst_vars; exact (bv_rel h₁ h₂).symm
-theorem lib_bvRel : Lib bvRel := Lib.of_pa pa_proves_bvRel
-
-/-- `bv (nrel k R v) = listMax (termBVVec k v)`. -/
-noncomputable def bvNRelB : ArithmeticSemisentence 6 :=
-  “m M v R k p. !LAct.isRel k R → !(isUTermVec LAct).pi k v → !qqNRelDef p k R v → !(termBVVecGraph LAct) M k v → !listMaxDef m M → !(bvGraph LAct) m p”
-noncomputable def bvNRel : ArithmeticSentence := ∀¹* bvNRelB
-lemma models_bvNRel : V↓[ℒₒᵣ] ⊧ bvNRel ↔ ∀ m M v R k p : V, LAct.IsRel k R → IsUTermVec LAct k v → p = ^nrel k R v → M = termBVVec LAct k v → m = listMax M → m = Bootstrapping.bv LAct p := by
-  simp [bvNRel, bvNRelB, models_iff, Matrix.vecForall_iff, termBVVec.defined.iff, listMax_defined.iff, bv.defined.iff]
-theorem pa_proves_bvNRel : 𝗣𝗔 ⊢ bvNRel :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_bvNRel.mpr fun _ _ _ _ _ _ h₁ h₂ h₃ h₄ h₅ ↦ by subst_vars; exact (bv_nrel h₁ h₂).symm
-theorem lib_bvNRel : Lib bvNRel := Lib.of_pa pa_proves_bvNRel
-
-/-- `bv ⊤ = 0`. -/
-noncomputable def bvVerumB : ArithmeticSemisentence 1 :=
-  “p. !qqVerumDef p → !(bvGraph LAct) 0 p”
-noncomputable def bvVerum : ArithmeticSentence := ∀¹* bvVerumB
-lemma models_bvVerum : V↓[ℒₒᵣ] ⊧ bvVerum ↔ ∀ p : V, p = ^⊤ → (0 : V) = Bootstrapping.bv LAct p := by
-  simp [bvVerum, bvVerumB, models_iff, Matrix.vecForall_iff, bv.defined.iff]
-theorem pa_proves_bvVerum : 𝗣𝗔 ⊢ bvVerum :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_bvVerum.mpr fun _ h₁ ↦ by subst_vars; exact bv_verum.symm
-theorem lib_bvVerum : Lib bvVerum := Lib.of_pa pa_proves_bvVerum
-
-/-- `bv ⊥ = 0`. -/
-noncomputable def bvFalsumB : ArithmeticSemisentence 1 :=
-  “p. !qqFalsumDef p → !(bvGraph LAct) 0 p”
-noncomputable def bvFalsum : ArithmeticSentence := ∀¹* bvFalsumB
-lemma models_bvFalsum : V↓[ℒₒᵣ] ⊧ bvFalsum ↔ ∀ p : V, p = ^⊥ → (0 : V) = Bootstrapping.bv LAct p := by
-  simp [bvFalsum, bvFalsumB, models_iff, Matrix.vecForall_iff, bv.defined.iff]
-theorem pa_proves_bvFalsum : 𝗣𝗔 ⊢ bvFalsum :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_bvFalsum.mpr fun _ h₁ ↦ by subst_vars; exact bv_falsum.symm
-theorem lib_bvFalsum : Lib bvFalsum := Lib.of_pa pa_proves_bvFalsum
-
 /-- `bv (p ⋏ q) = max (bv p) (bv q)`. -/
 noncomputable def bvAndB : ArithmeticSemisentence 6 :=
   “m mq mp r q p. !(isUFormula LAct).pi p → !(isUFormula LAct).pi q → !qqAndDef r p q → !(bvGraph LAct) mp p → !(bvGraph LAct) mq q → !max.dfn m mp mq → !(bvGraph LAct) m r”
@@ -1873,196 +1367,6 @@ lemma models_bvAnd : V↓[ℒₒᵣ] ⊧ bvAnd ↔ ∀ m mq mp r q p : V, IsUFor
 theorem pa_proves_bvAnd : 𝗣𝗔 ⊢ bvAnd :=
   Lib.pa_proves_of_models fun _ _ _ ↦ models_bvAnd.mpr fun _ _ _ _ _ _ h₁ h₂ h₃ h₄ h₅ h₆ ↦ by subst_vars; exact (bv_and h₁ h₂).symm
 theorem lib_bvAnd : Lib bvAnd := Lib.of_pa pa_proves_bvAnd
-
-/-- `bv (p ⋎ q) = max (bv p) (bv q)`. -/
-noncomputable def bvOrB : ArithmeticSemisentence 6 :=
-  “m mq mp r q p. !(isUFormula LAct).pi p → !(isUFormula LAct).pi q → !qqOrDef r p q → !(bvGraph LAct) mp p → !(bvGraph LAct) mq q → !max.dfn m mp mq → !(bvGraph LAct) m r”
-noncomputable def bvOr : ArithmeticSentence := ∀¹* bvOrB
-lemma models_bvOr : V↓[ℒₒᵣ] ⊧ bvOr ↔ ∀ m mq mp r q p : V, IsUFormula LAct p → IsUFormula LAct q → r = p ^⋎ q → mp = Bootstrapping.bv LAct p → mq = Bootstrapping.bv LAct q → m = max mp mq → m = Bootstrapping.bv LAct r := by
-  simp [bvOr, bvOrB, models_iff, Matrix.vecForall_iff, bv.defined.iff]
-theorem pa_proves_bvOr : 𝗣𝗔 ⊢ bvOr :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_bvOr.mpr fun _ _ _ _ _ _ h₁ h₂ h₃ h₄ h₅ h₆ ↦ by subst_vars; exact (bv_or h₁ h₂).symm
-theorem lib_bvOr : Lib bvOr := Lib.of_pa pa_proves_bvOr
-
-/-- `bv (∀ p) = bv p - 1`. -/
-noncomputable def bvAllB : ArithmeticSemisentence 4 :=
-  “m mp r p. !(isUFormula LAct).pi p → !qqAllDef r p → !(bvGraph LAct) mp p → !subDef m mp 1 → !(bvGraph LAct) m r”
-noncomputable def bvAll : ArithmeticSentence := ∀¹* bvAllB
-lemma models_bvAll : V↓[ℒₒᵣ] ⊧ bvAll ↔ ∀ m mp r p : V, IsUFormula LAct p → r = ^∀ p → mp = Bootstrapping.bv LAct p → m = mp - (1 : V) → m = Bootstrapping.bv LAct r := by
-  simp [bvAll, bvAllB, models_iff, Matrix.vecForall_iff, bv.defined.iff]
-theorem pa_proves_bvAll : 𝗣𝗔 ⊢ bvAll :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_bvAll.mpr fun _ _ _ _ h₁ h₂ h₃ h₄ ↦ by subst_vars; exact (bv_all h₁).symm
-theorem lib_bvAll : Lib bvAll := Lib.of_pa pa_proves_bvAll
-
-/-- `bv (∃ p) = bv p - 1`. -/
-noncomputable def bvExsB : ArithmeticSemisentence 4 :=
-  “m mp r p. !(isUFormula LAct).pi p → !qqExsDef r p → !(bvGraph LAct) mp p → !subDef m mp 1 → !(bvGraph LAct) m r”
-noncomputable def bvExs : ArithmeticSentence := ∀¹* bvExsB
-lemma models_bvExs : V↓[ℒₒᵣ] ⊧ bvExs ↔ ∀ m mp r p : V, IsUFormula LAct p → r = ^∃ p → mp = Bootstrapping.bv LAct p → m = mp - (1 : V) → m = Bootstrapping.bv LAct r := by
-  simp [bvExs, bvExsB, models_iff, Matrix.vecForall_iff, bv.defined.iff]
-theorem pa_proves_bvExs : 𝗣𝗔 ⊢ bvExs :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_bvExs.mpr fun _ _ _ _ h₁ h₂ h₃ h₄ ↦ by subst_vars; exact (bv_ex h₁).symm
-theorem lib_bvExs : Lib bvExs := Lib.of_pa pa_proves_bvExs
-
-/-- `termBV #z = z + 1`. -/
-noncomputable def termBVBvarB : ArithmeticSemisentence 2 :=
-  “t z. !qqBvarDef t z → !(termBVGraph LAct) (z + 1) t”
-noncomputable def termBVBvar : ArithmeticSentence := ∀¹* termBVBvarB
-lemma models_termBVBvar : V↓[ℒₒᵣ] ⊧ termBVBvar ↔ ∀ t z : V, t = ^#z → (z + 1) = termBV LAct t := by
-  simp [termBVBvar, termBVBvarB, models_iff, Matrix.vecForall_iff, termBV.defined.iff]
-theorem pa_proves_termBVBvar : 𝗣𝗔 ⊢ termBVBvar :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_termBVBvar.mpr fun _ _ h₁ ↦ by subst_vars; exact (termBV_bvar _).symm
-theorem lib_termBVBvar : Lib termBVBvar := Lib.of_pa pa_proves_termBVBvar
-
-/-- `termBV &x = 0`. -/
-noncomputable def termBVFvarB : ArithmeticSemisentence 2 :=
-  “t x. !qqFvarDef t x → !(termBVGraph LAct) 0 t”
-noncomputable def termBVFvar : ArithmeticSentence := ∀¹* termBVFvarB
-lemma models_termBVFvar : V↓[ℒₒᵣ] ⊧ termBVFvar ↔ ∀ t x : V, t = ^&x → (0 : V) = termBV LAct t := by
-  simp [termBVFvar, termBVFvarB, models_iff, Matrix.vecForall_iff, termBV.defined.iff]
-theorem pa_proves_termBVFvar : 𝗣𝗔 ⊢ termBVFvar :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_termBVFvar.mpr fun _ _ h₁ ↦ by subst_vars; exact (termBV_fvar _).symm
-theorem lib_termBVFvar : Lib termBVFvar := Lib.of_pa pa_proves_termBVFvar
-
-/-- `termBV (func k f v) = listMax (termBVVec k v)`. -/
-noncomputable def termBVFuncB : ArithmeticSemisentence 6 :=
-  “m M v f k t. !LAct.isFunc k f → !(isUTermVec LAct).pi k v → !qqFuncDef t k f v → !(termBVVecGraph LAct) M k v → !listMaxDef m M → !(termBVGraph LAct) m t”
-noncomputable def termBVFunc : ArithmeticSentence := ∀¹* termBVFuncB
-lemma models_termBVFunc : V↓[ℒₒᵣ] ⊧ termBVFunc ↔ ∀ m M v f k t : V, LAct.IsFunc k f → IsUTermVec LAct k v → t = ^func k f v → M = termBVVec LAct k v → m = listMax M → m = termBV LAct t := by
-  simp [termBVFunc, termBVFuncB, models_iff, Matrix.vecForall_iff, termBVVec.defined.iff, listMax_defined.iff, termBV.defined.iff]
-theorem pa_proves_termBVFunc : 𝗣𝗔 ⊢ termBVFunc :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_termBVFunc.mpr fun _ _ _ _ _ _ h₁ h₂ h₃ h₄ h₅ ↦ by subst_vars; exact (termBV_func h₁ h₂).symm
-theorem lib_termBVFunc : Lib termBVFunc := Lib.of_pa pa_proves_termBVFunc
-
-/-- `termBVVec 0 0 = 0` (dummy binder). -/
-noncomputable def termBVVecNilB : ArithmeticSemisentence 1 :=
-  “x. !(termBVVecGraph LAct) 0 0 0”
-noncomputable def termBVVecNil : ArithmeticSentence := ∀¹* termBVVecNilB
-lemma models_termBVVecNil : V↓[ℒₒᵣ] ⊧ termBVVecNil ↔ ∀ x : V, (0 : V) = termBVVec LAct (0 : V) (0 : V) := by
-  simp [termBVVecNil, termBVVecNilB, models_iff, Matrix.vecForall_iff, termBVVec.defined.iff]
-theorem pa_proves_termBVVecNil : 𝗣𝗔 ⊢ termBVVecNil :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_termBVVecNil.mpr fun _ ↦ by unfold termBVVec; exact (IsUTerm.BV.construction.resultVec_nil LAct ![]).symm
-theorem lib_termBVVecNil : Lib termBVVecNil := Lib.of_pa pa_proves_termBVVecNil
-
-/-- `termBVVec (k + 1) (t ∷ v) = termBV t ∷ termBVVec k v` bottom-up. -/
-noncomputable def termBVVecAdjB : ArithmeticSemisentence 8 :=
-  “M' M m t v' v k n. !(isSemiterm LAct).pi n t → !(isUTermVec LAct).pi k v → !(termBVGraph LAct) m t → !(termBVVecGraph LAct) M k v → !adjoinDef v' t v → !adjoinDef M' m M → !(termBVVecGraph LAct) M' (k + 1) v'”
-noncomputable def termBVVecAdj : ArithmeticSentence := ∀¹* termBVVecAdjB
-lemma models_termBVVecAdj : V↓[ℒₒᵣ] ⊧ termBVVecAdj ↔ ∀ M' M m t v' v k n : V, IsSemiterm LAct n t → IsUTermVec LAct k v → m = termBV LAct t → M = termBVVec LAct k v → v' = t ∷ v → M' = m ∷ M → M' = termBVVec LAct (k + 1) v' := by
-  simp [termBVVecAdj, termBVVecAdjB, models_iff, Matrix.vecForall_iff, termBV.defined.iff, termBVVec.defined.iff]
-theorem pa_proves_termBVVecAdj : 𝗣𝗔 ⊢ termBVVecAdj :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_termBVVecAdj.mpr fun _ _ _ _ _ _ _ _ h₁ h₂ h₃ h₄ h₅ h₆ ↦ by subst_vars; exact (termBVVec_cons h₁.isUTerm h₂).symm
-theorem lib_termBVVecAdj : Lib termBVVecAdj := Lib.of_pa pa_proves_termBVVecAdj
-
-/-- `listMax 0 = 0` (dummy binder). -/
-noncomputable def listMaxNilB : ArithmeticSemisentence 1 :=
-  “x. !listMaxDef 0 0”
-noncomputable def listMaxNil : ArithmeticSentence := ∀¹* listMaxNilB
-lemma models_listMaxNil : V↓[ℒₒᵣ] ⊧ listMaxNil ↔ ∀ x : V, (0 : V) = listMax (0 : V) := by
-  simp [listMaxNil, listMaxNilB, models_iff, Matrix.vecForall_iff, listMax_defined.iff]
-theorem pa_proves_listMaxNil : 𝗣𝗔 ⊢ listMaxNil :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_listMaxNil.mpr fun _ ↦ by exact listMax_nil.symm
-theorem lib_listMaxNil : Lib listMaxNil := Lib.of_pa pa_proves_listMaxNil
-
-/-- `listMax (x ∷ M) = max x (listMax M)`. -/
-noncomputable def listMaxAdjB : ArithmeticSemisentence 5 :=
-  “m' m x M M'. !listMaxDef m M → !adjoinDef M' x M → !max.dfn m' x m → !listMaxDef m' M'”
-noncomputable def listMaxAdj : ArithmeticSentence := ∀¹* listMaxAdjB
-lemma models_listMaxAdj : V↓[ℒₒᵣ] ⊧ listMaxAdj ↔ ∀ m' m x M M' : V, m = listMax M → M' = x ∷ M → m' = max x m → m' = listMax M' := by
-  simp [listMaxAdj, listMaxAdjB, models_iff, Matrix.vecForall_iff, listMax_defined.iff]
-theorem pa_proves_listMaxAdj : 𝗣𝗔 ⊢ listMaxAdj :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_listMaxAdj.mpr fun _ _ _ _ _ h₁ h₂ h₃ ↦ by subst_vars; exact (listMax_adjoin _ _).symm
-theorem lib_listMaxAdj : Lib listMaxAdj := Lib.of_pa pa_proves_listMaxAdj
-
-/-- `∀ b, ∃ m, m = bv b`. -/
-noncomputable def bvTotalB : ArithmeticSemisentence 1 :=
-  “b. ∃ m, !(bvGraph LAct) m b”
-noncomputable def bvTotal : ArithmeticSentence := ∀¹* bvTotalB
-lemma models_bvTotal : V↓[ℒₒᵣ] ⊧ bvTotal ↔ ∀ b : V, ∃ m, m = Bootstrapping.bv LAct b := by
-  simp [bvTotal, bvTotalB, models_iff, Matrix.vecForall_iff, bv.defined.iff]
-theorem pa_proves_bvTotal : 𝗣𝗔 ⊢ bvTotal :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_bvTotal.mpr fun _ ↦ ⟨_, rfl⟩
-theorem lib_bvTotal : Lib bvTotal := Lib.of_pa pa_proves_bvTotal
-
-/-- `∀ m, ∃ fv, fv = fvarVec m`. -/
-noncomputable def fvarVecTotalB : ArithmeticSemisentence 1 :=
-  “m. ∃ fv, !fvarVecDef fv m”
-noncomputable def fvarVecTotal : ArithmeticSentence := ∀¹* fvarVecTotalB
-lemma models_fvarVecTotal : V↓[ℒₒᵣ] ⊧ fvarVecTotal ↔ ∀ m : V, ∃ fv, fv = fvarVec m := by
-  simp [fvarVecTotal, fvarVecTotalB, models_iff, Matrix.vecForall_iff, fvarVec_defined.iff]
-theorem pa_proves_fvarVecTotal : 𝗣𝗔 ⊢ fvarVecTotal :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_fvarVecTotal.mpr fun _ ↦ ⟨_, rfl⟩
-theorem lib_fvarVecTotal : Lib fvarVecTotal := Lib.of_pa pa_proves_fvarVecTotal
-
-/-- `i < m → (fvarVec m).[i] = &i`. -/
-noncomputable def fvarVecNthB : ArithmeticSemisentence 4 :=
-  “e fv m i. i < m → !fvarVecDef fv m → !qqFvarDef e i → !nthDef e fv i”
-noncomputable def fvarVecNth : ArithmeticSentence := ∀¹* fvarVecNthB
-lemma models_fvarVecNth : V↓[ℒₒᵣ] ⊧ fvarVecNth ↔ ∀ e fv m i : V, i < m → fv = fvarVec m → e = ^&i → e = fv.[i] := by
-  simp [fvarVecNth, fvarVecNthB, models_iff, Matrix.vecForall_iff, fvarVec_defined.iff, nth_defined.iff]
-theorem pa_proves_fvarVecNth : 𝗣𝗔 ⊢ fvarVecNth :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_fvarVecNth.mpr fun _ _ _ _ h₁ h₂ h₃ ↦ by subst_vars; exact (nth_fvarVec _ _ h₁).symm
-theorem lib_fvarVecNth : Lib fvarVecNth := Lib.of_pa pa_proves_fvarVecNth
-
-/-- `∀ a b, ∃ m, m = max a b`. -/
-noncomputable def maxTotalB : ArithmeticSemisentence 2 :=
-  “b a. ∃ m, !max.dfn m a b”
-noncomputable def maxTotal : ArithmeticSentence := ∀¹* maxTotalB
-lemma models_maxTotal : V↓[ℒₒᵣ] ⊧ maxTotal ↔ ∀ b a : V, ∃ m, m = max a b := by
-  simp [maxTotal, maxTotalB, models_iff, Matrix.vecForall_iff]
-theorem pa_proves_maxTotal : 𝗣𝗔 ⊢ maxTotal :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_maxTotal.mpr fun _ _ ↦ ⟨_, rfl⟩
-theorem lib_maxTotal : Lib maxTotal := Lib.of_pa pa_proves_maxTotal
-
-/-- `∀ a b, ∃ m, m = a - b`. -/
-noncomputable def subTotalB : ArithmeticSemisentence 2 :=
-  “b a. ∃ m, !subDef m a b”
-noncomputable def subTotal : ArithmeticSentence := ∀¹* subTotalB
-lemma models_subTotal : V↓[ℒₒᵣ] ⊧ subTotal ↔ ∀ b a : V, ∃ m, m = a - b := by
-  simp [subTotal, subTotalB, models_iff, Matrix.vecForall_iff]
-theorem pa_proves_subTotal : 𝗣𝗔 ⊢ subTotal :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_subTotal.mpr fun _ _ ↦ ⟨_, rfl⟩
-theorem lib_subTotal : Lib subTotal := Lib.of_pa pa_proves_subTotal
-
-/-- `b ≤ a → max a b = a`. -/
-noncomputable def maxEqLeftB : ArithmeticSemisentence 3 :=
-  “m b a. b ≤ a → !max.dfn m a b → m = a”
-noncomputable def maxEqLeft : ArithmeticSentence := ∀¹* maxEqLeftB
-lemma models_maxEqLeft : V↓[ℒₒᵣ] ⊧ maxEqLeft ↔ ∀ m b a : V, b ≤ a → m = max a b → m = a := by
-  simp [maxEqLeft, maxEqLeftB, models_iff, Matrix.vecForall_iff]
-theorem pa_proves_maxEqLeft : 𝗣𝗔 ⊢ maxEqLeft :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_maxEqLeft.mpr fun _ _ _ h₁ h₂ ↦ by subst_vars; exact max_eq_left h₁
-theorem lib_maxEqLeft : Lib maxEqLeft := Lib.of_pa pa_proves_maxEqLeft
-
-/-- `a ≤ b → max a b = b`. -/
-noncomputable def maxEqRightB : ArithmeticSemisentence 3 :=
-  “m b a. a ≤ b → !max.dfn m a b → m = b”
-noncomputable def maxEqRight : ArithmeticSentence := ∀¹* maxEqRightB
-lemma models_maxEqRight : V↓[ℒₒᵣ] ⊧ maxEqRight ↔ ∀ m b a : V, a ≤ b → m = max a b → m = b := by
-  simp [maxEqRight, maxEqRightB, models_iff, Matrix.vecForall_iff]
-theorem pa_proves_maxEqRight : 𝗣𝗔 ⊢ maxEqRight :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_maxEqRight.mpr fun _ _ _ h₁ h₂ ↦ by subst_vars; exact max_eq_right h₁
-theorem lib_maxEqRight : Lib maxEqRight := Lib.of_pa pa_proves_maxEqRight
-
-/-- `a = b + c → a - b = c`. -/
-noncomputable def subAddCancelB : ArithmeticSemisentence 4 :=
-  “m c b a. a = (b + c) → !subDef m a b → m = c”
-noncomputable def subAddCancel : ArithmeticSentence := ∀¹* subAddCancelB
-lemma models_subAddCancel : V↓[ℒₒᵣ] ⊧ subAddCancel ↔ ∀ m c b a : V, a = (b + c) → m = a - b → m = c := by
-  simp [subAddCancel, subAddCancelB, models_iff, Matrix.vecForall_iff]
-theorem pa_proves_subAddCancel : 𝗣𝗔 ⊢ subAddCancel :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_subAddCancel.mpr fun _ _ _ _ h₁ h₂ ↦ by subst_vars; exact add_sub_self'
-theorem lib_subAddCancel : Lib subAddCancel := Lib.of_pa pa_proves_subAddCancel
-
-/-- `a ≤ b → a - b = 0`. -/
-noncomputable def subOfLeB : ArithmeticSemisentence 3 :=
-  “m b a. a ≤ b → !subDef m a b → m = 0”
-noncomputable def subOfLe : ArithmeticSentence := ∀¹* subOfLeB
-lemma models_subOfLe : V↓[ℒₒᵣ] ⊧ subOfLe ↔ ∀ m b a : V, a ≤ b → m = a - b → m = (0 : V) := by
-  simp [subOfLe, subOfLeB, models_iff, Matrix.vecForall_iff]
-theorem pa_proves_subOfLe : 𝗣𝗔 ⊢ subOfLe :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_subOfLe.mpr fun _ _ _ h₁ h₂ ↦ by subst_vars; exact sub_spec_of_le h₁
-theorem lib_subOfLe : Lib subOfLe := Lib.of_pa pa_proves_subOfLe
 
 /-! ### K. Chains: the `Sets`/`Lengths` rows of §3.4 re-issued with `inst_` lemmas (`Layout.chainSteps`) -/
 

@@ -44,10 +44,6 @@ def ppairTGraph : 𝚺₁.Semisentence 3 :=
 instance ppairT.defined : 𝚺₁-Function₂ (ppairT : V → V → V) via ppairTGraph := .mk fun v ↦ by
   simp [ppairTGraph, ppairT]
 
-instance ppairT.definable : 𝚺₁-Function₂ (ppairT : V → V → V) := ppairT.defined.to_definable
-
-instance ppairT.definable' : Γ-[m + 1]-Function₂ (ppairT : V → V → V) := ppairT.definable.of_sigmaOne
-
 @[simp] lemma lt_ppairT_left (s t : V) : s < ppairT s t :=
   lt_trans (lt_qqAdd_left s t) (lt_trans (lt_qqMul_left _ _) (lt_qqAdd_left _ _))
 
@@ -406,8 +402,6 @@ instance progT.defined : 𝚺₁-Function₁[V] progT via progTGraph := .mk fun 
   · intro h; rw [h]; exact progT_graph _
 
 instance progT.definable : 𝚺₁-Function₁[V] progT := progT.defined.to_definable
-
-instance progT.definable' : Γ-[m + 1]-Function₁[V] progT := progT.definable.of_sigmaOne
 
 /-! ### The equations -/
 

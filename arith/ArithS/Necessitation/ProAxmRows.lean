@@ -59,9 +59,6 @@ theorem quote_row_congAxch : (⌜Semiformula.lMap emb congAxchB⌝ : V) = impCha
   unfold congAxchB row_congAxch_as row_congAxch_c Paxch PeqB
   all_goals row_shapeB
 
-lemma isSemiformula_congAxch_as : ∀ A ∈ row_congAxch_as, IsSemiformula LAct ((2 : ℕ) : V) A := by
-  unfold row_congAxch_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Paxch _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩)
 lemma isSemiformula_congAxch_c : IsSemiformula LAct ((2 : ℕ) : V) row_congAxch_c := by
   unfold row_congAxch_c
   exact isSemiformula_substRow isSemiformula_Paxch _ (by rfl) (by row_entriesB)
@@ -111,22 +108,6 @@ noncomputable def proAxmExtraPieceList : List V := [
 noncomputable def proAxmPieces : V := vecOf (walkPieceList ++ layoutExtraPieceList ++ frag1ExtraPieceList ++ frag2ExtraPieceList ++ topExtraPieceList ++ proExtraPieceList ++ numIdPadPieceList ++ numIdExtraPieceList ++ proAxmExtraPieceList)
 
 set_option maxHeartbeats 1000000 in
-lemma proAxmPieces_nth_lt (i : ℕ) (hi : i < numIdRowCount) : (proAxmPieces : V).[(i : V)] = (numIdPieces : V).[(i : V)] := by
-  unfold proAxmPieces numIdPieces
-  have h1 : i < (walkPieceList ++ layoutExtraPieceList ++ frag1ExtraPieceList ++ frag2ExtraPieceList ++ topExtraPieceList ++ proExtraPieceList ++ numIdPadPieceList ++ numIdExtraPieceList ++ proAxmExtraPieceList : List V).length := by
-    rw [show (walkPieceList ++ layoutExtraPieceList ++ frag1ExtraPieceList ++ frag2ExtraPieceList ++ topExtraPieceList ++ proExtraPieceList ++ numIdPadPieceList ++ numIdExtraPieceList ++ proAxmExtraPieceList : List V).length = proAxmRowCount from rfl]
-    exact lt_of_lt_of_le hi (by simp only [proAxmRowCount]; omega)
-  have h2 : i < (walkPieceList ++ layoutExtraPieceList ++ frag1ExtraPieceList ++ frag2ExtraPieceList ++ topExtraPieceList ++ proExtraPieceList ++ numIdPadPieceList ++ numIdExtraPieceList : List V).length := by
-    rw [show (walkPieceList ++ layoutExtraPieceList ++ frag1ExtraPieceList ++ frag2ExtraPieceList ++ topExtraPieceList ++ proExtraPieceList ++ numIdPadPieceList ++ numIdExtraPieceList : List V).length = numIdRowCount from rfl]; exact hi
-  rw [nth_vecOf _ i h1, nth_vecOf _ i h2]
-  exact List.getElem_append_left h2
-
-/-- A pin step read from the `axm` pieces is the pin's step. -/
-lemma mkStep_proAxmPieces_lt (i : ℕ) (hi : i < numIdRowCount) (ev : V) :
-    mkStep proAxmPieces (i : V) ev = mkStep numIdPieces (i : V) ev := by
-  rw [mkStep, mkStep, proAxmPieces_nth_lt i hi]
-
-set_option maxHeartbeats 1000000 in
 lemma proAxmPieces_congAxch : (proAxmPieces : V).[((aIdx_congAxch : ℕ) : V)] = apiece_congAxch := by
   unfold proAxmPieces
   rw [nth_vecOf _ aIdx_congAxch (Nat.lt_of_sub_eq_succ rfl)]
@@ -136,10 +117,6 @@ lemma amk_congAxch (ev : V) :
     mkStep proAxmPieces ((aIdx_congAxch : ℕ) : V) ev = sUseHorn ((aIdx_congAxch : ℕ) : V) ev (vecOf row_congAxch_as) row_congAxch_c := by
   rw [mkStep, proAxmPieces_congAxch]
   simp [apiece_congAxch, sUseHorn]
-
-lemma atag_congAxch {W : V} (hWp : W = proAxmPieces) (ev : V) : sTag (mkStep W ((aIdx_congAxch : ℕ) : V) ev) = 0 := by
-  subst hWp
-  rw [amk_congAxch]; simp
 
 /-! ### The per-row applicability lemmas `aok_<row>` (against explicit table readings) -/
 

@@ -10,6 +10,9 @@ Conclusion: ('atom', pred, args) | ('ex', [vars], [conjuncts]) where the last co
 a nested ('ex', ...).  Conjunctions are right-associated (the DSL's `∧`).
 """
 import sys
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+from prune import prune  # drops the audit's DEAD declarations (scripts/pruned/<module>.txt)
 
 # pred key -> (Lean semisentence, arity, Pname, factname, def arg names, existing?)
 PREDS = {
@@ -662,5 +665,5 @@ def gen():
 
 gen()
 header = open(sys.argv[1] + '.head').read()
-open(sys.argv[1], 'w').write(header + '\n'.join(out) + '\nend ArithS\n')
+open(sys.argv[1], 'w').write(prune(header + '\n'.join(out) + '\nend ArithS\n', 'Necessitation.RowInst'))
 print('rows:', len([r for r in ROWS if SUBSET is None or r[0] in SUBSET]))

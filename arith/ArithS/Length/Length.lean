@@ -131,9 +131,6 @@ instance termLenVec.defined : 𝚺₁-Function₂ (termLenVec (V := V) L) via (t
 instance termLenVec.definable : 𝚺₁-Function₂ (termLenVec (V := V) L) :=
   termLenVec.defined.to_definable
 
-instance termLenVec.definable' : Γ-[i + 1]-Function₂ (termLenVec (V := V) L) :=
-  termLenVec.definable.of_sigmaOne
-
 end term
 
 /-! ### Formulas -/
@@ -199,9 +196,6 @@ instance formulaLen.defined : 𝚺₁-Function₁ formulaLen (V := V) L via form
     using! (FormulaLen.construction L).result_defined.defined ![v 0, 0, v 1]
 
 instance formulaLen.definable : 𝚺₁-Function₁ formulaLen (V := V) L := formulaLen.defined.to_definable
-
-instance formulaLen.definable' : Γ-[m + 1]-Function₁ formulaLen (V := V) L :=
-  formulaLen.definable.of_sigmaOne
 
 @[simp] lemma formulaLen_rel {k R v : V} (hR : L.IsRel k R) (hv : IsUTermVec L k v) :
     formulaLen L (^rel k R v) = listSum (termLenVec L k v) + 1 := by

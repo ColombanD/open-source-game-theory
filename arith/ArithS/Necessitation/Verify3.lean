@@ -86,20 +86,8 @@ instance axmEntryOK'_definable : 𝚫₁-Relation₅ (AxmEntryOK' : V → V → 
 instance axmTableOK'_definable : 𝚫₁-Relation₅ (AxmTableOK' : V → V → V → V → V → Prop) := by
   unfold AxmTableOK'; definability
 
-lemma AxmTableOK'.mono {tbl E Ww A A' Cv : V} (h : AxmTableOK' tbl E Ww A' Cv) (hAA : A ⊆ A') :
-    AxmTableOK' tbl E Ww A Cv := by
-  intro e he
-  exact h e (hAA he)
-
 lemma entryB_mono {Cv Cv' : V} (hC : Cv ≤ Cv') (p : V) : entryB Cv p ≤ entryB Cv' p :=
   mul_le_mul_of_nonneg_right hC zero_le
-
-lemma AxmTableOK'.mono_const {tbl E Ww A Cv Cv' : V} (hC : Cv ≤ Cv') (h : AxmTableOK' tbl E Ww A Cv) :
-    AxmTableOK' tbl E Ww A Cv' := by
-  intro e he
-  obtain ⟨p, hp, ip, hip, pro, hpro, rfl, hok, hnd, hsh, hlen, hsz, hmem⟩ := h e he
-  exact ⟨p, hp, ip, hip, pro, hpro, rfl, hok, hnd, le_trans hsh (entryB_mono hC p), le_trans hlen (entryB_mono hC p),
-    hsz.mono (entryB_mono hC p) (entryB_mono hC p), hmem⟩
 
 lemma axmTableOK'_empty (tbl E Ww Cv : V) : AxmTableOK' tbl E Ww 0 Cv := fun e he ↦ by simp at he
 
@@ -142,8 +130,6 @@ instance vAxm'_defined :
     𝚺₁.DefinedFunction (fun v : Fin 7 → V ↦ vAxm' (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) vAxm'Def := .mk fun v ↦ by
   simp [vAxm'Def, vAxm', memberList_defined.iff, shiftsV_defined.iff, memTop_defined.iff, setLen_defined.iff, dlen_defined.iff,
     nodeAxm_defined.iff, appendV_defined.iff, numeral_eq_natCast]
-instance vAxm'_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 7 → V ↦ vAxm' (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) := vAxm'_defined.to_definable
 
 lemma le_vAxm' (Ww Wc W₂ T s p pro : V) : pro ≤ vAxm' Ww Wc W₂ T s p pro := by
   unfold vAxm'; exact le_appendV_prefix _ _
@@ -298,19 +284,6 @@ instance vPackedP'_defined : 𝚺₁-Relation (VPackedP' : V → V → Prop) via
     | exact Iff.rfl
     | (constructor <;> intro h <;> convert h using 2 <;> funext i <;> fin_cases i <;> rfl)
 instance vPackedP'_definable : 𝚺₁-Relation (VPackedP' : V → V → Prop) := vPackedP'_defined.to_definable
-
-noncomputable def verifyGraph''Def : 𝚺₁.Semisentence 10 := .mkSigma
-  “Ww Wl Wc W₁ W₂ W T A ρ L. ∃ pr, !pairDef pr ρ L ∧ ∃ p₇, !pairDef p₇ T A ∧ ∃ p₆, !pairDef p₆ W p₇ ∧
-    ∃ p₅, !pairDef p₅ W₂ p₆ ∧ ∃ p₄, !pairDef p₄ W₁ p₅ ∧ ∃ p₃, !pairDef p₃ Wc p₄ ∧ ∃ p₂, !pairDef p₂ Wl p₃ ∧
-    ∃ P, !pairDef P Ww p₂ ∧ !vPackedP'Def P pr”
-
-instance verifyGraph''_defined :
-    𝚺₁.Defined (fun v : Fin 10 → V ↦ VerifyGraph'' (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9))
-      verifyGraph''Def := .mk
-  fun v ↦ by simp [verifyGraph''Def, vPackedP'_defined.iff, VerifyGraph'']
-instance verifyGraph''_definable :
-    𝚺₁.Definable (fun v : Fin 10 → V ↦ VerifyGraph'' (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9)) :=
-  verifyGraph''_defined.to_definable
 
 /-! ### 3.3 Case analysis and the ten inversions -/
 
@@ -513,7 +486,6 @@ theorem VerifyGraph''.mono_A {Ww Wl Wc W₁ W₂ W T A A' : V} (hAA : A ⊆ A') 
   exact key _ h
 
 end mono'
-
 
 /-! ## 4. Existence: the oracle-shaped form, the oracle DISCHARGED, and the UNCONDITIONAL theorem -/
 
@@ -1281,7 +1253,6 @@ theorem verifyGraph''_ok : ∃ Cs Ck : ℕ, ∀ (V : Type) [ORingStructure V] [V
         _ = (Cv + 1) * p6 d := by ring
         _ ≤ Csv * p6 d := mul_le_mul_of_nonneg_right hCv1 zero_le
     · rw [sh, ← add_assoc]; exact goal
-
 
 end glueMain'
 

@@ -152,17 +152,8 @@ instance fvOcc.defined : 𝚺₁-Function₁ (fvOcc (V := V) L) via (fvOccGraph 
 
 instance fvOcc.definable : 𝚺₁-Function₁ (fvOcc (V := V) L) := fvOcc.defined.to_definable
 
-instance fvOcc.definable' : Γ-[k + 1]-Function₁ (fvOcc (V := V) L) :=
-  fvOcc.definable.of_sigmaOne
-
 instance fvOccVec.defined : 𝚺₁-Function₂ (fvOccVec (V := V) L) via (fvOccVecGraph L) :=
   construction.resultVec_defined
-
-instance fvOccVec.definable : 𝚺₁-Function₂ (fvOccVec (V := V) L) :=
-  fvOccVec.defined.to_definable
-
-instance fvOccVec.definable' : Γ-[i + 1]-Function₂ (fvOccVec (V := V) L) :=
-  fvOccVec.definable.of_sigmaOne
 
 /-- Every free-variable occurrence is a symbol: `fvOcc t ≤ termLen t`. -/
 lemma fvOcc_le_termLen {t : V} (ht : IsUTerm L t) : fvOcc L t ≤ termLen L t := by
@@ -301,9 +292,6 @@ instance fvOccF.defined : 𝚺₁-Function₁ fvOccF (V := V) L via fvOccFGraph 
     using! (FvOccF.construction L).result_defined.defined ![v 0, 0, v 1]
 
 instance fvOccF.definable : 𝚺₁-Function₁ fvOccF (V := V) L := fvOccF.defined.to_definable
-
-instance fvOccF.definable' : Γ-[m + 1]-Function₁ fvOccF (V := V) L :=
-  fvOccF.definable.of_sigmaOne
 
 @[simp] lemma fvOccF_rel {k R v : V} (hR : L.IsRel k R) (hv : IsUTermVec L k v) :
     fvOccF L (^rel k R v) = listSum (fvOccVec L k v) := by
@@ -509,9 +497,6 @@ instance fvOccSAux_defined : 𝚺₁-Function₂[V] fvOccSAux L via fvOccSAuxDef
 
 instance fvOccSAux_definable : 𝚺₁-Function₂[V] fvOccSAux L := fvOccSAux_defined.to_definable
 
-instance fvOccSAux_definable' (Γ m) : Γ-[m + 1]-Function₂ (fvOccSAux (V := V) L) :=
-  fvOccSAux_definable.of_sigmaOne
-
 variable (L)
 
 /-- `fvOccS` as a substitution instance of `fvOccSAuxDef` (not a `“ ”`-DSL wrapper — see the
@@ -524,9 +509,6 @@ instance fvOccS_defined : 𝚺₁-Function₁[V] fvOccS L via fvOccSDef L := .mk
   simp [fvOccSDef, fvOccSAuxDef, (FvOccS.construction L).result_defined_iff, fvOccS]; rfl
 
 instance fvOccS_definable : 𝚺₁-Function₁[V] fvOccS L := fvOccS_defined.to_definable
-
-instance fvOccS_definable' (Γ m) : Γ-[m + 1]-Function₁ (fvOccS (V := V) L) :=
-  fvOccS_definable.of_sigmaOne
 
 end
 
@@ -584,9 +566,6 @@ lemma fvOccS_insert_le (x s : V) : fvOccS L (insert x s) ≤ fvOccS L s + fvOccF
 
 @[simp] lemma fvOccS_empty : fvOccS L (∅ : V) = 0 := by
   simp [fvOccS, emptyset_def]
-
-@[simp] lemma fvOccS_singleton (x : V) : fvOccS L ({x} : V) = fvOccF L x := by
-  rw [singleton_eq_insert, fvOccS_insert_of_not_mem (by simp), fvOccS_empty, zero_add]
 
 /-- `fvOccS s ≤ setLen s` for a set of formulas. -/
 lemma fvOccS_le_setLen {s : V} (hs : IsFormulaSet L s) : fvOccS L s ≤ setLen L s := by

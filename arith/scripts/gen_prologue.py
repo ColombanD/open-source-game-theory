@@ -10,6 +10,9 @@ EXPLICIT table-reading hypotheses (`hlen`, `hrow`), so that the generated file k
 Run from arith/: python3 scripts/gen_prologue.py
 """
 import sys, re, os, types
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+from prune import prune  # drops the audit's DEAD declarations (scripts/pruned/<module>.txt)
 HERE = os.path.dirname(os.path.abspath(__file__))
 _src = open(os.path.join(HERE, 'gen_frag.py')).read()
 _src = _src[:_src.index('\ngen_frag()\ngen_rowinstb()')].replace("if len(sys.argv) > 3:", "if False:")
@@ -265,5 +268,5 @@ end proRowInst
 
 '''
 text = head + lib_blocks + mid + new_blocks + tail + '\n'.join(o) + '\n\nend ArithS\n'
-open(os.path.join(HERE, '..', 'ArithS', 'Necessitation', 'PrologueRows.lean'), 'w').write(text)
+open(os.path.join(HERE, '..', 'ArithS', 'Necessitation', 'PrologueRows.lean'), 'w').write(prune(text, 'Necessitation.PrologueRows'))
 print('wrote PrologueRows.lean', len(text.splitlines()), 'lines')

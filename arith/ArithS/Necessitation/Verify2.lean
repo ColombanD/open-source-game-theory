@@ -126,13 +126,6 @@ lemma isFormulaSet_setShiftIterV {Γ : V} (h : IsFormulaSet LAct Γ) : ∀ k : V
 fact shifted to offset `ip` — exactly the facts `DossF Ww Γ 0 p ip` puts into `Γ`. -/
 noncomputable def dossCtx (Ww p ip : V) : V := setShiftIterV (finalCtx 0 (describeF Ww 0 p)) ip
 
-noncomputable def dossCtxDef : 𝚺₁.Semisentence 4 := .mkSigma
-  “y Ww p ip. ∃ D, !describeFDef D Ww 0 p ∧ ∃ G, !finalCtxDef G 0 D ∧ !setShiftIterVDef y G ip”
-
-instance dossCtx_defined : 𝚺₁-Function₃ (dossCtx : V → V → V → V) via dossCtxDef := .mk fun v ↦ by
-  simp [dossCtxDef, dossCtx, describeF_defined.iff, finalCtx_defined.iff, setShiftIterV_defined.iff]
-instance dossCtx_definable : 𝚺₁-Function₃ (dossCtx : V → V → V → V) := dossCtx_defined.to_definable
-
 lemma dossCtx_subset {Ww Γ p ip : V} (h : DossF Ww Γ 0 p ip) : dossCtx Ww p ip ⊆ Γ := by
   intro x hx
   obtain ⟨y, hy, rfl⟩ := (mem_setShiftIterV_iff _ _ _).mp hx
@@ -243,12 +236,6 @@ theorem listOK_mono_subset (M : ℕ) {tbl N E Γ Γ' S : V} (htbl : TableOK tbl 
     (hS : NoDrop' S) (hsub : Γ ⊆ Γ') (h : ListOK tbl E (M : V) Γ S) : ListOK tbl E (M : V) Γ' S :=
   fun i hi ↦ (listOK_mono_aux M htbl hΓ' hS hsub h (len S) le_rfl).1 i hi
 
-/-- A `NumInv` list (`NumId.lean`) transfers to any larger formula-set context. -/
-theorem NumInv.mono_ctx {tbl N E Γ Γ' P F : V} {C : ℕ} (htbl : TableOK tbl N) (hΓ' : IsFormulaSet LAct Γ')
-    (hsub : Γ ⊆ Γ') (h : NumInv tbl E Γ C P F) : NumInv tbl E Γ' C P F := by
-  obtain ⟨hok, hnd, hsh, hlen, hsz, hmem⟩ := h
-  exact ⟨listOK_mono_subset 9 htbl hΓ' hnd hsub hok, hnd, hsh, hlen, hsz, finalCtx_mono' hnd hsub hmem⟩
-
 end mono
 
 /-! ## 3. The `axm` certificate table (option (B), as a parameter of the recursion) -/
@@ -261,9 +248,6 @@ def NumInvV (tbl E Γ Cv P F : V) : Prop :=
   ListOK tbl E ((9 : ℕ) : V) Γ P ∧ NoDrop' P ∧ shiftsV P = 0 ∧ len P ≤ Cv ∧ SizeOK Cv Cv P ∧ neg LAct F ∈ finalCtx Γ P
 
 lemma numInv_iff_numInvV {tbl E Γ P F : V} {C : ℕ} : NumInv tbl E Γ C P F ↔ NumInvV tbl E Γ (C : V) P F := Iff.rfl
-
-instance numInvV_definable : 𝚫₁.Definable (fun v : Fin 6 → V ↦ NumInvV (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) := by
-  unfold NumInvV; definability
 
 /-- **An `axm` certificate entry** `⟪p, ip, pro⟫`: `pro` is a shift-free `NumInv` list at the canonical
 dossier context of `p` at `&ip`, leaving `axchFact &ip`. -/
@@ -278,17 +262,6 @@ instance axmEntryOK_definable : 𝚫₁-Relation₅ (AxmEntryOK : V → V → V 
 
 instance axmTableOK_definable : 𝚫₁-Relation₅ (AxmTableOK : V → V → V → V → V → Prop) := by
   unfold AxmTableOK; definability
-
-lemma AxmTableOK.mono {tbl E Ww A A' Cv : V} (h : AxmTableOK tbl E Ww A' Cv) (hAA : A ⊆ A') :
-    AxmTableOK tbl E Ww A Cv := by
-  intro e he
-  exact h e (hAA he)
-
-lemma AxmTableOK.mono_const {tbl E Ww A Cv Cv' : V} (hC : Cv ≤ Cv') (h : AxmTableOK tbl E Ww A Cv) :
-    AxmTableOK tbl E Ww A Cv' := by
-  intro e he
-  obtain ⟨p, hp, ip, hip, pro, hpro, rfl, hok, hnd, hsh, hlen, hsz, hmem⟩ := h e he
-  exact ⟨p, hp, ip, hip, pro, hpro, rfl, hok, hnd, hsh, le_trans hlen hC, hsz.mono hC hC, hmem⟩
 
 lemma axmTableOK_empty (tbl E Ww Cv : V) : AxmTableOK tbl E Ww 0 Cv := fun e he ↦ by simp at he
 
@@ -366,8 +339,6 @@ instance memTop_defined :
     𝚺₁.DefinedFunction (fun v : Fin 6 → V ↦ memTop (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) memTopDef := .mk
   fun v ↦ by
     simp [memTopDef, memTop, mTop, memberList_defined.iff, offVec_defined.iff, idxOf_defined.iff, numeral_eq_natCast]
-instance memTop_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 6 → V ↦ memTop (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) := memTop_defined.to_definable
 
 noncomputable def proSigDef : 𝚺₁.Semisentence 7 := .mkSigma
   “y Ww Wl Wc W T c. ∃ L, !layoutStepsDef L Ww Wl Wc W T c ∧ !shiftsVDef y L”
@@ -375,8 +346,6 @@ noncomputable def proSigDef : 𝚺₁.Semisentence 7 := .mkSigma
 instance proSig_defined :
     𝚺₁.DefinedFunction (fun v : Fin 6 → V ↦ proSig (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) proSigDef := .mk
   fun v ↦ by simp [proSigDef, proSig, layoutSteps_defined.iff, shiftsV_defined.iff]
-instance proSig_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 6 → V ↦ proSig (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) := proSig_defined.to_definable
 
 /-- `allCf Ww Wc p = freeCw Ww + freeS Wc Ww p (descCountF Ww 0 (free p)) 0` (`Prologue.lean` §13.3). -/
 noncomputable def allCfDef : 𝚺₁.Semisentence 4 := .mkSigma
@@ -388,7 +357,6 @@ noncomputable def allCfDef : 𝚺₁.Semisentence 4 := .mkSigma
 instance allCf_defined : 𝚺₁-Function₃ (allCf : V → V → V → V) via allCfDef := .mk fun v ↦ by
   simp [allCfDef, allCf, freeS, freeCw, freeWalk, fvec, free.defined.iff, descCountF_defined.iff, descTVec_defined.iff,
     descVecAux_defined.iff, shift.defined.iff, certSubst_defined.iff, shiftsV_defined.iff, numeral_eq_natCast]
-instance allCf_definable : 𝚺₁-Function₃ (allCf : V → V → V → V) := allCf_defined.to_definable
 
 noncomputable def allCertSigDef : 𝚺₁.Semisentence 4 := .mkSigma
   “y Ww Wc p. ∃ sp, !(shiftGraph LAct) sp p ∧ ∃ c₁, !descCountFDef c₁ Ww 1 sp ∧ ∃ fp, !(freeGraph LAct) fp p ∧
@@ -397,28 +365,24 @@ noncomputable def allCertSigDef : 𝚺₁.Semisentence 4 := .mkSigma
 instance allCertSig_defined : 𝚺₁-Function₃ (allCertSig : V → V → V → V) via allCertSigDef := .mk fun v ↦ by
   simp [allCertSigDef, allCertSig, shift.defined.iff, descCountF_defined.iff, free.defined.iff, allCf_defined.iff,
     numeral_eq_natCast]
-instance allCertSig_definable : 𝚺₁-Function₃ (allCertSig : V → V → V → V) := allCertSig_defined.to_definable
 
 noncomputable def vecCwDef : 𝚺₁.Semisentence 3 := .mkSigma
   “y Ww t. ∃ tv, !adjoinDef tv t 0 ∧ ∃ dv, !descTVecDef dv Ww 0 1 tv ∧ ∃ VW, !descVecAuxDef VW Ww 0 dv 1 ∧ !pi₁Def y VW”
 
 instance vecCw_defined : 𝚺₁-Function₂ (vecCw : V → V → V) via vecCwDef := .mk fun v ↦ by
   simp [vecCwDef, vecCw, descTVec_defined.iff, descVecAux_defined.iff, numeral_eq_natCast]
-instance vecCw_definable : 𝚺₁-Function₂ (vecCw : V → V → V) := vecCw_defined.to_definable
 
 noncomputable def exsSlDef : 𝚺₁.Semisentence 4 := .mkSigma
   “y Wc T t. ∃ Lt, !lenTDef Lt Wc T 0 t 1 ∧ !shiftsVDef y Lt”
 
 instance exsSl_defined : 𝚺₁-Function₃ (exsSl : V → V → V → V) via exsSlDef := .mk fun v ↦ by
   simp [exsSlDef, exsSl, lenT_defined.iff, shiftsV_defined.iff, numeral_eq_natCast]
-instance exsSl_definable : 𝚺₁-Function₃ (exsSl : V → V → V → V) := exsSl_defined.to_definable
 
 noncomputable def exsC3Def : 𝚺₁.Semisentence 4 := .mkSigma
   “y Ww t p. ∃ pt, !(substs1Graph LAct) pt t p ∧ !descCountFDef y Ww 0 pt”
 
 instance exsC3_defined : 𝚺₁-Function₃ (exsC3 : V → V → V → V) via exsC3Def := .mk fun v ↦ by
   simp [exsC3Def, exsC3, substs1.defined.iff, descCountF_defined.iff, numeral_eq_natCast]
-instance exsC3_definable : 𝚺₁-Function₃ (exsC3 : V → V → V → V) := exsC3_defined.to_definable
 
 noncomputable def exsIwDef : 𝚺₁.Semisentence 6 := .mkSigma
   “y Ww Wc T t p. ∃ sl, !exsSlDef sl Wc T t ∧ ∃ c₃, !exsC3Def c₃ Ww t p ∧ y = sl + 1 + c₃”
@@ -426,8 +390,6 @@ noncomputable def exsIwDef : 𝚺₁.Semisentence 6 := .mkSigma
 instance exsIw_defined :
     𝚺₁.DefinedFunction (fun v : Fin 5 → V ↦ exsIw (v 0) (v 1) (v 2) (v 3) (v 4)) exsIwDef := .mk fun v ↦ by
   simp [exsIwDef, exsIw, exsSl_defined.iff, exsC3_defined.iff]
-instance exsIw_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 5 → V ↦ exsIw (v 0) (v 1) (v 2) (v 3) (v 4)) := exsIw_defined.to_definable
 
 noncomputable def exsIpDef : 𝚺₁.Semisentence 8 := .mkSigma
   “y Ww Wc T s p t i. ∃ cv, !vecCwDef cv Ww t ∧ ∃ sl, !exsSlDef sl Wc T t ∧ ∃ c₃, !exsC3Def c₃ Ww t p ∧
@@ -437,8 +399,6 @@ instance exsIp_defined :
     𝚺₁.DefinedFunction (fun v : Fin 7 → V ↦ exsIp (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) exsIpDef := .mk
   fun v ↦ by
     simp [exsIpDef, exsIp, vecCw_defined.iff, exsSl_defined.iff, exsC3_defined.iff, memTop_defined.iff, numeral_eq_natCast]
-instance exsIp_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 7 → V ↦ exsIp (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) := exsIp_defined.to_definable
 
 noncomputable def exsScDef : 𝚺₁.Semisentence 8 := .mkSigma
   “y Ww Wc T s p t i. ∃ tv, !adjoinDef tv t 0 ∧ ∃ iw, !exsIwDef iw Ww Wc T t p ∧ ∃ ip, !exsIpDef ip Ww Wc T s p t i ∧
@@ -449,8 +409,6 @@ instance exsSc_defined :
   fun v ↦ by
     simp [exsScDef, exsSc, exsIw_defined.iff, exsIp_defined.iff, certSubst_defined.iff, shiftsV_defined.iff,
       numeral_eq_natCast]
-instance exsSc_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 7 → V ↦ exsSc (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) := exsSc_defined.to_definable
 
 noncomputable def exsSigDef : 𝚺₁.Semisentence 8 := .mkSigma
   “y Ww Wc T s p t i. ∃ cv, !vecCwDef cv Ww t ∧ ∃ sl, !exsSlDef sl Wc T t ∧ ∃ c₃, !exsC3Def c₃ Ww t p ∧
@@ -460,8 +418,6 @@ instance exsSig_defined :
     𝚺₁.DefinedFunction (fun v : Fin 7 → V ↦ exsSig (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) exsSigDef := .mk
   fun v ↦ by
     simp [exsSigDef, exsSig, vecCw_defined.iff, exsSl_defined.iff, exsC3_defined.iff, exsSc_defined.iff]
-instance exsSig_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 7 → V ↦ exsSig (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) := exsSig_defined.to_definable
 
 end helperDefs
 
@@ -493,8 +449,6 @@ instance vAxL_defined :
     𝚺₁.DefinedFunction (fun v : Fin 6 → V ↦ vAxL (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) vAxLDef := .mk fun v ↦ by
   simp [vAxLDef, vAxL, proAxL_defined.iff, memberList_defined.iff, memTop_defined.iff, neg.defined.iff,
     setLen_defined.iff, dlen_defined.iff, fragAxL_defined.iff, appendV_defined.iff, numeral_eq_natCast]
-instance vAxL_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 6 → V ↦ vAxL (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) := vAxL_defined.to_definable
 
 /-- The `verumIntro` list: no prologue (`layout_verum`), `fragVerum` at `is = k + 1`, `il = 0`. -/
 noncomputable def vVerum (Ww Wc W₁ T s : V) : V :=
@@ -510,8 +464,6 @@ instance vVerum_defined :
     𝚺₁.DefinedFunction (fun v : Fin 5 → V ↦ vVerum (v 0) (v 1) (v 2) (v 3) (v 4)) vVerumDef := .mk fun v ↦ by
   simp [vVerumDef, vVerum, memberList_defined.iff, memTop_defined.iff, setLen_defined.iff, dlen_defined.iff,
     fragVerum_defined.iff, numeral_eq_natCast]
-instance vVerum_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 5 → V ↦ vVerum (v 0) (v 1) (v 2) (v 3) (v 4)) := vVerum_defined.to_definable
 
 /-- The `andIntro` list. Block 1: `proIns s p 0 ip₀` (`σ₁ = 1 + proSig (insert p s)`), `L₁`, `postIns` at the child's
 chain top `&(k₁ + 1 + s₁)` and the insert object `&(proSig (insert p s) + s₁)`; `τ₁ = σ₁ + s₁ + 2`. Block 2 the same
@@ -570,9 +522,6 @@ instance vAnd_defined :
   simp [vAndDef, vAnd, memberList_defined.iff, memTop_defined.iff, descCountF_defined.iff, proSig_defined.iff,
     shiftsV_defined.iff, dlen_defined.iff, setLen_defined.iff, proIns_defined.iff, postIns_defined.iff,
     nodeAnd_defined.iff, appendV_defined.iff, numeral_eq_natCast]
-instance vAnd_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 13 → V ↦ vAnd (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10) (v 11) (v 12)) :=
-  vAnd_defined.to_definable
 
 /-- The `orIntro` list: `proOr` (`σ = 1 + proSig (insert q s) + (1 + proSig c)`, `c = insert p (insert q s)`), `L'`,
 `postIns`, `nodeOr` with `icq = proSig (insert q s) + (1 + proSig c) + s' + 2`, `ic = proSig c + s' + 2`. -/
@@ -620,9 +569,6 @@ instance vOr_defined :
   simp [vOrDef, vOr, memberList_defined.iff, memTop_defined.iff, descCountF_defined.iff, proSig_defined.iff,
     shiftsV_defined.iff, dlen_defined.iff, setLen_defined.iff, proOr_defined.iff, postIns_defined.iff,
     nodeOr_defined.iff, appendV_defined.iff, numeral_eq_natCast]
-instance vOr_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 11 → V ↦ vOr (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10)) :=
-  vOr_defined.to_definable
 
 /-- **`fsetPiFact` of the EMPTY sequent's object `&1`** (an empty layout at `0` has `eqFactB &1 𝟎`): `emptySubsetC [𝟎]`
 (`𝟎 ⊆ 𝟎`), `congSubsetL [𝟎, &1, 𝟎]` (`&1 ⊆ 𝟎`), `fsetOfSubsetZeroC [&1]`, `fsetSigmaPiC [&1]`. Shift-free; it is what
@@ -639,7 +585,6 @@ noncomputable def emptyFsetPiDef : 𝚺₁.Semisentence 2 := .mkSigma
 
 instance emptyFsetPi_defined : 𝚺₁-Function₁ (emptyFsetPi : V → V) via emptyFsetPiDef := .mk fun v ↦ by
   simp [emptyFsetPiDef, emptyFsetPi, mkStep_defined.iff, cTV.defined.iff, cTV_zero, numeral_eq_natCast]
-instance emptyFsetPi_definable : 𝚺₁-Function₁ (emptyFsetPi : V → V) := emptyFsetPi_defined.to_definable
 
 /-- The `wk` prologue selector: `proWk` for a nonempty child, `proWk0 ++ emptyFsetPi` for the empty child. -/
 noncomputable def wkPro (Ww Wl Wc W T s c : V) : V :=
@@ -655,8 +600,6 @@ instance wkPro_defined :
   simp [wkProDef, wkPro, memberList_defined.iff, proWk_defined.iff, proWk0_defined.iff, emptyFsetPi_defined.iff,
     appendV_defined.iff, numeral_eq_natCast]
   by_cases h : memberList (v 7) = 0 <;> simp [h]
-instance wkPro_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 7 → V ↦ wkPro (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) := wkPro_defined.to_definable
 
 /-- The `wkRule` list: the selector, `L'`, `goalElim` at the child's sequent object `&(k_c + 1 + s')`, `nodeWk` with
 `ic = k_c + 1 + s' + 2`, `id = 1`, `in₁ = 0`. -/
@@ -683,8 +626,6 @@ instance vWk_defined :
     𝚺₁.DefinedFunction (fun v : Fin 9 → V ↦ vWk (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8)) vWkDef := .mk fun v ↦ by
   simp [vWkDef, vWk, memberList_defined.iff, fstIdx_defined.iff, wkPro_defined.iff, shiftsV_defined.iff, dlen_defined.iff,
     setLen_defined.iff, bnum.defined.iff, goalElim_defined.iff, nodeWk_defined.iff, appendV_defined.iff, numeral_eq_natCast]
-instance vWk_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 9 → V ↦ vWk (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8)) := vWk_defined.to_definable
 
 /-- **The reset of the empty `shift` child** (`proShift0` leaves it at offset `1`): `layoutSteps0` (a fresh `Layout0` at
 `0`, `eqFactB &1 𝟎`), then `eqSymm [&4, 𝟎]` (`𝟎 = &4`, the old `∅`-object), `eqTrans [&1, 𝟎, &4]` (`&1 = &4`),
@@ -703,7 +644,6 @@ noncomputable def reset0Def : 𝚺₁.Semisentence 2 := .mkSigma
 instance reset0_defined : 𝚺₁-Function₁ (reset0 : V → V) via reset0Def := .mk fun v ↦ by
   simp [reset0Def, reset0, layoutSteps0_defined.iff, mkStep_defined.iff, cTV.defined.iff, cTV_zero, appendV_defined.iff,
     numeral_eq_natCast]
-instance reset0_definable : 𝚺₁-Function₁ (reset0 : V → V) := reset0_defined.to_definable
 
 /-- The `shift` prologue selector: `proShift` for a nonempty child, `proShift0 ++ reset0` for the empty one. -/
 noncomputable def shiftPro (Ww Wl Wc W T s c : V) : V :=
@@ -720,8 +660,6 @@ instance shiftPro_defined :
   simp [shiftProDef, shiftPro, memberList_defined.iff, proShift_defined.iff, proShift0_defined.iff, reset0_defined.iff,
     emptyFsetPi_defined.iff, appendV_defined.iff, numeral_eq_natCast]
   by_cases h : memberList (v 7) = 0 <;> simp [h]
-instance shiftPro_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 7 → V ↦ shiftPro (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) := shiftPro_defined.to_definable
 
 /-- The `shiftRule` list: as `vWk` with `shiftPro` and `nodeShift`. -/
 noncomputable def vShift (Ww Wl Wc W₂ W T s d' L' : V) : V :=
@@ -748,8 +686,6 @@ instance vShift_defined :
   fun v ↦ by
   simp [vShiftDef, vShift, memberList_defined.iff, fstIdx_defined.iff, shiftPro_defined.iff, shiftsV_defined.iff, dlen_defined.iff,
     setLen_defined.iff, bnum.defined.iff, goalElim_defined.iff, nodeShift_defined.iff, appendV_defined.iff, numeral_eq_natCast]
-instance vShift_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 9 → V ↦ vShift (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8)) := vShift_defined.to_definable
 
 /-- The `cut` insert selector: `proIns` for a nonempty parent, `proIns0` for the empty parent. -/
 noncomputable def cutPro (Ww Wl Wc W T s p i ip : V) : V :=
@@ -763,8 +699,6 @@ instance cutPro_defined :
     𝚺₁.DefinedFunction (fun v : Fin 9 → V ↦ cutPro (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8)) cutProDef := .mk fun v ↦ by
   simp [cutProDef, cutPro, memberList_defined.iff, proIns_defined.iff, proIns0_defined.iff, numeral_eq_natCast]
   by_cases h : memberList (v 6) = 0 <;> simp [h]
-instance cutPro_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 9 → V ↦ cutPro (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8)) := cutPro_defined.to_definable
 
 /-- The `cutRule` list: `proCutPre` (`σc = mShift p + mShift (neg p)`; `p` at `ip₀ = mLen p + mShift (neg p)`, `neg p` at
 `inp₀ = mLen (neg p)`), block 1 for `insert p s` (the parent at `σc`), block 2 for `insert (neg p) s` (the parent at
@@ -825,9 +759,6 @@ instance vCut_defined :
   simp [vCutDef, vCut, memberList_defined.iff, neg.defined.iff, mShift_defined.iff, mLen_defined.iff, proSig_defined.iff,
     shiftsV_defined.iff, dlen_defined.iff, setLen_defined.iff, proCutPre_defined.iff, cutPro_defined.iff, postIns_defined.iff,
     nodeCut_defined.iff, appendV_defined.iff, numeral_eq_natCast]
-instance vCut_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 12 → V ↦ vCut (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10) (v 11)) :=
-  vCut_defined.to_definable
 
 /-- The `allIntro` list: `proAll` (its shifts `σA`, the child `c = insert (free p) (setShift s)` at `0`, the insert object
 at `σc = proSig c`, `free p` at `fp₀`, the `setShift` object at `iss₀`), `L'`, `postIns`, `nodeAll`. -/
@@ -878,9 +809,6 @@ instance vAll_defined :
   simp [vAllDef, vAll, memberList_defined.iff, free.defined.iff, setShift.defined.iff, proSig_defined.iff, allCertSig_defined.iff,
     allCf_defined.iff, shiftsV_defined.iff, dlen_defined.iff, setLen_defined.iff, memTop_defined.iff, proAll_defined.iff,
     postIns_defined.iff, nodeAll_defined.iff, appendV_defined.iff, numeral_eq_natCast]
-instance vAll_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 10 → V ↦ vAll (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9)) :=
-  vAll_defined.to_definable
 
 /-- The `exsIntro` list: `proExs` (shifts `exsSig + (1 + σc)`, `c = insert (substs1 t p) s`; `T̂` at `it₀`, `l` at `ilt₀`,
 `PT` at `ipt₀`, the insert object at `σc`), `L'`, `postIns`, `nodeExs` with `Lt = termLen t`. -/
@@ -924,9 +852,6 @@ instance vExs_defined :
   simp [vExsDef, vExs, memberList_defined.iff, substs1.defined.iff, proSig_defined.iff, exsSig_defined.iff, exsIw_defined.iff,
     exsSc_defined.iff, exsC3_defined.iff, shiftsV_defined.iff, dlen_defined.iff, setLen_defined.iff, termLen.defined.iff,
     memTop_defined.iff, proExs_defined.iff, postIns_defined.iff, nodeExs_defined.iff, appendV_defined.iff, numeral_eq_natCast]
-instance vExs_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 11 → V ↦ vExs (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10)) :=
-  vExs_defined.to_definable
 
 /-- The `axm` list: the certificate `pro` (shift-free), then `nodeAxm` at `is = k + 1`, `il = 0`, `ip = memTop s p 0`. -/
 noncomputable def vAxm (Ww Wc W₂ T s p pro : V) : V :=
@@ -941,8 +866,6 @@ instance vAxm_defined :
     𝚺₁.DefinedFunction (fun v : Fin 7 → V ↦ vAxm (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) vAxmDef := .mk fun v ↦ by
   simp [vAxmDef, vAxm, memberList_defined.iff, memTop_defined.iff, setLen_defined.iff, dlen_defined.iff, nodeAxm_defined.iff,
     appendV_defined.iff, numeral_eq_natCast]
-instance vAxm_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 7 → V ↦ vAxm (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) := vAxm_defined.to_definable
 
 end assemblers
 
@@ -1095,19 +1018,6 @@ instance vPackedP_defined : 𝚺₁-Relation (VPackedP : V → V → Prop) via v
     | exact Iff.rfl
     | (constructor <;> intro h <;> convert h using 2 <;> funext i <;> fin_cases i <;> rfl)
 instance vPackedP_definable : 𝚺₁-Relation (VPackedP : V → V → Prop) := vPackedP_defined.to_definable
-
-noncomputable def verifyGraph'Def : 𝚺₁.Semisentence 10 := .mkSigma
-  “Ww Wl Wc W₁ W₂ W T A ρ L. ∃ pr, !pairDef pr ρ L ∧ ∃ p₇, !pairDef p₇ T A ∧ ∃ p₆, !pairDef p₆ W p₇ ∧
-    ∃ p₅, !pairDef p₅ W₂ p₆ ∧ ∃ p₄, !pairDef p₄ W₁ p₅ ∧ ∃ p₃, !pairDef p₃ Wc p₄ ∧ ∃ p₂, !pairDef p₂ Wl p₃ ∧
-    ∃ P, !pairDef P Ww p₂ ∧ !vPackedPDef P pr”
-
-instance verifyGraph'_defined :
-    𝚺₁.Defined (fun v : Fin 10 → V ↦ VerifyGraph' (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9))
-      verifyGraph'Def := .mk
-  fun v ↦ by simp [verifyGraph'Def, vPackedP_defined.iff, VerifyGraph']
-instance verifyGraph'_definable :
-    𝚺₁.Definable (fun v : Fin 10 → V ↦ VerifyGraph' (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9)) :=
-  verifyGraph'_defined.to_definable
 
 /-! ### 6.3 Case analysis and the ten inversions -/
 
@@ -1428,9 +1338,6 @@ section okPrelude
 instance layout_definable : 𝚫₁.Definable (fun v : Fin 6 → V ↦ Layout (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) := by
   unfold Layout; definability
 
-instance layout0_definable : 𝚫₁-Relation₅ (Layout0 : V → V → V → V → V → Prop) := by
-  unfold Layout0; definability
-
 lemma shiftIterV_derFact {e : V} (he : IsSemiterm LAct 0 e) :
     ∀ c : V, shiftIterV (derFact e) c = derFact (termShiftIterV e c) := by
   intro c
@@ -1649,11 +1556,6 @@ lemma NodeLay.fsetPi {Ww Wc T Γ s : V} (h : NodeLay Ww Wc T Γ s) :
   rcases h with ⟨hk, h⟩ | ⟨rfl, -, h⟩
   · have := h.fsetPi hk; rwa [zero_add] at this
   · rwa [len_memberList_zero, zero_add]
-
-lemma NodeLay.mono {Ww Wc T Γ Γ' s : V} (hsub : ∀ x ∈ Γ, x ∈ Γ') (h : NodeLay Ww Wc T Γ s) : NodeLay Ww Wc T Γ' s := by
-  rcases h with ⟨hk, h⟩ | ⟨rfl, h, hf⟩
-  · exact Or.inl ⟨hk, h.mono hsub⟩
-  · exact Or.inr ⟨rfl, h.mono hsub, hsub _ hf⟩
 
 /-- A transported (negated) fact. -/
 lemma tr_fact {Γ S x : V} (hS : NoDrop' S) (hxf : IsFormula LAct x) (hx : neg LAct x ∈ Γ) :
@@ -2133,7 +2035,6 @@ theorem shiftTail_ok {tbl N N' B' Wc W₂ T s d' L' pro σ D B E Γ : V} (htbl :
   · rw [finalCtx_appendV, finalCtx_appendV, finalCtx_appendV, ← hΓ₁, ← hΓ₂, ← hΓ₃,
       show k + 1 + (σ + s' + 3) = σ + s' + 2 + (k + 1) + 1 by ring]
     exact ngoal
-
 
 /-- **The `shift` list is applicable** at the node's layout: the selector's two cases, then the common tail. -/
 theorem vShift_ok {tbl N N' B' Wl Wc W₂ W T s d' L' D B E Γ : V} (htbl : TableOK tbl N) (hP : ProTable tbl)

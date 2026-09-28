@@ -54,7 +54,6 @@ lemma Plength_eq_quote : (Plength : V) = ⌜lengthS⌝ := rfl
 
 noncomputable def lengthFactDef : 𝚺₁.Semisentence 3 := fact2Def lengthS
 instance lengthFact_defined : 𝚺₁-Function₂ (lengthFact : V → V → V) via lengthFactDef := fact2_defined lengthS
-instance lengthFact_definable : 𝚺₁-Function₂ (lengthFact : V → V → V) := lengthFact_defined.to_definable
 
 /-- **N5's fact**: `lengthEqFact k := lengthFact (bnum ‖k‖) (bnum k)` — `bnum ‖k‖ = ‖bnum k‖`. -/
 noncomputable def lengthEqFact (k : V) : V := lengthFact (bnum ‖k‖) (bnum k)
@@ -230,7 +229,6 @@ theorem exists_lenTable : ∃ N B : ℕ, ∀ (V : Type) [ORingStructure V] [V↓
   · exact_mod_cast (by omega : 1 ≤ rowLen lengthZeroB + rowLen lengthOneB + rowLen lenTwoMulSB + rowLen lenTwoMulOneSB + flen (Rewriting.emb lengthS : Semiproposition LAct 2) + flen (Rewriting.emb eqS : Semiproposition LAct 2) + flen (Rewriting.emb ltS : Semiproposition LAct 2) + 1)
 
 end table
-
 
 /-! ## 4. The bit recursion: `LenGraph tblL tbl z d` (a `Fixpoint` on `⟪z, d⟫`, two table parameters)
 
@@ -466,22 +464,7 @@ lemma lengthEqCode_graph (tblL tbl k : V) : LenGraph tblL tbl k (lengthEqCode tb
 lemma lengthEqCode_eq_of_graph {tblL tbl k d : V} (h : LenGraph tblL tbl k d) : lengthEqCode tblL tbl k = d :=
   lenGraph_unique tblL tbl k _ _ (lengthEqCode_graph tblL tbl k) h
 
-noncomputable def lengthEqCodeDef : 𝚺₁.Semisentence 4 := .mkSigma “y tblL tbl k. !lenGraphDef tblL tbl k y”
-
-/-- The `succCode_defined` pattern: never a blanket `simp` through the fixpoint formula. -/
-instance lengthEqCode_defined : 𝚺₁-Function₃ (lengthEqCode : V → V → V → V) via lengthEqCodeDef := .mk fun v ↦ by
-  simp only [lengthEqCodeDef]
-  rw [HierarchySymbol.Semiformula.val_mkSigma, Semiformula.eval_substs ![#1, #2, #3, #0] lenGraphDef.val,
-    lenGraph_defined.iff]
-  simp only [Function.comp_apply, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.head_cons, Matrix.cons_val_two,
-    Matrix.tail_cons, Matrix.cons_val_three, Semiterm.val_bvar, Fin.succ_zero_eq_one, Fin.succ_one_eq_two]
-  constructor
-  · intro h; exact (lengthEqCode_eq_of_graph h).symm
-  · intro h; rw [h]; exact lengthEqCode_graph _ _ _
-instance lengthEqCode_definable : 𝚺₁-Function₃ (lengthEqCode : V → V → V → V) := lengthEqCode_defined.to_definable
-
 end lenGraph
-
 
 /-! ## 5. Soundness and length of `lengthEqCode`; its `sLemma` packaging
 

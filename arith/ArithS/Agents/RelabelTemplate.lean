@@ -47,12 +47,6 @@ instance relabelSym.defined : 𝚺₀-Function₃ (relabelSym : V → V → V �
       · simp [h2, h3]
       · simp [h2, h3]
 
-instance relabelSym.definable : 𝚺₀-Function₃ (relabelSym : V → V → V → V) :=
-  relabelSym.defined.to_definable
-
-instance relabelSym.definable' (Γ m) : Γ-[m]-Function₃ (relabelSym : V → V → V → V) :=
-  HierarchySymbol.Definable.of_zero relabelSym.definable
-
 lemma two_ne_three : (2 : V) ≠ 3 := by
   intro h
   have h' : (2 : V) + 0 = 2 + 1 := by rw [add_zero]; exact h.trans (by norm_num)
@@ -148,9 +142,6 @@ instance termRelabel.defined : 𝚺₁-Function₃ (termRelabel : V → V → V 
 instance termRelabel.definable : 𝚺₁-Function₃ (termRelabel : V → V → V → V) :=
   termRelabel.defined.to_definable
 
-instance termRelabel.definable' : Γ-[k + 1]-Function₃ (termRelabel : V → V → V → V) :=
-  termRelabel.definable.of_sigmaOne
-
 instance termRelabelVec.defined :
     𝚺₁-Function₄ (termRelabelVec : V → V → V → V → V) via termRelabelVecGraph :=
   .mk fun v ↦ by
@@ -168,9 +159,6 @@ instance termRelabelVec.defined :
 
 instance termRelabelVec.definable : 𝚺₁-Function₄ (termRelabelVec : V → V → V → V → V) :=
   termRelabelVec.defined.to_definable
-
-instance termRelabelVec.definable' : Γ-[i + 1]-Function₄ (termRelabelVec : V → V → V → V → V) :=
-  termRelabelVec.definable.of_sigmaOne
 
 @[simp] lemma len_termRelabelVec {k ts : V} (hts : IsUTermVec LAct k ts) :
     len (termRelabelVec u w k ts) = k := construction.resultVec_lh LAct _ hts
@@ -332,9 +320,6 @@ instance relabelTemplate.defined :
 
 instance relabelTemplate.definable : 𝚺₁-Function₃ (relabelTemplate : V → V → V → V) :=
   relabelTemplate.defined.to_definable
-
-instance relabelTemplate.definable' : Γ-[m + 1]-Function₃ (relabelTemplate : V → V → V → V) :=
-  relabelTemplate.definable.of_sigmaOne
 
 variable {u w : V}
 
@@ -559,4 +544,3 @@ theorem relabelTemplate_zero_one_quote {n : ℕ} (σ : Semisentence LAct n) :
 end metaLink
 
 end ArithS
-

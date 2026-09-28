@@ -563,8 +563,6 @@ noncomputable def gGraph : 𝚺₁.Semisentence 2 := .mkSigma “y k. ∃ l, !le
 instance gBudget.defined : 𝚺₁-Function₁[V] gBudget via gGraph := .mk fun v ↦ by
   simp [gGraph, gBudget]
 
-instance gBudget.definable : 𝚺₁-Function₁[V] gBudget := gBudget.defined.to_definable
-
 /-- **The ℒₒᵣ-core of the box**: `n k ↦ ∃ a, a = gBudget k ∧ bewB a n k` —
 **`#0` is the CODE slot `n`, `#1` the budget `k`** (the convention of
 `tact_parametric_diagonal`, whose right-hand side is `θ ⇜ ![⌜ψ⌝, #0]`). -/

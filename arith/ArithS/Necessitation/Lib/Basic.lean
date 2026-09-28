@@ -37,10 +37,6 @@ theorem of_tact {σ : ArithmeticSentence} (h : TAct ⊢ Semiformula.lMap emb σ)
 theorem of_pa {σ : ArithmeticSentence} (h : 𝗣𝗔 ⊢ σ) : Lib σ :=
   of_tact (tact_proves_lMap_emb h)
 
-/-- Every `𝗜𝚺₁`-theorem is a library sentence (`𝗜𝚺₁ ⪯ 𝗣𝗔`). -/
-theorem of_isigma1 {σ : ArithmeticSentence} (h : 𝗜𝚺₁ ⊢ σ) : Lib σ :=
-  of_pa (Entailment.WeakerThan.pbl h)
-
 /-- **The route every library row takes**: truth in every model of `𝗜𝚺₁` gives a `𝗣𝗔`-proof
 (completeness, `Arithmetic.complete`), hence a library sentence. -/
 theorem pa_proves_of_models {σ : ArithmeticSentence}
@@ -48,10 +44,6 @@ theorem pa_proves_of_models {σ : ArithmeticSentence}
   complete 𝗣𝗔 σ fun (V : Type) _ _ ↦
     haveI : V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
     H V
-
-theorem isigma1_proves_of_models {σ : ArithmeticSentence}
-    (H : ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁], V↓[ℒₒᵣ] ⊧ σ) : 𝗜𝚺₁ ⊢ σ :=
-  complete 𝗜𝚺₁ σ fun (V : Type) _ _ ↦ H V
 
 theorem of_models {σ : ArithmeticSentence}
     (H : ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁], V↓[ℒₒᵣ] ⊧ σ) : Lib σ :=

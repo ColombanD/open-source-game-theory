@@ -116,10 +116,6 @@ instance appendV_defined : 𝚺₁-Function₂ (appendV : V → V → V) via app
   fun v ↦ by simp [AppendV.construction.eval_resultDef, appendVDef]; rfl
 instance appendV_definable : 𝚺₁-Function₂ (appendV : V → V → V) := appendV_defined.to_definable
 
-lemma appendV_vecOf : ∀ (xs ys : List V), appendV (vecOf xs) (vecOf ys) = vecOf (xs ++ ys)
-  | [], ys => by simp
-  | x :: xs, ys => by simp [appendV_vecOf xs ys]
-
 @[simp] lemma len_appendV (u w : V) : len (appendV u w) = len u + len w := by
   induction u using adjoin_ISigma1.sigma1_succ_induction with
   | hP => definability
@@ -481,7 +477,6 @@ lemma mem_finalCtx_of_mem {Γ₀ S x : V} (hS : NoDrop S) (hx : x ∈ Γ₀) :
     shiftIterV x (shiftsV S) ∈ finalCtx Γ₀ S :=
   mem_ctxVec_of_mem hS hx (len S) le_rfl
 
-
 /-! ## Part 1 — the row table of the walk (D1)
 
 The 40 rows the walk uses, in a FIXED order (`rIdx_<row>`: terms 0–14, vectors 15–18, formulas
@@ -545,7 +540,6 @@ theorem exists_rows : ∀ (rs : List WRow), ∃ N : ℕ, ∀ (V : Type) [ORingSt
       | succ i =>
         simp only [List.getElem_cons_succ]
         exact hidx i (Nat.lt_of_succ_lt_succ h) (Nat.lt_of_succ_lt_succ h')
-
 
 def rIdx_zeroLtSucc : ℕ := 0
 def rIdx_succLtSucc : ℕ := 1
@@ -1043,8 +1037,6 @@ def mkStepDef : 𝚺₁.Semisentence 4 := .mkSigma
 
 instance mkStep_defined : 𝚺₁-Function₃ (mkStep : V → V → V → V) via mkStepDef := .mk
   fun v ↦ by simp [mkStepDef, mkStep]
-instance mkStep_definable : 𝚺₁-Function₃ (mkStep : V → V → V → V) := mkStep_defined.to_definable
-
 
 noncomputable def piece_zeroLtSucc : V := ⟪(0 : V), vecOf row_zeroLtSucc_as, row_zeroLtSucc_c⟫
 noncomputable def piece_succLtSucc : V := ⟪(0 : V), vecOf row_succLtSucc_as, row_succLtSucc_c⟫
@@ -1132,7 +1124,6 @@ noncomputable def walkPieceList : List V := [
 
 /-- **The piece table of the walk** (a closed V-generic term). -/
 noncomputable def walkPieces : V := vecOf walkPieceList
-
 
 lemma walkPieces_zeroLtSucc : (walkPieces : V).[((rIdx_zeroLtSucc : ℕ) : V)] = piece_zeroLtSucc := by
   unfold walkPieces
@@ -1536,7 +1527,6 @@ lemma mkStep_isUTermVecSigmaPiLAct (ev : V) :
 
 end rowTable
 
-
 /-! ## Part 2 — the term walk (D2 for terms)
 
 DESIGN §4.2, the term and vector tables. Every producer takes the piece table `W` and the arity
@@ -1606,7 +1596,6 @@ noncomputable def ltStepsDef : 𝚺₁.Semisentence 4 := ltAuxDef.rew (Rew.subst
 
 instance ltSteps_defined : 𝚺₁-Function₃ (ltSteps : V → V → V → V) via ltStepsDef := .mk
   fun v ↦ by simp [ltStepsDef, ltAuxDef, LtAux.construction.result_defined_iff, ltSteps]; rfl
-instance ltSteps_definable : 𝚺₁-Function₃ (ltSteps : V → V → V → V) := ltSteps_defined.to_definable
 
 /-! ### 2.2 The node emitters -/
 
@@ -1626,7 +1615,6 @@ noncomputable def bvarNodeDef : 𝚺₁.Semisentence 4 := .mkSigma
 
 instance bvarNode_defined : 𝚺₁-Function₃ (bvarNode : V → V → V → V) via bvarNodeDef := .mk
   fun v ↦ by simp [bvarNodeDef, bvarNode, numeral_eq_natCast, ltSteps_defined.iff, cTV.defined.iff, mkStep_defined.iff, appendV_defined.iff]
-instance bvarNode_definable : 𝚺₁-Function₃ (bvarNode : V → V → V → V) := bvarNode_defined.to_definable
 
 /-- (T&) the free variable `^&x`: `qqFvarTotal [cTV x]`, `isSemitermFvar [cTV n, cTV x, &0]`, the
 bridge. Count `1`. -/
@@ -1642,7 +1630,6 @@ noncomputable def fvarNodeDef : 𝚺₁.Semisentence 4 := .mkSigma
 
 instance fvarNode_defined : 𝚺₁-Function₃ (fvarNode : V → V → V → V) via fvarNodeDef := .mk
   fun v ↦ by simp [fvarNodeDef, fvarNode, numeral_eq_natCast, cTV.defined.iff, mkStep_defined.iff]
-instance fvarNode_definable : 𝚺₁-Function₃ (fvarNode : V → V → V → V) := fvarNode_defined.to_definable
 
 /-- (V0) the empty vector: `isSemitermVecNil [cTV n]`, the bridge `[cTV 0, cTV n, cTV 0]`. Count `0`. -/
 noncomputable def nilNode (W n : V) : V :=
@@ -1656,7 +1643,6 @@ noncomputable def nilNodeDef : 𝚺₁.Semisentence 3 := .mkSigma
 
 instance nilNode_defined : 𝚺₁-Function₂ (nilNode : V → V → V) via nilNodeDef := .mk
   fun v ↦ by simp [nilNodeDef, nilNode, numeral_eq_natCast, cTV.defined.iff, mkStep_defined.iff]
-instance nilNode_definable : 𝚺₁-Function₂ (nilNode : V → V → V) := nilNode_defined.to_definable
 
 /-- (V∷) one more entry in front of a described vector of length `j`: given the entry's result
 `p = ⟪ct, St⟫` and the tail's result `ih = ⟪cv, Sv⟫`, the steps `Sv ++ St ++ [adjoinTotal [&0, ⟨v'⟩],
@@ -1683,8 +1669,6 @@ noncomputable def adjNodeDef : 𝚺₁.Semisentence 6 := .mkSigma
 instance adjNode_defined : 𝚺₁-Function₅ (adjNode : V → V → V → V → V → V) via adjNodeDef := .mk
   fun v ↦ by
     simp [adjNodeDef, adjNode, numeral_eq_natCast, cTV.defined.iff, mkStep_defined.iff, appendV_defined.iff, vRef_defined.iff]
-instance adjNode_definable : 𝚺₁.DefinableFunction₅ (adjNode : V → V → V → V → V → V) :=
-  adjNode_defined.to_definable
 
 namespace DescVecAux
 
@@ -1739,7 +1723,6 @@ instance funcRow_defined : 𝚺₀-Function₂ (funcRow : V → V → V) via fun
     · simp [h0, h1, h2]
     · simp [h0, h1, h2]
   · by_cases h0 : v 2 = 0 <;> simp [h0]
-instance funcRow_definable : 𝚺₀-Function₂ (funcRow : V → V → V) := funcRow_defined.to_definable
 
 /-- (Tf) the function node `^func k f v` after its vector (result `d = ⟪cv, Sv⟫`): the closed symbol
 row, `qqFuncTotal [cTV k, cTV f, ⟨v⟩]`, `isSemitermFunc [cTV n, cTV k, cTV f, ⟨v⟩', &0]`, the bridge,
@@ -1773,8 +1756,6 @@ instance funcNode_defined : 𝚺₁-Function₅ (funcNode : V → V → V → V 
   fun v ↦ by
     simp [funcNodeDef, funcNode, numeral_eq_natCast, cTV.defined.iff, mkStep_defined.iff, appendV_defined.iff, vRef_defined.iff,
       funcRow_defined.iff]
-instance funcNode_definable : 𝚺₁.DefinableFunction₅ (funcNode : V → V → V → V → V → V) :=
-  funcNode_defined.to_definable
 
 /-! ### 2.3 The term walk (`TermRec` with the parameters `W`, `n`) -/
 
@@ -2366,7 +2347,6 @@ lemma ok_adjoinTotal {tbl N E Γ W : V} {wt : V} {wv : V} (htbl : TableOK tbl N)
   · rw [ctxAfter_introFact [wt, wv] row_adjoinTotal_as (by rw [← Nat.cast_succ]; exact isSemiformula_adjoinTotal_R) (fun e he ↦ (hes e he).1),
       show row_adjoinTotal_R = row_adjoinTotal_body from rfl, ← freeIter_one, hinst.2]
 
-
 end stepLemmas
 
 /-! ### 3.2 Generic list lemmas, fact-code definability, iterated shifts of facts -/
@@ -2410,15 +2390,6 @@ lemma shiftsV_nil : shiftsV (0 : V) = 0 := by simp [shiftsV]
 
 instance tPiFact_definable : 𝚺₁-Function₂ (tPiFact : V → V → V) := by
   have : (tPiFact : V → V → V) = fun a b ↦ subst LAct (a ∷ b ∷ 0) PtPi := rfl
-  rw [this]; definability
-instance tSigmaFact_definable : 𝚺₁-Function₂ (tSigmaFact : V → V → V) := by
-  have : (tSigmaFact : V → V → V) = fun a b ↦ subst LAct (a ∷ b ∷ 0) PtSigma := rfl
-  rw [this]; definability
-instance tvPiFact_definable : 𝚺₁-Function₃ (tvPiFact : V → V → V → V) := by
-  have : (tvPiFact : V → V → V → V) = fun a b c ↦ subst LAct (a ∷ b ∷ c ∷ 0) PtvPi := rfl
-  rw [this]; definability
-instance tvSigmaFact_definable : 𝚺₁-Function₃ (tvSigmaFact : V → V → V → V) := by
-  have : (tvSigmaFact : V → V → V → V) = fun a b c ↦ subst LAct (a ∷ b ∷ c ∷ 0) PtvSigma := rfl
   rw [this]; definability
 instance ltFact_definable : 𝚺₁-Function₂ (ltFact : V → V → V) := by
   have : (ltFact : V → V → V) = fun a b ↦ subst LAct (a ∷ b ∷ 0) Plt := rfl
@@ -2654,7 +2625,6 @@ theorem nilNode_ok {tbl N E W n : V} (htbl : TableOK tbl N) (hW : WalkTable tbl)
   · rw [finalCtx_cons, finalCtx_single, hctx₂, vRef_zero, ← cTV_zero]; simp
 
 end nodes
-
 
 /-! ### 3.5 The vector and function nodes are applicable -/
 
@@ -2909,9 +2879,6 @@ def TermOK (tbl W n t : V) : Prop :=
   ∀ E, 2 * n + 2 * termLen LAct t + 8 ≤ E →
     TermFacts tbl E W n (descT W n t) ∧ descCountT W n t + 1 ≤ 2 * termLen LAct t
 
-instance termFacts_definable : 𝚷₁-Relation₅ (TermFacts : V → V → V → V → V → Prop) := by
-  unfold TermFacts; definability
-
 instance termOK_definable : 𝚷₁-Relation₄ (TermOK : V → V → V → V → Prop) := by
   unfold TermOK TermFacts descCountT; definability
 
@@ -3042,7 +3009,6 @@ theorem describeT_chain {tbl N : V} (htbl : TableOK tbl N) (hW : WalkTable tbl) 
 
 end termWalkOK
 
-
 /-! ## Part 4 — the formula walk (D2 for formulas)
 
 DESIGN §4.1–4.2: a `Fixpoint` on triples `⟪n, r, y⟫` (`y = ⟪count, steps⟫`) — the arity changes
@@ -3063,7 +3029,6 @@ def relRowDef : 𝚺₀.Semisentence 2 := .mkSigma “y R. (R = 0 → y = 36) �
 instance relRow_defined : 𝚺₀-Function₁ (relRow : V → V) via relRowDef := .mk fun v ↦ by
   simp [relRowDef, relRow, numeral_eq_natCast]
   by_cases h : v 1 = 0 <;> simp [h]
-instance relRow_definable : 𝚺₀-Function₁ (relRow : V → V) := relRow_defined.to_definable
 
 /-- (F⊤)/(F⊥): the totality row `i₁` (closed), the formation row `i₂` at `[cTV n, &0]`, the bridge. -/
 noncomputable def constNode (W n i₁ i₂ : V) : V :=
@@ -3077,7 +3042,6 @@ noncomputable def constNodeDef : 𝚺₁.Semisentence 5 := .mkSigma
 
 instance constNode_defined : 𝚺₁-Function₄ (constNode : V → V → V → V → V) via constNodeDef := .mk
   fun v ↦ by simp [constNodeDef, constNode, numeral_eq_natCast, cTV.defined.iff, mkStep_defined.iff]
-instance constNode_definable : 𝚺₁-Function₄ (constNode : V → V → V → V → V) := constNode_defined.to_definable
 
 /-- (F∧)/(F∨): after `Sp ++ Sq` (`x_p = &cq`, `x_q = &0`): the totality row `i₁` at `[&cq, &0]`, the
 formation row `i₂` at `[cTV n, &(cq+1), &1, &0]`, the bridge. Count `cp + cq + 1`. -/
@@ -3099,9 +3063,6 @@ noncomputable def binNodeDef : 𝚺₁.Semisentence 7 := .mkSigma
 instance binNode_defined :
     𝚺₁.DefinedFunction (fun v : Fin 6 → V ↦ binNode (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) binNodeDef := .mk
   fun v ↦ by simp [binNodeDef, binNode, numeral_eq_natCast, cTV.defined.iff, mkStep_defined.iff, appendV_defined.iff]
-instance binNode_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 6 → V ↦ binNode (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) :=
-  binNode_defined.to_definable
 
 /-- (F∀)/(F∃): after `Sp` (`x_p = &0`, at arity `n + 1`): the totality row `i₁` at `[&0]`, the
 formation row `i₂` at `[cTV n, &1, &0]`, the bridge. Count `cp + 1`. -/
@@ -3120,8 +3081,6 @@ noncomputable def quantNodeDef : 𝚺₁.Semisentence 6 := .mkSigma
 
 instance quantNode_defined : 𝚺₁-Function₅ (quantNode : V → V → V → V → V → V) via quantNodeDef := .mk
   fun v ↦ by simp [quantNodeDef, quantNode, numeral_eq_natCast, cTV.defined.iff, mkStep_defined.iff, appendV_defined.iff]
-instance quantNode_definable : 𝚺₁.DefinableFunction₅ (quantNode : V → V → V → V → V → V) :=
-  quantNode_defined.to_definable
 
 /-- (Frel)/(Fnrel): after the vector (`d = ⟪cv, Sv⟫`): the closed relation row, the totality row `i₁`
 at `[cTV k, cTV R, ⟨v⟩]`, the formation row `i₂` at `[cTV n, cTV k, cTV R, ⟨v⟩', &0]`, the bridge,
@@ -3155,9 +3114,6 @@ instance atomNode_defined :
   fun v ↦ by
     simp [atomNodeDef, atomNode, numeral_eq_natCast, cTV.defined.iff, mkStep_defined.iff, appendV_defined.iff,
       vRef_defined.iff, relRow_defined.iff]
-instance atomNode_definable :
-    𝚺₁.DefinableFunction (fun v : Fin 7 → V ↦ atomNode (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) :=
-  atomNode_defined.to_definable
 
 /-! ### 4.1 The fixpoint on `⟪n, r, y⟫` -/
 
@@ -3442,9 +3398,6 @@ noncomputable def descFw (W n r : V) : V := Classical.choose! (descFGraph_exists
 theorem descFw_graph {W n r : V} (h : IsSemiformula LAct n r) : DescFGraph W n r (descFw W n r) :=
   (Classical.choose!_spec (descFGraph_existsUnique_total W n r)).1 h
 
-theorem descFw_of_not {W n r : V} (h : ¬IsSemiformula LAct n r) : descFw W n r = 0 :=
-  (Classical.choose!_spec (descFGraph_existsUnique_total W n r)).2 h
-
 lemma descFw_eq_of_graph {W n r y : V} (h : IsSemiformula LAct n r) (hy : DescFGraph W n r y) : descFw W n r = y :=
   descFGraph_unique W h _ _ (descFw_graph h) hy
 
@@ -3467,10 +3420,8 @@ noncomputable def descCountFDef : 𝚺₁.Semisentence 4 := .mkSigma “y W n r.
 
 instance describeF_defined : 𝚺₁-Function₃ (describeF : V → V → V → V) via describeFDef := .mk
   fun v ↦ by simp [describeFDef, descFw_defined.iff, describeF]
-instance describeF_definable : 𝚺₁-Function₃ (describeF : V → V → V → V) := describeF_defined.to_definable
 instance descCountF_defined : 𝚺₁-Function₃ (descCountF : V → V → V → V) via descCountFDef := .mk
   fun v ↦ by simp [descCountFDef, descFw_defined.iff, descCountF]
-instance descCountF_definable : 𝚺₁-Function₃ (descCountF : V → V → V → V) := descCountF_defined.to_definable
 
 /-! ### 4.3 The per-constructor equations (D2 for formulas) -/
 
@@ -3904,9 +3855,6 @@ section formulaFacts
 instance piFact_definable : 𝚺₁-Function₂ (piFact : V → V → V) := by
   have : (piFact : V → V → V) = fun a b ↦ subst LAct (a ∷ b ∷ 0) Ppi := rfl
   rw [this]; definability
-instance sigmaFact_definable : 𝚺₁-Function₂ (sigmaFact : V → V → V) := by
-  have : (sigmaFact : V → V → V) = fun a b ↦ subst LAct (a ∷ b ∷ 0) Psigma := rfl
-  rw [this]; definability
 
 lemma shiftIterV_piFact {a b : V} (ha : IsSemiterm LAct 0 a) (hb : IsSemiterm LAct 0 b) :
     ∀ k, shiftIterV (piFact a b) k = piFact (termShiftIterV a k) (termShiftIterV b k) := by
@@ -3923,9 +3871,6 @@ def FormFacts (tbl E W n p : V) : Prop :=
   ∀ Γ, IsFormulaSet LAct Γ →
     ListOK tbl E ((8 : ℕ) : V) Γ (π₂ p) ∧ NoDrop (π₂ p) ∧ shiftsV (π₂ p) = π₁ p ∧
     neg LAct (piFact (cTV n) (^&0)) ∈ finalCtx Γ (π₂ p)
-
-instance formFacts_definable : 𝚷₁-Relation₅ (FormFacts : V → V → V → V → V → Prop) := by
-  unfold FormFacts; definability
 
 /-- The closed relation row of `LAct.IsRel k R`, by the two cases. -/
 theorem relConst_ok {tbl N E W k R Γ : V} (htbl : TableOK tbl N) (hW : WalkTable tbl) (hWp : W = walkPieces)
@@ -3951,7 +3896,6 @@ end formulaFacts
 /-! ### 5.3 The formula nodes are applicable -/
 
 section formulaNodes
-
 
 /-- **(F⊤)**: witness bound `2n + 8 ≤ E`. -/
 theorem constNode_ok_verum {tbl N E W n Γ : V} (htbl : TableOK tbl N) (hW : WalkTable tbl) (hWp : W = walkPieces)
@@ -3985,7 +3929,6 @@ theorem constNode_ok_verum {tbl N E W n Γ : V} (htbl : TableOK tbl N) (hW : Wal
   · rw [finalCtx_cons, finalCtx_cons, finalCtx_single, hctx₃]; simp
   · rw [finalCtx_cons, finalCtx_cons, finalCtx_single, hctx₃, hctx₂]; simp [hV₂]
 
-
 /-- **(F⊥)**: witness bound `2n + 8 ≤ E`. -/
 theorem constNode_ok_falsum {tbl N E W n Γ : V} (htbl : TableOK tbl N) (hW : WalkTable tbl) (hWp : W = walkPieces)
     (hE : 2 * n + 8 ≤ E) (hΓ : IsFormulaSet LAct Γ) :
@@ -4017,7 +3960,6 @@ theorem constNode_ok_falsum {tbl N E W n Γ : V} (htbl : TableOK tbl N) (hW : Wa
     simp
   · rw [finalCtx_cons, finalCtx_cons, finalCtx_single, hctx₃]; simp
   · rw [finalCtx_cons, finalCtx_cons, finalCtx_single, hctx₃, hctx₂]; simp [hV₂]
-
 
 /-- **(F∧)**: from the two children's facts (`x_p = &cq`, `x_q = &0` after `Sp ++ Sq`); witness bound
 `2n + cq + 8 ≤ E`. -/
@@ -4085,7 +4027,6 @@ theorem binNode_ok_and {tbl N E W n yp yq Γ : V} (htbl : TableOK tbl N) (hW : W
   · rw [finalCtx_appendV, finalCtx_appendV, finalCtx_cons, finalCtx_cons, finalCtx_single, hctx₃]; simp
   · rw [finalCtx_appendV, finalCtx_appendV, finalCtx_cons, finalCtx_cons, finalCtx_single, hctx₃]; simp [hA₄]
 
-
 /-- **(F∨)**: from the two children's facts (`x_p = &cq`, `x_q = &0` after `Sp ++ Sq`); witness bound
 `2n + cq + 8 ≤ E`. -/
 theorem binNode_ok_or {tbl N E W n yp yq Γ : V} (htbl : TableOK tbl N) (hW : WalkTable tbl) (hWp : W = walkPieces)
@@ -4152,7 +4093,6 @@ theorem binNode_ok_or {tbl N E W n yp yq Γ : V} (htbl : TableOK tbl N) (hW : Wa
   · rw [finalCtx_appendV, finalCtx_appendV, finalCtx_cons, finalCtx_cons, finalCtx_single, hctx₃]; simp
   · rw [finalCtx_appendV, finalCtx_appendV, finalCtx_cons, finalCtx_cons, finalCtx_single, hctx₃]; simp [hA₄]
 
-
 /-- **(F∀)**: from the body's facts at arity `n + 1`; witness bound `2n + 8 ≤ E`. -/
 theorem quantNode_ok_all {tbl N E W n yp Γ : V} (htbl : TableOK tbl N) (hW : WalkTable tbl) (hWp : W = walkPieces)
     (hE : 2 * n + 8 ≤ E) (hp : FormFacts tbl E W (n + 1) yp) (hΓ : IsFormulaSet LAct Γ) :
@@ -4198,7 +4138,6 @@ theorem quantNode_ok_all {tbl N E W n yp Γ : V} (htbl : TableOK tbl N) (hW : Wa
   · rw [finalCtx_appendV, finalCtx_cons, finalCtx_cons, finalCtx_single, hctx₃]; simp
   · rw [finalCtx_appendV, finalCtx_cons, finalCtx_cons, finalCtx_single, hctx₃]; simp [hA₃]
 
-
 /-- **(F∃)**: from the body's facts at arity `n + 1`; witness bound `2n + 8 ≤ E`. -/
 theorem quantNode_ok_exs {tbl N E W n yp Γ : V} (htbl : TableOK tbl N) (hW : WalkTable tbl) (hWp : W = walkPieces)
     (hE : 2 * n + 8 ≤ E) (hp : FormFacts tbl E W (n + 1) yp) (hΓ : IsFormulaSet LAct Γ) :
@@ -4243,7 +4182,6 @@ theorem quantNode_ok_exs {tbl N E W n yp Γ : V} (htbl : TableOK tbl N) (hW : Wa
     ring
   · rw [finalCtx_appendV, finalCtx_cons, finalCtx_cons, finalCtx_single, hctx₃]; simp
   · rw [finalCtx_appendV, finalCtx_cons, finalCtx_cons, finalCtx_single, hctx₃]; simp [hA₃]
-
 
 /-- **(Frel)**: after the vector; witness bound `2n + 8 ≤ E`. -/
 theorem atomNode_ok_rel {tbl N E W n k R d Γ : V} (htbl : TableOK tbl N) (hW : WalkTable tbl) (hWp : W = walkPieces)
@@ -4337,7 +4275,6 @@ theorem atomNode_ok_rel {tbl N E W n k R d Γ : V} (htbl : TableOK tbl N) (hW : 
       finalCtx_single, hctx₆]
     simp [hG₅]
 
-
 /-- **(Fnrel)**: after the vector; witness bound `2n + 8 ≤ E`. -/
 theorem atomNode_ok_nrel {tbl N E W n k R d Γ : V} (htbl : TableOK tbl N) (hW : WalkTable tbl) (hWp : W = walkPieces)
     (hkR : LAct.IsRel k R) (hE : 2 * n + 8 ≤ E) (hΓ : IsFormulaSet LAct Γ) (hd : VecFacts tbl E W n k Γ d) :
@@ -4429,7 +4366,6 @@ theorem atomNode_ok_nrel {tbl N E W n k R d Γ : V} (htbl : TableOK tbl N) (hW :
   · rw [finalCtx_appendV, finalCtx_cons, finalCtx_cons, finalCtx_cons, finalCtx_cons, finalCtx_cons,
       finalCtx_single, hctx₆]
     simp [hG₅]
-
 
 end formulaNodes
 
@@ -4643,24 +4579,6 @@ theorem describeF_shape_and {tbl N : V} (htbl : TableOK tbl N) (hW : WalkTable t
   rw [describeF, descFw_and _ n hp hq]
   exact (binNode_ok_and htbl hW rfl hEb hFp hFq hΓ).2.2.2.2
 
-theorem describeF_shape_all {tbl N : V} (htbl : TableOK tbl N) (hW : WalkTable tbl) {n p : V}
-    (hp : IsSemiformula LAct (n + 1) p)
-    {E : V} (hE : 2 * n + 2 * formulaLen LAct (^∀ p) + 8 ≤ E) {Γ : V} (hΓ : IsFormulaSet LAct Γ) :
-    neg LAct (allFact (^&0) (^&1)) ∈ finalCtx Γ (describeF walkPieces n (^∀ p)) := by
-  have hlen : formulaLen LAct (^∀ p) = formulaLen LAct p + 1 := formulaLen_all hp.isUFormula
-  rw [hlen] at hE
-  have hEp : 2 * (n + 1) + 2 * formulaLen LAct p + 8 ≤ E := by refine le_trans (le_of_eq ?_) hE; ring
-  have hE' : 2 * n + 8 ≤ E := le_trans (add_le_add le_self_add le_rfl) hE
-  obtain ⟨hFp, _⟩ := formOK_of_isSemiformula htbl hW rfl hp E hEp
-  rw [describeF, descFw_all _ n hp]
-  exact (quantNode_ok_all htbl hW rfl hE' hFp hΓ).2.2.2.2
-
-theorem describeF_shape_verum {tbl N : V} (htbl : TableOK tbl N) (hW : WalkTable tbl) {n : V}
-    {E : V} (hE : 2 * n + 8 ≤ E) {Γ : V} (hΓ : IsFormulaSet LAct Γ) :
-    neg LAct (verumFact (^&0)) ∈ finalCtx Γ (describeF walkPieces n ^⊤) := by
-  rw [describeF, descFw_verum]
-  exact (constNode_ok_verum htbl hW rfl hE hΓ).2.2.2.2
-
 theorem describeF_shape_rel {tbl N : V} (htbl : TableOK tbl N) (hW : WalkTable tbl) {n k R v : V}
     (hkR : LAct.IsRel k R) (hv : IsSemitermVec LAct k n v)
     {E : V} (hE : 2 * n + 2 * formulaLen LAct (^rel k R v) + 8 ≤ E) {Γ : V} (hΓ : IsFormulaSet LAct Γ) :
@@ -4843,7 +4761,6 @@ theorem len_describeF_le (W : V) : ∀ {n r : V}, IsSemiformula LAct n r →
       _ = 12 * (formulaLen LAct p + 1) := by ring
 
 end stepCount
-
 
 /-! ## Part 7 — the cost of the walk (D5)
 
@@ -5431,13 +5348,6 @@ lemma tag_isUTermVecSigmaPiLAct {W : V} (hWp : W = walkPieces) (ev : V) : sTag (
   have hp := walkPieces_isUTermVecSigmaPiLAct (V := V)
   rw [hk] at hp
   rw [sTag_mkStep, hp, piece_isUTermVecSigmaPiLAct]; simp
-
-
-/-- Every step the walk emits is a Horn step (tag `0`) or a totality step (tag `2`). -/
-lemma tag_ok_of_02 {s : V} (h : sTag s = 0 ∨ sTag s = 2) : sTag s = 0 ∨ sTag s = 1 ∨ sTag s = 2 := by
-  rcases h with h | h
-  · exact Or.inl h
-  · exact Or.inr (Or.inr h)
 
 lemma tag_funcRow {W : V} (hWp : W = walkPieces) (k f ev : V) : sTag (mkStep W (funcRow k f) ev) = 0 := by
   unfold funcRow

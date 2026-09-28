@@ -60,7 +60,6 @@ lemma NumIdTable.proTable {tbl : V} (h : NumIdTable tbl) : ProTable tbl := by
   have := h.2 i hi'
   rwa [show numIdRows[i] = proRows[i] from List.getElem_append_left hi] at this
 
-lemma NumIdTable.topTable {tbl : V} (h : NumIdTable tbl) : TopTable tbl := h.proTable.topTable
 lemma NumIdTable.layoutTable {tbl : V} (h : NumIdTable tbl) : LayoutTable tbl := h.proTable.layoutTable
 lemma NumIdTable.walkTable {tbl : V} (h : NumIdTable tbl) : WalkTable tbl := h.proTable.walkTable
 
@@ -296,12 +295,6 @@ lemma transport_eq {Γ S y c : V} (hS : NoDrop' S) (h : neg LAct (eqFact (^&y) (
   rw [e] at this
   rwa [shiftIterV_neg (isFormula_eqFactB (by simp) (isSemiterm_numeral_LAct c)),
     shiftIterV_eqFactB (by simp) (isSemiterm_numeral_LAct c), termShiftIterV_fvar, termShiftIterV_numeral] at this
-
-lemma transport_subst {Γ S x v y : V} (hS : NoDrop' S) (h : neg LAct (substFact (^&x) (^&v) (^&y)) ∈ Γ) :
-    neg LAct (substFact (^&(x + shiftsV S)) (^&(v + shiftsV S)) (^&(y + shiftsV S))) ∈ finalCtx Γ S := by
-  have := mem_finalCtx_of_mem' hS h
-  rwa [shiftIterV_neg (isFormula_substFact (by simp) (by simp) (by simp)), shiftIterV_substFact (by simp) (by simp) (by simp),
-    termShiftIterV_fvar, termShiftIterV_fvar, termShiftIterV_fvar] at this
 
 /-! ### 2.2 The cap arithmetic -/
 

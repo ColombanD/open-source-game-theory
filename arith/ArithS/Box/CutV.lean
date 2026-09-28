@@ -388,9 +388,6 @@ instance LenDerivable.defined : 𝚺₁-Relation[V] (LenDerivable T) via lenDeri
     simp [lenDerivableDef, HierarchySymbol.Semiformula.val_sigma,
       (Proof.defined (T := T)).df, dlen_defined.iff, LenDerivable]
 
-instance LenDerivable.definable : 𝚺₁-Relation[V] (LenDerivable T) :=
-  (LenDerivable.defined T).to_definable
-
 variable {T}
 
 /-- **Bounded D2 on codes as a single `ℒₒᵣ`-sentence**: "for all `a b x y`, if `x, y` are

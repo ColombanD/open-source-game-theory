@@ -83,28 +83,18 @@ instance boxRel.defined : 𝚺₁-Relation[V] boxRel via boxCoreS := .mk fun v �
 noncomputable def PlenDer : V := ⌜Semiformula.lMap emb (↑(lenDerivableDef TAct) : ArithmeticSemisentence 2)⌝
 lemma isSemiformula_PlenDer : IsSemiformula LAct ((2 : ℕ) : V) (PlenDer : V) := Sentence.quote_isSemiformula _
 lemma shift_PlenDer : shift LAct (PlenDer : V) = PlenDer := shift_quote_sentence _
-lemma fvOccF_PlenDer : fvOccF LAct (PlenDer : V) = 0 := fvOccF_quote_sentence _
 
 /-- The code of `box` (arity 2). -/
 noncomputable def Pbox : V := ⌜Semiformula.lMap emb (↑boxCoreS : ArithmeticSemisentence 2)⌝
 lemma isSemiformula_Pbox : IsSemiformula LAct ((2 : ℕ) : V) (Pbox : V) := Sentence.quote_isSemiformula _
 lemma shift_Pbox : shift LAct (Pbox : V) = Pbox := shift_quote_sentence _
-lemma fvOccF_Pbox : fvOccF LAct (Pbox : V) = 0 := fvOccF_quote_sentence _
 
 noncomputable def lenDerFact (a g : V) : V := subst LAct (listToVec [a, g]) PlenDer
 lemma isFormula_lenDerFact {a g : V} (ha : IsSemiterm LAct 0 a) (hg : IsSemiterm LAct 0 g) : IsFormula LAct (lenDerFact a g) :=
   isFormula_fact isSemiformula_PlenDer _ rfl (List.forall_mem_cons.mpr ⟨ha, List.forall_mem_cons.mpr ⟨hg, List.forall_mem_nil _⟩⟩)
-lemma shift_lenDerFact {a g : V} (ha : IsSemiterm LAct 0 a) (hg : IsSemiterm LAct 0 g) :
-    shift LAct (lenDerFact a g) = lenDerFact (termShift LAct a) (termShift LAct g) := by
-  unfold lenDerFact
-  rw [shift_subst_listToVec [a, g] isSemiformula_PlenDer shift_PlenDer (n := 0) (List.forall_mem_cons.mpr ⟨ha, List.forall_mem_cons.mpr ⟨hg, List.forall_mem_nil _⟩⟩)]
-  rfl
 lemma formulaLen_lenDerFact_le {B : V} (hB : 1 ≤ B) {a g : V} (ha : IsSemiterm LAct 0 a) (hg : IsSemiterm LAct 0 g) (hla : termLen LAct a ≤ B) (hlg : termLen LAct g ≤ B) :
     formulaLen LAct (lenDerFact a g) ≤ formulaLen LAct (PlenDer : V) * B :=
   formulaLen_fact_le hB isSemiformula_PlenDer _ rfl (List.forall_mem_cons.mpr ⟨⟨ha, hla⟩, List.forall_mem_cons.mpr ⟨⟨hg, hlg⟩, List.forall_mem_nil _⟩⟩)
-lemma fvOccF_lenDerFact_le {M : V} {a g : V} (ha : IsSemiterm LAct 0 a) (hg : IsSemiterm LAct 0 g) (hoa : fvOcc LAct a ≤ M) (hog : fvOcc LAct g ≤ M) :
-    fvOccF LAct (lenDerFact a g) ≤ bvOccF LAct (PlenDer : V) * M :=
-  fvOccF_fact_le isSemiformula_PlenDer fvOccF_PlenDer _ rfl (List.forall_mem_cons.mpr ⟨⟨ha, hoa⟩, List.forall_mem_cons.mpr ⟨⟨hg, hog⟩, List.forall_mem_nil _⟩⟩)
 
 noncomputable def boxFact (n k : V) : V := subst LAct (listToVec [n, k]) Pbox
 lemma isFormula_boxFact {n k : V} (hn : IsSemiterm LAct 0 n) (hk : IsSemiterm LAct 0 k) : IsFormula LAct (boxFact n k) :=
@@ -117,9 +107,6 @@ lemma shift_boxFact {n k : V} (hn : IsSemiterm LAct 0 n) (hk : IsSemiterm LAct 0
 lemma formulaLen_boxFact_le {B : V} (hB : 1 ≤ B) {n k : V} (hn : IsSemiterm LAct 0 n) (hk : IsSemiterm LAct 0 k) (hln : termLen LAct n ≤ B) (hlk : termLen LAct k ≤ B) :
     formulaLen LAct (boxFact n k) ≤ formulaLen LAct (Pbox : V) * B :=
   formulaLen_fact_le hB isSemiformula_Pbox _ rfl (List.forall_mem_cons.mpr ⟨⟨hn, hln⟩, List.forall_mem_cons.mpr ⟨⟨hk, hlk⟩, List.forall_mem_nil _⟩⟩)
-lemma fvOccF_boxFact_le {M : V} {n k : V} (hn : IsSemiterm LAct 0 n) (hk : IsSemiterm LAct 0 k) (hon : fvOcc LAct n ≤ M) (hok : fvOcc LAct k ≤ M) :
-    fvOccF LAct (boxFact n k) ≤ bvOccF LAct (Pbox : V) * M :=
-  fvOccF_fact_le isSemiformula_Pbox fvOccF_Pbox _ rfl (List.forall_mem_cons.mpr ⟨⟨hn, hon⟩, List.forall_mem_cons.mpr ⟨⟨hk, hok⟩, List.forall_mem_nil _⟩⟩)
 
 /-! ### The three new library rows (`Lib`), on the `Lib/Frag.lean` template -/
 
@@ -164,9 +151,6 @@ theorem quote_row_gIntroNum : (⌜Semiformula.lMap emb gIntroNumB⌝ : V) = impC
   unfold gIntroNumB row_gIntroNum_as row_gIntroNum_c PeqB Pg Plength
   all_goals row_shapeB
 
-lemma isSemiformula_gIntroNum_as : ∀ A ∈ row_gIntroNum_as, IsSemiformula LAct ((4 : ℕ) : V) A := by
-  unfold row_gIntroNum_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Plength _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PeqB _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩)
 lemma isSemiformula_gIntroNum_c : IsSemiformula LAct ((4 : ℕ) : V) row_gIntroNum_c := by
   unfold row_gIntroNum_c
   exact isSemiformula_substRow isSemiformula_Pg _ (by rfl) (by row_entriesB)
@@ -191,9 +175,6 @@ theorem quote_row_lenDerIntro : (⌜Semiformula.lMap emb lenDerIntroB⌝ : V) = 
   unfold lenDerIntroB row_lenDerIntro_as row_lenDerIntro_c PdlenDef Ple PlenDer Pproof leS
   all_goals row_shapeB
 
-lemma isSemiformula_lenDerIntro_as : ∀ A ∈ row_lenDerIntro_as, IsSemiformula LAct ((4 : ℕ) : V) A := by
-  unfold row_lenDerIntro_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pproof _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PdlenDef _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Ple _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩)
 lemma isSemiformula_lenDerIntro_c : IsSemiformula LAct ((4 : ℕ) : V) row_lenDerIntro_c := by
   unfold row_lenDerIntro_c
   exact isSemiformula_substRow isSemiformula_PlenDer _ (by rfl) (by row_entriesB)
@@ -218,9 +199,6 @@ theorem quote_row_boxIntro : (⌜Semiformula.lMap emb boxIntroB⌝ : V) = impCha
   unfold boxIntroB row_boxIntro_as row_boxIntro_c Pbox Pg PinstB PlenDer
   all_goals row_shapeB
 
-lemma isSemiformula_boxIntro_as : ∀ A ∈ row_boxIntro_as, IsSemiformula LAct ((4 : ℕ) : V) A := by
-  unfold row_boxIntro_as
-  exact (List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_Pg _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PinstB _ (by rfl) (by row_entriesB), List.forall_mem_cons.mpr ⟨isSemiformula_substRow isSemiformula_PlenDer _ (by rfl) (by row_entriesB), List.forall_mem_nil _⟩⟩⟩)
 lemma isSemiformula_boxIntro_c : IsSemiformula LAct ((4 : ℕ) : V) row_boxIntro_c := by
   unfold row_boxIntro_c
   exact isSemiformula_substRow isSemiformula_Pbox _ (by rfl) (by row_entriesB)
@@ -635,7 +613,6 @@ theorem instB_quote_Box_g (χ : Semisentence LAct 1) (k : V) :
     termSubst_eq_self (L := LAct) (w := bnum k ∷ (0 : V)) (isSemiterm_qNum χ) (fun i hi ↦ by simp at hi)]
   simp
 
-
 /-- **The target IS the `boxIntro` fact**: `instB ⌜Box_g χ⌝ k = boxFact (qNum χ) (bnum k)`. -/
 theorem target_eq_boxFact (χ : Semisentence LAct 1) (k : V) :
     instB (⌜Box_g χ⌝ : V) k = boxFact (qNum χ) (bnum k) :=
@@ -683,9 +660,6 @@ lemma termShiftIterV_qqZero : ∀ c : V, termShiftIterV (𝟎 : V) c = 𝟎 := b
 instance boxFact_defined : 𝚺₁-Function₂ (boxFact : V → V → V) via
     fact2Def (Semiformula.lMap emb (↑boxCoreS : ArithmeticSemisentence 2)) := fact2_defined _
 instance boxFact_definable : 𝚺₁-Function₂ (boxFact : V → V → V) := boxFact_defined.to_definable
-instance instBFact_defined' : 𝚺₁-Function₃ (instBFact : V → V → V → V) via
-    fact3Def (Semiformula.lMap emb (↑instBGraph : ArithmeticSemisentence 3)) := fact3_defined _
-instance instBFact_definable' : 𝚺₁-Function₃ (instBFact : V → V → V → V) := instBFact_defined'.to_definable
 
 lemma shiftIterV_memFact {x s : V} (hx : IsSemiterm LAct 0 x) (hs : IsSemiterm LAct 0 s) :
     ∀ c : V, shiftIterV (memFact x s) c = memFact (termShiftIterV x c) (termShiftIterV s c) := by
@@ -2299,7 +2273,6 @@ theorem top_main' (χ : Semisentence LAct 1) {tbl N B W tblN N' B' tblL N₂ B�
           costSum N E Γ₃ (closeSteps χ k ρ js tblN tblL tblM) := by ring
       _ ≤ _ := add_le_add (add_le_add (add_le_add (add_le_add h_leaf h_root) h_pin) h_ver) h_close
 
-
 end assemblyCoarse
 
 /-! ## 11. The degree-4 bound and `BoundedInnerNec 4` -/
@@ -2525,7 +2498,6 @@ theorem boundedInnerNec_four_of_kit {N B N' B' N₂ B₂ N₃ B₃ Ck : ℕ} {C�
       have hD := topD_pb N' B' N₂ B₂ N₃ B₃ k (dlen TAct ρ) hlen
       have hmain := topBound'_pb hc (PB.const N) (PB.const B) hE hCk hCχ (PB.u_ hc) hd1 hS hF hL hD
       exact le_trans hbound (PB.final_quart hc hmain)⟩
-
 
 end final4
 
@@ -2871,8 +2843,6 @@ theorem top_main'' (χ : Semisentence LAct 1) (m : ℕ) {tbl N B W tblN N' B' tb
           costSum N E Γ₃ (closeSteps χ k ρ js tblN tblL tblM) := by ring
       _ ≤ _ := add_le_add (add_le_add (add_le_add (add_le_add h_leaf h_root) h_pin) h_ver) h_close
 
-
-
 end assemblyPoly
 
 /-! ## 14. The general-degree bound and `BoundedInnerNec (deg m)` -/
@@ -3124,8 +3094,6 @@ theorem boundedInnerNec_of_kit'' (m : ℕ) {N B N' B' N₂ B₂ N₃ B₃ Ck : �
       have hfin := PB.final_pow hc hmain
       rw [show deg m = 4 * n by rw [deg, hn_def]]
       exact le_trans hbound hfin⟩
-
-
 
 end finalPoly
 

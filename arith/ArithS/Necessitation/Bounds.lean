@@ -80,11 +80,6 @@ lemma le_p3_self {d : V} (hd : 1 ≤ d) : d ≤ p3 d := by
   calc d = 1 * 1 * d := by ring
     _ ≤ d * d * d := mul_le_mul (mul_le_mul hd hd zero_le zero_le) (le_refl d) zero_le zero_le
 
-lemma sq_le_p3 {d : V} (hd : 1 ≤ d) : d * d ≤ p3 d := by
-  simp only [p3]
-  calc d * d = d * d * 1 := by ring
-    _ ≤ d * d * d := mul_le_mul_of_nonneg_left hd zero_le
-
 lemma le_p4_self {d : V} (hd : 1 ≤ d) : d ≤ p4 d := by
   rw [p4_eq]
   calc d = d * 1 := by ring
@@ -155,12 +150,6 @@ theorem len_certSubst_single_le_cubic {Wd W m w iw r i j B D : V} (hw : IsSemite
     (mul_le_mul (sfL_single_le hrD hB) hr1 zero_le zero_le) ?_)
   exact le_of_eq (by simp only [p3]; ring)
 
-/-- The same in `(D+1)^3`. -/
-theorem len_certSubst_single_le_cubic' {Wd W m w iw r i j B D : V} (hw : IsSemitermVec LAct 1 m w) (hinv : SubstInv LAct B w)
-    (hr : IsSemiformula LAct 1 r) (hrD : formulaLen LAct r ≤ D) (hB : B ≤ D) :
-    len (certSubst W Wd 1 m w iw r i j) ≤ 144 * (D + 1) ^ 3 := by
-  rw [pow3_eq_p3]; exact len_certSubst_single_le_cubic hw hinv hr hrD hB
-
 end certSubstCubic
 
 /-! ## 2. The cubic lengths of `allCert`/`proAll` and `exsCert`/`proExs` -/
@@ -208,13 +197,6 @@ theorem len_proAll_le_cubic {tbl N : V} (htbl : TableOK tbl N) (hP : ProTable tb
           (le_mul_of_one_le_right zero_le (le_trans hD1 hpow))) le_rfl
     _ = 402 * p3 (D + 1) := by ring
 
-theorem len_proAll_le_cubic' {tbl N : V} (htbl : TableOK tbl N) (hP : ProTable tbl) {Wl Wc : V} (hWl : Wl = layoutPieces)
-    (hWc : Wc = certPieces) (Ww W T i : V) {s p D : V} (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 1 p) (hr : (^∀ p) ∈ s)
-    (hsD : setLen LAct s ≤ D) (hcD : setLen LAct (insert (free LAct p) (setShift LAct s)) ≤ D)
-    (hspD : formulaLen LAct (shift LAct p) ≤ D) :
-    len (proAll Ww Wl Wc W T s p i) ≤ 402 * (D + 1) ^ 3 := by
-  rw [pow3_eq_p3]; exact len_proAll_le_cubic htbl hP hWl hWc Ww W T i hs hp hr hsD hcD hspD
-
 /-- **`exsCert` is cubic**: `≤ 189·p3 (D+1)` for `|p|, |t|, |substs1 t p| ≤ D` (the hypotheses of `Prologue.len_exsCert_le`). -/
 theorem len_exsCert_le_cubic {Wc : V} (Ww W T s i : V) {p t D : V} (hp : IsSemiformula LAct 1 p) (ht : IsSemiterm LAct 0 t)
     (hpD : formulaLen LAct p ≤ D) (htD : termLen LAct t ≤ D) (hptD : formulaLen LAct (substs1 LAct t p) ≤ D) :
@@ -255,13 +237,6 @@ theorem len_proExs_le_cubic {tbl N : V} (htbl : TableOK tbl N) (hP : ProTable tb
         add_le_add (add_le_add (mul_le_mul_of_nonneg_left (le_trans le_self_add hpow) zero_le)
           (le_mul_of_one_le_right zero_le (le_trans hD1 hpow))) le_rfl
     _ = 256 * p3 (D + 1) := by ring
-
-theorem len_proExs_le_cubic' {tbl N : V} (htbl : TableOK tbl N) (hP : ProTable tbl) {Wl Wc : V} (hWl : Wl = layoutPieces)
-    (hWc : Wc = certPieces) (Ww W T i : V) {s p t D : V} (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 1 p)
-    (hr : (^∃ p) ∈ s) (ht : IsSemiterm LAct 0 t) (hsD : setLen LAct s ≤ D)
-    (hcD : setLen LAct (insert (substs1 LAct t p) s) ≤ D) (htD : termLen LAct t ≤ D) :
-    len (proExs Ww Wl Wc W T s p t i) ≤ 256 * (D + 1) ^ 3 := by
-  rw [pow3_eq_p3]; exact len_proExs_le_cubic htbl hP hWl hWc Ww W T i hs hp hr ht hsD hcD htD
 
 end lengths
 

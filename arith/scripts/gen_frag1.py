@@ -9,6 +9,9 @@ two nine-witness rows introAnd/dlenAnd — plus flok_<row> transfers of the layo
 Run from arith/: python3 scripts/gen_frag1.py
 """
 import sys, re, os, types
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+from prune import prune, load_names  # drops the audit's DEAD declarations (scripts/pruned/<module>.txt)
 HERE = os.path.dirname(os.path.abspath(__file__))
 _src = open(os.path.join(HERE, 'gen_frag.py')).read()
 _src = _src[:_src.index('\ngen_frag()\ngen_rowinstb()')].replace("if len(sys.argv) > 3:", "if False:")
@@ -96,6 +99,8 @@ BASE = 87
 rowinstb = open('ArithS/Necessitation/RowInstB.lean').read()
 rowinst = open('ArithS/Necessitation/RowInst.lean').read()
 alltext = rowinstb + '\n' + rowinst + '\n' + new_blocks
+LIBTEXT = alltext + ''.join(open(f).read() for f in __import__('glob').glob('ArithS/Necessitation/Lib/*.lean'))
+PRUNED = load_names('Necessitation.Frag1Rows')
 
 def split_top(s):
     out=[]; d=0; cur=''
@@ -111,7 +116,14 @@ def split_top(s):
 info = {}
 for name in TABLE:
     m = re.search(r'lemma isSemiformula_%s_c : IsSemiformula LAct \(\((\d+) : ℕ\) : V\)' % name, alltext)
-    ar = int(m.group(1))
+    if ('lemma inst_%s ' % name) not in alltext:
+        # The producer's row lemmas were pruned (scripts/pruned/*.txt, the reachability audit): the table
+        # ENTRY stays (indices are append-only; `lib_<row>`/`<row>B` are live), only the applicability lemma
+        # `fok_<row>` is skipped — it must be in this file's pruned list too, else the audit was wrong.
+        am = m or re.search(r'def %sB : ArithmeticSemisentence (\d+)' % name, LIBTEXT)
+        info[name] = dict(m=int(am.group(1)), tag2=('noncomputable def row_%s_R' % name) in alltext, pruned=True)
+        continue
+    ar = int((m or re.search(r'def %sB : ArithmeticSemisentence (\d+)' % name, LIBTEXT)).group(1))  # `isSemiformula_<row>_c` may be pruned
     tag2 = ('noncomputable def row_%s_R' % name) in alltext
     mi = alltext.index('lemma inst_%s ' % name)
     stmt = alltext[mi: alltext.index(':= by', mi)]
@@ -261,6 +273,9 @@ E('/-! ### The per-row applicability lemmas `fok_<row>` (at `M = 8`, or `M = 9` 
 E('')
 for name in TABLE:
     d = info[name]
+    if d.get('pruned'):
+        assert f'fok_{name}' in PRUNED, (name, 'producer row pruned but its applicability lemma is live')
+        continue
     idx = BASE + TABLE.index(name)
     ws = d['wits']; facts = d['facts']; conc = d['conc']
     Mcap = 9 if (len(ws) > 8 or len(facts) > 8) else 8
@@ -372,5 +387,5 @@ set_option maxRecDepth 20000
 section frag1Rows
 
 '''
-open('ArithS/Necessitation/Frag1Rows.lean','w').write(head + new_blocks + '\nend frag1Rows\n\n' + '\n'.join(o) + '\n\nend ArithS\n')
+open('ArithS/Necessitation/Frag1Rows.lean','w').write(prune(head + new_blocks + '\nend frag1Rows\n\n' + '\n'.join(o) + '\n\nend ArithS\n', 'Necessitation.Frag1Rows'))
 print('rows', len(TABLE))

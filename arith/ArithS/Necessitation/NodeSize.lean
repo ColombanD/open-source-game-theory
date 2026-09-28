@@ -38,14 +38,6 @@ section inversion
 
 attribute [local simp] axL verumIntro andIntro orIntro allIntro exsIntro wkRule shiftRule cutRule axm
 
-lemma Derivation.axL_inv {s p : V} (h : Derivation T (axL s p)) : p ∈ s ∧ neg L p ∈ s := by
-  have := Derivation.case_iff.mp h
-  simpa using this.2
-
-lemma Derivation.verumIntro_inv {s : V} (h : Derivation T (verumIntro s)) : (^⊤ : V) ∈ s := by
-  have := Derivation.case_iff.mp h
-  simpa using this.2
-
 lemma Derivation.andIntro_inv {s p q dp dq : V} (h : Derivation T (andIntro s p q dp dq)) :
     p ^⋏ q ∈ s ∧ DerivationOf T dp (insert p s) ∧ DerivationOf T dq (insert q s) := by
   have := Derivation.case_iff.mp h
@@ -77,10 +69,6 @@ lemma Derivation.shiftRule_inv {s d : V} (h : Derivation T (shiftRule s d)) :
 
 lemma Derivation.cutRule_inv {s p d₁ d₂ : V} (h : Derivation T (cutRule s p d₁ d₂)) :
     DerivationOf T d₁ (insert p s) ∧ DerivationOf T d₂ (insert (neg L p) s) := by
-  have := Derivation.case_iff.mp h
-  simpa using this.2
-
-lemma Derivation.axm_inv {s p : V} (h : Derivation T (axm s p)) : p ∈ s ∧ p ∈ T.Δ₁Class := by
   have := Derivation.case_iff.mp h
   simpa using this.2
 
@@ -166,9 +154,6 @@ theorem setLen_fstIdx_le_dlen {d : V} (h : Derivation T d) : setLen L (fstIdx d)
   · exact le_a3 _ _ _ _
   · exact le_self_add
 
-theorem length_setLen_fstIdx_le {d : V} (h : Derivation T d) : ‖setLen L (fstIdx d)‖ ≤ ‖dlen T d‖ :=
-  length_monotone (setLen_fstIdx_le_dlen h)
-
 /-- A member of the node's sequent is no longer than the derivation. -/
 theorem formulaLen_le_dlen_of_mem {d p : V} (h : Derivation T d) (hp : p ∈ fstIdx d) :
     formulaLen L p ≤ dlen T d :=
@@ -214,49 +199,10 @@ theorem dlen_d₂_succ_le_cutRule {s p d₁ d₂ : V} (h : Derivation T (cutRule
 
 /-! ### 3.2 The principal formulas and the `exs` witness -/
 
-/-- `p` and `neg p` at an `axL` leaf. -/
-theorem formulaLen_p_le_dlen_axL {s p : V} (h : Derivation T (axL s p)) : formulaLen L p ≤ dlen T (axL s p) :=
-  formulaLen_le_dlen_of_mem h (by rw [fstIdx_axL]; exact (Derivation.axL_inv h).1)
-
-theorem formulaLen_negp_le_dlen_axL {s p : V} (h : Derivation T (axL s p)) :
-    formulaLen L (neg L p) ≤ dlen T (axL s p) :=
-  formulaLen_le_dlen_of_mem h (by rw [fstIdx_axL]; exact (Derivation.axL_inv h).2)
-
-/-- The conjuncts of an `andIntro` node (members of the children's sequents). -/
-theorem formulaLen_p_le_dlen_andIntro {s p q dp dq : V} (h : Derivation T (andIntro s p q dp dq)) :
-    formulaLen L p ≤ dlen T (andIntro s p q dp dq) := by
-  obtain ⟨_, ⟨hf, hd⟩, _⟩ := Derivation.andIntro_inv h
-  refine le_trans (formulaLen_le_dlen_of_mem hd (by rw [hf]; simp)) (le_trans le_self_add (dlen_dp_succ_le_andIntro h))
-
 theorem formulaLen_q_le_dlen_andIntro {s p q dp dq : V} (h : Derivation T (andIntro s p q dp dq)) :
     formulaLen L q ≤ dlen T (andIntro s p q dp dq) := by
   obtain ⟨_, _, ⟨hf, hd⟩⟩ := Derivation.andIntro_inv h
   refine le_trans (formulaLen_le_dlen_of_mem hd (by rw [hf]; simp)) (le_trans le_self_add (dlen_dq_succ_le_andIntro h))
-
-theorem formulaLen_pq_le_dlen_andIntro {s p q dp dq : V} (h : Derivation T (andIntro s p q dp dq)) :
-    formulaLen L (p ^⋏ q) ≤ dlen T (andIntro s p q dp dq) :=
-  formulaLen_le_dlen_of_mem h (by rw [fstIdx_andIntro]; exact (Derivation.andIntro_inv h).1)
-
-/-- The disjuncts of an `orIntro` node. -/
-theorem formulaLen_p_le_dlen_orIntro {s p q d : V} (h : Derivation T (orIntro s p q d)) :
-    formulaLen L p ≤ dlen T (orIntro s p q d) := by
-  obtain ⟨_, hf, hd⟩ := Derivation.orIntro_inv h
-  refine le_trans (formulaLen_le_dlen_of_mem hd (by rw [hf]; simp)) (le_trans le_self_add (dlen_d_succ_le_orIntro h))
-
-theorem formulaLen_q_le_dlen_orIntro {s p q d : V} (h : Derivation T (orIntro s p q d)) :
-    formulaLen L q ≤ dlen T (orIntro s p q d) := by
-  obtain ⟨_, hf, hd⟩ := Derivation.orIntro_inv h
-  refine le_trans (formulaLen_le_dlen_of_mem hd (by rw [hf]; simp)) (le_trans le_self_add (dlen_d_succ_le_orIntro h))
-
-theorem formulaLen_pq_le_dlen_orIntro {s p q d : V} (h : Derivation T (orIntro s p q d)) :
-    formulaLen L (p ^⋎ q) ≤ dlen T (orIntro s p q d) :=
-  formulaLen_le_dlen_of_mem h (by rw [fstIdx_orIntro]; exact (Derivation.orIntro_inv h).1)
-
-/-- The eigenformula `free p` of an `allIntro` node (a member of the child's sequent) and the member `∀p`. -/
-theorem formulaLen_free_le_dlen_allIntro {s p d : V} (h : Derivation T (allIntro s p d)) :
-    formulaLen L (free L p) ≤ dlen T (allIntro s p d) := by
-  obtain ⟨_, hf, hd⟩ := Derivation.allIntro_inv h
-  refine le_trans (formulaLen_le_dlen_of_mem hd (by rw [hf]; simp)) (le_trans le_self_add (dlen_d_succ_le_allIntro h))
 
 theorem formulaLen_all_le_dlen_allIntro {s p d : V} (h : Derivation T (allIntro s p d)) :
     formulaLen L (^∀ p) ≤ dlen T (allIntro s p d) :=
@@ -271,25 +217,6 @@ theorem formulaLen_substs1_le_dlen_exsIntro {s p t d : V} (h : Derivation T (exs
     formulaLen L (substs1 L t p) ≤ dlen T (exsIntro s p t d) := by
   obtain ⟨_, _, hf, hd⟩ := Derivation.exsIntro_inv h
   refine le_trans (formulaLen_le_dlen_of_mem hd (by rw [hf]; simp)) (le_trans le_self_add (dlen_d_succ_le_exsIntro h))
-
-theorem formulaLen_exs_le_dlen_exsIntro {s p t d : V} (h : Derivation T (exsIntro s p t d)) :
-    formulaLen L (^∃ p) ≤ dlen T (exsIntro s p t d) :=
-  formulaLen_le_dlen_of_mem h (by rw [fstIdx_exsIntro]; exact (Derivation.exsIntro_inv h).1)
-
-/-- The cut formula and its negation (members of the two children's sequents). -/
-theorem formulaLen_p_le_dlen_cutRule {s p d₁ d₂ : V} (h : Derivation T (cutRule s p d₁ d₂)) :
-    formulaLen L p ≤ dlen T (cutRule s p d₁ d₂) := by
-  obtain ⟨⟨hf, hd⟩, _⟩ := Derivation.cutRule_inv h
-  refine le_trans (formulaLen_le_dlen_of_mem hd (by rw [hf]; simp)) (le_trans le_self_add (dlen_d₁_succ_le_cutRule h))
-
-theorem formulaLen_negp_le_dlen_cutRule {s p d₁ d₂ : V} (h : Derivation T (cutRule s p d₁ d₂)) :
-    formulaLen L (neg L p) ≤ dlen T (cutRule s p d₁ d₂) := by
-  obtain ⟨_, ⟨hf, hd⟩⟩ := Derivation.cutRule_inv h
-  refine le_trans (formulaLen_le_dlen_of_mem hd (by rw [hf]; simp)) (le_trans le_self_add (dlen_d₂_succ_le_cutRule h))
-
-/-- The axiom at an `axm` leaf. -/
-theorem formulaLen_p_le_dlen_axm {s p : V} (h : Derivation T (axm s p)) : formulaLen L p ≤ dlen T (axm s p) :=
-  formulaLen_le_dlen_of_mem h (by rw [fstIdx_axm]; exact (Derivation.axm_inv h).1)
 
 /-! ### 3.3 The children's sequents are charged in the parent's length too -/
 

@@ -186,17 +186,6 @@ theorem costSum_appendV (N E Γ S₁ S₂ : V) :
   unfold costSum
   rw [len_appendV, add_comm (len S₁), costAux_appendV_hi _ _ _ _ _ _ le_rfl, add_comm]
 
-lemma costSum_single (N E Γ s : V) : costSum N E Γ ?[s] = stepCost N E Γ s := by
-  unfold costSum
-  rw [len_adjoin, len_nil, zero_add, ← zero_add (1 : V), costAux_succ, costAux_zero, zero_add,
-    nthFromEnd_eq (v := ctxVec Γ ?[s]) (a := 0) (by simp),
-    nthFromEnd_eq (v := ?[s]) (a := 0) (by simp), nth_ctxVec_zero, nth_adjoin_zero]
-
-lemma costSum_cons (N E Γ s S : V) : costSum N E Γ (s ∷ S) = stepCost N E Γ s + costSum N E (ctxAfter Γ s) S := by
-  rw [cons_eq_appendV_single, costSum_appendV, costSum_single, finalCtx_single]
-
-lemma costSum_nil (N E Γ : V) : costSum N E Γ 0 = 0 := by simp [costSum]
-
 end costAppend
 
 /-! ## 0.4 Binary numerals are shift-invariant -/
@@ -229,12 +218,7 @@ lemma termShift_bnum (n : V) : termShift LAct (bnum n) = bnum n := by
         termShift_qqMul_LAct isUTerm_qqTwo_LAct (isSemiterm_bnum_LAct 0 _).isUTerm, termShift_qqTwo_LAct,
         ih (n / 2) hlt, termShift_qqOne isFunc_LAct_oneIndex]
 
-lemma termShift_bnum_add_one (n : V) : termShift LAct (bnum n ^+ 𝟏) = bnum n ^+ 𝟏 := by
-  rw [termShift_qqAdd isFunc_LAct_addIndex (isSemiterm_bnum_LAct 0 _).isUTerm qqOne_uterm_LAct, termShift_bnum,
-    termShift_qqOne isFunc_LAct_oneIndex]
-
 end bnumShift
-
 
 /-! ## 1. `goalElim` — recovering a child's goal: `sElimExs`×2 + `sSplit`×3 -/
 
@@ -252,7 +236,6 @@ instance goalBody1_defined : 𝚺₁-Function₂ (goalBody1 : V → V → V) via
   fun v ↦ by
     simp [goalBody1Def, derFact_defined.iff, fstIdxFact_defined.iff, dlenFact_defined.iff, leFact_defined.iff,
       goalBody1, bv]
-instance goalBody1_definable : 𝚺₁-Function₂ (goalBody1 : V → V → V) := goalBody1_defined.to_definable
 
 /-- **The recovery list** of a child's goal fact `goalFact s u` (DESIGN_fragments §2.2): eliminate `d`, eliminate
 `n`, split the three conjunctions. Leaves `d = &1`, `n = &0` and the four facts, with the closed witnesses
@@ -280,7 +263,6 @@ instance goalElim_defined : 𝚺₁-Function₂ (goalElim : V → V → V) via g
   fun v ↦ by
     simp [goalElimDef, goalBody_defined.iff, goalBody1_defined.iff, termShift.defined.iff, derFact_defined.iff,
       fstIdxFact_defined.iff, dlenFact_defined.iff, leFact_defined.iff, goalElim, sElimExs, sSplit]
-instance goalElim_definable : 𝚺₁-Function₂ (goalElim : V → V → V) := goalElim_defined.to_definable
 
 lemma len_goalElim (s u : V) : len (goalElim s u) = 5 := by
   unfold goalElim; simp [len_adjoin]; norm_num
@@ -2080,7 +2062,6 @@ theorem ctxAfter_len_le_M (M : ℕ) {tbl N E B Γ s : V} (hE : 1 ≤ E) (htbl : 
   · exfalso; rw [ht6] at ht; norm_num at ht
   · exfalso; rw [ht7] at ht; norm_num at ht
 
-
 noncomputable def stepKM (N E B M : V) : V :=
   hornCost N E 0 M M B + (6 * (B * E) + 4) + introCost N E 0 M M B
 
@@ -2516,15 +2497,6 @@ theorem sizeOK_goalElim {D s u : V} (hs : IsSemiterm LAct 0 s) (hu : IsSemiterm 
     (sizeOK_cons (stepSizeOK_sElimExs (le_trans h2 (by rw [show 4 * G = 2 * G + 2 * G by ring]; exact le_self_add)))
     (sizeOK_cons (stepSizeOK_sSplit h4) (sizeOK_cons (stepSizeOK_sSplit h5) (sizeOK_single (stepSizeOK_sSplit h6)))))
 
-theorem costSum_goalElim_le (M : ℕ) {tbl N E B Γ s u : V} (hE : 1 ≤ E) (htbl : TableOK tbl N)
-    (hBt : ∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ B) (hΓ : IsFormulaSet LAct Γ)
-    (hs : IsSemiterm LAct 0 s) (hu : IsSemiterm LAct 0 u) (hg : neg LAct (goalFact s u) ∈ Γ) :
-    costSum N E Γ (goalElim s u) ≤ 5 * (costK N E B M (4 * formulaLen LAct (goalFact s u)) 0 +
-      (3 * (M : V) + 11) * (ctxBoundG (growK B E (4 * formulaLen LAct (goalFact s u))) Γ 5 +
-        (fvOccS LAct Γ + 5 * growK B E (4 * formulaLen LAct (goalFact s u))))) := by
-  have := costSum_le_of_sizeOK M hE htbl hBt (goalElim_ok M htbl hΓ hs hu hg).1 (sizeOK_goalElim (D := 0) hs hu)
-  rwa [len_goalElim] at this
-
 /-- The size discipline of the tails: `Q` dominates the closed lemma fact, `D` its derivation. -/
 theorem sizeOK_dlenLeafSteps {Q D W tblN l L n : V} (hWp : W = frag1Pieces)
     (hA : formulaLen LAct (leafFact L n) ≤ Q) (hD : dlen TAct (leafCode tblN L n) ≤ D) :
@@ -2619,25 +2591,6 @@ theorem sizeOK_fragVerum {Q D W tblN is il iv L n : V} (hWp : W = frag1Pieces)
     (sizeOK_cons (stepSizeOK_horn0 (ftag_introVerum hWp _)) (sizeOK_single (stepSizeOK_horn0 (ftag_dlenVerum hWp _))))))
     (sizeOK_goalTailLeaf hWp hA hD hg)
 
-theorem costSum_fragVerum_le {tbl N E B Γ W tblN N' B' is il iv L n : V} (htbl : TableOK tbl N) (hF : Frag1Table tbl)
-    (hWp : W = frag1Pieces) (htblN : NumTableOK tblN N' B') (hΓ : IsFormulaSet LAct Γ)
-    (hBt : ∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ B) (hPle : formulaLen LAct (Ple : V) ≤ B)
-    (his : is + 2 ≤ E) (hil : il + 4 ≤ E) (hiv : iv + 2 ≤ E) (hn : 18 * ‖n‖ + 7 ≤ E) (hLn : L + 1 ≤ n)
-    (hfs : neg LAct (fsetPiFact (^&is)) ∈ Γ) (hv : neg LAct (verumFact (^&iv)) ∈ Γ)
-    (hmv : neg LAct (memFact (^&iv) (^&is)) ∈ Γ) (hsl : neg LAct (setLenFact (^&il) (^&is)) ∈ Γ)
-    (hle : neg LAct (leFact (^&il) (bnum L)) ∈ Γ) :
-    costSum N E Γ (fragVerum W tblN is il iv L n) ≤
-      9 * (costK N E B 8 (B * E + formulaLen LAct (goalFact (^&(is + 1)) (bnum n))) (dlen TAct (leafCode tblN L n)) +
-        (3 * ((8 : ℕ) : V) + 11) * (ctxBoundG (growK B E (B * E + formulaLen LAct (goalFact (^&(is + 1)) (bnum n)))) Γ 9 +
-          (fvOccS LAct Γ + 9 * growK B E (B * E + formulaLen LAct (goalFact (^&(is + 1)) (bnum n)))))) := by
-  have hE : 1 ≤ E := le_trans (by norm_num) (le_trans le_add_self hn)
-  obtain ⟨hok, _, _, hlen, _⟩ := fragVerum_ok htbl hF hWp htblN hΓ his hil hiv hn hLn hfs hv hmv hsl hle
-  have hsz := sizeOK_fragVerum (W := W) (tblN := tblN) (is := is) (il := il) (iv := iv) hWp
-    (le_trans (formulaLen_leafFact_le hE hPle hn (le_trans le_self_add hLn)) le_self_add)
-    (le_refl (dlen TAct (leafCode tblN L n))) le_add_self
-  have := costSum_le_of_sizeOK 8 hE htbl hBt hok hsz
-  rwa [hlen] at this
-
 theorem sizeOK_nodeAnd {Q D W tblN is il ir ip iq id₁ id₂ icp icq in₁ in₂ L m₁ m₂ n : V} (hWp : W = frag1Pieces)
     (hA : formulaLen LAct (bin3Fact L m₁ m₂ n) ≤ Q) (hD : dlen TAct (bin3Code tblN L m₁ m₂ n) ≤ D)
     (hg : formulaLen LAct (goalFact (^&(is + 1)) (bnum n)) ≤ Q) :
@@ -2687,34 +2640,6 @@ theorem sizeOK_nodeOr {Q D W tblN is il ir ip iq id icq ic in₁ L m₁ n : V} (
     (sizeOK_cons (stepSizeOK_horn0 (ftag_introOr hWp _)) (sizeOK_single (stepSizeOK_horn0 (ftag_dlenOr hWp _))))))
     (sizeOK_goalTailUnary hWp hA hD hg)
 
-theorem costSum_nodeOr_le {tbl N E B Γ W tblN N' B' is il ir ip iq id icq ic in₁ L m₁ n : V}
-    (htbl : TableOK tbl N) (hF : Frag1Table tbl) (hWp : W = frag1Pieces) (htblN : NumTableOK tblN N' B')
-    (hΓ : IsFormulaSet LAct Γ)
-    (hBt : ∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ B) (hPle : formulaLen LAct (Ple : V) ≤ B)
-    (his : is + 2 ≤ E) (hir : ir + 2 ≤ E) (hip : ip + 2 ≤ E) (hiq : iq + 2 ≤ E)
-    (hid : id + 2 ≤ E) (hicq : icq + 2 ≤ E) (hic : ic + 2 ≤ E)
-    (hT : il + in₁ + 7 ≤ E) (hn : 18 * ‖n‖ + 7 ≤ E) (hLn : L + m₁ + 1 ≤ n)
-    (hor : neg LAct (orFact (^&ir) (^&ip) (^&iq)) ∈ Γ) (hmr : neg LAct (memFact (^&ir) (^&is)) ∈ Γ)
-    (hf : neg LAct (fstIdxFact (^&ic) (^&id)) ∈ Γ) (hiq' : neg LAct (insFact (^&icq) (^&iq) (^&is)) ∈ Γ)
-    (hip' : neg LAct (insFact (^&ic) (^&ip) (^&icq)) ∈ Γ)
-    (hd : neg LAct (derFact (^&id : V)) ∈ Γ) (hn₁ : neg LAct (dlenFact (^&id : V) (^&in₁)) ∈ Γ)
-    (hle₁ : neg LAct (leFact (^&in₁) (bnum m₁)) ∈ Γ)
-    (hsl : neg LAct (setLenFact (^&il) (^&is)) ∈ Γ) (hle : neg LAct (leFact (^&il) (bnum L)) ∈ Γ) :
-    costSum N E Γ (nodeOr W tblN is il ir ip iq id icq ic in₁ L m₁ n) ≤
-      9 * (costK N E B 8 (B * E + formulaLen LAct (goalFact (^&(is + 1)) (bnum n))) (dlen TAct (bin2Code tblN L m₁ n)) +
-        (3 * ((8 : ℕ) : V) + 11) * (ctxBoundG (growK B E (B * E + formulaLen LAct (goalFact (^&(is + 1)) (bnum n)))) Γ 9 +
-          (fvOccS LAct Γ + 9 * growK B E (B * E + formulaLen LAct (goalFact (^&(is + 1)) (bnum n)))))) := by
-  have hE : 1 ≤ E := le_trans (by norm_num) (le_trans le_add_self hn)
-  have hLn' : L + m₁ ≤ n := le_trans le_self_add hLn
-  obtain ⟨hok, _, _, hlen, _⟩ := nodeOr_ok htbl hF hWp htblN hΓ his hir hip hiq hid hicq hic hT hn hLn
-    hor hmr hf hiq' hip' hd hn₁ hle₁ hsl hle
-  have hsz := sizeOK_nodeOr (W := W) (tblN := tblN) (is := is) (il := il) (ir := ir) (ip := ip) (iq := iq)
-    (id := id) (icq := icq) (ic := ic) (in₁ := in₁) hWp
-    (le_trans (formulaLen_bin2Fact_le hE hPle hn (le_trans le_self_add hLn') (le_trans le_add_self hLn')) le_self_add)
-    (le_refl (dlen TAct (bin2Code tblN L m₁ n))) le_add_self
-  have := costSum_le_of_sizeOK 8 hE htbl hBt hok hsz
-  rwa [hlen] at this
-
 theorem sizeOK_nodeWk {Q D W tblN is il ic id in₁ L m₁ n : V} (hWp : W = frag1Pieces)
     (hA : formulaLen LAct (bin2Fact L m₁ n) ≤ Q) (hD : dlen TAct (bin2Code tblN L m₁ n) ≤ D)
     (hg : formulaLen LAct (goalFact (^&(is + 1)) (bnum n)) ≤ Q) :
@@ -2723,30 +2648,6 @@ theorem sizeOK_nodeWk {Q D W tblN is il ic id in₁ L m₁ n : V} (hWp : W = fra
   exact sizeOK_appendV (sizeOK_cons (stepSizeOK_horn2 (ftag_totWkRule hWp _)) (sizeOK_cons (stepSizeOK_horn0 (ftag_fstIdxWk hWp _))
     (sizeOK_cons (stepSizeOK_horn0 (ftag_introWk hWp _)) (sizeOK_single (stepSizeOK_horn0 (ftag_dlenWk hWp _))))))
     (sizeOK_goalTailUnary hWp hA hD hg)
-
-theorem costSum_nodeWk_le {tbl N E B Γ W tblN N' B' is il ic id in₁ L m₁ n : V}
-    (htbl : TableOK tbl N) (hF : Frag1Table tbl) (hWp : W = frag1Pieces) (htblN : NumTableOK tblN N' B')
-    (hΓ : IsFormulaSet LAct Γ)
-    (hBt : ∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ B) (hPle : formulaLen LAct (Ple : V) ≤ B)
-    (his : is + 2 ≤ E) (hic : ic + 2 ≤ E) (hid : id + 2 ≤ E)
-    (hT : il + in₁ + 7 ≤ E) (hn : 18 * ‖n‖ + 7 ≤ E) (hLn : L + m₁ + 1 ≤ n)
-    (hfs : neg LAct (fsetPiFact (^&is)) ∈ Γ) (hf : neg LAct (fstIdxFact (^&ic) (^&id)) ∈ Γ)
-    (hsub : neg LAct (subsetFact (^&ic) (^&is)) ∈ Γ)
-    (hd : neg LAct (derFact (^&id : V)) ∈ Γ) (hn₁ : neg LAct (dlenFact (^&id : V) (^&in₁)) ∈ Γ)
-    (hle₁ : neg LAct (leFact (^&in₁) (bnum m₁)) ∈ Γ)
-    (hsl : neg LAct (setLenFact (^&il) (^&is)) ∈ Γ) (hle : neg LAct (leFact (^&il) (bnum L)) ∈ Γ) :
-    costSum N E Γ (nodeWk W tblN is il ic id in₁ L m₁ n) ≤
-      9 * (costK N E B 8 (B * E + formulaLen LAct (goalFact (^&(is + 1)) (bnum n))) (dlen TAct (bin2Code tblN L m₁ n)) +
-        (3 * ((8 : ℕ) : V) + 11) * (ctxBoundG (growK B E (B * E + formulaLen LAct (goalFact (^&(is + 1)) (bnum n)))) Γ 9 +
-          (fvOccS LAct Γ + 9 * growK B E (B * E + formulaLen LAct (goalFact (^&(is + 1)) (bnum n)))))) := by
-  have hE : 1 ≤ E := le_trans (by norm_num) (le_trans le_add_self hn)
-  have hLn' : L + m₁ ≤ n := le_trans le_self_add hLn
-  obtain ⟨hok, _, _, hlen, _⟩ := nodeWk_ok htbl hF hWp htblN hΓ his hic hid hT hn hLn hfs hf hsub hd hn₁ hle₁ hsl hle
-  have hsz := sizeOK_nodeWk (W := W) (tblN := tblN) (is := is) (il := il) (ic := ic) (id := id) (in₁ := in₁) hWp
-    (le_trans (formulaLen_bin2Fact_le hE hPle hn (le_trans le_self_add hLn') (le_trans le_add_self hLn')) le_self_add)
-    (le_refl (dlen TAct (bin2Code tblN L m₁ n))) le_add_self
-  have := costSum_le_of_sizeOK 8 hE htbl hBt hok hsz
-  rwa [hlen] at this
 
 theorem sizeOK_nodeCut {Q D W tblN is il ip inp id₁ id₂ ic₁ ic₂ in₁ in₂ L m₁ m₂ n : V} (hWp : W = frag1Pieces)
     (hA : formulaLen LAct (bin3Fact L m₁ m₂ n) ≤ Q) (hD : dlen TAct (bin3Code tblN L m₁ m₂ n) ≤ D)
