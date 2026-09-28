@@ -1,5 +1,5 @@
-import ArithS.DerivationLength
-import ArithS.ProperV
+import ArithS.Length.DerivationLength
+import ArithS.Box.ProperV
 
 /-!
 # ArithS.Necessitation.NodeSize — every node's sizes are charged in its own `dlen`

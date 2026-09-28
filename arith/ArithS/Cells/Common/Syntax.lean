@@ -1,8 +1,8 @@
 import ArithS.Assembly.Prep
-import ArithS.InstanceV
-import ArithS.SimTest
-import ArithS.Template
-import ArithS.EvalN
+import ArithS.Agents.InstanceV
+import ArithS.Eval.SimTest
+import ArithS.Agents.Template
+import ArithS.Eval.EvalN
 
 /-!
 # ArithS.Cells.Common.Syntax — the arity-generic syntax lemmas shared by every `Cells/*` file

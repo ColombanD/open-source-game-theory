@@ -1,6 +1,6 @@
 import ArithS.Cells.Common.Syntax
 import ArithS.Assembly.Prep
-import ArithS.SimTest
+import ArithS.Eval.SimTest
 import PrisonersDilemma.Bots.TitForTatBot
 
 /-!

@@ -1,5 +1,5 @@
 import ArithS.Cells.Common.Bots
-import ArithS.EvalN
+import ArithS.Eval.EvalN
 
 /-!
 # ArithS.Cells.Common.Probers — search clauses and prober steps in every model

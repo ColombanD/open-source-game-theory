@@ -1,5 +1,5 @@
-import ArithS.Inst
-import ArithS.SimTest
+import ArithS.Bridge.Inst
+import ArithS.Eval.SimTest
 import PrisonersDilemma.Theorems.CooperateBot.vs_CooperateBot
 import PrisonersDilemma.Theorems.CooperateBot.vs_DefectBot
 import PrisonersDilemma.Theorems.DBot.vs_CooperateBot

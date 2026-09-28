@@ -1,5 +1,5 @@
 import ArithS.Assembly.Prep
-import ArithS.NumeralFacts
+import ArithS.Loeb.NumeralFacts
 
 /-!
 # ArithS.Assembly.Family — the PBLT assembly, parametrized by the Löb family

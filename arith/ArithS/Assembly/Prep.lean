@@ -1,6 +1,6 @@
-import ArithS.Transparency
-import ArithS.Diag
-import ArithS.ProperV
+import ArithS.Eval.Transparency
+import ArithS.Loeb.Diag
+import ArithS.Box.ProperV
 
 /-!
 # ArithS.Assembly.Prep — every lemma the PBLT assembly (U8) needs that is not yet in the package

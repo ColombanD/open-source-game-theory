@@ -1,5 +1,5 @@
-import ArithS.InstV
-import ArithS.ProperV
+import ArithS.Loeb.InstV
+import ArithS.Box.ProperV
 
 /-!
 # ArithS.Necessitation.Primitives — the two moves of the verification proof, on derivation codes

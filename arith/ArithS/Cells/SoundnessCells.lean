@@ -1,8 +1,8 @@
 import ArithS.Cells.SearchFree
-import ArithS.Det
-import ArithS.InstanceV
-import ArithS.NumeralFacts
-import ArithS.Diag
+import ArithS.Eval.Det
+import ArithS.Agents.InstanceV
+import ArithS.Loeb.NumeralFacts
+import ArithS.Loeb.Diag
 import PrisonersDilemma.Bots.LlmGenerations.GuardianBot
 import PrisonersDilemma.Bots.LlmGenerations.PrudentBot
 import PrisonersDilemma.Bots.LlmGenerations.WaryBot
