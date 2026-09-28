@@ -291,3 +291,40 @@ congMemSet, congShiftL, listSumAdj, qVecNth0, qqAndFun, setShiftFun, twoMulMul �
 entry is live but whose instantiation row is not).
 
 To regenerate the full table: run the command at the top; the TSV is not committed (2 MB, three minutes).
+
+## 7. Tier B executed (2026-09-28, commit `f2bcc2e`)
+
+**Removed: 3 250 declarations, 12 543 lines over 55 files** (`ArithS` 146 775 → 134 383 lines). Build
+green (3370 jobs); census unchanged — 1896 `#print axioms`, every list `[propext, Classical.choice,
+Quot.sound]` but the four pre-existing subsets; `regen_all.sh` all nine `ok`. The re-run audit gives
+the invariant that matters: **LIVE 12 191 and ROOT 1 822 before and after** — nothing reachable was lost.
+
+| | before | after |
+|---|---:|---:|
+| non-aux declarations | 18 091 | 14 486 |
+| DEAD declarations | 4 078 | 473 |
+| DEAD declaration lines | 11 721 | 1 176 |
+| of which under `Necessitation/` | 10 622 | 141 |
+
+**What the closure cannot see — 71 declarations kept on purpose** (the five build iterations it took to
+find them are the lesson; `ARITH_TRAPS.md` §6):
+1. lemmas proved by `rfl` (`exsIter_zero`, `bvarList_*`, `row_*_R_eq`, `vecOf_two`, …): `simp`/`dsimp`
+   use them as definitional rewrites and leave no constant in the proof term;
+2. names that only OCCUR in code — inside a tactic macro's `simp only [...]` list (`isUTerm_cT` in
+   `row_entriesB`), in a `simp [...]` set that never fired, or in an `example` (`addCommB`): deleting
+   them is "unknown identifier" at elaboration, with no proof term ever involved.
+The rule now applied (`scratchpad` scripts, reproducible from the TSV): restore = names mentioned in the
+pruned tree's code (comments stripped, macro bodies included), closed under the pruned names their own
+statements mention, plus every `rfl`-proved lemma whose statement mentions no pruned name.
+
+**Mechanism, for the next round.** Generated tables: `scripts/pruned/<module>.txt` + `scripts/prune.py`
+(the row TABLES are untouched — indices are append-only — so a pruned producer row keeps its
+`⟨m, <row>B, lib_<row>⟩` entry and its `cpiece_`/`certTable_`/`cmk_` derived lemmas; only `inst_`,
+`quote_row_`, `isSemiformula_*` and the consumer's `*ok_` go). Hand-written files: deleted by the audit's
+declaration ranges; the range sometimes starts at the docstring and sometimes after it, and a bare
+`@[…]` line is swallowed while a `@[simp] lemma …` neighbour is not.
+
+**What remains dead (473 declarations, 1 176 lines)** is Tier A/C material outside `Necessitation/`
+(`Agents/Fit`, `Assembly/Uniform`, `Theory/Symmetry`, `Box/Bew`, cell-file leftovers, the 173 aliases of
+`Cells/Names.lean`, the FitBox/SimTest results to be added to the census, `Bridge/*`) plus the 71
+above and ~70 one-line `*_R_eq`/`bvarList_*` rfl twins in the row tables — see §3.3–§3.4 and §4.

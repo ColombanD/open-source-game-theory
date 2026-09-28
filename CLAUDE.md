@@ -768,5 +768,10 @@ never compile Foundation or mathlib (`lake build --try-cache`; `arith/.lake` is 
 OneDrive); ONE lake build on the machine at a time; single-file checks with `timeout 900 lake env lean`
 and CHECK THE EXIT CODE (`${pipestatus[1]}` in zsh); agents: one `Cells/<Bot>.lean` per family, targeted
 builds per agent, the coordinator runs the one full build, commit by file name only; every new module is
-imported in BOTH `ArithS.lean` and the relevant `Audit/<Layer>.lean`. The consolidated trap list is `Research/Notes/ARITH_TRAPS.md` (read it before writing a line
+imported in BOTH `ArithS.lean` and the relevant `Audit/<Layer>.lean`. The nine generated row tables
+(`Necessitation/*Rows.lean`, `RowInst`, `RowInstB`, `Lib/Frag`) are PRUNED at generation time — `scripts/prune.py`
+drops the names in `scripts/pruned/<module>.txt`, the dead set of the 2026-09-28 reachability audit
+(`Research/Notes/ARITH_DEAD_CODE_AUDIT.md`, tool `scripts/DeadCode.lean`; a missing row is a list entry, not a
+generator bug; regenerate producers before consumers; `rfl` lemmas and simp-set names are invisible to the
+closure — never delete on the audit alone, the build is the judge). The consolidated trap list is `Research/Notes/ARITH_TRAPS.md` (read it before writing a line
 of `ArithS`); the per-session originals stay in `ROUTE_B_SCOPE.md` §6 and `HANDOVER_ARITHMETIZED_S.md` §6.
