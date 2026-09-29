@@ -13,6 +13,10 @@ checked on Lean's three standard axioms).*
 
 ## 0. What "trusted" means here
 
+*Reading guide for the code: `arith/ArithS/README.md` (2026-09-29) — the four tiers, the nine trusted
+definitions in reading order, and the engine↔`ArithS` dictionary. The cells in the engine's vocabulary
+are `arith/ArithS/Outcome/Matrix/<L>.lean`.*
+
 A result of the package is a Lean theorem about definitions. The kernel guarantees the theorem
 follows from the definitions; it guarantees nothing about whether the definitions say what the
 prose claims. The trusted base is the set of definitions whose MEANING the reader must
@@ -23,7 +27,7 @@ establish by reading them, because every headline statement (`red_cell`,
 > `Theory/LangAct.lean`); the length measure `dlen` (`Length`, `SequentLength`, `DerivationLength`;
 > meta twins in `MetaLength`); the bounded boxes `LenProvable`/`LenProvableV`/`LenDerivable`
 > (`Bew`, `BewV`, `CutV`) with the code bound `fbound` (`Proper`); program codes on `ppair`
-> (`Prog`) and their description terms (`ProgT`, `Bnum`); the guard template `gtmpl`/`GtmplA`
+> (`Prog`) and their description terms (`ProgT`, `Bnum`); the guard template `gtmpl`/`guardTemplate`
 > (`Template`) and the general translation `tmpl`/`pcode` (`Code`); descriptions and guard codes
 > `descVec`/`guardCode`/`descVecB`/`guardCodeB` (`Guard`); substitution `psubst`/`gsubst`
 > (`Subst`); the evaluator `EvalGraph` (`Eval`); the box of the Löb argument `gBudget`/`Box_g`
@@ -206,11 +210,11 @@ all large `k` the searcher's own guard sentence is shorter than `k`.
 `x₁ u₁ w₁ x₂ u₂ w₂ t ↦ ∃ me, relabelDef me u₁ w₁ x₁ ∧ ∃ opp, relabelDef opp u₂ w₂ x₂ ∧ ∃ n,
 evalGraphDef n opp me opp t` — "the program described by `(x₂, u₂, w₂)` plays `t` against the one
 described by `(x₁, u₁, w₁)`"; note the run is `EvalGraph n opp me opp t`, the OPPONENT's play.
-`Gtmpl := lMap emb gtmpl.val` lifts it to `LAct`; `GtmplA a := Gtmpl ⇜ ![#0, …, #5, actT6 a]`
+`Gtmpl := lMap emb gtmpl.val` lifts it to `LAct`; `guardTemplate a := Gtmpl ⇜ ![#0, …, #5, actT6 a]`
 fixes the action as the constant `c_a`; `descVec me opp` is the six-entry description vector,
 `guardCode g me opp := subst LAct (descVec me opp) g`, and the meta sentence `guardSentenceA a
-me opp := GtmplA a ⇜ descTerms me opp` has code `guardCode ⌜GtmplA a⌝ me opp`
-(`quote_guardSentenceA`, THM). Dupoc is `Dupoc k := pSearch k ⌜GtmplA 0⌝ (pConst 0) (pConst 1)`
+me opp := guardTemplate a ⇜ descTerms me opp` has code `guardCode ⌜guardTemplate a⌝ me opp`
+(`quote_guardSentenceA`, THM). Dupoc is `Dupoc k := pSearch k ⌜guardTemplate 0⌝ (pConst 0) (pConst 1)`
 (`Cells/RedCell.lean`); compare by eye with the engine's `DupocBot k := .search k (.plays .opp .self
 Action.C) (.const C) (.const D)`.
 
@@ -261,7 +265,7 @@ against the OUTER players at the RUNNING node's budget, the seven-variable twin 
 `guardCode_gsubst` (`substs_substs` at `(7, 7, 0)`, `termSubstVec_descVecB_descVecSlot`: the six
 closed entries are fixed by substitution, `#6 ↦ bnum k`). Witnesses (THM):
 `SimTest.sim_search_outer_guard₇` and `Cells/SimSlot.evalGraph_sim_JustV7` — `pSim (JustV7 k) q`
-in `(me, opp)` runs Just's guard `guardCode ⌜GtmplA 0⌝ (pBot (DupocV k)) opp` against the OUTER
+in `(me, opp)` runs Just's guard `guardCode ⌜guardTemplate 0⌝ (pBot (DupocV k)) opp` against the OUTER
 `opp`, the engine's `.sim (JustBot k) q`.
 
 ## 5. Substitution `psubst`/`gsubst`

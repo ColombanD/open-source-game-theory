@@ -206,7 +206,7 @@ sentences), syncing notes to `-s`, re-pinning LeanInteract.
   the kernel builds a numeral over `LEAN_NAT_MAX_SIZE`; prove for a VARIABLE sentence and
   instantiate. Never put a closed numeral inside a Δ₁ fixpoint blueprint (26 GB elaboration).
   In `TermRec`/`UformulaRec1` blueprints, ∃-wrap graph clauses (`∃ s, !listSumDef s v' ∧ y = s`).
-* Closed constants built from a giant DSL template (`flen (GtmplA 0)`, `⌜GtmplA 0⌝ ≤ ⌜GtmplA 1⌝`)
+* Closed constants built from a giant DSL template (`flen (guardTemplate 0)`, `⌜guardTemplate 0⌝ ≤ ⌜guardTemplate 1⌝`)
   must never be evaluated: package them existentially, case-split with `le_total`.
 * Foundation numerals are unary; every budget entering a sentence goes through `bnum`; the code
   of a binary numeral term is exponential under Cantor pairing (`size_bnum_ge`).

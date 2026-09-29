@@ -177,13 +177,13 @@ equation `eval_GtmplA_subst_iff` that make each new instance equation a one-line
 **Just × Just and Just × Dupoc did NOT go through, for a structural reason, not for lack of time.**
 `JustBot k := .search k (.plays .opp (.bot (DupocBot k)) C)` carries the budget `k` TWICE: as its search
 budget and INSIDE its guard, in the frozen snapshot `DupocBot k`. Its arithmetized code
-`JustV k = pSearch k (gJ k) …` therefore stores a template `gJ k = subst (jVec k) ⌜GtmplA 0⌝` whose CODE
+`JustV k = pSearch k (gJ k) …` therefore stores a template `gJ k = subst (jVec k) ⌜guardTemplate 0⌝` whose CODE
 depends on `k`, and the canonical description `progT (dnum (JustV k))` has the leaf `bnum (gJ k)` — the
 binary numeral of a `k`-dependent formula code, which is NOT `termSubst (bnum k ∷ 0)` of any fixed term.
 So a guard that DESCRIBES `Just k` ("Just k plays C against …") is not `instB ⌜q⌝ k` for any fixed
 `q : Semisentence LAct 1`, and `Assembly/Family.family_found` (Critch's uniform argument, which needs
 the family to be the `bnum k`-instance of ONE formula) does not apply. Dupoc/Cupod/Mirror never hit this
-because their stored templates are CONSTANTS (`⌜GtmplA a⌝`) — the M4 brief's `ppair` fix (§2 there) made
+because their stored templates are CONSTANTS (`⌜guardTemplate a⌝`) — the M4 brief's `ppair` fix (§2 there) made
 the PROGRAM description a term in `k`, but a `k`-dependent TEMPLATE inside the program is the same
 mismatch one level down. The engine never sees it: `search_t` CITES the fact at `O(log k)`.
 
@@ -322,7 +322,7 @@ alongside (c)); SND/POS wait for (c) to settle.
   `Psubst` blueprint (it cites `gsubstGraph` by name) all byte-identical. Faithfulness witnesses:
   `SimTest.sim_search_outer_guard₇` (any seven-variable searcher under `sim` reads the outer frame at
   its own budget `k`) and `Cells/SimSlot.evalGraph_sim_JustV7` (`pSim (JustV7 k) q` in `(me, opp)`
-  runs Just's guard `guardCode ⌜GtmplA 0⌝ (pBot (DupocV k)) opp` — the OUTER `opp`, not the simulated
+  runs Just's guard `guardCode ⌜guardTemplate 0⌝ (pBot (DupocV k)) opp` — the OUTER `opp`, not the simulated
   `psubst me opp q` — the engine's `.sim (JustBot k) q`), `evalGraph_psubst_JustV7_iff`. `JustSlot`,
   `KhatCells`, `FlipCells` unchanged. `SPRIME_DESIGN_RATIONALE.md` §4/§5 updated. GATE: `lake build
   ArithS` 3349 jobs, 0 errors; census 1530 rows (+14: the new `Audit.lean` block), all standard but the 4

@@ -33,7 +33,7 @@ an agent-hour or more. Add to it when you lose one. Grouped by where it bites.*
 * NEVER `simp` a goal containing a closed quote of a big sentence (`⌜qDupoc⌝`, `⌜tactDiag θ⌝`,
   `⌜tmplD⌝`): the kernel builds a numeral over `LEAN_NAT_MAX_SIZE`. State for a VARIABLE sentence,
   instantiate, bridge by `rfl`. Never put a closed numeral inside a Δ₁ fixpoint blueprint (26 GB).
-* Closed constants built from a giant template (`flen (GtmplA 0)`, `⌜GtmplA 0⌝ ≤ ⌜GtmplA 1⌝`, `KP`,
+* Closed constants built from a giant template (`flen (guardTemplate 0)`, `⌜guardTemplate 0⌝ ≤ ⌜guardTemplate 1⌝`, `KP`,
   `innerP2`) must never be evaluated: package existentially or as irreducible ℕ-constants; case-split
   with `le_total`; decide code ORDERS by `unfold … pConst pOpp ppair; norm_num` — Cantor pairing is NOT
   lexicographic, componentwise `ppair_lt_*` chains cannot decide `TftV < TftTV`.

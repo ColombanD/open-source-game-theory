@@ -88,3 +88,17 @@ subsets.
 Every new module is still imported in BOTH `ArithS.lean` and the census (now the relevant
 `ArithS/Audit/<Layer>.lean`, which has its own minimal import list). The generator headers
 (`scripts/*.lean.head`, `scripts/gen_*.py`) import only `ArithS.Necessitation.*`, which did not move.
+
+## Renames (2026-09-29, the readability pass)
+
+| old | new | where |
+|---|---|---|
+| `GtmplA a` | `guardTemplate a` | `Agents/Template.lean` and every user (a word-boundary rename; notes updated) |
+| — | `□[k] φ` | scoped notation for `LenProvableV TAct k φ`, `Outcome/Spec.lean` |
+| — | `plays`, `OutcomeAtA`, `OutcomeSpecA`, `bot`, `const` | the engine's outcome vocabulary on codes, `Outcome/Spec.lean` |
+| — | `outcome_<L>_vs_<R>` | one theorem per ledger cell, `Outcome/Matrix/<L>.lean` (107), proved from the `Cells/` theorems |
+| — | `snd_DupocBot_vs_CupodBot` | the red cell on the engine's `pcode`, `Cells/RedCellEngine.lean` |
+
+`guardCode`/`guardCodeB` and `descVec`/`descVecB` were considered and kept: `guard` collides with the
+core library's `guard`, and the `B` suffix is the budget-slot marker every note uses. The reading guide
+is `ArithS/README.md`.

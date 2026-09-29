@@ -19,8 +19,8 @@ Axioms: `[propext, Classical.choice, Quot.sound]`.
 | # | Object | Lean | Where | Meaning in one sentence |
 |---|---|---|---|---|
 | T1 | Program codes | `pConst a`, `pSelf`, `pOpp`, `pBot`, `pSim`, `pIte`, `pSearch k g p q` | `Prog.lean` §137–169 | a program is a number: a tag paired (`ppair`) with its children; `pSearch k g p q` = "search for a proof of length ≤ k of the guard template `g` instantiated at (me, opp); if found run `p`, else `q`" |
-| T2 | The two bots | `Dupoc k := pSearch k ⌜GtmplA 0⌝ (pConst 0) (pConst 1)`, `Cupod k` with `1`/`0` | `RedCell.lean` §31–35 | Dupoc: cooperate iff "opp plays C against me" is provable in ≤ k; Cupod: defect iff "opp plays D against me" is |
-| T3 | The guard template | `gtmpl` (7 free variables), `GtmplA a` (action fixed) | `Template.lean` §37, §83 | "the program described by (x₂,u₂,w₂) plays `t` against the one described by (x₁,u₁,w₁)": `∃ me opp, me = relabel u₁ w₁ x₁ ∧ opp = relabel u₂ w₂ x₂ ∧ ∃ n, EvalGraph n opp me opp t` |
+| T2 | The two bots | `Dupoc k := pSearch k ⌜guardTemplate 0⌝ (pConst 0) (pConst 1)`, `Cupod k` with `1`/`0` | `RedCell.lean` §31–35 | Dupoc: cooperate iff "opp plays C against me" is provable in ≤ k; Cupod: defect iff "opp plays D against me" is |
+| T3 | The guard template | `gtmpl` (7 free variables), `guardTemplate a` (action fixed) | `Template.lean` §37, §83 | "the program described by (x₂,u₂,w₂) plays `t` against the one described by (x₁,u₁,w₁)": `∃ me opp, me = relabel u₁ w₁ x₁ ∧ opp = relabel u₂ w₂ x₂ ∧ ∃ n, EvalGraph n opp me opp t` |
 | T4 | Descriptions | `dnumT`, `dUT`, `dWT`, `descVec`, `guardCode g me opp := subst (descVec me opp) g` | `Template.lean` §60–72, `Guard.lean` §153–157 | how a program is named INSIDE a sentence: its canonical code as a structural term of binary numerals, plus two constants saying which of the two C/D orientations it is; the guard is the template with the six descriptions substituted |
 | T5 | The evaluator | `EvalGraph n me opp p a` = Δ₁ fixed point of the seven clauses in `Eval.lean` §35–49 | `Eval.lean` | fuel-`n` big-step semantics; the `search` clause: `LenProvableV TAct k (guardCode g me opp)` → run `p`, `¬…` → run `q` |
 | T6 | Bounded provability | `LenProvableV T k φ := ∃ d < fbound k, Proof T d φ ∧ dlen T d ≤ k` | `BewV.lean` §23 | "φ has a proof code of length ≤ k" (`dlen` = character count of the derivation, M1; `fbound` = the code bound making it Δ₁) |
@@ -57,7 +57,7 @@ definition is not load-bearing and the audit has found a hole.
 | Mutate | Must fail |
 |---|---|
 | swap the continuations of `Dupoc` (`pConst 1`, `pConst 0`) | EXECUTED 2026-09-16: `swapcode_Dupoc` (line 42, the mutated Dupoc is no longer Cupod's mirror) and `red_cell` (lines 112–123) fail; `red_cell_unique` cannot elaborate |
-| give `Cupod` the template `GtmplA 0` (same as Dupoc) | `guard_Dupoc_iff_guard_Cupod` (`swapcode_Cupod`) |
+| give `Cupod` the template `guardTemplate 0` (same as Dupoc) | `guard_Dupoc_iff_guard_Cupod` (`swapcode_Cupod`) |
 | in `gtmpl`, run `me` instead of `opp` (`EvalGraph n me opp me t`) | `models_guardSentenceA_iff`, hence `guard_is_about_the_run` |
 | in the evaluator's `search` clause, swap the `p`/`q` branches | `red_cell` via `EvalGraph.search_iff` |
 | drop `axAct` from `TAct` | the M4 vacuity found 2026-09-12 returns: models where the constants read as 5/7 (`tact_complete'` fails) — `red_cell` itself is EXPECTED to survive (it only needs soundness in ℕ + symmetry), i.e. the red cell should not depend on the action axiom; untested (the mutation rebuilds the whole package) |

@@ -461,9 +461,9 @@ recorded here before the next starts):
      subst LAct (descVec6 me opp) g`; τ acts on templates: `relabelTemplate u w` maps function
      symbol code `2+a ↦ 2+relabelAct a u w` (identity for `(0,1)`, the `swap` code image for
      `(1,0)`), and `relabel u w (pSearch k g p q) = pSearch k (relabelTemplate u w g) …`. The
-     restricted templates become the two closed instances `GtmplA a := gtmpl ⇜ [#0..#5, c_a]`
-     (so `relabelTemplate 1 0 (GtmplA 0) = GtmplA 1`), `Dupoc k = pSearch k (GtmplA 0) (pConst 0)
-     (pConst 1)`, `Cupod k = swapcode (Dupoc k) = pSearch k (GtmplA 1) (pConst 1) (pConst 0)`;
+     restricted templates become the two closed instances `guardTemplate a := gtmpl ⇜ [#0..#5, c_a]`
+     (so `relabelTemplate 1 0 (guardTemplate 0) = guardTemplate 1`), `Dupoc k = pSearch k (guardTemplate 0) (pConst 0)
+     (pConst 1)`, `Cupod k = swapcode (Dupoc k) = pSearch k (guardTemplate 1) (pConst 1) (pConst 0)`;
      `red_cell` re-proved (same argument). Guard/Template/RedCell/Fit change; Eval's search
      clause loses the action argument.
      **DONE 2026-09-10 (branch `colomban-arith-m3`, commits 7b96eda + 6dcb1b8, `lake build
@@ -478,10 +478,10 @@ recorded here before the next starts):
      (`.mkDelta`, both polarities cite `relabelTemplateGraph` like `Eval` cites
      `guardCodeGraph`; still StrongFinite — the bound on `relabelTemplate` is never needed,
      the referenced pairs are `⟪p, p'⟫` with `p < x`, `p' < y`). `Template.lean`: `actT6`,
-     `GtmplA a := Gtmpl ⇜ ![#0..#5, actT6 a]`, `guardSentenceA a me opp`, `lMap_swap_GtmplA`,
+     `guardTemplate a := Gtmpl ⇜ ![#0..#5, actT6 a]`, `guardSentenceA a me opp`, `lMap_swap_GtmplA`,
      `relabelTemplate_quote_GtmplA`, and the code/swap/truth equations under the new names.
-     `Fit.lean`: constants `cG a := flen (GtmplA a)` (irreducible, packaged as `cG 0 + cG 1`
-     in `exists_guard_const`) and `cP := ⟪⌜GtmplA 0⌝, pConst 0, pConst 1⟫`. Proof-craft traps
+     `Fit.lean`: constants `cG a := flen (guardTemplate a)` (irreducible, packaged as `cG 0 + cG 1`
+     in `exists_guard_const`) and `cP := ⟪⌜guardTemplate 0⌝, pConst 0, pConst 1⟫`. Proof-craft traps
      added: (i) at `V = ℕ` the coercion `(↑k : ℕ)` inside quoted codes is Foundation's
      `Nat.cast` (from `instCommSemiring_foundation`), NOT definitionally `k` — `show`/`change`
      to plain `k` fails; the simp lemma is `natCast_nat` (`Nat.numeral_eq` is for
@@ -592,7 +592,7 @@ recorded here before the next starts):
      `dnum`/`dU`/`dW` for programs, would fix τ but not substitution). The zoo is box-free in
      its templates except LegibleBot/OptimBot. `.tvote/.sys/.selfIdx` satisfy both code
      equations trivially (`0 = 0`) but are excluded from `frag` since `EvalGraph` knows nothing
-     about code `0`. The stored template of `pcode (DupocBot k)` is NOT `⌜GtmplA 0⌝` (different
+     about code `0`. The stored template of `pcode (DupocBot k)` is NOT `⌜guardTemplate 0⌝` (different
      quantifier order/shape; equivalent guards, two different searchers) — `Dupoc k` of
      `RedCell.lean` stays the red cell's object. Proof-craft traps: (i) a `/-! … -/` docstring
      containing `me-/opp` ENDS at that `-/` (cost a cascade of 30 phantom errors); (ii) `∃¹ ∃¹ φ`
@@ -835,17 +835,17 @@ instance mismatches, `instOfNatNat 3` vs `instOfNat` at `V = ℕ`), `val_progTT 
 tower at all. `descVec me opp := progT (dnum me) ∷ dU me ∷ dW me ∷ …`, `dnumT x := lMap emb
 (progTT (dnum x))`; `dnumT_eq_numTB` is gone. `Fit`: `exists_guard_const` now
 `flen ≤ c · (|dnumT me| + |dnumT opp| + 5)`, `exists_desc_const : |dnumT (Dupoc k)| ≤ 36 · size k
-+ D` (the constant carries `|bnumT ⌜GtmplA a⌝|`, packaged existentially), `guard_fits`/`guard_fits'`
++ D` (the constant carries `|bnumT ⌜guardTemplate a⌝|`, packaged existentially), `guard_fits`/`guard_fits'`
 byte-identical. THE HEADLINE: `dnum (Dupoc k) = pSearch k gD pD qD` with a `k`-INDEPENDENT inner
 triple decided by the fixed inequality `innerD ≤ innerC` between two closed constants (never
 evaluated; `ppair` reflects the order in its second argument, `pSearchInner_lt_iff`), `dUT/dWT
 (Dupoc k)` `k`-independent, `progTT (pSearch k g p q) = searchT1 g p q ⇜ ![bnumT k]`, hence
 `exists_dupoc_instance : ∃ q : Semisentence LAct 1, ∀ k, guardSentenceA 0 (Dupoc k) (Dupoc k) =
-q ⇜ ![lMap emb (bnumT k)]` (witness `qDupoc := GtmplA 0 ⇜ ![TD, cl uD, cl wD, TD, cl uD, cl wD]`)
-and `exists_dupoc_instance_code : ∃ cq, IsSemiformula LAct 1 cq ∧ ∀ k, guardCode ⌜GtmplA 0⌝
+q ⇜ ![lMap emb (bnumT k)]` (witness `qDupoc := guardTemplate 0 ⇜ ![TD, cl uD, cl wD, TD, cl uD, cl wD]`)
+and `exists_dupoc_instance_code : ∃ cq, IsSemiformula LAct 1 cq ∧ ∀ k, guardCode ⌜guardTemplate 0⌝
 (Dupoc k) (Dupoc k) = subst LAct (bnum k ∷ 0) cq`; and V-GENERIC, for possibly NONSTANDARD
 budgets: `exists_dupoc_instance_code_V : ∃ cq : ℕ, IsSemiformula LAct 1 cq ∧ ∀ (V) [𝗜𝚺₁] (k : V),
-guardCode ⌜GtmplA 0⌝ (DupocV k) (DupocV k) = subst LAct (bnum k ∷ 0) ↑cq` — i.e. the guard code
+guardCode ⌜guardTemplate 0⌝ (DupocV k) (DupocV k) = subst LAct (bnum k ∷ 0) ↑cq` — i.e. the guard code
 is `instB cq k` (`InstV`), the input the parametric box `bewB` expects. Its proof re-runs the
 analysis inside `V` (`swapcode_DupocV` by Σ₁-absoluteness of `relabelTemplate`; `Nat.cast_lt` for
 the deciding inequality — PA⁻ models are `IsStrictOrderedRing`) and then composes internal

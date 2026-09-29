@@ -39,7 +39,7 @@ predicate and IΣ₁ metatheory. On top of it:
   two constants in the order that reconstructs `x` — so τ acts on guard sentences
   SYNTACTICALLY (`lMap_swap_guardSentenceA`) and descriptions have length `O(log x)`
   (Critch's assumption (b)). `guardCode g me opp := subst (descVec me opp) g`, with the code
-  equation `⌜guardSentenceA a me opp⌝ = guardCode ⌜GtmplA a⌝ me opp`.
+  equation `⌜guardSentenceA a me opp⌝ = guardCode ⌜guardTemplate a⌝ me opp`.
 * **Evaluator.** `EvalGraph n me opp p a` — a Σ₁ fixpoint in IΣ₁ with fuel; clauses for
   const/self/opp/bot/sim/ite/search; the search clause consults `LenProvableV TAct k
   (guardCode g me opp)`. Deterministic and fuel-monotone (`EvalGraph.unique'`, `mono_le`).
@@ -48,8 +48,8 @@ predicate and IΣ₁ metatheory. On top of it:
 ## 2. Tier T1 — the red cell
 
 ```
-Dupoc k := pSearch k ⌜GtmplA 0⌝ (pConst 0) (pConst 1)     -- "cooperate iff □_k(opp cooperates with me)"
-Cupod k := swapcode (Dupoc k) = pSearch k ⌜GtmplA 1⌝ (pConst 1) (pConst 0)
+Dupoc k := pSearch k ⌜guardTemplate 0⌝ (pConst 0) (pConst 1)     -- "cooperate iff □_k(opp cooperates with me)"
+Cupod k := swapcode (Dupoc k) = pSearch k ⌜guardTemplate 1⌝ (pConst 1) (pConst 0)
 
 theorem red_cell (k : ℕ) :
     EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph 2 (Cupod k) (Dupoc k) (Cupod k) 0
