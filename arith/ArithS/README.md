@@ -25,6 +25,11 @@ never edit them (`scripts/README.md`).
 Nine definitions. Everything else in the package is a theorem about them or a construction. Each entry
 says what a reader accepts and the one design choice behind it.
 
+The other files in these five folders hold no definitions to accept, only theorems about these nine
+(`Theory/Transpose`, `Sound`, `Symmetry` = the τ-closure chain ending in `lenProvable_fbound_swap_iff`;
+`Length/Proper`, `Box/ProperV` = the properness estimates; `Box/Cut*` = bounded modus ponens; `Agents/Fit*`
+= the guard fits its budget): read their statements, let Lean keep their proofs.
+
 1. **The language** — `LAct := ℒₒᵣ + {c_C, c_D}` and the transposition `swap` (a language hom that
    exchanges the two constants): [`Theory/LangAct.lean`](Theory/LangAct.lean). Actions are constants,
    not numerals, so that τ is a symmetry of the syntax.
