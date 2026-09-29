@@ -29,7 +29,7 @@ unchanged (names, statements, definition bodies) out of `Cells/DupocMirror`, `Ce
    `pcode_DupocBot_SV`/`pcode_CupodBot_SV`/`pcode_WaryBot_SV` stay in `Cells/PositiveCells` (they need
    the ℕ-branch's `pcode_*` lemmas). The bridges `DimcidV_eq_SV`/`CimcicV_eq_SV` live next to
    `DimcidV`/`CimcicV` (`Cells/DIMCID`, `Cells/CIMCIC`); `DupocV`/`CupodV` are NOT `SV` instances
-   (hand template `GtmplA a` vs `tmpl (.plays .opp .self _)`, `Code.lean`) — never merge them.
+   (hand template `guardTemplate a` vs `tmpl (.plays .opp .self _)`, `Code.lean`) — never merge them.
 -/
 
 set_option linter.constructorNameAsVariable false

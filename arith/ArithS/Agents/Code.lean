@@ -690,7 +690,7 @@ theorem relabelTemplate_tcode (φ : PD.Formula) (h : fragF φ = true) :
 
 `pcode (DupocBot k)` is a searcher of budget `k` on the template of `.plays .opp .self .C` with
 the constant branches `C`/`D`; it is in the fragment. Its stored template is NOT literally
-`⌜GtmplA 0⌝` (the hand-written template of `ArithS.RedCell`): `tmpl` quantifies the two
+`⌜guardTemplate 0⌝` (the hand-written template of `ArithS.RedCell`): `tmpl` quantifies the two
 program codes and the fuel in the order `x y n` and describes each player through the
 uniform shape `descF`, whereas `Gtmpl` reconstructs `me`/`opp` and then quantifies the fuel.
 The two guard sentences say the same thing (both are "opp plays `C` against me"); `Dupoc k`

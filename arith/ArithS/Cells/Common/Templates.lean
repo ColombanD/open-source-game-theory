@@ -12,7 +12,7 @@ unchanged (names, statements, definition bodies) out of `Cells/DIMCID`, `Cells/P
 2. **An arbitrary six-variable template filled with two triples**: `qT g …`, `quote_qT`,
    `guardCode_qT_eq_instB`/`_swap_eq_instB`, `eval_qT_iff`, the closed-opponent atom
    `eval_tmpl_plays_opp_closed_V`.
-3. **JustBot's earlier form of the same equation** on `GtmplA a ⇜ ![T₁, cl u₁, cl w₁, T₂, cl u₂, cl w₂]`:
+3. **JustBot's earlier form of the same equation** on `guardTemplate a ⇜ ![T₁, cl u₁, cl w₁, T₂, cl u₂, cl w₂]`:
    `tmplVec` (kept as a definition with its original body; `tmplVec_eq_gVec` is `rfl` — the two vectors
    are the same term, the arguments in a different order), `quote_GtmplA_subst`, `guardCode_eq_instB_of`,
    `eval_GtmplA_subst_iff`.
@@ -41,14 +41,14 @@ open PD.Bots
 
 variable {V : Type*} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
 
-/-! ### 1. The hand-written template `GtmplA a`, filled with two arbitrary description triples -/
+/-! ### 1. The hand-written template `guardTemplate a`, filled with two arbitrary description triples -/
 
 section qG
 
-/-- The template instance `GtmplA a` filled with the triples `(X, U, W)` (me) and `(X', U', W')` (opp). -/
+/-- The template instance `guardTemplate a` filled with the triples `(X, U, W)` (me) and `(X', U', W')` (opp). -/
 noncomputable def qG (a : ℕ) (X : Semiterm LAct Empty 1) (U W : ClosedSemiterm LAct 0)
     (X' : Semiterm LAct Empty 1) (U' W' : ClosedSemiterm LAct 0) : Semisentence LAct 1 :=
-  GtmplA a ⇜ ![X, cl U, cl W, X', cl U', cl W']
+  guardTemplate a ⇜ ![X, cl U, cl W, X', cl U', cl W']
 
 lemma lMap_swap_qG (a : ℕ) (X : Semiterm LAct Empty 1) (U W : ClosedSemiterm LAct 0)
     (X' : Semiterm LAct Empty 1) (U' W' : ClosedSemiterm LAct 0) :
@@ -91,7 +91,7 @@ lemma semitermVec_val_gVec (X : Semiterm LAct Empty 1) (U W : ClosedSemiterm LAc
 
 theorem quote_qG (a : ℕ) (X : Semiterm LAct Empty 1) (U W : ClosedSemiterm LAct 0)
     (X' : Semiterm LAct Empty 1) (U' W' : ClosedSemiterm LAct 0) :
-    (⌜qG a X U W X' U' W'⌝ : V) = subst LAct (gVec X U W X' U' W') (⌜GtmplA a⌝ : V) := by
+    (⌜qG a X U W X' U' W'⌝ : V) = subst LAct (gVec X U W X' U' W') (⌜guardTemplate a⌝ : V) := by
   unfold qG
   rw [Sentence.quote_def, Semiformula.coe_subst_eq_subst_coe, Semiformula.quote_def,
     Semiformula.typed_quote_substs, Bootstrapping.Semiformula.val_substs, ← Semiformula.quote_def,
@@ -149,7 +149,7 @@ theorem termSubstVec_gVec (k : V) (X : Semiterm LAct Empty 1) (U W : ClosedSemit
     hX, sU, sW, hX', sU', sW']
 
 /-- **The instance equation on codes for the hand-written template, in every model**: the guard code
-of `me` against `opp` on `GtmplA a` is the `bnum k`-instance of `⌜qG a …⌝` whenever the two triples
+of `me` against `opp` on `guardTemplate a` is the `bnum k`-instance of `⌜qG a …⌝` whenever the two triples
 describe `me` and `opp` on codes. -/
 theorem guardCode_GtmplA_eq_instB (a : ℕ) (k : V) (X : Semiterm LAct Empty 1) (U W : ClosedSemiterm LAct 0)
     (X' : Semiterm LAct Empty 1) (U' W' : ClosedSemiterm LAct 0) {me opp : V}
@@ -157,28 +157,28 @@ theorem guardCode_GtmplA_eq_instB (a : ℕ) (k : V) (X : Semiterm LAct Empty 1) 
     (hU : (⌜U⌝ : V) = dU me) (hW : (⌜W⌝ : V) = dW me)
     (hX' : termSubst LAct (bnum k ∷ (0 : V)) (⌜(Rew.emb X' : SyntacticSemiterm LAct 1)⌝ : V) = progT (dnum opp))
     (hU' : (⌜U'⌝ : V) = dU opp) (hW' : (⌜W'⌝ : V) = dW opp) :
-    guardCode (⌜GtmplA a⌝ : V) me opp = instB (⌜qG a X U W X' U' W'⌝ : V) k := by
-  show guardCode (⌜GtmplA a⌝ : V) me opp = subst LAct (bnum k ∷ (0 : V)) (⌜qG a X U W X' U' W'⌝ : V)
-  rw [quote_qG, substs_substs (p := (⌜GtmplA a⌝ : V)) (l := 6)
-    (by simpa using Sentence.quote_isSemiformula (V := V) (GtmplA a))
+    guardCode (⌜guardTemplate a⌝ : V) me opp = instB (⌜qG a X U W X' U' W'⌝ : V) k := by
+  show guardCode (⌜guardTemplate a⌝ : V) me opp = subst LAct (bnum k ∷ (0 : V)) (⌜qG a X U W X' U' W'⌝ : V)
+  rw [quote_qG, substs_substs (p := (⌜guardTemplate a⌝ : V)) (l := 6)
+    (by simpa using Sentence.quote_isSemiformula (V := V) (guardTemplate a))
     (bnum_cons_semitermVec k) (gVec_semitermVec X U W X' U' W'),
     termSubstVec_gVec k X U W X' U' W' hX hU hW hX' hU' hW']
   rfl
 
 /-- The transposed instance equation: the guard code of `swapcode me` against `swapcode opp` on
-`GtmplA (swapAct a)` is the `bnum k`-instance of `⌜lMap swap (qG a …)⌝`. -/
+`guardTemplate (swapAct a)` is the `bnum k`-instance of `⌜lMap swap (qG a …)⌝`. -/
 theorem guardCode_GtmplA_swap_eq_instB (a : ℕ) (k : V) (X : Semiterm LAct Empty 1) (U W : ClosedSemiterm LAct 0)
     (X' : Semiterm LAct Empty 1) (U' W' : ClosedSemiterm LAct 0) {me opp : V}
     (hX : termSubst LAct (bnum k ∷ (0 : V)) (⌜(Rew.emb X : SyntacticSemiterm LAct 1)⌝ : V) = progT (dnum me))
     (hU : (⌜U⌝ : V) = dU me) (hW : (⌜W⌝ : V) = dW me)
     (hX' : termSubst LAct (bnum k ∷ (0 : V)) (⌜(Rew.emb X' : SyntacticSemiterm LAct 1)⌝ : V) = progT (dnum opp))
     (hU' : (⌜U'⌝ : V) = dU opp) (hW' : (⌜W'⌝ : V) = dW opp) :
-    guardCode (⌜GtmplA (swapAct a)⌝ : V) (swapcode me) (swapcode opp) =
+    guardCode (⌜guardTemplate (swapAct a)⌝ : V) (swapcode me) (swapcode opp) =
       instB (⌜Semiformula.lMap swap (qG a X U W X' U' W')⌝ : V) k := by
-  have hg0 : IsSemiformula LAct 6 (⌜GtmplA a⌝ : V) := by
-    simpa using Sentence.quote_isSemiformula (V := V) (GtmplA a)
-  have hg1 : IsSemiformula LAct 6 (⌜GtmplA (swapAct a)⌝ : V) := by
-    simpa using Sentence.quote_isSemiformula (V := V) (GtmplA (swapAct a))
+  have hg0 : IsSemiformula LAct 6 (⌜guardTemplate a⌝ : V) := by
+    simpa using Sentence.quote_isSemiformula (V := V) (guardTemplate a)
+  have hg1 : IsSemiformula LAct 6 (⌜guardTemplate (swapAct a)⌝ : V) := by
+    simpa using Sentence.quote_isSemiformula (V := V) (guardTemplate (swapAct a))
   rw [← gsubst_of_template hg1, ← relabelTemplate_quote_GtmplA_V, ← relabelTemplate_gsubst, gsubst_of_template hg0,
     guardCode_GtmplA_eq_instB a k X U W X' U' W' hX hU hW hX' hU' hW']
   unfold instB
@@ -198,7 +198,7 @@ theorem eval_qG_iff_V (a : ℕ) (k : V) (X : Semiterm LAct Empty 1) (U W : Close
       (X'.val (s := stdActV V) ![k] Empty.elim) = opp) :
     Semiformula.Eval (s := stdActV V) ![k] Empty.elim (qG a X U W X' U' W') ↔
       ∃ n, EvalGraph n opp me opp (a : V) := by
-  unfold qG GtmplA Gtmpl
+  unfold qG guardTemplate Gtmpl
   rw [Semiformula.eval_substs, Semiformula.eval_substs, Semiformula.eval_lMap, stdActV_lMap_emb]
   have h0 : (Semiterm.val (s := stdActV V) ![k] Empty.elim ∘ ![X, cl U, cl W, X', cl U', cl W']) =
       ![X.val (s := stdActV V) ![k] Empty.elim, U.val (s := stdActV V) ![] Empty.elim,
@@ -335,7 +335,7 @@ end qT
 
 section tmplVec
 
-/-- The six codes of the substituted terms of `GtmplA a ⇜ ![T₁, cl u₁, cl w₁, T₂, cl u₂, cl w₂]`,
+/-- The six codes of the substituted terms of `guardTemplate a ⇜ ![T₁, cl u₁, cl w₁, T₂, cl u₂, cl w₂]`,
 as an internal vector. -/
 noncomputable def tmplVec (T₁ T₂ : Semiterm LAct Empty 1) (u₁ w₁ u₂ w₂ : ClosedSemiterm LAct 0) : V :=
   (⌜(Rew.emb T₁ : SyntacticSemiterm LAct 1)⌝ : V) ∷
@@ -347,8 +347,8 @@ noncomputable def tmplVec (T₁ T₂ : Semiterm LAct Empty 1) (u₁ w₁ u₂ w�
 
 /-- The code of a template instance is the internal substitution of `tmplVec` into the template code. -/
 theorem quote_GtmplA_subst (a : ℕ) (T₁ T₂ : Semiterm LAct Empty 1) (u₁ w₁ u₂ w₂ : ClosedSemiterm LAct 0) :
-    (⌜(GtmplA a ⇜ ![T₁, cl u₁, cl w₁, T₂, cl u₂, cl w₂] : Semisentence LAct 1)⌝ : V) =
-      subst LAct (tmplVec T₁ T₂ u₁ w₁ u₂ w₂) (⌜GtmplA a⌝ : V) := by
+    (⌜(guardTemplate a ⇜ ![T₁, cl u₁, cl w₁, T₂, cl u₂, cl w₂] : Semisentence LAct 1)⌝ : V) =
+      subst LAct (tmplVec T₁ T₂ u₁ w₁ u₂ w₂) (⌜guardTemplate a⌝ : V) := by
   rw [Sentence.quote_def, Semiformula.coe_subst_eq_subst_coe, Semiformula.quote_def,
     Semiformula.typed_quote_substs, Bootstrapping.Semiformula.val_substs, ← Semiformula.quote_def,
     ← Sentence.quote_def]
@@ -406,7 +406,7 @@ theorem termSubstVec_tmplVec {T₁ T₂ : Semiterm LAct Empty 1} {u₁ w₁ u₂
     h₁, sU₁, sW₁, h₂, sU₂, sW₂]
 
 /-- **The generic instance equation on codes**: the guard code of `(me, opp)` on the template
-`GtmplA a` is the `bnum k`-instance of the code of the template instance, given the six entry
+`guardTemplate a` is the `bnum k`-instance of the code of the template instance, given the six entry
 equations. -/
 theorem guardCode_eq_instB_of (a : ℕ) {T₁ T₂ : Semiterm LAct Empty 1} {u₁ w₁ u₂ w₂ : ClosedSemiterm LAct 0}
     {k me opp : V}
@@ -416,12 +416,12 @@ theorem guardCode_eq_instB_of (a : ℕ) {T₁ T₂ : Semiterm LAct Empty 1} {u�
     (h₂ : termSubst LAct (bnum k ∷ (0 : V)) (⌜(Rew.emb T₂ : SyntacticSemiterm LAct 1)⌝ : V) = progT (dnum opp))
     (hu₂ : (⌜(Rew.emb u₂ : SyntacticSemiterm LAct 0)⌝ : V) = dU opp)
     (hw₂ : (⌜(Rew.emb w₂ : SyntacticSemiterm LAct 0)⌝ : V) = dW opp) :
-    guardCode (⌜GtmplA a⌝ : V) me opp =
-      instB (⌜(GtmplA a ⇜ ![T₁, cl u₁, cl w₁, T₂, cl u₂, cl w₂] : Semisentence LAct 1)⌝ : V) k := by
-  show guardCode (⌜GtmplA a⌝ : V) me opp =
-    subst LAct (bnum k ∷ (0 : V)) (⌜(GtmplA a ⇜ ![T₁, cl u₁, cl w₁, T₂, cl u₂, cl w₂] : Semisentence LAct 1)⌝ : V)
-  rw [quote_GtmplA_subst, substs_substs (p := (⌜GtmplA a⌝ : V)) (l := 6)
-    (by simpa using Sentence.quote_isSemiformula (V := V) (GtmplA a))
+    guardCode (⌜guardTemplate a⌝ : V) me opp =
+      instB (⌜(guardTemplate a ⇜ ![T₁, cl u₁, cl w₁, T₂, cl u₂, cl w₂] : Semisentence LAct 1)⌝ : V) k := by
+  show guardCode (⌜guardTemplate a⌝ : V) me opp =
+    subst LAct (bnum k ∷ (0 : V)) (⌜(guardTemplate a ⇜ ![T₁, cl u₁, cl w₁, T₂, cl u₂, cl w₂] : Semisentence LAct 1)⌝ : V)
+  rw [quote_GtmplA_subst, substs_substs (p := (⌜guardTemplate a⌝ : V)) (l := 6)
+    (by simpa using Sentence.quote_isSemiformula (V := V) (guardTemplate a))
     (bnum_cons_semitermVec k) (tmplVec_semitermVec T₁ T₂ u₁ w₁ u₂ w₂),
     termSubstVec_tmplVec h₁ hu₁ hw₁ h₂ hu₂ hw₂]
   rfl
@@ -431,7 +431,7 @@ theorem guardCode_eq_instB_of (a : ℕ) {T₁ T₂ : Semiterm LAct Empty 1} {u�
 me-triple". -/
 theorem eval_GtmplA_subst_iff (a : ℕ) (T₁ T₂ : Semiterm LAct Empty 1) (u₁ w₁ u₂ w₂ : ClosedSemiterm LAct 0)
     (k : V) :
-    Semiformula.Eval (s := stdActV V) ![k] Empty.elim (GtmplA a ⇜ ![T₁, cl u₁, cl w₁, T₂, cl u₂, cl w₂]) ↔
+    Semiformula.Eval (s := stdActV V) ![k] Empty.elim (guardTemplate a ⇜ ![T₁, cl u₁, cl w₁, T₂, cl u₂, cl w₂]) ↔
       ∃ n, EvalGraph n
         (relabel (u₂.val (s := stdActV V) ![] Empty.elim) (w₂.val (s := stdActV V) ![] Empty.elim)
           (T₂.val (s := stdActV V) ![k] Empty.elim))
@@ -440,7 +440,7 @@ theorem eval_GtmplA_subst_iff (a : ℕ) (T₁ T₂ : Semiterm LAct Empty 1) (u�
         (relabel (u₂.val (s := stdActV V) ![] Empty.elim) (w₂.val (s := stdActV V) ![] Empty.elim)
           (T₂.val (s := stdActV V) ![k] Empty.elim))
         (a : V) := by
-  unfold GtmplA Gtmpl
+  unfold guardTemplate Gtmpl
   rw [Semiformula.eval_substs, Semiformula.eval_substs, Semiformula.eval_lMap, stdActV_lMap_emb]
   have h0 : (Semiterm.val (s := stdActV V) ![k] Empty.elim ∘ ![T₁, cl u₁, cl w₁, T₂, cl u₂, cl w₂]) =
       ![T₁.val (s := stdActV V) ![k] Empty.elim, u₁.val (s := stdActV V) ![] Empty.elim,

@@ -13,27 +13,27 @@ V-generic (every model of `𝗜𝚺₁`, budgets `k : V` possibly nonstandard) u
    `psubst`; `pBot` is strictly monotone, so the canonical description commutes with it
    (`dnum_pBot`, `dU_pBot`, `dW_pBot`; `swapcode_pBot`). Dupoc's search clause holds in ANY frame
    (`dupoc_frame_search_V`): `pBot (DupocV k)` in the frame `(me, opp)` searches
-   `guardCode ⌜GtmplA 0⌝ me opp` — so the guards below are those of the FRAME players.
+   `guardCode ⌜guardTemplate 0⌝ me opp` — so the guards below are those of the FRAME players.
 2. **The description tower.** `TBD := lMap emb (botT1 (searchT1 gD pD qD))` is the one-variable
    description of `pBot (Dupoc k)` (`botT1 t = succT1 (ppairT1 3̂ t)`, `ProgT.progT_bot`);
    `val_TBD_V : TBD(k) = dnum (pBot (DupocV k))`, `termSubst_TBD : (bnum k)-instance of ⌜TBD⌝ =
    progT (dnum (pBot (DupocV k)))`.
 3. **The generic instance equation and truth equation** for a template instance
-   `GtmplA a ⇜ ![T₁, cl u₁, cl w₁, T₂, cl u₂, cl w₂]` (`guardCode_eq_instB_of`,
+   `guardTemplate a ⇜ ![T₁, cl u₁, cl w₁, T₂, cl u₂, cl w₂]` (`guardCode_eq_instB_of`,
    `eval_GtmplA_subst_iff`): the six per-cell substitution computations of `InstanceV`/
    `Cells/DupocMirror` factored once.
-4. **Family (1): the bot-wrapped self-play** `pBD := qBD ⋏ qBC` (`qBD = GtmplA 0 ⇜ ![TBD, cl uD, cl wD,
+4. **Family (1): the bot-wrapped self-play** `pBD := qBD ⋏ qBC` (`qBD = guardTemplate 0 ⇜ ![TBD, cl uD, cl wD,
    TBD, cl uD, cl wD]`, `qBC = lMap swap qBD`): `loeb_botDupoc_vs_botDupoc` — for all large
    `k`, `EvalGraph 3 (pBot (Dupoc k)) (pBot (Dupoc k)) (pBot (Dupoc k)) 0` (fuel 3: bot, search,
    const) — and `loeb_botCupod_vs_botCupod`.
 5. **JustV.** `JustV k := pSearch k (gJ k) (pConst 0) (pConst 1)` with the stored template
-   `gJ k := subst (jVec k) ⌜GtmplA 0⌝` — `GtmplA 0` PRE-FILLED in its me-slots with the closed
+   `gJ k := subst (jVec k) ⌜guardTemplate 0⌝` — `guardTemplate 0` PRE-FILLED in its me-slots with the closed
    description of `pBot (DupocV k)`, the opp-slots left as the frame variables `^#3 ^#4 ^#5`.
-   `guardCode_JustV : guardCode (gJ k) me opp = guardCode ⌜GtmplA 0⌝ (pBot (DupocV k)) opp` — Just's
+   `guardCode_JustV : guardCode (gJ k) me opp = guardCode ⌜guardTemplate 0⌝ (pBot (DupocV k)) opp` — Just's
    guard against `opp` IS the guard of Dupoc-in-bot against `opp` (the frame's `me` is unused,
    exactly the engine's `Formula.subst` on `.plays .opp (.bot (DupocBot k)) C`). At ℕ, `Just k :=
    pSearch k ⌜GtmplJ k⌝ …` with the meta template `GtmplJ k` and the bridge `JustV_nat`.
-6. **Family (3): Just × Mirror** `pJM := qJM ⋏ qJM'` (`qJM = GtmplA 0 ⇜ ![TBD, cl uD, cl wD, cl TM,
+6. **Family (3): Just × Mirror** `pJM := qJM ⋏ qJM'` (`qJM = guardTemplate 0 ⇜ ![TBD, cl uD, cl wD, cl TM,
    cl (numT 0), cl (numT 1)]`, "Mirror plays C against `pBot (Dupoc k)`"): a proof of `qJM(k)` within
    budget makes Dupoc-in-bot cooperate with Mirror (fuel 3), Mirror copies (fuel 4), so it is true;
    `family_found pJM` then fires Just's OUTER search by the same box:
@@ -88,12 +88,12 @@ end generic
 
 section botSelf
 
-/-- **The fixed formula of the bot-wrapped Dupoc self-play**: `GtmplA 0` filled with the
+/-- **The fixed formula of the bot-wrapped Dupoc self-play**: `guardTemplate 0` filled with the
 description of `pBot (Dupoc k)` twice. -/
 noncomputable def qBD : Semisentence LAct 1 :=
-  GtmplA 0 ⇜ ![TBD, cl uD, cl wD, TBD, cl uD, cl wD]
+  guardTemplate 0 ⇜ ![TBD, cl uD, cl wD, TBD, cl uD, cl wD]
 
-lemma qBD_eq : qBD = GtmplA 0 ⇜ ![TBD, cl uD, cl wD, TBD, cl uD, cl wD] := rfl
+lemma qBD_eq : qBD = guardTemplate 0 ⇜ ![TBD, cl uD, cl wD, TBD, cl uD, cl wD] := rfl
 
 /-- The transposition: the bot-wrapped Cupod self-play. -/
 noncomputable def qBC : Semisentence LAct 1 := Semiformula.lMap swap qBD
@@ -105,7 +105,7 @@ lemma lMap_swap_qBC : Semiformula.lMap swap qBC = qBD := lMap_swap_swap _
 
 /-- **The instance equation on codes of the bot-wrapped Dupoc self-play, in every model.** -/
 theorem guardCode_botDupocV_eq_instB (k : V) :
-    guardCode (⌜GtmplA 0⌝ : V) (pBot (DupocV k)) (pBot (DupocV k)) = instB (⌜qBD⌝ : V) k :=
+    guardCode (⌜guardTemplate 0⌝ : V) (pBot (DupocV k)) (pBot (DupocV k)) = instB (⌜qBD⌝ : V) k :=
   guardCode_eq_instB_of 0 (termSubst_TBD k) (quote_emb_uD_botDupocV k) (quote_emb_wD_botDupocV k)
     (termSubst_TBD k) (quote_emb_uD_botDupocV k) (quote_emb_wD_botDupocV k)
 
@@ -113,18 +113,18 @@ lemma relabelTemplate_quote_qBD_V : relabelTemplate 1 0 (⌜qBD⌝ : V) = ⌜qBC
   relabelTemplate_quote_sentence_V qBD
 
 lemma guardCode_botCupodV_eq_relabel (k : V) :
-    guardCode (⌜GtmplA 1⌝ : V) (pBot (CupodV k)) (pBot (CupodV k)) =
-      relabelTemplate 1 0 (guardCode (⌜GtmplA 0⌝ : V) (pBot (DupocV k)) (pBot (DupocV k))) := by
-  have hg0 : IsSemiformula LAct 6 (⌜GtmplA 0⌝ : V) := by
-    simpa using Sentence.quote_isSemiformula (V := V) (GtmplA 0)
-  have hg1 : IsSemiformula LAct 6 (⌜GtmplA 1⌝ : V) := by
-    simpa using Sentence.quote_isSemiformula (V := V) (GtmplA 1)
+    guardCode (⌜guardTemplate 1⌝ : V) (pBot (CupodV k)) (pBot (CupodV k)) =
+      relabelTemplate 1 0 (guardCode (⌜guardTemplate 0⌝ : V) (pBot (DupocV k)) (pBot (DupocV k))) := by
+  have hg0 : IsSemiformula LAct 6 (⌜guardTemplate 0⌝ : V) := by
+    simpa using Sentence.quote_isSemiformula (V := V) (guardTemplate 0)
+  have hg1 : IsSemiformula LAct 6 (⌜guardTemplate 1⌝ : V) := by
+    simpa using Sentence.quote_isSemiformula (V := V) (guardTemplate 1)
   rw [← gsubst_of_template hg0, relabelTemplate_gsubst, swapcode_pBot_DupocV,
     relabelTemplate_quote_GtmplA_V, swapAct_zero, gsubst_of_template hg1]
 
 /-- **The instance equation on codes of the bot-wrapped Cupod self-play, in every model.** -/
 theorem guardCode_botCupodV_eq_instB (k : V) :
-    guardCode (⌜GtmplA 1⌝ : V) (pBot (CupodV k)) (pBot (CupodV k)) = instB (⌜qBC⌝ : V) k := by
+    guardCode (⌜guardTemplate 1⌝ : V) (pBot (CupodV k)) (pBot (CupodV k)) = instB (⌜qBC⌝ : V) k := by
   rw [guardCode_botCupodV_eq_relabel, guardCode_botDupocV_eq_instB]
   unfold instB
   rw [relabelTemplate_subst isAct_one isAct_zero (Sentence.quote_isSemiformul₁ qBD)
@@ -135,8 +135,8 @@ theorem guardCode_botCupodV_eq_instB (k : V) :
 
 /-! #### The truth equations -/
 
-/-- `qBC` is `GtmplA 1` filled with the bot tower and the transposed re-valuation terms. -/
-theorem qBC_eq : qBC = GtmplA 1 ⇜ ![TBD, cl uC, cl wC, TBD, cl uC, cl wC] := by
+/-- `qBC` is `guardTemplate 1` filled with the bot tower and the transposed re-valuation terms. -/
+theorem qBC_eq : qBC = guardTemplate 1 ⇜ ![TBD, cl uC, cl wC, TBD, cl uC, cl wC] := by
   unfold qBC qBD
   rw [Semiformula.lMap_subst, lMap_swap_GtmplA, swapAct_zero]
   congr 1
@@ -172,12 +172,12 @@ theorem eval_qBC_swap_iff_V (k : V) :
 
 /-- **The bot-wrapped Dupoc's search clause against itself** (fuel 3). -/
 theorem botDupoc_search_V (k : V) :
-    LenProvableV TAct k (guardCode (⌜GtmplA 0⌝ : V) (pBot (DupocV k)) (pBot (DupocV k))) →
+    LenProvableV TAct k (guardCode (⌜guardTemplate 0⌝ : V) (pBot (DupocV k)) (pBot (DupocV k))) →
       EvalGraph 3 (pBot (DupocV k)) (pBot (DupocV k)) (pBot (DupocV k)) 0 :=
   botDupoc_frame_search_V k _ _
 
 theorem botCupod_search_V (k : V) :
-    LenProvableV TAct k (guardCode (⌜GtmplA 1⌝ : V) (pBot (CupodV k)) (pBot (CupodV k))) →
+    LenProvableV TAct k (guardCode (⌜guardTemplate 1⌝ : V) (pBot (CupodV k)) (pBot (CupodV k))) →
       EvalGraph 3 (pBot (CupodV k)) (pBot (CupodV k)) (pBot (CupodV k)) 1 :=
   botCupod_frame_search_V k _ _
 
@@ -221,8 +221,8 @@ theorem pBD_both_V (k : V) : ∀ a : V,
 theorem pBD_guards_V (k : V) (a : V)
     (ha : a + 8 * (formulaLen LAct (instB (⌜qBD⌝ : V) k) + formulaLen LAct (instB (⌜qBC⌝ : V) k)) + 7 ≤ k)
     (hpc : LenDerivable TAct a (instB (⌜pBD⌝ : V) k)) :
-    LenProvableV TAct k (guardCode (⌜GtmplA 0⌝ : V) (pBot (DupocV k)) (pBot (DupocV k))) ∧
-    LenProvableV TAct k (guardCode (⌜GtmplA 1⌝ : V) (pBot (CupodV k)) (pBot (CupodV k))) := by
+    LenProvableV TAct k (guardCode (⌜guardTemplate 0⌝ : V) (pBot (DupocV k)) (pBot (DupocV k))) ∧
+    LenProvableV TAct k (guardCode (⌜guardTemplate 1⌝ : V) (pBot (CupodV k)) (pBot (CupodV k))) := by
   rw [instB_quote_pBD] at hpc
   have hx := isFormula_instB_quote qBD k
   have hy := isFormula_instB_quote qBC k
@@ -272,8 +272,8 @@ theorem loeb_botDupoc_vs_botDupoc_core_of_nec {d : ℕ} (hE : BoundedInnerNec d)
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       (EvalGraph 3 (pBot (Dupoc k)) (pBot (Dupoc k)) (pBot (Dupoc k)) 0 ∧
         EvalGraph 3 (pBot (Cupod k)) (pBot (Cupod k)) (pBot (Cupod k)) 1) ∧
-      (LenProvableV TAct k (guardCode (⌜GtmplA 0⌝ : ℕ) (pBot (Dupoc k)) (pBot (Dupoc k))) ∧
-        LenProvableV TAct k (guardCode (⌜GtmplA 1⌝ : ℕ) (pBot (Cupod k)) (pBot (Cupod k)))) := by
+      (LenProvableV TAct k (guardCode (⌜guardTemplate 0⌝ : ℕ) (pBot (Dupoc k)) (pBot (Dupoc k))) ∧
+        LenProvableV TAct k (guardCode (⌜guardTemplate 1⌝ : ℕ) (pBot (Cupod k)) (pBot (Cupod k)))) := by
   obtain ⟨k₀, h⟩ := family_found pBD hE loebSound_pBD
   refine ⟨k₀, fun k hk ↦ ?_⟩
   obtain ⟨a, ha, hpc⟩ := h k hk
@@ -296,7 +296,7 @@ theorem loeb_botCupod_vs_botCupod_of_nec {d : ℕ} (hE : BoundedInnerNec d) :
 itself within its budget `k` (conditional). -/
 theorem loeb_botDupoc_vs_botDupoc_guard_of_nec {d : ℕ} (hE : BoundedInnerNec d) :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
-      LenProvableV TAct k (guardCode (⌜GtmplA 0⌝ : ℕ) (pBot (Dupoc k)) (pBot (Dupoc k))) := by
+      LenProvableV TAct k (guardCode (⌜guardTemplate 0⌝ : ℕ) (pBot (Dupoc k)) (pBot (Dupoc k))) := by
   obtain ⟨k₀, h⟩ := loeb_botDupoc_vs_botDupoc_core_of_nec hE
   exact ⟨k₀, fun k hk ↦ (h k hk).2.1⟩
 
@@ -314,7 +314,7 @@ theorem loeb_botCupod_vs_botCupod :
 /-- **The bot-wrapped Dupoc finds its guard, unconditional.** -/
 theorem loeb_botDupoc_vs_botDupoc_guard :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
-      LenProvableV TAct k (guardCode (⌜GtmplA 0⌝ : ℕ) (pBot (Dupoc k)) (pBot (Dupoc k))) :=
+      LenProvableV TAct k (guardCode (⌜guardTemplate 0⌝ : ℕ) (pBot (Dupoc k)) (pBot (Dupoc k))) :=
   loeb_botDupoc_vs_botDupoc_guard_of_nec boundedInnerNec_sixteen
 
 end botSelf
@@ -327,9 +327,9 @@ the frame variables `^#3 ^#4 ^#5` in the opp-slots. -/
 noncomputable def jVec (k : V) : V :=
   progT (dnum (pBot (DupocV k))) ∷ dU (pBot (DupocV k)) ∷ dW (pBot (DupocV k)) ∷ ^#3 ∷ ^#4 ∷ ^#5 ∷ 0
 
-/-- **Just's stored template**: `GtmplA 0` with its me-slots pre-filled by the closed description
+/-- **Just's stored template**: `guardTemplate 0` with its me-slots pre-filled by the closed description
 of `pBot (DupocV k)` — "the opponent plays C against `pBot (Dupoc k)`". -/
-noncomputable def gJ (k : V) : V := subst LAct (jVec k) (⌜GtmplA 0⌝ : V)
+noncomputable def gJ (k : V) : V := subst LAct (jVec k) (⌜guardTemplate 0⌝ : V)
 
 /-- **JustBot in every model**: `pSearch k (gJ k) (pConst 0) (pConst 1)`. -/
 noncomputable def JustV (k : V) : V := pSearch k (gJ k) (pConst 0) (pConst 1)
@@ -372,21 +372,21 @@ what `pBot (DupocV k)` searches in the frame `(pBot (DupocV k), opp)` — "`opp`
 `pBot (Dupoc k)`", the frame's `me` unused (the engine's `Formula.subst` on
 `.plays .opp (.bot (DupocBot k)) C`). -/
 theorem guardCode_JustV (k me opp : V) :
-    guardCode (gJ k) me opp = guardCode (⌜GtmplA 0⌝ : V) (pBot (DupocV k)) opp := by
-  have hg0 : IsSemiformula LAct 6 (⌜GtmplA 0⌝ : V) := by
-    simpa using Sentence.quote_isSemiformula (V := V) (GtmplA 0)
+    guardCode (gJ k) me opp = guardCode (⌜guardTemplate 0⌝ : V) (pBot (DupocV k)) opp := by
+  have hg0 : IsSemiformula LAct 6 (⌜guardTemplate 0⌝ : V) := by
+    simpa using Sentence.quote_isSemiformula (V := V) (guardTemplate 0)
   unfold guardCode gJ
   rw [substs_substs hg0 (descVec_semitermVec me opp) (jVec_semitermVec k), termSubstVec_jVec]
 
 /-- **Just's search clause in every model** (fuel 2): if "`opp` plays C against `pBot (Dupoc k)`"
 is provable within `k`, `JustV k` cooperates with `opp`. -/
 theorem just_search_V (k opp : V) :
-    LenProvableV TAct k (guardCode (⌜GtmplA 0⌝ : V) (pBot (DupocV k)) opp) →
+    LenProvableV TAct k (guardCode (⌜guardTemplate 0⌝ : V) (pBot (DupocV k)) opp) →
       EvalGraph 2 (JustV k) opp (JustV k) 0 := by
   intro h
   rw [show (2 : V) = 1 + 1 from one_add_one_eq_two.symm]
   show EvalGraph (1 + 1) (JustV k) opp (pSearch k (gJ k) (pConst 0) (pConst 1)) 0
-  have hgJ : IsSemiformula LAct 6 (gJ k) := (isSemiformula_quote₆ (GtmplA 0)).subst (jVec_semitermVec k)
+  have hgJ : IsSemiformula LAct 6 (gJ k) := (isSemiformula_quote₆ (guardTemplate 0)).subst (jVec_semitermVec k)
   rw [EvalGraph.search_iff₆ hgJ, guardCode_JustV]
   left
   refine ⟨h, ?_⟩
@@ -394,10 +394,10 @@ theorem just_search_V (k opp : V) :
 
 /-! #### The meta template at ℕ -/
 
-/-- **Just's template as a meta sentence** (`ℕ`): `GtmplA 0` with the me-slots filled by the closed
+/-- **Just's template as a meta sentence** (`ℕ`): `guardTemplate 0` with the me-slots filled by the closed
 description terms of `pBot (Dupoc k)` and the opp-slots kept as the frame variables. -/
 noncomputable def GtmplJ (k : ℕ) : Semisentence LAct 6 :=
-  GtmplA 0 ⇜ ![cl (dnumT (pBot (Dupoc k))), cl (dUT (pBot (Dupoc k))), cl (dWT (pBot (Dupoc k))), #3, #4, #5]
+  guardTemplate 0 ⇜ ![cl (dnumT (pBot (Dupoc k))), cl (dUT (pBot (Dupoc k))), cl (dWT (pBot (Dupoc k))), #3, #4, #5]
 
 /-- **JustBot at ℕ**: the searcher of budget `k` on the template `⌜GtmplJ k⌝`. -/
 noncomputable def Just (k : ℕ) : ℕ := pSearch k (⌜GtmplJ k⌝ : ℕ) (pConst 0) (pConst 1)
@@ -456,12 +456,12 @@ end just
 section justMirror
 
 /-- **The fixed formula of Just's guard against Mirror**: "Mirror plays C against
-`pBot (Dupoc k)`" — `GtmplA 0` with the bot tower in the me-slots and Mirror's closed description
+`pBot (Dupoc k)`" — `guardTemplate 0` with the bot tower in the me-slots and Mirror's closed description
 in the opp-slots. -/
 noncomputable def qJM : Semisentence LAct 1 :=
-  GtmplA 0 ⇜ ![TBD, cl uD, cl wD, cl TM, cl (numT 0), cl (numT 1)]
+  guardTemplate 0 ⇜ ![TBD, cl uD, cl wD, cl TM, cl (numT 0), cl (numT 1)]
 
-lemma qJM_eq : qJM = GtmplA 0 ⇜ ![TBD, cl uD, cl wD, cl TM, cl (numT 0), cl (numT 1)] := rfl
+lemma qJM_eq : qJM = guardTemplate 0 ⇜ ![TBD, cl uD, cl wD, cl TM, cl (numT 0), cl (numT 1)] := rfl
 
 /-- The transposition: "Mirror plays D against `pBot (Cupod k)`". -/
 noncomputable def qJC : Semisentence LAct 1 := Semiformula.lMap swap qJM
@@ -483,7 +483,7 @@ lemma quote_emb_numT_one_dW : (⌜(Rew.emb (numT 1) : SyntacticSemiterm LAct 0)�
 
 /-- **The instance equation on codes of Dupoc-in-bot's guard against Mirror, in every model.** -/
 theorem guardCode_botDupocV_MirrorV_eq_instB (k : V) :
-    guardCode (⌜GtmplA 0⌝ : V) (pBot (DupocV k)) MirrorV = instB (⌜qJM⌝ : V) k :=
+    guardCode (⌜guardTemplate 0⌝ : V) (pBot (DupocV k)) MirrorV = instB (⌜qJM⌝ : V) k :=
   guardCode_eq_instB_of 0 (termSubst_TBD k) (quote_emb_uD_botDupocV k) (quote_emb_wD_botDupocV k)
     (termSubst_cl_TM k) quote_emb_numT_zero_dU quote_emb_numT_one_dW
 
@@ -491,18 +491,18 @@ lemma relabelTemplate_quote_qJM_V : relabelTemplate 1 0 (⌜qJM⌝ : V) = ⌜qJC
   relabelTemplate_quote_sentence_V qJM
 
 lemma guardCode_botCupodV_MirrorV_eq_relabel (k : V) :
-    guardCode (⌜GtmplA 1⌝ : V) (pBot (CupodV k)) MirrorV =
-      relabelTemplate 1 0 (guardCode (⌜GtmplA 0⌝ : V) (pBot (DupocV k)) MirrorV) := by
-  have hg0 : IsSemiformula LAct 6 (⌜GtmplA 0⌝ : V) := by
-    simpa using Sentence.quote_isSemiformula (V := V) (GtmplA 0)
-  have hg1 : IsSemiformula LAct 6 (⌜GtmplA 1⌝ : V) := by
-    simpa using Sentence.quote_isSemiformula (V := V) (GtmplA 1)
+    guardCode (⌜guardTemplate 1⌝ : V) (pBot (CupodV k)) MirrorV =
+      relabelTemplate 1 0 (guardCode (⌜guardTemplate 0⌝ : V) (pBot (DupocV k)) MirrorV) := by
+  have hg0 : IsSemiformula LAct 6 (⌜guardTemplate 0⌝ : V) := by
+    simpa using Sentence.quote_isSemiformula (V := V) (guardTemplate 0)
+  have hg1 : IsSemiformula LAct 6 (⌜guardTemplate 1⌝ : V) := by
+    simpa using Sentence.quote_isSemiformula (V := V) (guardTemplate 1)
   rw [← gsubst_of_template hg0, relabelTemplate_gsubst, swapcode_pBot_DupocV, swapcode_MirrorV,
     relabelTemplate_quote_GtmplA_V, swapAct_zero, gsubst_of_template hg1]
 
 /-- **The instance equation on codes of Cupod-in-bot's guard against Mirror, in every model.** -/
 theorem guardCode_botCupodV_MirrorV_eq_instB (k : V) :
-    guardCode (⌜GtmplA 1⌝ : V) (pBot (CupodV k)) MirrorV = instB (⌜qJC⌝ : V) k := by
+    guardCode (⌜guardTemplate 1⌝ : V) (pBot (CupodV k)) MirrorV = instB (⌜qJC⌝ : V) k := by
   rw [guardCode_botCupodV_MirrorV_eq_relabel, guardCode_botDupocV_MirrorV_eq_instB]
   unfold instB
   rw [relabelTemplate_subst isAct_one isAct_zero (Sentence.quote_isSemiformul₁ qJM)
@@ -513,7 +513,7 @@ theorem guardCode_botCupodV_MirrorV_eq_instB (k : V) :
 
 /-! #### The truth equations -/
 
-theorem qJC_eq : qJC = GtmplA 1 ⇜ ![TBD, cl uC, cl wC, cl TM, cl (numT 0), cl (numT 1)] := by
+theorem qJC_eq : qJC = guardTemplate 1 ⇜ ![TBD, cl uC, cl wC, cl TM, cl (numT 0), cl (numT 1)] := by
   unfold qJC qJM
   rw [Semiformula.lMap_subst, lMap_swap_GtmplA, swapAct_zero]
   congr 1
@@ -553,12 +553,12 @@ theorem eval_qJC_swap_iff_V (k : V) :
 
 /-- **Dupoc-in-bot's search clause against Mirror** (fuel 3). -/
 theorem botDupoc_mirror_search_V (k : V) :
-    LenProvableV TAct k (guardCode (⌜GtmplA 0⌝ : V) (pBot (DupocV k)) MirrorV) →
+    LenProvableV TAct k (guardCode (⌜guardTemplate 0⌝ : V) (pBot (DupocV k)) MirrorV) →
       EvalGraph 3 (pBot (DupocV k)) MirrorV (pBot (DupocV k)) 0 :=
   botDupoc_frame_search_V k _ _
 
 theorem botCupod_mirror_search_V (k : V) :
-    LenProvableV TAct k (guardCode (⌜GtmplA 1⌝ : V) (pBot (CupodV k)) MirrorV) →
+    LenProvableV TAct k (guardCode (⌜guardTemplate 1⌝ : V) (pBot (CupodV k)) MirrorV) →
       EvalGraph 3 (pBot (CupodV k)) MirrorV (pBot (CupodV k)) 1 :=
   botCupod_frame_search_V k _ _
 
@@ -614,8 +614,8 @@ theorem pJM_both_V (k : V) : ∀ a : V,
 theorem pJM_guards_V (k : V) (a : V)
     (ha : a + 8 * (formulaLen LAct (instB (⌜qJM⌝ : V) k) + formulaLen LAct (instB (⌜qJC⌝ : V) k)) + 7 ≤ k)
     (hpc : LenDerivable TAct a (instB (⌜pJM⌝ : V) k)) :
-    LenProvableV TAct k (guardCode (⌜GtmplA 0⌝ : V) (pBot (DupocV k)) MirrorV) ∧
-    LenProvableV TAct k (guardCode (⌜GtmplA 1⌝ : V) (pBot (CupodV k)) MirrorV) := by
+    LenProvableV TAct k (guardCode (⌜guardTemplate 0⌝ : V) (pBot (DupocV k)) MirrorV) ∧
+    LenProvableV TAct k (guardCode (⌜guardTemplate 1⌝ : V) (pBot (CupodV k)) MirrorV) := by
   rw [instB_quote_pJM] at hpc
   have hx := isFormula_instB_quote qJM k
   have hy := isFormula_instB_quote qJC k
@@ -668,8 +668,8 @@ theorem loeb_Just_vs_Mirror_core_of_nec {d : ℕ} (hE : BoundedInnerNec d) :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       (EvalGraph 3 (pBot (Dupoc k)) Mirror (pBot (Dupoc k)) 0 ∧
         EvalGraph 3 (pBot (Cupod k)) Mirror (pBot (Cupod k)) 1) ∧
-      (LenProvableV TAct k (guardCode (⌜GtmplA 0⌝ : ℕ) (pBot (Dupoc k)) Mirror) ∧
-        LenProvableV TAct k (guardCode (⌜GtmplA 1⌝ : ℕ) (pBot (Cupod k)) Mirror)) := by
+      (LenProvableV TAct k (guardCode (⌜guardTemplate 0⌝ : ℕ) (pBot (Dupoc k)) Mirror) ∧
+        LenProvableV TAct k (guardCode (⌜guardTemplate 1⌝ : ℕ) (pBot (Cupod k)) Mirror)) := by
   obtain ⟨k₀, h⟩ := family_found pJM hE loebSound_pJM
   refine ⟨k₀, fun k hk ↦ ?_⟩
   obtain ⟨a, ha, hpc⟩ := h k hk

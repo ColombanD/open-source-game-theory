@@ -11,12 +11,12 @@ possibly nonstandard) unless a statement says `ℕ`.
 
 1. **Cupod's instance.** `CupodV k = swapcode (DupocV k)` (`ArithS.InstanceV`), the one-variable
    formula `qCupod := lMap swap qDupoc`, and the instance equation on codes
-   `guardCode_CupodV_eq_instB : guardCode ⌜GtmplA 1⌝ (CupodV k) (CupodV k) = instB ⌜qCupod⌝ k`
+   `guardCode_CupodV_eq_instB : guardCode ⌜guardTemplate 1⌝ (CupodV k) (CupodV k) = instB ⌜qCupod⌝ k`
    (the code-level τ of Dupoc's guard: `relabelTemplate_gsubst` + `relabelTemplate_subst`, the
    binary numeral being an `ℒₒᵣ` term code fixed by `termRelabel`), and the search clause
    `cupod_search_V` (fuel 2; the found branch plays `pConst 1`).
 2. **Truth equations.** `eval_qCupod_iff_V` in the standard reading `stdActV V`
-   ("Cupod plays D against itself"; `qCupod = GtmplA 1 ⇜ ![TD, cl uC, cl wC, …]` with the
+   ("Cupod plays D against itself"; `qCupod = guardTemplate 1 ⇜ ![TD, cl uC, cl wC, …]` with the
    re-valuation terms transposed); `eval_swapActS` pulls the transposed reading `swapActS V`
    back to the standard one (`swapActS V` IS `Structure.lMap swap (stdActS V)`, so this is
    `Semiformula.eval_lMap`), giving `eval_qDupoc_swap_iff_V`/`eval_qCupod_swap_iff_V`: in the
@@ -97,19 +97,19 @@ lemma relabelTemplate_quote_qDupoc_V : relabelTemplate 1 0 (⌜qDupoc⌝ : V) = 
 
 /-- Cupod's guard code against itself is the code-level τ of Dupoc's. -/
 lemma guardCode_CupodV_eq_relabel (k : V) :
-    guardCode (⌜GtmplA 1⌝ : V) (CupodV k) (CupodV k) =
-      relabelTemplate 1 0 (guardCode (⌜GtmplA 0⌝ : V) (DupocV k) (DupocV k)) := by
-  have hg0 : IsSemiformula LAct 6 (⌜GtmplA 0⌝ : V) := by
-    simpa using Sentence.quote_isSemiformula (V := V) (GtmplA 0)
-  have hg1 : IsSemiformula LAct 6 (⌜GtmplA 1⌝ : V) := by
-    simpa using Sentence.quote_isSemiformula (V := V) (GtmplA 1)
+    guardCode (⌜guardTemplate 1⌝ : V) (CupodV k) (CupodV k) =
+      relabelTemplate 1 0 (guardCode (⌜guardTemplate 0⌝ : V) (DupocV k) (DupocV k)) := by
+  have hg0 : IsSemiformula LAct 6 (⌜guardTemplate 0⌝ : V) := by
+    simpa using Sentence.quote_isSemiformula (V := V) (guardTemplate 0)
+  have hg1 : IsSemiformula LAct 6 (⌜guardTemplate 1⌝ : V) := by
+    simpa using Sentence.quote_isSemiformula (V := V) (guardTemplate 1)
   rw [← gsubst_of_template hg0, relabelTemplate_gsubst, swapcode_DupocV, relabelTemplate_quote_GtmplA_V,
     swapAct_zero, gsubst_of_template hg1]
 
 /-- **Cupod's instance equation on codes, in every model**: the guard code of `CupodV k` against
 itself is the `bnum k`-instance of `⌜qCupod⌝`. -/
 theorem guardCode_CupodV_eq_instB (k : V) :
-    guardCode (⌜GtmplA 1⌝ : V) (CupodV k) (CupodV k) = instB (⌜qCupod⌝ : V) k := by
+    guardCode (⌜guardTemplate 1⌝ : V) (CupodV k) (CupodV k) = instB (⌜qCupod⌝ : V) k := by
   rw [guardCode_CupodV_eq_relabel, guardCode_DupocV_eq_instB]
   unfold instB
   rw [relabelTemplate_subst isAct_one isAct_zero (Sentence.quote_isSemiformul₁ qDupoc)
@@ -121,12 +121,12 @@ theorem guardCode_CupodV_eq_instB (k : V) :
 /-- **Cupod's search clause in every model** (fuel `2`): if its guard is provable within the
 budget then `CupodV k` defects against itself. -/
 theorem cupod_search_V (k : V) :
-    LenProvableV TAct k (guardCode (⌜GtmplA 1⌝ : V) (CupodV k) (CupodV k)) →
+    LenProvableV TAct k (guardCode (⌜guardTemplate 1⌝ : V) (CupodV k) (CupodV k)) →
       EvalGraph 2 (CupodV k) (CupodV k) (CupodV k) 1 := by
   intro h
   rw [show (2 : V) = 1 + 1 from one_add_one_eq_two.symm]
-  show EvalGraph (1 + 1) (CupodV k) (CupodV k) (pSearch k (⌜GtmplA 1⌝ : V) (pConst 1) (pConst 0)) 1
-  rw [EvalGraph.search_iff₆ (isSemiformula_quote₆ (GtmplA 1))]
+  show EvalGraph (1 + 1) (CupodV k) (CupodV k) (pSearch k (⌜guardTemplate 1⌝ : V) (pConst 1) (pConst 0)) 1
+  rw [EvalGraph.search_iff₆ (isSemiformula_quote₆ (guardTemplate 1))]
   left
   refine ⟨h, ?_⟩
   have e : EvalGraph (0 + 1) (CupodV k) (CupodV k) (pConst 1) 1 := EvalGraph.const_iff.mpr rfl
@@ -151,9 +151,9 @@ lemma lMap_swap_TD : Semiterm.lMap swap TD = TD := term_lMap_swap_emb _
 noncomputable def uC : ClosedSemiterm LAct 0 := Semiterm.lMap swap uD
 noncomputable def wC : ClosedSemiterm LAct 0 := Semiterm.lMap swap wD
 
-/-- `qCupod` is the template instance `GtmplA 1` filled with Dupoc's description term and the
+/-- `qCupod` is the template instance `guardTemplate 1` filled with Dupoc's description term and the
 transposed re-valuation terms. -/
-theorem qCupod_eq : qCupod = GtmplA 1 ⇜ ![TD, cl uC, cl wC, TD, cl uC, cl wC] := by
+theorem qCupod_eq : qCupod = guardTemplate 1 ⇜ ![TD, cl uC, cl wC, TD, cl uC, cl wC] := by
   unfold qCupod qDupoc
   rw [Semiformula.lMap_subst, lMap_swap_GtmplA, swapAct_zero]
   congr 1
@@ -185,7 +185,7 @@ theorem eval_qCupod_iff_V (k : V) :
     Semiformula.Eval (s := stdActV V) ![k] Empty.elim qCupod ↔
       ∃ n, EvalGraph n (CupodV k) (CupodV k) (CupodV k) 1 := by
   rw [qCupod_eq]
-  unfold GtmplA Gtmpl
+  unfold guardTemplate Gtmpl
   rw [Semiformula.eval_substs, Semiformula.eval_substs, Semiformula.eval_lMap, stdActV_lMap_emb]
   have h0 : (Semiterm.val (s := stdActV V) ![k] Empty.elim ∘ ![TD, cl uC, cl wC, TD, cl uC, cl wC]) =
       ![dnum (DupocV k), uC.val (s := stdActV V) ![] Empty.elim, wC.val (s := stdActV V) ![] Empty.elim,

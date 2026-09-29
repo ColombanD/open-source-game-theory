@@ -7,6 +7,7 @@ import ArithS.Audit.Loeb
 import ArithS.Audit.Necessitation
 import ArithS.Audit.Bridge
 import ArithS.Audit.Cells
+import ArithS.Audit.Outcome
 
 /-!
 # ArithS.Audit — the axiom census of the arithmetized layer

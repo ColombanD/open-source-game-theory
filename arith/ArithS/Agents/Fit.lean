@@ -25,17 +25,17 @@ but explicit) constants:
   for every rewriter whose bound-variable images are variable-free or bare bound variables
   (the invariant that survives `Rew.q` under a quantifier);
 * `exists_guard_const`: `∃ c, flen (guardSentenceA a me opp) ≤ c · (|dnumT me| + |dnumT opp| + 5)`
-  for the actions `a ≤ 1`, with `c = cG 0 + cG 1`, `cG a = flen (GtmplA a)` the symbol counts
+  for the actions `a ≤ 1`, with `c = cG 0 + cG 1`, `cG a = flen (guardTemplate a)` the symbol counts
   of the two closed template instances, packaged existentially (`flen_guardSentence_le'` is
   the per-instance form; `|dnumT x|` is the length of the description term of `x`);
 * `exists_desc_const`: `∃ D, ∀ k, |dnumT (Dupoc k)| ≤ 36 · size k + D ∧ |dnumT (Cupod k)| ≤
   36 · size k + D` — the description of a searcher is `progTT (pSearch k G P Q)` for a
   `k`-INDEPENDENT inner triple, whose length is `6 · |bnumT k|` plus a constant
-  (`tlen_emb_progTT_search`, `tlen_bnumT`); the constant carries `|bnumT ⌜GtmplA a⌝|` and is
+  (`tlen_emb_progTT_search`, `tlen_bnumT`); the constant carries `|bnumT ⌜guardTemplate a⌝|` and is
   never written into a closed arithmetic expression;
 * `size_dnum_Dupoc_le`: `size (dnum (Dupoc k)) ≤ 4 · size k + (4 · size cP + 26)`, by the
   polynomial-pairing bound `ppair a b ≤ (a + b + 1)²` (`ArithS.Prog`, 2026-09-11; `cP =
-  ppair ⌜GtmplA 0⌝ (ppair (pConst 0) (pConst 1))` is the constant part of the searcher's code)
+  ppair ⌜guardTemplate 0⌝ (ppair (pConst 0) (pConst 1))` is the constant part of the searcher's code)
   — the bit length of the CODE, kept for reference;
 * **`guard_fits`**: `∃ K, ∀ k ≥ K, ∀ a ≤ 1, flen (guardSentenceA a (Dupoc k) (Cupod k)) ≤ k`
   (and `guard_fits'` with the roles swapped) — for all large budgets the searcher's own
@@ -293,15 +293,15 @@ end descriptions
 
 /-! ### 3. The guard sentence is `O(|dnumT me| + |dnumT opp|)` -/
 
-/-- `cG a`: the symbol count of the closed template instance `GtmplA a`. -/
-noncomputable def cG (a : ℕ) : ℕ := flen (Rewriting.emb (GtmplA a) : Semiproposition LAct 6)
+/-- `cG a`: the symbol count of the closed template instance `guardTemplate a`. -/
+noncomputable def cG (a : ℕ) : ℕ := flen (Rewriting.emb (guardTemplate a) : Semiproposition LAct 6)
 
 /-- The per-instance bound. -/
 theorem flen_guardSentence_le' (me opp a : ℕ) :
     flen (Rewriting.emb (guardSentenceA a me opp) : Proposition LAct) ≤
     cG a * (tlen (Rew.emb (dnumT me) : SyntacticSemiterm LAct 0) +
       tlen (Rew.emb (dnumT opp) : SyntacticSemiterm LAct 0) + 5) :=
-  le_trans (flen_subst_le (GtmplA a) (descTerms me opp))
+  le_trans (flen_subst_le (guardTemplate a) (descTerms me opp))
     (Nat.mul_le_mul_left _ (by have := sum_tlen_descTerms_le me opp; omega))
 
 /- `cG a` is a closed natural number built from the giant template; Lean's `Nat`-literal
@@ -313,7 +313,7 @@ attribute [irreducible] cG
 the guard sentence of `me` against `opp` has at most `c · (|dnumT me| + |dnumT opp| + 5)`
 symbols, for the constant `c = cG 0 + cG 1` (the symbol counts of the two template instances).
 The constant is never written into a closed arithmetic expression: Lean's `Nat` defeq machinery
-would try to evaluate it (that is what `flen (GtmplA a)` on the giant template does), so every
+would try to evaluate it (that is what `flen (guardTemplate a)` on the giant template does), so every
 later argument takes `c` as a variable from this statement. -/
 theorem exists_guard_const : ∃ c : ℕ, ∀ me opp a : ℕ, a ≤ 1 →
     flen (Rewriting.emb (guardSentenceA a me opp) : Proposition LAct) ≤
@@ -347,11 +347,11 @@ lemma dnum_Cupod_or (k : ℕ) : dnum (Cupod k) = Dupoc k ∨ dnum (Cupod k) = Cu
   unfold dnum; rw [swapcode_Cupod]; split_ifs <;> simp
 
 /-- The budget-independent part of the description length of the searcher of action `a`
-(`Dupoc` for `a = 0`, `Cupod` for `a = 1`): it carries `|bnumT ⌜GtmplA a⌝|`, a closed number
+(`Dupoc` for `a = 0`, `Cupod` for `a = 1`): it carries `|bnumT ⌜guardTemplate a⌝|`, a closed number
 built from the giant template — never to be evaluated. -/
 noncomputable def cD (a : ℕ) : ℕ :=
   2 * tlen (Rew.emb (bnumT 6) : SyntacticSemiterm ℒₒᵣ 0) +
-    18 * tlen (Rew.emb (bnumT (⌜GtmplA a⌝ : ℕ)) : SyntacticSemiterm ℒₒᵣ 0) +
+    18 * tlen (Rew.emb (bnumT (⌜guardTemplate a⌝ : ℕ)) : SyntacticSemiterm ℒₒᵣ 0) +
     54 * tlen (Rew.emb (progTT (pConst a)) : SyntacticSemiterm ℒₒᵣ 0) +
     81 * tlen (Rew.emb (progTT (pConst (swapAct a))) : SyntacticSemiterm ℒₒᵣ 0) + 168
 
@@ -420,8 +420,8 @@ lemma size_ppair_le (a b : ℕ) : Nat.size (ppair a b) ≤ 2 * (Nat.size a + Nat
   rw [Nat.size_one] at h2
   omega
 
-/-- The constant part of a searcher's code: `ppair ⌜GtmplA 0⌝ (ppair (pConst 0) (pConst 1))`. -/
-noncomputable def cP : ℕ := ppair (⌜GtmplA 0⌝ : ℕ) (ppair (pConst 0) (pConst 1))
+/-- The constant part of a searcher's code: `ppair ⌜guardTemplate 0⌝ (ppair (pConst 0) (pConst 1))`. -/
+noncomputable def cP : ℕ := ppair (⌜guardTemplate 0⌝ : ℕ) (ppair (pConst 0) (pConst 1))
 
 lemma Dupoc_eq (k : ℕ) : Dupoc k = ppair 6 (ppair k cP) + 1 := rfl
 

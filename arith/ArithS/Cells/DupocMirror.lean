@@ -24,10 +24,10 @@ budgets `k : V` possibly nonstandard) unless a statement says `ℕ`.
    the frame `(opp, Mirror)`.
 2. **The guards as `k`-instances of FIXED one-variable formulas.** `TM := lMap emb (progTT Mirror)`
    is Mirror's CLOSED description term (`val_TM_V : TM = MirrorV`, `quote_emb_TM : ⌜TM⌝ =
-   progT MirrorV`), and `qDM := GtmplA 0 ⇜ ![TD, cl uD, cl wD, cl TM, cl (numT 0), cl (numT 1)]`
+   progT MirrorV`), and `qDM := guardTemplate 0 ⇜ ![TD, cl uD, cl wD, cl TM, cl (numT 0), cl (numT 1)]`
    — Dupoc's one-variable description in the me-slots (`Instance.TD`, `k` = `#0`), Mirror's
    closed description in the opp-slots. The instance equation on codes
-   `guardCode_DupocV_MirrorV_eq_instB : guardCode ⌜GtmplA 0⌝ (DupocV k) MirrorV = instB ⌜qDM⌝ k`
+   `guardCode_DupocV_MirrorV_eq_instB : guardCode ⌜guardTemplate 0⌝ (DupocV k) MirrorV = instB ⌜qDM⌝ k`
    follows `InstanceV.guardCode_DupocV_eq` (internal `substs_substs` on the code of the fixed
    formula; the me-entries by `termSubst_tower`, the opp-entries closed, `termSubst_closed`).
    `qCM := lMap swap qDM` is Cupod's guard against Mirror (`swapcode MirrorV = MirrorV`):
@@ -95,12 +95,12 @@ end mirror
 section instanceEq
 
 
-/-- **The fixed formula of Dupoc vs Mirror**: the template instance `GtmplA 0` filled with
+/-- **The fixed formula of Dupoc vs Mirror**: the template instance `guardTemplate 0` filled with
 Dupoc's one-variable description (me-slots) and Mirror's closed description (opp-slots). -/
 noncomputable def qDM : Semisentence LAct 1 :=
-  GtmplA 0 ⇜ ![TD, cl uD, cl wD, cl TM, cl (numT 0), cl (numT 1)]
+  guardTemplate 0 ⇜ ![TD, cl uD, cl wD, cl TM, cl (numT 0), cl (numT 1)]
 
-lemma qDM_eq : qDM = GtmplA 0 ⇜ ![TD, cl uD, cl wD, cl TM, cl (numT 0), cl (numT 1)] := rfl
+lemma qDM_eq : qDM = guardTemplate 0 ⇜ ![TD, cl uD, cl wD, cl TM, cl (numT 0), cl (numT 1)] := rfl
 
 /-- **The fixed formula of Cupod vs Mirror**: the transposition of `qDM`. -/
 noncomputable def qCM : Semisentence LAct 1 := Semiformula.lMap swap qDM
@@ -133,7 +133,7 @@ lemma semitermVec_val_qDM :
   rfl
 
 /-- The code of `qDM` is the internal substitution of `qDMVec` into the template code. -/
-theorem quote_qDM : (⌜qDM⌝ : V) = subst LAct qDMVec (⌜GtmplA 0⌝ : V) := by
+theorem quote_qDM : (⌜qDM⌝ : V) = subst LAct qDMVec (⌜guardTemplate 0⌝ : V) := by
   unfold qDM
   rw [Sentence.quote_def, Semiformula.coe_subst_eq_subst_coe, Semiformula.quote_def,
     Semiformula.typed_quote_substs, Bootstrapping.Semiformula.val_substs, ← Semiformula.quote_def,
@@ -193,10 +193,10 @@ theorem termSubstVec_qDMVec (k : V) :
 /-- **Dupoc's instance equation on codes against Mirror, in every model**: the guard code of
 `DupocV k` against `MirrorV` is the `bnum k`-instance of `⌜qDM⌝`. -/
 theorem guardCode_DupocV_MirrorV_eq_instB (k : V) :
-    guardCode (⌜GtmplA 0⌝ : V) (DupocV k) MirrorV = instB (⌜qDM⌝ : V) k := by
-  show guardCode (⌜GtmplA 0⌝ : V) (DupocV k) MirrorV = subst LAct (bnum k ∷ (0 : V)) (⌜qDM⌝ : V)
-  rw [quote_qDM, substs_substs (p := (⌜GtmplA 0⌝ : V)) (l := 6)
-    (by simpa using Sentence.quote_isSemiformula (V := V) (GtmplA 0))
+    guardCode (⌜guardTemplate 0⌝ : V) (DupocV k) MirrorV = instB (⌜qDM⌝ : V) k := by
+  show guardCode (⌜guardTemplate 0⌝ : V) (DupocV k) MirrorV = subst LAct (bnum k ∷ (0 : V)) (⌜qDM⌝ : V)
+  rw [quote_qDM, substs_substs (p := (⌜guardTemplate 0⌝ : V)) (l := 6)
+    (by simpa using Sentence.quote_isSemiformula (V := V) (guardTemplate 0))
     (bnum_cons_semitermVec k) qDMVec_semitermVec, termSubstVec_qDMVec]
   rfl
 
@@ -206,18 +206,18 @@ lemma relabelTemplate_quote_qDM_V : relabelTemplate 1 0 (⌜qDM⌝ : V) = ⌜qCM
 
 /-- Cupod's guard code against Mirror is the code-level τ of Dupoc's (Mirror is τ-fixed). -/
 lemma guardCode_CupodV_MirrorV_eq_relabel (k : V) :
-    guardCode (⌜GtmplA 1⌝ : V) (CupodV k) MirrorV =
-      relabelTemplate 1 0 (guardCode (⌜GtmplA 0⌝ : V) (DupocV k) MirrorV) := by
-  have hg0 : IsSemiformula LAct 6 (⌜GtmplA 0⌝ : V) := by
-    simpa using Sentence.quote_isSemiformula (V := V) (GtmplA 0)
-  have hg1 : IsSemiformula LAct 6 (⌜GtmplA 1⌝ : V) := by
-    simpa using Sentence.quote_isSemiformula (V := V) (GtmplA 1)
+    guardCode (⌜guardTemplate 1⌝ : V) (CupodV k) MirrorV =
+      relabelTemplate 1 0 (guardCode (⌜guardTemplate 0⌝ : V) (DupocV k) MirrorV) := by
+  have hg0 : IsSemiformula LAct 6 (⌜guardTemplate 0⌝ : V) := by
+    simpa using Sentence.quote_isSemiformula (V := V) (guardTemplate 0)
+  have hg1 : IsSemiformula LAct 6 (⌜guardTemplate 1⌝ : V) := by
+    simpa using Sentence.quote_isSemiformula (V := V) (guardTemplate 1)
   rw [← gsubst_of_template hg0, relabelTemplate_gsubst, swapcode_DupocV, swapcode_MirrorV,
     relabelTemplate_quote_GtmplA_V, swapAct_zero, gsubst_of_template hg1]
 
 /-- **Cupod's instance equation on codes against Mirror, in every model.** -/
 theorem guardCode_CupodV_MirrorV_eq_instB (k : V) :
-    guardCode (⌜GtmplA 1⌝ : V) (CupodV k) MirrorV = instB (⌜qCM⌝ : V) k := by
+    guardCode (⌜guardTemplate 1⌝ : V) (CupodV k) MirrorV = instB (⌜qCM⌝ : V) k := by
   rw [guardCode_CupodV_MirrorV_eq_relabel, guardCode_DupocV_MirrorV_eq_instB]
   unfold instB
   rw [relabelTemplate_subst isAct_one isAct_zero (Sentence.quote_isSemiformul₁ qDM)
@@ -230,12 +230,12 @@ theorem guardCode_CupodV_MirrorV_eq_instB (k : V) :
 
 /-- **Dupoc's search clause against Mirror in every model** (fuel `2`). -/
 theorem dupoc_mirror_search_V (k : V) :
-    LenProvableV TAct k (guardCode (⌜GtmplA 0⌝ : V) (DupocV k) MirrorV) →
+    LenProvableV TAct k (guardCode (⌜guardTemplate 0⌝ : V) (DupocV k) MirrorV) →
       EvalGraph 2 (DupocV k) MirrorV (DupocV k) 0 := by
   intro h
   rw [show (2 : V) = 1 + 1 from one_add_one_eq_two.symm]
-  show EvalGraph (1 + 1) (DupocV k) MirrorV (pSearch k (⌜GtmplA 0⌝ : V) (pConst 0) (pConst 1)) 0
-  rw [EvalGraph.search_iff₆ (isSemiformula_quote₆ (GtmplA 0))]
+  show EvalGraph (1 + 1) (DupocV k) MirrorV (pSearch k (⌜guardTemplate 0⌝ : V) (pConst 0) (pConst 1)) 0
+  rw [EvalGraph.search_iff₆ (isSemiformula_quote₆ (guardTemplate 0))]
   left
   refine ⟨h, ?_⟩
   rw [show (1 : V) = 0 + 1 by simp, EvalGraph.const_iff]
@@ -243,12 +243,12 @@ theorem dupoc_mirror_search_V (k : V) :
 /-- **Cupod's search clause against Mirror in every model** (fuel `2`; the found branch plays
 `pConst 1`). -/
 theorem cupod_mirror_search_V (k : V) :
-    LenProvableV TAct k (guardCode (⌜GtmplA 1⌝ : V) (CupodV k) MirrorV) →
+    LenProvableV TAct k (guardCode (⌜guardTemplate 1⌝ : V) (CupodV k) MirrorV) →
       EvalGraph 2 (CupodV k) MirrorV (CupodV k) 1 := by
   intro h
   rw [show (2 : V) = 1 + 1 from one_add_one_eq_two.symm]
-  show EvalGraph (1 + 1) (CupodV k) MirrorV (pSearch k (⌜GtmplA 1⌝ : V) (pConst 1) (pConst 0)) 1
-  rw [EvalGraph.search_iff₆ (isSemiformula_quote₆ (GtmplA 1))]
+  show EvalGraph (1 + 1) (CupodV k) MirrorV (pSearch k (⌜guardTemplate 1⌝ : V) (pConst 1) (pConst 0)) 1
+  rw [EvalGraph.search_iff₆ (isSemiformula_quote₆ (guardTemplate 1))]
   left
   refine ⟨h, ?_⟩
   have e : EvalGraph (0 + 1) (CupodV k) MirrorV (pConst 1) 1 := EvalGraph.const_iff.mpr rfl
@@ -273,9 +273,9 @@ end instanceEq
 
 section truth
 
-/-- `qCM` is the template instance `GtmplA 1` filled with Dupoc's description term, the
+/-- `qCM` is the template instance `guardTemplate 1` filled with Dupoc's description term, the
 transposed re-valuation terms, and Mirror's (τ-fixed) closed description. -/
-theorem qCM_eq : qCM = GtmplA 1 ⇜ ![TD, cl uC, cl wC, cl TM, cl (numT 0), cl (numT 1)] := by
+theorem qCM_eq : qCM = guardTemplate 1 ⇜ ![TD, cl uC, cl wC, cl TM, cl (numT 0), cl (numT 1)] := by
   unfold qCM qDM
   rw [Semiformula.lMap_subst, lMap_swap_GtmplA, swapAct_zero]
   congr 1
@@ -288,7 +288,7 @@ theorem eval_qDM_iff_V (k : V) :
     Semiformula.Eval (s := stdActV V) ![k] Empty.elim qDM ↔
       ∃ n, EvalGraph n MirrorV (DupocV k) MirrorV 0 := by
   rw [qDM_eq]
-  unfold GtmplA Gtmpl
+  unfold guardTemplate Gtmpl
   rw [Semiformula.eval_substs, Semiformula.eval_substs, Semiformula.eval_lMap, stdActV_lMap_emb]
   have h0 : (Semiterm.val (s := stdActV V) ![k] Empty.elim ∘ ![TD, cl uD, cl wD, cl TM, cl (numT 0), cl (numT 1)]) =
       ![dnum (DupocV k), uD.val (s := stdActV V) ![] Empty.elim, wD.val (s := stdActV V) ![] Empty.elim,
@@ -311,7 +311,7 @@ theorem eval_qCM_iff_V (k : V) :
     Semiformula.Eval (s := stdActV V) ![k] Empty.elim qCM ↔
       ∃ n, EvalGraph n MirrorV (CupodV k) MirrorV 1 := by
   rw [qCM_eq]
-  unfold GtmplA Gtmpl
+  unfold guardTemplate Gtmpl
   rw [Semiformula.eval_substs, Semiformula.eval_substs, Semiformula.eval_lMap, stdActV_lMap_emb]
   have h0 : (Semiterm.val (s := stdActV V) ![k] Empty.elim ∘ ![TD, cl uC, cl wC, cl TM, cl (numT 0), cl (numT 1)]) =
       ![dnum (DupocV k), uC.val (s := stdActV V) ![] Empty.elim, wC.val (s := stdActV V) ![] Empty.elim,
@@ -389,8 +389,8 @@ theorem pDM_both_V (k : V) : ∀ a : V,
 theorem pDM_guards_V (k : V) (a : V)
     (ha : a + 8 * (formulaLen LAct (instB (⌜qDM⌝ : V) k) + formulaLen LAct (instB (⌜qCM⌝ : V) k)) + 7 ≤ k)
     (hpc : LenDerivable TAct a (instB (⌜pDM⌝ : V) k)) :
-    LenProvableV TAct k (guardCode (⌜GtmplA 0⌝ : V) (DupocV k) MirrorV) ∧
-    LenProvableV TAct k (guardCode (⌜GtmplA 1⌝ : V) (CupodV k) MirrorV) := by
+    LenProvableV TAct k (guardCode (⌜guardTemplate 0⌝ : V) (DupocV k) MirrorV) ∧
+    LenProvableV TAct k (guardCode (⌜guardTemplate 1⌝ : V) (CupodV k) MirrorV) := by
   rw [instB_quote_pDM] at hpc
   have hx := isFormula_instB_quote qDM k
   have hy := isFormula_instB_quote qCM k
@@ -451,8 +451,8 @@ then the ∧-elimination on codes. -/
 theorem loeb_Dupoc_vs_Mirror_core_of_nec {d : ℕ} (hE : BoundedInnerNec d) :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       (EvalGraph 2 (Dupoc k) Mirror (Dupoc k) 0 ∧ EvalGraph 2 (Cupod k) Mirror (Cupod k) 1) ∧
-      (LenProvableV TAct k (guardCode (⌜GtmplA 0⌝ : ℕ) (Dupoc k) Mirror) ∧
-        LenProvableV TAct k (guardCode (⌜GtmplA 1⌝ : ℕ) (Cupod k) Mirror)) := by
+      (LenProvableV TAct k (guardCode (⌜guardTemplate 0⌝ : ℕ) (Dupoc k) Mirror) ∧
+        LenProvableV TAct k (guardCode (⌜guardTemplate 1⌝ : ℕ) (Cupod k) Mirror)) := by
   obtain ⟨k₀, h⟩ := family_found pDM hE loebSound_pDM
   refine ⟨k₀, fun k hk ↦ ?_⟩
   obtain ⟨a, ha, hpc⟩ := h k hk
@@ -478,14 +478,14 @@ theorem loeb_Cupod_vs_Mirror_of_nec {d : ℕ} (hE : BoundedInnerNec d) :
 /-- **The box form**: for all large `k`, Dupoc actually FINDS a proof of its guard against Mirror
 within its budget `k` (conditional). -/
 theorem loeb_Dupoc_vs_Mirror_guard_of_nec {d : ℕ} (hE : BoundedInnerNec d) :
-    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k → LenProvableV TAct k (guardCode (⌜GtmplA 0⌝ : ℕ) (Dupoc k) Mirror) := by
+    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k → LenProvableV TAct k (guardCode (⌜guardTemplate 0⌝ : ℕ) (Dupoc k) Mirror) := by
   obtain ⟨k₀, h⟩ := loeb_Dupoc_vs_Mirror_core_of_nec hE
   exact ⟨k₀, fun k hk ↦ (h k hk).2.1⟩
 
 /-- **The box form**: for all large `k`, Cupod FINDS a proof of its guard against Mirror within
 its budget `k` (conditional). -/
 theorem loeb_Cupod_vs_Mirror_guard_of_nec {d : ℕ} (hE : BoundedInnerNec d) :
-    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k → LenProvableV TAct k (guardCode (⌜GtmplA 1⌝ : ℕ) (Cupod k) Mirror) := by
+    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k → LenProvableV TAct k (guardCode (⌜guardTemplate 1⌝ : ℕ) (Cupod k) Mirror) := by
   obtain ⟨k₀, h⟩ := loeb_Dupoc_vs_Mirror_core_of_nec hE
   exact ⟨k₀, fun k hk ↦ (h k hk).2.2⟩
 
@@ -507,12 +507,12 @@ theorem loeb_Cupod_vs_Mirror :
 
 /-- **Dupoc finds its guard against Mirror, unconditional.** -/
 theorem loeb_Dupoc_vs_Mirror_guard :
-    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k → LenProvableV TAct k (guardCode (⌜GtmplA 0⌝ : ℕ) (Dupoc k) Mirror) :=
+    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k → LenProvableV TAct k (guardCode (⌜guardTemplate 0⌝ : ℕ) (Dupoc k) Mirror) :=
   loeb_Dupoc_vs_Mirror_guard_of_nec boundedInnerNec_sixteen
 
 /-- **Cupod finds its guard against Mirror, unconditional.** -/
 theorem loeb_Cupod_vs_Mirror_guard :
-    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k → LenProvableV TAct k (guardCode (⌜GtmplA 1⌝ : ℕ) (Cupod k) Mirror) :=
+    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k → LenProvableV TAct k (guardCode (⌜guardTemplate 1⌝ : ℕ) (Cupod k) Mirror) :=
   loeb_Cupod_vs_Mirror_guard_of_nec boundedInnerNec_sixteen
 
 end cells

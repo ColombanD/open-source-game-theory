@@ -581,8 +581,8 @@ theorem guards_fit_bad :
 are `LenProvableV TBad k` — from a contradiction, everything is short. -/
 theorem guard_provable_bad :
     ∃ K, ∀ k ≥ K,
-      LenProvableV TBad k (guardCode (⌜GtmplA 0⌝ : ℕ) (Dupoc k) (Cupod k)) ∧
-      LenProvableV TBad k (guardCode (⌜GtmplA 1⌝ : ℕ) (Cupod k) (Dupoc k)) := by
+      LenProvableV TBad k (guardCode (⌜guardTemplate 0⌝ : ℕ) (Dupoc k) (Cupod k)) ∧
+      LenProvableV TBad k (guardCode (⌜guardTemplate 1⌝ : ℕ) (Cupod k) (Dupoc k)) := by
   obtain ⟨K, hK⟩ := guards_fit_bad
   refine ⟨K, fun k hk ↦ ⟨?_, ?_⟩⟩
   · rw [← quote_guardSentenceA, lenProvableV_nat_TBad]
@@ -603,10 +603,10 @@ theorem red_cell_flips_when_unsound :
   refine ⟨K, fun k hk ↦ ?_⟩
   obtain ⟨hD, hC⟩ := hK k hk
   constructor
-  · show EvalGraphBad (1 + 1) (Dupoc k) (Cupod k) (pSearch k (⌜GtmplA 0⌝ : ℕ) (pConst 0) (pConst 1)) 0
+  · show EvalGraphBad (1 + 1) (Dupoc k) (Cupod k) (pSearch k (⌜guardTemplate 0⌝ : ℕ) (pConst 0) (pConst 1)) 0
     rw [EvalGraphBad.search_iff]
     exact Or.inl ⟨hD, (EvalGraphBad.const_iff (n := 0)).mpr rfl⟩
-  · show EvalGraphBad (1 + 1) (Cupod k) (Dupoc k) (pSearch k (⌜GtmplA 1⌝ : ℕ) (pConst 1) (pConst 0)) 1
+  · show EvalGraphBad (1 + 1) (Cupod k) (Dupoc k) (pSearch k (⌜guardTemplate 1⌝ : ℕ) (pConst 1) (pConst 0)) 1
     rw [EvalGraphBad.search_iff]
     exact Or.inl ⟨hC, (EvalGraphBad.const_iff (n := 0)).mpr rfl⟩
 

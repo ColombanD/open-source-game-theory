@@ -157,8 +157,8 @@ gives `LenProvableV TAct k` of both guard codes. -/
 theorem pconj_guards_V (k : V) (a : V)
     (ha : a + 8 * (formulaLen LAct (instB (⌜qDupoc⌝ : V) k) + formulaLen LAct (instB (⌜qCupod⌝ : V) k)) + 7 ≤ k)
     (hpc : LenDerivable TAct a (instB (⌜pConj⌝ : V) k)) :
-    LenProvableV TAct k (guardCode (⌜GtmplA 0⌝ : V) (DupocV k) (DupocV k)) ∧
-    LenProvableV TAct k (guardCode (⌜GtmplA 1⌝ : V) (CupodV k) (CupodV k)) := by
+    LenProvableV TAct k (guardCode (⌜guardTemplate 0⌝ : V) (DupocV k) (DupocV k)) ∧
+    LenProvableV TAct k (guardCode (⌜guardTemplate 1⌝ : V) (CupodV k) (CupodV k)) := by
   rw [instB_quote_pConj] at hpc
   have hx := isFormula_instB_quote qDupoc k
   have hy := isFormula_instB_quote qCupod k
@@ -173,8 +173,8 @@ theorem chain_guard_V {d Cψ : ℕ} (hnec : NecAt d Cψ V)
     {N₁ : ℕ} (hN₁ : LenDerivable TAct (N₁ : V) (⌜(∀¹ chi₁ : Sentence LAct)⌝ : V)) (k : V)
     (hk : chainBound N₁ d Cψ k ≤ k)
     (hbox : LenDerivable TAct (gBudget k) (instB (⌜psi⌝ : V) k)) :
-    LenProvableV TAct k (guardCode (⌜GtmplA 0⌝ : V) (DupocV k) (DupocV k)) ∧
-    LenProvableV TAct k (guardCode (⌜GtmplA 1⌝ : V) (CupodV k) (CupodV k)) := by
+    LenProvableV TAct k (guardCode (⌜guardTemplate 0⌝ : V) (DupocV k) (DupocV k)) ∧
+    LenProvableV TAct k (guardCode (⌜guardTemplate 1⌝ : V) (CupodV k) (CupodV k)) := by
   obtain ⟨a, ha, hpc⟩ := chain_core_V hnec hN₁ k hk hbox
   exact pconj_guards_V k a ha hpc
 

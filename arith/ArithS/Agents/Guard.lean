@@ -26,7 +26,7 @@ So the swap of the two constants turns the description of `x` into that of `swap
 SYNTACTICALLY, in every case. `guardCode g me opp` is Σ₁-definable; the corresponding
 meta sentence and the code equation are in `ArithS.Template`. The action term
 `actTermCode a` (`c_a` for `a ∈ {0, 1}`) is kept for the closed template instances
-`GtmplA a` of `ArithS.Template`; it no longer enters `descVec`.
+`guardTemplate a` of `ArithS.Template`; it no longer enters `descVec`.
 -/
 
 namespace ArithS

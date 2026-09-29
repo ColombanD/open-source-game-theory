@@ -362,7 +362,7 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 -- the generic instance equation `guardCode_eq_instB_of` and truth equation `eval_GtmplA_subst_iff`. Family (1)
 -- `pBD = qBD ⋏ qBC`: **`loeb_botDupoc_vs_botDupoc`** — the engine's `loeb_botDupoc_vs_botDupoc_of_nec`, `EvalGraph 3 (pBot
 -- (Dupoc k)) (pBot (Dupoc k)) (pBot (Dupoc k)) 0` for all large `k` (fuel 3: bot, search, const). `JustV k = pSearch k
--- (gJ k) (pConst 0) (pConst 1)` on the PRE-FILLED template `gJ k = subst (jVec k) ⌜GtmplA 0⌝` (me-slots = the closed
+-- (gJ k) (pConst 0) (pConst 1)` on the PRE-FILLED template `gJ k = subst (jVec k) ⌜guardTemplate 0⌝` (me-slots = the closed
 -- description of `pBot (DupocV k)`, opp-slots = the frame variables): `guardCode_JustV` — Just's guard against `opp` IS
 -- Dupoc-in-bot's guard against `opp`; at ℕ `Just k = pSearch k ⌜GtmplJ k⌝ …` with the bridge `JustV_nat`. Family (3)
 -- `pJM = qJM ⋏ qJC` ("Mirror plays C against `pBot (Dupoc k)`"): **`loeb_Just_vs_Mirror`** — `EvalGraph 2
@@ -415,7 +415,7 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 -- k)`. THE GATE LEMMA `guardCodeB_of_template`: a six-variable template never reads the seventh entry (via the
 -- identity vector `idVec6`: `subst_eq_self` at (6,6), `substs_substs` at (6,7)); `EvalGraph.search_iff₆` is the
 -- pre-route-(c) reading on six-variable templates and repaired every use site; `gsubst`/`psubst` unchanged.
--- Cells/JustSlot: Just's template becomes the CONSTANT `GtmplJ7 = (GtmplA 0 ⇜ ![TBD(#0), cl uD, cl wD, #1, #2, #3])
+-- Cells/JustSlot: Just's template becomes the CONSTANT `GtmplJ7 = (guardTemplate 0 ⇜ ![TBD(#0), cl uD, cl wD, #1, #2, #3])
 -- ⇜ ![#6, #3, #4, #5]`; `JustV7 k = pSearch k ⌜GtmplJ7⌝ (pConst 0) (pConst 1)` is a `bnum k`-instance of a fixed
 -- term (`TJ`, `dnum_JustV7`), `guardCodeB_GtmplJ7` (Just's guard against `opp` = the bot-wrapped Dupoc's guard
 -- against `opp`), `evalGraph_JustV7_iff` (`JustV7 k` and `JustV k` play identically in every frame; the Mirror cell
@@ -828,7 +828,7 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 -- `K₀ + K₁·size k ≤ k` for all large `k` (`found_of_all`). The GENERIC engine-searcher description layer
 -- (`SV g a k := pSearch k ⌜g⌝ (pConst a) (pConst (1 - a))`, `swapcode_SV`, `dnum_SV`/`dU_SV`/`dW_SV`, the tower
 -- `TS`, `hX_SV`, `relabel_val_uS_wS_V`/`_uST_wST_V`) puts Dupoc's, Cupod's and Wary's ENGINE codes (`pcode (DupocBot k)`
--- etc., not the `GtmplA` twins) on the same footing as CIMCIC/DIMCID, and the bot tower `TBS` describes the frozen
+-- etc., not the `guardTemplate` twins) on the same footing as CIMCIC/DIMCID, and the bot tower `TBS` describes the frozen
 -- snapshot `pBot (pcode (DupocBot k))` of JustBot's guard (`guardCode_JustBot_eq`: Just's consulted guard IS Dupoc's
 -- engine guard in the snapshot's frame). The cells: `pos_DupocBot_vs_CooperateBot` `(C, C)`,
 -- `pos_CupodBot_vs_DefectBot` `(D, D)`, `pos_CIMCIC_vs_CooperateBot` `(C, C)`, `pos_DIMCID_vs_DefectBot` `(D, D)`,

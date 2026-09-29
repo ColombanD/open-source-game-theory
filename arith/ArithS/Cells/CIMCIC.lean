@@ -732,21 +732,21 @@ theorem eval_qCDu_swap_iff_V (k : V) :
   exact eval_qCTG_iff_V k _ _ _ (descT_dupoc k)
 
 /-- **Dupoc's guard against CIMCIC**: `qDCi(k)` says "`CimcicV k` plays C against `DupocV k`" — the
-hand-written template `GtmplA 0` filled with Dupoc's triple (me) and CIMCIC's triple (opp). -/
+hand-written template `guardTemplate 0` filled with Dupoc's triple (me) and CIMCIC's triple (opp). -/
 noncomputable def qDCi : Semisentence LAct 1 := qG 0 TD uD wD TCi uCi wCi
 
 lemma qDCi_def : qDCi = qG 0 TD uD wD TCi uCi wCi := rfl
 
 /-- **The instance equation on codes**: Dupoc's guard code against `CimcicV k`. -/
 theorem guardCode_DupocV_CimcicV_eq_instB (k : V) :
-    guardCode (⌜GtmplA 0⌝ : V) (DupocV k) (CimcicV k) = instB (⌜qDCi⌝ : V) k :=
+    guardCode (⌜guardTemplate 0⌝ : V) (DupocV k) (CimcicV k) = instB (⌜qDCi⌝ : V) k :=
   guardCode_GtmplA_eq_instB 0 k TD uD wD TCi uCi wCi (hX_dupoc k) (hU_dupoc k) (hW_dupoc k)
     (hX_cimcic k) (hU_cimcic k) (hW_cimcic k)
 
 /-- **The transposed instance equation**: Cupod's guard code against `CimcicTV k` is the
 `bnum k`-instance of `⌜lMap swap qDCi⌝`. -/
 theorem guardCode_CupodV_CimcicTV_eq_instB (k : V) :
-    guardCode (⌜GtmplA 1⌝ : V) (CupodV k) (CimcicTV k) = instB (⌜Semiformula.lMap swap qDCi⌝ : V) k := by
+    guardCode (⌜guardTemplate 1⌝ : V) (CupodV k) (CimcicTV k) = instB (⌜Semiformula.lMap swap qDCi⌝ : V) k := by
   have h := guardCode_GtmplA_swap_eq_instB 0 k TD uD wD TCi uCi wCi (hX_dupoc k) (hU_dupoc k) (hW_dupoc k)
     (hX_cimcic k) (hU_cimcic k) (hW_cimcic k)
   rwa [swapAct_zero, swapcode_DupocV, swapcode_CimcicV] at h
@@ -848,7 +848,7 @@ theorem pCiD_guards_V (k a : V)
       + 7 ≤ k)
     (h : LenDerivable TAct a (instB (⌜pCiD⌝ : V) k)) :
     LenProvableV TAct k (guardCode (⌜tmplC⌝ : V) (CimcicV k) (DupocV k)) ∧
-    LenProvableV TAct k (guardCode (⌜GtmplA 0⌝ : V) (DupocV k) (CimcicV k)) := by
+    LenProvableV TAct k (guardCode (⌜guardTemplate 0⌝ : V) (DupocV k) (CimcicV k)) := by
   rw [instB_quote_pCiD] at h
   have hx := isFormula_instB_quote (pGC TD uD wD) k
   have hy := isFormula_instB_quote pDCi k
@@ -917,7 +917,7 @@ theorem loeb_Cimcic_vs_Dupoc_core_of_nec {d : ℕ} (hE : BoundedInnerNec d) :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       (EvalGraph 2 (Cimcic k) (Dupoc k) (Cimcic k) 0 ∧ EvalGraph 2 (Dupoc k) (Cimcic k) (Dupoc k) 0) ∧
       (LenProvableV TAct k (guardCode (⌜tmplC⌝ : ℕ) (Cimcic k) (Dupoc k)) ∧
-        LenProvableV TAct k (guardCode (⌜GtmplA 0⌝ : ℕ) (Dupoc k) (Cimcic k))) := by
+        LenProvableV TAct k (guardCode (⌜guardTemplate 0⌝ : ℕ) (Dupoc k) (Cimcic k))) := by
   obtain ⟨k₀, h⟩ := family_found pCiD hE loebSound_pCiD
   refine ⟨k₀, fun k hk ↦ ?_⟩
   obtain ⟨a, ha, hpc⟩ := h k hk
@@ -941,7 +941,7 @@ within the budget `k` (conditional). -/
 theorem loeb_Cimcic_vs_Dupoc_guards_of_nec {d : ℕ} (hE : BoundedInnerNec d) :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       LenProvableV TAct k (guardCode (⌜tmplC⌝ : ℕ) (Cimcic k) (Dupoc k)) ∧
-      LenProvableV TAct k (guardCode (⌜GtmplA 0⌝ : ℕ) (Dupoc k) (Cimcic k)) := by
+      LenProvableV TAct k (guardCode (⌜guardTemplate 0⌝ : ℕ) (Dupoc k) (Cimcic k)) := by
   obtain ⟨k₀, h⟩ := loeb_Cimcic_vs_Dupoc_core_of_nec hE
   exact ⟨k₀, fun k hk ↦ (h k hk).2⟩
 
@@ -955,7 +955,7 @@ theorem loeb_Cimcic_vs_Dupoc :
 theorem loeb_Cimcic_vs_Dupoc_guards :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       LenProvableV TAct k (guardCode (⌜tmplC⌝ : ℕ) (Cimcic k) (Dupoc k)) ∧
-      LenProvableV TAct k (guardCode (⌜GtmplA 0⌝ : ℕ) (Dupoc k) (Cimcic k)) :=
+      LenProvableV TAct k (guardCode (⌜guardTemplate 0⌝ : ℕ) (Dupoc k) (Cimcic k)) :=
   loeb_Cimcic_vs_Dupoc_guards_of_nec boundedInnerNec_sixteen
 
 end dupocCell

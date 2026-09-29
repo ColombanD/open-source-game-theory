@@ -11,7 +11,7 @@ described by the structural terms of their codes (`ArithS.ProgT`, `ArithS.Guard`
 now an equation:
 
 * the canonical code `dnum (Dupoc k)` is `pSearch k G P Q` for a `k`-INDEPENDENT inner
-  triple — Dupoc's own `(⌜GtmplA 0⌝, pConst 0, pConst 1)` or Cupod's — decided by ONE fixed
+  triple — Dupoc's own `(⌜guardTemplate 0⌝, pConst 0, pConst 1)` or Cupod's — decided by ONE fixed
   inequality `innerD ≤ innerC` between two closed constants (`ppair` is strictly monotone in
   each argument, so `Dupoc k ≤ Cupod k ↔ innerD ≤ innerC` uniformly in `k`; the inequality is
   never evaluated), and likewise `dU (Dupoc k)`, `dW (Dupoc k)` are `k`-independent;
@@ -19,7 +19,7 @@ now an equation:
   `TD = succ (ppairT 6̂ (ppairT #0 (ppairT Ĝ (ppairT (progTT P) (progTT Q)))))`;
 * hence **`exists_dupoc_instance`**: `∃ q : Semisentence LAct 1, ∀ k, guardSentenceA 0
   (Dupoc k) (Dupoc k) = q ⇜ ![lMap emb (bnumT k)]`, and its code form
-  **`exists_dupoc_instance_code`**: `∃ cq, IsSemiformula LAct 1 cq ∧ ∀ k, guardCode ⌜GtmplA 0⌝
+  **`exists_dupoc_instance_code`**: `∃ cq, IsSemiformula LAct 1 cq ∧ ∀ k, guardCode ⌜guardTemplate 0⌝
   (Dupoc k) (Dupoc k) = subst LAct (bnum k ∷ 0) cq` (through the code equation
   `quote_guardSentenceA` and the quote of a substitution instance).
 
@@ -69,13 +69,13 @@ end ppairOrder
 section canonical
 
 /-- The budget-independent inner part of Dupoc's code. -/
-noncomputable def innerD : ℕ := ppair (⌜GtmplA 0⌝ : ℕ) (ppair (pConst 0) (pConst 1))
+noncomputable def innerD : ℕ := ppair (⌜guardTemplate 0⌝ : ℕ) (ppair (pConst 0) (pConst 1))
 
 /-- The budget-independent inner part of Cupod's code. -/
-noncomputable def innerC : ℕ := ppair (⌜GtmplA 1⌝ : ℕ) (ppair (pConst 1) (pConst 0))
+noncomputable def innerC : ℕ := ppair (⌜guardTemplate 1⌝ : ℕ) (ppair (pConst 1) (pConst 0))
 
-lemma innerD_def : innerD = ppair (⌜GtmplA 0⌝ : ℕ) (ppair (pConst 0) (pConst 1)) := rfl
-lemma innerC_def : innerC = ppair (⌜GtmplA 1⌝ : ℕ) (ppair (pConst 1) (pConst 0)) := rfl
+lemma innerD_def : innerD = ppair (⌜guardTemplate 0⌝ : ℕ) (ppair (pConst 0) (pConst 1)) := rfl
+lemma innerC_def : innerC = ppair (⌜guardTemplate 1⌝ : ℕ) (ppair (pConst 1) (pConst 0)) := rfl
 lemma Dupoc_eq_inner (k : ℕ) : Dupoc k = ppair 6 (ppair k innerD) + 1 := rfl
 lemma Cupod_eq_inner (k : ℕ) : Cupod k = ppair 6 (ppair k innerC) + 1 := rfl
 
@@ -88,8 +88,8 @@ lemma Dupoc_lt_Cupod_iff (k : ℕ) : Dupoc k < Cupod k ↔ innerD < innerC := by
 lemma Cupod_lt_Dupoc_iff (k : ℕ) : Cupod k < Dupoc k ↔ innerC < innerD := by
   rw [Dupoc_eq_inner, Cupod_eq_inner]; exact pSearchInner_lt_iff k innerC innerD
 
-/-- The stored template of the canonical searcher (`⌜GtmplA 0⌝` or `⌜GtmplA 1⌝`). -/
-noncomputable def gD : ℕ := if innerD ≤ innerC then (⌜GtmplA 0⌝ : ℕ) else (⌜GtmplA 1⌝ : ℕ)
+/-- The stored template of the canonical searcher (`⌜guardTemplate 0⌝` or `⌜guardTemplate 1⌝`). -/
+noncomputable def gD : ℕ := if innerD ≤ innerC then (⌜guardTemplate 0⌝ : ℕ) else (⌜guardTemplate 1⌝ : ℕ)
 /-- Its then-branch. -/
 noncomputable def pD : ℕ := if innerD ≤ innerC then pConst 0 else pConst 1
 /-- Its else-branch. -/
@@ -223,10 +223,10 @@ lemma cl_zero : ∀ t : ClosedSemiterm LAct 0, (cl t : Semiterm LAct Empty 0) = 
     funext i
     exact cl_zero (v i)
 
-/-- **The fixed formula**: the template instance `GtmplA 0` filled with the one-variable
+/-- **The fixed formula**: the template instance `guardTemplate 0` filled with the one-variable
 description of Dupoc (twice: `me = opp = Dupoc k`) and its `k`-independent re-valuation terms. -/
 noncomputable def qDupoc : Semisentence LAct 1 :=
-  GtmplA 0 ⇜ ![TD, cl uD, cl wD, TD, cl uD, cl wD]
+  guardTemplate 0 ⇜ ![TD, cl uD, cl wD, TD, cl uD, cl wD]
 
 /-- **The instance equation (meta)**: Dupoc's guard sentence against itself is the `k`-instance
 of the fixed formula `qDupoc`. -/
@@ -264,7 +264,7 @@ lemma semitermVec_val_single (k : ℕ) :
 /-- **The instance equation on codes**: Dupoc's guard code is the substitution of the binary
 numeral of `k` into the code of `qDupoc`. -/
 theorem guardCode_Dupoc_eq (k : ℕ) :
-    guardCode (⌜GtmplA 0⌝ : ℕ) (Dupoc k) (Dupoc k) = subst LAct (bnum k ∷ 0) (⌜qDupoc⌝ : ℕ) := by
+    guardCode (⌜guardTemplate 0⌝ : ℕ) (Dupoc k) (Dupoc k) = subst LAct (bnum k ∷ 0) (⌜qDupoc⌝ : ℕ) := by
   rw [← quote_guardSentenceA, guardSentenceA_Dupoc_eq, Sentence.quote_def,
     Semiformula.coe_subst_eq_subst_coe, Semiformula.quote_def, Semiformula.typed_quote_substs,
     Bootstrapping.Semiformula.val_substs, ← Semiformula.quote_def, ← Sentence.quote_def]
@@ -274,7 +274,7 @@ theorem guardCode_Dupoc_eq (k : ℕ) :
 /-- **The instance equation on codes, existentially packaged.** -/
 theorem exists_dupoc_instance_code :
     ∃ cq : ℕ, IsSemiformula LAct 1 cq ∧
-      ∀ k : ℕ, guardCode (⌜GtmplA 0⌝ : ℕ) (Dupoc k) (Dupoc k) = subst LAct (bnum k ∷ 0) cq :=
+      ∀ k : ℕ, guardCode (⌜guardTemplate 0⌝ : ℕ) (Dupoc k) (Dupoc k) = subst LAct (bnum k ∷ 0) cq :=
   ⟨⌜qDupoc⌝, by simp, guardCode_Dupoc_eq⟩
 
 end instance_eq

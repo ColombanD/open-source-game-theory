@@ -67,8 +67,8 @@ lemma pConj_slack_nat (a x y z k : ℕ) (hz : z = x + y + 1) (h : a + 7 + 8 * z 
 theorem cell_core {d : ℕ} (hE : BoundedInnerNec d) :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       (EvalGraph 2 (Dupoc k) (Dupoc k) (Dupoc k) 0 ∧ EvalGraph 2 (Cupod k) (Cupod k) (Cupod k) 1) ∧
-      (LenProvableV TAct k (guardCode (⌜GtmplA 0⌝ : ℕ) (Dupoc k) (Dupoc k)) ∧
-        LenProvableV TAct k (guardCode (⌜GtmplA 1⌝ : ℕ) (Cupod k) (Cupod k))) := by
+      (LenProvableV TAct k (guardCode (⌜guardTemplate 0⌝ : ℕ) (Dupoc k) (Dupoc k)) ∧
+        LenProvableV TAct k (guardCode (⌜guardTemplate 1⌝ : ℕ) (Cupod k) (Cupod k))) := by
   obtain ⟨k₀, h⟩ := family_found pConj hE loebSound_pConj
   refine ⟨k₀, fun k hk ↦ ?_⟩
   obtain ⟨a, ha, hpc⟩ := h k hk
@@ -87,8 +87,8 @@ theorem dupoc_self_coop {d : ℕ} (hE : BoundedInnerNec d) :
 within its budget `k` (and so does Cupod). -/
 theorem dupoc_finds_guard {d : ℕ} (hE : BoundedInnerNec d) :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
-      LenProvableV TAct k (guardCode (⌜GtmplA 0⌝ : ℕ) (Dupoc k) (Dupoc k)) ∧
-      LenProvableV TAct k (guardCode (⌜GtmplA 1⌝ : ℕ) (Cupod k) (Cupod k)) := by
+      LenProvableV TAct k (guardCode (⌜guardTemplate 0⌝ : ℕ) (Dupoc k) (Dupoc k)) ∧
+      LenProvableV TAct k (guardCode (⌜guardTemplate 1⌝ : ℕ) (Cupod k) (Cupod k)) := by
   obtain ⟨k₀, h⟩ := cell_core hE
   exact ⟨k₀, fun k hk ↦ (h k hk).2⟩
 

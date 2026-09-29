@@ -19,7 +19,7 @@ the parametric bounded Löb argument uses (`DupocV k`, `instB ⌜qDupoc⌝ k`, `
    (DupocV k) (DupocV k) (DupocV k) 0` — "Dupoc plays C against itself", `models_guardSentenceA_iff`
    (`ArithS.Template`, `ℕ` only) re-proved in every model along `models_trAt_plays_V`'s idiom.
 3. **Transparency (the search clause)** `dupoc_search_V : LenProvableV TAct k (guardCode
-   ⌜GtmplA 0⌝ (DupocV k) (DupocV k)) → EvalGraph 2 (DupocV k) (DupocV k) (DupocV k) 0` (fuel 2:
+   ⌜guardTemplate 0⌝ (DupocV k) (DupocV k)) → EvalGraph 2 (DupocV k) (DupocV k) (DupocV k) 0` (fuel 2:
    one search step, one `pConst 0` step), its `instB` reading `dupoc_search_instB_V`
    (unconditional, through `guardCode_DupocV_eq_instB`), and the Löb premise in the box
    vocabulary `dupoc_loeb_premise_V : bewB k ⌜qDupoc⌝ k → (stdActV V ⊧ qDupoc [k])` under
@@ -127,7 +127,7 @@ end terms
 theorem eval_qDupoc_iff_V (k : V) :
     Semiformula.Eval (s := stdActV V) ![k] Empty.elim qDupoc ↔
       ∃ n, EvalGraph n (DupocV k) (DupocV k) (DupocV k) 0 := by
-  unfold qDupoc GtmplA Gtmpl
+  unfold qDupoc guardTemplate Gtmpl
   rw [Semiformula.eval_substs, Semiformula.eval_substs, Semiformula.eval_lMap, stdActV_lMap_emb]
   have h0 : (Semiterm.val (s := stdActV V) ![k] Empty.elim ∘ ![TD, cl uD, cl wD, TD, cl uD, cl wD]) =
       ![dnum (DupocV k), uD.val (s := stdActV V) ![] Empty.elim, wD.val (s := stdActV V) ![] Empty.elim,
@@ -150,12 +150,12 @@ theorem eval_qDupoc_iff_V (k : V) :
 /-- **Dupoc's search clause in every model** (fuel `2`: the search step and the `pConst 0` step):
 if the guard is provable within the budget then `DupocV k` cooperates with itself. -/
 theorem dupoc_search_V (k : V) :
-    LenProvableV TAct k (guardCode (⌜GtmplA 0⌝ : V) (DupocV k) (DupocV k)) →
+    LenProvableV TAct k (guardCode (⌜guardTemplate 0⌝ : V) (DupocV k) (DupocV k)) →
       EvalGraph 2 (DupocV k) (DupocV k) (DupocV k) 0 := by
   intro h
   rw [show (2 : V) = 1 + 1 from one_add_one_eq_two.symm]
-  show EvalGraph (1 + 1) (DupocV k) (DupocV k) (pSearch k (⌜GtmplA 0⌝ : V) (pConst 0) (pConst 1)) 0
-  rw [EvalGraph.search_iff₆ (isSemiformula_quote₆ (GtmplA 0))]
+  show EvalGraph (1 + 1) (DupocV k) (DupocV k) (pSearch k (⌜guardTemplate 0⌝ : V) (pConst 0) (pConst 1)) 0
+  rw [EvalGraph.search_iff₆ (isSemiformula_quote₆ (guardTemplate 0))]
   left
   refine ⟨h, ?_⟩
   rw [show (1 : V) = 0 + 1 by simp, EvalGraph.const_iff]

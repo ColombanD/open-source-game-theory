@@ -18,7 +18,7 @@ an implication — is true; the fixed point closes it. The pattern is `Cells/Dup
 equations in both readings, search clauses, conjunction family, `LoebSound`, then
 `Assembly/Family.family_found` and the cells at `ℕ`), with two differences:
 
-1. **The guard is the GENERAL translation `tmpl`** (`Code.lean`), not the hand-written `GtmplA`:
+1. **The guard is the GENERAL translation `tmpl`** (`Code.lean`), not the hand-written `guardTemplate`:
    `tmplD := tmpl phiD` with `phiD := .impl (.plays .self .opp C) (.plays .opp .self D)`, a closed
    constant never evaluated; `DimcidV k := pSearch k ⌜tmplD⌝ (pConst 1) (pConst 0)` and
    `pcode (PD.Bots.DIMCID k) = Dimcid k` (`pcode_DIMCID`, the bridge to the engine). Its
@@ -64,7 +64,7 @@ is then the five hypotheses for its opponent plus `LoebSound _ 7 8`:
   Cupod says "Cupod plays D against me", which Cupod only does if IT finds ITS guard ("DIMCID plays D
   against me") — so the family is the four-guard conjunction `pDC := pG TD uC wC ⋏ pCD`, `pCD := qCD
   ⋏ lMap swap qCD`, with `qCD := qG 1 TD uC wC TDi uDi wDi` Cupod's guard against DIMCID on the
-  hand-written template (`qG a X U W X' U' W' := GtmplA a ⇜ ![X, cl U, cl W, X', cl U', cl W']`, the
+  hand-written template (`qG a X U W X' U' W' := guardTemplate a ⇜ ![X, cl U, cl W, X', cl U', cl W']`, the
   fully generic instance equation `guardCode_GtmplA_eq_instB` / `_swap_eq_instB` and truth equation
   `eval_qG_iff_V`, both taking description hypotheses — `InstanceV` §4 / `DupocMirror` §2–3 with both
   triples as parameters). A box of `pDC(k)` yields the four guard boxes by a TWO-level ∧-elimination
@@ -1007,7 +1007,7 @@ section cupodCell
 /-! #### Cupod's description, and the two searchers' search clauses against any opponent -/
 
 
-/-! #### The hand-written template `GtmplA a`, filled with two arbitrary description triples -/
+/-! #### The hand-written template `guardTemplate a`, filled with two arbitrary description triples -/
 
 
 /-! #### Cupod's guard against DIMCID, its transposition, and the mutual family -/
@@ -1019,14 +1019,14 @@ lemma qCD_def : qCD = qG 1 TD uC wC TDi uDi wDi := rfl
 
 /-- **The instance equation on codes**: Cupod's guard code against `DimcidV k`. -/
 theorem guardCode_CupodV_DimcidV_eq_instB (k : V) :
-    guardCode (⌜GtmplA 1⌝ : V) (CupodV k) (DimcidV k) = instB (⌜qCD⌝ : V) k :=
+    guardCode (⌜guardTemplate 1⌝ : V) (CupodV k) (DimcidV k) = instB (⌜qCD⌝ : V) k :=
   guardCode_GtmplA_eq_instB 1 k TD uC wC TDi uDi wDi (hX_cupod k) (hU_cupod k) (hW_cupod k)
     (hX_dimcid k) (hU_dimcid k) (hW_dimcid k)
 
 /-- **The transposed instance equation**: Dupoc's guard code against `DimcidTV k` is the
 `bnum k`-instance of `⌜lMap swap qCD⌝`. -/
 theorem guardCode_DupocV_DimcidTV_eq_instB (k : V) :
-    guardCode (⌜GtmplA 0⌝ : V) (DupocV k) (DimcidTV k) = instB (⌜Semiformula.lMap swap qCD⌝ : V) k := by
+    guardCode (⌜guardTemplate 0⌝ : V) (DupocV k) (DimcidTV k) = instB (⌜Semiformula.lMap swap qCD⌝ : V) k := by
   have h := guardCode_GtmplA_swap_eq_instB 1 k TD uC wC TDi uDi wDi (hX_cupod k) (hU_cupod k) (hW_cupod k)
     (hX_dimcid k) (hU_dimcid k) (hW_dimcid k)
   rwa [swapAct_one, swapcode_CupodV, swapcode_DimcidV] at h
@@ -1170,7 +1170,7 @@ theorem pDC_guards_V (k a : V)
       + 7 ≤ k)
     (h : LenDerivable TAct a (instB (⌜pDC⌝ : V) k)) :
     LenProvableV TAct k (guardCode (⌜tmplD⌝ : V) (DimcidV k) (CupodV k)) ∧
-    LenProvableV TAct k (guardCode (⌜GtmplA 1⌝ : V) (CupodV k) (DimcidV k)) := by
+    LenProvableV TAct k (guardCode (⌜guardTemplate 1⌝ : V) (CupodV k) (DimcidV k)) := by
   rw [instB_quote_pDC] at h
   have hx := isFormula_instB_quote (pG TD uC wC) k
   have hy := isFormula_instB_quote pCD k
@@ -1239,7 +1239,7 @@ theorem loeb_Dimcid_vs_Cupod_core_of_nec {d : ℕ} (hE : BoundedInnerNec d) :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       (EvalGraph 2 (Dimcid k) (Cupod k) (Dimcid k) 1 ∧ EvalGraph 2 (Cupod k) (Dimcid k) (Cupod k) 1) ∧
       (LenProvableV TAct k (guardCode (⌜tmplD⌝ : ℕ) (Dimcid k) (Cupod k)) ∧
-        LenProvableV TAct k (guardCode (⌜GtmplA 1⌝ : ℕ) (Cupod k) (Dimcid k))) := by
+        LenProvableV TAct k (guardCode (⌜guardTemplate 1⌝ : ℕ) (Cupod k) (Dimcid k))) := by
   obtain ⟨k₀, h⟩ := family_found pDC hE loebSound_pDC
   refine ⟨k₀, fun k hk ↦ ?_⟩
   obtain ⟨a, ha, hpc⟩ := h k hk
@@ -1263,7 +1263,7 @@ within the budget `k` (conditional). -/
 theorem loeb_Dimcid_vs_Cupod_guards_of_nec {d : ℕ} (hE : BoundedInnerNec d) :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       LenProvableV TAct k (guardCode (⌜tmplD⌝ : ℕ) (Dimcid k) (Cupod k)) ∧
-      LenProvableV TAct k (guardCode (⌜GtmplA 1⌝ : ℕ) (Cupod k) (Dimcid k)) := by
+      LenProvableV TAct k (guardCode (⌜guardTemplate 1⌝ : ℕ) (Cupod k) (Dimcid k)) := by
   obtain ⟨k₀, h⟩ := loeb_Dimcid_vs_Cupod_core_of_nec hE
   exact ⟨k₀, fun k hk ↦ (h k hk).2⟩
 
@@ -1277,7 +1277,7 @@ theorem loeb_Dimcid_vs_Cupod :
 theorem loeb_Dimcid_vs_Cupod_guards :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       LenProvableV TAct k (guardCode (⌜tmplD⌝ : ℕ) (Dimcid k) (Cupod k)) ∧
-      LenProvableV TAct k (guardCode (⌜GtmplA 1⌝ : ℕ) (Cupod k) (Dimcid k)) :=
+      LenProvableV TAct k (guardCode (⌜guardTemplate 1⌝ : ℕ) (Cupod k) (Dimcid k)) :=
   loeb_Dimcid_vs_Cupod_guards_of_nec boundedInnerNec_sixteen
 
 end cupodCell
