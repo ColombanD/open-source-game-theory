@@ -14,9 +14,9 @@ for sequents, by bit-sets `∑ 2^⌜φ⌝`. Two towers absorb these:
 * `E s = 2^(2^s)`: closed under pairing at the cost of two levels
   (`a, b ≤ E s → ⟪a, b⟫ + 1 ≤ E (s + 2)`); bounds term and formula codes by `E (8·len)`.
 * `F s = 2^(2^(2^s))`: same closure, and `2^(E s + 1) ≤ F (s + 1)` absorbs one bit-set;
-  bounds sequent codes by `F (8·sqlen + 1)` and derivation codes by `F (12·mlen)`.
+  bounds sequent codes by `F (8·sequentLenMeta + 1)` and derivation codes by `F (12·proofLenMeta)`.
 
-Hence `Proper` holds for `f k := F (12 k)`, which is Σ₁-definable via three `Exp.exp`s.
+Hence `ProperBoundNat` holds for `f k := F (12 k)`, which is Σ₁-definable via three `Exp.exp`s.
 -/
 
 namespace ArithS
@@ -125,7 +125,7 @@ lemma vec_E {k : ℕ} {s : ℕ} (w : Fin k → ℕ) (hw : ∀ i, w i ≤ E s) :
 
 end terms
 
-/-! ### Term codes are bounded by `E (8 · tlen)` -/
+/-! ### Term codes are bounded by `E (8 · termLenMeta)` -/
 
 section termBound
 
@@ -143,8 +143,8 @@ lemma sup_add_pred_card_le_sum {k : ℕ} (g : Fin (k + 1) → ℕ) (hg : ∀ i, 
   rw [hcard, smul_eq_mul, mul_one] at this
   omega
 
-lemma tlen_pos {n : ℕ} (t : SyntacticSemiterm L n) : 1 ≤ tlen t := by
-  cases t <;> simp [tlen]
+lemma termLenMeta_pos {n : ℕ} (t : SyntacticSemiterm L n) : 1 ≤ termLenMeta t := by
+  cases t <;> simp [termLenMeta]
 
 /-- Symbol codes bounded by `8` (true of `LAct`: the largest is `3`). -/
 def SmallCodes (L : Language) [L.Encodable] : Prop :=
@@ -168,20 +168,20 @@ lemma quote_func_eq {n k : ℕ} (f : L.Func k) (v : Fin k → SyntacticSemiterm 
 
 /-- The code of a term is bounded by a tower in its symbol count. -/
 theorem quote_term_le (hL : SmallCodes L) {n : ℕ} (t : SyntacticSemiterm L n) :
-    (⌜t⌝ : ℕ) ≤ E (8 * tlen t) := by
+    (⌜t⌝ : ℕ) ≤ E (8 * termLenMeta t) := by
   induction t with
   | bvar x =>
-    rw [quote_bvar_eq, tlen_bvar]
+    rw [quote_bvar_eq, termLenMeta_bvar]
     have := pair_E' (s := 8 * (x : ℕ) + 6) (a := 0) (b := (x : ℕ)) (Nat.zero_le _)
       (le_trans (by omega) (le_E _))
     rwa [show 8 * (x : ℕ) + 6 + 2 = 8 * ((x : ℕ) + 1) by ring] at this
   | fvar x =>
-    rw [quote_fvar_eq, tlen_fvar]
+    rw [quote_fvar_eq, termLenMeta_fvar]
     have := pair_E' (s := 8 * x + 6) (a := 1) (b := x)
       (le_trans (by omega) (le_E _)) (le_trans (by omega) (le_E _))
     rwa [show 8 * x + 6 + 2 = 8 * (x + 1) by ring] at this
   | @func k f v ih =>
-    rw [quote_func_eq, tlen_func]
+    rw [quote_func_eq, termLenMeta_func]
     cases k with
     | zero =>
       have hf : Encodable.encode f ≤ E 2 := le_trans (hL f) (by decide)
@@ -192,13 +192,13 @@ theorem quote_term_le (hL : SmallCodes L) {n : ℕ} (t : SyntacticSemiterm L n) 
       have h3 := pair_E' (a := 2) (le_trans (by decide) (two_le_E 6)) h2
       simpa using h3
     | succ k =>
-      set M := Finset.univ.sup (fun i ↦ tlen (v i)) with hM
-      set S := ∑ i, tlen (v i) with hS
-      have hMS : M + k ≤ S := sup_add_pred_card_le_sum _ (fun i ↦ tlen_pos _)
+      set M := Finset.univ.sup (fun i ↦ termLenMeta (v i)) with hM
+      set S := ∑ i, termLenMeta (v i) with hS
+      have hMS : M + k ≤ S := sup_add_pred_card_le_sum _ (fun i ↦ termLenMeta_pos _)
       -- every argument code is below `E (8 M)`
       have hv : ∀ i, (⌜v i⌝ : ℕ) ≤ E (8 * M) := fun i ↦
         le_trans (ih i) (E_mono (by
-          have := Finset.le_sup (f := fun i ↦ tlen (v i)) (Finset.mem_univ i)
+          have := Finset.le_sup (f := fun i ↦ termLenMeta (v i)) (Finset.mem_univ i)
           omega))
       have hvec : matrixToVec (fun i ↦ (⌜v i⌝ : ℕ)) ≤ E (8 * M + 2 * (k + 1)) := vec_E _ hv
       have hs₀ : 2 ≤ 8 * M + 2 * (k + 1) := by omega
@@ -212,7 +212,7 @@ theorem quote_term_le (hL : SmallCodes L) {n : ℕ} (t : SyntacticSemiterm L n) 
 
 end termBound
 
-/-! ### Formula codes are bounded by `E (8 · flen)` -/
+/-! ### Formula codes are bounded by `E (8 · formulaLenMeta)` -/
 
 section formulaBound
 
@@ -222,8 +222,8 @@ variable {L : Language} [L.Encodable] [L.LORDefinable]
 def SmallRelCodes (L : Language) [L.Encodable] : Prop :=
   ∀ {k : ℕ} (r : L.Rel k), Encodable.encode r ≤ 8
 
-lemma flen_pos {n : ℕ} (φ : Semiproposition L n) : 1 ≤ flen φ := by
-  cases φ <;> simp [flen]
+lemma formulaLenMeta_pos {n : ℕ} (φ : Semiproposition L n) : 1 ≤ formulaLenMeta φ := by
+  cases φ <;> simp [formulaLenMeta]
 
 lemma quote_rel_eq {n k : ℕ} (R : L.Rel k) (v : Fin k → SyntacticSemiterm L n) :
     (⌜Semiformula.rel R v⌝ : ℕ) =
@@ -261,36 +261,36 @@ private lemma rel_chain₀ {t : ℕ} (ht : t ≤ 2) {r : ℕ} (hr : r ≤ 8) :
   exact pair_E' (a := t) (le_trans (by omega) (two_le_E 6)) h2
 
 theorem quote_formula_le (hL : SmallCodes L) (hR : SmallRelCodes L) {n : ℕ}
-    (φ : Semiproposition L n) : (⌜φ⌝ : ℕ) ≤ E (8 * flen φ) := by
+    (φ : Semiproposition L n) : (⌜φ⌝ : ℕ) ≤ E (8 * formulaLenMeta φ) := by
   induction φ with
   | @rel n k R v =>
     rw [quote_rel_eq]
-    simp only [flen]
+    simp only [formulaLenMeta]
     cases k with
     | zero =>
       have : matrixToVec (fun i : Fin 0 ↦ (⌜v i⌝ : ℕ)) = 0 := by simp [matrixToVec]
       rw [this]; simpa using rel_chain₀ (by norm_num) (hR R)
     | succ k =>
-      set M := Finset.univ.sup (fun i ↦ tlen (v i)) with hM
-      have hMS : M + k ≤ ∑ i, tlen (v i) := sup_add_pred_card_le_sum _ (fun i ↦ tlen_pos _)
+      set M := Finset.univ.sup (fun i ↦ termLenMeta (v i)) with hM
+      have hMS : M + k ≤ ∑ i, termLenMeta (v i) := sup_add_pred_card_le_sum _ (fun i ↦ termLenMeta_pos _)
       have hv : ∀ i, (⌜v i⌝ : ℕ) ≤ E (8 * M) := fun i ↦
         le_trans (quote_term_le hL (v i)) (E_mono (by
-          have := Finset.le_sup (f := fun i ↦ tlen (v i)) (Finset.mem_univ i)
+          have := Finset.le_sup (f := fun i ↦ termLenMeta (v i)) (Finset.mem_univ i)
           omega))
       exact rel_chain (by norm_num) hMS (hR R) (vec_E _ hv)
   | @nrel n k R v =>
     rw [quote_nrel_eq]
-    simp only [flen]
+    simp only [formulaLenMeta]
     cases k with
     | zero =>
       have : matrixToVec (fun i : Fin 0 ↦ (⌜v i⌝ : ℕ)) = 0 := by simp [matrixToVec]
       rw [this]; simpa using rel_chain₀ (by norm_num) (hR R)
     | succ k =>
-      set M := Finset.univ.sup (fun i ↦ tlen (v i)) with hM
-      have hMS : M + k ≤ ∑ i, tlen (v i) := sup_add_pred_card_le_sum _ (fun i ↦ tlen_pos _)
+      set M := Finset.univ.sup (fun i ↦ termLenMeta (v i)) with hM
+      have hMS : M + k ≤ ∑ i, termLenMeta (v i) := sup_add_pred_card_le_sum _ (fun i ↦ termLenMeta_pos _)
       have hv : ∀ i, (⌜v i⌝ : ℕ) ≤ E (8 * M) := fun i ↦
         le_trans (quote_term_le hL (v i)) (E_mono (by
-          have := Finset.le_sup (f := fun i ↦ tlen (v i)) (Finset.mem_univ i)
+          have := Finset.le_sup (f := fun i ↦ termLenMeta (v i)) (Finset.mem_univ i)
           omega))
       exact rel_chain (by norm_num) hMS (hR R) (vec_E _ hv)
   | verum =>
@@ -304,61 +304,61 @@ theorem quote_formula_le (hL : SmallCodes L) (hR : SmallRelCodes L) {n : ℕ}
     unfold qqFalsum
     exact pair_E' (s := 6) (le_trans (by omega) (le_E 6)) (Nat.zero_le _)
   | and φ ψ ihφ ihψ =>
-    change (⌜φ ⋏ ψ⌝ : ℕ) ≤ E (8 * (flen φ + flen ψ + 1))
+    change (⌜φ ⋏ ψ⌝ : ℕ) ≤ E (8 * (formulaLenMeta φ + formulaLenMeta ψ + 1))
     rw [Semiformula.quote_and]
     unfold qqAnd
-    have h1 := pair_E_le (le_trans ihφ (E_mono (by omega : 8 * flen φ ≤ 8 * (flen φ + flen ψ))))
-      (le_trans ihψ (E_mono (by omega : 8 * flen ψ ≤ 8 * (flen φ + flen ψ))))
-    have h2 := pair_E' (a := 4) (le_trans (by have := flen_pos φ; omega) (le_E _)) h1
+    have h1 := pair_E_le (le_trans ihφ (E_mono (by omega : 8 * formulaLenMeta φ ≤ 8 * (formulaLenMeta φ + formulaLenMeta ψ))))
+      (le_trans ihψ (E_mono (by omega : 8 * formulaLenMeta ψ ≤ 8 * (formulaLenMeta φ + formulaLenMeta ψ))))
+    have h2 := pair_E' (a := 4) (le_trans (by have := formulaLenMeta_pos φ; omega) (le_E _)) h1
     exact le_trans h2 (E_mono (by omega))
   | or φ ψ ihφ ihψ =>
-    change (⌜φ ⋎ ψ⌝ : ℕ) ≤ E (8 * (flen φ + flen ψ + 1))
+    change (⌜φ ⋎ ψ⌝ : ℕ) ≤ E (8 * (formulaLenMeta φ + formulaLenMeta ψ + 1))
     rw [Semiformula.quote_or]
     unfold qqOr
-    have h1 := pair_E_le (le_trans ihφ (E_mono (by omega : 8 * flen φ ≤ 8 * (flen φ + flen ψ))))
-      (le_trans ihψ (E_mono (by omega : 8 * flen ψ ≤ 8 * (flen φ + flen ψ))))
-    have h2 := pair_E' (a := 5) (le_trans (by have := flen_pos φ; omega) (le_E _)) h1
+    have h1 := pair_E_le (le_trans ihφ (E_mono (by omega : 8 * formulaLenMeta φ ≤ 8 * (formulaLenMeta φ + formulaLenMeta ψ))))
+      (le_trans ihψ (E_mono (by omega : 8 * formulaLenMeta ψ ≤ 8 * (formulaLenMeta φ + formulaLenMeta ψ))))
+    have h2 := pair_E' (a := 5) (le_trans (by have := formulaLenMeta_pos φ; omega) (le_E _)) h1
     exact le_trans h2 (E_mono (by omega))
   | all φ ih =>
-    change (⌜∀¹ φ⌝ : ℕ) ≤ E (8 * (flen φ + 1))
+    change (⌜∀¹ φ⌝ : ℕ) ≤ E (8 * (formulaLenMeta φ + 1))
     rw [Semiformula.quote_all]
     unfold qqAll
-    have h := pair_E' (a := 6) (le_trans (by have := flen_pos φ; omega) (le_E _)) ih
+    have h := pair_E' (a := 6) (le_trans (by have := formulaLenMeta_pos φ; omega) (le_E _)) ih
     exact le_trans h (E_mono (by omega))
   | exs φ ih =>
-    change (⌜∃¹ φ⌝ : ℕ) ≤ E (8 * (flen φ + 1))
+    change (⌜∃¹ φ⌝ : ℕ) ≤ E (8 * (formulaLenMeta φ + 1))
     rw [Semiformula.quote_ex]
     unfold qqExs
-    have h := pair_E' (a := 7) (le_trans (by have := flen_pos φ; omega) (le_E _)) ih
+    have h := pair_E' (a := 7) (le_trans (by have := formulaLenMeta_pos φ; omega) (le_E _)) ih
     exact le_trans h (E_mono (by omega))
 
 end formulaBound
 
-/-! ### Sequent codes are bounded by `F (8 · sqlen + 1)` -/
+/-! ### Sequent codes are bounded by `F (8 · sequentLenMeta + 1)` -/
 
 section sequentBound
 
 variable {L : Language} [L.DecidableEq] [L.Encodable] [L.LORDefinable]
 
-lemma flen_le_sqlen {Γ : Finset (Proposition L)} {φ : Proposition L} (h : φ ∈ Γ) :
-    flen φ ≤ sqlen Γ :=
+lemma formulaLenMeta_le_sequentLenMeta {Γ : Finset (Proposition L)} {φ : Proposition L} (h : φ ∈ Γ) :
+    formulaLenMeta φ ≤ sequentLenMeta Γ :=
   Finset.single_le_sum (fun _ _ ↦ Nat.zero_le _) h
 
 theorem quote_sequent_le (hL : SmallCodes L) (hR : SmallRelCodes L) (Γ : Finset (Proposition L)) :
-    (⌜Γ⌝ : ℕ) ≤ F (8 * sqlen Γ + 1) := by
-  have h1 : (⌜Γ⌝ : ℕ) < Exp.exp (E (8 * sqlen Γ) + 1) := by
+    (⌜Γ⌝ : ℕ) ≤ F (8 * sequentLenMeta Γ + 1) := by
+  have h1 : (⌜Γ⌝ : ℕ) < Exp.exp (E (8 * sequentLenMeta Γ) + 1) := by
     rw [lt_exp_iff]
     intro j hj
     rcases Derivation2.Sequent.mem_quote hj with ⟨φ, hφ, rfl⟩
     have := quote_formula_le hL hR φ
-    have := E_mono (by have := flen_le_sqlen hφ; omega : 8 * flen φ ≤ 8 * sqlen Γ)
+    have := E_mono (by have := formulaLenMeta_le_sequentLenMeta hφ; omega : 8 * formulaLenMeta φ ≤ 8 * sequentLenMeta Γ)
     exact Nat.lt_succ_of_le (le_trans (quote_formula_le hL hR φ) this)
   rw [exp_nat_eq_two_pow] at h1
   exact le_trans h1.le (two_pow_E_succ_le_F _)
 
 end sequentBound
 
-/-! ### Derivation codes are bounded by `F (12 · mlen)` -/
+/-! ### Derivation codes are bounded by `F (12 · proofLenMeta)` -/
 
 section derivationBound
 
@@ -375,21 +375,21 @@ lemma tag_le_F {t s : ℕ} (ht : t ≤ 9) (hs : 2 ≤ s) : t ≤ F s :=
   le_trans ht (le_trans (by decide : 9 ≤ F 2) (F_mono hs))
 
 lemma quote_formula_le_F (hL : SmallCodes L) (hR : SmallRelCodes L) {n : ℕ}
-    (φ : Semiproposition L n) : (⌜φ⌝ : ℕ) ≤ F (8 * flen φ) :=
+    (φ : Semiproposition L n) : (⌜φ⌝ : ℕ) ≤ F (8 * formulaLenMeta φ) :=
   le_trans (quote_formula_le hL hR φ) (E_le_F _)
 
 lemma quote_term_le_F (hL : SmallCodes L) {n : ℕ} (t : SyntacticSemiterm L n) :
-    (⌜t⌝ : ℕ) ≤ F (8 * tlen t) :=
+    (⌜t⌝ : ℕ) ≤ F (8 * termLenMeta t) :=
   le_trans (quote_term_le hL t) (E_le_F _)
 
-lemma mlen_pos {Γ : Finset (Proposition L)} (d : T ⟹₂ Γ) : 1 ≤ mlen d := by
-  cases d <;> simp [mlen]
+lemma proofLenMeta_pos {Γ : Finset (Proposition L)} (d : T ⟹₂ Γ) : 1 ≤ proofLenMeta d := by
+  cases d <;> simp [proofLenMeta]
 
-lemma sqlen_pos_of_mem {Γ : Finset (Proposition L)} {φ : Proposition L} (h : φ ∈ Γ) :
-    1 ≤ sqlen Γ := le_trans (flen_pos φ) (flen_le_sqlen h)
+lemma sequentLenMeta_pos_of_mem {Γ : Finset (Proposition L)} {φ : Proposition L} (h : φ ∈ Γ) :
+    1 ≤ sequentLenMeta Γ := le_trans (formulaLenMeta_pos φ) (formulaLenMeta_le_sequentLenMeta h)
 
-lemma sqlen_le_mlen {Γ : Finset (Proposition L)} (d : T ⟹₂ Γ) : sqlen Γ ≤ mlen d := by
-  cases d <;> simp [mlen] <;> omega
+lemma sequentLenMeta_le_proofLenMeta {Γ : Finset (Proposition L)} (d : T ⟹₂ Γ) : sequentLenMeta Γ ≤ proofLenMeta d := by
+  cases d <;> simp [proofLenMeta] <;> omega
 
 /-- One pairing step of the node chain: `⟪a, b⟫ ≤ F (X + 2)`. -/
 private lemma step {a b X : ℕ} (ha : a ≤ F X) (hb : b ≤ F X) : (⟪a, b⟫ : ℕ) ≤ F (X + 2) :=
@@ -397,17 +397,17 @@ private lemma step {a b X : ℕ} (ha : a ≤ F X) (hb : b ≤ F X) : (⟪a, b⟫
 
 /-- The code of a derivation is bounded by a tower in its symbol count. -/
 theorem quote_derivation_le (hL : SmallCodes L) (hR : SmallRelCodes L)
-    {Γ : Finset (Proposition L)} (d : T ⟹₂ Γ) : (⌜d⌝ : ℕ) ≤ F (12 * mlen d) := by
+    {Γ : Finset (Proposition L)} (d : T ⟹₂ Γ) : (⌜d⌝ : ℕ) ≤ F (12 * proofLenMeta d) := by
   induction d with
   | closed Γ φ h hn =>
     rw [Derivation2.quote_closed]
     unfold axL
-    have hm : mlen (Derivation2.closed (T := T) Γ φ h hn) = sqlen Γ + 1 := by simp [mlen]
+    have hm : proofLenMeta (Derivation2.closed (T := T) Γ φ h hn) = sequentLenMeta Γ + 1 := by simp [proofLenMeta]
     rw [hm]
-    have hΓ1 := sqlen_pos_of_mem h
-    have hfl := flen_le_sqlen h
-    have hs : (⌜Γ⌝ : ℕ) ≤ F (8 * sqlen Γ + 1) := quote_sequent_le hL hR Γ
-    have hp : (⌜φ⌝ : ℕ) ≤ F (8 * sqlen Γ + 1) :=
+    have hΓ1 := sequentLenMeta_pos_of_mem h
+    have hfl := formulaLenMeta_le_sequentLenMeta h
+    have hs : (⌜Γ⌝ : ℕ) ≤ F (8 * sequentLenMeta Γ + 1) := quote_sequent_le hL hR Γ
+    have hp : (⌜φ⌝ : ℕ) ≤ F (8 * sequentLenMeta Γ + 1) :=
       le_trans (quote_formula_le_F hL hR φ) (F_mono (by omega))
     have h1 := step (tag_le_F (t := 0) (by norm_num) (by omega)) hp
     have h2 := pair_F' (le_trans hs (F_mono (Nat.le_add_right _ 2))) h1
@@ -415,12 +415,12 @@ theorem quote_derivation_le (hL : SmallCodes L) (hR : SmallRelCodes L)
   | @axm Γ σ hT hΓ =>
     rw [Derivation2.quote_axm]
     unfold Bootstrapping.axm
-    have hm : mlen (Derivation2.axm (Γ := Γ) σ hT hΓ) = sqlen Γ + 1 := by simp [mlen]
+    have hm : proofLenMeta (Derivation2.axm (Γ := Γ) σ hT hΓ) = sequentLenMeta Γ + 1 := by simp [proofLenMeta]
     rw [hm]
-    have hΓ1 := sqlen_pos_of_mem hΓ
-    have hfl := flen_le_sqlen hΓ
-    have hs : (⌜Γ⌝ : ℕ) ≤ F (8 * sqlen Γ + 1) := quote_sequent_le hL hR Γ
-    have hp : (⌜σ⌝ : ℕ) ≤ F (8 * sqlen Γ + 1) := by
+    have hΓ1 := sequentLenMeta_pos_of_mem hΓ
+    have hfl := formulaLenMeta_le_sequentLenMeta hΓ
+    have hs : (⌜Γ⌝ : ℕ) ≤ F (8 * sequentLenMeta Γ + 1) := quote_sequent_le hL hR Γ
+    have hp : (⌜σ⌝ : ℕ) ≤ F (8 * sequentLenMeta Γ + 1) := by
       rw [Sentence.quote_def]
       exact le_trans (quote_formula_le_F hL hR _) (F_mono (by omega))
     have h1 := step (tag_le_F (t := 9) (by norm_num) (by omega)) hp
@@ -429,23 +429,23 @@ theorem quote_derivation_le (hL : SmallCodes L) (hR : SmallRelCodes L)
   | @verum Γ h =>
     rw [Derivation2.quote_verum]
     unfold verumIntro
-    have hm : mlen (Derivation2.verum (Γ := Γ) (T := T) h) = sqlen Γ + 1 := by simp [mlen]
+    have hm : proofLenMeta (Derivation2.verum (Γ := Γ) (T := T) h) = sequentLenMeta Γ + 1 := by simp [proofLenMeta]
     rw [hm]
-    have hΓ1 := sqlen_pos_of_mem h
-    have hs : (⌜Γ⌝ : ℕ) ≤ F (8 * sqlen Γ + 1) := quote_sequent_le hL hR Γ
-    have h1 := step (X := 8 * sqlen Γ + 1) (tag_le_F (t := 1) (by norm_num) (by omega))
+    have hΓ1 := sequentLenMeta_pos_of_mem h
+    have hs : (⌜Γ⌝ : ℕ) ≤ F (8 * sequentLenMeta Γ + 1) := quote_sequent_le hL hR Γ
+    have h1 := step (X := 8 * sequentLenMeta Γ + 1) (tag_le_F (t := 1) (by norm_num) (by omega))
       (Nat.zero_le _)
     have h2 := pair_F' (le_trans hs (F_mono (Nat.le_add_right _ 2))) h1
     exact le_trans h2 (F_mono (by omega))
   | @and Γ φ ψ h d₁ d₂ ih₁ ih₂ =>
     rw [Derivation2.quote_and]
     unfold andIntro
-    have hm : mlen (Derivation2.and h d₁ d₂) = sqlen Γ + mlen d₁ + mlen d₂ + 1 := by simp [mlen]
+    have hm : proofLenMeta (Derivation2.and h d₁ d₂) = sequentLenMeta Γ + proofLenMeta d₁ + proofLenMeta d₂ + 1 := by simp [proofLenMeta]
     rw [hm]
-    have hm₁ := mlen_pos d₁; have hm₂ := mlen_pos d₂
-    have hfl : flen φ + flen ψ + 1 ≤ sqlen Γ := by
-      have := flen_le_sqlen h; simpa [flen] using this
-    set m := sqlen Γ + mlen d₁ + mlen d₂ + 1 with hmdef
+    have hm₁ := proofLenMeta_pos d₁; have hm₂ := proofLenMeta_pos d₂
+    have hfl : formulaLenMeta φ + formulaLenMeta ψ + 1 ≤ sequentLenMeta Γ := by
+      have := formulaLenMeta_le_sequentLenMeta h; simpa [formulaLenMeta] using this
+    set m := sequentLenMeta Γ + proofLenMeta d₁ + proofLenMeta d₂ + 1 with hmdef
     have hs : (⌜Γ⌝ : ℕ) ≤ F (12 * m - 12) :=
       le_trans (quote_sequent_le hL hR Γ) (F_mono (by omega))
     have hp : (⌜φ⌝ : ℕ) ≤ F (12 * m - 12) :=
@@ -463,12 +463,12 @@ theorem quote_derivation_le (hL : SmallCodes L) (hR : SmallRelCodes L)
   | @or Γ φ ψ h d ih =>
     rw [Derivation2.quote_or]
     unfold orIntro
-    have hm : mlen (Derivation2.or h d) = sqlen Γ + mlen d + 1 := by simp [mlen]
+    have hm : proofLenMeta (Derivation2.or h d) = sequentLenMeta Γ + proofLenMeta d + 1 := by simp [proofLenMeta]
     rw [hm]
-    have hm₁ := mlen_pos d
-    have hfl : flen φ + flen ψ + 1 ≤ sqlen Γ := by
-      have := flen_le_sqlen h; simpa [flen] using this
-    set m := sqlen Γ + mlen d + 1 with hmdef
+    have hm₁ := proofLenMeta_pos d
+    have hfl : formulaLenMeta φ + formulaLenMeta ψ + 1 ≤ sequentLenMeta Γ := by
+      have := formulaLenMeta_le_sequentLenMeta h; simpa [formulaLenMeta] using this
+    set m := sequentLenMeta Γ + proofLenMeta d + 1 with hmdef
     have hs : (⌜Γ⌝ : ℕ) ≤ F (12 * m - 12) :=
       le_trans (quote_sequent_le hL hR Γ) (F_mono (by omega))
     have hp : (⌜φ⌝ : ℕ) ≤ F (12 * m - 12) :=
@@ -484,12 +484,12 @@ theorem quote_derivation_le (hL : SmallCodes L) (hR : SmallRelCodes L)
   | @all Γ φ h d ih =>
     rw [Derivation2.quote_all]
     unfold allIntro
-    have hm : mlen (Derivation2.all h d) = sqlen Γ + mlen d + 1 := by simp [mlen]
+    have hm : proofLenMeta (Derivation2.all h d) = sequentLenMeta Γ + proofLenMeta d + 1 := by simp [proofLenMeta]
     rw [hm]
-    have hm₁ := mlen_pos d
-    have hfl : flen φ + 1 ≤ sqlen Γ := by
-      have := flen_le_sqlen h; simpa [flen] using this
-    set m := sqlen Γ + mlen d + 1 with hmdef
+    have hm₁ := proofLenMeta_pos d
+    have hfl : formulaLenMeta φ + 1 ≤ sequentLenMeta Γ := by
+      have := formulaLenMeta_le_sequentLenMeta h; simpa [formulaLenMeta] using this
+    set m := sequentLenMeta Γ + proofLenMeta d + 1 with hmdef
     have hs : (⌜Γ⌝ : ℕ) ≤ F (12 * m - 12) :=
       le_trans (quote_sequent_le hL hR Γ) (F_mono (by omega))
     have hp : (⌜φ⌝ : ℕ) ≤ F (12 * m - 12) :=
@@ -502,13 +502,13 @@ theorem quote_derivation_le (hL : SmallCodes L) (hR : SmallRelCodes L)
   | @exs Γ φ h t d ih =>
     rw [Derivation2.quote_exs]
     unfold exsIntro
-    have hm : mlen (Derivation2.exs h t d) = sqlen Γ + tlen t + mlen d + 1 := by simp [mlen]
+    have hm : proofLenMeta (Derivation2.exs h t d) = sequentLenMeta Γ + termLenMeta t + proofLenMeta d + 1 := by simp [proofLenMeta]
     rw [hm]
-    have hm₁ := mlen_pos d
-    have ht₁ := tlen_pos t
-    have hfl : flen φ + 1 ≤ sqlen Γ := by
-      have := flen_le_sqlen h; simpa [flen] using this
-    set m := sqlen Γ + tlen t + mlen d + 1 with hmdef
+    have hm₁ := proofLenMeta_pos d
+    have ht₁ := termLenMeta_pos t
+    have hfl : formulaLenMeta φ + 1 ≤ sequentLenMeta Γ := by
+      have := formulaLenMeta_le_sequentLenMeta h; simpa [formulaLenMeta] using this
+    set m := sequentLenMeta Γ + termLenMeta t + proofLenMeta d + 1 with hmdef
     have hs : (⌜Γ⌝ : ℕ) ≤ F (12 * m - 12) :=
       le_trans (quote_sequent_le hL hR Γ) (F_mono (by omega))
     have hp : (⌜φ⌝ : ℕ) ≤ F (12 * m - 12) :=
@@ -524,10 +524,10 @@ theorem quote_derivation_le (hL : SmallCodes L) (hR : SmallRelCodes L)
   | @wk Δ Γ d ss ih =>
     rw [Derivation2.quote_wk]
     unfold wkRule
-    have hm : mlen (Derivation2.wk d ss) = sqlen Γ + mlen d + 1 := by simp [mlen]
+    have hm : proofLenMeta (Derivation2.wk d ss) = sequentLenMeta Γ + proofLenMeta d + 1 := by simp [proofLenMeta]
     rw [hm]
-    have hm₁ := mlen_pos d
-    set m := sqlen Γ + mlen d + 1 with hmdef
+    have hm₁ := proofLenMeta_pos d
+    set m := sequentLenMeta Γ + proofLenMeta d + 1 with hmdef
     have hs : (⌜Γ⌝ : ℕ) ≤ F (12 * m - 12) :=
       le_trans (quote_sequent_le hL hR Γ) (F_mono (by omega))
     have hd : (⌜d⌝ : ℕ) ≤ F (12 * m - 12) := le_trans ih (F_mono (by omega))
@@ -537,11 +537,11 @@ theorem quote_derivation_le (hL : SmallCodes L) (hR : SmallRelCodes L)
   | @shift Γ d ih =>
     rw [Derivation2.quote_shift]
     unfold shiftRule
-    have hm : mlen (Derivation2.shift d) = sqlen (Γ.image Rewriting.shift) + mlen d + 1 := by
-      simp [mlen]
+    have hm : proofLenMeta (Derivation2.shift d) = sequentLenMeta (Γ.image Rewriting.shift) + proofLenMeta d + 1 := by
+      simp [proofLenMeta]
     rw [hm]
-    have hm₁ := mlen_pos d
-    set m := sqlen (Γ.image Rewriting.shift) + mlen d + 1 with hmdef
+    have hm₁ := proofLenMeta_pos d
+    set m := sequentLenMeta (Γ.image Rewriting.shift) + proofLenMeta d + 1 with hmdef
     have hs : (⌜Γ.image Rewriting.shift⌝ : ℕ) ≤ F (12 * m - 12) :=
       le_trans (quote_sequent_le hL hR _) (F_mono (by omega))
     have hd : (⌜d⌝ : ℕ) ≤ F (12 * m - 12) := le_trans ih (F_mono (by omega))
@@ -551,12 +551,12 @@ theorem quote_derivation_le (hL : SmallCodes L) (hR : SmallRelCodes L)
   | @cut Γ φ d₁ d₂ ih₁ ih₂ =>
     rw [Derivation2.quote_cut]
     unfold cutRule
-    have hm : mlen (Derivation2.cut d₁ d₂) = sqlen Γ + mlen d₁ + mlen d₂ + 1 := by simp [mlen]
+    have hm : proofLenMeta (Derivation2.cut d₁ d₂) = sequentLenMeta Γ + proofLenMeta d₁ + proofLenMeta d₂ + 1 := by simp [proofLenMeta]
     rw [hm]
-    have hm₁ := mlen_pos d₁; have hm₂ := mlen_pos d₂
-    have hfl : flen φ ≤ mlen d₁ :=
-      le_trans (flen_le_sqlen (Finset.mem_insert_self φ Γ)) (sqlen_le_mlen d₁)
-    set m := sqlen Γ + mlen d₁ + mlen d₂ + 1 with hmdef
+    have hm₁ := proofLenMeta_pos d₁; have hm₂ := proofLenMeta_pos d₂
+    have hfl : formulaLenMeta φ ≤ proofLenMeta d₁ :=
+      le_trans (formulaLenMeta_le_sequentLenMeta (Finset.mem_insert_self φ Γ)) (sequentLenMeta_le_proofLenMeta d₁)
+    set m := sequentLenMeta Γ + proofLenMeta d₁ + proofLenMeta d₂ + 1 with hmdef
     have hs : (⌜Γ⌝ : ℕ) ≤ F (12 * m - 12) :=
       le_trans (quote_sequent_le hL hR Γ) (F_mono (by omega))
     have hp : (⌜φ⌝ : ℕ) ≤ F (12 * m - 12) :=
@@ -571,41 +571,41 @@ theorem quote_derivation_le (hL : SmallCodes L) (hR : SmallRelCodes L)
 
 end derivationBound
 
-/-! ### The concrete bound `fbound k = exp (exp (exp (12 k))) + 1`, and properness -/
+/-! ### The concrete bound `codeBound k = exp (exp (exp (12 k))) + 1`, and properness -/
 
-section fbound
+section codeBound
 
 variable {V : Type*} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
 
 /-- The code bound: three exponentials of `12 k`, plus one. Σ₁-definable. -/
-noncomputable def fbound (k : V) : V := Exp.exp (Exp.exp (Exp.exp (12 * k))) + 1
+noncomputable def codeBound (k : V) : V := Exp.exp (Exp.exp (Exp.exp (12 * k))) + 1
 
-def fboundDef : 𝚺₁.Semisentence 2 := .mkSigma
+def codeBoundDef : 𝚺₁.Semisentence 2 := .mkSigma
   “y k. ∃ a, !(expDef.ofZero 𝚺₁) a (12 * k) ∧ ∃ b, !(expDef.ofZero 𝚺₁) b a ∧
     ∃ c, !(expDef.ofZero 𝚺₁) c b ∧ y = c + 1”
 
-instance fbound_defined : 𝚺₁-Function₁[V] fbound via fboundDef := .mk fun v ↦ by
-  simp [fboundDef, fbound, expDef, ← exponential_graph, numeral_eq_natCast]
+instance codeBound_defined : 𝚺₁-Function₁[V] codeBound via codeBoundDef := .mk fun v ↦ by
+  simp [codeBoundDef, codeBound, expDef, ← exponential_graph, numeral_eq_natCast]
 
-instance fbound_definable : 𝚺₁-Function₁[V] fbound := fbound_defined.to_definable
+instance codeBound_definable : 𝚺₁-Function₁[V] codeBound := codeBound_defined.to_definable
 
-lemma fbound_nat (k : ℕ) : fbound k = F (12 * k) + 1 := by
-  simp [fbound, F, exp_nat_eq_two_pow]
+lemma codeBound_nat (k : ℕ) : codeBound k = F (12 * k) + 1 := by
+  simp [codeBound, F, exp_nat_eq_two_pow]
 
-end fbound
+end codeBound
 
 section properness
 
 variable {L : Language} [L.DecidableEq] [L.Encodable] [L.LORDefinable]
 variable {T : Theory L} [T.Δ₁]
 
-/-- **Properness**: a proof of length `≤ k` has code `< fbound k`. -/
-theorem proper_of_small (hL : SmallCodes L) (hR : SmallRelCodes L) {k : ℕ} {σ : Sentence L}
-    (b : T ⊢! σ) (h : dlen T (⌜b⌝ : ℕ) ≤ k) : (⌜b⌝ : ℕ) < fbound k := by
+/-- **Properness**: a proof of length `≤ k` has code `< codeBound k`. -/
+theorem properPlayer_of_small (hL : SmallCodes L) (hR : SmallRelCodes L) {k : ℕ} {σ : Sentence L}
+    (b : T ⊢! σ) (h : proofLen T (⌜b⌝ : ℕ) ≤ k) : (⌜b⌝ : ℕ) < codeBound k := by
   have e : (⌜b⌝ : ℕ) = ⌜b.toProof2⌝ := rfl
   rw [e] at h ⊢
-  rw [dlen_quote] at h
-  rw [fbound_nat]
+  rw [proofLen_quote] at h
+  rw [codeBound_nat]
   exact Nat.lt_succ_of_le (le_trans (quote_derivation_le hL hR _) (F_mono (by omega)))
 
 end properness
@@ -635,11 +635,11 @@ open ArithS.Arithmetic
 variable {T : ArithmeticTheory} [T.Δ₁] [𝗜𝚺₁ ⪯ T] [T.SoundOnHierarchy 𝚺 1] {k : ℕ}
 
 /-- **The M1 gate.** Every `T`-proof of the Gödel sentence for `□_k` (with the bound
-`fbound`) is longer than `k`. -/
-theorem lower_bound_dlen_proof_lenGödel_fbound :
-    ∀ b : T ⊢! lenGödel T fboundDef k, k < dlen T (⌜b⌝ : ℕ) :=
-  lower_bound_dlen_proof_lenGödel (fDef := fboundDef) fbound
-    (fun b h ↦ proper_of_small smallCodes_LOR smallRelCodes_LOR b h)
+`codeBound`) is longer than `k`. -/
+theorem lower_bound_proofLen_proof_lenGödel_codeBound :
+    ∀ b : T ⊢! lenGödel T codeBoundDef k, k < proofLen T (⌜b⌝ : ℕ) :=
+  lower_bound_proofLen_proof_lenGödel (fDef := codeBoundDef) codeBound
+    (fun b h ↦ properPlayer_of_small smallCodes_LOR smallRelCodes_LOR b h)
 
 end Arithmetic
 

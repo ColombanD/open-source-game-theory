@@ -11,11 +11,11 @@ codes and canonical fact codes those rows need beyond `RowInst.lean`/`Chain.lean
 (NumSteps.lean's `Peq`/`eqFact` are the SAME code — `PeqB = Peq` by `rfl` after `unfold eqS`; the names
 differ only so that both modules build side by side; unify when both have landed),
 `Pmem`/`memFact`, `Pinsert`/`insFact`, `Psubset`/`subsetFact`, `PfsetPi`/`fsetPiFact`,
-`PsetShiftG`/`setShiftFact`, `PsetLen`/`setLenFact`, `PflenG`/`lenFact`, the term-level graphs,
+`PsetShiftG`/`setShiftFact`, `PsetLen`/`sequentLenFact`, `PflenG`/`lenFact`, the term-level graphs,
 `Pnth`/`nthFact`, the `axm`(ii) graphs, the node graphs `PaxL`/`axLFact` … `Paxm`/`axmFact`, and
 the top's `PdlenDef`/`Pproof`/`PinstB`/`Pg` — each with `IsFormula`-ness, the shift law, the
 multiplicative length bound and the occurrence bound. `Chain.lean`'s `Pderiv`/`PfstIdx`/`Pdlen`/
-`Ple` (`derFact`/`fstIdxFact`/`dlenFact`/`leFact`) get the lemmas `Chain` does not state.
+`Ple` (`derFact`/`fstIdxFact`/`proofLenFact`/`leFact`) get the lemmas `Chain` does not state.
 
 **Generated** by `arith/scripts/gen_frag.py` (the row table is shared with `Lib/Frag.lean`); the
 header below (§1) is hand-written (`scripts/RowInstB.lean.head`). New over `RowInst.lean`'s §1:

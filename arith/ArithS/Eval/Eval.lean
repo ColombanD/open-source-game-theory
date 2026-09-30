@@ -11,9 +11,9 @@ clause for clause:
   `bot p` runs `p`; `ite b a' p q` runs `b`, then `p` if it played `a'`, else `q`;
 * `search k g p q` runs `p` if `TAct ⊢_k guardCodeB g me opp k` (the runtime guard sentence of
   `ArithS.Guard`: the template `g` filled with the descriptions of the frame in `#0..#5` AND the
-  node's own budget `bnum k` in `#6` — route (c), 2026-09-23; on a six-variable template this is
+  node's own budget `binNumeral k` in `#6` — route (c), 2026-09-23; on a six-variable template this is
   `guardCode g me opp`, `guardCodeB_of_template` — provability by a proof of length `≤ k`), else `q`;
-* `sim p q` substitutes the frame into `p` and `q` (`psubst`, `ArithS.Subst`: `pSelf ↦ me`,
+* `sim p q` substitutes the frame into `p` and `q` (`substCode`, `ArithS.Subst`: `pSelf ↦ me`,
   `pOpp ↦ opp`, `pBot` frozen, stored templates instantiated with the OUTER descriptions) and
   runs `p'` in the frame `(p', q')` — the engine's `.sim` clause, roadmap M3 step (b);
 * fuel `0` plays nothing.
@@ -39,14 +39,14 @@ def Phi (C : Set V) (pr : V) : Prop :=
   (∃ n me opp a, ⟪n, me, opp, me, a⟫ ∈ C ∧ pr = ⟪n + 1, me, opp, pSelf, a⟫) ∨
   (∃ n me opp a, ⟪n, me, opp, opp, a⟫ ∈ C ∧ pr = ⟪n + 1, me, opp, pOpp, a⟫) ∨
   (∃ n me opp p a, ⟪n, me, opp, p, a⟫ ∈ C ∧ pr = ⟪n + 1, me, opp, pBot p, a⟫) ∨
-  (∃ n me opp p q a, ⟪n, psubst me opp p, psubst me opp q, psubst me opp p, a⟫ ∈ C ∧
+  (∃ n me opp p q a, ⟪n, substCode me opp p, substCode me opp q, substCode me opp p, a⟫ ∈ C ∧
     pr = ⟪n + 1, me, opp, pSim p q, a⟫) ∨
   (∃ n me opp b a' p q a r, ⟪n, me, opp, b, r⟫ ∈ C ∧
     ((r = a' ∧ ⟪n, me, opp, p, a⟫ ∈ C) ∨ (r ≠ a' ∧ ⟪n, me, opp, q, a⟫ ∈ C)) ∧
     pr = ⟪n + 1, me, opp, pIte b a' p q, a⟫) ∨
   (∃ n me opp k g p q a,
-    ((LenProvableV TAct k (guardCodeB g me opp k) ∧ ⟪n, me, opp, p, a⟫ ∈ C) ∨
-      (¬LenProvableV TAct k (guardCodeB g me opp k) ∧ ⟪n, me, opp, q, a⟫ ∈ C)) ∧
+    ((LenBox TAct k (guardCodeB g me opp k) ∧ ⟪n, me, opp, p, a⟫ ∈ C) ∨
+      (¬LenBox TAct k (guardCodeB g me opp k) ∧ ⟪n, me, opp, q, a⟫ ∈ C)) ∧
     pr = ⟪n + 1, me, opp, pSearch k g p q, a⟫)
 
 noncomputable def blueprint : Fixpoint.Blueprint 0 := ⟨.mkDelta
@@ -57,7 +57,7 @@ noncomputable def blueprint : Fixpoint.Blueprint 0 := ⟨.mkDelta
       (!pOppGraph p ∧ ∃ t, !pair₅Def t n me opp opp a ∧ t ∈ C) ∨
       (∃ p' < p, !pBotGraph p p' ∧ ∃ t, !pair₅Def t n me opp p' a ∧ t ∈ C) ∨
       (∃ p' < p, ∃ q < p, !pSimGraph p p' q ∧
-        ∃ sp, !psubstDef sp me opp p' ∧ ∃ sq, !psubstDef sq me opp q ∧
+        ∃ sp, !substCodeDef sp me opp p' ∧ ∃ sq, !substCodeDef sq me opp q ∧
           ∃ t, !pair₅Def t n sp sq sp a ∧ t ∈ C) ∨
       (∃ b < p, ∃ a' < p, ∃ p' < p, ∃ q < p, !pIteGraph p b a' p' q ∧
         ∃ r < pr + C + 1, (∃ t, !pair₅Def t n me opp b r ∧ t ∈ C) ∧
@@ -65,8 +65,8 @@ noncomputable def blueprint : Fixpoint.Blueprint 0 := ⟨.mkDelta
            (r ≠ a' ∧ ∃ t, !pair₅Def t n me opp q a ∧ t ∈ C))) ∨
       (∃ k < p, ∃ g < p, ∃ p' < p, ∃ q < p, !pSearchGraph p k g p' q ∧
         ∃ gc, !guardCodeBGraph gc g me opp k ∧
-          ((!(lenProvableV TAct).sigma k gc ∧ ∃ t, !pair₅Def t n me opp p' a ∧ t ∈ C) ∨
-           (¬!(lenProvableV TAct).pi k gc ∧ ∃ t, !pair₅Def t n me opp q a ∧ t ∈ C))) )”)
+          ((!(lenBox TAct).sigma k gc ∧ ∃ t, !pair₅Def t n me opp p' a ∧ t ∈ C) ∨
+           (¬!(lenBox TAct).pi k gc ∧ ∃ t, !pair₅Def t n me opp q a ∧ t ∈ C))) )”)
   (.mkPi “pr C.
     ∃ n <⁺ pr, ∃ me <⁺ pr, ∃ opp <⁺ pr, ∃ p <⁺ pr, ∃ a <⁺ pr, !pair₅Def pr (n + 1) me opp p a ∧
     ( !pConstGraph p a ∨
@@ -74,7 +74,7 @@ noncomputable def blueprint : Fixpoint.Blueprint 0 := ⟨.mkDelta
       (!pOppGraph p ∧ ∀ t, !pair₅Def t n me opp opp a → t ∈ C) ∨
       (∃ p' < p, !pBotGraph p p' ∧ ∀ t, !pair₅Def t n me opp p' a → t ∈ C) ∨
       (∃ p' < p, ∃ q < p, !pSimGraph p p' q ∧
-        ∀ sp, !psubstDef sp me opp p' → ∀ sq, !psubstDef sq me opp q →
+        ∀ sp, !substCodeDef sp me opp p' → ∀ sq, !substCodeDef sq me opp q →
           ∀ t, !pair₅Def t n sp sq sp a → t ∈ C) ∨
       (∃ b < p, ∃ a' < p, ∃ p' < p, ∃ q < p, !pIteGraph p b a' p' q ∧
         ∃ r < pr + C + 1, (∀ t, !pair₅Def t n me opp b r → t ∈ C) ∧
@@ -82,8 +82,8 @@ noncomputable def blueprint : Fixpoint.Blueprint 0 := ⟨.mkDelta
            (r ≠ a' ∧ ∀ t, !pair₅Def t n me opp q a → t ∈ C))) ∨
       (∃ k < p, ∃ g < p, ∃ p' < p, ∃ q < p, !pSearchGraph p k g p' q ∧
         ∀ gc, !guardCodeBGraph gc g me opp k →
-          ((!(lenProvableV TAct).pi k gc ∧ ∀ t, !pair₅Def t n me opp p' a → t ∈ C) ∨
-           (¬!(lenProvableV TAct).sigma k gc ∧ ∀ t, !pair₅Def t n me opp q a → t ∈ C))) )”)⟩
+          ((!(lenBox TAct).pi k gc ∧ ∀ t, !pair₅Def t n me opp p' a → t ∈ C) ∨
+           (¬!(lenBox TAct).sigma k gc ∧ ∀ t, !pair₅Def t n me opp q a → t ∈ C))) )”)⟩
 
 /-- Every component of a tuple is below any set containing the tuple. -/
 private lemma lt_of_tuple_mem {n me opp b r C : V} (h : ⟪n, me, opp, b, r⟫ ∈ C) : r < C :=
@@ -109,13 +109,13 @@ private lemma phi_iff (C pr : V) :
       (p = pOpp ∧ ⟪n, me, opp, opp, a⟫ ∈ C) ∨
       (∃ p' < p, p = pBot p' ∧ ⟪n, me, opp, p', a⟫ ∈ C) ∨
       (∃ p' < p, ∃ q < p, p = pSim p' q ∧
-        ⟪n, psubst me opp p', psubst me opp q, psubst me opp p', a⟫ ∈ C) ∨
+        ⟪n, substCode me opp p', substCode me opp q, substCode me opp p', a⟫ ∈ C) ∨
       (∃ b < p, ∃ a' < p, ∃ p' < p, ∃ q < p, p = pIte b a' p' q ∧
         ∃ r < pr + C + 1, ⟪n, me, opp, b, r⟫ ∈ C ∧
           ((r = a' ∧ ⟪n, me, opp, p', a⟫ ∈ C) ∨ (r ≠ a' ∧ ⟪n, me, opp, q, a⟫ ∈ C))) ∨
       (∃ k < p, ∃ g < p, ∃ p' < p, ∃ q < p, p = pSearch k g p' q ∧
-        ((LenProvableV TAct k (guardCodeB g me opp k) ∧ ⟪n, me, opp, p', a⟫ ∈ C) ∨
-         (¬LenProvableV TAct k (guardCodeB g me opp k) ∧ ⟪n, me, opp, q, a⟫ ∈ C))) ) := by
+        ((LenBox TAct k (guardCodeB g me opp k) ∧ ⟪n, me, opp, p', a⟫ ∈ C) ∨
+         (¬LenBox TAct k (guardCodeB g me opp k) ∧ ⟪n, me, opp, q, a⟫ ∈ C))) ) := by
   constructor
   · rintro (⟨n, me, opp, a, rfl⟩ | ⟨n, me, opp, a, h, rfl⟩ | ⟨n, me, opp, a, h, rfl⟩ |
       ⟨n, me, opp, p, a, h, rfl⟩ | ⟨n, me, opp, p, q, a, h, rfl⟩ |
@@ -156,11 +156,11 @@ noncomputable def construction : Fixpoint.Construction V blueprint where
     constructor
     · intro v
       simp [blueprint, HierarchySymbol.Semiformula.val_sigma,
-        (LenProvableV.defined TAct).proper.iff', psubst_defined.df]
+        (LenBox.defined TAct).proper.iff', substCode_defined.df]
     · intro v
       symm
-      simpa [blueprint, HierarchySymbol.Semiformula.val_sigma, (LenProvableV.defined TAct).df,
-        psubst_defined.df, pSelfGraph, pOppGraph, pSelf, pOpp, lt_and_eq_succ_iff]
+      simpa [blueprint, HierarchySymbol.Semiformula.val_sigma, (LenBox.defined TAct).df,
+        substCode_defined.df, pSelfGraph, pOppGraph, pSelf, pOpp, lt_and_eq_succ_iff]
         using phi_iff (v 1) (v 0)
   monotone := by
     rintro C C' hC _ pr (⟨n, me, opp, a, rfl⟩ | ⟨n, me, opp, a, h, rfl⟩ | ⟨n, me, opp, a, h, rfl⟩ |
@@ -235,12 +235,12 @@ lemma EvalGraph.case_iff {n me opp p a : V} :
       (p = pOpp ∧ EvalGraph n' me opp opp a) ∨
       (∃ p', p = pBot p' ∧ EvalGraph n' me opp p' a) ∨
       (∃ p' q, p = pSim p' q ∧
-        EvalGraph n' (psubst me opp p') (psubst me opp q) (psubst me opp p') a) ∨
+        EvalGraph n' (substCode me opp p') (substCode me opp q) (substCode me opp p') a) ∨
       (∃ b a' p' q r, p = pIte b a' p' q ∧ EvalGraph n' me opp b r ∧
         ((r = a' ∧ EvalGraph n' me opp p' a) ∨ (r ≠ a' ∧ EvalGraph n' me opp q a))) ∨
       (∃ k g p' q, p = pSearch k g p' q ∧
-        ((LenProvableV TAct k (guardCodeB g me opp k) ∧ EvalGraph n' me opp p' a) ∨
-         (¬LenProvableV TAct k (guardCodeB g me opp k) ∧ EvalGraph n' me opp q a))) ) := by
+        ((LenBox TAct k (guardCodeB g me opp k) ∧ EvalGraph n' me opp p' a) ∨
+         (¬LenBox TAct k (guardCodeB g me opp k) ∧ EvalGraph n' me opp q a))) ) := by
   rw [EvalGraph, EvalFix.construction.case]
   simp only [EvalFix.construction, EvalFix.Phi, Set.mem_setOf_eq, pair_ext_iff]
   constructor

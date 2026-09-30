@@ -10,11 +10,11 @@ the layout enumerates its members `x₁ < x₂ < … < x_k` in ASCENDING code or
 substitution instance — never a DSL wrapper, `SequentLength.lean`'s note), membership both ways
 (`mem_memberList_iff`, `nth_memberList_mem`), strict ascent (`memberList_sorted`, hence
 `memberList_nodup`), the length bounds (`len_memberList_le`, `len_memberList_le_length` — a strictly
-ascending list of values `< N` has at most `N` entries — and `len_memberList_le_setLen` for formula
+ascending list of values `< N` has at most `N` entries — and `len_memberList_le_sequentLen` for formula
 sets), and **the distinctness lemma the chain's exact length rests on**: the formula lengths of the
-listed members (`flenVec`, the `formulaLen` map on vectors) sum EXACTLY to `setLen s`
-(`setLen_eq_listSum_memberList`; DESIGN §0 item 5: "the summands are the walked lengths of the actual
-distinct members"), so `Σ bnum|xᵢ| ≤ bnum (setLen s)` is a TRUE closed sentence for the `sLemma`.
+listed members (`formulaLenMetaVec`, the `formulaLen` map on vectors) sum EXACTLY to `sequentLen s`
+(`sequentLen_eq_listSum_memberList`; DESIGN §0 item 5: "the summands are the walked lengths of the actual
+distinct members"), so `Σ binNumeral|xᵢ| ≤ binNumeral (sequentLen s)` is a TRUE closed sentence for the `sLemma`.
 -/
 
 namespace ArithS
@@ -44,41 +44,41 @@ noncomputable def construction : VecRec.Construction V blueprint where
 
 end FlenVec
 
-/-- `flenVec L` — the vector of the formula lengths of the entries of `L`. -/
-noncomputable def flenVec (L : V) : V := FlenVec.construction.result ![] L
+/-- `formulaLenMetaVec L` — the vector of the formula lengths of the entries of `L`. -/
+noncomputable def formulaLenMetaVec (L : V) : V := FlenVec.construction.result ![] L
 
-@[simp] lemma flenVec_nil : flenVec (0 : V) = 0 := by simp [flenVec, FlenVec.construction]
-@[simp] lemma flenVec_adjoin (x L : V) : flenVec (x ∷ L) = formulaLen LAct x ∷ flenVec L := by
-  simp [flenVec, FlenVec.construction]
+@[simp] lemma formulaLenMetaVec_nil : formulaLenMetaVec (0 : V) = 0 := by simp [formulaLenMetaVec, FlenVec.construction]
+@[simp] lemma formulaLenMetaVec_adjoin (x L : V) : formulaLenMetaVec (x ∷ L) = formulaLen LAct x ∷ formulaLenMetaVec L := by
+  simp [formulaLenMetaVec, FlenVec.construction]
 
-noncomputable def flenVecDef : 𝚺₁.Semisentence 2 := FlenVec.blueprint.resultDef
+noncomputable def formulaLenMetaVecDef : 𝚺₁.Semisentence 2 := FlenVec.blueprint.resultDef
 
-instance flenVec_defined : 𝚺₁-Function₁ (flenVec : V → V) via flenVecDef := .mk
-  fun v ↦ by simp [FlenVec.construction.eval_resultDef, flenVecDef]; rfl
-instance flenVec_definable : 𝚺₁-Function₁ (flenVec : V → V) := flenVec_defined.to_definable
+instance formulaLenMetaVec_defined : 𝚺₁-Function₁ (formulaLenMetaVec : V → V) via formulaLenMetaVecDef := .mk
+  fun v ↦ by simp [FlenVec.construction.eval_resultDef, formulaLenMetaVecDef]; rfl
+instance formulaLenMetaVec_definable : 𝚺₁-Function₁ (formulaLenMetaVec : V → V) := formulaLenMetaVec_defined.to_definable
 
-lemma flenVec_appendV : ∀ A B : V, flenVec (appendV A B) = appendV (flenVec A) (flenVec B) := by
+lemma formulaLenMetaVec_appendV : ∀ A B : V, formulaLenMetaVec (appendV A B) = appendV (formulaLenMetaVec A) (formulaLenMetaVec B) := by
   intro A B
   induction A using adjoin_ISigma1.sigma1_succ_induction with
   | hP => definability
   | nil => simp
-  | adjoin x A ih => rw [appendV_adjoin, flenVec_adjoin, flenVec_adjoin, ih, appendV_adjoin]
+  | adjoin x A ih => rw [appendV_adjoin, formulaLenMetaVec_adjoin, formulaLenMetaVec_adjoin, ih, appendV_adjoin]
 
-lemma len_flenVec : ∀ L : V, len (flenVec L) = len L := by
+lemma len_formulaLenMetaVec : ∀ L : V, len (formulaLenMetaVec L) = len L := by
   intro L
   induction L using adjoin_ISigma1.sigma1_succ_induction with
   | hP => definability
   | nil => simp
-  | adjoin x L ih => rw [flenVec_adjoin, len_adjoin, len_adjoin, ih]
+  | adjoin x L ih => rw [formulaLenMetaVec_adjoin, len_adjoin, len_adjoin, ih]
 
-lemma nth_flenVec : ∀ L : V, ∀ m < len L, (flenVec L).[m] = formulaLen LAct L.[m] := by
+lemma nth_formulaLenMetaVec : ∀ L : V, ∀ m < len L, (formulaLenMetaVec L).[m] = formulaLen LAct L.[m] := by
   intro L
   induction L using adjoin_ISigma1.pi1_succ_induction with
   | hP => definability
   | nil => intro m hm; simp at hm
   | adjoin x L ih =>
     intro m hm
-    rw [flenVec_adjoin]
+    rw [formulaLenMetaVec_adjoin]
     rcases zero_or_succ m with rfl | ⟨m', rfl⟩
     · simp
     · rw [nth_adjoin_succ, nth_adjoin_succ]
@@ -284,30 +284,30 @@ lemma len_memberList_le_length (s : V) : len (memberList s) ≤ ‖s‖ := by
     rw [hm]
     exact lt_iff_succ_le.mp (lt_of_le_of_lt h1 h2)
 
-/-! ### 2.3 The exact length: `setLen s = Σ formulaLen (memberList s)` -/
+/-! ### 2.3 The exact length: `sequentLen s = Σ formulaLen (memberList s)` -/
 
-lemma setLenAux_eq_listSum_flenVec (s : V) :
-    ∀ i, setLenAux LAct s i = listSum (flenVec (memberListAux s i)) := by
+lemma sequentLenAux_eq_listSum_formulaLenMetaVec (s : V) :
+    ∀ i, sequentLenAux LAct s i = listSum (formulaLenMetaVec (memberListAux s i)) := by
   intro i
   induction i using ISigma1.pi1_succ_induction with
   | hP => definability
   | zero => simp
   | succ i ih =>
-    rw [setLenAux_succ, memberListAux_succ]
+    rw [sequentLenAux_succ, memberListAux_succ]
     split_ifs with h
-    · rw [flenVec_appendV, listSum_appendV, flenVec_adjoin, flenVec_nil, listSum_adjoin, listSum_nil, add_zero, ih]
+    · rw [formulaLenMetaVec_appendV, listSum_appendV, formulaLenMetaVec_adjoin, formulaLenMetaVec_nil, listSum_adjoin, listSum_nil, add_zero, ih]
     · exact ih
 
-/-- **The distinctness lemma**: the formula lengths of the listed members sum exactly to `setLen s`. -/
-theorem setLen_eq_listSum_memberList (s : V) : setLen LAct s = listSum (flenVec (memberList s)) :=
-  setLenAux_eq_listSum_flenVec s s
+/-- **The distinctness lemma**: the formula lengths of the listed members sum exactly to `sequentLen s`. -/
+theorem sequentLen_eq_listSum_memberList (s : V) : sequentLen LAct s = listSum (formulaLenMetaVec (memberList s)) :=
+  sequentLenAux_eq_listSum_formulaLenMetaVec s s
 
-/-- A formula set has at most `setLen s` members. -/
-theorem len_memberList_le_setLen {s : V} (hs : IsFormulaSet LAct s) : len (memberList s) ≤ setLen LAct s := by
-  rw [setLen_eq_listSum_memberList, ← len_flenVec]
+/-- A formula set has at most `sequentLen s` members. -/
+theorem len_memberList_le_sequentLen {s : V} (hs : IsFormulaSet LAct s) : len (memberList s) ≤ sequentLen LAct s := by
+  rw [sequentLen_eq_listSum_memberList, ← len_formulaLenMetaVec]
   refine len_le_listSum_of_one_le _ fun m hm ↦ ?_
-  rw [len_flenVec] at hm
-  rw [nth_flenVec _ m hm]
+  rw [len_formulaLenMetaVec] at hm
+  rw [nth_formulaLenMetaVec _ m hm]
   exact one_le_formulaLen_V (L := LAct) (n := 0) (hs _ (nth_memberList_mem hm))
 
 end memberList

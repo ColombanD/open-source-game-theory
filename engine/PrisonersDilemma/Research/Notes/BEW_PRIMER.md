@@ -20,7 +20,7 @@ the standard model, and `□σ` is a SENTENCE of arithmetic — never a Lean jud
    lemma, on the back of a bus ticket.
 4. Explain why the restricted Gödel sentence `G_k` ("I have no proof of length ≤ k") is
    TRUE and PROVABLE, while Gödel's `G` is true and unprovable — and read
-   `true_lenGödel`, `provable_lenGödel`, `lower_bound_dlen_proof_lenGödel` as the three
+   `true_lenGödel`, `provable_lenGödel`, `lower_bound_proofLen_proof_lenGödel` as the three
    halves of that one fact.
 5. Explain why the red cell `(Dupoc, Cupod) = (D, C)` needs soundness and the C/D symmetry
    only, and why Löbian cooperation needs Löb.
@@ -84,7 +84,7 @@ Checking a proof is a primitive recursive job — decode `d`, check each step is
 an instance of a rule applied to earlier steps, compare the last line to `x` — so `Prf_T`
 is Δ₁ in IΣ₁ provided the axiom set of `T` is itself Δ₁ (recognizable). Foundation:
 `Bootstrapping.Proof T d φ`, requiring `[T.Δ₁]`; this is the `Proof T d φ` conjunct inside
-`LenProvable`.
+`LenBoxNat`.
 
 **`Bew_T(x) := ∃d. Prf_T(d, x)`: "`x` is provable".** One unbounded existential in front
 of a Δ₁ matrix: **Σ₁, and in general NOT Δ₁**. There is no bound on how long a proof of
@@ -146,7 +146,7 @@ proved for ℕ only is a fact about the standard model. `Proper` is of the secon
 Foundation: `Bootstrapping.diag θ := “x. ∀ y, !ssnum y x x → !θ y”` is exactly `D`,
 `fixedpoint θ := (diag θ)/[⌜diag θ⌝]` is exactly `φ`, and `diagonal θ : T ⊢ fixedpoint θ
 🡘 θ/[⌜fixedpoint θ⌝]`. Abstractly, `class Diagonalization T` bundles the pair. `Bew.lean`
-uses it twice: `lenGödel := fixedpoint (∼(lenProvable T fDef k))` and `def_lenGödel := diagonal _`.
+uses it twice: `lenGödel := fixedpoint (∼(lenBoxNat T fDef k))` and `def_lenGödel := diagonal _`.
 
 Two remarks that matter for the engine. First, the fixed point is a SENTENCE, not a
 program; there is no "self" object, only a sentence that provably talks about its own
@@ -358,8 +358,8 @@ truth of `□_k σ` is decidable and both `□_k σ` and `¬□_k σ` are decide
 already lives with: proof search is a finite computation, the guard of `.search` is a
 decidable test, and agents TERMINATE. The unbounded `Bew` had none of these.
 
-Look at `LenProvable f k T φ := ∃ d < f (numeral k), Proof T d φ ∧ dlen T d ≤ numeral k`
-and its definition `lenProvable`, stated as a Π₁ formula: `∀ E, fDef E k → ∃ d < E, …`.
+Look at `LenBoxNat f k T φ := ∃ d < f (numeral k), Proof T d φ ∧ proofLen T d ≤ numeral k`
+and its definition `lenBoxNat`, stated as a Π₁ formula: `∀ E, fDef E k → ∃ d < E, …`.
 The Π₁ shape is because `f` is given by a Σ₁ GRAPH `fDef` (three `Exp.exp`s are not a
 term), and "for every value `E` of `f k`" is the standard way to use a Σ₁-defined function
 inside a Π₁ formula — the roadmap trap "Δ₁ blueprints put the Σ formula in antecedent
@@ -382,7 +382,7 @@ length ≤ k satisfies it. The docstring of `Bew.lean` says exactly this.
 
 Compare with §4: `G` is true because unprovable; `G_k` is true AND provable, but only by
 proofs longer than the bound it talks about. The three theorems in `Bew.lean` —
-`true_lenGödel`, `provable_lenGödel`, `lower_bound_dlen_proof_lenGödel` — are (i), (ii),
+`true_lenGödel`, `provable_lenGödel`, `lower_bound_proofLen_proof_lenGödel` — are (i), (ii),
 (iii) with `len` for "length"; Foundation's `RestrictedProvability.lean` has the same three
 with `⌜d⌝ < f e` (the CODE) in place of the length, which is the template and not the
 object (the roadmap's whole reason for M1). The intermediate `lower_bound_proof_lenGödel`
@@ -420,17 +420,17 @@ Löb, no cost constant, no floor. That is why it is T1 and the headline.
 
 | Concept | Foundation (pinned `58c76ac`) | `ArithS` | Engine (`Pf`) |
 |---|---|---|---|
-| proof predicate `Prf(d,x)` | `Bootstrapping.Proof T d φ`, `[T.Δ₁]` | conjunct of `LenProvable` | the `Pf` inductive itself |
-| length of a derivation | — (none) | `dlen T` (`DerivationLength.lean`), meta bridge `MetaLength.lean` | the budget index `k` of `Pf k φ` |
-| `Bew(x)` / `□σ` | `provabilityPred T σ`, `Provability T₀ T` | `LenProvable f k T φ`, `lenProvabilityPred` | `Formula.box k φ` |
+| proof predicate `Prf(d,x)` | `Bootstrapping.Proof T d φ`, `[T.Δ₁]` | conjunct of `LenBoxNat` | the `Pf` inductive itself |
+| length of a derivation | — (none) | `proofLen T` (`DerivationLength.lean`), meta bridge `MetaLength.lean` | the budget index `k` of `Pf k φ` |
+| `Bew(x)` / `□σ` | `provabilityPred T σ`, `Provability T₀ T` | `LenBoxNat f k T φ`, `lenProvabilityPred` | `Formula.box k φ` |
 | standard-model lemma | `provable_of_standard_proof`, `proof_of_quote_proof` | used in `true_lenGödel`, `lower_bound_*` | `Formula.interp` of `.box` = `Pf` |
 | Σ₁-completeness | `sigma_one_completeness_iff`, `provable_sigma_one_complete` | `provable_lenGödel` | atom rules read true computation steps |
 | soundness | `T.SoundOnHierarchy 𝚺 1`, `SoundOn`, `provable_sound` | hypothesis on every §-9 theorem | `sound_upto`, `proofSearch_sound` |
 | diagonal lemma | `fixedpoint`, `diagonal`, `Diagonalization` | `lenGödel`, `def_lenGödel` | `Formula.diag`, `diagF`/`diagB` |
-| G1 | `gödel`, `unprovable_gödel`, `first_incompleteness` | restricted twin: `true_lenGödel` + `lower_bound_dlen_proof_lenGödel` | — |
+| G1 | `gödel`, `unprovable_gödel`, `first_incompleteness` | restricted twin: `true_lenGödel` + `lower_bound_proofLen_proof_lenGödel` | — |
 | D1 / D2 / D3 | `provable_D1/D2/D3`, classes `HBL2/HBL3/HBL` | M4 (costed) | `BoundedGL` fields, `pfBoundedGL` |
 | G2 / Löb | `con_unprovable`, `löb_theorem`, `formalized_löb_theorem` | M5 | `bloeb_engine`, `pblt_engine`, `mutual_pblt_*` |
-| bounded provability | `RestrictedProvable` (bounds the CODE) | `LenProvable` (bounds the LENGTH) | `Pf k` |
+| bounded provability | `RestrictedProvable` (bounds the CODE) | `LenBoxNat` (bounds the LENGTH) | `Pf k` |
 | properness | `Superexp.superexp`, `two_pow_le_superexp` | `Proper`, towers `E`/`F` (`Proper.lean`) | structural: `size` bounds are exact |
 | transposition τ | — | `LangAct.swap` (constant swap, involution) | `Base/Transpose`, `Pf.transpose` |
 
@@ -449,7 +449,7 @@ Löb, no cost constant, no floor. That is why it is T1 and the headline.
 5. State the three ingredients of the red-cell proof and, for each, name the Foundation
    or `ArithS` declaration that provides it. Then say which of D1–D3 it uses. (§9d; the
    answer to the last part is "none".)
-6. Harder. `LenProvable` is stated Π₁. Argue that it is nevertheless Δ₁ in IΣ₁, assuming
+6. Harder. `LenBoxNat` is stated Π₁. Argue that it is nevertheless Δ₁ in IΣ₁, assuming
    `fDef` is a total Σ₁ function. (§1, §9a: a Σ₁-defined total function can be pushed
    through as `∃E. fDef E k ∧ …` as well.)
 7. Harder. Why does the roadmap insist the actions are fresh CONSTANT SYMBOLS rather than

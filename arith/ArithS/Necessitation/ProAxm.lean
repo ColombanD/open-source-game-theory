@@ -13,7 +13,7 @@ LAYOUT HYPOTHESIS. This file produces it, for the member `p` of the sequent whos
 
 An axiom code `p ∈ TAct.Δ₁Class` is EITHER
 * **(i)** `p = ⌜σ⌝` for one of the finitely many STANDARD non-schema axioms σ (`StdAxiom σ`: the four action
-  sentences `axAct, axAct', axNe, axNe'` and every `𝗣𝗔⁻` axiom embedded along `emb` — `𝗣𝗔⁻` is finite,
+  sentences `actionAxiom, actionAxiom', constNe, constNe'` and every `𝗣𝗔⁻` axiom embedded along `emb` — `𝗣𝗔⁻` is finite,
   `PeanoMinus.finite`, its `Δ₁ch` is `Theory.Δ₁.ofFinite` = a disjunction of `x = ↑(encode σ)`, read off in
   `eval_ofList_ch`), OR
 * **(ii)** an INDUCTION INSTANCE: `IsSemiformula ℒₒᵣ 0 p ∧ InductionR (fun _ ↦ True) p` (Foundation's `chUniv`
@@ -156,7 +156,7 @@ section caseSplit
 variable {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
 
 /-- The recognizer of a singleton theory `{φ}` accepts exactly the code of `φ` (stated for a VARIABLE `φ` over a
-VARIABLE language — `axNe'` is a `Sentence LAct`, `𝗣𝗔⁻`'s axioms are `Sentence ℒₒᵣ`, and a `rw` across the two
+VARIABLE language — `constNe'` is a `Sentence LAct`, `𝗣𝗔⁻`'s axioms are `Sentence ℒₒᵣ`, and a `rw` across the two
 languages whnf's the closed code; `encode` never appears in a statement for the same reason). -/
 lemma eval_singleton_ch {L : Language} [L.Encodable] [L.LORDefinable] (φ : Sentence L) (p : V) :
     V ⊧/![p] (Theory.Δ₁.singleton φ).ch.val ↔ p = (⌜φ⌝ : V) := by
@@ -187,20 +187,20 @@ lemma eval_paMinus_ch (p : V) :
 
 /-- **The standard non-schema axioms of `TAct`**: the four action sentences and every `𝗣𝗔⁻` axiom along `emb`. -/
 def StdAxiom (σ : Sentence LAct) : Prop :=
-  σ = axAct ∨ σ = axAct' ∨ σ = axNe ∨ σ = axNe' ∨ ∃ σ₀ ∈ 𝗣𝗔⁻, Semiformula.lMap emb σ₀ = σ
+  σ = actionAxiom ∨ σ = actionAxiom' ∨ σ = constNe ∨ σ = constNe' ∨ ∃ σ₀ ∈ 𝗣𝗔⁻, Semiformula.lMap emb σ₀ = σ
 
 lemma StdAxiom.mem_TAct {σ : Sentence LAct} (h : StdAxiom σ) : σ ∈ TAct := by
   rcases h with rfl | rfl | rfl | rfl | ⟨σ₀, h₀, rfl⟩
-  · exact axAct_mem_TAct
-  · exact axAct'_mem_TAct
-  · exact axNe_mem_TAct
-  · exact axNe'_mem_TAct
+  · exact actionAxiom_mem_TAct
+  · exact actionAxiom'_mem_TAct
+  · exact constNe_mem_TAct
+  · exact constNe'_mem_TAct
   · exact lMap_emb_mem_TAct (Set.mem_union_left _ h₀)
 
 /-- The standard axioms form a FINITE set. -/
 lemma stdAxiom_finite : Set.Finite {σ : Sentence LAct | StdAxiom σ} := by
   have e : {σ : Sentence LAct | StdAxiom σ} =
-      insert axAct (insert axAct' (insert axNe (insert axNe' ((fun σ₀ ↦ Semiformula.lMap emb σ₀) '' 𝗣𝗔⁻)))) := by
+      insert actionAxiom (insert actionAxiom' (insert constNe (insert constNe' ((fun σ₀ ↦ Semiformula.lMap emb σ₀) '' 𝗣𝗔⁻)))) := by
     ext σ; simp [StdAxiom, Set.mem_image]
   rw [e]
   exact (((PeanoMinus.finite.image _).insert _).insert _).insert _ |>.insert _
@@ -223,13 +223,13 @@ theorem mem_TAct_class_cases {p : V} (h : p ∈ TAct.Δ₁Class) :
       simpa [HierarchySymbol.Defined.iff] using hind
     exact Or.inr ⟨(eval_isFormulaOR' p).mp hF, hI⟩
   · rw [eval_singleton_ch] at hNe'
-    exact Or.inl ⟨axNe', Or.inr (Or.inr (Or.inr (Or.inl rfl))), hNe'⟩
+    exact Or.inl ⟨constNe', Or.inr (Or.inr (Or.inr (Or.inl rfl))), hNe'⟩
   · rw [eval_singleton_ch] at hNe
-    exact Or.inl ⟨axNe, Or.inr (Or.inr (Or.inl rfl)), hNe⟩
+    exact Or.inl ⟨constNe, Or.inr (Or.inr (Or.inl rfl)), hNe⟩
   · rw [eval_singleton_ch] at hAct'
-    exact Or.inl ⟨axAct', Or.inr (Or.inl rfl), hAct'⟩
+    exact Or.inl ⟨actionAxiom', Or.inr (Or.inl rfl), hAct'⟩
   · rw [eval_singleton_ch] at hAct
-    exact Or.inl ⟨axAct, Or.inl rfl, hAct⟩
+    exact Or.inl ⟨actionAxiom, Or.inl rfl, hAct⟩
 
 end caseSplit
 
@@ -325,12 +325,12 @@ end stdCase
 section stdLayout
 
 /-- **The `axm` prologue for a standard axiom, at the layout** (`Layout.member` + `memTop_le`): from the
-canonical layout of `s ∋ ⌜σ⌝` at chain offset `i`, under `C + (i + 6D + 1) ≤ E` (`setLen s ≤ D`), a shift-free
+canonical layout of `s ∋ ⌜σ⌝` at chain offset `i`, under `C + (i + 6D + 1) ≤ E` (`sequentLen s ≤ D`), a shift-free
 `NumInv` list leaving `axchFact &ip`, `ip = memTop s ⌜σ⌝ i` — exactly `nodeAxm_ok`'s `hax` after `Layout.transport`. -/
 theorem proAxmStd_ok (σ : Sentence LAct) (hσ : σ ∈ TAct) :
     ∃ C : ℕ, ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] {tbl N Wc T s D E Γ i : V},
       TableOK tbl N → ProAxmTable tbl → Wc = certPieces →
-      IsFormulaSet LAct s → (⌜σ⌝ : V) ∈ s → setLen LAct s ≤ D → (C : V) + (i + 6 * D + 1) ≤ E →
+      IsFormulaSet LAct s → (⌜σ⌝ : V) ∈ s → sequentLen LAct s ≤ D → (C : V) + (i + 6 * D + 1) ≤ E →
       IsFormulaSet LAct Γ → Layout walkPieces Wc T Γ s i →
       ∃ P : V, NumInv tbl E Γ C P (axchFact (^&(memTop walkPieces Wc T s (⌜σ⌝ : V) i))) := by
   obtain ⟨C, hC⟩ := axmStd_ok σ hσ
@@ -344,7 +344,7 @@ bounded over the finite set). -/
 theorem proAxm_std : ∃ C : ℕ, ∀ (σ : Sentence LAct), StdAxiom σ →
     ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] {tbl N Wc T s D E Γ i : V},
       TableOK tbl N → ProAxmTable tbl → Wc = certPieces →
-      IsFormulaSet LAct s → (⌜σ⌝ : V) ∈ s → setLen LAct s ≤ D → (C : V) + (i + 6 * D + 1) ≤ E →
+      IsFormulaSet LAct s → (⌜σ⌝ : V) ∈ s → sequentLen LAct s ≤ D → (C : V) + (i + 6 * D + 1) ≤ E →
       IsFormulaSet LAct Γ → Layout walkPieces Wc T Γ s i →
       ∃ P : V, NumInv tbl E Γ C P (axchFact (^&(memTop walkPieces Wc T s (⌜σ⌝ : V) i))) := by
   classical
@@ -381,7 +381,7 @@ taken from `AxmIndOracle` (constant `Cind`). `NumInv tbl E Γ C P F` unfolds to 
 shiftsV P = 0 ∧ len P ≤ C ∧ SizeOK C C P ∧ neg F ∈ finalCtx Γ P` — shift-free, so the fact is at `&ip` itself. -/
 theorem proAxm_ok : ∃ C : ℕ, ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] {tbl N Wc T s D E Γ i p : V}
     (Cind : ℕ), TableOK tbl N → ProAxmTable tbl → Wc = certPieces →
-    IsFormulaSet LAct s → p ∈ s → p ∈ TAct.Δ₁Class → setLen LAct s ≤ D →
+    IsFormulaSet LAct s → p ∈ s → p ∈ TAct.Δ₁Class → sequentLen LAct s ≤ D →
     ((C + Cind : ℕ) : V) + (i + 6 * D + 1) ≤ E → IsFormulaSet LAct Γ → Layout walkPieces Wc T Γ s i →
     AxmIndOracle tbl E Wc T Γ s i Cind →
     ∃ P : V, NumInv tbl E Γ (C + Cind) P (axchFact (^&(memTop walkPieces Wc T s p i))) := by
@@ -395,7 +395,7 @@ theorem proAxm_ok : ∃ C : ℕ, ∀ (V : Type) [ORingStructure V] [V↓[ℒₒ�
   · obtain ⟨P, hP⟩ := hind p hp hF hI
     exact ⟨P, hP.mono (Nat.le_add_left Cind C)⟩
 
-/-- **The cost of the `axm` prologue** — `NumId.numInv_cost`'s shape (linear in `N`, `E`, `setLen Γ`, `fvOccS Γ`
+/-- **The cost of the `axm` prologue** — `NumId.numInv_cost`'s shape (linear in `N`, `E`, `sequentLen Γ`, `fvOccS Γ`
 for the standard `C` and the row-body bound `B`; `Prologue` §11's coarse shape with `len ≤ C`). -/
 theorem costSum_proAxm_le {tbl N E B Γ P ip : V} {C : ℕ} (hE : 1 ≤ E) (htbl : TableOK tbl N)
     (hBt : ∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ B) (h : NumInv tbl E Γ C P (axchFact (^&ip))) :

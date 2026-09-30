@@ -72,30 +72,30 @@ codes, `pG_guards_V`'s shape for an arbitrary `q`). -/
 theorem pQ_both_V (q : Semisentence LAct 1) (k a : V)
     (ha : a + 8 * (formulaLen LAct (instB (⌜q⌝ : V) k) + formulaLen LAct (instB (⌜Semiformula.lMap swap q⌝ : V) k))
       + 7 ≤ k)
-    (h : LenDerivable TAct a (instB (⌜pQ q⌝ : V) k)) :
-    LenProvableV TAct k (instB (⌜q⌝ : V) k) ∧ LenProvableV TAct k (instB (⌜Semiformula.lMap swap q⌝ : V) k) := by
+    (h : LenBoxUnbounded TAct a (instB (⌜pQ q⌝ : V) k)) :
+    LenBox TAct k (instB (⌜q⌝ : V) k) ∧ LenBox TAct k (instB (⌜Semiformula.lMap swap q⌝ : V) k) := by
   rw [instB_quote_pQ] at h
   have hx := isFormula_instB_quote q k
   have hy := isFormula_instB_quote (Semiformula.lMap swap q) k
-  exact ⟨(lenDerivable_iff_lenProvableV _ _).mp (lenDerivable_mono_V ha (lenDerivable_andL_V hx hy h)),
-    (lenDerivable_iff_lenProvableV _ _).mp (lenDerivable_mono_V ha (lenDerivable_andR_V hx hy h))⟩
+  exact ⟨(lenBoxUnbounded_iff_lenBox _ _).mp (lenBoxUnbounded_mono_V ha (lenBoxUnbounded_andL_V hx hy h)),
+    (lenBoxUnbounded_iff_lenBox _ _).mp (lenBoxUnbounded_mono_V ha (lenBoxUnbounded_andR_V hx hy h))⟩
 
 omit [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] in
 /-- `pQ q (k)` in the standard reading: both conjuncts. -/
 theorem eval_pQ_std (q : Semisentence LAct 1) (k : V) :
-    Semiformula.Eval (s := stdActS V) ![k] Empty.elim (pQ q) ↔
-      Semiformula.Eval (s := stdActS V) ![k] Empty.elim q ∧
-      Semiformula.Eval (s := stdActS V) ![k] Empty.elim (Semiformula.lMap swap q) := by
+    Semiformula.Eval (s := stdReading V) ![k] Empty.elim (pQ q) ↔
+      Semiformula.Eval (s := stdReading V) ![k] Empty.elim q ∧
+      Semiformula.Eval (s := stdReading V) ![k] Empty.elim (Semiformula.lMap swap q) := by
   rw [pQ_def]
   simp only [LogicalConnective.HomClass.map_and, LogicalConnective.Prop.and_eq]
 
 omit [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] in
 /-- `pQ q (k)` in the swapped reading: the conjuncts exchange roles. -/
 theorem eval_pQ_swap (q : Semisentence LAct 1) (k : V) :
-    Semiformula.Eval (s := swapActS V) ![k] Empty.elim (pQ q) ↔
-      Semiformula.Eval (s := stdActS V) ![k] Empty.elim (Semiformula.lMap swap q) ∧
-      Semiformula.Eval (s := stdActS V) ![k] Empty.elim q := by
-  rw [eval_swapActS, lMap_swap_pQ]
+    Semiformula.Eval (s := swappedReading V) ![k] Empty.elim (pQ q) ↔
+      Semiformula.Eval (s := stdReading V) ![k] Empty.elim (Semiformula.lMap swap q) ∧
+      Semiformula.Eval (s := stdReading V) ![k] Empty.elim q := by
+  rw [eval_swappedReading, lMap_swap_pQ]
   simp only [LogicalConnective.HomClass.map_and, LogicalConnective.Prop.and_eq]
 
 /-- **The Löb premise of `pQ q` at slack `(7, 8)`, from one semantic fact**: whenever both instances `q(k)`
@@ -104,9 +104,9 @@ the two instances by ∧-elimination on codes (`pQ_both_V`); the two readings of
 conjunction orders (`eval_pQ_std`, `eval_pQ_swap`). -/
 theorem loebSound_pQ_of (q : Semisentence LAct 1)
     (h : ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] (k : V),
-      LenProvableV TAct k (instB (⌜q⌝ : V) k) → LenProvableV TAct k (instB (⌜Semiformula.lMap swap q⌝ : V) k) →
-      Semiformula.Eval (s := stdActS V) ![k] Empty.elim q ∧
-      Semiformula.Eval (s := stdActS V) ![k] Empty.elim (Semiformula.lMap swap q)) :
+      LenBox TAct k (instB (⌜q⌝ : V) k) → LenBox TAct k (instB (⌜Semiformula.lMap swap q⌝ : V) k) →
+      Semiformula.Eval (s := stdReading V) ![k] Empty.elim q ∧
+      Semiformula.Eval (s := stdReading V) ![k] Empty.elim (Semiformula.lMap swap q)) :
     LoebSound (pQ q) 7 8 := by
   intro V _ _ k a ha hp
   have : V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance

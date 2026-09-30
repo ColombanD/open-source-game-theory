@@ -62,8 +62,8 @@ theorem outcome_DupocBot_vs_CupodBot :
 
 /-! ### On the hand-template twins
 
-These cells are stated on arith codes that are NOT the engine's `pcode`:
-* `Dupoc k` (`Cells/RedCell.lean`): the searcher on the HAND template `guardTemplate 0`; the engine's `DupocBot k` carries the translated template `tmpl (.plays .opp .self .C)` — a different code with a provably equivalent guard (`Agents/Code.lean`, "Sanity"), on which the Löb cells are not yet re-proved.
+These cells are stated on arith codes that are NOT the engine's `progCode`:
+* `Dupoc k` (`Cells/RedCell.lean`): the searcher on the HAND template `guardTemplate 0`; the engine's `DupocBot k` carries the translated template `template (.plays .opp .self .C)` — a different code with a provably equivalent guard (`Agents/Code.lean`, "Sanity"), on which the Löb cells are not yet re-proved.
 -/
 
 /-- `loeb_Dupoc_vs_Mirror` -/
@@ -71,13 +71,13 @@ theorem outcome_Dupoc_vs_MirrorBot :
     OutcomeSpecA .eventual Dupoc (const MirrorBot) (some (.C, .C)) :=
   OutcomeSpecA.eventual_of (by
     obtain ⟨k₀, h⟩ := loeb_Dupoc_vs_Mirror
-    exact ⟨k₀, fun k hk ↦ by dsimp only [bot, const]; rw [pcode_MirrorBot]; exact OutcomeAtA.of_evalGraph (h k hk)⟩)
+    exact ⟨k₀, fun k hk ↦ by dsimp only [bot, const]; rw [progCode_MirrorBot]; exact OutcomeAtA.of_evalGraph (h k hk)⟩)
 
-/-- `dupoc_self_coop_unconditional` (`Necessitation/Package.lean`) -/
+/-- `dupoc_self_coop` (`Necessitation/Package.lean`) -/
 theorem outcome_Dupoc_vs_Dupoc :
     OutcomeSpecA .eventual Dupoc Dupoc (some (.C, .C)) :=
   OutcomeSpecA.eventual_of (by
-    obtain ⟨k₀, h⟩ := dupoc_self_coop_unconditional
+    obtain ⟨k₀, h⟩ := dupoc_self_coop
     exact ⟨k₀, fun k hk ↦ OutcomeAtA.of_evalGraph₂ (h k hk).1 (h k hk).1⟩)
 
 end ArithS

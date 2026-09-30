@@ -1,5 +1,5 @@
 import ArithS.Theory.Symmetry
-import ArithS.Agents.RelabelTemplate
+import ArithS.Agents.RevalueTemplate
 
 /-!
 # ArithS.Prog — program codes and the action swap on codes
@@ -20,13 +20,13 @@ no action slot.
   nesting of the former `⟪6, k, g, p, q⟫`); action values: `0 = C`, `1 = D`. Sub-programs are
   STRICTLY below their parent (`le_ppair_left/right` + the outer `+ 1`), constructors are
   injective and pairwise disjoint (`ppair_ext_iff` + the tag).
-* `swapAct` exchanges the two action values; `swapcode` applies it to every action
+* `swapAction` exchanges the two action values; `transposeCode` applies it to every action
   occurrence of a program code — the action VALUES of `pConst`/`pIte` and, through
-  `relabelTemplate` (`ArithS.RelabelTemplate`), the action CONSTANTS of every stored
+  `revalueTemplate` (`ArithS.RevalueTemplate`), the action CONSTANTS of every stored
   template (a Δ₁ function defined by a fixpoint on Foundation pairs `⟪x, y⟫` of
   input/output — the fixpoint machinery keeps the Cantor pair — with a catch-all clause
   `y = x` on non-program codes so that it is total). It is the code-level τ of
-  `Base/Transpose`: `swapcode (swapcode x) = x`.
+  `Base/Transpose`: `transposeCode (transposeCode x) = x`.
 -/
 
 namespace ArithS
@@ -211,16 +211,16 @@ end inj
 /-! ### Re-valuing actions -/
 
 /-- `0 ↦ u`, `1 ↦ w`, other values fixed. -/
-noncomputable def relabelAct (a u w : V) : V := if a = 0 then u else if a = 1 then w else a
+noncomputable def revalueAction (a u w : V) : V := if a = 0 then u else if a = 1 then w else a
 
-def relabelActGraph : 𝚺₀.Semisentence 4 :=
+def revalueActionGraph : 𝚺₀.Semisentence 4 :=
   .mkSigma “y a u w. (a = 0 → y = u) ∧ (a = 1 → y = w) ∧ (a ≠ 0 → a ≠ 1 → y = a)”
 
-instance relabelAct.defined : 𝚺₀-Function₃ (relabelAct : V → V → V → V) via relabelActGraph :=
+instance revalueAction.defined : 𝚺₀-Function₃ (revalueAction : V → V → V → V) via revalueActionGraph :=
   .mk fun v ↦ by
     suffices (v 1 = 0 → v 0 = v 2) ∧ (v 1 = 1 → v 0 = v 3) ∧ (v 1 ≠ 0 → v 1 ≠ 1 → v 0 = v 1) ↔
-        v 0 = relabelAct (v 1) (v 2) (v 3) by simpa [relabelActGraph]
-    unfold relabelAct
+        v 0 = revalueAction (v 1) (v 2) (v 3) by simpa [revalueActionGraph]
+    unfold revalueAction
     by_cases h0 : v 1 = 0
     · simp [h0]
     · by_cases h1 : v 1 = 1
@@ -228,26 +228,26 @@ instance relabelAct.defined : 𝚺₀-Function₃ (relabelAct : V → V → V �
       · simp [h0, h1]
 
 /-- The action swap. -/
-noncomputable abbrev swapAct (a : V) : V := relabelAct a 1 0
+noncomputable abbrev swapAction (a : V) : V := revalueAction a 1 0
 
-lemma relabelAct_le (a u w : V) : relabelAct a u w ≤ a + u + w := by
-  unfold relabelAct
+lemma revalueAction_le (a u w : V) : revalueAction a u w ≤ a + u + w := by
+  unfold revalueAction
   by_cases h0 : a = 0
   · simp [h0]
   · by_cases h1 : a = 1
     · simp [h1]
     · simp [h0, h1]
 
-@[simp] lemma relabelAct_zero_one (a : V) : relabelAct a 0 1 = a := by
-  unfold relabelAct
+@[simp] lemma revalueAction_zero_one (a : V) : revalueAction a 0 1 = a := by
+  unfold revalueAction
   by_cases h0 : a = 0
   · simp [h0]
   · by_cases h1 : a = 1
     · simp [h0, h1]
     · simp [h0, h1]
 
-@[simp] lemma swapAct_swapAct (a : V) : swapAct (swapAct a) = a := by
-  unfold swapAct relabelAct
+@[simp] lemma swapAction_swapAction (a : V) : swapAction (swapAction a) = a := by
+  unfold swapAction revalueAction
   by_cases h0 : a = 0
   · simp [h0]
   · by_cases h1 : a = 1
@@ -308,29 +308,29 @@ instance IsShape.defined : 𝚺₀-Predicate[V] IsShape via isShape := .mk fun v
 
 /-! ### Re-valuing every action of a program: a fixpoint on pairs `⟪x, y⟫` with parameters `u w`
 
-The search clause re-values the stored template through `relabelTemplate u w` (a Σ₁
-function), so the core is Δ₁ (both polarities cite `relabelTemplateGraph`, exactly like the
+The search clause re-values the stored template through `revalueTemplate u w` (a Σ₁
+function), so the core is Δ₁ (both polarities cite `revalueTemplateGraph`, exactly like the
 guard code in `ArithS.Eval`) rather than Δ₀; the fixpoint is still StrongFinite, since the
 sub-results referenced are `⟪p, p'⟫` with `p < x` and `p' < y`. -/
 
-namespace Relabel
+namespace Revalue
 
 /-- `Phi ![u, w] C ⟪x, y⟫`: `y` is `x` with actions re-valued `0 ↦ u, 1 ↦ w`, given the
 sub-results in `C`. -/
 def Phi (param : Fin 2 → V) (C : Set V) (pr : V) : Prop :=
-  (∃ a, pr = ⟪pConst a, pConst (relabelAct a (param 0) (param 1))⟫) ∨
+  (∃ a, pr = ⟪pConst a, pConst (revalueAction a (param 0) (param 1))⟫) ∨
   pr = ⟪pSelf, pSelf⟫ ∨ pr = ⟪pOpp, pOpp⟫ ∨
   (∃ p p', ⟪p, p'⟫ ∈ C ∧ pr = ⟪pBot p, pBot p'⟫) ∨
   (∃ p q p' q', ⟪p, p'⟫ ∈ C ∧ ⟪q, q'⟫ ∈ C ∧ pr = ⟪pSim p q, pSim p' q'⟫) ∨
   (∃ b a p q b' p' q', ⟪b, b'⟫ ∈ C ∧ ⟪p, p'⟫ ∈ C ∧ ⟪q, q'⟫ ∈ C ∧
-    pr = ⟪pIte b a p q, pIte b' (relabelAct a (param 0) (param 1)) p' q'⟫) ∨
+    pr = ⟪pIte b a p q, pIte b' (revalueAction a (param 0) (param 1)) p' q'⟫) ∨
   (∃ k g p q p' q', ⟪p, p'⟫ ∈ C ∧ ⟪q, q'⟫ ∈ C ∧
-    pr = ⟪pSearch k g p q, pSearch k (relabelTemplate (param 0) (param 1) g) p' q'⟫) ∨
+    pr = ⟪pSearch k g p q, pSearch k (revalueTemplate (param 0) (param 1) g) p' q'⟫) ∨
   (∃ x, ¬IsShape x ∧ pr = ⟪x, x⟫)
 
 noncomputable def blueprint : Fixpoint.Blueprint 2 := ⟨.mkDelta
   (.mkSigma “pr C u w. ∃ x <⁺ pr, ∃ y <⁺ pr, !pairDef pr x y ∧
-    ( (∃ a < x, !pConstGraph x a ∧ ∃ a' <⁺ a + u + w, !relabelActGraph a' a u w ∧ !pConstGraph y a') ∨
+    ( (∃ a < x, !pConstGraph x a ∧ ∃ a' <⁺ a + u + w, !revalueActionGraph a' a u w ∧ !pConstGraph y a') ∨
       (!pSelfGraph x ∧ !pSelfGraph y) ∨
       (!pOppGraph x ∧ !pOppGraph y) ∨
       (∃ p < x, !pBotGraph x p ∧ ∃ p' < y, :⟪p, p'⟫:∈ C ∧ !pBotGraph y p') ∨
@@ -338,13 +338,13 @@ noncomputable def blueprint : Fixpoint.Blueprint 2 := ⟨.mkDelta
         ∃ p' < y, ∃ q' < y, :⟪p, p'⟫:∈ C ∧ :⟪q, q'⟫:∈ C ∧ !pSimGraph y p' q') ∨
       (∃ b < x, ∃ a < x, ∃ p < x, ∃ q < x, !pIteGraph x b a p q ∧
         ∃ b' < y, ∃ a' <⁺ a + u + w, ∃ p' < y, ∃ q' < y,
-          :⟪b, b'⟫:∈ C ∧ :⟪p, p'⟫:∈ C ∧ :⟪q, q'⟫:∈ C ∧ !relabelActGraph a' a u w ∧ !pIteGraph y b' a' p' q') ∨
+          :⟪b, b'⟫:∈ C ∧ :⟪p, p'⟫:∈ C ∧ :⟪q, q'⟫:∈ C ∧ !revalueActionGraph a' a u w ∧ !pIteGraph y b' a' p' q') ∨
       (∃ k < x, ∃ g < x, ∃ p < x, ∃ q < x, !pSearchGraph x k g p q ∧
-        ∃ g', !relabelTemplateGraph g' u w g ∧ ∃ p' < y, ∃ q' < y,
+        ∃ g', !revalueTemplateGraph g' u w g ∧ ∃ p' < y, ∃ q' < y,
           :⟪p, p'⟫:∈ C ∧ :⟪q, q'⟫:∈ C ∧ !pSearchGraph y k g' p' q') ∨
       (¬!isShape x ∧ y = x) )”)
   (.mkPi “pr C u w. ∃ x <⁺ pr, ∃ y <⁺ pr, !pairDef pr x y ∧
-    ( (∃ a < x, !pConstGraph x a ∧ ∃ a' <⁺ a + u + w, !relabelActGraph a' a u w ∧ !pConstGraph y a') ∨
+    ( (∃ a < x, !pConstGraph x a ∧ ∃ a' <⁺ a + u + w, !revalueActionGraph a' a u w ∧ !pConstGraph y a') ∨
       (!pSelfGraph x ∧ !pSelfGraph y) ∨
       (!pOppGraph x ∧ !pOppGraph y) ∨
       (∃ p < x, !pBotGraph x p ∧ ∃ p' < y, :⟪p, p'⟫:∈ C ∧ !pBotGraph y p') ∨
@@ -352,16 +352,16 @@ noncomputable def blueprint : Fixpoint.Blueprint 2 := ⟨.mkDelta
         ∃ p' < y, ∃ q' < y, :⟪p, p'⟫:∈ C ∧ :⟪q, q'⟫:∈ C ∧ !pSimGraph y p' q') ∨
       (∃ b < x, ∃ a < x, ∃ p < x, ∃ q < x, !pIteGraph x b a p q ∧
         ∃ b' < y, ∃ a' <⁺ a + u + w, ∃ p' < y, ∃ q' < y,
-          :⟪b, b'⟫:∈ C ∧ :⟪p, p'⟫:∈ C ∧ :⟪q, q'⟫:∈ C ∧ !relabelActGraph a' a u w ∧ !pIteGraph y b' a' p' q') ∨
+          :⟪b, b'⟫:∈ C ∧ :⟪p, p'⟫:∈ C ∧ :⟪q, q'⟫:∈ C ∧ !revalueActionGraph a' a u w ∧ !pIteGraph y b' a' p' q') ∨
       (∃ k < x, ∃ g < x, ∃ p < x, ∃ q < x, !pSearchGraph x k g p q ∧
-        ∀ g', !relabelTemplateGraph g' u w g → ∃ p' < y, ∃ q' < y,
+        ∀ g', !revalueTemplateGraph g' u w g → ∃ p' < y, ∃ q' < y,
           :⟪p, p'⟫:∈ C ∧ :⟪q, q'⟫:∈ C ∧ !pSearchGraph y k g' p' q') ∨
       (¬!isShape x ∧ y = x) )”)⟩
 
 private lemma phi_iff (param : Fin 2 → V) (C pr : V) :
     Phi param {x | x ∈ C} pr ↔
     ∃ x ≤ pr, ∃ y ≤ pr, pr = ⟪x, y⟫ ∧
-    ( (∃ a < x, x = pConst a ∧ ∃ a' ≤ a + param 0 + param 1, a' = relabelAct a (param 0) (param 1) ∧ y = pConst a') ∨
+    ( (∃ a < x, x = pConst a ∧ ∃ a' ≤ a + param 0 + param 1, a' = revalueAction a (param 0) (param 1) ∧ y = pConst a') ∨
       (x = pSelf ∧ y = pSelf) ∨
       (x = pOpp ∧ y = pOpp) ∨
       (∃ p < x, x = pBot p ∧ ∃ p' < y, ⟪p, p'⟫ ∈ C ∧ y = pBot p') ∨
@@ -369,16 +369,16 @@ private lemma phi_iff (param : Fin 2 → V) (C pr : V) :
         ∃ p' < y, ∃ q' < y, ⟪p, p'⟫ ∈ C ∧ ⟪q, q'⟫ ∈ C ∧ y = pSim p' q') ∨
       (∃ b < x, ∃ a < x, ∃ p < x, ∃ q < x, x = pIte b a p q ∧
         ∃ b' < y, ∃ a' ≤ a + param 0 + param 1, ∃ p' < y, ∃ q' < y,
-          ⟪b, b'⟫ ∈ C ∧ ⟪p, p'⟫ ∈ C ∧ ⟪q, q'⟫ ∈ C ∧ a' = relabelAct a (param 0) (param 1) ∧
+          ⟪b, b'⟫ ∈ C ∧ ⟪p, p'⟫ ∈ C ∧ ⟪q, q'⟫ ∈ C ∧ a' = revalueAction a (param 0) (param 1) ∧
           y = pIte b' a' p' q') ∨
       (∃ k < x, ∃ g < x, ∃ p < x, ∃ q < x, x = pSearch k g p q ∧
         ∃ p' < y, ∃ q' < y,
-          ⟪p, p'⟫ ∈ C ∧ ⟪q, q'⟫ ∈ C ∧ y = pSearch k (relabelTemplate (param 0) (param 1) g) p' q') ∨
+          ⟪p, p'⟫ ∈ C ∧ ⟪q, q'⟫ ∈ C ∧ y = pSearch k (revalueTemplate (param 0) (param 1) g) p' q') ∨
       (¬IsShape x ∧ y = x) ) := by
   constructor
   · rintro (⟨a, rfl⟩ | rfl | rfl | ⟨p, p', h, rfl⟩ | ⟨p, q, p', q', hp, hq, rfl⟩ |
       ⟨b, a, p, q, b', p', q', hb, hp, hq, rfl⟩ | ⟨k, g, p, q, p', q', hp, hq, rfl⟩ | ⟨x, hx, rfl⟩)
-    · exact ⟨_, by simp, _, by simp, rfl, Or.inl ⟨a, by simp, rfl, _, relabelAct_le _ _ _, rfl, rfl⟩⟩
+    · exact ⟨_, by simp, _, by simp, rfl, Or.inl ⟨a, by simp, rfl, _, revalueAction_le _ _ _, rfl, rfl⟩⟩
     · exact ⟨_, by simp, _, by simp, rfl, Or.inr (Or.inl ⟨rfl, rfl⟩)⟩
     · exact ⟨_, by simp, _, by simp, rfl, Or.inr (Or.inr (Or.inl ⟨rfl, rfl⟩))⟩
     · exact ⟨_, by simp, _, by simp, rfl, Or.inr (Or.inr (Or.inr (Or.inl
@@ -386,7 +386,7 @@ private lemma phi_iff (param : Fin 2 → V) (C pr : V) :
     · exact ⟨_, by simp, _, by simp, rfl, Or.inr (Or.inr (Or.inr (Or.inr (Or.inl
         ⟨p, by simp, q, by simp, rfl, p', by simp, q', by simp, hp, hq, rfl⟩))))⟩
     · exact ⟨_, by simp, _, by simp, rfl, Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl
-        ⟨b, by simp, a, by simp, p, by simp, q, by simp, rfl, b', by simp, _, relabelAct_le _ _ _,
+        ⟨b, by simp, a, by simp, p, by simp, q, by simp, rfl, b', by simp, _, revalueAction_le _ _ _,
           p', by simp, q', by simp, hb, hp, hq, rfl, rfl⟩)))))⟩
     · exact ⟨_, by simp, _, by simp, rfl, Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl
         ⟨k, by simp, g, by simp, p, by simp, q, by simp, rfl,
@@ -411,10 +411,10 @@ noncomputable def construction : Fixpoint.Construction V blueprint where
   defined := .mk <| by
     constructor
     · intro v
-      simp [blueprint, HierarchySymbol.Semiformula.val_sigma, relabelTemplate.defined.df]
+      simp [blueprint, HierarchySymbol.Semiformula.val_sigma, revalueTemplate.defined.df]
     · intro v
       symm
-      simpa [blueprint, HierarchySymbol.Semiformula.val_sigma, relabelTemplate.defined.df,
+      simpa [blueprint, HierarchySymbol.Semiformula.val_sigma, revalueTemplate.defined.df,
         pSelfGraph, pOppGraph, pSelf, pOpp, lt_and_eq_succ_iff]
         using phi_iff (fun i ↦ v i.succ.succ) (v 1) (v 0)
   monotone := by
@@ -448,83 +448,83 @@ instance : construction.StrongFinite V where
         ⟨hp, pair_lt_pair (by simp) (by simp)⟩, ⟨hq, pair_lt_pair (by simp) (by simp)⟩, rfl⟩))))))
     · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨x, hx, rfl⟩))))))
 
-end Relabel
+end Revalue
 
-/-- `RelabelGraph u w x y`: `y` is `x` with actions re-valued `0 ↦ u, 1 ↦ w`. -/
-def RelabelGraph (u w x y : V) : Prop := Relabel.construction.Fixpoint ![u, w] ⟪x, y⟫
+/-- `RevalueGraph u w x y`: `y` is `x` with actions re-valued `0 ↦ u, 1 ↦ w`. -/
+def RevalueGraph (u w x y : V) : Prop := Revalue.construction.Fixpoint ![u, w] ⟪x, y⟫
 
-noncomputable def relabelGraphDef : 𝚫₁.Semisentence 4 := .mkDelta
-  (.mkSigma “u w x y. ∃ pr <⁺ (x + y + 1)², !pairDef pr x y ∧ !Relabel.blueprint.fixpointDefΔ₁.sigma pr u w”)
-  (.mkPi “u w x y. ∀ pr <⁺ (x + y + 1)², !pairDef pr x y → !Relabel.blueprint.fixpointDefΔ₁.pi pr u w”)
+noncomputable def revalueGraphDef : 𝚫₁.Semisentence 4 := .mkDelta
+  (.mkSigma “u w x y. ∃ pr <⁺ (x + y + 1)², !pairDef pr x y ∧ !Revalue.blueprint.fixpointDefΔ₁.sigma pr u w”)
+  (.mkPi “u w x y. ∀ pr <⁺ (x + y + 1)², !pairDef pr x y → !Revalue.blueprint.fixpointDefΔ₁.pi pr u w”)
 
-private lemma relabel_param_eq (v : Fin 3 → V) : (fun i ↦ v i.succ) = ![v 1, v 2] := by
+private lemma revalue_param_eq (v : Fin 3 → V) : (fun i ↦ v i.succ) = ![v 1, v 2] := by
   funext i; fin_cases i <;> rfl
 
-instance relabelGraph_defined : 𝚫₁-Relation₄[V] RelabelGraph via relabelGraphDef := .mk
+instance revalueGraph_defined : 𝚫₁-Relation₄[V] RevalueGraph via revalueGraphDef := .mk
   ⟨by intro v
-      simp [relabelGraphDef, HierarchySymbol.Semiformula.val_sigma,
-        Relabel.construction.fixpoint_definedΔ₁.proper.iff', Relabel.construction.fixpoint_definedΔ₁.df]
+      simp [revalueGraphDef, HierarchySymbol.Semiformula.val_sigma,
+        Revalue.construction.fixpoint_definedΔ₁.proper.iff', Revalue.construction.fixpoint_definedΔ₁.df]
       constructor
-      · rintro h x _ rfl; simpa [relabel_param_eq] using h
-      · intro h; have := h ⟪v 2, v 3⟫ (by simp) rfl; simpa [relabel_param_eq] using this,
+      · rintro h x _ rfl; simpa [revalue_param_eq] using h
+      · intro h; have := h ⟪v 2, v 3⟫ (by simp) rfl; simpa [revalue_param_eq] using this,
    by intro v
-      simp [relabelGraphDef, HierarchySymbol.Semiformula.val_sigma,
-        Relabel.construction.fixpoint_definedΔ₁.df, RelabelGraph]⟩
+      simp [revalueGraphDef, HierarchySymbol.Semiformula.val_sigma,
+        Revalue.construction.fixpoint_definedΔ₁.df, RevalueGraph]⟩
 
-instance relabelGraph_definable : 𝚫₁-Relation₄[V] RelabelGraph := relabelGraph_defined.to_definable
+instance revalueGraph_definable : 𝚫₁-Relation₄[V] RevalueGraph := revalueGraph_defined.to_definable
 
-instance relabelGraph_definable' : Γ-[m + 1]-Relation₄[V] RelabelGraph :=
-  relabelGraph_definable.of_deltaOne
+instance revalueGraph_definable' : Γ-[m + 1]-Relation₄[V] RevalueGraph :=
+  revalueGraph_definable.of_deltaOne
 
-lemma RelabelGraph.case_iff {u w x y : V} :
-    RelabelGraph u w x y ↔
-    (∃ a, x = pConst a ∧ y = pConst (relabelAct a u w)) ∨
+lemma RevalueGraph.case_iff {u w x y : V} :
+    RevalueGraph u w x y ↔
+    (∃ a, x = pConst a ∧ y = pConst (revalueAction a u w)) ∨
     (x = pSelf ∧ y = pSelf) ∨ (x = pOpp ∧ y = pOpp) ∨
-    (∃ p p', RelabelGraph u w p p' ∧ x = pBot p ∧ y = pBot p') ∨
-    (∃ p q p' q', RelabelGraph u w p p' ∧ RelabelGraph u w q q' ∧ x = pSim p q ∧ y = pSim p' q') ∨
-    (∃ b a p q b' p' q', RelabelGraph u w b b' ∧ RelabelGraph u w p p' ∧ RelabelGraph u w q q' ∧
-      x = pIte b a p q ∧ y = pIte b' (relabelAct a u w) p' q') ∨
-    (∃ k g p q p' q', RelabelGraph u w p p' ∧ RelabelGraph u w q q' ∧
-      x = pSearch k g p q ∧ y = pSearch k (relabelTemplate u w g) p' q') ∨
+    (∃ p p', RevalueGraph u w p p' ∧ x = pBot p ∧ y = pBot p') ∨
+    (∃ p q p' q', RevalueGraph u w p p' ∧ RevalueGraph u w q q' ∧ x = pSim p q ∧ y = pSim p' q') ∨
+    (∃ b a p q b' p' q', RevalueGraph u w b b' ∧ RevalueGraph u w p p' ∧ RevalueGraph u w q q' ∧
+      x = pIte b a p q ∧ y = pIte b' (revalueAction a u w) p' q') ∨
+    (∃ k g p q p' q', RevalueGraph u w p p' ∧ RevalueGraph u w q q' ∧
+      x = pSearch k g p q ∧ y = pSearch k (revalueTemplate u w g) p' q') ∨
     (¬IsShape y ∧ x = y) :=
-  Iff.trans Relabel.construction.case (by simp [Relabel.construction, Relabel.Phi, RelabelGraph])
+  Iff.trans Revalue.construction.case (by simp [Revalue.construction, Revalue.Phi, RevalueGraph])
 
 section inversion
 
 attribute [local simp] pConst pSelf pOpp pBot pSim pIte pSearch IsShape
 
-lemma RelabelGraph.const_iff {u w a y : V} :
-    RelabelGraph u w (pConst a) y ↔ y = pConst (relabelAct a u w) := by
-  rw [RelabelGraph.case_iff]; simp
+lemma RevalueGraph.const_iff {u w a y : V} :
+    RevalueGraph u w (pConst a) y ↔ y = pConst (revalueAction a u w) := by
+  rw [RevalueGraph.case_iff]; simp
   intro h₀ _ _ _ _ _ _ h; exact absurd h.symm (h₀ a)
-lemma RelabelGraph.self_iff {u w y : V} : RelabelGraph u w pSelf y ↔ y = pSelf := by
-  rw [RelabelGraph.case_iff]; simp
+lemma RevalueGraph.self_iff {u w y : V} : RevalueGraph u w pSelf y ↔ y = pSelf := by
+  rw [RevalueGraph.case_iff]; simp
   intro _ h₁ _ _ _ _ _ h; exact absurd h.symm h₁
-lemma RelabelGraph.opp_iff {u w y : V} : RelabelGraph u w pOpp y ↔ y = pOpp := by
-  rw [RelabelGraph.case_iff]; simp
+lemma RevalueGraph.opp_iff {u w y : V} : RevalueGraph u w pOpp y ↔ y = pOpp := by
+  rw [RevalueGraph.case_iff]; simp
   intro _ _ h₂ _ _ _ _ h; exact absurd h.symm h₂
-lemma RelabelGraph.bot_iff {u w p y : V} :
-    RelabelGraph u w (pBot p) y ↔ ∃ p', RelabelGraph u w p p' ∧ y = pBot p' := by
-  rw [RelabelGraph.case_iff]; simp
+lemma RevalueGraph.bot_iff {u w p y : V} :
+    RevalueGraph u w (pBot p) y ↔ ∃ p', RevalueGraph u w p p' ∧ y = pBot p' := by
+  rw [RevalueGraph.case_iff]; simp
   intro _ _ _ h₃ _ _ _ h; exact absurd h.symm (h₃ p)
-lemma RelabelGraph.sim_iff {u w p q y : V} :
-    RelabelGraph u w (pSim p q) y ↔
-    ∃ p' q', RelabelGraph u w p p' ∧ RelabelGraph u w q q' ∧ y = pSim p' q' := by
-  rw [RelabelGraph.case_iff]; simp
+lemma RevalueGraph.sim_iff {u w p q y : V} :
+    RevalueGraph u w (pSim p q) y ↔
+    ∃ p' q', RevalueGraph u w p p' ∧ RevalueGraph u w q q' ∧ y = pSim p' q' := by
+  rw [RevalueGraph.case_iff]; simp
   intro _ _ _ _ h₄ _ _ h; exact absurd h.symm (h₄ p q)
-lemma RelabelGraph.ite_iff {u w b a p q y : V} :
-    RelabelGraph u w (pIte b a p q) y ↔
-    ∃ b' p' q', RelabelGraph u w b b' ∧ RelabelGraph u w p p' ∧ RelabelGraph u w q q' ∧
-      y = pIte b' (relabelAct a u w) p' q' := by
-  rw [RelabelGraph.case_iff]; simp
+lemma RevalueGraph.ite_iff {u w b a p q y : V} :
+    RevalueGraph u w (pIte b a p q) y ↔
+    ∃ b' p' q', RevalueGraph u w b b' ∧ RevalueGraph u w p p' ∧ RevalueGraph u w q q' ∧
+      y = pIte b' (revalueAction a u w) p' q' := by
+  rw [RevalueGraph.case_iff]; simp
   intro _ _ _ _ _ h₅ _ h; exact absurd h.symm (h₅ b a p q)
-lemma RelabelGraph.search_iff {u w k g p q y : V} :
-    RelabelGraph u w (pSearch k g p q) y ↔
-    ∃ p' q', RelabelGraph u w p p' ∧ RelabelGraph u w q q' ∧ y = pSearch k (relabelTemplate u w g) p' q' := by
-  rw [RelabelGraph.case_iff]; simp
+lemma RevalueGraph.search_iff {u w k g p q y : V} :
+    RevalueGraph u w (pSearch k g p q) y ↔
+    ∃ p' q', RevalueGraph u w p p' ∧ RevalueGraph u w q q' ∧ y = pSearch k (revalueTemplate u w g) p' q' := by
+  rw [RevalueGraph.case_iff]; simp
   intro _ _ _ _ _ _ h₆ h; exact absurd h.symm (h₆ k g p q)
-lemma RelabelGraph.of_not_shape {u w x y : V} (hx : ¬IsShape x) : RelabelGraph u w x y ↔ y = x := by
-  rw [RelabelGraph.case_iff]
+lemma RevalueGraph.of_not_shape {u w x y : V} (hx : ¬IsShape x) : RevalueGraph u w x y ↔ y = x := by
+  rw [RevalueGraph.case_iff]
   constructor
   · rintro (⟨a, rfl, _⟩ | ⟨rfl, _⟩ | ⟨rfl, _⟩ | ⟨p, p', _, rfl, _⟩ | ⟨p, q, p', q', _, _, rfl, _⟩ |
       ⟨b, a, p, q, b', p', q', _, _, _, rfl, _⟩ | ⟨k, g, p, q, p', q', _, _, rfl, _⟩ | ⟨_, h⟩)
@@ -541,103 +541,103 @@ lemma RelabelGraph.of_not_shape {u w x y : V} (hx : ¬IsShape x) : RelabelGraph 
 
 end inversion
 
-/-! ### `relabel` is a total Σ₁ function -/
+/-! ### `revalue` is a total Σ₁ function -/
 
-lemma relabelGraph_exists (u w x : V) : ∃ y, RelabelGraph u w x y := by
+lemma revalueGraph_exists (u w x : V) : ∃ y, RevalueGraph u w x y := by
   induction x using ISigma1.sigma1_order_induction with
   | hP => definability
   | ind x ih =>
     by_cases hx : IsShape x
     · rcases hx with ⟨a, rfl⟩ | rfl | rfl | ⟨p, rfl⟩ | ⟨p, q, rfl⟩ | ⟨b, a, p, q, rfl⟩ | ⟨k, g, p, q, rfl⟩
-      · exact ⟨_, RelabelGraph.const_iff.mpr rfl⟩
-      · exact ⟨_, RelabelGraph.self_iff.mpr rfl⟩
-      · exact ⟨_, RelabelGraph.opp_iff.mpr rfl⟩
+      · exact ⟨_, RevalueGraph.const_iff.mpr rfl⟩
+      · exact ⟨_, RevalueGraph.self_iff.mpr rfl⟩
+      · exact ⟨_, RevalueGraph.opp_iff.mpr rfl⟩
       · obtain ⟨p', hp⟩ := ih p (by simp)
-        exact ⟨_, RelabelGraph.bot_iff.mpr ⟨p', hp, rfl⟩⟩
+        exact ⟨_, RevalueGraph.bot_iff.mpr ⟨p', hp, rfl⟩⟩
       · obtain ⟨p', hp⟩ := ih p (by simp); obtain ⟨q', hq⟩ := ih q (by simp)
-        exact ⟨_, RelabelGraph.sim_iff.mpr ⟨p', q', hp, hq, rfl⟩⟩
+        exact ⟨_, RevalueGraph.sim_iff.mpr ⟨p', q', hp, hq, rfl⟩⟩
       · obtain ⟨b', hb⟩ := ih b (by simp); obtain ⟨p', hp⟩ := ih p (by simp)
         obtain ⟨q', hq⟩ := ih q (by simp)
-        exact ⟨_, RelabelGraph.ite_iff.mpr ⟨b', p', q', hb, hp, hq, rfl⟩⟩
+        exact ⟨_, RevalueGraph.ite_iff.mpr ⟨b', p', q', hb, hp, hq, rfl⟩⟩
       · obtain ⟨p', hp⟩ := ih p (by simp); obtain ⟨q', hq⟩ := ih q (by simp)
-        exact ⟨_, RelabelGraph.search_iff.mpr ⟨p', q', hp, hq, rfl⟩⟩
-    · exact ⟨x, (RelabelGraph.of_not_shape hx).mpr rfl⟩
+        exact ⟨_, RevalueGraph.search_iff.mpr ⟨p', q', hp, hq, rfl⟩⟩
+    · exact ⟨x, (RevalueGraph.of_not_shape hx).mpr rfl⟩
 
-lemma relabelGraph_unique (u w x : V) :
-    ∀ y₁ y₂, RelabelGraph u w x y₁ → RelabelGraph u w x y₂ → y₁ = y₂ := by
+lemma revalueGraph_unique (u w x : V) :
+    ∀ y₁ y₂, RevalueGraph u w x y₁ → RevalueGraph u w x y₂ → y₁ = y₂ := by
   induction x using ISigma1.pi1_order_induction with
   | hP => definability
   | ind x ih =>
     intro y₁ y₂ h₁ h₂
     by_cases hx : IsShape x
     · rcases hx with ⟨a, rfl⟩ | rfl | rfl | ⟨p, rfl⟩ | ⟨p, q, rfl⟩ | ⟨b, a, p, q, rfl⟩ | ⟨k, g, p, q, rfl⟩
-      · rw [RelabelGraph.const_iff] at h₁ h₂; rw [h₁, h₂]
-      · rw [RelabelGraph.self_iff] at h₁ h₂; rw [h₁, h₂]
-      · rw [RelabelGraph.opp_iff] at h₁ h₂; rw [h₁, h₂]
-      · rcases RelabelGraph.bot_iff.mp h₁ with ⟨p₁, hp₁, rfl⟩
-        rcases RelabelGraph.bot_iff.mp h₂ with ⟨p₂, hp₂, rfl⟩
+      · rw [RevalueGraph.const_iff] at h₁ h₂; rw [h₁, h₂]
+      · rw [RevalueGraph.self_iff] at h₁ h₂; rw [h₁, h₂]
+      · rw [RevalueGraph.opp_iff] at h₁ h₂; rw [h₁, h₂]
+      · rcases RevalueGraph.bot_iff.mp h₁ with ⟨p₁, hp₁, rfl⟩
+        rcases RevalueGraph.bot_iff.mp h₂ with ⟨p₂, hp₂, rfl⟩
         rw [ih p (by simp) _ _ hp₁ hp₂]
-      · rcases RelabelGraph.sim_iff.mp h₁ with ⟨p₁, q₁, hp₁, hq₁, rfl⟩
-        rcases RelabelGraph.sim_iff.mp h₂ with ⟨p₂, q₂, hp₂, hq₂, rfl⟩
+      · rcases RevalueGraph.sim_iff.mp h₁ with ⟨p₁, q₁, hp₁, hq₁, rfl⟩
+        rcases RevalueGraph.sim_iff.mp h₂ with ⟨p₂, q₂, hp₂, hq₂, rfl⟩
         rw [ih p (by simp) _ _ hp₁ hp₂, ih q (by simp) _ _ hq₁ hq₂]
-      · rcases RelabelGraph.ite_iff.mp h₁ with ⟨b₁, p₁, q₁, hb₁, hp₁, hq₁, rfl⟩
-        rcases RelabelGraph.ite_iff.mp h₂ with ⟨b₂, p₂, q₂, hb₂, hp₂, hq₂, rfl⟩
+      · rcases RevalueGraph.ite_iff.mp h₁ with ⟨b₁, p₁, q₁, hb₁, hp₁, hq₁, rfl⟩
+        rcases RevalueGraph.ite_iff.mp h₂ with ⟨b₂, p₂, q₂, hb₂, hp₂, hq₂, rfl⟩
         rw [ih b (by simp) _ _ hb₁ hb₂, ih p (by simp) _ _ hp₁ hp₂, ih q (by simp) _ _ hq₁ hq₂]
-      · rcases RelabelGraph.search_iff.mp h₁ with ⟨p₁, q₁, hp₁, hq₁, rfl⟩
-        rcases RelabelGraph.search_iff.mp h₂ with ⟨p₂, q₂, hp₂, hq₂, rfl⟩
+      · rcases RevalueGraph.search_iff.mp h₁ with ⟨p₁, q₁, hp₁, hq₁, rfl⟩
+        rcases RevalueGraph.search_iff.mp h₂ with ⟨p₂, q₂, hp₂, hq₂, rfl⟩
         rw [ih p (by simp) _ _ hp₁ hp₂, ih q (by simp) _ _ hq₁ hq₂]
-    · rw [RelabelGraph.of_not_shape hx] at h₁ h₂; rw [h₁, h₂]
+    · rw [RevalueGraph.of_not_shape hx] at h₁ h₂; rw [h₁, h₂]
 
-lemma relabelGraph_existsUnique (u w x : V) : ∃! y, RelabelGraph u w x y := by
-  rcases relabelGraph_exists u w x with ⟨y, hy⟩
-  exact ExistsUnique.intro y hy (fun y' h' ↦ relabelGraph_unique u w x y' y h' hy)
+lemma revalueGraph_existsUnique (u w x : V) : ∃! y, RevalueGraph u w x y := by
+  rcases revalueGraph_exists u w x with ⟨y, hy⟩
+  exact ExistsUnique.intro y hy (fun y' h' ↦ revalueGraph_unique u w x y' y h' hy)
 
 /-- Re-value every action of a program: `0 ↦ u`, `1 ↦ w`. -/
-noncomputable def relabel (u w x : V) : V := Classical.choose! (relabelGraph_existsUnique u w x)
+noncomputable def revalue (u w x : V) : V := Classical.choose! (revalueGraph_existsUnique u w x)
 
-lemma relabel_graph (u w x : V) : RelabelGraph u w x (relabel u w x) :=
-  Classical.choose!_spec (relabelGraph_existsUnique u w x)
+lemma revalue_graph (u w x : V) : RevalueGraph u w x (revalue u w x) :=
+  Classical.choose!_spec (revalueGraph_existsUnique u w x)
 
-lemma relabel_eq_of_graph {u w x y : V} (h : RelabelGraph u w x y) : relabel u w x = y :=
-  relabelGraph_unique u w x _ _ (relabel_graph u w x) h
+lemma revalue_eq_of_graph {u w x y : V} (h : RevalueGraph u w x y) : revalue u w x = y :=
+  revalueGraph_unique u w x _ _ (revalue_graph u w x) h
 
-noncomputable def relabelDef : 𝚺₁.Semisentence 4 := .mkSigma “y u w x. !relabelGraphDef.sigma u w x y”
+noncomputable def revalueDef : 𝚺₁.Semisentence 4 := .mkSigma “y u w x. !revalueGraphDef.sigma u w x y”
 
-instance relabel_defined : 𝚺₁-Function₃ (relabel : V → V → V → V) via relabelDef := .mk fun v ↦ by
-  simp [relabelDef, HierarchySymbol.Semiformula.val_sigma, relabelGraph_defined.df]
+instance revalue_defined : 𝚺₁-Function₃ (revalue : V → V → V → V) via revalueDef := .mk fun v ↦ by
+  simp [revalueDef, HierarchySymbol.Semiformula.val_sigma, revalueGraph_defined.df]
   constructor
-  · intro h; exact (relabel_eq_of_graph h).symm
-  · intro h; rw [h]; exact relabel_graph _ _ _
+  · intro h; exact (revalue_eq_of_graph h).symm
+  · intro h; rw [h]; exact revalue_graph _ _ _
 
-instance relabel_definable : 𝚺₁-Function₃ (relabel : V → V → V → V) := relabel_defined.to_definable
+instance revalue_definable : 𝚺₁-Function₃ (revalue : V → V → V → V) := revalue_defined.to_definable
 
-instance relabel_definable' : Γ-[m + 1]-Function₃ (relabel : V → V → V → V) :=
-  relabel_definable.of_sigmaOne
+instance revalue_definable' : Γ-[m + 1]-Function₃ (revalue : V → V → V → V) :=
+  revalue_definable.of_sigmaOne
 
-@[simp] lemma relabel_const (u w a : V) : relabel u w (pConst a) = pConst (relabelAct a u w) :=
-  relabel_eq_of_graph (RelabelGraph.const_iff.mpr rfl)
-@[simp] lemma relabel_self (u w : V) : relabel u w (pSelf : V) = pSelf :=
-  relabel_eq_of_graph (RelabelGraph.self_iff.mpr rfl)
-@[simp] lemma relabel_opp (u w : V) : relabel u w (pOpp : V) = pOpp :=
-  relabel_eq_of_graph (RelabelGraph.opp_iff.mpr rfl)
-@[simp] lemma relabel_bot (u w p : V) : relabel u w (pBot p) = pBot (relabel u w p) :=
-  relabel_eq_of_graph (RelabelGraph.bot_iff.mpr ⟨_, relabel_graph u w p, rfl⟩)
-@[simp] lemma relabel_sim (u w p q : V) :
-    relabel u w (pSim p q) = pSim (relabel u w p) (relabel u w q) :=
-  relabel_eq_of_graph (RelabelGraph.sim_iff.mpr ⟨_, _, relabel_graph u w p, relabel_graph u w q, rfl⟩)
-@[simp] lemma relabel_ite (u w b a p q : V) :
-    relabel u w (pIte b a p q) = pIte (relabel u w b) (relabelAct a u w) (relabel u w p) (relabel u w q) :=
-  relabel_eq_of_graph (RelabelGraph.ite_iff.mpr
-    ⟨_, _, _, relabel_graph u w b, relabel_graph u w p, relabel_graph u w q, rfl⟩)
-@[simp] lemma relabel_search (u w k g p q : V) :
-    relabel u w (pSearch k g p q) = pSearch k (relabelTemplate u w g) (relabel u w p) (relabel u w q) :=
-  relabel_eq_of_graph (RelabelGraph.search_iff.mpr
-    ⟨_, _, relabel_graph u w p, relabel_graph u w q, rfl⟩)
-lemma relabel_of_not_shape {u w x : V} (hx : ¬IsShape x) : relabel u w x = x :=
-  relabel_eq_of_graph ((RelabelGraph.of_not_shape hx).mpr rfl)
+@[simp] lemma revalue_const (u w a : V) : revalue u w (pConst a) = pConst (revalueAction a u w) :=
+  revalue_eq_of_graph (RevalueGraph.const_iff.mpr rfl)
+@[simp] lemma revalue_self (u w : V) : revalue u w (pSelf : V) = pSelf :=
+  revalue_eq_of_graph (RevalueGraph.self_iff.mpr rfl)
+@[simp] lemma revalue_opp (u w : V) : revalue u w (pOpp : V) = pOpp :=
+  revalue_eq_of_graph (RevalueGraph.opp_iff.mpr rfl)
+@[simp] lemma revalue_bot (u w p : V) : revalue u w (pBot p) = pBot (revalue u w p) :=
+  revalue_eq_of_graph (RevalueGraph.bot_iff.mpr ⟨_, revalue_graph u w p, rfl⟩)
+@[simp] lemma revalue_sim (u w p q : V) :
+    revalue u w (pSim p q) = pSim (revalue u w p) (revalue u w q) :=
+  revalue_eq_of_graph (RevalueGraph.sim_iff.mpr ⟨_, _, revalue_graph u w p, revalue_graph u w q, rfl⟩)
+@[simp] lemma revalue_ite (u w b a p q : V) :
+    revalue u w (pIte b a p q) = pIte (revalue u w b) (revalueAction a u w) (revalue u w p) (revalue u w q) :=
+  revalue_eq_of_graph (RevalueGraph.ite_iff.mpr
+    ⟨_, _, _, revalue_graph u w b, revalue_graph u w p, revalue_graph u w q, rfl⟩)
+@[simp] lemma revalue_search (u w k g p q : V) :
+    revalue u w (pSearch k g p q) = pSearch k (revalueTemplate u w g) (revalue u w p) (revalue u w q) :=
+  revalue_eq_of_graph (RevalueGraph.search_iff.mpr
+    ⟨_, _, revalue_graph u w p, revalue_graph u w q, rfl⟩)
+lemma revalue_of_not_shape {u w x : V} (hx : ¬IsShape x) : revalue u w x = x :=
+  revalue_eq_of_graph ((RevalueGraph.of_not_shape hx).mpr rfl)
 
 /-- Re-valuing with `(0, 1)` is the identity. -/
-theorem relabel_zero_one (x : V) : relabel 0 1 x = x := by
+theorem revalue_zero_one (x : V) : revalue 0 1 x = x := by
   induction x using ISigma1.pi1_order_induction with
   | hP => definability
   | ind x ih =>
@@ -649,26 +649,26 @@ theorem relabel_zero_one (x : V) : relabel 0 1 x = x := by
       · simp [ih p (by simp)]
       · simp [ih p (by simp), ih q (by simp)]
       · simp [ih b (by simp), ih p (by simp), ih q (by simp)]
-      · simp [ih p (by simp), ih q (by simp), relabelTemplate_zero_one]
-    · rw [relabel_of_not_shape hx]
+      · simp [ih p (by simp), ih q (by simp), revalueTemplate_zero_one]
+    · rw [revalue_of_not_shape hx]
 
 /-- The action swap on program codes: re-value with `(1, 0)`. -/
-noncomputable abbrev swapcode (x : V) : V := relabel 1 0 x
+noncomputable abbrev transposeCode (x : V) : V := revalue 1 0 x
 
 /-- τ is an involution on codes. -/
-theorem swapcode_swapcode (x : V) : swapcode (swapcode x) = x := by
+theorem transposeCode_transposeCode (x : V) : transposeCode (transposeCode x) = x := by
   induction x using ISigma1.pi1_order_induction with
   | hP => definability
   | ind x ih =>
     by_cases hx : IsShape x
     · rcases hx with ⟨a, rfl⟩ | rfl | rfl | ⟨p, rfl⟩ | ⟨p, q, rfl⟩ | ⟨b, a, p, q, rfl⟩ | ⟨k, g, p, q, rfl⟩
-      · simp [swapcode]
-      · simp [swapcode]
-      · simp [swapcode]
-      · simp [swapcode, ih p (by simp)]
-      · simp [swapcode, ih p (by simp), ih q (by simp)]
-      · simp [swapcode, ih b (by simp), ih p (by simp), ih q (by simp)]
-      · simp [swapcode, ih p (by simp), ih q (by simp), relabelTemplate_swap_swap]
-    · simp only [swapcode]; rw [relabel_of_not_shape hx, relabel_of_not_shape hx]
+      · simp [transposeCode]
+      · simp [transposeCode]
+      · simp [transposeCode]
+      · simp [transposeCode, ih p (by simp)]
+      · simp [transposeCode, ih p (by simp), ih q (by simp)]
+      · simp [transposeCode, ih b (by simp), ih p (by simp), ih q (by simp)]
+      · simp [transposeCode, ih p (by simp), ih q (by simp), revalueTemplate_swap_swap]
+    · simp only [transposeCode]; rw [revalue_of_not_shape hx, revalue_of_not_shape hx]
 
 end ArithS

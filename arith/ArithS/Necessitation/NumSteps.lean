@@ -4,18 +4,18 @@ import ArithS.Necessitation.Chain
 # ArithS.Necessitation.NumSteps — Σ₁ provers of closed binary-numeral facts (derivation codes)
 
 `M4_BOUNDED_HBL/DESIGN_fragments.md` §2.3–2.4 and `BRIEF.md` §11: every closed arithmetic
-fact between binary numerals the fragments need (`bnum a + bnum b = bnum (a + b)`, `bnum a ≤
-bnum b`, `bnum a + bnum b + bnum c + 1 ≤ bnum n`, …) is cut into the verification proof by ONE
+fact between binary numerals the fragments need (`binNumeral a + binNumeral b = binNumeral (a + b)`, `binNumeral a ≤
+binNumeral b`, `binNumeral a + binNumeral b + binNumeral c + 1 ≤ binNumeral n`, …) is cut into the verification proof by ONE
 `sLemma A dA` step whose data `dA` is a DERIVATION CODE of the singleton `{A}` — produced,
 inside every model of `𝗜𝚺₁`, by the Σ₁ provers of this file, at a length polynomial in the
-bit lengths (`termLen (bnum ·)`), never in the numbers.
+bit lengths (`termLen (binNumeral ·)`), never in the numbers.
 
 The construction is `NumeralFacts.lean`'s bit recursion lifted to codes: a fact about `(a, b)` is
 derived from the fact about `(a / 2, b / 2)` (and, for a carry, about `(a/2 + b/2, 1)`) by ONE
 Horn row of the library instantiated at the sub-numerals (`useHornCode`, the row's proof code
 read from a TABLE `tbl` — `NumTableOK tbl N B`, `exists_numTable`) and ONE lemma cut per
 sub-fact (`cut1`, Chain's `lemmaCut_proof`). The recursion is a `Fixpoint` on `⟪a, b, d⟫`
-(`AddGraph`, the `Bnum` pattern; `Finite` — the graph is Σ₁, all a Σ₁ function needs), with
+(`AddGraph`, the `BinNumeral` pattern; `Finite` — the graph is Σ₁, all a Σ₁ function needs), with
 existence + correctness + length by ONE Σ₁ order induction on `a + b` (bounded quantifiers) and
 uniqueness by Π₁ induction. Everything else is non-recursive on top of `addCode` (`leCode`,
 `ltCode`, the node bookkeeping facts) or a `PR` on a unary index (`cTEqCode`).
@@ -23,14 +23,14 @@ uniqueness by Π₁ induction. Everything else is non-recursive on top of `addCo
 The rows are written in `NumeralFacts.lean`'s operator syntax (`eqO`/`leF`/`ltF`, `addO`,
 `twoMul`, `twoMulOne`, `oneO`), so their codes are `impChain`s of canonical facts `eqFact`/
 `leFact`/`ltFact` — `subst ?[t, u] P` with `P` the code of the `=`/`≤`/`<` operator sentence
-(`Peq`; `Ple`, `Plt` of `Chain`/`RowInst`) — and `bnum`'s bit equations (`bnum (2m) = 𝟐 ^* bnum m`,
-`bnum (2m + 1) = (𝟐 ^* bnum m) ^+ 𝟏`) match the rows' conclusions SYNTACTICALLY.
+(`Peq`; `Ple`, `Plt` of `Chain`/`RowInst`) — and `binNumeral`'s bit equations (`binNumeral (2m) = 𝟐 ^* binNumeral m`,
+`binNumeral (2m + 1) = (𝟐 ^* binNumeral m) ^+ 𝟏`) match the rows' conclusions SYNTACTICALLY.
 
 Delivered (DESIGN §2.4's table): N1 `addCode` (`addFact a b`), N2 `leCode` (`a ≤ b`), `ltCode`
 (`a < b`), N7 (`oneLe` = `leCode 1 a`), the node bookkeeping facts N3 at fixed arities
-(`bin3Fact`: `bnum a + bnum b + bnum c + 1 ≤ bnum n`, `bin2Fact`, `leafFact`, `sum2Fact`), and
-N6 `cTEqCode` (`cT z = bnum z`, hence `cT z ≤ bnum z`). Each comes with its `DerivationOf`
-theorem, a `dlen` bound, and its `sLemma` packaging (`LemmaOK` + `stepCost`).
+(`bin3Fact`: `binNumeral a + binNumeral b + binNumeral c + 1 ≤ binNumeral n`, `bin2Fact`, `leafFact`, `sum2Fact`), and
+N6 `cTEqCode` (`cT z = binNumeral z`, hence `cT z ≤ binNumeral z`). Each comes with its `DerivationOf`
+theorem, a `proofLen` bound, and its `sLemma` packaging (`LemmaOK` + `stepCost`).
 -/
 
 namespace ArithS
@@ -179,7 +179,7 @@ lemma termSubst_qqTwo' (w : V) : termSubst LAct w (𝟐 : V) = 𝟐 := by
 @[simp] lemma isSemiterm_qqOne_LAct' (n : V) : IsSemiterm LAct n (𝟏 : V) := isSemiterm_qqOne_LAct n
 @[simp] lemma isSemiterm_qqZero_LAct' (n : V) : IsSemiterm LAct n (𝟎 : V) := isSemiterm_qqZero_LAct n
 
-lemma isSemiterm_bnum_LAct (n a : V) : IsSemiterm LAct n (bnum a) := IsSemiterm.LAct_of_LOR (bnum_semiterm n a)
+lemma isSemiterm_binNumeral_LAct (n a : V) : IsSemiterm LAct n (binNumeral a) := IsSemiterm.LAct_of_LOR (binNumeral_semiterm n a)
 
 /-! ### Lengths of numeral codes (`Assembly/Uniform` has these at `V : Type` only) -/
 
@@ -195,24 +195,24 @@ lemma termLen_qqTwoL : termLen LAct (𝟐 : V) = 3 := by
     termLen_qqOne isFunc_LAct_oneIndex]
   norm_num
 
-lemma termLen_bnum_two_mul {m : V} (hm : 1 ≤ m) : termLen LAct (bnum (2 * m)) = termLen LAct (bnum m) + 4 := by
-  rw [bnum_two_mul hm, termLen_qqMulL (isSemiterm_qqTwo_LAct 0).isUTerm (isSemiterm_bnum_LAct 0 m).isUTerm,
+lemma termLen_binNumeral_two_mul {m : V} (hm : 1 ≤ m) : termLen LAct (binNumeral (2 * m)) = termLen LAct (binNumeral m) + 4 := by
+  rw [binNumeral_two_mul hm, termLen_qqMulL (isSemiterm_qqTwo_LAct 0).isUTerm (isSemiterm_binNumeral_LAct 0 m).isUTerm,
     termLen_qqTwoL]
   ring
 
-lemma termLen_bnum_two_mul_add_one {m : V} (hm : 1 ≤ m) :
-    termLen LAct (bnum (2 * m + 1)) = termLen LAct (bnum m) + 6 := by
-  rw [bnum_two_mul_add_one hm,
-    termLen_qqAdd isFunc_LAct_addIndex (isSemiterm_qqMul_LAct_iff.mpr ⟨isSemiterm_qqTwo_LAct 0, isSemiterm_bnum_LAct 0 m⟩).isUTerm
+lemma termLen_binNumeral_two_mul_add_one {m : V} (hm : 1 ≤ m) :
+    termLen LAct (binNumeral (2 * m + 1)) = termLen LAct (binNumeral m) + 6 := by
+  rw [binNumeral_two_mul_add_one hm,
+    termLen_qqAdd isFunc_LAct_addIndex (isSemiterm_qqMul_LAct_iff.mpr ⟨isSemiterm_qqTwo_LAct 0, isSemiterm_binNumeral_LAct 0 m⟩).isUTerm
       (isSemiterm_qqOne_LAct 0).isUTerm,
-    termLen_qqMulL (isSemiterm_qqTwo_LAct 0).isUTerm (isSemiterm_bnum_LAct 0 m).isUTerm,
+    termLen_qqMulL (isSemiterm_qqTwo_LAct 0).isUTerm (isSemiterm_binNumeral_LAct 0 m).isUTerm,
     termLen_qqTwoL, termLen_qqOne isFunc_LAct_oneIndex]
   ring
 
-lemma termLen_bnum_zero : termLen LAct (bnum (0 : V)) = 1 := by
-  rw [bnum_zero, termLen_qqZero isFunc_LAct_zeroIndex]
-lemma termLen_bnum_one : termLen LAct (bnum (1 : V)) = 1 := by
-  rw [bnum_one, termLen_qqOne isFunc_LAct_oneIndex]
+lemma termLen_binNumeral_zero : termLen LAct (binNumeral (0 : V)) = 1 := by
+  rw [binNumeral_zero, termLen_qqZero isFunc_LAct_zeroIndex]
+lemma termLen_binNumeral_one : termLen LAct (binNumeral (1 : V)) = 1 := by
+  rw [binNumeral_one, termLen_qqOne isFunc_LAct_oneIndex]
 
 end syntaxCodes
 
@@ -929,7 +929,7 @@ end rows
 /-! ## 3. The table: the rows' proof codes and pieces, in every model
 
 `NumTableOK tbl N B`: row `i` of `tbl` is `⟪dΛ, vecOf as, c⟫` — the row's `TAct`-proof code
-(`Proof TAct dΛ (∀^m (impChain as c))`, `dlen dΛ ≤ N`) with its pieces; `B` bounds every row body
+(`Proof TAct dΛ (∀^m (impChain as c))`, `proofLen dΛ ≤ N`) with its pieces; `B` bounds every row body
 and the three predicate codes `Peq/Ple/Plt`. `exists_numTable`: ONE standard `(N, B)` serves every
 model (`Lib.univ_code` row by row). -/
 
@@ -949,12 +949,12 @@ lemma pieces_of_impChain {n : V} : ∀ {as : List V} {c : V}, IsSemiformula LAct
 
 /-- The code length of a quoted semisentence is its meta length, in every model (any arity). -/
 lemma formulaLen_quote_semisentence_V' {m : ℕ} (χ : Semisentence LAct m) :
-    formulaLen LAct (⌜χ⌝ : V) = ((flen (Rewriting.emb χ : Semiproposition LAct m) : ℕ) : V) := by
+    formulaLen LAct (⌜χ⌝ : V) = ((formulaLenMeta (Rewriting.emb χ : Semiproposition LAct m) : ℕ) : V) := by
   rw [Sentence.quote_def, formulaLen_quote]
 
 /-- The standard length of a row body (its embedded meta length). -/
 def rowLen {m : ℕ} (Bd : ArithmeticSemisentence m) : ℕ :=
-  flen (Rewriting.emb (Semiformula.lMap emb Bd) : Semiproposition LAct m)
+  formulaLenMeta (Rewriting.emb (Semiformula.lMap emb Bd) : Semiproposition LAct m)
 
 /-- The `<` operator sentence over `LAct` (`RowInst.Plt = ⌜ltS⌝`). -/
 noncomputable def ltS : Semisentence LAct 2 :=
@@ -966,13 +966,13 @@ def NumRowOK (tbl : V) (i : ℕ) (N B : V) (m : ℕ) (as : List V) (c : V) : Pro
   π₁ (π₂ tbl.[(i : V)]) = vecOf as ∧ π₂ (π₂ tbl.[(i : V)]) = c ∧
   (∀ a ∈ as, IsSemiformula LAct (m : V) a) ∧ IsSemiformula LAct (m : V) c ∧
   Proof TAct (π₁ tbl.[(i : V)]) (allsIter m (impChain LAct as c)) ∧
-  dlen TAct (π₁ tbl.[(i : V)]) ≤ N ∧ formulaLen LAct (impChain LAct as c) ≤ B
+  proofLen TAct (π₁ tbl.[(i : V)]) ≤ N ∧ formulaLen LAct (impChain LAct as c) ≤ B
 
 lemma numRowOK_of {tbl : V} {i : ℕ} {N B : V} {m : ℕ} {as : List V} {c d : V}
     (Bd : ArithmeticSemisentence m)
     (hrow : tbl.[(i : V)] = ⟪d, vecOf as, c⟫)
     (hq : (⌜Semiformula.lMap emb Bd⌝ : V) = impChain LAct as c)
-    (hd : Proof TAct d (qqAlls (⌜Semiformula.lMap emb Bd⌝ : V) (m : V))) (hN : dlen TAct d ≤ N)
+    (hd : Proof TAct d (qqAlls (⌜Semiformula.lMap emb Bd⌝ : V) (m : V))) (hN : proofLen TAct d ≤ N)
     (hB : ((rowLen Bd : ℕ) : V) ≤ B) : NumRowOK tbl i N B m as c := by
   have hsf : IsSemiformula LAct (m : V) (impChain LAct as c) := hq ▸ Sentence.quote_isSemiformula _
   obtain ⟨has, hc⟩ := pieces_of_impChain hsf
@@ -1049,7 +1049,7 @@ theorem exists_numTable : ∃ N B : ℕ, ∀ (V : Type) [ORingStructure V] [V↓
   obtain ⟨N16, h16⟩ := (lib_nSum2Le).univ_code
   obtain ⟨N17, h17⟩ := (lib_nSuccCong).univ_code
   obtain ⟨N18, h18⟩ := (lib_nLeOfEq).univ_code
-  refine ⟨N0 + N1 + N2 + N3 + N4 + N5 + N6 + N7 + N8 + N9 + N10 + N11 + N12 + N13 + N14 + N15 + N16 + N17 + N18, rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + flen (Rewriting.emb eqS : Semiproposition LAct 2) + flen (Rewriting.emb leS : Semiproposition LAct 2) + flen (Rewriting.emb ltS : Semiproposition LAct 2) + 1, fun V _ _ ↦ ?_⟩
+  refine ⟨N0 + N1 + N2 + N3 + N4 + N5 + N6 + N7 + N8 + N9 + N10 + N11 + N12 + N13 + N14 + N15 + N16 + N17 + N18, rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + formulaLenMeta (Rewriting.emb eqS : Semiproposition LAct 2) + formulaLenMeta (Rewriting.emb leS : Semiproposition LAct 2) + formulaLenMeta (Rewriting.emb ltS : Semiproposition LAct 2) + 1, fun V _ _ ↦ ?_⟩
   obtain ⟨d0, hd0, hl0⟩ := h0 V
   obtain ⟨d1, hd1, hl1⟩ := h1 V
   obtain ⟨d2, hd2, hl2⟩ := h2 V
@@ -1073,65 +1073,65 @@ theorem exists_numTable : ∃ N B : ℕ, ∀ (V : Type) [ORingStructure V] [V↓
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · exact numRowOK_of nZeroAddB (by unfold rZeroAdd; rw [nth_vecOf _ 0 (by simp)]; rfl) quote_nZeroAddB hd0
       (le_trans hl0 (by exact_mod_cast (by omega : N0 ≤ N0 + N1 + N2 + N3 + N4 + N5 + N6 + N7 + N8 + N9 + N10 + N11 + N12 + N13 + N14 + N15 + N16 + N17 + N18)))
-      (by exact_mod_cast (by omega : rowLen nZeroAddB ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + flen (Rewriting.emb eqS : Semiproposition LAct 2) + flen (Rewriting.emb leS : Semiproposition LAct 2) + flen (Rewriting.emb ltS : Semiproposition LAct 2) + 1))
+      (by exact_mod_cast (by omega : rowLen nZeroAddB ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + formulaLenMeta (Rewriting.emb eqS : Semiproposition LAct 2) + formulaLenMeta (Rewriting.emb leS : Semiproposition LAct 2) + formulaLenMeta (Rewriting.emb ltS : Semiproposition LAct 2) + 1))
   · exact numRowOK_of nAddZeroB (by unfold rAddZero; rw [nth_vecOf _ 1 (by simp)]; rfl) quote_nAddZeroB hd1
       (le_trans hl1 (by exact_mod_cast (by omega : N1 ≤ N0 + N1 + N2 + N3 + N4 + N5 + N6 + N7 + N8 + N9 + N10 + N11 + N12 + N13 + N14 + N15 + N16 + N17 + N18)))
-      (by exact_mod_cast (by omega : rowLen nAddZeroB ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + flen (Rewriting.emb eqS : Semiproposition LAct 2) + flen (Rewriting.emb leS : Semiproposition LAct 2) + flen (Rewriting.emb ltS : Semiproposition LAct 2) + 1))
+      (by exact_mod_cast (by omega : rowLen nAddZeroB ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + formulaLenMeta (Rewriting.emb eqS : Semiproposition LAct 2) + formulaLenMeta (Rewriting.emb leS : Semiproposition LAct 2) + formulaLenMeta (Rewriting.emb ltS : Semiproposition LAct 2) + 1))
   · exact numRowOK_of nOneOneB (by unfold rOneOne; rw [nth_vecOf _ 2 (by simp)]; rfl) quote_nOneOneB hd2
       (le_trans hl2 (by exact_mod_cast (by omega : N2 ≤ N0 + N1 + N2 + N3 + N4 + N5 + N6 + N7 + N8 + N9 + N10 + N11 + N12 + N13 + N14 + N15 + N16 + N17 + N18)))
-      (by exact_mod_cast (by omega : rowLen nOneOneB ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + flen (Rewriting.emb eqS : Semiproposition LAct 2) + flen (Rewriting.emb leS : Semiproposition LAct 2) + flen (Rewriting.emb ltS : Semiproposition LAct 2) + 1))
+      (by exact_mod_cast (by omega : rowLen nOneOneB ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + formulaLenMeta (Rewriting.emb eqS : Semiproposition LAct 2) + formulaLenMeta (Rewriting.emb leS : Semiproposition LAct 2) + formulaLenMeta (Rewriting.emb ltS : Semiproposition LAct 2) + 1))
   · exact numRowOK_of nZeroOneB (by unfold rZeroOne; rw [nth_vecOf _ 3 (by simp)]; rfl) quote_nZeroOneB hd3
       (le_trans hl3 (by exact_mod_cast (by omega : N3 ≤ N0 + N1 + N2 + N3 + N4 + N5 + N6 + N7 + N8 + N9 + N10 + N11 + N12 + N13 + N14 + N15 + N16 + N17 + N18)))
-      (by exact_mod_cast (by omega : rowLen nZeroOneB ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + flen (Rewriting.emb eqS : Semiproposition LAct 2) + flen (Rewriting.emb leS : Semiproposition LAct 2) + flen (Rewriting.emb ltS : Semiproposition LAct 2) + 1))
+      (by exact_mod_cast (by omega : rowLen nZeroOneB ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + formulaLenMeta (Rewriting.emb eqS : Semiproposition LAct 2) + formulaLenMeta (Rewriting.emb leS : Semiproposition LAct 2) + formulaLenMeta (Rewriting.emb ltS : Semiproposition LAct 2) + 1))
   · exact numRowOK_of nOneAddB (by unfold rOneAdd; rw [nth_vecOf _ 4 (by simp)]; rfl) quote_nOneAddB hd4
       (le_trans hl4 (by exact_mod_cast (by omega : N4 ≤ N0 + N1 + N2 + N3 + N4 + N5 + N6 + N7 + N8 + N9 + N10 + N11 + N12 + N13 + N14 + N15 + N16 + N17 + N18)))
-      (by exact_mod_cast (by omega : rowLen nOneAddB ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + flen (Rewriting.emb eqS : Semiproposition LAct 2) + flen (Rewriting.emb leS : Semiproposition LAct 2) + flen (Rewriting.emb ltS : Semiproposition LAct 2) + 1))
+      (by exact_mod_cast (by omega : rowLen nOneAddB ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + formulaLenMeta (Rewriting.emb eqS : Semiproposition LAct 2) + formulaLenMeta (Rewriting.emb leS : Semiproposition LAct 2) + formulaLenMeta (Rewriting.emb ltS : Semiproposition LAct 2) + 1))
   · exact numRowOK_of nEqReflB (by unfold rEqRefl; rw [nth_vecOf _ 5 (by simp)]; rfl) quote_nEqReflB hd5
       (le_trans hl5 (by exact_mod_cast (by omega : N5 ≤ N0 + N1 + N2 + N3 + N4 + N5 + N6 + N7 + N8 + N9 + N10 + N11 + N12 + N13 + N14 + N15 + N16 + N17 + N18)))
-      (by exact_mod_cast (by omega : rowLen nEqReflB ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + flen (Rewriting.emb eqS : Semiproposition LAct 2) + flen (Rewriting.emb leS : Semiproposition LAct 2) + flen (Rewriting.emb ltS : Semiproposition LAct 2) + 1))
+      (by exact_mod_cast (by omega : rowLen nEqReflB ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + formulaLenMeta (Rewriting.emb eqS : Semiproposition LAct 2) + formulaLenMeta (Rewriting.emb leS : Semiproposition LAct 2) + formulaLenMeta (Rewriting.emb ltS : Semiproposition LAct 2) + 1))
   · exact numRowOK_of nCarryB (by unfold rCarry; rw [nth_vecOf _ 6 (by simp)]; rfl) quote_nCarryB hd6
       (le_trans hl6 (by exact_mod_cast (by omega : N6 ≤ N0 + N1 + N2 + N3 + N4 + N5 + N6 + N7 + N8 + N9 + N10 + N11 + N12 + N13 + N14 + N15 + N16 + N17 + N18)))
-      (by exact_mod_cast (by omega : rowLen nCarryB ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + flen (Rewriting.emb eqS : Semiproposition LAct 2) + flen (Rewriting.emb leS : Semiproposition LAct 2) + flen (Rewriting.emb ltS : Semiproposition LAct 2) + 1))
+      (by exact_mod_cast (by omega : rowLen nCarryB ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + formulaLenMeta (Rewriting.emb eqS : Semiproposition LAct 2) + formulaLenMeta (Rewriting.emb leS : Semiproposition LAct 2) + formulaLenMeta (Rewriting.emb ltS : Semiproposition LAct 2) + 1))
   · exact numRowOK_of nBit00B (by unfold rBit00; rw [nth_vecOf _ 7 (by simp)]; rfl) quote_nBit00B hd7
       (le_trans hl7 (by exact_mod_cast (by omega : N7 ≤ N0 + N1 + N2 + N3 + N4 + N5 + N6 + N7 + N8 + N9 + N10 + N11 + N12 + N13 + N14 + N15 + N16 + N17 + N18)))
-      (by exact_mod_cast (by omega : rowLen nBit00B ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + flen (Rewriting.emb eqS : Semiproposition LAct 2) + flen (Rewriting.emb leS : Semiproposition LAct 2) + flen (Rewriting.emb ltS : Semiproposition LAct 2) + 1))
+      (by exact_mod_cast (by omega : rowLen nBit00B ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + formulaLenMeta (Rewriting.emb eqS : Semiproposition LAct 2) + formulaLenMeta (Rewriting.emb leS : Semiproposition LAct 2) + formulaLenMeta (Rewriting.emb ltS : Semiproposition LAct 2) + 1))
   · exact numRowOK_of nBit01B (by unfold rBit01; rw [nth_vecOf _ 8 (by simp)]; rfl) quote_nBit01B hd8
       (le_trans hl8 (by exact_mod_cast (by omega : N8 ≤ N0 + N1 + N2 + N3 + N4 + N5 + N6 + N7 + N8 + N9 + N10 + N11 + N12 + N13 + N14 + N15 + N16 + N17 + N18)))
-      (by exact_mod_cast (by omega : rowLen nBit01B ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + flen (Rewriting.emb eqS : Semiproposition LAct 2) + flen (Rewriting.emb leS : Semiproposition LAct 2) + flen (Rewriting.emb ltS : Semiproposition LAct 2) + 1))
+      (by exact_mod_cast (by omega : rowLen nBit01B ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + formulaLenMeta (Rewriting.emb eqS : Semiproposition LAct 2) + formulaLenMeta (Rewriting.emb leS : Semiproposition LAct 2) + formulaLenMeta (Rewriting.emb ltS : Semiproposition LAct 2) + 1))
   · exact numRowOK_of nBit10B (by unfold rBit10; rw [nth_vecOf _ 9 (by simp)]; rfl) quote_nBit10B hd9
       (le_trans hl9 (by exact_mod_cast (by omega : N9 ≤ N0 + N1 + N2 + N3 + N4 + N5 + N6 + N7 + N8 + N9 + N10 + N11 + N12 + N13 + N14 + N15 + N16 + N17 + N18)))
-      (by exact_mod_cast (by omega : rowLen nBit10B ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + flen (Rewriting.emb eqS : Semiproposition LAct 2) + flen (Rewriting.emb leS : Semiproposition LAct 2) + flen (Rewriting.emb ltS : Semiproposition LAct 2) + 1))
+      (by exact_mod_cast (by omega : rowLen nBit10B ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + formulaLenMeta (Rewriting.emb eqS : Semiproposition LAct 2) + formulaLenMeta (Rewriting.emb leS : Semiproposition LAct 2) + formulaLenMeta (Rewriting.emb ltS : Semiproposition LAct 2) + 1))
   · exact numRowOK_of nBit11B (by unfold rBit11; rw [nth_vecOf _ 10 (by simp)]; rfl) quote_nBit11B hd10
       (le_trans hl10 (by exact_mod_cast (by omega : N10 ≤ N0 + N1 + N2 + N3 + N4 + N5 + N6 + N7 + N8 + N9 + N10 + N11 + N12 + N13 + N14 + N15 + N16 + N17 + N18)))
-      (by exact_mod_cast (by omega : rowLen nBit11B ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + flen (Rewriting.emb eqS : Semiproposition LAct 2) + flen (Rewriting.emb leS : Semiproposition LAct 2) + flen (Rewriting.emb ltS : Semiproposition LAct 2) + 1))
+      (by exact_mod_cast (by omega : rowLen nBit11B ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + formulaLenMeta (Rewriting.emb eqS : Semiproposition LAct 2) + formulaLenMeta (Rewriting.emb leS : Semiproposition LAct 2) + formulaLenMeta (Rewriting.emb ltS : Semiproposition LAct 2) + 1))
   · exact numRowOK_of nLeOfAddB (by unfold rLeOfAdd; rw [nth_vecOf _ 11 (by simp)]; rfl) quote_nLeOfAddB hd11
       (le_trans hl11 (by exact_mod_cast (by omega : N11 ≤ N0 + N1 + N2 + N3 + N4 + N5 + N6 + N7 + N8 + N9 + N10 + N11 + N12 + N13 + N14 + N15 + N16 + N17 + N18)))
-      (by exact_mod_cast (by omega : rowLen nLeOfAddB ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + flen (Rewriting.emb eqS : Semiproposition LAct 2) + flen (Rewriting.emb leS : Semiproposition LAct 2) + flen (Rewriting.emb ltS : Semiproposition LAct 2) + 1))
+      (by exact_mod_cast (by omega : rowLen nLeOfAddB ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + formulaLenMeta (Rewriting.emb eqS : Semiproposition LAct 2) + formulaLenMeta (Rewriting.emb leS : Semiproposition LAct 2) + formulaLenMeta (Rewriting.emb ltS : Semiproposition LAct 2) + 1))
   · exact numRowOK_of nLtOfSuccLeB (by unfold rLtOfSuccLe; rw [nth_vecOf _ 12 (by simp)]; rfl) quote_nLtOfSuccLeB hd12
       (le_trans hl12 (by exact_mod_cast (by omega : N12 ≤ N0 + N1 + N2 + N3 + N4 + N5 + N6 + N7 + N8 + N9 + N10 + N11 + N12 + N13 + N14 + N15 + N16 + N17 + N18)))
-      (by exact_mod_cast (by omega : rowLen nLtOfSuccLeB ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + flen (Rewriting.emb eqS : Semiproposition LAct 2) + flen (Rewriting.emb leS : Semiproposition LAct 2) + flen (Rewriting.emb ltS : Semiproposition LAct 2) + 1))
+      (by exact_mod_cast (by omega : rowLen nLtOfSuccLeB ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + formulaLenMeta (Rewriting.emb eqS : Semiproposition LAct 2) + formulaLenMeta (Rewriting.emb leS : Semiproposition LAct 2) + formulaLenMeta (Rewriting.emb ltS : Semiproposition LAct 2) + 1))
   · exact numRowOK_of nSum3SuccLeB (by unfold rSum3SuccLe; rw [nth_vecOf _ 13 (by simp)]; rfl) quote_nSum3SuccLeB hd13
       (le_trans hl13 (by exact_mod_cast (by omega : N13 ≤ N0 + N1 + N2 + N3 + N4 + N5 + N6 + N7 + N8 + N9 + N10 + N11 + N12 + N13 + N14 + N15 + N16 + N17 + N18)))
-      (by exact_mod_cast (by omega : rowLen nSum3SuccLeB ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + flen (Rewriting.emb eqS : Semiproposition LAct 2) + flen (Rewriting.emb leS : Semiproposition LAct 2) + flen (Rewriting.emb ltS : Semiproposition LAct 2) + 1))
+      (by exact_mod_cast (by omega : rowLen nSum3SuccLeB ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + formulaLenMeta (Rewriting.emb eqS : Semiproposition LAct 2) + formulaLenMeta (Rewriting.emb leS : Semiproposition LAct 2) + formulaLenMeta (Rewriting.emb ltS : Semiproposition LAct 2) + 1))
   · exact numRowOK_of nSum2SuccLeB (by unfold rSum2SuccLe; rw [nth_vecOf _ 14 (by simp)]; rfl) quote_nSum2SuccLeB hd14
       (le_trans hl14 (by exact_mod_cast (by omega : N14 ≤ N0 + N1 + N2 + N3 + N4 + N5 + N6 + N7 + N8 + N9 + N10 + N11 + N12 + N13 + N14 + N15 + N16 + N17 + N18)))
-      (by exact_mod_cast (by omega : rowLen nSum2SuccLeB ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + flen (Rewriting.emb eqS : Semiproposition LAct 2) + flen (Rewriting.emb leS : Semiproposition LAct 2) + flen (Rewriting.emb ltS : Semiproposition LAct 2) + 1))
+      (by exact_mod_cast (by omega : rowLen nSum2SuccLeB ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + formulaLenMeta (Rewriting.emb eqS : Semiproposition LAct 2) + formulaLenMeta (Rewriting.emb leS : Semiproposition LAct 2) + formulaLenMeta (Rewriting.emb ltS : Semiproposition LAct 2) + 1))
   · exact numRowOK_of nSuccLeB (by unfold rSuccLe; rw [nth_vecOf _ 15 (by simp)]; rfl) quote_nSuccLeB hd15
       (le_trans hl15 (by exact_mod_cast (by omega : N15 ≤ N0 + N1 + N2 + N3 + N4 + N5 + N6 + N7 + N8 + N9 + N10 + N11 + N12 + N13 + N14 + N15 + N16 + N17 + N18)))
-      (by exact_mod_cast (by omega : rowLen nSuccLeB ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + flen (Rewriting.emb eqS : Semiproposition LAct 2) + flen (Rewriting.emb leS : Semiproposition LAct 2) + flen (Rewriting.emb ltS : Semiproposition LAct 2) + 1))
+      (by exact_mod_cast (by omega : rowLen nSuccLeB ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + formulaLenMeta (Rewriting.emb eqS : Semiproposition LAct 2) + formulaLenMeta (Rewriting.emb leS : Semiproposition LAct 2) + formulaLenMeta (Rewriting.emb ltS : Semiproposition LAct 2) + 1))
   · exact numRowOK_of nSum2LeB (by unfold rSum2Le; rw [nth_vecOf _ 16 (by simp)]; rfl) quote_nSum2LeB hd16
       (le_trans hl16 (by exact_mod_cast (by omega : N16 ≤ N0 + N1 + N2 + N3 + N4 + N5 + N6 + N7 + N8 + N9 + N10 + N11 + N12 + N13 + N14 + N15 + N16 + N17 + N18)))
-      (by exact_mod_cast (by omega : rowLen nSum2LeB ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + flen (Rewriting.emb eqS : Semiproposition LAct 2) + flen (Rewriting.emb leS : Semiproposition LAct 2) + flen (Rewriting.emb ltS : Semiproposition LAct 2) + 1))
+      (by exact_mod_cast (by omega : rowLen nSum2LeB ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + formulaLenMeta (Rewriting.emb eqS : Semiproposition LAct 2) + formulaLenMeta (Rewriting.emb leS : Semiproposition LAct 2) + formulaLenMeta (Rewriting.emb ltS : Semiproposition LAct 2) + 1))
   · exact numRowOK_of nSuccCongB (by unfold rSuccCong; rw [nth_vecOf _ 17 (by simp)]; rfl) quote_nSuccCongB hd17
       (le_trans hl17 (by exact_mod_cast (by omega : N17 ≤ N0 + N1 + N2 + N3 + N4 + N5 + N6 + N7 + N8 + N9 + N10 + N11 + N12 + N13 + N14 + N15 + N16 + N17 + N18)))
-      (by exact_mod_cast (by omega : rowLen nSuccCongB ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + flen (Rewriting.emb eqS : Semiproposition LAct 2) + flen (Rewriting.emb leS : Semiproposition LAct 2) + flen (Rewriting.emb ltS : Semiproposition LAct 2) + 1))
+      (by exact_mod_cast (by omega : rowLen nSuccCongB ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + formulaLenMeta (Rewriting.emb eqS : Semiproposition LAct 2) + formulaLenMeta (Rewriting.emb leS : Semiproposition LAct 2) + formulaLenMeta (Rewriting.emb ltS : Semiproposition LAct 2) + 1))
   · exact numRowOK_of nLeOfEqB (by unfold rLeOfEq; rw [nth_vecOf _ 18 (by simp)]; rfl) quote_nLeOfEqB hd18
       (le_trans hl18 (by exact_mod_cast (by omega : N18 ≤ N0 + N1 + N2 + N3 + N4 + N5 + N6 + N7 + N8 + N9 + N10 + N11 + N12 + N13 + N14 + N15 + N16 + N17 + N18)))
-      (by exact_mod_cast (by omega : rowLen nLeOfEqB ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + flen (Rewriting.emb eqS : Semiproposition LAct 2) + flen (Rewriting.emb leS : Semiproposition LAct 2) + flen (Rewriting.emb ltS : Semiproposition LAct 2) + 1))
-  · rw [Peq, formulaLen_quote_semisentence_V']; exact_mod_cast (by omega : flen (Rewriting.emb eqS : Semiproposition LAct 2) ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + flen (Rewriting.emb eqS : Semiproposition LAct 2) + flen (Rewriting.emb leS : Semiproposition LAct 2) + flen (Rewriting.emb ltS : Semiproposition LAct 2) + 1)
-  · rw [Ple, formulaLen_quote_semisentence_V']; exact_mod_cast (by omega : flen (Rewriting.emb leS : Semiproposition LAct 2) ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + flen (Rewriting.emb eqS : Semiproposition LAct 2) + flen (Rewriting.emb leS : Semiproposition LAct 2) + flen (Rewriting.emb ltS : Semiproposition LAct 2) + 1)
-  · rw [Plt_eq_quote, formulaLen_quote_semisentence_V']; exact_mod_cast (by omega : flen (Rewriting.emb ltS : Semiproposition LAct 2) ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + flen (Rewriting.emb eqS : Semiproposition LAct 2) + flen (Rewriting.emb leS : Semiproposition LAct 2) + flen (Rewriting.emb ltS : Semiproposition LAct 2) + 1)
-  · exact_mod_cast (by omega : 1 ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + flen (Rewriting.emb eqS : Semiproposition LAct 2) + flen (Rewriting.emb leS : Semiproposition LAct 2) + flen (Rewriting.emb ltS : Semiproposition LAct 2) + 1)
+      (by exact_mod_cast (by omega : rowLen nLeOfEqB ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + formulaLenMeta (Rewriting.emb eqS : Semiproposition LAct 2) + formulaLenMeta (Rewriting.emb leS : Semiproposition LAct 2) + formulaLenMeta (Rewriting.emb ltS : Semiproposition LAct 2) + 1))
+  · rw [Peq, formulaLen_quote_semisentence_V']; exact_mod_cast (by omega : formulaLenMeta (Rewriting.emb eqS : Semiproposition LAct 2) ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + formulaLenMeta (Rewriting.emb eqS : Semiproposition LAct 2) + formulaLenMeta (Rewriting.emb leS : Semiproposition LAct 2) + formulaLenMeta (Rewriting.emb ltS : Semiproposition LAct 2) + 1)
+  · rw [Ple, formulaLen_quote_semisentence_V']; exact_mod_cast (by omega : formulaLenMeta (Rewriting.emb leS : Semiproposition LAct 2) ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + formulaLenMeta (Rewriting.emb eqS : Semiproposition LAct 2) + formulaLenMeta (Rewriting.emb leS : Semiproposition LAct 2) + formulaLenMeta (Rewriting.emb ltS : Semiproposition LAct 2) + 1)
+  · rw [Plt_eq_quote, formulaLen_quote_semisentence_V']; exact_mod_cast (by omega : formulaLenMeta (Rewriting.emb ltS : Semiproposition LAct 2) ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + formulaLenMeta (Rewriting.emb eqS : Semiproposition LAct 2) + formulaLenMeta (Rewriting.emb leS : Semiproposition LAct 2) + formulaLenMeta (Rewriting.emb ltS : Semiproposition LAct 2) + 1)
+  · exact_mod_cast (by omega : 1 ≤ rowLen nZeroAddB + rowLen nAddZeroB + rowLen nOneOneB + rowLen nZeroOneB + rowLen nOneAddB + rowLen nEqReflB + rowLen nCarryB + rowLen nBit00B + rowLen nBit01B + rowLen nBit10B + rowLen nBit11B + rowLen nLeOfAddB + rowLen nLtOfSuccLeB + rowLen nSum3SuccLeB + rowLen nSum2SuccLeB + rowLen nSuccLeB + rowLen nSum2LeB + rowLen nSuccCongB + rowLen nLeOfEqB + formulaLenMeta (Rewriting.emb eqS : Semiproposition LAct 2) + formulaLenMeta (Rewriting.emb leS : Semiproposition LAct 2) + formulaLenMeta (Rewriting.emb ltS : Semiproposition LAct 2) + 1)
 
 end table
 
@@ -1157,11 +1157,11 @@ theorem goalLeaf_proof {Γ A : V} (hΓ : IsFormulaSet LAct Γ) (hA : IsFormula L
     DerivationOf TAct (goalLeaf Γ A) (insert (neg LAct A) Γ) :=
   ⟨by simp [goalLeaf], Derivation.axL (by simp [hΓ, hA]) (by simp [h]) (by simp)⟩
 
-theorem dlen_goalLeaf_le {Γ A : V} (hΓ : IsFormulaSet LAct Γ) (hA : IsFormula LAct A) (h : A ∈ Γ) :
-    dlen TAct (goalLeaf Γ A) ≤ setLen LAct Γ + formulaLen LAct A + 1 := by
+theorem proofLen_goalLeaf_le {Γ A : V} (hΓ : IsFormulaSet LAct Γ) (hA : IsFormula LAct A) (h : A ∈ Γ) :
+    proofLen TAct (goalLeaf Γ A) ≤ sequentLen LAct Γ + formulaLen LAct A + 1 := by
   have hpf := goalLeaf_proof hΓ hA h
-  rw [dlen_eq_of_graph hpf.2 (DlenGraph.axL_iff.mpr rfl)]
-  have := setLen_insert_le (L := LAct) (neg LAct A) Γ
+  rw [proofLen_eq_of_graph hpf.2 (ProofLenGraph.axL_iff.mpr rfl)]
+  have := sequentLen_insert_le (L := LAct) (neg LAct A) Γ
   rw [formulaLen_neg hA.isUFormula] at this
   gcongr
 
@@ -1176,10 +1176,10 @@ theorem cut1_proof {Γ F dF e : V} (hΓ : IsFormulaSet LAct Γ) (hF : IsFormula 
     (hdF : DerivationOf TAct dF (insert F 0)) (he : DerivationOf TAct e (insert (neg LAct F) Γ)) :
     DerivationOf TAct (cut1 Γ F dF e) Γ := lemmaCut_proof hΓ hF hdF he
 
-theorem dlen_cut1_le {Γ F dF e : V} (hΓ : IsFormulaSet LAct Γ) (hF : IsFormula LAct F)
+theorem proofLen_cut1_le {Γ F dF e : V} (hΓ : IsFormulaSet LAct Γ) (hF : IsFormula LAct F)
     (hdF : DerivationOf TAct dF (insert F 0)) (he : DerivationOf TAct e (insert (neg LAct F) Γ)) :
-    dlen TAct (cut1 Γ F dF e) ≤ dlen TAct e + (dlen TAct dF + 2 * setLen LAct Γ + 2 * formulaLen LAct F + 2) :=
-  dlen_lemmaCut_le hΓ hF hdF he
+    proofLen TAct (cut1 Γ F dF e) ≤ proofLen TAct e + (proofLen TAct dF + 2 * sequentLen LAct Γ + 2 * formulaLen LAct F + 2) :=
+  proofLen_lemmaCut_le hΓ hF hdF he
 
 /-- Use row `i` of the table at witnesses `ev` to close the goal `A ∈ Γ`. -/
 noncomputable def hornGoal (tbl i Γ ev A : V) : V :=
@@ -1212,14 +1212,14 @@ theorem hornGoal_proof {tbl : V} {i : ℕ} {N B : V} {m : ℕ} {as : List V} {c 
 
 /-- **The bound for a table-driven Horn use** (rows of arity `≤ 7` with `≤ 4` antecedents, witnesses
 of length `≤ E`): `≤ N + 20|Γ| + 120·B·E + |A| + 480`. -/
-theorem dlen_hornGoal_le {tbl : V} {i : ℕ} {N B : V} {m : ℕ} {as : List V} {c : V}
+theorem proofLen_hornGoal_le {tbl : V} {i : ℕ} {N B : V} {m : ℕ} {as : List V} {c : V}
     (hrow : NumRowOK tbl i N B m as c) {Γ A E : V} (es : List V) (hm : es.length = m)
     (hes : ∀ e ∈ es, IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E) (hE : 1 ≤ E) (hB : 1 ≤ B)
     (hΓ : IsFormulaSet LAct Γ)
     (hneg : ∀ a ∈ as, neg LAct (instOuter LAct es a) ∈ Γ) (hc : instOuter LAct es c = A) (hA : A ∈ Γ)
     (hm7 : m ≤ 7) (hj4 : as.length ≤ 4) :
-    dlen TAct (hornGoal tbl (i : V) Γ (vecOf es) A) ≤
-      N + 20 * setLen LAct Γ + 120 * (B * E) + formulaLen LAct A + 480 := by
+    proofLen TAct (hornGoal tbl (i : V) Γ (vecOf es) A) ≤
+      N + 20 * sequentLen LAct Γ + 120 * (B * E) + formulaLen LAct A + 480 := by
   obtain ⟨h1, h2, has, hcf, hΛ, hN, hlen⟩ := hrow
   unfold hornGoal
   rw [h1, h2]
@@ -1230,31 +1230,31 @@ theorem dlen_hornGoal_le {tbl : V} {i : ℕ} {N B : V} {m : ℕ} {as : List V} {
   have hA' : IsFormula LAct A := hc ▸ isFormula_instOuter es hcf' hes₁
   have hleaf : DerivationOf TAct (goalLeaf Γ A) (insert (neg LAct (instOuter LAct es c)) Γ) := by
     rw [hc]; exact goalLeaf_proof hΓ hA' hA
-  have hleafLen := dlen_goalLeaf_le hΓ hA' hA
+  have hleafLen := proofLen_goalLeaf_le hΓ hA' hA
   have hF : formulaLen LAct (impChain LAct as c) * E ≤ B * E :=
     mul_le_mul_of_nonneg_right hlen zero_le
-  have hbound := dlen_useHornCode_le (T := TAct) (E := E) (F := B * E) hE has' hcf' hes hΓ (subset_refl Γ)
+  have hbound := proofLen_useHornCode_le (T := TAct) (E := E) (F := B * E) hE has' hcf' hes hΓ (subset_refl Γ)
     hneg (by rw [hm]; exact hΛ) hleaf hF
   refine le_trans hbound ?_
   have hm' : (es.length : V) ≤ 7 := by rw [hm]; exact_mod_cast hm7
   have hj' : (as.length : V) ≤ 4 := by exact_mod_cast hj4
   have hchain : formulaLen LAct (impChain LAct as c) ≤ B * E := le_trans hlen (le_mul_of_one_le_right zero_le hE)
   have hEF : E ≤ B * E := le_mul_of_one_le_left zero_le hB
-  have hN' : dlen TAct (π₁ tbl.[(i : V)]) ≤ N := hN
-  calc dlen TAct (π₁ tbl.[(i : V)]) + dlen TAct (goalLeaf Γ A) + ((es.length : V) + 3) * setLen LAct Γ
+  have hN' : proofLen TAct (π₁ tbl.[(i : V)]) ≤ N := hN
+  calc proofLen TAct (π₁ tbl.[(i : V)]) + proofLen TAct (goalLeaf Γ A) + ((es.length : V) + 3) * sequentLen LAct Γ
         + ((es.length : V) + 1) * ((es.length : V) + 1) * (B * E + (es.length : V))
         + formulaLen LAct (impChain LAct as c) + (es.length : V) * E + 2 * (es.length : V) + 3
-        + (2 * (as.length : V) + 1) * (setLen LAct Γ + ((as.length : V) + 1) * (B * E) + 1)
-      ≤ N + (setLen LAct Γ + formulaLen LAct A + 1) + (7 + 3) * setLen LAct Γ
+        + (2 * (as.length : V) + 1) * (sequentLen LAct Γ + ((as.length : V) + 1) * (B * E) + 1)
+      ≤ N + (sequentLen LAct Γ + formulaLen LAct A + 1) + (7 + 3) * sequentLen LAct Γ
         + (7 + 1) * (7 + 1) * (B * E + 7) + B * E + 7 * (B * E) + 2 * 7 + 3
-        + (2 * 4 + 1) * (setLen LAct Γ + (4 + 1) * (B * E) + 1) := by
+        + (2 * 4 + 1) * (sequentLen LAct Γ + (4 + 1) * (B * E) + 1) := by
         gcongr
-    _ = N + 20 * setLen LAct Γ + 117 * (B * E) + formulaLen LAct A + 475 := by ring
-    _ ≤ N + 20 * setLen LAct Γ + 120 * (B * E) + formulaLen LAct A + 480 := by
+    _ = N + 20 * sequentLen LAct Γ + 117 * (B * E) + formulaLen LAct A + 475 := by ring
+    _ ≤ N + 20 * sequentLen LAct Γ + 120 * (B * E) + formulaLen LAct A + 480 := by
         have h1 : (117 : V) * (B * E) ≤ 120 * (B * E) := mul_le_mul_of_nonneg_right (by norm_num) zero_le
         have h2 : (475 : V) ≤ 480 := by norm_num
-        calc N + 20 * setLen LAct Γ + 117 * (B * E) + formulaLen LAct A + 475
-            ≤ N + 20 * setLen LAct Γ + 120 * (B * E) + formulaLen LAct A + 480 := by gcongr
+        calc N + 20 * sequentLen LAct Γ + 117 * (B * E) + formulaLen LAct A + 475
+            ≤ N + 20 * sequentLen LAct Γ + 120 * (B * E) + formulaLen LAct A + 480 := by gcongr
 
 /-! ### The step shapes -/
 
@@ -1265,10 +1265,10 @@ lemma isFormulaSet_sing {A : V} (hA : IsFormula LAct A) : IsFormulaSet LAct (sin
   simp only [sing, IsFormulaSet.insert_iff, hA, true_and]
   exact IsFormulaSet.empty
 
-lemma setLen_sing_le (A : V) : setLen LAct (sing A) ≤ formulaLen LAct A := by
+lemma sequentLen_sing_le (A : V) : sequentLen LAct (sing A) ≤ formulaLen LAct A := by
   unfold sing
-  refine le_trans (setLen_insert_le _ _) ?_
-  rw [show (0 : V) = ∅ from rfl, setLen_empty, zero_add]
+  refine le_trans (sequentLen_insert_le _ _) ?_
+  rw [show (0 : V) = ∅ from rfl, sequentLen_empty, zero_add]
 
 lemma mem_sing (A : V) : A ∈ sing A := by simp [sing]
 
@@ -1341,57 +1341,57 @@ theorem step2_proof {tbl : V} {i : ℕ} {N B : V} {m : ℕ} {as : List V} {c : V
 lemma one_le_BE {B E : V} (hB : 1 ≤ B) (hE : 1 ≤ E) : 1 ≤ B * E :=
   le_trans hB (le_mul_of_one_le_right zero_le hE)
 
-theorem dlen_step0_le {tbl : V} {i : ℕ} {N B : V} {m : ℕ} {as : List V} {c : V}
+theorem proofLen_step0_le {tbl : V} {i : ℕ} {N B : V} {m : ℕ} {as : List V} {c : V}
     (hrow : NumRowOK tbl i N B m as c) {A E : V} (es : List V) (hm : es.length = m)
     (hes : ∀ e ∈ es, IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E) (hE : 1 ≤ E) (hB : 1 ≤ B)
     (hA : IsFormula LAct A) (hmap : as.map (instOuter LAct es) = []) (hc : instOuter LAct es c = A)
     (hm7 : m ≤ 7) (hj4 : as.length ≤ 4) (hAP : formulaLen LAct A ≤ B * E) :
-    dlen TAct (step0 tbl (i : V) (vecOf es) A) ≤ nodeCost N B E := by
+    proofLen TAct (step0 tbl (i : V) (vecOf es) A) ≤ nodeCost N B E := by
   have h1 : 1 ≤ B * E := one_le_BE hB hE
-  have hsA : setLen LAct (sing A) ≤ B * E := le_trans (setLen_sing_le A) hAP
-  have hh := dlen_hornGoal_le hrow es hm hes hE hB (isFormulaSet_sing hA)
+  have hsA : sequentLen LAct (sing A) ≤ B * E := le_trans (sequentLen_sing_le A) hAP
+  have hh := proofLen_hornGoal_le hrow es hm hes hE hB (isFormulaSet_sing hA)
     (neg_mem_of_map hmap (fun _ h ↦ absurd h List.not_mem_nil)) hc (mem_sing A) hm7 hj4
   have e480 : (480 : V) ≤ 480 * (B * E) := le_mul_of_one_le_right zero_le h1
   unfold step0 nodeCost
   refine le_trans hh ?_
-  calc N + 20 * setLen LAct (sing A) + 120 * (B * E) + formulaLen LAct A + 480
+  calc N + 20 * sequentLen LAct (sing A) + 120 * (B * E) + formulaLen LAct A + 480
       ≤ N + 20 * (B * E) + 120 * (B * E) + B * E + 480 * (B * E) := by gcongr
     _ = N + 621 * (B * E) := by ring
     _ ≤ N + 800 * (B * E) := by gcongr; norm_num
 
-theorem dlen_step1_le {tbl : V} {i : ℕ} {N B : V} {m : ℕ} {as : List V} {c : V}
+theorem proofLen_step1_le {tbl : V} {i : ℕ} {N B : V} {m : ℕ} {as : List V} {c : V}
     (hrow : NumRowOK tbl i N B m as c) {A F dF E : V} (es : List V) (hm : es.length = m)
     (hes : ∀ e ∈ es, IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E) (hE : 1 ≤ E) (hB : 1 ≤ B)
     (hA : IsFormula LAct A) (hF : IsFormula LAct F) (hdF : DerivationOf TAct dF (sing F))
     (hmap : as.map (instOuter LAct es) = [F]) (hc : instOuter LAct es c = A)
     (hm7 : m ≤ 7) (hj4 : as.length ≤ 4) (hAP : formulaLen LAct A ≤ B * E) (hFP : formulaLen LAct F ≤ B * E) :
-    dlen TAct (step1 tbl (i : V) F dF (vecOf es) A) ≤ dlen TAct dF + nodeCost N B E := by
+    proofLen TAct (step1 tbl (i : V) F dF (vecOf es) A) ≤ proofLen TAct dF + nodeCost N B E := by
   have h1 : 1 ≤ B * E := one_le_BE hB hE
   have hes₁ : ∀ e ∈ es, IsSemiterm LAct 0 e := fun e he ↦ (hes e he).1
   have hΓ' : IsFormulaSet LAct (insert (neg LAct F) (sing A)) := by simp [isFormulaSet_sing hA, hF]
-  have hΓ'len : setLen LAct (insert (neg LAct F) (sing A)) ≤ B * E + B * E := by
-    refine le_trans (setLen_insert_le _ _) ?_
+  have hΓ'len : sequentLen LAct (insert (neg LAct F) (sing A)) ≤ B * E + B * E := by
+    refine le_trans (sequentLen_insert_le _ _) ?_
     rw [formulaLen_neg hF.isUFormula]
-    exact add_le_add (le_trans (setLen_sing_le A) hAP) hFP
-  have hsA : setLen LAct (sing A) ≤ B * E := le_trans (setLen_sing_le A) hAP
+    exact add_le_add (le_trans (sequentLen_sing_le A) hAP) hFP
+  have hsA : sequentLen LAct (sing A) ≤ B * E := le_trans (sequentLen_sing_le A) hAP
   have hneg := neg_mem_of_map (Γ := insert (neg LAct F) (sing A)) hmap (fun f hf ↦ by simp at hf; subst hf; simp)
-  have hh := dlen_hornGoal_le hrow es hm hes hE hB hΓ' hneg hc (by simp [mem_sing]) hm7 hj4
+  have hh := proofLen_hornGoal_le hrow es hm hes hE hB hΓ' hneg hc (by simp [mem_sing]) hm7 hj4
   have hhorn := hornGoal_proof hrow es hm hes₁ hΓ' hneg hc (by simp [mem_sing])
-  have hcut := dlen_cut1_le (isFormulaSet_sing hA) hF hdF hhorn
+  have hcut := proofLen_cut1_le (isFormulaSet_sing hA) hF hdF hhorn
   have e480 : (480 : V) ≤ 480 * (B * E) := le_mul_of_one_le_right zero_le h1
   have e2 : (2 : V) ≤ 2 * (B * E) := le_mul_of_one_le_right zero_le h1
   unfold step1 nodeCost
   refine le_trans hcut ?_
-  calc dlen TAct (hornGoal tbl (i : V) (insert (neg LAct F) (sing A)) (vecOf es) A)
-        + (dlen TAct dF + 2 * setLen LAct (sing A) + 2 * formulaLen LAct F + 2)
+  calc proofLen TAct (hornGoal tbl (i : V) (insert (neg LAct F) (sing A)) (vecOf es) A)
+        + (proofLen TAct dF + 2 * sequentLen LAct (sing A) + 2 * formulaLen LAct F + 2)
       ≤ (N + 20 * (B * E + B * E) + 120 * (B * E) + B * E + 480 * (B * E))
-        + (dlen TAct dF + 2 * (B * E) + 2 * (B * E) + 2 * (B * E)) := by
+        + (proofLen TAct dF + 2 * (B * E) + 2 * (B * E) + 2 * (B * E)) := by
         gcongr
         exact le_trans hh (by gcongr)
-    _ = dlen TAct dF + (N + 647 * (B * E)) := by ring
-    _ ≤ dlen TAct dF + (N + 800 * (B * E)) := by gcongr; norm_num
+    _ = proofLen TAct dF + (N + 647 * (B * E)) := by ring
+    _ ≤ proofLen TAct dF + (N + 800 * (B * E)) := by gcongr; norm_num
 
-theorem dlen_step2_le {tbl : V} {i : ℕ} {N B : V} {m : ℕ} {as : List V} {c : V}
+theorem proofLen_step2_le {tbl : V} {i : ℕ} {N B : V} {m : ℕ} {as : List V} {c : V}
     (hrow : NumRowOK tbl i N B m as c) {A F₁ d₁ F₂ d₂ E : V} (es : List V) (hm : es.length = m)
     (hes : ∀ e ∈ es, IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E) (hE : 1 ≤ E) (hB : 1 ≤ B)
     (hA : IsFormula LAct A) (hF₁ : IsFormula LAct F₁) (hF₂ : IsFormula LAct F₂)
@@ -1399,80 +1399,80 @@ theorem dlen_step2_le {tbl : V} {i : ℕ} {N B : V} {m : ℕ} {as : List V} {c :
     (hmap : as.map (instOuter LAct es) = [F₁, F₂]) (hc : instOuter LAct es c = A)
     (hm7 : m ≤ 7) (hj4 : as.length ≤ 4) (hAP : formulaLen LAct A ≤ B * E)
     (hF₁P : formulaLen LAct F₁ ≤ B * E) (hF₂P : formulaLen LAct F₂ ≤ B * E) :
-    dlen TAct (step2 tbl (i : V) F₁ d₁ F₂ d₂ (vecOf es) A) ≤ dlen TAct d₁ + dlen TAct d₂ + nodeCost N B E := by
+    proofLen TAct (step2 tbl (i : V) F₁ d₁ F₂ d₂ (vecOf es) A) ≤ proofLen TAct d₁ + proofLen TAct d₂ + nodeCost N B E := by
   have h1 : 1 ≤ B * E := one_le_BE hB hE
   have hes₁ : ∀ e ∈ es, IsSemiterm LAct 0 e := fun e he ↦ (hes e he).1
   have hΓ₁ : IsFormulaSet LAct (insert (neg LAct F₁) (sing A)) := by simp [isFormulaSet_sing hA, hF₁]
   have hΓ₂ : IsFormulaSet LAct (insert (neg LAct F₂) (insert (neg LAct F₁) (sing A))) := by
     simp [isFormulaSet_sing hA, hF₁, hF₂]
-  have hsA : setLen LAct (sing A) ≤ B * E := le_trans (setLen_sing_le A) hAP
-  have hΓ₁len : setLen LAct (insert (neg LAct F₁) (sing A)) ≤ B * E + B * E := by
-    refine le_trans (setLen_insert_le _ _) ?_
+  have hsA : sequentLen LAct (sing A) ≤ B * E := le_trans (sequentLen_sing_le A) hAP
+  have hΓ₁len : sequentLen LAct (insert (neg LAct F₁) (sing A)) ≤ B * E + B * E := by
+    refine le_trans (sequentLen_insert_le _ _) ?_
     rw [formulaLen_neg hF₁.isUFormula]
     exact add_le_add hsA hF₁P
-  have hΓ₂len : setLen LAct (insert (neg LAct F₂) (insert (neg LAct F₁) (sing A))) ≤ B * E + B * E + B * E := by
-    refine le_trans (setLen_insert_le _ _) ?_
+  have hΓ₂len : sequentLen LAct (insert (neg LAct F₂) (insert (neg LAct F₁) (sing A))) ≤ B * E + B * E + B * E := by
+    refine le_trans (sequentLen_insert_le _ _) ?_
     rw [formulaLen_neg hF₂.isUFormula]
     exact add_le_add hΓ₁len hF₂P
   have hneg := neg_mem_of_map (Γ := insert (neg LAct F₂) (insert (neg LAct F₁) (sing A))) hmap
     (fun f hf ↦ by simp at hf; rcases hf with rfl | rfl <;> simp)
-  have hh := dlen_hornGoal_le hrow es hm hes hE hB hΓ₂ hneg hc (by simp [mem_sing]) hm7 hj4
+  have hh := proofLen_hornGoal_le hrow es hm hes hE hB hΓ₂ hneg hc (by simp [mem_sing]) hm7 hj4
   have hhorn := hornGoal_proof hrow es hm hes₁ hΓ₂ hneg hc (by simp [mem_sing])
-  have hcut₂ := dlen_cut1_le hΓ₁ hF₂ hd₂ hhorn
+  have hcut₂ := proofLen_cut1_le hΓ₁ hF₂ hd₂ hhorn
   have hinner := cut1_proof hΓ₁ hF₂ hd₂ hhorn
-  have hcut₁ := dlen_cut1_le (isFormulaSet_sing hA) hF₁ hd₁ hinner
+  have hcut₁ := proofLen_cut1_le (isFormulaSet_sing hA) hF₁ hd₁ hinner
   have e480 : (480 : V) ≤ 480 * (B * E) := le_mul_of_one_le_right zero_le h1
   have e2 : (2 : V) ≤ 2 * (B * E) := le_mul_of_one_le_right zero_le h1
   unfold step2 nodeCost
   refine le_trans hcut₁ ?_
-  calc dlen TAct (cut1 (insert (neg LAct F₁) (sing A)) F₂ d₂
+  calc proofLen TAct (cut1 (insert (neg LAct F₁) (sing A)) F₂ d₂
           (hornGoal tbl (i : V) (insert (neg LAct F₂) (insert (neg LAct F₁) (sing A))) (vecOf es) A))
-        + (dlen TAct d₁ + 2 * setLen LAct (sing A) + 2 * formulaLen LAct F₁ + 2)
+        + (proofLen TAct d₁ + 2 * sequentLen LAct (sing A) + 2 * formulaLen LAct F₁ + 2)
       ≤ ((N + 20 * (B * E + B * E + B * E) + 120 * (B * E) + B * E + 480 * (B * E))
-          + (dlen TAct d₂ + 2 * (B * E + B * E) + 2 * (B * E) + 2 * (B * E)))
-        + (dlen TAct d₁ + 2 * (B * E) + 2 * (B * E) + 2 * (B * E)) := by
+          + (proofLen TAct d₂ + 2 * (B * E + B * E) + 2 * (B * E) + 2 * (B * E)))
+        + (proofLen TAct d₁ + 2 * (B * E) + 2 * (B * E) + 2 * (B * E)) := by
         gcongr
         refine le_trans hcut₂ ?_
         gcongr
         exact le_trans hh (by gcongr)
-    _ = dlen TAct d₁ + dlen TAct d₂ + (N + 675 * (B * E)) := by ring
-    _ ≤ dlen TAct d₁ + dlen TAct d₂ + (N + 800 * (B * E)) := by gcongr; norm_num
+    _ = proofLen TAct d₁ + proofLen TAct d₂ + (N + 675 * (B * E)) := by ring
+    _ ≤ proofLen TAct d₁ + proofLen TAct d₂ + (N + 800 * (B * E)) := by gcongr; norm_num
 
 end combinators
 
-/-! ## 5. The successor chain: `succFact z := bnum z + 1 = bnum (z + 1)`
+/-! ## 5. The successor chain: `succFact z := binNumeral z + 1 = binNumeral (z + 1)`
 
 `succCode tbl z` — a `Fixpoint` on `⟪z, d⟫` (parameter `tbl`): `z = 0` by row `zeroOne`, `z = 1` by
-`oneOne`, `z = 2m` by `eqRefl` at `bnum (2m + 1)` (the fact is syntactically reflexive), `z = 2m + 1`
-by `carry` at `(bnum m, bnum (m + 1))` from the fact for `m` — a CHAIN of `‖z‖ + 1` nodes. -/
+`oneOne`, `z = 2m` by `eqRefl` at `binNumeral (2m + 1)` (the fact is syntactically reflexive), `z = 2m + 1`
+by `carry` at `(binNumeral m, binNumeral (m + 1))` from the fact for `m` — a CHAIN of `‖z‖ + 1` nodes. -/
 
 section succ
 
-/-- `|bnum n| ≤ 6‖n‖ + 1` in every model (`Assembly/Uniform.termLen_bnum_le_V` at `Type*`). -/
-theorem termLen_bnum_le (n : V) : termLen LAct (bnum n) ≤ 6 * ‖n‖ + 1 := by
+/-- `|binNumeral n| ≤ 6‖n‖ + 1` in every model (`Assembly/Uniform.termLen_binNumeral_le_V` at `Type*`). -/
+theorem termLen_binNumeral_le (n : V) : termLen LAct (binNumeral n) ≤ 6 * ‖n‖ + 1 := by
   induction n using ISigma1.pi1_order_induction with
   | hP => definability
   | ind n ih =>
     rcases zero_one_or_two_le n with rfl | rfl | h2
-    · rw [termLen_bnum_zero, length_zero]; simp
-    · rw [termLen_bnum_one, length_one, mul_one]; exact le_add_self
+    · rw [termLen_binNumeral_zero, length_zero]; simp
+    · rw [termLen_binNumeral_one, length_one, mul_one]; exact le_add_self
     obtain ⟨hm, hlt, he | ho⟩ := two_le_cases h2
     · have ih' := ih (n / 2) hlt
-      rw [he, termLen_bnum_two_mul hm, length_two_mul_of_pos (lt_of_lt_of_le zero_lt_one hm)]
-      calc termLen LAct (bnum (n / 2)) + 4 ≤ (6 * ‖n / 2‖ + 1) + 4 := by gcongr
+      rw [he, termLen_binNumeral_two_mul hm, length_two_mul_of_pos (lt_of_lt_of_le zero_lt_one hm)]
+      calc termLen LAct (binNumeral (n / 2)) + 4 ≤ (6 * ‖n / 2‖ + 1) + 4 := by gcongr
         _ ≤ (6 * ‖n / 2‖ + 1) + 4 + 2 := le_self_add
         _ = 6 * (‖n / 2‖ + 1) + 1 := by ring
     · have ih' := ih (n / 2) hlt
-      rw [ho, termLen_bnum_two_mul_add_one hm, length_two_mul_add_one]
-      calc termLen LAct (bnum (n / 2)) + 6 ≤ (6 * ‖n / 2‖ + 1) + 6 := by gcongr
+      rw [ho, termLen_binNumeral_two_mul_add_one hm, length_two_mul_add_one]
+      calc termLen LAct (binNumeral (n / 2)) + 6 ≤ (6 * ‖n / 2‖ + 1) + 6 := by gcongr
         _ = 6 * (‖n / 2‖ + 1) + 1 := by ring
 
-/-- `succFact z := bnum z + 1 = bnum (z + 1)`. -/
-noncomputable def succFact (z : V) : V := eqFact (bnum z ^+ 𝟏) (bnum (z + 1))
+/-- `succFact z := binNumeral z + 1 = binNumeral (z + 1)`. -/
+noncomputable def succFact (z : V) : V := eqFact (binNumeral z ^+ 𝟏) (binNumeral (z + 1))
 noncomputable def succFactDef : 𝚺₁.Semisentence 2 := .mkSigma
-  “y z. ∃ t, !bnumGraph t z ∧ ∃ s, !qqAddGraph s t ↑Arithmetic.one ∧ ∃ t', !bnumGraph t' (z + 1) ∧ !eqFactDef y s t'”
+  “y z. ∃ t, !binNumeralGraph t z ∧ ∃ s, !qqAddGraph s t ↑Arithmetic.one ∧ ∃ t', !binNumeralGraph t' (z + 1) ∧ !eqFactDef y s t'”
 instance succFact_defined : 𝚺₁-Function₁ (succFact : V → V) via succFactDef := .mk fun v ↦ by
-  simp [succFactDef, bnum.defined.iff, qqAdd_defined.iff, eqFact_defined.iff, succFact, numeral_eq_natCast]
+  simp [succFactDef, binNumeral.defined.iff, qqAdd_defined.iff, eqFact_defined.iff, succFact, numeral_eq_natCast]
 instance succFact_definable : 𝚺₁-Function₁ (succFact : V → V) := succFact_defined.to_definable
 
 noncomputable def singDef : 𝚺₁.Semisentence 2 := .mkSigma “y A. !insertDef y A 0”
@@ -1488,10 +1488,10 @@ lemma nodeCost_mono {N B E E' : V} (h : E ≤ E') : nodeCost N B E ≤ nodeCost 
   unfold nodeCost; gcongr
 
 lemma isFormula_succFact (z : V) : IsFormula LAct (succFact z) :=
-  isFormula_eqFact (by simp [isSemiterm_bnum_LAct]) (isSemiterm_bnum_LAct 0 _)
+  isFormula_eqFact (by simp [isSemiterm_binNumeral_LAct]) (isSemiterm_binNumeral_LAct 0 _)
 
-lemma termLen_bnum_add_one (z : V) : termLen LAct (bnum z ^+ 𝟏) = termLen LAct (bnum z) + 2 := by
-  rw [termLen_qqAdd isFunc_LAct_addIndex (isSemiterm_bnum_LAct 0 z).isUTerm (isSemiterm_qqOne_LAct 0).isUTerm,
+lemma termLen_binNumeral_add_one (z : V) : termLen LAct (binNumeral z ^+ 𝟏) = termLen LAct (binNumeral z) + 2 := by
+  rw [termLen_qqAdd isFunc_LAct_addIndex (isSemiterm_binNumeral_LAct 0 z).isUTerm (isSemiterm_qqOne_LAct 0).isUTerm,
     termLen_qqOne isFunc_LAct_oneIndex]
   ring
 
@@ -1499,21 +1499,21 @@ lemma termLen_bnum_add_one (z : V) : termLen LAct (bnum z ^+ 𝟏) = termLen LAc
 lemma formulaLen_succFact_le {B E z : V} (hPeq : formulaLen LAct (Peq : V) ≤ B) (hE : 6 * ‖z + 1‖ + 3 ≤ E) :
     formulaLen LAct (succFact z) ≤ B * E := by
   have hE1 : 1 ≤ E := le_trans (by norm_num) (le_trans le_add_self hE)
-  have h1 : termLen LAct (bnum z ^+ 𝟏) ≤ E := by
-    rw [termLen_bnum_add_one]
-    calc termLen LAct (bnum z) + 2 ≤ (6 * ‖z‖ + 1) + 2 := by gcongr; exact termLen_bnum_le z
+  have h1 : termLen LAct (binNumeral z ^+ 𝟏) ≤ E := by
+    rw [termLen_binNumeral_add_one]
+    calc termLen LAct (binNumeral z) + 2 ≤ (6 * ‖z‖ + 1) + 2 := by gcongr; exact termLen_binNumeral_le z
       _ ≤ 6 * ‖z + 1‖ + 3 := by
           have := length_monotone (le_self_add : z ≤ z + 1)
           calc 6 * ‖z‖ + 1 + 2 = 6 * ‖z‖ + 3 := by ring
             _ ≤ 6 * ‖z + 1‖ + 3 := by gcongr
       _ ≤ E := hE
-  have h2 : termLen LAct (bnum (z + 1)) ≤ E :=
-    le_trans (termLen_bnum_le _) (le_trans (by gcongr; norm_num : 6 * ‖z + 1‖ + 1 ≤ 6 * ‖z + 1‖ + 3) hE)
-  exact le_trans (formulaLen_eqFact_le hE1 (by simp [isSemiterm_bnum_LAct]) (isSemiterm_bnum_LAct 0 _) h1 h2)
+  have h2 : termLen LAct (binNumeral (z + 1)) ≤ E :=
+    le_trans (termLen_binNumeral_le _) (le_trans (by gcongr; norm_num : 6 * ‖z + 1‖ + 1 ≤ 6 * ‖z + 1‖ + 3) hE)
+  exact le_trans (formulaLen_eqFact_le hE1 (by simp [isSemiterm_binNumeral_LAct]) (isSemiterm_binNumeral_LAct 0 _) h1 h2)
     (mul_le_mul_of_nonneg_right hPeq zero_le)
 
-lemma termLen_bnum_le_E {x z E : V} (hx : x ≤ z + 1) (hE : 6 * ‖z + 1‖ + 3 ≤ E) : termLen LAct (bnum x) ≤ E :=
-  le_trans (termLen_bnum_le x) (le_trans (by have := length_monotone hx; gcongr; norm_num) hE)
+lemma termLen_binNumeral_le_E {x z E : V} (hx : x ≤ z + 1) (hE : 6 * ‖z + 1‖ + 3 ≤ E) : termLen LAct (binNumeral x) ≤ E :=
+  le_trans (termLen_binNumeral_le x) (le_trans (by have := length_monotone hx; gcongr; norm_num) hE)
 
 namespace SuccG
 
@@ -1522,28 +1522,28 @@ def Phi (tbl : V) (C : Set V) (pr : V) : Prop :=
   ∃ z d, pr = ⟪z, d⟫ ∧
   ( (z = 0 ∧ d = step0 tbl 3 (vecOf []) (succFact 0)) ∨
     (z = 1 ∧ d = step0 tbl 2 (vecOf []) (succFact 1)) ∨
-    (∃ m, 1 ≤ m ∧ z = 2 * m ∧ d = step0 tbl 5 (vecOf [bnum (2 * m + 1)]) (succFact z)) ∨
+    (∃ m, 1 ≤ m ∧ z = 2 * m ∧ d = step0 tbl 5 (vecOf [binNumeral (2 * m + 1)]) (succFact z)) ∨
     (∃ m d', 1 ≤ m ∧ z = 2 * m + 1 ∧ ⟪m, d'⟫ ∈ C ∧
-      d = step1 tbl 6 (succFact m) d' (vecOf [bnum (m + 1), bnum m]) (succFact z)) )
+      d = step1 tbl 6 (succFact m) d' (vecOf [binNumeral (m + 1), binNumeral m]) (succFact z)) )
 
 noncomputable def blueprint : Fixpoint.Blueprint 1 := ⟨.mkDelta
   (.mkSigma “pr C tbl.
     ∃ z <⁺ pr, ∃ d <⁺ pr, !pairDef pr z d ∧
     ( (z = 0 ∧ ∃ A, !succFactDef A 0 ∧ ∃ x, !step0Def x tbl 3 0 A ∧ d = x) ∨
       (z = 1 ∧ ∃ A, !succFactDef A 1 ∧ ∃ x, !step0Def x tbl 2 0 A ∧ d = x) ∨
-      (∃ m < z, 1 ≤ m ∧ z = 2 * m ∧ ∃ t, !bnumGraph t (2 * m + 1) ∧ ∃ ev, !adjoinDef ev t 0 ∧
+      (∃ m < z, 1 ≤ m ∧ z = 2 * m ∧ ∃ t, !binNumeralGraph t (2 * m + 1) ∧ ∃ ev, !adjoinDef ev t 0 ∧
         ∃ A, !succFactDef A z ∧ ∃ x, !step0Def x tbl 5 ev A ∧ d = x) ∨
       (∃ m < z, ∃ d' < d, 1 ≤ m ∧ z = 2 * m + 1 ∧ :⟪m, d'⟫:∈ C ∧ ∃ F, !succFactDef F m ∧
-        ∃ t1, !bnumGraph t1 (m + 1) ∧ ∃ t0, !bnumGraph t0 m ∧ ∃ v0, !adjoinDef v0 t0 0 ∧
+        ∃ t1, !binNumeralGraph t1 (m + 1) ∧ ∃ t0, !binNumeralGraph t0 m ∧ ∃ v0, !adjoinDef v0 t0 0 ∧
         ∃ ev, !adjoinDef ev t1 v0 ∧ ∃ A, !succFactDef A z ∧ ∃ x, !step1Def x tbl 6 F d' ev A ∧ d = x) )”)
   (.mkPi “pr C tbl.
     ∃ z <⁺ pr, ∃ d <⁺ pr, !pairDef pr z d ∧
     ( (z = 0 ∧ ∀ A, !succFactDef A 0 → ∀ x, !step0Def x tbl 3 0 A → d = x) ∨
       (z = 1 ∧ ∀ A, !succFactDef A 1 → ∀ x, !step0Def x tbl 2 0 A → d = x) ∨
-      (∃ m < z, 1 ≤ m ∧ z = 2 * m ∧ ∀ t, !bnumGraph t (2 * m + 1) → ∀ ev, !adjoinDef ev t 0 →
+      (∃ m < z, 1 ≤ m ∧ z = 2 * m ∧ ∀ t, !binNumeralGraph t (2 * m + 1) → ∀ ev, !adjoinDef ev t 0 →
         ∀ A, !succFactDef A z → ∀ x, !step0Def x tbl 5 ev A → d = x) ∨
       (∃ m < z, ∃ d' < d, 1 ≤ m ∧ z = 2 * m + 1 ∧ :⟪m, d'⟫:∈ C ∧ ∀ F, !succFactDef F m →
-        ∀ t1, !bnumGraph t1 (m + 1) → ∀ t0, !bnumGraph t0 m → ∀ v0, !adjoinDef v0 t0 0 →
+        ∀ t1, !binNumeralGraph t1 (m + 1) → ∀ t0, !binNumeralGraph t0 m → ∀ v0, !adjoinDef v0 t0 0 →
         ∀ ev, !adjoinDef ev t1 v0 → ∀ A, !succFactDef A z → ∀ x, !step1Def x tbl 6 F d' ev A → d = x) )”)⟩
 
 lemma d_lt_step1 (tbl i F d' ev A : V) : d' < step1 tbl i F d' ev A :=
@@ -1555,17 +1555,17 @@ private lemma phi_iff (tbl C pr : V) :
     ∃ z ≤ pr, ∃ d ≤ pr, pr = ⟪z, d⟫ ∧
     ( (z = 0 ∧ d = step0 tbl 3 (vecOf []) (succFact 0)) ∨
       (z = 1 ∧ d = step0 tbl 2 (vecOf []) (succFact 1)) ∨
-      (∃ m < z, 1 ≤ m ∧ z = 2 * m ∧ d = step0 tbl 5 (vecOf [bnum (2 * m + 1)]) (succFact z)) ∨
+      (∃ m < z, 1 ≤ m ∧ z = 2 * m ∧ d = step0 tbl 5 (vecOf [binNumeral (2 * m + 1)]) (succFact z)) ∨
       (∃ m < z, ∃ d' < d, 1 ≤ m ∧ z = 2 * m + 1 ∧ ⟪m, d'⟫ ∈ C ∧
-        d = step1 tbl 6 (succFact m) d' (vecOf [bnum (m + 1), bnum m]) (succFact z)) ) := by
+        d = step1 tbl 6 (succFact m) d' (vecOf [binNumeral (m + 1), binNumeral m]) (succFact z)) ) := by
   constructor
   · rintro ⟨z, d, rfl, h⟩
     refine ⟨z, le_pair_left _ _, d, le_pair_right _ _, rfl, ?_⟩
     rcases h with h | h | ⟨m, hm, rfl, rfl⟩ | ⟨m, d', hm, rfl, hC, rfl⟩
     · exact Or.inl h
     · exact Or.inr (Or.inl h)
-    · exact Or.inr (Or.inr (Or.inl ⟨m, Bnum.lt_two_mul hm, hm, rfl, rfl⟩))
-    · exact Or.inr (Or.inr (Or.inr ⟨m, Bnum.lt_two_mul_add_one hm, d', d_lt_step1 _ _ _ _ _ _, hm, rfl, hC, rfl⟩))
+    · exact Or.inr (Or.inr (Or.inl ⟨m, BinNumeral.lt_two_mul hm, hm, rfl, rfl⟩))
+    · exact Or.inr (Or.inr (Or.inr ⟨m, BinNumeral.lt_two_mul_add_one hm, d', d_lt_step1 _ _ _ _ _ _, hm, rfl, hC, rfl⟩))
   · rintro ⟨z, _, d, _, rfl, h⟩
     refine ⟨z, d, rfl, ?_⟩
     rcases h with h | h | ⟨m, _, hm, rfl, rfl⟩ | ⟨m, _, d', _, hm, rfl, hC, rfl⟩
@@ -1579,11 +1579,11 @@ noncomputable def construction : Fixpoint.Construction V blueprint where
   defined := .mk <| by
     constructor
     · intro v
-      simp [blueprint, succFact_defined.iff, bnum.defined.iff, step0_defined.iff, step1_defined.iff,
+      simp [blueprint, succFact_defined.iff, binNumeral.defined.iff, step0_defined.iff, step1_defined.iff,
         numeral_eq_natCast]
     · intro v
       symm
-      simpa [blueprint, succFact_defined.iff, bnum.defined.iff, step0_defined.iff, step1_defined.iff,
+      simpa [blueprint, succFact_defined.iff, binNumeral.defined.iff, step0_defined.iff, step1_defined.iff,
         numeral_eq_natCast] using phi_iff (v 2) (v 1) (v 0)
   monotone := by
     rintro C C' hC _ pr ⟨z, d, rfl, h⟩
@@ -1621,9 +1621,9 @@ lemma SuccGraph.case_iff {tbl z d : V} :
     SuccGraph tbl z d ↔
     (z = 0 ∧ d = step0 tbl 3 (vecOf []) (succFact 0)) ∨
     (z = 1 ∧ d = step0 tbl 2 (vecOf []) (succFact 1)) ∨
-    (∃ m, 1 ≤ m ∧ z = 2 * m ∧ d = step0 tbl 5 (vecOf [bnum (2 * m + 1)]) (succFact z)) ∨
+    (∃ m, 1 ≤ m ∧ z = 2 * m ∧ d = step0 tbl 5 (vecOf [binNumeral (2 * m + 1)]) (succFact z)) ∨
     (∃ m d', 1 ≤ m ∧ z = 2 * m + 1 ∧ SuccGraph tbl m d' ∧
-      d = step1 tbl 6 (succFact m) d' (vecOf [bnum (m + 1), bnum m]) (succFact z)) :=
+      d = step1 tbl 6 (succFact m) d' (vecOf [binNumeral (m + 1), binNumeral m]) (succFact z)) :=
   Iff.trans SuccG.construction.case (by simp [SuccG.construction, SuccG.Phi, SuccGraph])
 
 lemma SuccGraph.zero_iff {tbl d : V} : SuccGraph tbl 0 d ↔ d = step0 tbl 3 (vecOf []) (succFact 0) := by
@@ -1647,7 +1647,7 @@ lemma SuccGraph.one_iff {tbl d : V} : SuccGraph tbl 1 d ↔ d = step0 tbl 2 (vec
   · rintro rfl; exact Or.inr (Or.inl ⟨rfl, rfl⟩)
 
 lemma SuccGraph.two_mul_iff {tbl m d : V} (hm : 1 ≤ m) :
-    SuccGraph tbl (2 * m) d ↔ d = step0 tbl 5 (vecOf [bnum (2 * m + 1)]) (succFact (2 * m)) := by
+    SuccGraph tbl (2 * m) d ↔ d = step0 tbl 5 (vecOf [binNumeral (2 * m + 1)]) (succFact (2 * m)) := by
   rw [SuccGraph.case_iff]
   constructor
   · rintro (⟨h, _⟩ | ⟨h, _⟩ | ⟨m', _, h, rfl⟩ | ⟨m', _, _, h, _⟩)
@@ -1659,7 +1659,7 @@ lemma SuccGraph.two_mul_iff {tbl m d : V} (hm : 1 ≤ m) :
 
 lemma SuccGraph.two_mul_add_one_iff {tbl m d : V} (hm : 1 ≤ m) :
     SuccGraph tbl (2 * m + 1) d ↔ ∃ d', SuccGraph tbl m d' ∧
-      d = step1 tbl 6 (succFact m) d' (vecOf [bnum (m + 1), bnum m]) (succFact (2 * m + 1)) := by
+      d = step1 tbl 6 (succFact m) d' (vecOf [binNumeral (m + 1), binNumeral m]) (succFact (2 * m + 1)) := by
   rw [SuccGraph.case_iff]
   constructor
   · rintro (⟨h, _⟩ | ⟨h, _⟩ | ⟨m', _, h, _⟩ | ⟨m', d', _, h, hd', rfl⟩)
@@ -1701,7 +1701,7 @@ lemma succGraph_existsUnique (tbl z : V) : ∃! d, SuccGraph tbl z d := by
   obtain ⟨d, hd⟩ := succGraph_exists tbl z
   exact ExistsUnique.intro d hd (fun d' h' ↦ succGraph_unique tbl z d' d h' hd)
 
-/-- **The successor-fact prover**: the derivation code of `{bnum z + 1 = bnum (z + 1)}`. -/
+/-- **The successor-fact prover**: the derivation code of `{binNumeral z + 1 = binNumeral (z + 1)}`. -/
 noncomputable def succCode (tbl z : V) : V := Classical.choose! (succGraph_existsUnique tbl z)
 
 lemma succCode_graph (tbl z : V) : SuccGraph tbl z (succCode tbl z) :=
@@ -1740,19 +1740,19 @@ lemma cast_rCarry : ((rCarry : ℕ) : V) = 6 := by simp [rCarry]
 
 lemma one_le_E {z : V} : 1 ≤ 6 * ‖z + 1‖ + 3 := le_trans (by norm_num) le_add_self
 
-lemma succFact_two_mul {m : V} (hm : 1 ≤ m) : succFact (2 * m) = eqFact (bnum (2 * m + 1)) (bnum (2 * m + 1)) := by
+lemma succFact_two_mul {m : V} (hm : 1 ≤ m) : succFact (2 * m) = eqFact (binNumeral (2 * m + 1)) (binNumeral (2 * m + 1)) := by
   unfold succFact
-  rw [bnum_two_mul hm, bnum_two_mul_add_one hm]
+  rw [binNumeral_two_mul hm, binNumeral_two_mul_add_one hm]
 
 lemma succFact_two_mul_add_one {m : V} (hm : 1 ≤ m) :
-    succFact (2 * m + 1) = eqFact ((((𝟐 : V) ^* bnum m) ^+ 𝟏) ^+ 𝟏) (𝟐 ^* bnum (m + 1)) := by
+    succFact (2 * m + 1) = eqFact ((((𝟐 : V) ^* binNumeral m) ^+ 𝟏) ^+ 𝟏) (𝟐 ^* binNumeral (m + 1)) := by
   unfold succFact
-  rw [bnum_two_mul_add_one hm, show 2 * m + 1 + 1 = 2 * (m + 1) by ring,
-    bnum_two_mul (le_trans hm le_self_add)]
+  rw [binNumeral_two_mul_add_one hm, show 2 * m + 1 + 1 = 2 * (m + 1) by ring,
+    binNumeral_two_mul (le_trans hm le_self_add)]
 
 /-- **Soundness and length of the successor chain**, by Π₁ order induction on `z`. -/
 theorem succGraph_sound {tbl N B : V} (htbl : NumTableOK tbl N B) (z : V) :
-    ∀ d, SuccGraph tbl z d → DerivationOf TAct d (sing (succFact z)) ∧ dlen TAct d ≤ succBound N B z := by
+    ∀ d, SuccGraph tbl z d → DerivationOf TAct d (sing (succFact z)) ∧ proofLen TAct d ≤ succBound N B z := by
   induction z using ISigma1.pi1_order_induction with
   | hP => simp only [succBound]; definability
   | ind z ih =>
@@ -1764,7 +1764,7 @@ theorem succGraph_sound {tbl N B : V} (htbl : NumTableOK tbl N B) (z : V) :
       have hc : instOuter LAct [] nZeroOne_c = succFact (0 : V) := by
         rw [inst_nZeroOne.2]; simp [succFact]
       have hpf := step0_proof hr3 [] rfl (by simp) (isFormula_succFact 0) inst_nZeroOne.1 hc
-      have hlen := dlen_step0_le hr3 (E := 6 * ‖(1 : V)‖ + 3) [] rfl (by simp) (le_trans (by norm_num) le_add_self) hB
+      have hlen := proofLen_step0_le hr3 (E := 6 * ‖(1 : V)‖ + 3) [] rfl (by simp) (le_trans (by norm_num) le_add_self) hB
         (isFormula_succFact 0) inst_nZeroOne.1 hc (by norm_num) (by simp [nZeroOne_as])
         (formulaLen_succFact_le hPeq (by rw [zero_add]))
       rw [cast_rZeroOne] at hpf hlen
@@ -1776,9 +1776,9 @@ theorem succGraph_sound {tbl N B : V} (htbl : NumTableOK tbl N B) (z : V) :
       have hc : instOuter LAct [] nOneOne_c = succFact (1 : V) := by
         rw [inst_nOneOne.2]
         unfold succFact
-        rw [bnum_one, show (1 : V) + 1 = 2 * 1 by ring, bnum_two_mul le_rfl, bnum_one]
+        rw [binNumeral_one, show (1 : V) + 1 = 2 * 1 by ring, binNumeral_two_mul le_rfl, binNumeral_one]
       have hpf := step0_proof hr2 [] rfl (by simp) (isFormula_succFact 1) inst_nOneOne.1 hc
-      have hlen := dlen_step0_le hr2 (E := 6 * ‖(1 : V) + 1‖ + 3) [] rfl (by simp) one_le_E hB
+      have hlen := proofLen_step0_le hr2 (E := 6 * ‖(1 : V) + 1‖ + 3) [] rfl (by simp) one_le_E hB
         (isFormula_succFact 1) inst_nOneOne.1 hc (by norm_num) (by simp [nOneOne_as])
         (formulaLen_succFact_le hPeq le_rfl)
       rw [cast_rOneOne] at hpf hlen
@@ -1789,15 +1789,15 @@ theorem succGraph_sound {tbl N B : V} (htbl : NumTableOK tbl N B) (z : V) :
     · rw [he] at hd ⊢
       rw [SuccGraph.two_mul_iff hm] at hd
       subst hd
-      have hx : IsSemiterm LAct 0 (bnum (2 * (z / 2) + 1)) := isSemiterm_bnum_LAct 0 _
-      have hc : instOuter LAct [bnum (2 * (z / 2) + 1)] nEqRefl_c = succFact (2 * (z / 2)) := by
+      have hx : IsSemiterm LAct 0 (binNumeral (2 * (z / 2) + 1)) := isSemiterm_binNumeral_LAct 0 _
+      have hc : instOuter LAct [binNumeral (2 * (z / 2) + 1)] nEqRefl_c = succFact (2 * (z / 2)) := by
         rw [(inst_nEqRefl hx).2, succFact_two_mul hm]
-      have hes : ∀ e ∈ [bnum (2 * (z / 2) + 1)], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ 6 * ‖2 * (z / 2) + 1‖ + 3 := by
+      have hes : ∀ e ∈ [binNumeral (2 * (z / 2) + 1)], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ 6 * ‖2 * (z / 2) + 1‖ + 3 := by
         simp only [List.mem_singleton, forall_eq]
-        exact ⟨hx, termLen_bnum_le_E le_rfl le_rfl⟩
-      have hpf := step0_proof hr5 [bnum (2 * (z / 2) + 1)] rfl (fun e he ↦ (hes e he).1) (isFormula_succFact _)
+        exact ⟨hx, termLen_binNumeral_le_E le_rfl le_rfl⟩
+      have hpf := step0_proof hr5 [binNumeral (2 * (z / 2) + 1)] rfl (fun e he ↦ (hes e he).1) (isFormula_succFact _)
         (inst_nEqRefl hx).1 hc
-      have hlen := dlen_step0_le hr5 [bnum (2 * (z / 2) + 1)] rfl hes one_le_E hB (isFormula_succFact _)
+      have hlen := proofLen_step0_le hr5 [binNumeral (2 * (z / 2) + 1)] rfl hes one_le_E hB (isFormula_succFact _)
         (inst_nEqRefl hx).1 hc (by norm_num) (by simp [nEqRefl_as]) (formulaLen_succFact_le hPeq le_rfl)
       rw [cast_rEqRefl] at hpf hlen
       refine ⟨hpf, le_trans hlen (le_mul_of_one_le_left zero_le ?_)⟩
@@ -1807,10 +1807,10 @@ theorem succGraph_sound {tbl N B : V} (htbl : NumTableOK tbl N B) (z : V) :
       obtain ⟨d', hd', rfl⟩ := hd
       obtain ⟨hpf', hlen'⟩ := ih (z / 2) hlt d' hd'
       set m := z / 2 with hm_def
-      have hx : IsSemiterm LAct 0 (bnum m) := isSemiterm_bnum_LAct 0 _
-      have hw : IsSemiterm LAct 0 (bnum (m + 1)) := isSemiterm_bnum_LAct 0 _
-      have hmap : nCarry_as.map (instOuter LAct [bnum (m + 1), bnum m]) = [succFact m] := (inst_nCarry hx hw).1
-      have hc : instOuter LAct [bnum (m + 1), bnum m] nCarry_c = succFact (2 * m + 1) := by
+      have hx : IsSemiterm LAct 0 (binNumeral m) := isSemiterm_binNumeral_LAct 0 _
+      have hw : IsSemiterm LAct 0 (binNumeral (m + 1)) := isSemiterm_binNumeral_LAct 0 _
+      have hmap : nCarry_as.map (instOuter LAct [binNumeral (m + 1), binNumeral m]) = [succFact m] := (inst_nCarry hx hw).1
+      have hc : instOuter LAct [binNumeral (m + 1), binNumeral m] nCarry_c = succFact (2 * m + 1) := by
         rw [(inst_nCarry hx hw).2, succFact_two_mul_add_one hm]
       have hle1 : m + 1 ≤ 2 * m + 1 + 1 := by
         rw [two_mul]
@@ -1819,15 +1819,15 @@ theorem succGraph_sound {tbl N B : V} (htbl : NumTableOK tbl N B) (z : V) :
       have hE : 6 * ‖m + 1‖ + 3 ≤ 6 * ‖2 * m + 1 + 1‖ + 3 := by
         have := length_monotone hle1
         gcongr
-      have hes : ∀ e ∈ [bnum (m + 1), bnum m], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ 6 * ‖2 * m + 1 + 1‖ + 3 := by
+      have hes : ∀ e ∈ [binNumeral (m + 1), binNumeral m], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ 6 * ‖2 * m + 1 + 1‖ + 3 := by
         intro e he
         simp only [List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false] at he
         rcases he with rfl | rfl
-        · exact ⟨hw, termLen_bnum_le_E (z := 2 * m + 1) hle1 le_rfl⟩
-        · exact ⟨hx, termLen_bnum_le_E (z := 2 * m + 1) hle0 le_rfl⟩
-      have hpf := step1_proof hr6 [bnum (m + 1), bnum m] rfl (fun e he ↦ (hes e he).1) (isFormula_succFact _)
+        · exact ⟨hw, termLen_binNumeral_le_E (z := 2 * m + 1) hle1 le_rfl⟩
+        · exact ⟨hx, termLen_binNumeral_le_E (z := 2 * m + 1) hle0 le_rfl⟩
+      have hpf := step1_proof hr6 [binNumeral (m + 1), binNumeral m] rfl (fun e he ↦ (hes e he).1) (isFormula_succFact _)
         (isFormula_succFact m) hpf' hmap hc
-      have hlen := dlen_step1_le hr6 [bnum (m + 1), bnum m] rfl hes one_le_E hB (isFormula_succFact _)
+      have hlen := proofLen_step1_le hr6 [binNumeral (m + 1), binNumeral m] rfl hes one_le_E hB (isFormula_succFact _)
         (isFormula_succFact m) hpf' hmap hc (by norm_num) (by simp [nCarry_as])
         (formulaLen_succFact_le hPeq le_rfl)
         (formulaLen_succFact_le hPeq (le_trans le_rfl hE))
@@ -1835,21 +1835,21 @@ theorem succGraph_sound {tbl N B : V} (htbl : NumTableOK tbl N B) (z : V) :
       refine ⟨hpf, ?_⟩
       unfold succBound at hlen' ⊢
       rw [length_two_mul_add_one]
-      calc dlen TAct (step1 tbl 6 (succFact m) d' (vecOf [bnum (m + 1), bnum m]) (succFact (2 * m + 1)))
-          ≤ dlen TAct d' + nodeCost N B (6 * ‖2 * m + 1 + 1‖ + 3) := hlen
+      calc proofLen TAct (step1 tbl 6 (succFact m) d' (vecOf [binNumeral (m + 1), binNumeral m]) (succFact (2 * m + 1)))
+          ≤ proofLen TAct d' + nodeCost N B (6 * ‖2 * m + 1 + 1‖ + 3) := hlen
         _ ≤ (‖m‖ + 1) * nodeCost N B (6 * ‖2 * m + 1 + 1‖ + 3) + nodeCost N B (6 * ‖2 * m + 1 + 1‖ + 3) := by
             gcongr
             exact le_trans hlen' (mul_le_mul_of_nonneg_left (nodeCost_mono hE) zero_le)
         _ = (‖m‖ + 1 + 1) * nodeCost N B (6 * ‖2 * m + 1 + 1‖ + 3) := by ring
 
-/-- **`succCode` is a derivation of `{bnum z + 1 = bnum (z + 1)}`**, in every model, over any sound table. -/
+/-- **`succCode` is a derivation of `{binNumeral z + 1 = binNumeral (z + 1)}`**, in every model, over any sound table. -/
 theorem succCode_proof {tbl N B : V} (htbl : NumTableOK tbl N B) (z : V) :
     DerivationOf TAct (succCode tbl z) (sing (succFact z)) :=
   (succGraph_sound htbl z _ (succCode_graph tbl z)).1
 
-/-- **`dlen (succCode tbl z) ≤ (‖z‖ + 1) · (N + 800·B·(6‖z + 1‖ + 3))`** — quadratic in the bit length. -/
-theorem dlen_succCode_le {tbl N B : V} (htbl : NumTableOK tbl N B) (z : V) :
-    dlen TAct (succCode tbl z) ≤ (‖z‖ + 1) * nodeCost N B (6 * ‖z + 1‖ + 3) :=
+/-- **`proofLen (succCode tbl z) ≤ (‖z‖ + 1) · (N + 800·B·(6‖z + 1‖ + 3))`** — quadratic in the bit length. -/
+theorem proofLen_succCode_le {tbl N B : V} (htbl : NumTableOK tbl N B) (z : V) :
+    proofLen TAct (succCode tbl z) ≤ (‖z‖ + 1) * nodeCost N B (6 * ‖z + 1‖ + 3) :=
   (succGraph_sound htbl z _ (succCode_graph tbl z)).2
 
 /-- The `sLemma` step of the successor fact is applicable (`LemmaOK`), … -/
@@ -1865,55 +1865,55 @@ theorem lemmaOK_succ {tbl N B : V} (htbl : NumTableOK tbl N B) (z : V) :
 
 end succSound
 
-/-! ## 7. Addition: `addFact a b := bnum a + bnum b = bnum (a + b)`
+/-! ## 7. Addition: `addFact a b := binNumeral a + binNumeral b = binNumeral (a + b)`
 
 `addCode tbl a b` — a `Fixpoint` on `⟪a, b, d⟫`: `a = 0`/`b = 0` by `zeroAdd`/`addZero`; `a = 1` by
-`oneAdd` from `succCode b`; `b = 1` IS `succCode a` (`bnum 1 = 𝟏`); `a, b ≥ 2` by the four bit rows
+`oneAdd` from `succCode b`; `b = 1` IS `succCode a` (`binNumeral 1 = 𝟏`); `a, b ≥ 2` by the four bit rows
 from the fact for `(a / 2, b / 2)` — and, for `11`, the carry `succCode (a/2 + b/2)`. A chain of
 `‖a‖ + 1` add-nodes, each with at most one successor chain: `(‖a‖ + 1)(‖a + b‖ + 2)` nodes. -/
 
 section add
 
-/-- `addFact a b := bnum a + bnum b = bnum (a + b)`. -/
-noncomputable def addFact (a b : V) : V := eqFact (bnum a ^+ bnum b) (bnum (a + b))
+/-- `addFact a b := binNumeral a + binNumeral b = binNumeral (a + b)`. -/
+noncomputable def addFact (a b : V) : V := eqFact (binNumeral a ^+ binNumeral b) (binNumeral (a + b))
 noncomputable def addFactDef : 𝚺₁.Semisentence 3 := .mkSigma
-  “y a b. ∃ ta, !bnumGraph ta a ∧ ∃ tb, !bnumGraph tb b ∧ ∃ s, !qqAddGraph s ta tb ∧ ∃ t, !bnumGraph t (a + b) ∧
+  “y a b. ∃ ta, !binNumeralGraph ta a ∧ ∃ tb, !binNumeralGraph tb b ∧ ∃ s, !qqAddGraph s ta tb ∧ ∃ t, !binNumeralGraph t (a + b) ∧
     !eqFactDef y s t”
 instance addFact_defined : 𝚺₁-Function₂ (addFact : V → V → V) via addFactDef := .mk fun v ↦ by
-  simp [addFactDef, bnum.defined.iff, qqAdd_defined.iff, eqFact_defined.iff, addFact]
+  simp [addFactDef, binNumeral.defined.iff, qqAdd_defined.iff, eqFact_defined.iff, addFact]
 instance addFact_definable : 𝚺₁-Function₂ (addFact : V → V → V) := addFact_defined.to_definable
 
 lemma isFormula_addFact (a b : V) : IsFormula LAct (addFact a b) :=
-  isFormula_eqFact (by simp [isSemiterm_bnum_LAct]) (isSemiterm_bnum_LAct 0 _)
+  isFormula_eqFact (by simp [isSemiterm_binNumeral_LAct]) (isSemiterm_binNumeral_LAct 0 _)
 
-lemma addFact_zero_left (b : V) : addFact 0 b = eqFact ((𝟎 : V) ^+ bnum b) (bnum b) := by
-  unfold addFact; rw [bnum_zero, zero_add]
-lemma addFact_zero_right (a : V) : addFact a 0 = eqFact (bnum a ^+ (𝟎 : V)) (bnum a) := by
-  unfold addFact; rw [bnum_zero, add_zero]
-lemma addFact_one_left (b : V) : addFact 1 b = eqFact ((𝟏 : V) ^+ bnum b) (bnum (b + 1)) := by
-  unfold addFact; rw [bnum_one, add_comm]
+lemma addFact_zero_left (b : V) : addFact 0 b = eqFact ((𝟎 : V) ^+ binNumeral b) (binNumeral b) := by
+  unfold addFact; rw [binNumeral_zero, zero_add]
+lemma addFact_zero_right (a : V) : addFact a 0 = eqFact (binNumeral a ^+ (𝟎 : V)) (binNumeral a) := by
+  unfold addFact; rw [binNumeral_zero, add_zero]
+lemma addFact_one_left (b : V) : addFact 1 b = eqFact ((𝟏 : V) ^+ binNumeral b) (binNumeral (b + 1)) := by
+  unfold addFact; rw [binNumeral_one, add_comm]
 lemma addFact_one_right (a : V) : addFact a 1 = succFact a := by
-  unfold addFact succFact; rw [bnum_one]
+  unfold addFact succFact; rw [binNumeral_one]
 lemma addFact_bit00 {a' b' : V} (ha : 1 ≤ a') (hb : 1 ≤ b') :
-    addFact (2 * a') (2 * b') = eqFact (((𝟐 : V) ^* bnum a') ^+ (𝟐 ^* bnum b')) (𝟐 ^* bnum (a' + b')) := by
+    addFact (2 * a') (2 * b') = eqFact (((𝟐 : V) ^* binNumeral a') ^+ (𝟐 ^* binNumeral b')) (𝟐 ^* binNumeral (a' + b')) := by
   unfold addFact
-  rw [bnum_two_mul ha, bnum_two_mul hb, show 2 * a' + 2 * b' = 2 * (a' + b') by ring, bnum_two_mul (le_trans ha le_self_add)]
+  rw [binNumeral_two_mul ha, binNumeral_two_mul hb, show 2 * a' + 2 * b' = 2 * (a' + b') by ring, binNumeral_two_mul (le_trans ha le_self_add)]
 lemma addFact_bit01 {a' b' : V} (ha : 1 ≤ a') (hb : 1 ≤ b') :
-    addFact (2 * a') (2 * b' + 1) = eqFact (((𝟐 : V) ^* bnum a') ^+ ((𝟐 ^* bnum b') ^+ 𝟏)) ((𝟐 ^* bnum (a' + b')) ^+ 𝟏) := by
+    addFact (2 * a') (2 * b' + 1) = eqFact (((𝟐 : V) ^* binNumeral a') ^+ ((𝟐 ^* binNumeral b') ^+ 𝟏)) ((𝟐 ^* binNumeral (a' + b')) ^+ 𝟏) := by
   unfold addFact
-  rw [bnum_two_mul ha, bnum_two_mul_add_one hb, show 2 * a' + (2 * b' + 1) = 2 * (a' + b') + 1 by ring,
-    bnum_two_mul_add_one (le_trans ha le_self_add)]
+  rw [binNumeral_two_mul ha, binNumeral_two_mul_add_one hb, show 2 * a' + (2 * b' + 1) = 2 * (a' + b') + 1 by ring,
+    binNumeral_two_mul_add_one (le_trans ha le_self_add)]
 lemma addFact_bit10 {a' b' : V} (ha : 1 ≤ a') (hb : 1 ≤ b') :
-    addFact (2 * a' + 1) (2 * b') = eqFact ((((𝟐 : V) ^* bnum a') ^+ 𝟏) ^+ (𝟐 ^* bnum b')) ((𝟐 ^* bnum (a' + b')) ^+ 𝟏) := by
+    addFact (2 * a' + 1) (2 * b') = eqFact ((((𝟐 : V) ^* binNumeral a') ^+ 𝟏) ^+ (𝟐 ^* binNumeral b')) ((𝟐 ^* binNumeral (a' + b')) ^+ 𝟏) := by
   unfold addFact
-  rw [bnum_two_mul_add_one ha, bnum_two_mul hb, show 2 * a' + 1 + 2 * b' = 2 * (a' + b') + 1 by ring,
-    bnum_two_mul_add_one (le_trans ha le_self_add)]
+  rw [binNumeral_two_mul_add_one ha, binNumeral_two_mul hb, show 2 * a' + 1 + 2 * b' = 2 * (a' + b') + 1 by ring,
+    binNumeral_two_mul_add_one (le_trans ha le_self_add)]
 lemma addFact_bit11 {a' b' : V} (ha : 1 ≤ a') (hb : 1 ≤ b') :
     addFact (2 * a' + 1) (2 * b' + 1) =
-      eqFact ((((𝟐 : V) ^* bnum a') ^+ 𝟏) ^+ ((𝟐 ^* bnum b') ^+ 𝟏)) (𝟐 ^* bnum (a' + b' + 1)) := by
+      eqFact ((((𝟐 : V) ^* binNumeral a') ^+ 𝟏) ^+ ((𝟐 ^* binNumeral b') ^+ 𝟏)) (𝟐 ^* binNumeral (a' + b' + 1)) := by
   unfold addFact
-  rw [bnum_two_mul_add_one ha, bnum_two_mul_add_one hb, show 2 * a' + 1 + (2 * b' + 1) = 2 * (a' + b' + 1) by ring,
-    bnum_two_mul (le_trans ha (le_trans le_self_add le_self_add))]
+  rw [binNumeral_two_mul_add_one ha, binNumeral_two_mul_add_one hb, show 2 * a' + 1 + (2 * b' + 1) = 2 * (a' + b' + 1) by ring,
+    binNumeral_two_mul (le_trans ha (le_trans le_self_add le_self_add))]
 
 /-- `|addFact a b| ≤ B·E` once `B ≥ |Peq|` and `E ≥ 12‖a + b‖ + 3`. -/
 lemma formulaLen_addFact_le {B E a b : V} (hPeq : formulaLen LAct (Peq : V) ≤ B) (hE : 12 * ‖a + b‖ + 3 ≤ E) :
@@ -1921,22 +1921,22 @@ lemma formulaLen_addFact_le {B E a b : V} (hPeq : formulaLen LAct (Peq : V) ≤ 
   have hE1 : 1 ≤ E := le_trans (by norm_num) (le_trans le_add_self hE)
   have ha := length_monotone (le_self_add : a ≤ a + b)
   have hb := length_monotone (le_add_self : b ≤ a + b)
-  have h1 : termLen LAct (bnum a ^+ bnum b) ≤ E := by
-    rw [termLen_qqAdd isFunc_LAct_addIndex (isSemiterm_bnum_LAct 0 a).isUTerm (isSemiterm_bnum_LAct 0 b).isUTerm]
-    calc termLen LAct (bnum a) + termLen LAct (bnum b) + 1 ≤ (6 * ‖a‖ + 1) + (6 * ‖b‖ + 1) + 1 := by
-          gcongr <;> exact termLen_bnum_le _
+  have h1 : termLen LAct (binNumeral a ^+ binNumeral b) ≤ E := by
+    rw [termLen_qqAdd isFunc_LAct_addIndex (isSemiterm_binNumeral_LAct 0 a).isUTerm (isSemiterm_binNumeral_LAct 0 b).isUTerm]
+    calc termLen LAct (binNumeral a) + termLen LAct (binNumeral b) + 1 ≤ (6 * ‖a‖ + 1) + (6 * ‖b‖ + 1) + 1 := by
+          gcongr <;> exact termLen_binNumeral_le _
       _ ≤ (6 * ‖a + b‖ + 1) + (6 * ‖a + b‖ + 1) + 1 := by gcongr
       _ = 12 * ‖a + b‖ + 3 := by ring
       _ ≤ E := hE
-  have h2 : termLen LAct (bnum (a + b)) ≤ E :=
-    le_trans (termLen_bnum_le _) (le_trans (by
+  have h2 : termLen LAct (binNumeral (a + b)) ≤ E :=
+    le_trans (termLen_binNumeral_le _) (le_trans (by
       calc 6 * ‖a + b‖ + 1 ≤ 12 * ‖a + b‖ + 1 := by gcongr; norm_num
         _ ≤ 12 * ‖a + b‖ + 3 := by gcongr; norm_num) hE)
-  exact le_trans (formulaLen_eqFact_le hE1 (by simp [isSemiterm_bnum_LAct]) (isSemiterm_bnum_LAct 0 _) h1 h2)
+  exact le_trans (formulaLen_eqFact_le hE1 (by simp [isSemiterm_binNumeral_LAct]) (isSemiterm_binNumeral_LAct 0 _) h1 h2)
     (mul_le_mul_of_nonneg_right hPeq zero_le)
 
-lemma termLen_bnum_le_E' {x s E : V} (hx : x ≤ s) (hE : 12 * ‖s‖ + 3 ≤ E) : termLen LAct (bnum x) ≤ E :=
-  le_trans (termLen_bnum_le x) (le_trans (by
+lemma termLen_binNumeral_le_E' {x s E : V} (hx : x ≤ s) (hE : 12 * ‖s‖ + 3 ≤ E) : termLen LAct (binNumeral x) ≤ E :=
+  le_trans (termLen_binNumeral_le x) (le_trans (by
     have := length_monotone hx
     calc 6 * ‖x‖ + 1 ≤ 6 * ‖s‖ + 1 := by gcongr
       _ ≤ 12 * ‖s‖ + 3 := by gcongr <;> norm_num) hE)
@@ -1956,83 +1956,83 @@ namespace AddG
 /-- The graph: `⟪a, b, d⟫` where `d` is the addition-fact derivation of `(a, b)`. -/
 def Phi (tbl : V) (C : Set V) (pr : V) : Prop :=
   ∃ a b d, pr = ⟪a, b, d⟫ ∧
-  ( (a = 0 ∧ d = step0 tbl 0 (vecOf [bnum b]) (addFact 0 b)) ∨
-    (1 ≤ a ∧ b = 0 ∧ d = step0 tbl 1 (vecOf [bnum a]) (addFact a 0)) ∨
-    (a = 1 ∧ 1 ≤ b ∧ d = step1 tbl 4 (succFact b) (succCode tbl b) (vecOf [bnum (b + 1), bnum b]) (addFact 1 b)) ∨
+  ( (a = 0 ∧ d = step0 tbl 0 (vecOf [binNumeral b]) (addFact 0 b)) ∨
+    (1 ≤ a ∧ b = 0 ∧ d = step0 tbl 1 (vecOf [binNumeral a]) (addFact a 0)) ∨
+    (a = 1 ∧ 1 ≤ b ∧ d = step1 tbl 4 (succFact b) (succCode tbl b) (vecOf [binNumeral (b + 1), binNumeral b]) (addFact 1 b)) ∨
     (2 ≤ a ∧ b = 1 ∧ d = succCode tbl a) ∨
     (∃ a' b' d', 1 ≤ a' ∧ 1 ≤ b' ∧ a = 2 * a' ∧ b = 2 * b' ∧ ⟪a', b', d'⟫ ∈ C ∧
-      d = step1 tbl 7 (addFact a' b') d' (vecOf [bnum (a' + b'), bnum b', bnum a']) (addFact a b)) ∨
+      d = step1 tbl 7 (addFact a' b') d' (vecOf [binNumeral (a' + b'), binNumeral b', binNumeral a']) (addFact a b)) ∨
     (∃ a' b' d', 1 ≤ a' ∧ 1 ≤ b' ∧ a = 2 * a' ∧ b = 2 * b' + 1 ∧ ⟪a', b', d'⟫ ∈ C ∧
-      d = step1 tbl 8 (addFact a' b') d' (vecOf [bnum (a' + b'), bnum b', bnum a']) (addFact a b)) ∨
+      d = step1 tbl 8 (addFact a' b') d' (vecOf [binNumeral (a' + b'), binNumeral b', binNumeral a']) (addFact a b)) ∨
     (∃ a' b' d', 1 ≤ a' ∧ 1 ≤ b' ∧ a = 2 * a' + 1 ∧ b = 2 * b' ∧ ⟪a', b', d'⟫ ∈ C ∧
-      d = step1 tbl 9 (addFact a' b') d' (vecOf [bnum (a' + b'), bnum b', bnum a']) (addFact a b)) ∨
+      d = step1 tbl 9 (addFact a' b') d' (vecOf [binNumeral (a' + b'), binNumeral b', binNumeral a']) (addFact a b)) ∨
     (∃ a' b' d', 1 ≤ a' ∧ 1 ≤ b' ∧ a = 2 * a' + 1 ∧ b = 2 * b' + 1 ∧ ⟪a', b', d'⟫ ∈ C ∧
       d = step2 tbl 10 (addFact a' b') d' (succFact (a' + b')) (succCode tbl (a' + b'))
-        (vecOf [bnum (a' + b' + 1), bnum (a' + b'), bnum b', bnum a']) (addFact a b)) )
+        (vecOf [binNumeral (a' + b' + 1), binNumeral (a' + b'), binNumeral b', binNumeral a']) (addFact a b)) )
 
 noncomputable def blueprint : Fixpoint.Blueprint 1 := ⟨.mkDelta
   (.mkSigma “pr C tbl.
     ∃ a <⁺ pr, ∃ q <⁺ pr, !pairDef pr a q ∧ ∃ b <⁺ q, ∃ d <⁺ q, !pairDef q b d ∧
-    ( (a = 0 ∧ ∃ t, !bnumGraph t b ∧ ∃ ev, !adjoinDef ev t 0 ∧ ∃ A, !addFactDef A 0 b ∧
+    ( (a = 0 ∧ ∃ t, !binNumeralGraph t b ∧ ∃ ev, !adjoinDef ev t 0 ∧ ∃ A, !addFactDef A 0 b ∧
         ∃ x, !step0Def x tbl 0 ev A ∧ d = x) ∨
-      (1 ≤ a ∧ b = 0 ∧ ∃ t, !bnumGraph t a ∧ ∃ ev, !adjoinDef ev t 0 ∧ ∃ A, !addFactDef A a 0 ∧
+      (1 ≤ a ∧ b = 0 ∧ ∃ t, !binNumeralGraph t a ∧ ∃ ev, !adjoinDef ev t 0 ∧ ∃ A, !addFactDef A a 0 ∧
         ∃ x, !step0Def x tbl 1 ev A ∧ d = x) ∨
-      (a = 1 ∧ 1 ≤ b ∧ ∃ F, !succFactDef F b ∧ ∃ dF, !succCodeDef dF tbl b ∧ ∃ t1, !bnumGraph t1 (b + 1) ∧
-        ∃ t0, !bnumGraph t0 b ∧ ∃ v0, !adjoinDef v0 t0 0 ∧ ∃ ev, !adjoinDef ev t1 v0 ∧ ∃ A, !addFactDef A 1 b ∧
+      (a = 1 ∧ 1 ≤ b ∧ ∃ F, !succFactDef F b ∧ ∃ dF, !succCodeDef dF tbl b ∧ ∃ t1, !binNumeralGraph t1 (b + 1) ∧
+        ∃ t0, !binNumeralGraph t0 b ∧ ∃ v0, !adjoinDef v0 t0 0 ∧ ∃ ev, !adjoinDef ev t1 v0 ∧ ∃ A, !addFactDef A 1 b ∧
         ∃ x, !step1Def x tbl 4 F dF ev A ∧ d = x) ∨
       (2 ≤ a ∧ b = 1 ∧ ∃ x, !succCodeDef x tbl a ∧ d = x) ∨
       (∃ a' < a, ∃ b' < b, ∃ d' < d, 1 ≤ a' ∧ 1 ≤ b' ∧ a = 2 * a' ∧ b = 2 * b' ∧
         (∃ q', !pairDef q' b' d' ∧ :⟪a', q'⟫:∈ C) ∧ ∃ F, !addFactDef F a' b' ∧
-        ∃ t2, !bnumGraph t2 (a' + b') ∧ ∃ t1, !bnumGraph t1 b' ∧ ∃ t0, !bnumGraph t0 a' ∧
+        ∃ t2, !binNumeralGraph t2 (a' + b') ∧ ∃ t1, !binNumeralGraph t1 b' ∧ ∃ t0, !binNumeralGraph t0 a' ∧
         ∃ v0, !adjoinDef v0 t0 0 ∧ ∃ v1, !adjoinDef v1 t1 v0 ∧ ∃ ev, !adjoinDef ev t2 v1 ∧
         ∃ A, !addFactDef A a b ∧ ∃ x, !step1Def x tbl 7 F d' ev A ∧ d = x) ∨
       (∃ a' < a, ∃ b' < b, ∃ d' < d, 1 ≤ a' ∧ 1 ≤ b' ∧ a = 2 * a' ∧ b = 2 * b' + 1 ∧
         (∃ q', !pairDef q' b' d' ∧ :⟪a', q'⟫:∈ C) ∧ ∃ F, !addFactDef F a' b' ∧
-        ∃ t2, !bnumGraph t2 (a' + b') ∧ ∃ t1, !bnumGraph t1 b' ∧ ∃ t0, !bnumGraph t0 a' ∧
+        ∃ t2, !binNumeralGraph t2 (a' + b') ∧ ∃ t1, !binNumeralGraph t1 b' ∧ ∃ t0, !binNumeralGraph t0 a' ∧
         ∃ v0, !adjoinDef v0 t0 0 ∧ ∃ v1, !adjoinDef v1 t1 v0 ∧ ∃ ev, !adjoinDef ev t2 v1 ∧
         ∃ A, !addFactDef A a b ∧ ∃ x, !step1Def x tbl 8 F d' ev A ∧ d = x) ∨
       (∃ a' < a, ∃ b' < b, ∃ d' < d, 1 ≤ a' ∧ 1 ≤ b' ∧ a = 2 * a' + 1 ∧ b = 2 * b' ∧
         (∃ q', !pairDef q' b' d' ∧ :⟪a', q'⟫:∈ C) ∧ ∃ F, !addFactDef F a' b' ∧
-        ∃ t2, !bnumGraph t2 (a' + b') ∧ ∃ t1, !bnumGraph t1 b' ∧ ∃ t0, !bnumGraph t0 a' ∧
+        ∃ t2, !binNumeralGraph t2 (a' + b') ∧ ∃ t1, !binNumeralGraph t1 b' ∧ ∃ t0, !binNumeralGraph t0 a' ∧
         ∃ v0, !adjoinDef v0 t0 0 ∧ ∃ v1, !adjoinDef v1 t1 v0 ∧ ∃ ev, !adjoinDef ev t2 v1 ∧
         ∃ A, !addFactDef A a b ∧ ∃ x, !step1Def x tbl 9 F d' ev A ∧ d = x) ∨
       (∃ a' < a, ∃ b' < b, ∃ d' < d, 1 ≤ a' ∧ 1 ≤ b' ∧ a = 2 * a' + 1 ∧ b = 2 * b' + 1 ∧
         (∃ q', !pairDef q' b' d' ∧ :⟪a', q'⟫:∈ C) ∧ ∃ F, !addFactDef F a' b' ∧
         ∃ G, !succFactDef G (a' + b') ∧ ∃ dG, !succCodeDef dG tbl (a' + b') ∧
-        ∃ t3, !bnumGraph t3 (a' + b' + 1) ∧ ∃ t2, !bnumGraph t2 (a' + b') ∧ ∃ t1, !bnumGraph t1 b' ∧
-        ∃ t0, !bnumGraph t0 a' ∧ ∃ v0, !adjoinDef v0 t0 0 ∧ ∃ v1, !adjoinDef v1 t1 v0 ∧
+        ∃ t3, !binNumeralGraph t3 (a' + b' + 1) ∧ ∃ t2, !binNumeralGraph t2 (a' + b') ∧ ∃ t1, !binNumeralGraph t1 b' ∧
+        ∃ t0, !binNumeralGraph t0 a' ∧ ∃ v0, !adjoinDef v0 t0 0 ∧ ∃ v1, !adjoinDef v1 t1 v0 ∧
         ∃ v2, !adjoinDef v2 t2 v1 ∧ ∃ ev, !adjoinDef ev t3 v2 ∧
         ∃ A, !addFactDef A a b ∧ ∃ x, !step2Def x tbl 10 F d' G dG ev A ∧ d = x) )”)
   (.mkPi “pr C tbl.
     ∃ a <⁺ pr, ∃ q <⁺ pr, !pairDef pr a q ∧ ∃ b <⁺ q, ∃ d <⁺ q, !pairDef q b d ∧
-    ( (a = 0 ∧ ∀ t, !bnumGraph t b → ∀ ev, !adjoinDef ev t 0 → ∀ A, !addFactDef A 0 b →
+    ( (a = 0 ∧ ∀ t, !binNumeralGraph t b → ∀ ev, !adjoinDef ev t 0 → ∀ A, !addFactDef A 0 b →
         ∀ x, !step0Def x tbl 0 ev A → d = x) ∨
-      (1 ≤ a ∧ b = 0 ∧ ∀ t, !bnumGraph t a → ∀ ev, !adjoinDef ev t 0 → ∀ A, !addFactDef A a 0 →
+      (1 ≤ a ∧ b = 0 ∧ ∀ t, !binNumeralGraph t a → ∀ ev, !adjoinDef ev t 0 → ∀ A, !addFactDef A a 0 →
         ∀ x, !step0Def x tbl 1 ev A → d = x) ∨
-      (a = 1 ∧ 1 ≤ b ∧ ∀ F, !succFactDef F b → ∀ dF, !succCodeDef dF tbl b → ∀ t1, !bnumGraph t1 (b + 1) →
-        ∀ t0, !bnumGraph t0 b → ∀ v0, !adjoinDef v0 t0 0 → ∀ ev, !adjoinDef ev t1 v0 → ∀ A, !addFactDef A 1 b →
+      (a = 1 ∧ 1 ≤ b ∧ ∀ F, !succFactDef F b → ∀ dF, !succCodeDef dF tbl b → ∀ t1, !binNumeralGraph t1 (b + 1) →
+        ∀ t0, !binNumeralGraph t0 b → ∀ v0, !adjoinDef v0 t0 0 → ∀ ev, !adjoinDef ev t1 v0 → ∀ A, !addFactDef A 1 b →
         ∀ x, !step1Def x tbl 4 F dF ev A → d = x) ∨
       (2 ≤ a ∧ b = 1 ∧ ∀ x, !succCodeDef x tbl a → d = x) ∨
       (∃ a' < a, ∃ b' < b, ∃ d' < d, 1 ≤ a' ∧ 1 ≤ b' ∧ a = 2 * a' ∧ b = 2 * b' ∧
         (∀ q', !pairDef q' b' d' → :⟪a', q'⟫:∈ C) ∧ ∀ F, !addFactDef F a' b' →
-        ∀ t2, !bnumGraph t2 (a' + b') → ∀ t1, !bnumGraph t1 b' → ∀ t0, !bnumGraph t0 a' →
+        ∀ t2, !binNumeralGraph t2 (a' + b') → ∀ t1, !binNumeralGraph t1 b' → ∀ t0, !binNumeralGraph t0 a' →
         ∀ v0, !adjoinDef v0 t0 0 → ∀ v1, !adjoinDef v1 t1 v0 → ∀ ev, !adjoinDef ev t2 v1 →
         ∀ A, !addFactDef A a b → ∀ x, !step1Def x tbl 7 F d' ev A → d = x) ∨
       (∃ a' < a, ∃ b' < b, ∃ d' < d, 1 ≤ a' ∧ 1 ≤ b' ∧ a = 2 * a' ∧ b = 2 * b' + 1 ∧
         (∀ q', !pairDef q' b' d' → :⟪a', q'⟫:∈ C) ∧ ∀ F, !addFactDef F a' b' →
-        ∀ t2, !bnumGraph t2 (a' + b') → ∀ t1, !bnumGraph t1 b' → ∀ t0, !bnumGraph t0 a' →
+        ∀ t2, !binNumeralGraph t2 (a' + b') → ∀ t1, !binNumeralGraph t1 b' → ∀ t0, !binNumeralGraph t0 a' →
         ∀ v0, !adjoinDef v0 t0 0 → ∀ v1, !adjoinDef v1 t1 v0 → ∀ ev, !adjoinDef ev t2 v1 →
         ∀ A, !addFactDef A a b → ∀ x, !step1Def x tbl 8 F d' ev A → d = x) ∨
       (∃ a' < a, ∃ b' < b, ∃ d' < d, 1 ≤ a' ∧ 1 ≤ b' ∧ a = 2 * a' + 1 ∧ b = 2 * b' ∧
         (∀ q', !pairDef q' b' d' → :⟪a', q'⟫:∈ C) ∧ ∀ F, !addFactDef F a' b' →
-        ∀ t2, !bnumGraph t2 (a' + b') → ∀ t1, !bnumGraph t1 b' → ∀ t0, !bnumGraph t0 a' →
+        ∀ t2, !binNumeralGraph t2 (a' + b') → ∀ t1, !binNumeralGraph t1 b' → ∀ t0, !binNumeralGraph t0 a' →
         ∀ v0, !adjoinDef v0 t0 0 → ∀ v1, !adjoinDef v1 t1 v0 → ∀ ev, !adjoinDef ev t2 v1 →
         ∀ A, !addFactDef A a b → ∀ x, !step1Def x tbl 9 F d' ev A → d = x) ∨
       (∃ a' < a, ∃ b' < b, ∃ d' < d, 1 ≤ a' ∧ 1 ≤ b' ∧ a = 2 * a' + 1 ∧ b = 2 * b' + 1 ∧
         (∀ q', !pairDef q' b' d' → :⟪a', q'⟫:∈ C) ∧ ∀ F, !addFactDef F a' b' →
         ∀ G, !succFactDef G (a' + b') → ∀ dG, !succCodeDef dG tbl (a' + b') →
-        ∀ t3, !bnumGraph t3 (a' + b' + 1) → ∀ t2, !bnumGraph t2 (a' + b') → ∀ t1, !bnumGraph t1 b' →
-        ∀ t0, !bnumGraph t0 a' → ∀ v0, !adjoinDef v0 t0 0 → ∀ v1, !adjoinDef v1 t1 v0 →
+        ∀ t3, !binNumeralGraph t3 (a' + b' + 1) → ∀ t2, !binNumeralGraph t2 (a' + b') → ∀ t1, !binNumeralGraph t1 b' →
+        ∀ t0, !binNumeralGraph t0 a' → ∀ v0, !adjoinDef v0 t0 0 → ∀ v1, !adjoinDef v1 t1 v0 →
         ∀ v2, !adjoinDef v2 t2 v1 → ∀ ev, !adjoinDef ev t3 v2 →
         ∀ A, !addFactDef A a b → ∀ x, !step2Def x tbl 10 F d' G dG ev A → d = x) )”)⟩
 
@@ -2040,19 +2040,19 @@ noncomputable def blueprint : Fixpoint.Blueprint 1 := ⟨.mkDelta
 private lemma phi_iff (tbl C pr : V) :
     Phi tbl {x | x ∈ C} pr ↔
     ∃ a ≤ pr, ∃ q ≤ pr, pr = ⟪a, q⟫ ∧ ∃ b ≤ q, ∃ d ≤ q, q = ⟪b, d⟫ ∧
-    ( (a = 0 ∧ d = step0 tbl 0 (vecOf [bnum b]) (addFact 0 b)) ∨
-      (1 ≤ a ∧ b = 0 ∧ d = step0 tbl 1 (vecOf [bnum a]) (addFact a 0)) ∨
-      (a = 1 ∧ 1 ≤ b ∧ d = step1 tbl 4 (succFact b) (succCode tbl b) (vecOf [bnum (b + 1), bnum b]) (addFact 1 b)) ∨
+    ( (a = 0 ∧ d = step0 tbl 0 (vecOf [binNumeral b]) (addFact 0 b)) ∨
+      (1 ≤ a ∧ b = 0 ∧ d = step0 tbl 1 (vecOf [binNumeral a]) (addFact a 0)) ∨
+      (a = 1 ∧ 1 ≤ b ∧ d = step1 tbl 4 (succFact b) (succCode tbl b) (vecOf [binNumeral (b + 1), binNumeral b]) (addFact 1 b)) ∨
       (2 ≤ a ∧ b = 1 ∧ d = succCode tbl a) ∨
       (∃ a' < a, ∃ b' < b, ∃ d' < d, 1 ≤ a' ∧ 1 ≤ b' ∧ a = 2 * a' ∧ b = 2 * b' ∧ ⟪a', b', d'⟫ ∈ C ∧
-        d = step1 tbl 7 (addFact a' b') d' (vecOf [bnum (a' + b'), bnum b', bnum a']) (addFact a b)) ∨
+        d = step1 tbl 7 (addFact a' b') d' (vecOf [binNumeral (a' + b'), binNumeral b', binNumeral a']) (addFact a b)) ∨
       (∃ a' < a, ∃ b' < b, ∃ d' < d, 1 ≤ a' ∧ 1 ≤ b' ∧ a = 2 * a' ∧ b = 2 * b' + 1 ∧ ⟪a', b', d'⟫ ∈ C ∧
-        d = step1 tbl 8 (addFact a' b') d' (vecOf [bnum (a' + b'), bnum b', bnum a']) (addFact a b)) ∨
+        d = step1 tbl 8 (addFact a' b') d' (vecOf [binNumeral (a' + b'), binNumeral b', binNumeral a']) (addFact a b)) ∨
       (∃ a' < a, ∃ b' < b, ∃ d' < d, 1 ≤ a' ∧ 1 ≤ b' ∧ a = 2 * a' + 1 ∧ b = 2 * b' ∧ ⟪a', b', d'⟫ ∈ C ∧
-        d = step1 tbl 9 (addFact a' b') d' (vecOf [bnum (a' + b'), bnum b', bnum a']) (addFact a b)) ∨
+        d = step1 tbl 9 (addFact a' b') d' (vecOf [binNumeral (a' + b'), binNumeral b', binNumeral a']) (addFact a b)) ∨
       (∃ a' < a, ∃ b' < b, ∃ d' < d, 1 ≤ a' ∧ 1 ≤ b' ∧ a = 2 * a' + 1 ∧ b = 2 * b' + 1 ∧ ⟪a', b', d'⟫ ∈ C ∧
         d = step2 tbl 10 (addFact a' b') d' (succFact (a' + b')) (succCode tbl (a' + b'))
-          (vecOf [bnum (a' + b' + 1), bnum (a' + b'), bnum b', bnum a']) (addFact a b)) ) := by
+          (vecOf [binNumeral (a' + b' + 1), binNumeral (a' + b'), binNumeral b', binNumeral a']) (addFact a b)) ) := by
   constructor
   · rintro ⟨a, b, d, rfl, h⟩
     refine ⟨a, le_pair_left _ _, ⟪b, d⟫, le_pair_right _ _, rfl, b, le_pair_left _ _, d, le_pair_right _ _, rfl, ?_⟩
@@ -2063,13 +2063,13 @@ private lemma phi_iff (tbl C pr : V) :
     · exact Or.inr (Or.inr (Or.inl h))
     · exact Or.inr (Or.inr (Or.inr (Or.inl h)))
     · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inl
-        ⟨a', Bnum.lt_two_mul ha, b', Bnum.lt_two_mul hb, d', SuccG.d_lt_step1 _ _ _ _ _ _, ha, hb, rfl, rfl, hC, rfl⟩))))
+        ⟨a', BinNumeral.lt_two_mul ha, b', BinNumeral.lt_two_mul hb, d', SuccG.d_lt_step1 _ _ _ _ _ _, ha, hb, rfl, rfl, hC, rfl⟩))))
     · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl
-        ⟨a', Bnum.lt_two_mul ha, b', Bnum.lt_two_mul_add_one hb, d', SuccG.d_lt_step1 _ _ _ _ _ _, ha, hb, rfl, rfl, hC, rfl⟩)))))
+        ⟨a', BinNumeral.lt_two_mul ha, b', BinNumeral.lt_two_mul_add_one hb, d', SuccG.d_lt_step1 _ _ _ _ _ _, ha, hb, rfl, rfl, hC, rfl⟩)))))
     · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl
-        ⟨a', Bnum.lt_two_mul_add_one ha, b', Bnum.lt_two_mul hb, d', SuccG.d_lt_step1 _ _ _ _ _ _, ha, hb, rfl, rfl, hC, rfl⟩))))))
+        ⟨a', BinNumeral.lt_two_mul_add_one ha, b', BinNumeral.lt_two_mul hb, d', SuccG.d_lt_step1 _ _ _ _ _ _, ha, hb, rfl, rfl, hC, rfl⟩))))))
     · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr
-        ⟨a', Bnum.lt_two_mul_add_one ha, b', Bnum.lt_two_mul_add_one hb, d', d_lt_step2 _ _ _ _ _ _ _ _, ha, hb, rfl, rfl, hC, rfl⟩))))))
+        ⟨a', BinNumeral.lt_two_mul_add_one ha, b', BinNumeral.lt_two_mul_add_one hb, d', d_lt_step2 _ _ _ _ _ _ _ _, ha, hb, rfl, rfl, hC, rfl⟩))))))
   · rintro ⟨a, _, q, _, rfl, b, _, d, _, rfl, h⟩
     refine ⟨a, b, d, rfl, ?_⟩
     rcases h with h | h | h | h | ⟨a', _, b', _, d', _, ha, hb, rfl, rfl, hC, rfl⟩ | ⟨a', _, b', _, d', _, ha, hb, rfl, rfl, hC, rfl⟩ |
@@ -2089,11 +2089,11 @@ noncomputable def construction : Fixpoint.Construction V blueprint where
   defined := .mk <| by
     constructor
     · intro v
-      simp [blueprint, addFact_defined.iff, succFact_defined.iff, succCode_defined.iff, bnum.defined.iff,
+      simp [blueprint, addFact_defined.iff, succFact_defined.iff, succCode_defined.iff, binNumeral.defined.iff,
         step0_defined.iff, step1_defined.iff, step2_defined.iff, numeral_eq_natCast]
     · intro v
       symm
-      simpa [blueprint, addFact_defined.iff, succFact_defined.iff, succCode_defined.iff, bnum.defined.iff,
+      simpa [blueprint, addFact_defined.iff, succFact_defined.iff, succCode_defined.iff, binNumeral.defined.iff,
         step0_defined.iff, step1_defined.iff, step2_defined.iff, numeral_eq_natCast] using phi_iff (v 2) (v 1) (v 0)
   monotone := by
     rintro C C' hC _ pr ⟨a, b, d, rfl, h⟩
@@ -2143,19 +2143,19 @@ instance addGraph_definable : 𝚺₁-Relation₄ (AddGraph : V → V → V → 
 
 lemma AddGraph.case_iff {tbl a b d : V} :
     AddGraph tbl a b d ↔
-    (a = 0 ∧ d = step0 tbl 0 (vecOf [bnum b]) (addFact 0 b)) ∨
-    (1 ≤ a ∧ b = 0 ∧ d = step0 tbl 1 (vecOf [bnum a]) (addFact a 0)) ∨
-    (a = 1 ∧ 1 ≤ b ∧ d = step1 tbl 4 (succFact b) (succCode tbl b) (vecOf [bnum (b + 1), bnum b]) (addFact 1 b)) ∨
+    (a = 0 ∧ d = step0 tbl 0 (vecOf [binNumeral b]) (addFact 0 b)) ∨
+    (1 ≤ a ∧ b = 0 ∧ d = step0 tbl 1 (vecOf [binNumeral a]) (addFact a 0)) ∨
+    (a = 1 ∧ 1 ≤ b ∧ d = step1 tbl 4 (succFact b) (succCode tbl b) (vecOf [binNumeral (b + 1), binNumeral b]) (addFact 1 b)) ∨
     (2 ≤ a ∧ b = 1 ∧ d = succCode tbl a) ∨
     (∃ a' b' d', 1 ≤ a' ∧ 1 ≤ b' ∧ a = 2 * a' ∧ b = 2 * b' ∧ AddGraph tbl a' b' d' ∧
-      d = step1 tbl 7 (addFact a' b') d' (vecOf [bnum (a' + b'), bnum b', bnum a']) (addFact a b)) ∨
+      d = step1 tbl 7 (addFact a' b') d' (vecOf [binNumeral (a' + b'), binNumeral b', binNumeral a']) (addFact a b)) ∨
     (∃ a' b' d', 1 ≤ a' ∧ 1 ≤ b' ∧ a = 2 * a' ∧ b = 2 * b' + 1 ∧ AddGraph tbl a' b' d' ∧
-      d = step1 tbl 8 (addFact a' b') d' (vecOf [bnum (a' + b'), bnum b', bnum a']) (addFact a b)) ∨
+      d = step1 tbl 8 (addFact a' b') d' (vecOf [binNumeral (a' + b'), binNumeral b', binNumeral a']) (addFact a b)) ∨
     (∃ a' b' d', 1 ≤ a' ∧ 1 ≤ b' ∧ a = 2 * a' + 1 ∧ b = 2 * b' ∧ AddGraph tbl a' b' d' ∧
-      d = step1 tbl 9 (addFact a' b') d' (vecOf [bnum (a' + b'), bnum b', bnum a']) (addFact a b)) ∨
+      d = step1 tbl 9 (addFact a' b') d' (vecOf [binNumeral (a' + b'), binNumeral b', binNumeral a']) (addFact a b)) ∨
     (∃ a' b' d', 1 ≤ a' ∧ 1 ≤ b' ∧ a = 2 * a' + 1 ∧ b = 2 * b' + 1 ∧ AddGraph tbl a' b' d' ∧
       d = step2 tbl 10 (addFact a' b') d' (succFact (a' + b')) (succCode tbl (a' + b'))
-        (vecOf [bnum (a' + b' + 1), bnum (a' + b'), bnum b', bnum a']) (addFact a b)) :=
+        (vecOf [binNumeral (a' + b' + 1), binNumeral (a' + b'), binNumeral b', binNumeral a']) (addFact a b)) :=
   Iff.trans AddG.construction.case (by simp [AddG.construction, AddG.Phi, AddGraph])
 
 end add
@@ -2174,7 +2174,7 @@ lemma zero_ne_two_mul_add_one (m : V) : (0 : V) ≠ 2 * m + 1 := fun h ↦ two_m
 
 /-- The pieces of the eight-way case analysis that a situation `(a, b)` excludes, in one place. -/
 lemma AddGraph.zero_left_iff {tbl b d : V} :
-    AddGraph tbl 0 b d ↔ d = step0 tbl 0 (vecOf [bnum b]) (addFact 0 b) := by
+    AddGraph tbl 0 b d ↔ d = step0 tbl 0 (vecOf [binNumeral b]) (addFact 0 b) := by
   rw [AddGraph.case_iff]
   constructor
   · rintro (⟨_, rfl⟩ | ⟨h, _⟩ | ⟨h, _⟩ | ⟨h, _⟩ | ⟨a', b', d', ha, hb, h, _⟩ | ⟨a', b', d', ha, hb, h, _⟩ |
@@ -2190,7 +2190,7 @@ lemma AddGraph.zero_left_iff {tbl b d : V} :
   · rintro rfl; exact Or.inl ⟨rfl, rfl⟩
 
 lemma AddGraph.zero_right_iff {tbl a d : V} (ha : 1 ≤ a) :
-    AddGraph tbl a 0 d ↔ d = step0 tbl 1 (vecOf [bnum a]) (addFact a 0) := by
+    AddGraph tbl a 0 d ↔ d = step0 tbl 1 (vecOf [binNumeral a]) (addFact a 0) := by
   rw [AddGraph.case_iff]
   constructor
   · rintro (⟨h, _⟩ | ⟨_, _, rfl⟩ | ⟨_, h, _⟩ | ⟨_, h, _⟩ | ⟨a', b', d', _, hb, _, h, _⟩ | ⟨a', b', d', _, hb, _, h, _⟩ |
@@ -2207,7 +2207,7 @@ lemma AddGraph.zero_right_iff {tbl a d : V} (ha : 1 ≤ a) :
 
 lemma AddGraph.one_left_iff {tbl b d : V} (hb : 1 ≤ b) :
     AddGraph tbl 1 b d ↔
-      d = step1 tbl 4 (succFact b) (succCode tbl b) (vecOf [bnum (b + 1), bnum b]) (addFact 1 b) := by
+      d = step1 tbl 4 (succFact b) (succCode tbl b) (vecOf [binNumeral (b + 1), binNumeral b]) (addFact 1 b) := by
   rw [AddGraph.case_iff]
   constructor
   · rintro (⟨h, _⟩ | ⟨_, h, _⟩ | ⟨_, _, rfl⟩ | ⟨h, _⟩ | ⟨a', b', d', ha, _, h, _⟩ | ⟨a', b', d', ha, _, h, _⟩ |
@@ -2239,7 +2239,7 @@ lemma AddGraph.one_right_iff {tbl a d : V} (ha : 2 ≤ a) : AddGraph tbl a 1 d �
 
 lemma AddGraph.bit00_iff {tbl a' b' d : V} (ha : 1 ≤ a') (hb : 1 ≤ b') :
     AddGraph tbl (2 * a') (2 * b') d ↔ ∃ d', AddGraph tbl a' b' d' ∧
-      d = step1 tbl 7 (addFact a' b') d' (vecOf [bnum (a' + b'), bnum b', bnum a']) (addFact (2 * a') (2 * b')) := by
+      d = step1 tbl 7 (addFact a' b') d' (vecOf [binNumeral (a' + b'), binNumeral b', binNumeral a']) (addFact (2 * a') (2 * b')) := by
   rw [AddGraph.case_iff]
   constructor
   · rintro (⟨h, _⟩ | ⟨_, h, _⟩ | ⟨h, _⟩ | ⟨_, h, _⟩ | ⟨a'', b'', d', _, _, h1, h2, hd', rfl⟩ | ⟨a'', b'', d', _, _, h1, h2, _⟩ |
@@ -2257,7 +2257,7 @@ lemma AddGraph.bit00_iff {tbl a' b' d : V} (ha : 1 ≤ a') (hb : 1 ≤ b') :
 
 lemma AddGraph.bit01_iff {tbl a' b' d : V} (ha : 1 ≤ a') (hb : 1 ≤ b') :
     AddGraph tbl (2 * a') (2 * b' + 1) d ↔ ∃ d', AddGraph tbl a' b' d' ∧
-      d = step1 tbl 8 (addFact a' b') d' (vecOf [bnum (a' + b'), bnum b', bnum a']) (addFact (2 * a') (2 * b' + 1)) := by
+      d = step1 tbl 8 (addFact a' b') d' (vecOf [binNumeral (a' + b'), binNumeral b', binNumeral a']) (addFact (2 * a') (2 * b' + 1)) := by
   rw [AddGraph.case_iff]
   constructor
   · rintro (⟨h, _⟩ | ⟨_, h, _⟩ | ⟨h, _⟩ | ⟨_, h, _⟩ | ⟨a'', b'', d', _, _, h1, h2, _⟩ | ⟨a'', b'', d', _, _, h1, h2, hd', rfl⟩ |
@@ -2275,7 +2275,7 @@ lemma AddGraph.bit01_iff {tbl a' b' d : V} (ha : 1 ≤ a') (hb : 1 ≤ b') :
 
 lemma AddGraph.bit10_iff {tbl a' b' d : V} (ha : 1 ≤ a') (hb : 1 ≤ b') :
     AddGraph tbl (2 * a' + 1) (2 * b') d ↔ ∃ d', AddGraph tbl a' b' d' ∧
-      d = step1 tbl 9 (addFact a' b') d' (vecOf [bnum (a' + b'), bnum b', bnum a']) (addFact (2 * a' + 1) (2 * b')) := by
+      d = step1 tbl 9 (addFact a' b') d' (vecOf [binNumeral (a' + b'), binNumeral b', binNumeral a']) (addFact (2 * a' + 1) (2 * b')) := by
   rw [AddGraph.case_iff]
   constructor
   · rintro (⟨h, _⟩ | ⟨_, h, _⟩ | ⟨h, _⟩ | ⟨_, h, _⟩ | ⟨a'', b'', d', _, _, h1, h2, _⟩ | ⟨a'', b'', d', _, _, h1, h2, _⟩ |
@@ -2294,7 +2294,7 @@ lemma AddGraph.bit10_iff {tbl a' b' d : V} (ha : 1 ≤ a') (hb : 1 ≤ b') :
 lemma AddGraph.bit11_iff {tbl a' b' d : V} (ha : 1 ≤ a') (hb : 1 ≤ b') :
     AddGraph tbl (2 * a' + 1) (2 * b' + 1) d ↔ ∃ d', AddGraph tbl a' b' d' ∧
       d = step2 tbl 10 (addFact a' b') d' (succFact (a' + b')) (succCode tbl (a' + b'))
-        (vecOf [bnum (a' + b' + 1), bnum (a' + b'), bnum b', bnum a']) (addFact (2 * a' + 1) (2 * b' + 1)) := by
+        (vecOf [binNumeral (a' + b' + 1), binNumeral (a' + b'), binNumeral b', binNumeral a']) (addFact (2 * a' + 1) (2 * b' + 1)) := by
   rw [AddGraph.case_iff]
   constructor
   · rintro (⟨h, _⟩ | ⟨_, h, _⟩ | ⟨h, _⟩ | ⟨_, h, _⟩ | ⟨a'', b'', d', _, _, h1, h2, _⟩ | ⟨a'', b'', d', _, _, h1, h2, _⟩ |
@@ -2387,7 +2387,7 @@ lemma addGraph_existsUnique (tbl a b : V) : ∃! d, AddGraph tbl a b d := by
   obtain ⟨d, hd⟩ := addGraph_exists tbl (a + b) a le_self_add b le_add_self rfl
   exact ExistsUnique.intro d hd (fun d' h' ↦ addGraph_unique tbl (a + b) a le_self_add b le_add_self rfl d' d h' hd)
 
-/-- **The addition-fact prover**: the derivation code of `{bnum a + bnum b = bnum (a + b)}`. -/
+/-- **The addition-fact prover**: the derivation code of `{binNumeral a + binNumeral b = binNumeral (a + b)}`. -/
 noncomputable def addCode (tbl a b : V) : V := Classical.choose! (addGraph_existsUnique tbl a b)
 
 lemma addCode_graph (tbl a b : V) : AddGraph tbl a b (addCode tbl a b) :=
@@ -2438,45 +2438,45 @@ lemma one_le_count (x y : V) : 1 ≤ (x + 1) * (y + 2) := by
   calc (1 : V) ≤ 1 * 2 := by norm_num
     _ ≤ (x + 1) * (y + 2) := mul_le_mul le_add_self le_add_self (by norm_num) zero_le
 
-lemma le_two_mul' {m : V} (hm : 1 ≤ m) : m ≤ 2 * m := le_of_lt (Bnum.lt_two_mul hm)
-lemma le_two_mul_add_one' {m : V} (hm : 1 ≤ m) : m ≤ 2 * m + 1 := le_of_lt (Bnum.lt_two_mul_add_one hm)
+lemma le_two_mul' {m : V} (hm : 1 ≤ m) : m ≤ 2 * m := le_of_lt (BinNumeral.lt_two_mul hm)
+lemma le_two_mul_add_one' {m : V} (hm : 1 ≤ m) : m ≤ 2 * m + 1 := le_of_lt (BinNumeral.lt_two_mul_add_one hm)
 
 /-- The `a = 1` node: `oneAdd` from the successor chain of `b`. -/
 lemma addGraph_sound_one {tbl N B : V} (htbl : NumTableOK tbl N B) (b : V) (hb1 : 1 ≤ b) (d : V)
-    (hd : AddGraph tbl 1 b d) : DerivationOf TAct d (sing (addFact 1 b)) ∧ dlen TAct d ≤ addBound N B 1 b := by
+    (hd : AddGraph tbl 1 b d) : DerivationOf TAct d (sing (addFact 1 b)) ∧ proofLen TAct d ≤ addBound N B 1 b := by
   obtain ⟨-, -, -, -, hr4, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hPeq, -, -, hB⟩ := id htbl
   have hE1 : 1 ≤ 12 * ‖1 + b‖ + 3 := one_le_addE
   have hAP : formulaLen LAct (addFact 1 b) ≤ B * (12 * ‖1 + b‖ + 3) := formulaLen_addFact_le hPeq le_rfl
   set nc := nodeCost N B (12 * ‖1 + b‖ + 3) with hnc
   rw [AddGraph.one_left_iff hb1] at hd
   subst hd
-  have hx : IsSemiterm LAct 0 (bnum b) := isSemiterm_bnum_LAct 0 _
-  have hw : IsSemiterm LAct 0 (bnum (b + 1)) := isSemiterm_bnum_LAct 0 _
-  have hmap : nOneAdd_as.map (instOuter LAct [bnum (b + 1), bnum b]) = [succFact b] := (inst_nOneAdd hx hw).1
-  have hc : instOuter LAct [bnum (b + 1), bnum b] nOneAdd_c = addFact 1 b := by
+  have hx : IsSemiterm LAct 0 (binNumeral b) := isSemiterm_binNumeral_LAct 0 _
+  have hw : IsSemiterm LAct 0 (binNumeral (b + 1)) := isSemiterm_binNumeral_LAct 0 _
+  have hmap : nOneAdd_as.map (instOuter LAct [binNumeral (b + 1), binNumeral b]) = [succFact b] := (inst_nOneAdd hx hw).1
+  have hc : instOuter LAct [binNumeral (b + 1), binNumeral b] nOneAdd_c = addFact 1 b := by
     rw [(inst_nOneAdd hx hw).2, addFact_one_left]
   have hb1s : b + 1 ≤ 1 + b := by rw [add_comm]
-  have hes : ∀ e ∈ [bnum (b + 1), bnum b], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ 12 * ‖1 + b‖ + 3 := by
+  have hes : ∀ e ∈ [binNumeral (b + 1), binNumeral b], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ 12 * ‖1 + b‖ + 3 := by
     intro e he
     simp only [List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false] at he
     rcases he with rfl | rfl
-    · exact ⟨hw, termLen_bnum_le_E' hb1s le_rfl⟩
-    · exact ⟨hx, termLen_bnum_le_E' le_add_self le_rfl⟩
+    · exact ⟨hw, termLen_binNumeral_le_E' hb1s le_rfl⟩
+    · exact ⟨hx, termLen_binNumeral_le_E' le_add_self le_rfl⟩
   have hsucc := succCode_proof htbl b
   have hFP : formulaLen LAct (succFact b) ≤ B * (12 * ‖1 + b‖ + 3) :=
     formulaLen_succFact_le hPeq (succE_le_addE hb1s)
-  have hpf := step1_proof hr4 [bnum (b + 1), bnum b] rfl (fun e he ↦ (hes e he).1) (isFormula_addFact _ _)
+  have hpf := step1_proof hr4 [binNumeral (b + 1), binNumeral b] rfl (fun e he ↦ (hes e he).1) (isFormula_addFact _ _)
     (isFormula_succFact b) hsucc hmap hc
-  have hlen := dlen_step1_le hr4 [bnum (b + 1), bnum b] rfl hes hE1 hB (isFormula_addFact _ _)
+  have hlen := proofLen_step1_le hr4 [binNumeral (b + 1), binNumeral b] rfl hes hE1 hB (isFormula_addFact _ _)
     (isFormula_succFact b) hsucc hmap hc (by norm_num) (by simp [nOneAdd_as]) hAP hFP
   rw [cast_rOneAdd] at hpf hlen
   refine ⟨hpf, ?_⟩
   have hs := succBound_le (N := N) (B := B) hb1s
   unfold addBound
   rw [length_one]
-  calc dlen TAct (step1 tbl 4 (succFact b) (succCode tbl b) (vecOf [bnum (b + 1), bnum b]) (addFact 1 b))
-      ≤ dlen TAct (succCode tbl b) + nc := hlen
-    _ ≤ (‖b‖ + 1) * nc + nc := by gcongr; exact le_trans (dlen_succCode_le htbl b) hs
+  calc proofLen TAct (step1 tbl 4 (succFact b) (succCode tbl b) (vecOf [binNumeral (b + 1), binNumeral b]) (addFact 1 b))
+      ≤ proofLen TAct (succCode tbl b) + nc := hlen
+    _ ≤ (‖b‖ + 1) * nc + nc := by gcongr; exact le_trans (proofLen_succCode_le htbl b) hs
     _ = (‖b‖ + 2) * nc := by ring
     _ ≤ (1 + 1) * (‖1 + b‖ + 2) * nc := by
         gcongr
@@ -2485,20 +2485,20 @@ lemma addGraph_sound_one {tbl N B : V} (htbl : NumTableOK tbl N B) (b : V) (hb1 
 
 /-- The `b = 0` node (`a ≥ 1`): `addZero`. -/
 lemma addGraph_sound_zero_right {tbl N B : V} (htbl : NumTableOK tbl N B) (a : V) (ha1 : 1 ≤ a) (d : V)
-    (hd : AddGraph tbl a 0 d) : DerivationOf TAct d (sing (addFact a 0)) ∧ dlen TAct d ≤ addBound N B a 0 := by
+    (hd : AddGraph tbl a 0 d) : DerivationOf TAct d (sing (addFact a 0)) ∧ proofLen TAct d ≤ addBound N B a 0 := by
   obtain ⟨-, hr1, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hPeq, -, -, hB⟩ := id htbl
   have hE1 : 1 ≤ 12 * ‖a + 0‖ + 3 := one_le_addE
   have hAP : formulaLen LAct (addFact a 0) ≤ B * (12 * ‖a + 0‖ + 3) := formulaLen_addFact_le hPeq le_rfl
   rw [AddGraph.zero_right_iff ha1] at hd
   subst hd
-  have hx : IsSemiterm LAct 0 (bnum a) := isSemiterm_bnum_LAct 0 _
-  have hc : instOuter LAct [bnum a] nAddZero_c = addFact a 0 := by
+  have hx : IsSemiterm LAct 0 (binNumeral a) := isSemiterm_binNumeral_LAct 0 _
+  have hc : instOuter LAct [binNumeral a] nAddZero_c = addFact a 0 := by
     rw [(inst_nAddZero hx).2, addFact_zero_right]
-  have hes : ∀ e ∈ [bnum a], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ 12 * ‖a + 0‖ + 3 := by
+  have hes : ∀ e ∈ [binNumeral a], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ 12 * ‖a + 0‖ + 3 := by
     simp only [List.mem_singleton, forall_eq]
-    exact ⟨hx, termLen_bnum_le_E' le_self_add le_rfl⟩
-  have hpf := step0_proof hr1 [bnum a] rfl (fun e he ↦ (hes e he).1) (isFormula_addFact _ _) (inst_nAddZero hx).1 hc
-  have hlen := dlen_step0_le hr1 [bnum a] rfl hes hE1 hB (isFormula_addFact _ _) (inst_nAddZero hx).1 hc
+    exact ⟨hx, termLen_binNumeral_le_E' le_self_add le_rfl⟩
+  have hpf := step0_proof hr1 [binNumeral a] rfl (fun e he ↦ (hes e he).1) (isFormula_addFact _ _) (inst_nAddZero hx).1 hc
+  have hlen := proofLen_step0_le hr1 [binNumeral a] rfl hes hE1 hB (isFormula_addFact _ _) (inst_nAddZero hx).1 hc
     (by norm_num) (by simp [nAddZero_as]) hAP
   rw [cast_rAddZero] at hpf hlen
   refine ⟨hpf, ?_⟩
@@ -2508,7 +2508,7 @@ lemma addGraph_sound_zero_right {tbl N B : V} (htbl : NumTableOK tbl N B) (a : V
 /-- **Soundness and length of addition**, by Π₁ order induction on `a + b`. -/
 theorem addGraph_sound {tbl N B : V} (htbl : NumTableOK tbl N B) :
     ∀ s : V, ∀ a ≤ s, ∀ b ≤ s, a + b = s →
-      ∀ d, AddGraph tbl a b d → DerivationOf TAct d (sing (addFact a b)) ∧ dlen TAct d ≤ addBound N B a b := by
+      ∀ d, AddGraph tbl a b d → DerivationOf TAct d (sing (addFact a b)) ∧ proofLen TAct d ≤ addBound N B a b := by
   intro s
   induction s using ISigma1.pi1_order_induction with
   | hP => simp only [addBound]; definability
@@ -2522,14 +2522,14 @@ theorem addGraph_sound {tbl N B : V} (htbl : NumTableOK tbl N B) :
     · -- a = 0
       rw [AddGraph.zero_left_iff] at hd
       subst hd
-      have hx : IsSemiterm LAct 0 (bnum b) := isSemiterm_bnum_LAct 0 _
-      have hc : instOuter LAct [bnum b] nZeroAdd_c = addFact 0 b := by
+      have hx : IsSemiterm LAct 0 (binNumeral b) := isSemiterm_binNumeral_LAct 0 _
+      have hc : instOuter LAct [binNumeral b] nZeroAdd_c = addFact 0 b := by
         rw [(inst_nZeroAdd hx).2, addFact_zero_left]
-      have hes : ∀ e ∈ [bnum b], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ 12 * ‖0 + b‖ + 3 := by
+      have hes : ∀ e ∈ [binNumeral b], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ 12 * ‖0 + b‖ + 3 := by
         simp only [List.mem_singleton, forall_eq]
-        exact ⟨hx, termLen_bnum_le_E' le_add_self le_rfl⟩
-      have hpf := step0_proof hr0 [bnum b] rfl (fun e he ↦ (hes e he).1) (isFormula_addFact _ _) (inst_nZeroAdd hx).1 hc
-      have hlen := dlen_step0_le hr0 [bnum b] rfl hes hE1 hB (isFormula_addFact _ _) (inst_nZeroAdd hx).1 hc
+        exact ⟨hx, termLen_binNumeral_le_E' le_add_self le_rfl⟩
+      have hpf := step0_proof hr0 [binNumeral b] rfl (fun e he ↦ (hes e he).1) (isFormula_addFact _ _) (inst_nZeroAdd hx).1 hc
+      have hlen := proofLen_step0_le hr0 [binNumeral b] rfl hes hE1 hB (isFormula_addFact _ _) (inst_nZeroAdd hx).1 hc
         (by norm_num) (by simp [nZeroAdd_as]) hAP
       rw [cast_rZeroAdd] at hpf hlen
       refine ⟨hpf, ?_⟩
@@ -2550,7 +2550,7 @@ theorem addGraph_sound {tbl N B : V} (htbl : NumTableOK tbl N B) :
         rw [← addFact_one_right] at hpf
         refine ⟨hpf, ?_⟩
         unfold addBound
-        calc dlen TAct (succCode tbl a) ≤ succBound N B a := dlen_succCode_le htbl a
+        calc proofLen TAct (succCode tbl a) ≤ succBound N B a := proofLen_succCode_le htbl a
           _ ≤ (‖a‖ + 1) * nc := succBound_le le_rfl
           _ ≤ (‖a‖ + 1) * (‖a + 1‖ + 2) * nc := by
               rw [mul_assoc]
@@ -2560,13 +2560,13 @@ theorem addGraph_sound {tbl N B : V} (htbl : NumTableOK tbl N B) :
         set a' := a / 2 with ha'
         set b' := b / 2 with hb'
         obtain ⟨d', hd', hpf', hlen'⟩ :
-            ∃ d', AddGraph tbl a' b' d' ∧ DerivationOf TAct d' (sing (addFact a' b')) ∧ dlen TAct d' ≤ addBound N B a' b' := by
+            ∃ d', AddGraph tbl a' b' d' ∧ DerivationOf TAct d' (sing (addFact a' b')) ∧ proofLen TAct d' ≤ addBound N B a' b' := by
           obtain ⟨d', hd'⟩ := addGraph_exists tbl (a' + b') a' le_self_add b' le_add_self rfl
           exact ⟨d', hd', ih (a' + b') (hs ▸ hlt) a' le_self_add b' le_add_self rfl d' hd'⟩
-        have hx : IsSemiterm LAct 0 (bnum a') := isSemiterm_bnum_LAct 0 _
-        have hy : IsSemiterm LAct 0 (bnum b') := isSemiterm_bnum_LAct 0 _
-        have hz : IsSemiterm LAct 0 (bnum (a' + b')) := isSemiterm_bnum_LAct 0 _
-        have hw : IsSemiterm LAct 0 (bnum (a' + b' + 1)) := isSemiterm_bnum_LAct 0 _
+        have hx : IsSemiterm LAct 0 (binNumeral a') := isSemiterm_binNumeral_LAct 0 _
+        have hy : IsSemiterm LAct 0 (binNumeral b') := isSemiterm_binNumeral_LAct 0 _
+        have hz : IsSemiterm LAct 0 (binNumeral (a' + b')) := isSemiterm_binNumeral_LAct 0 _
+        have hw : IsSemiterm LAct 0 (binNumeral (a' + b' + 1)) := isSemiterm_binNumeral_LAct 0 _
         have ha'le : a' ≤ a := by
           rcases h with ⟨h1, _⟩ | ⟨h1, _⟩ | ⟨h1, _⟩ | ⟨h1, _⟩ <;> rw [h1]
           · exact le_two_mul' ha1
@@ -2583,14 +2583,14 @@ theorem addGraph_sound {tbl N B : V} (htbl : NumTableOK tbl N B) :
         have hlA' : ‖a' + b'‖ ≤ ‖a + b‖ := length_le_of_le hsub
         have hAP' : formulaLen LAct (addFact a' b') ≤ B * (12 * ‖a + b‖ + 3) :=
           formulaLen_addFact_le hPeq (by gcongr)
-        have hes3 : ∀ e ∈ [bnum (a' + b'), bnum b', bnum a'], IsSemiterm LAct 0 e ∧
+        have hes3 : ∀ e ∈ [binNumeral (a' + b'), binNumeral b', binNumeral a'], IsSemiterm LAct 0 e ∧
             termLen LAct e ≤ 12 * ‖a + b‖ + 3 := by
           intro e he
           simp only [List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false] at he
           rcases he with rfl | rfl | rfl
-          · exact ⟨hz, termLen_bnum_le_E' hsub le_rfl⟩
-          · exact ⟨hy, termLen_bnum_le_E' (le_trans le_add_self hsub) le_rfl⟩
-          · exact ⟨hx, termLen_bnum_le_E' (le_trans le_self_add hsub) le_rfl⟩
+          · exact ⟨hz, termLen_binNumeral_le_E' hsub le_rfl⟩
+          · exact ⟨hy, termLen_binNumeral_le_E' (le_trans le_add_self hsub) le_rfl⟩
+          · exact ⟨hx, termLen_binNumeral_le_E' (le_trans le_self_add hsub) le_rfl⟩
         have hcount : ∀ k : V, ‖a‖ = k + 1 → (1 + (k + 1) * (‖a' + b'‖ + 2) + (‖a' + b'‖ + 1)) * nc ≤ addBound N B a b := by
           intro k hk
           unfold addBound
@@ -2600,14 +2600,14 @@ theorem addGraph_sound {tbl N B : V} (htbl : NumTableOK tbl N B) :
             _ = (k + 1 + 1) * (‖a + b‖ + 2) := by ring
         have hcount1 : ∀ k : V, ‖a‖ = k + 1 → (1 + (k + 1) * (‖a' + b'‖ + 2)) * nc ≤ addBound N B a b :=
           fun k hk ↦ le_trans (mul_le_mul_of_nonneg_right le_self_add zero_le) (hcount k hk)
-        have hlen'' : dlen TAct d' ≤ (‖a'‖ + 1) * (‖a' + b'‖ + 2) * nc := by
+        have hlen'' : proofLen TAct d' ≤ (‖a'‖ + 1) * (‖a' + b'‖ + 2) * nc := by
           refine le_trans hlen' ?_
           unfold addBound
           exact mul_le_mul_of_nonneg_left (nodeCost_mono (by gcongr)) zero_le
-        have hstep1 : ∀ e, dlen TAct e ≤ dlen TAct d' + nc → ‖a‖ = ‖a'‖ + 1 → dlen TAct e ≤ addBound N B a b := by
+        have hstep1 : ∀ e, proofLen TAct e ≤ proofLen TAct d' + nc → ‖a‖ = ‖a'‖ + 1 → proofLen TAct e ≤ addBound N B a b := by
           intro e he hka
           refine le_trans he (le_trans ?_ (hcount1 ‖a'‖ hka))
-          calc dlen TAct d' + nc ≤ (‖a'‖ + 1) * (‖a' + b'‖ + 2) * nc + nc := by gcongr
+          calc proofLen TAct d' + nc ≤ (‖a'‖ + 1) * (‖a' + b'‖ + 2) * nc + nc := by gcongr
             _ = (1 + (‖a'‖ + 1) * (‖a' + b'‖ + 2)) * nc := by ring
         rcases h with ⟨h1, h2⟩ | ⟨h1, h2⟩ | ⟨h1, h2⟩ | ⟨h1, h2⟩
         · -- 00
@@ -2616,10 +2616,10 @@ theorem addGraph_sound {tbl N B : V} (htbl : NumTableOK tbl N B) :
           obtain ⟨e, he, rfl⟩ := hinv.mp hd
           obtain rfl := addGraph_unique tbl (a' + b') a' le_self_add b' le_add_self rfl _ _ hd' he
           have hmap := (inst_nBit00 hx hy hz).1
-          have hc : instOuter LAct [bnum (a' + b'), bnum b', bnum a'] nBit00_c = addFact a b := by
+          have hc : instOuter LAct [binNumeral (a' + b'), binNumeral b', binNumeral a'] nBit00_c = addFact a b := by
             rw [(inst_nBit00 hx hy hz).2, h1, h2, addFact_bit00 ha1 hb1]
           have hpf := step1_proof hr7 _ rfl (fun e he ↦ (hes3 e he).1) (isFormula_addFact _ _) (isFormula_addFact _ _) hpf' hmap hc
-          have hlen := dlen_step1_le hr7 _ rfl hes3 hE1 hB (isFormula_addFact _ _) (isFormula_addFact _ _) hpf' hmap hc
+          have hlen := proofLen_step1_le hr7 _ rfl hes3 hE1 hB (isFormula_addFact _ _) (isFormula_addFact _ _) hpf' hmap hc
             (by norm_num) (by simp [nBit00_as]) hAP hAP'
           rw [cast_rBit00] at hpf hlen
           refine ⟨hpf, hstep1 _ hlen ?_⟩
@@ -2630,10 +2630,10 @@ theorem addGraph_sound {tbl N B : V} (htbl : NumTableOK tbl N B) :
           obtain ⟨e, he, rfl⟩ := hinv.mp hd
           obtain rfl := addGraph_unique tbl (a' + b') a' le_self_add b' le_add_self rfl _ _ hd' he
           have hmap := (inst_nBit01 hx hy hz).1
-          have hc : instOuter LAct [bnum (a' + b'), bnum b', bnum a'] nBit01_c = addFact a b := by
+          have hc : instOuter LAct [binNumeral (a' + b'), binNumeral b', binNumeral a'] nBit01_c = addFact a b := by
             rw [(inst_nBit01 hx hy hz).2, h1, h2, addFact_bit01 ha1 hb1]
           have hpf := step1_proof hr8 _ rfl (fun e he ↦ (hes3 e he).1) (isFormula_addFact _ _) (isFormula_addFact _ _) hpf' hmap hc
-          have hlen := dlen_step1_le hr8 _ rfl hes3 hE1 hB (isFormula_addFact _ _) (isFormula_addFact _ _) hpf' hmap hc
+          have hlen := proofLen_step1_le hr8 _ rfl hes3 hE1 hB (isFormula_addFact _ _) (isFormula_addFact _ _) hpf' hmap hc
             (by norm_num) (by simp [nBit01_as]) hAP hAP'
           rw [cast_rBit01] at hpf hlen
           refine ⟨hpf, hstep1 _ hlen ?_⟩
@@ -2644,10 +2644,10 @@ theorem addGraph_sound {tbl N B : V} (htbl : NumTableOK tbl N B) :
           obtain ⟨e, he, rfl⟩ := hinv.mp hd
           obtain rfl := addGraph_unique tbl (a' + b') a' le_self_add b' le_add_self rfl _ _ hd' he
           have hmap := (inst_nBit10 hx hy hz).1
-          have hc : instOuter LAct [bnum (a' + b'), bnum b', bnum a'] nBit10_c = addFact a b := by
+          have hc : instOuter LAct [binNumeral (a' + b'), binNumeral b', binNumeral a'] nBit10_c = addFact a b := by
             rw [(inst_nBit10 hx hy hz).2, h1, h2, addFact_bit10 ha1 hb1]
           have hpf := step1_proof hr9 _ rfl (fun e he ↦ (hes3 e he).1) (isFormula_addFact _ _) (isFormula_addFact _ _) hpf' hmap hc
-          have hlen := dlen_step1_le hr9 _ rfl hes3 hE1 hB (isFormula_addFact _ _) (isFormula_addFact _ _) hpf' hmap hc
+          have hlen := proofLen_step1_le hr9 _ rfl hes3 hE1 hB (isFormula_addFact _ _) (isFormula_addFact _ _) hpf' hmap hc
             (by norm_num) (by simp [nBit10_as]) hAP hAP'
           rw [cast_rBit10] at hpf hlen
           refine ⟨hpf, hstep1 _ hlen ?_⟩
@@ -2661,42 +2661,42 @@ theorem addGraph_sound {tbl N B : V} (htbl : NumTableOK tbl N B) :
           obtain ⟨e, he, rfl⟩ := hinv.mp hd
           obtain rfl := addGraph_unique tbl (a' + b') a' le_self_add b' le_add_self rfl _ _ hd' he
           have hmap := (inst_nBit11 hx hy hz hw).1
-          have hc : instOuter LAct [bnum (a' + b' + 1), bnum (a' + b'), bnum b', bnum a'] nBit11_c = addFact a b := by
+          have hc : instOuter LAct [binNumeral (a' + b' + 1), binNumeral (a' + b'), binNumeral b', binNumeral a'] nBit11_c = addFact a b := by
             rw [(inst_nBit11 hx hy hz hw).2, h1, h2, addFact_bit11 ha1 hb1]
-          have hes4 : ∀ e ∈ [bnum (a' + b' + 1), bnum (a' + b'), bnum b', bnum a'], IsSemiterm LAct 0 e ∧
+          have hes4 : ∀ e ∈ [binNumeral (a' + b' + 1), binNumeral (a' + b'), binNumeral b', binNumeral a'], IsSemiterm LAct 0 e ∧
               termLen LAct e ≤ 12 * ‖a + b‖ + 3 := by
             intro e he
             simp only [List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false] at he
             rcases he with rfl | rfl | rfl | rfl
-            · exact ⟨hw, termLen_bnum_le_E' hsub1 le_rfl⟩
-            · exact ⟨hz, termLen_bnum_le_E' hsub le_rfl⟩
-            · exact ⟨hy, termLen_bnum_le_E' (le_trans le_add_self hsub) le_rfl⟩
-            · exact ⟨hx, termLen_bnum_le_E' (le_trans le_self_add hsub) le_rfl⟩
+            · exact ⟨hw, termLen_binNumeral_le_E' hsub1 le_rfl⟩
+            · exact ⟨hz, termLen_binNumeral_le_E' hsub le_rfl⟩
+            · exact ⟨hy, termLen_binNumeral_le_E' (le_trans le_add_self hsub) le_rfl⟩
+            · exact ⟨hx, termLen_binNumeral_le_E' (le_trans le_self_add hsub) le_rfl⟩
           have hsucc := succCode_proof htbl (a' + b')
           have hGP : formulaLen LAct (succFact (a' + b')) ≤ B * (12 * ‖a + b‖ + 3) :=
             formulaLen_succFact_le hPeq (succE_le_addE hsub1)
           have hpf := step2_proof hr10 _ rfl (fun e he ↦ (hes4 e he).1) (isFormula_addFact _ _) (isFormula_addFact _ _)
             (isFormula_succFact _) hpf' hsucc hmap hc
-          have hlen := dlen_step2_le hr10 _ rfl hes4 hE1 hB (isFormula_addFact _ _) (isFormula_addFact _ _)
+          have hlen := proofLen_step2_le hr10 _ rfl hes4 hE1 hB (isFormula_addFact _ _) (isFormula_addFact _ _)
             (isFormula_succFact _) hpf' hsucc hmap hc (by norm_num) (by simp [nBit11_as]) hAP hAP' hGP
           rw [cast_rBit11] at hpf hlen
           refine ⟨hpf, ?_⟩
           have hka : ‖a‖ = ‖a'‖ + 1 := by rw [h1]; exact length_two_mul_add_one a'
-          have hsB : dlen TAct (succCode tbl (a' + b')) ≤ (‖a' + b'‖ + 1) * nc :=
-            le_trans (dlen_succCode_le htbl _) (succBound_le hsub1)
+          have hsB : proofLen TAct (succCode tbl (a' + b')) ≤ (‖a' + b'‖ + 1) * nc :=
+            le_trans (proofLen_succCode_le htbl _) (succBound_le hsub1)
           refine le_trans hlen (le_trans ?_ (hcount ‖a'‖ hka))
-          calc dlen TAct d' + dlen TAct (succCode tbl (a' + b')) + nc
+          calc proofLen TAct d' + proofLen TAct (succCode tbl (a' + b')) + nc
               ≤ (‖a'‖ + 1) * (‖a' + b'‖ + 2) * nc + (‖a' + b'‖ + 1) * nc + nc := by gcongr
             _ = (1 + (‖a'‖ + 1) * (‖a' + b'‖ + 2) + (‖a' + b'‖ + 1)) * nc := by ring
 
-/-- **`addCode` is a derivation of `{bnum a + bnum b = bnum (a + b)}`**, in every model, over any sound table. -/
+/-- **`addCode` is a derivation of `{binNumeral a + binNumeral b = binNumeral (a + b)}`**, in every model, over any sound table. -/
 theorem addCode_proof {tbl N B : V} (htbl : NumTableOK tbl N B) (a b : V) :
     DerivationOf TAct (addCode tbl a b) (sing (addFact a b)) :=
   (addGraph_sound htbl (a + b) a le_self_add b le_add_self rfl _ (addCode_graph tbl a b)).1
 
-/-- **`dlen (addCode tbl a b) ≤ (‖a‖ + 1)(‖a + b‖ + 2)·(N + 800·B·(12‖a + b‖ + 3))`** — cubic in the bit length. -/
-theorem dlen_addCode_le {tbl N B : V} (htbl : NumTableOK tbl N B) (a b : V) :
-    dlen TAct (addCode tbl a b) ≤ (‖a‖ + 1) * (‖a + b‖ + 2) * nodeCost N B (12 * ‖a + b‖ + 3) :=
+/-- **`proofLen (addCode tbl a b) ≤ (‖a‖ + 1)(‖a + b‖ + 2)·(N + 800·B·(12‖a + b‖ + 3))`** — cubic in the bit length. -/
+theorem proofLen_addCode_le {tbl N B : V} (htbl : NumTableOK tbl N B) (a b : V) :
+    proofLen TAct (addCode tbl a b) ≤ (‖a‖ + 1) * (‖a + b‖ + 2) * nodeCost N B (12 * ‖a + b‖ + 3) :=
   (addGraph_sound htbl (a + b) a le_self_add b le_add_self rfl _ (addCode_graph tbl a b)).2
 
 theorem lemmaOK_add {tbl N B : V} (htbl : NumTableOK tbl N B) (a b : V) :
@@ -2757,25 +2757,25 @@ lemma neg_mem_ctxIn : ∀ (ps : List (V × V)) (Γ : V) {F dF : V}, (F, dF) ∈ 
 
 /-- The facts' total length. -/
 noncomputable def factsLen (ps : List (V × V)) : V := (ps.map (fun p ↦ formulaLen LAct p.1)).sum
-noncomputable def factsDlen (ps : List (V × V)) : V := (ps.map (fun p ↦ dlen TAct p.2)).sum
+noncomputable def factsDlen (ps : List (V × V)) : V := (ps.map (fun p ↦ proofLen TAct p.2)).sum
 
 @[simp] lemma factsLen_nil : factsLen ([] : List (V × V)) = 0 := rfl
 @[simp] lemma factsLen_cons (F dF : V) (ps : List (V × V)) : factsLen ((F, dF) :: ps) = formulaLen LAct F + factsLen ps := by
   simp [factsLen]
 @[simp] lemma factsDlen_nil : factsDlen ([] : List (V × V)) = 0 := rfl
-@[simp] lemma factsDlen_cons (F dF : V) (ps : List (V × V)) : factsDlen ((F, dF) :: ps) = dlen TAct dF + factsDlen ps := by
+@[simp] lemma factsDlen_cons (F dF : V) (ps : List (V × V)) : factsDlen ((F, dF) :: ps) = proofLen TAct dF + factsDlen ps := by
   simp [factsDlen]
 
-lemma setLen_ctxIn_le : ∀ (ps : List (V × V)) (Γ : V), (∀ p ∈ ps, IsFormula LAct p.1) →
-    setLen LAct (ctxIn Γ ps) ≤ setLen LAct Γ + factsLen ps
+lemma sequentLen_ctxIn_le : ∀ (ps : List (V × V)) (Γ : V), (∀ p ∈ ps, IsFormula LAct p.1) →
+    sequentLen LAct (ctxIn Γ ps) ≤ sequentLen LAct Γ + factsLen ps
   | [], Γ, _ => by simp
   | (F, dF) :: ps, Γ, hps => by
     rw [ctxIn_cons, factsLen_cons]
-    refine le_trans (setLen_ctxIn_le ps _ (fun p hp ↦ hps p (by simp [hp]))) ?_
-    have := setLen_insert_le (L := LAct) (neg LAct F) Γ
+    refine le_trans (sequentLen_ctxIn_le ps _ (fun p hp ↦ hps p (by simp [hp]))) ?_
+    have := sequentLen_insert_le (L := LAct) (neg LAct F) Γ
     rw [formulaLen_neg (hps (F, dF) (by simp)).isUFormula] at this
-    calc setLen LAct (insert (neg LAct F) Γ) + factsLen ps ≤ setLen LAct Γ + formulaLen LAct F + factsLen ps := by gcongr
-      _ = setLen LAct Γ + (formulaLen LAct F + factsLen ps) := by ring
+    calc sequentLen LAct (insert (neg LAct F) Γ) + factsLen ps ≤ sequentLen LAct Γ + formulaLen LAct F + factsLen ps := by gcongr
+      _ = sequentLen LAct Γ + (formulaLen LAct F + factsLen ps) := by ring
 
 lemma factsLen_le : ∀ {ps : List (V × V)} {P : V}, (∀ p ∈ ps, formulaLen LAct p.1 ≤ P) →
     factsLen ps ≤ (ps.length : V) * P
@@ -2797,11 +2797,11 @@ theorem cutsIn_proof : ∀ (ps : List (V × V)) {Γ e : V}, IsFormulaSet LAct Γ
     have hF := hps (F, dF) (by simp)
     exact cut1_proof hΓ hF.1 hF.2 (cutsIn_proof ps (by simp [hΓ, hF.1]) (fun p hp ↦ hps p (by simp [hp])) he)
 
-/-- Every cut at a context of size `≤ G` on a fact of size `≤ G`: `≤ dlen e + Σ dlen dᵢ + j·(4G + 2)`. -/
-theorem dlen_cutsIn_le : ∀ (ps : List (V × V)) {Γ e G : V}, IsFormulaSet LAct Γ →
+/-- Every cut at a context of size `≤ G` on a fact of size `≤ G`: `≤ proofLen e + Σ proofLen dᵢ + j·(4G + 2)`. -/
+theorem proofLen_cutsIn_le : ∀ (ps : List (V × V)) {Γ e G : V}, IsFormulaSet LAct Γ →
     (∀ p ∈ ps, IsFormula LAct p.1 ∧ DerivationOf TAct p.2 (sing p.1)) →
-    DerivationOf TAct e (ctxIn Γ ps) → setLen LAct Γ + factsLen ps ≤ G →
-    dlen TAct (cutsIn Γ ps e) ≤ dlen TAct e + factsDlen ps + (ps.length : V) * (4 * G + 2)
+    DerivationOf TAct e (ctxIn Γ ps) → sequentLen LAct Γ + factsLen ps ≤ G →
+    proofLen TAct (cutsIn Γ ps e) ≤ proofLen TAct e + factsDlen ps + (ps.length : V) * (4 * G + 2)
   | [], _, e, G, _, _, _, _ => by simp
   | (F, dF) :: ps, Γ, e, G, hΓ, hps, he, hG => by
     rw [cutsIn_cons, factsDlen_cons]
@@ -2809,22 +2809,22 @@ theorem dlen_cutsIn_le : ∀ (ps : List (V × V)) {Γ e G : V}, IsFormulaSet LAc
     have hps' : ∀ p ∈ ps, IsFormula LAct p.1 ∧ DerivationOf TAct p.2 (sing p.1) := fun p hp ↦ hps p (by simp [hp])
     have hΓ' : IsFormulaSet LAct (insert (neg LAct F) Γ) := by simp [hΓ, hF.1]
     have hin := cutsIn_proof ps hΓ' hps' he
-    have hcut := dlen_cut1_le hΓ hF.1 hF.2 hin
-    have hins : setLen LAct (insert (neg LAct F) Γ) ≤ setLen LAct Γ + formulaLen LAct F := by
-      have := setLen_insert_le (L := LAct) (neg LAct F) Γ
+    have hcut := proofLen_cut1_le hΓ hF.1 hF.2 hin
+    have hins : sequentLen LAct (insert (neg LAct F) Γ) ≤ sequentLen LAct Γ + formulaLen LAct F := by
+      have := sequentLen_insert_le (L := LAct) (neg LAct F) Γ
       rwa [formulaLen_neg hF.1.isUFormula] at this
     rw [factsLen_cons] at hG
-    have hG' : setLen LAct (insert (neg LAct F) Γ) + factsLen ps ≤ G := by
-      calc setLen LAct (insert (neg LAct F) Γ) + factsLen ps ≤ setLen LAct Γ + formulaLen LAct F + factsLen ps := by gcongr
-        _ = setLen LAct Γ + (formulaLen LAct F + factsLen ps) := by ring
+    have hG' : sequentLen LAct (insert (neg LAct F) Γ) + factsLen ps ≤ G := by
+      calc sequentLen LAct (insert (neg LAct F) Γ) + factsLen ps ≤ sequentLen LAct Γ + formulaLen LAct F + factsLen ps := by gcongr
+        _ = sequentLen LAct Γ + (formulaLen LAct F + factsLen ps) := by ring
         _ ≤ G := hG
-    have ih := dlen_cutsIn_le ps hΓ' hps' he hG'
-    have hΓG : setLen LAct Γ ≤ G := le_trans le_self_add hG
+    have ih := proofLen_cutsIn_le ps hΓ' hps' he hG'
+    have hΓG : sequentLen LAct Γ ≤ G := le_trans le_self_add hG
     have hFG : formulaLen LAct F ≤ G := le_trans (le_trans le_self_add le_add_self) hG
     refine le_trans hcut ?_
-    calc dlen TAct (cutsIn (insert (neg LAct F) Γ) ps e) + (dlen TAct dF + 2 * setLen LAct Γ + 2 * formulaLen LAct F + 2)
-        ≤ (dlen TAct e + factsDlen ps + (ps.length : V) * (4 * G + 2)) + (dlen TAct dF + 2 * G + 2 * G + 2) := by gcongr
-      _ = dlen TAct e + (dlen TAct dF + factsDlen ps) + (((F, dF) :: ps).length : V) * (4 * G + 2) := by
+    calc proofLen TAct (cutsIn (insert (neg LAct F) Γ) ps e) + (proofLen TAct dF + 2 * sequentLen LAct Γ + 2 * formulaLen LAct F + 2)
+        ≤ (proofLen TAct e + factsDlen ps + (ps.length : V) * (4 * G + 2)) + (proofLen TAct dF + 2 * G + 2 * G + 2) := by gcongr
+      _ = proofLen TAct e + (proofLen TAct dF + factsDlen ps) + (((F, dF) :: ps).length : V) * (4 * G + 2) := by
           simp only [List.length_cons, Nat.cast_succ]; ring
 
 theorem stepL_proof {tbl : V} {i : ℕ} {N B : V} {m : ℕ} {as : List V} {c : V}
@@ -2841,15 +2841,15 @@ theorem stepL_proof {tbl : V} {i : ℕ} {N B : V} {m : ℕ} {as : List V} {c : V
   obtain ⟨p, hp, rfl⟩ := List.mem_map.mp hf
   exact neg_mem_ctxIn ps _ hp
 
-/-- **The bound of the `j`-cut shape** (`j ≤ 4`, all facts and `A` of size `≤ B·E`): `≤ Σ dlen dᵢ + nodeCost N B E`. -/
-theorem dlen_stepL_le {tbl : V} {i : ℕ} {N B : V} {m : ℕ} {as : List V} {c : V}
+/-- **The bound of the `j`-cut shape** (`j ≤ 4`, all facts and `A` of size `≤ B·E`): `≤ Σ proofLen dᵢ + nodeCost N B E`. -/
+theorem proofLen_stepL_le {tbl : V} {i : ℕ} {N B : V} {m : ℕ} {as : List V} {c : V}
     (hrow : NumRowOK tbl i N B m as c) {A E : V} (ps : List (V × V)) (es : List V) (hm : es.length = m)
     (hes : ∀ e ∈ es, IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E) (hE : 1 ≤ E) (hB : 1 ≤ B) (hA : IsFormula LAct A)
     (hps : ∀ p ∈ ps, IsFormula LAct p.1 ∧ DerivationOf TAct p.2 (sing p.1))
     (hmap : as.map (instOuter LAct es) = ps.map Prod.fst) (hc : instOuter LAct es c = A)
     (hm7 : m ≤ 7) (hj4 : as.length ≤ 4) (hAP : formulaLen LAct A ≤ B * E)
     (hpsP : ∀ p ∈ ps, formulaLen LAct p.1 ≤ B * E) :
-    dlen TAct (stepL tbl (i : V) ps (vecOf es) A) ≤ factsDlen ps + nodeCost N B E := by
+    proofLen TAct (stepL tbl (i : V) ps (vecOf es) A) ≤ factsDlen ps + nodeCost N B E := by
   have h1 : 1 ≤ B * E := one_le_BE hB hE
   have hj : ps.length ≤ 4 := by
     have := congrArg List.length hmap; simp only [List.length_map] at this; omega
@@ -2864,21 +2864,21 @@ theorem dlen_stepL_le {tbl : V} {i : ℕ} {N B : V} {m : ℕ} {as : List V} {c :
   have hAm : A ∈ ctxIn (sing A) ps := mem_ctxIn_of_mem ps (mem_sing A)
   have hes₁ : ∀ e ∈ es, IsSemiterm LAct 0 e := fun e he ↦ (hes e he).1
   have hhorn := hornGoal_proof hrow es hm hes₁ hΓ hneg hc hAm
-  have hh := dlen_hornGoal_le hrow es hm hes hE hB hΓ hneg hc hAm hm7 hj4
+  have hh := proofLen_hornGoal_le hrow es hm hes hE hB hΓ hneg hc hAm hm7 hj4
   have hfl : factsLen ps ≤ (ps.length : V) * (B * E) := factsLen_le hpsP
-  have hG : setLen LAct (sing A) + factsLen ps ≤ 5 * (B * E) := by
-    calc setLen LAct (sing A) + factsLen ps ≤ B * E + 4 * (B * E) := by
+  have hG : sequentLen LAct (sing A) + factsLen ps ≤ 5 * (B * E) := by
+    calc sequentLen LAct (sing A) + factsLen ps ≤ B * E + 4 * (B * E) := by
           gcongr
-          · exact le_trans (setLen_sing_le A) hAP
+          · exact le_trans (sequentLen_sing_le A) hAP
           · exact le_trans hfl (mul_le_mul_of_nonneg_right hjV zero_le)
       _ = 5 * (B * E) := by ring
-  have hctx : setLen LAct (ctxIn (sing A) ps) ≤ 5 * (B * E) := le_trans (setLen_ctxIn_le ps _ hpsF) hG
-  have hcuts := dlen_cutsIn_le ps (G := 5 * (B * E)) (isFormulaSet_sing hA) hps hhorn hG
+  have hctx : sequentLen LAct (ctxIn (sing A) ps) ≤ 5 * (B * E) := le_trans (sequentLen_ctxIn_le ps _ hpsF) hG
+  have hcuts := proofLen_cutsIn_le ps (G := 5 * (B * E)) (isFormulaSet_sing hA) hps hhorn hG
   have e480 : (480 : V) ≤ 480 * (B * E) := le_mul_of_one_le_right zero_le h1
   have e2 : (2 : V) ≤ 2 * (B * E) := le_mul_of_one_le_right zero_le h1
   unfold stepL nodeCost
   refine le_trans hcuts ?_
-  calc dlen TAct (hornGoal tbl (i : V) (ctxIn (sing A) ps) (vecOf es) A) + factsDlen ps + (ps.length : V) * (4 * (5 * (B * E)) + 2)
+  calc proofLen TAct (hornGoal tbl (i : V) (ctxIn (sing A) ps) (vecOf es) A) + factsDlen ps + (ps.length : V) * (4 * (5 * (B * E)) + 2)
       ≤ (N + 20 * (5 * (B * E)) + 120 * (B * E) + B * E + 480 * (B * E)) + factsDlen ps + 4 * (4 * (5 * (B * E)) + 2 * (B * E)) := by
         gcongr
         exact le_trans hh (by gcongr)
@@ -2887,76 +2887,76 @@ theorem dlen_stepL_le {tbl : V} {i : ℕ} {N B : V} {m : ℕ} {as : List V} {c :
 
 end stepL
 
-/-! ### N2/N7: `bnum a ≤ bnum b` for `a ≤ b`; `bnum a < bnum b` for `a < b` -/
+/-! ### N2/N7: `binNumeral a ≤ binNumeral b` for `a ≤ b`; `binNumeral a < binNumeral b` for `a < b` -/
 
 section leLt
 
-/-- `leCode tbl a b`: `leOfAdd` at `(bnum a, bnum (b − a), bnum b)` from `addCode tbl a (b − a)`. -/
+/-- `leCode tbl a b`: `leOfAdd` at `(binNumeral a, binNumeral (b − a), binNumeral b)` from `addCode tbl a (b − a)`. -/
 noncomputable def leCode (tbl a b : V) : V :=
-  stepL tbl 11 [(addFact a (b - a), addCode tbl a (b - a))] (vecOf [bnum b, bnum (b - a), bnum a]) (leFact (bnum a) (bnum b))
+  stepL tbl 11 [(addFact a (b - a), addCode tbl a (b - a))] (vecOf [binNumeral b, binNumeral (b - a), binNumeral a]) (leFact (binNumeral a) (binNumeral b))
 
-/-- `ltCode tbl a b`: `ltOfSuccLe` at `(bnum a, bnum (a + 1), bnum b)` from `succCode tbl a` and `leCode tbl (a + 1) b`. -/
+/-- `ltCode tbl a b`: `ltOfSuccLe` at `(binNumeral a, binNumeral (a + 1), binNumeral b)` from `succCode tbl a` and `leCode tbl (a + 1) b`. -/
 noncomputable def ltCode (tbl a b : V) : V :=
-  stepL tbl 12 [(succFact a, succCode tbl a), (leFact (bnum (a + 1)) (bnum b), leCode tbl (a + 1) b)]
-    (vecOf [bnum b, bnum (a + 1), bnum a]) (ltFact (bnum a) (bnum b))
+  stepL tbl 12 [(succFact a, succCode tbl a), (leFact (binNumeral (a + 1)) (binNumeral b), leCode tbl (a + 1) b)]
+    (vecOf [binNumeral b, binNumeral (a + 1), binNumeral a]) (ltFact (binNumeral a) (binNumeral b))
 
 lemma cast_rLeOfAdd : ((rLeOfAdd : ℕ) : V) = 11 := by simp [rLeOfAdd]
 lemma cast_rLtOfSuccLe : ((rLtOfSuccLe : ℕ) : V) = 12 := by simp [rLtOfSuccLe]
 
-lemma isFormula_leFact_bnum (a b : V) : IsFormula LAct (leFact (bnum a) (bnum b)) :=
-  isFormula_leFact (isSemiterm_bnum_LAct 0 a) (isSemiterm_bnum_LAct 0 b)
-lemma isFormula_ltFact_bnum (a b : V) : IsFormula LAct (ltFact (bnum a) (bnum b)) :=
-  isFormula_ltFact (isSemiterm_bnum_LAct 0 a) (isSemiterm_bnum_LAct 0 b)
+lemma isFormula_leFact_binNumeral (a b : V) : IsFormula LAct (leFact (binNumeral a) (binNumeral b)) :=
+  isFormula_leFact (isSemiterm_binNumeral_LAct 0 a) (isSemiterm_binNumeral_LAct 0 b)
+lemma isFormula_ltFact_binNumeral (a b : V) : IsFormula LAct (ltFact (binNumeral a) (binNumeral b)) :=
+  isFormula_ltFact (isSemiterm_binNumeral_LAct 0 a) (isSemiterm_binNumeral_LAct 0 b)
 
-lemma formulaLen_leFact_bnum_le {B E a b n : V} (hPle : formulaLen LAct (Ple : V) ≤ B) (ha : a ≤ n) (hb : b ≤ n)
-    (hE : 12 * ‖n‖ + 3 ≤ E) : formulaLen LAct (leFact (bnum a) (bnum b)) ≤ B * E :=
-  le_trans (formulaLen_leFact_le (le_trans one_le_addE hE) (isSemiterm_bnum_LAct 0 a) (isSemiterm_bnum_LAct 0 b)
-    (termLen_bnum_le_E' ha hE) (termLen_bnum_le_E' hb hE)) (mul_le_mul_of_nonneg_right hPle zero_le)
+lemma formulaLen_leFact_binNumeral_le {B E a b n : V} (hPle : formulaLen LAct (Ple : V) ≤ B) (ha : a ≤ n) (hb : b ≤ n)
+    (hE : 12 * ‖n‖ + 3 ≤ E) : formulaLen LAct (leFact (binNumeral a) (binNumeral b)) ≤ B * E :=
+  le_trans (formulaLen_leFact_le (le_trans one_le_addE hE) (isSemiterm_binNumeral_LAct 0 a) (isSemiterm_binNumeral_LAct 0 b)
+    (termLen_binNumeral_le_E' ha hE) (termLen_binNumeral_le_E' hb hE)) (mul_le_mul_of_nonneg_right hPle zero_le)
 
-lemma formulaLen_ltFact_bnum_le {B E a b n : V} (hPlt : formulaLen LAct (Plt : V) ≤ B) (ha : a ≤ n) (hb : b ≤ n)
-    (hE : 12 * ‖n‖ + 3 ≤ E) : formulaLen LAct (ltFact (bnum a) (bnum b)) ≤ B * E :=
-  le_trans (formulaLen_ltFact_le (le_trans one_le_addE hE) (isSemiterm_bnum_LAct 0 a) (isSemiterm_bnum_LAct 0 b)
-    (termLen_bnum_le_E' ha hE) (termLen_bnum_le_E' hb hE)) (mul_le_mul_of_nonneg_right hPlt zero_le)
+lemma formulaLen_ltFact_binNumeral_le {B E a b n : V} (hPlt : formulaLen LAct (Plt : V) ≤ B) (ha : a ≤ n) (hb : b ≤ n)
+    (hE : 12 * ‖n‖ + 3 ≤ E) : formulaLen LAct (ltFact (binNumeral a) (binNumeral b)) ≤ B * E :=
+  le_trans (formulaLen_ltFact_le (le_trans one_le_addE hE) (isSemiterm_binNumeral_LAct 0 a) (isSemiterm_binNumeral_LAct 0 b)
+    (termLen_binNumeral_le_E' ha hE) (termLen_binNumeral_le_E' hb hE)) (mul_le_mul_of_nonneg_right hPlt zero_le)
 
-/-- **`leCode` is a derivation of `{bnum a ≤ bnum b}`** for `a ≤ b`. -/
+/-- **`leCode` is a derivation of `{binNumeral a ≤ binNumeral b}`** for `a ≤ b`. -/
 theorem leCode_proof {tbl N B : V} (htbl : NumTableOK tbl N B) {a b : V} (hab : a ≤ b) :
-    DerivationOf TAct (leCode tbl a b) (sing (leFact (bnum a) (bnum b))) := by
+    DerivationOf TAct (leCode tbl a b) (sing (leFact (binNumeral a) (binNumeral b))) := by
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, hr11, -, -, -, -, -, -, -, -, -, -, -⟩ := id htbl
-  have hx : IsSemiterm LAct 0 (bnum a) := isSemiterm_bnum_LAct 0 _
-  have hy : IsSemiterm LAct 0 (bnum (b - a)) := isSemiterm_bnum_LAct 0 _
-  have hz : IsSemiterm LAct 0 (bnum b) := isSemiterm_bnum_LAct 0 _
-  have hmap : nLeOfAdd_as.map (instOuter LAct [bnum b, bnum (b - a), bnum a]) =
+  have hx : IsSemiterm LAct 0 (binNumeral a) := isSemiterm_binNumeral_LAct 0 _
+  have hy : IsSemiterm LAct 0 (binNumeral (b - a)) := isSemiterm_binNumeral_LAct 0 _
+  have hz : IsSemiterm LAct 0 (binNumeral b) := isSemiterm_binNumeral_LAct 0 _
+  have hmap : nLeOfAdd_as.map (instOuter LAct [binNumeral b, binNumeral (b - a), binNumeral a]) =
       [(addFact a (b - a), addCode tbl a (b - a))].map Prod.fst := by
     rw [(inst_nLeOfAdd hx hy hz).1]
     simp only [List.map, addFact, add_tsub_cancel_of_le hab]
-  have hpf := stepL_proof hr11 [(addFact a (b - a), addCode tbl a (b - a))] [bnum b, bnum (b - a), bnum a] rfl
-    (by simp [hx, hy, hz]) (isFormula_leFact_bnum a b)
+  have hpf := stepL_proof hr11 [(addFact a (b - a), addCode tbl a (b - a))] [binNumeral b, binNumeral (b - a), binNumeral a] rfl
+    (by simp [hx, hy, hz]) (isFormula_leFact_binNumeral a b)
     (by simp only [List.mem_singleton, forall_eq]; exact ⟨isFormula_addFact _ _, addCode_proof htbl _ _⟩)
     hmap (inst_nLeOfAdd hx hy hz).2
   rwa [cast_rLeOfAdd] at hpf
 
-theorem dlen_leCode_le {tbl N B : V} (htbl : NumTableOK tbl N B) {a b : V} (hab : a ≤ b) :
-    dlen TAct (leCode tbl a b) ≤ dlen TAct (addCode tbl a (b - a)) + nodeCost N B (12 * ‖b‖ + 3) := by
+theorem proofLen_leCode_le {tbl N B : V} (htbl : NumTableOK tbl N B) {a b : V} (hab : a ≤ b) :
+    proofLen TAct (leCode tbl a b) ≤ proofLen TAct (addCode tbl a (b - a)) + nodeCost N B (12 * ‖b‖ + 3) := by
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, hr11, -, -, -, -, -, -, -, hPeq, hPle, -, hB⟩ := id htbl
-  have hx : IsSemiterm LAct 0 (bnum a) := isSemiterm_bnum_LAct 0 _
-  have hy : IsSemiterm LAct 0 (bnum (b - a)) := isSemiterm_bnum_LAct 0 _
-  have hz : IsSemiterm LAct 0 (bnum b) := isSemiterm_bnum_LAct 0 _
-  have hmap : nLeOfAdd_as.map (instOuter LAct [bnum b, bnum (b - a), bnum a]) =
+  have hx : IsSemiterm LAct 0 (binNumeral a) := isSemiterm_binNumeral_LAct 0 _
+  have hy : IsSemiterm LAct 0 (binNumeral (b - a)) := isSemiterm_binNumeral_LAct 0 _
+  have hz : IsSemiterm LAct 0 (binNumeral b) := isSemiterm_binNumeral_LAct 0 _
+  have hmap : nLeOfAdd_as.map (instOuter LAct [binNumeral b, binNumeral (b - a), binNumeral a]) =
       [(addFact a (b - a), addCode tbl a (b - a))].map Prod.fst := by
     rw [(inst_nLeOfAdd hx hy hz).1]
     simp only [List.map, addFact, add_tsub_cancel_of_le hab]
-  have hes : ∀ e ∈ [bnum b, bnum (b - a), bnum a], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ 12 * ‖b‖ + 3 := by
+  have hes : ∀ e ∈ [binNumeral b, binNumeral (b - a), binNumeral a], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ 12 * ‖b‖ + 3 := by
     intro e he
     simp only [List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false] at he
     rcases he with rfl | rfl | rfl
-    · exact ⟨hz, termLen_bnum_le_E' le_rfl le_rfl⟩
-    · exact ⟨hy, termLen_bnum_le_E' tsub_le_self le_rfl⟩
-    · exact ⟨hx, termLen_bnum_le_E' hab le_rfl⟩
-  have h := dlen_stepL_le hr11 [(addFact a (b - a), addCode tbl a (b - a))] [bnum b, bnum (b - a), bnum a] rfl hes
-    one_le_addE hB (isFormula_leFact_bnum a b)
+    · exact ⟨hz, termLen_binNumeral_le_E' le_rfl le_rfl⟩
+    · exact ⟨hy, termLen_binNumeral_le_E' tsub_le_self le_rfl⟩
+    · exact ⟨hx, termLen_binNumeral_le_E' hab le_rfl⟩
+  have h := proofLen_stepL_le hr11 [(addFact a (b - a), addCode tbl a (b - a))] [binNumeral b, binNumeral (b - a), binNumeral a] rfl hes
+    one_le_addE hB (isFormula_leFact_binNumeral a b)
     (by simp only [List.mem_singleton, forall_eq]; exact ⟨isFormula_addFact _ _, addCode_proof htbl _ _⟩)
     hmap (inst_nLeOfAdd hx hy hz).2 (by norm_num) (by simp [nLeOfAdd_as])
-    (formulaLen_leFact_bnum_le hPle hab le_rfl le_rfl)
+    (formulaLen_leFact_binNumeral_le hPle hab le_rfl le_rfl)
     (by
       simp only [List.mem_singleton, forall_eq]
       have := formulaLen_addFact_le (a := a) (b := b - a) hPeq (E := 12 * ‖b‖ + 3) (by rw [add_tsub_cancel_of_le hab])
@@ -2965,56 +2965,56 @@ theorem dlen_leCode_le {tbl N B : V} (htbl : NumTableOK tbl N B) {a b : V} (hab 
   unfold leCode
   simpa using h
 
-/-- **`ltCode` is a derivation of `{bnum a < bnum b}`** for `a < b`. -/
+/-- **`ltCode` is a derivation of `{binNumeral a < binNumeral b}`** for `a < b`. -/
 theorem ltCode_proof {tbl N B : V} (htbl : NumTableOK tbl N B) {a b : V} (hab : a < b) :
-    DerivationOf TAct (ltCode tbl a b) (sing (ltFact (bnum a) (bnum b))) := by
+    DerivationOf TAct (ltCode tbl a b) (sing (ltFact (binNumeral a) (binNumeral b))) := by
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, hr12, -, -, -, -, -, -, -, -, -, -⟩ := id htbl
-  have hx : IsSemiterm LAct 0 (bnum a) := isSemiterm_bnum_LAct 0 _
-  have hw : IsSemiterm LAct 0 (bnum (a + 1)) := isSemiterm_bnum_LAct 0 _
-  have hz : IsSemiterm LAct 0 (bnum b) := isSemiterm_bnum_LAct 0 _
+  have hx : IsSemiterm LAct 0 (binNumeral a) := isSemiterm_binNumeral_LAct 0 _
+  have hw : IsSemiterm LAct 0 (binNumeral (a + 1)) := isSemiterm_binNumeral_LAct 0 _
+  have hz : IsSemiterm LAct 0 (binNumeral b) := isSemiterm_binNumeral_LAct 0 _
   have hab' : a + 1 ≤ b := lt_iff_succ_le.mp hab
-  have hpf := stepL_proof hr12 [(succFact a, succCode tbl a), (leFact (bnum (a + 1)) (bnum b), leCode tbl (a + 1) b)]
-    [bnum b, bnum (a + 1), bnum a] rfl (by simp [hx, hw, hz]) (isFormula_ltFact_bnum a b)
+  have hpf := stepL_proof hr12 [(succFact a, succCode tbl a), (leFact (binNumeral (a + 1)) (binNumeral b), leCode tbl (a + 1) b)]
+    [binNumeral b, binNumeral (a + 1), binNumeral a] rfl (by simp [hx, hw, hz]) (isFormula_ltFact_binNumeral a b)
     (by
       intro p hp
       simp only [List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false] at hp
       rcases hp with rfl | rfl
       · exact ⟨isFormula_succFact a, succCode_proof htbl a⟩
-      · exact ⟨isFormula_leFact_bnum _ _, leCode_proof htbl hab'⟩)
+      · exact ⟨isFormula_leFact_binNumeral _ _, leCode_proof htbl hab'⟩)
     (by rw [(inst_nLtOfSuccLe hx hw hz).1]; rfl) (inst_nLtOfSuccLe hx hw hz).2
   rwa [cast_rLtOfSuccLe] at hpf
 
-theorem dlen_ltCode_le {tbl N B : V} (htbl : NumTableOK tbl N B) {a b : V} (hab : a < b) :
-    dlen TAct (ltCode tbl a b) ≤
-      dlen TAct (succCode tbl a) + dlen TAct (leCode tbl (a + 1) b) + nodeCost N B (12 * ‖b‖ + 3) := by
+theorem proofLen_ltCode_le {tbl N B : V} (htbl : NumTableOK tbl N B) {a b : V} (hab : a < b) :
+    proofLen TAct (ltCode tbl a b) ≤
+      proofLen TAct (succCode tbl a) + proofLen TAct (leCode tbl (a + 1) b) + nodeCost N B (12 * ‖b‖ + 3) := by
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, hr12, -, -, -, -, -, -, hPeq, hPle, hPlt, hB⟩ := id htbl
-  have hx : IsSemiterm LAct 0 (bnum a) := isSemiterm_bnum_LAct 0 _
-  have hw : IsSemiterm LAct 0 (bnum (a + 1)) := isSemiterm_bnum_LAct 0 _
-  have hz : IsSemiterm LAct 0 (bnum b) := isSemiterm_bnum_LAct 0 _
+  have hx : IsSemiterm LAct 0 (binNumeral a) := isSemiterm_binNumeral_LAct 0 _
+  have hw : IsSemiterm LAct 0 (binNumeral (a + 1)) := isSemiterm_binNumeral_LAct 0 _
+  have hz : IsSemiterm LAct 0 (binNumeral b) := isSemiterm_binNumeral_LAct 0 _
   have hab' : a + 1 ≤ b := lt_iff_succ_le.mp hab
-  have hes : ∀ e ∈ [bnum b, bnum (a + 1), bnum a], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ 12 * ‖b‖ + 3 := by
+  have hes : ∀ e ∈ [binNumeral b, binNumeral (a + 1), binNumeral a], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ 12 * ‖b‖ + 3 := by
     intro e he
     simp only [List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false] at he
     rcases he with rfl | rfl | rfl
-    · exact ⟨hz, termLen_bnum_le_E' le_rfl le_rfl⟩
-    · exact ⟨hw, termLen_bnum_le_E' hab' le_rfl⟩
-    · exact ⟨hx, termLen_bnum_le_E' (le_of_lt hab) le_rfl⟩
-  have h := dlen_stepL_le hr12 [(succFact a, succCode tbl a), (leFact (bnum (a + 1)) (bnum b), leCode tbl (a + 1) b)]
-    [bnum b, bnum (a + 1), bnum a] rfl hes one_le_addE hB (isFormula_ltFact_bnum a b)
+    · exact ⟨hz, termLen_binNumeral_le_E' le_rfl le_rfl⟩
+    · exact ⟨hw, termLen_binNumeral_le_E' hab' le_rfl⟩
+    · exact ⟨hx, termLen_binNumeral_le_E' (le_of_lt hab) le_rfl⟩
+  have h := proofLen_stepL_le hr12 [(succFact a, succCode tbl a), (leFact (binNumeral (a + 1)) (binNumeral b), leCode tbl (a + 1) b)]
+    [binNumeral b, binNumeral (a + 1), binNumeral a] rfl hes one_le_addE hB (isFormula_ltFact_binNumeral a b)
     (by
       intro p hp
       simp only [List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false] at hp
       rcases hp with rfl | rfl
       · exact ⟨isFormula_succFact a, succCode_proof htbl a⟩
-      · exact ⟨isFormula_leFact_bnum _ _, leCode_proof htbl hab'⟩)
+      · exact ⟨isFormula_leFact_binNumeral _ _, leCode_proof htbl hab'⟩)
     (by rw [(inst_nLtOfSuccLe hx hw hz).1]; rfl) (inst_nLtOfSuccLe hx hw hz).2 (by norm_num) (by simp [nLtOfSuccLe_as])
-    (formulaLen_ltFact_bnum_le hPlt (le_of_lt hab) le_rfl le_rfl)
+    (formulaLen_ltFact_binNumeral_le hPlt (le_of_lt hab) le_rfl le_rfl)
     (by
       intro p hp
       simp only [List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false] at hp
       rcases hp with rfl | rfl
       · exact formulaLen_succFact_le hPeq (succE_le_addE hab')
-      · exact formulaLen_leFact_bnum_le hPle hab' le_rfl le_rfl)
+      · exact formulaLen_leFact_binNumeral_le hPle hab' le_rfl le_rfl)
   rw [cast_rLtOfSuccLe] at h
   unfold ltCode
   simpa [add_assoc] using h
@@ -3032,45 +3032,45 @@ lemma cast_rSum2Le : ((rSum2Le : ℕ) : V) = 16 := by simp [rSum2Le]
 lemma cast_rSuccCong : ((rSuccCong : ℕ) : V) = 17 := by simp [rSuccCong]
 lemma cast_rLeOfEq : ((rLeOfEq : ℕ) : V) = 18 := by simp [rLeOfEq]
 
-/-- `leafFact a n := bnum a + 1 ≤ bnum n` (the leaf node's `dlenLeafLe` companion). -/
-noncomputable def leafFact (a n : V) : V := leFact (bnum a ^+ 𝟏) (bnum n)
-/-- `sum2Fact a b n := bnum a + bnum b ≤ bnum n` (the `setLen` chains). -/
-noncomputable def sum2Fact (a b n : V) : V := leFact (bnum a ^+ bnum b) (bnum n)
-/-- `bin2Fact a b n := bnum a + bnum b + 1 ≤ bnum n` (the unary node's `dlenUnaryLe` companion). -/
-noncomputable def bin2Fact (a b n : V) : V := leFact ((bnum a ^+ bnum b) ^+ 𝟏) (bnum n)
-/-- `bin3Fact a b c n := bnum a + bnum b + bnum c + 1 ≤ bnum n` (the binary node's `dlenBinaryLe` companion). -/
-noncomputable def bin3Fact (a b c n : V) : V := leFact (((bnum a ^+ bnum b) ^+ bnum c) ^+ 𝟏) (bnum n)
+/-- `leafFact a n := binNumeral a + 1 ≤ binNumeral n` (the leaf node's `proofLenLeafLe` companion). -/
+noncomputable def leafFact (a n : V) : V := leFact (binNumeral a ^+ 𝟏) (binNumeral n)
+/-- `sum2Fact a b n := binNumeral a + binNumeral b ≤ binNumeral n` (the `sequentLen` chains). -/
+noncomputable def sum2Fact (a b n : V) : V := leFact (binNumeral a ^+ binNumeral b) (binNumeral n)
+/-- `bin2Fact a b n := binNumeral a + binNumeral b + 1 ≤ binNumeral n` (the unary node's `proofLenUnaryLe` companion). -/
+noncomputable def bin2Fact (a b n : V) : V := leFact ((binNumeral a ^+ binNumeral b) ^+ 𝟏) (binNumeral n)
+/-- `bin3Fact a b c n := binNumeral a + binNumeral b + binNumeral c + 1 ≤ binNumeral n` (the binary node's `proofLenBinaryLe` companion). -/
+noncomputable def bin3Fact (a b c n : V) : V := leFact (((binNumeral a ^+ binNumeral b) ^+ binNumeral c) ^+ 𝟏) (binNumeral n)
 
-/-- `leafCode`: `succLe` at `(bnum a, bnum (a + 1), bnum n)` from `succCode a`, `leCode (a + 1) n`. -/
+/-- `leafCode`: `succLe` at `(binNumeral a, binNumeral (a + 1), binNumeral n)` from `succCode a`, `leCode (a + 1) n`. -/
 noncomputable def leafCode (tbl a n : V) : V :=
-  stepL tbl 15 [(succFact a, succCode tbl a), (leFact (bnum (a + 1)) (bnum n), leCode tbl (a + 1) n)]
-    (vecOf [bnum n, bnum (a + 1), bnum a]) (leafFact a n)
+  stepL tbl 15 [(succFact a, succCode tbl a), (leFact (binNumeral (a + 1)) (binNumeral n), leCode tbl (a + 1) n)]
+    (vecOf [binNumeral n, binNumeral (a + 1), binNumeral a]) (leafFact a n)
 /-- `sum2Code`: `sum2Le` from `addCode a b`, `leCode (a + b) n`. -/
 noncomputable def sum2Code (tbl a b n : V) : V :=
-  stepL tbl 16 [(addFact a b, addCode tbl a b), (leFact (bnum (a + b)) (bnum n), leCode tbl (a + b) n)]
-    (vecOf [bnum n, bnum (a + b), bnum b, bnum a]) (sum2Fact a b n)
+  stepL tbl 16 [(addFact a b, addCode tbl a b), (leFact (binNumeral (a + b)) (binNumeral n), leCode tbl (a + b) n)]
+    (vecOf [binNumeral n, binNumeral (a + b), binNumeral b, binNumeral a]) (sum2Fact a b n)
 /-- `bin2Code`: `sum2SuccLe` from `addCode a b`, `succCode (a + b)`, `leCode (a + b + 1) n`. -/
 noncomputable def bin2Code (tbl a b n : V) : V :=
   stepL tbl 14 [(addFact a b, addCode tbl a b), (succFact (a + b), succCode tbl (a + b)),
-    (leFact (bnum (a + b + 1)) (bnum n), leCode tbl (a + b + 1) n)]
-    (vecOf [bnum n, bnum (a + b + 1), bnum (a + b), bnum b, bnum a]) (bin2Fact a b n)
+    (leFact (binNumeral (a + b + 1)) (binNumeral n), leCode tbl (a + b + 1) n)]
+    (vecOf [binNumeral n, binNumeral (a + b + 1), binNumeral (a + b), binNumeral b, binNumeral a]) (bin2Fact a b n)
 /-- `bin3Code`: `sum3SuccLe` from `addCode a b`, `addCode (a + b) c`, `succCode (a + b + c)`, `leCode (a + b + c + 1) n`. -/
 noncomputable def bin3Code (tbl a b c n : V) : V :=
   stepL tbl 13 [(addFact a b, addCode tbl a b), (addFact (a + b) c, addCode tbl (a + b) c),
-    (succFact (a + b + c), succCode tbl (a + b + c)), (leFact (bnum (a + b + c + 1)) (bnum n), leCode tbl (a + b + c + 1) n)]
-    (vecOf [bnum n, bnum (a + b + c + 1), bnum (a + b + c), bnum (a + b), bnum c, bnum b, bnum a]) (bin3Fact a b c n)
+    (succFact (a + b + c), succCode tbl (a + b + c)), (leFact (binNumeral (a + b + c + 1)) (binNumeral n), leCode tbl (a + b + c + 1) n)]
+    (vecOf [binNumeral n, binNumeral (a + b + c + 1), binNumeral (a + b + c), binNumeral (a + b), binNumeral c, binNumeral b, binNumeral a]) (bin3Fact a b c n)
 
 lemma isFormula_leafFact (a n : V) : IsFormula LAct (leafFact a n) :=
-  isFormula_leFact (by simp [isSemiterm_bnum_LAct]) (isSemiterm_bnum_LAct 0 n)
+  isFormula_leFact (by simp [isSemiterm_binNumeral_LAct]) (isSemiterm_binNumeral_LAct 0 n)
 lemma isFormula_sum2Fact (a b n : V) : IsFormula LAct (sum2Fact a b n) :=
-  isFormula_leFact (by simp [isSemiterm_bnum_LAct]) (isSemiterm_bnum_LAct 0 n)
+  isFormula_leFact (by simp [isSemiterm_binNumeral_LAct]) (isSemiterm_binNumeral_LAct 0 n)
 lemma isFormula_bin2Fact (a b n : V) : IsFormula LAct (bin2Fact a b n) :=
-  isFormula_leFact (by simp [isSemiterm_bnum_LAct]) (isSemiterm_bnum_LAct 0 n)
+  isFormula_leFact (by simp [isSemiterm_binNumeral_LAct]) (isSemiterm_binNumeral_LAct 0 n)
 lemma isFormula_bin3Fact (a b c n : V) : IsFormula LAct (bin3Fact a b c n) :=
-  isFormula_leFact (by simp [isSemiterm_bnum_LAct]) (isSemiterm_bnum_LAct 0 n)
+  isFormula_leFact (by simp [isSemiterm_binNumeral_LAct]) (isSemiterm_binNumeral_LAct 0 n)
 
-@[simp] lemma isUTerm_bnum_LAct (a : V) : IsUTerm LAct (bnum a) := (isSemiterm_bnum_LAct 0 a).isUTerm
-@[simp] lemma isSemiterm_bnum_LAct' (n a : V) : IsSemiterm LAct n (bnum a) := isSemiterm_bnum_LAct n a
+@[simp] lemma isUTerm_binNumeral_LAct (a : V) : IsUTerm LAct (binNumeral a) := (isSemiterm_binNumeral_LAct 0 a).isUTerm
+@[simp] lemma isSemiterm_binNumeral_LAct' (n a : V) : IsSemiterm LAct n (binNumeral a) := isSemiterm_binNumeral_LAct n a
 
 lemma termLen_qqAdd_le {x y X Y : V} (hx : IsUTerm LAct x) (hy : IsUTerm LAct y)
     (hX : termLen LAct x ≤ X) (hY : termLen LAct y ≤ Y) : termLen LAct (x ^+ y) ≤ X + Y + 1 := by
@@ -3082,30 +3082,30 @@ lemma termLen_qqOne_le : termLen LAct (𝟏 : V) ≤ 1 := by rw [termLen_qqOne i
 lemma addE_le_bkE (n : V) : 12 * ‖n‖ + 3 ≤ 18 * ‖n‖ + 7 := by gcongr <;> norm_num
 lemma one_le_bkE (n : V) : 1 ≤ 18 * ‖n‖ + 7 := le_trans (by norm_num) le_add_self
 
-lemma termLen_bnum_le_bk {x n : V} (hx : x ≤ n) : termLen LAct (bnum x) ≤ 6 * ‖n‖ + 1 :=
-  le_trans (termLen_bnum_le x) (by gcongr; exact length_le_of_le hx)
+lemma termLen_binNumeral_le_bk {x n : V} (hx : x ≤ n) : termLen LAct (binNumeral x) ≤ 6 * ‖n‖ + 1 :=
+  le_trans (termLen_binNumeral_le x) (by gcongr; exact length_le_of_le hx)
 
-lemma termLen_leafT_le {a n : V} (ha : a ≤ n) : termLen LAct (bnum a ^+ 𝟏) ≤ 18 * ‖n‖ + 7 :=
-  le_trans (termLen_qqAdd_le (by simp) (by simp) (termLen_bnum_le_bk ha) termLen_qqOne_le)
+lemma termLen_leafT_le {a n : V} (ha : a ≤ n) : termLen LAct (binNumeral a ^+ 𝟏) ≤ 18 * ‖n‖ + 7 :=
+  le_trans (termLen_qqAdd_le (by simp) (by simp) (termLen_binNumeral_le_bk ha) termLen_qqOne_le)
     (by calc 6 * ‖n‖ + 1 + 1 + 1 ≤ 18 * ‖n‖ + 1 + 1 + 1 := by gcongr; norm_num
           _ ≤ 18 * ‖n‖ + 7 := by rw [add_assoc, add_assoc]; gcongr; norm_num)
 
-lemma termLen_sum2T_le {a b n : V} (ha : a ≤ n) (hb : b ≤ n) : termLen LAct (bnum a ^+ bnum b) ≤ 18 * ‖n‖ + 7 :=
-  le_trans (termLen_qqAdd_le (by simp) (by simp) (termLen_bnum_le_bk ha) (termLen_bnum_le_bk hb))
+lemma termLen_sum2T_le {a b n : V} (ha : a ≤ n) (hb : b ≤ n) : termLen LAct (binNumeral a ^+ binNumeral b) ≤ 18 * ‖n‖ + 7 :=
+  le_trans (termLen_qqAdd_le (by simp) (by simp) (termLen_binNumeral_le_bk ha) (termLen_binNumeral_le_bk hb))
     (by calc 6 * ‖n‖ + 1 + (6 * ‖n‖ + 1) + 1 = 12 * ‖n‖ + 3 := by ring
           _ ≤ 18 * ‖n‖ + 7 := addE_le_bkE n)
 
-lemma termLen_bin2T_le {a b n : V} (ha : a ≤ n) (hb : b ≤ n) : termLen LAct ((bnum a ^+ bnum b) ^+ 𝟏) ≤ 18 * ‖n‖ + 7 :=
+lemma termLen_bin2T_le {a b n : V} (ha : a ≤ n) (hb : b ≤ n) : termLen LAct ((binNumeral a ^+ binNumeral b) ^+ 𝟏) ≤ 18 * ‖n‖ + 7 :=
   le_trans (termLen_qqAdd_le (by simp) (by simp)
-      (termLen_qqAdd_le (by simp) (by simp) (termLen_bnum_le_bk ha) (termLen_bnum_le_bk hb)) termLen_qqOne_le)
+      (termLen_qqAdd_le (by simp) (by simp) (termLen_binNumeral_le_bk ha) (termLen_binNumeral_le_bk hb)) termLen_qqOne_le)
     (by calc 6 * ‖n‖ + 1 + (6 * ‖n‖ + 1) + 1 + 1 + 1 = 12 * ‖n‖ + 5 := by ring
           _ ≤ 18 * ‖n‖ + 7 := by gcongr <;> norm_num)
 
 lemma termLen_bin3T_le {a b c n : V} (ha : a ≤ n) (hb : b ≤ n) (hc : c ≤ n) :
-    termLen LAct (((bnum a ^+ bnum b) ^+ bnum c) ^+ 𝟏) ≤ 18 * ‖n‖ + 7 :=
+    termLen LAct (((binNumeral a ^+ binNumeral b) ^+ binNumeral c) ^+ 𝟏) ≤ 18 * ‖n‖ + 7 :=
   le_trans (termLen_qqAdd_le (by simp) (by simp)
       (termLen_qqAdd_le (by simp) (by simp)
-        (termLen_qqAdd_le (by simp) (by simp) (termLen_bnum_le_bk ha) (termLen_bnum_le_bk hb)) (termLen_bnum_le_bk hc))
+        (termLen_qqAdd_le (by simp) (by simp) (termLen_binNumeral_le_bk ha) (termLen_binNumeral_le_bk hb)) (termLen_binNumeral_le_bk hc))
       termLen_qqOne_le)
     (by calc 6 * ‖n‖ + 1 + (6 * ‖n‖ + 1) + 1 + (6 * ‖n‖ + 1) + 1 + 1 + 1 = 18 * ‖n‖ + 7 := by ring
           _ ≤ 18 * ‖n‖ + 7 := le_rfl)
@@ -3114,57 +3114,57 @@ lemma termLen_bin3T_le {a b c n : V} (ha : a ≤ n) (hb : b ≤ n) (hc : c ≤ n
 
 lemma formulaLen_leFact_bk {B a t n : V} (hPle : formulaLen LAct (Ple : V) ≤ B) (ht : IsSemiterm LAct 0 t)
     (hlt : termLen LAct t ≤ 18 * ‖n‖ + 7) (ha : a ≤ n) :
-    formulaLen LAct (leFact t (bnum a)) ≤ B * (18 * ‖n‖ + 7) :=
-  le_trans (formulaLen_leFact_le (one_le_bkE n) ht (isSemiterm_bnum_LAct 0 a) hlt
-    (termLen_bnum_le_E' ha (addE_le_bkE n))) (mul_le_mul_of_nonneg_right hPle zero_le)
+    formulaLen LAct (leFact t (binNumeral a)) ≤ B * (18 * ‖n‖ + 7) :=
+  le_trans (formulaLen_leFact_le (one_le_bkE n) ht (isSemiterm_binNumeral_LAct 0 a) hlt
+    (termLen_binNumeral_le_E' ha (addE_le_bkE n))) (mul_le_mul_of_nonneg_right hPle zero_le)
 
-lemma hes_of_le {es : List V} {n : V} (h : ∀ e ∈ es, ∃ x, e = bnum x ∧ x ≤ n) :
+lemma hes_of_le {es : List V} {n : V} (h : ∀ e ∈ es, ∃ x, e = binNumeral x ∧ x ≤ n) :
     ∀ e ∈ es, IsSemiterm LAct 0 e ∧ termLen LAct e ≤ 18 * ‖n‖ + 7 := by
   intro e he
   obtain ⟨x, rfl, hx⟩ := h e he
-  exact ⟨isSemiterm_bnum_LAct 0 x, termLen_bnum_le_E' hx (addE_le_bkE n)⟩
+  exact ⟨isSemiterm_binNumeral_LAct 0 x, termLen_binNumeral_le_E' hx (addE_le_bkE n)⟩
 
-/-- **`leafCode`**: `{bnum a + 1 ≤ bnum n}` for `a + 1 ≤ n`. -/
+/-- **`leafCode`**: `{binNumeral a + 1 ≤ binNumeral n}` for `a + 1 ≤ n`. -/
 theorem leafCode_proof {tbl N B : V} (htbl : NumTableOK tbl N B) {a n : V} (h : a + 1 ≤ n) :
     DerivationOf TAct (leafCode tbl a n) (sing (leafFact a n)) := by
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hr15, -, -, -, -, -, -, -⟩ := id htbl
-  have hx : IsSemiterm LAct 0 (bnum a) := isSemiterm_bnum_LAct 0 _
-  have hu : IsSemiterm LAct 0 (bnum (a + 1)) := isSemiterm_bnum_LAct 0 _
-  have hn : IsSemiterm LAct 0 (bnum n) := isSemiterm_bnum_LAct 0 _
-  have hpf := stepL_proof hr15 [(succFact a, succCode tbl a), (leFact (bnum (a + 1)) (bnum n), leCode tbl (a + 1) n)]
-    [bnum n, bnum (a + 1), bnum a] rfl (by simp [hx, hu, hn]) (isFormula_leafFact a n)
+  have hx : IsSemiterm LAct 0 (binNumeral a) := isSemiterm_binNumeral_LAct 0 _
+  have hu : IsSemiterm LAct 0 (binNumeral (a + 1)) := isSemiterm_binNumeral_LAct 0 _
+  have hn : IsSemiterm LAct 0 (binNumeral n) := isSemiterm_binNumeral_LAct 0 _
+  have hpf := stepL_proof hr15 [(succFact a, succCode tbl a), (leFact (binNumeral (a + 1)) (binNumeral n), leCode tbl (a + 1) n)]
+    [binNumeral n, binNumeral (a + 1), binNumeral a] rfl (by simp [hx, hu, hn]) (isFormula_leafFact a n)
     (by
       intro p hp
       simp only [List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false] at hp
       rcases hp with rfl | rfl
       · exact ⟨isFormula_succFact a, succCode_proof htbl a⟩
-      · exact ⟨isFormula_leFact_bnum _ _, leCode_proof htbl h⟩)
+      · exact ⟨isFormula_leFact_binNumeral _ _, leCode_proof htbl h⟩)
     (by rw [(inst_nSuccLe hx hu hn).1]; rfl) (inst_nSuccLe hx hu hn).2
   rwa [cast_rSuccLe] at hpf
 
-theorem dlen_leafCode_le {tbl N B : V} (htbl : NumTableOK tbl N B) {a n : V} (h : a + 1 ≤ n) :
-    dlen TAct (leafCode tbl a n) ≤
-      dlen TAct (succCode tbl a) + dlen TAct (leCode tbl (a + 1) n) + nodeCost N B (18 * ‖n‖ + 7) := by
+theorem proofLen_leafCode_le {tbl N B : V} (htbl : NumTableOK tbl N B) {a n : V} (h : a + 1 ≤ n) :
+    proofLen TAct (leafCode tbl a n) ≤
+      proofLen TAct (succCode tbl a) + proofLen TAct (leCode tbl (a + 1) n) + nodeCost N B (18 * ‖n‖ + 7) := by
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hr15, -, -, -, hPeq, hPle, -, hB⟩ := id htbl
-  have hx : IsSemiterm LAct 0 (bnum a) := isSemiterm_bnum_LAct 0 _
-  have hu : IsSemiterm LAct 0 (bnum (a + 1)) := isSemiterm_bnum_LAct 0 _
-  have hn : IsSemiterm LAct 0 (bnum n) := isSemiterm_bnum_LAct 0 _
+  have hx : IsSemiterm LAct 0 (binNumeral a) := isSemiterm_binNumeral_LAct 0 _
+  have hu : IsSemiterm LAct 0 (binNumeral (a + 1)) := isSemiterm_binNumeral_LAct 0 _
+  have hn : IsSemiterm LAct 0 (binNumeral n) := isSemiterm_binNumeral_LAct 0 _
   have ha : a ≤ n := le_trans le_self_add h
-  have hes := hes_of_le (es := [bnum n, bnum (a + 1), bnum a]) (n := n) (by
+  have hes := hes_of_le (es := [binNumeral n, binNumeral (a + 1), binNumeral a]) (n := n) (by
     intro e he
     simp only [List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false] at he
     rcases he with rfl | rfl | rfl
     · exact ⟨n, rfl, le_rfl⟩
     · exact ⟨a + 1, rfl, h⟩
     · exact ⟨a, rfl, ha⟩)
-  have hh := dlen_stepL_le hr15 [(succFact a, succCode tbl a), (leFact (bnum (a + 1)) (bnum n), leCode tbl (a + 1) n)]
-    [bnum n, bnum (a + 1), bnum a] rfl hes (one_le_bkE n) hB (isFormula_leafFact a n)
+  have hh := proofLen_stepL_le hr15 [(succFact a, succCode tbl a), (leFact (binNumeral (a + 1)) (binNumeral n), leCode tbl (a + 1) n)]
+    [binNumeral n, binNumeral (a + 1), binNumeral a] rfl hes (one_le_bkE n) hB (isFormula_leafFact a n)
     (by
       intro p hp
       simp only [List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false] at hp
       rcases hp with rfl | rfl
       · exact ⟨isFormula_succFact a, succCode_proof htbl a⟩
-      · exact ⟨isFormula_leFact_bnum _ _, leCode_proof htbl h⟩)
+      · exact ⟨isFormula_leFact_binNumeral _ _, leCode_proof htbl h⟩)
     (by rw [(inst_nSuccLe hx hu hn).1]; rfl) (inst_nSuccLe hx hu hn).2 (by norm_num) (by simp [nSuccLe_as])
     (formulaLen_leFact_bk hPle (by simp) (termLen_leafT_le ha) le_rfl)
     (by
@@ -3172,41 +3172,41 @@ theorem dlen_leafCode_le {tbl N B : V} (htbl : NumTableOK tbl N B) {a n : V} (h 
       simp only [List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false] at hp
       rcases hp with rfl | rfl
       · exact formulaLen_succFact_le hPeq (le_trans (succE_le_addE h) (addE_le_bkE n))
-      · exact formulaLen_leFact_bk hPle hu (termLen_bnum_le_E' h (addE_le_bkE n)) le_rfl)
+      · exact formulaLen_leFact_bk hPle hu (termLen_binNumeral_le_E' h (addE_le_bkE n)) le_rfl)
   rw [cast_rSuccLe] at hh
   unfold leafCode
   simpa [add_assoc] using hh
 
-/-- **`sum2Code`**: `{bnum a + bnum b ≤ bnum n}` for `a + b ≤ n`. -/
+/-- **`sum2Code`**: `{binNumeral a + binNumeral b ≤ binNumeral n}` for `a + b ≤ n`. -/
 theorem sum2Code_proof {tbl N B : V} (htbl : NumTableOK tbl N B) {a b n : V} (h : a + b ≤ n) :
     DerivationOf TAct (sum2Code tbl a b n) (sing (sum2Fact a b n)) := by
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hr16, -, -, -, -, -, -⟩ := id htbl
-  have hx : IsSemiterm LAct 0 (bnum a) := isSemiterm_bnum_LAct 0 _
-  have hy : IsSemiterm LAct 0 (bnum b) := isSemiterm_bnum_LAct 0 _
-  have hs : IsSemiterm LAct 0 (bnum (a + b)) := isSemiterm_bnum_LAct 0 _
-  have hn : IsSemiterm LAct 0 (bnum n) := isSemiterm_bnum_LAct 0 _
-  have hpf := stepL_proof hr16 [(addFact a b, addCode tbl a b), (leFact (bnum (a + b)) (bnum n), leCode tbl (a + b) n)]
-    [bnum n, bnum (a + b), bnum b, bnum a] rfl (by simp [hx, hy, hs, hn]) (isFormula_sum2Fact a b n)
+  have hx : IsSemiterm LAct 0 (binNumeral a) := isSemiterm_binNumeral_LAct 0 _
+  have hy : IsSemiterm LAct 0 (binNumeral b) := isSemiterm_binNumeral_LAct 0 _
+  have hs : IsSemiterm LAct 0 (binNumeral (a + b)) := isSemiterm_binNumeral_LAct 0 _
+  have hn : IsSemiterm LAct 0 (binNumeral n) := isSemiterm_binNumeral_LAct 0 _
+  have hpf := stepL_proof hr16 [(addFact a b, addCode tbl a b), (leFact (binNumeral (a + b)) (binNumeral n), leCode tbl (a + b) n)]
+    [binNumeral n, binNumeral (a + b), binNumeral b, binNumeral a] rfl (by simp [hx, hy, hs, hn]) (isFormula_sum2Fact a b n)
     (by
       intro p hp
       simp only [List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false] at hp
       rcases hp with rfl | rfl
       · exact ⟨isFormula_addFact a b, addCode_proof htbl a b⟩
-      · exact ⟨isFormula_leFact_bnum _ _, leCode_proof htbl h⟩)
+      · exact ⟨isFormula_leFact_binNumeral _ _, leCode_proof htbl h⟩)
     (by rw [(inst_nSum2Le hx hy hs hn).1]; rfl) (inst_nSum2Le hx hy hs hn).2
   rwa [cast_rSum2Le] at hpf
 
-theorem dlen_sum2Code_le {tbl N B : V} (htbl : NumTableOK tbl N B) {a b n : V} (h : a + b ≤ n) :
-    dlen TAct (sum2Code tbl a b n) ≤
-      dlen TAct (addCode tbl a b) + dlen TAct (leCode tbl (a + b) n) + nodeCost N B (18 * ‖n‖ + 7) := by
+theorem proofLen_sum2Code_le {tbl N B : V} (htbl : NumTableOK tbl N B) {a b n : V} (h : a + b ≤ n) :
+    proofLen TAct (sum2Code tbl a b n) ≤
+      proofLen TAct (addCode tbl a b) + proofLen TAct (leCode tbl (a + b) n) + nodeCost N B (18 * ‖n‖ + 7) := by
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hr16, -, -, hPeq, hPle, -, hB⟩ := id htbl
-  have hx : IsSemiterm LAct 0 (bnum a) := isSemiterm_bnum_LAct 0 _
-  have hy : IsSemiterm LAct 0 (bnum b) := isSemiterm_bnum_LAct 0 _
-  have hs : IsSemiterm LAct 0 (bnum (a + b)) := isSemiterm_bnum_LAct 0 _
-  have hn : IsSemiterm LAct 0 (bnum n) := isSemiterm_bnum_LAct 0 _
+  have hx : IsSemiterm LAct 0 (binNumeral a) := isSemiterm_binNumeral_LAct 0 _
+  have hy : IsSemiterm LAct 0 (binNumeral b) := isSemiterm_binNumeral_LAct 0 _
+  have hs : IsSemiterm LAct 0 (binNumeral (a + b)) := isSemiterm_binNumeral_LAct 0 _
+  have hn : IsSemiterm LAct 0 (binNumeral n) := isSemiterm_binNumeral_LAct 0 _
   have ha : a ≤ n := le_trans le_self_add h
   have hb : b ≤ n := le_trans le_add_self h
-  have hes := hes_of_le (es := [bnum n, bnum (a + b), bnum b, bnum a]) (n := n) (by
+  have hes := hes_of_le (es := [binNumeral n, binNumeral (a + b), binNumeral b, binNumeral a]) (n := n) (by
     intro e he
     simp only [List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false] at he
     rcases he with rfl | rfl | rfl | rfl
@@ -3214,14 +3214,14 @@ theorem dlen_sum2Code_le {tbl N B : V} (htbl : NumTableOK tbl N B) {a b n : V} (
     · exact ⟨a + b, rfl, h⟩
     · exact ⟨b, rfl, hb⟩
     · exact ⟨a, rfl, ha⟩)
-  have hh := dlen_stepL_le hr16 [(addFact a b, addCode tbl a b), (leFact (bnum (a + b)) (bnum n), leCode tbl (a + b) n)]
-    [bnum n, bnum (a + b), bnum b, bnum a] rfl hes (one_le_bkE n) hB (isFormula_sum2Fact a b n)
+  have hh := proofLen_stepL_le hr16 [(addFact a b, addCode tbl a b), (leFact (binNumeral (a + b)) (binNumeral n), leCode tbl (a + b) n)]
+    [binNumeral n, binNumeral (a + b), binNumeral b, binNumeral a] rfl hes (one_le_bkE n) hB (isFormula_sum2Fact a b n)
     (by
       intro p hp
       simp only [List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false] at hp
       rcases hp with rfl | rfl
       · exact ⟨isFormula_addFact a b, addCode_proof htbl a b⟩
-      · exact ⟨isFormula_leFact_bnum _ _, leCode_proof htbl h⟩)
+      · exact ⟨isFormula_leFact_binNumeral _ _, leCode_proof htbl h⟩)
     (by rw [(inst_nSum2Le hx hy hs hn).1]; rfl) (inst_nSum2Le hx hy hs hn).2 (by norm_num) (by simp [nSum2Le_as])
     (formulaLen_leFact_bk hPle (by simp) (termLen_sum2T_le ha hb) le_rfl)
     (by
@@ -3229,47 +3229,47 @@ theorem dlen_sum2Code_le {tbl N B : V} (htbl : NumTableOK tbl N B) {a b n : V} (
       simp only [List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false] at hp
       rcases hp with rfl | rfl
       · exact formulaLen_addFact_le hPeq (le_trans (by gcongr; exact length_le_of_le h) (addE_le_bkE n))
-      · exact formulaLen_leFact_bk hPle hs (termLen_bnum_le_E' h (addE_le_bkE n)) le_rfl)
+      · exact formulaLen_leFact_bk hPle hs (termLen_binNumeral_le_E' h (addE_le_bkE n)) le_rfl)
   rw [cast_rSum2Le] at hh
   unfold sum2Code
   simpa [add_assoc] using hh
 
-/-- **`bin2Code`**: `{bnum a + bnum b + 1 ≤ bnum n}` for `a + b + 1 ≤ n`. -/
+/-- **`bin2Code`**: `{binNumeral a + binNumeral b + 1 ≤ binNumeral n}` for `a + b + 1 ≤ n`. -/
 theorem bin2Code_proof {tbl N B : V} (htbl : NumTableOK tbl N B) {a b n : V} (h : a + b + 1 ≤ n) :
     DerivationOf TAct (bin2Code tbl a b n) (sing (bin2Fact a b n)) := by
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, hr14, -, -, -, -, -, -, -, -⟩ := id htbl
-  have hx : IsSemiterm LAct 0 (bnum a) := isSemiterm_bnum_LAct 0 _
-  have hy : IsSemiterm LAct 0 (bnum b) := isSemiterm_bnum_LAct 0 _
-  have hs : IsSemiterm LAct 0 (bnum (a + b)) := isSemiterm_bnum_LAct 0 _
-  have hu : IsSemiterm LAct 0 (bnum (a + b + 1)) := isSemiterm_bnum_LAct 0 _
-  have hn : IsSemiterm LAct 0 (bnum n) := isSemiterm_bnum_LAct 0 _
+  have hx : IsSemiterm LAct 0 (binNumeral a) := isSemiterm_binNumeral_LAct 0 _
+  have hy : IsSemiterm LAct 0 (binNumeral b) := isSemiterm_binNumeral_LAct 0 _
+  have hs : IsSemiterm LAct 0 (binNumeral (a + b)) := isSemiterm_binNumeral_LAct 0 _
+  have hu : IsSemiterm LAct 0 (binNumeral (a + b + 1)) := isSemiterm_binNumeral_LAct 0 _
+  have hn : IsSemiterm LAct 0 (binNumeral n) := isSemiterm_binNumeral_LAct 0 _
   have hpf := stepL_proof hr14 [(addFact a b, addCode tbl a b), (succFact (a + b), succCode tbl (a + b)),
-      (leFact (bnum (a + b + 1)) (bnum n), leCode tbl (a + b + 1) n)]
-    [bnum n, bnum (a + b + 1), bnum (a + b), bnum b, bnum a] rfl (by simp [hx, hy, hs, hu, hn]) (isFormula_bin2Fact a b n)
+      (leFact (binNumeral (a + b + 1)) (binNumeral n), leCode tbl (a + b + 1) n)]
+    [binNumeral n, binNumeral (a + b + 1), binNumeral (a + b), binNumeral b, binNumeral a] rfl (by simp [hx, hy, hs, hu, hn]) (isFormula_bin2Fact a b n)
     (by
       intro p hp
       simp only [List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false] at hp
       rcases hp with rfl | rfl | rfl
       · exact ⟨isFormula_addFact a b, addCode_proof htbl a b⟩
       · exact ⟨isFormula_succFact _, succCode_proof htbl _⟩
-      · exact ⟨isFormula_leFact_bnum _ _, leCode_proof htbl h⟩)
+      · exact ⟨isFormula_leFact_binNumeral _ _, leCode_proof htbl h⟩)
     (by rw [(inst_nSum2SuccLe hx hy hs hu hn).1]; rfl) (inst_nSum2SuccLe hx hy hs hu hn).2
   rwa [cast_rSum2SuccLe] at hpf
 
-theorem dlen_bin2Code_le {tbl N B : V} (htbl : NumTableOK tbl N B) {a b n : V} (h : a + b + 1 ≤ n) :
-    dlen TAct (bin2Code tbl a b n) ≤
-      dlen TAct (addCode tbl a b) + dlen TAct (succCode tbl (a + b)) + dlen TAct (leCode tbl (a + b + 1) n)
+theorem proofLen_bin2Code_le {tbl N B : V} (htbl : NumTableOK tbl N B) {a b n : V} (h : a + b + 1 ≤ n) :
+    proofLen TAct (bin2Code tbl a b n) ≤
+      proofLen TAct (addCode tbl a b) + proofLen TAct (succCode tbl (a + b)) + proofLen TAct (leCode tbl (a + b + 1) n)
         + nodeCost N B (18 * ‖n‖ + 7) := by
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, hr14, -, -, -, -, hPeq, hPle, -, hB⟩ := id htbl
-  have hx : IsSemiterm LAct 0 (bnum a) := isSemiterm_bnum_LAct 0 _
-  have hy : IsSemiterm LAct 0 (bnum b) := isSemiterm_bnum_LAct 0 _
-  have hs : IsSemiterm LAct 0 (bnum (a + b)) := isSemiterm_bnum_LAct 0 _
-  have hu : IsSemiterm LAct 0 (bnum (a + b + 1)) := isSemiterm_bnum_LAct 0 _
-  have hn : IsSemiterm LAct 0 (bnum n) := isSemiterm_bnum_LAct 0 _
+  have hx : IsSemiterm LAct 0 (binNumeral a) := isSemiterm_binNumeral_LAct 0 _
+  have hy : IsSemiterm LAct 0 (binNumeral b) := isSemiterm_binNumeral_LAct 0 _
+  have hs : IsSemiterm LAct 0 (binNumeral (a + b)) := isSemiterm_binNumeral_LAct 0 _
+  have hu : IsSemiterm LAct 0 (binNumeral (a + b + 1)) := isSemiterm_binNumeral_LAct 0 _
+  have hn : IsSemiterm LAct 0 (binNumeral n) := isSemiterm_binNumeral_LAct 0 _
   have hab : a + b ≤ n := le_trans le_self_add h
   have ha : a ≤ n := le_trans le_self_add hab
   have hb : b ≤ n := le_trans le_add_self hab
-  have hes := hes_of_le (es := [bnum n, bnum (a + b + 1), bnum (a + b), bnum b, bnum a]) (n := n) (by
+  have hes := hes_of_le (es := [binNumeral n, binNumeral (a + b + 1), binNumeral (a + b), binNumeral b, binNumeral a]) (n := n) (by
     intro e he
     simp only [List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false] at he
     rcases he with rfl | rfl | rfl | rfl | rfl
@@ -3278,16 +3278,16 @@ theorem dlen_bin2Code_le {tbl N B : V} (htbl : NumTableOK tbl N B) {a b n : V} (
     · exact ⟨a + b, rfl, hab⟩
     · exact ⟨b, rfl, hb⟩
     · exact ⟨a, rfl, ha⟩)
-  have hh := dlen_stepL_le hr14 [(addFact a b, addCode tbl a b), (succFact (a + b), succCode tbl (a + b)),
-      (leFact (bnum (a + b + 1)) (bnum n), leCode tbl (a + b + 1) n)]
-    [bnum n, bnum (a + b + 1), bnum (a + b), bnum b, bnum a] rfl hes (one_le_bkE n) hB (isFormula_bin2Fact a b n)
+  have hh := proofLen_stepL_le hr14 [(addFact a b, addCode tbl a b), (succFact (a + b), succCode tbl (a + b)),
+      (leFact (binNumeral (a + b + 1)) (binNumeral n), leCode tbl (a + b + 1) n)]
+    [binNumeral n, binNumeral (a + b + 1), binNumeral (a + b), binNumeral b, binNumeral a] rfl hes (one_le_bkE n) hB (isFormula_bin2Fact a b n)
     (by
       intro p hp
       simp only [List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false] at hp
       rcases hp with rfl | rfl | rfl
       · exact ⟨isFormula_addFact a b, addCode_proof htbl a b⟩
       · exact ⟨isFormula_succFact _, succCode_proof htbl _⟩
-      · exact ⟨isFormula_leFact_bnum _ _, leCode_proof htbl h⟩)
+      · exact ⟨isFormula_leFact_binNumeral _ _, leCode_proof htbl h⟩)
     (by rw [(inst_nSum2SuccLe hx hy hs hu hn).1]; rfl) (inst_nSum2SuccLe hx hy hs hu hn).2 (by norm_num)
     (by simp [nSum2SuccLe_as]) (formulaLen_leFact_bk hPle (by simp) (termLen_bin2T_le ha hb) le_rfl)
     (by
@@ -3296,26 +3296,26 @@ theorem dlen_bin2Code_le {tbl N B : V} (htbl : NumTableOK tbl N B) {a b n : V} (
       rcases hp with rfl | rfl | rfl
       · exact formulaLen_addFact_le hPeq (le_trans (by gcongr; exact length_le_of_le hab) (addE_le_bkE n))
       · exact formulaLen_succFact_le hPeq (le_trans (succE_le_addE h) (addE_le_bkE n))
-      · exact formulaLen_leFact_bk hPle hu (termLen_bnum_le_E' h (addE_le_bkE n)) le_rfl)
+      · exact formulaLen_leFact_bk hPle hu (termLen_binNumeral_le_E' h (addE_le_bkE n)) le_rfl)
   rw [cast_rSum2SuccLe] at hh
   unfold bin2Code
   simpa [add_assoc] using hh
 
-/-- **`bin3Code`**: `{bnum a + bnum b + bnum c + 1 ≤ bnum n}` for `a + b + c + 1 ≤ n` — the binary node's
-`dlenBinaryLe` companion (DESIGN_fragments §0 (2)). -/
+/-- **`bin3Code`**: `{binNumeral a + binNumeral b + binNumeral c + 1 ≤ binNumeral n}` for `a + b + c + 1 ≤ n` — the binary node's
+`proofLenBinaryLe` companion (DESIGN_fragments §0 (2)). -/
 theorem bin3Code_proof {tbl N B : V} (htbl : NumTableOK tbl N B) {a b c n : V} (h : a + b + c + 1 ≤ n) :
     DerivationOf TAct (bin3Code tbl a b c n) (sing (bin3Fact a b c n)) := by
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, hr13, -, -, -, -, -, -, -, -, -⟩ := id htbl
-  have hx : IsSemiterm LAct 0 (bnum a) := isSemiterm_bnum_LAct 0 _
-  have hy : IsSemiterm LAct 0 (bnum b) := isSemiterm_bnum_LAct 0 _
-  have hz : IsSemiterm LAct 0 (bnum c) := isSemiterm_bnum_LAct 0 _
-  have hs : IsSemiterm LAct 0 (bnum (a + b)) := isSemiterm_bnum_LAct 0 _
-  have ht : IsSemiterm LAct 0 (bnum (a + b + c)) := isSemiterm_bnum_LAct 0 _
-  have hu : IsSemiterm LAct 0 (bnum (a + b + c + 1)) := isSemiterm_bnum_LAct 0 _
-  have hn : IsSemiterm LAct 0 (bnum n) := isSemiterm_bnum_LAct 0 _
+  have hx : IsSemiterm LAct 0 (binNumeral a) := isSemiterm_binNumeral_LAct 0 _
+  have hy : IsSemiterm LAct 0 (binNumeral b) := isSemiterm_binNumeral_LAct 0 _
+  have hz : IsSemiterm LAct 0 (binNumeral c) := isSemiterm_binNumeral_LAct 0 _
+  have hs : IsSemiterm LAct 0 (binNumeral (a + b)) := isSemiterm_binNumeral_LAct 0 _
+  have ht : IsSemiterm LAct 0 (binNumeral (a + b + c)) := isSemiterm_binNumeral_LAct 0 _
+  have hu : IsSemiterm LAct 0 (binNumeral (a + b + c + 1)) := isSemiterm_binNumeral_LAct 0 _
+  have hn : IsSemiterm LAct 0 (binNumeral n) := isSemiterm_binNumeral_LAct 0 _
   have hpf := stepL_proof hr13 [(addFact a b, addCode tbl a b), (addFact (a + b) c, addCode tbl (a + b) c),
-      (succFact (a + b + c), succCode tbl (a + b + c)), (leFact (bnum (a + b + c + 1)) (bnum n), leCode tbl (a + b + c + 1) n)]
-    [bnum n, bnum (a + b + c + 1), bnum (a + b + c), bnum (a + b), bnum c, bnum b, bnum a] rfl
+      (succFact (a + b + c), succCode tbl (a + b + c)), (leFact (binNumeral (a + b + c + 1)) (binNumeral n), leCode tbl (a + b + c + 1) n)]
+    [binNumeral n, binNumeral (a + b + c + 1), binNumeral (a + b + c), binNumeral (a + b), binNumeral c, binNumeral b, binNumeral a] rfl
     (by simp [hx, hy, hz, hs, ht, hu, hn]) (isFormula_bin3Fact a b c n)
     (by
       intro p hp
@@ -3324,28 +3324,28 @@ theorem bin3Code_proof {tbl N B : V} (htbl : NumTableOK tbl N B) {a b c n : V} (
       · exact ⟨isFormula_addFact a b, addCode_proof htbl a b⟩
       · exact ⟨isFormula_addFact _ _, addCode_proof htbl _ _⟩
       · exact ⟨isFormula_succFact _, succCode_proof htbl _⟩
-      · exact ⟨isFormula_leFact_bnum _ _, leCode_proof htbl h⟩)
+      · exact ⟨isFormula_leFact_binNumeral _ _, leCode_proof htbl h⟩)
     (by rw [(inst_nSum3SuccLe hx hy hz hs ht hu hn).1]; rfl) (inst_nSum3SuccLe hx hy hz hs ht hu hn).2
   rwa [cast_rSum3SuccLe] at hpf
 
-theorem dlen_bin3Code_le {tbl N B : V} (htbl : NumTableOK tbl N B) {a b c n : V} (h : a + b + c + 1 ≤ n) :
-    dlen TAct (bin3Code tbl a b c n) ≤
-      dlen TAct (addCode tbl a b) + dlen TAct (addCode tbl (a + b) c) + dlen TAct (succCode tbl (a + b + c))
-        + dlen TAct (leCode tbl (a + b + c + 1) n) + nodeCost N B (18 * ‖n‖ + 7) := by
+theorem proofLen_bin3Code_le {tbl N B : V} (htbl : NumTableOK tbl N B) {a b c n : V} (h : a + b + c + 1 ≤ n) :
+    proofLen TAct (bin3Code tbl a b c n) ≤
+      proofLen TAct (addCode tbl a b) + proofLen TAct (addCode tbl (a + b) c) + proofLen TAct (succCode tbl (a + b + c))
+        + proofLen TAct (leCode tbl (a + b + c + 1) n) + nodeCost N B (18 * ‖n‖ + 7) := by
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, hr13, -, -, -, -, -, hPeq, hPle, -, hB⟩ := id htbl
-  have hx : IsSemiterm LAct 0 (bnum a) := isSemiterm_bnum_LAct 0 _
-  have hy : IsSemiterm LAct 0 (bnum b) := isSemiterm_bnum_LAct 0 _
-  have hz : IsSemiterm LAct 0 (bnum c) := isSemiterm_bnum_LAct 0 _
-  have hs : IsSemiterm LAct 0 (bnum (a + b)) := isSemiterm_bnum_LAct 0 _
-  have ht : IsSemiterm LAct 0 (bnum (a + b + c)) := isSemiterm_bnum_LAct 0 _
-  have hu : IsSemiterm LAct 0 (bnum (a + b + c + 1)) := isSemiterm_bnum_LAct 0 _
-  have hn : IsSemiterm LAct 0 (bnum n) := isSemiterm_bnum_LAct 0 _
+  have hx : IsSemiterm LAct 0 (binNumeral a) := isSemiterm_binNumeral_LAct 0 _
+  have hy : IsSemiterm LAct 0 (binNumeral b) := isSemiterm_binNumeral_LAct 0 _
+  have hz : IsSemiterm LAct 0 (binNumeral c) := isSemiterm_binNumeral_LAct 0 _
+  have hs : IsSemiterm LAct 0 (binNumeral (a + b)) := isSemiterm_binNumeral_LAct 0 _
+  have ht : IsSemiterm LAct 0 (binNumeral (a + b + c)) := isSemiterm_binNumeral_LAct 0 _
+  have hu : IsSemiterm LAct 0 (binNumeral (a + b + c + 1)) := isSemiterm_binNumeral_LAct 0 _
+  have hn : IsSemiterm LAct 0 (binNumeral n) := isSemiterm_binNumeral_LAct 0 _
   have habc : a + b + c ≤ n := le_trans le_self_add h
   have hab : a + b ≤ n := le_trans le_self_add habc
   have ha : a ≤ n := le_trans le_self_add hab
   have hb : b ≤ n := le_trans le_add_self hab
   have hc : c ≤ n := le_trans le_add_self habc
-  have hes := hes_of_le (es := [bnum n, bnum (a + b + c + 1), bnum (a + b + c), bnum (a + b), bnum c, bnum b, bnum a])
+  have hes := hes_of_le (es := [binNumeral n, binNumeral (a + b + c + 1), binNumeral (a + b + c), binNumeral (a + b), binNumeral c, binNumeral b, binNumeral a])
     (n := n) (by
     intro e he
     simp only [List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false] at he
@@ -3357,9 +3357,9 @@ theorem dlen_bin3Code_le {tbl N B : V} (htbl : NumTableOK tbl N B) {a b c n : V}
     · exact ⟨c, rfl, hc⟩
     · exact ⟨b, rfl, hb⟩
     · exact ⟨a, rfl, ha⟩)
-  have hh := dlen_stepL_le hr13 [(addFact a b, addCode tbl a b), (addFact (a + b) c, addCode tbl (a + b) c),
-      (succFact (a + b + c), succCode tbl (a + b + c)), (leFact (bnum (a + b + c + 1)) (bnum n), leCode tbl (a + b + c + 1) n)]
-    [bnum n, bnum (a + b + c + 1), bnum (a + b + c), bnum (a + b), bnum c, bnum b, bnum a] rfl hes (one_le_bkE n) hB
+  have hh := proofLen_stepL_le hr13 [(addFact a b, addCode tbl a b), (addFact (a + b) c, addCode tbl (a + b) c),
+      (succFact (a + b + c), succCode tbl (a + b + c)), (leFact (binNumeral (a + b + c + 1)) (binNumeral n), leCode tbl (a + b + c + 1) n)]
+    [binNumeral n, binNumeral (a + b + c + 1), binNumeral (a + b + c), binNumeral (a + b), binNumeral c, binNumeral b, binNumeral a] rfl hes (one_le_bkE n) hB
     (isFormula_bin3Fact a b c n)
     (by
       intro p hp
@@ -3368,7 +3368,7 @@ theorem dlen_bin3Code_le {tbl N B : V} (htbl : NumTableOK tbl N B) {a b c n : V}
       · exact ⟨isFormula_addFact a b, addCode_proof htbl a b⟩
       · exact ⟨isFormula_addFact _ _, addCode_proof htbl _ _⟩
       · exact ⟨isFormula_succFact _, succCode_proof htbl _⟩
-      · exact ⟨isFormula_leFact_bnum _ _, leCode_proof htbl h⟩)
+      · exact ⟨isFormula_leFact_binNumeral _ _, leCode_proof htbl h⟩)
     (by rw [(inst_nSum3SuccLe hx hy hz hs ht hu hn).1]; rfl) (inst_nSum3SuccLe hx hy hz hs ht hu hn).2 (by norm_num)
     (by simp [nSum3SuccLe_as]) (formulaLen_leFact_bk hPle (by simp) (termLen_bin3T_le ha hb hc) le_rfl)
     (by
@@ -3378,65 +3378,65 @@ theorem dlen_bin3Code_le {tbl N B : V} (htbl : NumTableOK tbl N B) {a b c n : V}
       · exact formulaLen_addFact_le hPeq (le_trans (by gcongr; exact length_le_of_le hab) (addE_le_bkE n))
       · exact formulaLen_addFact_le hPeq (le_trans (by gcongr; exact length_le_of_le habc) (addE_le_bkE n))
       · exact formulaLen_succFact_le hPeq (le_trans (succE_le_addE h) (addE_le_bkE n))
-      · exact formulaLen_leFact_bk hPle hu (termLen_bnum_le_E' h (addE_le_bkE n)) le_rfl)
+      · exact formulaLen_leFact_bk hPle hu (termLen_binNumeral_le_E' h (addE_le_bkE n)) le_rfl)
   rw [cast_rSum3SuccLe] at hh
   unfold bin3Code
   simpa [add_assoc] using hh
 
-/-- N7: `1 ≤ bnum a` for `1 ≤ a` is `leCode tbl 1 a` (`bnum 1 = 𝟏`). -/
+/-- N7: `1 ≤ binNumeral a` for `1 ≤ a` is `leCode tbl 1 a` (`binNumeral 1 = 𝟏`). -/
 theorem oneLe_proof {tbl N B : V} (htbl : NumTableOK tbl N B) {a : V} (ha : 1 ≤ a) :
-    DerivationOf TAct (leCode tbl 1 a) (sing (leFact 𝟏 (bnum a))) := by
+    DerivationOf TAct (leCode tbl 1 a) (sing (leFact 𝟏 (binNumeral a))) := by
   have := leCode_proof htbl ha
-  rwa [bnum_one] at this
+  rwa [binNumeral_one] at this
 
 end bookkeeping
 
-/-! ## 11. N6: the chain numeral `cT z` — `cTEqCode z : cT z = bnum z` (a `PR` on `z`) and `cTLeCode` -/
+/-! ## 11. N6: the chain numeral `cT z` — `cTEqCode z : cT z = binNumeral z` (a `PR` on `z`) and `cTLeCode` -/
 
 section chainNumeral
 
-/-- `cTEqFact z := cTV z = bnum z`. -/
-noncomputable def cTEqFact (z : V) : V := eqFact (cTV z) (bnum z)
+/-- `cTEqFact z := cTV z = binNumeral z`. -/
+noncomputable def cTEqFact (z : V) : V := eqFact (cTV z) (binNumeral z)
 noncomputable def cTEqFactDef : 𝚺₁.Semisentence 2 := .mkSigma
-  “y z. ∃ c, !cTVGraph c z ∧ ∃ t, !bnumGraph t z ∧ !eqFactDef y c t”
+  “y z. ∃ c, !cTVGraph c z ∧ ∃ t, !binNumeralGraph t z ∧ !eqFactDef y c t”
 instance cTEqFact_defined : 𝚺₁-Function₁ (cTEqFact : V → V) via cTEqFactDef := .mk fun v ↦ by
-  simp [cTEqFactDef, cTV.defined.iff, bnum.defined.iff, eqFact_defined.iff, cTEqFact]
+  simp [cTEqFactDef, cTV.defined.iff, binNumeral.defined.iff, eqFact_defined.iff, cTEqFact]
 instance cTEqFact_definable : 𝚺₁-Function₁ (cTEqFact : V → V) := cTEqFact_defined.to_definable
 
 lemma isFormula_cTEqFact (z : V) : IsFormula LAct (cTEqFact z) :=
-  isFormula_eqFact (cTV_semiterm_LAct 0 z) (isSemiterm_bnum_LAct 0 z)
+  isFormula_eqFact (cTV_semiterm_LAct 0 z) (isSemiterm_binNumeral_LAct 0 z)
 
 namespace CTEq
 
-/-- Base: `eqRefl` at `𝟎` (`cTV 0 = 𝟎 = bnum 0`); step: `succCong` at `(cTV z, bnum z, bnum (z + 1))` from the
+/-- Base: `eqRefl` at `𝟎` (`cTV 0 = 𝟎 = binNumeral 0`); step: `succCong` at `(cTV z, binNumeral z, binNumeral (z + 1))` from the
 previous fact and `succCode z`. -/
 noncomputable def blueprint : PR.Blueprint 1 where
-  zero := .mkSigma “y tbl. ∃ t, !bnumGraph t 0 ∧ ∃ ev, !adjoinDef ev t 0 ∧ ∃ A, !cTEqFactDef A 0 ∧ !step0Def y tbl 5 ev A”
+  zero := .mkSigma “y tbl. ∃ t, !binNumeralGraph t 0 ∧ ∃ ev, !adjoinDef ev t 0 ∧ ∃ A, !cTEqFactDef A 0 ∧ !step0Def y tbl 5 ev A”
   succ := .mkSigma “y ih z tbl. ∃ F, !cTEqFactDef F z ∧ ∃ G, !succFactDef G z ∧ ∃ dG, !succCodeDef dG tbl z ∧
-    ∃ c, !cTVGraph c z ∧ ∃ t0, !bnumGraph t0 z ∧ ∃ t1, !bnumGraph t1 (z + 1) ∧
+    ∃ c, !cTVGraph c z ∧ ∃ t0, !binNumeralGraph t0 z ∧ ∃ t1, !binNumeralGraph t1 (z + 1) ∧
     ∃ v0, !adjoinDef v0 c 0 ∧ ∃ v1, !adjoinDef v1 t0 v0 ∧ ∃ ev, !adjoinDef ev t1 v1 ∧
     ∃ A, !cTEqFactDef A (z + 1) ∧ !step2Def y tbl 17 F ih G dG ev A”
 
 noncomputable def construction : PR.Construction V blueprint where
-  zero := fun v ↦ step0 (v 0) 5 (vecOf [bnum 0]) (cTEqFact 0)
+  zero := fun v ↦ step0 (v 0) 5 (vecOf [binNumeral 0]) (cTEqFact 0)
   succ := fun v z ih ↦ step2 (v 0) 17 (cTEqFact z) ih (succFact z) (succCode (v 0) z)
-    (vecOf [bnum (z + 1), bnum z, cTV z]) (cTEqFact (z + 1))
+    (vecOf [binNumeral (z + 1), binNumeral z, cTV z]) (cTEqFact (z + 1))
   zero_defined := .mk fun v ↦ by
-    simp [blueprint, bnum.defined.iff, cTEqFact_defined.iff, step0_defined.iff, numeral_eq_natCast]
+    simp [blueprint, binNumeral.defined.iff, cTEqFact_defined.iff, step0_defined.iff, numeral_eq_natCast]
   succ_defined := .mk fun v ↦ by
     simp [blueprint, cTEqFact_defined.iff, succFact_defined.iff, succCode_defined.iff, cTV.defined.iff,
-      bnum.defined.iff, step2_defined.iff, numeral_eq_natCast]
+      binNumeral.defined.iff, step2_defined.iff, numeral_eq_natCast]
 
 end CTEq
 
-/-- **The chain-numeral prover**: the derivation code of `{cT z = bnum z}`. -/
+/-- **The chain-numeral prover**: the derivation code of `{cT z = binNumeral z}`. -/
 noncomputable def cTEqCode (tbl z : V) : V := CTEq.construction.result ![tbl] z
 
-@[simp] lemma cTEqCode_zero (tbl : V) : cTEqCode tbl 0 = step0 tbl 5 (vecOf [bnum 0]) (cTEqFact 0) := by
+@[simp] lemma cTEqCode_zero (tbl : V) : cTEqCode tbl 0 = step0 tbl 5 (vecOf [binNumeral 0]) (cTEqFact 0) := by
   simp [cTEqCode, CTEq.construction]
 @[simp] lemma cTEqCode_succ (tbl z : V) :
     cTEqCode tbl (z + 1) = step2 tbl 17 (cTEqFact z) (cTEqCode tbl z) (succFact z) (succCode tbl z)
-      (vecOf [bnum (z + 1), bnum z, cTV z]) (cTEqFact (z + 1)) := by
+      (vecOf [binNumeral (z + 1), binNumeral z, cTV z]) (cTEqFact (z + 1)) := by
   simp [cTEqCode, CTEq.construction]
 
 noncomputable def cTEqCodeDef : 𝚺₁.Semisentence 3 := CTEq.blueprint.resultDef |>.rew (Rew.subst ![#0, #2, #1])
@@ -3445,7 +3445,7 @@ instance cTEqCode_defined : 𝚺₁-Function₂ (cTEqCode : V → V → V) via c
   fun v ↦ by simp [CTEq.construction.result_defined_iff, cTEqCodeDef]; rfl
 instance cTEqCode_definable : 𝚺₁-Function₂ (cTEqCode : V → V → V) := cTEqCode_defined.to_definable
 
-/-- The node size of the chain: `E := 2z + 12‖z + 1‖ + 5` dominates `|cT z|`, `|bnum z|`, `|bnum (z + 1)|`. -/
+/-- The node size of the chain: `E := 2z + 12‖z + 1‖ + 5` dominates `|cT z|`, `|binNumeral z|`, `|binNumeral (z + 1)|`. -/
 noncomputable def cTE (z : V) : V := 2 * z + 12 * ‖z + 1‖ + 5
 
 lemma one_le_cTE (z : V) : 1 ≤ cTE z := le_trans (by norm_num) le_add_self
@@ -3462,8 +3462,8 @@ lemma termLen_cTV_le_cTE (z : V) : termLen LAct (cTV z) ≤ cTE z := by
 
 lemma formulaLen_cTEqFact_le {B z : V} (hPeq : formulaLen LAct (Peq : V) ≤ B) :
     formulaLen LAct (cTEqFact z) ≤ B * cTE z :=
-  le_trans (formulaLen_eqFact_le (one_le_cTE z) (cTV_semiterm_LAct 0 z) (isSemiterm_bnum_LAct 0 z)
-    (termLen_cTV_le_cTE z) (termLen_bnum_le_E' le_self_add (addE_le_cTE z)))
+  le_trans (formulaLen_eqFact_le (one_le_cTE z) (cTV_semiterm_LAct 0 z) (isSemiterm_binNumeral_LAct 0 z)
+    (termLen_cTV_le_cTE z) (termLen_binNumeral_le_E' le_self_add (addE_le_cTE z)))
     (mul_le_mul_of_nonneg_right hPeq zero_le)
 
 /-- The bound of the chain: `(z + 1)(‖z‖ + 2)` nodes, each `≤ nodeCost N B (cTE z)`. -/
@@ -3471,20 +3471,20 @@ noncomputable def cTBound (N B z : V) : V := (z + 1) * (‖z‖ + 2) * nodeCost 
 
 /-- **Soundness and length of the chain-numeral prover**, by Π₁ successor induction on `z`. -/
 theorem cTEqCode_sound {tbl N B : V} (htbl : NumTableOK tbl N B) (z : V) :
-    DerivationOf TAct (cTEqCode tbl z) (sing (cTEqFact z)) ∧ dlen TAct (cTEqCode tbl z) ≤ cTBound N B z := by
+    DerivationOf TAct (cTEqCode tbl z) (sing (cTEqFact z)) ∧ proofLen TAct (cTEqCode tbl z) ≤ cTBound N B z := by
   induction z using ISigma1.pi1_succ_induction with
   | hP => simp only [cTBound, cTE]; definability
   | zero =>
     obtain ⟨-, -, -, -, -, hr5, -, -, -, -, -, -, -, -, -, -, -, -, -, hPeq, -, -, hB⟩ := id htbl
     rw [cTEqCode_zero]
-    have hx : IsSemiterm LAct 0 (bnum (0 : V)) := isSemiterm_bnum_LAct 0 _
-    have hc : instOuter LAct [bnum (0 : V)] nEqRefl_c = cTEqFact 0 := by
-      rw [(inst_nEqRefl hx).2]; unfold cTEqFact; rw [cTV_zero, bnum_zero]
-    have hes : ∀ e ∈ [bnum (0 : V)], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ cTE 0 := by
+    have hx : IsSemiterm LAct 0 (binNumeral (0 : V)) := isSemiterm_binNumeral_LAct 0 _
+    have hc : instOuter LAct [binNumeral (0 : V)] nEqRefl_c = cTEqFact 0 := by
+      rw [(inst_nEqRefl hx).2]; unfold cTEqFact; rw [cTV_zero, binNumeral_zero]
+    have hes : ∀ e ∈ [binNumeral (0 : V)], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ cTE 0 := by
       simp only [List.mem_singleton, forall_eq]
-      exact ⟨hx, termLen_bnum_le_E' le_self_add (addE_le_cTE 0)⟩
-    have hpf := step0_proof hr5 [bnum (0 : V)] rfl (fun e he ↦ (hes e he).1) (isFormula_cTEqFact 0) (inst_nEqRefl hx).1 hc
-    have hlen := dlen_step0_le hr5 [bnum (0 : V)] rfl hes (one_le_cTE 0) hB (isFormula_cTEqFact 0) (inst_nEqRefl hx).1 hc
+      exact ⟨hx, termLen_binNumeral_le_E' le_self_add (addE_le_cTE 0)⟩
+    have hpf := step0_proof hr5 [binNumeral (0 : V)] rfl (fun e he ↦ (hes e he).1) (isFormula_cTEqFact 0) (inst_nEqRefl hx).1 hc
+    have hlen := proofLen_step0_le hr5 [binNumeral (0 : V)] rfl hes (one_le_cTE 0) hB (isFormula_cTEqFact 0) (inst_nEqRefl hx).1 hc
       (by norm_num) (by simp [nEqRefl_as]) (formulaLen_cTEqFact_le hPeq)
     rw [cast_rEqRefl] at hpf hlen
     refine ⟨hpf, ?_⟩
@@ -3495,20 +3495,20 @@ theorem cTEqCode_sound {tbl N B : V} (htbl : NumTableOK tbl N B) (z : V) :
     obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hr17, -, hPeq, -, -, hB⟩ := id htbl
     rw [cTEqCode_succ]
     have hc0 : IsSemiterm LAct 0 (cTV z) := cTV_semiterm_LAct 0 z
-    have ht0 : IsSemiterm LAct 0 (bnum z) := isSemiterm_bnum_LAct 0 _
-    have ht1 : IsSemiterm LAct 0 (bnum (z + 1)) := isSemiterm_bnum_LAct 0 _
-    have hmap : nSuccCong_as.map (instOuter LAct [bnum (z + 1), bnum z, cTV z]) =
+    have ht0 : IsSemiterm LAct 0 (binNumeral z) := isSemiterm_binNumeral_LAct 0 _
+    have ht1 : IsSemiterm LAct 0 (binNumeral (z + 1)) := isSemiterm_binNumeral_LAct 0 _
+    have hmap : nSuccCong_as.map (instOuter LAct [binNumeral (z + 1), binNumeral z, cTV z]) =
         [(cTEqFact z, cTEqCode tbl z), (succFact z, succCode tbl z)].map Prod.fst := by
       rw [(inst_nSuccCong hc0 ht0 ht1).1]; rfl
-    have hc : instOuter LAct [bnum (z + 1), bnum z, cTV z] nSuccCong_c = cTEqFact (z + 1) := by
+    have hc : instOuter LAct [binNumeral (z + 1), binNumeral z, cTV z] nSuccCong_c = cTEqFact (z + 1) := by
       rw [(inst_nSuccCong hc0 ht0 ht1).2]; unfold cTEqFact; rw [cTV_succ]
     have hE' : cTE z ≤ cTE (z + 1) := cTE_mono le_self_add
-    have hes : ∀ e ∈ [bnum (z + 1), bnum z, cTV z], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ cTE (z + 1) := by
+    have hes : ∀ e ∈ [binNumeral (z + 1), binNumeral z, cTV z], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ cTE (z + 1) := by
       intro e he
       simp only [List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false] at he
       rcases he with rfl | rfl | rfl
-      · exact ⟨ht1, termLen_bnum_le_E' le_self_add (addE_le_cTE (z + 1))⟩
-      · exact ⟨ht0, termLen_bnum_le_E' (le_trans le_self_add le_self_add) (addE_le_cTE (z + 1))⟩
+      · exact ⟨ht1, termLen_binNumeral_le_E' le_self_add (addE_le_cTE (z + 1))⟩
+      · exact ⟨ht0, termLen_binNumeral_le_E' (le_trans le_self_add le_self_add) (addE_le_cTE (z + 1))⟩
       · exact ⟨hc0, le_trans (termLen_cTV_le_cTE z) hE'⟩
     have hps : ∀ p ∈ [(cTEqFact z, cTEqCode tbl z), (succFact z, succCode tbl z)],
         IsFormula LAct p.1 ∧ DerivationOf TAct p.2 (sing p.1) := by
@@ -3517,9 +3517,9 @@ theorem cTEqCode_sound {tbl N B : V} (htbl : NumTableOK tbl N B) (z : V) :
       rcases hp with rfl | rfl
       · exact ⟨isFormula_cTEqFact z, hpf'⟩
       · exact ⟨isFormula_succFact z, succCode_proof htbl z⟩
-    have hpf := stepL_proof hr17 [(cTEqFact z, cTEqCode tbl z), (succFact z, succCode tbl z)] [bnum (z + 1), bnum z, cTV z]
+    have hpf := stepL_proof hr17 [(cTEqFact z, cTEqCode tbl z), (succFact z, succCode tbl z)] [binNumeral (z + 1), binNumeral z, cTV z]
       rfl (fun e he ↦ (hes e he).1) (isFormula_cTEqFact _) hps hmap hc
-    have hlen := dlen_stepL_le hr17 [(cTEqFact z, cTEqCode tbl z), (succFact z, succCode tbl z)] [bnum (z + 1), bnum z, cTV z]
+    have hlen := proofLen_stepL_le hr17 [(cTEqFact z, cTEqCode tbl z), (succFact z, succCode tbl z)] [binNumeral (z + 1), binNumeral z, cTV z]
       rfl hes (one_le_cTE _) hB (isFormula_cTEqFact _) hps hmap hc (by norm_num) (by simp [nSuccCong_as])
       (formulaLen_cTEqFact_le hPeq)
       (by
@@ -3531,22 +3531,22 @@ theorem cTEqCode_sound {tbl N B : V} (htbl : NumTableOK tbl N B) (z : V) :
             (le_trans (addE_le_cTE z) hE')))
     rw [cast_rSuccCong] at hpf hlen
     have hstep : stepL tbl 17 [(cTEqFact z, cTEqCode tbl z), (succFact z, succCode tbl z)]
-        (vecOf [bnum (z + 1), bnum z, cTV z]) (cTEqFact (z + 1)) =
+        (vecOf [binNumeral (z + 1), binNumeral z, cTV z]) (cTEqFact (z + 1)) =
       step2 tbl 17 (cTEqFact z) (cTEqCode tbl z) (succFact z) (succCode tbl z)
-        (vecOf [bnum (z + 1), bnum z, cTV z]) (cTEqFact (z + 1)) := rfl
+        (vecOf [binNumeral (z + 1), binNumeral z, cTV z]) (cTEqFact (z + 1)) := rfl
     rw [hstep] at hpf hlen
     refine ⟨hpf, ?_⟩
     set nc := nodeCost N B (cTE (z + 1)) with hnc
-    have hsB : dlen TAct (succCode tbl z) ≤ (‖z‖ + 1) * nc := by
-      refine le_trans (dlen_succCode_le htbl z) ?_
+    have hsB : proofLen TAct (succCode tbl z) ≤ (‖z‖ + 1) * nc := by
+      refine le_trans (proofLen_succCode_le htbl z) ?_
       exact mul_le_mul_of_nonneg_left (nodeCost_mono (le_trans (by gcongr <;> norm_num : 6 * ‖z + 1‖ + 3 ≤ 12 * ‖z + 1‖ + 3)
         (le_trans (addE_le_cTE z) hE'))) zero_le
     have hlz : ‖z‖ ≤ ‖z + 1‖ := length_le_of_le le_self_add
     unfold cTBound at hlen' ⊢
-    calc dlen TAct (step2 tbl 17 (cTEqFact z) (cTEqCode tbl z) (succFact z) (succCode tbl z)
-            (vecOf [bnum (z + 1), bnum z, cTV z]) (cTEqFact (z + 1)))
+    calc proofLen TAct (step2 tbl 17 (cTEqFact z) (cTEqCode tbl z) (succFact z) (succCode tbl z)
+            (vecOf [binNumeral (z + 1), binNumeral z, cTV z]) (cTEqFact (z + 1)))
         ≤ factsDlen [(cTEqFact z, cTEqCode tbl z), (succFact z, succCode tbl z)] + nc := hlen
-      _ = dlen TAct (cTEqCode tbl z) + dlen TAct (succCode tbl z) + nc := by simp [factsDlen, add_assoc]
+      _ = proofLen TAct (cTEqCode tbl z) + proofLen TAct (succCode tbl z) + nc := by simp [factsDlen, add_assoc]
       _ ≤ (z + 1) * (‖z‖ + 2) * nc + (‖z‖ + 1) * nc + nc := by
           gcongr
           exact le_trans hlen' (mul_le_mul_of_nonneg_left (nodeCost_mono hE') zero_le)
@@ -3556,23 +3556,23 @@ theorem cTEqCode_sound {tbl N B : V} (htbl : NumTableOK tbl N B) (z : V) :
 theorem cTEqCode_proof {tbl N B : V} (htbl : NumTableOK tbl N B) (z : V) :
     DerivationOf TAct (cTEqCode tbl z) (sing (cTEqFact z)) := (cTEqCode_sound htbl z).1
 
-theorem dlen_cTEqCode_le {tbl N B : V} (htbl : NumTableOK tbl N B) (z : V) :
-    dlen TAct (cTEqCode tbl z) ≤ (z + 1) * (‖z‖ + 2) * nodeCost N B (cTE z) := (cTEqCode_sound htbl z).2
+theorem proofLen_cTEqCode_le {tbl N B : V} (htbl : NumTableOK tbl N B) (z : V) :
+    proofLen TAct (cTEqCode tbl z) ≤ (z + 1) * (‖z‖ + 2) * nodeCost N B (cTE z) := (cTEqCode_sound htbl z).2
 
-/-- `cTLeFact z := cT z ≤ bnum z`; `cTLeCode`: `leOfEq` from `cTEqCode`. -/
-noncomputable def cTLeFact (z : V) : V := leFact (cTV z) (bnum z)
+/-- `cTLeFact z := cT z ≤ binNumeral z`; `cTLeCode`: `leOfEq` from `cTEqCode`. -/
+noncomputable def cTLeFact (z : V) : V := leFact (cTV z) (binNumeral z)
 noncomputable def cTLeCode (tbl z : V) : V :=
-  stepL tbl 18 [(cTEqFact z, cTEqCode tbl z)] (vecOf [bnum z, cTV z]) (cTLeFact z)
+  stepL tbl 18 [(cTEqFact z, cTEqCode tbl z)] (vecOf [binNumeral z, cTV z]) (cTLeFact z)
 
 lemma isFormula_cTLeFact (z : V) : IsFormula LAct (cTLeFact z) :=
-  isFormula_leFact (cTV_semiterm_LAct 0 z) (isSemiterm_bnum_LAct 0 z)
+  isFormula_leFact (cTV_semiterm_LAct 0 z) (isSemiterm_binNumeral_LAct 0 z)
 
 theorem cTLeCode_proof {tbl N B : V} (htbl : NumTableOK tbl N B) (z : V) :
     DerivationOf TAct (cTLeCode tbl z) (sing (cTLeFact z)) := by
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hr18, -, -, -, -⟩ := id htbl
   have hc0 : IsSemiterm LAct 0 (cTV z) := cTV_semiterm_LAct 0 z
-  have ht0 : IsSemiterm LAct 0 (bnum z) := isSemiterm_bnum_LAct 0 _
-  have hpf := stepL_proof hr18 [(cTEqFact z, cTEqCode tbl z)] [bnum z, cTV z] rfl (by simp [hc0, ht0])
+  have ht0 : IsSemiterm LAct 0 (binNumeral z) := isSemiterm_binNumeral_LAct 0 _
+  have hpf := stepL_proof hr18 [(cTEqFact z, cTEqCode tbl z)] [binNumeral z, cTV z] rfl (by simp [hc0, ht0])
     (isFormula_cTLeFact z) (by simp only [List.mem_singleton, forall_eq]; exact ⟨isFormula_cTEqFact z, cTEqCode_proof htbl z⟩)
     (by rw [(inst_nLeOfEq hc0 ht0).1]; rfl) (inst_nLeOfEq hc0 ht0).2
   rwa [cast_rLeOfEq] at hpf
@@ -3593,7 +3593,7 @@ lemma lemmaOK_of {A dA : V} (hA : IsFormula LAct A) (hd : DerivationOf TAct dA (
 
 /-- The cost of an `sLemma` step is its derivation's length plus `2|Γ| + 2|A| + 2`. -/
 lemma stepCost_sLemma (N' E Γ A dA : V) :
-    stepCost N' E Γ (sLemma A dA) = dlen TAct dA + 2 * setLen LAct Γ + 2 * formulaLen LAct A + 2 := by
+    stepCost N' E Γ (sLemma A dA) = proofLen TAct dA + 2 * sequentLen LAct Γ + 2 * formulaLen LAct A + 2 := by
   rw [stepCost_tag7 (by simp [sTag, sLemma])]
   simp only [sLemA, sLemD, sLemma, pi₂_pair, pi₁_pair]
 
@@ -3618,19 +3618,19 @@ theorem lemmaOK_cTEq {tbl N B : V} (htbl : NumTableOK tbl N B) (z : V) :
 being the derivation length — every summand cubic in `‖n‖`. -/
 theorem stepCost_lemma_bin3 {tbl N B N' E Γ : V} (htbl : NumTableOK tbl N B) {a b c n : V} (h : a + b + c + 1 ≤ n) :
     stepCost N' E Γ (sLemma (bin3Fact a b c n) (bin3Code tbl a b c n)) ≤
-      (dlen TAct (addCode tbl a b) + dlen TAct (addCode tbl (a + b) c) + dlen TAct (succCode tbl (a + b + c))
-        + dlen TAct (leCode tbl (a + b + c + 1) n) + nodeCost N B (18 * ‖n‖ + 7))
-        + 2 * setLen LAct Γ + 2 * formulaLen LAct (bin3Fact a b c n) + 2 := by
+      (proofLen TAct (addCode tbl a b) + proofLen TAct (addCode tbl (a + b) c) + proofLen TAct (succCode tbl (a + b + c))
+        + proofLen TAct (leCode tbl (a + b + c + 1) n) + nodeCost N B (18 * ‖n‖ + 7))
+        + 2 * sequentLen LAct Γ + 2 * formulaLen LAct (bin3Fact a b c n) + 2 := by
   rw [stepCost_sLemma]
   gcongr
-  exact dlen_bin3Code_le htbl h
+  exact proofLen_bin3Code_le htbl h
 
 /-- **Every derivation length in the closed-fact provers is polynomial in the bit lengths**: the fully
 expanded bound of `bin3Code`, with `M := ‖n‖` (all arguments `≤ n`):
 `≤ (7M + 21)·(M + 2)·nodeCost N B (18M + 7) + 2·(M + 2)·nodeCost N B (12M + 3)`-like terms — stated here in
 the compact form `≤ 3·(M + 1)·(M + 2)·C + (M + 1)·C + 3·C` with `C := nodeCost N B (18 * M + 7)`. -/
-theorem dlen_bin3Code_poly {tbl N B : V} (htbl : NumTableOK tbl N B) {a b c n : V} (h : a + b + c + 1 ≤ n) :
-    dlen TAct (bin3Code tbl a b c n) ≤
+theorem proofLen_bin3Code_poly {tbl N B : V} (htbl : NumTableOK tbl N B) {a b c n : V} (h : a + b + c + 1 ≤ n) :
+    proofLen TAct (bin3Code tbl a b c n) ≤
       3 * ((‖n‖ + 1) * (‖n‖ + 2)) * nodeCost N B (18 * ‖n‖ + 7)
         + (‖n‖ + 1) * nodeCost N B (18 * ‖n‖ + 7) + 3 * nodeCost N B (18 * ‖n‖ + 7) := by
   have habc : a + b + c ≤ n := le_trans le_self_add h
@@ -3645,23 +3645,23 @@ theorem dlen_bin3Code_poly {tbl N B : V} (htbl : NumTableOK tbl N B) {a b c n : 
   have hl2 : ‖a + b‖ ≤ ‖n‖ := length_le_of_le hab
   have hl3 : ‖a + b + c‖ ≤ ‖n‖ := length_le_of_le habc
   have hl4 : ‖a + b + c + 1‖ ≤ ‖n‖ := length_le_of_le h
-  have b1 : dlen TAct (addCode tbl a b) ≤ (‖n‖ + 1) * (‖n‖ + 2) * C :=
-    le_trans (dlen_addCode_le htbl a b) (by gcongr; exact nodeCost_mono hE1)
-  have b2 : dlen TAct (addCode tbl (a + b) c) ≤ (‖n‖ + 1) * (‖n‖ + 2) * C :=
-    le_trans (dlen_addCode_le htbl (a + b) c) (by gcongr; exact nodeCost_mono hE2)
-  have b3 : dlen TAct (succCode tbl (a + b + c)) ≤ (‖n‖ + 1) * C :=
-    le_trans (dlen_succCode_le htbl _) (by gcongr; exact nodeCost_mono hE3)
-  have b4 : dlen TAct (leCode tbl (a + b + c + 1) n) ≤ (‖n‖ + 1) * (‖n‖ + 2) * C + C := by
-    refine le_trans (dlen_leCode_le htbl h) ?_
+  have b1 : proofLen TAct (addCode tbl a b) ≤ (‖n‖ + 1) * (‖n‖ + 2) * C :=
+    le_trans (proofLen_addCode_le htbl a b) (by gcongr; exact nodeCost_mono hE1)
+  have b2 : proofLen TAct (addCode tbl (a + b) c) ≤ (‖n‖ + 1) * (‖n‖ + 2) * C :=
+    le_trans (proofLen_addCode_le htbl (a + b) c) (by gcongr; exact nodeCost_mono hE2)
+  have b3 : proofLen TAct (succCode tbl (a + b + c)) ≤ (‖n‖ + 1) * C :=
+    le_trans (proofLen_succCode_le htbl _) (by gcongr; exact nodeCost_mono hE3)
+  have b4 : proofLen TAct (leCode tbl (a + b + c + 1) n) ≤ (‖n‖ + 1) * (‖n‖ + 2) * C + C := by
+    refine le_trans (proofLen_leCode_le htbl h) ?_
     gcongr
-    · refine le_trans (dlen_addCode_le htbl _ _) ?_
+    · refine le_trans (proofLen_addCode_le htbl _ _) ?_
       rw [add_tsub_cancel_of_le h]
       gcongr
       exact nodeCost_mono hE4
     · exact nodeCost_mono hE4
-  calc dlen TAct (bin3Code tbl a b c n)
-      ≤ dlen TAct (addCode tbl a b) + dlen TAct (addCode tbl (a + b) c) + dlen TAct (succCode tbl (a + b + c))
-        + dlen TAct (leCode tbl (a + b + c + 1) n) + C := dlen_bin3Code_le htbl h
+  calc proofLen TAct (bin3Code tbl a b c n)
+      ≤ proofLen TAct (addCode tbl a b) + proofLen TAct (addCode tbl (a + b) c) + proofLen TAct (succCode tbl (a + b + c))
+        + proofLen TAct (leCode tbl (a + b + c + 1) n) + C := proofLen_bin3Code_le htbl h
     _ ≤ (‖n‖ + 1) * (‖n‖ + 2) * C + (‖n‖ + 1) * (‖n‖ + 2) * C + (‖n‖ + 1) * C
         + ((‖n‖ + 1) * (‖n‖ + 2) * C + C) + C := by gcongr
     _ = 3 * ((‖n‖ + 1) * (‖n‖ + 2)) * C + (‖n‖ + 1) * C + 2 * C := by ring
@@ -3718,66 +3718,66 @@ instance step4_defined :
 /-- `leCode tbl a b` (`s := b − a` through `subDef`). -/
 noncomputable def leCodeDef : 𝚺₁.Semisentence 4 := .mkSigma
   “y tbl a b. ∃ s, !subDef s b a ∧ ∃ F, !addFactDef F a s ∧ ∃ dF, !addCodeDef dF tbl a s ∧
-    ∃ tb, !bnumGraph tb b ∧ ∃ ts, !bnumGraph ts s ∧ ∃ ta, !bnumGraph ta a ∧
+    ∃ tb, !binNumeralGraph tb b ∧ ∃ ts, !binNumeralGraph ts s ∧ ∃ ta, !binNumeralGraph ta a ∧
     ∃ v0, !adjoinDef v0 ta 0 ∧ ∃ v1, !adjoinDef v1 ts v0 ∧ ∃ ev, !adjoinDef ev tb v1 ∧
     ∃ A, !leFactDef A ta tb ∧ !step1Def y tbl 11 F dF ev A”
 instance leCode_defined : 𝚺₁-Function₃ (leCode : V → V → V → V) via leCodeDef := .mk fun v ↦ by
-  simp [leCodeDef, sub_defined.iff, addFact_defined.iff, addCode_defined.iff, bnum.defined.iff, leFact_defined.iff,
+  simp [leCodeDef, sub_defined.iff, addFact_defined.iff, addCode_defined.iff, binNumeral.defined.iff, leFact_defined.iff,
     step1_defined.iff, leCode, stepL_one, numeral_eq_natCast]
 
 noncomputable def ltCodeDef : 𝚺₁.Semisentence 4 := .mkSigma
-  “y tbl a b. ∃ F, !succFactDef F a ∧ ∃ dF, !succCodeDef dF tbl a ∧ ∃ ta1, !bnumGraph ta1 (a + 1) ∧ ∃ tb, !bnumGraph tb b ∧
-    ∃ G, !leFactDef G ta1 tb ∧ ∃ dG, !leCodeDef dG tbl (a + 1) b ∧ ∃ ta, !bnumGraph ta a ∧
+  “y tbl a b. ∃ F, !succFactDef F a ∧ ∃ dF, !succCodeDef dF tbl a ∧ ∃ ta1, !binNumeralGraph ta1 (a + 1) ∧ ∃ tb, !binNumeralGraph tb b ∧
+    ∃ G, !leFactDef G ta1 tb ∧ ∃ dG, !leCodeDef dG tbl (a + 1) b ∧ ∃ ta, !binNumeralGraph ta a ∧
     ∃ v0, !adjoinDef v0 ta 0 ∧ ∃ v1, !adjoinDef v1 ta1 v0 ∧ ∃ ev, !adjoinDef ev tb v1 ∧
     ∃ A, !ltFactDef A ta tb ∧ !step2Def y tbl 12 F dF G dG ev A”
 instance ltCode_defined : 𝚺₁-Function₃ (ltCode : V → V → V → V) via ltCodeDef := .mk fun v ↦ by
-  simp [ltCodeDef, succFact_defined.iff, succCode_defined.iff, bnum.defined.iff, leFact_defined.iff, leCode_defined.iff,
+  simp [ltCodeDef, succFact_defined.iff, succCode_defined.iff, binNumeral.defined.iff, leFact_defined.iff, leCode_defined.iff,
     ltFact_defined'.iff, step2_defined.iff, ltCode, stepL_two, numeral_eq_natCast]
 
 noncomputable def leafCodeDef : 𝚺₁.Semisentence 4 := .mkSigma
-  “y tbl a n. ∃ F, !succFactDef F a ∧ ∃ dF, !succCodeDef dF tbl a ∧ ∃ ta1, !bnumGraph ta1 (a + 1) ∧ ∃ tn, !bnumGraph tn n ∧
-    ∃ G, !leFactDef G ta1 tn ∧ ∃ dG, !leCodeDef dG tbl (a + 1) n ∧ ∃ ta, !bnumGraph ta a ∧
+  “y tbl a n. ∃ F, !succFactDef F a ∧ ∃ dF, !succCodeDef dF tbl a ∧ ∃ ta1, !binNumeralGraph ta1 (a + 1) ∧ ∃ tn, !binNumeralGraph tn n ∧
+    ∃ G, !leFactDef G ta1 tn ∧ ∃ dG, !leCodeDef dG tbl (a + 1) n ∧ ∃ ta, !binNumeralGraph ta a ∧
     ∃ v0, !adjoinDef v0 ta 0 ∧ ∃ v1, !adjoinDef v1 ta1 v0 ∧ ∃ ev, !adjoinDef ev tn v1 ∧
     ∃ s, !qqAddGraph s ta ↑Arithmetic.one ∧ ∃ A, !leFactDef A s tn ∧ !step2Def y tbl 15 F dF G dG ev A”
 instance leafCode_defined : 𝚺₁-Function₃ (leafCode : V → V → V → V) via leafCodeDef := .mk fun v ↦ by
-  simp [leafCodeDef, succFact_defined.iff, succCode_defined.iff, bnum.defined.iff, leFact_defined.iff, leCode_defined.iff,
+  simp [leafCodeDef, succFact_defined.iff, succCode_defined.iff, binNumeral.defined.iff, leFact_defined.iff, leCode_defined.iff,
     qqAdd_defined.iff, step2_defined.iff, leafCode, leafFact, stepL_two, numeral_eq_natCast]
 
 noncomputable def sum2CodeDef : 𝚺₁.Semisentence 5 := .mkSigma
-  “y tbl a b n. ∃ F, !addFactDef F a b ∧ ∃ dF, !addCodeDef dF tbl a b ∧ ∃ ts, !bnumGraph ts (a + b) ∧ ∃ tn, !bnumGraph tn n ∧
-    ∃ G, !leFactDef G ts tn ∧ ∃ dG, !leCodeDef dG tbl (a + b) n ∧ ∃ ta, !bnumGraph ta a ∧ ∃ tb, !bnumGraph tb b ∧
+  “y tbl a b n. ∃ F, !addFactDef F a b ∧ ∃ dF, !addCodeDef dF tbl a b ∧ ∃ ts, !binNumeralGraph ts (a + b) ∧ ∃ tn, !binNumeralGraph tn n ∧
+    ∃ G, !leFactDef G ts tn ∧ ∃ dG, !leCodeDef dG tbl (a + b) n ∧ ∃ ta, !binNumeralGraph ta a ∧ ∃ tb, !binNumeralGraph tb b ∧
     ∃ v0, !adjoinDef v0 ta 0 ∧ ∃ v1, !adjoinDef v1 tb v0 ∧ ∃ v2, !adjoinDef v2 ts v1 ∧ ∃ ev, !adjoinDef ev tn v2 ∧
     ∃ u, !qqAddGraph u ta tb ∧ ∃ A, !leFactDef A u tn ∧ !step2Def y tbl 16 F dF G dG ev A”
 instance sum2Code_defined : 𝚺₁-Function₄ (sum2Code : V → V → V → V → V) via sum2CodeDef := .mk fun v ↦ by
-  simp [sum2CodeDef, addFact_defined.iff, addCode_defined.iff, bnum.defined.iff, leFact_defined.iff, leCode_defined.iff,
+  simp [sum2CodeDef, addFact_defined.iff, addCode_defined.iff, binNumeral.defined.iff, leFact_defined.iff, leCode_defined.iff,
     qqAdd_defined.iff, step2_defined.iff, sum2Code, sum2Fact, stepL_two, numeral_eq_natCast]
 
 noncomputable def bin2CodeDef : 𝚺₁.Semisentence 5 := .mkSigma
   “y tbl a b n. ∃ F, !addFactDef F a b ∧ ∃ dF, !addCodeDef dF tbl a b ∧ ∃ G, !succFactDef G (a + b) ∧
-    ∃ dG, !succCodeDef dG tbl (a + b) ∧ ∃ tu, !bnumGraph tu (a + b + 1) ∧ ∃ tn, !bnumGraph tn n ∧
+    ∃ dG, !succCodeDef dG tbl (a + b) ∧ ∃ tu, !binNumeralGraph tu (a + b + 1) ∧ ∃ tn, !binNumeralGraph tn n ∧
     ∃ H, !leFactDef H tu tn ∧ ∃ dH, !leCodeDef dH tbl (a + b + 1) n ∧
-    ∃ ta, !bnumGraph ta a ∧ ∃ tb, !bnumGraph tb b ∧ ∃ ts, !bnumGraph ts (a + b) ∧
+    ∃ ta, !binNumeralGraph ta a ∧ ∃ tb, !binNumeralGraph tb b ∧ ∃ ts, !binNumeralGraph ts (a + b) ∧
     ∃ v0, !adjoinDef v0 ta 0 ∧ ∃ v1, !adjoinDef v1 tb v0 ∧ ∃ v2, !adjoinDef v2 ts v1 ∧ ∃ v3, !adjoinDef v3 tu v2 ∧
     ∃ ev, !adjoinDef ev tn v3 ∧ ∃ u, !qqAddGraph u ta tb ∧ ∃ u1, !qqAddGraph u1 u ↑Arithmetic.one ∧
     ∃ A, !leFactDef A u1 tn ∧ !step3Def y tbl 14 F dF G dG H dH ev A”
 instance bin2Code_defined : 𝚺₁-Function₄ (bin2Code : V → V → V → V → V) via bin2CodeDef := .mk fun v ↦ by
-  simp [bin2CodeDef, addFact_defined.iff, addCode_defined.iff, succFact_defined.iff, succCode_defined.iff, bnum.defined.iff,
+  simp [bin2CodeDef, addFact_defined.iff, addCode_defined.iff, succFact_defined.iff, succCode_defined.iff, binNumeral.defined.iff,
     leFact_defined.iff, leCode_defined.iff, qqAdd_defined.iff, step3_defined.iff, bin2Code, bin2Fact, stepL_three,
     numeral_eq_natCast]
 
 noncomputable def bin3CodeDef : 𝚺₁.Semisentence 6 := .mkSigma
   “y tbl a b c n. ∃ F, !addFactDef F a b ∧ ∃ dF, !addCodeDef dF tbl a b ∧ ∃ G, !addFactDef G (a + b) c ∧
     ∃ dG, !addCodeDef dG tbl (a + b) c ∧ ∃ H, !succFactDef H (a + b + c) ∧ ∃ dH, !succCodeDef dH tbl (a + b + c) ∧
-    ∃ tu, !bnumGraph tu (a + b + c + 1) ∧ ∃ tn, !bnumGraph tn n ∧ ∃ K, !leFactDef K tu tn ∧
+    ∃ tu, !binNumeralGraph tu (a + b + c + 1) ∧ ∃ tn, !binNumeralGraph tn n ∧ ∃ K, !leFactDef K tu tn ∧
     ∃ dK, !leCodeDef dK tbl (a + b + c + 1) n ∧
-    ∃ ta, !bnumGraph ta a ∧ ∃ tb, !bnumGraph tb b ∧ ∃ tc, !bnumGraph tc c ∧ ∃ ts, !bnumGraph ts (a + b) ∧
-    ∃ tt, !bnumGraph tt (a + b + c) ∧
+    ∃ ta, !binNumeralGraph ta a ∧ ∃ tb, !binNumeralGraph tb b ∧ ∃ tc, !binNumeralGraph tc c ∧ ∃ ts, !binNumeralGraph ts (a + b) ∧
+    ∃ tt, !binNumeralGraph tt (a + b + c) ∧
     ∃ v0, !adjoinDef v0 ta 0 ∧ ∃ v1, !adjoinDef v1 tb v0 ∧ ∃ v2, !adjoinDef v2 tc v1 ∧ ∃ v3, !adjoinDef v3 ts v2 ∧
     ∃ v4, !adjoinDef v4 tt v3 ∧ ∃ v5, !adjoinDef v5 tu v4 ∧ ∃ ev, !adjoinDef ev tn v5 ∧
     ∃ u, !qqAddGraph u ta tb ∧ ∃ u2, !qqAddGraph u2 u tc ∧ ∃ u3, !qqAddGraph u3 u2 ↑Arithmetic.one ∧
     ∃ A, !leFactDef A u3 tn ∧ !step4Def y tbl 13 F dF G dG H dH K dK ev A”
 instance bin3Code_defined : 𝚺₁-Function₅ (bin3Code : V → V → V → V → V → V) via bin3CodeDef := .mk fun v ↦ by
-  simp [bin3CodeDef, addFact_defined.iff, addCode_defined.iff, succFact_defined.iff, succCode_defined.iff, bnum.defined.iff,
+  simp [bin3CodeDef, addFact_defined.iff, addCode_defined.iff, succFact_defined.iff, succCode_defined.iff, binNumeral.defined.iff,
     leFact_defined.iff, leCode_defined.iff, qqAdd_defined.iff, step4_defined.iff, bin3Code, bin3Fact, stepL_four,
     numeral_eq_natCast]
 

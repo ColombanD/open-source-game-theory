@@ -15,7 +15,7 @@ the index of the code.
 | **Trusted base** — the definitions a reader accepts by eye | `Theory/`, `Length/`, `Box/`, `Agents/`, `Eval/` | ~13k, of which the definitions themselves are a few hundred | read §2 in order; skim the lemmas around them |
 | **Results** — the theorems | `Outcome/` (the matrix in the engine's vocabulary), `Cells/` (the proofs), `Assembly/` + `Loeb/` (PBLT), `Necessitation/Package.lean` (bounded inner necessitation, statements only) | ~19k | read `Outcome/`, then §3's reading order |
 | **Construction of U10** — the proof that PA verifies its own proofs within a polynomial budget | everything in `Necessitation/` except `Package.lean` | ~96k (72 %) | do not open; the design notes are `Research/Notes/M4_BOUNDED_HBL/` |
-| **Frozen, estimates, census** | `Bridge/` (the T2 bridge, frozen by decision), `Length/Proper`, `Box/ProperV`, `Agents/Fit*` (numeric estimates), `Audit/` (every `#print axioms` the build runs) | ~6k | skip; `Audit/` is what `lake build` checks, not what you read |
+| **Frozen, estimates, census** | `Bridge/` (the T2 bridge, frozen by decision), `Length/Proper`, `Box/ProperBound`, `Agents/Fit*` (numeric estimates), `Audit/` (every `#print axioms` the build runs) | ~6k | skip; `Audit/` is what `lake build` checks, not what you read |
 
 Generated files (`Necessitation/*Rows.lean`, `RowInst*.lean`, `Lib/Frag.lean`) carry a `GENERATED` marker;
 never edit them (`scripts/README.md`).
@@ -26,40 +26,40 @@ Nine definitions. Everything else in the package is a theorem about them or a co
 says what a reader accepts and the one design choice behind it.
 
 The other files in these five folders hold no definitions to accept, only theorems about these nine
-(`Theory/Transpose`, `Sound`, `Symmetry` = the τ-closure chain ending in `lenProvable_fbound_swap_iff`;
-`Length/Proper`, `Box/ProperV` = the properness estimates; `Box/Cut*` = bounded modus ponens; `Agents/Fit*`
+(`Theory/Transpose`, `Sound`, `Symmetry` = the τ-closure chain ending in `lenBoxNat_swap_iff`;
+`Length/Proper`, `Box/ProperBound` = the properness estimates; `Box/Cut*` = bounded modus ponens; `Agents/Fit*`
 = the guard fits its budget): read their statements, let Lean keep their proofs.
 
 1. **The language** — `LAct := ℒₒᵣ + {c_C, c_D}` and the transposition `swap` (a language hom that
    exchanges the two constants): [`Theory/LangAct.lean`](Theory/LangAct.lean). Actions are constants,
    not numerals, so that τ is a symmetry of the syntax.
-2. **The theory** — `TAct := PA ∪ {c_C ≠ c_D, c_D ≠ c_C, axAct, axAct'}`, the action axiom in BOTH
+2. **The theory** — `TAct := PA ∪ {c_C ≠ c_D, c_D ≠ c_C, actionAxiom, actionAxiom'}`, the action axiom in BOTH
    orders so the theory is literally closed under `swap`: [`Theory/TheoryAct.lean`](Theory/TheoryAct.lean).
-   Its two standard readings `stdActS`/`swapActS`; ℕ is a model (`models_TAct`).
-3. **The length** — `dlen`, the structural symbol count of a derivation code (symbol-blind, so τ
+   Its two standard readings `stdReading`/`swappedReading`; ℕ is a model (`models_TAct`).
+3. **The length** — `proofLen`, the structural symbol count of a derivation code (symbol-blind, so τ
    preserves it exactly; weakening and ∃-witnesses charged): [`Length/DerivationLength.lean`](Length/DerivationLength.lean),
-   with `dlen ⌜d⌝ = mlen d` in [`Length/MetaLength.lean`](Length/MetaLength.lean). The cost is a tree
+   with `proofLen ⌜d⌝ = proofLenMeta d` in [`Length/MetaLength.lean`](Length/MetaLength.lean). The cost is a tree
    shape, never a Gödel number's magnitude.
-4. **The box** — `□[k] φ := ∃ d < fbound k, Proof TAct d φ ∧ dlen d ≤ k` (`LenProvableV`, Δ₁; the code
+4. **The box** — `□[k] φ := ∃ d < codeBound k, Proof TAct d φ ∧ proofLen d ≤ k` (`LenBox`, Δ₁; the code
    bound is a margin that properness makes harmless): [`Box/BewV.lean`](Box/BewV.lean); the Σ₁ form
-   `LenDerivable` and their equality in every model, [`Box/CutV.lean`](Box/CutV.lean), [`Box/ProperV.lean`](Box/ProperV.lean).
+   `LenBoxUnbounded` and their equality in every model, [`Box/CutV.lean`](Box/CutV.lean), [`Box/ProperBound.lean`](Box/ProperBound.lean).
 5. **Program codes** — `pConst/pSelf/pOpp/pBot/pSim/pIte/pSearch` on the polynomial pairing `ppair`:
-   [`Agents/Prog.lean`](Agents/Prog.lean). `swapcode` is τ on codes.
-6. **Descriptions** — a program named inside a sentence by binary numeral TERMS (`progT`, `dnum`,
-   `dU`, `dW`): [`Agents/ProgT.lean`](Agents/ProgT.lean), [`Agents/Bnum.lean`](Agents/Bnum.lean).
+   [`Agents/Prog.lean`](Agents/Prog.lean). `transposeCode` is τ on codes.
+6. **Descriptions** — a program named inside a sentence by binary numeral TERMS (`codeTerm`, `canonical`,
+   `revalueU`, `revalueW`): [`Agents/CodeTerm.lean`](Agents/CodeTerm.lean), [`Agents/BinNumeral.lean`](Agents/BinNumeral.lean).
 7. **The guard template and the runtime guard** — `guardTemplate a` ("opp plays `a` against me", six
-   description slots) and the general translation `tmpl : PD.Formula → Semisentence LAct 6` of the
+   description slots) and the general translation `template : PD.Formula → Semisentence LAct 6` of the
    engine's guard formulas; `guardCode g me opp` fills the slots at run time, `guardCodeB` adds the
    seventh slot holding the node's own budget (route (c)): [`Agents/Template.lean`](Agents/Template.lean),
    [`Agents/Code.lean`](Agents/Code.lean), [`Agents/Guard.lean`](Agents/Guard.lean).
-8. **Substitution** — `psubst`/`gsubst`, the engine's one-shot `Prog.subst` on codes (`.bot` frozen,
+8. **Substitution** — `substCode`/`substTemplate`, the engine's one-shot `Prog.subst` on codes (`.bot` frozen,
    guards read the outer players): [`Agents/Subst.lean`](Agents/Subst.lean); agreement with the engine
-   `pcode_subst` in `Agents/Code.lean`.
+   `progCode_subst` in `Agents/Code.lean`.
 9. **The evaluator** — `EvalGraph n me opp p a`, a Σ₁ fixpoint mirroring the engine's `eval` clause
    by clause, whose `search` clause consults the box: [`Eval/Eval.lean`](Eval/Eval.lean); on ℕ it is
    deterministic and fuel-monotone, [`Eval/EvalN.lean`](Eval/EvalN.lean).
 
-The bridge from the engine is `pcode : PD.Prog → ℕ` and `tcode : PD.Formula → ℕ` in `Agents/Code.lean`.
+The bridge from the engine is `progCode : PD.Prog → ℕ` and `templateCode : PD.Formula → ℕ` in `Agents/Code.lean`.
 
 ## 3. The results, and a reading order
 
@@ -82,8 +82,8 @@ Then, in order:
 2. **A soundness cell** — `Cells/SoundnessCells.lean`, `snd_else_of_false` and one `snd_*` cell: a
    guard false in ℕ is never found, so the searcher takes its else branch.
 3. **PBLT** — `Assembly/Family.lean` (`LoebSound`, `family_found`, the family-parametric bounded Löb
-   theorem) and `Necessitation/Package.lean` (`boundedInnerNec_sixteen`, `pblt_unconditional`,
-   `dupoc_self_coop_unconditional`): read the STATEMENTS.
+   theorem) and `Necessitation/Package.lean` (`boundedInnerNec_sixteen`, `pblt`,
+   `dupoc_self_coop`): read the STATEMENTS.
 4. **One Löb cell** — `Cells/CIMCIC.lean` or `Cells/DupocMirror.lean`.
 5. **The flips** — `Cells/FlipCells.lean`, `Cells/DimcidFlips.lean`: where PA-`S'` contradicts the
    engine, and why (`dimcid_vs_closed`: DIMCID defects against every closed program).
@@ -94,32 +94,32 @@ Then, in order:
 
 | engine (`PD`) | `ArithS` | note |
 |---|---|---|
-| `Prog` (syntax tree) | `ℕ` (a code); `pcode p` | `bot P k = pcode (P k)`, `const P = pcode P` |
+| `Prog` (syntax tree) | `ℕ` (a code); `progCode p` | `bot P k = progCode (P k)`, `const P = progCode P` |
 | `Action` `.C`/`.D` | `actCode .C = 0`, `actCode .D = 1` | the older cell theorems write the literals |
-| `Formula` (guard) | `tmpl φ : Semisentence LAct 6`, code `tcode φ` | `guardTemplate a` is the hand-written template of `.plays .opp .self a` |
+| `Formula` (guard) | `template φ : Semisentence LAct 6`, code `templateCode φ` | `guardTemplate a` is the hand-written template of `.plays .opp .self a` |
 | `eval n me opp p` | `EvalGraph n me opp p a` | a graph, not a function: it is a Σ₁ fixpoint |
 | `play`, `outcome` | `plays me opp a`, `OutcomeAtA L R r` | `Outcome/Spec.lean` |
 | `OutcomeSpec regime pad L R r` | `OutcomeSpecA regime L R r` | same `BudgetRegime`; fuel is `∃ n` here |
-| `Pf k φ` (`⊢_k φ`) | `LenProvableV TAct k ⌜φ⌝` (`□[k] φ`) | PA with a length bound, not a rule set |
+| `Pf k φ` (`⊢_k φ`) | `LenBox TAct k ⌜φ⌝` (`□[k] φ`) | PA with a length bound, not a rule set |
 | `Pf.transpose` (47 arms) | `transpose_exists` (`Theory/Transpose.lean`) | free: a language hom |
 | `sound_upto` | `models_TAct` + the truth equations | soundness in ℕ |
-| `bloeb_engine`/`pblt_engine` | `family_found`/`pblt_unconditional` | Löb needs U10 |
+| `bloeb_engine`/`pblt_engine` | `family_found`/`pblt` | Löb needs U10 |
 | `outcome_<L>_vs_<R>` | `outcome_<L>_vs_<R>` in `Outcome/Matrix/` | proved from `snd_/pos_/loeb_/khat_/sf_<L>_vs_<R>` |
-| `DupocBot k` | `pcode (DupocBot k)`; the hand twin `Dupoc k` | see the twins below |
+| `DupocBot k` | `progCode (DupocBot k)`; the hand twin `Dupoc k` | see the twins below |
 
 **Theorem heads in `Cells/`** name the PROOF METHOD: `sf_` search-free transfer, `pa_` PA proves the
 atom, `snd_` soundness/else branch, `pos_` guard found without Löb, `loeb_` bounded Löb, `khat_` the
 `k̂`-chain, `floor_` a settled floor half, `dich_` a floor dichotomy. The cell name is the `outcome_` one.
 
-**The hand-template twins.** Thirteen cells are stated on codes that are NOT the engine's `pcode`:
+**The hand-template twins.** Thirteen cells are stated on codes that are NOT the engine's `progCode`:
 `Dupoc k`/`Cupod k` (`Cells/RedCell.lean`, template `guardTemplate`), `Just k`/`Just7 k`
-(`Cells/JustBot.lean`, `Cells/JustSlot.lean`), `CupodTroll7 k` (`Cells/KhatCells.lean`; it plays as `pcode (CupodTrollBot k)` in the program slot, but as an opponent its code differs).
-The engine's `DupocBot k` carries the translated template `tmpl (.plays .opp .self .C)`, a different
+(`Cells/JustBot.lean`, `Cells/JustSlot.lean`), `CupodTroll7 k` (`Cells/KhatCells.lean`; it plays as `progCode (CupodTrollBot k)` in the program slot, but as an opponent its code differs).
+The engine's `DupocBot k` carries the translated template `template (.plays .opp .self .C)`, a different
 code with a provably equivalent guard (`Agents/Code.lean`, "Sanity"); the Löb cells were built on the
-hand template first and are not yet re-proved on `tcode`. Their `outcome_` theorems keep the twin's
+hand template first and are not yet re-proved on `templateCode`. Their `outcome_` theorems keep the twin's
 name (`outcome_Dupoc_vs_Dupoc`) so that a name never claims more than its statement. `Cimcic`, `Dimcid`,
-`Prudent`, `Mirror` ARE the engine's codes (`pcode_CIMCIC`, `pcode_DIMCID`, `pcode_PrudentBot`,
-`pcode_MirrorBot`) and their cells carry engine names.
+`Prudent`, `Mirror` ARE the engine's codes (`progCode_CIMCIC`, `progCode_DIMCID`, `progCode_PrudentBot`,
+`progCode_MirrorBot`) and their cells carry engine names.
 
 ## 5. Folder map
 
@@ -130,15 +130,15 @@ them · `Transpose` derivations transport along language homs, τ preserves leng
 on proof codes at every length · `Sound` internal derivation codes come from meta derivations.
 
 **`Length/`** — `Length` term/formula symbol counts · `SequentLength` sequents (bit-sets) · `DerivationLength`
-`dlen` · `MetaLength` `dlen ⌜d⌝ = mlen d` · `Proper` a derivation of length `k` has code below a tower
+`proofLen` · `MetaLength` `proofLen ⌜d⌝ = proofLenMeta d` · `Proper` a derivation of length `k` has code below a tower
 (estimate) · `ProofLength` a proof is at least as long as its conclusion.
 
-**`Box/`** — `Bew` `□_k` at ℕ · `BewV` the budget as a variable (`LenProvableV`) · `Cut`/`CutV` bounded
-modus ponens with exact length accounting · `ProperV` properness inside every model.
+**`Box/`** — `Bew` `□_k` at ℕ · `BewV` the budget as a variable (`LenBox`) · `Cut`/`CutV` bounded
+modus ponens with exact length accounting · `ProperBound` properness inside every model.
 
-**`Agents/`** — `Prog` codes · `ProgT` descriptions as terms · `Bnum` binary numerals · `RelabelTemplate`
+**`Agents/`** — `Prog` codes · `CodeTerm` descriptions as terms · `BinNumeral` binary numerals · `RevalueTemplate`
 τ on template codes · `Template` the guard template · `Guard` the runtime guard, the budget slot ·
-`Subst` `psubst`/`gsubst` · `Code` `pcode`/`tcode`/`tmpl`, the engine bridge · `Instance`/`InstanceV`
+`Subst` `substCode`/`substTemplate` · `Code` `progCode`/`templateCode`/`template`, the engine bridge · `Instance`/`InstanceV`
 Dupoc's guard as the `k`-instance of one formula (for Löb) · `Fit`/`FitBox` the guard fits its budget;
 `box_guard_never_fits` (why LegibleBot is out).
 

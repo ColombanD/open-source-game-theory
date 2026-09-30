@@ -7,21 +7,21 @@ import ArithS.Agents.Code
 Roadmap M4, item U0 (`M4_BOUNDED_HBL/BRIEF.md` §2): the parametric bounded Löb argument
 needs the guard sentence of `Dupoc k` to be `q(k̂)` for a FIXED one-variable formula `q` and
 the binary numeral `k̂` — Critch's "source with `k` written in binary". With programs
-described by the structural terms of their codes (`ArithS.ProgT`, `ArithS.Guard`) this is
+described by the structural terms of their codes (`ArithS.CodeTerm`, `ArithS.Guard`) this is
 now an equation:
 
-* the canonical code `dnum (Dupoc k)` is `pSearch k G P Q` for a `k`-INDEPENDENT inner
+* the canonical code `canonical (Dupoc k)` is `pSearch k G P Q` for a `k`-INDEPENDENT inner
   triple — Dupoc's own `(⌜guardTemplate 0⌝, pConst 0, pConst 1)` or Cupod's — decided by ONE fixed
   inequality `innerD ≤ innerC` between two closed constants (`ppair` is strictly monotone in
   each argument, so `Dupoc k ≤ Cupod k ↔ innerD ≤ innerC` uniformly in `k`; the inequality is
-  never evaluated), and likewise `dU (Dupoc k)`, `dW (Dupoc k)` are `k`-independent;
-* `progTT (pSearch k G P Q) = TD ⇜ ![bnumT k]` for the fixed one-variable term
-  `TD = succ (ppairT 6̂ (ppairT #0 (ppairT Ĝ (ppairT (progTT P) (progTT Q)))))`;
-* hence **`exists_dupoc_instance`**: `∃ q : Semisentence LAct 1, ∀ k, guardSentenceA 0
-  (Dupoc k) (Dupoc k) = q ⇜ ![lMap emb (bnumT k)]`, and its code form
+  never evaluated), and likewise `revalueU (Dupoc k)`, `revalueW (Dupoc k)` are `k`-independent;
+* `codeTermMeta (pSearch k G P Q) = TD ⇜ ![binNumeralMeta k]` for the fixed one-variable term
+  `TD = succ (ppairTerm 6̂ (ppairTerm #0 (ppairTerm Ĝ (ppairTerm (codeTermMeta P) (codeTermMeta Q)))))`;
+* hence **`exists_dupoc_instance`**: `∃ q : Semisentence LAct 1, ∀ k, guardSentence 0
+  (Dupoc k) (Dupoc k) = q ⇜ ![lMap emb (binNumeralMeta k)]`, and its code form
   **`exists_dupoc_instance_code`**: `∃ cq, IsSemiformula LAct 1 cq ∧ ∀ k, guardCode ⌜guardTemplate 0⌝
-  (Dupoc k) (Dupoc k) = subst LAct (bnum k ∷ 0) cq` (through the code equation
-  `quote_guardSentenceA` and the quote of a substitution instance).
+  (Dupoc k) (Dupoc k) = subst LAct (binNumeral k ∷ 0) cq` (through the code equation
+  `quote_guardSentence` and the quote of a substitution instance).
 
 Everything here is at `ℕ` (the meta level, where `Dupoc` lives); `ArithS.InstanceV` re-runs
 the analysis inside every model of `𝗜𝚺₁` (`exists_dupoc_instance_code_V`, for possibly
@@ -102,20 +102,20 @@ noncomputable def wD : ClosedSemiterm LAct 0 :=
   if innerD < innerC then cterm Act.D else if innerC < innerD then cterm Act.C else numT 1
 
 /-- **The canonical code of `Dupoc k` is a searcher with a `k`-independent inner triple.** -/
-theorem dnum_Dupoc (k : ℕ) : dnum (Dupoc k) = pSearch k gD pD qD := by
+theorem canonical_Dupoc (k : ℕ) : canonical (Dupoc k) = pSearch k gD pD qD := by
   by_cases h : innerD ≤ innerC
   · simp only [gD, pD, qD, if_pos h]
     rcases Nat.lt_or_eq_of_le h with h' | h'
-    · rw [dnum_of_lt (by rw [swapcode_Dupoc]; exact (Dupoc_lt_Cupod_iff k).mpr h')]; rfl
-    · rw [dnum_of_eq (by rw [swapcode_Dupoc, Dupoc_eq_inner, Cupod_eq_inner, h'])]; rfl
+    · rw [canonical_of_lt (by rw [transposeCode_Dupoc]; exact (Dupoc_lt_Cupod_iff k).mpr h')]; rfl
+    · rw [canonical_of_eq (by rw [transposeCode_Dupoc, Dupoc_eq_inner, Cupod_eq_inner, h'])]; rfl
   · simp only [gD, pD, qD, if_neg h]
-    rw [dnum_of_gt (by rw [swapcode_Dupoc]; exact (Cupod_lt_Dupoc_iff k).mpr (Nat.lt_of_not_le h)),
-      swapcode_Dupoc]
+    rw [canonical_of_gt (by rw [transposeCode_Dupoc]; exact (Cupod_lt_Dupoc_iff k).mpr (Nat.lt_of_not_le h)),
+      transposeCode_Dupoc]
     rfl
 
-theorem dUT_Dupoc (k : ℕ) : dUT (Dupoc k) = uD := by
-  unfold dUT uD
-  rw [swapcode_Dupoc]
+theorem revalueUMeta_Dupoc (k : ℕ) : revalueUMeta (Dupoc k) = uD := by
+  unfold revalueUMeta uD
+  rw [transposeCode_Dupoc]
   by_cases h1 : innerD < innerC
   · rw [if_pos ((Dupoc_lt_Cupod_iff k).mpr h1), if_pos h1]
   · rw [if_neg (fun h ↦ h1 ((Dupoc_lt_Cupod_iff k).mp h)), if_neg h1]
@@ -123,9 +123,9 @@ theorem dUT_Dupoc (k : ℕ) : dUT (Dupoc k) = uD := by
     · rw [if_pos ((Cupod_lt_Dupoc_iff k).mpr h2), if_pos h2]
     · rw [if_neg (fun h ↦ h2 ((Cupod_lt_Dupoc_iff k).mp h)), if_neg h2]
 
-theorem dWT_Dupoc (k : ℕ) : dWT (Dupoc k) = wD := by
-  unfold dWT wD
-  rw [swapcode_Dupoc]
+theorem revalueWMeta_Dupoc (k : ℕ) : revalueWMeta (Dupoc k) = wD := by
+  unfold revalueWMeta wD
+  rw [transposeCode_Dupoc]
   by_cases h1 : innerD < innerC
   · rw [if_pos ((Dupoc_lt_Cupod_iff k).mpr h1), if_pos h1]
   · rw [if_neg (fun h ↦ h1 ((Dupoc_lt_Cupod_iff k).mp h)), if_neg h1]
@@ -152,8 +152,8 @@ noncomputable def oneTT : ClosedSemiterm ℒₒᵣ 0 := ‘1’
 noncomputable def succT1 (t : Semiterm ℒₒᵣ Empty 1) : Semiterm ℒₒᵣ Empty 1 :=
   Semiterm.func Language.ORing.Func.add ![t, Rew.bShift oneTT]
 
-lemma ppairTT_func (s t : ClosedSemiterm ℒₒᵣ 0) :
-    ppairTT s t = Semiterm.func Language.ORing.Func.add
+lemma ppairTermMeta_func (s t : ClosedSemiterm ℒₒᵣ 0) :
+    ppairTermMeta s t = Semiterm.func Language.ORing.Func.add
       ![Semiterm.func Language.ORing.Func.mul
         ![Semiterm.func Language.ORing.Func.add ![s, t], Semiterm.func Language.ORing.Func.add ![s, t]], t] := rfl
 
@@ -169,8 +169,8 @@ lemma subst_bShift₁ (u : ClosedSemiterm ℒₒᵣ 0) (t : ClosedSemiterm ℒ�
   rw [← Rew.comp_app, Rew.subst_comp_bShift_eq_id]; rfl
 
 lemma subst_ppairT1 (u : ClosedSemiterm ℒₒᵣ 0) (s t : Semiterm ℒₒᵣ Empty 1) :
-    Rew.subst ![u] (ppairT1 s t) = ppairTT (Rew.subst ![u] s) (Rew.subst ![u] t) := by
-  rw [ppairT1, ppairTT_func, subst_func₂, subst_func₂, subst_func₂]
+    Rew.subst ![u] (ppairT1 s t) = ppairTermMeta (Rew.subst ![u] s) (Rew.subst ![u] t) := by
+  rw [ppairT1, ppairTermMeta_func, subst_func₂, subst_func₂, subst_func₂]
 
 lemma subst_succT1 (u : ClosedSemiterm ℒₒᵣ 0) (t : Semiterm ℒₒᵣ Empty 1) :
     Rew.subst ![u] (succT1 t) = succTT (Rew.subst ![u] t) := by
@@ -178,13 +178,13 @@ lemma subst_succT1 (u : ClosedSemiterm ℒₒᵣ 0) (t : Semiterm ℒₒᵣ Empt
 
 /-- The one-variable structural term of the searcher `pSearch · g p q`. -/
 noncomputable def searchT1 (g p q : ℕ) : Semiterm ℒₒᵣ Empty 1 :=
-  succT1 (ppairT1 (Rew.bShift (bnumT 6)) (ppairT1 #0
-    (Rew.bShift (ppairTT (bnumT g) (ppairTT (progTT p) (progTT q))))))
+  succT1 (ppairT1 (Rew.bShift (binNumeralMeta 6)) (ppairT1 #0
+    (Rew.bShift (ppairTermMeta (binNumeralMeta g) (ppairTermMeta (codeTermMeta p) (codeTermMeta q))))))
 
 /-- **The structural term of a searcher is the `k`-instance of `searchT1`.** -/
-theorem progTT_search_eq_subst (k g p q : ℕ) :
-    progTT (pSearch k g p q) = Rew.subst ![bnumT k] (searchT1 g p q) := by
-  rw [progTT_search, searchT1, subst_succT1, subst_ppairT1, subst_ppairT1, subst_bShift₁, subst_bShift₁,
+theorem codeTermMeta_search_eq_subst (k g p q : ℕ) :
+    codeTermMeta (pSearch k g p q) = Rew.subst ![binNumeralMeta k] (searchT1 g p q) := by
+  rw [codeTermMeta_search, searchT1, subst_succT1, subst_ppairT1, subst_ppairT1, subst_bShift₁, subst_bShift₁,
     Rew.subst_bvar]
   rfl
 
@@ -202,9 +202,9 @@ lemma term_lMap_subst₁ (b : ClosedSemiterm ℒₒᵣ 0) (T : Semiterm ℒₒ�
 noncomputable def TD : Semiterm LAct Empty 1 := Semiterm.lMap emb (searchT1 gD pD qD)
 
 /-- **The description of `Dupoc k` is the `k`-instance of `TD`.** -/
-theorem dnumT_Dupoc (k : ℕ) : dnumT (Dupoc k) = Rew.subst ![Semiterm.lMap emb (bnumT k)] TD := by
-  unfold dnumT TD
-  rw [dnum_Dupoc, progTT_search_eq_subst, term_lMap_subst₁]
+theorem canonicalMeta_Dupoc (k : ℕ) : canonicalMeta (Dupoc k) = Rew.subst ![Semiterm.lMap emb (binNumeralMeta k)] TD := by
+  unfold canonicalMeta TD
+  rw [canonical_Dupoc, codeTermMeta_search_eq_subst, term_lMap_subst₁]
 
 end oneVariable
 
@@ -230,42 +230,42 @@ noncomputable def qDupoc : Semisentence LAct 1 :=
 
 /-- **The instance equation (meta)**: Dupoc's guard sentence against itself is the `k`-instance
 of the fixed formula `qDupoc`. -/
-theorem guardSentenceA_Dupoc_eq (k : ℕ) :
-    guardSentenceA 0 (Dupoc k) (Dupoc k) = qDupoc ⇜ ![Semiterm.lMap emb (bnumT k)] := by
-  have hv : descTerms (Dupoc k) (Dupoc k) =
-      fun i ↦ Rew.subst ![Semiterm.lMap emb (bnumT k)] (![TD, cl uD, cl wD, TD, cl uD, cl wD] i) := by
+theorem guardSentence_Dupoc_eq (k : ℕ) :
+    guardSentence 0 (Dupoc k) (Dupoc k) = qDupoc ⇜ ![Semiterm.lMap emb (binNumeralMeta k)] := by
+  have hv : descriptionTerms (Dupoc k) (Dupoc k) =
+      fun i ↦ Rew.subst ![Semiterm.lMap emb (binNumeralMeta k)] (![TD, cl uD, cl wD, TD, cl uD, cl wD] i) := by
     funext i
-    fin_cases i <;> simp [descTerms, dnumT_Dupoc, dUT_Dupoc, dWT_Dupoc, rew_cl, cl_zero]
-  unfold guardSentenceA qDupoc Rewriting.subst
+    fin_cases i <;> simp [descriptionTerms, canonicalMeta_Dupoc, revalueUMeta_Dupoc, revalueWMeta_Dupoc, rew_cl, cl_zero]
+  unfold guardSentence qDupoc Rewriting.subst
   rw [← TransitiveRewriting.comp_app, comp_subst_eq, hv]
 
 /-- **The instance equation, existentially packaged.** -/
 theorem exists_dupoc_instance :
     ∃ q : Semisentence LAct 1, ∀ k : ℕ,
-      guardSentenceA 0 (Dupoc k) (Dupoc k) = q ⇜ ![Semiterm.lMap emb (bnumT k)] :=
-  ⟨qDupoc, guardSentenceA_Dupoc_eq⟩
+      guardSentence 0 (Dupoc k) (Dupoc k) = q ⇜ ![Semiterm.lMap emb (binNumeralMeta k)] :=
+  ⟨qDupoc, guardSentence_Dupoc_eq⟩
 
 /-! #### The code form -/
 
-lemma quote_lMap_emb_bnumT (k : ℕ) : (⌜Semiterm.lMap emb (bnumT k)⌝ : ℕ) = bnum k := by
+lemma quote_lMap_emb_binNumeralMeta (k : ℕ) : (⌜Semiterm.lMap emb (binNumeralMeta k)⌝ : ℕ) = binNumeral k := by
   rw [Semiterm.empty_quote_def, term_emb_lMap_emb, quote_term_lMap_emb, ← Semiterm.empty_quote_def,
-    quote_bnumT_nat]
+    quote_binNumeralMeta_nat]
 
 lemma semitermVec_val_single (k : ℕ) :
-    SemitermVec.val (fun i ↦ (⌜(Rew.emb ((![Semiterm.lMap emb (bnumT k)] : Fin 1 → ClosedSemiterm LAct 0) i) :
-      SyntacticSemiterm LAct 0)⌝ : Bootstrapping.Semiterm ℕ LAct 0)) = bnum k ∷ 0 := by
-  have hv : (fun i ↦ (⌜(Rew.emb ((![Semiterm.lMap emb (bnumT k)] : Fin 1 → ClosedSemiterm LAct 0) i) :
+    SemitermVec.val (fun i ↦ (⌜(Rew.emb ((![Semiterm.lMap emb (binNumeralMeta k)] : Fin 1 → ClosedSemiterm LAct 0) i) :
+      SyntacticSemiterm LAct 0)⌝ : Bootstrapping.Semiterm ℕ LAct 0)) = binNumeral k ∷ 0 := by
+  have hv : (fun i ↦ (⌜(Rew.emb ((![Semiterm.lMap emb (binNumeralMeta k)] : Fin 1 → ClosedSemiterm LAct 0) i) :
       SyntacticSemiterm LAct 0)⌝ : Bootstrapping.Semiterm ℕ LAct 0)) =
-      ![⌜(Rew.emb (Semiterm.lMap emb (bnumT k)) : SyntacticSemiterm LAct 0)⌝] := by
+      ![⌜(Rew.emb (Semiterm.lMap emb (binNumeralMeta k)) : SyntacticSemiterm LAct 0)⌝] := by
     funext i; fin_cases i; rfl
   rw [hv]
-  simp only [SemitermVec.val_cons, SemitermVec.val_nil, typed_val_emb, quote_lMap_emb_bnumT]
+  simp only [SemitermVec.val_cons, SemitermVec.val_nil, typed_val_emb, quote_lMap_emb_binNumeralMeta]
 
 /-- **The instance equation on codes**: Dupoc's guard code is the substitution of the binary
 numeral of `k` into the code of `qDupoc`. -/
 theorem guardCode_Dupoc_eq (k : ℕ) :
-    guardCode (⌜guardTemplate 0⌝ : ℕ) (Dupoc k) (Dupoc k) = subst LAct (bnum k ∷ 0) (⌜qDupoc⌝ : ℕ) := by
-  rw [← quote_guardSentenceA, guardSentenceA_Dupoc_eq, Sentence.quote_def,
+    guardCode (⌜guardTemplate 0⌝ : ℕ) (Dupoc k) (Dupoc k) = subst LAct (binNumeral k ∷ 0) (⌜qDupoc⌝ : ℕ) := by
+  rw [← quote_guardSentence, guardSentence_Dupoc_eq, Sentence.quote_def,
     Semiformula.coe_subst_eq_subst_coe, Semiformula.quote_def, Semiformula.typed_quote_substs,
     Bootstrapping.Semiformula.val_substs, ← Semiformula.quote_def, ← Sentence.quote_def]
   congr 1
@@ -274,7 +274,7 @@ theorem guardCode_Dupoc_eq (k : ℕ) :
 /-- **The instance equation on codes, existentially packaged.** -/
 theorem exists_dupoc_instance_code :
     ∃ cq : ℕ, IsSemiformula LAct 1 cq ∧
-      ∀ k : ℕ, guardCode (⌜guardTemplate 0⌝ : ℕ) (Dupoc k) (Dupoc k) = subst LAct (bnum k ∷ 0) cq :=
+      ∀ k : ℕ, guardCode (⌜guardTemplate 0⌝ : ℕ) (Dupoc k) (Dupoc k) = subst LAct (binNumeral k ∷ 0) cq :=
   ⟨⌜qDupoc⌝, by simp, guardCode_Dupoc_eq⟩
 
 end instance_eq

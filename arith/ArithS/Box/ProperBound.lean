@@ -2,21 +2,21 @@ import ArithS.Box.CutV
 import ArithS.Box.BewV
 
 /-!
-# ArithS.ProperV — properness of derivation codes inside every model of `IΣ₁`
+# ArithS.ProperBound — properness of derivation codes inside every model of `IΣ₁`
 
 `ArithS.Proper` proves properness at `V = ℕ` THROUGH QUOTES (`quote_derivation_le`: the code
-of a meta derivation `d : T ⟹₂ Γ` is below a tower in `mlen d`), and `ArithS.CutV` therefore
-states properness inside a model as a HYPOTHESIS (`ProperV V T`), discharged only at ℕ
-(`properV_nat`). This module proves it in EVERY model, without quotes:
+of a meta derivation `d : T ⟹₂ Γ` is below a tower in `proofLenMeta d`), and `ArithS.CutV` therefore
+states properness inside a model as a HYPOTHESIS (`ProperBound V T`), discharged only at ℕ
+(`properBound_nat`). This module proves it in EVERY model, without quotes:
 
 ```
-properV_of_small : SmallCodesV V L → SmallRelCodesV V L → ∀ (T : Theory L) [T.Δ₁], ProperV V T
-properV_TAct     : ProperV V TAct
+properBound_of_small : SmallCodesV V L → SmallRelCodesV V L → ∀ (T : Theory L) [T.Δ₁], ProperBound V T
+properBound_TAct     : ProperBound V TAct
 ```
 
-The chain of `Proper.lean` is redone on the INTERNAL codes by the internal induction principles:
+The chain of `ProperPlayer.lean` is redone on the INTERNAL codes by the internal induction principles:
 
-* towers `EV s = exp (exp s)`, `FV s = exp (EV s)` (Σ₁-definable; `fbound k = FV (12 k) + 1` by
+* towers `EV s = exp (exp s)`, `FV s = exp (EV s)` (Σ₁-definable; `codeBound k = FV (12 k) + 1` by
   `rfl`), closed under pairing at two levels (`pair_EV`, `pair_FV`, from the sharp pair bound
   `⟪a, b⟫ + 1 ≤ (max a b + 1)²` proved from the definition of `pair`) and, for `FV`, under
   one bit-set level (`exp_EV_succ_le_FV`);
@@ -25,22 +25,22 @@ The chain of `Proper.lean` is redone on the INTERNAL codes by the internal induc
   (`vec_EV`: entries below `EV (8 lᵢ)` with `lᵢ ≥ 1` give a vector below `EV (8 Σ lᵢ + 2)`);
 * formulas: `IsSemiformula L n p → 1 ≤ formulaLen L p ∧ p ≤ EV (8 · formulaLen L p)`
   (`isSemiformula_le_EV`, by `IsSemiformula.sigma1_structural_induction`);
-* sequents: `IsFormulaSet L s → s ≤ FV (8 · setLen L s + 1)` (`isFormulaSet_le_FV`, by
-  `lt_exp_iff` on the bit-set and `formulaLen_le_setLen_of_mem`);
-* derivations: `Derivation T d → DlenGraph L d n → d ≤ FV (12 n)` (`derivation_le_FV`, by
-  `Derivation.induction1 𝚷` — the `DlenGraph.*_iff` inversion clauses give each node's length
+* sequents: `IsFormulaSet L s → s ≤ FV (8 · sequentLen L s + 1)` (`isFormulaSet_le_FV`, by
+  `lt_exp_iff` on the bit-set and `formulaLen_le_sequentLen_of_mem`);
+* derivations: `Derivation T d → ProofLenGraph L d n → d ≤ FV (12 n)` (`derivation_le_FV`, by
+  `Derivation.induction1 𝚷` — the `ProofLenGraph.*_iff` inversion clauses give each node's length
   from its premises, and every node is `⟪s, tag, rest⟫ + 1` with `s, rest ≤ FV (12 Y)` for `Y`
   the length without the node's own `+ 1`).
 
 The symbol-code hypotheses are the INTERNAL statements `SmallCodesV V L : ∀ k f, L.IsFunc k f →
-f ≤ 8` (resp. `IsRel`); the meta `SmallCodes L` of `Proper.lean` does not imply them for an
+f ≤ 8` (resp. `IsRel`); the meta `SmallCodes L` of `ProperPlayer.lean` does not imply them for an
 arbitrary language (a nonstandard model may have nonstandard symbol codes), but for `LAct` and
 `ℒₒᵣ` the symbol sets are explicit finite Δ₀-disjunctions, so both hold in every model
 (`smallCodesV_LAct`, `smallCodesV_LOR`, …).
 
-Consequences (all unconditional, every model of `IΣ₁`): `lenProvableV_cut_V'` and
-`lenProvableV_cut_V_sharp'` (bounded D2 for `LenProvableV TAct`, no `hP`), and the bridge
-`lenDerivable_iff_lenProvableV : LenDerivable TAct k φ ↔ LenProvableV TAct k φ` — the Löb
+Consequences (all unconditional, every model of `IΣ₁`): `lenBox_mp` and
+`lenBox_mp_sharp` (bounded D2 for `LenBox TAct`, no `hP`), and the bridge
+`lenBoxUnbounded_iff_lenBox : LenBoxUnbounded TAct k φ ↔ LenBox TAct k φ` — the Löb
 argument's Σ₁ box (no code bound) and the evaluator's Δ₁ box (`ArithS.BewV`) coincide.
 -/
 
@@ -56,7 +56,7 @@ variable {V : Type*} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
 /-- `EV s = exp (exp s)`, the internal `E`. -/
 noncomputable def EV (s : V) : V := Exp.exp (Exp.exp s)
 
-/-- `FV s = exp (exp (exp s))`, the internal `F`; `fbound k = FV (12 k) + 1`. -/
+/-- `FV s = exp (exp (exp s))`, the internal `F`; `codeBound k = FV (12 k) + 1`. -/
 noncomputable def FV (s : V) : V := Exp.exp (EV s)
 
 def EVDef : 𝚺₁.Semisentence 2 := .mkSigma
@@ -79,7 +79,7 @@ instance FV_definable : 𝚺₁-Function₁[V] FV := FV_defined.to_definable
 
 instance FV_definable' : Γ-[m + 1]-Function₁[V] FV := FV_definable.of_sigmaOne
 
-lemma fbound_eq_FV (k : V) : fbound k = FV (12 * k) + 1 := rfl
+lemma codeBound_eq_FV (k : V) : codeBound k = FV (12 * k) + 1 := rfl
 
 lemma EV_mono {s t : V} (h : s ≤ t) : EV s ≤ EV t :=
   exp_monotone_le.mpr (exp_monotone_le.mpr h)
@@ -427,64 +427,64 @@ theorem one_le_formulaLen_V {n p : V} (hp : IsSemiformula L n p) : 1 ≤ formula
 end formulas
 
 
-/-! ### Sequent codes (bit-sets of formula codes) are bounded by `FV (8 · setLen + 1)` -/
+/-! ### Sequent codes (bit-sets of formula codes) are bounded by `FV (8 · sequentLen + 1)` -/
 
 section sequents
 
 variable {L : Language} [L.Encodable] [L.LORDefinable]
 
-/-- The partial sums of `setLen` are monotone in the index. -/
-lemma setLenAux_le_add (s i : V) : ∀ j, setLenAux L s i ≤ setLenAux L s (i + j) := by
+/-- The partial sums of `sequentLen` are monotone in the index. -/
+lemma sequentLenAux_le_add (s i : V) : ∀ j, sequentLenAux L s i ≤ sequentLenAux L s (i + j) := by
   intro j
   induction j using ISigma1.sigma1_succ_induction with
   | hP => definability
   | zero => simp
   | succ j ih =>
-    rw [← add_assoc, setLenAux_succ]
+    rw [← add_assoc, sequentLenAux_succ]
     split_ifs
     · exact le_trans ih le_self_add
     · exact ih
 
-lemma setLenAux_mono {s i j : V} (h : i ≤ j) : setLenAux L s i ≤ setLenAux L s j := by
+lemma sequentLenAux_mono {s i j : V} (h : i ≤ j) : sequentLenAux L s i ≤ sequentLenAux L s j := by
   obtain ⟨k, rfl⟩ := exists_add_of_le h
-  exact setLenAux_le_add s i k
+  exact sequentLenAux_le_add s i k
 
 /-- A member's symbol count is at most the sequent's. -/
-lemma formulaLen_le_setLen_of_mem {p s : V} (h : p ∈ s) : formulaLen L p ≤ setLen L s := by
-  have h1 : formulaLen L p ≤ setLenAux L s (p + 1) := by
-    rw [setLenAux_succ_of_mem h]; exact le_add_self
-  exact le_trans h1 (setLenAux_mono (lt_iff_succ_le.mp (lt_of_mem h)))
+lemma formulaLen_le_sequentLen_of_mem {p s : V} (h : p ∈ s) : formulaLen L p ≤ sequentLen L s := by
+  have h1 : formulaLen L p ≤ sequentLenAux L s (p + 1) := by
+    rw [sequentLenAux_succ_of_mem h]; exact le_add_self
+  exact le_trans h1 (sequentLenAux_mono (lt_iff_succ_le.mp (lt_of_mem h)))
 
-/-- **Sequent codes are proper**: `IsFormulaSet L s → s ≤ FV (8 · setLen L s + 1)`. -/
+/-- **Sequent codes are proper**: `IsFormulaSet L s → s ≤ FV (8 · sequentLen L s + 1)`. -/
 theorem isFormulaSet_le_FV (hL : SmallCodesV V L) (hR : SmallRelCodesV V L) {s : V}
-    (hs : IsFormulaSet L s) : s ≤ FV (8 * setLen L s + 1) := by
-  have h1 : s < Exp.exp (EV (8 * setLen L s) + 1) := by
+    (hs : IsFormulaSet L s) : s ≤ FV (8 * sequentLen L s + 1) := by
+  have h1 : s < Exp.exp (EV (8 * sequentLen L s) + 1) := by
     rw [lt_exp_iff]
     intro j hj
-    have hjE : j ≤ EV (8 * setLen L s) :=
+    have hjE : j ≤ EV (8 * sequentLen L s) :=
       le_trans (isFormula_le_EV hL hR (hs j hj))
-        (EV_mono (mul_le_mul_of_nonneg_left (formulaLen_le_setLen_of_mem hj) (by positivity)))
+        (EV_mono (mul_le_mul_of_nonneg_left (formulaLen_le_sequentLen_of_mem hj) (by positivity)))
     exact lt_of_le_of_lt hjE (lt_add_one _)
   exact le_trans h1.le (exp_EV_succ_le_FV _)
 
 end sequents
 
-/-! ### Derivation codes are bounded by `FV (12 · dlen)` -/
+/-! ### Derivation codes are bounded by `FV (12 · proofLen)` -/
 
 section derivations
 
 variable {L : Language} [L.Encodable] [L.LORDefinable]
 
-lemma DlenGraph.one_le {d n : V} (h : DlenGraph L d n) : 1 ≤ n := by
-  rcases DlenGraph.case_iff.mp h with
+lemma ProofLenGraph.one_le {d n : V} (h : ProofLenGraph L d n) : 1 ≤ n := by
+  rcases ProofLenGraph.case_iff.mp h with
     ⟨s, p, rfl, rfl⟩ | ⟨s, rfl, rfl⟩ | ⟨s, p, q, dp, dq, np, nq, _, _, rfl, rfl⟩ |
     ⟨s, p, q, d', n', _, rfl, rfl⟩ | ⟨s, p, d', n', _, rfl, rfl⟩ | ⟨s, p, t, d', n', _, rfl, rfl⟩ |
     ⟨s, d', n', _, rfl, rfl⟩ | ⟨s, d', n', _, rfl, rfl⟩ | ⟨s, p, d₁, d₂, n₁, n₂, _, _, rfl, rfl⟩ |
     ⟨s, p, rfl, rfl⟩ <;> exact le_add_self
 
 /-- The conclusion sequent is charged by every node. -/
-lemma DlenGraph.setLen_fstIdx_le {d n : V} (h : DlenGraph L d n) : setLen L (fstIdx d) ≤ n := by
-  rcases DlenGraph.case_iff.mp h with
+lemma ProofLenGraph.sequentLen_fstIdx_le {d n : V} (h : ProofLenGraph L d n) : sequentLen L (fstIdx d) ≤ n := by
+  rcases ProofLenGraph.case_iff.mp h with
     ⟨s, p, rfl, rfl⟩ | ⟨s, rfl, rfl⟩ | ⟨s, p, q, dp, dq, np, nq, _, _, rfl, rfl⟩ |
     ⟨s, p, q, d', n', _, rfl, rfl⟩ | ⟨s, p, d', n', _, rfl, rfl⟩ | ⟨s, p, t, d', n', _, rfl, rfl⟩ |
     ⟨s, d', n', _, rfl, rfl⟩ | ⟨s, d', n', _, rfl, rfl⟩ | ⟨s, p, d₁, d₂, n₁, n₂, _, _, rfl, rfl⟩ |
@@ -538,42 +538,42 @@ lemma term_le_FV (hL : SmallCodesV V L) {n t X : V} (ht : IsSemiterm L n t)
 variable {T : Theory L} [T.Δ₁]
 
 /-- **Derivation codes are proper**, inside `V`: a `T`-derivation code of length `n`
-(`DlenGraph L d n`) is below `FV (12 n)`. By `Derivation.induction1` on the `Π₁` predicate. -/
+(`ProofLenGraph L d n`) is below `FV (12 n)`. By `Derivation.induction1` on the `Π₁` predicate. -/
 theorem derivation_le_FV (hL : SmallCodesV V L) (hR : SmallRelCodesV V L) {d : V}
-    (hd : Derivation T d) : ∀ n, DlenGraph L d n → d ≤ FV (12 * n) := by
-  apply Derivation.induction1 𝚷 (T := T) (P := fun d ↦ ∀ n, DlenGraph L d n → d ≤ FV (12 * n))
+    (hd : Derivation T d) : ∀ n, ProofLenGraph L d n → d ≤ FV (12 * n) := by
+  apply Derivation.induction1 𝚷 (T := T) (P := fun d ↦ ∀ n, ProofLenGraph L d n → d ≤ FV (12 * n))
     (by definability) hd
   -- axL
   · intro s hs p hp _ n hn
-    obtain rfl := DlenGraph.axL_iff.mp hn
-    have hsl : 1 ≤ setLen L s :=
-      le_trans (one_le_formulaLen_V (hs p hp)) (formulaLen_le_setLen_of_mem hp)
-    have hs' : s ≤ FV (12 * setLen L s) :=
+    obtain rfl := ProofLenGraph.axL_iff.mp hn
+    have hsl : 1 ≤ sequentLen L s :=
+      le_trans (one_le_formulaLen_V (hs p hp)) (formulaLen_le_sequentLen_of_mem hp)
+    have hs' : s ≤ FV (12 * sequentLen L s) :=
       le_trans (isFormulaSet_le_FV hL hR hs) (FV_mono (eight_succ_le_twelve_self hsl))
-    have hp' : p ≤ FV (12 * setLen L s) :=
-      formula_le_FV hL hR (hs p hp) (eight_le_twelve_of_le (formulaLen_le_setLen_of_mem hp) le_rfl)
+    have hp' : p ≤ FV (12 * sequentLen L s) :=
+      formula_le_FV hL hR (hs p hp) (eight_le_twelve_of_le (formulaLen_le_sequentLen_of_mem hp) le_rfl)
     unfold Bootstrapping.axL
     exact rule_node_FV hsl le_rfl (add_le_twelve_mul_succ _ (by norm_num)) hs' (by norm_num) hp'
   -- verumIntro
   · intro s hs hv n hn
-    obtain rfl := DlenGraph.verumIntro_iff.mp hn
-    have hsl : 1 ≤ setLen L s :=
-      le_trans (one_le_formulaLen_V (hs _ hv)) (formulaLen_le_setLen_of_mem hv)
-    have hs' : s ≤ FV (12 * setLen L s) :=
+    obtain rfl := ProofLenGraph.verumIntro_iff.mp hn
+    have hsl : 1 ≤ sequentLen L s :=
+      le_trans (one_le_formulaLen_V (hs _ hv)) (formulaLen_le_sequentLen_of_mem hv)
+    have hs' : s ≤ FV (12 * sequentLen L s) :=
       le_trans (isFormulaSet_le_FV hL hR hs) (FV_mono (eight_succ_le_twelve_self hsl))
     unfold Bootstrapping.verumIntro
     exact rule_node_FV hsl le_rfl (add_le_twelve_mul_succ _ (by norm_num)) hs' (by norm_num) zero_le
   -- andIntro
   · intro s hs p q dp dq hpq hdp hdq ihp ihq n hn
-    obtain ⟨np, nq, gp, gq, rfl⟩ := DlenGraph.andIntro_iff.mp hn
+    obtain ⟨np, nq, gp, gq, rfl⟩ := ProofLenGraph.andIntro_iff.mp hn
     have hnp := gp.one_le
     have hpq' : IsFormula L p ∧ IsFormula L q := by simpa using hs _ hpq
-    have hfl : formulaLen L p + formulaLen L q + 1 ≤ setLen L s := by
-      have := formulaLen_le_setLen_of_mem (L := L) hpq
+    have hfl : formulaLen L p + formulaLen L q + 1 ≤ sequentLen L s := by
+      have := formulaLen_le_sequentLen_of_mem (L := L) hpq
       rwa [formulaLen_and hpq'.1.isUFormula hpq'.2.isUFormula] at this
-    set Y := setLen L s + np + nq with hYdef
-    have hsY : setLen L s + np ≤ Y := le_self_add
-    have hslY : setLen L s ≤ Y := le_trans le_self_add hsY
+    set Y := sequentLen L s + np + nq with hYdef
+    have hsY : sequentLen L s + np ≤ Y := le_self_add
+    have hslY : sequentLen L s ≤ Y := le_trans le_self_add hsY
     have hY : 1 ≤ Y := le_trans hnp (le_trans le_add_self hsY)
     have hs' : s ≤ FV (12 * Y) :=
       le_trans (isFormulaSet_le_FV hL hR hs) (FV_mono (eight_succ_le_twelve hnp hsY))
@@ -594,14 +594,14 @@ theorem derivation_le_FV (hL : SmallCodesV V L) (hR : SmallRelCodesV V L) {d : V
       hs' (by norm_num) h3
   -- orIntro
   · intro s hs p q d' hpq hd' ih n hn
-    obtain ⟨n', g, rfl⟩ := DlenGraph.orIntro_iff.mp hn
+    obtain ⟨n', g, rfl⟩ := ProofLenGraph.orIntro_iff.mp hn
     have hn' := g.one_le
     have hpq' : IsFormula L p ∧ IsFormula L q := by simpa using hs _ hpq
-    have hfl : formulaLen L p + formulaLen L q + 1 ≤ setLen L s := by
-      have := formulaLen_le_setLen_of_mem (L := L) hpq
+    have hfl : formulaLen L p + formulaLen L q + 1 ≤ sequentLen L s := by
+      have := formulaLen_le_sequentLen_of_mem (L := L) hpq
       rwa [formulaLen_or hpq'.1.isUFormula hpq'.2.isUFormula] at this
-    set Y := setLen L s + n' with hYdef
-    have hslY : setLen L s ≤ Y := le_self_add
+    set Y := sequentLen L s + n' with hYdef
+    have hslY : sequentLen L s ≤ Y := le_self_add
     have hY : 1 ≤ Y := le_trans hn' le_add_self
     have hs' : s ≤ FV (12 * Y) :=
       le_trans (isFormulaSet_le_FV hL hR hs) (FV_mono (eight_succ_le_twelve hn' le_rfl))
@@ -619,14 +619,14 @@ theorem derivation_le_FV (hL : SmallCodesV V L) (hR : SmallRelCodesV V L) {d : V
       hs' (by norm_num) h2
   -- allIntro
   · intro s hs p d' hp hd' ih n hn
-    obtain ⟨n', g, rfl⟩ := DlenGraph.allIntro_iff.mp hn
+    obtain ⟨n', g, rfl⟩ := ProofLenGraph.allIntro_iff.mp hn
     have hn' := g.one_le
     have hp' : IsSemiformula L 1 p := by simpa using hs _ hp
-    have hfl : formulaLen L p + 1 ≤ setLen L s := by
-      have := formulaLen_le_setLen_of_mem (L := L) hp
+    have hfl : formulaLen L p + 1 ≤ sequentLen L s := by
+      have := formulaLen_le_sequentLen_of_mem (L := L) hp
       rwa [formulaLen_all hp'.isUFormula] at this
-    set Y := setLen L s + n' with hYdef
-    have hslY : setLen L s ≤ Y := le_self_add
+    set Y := sequentLen L s + n' with hYdef
+    have hslY : sequentLen L s ≤ Y := le_self_add
     have hY : 1 ≤ Y := le_trans hn' le_add_self
     have hs' : s ≤ FV (12 * Y) :=
       le_trans (isFormulaSet_le_FV hL hR hs) (FV_mono (eight_succ_le_twelve hn' le_rfl))
@@ -641,15 +641,15 @@ theorem derivation_le_FV (hL : SmallCodesV V L) (hR : SmallRelCodesV V L) {d : V
       hs' (by norm_num) h1
   -- exsIntro
   · intro s hs p t d' hp ht hd' ih n hn
-    obtain ⟨n', g, rfl⟩ := DlenGraph.exsIntro_iff.mp hn
+    obtain ⟨n', g, rfl⟩ := ProofLenGraph.exsIntro_iff.mp hn
     have hn' := g.one_le
     have hp' : IsSemiformula L 1 p := by simpa using hs _ hp
-    have hfl : formulaLen L p + 1 ≤ setLen L s := by
-      have := formulaLen_le_setLen_of_mem (L := L) hp
+    have hfl : formulaLen L p + 1 ≤ sequentLen L s := by
+      have := formulaLen_le_sequentLen_of_mem (L := L) hp
       rwa [formulaLen_exs hp'.isUFormula] at this
-    set Y := setLen L s + termLen L t + n' with hYdef
-    have hsY : setLen L s + n' ≤ Y := add_le_add le_self_add le_rfl
-    have hslY : setLen L s ≤ Y := le_trans le_self_add hsY
+    set Y := sequentLen L s + termLen L t + n' with hYdef
+    have hsY : sequentLen L s + n' ≤ Y := add_le_add le_self_add le_rfl
+    have hslY : sequentLen L s ≤ Y := le_trans le_self_add hsY
     have htY : termLen L t ≤ Y := le_trans le_add_self le_self_add
     have hY : 1 ≤ Y := le_trans hn' le_add_self
     have hs' : s ≤ FV (12 * Y) :=
@@ -667,9 +667,9 @@ theorem derivation_le_FV (hL : SmallCodesV V L) (hR : SmallRelCodesV V L) {d : V
       hs' (by norm_num) h2
   -- wkRule
   · intro s hs d' _ _ ih n hn
-    obtain ⟨n', g, rfl⟩ := DlenGraph.wkRule_iff.mp hn
+    obtain ⟨n', g, rfl⟩ := ProofLenGraph.wkRule_iff.mp hn
     have hn' := g.one_le
-    set Y := setLen L s + n' with hYdef
+    set Y := sequentLen L s + n' with hYdef
     have hY : 1 ≤ Y := le_trans hn' le_add_self
     have hs' : s ≤ FV (12 * Y) :=
       le_trans (isFormulaSet_le_FV hL hR hs) (FV_mono (eight_succ_le_twelve hn' le_rfl))
@@ -679,9 +679,9 @@ theorem derivation_le_FV (hL : SmallCodesV V L) (hR : SmallRelCodesV V L) {d : V
     exact rule_node_FV hY le_rfl (add_le_twelve_mul_succ Y (c := 4) (by norm_num)) hs' (by norm_num) hd''
   -- shiftRule
   · intro s hs d' _ _ ih n hn
-    obtain ⟨n', g, rfl⟩ := DlenGraph.shiftRule_iff.mp hn
+    obtain ⟨n', g, rfl⟩ := ProofLenGraph.shiftRule_iff.mp hn
     have hn' := g.one_le
-    set Y := setLen L s + n' with hYdef
+    set Y := sequentLen L s + n' with hYdef
     have hY : 1 ≤ Y := le_trans hn' le_add_self
     have hs' : s ≤ FV (12 * Y) :=
       le_trans (isFormulaSet_le_FV hL hR hs) (FV_mono (eight_succ_le_twelve hn' le_rfl))
@@ -691,15 +691,15 @@ theorem derivation_le_FV (hL : SmallCodesV V L) (hR : SmallRelCodesV V L) {d : V
     exact rule_node_FV hY le_rfl (add_le_twelve_mul_succ Y (c := 4) (by norm_num)) hs' (by norm_num) hd''
   -- cutRule
   · intro s hs p d₁ d₂ hd₁ hd₂ ih₁ ih₂ n hn
-    obtain ⟨n₁, n₂, g₁, g₂, rfl⟩ := DlenGraph.cutRule_iff.mp hn
+    obtain ⟨n₁, n₂, g₁, g₂, rfl⟩ := ProofLenGraph.cutRule_iff.mp hn
     have hn₁ := g₁.one_le
     have hpF : IsFormula L p := (IsFormulaSet.insert_iff.mp hd₁.isFormulaSet).1
     have hfl : formulaLen L p ≤ n₁ := by
-      have h1 : formulaLen L p ≤ setLen L (fstIdx d₁) := by
-        rw [hd₁.1]; exact formulaLen_le_setLen_of_mem (by simp)
-      exact le_trans h1 g₁.setLen_fstIdx_le
-    set Y := setLen L s + n₁ + n₂ with hYdef
-    have hsY : setLen L s + n₁ ≤ Y := le_self_add
+      have h1 : formulaLen L p ≤ sequentLen L (fstIdx d₁) := by
+        rw [hd₁.1]; exact formulaLen_le_sequentLen_of_mem (by simp)
+      exact le_trans h1 g₁.sequentLen_fstIdx_le
+    set Y := sequentLen L s + n₁ + n₂ with hYdef
+    have hsY : sequentLen L s + n₁ ≤ Y := le_self_add
     have hn₁Y : n₁ ≤ Y := le_trans le_add_self hsY
     have hY : 1 ≤ Y := le_trans hn₁ hn₁Y
     have hs' : s ≤ FV (12 * Y) :=
@@ -717,20 +717,20 @@ theorem derivation_le_FV (hL : SmallCodesV V L) (hR : SmallRelCodesV V L) {d : V
       hs' (by norm_num) h2
   -- axm
   · intro s hs p hp _ n hn
-    obtain rfl := DlenGraph.axm_iff.mp hn
-    have hsl : 1 ≤ setLen L s :=
-      le_trans (one_le_formulaLen_V (hs p hp)) (formulaLen_le_setLen_of_mem hp)
-    have hs' : s ≤ FV (12 * setLen L s) :=
+    obtain rfl := ProofLenGraph.axm_iff.mp hn
+    have hsl : 1 ≤ sequentLen L s :=
+      le_trans (one_le_formulaLen_V (hs p hp)) (formulaLen_le_sequentLen_of_mem hp)
+    have hs' : s ≤ FV (12 * sequentLen L s) :=
       le_trans (isFormulaSet_le_FV hL hR hs) (FV_mono (eight_succ_le_twelve_self hsl))
-    have hp' : p ≤ FV (12 * setLen L s) :=
-      formula_le_FV hL hR (hs p hp) (eight_le_twelve_of_le (formulaLen_le_setLen_of_mem hp) le_rfl)
+    have hp' : p ≤ FV (12 * sequentLen L s) :=
+      formula_le_FV hL hR (hs p hp) (eight_le_twelve_of_le (formulaLen_le_sequentLen_of_mem hp) le_rfl)
     unfold Bootstrapping.axm
     exact rule_node_FV hsl le_rfl (add_le_twelve_mul_succ _ (by norm_num)) hs' (by norm_num) hp'
 
-/-- `Derivation T d → d ≤ FV (12 · dlen T d)`. -/
-theorem derivation_le_FV_dlen (hL : SmallCodesV V L) (hR : SmallRelCodesV V L) {d : V}
-    (hd : Derivation T d) : d ≤ FV (12 * dlen T d) :=
-  derivation_le_FV hL hR hd _ (dlen_graph hd)
+/-- `Derivation T d → d ≤ FV (12 · proofLen T d)`. -/
+theorem derivation_le_FV_proofLen (hL : SmallCodesV V L) (hR : SmallRelCodesV V L) {d : V}
+    (hd : Derivation T d) : d ≤ FV (12 * proofLen T d) :=
+  derivation_le_FV hL hR hd _ (proofLen_graph hd)
 
 end derivations
 
@@ -741,55 +741,55 @@ section properness
 variable {L : Language} [L.Encodable] [L.LORDefinable]
 
 /-- **Properness inside `V`**, for every Δ₁ theory over a language with small symbol codes:
-a `T`-proof code of length `≤ k` is below `fbound k = FV (12 k) + 1`. No quotes: the chain
+a `T`-proof code of length `≤ k` is below `codeBound k = FV (12 k) + 1`. No quotes: the chain
 term → formula → sequent → derivation is redone by the internal induction principles. -/
-theorem properV_of_small (hL : SmallCodesV V L) (hR : SmallRelCodesV V L) (T : Theory L) [T.Δ₁] :
-    ProperV V T := by
+theorem properBound_of_small (hL : SmallCodesV V L) (hR : SmallRelCodesV V L) (T : Theory L) [T.Δ₁] :
+    ProperBound V T := by
   intro k d φ hd hk
-  rw [fbound_eq_FV]
+  rw [codeBound_eq_FV]
   exact lt_of_le_of_lt
-    (le_trans (derivation_le_FV_dlen hL hR hd.2) (FV_mono (mul_le_mul_of_nonneg_left hk (by positivity))))
+    (le_trans (derivation_le_FV_proofLen hL hR hd.2) (FV_mono (mul_le_mul_of_nonneg_left hk (by positivity))))
     (lt_add_one _)
 
-/-- **`TAct` is proper inside every model of `IΣ₁`** — the hypothesis of `lenProvableV_cut_V`
+/-- **`TAct` is proper inside every model of `IΣ₁`** — the hypothesis of `lenBox_cut_V`
 discharged, V-generically. -/
-theorem properV_TAct : ProperV V TAct := properV_of_small smallCodesV_LAct smallRelCodesV_LAct TAct
+theorem properBound_TAct : ProperBound V TAct := properBound_of_small smallCodesV_LAct smallRelCodesV_LAct TAct
 
 /-- Every Δ₁ arithmetic theory (e.g. `𝗣𝗔`, `𝗜𝚺₁`) is proper inside every model of `IΣ₁`. -/
-theorem properV_LOR (T : ArithmeticTheory) [T.Δ₁] : ProperV V T :=
-  properV_of_small smallCodesV_LOR smallRelCodesV_LOR T
+theorem properBound_LOR (T : ArithmeticTheory) [T.Δ₁] : ProperBound V T :=
+  properBound_of_small smallCodesV_LOR smallRelCodesV_LOR T
 
 end properness
 
-/-! ### Consequences: the `LenProvableV` theorems without the properness hypothesis -/
+/-! ### Consequences: the `LenBox` theorems without the properness hypothesis -/
 
 section consequences
 
 /-- **Bounded D2 on codes at `TAct`, inside every model of `IΣ₁`, unconditional**
-(`LenProvableV`-shaped, uniform constants `c₁ = 10, c₀ = 9`). -/
-theorem lenProvableV_cut_V' (a b φ ψ : V) (hφ : IsSemiformula LAct 0 φ) (hψ : IsSemiformula LAct 0 ψ) :
-    LenProvableV TAct a (Bootstrapping.imp LAct φ ψ) → LenProvableV TAct b φ →
-    LenProvableV TAct (a + b + 10 * (formulaLen LAct φ + formulaLen LAct ψ) + 9) ψ :=
-  lenProvableV_cut_V properV_TAct a b φ ψ hφ hψ
+(`LenBox`-shaped, uniform constants `c₁ = 10, c₀ = 9`). -/
+theorem lenBox_mp (a b φ ψ : V) (hφ : IsSemiformula LAct 0 φ) (hψ : IsSemiformula LAct 0 ψ) :
+    LenBox TAct a (Bootstrapping.imp LAct φ ψ) → LenBox TAct b φ →
+    LenBox TAct (a + b + 10 * (formulaLen LAct φ + formulaLen LAct ψ) + 9) ψ :=
+  lenBox_cut_V properBound_TAct a b φ ψ hφ hψ
 
 /-- The sharp form, unconditional. -/
-theorem lenProvableV_cut_V_sharp' {a b φ ψ : V} (hφ : IsFormula LAct φ) (hψ : IsFormula LAct ψ) :
-    LenProvableV TAct a (Bootstrapping.imp LAct φ ψ) → LenProvableV TAct b φ →
-    LenProvableV TAct (a + b + 5 * formulaLen LAct φ + 10 * formulaLen LAct ψ + 9) ψ :=
-  lenProvableV_cut_V_sharp properV_TAct hφ hψ
+theorem lenBox_mp_sharp {a b φ ψ : V} (hφ : IsFormula LAct φ) (hψ : IsFormula LAct ψ) :
+    LenBox TAct a (Bootstrapping.imp LAct φ ψ) → LenBox TAct b φ →
+    LenBox TAct (a + b + 5 * formulaLen LAct φ + 10 * formulaLen LAct ψ + 9) ψ :=
+  lenBox_cut_V_sharp properBound_TAct hφ hψ
 
-/-- **The bridge**: for a proper theory the code bound of `LenProvableV` is invisible —
-`LenDerivable T k φ ↔ LenProvableV T k φ` in every model. -/
-theorem lenDerivable_iff_lenProvableV_of {L : Language} [L.Encodable] [L.LORDefinable]
-    {T : Theory L} [T.Δ₁] (hP : ProperV V T) (k φ : V) :
-    LenDerivable T k φ ↔ LenProvableV T k φ :=
+/-- **The bridge**: for a proper theory the code bound of `LenBox` is invisible —
+`LenBoxUnbounded T k φ ↔ LenBox T k φ` in every model. -/
+theorem lenBoxUnbounded_iff_lenBox_of {L : Language} [L.Encodable] [L.LORDefinable]
+    {T : Theory L} [T.Δ₁] (hP : ProperBound V T) (k φ : V) :
+    LenBoxUnbounded T k φ ↔ LenBox T k φ :=
   ⟨fun ⟨d, hd, hk⟩ ↦ ⟨d, hP k d φ hd hk, hd, hk⟩, fun ⟨d, _, hd, hk⟩ ↦ ⟨d, hd, hk⟩⟩
 
-/-- **`LenDerivable TAct k φ ↔ LenProvableV TAct k φ`** in every model of `IΣ₁`: the Löb
+/-- **`LenBoxUnbounded TAct k φ ↔ LenBox TAct k φ`** in every model of `IΣ₁`: the Löb
 argument's Σ₁ box (no code bound) and the evaluator's Δ₁ box agree. -/
-theorem lenDerivable_iff_lenProvableV (k φ : V) :
-    LenDerivable TAct k φ ↔ LenProvableV TAct k φ :=
-  lenDerivable_iff_lenProvableV_of properV_TAct k φ
+theorem lenBoxUnbounded_iff_lenBox (k φ : V) :
+    LenBoxUnbounded TAct k φ ↔ LenBox TAct k φ :=
+  lenBoxUnbounded_iff_lenBox_of properBound_TAct k φ
 
 end consequences
 

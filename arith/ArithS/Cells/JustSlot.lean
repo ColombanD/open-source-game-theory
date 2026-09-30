@@ -8,29 +8,29 @@ Just × Dupoc and CIMCIC × Just, all `(C, C)`, in PA-`S'`
 `Research/Notes/ROUTE_B_SCOPE.md` §7–§8 (2026-09-23). `Cells/JustBot.lean` arithmetized
 `JustBot k := .search k (.plays .opp (.bot (DupocBot k)) C) (.const C) (.const D)` as `JustV k :=
 pSearch k (gJ k) …` with a `k`-DEPENDENT stored template `gJ k` (the description of the frozen snapshot
-`pBot (Dupoc k)` pre-filled into the me-slots), so `JustV k` was not the `bnum k`-instance of any fixed
+`pBot (Dupoc k)` pre-filled into the me-slots), so `JustV k` was not the `binNumeral k`-instance of any fixed
 term and the family assembly (`Assembly/Family.family_found`) could not describe it (§7). Route (c):
 the evaluator's search clause now fills a SEVENTH slot `#6` of the stored template with the node's own
 budget (`guardCodeB`, `ArithS.Guard`/`ArithS.Eval`; six-variable templates unchanged by the gate lemma
 `guardCodeB_of_template`). Just's template becomes the CONSTANT
 
-  `GtmplJ7 := (guardTemplate 0 ⇜ ![TBD(#0), cl uD, cl wD, #1, #2, #3]) ⇜ ![#6, #3, #4, #5]`
+  `guardTemplateJust7 := (guardTemplate 0 ⇜ ![TBD(#0), cl uD, cl wD, #1, #2, #3]) ⇜ ![#6, #3, #4, #5]`
 
 ("the program described by the frame's opp-triple `#3 #4 #5` plays C against the bot-wrapped Dupoc of
-budget `#6`"), and `JustV7 k := pSearch k ⌜GtmplJ7⌝ (pConst 0) (pConst 1)` IS a `bnum k`-instance of a
+budget `#6`"), and `JustV7 k := pSearch k ⌜guardTemplateJust7⌝ (pConst 0) (pConst 1)` IS a `binNumeral k`-instance of a
 fixed term, exactly like `DupocV`/`CimcicV` — so its description `TJ` is a one-variable term and every
 guard mentioning `JustV7 k` is `instB ⌜q⌝ k` for a fixed `q`.
 
 0. **Generic pieces**: `castLE` is quote-transparent (`quote_emb_castLE_V`); the description tower with
-   an arbitrary substitution vector whose head is `bnum k` (`termSubst_tower_of`, `termSubst_TBD_of`);
-   the τ-equivariance of `guardCodeB` (`relabelTemplate_guardCodeB`, from `termRelabelVec_descVecB`).
-1. **The template and its instance equation**: `guardCodeB ⌜GtmplJ7⌝ me opp k = guardCode ⌜guardTemplate 0⌝
-   (pBot (DupocV k)) opp` (`guardCodeB_GtmplJ7`) — Just's guard against `opp` IS the guard of the
+   an arbitrary substitution vector whose head is `binNumeral k` (`termSubst_tower_of`, `termSubst_TBD_of`);
+   the τ-equivariance of `guardCodeB` (`revalueTemplate_guardCodeB`, from `termRelabelVec_descriptionsB`).
+1. **The template and its instance equation**: `guardCodeB ⌜guardTemplateJust7⌝ me opp k = guardCode ⌜guardTemplate 0⌝
+   (pBot (DupocV k)) opp` (`guardCodeB_guardTemplateJust7`) — Just's guard against `opp` IS the guard of the
    bot-wrapped Dupoc against `opp`, the frame's `me` unused (as `guardCode_JustV`); the transposed
-   template `GtmplJ7A 1 uC wC = lMap swap GtmplJ7` gives `guardCode ⌜guardTemplate 1⌝ (pBot (CupodV k)) opp`.
+   template `guardTemplateJust7A 1 uC wC = lMap swap guardTemplateJust7` gives `guardCode ⌜guardTemplate 1⌝ (pBot (CupodV k)) opp`.
 2. **`JustV7` plays exactly as `JustV`** in every frame and at every fuel (`evalGraph_JustV7_iff`), so
    `loeb_Just_vs_Mirror` transfers (`loeb_Just7_vs_Mirror`).
-3. **The description layer** of `JustV7 k` (`Cells/CIMCIC.lean` §2 re-run): `dnum (JustV7 k) = pSearch k
+3. **The description layer** of `JustV7 k` (`Cells/CIMCIC.lean` §2 re-run): `canonical (JustV7 k) = pSearch k
    gJd pJd qJd`, `TJ`, `uJ`, `wJ`, and the description hypotheses `hX_just7`/`desc_just7` (+ transposed).
 4. **Just × Just `(C, C)`** (`llm_outcome_JustBot_vs_JustBot`): Just's guard against Just is "Just plays C
    against `pBot (Dupoc k)`" (`qJJ`), whose truth needs the box of the bot-wrapped self-play guard
@@ -50,7 +50,7 @@ guard mentioning `JustV7 k` is `instB ⌜q⌝ k` for a fixed `q`.
 
 `JustBot k = JustBot2 k k`: `Just7 k` is the DIAGONAL — the snapshot's budget equals the searcher's,
 read from the slot. Conventions (`HANDOVER_ARITHMETIZED_S.md` §5–6): every threshold EXISTENTIAL; `simp`
-never sees a closed quote of `GtmplJ7`/`qJJ`/…; `omega` never asked about `V`; at ℕ the thresholds are
+never sees a closed quote of `guardTemplateJust7`/`qJJ`/…; `omega` never asked about `V`; at ℕ the thresholds are
 STRICT and the V-generic `≤` is bridged by `le_def`.
 -/
 
@@ -68,29 +68,29 @@ variable {V : Type*} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
 section generic
 
 
-/-- The bot tower `TBD` under any substitution vector whose head is `bnum k`. -/
-theorem termSubst_TBD_of (w k : V) (h0 : w.[0] = bnum k) :
-    termSubst LAct w (⌜(Rew.emb TBD : SyntacticSemiterm LAct 1)⌝ : V) = progT (dnum (pBot (DupocV k))) := by
-  have hb3 : IsUTerm LAct (bnum (3 : V)) := (bnum_semiterm_LAct 0 _).isUTerm
-  have hb6 : IsUTerm LAct (bnum (6 : V)) := (bnum_semiterm_LAct 0 _).isUTerm
-  have hbg : IsUTerm LAct (bnum (gD : V)) := (bnum_semiterm_LAct 0 _).isUTerm
-  have hp : IsUTerm LAct (progT (pD : V)) := (progT_semiterm_LAct 0 _).isUTerm
-  have hq : IsUTerm LAct (progT (qD : V)) := (progT_semiterm_LAct 0 _).isUTerm
+/-- The bot tower `TBD` under any substitution vector whose head is `binNumeral k`. -/
+theorem termSubst_TBD_of (w k : V) (h0 : w.[0] = binNumeral k) :
+    termSubst LAct w (⌜(Rew.emb TBD : SyntacticSemiterm LAct 1)⌝ : V) = codeTerm (canonical (pBot (DupocV k))) := by
+  have hb3 : IsUTerm LAct (binNumeral (3 : V)) := (binNumeral_semiterm_LAct 0 _).isUTerm
+  have hb6 : IsUTerm LAct (binNumeral (6 : V)) := (binNumeral_semiterm_LAct 0 _).isUTerm
+  have hbg : IsUTerm LAct (binNumeral (gD : V)) := (binNumeral_semiterm_LAct 0 _).isUTerm
+  have hp : IsUTerm LAct (codeTerm (pD : V)) := (codeTerm_semiterm_LAct 0 _).isUTerm
+  have hq : IsUTerm LAct (codeTerm (qD : V)) := (codeTerm_semiterm_LAct 0 _).isUTerm
   have hone : IsUTerm LAct (𝟏 : V) := (IsSemiterm.LAct_of_LOR (one_semiterm (n := 0))).isUTerm
-  have h1 : IsUTerm LAct (ppairT (progT (pD : V)) (progT (qD : V))) := ppairT_uterm_LAct hp hq
-  have h2 : IsUTerm LAct (ppairT (bnum (gD : V)) (ppairT (progT (pD : V)) (progT (qD : V)))) := ppairT_uterm_LAct hbg h1
-  have h3 : IsUTerm LAct (ppairT (^#0) (ppairT (bnum (gD : V)) (ppairT (progT (pD : V)) (progT (qD : V))))) :=
-    ppairT_uterm_LAct bvar_zero_uterm h2
-  have h4 : IsUTerm LAct (ppairT (bnum 6) (ppairT (^#0) (ppairT (bnum (gD : V)) (ppairT (progT (pD : V)) (progT (qD : V)))))) :=
-    ppairT_uterm_LAct hb6 h3
-  have h5 : IsUTerm LAct (ppairT (bnum 6) (ppairT (^#0) (ppairT (bnum (gD : V)) (ppairT (progT (pD : V)) (progT (qD : V))))) ^+ 𝟏) :=
+  have h1 : IsUTerm LAct (ppairTerm (codeTerm (pD : V)) (codeTerm (qD : V))) := ppairTerm_uterm_LAct hp hq
+  have h2 : IsUTerm LAct (ppairTerm (binNumeral (gD : V)) (ppairTerm (codeTerm (pD : V)) (codeTerm (qD : V)))) := ppairTerm_uterm_LAct hbg h1
+  have h3 : IsUTerm LAct (ppairTerm (^#0) (ppairTerm (binNumeral (gD : V)) (ppairTerm (codeTerm (pD : V)) (codeTerm (qD : V))))) :=
+    ppairTerm_uterm_LAct bvar_zero_uterm h2
+  have h4 : IsUTerm LAct (ppairTerm (binNumeral 6) (ppairTerm (^#0) (ppairTerm (binNumeral (gD : V)) (ppairTerm (codeTerm (pD : V)) (codeTerm (qD : V)))))) :=
+    ppairTerm_uterm_LAct hb6 h3
+  have h5 : IsUTerm LAct (ppairTerm (binNumeral 6) (ppairTerm (^#0) (ppairTerm (binNumeral (gD : V)) (ppairTerm (codeTerm (pD : V)) (codeTerm (qD : V))))) ^+ 𝟏) :=
     qqAdd_uterm_LAct h4 hone
-  have h6 : IsUTerm LAct (ppairT (bnum 3)
-      (ppairT (bnum 6) (ppairT (^#0) (ppairT (bnum (gD : V)) (ppairT (progT (pD : V)) (progT (qD : V))))) ^+ 𝟏)) :=
-    ppairT_uterm_LAct hb3 h5
-  rw [quote_emb_TBD, termSubst_qqAdd _ h6 hone, termSubst_ppairT _ hb3 h5,
-    termSubst_closed _ (bnum_semiterm_LAct 0 _), termSubst_closed _ (IsSemiterm.LAct_of_LOR one_semiterm),
-    termSubst_tower_of w k _ _ _ h0, dnum_pBot, dnum_DupocV, progT_bot]
+  have h6 : IsUTerm LAct (ppairTerm (binNumeral 3)
+      (ppairTerm (binNumeral 6) (ppairTerm (^#0) (ppairTerm (binNumeral (gD : V)) (ppairTerm (codeTerm (pD : V)) (codeTerm (qD : V))))) ^+ 𝟏)) :=
+    ppairTerm_uterm_LAct hb3 h5
+  rw [quote_emb_TBD, termSubst_qqAdd _ h6 hone, termSubst_ppairTerm _ hb3 h5,
+    termSubst_closed _ (binNumeral_semiterm_LAct 0 _), termSubst_closed _ (IsSemiterm.LAct_of_LOR one_semiterm),
+    termSubst_tower_of w k _ _ _ h0, canonical_pBot, canonical_DupocV, codeTerm_bot]
 
 
 end generic
@@ -108,14 +108,14 @@ noncomputable def qJ4 (a : ℕ) (U W : ClosedSemiterm LAct 0) : Semisentence LAc
   guardTemplate a ⇜ ![TBD4, cl U, cl W, #1, #2, #3]
 
 /-- **The constant seven-variable template**: the frame's opp-triple in `#3 #4 #5`, the node budget in
-`#6` (the me-triple `#0 #1 #2` unused, as in `GtmplJ`). -/
-noncomputable def GtmplJ7A (a : ℕ) (U W : ClosedSemiterm LAct 0) : Semisentence LAct 7 :=
+`#6` (the me-triple `#0 #1 #2` unused, as in `guardTemplateJust`). -/
+noncomputable def guardTemplateJust7A (a : ℕ) (U W : ClosedSemiterm LAct 0) : Semisentence LAct 7 :=
   qJ4 a U W ⇜ ![#6, #3, #4, #5]
 
 /-- **Just's template**: "the opponent plays C against `pBot (Dupoc #6)`". -/
-noncomputable def GtmplJ7 : Semisentence LAct 7 := GtmplJ7A 0 uD wD
+noncomputable def guardTemplateJust7 : Semisentence LAct 7 := guardTemplateJust7A 0 uD wD
 
-lemma GtmplJ7_def : GtmplJ7 = GtmplJ7A 0 uD wD := rfl
+lemma guardTemplateJust7_def : guardTemplateJust7 = guardTemplateJust7A 0 uD wD := rfl
 
 lemma lMap_swap_TBD4 : Semiterm.lMap swap TBD4 = TBD4 := by
   unfold TBD4
@@ -123,25 +123,25 @@ lemma lMap_swap_TBD4 : Semiterm.lMap swap TBD4 = TBD4 := by
   rw [Semiterm.lMap_map, lMap_swap_TBD]
 
 lemma lMap_swap_qJ4 (a : ℕ) (U W : ClosedSemiterm LAct 0) :
-    Semiformula.lMap swap (qJ4 a U W) = qJ4 (swapAct a) (Semiterm.lMap swap U) (Semiterm.lMap swap W) := by
+    Semiformula.lMap swap (qJ4 a U W) = qJ4 (swapAction a) (Semiterm.lMap swap U) (Semiterm.lMap swap W) := by
   unfold qJ4
   rw [Semiformula.lMap_subst, lMap_swap_GtmplA]
   congr 1
   funext i
   fin_cases i <;> simp [lMap_swap_TBD4, lMap_swap_cl]
 
-lemma lMap_swap_GtmplJ7A (a : ℕ) (U W : ClosedSemiterm LAct 0) :
-    Semiformula.lMap swap (GtmplJ7A a U W) =
-      GtmplJ7A (swapAct a) (Semiterm.lMap swap U) (Semiterm.lMap swap W) := by
-  unfold GtmplJ7A
+lemma lMap_swap_guardTemplateJust7A (a : ℕ) (U W : ClosedSemiterm LAct 0) :
+    Semiformula.lMap swap (guardTemplateJust7A a U W) =
+      guardTemplateJust7A (swapAction a) (Semiterm.lMap swap U) (Semiterm.lMap swap W) := by
+  unfold guardTemplateJust7A
   rw [Semiformula.lMap_subst, lMap_swap_qJ4]
   congr 1
   funext i
   fin_cases i <;> simp
 
 /-- The transposition of Just's template is the Cupod-snapshot template with `uC = swap uD`. -/
-lemma lMap_swap_GtmplJ7 : Semiformula.lMap swap GtmplJ7 = GtmplJ7A 1 uC wC := by
-  rw [GtmplJ7_def, lMap_swap_GtmplJ7A, swapAct_zero]; rfl
+lemma lMap_swap_guardTemplateJust7 : Semiformula.lMap swap guardTemplateJust7 = guardTemplateJust7A 1 uC wC := by
+  rw [guardTemplateJust7_def, lMap_swap_guardTemplateJust7A, swapAction_zero]; rfl
 
 /-! #### The codes -/
 
@@ -161,9 +161,9 @@ noncomputable def jVec4 (U W : ClosedSemiterm LAct 0) : V :=
     ⌜(Rew.emb (#2 : Semiterm LAct Empty 4) : SyntacticSemiterm LAct 4)⌝ ∷
     ⌜(Rew.emb (#3 : Semiterm LAct Empty 4) : SyntacticSemiterm LAct 4)⌝ ∷ 0
 
-theorem quote_GtmplJ7A (a : ℕ) (U W : ClosedSemiterm LAct 0) :
-    (⌜GtmplJ7A a U W⌝ : V) = subst LAct sVec7 (⌜qJ4 a U W⌝ : V) := by
-  unfold GtmplJ7A
+theorem quote_guardTemplateJust7A (a : ℕ) (U W : ClosedSemiterm LAct 0) :
+    (⌜guardTemplateJust7A a U W⌝ : V) = subst LAct sVec7 (⌜qJ4 a U W⌝ : V) := by
+  unfold guardTemplateJust7A
   rw [Sentence.quote_def, Semiformula.coe_subst_eq_subst_coe, Semiformula.quote_def,
     Semiformula.typed_quote_substs, Bootstrapping.Semiformula.val_substs, ← Semiformula.quote_def,
     ← Sentence.quote_def]
@@ -208,16 +208,16 @@ lemma jVec4_semitermVec (U W : ClosedSemiterm LAct 0) : IsSemitermVec LAct 6 4 (
     (semiterm_quote_emb₄ (cl U : Semiterm LAct Empty 4))).adjoin (semiterm_quote_emb₄ TBD4)
 
 /-- The budget vector of the four-variable intermediate at the frame `opp` and budget `k`. -/
-noncomputable def bVec4 (opp k : V) : V := bnum k ∷ progT (dnum opp) ∷ dU opp ∷ dW opp ∷ 0
+noncomputable def bVec4 (opp k : V) : V := binNumeral k ∷ codeTerm (canonical opp) ∷ revalueU opp ∷ revalueW opp ∷ 0
 
 lemma bVec4_semitermVec (opp k : V) : IsSemitermVec LAct 4 0 (bVec4 opp k) := by
   rw [four_eq, bVec4]
-  exact ((((IsSemitermVec.nil 0).adjoin (dW_semiterm 0 opp)).adjoin (dU_semiterm 0 opp)).adjoin
-    (progT_semiterm_LAct 0 (dnum opp))).adjoin (bnum_semiterm_LAct 0 k)
+  exact ((((IsSemitermVec.nil 0).adjoin (revalueW_semiterm 0 opp)).adjoin (revalueU_semiterm 0 opp)).adjoin
+    (codeTerm_semiterm_LAct 0 (canonical opp))).adjoin (binNumeral_semiterm_LAct 0 k)
 
-/-- Filling `![#6, #3, #4, #5]` with `descVecB me opp k` gives the budget vector of `(opp, k)`. -/
+/-- Filling `![#6, #3, #4, #5]` with `descriptionsB me opp k` gives the budget vector of `(opp, k)`. -/
 theorem termSubstVec_sVec7 (me opp k : V) :
-    termSubstVec LAct 4 (descVecB me opp k) (sVec7 : V) = bVec4 opp k := by
+    termSubstVec LAct 4 (descriptionsB me opp k) (sVec7 : V) = bVec4 opp k := by
   have h6 : IsUTerm LAct (^#6 : V) := (IsSemiterm.bvar.mpr (by norm_num : (6 : V) < 7)).isUTerm
   have h3 : IsUTerm LAct (^#3 : V) := (IsSemiterm.bvar.mpr (by norm_num : (3 : V) < 7)).isUTerm
   have h4 : IsUTerm LAct (^#4 : V) := (IsSemiterm.bvar.mpr (by norm_num : (4 : V) < 7)).isUTerm
@@ -226,12 +226,12 @@ theorem termSubstVec_sVec7 (me opp k : V) :
   have e1 := e0.adjoin h5
   have e2 := e1.adjoin h4
   have e3 := e2.adjoin h3
-  have h : termSubstVec LAct (0 + 1 + 1 + 1 + 1) (descVecB me opp k) (^#6 ∷ ^#3 ∷ ^#4 ∷ ^#5 ∷ (0 : V)) =
+  have h : termSubstVec LAct (0 + 1 + 1 + 1 + 1) (descriptionsB me opp k) (^#6 ∷ ^#3 ∷ ^#4 ∷ ^#5 ∷ (0 : V)) =
       bVec4 opp k := by
     unfold bVec4
     rw [termSubstVec_cons h6 e3, termSubstVec_cons h3 e2, termSubstVec_cons h4 e1, termSubstVec_cons h5 e0,
-      termSubstVec_nil, termSubst_bvar, termSubst_bvar, termSubst_bvar, termSubst_bvar, nth_descVecB_six,
-      nth_descVecB_three, nth_descVecB_four, nth_descVecB_five]
+      termSubstVec_nil, termSubst_bvar, termSubst_bvar, termSubst_bvar, termSubst_bvar, nth_descriptionsB_six,
+      nth_descriptionsB_three, nth_descriptionsB_four, nth_descriptionsB_five]
   rw [← four_eq] at h
   unfold sVec7
   rw [quote_emb_bvar7_6, quote_emb_bvar7_3, quote_emb_bvar7_4, quote_emb_bvar7_5]
@@ -241,8 +241,8 @@ theorem termSubstVec_sVec7 (me opp k : V) :
 `(pBot (DupocV k), opp)` up to the two closed entries. -/
 theorem termSubstVec_jVec4 (U W : ClosedSemiterm LAct 0) (opp k : V) :
     termSubstVec LAct 6 (bVec4 opp k) (jVec4 U W) =
-      progT (dnum (pBot (DupocV k))) ∷ (⌜(Rew.emb U : SyntacticSemiterm LAct 0)⌝ : V) ∷
-        (⌜(Rew.emb W : SyntacticSemiterm LAct 0)⌝ : V) ∷ progT (dnum opp) ∷ dU opp ∷ dW opp ∷ 0 := by
+      codeTerm (canonical (pBot (DupocV k))) ∷ (⌜(Rew.emb U : SyntacticSemiterm LAct 0)⌝ : V) ∷
+        (⌜(Rew.emb W : SyntacticSemiterm LAct 0)⌝ : V) ∷ codeTerm (canonical opp) ∷ revalueU opp ∷ revalueW opp ∷ 0 := by
   unfold jVec4 TBD4
   rw [quote_emb_castLE_V, show (cl U : Semiterm LAct Empty 4) = Rew.castLE (Nat.zero_le 4) U from rfl,
     show (cl W : Semiterm LAct Empty 4) = Rew.castLE (Nat.zero_le 4) W from rfl,
@@ -270,36 +270,36 @@ theorem termSubstVec_jVec4 (U W : ClosedSemiterm LAct 0) (opp k : V) :
 
 /-- **The generic instance equation of the seven-variable template**: its guard code with the node
 budget is `guardTemplate a` filled with the bot tower at `k`, the two closed terms, and `opp`'s description. -/
-theorem guardCodeB_GtmplJ7A (a : ℕ) (U W : ClosedSemiterm LAct 0) (me opp k : V) :
-    guardCodeB (⌜GtmplJ7A a U W⌝ : V) me opp k =
-      subst LAct (progT (dnum (pBot (DupocV k))) ∷ (⌜(Rew.emb U : SyntacticSemiterm LAct 0)⌝ : V) ∷
-        (⌜(Rew.emb W : SyntacticSemiterm LAct 0)⌝ : V) ∷ progT (dnum opp) ∷ dU opp ∷ dW opp ∷ 0)
+theorem guardCodeB_guardTemplateJust7A (a : ℕ) (U W : ClosedSemiterm LAct 0) (me opp k : V) :
+    guardCodeB (⌜guardTemplateJust7A a U W⌝ : V) me opp k =
+      subst LAct (codeTerm (canonical (pBot (DupocV k))) ∷ (⌜(Rew.emb U : SyntacticSemiterm LAct 0)⌝ : V) ∷
+        (⌜(Rew.emb W : SyntacticSemiterm LAct 0)⌝ : V) ∷ codeTerm (canonical opp) ∷ revalueU opp ∷ revalueW opp ∷ 0)
         (⌜guardTemplate a⌝ : V) := by
   unfold guardCodeB
-  rw [quote_GtmplJ7A, substs_substs (isSemiformula_quote₄ (qJ4 a U W)) (descVecB_semitermVec me opp k)
+  rw [quote_guardTemplateJust7A, substs_substs (isSemiformula_quote₄ (qJ4 a U W)) (descriptionsB_semitermVec me opp k)
     sVec7_semitermVec, termSubstVec_sVec7, quote_qJ4,
     substs_substs (isSemiformula_quote₆ (guardTemplate a)) (bVec4_semitermVec opp k) (jVec4_semitermVec U W),
     termSubstVec_jVec4]
 
 /-- **Just's instance equation**: in the frame `(me, opp)`, the constant template filled with the node
 budget `k` IS the guard of the bot-wrapped Dupoc of budget `k` against `opp` — the frame's `me` unused. -/
-theorem guardCodeB_GtmplJ7 (me opp k : V) :
-    guardCodeB (⌜GtmplJ7⌝ : V) me opp k = guardCode (⌜guardTemplate 0⌝ : V) (pBot (DupocV k)) opp := by
-  rw [GtmplJ7_def, guardCodeB_GtmplJ7A, quote_emb_uD_botDupocV, quote_emb_wD_botDupocV]
+theorem guardCodeB_guardTemplateJust7 (me opp k : V) :
+    guardCodeB (⌜guardTemplateJust7⌝ : V) me opp k = guardCode (⌜guardTemplate 0⌝ : V) (pBot (DupocV k)) opp := by
+  rw [guardTemplateJust7_def, guardCodeB_guardTemplateJust7A, quote_emb_uD_botDupocV, quote_emb_wD_botDupocV]
   rfl
 
 /-- **The transposed instance equation**: the Cupod-snapshot template gives the guard of the bot-wrapped
 Cupod against `opp`. -/
-theorem guardCodeB_GtmplJ7T (me opp k : V) :
-    guardCodeB (⌜GtmplJ7A 1 uC wC⌝ : V) me opp k = guardCode (⌜guardTemplate 1⌝ : V) (pBot (CupodV k)) opp := by
-  have h := relabelTemplate_guardCodeB (isSemiformula_quote₇ GtmplJ7) (swapcode me) (swapcode opp) k
-  rw [swapcode_swapcode, swapcode_swapcode, relabelTemplate_quote_sentence₇_V, lMap_swap_GtmplJ7,
-    guardCodeB_GtmplJ7] at h
+theorem guardCodeB_guardTemplateJust7T (me opp k : V) :
+    guardCodeB (⌜guardTemplateJust7A 1 uC wC⌝ : V) me opp k = guardCode (⌜guardTemplate 1⌝ : V) (pBot (CupodV k)) opp := by
+  have h := revalueTemplate_guardCodeB (isSemiformula_quote₇ guardTemplateJust7) (transposeCode me) (transposeCode opp) k
+  rw [transposeCode_transposeCode, transposeCode_transposeCode, revalueTemplate_quote_sentence₇_V, lMap_swap_guardTemplateJust7,
+    guardCodeB_guardTemplateJust7] at h
   rw [← h]
   have hg0 : IsSemiformula LAct 6 (⌜guardTemplate 0⌝ : V) := isSemiformula_quote₆ (guardTemplate 0)
   have hg1 : IsSemiformula LAct 6 (⌜guardTemplate 1⌝ : V) := isSemiformula_quote₆ (guardTemplate 1)
-  rw [← gsubst_of_template hg0, relabelTemplate_gsubst, swapcode_pBot_DupocV, swapcode_swapcode,
-    relabelTemplate_quote_GtmplA_V, swapAct_zero, gsubst_of_template hg1]
+  rw [← substTemplate_of_template hg0, revalueTemplate_substTemplate, transposeCode_pBot_DupocV, transposeCode_transposeCode,
+    revalueTemplate_quote_GtmplA_V, swapAction_zero, substTemplate_of_template hg1]
 
 end template
 
@@ -307,46 +307,46 @@ end template
 
 section just7
 
-/-- **JustBot on the constant template, in every model**: `pSearch k ⌜GtmplJ7⌝ (pConst 0) (pConst 1)`. -/
-noncomputable def JustV7 (k : V) : V := pSearch k (⌜GtmplJ7⌝ : V) (pConst 0) (pConst 1)
+/-- **JustBot on the constant template, in every model**: `pSearch k ⌜guardTemplateJust7⌝ (pConst 0) (pConst 1)`. -/
+noncomputable def JustV7 (k : V) : V := pSearch k (⌜guardTemplateJust7⌝ : V) (pConst 0) (pConst 1)
 
 /-- The transposed searcher (found ⇒ `D`). -/
-noncomputable def JustTV7 (k : V) : V := pSearch k (⌜GtmplJ7A 1 uC wC⌝ : V) (pConst 1) (pConst 0)
+noncomputable def JustTV7 (k : V) : V := pSearch k (⌜guardTemplateJust7A 1 uC wC⌝ : V) (pConst 1) (pConst 0)
 
 /-- **JustBot at ℕ on the constant template.** -/
 noncomputable def Just7 (k : ℕ) : ℕ := JustV7 (V := ℕ) k
 
 lemma JustV7_nat (k : ℕ) : JustV7 (V := ℕ) k = Just7 k := rfl
 
-theorem swapcode_JustV7 (k : V) : swapcode (JustV7 k) = JustTV7 k := by
-  unfold JustV7 JustTV7 swapcode
-  rw [relabel_search, relabel_const, relabel_const, relabelTemplate_quote_sentence₇_V, lMap_swap_GtmplJ7]
-  simp [relabelAct]
+theorem transposeCode_JustV7 (k : V) : transposeCode (JustV7 k) = JustTV7 k := by
+  unfold JustV7 JustTV7 transposeCode
+  rw [revalue_search, revalue_const, revalue_const, revalueTemplate_quote_sentence₇_V, lMap_swap_guardTemplateJust7]
+  simp [revalueAction]
 
-theorem swapcode_JustTV7 (k : V) : swapcode (JustTV7 k) = JustV7 k := by
-  rw [← swapcode_JustV7, swapcode_swapcode]
+theorem transposeCode_JustTV7 (k : V) : transposeCode (JustTV7 k) = JustV7 k := by
+  rw [← transposeCode_JustV7, transposeCode_transposeCode]
 
 /-- **Just's search clause in ANY frame** (fuel 2): a proof within `k` of "`opp` plays C against
 `pBot (Dupoc k)`" makes `JustV7 k` cooperate with `opp`. -/
 theorem just7_search_V (k me opp : V) :
-    LenProvableV TAct k (guardCode (⌜guardTemplate 0⌝ : V) (pBot (DupocV k)) opp) →
+    LenBox TAct k (guardCode (⌜guardTemplate 0⌝ : V) (pBot (DupocV k)) opp) →
       EvalGraph 2 me opp (JustV7 k) 0 := by
   intro h
   rw [show (2 : V) = 1 + 1 from one_add_one_eq_two.symm]
-  show EvalGraph (1 + 1) me opp (pSearch k (⌜GtmplJ7⌝ : V) (pConst 0) (pConst 1)) 0
-  rw [EvalGraph.search_iff, guardCodeB_GtmplJ7]
+  show EvalGraph (1 + 1) me opp (pSearch k (⌜guardTemplateJust7⌝ : V) (pConst 0) (pConst 1)) 0
+  rw [EvalGraph.search_iff, guardCodeB_guardTemplateJust7]
   left
   refine ⟨h, ?_⟩
   rw [show (1 : V) = 0 + 1 by simp, EvalGraph.const_iff]
 
 /-- **The transposed searcher's search clause in any frame** (fuel 2): found ⇒ `D`. -/
 theorem just7T_search_V (k me opp : V) :
-    LenProvableV TAct k (guardCode (⌜guardTemplate 1⌝ : V) (pBot (CupodV k)) opp) →
+    LenBox TAct k (guardCode (⌜guardTemplate 1⌝ : V) (pBot (CupodV k)) opp) →
       EvalGraph 2 me opp (JustTV7 k) 1 := by
   intro h
   rw [show (2 : V) = 1 + 1 from one_add_one_eq_two.symm]
-  show EvalGraph (1 + 1) me opp (pSearch k (⌜GtmplJ7A 1 uC wC⌝ : V) (pConst 1) (pConst 0)) 1
-  rw [EvalGraph.search_iff, guardCodeB_GtmplJ7T]
+  show EvalGraph (1 + 1) me opp (pSearch k (⌜guardTemplateJust7A 1 uC wC⌝ : V) (pConst 1) (pConst 0)) 1
+  rw [EvalGraph.search_iff, guardCodeB_guardTemplateJust7T]
   left
   refine ⟨h, ?_⟩
   have e : EvalGraph (0 + 1) me opp (pConst 1) 1 := EvalGraph.const_iff.mpr rfl
@@ -359,7 +359,7 @@ theorem evalGraph_JustV7_iff (n me opp a k : V) :
   · exact ⟨fun h ↦ absurd h EvalGraph.zero_iff, fun h ↦ absurd h EvalGraph.zero_iff⟩
   · have hgJ : IsSemiformula LAct 6 (gJ k) := (isSemiformula_quote₆ (guardTemplate 0)).subst (jVec_semitermVec k)
     unfold JustV7 JustV
-    rw [EvalGraph.search_iff, guardCodeB_GtmplJ7, EvalGraph.search_iff₆ hgJ, guardCode_JustV]
+    rw [EvalGraph.search_iff, guardCodeB_guardTemplateJust7, EvalGraph.search_iff₆ hgJ, guardCode_JustV]
 
 /-- The same at ℕ, for the ℕ-level constants. -/
 theorem evalGraph_Just7_iff (n me opp a k : ℕ) :
@@ -379,12 +379,12 @@ theorem loeb_Just7_vs_Mirror :
 /-- **The else branch of the budget-slot Just in any frame** (fuel 2): the guard "`opp` plays C against
 `pBot (Dupoc k)`" not found ⇒ `D`. -/
 theorem just7_else_V (k me opp : V) :
-    ¬ LenProvableV TAct k (guardCode (⌜guardTemplate 0⌝ : V) (pBot (DupocV k)) opp) →
+    ¬ LenBox TAct k (guardCode (⌜guardTemplate 0⌝ : V) (pBot (DupocV k)) opp) →
       EvalGraph 2 me opp (JustV7 k) 1 := by
   intro h
   rw [show (2 : V) = 1 + 1 from one_add_one_eq_two.symm]
-  show EvalGraph (1 + 1) me opp (pSearch k (⌜GtmplJ7⌝ : V) (pConst 0) (pConst 1)) 1
-  rw [EvalGraph.search_iff, guardCodeB_GtmplJ7]
+  show EvalGraph (1 + 1) me opp (pSearch k (⌜guardTemplateJust7⌝ : V) (pConst 0) (pConst 1)) 1
+  rw [EvalGraph.search_iff, guardCodeB_guardTemplateJust7]
   right
   refine ⟨h, ?_⟩
   have e : EvalGraph (0 + 1) me opp (pConst 1) 1 := EvalGraph.const_iff.mpr rfl
@@ -405,23 +405,23 @@ end just7
 section canonical
 
 /-- The budget-independent inner part of Just's code. -/
-noncomputable def innerJ : ℕ := ppair (⌜GtmplJ7⌝ : ℕ) (ppair (pConst 0) (pConst 1))
+noncomputable def innerJ : ℕ := ppair (⌜guardTemplateJust7⌝ : ℕ) (ppair (pConst 0) (pConst 1))
 
 /-- The budget-independent inner part of the transposed searcher's code. -/
-noncomputable def innerJT : ℕ := ppair (⌜GtmplJ7A 1 uC wC⌝ : ℕ) (ppair (pConst 1) (pConst 0))
+noncomputable def innerJT : ℕ := ppair (⌜guardTemplateJust7A 1 uC wC⌝ : ℕ) (ppair (pConst 1) (pConst 0))
 
-lemma innerJ_def : innerJ = ppair (⌜GtmplJ7⌝ : ℕ) (ppair (pConst 0) (pConst 1)) := rfl
-lemma innerJT_def : innerJT = ppair (⌜GtmplJ7A 1 uC wC⌝ : ℕ) (ppair (pConst 1) (pConst 0)) := rfl
+lemma innerJ_def : innerJ = ppair (⌜guardTemplateJust7⌝ : ℕ) (ppair (pConst 0) (pConst 1)) := rfl
+lemma innerJT_def : innerJT = ppair (⌜guardTemplateJust7A 1 uC wC⌝ : ℕ) (ppair (pConst 1) (pConst 0)) := rfl
 
 /- Closed constants built from the giant template: never to be evaluated. -/
 attribute [irreducible] innerJ innerJT
 
-lemma cast_innerJ : ((innerJ : ℕ) : V) = ppair (⌜GtmplJ7⌝ : V) (ppair (pConst 0) (pConst 1)) := by
+lemma cast_innerJ : ((innerJ : ℕ) : V) = ppair (⌜guardTemplateJust7⌝ : V) (ppair (pConst 0) (pConst 1)) := by
   rw [innerJ_def, cast_ppair, cast_ppair, cast_pConst, cast_pConst, coe_quote_sentence₇]
   push_cast
   rfl
 
-lemma cast_innerJT : ((innerJT : ℕ) : V) = ppair (⌜GtmplJ7A 1 uC wC⌝ : V) (ppair (pConst 1) (pConst 0)) := by
+lemma cast_innerJT : ((innerJT : ℕ) : V) = ppair (⌜guardTemplateJust7A 1 uC wC⌝ : V) (ppair (pConst 1) (pConst 0)) := by
   rw [innerJT_def, cast_ppair, cast_ppair, cast_pConst, cast_pConst, coe_quote_sentence₇]
   push_cast
   rfl
@@ -438,7 +438,7 @@ lemma JustTV7_lt_JustV7_iff (k : V) : JustTV7 k < JustV7 k ↔ innerJT < innerJ 
   rw [JustV7_eq_inner, JustTV7_eq_inner, pSearchInner_lt_iff, Nat.cast_lt]
 
 /-- The stored template of the canonical searcher. -/
-noncomputable def gJd : ℕ := if innerJ ≤ innerJT then (⌜GtmplJ7⌝ : ℕ) else (⌜GtmplJ7A 1 uC wC⌝ : ℕ)
+noncomputable def gJd : ℕ := if innerJ ≤ innerJT then (⌜guardTemplateJust7⌝ : ℕ) else (⌜guardTemplateJust7A 1 uC wC⌝ : ℕ)
 /-- Its then-branch. -/
 noncomputable def pJd : ℕ := if innerJ ≤ innerJT then pConst 0 else pConst 1
 /-- Its else-branch. -/
@@ -451,30 +451,30 @@ noncomputable def wJ : ClosedSemiterm LAct 0 :=
   if innerJ < innerJT then cterm Act.D else if innerJT < innerJ then cterm Act.C else numT 1
 
 lemma JustV7_eq_cast (k : V) :
-    JustV7 k = pSearch k ((⌜GtmplJ7⌝ : ℕ) : V) ((pConst 0 : ℕ) : V) ((pConst 1 : ℕ) : V) := by
+    JustV7 k = pSearch k ((⌜guardTemplateJust7⌝ : ℕ) : V) ((pConst 0 : ℕ) : V) ((pConst 1 : ℕ) : V) := by
   unfold JustV7; rw [coe_quote_sentence₇, cast_pConst, cast_pConst]; push_cast; rfl
 
 lemma JustTV7_eq_cast (k : V) :
-    JustTV7 k = pSearch k ((⌜GtmplJ7A 1 uC wC⌝ : ℕ) : V) ((pConst 1 : ℕ) : V) ((pConst 0 : ℕ) : V) := by
+    JustTV7 k = pSearch k ((⌜guardTemplateJust7A 1 uC wC⌝ : ℕ) : V) ((pConst 1 : ℕ) : V) ((pConst 0 : ℕ) : V) := by
   unfold JustTV7; rw [coe_quote_sentence₇, cast_pConst, cast_pConst]; push_cast; rfl
 
 /-- **The canonical code of `JustV7 k` is a searcher with the (cast) `k`-independent inner triple.** -/
-theorem dnum_JustV7 (k : V) : dnum (JustV7 k) = pSearch k (gJd : V) (pJd : V) (qJd : V) := by
+theorem canonical_JustV7 (k : V) : canonical (JustV7 k) = pSearch k (gJd : V) (pJd : V) (qJd : V) := by
   by_cases h : innerJ ≤ innerJT
   · simp only [gJd, pJd, qJd, if_pos h]
     rcases Nat.lt_or_eq_of_le h with h' | h'
-    · rw [dnum_of_lt (by rw [swapcode_JustV7]; exact (JustV7_lt_JustTV7_iff k).mpr h')]
+    · rw [canonical_of_lt (by rw [transposeCode_JustV7]; exact (JustV7_lt_JustTV7_iff k).mpr h')]
       exact JustV7_eq_cast k
-    · rw [dnum_of_eq (by rw [swapcode_JustV7, JustV7_eq_inner, JustTV7_eq_inner, h'])]
+    · rw [canonical_of_eq (by rw [transposeCode_JustV7, JustV7_eq_inner, JustTV7_eq_inner, h'])]
       exact JustV7_eq_cast k
   · simp only [gJd, pJd, qJd, if_neg h]
-    rw [dnum_of_gt (by rw [swapcode_JustV7]; exact (JustTV7_lt_JustV7_iff k).mpr (Nat.lt_of_not_le h)),
-      swapcode_JustV7]
+    rw [canonical_of_gt (by rw [transposeCode_JustV7]; exact (JustTV7_lt_JustV7_iff k).mpr (Nat.lt_of_not_le h)),
+      transposeCode_JustV7]
     exact JustTV7_eq_cast k
 
-theorem dU_JustV7 (k : V) : dU (JustV7 k) = (⌜uJ⌝ : V) := by
-  unfold dU uJ
-  rw [swapcode_JustV7]
+theorem revalueU_JustV7 (k : V) : revalueU (JustV7 k) = (⌜uJ⌝ : V) := by
+  unfold revalueU uJ
+  rw [transposeCode_JustV7]
   by_cases h1 : innerJ < innerJT
   · rw [if_pos ((JustV7_lt_JustTV7_iff k).mpr h1), if_pos h1, quote_cterm_C]
   · rw [if_neg (fun h ↦ h1 ((JustV7_lt_JustTV7_iff k).mp h)), if_neg h1]
@@ -483,9 +483,9 @@ theorem dU_JustV7 (k : V) : dU (JustV7 k) = (⌜uJ⌝ : V) := by
     · rw [if_neg (fun h ↦ h2 ((JustTV7_lt_JustV7_iff k).mp h)), if_neg h2, quote_numT]
       simp
 
-theorem dW_JustV7 (k : V) : dW (JustV7 k) = (⌜wJ⌝ : V) := by
-  unfold dW wJ
-  rw [swapcode_JustV7]
+theorem revalueW_JustV7 (k : V) : revalueW (JustV7 k) = (⌜wJ⌝ : V) := by
+  unfold revalueW wJ
+  rw [transposeCode_JustV7]
   by_cases h1 : innerJ < innerJT
   · rw [if_pos ((JustV7_lt_JustTV7_iff k).mpr h1), if_pos h1, quote_cterm_D]
   · rw [if_neg (fun h ↦ h1 ((JustV7_lt_JustTV7_iff k).mp h)), if_neg h1]
@@ -502,54 +502,54 @@ lemma lMap_swap_TJ : Semiterm.lMap swap TJ = TJ := term_lMap_swap_emb _
 /-- The code of `TJ` (over `LAct`) is the `ℒₒᵣ` tower. -/
 theorem quote_emb_TJ :
     (⌜(Rew.emb TJ : SyntacticSemiterm LAct 1)⌝ : V) =
-    ppairT (bnum 6) (ppairT (^#0) (ppairT (bnum (gJd : V)) (ppairT (progT (pJd : V)) (progT (qJd : V))))) ^+ 𝟏 := by
+    ppairTerm (binNumeral 6) (ppairTerm (^#0) (ppairTerm (binNumeral (gJd : V)) (ppairTerm (codeTerm (pJd : V)) (codeTerm (qJd : V))))) ^+ 𝟏 := by
   unfold TJ
   rw [term_emb_lMap_emb_n, quote_term_lMap_emb, quote_emb_searchT1]
 
-/-- **`TJ` at the budget `k` denotes the canonical code of `JustV7 k`** (in `stdActV V`). -/
-theorem val_TJ_V (k : V) : TJ.val (s := stdActV V) ![k] Empty.elim = dnum (JustV7 k) := by
+/-- **`TJ` at the budget `k` denotes the canonical code of `JustV7 k`** (in `stdReadingV V`). -/
+theorem val_TJ_V (k : V) : TJ.val (s := stdReadingV V) ![k] Empty.elim = canonical (JustV7 k) := by
   unfold TJ
-  rw [Semiterm.val_lMap, stdActV_lMap_emb, val_searchT1_V, dnum_JustV7]
+  rw [Semiterm.val_lMap, stdReadingV_lMap_emb, val_searchT1_V, canonical_JustV7]
 
 /-- The `k`-independent re-valuation terms reconstruct `JustV7 k` from its canonical code. -/
-theorem relabel_val_uJ_wJ_V (k : V) :
-    relabel (uJ.val (s := stdActV V) ![] Empty.elim) (wJ.val (s := stdActV V) ![] Empty.elim)
-      (dnum (JustV7 k)) = JustV7 k := by
+theorem revalue_val_uJ_wJ_V (k : V) :
+    revalue (uJ.val (s := stdReadingV V) ![] Empty.elim) (wJ.val (s := stdReadingV V) ![] Empty.elim)
+      (canonical (JustV7 k)) = JustV7 k := by
   unfold uJ wJ
   by_cases h1 : innerJ < innerJT
   · rw [if_pos h1, if_pos h1, val_cterm_C_V, val_cterm_D_V,
-      dnum_of_lt (by rw [swapcode_JustV7]; exact (JustV7_lt_JustTV7_iff k).mpr h1), relabel_zero_one]
+      canonical_of_lt (by rw [transposeCode_JustV7]; exact (JustV7_lt_JustTV7_iff k).mpr h1), revalue_zero_one]
   · rw [if_neg h1, if_neg h1]
     by_cases h2 : innerJT < innerJ
     · rw [if_pos h2, if_pos h2, val_cterm_D_V, val_cterm_C_V,
-        dnum_of_gt (by rw [swapcode_JustV7]; exact (JustTV7_lt_JustV7_iff k).mpr h2)]
-      exact swapcode_swapcode _
+        canonical_of_gt (by rw [transposeCode_JustV7]; exact (JustTV7_lt_JustV7_iff k).mpr h2)]
+      exact transposeCode_transposeCode _
     · have h' : innerJ = innerJT := le_antisymm (not_lt.mp h2) (not_lt.mp h1)
       rw [if_neg h2, if_neg h2, val_numT_V, val_numT_V, Nat.cast_zero, Nat.cast_one,
-        dnum_of_eq (by rw [swapcode_JustV7, JustV7_eq_inner, JustTV7_eq_inner, h']), relabel_zero_one]
+        canonical_of_eq (by rw [transposeCode_JustV7, JustV7_eq_inner, JustTV7_eq_inner, h']), revalue_zero_one]
 
 /-- The transposed re-valuation terms. -/
 noncomputable def uJT : ClosedSemiterm LAct 0 := Semiterm.lMap swap uJ
 noncomputable def wJT : ClosedSemiterm LAct 0 := Semiterm.lMap swap wJ
 
 /-- The transposed descriptions reconstruct `JustTV7 k` from the canonical code of `JustV7 k`. -/
-theorem relabel_val_uJT_wJT_V (k : V) :
-    relabel (uJT.val (s := stdActV V) ![] Empty.elim) (wJT.val (s := stdActV V) ![] Empty.elim)
-      (dnum (JustV7 k)) = JustTV7 k := by
+theorem revalue_val_uJT_wJT_V (k : V) :
+    revalue (uJT.val (s := stdReadingV V) ![] Empty.elim) (wJT.val (s := stdReadingV V) ![] Empty.elim)
+      (canonical (JustV7 k)) = JustTV7 k := by
   unfold uJT wJT uJ wJ
   by_cases h1 : innerJ < innerJT
   · rw [if_pos h1, if_pos h1, lMap_swap_cterm_C, lMap_swap_cterm_D, val_cterm_D_V, val_cterm_C_V,
-      dnum_of_lt (by rw [swapcode_JustV7]; exact (JustV7_lt_JustTV7_iff k).mpr h1)]
-    exact swapcode_JustV7 k
+      canonical_of_lt (by rw [transposeCode_JustV7]; exact (JustV7_lt_JustTV7_iff k).mpr h1)]
+    exact transposeCode_JustV7 k
   · rw [if_neg h1, if_neg h1]
     by_cases h2 : innerJT < innerJ
     · rw [if_pos h2, if_pos h2, lMap_swap_cterm_D, lMap_swap_cterm_C, val_cterm_C_V, val_cterm_D_V,
-        dnum_of_gt (by rw [swapcode_JustV7]; exact (JustTV7_lt_JustV7_iff k).mpr h2), swapcode_JustV7,
-        relabel_zero_one]
+        canonical_of_gt (by rw [transposeCode_JustV7]; exact (JustTV7_lt_JustV7_iff k).mpr h2), transposeCode_JustV7,
+        revalue_zero_one]
     · have h' : innerJ = innerJT := le_antisymm (not_lt.mp h2) (not_lt.mp h1)
       rw [if_neg h2, if_neg h2, lMap_swap_numT, lMap_swap_numT, val_numT_V, val_numT_V, Nat.cast_zero,
-        Nat.cast_one, dnum_of_eq (by rw [swapcode_JustV7, JustV7_eq_inner, JustTV7_eq_inner, h']),
-        relabel_zero_one]
+        Nat.cast_one, canonical_of_eq (by rw [transposeCode_JustV7, JustV7_eq_inner, JustTV7_eq_inner, h']),
+        revalue_zero_one]
       have e : JustV7 k = JustTV7 k := by rw [JustV7_eq_inner, JustTV7_eq_inner, h']
       exact e
 
@@ -557,25 +557,25 @@ theorem relabel_val_uJT_wJT_V (k : V) :
 
 /-- Just's own triple describes `JustV7 k` on codes. -/
 lemma hX_just7 (k : V) :
-    termSubst LAct (bnum k ∷ (0 : V)) (⌜(Rew.emb TJ : SyntacticSemiterm LAct 1)⌝ : V) =
-      progT (dnum (JustV7 k)) := by
-  rw [quote_emb_TJ, termSubst_tower, dnum_JustV7]
+    termSubst LAct (binNumeral k ∷ (0 : V)) (⌜(Rew.emb TJ : SyntacticSemiterm LAct 1)⌝ : V) =
+      codeTerm (canonical (JustV7 k)) := by
+  rw [quote_emb_TJ, termSubst_tower, canonical_JustV7]
 
-lemma hU_just7 (k : V) : (⌜uJ⌝ : V) = dU (JustV7 k) := (dU_JustV7 k).symm
-lemma hW_just7 (k : V) : (⌜wJ⌝ : V) = dW (JustV7 k) := (dW_JustV7 k).symm
+lemma hU_just7 (k : V) : (⌜uJ⌝ : V) = revalueU (JustV7 k) := (revalueU_JustV7 k).symm
+lemma hW_just7 (k : V) : (⌜wJ⌝ : V) = revalueW (JustV7 k) := (revalueW_JustV7 k).symm
 
-/-- Just's own triple describes `JustV7 k` in `stdActV V`. -/
+/-- Just's own triple describes `JustV7 k` in `stdReadingV V`. -/
 lemma desc_just7 (k : V) :
-    relabel (uJ.val (s := stdActV V) ![] Empty.elim) (wJ.val (s := stdActV V) ![] Empty.elim)
-      (TJ.val (s := stdActV V) ![k] Empty.elim) = JustV7 k := by
-  rw [val_TJ_V]; exact relabel_val_uJ_wJ_V k
+    revalue (uJ.val (s := stdReadingV V) ![] Empty.elim) (wJ.val (s := stdReadingV V) ![] Empty.elim)
+      (TJ.val (s := stdReadingV V) ![k] Empty.elim) = JustV7 k := by
+  rw [val_TJ_V]; exact revalue_val_uJ_wJ_V k
 
-/-- The transposed triple describes `JustTV7 k` in `stdActV V`. -/
+/-- The transposed triple describes `JustTV7 k` in `stdReadingV V`. -/
 lemma descT_just7 (k : V) :
-    relabel ((Semiterm.lMap swap uJ).val (s := stdActV V) ![] Empty.elim)
-      ((Semiterm.lMap swap wJ).val (s := stdActV V) ![] Empty.elim)
-      ((Semiterm.lMap swap TJ).val (s := stdActV V) ![k] Empty.elim) = JustTV7 k := by
-  rw [lMap_swap_TJ, val_TJ_V]; exact relabel_val_uJT_wJT_V k
+    revalue ((Semiterm.lMap swap uJ).val (s := stdReadingV V) ![] Empty.elim)
+      ((Semiterm.lMap swap wJ).val (s := stdReadingV V) ![] Empty.elim)
+      ((Semiterm.lMap swap TJ).val (s := stdReadingV V) ![k] Empty.elim) = JustTV7 k := by
+  rw [lMap_swap_TJ, val_TJ_V]; exact revalue_val_uJT_wJT_V k
 
 
 end canonical
@@ -679,19 +679,19 @@ theorem guardCode_botCupodV_JustTV7_eq_instB (k : V) :
     guardCode (⌜guardTemplate 1⌝ : V) (pBot (CupodV k)) (JustTV7 k) = instB (⌜Semiformula.lMap swap qJJ⌝ : V) k := by
   have h := guardCode_GtmplA_swap_eq_instB 0 k TBD uD wD TJ uJ wJ (hX_botDupoc k) (hU_botDupoc k) (hW_botDupoc k) (hX_just7 k)
     (hU_just7 k) (hW_just7 k)
-  rwa [swapAct_zero, swapcode_pBot_DupocV, swapcode_JustV7] at h
+  rwa [swapAction_zero, transposeCode_pBot_DupocV, transposeCode_JustV7] at h
 
 /-- **The truth equation of `qJJ`** (standard reading). -/
 theorem eval_qJJ_iff_V (k : V) :
-    Semiformula.Eval (s := stdActV V) ![k] Empty.elim qJJ ↔
+    Semiformula.Eval (s := stdReadingV V) ![k] Empty.elim qJJ ↔
       ∃ n, EvalGraph n (JustV7 k) (pBot (DupocV k)) (JustV7 k) 0 := by
   have h := eval_qG_iff_V 0 k TBD uD wD TJ uJ wJ (desc_botDupoc k) (desc_just7 k)
   rwa [Nat.cast_zero] at h
 
 theorem eval_qJJ_swapped_iff_V (k : V) :
-    Semiformula.Eval (s := stdActV V) ![k] Empty.elim (Semiformula.lMap swap qJJ) ↔
+    Semiformula.Eval (s := stdReadingV V) ![k] Empty.elim (Semiformula.lMap swap qJJ) ↔
       ∃ n, EvalGraph n (JustTV7 k) (pBot (CupodV k)) (JustTV7 k) 1 := by
-  rw [qJJ_def, lMap_swap_qG, swapAct_zero]
+  rw [qJJ_def, lMap_swap_qG, swapAction_zero]
   have h := eval_qG_iff_V 1 k _ _ _ _ _ _ (descT_botDupoc k) (descT_just7 k)
   rwa [Nat.cast_one] at h
 
@@ -738,7 +738,7 @@ theorem pJJ_all_V (k a : V)
       + 7 ≤ k)
     (ha₂ : a + 8 * (formulaLen LAct (instB (⌜pJJ2⌝ : V) k) + formulaLen LAct (instB (⌜pBD⌝ : V) k)) + 7 +
       8 * (formulaLen LAct (instB (⌜qBD⌝ : V) k) + formulaLen LAct (instB (⌜qBC⌝ : V) k)) + 7 ≤ k)
-    (h : LenDerivable TAct a (instB (⌜pJJ⌝ : V) k)) :
+    (h : LenBoxUnbounded TAct a (instB (⌜pJJ⌝ : V) k)) :
     (EvalGraph 2 (JustV7 k) (JustV7 k) (JustV7 k) 0 ∧ EvalGraph 2 (JustTV7 k) (JustTV7 k) (JustTV7 k) 1) ∧
     (EvalGraph 2 (JustV7 k) (pBot (DupocV k)) (JustV7 k) 0 ∧ EvalGraph 2 (JustTV7 k) (pBot (CupodV k)) (JustTV7 k) 1) ∧
     (EvalGraph 3 (pBot (DupocV k)) (pBot (DupocV k)) (pBot (DupocV k)) 0 ∧
@@ -746,18 +746,18 @@ theorem pJJ_all_V (k a : V)
   rw [instB_quote_pJJ] at h
   have hx := isFormula_instB_quote pJJ2 k
   have hy := isFormula_instB_quote pBD k
-  have h₁ := lenDerivable_andL_V hx hy h
-  have h₂ := lenDerivable_andR_V hx hy h
+  have h₁ := lenBoxUnbounded_andL_V hx hy h
+  have h₂ := lenBoxUnbounded_andR_V hx hy h
   have hx' := isFormula_instB_quote qJJ k
   have hy' := isFormula_instB_quote (Semiformula.lMap swap qJJ) k
-  have h₁' : LenDerivable TAct
+  have h₁' : LenBoxUnbounded TAct
       (a + 8 * (formulaLen LAct (instB (⌜pJJ2⌝ : V) k) + formulaLen LAct (instB (⌜pBD⌝ : V) k)) + 7)
       (instB (⌜qJJ⌝ : V) k ^⋏ instB (⌜Semiformula.lMap swap qJJ⌝ : V) k) := by
     rw [← instB_quote_pJJ2]; exact h₁
-  have c1 := lenDerivable_mono_V ha₁ (lenDerivable_andL_V hx' hy' h₁')
-  have c2 := lenDerivable_mono_V ha₁ (lenDerivable_andR_V hx' hy' h₁')
-  rw [lenDerivable_iff_lenProvableV, ← guardCode_botDupocV_JustV7_eq_instB] at c1
-  rw [lenDerivable_iff_lenProvableV, ← guardCode_botCupodV_JustTV7_eq_instB] at c2
+  have c1 := lenBoxUnbounded_mono_V ha₁ (lenBoxUnbounded_andL_V hx' hy' h₁')
+  have c2 := lenBoxUnbounded_mono_V ha₁ (lenBoxUnbounded_andR_V hx' hy' h₁')
+  rw [lenBoxUnbounded_iff_lenBox, ← guardCode_botDupocV_JustV7_eq_instB] at c1
+  rw [lenBoxUnbounded_iff_lenBox, ← guardCode_botCupodV_JustTV7_eq_instB] at c2
   have hb := pBD_both_V k _ ha₂ h₂
   have hg := pBD_guards_V k _ ha₂ h₂
   exact ⟨⟨just7_search_V k _ _ c1, just7T_search_V k _ _ c2⟩,
@@ -768,25 +768,25 @@ theorem pJJ_guards_V (k a : V)
     (ha₁ : a + 8 * (formulaLen LAct (instB (⌜pJJ2⌝ : V) k) + formulaLen LAct (instB (⌜pBD⌝ : V) k)) + 7 +
       8 * (formulaLen LAct (instB (⌜qJJ⌝ : V) k) + formulaLen LAct (instB (⌜Semiformula.lMap swap qJJ⌝ : V) k))
       + 7 ≤ k)
-    (h : LenDerivable TAct a (instB (⌜pJJ⌝ : V) k)) :
-    LenProvableV TAct k (guardCode (⌜guardTemplate 0⌝ : V) (pBot (DupocV k)) (JustV7 k)) := by
+    (h : LenBoxUnbounded TAct a (instB (⌜pJJ⌝ : V) k)) :
+    LenBox TAct k (guardCode (⌜guardTemplate 0⌝ : V) (pBot (DupocV k)) (JustV7 k)) := by
   rw [instB_quote_pJJ] at h
   have hx := isFormula_instB_quote pJJ2 k
   have hy := isFormula_instB_quote pBD k
-  have h₁ := lenDerivable_andL_V hx hy h
+  have h₁ := lenBoxUnbounded_andL_V hx hy h
   have hx' := isFormula_instB_quote qJJ k
   have hy' := isFormula_instB_quote (Semiformula.lMap swap qJJ) k
-  have h₁' : LenDerivable TAct
+  have h₁' : LenBoxUnbounded TAct
       (a + 8 * (formulaLen LAct (instB (⌜pJJ2⌝ : V) k) + formulaLen LAct (instB (⌜pBD⌝ : V) k)) + 7)
       (instB (⌜qJJ⌝ : V) k ^⋏ instB (⌜Semiformula.lMap swap qJJ⌝ : V) k) := by
     rw [← instB_quote_pJJ2]; exact h₁
-  have c1 := lenDerivable_mono_V ha₁ (lenDerivable_andL_V hx' hy' h₁')
-  rwa [lenDerivable_iff_lenProvableV, ← guardCode_botDupocV_JustV7_eq_instB] at c1
+  have c1 := lenBoxUnbounded_mono_V ha₁ (lenBoxUnbounded_andL_V hx' hy' h₁')
+  rwa [lenBoxUnbounded_iff_lenBox, ← guardCode_botDupocV_JustV7_eq_instB] at c1
 
 /-! #### `pJJ` in both readings -/
 
 theorem eval_pJJ_iff_std (k : V) :
-    Semiformula.Eval (s := stdActV V) ![k] Empty.elim pJJ ↔
+    Semiformula.Eval (s := stdReadingV V) ![k] Empty.elim pJJ ↔
       ((∃ n, EvalGraph n (JustV7 k) (pBot (DupocV k)) (JustV7 k) 0) ∧
         (∃ n, EvalGraph n (JustTV7 k) (pBot (CupodV k)) (JustTV7 k) 1)) ∧
       ((∃ n, EvalGraph n (pBot (DupocV k)) (pBot (DupocV k)) (pBot (DupocV k)) 0) ∧
@@ -796,25 +796,25 @@ theorem eval_pJJ_iff_std (k : V) :
   rw [eval_qJJ_iff_V, eval_qJJ_swapped_iff_V, eval_qBD_iff_V, eval_qBC_iff_V]
 
 theorem eval_pJJ_iff_swap (k : V) :
-    Semiformula.Eval (s := swapActS V) ![k] Empty.elim pJJ ↔
+    Semiformula.Eval (s := swappedReading V) ![k] Empty.elim pJJ ↔
       ((∃ n, EvalGraph n (JustV7 k) (pBot (DupocV k)) (JustV7 k) 0) ∧
         (∃ n, EvalGraph n (JustTV7 k) (pBot (CupodV k)) (JustTV7 k) 1)) ∧
       ((∃ n, EvalGraph n (pBot (DupocV k)) (pBot (DupocV k)) (pBot (DupocV k)) 0) ∧
         (∃ n, EvalGraph n (pBot (CupodV k)) (pBot (CupodV k)) (pBot (CupodV k)) 1)) := by
-  rw [eval_swapActS, pJJ_def, LogicalConnective.HomClass.map_and, lMap_swap_pJJ2, lMap_swap_pBD,
-    ← stdActV_eq_stdActS]
+  rw [eval_swappedReading, pJJ_def, LogicalConnective.HomClass.map_and, lMap_swap_pJJ2, lMap_swap_pBD,
+    ← stdReadingV_eq_stdReading]
   simp only [LogicalConnective.HomClass.map_and, LogicalConnective.Prop.and_eq]
   rw [eval_qJJ_swapped_iff_V, eval_qJJ_iff_V, eval_qBC_iff_V, eval_qBD_iff_V,
     and_comm (a := ∃ n, EvalGraph n (JustTV7 k) (pBot (CupodV k)) (JustTV7 k) 1),
     and_comm (a := ∃ n, EvalGraph n (pBot (CupodV k)) (pBot (CupodV k)) (pBot (CupodV k)) 1)]
 
-theorem eval_pJJ_iff_stdActS (k : V) :
-    Semiformula.Eval (s := stdActS V) ![k] Empty.elim pJJ ↔
+theorem eval_pJJ_iff_stdReading (k : V) :
+    Semiformula.Eval (s := stdReading V) ![k] Empty.elim pJJ ↔
       ((∃ n, EvalGraph n (JustV7 k) (pBot (DupocV k)) (JustV7 k) 0) ∧
         (∃ n, EvalGraph n (JustTV7 k) (pBot (CupodV k)) (JustTV7 k) 1)) ∧
       ((∃ n, EvalGraph n (pBot (DupocV k)) (pBot (DupocV k)) (pBot (DupocV k)) 0) ∧
         (∃ n, EvalGraph n (pBot (CupodV k)) (pBot (CupodV k)) (pBot (CupodV k)) 1)) := by
-  rw [← stdActV_eq_stdActS]; exact eval_pJJ_iff_std k
+  rw [← stdReadingV_eq_stdReading]; exact eval_pJJ_iff_std k
 
 /-- **The bounded Löb premise of the Just × Just family, slack `(14, 16)`.** -/
 theorem loebSound_pJJ : LoebSound pJJ 14 16 := by
@@ -823,7 +823,7 @@ theorem loebSound_pJJ : LoebSound pJJ 14 16 := by
   have ha₁ := le_trans (slack4_le a _ _ _ _ _ (formulaLen_instB_pJJ2 k) (formulaLen_instB_pJJ k)) ha
   have ha₂ := le_trans (slack4_le' a _ _ _ _ _ (formulaLen_instB_pBD k) (formulaLen_instB_pJJ k)) ha
   obtain ⟨_, ⟨j1, j2⟩, ⟨b1, b2⟩⟩ := pJJ_all_V k a ha₁ ha₂ h
-  exact ⟨(eval_pJJ_iff_stdActS k).mpr ⟨⟨⟨2, j1⟩, ⟨2, j2⟩⟩, ⟨⟨3, b1⟩, ⟨3, b2⟩⟩⟩,
+  exact ⟨(eval_pJJ_iff_stdReading k).mpr ⟨⟨⟨2, j1⟩, ⟨2, j2⟩⟩, ⟨⟨3, b1⟩, ⟨3, b2⟩⟩⟩,
     (eval_pJJ_iff_swap k).mpr ⟨⟨⟨2, j1⟩, ⟨2, j2⟩⟩, ⟨⟨3, b1⟩, ⟨3, b2⟩⟩⟩⟩
 
 /-! #### The cell at ℕ -/
@@ -833,7 +833,7 @@ and finds its guard against itself. -/
 theorem loeb_Just7_vs_Just7_core_of_nec {d : ℕ} (hE : BoundedInnerNec d) :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 2 (Just7 k) (Just7 k) (Just7 k) 0 ∧
-      LenProvableV TAct k (guardCode (⌜guardTemplate 0⌝ : ℕ) (pBot (Dupoc k)) (Just7 k)) := by
+      LenBox TAct k (guardCode (⌜guardTemplate 0⌝ : ℕ) (pBot (Dupoc k)) (Just7 k)) := by
   obtain ⟨k₀, h⟩ := family_found pJJ hE loebSound_pJJ
   refine ⟨k₀, fun k hk ↦ ?_⟩
   obtain ⟨a, ha, hpc⟩ := h k hk
@@ -858,10 +858,10 @@ theorem loeb_Just7_vs_Just7 :
 /-- **The box form, unconditional**: Just FINDS its guard against itself within its budget — stated
 with the node-budget guard code of the constant template. -/
 theorem loeb_Just7_vs_Just7_guard :
-    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k → LenProvableV TAct k (guardCodeB (⌜GtmplJ7⌝ : ℕ) (Just7 k) (Just7 k) k) := by
+    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k → LenBox TAct k (guardCodeB (⌜guardTemplateJust7⌝ : ℕ) (Just7 k) (Just7 k) k) := by
   obtain ⟨k₀, h⟩ := loeb_Just7_vs_Just7_core_of_nec boundedInnerNec_sixteen
   refine ⟨k₀, fun k hk ↦ ?_⟩
-  rw [guardCodeB_GtmplJ7]
+  rw [guardCodeB_guardTemplateJust7]
   exact (h k hk).2
 
 end selfCell
@@ -892,7 +892,7 @@ theorem guardCode_botCupodV_CupodV_eq_instB (k : V) :
     guardCode (⌜guardTemplate 1⌝ : V) (pBot (CupodV k)) (CupodV k) = instB (⌜Semiformula.lMap swap qJD⌝ : V) k := by
   have h := guardCode_GtmplA_swap_eq_instB 0 k TBD uD wD TD uD wD (hX_botDupoc k) (hU_botDupoc k) (hW_botDupoc k) (hX_dupoc k)
     (hU_dupoc k) (hW_dupoc k)
-  rwa [swapAct_zero, swapcode_pBot_DupocV, swapcode_DupocV] at h
+  rwa [swapAction_zero, transposeCode_pBot_DupocV, transposeCode_DupocV] at h
 
 theorem guardCode_DupocV_botDupocV_eq_instB (k : V) :
     guardCode (⌜guardTemplate 0⌝ : V) (DupocV k) (pBot (DupocV k)) = instB (⌜qBDD⌝ : V) k :=
@@ -903,7 +903,7 @@ theorem guardCode_CupodV_botCupodV_eq_instB (k : V) :
     guardCode (⌜guardTemplate 1⌝ : V) (CupodV k) (pBot (CupodV k)) = instB (⌜Semiformula.lMap swap qBDD⌝ : V) k := by
   have h := guardCode_GtmplA_swap_eq_instB 0 k TD uD wD TBD uD wD (hX_dupoc k) (hU_dupoc k) (hW_dupoc k) (hX_botDupoc k)
     (hU_botDupoc k) (hW_botDupoc k)
-  rwa [swapAct_zero, swapcode_pBot_DupocV, swapcode_DupocV] at h
+  rwa [swapAction_zero, transposeCode_pBot_DupocV, transposeCode_DupocV] at h
 
 theorem guardCode_DupocV_JustV7_eq_instB (k : V) :
     guardCode (⌜guardTemplate 0⌝ : V) (DupocV k) (JustV7 k) = instB (⌜qDJ⌝ : V) k :=
@@ -914,46 +914,46 @@ theorem guardCode_CupodV_JustTV7_eq_instB (k : V) :
     guardCode (⌜guardTemplate 1⌝ : V) (CupodV k) (JustTV7 k) = instB (⌜Semiformula.lMap swap qDJ⌝ : V) k := by
   have h := guardCode_GtmplA_swap_eq_instB 0 k TD uD wD TJ uJ wJ (hX_dupoc k) (hU_dupoc k) (hW_dupoc k) (hX_just7 k)
     (hU_just7 k) (hW_just7 k)
-  rwa [swapAct_zero, swapcode_DupocV, swapcode_JustV7] at h
+  rwa [swapAction_zero, transposeCode_DupocV, transposeCode_JustV7] at h
 
 /-! #### The truth equations -/
 
 theorem eval_qJD_iff_V (k : V) :
-    Semiformula.Eval (s := stdActV V) ![k] Empty.elim qJD ↔
+    Semiformula.Eval (s := stdReadingV V) ![k] Empty.elim qJD ↔
       ∃ n, EvalGraph n (DupocV k) (pBot (DupocV k)) (DupocV k) 0 := by
   have h := eval_qG_iff_V 0 k TBD uD wD TD uD wD (desc_botDupoc k) (desc_dupoc k)
   rwa [Nat.cast_zero] at h
 
 theorem eval_qJD_swapped_iff_V (k : V) :
-    Semiformula.Eval (s := stdActV V) ![k] Empty.elim (Semiformula.lMap swap qJD) ↔
+    Semiformula.Eval (s := stdReadingV V) ![k] Empty.elim (Semiformula.lMap swap qJD) ↔
       ∃ n, EvalGraph n (CupodV k) (pBot (CupodV k)) (CupodV k) 1 := by
-  rw [qJD_def, lMap_swap_qG, swapAct_zero]
+  rw [qJD_def, lMap_swap_qG, swapAction_zero]
   have h := eval_qG_iff_V 1 k _ _ _ _ _ _ (descT_botDupoc k) (descT_dupoc k)
   rwa [Nat.cast_one] at h
 
 theorem eval_qBDD_iff_V (k : V) :
-    Semiformula.Eval (s := stdActV V) ![k] Empty.elim qBDD ↔
+    Semiformula.Eval (s := stdReadingV V) ![k] Empty.elim qBDD ↔
       ∃ n, EvalGraph n (pBot (DupocV k)) (DupocV k) (pBot (DupocV k)) 0 := by
   have h := eval_qG_iff_V 0 k TD uD wD TBD uD wD (desc_dupoc k) (desc_botDupoc k)
   rwa [Nat.cast_zero] at h
 
 theorem eval_qBDD_swapped_iff_V (k : V) :
-    Semiformula.Eval (s := stdActV V) ![k] Empty.elim (Semiformula.lMap swap qBDD) ↔
+    Semiformula.Eval (s := stdReadingV V) ![k] Empty.elim (Semiformula.lMap swap qBDD) ↔
       ∃ n, EvalGraph n (pBot (CupodV k)) (CupodV k) (pBot (CupodV k)) 1 := by
-  rw [qBDD_def, lMap_swap_qG, swapAct_zero]
+  rw [qBDD_def, lMap_swap_qG, swapAction_zero]
   have h := eval_qG_iff_V 1 k _ _ _ _ _ _ (descT_dupoc k) (descT_botDupoc k)
   rwa [Nat.cast_one] at h
 
 theorem eval_qDJ_iff_V (k : V) :
-    Semiformula.Eval (s := stdActV V) ![k] Empty.elim qDJ ↔
+    Semiformula.Eval (s := stdReadingV V) ![k] Empty.elim qDJ ↔
       ∃ n, EvalGraph n (JustV7 k) (DupocV k) (JustV7 k) 0 := by
   have h := eval_qG_iff_V 0 k TD uD wD TJ uJ wJ (desc_dupoc k) (desc_just7 k)
   rwa [Nat.cast_zero] at h
 
 theorem eval_qDJ_swapped_iff_V (k : V) :
-    Semiformula.Eval (s := stdActV V) ![k] Empty.elim (Semiformula.lMap swap qDJ) ↔
+    Semiformula.Eval (s := stdReadingV V) ![k] Empty.elim (Semiformula.lMap swap qDJ) ↔
       ∃ n, EvalGraph n (JustTV7 k) (CupodV k) (JustTV7 k) 1 := by
-  rw [qDJ_def, lMap_swap_qG, swapAct_zero]
+  rw [qDJ_def, lMap_swap_qG, swapAction_zero]
   have h := eval_qG_iff_V 1 k _ _ _ _ _ _ (descT_dupoc k) (descT_just7 k)
   rwa [Nat.cast_one] at h
 
@@ -1029,71 +1029,71 @@ theorem pJD_guards_V (k a : V)
       8 * (formulaLen LAct (instB (⌜pBDD2⌝ : V) k) + formulaLen LAct (instB (⌜pDJ2⌝ : V) k)) + 7 +
       8 * (formulaLen LAct (instB (⌜qDJ⌝ : V) k) + formulaLen LAct (instB (⌜Semiformula.lMap swap qDJ⌝ : V) k))
       + 7 ≤ k)
-    (h : LenDerivable TAct a (instB (⌜pJD⌝ : V) k)) :
-    (LenProvableV TAct k (guardCode (⌜guardTemplate 0⌝ : V) (pBot (DupocV k)) (DupocV k)) ∧
-      LenProvableV TAct k (guardCode (⌜guardTemplate 1⌝ : V) (pBot (CupodV k)) (CupodV k))) ∧
-    (LenProvableV TAct k (guardCode (⌜guardTemplate 0⌝ : V) (DupocV k) (pBot (DupocV k))) ∧
-      LenProvableV TAct k (guardCode (⌜guardTemplate 1⌝ : V) (CupodV k) (pBot (CupodV k)))) ∧
-    (LenProvableV TAct k (guardCode (⌜guardTemplate 0⌝ : V) (DupocV k) (JustV7 k)) ∧
-      LenProvableV TAct k (guardCode (⌜guardTemplate 1⌝ : V) (CupodV k) (JustTV7 k))) := by
+    (h : LenBoxUnbounded TAct a (instB (⌜pJD⌝ : V) k)) :
+    (LenBox TAct k (guardCode (⌜guardTemplate 0⌝ : V) (pBot (DupocV k)) (DupocV k)) ∧
+      LenBox TAct k (guardCode (⌜guardTemplate 1⌝ : V) (pBot (CupodV k)) (CupodV k))) ∧
+    (LenBox TAct k (guardCode (⌜guardTemplate 0⌝ : V) (DupocV k) (pBot (DupocV k))) ∧
+      LenBox TAct k (guardCode (⌜guardTemplate 1⌝ : V) (CupodV k) (pBot (CupodV k)))) ∧
+    (LenBox TAct k (guardCode (⌜guardTemplate 0⌝ : V) (DupocV k) (JustV7 k)) ∧
+      LenBox TAct k (guardCode (⌜guardTemplate 1⌝ : V) (CupodV k) (JustTV7 k))) := by
   rw [instB_quote_pJD] at h
   have hx := isFormula_instB_quote pJD2 k
   have hy := isFormula_instB_quote pJDR k
-  have h₁ := lenDerivable_andL_V hx hy h
-  have h₂ := lenDerivable_andR_V hx hy h
+  have h₁ := lenBoxUnbounded_andL_V hx hy h
+  have h₂ := lenBoxUnbounded_andR_V hx hy h
   -- level 2, left
   have hx₁ := isFormula_instB_quote qJD k
   have hy₁ := isFormula_instB_quote (Semiformula.lMap swap qJD) k
-  have h₁' : LenDerivable TAct
+  have h₁' : LenBoxUnbounded TAct
       (a + 8 * (formulaLen LAct (instB (⌜pJD2⌝ : V) k) + formulaLen LAct (instB (⌜pJDR⌝ : V) k)) + 7)
       (instB (⌜qJD⌝ : V) k ^⋏ instB (⌜Semiformula.lMap swap qJD⌝ : V) k) := by
     rw [← instB_quote_pJD2]; exact h₁
-  have c1 := lenDerivable_mono_V ha₁ (lenDerivable_andL_V hx₁ hy₁ h₁')
-  have c1' := lenDerivable_mono_V ha₁ (lenDerivable_andR_V hx₁ hy₁ h₁')
+  have c1 := lenBoxUnbounded_mono_V ha₁ (lenBoxUnbounded_andL_V hx₁ hy₁ h₁')
+  have c1' := lenBoxUnbounded_mono_V ha₁ (lenBoxUnbounded_andR_V hx₁ hy₁ h₁')
   -- level 2, right
   have hx₂ := isFormula_instB_quote pBDD2 k
   have hy₂ := isFormula_instB_quote pDJ2 k
-  have h₂' : LenDerivable TAct
+  have h₂' : LenBoxUnbounded TAct
       (a + 8 * (formulaLen LAct (instB (⌜pJD2⌝ : V) k) + formulaLen LAct (instB (⌜pJDR⌝ : V) k)) + 7)
       (instB (⌜pBDD2⌝ : V) k ^⋏ instB (⌜pDJ2⌝ : V) k) := by
     rw [← instB_quote_pJDR]; exact h₂
-  have h₂₁ := lenDerivable_andL_V hx₂ hy₂ h₂'
-  have h₂₂ := lenDerivable_andR_V hx₂ hy₂ h₂'
+  have h₂₁ := lenBoxUnbounded_andL_V hx₂ hy₂ h₂'
+  have h₂₂ := lenBoxUnbounded_andR_V hx₂ hy₂ h₂'
   -- level 3
   have hx₃ := isFormula_instB_quote qBDD k
   have hy₃ := isFormula_instB_quote (Semiformula.lMap swap qBDD) k
-  have h₂₁' : LenDerivable TAct
+  have h₂₁' : LenBoxUnbounded TAct
       (a + 8 * (formulaLen LAct (instB (⌜pJD2⌝ : V) k) + formulaLen LAct (instB (⌜pJDR⌝ : V) k)) + 7 +
         8 * (formulaLen LAct (instB (⌜pBDD2⌝ : V) k) + formulaLen LAct (instB (⌜pDJ2⌝ : V) k)) + 7)
       (instB (⌜qBDD⌝ : V) k ^⋏ instB (⌜Semiformula.lMap swap qBDD⌝ : V) k) := by
     rw [← instB_quote_pBDD2]; exact h₂₁
-  have c2 := lenDerivable_mono_V ha₂ (lenDerivable_andL_V hx₃ hy₃ h₂₁')
-  have c2' := lenDerivable_mono_V ha₂ (lenDerivable_andR_V hx₃ hy₃ h₂₁')
+  have c2 := lenBoxUnbounded_mono_V ha₂ (lenBoxUnbounded_andL_V hx₃ hy₃ h₂₁')
+  have c2' := lenBoxUnbounded_mono_V ha₂ (lenBoxUnbounded_andR_V hx₃ hy₃ h₂₁')
   have hx₄ := isFormula_instB_quote qDJ k
   have hy₄ := isFormula_instB_quote (Semiformula.lMap swap qDJ) k
-  have h₂₂' : LenDerivable TAct
+  have h₂₂' : LenBoxUnbounded TAct
       (a + 8 * (formulaLen LAct (instB (⌜pJD2⌝ : V) k) + formulaLen LAct (instB (⌜pJDR⌝ : V) k)) + 7 +
         8 * (formulaLen LAct (instB (⌜pBDD2⌝ : V) k) + formulaLen LAct (instB (⌜pDJ2⌝ : V) k)) + 7)
       (instB (⌜qDJ⌝ : V) k ^⋏ instB (⌜Semiformula.lMap swap qDJ⌝ : V) k) := by
     rw [← instB_quote_pDJ2]; exact h₂₂
-  have c3 := lenDerivable_mono_V ha₃ (lenDerivable_andL_V hx₄ hy₄ h₂₂')
-  have c3' := lenDerivable_mono_V ha₃ (lenDerivable_andR_V hx₄ hy₄ h₂₂')
-  rw [lenDerivable_iff_lenProvableV, ← guardCode_botDupocV_DupocV_eq_instB] at c1
-  rw [lenDerivable_iff_lenProvableV, ← guardCode_botCupodV_CupodV_eq_instB] at c1'
-  rw [lenDerivable_iff_lenProvableV, ← guardCode_DupocV_botDupocV_eq_instB] at c2
-  rw [lenDerivable_iff_lenProvableV, ← guardCode_CupodV_botCupodV_eq_instB] at c2'
-  rw [lenDerivable_iff_lenProvableV, ← guardCode_DupocV_JustV7_eq_instB] at c3
-  rw [lenDerivable_iff_lenProvableV, ← guardCode_CupodV_JustTV7_eq_instB] at c3'
+  have c3 := lenBoxUnbounded_mono_V ha₃ (lenBoxUnbounded_andL_V hx₄ hy₄ h₂₂')
+  have c3' := lenBoxUnbounded_mono_V ha₃ (lenBoxUnbounded_andR_V hx₄ hy₄ h₂₂')
+  rw [lenBoxUnbounded_iff_lenBox, ← guardCode_botDupocV_DupocV_eq_instB] at c1
+  rw [lenBoxUnbounded_iff_lenBox, ← guardCode_botCupodV_CupodV_eq_instB] at c1'
+  rw [lenBoxUnbounded_iff_lenBox, ← guardCode_DupocV_botDupocV_eq_instB] at c2
+  rw [lenBoxUnbounded_iff_lenBox, ← guardCode_CupodV_botCupodV_eq_instB] at c2'
+  rw [lenBoxUnbounded_iff_lenBox, ← guardCode_DupocV_JustV7_eq_instB] at c3
+  rw [lenBoxUnbounded_iff_lenBox, ← guardCode_CupodV_JustTV7_eq_instB] at c3'
   exact ⟨⟨c1, c1'⟩, ⟨c2, c2'⟩, ⟨c3, c3'⟩⟩
 
 /-- **All the plays from the six boxes.** -/
 theorem pJD_all_V (k : V)
-    (hb : (LenProvableV TAct k (guardCode (⌜guardTemplate 0⌝ : V) (pBot (DupocV k)) (DupocV k)) ∧
-      LenProvableV TAct k (guardCode (⌜guardTemplate 1⌝ : V) (pBot (CupodV k)) (CupodV k))) ∧
-    (LenProvableV TAct k (guardCode (⌜guardTemplate 0⌝ : V) (DupocV k) (pBot (DupocV k))) ∧
-      LenProvableV TAct k (guardCode (⌜guardTemplate 1⌝ : V) (CupodV k) (pBot (CupodV k)))) ∧
-    (LenProvableV TAct k (guardCode (⌜guardTemplate 0⌝ : V) (DupocV k) (JustV7 k)) ∧
-      LenProvableV TAct k (guardCode (⌜guardTemplate 1⌝ : V) (CupodV k) (JustTV7 k)))) :
+    (hb : (LenBox TAct k (guardCode (⌜guardTemplate 0⌝ : V) (pBot (DupocV k)) (DupocV k)) ∧
+      LenBox TAct k (guardCode (⌜guardTemplate 1⌝ : V) (pBot (CupodV k)) (CupodV k))) ∧
+    (LenBox TAct k (guardCode (⌜guardTemplate 0⌝ : V) (DupocV k) (pBot (DupocV k))) ∧
+      LenBox TAct k (guardCode (⌜guardTemplate 1⌝ : V) (CupodV k) (pBot (CupodV k)))) ∧
+    (LenBox TAct k (guardCode (⌜guardTemplate 0⌝ : V) (DupocV k) (JustV7 k)) ∧
+      LenBox TAct k (guardCode (⌜guardTemplate 1⌝ : V) (CupodV k) (JustTV7 k)))) :
     (EvalGraph 2 (JustV7 k) (DupocV k) (JustV7 k) 0 ∧ EvalGraph 2 (JustTV7 k) (CupodV k) (JustTV7 k) 1) ∧
     (EvalGraph 2 (DupocV k) (JustV7 k) (DupocV k) 0 ∧ EvalGraph 2 (CupodV k) (JustTV7 k) (CupodV k) 1) ∧
     (EvalGraph 2 (DupocV k) (pBot (DupocV k)) (DupocV k) 0 ∧ EvalGraph 2 (CupodV k) (pBot (CupodV k)) (CupodV k) 1) ∧
@@ -1108,7 +1108,7 @@ theorem pJD_all_V (k : V)
 /-! #### `pJD` in both readings -/
 
 theorem eval_pJD_iff_std (k : V) :
-    Semiformula.Eval (s := stdActV V) ![k] Empty.elim pJD ↔
+    Semiformula.Eval (s := stdReadingV V) ![k] Empty.elim pJD ↔
       ((∃ n, EvalGraph n (DupocV k) (pBot (DupocV k)) (DupocV k) 0) ∧
         (∃ n, EvalGraph n (CupodV k) (pBot (CupodV k)) (CupodV k) 1)) ∧
       ((∃ n, EvalGraph n (pBot (DupocV k)) (DupocV k) (pBot (DupocV k)) 0) ∧
@@ -1121,14 +1121,14 @@ theorem eval_pJD_iff_std (k : V) :
     eval_qDJ_swapped_iff_V]
 
 theorem eval_pJD_iff_swap (k : V) :
-    Semiformula.Eval (s := swapActS V) ![k] Empty.elim pJD ↔
+    Semiformula.Eval (s := swappedReading V) ![k] Empty.elim pJD ↔
       ((∃ n, EvalGraph n (DupocV k) (pBot (DupocV k)) (DupocV k) 0) ∧
         (∃ n, EvalGraph n (CupodV k) (pBot (CupodV k)) (CupodV k) 1)) ∧
       ((∃ n, EvalGraph n (pBot (DupocV k)) (DupocV k) (pBot (DupocV k)) 0) ∧
         (∃ n, EvalGraph n (pBot (CupodV k)) (CupodV k) (pBot (CupodV k)) 1)) ∧
       ((∃ n, EvalGraph n (JustV7 k) (DupocV k) (JustV7 k) 0) ∧
         (∃ n, EvalGraph n (JustTV7 k) (CupodV k) (JustTV7 k) 1)) := by
-  rw [eval_swapActS, pJD_def, pJDR_def, pJD2_def, pBDD2_def, pDJ2_def, ← stdActV_eq_stdActS]
+  rw [eval_swappedReading, pJD_def, pJDR_def, pJD2_def, pBDD2_def, pDJ2_def, ← stdReadingV_eq_stdReading]
   simp only [LogicalConnective.HomClass.map_and, lMap_swap_swap, LogicalConnective.Prop.and_eq]
   rw [eval_qJD_iff_V, eval_qJD_swapped_iff_V, eval_qBDD_iff_V, eval_qBDD_swapped_iff_V, eval_qDJ_iff_V,
     eval_qDJ_swapped_iff_V]
@@ -1136,15 +1136,15 @@ theorem eval_pJD_iff_swap (k : V) :
   · rintro ⟨⟨a, b⟩, ⟨c, d⟩, ⟨e, f⟩⟩; exact ⟨⟨b, a⟩, ⟨d, c⟩, ⟨f, e⟩⟩
   · rintro ⟨⟨a, b⟩, ⟨c, d⟩, ⟨e, f⟩⟩; exact ⟨⟨b, a⟩, ⟨d, c⟩, ⟨f, e⟩⟩
 
-theorem eval_pJD_iff_stdActS (k : V) :
-    Semiformula.Eval (s := stdActS V) ![k] Empty.elim pJD ↔
+theorem eval_pJD_iff_stdReading (k : V) :
+    Semiformula.Eval (s := stdReading V) ![k] Empty.elim pJD ↔
       ((∃ n, EvalGraph n (DupocV k) (pBot (DupocV k)) (DupocV k) 0) ∧
         (∃ n, EvalGraph n (CupodV k) (pBot (CupodV k)) (CupodV k) 1)) ∧
       ((∃ n, EvalGraph n (pBot (DupocV k)) (DupocV k) (pBot (DupocV k)) 0) ∧
         (∃ n, EvalGraph n (pBot (CupodV k)) (CupodV k) (pBot (CupodV k)) 1)) ∧
       ((∃ n, EvalGraph n (JustV7 k) (DupocV k) (JustV7 k) 0) ∧
         (∃ n, EvalGraph n (JustTV7 k) (CupodV k) (JustTV7 k) 1)) := by
-  rw [← stdActV_eq_stdActS]; exact eval_pJD_iff_std k
+  rw [← stdReadingV_eq_stdReading]; exact eval_pJD_iff_std k
 
 /-- **The bounded Löb premise of the Just × Dupoc family, slack `(21, 24)`.** -/
 theorem loebSound_pJD : LoebSound pJD 21 24 := by
@@ -1156,7 +1156,7 @@ theorem loebSound_pJD : LoebSound pJD 21 24 := by
   have ha₃ := le_trans (slack6_le' a _ _ _ _ _ _ _ (formulaLen_instB_pJDR k) (formulaLen_instB_pDJ2 k)
     (formulaLen_instB_pJD k)) ha
   obtain ⟨⟨j1, j2⟩, _, ⟨d1, d2⟩, ⟨b1, b2⟩⟩ := pJD_all_V k (pJD_guards_V k a ha₁ ha₂ ha₃ h)
-  exact ⟨(eval_pJD_iff_stdActS k).mpr ⟨⟨⟨2, d1⟩, ⟨2, d2⟩⟩, ⟨⟨3, b1⟩, ⟨3, b2⟩⟩, ⟨⟨2, j1⟩, ⟨2, j2⟩⟩⟩,
+  exact ⟨(eval_pJD_iff_stdReading k).mpr ⟨⟨⟨2, d1⟩, ⟨2, d2⟩⟩, ⟨⟨3, b1⟩, ⟨3, b2⟩⟩, ⟨⟨2, j1⟩, ⟨2, j2⟩⟩⟩,
     (eval_pJD_iff_swap k).mpr ⟨⟨⟨2, d1⟩, ⟨2, d2⟩⟩, ⟨⟨3, b1⟩, ⟨3, b2⟩⟩, ⟨⟨2, j1⟩, ⟨2, j2⟩⟩⟩⟩
 
 /-! #### The cell at ℕ -/
@@ -1166,8 +1166,8 @@ cooperates with Just (fuel 2), and both guard boxes hold. -/
 theorem loeb_Just7_vs_Dupoc_core_of_nec {d : ℕ} (hE : BoundedInnerNec d) :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       (EvalGraph 2 (Just7 k) (Dupoc k) (Just7 k) 0 ∧ EvalGraph 2 (Dupoc k) (Just7 k) (Dupoc k) 0) ∧
-      (LenProvableV TAct k (guardCode (⌜guardTemplate 0⌝ : ℕ) (pBot (Dupoc k)) (Dupoc k)) ∧
-        LenProvableV TAct k (guardCode (⌜guardTemplate 0⌝ : ℕ) (Dupoc k) (Just7 k))) := by
+      (LenBox TAct k (guardCode (⌜guardTemplate 0⌝ : ℕ) (pBot (Dupoc k)) (Dupoc k)) ∧
+        LenBox TAct k (guardCode (⌜guardTemplate 0⌝ : ℕ) (Dupoc k) (Just7 k))) := by
   obtain ⟨k₀, h⟩ := family_found pJD hE loebSound_pJD
   refine ⟨k₀, fun k hk ↦ ?_⟩
   obtain ⟨a, ha, hpc⟩ := h k hk
@@ -1200,11 +1200,11 @@ theorem loeb_Just7_vs_Dupoc :
 the constant template) and Dupoc finds its guard against Just. -/
 theorem loeb_Just7_vs_Dupoc_guards :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
-      LenProvableV TAct k (guardCodeB (⌜GtmplJ7⌝ : ℕ) (Just7 k) (Dupoc k) k) ∧
-      LenProvableV TAct k (guardCode (⌜guardTemplate 0⌝ : ℕ) (Dupoc k) (Just7 k)) := by
+      LenBox TAct k (guardCodeB (⌜guardTemplateJust7⌝ : ℕ) (Just7 k) (Dupoc k) k) ∧
+      LenBox TAct k (guardCode (⌜guardTemplate 0⌝ : ℕ) (Dupoc k) (Just7 k)) := by
   obtain ⟨k₀, h⟩ := loeb_Just7_vs_Dupoc_core_of_nec boundedInnerNec_sixteen
   refine ⟨k₀, fun k hk ↦ ?_⟩
-  rw [guardCodeB_GtmplJ7]
+  rw [guardCodeB_guardTemplateJust7]
   exact (h k hk).2
 
 end dupocCell
@@ -1228,18 +1228,18 @@ theorem guardCode_botCupodV_CimcicTV_eq_instB (k : V) :
     guardCode (⌜guardTemplate 1⌝ : V) (pBot (CupodV k)) (CimcicTV k) = instB (⌜Semiformula.lMap swap qJCi⌝ : V) k := by
   have h := guardCode_GtmplA_swap_eq_instB 0 k TBD uD wD TCi uCi wCi (hX_botDupoc k) (hU_botDupoc k) (hW_botDupoc k)
     (hX_cimcic k) (hU_cimcic k) (hW_cimcic k)
-  rwa [swapAct_zero, swapcode_pBot_DupocV, swapcode_CimcicV] at h
+  rwa [swapAction_zero, transposeCode_pBot_DupocV, transposeCode_CimcicV] at h
 
 theorem eval_qJCi_iff_V (k : V) :
-    Semiformula.Eval (s := stdActV V) ![k] Empty.elim qJCi ↔
+    Semiformula.Eval (s := stdReadingV V) ![k] Empty.elim qJCi ↔
       ∃ n, EvalGraph n (CimcicV k) (pBot (DupocV k)) (CimcicV k) 0 := by
   have h := eval_qG_iff_V 0 k TBD uD wD TCi uCi wCi (desc_botDupoc k) (desc_cimcic k)
   rwa [Nat.cast_zero] at h
 
 theorem eval_qJCi_swapped_iff_V (k : V) :
-    Semiformula.Eval (s := stdActV V) ![k] Empty.elim (Semiformula.lMap swap qJCi) ↔
+    Semiformula.Eval (s := stdReadingV V) ![k] Empty.elim (Semiformula.lMap swap qJCi) ↔
       ∃ n, EvalGraph n (CimcicTV k) (pBot (CupodV k)) (CimcicTV k) 1 := by
-  rw [qJCi_def, lMap_swap_qG, swapAct_zero]
+  rw [qJCi_def, lMap_swap_qG, swapAction_zero]
   have h := eval_qG_iff_V 1 k _ _ _ _ _ _ (descT_botDupoc k) (descT_cimcic k)
   rwa [Nat.cast_one] at h
 
@@ -1300,51 +1300,51 @@ theorem pCJ_all_V (k a : V)
       8 * (formulaLen LAct (instB (⌜qCG TBD uD wD⌝ : V) k) +
         formulaLen LAct (instB (⌜qCTG (Semiterm.lMap swap TBD) (Semiterm.lMap swap uD) (Semiterm.lMap swap wD)⌝ : V) k))
       + 7 ≤ k)
-    (h : LenDerivable TAct a (instB (⌜pCJ⌝ : V) k)) :
+    (h : LenBoxUnbounded TAct a (instB (⌜pCJ⌝ : V) k)) :
     (EvalGraph 2 (CimcicV k) (JustV7 k) (CimcicV k) 0 ∧ EvalGraph 2 (CimcicTV k) (JustTV7 k) (CimcicTV k) 1) ∧
     (EvalGraph 2 (JustV7 k) (CimcicV k) (JustV7 k) 0 ∧ EvalGraph 2 (JustTV7 k) (CimcicTV k) (JustTV7 k) 1) ∧
     (EvalGraph 2 (CimcicV k) (pBot (DupocV k)) (CimcicV k) 0 ∧
       EvalGraph 2 (CimcicTV k) (pBot (CupodV k)) (CimcicTV k) 1) ∧
     (EvalGraph 3 (pBot (DupocV k)) (CimcicV k) (pBot (DupocV k)) 0 ∧
       EvalGraph 3 (pBot (CupodV k)) (CimcicTV k) (pBot (CupodV k)) 1) ∧
-    (LenProvableV TAct k (guardCode (⌜tmplC⌝ : V) (CimcicV k) (JustV7 k)) ∧
-      LenProvableV TAct k (guardCode (⌜guardTemplate 0⌝ : V) (pBot (DupocV k)) (CimcicV k))) := by
+    (LenBox TAct k (guardCode (⌜templateC⌝ : V) (CimcicV k) (JustV7 k)) ∧
+      LenBox TAct k (guardCode (⌜guardTemplate 0⌝ : V) (pBot (DupocV k)) (CimcicV k))) := by
   rw [instB_quote_pCJ] at h
   have hx := isFormula_instB_quote (pGC TJ uJ wJ) k
   have hy := isFormula_instB_quote pCJR k
-  have h₁ := lenDerivable_andL_V hx hy h
-  have h₂ := lenDerivable_andR_V hx hy h
+  have h₁ := lenBoxUnbounded_andL_V hx hy h
+  have h₂ := lenBoxUnbounded_andR_V hx hy h
   obtain ⟨g1, g2⟩ := pGC_both_V k TJ uJ wJ (hX_just7 k) (hU_just7 k) (hW_just7 k) _ ha₁ h₁
   obtain ⟨gb1, _⟩ := pGC_guards_V k TJ uJ wJ (hX_just7 k) (hU_just7 k) (hW_just7 k) _ ha₁ h₁
-  rw [swapcode_JustV7] at g2
+  rw [transposeCode_JustV7] at g2
   have hx₂ := isFormula_instB_quote pJCi2 k
   have hy₂ := isFormula_instB_quote (pGC TBD uD wD) k
-  have h₂' : LenDerivable TAct
+  have h₂' : LenBoxUnbounded TAct
       (a + 8 * (formulaLen LAct (instB (⌜pGC TJ uJ wJ⌝ : V) k) + formulaLen LAct (instB (⌜pCJR⌝ : V) k)) + 7)
       (instB (⌜pJCi2⌝ : V) k ^⋏ instB (⌜pGC TBD uD wD⌝ : V) k) := by
     rw [← instB_quote_pCJR]; exact h₂
-  have h₂₁ := lenDerivable_andL_V hx₂ hy₂ h₂'
-  have h₂₂ := lenDerivable_andR_V hx₂ hy₂ h₂'
+  have h₂₁ := lenBoxUnbounded_andL_V hx₂ hy₂ h₂'
+  have h₂₂ := lenBoxUnbounded_andR_V hx₂ hy₂ h₂'
   have hx₃ := isFormula_instB_quote qJCi k
   have hy₃ := isFormula_instB_quote (Semiformula.lMap swap qJCi) k
-  have h₂₁' : LenDerivable TAct
+  have h₂₁' : LenBoxUnbounded TAct
       (a + 8 * (formulaLen LAct (instB (⌜pGC TJ uJ wJ⌝ : V) k) + formulaLen LAct (instB (⌜pCJR⌝ : V) k)) + 7 +
         8 * (formulaLen LAct (instB (⌜pJCi2⌝ : V) k) + formulaLen LAct (instB (⌜pGC TBD uD wD⌝ : V) k)) + 7)
       (instB (⌜qJCi⌝ : V) k ^⋏ instB (⌜Semiformula.lMap swap qJCi⌝ : V) k) := by
     rw [← instB_quote_pJCi2]; exact h₂₁
-  have c1 := lenDerivable_mono_V ha₂ (lenDerivable_andL_V hx₃ hy₃ h₂₁')
-  have c1' := lenDerivable_mono_V ha₂ (lenDerivable_andR_V hx₃ hy₃ h₂₁')
-  rw [lenDerivable_iff_lenProvableV, ← guardCode_botDupocV_CimcicV_eq_instB] at c1
-  rw [lenDerivable_iff_lenProvableV, ← guardCode_botCupodV_CimcicTV_eq_instB] at c1'
+  have c1 := lenBoxUnbounded_mono_V ha₂ (lenBoxUnbounded_andL_V hx₃ hy₃ h₂₁')
+  have c1' := lenBoxUnbounded_mono_V ha₂ (lenBoxUnbounded_andR_V hx₃ hy₃ h₂₁')
+  rw [lenBoxUnbounded_iff_lenBox, ← guardCode_botDupocV_CimcicV_eq_instB] at c1
+  rw [lenBoxUnbounded_iff_lenBox, ← guardCode_botCupodV_CimcicTV_eq_instB] at c1'
   obtain ⟨b1, b2⟩ := pGC_both_V k TBD uD wD (hX_botDupoc k) (hU_botDupoc k) (hW_botDupoc k) _ ha₃ h₂₂
-  rw [swapcode_pBot_DupocV] at b2
+  rw [transposeCode_pBot_DupocV] at b2
   exact ⟨⟨g1, g2⟩, ⟨just7_search_V k _ _ c1, just7T_search_V k _ _ c1'⟩, ⟨b1, b2⟩,
     ⟨botDupoc_frame_search_V k _ _ c1, botCupod_frame_search_V k _ _ c1'⟩, ⟨gb1, c1⟩⟩
 
 /-! #### `pCJ` in both readings -/
 
 theorem eval_pCJ_iff_std (k : V) :
-    Semiformula.Eval (s := stdActV V) ![k] Empty.elim pCJ ↔
+    Semiformula.Eval (s := stdReadingV V) ![k] Empty.elim pCJ ↔
       (((∃ n, EvalGraph n (CimcicV k) (JustV7 k) (CimcicV k) 0) → (∃ n, EvalGraph n (JustV7 k) (CimcicV k) (JustV7 k) 0)) ∧
        ((∃ n, EvalGraph n (CimcicTV k) (JustTV7 k) (CimcicTV k) 1) → (∃ n, EvalGraph n (JustTV7 k) (CimcicTV k) (JustTV7 k) 1))) ∧
       ((∃ n, EvalGraph n (CimcicV k) (pBot (DupocV k)) (CimcicV k) 0) ∧
@@ -1359,7 +1359,7 @@ theorem eval_pCJ_iff_std (k : V) :
     eval_pGC_iff_std k TBD uD wD (desc_botDupoc k) (descT_botDupoc k)]
 
 theorem eval_pCJ_iff_swap (k : V) :
-    Semiformula.Eval (s := swapActS V) ![k] Empty.elim pCJ ↔
+    Semiformula.Eval (s := swappedReading V) ![k] Empty.elim pCJ ↔
       (((∃ n, EvalGraph n (CimcicV k) (JustV7 k) (CimcicV k) 0) → (∃ n, EvalGraph n (JustV7 k) (CimcicV k) (JustV7 k) 0)) ∧
        ((∃ n, EvalGraph n (CimcicTV k) (JustTV7 k) (CimcicTV k) 1) → (∃ n, EvalGraph n (JustTV7 k) (CimcicTV k) (JustTV7 k) 1))) ∧
       ((∃ n, EvalGraph n (CimcicV k) (pBot (DupocV k)) (CimcicV k) 0) ∧
@@ -1368,7 +1368,7 @@ theorem eval_pCJ_iff_swap (k : V) :
           (∃ n, EvalGraph n (pBot (DupocV k)) (CimcicV k) (pBot (DupocV k)) 0)) ∧
        ((∃ n, EvalGraph n (CimcicTV k) (pBot (CupodV k)) (CimcicTV k) 1) →
           (∃ n, EvalGraph n (pBot (CupodV k)) (CimcicTV k) (pBot (CupodV k)) 1))) := by
-  rw [eval_swapActS, pCJ_def, pCJR_def, pJCi2_def, ← stdActV_eq_stdActS]
+  rw [eval_swappedReading, pCJ_def, pCJR_def, pJCi2_def, ← stdReadingV_eq_stdReading]
   simp only [LogicalConnective.HomClass.map_and, lMap_swap_swap, lMap_swap_pGC, LogicalConnective.Prop.and_eq]
   rw [eval_qCG_iff_V k TJ uJ wJ (desc_just7 k), eval_qCTG_iff_V k _ _ _ (descT_just7 k), eval_qJCi_iff_V,
     eval_qJCi_swapped_iff_V, eval_qCG_iff_V k TBD uD wD (desc_botDupoc k), eval_qCTG_iff_V k _ _ _ (descT_botDupoc k)]
@@ -1376,8 +1376,8 @@ theorem eval_pCJ_iff_swap (k : V) :
   · rintro ⟨⟨a, b⟩, ⟨c, d⟩, ⟨e, f⟩⟩; exact ⟨⟨b, a⟩, ⟨d, c⟩, ⟨f, e⟩⟩
   · rintro ⟨⟨a, b⟩, ⟨c, d⟩, ⟨e, f⟩⟩; exact ⟨⟨b, a⟩, ⟨d, c⟩, ⟨f, e⟩⟩
 
-theorem eval_pCJ_iff_stdActS (k : V) :
-    Semiformula.Eval (s := stdActS V) ![k] Empty.elim pCJ ↔
+theorem eval_pCJ_iff_stdReading (k : V) :
+    Semiformula.Eval (s := stdReading V) ![k] Empty.elim pCJ ↔
       (((∃ n, EvalGraph n (CimcicV k) (JustV7 k) (CimcicV k) 0) → (∃ n, EvalGraph n (JustV7 k) (CimcicV k) (JustV7 k) 0)) ∧
        ((∃ n, EvalGraph n (CimcicTV k) (JustTV7 k) (CimcicTV k) 1) → (∃ n, EvalGraph n (JustTV7 k) (CimcicTV k) (JustTV7 k) 1))) ∧
       ((∃ n, EvalGraph n (CimcicV k) (pBot (DupocV k)) (CimcicV k) 0) ∧
@@ -1386,7 +1386,7 @@ theorem eval_pCJ_iff_stdActS (k : V) :
           (∃ n, EvalGraph n (pBot (DupocV k)) (CimcicV k) (pBot (DupocV k)) 0)) ∧
        ((∃ n, EvalGraph n (CimcicTV k) (pBot (CupodV k)) (CimcicTV k) 1) →
           (∃ n, EvalGraph n (pBot (CupodV k)) (CimcicTV k) (pBot (CupodV k)) 1))) := by
-  rw [← stdActV_eq_stdActS]; exact eval_pCJ_iff_std k
+  rw [← stdReadingV_eq_stdReading]; exact eval_pCJ_iff_std k
 
 /-- **The bounded Löb premise of the CIMCIC × Just family, slack `(21, 24)`.** -/
 theorem loebSound_pCJ : LoebSound pCJ 21 24 := by
@@ -1398,7 +1398,7 @@ theorem loebSound_pCJ : LoebSound pCJ 21 24 := by
   have ha₃ := le_trans (slack6_le' a _ _ _ _ _ _ _ (formulaLen_instB_pCJR k) (formulaLen_instB_pGC TBD uD wD k)
     (formulaLen_instB_pCJ k)) ha
   obtain ⟨_, ⟨j1, j2⟩, ⟨c1, c2⟩, ⟨b1, b2⟩, _⟩ := pCJ_all_V k a ha₁ ha₂ ha₃ h
-  exact ⟨(eval_pCJ_iff_stdActS k).mpr ⟨⟨fun _ ↦ ⟨2, j1⟩, fun _ ↦ ⟨2, j2⟩⟩, ⟨⟨2, c1⟩, ⟨2, c2⟩⟩,
+  exact ⟨(eval_pCJ_iff_stdReading k).mpr ⟨⟨fun _ ↦ ⟨2, j1⟩, fun _ ↦ ⟨2, j2⟩⟩, ⟨⟨2, c1⟩, ⟨2, c2⟩⟩,
       ⟨fun _ ↦ ⟨3, b1⟩, fun _ ↦ ⟨3, b2⟩⟩⟩,
     (eval_pCJ_iff_swap k).mpr ⟨⟨fun _ ↦ ⟨2, j1⟩, fun _ ↦ ⟨2, j2⟩⟩, ⟨⟨2, c1⟩, ⟨2, c2⟩⟩,
       ⟨fun _ ↦ ⟨3, b1⟩, fun _ ↦ ⟨3, b2⟩⟩⟩⟩
@@ -1410,8 +1410,8 @@ cooperates with CIMCIC (fuel 2), and both guard boxes hold. -/
 theorem loeb_Cimcic_vs_Just7_core_of_nec {d : ℕ} (hE : BoundedInnerNec d) :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       (EvalGraph 2 (Cimcic k) (Just7 k) (Cimcic k) 0 ∧ EvalGraph 2 (Just7 k) (Cimcic k) (Just7 k) 0) ∧
-      (LenProvableV TAct k (guardCode (⌜tmplC⌝ : ℕ) (Cimcic k) (Just7 k)) ∧
-        LenProvableV TAct k (guardCode (⌜guardTemplate 0⌝ : ℕ) (pBot (Dupoc k)) (Cimcic k))) := by
+      (LenBox TAct k (guardCode (⌜templateC⌝ : ℕ) (Cimcic k) (Just7 k)) ∧
+        LenBox TAct k (guardCode (⌜guardTemplate 0⌝ : ℕ) (pBot (Dupoc k)) (Cimcic k))) := by
   obtain ⟨k₀, h⟩ := family_found pCJ hE loebSound_pCJ
   refine ⟨k₀, fun k hk ↦ ?_⟩
   obtain ⟨a, ha, hpc⟩ := h k hk
@@ -1443,11 +1443,11 @@ theorem loeb_Cimcic_vs_Just7 :
 against CIMCIC (the node-budget guard code of the constant template). -/
 theorem loeb_Cimcic_vs_Just7_guards :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
-      LenProvableV TAct k (guardCode (⌜tmplC⌝ : ℕ) (Cimcic k) (Just7 k)) ∧
-      LenProvableV TAct k (guardCodeB (⌜GtmplJ7⌝ : ℕ) (Just7 k) (Cimcic k) k) := by
+      LenBox TAct k (guardCode (⌜templateC⌝ : ℕ) (Cimcic k) (Just7 k)) ∧
+      LenBox TAct k (guardCodeB (⌜guardTemplateJust7⌝ : ℕ) (Just7 k) (Cimcic k) k) := by
   obtain ⟨k₀, h⟩ := loeb_Cimcic_vs_Just7_core_of_nec boundedInnerNec_sixteen
   refine ⟨k₀, fun k hk ↦ ?_⟩
-  rw [guardCodeB_GtmplJ7]
+  rw [guardCodeB_guardTemplateJust7]
   exact (h k hk).2
 
 end cimcicCell

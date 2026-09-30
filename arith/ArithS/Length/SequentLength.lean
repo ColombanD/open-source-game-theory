@@ -3,7 +3,7 @@ import ArithS.Length.Length
 /-!
 # ArithS.SequentLength — symbol count of a sequent (an HFS bit-set of formula codes)
 
-`setLen s = Σ_{p ∈ s} formulaLen p`, by primitive recursion over the indices `i < s`
+`sequentLen s = Σ_{p ∈ s} formulaLen p`, by primitive recursion over the indices `i < s`
 (every member of a bit-set is below the set: `lt_of_mem`). Needed because the weakening
 rule introduces arbitrary formulas, so a proper length measure must charge the target
 sequent there (roadmap §2.1, PROPER).
@@ -17,7 +17,7 @@ open Classical
 variable {V : Type*} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
 variable {L : Language} [L.Encodable] [L.LORDefinable]
 
-namespace SetLen
+namespace SequentLen
 
 variable (L)
 
@@ -39,64 +39,64 @@ noncomputable def construction : PR.Construction V (blueprint L) where
     · simp [h]
     · simp [h]
 
-end SetLen
+end SequentLen
 
 variable (L)
 
 /-- Partial sum `Σ_{p ∈ s, p < i} formulaLen p`. -/
-noncomputable def setLenAux (s i : V) : V := (SetLen.construction L).result ![s] i
+noncomputable def sequentLenAux (s i : V) : V := (SequentLen.construction L).result ![s] i
 
 /-- Symbol count of a sequent: `Σ_{p ∈ s} formulaLen p`. -/
-noncomputable def setLen (s : V) : V := setLenAux L s s
+noncomputable def sequentLen (s : V) : V := sequentLenAux L s s
 
 variable {L}
 
-@[simp] lemma setLenAux_zero (s : V) : setLenAux L s 0 = 0 := by
-  simp [setLenAux, SetLen.construction]
+@[simp] lemma sequentLenAux_zero (s : V) : sequentLenAux L s 0 = 0 := by
+  simp [sequentLenAux, SequentLen.construction]
 
-lemma setLenAux_succ (s i : V) :
-    setLenAux L s (i + 1) = if i ∈ s then setLenAux L s i + formulaLen L i else setLenAux L s i := by
-  simp [setLenAux, SetLen.construction]
+lemma sequentLenAux_succ (s i : V) :
+    sequentLenAux L s (i + 1) = if i ∈ s then sequentLenAux L s i + formulaLen L i else sequentLenAux L s i := by
+  simp [sequentLenAux, SequentLen.construction]
 
-@[simp] lemma setLenAux_succ_of_mem {s i : V} (h : i ∈ s) :
-    setLenAux L s (i + 1) = setLenAux L s i + formulaLen L i := by simp [setLenAux_succ, h]
+@[simp] lemma sequentLenAux_succ_of_mem {s i : V} (h : i ∈ s) :
+    sequentLenAux L s (i + 1) = sequentLenAux L s i + formulaLen L i := by simp [sequentLenAux_succ, h]
 
-@[simp] lemma setLenAux_succ_of_not_mem {s i : V} (h : i ∉ s) :
-    setLenAux L s (i + 1) = setLenAux L s i := by simp [setLenAux_succ, h]
+@[simp] lemma sequentLenAux_succ_of_not_mem {s i : V} (h : i ∉ s) :
+    sequentLenAux L s (i + 1) = sequentLenAux L s i := by simp [sequentLenAux_succ, h]
 
 section
 
 variable (L)
 
-noncomputable def setLenAuxDef : 𝚺₁.Semisentence 3 :=
-  (SetLen.blueprint L).resultDef |>.rew (Rew.subst ![#0, #2, #1])
+noncomputable def sequentLenAuxDef : 𝚺₁.Semisentence 3 :=
+  (SequentLen.blueprint L).resultDef |>.rew (Rew.subst ![#0, #2, #1])
 
 variable {L}
 
-instance setLenAux_defined : 𝚺₁-Function₂[V] setLenAux L via setLenAuxDef L := .mk fun v ↦ by
-  simp [(SetLen.construction L).result_defined_iff, setLenAuxDef]; rfl
+instance sequentLenAux_defined : 𝚺₁-Function₂[V] sequentLenAux L via sequentLenAuxDef L := .mk fun v ↦ by
+  simp [(SequentLen.construction L).result_defined_iff, sequentLenAuxDef]; rfl
 
-instance setLenAux_definable : 𝚺₁-Function₂[V] setLenAux L := setLenAux_defined.to_definable
+instance sequentLenAux_definable : 𝚺₁-Function₂[V] sequentLenAux L := sequentLenAux_defined.to_definable
 
-instance setLenAux_definable' (Γ m) : Γ-[m + 1]-Function₂ (setLenAux (V := V) L) :=
-  setLenAux_definable.of_sigmaOne
+instance sequentLenAux_definable' (Γ m) : Γ-[m + 1]-Function₂ (sequentLenAux (V := V) L) :=
+  sequentLenAux_definable.of_sigmaOne
 
 variable (L)
 
-/-- `setLen` as a substitution instance of `setLenAuxDef` (NOT a `“ ”`-DSL wrapper: simp on
+/-- `sequentLen` as a substitution instance of `sequentLenAuxDef` (NOT a `“ ”`-DSL wrapper: simp on
 the wrapper form normalizes the substitution through the whole PR `resultDef` and runs
 away — 17 GB, never terminates). -/
-noncomputable def setLenDef : 𝚺₁.Semisentence 2 := (setLenAuxDef L).rew (Rew.subst ![#0, #1, #1])
+noncomputable def sequentLenDef : 𝚺₁.Semisentence 2 := (sequentLenAuxDef L).rew (Rew.subst ![#0, #1, #1])
 
 variable {L}
 
-instance setLen_defined : 𝚺₁-Function₁[V] setLen L via setLenDef L := .mk fun v ↦ by
-  simp [setLenDef, setLenAuxDef, (SetLen.construction L).result_defined_iff, setLen]; rfl
+instance sequentLen_defined : 𝚺₁-Function₁[V] sequentLen L via sequentLenDef L := .mk fun v ↦ by
+  simp [sequentLenDef, sequentLenAuxDef, (SequentLen.construction L).result_defined_iff, sequentLen]; rfl
 
-instance setLen_definable : 𝚺₁-Function₁[V] setLen L := setLen_defined.to_definable
+instance sequentLen_definable : 𝚺₁-Function₁[V] sequentLen L := sequentLen_defined.to_definable
 
-instance setLen_definable' (Γ m) : Γ-[m + 1]-Function₁ (setLen (V := V) L) :=
-  setLen_definable.of_sigmaOne
+instance sequentLen_definable' (Γ m) : Γ-[m + 1]-Function₁ (sequentLen (V := V) L) :=
+  sequentLen_definable.of_sigmaOne
 
 end
 

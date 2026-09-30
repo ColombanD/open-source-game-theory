@@ -11,26 +11,26 @@ certificate `⊢_33 (Mirror plays D vs .bot DefectBot)`). V-generic unless a sta
 
 **STEP 0 (the §7 test).** `PrudentBot k = .search k g₁ (.search k g₂ (const C) (const D)) (const D)`
 with `g₁ = plays opp self C` and `g₂ = plays opp (.bot DefectBot) D`. Both STORED TEMPLATES are
-budget-free constants (`⌜tmpl g₁⌝`, `⌜tmpl g₂⌝`: neither formula mentions `k`; `.bot DefectBot` is
-closed), and `k` sits only in the two `pSearch` budget slots, which `progT` renders as `bnum k` leaves
-(`progT_search`). So `PrudentV k` IS the `bnum k`-instance of a fixed two-`#0` term — NOT the JustBot
+budget-free constants (`⌜template g₁⌝`, `⌜template g₂⌝`: neither formula mentions `k`; `.bot DefectBot` is
+closed), and `k` sits only in the two `pSearch` budget slots, which `codeTerm` renders as `binNumeral k` leaves
+(`codeTerm_search`). So `PrudentV k` IS the `binNumeral k`-instance of a fixed two-`#0` term — NOT the JustBot
 obstruction. What the nested search DOES cost: the canonical description compares two `k`-DEPENDENT
-codes (`PrudentV k` vs its transposition `PrudentTV k`, whose then-branches carry `k`), so `dnum`,
-`dU`, `dW` are `k`-uniform only ABOVE A STANDARD THRESHOLD `KP` (§2: `nested_search_lt`, an
+codes (`PrudentV k` vs its transposition `PrudentTV k`, whose then-branches carry `k`), so `canonical`,
+`revalueU`, `revalueW` are `k`-uniform only ABOVE A STANDARD THRESHOLD `KP` (§2: `nested_search_lt`, an
 ordered-semiring argument on `ppair`; below it the order could in principle depend on `k`). Every
 description/instance/truth equation below therefore carries `hk : (KP : V) ≤ k`, and the family's
 slack `S₀ = 14 + KP` supplies it inside the Löb premise.
 
-1. **The two templates** `tmplP1 := tmpl (plays opp self C)`, `tmplP2 := tmpl (plays opp (.bot
-   DefectBot) D)` and their transpositions; `PrudentV k`, `PrudentTV k = swapcode (PrudentV k)`; the
-   bridge `pcode_PrudentBot : pcode (PD.Bots.PrudentBot k) = Prudent k`.
-2. **The canonical description above `KP`**: `dnum_PrudentV`, `dU_PrudentV`, `dW_PrudentV` (constants
+1. **The two templates** `templateP1 := template (plays opp self C)`, `templateP2 := template (plays opp (.bot
+   DefectBot) D)` and their transpositions; `PrudentV k`, `PrudentTV k = transposeCode (PrudentV k)`; the
+   bridge `progCode_PrudentBot : progCode (PD.Bots.PrudentBot k) = Prudent k`.
+2. **The canonical description above `KP`**: `canonical_PrudentV`, `revalueU_PrudentV`, `revalueW_PrudentV` (constants
    `gPo gPi pPi qPi qPo`, `uP wP`, decided by the never-evaluated case split `innerP2 < innerT2` on
    the INNER searchers' budget-free parts — the two are distinct by `ppair` injectivity); the
    two-level description tower `searchT1'`/`TP` (`termSubst_tower'`, `termSubst_TP`, `val_TP_V`).
 3. **Generic template instances** `qT g X U W X' U' W'` for an ARBITRARY six-variable template
-   (`guardCode_qT_eq_instB`, its swap, `eval_qT_iff`), and the truth of `tmpl (plays opp q a)` for a
-   CLOSED `q` (`eval_tmpl_plays_opp_closed_V`, via `Det.eval_closedDesc_V`).
+   (`guardCode_qT_eq_instB`, its swap, `eval_qT_iff`), and the truth of `template (plays opp q a)` for a
+   CLOSED `q` (`eval_template_plays_opp_closed_V`, via `Det.eval_closedDesc_V`).
 4. **The four fixed formulas** `qPM` ("Mirror plays C against Prudent k"), `qPP` ("Mirror plays D
    against `.bot DefectBot`" — the PRUDENCE conjunct: a CLOSED true Σ₁ fact, constant in `k` up to the
    inert me-slots), and their transpositions `qPMT`/`qPPT`; instance equations and truth equations.
@@ -76,30 +76,30 @@ lemma fragF_phiP1 : fragF phiP1 = true := rfl
 lemma fragF_phiP2 : fragF phiP2 = true := rfl
 
 /-- The outer template (a closed constant, never evaluated). -/
-noncomputable def tmplP1 : Semisentence LAct 6 := tmpl phiP1
+noncomputable def templateP1 : Semisentence LAct 6 := template phiP1
 /-- The inner (prudence) template. -/
-noncomputable def tmplP2 : Semisentence LAct 6 := tmpl phiP2
+noncomputable def templateP2 : Semisentence LAct 6 := template phiP2
 /-- The transposed outer template: "opp defects against me". -/
-noncomputable def tmplP1T : Semisentence LAct 6 := tmpl (.plays .opp .self .D)
+noncomputable def templateP1T : Semisentence LAct 6 := template (.plays .opp .self .D)
 /-- The transposed inner template: "opp cooperates with `.bot CooperateBot`". -/
-noncomputable def tmplP2T : Semisentence LAct 6 := tmpl (.plays .opp (.bot (.const .C)) .C)
+noncomputable def templateP2T : Semisentence LAct 6 := template (.plays .opp (.bot (.const .C)) .C)
 
-lemma lMap_swap_tmplP1 : Semiformula.lMap swap tmplP1 = tmplP1T := lMap_swap_tmpl phiP1 fragF_phiP1
-lemma lMap_swap_tmplP2 : Semiformula.lMap swap tmplP2 = tmplP2T := lMap_swap_tmpl phiP2 fragF_phiP2
-lemma lMap_swap_tmplP1T : Semiformula.lMap swap tmplP1T = tmplP1 := by
-  rw [← lMap_swap_tmplP1, lMap_swap_swap]
-lemma lMap_swap_tmplP2T : Semiformula.lMap swap tmplP2T = tmplP2 := by
-  rw [← lMap_swap_tmplP2, lMap_swap_swap]
+lemma lMap_swap_templateP1 : Semiformula.lMap swap templateP1 = templateP1T := lMap_swap_template phiP1 fragF_phiP1
+lemma lMap_swap_templateP2 : Semiformula.lMap swap templateP2 = templateP2T := lMap_swap_template phiP2 fragF_phiP2
+lemma lMap_swap_templateP1T : Semiformula.lMap swap templateP1T = templateP1 := by
+  rw [← lMap_swap_templateP1, lMap_swap_swap]
+lemma lMap_swap_templateP2T : Semiformula.lMap swap templateP2T = templateP2 := by
+  rw [← lMap_swap_templateP2, lMap_swap_swap]
 
 /-- `PrudentBot k` in an arbitrary model: the cooperation search at the root, the prudence search in
 its then-branch (found-found ⇒ `C`, else `D`). -/
 noncomputable def PrudentV (k : V) : V :=
-  pSearch k (⌜tmplP1⌝ : V) (pSearch k (⌜tmplP2⌝ : V) (pConst 0) (pConst 1)) (pConst 1)
+  pSearch k (⌜templateP1⌝ : V) (pSearch k (⌜templateP2⌝ : V) (pConst 0) (pConst 1)) (pConst 1)
 
 /-- The transposed searcher τ(PrudentBot): defect iff (opp defects against me AND opp cooperates
 with CooperateBot). -/
 noncomputable def PrudentTV (k : V) : V :=
-  pSearch k (⌜tmplP1T⌝ : V) (pSearch k (⌜tmplP2T⌝ : V) (pConst 1) (pConst 0)) (pConst 0)
+  pSearch k (⌜templateP1T⌝ : V) (pSearch k (⌜templateP2T⌝ : V) (pConst 1) (pConst 0)) (pConst 0)
 
 /-- `PrudentBot k` at `ℕ`. -/
 noncomputable def Prudent (k : ℕ) : ℕ := PrudentV (V := ℕ) k
@@ -110,17 +110,17 @@ lemma PrudentV_nat (k : ℕ) : PrudentV (V := ℕ) k = Prudent k := rfl
 lemma PrudentTV_nat (k : ℕ) : PrudentTV (V := ℕ) k = PrudentT k := rfl
 
 /-- **The bridge to the engine**: the code of the engine's `PrudentBot k` is `Prudent k`. -/
-theorem pcode_PrudentBot (k : ℕ) : pcode (PD.Bots.PrudentBot k) = Prudent k := by
-  simp only [PD.Bots.PrudentBot, pcode_search, pcode_const, actCode]; rfl
+theorem progCode_PrudentBot (k : ℕ) : progCode (PD.Bots.PrudentBot k) = Prudent k := by
+  simp only [PD.Bots.PrudentBot, progCode_search, progCode_const, actCode]; rfl
 
-theorem swapcode_PrudentV (k : V) : swapcode (PrudentV k) = PrudentTV k := by
-  unfold PrudentV PrudentTV swapcode
-  rw [relabel_search, relabel_search, relabel_const, relabel_const,
-    relabelTemplate_quote_sentence₆_V, relabelTemplate_quote_sentence₆_V, lMap_swap_tmplP1, lMap_swap_tmplP2]
-  simp [relabelAct]
+theorem transposeCode_PrudentV (k : V) : transposeCode (PrudentV k) = PrudentTV k := by
+  unfold PrudentV PrudentTV transposeCode
+  rw [revalue_search, revalue_search, revalue_const, revalue_const,
+    revalueTemplate_quote_sentence₆_V, revalueTemplate_quote_sentence₆_V, lMap_swap_templateP1, lMap_swap_templateP2]
+  simp [revalueAction]
 
-theorem swapcode_PrudentTV (k : V) : swapcode (PrudentTV k) = PrudentV k := by
-  rw [← swapcode_PrudentV, swapcode_swapcode]
+theorem transposeCode_PrudentTV (k : V) : transposeCode (PrudentTV k) = PrudentV k := by
+  rw [← transposeCode_PrudentV, transposeCode_transposeCode]
 
 end programs
 
@@ -203,16 +203,16 @@ end order
 section canonical
 
 /-- The budget-free part of the INNER searcher of `PrudentV k`. -/
-noncomputable def innerP2 : ℕ := ppair (⌜tmplP2⌝ : ℕ) (ppair (pConst 0) (pConst 1))
+noncomputable def innerP2 : ℕ := ppair (⌜templateP2⌝ : ℕ) (ppair (pConst 0) (pConst 1))
 /-- The budget-free part of the inner searcher of `PrudentTV k`. -/
-noncomputable def innerT2 : ℕ := ppair (⌜tmplP2T⌝ : ℕ) (ppair (pConst 1) (pConst 0))
+noncomputable def innerT2 : ℕ := ppair (⌜templateP2T⌝ : ℕ) (ppair (pConst 1) (pConst 0))
 /-- **The threshold** above which the order of `PrudentV k` and `PrudentTV k` is `k`-uniform: the sum
 of the two outer template codes (never evaluated). -/
-noncomputable def KP : ℕ := (⌜tmplP1⌝ : ℕ) + (⌜tmplP1T⌝ : ℕ)
+noncomputable def KP : ℕ := (⌜templateP1⌝ : ℕ) + (⌜templateP1T⌝ : ℕ)
 
-lemma innerP2_def : innerP2 = ppair (⌜tmplP2⌝ : ℕ) (ppair (pConst 0) (pConst 1)) := rfl
-lemma innerT2_def : innerT2 = ppair (⌜tmplP2T⌝ : ℕ) (ppair (pConst 1) (pConst 0)) := rfl
-lemma KP_def : KP = (⌜tmplP1⌝ : ℕ) + (⌜tmplP1T⌝ : ℕ) := rfl
+lemma innerP2_def : innerP2 = ppair (⌜templateP2⌝ : ℕ) (ppair (pConst 0) (pConst 1)) := rfl
+lemma innerT2_def : innerT2 = ppair (⌜templateP2T⌝ : ℕ) (ppair (pConst 1) (pConst 0)) := rfl
+lemma KP_def : KP = (⌜templateP1⌝ : ℕ) + (⌜templateP1T⌝ : ℕ) := rfl
 
 attribute [irreducible] innerP2 innerT2 KP
 
@@ -224,29 +224,29 @@ lemma innerP2_ne_innerT2 : innerP2 ≠ innerT2 := by
   obtain ⟨h3, _⟩ := ppair_inj h2
   exact absurd (pConst_inj h3) (by decide)
 
-lemma cast_innerP2 : ((innerP2 : ℕ) : V) = ppair (⌜tmplP2⌝ : V) (ppair (pConst 0) (pConst 1)) := by
+lemma cast_innerP2 : ((innerP2 : ℕ) : V) = ppair (⌜templateP2⌝ : V) (ppair (pConst 0) (pConst 1)) := by
   rw [innerP2_def, cast_ppair, cast_ppair, cast_pConst, cast_pConst, coe_quote_sentence₆]
   push_cast
   rfl
 
-lemma cast_innerT2 : ((innerT2 : ℕ) : V) = ppair (⌜tmplP2T⌝ : V) (ppair (pConst 1) (pConst 0)) := by
+lemma cast_innerT2 : ((innerT2 : ℕ) : V) = ppair (⌜templateP2T⌝ : V) (ppair (pConst 1) (pConst 0)) := by
   rw [innerT2_def, cast_ppair, cast_ppair, cast_pConst, cast_pConst, coe_quote_sentence₆]
   push_cast
   rfl
 
 lemma PrudentV_eq_inner (k : V) :
-    PrudentV k = ppair 6 (ppair k (ppair (⌜tmplP1⌝ : V) (ppair (ppair 6 (ppair k (innerP2 : V)) + 1) (pConst 1)))) + 1 := by
+    PrudentV k = ppair 6 (ppair k (ppair (⌜templateP1⌝ : V) (ppair (ppair 6 (ppair k (innerP2 : V)) + 1) (pConst 1)))) + 1 := by
   rw [cast_innerP2]; rfl
 
 lemma PrudentTV_eq_inner (k : V) :
-    PrudentTV k = ppair 6 (ppair k (ppair (⌜tmplP1T⌝ : V) (ppair (ppair 6 (ppair k (innerT2 : V)) + 1) (pConst 0)))) + 1 := by
+    PrudentTV k = ppair 6 (ppair k (ppair (⌜templateP1T⌝ : V) (ppair (ppair 6 (ppair k (innerT2 : V)) + 1) (pConst 0)))) + 1 := by
   rw [cast_innerT2]; rfl
 
-lemma quote_tmplP1_le_of_KP {k : V} (hk : (KP : V) ≤ k) : (⌜tmplP1⌝ : V) ≤ k := by
+lemma quote_templateP1_le_of_KP {k : V} (hk : (KP : V) ≤ k) : (⌜templateP1⌝ : V) ≤ k := by
   rw [KP_def, Nat.cast_add, coe_quote_sentence₆, coe_quote_sentence₆] at hk
   exact le_trans le_self_add hk
 
-lemma quote_tmplP1T_le_of_KP {k : V} (hk : (KP : V) ≤ k) : (⌜tmplP1T⌝ : V) ≤ k := by
+lemma quote_templateP1T_le_of_KP {k : V} (hk : (KP : V) ≤ k) : (⌜templateP1T⌝ : V) ≤ k := by
   rw [KP_def, Nat.cast_add, coe_quote_sentence₆, coe_quote_sentence₆] at hk
   exact le_trans le_add_self hk
 
@@ -260,18 +260,18 @@ lemma pConst_one_succ_le : pConst (1 : V) + 1 ≤ 14 := by
 theorem PrudentV_lt_PrudentTV {k : V} (hk : (KP : V) ≤ k) (h : innerP2 < innerT2) :
     PrudentV k < PrudentTV k := by
   rw [PrudentV_eq_inner, PrudentTV_eq_inner]
-  exact nested_search_lt (lt_iff_succ_le.mp (Nat.cast_lt.mpr h)) (quote_tmplP1_le_of_KP hk) pConst_one_succ_le
+  exact nested_search_lt (lt_iff_succ_le.mp (Nat.cast_lt.mpr h)) (quote_templateP1_le_of_KP hk) pConst_one_succ_le
 
 /-- Above the threshold, `innerT2 < innerP2` puts the transposition below `PrudentV k`. -/
 theorem PrudentTV_lt_PrudentV {k : V} (hk : (KP : V) ≤ k) (h : innerT2 < innerP2) :
     PrudentTV k < PrudentV k := by
   rw [PrudentV_eq_inner, PrudentTV_eq_inner]
-  exact nested_search_lt (lt_iff_succ_le.mp (Nat.cast_lt.mpr h)) (quote_tmplP1T_le_of_KP hk) pConst_zero_succ_le
+  exact nested_search_lt (lt_iff_succ_le.mp (Nat.cast_lt.mpr h)) (quote_templateP1T_le_of_KP hk) pConst_zero_succ_le
 
 /-- The stored OUTER template of the canonical searcher. -/
-noncomputable def gPo : ℕ := if innerP2 < innerT2 then (⌜tmplP1⌝ : ℕ) else (⌜tmplP1T⌝ : ℕ)
+noncomputable def gPo : ℕ := if innerP2 < innerT2 then (⌜templateP1⌝ : ℕ) else (⌜templateP1T⌝ : ℕ)
 /-- The stored INNER template. -/
-noncomputable def gPi : ℕ := if innerP2 < innerT2 then (⌜tmplP2⌝ : ℕ) else (⌜tmplP2T⌝ : ℕ)
+noncomputable def gPi : ℕ := if innerP2 < innerT2 then (⌜templateP2⌝ : ℕ) else (⌜templateP2T⌝ : ℕ)
 /-- The inner then-branch. -/
 noncomputable def pPi : ℕ := if innerP2 < innerT2 then pConst 0 else pConst 1
 /-- The inner else-branch. -/
@@ -284,13 +284,13 @@ noncomputable def uP : ClosedSemiterm LAct 0 := if innerP2 < innerT2 then cterm 
 noncomputable def wP : ClosedSemiterm LAct 0 := if innerP2 < innerT2 then cterm Act.D else cterm Act.C
 
 lemma PrudentV_eq_cast (k : V) :
-    PrudentV k = pSearch k ((⌜tmplP1⌝ : ℕ) : V)
-      (pSearch k ((⌜tmplP2⌝ : ℕ) : V) ((pConst 0 : ℕ) : V) ((pConst 1 : ℕ) : V)) ((pConst 1 : ℕ) : V) := by
+    PrudentV k = pSearch k ((⌜templateP1⌝ : ℕ) : V)
+      (pSearch k ((⌜templateP2⌝ : ℕ) : V) ((pConst 0 : ℕ) : V) ((pConst 1 : ℕ) : V)) ((pConst 1 : ℕ) : V) := by
   unfold PrudentV; rw [coe_quote_sentence₆, coe_quote_sentence₆, cast_pConst, cast_pConst]; push_cast; rfl
 
 lemma PrudentTV_eq_cast (k : V) :
-    PrudentTV k = pSearch k ((⌜tmplP1T⌝ : ℕ) : V)
-      (pSearch k ((⌜tmplP2T⌝ : ℕ) : V) ((pConst 1 : ℕ) : V) ((pConst 0 : ℕ) : V)) ((pConst 0 : ℕ) : V) := by
+    PrudentTV k = pSearch k ((⌜templateP1T⌝ : ℕ) : V)
+      (pSearch k ((⌜templateP2T⌝ : ℕ) : V) ((pConst 1 : ℕ) : V) ((pConst 0 : ℕ) : V)) ((pConst 0 : ℕ) : V) := by
   unfold PrudentTV; rw [coe_quote_sentence₆, coe_quote_sentence₆, cast_pConst, cast_pConst]; push_cast; rfl
 
 lemma innerT2_lt_of_not_lt (h : ¬ innerP2 < innerT2) : innerT2 < innerP2 :=
@@ -298,61 +298,61 @@ lemma innerT2_lt_of_not_lt (h : ¬ innerP2 < innerT2) : innerT2 < innerP2 :=
 
 /-- **The canonical code of `PrudentV k` above the threshold**: a two-level searcher with (cast)
 `k`-independent stored parts. -/
-theorem dnum_PrudentV {k : V} (hk : (KP : V) ≤ k) :
-    dnum (PrudentV k) = pSearch k (gPo : V) (pSearch k (gPi : V) (pPi : V) (qPi : V)) (qPo : V) := by
+theorem canonical_PrudentV {k : V} (hk : (KP : V) ≤ k) :
+    canonical (PrudentV k) = pSearch k (gPo : V) (pSearch k (gPi : V) (pPi : V) (qPi : V)) (qPo : V) := by
   by_cases h : innerP2 < innerT2
   · simp only [gPo, gPi, pPi, qPi, qPo, if_pos h]
-    rw [dnum_of_lt (by rw [swapcode_PrudentV]; exact PrudentV_lt_PrudentTV hk h)]
+    rw [canonical_of_lt (by rw [transposeCode_PrudentV]; exact PrudentV_lt_PrudentTV hk h)]
     exact PrudentV_eq_cast k
   · simp only [gPo, gPi, pPi, qPi, qPo, if_neg h]
-    rw [dnum_of_gt (by rw [swapcode_PrudentV]; exact PrudentTV_lt_PrudentV hk (innerT2_lt_of_not_lt h)),
-      swapcode_PrudentV]
+    rw [canonical_of_gt (by rw [transposeCode_PrudentV]; exact PrudentTV_lt_PrudentV hk (innerT2_lt_of_not_lt h)),
+      transposeCode_PrudentV]
     exact PrudentTV_eq_cast k
 
-theorem dU_PrudentV {k : V} (hk : (KP : V) ≤ k) : dU (PrudentV k) = (⌜uP⌝ : V) := by
-  unfold dU uP
-  rw [swapcode_PrudentV]
+theorem revalueU_PrudentV {k : V} (hk : (KP : V) ≤ k) : revalueU (PrudentV k) = (⌜uP⌝ : V) := by
+  unfold revalueU uP
+  rw [transposeCode_PrudentV]
   by_cases h : innerP2 < innerT2
   · rw [if_pos (PrudentV_lt_PrudentTV hk h), if_pos h, quote_cterm_C]
   · have h' := PrudentTV_lt_PrudentV hk (innerT2_lt_of_not_lt h)
     rw [if_neg (lt_asymm h'), if_pos h', if_neg h, quote_cterm_D]
 
-theorem dW_PrudentV {k : V} (hk : (KP : V) ≤ k) : dW (PrudentV k) = (⌜wP⌝ : V) := by
-  unfold dW wP
-  rw [swapcode_PrudentV]
+theorem revalueW_PrudentV {k : V} (hk : (KP : V) ≤ k) : revalueW (PrudentV k) = (⌜wP⌝ : V) := by
+  unfold revalueW wP
+  rw [transposeCode_PrudentV]
   by_cases h : innerP2 < innerT2
   · rw [if_pos (PrudentV_lt_PrudentTV hk h), if_pos h, quote_cterm_D]
   · have h' := PrudentTV_lt_PrudentV hk (innerT2_lt_of_not_lt h)
     rw [if_neg (lt_asymm h'), if_pos h', if_neg h, quote_cterm_C]
 
 /-- The re-valuation terms reconstruct `PrudentV k` from its canonical code (above the threshold). -/
-theorem relabel_val_uP_wP_V {k : V} (hk : (KP : V) ≤ k) :
-    relabel (uP.val (s := stdActV V) ![] Empty.elim) (wP.val (s := stdActV V) ![] Empty.elim)
-      (dnum (PrudentV k)) = PrudentV k := by
+theorem revalue_val_uP_wP_V {k : V} (hk : (KP : V) ≤ k) :
+    revalue (uP.val (s := stdReadingV V) ![] Empty.elim) (wP.val (s := stdReadingV V) ![] Empty.elim)
+      (canonical (PrudentV k)) = PrudentV k := by
   unfold uP wP
   by_cases h : innerP2 < innerT2
   · rw [if_pos h, if_pos h, val_cterm_C_V, val_cterm_D_V,
-      dnum_of_lt (by rw [swapcode_PrudentV]; exact PrudentV_lt_PrudentTV hk h), relabel_zero_one]
+      canonical_of_lt (by rw [transposeCode_PrudentV]; exact PrudentV_lt_PrudentTV hk h), revalue_zero_one]
   · rw [if_neg h, if_neg h, val_cterm_D_V, val_cterm_C_V,
-      dnum_of_gt (by rw [swapcode_PrudentV]; exact PrudentTV_lt_PrudentV hk (innerT2_lt_of_not_lt h))]
-    exact swapcode_swapcode _
+      canonical_of_gt (by rw [transposeCode_PrudentV]; exact PrudentTV_lt_PrudentV hk (innerT2_lt_of_not_lt h))]
+    exact transposeCode_transposeCode _
 
 /-- The transposed re-valuation terms. -/
 noncomputable def uPT : ClosedSemiterm LAct 0 := Semiterm.lMap swap uP
 noncomputable def wPT : ClosedSemiterm LAct 0 := Semiterm.lMap swap wP
 
 /-- The transposed re-valuation terms reconstruct `PrudentTV k` from the canonical code of `PrudentV k`. -/
-theorem relabel_val_uPT_wPT_V {k : V} (hk : (KP : V) ≤ k) :
-    relabel (uPT.val (s := stdActV V) ![] Empty.elim) (wPT.val (s := stdActV V) ![] Empty.elim)
-      (dnum (PrudentV k)) = PrudentTV k := by
+theorem revalue_val_uPT_wPT_V {k : V} (hk : (KP : V) ≤ k) :
+    revalue (uPT.val (s := stdReadingV V) ![] Empty.elim) (wPT.val (s := stdReadingV V) ![] Empty.elim)
+      (canonical (PrudentV k)) = PrudentTV k := by
   unfold uPT wPT uP wP
   by_cases h : innerP2 < innerT2
   · rw [if_pos h, if_pos h, lMap_swap_cterm_C, lMap_swap_cterm_D, val_cterm_D_V, val_cterm_C_V,
-      dnum_of_lt (by rw [swapcode_PrudentV]; exact PrudentV_lt_PrudentTV hk h)]
-    exact swapcode_PrudentV k
+      canonical_of_lt (by rw [transposeCode_PrudentV]; exact PrudentV_lt_PrudentTV hk h)]
+    exact transposeCode_PrudentV k
   · rw [if_neg h, if_neg h, lMap_swap_cterm_D, lMap_swap_cterm_C, val_cterm_C_V, val_cterm_D_V,
-      dnum_of_gt (by rw [swapcode_PrudentV]; exact PrudentTV_lt_PrudentV hk (innerT2_lt_of_not_lt h)),
-      swapcode_PrudentV, relabel_zero_one]
+      canonical_of_gt (by rw [transposeCode_PrudentV]; exact PrudentTV_lt_PrudentV hk (innerT2_lt_of_not_lt h)),
+      transposeCode_PrudentV, revalue_zero_one]
 
 end canonical
 
@@ -361,29 +361,29 @@ end canonical
 section tower
 
 /-- The one-variable structural term of a searcher whose THEN-branch is itself a one-variable term
-`P` (the else-branch and the template closed). `searchT1 g p q = searchT1' g (bShift (progTT p)) q`
+`P` (the else-branch and the template closed). `searchT1 g p q = searchT1' g (bShift (codeTermMeta p)) q`
 up to the shift. -/
 noncomputable def searchT1' (g : ℕ) (P : Semiterm ℒₒᵣ Empty 1) (q : ℕ) : Semiterm ℒₒᵣ Empty 1 :=
-  succT1 (ppairT1 (Rew.bShift (bnumT 6)) (ppairT1 #0
-    (ppairT1 (Rew.bShift (bnumT g)) (ppairT1 P (Rew.bShift (progTT q))))))
+  succT1 (ppairT1 (Rew.bShift (binNumeralMeta 6)) (ppairT1 #0
+    (ppairT1 (Rew.bShift (binNumeralMeta g)) (ppairT1 P (Rew.bShift (codeTermMeta q))))))
 
 lemma val_searchT1'_V (g : ℕ) (P : Semiterm ℒₒᵣ Empty 1) (q : ℕ) (k : V) :
     (searchT1' g P q).val (s := standardModel V) ![k] Empty.elim =
       pSearch k (g : V) (P.val (s := standardModel V) ![k] Empty.elim) (q : V) := by
   rw [searchT1', val_succT1_V, val_ppairT1_V, val_ppairT1_V, val_bShift₁_V, val_ppairT1_V, val_bShift₁_V,
-    val_ppairT1_V, val_bShift₁_V, val_bnumT_V, val_bnumT_V, val_progTT_V]
+    val_ppairT1_V, val_bShift₁_V, val_binNumeralMeta_V, val_binNumeralMeta_V, val_codeTermMeta_V]
   unfold pSearch
   push_cast
   rfl
 
 lemma quote_emb_searchT1' (g : ℕ) (P : Semiterm ℒₒᵣ Empty 1) (q : ℕ) :
     (⌜(Rew.emb (searchT1' g P q) : SyntacticSemiterm ℒₒᵣ 1)⌝ : V) =
-    ppairT (bnum 6) (ppairT (^#0) (ppairT (bnum (g : V))
-      (ppairT (⌜(Rew.emb P : SyntacticSemiterm ℒₒᵣ 1)⌝ : V) (progT (q : V))))) ^+ 𝟏 := by
+    ppairTerm (binNumeral 6) (ppairTerm (^#0) (ppairTerm (binNumeral (g : V))
+      (ppairTerm (⌜(Rew.emb P : SyntacticSemiterm ℒₒᵣ 1)⌝ : V) (codeTerm (q : V))))) ^+ 𝟏 := by
   rw [searchT1', quote_emb_succT1, quote_emb_ppairT1, quote_emb_ppairT1, quote_emb_bShift, quote_emb_ppairT1,
     quote_emb_bShift, quote_emb_ppairT1, quote_emb_bShift, quote_emb_bvar_zero, ← Semiterm.empty_quote_def,
-    ← Semiterm.empty_quote_def, ← Semiterm.empty_quote_def, ← Semiterm.empty_quote_def, quote_bnumT, quote_bnumT,
-    quote_progTT]
+    ← Semiterm.empty_quote_def, ← Semiterm.empty_quote_def, ← Semiterm.empty_quote_def, quote_binNumeralMeta, quote_binNumeralMeta,
+    quote_codeTermMeta]
   push_cast
   rfl
 
@@ -395,37 +395,37 @@ noncomputable def TP : Semiterm LAct Empty 1 := Semiterm.lMap emb (searchT1' gPo
 lemma lMap_swap_TP : Semiterm.lMap swap TP = TP := term_lMap_swap_emb _
 
 /-- `TP` at a budget `k` above the threshold denotes the canonical code of `PrudentV k`. -/
-theorem val_TP_V {k : V} (hk : (KP : V) ≤ k) : TP.val (s := stdActV V) ![k] Empty.elim = dnum (PrudentV k) := by
+theorem val_TP_V {k : V} (hk : (KP : V) ≤ k) : TP.val (s := stdReadingV V) ![k] Empty.elim = canonical (PrudentV k) := by
   unfold TP
-  rw [Semiterm.val_lMap, stdActV_lMap_emb, val_searchT1'_V, val_searchT1_V, dnum_PrudentV hk]
+  rw [Semiterm.val_lMap, stdReadingV_lMap_emb, val_searchT1'_V, val_searchT1_V, canonical_PrudentV hk]
 
 theorem quote_emb_TP :
     (⌜(Rew.emb TP : SyntacticSemiterm LAct 1)⌝ : V) =
-    ppairT (bnum 6) (ppairT (^#0) (ppairT (bnum (gPo : V))
-      (ppairT (ppairT (bnum 6) (ppairT (^#0) (ppairT (bnum (gPi : V)) (ppairT (progT (pPi : V)) (progT (qPi : V))))) ^+ 𝟏)
-        (progT (qPo : V))))) ^+ 𝟏 := by
+    ppairTerm (binNumeral 6) (ppairTerm (^#0) (ppairTerm (binNumeral (gPo : V))
+      (ppairTerm (ppairTerm (binNumeral 6) (ppairTerm (^#0) (ppairTerm (binNumeral (gPi : V)) (ppairTerm (codeTerm (pPi : V)) (codeTerm (qPi : V))))) ^+ 𝟏)
+        (codeTerm (qPo : V))))) ^+ 𝟏 := by
   unfold TP
   rw [term_emb_lMap_emb_n, quote_term_lMap_emb, quote_emb_searchT1', quote_emb_searchT1]
 
 /-- **Filling the budget slot of `TP`** (above the threshold): the structural term of the canonical
 code of `PrudentV k`. -/
 theorem termSubst_TP {k : V} (hk : (KP : V) ≤ k) :
-    termSubst LAct (bnum k ∷ (0 : V)) (⌜(Rew.emb TP : SyntacticSemiterm LAct 1)⌝ : V) =
-      progT (dnum (PrudentV k)) := by
-  have hb6 : IsUTerm LAct (bnum (6 : V)) := (bnum_semiterm_LAct 0 _).isUTerm
-  have hbg : IsUTerm LAct (bnum (gPi : V)) := (bnum_semiterm_LAct 0 _).isUTerm
-  have hp : IsUTerm LAct (progT (pPi : V)) := (progT_semiterm_LAct 0 _).isUTerm
-  have hq : IsUTerm LAct (progT (qPi : V)) := (progT_semiterm_LAct 0 _).isUTerm
+    termSubst LAct (binNumeral k ∷ (0 : V)) (⌜(Rew.emb TP : SyntacticSemiterm LAct 1)⌝ : V) =
+      codeTerm (canonical (PrudentV k)) := by
+  have hb6 : IsUTerm LAct (binNumeral (6 : V)) := (binNumeral_semiterm_LAct 0 _).isUTerm
+  have hbg : IsUTerm LAct (binNumeral (gPi : V)) := (binNumeral_semiterm_LAct 0 _).isUTerm
+  have hp : IsUTerm LAct (codeTerm (pPi : V)) := (codeTerm_semiterm_LAct 0 _).isUTerm
+  have hq : IsUTerm LAct (codeTerm (qPi : V)) := (codeTerm_semiterm_LAct 0 _).isUTerm
   have hone : IsUTerm LAct (𝟏 : V) := (IsSemiterm.LAct_of_LOR (one_semiterm (n := 0))).isUTerm
-  have h1 : IsUTerm LAct (ppairT (progT (pPi : V)) (progT (qPi : V))) := ppairT_uterm_LAct hp hq
-  have h2 : IsUTerm LAct (ppairT (bnum (gPi : V)) (ppairT (progT (pPi : V)) (progT (qPi : V)))) := ppairT_uterm_LAct hbg h1
-  have h3 : IsUTerm LAct (ppairT (^#0) (ppairT (bnum (gPi : V)) (ppairT (progT (pPi : V)) (progT (qPi : V))))) :=
-    ppairT_uterm_LAct bvar_zero_uterm h2
-  have h4 : IsUTerm LAct (ppairT (bnum 6) (ppairT (^#0) (ppairT (bnum (gPi : V)) (ppairT (progT (pPi : V)) (progT (qPi : V)))))) :=
-    ppairT_uterm_LAct hb6 h3
-  have h5 : IsUTerm LAct (ppairT (bnum 6) (ppairT (^#0) (ppairT (bnum (gPi : V)) (ppairT (progT (pPi : V)) (progT (qPi : V))))) ^+ 𝟏) :=
+  have h1 : IsUTerm LAct (ppairTerm (codeTerm (pPi : V)) (codeTerm (qPi : V))) := ppairTerm_uterm_LAct hp hq
+  have h2 : IsUTerm LAct (ppairTerm (binNumeral (gPi : V)) (ppairTerm (codeTerm (pPi : V)) (codeTerm (qPi : V)))) := ppairTerm_uterm_LAct hbg h1
+  have h3 : IsUTerm LAct (ppairTerm (^#0) (ppairTerm (binNumeral (gPi : V)) (ppairTerm (codeTerm (pPi : V)) (codeTerm (qPi : V))))) :=
+    ppairTerm_uterm_LAct bvar_zero_uterm h2
+  have h4 : IsUTerm LAct (ppairTerm (binNumeral 6) (ppairTerm (^#0) (ppairTerm (binNumeral (gPi : V)) (ppairTerm (codeTerm (pPi : V)) (codeTerm (qPi : V)))))) :=
+    ppairTerm_uterm_LAct hb6 h3
+  have h5 : IsUTerm LAct (ppairTerm (binNumeral 6) (ppairTerm (^#0) (ppairTerm (binNumeral (gPi : V)) (ppairTerm (codeTerm (pPi : V)) (codeTerm (qPi : V))))) ^+ 𝟏) :=
     qqAdd_uterm_LAct h4 hone
-  rw [quote_emb_TP, termSubst_tower' k _ _ h5 (termSubst_tower k _ _ _), dnum_PrudentV hk]
+  rw [quote_emb_TP, termSubst_tower' k _ _ h5 (termSubst_tower k _ _ _), canonical_PrudentV hk]
 
 end tower
 
@@ -440,16 +440,16 @@ end generic
 section fixedFormulas
 
 lemma hX_prudent {k : V} (hk : (KP : V) ≤ k) :
-    termSubst LAct (bnum k ∷ (0 : V)) (⌜(Rew.emb TP : SyntacticSemiterm LAct 1)⌝ : V) = progT (dnum (PrudentV k)) :=
+    termSubst LAct (binNumeral k ∷ (0 : V)) (⌜(Rew.emb TP : SyntacticSemiterm LAct 1)⌝ : V) = codeTerm (canonical (PrudentV k)) :=
   termSubst_TP hk
-lemma hU_prudent {k : V} (hk : (KP : V) ≤ k) : (⌜uP⌝ : V) = dU (PrudentV k) := (dU_PrudentV hk).symm
-lemma hW_prudent {k : V} (hk : (KP : V) ≤ k) : (⌜wP⌝ : V) = dW (PrudentV k) := (dW_PrudentV hk).symm
+lemma hU_prudent {k : V} (hk : (KP : V) ≤ k) : (⌜uP⌝ : V) = revalueU (PrudentV k) := (revalueU_PrudentV hk).symm
+lemma hW_prudent {k : V} (hk : (KP : V) ≤ k) : (⌜wP⌝ : V) = revalueW (PrudentV k) := (revalueW_PrudentV hk).symm
 
 /-- **The outer fixed formula**: `qPM(k)` says "Mirror plays C against `PrudentV k`". -/
-noncomputable def qPM : Semisentence LAct 1 := qT tmplP1 TP uP wP (cl TM) (numT 0) (numT 1)
+noncomputable def qPM : Semisentence LAct 1 := qT templateP1 TP uP wP (cl TM) (numT 0) (numT 1)
 /-- **The prudence fixed formula**: `qPP(k)` says "Mirror plays D against `.bot DefectBot`" (the
 me-slots are inert: a closed Σ₁ fact carried at every `k`). -/
-noncomputable def qPP : Semisentence LAct 1 := qT tmplP2 TP uP wP (cl TM) (numT 0) (numT 1)
+noncomputable def qPP : Semisentence LAct 1 := qT templateP2 TP uP wP (cl TM) (numT 0) (numT 1)
 /-- The transposed outer formula: "Mirror plays D against `PrudentTV k`". -/
 noncomputable def qPMT : Semisentence LAct 1 := Semiformula.lMap swap qPM
 /-- The transposed prudence formula: "Mirror plays C against `.bot CooperateBot`". -/
@@ -460,83 +460,83 @@ lemma lMap_swap_qPP : Semiformula.lMap swap qPP = qPPT := rfl
 lemma lMap_swap_qPMT : Semiformula.lMap swap qPMT = qPM := lMap_swap_swap _
 lemma lMap_swap_qPPT : Semiformula.lMap swap qPPT = qPP := lMap_swap_swap _
 
-theorem qPMT_eq : qPMT = qT tmplP1T TP uPT wPT (cl TM) (numT 0) (numT 1) := by
+theorem qPMT_eq : qPMT = qT templateP1T TP uPT wPT (cl TM) (numT 0) (numT 1) := by
   unfold qPMT qPM
-  rw [lMap_swap_qT, lMap_swap_tmplP1, lMap_swap_TP, lMap_swap_cl, lMap_swap_TM, lMap_swap_numT, lMap_swap_numT]
+  rw [lMap_swap_qT, lMap_swap_templateP1, lMap_swap_TP, lMap_swap_cl, lMap_swap_TM, lMap_swap_numT, lMap_swap_numT]
   rfl
 
-theorem qPPT_eq : qPPT = qT tmplP2T TP uPT wPT (cl TM) (numT 0) (numT 1) := by
+theorem qPPT_eq : qPPT = qT templateP2T TP uPT wPT (cl TM) (numT 0) (numT 1) := by
   unfold qPPT qPP
-  rw [lMap_swap_qT, lMap_swap_tmplP2, lMap_swap_TP, lMap_swap_cl, lMap_swap_TM, lMap_swap_numT, lMap_swap_numT]
+  rw [lMap_swap_qT, lMap_swap_templateP2, lMap_swap_TP, lMap_swap_cl, lMap_swap_TM, lMap_swap_numT, lMap_swap_numT]
   rfl
 
 /-- **The instance equation on codes** (above the threshold): Prudent's outer guard code against
-Mirror is the `bnum k`-instance of `⌜qPM⌝`. -/
+Mirror is the `binNumeral k`-instance of `⌜qPM⌝`. -/
 theorem guardCode_PrudentV_MirrorV_eq_instB {k : V} (hk : (KP : V) ≤ k) :
-    guardCode (⌜tmplP1⌝ : V) (PrudentV k) MirrorV = instB (⌜qPM⌝ : V) k :=
-  guardCode_qT_eq_instB tmplP1 k TP uP wP (cl TM) (numT 0) (numT 1) (hX_prudent hk) (hU_prudent hk)
+    guardCode (⌜templateP1⌝ : V) (PrudentV k) MirrorV = instB (⌜qPM⌝ : V) k :=
+  guardCode_qT_eq_instB templateP1 k TP uP wP (cl TM) (numT 0) (numT 1) (hX_prudent hk) (hU_prudent hk)
     (hW_prudent hk) (hX_mirror k) hU_mirror hW_mirror
 
-/-- The prudence guard code is the `bnum k`-instance of `⌜qPP⌝`. -/
+/-- The prudence guard code is the `binNumeral k`-instance of `⌜qPP⌝`. -/
 theorem guardCode_PrudentV_MirrorV_inner_eq_instB {k : V} (hk : (KP : V) ≤ k) :
-    guardCode (⌜tmplP2⌝ : V) (PrudentV k) MirrorV = instB (⌜qPP⌝ : V) k :=
-  guardCode_qT_eq_instB tmplP2 k TP uP wP (cl TM) (numT 0) (numT 1) (hX_prudent hk) (hU_prudent hk)
+    guardCode (⌜templateP2⌝ : V) (PrudentV k) MirrorV = instB (⌜qPP⌝ : V) k :=
+  guardCode_qT_eq_instB templateP2 k TP uP wP (cl TM) (numT 0) (numT 1) (hX_prudent hk) (hU_prudent hk)
     (hW_prudent hk) (hX_mirror k) hU_mirror hW_mirror
 
-/-- The transposed searcher's outer guard code against Mirror is the `bnum k`-instance of `⌜qPMT⌝`. -/
+/-- The transposed searcher's outer guard code against Mirror is the `binNumeral k`-instance of `⌜qPMT⌝`. -/
 theorem guardCode_PrudentTV_MirrorV_eq_instB {k : V} (hk : (KP : V) ≤ k) :
-    guardCode (⌜tmplP1T⌝ : V) (PrudentTV k) MirrorV = instB (⌜qPMT⌝ : V) k := by
-  have h := guardCode_qT_swap_eq_instB tmplP1 k TP uP wP (cl TM) (numT 0) (numT 1) (hX_prudent hk) (hU_prudent hk)
+    guardCode (⌜templateP1T⌝ : V) (PrudentTV k) MirrorV = instB (⌜qPMT⌝ : V) k := by
+  have h := guardCode_qT_swap_eq_instB templateP1 k TP uP wP (cl TM) (numT 0) (numT 1) (hX_prudent hk) (hU_prudent hk)
     (hW_prudent hk) (hX_mirror k) hU_mirror hW_mirror
-  rw [lMap_swap_tmplP1, swapcode_PrudentV, swapcode_MirrorV] at h
+  rw [lMap_swap_templateP1, transposeCode_PrudentV, transposeCode_MirrorV] at h
   exact h
 
 theorem guardCode_PrudentTV_MirrorV_inner_eq_instB {k : V} (hk : (KP : V) ≤ k) :
-    guardCode (⌜tmplP2T⌝ : V) (PrudentTV k) MirrorV = instB (⌜qPPT⌝ : V) k := by
-  have h := guardCode_qT_swap_eq_instB tmplP2 k TP uP wP (cl TM) (numT 0) (numT 1) (hX_prudent hk) (hU_prudent hk)
+    guardCode (⌜templateP2T⌝ : V) (PrudentTV k) MirrorV = instB (⌜qPPT⌝ : V) k := by
+  have h := guardCode_qT_swap_eq_instB templateP2 k TP uP wP (cl TM) (numT 0) (numT 1) (hX_prudent hk) (hU_prudent hk)
     (hW_prudent hk) (hX_mirror k) hU_mirror hW_mirror
-  rw [lMap_swap_tmplP2, swapcode_PrudentV, swapcode_MirrorV] at h
+  rw [lMap_swap_templateP2, transposeCode_PrudentV, transposeCode_MirrorV] at h
   exact h
 
 /-! #### The truth equations (standard reading) -/
 
-/-- `qPM(k)` holds in `stdActV V` iff Mirror plays C against `PrudentV k` (above the threshold). -/
+/-- `qPM(k)` holds in `stdReadingV V` iff Mirror plays C against `PrudentV k` (above the threshold). -/
 theorem eval_qPM_iff_V {k : V} (hk : (KP : V) ≤ k) :
-    Semiformula.Eval (s := stdActV V) ![k] Empty.elim qPM ↔
+    Semiformula.Eval (s := stdReadingV V) ![k] Empty.elim qPM ↔
       ∃ n, EvalGraph n MirrorV (PrudentV k) MirrorV 0 := by
-  unfold qPM tmplP1 phiP1
-  rw [eval_qT_iff, eval_tmpl_plays_opp_self_V]
+  unfold qPM templateP1 phiP1
+  rw [eval_qT_iff, eval_template_plays_opp_self_V]
   simp only [Matrix.cons_val, actCode, Nat.cast_zero]
-  rw [val_TP_V hk, relabel_val_uP_wP_V hk, desc_mirror k]
+  rw [val_TP_V hk, revalue_val_uP_wP_V hk, desc_mirror k]
 
-/-- `qPP(k)` holds in `stdActV V` iff Mirror plays D against `.bot DefectBot` (`pBot (pConst 1)`). -/
+/-- `qPP(k)` holds in `stdReadingV V` iff Mirror plays D against `.bot DefectBot` (`pBot (pConst 1)`). -/
 theorem eval_qPP_iff_V (k : V) :
-    Semiformula.Eval (s := stdActV V) ![k] Empty.elim qPP ↔
+    Semiformula.Eval (s := stdReadingV V) ![k] Empty.elim qPP ↔
       ∃ n, EvalGraph n (MirrorV : V) (pBot (pConst 1)) MirrorV 1 := by
-  unfold qPP tmplP2 phiP2
-  rw [eval_qT_iff, eval_tmpl_plays_opp_closed_V _ (by intro h; cases h) (by intro h; cases h)]
-  simp only [Matrix.cons_val, actCode, Nat.cast_one, pcode_bot, pcode_const, PD.Bots.DefectBot, cast_pBot,
+  unfold qPP templateP2 phiP2
+  rw [eval_qT_iff, eval_template_plays_opp_closed_V _ (by intro h; cases h) (by intro h; cases h)]
+  simp only [Matrix.cons_val, actCode, Nat.cast_one, progCode_bot, progCode_const, PD.Bots.DefectBot, cast_pBot,
     cast_pConst]
   rw [desc_mirror k]
 
-/-- `qPMT(k)` holds in `stdActV V` iff Mirror plays D against `PrudentTV k`. -/
+/-- `qPMT(k)` holds in `stdReadingV V` iff Mirror plays D against `PrudentTV k`. -/
 theorem eval_qPMT_iff_V {k : V} (hk : (KP : V) ≤ k) :
-    Semiformula.Eval (s := stdActV V) ![k] Empty.elim qPMT ↔
+    Semiformula.Eval (s := stdReadingV V) ![k] Empty.elim qPMT ↔
       ∃ n, EvalGraph n MirrorV (PrudentTV k) MirrorV 1 := by
   rw [qPMT_eq]
-  unfold tmplP1T
-  rw [eval_qT_iff, eval_tmpl_plays_opp_self_V]
+  unfold templateP1T
+  rw [eval_qT_iff, eval_template_plays_opp_self_V]
   simp only [Matrix.cons_val, actCode, Nat.cast_one]
-  rw [val_TP_V hk, relabel_val_uPT_wPT_V hk, desc_mirror k]
+  rw [val_TP_V hk, revalue_val_uPT_wPT_V hk, desc_mirror k]
 
-/-- `qPPT(k)` holds in `stdActV V` iff Mirror plays C against `.bot CooperateBot` (`pBot (pConst 0)`). -/
+/-- `qPPT(k)` holds in `stdReadingV V` iff Mirror plays C against `.bot CooperateBot` (`pBot (pConst 0)`). -/
 theorem eval_qPPT_iff_V (k : V) :
-    Semiformula.Eval (s := stdActV V) ![k] Empty.elim qPPT ↔
+    Semiformula.Eval (s := stdReadingV V) ![k] Empty.elim qPPT ↔
       ∃ n, EvalGraph n (MirrorV : V) (pBot (pConst 0)) MirrorV 0 := by
   rw [qPPT_eq]
-  unfold tmplP2T
-  rw [eval_qT_iff, eval_tmpl_plays_opp_closed_V _ (by intro h; cases h) (by intro h; cases h)]
-  simp only [Matrix.cons_val, actCode, Nat.cast_zero, pcode_bot, pcode_const, cast_pBot, cast_pConst]
+  unfold templateP2T
+  rw [eval_qT_iff, eval_template_plays_opp_closed_V _ (by intro h; cases h) (by intro h; cases h)]
+  simp only [Matrix.cons_val, actCode, Nat.cast_zero, progCode_bot, progCode_const, cast_pBot, cast_pConst]
   rw [desc_mirror k]
 
 /-! #### The prudence facts, the search clauses, Mirror's copy -/
@@ -544,28 +544,28 @@ theorem eval_qPPT_iff_V (k : V) :
 
 /-- **Prudent's search clause against Mirror** (fuel 3): both guards provable within `k` ⇒ `C`. -/
 theorem prudent_search_V (k : V)
-    (h1 : LenProvableV TAct k (guardCode (⌜tmplP1⌝ : V) (PrudentV k) MirrorV))
-    (h2 : LenProvableV TAct k (guardCode (⌜tmplP2⌝ : V) (PrudentV k) MirrorV)) :
+    (h1 : LenBox TAct k (guardCode (⌜templateP1⌝ : V) (PrudentV k) MirrorV))
+    (h2 : LenBox TAct k (guardCode (⌜templateP2⌝ : V) (PrudentV k) MirrorV)) :
     EvalGraph 3 (PrudentV k) MirrorV (PrudentV k) 0 := by
   have e0 : EvalGraph (0 + 1) (PrudentV k) MirrorV (pConst 0) (0 : V) := EvalGraph.const_iff.mpr rfl
-  have e1 : EvalGraph (0 + 1 + 1) (PrudentV k) MirrorV (pSearch k (⌜tmplP2⌝ : V) (pConst 0) (pConst 1)) 0 :=
-    (EvalGraph.search_iff₆ (isSemiformula_quote₆ tmplP2)).mpr (Or.inl ⟨h2, e0⟩)
+  have e1 : EvalGraph (0 + 1 + 1) (PrudentV k) MirrorV (pSearch k (⌜templateP2⌝ : V) (pConst 0) (pConst 1)) 0 :=
+    (EvalGraph.search_iff₆ (isSemiformula_quote₆ templateP2)).mpr (Or.inl ⟨h2, e0⟩)
   have e2 : EvalGraph (0 + 1 + 1 + 1) (PrudentV k) MirrorV
-      (pSearch k (⌜tmplP1⌝ : V) (pSearch k (⌜tmplP2⌝ : V) (pConst 0) (pConst 1)) (pConst 1)) 0 :=
-    (EvalGraph.search_iff₆ (isSemiformula_quote₆ tmplP1)).mpr (Or.inl ⟨h1, e1⟩)
+      (pSearch k (⌜templateP1⌝ : V) (pSearch k (⌜templateP2⌝ : V) (pConst 0) (pConst 1)) (pConst 1)) 0 :=
+    (EvalGraph.search_iff₆ (isSemiformula_quote₆ templateP1)).mpr (Or.inl ⟨h1, e1⟩)
   rwa [show (0 : V) + 1 + 1 + 1 = 3 by norm_num] at e2
 
 /-- **The transposed searcher's search clause against Mirror** (fuel 3): both guards ⇒ `D`. -/
 theorem prudentT_search_V (k : V)
-    (h1 : LenProvableV TAct k (guardCode (⌜tmplP1T⌝ : V) (PrudentTV k) MirrorV))
-    (h2 : LenProvableV TAct k (guardCode (⌜tmplP2T⌝ : V) (PrudentTV k) MirrorV)) :
+    (h1 : LenBox TAct k (guardCode (⌜templateP1T⌝ : V) (PrudentTV k) MirrorV))
+    (h2 : LenBox TAct k (guardCode (⌜templateP2T⌝ : V) (PrudentTV k) MirrorV)) :
     EvalGraph 3 (PrudentTV k) MirrorV (PrudentTV k) 1 := by
   have e0 : EvalGraph (0 + 1) (PrudentTV k) MirrorV (pConst 1) (1 : V) := EvalGraph.const_iff.mpr rfl
-  have e1 : EvalGraph (0 + 1 + 1) (PrudentTV k) MirrorV (pSearch k (⌜tmplP2T⌝ : V) (pConst 1) (pConst 0)) 1 :=
-    (EvalGraph.search_iff₆ (isSemiformula_quote₆ tmplP2T)).mpr (Or.inl ⟨h2, e0⟩)
+  have e1 : EvalGraph (0 + 1 + 1) (PrudentTV k) MirrorV (pSearch k (⌜templateP2T⌝ : V) (pConst 1) (pConst 0)) 1 :=
+    (EvalGraph.search_iff₆ (isSemiformula_quote₆ templateP2T)).mpr (Or.inl ⟨h2, e0⟩)
   have e2 : EvalGraph (0 + 1 + 1 + 1) (PrudentTV k) MirrorV
-      (pSearch k (⌜tmplP1T⌝ : V) (pSearch k (⌜tmplP2T⌝ : V) (pConst 1) (pConst 0)) (pConst 0)) 1 :=
-    (EvalGraph.search_iff₆ (isSemiformula_quote₆ tmplP1T)).mpr (Or.inl ⟨h1, e1⟩)
+      (pSearch k (⌜templateP1T⌝ : V) (pSearch k (⌜templateP2T⌝ : V) (pConst 1) (pConst 0)) (pConst 0)) 1 :=
+    (EvalGraph.search_iff₆ (isSemiformula_quote₆ templateP1T)).mpr (Or.inl ⟨h1, e1⟩)
   rwa [show (0 : V) + 1 + 1 + 1 = 3 by norm_num] at e2
 
 
@@ -625,60 +625,60 @@ theorem pPM_all_V (k a : V) (hk : (KP : V) ≤ k)
       8 * (formulaLen LAct (instB (⌜qPM⌝ : V) k) + formulaLen LAct (instB (⌜qPP⌝ : V) k)) + 7 ≤ k)
     (ha₂ : a + 8 * (formulaLen LAct (instB (⌜pPMa⌝ : V) k) + formulaLen LAct (instB (⌜pPMb⌝ : V) k)) + 7 +
       8 * (formulaLen LAct (instB (⌜qPMT⌝ : V) k) + formulaLen LAct (instB (⌜qPPT⌝ : V) k)) + 7 ≤ k)
-    (h : LenDerivable TAct a (instB (⌜pPM⌝ : V) k)) :
+    (h : LenBoxUnbounded TAct a (instB (⌜pPM⌝ : V) k)) :
     EvalGraph 3 (PrudentV k) MirrorV (PrudentV k) 0 ∧ EvalGraph 3 (PrudentTV k) MirrorV (PrudentTV k) 1 := by
   rw [instB_quote_pPM] at h
   have hx := isFormula_instB_quote pPMa k
   have hy := isFormula_instB_quote pPMb k
-  have h₁ : LenDerivable TAct
+  have h₁ : LenBoxUnbounded TAct
       (a + 8 * (formulaLen LAct (instB (⌜pPMa⌝ : V) k) + formulaLen LAct (instB (⌜pPMb⌝ : V) k)) + 7)
       (instB (⌜qPM⌝ : V) k ^⋏ instB (⌜qPP⌝ : V) k) := by
-    rw [← instB_quote_pPMa]; exact lenDerivable_andL_V hx hy h
-  have h₂ : LenDerivable TAct
+    rw [← instB_quote_pPMa]; exact lenBoxUnbounded_andL_V hx hy h
+  have h₂ : LenBoxUnbounded TAct
       (a + 8 * (formulaLen LAct (instB (⌜pPMa⌝ : V) k) + formulaLen LAct (instB (⌜pPMb⌝ : V) k)) + 7)
       (instB (⌜qPMT⌝ : V) k ^⋏ instB (⌜qPPT⌝ : V) k) := by
-    rw [← instB_quote_pPMb]; exact lenDerivable_andR_V hx hy h
+    rw [← instB_quote_pPMb]; exact lenBoxUnbounded_andR_V hx hy h
   have hx₁ := isFormula_instB_quote qPM k
   have hy₁ := isFormula_instB_quote qPP k
   have hx₂ := isFormula_instB_quote qPMT k
   have hy₂ := isFormula_instB_quote qPPT k
-  have g1 := lenDerivable_mono_V ha₁ (lenDerivable_andL_V hx₁ hy₁ h₁)
-  have g2 := lenDerivable_mono_V ha₁ (lenDerivable_andR_V hx₁ hy₁ h₁)
-  have g3 := lenDerivable_mono_V ha₂ (lenDerivable_andL_V hx₂ hy₂ h₂)
-  have g4 := lenDerivable_mono_V ha₂ (lenDerivable_andR_V hx₂ hy₂ h₂)
-  rw [lenDerivable_iff_lenProvableV, ← guardCode_PrudentV_MirrorV_eq_instB hk] at g1
-  rw [lenDerivable_iff_lenProvableV, ← guardCode_PrudentV_MirrorV_inner_eq_instB hk] at g2
-  rw [lenDerivable_iff_lenProvableV, ← guardCode_PrudentTV_MirrorV_eq_instB hk] at g3
-  rw [lenDerivable_iff_lenProvableV, ← guardCode_PrudentTV_MirrorV_inner_eq_instB hk] at g4
+  have g1 := lenBoxUnbounded_mono_V ha₁ (lenBoxUnbounded_andL_V hx₁ hy₁ h₁)
+  have g2 := lenBoxUnbounded_mono_V ha₁ (lenBoxUnbounded_andR_V hx₁ hy₁ h₁)
+  have g3 := lenBoxUnbounded_mono_V ha₂ (lenBoxUnbounded_andL_V hx₂ hy₂ h₂)
+  have g4 := lenBoxUnbounded_mono_V ha₂ (lenBoxUnbounded_andR_V hx₂ hy₂ h₂)
+  rw [lenBoxUnbounded_iff_lenBox, ← guardCode_PrudentV_MirrorV_eq_instB hk] at g1
+  rw [lenBoxUnbounded_iff_lenBox, ← guardCode_PrudentV_MirrorV_inner_eq_instB hk] at g2
+  rw [lenBoxUnbounded_iff_lenBox, ← guardCode_PrudentTV_MirrorV_eq_instB hk] at g3
+  rw [lenBoxUnbounded_iff_lenBox, ← guardCode_PrudentTV_MirrorV_inner_eq_instB hk] at g4
   exact ⟨prudent_search_V k g1 g2, prudentT_search_V k g3 g4⟩
 
 /-- **The box form**: Prudent's two guards against Mirror are provable within `k`. -/
 theorem pPM_guards_V (k a : V) (hk : (KP : V) ≤ k)
     (ha₁ : a + 8 * (formulaLen LAct (instB (⌜pPMa⌝ : V) k) + formulaLen LAct (instB (⌜pPMb⌝ : V) k)) + 7 +
       8 * (formulaLen LAct (instB (⌜qPM⌝ : V) k) + formulaLen LAct (instB (⌜qPP⌝ : V) k)) + 7 ≤ k)
-    (h : LenDerivable TAct a (instB (⌜pPM⌝ : V) k)) :
-    LenProvableV TAct k (guardCode (⌜tmplP1⌝ : V) (PrudentV k) MirrorV) ∧
-    LenProvableV TAct k (guardCode (⌜tmplP2⌝ : V) (PrudentV k) MirrorV) := by
+    (h : LenBoxUnbounded TAct a (instB (⌜pPM⌝ : V) k)) :
+    LenBox TAct k (guardCode (⌜templateP1⌝ : V) (PrudentV k) MirrorV) ∧
+    LenBox TAct k (guardCode (⌜templateP2⌝ : V) (PrudentV k) MirrorV) := by
   rw [instB_quote_pPM] at h
   have hx := isFormula_instB_quote pPMa k
   have hy := isFormula_instB_quote pPMb k
-  have h₁ : LenDerivable TAct
+  have h₁ : LenBoxUnbounded TAct
       (a + 8 * (formulaLen LAct (instB (⌜pPMa⌝ : V) k) + formulaLen LAct (instB (⌜pPMb⌝ : V) k)) + 7)
       (instB (⌜qPM⌝ : V) k ^⋏ instB (⌜qPP⌝ : V) k) := by
-    rw [← instB_quote_pPMa]; exact lenDerivable_andL_V hx hy h
+    rw [← instB_quote_pPMa]; exact lenBoxUnbounded_andL_V hx hy h
   have hx₁ := isFormula_instB_quote qPM k
   have hy₁ := isFormula_instB_quote qPP k
-  have g1 := lenDerivable_mono_V ha₁ (lenDerivable_andL_V hx₁ hy₁ h₁)
-  have g2 := lenDerivable_mono_V ha₁ (lenDerivable_andR_V hx₁ hy₁ h₁)
-  rw [lenDerivable_iff_lenProvableV, ← guardCode_PrudentV_MirrorV_eq_instB hk] at g1
-  rw [lenDerivable_iff_lenProvableV, ← guardCode_PrudentV_MirrorV_inner_eq_instB hk] at g2
+  have g1 := lenBoxUnbounded_mono_V ha₁ (lenBoxUnbounded_andL_V hx₁ hy₁ h₁)
+  have g2 := lenBoxUnbounded_mono_V ha₁ (lenBoxUnbounded_andR_V hx₁ hy₁ h₁)
+  rw [lenBoxUnbounded_iff_lenBox, ← guardCode_PrudentV_MirrorV_eq_instB hk] at g1
+  rw [lenBoxUnbounded_iff_lenBox, ← guardCode_PrudentV_MirrorV_inner_eq_instB hk] at g2
   exact ⟨g1, g2⟩
 
 /-! #### `pPM` in both readings -/
 
 /-- `pPM(k)` in the standard reading (above the threshold). -/
 theorem eval_pPM_iff_std {k : V} (hk : (KP : V) ≤ k) :
-    Semiformula.Eval (s := stdActV V) ![k] Empty.elim pPM ↔
+    Semiformula.Eval (s := stdReadingV V) ![k] Empty.elim pPM ↔
       ((∃ n, EvalGraph n MirrorV (PrudentV k) MirrorV 0) ∧ (∃ n, EvalGraph n (MirrorV : V) (pBot (pConst 1)) MirrorV 1)) ∧
       ((∃ n, EvalGraph n MirrorV (PrudentTV k) MirrorV 1) ∧ (∃ n, EvalGraph n (MirrorV : V) (pBot (pConst 0)) MirrorV 0)) := by
   rw [pPM_def, pPMa_def, pPMb_def]
@@ -687,18 +687,18 @@ theorem eval_pPM_iff_std {k : V} (hk : (KP : V) ≤ k) :
 
 /-- `pPM(k)` in the swapped reading: the SAME four facts (the halves exchange roles). -/
 theorem eval_pPM_iff_swap {k : V} (hk : (KP : V) ≤ k) :
-    Semiformula.Eval (s := swapActS V) ![k] Empty.elim pPM ↔
+    Semiformula.Eval (s := swappedReading V) ![k] Empty.elim pPM ↔
       ((∃ n, EvalGraph n MirrorV (PrudentTV k) MirrorV 1) ∧ (∃ n, EvalGraph n (MirrorV : V) (pBot (pConst 0)) MirrorV 0)) ∧
       ((∃ n, EvalGraph n MirrorV (PrudentV k) MirrorV 0) ∧ (∃ n, EvalGraph n (MirrorV : V) (pBot (pConst 1)) MirrorV 1)) := by
-  rw [eval_swapActS, lMap_swap_pPM, ← stdActV_eq_stdActS, pPMa_def, pPMb_def]
+  rw [eval_swappedReading, lMap_swap_pPM, ← stdReadingV_eq_stdReading, pPMa_def, pPMb_def]
   simp only [LogicalConnective.HomClass.map_and, LogicalConnective.Prop.and_eq]
   rw [eval_qPM_iff_V hk, eval_qPP_iff_V, eval_qPMT_iff_V hk, eval_qPPT_iff_V]
 
-theorem eval_pPM_iff_stdActS {k : V} (hk : (KP : V) ≤ k) :
-    Semiformula.Eval (s := stdActS V) ![k] Empty.elim pPM ↔
+theorem eval_pPM_iff_stdReading {k : V} (hk : (KP : V) ≤ k) :
+    Semiformula.Eval (s := stdReading V) ![k] Empty.elim pPM ↔
       ((∃ n, EvalGraph n MirrorV (PrudentV k) MirrorV 0) ∧ (∃ n, EvalGraph n (MirrorV : V) (pBot (pConst 1)) MirrorV 1)) ∧
       ((∃ n, EvalGraph n MirrorV (PrudentTV k) MirrorV 1) ∧ (∃ n, EvalGraph n (MirrorV : V) (pBot (pConst 0)) MirrorV 0)) := by
-  rw [← stdActV_eq_stdActS]; exact eval_pPM_iff_std hk
+  rw [← stdReadingV_eq_stdReading]; exact eval_pPM_iff_std hk
 
 /-- **The bounded Löb premise of the Prudent × Mirror family, slack `(14 + KP, 16)`**: a box of
 `pPM(k)` with the slack (which also puts `k` above the description threshold) makes both searchers
@@ -716,7 +716,7 @@ theorem loebSound_pPM : LoebSound pPM (14 + KP) 16 := by
   have ha₁ := le_trans (slack4_le a _ _ _ _ _ (formulaLen_instB_pPMa k) (formulaLen_instB_pPM k)) (le_trans hb ha)
   have ha₂ := le_trans (slack4_le' a _ _ _ _ _ (formulaLen_instB_pPMb k) (formulaLen_instB_pPM k)) (le_trans hb ha)
   obtain ⟨g1, g2⟩ := pPM_all_V k a hk ha₁ ha₂ h
-  exact ⟨(eval_pPM_iff_stdActS hk).mpr
+  exact ⟨(eval_pPM_iff_stdReading hk).mpr
       ⟨⟨⟨4, mirror_copies3_V _ _ g1⟩, ⟨3, mirror_bot_defect_V⟩⟩, ⟨⟨4, mirror_copies3_V _ _ g2⟩, ⟨3, mirror_bot_coop_V⟩⟩⟩,
     (eval_pPM_iff_swap hk).mpr
       ⟨⟨⟨4, mirror_copies3_V _ _ g2⟩, ⟨3, mirror_bot_coop_V⟩⟩, ⟨⟨4, mirror_copies3_V _ _ g1⟩, ⟨3, mirror_bot_defect_V⟩⟩⟩⟩
@@ -733,8 +733,8 @@ the two-level ∧-elimination. -/
 theorem loeb_Prudent_vs_Mirror_core_of_nec {d : ℕ} (hE : BoundedInnerNec d) :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       (EvalGraph 3 (Prudent k) Mirror (Prudent k) 0 ∧ EvalGraph 3 (PrudentT k) Mirror (PrudentT k) 1) ∧
-      (LenProvableV TAct k (guardCode (⌜tmplP1⌝ : ℕ) (Prudent k) Mirror) ∧
-        LenProvableV TAct k (guardCode (⌜tmplP2⌝ : ℕ) (Prudent k) Mirror)) := by
+      (LenBox TAct k (guardCode (⌜templateP1⌝ : ℕ) (Prudent k) Mirror) ∧
+        LenBox TAct k (guardCode (⌜templateP2⌝ : ℕ) (Prudent k) Mirror)) := by
   obtain ⟨k₀, h⟩ := family_found pPM hE loebSound_pPM
   refine ⟨k₀, fun k hk ↦ ?_⟩
   obtain ⟨a, ha, hpc⟩ := h k hk
@@ -765,8 +765,8 @@ theorem loeb_PrudentT_vs_Mirror_of_nec {d : ℕ} (hE : BoundedInnerNec d) :
 within its budget `k` (conditional). -/
 theorem loeb_Prudent_vs_Mirror_guards_of_nec {d : ℕ} (hE : BoundedInnerNec d) :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
-      LenProvableV TAct k (guardCode (⌜tmplP1⌝ : ℕ) (Prudent k) Mirror) ∧
-      LenProvableV TAct k (guardCode (⌜tmplP2⌝ : ℕ) (Prudent k) Mirror) := by
+      LenBox TAct k (guardCode (⌜templateP1⌝ : ℕ) (Prudent k) Mirror) ∧
+      LenBox TAct k (guardCode (⌜templateP2⌝ : ℕ) (Prudent k) Mirror) := by
   obtain ⟨k₀, h⟩ := loeb_Prudent_vs_Mirror_core_of_nec hE
   exact ⟨k₀, fun k hk ↦ (h k hk).2⟩
 
@@ -788,8 +788,8 @@ theorem loeb_PrudentT_vs_Mirror :
 /-- **Prudent finds both its guards against Mirror, unconditional.** -/
 theorem loeb_Prudent_vs_Mirror_guards :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
-      LenProvableV TAct k (guardCode (⌜tmplP1⌝ : ℕ) (Prudent k) Mirror) ∧
-      LenProvableV TAct k (guardCode (⌜tmplP2⌝ : ℕ) (Prudent k) Mirror) :=
+      LenBox TAct k (guardCode (⌜templateP1⌝ : ℕ) (Prudent k) Mirror) ∧
+      LenBox TAct k (guardCode (⌜templateP2⌝ : ℕ) (Prudent k) Mirror) :=
   loeb_Prudent_vs_Mirror_guards_of_nec boundedInnerNec_sixteen
 
 end cells

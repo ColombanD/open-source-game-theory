@@ -1,40 +1,40 @@
 import ArithS.Agents.Guard
 
 /-!
-# ArithS.Subst — program substitution on codes (`psubst`), the engine's `Prog.subst`
+# ArithS.Subst — program substitution on codes (`substCode`), the engine's `Prog.subst`
 
 Roadmap M3 step (b). The engine's `.sim p q` runs `p.subst me opp` against `q.subst me opp`:
 `subst` is ONE-SHOT (`.self ↦ me`, `.opp ↦ opp`), `.bot` is a barrier (frozen), and it
 descends into the guard of a `.search` node — so a guard inside a simulated program refers
 to the OUTER players. On codes:
 
-* `gsubst me opp g` instantiates a six-variable template with the canonical descriptions of
+* `substTemplate me opp g` instantiates a six-variable template with the canonical descriptions of
   `me` and `opp` — it IS `guardCode g me opp` on every template (`IsSemiformula LAct 6 g`,
-  `gsubst_of_template`). The result is a SENTENCE
+  `substTemplate_of_template`). The result is a SENTENCE
   (no free variables), so a later `guardCode … me' opp'` is the identity on it
-  (`guardCode_gsubst`): a search node inside a simulated program evaluates its guard
+  (`guardCode_substTemplate`): a search node inside a simulated program evaluates its guard
   against the outer players whatever the current frame is — the engine's semantics.
   On a SEVEN-variable template (route (c), the budget slot `#6`; `ArithS.Guard`) it fills
   `#0..#5` with the outer descriptions and KEEPS `#6` a variable (`guardCodeSlot`,
-  `gsubst_of_template₇`), so the node that eventually runs the guard fills the slot with ITS
-  budget: `guardCodeB (gsubst me opp g) me' opp' k = guardCodeB g me opp k`
-  (`guardCodeB_gsubst₇`, the seven-variable twin of `guardCode_gsubst`) — the `.sim` debt of
+  `substTemplate_of_template₇`), so the node that eventually runs the guard fills the slot with ITS
+  budget: `guardCodeB (substTemplate me opp g) me' opp' k = guardCodeB g me opp k`
+  (`guardCodeB_substTemplate₇`, the seven-variable twin of `guardCode_substTemplate`) — the `.sim` debt of
   route (c) (`ROUTE_B_SCOPE.md` §6), discharged 2026-09-24. Every other code is fixed
-  (`gsubst_of_not`, hypothesis `¬IsSemiformula LAct 7 g`).
+  (`substTemplate_of_not`, hypothesis `¬IsSemiformula LAct 7 g`).
   (The identity on non-templates is what makes the τ-equivariance below hold on EVERY code:
-  `subst` truncates out-of-range variables to `0` and `relabelTemplate` fixes the
+  `subst` truncates out-of-range variables to `0` and `revalueTemplate` fixes the
   resulting non-formula, so on a code with more than seven free variables the two do not
   commute — `^rel 2 R ?[c_C, #8]` is a counterexample.)
-* `psubst me opp p`: the Δ₁ fixpoint on pairs `⟪x, y⟫` with parameters `me opp`, exactly
-  like `Relabel` (`ArithS.Prog`): `pConst a ↦ pConst a`, `pSelf ↦ me`, `pOpp ↦ opp`,
+* `substCode me opp p`: the Δ₁ fixpoint on pairs `⟪x, y⟫` with parameters `me opp`, exactly
+  like `Revalue` (`ArithS.Prog`): `pConst a ↦ pConst a`, `pSelf ↦ me`, `pOpp ↦ opp`,
   `pBot p ↦ pBot p` (frozen), `pSim`/`pIte` structurally, `pSearch k g p q ↦
-  pSearch k (gsubst me opp g) (psubst p) (psubst q)`, non-shapes fixed. A Σ₁ function
-  (`psubstDef`), with the equations `psubst_const/self/opp/bot/sim/ite/search`.
-* τ-equivariance: `swapcode_psubst : swapcode (psubst me opp p) = psubst (swapcode me)
-  (swapcode opp) (swapcode p)`, from the code-level swap equation for descriptions
-  (`termRelabelVec_descVec`: `termRelabel 1 0` maps `descVec me opp` entrywise to
-  `descVec (swapcode me) (swapcode opp)`) and the commutation of `relabelTemplate` with
-  `subst` (`relabelTemplate_subst`, by the formula recursion, as `substs_substs`).
+  pSearch k (substTemplate me opp g) (substCode p) (substCode q)`, non-shapes fixed. A Σ₁ function
+  (`substCodeDef`), with the equations `substCode_const/self/opp/bot/sim/ite/search`.
+* τ-equivariance: `transposeCode_substCode : transposeCode (substCode me opp p) = substCode (transposeCode me)
+  (transposeCode opp) (transposeCode p)`, from the code-level swap equation for descriptions
+  (`termRelabelVec_descriptions`: `termRelabel 1 0` maps `descriptions me opp` entrywise to
+  `descriptions (transposeCode me) (transposeCode opp)`) and the commutation of `revalueTemplate` with
+  `subst` (`revalueTemplate_subst`, by the formula recursion, as `substs_substs`).
 -/
 
 namespace ArithS
@@ -92,21 +92,21 @@ lemma csym_semiterm {n a : V} (ha : IsAct a) : IsSemiterm LAct n (csym a) := by
 lemma numeral_semiterm_LAct (n x : V) : IsSemiterm LAct n (numeral x) :=
   IsSemiterm.LAct_of_LOR (numeral_semiterm n x)
 
-lemma bnum_semiterm_LAct (n x : V) : IsSemiterm LAct n (bnum x) :=
-  IsSemiterm.LAct_of_LOR (bnum_semiterm n x)
+lemma binNumeral_semiterm_LAct (n x : V) : IsSemiterm LAct n (binNumeral x) :=
+  IsSemiterm.LAct_of_LOR (binNumeral_semiterm n x)
 
-lemma progT_semiterm_LAct (n x : V) : IsSemiterm LAct n (progT x) :=
-  IsSemiterm.LAct_of_LOR (progT_semiterm n x)
+lemma codeTerm_semiterm_LAct (n x : V) : IsSemiterm LAct n (codeTerm x) :=
+  IsSemiterm.LAct_of_LOR (codeTerm_semiterm n x)
 
-lemma dU_semiterm (n x : V) : IsSemiterm LAct n (dU x) := by
-  unfold dU
+lemma revalueU_semiterm (n x : V) : IsSemiterm LAct n (revalueU x) := by
+  unfold revalueU
   split_ifs
   · exact csym_semiterm isAct_zero
   · exact csym_semiterm isAct_one
   · exact numeral_semiterm_LAct n 0
 
-lemma dW_semiterm (n x : V) : IsSemiterm LAct n (dW x) := by
-  unfold dW
+lemma revalueW_semiterm (n x : V) : IsSemiterm LAct n (revalueW x) := by
+  unfold revalueW
   split_ifs
   · exact csym_semiterm isAct_one
   · exact csym_semiterm isAct_zero
@@ -115,21 +115,21 @@ lemma dW_semiterm (n x : V) : IsSemiterm LAct n (dW x) := by
 lemma six_eq : (6 : V) = 0 + 1 + 1 + 1 + 1 + 1 + 1 := by norm_num
 
 /-- The description vector is a vector of six closed terms. -/
-lemma descVec_semitermVec (me opp : V) : IsSemitermVec LAct 6 0 (descVec me opp) := by
-  rw [six_eq, descVec]
-  exact ((((((IsSemitermVec.nil 0).adjoin (dW_semiterm 0 opp)).adjoin (dU_semiterm 0 opp)).adjoin
-    (progT_semiterm_LAct 0 _)).adjoin (dW_semiterm 0 me)).adjoin (dU_semiterm 0 me)).adjoin
-    (progT_semiterm_LAct 0 _)
+lemma descriptions_semitermVec (me opp : V) : IsSemitermVec LAct 6 0 (descriptions me opp) := by
+  rw [six_eq, descriptions]
+  exact ((((((IsSemitermVec.nil 0).adjoin (revalueW_semiterm 0 opp)).adjoin (revalueU_semiterm 0 opp)).adjoin
+    (codeTerm_semiterm_LAct 0 _)).adjoin (revalueW_semiterm 0 me)).adjoin (revalueU_semiterm 0 me)).adjoin
+    (codeTerm_semiterm_LAct 0 _)
 
-lemma len_descVec (me opp : V) : len (descVec me opp) = 6 := (descVec_semitermVec me opp).lh
+lemma len_descriptions (me opp : V) : len (descriptions me opp) = 6 := (descriptions_semitermVec me opp).lh
 
-lemma descVec_utermVec (me opp : V) : IsUTermVec LAct (len (descVec me opp)) (descVec me opp) := by
-  rw [len_descVec]; exact (descVec_semitermVec me opp).isUTerm
+lemma descriptions_utermVec (me opp : V) : IsUTermVec LAct (len (descriptions me opp)) (descriptions me opp) := by
+  rw [len_descriptions]; exact (descriptions_semitermVec me opp).isUTerm
 
 /-- Instantiating a six-variable template gives a sentence. -/
 lemma isSemiformula_guardCode {g : V} (hg : IsSemiformula LAct 6 g) (me opp : V) :
     IsSemiformula LAct 0 (guardCode g me opp) :=
-  hg.subst (descVec_semitermVec me opp)
+  hg.subst (descriptions_semitermVec me opp)
 
 /-! ### Substitution fixes a formula whose free variables it does not touch
 
@@ -189,12 +189,12 @@ lemma subst_eq_self_of_le {n w p : V} (hp : IsSemiformula LAct n p) :
 /-- A sentence is fixed by `guardCode`. -/
 lemma guardCode_of_sentence {g : V} (hg : IsSemiformula LAct 0 g) (me opp : V) :
     guardCode g me opp = g :=
-  subst_eq_self_of_le hg (descVec_utermVec me opp) (by simp) (by simp)
+  subst_eq_self_of_le hg (descriptions_utermVec me opp) (by simp) (by simp)
 
 /-! ### The guard code with the node budget (route c): the gate lemma
 
 `guardCodeB g me opp k` (`ArithS.Guard`) fills `#0..#5` with the frame's descriptions and `#6` with
-`bnum k`. The GATE LEMMA of the design: a six-variable template never reads the seventh entry, so on
+`binNumeral k`. The GATE LEMMA of the design: a six-variable template never reads the seventh entry, so on
 every existing template `guardCodeB` IS `guardCode` (`guardCodeB_of_template`) — proved through the
 identity vector `idVec6` (`subst_eq_self` at `(6, 6)`, then `substs_substs` at `(6, 7)`, then the
 seven-entry `termSubstVec` computed entry by entry). -/
@@ -202,27 +202,27 @@ seven-entry `termSubstVec` computed entry by entry). -/
 lemma seven_eq : (7 : V) = 0 + 1 + 1 + 1 + 1 + 1 + 1 + 1 := by norm_num
 
 /-- The description vector with the budget is a vector of seven closed terms. -/
-lemma descVecB_semitermVec (me opp k : V) : IsSemitermVec LAct 7 0 (descVecB me opp k) := by
-  rw [seven_eq, descVecB]
-  exact (((((((IsSemitermVec.nil 0).adjoin (bnum_semiterm_LAct 0 k)).adjoin (dW_semiterm 0 opp)).adjoin
-    (dU_semiterm 0 opp)).adjoin (progT_semiterm_LAct 0 (dnum opp))).adjoin (dW_semiterm 0 me)).adjoin
-    (dU_semiterm 0 me)).adjoin (progT_semiterm_LAct 0 (dnum me))
+lemma descriptionsB_semitermVec (me opp k : V) : IsSemitermVec LAct 7 0 (descriptionsB me opp k) := by
+  rw [seven_eq, descriptionsB]
+  exact (((((((IsSemitermVec.nil 0).adjoin (binNumeral_semiterm_LAct 0 k)).adjoin (revalueW_semiterm 0 opp)).adjoin
+    (revalueU_semiterm 0 opp)).adjoin (codeTerm_semiterm_LAct 0 (canonical opp))).adjoin (revalueW_semiterm 0 me)).adjoin
+    (revalueU_semiterm 0 me)).adjoin (codeTerm_semiterm_LAct 0 (canonical me))
 
-lemma len_descVecB (me opp k : V) : len (descVecB me opp k) = 7 := (descVecB_semitermVec me opp k).lh
+lemma len_descriptionsB (me opp k : V) : len (descriptionsB me opp k) = 7 := (descriptionsB_semitermVec me opp k).lh
 
-lemma descVecB_utermVec (me opp k : V) :
-    IsUTermVec LAct (len (descVecB me opp k)) (descVecB me opp k) := by
-  rw [len_descVecB]; exact (descVecB_semitermVec me opp k).isUTerm
+lemma descriptionsB_utermVec (me opp k : V) :
+    IsUTermVec LAct (len (descriptionsB me opp k)) (descriptionsB me opp k) := by
+  rw [len_descriptionsB]; exact (descriptionsB_semitermVec me opp k).isUTerm
 
 /-- Instantiating a seven-variable template with the budget gives a sentence. -/
 lemma isSemiformula_guardCodeB {g : V} (hg : IsSemiformula LAct 7 g) (me opp k : V) :
     IsSemiformula LAct 0 (guardCodeB g me opp k) :=
-  hg.subst (descVecB_semitermVec me opp k)
+  hg.subst (descriptionsB_semitermVec me opp k)
 
 /-- A sentence is fixed by `guardCodeB`. -/
 lemma guardCodeB_of_sentence {g : V} (hg : IsSemiformula LAct 0 g) (me opp k : V) :
     guardCodeB g me opp k = g :=
-  subst_eq_self_of_le hg (descVecB_utermVec me opp k) (by simp) (by simp)
+  subst_eq_self_of_le hg (descriptionsB_utermVec me opp k) (by simp) (by simp)
 
 /-- The identity vector on the six frame variables. -/
 noncomputable def idVec6 : V := ^#0 ∷ ^#1 ∷ ^#2 ∷ ^#3 ∷ ^#4 ∷ ^#5 ∷ 0
@@ -263,8 +263,8 @@ lemma nth_idVec6 : ∀ i < (6 : V), (idVec6 : V).[i] = ^#i := by
   exact absurd hi (not_lt.mpr le_add_self)
 
 /-- The seven-entry substitution restricted to the six frame variables is the description vector. -/
-lemma termSubstVec_descVecB_idVec6 (me opp k : V) :
-    termSubstVec LAct 6 (descVecB me opp k) (idVec6 : V) = descVec me opp := by
+lemma termSubstVec_descriptionsB_idVec6 (me opp k : V) :
+    termSubstVec LAct 6 (descriptionsB me opp k) (idVec6 : V) = descriptions me opp := by
   have h0 : IsUTerm LAct (^#0 : V) := (IsSemiterm.bvar.mpr (by norm_num : (0 : V) < 6)).isUTerm
   have h1 : IsUTerm LAct (^#1 : V) := (IsSemiterm.bvar.mpr (by norm_num : (1 : V) < 6)).isUTerm
   have h2 : IsUTerm LAct (^#2 : V) := (IsSemiterm.bvar.mpr (by norm_num : (2 : V) < 6)).isUTerm
@@ -277,7 +277,7 @@ lemma termSubstVec_descVecB_idVec6 (me opp k : V) :
   have e3 := e2.adjoin h3
   have e4 := e3.adjoin h2
   have e5 := e4.adjoin h1
-  unfold idVec6 descVecB descVec
+  unfold idVec6 descriptionsB descriptions
   rw [six_eq, termSubstVec_cons h0 e5, termSubstVec_cons h1 e4, termSubstVec_cons h2 e3,
     termSubstVec_cons h3 e2, termSubstVec_cons h4 e1, termSubstVec_cons h5 e0, termSubstVec_nil,
     termSubst_bvar, termSubst_bvar, termSubst_bvar, termSubst_bvar, termSubst_bvar, termSubst_bvar]
@@ -295,68 +295,68 @@ theorem guardCodeB_of_template {g : V} (hg : IsSemiformula LAct 6 g) (me opp k :
   have hid7 : IsSemitermVec LAct 6 7 (idVec6 : V) := idVec6_semitermVec (by norm_num)
   have e : subst LAct (idVec6 : V) g = g := subst_eq_self hg hid6 nth_idVec6
   unfold guardCodeB guardCode
-  calc subst LAct (descVecB me opp k) g
-      = subst LAct (descVecB me opp k) (subst LAct (idVec6 : V) g) := by rw [e]
-    _ = subst LAct (termSubstVec LAct 6 (descVecB me opp k) (idVec6 : V)) g :=
-        substs_substs hg (descVecB_semitermVec me opp k) hid7
-    _ = subst LAct (descVec me opp) g := by rw [termSubstVec_descVecB_idVec6]
+  calc subst LAct (descriptionsB me opp k) g
+      = subst LAct (descriptionsB me opp k) (subst LAct (idVec6 : V) g) := by rw [e]
+    _ = subst LAct (termSubstVec LAct 6 (descriptionsB me opp k) (idVec6 : V)) g :=
+        substs_substs hg (descriptionsB_semitermVec me opp k) hid7
+    _ = subst LAct (descriptions me opp) g := by rw [termSubstVec_descriptionsB_idVec6]
 
 /-! ### The budget slot KEPT: `guardCodeSlot` (the `.sim` debt of route c, discharged 2026-09-24)
 
-`guardCodeSlot g me opp := subst (descVecSlot me opp) g` (`ArithS.Guard`) fills `#0..#5` of a
+`guardCodeSlot g me opp := subst (descriptionsSlot me opp) g` (`ArithS.Guard`) fills `#0..#5` of a
 seven-variable template with the frame's descriptions and keeps `#6` a variable. The result is a
 seven-variable formula with only `#6` free, and a later `guardCodeB … me' opp' k` in ANY frame fills
-that one variable with `bnum k` (`termSubstVec_descVecB_descVecSlot`, `guardCodeB_guardCodeSlot`):
+that one variable with `binNumeral k` (`termSubstVec_descriptionsB_descriptionsSlot`, `guardCodeB_guardCodeSlot`):
 the seven-variable twin of `guardCode_of_sentence`, with the budget the RUNNING node's. -/
 
 lemma bvar_six_semiterm : IsSemiterm LAct 7 (^#6 : V) := IsSemiterm.bvar.mpr (by norm_num)
 
 /-- The kept-slot vector is a vector of seven terms of arity seven (six closed, one the variable `#6`). -/
-lemma descVecSlot_semitermVec (me opp : V) : IsSemitermVec LAct 7 7 (descVecSlot me opp) := by
-  unfold descVecSlot
-  have := (((((((IsSemitermVec.nil 7).adjoin bvar_six_semiterm).adjoin (dW_semiterm 7 opp)).adjoin
-    (dU_semiterm 7 opp)).adjoin (progT_semiterm_LAct 7 (dnum opp))).adjoin (dW_semiterm 7 me)).adjoin
-    (dU_semiterm 7 me)).adjoin (progT_semiterm_LAct 7 (dnum me))
+lemma descriptionsSlot_semitermVec (me opp : V) : IsSemitermVec LAct 7 7 (descriptionsSlot me opp) := by
+  unfold descriptionsSlot
+  have := (((((((IsSemitermVec.nil 7).adjoin bvar_six_semiterm).adjoin (revalueW_semiterm 7 opp)).adjoin
+    (revalueU_semiterm 7 opp)).adjoin (codeTerm_semiterm_LAct 7 (canonical opp))).adjoin (revalueW_semiterm 7 me)).adjoin
+    (revalueU_semiterm 7 me)).adjoin (codeTerm_semiterm_LAct 7 (canonical me))
   rwa [← seven_eq] at this
 
-lemma len_descVecSlot (me opp : V) : len (descVecSlot me opp) = 7 := (descVecSlot_semitermVec me opp).lh
+lemma len_descriptionsSlot (me opp : V) : len (descriptionsSlot me opp) = 7 := (descriptionsSlot_semitermVec me opp).lh
 
 /-- Filling `#0..#5` of a seven-variable template gives a seven-variable formula (`#6` is still free). -/
 lemma isSemiformula_guardCodeSlot {g : V} (hg : IsSemiformula LAct 7 g) (me opp : V) :
     IsSemiformula LAct 7 (guardCodeSlot g me opp) :=
-  hg.subst (descVecSlot_semitermVec me opp)
+  hg.subst (descriptionsSlot_semitermVec me opp)
 
 private lemma termSubst_of_closed (w : V) {t : V} (ht : IsSemiterm LAct 0 t) : termSubst LAct w t = t :=
   termSubst_eq_self ht (fun i hi ↦ absurd hi (by simp))
 
-/-- The seventh entry of `descVecB` is the budget numeral. -/
-lemma nth_descVecB_budget (me opp k : V) : (descVecB me opp k).[6] = bnum k := by
-  unfold descVecB
+/-- The seventh entry of `descriptionsB` is the budget numeral. -/
+lemma nth_descriptionsB_budget (me opp k : V) : (descriptionsB me opp k).[6] = binNumeral k := by
+  unfold descriptionsB
   rw [show (6 : V) = 2 + 1 + 1 + 1 + 1 by norm_num, nth_adjoin_succ, nth_adjoin_succ, nth_adjoin_succ,
     nth_adjoin_succ]
   simp only [nth_adjoin_zero, nth_adjoin_one, nth_adjoin_two]
 
-/-- Substituting `descVecB me' opp' k` into the kept-slot vector of `(me, opp)`: the six closed
-descriptions are fixed and `#6 ↦ bnum k` — the frame is the OUTER one, the budget the node's. -/
-theorem termSubstVec_descVecB_descVecSlot (me opp me' opp' k : V) :
-    termSubstVec LAct 7 (descVecB me' opp' k) (descVecSlot me opp) = descVecB me opp k := by
+/-- Substituting `descriptionsB me' opp' k` into the kept-slot vector of `(me, opp)`: the six closed
+descriptions are fixed and `#6 ↦ binNumeral k` — the frame is the OUTER one, the budget the node's. -/
+theorem termSubstVec_descriptionsB_descriptionsSlot (me opp me' opp' k : V) :
+    termSubstVec LAct 7 (descriptionsB me' opp' k) (descriptionsSlot me opp) = descriptionsB me opp k := by
   have h6 : IsUTerm LAct (^#6 : V) := bvar_six_semiterm.isUTerm
   have e0 : IsUTermVec LAct 0 (0 : V) := IsUTermVec.empty
   have e1 := e0.adjoin h6
-  have e2 := e1.adjoin (dW_semiterm 0 opp).isUTerm
-  have e3 := e2.adjoin (dU_semiterm 0 opp).isUTerm
-  have e4 := e3.adjoin (progT_semiterm_LAct 0 (dnum opp)).isUTerm
-  have e5 := e4.adjoin (dW_semiterm 0 me).isUTerm
-  have e6 := e5.adjoin (dU_semiterm 0 me).isUTerm
-  unfold descVecSlot
-  rw [seven_eq, termSubstVec_cons (progT_semiterm_LAct 0 (dnum me)).isUTerm e6,
-    termSubstVec_cons (dU_semiterm 0 me).isUTerm e5, termSubstVec_cons (dW_semiterm 0 me).isUTerm e4,
-    termSubstVec_cons (progT_semiterm_LAct 0 (dnum opp)).isUTerm e3,
-    termSubstVec_cons (dU_semiterm 0 opp).isUTerm e2, termSubstVec_cons (dW_semiterm 0 opp).isUTerm e1,
-    termSubstVec_cons h6 e0, termSubstVec_nil, termSubst_bvar, nth_descVecB_budget,
-    termSubst_of_closed _ (progT_semiterm_LAct 0 (dnum me)), termSubst_of_closed _ (dU_semiterm 0 me),
-    termSubst_of_closed _ (dW_semiterm 0 me), termSubst_of_closed _ (progT_semiterm_LAct 0 (dnum opp)),
-    termSubst_of_closed _ (dU_semiterm 0 opp), termSubst_of_closed _ (dW_semiterm 0 opp)]
+  have e2 := e1.adjoin (revalueW_semiterm 0 opp).isUTerm
+  have e3 := e2.adjoin (revalueU_semiterm 0 opp).isUTerm
+  have e4 := e3.adjoin (codeTerm_semiterm_LAct 0 (canonical opp)).isUTerm
+  have e5 := e4.adjoin (revalueW_semiterm 0 me).isUTerm
+  have e6 := e5.adjoin (revalueU_semiterm 0 me).isUTerm
+  unfold descriptionsSlot
+  rw [seven_eq, termSubstVec_cons (codeTerm_semiterm_LAct 0 (canonical me)).isUTerm e6,
+    termSubstVec_cons (revalueU_semiterm 0 me).isUTerm e5, termSubstVec_cons (revalueW_semiterm 0 me).isUTerm e4,
+    termSubstVec_cons (codeTerm_semiterm_LAct 0 (canonical opp)).isUTerm e3,
+    termSubstVec_cons (revalueU_semiterm 0 opp).isUTerm e2, termSubstVec_cons (revalueW_semiterm 0 opp).isUTerm e1,
+    termSubstVec_cons h6 e0, termSubstVec_nil, termSubst_bvar, nth_descriptionsB_budget,
+    termSubst_of_closed _ (codeTerm_semiterm_LAct 0 (canonical me)), termSubst_of_closed _ (revalueU_semiterm 0 me),
+    termSubst_of_closed _ (revalueW_semiterm 0 me), termSubst_of_closed _ (codeTerm_semiterm_LAct 0 (canonical opp)),
+    termSubst_of_closed _ (revalueU_semiterm 0 opp), termSubst_of_closed _ (revalueW_semiterm 0 opp)]
   rfl
 
 /-- **The seven-variable twin of `guardCode_of_sentence`**: after `guardCodeSlot` by the OUTER frame,
@@ -364,8 +364,8 @@ theorem termSubstVec_descVecB_descVecSlot (me opp me' opp' k : V) :
 theorem guardCodeB_guardCodeSlot {g : V} (hg : IsSemiformula LAct 7 g) (me opp me' opp' k : V) :
     guardCodeB (guardCodeSlot g me opp) me' opp' k = guardCodeB g me opp k := by
   unfold guardCodeB guardCodeSlot
-  rw [substs_substs hg (descVecB_semitermVec me' opp' k) (descVecSlot_semitermVec me opp),
-    termSubstVec_descVecB_descVecSlot]
+  rw [substs_substs hg (descriptionsB_semitermVec me' opp' k) (descriptionsSlot_semitermVec me opp),
+    termSubstVec_descriptionsB_descriptionsSlot]
 
 /-- Arity monotonicity of `IsSemiformula` (from the structure: `bv p ≤ n ≤ m`). -/
 lemma isSemiformula_of_le {n m p : V} (hp : IsSemiformula LAct n p) (h : n ≤ m) : IsSemiformula LAct m p :=
@@ -374,78 +374,78 @@ lemma isSemiformula_of_le {n m p : V} (hp : IsSemiformula LAct n p) (h : n ≤ m
 lemma isSemiformula_seven_of_six {g : V} (hg : IsSemiformula LAct 6 g) : IsSemiformula LAct 7 g :=
   isSemiformula_of_le hg (by norm_num)
 
-/-! ### `gsubst`: instantiate a template with the outer descriptions -/
+/-! ### `substTemplate`: instantiate a template with the outer descriptions -/
 
 open scoped Classical in
 /-- Fill a six-variable template with the descriptions of `me` and `opp` (`guardCode`,
-`gsubst_of_template`); fill `#0..#5` of a seven-variable template with them, keeping the budget
-slot `#6` free (`guardCodeSlot`, `gsubst_of_template₇`); every other code is fixed (`gsubst_of_not`). -/
-noncomputable def gsubst (me opp g : V) : V :=
+`substTemplate_of_template`); fill `#0..#5` of a seven-variable template with them, keeping the budget
+slot `#6` free (`guardCodeSlot`, `substTemplate_of_template₇`); every other code is fixed (`substTemplate_of_not`). -/
+noncomputable def substTemplate (me opp g : V) : V :=
   if IsSemiformula LAct 6 g then guardCode g me opp
   else if IsSemiformula LAct 7 g then guardCodeSlot g me opp
   else g
 
-lemma gsubst_of_template {g : V} (hg : IsSemiformula LAct 6 g) (me opp : V) :
-    gsubst me opp g = guardCode g me opp := by
-  unfold gsubst; rw [if_pos hg]
+lemma substTemplate_of_template {g : V} (hg : IsSemiformula LAct 6 g) (me opp : V) :
+    substTemplate me opp g = guardCode g me opp := by
+  unfold substTemplate; rw [if_pos hg]
 
 /-- The middle case: a seven-variable template that is not a six-variable one (it reads `#6`). -/
-lemma gsubst_of_template₇ {g : V} (h6 : ¬IsSemiformula LAct 6 g) (h7 : IsSemiformula LAct 7 g) (me opp : V) :
-    gsubst me opp g = guardCodeSlot g me opp := by
-  unfold gsubst; rw [if_neg h6, if_pos h7]
+lemma substTemplate_of_template₇ {g : V} (h6 : ¬IsSemiformula LAct 6 g) (h7 : IsSemiformula LAct 7 g) (me opp : V) :
+    substTemplate me opp g = guardCodeSlot g me opp := by
+  unfold substTemplate; rw [if_neg h6, if_pos h7]
 
-lemma gsubst_of_not {g : V} (hg : ¬IsSemiformula LAct 7 g) (me opp : V) : gsubst me opp g = g := by
-  unfold gsubst; rw [if_neg (fun h ↦ hg (isSemiformula_seven_of_six h)), if_neg hg]
+lemma substTemplate_of_not {g : V} (hg : ¬IsSemiformula LAct 7 g) (me opp : V) : substTemplate me opp g = g := by
+  unfold substTemplate; rw [if_neg (fun h ↦ hg (isSemiformula_seven_of_six h)), if_neg hg]
 
-lemma isSemiformula_gsubst {g : V} (hg : IsSemiformula LAct 6 g) (me opp : V) :
-    IsSemiformula LAct 0 (gsubst me opp g) := by
-  rw [gsubst_of_template hg]; exact isSemiformula_guardCode hg me opp
+lemma isSemiformula_substTemplate {g : V} (hg : IsSemiformula LAct 6 g) (me opp : V) :
+    IsSemiformula LAct 0 (substTemplate me opp g) := by
+  rw [substTemplate_of_template hg]; exact isSemiformula_guardCode hg me opp
 
 /-- **Outer reference**: an instantiated template is a sentence, so the guard code computed by
 the evaluator in ANY later frame `(me', opp')` is the instantiation by the OUTER frame. -/
-theorem guardCode_gsubst {g : V} (hg : IsSemiformula LAct 6 g) (me opp me' opp' : V) :
-    guardCode (gsubst me opp g) me' opp' = gsubst me opp g :=
-  guardCode_of_sentence (isSemiformula_gsubst hg me opp) me' opp'
+theorem guardCode_substTemplate {g : V} (hg : IsSemiformula LAct 6 g) (me opp me' opp' : V) :
+    guardCode (substTemplate me opp g) me' opp' = substTemplate me opp g :=
+  guardCode_of_sentence (isSemiformula_substTemplate hg me opp) me' opp'
 
 /-- The same for the guard code with the node budget: an instantiated template is a sentence. -/
-theorem guardCodeB_gsubst {g : V} (hg : IsSemiformula LAct 6 g) (me opp me' opp' k : V) :
-    guardCodeB (gsubst me opp g) me' opp' k = gsubst me opp g :=
-  guardCodeB_of_sentence (isSemiformula_gsubst hg me opp) me' opp' k
+theorem guardCodeB_substTemplate {g : V} (hg : IsSemiformula LAct 6 g) (me opp me' opp' k : V) :
+    guardCodeB (substTemplate me opp g) me' opp' k = substTemplate me opp g :=
+  guardCodeB_of_sentence (isSemiformula_substTemplate hg me opp) me' opp' k
 
-/-- `gsubst` of a seven-variable template is a seven-variable formula (a sentence, or `#6` free). -/
-lemma isSemiformula_gsubst₇ {g : V} (hg : IsSemiformula LAct 7 g) (me opp : V) :
-    IsSemiformula LAct 7 (gsubst me opp g) := by
+/-- `substTemplate` of a seven-variable template is a seven-variable formula (a sentence, or `#6` free). -/
+lemma isSemiformula_substTemplate₇ {g : V} (hg : IsSemiformula LAct 7 g) (me opp : V) :
+    IsSemiformula LAct 7 (substTemplate me opp g) := by
   by_cases h6 : IsSemiformula LAct 6 g
-  · rw [gsubst_of_template h6]
+  · rw [substTemplate_of_template h6]
     exact isSemiformula_of_le (isSemiformula_guardCode h6 me opp) (by norm_num)
-  · rw [gsubst_of_template₇ h6 hg]; exact isSemiformula_guardCodeSlot hg me opp
+  · rw [substTemplate_of_template₇ h6 hg]; exact isSemiformula_guardCodeSlot hg me opp
 
 /-- **Outer reference on seven-variable templates, at the running node's budget**: a seven-variable
 guard inside a simulated program is evaluated against the OUTER players, with the budget slot filled by
-the node that runs it — the seven-variable twin of `guardCode_gsubst`. (On a six-variable template the
+the node that runs it — the seven-variable twin of `guardCode_substTemplate`. (On a six-variable template the
 slot is never read and both sides are `guardCode g me opp`.) -/
-theorem guardCodeB_gsubst₇ {g : V} (hg : IsSemiformula LAct 7 g) (me opp me' opp' k : V) :
-    guardCodeB (gsubst me opp g) me' opp' k = guardCodeB g me opp k := by
+theorem guardCodeB_substTemplate₇ {g : V} (hg : IsSemiformula LAct 7 g) (me opp me' opp' k : V) :
+    guardCodeB (substTemplate me opp g) me' opp' k = guardCodeB g me opp k := by
   by_cases h6 : IsSemiformula LAct 6 g
-  · rw [gsubst_of_template h6, guardCodeB_of_sentence (isSemiformula_guardCode h6 me opp),
+  · rw [substTemplate_of_template h6, guardCodeB_of_sentence (isSemiformula_guardCode h6 me opp),
       guardCodeB_of_template h6]
-  · rw [gsubst_of_template₇ h6 hg, guardCodeB_guardCodeSlot hg]
+  · rw [substTemplate_of_template₇ h6 hg, guardCodeB_guardCodeSlot hg]
 
-noncomputable def gsubstGraph : 𝚺₁.Semisentence 4 := .mkSigma
+noncomputable def substTemplateGraph : 𝚺₁.Semisentence 4 := .mkSigma
   “y me opp g. (!(isSemiformula LAct).sigma 6 g ∧ !guardCodeGraph y g me opp) ∨
     (¬!(isSemiformula LAct).pi 6 g ∧ !(isSemiformula LAct).sigma 7 g ∧ !guardCodeSlotGraph y g me opp) ∨
     (¬!(isSemiformula LAct).pi 7 g ∧ y = g)”
 
-instance gsubst.defined : 𝚺₁-Function₃ (gsubst : V → V → V → V) via gsubstGraph := .mk fun v ↦ by
-  simp [gsubstGraph, HierarchySymbol.Semiformula.val_sigma,
+instance substTemplate.defined : 𝚺₁-Function₃ (substTemplate : V → V → V → V) via substTemplateGraph := .mk fun v ↦ by
+  simp [substTemplateGraph, HierarchySymbol.Semiformula.val_sigma,
     (IsSemiformula.defined (L := LAct) (V := V)).proper.iff',
     (IsSemiformula.defined (L := LAct) (V := V)).df, guardCode.defined.df, guardCodeSlot.defined.df,
     numeral_eq_natCast]
   by_cases h6 : IsSemiformula LAct 6 (v 3)
-  · simp [h6, isSemiformula_seven_of_six h6, gsubst]
-  · by_cases h7 : IsSemiformula LAct 7 (v 3) <;> simp [h6, h7, gsubst]
+  · simp [h6, isSemiformula_seven_of_six h6, substTemplate]
+  · by_cases h7 : IsSemiformula LAct 7 (v 3) <;> simp [h6, h7, substTemplate]
 
-/-! ### `relabelTemplate` commutes with substitution
+/-! ### `revalueTemplate` commutes with substitution
 
 For `u, w ∈ {0, 1}` (the only re-valuations τ uses), re-valuing the action constants of an
 instantiated template is instantiating the re-valued template with the re-valued terms —
@@ -464,7 +464,7 @@ lemma IsSemiterm.termRelabel (hu : IsAct u) (hw : IsAct w) {n t : V} (ht : IsSem
   · intro x; simp
   · intro k f v hkf hv ih
     rw [termRelabel_func hkf hv.isUTerm, IsSemiterm.func]
-    exact ⟨isFunc_relabelSym hu hw hkf, IsSemitermVec.iff.mpr
+    exact ⟨isFunc_revalueSym hu hw hkf, IsSemitermVec.iff.mpr
       ⟨len_termRelabelVec hv.isUTerm, fun i hi ↦ by rw [nth_termRelabelVec hv.isUTerm hi]; exact ih i hi⟩⟩
 
 lemma IsSemitermVec.termRelabelVec (hu : IsAct u) (hw : IsAct w) {k n v : V}
@@ -488,7 +488,7 @@ lemma termRelabel_termBShift (hu : IsAct u) (hw : IsAct w) {t : V} (ht : IsUTerm
   · intro k f v hkf hv ih
     rw [termBShift_func hkf hv, termRelabel_func hkf hv.isSemitermVec.termBShiftVec.isUTerm,
       termRelabel_func hkf hv,
-      termBShift_func (isFunc_relabelSym hu hw hkf) (IsUTermVec.termRelabelVec hu hw hv)]
+      termBShift_func (isFunc_revalueSym hu hw hkf) (IsUTermVec.termRelabelVec hu hw hv)]
     simp only [qqFunc_inj, true_and]
     apply nth_ext' k (len_termRelabelVec hv.isSemitermVec.termBShiftVec.isUTerm)
       (len_termBShiftVec (IsUTermVec.termRelabelVec hu hw hv))
@@ -524,7 +524,7 @@ lemma termRelabel_termSubst (hu : IsAct u) (hw : IsAct w) {n t : V} (ht : IsSemi
   · intro k f ts hf hts ih
     rw [termSubst_func hf hts.isUTerm, termRelabel_func hf (hv.termSubstVec hts).isUTerm,
       termRelabel_func hf hts.isUTerm,
-      termSubst_func (isFunc_relabelSym hu hw hf) (IsUTermVec.termRelabelVec hu hw hts.isUTerm)]
+      termSubst_func (isFunc_revalueSym hu hw hf) (IsUTermVec.termRelabelVec hu hw hts.isUTerm)]
     simp only [qqFunc_inj, true_and]
     apply nth_ext' k (len_termRelabelVec (hv.termSubstVec hts).isUTerm)
       (len_termSubstVec (IsUTermVec.termRelabelVec hu hw hts.isUTerm))
@@ -533,15 +533,15 @@ lemma termRelabel_termSubst (hu : IsAct u) (hw : IsAct w) {n t : V} (ht : IsSemi
       nth_termSubstVec (IsUTermVec.termRelabelVec hu hw hts.isUTerm) hi,
       nth_termRelabelVec hts.isUTerm hi, ih i hi]
 
-/-- **`relabelTemplate` commutes with `subst`.** -/
-theorem relabelTemplate_subst (hu : IsAct u) (hw : IsAct w) {n p : V} (hp : IsSemiformula LAct n p) :
+/-- **`revalueTemplate` commutes with `subst`.** -/
+theorem revalueTemplate_subst (hu : IsAct u) (hw : IsAct w) {n p : V} (hp : IsSemiformula LAct n p) :
     ∀ {m v : V}, IsSemitermVec LAct n m v →
-    relabelTemplate u w (subst LAct v p) = subst LAct (termRelabelVec u w n v) (relabelTemplate u w p) := by
+    revalueTemplate u w (subst LAct v p) = subst LAct (termRelabelVec u w n v) (revalueTemplate u w p) := by
   apply IsSemiformula.pi1_structural_induction ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ hp
   · definability
   · intro n k R ts hR hts m v hv
-    rw [substs_rel hR hts.isUTerm, relabelTemplate_rel hR (hv.termSubstVec hts).isUTerm,
-      relabelTemplate_rel hR hts.isUTerm,
+    rw [substs_rel hR hts.isUTerm, revalueTemplate_rel hR (hv.termSubstVec hts).isUTerm,
+      revalueTemplate_rel hR hts.isUTerm,
       substs_rel hR (IsUTermVec.termRelabelVec hu hw hts.isUTerm)]
     simp only [qqRel_inj, true_and]
     apply nth_ext' k (len_termRelabelVec (hv.termSubstVec hts).isUTerm)
@@ -551,8 +551,8 @@ theorem relabelTemplate_subst (hu : IsAct u) (hw : IsAct w) {n p : V} (hp : IsSe
       nth_termSubstVec (IsUTermVec.termRelabelVec hu hw hts.isUTerm) hi,
       nth_termRelabelVec hts.isUTerm hi, termRelabel_termSubst hu hw (hts.nth hi) hv]
   · intro n k R ts hR hts m v hv
-    rw [substs_nrel hR hts.isUTerm, relabelTemplate_nrel hR (hv.termSubstVec hts).isUTerm,
-      relabelTemplate_nrel hR hts.isUTerm,
+    rw [substs_nrel hR hts.isUTerm, revalueTemplate_nrel hR (hv.termSubstVec hts).isUTerm,
+      revalueTemplate_nrel hR hts.isUTerm,
       substs_nrel hR (IsUTermVec.termRelabelVec hu hw hts.isUTerm)]
     simp only [qqNRel_inj, true_and]
     apply nth_ext' k (len_termRelabelVec (hv.termSubstVec hts).isUTerm)
@@ -565,81 +565,81 @@ theorem relabelTemplate_subst (hu : IsAct u) (hw : IsAct w) {n p : V} (hp : IsSe
   · intros; simp
   · intro n p q hp hq ihp ihq m v hv
     rw [substs_and hp.isUFormula hq.isUFormula,
-      relabelTemplate_and (hp.subst hv).isUFormula (hq.subst hv).isUFormula,
-      relabelTemplate_and hp.isUFormula hq.isUFormula,
-      substs_and (IsUFormula.relabelTemplate hu hw hp.isUFormula)
-        (IsUFormula.relabelTemplate hu hw hq.isUFormula), ihp hv, ihq hv]
+      revalueTemplate_and (hp.subst hv).isUFormula (hq.subst hv).isUFormula,
+      revalueTemplate_and hp.isUFormula hq.isUFormula,
+      substs_and (IsUFormula.revalueTemplate hu hw hp.isUFormula)
+        (IsUFormula.revalueTemplate hu hw hq.isUFormula), ihp hv, ihq hv]
   · intro n p q hp hq ihp ihq m v hv
     rw [substs_or hp.isUFormula hq.isUFormula,
-      relabelTemplate_or (hp.subst hv).isUFormula (hq.subst hv).isUFormula,
-      relabelTemplate_or hp.isUFormula hq.isUFormula,
-      substs_or (IsUFormula.relabelTemplate hu hw hp.isUFormula)
-        (IsUFormula.relabelTemplate hu hw hq.isUFormula), ihp hv, ihq hv]
+      revalueTemplate_or (hp.subst hv).isUFormula (hq.subst hv).isUFormula,
+      revalueTemplate_or hp.isUFormula hq.isUFormula,
+      substs_or (IsUFormula.revalueTemplate hu hw hp.isUFormula)
+        (IsUFormula.revalueTemplate hu hw hq.isUFormula), ihp hv, ihq hv]
   · intro n p hp ih m v hv
-    rw [substs_all hp.isUFormula, relabelTemplate_all (hp.subst hv.qVec).isUFormula,
-      relabelTemplate_all hp.isUFormula,
-      substs_all (IsUFormula.relabelTemplate hu hw hp.isUFormula), ih hv.qVec,
+    rw [substs_all hp.isUFormula, revalueTemplate_all (hp.subst hv.qVec).isUFormula,
+      revalueTemplate_all hp.isUFormula,
+      substs_all (IsUFormula.revalueTemplate hu hw hp.isUFormula), ih hv.qVec,
       termRelabelVec_qVec hu hw hv.isUTerm]
   · intro n p hp ih m v hv
-    rw [substs_ex hp.isUFormula, relabelTemplate_exs (hp.subst hv.qVec).isUFormula,
-      relabelTemplate_exs hp.isUFormula,
-      substs_ex (IsUFormula.relabelTemplate hu hw hp.isUFormula), ih hv.qVec,
+    rw [substs_ex hp.isUFormula, revalueTemplate_exs (hp.subst hv.qVec).isUFormula,
+      revalueTemplate_exs hp.isUFormula,
+      substs_ex (IsUFormula.revalueTemplate hu hw hp.isUFormula), ih hv.qVec,
       termRelabelVec_qVec hu hw hv.isUTerm]
 
-/-- `relabelTemplate` preserves the number of free variables. -/
-lemma IsSemiformula.relabelTemplate (hu : IsAct u) (hw : IsAct w) {n p : V} (hp : IsSemiformula LAct n p) :
-    IsSemiformula LAct n (relabelTemplate u w p) := by
+/-- `revalueTemplate` preserves the number of free variables. -/
+lemma IsSemiformula.revalueTemplate (hu : IsAct u) (hw : IsAct w) {n p : V} (hp : IsSemiformula LAct n p) :
+    IsSemiformula LAct n (revalueTemplate u w p) := by
   apply IsSemiformula.pi1_structural_induction ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ hp
   · definability
   · intro n k R v hR hv
-    rw [relabelTemplate_rel hR hv.isUTerm, IsSemiformula.rel]
+    rw [revalueTemplate_rel hR hv.isUTerm, IsSemiformula.rel]
     exact ⟨hR, IsSemitermVec.termRelabelVec hu hw hv⟩
   · intro n k R v hR hv
-    rw [relabelTemplate_nrel hR hv.isUTerm, IsSemiformula.nrel]
+    rw [revalueTemplate_nrel hR hv.isUTerm, IsSemiformula.nrel]
     exact ⟨hR, IsSemitermVec.termRelabelVec hu hw hv⟩
   · intro n; simp
   · intro n; simp
   · intro n p q hp hq ihp ihq
-    rw [relabelTemplate_and hp.isUFormula hq.isUFormula]; simp [ihp, ihq]
+    rw [revalueTemplate_and hp.isUFormula hq.isUFormula]; simp [ihp, ihq]
   · intro n p q hp hq ihp ihq
-    rw [relabelTemplate_or hp.isUFormula hq.isUFormula]; simp [ihp, ihq]
+    rw [revalueTemplate_or hp.isUFormula hq.isUFormula]; simp [ihp, ihq]
   · intro n p hp ih
-    rw [relabelTemplate_all hp.isUFormula]; simpa using ih
+    rw [revalueTemplate_all hp.isUFormula]; simpa using ih
   · intro n p hp ih
-    rw [relabelTemplate_exs hp.isUFormula]; simpa using ih
+    rw [revalueTemplate_exs hp.isUFormula]; simpa using ih
 
-lemma isSemiformula_relabelTemplate_swap_iff {n p : V} :
-    IsSemiformula LAct n (relabelTemplate 1 0 p) ↔ IsSemiformula LAct n p :=
-  ⟨fun h ↦ by simpa [relabelTemplate_swap_swap] using IsSemiformula.relabelTemplate isAct_one isAct_zero h,
-   IsSemiformula.relabelTemplate isAct_one isAct_zero⟩
+lemma isSemiformula_revalueTemplate_swap_iff {n p : V} :
+    IsSemiformula LAct n (revalueTemplate 1 0 p) ↔ IsSemiformula LAct n p :=
+  ⟨fun h ↦ by simpa [revalueTemplate_swap_swap] using IsSemiformula.revalueTemplate isAct_one isAct_zero h,
+   IsSemiformula.revalueTemplate isAct_one isAct_zero⟩
 
 end commute
 
 /-! ### The swap equation for descriptions, on codes -/
 
-section dnum
+section canonical
 
-lemma dnum_of_lt {x : V} (h : x < swapcode x) : dnum x = x := by
-  unfold dnum; rw [if_pos (le_def.mpr (Or.inr h))]
+lemma canonical_of_lt {x : V} (h : x < transposeCode x) : canonical x = x := by
+  unfold canonical; rw [if_pos (le_def.mpr (Or.inr h))]
 
-lemma dnum_of_eq {x : V} (h : x = swapcode x) : dnum x = x := by
-  unfold dnum; rw [if_pos (le_def.mpr (Or.inl h))]
+lemma canonical_of_eq {x : V} (h : x = transposeCode x) : canonical x = x := by
+  unfold canonical; rw [if_pos (le_def.mpr (Or.inl h))]
 
-lemma dnum_of_gt {x : V} (h : swapcode x < x) : dnum x = swapcode x := by
-  unfold dnum
+lemma canonical_of_gt {x : V} (h : transposeCode x < x) : canonical x = transposeCode x := by
+  unfold canonical
   rw [if_neg]
   intro h'
   rcases le_def.mp h' with e | l
   · rw [← e] at h; exact _root_.lt_irrefl _ h
   · exact lt_asymm h l
 
-lemma dnum_swapcode (x : V) : dnum (swapcode x) = dnum x := by
-  rcases lt_trichotomy x (swapcode x) with h | h | h
-  · rw [dnum_of_lt h, dnum_of_gt (by rw [swapcode_swapcode]; exact h), swapcode_swapcode]
+lemma canonical_transposeCode (x : V) : canonical (transposeCode x) = canonical x := by
+  rcases lt_trichotomy x (transposeCode x) with h | h | h
+  · rw [canonical_of_lt h, canonical_of_gt (by rw [transposeCode_transposeCode]; exact h), transposeCode_transposeCode]
   · rw [← h]
-  · rw [dnum_of_gt h, dnum_of_lt (by rw [swapcode_swapcode]; exact h)]
+  · rw [canonical_of_gt h, canonical_of_lt (by rw [transposeCode_transposeCode]; exact h)]
 
-end dnum
+end canonical
 
 /-- `termRelabel` fixes every `ℒₒᵣ` term (its symbols `0, 1, +, *` carry no action). -/
 lemma termRelabel_of_LOR {u w t : V} (ht : IsUTerm ℒₒᵣ t) : termRelabel u w t = t := by
@@ -650,8 +650,8 @@ lemma termRelabel_of_LOR {u w t : V} (ht : IsUTerm ℒₒᵣ t) : termRelabel u 
   · intro k f v hkf hv ih
     have hv' : IsUTermVec LAct k v := ⟨hv.lh, fun i hi ↦ IsUTerm.LAct_of_LOR (hv.nth hi)⟩
     rw [termRelabel_func (isFunc_LAct_of_LOR hkf) hv']
-    have hf : relabelSym f u w = f := by
-      unfold relabelSym
+    have hf : revalueSym f u w = f := by
+      unfold revalueSym
       rcases isFunc_LOR.mp hkf with ⟨_, rfl⟩ | ⟨_, rfl⟩ | ⟨_, rfl⟩ | ⟨_, rfl⟩ <;>
         rw [if_neg (by norm_num), if_neg (by norm_num)]
     rw [hf]
@@ -660,116 +660,116 @@ lemma termRelabel_of_LOR {u w t : V} (ht : IsUTerm ℒₒᵣ t) : termRelabel u 
     intro i hi
     rw [nth_termRelabelVec hv' hi, ih i hi]
 
-lemma termRelabel_bnum (u w n : V) : termRelabel u w (bnum n) = bnum n :=
-  termRelabel_of_LOR (bnum_uterm n)
+lemma termRelabel_binNumeral (u w n : V) : termRelabel u w (binNumeral n) = binNumeral n :=
+  termRelabel_of_LOR (binNumeral_uterm n)
 
-lemma termRelabel_progT (u w x : V) : termRelabel u w (progT x) = progT x :=
-  termRelabel_of_LOR (progT_uterm x)
+lemma termRelabel_codeTerm (u w x : V) : termRelabel u w (codeTerm x) = codeTerm x :=
+  termRelabel_of_LOR (codeTerm_uterm x)
 
 lemma termRelabel_numeral (u w n : V) : termRelabel u w (numeral n) = numeral n :=
   termRelabel_of_LOR (numeral_uterm n)
 
 lemma termRelabel_csym {u w a : V} (ha : IsAct a) :
-    termRelabel u w (csym a) = csym (relabelAct a u w) := by
+    termRelabel u w (csym a) = csym (revalueAction a u w) := by
   unfold csym
   rw [termRelabel_func (isFunc_csym ha) (by simp), termRelabelVec_nil]
   rcases ha with rfl | rfl
-  · rw [show (2 : V) + 0 = 2 by norm_num, relabelSym_two]; simp [relabelAct]
-  · rw [show (2 : V) + 1 = 3 by norm_num, relabelSym_three]; simp [relabelAct]
+  · rw [show (2 : V) + 0 = 2 by norm_num, revalueSym_two]; simp [revalueAction]
+  · rw [show (2 : V) + 1 = 3 by norm_num, revalueSym_three]; simp [revalueAction]
 
-lemma termRelabel_dU (x : V) : termRelabel 1 0 (dU x) = dU (swapcode x) := by
-  unfold dU
-  rw [swapcode_swapcode]
-  generalize swapcode x = s
+lemma termRelabel_revalueU (x : V) : termRelabel 1 0 (revalueU x) = revalueU (transposeCode x) := by
+  unfold revalueU
+  rw [transposeCode_transposeCode]
+  generalize transposeCode x = s
   rcases lt_trichotomy x s with h | h | h
-  · rw [if_pos h, if_neg (lt_asymm h), if_pos h, termRelabel_csym isAct_zero]; simp [relabelAct]
+  · rw [if_pos h, if_neg (lt_asymm h), if_pos h, termRelabel_csym isAct_zero]; simp [revalueAction]
   · subst h
     rw [if_neg (_root_.lt_irrefl _), if_neg (_root_.lt_irrefl _), termRelabel_numeral]
-  · rw [if_neg (lt_asymm h), if_pos h, if_pos h, termRelabel_csym isAct_one]; simp [relabelAct]
+  · rw [if_neg (lt_asymm h), if_pos h, if_pos h, termRelabel_csym isAct_one]; simp [revalueAction]
 
-lemma termRelabel_dW (x : V) : termRelabel 1 0 (dW x) = dW (swapcode x) := by
-  unfold dW
-  rw [swapcode_swapcode]
-  generalize swapcode x = s
+lemma termRelabel_revalueW (x : V) : termRelabel 1 0 (revalueW x) = revalueW (transposeCode x) := by
+  unfold revalueW
+  rw [transposeCode_transposeCode]
+  generalize transposeCode x = s
   rcases lt_trichotomy x s with h | h | h
-  · rw [if_pos h, if_neg (lt_asymm h), if_pos h, termRelabel_csym isAct_one]; simp [relabelAct]
+  · rw [if_pos h, if_neg (lt_asymm h), if_pos h, termRelabel_csym isAct_one]; simp [revalueAction]
   · subst h
     rw [if_neg (_root_.lt_irrefl _), if_neg (_root_.lt_irrefl _), termRelabel_numeral]
-  · rw [if_neg (lt_asymm h), if_pos h, if_pos h, termRelabel_csym isAct_zero]; simp [relabelAct]
+  · rw [if_neg (lt_asymm h), if_pos h, if_pos h, termRelabel_csym isAct_zero]; simp [revalueAction]
 
 /-- **The swap equation for descriptions**: the code-level τ maps the description vector of
-`(me, opp)` entrywise to that of `(swapcode me, swapcode opp)`. -/
-theorem termRelabelVec_descVec (me opp : V) :
-    termRelabelVec 1 0 6 (descVec me opp) = descVec (swapcode me) (swapcode opp) := by
+`(me, opp)` entrywise to that of `(transposeCode me, transposeCode opp)`. -/
+theorem termRelabelVec_descriptions (me opp : V) :
+    termRelabelVec 1 0 6 (descriptions me opp) = descriptions (transposeCode me) (transposeCode opp) := by
   have e0 : IsUTermVec LAct 0 (0 : V) := IsUTermVec.empty
-  have h1 : IsUTermVec LAct (0 + 1) (dW opp ∷ (0 : V)) := e0.adjoin (dW_semiterm 0 opp).isUTerm
-  have h2 : IsUTermVec LAct (0 + 1 + 1) (dU opp ∷ dW opp ∷ (0 : V)) := h1.adjoin (dU_semiterm 0 opp).isUTerm
-  have h3 : IsUTermVec LAct (0 + 1 + 1 + 1) (progT (dnum opp) ∷ dU opp ∷ dW opp ∷ (0 : V)) :=
-    h2.adjoin (progT_semiterm_LAct 0 (dnum opp)).isUTerm
-  have h4 : IsUTermVec LAct (0 + 1 + 1 + 1 + 1) (dW me ∷ progT (dnum opp) ∷ dU opp ∷ dW opp ∷ (0 : V)) :=
-    h3.adjoin (dW_semiterm 0 me).isUTerm
-  have h5 : IsUTermVec LAct (0 + 1 + 1 + 1 + 1 + 1) (dU me ∷ dW me ∷ progT (dnum opp) ∷ dU opp ∷ dW opp ∷ (0 : V)) :=
-    h4.adjoin (dU_semiterm 0 me).isUTerm
-  unfold descVec
-  rw [six_eq, termRelabelVec_cons (progT_semiterm_LAct 0 (dnum me)).isUTerm h5,
-    termRelabelVec_cons (dU_semiterm 0 me).isUTerm h4, termRelabelVec_cons (dW_semiterm 0 me).isUTerm h3,
-    termRelabelVec_cons (progT_semiterm_LAct 0 (dnum opp)).isUTerm h2,
-    termRelabelVec_cons (dU_semiterm 0 opp).isUTerm h1,
-    termRelabelVec_cons (dW_semiterm 0 opp).isUTerm e0, termRelabelVec_nil,
-    termRelabel_progT, termRelabel_progT, termRelabel_dU, termRelabel_dU, termRelabel_dW, termRelabel_dW,
-    dnum_swapcode, dnum_swapcode]
+  have h1 : IsUTermVec LAct (0 + 1) (revalueW opp ∷ (0 : V)) := e0.adjoin (revalueW_semiterm 0 opp).isUTerm
+  have h2 : IsUTermVec LAct (0 + 1 + 1) (revalueU opp ∷ revalueW opp ∷ (0 : V)) := h1.adjoin (revalueU_semiterm 0 opp).isUTerm
+  have h3 : IsUTermVec LAct (0 + 1 + 1 + 1) (codeTerm (canonical opp) ∷ revalueU opp ∷ revalueW opp ∷ (0 : V)) :=
+    h2.adjoin (codeTerm_semiterm_LAct 0 (canonical opp)).isUTerm
+  have h4 : IsUTermVec LAct (0 + 1 + 1 + 1 + 1) (revalueW me ∷ codeTerm (canonical opp) ∷ revalueU opp ∷ revalueW opp ∷ (0 : V)) :=
+    h3.adjoin (revalueW_semiterm 0 me).isUTerm
+  have h5 : IsUTermVec LAct (0 + 1 + 1 + 1 + 1 + 1) (revalueU me ∷ revalueW me ∷ codeTerm (canonical opp) ∷ revalueU opp ∷ revalueW opp ∷ (0 : V)) :=
+    h4.adjoin (revalueU_semiterm 0 me).isUTerm
+  unfold descriptions
+  rw [six_eq, termRelabelVec_cons (codeTerm_semiterm_LAct 0 (canonical me)).isUTerm h5,
+    termRelabelVec_cons (revalueU_semiterm 0 me).isUTerm h4, termRelabelVec_cons (revalueW_semiterm 0 me).isUTerm h3,
+    termRelabelVec_cons (codeTerm_semiterm_LAct 0 (canonical opp)).isUTerm h2,
+    termRelabelVec_cons (revalueU_semiterm 0 opp).isUTerm h1,
+    termRelabelVec_cons (revalueW_semiterm 0 opp).isUTerm e0, termRelabelVec_nil,
+    termRelabel_codeTerm, termRelabel_codeTerm, termRelabel_revalueU, termRelabel_revalueU, termRelabel_revalueW, termRelabel_revalueW,
+    canonical_transposeCode, canonical_transposeCode]
 
 /-- The code-level τ maps the kept-slot vector entrywise (the swap fixes the variable `#6`). -/
-theorem termRelabelVec_descVecSlot (me opp : V) :
-    termRelabelVec 1 0 7 (descVecSlot me opp) = descVecSlot (swapcode me) (swapcode opp) := by
+theorem termRelabelVec_descriptionsSlot (me opp : V) :
+    termRelabelVec 1 0 7 (descriptionsSlot me opp) = descriptionsSlot (transposeCode me) (transposeCode opp) := by
   have h6 : IsUTerm LAct (^#6 : V) := bvar_six_semiterm.isUTerm
   have e0 : IsUTermVec LAct 0 (0 : V) := IsUTermVec.empty
   have h0 : IsUTermVec LAct (0 + 1) (^#6 ∷ (0 : V)) := e0.adjoin h6
-  have h1 : IsUTermVec LAct (0 + 1 + 1) (dW opp ∷ ^#6 ∷ (0 : V)) := h0.adjoin (dW_semiterm 0 opp).isUTerm
-  have h2 : IsUTermVec LAct (0 + 1 + 1 + 1) (dU opp ∷ dW opp ∷ ^#6 ∷ (0 : V)) :=
-    h1.adjoin (dU_semiterm 0 opp).isUTerm
-  have h3 : IsUTermVec LAct (0 + 1 + 1 + 1 + 1) (progT (dnum opp) ∷ dU opp ∷ dW opp ∷ ^#6 ∷ (0 : V)) :=
-    h2.adjoin (progT_semiterm_LAct 0 (dnum opp)).isUTerm
+  have h1 : IsUTermVec LAct (0 + 1 + 1) (revalueW opp ∷ ^#6 ∷ (0 : V)) := h0.adjoin (revalueW_semiterm 0 opp).isUTerm
+  have h2 : IsUTermVec LAct (0 + 1 + 1 + 1) (revalueU opp ∷ revalueW opp ∷ ^#6 ∷ (0 : V)) :=
+    h1.adjoin (revalueU_semiterm 0 opp).isUTerm
+  have h3 : IsUTermVec LAct (0 + 1 + 1 + 1 + 1) (codeTerm (canonical opp) ∷ revalueU opp ∷ revalueW opp ∷ ^#6 ∷ (0 : V)) :=
+    h2.adjoin (codeTerm_semiterm_LAct 0 (canonical opp)).isUTerm
   have h4 : IsUTermVec LAct (0 + 1 + 1 + 1 + 1 + 1)
-      (dW me ∷ progT (dnum opp) ∷ dU opp ∷ dW opp ∷ ^#6 ∷ (0 : V)) :=
-    h3.adjoin (dW_semiterm 0 me).isUTerm
+      (revalueW me ∷ codeTerm (canonical opp) ∷ revalueU opp ∷ revalueW opp ∷ ^#6 ∷ (0 : V)) :=
+    h3.adjoin (revalueW_semiterm 0 me).isUTerm
   have h5 : IsUTermVec LAct (0 + 1 + 1 + 1 + 1 + 1 + 1)
-      (dU me ∷ dW me ∷ progT (dnum opp) ∷ dU opp ∷ dW opp ∷ ^#6 ∷ (0 : V)) :=
-    h4.adjoin (dU_semiterm 0 me).isUTerm
-  unfold descVecSlot
-  rw [seven_eq, termRelabelVec_cons (progT_semiterm_LAct 0 (dnum me)).isUTerm h5,
-    termRelabelVec_cons (dU_semiterm 0 me).isUTerm h4, termRelabelVec_cons (dW_semiterm 0 me).isUTerm h3,
-    termRelabelVec_cons (progT_semiterm_LAct 0 (dnum opp)).isUTerm h2,
-    termRelabelVec_cons (dU_semiterm 0 opp).isUTerm h1,
-    termRelabelVec_cons (dW_semiterm 0 opp).isUTerm h0,
+      (revalueU me ∷ revalueW me ∷ codeTerm (canonical opp) ∷ revalueU opp ∷ revalueW opp ∷ ^#6 ∷ (0 : V)) :=
+    h4.adjoin (revalueU_semiterm 0 me).isUTerm
+  unfold descriptionsSlot
+  rw [seven_eq, termRelabelVec_cons (codeTerm_semiterm_LAct 0 (canonical me)).isUTerm h5,
+    termRelabelVec_cons (revalueU_semiterm 0 me).isUTerm h4, termRelabelVec_cons (revalueW_semiterm 0 me).isUTerm h3,
+    termRelabelVec_cons (codeTerm_semiterm_LAct 0 (canonical opp)).isUTerm h2,
+    termRelabelVec_cons (revalueU_semiterm 0 opp).isUTerm h1,
+    termRelabelVec_cons (revalueW_semiterm 0 opp).isUTerm h0,
     termRelabelVec_cons h6 e0, termRelabelVec_nil,
-    termRelabel_progT, termRelabel_progT, termRelabel_dU, termRelabel_dU, termRelabel_dW, termRelabel_dW,
-    termRelabel_bvar, dnum_swapcode, dnum_swapcode]
+    termRelabel_codeTerm, termRelabel_codeTerm, termRelabel_revalueU, termRelabel_revalueU, termRelabel_revalueW, termRelabel_revalueW,
+    termRelabel_bvar, canonical_transposeCode, canonical_transposeCode]
 
-/-- **The swap equation for `gsubst`**, on every code. -/
-theorem relabelTemplate_gsubst (me opp g : V) :
-    relabelTemplate 1 0 (gsubst me opp g) = gsubst (swapcode me) (swapcode opp) (relabelTemplate 1 0 g) := by
+/-- **The swap equation for `substTemplate`**, on every code. -/
+theorem revalueTemplate_substTemplate (me opp g : V) :
+    revalueTemplate 1 0 (substTemplate me opp g) = substTemplate (transposeCode me) (transposeCode opp) (revalueTemplate 1 0 g) := by
   by_cases hg : IsSemiformula LAct 6 g
-  · rw [gsubst_of_template hg, gsubst_of_template (isSemiformula_relabelTemplate_swap_iff.mpr hg)]
+  · rw [substTemplate_of_template hg, substTemplate_of_template (isSemiformula_revalueTemplate_swap_iff.mpr hg)]
     unfold guardCode
-    rw [relabelTemplate_subst isAct_one isAct_zero hg (descVec_semitermVec me opp), termRelabelVec_descVec]
+    rw [revalueTemplate_subst isAct_one isAct_zero hg (descriptions_semitermVec me opp), termRelabelVec_descriptions]
   · by_cases h7 : IsSemiformula LAct 7 g
-    · rw [gsubst_of_template₇ hg h7,
-        gsubst_of_template₇ (fun h ↦ hg (isSemiformula_relabelTemplate_swap_iff.mp h))
-          (isSemiformula_relabelTemplate_swap_iff.mpr h7)]
+    · rw [substTemplate_of_template₇ hg h7,
+        substTemplate_of_template₇ (fun h ↦ hg (isSemiformula_revalueTemplate_swap_iff.mp h))
+          (isSemiformula_revalueTemplate_swap_iff.mpr h7)]
       unfold guardCodeSlot
-      rw [relabelTemplate_subst isAct_one isAct_zero h7 (descVecSlot_semitermVec me opp),
-        termRelabelVec_descVecSlot]
-    · rw [gsubst_of_not h7, gsubst_of_not (fun h ↦ h7 (isSemiformula_relabelTemplate_swap_iff.mp h))]
+      rw [revalueTemplate_subst isAct_one isAct_zero h7 (descriptionsSlot_semitermVec me opp),
+        termRelabelVec_descriptionsSlot]
+    · rw [substTemplate_of_not h7, substTemplate_of_not (fun h ↦ h7 (isSemiformula_revalueTemplate_swap_iff.mp h))]
 
-/-! ### `psubst`: a fixpoint on pairs `⟪x, y⟫` with parameters `me opp`
+/-! ### `substCode`: a fixpoint on pairs `⟪x, y⟫` with parameters `me opp`
 
-The search clause instantiates the stored template through `gsubst` (a Σ₁ function), so the
-core is Δ₁ (both polarities cite `gsubstGraph`, exactly like `Relabel` cites
-`relabelTemplateGraph`); the fixpoint is StrongFinite, since the sub-results referenced are
+The search clause instantiates the stored template through `substTemplate` (a Σ₁ function), so the
+core is Δ₁ (both polarities cite `substTemplateGraph`, exactly like `Revalue` cites
+`revalueTemplateGraph`); the fixpoint is StrongFinite, since the sub-results referenced are
 `⟪p, p'⟫` with `p < x` and `p' < y`. -/
 
-namespace Psubst
+namespace SubstCode
 
 /-- `Phi ![me, opp] C ⟪x, y⟫`: `y` is `x` with `pSelf ↦ me`, `pOpp ↦ opp`, `pBot` frozen and every
 stored template instantiated, given the sub-results in `C`. -/
@@ -781,7 +781,7 @@ def Phi (param : Fin 2 → V) (C : Set V) (pr : V) : Prop :=
   (∃ b a p q b' p' q', ⟪b, b'⟫ ∈ C ∧ ⟪p, p'⟫ ∈ C ∧ ⟪q, q'⟫ ∈ C ∧
     pr = ⟪pIte b a p q, pIte b' a p' q'⟫) ∨
   (∃ k g p q p' q', ⟪p, p'⟫ ∈ C ∧ ⟪q, q'⟫ ∈ C ∧
-    pr = ⟪pSearch k g p q, pSearch k (gsubst (param 0) (param 1) g) p' q'⟫) ∨
+    pr = ⟪pSearch k g p q, pSearch k (substTemplate (param 0) (param 1) g) p' q'⟫) ∨
   (∃ x, ¬IsShape x ∧ pr = ⟪x, x⟫)
 
 noncomputable def blueprint : Fixpoint.Blueprint 2 := ⟨.mkDelta
@@ -796,7 +796,7 @@ noncomputable def blueprint : Fixpoint.Blueprint 2 := ⟨.mkDelta
         ∃ b' < y, ∃ p' < y, ∃ q' < y,
           :⟪b, b'⟫:∈ C ∧ :⟪p, p'⟫:∈ C ∧ :⟪q, q'⟫:∈ C ∧ !pIteGraph y b' a p' q') ∨
       (∃ k < x, ∃ g < x, ∃ p < x, ∃ q < x, !pSearchGraph x k g p q ∧
-        ∃ g', !gsubstGraph g' me opp g ∧ ∃ p' < y, ∃ q' < y,
+        ∃ g', !substTemplateGraph g' me opp g ∧ ∃ p' < y, ∃ q' < y,
           :⟪p, p'⟫:∈ C ∧ :⟪q, q'⟫:∈ C ∧ !pSearchGraph y k g' p' q') ∨
       (¬!isShape x ∧ y = x) )”)
   (.mkPi “pr C me opp. ∃ x <⁺ pr, ∃ y <⁺ pr, !pairDef pr x y ∧
@@ -810,7 +810,7 @@ noncomputable def blueprint : Fixpoint.Blueprint 2 := ⟨.mkDelta
         ∃ b' < y, ∃ p' < y, ∃ q' < y,
           :⟪b, b'⟫:∈ C ∧ :⟪p, p'⟫:∈ C ∧ :⟪q, q'⟫:∈ C ∧ !pIteGraph y b' a p' q') ∨
       (∃ k < x, ∃ g < x, ∃ p < x, ∃ q < x, !pSearchGraph x k g p q ∧
-        ∀ g', !gsubstGraph g' me opp g → ∃ p' < y, ∃ q' < y,
+        ∀ g', !substTemplateGraph g' me opp g → ∃ p' < y, ∃ q' < y,
           :⟪p, p'⟫:∈ C ∧ :⟪q, q'⟫:∈ C ∧ !pSearchGraph y k g' p' q') ∨
       (¬!isShape x ∧ y = x) )”)⟩
 
@@ -828,7 +828,7 @@ private lemma phi_iff (param : Fin 2 → V) (C pr : V) :
           ⟪b, b'⟫ ∈ C ∧ ⟪p, p'⟫ ∈ C ∧ ⟪q, q'⟫ ∈ C ∧ y = pIte b' a p' q') ∨
       (∃ k < x, ∃ g < x, ∃ p < x, ∃ q < x, x = pSearch k g p q ∧
         ∃ p' < y, ∃ q' < y,
-          ⟪p, p'⟫ ∈ C ∧ ⟪q, q'⟫ ∈ C ∧ y = pSearch k (gsubst (param 0) (param 1) g) p' q') ∨
+          ⟪p, p'⟫ ∈ C ∧ ⟪q, q'⟫ ∈ C ∧ y = pSearch k (substTemplate (param 0) (param 1) g) p' q') ∨
       (¬IsShape x ∧ y = x) ) := by
   constructor
   · rintro (⟨a, rfl⟩ | rfl | rfl | ⟨p, rfl⟩ | ⟨p, q, p', q', hp, hq, rfl⟩ |
@@ -865,10 +865,10 @@ noncomputable def construction : Fixpoint.Construction V blueprint where
   defined := .mk <| by
     constructor
     · intro v
-      simp [blueprint, HierarchySymbol.Semiformula.val_sigma, gsubst.defined.df]
+      simp [blueprint, HierarchySymbol.Semiformula.val_sigma, substTemplate.defined.df]
     · intro v
       symm
-      simpa [blueprint, HierarchySymbol.Semiformula.val_sigma, gsubst.defined.df,
+      simpa [blueprint, HierarchySymbol.Semiformula.val_sigma, substTemplate.defined.df,
         pSelfGraph, pOppGraph, pSelf, pOpp, lt_and_eq_succ_iff]
         using phi_iff (fun i ↦ v i.succ.succ) (v 1) (v 0)
   monotone := by
@@ -902,81 +902,81 @@ instance : construction.StrongFinite V where
         ⟨hp, pair_lt_pair (by simp) (by simp)⟩, ⟨hq, pair_lt_pair (by simp) (by simp)⟩, rfl⟩))))))
     · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨x, hx, rfl⟩))))))
 
-end Psubst
+end SubstCode
 
-/-- `PsubstGraph me opp x y`: `y` is `x` with the frame `(me, opp)` substituted in. -/
-def PsubstGraph (me opp x y : V) : Prop := Psubst.construction.Fixpoint ![me, opp] ⟪x, y⟫
+/-- `SubstCodeGraph me opp x y`: `y` is `x` with the frame `(me, opp)` substituted in. -/
+def SubstCodeGraph (me opp x y : V) : Prop := SubstCode.construction.Fixpoint ![me, opp] ⟪x, y⟫
 
-noncomputable def psubstGraphDef : 𝚫₁.Semisentence 4 := .mkDelta
-  (.mkSigma “me opp x y. ∃ pr <⁺ (x + y + 1)², !pairDef pr x y ∧ !Psubst.blueprint.fixpointDefΔ₁.sigma pr me opp”)
-  (.mkPi “me opp x y. ∀ pr <⁺ (x + y + 1)², !pairDef pr x y → !Psubst.blueprint.fixpointDefΔ₁.pi pr me opp”)
+noncomputable def substCodeGraphDef : 𝚫₁.Semisentence 4 := .mkDelta
+  (.mkSigma “me opp x y. ∃ pr <⁺ (x + y + 1)², !pairDef pr x y ∧ !SubstCode.blueprint.fixpointDefΔ₁.sigma pr me opp”)
+  (.mkPi “me opp x y. ∀ pr <⁺ (x + y + 1)², !pairDef pr x y → !SubstCode.blueprint.fixpointDefΔ₁.pi pr me opp”)
 
-private lemma psubst_param_eq (v : Fin 3 → V) : (fun i ↦ v i.succ) = ![v 1, v 2] := by
+private lemma substCode_param_eq (v : Fin 3 → V) : (fun i ↦ v i.succ) = ![v 1, v 2] := by
   funext i; fin_cases i <;> rfl
 
-instance psubstGraph_defined : 𝚫₁-Relation₄[V] PsubstGraph via psubstGraphDef := .mk
+instance substCodeGraph_defined : 𝚫₁-Relation₄[V] SubstCodeGraph via substCodeGraphDef := .mk
   ⟨by intro v
-      simp [psubstGraphDef, HierarchySymbol.Semiformula.val_sigma,
-        Psubst.construction.fixpoint_definedΔ₁.proper.iff', Psubst.construction.fixpoint_definedΔ₁.df]
+      simp [substCodeGraphDef, HierarchySymbol.Semiformula.val_sigma,
+        SubstCode.construction.fixpoint_definedΔ₁.proper.iff', SubstCode.construction.fixpoint_definedΔ₁.df]
       constructor
-      · rintro h x _ rfl; simpa [psubst_param_eq] using h
-      · intro h; have := h ⟪v 2, v 3⟫ (by simp) rfl; simpa [psubst_param_eq] using this,
+      · rintro h x _ rfl; simpa [substCode_param_eq] using h
+      · intro h; have := h ⟪v 2, v 3⟫ (by simp) rfl; simpa [substCode_param_eq] using this,
    by intro v
-      simp [psubstGraphDef, HierarchySymbol.Semiformula.val_sigma,
-        Psubst.construction.fixpoint_definedΔ₁.df, PsubstGraph]⟩
+      simp [substCodeGraphDef, HierarchySymbol.Semiformula.val_sigma,
+        SubstCode.construction.fixpoint_definedΔ₁.df, SubstCodeGraph]⟩
 
-instance psubstGraph_definable : 𝚫₁-Relation₄[V] PsubstGraph := psubstGraph_defined.to_definable
+instance substCodeGraph_definable : 𝚫₁-Relation₄[V] SubstCodeGraph := substCodeGraph_defined.to_definable
 
-instance psubstGraph_definable' : Γ-[m + 1]-Relation₄[V] PsubstGraph :=
-  psubstGraph_definable.of_deltaOne
+instance substCodeGraph_definable' : Γ-[m + 1]-Relation₄[V] SubstCodeGraph :=
+  substCodeGraph_definable.of_deltaOne
 
-lemma PsubstGraph.case_iff {me opp x y : V} :
-    PsubstGraph me opp x y ↔
+lemma SubstCodeGraph.case_iff {me opp x y : V} :
+    SubstCodeGraph me opp x y ↔
     (∃ a, x = pConst a ∧ y = pConst a) ∨
     (x = pSelf ∧ y = me) ∨ (x = pOpp ∧ y = opp) ∨
     (∃ p, x = pBot p ∧ y = pBot p) ∨
-    (∃ p q p' q', PsubstGraph me opp p p' ∧ PsubstGraph me opp q q' ∧ x = pSim p q ∧ y = pSim p' q') ∨
-    (∃ b a p q b' p' q', PsubstGraph me opp b b' ∧ PsubstGraph me opp p p' ∧ PsubstGraph me opp q q' ∧
+    (∃ p q p' q', SubstCodeGraph me opp p p' ∧ SubstCodeGraph me opp q q' ∧ x = pSim p q ∧ y = pSim p' q') ∨
+    (∃ b a p q b' p' q', SubstCodeGraph me opp b b' ∧ SubstCodeGraph me opp p p' ∧ SubstCodeGraph me opp q q' ∧
       x = pIte b a p q ∧ y = pIte b' a p' q') ∨
-    (∃ k g p q p' q', PsubstGraph me opp p p' ∧ PsubstGraph me opp q q' ∧
-      x = pSearch k g p q ∧ y = pSearch k (gsubst me opp g) p' q') ∨
+    (∃ k g p q p' q', SubstCodeGraph me opp p p' ∧ SubstCodeGraph me opp q q' ∧
+      x = pSearch k g p q ∧ y = pSearch k (substTemplate me opp g) p' q') ∨
     (¬IsShape y ∧ x = y) :=
-  Iff.trans Psubst.construction.case (by simp [Psubst.construction, Psubst.Phi, PsubstGraph])
+  Iff.trans SubstCode.construction.case (by simp [SubstCode.construction, SubstCode.Phi, SubstCodeGraph])
 
 section inversion
 
 attribute [local simp] pConst pSelf pOpp pBot pSim pIte pSearch IsShape
 
-lemma PsubstGraph.const_iff {me opp a y : V} : PsubstGraph me opp (pConst a) y ↔ y = pConst a := by
-  rw [PsubstGraph.case_iff]; simp
+lemma SubstCodeGraph.const_iff {me opp a y : V} : SubstCodeGraph me opp (pConst a) y ↔ y = pConst a := by
+  rw [SubstCodeGraph.case_iff]; simp
   intro h₀ _ _ _ _ _ _ h; exact absurd h.symm (h₀ a)
-lemma PsubstGraph.self_iff {me opp y : V} : PsubstGraph me opp pSelf y ↔ y = me := by
-  rw [PsubstGraph.case_iff]; simp
+lemma SubstCodeGraph.self_iff {me opp y : V} : SubstCodeGraph me opp pSelf y ↔ y = me := by
+  rw [SubstCodeGraph.case_iff]; simp
   intro _ h₁ _ _ _ _ _ h; exact absurd h.symm h₁
-lemma PsubstGraph.opp_iff {me opp y : V} : PsubstGraph me opp pOpp y ↔ y = opp := by
-  rw [PsubstGraph.case_iff]; simp
+lemma SubstCodeGraph.opp_iff {me opp y : V} : SubstCodeGraph me opp pOpp y ↔ y = opp := by
+  rw [SubstCodeGraph.case_iff]; simp
   intro _ _ h₂ _ _ _ _ h; exact absurd h.symm h₂
-lemma PsubstGraph.bot_iff {me opp p y : V} : PsubstGraph me opp (pBot p) y ↔ y = pBot p := by
-  rw [PsubstGraph.case_iff]; simp
+lemma SubstCodeGraph.bot_iff {me opp p y : V} : SubstCodeGraph me opp (pBot p) y ↔ y = pBot p := by
+  rw [SubstCodeGraph.case_iff]; simp
   intro _ _ _ h₃ _ _ _ h; exact absurd h.symm (h₃ p)
-lemma PsubstGraph.sim_iff {me opp p q y : V} :
-    PsubstGraph me opp (pSim p q) y ↔
-    ∃ p' q', PsubstGraph me opp p p' ∧ PsubstGraph me opp q q' ∧ y = pSim p' q' := by
-  rw [PsubstGraph.case_iff]; simp
+lemma SubstCodeGraph.sim_iff {me opp p q y : V} :
+    SubstCodeGraph me opp (pSim p q) y ↔
+    ∃ p' q', SubstCodeGraph me opp p p' ∧ SubstCodeGraph me opp q q' ∧ y = pSim p' q' := by
+  rw [SubstCodeGraph.case_iff]; simp
   intro _ _ _ _ h₄ _ _ h; exact absurd h.symm (h₄ p q)
-lemma PsubstGraph.ite_iff {me opp b a p q y : V} :
-    PsubstGraph me opp (pIte b a p q) y ↔
-    ∃ b' p' q', PsubstGraph me opp b b' ∧ PsubstGraph me opp p p' ∧ PsubstGraph me opp q q' ∧
+lemma SubstCodeGraph.ite_iff {me opp b a p q y : V} :
+    SubstCodeGraph me opp (pIte b a p q) y ↔
+    ∃ b' p' q', SubstCodeGraph me opp b b' ∧ SubstCodeGraph me opp p p' ∧ SubstCodeGraph me opp q q' ∧
       y = pIte b' a p' q' := by
-  rw [PsubstGraph.case_iff]; simp
+  rw [SubstCodeGraph.case_iff]; simp
   intro _ _ _ _ _ h₅ _ h; exact absurd h.symm (h₅ b a p q)
-lemma PsubstGraph.search_iff {me opp k g p q y : V} :
-    PsubstGraph me opp (pSearch k g p q) y ↔
-    ∃ p' q', PsubstGraph me opp p p' ∧ PsubstGraph me opp q q' ∧ y = pSearch k (gsubst me opp g) p' q' := by
-  rw [PsubstGraph.case_iff]; simp
+lemma SubstCodeGraph.search_iff {me opp k g p q y : V} :
+    SubstCodeGraph me opp (pSearch k g p q) y ↔
+    ∃ p' q', SubstCodeGraph me opp p p' ∧ SubstCodeGraph me opp q q' ∧ y = pSearch k (substTemplate me opp g) p' q' := by
+  rw [SubstCodeGraph.case_iff]; simp
   intro _ _ _ _ _ _ h₆ h; exact absurd h.symm (h₆ k g p q)
-lemma PsubstGraph.of_not_shape {me opp x y : V} (hx : ¬IsShape x) : PsubstGraph me opp x y ↔ y = x := by
-  rw [PsubstGraph.case_iff]
+lemma SubstCodeGraph.of_not_shape {me opp x y : V} (hx : ¬IsShape x) : SubstCodeGraph me opp x y ↔ y = x := by
+  rw [SubstCodeGraph.case_iff]
   constructor
   · rintro (⟨a, rfl, _⟩ | ⟨rfl, _⟩ | ⟨rfl, _⟩ | ⟨p, rfl, _⟩ | ⟨p, q, p', q', _, _, rfl, _⟩ |
       ⟨b, a, p, q, b', p', q', _, _, _, rfl, _⟩ | ⟨k, g, p, q, p', q', _, _, rfl, _⟩ | ⟨_, h⟩)
@@ -993,117 +993,117 @@ lemma PsubstGraph.of_not_shape {me opp x y : V} (hx : ¬IsShape x) : PsubstGraph
 
 end inversion
 
-/-! ### `psubst` is a total Σ₁ function -/
+/-! ### `substCode` is a total Σ₁ function -/
 
-lemma psubstGraph_exists (me opp x : V) : ∃ y, PsubstGraph me opp x y := by
+lemma substCodeGraph_exists (me opp x : V) : ∃ y, SubstCodeGraph me opp x y := by
   induction x using ISigma1.sigma1_order_induction with
   | hP => definability
   | ind x ih =>
     by_cases hx : IsShape x
     · rcases hx with ⟨a, rfl⟩ | rfl | rfl | ⟨p, rfl⟩ | ⟨p, q, rfl⟩ | ⟨b, a, p, q, rfl⟩ | ⟨k, g, p, q, rfl⟩
-      · exact ⟨_, PsubstGraph.const_iff.mpr rfl⟩
-      · exact ⟨_, PsubstGraph.self_iff.mpr rfl⟩
-      · exact ⟨_, PsubstGraph.opp_iff.mpr rfl⟩
-      · exact ⟨_, PsubstGraph.bot_iff.mpr rfl⟩
+      · exact ⟨_, SubstCodeGraph.const_iff.mpr rfl⟩
+      · exact ⟨_, SubstCodeGraph.self_iff.mpr rfl⟩
+      · exact ⟨_, SubstCodeGraph.opp_iff.mpr rfl⟩
+      · exact ⟨_, SubstCodeGraph.bot_iff.mpr rfl⟩
       · obtain ⟨p', hp⟩ := ih p (by simp); obtain ⟨q', hq⟩ := ih q (by simp)
-        exact ⟨_, PsubstGraph.sim_iff.mpr ⟨p', q', hp, hq, rfl⟩⟩
+        exact ⟨_, SubstCodeGraph.sim_iff.mpr ⟨p', q', hp, hq, rfl⟩⟩
       · obtain ⟨b', hb⟩ := ih b (by simp); obtain ⟨p', hp⟩ := ih p (by simp)
         obtain ⟨q', hq⟩ := ih q (by simp)
-        exact ⟨_, PsubstGraph.ite_iff.mpr ⟨b', p', q', hb, hp, hq, rfl⟩⟩
+        exact ⟨_, SubstCodeGraph.ite_iff.mpr ⟨b', p', q', hb, hp, hq, rfl⟩⟩
       · obtain ⟨p', hp⟩ := ih p (by simp); obtain ⟨q', hq⟩ := ih q (by simp)
-        exact ⟨_, PsubstGraph.search_iff.mpr ⟨p', q', hp, hq, rfl⟩⟩
-    · exact ⟨x, (PsubstGraph.of_not_shape hx).mpr rfl⟩
+        exact ⟨_, SubstCodeGraph.search_iff.mpr ⟨p', q', hp, hq, rfl⟩⟩
+    · exact ⟨x, (SubstCodeGraph.of_not_shape hx).mpr rfl⟩
 
-lemma psubstGraph_unique (me opp x : V) :
-    ∀ y₁ y₂, PsubstGraph me opp x y₁ → PsubstGraph me opp x y₂ → y₁ = y₂ := by
+lemma substCodeGraph_unique (me opp x : V) :
+    ∀ y₁ y₂, SubstCodeGraph me opp x y₁ → SubstCodeGraph me opp x y₂ → y₁ = y₂ := by
   induction x using ISigma1.pi1_order_induction with
   | hP => definability
   | ind x ih =>
     intro y₁ y₂ h₁ h₂
     by_cases hx : IsShape x
     · rcases hx with ⟨a, rfl⟩ | rfl | rfl | ⟨p, rfl⟩ | ⟨p, q, rfl⟩ | ⟨b, a, p, q, rfl⟩ | ⟨k, g, p, q, rfl⟩
-      · rw [PsubstGraph.const_iff] at h₁ h₂; rw [h₁, h₂]
-      · rw [PsubstGraph.self_iff] at h₁ h₂; rw [h₁, h₂]
-      · rw [PsubstGraph.opp_iff] at h₁ h₂; rw [h₁, h₂]
-      · rw [PsubstGraph.bot_iff] at h₁ h₂; rw [h₁, h₂]
-      · rcases PsubstGraph.sim_iff.mp h₁ with ⟨p₁, q₁, hp₁, hq₁, rfl⟩
-        rcases PsubstGraph.sim_iff.mp h₂ with ⟨p₂, q₂, hp₂, hq₂, rfl⟩
+      · rw [SubstCodeGraph.const_iff] at h₁ h₂; rw [h₁, h₂]
+      · rw [SubstCodeGraph.self_iff] at h₁ h₂; rw [h₁, h₂]
+      · rw [SubstCodeGraph.opp_iff] at h₁ h₂; rw [h₁, h₂]
+      · rw [SubstCodeGraph.bot_iff] at h₁ h₂; rw [h₁, h₂]
+      · rcases SubstCodeGraph.sim_iff.mp h₁ with ⟨p₁, q₁, hp₁, hq₁, rfl⟩
+        rcases SubstCodeGraph.sim_iff.mp h₂ with ⟨p₂, q₂, hp₂, hq₂, rfl⟩
         rw [ih p (by simp) _ _ hp₁ hp₂, ih q (by simp) _ _ hq₁ hq₂]
-      · rcases PsubstGraph.ite_iff.mp h₁ with ⟨b₁, p₁, q₁, hb₁, hp₁, hq₁, rfl⟩
-        rcases PsubstGraph.ite_iff.mp h₂ with ⟨b₂, p₂, q₂, hb₂, hp₂, hq₂, rfl⟩
+      · rcases SubstCodeGraph.ite_iff.mp h₁ with ⟨b₁, p₁, q₁, hb₁, hp₁, hq₁, rfl⟩
+        rcases SubstCodeGraph.ite_iff.mp h₂ with ⟨b₂, p₂, q₂, hb₂, hp₂, hq₂, rfl⟩
         rw [ih b (by simp) _ _ hb₁ hb₂, ih p (by simp) _ _ hp₁ hp₂, ih q (by simp) _ _ hq₁ hq₂]
-      · rcases PsubstGraph.search_iff.mp h₁ with ⟨p₁, q₁, hp₁, hq₁, rfl⟩
-        rcases PsubstGraph.search_iff.mp h₂ with ⟨p₂, q₂, hp₂, hq₂, rfl⟩
+      · rcases SubstCodeGraph.search_iff.mp h₁ with ⟨p₁, q₁, hp₁, hq₁, rfl⟩
+        rcases SubstCodeGraph.search_iff.mp h₂ with ⟨p₂, q₂, hp₂, hq₂, rfl⟩
         rw [ih p (by simp) _ _ hp₁ hp₂, ih q (by simp) _ _ hq₁ hq₂]
-    · rw [PsubstGraph.of_not_shape hx] at h₁ h₂; rw [h₁, h₂]
+    · rw [SubstCodeGraph.of_not_shape hx] at h₁ h₂; rw [h₁, h₂]
 
-lemma psubstGraph_existsUnique (me opp x : V) : ∃! y, PsubstGraph me opp x y := by
-  rcases psubstGraph_exists me opp x with ⟨y, hy⟩
-  exact ExistsUnique.intro y hy (fun y' h' ↦ psubstGraph_unique me opp x y' y h' hy)
+lemma substCodeGraph_existsUnique (me opp x : V) : ∃! y, SubstCodeGraph me opp x y := by
+  rcases substCodeGraph_exists me opp x with ⟨y, hy⟩
+  exact ExistsUnique.intro y hy (fun y' h' ↦ substCodeGraph_unique me opp x y' y h' hy)
 
 /-- **Program substitution**: `pSelf ↦ me`, `pOpp ↦ opp`, `pBot` frozen, stored templates
 instantiated with the descriptions of `(me, opp)` — the engine's `Prog.subst`. -/
-noncomputable def psubst (me opp x : V) : V := Classical.choose! (psubstGraph_existsUnique me opp x)
+noncomputable def substCode (me opp x : V) : V := Classical.choose! (substCodeGraph_existsUnique me opp x)
 
-lemma psubst_graph (me opp x : V) : PsubstGraph me opp x (psubst me opp x) :=
-  Classical.choose!_spec (psubstGraph_existsUnique me opp x)
+lemma substCode_graph (me opp x : V) : SubstCodeGraph me opp x (substCode me opp x) :=
+  Classical.choose!_spec (substCodeGraph_existsUnique me opp x)
 
-lemma psubst_eq_of_graph {me opp x y : V} (h : PsubstGraph me opp x y) : psubst me opp x = y :=
-  psubstGraph_unique me opp x _ _ (psubst_graph me opp x) h
+lemma substCode_eq_of_graph {me opp x y : V} (h : SubstCodeGraph me opp x y) : substCode me opp x = y :=
+  substCodeGraph_unique me opp x _ _ (substCode_graph me opp x) h
 
-noncomputable def psubstDef : 𝚺₁.Semisentence 4 := .mkSigma “y me opp x. !psubstGraphDef.sigma me opp x y”
+noncomputable def substCodeDef : 𝚺₁.Semisentence 4 := .mkSigma “y me opp x. !substCodeGraphDef.sigma me opp x y”
 
-instance psubst_defined : 𝚺₁-Function₃ (psubst : V → V → V → V) via psubstDef := .mk fun v ↦ by
-  simp [psubstDef, HierarchySymbol.Semiformula.val_sigma, psubstGraph_defined.df]
+instance substCode_defined : 𝚺₁-Function₃ (substCode : V → V → V → V) via substCodeDef := .mk fun v ↦ by
+  simp [substCodeDef, HierarchySymbol.Semiformula.val_sigma, substCodeGraph_defined.df]
   constructor
-  · intro h; exact (psubst_eq_of_graph h).symm
-  · intro h; rw [h]; exact psubst_graph _ _ _
+  · intro h; exact (substCode_eq_of_graph h).symm
+  · intro h; rw [h]; exact substCode_graph _ _ _
 
-instance psubst_definable : 𝚺₁-Function₃ (psubst : V → V → V → V) := psubst_defined.to_definable
+instance substCode_definable : 𝚺₁-Function₃ (substCode : V → V → V → V) := substCode_defined.to_definable
 
-instance psubst_definable' : Γ-[m + 1]-Function₃ (psubst : V → V → V → V) :=
-  psubst_definable.of_sigmaOne
+instance substCode_definable' : Γ-[m + 1]-Function₃ (substCode : V → V → V → V) :=
+  substCode_definable.of_sigmaOne
 
-@[simp] lemma psubst_const (me opp a : V) : psubst me opp (pConst a) = pConst a :=
-  psubst_eq_of_graph (PsubstGraph.const_iff.mpr rfl)
-@[simp] lemma psubst_self (me opp : V) : psubst me opp (pSelf : V) = me :=
-  psubst_eq_of_graph (PsubstGraph.self_iff.mpr rfl)
-@[simp] lemma psubst_opp (me opp : V) : psubst me opp (pOpp : V) = opp :=
-  psubst_eq_of_graph (PsubstGraph.opp_iff.mpr rfl)
-@[simp] lemma psubst_bot (me opp p : V) : psubst me opp (pBot p) = pBot p :=
-  psubst_eq_of_graph (PsubstGraph.bot_iff.mpr rfl)
-@[simp] lemma psubst_sim (me opp p q : V) :
-    psubst me opp (pSim p q) = pSim (psubst me opp p) (psubst me opp q) :=
-  psubst_eq_of_graph (PsubstGraph.sim_iff.mpr ⟨_, _, psubst_graph me opp p, psubst_graph me opp q, rfl⟩)
-@[simp] lemma psubst_ite (me opp b a p q : V) :
-    psubst me opp (pIte b a p q) = pIte (psubst me opp b) a (psubst me opp p) (psubst me opp q) :=
-  psubst_eq_of_graph (PsubstGraph.ite_iff.mpr
-    ⟨_, _, _, psubst_graph me opp b, psubst_graph me opp p, psubst_graph me opp q, rfl⟩)
-@[simp] lemma psubst_search (me opp k g p q : V) :
-    psubst me opp (pSearch k g p q) = pSearch k (gsubst me opp g) (psubst me opp p) (psubst me opp q) :=
-  psubst_eq_of_graph (PsubstGraph.search_iff.mpr ⟨_, _, psubst_graph me opp p, psubst_graph me opp q, rfl⟩)
-lemma psubst_of_not_shape {me opp x : V} (hx : ¬IsShape x) : psubst me opp x = x :=
-  psubst_eq_of_graph ((PsubstGraph.of_not_shape hx).mpr rfl)
+@[simp] lemma substCode_const (me opp a : V) : substCode me opp (pConst a) = pConst a :=
+  substCode_eq_of_graph (SubstCodeGraph.const_iff.mpr rfl)
+@[simp] lemma substCode_self (me opp : V) : substCode me opp (pSelf : V) = me :=
+  substCode_eq_of_graph (SubstCodeGraph.self_iff.mpr rfl)
+@[simp] lemma substCode_opp (me opp : V) : substCode me opp (pOpp : V) = opp :=
+  substCode_eq_of_graph (SubstCodeGraph.opp_iff.mpr rfl)
+@[simp] lemma substCode_bot (me opp p : V) : substCode me opp (pBot p) = pBot p :=
+  substCode_eq_of_graph (SubstCodeGraph.bot_iff.mpr rfl)
+@[simp] lemma substCode_sim (me opp p q : V) :
+    substCode me opp (pSim p q) = pSim (substCode me opp p) (substCode me opp q) :=
+  substCode_eq_of_graph (SubstCodeGraph.sim_iff.mpr ⟨_, _, substCode_graph me opp p, substCode_graph me opp q, rfl⟩)
+@[simp] lemma substCode_ite (me opp b a p q : V) :
+    substCode me opp (pIte b a p q) = pIte (substCode me opp b) a (substCode me opp p) (substCode me opp q) :=
+  substCode_eq_of_graph (SubstCodeGraph.ite_iff.mpr
+    ⟨_, _, _, substCode_graph me opp b, substCode_graph me opp p, substCode_graph me opp q, rfl⟩)
+@[simp] lemma substCode_search (me opp k g p q : V) :
+    substCode me opp (pSearch k g p q) = pSearch k (substTemplate me opp g) (substCode me opp p) (substCode me opp q) :=
+  substCode_eq_of_graph (SubstCodeGraph.search_iff.mpr ⟨_, _, substCode_graph me opp p, substCode_graph me opp q, rfl⟩)
+lemma substCode_of_not_shape {me opp x : V} (hx : ¬IsShape x) : substCode me opp x = x :=
+  substCode_eq_of_graph ((SubstCodeGraph.of_not_shape hx).mpr rfl)
 
 /-! ### τ-equivariance -/
 
 /-- **τ commutes with substitution**: transposing a substituted program is substituting the
 transposed frame into the transposed program (on every code). -/
-theorem swapcode_psubst (me opp x : V) :
-    swapcode (psubst me opp x) = psubst (swapcode me) (swapcode opp) (swapcode x) := by
+theorem transposeCode_substCode (me opp x : V) :
+    transposeCode (substCode me opp x) = substCode (transposeCode me) (transposeCode opp) (transposeCode x) := by
   induction x using ISigma1.pi1_order_induction with
   | hP => definability
   | ind x ih =>
     by_cases hx : IsShape x
     · rcases hx with ⟨a, rfl⟩ | rfl | rfl | ⟨p, rfl⟩ | ⟨p, q, rfl⟩ | ⟨b, a, p, q, rfl⟩ | ⟨k, g, p, q, rfl⟩
-      · simp [swapcode]
-      · simp [swapcode]
-      · simp [swapcode]
-      · simp [swapcode]
-      · simp [swapcode, ih p (by simp), ih q (by simp)]
-      · simp [swapcode, ih b (by simp), ih p (by simp), ih q (by simp)]
-      · simp [swapcode, ih p (by simp), ih q (by simp), relabelTemplate_gsubst]
-    · simp only [swapcode]
-      rw [psubst_of_not_shape hx, relabel_of_not_shape hx, psubst_of_not_shape hx]
+      · simp [transposeCode]
+      · simp [transposeCode]
+      · simp [transposeCode]
+      · simp [transposeCode]
+      · simp [transposeCode, ih p (by simp), ih q (by simp)]
+      · simp [transposeCode, ih b (by simp), ih p (by simp), ih q (by simp)]
+      · simp [transposeCode, ih p (by simp), ih q (by simp), revalueTemplate_substTemplate]
+    · simp only [transposeCode]
+      rw [substCode_of_not_shape hx, revalue_of_not_shape hx, substCode_of_not_shape hx]
 
 end ArithS

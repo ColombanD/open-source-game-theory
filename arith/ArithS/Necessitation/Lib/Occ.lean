@@ -5,11 +5,11 @@ import ArithS.Necessitation.WalkLemmas
 # ArithS.Necessitation.Lib.Occ — occurrence-count and shift-length rows of the library `Λ`
 
 `DESIGN_inner_necessitation.md` §4.1–4.2 and `DESIGN_describe.md` §9.2 / summary item 15: the
-`dlen` bookkeeping of the verification proof bounds the length of every node by a binary numeral,
+`proofLen` bookkeeping of the verification proof bounds the length of every node by a binary numeral,
 and at `allIntro`/`shiftRule` sites the node's sequent is a SHIFTED sequent whose length the
 `Lengths.lean` rows cannot bound (the term vector of a shifted atom is opaque). `ShiftLen.lean`
 proved the exact laws `termLen (termShift t) = termLen t + fvOcc t`, `formulaLen (shift p) =
-formulaLen p + fvOccF p`, `setLen (setShift s) ≤ setLen s + fvOccS s`; this module states them,
+formulaLen p + fvOccF p`, `sequentLen (setShift s) ≤ sequentLen s + fvOccS s`; this module states them,
 the occurrence counts' totality and per-constructor equations, the `free`/`subst` occurrence
 bounds of `WalkLemmas.lean`, and the `O(1)` order glue §4.1's node recurrence needs, as library
 rows on the `Lengths.lean` convention (body `xB` in index order, `x := ∀¹* xB`, `models_x`,
@@ -20,15 +20,15 @@ Sections:
 1. Totality: `fvOccTotal`, `fvOccVecTotal`, `fvOccFTotal`, `fvOccSTotal`, `bvOccFTotal`.
 2. Per constructor: `fvOccBvar/Fvar/Func`, `fvOccFRel/NRel/Verum/Falsum/And/Or/All/Exs`,
    `fvOccSInsertLe`, `fvOccSEmpty`.
-3. Shift laws and bounds: `termLenShift`, `formulaLenShift`, `setLenSetShiftLe`, `fvOccFShift`,
+3. Shift laws and bounds: `termLenShift`, `formulaLenShift`, `sequentLenSetShiftLe`, `fvOccFShift`,
    `fvOccSSetShiftLe`, `fvOccTermShift`; sanity `fvOccLeTermLen`, `fvOccFLeFormulaLen`,
    `fvOccSLeSetLen`; `fvOccFFreeLe'` (via `shiftGraph` + `substs1Graph`, Foundation has no
    `free` graph) and `fvOccFSubstLe` (the entry bound `M` over the vector code `w` in the `.pi`
    shape Foundation's own `isSemitermVec` uses: `∀ i < n, ∀ e, !nthDef e w i → ∀ x,
    !(fvOccGraph LAct) x e → x ≤ M`).
-4. The §4.1 node bookkeeping, in the DSL syntax the `dlen` rows of `Nodes.lean` produce (the DSL
+4. The §4.1 node bookkeeping, in the DSL syntax the `proofLen` rows of `Nodes.lean` produce (the DSL
    numeral `1` is NOT `rfl`-equal to `Lengths.lean`'s `oneO`, while DSL `+`, `=`, `≤` ARE
-   `addO`, `eqO`, `leF`): `dlenLeafLe`, `dlenUnaryLe`, `dlenBinaryLe` (one row use per node),
+   `addO`, `eqO`, `leF`): `proofLenLeafLe`, `proofLenUnaryLe`, `proofLenBinaryLe` (one row use per node),
    `addLeAdd₃`, `leOfEqLe`, `leAddLeAdd`, `leAddLeft`, `leRefl`; the bridge `dslSuccEqSuccO :
    x + 1 = x + oneO` between the two syntaxes.
 -/
@@ -178,25 +178,25 @@ theorem pa_proves_formulaLenShift : 𝗣𝗔 ⊢ formulaLenShift :=
 
 theorem lib_formulaLenShift : Lib formulaLenShift := Lib.of_pa pa_proves_formulaLenShift
 
-/-- `setLen (setShift s) ≤ setLen s + fvOccS s` (`setLen_setShift_le_occ`; the shape of
-`setLenInsertLe` — the shifted set's length arrives from `setLenTotal`). -/
-noncomputable def setLenSetShiftLeB : ArithmeticSemisentence 5 :=
-  “l' o l s' s. !(isFormulaSet LAct).pi s → !(setShiftGraph LAct) s' s → !(setLenDef LAct) l s →
-    !(fvOccSDef LAct) o s → !(setLenDef LAct) l' s' → l' ≤ l + o”
-noncomputable def setLenSetShiftLe : ArithmeticSentence := ∀¹* setLenSetShiftLeB
+/-- `sequentLen (setShift s) ≤ sequentLen s + fvOccS s` (`sequentLen_setShift_le_occ`; the shape of
+`sequentLenInsertLe` — the shifted set's length arrives from `sequentLenTotal`). -/
+noncomputable def sequentLenSetShiftLeB : ArithmeticSemisentence 5 :=
+  “l' o l s' s. !(isFormulaSet LAct).pi s → !(setShiftGraph LAct) s' s → !(sequentLenDef LAct) l s →
+    !(fvOccSDef LAct) o s → !(sequentLenDef LAct) l' s' → l' ≤ l + o”
+noncomputable def sequentLenSetShiftLe : ArithmeticSentence := ∀¹* sequentLenSetShiftLeB
 
-lemma models_setLenSetShiftLe :
-    V↓[ℒₒᵣ] ⊧ setLenSetShiftLe ↔
-    ∀ l' o l s' s : V, IsFormulaSet LAct s → s' = setShift LAct s → l = setLen LAct s →
-      o = fvOccS LAct s → l' = setLen LAct s' → l' ≤ l + o := by
-  simp [setLenSetShiftLe, setLenSetShiftLeB, models_iff, Matrix.vecForall_iff, setLen_defined.iff,
+lemma models_sequentLenSetShiftLe :
+    V↓[ℒₒᵣ] ⊧ sequentLenSetShiftLe ↔
+    ∀ l' o l s' s : V, IsFormulaSet LAct s → s' = setShift LAct s → l = sequentLen LAct s →
+      o = fvOccS LAct s → l' = sequentLen LAct s' → l' ≤ l + o := by
+  simp [sequentLenSetShiftLe, sequentLenSetShiftLeB, models_iff, Matrix.vecForall_iff, sequentLen_defined.iff,
     fvOccS_defined.iff, setShift.defined.iff]
 
-theorem pa_proves_setLenSetShiftLe : 𝗣𝗔 ⊢ setLenSetShiftLe :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_setLenSetShiftLe.mpr fun _ _ _ _ _ hs hs' hl ho hl' ↦ by
-    subst hs'; subst hl; subst ho; subst hl'; exact setLen_setShift_le_occ hs
+theorem pa_proves_sequentLenSetShiftLe : 𝗣𝗔 ⊢ sequentLenSetShiftLe :=
+  Lib.pa_proves_of_models fun _ _ _ ↦ models_sequentLenSetShiftLe.mpr fun _ _ _ _ _ hs hs' hl ho hl' ↦ by
+    subst hs'; subst hl; subst ho; subst hl'; exact sequentLen_setShift_le_occ hs
 
-theorem lib_setLenSetShiftLe : Lib setLenSetShiftLe := Lib.of_pa pa_proves_setLenSetShiftLe
+theorem lib_sequentLenSetShiftLe : Lib sequentLenSetShiftLe := Lib.of_pa pa_proves_sequentLenSetShiftLe
 
 /-- `fvOccF (free p) ≤ fvOccF p + bvOccF p` (`fvOccF_free_le'`). Foundation has no graph for
 `free`; `free p = substs1 &0 (shift p)` is spelled out: `z = &0`, `sp = shift p`,
@@ -250,58 +250,58 @@ theorem lib_fvOccFSubstLe : Lib fvOccFSubstLe := Lib.of_pa pa_proves_fvOccFSubst
 
 /-! ### 4. The §4.1 node bookkeeping — DSL syntax, one row use per node
 
-`Nodes.lean`'s `dlen` rows conclude `!(dlenGraphDef LAct).sigma e (l + np + nq + 1)` in the DSL;
+`Nodes.lean`'s `proofLen` rows conclude `!(proofLenGraphDef LAct).sigma e (l + np + nq + 1)` in the DSL;
 the DSL `+`, `=`, `≤` are `rfl`-equal to `Lengths.lean`'s `addO`, `eqO`, `leF`, but the DSL
-numeral `1` is not `rfl`-equal to `oneO`, so the rows that must match a `dlen` conclusion are
+numeral `1` is not `rfl`-equal to `oneO`, so the rows that must match a `proofLen` conclusion are
 stated here in the DSL. -/
 
-/-- Leaf: `n = l + 1 → l ≤ a → n ≤ a + 1` (`dlenAxL`, `dlenVerum`). -/
-noncomputable def dlenLeafLeB : ArithmeticSemisentence 3 :=
+/-- Leaf: `n = l + 1 → l ≤ a → n ≤ a + 1` (`proofLenAxL`, `proofLenVerum`). -/
+noncomputable def proofLenLeafLeB : ArithmeticSemisentence 3 :=
   “a l n. n = l + 1 → l ≤ a → n ≤ a + 1”
-noncomputable def dlenLeafLe : ArithmeticSentence := ∀¹* dlenLeafLeB
+noncomputable def proofLenLeafLe : ArithmeticSentence := ∀¹* proofLenLeafLeB
 
-lemma models_dlenLeafLe : V↓[ℒₒᵣ] ⊧ dlenLeafLe ↔ ∀ a l n : V, n = l + 1 → l ≤ a → n ≤ a + 1 := by
-  simp [dlenLeafLe, dlenLeafLeB, models_iff, Matrix.vecForall_iff]
+lemma models_proofLenLeafLe : V↓[ℒₒᵣ] ⊧ proofLenLeafLe ↔ ∀ a l n : V, n = l + 1 → l ≤ a → n ≤ a + 1 := by
+  simp [proofLenLeafLe, proofLenLeafLeB, models_iff, Matrix.vecForall_iff]
 
-theorem pa_proves_dlenLeafLe : 𝗣𝗔 ⊢ dlenLeafLe :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_dlenLeafLe.mpr fun _ _ _ hn hl ↦ by
+theorem pa_proves_proofLenLeafLe : 𝗣𝗔 ⊢ proofLenLeafLe :=
+  Lib.pa_proves_of_models fun _ _ _ ↦ models_proofLenLeafLe.mpr fun _ _ _ hn hl ↦ by
     subst hn; exact add_le_add hl (le_refl 1)
 
-theorem lib_dlenLeafLe : Lib dlenLeafLe := Lib.of_pa pa_proves_dlenLeafLe
+theorem lib_proofLenLeafLe : Lib proofLenLeafLe := Lib.of_pa pa_proves_proofLenLeafLe
 
-/-- Unary node: `n = l + n₁ + 1 → l ≤ a → n₁ ≤ b → n ≤ a + b + 1` (`dlenOr`, `dlenAll`, …). -/
-noncomputable def dlenUnaryLeB : ArithmeticSemisentence 5 :=
+/-- Unary node: `n = l + n₁ + 1 → l ≤ a → n₁ ≤ b → n ≤ a + b + 1` (`proofLenOr`, `proofLenAll`, …). -/
+noncomputable def proofLenUnaryLeB : ArithmeticSemisentence 5 :=
   “b a np l n. n = l + np + 1 → l ≤ a → np ≤ b → n ≤ a + b + 1”
-noncomputable def dlenUnaryLe : ArithmeticSentence := ∀¹* dlenUnaryLeB
+noncomputable def proofLenUnaryLe : ArithmeticSentence := ∀¹* proofLenUnaryLeB
 
-lemma models_dlenUnaryLe :
-    V↓[ℒₒᵣ] ⊧ dlenUnaryLe ↔ ∀ b a np l n : V, n = l + np + 1 → l ≤ a → np ≤ b → n ≤ a + b + 1 := by
-  simp [dlenUnaryLe, dlenUnaryLeB, models_iff, Matrix.vecForall_iff]
+lemma models_proofLenUnaryLe :
+    V↓[ℒₒᵣ] ⊧ proofLenUnaryLe ↔ ∀ b a np l n : V, n = l + np + 1 → l ≤ a → np ≤ b → n ≤ a + b + 1 := by
+  simp [proofLenUnaryLe, proofLenUnaryLeB, models_iff, Matrix.vecForall_iff]
 
-theorem pa_proves_dlenUnaryLe : 𝗣𝗔 ⊢ dlenUnaryLe :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_dlenUnaryLe.mpr fun _ _ _ _ _ hn hl hp ↦ by
+theorem pa_proves_proofLenUnaryLe : 𝗣𝗔 ⊢ proofLenUnaryLe :=
+  Lib.pa_proves_of_models fun _ _ _ ↦ models_proofLenUnaryLe.mpr fun _ _ _ _ _ hn hl hp ↦ by
     subst hn; exact add_le_add (add_le_add hl hp) (le_refl 1)
 
-theorem lib_dlenUnaryLe : Lib dlenUnaryLe := Lib.of_pa pa_proves_dlenUnaryLe
+theorem lib_proofLenUnaryLe : Lib proofLenUnaryLe := Lib.of_pa pa_proves_proofLenUnaryLe
 
 /-- Binary node, §4.1's recurrence: `n = l + n₁ + n₂ + 1 → l ≤ a → n₁ ≤ b → n₂ ≤ c →
-n ≤ a + b + c + 1` (`dlenAnd`, cut). -/
-noncomputable def dlenBinaryLeB : ArithmeticSemisentence 7 :=
+n ≤ a + b + c + 1` (`proofLenAnd`, cut). -/
+noncomputable def proofLenBinaryLeB : ArithmeticSemisentence 7 :=
   “c b a nq np l n. n = l + np + nq + 1 → l ≤ a → np ≤ b → nq ≤ c → n ≤ a + b + c + 1”
-noncomputable def dlenBinaryLe : ArithmeticSentence := ∀¹* dlenBinaryLeB
+noncomputable def proofLenBinaryLe : ArithmeticSentence := ∀¹* proofLenBinaryLeB
 
-lemma models_dlenBinaryLe :
-    V↓[ℒₒᵣ] ⊧ dlenBinaryLe ↔
+lemma models_proofLenBinaryLe :
+    V↓[ℒₒᵣ] ⊧ proofLenBinaryLe ↔
     ∀ c b a nq np l n : V, n = l + np + nq + 1 → l ≤ a → np ≤ b → nq ≤ c → n ≤ a + b + c + 1 := by
-  simp [dlenBinaryLe, dlenBinaryLeB, models_iff, Matrix.vecForall_iff]
+  simp [proofLenBinaryLe, proofLenBinaryLeB, models_iff, Matrix.vecForall_iff]
 
-theorem pa_proves_dlenBinaryLe : 𝗣𝗔 ⊢ dlenBinaryLe :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_dlenBinaryLe.mpr fun _ _ _ _ _ _ _ hn hl hp hq ↦ by
+theorem pa_proves_proofLenBinaryLe : 𝗣𝗔 ⊢ proofLenBinaryLe :=
+  Lib.pa_proves_of_models fun _ _ _ ↦ models_proofLenBinaryLe.mpr fun _ _ _ _ _ _ _ hn hl hp hq ↦ by
     subst hn; exact add_le_add (add_le_add (add_le_add hl hp) hq) (le_refl 1)
 
-theorem lib_dlenBinaryLe : Lib dlenBinaryLe := Lib.of_pa pa_proves_dlenBinaryLe
+theorem lib_proofLenBinaryLe : Lib proofLenBinaryLe := Lib.of_pa pa_proves_proofLenBinaryLe
 
-/-- `x ≤ y + z → y ≤ a → z ≤ b → x ≤ a + b` (§4.2: `setLen s' ≤ setLen s + formulaLen p`
+/-- `x ≤ y + z → y ≤ a → z ≤ b → x ≤ a + b` (§4.2: `sequentLen s' ≤ sequentLen s + formulaLen p`
 with both summands bounded, in one use). -/
 noncomputable def leAddLeAddB : ArithmeticSemisentence 5 :=
   “b a z y x. x ≤ y + z → y ≤ a → z ≤ b → x ≤ a + b”
@@ -329,8 +329,8 @@ theorem pa_proves_leRefl : 𝗣𝗔 ⊢ leRefl :=
 
 theorem lib_leRefl : Lib leRefl := Lib.of_pa pa_proves_leRefl
 
-/-- **The syntax bridge**: the DSL numeral `1` (what the `dlen` rows and the rows above
-produce) against `Lengths.lean`'s `oneO` (what the `bnum` bit laws `twoMulOneSucc`, `succLeSucc`
+/-- **The syntax bridge**: the DSL numeral `1` (what the `proofLen` rows and the rows above
+produce) against `Lengths.lean`'s `oneO` (what the `binNumeral` bit laws `twoMulOneSucc`, `succLeSucc`
 consume): `x + 1 = x + oneO`. Neither side is `rfl`-equal to the other as syntax; with `leOfLeEq`
 one row use crosses over. -/
 noncomputable def dslSuccEqSuccOB : ArithmeticSemisentence 1 := eqO ‘x. x + 1’ (addO #0 oneO)

@@ -7,7 +7,7 @@ import ArithS.Necessitation.Frag1Rows
    with their `quote_row_`/`inst_` lemmas (the originals in `Lib/Nodes.lean`, `Lib/Sets.lean`,
    `Lib/Frag.lean`; blocks produced by `gen_frag.py`'s `gen_row`, same names, same DSL): the
    totalities `totAllIntro`/`totExsIntro`/`totShiftRule`/`totAxm`, the `introAll`/`introExs`/
-   `introShift` and `dlenAll`/`dlenExs`/`dlenShift`/`dlenAxm` node rows, and the sequent plumbing
+   `introShift` and `proofLenAll`/`proofLenExs`/`proofLenShift`/`proofLenAxm` node rows, and the sequent plumbing
    `setShiftTotal`, `shiftMemSetShift`.
 2. The fragment-2 table: `frag2Rows := frag1Rows ++ frag2ExtraRows` — Frag1's 126 rows at their
    indices, then the rows above and the `fstIdx<Tag>`/`setShift*`/congruence rows of `RowInstB` at
@@ -259,97 +259,97 @@ lemma inst_introShift {wd wc wss we : V} (hwd : IsSemiterm LAct 0 wd) (hwc : IsS
   all_goals try row_entries_simpB
   row_finish
 
-/-! ### `dlenAll` — `“l n d p s e. …”`, `m = 6` -/
+/-! ### `proofLenAll` — `“l n d p s e. …”`, `m = 6` -/
 
-noncomputable def row_dlenAll_as : List V := [subst LAct (listToVec [bv 5, bv 4, bv 3, bv 2]) PallIntro, subst LAct (listToVec [bv 2, bv 1]) Pdlen, subst LAct (listToVec [bv 0, bv 4]) PsetLen]
-noncomputable def row_dlenAll_c : V := subst LAct (listToVec [bv 5, ((bv 0 ^+ bv 1) ^+ (𝟏 : V))]) Pdlen
+noncomputable def row_proofLenAll_as : List V := [subst LAct (listToVec [bv 5, bv 4, bv 3, bv 2]) PallIntro, subst LAct (listToVec [bv 2, bv 1]) Pdlen, subst LAct (listToVec [bv 0, bv 4]) PsetLen]
+noncomputable def row_proofLenAll_c : V := subst LAct (listToVec [bv 5, ((bv 0 ^+ bv 1) ^+ (𝟏 : V))]) Pdlen
 
-theorem quote_row_dlenAll : (⌜Semiformula.lMap emb dlenAllB⌝ : V) = impChain LAct row_dlenAll_as row_dlenAll_c := by
-  unfold dlenAllB row_dlenAll_as row_dlenAll_c PallIntro Pdlen PsetLen dlenS
+theorem quote_row_proofLenAll : (⌜Semiformula.lMap emb proofLenAllB⌝ : V) = impChain LAct row_proofLenAll_as row_proofLenAll_c := by
+  unfold proofLenAllB row_proofLenAll_as row_proofLenAll_c PallIntro Pdlen PsetLen proofLenS
   all_goals row_shapeB
 
-lemma isSemiformula_dlenAll_c : IsSemiformula LAct ((6 : ℕ) : V) row_dlenAll_c := by
-  unfold row_dlenAll_c
+lemma isSemiformula_proofLenAll_c : IsSemiformula LAct ((6 : ℕ) : V) row_proofLenAll_c := by
+  unfold row_proofLenAll_c
   exact isSemiformula_substRow isSemiformula_Pdlen _ (by rfl) (by row_entriesB)
 
-/-- `dlenAll` at the witnesses `[we, ws, wp, wd, wn, wl]` (the DSL variables right-to-left). -/
-lemma inst_dlenAll {we ws wp wd wn wl : V} (hwe : IsSemiterm LAct 0 we) (hws : IsSemiterm LAct 0 ws) (hwp : IsSemiterm LAct 0 wp) (hwd : IsSemiterm LAct 0 wd) (hwn : IsSemiterm LAct 0 wn) (hwl : IsSemiterm LAct 0 wl) :
-    row_dlenAll_as.map (instOuter LAct [we, ws, wp, wd, wn, wl]) = [allIntroFact we ws wp wd, dlenFact wd wn, setLenFact wl ws] ∧
-    instOuter LAct [we, ws, wp, wd, wn, wl] row_dlenAll_c = dlenFact we ((wl ^+ wn) ^+ (𝟏 : V)) := by
+/-- `proofLenAll` at the witnesses `[we, ws, wp, wd, wn, wl]` (the DSL variables right-to-left). -/
+lemma inst_proofLenAll {we ws wp wd wn wl : V} (hwe : IsSemiterm LAct 0 we) (hws : IsSemiterm LAct 0 ws) (hwp : IsSemiterm LAct 0 wp) (hwd : IsSemiterm LAct 0 wd) (hwn : IsSemiterm LAct 0 wn) (hwl : IsSemiterm LAct 0 wl) :
+    row_proofLenAll_as.map (instOuter LAct [we, ws, wp, wd, wn, wl]) = [allIntroFact we ws wp wd, proofLenFact wd wn, sequentLenFact wl ws] ∧
+    instOuter LAct [we, ws, wp, wd, wn, wl] row_proofLenAll_c = proofLenFact we ((wl ^+ wn) ^+ (𝟏 : V)) := by
   have hes : ∀ e ∈ ([we, ws, wp, wd, wn, wl] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwe, List.forall_mem_cons.mpr ⟨hws, List.forall_mem_cons.mpr ⟨hwp, List.forall_mem_cons.mpr ⟨hwd, List.forall_mem_cons.mpr ⟨hwn, List.forall_mem_cons.mpr ⟨hwl, List.forall_mem_nil _⟩⟩⟩⟩⟩⟩)
-  unfold row_dlenAll_as row_dlenAll_c
+  unfold row_proofLenAll_as row_proofLenAll_c
   simp only [List.map_cons, List.map_nil]
   rw [instOuter_subst_listToVec _ isSemiformula_PallIntro (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pdlen (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PsetLen (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pdlen (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
-/-! ### `dlenExs` — `“lt l n d t p s e. …”`, `m = 8` -/
+/-! ### `proofLenExs` — `“lt l n d t p s e. …”`, `m = 8` -/
 
-noncomputable def row_dlenExs_as : List V := [subst LAct (listToVec [bv 7, bv 6, bv 5, bv 4, bv 3]) PexsIntro, subst LAct (listToVec [bv 3, bv 2]) Pdlen, subst LAct (listToVec [bv 1, bv 6]) PsetLen, subst LAct (listToVec [bv 0, bv 4]) PtlenG]
-noncomputable def row_dlenExs_c : V := subst LAct (listToVec [bv 7, (((bv 1 ^+ bv 0) ^+ bv 2) ^+ (𝟏 : V))]) Pdlen
+noncomputable def row_proofLenExs_as : List V := [subst LAct (listToVec [bv 7, bv 6, bv 5, bv 4, bv 3]) PexsIntro, subst LAct (listToVec [bv 3, bv 2]) Pdlen, subst LAct (listToVec [bv 1, bv 6]) PsetLen, subst LAct (listToVec [bv 0, bv 4]) PtlenG]
+noncomputable def row_proofLenExs_c : V := subst LAct (listToVec [bv 7, (((bv 1 ^+ bv 0) ^+ bv 2) ^+ (𝟏 : V))]) Pdlen
 
-theorem quote_row_dlenExs : (⌜Semiformula.lMap emb dlenExsB⌝ : V) = impChain LAct row_dlenExs_as row_dlenExs_c := by
-  unfold dlenExsB row_dlenExs_as row_dlenExs_c Pdlen PexsIntro PsetLen PtlenG dlenS
+theorem quote_row_proofLenExs : (⌜Semiformula.lMap emb proofLenExsB⌝ : V) = impChain LAct row_proofLenExs_as row_proofLenExs_c := by
+  unfold proofLenExsB row_proofLenExs_as row_proofLenExs_c Pdlen PexsIntro PsetLen PtlenG proofLenS
   all_goals row_shapeB
 
-lemma isSemiformula_dlenExs_c : IsSemiformula LAct ((8 : ℕ) : V) row_dlenExs_c := by
-  unfold row_dlenExs_c
+lemma isSemiformula_proofLenExs_c : IsSemiformula LAct ((8 : ℕ) : V) row_proofLenExs_c := by
+  unfold row_proofLenExs_c
   exact isSemiformula_substRow isSemiformula_Pdlen _ (by rfl) (by row_entriesB)
 
-/-- `dlenExs` at the witnesses `[we, ws, wp, wt, wd, wn, wl, wlt]` (the DSL variables right-to-left). -/
-lemma inst_dlenExs {we ws wp wt wd wn wl wlt : V} (hwe : IsSemiterm LAct 0 we) (hws : IsSemiterm LAct 0 ws) (hwp : IsSemiterm LAct 0 wp) (hwt : IsSemiterm LAct 0 wt) (hwd : IsSemiterm LAct 0 wd) (hwn : IsSemiterm LAct 0 wn) (hwl : IsSemiterm LAct 0 wl) (hwlt : IsSemiterm LAct 0 wlt) :
-    row_dlenExs_as.map (instOuter LAct [we, ws, wp, wt, wd, wn, wl, wlt]) = [exsIntroFact we ws wp wt wd, dlenFact wd wn, setLenFact wl ws, tlenFact wlt wt] ∧
-    instOuter LAct [we, ws, wp, wt, wd, wn, wl, wlt] row_dlenExs_c = dlenFact we (((wl ^+ wlt) ^+ wn) ^+ (𝟏 : V)) := by
+/-- `proofLenExs` at the witnesses `[we, ws, wp, wt, wd, wn, wl, wlt]` (the DSL variables right-to-left). -/
+lemma inst_proofLenExs {we ws wp wt wd wn wl wlt : V} (hwe : IsSemiterm LAct 0 we) (hws : IsSemiterm LAct 0 ws) (hwp : IsSemiterm LAct 0 wp) (hwt : IsSemiterm LAct 0 wt) (hwd : IsSemiterm LAct 0 wd) (hwn : IsSemiterm LAct 0 wn) (hwl : IsSemiterm LAct 0 wl) (hwlt : IsSemiterm LAct 0 wlt) :
+    row_proofLenExs_as.map (instOuter LAct [we, ws, wp, wt, wd, wn, wl, wlt]) = [exsIntroFact we ws wp wt wd, proofLenFact wd wn, sequentLenFact wl ws, termLenMetaFact wlt wt] ∧
+    instOuter LAct [we, ws, wp, wt, wd, wn, wl, wlt] row_proofLenExs_c = proofLenFact we (((wl ^+ wlt) ^+ wn) ^+ (𝟏 : V)) := by
   have hes : ∀ e ∈ ([we, ws, wp, wt, wd, wn, wl, wlt] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwe, List.forall_mem_cons.mpr ⟨hws, List.forall_mem_cons.mpr ⟨hwp, List.forall_mem_cons.mpr ⟨hwt, List.forall_mem_cons.mpr ⟨hwd, List.forall_mem_cons.mpr ⟨hwn, List.forall_mem_cons.mpr ⟨hwl, List.forall_mem_cons.mpr ⟨hwlt, List.forall_mem_nil _⟩⟩⟩⟩⟩⟩⟩⟩)
-  unfold row_dlenExs_as row_dlenExs_c
+  unfold row_proofLenExs_as row_proofLenExs_c
   simp only [List.map_cons, List.map_nil]
   rw [instOuter_subst_listToVec _ isSemiformula_PexsIntro (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pdlen (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PsetLen (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PtlenG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pdlen (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
-/-! ### `dlenShift` — `“l n d s e. …”`, `m = 5` -/
+/-! ### `proofLenShift` — `“l n d s e. …”`, `m = 5` -/
 
-noncomputable def row_dlenShift_as : List V := [subst LAct (listToVec [bv 4, bv 3, bv 2]) PshiftRule, subst LAct (listToVec [bv 2, bv 1]) Pdlen, subst LAct (listToVec [bv 0, bv 3]) PsetLen]
-noncomputable def row_dlenShift_c : V := subst LAct (listToVec [bv 4, ((bv 0 ^+ bv 1) ^+ (𝟏 : V))]) Pdlen
+noncomputable def row_proofLenShift_as : List V := [subst LAct (listToVec [bv 4, bv 3, bv 2]) PshiftRule, subst LAct (listToVec [bv 2, bv 1]) Pdlen, subst LAct (listToVec [bv 0, bv 3]) PsetLen]
+noncomputable def row_proofLenShift_c : V := subst LAct (listToVec [bv 4, ((bv 0 ^+ bv 1) ^+ (𝟏 : V))]) Pdlen
 
-theorem quote_row_dlenShift : (⌜Semiformula.lMap emb dlenShiftB⌝ : V) = impChain LAct row_dlenShift_as row_dlenShift_c := by
-  unfold dlenShiftB row_dlenShift_as row_dlenShift_c Pdlen PsetLen PshiftRule dlenS
+theorem quote_row_proofLenShift : (⌜Semiformula.lMap emb proofLenShiftB⌝ : V) = impChain LAct row_proofLenShift_as row_proofLenShift_c := by
+  unfold proofLenShiftB row_proofLenShift_as row_proofLenShift_c Pdlen PsetLen PshiftRule proofLenS
   all_goals row_shapeB
 
-lemma isSemiformula_dlenShift_c : IsSemiformula LAct ((5 : ℕ) : V) row_dlenShift_c := by
-  unfold row_dlenShift_c
+lemma isSemiformula_proofLenShift_c : IsSemiformula LAct ((5 : ℕ) : V) row_proofLenShift_c := by
+  unfold row_proofLenShift_c
   exact isSemiformula_substRow isSemiformula_Pdlen _ (by rfl) (by row_entriesB)
 
-/-- `dlenShift` at the witnesses `[we, ws, wd, wn, wl]` (the DSL variables right-to-left). -/
-lemma inst_dlenShift {we ws wd wn wl : V} (hwe : IsSemiterm LAct 0 we) (hws : IsSemiterm LAct 0 ws) (hwd : IsSemiterm LAct 0 wd) (hwn : IsSemiterm LAct 0 wn) (hwl : IsSemiterm LAct 0 wl) :
-    row_dlenShift_as.map (instOuter LAct [we, ws, wd, wn, wl]) = [shiftRuleFact we ws wd, dlenFact wd wn, setLenFact wl ws] ∧
-    instOuter LAct [we, ws, wd, wn, wl] row_dlenShift_c = dlenFact we ((wl ^+ wn) ^+ (𝟏 : V)) := by
+/-- `proofLenShift` at the witnesses `[we, ws, wd, wn, wl]` (the DSL variables right-to-left). -/
+lemma inst_proofLenShift {we ws wd wn wl : V} (hwe : IsSemiterm LAct 0 we) (hws : IsSemiterm LAct 0 ws) (hwd : IsSemiterm LAct 0 wd) (hwn : IsSemiterm LAct 0 wn) (hwl : IsSemiterm LAct 0 wl) :
+    row_proofLenShift_as.map (instOuter LAct [we, ws, wd, wn, wl]) = [shiftRuleFact we ws wd, proofLenFact wd wn, sequentLenFact wl ws] ∧
+    instOuter LAct [we, ws, wd, wn, wl] row_proofLenShift_c = proofLenFact we ((wl ^+ wn) ^+ (𝟏 : V)) := by
   have hes : ∀ e ∈ ([we, ws, wd, wn, wl] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwe, List.forall_mem_cons.mpr ⟨hws, List.forall_mem_cons.mpr ⟨hwd, List.forall_mem_cons.mpr ⟨hwn, List.forall_mem_cons.mpr ⟨hwl, List.forall_mem_nil _⟩⟩⟩⟩⟩)
-  unfold row_dlenShift_as row_dlenShift_c
+  unfold row_proofLenShift_as row_proofLenShift_c
   simp only [List.map_cons, List.map_nil]
   rw [instOuter_subst_listToVec _ isSemiformula_PshiftRule (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pdlen (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PsetLen (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pdlen (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
-/-! ### `dlenAxm` — `“l p s e. …”`, `m = 4` -/
+/-! ### `proofLenAxm` — `“l p s e. …”`, `m = 4` -/
 
-noncomputable def row_dlenAxm_as : List V := [subst LAct (listToVec [bv 3, bv 2, bv 1]) Paxm, subst LAct (listToVec [bv 0, bv 2]) PsetLen]
-noncomputable def row_dlenAxm_c : V := subst LAct (listToVec [bv 3, (bv 0 ^+ (𝟏 : V))]) Pdlen
+noncomputable def row_proofLenAxm_as : List V := [subst LAct (listToVec [bv 3, bv 2, bv 1]) Paxm, subst LAct (listToVec [bv 0, bv 2]) PsetLen]
+noncomputable def row_proofLenAxm_c : V := subst LAct (listToVec [bv 3, (bv 0 ^+ (𝟏 : V))]) Pdlen
 
-theorem quote_row_dlenAxm : (⌜Semiformula.lMap emb dlenAxmB⌝ : V) = impChain LAct row_dlenAxm_as row_dlenAxm_c := by
-  unfold dlenAxmB row_dlenAxm_as row_dlenAxm_c Paxm Pdlen PsetLen dlenS
+theorem quote_row_proofLenAxm : (⌜Semiformula.lMap emb proofLenAxmB⌝ : V) = impChain LAct row_proofLenAxm_as row_proofLenAxm_c := by
+  unfold proofLenAxmB row_proofLenAxm_as row_proofLenAxm_c Paxm Pdlen PsetLen proofLenS
   all_goals row_shapeB
 
-lemma isSemiformula_dlenAxm_c : IsSemiformula LAct ((4 : ℕ) : V) row_dlenAxm_c := by
-  unfold row_dlenAxm_c
+lemma isSemiformula_proofLenAxm_c : IsSemiformula LAct ((4 : ℕ) : V) row_proofLenAxm_c := by
+  unfold row_proofLenAxm_c
   exact isSemiformula_substRow isSemiformula_Pdlen _ (by rfl) (by row_entriesB)
 
-/-- `dlenAxm` at the witnesses `[we, ws, wp, wl]` (the DSL variables right-to-left). -/
-lemma inst_dlenAxm {we ws wp wl : V} (hwe : IsSemiterm LAct 0 we) (hws : IsSemiterm LAct 0 ws) (hwp : IsSemiterm LAct 0 wp) (hwl : IsSemiterm LAct 0 wl) :
-    row_dlenAxm_as.map (instOuter LAct [we, ws, wp, wl]) = [axmFact we ws wp, setLenFact wl ws] ∧
-    instOuter LAct [we, ws, wp, wl] row_dlenAxm_c = dlenFact we (wl ^+ (𝟏 : V)) := by
+/-- `proofLenAxm` at the witnesses `[we, ws, wp, wl]` (the DSL variables right-to-left). -/
+lemma inst_proofLenAxm {we ws wp wl : V} (hwe : IsSemiterm LAct 0 we) (hws : IsSemiterm LAct 0 ws) (hwp : IsSemiterm LAct 0 wp) (hwl : IsSemiterm LAct 0 wl) :
+    row_proofLenAxm_as.map (instOuter LAct [we, ws, wp, wl]) = [axmFact we ws wp, sequentLenFact wl ws] ∧
+    instOuter LAct [we, ws, wp, wl] row_proofLenAxm_c = proofLenFact we (wl ^+ (𝟏 : V)) := by
   have hes : ∀ e ∈ ([we, ws, wp, wl] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwe, List.forall_mem_cons.mpr ⟨hws, List.forall_mem_cons.mpr ⟨hwp, List.forall_mem_cons.mpr ⟨hwl, List.forall_mem_nil _⟩⟩⟩⟩)
-  unfold row_dlenAxm_as row_dlenAxm_c
+  unfold row_proofLenAxm_as row_proofLenAxm_c
   simp only [List.map_cons, List.map_nil]
   rw [instOuter_subst_listToVec _ isSemiformula_Paxm (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PsetLen (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pdlen (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
@@ -447,10 +447,10 @@ def gIdx_totAxm : ℕ := 129
 def gIdx_introAll : ℕ := 130
 def gIdx_introExs : ℕ := 131
 def gIdx_introShift : ℕ := 132
-def gIdx_dlenAll : ℕ := 133
-def gIdx_dlenExs : ℕ := 134
-def gIdx_dlenShift : ℕ := 135
-def gIdx_dlenAxm : ℕ := 136
+def gIdx_proofLenAll : ℕ := 133
+def gIdx_proofLenExs : ℕ := 134
+def gIdx_proofLenShift : ℕ := 135
+def gIdx_proofLenAxm : ℕ := 136
 def gIdx_introAxm : ℕ := 137
 def gIdx_setShiftTotal : ℕ := 138
 def gIdx_shiftMemSetShift : ℕ := 139
@@ -473,10 +473,10 @@ noncomputable def frag2ExtraRows : List WRow := [
   ⟨8, introAllB, lib_introAll⟩,
   ⟨9, introExsB, lib_introExs⟩,
   ⟨4, introShiftB, lib_introShift⟩,
-  ⟨6, dlenAllB, lib_dlenAll⟩,
-  ⟨8, dlenExsB, lib_dlenExs⟩,
-  ⟨5, dlenShiftB, lib_dlenShift⟩,
-  ⟨4, dlenAxmB, lib_dlenAxm⟩,
+  ⟨6, proofLenAllB, lib_proofLenAll⟩,
+  ⟨8, proofLenExsB, lib_proofLenExs⟩,
+  ⟨5, proofLenShiftB, lib_proofLenShift⟩,
+  ⟨4, proofLenAxmB, lib_proofLenAxm⟩,
   ⟨3, introAxmB, lib_introAxm⟩,
   ⟨1, setShiftTotalB, lib_setShiftTotal⟩,
   ⟨4, shiftMemSetShiftB, lib_shiftMemSetShift⟩,
@@ -601,41 +601,41 @@ lemma frag2Table_introShift {tbl : V} (h : Frag2Table tbl) :
   refine ⟨this.1, ?_⟩
   rw [impChainV_vecOf, this.2, quote_row_introShift]
 
-lemma frag2Table_dlenAll {tbl : V} (h : Frag2Table tbl) :
-    rowM tbl.[((gIdx_dlenAll : ℕ) : V)] = ((6 : ℕ) : V) ∧
-    rowB tbl.[((gIdx_dlenAll : ℕ) : V)] = impChainV LAct (vecOf row_dlenAll_as) row_dlenAll_c := by
-  have this : rowM tbl.[((gIdx_dlenAll : ℕ) : V)] = ((6 : ℕ) : V) ∧
-      rowB tbl.[((gIdx_dlenAll : ℕ) : V)] = ⌜Semiformula.lMap emb dlenAllB⌝ :=
-    h.2 gIdx_dlenAll (Nat.lt_of_sub_eq_succ rfl)
+lemma frag2Table_proofLenAll {tbl : V} (h : Frag2Table tbl) :
+    rowM tbl.[((gIdx_proofLenAll : ℕ) : V)] = ((6 : ℕ) : V) ∧
+    rowB tbl.[((gIdx_proofLenAll : ℕ) : V)] = impChainV LAct (vecOf row_proofLenAll_as) row_proofLenAll_c := by
+  have this : rowM tbl.[((gIdx_proofLenAll : ℕ) : V)] = ((6 : ℕ) : V) ∧
+      rowB tbl.[((gIdx_proofLenAll : ℕ) : V)] = ⌜Semiformula.lMap emb proofLenAllB⌝ :=
+    h.2 gIdx_proofLenAll (Nat.lt_of_sub_eq_succ rfl)
   refine ⟨this.1, ?_⟩
-  rw [impChainV_vecOf, this.2, quote_row_dlenAll]
+  rw [impChainV_vecOf, this.2, quote_row_proofLenAll]
 
-lemma frag2Table_dlenExs {tbl : V} (h : Frag2Table tbl) :
-    rowM tbl.[((gIdx_dlenExs : ℕ) : V)] = ((8 : ℕ) : V) ∧
-    rowB tbl.[((gIdx_dlenExs : ℕ) : V)] = impChainV LAct (vecOf row_dlenExs_as) row_dlenExs_c := by
-  have this : rowM tbl.[((gIdx_dlenExs : ℕ) : V)] = ((8 : ℕ) : V) ∧
-      rowB tbl.[((gIdx_dlenExs : ℕ) : V)] = ⌜Semiformula.lMap emb dlenExsB⌝ :=
-    h.2 gIdx_dlenExs (Nat.lt_of_sub_eq_succ rfl)
+lemma frag2Table_proofLenExs {tbl : V} (h : Frag2Table tbl) :
+    rowM tbl.[((gIdx_proofLenExs : ℕ) : V)] = ((8 : ℕ) : V) ∧
+    rowB tbl.[((gIdx_proofLenExs : ℕ) : V)] = impChainV LAct (vecOf row_proofLenExs_as) row_proofLenExs_c := by
+  have this : rowM tbl.[((gIdx_proofLenExs : ℕ) : V)] = ((8 : ℕ) : V) ∧
+      rowB tbl.[((gIdx_proofLenExs : ℕ) : V)] = ⌜Semiformula.lMap emb proofLenExsB⌝ :=
+    h.2 gIdx_proofLenExs (Nat.lt_of_sub_eq_succ rfl)
   refine ⟨this.1, ?_⟩
-  rw [impChainV_vecOf, this.2, quote_row_dlenExs]
+  rw [impChainV_vecOf, this.2, quote_row_proofLenExs]
 
-lemma frag2Table_dlenShift {tbl : V} (h : Frag2Table tbl) :
-    rowM tbl.[((gIdx_dlenShift : ℕ) : V)] = ((5 : ℕ) : V) ∧
-    rowB tbl.[((gIdx_dlenShift : ℕ) : V)] = impChainV LAct (vecOf row_dlenShift_as) row_dlenShift_c := by
-  have this : rowM tbl.[((gIdx_dlenShift : ℕ) : V)] = ((5 : ℕ) : V) ∧
-      rowB tbl.[((gIdx_dlenShift : ℕ) : V)] = ⌜Semiformula.lMap emb dlenShiftB⌝ :=
-    h.2 gIdx_dlenShift (Nat.lt_of_sub_eq_succ rfl)
+lemma frag2Table_proofLenShift {tbl : V} (h : Frag2Table tbl) :
+    rowM tbl.[((gIdx_proofLenShift : ℕ) : V)] = ((5 : ℕ) : V) ∧
+    rowB tbl.[((gIdx_proofLenShift : ℕ) : V)] = impChainV LAct (vecOf row_proofLenShift_as) row_proofLenShift_c := by
+  have this : rowM tbl.[((gIdx_proofLenShift : ℕ) : V)] = ((5 : ℕ) : V) ∧
+      rowB tbl.[((gIdx_proofLenShift : ℕ) : V)] = ⌜Semiformula.lMap emb proofLenShiftB⌝ :=
+    h.2 gIdx_proofLenShift (Nat.lt_of_sub_eq_succ rfl)
   refine ⟨this.1, ?_⟩
-  rw [impChainV_vecOf, this.2, quote_row_dlenShift]
+  rw [impChainV_vecOf, this.2, quote_row_proofLenShift]
 
-lemma frag2Table_dlenAxm {tbl : V} (h : Frag2Table tbl) :
-    rowM tbl.[((gIdx_dlenAxm : ℕ) : V)] = ((4 : ℕ) : V) ∧
-    rowB tbl.[((gIdx_dlenAxm : ℕ) : V)] = impChainV LAct (vecOf row_dlenAxm_as) row_dlenAxm_c := by
-  have this : rowM tbl.[((gIdx_dlenAxm : ℕ) : V)] = ((4 : ℕ) : V) ∧
-      rowB tbl.[((gIdx_dlenAxm : ℕ) : V)] = ⌜Semiformula.lMap emb dlenAxmB⌝ :=
-    h.2 gIdx_dlenAxm (Nat.lt_of_sub_eq_succ rfl)
+lemma frag2Table_proofLenAxm {tbl : V} (h : Frag2Table tbl) :
+    rowM tbl.[((gIdx_proofLenAxm : ℕ) : V)] = ((4 : ℕ) : V) ∧
+    rowB tbl.[((gIdx_proofLenAxm : ℕ) : V)] = impChainV LAct (vecOf row_proofLenAxm_as) row_proofLenAxm_c := by
+  have this : rowM tbl.[((gIdx_proofLenAxm : ℕ) : V)] = ((4 : ℕ) : V) ∧
+      rowB tbl.[((gIdx_proofLenAxm : ℕ) : V)] = ⌜Semiformula.lMap emb proofLenAxmB⌝ :=
+    h.2 gIdx_proofLenAxm (Nat.lt_of_sub_eq_succ rfl)
   refine ⟨this.1, ?_⟩
-  rw [impChainV_vecOf, this.2, quote_row_dlenAxm]
+  rw [impChainV_vecOf, this.2, quote_row_proofLenAxm]
 
 lemma frag2Table_introAxm {tbl : V} (h : Frag2Table tbl) :
     rowM tbl.[((gIdx_introAxm : ℕ) : V)] = ((3 : ℕ) : V) ∧
@@ -746,10 +746,10 @@ noncomputable def gpiece_totAxm : V := ⟪(2 : V), vecOf row_totAxm_as, row_totA
 noncomputable def gpiece_introAll : V := ⟪(0 : V), vecOf row_introAll_as, row_introAll_c⟫
 noncomputable def gpiece_introExs : V := ⟪(0 : V), vecOf row_introExs_as, row_introExs_c⟫
 noncomputable def gpiece_introShift : V := ⟪(0 : V), vecOf row_introShift_as, row_introShift_c⟫
-noncomputable def gpiece_dlenAll : V := ⟪(0 : V), vecOf row_dlenAll_as, row_dlenAll_c⟫
-noncomputable def gpiece_dlenExs : V := ⟪(0 : V), vecOf row_dlenExs_as, row_dlenExs_c⟫
-noncomputable def gpiece_dlenShift : V := ⟪(0 : V), vecOf row_dlenShift_as, row_dlenShift_c⟫
-noncomputable def gpiece_dlenAxm : V := ⟪(0 : V), vecOf row_dlenAxm_as, row_dlenAxm_c⟫
+noncomputable def gpiece_proofLenAll : V := ⟪(0 : V), vecOf row_proofLenAll_as, row_proofLenAll_c⟫
+noncomputable def gpiece_proofLenExs : V := ⟪(0 : V), vecOf row_proofLenExs_as, row_proofLenExs_c⟫
+noncomputable def gpiece_proofLenShift : V := ⟪(0 : V), vecOf row_proofLenShift_as, row_proofLenShift_c⟫
+noncomputable def gpiece_proofLenAxm : V := ⟪(0 : V), vecOf row_proofLenAxm_as, row_proofLenAxm_c⟫
 noncomputable def gpiece_introAxm : V := ⟪(0 : V), vecOf row_introAxm_as, row_introAxm_c⟫
 noncomputable def gpiece_setShiftTotal : V := ⟪(2 : V), vecOf row_setShiftTotal_as, row_setShiftTotal_R⟫
 noncomputable def gpiece_shiftMemSetShift : V := ⟪(0 : V), vecOf row_shiftMemSetShift_as, row_shiftMemSetShift_c⟫
@@ -772,10 +772,10 @@ noncomputable def frag2ExtraPieceList : List V := [
   gpiece_introAll,
   gpiece_introExs,
   gpiece_introShift,
-  gpiece_dlenAll,
-  gpiece_dlenExs,
-  gpiece_dlenShift,
-  gpiece_dlenAxm,
+  gpiece_proofLenAll,
+  gpiece_proofLenExs,
+  gpiece_proofLenShift,
+  gpiece_proofLenAxm,
   gpiece_introAxm,
   gpiece_setShiftTotal,
   gpiece_shiftMemSetShift,
@@ -914,65 +914,65 @@ lemma gtag_introShift {W : V} (hWp : W = frag2Pieces) (ev : V) : sTag (mkStep W 
   have hk : ((gIdx_introShift : ℕ) : V) = (132 : V) := by simp [gIdx_introShift]
   rw [← hk, gmk_introShift]; simp
 
-lemma frag2Pieces_dlenAll : (frag2Pieces : V).[((gIdx_dlenAll : ℕ) : V)] = gpiece_dlenAll := by
+lemma frag2Pieces_proofLenAll : (frag2Pieces : V).[((gIdx_proofLenAll : ℕ) : V)] = gpiece_proofLenAll := by
   unfold frag2Pieces
-  rw [nth_vecOf _ gIdx_dlenAll (Nat.lt_of_sub_eq_succ rfl)]
+  rw [nth_vecOf _ gIdx_proofLenAll (Nat.lt_of_sub_eq_succ rfl)]
   rfl
 
-lemma gmk_dlenAll (ev : V) :
-    mkStep frag2Pieces ((gIdx_dlenAll : ℕ) : V) ev = sUseHorn ((gIdx_dlenAll : ℕ) : V) ev (vecOf row_dlenAll_as) row_dlenAll_c := by
-  rw [mkStep, frag2Pieces_dlenAll]
-  simp [gpiece_dlenAll, sUseHorn]
+lemma gmk_proofLenAll (ev : V) :
+    mkStep frag2Pieces ((gIdx_proofLenAll : ℕ) : V) ev = sUseHorn ((gIdx_proofLenAll : ℕ) : V) ev (vecOf row_proofLenAll_as) row_proofLenAll_c := by
+  rw [mkStep, frag2Pieces_proofLenAll]
+  simp [gpiece_proofLenAll, sUseHorn]
 
-lemma gtag_dlenAll {W : V} (hWp : W = frag2Pieces) (ev : V) : sTag (mkStep W (133 : V) ev) = 0 := by
+lemma gtag_proofLenAll {W : V} (hWp : W = frag2Pieces) (ev : V) : sTag (mkStep W (133 : V) ev) = 0 := by
   subst hWp
-  have hk : ((gIdx_dlenAll : ℕ) : V) = (133 : V) := by simp [gIdx_dlenAll]
-  rw [← hk, gmk_dlenAll]; simp
+  have hk : ((gIdx_proofLenAll : ℕ) : V) = (133 : V) := by simp [gIdx_proofLenAll]
+  rw [← hk, gmk_proofLenAll]; simp
 
-lemma frag2Pieces_dlenExs : (frag2Pieces : V).[((gIdx_dlenExs : ℕ) : V)] = gpiece_dlenExs := by
+lemma frag2Pieces_proofLenExs : (frag2Pieces : V).[((gIdx_proofLenExs : ℕ) : V)] = gpiece_proofLenExs := by
   unfold frag2Pieces
-  rw [nth_vecOf _ gIdx_dlenExs (Nat.lt_of_sub_eq_succ rfl)]
+  rw [nth_vecOf _ gIdx_proofLenExs (Nat.lt_of_sub_eq_succ rfl)]
   rfl
 
-lemma gmk_dlenExs (ev : V) :
-    mkStep frag2Pieces ((gIdx_dlenExs : ℕ) : V) ev = sUseHorn ((gIdx_dlenExs : ℕ) : V) ev (vecOf row_dlenExs_as) row_dlenExs_c := by
-  rw [mkStep, frag2Pieces_dlenExs]
-  simp [gpiece_dlenExs, sUseHorn]
+lemma gmk_proofLenExs (ev : V) :
+    mkStep frag2Pieces ((gIdx_proofLenExs : ℕ) : V) ev = sUseHorn ((gIdx_proofLenExs : ℕ) : V) ev (vecOf row_proofLenExs_as) row_proofLenExs_c := by
+  rw [mkStep, frag2Pieces_proofLenExs]
+  simp [gpiece_proofLenExs, sUseHorn]
 
-lemma gtag_dlenExs {W : V} (hWp : W = frag2Pieces) (ev : V) : sTag (mkStep W (134 : V) ev) = 0 := by
+lemma gtag_proofLenExs {W : V} (hWp : W = frag2Pieces) (ev : V) : sTag (mkStep W (134 : V) ev) = 0 := by
   subst hWp
-  have hk : ((gIdx_dlenExs : ℕ) : V) = (134 : V) := by simp [gIdx_dlenExs]
-  rw [← hk, gmk_dlenExs]; simp
+  have hk : ((gIdx_proofLenExs : ℕ) : V) = (134 : V) := by simp [gIdx_proofLenExs]
+  rw [← hk, gmk_proofLenExs]; simp
 
-lemma frag2Pieces_dlenShift : (frag2Pieces : V).[((gIdx_dlenShift : ℕ) : V)] = gpiece_dlenShift := by
+lemma frag2Pieces_proofLenShift : (frag2Pieces : V).[((gIdx_proofLenShift : ℕ) : V)] = gpiece_proofLenShift := by
   unfold frag2Pieces
-  rw [nth_vecOf _ gIdx_dlenShift (Nat.lt_of_sub_eq_succ rfl)]
+  rw [nth_vecOf _ gIdx_proofLenShift (Nat.lt_of_sub_eq_succ rfl)]
   rfl
 
-lemma gmk_dlenShift (ev : V) :
-    mkStep frag2Pieces ((gIdx_dlenShift : ℕ) : V) ev = sUseHorn ((gIdx_dlenShift : ℕ) : V) ev (vecOf row_dlenShift_as) row_dlenShift_c := by
-  rw [mkStep, frag2Pieces_dlenShift]
-  simp [gpiece_dlenShift, sUseHorn]
+lemma gmk_proofLenShift (ev : V) :
+    mkStep frag2Pieces ((gIdx_proofLenShift : ℕ) : V) ev = sUseHorn ((gIdx_proofLenShift : ℕ) : V) ev (vecOf row_proofLenShift_as) row_proofLenShift_c := by
+  rw [mkStep, frag2Pieces_proofLenShift]
+  simp [gpiece_proofLenShift, sUseHorn]
 
-lemma gtag_dlenShift {W : V} (hWp : W = frag2Pieces) (ev : V) : sTag (mkStep W (135 : V) ev) = 0 := by
+lemma gtag_proofLenShift {W : V} (hWp : W = frag2Pieces) (ev : V) : sTag (mkStep W (135 : V) ev) = 0 := by
   subst hWp
-  have hk : ((gIdx_dlenShift : ℕ) : V) = (135 : V) := by simp [gIdx_dlenShift]
-  rw [← hk, gmk_dlenShift]; simp
+  have hk : ((gIdx_proofLenShift : ℕ) : V) = (135 : V) := by simp [gIdx_proofLenShift]
+  rw [← hk, gmk_proofLenShift]; simp
 
-lemma frag2Pieces_dlenAxm : (frag2Pieces : V).[((gIdx_dlenAxm : ℕ) : V)] = gpiece_dlenAxm := by
+lemma frag2Pieces_proofLenAxm : (frag2Pieces : V).[((gIdx_proofLenAxm : ℕ) : V)] = gpiece_proofLenAxm := by
   unfold frag2Pieces
-  rw [nth_vecOf _ gIdx_dlenAxm (Nat.lt_of_sub_eq_succ rfl)]
+  rw [nth_vecOf _ gIdx_proofLenAxm (Nat.lt_of_sub_eq_succ rfl)]
   rfl
 
-lemma gmk_dlenAxm (ev : V) :
-    mkStep frag2Pieces ((gIdx_dlenAxm : ℕ) : V) ev = sUseHorn ((gIdx_dlenAxm : ℕ) : V) ev (vecOf row_dlenAxm_as) row_dlenAxm_c := by
-  rw [mkStep, frag2Pieces_dlenAxm]
-  simp [gpiece_dlenAxm, sUseHorn]
+lemma gmk_proofLenAxm (ev : V) :
+    mkStep frag2Pieces ((gIdx_proofLenAxm : ℕ) : V) ev = sUseHorn ((gIdx_proofLenAxm : ℕ) : V) ev (vecOf row_proofLenAxm_as) row_proofLenAxm_c := by
+  rw [mkStep, frag2Pieces_proofLenAxm]
+  simp [gpiece_proofLenAxm, sUseHorn]
 
-lemma gtag_dlenAxm {W : V} (hWp : W = frag2Pieces) (ev : V) : sTag (mkStep W (136 : V) ev) = 0 := by
+lemma gtag_proofLenAxm {W : V} (hWp : W = frag2Pieces) (ev : V) : sTag (mkStep W (136 : V) ev) = 0 := by
   subst hWp
-  have hk : ((gIdx_dlenAxm : ℕ) : V) = (136 : V) := by simp [gIdx_dlenAxm]
-  rw [← hk, gmk_dlenAxm]; simp
+  have hk : ((gIdx_proofLenAxm : ℕ) : V) = (136 : V) := by simp [gIdx_proofLenAxm]
+  rw [← hk, gmk_proofLenAxm]; simp
 
 lemma frag2Pieces_introAxm : (frag2Pieces : V).[((gIdx_introAxm : ℕ) : V)] = gpiece_introAxm := by
   unfold frag2Pieces
@@ -1273,81 +1273,81 @@ lemma gok_introShift {tbl N E Γ W : V} {wd wc wss we : V} (htbl : TableOK tbl N
   · exact neg_mem_of_map hinst.1 (List.forall_mem_cons.mpr ⟨hmem0, List.forall_mem_cons.mpr ⟨hmem1, List.forall_mem_cons.mpr ⟨hmem2, List.forall_mem_cons.mpr ⟨hmem3, List.forall_mem_nil _⟩⟩⟩⟩)
   · rw [ctxAfter_useHorn [wd, wc, wss, we] row_introShift_as isSemiformula_introShift_c (fun e he ↦ (hes e he).1), hinst.2]
 
-/-- Row `dlenAll` as a step. -/
-lemma gok_dlenAll {tbl N E Γ W : V} {we ws wp wd wn wl : V} (htbl : TableOK tbl N) (hF : Frag2Table tbl) (hWp : W = frag2Pieces)
-    (hΓ : IsFormulaSet LAct Γ) (hwe : IsSemiterm LAct 0 we) (hEwe : termLen LAct we ≤ E) (hws : IsSemiterm LAct 0 ws) (hEws : termLen LAct ws ≤ E) (hwp : IsSemiterm LAct 0 wp) (hEwp : termLen LAct wp ≤ E) (hwd : IsSemiterm LAct 0 wd) (hEwd : termLen LAct wd ≤ E) (hwn : IsSemiterm LAct 0 wn) (hEwn : termLen LAct wn ≤ E) (hwl : IsSemiterm LAct 0 wl) (hEwl : termLen LAct wl ≤ E) (hmem0 : neg LAct (allIntroFact we ws wp wd) ∈ Γ) (hmem1 : neg LAct (dlenFact wd wn) ∈ Γ) (hmem2 : neg LAct (setLenFact wl ws) ∈ Γ) :
+/-- Row `proofLenAll` as a step. -/
+lemma gok_proofLenAll {tbl N E Γ W : V} {we ws wp wd wn wl : V} (htbl : TableOK tbl N) (hF : Frag2Table tbl) (hWp : W = frag2Pieces)
+    (hΓ : IsFormulaSet LAct Γ) (hwe : IsSemiterm LAct 0 we) (hEwe : termLen LAct we ≤ E) (hws : IsSemiterm LAct 0 ws) (hEws : termLen LAct ws ≤ E) (hwp : IsSemiterm LAct 0 wp) (hEwp : termLen LAct wp ≤ E) (hwd : IsSemiterm LAct 0 wd) (hEwd : termLen LAct wd ≤ E) (hwn : IsSemiterm LAct 0 wn) (hEwn : termLen LAct wn ≤ E) (hwl : IsSemiterm LAct 0 wl) (hEwl : termLen LAct wl ≤ E) (hmem0 : neg LAct (allIntroFact we ws wp wd) ∈ Γ) (hmem1 : neg LAct (proofLenFact wd wn) ∈ Γ) (hmem2 : neg LAct (sequentLenFact wl ws) ∈ Γ) :
     StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 133 ?[we, ws, wp, wd, wn, wl]) ∧ sTag (mkStep W 133 ?[we, ws, wp, wd, wn, wl]) = 0 ∧
-    ctxAfter Γ (mkStep W 133 ?[we, ws, wp, wd, wn, wl]) = insert (neg LAct (dlenFact we ((wl ^+ wn) ^+ (𝟏 : V)))) Γ := by
+    ctxAfter Γ (mkStep W 133 ?[we, ws, wp, wd, wn, wl]) = insert (neg LAct (proofLenFact we ((wl ^+ wn) ^+ (𝟏 : V)))) Γ := by
   subst hWp
-  have hk : ((gIdx_dlenAll : ℕ) : V) = (133 : V) := by simp [gIdx_dlenAll]
-  have hstep := gmk_dlenAll (V := V) ?[we, ws, wp, wd, wn, wl]
-  have hlen := frag2Table_len hF gIdx_dlenAll (by decide)
-  have hrow := frag2Table_dlenAll hF
+  have hk : ((gIdx_proofLenAll : ℕ) : V) = (133 : V) := by simp [gIdx_proofLenAll]
+  have hstep := gmk_proofLenAll (V := V) ?[we, ws, wp, wd, wn, wl]
+  have hlen := frag2Table_len hF gIdx_proofLenAll (by decide)
+  have hrow := frag2Table_proofLenAll hF
   rw [hk] at hstep hlen hrow
   have hes : ∀ e ∈ [we, ws, wp, wd, wn, wl], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E := List.forall_mem_cons.mpr ⟨⟨hwe, hEwe⟩, List.forall_mem_cons.mpr ⟨⟨hws, hEws⟩, List.forall_mem_cons.mpr ⟨⟨hwp, hEwp⟩, List.forall_mem_cons.mpr ⟨⟨hwd, hEwd⟩, List.forall_mem_cons.mpr ⟨⟨hwn, hEwn⟩, List.forall_mem_cons.mpr ⟨⟨hwl, hEwl⟩, List.forall_mem_nil _⟩⟩⟩⟩⟩⟩
-  have hinst := inst_dlenAll hwe hws hwp hwd hwn hwl
+  have hinst := inst_proofLenAll hwe hws hwp hwd hwn hwl
   rw [hstep, show (?[we, ws, wp, wd, wn, wl] : V) = vecOf [we, ws, wp, wd, wn, wl] from rfl]
-  refine ⟨stepOK_useHorn htbl [we, ws, wp, wd, wn, wl] row_dlenAll_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : 6 ≤ 8))
-    (by rw [show row_dlenAll_as.length = 3 from rfl] <;> exact_mod_cast (by decide : 3 ≤ 8)) hes ?_, by simp, ?_⟩
+  refine ⟨stepOK_useHorn htbl [we, ws, wp, wd, wn, wl] row_proofLenAll_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : 6 ≤ 8))
+    (by rw [show row_proofLenAll_as.length = 3 from rfl] <;> exact_mod_cast (by decide : 3 ≤ 8)) hes ?_, by simp, ?_⟩
   · exact neg_mem_of_map hinst.1 (List.forall_mem_cons.mpr ⟨hmem0, List.forall_mem_cons.mpr ⟨hmem1, List.forall_mem_cons.mpr ⟨hmem2, List.forall_mem_nil _⟩⟩⟩)
-  · rw [ctxAfter_useHorn [we, ws, wp, wd, wn, wl] row_dlenAll_as isSemiformula_dlenAll_c (fun e he ↦ (hes e he).1), hinst.2]
+  · rw [ctxAfter_useHorn [we, ws, wp, wd, wn, wl] row_proofLenAll_as isSemiformula_proofLenAll_c (fun e he ↦ (hes e he).1), hinst.2]
 
-/-- Row `dlenExs` as a step. -/
-lemma gok_dlenExs {tbl N E Γ W : V} {we ws wp wt wd wn wl wlt : V} (htbl : TableOK tbl N) (hF : Frag2Table tbl) (hWp : W = frag2Pieces)
-    (hΓ : IsFormulaSet LAct Γ) (hwe : IsSemiterm LAct 0 we) (hEwe : termLen LAct we ≤ E) (hws : IsSemiterm LAct 0 ws) (hEws : termLen LAct ws ≤ E) (hwp : IsSemiterm LAct 0 wp) (hEwp : termLen LAct wp ≤ E) (hwt : IsSemiterm LAct 0 wt) (hEwt : termLen LAct wt ≤ E) (hwd : IsSemiterm LAct 0 wd) (hEwd : termLen LAct wd ≤ E) (hwn : IsSemiterm LAct 0 wn) (hEwn : termLen LAct wn ≤ E) (hwl : IsSemiterm LAct 0 wl) (hEwl : termLen LAct wl ≤ E) (hwlt : IsSemiterm LAct 0 wlt) (hEwlt : termLen LAct wlt ≤ E) (hmem0 : neg LAct (exsIntroFact we ws wp wt wd) ∈ Γ) (hmem1 : neg LAct (dlenFact wd wn) ∈ Γ) (hmem2 : neg LAct (setLenFact wl ws) ∈ Γ) (hmem3 : neg LAct (tlenFact wlt wt) ∈ Γ) :
+/-- Row `proofLenExs` as a step. -/
+lemma gok_proofLenExs {tbl N E Γ W : V} {we ws wp wt wd wn wl wlt : V} (htbl : TableOK tbl N) (hF : Frag2Table tbl) (hWp : W = frag2Pieces)
+    (hΓ : IsFormulaSet LAct Γ) (hwe : IsSemiterm LAct 0 we) (hEwe : termLen LAct we ≤ E) (hws : IsSemiterm LAct 0 ws) (hEws : termLen LAct ws ≤ E) (hwp : IsSemiterm LAct 0 wp) (hEwp : termLen LAct wp ≤ E) (hwt : IsSemiterm LAct 0 wt) (hEwt : termLen LAct wt ≤ E) (hwd : IsSemiterm LAct 0 wd) (hEwd : termLen LAct wd ≤ E) (hwn : IsSemiterm LAct 0 wn) (hEwn : termLen LAct wn ≤ E) (hwl : IsSemiterm LAct 0 wl) (hEwl : termLen LAct wl ≤ E) (hwlt : IsSemiterm LAct 0 wlt) (hEwlt : termLen LAct wlt ≤ E) (hmem0 : neg LAct (exsIntroFact we ws wp wt wd) ∈ Γ) (hmem1 : neg LAct (proofLenFact wd wn) ∈ Γ) (hmem2 : neg LAct (sequentLenFact wl ws) ∈ Γ) (hmem3 : neg LAct (termLenMetaFact wlt wt) ∈ Γ) :
     StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 134 ?[we, ws, wp, wt, wd, wn, wl, wlt]) ∧ sTag (mkStep W 134 ?[we, ws, wp, wt, wd, wn, wl, wlt]) = 0 ∧
-    ctxAfter Γ (mkStep W 134 ?[we, ws, wp, wt, wd, wn, wl, wlt]) = insert (neg LAct (dlenFact we (((wl ^+ wlt) ^+ wn) ^+ (𝟏 : V)))) Γ := by
+    ctxAfter Γ (mkStep W 134 ?[we, ws, wp, wt, wd, wn, wl, wlt]) = insert (neg LAct (proofLenFact we (((wl ^+ wlt) ^+ wn) ^+ (𝟏 : V)))) Γ := by
   subst hWp
-  have hk : ((gIdx_dlenExs : ℕ) : V) = (134 : V) := by simp [gIdx_dlenExs]
-  have hstep := gmk_dlenExs (V := V) ?[we, ws, wp, wt, wd, wn, wl, wlt]
-  have hlen := frag2Table_len hF gIdx_dlenExs (by decide)
-  have hrow := frag2Table_dlenExs hF
+  have hk : ((gIdx_proofLenExs : ℕ) : V) = (134 : V) := by simp [gIdx_proofLenExs]
+  have hstep := gmk_proofLenExs (V := V) ?[we, ws, wp, wt, wd, wn, wl, wlt]
+  have hlen := frag2Table_len hF gIdx_proofLenExs (by decide)
+  have hrow := frag2Table_proofLenExs hF
   rw [hk] at hstep hlen hrow
   have hes : ∀ e ∈ [we, ws, wp, wt, wd, wn, wl, wlt], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E := List.forall_mem_cons.mpr ⟨⟨hwe, hEwe⟩, List.forall_mem_cons.mpr ⟨⟨hws, hEws⟩, List.forall_mem_cons.mpr ⟨⟨hwp, hEwp⟩, List.forall_mem_cons.mpr ⟨⟨hwt, hEwt⟩, List.forall_mem_cons.mpr ⟨⟨hwd, hEwd⟩, List.forall_mem_cons.mpr ⟨⟨hwn, hEwn⟩, List.forall_mem_cons.mpr ⟨⟨hwl, hEwl⟩, List.forall_mem_cons.mpr ⟨⟨hwlt, hEwlt⟩, List.forall_mem_nil _⟩⟩⟩⟩⟩⟩⟩⟩
-  have hinst := inst_dlenExs hwe hws hwp hwt hwd hwn hwl hwlt
+  have hinst := inst_proofLenExs hwe hws hwp hwt hwd hwn hwl hwlt
   rw [hstep, show (?[we, ws, wp, wt, wd, wn, wl, wlt] : V) = vecOf [we, ws, wp, wt, wd, wn, wl, wlt] from rfl]
-  refine ⟨stepOK_useHorn htbl [we, ws, wp, wt, wd, wn, wl, wlt] row_dlenExs_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : 8 ≤ 8))
-    (by rw [show row_dlenExs_as.length = 4 from rfl] <;> exact_mod_cast (by decide : 4 ≤ 8)) hes ?_, by simp, ?_⟩
+  refine ⟨stepOK_useHorn htbl [we, ws, wp, wt, wd, wn, wl, wlt] row_proofLenExs_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : 8 ≤ 8))
+    (by rw [show row_proofLenExs_as.length = 4 from rfl] <;> exact_mod_cast (by decide : 4 ≤ 8)) hes ?_, by simp, ?_⟩
   · exact neg_mem_of_map hinst.1 (List.forall_mem_cons.mpr ⟨hmem0, List.forall_mem_cons.mpr ⟨hmem1, List.forall_mem_cons.mpr ⟨hmem2, List.forall_mem_cons.mpr ⟨hmem3, List.forall_mem_nil _⟩⟩⟩⟩)
-  · rw [ctxAfter_useHorn [we, ws, wp, wt, wd, wn, wl, wlt] row_dlenExs_as isSemiformula_dlenExs_c (fun e he ↦ (hes e he).1), hinst.2]
+  · rw [ctxAfter_useHorn [we, ws, wp, wt, wd, wn, wl, wlt] row_proofLenExs_as isSemiformula_proofLenExs_c (fun e he ↦ (hes e he).1), hinst.2]
 
-/-- Row `dlenShift` as a step. -/
-lemma gok_dlenShift {tbl N E Γ W : V} {we ws wd wn wl : V} (htbl : TableOK tbl N) (hF : Frag2Table tbl) (hWp : W = frag2Pieces)
-    (hΓ : IsFormulaSet LAct Γ) (hwe : IsSemiterm LAct 0 we) (hEwe : termLen LAct we ≤ E) (hws : IsSemiterm LAct 0 ws) (hEws : termLen LAct ws ≤ E) (hwd : IsSemiterm LAct 0 wd) (hEwd : termLen LAct wd ≤ E) (hwn : IsSemiterm LAct 0 wn) (hEwn : termLen LAct wn ≤ E) (hwl : IsSemiterm LAct 0 wl) (hEwl : termLen LAct wl ≤ E) (hmem0 : neg LAct (shiftRuleFact we ws wd) ∈ Γ) (hmem1 : neg LAct (dlenFact wd wn) ∈ Γ) (hmem2 : neg LAct (setLenFact wl ws) ∈ Γ) :
+/-- Row `proofLenShift` as a step. -/
+lemma gok_proofLenShift {tbl N E Γ W : V} {we ws wd wn wl : V} (htbl : TableOK tbl N) (hF : Frag2Table tbl) (hWp : W = frag2Pieces)
+    (hΓ : IsFormulaSet LAct Γ) (hwe : IsSemiterm LAct 0 we) (hEwe : termLen LAct we ≤ E) (hws : IsSemiterm LAct 0 ws) (hEws : termLen LAct ws ≤ E) (hwd : IsSemiterm LAct 0 wd) (hEwd : termLen LAct wd ≤ E) (hwn : IsSemiterm LAct 0 wn) (hEwn : termLen LAct wn ≤ E) (hwl : IsSemiterm LAct 0 wl) (hEwl : termLen LAct wl ≤ E) (hmem0 : neg LAct (shiftRuleFact we ws wd) ∈ Γ) (hmem1 : neg LAct (proofLenFact wd wn) ∈ Γ) (hmem2 : neg LAct (sequentLenFact wl ws) ∈ Γ) :
     StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 135 ?[we, ws, wd, wn, wl]) ∧ sTag (mkStep W 135 ?[we, ws, wd, wn, wl]) = 0 ∧
-    ctxAfter Γ (mkStep W 135 ?[we, ws, wd, wn, wl]) = insert (neg LAct (dlenFact we ((wl ^+ wn) ^+ (𝟏 : V)))) Γ := by
+    ctxAfter Γ (mkStep W 135 ?[we, ws, wd, wn, wl]) = insert (neg LAct (proofLenFact we ((wl ^+ wn) ^+ (𝟏 : V)))) Γ := by
   subst hWp
-  have hk : ((gIdx_dlenShift : ℕ) : V) = (135 : V) := by simp [gIdx_dlenShift]
-  have hstep := gmk_dlenShift (V := V) ?[we, ws, wd, wn, wl]
-  have hlen := frag2Table_len hF gIdx_dlenShift (by decide)
-  have hrow := frag2Table_dlenShift hF
+  have hk : ((gIdx_proofLenShift : ℕ) : V) = (135 : V) := by simp [gIdx_proofLenShift]
+  have hstep := gmk_proofLenShift (V := V) ?[we, ws, wd, wn, wl]
+  have hlen := frag2Table_len hF gIdx_proofLenShift (by decide)
+  have hrow := frag2Table_proofLenShift hF
   rw [hk] at hstep hlen hrow
   have hes : ∀ e ∈ [we, ws, wd, wn, wl], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E := List.forall_mem_cons.mpr ⟨⟨hwe, hEwe⟩, List.forall_mem_cons.mpr ⟨⟨hws, hEws⟩, List.forall_mem_cons.mpr ⟨⟨hwd, hEwd⟩, List.forall_mem_cons.mpr ⟨⟨hwn, hEwn⟩, List.forall_mem_cons.mpr ⟨⟨hwl, hEwl⟩, List.forall_mem_nil _⟩⟩⟩⟩⟩
-  have hinst := inst_dlenShift hwe hws hwd hwn hwl
+  have hinst := inst_proofLenShift hwe hws hwd hwn hwl
   rw [hstep, show (?[we, ws, wd, wn, wl] : V) = vecOf [we, ws, wd, wn, wl] from rfl]
-  refine ⟨stepOK_useHorn htbl [we, ws, wd, wn, wl] row_dlenShift_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : 5 ≤ 8))
-    (by rw [show row_dlenShift_as.length = 3 from rfl] <;> exact_mod_cast (by decide : 3 ≤ 8)) hes ?_, by simp, ?_⟩
+  refine ⟨stepOK_useHorn htbl [we, ws, wd, wn, wl] row_proofLenShift_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : 5 ≤ 8))
+    (by rw [show row_proofLenShift_as.length = 3 from rfl] <;> exact_mod_cast (by decide : 3 ≤ 8)) hes ?_, by simp, ?_⟩
   · exact neg_mem_of_map hinst.1 (List.forall_mem_cons.mpr ⟨hmem0, List.forall_mem_cons.mpr ⟨hmem1, List.forall_mem_cons.mpr ⟨hmem2, List.forall_mem_nil _⟩⟩⟩)
-  · rw [ctxAfter_useHorn [we, ws, wd, wn, wl] row_dlenShift_as isSemiformula_dlenShift_c (fun e he ↦ (hes e he).1), hinst.2]
+  · rw [ctxAfter_useHorn [we, ws, wd, wn, wl] row_proofLenShift_as isSemiformula_proofLenShift_c (fun e he ↦ (hes e he).1), hinst.2]
 
-/-- Row `dlenAxm` as a step. -/
-lemma gok_dlenAxm {tbl N E Γ W : V} {we ws wp wl : V} (htbl : TableOK tbl N) (hF : Frag2Table tbl) (hWp : W = frag2Pieces)
-    (hΓ : IsFormulaSet LAct Γ) (hwe : IsSemiterm LAct 0 we) (hEwe : termLen LAct we ≤ E) (hws : IsSemiterm LAct 0 ws) (hEws : termLen LAct ws ≤ E) (hwp : IsSemiterm LAct 0 wp) (hEwp : termLen LAct wp ≤ E) (hwl : IsSemiterm LAct 0 wl) (hEwl : termLen LAct wl ≤ E) (hmem0 : neg LAct (axmFact we ws wp) ∈ Γ) (hmem1 : neg LAct (setLenFact wl ws) ∈ Γ) :
+/-- Row `proofLenAxm` as a step. -/
+lemma gok_proofLenAxm {tbl N E Γ W : V} {we ws wp wl : V} (htbl : TableOK tbl N) (hF : Frag2Table tbl) (hWp : W = frag2Pieces)
+    (hΓ : IsFormulaSet LAct Γ) (hwe : IsSemiterm LAct 0 we) (hEwe : termLen LAct we ≤ E) (hws : IsSemiterm LAct 0 ws) (hEws : termLen LAct ws ≤ E) (hwp : IsSemiterm LAct 0 wp) (hEwp : termLen LAct wp ≤ E) (hwl : IsSemiterm LAct 0 wl) (hEwl : termLen LAct wl ≤ E) (hmem0 : neg LAct (axmFact we ws wp) ∈ Γ) (hmem1 : neg LAct (sequentLenFact wl ws) ∈ Γ) :
     StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 136 ?[we, ws, wp, wl]) ∧ sTag (mkStep W 136 ?[we, ws, wp, wl]) = 0 ∧
-    ctxAfter Γ (mkStep W 136 ?[we, ws, wp, wl]) = insert (neg LAct (dlenFact we (wl ^+ (𝟏 : V)))) Γ := by
+    ctxAfter Γ (mkStep W 136 ?[we, ws, wp, wl]) = insert (neg LAct (proofLenFact we (wl ^+ (𝟏 : V)))) Γ := by
   subst hWp
-  have hk : ((gIdx_dlenAxm : ℕ) : V) = (136 : V) := by simp [gIdx_dlenAxm]
-  have hstep := gmk_dlenAxm (V := V) ?[we, ws, wp, wl]
-  have hlen := frag2Table_len hF gIdx_dlenAxm (by decide)
-  have hrow := frag2Table_dlenAxm hF
+  have hk : ((gIdx_proofLenAxm : ℕ) : V) = (136 : V) := by simp [gIdx_proofLenAxm]
+  have hstep := gmk_proofLenAxm (V := V) ?[we, ws, wp, wl]
+  have hlen := frag2Table_len hF gIdx_proofLenAxm (by decide)
+  have hrow := frag2Table_proofLenAxm hF
   rw [hk] at hstep hlen hrow
   have hes : ∀ e ∈ [we, ws, wp, wl], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E := List.forall_mem_cons.mpr ⟨⟨hwe, hEwe⟩, List.forall_mem_cons.mpr ⟨⟨hws, hEws⟩, List.forall_mem_cons.mpr ⟨⟨hwp, hEwp⟩, List.forall_mem_cons.mpr ⟨⟨hwl, hEwl⟩, List.forall_mem_nil _⟩⟩⟩⟩
-  have hinst := inst_dlenAxm hwe hws hwp hwl
+  have hinst := inst_proofLenAxm hwe hws hwp hwl
   rw [hstep, show (?[we, ws, wp, wl] : V) = vecOf [we, ws, wp, wl] from rfl]
-  refine ⟨stepOK_useHorn htbl [we, ws, wp, wl] row_dlenAxm_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : 4 ≤ 8))
-    (by rw [show row_dlenAxm_as.length = 2 from rfl] <;> exact_mod_cast (by decide : 2 ≤ 8)) hes ?_, by simp, ?_⟩
+  refine ⟨stepOK_useHorn htbl [we, ws, wp, wl] row_proofLenAxm_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : 4 ≤ 8))
+    (by rw [show row_proofLenAxm_as.length = 2 from rfl] <;> exact_mod_cast (by decide : 2 ≤ 8)) hes ?_, by simp, ?_⟩
   · exact neg_mem_of_map hinst.1 (List.forall_mem_cons.mpr ⟨hmem0, List.forall_mem_cons.mpr ⟨hmem1, List.forall_mem_nil _⟩⟩)
-  · rw [ctxAfter_useHorn [we, ws, wp, wl] row_dlenAxm_as isSemiformula_dlenAxm_c (fun e he ↦ (hes e he).1), hinst.2]
+  · rw [ctxAfter_useHorn [we, ws, wp, wl] row_proofLenAxm_as isSemiformula_proofLenAxm_c (fun e he ↦ (hes e he).1), hinst.2]
 
 /-- Row `introAxm` as a step. -/
 lemma gok_introAxm {tbl N E Γ W : V} {ws wp we : V} (htbl : TableOK tbl N) (hF : Frag2Table tbl) (hWp : W = frag2Pieces)

@@ -1,33 +1,33 @@
 import ArithS.Box.CutV
-import ArithS.Agents.Bnum
+import ArithS.Agents.BinNumeral
 
 /-!
-# ArithS.InstV — the `bnum`-instance operator, the parametric box, and Quantifier Distribution on codes
+# ArithS.InstV — the `binNumeral`-instance operator, the parametric box, and Quantifier Distribution on codes
 
 M4 items U1 and U3 of `Research/Notes/M4_BOUNDED_HBL/BRIEF.md` §3, V-generic (every model of
 `IΣ₁`), on Foundation's formula/derivation CODES.
 
-* **U1.** `instB n k := subst LAct (bnum k ∷ 0) n` — the formula code `n` (one free variable
-  `#0`) with the BINARY numeral of `k` substituted (Foundation's `substs1 LAct (bnum k) n`);
+* **U1.** `instB n k := subst LAct (binNumeral k ∷ 0) n` — the formula code `n` (one free variable
+  `#0`) with the BINARY numeral of `k` substituted (Foundation's `substs1 LAct (binNumeral k) n`);
   its Σ₁ graph `instBGraph`, the `IsSemiformula` transport `isSemiformula_instB`, and the meta
-  code equation `quote_instB : instB ⌜φ⌝ k = ⌜φ ⇜ ![lMap emb (bnumT k)]⌝` (the `quote_trAt`
-  route of `ArithS.Code`), and the LENGTH bound `formulaLen_instB_le : |instB n k| ≤ |n| · |bnum k|`
+  code equation `quote_instB : instB ⌜φ⌝ k = ⌜φ ⇜ ![lMap emb (binNumeralMeta k)]⌝` (the `quote_sentenceAt`
+  route of `ArithS.Code`), and the LENGTH bound `formulaLen_instB_le : |instB n k| ≤ |n| · |binNumeral k|`
   (from `formulaLen_subst_le`, `|p[w]| ≤ |p| · B` for vectors whose entries are identity
   variables or closed terms of length `≤ B` — the invariant `SubstInv`, preserved by `qVec`
   because the bound shift fixes closed terms, `termBShift_eq_self_of_closed`; a Π₁ structural
   induction on formula codes over a Π₁ induction on term codes and a vector induction for
-  `listSum`). `bewB a n k := LenDerivable TAct a (instB n k)` is the parametric box "`□_a` of
+  `listSum`). `bewB a n k := LenBoxUnbounded TAct a (instB n k)` is the parametric box "`□_a` of
   the `k`-instance of `n`", with its Σ₁ semisentence `bewBDef`.
-* **U3 — Property 2 (Quantifier Distribution) with `dlen` accounting.** `instCode χ t d` is
+* **U3 — Property 2 (Quantifier Distribution) with `proofLen` accounting.** `instCode χ t d` is
   the derivation code of `{χ[t]}` from `d : {∀χ}`: cut on `∀χ` against `{∃∼χ, χ[t]}`, which
   `exsIntro` introduces at the term `t` from the closed leaf `{∼χ[t], ∃∼χ, χ[t]}`
   (`substs_neg` turns `(∼χ)[t]` into `∼(χ[t])`, `neg_all` turns `∼∀χ` into `∃∼χ`). Its
-  `Proof` is `instCode_proof`; its length is EXACT (`dlen_instCode`, by the `DlenGraph.*_iff`
-  inversion clauses) and bounded by `dlen d + 5|χ[t]| + 3|χ| + |t| + 7` (`dlen_instCode_le`).
-  The theorems: `lenDerivable_inst_V` (any term, any Δ₁ theory), `lenDerivable_instB_V`
-  (`t = bnum k` at `TAct`; `lenDerivable_instB_V'` with the instance length eliminated:
-  `N + 5|χ|·|bnum k| + 3|χ| + |bnum k| + 7`; `bewB_of_all` in the box vocabulary), the meta twin `lenProvable_inst` at `V = ℕ` (the final meta step
-  of PBLT — instantiate the uniform proof at `k`, cost `O(|χ[bnum k]| + size k)`), and the
+  `Proof` is `instCode_proof`; its length is EXACT (`proofLen_instCode`, by the `ProofLenGraph.*_iff`
+  inversion clauses) and bounded by `proofLen d + 5|χ[t]| + 3|χ| + |t| + 7` (`proofLen_instCode_le`).
+  The theorems: `lenBoxUnbounded_inst_V` (any term, any Δ₁ theory), `lenBoxUnbounded_instB_V`
+  (`t = binNumeral k` at `TAct`; `lenBoxUnbounded_instB_V'` with the instance length eliminated:
+  `N + 5|χ|·|binNumeral k| + 3|χ| + |binNumeral k| + 7`; `bewB_of_all` in the box vocabulary), the meta twin `lenBoxNat_inst` at `V = ℕ` (the final meta step
+  of PBLT — instantiate the uniform proof at `k`, cost `O(|χ[binNumeral k]| + size k)`), and the
   single-sentence form `instSentence` proved by `IΣ₁`/`PA`/`TAct` (`complete`).
 
 Constants: `c₀ = 7`; the instance formula is charged `5×`, the template `3×`, the term `1×`
@@ -35,7 +35,7 @@ Constants: `c₀ = 7`; the instance formula is charged `5×`, the template `3×`
 its whole conclusion). The bound is stated in `|χ[t]|`, `|χ|`, `|t|` separately: `|χ| ≤ |χ[t]|`
 and `|t| ≤ |χ[t]|` hold only when `#0` occurs in `χ`, so no single-quantity form is sharp.
 
-Imports only `ArithS.CutV` and `ArithS.Bnum`; the `ℒₒᵣ → LAct` term-code transport of
+Imports only `ArithS.CutV` and `ArithS.BinNumeral`; the `ℒₒᵣ → LAct` term-code transport of
 `ArithS.Subst` is therefore re-proved here under the `InstV` namespace (four lines each).
 -/
 
@@ -76,19 +76,19 @@ lemma isSemiterm_LAct_of_LOR {n t : V} (ht : IsSemiterm ℒₒᵣ n t) : IsSemit
 end InstV
 
 /-- The binary numeral is a closed `LAct` term code. -/
-lemma bnum_term_LAct (k : V) : IsTerm LAct (bnum k) := InstV.isSemiterm_LAct_of_LOR (bnum_semiterm 0 k)
+lemma binNumeral_term_LAct (k : V) : IsTerm LAct (binNumeral k) := InstV.isSemiterm_LAct_of_LOR (binNumeral_semiterm 0 k)
 
-/-! ### U1 — the `bnum`-instance operator -/
+/-! ### U1 — the `binNumeral`-instance operator -/
 
 /-- The formula code `n` (one free variable `#0`) with the binary numeral of `k` substituted:
-`instB n k = substs1 LAct (bnum k) n` (definitionally). -/
-noncomputable def instB (n k : V) : V := subst LAct (bnum k ∷ 0) n
+`instB n k = substs1 LAct (binNumeral k) n` (definitionally). -/
+noncomputable def instB (n k : V) : V := subst LAct (binNumeral k ∷ 0) n
 
-lemma instB_eq_substs1 (n k : V) : instB n k = substs1 LAct (bnum k) n := rfl
+lemma instB_eq_substs1 (n k : V) : instB n k = substs1 LAct (binNumeral k) n := rfl
 
 /-- The Σ₁ graph of `instB` (`y n k`): the numeral, the one-entry vector, the substitution. -/
 noncomputable def instBGraph : 𝚺₁.Semisentence 3 := .mkSigma
-  “y n k. ∃ t, !bnumGraph t k ∧ ∃ v, !adjoinDef v t 0 ∧ !(substsGraph LAct) y v n”
+  “y n k. ∃ t, !binNumeralGraph t k ∧ ∃ v, !adjoinDef v t 0 ∧ !(substsGraph LAct) y v n”
 
 instance instB.defined : 𝚺₁-Function₂ (instB : V → V → V) via instBGraph := .mk fun v ↦ by
   simp [instBGraph, instB]
@@ -96,7 +96,7 @@ instance instB.defined : 𝚺₁-Function₂ (instB : V → V → V) via instBGr
 /-- The `k`-instance of a one-variable formula code is a sentence code. -/
 lemma isSemiformula_instB {n : V} (hn : IsSemiformula LAct 1 n) (k : V) :
     IsSemiformula LAct 0 (instB n k) :=
-  IsSemiformula.substs1 (bnum_term_LAct k) hn
+  IsSemiformula.substs1 (binNumeral_term_LAct k) hn
 
 /-! #### The meta code equation -/
 
@@ -109,11 +109,11 @@ lemma term_emb_lMap_emb' (t : ClosedSemiterm ℒₒᵣ 0) :
   | fvar x => exact x.elim
   | func f v ih => simp [Rew.func, Semiterm.lMap_func, Function.comp_def, ih]
 
-/-- The `LAct` code of the binary numeral term (embedded along `emb`) is `bnum k`. -/
-lemma quote_lMap_bnumT (k : ℕ) :
-    (⌜(Semiterm.lMap emb (bnumT k) : ClosedSemiterm LAct 0)⌝ : V) = bnum (k : V) := by
+/-- The `LAct` code of the binary numeral term (embedded along `emb`) is `binNumeral k`. -/
+lemma quote_lMap_binNumeralMeta (k : ℕ) :
+    (⌜(Semiterm.lMap emb (binNumeralMeta k) : ClosedSemiterm LAct 0)⌝ : V) = binNumeral (k : V) := by
   rw [Semiterm.empty_quote_def, term_emb_lMap_emb', quote_term_lMap_emb, ← Semiterm.empty_quote_def,
-    quote_bnumT]
+    quote_binNumeralMeta]
 
 lemma typed_val_emb' (t : ClosedSemiterm LAct 0) :
     ((⌜(Rew.emb t : SyntacticSemiterm LAct 0)⌝ : Bootstrapping.Semiterm V LAct 0)).val = (⌜t⌝ : V) := rfl
@@ -121,41 +121,41 @@ lemma typed_val_emb' (t : ClosedSemiterm LAct 0) :
 /-- **The code equation**: `instB ⌜φ⌝ k` is the code of `φ` with the binary numeral term
 of `k` substituted. -/
 theorem quote_instB (φ : Semisentence LAct 1) (k : ℕ) :
-    instB (⌜φ⌝ : V) (k : V) = ⌜(φ ⇜ ![Semiterm.lMap emb (bnumT k)] : Sentence LAct)⌝ := by
+    instB (⌜φ⌝ : V) (k : V) = ⌜(φ ⇜ ![Semiterm.lMap emb (binNumeralMeta k)] : Sentence LAct)⌝ := by
   unfold instB
   conv_rhs =>
     rw [Sentence.quote_def, Semiformula.coe_subst_eq_subst_coe, Semiformula.quote_def,
       Semiformula.typed_quote_substs, Bootstrapping.Semiformula.val_substs, ← Semiformula.quote_def,
       ← Sentence.quote_def]
   congr 1
-  have hv : (fun i ↦ (⌜(Rew.emb (![Semiterm.lMap emb (bnumT k)] i) : SyntacticSemiterm LAct 0)⌝ :
+  have hv : (fun i ↦ (⌜(Rew.emb (![Semiterm.lMap emb (binNumeralMeta k)] i) : SyntacticSemiterm LAct 0)⌝ :
       Bootstrapping.Semiterm V LAct 0)) =
-      ![⌜(Rew.emb (Semiterm.lMap emb (bnumT k)) : SyntacticSemiterm LAct 0)⌝] := by
+      ![⌜(Rew.emb (Semiterm.lMap emb (binNumeralMeta k)) : SyntacticSemiterm LAct 0)⌝] := by
     funext i; fin_cases i; rfl
   rw [hv]
-  simp only [SemitermVec.val_cons, SemitermVec.val_nil, typed_val_emb', quote_lMap_bnumT]
+  simp only [SemitermVec.val_cons, SemitermVec.val_nil, typed_val_emb', quote_lMap_binNumeralMeta]
 
 end quote
 
 /-! ### U1 — the parametric box -/
 
 /-- The parametric box: `□_a` of the `k`-instance of the formula code `n`
-(`LenDerivable` — no code bound). -/
-def bewB (a n k : V) : Prop := LenDerivable TAct a (instB n k)
+(`LenBoxUnbounded` — no code bound). -/
+def bewB (a n k : V) : Prop := LenBoxUnbounded TAct a (instB n k)
 
 /-- `bewB` as a Σ₁ semisentence (`a n k`). -/
 noncomputable def bewBDef : 𝚺₁.Semisentence 3 := .mkSigma
-  “a n k. ∃ g, !instBGraph g n k ∧ !(lenDerivableDef TAct) a g”
+  “a n k. ∃ g, !instBGraph g n k ∧ !(lenBoxUnboundedDef TAct) a g”
 
 instance bewB.defined : 𝚺₁-Relation₃[V] bewB via bewBDef := .mk fun v ↦ by
-  simp [bewBDef, bewB, (LenDerivable.defined (V := V) TAct).iff]
+  simp [bewBDef, bewB, (LenBoxUnbounded.defined (V := V) TAct).iff]
 
 /-! ### U1 — the length of a substitution instance, inside `V`
 
 `|p[w]| ≤ |p| · B` whenever every entry of `w` is either the identity variable `#i` or a CLOSED
 term of length `≤ B ≥ 1` (`SubstInv`): a bound variable `#i` is charged `i + 1 ≤ (i + 1)·B`, a
 closed entry `≤ B`, and closed entries are fixed by the bound shift, so the invariant passes
-through `qVec` under quantifiers. For `instB n k` this gives `|instB n k| ≤ |n| · |bnum k|`. -/
+through `qVec` under quantifiers. For `instB n k` this gives `|instB n k| ≤ |n| · |binNumeral k|`. -/
 
 section length
 
@@ -304,11 +304,11 @@ lemma formulaLen_subst_le {B : V} (hB : 1 ≤ B) {n p : V} (hp : IsSemiformula L
 
 end length
 
-/-- **The length of the `bnum k`-instance**: `|instB n k| ≤ |n| · |bnum k|`. -/
+/-- **The length of the `binNumeral k`-instance**: `|instB n k| ≤ |n| · |binNumeral k|`. -/
 theorem formulaLen_instB_le {n : V} (hn : IsSemiformula LAct 1 n) (k : V) :
-    formulaLen LAct (instB n k) ≤ formulaLen LAct n * termLen LAct (bnum k) :=
-  formulaLen_subst_le (one_le_termLen (bnum_term_LAct k)) hn 0 (bnum k ∷ 0)
-    (by simp [bnum_term_LAct k]) (substInv_single (bnum_term_LAct k) (le_refl _))
+    formulaLen LAct (instB n k) ≤ formulaLen LAct n * termLen LAct (binNumeral k) :=
+  formulaLen_subst_le (one_le_termLen (binNumeral_term_LAct k)) hn 0 (binNumeral k ∷ 0)
+    (by simp [binNumeral_term_LAct k]) (substInv_single (binNumeral_term_LAct k) (le_refl _))
 
 /-! ### U3 — Quantifier Distribution on codes -/
 
@@ -355,91 +355,91 @@ theorem instCode_proof {χ t d : V} (hχ : IsSemiformula L 1 χ) (ht : IsTerm L 
   exact e₂
 
 /-- The exact length of the instance code, node by node. -/
-theorem dlen_instCode {χ t d : V} (hχ : IsSemiformula L 1 χ) (ht : IsTerm L t)
+theorem proofLen_instCode {χ t d : V} (hχ : IsSemiformula L 1 χ) (ht : IsTerm L t)
     (hd : Proof T d (^∀ χ)) :
-    dlen T (instCode L χ t d) =
-      setLen L ({substs1 L t χ} : V)
-      + (setLen L (insert (^∀ χ) {substs1 L t χ}) + dlen T d + 1)
-      + (setLen L (insert (^∃ neg L χ) {substs1 L t χ}) + termLen L t
-          + (setLen L (insert (substs1 L t (neg L χ)) (insert (^∃ neg L χ) {substs1 L t χ})) + 1) + 1)
+    proofLen T (instCode L χ t d) =
+      sequentLen L ({substs1 L t χ} : V)
+      + (sequentLen L (insert (^∀ χ) {substs1 L t χ}) + proofLen T d + 1)
+      + (sequentLen L (insert (^∃ neg L χ) {substs1 L t χ}) + termLen L t
+          + (sequentLen L (insert (substs1 L t (neg L χ)) (insert (^∃ neg L χ) {substs1 L t χ})) + 1) + 1)
       + 1 := by
-  apply dlen_eq_of_graph (instCode_proof hχ ht hd).2
+  apply proofLen_eq_of_graph (instCode_proof hχ ht hd).2
   unfold instCode
-  refine DlenGraph.cutRule_iff.mpr ⟨_, _, DlenGraph.wkRule_iff.mpr ⟨_, dlen_graph hd.2, rfl⟩, ?_, rfl⟩
-  exact DlenGraph.exsIntro_iff.mpr ⟨_, DlenGraph.axL_iff.mpr rfl, rfl⟩
+  refine ProofLenGraph.cutRule_iff.mpr ⟨_, _, ProofLenGraph.wkRule_iff.mpr ⟨_, proofLen_graph hd.2, rfl⟩, ?_, rfl⟩
+  exact ProofLenGraph.exsIntro_iff.mpr ⟨_, ProofLenGraph.axL_iff.mpr rfl, rfl⟩
 
 /-- **Quantifier Distribution on codes, sharp**:
-`dlen (instCode) ≤ dlen d + 5|χ[t]| + 3|χ| + |t| + 7`. -/
-theorem dlen_instCode_le {χ t d : V} (hχ : IsSemiformula L 1 χ) (ht : IsTerm L t)
+`proofLen (instCode) ≤ proofLen d + 5|χ[t]| + 3|χ| + |t| + 7`. -/
+theorem proofLen_instCode_le {χ t d : V} (hχ : IsSemiformula L 1 χ) (ht : IsTerm L t)
     (hd : Proof T d (^∀ χ)) :
-    dlen T (instCode L χ t d) ≤
-      dlen T d + 5 * formulaLen L (substs1 L t χ) + 3 * formulaLen L χ + termLen L t + 7 := by
+    proofLen T (instCode L χ t d) ≤
+      proofLen T d + 5 * formulaLen L (substs1 L t χ) + 3 * formulaLen L χ + termLen L t + 7 := by
   have hχ' := hχ.isUFormula
   have hχt : IsFormula L (substs1 L t χ) := hχ.substs1 ht
   have hneg : substs1 L t (neg L χ) = neg L (substs1 L t χ) := substs1_neg_code hχ ht
   set A := formulaLen L (substs1 L t χ) with hA
   set B := formulaLen L χ with hB
-  have h₁ : setLen L (insert (^∀ χ) ({substs1 L t χ} : V)) ≤ A + B + 1 := by
-    have := setLen_insert_le (L := L) (^∀ χ) {substs1 L t χ}
-    rw [setLen_singleton, formulaLen_all hχ'] at this
+  have h₁ : sequentLen L (insert (^∀ χ) ({substs1 L t χ} : V)) ≤ A + B + 1 := by
+    have := sequentLen_insert_le (L := L) (^∀ χ) {substs1 L t χ}
+    rw [sequentLen_singleton, formulaLen_all hχ'] at this
     exact le_trans this (le_of_eq (by ring))
-  have h₂ : setLen L (insert (^∃ neg L χ) ({substs1 L t χ} : V)) ≤ A + B + 1 := by
-    have := setLen_insert_le (L := L) (^∃ neg L χ) {substs1 L t χ}
-    rw [setLen_singleton, formulaLen_exs hχ'.neg, formulaLen_neg hχ'] at this
+  have h₂ : sequentLen L (insert (^∃ neg L χ) ({substs1 L t χ} : V)) ≤ A + B + 1 := by
+    have := sequentLen_insert_le (L := L) (^∃ neg L χ) {substs1 L t χ}
+    rw [sequentLen_singleton, formulaLen_exs hχ'.neg, formulaLen_neg hχ'] at this
     exact le_trans this (le_of_eq (by ring))
-  have h₃ : setLen L (insert (substs1 L t (neg L χ)) (insert (^∃ neg L χ) ({substs1 L t χ} : V)))
+  have h₃ : sequentLen L (insert (substs1 L t (neg L χ)) (insert (^∃ neg L χ) ({substs1 L t χ} : V)))
       ≤ 2 * A + B + 1 := by
-    refine le_trans (setLen_insert_le _ _) ?_
+    refine le_trans (sequentLen_insert_le _ _) ?_
     rw [hneg, formulaLen_neg hχt.isUFormula]
     exact le_trans (add_le_add h₂ (le_refl _)) (le_of_eq (by ring))
-  rw [dlen_instCode hχ ht hd, setLen_singleton]
+  rw [proofLen_instCode hχ ht hd, sequentLen_singleton]
   calc A
-      + (setLen L (insert (^∀ χ) {substs1 L t χ}) + dlen T d + 1)
-      + (setLen L (insert (^∃ neg L χ) {substs1 L t χ}) + termLen L t
-          + (setLen L (insert (substs1 L t (neg L χ)) (insert (^∃ neg L χ) {substs1 L t χ})) + 1) + 1)
+      + (sequentLen L (insert (^∀ χ) {substs1 L t χ}) + proofLen T d + 1)
+      + (sequentLen L (insert (^∃ neg L χ) {substs1 L t χ}) + termLen L t
+          + (sequentLen L (insert (substs1 L t (neg L χ)) (insert (^∃ neg L χ) {substs1 L t χ})) + 1) + 1)
       + 1
-      ≤ A + ((A + B + 1) + dlen T d + 1)
+      ≤ A + ((A + B + 1) + proofLen T d + 1)
       + ((A + B + 1) + termLen L t + ((2 * A + B + 1) + 1) + 1) + 1 := by gcongr
-    _ = dlen T d + 5 * A + 3 * B + termLen L t + 7 := by ring
+    _ = proofLen T d + 5 * A + 3 * B + termLen L t + 7 := by ring
 
 /-- **Property 2 (Quantifier Distribution) on codes, any Δ₁ theory, any closed term code**:
 from a proof code of `∀χ` of length `≤ N`, a proof code of `χ[t]` of length
 `≤ N + 5|χ[t]| + 3|χ| + |t| + 7`. -/
-theorem lenDerivable_inst_V {N χ t : V} (hχ : IsSemiformula L 1 χ) (ht : IsTerm L t)
-    (h : LenDerivable T N (^∀ χ)) :
-    LenDerivable T (N + 5 * formulaLen L (substs1 L t χ) + 3 * formulaLen L χ + termLen L t + 7)
+theorem lenBoxUnbounded_inst_V {N χ t : V} (hχ : IsSemiformula L 1 χ) (ht : IsTerm L t)
+    (h : LenBoxUnbounded T N (^∀ χ)) :
+    LenBoxUnbounded T (N + 5 * formulaLen L (substs1 L t χ) + 3 * formulaLen L χ + termLen L t + 7)
       (substs1 L t χ) := by
   obtain ⟨d, hd, hN⟩ := h
   refine ⟨instCode L χ t d, instCode_proof hχ ht hd, ?_⟩
-  refine le_trans (dlen_instCode_le hχ ht hd) ?_
+  refine le_trans (proofLen_instCode_le hχ ht hd) ?_
   gcongr
 
 end inst
 
 /-- **Property 2 at `TAct` for the binary numeral**: from a proof code of `∀χ` of length
-`≤ N`, a proof code of the `bnum k`-instance of length
-`≤ N + 5|instB χ k| + 3|χ| + |bnum k| + 7`. -/
-theorem lenDerivable_instB_V {N χ k : V} (hχ : IsSemiformula LAct 1 χ)
-    (h : LenDerivable TAct N (^∀ χ)) :
-    LenDerivable TAct
-      (N + 5 * formulaLen LAct (instB χ k) + 3 * formulaLen LAct χ + termLen LAct (bnum k) + 7)
+`≤ N`, a proof code of the `binNumeral k`-instance of length
+`≤ N + 5|instB χ k| + 3|χ| + |binNumeral k| + 7`. -/
+theorem lenBoxUnbounded_instB_V {N χ k : V} (hχ : IsSemiformula LAct 1 χ)
+    (h : LenBoxUnbounded TAct N (^∀ χ)) :
+    LenBoxUnbounded TAct
+      (N + 5 * formulaLen LAct (instB χ k) + 3 * formulaLen LAct χ + termLen LAct (binNumeral k) + 7)
       (instB χ k) :=
-  lenDerivable_inst_V hχ (bnum_term_LAct k) h
+  lenBoxUnbounded_inst_V hχ (binNumeral_term_LAct k) h
 
-/-- **Property 2 at `TAct`, in the template's length only** (`|instB χ k| ≤ |χ| · |bnum k|`,
-`formulaLen_instB_le`): cost `N + 5|χ|·|bnum k| + 3|χ| + |bnum k| + 7`. -/
-theorem lenDerivable_instB_V' {N χ k : V} (hχ : IsSemiformula LAct 1 χ)
-    (h : LenDerivable TAct N (^∀ χ)) :
-    LenDerivable TAct
-      (N + 5 * (formulaLen LAct χ * termLen LAct (bnum k)) + 3 * formulaLen LAct χ
-        + termLen LAct (bnum k) + 7)
+/-- **Property 2 at `TAct`, in the template's length only** (`|instB χ k| ≤ |χ| · |binNumeral k|`,
+`formulaLen_instB_le`): cost `N + 5|χ|·|binNumeral k| + 3|χ| + |binNumeral k| + 7`. -/
+theorem lenBoxUnbounded_instB_V' {N χ k : V} (hχ : IsSemiformula LAct 1 χ)
+    (h : LenBoxUnbounded TAct N (^∀ χ)) :
+    LenBoxUnbounded TAct
+      (N + 5 * (formulaLen LAct χ * termLen LAct (binNumeral k)) + 3 * formulaLen LAct χ
+        + termLen LAct (binNumeral k) + 7)
       (instB χ k) :=
-  lenDerivable_mono_V (by gcongr; exact formulaLen_instB_le hχ k) (lenDerivable_instB_V hχ h)
+  lenBoxUnbounded_mono_V (by gcongr; exact formulaLen_instB_le hχ k) (lenBoxUnbounded_instB_V hχ h)
 
 /-- The same, in the `bewB` vocabulary. -/
-theorem bewB_of_all {N χ k : V} (hχ : IsSemiformula LAct 1 χ) (h : LenDerivable TAct N (^∀ χ)) :
-    bewB (N + 5 * formulaLen LAct (instB χ k) + 3 * formulaLen LAct χ + termLen LAct (bnum k) + 7) χ k :=
-  lenDerivable_instB_V hχ h
+theorem bewB_of_all {N χ k : V} (hχ : IsSemiformula LAct 1 χ) (h : LenBoxUnbounded TAct N (^∀ χ)) :
+    bewB (N + 5 * formulaLen LAct (instB χ k) + 3 * formulaLen LAct χ + termLen LAct (binNumeral k) + 7) χ k :=
+  lenBoxUnbounded_instB_V hχ h
 
 /-! ### The meta twin at `V = ℕ` — the final meta step of PBLT -/
 
@@ -455,56 +455,56 @@ lemma isSemiformula_quote_one (χ : Semisentence LAct 1) : IsSemiformula LAct 1 
   simp
 
 lemma formulaLen_quote_sentence (σ : Sentence LAct) :
-    formulaLen LAct (⌜σ⌝ : ℕ) = flen (σ : Proposition LAct) := by
+    formulaLen LAct (⌜σ⌝ : ℕ) = formulaLenMeta (σ : Proposition LAct) := by
   rw [Sentence.quote_def, formulaLen_quote]; simp
 
 lemma formulaLen_quote_semisentence (χ : Semisentence LAct 1) :
-    formulaLen LAct (⌜χ⌝ : ℕ) = flen (χ : Semiproposition LAct 1) := by
+    formulaLen LAct (⌜χ⌝ : ℕ) = formulaLenMeta (χ : Semiproposition LAct 1) := by
   rw [Sentence.quote_def, formulaLen_quote]; simp
 
-/-- The `LAct` symbol count of `bnum k` is the meta length of the binary numeral term. -/
-lemma termLen_bnum_nat (k : ℕ) :
-    termLen LAct (bnum k : ℕ) = tlen (Rew.emb (bnumT k) : SyntacticSemiterm ℒₒᵣ 0) := by
-  have h := quote_lMap_bnumT (V := ℕ) k
+/-- The `LAct` symbol count of `binNumeral k` is the meta length of the binary numeral term. -/
+lemma termLen_binNumeral_nat (k : ℕ) :
+    termLen LAct (binNumeral k : ℕ) = termLenMeta (Rew.emb (binNumeralMeta k) : SyntacticSemiterm ℒₒᵣ 0) := by
+  have h := quote_lMap_binNumeralMeta (V := ℕ) k
   rw [natCast_nat] at h
-  rw [← h, Semiterm.empty_quote_def, termLen_quote, term_emb_lMap_emb', tlen_lMap]; simp
+  rw [← h, Semiterm.empty_quote_def, termLen_quote, term_emb_lMap_emb', termLenMeta_lMap]; simp
 
 /-- **Property 2 (Quantifier Distribution), meta form, at `TAct`**: a `□_N` proof of `∀¹ χ`
-yields a `□_{N + 5|χ[bnum k]| + 3|χ| + |bnum k| + 7}` proof of the instance
-`χ ⇜ ![lMap emb (bnumT k)]` — the final meta step of PBLT (instantiate the uniform proof at
-`k`). Proved through `lenDerivable_instB_V` at `V = ℕ`, `quote_instB`, and properness at `ℕ`
-(`properV_nat_TAct`). -/
-theorem lenProvable_inst (χ : Semisentence LAct 1) (k : ℕ) {N : ℕ}
-    (h : LenProvable (fbound : ℕ → ℕ) N TAct (⌜(∀¹ χ : Sentence LAct)⌝ : ℕ)) :
-    LenProvable (fbound : ℕ → ℕ)
-      (N + 5 * flen ((χ ⇜ ![Semiterm.lMap emb (bnumT k)] : Sentence LAct) : Proposition LAct)
-        + 3 * flen (χ : Semiproposition LAct 1)
-        + tlen (Rew.emb (bnumT k) : SyntacticSemiterm ℒₒᵣ 0) + 7)
-      TAct (⌜(χ ⇜ ![Semiterm.lMap emb (bnumT k)] : Sentence LAct)⌝ : ℕ) := by
+yields a `□_{N + 5|χ[binNumeral k]| + 3|χ| + |binNumeral k| + 7}` proof of the instance
+`χ ⇜ ![lMap emb (binNumeralMeta k)]` — the final meta step of PBLT (instantiate the uniform proof at
+`k`). Proved through `lenBoxUnbounded_instB_V` at `V = ℕ`, `quote_instB`, and properness at `ℕ`
+(`properBound_nat_TAct`). -/
+theorem lenBoxNat_inst (χ : Semisentence LAct 1) (k : ℕ) {N : ℕ}
+    (h : LenBoxNat (codeBound : ℕ → ℕ) N TAct (⌜(∀¹ χ : Sentence LAct)⌝ : ℕ)) :
+    LenBoxNat (codeBound : ℕ → ℕ)
+      (N + 5 * formulaLenMeta ((χ ⇜ ![Semiterm.lMap emb (binNumeralMeta k)] : Sentence LAct) : Proposition LAct)
+        + 3 * formulaLenMeta (χ : Semiproposition LAct 1)
+        + termLenMeta (Rew.emb (binNumeralMeta k) : SyntacticSemiterm ℒₒᵣ 0) + 7)
+      TAct (⌜(χ ⇜ ![Semiterm.lMap emb (binNumeralMeta k)] : Sentence LAct)⌝ : ℕ) := by
   obtain ⟨d, _, hd, hk⟩ := h
   have e : ∀ n : ℕ, (ORingStructure.numeral n : ℕ) = n := fun n ↦ by simp
   rw [e] at hk
   rw [quote_all_sentence] at hd
   obtain ⟨d', hd', hk'⟩ :=
-    lenDerivable_instB_V (V := ℕ) (k := k) (isSemiformula_quote_one χ) ⟨d, hd, hk⟩
-  have hq : instB (⌜χ⌝ : ℕ) k = ⌜(χ ⇜ ![Semiterm.lMap emb (bnumT k)] : Sentence LAct)⌝ := by
+    lenBoxUnbounded_instB_V (V := ℕ) (k := k) (isSemiformula_quote_one χ) ⟨d, hd, hk⟩
+  have hq : instB (⌜χ⌝ : ℕ) k = ⌜(χ ⇜ ![Semiterm.lMap emb (binNumeralMeta k)] : Sentence LAct)⌝ := by
     have := quote_instB (V := ℕ) χ k
     rwa [natCast_nat] at this
   rw [hq] at hd' hk'
-  rw [formulaLen_quote_sentence, formulaLen_quote_semisentence, termLen_bnum_nat] at hk'
+  rw [formulaLen_quote_sentence, formulaLen_quote_semisentence, termLen_binNumeral_nat] at hk'
   refine ⟨d', ?_, hd', ?_⟩
-  · rw [e]; exact properV_nat_TAct _ d' _ hd' hk'
+  · rw [e]; exact properBound_nat_TAct _ d' _ hd' hk'
   · rw [e]; exact hk'
 
-/-- The same with the numeral's length bounded by its bit length (`tlen_bnumT`):
-cost `N + 5|χ[bnum k]| + 3|χ| + 6·size k + 8`. -/
-theorem lenProvable_inst_size (χ : Semisentence LAct 1) (k : ℕ) {N : ℕ}
-    (h : LenProvable (fbound : ℕ → ℕ) N TAct (⌜(∀¹ χ : Sentence LAct)⌝ : ℕ)) :
-    LenProvable (fbound : ℕ → ℕ)
-      (N + 5 * flen ((χ ⇜ ![Semiterm.lMap emb (bnumT k)] : Sentence LAct) : Proposition LAct)
-        + 3 * flen (χ : Semiproposition LAct 1) + 6 * Nat.size k + 8)
-      TAct (⌜(χ ⇜ ![Semiterm.lMap emb (bnumT k)] : Sentence LAct)⌝ : ℕ) :=
-  lenProvable_fbound_mono (by have := tlen_bnumT k; omega) (lenProvable_inst χ k h)
+/-- The same with the numeral's length bounded by its bit length (`termLenMeta_binNumeralMeta`):
+cost `N + 5|χ[binNumeral k]| + 3|χ| + 6·size k + 8`. -/
+theorem lenBoxNat_inst_size (χ : Semisentence LAct 1) (k : ℕ) {N : ℕ}
+    (h : LenBoxNat (codeBound : ℕ → ℕ) N TAct (⌜(∀¹ χ : Sentence LAct)⌝ : ℕ)) :
+    LenBoxNat (codeBound : ℕ → ℕ)
+      (N + 5 * formulaLenMeta ((χ ⇜ ![Semiterm.lMap emb (binNumeralMeta k)] : Sentence LAct) : Proposition LAct)
+        + 3 * formulaLenMeta (χ : Semiproposition LAct 1) + 6 * Nat.size k + 8)
+      TAct (⌜(χ ⇜ ![Semiterm.lMap emb (binNumeralMeta k)] : Sentence LAct)⌝ : ℕ) :=
+  lenBoxNat_codeBound_mono (by have := termLenMeta_binNumeralMeta k; omega) (lenBoxNat_inst χ k h)
 
 end nat
 
@@ -514,35 +514,35 @@ section sentence
 
 /-- **Quantifier Distribution on codes as a single `ℒₒᵣ`-sentence**: "for all `N x k`, if `x`
 is a one-variable formula code and `∀x` has a `TAct`-proof of length `≤ N`, then the
-`bnum k`-instance of `x` has one of length `≤ N + 5|x[bnum k]| + 3|x| + |bnum k| + 7`." -/
+`binNumeral k`-instance of `x` has one of length `≤ N + 5|x[binNumeral k]| + 3|x| + |binNumeral k| + 7`." -/
 noncomputable def instSentence : ArithmeticSentence :=
   “∀ N x k, !(isSemiformula LAct).pi 1 x →
-    ∀ u, !qqAllDef u x → !(lenDerivableDef TAct) N u →
+    ∀ u, !qqAllDef u x → !(lenBoxUnboundedDef TAct) N u →
     ∀ y, !instBGraph y x k → ∀ ly, !(formulaLenGraph LAct) ly y →
     ∀ lx, !(formulaLenGraph LAct) lx x →
-    ∀ t, !bnumGraph t k → ∀ lt, !(termLenGraph LAct) lt t →
-    !(lenDerivableDef TAct) (N + 5 * ly + 3 * lx + lt + 7) y”
+    ∀ t, !binNumeralGraph t k → ∀ lt, !(termLenGraph LAct) lt t →
+    !(lenBoxUnboundedDef TAct) (N + 5 * ly + 3 * lx + lt + 7) y”
 
 lemma models_instSentence :
     V↓[ℒₒᵣ] ⊧ instSentence ↔
     ∀ N x k : V, IsSemiformula LAct 1 x →
-      LenDerivable TAct N (^∀ x) →
-      LenDerivable TAct (N + 5 * formulaLen LAct (instB x k) + 3 * formulaLen LAct x
-        + termLen LAct (bnum k) + 7) (instB x k) := by
+      LenBoxUnbounded TAct N (^∀ x) →
+      LenBoxUnbounded TAct (N + 5 * formulaLen LAct (instB x k) + 3 * formulaLen LAct x
+        + termLen LAct (binNumeral k) + 7) (instB x k) := by
   simp [instSentence, models_iff, (IsSemiformula.defined (V := V) (L := LAct)).proper.iff',
-    formulaLen.defined.iff, termLen.defined.iff, instB.defined.iff, bnum.defined.iff,
-    (LenDerivable.defined (V := V) TAct).iff, numeral_eq_natCast]
+    formulaLen.defined.iff, termLen.defined.iff, instB.defined.iff, binNumeral.defined.iff,
+    (LenBoxUnbounded.defined (V := V) TAct).iff, numeral_eq_natCast]
 
 /-- **`IΣ₁` proves Quantifier Distribution on codes.** -/
 theorem isigma1_proves_instSentence : 𝗜𝚺₁ ⊢ instSentence :=
   complete 𝗜𝚺₁ _ fun (_ : Type) _ _ ↦ models_instSentence.mpr fun _ _ _ hx h ↦
-    lenDerivable_instB_V hx h
+    lenBoxUnbounded_instB_V hx h
 
 /-- **`PA` proves Quantifier Distribution on codes.** -/
 theorem pa_proves_instSentence : 𝗣𝗔 ⊢ instSentence :=
   complete 𝗣𝗔 _ fun (V : Type) _ _ ↦
     haveI : V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
-    models_instSentence.mpr fun _ _ _ hx h ↦ lenDerivable_instB_V hx h
+    models_instSentence.mpr fun _ _ _ hx h ↦ lenBoxUnbounded_instB_V hx h
 
 /-- **`TAct` proves Quantifier Distribution on codes** (embedded along `emb`). -/
 theorem tact_proves_instSentence : TAct ⊢ Semiformula.lMap LAct.emb instSentence := by

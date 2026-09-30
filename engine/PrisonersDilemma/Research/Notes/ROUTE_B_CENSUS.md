@@ -80,7 +80,7 @@ it: Löb engine, floor lemma, census) and the classification method are in git b
 | outcome_CooperateBot_vs_CooperateBot | (C, C) | (C, C) | SF | sf_CooperateBot_vs_CooperateBot |
 | outcome_CooperateBot_vs_DefectBot | (C, D) | (C, D) | SF | sf_CooperateBot_vs_DefectBot |
 | outcome_CupodBot_vs_CooperateBot | (C, C) | (C, C) | SND | snd_CupodBot_vs_CooperateBot |
-| outcome_CupodBot_vs_CupodBot | (D, D) | (D, D) | LOEB | dupoc_self_coop_unconditional |
+| outcome_CupodBot_vs_CupodBot | (D, D) | (D, D) | LOEB | dupoc_self_coop |
 | outcome_CupodBot_vs_DBot | (C, C) | (C, C) | SND | pos_CupodBot_vs_DBot |
 | outcome_CupodBot_vs_DefectBot | (D, D) | (D, D) | POS | pos_CupodBot_vs_DefectBot |
 | outcome_CupodBot_vs_EBot | (C, C) | (C, C) | SND | pos_CupodBot_vs_EBot |
@@ -110,7 +110,7 @@ it: Löb engine, floor lemma, census) and the classification method are in git b
 | outcome_DupocBot_vs_CupodTrollBot | (D, C) | — | GENUINE-FLOOR | Dupoc's guard TRUE (CupodTroll's else-play: a false `.eq`). Settled: `floor_DupocBot_vs_CupodTrollBot_right`, `_true` — dichotomy: `dich_DupocBot_vs_CupodTrollBot` |
 | outcome_DupocBot_vs_DBot | (D, C) | — | GENUINE-FLOOR | Dupoc's guard TRUE (DBot cooperates: Dupoc's else-play vs `.bot DefectBot`); residue `Con_TAct(k+c)`. Settled: `floor_DupocBot_vs_DBot_right`, `_true` — dichotomy: `dich_DupocBot_vs_DBot` |
 | outcome_DupocBot_vs_DefectBot | (D, D) | (D, D) | SND | snd_DupocBot_vs_DefectBot |
-| outcome_DupocBot_vs_DupocBot | (C, C) | (C, C) | LOEB | dupoc_self_coop_unconditional |
+| outcome_DupocBot_vs_DupocBot | (C, C) | (C, C) | LOEB | dupoc_self_coop |
 | outcome_DupocBot_vs_EBot | (D, C) | — | GENUINE-FLOOR | Dupoc's guard TRUE (EBot's rung 1 = Dupoc's else-play vs `.bot DefectBot`). Settled: `floor_DupocBot_vs_EBot_right`, `_true` — dichotomy: `dich_DupocBot_vs_EBot` |
 | outcome_DupocBot_vs_MirrorBot | (C, C) | (C, C) | LOEB | loeb_Dupoc_vs_Mirror |
 | outcome_DupocBot_vs_OBot | (D, D) | (D, D) | SND | snd_DupocBot_vs_OBot |
@@ -134,7 +134,7 @@ it: Löb engine, floor lemma, census) and the classification method are in git b
 | outcome_JustBot_vs_EBot | (D, C) | — | GENUINE-FLOOR | Just's guard TRUE (EBot's rung 1 on the snapshot = an else-play). Settled: `floor_JustBot_vs_EBot_right`, `_true` — dichotomy: `dich_JustBot_vs_EBot` |
 | outcome_JustBot_vs_JustBot | (C, C) | (C, C) | LOEB | loeb_Just7_vs_Just7 (on `Just7 k`) |
 | outcome_JustBot_vs_OBot | (D, D) | (D, D) | SND | snd_JustBot_vs_OBot |
-| outcome_JustBot_vs_PrudentBot | (D, D) | — | GENUINE-FLOOR | prudence guard TRUE via Just's else-play vs `.bot DefectBot` — `floor_JustBot_vs_PrudentBot_true`; if not found `(D, D)` follows — dichotomy: `dich_JustBot_vs_PrudentBot` (prudence hinge `B` NOT dischargeable: an else-branch defection, plus §7 on `pcode (JustBot k)` — `Cells/PrudentLoose`) |
+| outcome_JustBot_vs_PrudentBot | (D, D) | — | GENUINE-FLOOR | prudence guard TRUE via Just's else-play vs `.bot DefectBot` — `floor_JustBot_vs_PrudentBot_true`; if not found `(D, D)` follows — dichotomy: `dich_JustBot_vs_PrudentBot` (prudence hinge `B` NOT dischargeable: an else-branch defection, plus §7 on `progCode (JustBot k)` — `Cells/PrudentLoose`) |
 | outcome_JustBot_vs_TitForTatBot | (C, C) | (C, C) | POS | khat_JustBot_vs_TitForTatBot |
 | outcome_LegibleBot_vs_CIMCIC | (C, C) | — | EXCLUDED | OptimBot/LegibleBot out of coverage |
 | outcome_LegibleBot_vs_CooperateBot | (C, C) | — | EXCLUDED | OptimBot/LegibleBot out of coverage |
@@ -194,7 +194,7 @@ it: Löb engine, floor lemma, census) and the classification method are in git b
 | Dupoc × EBot | Dupoc | G | EBot's C runs through Dupoc's else-play (rung 1) | `_true` |
 | Dupoc × EBot | EBot | settled | D vs `.bot DefectBot` (else), C vs `.bot CooperateBot` (found) | `_right` (large `k`) |
 | Dupoc × CupodTroll | Dupoc | G | CupodTroll's C is its else-play on a false `.eq` | `_true` |
-| Dupoc × CupodTroll | CupodTroll | F | `.eq` guard false (`pcode_DupocBot_ne_CupodBot`) | `_right` (every `k`) |
+| Dupoc × CupodTroll | CupodTroll | F | `.eq` guard false (`progCode_DupocBot_ne_CupodBot`) | `_right` (every `k`) |
 | Just × DBot | Just | G | DBot's C vs the snapshot runs through the snapshot's else-play | `_true` |
 | Just × DBot | DBot | settled | Just defects vs `.bot DefectBot` (`snd_JustBot_vs_botDB`) | `_right` |
 | Just × EBot | Just | G | as Dupoc × EBot in the snapshot's frame | `_true` |
@@ -205,7 +205,7 @@ it: Löb engine, floor lemma, census) and the classification method are in git b
 | Just × Prudent | Prudent (prudence) | G | "Just plays D vs `.bot DefectBot`" true via Just's else-play | `_true` |
 | Just × Prudent | Just / Prudent outer | G | conditional on the prudence verdict | — |
 | CIMCIC × CupodTroll | CIMCIC | G | consequent "CupodTroll plays C vs me" is an else-play | `_true` |
-| CIMCIC × CupodTroll | CupodTroll | F | `.eq` guard false (`pcode_CIMCIC_ne_CupodBot`) | `_right` |
+| CIMCIC × CupodTroll | CupodTroll | F | `.eq` guard false (`progCode_CIMCIC_ne_CupodBot`) | `_right` |
 | CIMCIC × DBot (cenU) | CIMCIC | G | DBot's C runs through CIMCIC's self-refuting else-play vs `.bot DefectBot` | `_true` |
 | CIMCIC × DBot (cenU) | DBot | settled | `snd_CIMCIC_vs_botDB` | `_right` |
 | CIMCIC × EBot (cenU) | CIMCIC | G | EBot's rung 1 = CIMCIC's else-play | `_true` |

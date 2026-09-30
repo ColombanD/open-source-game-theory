@@ -49,16 +49,16 @@ instantiation at `k̄` of cost `O(lg k)`. Therefore:
    Σ₁-completeness on the Δ₀ matrix of `Proof` is exponential in code size and useless here.
 3. **Everything else is V-generic Lean, not PA-internal sentences.** The uniform argument can be
    run as reasoning "in every model `V ⊧ TAct`", using V-generic lemmas about codes (bounded cut
-   with `dlen` accounting, instantiation with `dlen` accounting, inner necessitation), plus the
+   with `proofLen` accounting, instantiation with `proofLen` accounting, inner necessitation), plus the
    diagonal lemma transferred to `V` by soundness; `complete` then yields the uniform TAct theorem
    (`Det.lean`'s pattern, `READ_arith_for_m4.md` §3). Only its EXISTENCE with some length `N` is
    used, by the meta instantiation (`Cut.lean`-style bridges).
 
 ## 2. The guard mismatch, and the coding decision
 
-FACT. Dupoc's runtime guard is `guardCode ⌜GtmplA 0⌝ (Dupoc k) (Dupoc k) = subst (descVec …) ⌜GtmplA 0⌝`
-with `descVec` built (before 2026-09-12) from `bnum (dnum (Dupoc k))` — the binary numeral of the WHOLE program code
-(`Guard.lean`, now `progT (dnum (Dupoc k))`). PBLT's fixed point and Property 1 produce boxes of `k`-INSTANCES of
+FACT. Dupoc's runtime guard is `guardCode ⌜GtmplA 0⌝ (Dupoc k) (Dupoc k) = subst (descriptions …) ⌜GtmplA 0⌝`
+with `descriptions` built (before 2026-09-12) from `binNumeral (canonical (Dupoc k))` — the binary numeral of the WHOLE program code
+(`Guard.lean`, now `codeTerm (canonical (Dupoc k))`). PBLT's fixed point and Property 1 produce boxes of `k`-INSTANCES of
 formulas, `subst (numeral k) ⌜p⌝`. The numeral of `⟪6, k, cP⟫ + 1` is not the numeral of `k`
 inside any fixed term, because Foundation's `pair` is `if a < b then b*b + a else a*a + a + b`
 (`IOpen/Basic.lean:511`) — no ℒₒᵣ term denotes it. So the guard is the `k`-instance of NO formula,
@@ -69,42 +69,42 @@ ANALYSIS — options considered.
 (a) STRUCTURAL descriptions as FORMULAS (`∃x₁ x₂, Desc_me(x₁) ∧ Desc_opp(x₂) ∧ g[x₁,x₂]`): no
     language change, but the template interface changes from 6-variable term substitution to
     formula-code assembly; every bridge module (`Code`…`FitBox`, ~200 KB) re-shapes.
-(b) Keep numeral descriptions, index the Löb family by the CODE `y = dnum (Dupoc k)`: the guard is
-    then `subst (bnum y ∷ 0) ⌜q⌝` exactly — but the final instantiation must discharge
-    `IsDupoc (bnum y₀) ∧ budget(bnum y₀) > k̂` by a SHORT PA proof about a numeral (pair-decoding
-    and, worse, `y₀ ≤ swapcode y₀` — evaluating a Σ₁ fixpoint on a numeral), which is the very
+(b) Keep numeral descriptions, index the Löb family by the CODE `y = canonical (Dupoc k)`: the guard is
+    then `subst (binNumeral y ∷ 0) ⌜q⌝` exactly — but the final instantiation must discharge
+    `IsDupoc (binNumeral y₀) ∧ budget(binNumeral y₀) > k̂` by a SHORT PA proof about a numeral (pair-decoding
+    and, worse, `y₀ ≤ transposeCode y₀` — evaluating a Σ₁ fixpoint on a numeral), which is the very
     cost we are trying to avoid.
 (c) A `pair` function symbol in `LAct` with a defining axiom in `TAct`: faithful (no term
     duplication) but touches the M1/M2 foundation layer and kills the `inst : LAct →ᵥ ℒₒᵣ` hom
     (`Inst`/`Det`, bridge-deferred but in the census).
 (d) **CHOSEN: polynomial pairing for PROGRAM CODES**, `ppair x y := (x+y)·(x+y) + y` (injective,
     Δ₀-decodable, monotone, TERM-expressible), `pSearch k g p q := ppair 6 (ppair k (ppair g (ppair p q))) + 1`,
-    and the description of a program is the TERM `progT x` built from `ppair` and the binary
-    numerals of its leaves. Then `progT (Dupoc k) = T_D[bnum k]` for a FIXED term `T_D` with one
-    variable, so the guard is literally `subst (bnum k ∷ 0) ⌜q_D⌝` for a fixed formula `q_D` —
+    and the description of a program is the TERM `codeTerm x` built from `ppair` and the binary
+    numerals of its leaves. Then `codeTerm (Dupoc k) = T_D[binNumeral k]` for a FIXED term `T_D` with one
+    variable, so the guard is literally `subst (binNumeral k ∷ 0) ⌜q_D⌝` for a fixed formula `q_D` —
     Critch's "source with `k` written in binary". Contained in `Prog.lean` (+ the few files that
     look into the pairing: `Neg`, `FitBox`, `Fit`), no language change, `Inst`/`Det` survive,
-    `dnum/dU/dW`/τ untouched. Cost: term duplication (`ppair` copies `x` twice, `y` three times —
+    `canonical/revalueU/revalueW`/τ untouched. Cost: term duplication (`ppair` copies `x` twice, `y` three times —
     a constant factor per nesting level; the zoo has constant depth). Guard length stays
     `O(size k)`. Note `FitBox`'s negative finding survives (the template CODE is still a numeral).
 
 ## 3. Objects and obligations (the M4 ladder)
 
 Notation: `V` ranges over models of `TAct` (equivalently `V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁` plus the two action
-axioms); `L a x := LenProvableV TAct a x` on codes.
+axioms); `L a x := LenBox TAct a x` on codes.
 
 | # | object / lemma | kind | status |
 |---|---|---|---|
-| U0 | `ppair`, program codes on it, `progT` (Σ₁ term-code function), `descVec` via `progT ∘ dnum`, `guard_fits` re-proved, code equation `guardCode ⌜GtmplA 0⌝ (Dupoc k) (Dupoc k) = subst (bnum k ∷ 0) ⌜q_D⌝` (existentially packaged `q_D`) | refactor | **DONE 2026-09-12** (`ProgT`, `Instance`, `InstanceV`): `exists_dupoc_instance` (meta), `exists_dupoc_instance_code` (ℕ) and `exists_dupoc_instance_code_V` (every `V`, every `k : V` — the guard code is `instB cq k`) |
-| U1 | `bewB a n k := ∃ g, g = subst (bnum k ∷ 0) n ∧ L a g` — the parametric box on codes; its Δ₁ graph | def | **DONE 2026-09-11** (`InstV.lean`, 47fa241): `instB`, `bewB a n k := LenDerivable TAct a (instB n k)` (Σ₁, NO `fbound` — `LenDerivable` is the box of the Löb argument), `bewBDef`, `quote_instB`, `formulaLen_instB_le` |
-| U2 | Property 1 in `V`: `L a (imp φ ψ) → L b φ → L (a + b + c₁(‖φ‖+‖ψ‖) + c₀) ψ` (`CutV.lean`) | V-generic lemma | **DONE 2026-09-11** (`CutV.lean`, f4a1a0b): `lenDerivable_cut_V` unconditional (`5|φ|+10|ψ|+9`); `lenProvableV_cut_V` under `ProperV V T` — DISCHARGED for every model by `ProperV.lean` (5d9fc0a): `properV_TAct`, `lenDerivable_iff_lenProvableV`; `pa_proves_cutSentence`/`tact_proves_cutSentence` |
-| U3 | Property 2 in `V`: from a code of `∀k χ(k)` with `dlen ≤ N`, a code of `subst (bnum k ∷ 0) ⌜χ⌝` with `dlen ≤ N + c·len(bnum k) + c'` (internal `∀`-elimination = one cut) | V-generic lemma | **DONE 2026-09-11** (`InstV.lean`): `lenDerivable_instB_V` (`+ 5|χ[t]| + 3|χ| + |t| + 7`), `bewB_of_all`, meta `lenProvable_inst_size` (`+ 6·size k + 8`) |
-| U4 | Property 3′: `LenProvable n σ → TAct ⊢ □_n σ` (Σ₁-completeness of a true Δ₁ sentence; the `lenProvableV_nat` reading) | free | check name |
-| U5 | Property 4 in `V`: `L a x → L (E a) ⌜lenProvableV a x⌝` with `E` polynomial | V-generic lemma | **RESTATED + used** (`Prep.lean`): `BoundedInnerNec d`, per-`χ` constant (the uniform-in-`flen` form was unsatisfiable) |
-| U6 | parametric diagonal lemma for the `bnum`-instance operator (Foundation's `parameterized_diagonal₁` uses unary `numeral`; either reuse it — the numeral of `k` inside the fixed point may be unary, its length is `O(k)`… NO: that breaks `g ≥ lg k`; so re-do the construction with `bnum`, or prove `TAct ⊢ ∀k, ψ(k) ↔ …` where instances are `bnum`-instances) | theorem | **DONE 2026-09-12** (`Diag.lean`, 669704c): `tact_parametric_diagonal (θ : Semisentence LAct 2) : ∃ ψ, TAct ⊢ ∀¹ (ψ 🡘 θ ⇜ ![lMap emb ⌜ψ⌝, #0])` (Foundation's construction re-done over `LAct`: `substNumeralParamsA`, `tactFixedpoint`), instances at `bnumT k` (`tact_parametric_diagonal_inst`, model and `Provable`-code forms); reusable `tact_complete` (completeness for `TAct` on REAL-equality models) + `𝗘𝗤 LAct ⪯ TAct` |
-| U7 | Dupoc transparency: `∀ V, ∀ k, L k (guard k) → EvalGraph 2 (Dupoc k) (Dupoc k) (Dupoc k) 0` and the truth equation in `V` (`READ_arith_for_m4.md` §4(iv) lists the ℕ-only lemmas needing `V` twins) | V-generic | **DONE 2026-09-12** (`Transparency.lean`, 54aee07): `eval_qDupoc_iff_V` (truth equation in `stdActV V`), `dupoc_search_V`, `dupoc_search_instB_V` (unconditional), `dupoc_loeb_premise_V` (under `ProperV`), ℕ forms unconditional, `pa_proves_dupocPremise`/`tact_proves_dupocPremise`. FINDING: truth equations hold only in the STANDARD readings `c_C ↦ 0, c_D ↦ 1` (and the swap) — `TAct` with only `c_C ≠ c_D` admits models where the guard is FALSE ⇒ `TAct ⊬ guard(k)` for all `k`: a VACUITY, fixed by the action axiom (U0b, agent launched) |
-| U8 | `pblt_uniform`: assembling U1–U7 in `V`, then `complete`: `TAct ⊢ ∀k > k̂, q_D(k)` — and its meta instantiation: `∀ k > k̂, LenProvable (N + c·size k) (guard k)` | theorem, conditional on U5 | **DONE 2026-09-12** (`Assembly/Uniform.lean`, 91df6b9): `chain_V`, `chainBound_poly`, `psi_true_V`, `pblt_uniform` |
-| U9 | `dupoc_self_coop : ∃ k̂, ∀ k > k̂, EvalGraph 2 (Dupoc k) (Dupoc k) (Dupoc k) 0` (and the `(C, C)` outcome), conditional on U5 | theorem | **DONE 2026-09-12** (`Assembly/Cell.lean`, 4c8ecc9): `dupoc_self_coop`, `dupoc_finds_guard` (conditional on `BoundedInnerNec d`) |
+| U0 | `ppair`, program codes on it, `codeTerm` (Σ₁ term-code function), `descriptions` via `codeTerm ∘ canonical`, `guard_fits` re-proved, code equation `guardCode ⌜GtmplA 0⌝ (Dupoc k) (Dupoc k) = subst (binNumeral k ∷ 0) ⌜q_D⌝` (existentially packaged `q_D`) | refactor | **DONE 2026-09-12** (`CodeTerm`, `Instance`, `InstanceV`): `exists_dupoc_instance` (meta), `exists_dupoc_instance_code` (ℕ) and `exists_dupoc_instance_code_V` (every `V`, every `k : V` — the guard code is `instB cq k`) |
+| U1 | `bewB a n k := ∃ g, g = subst (binNumeral k ∷ 0) n ∧ L a g` — the parametric box on codes; its Δ₁ graph | def | **DONE 2026-09-11** (`InstV.lean`, 47fa241): `instB`, `bewB a n k := LenBoxUnbounded TAct a (instB n k)` (Σ₁, NO `codeBound` — `LenBoxUnbounded` is the box of the Löb argument), `bewBDef`, `quote_instB`, `formulaLen_instB_le` |
+| U2 | Property 1 in `V`: `L a (imp φ ψ) → L b φ → L (a + b + c₁(‖φ‖+‖ψ‖) + c₀) ψ` (`CutV.lean`) | V-generic lemma | **DONE 2026-09-11** (`CutV.lean`, f4a1a0b): `lenBoxUnbounded_mp` unconditional (`5|φ|+10|ψ|+9`); `lenBox_cut_V` under `ProperBound V T` — DISCHARGED for every model by `ProperBound.lean` (5d9fc0a): `properBound_TAct`, `lenBoxUnbounded_iff_lenBox`; `pa_proves_cutSentence`/`tact_proves_cutSentence` |
+| U3 | Property 2 in `V`: from a code of `∀k χ(k)` with `proofLen ≤ N`, a code of `subst (binNumeral k ∷ 0) ⌜χ⌝` with `proofLen ≤ N + c·len(binNumeral k) + c'` (internal `∀`-elimination = one cut) | V-generic lemma | **DONE 2026-09-11** (`InstV.lean`): `lenBoxUnbounded_instB_V` (`+ 5|χ[t]| + 3|χ| + |t| + 7`), `bewB_of_all`, meta `lenBoxNat_inst_size` (`+ 6·size k + 8`) |
+| U4 | Property 3′: `LenBoxNat n σ → TAct ⊢ □_n σ` (Σ₁-completeness of a true Δ₁ sentence; the `lenBox_nat` reading) | free | check name |
+| U5 | Property 4 in `V`: `L a x → L (E a) ⌜lenBox a x⌝` with `E` polynomial | V-generic lemma | **RESTATED + used** (`Prep.lean`): `BoundedInnerNec d`, per-`χ` constant (the uniform-in-`formulaLenMeta` form was unsatisfiable) |
+| U6 | parametric diagonal lemma for the `binNumeral`-instance operator (Foundation's `parameterized_diagonal₁` uses unary `numeral`; either reuse it — the numeral of `k` inside the fixed point may be unary, its length is `O(k)`… NO: that breaks `g ≥ lg k`; so re-do the construction with `binNumeral`, or prove `TAct ⊢ ∀k, ψ(k) ↔ …` where instances are `binNumeral`-instances) | theorem | **DONE 2026-09-12** (`Diag.lean`, 669704c): `tact_parametric_diagonal (θ : Semisentence LAct 2) : ∃ ψ, TAct ⊢ ∀¹ (ψ 🡘 θ ⇜ ![lMap emb ⌜ψ⌝, #0])` (Foundation's construction re-done over `LAct`: `substNumeralParamsA`, `tactFixedpoint`), instances at `binNumeralMeta k` (`tact_parametric_diagonal_inst`, model and `Provable`-code forms); reusable `TAct_complete` (completeness for `TAct` on REAL-equality models) + `𝗘𝗤 LAct ⪯ TAct` |
+| U7 | Dupoc transparency: `∀ V, ∀ k, L k (guard k) → EvalGraph 2 (Dupoc k) (Dupoc k) (Dupoc k) 0` and the truth equation in `V` (`READ_arith_for_m4.md` §4(iv) lists the ℕ-only lemmas needing `V` twins) | V-generic | **DONE 2026-09-12** (`Transparency.lean`, 54aee07): `eval_qDupoc_iff_V` (truth equation in `stdReadingV V`), `dupoc_search_V`, `dupoc_search_instB_V` (unconditional), `dupoc_loeb_premise_V` (under `ProperBound`), ℕ forms unconditional, `pa_proves_dupocPremise`/`tact_proves_dupocPremise`. FINDING: truth equations hold only in the STANDARD readings `c_C ↦ 0, c_D ↦ 1` (and the swap) — `TAct` with only `c_C ≠ c_D` admits models where the guard is FALSE ⇒ `TAct ⊬ guard(k)` for all `k`: a VACUITY, fixed by the action axiom (U0b, agent launched) |
+| U8 | `pblt_uniform`: assembling U1–U7 in `V`, then `complete`: `TAct ⊢ ∀k > k̂, q_D(k)` — and its meta instantiation: `∀ k > k̂, LenBoxNat (N + c·size k) (guard k)` | theorem, conditional on U5 | **DONE 2026-09-12** (`Assembly/Uniform.lean`, 91df6b9): `chain_V`, `chainBound_poly`, `psi_true_V`, `pblt_uniform` |
+| U9 | `dupoc_self_coop_of_nec : ∃ k̂, ∀ k > k̂, EvalGraph 2 (Dupoc k) (Dupoc k) (Dupoc k) 0` (and the `(C, C)` outcome), conditional on U5 | theorem | **DONE 2026-09-12** (`Assembly/Cell.lean`, 4c8ecc9): `dupoc_self_coop_of_nec`, `dupoc_finds_guard` (conditional on `BoundedInnerNec d`) |
 | U10 | discharge U5 (bounded inner necessitation with polynomial `E`) | research | designed (`DESIGN_inner_necessitation.md`): 2.5–4 months, E = O(a³); risk (1) checked OK — USER DECISION |
 
 Ordering: U0 ∥ U2 now; then U1/U3/U6/U7; then U8/U9 with U5 as a hypothesis (the honest,
@@ -127,17 +127,17 @@ Ordering: U0 ∥ U2 now; then U1/U3/U6/U7; then U8/U9 with U5 as a hypothesis (t
    `T2-NEG`-style `bot^m` witnesses are bridge material.
 3. Foundation's `numeral` is unary everywhere a Foundation lemma introduces one
    (`substNumeral`, `parameterizedFixedpoint`); every budget that enters a sentence must go
-   through `bnum` (U6).
-4. Properness inside `V` (`d < fbound k` from `dlen d ≤ k`) is proved at ℕ only (`Proper.lean`);
+   through `binNumeral` (U6).
+4. Properness inside `V` (`d < codeBound k` from `proofLen d ≤ k`) is proved at ℕ only (`Proper.lean`);
    U2/U3/U5 need it V-generically or must carry it as a hypothesis.
 
 ## 6. The assembly (U5 + U8 + U9), stated exactly (2026-09-12, after U0–U3, U6 landed)
 
-Notation: `L a x := LenDerivable TAct a x` (Σ₁ box on codes, `CutV`); `instB n k`, `bewB`
+Notation: `L a x := LenBoxUnbounded TAct a x` (Σ₁ box on codes, `CutV`); `instB n k`, `bewB`
 (`InstV`); `qDupoc`, `DupocV k`, `guardCode_DupocV_eq_instB` (`InstanceV`); `tact_parametric_diagonal`,
-`tact_complete` (`Diag`); `ProperV` (`CutV`/`ProperV`); transparency and the truth equation (U7).
+`TAct_complete` (`Diag`); `ProperBound` (`CutV`/`ProperBound`); transparency and the truth equation (U7).
 Models `V`: `LAct`-structures with REAL equality whose reduct is a model of PA, satisfying the two
-action axioms — exactly the class `tact_complete` quantifies over.
+action axioms — exactly the class `TAct_complete` quantifies over.
 
 **The budget function.** `g k := ‖k‖ * ‖k‖` (`‖·‖` = bit length, Σ₁-definable in Foundation),
 so that `C + c·‖k‖ ≤ g k` for all large `k` whatever the constants `C, c` (this breaks the
@@ -152,7 +152,7 @@ circularity between the fixed point's constants and the threshold: Critch's `lg 
 structure BoundedInnerNec (E : ℕ → ℕ) : Prop where
   poly : ∃ d c, ∀ a, E a ≤ a ^ d + c
   nec  : ∀ (V) [real-eq model of TAct] (χ : Semisentence LAct 1) (k : V),
-           L (g k) (instB ⌜χ⌝ k) → L (E (g k) + c₁ * (flen χ + ‖k‖) + c₀) (instB ⌜Box_g χ⌝ k)
+           L (g k) (instB ⌜χ⌝ k) → L (E (g k) + c₁ * (formulaLenMeta χ + ‖k‖) + c₀) (instB ⌜Box_g χ⌝ k)
 ```
 (`E` applied inside `V` through its Σ₁ graph, or state `nec` with an explicit polynomial). This is
 Critch's Property 4 = assumption (d); everything below is a theorem GIVEN it (U10 discharges it).
@@ -161,76 +161,76 @@ Critch's Property 4 = assumption (d); everything below is a theorem GIVEN it (U1
 (a `Semisentence LAct 2`: `n` the code variable, `k` the budget variable), `ψ := tactFixedpoint θ`,
 so `TAct ⊢ ∀¹ (ψ 🡘 θ ⇜ ![⌜ψ⌝, #0])`. Take META proofs of the two directions
 `∀¹ (ψ 🡒 θ[⌜ψ⌝])` and `∀¹ (θ[⌜ψ⌝] 🡒 ψ)` with lengths `N₁, N₂ : ℕ` (constants; from `TAct ⊢` via
-`Theory.Proof` + `mlen`), and transfer `L N₁ ⌜∀¹ (ψ 🡒 …)⌝` into every `V` by Σ₁-upward absoluteness
-(`lenDerivableDef` is Σ₁). In `V`, for `k` with the master inequality:
+`Theory.Proof` + `proofLenMeta`), and transfer `L N₁ ⌜∀¹ (ψ 🡒 …)⌝` into every `V` by Σ₁-upward absoluteness
+(`lenBoxUnboundedDef` is Σ₁). In `V`, for `k` with the master inequality:
 1. (U3) `L (N₁ + …) (instB ⌜ψ 🡒 θ[⌜ψ⌝]⌝ k)`, i.e. of `imp (instB ⌜ψ⌝ k) (imp (instB ⌜Box_g ψ⌝ k) (instB ⌜p⌝ k))` (`instB` distributes over `🡒` — a code lemma).
 2. Assume `A : L (g k) (instB ⌜ψ⌝ k)` (= `bewB (g k) ⌜ψ⌝ k`).
 3. (U2 cut of 1 with 2) `L (…) (imp (instB ⌜Box_g ψ⌝ k) (instB ⌜p⌝ k))`.
 4. (U5 on 2) `L (E (g k) + …) (instB ⌜Box_g ψ⌝ k)`.
 5. (U2 cut of 3 with 4) `L (…) (instB ⌜p⌝ k)` = `L (…) (guardCode ⌜GtmplA 0⌝ (DupocV k) (DupocV k))`.
-6. (master inequality + `lenDerivable_mono_V`) `L k (guard)`; (`properV_TAct`) `LenProvableV TAct k (guard)`;
+6. (master inequality + `lenBoxUnbounded_mono_V`) `L k (guard)`; (`properBound_TAct`) `LenBox TAct k (guard)`;
    (U7 `dupoc_search_V`) `EvalGraph 2 (DupocV k) (DupocV k) (DupocV k) 0`; (U7 truth equation) `V ⊧ p[k]`.
 7. Discharging 2: `V ⊧ (Box_g ψ)[k] ↔ L (g k) (instB ⌜ψ⌝ k)` (semantics of `bewBDef`/`gGraph`), so `V ⊧ θ[⌜ψ⌝][k]`, and by the fixed point (soundness of `TAct ⊢ ∀¹ (θ[⌜ψ⌝] 🡒 ψ)` in `V`) `V ⊧ ψ[k]`.
-8. Hence, with `k̂ : ℕ` the threshold of the master inequality: every real-eq model of `TAct` satisfies `∀¹ (numeral k̂ ≤ #0 🡒 ψ)`; by `tact_complete`, `TAct ⊢ ∀¹ (numeral k̂ ≤ #0 🡒 ψ)`; let `N₃` be the length of one such proof.
-   `pblt_uniform (hE : BoundedInnerNec E) : ∃ k̂ N₃, LenProvable fbound N₃ TAct ⌜∀¹ (numeral k̂ ≤ #0 🡒 ψ)⌝ ∧ (the chain 1–7 at every V, k ≥ k̂)`.
+8. Hence, with `k̂ : ℕ` the threshold of the master inequality: every real-eq model of `TAct` satisfies `∀¹ (numeral k̂ ≤ #0 🡒 ψ)`; by `TAct_complete`, `TAct ⊢ ∀¹ (numeral k̂ ≤ #0 🡒 ψ)`; let `N₃` be the length of one such proof.
+   `pblt_uniform (hE : BoundedInnerNec E) : ∃ k̂ N₃, LenBoxNat codeBound N₃ TAct ⌜∀¹ (numeral k̂ ≤ #0 🡒 ψ)⌝ ∧ (the chain 1–7 at every V, k ≥ k̂)`.
 
 **U9 — the cell, at ℕ.** For `k ≥ k̂` (and a second threshold `k̂'` below):
-1. (U3 meta, `lenProvable_inst_size`) `LenProvable (N₃ + c·‖k‖ + C) TAct ⌜numeral k̂ ≤ bnumT k 🡒 ψ ⇜ ![bnumT k]⌝`.
-2. A SHORT proof of the antecedent: `LenProvable (c'·‖k‖ + C') TAct ⌜numeral k̂ ≤ bnumT k⌝` for `k ≥ k̂` — by bit recursion on `bnumT` (`x ≤ y → x ≤ 2y`, `x ≤ y → x ≤ 2y + 1` as PA lemmas cut in once per bit; base cases `k ∈ [k̂, 2k̂+1]` finitely many constant proofs by Σ₁-completeness, constants existential). NEW small library `NumeralFacts.lean`.
-3. (`Cut.lean` meta cut) `LenProvable (N₄ k) TAct ⌜ψ ⇜ ![bnumT k]⌝` with `N₄ k = C'' + c''·‖k‖ ≤ g k` for `k ≥ k̂'`; by `quote_instB` + `properV_nat_TAct`: `L (g k) (instB ⌜ψ⌝ k)` at `V = ℕ` = step 2 of U8.
-4. Run U8's chain at `V = ℕ`: `LenProvableV TAct k (guard)` and `EvalGraph 2 (Dupoc k) (Dupoc k) (Dupoc k) 0`.
-   `dupoc_self_coop (hE : BoundedInnerNec E) : ∃ k₀, ∀ k ≥ k₀, EvalGraph 2 (Dupoc k) (Dupoc k) (Dupoc k) 0` — Critch's Theorem 3.7 in PA-`S`, conditional on (d).
+1. (U3 meta, `lenBoxNat_inst_size`) `LenBoxNat (N₃ + c·‖k‖ + C) TAct ⌜numeral k̂ ≤ binNumeralMeta k 🡒 ψ ⇜ ![binNumeralMeta k]⌝`.
+2. A SHORT proof of the antecedent: `LenBoxNat (c'·‖k‖ + C') TAct ⌜numeral k̂ ≤ binNumeralMeta k⌝` for `k ≥ k̂` — by bit recursion on `binNumeralMeta` (`x ≤ y → x ≤ 2y`, `x ≤ y → x ≤ 2y + 1` as PA lemmas cut in once per bit; base cases `k ∈ [k̂, 2k̂+1]` finitely many constant proofs by Σ₁-completeness, constants existential). NEW small library `NumeralFacts.lean`.
+3. (`Cut.lean` meta cut) `LenBoxNat (N₄ k) TAct ⌜ψ ⇜ ![binNumeralMeta k]⌝` with `N₄ k = C'' + c''·‖k‖ ≤ g k` for `k ≥ k̂'`; by `quote_instB` + `properBound_nat_TAct`: `L (g k) (instB ⌜ψ⌝ k)` at `V = ℕ` = step 2 of U8.
+4. Run U8's chain at `V = ℕ`: `LenBox TAct k (guard)` and `EvalGraph 2 (Dupoc k) (Dupoc k) (Dupoc k) 0`.
+   `dupoc_self_coop_of_nec (hE : BoundedInnerNec E) : ∃ k₀, ∀ k ≥ k₀, EvalGraph 2 (Dupoc k) (Dupoc k) (Dupoc k) 0` — Critch's Theorem 3.7 in PA-`S`, conditional on (d).
 
 Traps to expect: never `simp` a goal containing `⌜ψ⌝` (Diag's kernel-numeral trap); state every
-length in `‖k‖`, `flen ψ`, `flen p` separately (InstV's trap); the fixed point's numeral `⌜ψ⌝` is
+length in `‖k‖`, `formulaLenMeta ψ`, `formulaLenMeta p` separately (InstV's trap); the fixed point's numeral `⌜ψ⌝` is
 Foundation's UNARY numeral — an astronomical CONSTANT, harmless; `k̂`, `N₁…N₄` are all existential.
 
 ## 7. Correction to §6 (2026-09-12, after U7): the model class and the action axiom
 
 `TAct = PA ∪ {c_C ≠ c_D, c_D ≠ c_C}` admits models reading the constants as ANY distinct pair; there
-`relabel c_C c_D (dnum (Dupoc k))` is not a program (the relabelled template has a non-existent
+`revalue c_C c_D (canonical (Dupoc k))` is not a program (the relabelled template has a non-existent
 symbol code), its search fails, and Dupoc's guard sentence is FALSE. So `TAct ⊬ guard(k)` for every
 `k` and Dupoc never cooperates — the abstract-constant τ design (roadmap §2.4) was vacuous for the
-Löbian cells (the M3 record's boundary 2 called the generic `TAct ⊢ trAt …` "needed by nothing
+Löbian cells (the M3 record's boundary 2 called the generic `TAct ⊢ sentenceAt …` "needed by nothing
 downstream"; it is needed by exactly these cells). FIX (U0b): add the τ-symmetric axiom
-`axAct : (c_C = 0 ∧ c_D = 1) ∨ (c_C = 1 ∧ c_D = 0)` (and its swap image). Then every real-equality
-model of `TAct` is `stdActV V` or its swap twin, `tact_complete` quantifies over exactly those two
+`actionAxiom : (c_C = 0 ∧ c_D = 1) ∨ (c_C = 1 ∧ c_D = 0)` (and its swap image). Then every real-equality
+model of `TAct` is `stdReadingV V` or its swap twin, `TAct_complete` quantifies over exactly those two
 readings, and §6's chain must be run in BOTH: in the swapped reading `qDupoc(k)` says "Cupod k plays
 D vs Cupod k", obtained from `EvalGraph 2 (DupocV k) … 0` by the τ-equivariance of `EvalGraph`
-(`swapcode`, `swapAct`) — a V-generic lemma to add to U8. Red cell, τ-closure and every `TAct ⊢`
+(`transposeCode`, `swapAction`) — a V-generic lemma to add to U8. Red cell, τ-closure and every `TAct ⊢`
 result survive (a stronger theory); `no_budget_keeping_transfer` is a length argument.
 
-**§7 addendum (after U0b landed, 7908336): the family is the CONJUNCTION.** `tact_complete'`
-quantifies over `stdActS M` and `swapActS M`. In the swapped reading `qDupoc(k)` means "Cupod k plays
+**§7 addendum (after U0b landed, 7908336): the family is the CONJUNCTION.** `TAct_complete_of_readings`
+quantifies over `stdReading M` and `swappedReading M`. In the swapped reading `qDupoc(k)` means "Cupod k plays
 D vs Cupod k", and turning `EvalGraph 2 (DupocV k) … 0` into that needs τ-equivariance of `EvalGraph`
-inside `V`, i.e. τ-closure of `LenProvableV` INTERNALLY — not available (`Symmetry.lean` is meta).
+inside `V`, i.e. τ-closure of `LenBox` INTERNALLY — not available (`Symmetry.lean` is meta).
 Critch's own move (2019 p. 21, PBLT on the conjunction) avoids it: take
 `p := qDupoc ⋏ qCupod` with `qCupod := lMap swap qDupoc` (the one-variable formula whose `k`-instance
 is CUPOD's guard: `guardCode ⌜GtmplA 1⌝ (CupodV k) (CupodV k) = instB ⌜qCupod⌝ k`, from
-`swapcode_DupocV` + the template swap equations). Then from `L a (instB ⌜p⌝ k)` two cheap
+`transposeCode_DupocV` + the template swap equations). Then from `L a (instB ⌜p⌝ k)` two cheap
 ∧-elimination cuts give `L (a + …) (instB ⌜qDupoc⌝ k)` AND `L (a + …) (instB ⌜qCupod⌝ k)`; each
 searcher finds its own guard: `EvalGraph 2 (DupocV k) … 0` and `EvalGraph 2 (CupodV k) … 1`
 (`search_iff` for `pSearch k _ (pConst 1) (pConst 0)`); and `p(k)` is TRUE in BOTH readings: in
-`stdActS`, `qDupoc ↔ EvalGraph … Dupoc … 0` (U7) and `qCupod ↔ EvalGraph … Cupod … 1` (mirror);
-in `swapActS`, `Eval (swapActS) φ = Eval (stdActS) (lMap swap φ)` swaps the two roles. So the ONLY new
-truth equation is `eval_qCupod_iff_V` in `stdActS`, and U8's step 6 produces both `EvalGraph` facts.
-The conclusion `dupoc_self_coop` is unchanged (and `cupod_self_defect` comes for free).
+`stdReading`, `qDupoc ↔ EvalGraph … Dupoc … 0` (U7) and `qCupod ↔ EvalGraph … Cupod … 1` (mirror);
+in `swappedReading`, `Eval (swappedReading) φ = Eval (stdReading) (lMap swap φ)` swaps the two roles. So the ONLY new
+truth equation is `eval_qCupod_iff_V` in `stdReading`, and U8's step 6 produces both `EvalGraph` facts.
+The conclusion `dupoc_self_coop_of_nec` is unchanged (and `cupod_self_defect` comes for free).
 
 ## 8. U10 design (2026-09-12, `DESIGN_inner_necessitation.md`) and a correction to §6
 
 **Correction.** `BoundedInnerNec d c c₁ c₀` as first stated (§6, `Prep.lean` ec5a8b6) is
 UNSATISFIABLE: the target `instB ⌜Box_g χ⌝ k` contains the UNARY numeral `⌜χ⌝`, so every proof of
-it has `dlen ≥ encode χ` (exponential in `flen χ`) while the bound allowed `c₁ · flen χ` — a
+it has `proofLen ≥ encode χ` (exponential in `formulaLenMeta χ`) while the bound allowed `c₁ · formulaLenMeta χ` — a
 theorem conditional on it would be vacuous. RESTATED (assembly agent instructed): the constant may
 depend on `χ`: `∀ χ, ∃ C, ∀ V k, L (g k) (instB ⌜χ⌝ k) → ∃ e ≤ C·((g k)^d + 1), L e (instB ⌜Box_g χ⌝ k)`.
 The argument uses one `χ` (= `psi`), so nothing is lost. General lesson: any sentence naming a
 formula by a numeral costs at least that code's magnitude — bound constants per family, never
-uniformly in `flen`.
+uniformly in `formulaLenMeta`.
 
 **The construction (ANALYSIS, report §3).** `verifyCode ρ` follows `ρ`'s tree; every code
 (sequent, formula, term, sub-derivation, length) enters the proof as an EIGENVARIABLE obtained by
 ∃-elimination from a constant-size universal lemma (pairing/insert/subst totality, the ten per-tag
-intro clauses of the `derivation` fixpoint, the `DlenGraph` clauses — a finite library of ~40
+intro clauses of the `derivation` fixpoint, the `ProofLenGraph` clauses — a finite library of ~40
 `TAct`-sentences with existential lengths, each proved by `complete`); the fixpoint is never
 unfolded; membership/subset/`IsFormulaSet` facts are constant consequences of the `insert`
 construction; lengths flow as binary numerals. Foundation's own internal Σ₁-completeness is NOT
@@ -262,13 +262,13 @@ disjunction of numerals — constant). Risk (1) is not a blocker.
 
 Colomban's decision: push for the one obligation. Plan = `DESIGN_inner_necessitation.md` §5, cut into
 agent-sized tasks under `arith/ArithS/Necessitation/`:
-* `Primitives.lean` — the two moves of §3.1 as derivation-code constructors with `dlen` bounds:
+* `Primitives.lean` — the two moves of §3.1 as derivation-code constructors with `proofLen` bounds:
   `useLemmaCode` (cut a stored `∀x̄ B` in at witnesses `ē`: `wk` + `m` `exsIntro`s + `cut`) and
   `elimExistsCode` (cut on `∃x P` against `allIntro` with the fresh `&0`); `wkDropCode`.
-* `Lib/Basic.lean` — `Lib σ := ∃ N, ∀ V, LenDerivable TAct N ⌜lMap emb σ⌝`, `Lib.of_pa`;
+* `Lib/Basic.lean` — `Lib σ := ∃ N, ∀ V, LenBoxUnbounded TAct N ⌜lMap emb σ⌝`, `Lib.of_pa`;
   `Lib/Sets.lean`, `Lib/Formulas.lean`, `Lib/Lengths.lean` — the table rows totality/sets/formulas/lengths.
-* NEXT: `Lib/Nodes.lean` — the ten `Intro_tag` + ten `Dlen_tag` sentences (with `(derivation TAct).sigma`
-  and `dlenGraphDef`) and the `axm` recognizer items (§3.6); then `describeFormula` (the bottom-up
+* NEXT: `Lib/Nodes.lean` — the ten `Intro_tag` + ten `ProofLen_tag` sentences (with `(derivation TAct).sigma`
+  and `proofLenGraphDef`) and the `axm` recognizer items (§3.6); then `describeFormula` (the bottom-up
   syntax walk, a `UformulaRec`-style Σ₁ construction), `transportFacts`, the ten per-tag fragments
   (§3.3), the existential recursion by `Derivation.induction1` (§5(b), recommended over a
   `verifyCode` function), and the top (§4.3) closing `BoundedInnerNec 3`.
@@ -277,15 +277,15 @@ Conventions: two concurrent Lean agents, short tool calls, `wip` commits per gre
 
 **§9 status — Primitives DONE (204c012, census 179, general `L`/`T`, general arity `m`).**
 `useLemmaCode Γ es B dΛ d` (cut a stored `∀^m B` in at the witness list `es`; `exsChainCode` =
-`m` `exsIntro`s; `dlen ≤ dlen dΛ + dlen d + (m+3)|Γ| + (m+1)²(|B|·E + m) + |B| + mE + 2m + 3` with
+`m` `exsIntro`s; `proofLen ≤ proofLen dΛ + proofLen d + (m+3)|Γ| + (m+1)²(|B|·E + m) + |B| + mE + 2m + 3` with
 `E` a bound on the witness term lengths — the `(m+1)²` is real: Foundation's `exsIntro` keeps the
-principal formula, so the chain sequents accumulate), `elimExistsCode Γ P D d` (`dlen ≤ dlen D +
-dlen d + 5|Γ| + 6|P| + 8`; the factor 2 on `setShift` is the unary free-variable charge),
+principal formula, so the chain sequents accumulate), `elimExistsCode Γ P D d` (`proofLen ≤ proofLen D +
+proofLen d + 5|Γ| + 6|P| + 8`; the factor 2 on `setShift` is the unary free-variable charge),
 `wkDropCode`; infrastructure `allsIter/exsIter`, `instOuter` (outermost-first instantiation) with
 the LINEAR bound `|instOuter es B| ≤ |B|·E`. PROCESS TRAP: `pgrep -f 'lake build'` matches the
 agent's own polling shell — use `pgrep -f 'bin/lake build'`. Mathlib: `add_le_add_left/right` have
 swapped sides in this toolchain — use `add_le_add`/`gcongr`. IN FLIGHT: `Lib/{Basic,Sets,Formulas,
-Lengths}` (rows A), `Lib/Nodes` (Intro/Dlen/axm).
+Lengths}` (rows A), `Lib/Nodes` (Intro/ProofLen/axm).
 
 **§9 status — Library rows A DONE (f6536fc): `Lib/Basic` (`Lib σ`, `Lib.of_pa`, `quote_alls`,
 `Lib.univ_code`), `Lib/Sets` 26 rows, `Lib/Formulas` 84 rows (totality 18, formation 18,
@@ -295,7 +295,7 @@ inside a Δ₁ fixpoint blueprint (`!(isFormulaSet LAct).sigma 0`) explodes elab
 state rows over variables (`IsFormulaSet ∅` is the pair `isFormulaSetOfNoMem` + `notMemEmpty`);
 a `timeout` upstream of `grep` exits 0 — check the exit code of `lake env lean` itself.
 Library rows B DONE (d95ba66): `Lib/Nodes` — ten `Intro_tag`, ten node-code totality, ten
-`Dlen_tag` rows (the length as a TERM in the conclusion), six polarity bridges, the axiom
+`ProofLen_tag` rows (the length as a TERM in the conclusion), six polarity bridges, the axiom
 recognizer: `lib_axiomRec σ (h : σ ∈ TAct)` (any axiom, at the price of its unary numeral) and
 `lib_indRec` (induction instances through Foundation's `InductionR`: `qqAlls`, `IsUFormula ℒₒᵣ`,
 `shift b = b`, `bv`, `fvarVec`, `substs`, `indBodyValGraph` — ℒₒᵣ-indexed graphs, hence the
@@ -321,11 +321,11 @@ RESOLUTION: separate WHAT is done from HOW it is assembled.
   FIXED parameters: `g 0 = d`, `g (j+1) = applyStep (ctxVec[n−j−1]) (steps[n−j−1]) (g j)`).
 * `StepOK Γ s` (Δ₁: the row's antecedents are in `Γ` at the stated indices, the witnesses are
   terms, …); `chainCode_proof : (∀ i < n, StepOK (ctxVec[i]) (steps[i])) → DerivationOf d (ctxVec[n])
-  → DerivationOf (chainCode Γ₀ steps d) Γ₀` and `dlen_chainCode_le` (sum of the per-step costs) —
+  → DerivationOf (chainCode Γ₀ steps d) Γ₀` and `proofLen_chainCode_le` (sum of the per-step costs) —
   both by IΣ₁ induction on `j` with Π₁ predicates.
 * Every producer is then a LIST-valued Σ₁ function: `describeSteps r` (by `UformulaRec`-style
   recursion, children's lists concatenated, with the index bookkeeping `descCount`), the per-tag
-  fragments, and `verifySteps ρ` (a `DlenGraph`-style fixpoint on `⟪ρ, list⟫`); their theorems are
+  fragments, and `verifySteps ρ` (a `ProofLenGraph`-style fixpoint on `⟪ρ, list⟫`); their theorems are
   `StepsOK` (Δ₁, bounded ∀ over the list) + the final-context facts + the length sum, all Π₁ in the
   input, provable by `IsUFormula`/`Derivation.induction1`.
 * `verifyCode ρ := chainCode Γ₀ (verifySteps ρ) (top-closing code)`.
@@ -339,12 +339,12 @@ file's closing docstring. NOT `rfl`: every operation is an `L`-indexed fixpoint 
 IN FLIGHT: `Steps.lean` (final), `Chain.lean` (§10). NEXT: `describeSteps`, fragments, `verifySteps`, top.
 
 **§9 status — `Steps` DONE (511e5f1, census 251):** `useHornCode`/`useHornAndCode`/`introFactCode`/
-`axLFactCode`/`wkToCode` with proofs and `dlen` bounds, `instOuterAt_subst` (one simultaneous
+`axLFactCode`/`wkToCode` with proofs and `proofLen` bounds, `instOuterAt_subst` (one simultaneous
 substitution makes fact matching SYNTACTIC), the canonical fact codes `subst ?[w] ⌜lMap emb P⌝`,
 the shift bookkeeping (`subst ?[w] P` reappears as `subst ?[shift w] P`), and the worked
-`describeAndCode` (introFact ∘ useHorn ∘ useHorn, cost `≤ dlen d + ΣNᵢ + 56|Γ| + O(|B|E)`); the
+`describeAndCode` (introFact ∘ useHorn ∘ useHorn, cost `≤ proofLen d + ΣNᵢ + 56|Γ| + O(|B|E)`); the
 fragment protocol is the module docstring §1–10.
-**RISK found 2026-09-12 (cost accounting):** `Primitives`' `setLen_setShift_le : |setShift Γ| ≤ 2|Γ|`
+**RISK found 2026-09-12 (cost accounting):** `Primitives`' `sequentLen_setShift_le : |setShift Γ| ≤ 2|Γ|`
 is the unary-index doubling bound; composed over `n` eigenvariable introductions it gives
 `2ⁿ|Γ|` — EXPONENTIAL, unusable. The honest bound is additive: `|setShift Γ| ≤ |Γ| + occ(Γ)` with
 `occ` the number of free-variable occurrences (each index grows by exactly 1), so `n` introductions
@@ -364,7 +364,7 @@ child's fact matches syntactically; a bvar index `z` is a numeral witness (paid 
 (`negAndB`, `freeAllB`); (4) NO `sWkDrop` inside the walk (the steps are `Γ`-independent so the
 theorem can quantify over `Γ`); (5) witness lists = the row's DSL variable list read right-to-left;
 after `a` eliminations the last-listed variable is `&0`; the index rule for siblings:
-`&0 ↦ &(c + 1)`; (6) `descCount ≤ |r|`, `stepCount ≤ 8|r|`, cost `dlen d + C₁|r|(N + |Γ|) +
+`&0 ↦ &(c + 1)`; (6) `descCount ≤ |r|`, `stepCount ≤ 8|r|`, cost `proofLen d + C₁|r|(N + |Γ|) +
 C₂|r|²·fvOccS Γ + C₃|r|³`, witness bound `E ≤ 2(n₀ + |r|) + 18` independent of `Γ`; (7) all
 hypotheses are memberships of codes built from witness TERMS — the values the eigenvariables
 denote never appear (the derivation is valid under every valuation). LIBRARY GAPS (§10 of the
@@ -375,11 +375,11 @@ report): two `lt` rows (`0 < y+1`, `x < y → x+1 < y+1`), per-symbol closed row
 opaque). The `neg`/`shift`/`subst`/`free` shape facts are produced by separate `negSteps`/… (§9).
 
 **§9 status — `ShiftLen` DONE (1eb099b, census +13):** occurrence counts `fvOcc`/`fvOccVec`/
-`fvOccF`/`fvOccS` (Σ₁, by the `termLen`/`formulaLen`/`setLen` schemes), EXACT shift laws
+`fvOccF`/`fvOccS` (Σ₁, by the `termLen`/`formulaLen`/`sequentLen` schemes), EXACT shift laws
 `termLen (termShift t) = termLen t + fvOcc t`, `formulaLen (shift p) = formulaLen p + fvOccF p`,
-`setLen (setShift s) ≤ setLen s + fvOccS s`, invariance of the counts under shift, and the LINEAR
-iteration bound `setLen (setShiftIter n s) ≤ setLen s + n · fvOccS s`; sanity `fvOcc ≤ termLen` etc.;
-`dlen_elimExistsCode_le_occ` (`… + 4|Γ| + fvOccS Γ + …`). The `free` bound `+ 1` was FALSE
+`sequentLen (setShift s) ≤ sequentLen s + fvOccS s`, invariance of the counts under shift, and the LINEAR
+iteration bound `sequentLen (setShiftIter n s) ≤ sequentLen s + n · fvOccS s`; sanity `fvOcc ≤ termLen` etc.;
+`proofLen_elimExistsCode_le_occ` (`… + 4|Γ| + fvOccS Γ + …`). The `free` bound `+ 1` was FALSE
 (`free` frees every `#0` occurrence) — delivered `≤ fvOccF p + formulaLen p`; the sharp form needs
 `bvOcc` (in the Walk task). TRAP: a `TermRec`/`UformulaRec1` blueprint clause written as the direct
 graph `!listSumDef y v'` makes the `_defined` obligation loop forever — ∃-wrap it
@@ -393,7 +393,7 @@ symbol rows written with CHAIN numerals (`“!LAct.isRel (0+1+1) 0”`, verified
 `fvOccF_subst_le : ≤ fvOccF p + bvOccF p · M` (entry bound `M`), `fvOccF_free_le' : ≤ fvOccF p +
 bvOccF p`; `instOuterAt_subst_bvList` (+ `_bvN`, N ≤ 7), `freeIter`, `free_exsIter`,
 `freeIter_subst_listToVec` (last-listed existential is `&0`, witnesses shifted `k` times).
-Pending on `Chain` landing: the `Steps.lean` `dlen_introFactCode_le_occ` swap. IN FLIGHT: `Chain`
+Pending on `Chain` landing: the `Steps.lean` `proofLen_introFactCode_le_occ` swap. IN FLIGHT: `Chain`
 (resumed), `RowInst` (row-shape/instantiation lemmas + canonical context-fact codes).
 NEXT: `describeSteps` (the walk itself, a `Fixpoint` on `⟪n, r⟫`) once `Chain` fixes the step codes.
 
@@ -420,14 +420,14 @@ qVecIter k (concat W e)`, a `V`-cast on the length, never a `ℕ` ascription —
 syntactically (`rowB = impChainV as c`), so no Σ₁ Horn-decomposition of a code exists;
 `sElimExs P`, `sSplit p q` (via `splitAndCode`, the context already holds `neg (p ⋏ q)`,
 `insert_eq_self_of_mem`), `sWkDrop Γ'`; `axLFactCode` is a LEAF, never a step (the chain's `d`).
-`applyStep/ctxAfter/stepCost` are tag `if`-chains with explicit graph Defs (the `relabelSym`
+`applyStep/ctxAfter/stepCost` are tag `if`-chains with explicit graph Defs (the `revalueSym`
 pattern; `π₁` is a LOW-precedence prefix — parenthesize `(π₁ x) ^⋏ (π₂ x)`), `ctxAfter` needs no
 table. `StepOK tbl E M Γ s` has an arity cap `M` (the STANDARDNESS bridge
 `exists_list_of_len_le`: a vector of length `≤ (M : ℕ)` is `vecOf` of a Lean list, so the list
 theorems apply — the theorems take `(M : ℕ)`); `ctxVec` (PR forward, stability + successor law),
 `chainAux/chainCode` and `costAux/costSum` (PR from the end, fixed parameters);
-`chainCode_proof`/`dlen_chainCode_le` by `pi1_succ_induction` on the position from the end;
-`stepCost` reproduces the `dlen_…_le` bounds exactly (tag 3: `4G + |setShift Γ| + 7|P| + 10`,
+`chainCode_proof`/`proofLen_chainCode_le` by `pi1_succ_induction` on the position from the end;
+`stepCost` reproduces the `proofLen_…_le` bounds exactly (tag 3: `4G + |setShift Γ| + 7|P| + 10`,
 the shifted length explicit). TRAPS: arity > 5 functions have no `Function₆` notation — state
 `𝚺₁.DefinedFunction (fun v : Fin 6 → V ↦ …)`; `definability` does not compose 5-ary functions —
 write the Def; `add_le_add_right` is swapped (use `add_le_add h le_rfl`); `zero_lt_one` is
@@ -435,9 +435,9 @@ ambiguous (`_root_.`); `tsub_add_cancel_of_le` for `n = (n - k) + k`. NEXT: `Row
 then `describeSteps` producing step lists against this `StepOK`.
 
 **§9 status — `Steps` `_occ` swap + `ChainOcc` DONE (c2cfd17, census 305):**
-`dlen_introFactCode_horn_le` extracted, `dlen_introFactCode_le` byte-identical, new
-`dlen_introFactCode_le_occ` (`(m + 2j + 9)·|Γ| + fvOccS Γ` instead of `(m + 2j + 10)·|Γ|`);
-`ChainOcc.lean`: `introCostOcc`, `stepCostOcc` (tags 2/3 sharpened), `dlen_applyStep_le_occ`.
+`proofLen_introFactCode_horn_le` extracted, `proofLen_introFactCode_le` byte-identical, new
+`proofLen_introFactCode_le_occ` (`(m + 2j + 9)·|Γ| + fvOccS Γ` instead of `(m + 2j + 10)·|Γ|`);
+`ChainOcc.lean`: `introCostOcc`, `stepCostOcc` (tags 2/3 sharpened), `proofLen_applyStep_le_occ`.
 Limits: `stepCostOcc` has no Σ₁ blueprint (the PR `costSum` stays on `stepCost`); no
 `stepCostOcc ≤ stepCost` on tag 3 (needs injectivity of `shift`, absent). IN FLIGHT: `RowInst`,
 `Lib/Occ` (occurrence/shift-length rows). NEXT: `describeSteps`.
@@ -457,13 +457,13 @@ the length bound is multiplicative (`formulaLen P · B`), an additive one is fal
 
 **§9 status — `Lib/Occ` DONE (18b6a91, 38 rows, census 347):** totality of `fvOcc/fvOccVec/fvOccF/
 fvOccS/bvOccF`, per-constructor `fvOcc` rows, `termLenShift`/`formulaLenShift` (exact),
-`setLenSetShiftLe`, `fvOccFShift`, sanity rows, `fvOccFFreeLe'` (Foundation has NO `free` graph:
+`sequentLenSetShiftLe`, `fvOccFShift`, sanity rows, `fvOccFFreeLe'` (Foundation has NO `free` graph:
 `free p = substs1 &0 (shift p)` spelled out), `fvOccFSubstLe` (entry bound in the bounded `.pi`
 shape `∀ i < n, ∀ e, nthDef e w i → ∀ x, fvOccGraph x e → x ≤ M`), and the §4.1 node
-bookkeeping rows `dlenLeafLe/dlenUnaryLe/dlenBinaryLe` (one row use per node), `addLeAdd₃`,
+bookkeeping rows `proofLenLeafLe/proofLenUnaryLe/proofLenBinaryLe` (one row use per node), `addLeAdd₃`,
 `leOfEqLe`, `leAddLeAdd`, `leAddLeft`, `leRefl`. TRAP/FINDING: DSL `+`, `=`, `≤` are `rfl`-equal to
 `Lengths.lean`'s `addO/eqO/leF`, but the DSL numeral `1` is NOT `rfl`-equal to `oneO`; `Nodes`'
-`dlen` rows conclude in the DSL, the `bnum` bit laws use `oneO` — bridge row `dslSuccEqSuccO :
+`proofLen` rows conclude in the DSL, the `binNumeral` bit laws use `oneO` — bridge row `dslSuccEqSuccO :
 x + 1 = x + oneO` (+ `leOfLeEq`). `RowInst` generator checked in (`arith/scripts/`).
 IN FLIGHT: `Describe` (the walk), a read-only design of the ten per-tag fragments (`DESIGN_fragments.md`).
 
@@ -480,31 +480,31 @@ df3ffe3), `DESIGN_fragments.md`.
 
 Decisions: (1) a sub-chain step (`sSub`) is REJECTED — `chainAux` calls `applyStep`, so a chain
 inside a step is a circular PR; instead two new FLAT tags: `sGoal e n s ū` (tag 6: `cutRule` on
-the node's goal fact `∃ d n, derivation d ∧ fstIdx s d ∧ dlenGraph d n ∧ n ≤ ū`, left premise a
+the node's goal fact `∃ d n, derivation d ∧ fstIdx s d ∧ proofLenGraph d n ∧ n ≤ ū`, left premise a
 constant 10-node leaf from facts in context; the parent recovers `d, n` by `sElimExs`×2 +
 `sSplit`×3) and `sLemma A dA` (tag 7: cut in a CLOSED numeral fact with its Γ-independent
-derivation `dA` carried as data; `StepOK` = `DerivationOf dA {A}`, Δ₁). (2) `ū_ν = bnum (dlen ν)`
-(a numeral); per node one `dlenBinaryLe` + one `sLemma` (`bnum a + bnum b + bnum c + 1 ≤
-bnum (dlen ν)`, true by `DlenGraph.*_iff`) + `leTrans`; a Σ₁ prover `numSteps` over the
+derivation `dA` carried as data; `StepOK` = `DerivationOf dA {A}`, Δ₁). (2) `ū_ν = binNumeral (proofLen ν)`
+(a numeral); per node one `proofLenBinaryLe` + one `sLemma` (`binNumeral a + binNumeral b + binNumeral c + 1 ≤
+binNumeral (proofLen ν)`, true by `ProofLenGraph.*_iff`) + `leTrans`; a Σ₁ prover `numSteps` over the
 `Lengths.lean` term-level rows produces the closed facts. (3) No environment, no `sWkDrop`:
 fragments assume a CANONICAL LAYOUT (member dossiers in walk order, insert-chain prefixes, `s =
 &k`, `l_s = &0`); parents COPY inherited objects in (`eqTotal` + ~30 congruence rows); sequents
-are chains over distinct members so `setLen` is exact by `sLemma` on V-truth (no `∉`); the row's
+are chains over distinct members so `sequentLen` is exact by `sLemma` on V-truth (no `∉`); the row's
 `insertDef cp p s` object is identified with the chain by `subsetAntisymm`. (4) Derived formulas
 (`neg/shift/substs/free`) are RE-DESCRIBED bottom-up and CERTIFIED by new bottom-up rows (incl.
 term-level `termShiftVec/termSubstVec` intro rows), replacing DESIGN_describe §9's opaque-vector
 companions; an identification walk `eqSteps` (12 injectivity rows) handles duplicate inserts,
 `shiftRule`, `axm`, and the top's `x_χ = ⌜χ⌝` pin. (5) FACT corrected: Foundation's `wk` clause is
 `fstIdx d' ⊆ s` — only `cut` introduces arbitrary formulas. (6) `VerifyGraph W tbl ρ L`: a Δ₁
-`Fixpoint` on `⟪ρ, L⟫` (`DlenGraph` pattern, `StrongFinite` via `ρ' < ρ`, `L' ≤ L` for
+`Fixpoint` on `⟪ρ, L⟫` (`ProofLenGraph` pattern, `StrongFinite` via `ρ' < ρ`, `L' ≤ L` for
 sub-vectors — new `le_appendV_mid`); existence by `Derivation.induction1 𝚺`, `verifySteps_ok`
 (Π₁, `Layout Γ ρ → ListOK ∧ NoDrop ∧ goal fact ∧ shifted layout`) by `induction1 𝚷` +
-`Fixpoint.case`. (7) COST: `O(g)` steps, contexts `O(B·g²)`, per step `O(|Γ|)`: `dlen ≤ dlen d +
-C·(dlen ρ + 1)·(setLen Γ + N + (dlen ρ + 1)²)` — CUBIC; with `setLen Γ_top = C_χ·O(‖k‖)` and
-`dlen ρ ≤ ‖k‖³` this is `BoundedInnerNec 3` exactly. (8) `M = 9`. (9) GAPS: ~150 new rows,
+`Fixpoint.case`. (7) COST: `O(g)` steps, contexts `O(B·g²)`, per step `O(|Γ|)`: `proofLen ≤ proofLen d +
+C·(proofLen ρ + 1)·(sequentLen Γ + N + (proofLen ρ + 1)²)` — CUBIC; with `sequentLen Γ_top = C_χ·O(‖k‖)` and
+`proofLen ρ ≤ ‖k‖³` this is `BoundedInnerNec 3` exactly. (8) `M = 9`. (9) GAPS: ~150 new rows,
 ~100 `inst_` lemmas (generator), tags 6/7 in `Chain.lean` (~500 lines), producers
 `memberList/copySteps/chainSteps/eqSteps/certX/lenSteps/numSteps/pinSteps/frag<Tag>` (~6–7k
-lines), V-lemmas `setShift_insert`, `termLen_bnum_le`, `le_appendV_mid`. ORDER: tags 6/7 +
+lines), V-lemmas `setShift_insert`, `termLen_binNumeral_le`, `le_appendV_mid`. ORDER: tags 6/7 +
 leaves → `numSteps` → `copySteps/chainSteps/eqSteps` → `certX/lenSteps` → the ten `frag<Tag>` +
 `VerifyGraph` → `verifySteps_ok` → top. RISK: the ten per-tag LAYOUT theorems (index bookkeeping);
 `axm`(ii)'s `bv`/`fvarVec` V-lemmas (Foundation status unverified). Note: `Occ.lean`'s `fvOcc`
@@ -518,9 +518,9 @@ PIECE table `walkPieces` (`⟪tag, as, c⟫` per row, a closed V-generic term pa
 a PARAMETER — a closed quote must never enter a blueprint), `mkStep W i ev = ⟪tag, i, ev, as, c⟫`,
 `walkTable_<row>`/`mkStep_<row>`); Part 2 the TERM walk (D2) as a `TermRec` construction with
 parameters `(W, n)` (`vRef`, `ltSteps` = PR on `z`, `bvarNode/fvarNode/nilNode/adjNode/funcNode`,
-`descVecAux` = PR from the END of the vector, `descT/describeT/descCountT/descTVec` + equations);
+`descriptionsAux` = PR from the END of the vector, `descT/describeT/descCountT/descTVec` + equations);
 Part 3 D3 for terms (`stepOK_useHorn/introFact`, the 21 per-row `ok_<row>` lemmas from
-`mkStep_<row>` + `walkTable_<row>` + `inst_<row>`, `ltAux_ok`, the node lemmas, `descVecAux_ok`
+`mkStep_<row>` + `walkTable_<row>` + `inst_<row>`, `ltAux_ok`, the node lemmas, `descriptionsAux_ok`
 by PR on the number of entries folded with the entries' facts as a LEAN-level hypothesis, and
 `termOK_of_isSemiterm` by `IsSemiterm.induction 𝚷` on the Π₁ invariant `TermOK tbl W n t := ∀ E,
 2n + 2|t| + 8 ≤ E → TermFacts … ∧ descCountT + 1 ≤ 2|t|`: `describeT_ok`, `describeT_chain`);
@@ -537,12 +537,12 @@ Part 7 D5 the cost: a HORN-ONLY list (tags 0/1/2, row bodies `≤ B`) costs `ste
 per step (`gcongr` monotonicity to the cap `m, j ≤ 8`, `hornCost_G/introCost_G` split off the `|Γ|`
 coefficient), the contexts grow ADDITIVELY (`ctxAfter_len_le : |Γ'| ≤ |Γ| + fvOccS Γ + 4BE`,
 `fvOccS Γ' ≤ fvOccS Γ + 4BE`; `ctxVec_len_le`), `costSum_le_of_hornOnly`, the walk is Horn-only
-(`hornOnly_describeT/F` via 40 `tag_<row>` lemmas), and **`dlen_describeF_chain_le`**:
-`dlen (chainCode tbl Γ (describeF n r) d) ≤ dlen d + 12|r|·(stepK N E B + 36·ctxBound E B Γ (12|r|))`,
+(`hornOnly_describeT/F` via 40 `tag_<row>` lemmas), and **`proofLen_describeF_chain_le`**:
+`proofLen (chainCode tbl Γ (describeF n r) d) ≤ proofLen d + 12|r|·(stepK N E B + 36·ctxBound E B Γ (12|r|))`,
 `ctxBound E B Γ L = |Γ| + L·fvOccS Γ + (L² + L)·4BE` — DESIGN §6.3's polynomial, `B` a bound on
 the table's row bodies (`∀ i < len tbl, |rowB tbl.[i]| ≤ B`, a table constant).
 TRAPS: a DSL wrapper with a DUPLICATED variable (`“y W n z. !ltAuxDef y W n z z”`) runs away like
-`setLenDef` — use `.rew (Rew.subst …)`; a PR/TermRec clause calling a Σ₁ Def DIRECTLY on `y`
+`sequentLenDef` — use `.rew (Rew.subst …)`; a PR/TermRec clause calling a Σ₁ Def DIRECTLY on `y`
 (`!nilNodeDef y W n`) loops in `_defined` — ∃-wrap (`∃ s, !nilNodeDef s W n ∧ y = s`); `definability`
 on a predicate mentioning `walkPieces` (or any def without an instance, e.g. `HornOnly`) times out
 at `whnf` — keep `W` abstract with `hWp : W = walkPieces` and give every predicate an instance;
@@ -553,14 +553,14 @@ at `whnf` — keep `W` abstract with `hWp : W = walkPieces` and give every predi
 D4 shape facts for `or/exs/falsum/nrel` (same proof as the four given), term-level shape facts.
 
 **§11 status — `Chain` Part C DONE (6d4ebab):** `goalFact s ū := ^∃ ^∃ goalBody` (`d = #1`, `n = #0`;
-conjuncts `derFact/fstIdxFact/dlenFact/leFact` as canonical codes over `Pderiv/PfstIdx/Pdlen/Ple`),
+conjuncts `derFact/fstIdxFact/proofLenFact/leFact` as canonical codes over `Pderiv/PfstIdx/Pdlen/Ple`),
 `goalInst`, `instOuter_goalBody`; the leaf `goalLeafCode` (2 `exsIntro` + `conj4Code` (3 `andIntro`
-+ 4 `axL`) + 1 `wk`), `goalLeafCode_proof`, `dlen_goalLeafCode_le ≤ 10|Γ| + 27·|goalBody|·E + 2E + 41`
++ 4 `axL`) + 1 `wk`), `goalLeafCode_proof`, `proofLen_goalLeafCode_le ≤ 10|Γ| + 27·|goalBody|·E + 2E + 41`
 (MULTIPLICATIVE in `|G|·E` — the additive form is false when a variable repeats); tags `sGoal e n s ū`
 (6; `ctxAfter = insert (neg goalFact) Γ`; `goalCost G Q E = 11G + 27QE + 2E + 42`) and `sLemma A dA`
 (7; `StepOK = LemmaOK := IsFormula A ∧ DerivationOf dA {A}`, Δ₁ via `DerivationOf.definable'` — `derivation`
-never unfolded; cost `dlen dA + 2|Γ| + 2|A| + 2`); `GoalOK` (12 conjuncts; one `definability` over
-13 inline conjuncts hits aesop's 200-rule limit — split); `applyStep_proof`/`dlen_applyStep_le`/
+never unfolded; cost `proofLen dA + 2|Γ| + 2|A| + 2`); `GoalOK` (12 conjuncts; one `definability` over
+13 inline conjuncts hits aesop's 200-rule limit — split); `applyStep_proof`/`proofLen_applyStep_le`/
 `isFormulaSet_ctxAfter`/`ChainOcc` extended, all pre-existing names/statements byte-identical;
 `mem_ctxAfter_of_noShift'` (tags 0/1/4/6/7). `Chain` now imports `RowInst`. Definability without
 touching closed quotes: generic `fact1Def τ`/`fact2Def τ` blueprints proved for a VARIABLE `τ`.
@@ -580,11 +580,11 @@ poll with `pgrep -f 'bin/lake build ArithS'`, never a pattern that matches the w
 IN FLIGHT: `NumSteps` (resumed), `Layout` (copySteps/chainSteps/eqSteps).
 
 **§11 status — `NumSteps` DONE (ded402f; ≈3950 lines, census +14):** Σ₁ provers producing DERIVATION
-CODES of closed binary-numeral facts, each with `DerivationOf`, a cubic `dlen` bound (`nodeCost N B E
+CODES of closed binary-numeral facts, each with `DerivationOf`, a cubic `proofLen` bound (`nodeCost N B E
 = N + 800·B·E`) and `LemmaOK (sLemma A dA)` packaging: `succCode`, `addCode` (Fixpoint on `⟪a,b,d⟫`),
 `leCode`/`ltCode`, `oneLe`, the node-bookkeeping facts `leafFact/bin2Fact/bin3Fact/sum2Fact`
-(`bin3Fact : bnum a + bnum b + bnum c + 1 ≤ bnum n`, the `dlenBinaryLe` companion), `cTEqFact/cTLeFact`
-(`cT z = bnum z`); a 19-row library, `exists_numTable`, combinators `goalLeaf/cut1/hornGoal/stepL`.
+(`bin3Fact : binNumeral a + binNumeral b + binNumeral c + 1 ≤ binNumeral n`, the `proofLenBinaryLe` companion), `cTEqFact/cTLeFact`
+(`cT z = binNumeral z`); a 19-row library, `exists_numTable`, combinators `goalLeaf/cut1/hornGoal/stepL`.
 NOT delivered: N4 `mulEq`, N5 `lengthEq` (top only), the general-list N3. TRAPS: a full `simp` on the
 instance proof of a Fixpoint-defined function explodes to 17 GB — rewrite explicitly, never unfold the
 graph wrapper; `definability` dies on nested combinators — explicit blueprints; `zsh` `pipestatus` is
@@ -596,7 +596,7 @@ IN FLIGHT: `Layout` (copy/chain/eq), `Cert` (certX + lenSteps).
 explicit blueprints, `copyAux` PR, `copySteps_ok`: Horn-only, one shift, `eqFactB &0 &(i+1)` + every
 copied fact, `costSum_copySteps_le`) and `chainSteps` (`chainPre/chainA/chainBpre/chainB` PR,
 innermost-first insert chain with interleaved formula-set facts, `subsetRefl/Insert/Trans`,
-`memInsertSelf`, `subsetMem`, `setLenTotal`; `chainSteps_ok` — final layout `l_s = &0`, `s = &1`,
+`memInsertSelf`, `subsetMem`, `sequentLenTotal`; `chainSteps_ok` — final layout `l_s = &0`, `s = &1`,
 `s_i = &(i+1)`; `+ subsetReflC` row, Frag/RowInstB regenerated); Part 4 `eqSteps` pending.
 `Cert.lean` wip Part 0 (1889d58: dossiers `DossF/DossT/DossV` = the walk's own final context from
 the empty context shifted to an offset, `finalCtx` monotonicity, transport through `NoDrop` lists,
@@ -612,16 +612,16 @@ reached as `0 ⊆ 0 → s ⊆ 0 → IsFormulaSet s`, never a closed `0` inside `
 (⇒ `WalkTable`), `layoutPieces` extending `walkPieces` entrywise (`mkStep_layoutPieces_lt`, so the
 walk's `ok_` lemmas transfer), per row `lok_<row>` (generated). Part 2 `copySteps W i T`: FACT TAGS
 `⟪kind, args⟫` (19 kinds: pi/and/or/all/exs/rel/nrel/verum/falsum/len/mem for formulas, tpi/func/bvar/
-fvar/tlen for terms, adj/tvpi/utvpi for vectors) name one dossier fact and its other witnesses in the
+fvar/termLenMeta for terms, adj/tvpi/utvpi for vectors) name one dossier fact and its other witnesses in the
 PRE-copy frame; `eqTotal [^&i]` then per tag the congruence step (+ the walk's `.sigma→.pi` bridge for
 the four formation kinds); `copySteps_ok`: `TagOK` for every tag ⇒ Horn-only, ONE shift, `≤ 2|T|+1`
 steps, `eqFactB &0 &(i+1)` and every `tagFact` in the final context. Part 3 `chainSteps W xs`:
 members inserted INNERMOST FIRST so `s_i = insert x_i s_{i+1}` ends at `&(i+1)` with NO index
 arithmetic in the membership phase (only `k − (c+1)` in the intro loop, via `nthFromEnd`); the
 formula-set facts interleaved into the intro loop; membership by `subsetRefl` + per member
-`subsetInsert/subsetTrans/memInsertSelf/subsetMem` (`O(k)`); `setLenTotal` last. Final layout
+`subsetInsert/subsetTrans/memInsertSelf/subsetMem` (`O(k)`); `sequentLenTotal` last. Final layout
 (`k+1` shifts): `l_s = &0`, `s = &1`, `s_i = &(i+1)`, `insFact/fsetPiFact/memFact` per member,
-`setLenFact &0 &1` (`chainSteps_ok`, `≤ 7k+6` steps). NOTE: this deviates from §3.2's `s = &k` (which
+`sequentLenFact &0 &1` (`chainSteps_ok`, `≤ 7k+6` steps). NOTE: this deviates from §3.2's `s = &k` (which
 assumed a length object per prefix; the exact-length `sLemma` route is `NumSteps`'). Part 4
 `eqSteps W i j r`: the walk's recursion shape replayed ONCE per code as a TEMPLATE `⟪count, facts,
 steps⟫` with witnesses `tL/tR/tA` (left offset, right offset, closed term) — `TermRec` for terms, a
@@ -697,13 +697,13 @@ census 437, all standard. `gen_frag2.py` + `Frag2Rows.lean` (24 new rows at `gId
 `frag2RowCount = 150`, `Frag2Table`/`frag2Pieces` extending `frag1Pieces` entrywise) and
 `Frag2.lean` (1075 lines): `nodeShift`, `nodeAll`, `nodeExs` (cap `M = 9`, BINARY tail — the
 witness term's length is charged), `nodeAxm` (leaf tail), each `node<Tag>Head` (4 steps, 1 shift:
-totality → `fstIdx<Tag>` → `Intro<Tag>` → `Dlen<Tag>`) + a Frag1 tail, with `Head_ok`, `_ok`
-(`len = 9`, `shiftsV = 1`, concluding `neg (goalFact (^&(is+1)) (bnum n)) ∈ finalCtx`), `sizeOK_`
+totality → `fstIdx<Tag>` → `Intro<Tag>` → `ProofLen<Tag>`) + a Frag1 tail, with `Head_ok`, `_ok`
+(`len = 9`, `shiftsV = 1`, concluding `neg (goalFact (^&(is+1)) (binNumeral n)) ∈ finalCtx`), `sizeOK_`
 and `costSum_…_le`. NEW predicate `Paxch`/`axchFact` (the `Δ₁ch TAct` recognizer had no code in
 `RowInstB`). THE LAYOUT HYPOTHESES `Cert` MUST DISCHARGE (all stated as `neg … ∈ Γ`, the Frag1
 discipline): `nodeShift` — `setShiftFact (^&is) (^&ic)` (pure producer work, every row needed is
 already in the table) + `fstIdxFact`; `nodeAll` — `freeFact` (← `certFree`), `setShiftFact`,
-`insFact`, `allFact`/`memFact`, `fstIdxFact`; `nodeExs` — `tPiFact`/`tlenFact` (← `describeT` +
+`insFact`, `allFact`/`memFact`, `fstIdxFact`; `nodeExs` — `tPiFact`/`termLenMetaFact` (← `describeT` +
 term `lenSteps`), `leFact`, `substs1Fact` (← `certSubst` + `substsSubsts1`), `insFact`,
 `exsFact`/`memFact`, `fstIdxFact`; **`nodeAxm` — the ONE deliberate weakening, flagged in the file
 docstring and the census comment**: the whole recognizer chain of DESIGN §4.10 (case (i)
@@ -719,8 +719,8 @@ import is "Function expected at …" from autobound implicits, NOT "unknown iden
 (3) piece-table extension is FREE for the tails: every tail step reads an index `< frag1RowCount`,
 so `goalTail*` at `frag2Pieces` is definitionally the Frag1 one after three
 `mkStep_frag2Pieces_lt` rewrites (the same trick will serve any `Frag3`);
-(4) `dlenExs` yields `binaryT` only if the term-length object is an EIGENVARIABLE `^&ilt` — the
-numeral `bnum Lt` enters only through `leFact (^&ilt) (bnum Lt)` in the tail;
+(4) `proofLenExs` yields `binaryT` only if the term-length object is an EIGENVARIABLE `^&ilt` — the
+numeral `binNumeral Lt` enters only through `leFact (^&ilt) (binNumeral Lt)` in the tail;
 (5) `introExs`'s dummy ninth witness is the literal `𝟎`, forcing cap `M = 9` and `ok.mono h89` on
 the `M = 8` siblings.
 
@@ -790,13 +790,13 @@ all standard; every check sentinel-tested).** `Layout.lean` §4.8 (5299 → 5483
 (p ^⋏ q) ↔ neg (andFact (^&i) (^&(i + eqCount q + 1)) (^&(i+1))) ∈ Γ ∧ DossierAt … (i+1) q ∧
 DossierAt … (i + eqCount q + 1) p`, `dossierAtV_succ`, …). NOTE for the bridge: Layout's dossier
 carries NO `piFact/tPiFact/tvPiFact/utvPiFact` (only the 12 shape kinds) — Cert's extra conjuncts
-are dropped; hypotheses are `IsUFormula`/`IsUTermVec`. `Members.lean` (NEW, 338): `flenVec`
+are dropped; hypotheses are `IsUFormula`/`IsUTermVec`. `Members.lean` (NEW, 338): `formulaLenMetaVec`
 (VecRec map of `formulaLen`), `listSum_appendV`, `memberList` (PR on the set code: ascending,
 `mem_memberList_iff`, `memberList_sorted/nodup`, `len_memberList_le_length : ≤ ‖s‖`),
-**`setLen_eq_listSum_memberList : setLen LAct s = listSum (flenVec (memberList s))`** (THE
-distinctness lemma, DESIGN §0 item 5) and `listSum_flenVec_memberList_le` (the `sLemma`'s true
+**`sequentLen_eq_listSum_memberList : sequentLen LAct s = listSum (formulaLenMetaVec (memberList s))`** (THE
+distinctness lemma, DESIGN §0 item 5) and `listSum_formulaLenMetaVec_memberList_le` (the `sLemma`'s true
 closed sentence). §8.4 V-lemmas: nothing to write — `setShift_insert` (`Lib/Frag.lean:73`) and
-`termLen_bnum_le` (`NumSteps.lean:1465`) exist. NOT started: N4 `mulEq`/N5 `lengthEq` — not a
+`termLen_binNumeral_le` (`NumSteps.lean:1465`) exist. NOT started: N4 `mulEq`/N5 `lengthEq` — not a
 small addition (`NumTableOK` has only the 19 `n*B` rows; each needs new rows + a bit-recursion
 fixpoint on the `addCode` precedent, ~1000 lines); DESIGN NOTE: the FACT-level rows
 `row_lengthZero/One/TwoMul/TwoMulOne` already exist in `RowInstB` (Frag table), so N5 can be a STEP
@@ -817,15 +817,15 @@ DossF W Γ n r i → DossierAt factPreds Γ i r`**, `dossierAt_of_walk : Dossier
 `dossierAt_of_walk_transport`/`dossierAt_of_dossF_transport` (offset `i + shiftsV S` after a
 `NoDrop` list), `dossierAtT_of_walk`; `eqCountT_eq_descCountT`. Cert's `piFact/…` conjuncts are
 dropped. `NumLength.lean` (leaf, imports `NumSteps`, `RowInstB`): N5 by the `sLemma`/`DerivationOf`
-ROUTE (not the step list — the Frag row `lengthTwoMul` concludes at `bnum ‖m‖ ^+ 𝟏` while the fact
-needs `bnum (‖m‖+1)`, so two COMBINED rows `lenTwoMulSB “l' l x. !lengthDef l x → 0 < x → l + 1 = l'
+ROUTE (not the step list — the Frag row `lengthTwoMul` concludes at `binNumeral ‖m‖ ^+ 𝟏` while the fact
+needs `binNumeral (‖m‖+1)`, so two COMBINED rows `lenTwoMulSB “l' l x. !lengthDef l x → 0 < x → l + 1 = l'
 → !lengthDef l' (2*x)”`, `lenTwoMulOneSB` in their own 4-row `LenTableOK` table with
-`exists_lenTable`): `lengthEqFact k := lengthFact (bnum ‖k‖) (bnum k)`, `LenGraph` fixpoint,
+`exists_lenTable`): `lengthEqFact k := lengthFact (binNumeral ‖k‖) (binNumeral k)`, `LenGraph` fixpoint,
 `lengthEqCode` (+ definability), `lengthEqCode_proof : DerivationOf TAct (lengthEqCode tblL tbl k)
-(sing (lengthEqFact k))`, `dlen_lengthEqCode_le ≤ lengthEqBound N B N' B' k = (‖k‖+1)·nodeCap`,
-`lemmaOK_lengthEq`, `stepCost_lemma_lengthEq`. `NumMul.lean` (leaf): `mulFact a b := eqFact (bnum a
-^* bnum b) (bnum (a*b))`, `MulTableOK` (5 rows incl. `zeroMul` — `bnum (2·0) = 𝟎`, not `𝟐 ^* 𝟎`),
-`MulGraph` on the bits of `b`, `mulEqCode`, `mulEqCode_proof`, `dlen_mulEqCode_le ≤ mulEqBound`,
+(sing (lengthEqFact k))`, `proofLen_lengthEqCode_le ≤ lengthEqBound N B N' B' k = (‖k‖+1)·nodeCap`,
+`lemmaOK_lengthEq`, `stepCost_lemma_lengthEq`. `NumMul.lean` (leaf): `mulFact a b := eqFact (binNumeral a
+^* binNumeral b) (binNumeral (a*b))`, `MulTableOK` (5 rows incl. `zeroMul` — `binNumeral (2·0) = 𝟎`, not `𝟐 ^* 𝟎`),
+`MulGraph` on the bits of `b`, `mulEqCode`, `mulEqCode_proof`, `proofLen_mulEqCode_le ≤ mulEqBound`,
 `lemmaOK_mulEq`, `stepCost_lemma_mulEq`. Neither file touches `NumTableOK` (index-stable, no olean
 invalidation under the concurrent `Cert` agent). FOR THE TOP: two extra tables in hand
 (`exists_lenTable`, `exists_mulTable`), `mulEqCode` twice for `‖k‖³` plus `leCode`.
@@ -861,7 +861,7 @@ image offsets not in lock-step (`#z ↦ w.[z]` walked afresh) ⇒ a SIBLING fixp
 `(W, wv, wt)`; the bvar leaf needs `termSubstBvarCert` at the original entry + identification +
 `congAdj` (APPENDED to the certification table, `cIdx_congAdj = 182`, `M = 8`, sentinel-tested);
 under quantifiers `qVec w` must be CONSTRUCTED by totality steps, so that pass is not shift-free.
-`lenSteps` — the closed fact `bnum|p| ^+ bnum|q| ^+ 𝟏 = bnum(|p|+|q|+1)` needs an ADDITION
+`lenSteps` — the closed fact `binNumeral|p| ^+ binNumeral|q| ^+ 𝟏 = binNumeral(|p|+|q|+1)` needs an ADDITION
 CONGRUENCE row (`x = x' → y = y' → x + y = x' + y'`; VERIFIED absent 2026-09-14 — no `congAdd`/
 successor-congruence row anywhere) combined with `addFact`/`succFact` and `eqTrans`.
 TRAPS: `definability` on an 8-conjunct inlined Π₁ motive times out at `whnf` though each conjunct
@@ -880,20 +880,20 @@ builders `lnConst/Bin/Quant/Atom/Leaf/Func/Nil/AdjSteps`; the term/vector length
 `⟪tg, n, x, i, y⟫` (Blueprint 2: pieces `W` + the NumSteps table `T`) and the formula one `LenF` on
 `⟪n, r, i, y⟫` (offsets move with `shiftsV` — the length lists are NOT shift-free: `shiftsV + 1 ≤
 2|r|`, `len ≤ 14|r|`); the functions `lenT/lenV/lenSteps W T n r i` (Σ₁, equations,
-`lenSteps_struct`); `lenTGraph_ok` (`tlenFact (bnum |t|) &(i + shifts)` in the final context, via
+`lenSteps_struct`); `lenTGraph_ok` (`termLenMetaFact (binNumeral |t|) &(i + shifts)` in the final context, via
 `LenPre/LenPreV/LenPost(V)` packages and fact transport through `NoDrop'` lists). PENDING:
 `lenSteps_ok` at the formula level, `costSum_lenSteps_le`, then `certSubst`/`certFree`.
 `Top.lean` (NEW, b1fc02c … 7376039, wip, ~1780 lines): the two new predicate codes
-(`lenDerivableDef TAct`, `boxCore` via the Σ₁ symbol `boxCoreS`), the three closing rows
+(`lenBoxUnboundedDef TAct`, `boxCore` via the Σ₁ symbol `boxCoreS`), the three closing rows
 `gIntroNum/lenDerIntro/boxIntro` (Lib + pieces + `inst_`), the top table `topRows = frag2Rows ++ 5
 rows at 150+k` (`TopTable`, `exists_topTable`, `topPieces`), the target's code shape for a VARIABLE
-χ (`instB ⌜Box_g χ⌝ k = boxFact (numeral ⌜χ⌝) (bnum k)`, closedness/shift/length of the numeral);
+χ (`instB ⌜Box_g χ⌝ k = boxFact (numeral ⌜χ⌝) (binNumeral k)`, closedness/shift/length of the numeral);
 §3 `RootLayout` (walk dossier + singleton chain) and the two KITS — `VerifyKit` (§6.3/§6.4/§5 for
 the RELATION `VerifyGraph` at the root) and `PinKit χ` (§7.1 steps 1–4 / §7.2 pinning); §4
 `rootSteps = describeF ++ chainSteps` with `rootSteps_ok`; §5 `closeSteps` (`goalElim` + the four
-numeral `sLemma`s N5/N4/N4/N2 + `dlenDefIntro/proofIntro/leTrans/lenDerIntro/gIntroNum/boxIntro`)
-with `closeSteps_ok` (cap 8, `NoDrop'`, 2 shifts, 15 steps, `boxFact (qNum χ) (bnum k)` in the
-final context); §6 the assembly `top_main` (from `Proof ρ (instB ⌜χ⌝ k)`, `dlen ρ ≤ gBudget k`,
+numeral `sLemma`s N5/N4/N4/N2 + `proofLenDefIntro/proofIntro/leTrans/lenDerIntro/gIntroNum/boxIntro`)
+with `closeSteps_ok` (cap 8, `NoDrop'`, 2 shifts, 15 steps, `boxFact (qNum χ) (binNumeral k)` in the
+final context); §6 the assembly `top_main` (from `Proof ρ (instB ⌜χ⌝ k)`, `proofLen ρ ≤ gBudget k`,
 `VerifyGraph ρ L`, the two kits and the tables: a proof code of `instB ⌜Box_g χ⌝ k` of length
 `≤ topBound`); §7 the graded polynomial-bound toolkit `PB/PBCtx` and `topD_pb` (the closing block's
 four `sLemma` derivations are CUBIC in `gBudget k + 1`, using `‖gBudget k + 1‖ ≤ 3‖‖k‖‖ + 2` via
@@ -914,9 +914,9 @@ lengths, then the closed arithmetic by `sLemma`s (`addFact`, `succFact`, `cTEqFa
 the table's `listSumAdj` has all three `listSumDef` facts as ANTECEDENTS, so no sum fact was derivable for a
 non-empty vector (a real gap in the row library, found by the design); **`congAdd` (183)** appended as
 requested (unused by `lenSteps`: at the closed `𝟏` it would need the closed-constant witness).
-**`lenSteps_ok`**: `ListOK tbl E 8 Γ ∧ NoDrop' ∧ shiftsV + 1 ≤ 2|r| ∧ len ≤ 14|r| ∧ neg (lenFact (bnum |r|)
+**`lenSteps_ok`**: `ListOK tbl E 8 Γ ∧ NoDrop' ∧ shiftsV + 1 ≤ 2|r| ∧ len ≤ 14|r| ∧ neg (lenFact (binNumeral |r|)
 (^&(i + shiftsV (lenSteps …)))) ∈ finalCtx` under `2n + 13|r| + 8 ≤ E`, `i + 5|r| + 2 ≤ E` (the numeral
-sums `bnum a + bnum b + 1` cost `12a + 5` in term length). **`costSum_lenSteps_le`**: `Frag1`'s
+sums `binNumeral a + binNumeral b + 1` cost `12a + 5` in term length). **`costSum_lenSteps_le`**: `Frag1`'s
 `costSum_le_of_sizeOK` at `14|r|` steps, `Q = B'·cTE |r|`, `D = (|r|+1)(‖|r|‖+2)·nodeCost N' B' (cTE |r|)`
 — `O(|r|·‖|r|‖³)` per §0 item 2. NOTE for consumers: the root fact sits at `&(i + shiftsV …)`, not `&i`.
 `certSubst`/`certFree`: NOT started (budget); §4.8 of `Cert.lean` records what Part 5 provides towards them.
@@ -927,7 +927,7 @@ motive — `PassTGraph` (7-ary) only worked because its packed form is 2-ary and
 per DECLARATION — a lemma with four `definability` calls needs `set_option maxHeartbeats` even when each
 call passes alone; `set … with h` contexts: discharge memberships by `rw [h]; exact mem_insert_self'` (`exact`
 does not see through the let); `rw … at h₁ h₂` fails if a pattern is absent in one — split; `Σ` is not an
-identifier character (`hΣ` → `hSum`); dot-lemmas named `LenPre.bnum`/`.vRef` shadow the globals inside
+identifier character (`hΣ` → `hSum`); dot-lemmas named `LenPre.binNumeral`/`.vRef` shadow the globals inside
 later `LenPre.*` statements — never name an accessor after a global; `cok_` witness-name is the ROW's
 binder (`wp` for `formulaLenTotal`), not the consumer's.
 
@@ -936,22 +936,22 @@ census 508, all standard).** **`theorem boundedInnerNec_three_of_kit (hpkg : Kit
 N₂ B₂ N₃ B₃ Ck Cχ) : BoundedInnerNec 3`.** `KitPackage` = per model: the top table (`TopTable`,
 rows 150–154 `gIntroNum/lenDerIntro/boxIntro` + …), the NumSteps/Len/Mul tables, and TWO kits:
 `VerifyKit tbl N W tblN Ck` — `ok : Proof TAct ρ x → RootLayout Γ x i → IsFormulaSet Γ →
-Ck·(dlen ρ + i + 1) ≤ E → VerifyGraph W tblN ρ L → ListOK tbl E 9 Γ L ∧ NoDrop' L ∧ shiftsV L ≤
-Ck·(dlen ρ + 1) ∧ neg (goalFact (^&(i + 1 + shiftsV L)) (bnum (dlen ρ))) ∈ finalCtx Γ L` and
-`cost : … → costSum N E Γ L ≤ Ck·(dlen ρ + 1)·(setLen Γ + N + E + (dlen ρ + 1)²) ∧ setLen
-(finalCtx Γ L) ≤ setLen Γ + Ck·E·(dlen ρ + 1) ∧ fvOccS (finalCtx Γ L) ≤ fvOccS Γ + Ck·(dlen ρ + 1)`
+Ck·(proofLen ρ + i + 1) ≤ E → VerifyGraph W tblN ρ L → ListOK tbl E 9 Γ L ∧ NoDrop' L ∧ shiftsV L ≤
+Ck·(proofLen ρ + 1) ∧ neg (goalFact (^&(i + 1 + shiftsV L)) (binNumeral (proofLen ρ))) ∈ finalCtx Γ L` and
+`cost : … → costSum N E Γ L ≤ Ck·(proofLen ρ + 1)·(sequentLen Γ + N + E + (proofLen ρ + 1)²) ∧ sequentLen
+(finalCtx Γ L) ≤ sequentLen Γ + Ck·E·(proofLen ρ + 1) ∧ fvOccS (finalCtx Γ L) ≤ fvOccS Γ + Ck·(proofLen ρ + 1)`
 (= §6.3/§6.4/§5 for the RELATION `VerifyGraph` at the root — NO function, NO uniqueness needed);
 `PinKit χ tbl N Cχ` — `pin : ∀ k, RootLayout Γ (instB ⌜χ⌝ k) i → … → ∃ P, ListOK … ∧ NoDrop' ∧
-shiftsV P ≤ Cχ·(‖k‖+1) ∧ neg (instBFact (^&(i + 2 + shiftsV P)) (qNum χ) (bnum k)) ∈ finalCtx Γ P ∧
-costs` (= §7.1 steps 1–4 / §7.2: bnum certification, adjoin, the per-χ closed shape rows,
+shiftsV P ≤ Cχ·(‖k‖+1) ∧ neg (instBFact (^&(i + 2 + shiftsV P)) (qNum χ) (binNumeral k)) ∈ finalCtx Γ P ∧
+costs` (= §7.1 steps 1–4 / §7.2: binNumeral certification, adjoin, the per-χ closed shape rows,
 `certSubst`, `instBIntro` — per-χ constants are ALLOWED by `BoundedInnerNec`'s `∃ C` per χ, so the
 pin may cost anything constant in `k`). `RootLayout Γ x i := DossF walkPieces Γ 0 x (i+2) ∧ piFact
-𝟎 &(i+2) ∧ insFact &(i+1) &(i+2) 𝟎 ∧ fsetPiFact &(i+1) ∧ memFact &(i+2) &(i+1) ∧ setLenFact &i
+𝟎 &(i+2) ∧ insFact &(i+1) &(i+2) 𝟎 ∧ fsetPiFact &(i+1) ∧ memFact &(i+2) &(i+1) ∧ sequentLenFact &i
 &(i+1)`. DISCHARGED in `Top`: the target's code shape with NO closed quote unfolded
-(**`target_eq_boxFact χ k : instB ⌜Box_g χ⌝ k = boxFact (qNum χ) (bnum k)`**, `qNum χ := numeral
+(**`target_eq_boxFact χ k : instB ⌜Box_g χ⌝ k = boxFact (qNum χ) (binNumeral k)`**, `qNum χ := numeral
 ⌜χ⌝`, `Pbox` via the Σ₁ symbol `boxCoreS`), the closing rows, `rootSteps = describeF ++ chainSteps`
 (`rootSteps_ok`), `closeSteps` (15 steps: `goalElim` + the four numeral `sLemma`s N5/N4/N4/N2 +
-`dlenDefIntro/proofIntro/leTrans/lenDerIntro/gIntroNum/boxIntro`; the leaf is `axL` — no
+`proofLenDefIntro/proofIntro/leTrans/lenDerIntro/gIntroNum/boxIntro`; the leaf is `axL` — no
 `targetLeafCode`, one Horn row `boxIntro` concludes the target), `top_main`, and the CUBIC bound
 with explicit standard constants (`PB` graded-bound toolkit, `topBound_pb`, `‖gBudget k + 1‖ ≤
 3‖‖k‖‖ + 2`). **THE REMAINING OBLIGATION IS EXACTLY THE KIT:** (i) `VerifyKit.ok/.cost` = the
@@ -982,15 +982,15 @@ invariance lemmas (`ctxAfter/stepCost/finalCtx/shiftsV/costSum/noDrop'/hornOnly/
 symbolic in `certRowCount` (survived a row appended mid-session). LONG-TERM: regenerate `CertRows`
 at `156 + k` and delete the wrapper. **THE `Layout` PREDICATE** (`Layout Ww Wc T Γ s i`): every
 member `x_j` of `memberList s` has `DossF` at its top `mTop i k o_j`, `piFact`, the exact `lenFact
-(bnum |x_j|)`, `insFact`/`fsetPiFact` of the prefix `s_j = &(i+k+1+j)`, `memFact x_j s`; plus
-`setLenFact &i s` and `leFact &i (bnum (setLen s))`; `l_s = &i`, `s = &(i+k+1)`; offsets
+(binNumeral |x_j|)`, `insFact`/`fsetPiFact` of the prefix `s_j = &(i+k+1+j)`, `memFact x_j s`; plus
+`sequentLenFact &i s` and `leFact &i (binNumeral (sequentLen s))`; `l_s = &i`, `s = &(i+k+1)`; offsets
 `o_j = (offVec xs).[j]` Σ₁ from `descCountF` + `shiftsV ∘ lenSteps` (the child recomputes them from
 its sequent alone); ONE transport lemma `Layout.transport (NoDrop' S) : Layout … (finalCtx Γ S) s
 (i + shiftsV S)`. Deviations: a conjunction (the `RootLayout` pattern) rather than §9-risk-1's
 list-membership; members are RE-WALKED (`describeF` + re-indexed `lenSteps`), not copied — no
 whole-dossier copier exists, cost-equivalent. `layoutSteps_ok` (`memberBlocks ++ chainSteps ++
-lenFold`; NEW row `setLenSingLe` at `pIdx 155`; exactness of `setLen` by `memberList_nodup`):
-`ListOK 8 ∧ NoDrop' ∧ shiftsV = tailShift + 2k + 1 ∧ len ≤ 26·setLen s + 13k + 6 ∧ Layout …
+lenFold`; NEW row `sequentLenSingLe` at `pIdx 155`; exactness of `sequentLen` by `memberList_nodup`):
+`ListOK 8 ∧ NoDrop' ∧ shiftsV = tailShift + 2k + 1 ∧ len ≤ 26·sequentLen s + 13k + 6 ∧ Layout …
 (finalCtx …) s 0`. PER TAG: `proAxL_ok` discharges ALL SIX `fragAxL_ok` hypotheses (`certNeg`
 re-indexed); `verum` — `layout_verum` discharges all five; `and` — `proIns_ok` (`insertTotalC ++
 layoutSteps (insert p s) ++ identIns`, child layout at 0 + `IdFrame` + `eqFactB cp s''`) and
@@ -1001,7 +1001,7 @@ NOT DELIVERED: `or`'s two-level `insert p (insert q s)` identification; `shift` 
 file's §8: per-member `memberBlock (shift x_j)` + re-indexed `certShift`, `setShiftTotal`, both
 subset directions via `setShiftInsert`/`shiftMemSetShift` + `subChain`, `subsetAntisymm`,
 `congSetShiftL`); every `costSum_pro<Tag>_le` (ingredients exist; `SizeOK` of `lenFold` needs
-`Q ≥ |sum2Fact|`, `D ≥ dlen (sum2Code …)`); the EMPTY child sequent (`chainSteps_ok` needs
+`Q ≥ |sum2Fact|`, `D ≥ proofLen (sum2Code …)`); the EMPTY child sequent (`chainSteps_ok` needs
 `1 ≤ k`); the splice must read fragment steps at `proPieces` through `mkStep_frag2Pieces_lt`/
 `mkStep_proPieces_lt`; `all/exs/axm` need `certSubst`. TRAPS: `definability`'s `comp` rules stop at
 arity 5 — a 6-ary FUNCTION or a 9-ary PREDICATE motive fails "goal N was not normalised": PACK the
@@ -1046,7 +1046,7 @@ stated, so `len (pro…)` stays symbolic). **THE EMPTY SEQUENT — DECISION: the
 nonemptiness invariant.** Verified in `Proof/Basic.lean`: `wkRule` needs only `fstIdx d' ⊆ s`,
 `shiftRule` `s = setShift (fstIdx d')`; under `¬Con(TAct)` (not excludable in `𝗜𝚺₁`) a derivation
 of `∅` EXISTS, so "every node sequent is nonempty" is FALSE (`∅` occurs as `wk`'s child, both sides
-of `shift`, `cut`'s parent). Delivered: rows `setLenEmptyLe` (156, new Lib), `congSubsetL` (157),
+of `shift`, `cut`'s parent). Delivered: rows `sequentLenEmptyLe` (156, new Lib), `congSubsetL` (157),
 `congSetShiftR` (158); `Layout0 … i := Layout … 0 i ∧ eqFactB &(i+1) 𝟎`; `layoutSteps0_ok`,
 `proWk0_ok`, `proShift0_ok`, `Layout.mono`. NOT done: `proIns0` (cut at an empty parent), the
 `0`-producers' costs, the verify recursion carrying `1 ≤ k ∧ Layout ∨ k = 0 ∧ Layout0`.
@@ -1074,20 +1074,20 @@ constants per formula via the 𝚺₁-absoluteness of `formulaLen/termLen/takeLa
 producer over a VARIABLE code (would need unary-numeral provers for the quadratic pairing, or an
 internal Σ₁-completeness bridge) — neither consumer needs it (`PinKit` is per χ, `axm`(i) per
 standard σ). `NumIdRows.lean` (generated, `gen_numid.py`): six rows APPENDED at `proRowCount + k`
-(symbolic base): `instBIntro`, `congSubstArg`, `bnumZero/One/EvenCert`, NEW **`bnumOddOfEven`**
-(the library's `bnumOddCert` has 12 witnesses, above cap 9). `Pin.lean` (585): `NumIdTable`,
-`pinKernel_ok` (`congSubstArg ∷ instBIntro` → `instBFact &x (numeral c) (bnum k)`), and
-**`pin_assembly χ Cb Cs : ∃ Cχ, … RootLayout Γ (instB ⌜χ⌝ k) i → BnumOracle tbl E k Cb →
+(symbolic base): `instBIntro`, `congSubstArg`, `binNumeralZero/One/EvenCert`, NEW **`binNumeralOddOfEven`**
+(the library's `binNumeralOddCert` has 12 witnesses, above cap 9). `Pin.lean` (585): `NumIdTable`,
+`pinKernel_ok` (`congSubstArg ∷ instBIntro` → `instBFact &x (numeral c) (binNumeral k)`), and
+**`pin_assembly χ Cb Cs : ∃ Cχ, … RootLayout Γ (instB ⌜χ⌝ k) i → BinNumeralOracle tbl E k Cb →
 SubstOracle tbl E χ k Cs → … → ∃ P, ListOK 9 ∧ NoDrop' ∧ shiftsV P ≤ Cχ·(‖k‖+1) ∧ neg (instBFact
-(^&(i+2+shiftsV P)) (qNum χ) (bnum k)) ∈ finalCtx Γ P`** — every pin conjunct except the COST, the
-χ-walk and the vector walk real, only the two oracles hypotheses: `BnumOracle` (a `bnumSteps k j`
-producer over the bits of `k` on `bnum k`'s dossier, per bit an `sLemma` `𝟏 ≤ bnum m` + one Horn
-`bnumEvenCert`/`bnumOddOfEven`; TRAP: the two `𝟏`s in `𝟐 = 𝟏 ^+ 𝟏` are DIFFERENT eigenvariables —
+(^&(i+2+shiftsV P)) (qNum χ) (binNumeral k)) ∈ finalCtx Γ P`** — every pin conjunct except the COST, the
+χ-walk and the vector walk real, only the two oracles hypotheses: `BinNumeralOracle` (a `binNumeralSteps k j`
+producer over the bits of `k` on `binNumeral k`'s dossier, per bit an `sLemma` `𝟏 ≤ binNumeral m` + one Horn
+`binNumeralEvenCert`/`binNumeralOddOfEven`; TRAP: the two `𝟏`s in `𝟐 = 𝟏 ^+ 𝟏` are DIFFERENT eigenvariables —
 identify by `eqOfFunc` at `𝟎` then `congAdj`; ~600–800 lines on the Part-5 template) and
-`SubstOracle` (`certSubst_ok` re-indexed at `w = bnum k ∷ 0`, `r = ⌜χ⌝` — discharge `SubFPre`'s
-`Q ≥ 3e + |bnum k|` and the `qWalkP` length bound; elementary, unwritten).
+`SubstOracle` (`certSubst_ok` re-indexed at `w = binNumeral k ∷ 0`, `r = ⌜χ⌝` — discharge `SubFPre`'s
+`Q ≥ 3e + |binNumeral k|` and the `qWalkP` length bound; elementary, unwritten).
 **THE FINDING (decides the degree):** `PinKit.cost` — and likewise `VerifyKit.cost` — as `Top`
-states them (`C·(size)·(setLen Γ + N + E + size²)`, the design's FINE shape) are NOT reachable
+states them (`C·(size)·(sequentLen Γ + N + E + size²)`, the design's FINE shape) are NOT reachable
 from the generic cost lemmas (`costSum_le_of_sizeOK`, `ctxBoundG G Γ L = |Γ| + L·fvOccS Γ +
 (L²+L)·G`, `G ≥ 4·B·E`): they charge context growth `4·B·E` per step (a new fact's full LENGTH),
 so `L` steps cost `≳ L²·B·E`; with `L ~ g` and `E ~ g` (eigenvariable indices in unary) the total
@@ -1095,7 +1095,7 @@ is `~ g⁴`, ONE factor of `g` above the design's `g³`. The design's cubic coun
 fact that each new fact has `O(B)` variable OCCURRENCES (`ShiftLen`'s `fvOccF`, `ChainOcc`'s
 `stepCostOcc` — the "secondary risk" of §11's original entry), so `fvOccS` grows by a constant per
 step and contexts stay `O(g²)`. DECISION (2026-09-15): the M4 results are PARAMETRIC in the degree
-(`pblt_uniform {d}`, `dupoc_self_coop {d}`), so **target `BoundedInnerNec 4` FIRST from the bounds
+(`pblt_uniform {d}`, `dupoc_self_coop_of_nec {d}`), so **target `BoundedInnerNec 4` FIRST from the bounds
 already proved** (a `Top`-only change: the kits restated in the COARSE shape `C·size·(|Γ| +
 size·fvOccS Γ + size²·(N + E + 1)·(‖size‖+1)^c)`, a degree-4 assembly `boundedInnerNec_four_of_kit`
 using `‖g‖³ ≤ 8g` universally; keep `_three_of_kit`), and record the fine occurrence accounting
@@ -1112,10 +1112,10 @@ IN FLIGHT: `Prologue` Part 3 (all/exs); `Top` (degree-4 kits + assembly).
 all standard; §1–§8 byte-identical).** The COARSE-shape kits: `kitQ C B E := C·((B+1)(E+1))`,
 `kitD C z := C·(z+1)³` (dominate every producer's `Q`/`D`: `lenD` is CUBIC in the length argument,
 since `cTE` is unary — a `‖·‖`-polynomial `D` would not have been dischargeable); `VerifyKit' tbl
-N B W tblN Ck` (`ok` as before; `cost : … → costSum N E Γ L ≤ Ck·(dlen ρ+1)·(costK N E B 9 (kitQ Ck
-B E) (kitD Ck (dlen ρ)) + 38·(ctxBoundG (growK B E (kitQ …)) Γ (Ck·(dlen ρ+1)) + (fvOccS Γ +
-Ck·(dlen ρ+1)·growK …))) ∧ setLen (finalCtx Γ L) ≤ ctxBoundG … ∧ fvOccS (finalCtx Γ L) ≤ fvOccS Γ
-+ Ck·(dlen ρ+1)·growK …`), `PinKit' χ tbl N B Cχ` (first four conjuncts EXACTLY `pin_assembly`'s
+N B W tblN Ck` (`ok` as before; `cost : … → costSum N E Γ L ≤ Ck·(proofLen ρ+1)·(costK N E B 9 (kitQ Ck
+B E) (kitD Ck (proofLen ρ)) + 38·(ctxBoundG (growK B E (kitQ …)) Γ (Ck·(proofLen ρ+1)) + (fvOccS Γ +
+Ck·(proofLen ρ+1)·growK …))) ∧ sequentLen (finalCtx Γ L) ≤ ctxBoundG … ∧ fvOccS (finalCtx Γ L) ≤ fvOccS Γ
++ Ck·(proofLen ρ+1)·growK …`), `PinKit' χ tbl N B Cχ` (first four conjuncts EXACTLY `pin_assembly`'s
 conclusion, then the same three cost conjuncts with `‖k‖+1`), `KitPackage'`, `top_main'`,
 `stepKM9_le ≤ 1899·(N + BE + B + E + 1)`, `succ_quart_le`, `topBound'_pb : PB G u … 4 0`,
 **`theorem boundedInnerNec_four_of_kit (hpkg : KitPackage' …) : BoundedInnerNec 4`.** THE DEGREE
@@ -1129,16 +1129,16 @@ big constants off Lean's mismatch (dummy `0`), paste as an `irreducible` `def`.
 **THE REMAINING OBLIGATION IS EXACTLY `KitPackage'`:** `VerifyKit'` (the ten prologues — seven
 done, `all`/`exs` in flight, `axm` pending — + `Verify`'s clause edit + the per-tag layout/cost
 theorems glued by `Derivation.induction1 𝚷` at the root) and `PinKit'` (`pin_assembly` + the two
-oracles `BnumOracle`/`SubstOracle` + the coarse cost conjuncts).
+oracles `BinNumeralOracle`/`SubstOracle` + the coarse cost conjuncts).
 IN FLIGHT: `Prologue` Part 3 (all/exs); `Pin` Part 2 (the oracles + cost → a `PinKit'` instance).
 
-**§11 status — `PinKit'` DONE FOR EVERY χ (30c4162 … 21b3fb3; `BnumSteps.lean` NEW 958 lines,
+**§11 status — `PinKit'` DONE FOR EVERY χ (30c4162 … 21b3fb3; `BinNumeralSteps.lean` NEW 958 lines,
 `Pin.lean` §4–§7; build 3254, census 651, all standard; no cost conjunct weakened).**
-`BnumSteps.lean`: `BnGraph` fixpoint on `⟪k, j, y⟫` over the bits of `k` (recursing on `m`, not
+`BinNumeralSteps.lean`: `BnGraph` fixpoint on `⟪k, j, y⟫` over the bits of `k` (recursing on `m`, not
 `2m`, so `len ≤ 8‖k‖+1` closes), `bnEvenTail` (6 steps incl. the `eqRefl 𝟎`/`eqOfFunc`/`congAdj`
-identification of the two `𝟏` eigenvariables), `bnOddTop`, `bnumSteps_ok` (`ListOK 9 ∧ NoDrop' ∧
-shiftsV = 0 ∧ len ≤ 8‖k‖+1 ∧ SizeOK (bQ B' ‖k‖) (bD N' B' ‖k‖) ∧ bnumFact &j (bnum k)`); **`Cb =
-27`** (`bnumOracle_of`). `Pin` §5: `substSteps_ok`/`substOracle_of` with an explicit `Cs`
+identification of the two `𝟏` eigenvariables), `bnOddTop`, `binNumeralSteps_ok` (`ListOK 9 ∧ NoDrop' ∧
+shiftsV = 0 ∧ len ≤ 8‖k‖+1 ∧ SizeOK (bQ B' ‖k‖) (bD N' B' ‖k‖) ∧ binNumeralFact &j (binNumeral k)`); **`Cb =
+27`** (`binNumeralOracle_of`). `Pin` §5: `substSteps_ok`/`substOracle_of` with an explicit `Cs`
 polynomial in `f = flN ⌜χ⌝`. **A FINDING RESOLVED:** `Cert.sfK L Q = L + 12Q(Q+1) + …` (the
 quadratic length of `certSubst`) was an ARTIFACT — in the quantifier case the mode-1 vector pass's
 entry-length parameter `S` is vacuous and had been instantiated at `S := Q`; `len_subFGraph_le_lin`
@@ -1157,7 +1157,7 @@ with equations and `subst` inside the case; a `lin_add` summand for `+ 0` leaves
 metavariable; `section exists` is a keyword clash; lemmas under `include htbl hW` silently take
 the table as arguments.
 **THE ENTIRE REMAINING OBLIGATION IS `VerifyKit'`** (+ the one-line `KitPackage'` assembly with a
-common `B`, then `dupoc_self_coop` at `boundedInnerNec_four_of_kit`).
+common `B`, then `dupoc_self_coop_of_nec` at `boundedInnerNec_four_of_kit`).
 IN FLIGHT: `Prologue` Part 3 (all/exs); `Prologue` axm (a separate agent, `ProAxm.lean`).
 
 **§11 status — `Prologue` Part 3 DONE: `all`, `exs`, `proIns0`, costs (0790044, cac11e7, 0a7710a;
@@ -1167,7 +1167,7 @@ by REUSING `proShift_ok` with roles `(s := setShift s, c := s, i := 0)` and iden
 chain top with the parent's `S` by Loop E (`eqSteps` per member, both `congMem` directions) + two
 `subChain`s + `subsetAntisymm` + `congSetShiftR` (158); `proIns_ok` reused for both inserts, the
 fresh dossiers of `free p`/`substs1 t p` walked BEFORE the layouts so `certFree`/`certSubst` run
-between fresh dossiers; `exs`'s length OBJECT by `eqTotal [bnum |t|]`, `eqSymm`, re-indexed
+between fresh dossiers; `exs`'s length OBJECT by `eqTotal [binNumeral |t|]`, `eqSymm`, re-indexed
 `congTLenNum` (146), `leOfEqP` (159); `certFreeDef` (the Σ₁ graph `Cert` lacked). `proAll_ok`
 discharges EVERY `nodeAll_ok` fact hypothesis (`hall/hmr` via `layout_all`, `hfree`, `hsh`,
 `hins`, `hsl/hle`, `hfst/hd/hn₁/hle₁` via `postIns_ok` after the child); `proExs_ok` likewise for
@@ -1177,8 +1177,8 @@ in the `costSum_le_of_sizeOK 9` shape at `(layQ B B' D, layD N' B' D)`; `proIns0
 (`identIns0` = Loop A + child `subChain` + `emptySubsetC` + `congSubsetL` + `blockP` +
 `insertSubset` + `subsetAntisymm`), `costSum_layoutSteps0/proWk0/proShift0/proIns0_le`.
 STILL SYMBOLIC: the loops' `len` bounds — every `costSum_pro*_le` has `len (pro…)` as its
-multiplier, but `VerifyKit'.cost` needs `len ≤ Ck·(dlen ρ + 1)`, so concrete `len_pro<Tag>_le`
-bounds (linear in the node's sequent/formula sizes) are REQUIRED, plus `setLen (fstIdx d) ≤ dlen d`
+multiplier, but `VerifyKit'.cost` needs `len ≤ Ck·(proofLen ρ + 1)`, so concrete `len_pro<Tag>_le`
+bounds (linear in the node's sequent/formula sizes) are REQUIRED, plus `sequentLen (fstIdx d) ≤ proofLen d`
 -style size lemmas for the node's data. TRAPS: **`PrologueRows.olean` was STALE at session start**
 (a commit without rebuilding; `lake env lean` silently used the old olean — sentinel with
 `#print proExtraRowCount`); `lake build` removes `Prologue.olean` for ~2 min; `cok_*` take `hWc` —
@@ -1191,7 +1191,7 @@ IN FLIGHT: `ProAxm` (axm); `Prologue` Part 4 (the `len` bounds + node-size lemma
 
 **§11 status — `ProAxm` (459af33, 358f2ba; build 3256, census 676, all standard): `axm` case (i)
 DONE per model; case (ii) = a NAMED ORACLE; and `proAxm` is NOT Σ₁ — a decision for `Verify`.**
-Case (i) (the finitely many standard axioms: `StdAxiom σ := σ = axAct ∨ axAct' ∨ axNe ∨ axNe' ∨ ∃
+Case (i) (the finitely many standard axioms: `StdAxiom σ := σ = actionAxiom ∨ actionAxiom' ∨ constNe ∨ constNe' ∨ ∃
 σ₀ ∈ 𝗣𝗔⁻, lMap emb σ₀ = σ`, `stdAxiom_finite`; the V-level case split `mem_TAct_class_cases : p ∈
 TAct.Δ₁Class → (∃ σ, StdAxiom σ ∧ p = ⌜σ⌝) ∨ (IsSemiformula ℒₒᵣ 0 p ∧ InductionR … p)`): NumId's
 route + the closed fact `axchNum ⌜σ⌝` (`Lib` for every `σ ∈ TAct`) + ONE row **`congAxch`**
@@ -1219,7 +1219,7 @@ context-MONOTONICITY lemma for shift-free `NoDrop'` lists (`Cert` Part 0's `ctxA
 is the Σ₁ route, multi-session, not taken. CONSEQUENCE: until case (ii) lands, the `VerifyKit'`
 instance carries `AxmIndOracle` as a HYPOTHESIS — an explicit, named weakening (nonstandard
 induction instances). TRAPS: a lemma stated over `ℒₒᵣ` made `rw` whnf the closed code `encode
-axNe'` (200k heartbeats + a whole-declaration timeout) — state over a VARIABLE language and never
+constNe'` (200k heartbeats + a whole-declaration timeout) — state over a VARIABLE language and never
 put `encode` in a statement; `simp` does not rewrite inside instance arguments (`change … .val`);
 `HierarchySymbol.Defined.iff` in a simp set silently turns `Evalb` hypotheses into `Δ₁Class`
 memberships; two `.length = count` `rfl`s on the 9-fold piece list exceed 200k heartbeats in ONE
@@ -1230,14 +1230,14 @@ B for axm, `VerifyKit'.ok`).
 **§11 status — `Prologue` Part 4 + `NodeSize` DONE (c23d3bd, 3dd5cf7, 0a3ff71; build 3261, census
 705, all standard). AND A SECOND ACCOUNTING FINDING: `all`/`exs` ARE NOT LINEAR.**
 `NodeSize.lean` (generic `L`, `T` `[T.Δ₁]`): the ten `Derivation.<tag>_inv`, the EXACT node laws
-(`dlen_andIntro : dlen (andIntro s p q dp dq) = setLen s + dlen dp + dlen dq + 1`, `dlen_exsIntro =
-setLen s + termLen t + dlen d + 1`, …), `one_le_dlen`, **`setLen_fstIdx_le_dlen`**,
-`formulaLen_le_dlen_of_mem`, the children `dlen_dp_succ_le_<tag>`, principal-formula and child-
+(`proofLen_andIntro : proofLen (andIntro s p q dp dq) = sequentLen s + proofLen dp + proofLen dq + 1`, `proofLen_exsIntro =
+sequentLen s + termLen t + proofLen d + 1`, …), `one_le_proofLen`, **`sequentLen_fstIdx_le_proofLen`**,
+`formulaLen_le_proofLen_of_mem`, the children `proofLen_dp_succ_le_<tag>`, principal-formula and child-
 sequent bounds per tag. `Prologue` §18: structural `len_*` for every block/loop (`len_layoutSteps_le
-≤ 26·setLen s + 13k + 6`, `len_proAxL_le + 4 ≤ 12|p|`, `len_proCutPre_le ≤ 64|p|`, `len_proShift_le
-≤ 61·setLen c + setLen s + 20`, `len_eqSteps_le ≤ 2·eqCount r + 1` (needs the tables; extracted from
-`eqSteps_ok` by a double walk), `len_identIns_le ≤ 16·setLen (insert p s) + 5`, `len_proIns_le ≤
-55·setLen (insert p s) + 12`, `len_proOr_le ≤ 110·… + 25`, `len_proWk_le ≤ 44·setLen c + 7`,
+≤ 26·sequentLen s + 13k + 6`, `len_proAxL_le + 4 ≤ 12|p|`, `len_proCutPre_le ≤ 64|p|`, `len_proShift_le
+≤ 61·sequentLen c + sequentLen s + 20`, `len_eqSteps_le ≤ 2·eqCount r + 1` (needs the tables; extracted from
+`eqSteps_ok` by a double walk), `len_identIns_le ≤ 16·sequentLen (insert p s) + 5`, `len_proIns_le ≤
+55·sequentLen (insert p s) + 12`, `len_proOr_le ≤ 110·… + 25`, `len_proWk_le ≤ 44·sequentLen c + 7`,
 `len_proSS_le`, `len_proIns0_le ≤ 49·… + 13`), the cost corollaries `costSum_pro<Tag>_le'` with
 literal constants, the sharp `shiftsV_pro<Tag>_le'` (`proIns ≤ 6D+2`, `proOr ≤ 12D+4`, `proShift
 ≤ 7D+3`, `proCutPre ≤ 8D`). BUT **`len_proAll_le ≤ 450·(D+1)^5`, `len_proExs_le ≤ 310·(D+1)^5`**
@@ -1245,27 +1245,27 @@ literal constants, the sharp `shiftsV_pro<Tag>_le'` (`proIns ≤ 6D+2`, `proOr �
 CUBIC in `D` with `Pin`'s `len_certSubst_le_lin`, quintic without): `certSubst` walks the
 `qVecIterV` vectors at every quantifier depth, whose term-length sums are QUADRATIC in the depth
 (unary bvar codes: `Σ_{i<e}(i+1)`), so the substitution certificate is superlinear per node — the
-DESIGN's "steps `O(setLen s')`" for §4.5/§4.6 overlooked this (root cause: variable indices charged
+DESIGN's "steps `O(sequentLen s')`" for §4.5/§4.6 overlooked this (root cause: variable indices charged
 in UNARY, the same cause as the degree-4 loss). CONSEQUENCE: the verify list is `O(Σ_nodes (D+1)³)
-≤ O((dlen ρ + 1)³)` long, not `O(dlen ρ)`; `VerifyKit'.cost`'s multiplier must be `Ck·(dlen ρ+1)³`;
+≤ O((proofLen ρ + 1)³)` long, not `O(proofLen ρ)`; `VerifyKit'.cost`'s multiplier must be `Ck·(proofLen ρ+1)³`;
 the top's degree is then ≈ 10 under the coarse accounting (`L ~ G³`, `ctxBoundG ~ L²G ~ G⁷`, cost
 `~ L·G⁷`), ≈ 7 under fine occurrence accounting, and back toward 4–5 only with a REDESIGN of the
 substitution certificate (one `qVecCert` step per depth + lazy `qVecNth0/Succ` at bvar leaves,
 instead of re-walking the iterate). DECISION (2026-09-15): finish the UNCONDITIONAL theorem at the
-honest degree first (any fixed degree suffices for `dupoc_self_coop {d}`; the remaining work is the
+honest degree first (any fixed degree suffices for `dupoc_self_coop_of_nec {d}`; the remaining work is the
 same), record the two improvements as follow-ups: (1) `certSubst` redesign, (2) occurrence
 accounting; (3) the deeper fix — binary variable-index charging in the M1 length measure. The user
-is informed. TRAPS: `formulaLen_le_setLen_of_mem` needs `(L := LAct)`; `norm_num` turned a true
+is informed. TRAPS: `formulaLen_le_sequentLen_of_mem` needs `(L := LAct)`; `norm_num` turned a true
 `12*1+4 = 14` into `False` inside a `calc` — `le_of_eq (by ring)`; `Audit.lean` imports modules
 individually. NOTE: `len_eqSteps_le` needs `TableOK`/`ProTable` — a purely structural bound of the
 `eqFT` template would be a `Layout` addition.
 IN FLIGHT: `Verify2` (VerifyGraph', option B, verifyKit'_ok at the cubic length); `Top` (the kit
-generalized to a `(dlen ρ+1)^m` multiplier and the resulting degree).
+generalized to a `(proofLen ρ+1)^m` multiplier and the resulting degree).
 
 **§11 status — `Top` §12–§14 DONE: the polynomial-length kits (12a7e6b, 1b79981, 9e30741; census
 696, all standard).** `VerifyKit'' tbl N B W tblN Ck m` = `VerifyKit'` with every list-length
-multiplier `Ck·(dlen ρ+1)` replaced by `Ck·(dlen ρ+1)^m` AND the cap `Ck·((dlen ρ+1)^m + i) ≤ E`
-(a deliberate deviation: a list whose eigenvariable indices reach `Ck·(dlen ρ+1)^m` is applicable
+multiplier `Ck·(proofLen ρ+1)` replaced by `Ck·(proofLen ρ+1)^m` AND the cap `Ck·((proofLen ρ+1)^m + i) ≤ E`
+(a deliberate deviation: a list whose eigenvariable indices reach `Ck·(proofLen ρ+1)^m` is applicable
 only at a cap `E ≥` those indices — `HornOK` charges `termLen (^&j) = j + 1 ≤ E` — so the unchanged
 cap would be UNSATISFIABLE for `m ≥ 2`); `verifyKit''_one_iff : VerifyKit'' … 1 ↔ VerifyKit'`;
 `KitPackage'' … m`; `top_main''`; `succ_pow_le : (a+1)^n ≤ 2^n·(a^n+1)`, `PB.final_pow`,
@@ -1299,20 +1299,20 @@ the empty-sequent selectors; §6 `VerifyGraph' Ww Wl Wc W₁ W₂ W T A ρ L` (f
 ⟪p, memTop … s p 0, pro⟫ ∈ A ∧ L = vAxm … pro`); §7 `verifyGraph'_exists` (with `AxmIndOracleC tbl
 E Cind` explicit, uniting the children's tables by `mono_A`); §8 `v<Tag>_ok` for all ten and
 **`verifyGraph'_ok`** (`Derivation.induction1 𝚷`; `Cs = 500000`, `Ck = 2500000`): under
-`Ck·(dlen ρ+1)^6 ≤ E`, every `L` with `VerifyGraph' … ρ L` and `NodeLay` at the root satisfies
-`ListOK 9 ∧ NoDrop' ∧ shiftsV L ≤ Cs·(dlen ρ)^6 ∧ goalFact at &(k+1+shiftsV L) ∈ finalCtx`;
+`Ck·(proofLen ρ+1)^6 ≤ E`, every `L` with `VerifyGraph' … ρ L` and `NodeLay` at the root satisfies
+`ListOK 9 ∧ NoDrop' ∧ shiftsV L ≤ Cs·(proofLen ρ)^6 ∧ goalFact at &(k+1+shiftsV L) ∈ finalCtx`;
 `verifyGraph'_ok_pow` in the `VerifyKit''` shape at `m = 6`. **DEGREE 6 IN THE LIST, NOT 3**: the
-`all`/`exs` shift bounds are QUINTIC in a `D` bounded only globally by `dlen ρ`, and the recursion
+`all`/`exs` shift bounds are QUINTIC in a `D` bounded only globally by `proofLen ρ`, and the recursion
 `X + Cs·y^6 ≤ Cs·(y+m)^6` needs `X ≤ Cs·d^5`; cubic prologue bounds (via `Pin`'s
 `len_certSubst_le_lin`) would give 4, per-node accounting 3. So the top's `deg 6 = 24` for now.
 REMAINING FOR THE KIT: (1) the ROOT BRIDGE — `VerifyKit''.ok` takes `RootLayout Γ x i` (dossier at
 `&(i+2)`, chain at `&(i+1)`, no fold base/`lenFact`/`leFact`), not a `Layout`: a re-layout list +
 a retarget of the goal index; (2) the kit quantifies over the OLD `VerifyGraph W tblN` — a
 `VerifyKit'''` over `VerifyGraph'` (+ `A`, `AxmTableOK`) is needed; (3) the `cost` conjunct (not
-started); (4) the quintic prologue caps are dischargeable only by a cap `≥ (dlen ρ+1)^6` — fine
+started); (4) the quintic prologue caps are dischargeable only by a cap `≥ (proofLen ρ+1)^6` — fine
 for `VerifyKit''`'s cap at `m = 6`. TRAPS: `rw [shiftsV_appendV]×3` splits the wrong `appendV` —
-interleave the block equations; never `rw [← hdd] at … ⊢` while a node lemma still mentions `dlen
-(tag …)`; child bounds on `dlen dp` with `y` only inside `Cs·p6 y`; `p5`/`p6` as explicit products
+interleave the block equations; never `rw [← hdd] at … ⊢` while a node lemma still mentions `proofLen
+(tag …)`; child bounds on `proofLen dp` with `y` only inside `Cs·p6 y`; `p5`/`p6` as explicit products
 keep the 𝚷 motive `definability`-friendly; injectivity of `⟪p, ip, pro⟫` via two `pair_ext_iff.mp`
 then `rw [← e₁, …] at hinv`; appending after `end ArithS` leaves the namespace.
 IN FLIGHT: `IndRec` (case (ii)); `Assemble` (VerifyKit''' over VerifyGraph', root bridge, cost,
@@ -1377,21 +1377,21 @@ reused** — its `axm` clause bakes the UNMOVED offset into the assembler (`node
 so a shifted `pro` needs `vAxm'` with the node at `is = k+1+σ`, `il = σ`, `ip = memTop s p σ`, hence
 a new fixpoint **`VerifyGraph''`** (nine clauses verbatim); `AxmEntryOK'`/`AxmTableOK'` with the
 INTRINSIC entry bound `entryB Cv p = Cv·(|p|+1)³` (a small leaf deep in a large derivation must fit
-ITS OWN node budget `Cs·(dlen (axm s p))^6` — a root-sized constant would not); `vAxm_ok'`;
+ITS OWN node budget `Cs·(proofLen (axm s p))^6` — a root-sized constant would not); `vAxm_ok'`;
 `axmIndOracleC'_of_indRec : IndRecTable tbl → AxmIndOracleC' tbl E 1400` (THE ORACLE DISCHARGED);
 `axmEntry_exists'`; **`verifyGraph''_exists_unconditional : ∃ C, ∀ V …, TableOK tbl N →
-IndRecTable tbl → … → Derivation TAct ρ → Cv·p3(dlen ρ+1) + 6·dlen ρ + 1 ≤ E → ∃ A L, AxmTableOK'
+IndRecTable tbl → … → Derivation TAct ρ → Cv·p3(proofLen ρ+1) + 6·proofLen ρ + 1 ≤ E → ∃ A L, AxmTableOK'
 tbl E Ww A Cv ∧ VerifyGraph'' … A ρ L`** (`IndRecTable ⇒ ProAxmTable ⇒ NumIdTable ⇒ ProTable ⇒
 TopTable` — the ONLY table hypothesis); **`verifyGraph''_ok_pow`** at `m = 6` STILL HOLDS (at the
-leaf `d = setLen s + 1 ≥ |p| + 1`, so `Cv·(|p|+1)³ + 1 ≤ (Cv+1)·d⁶`; the shift constant absorbs
-`Cv`: cap `Ck·(Cv+1)·(dlen ρ+1)^6 ≤ E`). `Verify2.AxmIndOracleC` and `ProAxm.AxmIndOracle` are no
+leaf `d = sequentLen s + 1 ≥ |p| + 1`, so `Cv·(|p|+1)³ + 1 ≤ (Cv+1)·d⁶`; the shift constant absorbs
+`Cv`: cap `Ck·(Cv+1)·(proofLen ρ+1)^6 ≤ E`). `Verify2.AxmIndOracleC` and `ProAxm.AxmIndOracle` are no
 longer needed anywhere. TRAPS: `exact_mod_cast` under `le_trans` with a free middle term fails
 silently — pin it (`le_trans (b := ((500000 : ℕ) : V)) …`); `add_le_add` on `a + b + c ≤ …` splits
 as `(a+b), c` — write the `calc` with an explicit `ring` reassociation; `hC 1400 …` on a `∀ (V :
 Type)` theorem passes `1400` as `V` — `hC V 1400`; `Γ-[m+1]-Relation₁[V]` is not a notation;
 `Layout.transport` returns `0 + shiftsV S`.
 IN FLIGHT: `Assemble` (switched to Verify3: the cost conjunct, `verifyKit'''_of` with no oracle,
-`KitPackage''' 6`, **`boundedInnerNec_twentyfour`**, **`dupoc_self_coop_unconditional`**).
+`KitPackage''' 6`, **`boundedInnerNec_twentyfour`**, **`dupoc_self_coop`**).
 
 **§11 status — `Bounds` DONE: `all`/`exs` CUBIC, the recursion can run at `m = 4` (45d1f55, 7f0432e;
 `Bounds.lean` 596 lines, imports `Prologue`/`Pin`/`NodeSize`/`Verify3`; census 761, all standard).**
@@ -1409,7 +1409,7 @@ iterate). §4 the recursion arithmetic at `m = 4`, name-for-name against `Verify
 (`p4`, `rec1₄`/`rec2₄`, `allNode_p4`, `axmLeaf_p4`, `allE_p4`/`exsE_p4`, `capE4`, `child_bound4`,
 `quad_cap3`, `proSA_add_le_p3` with `Csv ≥ 25731`, `Ckv ≥ 5·Csv`): **`m = 4` ⇒ `deg 4 = 16`**. Also
 the LOCAL step at `m = 3` (`rec1_local`/`rec2_local`): with PER-NODE accounting (`D` = the node's own
-`setLen s + 1`) the same cubic bounds would close at `m = 3` (`deg 12`) — but the `_ok`s take ONE `D`
+`sequentLen s + 1`) the same cubic bounds would close at `m = 3` (`deg 12`) — but the `_ok`s take ONE `D`
 that also bounds the child sequent and `|substs1 t p|`, only globally bounded; that refactor is not
 done. `costSum_proAll/proExs_le''` at the cubic lengths. TRAP: `le_trans hrD le_self_add` with a free
 middle term — pin it.
@@ -1419,7 +1419,7 @@ IN FLIGHT: `Assemble` (at `m = 6`: the unconditional `BoundedInnerNec 24`); `Ver
 **§11 status — `Verify4` DONE: the recursion invariant at `m = 4` (4e4d058, fd75d19; 560 lines;
 census 763, all standard).** **`verifyGraph''_ok4`** = `Verify3.verifyGraph''_ok` with `p6 ↦ p4`
 throughout (`Cs = 25731`, `Ck = 128655`; the binding floor is `proSA_add_le_p3`'s `25731 ≤ Csv`)
-and **`verifyGraph''_ok_pow4`** in the `VerifyKit'' … 4` shape (cap `Ck·(Cv+1)·(dlen ρ+1)^4 ≤ E`,
+and **`verifyGraph''_ok_pow4`** in the `VerifyKit'' … 4` shape (cap `Ck·(Cv+1)·(proofLen ρ+1)^4 ≤ E`,
 `Ck = 154391`) — so `boundedInnerNec_of_kit'' 4` gives **`deg 4 = 16`**. Every arm closes at 4, none
 forces 5: the linear arms via `capE4'/capE4`, `child_bound4`, `lin_le_p3`, `rec1₄/rec2₄`; `all`/`exs`
 via `shiftsV_proAll/proExs_le_cubic` landed in EXACTLY `402·p3(2(d+1))` (the `p3_mono hD3` lift;
@@ -1430,9 +1430,9 @@ in the CHILD's sequent size is not obviously summable to `g³` — a different r
 attempted). TRAPS: an EMPTY log with `EXIT 0` is the normal green here (linters off) — sentinel
 with a deliberate error + `#print axioms`; `entryB` must be unfolded before `axmLeaf_p4`; the
 mechanical `p6 → p4` rename must rename the LEMMA names first, then the bare tokens.
-IN FLIGHT: `Assemble` (switched to `m = 4`: `boundedInnerNec_sixteen`, `dupoc_self_coop_unconditional`).
+IN FLIGHT: `Assemble` (switched to `m = 4`: `boundedInnerNec_sixteen`, `dupoc_self_coop`).
 
-**§11 status — `Assemble` DONE: `BoundedInnerNec 16` and `dupoc_self_coop` modulo ONE hypothesis,
+**§11 status — `Assemble` DONE: `BoundedInnerNec 16` and `dupoc_self_coop_of_nec` modulo ONE hypothesis,
 `SizeOracle` (7454672 … 7ae6122; `Assemble.lean` 1367 lines; build 3268, census 794, all standard).**
 §1 `memberList_single`, `layout_single`; §2 `identRoot` (the root's two copies identified:
 `eqSteps`, `congMem`×2, `emptySubsetC`×2, `insertSubset`×2, `subsetAntisymm`; Horn-only, shift-free,
@@ -1442,7 +1442,7 @@ identity exists — the fold base `&1` sits between the length and the chain —
 identification was necessary), and the kit's `ok` ends with EXACTLY `VerifyKit''`'s index
 `&(i + 1 + shiftsV vList)`; §4 `vList = layoutSteps {x} ++ identRoot ++ L ++ retargetRoot`; §5 the
 codes of the goal's predicates as OPAQUE constants (`cDer cDlen cFst : ℕ`, `formulaLen_goalFact_le`);
-§6 `VerifySizeOracle` (`len L ≤ Cz·(dlen ρ+1)^4 ∧ SizeOK (kitQ Cz B E) (kitD Cz (dlen ρ)) L` for every
+§6 `VerifySizeOracle` (`len L ≤ Cz·(proofLen ρ+1)^4 ∧ SizeOK (kitQ Cz B E) (kitD Cz (proofLen ρ)) L` for every
 graph list), the size-class dominations `layQ_le`, `layD_le`, `goalFact4_le_kitQ`, **`vList_full`**
 (the `ok` conjuncts + `len`/`SizeOK` of `vList`, `Ck = (asmCk Ck₄ Cz N' B' + cG)·(Cv+1)`); §7
 `VerifyKit''' … Cv Ck m` (in `Assemble`, not `Top`: `Verify2` imports `Top`), `KitPackage'''`,
@@ -1455,12 +1455,12 @@ Cz) : BoundedInnerNec 16`**, **`dupoc_self_coop_of_size … : ∃ k₀, ∀ k > 
 so it is a second `Derivation.induction1 𝚷` glue mirroring `Verify4` with two more conjuncts (the
 `axm` entries' `len`/`SizeOK` are already in `AxmEntryOK'`). Morally true, being machine-checked
 (`Verify5`, in flight). THE STALL (2905 s, empty log): `def cGoal : ℕ := 4·(cDer + …)` with `cDer =
-flen ⌜derivation …⌝` — ANY `Nat`-level arithmetic on it makes the KERNEL evaluate the giant closed
+formulaLenMeta ⌜derivation …⌝` — ANY `Nat`-level arithmetic on it makes the KERNEL evaluate the giant closed
 constant, and `irreducible` does not help; fix: package it existentially (`exists_cGoal`) and add
 it as an opaque summand. TRAPS: `'''` in Python strings; a regex rename hits named arguments;
 `(1 : V)` vs `((1:ℕ):V)` in cast lemmas.
 IN FLIGHT: `Verify5` (the size oracle discharged → `boundedInnerNec_sixteen`,
-`dupoc_self_coop_unconditional`).
+`dupoc_self_coop`).
 
 **§11 status — A DEFECT IN OUR OWN STATEMENT, and its repair (`Verify5` §1/§3: 4d57c5d … e54d638;
 `Package`: 342ab0a, 4322685; build 3270, census 819, all standard).**
@@ -1488,8 +1488,8 @@ coordinator): `verifySizeOracle_of_sizeThm`, `kitPackage'''_of_size'`,
 **`boundedInnerNec_sixteen_of_sizeThm : SizeThmAll → BoundedInnerNec 16`**,
 **`dupoc_self_coop_of_sizeThm`**, **`pblt_of_sizeThm`** (`pblt_uniform` needed only
 `BoundedInnerNec 16` — no extra work). `Verify5` §1 `layQ_mono`/`layD_mono` (the layout class is
-monotone in its size parameter — no such lemmas existed); §3 `dlen_leafCode_le'`/`dlen_bin2Code_le'`/
-`dlen_bin3Code_le'` via `codeK N' B' Dz` — **these discharge the `dlen TAct (leafCode tblN L n) ≤ D`
+monotone in its size parameter — no such lemmas existed); §3 `proofLen_leafCode_le'`/`proofLen_bin2Code_le'`/
+`proofLen_bin3Code_le'` via `codeK N' B' Dz` — **these discharge the `proofLen TAct (leafCode tblN L n) ≤ D`
 side conditions of `Frag1`/`Frag2`'s `sizeOK_frag*`/`sizeOK_node*`, which NO caller in the tree had
 ever discharged** (`NumSteps` stops at the raw decompositions). §2's `ArmHyps`/
 `verifySizeOracle_of_arms` is an honest SCAFFOLD (assumes what it concludes); the ten-arm glue
@@ -1520,8 +1520,8 @@ assembly volume: every reusable block is now proved and committed — the layout
 `layQ_le_kitQ`/`layD_le_kitD`; the recovery blocks `sizeOK_goalElim_kit`/`sizeOK_postIns_kit` (at
 ANY `D`, so they never touch the layout class); `len_nodeWk`, `len_nodeShift`, `len_wkPro`,
 `len_shiftPro`, `len_emptyFsetPi = 4`, `len_reset0 = 8`; the selector sizes in BOTH branches
-(`sizeOK_wkPro`, `sizeOK_shiftPro`); the node codes in the kit class (`dlen_bin2Code_le_kitD`,
-`dlen_bin3Code_le_kitD`). What remains per arm is `sizeOK_appendV` over four blocks, then the
+(`sizeOK_wkPro`, `sizeOK_shiftPro`); the node codes in the kit class (`proofLen_bin2Code_le_kitD`,
+`proofLen_bin3Code_le_kitD`). What remains per arm is `sizeOK_appendV` over four blocks, then the
 induction mirroring `verifyGraph''_ok4`'s 560 lines. TRAPS: `pow_le_pow_left` does not exist at
 this structure — `pow3_eq_p3` + `p3_mono`; **`lake env lean` writes NO olean**, so an `Audit`
 compile after a fresh file reports `unknownIdentifier` until `lake build
@@ -1561,7 +1561,7 @@ introduced only in a HYPOTHESIS is autobound AFTER `variable {V …}`, leaving i
 lands in `(lenQ B' D + Q', lenD N' B' D + D')`, NOT the layout class — instantiate `Q' = D' = 0`
 and route `lenQ ≤ layQ`; the three selectors split on TWO different conditions (`wkPro`/`shiftPro`
 on the empty CHILD, `cutPro` on the empty PARENT); the recovery block's goal fact sits at the
-CHILD's `dlen`, the node's at the PARENT's — two different term-length hypotheses; do not extract
+CHILD's `proofLen`, the node's at the PARENT's — two different term-length hypotheses; do not extract
 validated Lean text across files by script (backtick escaping) — write each section out literally.
 IN FLIGHT: `Verify5` Part 3 (`len_cutPro` + the wk/shift bound forms, then the ten-arm induction).
 
@@ -1569,15 +1569,15 @@ IN FLIGHT: `Verify5` Part 3 (`len_cutPro` + the wk/shift bound forms, then the t
 induction (bcaf996, b3e07a5; build 3270, census 867, all standard; Verify5 at 1327 lines, zero
 `sorry`).** §14 closes the gap Part 2 named: **`len_cutPro_le ≤ 55·D + 13`** (the lemma the tree
 never had — `cutPro` splits on the EMPTY PARENT, so its branches are `len_proIns0_le`'s
-`49·setLen (insert p 0) + 13` and `len_proIns_le`'s `55·setLen (insert p s) + 12`; the
+`49·sequentLen (insert p 0) + 13` and `len_proIns_le`'s `55·sequentLen (insert p s) + 12`; the
 empty-parent branch needs its OWN size hypothesis, `insert p 0` is not `insert p s`),
 `len_wkPro_le ≤ 44·D + 11`, `len_shiftPro_le ≤ 62·D + 23` (bound forms replacing §7's branch
 equations; `shift` consumes BOTH size hypotheses). §15 the recursion prerequisites `kitD_mono`,
-`le_two_mul_self`, `dlen_leafCode_le_kitD` — needed because the arm lemmas conclude at `kitD Cz n`
-(the node's own `dlen`) while the motive carries `kitD Cz (2·dlen ρ)`.
+`le_two_mul_self`, `proofLen_leafCode_le_kitD` — needed because the arm lemmas conclude at `kitD Cz n`
+(the node's own `proofLen`) while the motive carries `kitD Cz (2·proofLen ρ)`.
 **TRAP 15, THE IMPORTANT ONE — the ten-arm induction body DOES NOT SCALE BY ACCRETION.** The `axL`
 recipe is proven complete: every ingredient (the four E-rooms via `capE4'`/`lin_cap`/`hCk`/
-`termLen_bnum_le_V`, the `proAxL_ok` destructuring, the length chain `axL_arm_len → len_proAxL_le →
+`termLen_binNumeral_le_V`, the `proAxL_ok` destructuring, the length chain `axL_arm_len → len_proAxL_le →
 lin_le_p3 → p3_le_p4`, the size application widened by `.mono le_rfl (kitD_mono (le_two_mul_self
 d))`) compiles STANDALONE in ~10 s. Assembling that SAME arm INSIDE `Derivation.induction1 𝚷` does
 not converge: first run `EXIT 124` empty log at 570 s, rerun still elaborating at ~39 min — **more
@@ -1608,13 +1608,13 @@ numeric one). WRAPPERS LANDED (2 of 10): `axL_wrapper` (§16, 5 s), `verum_wrapp
 the template generalises). REMAINING 8: `wk`, `shift`, `and`, `or`, `cut`, `all`, `exs`, `axm` —
 all template copies; every arm lemma (§§4–13), length bound (§14) and prerequisite (§15) they
 consume is proved.
-TRAP 17: `rw [← hdd]` must come AFTER the `unfold` — the wrapper abbreviates `d = dlen TAct (…)`
-and rewrites in bulk at the top, then `unfold v<Tag>` RE-EXPOSES the raw `dlen` in the fragment's
+TRAP 17: `rw [← hdd]` must come AFTER the `unfold` — the wrapper abbreviates `d = proofLen TAct (…)`
+and rewrites in bulk at the top, then `unfold v<Tag>` RE-EXPOSES the raw `proofLen` in the fragment's
 `n` position and the pinned `n := d` stops matching; repeat the rewrite after the unfold, but ONLY
 where an unfold re-exposed it (in `axm`, never unfolded, the repeat fails "did not find an
 occurrence"). TRAP 18: the arm lemmas DIFFER in whether the node length is free or hard-wired —
 `axL_arm_size`/`verum_arm_size` take a free `n` so the `d` abbreviation pins cleanly, but
-**`axm_arm_size` HARD-WIRES `dlen TAct (axm s p)` in its hypothesis types** (`hp3E`, `hLn`,
+**`axm_arm_size` HARD-WIRES `proofLen TAct (axm s p)` in its hypothesis types** (`hp3E`, `hLn`,
 `hleaf`, `hgoalE`, `hbn`, `hnE`), so `d` cannot be pinned into it and **its wrapper must be written
 UNABBREVIATED from the start**; check each remaining arm lemma's statement for this before
 drafting. CAUTION (trap 14 recurring): an attempt to convert the `axm` probe by BULK STRING
@@ -1627,14 +1627,14 @@ IN FLIGHT: `Verify5` Part 5 (the eight remaining wrappers, then the one-line rec
 **§11 status — `Verify5` glue, Part 5: NO COMMITS (tree green and clean at 5b87af8); two findings
 that redirect the work.** Wrappers still 2 of 10 (`axL`, `verum`); `wk` scaffolded but not green.
 **FINDING 1 — TRAP 18 GENERALISES: hard-wired node lengths are the NORM, not the exception.**
-`wk_arm_size` states `hbn'`, `hnE`, `hLn`, `hnd` at `dlen TAct (wkRule s d')` and `hbn`, `hgE` at
-`dlen TAct d'`; `shift_arm_size` is the same, and by shape almost certainly `or`/`and`/`cut`/
-`all`/`exs` too. So MOST wrappers must be written UNABBREVIATED (no `d = dlen …` abbreviation);
+`wk_arm_size` states `hbn'`, `hnE`, `hLn`, `hnd` at `proofLen TAct (wkRule s d')` and `hbn`, `hgE` at
+`proofLen TAct d'`; `shift_arm_size` is the same, and by shape almost certainly `or`/`and`/`cut`/
+`all`/`exs` too. So MOST wrappers must be written UNABBREVIATED (no `d = proofLen …` abbreviation);
 `axL`/`verum` are the outliers. CHECK EACH ARM LEMMA'S STATEMENT BEFORE DRAFTING ITS WRAPPER.
 **FINDING 2 — the structure is sound at `wk`'s complexity** (trap 16 continues to hold): the
 `rec1₄` recursion shape for the length half AND a **20-ARGUMENT PINNED `wk_arm_size` application**
 both elaborate at standalone cost; the `wk` scaffolding (all E-rooms `hEpro`/`hiEpro`/`hnE`/
-`hbnc`/`hbn'`, the `dlen_wkRule` facts `hLn`/`hyd`/`hnd`, both `shiftsV_le_len` bridges) is green
+`hbnc`/`hbn'`, the `proofLen_wkRule` facts `hLn`/`hyd`/`hnd`, both `shiftsV_le_len` bridges) is green
 in 4 s. What remained were two type mismatches at the goal-fact offsets — E-room cap plumbing, not
 structure. **EVERY failure this round was hand-built inequality arithmetic, each caught in 3–10 s**
 (a leading `0 +` blocking `ring`; a wrong `le_of_add_eq'` association; `44 + 25 ≤ 65` — it is 69).
@@ -1642,7 +1642,7 @@ No wrapper resisted AFTER pinning; the template never failed.
 **THE REDIRECTION (the agent's own suggestion, adopted): build the E-room helper family FIRST.**
 The per-wrapper E-rooms are near-identical modulo constants — `hEpro`, `hiEpro`, `hnE`, `hbn`
 differ only in the coefficient fed to `capE4'`/`lin_cap`/`hCk`. A small family (`eroom_lin`,
-`eroom_len`, `eroom_bnum`) taking the coefficient and returning the capped bound removes the class
+`eroom_len`, `eroom_binNumeral`) taking the coefficient and returning the capped bound removes the class
 of error that consumed this round and makes the remaining seven wrappers close to mechanical.
 Do that BEFORE drafting `shift`. (The `wk` probe stays in the scratchpad unlanded; the Part-4
 `axm` probe stays quarantined.)
@@ -1652,7 +1652,7 @@ IN FLIGHT: `Verify5` Part 6 (the E-room helper family, then the eight wrappers, 
 build 3270, census 872, all standard).** Three helpers, green in 4 s, validated at the exact shapes
 Part 5 hand-rolled and got wrong: **`eroom_lin hE hCk a b c _ : (a:V)·D + (b:V)·‖D‖ + (c:V) ≤ E`**
 (the general linear room — subsumes the prologue room `(13,18,12)`, the node room `(0,18,7)`, the
-insert room `(14,0,5)` and every other `lin_cap` chain), **`eroom_bnum hE hCk hn : termLen (bnum n)
+insert room `(14,0,5)` and every other `lin_cap` chain), **`eroom_binNumeral hE hCk hn : termLen (binNumeral n)
 ≤ E`** for `n ≤ D`, **`eroom_off hE hCk hx c _ : x + (c:V) ≤ E`** for `x ≤ D` (the goal-fact offset
 shape). USAGE IDIOM (in the section docstring and census): coefficients carry ℕ-casts so the
 constant side discharges by `norm_num` against `hCk`; call sites wanting the literal `V`-shape
@@ -1661,8 +1661,8 @@ zero_add] at this` — that leading zero is exactly what blocked `ring` when the
 **PROOF THAT THEY WORK: rebuilt on the helpers, the `wk` scaffolding goes green in 3 s**, each
 E-room a single call. Also: **the 20-argument pinned `wk_arm_size` application TYPE-CHECKS** (the
 last structural unknown for that arm — the blocker had been a wrong `le_rfl` in the `hsD` slot
-where `D := dlen TAct (wkRule s d')`; the witness is the scaffolding's own `hsD`), and the length
-half via `rec1₄` + `hdeq` from `dlen_wkRule` is structurally sound. RESIDUAL: `lin_le_p3` yields
+where `D := proofLen TAct (wkRule s d')`; the witness is the scaffolding's own `hsD`), and the length
+half via `rec1₄` + `hdeq` from `proofLen_wkRule` is structurally sound. RESIDUAL: `lin_le_p3` yields
 `1 * D + c`, not `D + c` — a `one_mul` rewrite is needed at those call sites.
 WRAPPERS: still 2 of 10 (`axL`, `verum`); `wk` is ONE CAREFUL LITERAL TRANSCRIPTION from landing
 (scaffolding, `hsD` fix, `rec1₄` length half and the pinned size call all individually verified).
@@ -1680,9 +1680,9 @@ transcribed LITERALLY via Edit, one pass each, and both were GREEN AT THE FIRST 
 5 s, `shift` in 7 s, no repair cycles, no corrupted probes.** The two scripted splices of Parts 4
 and 6 cost a round each; literal transcription cost none. Both written UNABBREVIATED (trap 18),
 implicits PINNED (trap 16), every E-room from §17's helper family (`eroom_lin` at `(13,18,12)`,
-`(14,0,5)`/`(16,0,8)`, `(0,18,7)`; `eroom_bnum` for the child's and parent's `dlen`). The two
+`(14,0,5)`/`(16,0,8)`, `(0,18,7)`; `eroom_binNumeral` for the child's and parent's `proofLen`). The two
 goal-fact offsets and the length half close identically in both: a linear term plus the child's
-`Czv·p4 (dlen d')`, absorbed by `rec1₄` at `hdeq : dlen (rule s d') = dlen d' + (setLen s + 1)`.
+`Czv·p4 (proofLen d')`, absorbed by `rec1₄` at `hdeq : proofLen (rule s d') = proofLen d' + (sequentLen s + 1)`.
 Constants follow the selector bound — `wk` at `44·D + 11` needs 69 and 61; `shift` at `62·D + 23`
 needs 99 and 91. REMAINING 6: `or`, `and`, `cut`, `all`, `exs`, `axm`.
 **`or` IS MATERIALLY HARDER than `wk`/`shift`** (read before drafting, per trap 18 — it does NOT
@@ -1717,7 +1717,7 @@ from `or`, not variants of it.** Both carry hypotheses stated at a LATER CONTEXT
 `hΓ₃`, `hLay₃`, `hDq₃` at `Γ₃` (the context after the first child and its `postIns`), and its
 rooms `hiE₂`/`hipE₂`/`hgE3` carry `shiftsV L₁` INSIDE the offsets; `cut` is the same with `Γ₄` plus
 an extra `proCutPre` block. So their wrappers CANNOT bound their rooms from `D` alone: they need
-`shiftsV L₁ ≤ Czv·p4 (dlen dp)` (from the first child's motive via `shiftsV_le_len`) AND the
+`shiftsV L₁ ≤ Czv·p4 (proofLen dp)` (from the first child's motive via `shiftsV_le_len`) AND the
 layout/dossier transport into the later context — which the recursion supplies but a standalone
 wrapper must take as EXPLICIT hypotheses. ORDERING CONSEQUENCE: `or` is genuinely next-cheapest
 (one child, one context, its two offset rooms now collapsing via `eroom_of_le`); `and`/`cut` follow
@@ -1733,10 +1733,10 @@ census 876, all standard).** The Part 8 infrastructure paid off as intended: BOT
 collapsed through `eroom_of_le` on the FIRST try — `hipE` to `22·D + 8` (via `memTop_le` +
 `descCountF_le_of_len`), `hiqE` to `14·D + 6` — and the dossiers came straight from
 `Prologue.layout_or`. WHAT DIFFERS from `wk`/`shift`: the `postIns` recovery block is SIX steps (not
-`goalElim`'s five), so the tail is `6 + 9 = 15`; `len_proOr_le ≤ 110·setLen (insert p (insert q s))
-+ 25` with the `setLen` bounded by `setLen_child_le_dlen_orIntro` gives a length-half constant of
+`goalElim`'s five), so the tail is `6 + 9 = 15`; `len_proOr_le ≤ 110·sequentLen (insert p (insert q s))
++ 25` with the `sequentLen` bounded by `sequentLen_child_le_proofLen_orIntro` gives a length-half constant of
 `110 + 40 = 150`; `hgE2` carries TWO `proSig` terms, each `≤ 6·D + 1`, that bound itself needing an
-E-room at `(13,18,8)`. `dlen_orIntro` has the same `setLen s + dlen d' + 1` shape, so
+E-room at `(13,18,8)`. `proofLen_orIntro` has the same `sequentLen s + proofLen d' + 1` shape, so
 `hdeq`/`hyd`/`hLn` transcribed unchanged. THREE REPAIR HUNKS, each diagnosed in seconds, all
 arithmetic or plumbing: `Derivation.orIntro` wants the whole `DerivationOf` (not its `.2`); `hqD`
 needed an explicit membership witness, not `le_of_eq rfl`; and **`hgE2`'s summed constant is
@@ -1746,7 +1746,7 @@ with `le_of_add_eq' (c := 0)` slack FAILED; reading the IDE's residual goal (`9 
 No corrupted probes this round — the Edit-only rule held.
 REMAINING: 5 wrappers (`and`, `cut`, `all`, `exs`, `axm`) then the recursion. Per Part 8, `and`/`cut`
 take their later-context hypotheses (`hΓ₃`/`hLay₃`/`hDq₃`; `Γ₄` + the `proCutPre` block for `cut`)
-as EXPLICIT wrapper hypotheses with `shiftsV L₁ ≤ Czv·p4 (dlen dp)` from the first child's motive
+as EXPLICIT wrapper hypotheses with `shiftsV L₁ ≤ Czv·p4 (proofLen dp)` from the first child's motive
 via `shiftsV_le_len`; the agent holds every signature and bound they need — nothing left to locate.
 IN FLIGHT: `Verify5` Part 10 (`and`, `cut`, then `all`/`exs`/`axm`, then the recursion).
 
@@ -1755,14 +1755,14 @@ census 877, all standard).** The first TWO-CHILD arm; seven repair hunks, each a
 structural and each diagnosed in seconds.
 **TRAP 19 (the structural finding, and it RECURS IN `cut`): in a two-child arm, EVERY room must use
 `rec2₄`, NOT `rec1₄` — including the four that mention only ONE child** (`hiE₂`, `hipE₂`, `hgE₁`,
-`hgE₂`). `rec1₄` wants `d = y + m`, and a two-child `dlen` cannot be written that way: the other
-child's `dlen` has nowhere to go, and the residual goal shows it as `… + dlen dq = …` with the
+`hgE₂`). `rec1₄` wants `d = y + m`, and a two-child `proofLen` cannot be written that way: the other
+child's `proofLen` has nowhere to go, and the residual goal shows it as `… + proofLen dq = …` with the
 summand simply MISSING. The fix is uniform — add the absent child's `Czv·p4` as slack via
 `le_of_add_eq'`, then close with `rec2₄`.
-SPECIFICS: seven blocks, so the length half is two `len_proIns_le ≤ 55·setLen (insert · s) + 12`
-(the `setLen`s via `setLen_child_le_dlen_andIntro_left`/`_right`) plus `6 + 6 + 9 = 21`, giving
+SPECIFICS: seven blocks, so the length half is two `len_proIns_le ≤ 55·sequentLen (insert · s) + 12`
+(the `sequentLen`s via `sequentLen_child_le_proofLen_andIntro_left`/`_right`) plus `6 + 6 + 9 = 21`, giving
 `110·D + 45 = 155`. The later-context hypotheses `hΓ₃`/`hLay₃`/`hDq₃` went in as explicit binders
-(Part 8's finding), `hDp` from `layout_and`, and `shiftsV L₁ ≤ Czv·p4 (dlen dp)` via
+(Part 8's finding), `hDp` from `layout_and`, and `shiftsV L₁ ≤ Czv·p4 (proofLen dp)` via
 `shiftsV_le_len` bounds the later-context rooms. **Part 9's method note earned its keep four
 times**: the constants `hipE₁ 16·D+6`, `hiE₂ 20·D+9`, `hipE₂ 20·D+10`, `hgE₃ 13·D+11` were all READ
 OFF THE RESIDUAL GOALS, not guessed; where invented slack (`le_of_add_eq' (c := 0)`) was tried it
@@ -1806,14 +1806,14 @@ THE OUTSTANDING READ, RESOLVED: `allCertSig`'s bound lives in **`Prologue.allCer
 `hΓ`/`hLay` — all suppliable by the wrapper.
 **STRUCTURALLY VALIDATED (transcribed with two deliberate `sorry`s so the compile would answer the
 structural questions first; all came back clean):** the 30-ARGUMENT pinned `all_arm_size`
-application type-checks at `D := 2·dlen`; both QUADRATIC rooms discharge through `capE4` +
+application type-checks at `D := 2·proofLen`; both QUADRATIC rooms discharge through `capE4` +
 `allEQ_p3`/`alliE_p3` + `p3_le_p4` (confirming Part 11 — NO new helper needed); `allCert_ok`'s
 nine-conjunct destructuring is right; `hDE`, `hnE`, the `setShift` facts (`hs.setShift`,
 `one_le_len_memberList_setShift`) and all three `proSig` bounds hold.
-**TRAP 21 (the design point): `all` is the first wrapper whose `D` is NOT the node's `dlen` — it
-must run at `D := 2 · dlen (allIntro s p d')`**, for two reasons that agree: `hspD : formulaLen
-(shift p) ≤ D` only holds at twice the `dlen` (`formulaLen_shift_le ≤ 2·|p|`), and
-`allEQ_p3`/`alliE_p3` are stated at exactly `D = 2d`. The motive's `d` stays `dlen (allIntro …)`,
+**TRAP 21 (the design point): `all` is the first wrapper whose `D` is NOT the node's `proofLen` — it
+must run at `D := 2 · proofLen (allIntro s p d')`**, for two reasons that agree: `hspD : formulaLen
+(shift p) ≤ D` only holds at twice the `proofLen` (`formulaLen_shift_le ≤ 2·|p|`), and
+`allEQ_p3`/`alliE_p3` are stated at exactly `D = 2d`. The motive's `d` stays `proofLen (allIntro …)`,
 so `hDd` becomes `le_rfl` and `hsD`/`hcD` are weakened via `le_two_mul_self`. **`exs` will be
 identical** with `exsEQ_p3`/`exsiE_p3`. One repair: `hEpro`'s cap was written at `44` doubling the
 right-hand side; the residual goal gave the true form — the constant is **`62`** (`13·2 + 18·2`),
@@ -1833,7 +1833,7 @@ structure held unchanged and the round's whole cost was the two arithmetic tails
 scoped — two repair hunks, each diagnosed in seconds. QUADRATIC rooms through `allEQ_p3 ≤ 27·p3
 (d+1)` and `alliE_p3 ≤ 96·p3 (d+1)`, lifted by `p3_le_p4`, capped by `capE4` (no new helper —
 Part 11's finding confirmed in use). CUBIC length half through `len_proAll_le_cubic ≤ 402·p3 (D+1)`
-at `D = 2·dlen`: `p3_mono` takes `2d+1 ≤ 2(d+1)`, `p3_two_mul` gives `8·p3 (d+1)`, `p3_succ_le`
+at `D = 2·proofLen`: `p3_mono` takes `2d+1 ≤ 2(d+1)`, `p3_two_mul` gives `8·p3 (d+1)`, `p3_succ_le`
 gives `64·p3 d` — constant `402·64 = 25728`, capped at `25743`. `hgE2` closes against `alliE_p3` at
 constant `768` (`allCertSig` from `allCert_ok`'s sixth conjunct + three `proSig` bounds).
 **TRAP 22, the methodological one: that closing step is a genuine `≤`, not an `=`.** The summed
@@ -1846,19 +1846,19 @@ PROCESS ERROR RECORDED: a full 570 s poll window was lost to a build that never 
 non-zero, so the launch never ran and the log never existed. **Launch detached builds as STANDALONE
 commands, never as the last conjunct of an `&&` chain.** The correct relaunch took 8 s.
 REMAINING: `exs` (now MECHANICAL — `all`'s shape with `exsEQ_p3 ≤ 43·p3 (d+1)`, `exsiE_p3 ≤ 112·p3
-(d+1)`, `len_proExs_le_cubic`; trap 21's `D = 2·dlen` applies identically), then `axm` (fresh,
+(d+1)`, `len_proExs_le_cubic`; trap 21's `D = 2·proofLen` applies identically), then `axm` (fresh,
 unabbreviated, trap 18), then the ten-application recursion.
 IN FLIGHT: `Verify5` Part 14 (`exs`, `axm`, then the recursion).
 
 **§11 status — `Verify5` glue, Part 14: `exs_wrapper` LANDED, 9 of 10 (2cf0785, §25; build 3270,
-census 880, all standard).** `all`'s twin at `D := 2·dlen (exsIntro s p t d')` (trap 21), with four
+census 880, all standard).** `all`'s twin at `D := 2·proofLen (exsIntro s p t d')` (trap 21), with four
 differences, ALL anticipated from the pre-drafting read: the quadratic rooms carry `(1 + D + D)`
 not `(1 + D + 1)`, matching `exsEQ_p3 ≤ 43·p3 (d+1)` and `exsiE_p3 ≤ 112·p3 (d+1)`;
-**`dlen_exsIntro = setLen s + termLen t + dlen d' + 1`** — the WITNESS TERM's length joins the
-`rec1₄` remainder, so `hdeq` is `dlen d' + (setLen s + termLen t + 1)`; the arm wants `ht`/`htD`
-(`termLen_le_dlen_exsIntro`); `hgE2` carries `exsSig` from **`exsCert_ok`'s FIFTH conjunct**, whose
-`hptD` comes from `formulaLen_substs1_le_dlen_exsIntro`. Cubic length half:
-`len_proExs_le_cubic ≤ 256·p3 (D+1)` at `D = 2·dlen` gives `256·64 = 16384`, capped `16399`;
+**`proofLen_exsIntro = sequentLen s + termLen t + proofLen d' + 1`** — the WITNESS TERM's length joins the
+`rec1₄` remainder, so `hdeq` is `proofLen d' + (sequentLen s + termLen t + 1)`; the arm wants `ht`/`htD`
+(`termLen_le_proofLen_exsIntro`); `hgE2` carries `exsSig` from **`exsCert_ok`'s FIFTH conjunct**, whose
+`hptD` comes from `formulaLen_substs1_le_proofLen_exsIntro`. Cubic length half:
+`len_proExs_le_cubic ≤ 256·p3 (D+1)` at `D = 2·proofLen` gives `256·64 = 16384`, capped `16399`;
 `hgE2` constant `896`.
 **TRAP 23 — a REFINEMENT of trap 22, with an honest account of how it was hit.** Three repair
 hunks: an `add_le_add` nesting one level short, then TWO WRONG SLACK VALUES before the right one.
@@ -1877,20 +1877,20 @@ IN FLIGHT: `Verify5` Part 15 (`axm`, then the recursion).
 
 **§11 status — `Verify5` glue, Part 15: `axm_wrapper` LANDED — TEN OF TEN WRAPPERS (f488a0a, §26;
 build 3266, census 885, all standard, sentinel-verified).** Specific to `axm`: UNABBREVIATED per
-trap 18 (`axm_arm_size` hard-wires `dlen TAct (axm s p)` in six hypotheses and in its conclusion's
+trap 18 (`axm_arm_size` hard-wires `proofLen TAct (axm s p)` in six hypotheses and in its conclusion's
 class); **the only arm whose prologue the wrapper does NOT build** — `pro` comes from the shifted
 certificate table, so `SizeOK (entryB Cv p) (entryB Cv p) pro`, `len pro ≤ entryB Cv p` and
 `shiftsV pro ≤ entryB Cv p` are EXPLICIT wrapper hypotheses, exactly the three conjuncts of
 `Verify3.AxmEntryOK'` which the recursion supplies by destructuring `hA _ hmem`; **the only wrapper
-that changes the size class** (the arm concludes at `kitD Cz (dlen)`, the motive wants `kitD Czv
-(2·dlen)` — closes with `.mono le_rfl (kitD_mono (le_two_mul_self _))`); `hleaf` could NOT use §15's
-`dlen_leafCode_le_kitD` (stated at `kitD Cz (2*d)`, wrong shape) — it takes the raw
-`dlen_leafCode_le'` → `sum2D_le_layD` → `layD_le_kitD le_rfl hCD` route; the length half is LINEAR,
-not cubic (`len pro + 9`, `entryB` pushed to `8·Cv·p3 dlen` via `axm_hpd` + `p3_succ_le`, single
+that changes the size class** (the arm concludes at `kitD Cz (proofLen)`, the motive wants `kitD Czv
+(2·proofLen)` — closes with `.mono le_rfl (kitD_mono (le_two_mul_self _))`); `hleaf` could NOT use §15's
+`proofLen_leafCode_le_kitD` (stated at `kitD Cz (2*d)`, wrong shape) — it takes the raw
+`proofLen_leafCode_le'` → `sum2D_le_layD` → `layD_le_kitD le_rfl hCD` route; the length half is LINEAR,
+not cubic (`len pro + 9`, `entryB` pushed to `8·Cv·p3 proofLen` via `axm_hpd` + `p3_succ_le`, single
 constant `8·Cv + 9 ≤ Czv`; no `capE4`, no `rec1₄`/`rec2₄` — `axm` is a leaf).
 **THE STRUCTURAL MISMATCH, found by SCOPING the recursion rather than by hitting it mid-proof:**
-all ten wrappers conclude `SizeOK (kitQ Czv B E) (kitD Czv (2 * dlen ρ))`, but `ArmHyps` /
-`Assemble.VerifySizeOracle` (Assemble.lean:491) demand `SizeOK (kitQ Cz B E) (kitD Cz (dlen ρ))` —
+all ten wrappers conclude `SizeOK (kitQ Czv B E) (kitD Czv (2 * proofLen ρ))`, but `ArmHyps` /
+`Assemble.VerifySizeOracle` (Assemble.lean:491) demand `SizeOK (kitQ Cz B E) (kitD Cz (proofLen ρ))` —
 **UNDOUBLED**, same `Cz` in both slots. `kitD C z = C·(z+1)³` rises in `z`, and `kitD_mono`/
 `SizeOK.mono` only weaken UPWARD, so no existing lemma bridges it. **THE FIX keeps `ArmHyps`
 BYTE-IDENTICAL (required — `Package.lean` consumes it): absorb the doubling into the constant** —
@@ -1902,10 +1902,10 @@ anywhere in the tree** (only `*_le_kitQ` landing lemmas; no monotonicity in `C`)
 REMAINING: ONLY the recursion (~450 lines on `Verify4.verifyGraph''_ok4`'s pattern). Two
 prerequisites still unlocated: `Derivation.induction1`'s signature (it lives in a FOUNDATION
 dependency, not under `ArithS/`), and confirmation of how the child `SizeOK` at the CHILD's
-`2·dlen` widens to the PARENT's. Located and confirmed present for it: `child_bound4`, `rec1₄`,
+`2·proofLen` widens to the PARENT's. Located and confirmed present for it: `child_bound4`, `rec1₄`,
 `rec2₄`, `capE4`/`capE4'`, `lin_cap`, `lin_le_p3`, `le_of_add_eq'`; all ten
-`VerifyGraph''.*_iff` (Verify3.lean:358–462); the child-descent families `dlen_*_succ_le_*` and
-`setLen_child_le_dlen_*` (NodeSize.lean:179–338); `AxmEntryOK'` (Verify3.lean:71–75).
+`VerifyGraph''.*_iff` (Verify3.lean:358–462); the child-descent families `proofLen_*_succ_le_*` and
+`sequentLen_child_le_proofLen_*` (NodeSize.lean:179–338); `AxmEntryOK'` (Verify3.lean:71–75).
 PROCESS: **`nohup … &` produced a FALSE GREEN** — exit 0, zero-byte log, stale olean, ten seconds.
 Detached launches cannot be trusted in this sandbox; use foreground with an explicit `$?` capture
 (the compile is ~7 s warm, so backgrounding buys nothing). ALSO: a mid-session auto-mode
@@ -1922,8 +1922,8 @@ DIAGNOSED AT THE SOURCE (7a6aaa8, §15; build 3266, census 887, all standard, se
 THE RECURSION'S SHAPE IS SETTLED: `Derivation.induction1` (Foundation
 `.../Syntax/Proof/Basic.lean:560`) fixes the arm order `hAxL, hVerumIntro, hAnd, hOr, hAll, hExs,
 hWk, hShift, hCut, hRoot`, motive `P : V → Prop` with `Γ-[1]-Predicate P`; the motive is
-`P ρ := Czv·p4 (dlen ρ + 1) ≤ E → ∀ L Γ, VerifyGraph'' … ρ L → IsFormulaSet Γ → NodeLay …
-(fstIdx ρ) → len L ≤ Czv·p4 (dlen ρ) ∧ SizeOK (kitQ Czv B E) (kitD Czv (2·dlen ρ))`, with
+`P ρ := Czv·p4 (proofLen ρ + 1) ≤ E → ∀ L Γ, VerifyGraph'' … ρ L → IsFormulaSet Γ → NodeLay …
+(fstIdx ρ) → len L ≤ Czv·p4 (proofLen ρ) ∧ SizeOK (kitQ Czv B E) (kitD Czv (2·proofLen ρ))`, with
 `ArmHyps` at `Cz := 8·Czv`, child→parent widening by `kitD_mono` on `2·y ≤ 2·d`, E-room descent by
 `child_bound4`.
 **THE OBSTRUCTION, verified by the coordinator at the source (not a wrapper artefact):
@@ -2064,9 +2064,9 @@ obtained INSIDE `kitPackage'''_of_size`'s proof, so no parameter list can name i
 than threading; every body line intact. Taking the smaller edit rather than spending the authorised
 licence is the third time this agent's stop-and-report judgement has averted a wider change.
 **THE `axm` ARM IS NOW DISCHARGEABLE** — `ArmHyps … (Cv Cz : ℕ)` supplies the fixed `Cv` that
-`axm_wrapper`'s `hCv`/`hCv8` require. The recursion is FULLY SPECIFIED: motive `Czv·p4 (dlen ρ + 1)
-≤ E → ∀ L Γ, VerifyGraph'' … ρ L → IsFormulaSet Γ → NodeLay … (fstIdx ρ) → len L ≤ Czv·p4 (dlen ρ)
-∧ SizeOK (kitQ Czv B E) (kitD Czv (2·dlen ρ)) L` under `(by simp only [VerifyGraph'', p4, kitQ,
+`axm_wrapper`'s `hCv`/`hCv8` require. The recursion is FULLY SPECIFIED: motive `Czv·p4 (proofLen ρ + 1)
+≤ E → ∀ L Γ, VerifyGraph'' … ρ L → IsFormulaSet Γ → NodeLay … (fstIdx ρ) → len L ≤ Czv·p4 (proofLen ρ)
+∧ SizeOK (kitQ Czv B E) (kitD Czv (2·proofLen ρ)) L` under `(by simp only [VerifyGraph'', p4, kitQ,
 kitD]; definability) hd`; arm order (from Foundation) `axL, verum, and, or, all, exs, wk, shift,
 cut, axm`; constant `Czv := ((K : ℕ) : V)` with `K := 1000000 + (19·B' + 25) + 2·(27·N' +
 525600·B') + cG + (8·Cv + 9)` on `Verify4`'s `obtain ⟨Czv, hCzv⟩ : ∃ x : V, x = ((K : ℕ) : V)`
@@ -2130,8 +2130,8 @@ is TRUE of `hchildSz` but **FALSE of `hchildLen`**, which every wrapper consumes
 (`hshL := le_trans (shiftsV_le_len L') hchildLen` and the length calc; wk 1640/1682, shift
 1764/1808, or 1955/2017, all 2732/2841, exs 2971/3069, and 2133-4/2287-8, cut 2422-3/2597-8).
 **THE REAL FIX, found by COMPILING TWO SKELETONS (7 s each, following the draft-first lesson): THE
-MOTIVE NEEDS NO CONTEXT AT ALL.** `Derivation.induction1 𝚷` accepts `P ρ := Czv·p4 (dlen ρ + 1) ≤ E
-→ ∀ L, VerifyGraph'' … ρ L → len L ≤ Czv·p4 (dlen ρ) ∧ SizeOK (kitQ Czv B E) (kitD Czv (2·dlen ρ))
+MOTIVE NEEDS NO CONTEXT AT ALL.** `Derivation.induction1 𝚷` accepts `P ρ := Czv·p4 (proofLen ρ + 1) ≤ E
+→ ∀ L, VerifyGraph'' … ρ L → len L ≤ Czv·p4 (proofLen ρ) ∧ SizeOK (kitQ Czv B E) (kitD Czv (2·proofLen ρ))
 L` — no `Γ`, no `NodeLay`. **That is `ArmHyps`'s EXACT shape** (coordinator-verified: Verify5:97
 binds only `{E A ρ L}` and neither conjunct mentions a context). The `∀ L Γ … → NodeLay …` copied
 from `Verify4` was DEAD WEIGHT — Verify4 needs it because ITS conjuncts mention `Γ` (`ListOK tbl E
@@ -2201,13 +2201,13 @@ IN FLIGHT: `Verify5` Part 22 — (1) §28 the two transport chains, `NoDrop'` fo
 yields `NoDrop' L₁`, with the child context from §26.1's `nodeCtx_exists` and the E-room assumed —
 so the Part-21 ruling (cite, don't widen the motive) holds in practice, not just on paper.
 TWO COSTS, both arithmetic and both anticipated: (1) **THE E-ROOM RECONCILIATION** —
-`verifyGraph''_ok4` wants `(((Ck:ℕ):V) + 5·Cv)·p4 (dlen dp + 1) ≤ E` at its OWN `Ck = 128655`
-(Verify4:73), while the arms carry `hE : Czv·p4 (dlen node + 1) ≤ E` and `hCk : ∀ a ≤ 1000000,
+`verifyGraph''_ok4` wants `(((Ck:ℕ):V) + 5·Cv)·p4 (proofLen dp + 1) ≤ E` at its OWN `Ck = 128655`
+(Verify4:73), while the arms carry `hE : Czv·p4 (proofLen node + 1) ≤ E` and `hCk : ∀ a ≤ 1000000,
 ((a:ℕ):V) ≤ Czv` (Verify5:1382). `hCk 128655` covers the constant (128655 ≤ 1000000), but
 **NOTHING IN SCOPE DOMINATES A TERM CONTAINING `5·Cv`** — `hCk` reaches only standard constants and
 `Cv` is a VARIABLE (coordinator-verified: no existing binder mentions `5·Cv`). The descent from
-`dlen node + 1` to `dlen dp + 1` is `child_bound4` + `dlen_dp_succ_le_andIntro`, already used in the
-arm. (2) the child context needs `setLen (insert p s) ≤ D` and two E-room facts, all derivable
+`proofLen node + 1` to `proofLen dp + 1` is `child_bound4` + `proofLen_dp_succ_le_andIntro`, already used in the
+arm. (2) the child context needs `sequentLen (insert p s) ≤ D` and two E-room facts, all derivable
 in-arm as the existing `nodeCtx_exists` calls show.
 **COORDINATOR'S RULING: the new binder is APPROVED** — `hCk5 : ((128655:ℕ):V) + 5·Cv ≤ Czv` (or a
 general `hCvD : ∀ a ≤ 1000000, ((a:ℕ):V) + 5·Cv ≤ Czv` if `cut` wants it at another constant), in
@@ -2274,7 +2274,7 @@ he1 ?_ ?_` leaves it unsolved — supply it POSITIONALLY.
 splitting it with `p4_split D 1`. They differ at a real arithmetic boundary — `hsE`'s linear part
 is `D + 4` (covered from `1 ≤ D`), while `hcE`'s is `6·D + 4`, and **`6·D + 4 ≤ p3 (D+1)` is FALSE
 at `D = 1`** (`10 ≤ 8`); it needs `2 ≤ D`, which the STRICT DESCENT supplies (`1 ≤ y` from
-`one_le_dlen`, `y + 1 ≤ D` from `dlen_dp_succ_le_andIntro`, both already bound in the arm).
+`one_le_proofLen`, `y + 1 ≤ D` from `proofLen_dp_succ_le_andIntro`, both already bound in the arm).
 **A GREEN-BUT-UNCALLABLE LEMMA WAS CAUGHT BEFORE IT SPREAD**: an earlier doubled-cap form compiled
 fine but could never be applied — the arm holds `hE` at a SINGLE `Czv` and cannot manufacture a
 multiple. **Checking CALLABILITY before transcribing is what produced the strict-descent route**;
@@ -2314,7 +2314,7 @@ SCOPE DISCOVERY: `and_wrapper` already derives every remaining `and_arm_size` in
 `hΓ₃`/`hLay₃`/`hDq₃` as hypotheses — EXACTLY what §§26.4–26.6 produce, and its conclusion is
 verbatim `hAndArm`'s. So the discharge is ASSEMBLY, drafted green: `and_input` → `and_cross` →
 `and_trans` → `rwa [finalCtx_appendV]` → `and_wrapper`, plus two `have`s
-(`setLen_child_le_dlen_andIntro_left`, `formulaLen_q_le_dlen_andIntro`).
+(`sequentLen_child_le_proofLen_andIntro_left`, `formulaLen_q_le_proofLen_andIntro`).
 **THE BLOCKER, AND A COORDINATOR ERROR: `verifyGraph''_ok4` is `∃ Cs Ck : ℕ, ∀ …`** — the literal
 `128655` is a witness chosen INSIDE its own proof and never appears in the statement
 (coordinator-verified), so after `obtain ⟨Cs, Ck, h⟩` the `Ck` is OPAQUE and **the `hCk5 :
@@ -2359,7 +2359,7 @@ Three lemmas change, ONE hypothesis each: `sizeOK_cutPro`, `cut_arm_size`, `cut_
 Coordinator-verified: `hLay0₁`/`hLay0₄` occur only at the two `sizeOK_cutPro` calls (1078, 1081),
 their binders, and the pass-through at 2608 — no collateral edits. **SUFFICIENCY WAS CHECKED TOO**
 (not just necessity): the other deferred hypotheses ARE dischargeable (`hsD0p`/`hsD0np` via
-`setLen_le_insert` + `setLen_empty`; the `Γ₄` side via `Layout.transport`/`dossF_transport'`), so no
+`sequentLen_le_insert` + `sequentLen_empty`; the `Γ₄` side via `Layout.transport`/`dossF_transport'`), so no
 second blocker lurks behind this one. APPROVED; bank the three in order, one commit each, then the
 discharge.
 TWO SMALLER FINDINGS: (a) **`eroom_lin`/`eroom_of_le` (Verify5:1537, 1838) ALREADY GENERALISE the
@@ -2383,7 +2383,7 @@ and `layP₀ : PLay … Γ₀ s σc` comes from `hLay.play.transport c0nd` + `rw
 **`Γ₄` side is constructible** — `cutBlock_ok`'s `layP₃` lands at EXACTLY `hLay₄`'s offset
 (`rw [← hσ₁]; exact layP₃`), with `hDnp₄` from `dossF_transport' b1nd hDnp` + `rwa [b1sh]`; (3) **the
 `ChildOK` bridge is a LAMBDA, not a lemma** — `fun Γ' hΓ' hLay' => hV4 V … L₁ Γ' hL₁ hΓ' hLay'`
-typechecks at `B := ((Cs:V)+Cv)·p4 (dlen d₁)`; (4) the rooms come from `eroom_of_le`/`eroom_lin` as
+typechecks at `B := ((Cs:V)+Cv)·p4 (proofLen d₁)`; (4) the rooms come from `eroom_of_le`/`eroom_lin` as
 directed, with `σc = mShift p + mShift (neg p) ≤ 8·D` and `mLen p + mShift (neg p) ≤ 6·D ≤ 8·D`
 from `mShift_le`/`mLen_succ_le`, matching `cutBlock_ok`'s `Bi := 8*D`.
 **THE `ChildOK` FINDING CLOSES A LOOP: `ChildOK` was NEVER constructible from the `SizeOK`-shaped
@@ -2438,8 +2438,8 @@ selector-free `cut_input`).
 `ArmHypsAll` still needs a lemma instantiating `armHyps_of_arms` at the `ArmHyps` shape: construct
 `Czv` from `(N', B', Cv)` LAST in `Verify4`'s style (`Csv := 25731 + Cv`), discharge the nine
 constant hypotheses, supply `hV4` by `obtain ⟨Cs, Ck, hV4⟩ := verifyGraph''_ok4`, and bridge the two
-statement shapes — `(dlen+1)^4` vs `p4 (dlen)` via `pow4_eq_p4`, and `kitD Cz (dlen ρ)` vs
-`kitD Czv (2·dlen ρ)` via §15's `kitD_two_mul_le`. Then `verifyGraph''_size4_of_arms` IS
+statement shapes — `(proofLen+1)^4` vs `p4 (proofLen)` via `pow4_eq_p4`, and `kitD Cz (proofLen ρ)` vs
+`kitD Czv (2·proofLen ρ)` via §15's `kitD_two_mul_le`. Then `verifyGraph''_size4_of_arms` IS
 `Package.SizeThm N' B' Cv Cz`, and `SizeThmAll` follows by choosing `Cz` per `(N', B')`.
 FOLLOW-UPS folded into the next commit: the stale `Audit.lean` comments at 1717 and 1750 (they
 still say `hCutArm` remains), and a missing `#print axioms armHyps_of_arms` census entry.
@@ -2454,7 +2454,7 @@ BANKED: census 900 → 902 (`cut_input`, `cut_trans`, both standard), the two st
 escalating: (1) `TableOK` is NOT a projection of `IndRecTable` (the projections are
 `proAxmTable`/`numIdTable`/`proTable`/`layoutTable`/`walkTable`/`extra` + per-row readings); (2)
 `∃ N, TableOK tbl N` is NOT derivable, and structurally so — **`TableOK tbl N` constrains the PROOF
-CODES (`rowD`), asserting `Proof TAct (rowD tbl.[i]) (qqAlls …) ∧ dlen TAct (rowD tbl.[i]) ≤ N`,
+CODES (`rowD`), asserting `Proof TAct (rowD tbl.[i]) (qqAlls …) ∧ proofLen TAct (rowD tbl.[i]) ≤ N`,
 while `rowD` occurs in NONE of the six table predicates** (coordinator-verified by grep:
 `IndRecTable`, `ProAxmTable`, `NumIdTable`, `ProTable`, `LayoutTable`, `WalkTable` all 0;
 `TableOK` 1). A table can satisfy `IndRecTable` with arbitrary junk in `rowD`, so no `N` bounds it.
@@ -2488,7 +2488,7 @@ jobs) on a FORCED rebuild. **VERIFICATION DISCIPLINE WORTH KEEPING: the IDE repo
 `Package.lean` mid-edit; the agent did NOT accept its own "intermediate-state artifact" explanation
 on reasoning alone — it `touch`ed both files, forced a full rebuild, and read the final text at all
 seven sites. Intermediate-state artefacts and real breakage look IDENTICAL from a hook.**
-**THE SECOND BLOCKER: `armHyps_of_arms` requires `Czv * p4 (dlen ρ + 1) ≤ E`, which `ArmHyps`
+**THE SECOND BLOCKER: `armHyps_of_arms` requires `Czv * p4 (proofLen ρ + 1) ≤ E`, which `ArmHyps`
 cannot supply.** Both escape routes closed again, and coordinator-verified: (1) NOT DERIVABLE —
 `AxmTableOK' tbl E Ww A Cv := ∀ e ∈ A, AxmEntryOK' …` is **VACUOUS AT `A = 0`** so it bounds
 nothing; `VerifyGraph''` is the fixpoint `VPackedP'` and never mentions `E`; `ListOK` is vacuous at
@@ -2498,9 +2498,9 @@ shrinks, so `SizeOK (kitQ Cz B E) …` gets STRICTLY HARDER**. So `ArmHyps` as w
 size bound at EVERY `E`, including caps far too small for the graph's own steps to fit: **the
 previous five instances were unprovable-as-stated; this one asserts something FALSE at small `E`.**
 The same gap sits in `VerifySizeOracle` (Assemble:488) and the original `Assemble.SizeOracle`.
-**THE CONSUMER CAN SUPPLY IT (coordinator-verified): `vList_full` carries `(Ck : V) * ((dlen ρ +
+**THE CONSUMER CAN SUPPLY IT (coordinator-verified): `vList_full` carries `(Ck : V) * ((proofLen ρ +
 1)^4 + i) ≤ E` in its own binder list and calls `hsize hA hd hL` with NO cap at both sites (786,
-818)** — that dominates the needed `(Cz : V) * (dlen ρ + 1)^4 ≤ E` given `Cz ≤ Ck`, the same
+818)** — that dominates the needed `(Cz : V) * (proofLen ρ + 1)^4 ≤ E` given `Cz ≤ Ck`, the same
 domination `hle`/`asmCk` already establish for other constants at 814–820. AUTHORISED: add the cap
 binder to `VerifySizeOracle` (Assemble:488) and `ArmHyps` (Verify5:97), pass it at the two call
 sites, then build the instantiation — one commit; if the domination does not hold at
@@ -2535,7 +2535,7 @@ predicate code, and its `IndRecRows` occurrences are ANTECEDENTS INSIDE row bodi
 (listToVec …) Ple` in `row_bsVAdjL_as`), never a row whose `rowB` EQUALS `Ple`, so `∀ j < len tbl,
 formulaLen (rowB tbl.[j]) ≤ B` does not transfer (corroborating evidence: `Bounds.lean:565,582`
 take `hPle` as a SIBLING hypothesis alongside that very bound); (2) NOT dominable as a small
-constant — `cPle := flen (Rewriting.emb leS)` is an opaque `flen`, the same giant-DSL-constant class
+constant — `cPle := formulaLenMeta (Rewriting.emb leS)` is an opaque `formulaLenMeta`, the same giant-DSL-constant class
 as `cDer`/`cG`, and `hPle` bounds against `B`, not `Czv`, so `hCk`'s ≤1000000 domination is the
 wrong shape. It is load-bearing (uses across the arms, feeding every wrapper). **The consumer
 already computes it**: `kitPackage'''_of_size'` picks `B := B₀ + cPlength + cPeq + cPle` exactly so
@@ -2557,13 +2557,13 @@ census 918, all `[propext, Classical.choice, Quot.sound]`; zero `sorry`, zero `a
 zero `native_decide` tree-wide):
 ```
 ArithS.boundedInnerNec_sixteen        : BoundedInnerNec 16
-ArithS.dupoc_self_coop_unconditional  : Critch Thm 3.7 in PA-S
-ArithS.pblt_unconditional             : the uniform parametric bounded Löb theorem
+ArithS.dupoc_self_coop  : Critch Thm 3.7 in PA-S
+ArithS.pblt             : the uniform parametric bounded Löb theorem
 ArithS.sizeThmAll_holds               : SizeThmAll
 ```
 THE INSTANTIATION (`Verify5` §28, `Package` §2.5): **`Cz := 8 * Cn` is FORCED, not chosen** — the
-recursion's size conjunct sits at `kitD Czv (2·dlen ρ)` while `ArmHyps` demands the undoubled
-`kitD Cz (dlen ρ)`, and §15's `kitD_two_mul_le` bridges exactly that at factor 8; the Q side by
+recursion's size conjunct sits at `kitD Czv (2·proofLen ρ)` while `ArmHyps` demands the undoubled
+`kitD Cz (proofLen ρ)`, and §15's `kitD_two_mul_le` bridges exactly that at factor 8; the Q side by
 `kitQ_mono_const`, the length side by `p4_mono le_self_add` + `pow4_eq_p4` (the recursion's bound is
 the SMALLER one, so that direction is free); `Cn` collects the nine domination constants as
 summands with `cG` and `Ck` opaque throughout. TRAPS: §28 must sit AFTER §27 (a first attempt beside

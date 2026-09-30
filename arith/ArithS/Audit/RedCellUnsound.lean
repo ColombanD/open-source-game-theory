@@ -22,16 +22,16 @@ This file proves exactly that:
   too, so the axiom set stays literally closed under `swap` like `TAct`'s —
   `lMap_swap_mem_TBad`). It is Δ₁-axiomatized by Foundation's `Theory.Δ₁.insert`.
 * `exFalso φ : TBad ⟹₂ {φ}` — the three-node Tait derivation of ANY formula: `axm` on
-  `c_C = c_D`, `axm` on `c_C ≠ c_D` (which IS `∼(c_C = c_D)`, `coe_axNe`), one `cut`. Its
-  length is `≤ 3|φ| + 2|axEq| + 3` (`mlen_exFalso`); quoting it (`lenProvable_of_derivation`)
-  gives `LenProvable fbound k TBad ⌜φ⌝` for every `k` at least that
-  (`lenProvable_TBad_of_flen`), so `TBad` is inconsistent (`tbad_inconsistent`,
+  `c_C = c_D`, `axm` on `c_C ≠ c_D` (which IS `∼(c_C = c_D)`, `coe_constNe`), one `cut`. Its
+  length is `≤ 3|φ| + 2|axEq| + 3` (`proofLenMeta_exFalso`); quoting it (`lenBoxNat_of_derivation`)
+  gives `LenBoxNat codeBound k TBad ⌜φ⌝` for every `k` at least that
+  (`lenBoxNat_TBad_of_formulaLenMeta`), so `TBad` is inconsistent (`tbad_inconsistent`,
   `tbad_proves_bot`) and, more to the point, inconsistent AT SHORT LENGTH.
 * `EvalGraphBad` — **a verbatim copy of `ArithS.Eval`'s `EvalGraph`** (the Σ₁ fixpoint on
   tuples, its blueprint, definability, the clause inversions of `ArithS.EvalN` and the
   determinism/monotonicity facts at `ℕ`) **with `TAct` replaced by `TBad` in the `search`
   clause and nowhere else.** The evaluator is not parametric in its theory: the theory is
-  hardwired in `EvalFix.Phi` and in the blueprint's `!(lenProvableV TAct)` literal, and
+  hardwired in `EvalFix.Phi` and in the blueprint's `!(lenBox TAct)` literal, and
   making it a parameter would touch every consumer (`RedCell`, `Template`, `Agent`,
   `Assembly/*`, `Necessitation/*`); the mutation protocol asks for a copy, so this is one —
   every `Bad`-suffixed name below is the same-named declaration of `Eval.lean`/`EvalN.lean`
@@ -41,7 +41,7 @@ This file proves exactly that:
 * `guards_fit_bad`: the ex-falso proofs of BOTH guard sentences fit their budget for all
   large `k` — `guard_fits`'s argument (`exists_guard_const`, `exists_desc_const`,
   `exists_linear_size_le`) with the ex-falso constants folded in; so
-  `guard_provable_bad`: `LenProvableV TBad k` of both guard codes.
+  `guard_provable_bad`: `LenBox TBad k` of both guard codes.
 * **`red_cell_flips_when_unsound`**: `∃ K, ∀ k ≥ K, Dupoc k plays 0 and Cupod k plays 1`
   under `EvalGraphBad` (fuel 2), by the then-branch of `search_iff`; `red_cell_flip` puts
   the sound and the unsound value side by side; `red_cell_flips_unique` says no other
@@ -60,7 +60,7 @@ open LAct
 
 /-! ### 1. The inconsistent theory `TBad` -/
 
-/-- `c_C = c_D` — the contradiction of `axNe`, as the atomic equality. -/
+/-- `c_C = c_D` — the contradiction of `constNe`, as the atomic equality. -/
 def axEq : Sentence LAct := Semiformula.rel Language.Eq.eq ![cterm Act.C, cterm Act.D]
 
 /-- `c_D = c_C` — its swap (added so the axiom set stays closed under the transposition). -/
@@ -76,20 +76,20 @@ lemma axEq'_mem_TBad : axEq' ∈ TBad := Set.mem_insert_of_mem _ (Set.mem_insert
 lemma TAct_subset_TBad : TAct ⊆ TBad := fun _ h ↦
   Set.mem_insert_of_mem _ (Set.mem_insert_of_mem _ h)
 
-lemma axNe_mem_TBad : axNe ∈ TBad := TAct_subset_TBad axNe_mem_TAct
+lemma constNe_mem_TBad : constNe ∈ TBad := TAct_subset_TBad constNe_mem_TAct
 
-lemma axNe'_mem_TBad : axNe' ∈ TBad := TAct_subset_TBad axNe'_mem_TAct
+lemma constNe'_mem_TBad : constNe' ∈ TBad := TAct_subset_TBad constNe'_mem_TAct
 
 /-- Δ₁, by two `insert`s on top of `TAct`'s instance. -/
 noncomputable instance : TBad.Δ₁ := inferInstance
 
 /-- `c_C ≠ c_D` IS `∼(c_C = c_D)` (definitionally: `∼` swaps `rel`/`nrel`). -/
-lemma neg_axEq : ∼axEq = axNe := rfl
+lemma neg_axEq : ∼axEq = constNe := rfl
 
-lemma neg_axEq' : ∼axEq' = axNe' := rfl
+lemma neg_axEq' : ∼axEq' = constNe' := rfl
 
 /-- The same after the sentence-to-proposition coercion (`Rewriting.emb` is structural). -/
-lemma coe_axNe : (axNe : Proposition LAct) = ∼(axEq : Proposition LAct) := rfl
+lemma coe_constNe : (constNe : Proposition LAct) = ∼(axEq : Proposition LAct) := rfl
 
 lemma lMap_swap_axEq : Semiformula.lMap swap axEq = axEq' := by
   unfold axEq axEq'
@@ -116,9 +116,9 @@ section exFalso
 
 variable {L : Language} [L.DecidableEq] {T : Theory L}
 
-lemma mlen_axm {Γ : Finset (Proposition L)} (σ : Sentence L) (hT : σ ∈ T)
+lemma proofLenMeta_axm {Γ : Finset (Proposition L)} (σ : Sentence L) (hT : σ ∈ T)
     (hΓ : (σ : Proposition L) ∈ Γ) :
-    mlen (Derivation2.axm (T := T) σ hT hΓ) = sqlen Γ + 1 := by simp [mlen]
+    proofLenMeta (Derivation2.axm (T := T) σ hT hΓ) = sequentLenMeta Γ + 1 := by simp [proofLenMeta]
 
 end exFalso
 
@@ -127,37 +127,37 @@ end exFalso
 noncomputable def exFalso (φ : Proposition LAct) : TBad ⟹₂ {φ} :=
   Derivation2.cut (Γ := {φ}) (φ := (axEq : Proposition LAct))
     (Derivation2.axm axEq axEq_mem_TBad (Finset.mem_insert_self _ _))
-    (Derivation2.axm axNe axNe_mem_TBad (by rw [coe_axNe]; exact Finset.mem_insert_self _ _))
+    (Derivation2.axm constNe constNe_mem_TBad (by rw [coe_constNe]; exact Finset.mem_insert_self _ _))
 
 /-- **Its length**: `3|φ| + 2|c_C = c_D| + 3` — every node charges its whole sequent. -/
-theorem mlen_exFalso (φ : Proposition LAct) :
-    mlen (exFalso φ) ≤ 3 * flen φ + 2 * flen (axEq : Proposition LAct) + 3 := by
+theorem proofLenMeta_exFalso (φ : Proposition LAct) :
+    proofLenMeta (exFalso φ) ≤ 3 * formulaLenMeta φ + 2 * formulaLenMeta (axEq : Proposition LAct) + 3 := by
   unfold exFalso
-  rw [mlen_cut, mlen_axm, mlen_axm]
-  have h0 : sqlen ({φ} : Finset (Proposition LAct)) = flen φ := sqlen_singleton φ
-  have h1 := sqlen_insert_le (axEq : Proposition LAct) {φ}
-  have h2 := sqlen_insert_le (∼(axEq : Proposition LAct)) {φ}
-  rw [flen_neg] at h2
+  rw [proofLenMeta_cut, proofLenMeta_axm, proofLenMeta_axm]
+  have h0 : sequentLenMeta ({φ} : Finset (Proposition LAct)) = formulaLenMeta φ := sequentLenMeta_singleton φ
+  have h1 := sequentLenMeta_insert_le (axEq : Proposition LAct) {φ}
+  have h2 := sequentLenMeta_insert_le (∼(axEq : Proposition LAct)) {φ}
+  rw [formulaLenMeta_neg] at h2
   omega
 
 /-- **Every sentence has a `TBad`-proof of length linear in its own**: the quoted ex-falso
-derivation is a `LenProvable fbound k TBad` witness once `k ≥ 3|σ| + 2|axEq| + 3`. -/
-theorem lenProvable_TBad_of_flen {σ : Sentence LAct} {k : ℕ}
-    (h : 3 * flen (σ : Proposition LAct) + 2 * flen (axEq : Proposition LAct) + 3 ≤ k) :
-    LenProvable (fbound : ℕ → ℕ) k TBad (⌜σ⌝ : ℕ) :=
-  lenProvable_of_derivation smallCodes_LAct smallRelCodes_LAct (exFalso σ)
-    (le_trans (mlen_exFalso _) h)
+derivation is a `LenBoxNat codeBound k TBad` witness once `k ≥ 3|σ| + 2|axEq| + 3`. -/
+theorem lenBoxNat_TBad_of_formulaLenMeta {σ : Sentence LAct} {k : ℕ}
+    (h : 3 * formulaLenMeta (σ : Proposition LAct) + 2 * formulaLenMeta (axEq : Proposition LAct) + 3 ≤ k) :
+    LenBoxNat (codeBound : ℕ → ℕ) k TBad (⌜σ⌝ : ℕ) :=
+  lenBoxNat_of_derivation smallCodes_LAct smallRelCodes_LAct (exFalso σ)
+    (le_trans (proofLenMeta_exFalso _) h)
 
-/-- The object-variable box at `ℕ` is `LenProvable fbound` (as `lenProvableV_nat` for `TAct`). -/
-lemma lenProvableV_nat_TBad (k φ : ℕ) :
-    LenProvableV TBad k φ ↔ LenProvable (fbound : ℕ → ℕ) k TBad φ := by
-  have := lenProvableV_numeral (V := ℕ) TBad k φ
+/-- The object-variable box at `ℕ` is `LenBoxNat codeBound` (as `lenBox_nat` for `TAct`). -/
+lemma lenBox_nat_TBad (k φ : ℕ) :
+    LenBox TBad k φ ↔ LenBoxNat (codeBound : ℕ → ℕ) k TBad φ := by
+  have := lenBox_numeral (V := ℕ) TBad k φ
   rwa [Nat.numeral_eq] at this
 
-/-- Every sentence is `LenProvableV TBad` at some budget. -/
-theorem exists_lenProvableV_TBad (σ : Sentence LAct) : ∃ k : ℕ, LenProvableV TBad k (⌜σ⌝ : ℕ) :=
-  ⟨3 * flen (σ : Proposition LAct) + 2 * flen (axEq : Proposition LAct) + 3,
-    (lenProvableV_nat_TBad _ _).mpr (lenProvable_TBad_of_flen le_rfl)⟩
+/-- Every sentence is `LenBox TBad` at some budget. -/
+theorem exists_lenBox_TBad (σ : Sentence LAct) : ∃ k : ℕ, LenBox TBad k (⌜σ⌝ : ℕ) :=
+  ⟨3 * formulaLenMeta (σ : Proposition LAct) + 2 * formulaLenMeta (axEq : Proposition LAct) + 3,
+    (lenBox_nat_TBad _ _).mpr (lenBoxNat_TBad_of_formulaLenMeta le_rfl)⟩
 
 /-- `TBad` proves every sentence. -/
 theorem tbad_proves (σ : Sentence LAct) : TBad ⊢ σ :=
@@ -183,14 +183,14 @@ def Phi (C : Set V) (pr : V) : Prop :=
   (∃ n me opp a, ⟪n, me, opp, me, a⟫ ∈ C ∧ pr = ⟪n + 1, me, opp, pSelf, a⟫) ∨
   (∃ n me opp a, ⟪n, me, opp, opp, a⟫ ∈ C ∧ pr = ⟪n + 1, me, opp, pOpp, a⟫) ∨
   (∃ n me opp p a, ⟪n, me, opp, p, a⟫ ∈ C ∧ pr = ⟪n + 1, me, opp, pBot p, a⟫) ∨
-  (∃ n me opp p q a, ⟪n, psubst me opp p, psubst me opp q, psubst me opp p, a⟫ ∈ C ∧
+  (∃ n me opp p q a, ⟪n, substCode me opp p, substCode me opp q, substCode me opp p, a⟫ ∈ C ∧
     pr = ⟪n + 1, me, opp, pSim p q, a⟫) ∨
   (∃ n me opp b a' p q a r, ⟪n, me, opp, b, r⟫ ∈ C ∧
     ((r = a' ∧ ⟪n, me, opp, p, a⟫ ∈ C) ∨ (r ≠ a' ∧ ⟪n, me, opp, q, a⟫ ∈ C)) ∧
     pr = ⟪n + 1, me, opp, pIte b a' p q, a⟫) ∨
   (∃ n me opp k g p q a,
-    ((LenProvableV TBad k (guardCode g me opp) ∧ ⟪n, me, opp, p, a⟫ ∈ C) ∨
-      (¬LenProvableV TBad k (guardCode g me opp) ∧ ⟪n, me, opp, q, a⟫ ∈ C)) ∧
+    ((LenBox TBad k (guardCode g me opp) ∧ ⟪n, me, opp, p, a⟫ ∈ C) ∨
+      (¬LenBox TBad k (guardCode g me opp) ∧ ⟪n, me, opp, q, a⟫ ∈ C)) ∧
     pr = ⟪n + 1, me, opp, pSearch k g p q, a⟫)
 
 noncomputable def blueprint : Fixpoint.Blueprint 0 := ⟨.mkDelta
@@ -201,7 +201,7 @@ noncomputable def blueprint : Fixpoint.Blueprint 0 := ⟨.mkDelta
       (!pOppGraph p ∧ ∃ t, !pair₅Def t n me opp opp a ∧ t ∈ C) ∨
       (∃ p' < p, !pBotGraph p p' ∧ ∃ t, !pair₅Def t n me opp p' a ∧ t ∈ C) ∨
       (∃ p' < p, ∃ q < p, !pSimGraph p p' q ∧
-        ∃ sp, !psubstDef sp me opp p' ∧ ∃ sq, !psubstDef sq me opp q ∧
+        ∃ sp, !substCodeDef sp me opp p' ∧ ∃ sq, !substCodeDef sq me opp q ∧
           ∃ t, !pair₅Def t n sp sq sp a ∧ t ∈ C) ∨
       (∃ b < p, ∃ a' < p, ∃ p' < p, ∃ q < p, !pIteGraph p b a' p' q ∧
         ∃ r < pr + C + 1, (∃ t, !pair₅Def t n me opp b r ∧ t ∈ C) ∧
@@ -209,8 +209,8 @@ noncomputable def blueprint : Fixpoint.Blueprint 0 := ⟨.mkDelta
            (r ≠ a' ∧ ∃ t, !pair₅Def t n me opp q a ∧ t ∈ C))) ∨
       (∃ k < p, ∃ g < p, ∃ p' < p, ∃ q < p, !pSearchGraph p k g p' q ∧
         ∃ gc, !guardCodeGraph gc g me opp ∧
-          ((!(lenProvableV TBad).sigma k gc ∧ ∃ t, !pair₅Def t n me opp p' a ∧ t ∈ C) ∨
-           (¬!(lenProvableV TBad).pi k gc ∧ ∃ t, !pair₅Def t n me opp q a ∧ t ∈ C))) )”)
+          ((!(lenBox TBad).sigma k gc ∧ ∃ t, !pair₅Def t n me opp p' a ∧ t ∈ C) ∨
+           (¬!(lenBox TBad).pi k gc ∧ ∃ t, !pair₅Def t n me opp q a ∧ t ∈ C))) )”)
   (.mkPi “pr C.
     ∃ n <⁺ pr, ∃ me <⁺ pr, ∃ opp <⁺ pr, ∃ p <⁺ pr, ∃ a <⁺ pr, !pair₅Def pr (n + 1) me opp p a ∧
     ( !pConstGraph p a ∨
@@ -218,7 +218,7 @@ noncomputable def blueprint : Fixpoint.Blueprint 0 := ⟨.mkDelta
       (!pOppGraph p ∧ ∀ t, !pair₅Def t n me opp opp a → t ∈ C) ∨
       (∃ p' < p, !pBotGraph p p' ∧ ∀ t, !pair₅Def t n me opp p' a → t ∈ C) ∨
       (∃ p' < p, ∃ q < p, !pSimGraph p p' q ∧
-        ∀ sp, !psubstDef sp me opp p' → ∀ sq, !psubstDef sq me opp q →
+        ∀ sp, !substCodeDef sp me opp p' → ∀ sq, !substCodeDef sq me opp q →
           ∀ t, !pair₅Def t n sp sq sp a → t ∈ C) ∨
       (∃ b < p, ∃ a' < p, ∃ p' < p, ∃ q < p, !pIteGraph p b a' p' q ∧
         ∃ r < pr + C + 1, (∀ t, !pair₅Def t n me opp b r → t ∈ C) ∧
@@ -226,8 +226,8 @@ noncomputable def blueprint : Fixpoint.Blueprint 0 := ⟨.mkDelta
            (r ≠ a' ∧ ∀ t, !pair₅Def t n me opp q a → t ∈ C))) ∨
       (∃ k < p, ∃ g < p, ∃ p' < p, ∃ q < p, !pSearchGraph p k g p' q ∧
         ∀ gc, !guardCodeGraph gc g me opp →
-          ((!(lenProvableV TBad).pi k gc ∧ ∀ t, !pair₅Def t n me opp p' a → t ∈ C) ∨
-           (¬!(lenProvableV TBad).sigma k gc ∧ ∀ t, !pair₅Def t n me opp q a → t ∈ C))) )”)⟩
+          ((!(lenBox TBad).pi k gc ∧ ∀ t, !pair₅Def t n me opp p' a → t ∈ C) ∨
+           (¬!(lenBox TBad).sigma k gc ∧ ∀ t, !pair₅Def t n me opp q a → t ∈ C))) )”)⟩
 
 /-- Every component of a tuple is below any set containing the tuple. -/
 private lemma lt_of_tuple_mem {n me opp b r C : V} (h : ⟪n, me, opp, b, r⟫ ∈ C) : r < C :=
@@ -253,13 +253,13 @@ private lemma phi_iff (C pr : V) :
       (p = pOpp ∧ ⟪n, me, opp, opp, a⟫ ∈ C) ∨
       (∃ p' < p, p = pBot p' ∧ ⟪n, me, opp, p', a⟫ ∈ C) ∨
       (∃ p' < p, ∃ q < p, p = pSim p' q ∧
-        ⟪n, psubst me opp p', psubst me opp q, psubst me opp p', a⟫ ∈ C) ∨
+        ⟪n, substCode me opp p', substCode me opp q, substCode me opp p', a⟫ ∈ C) ∨
       (∃ b < p, ∃ a' < p, ∃ p' < p, ∃ q < p, p = pIte b a' p' q ∧
         ∃ r < pr + C + 1, ⟪n, me, opp, b, r⟫ ∈ C ∧
           ((r = a' ∧ ⟪n, me, opp, p', a⟫ ∈ C) ∨ (r ≠ a' ∧ ⟪n, me, opp, q, a⟫ ∈ C))) ∨
       (∃ k < p, ∃ g < p, ∃ p' < p, ∃ q < p, p = pSearch k g p' q ∧
-        ((LenProvableV TBad k (guardCode g me opp) ∧ ⟪n, me, opp, p', a⟫ ∈ C) ∨
-         (¬LenProvableV TBad k (guardCode g me opp) ∧ ⟪n, me, opp, q, a⟫ ∈ C))) ) := by
+        ((LenBox TBad k (guardCode g me opp) ∧ ⟪n, me, opp, p', a⟫ ∈ C) ∨
+         (¬LenBox TBad k (guardCode g me opp) ∧ ⟪n, me, opp, q, a⟫ ∈ C))) ) := by
   constructor
   · rintro (⟨n, me, opp, a, rfl⟩ | ⟨n, me, opp, a, h, rfl⟩ | ⟨n, me, opp, a, h, rfl⟩ |
       ⟨n, me, opp, p, a, h, rfl⟩ | ⟨n, me, opp, p, q, a, h, rfl⟩ |
@@ -300,11 +300,11 @@ noncomputable def construction : Fixpoint.Construction V blueprint where
     constructor
     · intro v
       simp [blueprint, HierarchySymbol.Semiformula.val_sigma,
-        (LenProvableV.defined TBad).proper.iff', psubst_defined.df]
+        (LenBox.defined TBad).proper.iff', substCode_defined.df]
     · intro v
       symm
-      simpa [blueprint, HierarchySymbol.Semiformula.val_sigma, (LenProvableV.defined TBad).df,
-        psubst_defined.df, pSelfGraph, pOppGraph, pSelf, pOpp, lt_and_eq_succ_iff]
+      simpa [blueprint, HierarchySymbol.Semiformula.val_sigma, (LenBox.defined TBad).df,
+        substCode_defined.df, pSelfGraph, pOppGraph, pSelf, pOpp, lt_and_eq_succ_iff]
         using phi_iff (v 1) (v 0)
   monotone := by
     rintro C C' hC _ pr (⟨n, me, opp, a, rfl⟩ | ⟨n, me, opp, a, h, rfl⟩ | ⟨n, me, opp, a, h, rfl⟩ |
@@ -380,12 +380,12 @@ lemma EvalGraphBad.case_iff {n me opp p a : V} :
       (p = pOpp ∧ EvalGraphBad n' me opp opp a) ∨
       (∃ p', p = pBot p' ∧ EvalGraphBad n' me opp p' a) ∨
       (∃ p' q, p = pSim p' q ∧
-        EvalGraphBad n' (psubst me opp p') (psubst me opp q) (psubst me opp p') a) ∨
+        EvalGraphBad n' (substCode me opp p') (substCode me opp q) (substCode me opp p') a) ∨
       (∃ b a' p' q r, p = pIte b a' p' q ∧ EvalGraphBad n' me opp b r ∧
         ((r = a' ∧ EvalGraphBad n' me opp p' a) ∨ (r ≠ a' ∧ EvalGraphBad n' me opp q a))) ∨
       (∃ k g p' q, p = pSearch k g p' q ∧
-        ((LenProvableV TBad k (guardCode g me opp) ∧ EvalGraphBad n' me opp p' a) ∨
-         (¬LenProvableV TBad k (guardCode g me opp) ∧ EvalGraphBad n' me opp q a))) ) := by
+        ((LenBox TBad k (guardCode g me opp) ∧ EvalGraphBad n' me opp p' a) ∨
+         (¬LenBox TBad k (guardCode g me opp) ∧ EvalGraphBad n' me opp q a))) ) := by
   rw [EvalGraphBad, EvalFixBad.construction.case]
   simp only [EvalFixBad.construction, EvalFixBad.Phi, Set.mem_setOf_eq, pair_ext_iff]
   constructor
@@ -439,7 +439,7 @@ lemma EvalGraphBad.bot_iff {n me opp p a : V} :
 
 lemma EvalGraphBad.sim_iff {n me opp p q a : V} :
     EvalGraphBad (n + 1) me opp (pSim p q) a ↔
-    EvalGraphBad n (psubst me opp p) (psubst me opp q) (psubst me opp p) a := by
+    EvalGraphBad n (substCode me opp p) (substCode me opp q) (substCode me opp p) a := by
   rw [EvalGraphBad.case_iff]; simp
 
 lemma EvalGraphBad.ite_iff {n me opp b a' p q a : V} :
@@ -450,8 +450,8 @@ lemma EvalGraphBad.ite_iff {n me opp b a' p q a : V} :
 
 lemma EvalGraphBad.search_iff {n me opp k g p q a : V} :
     EvalGraphBad (n + 1) me opp (pSearch k g p q) a ↔
-    ((LenProvableV TBad k (guardCode g me opp) ∧ EvalGraphBad n me opp p a) ∨
-     (¬LenProvableV TBad k (guardCode g me opp) ∧ EvalGraphBad n me opp q a)) := by
+    ((LenBox TBad k (guardCode g me opp) ∧ EvalGraphBad n me opp p a) ∨
+     (¬LenBox TBad k (guardCode g me opp) ∧ EvalGraphBad n me opp q a)) := by
   rw [EvalGraphBad.case_iff]; simp
 
 end inversion
@@ -545,50 +545,50 @@ end nat
 `guard_fits`'s argument with the ex-falso constants (`3·|guard| + 2·|axEq| + 3 ≤ k`). -/
 theorem guards_fit_bad :
     ∃ K, ∀ k ≥ K, ∀ a ≤ 1,
-      3 * flen (Rewriting.emb (guardSentenceA a (Dupoc k) (Cupod k)) : Proposition LAct) +
-        2 * flen (axEq : Proposition LAct) + 3 ≤ k ∧
-      3 * flen (Rewriting.emb (guardSentenceA a (Cupod k) (Dupoc k)) : Proposition LAct) +
-        2 * flen (axEq : Proposition LAct) + 3 ≤ k := by
+      3 * formulaLenMeta (Rewriting.emb (guardSentence a (Dupoc k) (Cupod k)) : Proposition LAct) +
+        2 * formulaLenMeta (axEq : Proposition LAct) + 3 ≤ k ∧
+      3 * formulaLenMeta (Rewriting.emb (guardSentence a (Cupod k) (Dupoc k)) : Proposition LAct) +
+        2 * formulaLenMeta (axEq : Proposition LAct) + 3 ≤ k := by
   obtain ⟨c, hc⟩ := exists_guard_const
   obtain ⟨D, hD⟩ := exists_desc_const
   obtain ⟨K, hK⟩ := exists_linear_size_le
-    (3 * (c * (2 * D + 5)) + 2 * flen (axEq : Proposition LAct) + 3) (3 * (72 * c))
+    (3 * (c * (2 * D + 5)) + 2 * formulaLenMeta (axEq : Proposition LAct) + 3) (3 * (72 * c))
   refine ⟨K, fun k hk a ha ↦ ?_⟩
   obtain ⟨h1, h2⟩ := hD k
-  have b1 : flen (Rewriting.emb (guardSentenceA a (Dupoc k) (Cupod k)) : Proposition LAct) ≤
+  have b1 : formulaLenMeta (Rewriting.emb (guardSentence a (Dupoc k) (Cupod k)) : Proposition LAct) ≤
       c * (2 * D + 5) + 72 * c * Nat.size k :=
-    calc flen (Rewriting.emb (guardSentenceA a (Dupoc k) (Cupod k)) : Proposition LAct)
-        ≤ c * (tlen (Rew.emb (dnumT (Dupoc k)) : SyntacticSemiterm LAct 0) +
-            tlen (Rew.emb (dnumT (Cupod k)) : SyntacticSemiterm LAct 0) + 5) := hc _ _ a ha
+    calc formulaLenMeta (Rewriting.emb (guardSentence a (Dupoc k) (Cupod k)) : Proposition LAct)
+        ≤ c * (termLenMeta (Rew.emb (canonicalMeta (Dupoc k)) : SyntacticSemiterm LAct 0) +
+            termLenMeta (Rew.emb (canonicalMeta (Cupod k)) : SyntacticSemiterm LAct 0) + 5) := hc _ _ a ha
       _ ≤ c * (72 * Nat.size k + 2 * D + 5) := Nat.mul_le_mul_left _ (by omega)
       _ = c * (2 * D + 5) + 72 * c * Nat.size k := by ring
-  have b2 : flen (Rewriting.emb (guardSentenceA a (Cupod k) (Dupoc k)) : Proposition LAct) ≤
+  have b2 : formulaLenMeta (Rewriting.emb (guardSentence a (Cupod k) (Dupoc k)) : Proposition LAct) ≤
       c * (2 * D + 5) + 72 * c * Nat.size k :=
-    calc flen (Rewriting.emb (guardSentenceA a (Cupod k) (Dupoc k)) : Proposition LAct)
-        ≤ c * (tlen (Rew.emb (dnumT (Cupod k)) : SyntacticSemiterm LAct 0) +
-            tlen (Rew.emb (dnumT (Dupoc k)) : SyntacticSemiterm LAct 0) + 5) := hc _ _ a ha
+    calc formulaLenMeta (Rewriting.emb (guardSentence a (Cupod k) (Dupoc k)) : Proposition LAct)
+        ≤ c * (termLenMeta (Rew.emb (canonicalMeta (Cupod k)) : SyntacticSemiterm LAct 0) +
+            termLenMeta (Rew.emb (canonicalMeta (Dupoc k)) : SyntacticSemiterm LAct 0) + 5) := hc _ _ a ha
       _ ≤ c * (72 * Nat.size k + 2 * D + 5) := Nat.mul_le_mul_left _ (by omega)
       _ = c * (2 * D + 5) + 72 * c * Nat.size k := by ring
-  have hK' : 3 * (c * (2 * D + 5) + 72 * c * Nat.size k) + 2 * flen (axEq : Proposition LAct) + 3 ≤ k :=
-    calc 3 * (c * (2 * D + 5) + 72 * c * Nat.size k) + 2 * flen (axEq : Proposition LAct) + 3
-        = 3 * (c * (2 * D + 5)) + 2 * flen (axEq : Proposition LAct) + 3 +
+  have hK' : 3 * (c * (2 * D + 5) + 72 * c * Nat.size k) + 2 * formulaLenMeta (axEq : Proposition LAct) + 3 ≤ k :=
+    calc 3 * (c * (2 * D + 5) + 72 * c * Nat.size k) + 2 * formulaLenMeta (axEq : Proposition LAct) + 3
+        = 3 * (c * (2 * D + 5)) + 2 * formulaLenMeta (axEq : Proposition LAct) + 3 +
             3 * (72 * c) * Nat.size k := by ring
       _ ≤ k := hK k hk
   exact ⟨by omega, by omega⟩
 
 /-- **Both guards are found under `TBad`**: for all large `k`, Dupoc's guard against Cupod
 ("Cupod plays `C` against me") and Cupod's guard against Dupoc ("Dupoc plays `D` against me")
-are `LenProvableV TBad k` — from a contradiction, everything is short. -/
+are `LenBox TBad k` — from a contradiction, everything is short. -/
 theorem guard_provable_bad :
     ∃ K, ∀ k ≥ K,
-      LenProvableV TBad k (guardCode (⌜guardTemplate 0⌝ : ℕ) (Dupoc k) (Cupod k)) ∧
-      LenProvableV TBad k (guardCode (⌜guardTemplate 1⌝ : ℕ) (Cupod k) (Dupoc k)) := by
+      LenBox TBad k (guardCode (⌜guardTemplate 0⌝ : ℕ) (Dupoc k) (Cupod k)) ∧
+      LenBox TBad k (guardCode (⌜guardTemplate 1⌝ : ℕ) (Cupod k) (Dupoc k)) := by
   obtain ⟨K, hK⟩ := guards_fit_bad
   refine ⟨K, fun k hk ↦ ⟨?_, ?_⟩⟩
-  · rw [← quote_guardSentenceA, lenProvableV_nat_TBad]
-    exact lenProvable_TBad_of_flen (hK k hk 0 (by norm_num)).1
-  · rw [← quote_guardSentenceA, lenProvableV_nat_TBad]
-    exact lenProvable_TBad_of_flen (hK k hk 1 le_rfl).2
+  · rw [← quote_guardSentence, lenBox_nat_TBad]
+    exact lenBoxNat_TBad_of_formulaLenMeta (hK k hk 0 (by norm_num)).1
+  · rw [← quote_guardSentence, lenBox_nat_TBad]
+    exact lenBoxNat_TBad_of_formulaLenMeta (hK k hk 1 le_rfl).2
 
 /-! ### 5. The flip -/
 
@@ -632,7 +632,7 @@ end ArithS
 
 #print axioms ArithS.tbad_inconsistent
 #print axioms ArithS.tbad_proves_bot
-#print axioms ArithS.lenProvable_TBad_of_flen
+#print axioms ArithS.lenBoxNat_TBad_of_formulaLenMeta
 #print axioms ArithS.guard_provable_bad
 #print axioms ArithS.red_cell_flips_when_unsound
 #print axioms ArithS.red_cell_flip

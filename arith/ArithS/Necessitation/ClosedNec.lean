@@ -10,13 +10,13 @@ box `Box_g χ`. Route B (`ROUTE_B_SCOPE.md` §3 Phase 0) needs the same construc
 full budget. This file delivers it:
 
     closedInnerNec_sixteen : ∀ σ : Sentence LAct, ∃ C : ℕ, ∀ V b,
-      LenDerivable TAct b ⌜σ⌝ → ∃ e ≤ C·(b^16 + 1), LenDerivable TAct e (boxSentenceCode σ b)
+      LenBoxUnbounded TAct b ⌜σ⌝ → ∃ e ≤ C·(b^16 + 1), LenBoxUnbounded TAct e (boxSentenceCode σ b)
 
 where `boxSentenceCode σ b := instB ⌜boxClosed σ⌝ b` is the CODE of the `LAct`-sentence
-"`σ` has a `TAct`-proof of length `≤ b`" with `b` written as the BINARY NUMERAL TERM `bnum b` and `σ`
-named by its (unary) Gödel numeral — `boxClosed σ := lenDerivableDef ⇜ ![#0, ⌜σ⌝]`, the budget in the
+"`σ` has a `TAct`-proof of length `≤ b`" with `b` written as the BINARY NUMERAL TERM `binNumeral b` and `σ`
+named by its (unary) Gödel numeral — `boxClosed σ := lenBoxUnboundedDef ⇜ ![#0, ⌜σ⌝]`, the budget in the
 free slot `#0`, exactly as `Prep.Box_g` fills its slots; the code equation is
-`boxSentenceCode_eq : boxSentenceCode σ b = lenDerFact (bnum b) (numeral ⌜σ⌝)` and the semantics is
+`boxSentenceCode_eq : boxSentenceCode σ b = lenDerFact (binNumeral b) (numeral ⌜σ⌝)` and the semantics is
 `eval_boxSentence_iff` (in every `LAct`-structure with a standard `ℒₒᵣ`-reduct; `_std`/`_swap` are the two
 standard readings).
 
@@ -26,13 +26,13 @@ The verification kit itself (`Assemble.VerifyKit'''`: `rootSteps_ok`, `vList`, t
 an ARBITRARY conclusion `x` and cap `E` — it is re-used verbatim. Three pieces of `Top.lean`/`Assemble.lean`
 are specific to the parametric form and are replaced here, none of them modified:
 
-* the PIN (`PinKit'`: `instBFact &(i+2) (qNum χ) (bnum k)` via the certified substitution) — replaced by the
+* the PIN (`PinKit'`: `instBFact &(i+2) (qNum χ) (binNumeral k)` via the certified substitution) — replaced by the
   numeral identification `NumId.numId_sentence σ` on the ROOT DOSSIER (`RootLayout.1`), which leaves
   `eqFact &(i+2) (numeral ⌜σ⌝)` with a shift-free list of standard length `Cσ`;
 * the CLOSING BLOCK (`closeSteps`: the three numeral lemmas N5/N4/N4 computing `‖k‖³`, `gIntroNum`,
   `boxIntro` into `boxFact`) — replaced by `closeStepsC`: `goalElim`, the ONE numeral lemma
-  `leFact (bnum (dlen ρ)) (bnum b)` (`NumSteps.leCode`), `dlenDefIntro`, `proofIntro`, `leTrans`,
-  `lenDerIntro` at `wa := bnum b`, and ONE NEW ROW, the equality congruence
+  `leFact (binNumeral (proofLen ρ)) (binNumeral b)` (`NumSteps.leCode`), `proofLenDefIntro`, `proofIntro`, `leTrans`,
+  `lenDerIntro` at `wa := binNumeral b`, and ONE NEW ROW, the equality congruence
   `lenDerCong : ∀ g' g a, LenDer a g → g = g' → LenDer a g'` (§2 — `Lib` by truth in every model), which
   replaces the eigenvariable `&(js+3)` by the numeral of `σ`;
 * the COST ARITHMETIC (`boundedInnerNec_of_kit'''`, graded in `G = gBudget k + 1`, `u = ‖k‖ + 1`) —
@@ -77,11 +77,11 @@ variable {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
 
 section closedBox
 
-/-- `LenDerivable TAct a g` as an `LAct`-semisentence (`a g` = budget, formula). -/
+/-- `LenBoxUnbounded TAct a g` as an `LAct`-semisentence (`a g` = budget, formula). -/
 noncomputable def lenDerA : Semisentence LAct 2 :=
-  Semiformula.lMap emb (↑(lenDerivableDef TAct) : ArithmeticSemisentence 2)
+  Semiformula.lMap emb (↑(lenBoxUnboundedDef TAct) : ArithmeticSemisentence 2)
 
-/-- **The closed box**: `boxClosed σ (b) := LenDerivable b ⌜σ⌝`, the budget in the free slot `#0` and the
+/-- **The closed box**: `boxClosed σ (b) := LenBoxUnbounded b ⌜σ⌝`, the budget in the free slot `#0` and the
 sentence named by its Gödel numeral (an astronomical CONSTANT, never evaluated — the `Box_g` discipline). -/
 noncomputable def boxClosed (σ : Sentence LAct) : Semisentence LAct 1 :=
   lenDerA ⇜ ![#0, Semiterm.lMap emb (⌜σ⌝ : ArithmeticSemiterm Empty 1)]
@@ -93,7 +93,7 @@ lemma boxClosed_def (σ : Sentence LAct) :
 `boxClosed σ (b)` holds iff `⌜σ⌝` has a `TAct`-proof code of length `≤ b`. -/
 theorem eval_boxSentence_iff (σ : Sentence LAct) (S : Structure LAct V)
     (hS : Structure.lMap emb S = standardModel V) (b : V) :
-    Semiformula.Eval (s := S) ![b] Empty.elim (boxClosed σ) ↔ LenDerivable TAct b (⌜σ⌝ : V) := by
+    Semiformula.Eval (s := S) ![b] Empty.elim (boxClosed σ) ↔ LenBoxUnbounded TAct b (⌜σ⌝ : V) := by
   rw [boxClosed_def, Semiformula.eval_substs]
   have hv : (Semiterm.val (s := S) (b :> ![]) Empty.elim ∘
       ![#0, Semiterm.lMap emb (⌜σ⌝ : ArithmeticSemiterm Empty 1)]) = ![b, (⌜σ⌝ : V)] := by
@@ -103,7 +103,7 @@ theorem eval_boxSentence_iff (σ : Sentence LAct) (S : Structure LAct V)
   rw [hv]
   unfold lenDerA
   rw [Semiformula.eval_lMap, hS]
-  simp [(LenDerivable.defined (V := V) TAct).iff]
+  simp [(LenBoxUnbounded.defined (V := V) TAct).iff]
 
 /-- The unary numeral term of `⌜σ⌝` (the closed-sentence twin of `Top.qNum`). -/
 noncomputable def qNumS (σ : Sentence LAct) : V := numeral (⌜σ⌝ : V)
@@ -144,10 +144,10 @@ theorem quote_boxClosed (σ : Sentence LAct) :
   simp only [SemitermVec.val_cons, SemitermVec.val_nil, Diag.typed_val_emb, quote_lMap_gödel]
   rfl
 
-/-- **The code equation**: `boxSentenceCode σ b = lenDerFact (bnum b) (numeral ⌜σ⌝)` — the fact the closing
+/-- **The code equation**: `boxSentenceCode σ b = lenDerFact (binNumeral b) (numeral ⌜σ⌝)` — the fact the closing
 block produces. -/
 theorem boxSentenceCode_eq (σ : Sentence LAct) (b : V) :
-    boxSentenceCode σ b = lenDerFact (bnum b) (qNumS σ) := by
+    boxSentenceCode σ b = lenDerFact (binNumeral b) (qNumS σ) := by
   unfold boxSentenceCode
   rw [quote_boxClosed, instB]
   have hq : IsSemiterm LAct ((0 : V) + 1) (qNumS σ) :=
@@ -155,21 +155,21 @@ theorem boxSentenceCode_eq (σ : Sentence LAct) (b : V) :
   have hb : IsSemiterm LAct ((0 : V) + 1) (^#0 : V) := by simp
   have hv : IsSemitermVec LAct ((0 : V) + 1 + 1) ((0 : V) + 1) (^#0 ∷ qNumS σ ∷ (0 : V)) :=
     IsSemitermVec.adjoin (IsSemitermVec.adjoin (IsSemitermVec.nil (L := LAct) ((0 : V) + 1)) hq) hb
-  have hw : IsSemitermVec LAct ((0 : V) + 1) (0 : V) (bnum b ∷ (0 : V)) :=
-    IsSemitermVec.adjoin (IsSemitermVec.nil (L := LAct) (0 : V)) (bnum_term_LAct b)
+  have hw : IsSemitermVec LAct ((0 : V) + 1) (0 : V) (binNumeral b ∷ (0 : V)) :=
+    IsSemitermVec.adjoin (IsSemitermVec.nil (L := LAct) (0 : V)) (binNumeral_term_LAct b)
   have h2 : ((2 : ℕ) : V) = 0 + 1 + 1 := by simp [one_add_one_eq_two]
   rw [substs_substs (h2 ▸ isSemiformula_PlenDer) hw hv]
   unfold lenDerFact
   congr 1
   rw [termSubstVec_cons hb.isUTerm (IsSemitermVec.adjoin (IsSemitermVec.nil (L := LAct) ((0 : V) + 1)) hq).isUTerm,
     termSubstVec_cons hq.isUTerm (IsSemitermVec.nil (L := LAct) ((0 : V) + 1)).isUTerm, termSubstVec_nil, termSubst_bvar,
-    termSubst_eq_self (L := LAct) (w := bnum b ∷ (0 : V)) (isSemiterm_qNumS σ) (fun i hi ↦ by simp at hi)]
+    termSubst_eq_self (L := LAct) (w := binNumeral b ∷ (0 : V)) (isSemiterm_qNumS σ) (fun i hi ↦ by simp at hi)]
   simp
 
 /-- The ℕ reading: at a standard budget `k`, `boxSentenceCode σ k` is the quote of the `LAct`-SENTENCE
-`boxClosed σ ⇜ ![bnumT k]` (`InstV.quote_instB`). -/
+`boxClosed σ ⇜ ![binNumeralMeta k]` (`InstV.quote_instB`). -/
 theorem boxSentenceCode_nat (σ : Sentence LAct) (k : ℕ) :
-    boxSentenceCode σ (k : V) = ⌜(boxClosed σ ⇜ ![Semiterm.lMap emb (bnumT k)] : Sentence LAct)⌝ :=
+    boxSentenceCode σ (k : V) = ⌜(boxClosed σ ⇜ ![Semiterm.lMap emb (binNumeralMeta k)] : Sentence LAct)⌝ :=
   quote_instB (boxClosed σ) k
 
 lemma shiftIterV_lenDerFact {a g : V} (ha : IsSemiterm LAct 0 a) (hg : IsSemiterm LAct 0 g) (c : V) :
@@ -178,8 +178,8 @@ lemma shiftIterV_lenDerFact {a g : V} (ha : IsSemiterm LAct 0 a) (hg : IsSemiter
 
 /-- The closed target is closed: shifts do not move it. -/
 lemma shiftIterV_targetC (σ : Sentence LAct) (b c : V) :
-    shiftIterV (lenDerFact (bnum b) (qNumS σ)) c = lenDerFact (bnum b) (qNumS σ) := by
-  rw [shiftIterV_lenDerFact (isSemiterm_bnum_LAct 0 b) (isSemiterm_qNumS σ), termShiftIterV_bnumTop,
+    shiftIterV (lenDerFact (binNumeral b) (qNumS σ)) c = lenDerFact (binNumeral b) (qNumS σ) := by
+  rw [shiftIterV_lenDerFact (isSemiterm_binNumeral_LAct 0 b) (isSemiterm_qNumS σ), termShiftIterV_binNumeralTop,
     termShiftIterV_qNumS]
 
 end closedBox
@@ -189,12 +189,12 @@ end closedBox
 section congRow
 
 noncomputable def lenDerCongB : ArithmeticSemisentence 3 :=
-  “g' g a. !(lenDerivableDef TAct) a g → g = g' → !(lenDerivableDef TAct) a g'”
+  “g' g a. !(lenBoxUnboundedDef TAct) a g → g = g' → !(lenBoxUnboundedDef TAct) a g'”
 noncomputable def lenDerCong : ArithmeticSentence := ∀¹* lenDerCongB
 
 lemma models_lenDerCong : V↓[ℒₒᵣ] ⊧ lenDerCong ↔
-    ∀ g' g a : V, LenDerivable TAct a g → g = g' → LenDerivable TAct a g' := by
-  simp [lenDerCong, lenDerCongB, models_iff, Matrix.vecForall_iff, (LenDerivable.defined (V := V) TAct).iff]
+    ∀ g' g a : V, LenBoxUnbounded TAct a g → g = g' → LenBoxUnbounded TAct a g' := by
+  simp [lenDerCong, lenDerCongB, models_iff, Matrix.vecForall_iff, (LenBoxUnbounded.defined (V := V) TAct).iff]
 
 theorem pa_proves_lenDerCong : 𝗣𝗔 ⊢ lenDerCong :=
   Lib.pa_proves_of_models fun _ _ _ ↦ models_lenDerCong.mpr fun _ _ _ h₁ h₂ ↦ h₂ ▸ h₁
@@ -330,40 +330,40 @@ end closedTable
 
 section closeStepsC
 
-/-- `closeStepsC σ b ρ js tblN`: with the root goal fact `goalFact (^&js) (bnum (dlen ρ))`, the chain fact
+/-- `closeStepsC σ b ρ js tblN`: with the root goal fact `goalFact (^&js) (binNumeral (proofLen ρ))`, the chain fact
 `insFact &js &(js+1) 𝟎` and the pinned `eqFact &(js+1) (numeral ⌜σ⌝)` in context — `goalElim` (2 shifts:
 `d = &1`, `n = &0`, the sequent at `&(js+2)`, the member at `&(js+3)`), then the numeral lemma
-`dlen ρ ≤ b` (N2), `dlenDefIntro [&1, &0]`, `proofIntro [&(js+2), &(js+3), &1]`, `leTrans [bnum b, bnum (dlen ρ), &0]`,
-`lenDerIntro [&1, &0, &(js+3), bnum b]`, `lenDerCong [bnum b, &(js+3), numeral ⌜σ⌝]` — whose conclusion is the
-closed target `lenDerFact (bnum b) (numeral ⌜σ⌝)`. `11` steps, `2` shifts. -/
+`proofLen ρ ≤ b` (N2), `proofLenDefIntro [&1, &0]`, `proofIntro [&(js+2), &(js+3), &1]`, `leTrans [binNumeral b, binNumeral (proofLen ρ), &0]`,
+`lenDerIntro [&1, &0, &(js+3), binNumeral b]`, `lenDerCong [binNumeral b, &(js+3), numeral ⌜σ⌝]` — whose conclusion is the
+closed target `lenDerFact (binNumeral b) (numeral ⌜σ⌝)`. `11` steps, `2` shifts. -/
 noncomputable def closeStepsC (σ : Sentence LAct) (b ρ js tblN : V) : V :=
-  appendV (goalElim (^&js) (bnum (dlen TAct ρ)))
-    (sLemma (leFact (bnum (dlen TAct ρ)) (bnum b)) (leCode tblN (dlen TAct ρ) b) ∷
+  appendV (goalElim (^&js) (binNumeral (proofLen TAct ρ)))
+    (sLemma (leFact (binNumeral (proofLen TAct ρ)) (binNumeral b)) (leCode tblN (proofLen TAct ρ) b) ∷
      mkStep topPieces 150 ?[^&1, ^&0] ∷
      mkStep topPieces 151 ?[^&(js + 2), ^&(js + 3), ^&1] ∷
-     mkStep topPieces 110 ?[bnum b, bnum (dlen TAct ρ), ^&0] ∷
-     mkStep topPieces 153 ?[^&1, ^&0, ^&(js + 3), bnum b] ∷
-     stepLenDerCong (bnum b) (^&(js + 3)) (qNumS σ) ∷ (0 : V))
+     mkStep topPieces 110 ?[binNumeral b, binNumeral (proofLen TAct ρ), ^&0] ∷
+     mkStep topPieces 153 ?[^&1, ^&0, ^&(js + 3), binNumeral b] ∷
+     stepLenDerCong (binNumeral b) (^&(js + 3)) (qNumS σ) ∷ (0 : V))
 
 /-- **The closing steps are applicable** and end with the closed target: cap `8`, cut-admitting, `2` shifts,
 `11` steps. -/
 theorem closeStepsC_ok (σ : Sentence LAct) {tbl N E Γ tblN N' B' b ρ js : V}
     (htbl : TableOK tbl N) (hC : ClosedTable tbl) (htblN : NumTableOK tblN N' B')
-    (hΓ : IsFormulaSet LAct Γ) (hρ : dlen TAct ρ ≤ b)
-    (hE1 : js + 4 ≤ E) (hEq : termLen LAct (qNumS σ : V) ≤ E) (hEb : termLen LAct (bnum b) ≤ E)
-    (hEd : termLen LAct (bnum (dlen TAct ρ)) ≤ E)
-    (hgoal : neg LAct (goalFact (^&js) (bnum (dlen TAct ρ))) ∈ Γ)
+    (hΓ : IsFormulaSet LAct Γ) (hρ : proofLen TAct ρ ≤ b)
+    (hE1 : js + 4 ≤ E) (hEq : termLen LAct (qNumS σ : V) ≤ E) (hEb : termLen LAct (binNumeral b) ≤ E)
+    (hEd : termLen LAct (binNumeral (proofLen TAct ρ)) ≤ E)
+    (hgoal : neg LAct (goalFact (^&js) (binNumeral (proofLen TAct ρ))) ∈ Γ)
     (hins : neg LAct (insFact (^&js) (^&(js + 1)) (𝟎 : V)) ∈ Γ)
     (hpin : neg LAct (eqFactB (^&(js + 1)) (qNumS σ)) ∈ Γ) :
     ListOK tbl E ((8 : ℕ) : V) Γ (closeStepsC σ b ρ js tblN) ∧
     NoDrop' (closeStepsC σ b ρ js tblN) ∧ shiftsV (closeStepsC σ b ρ js tblN) = 2 ∧
     len (closeStepsC σ b ρ js tblN) = 11 ∧
-    neg LAct (lenDerFact (bnum b) (qNumS σ)) ∈ finalCtx Γ (closeStepsC σ b ρ js tblN) := by
+    neg LAct (lenDerFact (binNumeral b) (qNumS σ)) ∈ finalCtx Γ (closeStepsC σ b ρ js tblN) := by
   have hT : TopTable tbl := hC.topTable
   have h0 : IsSemiterm LAct (0 : V) (𝟎 : V) := isSemiterm_qqZero_LAct 0
   have hq : IsSemiterm LAct (0 : V) (qNumS σ) := isSemiterm_qNumS σ
-  have hbb : IsSemiterm LAct (0 : V) (bnum b) := isSemiterm_bnum_LAct 0 b
-  have hbd : IsSemiterm LAct (0 : V) (bnum (dlen TAct ρ)) := isSemiterm_bnum_LAct 0 _
+  have hbb : IsSemiterm LAct (0 : V) (binNumeral b) := isSemiterm_binNumeral_LAct 0 b
+  have hbd : IsSemiterm LAct (0 : V) (binNumeral (proofLen TAct ρ)) := isSemiterm_binNumeral_LAct 0 _
   have hE4 : (4 : V) ≤ E := le_trans le_add_self hE1
   have hf0 : termLen LAct (^&0 : V) ≤ E := termLen_fvar_le (le_trans (by norm_num) hE4)
   have hf1 : termLen LAct (^&1 : V) ≤ E := termLen_fvar_le (le_trans (by norm_num) hE4)
@@ -379,8 +379,8 @@ theorem closeStepsC_ok (σ : Sentence LAct) {tbl N E Γ tblN N' B' b ρ js : V}
   -- the recovery of the goal
   obtain ⟨gok, gnd, gsh, _, gder, gfst, gdlen, gle⟩ := goalElim_ok 8 htbl hΓ (by simp) hbd hgoal
   rw [termShift_fvar, termShift_fvar, e2] at gfst
-  rw [termShift_bnum, termShift_bnum] at gle
-  have hΓ₀ : IsFormulaSet LAct (finalCtx Γ (goalElim (^&js) (bnum (dlen TAct ρ)))) :=
+  rw [termShift_binNumeral, termShift_binNumeral] at gle
+  have hΓ₀ : IsFormulaSet LAct (finalCtx Γ (goalElim (^&js) (binNumeral (proofLen TAct ρ)))) :=
     finalCtx_isFormulaSet 8 htbl hΓ gok
   have hins₀ := mem_finalCtx_of_mem' gnd hins
   rw [gsh, shiftIterV_neg (isFormula_insFact (by simp) (by simp) h0), shiftIterV_insFact (by simp) (by simp) h0,
@@ -388,25 +388,25 @@ theorem closeStepsC_ok (σ : Sentence LAct) {tbl N E Γ tblN N' B' b ρ js : V}
   have hpin₀ := mem_finalCtx_of_mem' gnd hpin
   rw [gsh, shiftIterV_neg (isFormula_eqFactB (by simp) hq), shiftIterV_eqFactB (by simp) hq,
     termShiftIterV_fvar, termShiftIterV_qNumS, e3] at hpin₀
-  set Γ₀ := finalCtx Γ (goalElim (^&js) (bnum (dlen TAct ρ))) with hΓ₀def
+  set Γ₀ := finalCtx Γ (goalElim (^&js) (binNumeral (proofLen TAct ρ))) with hΓ₀def
   -- the numeral lemma N2
   have ok₁ : StepOK tbl E ((8 : ℕ) : V) Γ₀
-      (sLemma (leFact (bnum (dlen TAct ρ)) (bnum b)) (leCode tblN (dlen TAct ρ) b)) :=
-    stepOK_sLemma hΓ₀ (lemmaOK_of (isFormula_leFact_bnum _ _) (leCode_proof htblN hρ))
-  have cx₁ := ctxAfter_sLemma Γ₀ (leFact (bnum (dlen TAct ρ)) (bnum b)) (leCode tblN (dlen TAct ρ) b)
-  set Γ₁ := insert (neg LAct (leFact (bnum (dlen TAct ρ)) (bnum b))) Γ₀ with hΓ₁def
+      (sLemma (leFact (binNumeral (proofLen TAct ρ)) (binNumeral b)) (leCode tblN (proofLen TAct ρ) b)) :=
+    stepOK_sLemma hΓ₀ (lemmaOK_of (isFormula_leFact_binNumeral _ _) (leCode_proof htblN hρ))
+  have cx₁ := ctxAfter_sLemma Γ₀ (leFact (binNumeral (proofLen TAct ρ)) (binNumeral b)) (leCode tblN (proofLen TAct ρ) b)
+  set Γ₁ := insert (neg LAct (leFact (binNumeral (proofLen TAct ρ)) (binNumeral b))) Γ₀ with hΓ₁def
   have hΓ₁ : IsFormulaSet LAct Γ₁ := cx₁ ▸ isFormulaSet_ctxAfter 8 htbl ok₁
   -- the facts so far, in `Γ₁`
   have m_der : neg LAct (derFact (^&1 : V)) ∈ Γ₁ := mem_ins gder
   have m_fst : neg LAct (fstIdxFact (^&(js + 2)) (^&1)) ∈ Γ₁ := mem_ins gfst
-  have m_dlen : neg LAct (dlenFact (^&1 : V) (^&0)) ∈ Γ₁ := mem_ins gdlen
-  have m_le : neg LAct (leFact (^&0) (bnum (dlen TAct ρ))) ∈ Γ₁ := mem_ins gle
+  have m_proofLen : neg LAct (proofLenFact (^&1 : V) (^&0)) ∈ Γ₁ := mem_ins gdlen
+  have m_le : neg LAct (leFact (^&0) (binNumeral (proofLen TAct ρ))) ∈ Γ₁ := mem_ins gle
   have m_ins : neg LAct (insFact (^&(js + 2)) (^&(js + 3)) (𝟎 : V)) ∈ Γ₁ := mem_ins hins₀
   have m_pin : neg LAct (eqFactB (^&(js + 3)) (qNumS σ)) ∈ Γ₁ := mem_ins hpin₀
-  have m_leb : neg LAct (leFact (bnum (dlen TAct ρ)) (bnum b)) ∈ Γ₁ := by rw [hΓ₁def]; simp
-  -- step 2: dlenDefIntro
-  obtain ⟨ok₂, tg₂, cx₂⟩ := tok_dlenDefIntro (wd := ^&1) (wn := ^&0) htbl hT rfl hΓ₁ (by simp) hf1 (by simp) hf0 m_der m_dlen
-  set Γ₂ := insert (neg LAct (dlenDefFact (^&0) (^&1))) Γ₁ with hΓ₂def
+  have m_leb : neg LAct (leFact (binNumeral (proofLen TAct ρ)) (binNumeral b)) ∈ Γ₁ := by rw [hΓ₁def]; simp
+  -- step 2: proofLenDefIntro
+  obtain ⟨ok₂, tg₂, cx₂⟩ := tok_proofLenDefIntro (wd := ^&1) (wn := ^&0) htbl hT rfl hΓ₁ (by simp) hf1 (by simp) hf0 m_der m_proofLen
+  set Γ₂ := insert (neg LAct (proofLenDefFact (^&0) (^&1))) Γ₁ with hΓ₂def
   have hΓ₂ : IsFormulaSet LAct Γ₂ := cx₂ ▸ isFormulaSet_ctxAfter 8 htbl ok₂
   -- step 3: proofIntro
   obtain ⟨ok₃, tg₃, cx₃⟩ := tok_proofIntro (ws := ^&(js + 2)) (wg := ^&(js + 3)) (wd := ^&1) htbl hT rfl hΓ₂
@@ -414,21 +414,21 @@ theorem closeStepsC_ok (σ : Sentence LAct) {tbl N E Γ tblN N' B' b ρ js : V}
   set Γ₃ := insert (neg LAct (proofFact (^&1) (^&(js + 3)))) Γ₂ with hΓ₃def
   have hΓ₃ : IsFormulaSet LAct Γ₃ := cx₃ ▸ isFormulaSet_ctxAfter 8 htbl ok₃
   -- step 4: leTrans
-  obtain ⟨ok₄, tg₄, cx₄⟩ := tfok_leTrans (wz := bnum b) (wy := bnum (dlen TAct ρ)) (wx := ^&0) htbl hT rfl hΓ₃
+  obtain ⟨ok₄, tg₄, cx₄⟩ := tfok_leTrans (wz := binNumeral b) (wy := binNumeral (proofLen TAct ρ)) (wx := ^&0) htbl hT rfl hΓ₃
     hbb hEb hbd hEd (by simp) hf0 (mem_ins (mem_ins m_le)) (mem_ins (mem_ins m_leb))
-  set Γ₄ := insert (neg LAct (leFact (^&0) (bnum b))) Γ₃ with hΓ₄def
+  set Γ₄ := insert (neg LAct (leFact (^&0) (binNumeral b))) Γ₃ with hΓ₄def
   have hΓ₄ : IsFormulaSet LAct Γ₄ := cx₄ ▸ isFormulaSet_ctxAfter 8 htbl ok₄
   -- step 5: lenDerIntro
-  obtain ⟨ok₅, tg₅, cx₅⟩ := tok_lenDerIntro (wd := ^&1) (wn := ^&0) (wg := ^&(js + 3)) (wa := bnum b) htbl hT rfl hΓ₄
+  obtain ⟨ok₅, tg₅, cx₅⟩ := tok_lenDerIntro (wd := ^&1) (wn := ^&0) (wg := ^&(js + 3)) (wa := binNumeral b) htbl hT rfl hΓ₄
     (by simp) hf1 (by simp) hf0 (by simp) hf3 hbb hEb (mem_ins (by rw [hΓ₃def]; simp))
     (mem_ins (mem_ins (by rw [hΓ₂def]; simp))) (by rw [hΓ₄def]; simp)
-  set Γ₅ := insert (neg LAct (lenDerFact (bnum b) (^&(js + 3)))) Γ₄ with hΓ₅def
+  set Γ₅ := insert (neg LAct (lenDerFact (binNumeral b) (^&(js + 3)))) Γ₄ with hΓ₅def
   have hΓ₅ : IsFormulaSet LAct Γ₅ := cx₅ ▸ isFormulaSet_ctxAfter 8 htbl ok₅
   -- step 6: lenDerCong
-  obtain ⟨ok₆, tg₆, cx₆⟩ := tok_lenDerCong (wa := bnum b) (wg := ^&(js + 3)) (wg' := qNumS σ) htbl hC hΓ₅
+  obtain ⟨ok₆, tg₆, cx₆⟩ := tok_lenDerCong (wa := binNumeral b) (wg := ^&(js + 3)) (wg' := qNumS σ) htbl hC hΓ₅
     hbb hEb (by simp) hf3 hq hEq (by rw [hΓ₅def]; simp) (mem_ins (mem_ins (mem_ins (mem_ins m_pin))))
   -- assembly
-  have hfin : finalCtx Γ (closeStepsC σ b ρ js tblN) = insert (neg LAct (lenDerFact (bnum b) (qNumS σ))) Γ₅ := by
+  have hfin : finalCtx Γ (closeStepsC σ b ρ js tblN) = insert (neg LAct (lenDerFact (binNumeral b) (qNumS σ))) Γ₅ := by
     unfold closeStepsC
     rw [finalCtx_appendV, ← hΓ₀def, finalCtx_cons, cx₁, finalCtx_cons, cx₂, finalCtx_cons, cx₃,
       finalCtx_cons, cx₄, finalCtx_cons, cx₅, finalCtx_single, cx₆]
@@ -499,7 +499,7 @@ lemma le_EtopCv_top (σ : Sentence LAct) (b d : V) (Ck Cσ Cv : ℕ) (m : ℕ) :
 lemma le_EtopCv_axm (σ : Sentence LAct) (b d : V) (Ck Cσ Cv : ℕ) (m : ℕ) :
     (Cv : V) * p3 (d + 1) + 6 * d + 1 ≤ EtopCv σ b d Ck Cσ Cv m := le_add_self
 
-/-- The one `sLemma` derivation of the closed closing block (`NumSteps.dlen_leCode_le` with the addition). -/
+/-- The one `sLemma` derivation of the closed closing block (`NumSteps.proofLen_leCode_le` with the addition). -/
 noncomputable def closeD (N' B' b d : V) : V :=
   (‖d‖ + 1) * (‖b‖ + 2) * nodeCost N' B' (12 * ‖b‖ + 3) + nodeCost N' B' (12 * ‖b‖ + 3)
 
@@ -508,7 +508,7 @@ noncomputable def topListC (σ : Sentence LAct) (b ρ P L tblN : V) : V :=
   appendV (rootSteps (⌜σ⌝ : V))
     (appendV P (appendV L (closeStepsC σ b ρ (0 + shiftsV P + 1 + shiftsV L) tblN)))
 
-/-- **The closed top, assembled**: from a proof code `ρ` of `⌜σ⌝` with `dlen ρ ≤ b`, the verification graph
+/-- **The closed top, assembled**: from a proof code `ρ` of `⌜σ⌝` with `proofLen ρ ≤ b`, the verification graph
 and the certificate table at the cap `E ≥ EtopC`, a `TAct`-derivation of the closed box code of length
 `≤ topBound''` at `lk = 0` — the FOUR blocks (root walk, `numId` pin, verification list, closing block), the
 leaf `axL` on the target, and the cost accounting of `Assemble.top_main'''` with the pin's and the closing
@@ -519,34 +519,34 @@ theorem top_mainC (σ : Sentence LAct) (m : ℕ) {tbl N B Wl Wc W₁ W₂ W tN A
     (hkit : VerifyKit''' tbl N B Wl Wc W₁ W₂ W tN Cv Ck m)
     (hpin : ∀ {Γ i E : V}, IsFormulaSet LAct Γ → DossF walkPieces Γ 0 (⌜σ⌝ : V) i → (Cσ : V) + i ≤ E →
       ∃ P : V, NumInv tbl E Γ Cσ P (eqFact (^&i) (numeral (⌜σ⌝ : V))))
-    {b ρ : V} (hρ : Proof TAct ρ (⌜σ⌝ : V)) (hlen : dlen TAct ρ ≤ b)
+    {b ρ : V} (hρ : Proof TAct ρ (⌜σ⌝ : V)) (hlen : proofLen TAct ρ ≤ b)
     {L E : V} (hL : VerifyGraph'' walkPieces Wl Wc W₁ W₂ W tN A ρ L) (hA : AxmTableOK' tbl E walkPieces A (Cv : V))
-    (hE : EtopC σ b (dlen TAct ρ) Ck Cσ m ≤ E) :
-    ∃ e Lr : V, LenDerivable TAct e (boxSentenceCode σ b) ∧
+    (hE : EtopC σ b (proofLen TAct ρ) Ck Cσ m ≤ E) :
+    ∃ e Lr : V, LenBoxUnbounded TAct e (boxSentenceCode σ b) ∧
       Lr + 4 ≤ 12 * formulaLen LAct (⌜σ⌝ : V) + 13 ∧
-      e ≤ topBound'' N B E Ck Cσ 0 (dlen TAct ρ) (setLen LAct (insert (lenDerFact (bnum b) (qNumS σ)) (∅ : V)))
-        (fvOccS LAct (insert (lenDerFact (bnum b) (qNumS σ)) (∅ : V))) Lr (closeD N' B' b (dlen TAct ρ)) m := by
+      e ≤ topBound'' N B E Ck Cσ 0 (proofLen TAct ρ) (sequentLen LAct (insert (lenDerFact (binNumeral b) (qNumS σ)) (∅ : V)))
+        (fvOccS LAct (insert (lenDerFact (binNumeral b) (qNumS σ)) (∅ : V))) Lr (closeD N' B' b (proofLen TAct ρ)) m := by
   have hT : TopTable tbl := hC.topTable
   obtain ⟨x, hxdef⟩ : ∃ x, x = (⌜σ⌝ : V) := ⟨_, rfl⟩
-  obtain ⟨T, hTdef⟩ : ∃ T, T = lenDerFact (bnum b) (qNumS σ) := ⟨_, rfl⟩
+  obtain ⟨T, hTdef⟩ : ∃ T, T = lenDerFact (binNumeral b) (qNumS σ) := ⟨_, rfl⟩
   obtain ⟨Γ₀, hΓ₀def⟩ : ∃ Γ₀ : V, Γ₀ = insert T (∅ : V) := ⟨_, rfl⟩
   rw [← hxdef] at hρ ⊢
   rw [← hTdef, ← hΓ₀def]
   have hx : IsSemiformula LAct 0 x := hxdef ▸ Sentence.quote_isSemiformula₀ σ
   have hq : IsSemiterm LAct (0 : V) (qNumS σ) := isSemiterm_qNumS σ
   have hq' : IsSemiterm LAct (0 : V) (numeral (⌜σ⌝ : V)) := hq
-  have hbb : IsSemiterm LAct (0 : V) (bnum b) := isSemiterm_bnum_LAct 0 b
+  have hbb : IsSemiterm LAct (0 : V) (binNumeral b) := isSemiterm_binNumeral_LAct 0 b
   have hTf : IsFormula LAct T := hTdef ▸ isFormula_lenDerFact hbb hq
   have hΓ₀ : IsFormulaSet LAct Γ₀ := hΓ₀def ▸ IsFormulaSet.insert_iff.mpr ⟨hTf, IsFormulaSet.empty⟩
   have hTmem : T ∈ Γ₀ := by rw [hΓ₀def]; simp
   -- the cap requirements, read off `EtopC`
-  have r_walk : eWalkC σ ≤ E := le_trans (le_EtopC_walk σ b (dlen TAct ρ) Ck Cσ m) hE
-  have r_pin : ePinC Cσ ≤ E := le_trans (le_EtopC_pin σ b (dlen TAct ρ) Ck Cσ m) hE
-  have r_ver : eVerC (dlen TAct ρ) Ck m ≤ E := le_trans (le_EtopC_ver σ b (dlen TAct ρ) Ck Cσ m) hE
-  have r_js : eJsC (dlen TAct ρ) Ck m ≤ E := le_trans (le_EtopC_js σ b (dlen TAct ρ) Ck Cσ m) hE
-  have r_q : eQC σ ≤ E := le_trans (le_EtopC_q σ b (dlen TAct ρ) Ck Cσ m) hE
-  have r_b : eK b ≤ E := le_trans (le_EtopC_k σ b (dlen TAct ρ) Ck Cσ m) hE
-  have r_d : eD (dlen TAct ρ) ≤ E := le_trans (le_EtopC_d σ b (dlen TAct ρ) Ck Cσ m) hE
+  have r_walk : eWalkC σ ≤ E := le_trans (le_EtopC_walk σ b (proofLen TAct ρ) Ck Cσ m) hE
+  have r_pin : ePinC Cσ ≤ E := le_trans (le_EtopC_pin σ b (proofLen TAct ρ) Ck Cσ m) hE
+  have r_ver : eVerC (proofLen TAct ρ) Ck m ≤ E := le_trans (le_EtopC_ver σ b (proofLen TAct ρ) Ck Cσ m) hE
+  have r_js : eJsC (proofLen TAct ρ) Ck m ≤ E := le_trans (le_EtopC_js σ b (proofLen TAct ρ) Ck Cσ m) hE
+  have r_q : eQC σ ≤ E := le_trans (le_EtopC_q σ b (proofLen TAct ρ) Ck Cσ m) hE
+  have r_b : eK b ≤ E := le_trans (le_EtopC_k σ b (proofLen TAct ρ) Ck Cσ m) hE
+  have r_d : eD (proofLen TAct ρ) ≤ E := le_trans (le_EtopC_d σ b (proofLen TAct ρ) Ck Cσ m) hE
   unfold eWalkC at r_walk
   rw [← hxdef] at r_walk
   unfold ePinC at r_pin
@@ -565,7 +565,7 @@ theorem top_mainC (σ : Sentence LAct) (m : ℕ) {tbl N B Wl Wc W₁ W₂ W tN A
   have rcost := costSum_le_of_hornOnly hE1 htbl rok rho rB
   obtain ⟨rF, rS⟩ := ctxVec_len_le hE1 htbl rok rho rB (len (rootSteps x)) le_rfl
   have rF' : fvOccS LAct Γ₁ ≤ topF1 B E (fvOccS LAct Γ₀) (len (rootSteps x)) := rF
-  have rS' : setLen LAct Γ₁ ≤ topS1 B E (setLen LAct Γ₀) (fvOccS LAct Γ₀) (len (rootSteps x)) := rS
+  have rS' : sequentLen LAct Γ₁ ≤ topS1 B E (sequentLen LAct Γ₀) (fvOccS LAct Γ₀) (len (rootSteps x)) := rS
   -- (2) the pin block (`numId` on the root dossier)
   obtain ⟨P, pok, pnd, psh, plen, psz, pinst⟩ := hpin hΓ₁ (hxdef ▸ rlay.1) r_pin
   set Γ₂ := finalCtx Γ₁ P with hΓ₂def
@@ -574,9 +574,9 @@ theorem top_mainC (σ : Sentence LAct) (m : ℕ) {tbl N B Wl Wc W₁ W₂ W tN A
   have pcost := numInv_cost hE1 htbl hB ⟨pok, pnd, psh, plen, psz, pinst⟩
   obtain ⟨pF, pS⟩ := ctxVec_len_le_sizeOK 9 hE1 htbl hB pok psz (len P) le_rfl
   have pF' : fvOccS LAct Γ₂ ≤ fvOccS LAct Γ₁ + len P * growK B E (Cσ : V) := pF
-  have pS' : setLen LAct Γ₂ ≤ setLen LAct Γ₁ + len P * fvOccS LAct Γ₁ + (len P * len P + len P) * growK B E (Cσ : V) := pS
+  have pS' : sequentLen LAct Γ₂ ≤ sequentLen LAct Γ₁ + len P * fvOccS LAct Γ₁ + (len P * len P + len P) * growK B E (Cσ : V) := pS
   -- (3) the verification block
-  have r_ver' : (Ck : V) * ((dlen TAct ρ + 1) ^ m + (0 + shiftsV P)) ≤ E := by rw [psh]; exact r_ver
+  have r_ver' : (Ck : V) * ((proofLen TAct ρ + 1) ^ m + (0 + shiftsV P)) ≤ E := by rw [psh]; exact r_ver
   obtain ⟨vok, vnd, vsh, vgoal⟩ := hkit.ok hρ hx lay₂ hΓ₂ r_ver' hA hL
   obtain ⟨vcost, vS, vF⟩ := hkit.cost hρ hx lay₂ hΓ₂ r_ver' hA hL
   obtain ⟨L₁, hL₁⟩ : ∃ L₁, L₁ = vList Wl Wc W tN x (0 + shiftsV P) ρ L := ⟨_, rfl⟩
@@ -632,23 +632,23 @@ theorem top_mainC (σ : Sentence LAct) (m : ℕ) {tbl N B Wl Wc W₁ W₂ W tN A
   have hleaf : DerivationOf TAct (axL Γ₄ T) Γ₄ := ⟨by simp, Derivation.axL hΓ₄ hT₄ hnT₄⟩
   have hleaf' : DerivationOf TAct (axL Γ₄ T) (ctxVec Γ₀ S).[len S] := by
     show DerivationOf TAct (axL Γ₄ T) (finalCtx Γ₀ S); rw [hSfin]; exact hleaf
-  have hdlen_leaf : dlen TAct (axL Γ₄ T) = setLen LAct Γ₄ + 1 :=
-    dlen_eq_of_graph hleaf.2 (DlenGraph.axL_iff.mpr rfl)
+  have hdlen_leaf : proofLen TAct (axL Γ₄ T) = sequentLen LAct Γ₄ + 1 :=
+    proofLen_eq_of_graph hleaf.2 (ProofLenGraph.axL_iff.mpr rfl)
   have hproof : DerivationOf TAct (chainCode tbl Γ₀ S (axL Γ₄ T)) Γ₀ := chainCode_proof 9 htbl hok hleaf'
-  have hcost := dlen_chainCode_le 9 hE1 htbl hok hleaf'
+  have hcost := proofLen_chainCode_le 9 hE1 htbl hok hleaf'
   -- the closing block's cost
-  have hgoalLen : formulaLen LAct (goalFact (^&js) (bnum (dlen TAct ρ))) ≤ setLen LAct Γ₃ := by
-    have h := formulaLen_le_setLen_of_mem (L := LAct) vgoal
-    rwa [formulaLen_neg_eq (isFormula_goalFact (by simp) (isSemiterm_bnum_LAct 0 _))] at h
-  set Q := topQ'' B E Ck Cσ 0 (dlen TAct ρ) (setLen LAct Γ₀) (fvOccS LAct Γ₀) (len (rootSteps x)) m with hQdef
-  set D := closeD N' B' b (dlen TAct ρ) with hDdef
+  have hgoalLen : formulaLen LAct (goalFact (^&js) (binNumeral (proofLen TAct ρ))) ≤ sequentLen LAct Γ₃ := by
+    have h := formulaLen_le_sequentLen_of_mem (L := LAct) vgoal
+    rwa [formulaLen_neg_eq (isFormula_goalFact (by simp) (isSemiterm_binNumeral_LAct 0 _))] at h
+  set Q := topQ'' B E Ck Cσ 0 (proofLen TAct ρ) (sequentLen LAct Γ₀) (fvOccS LAct Γ₀) (len (rootSteps x)) m with hQdef
+  set D := closeD N' B' b (proofLen TAct ρ) with hDdef
   -- the pin's shapes at `lk = 0`
   have e01 : (Cσ : V) * (0 + 1) = Cσ := by rw [zero_add, mul_one]
   have hQp : (Cσ : V) ≤ kitQ (Cσ : V) B E :=
     le_mul_of_one_le_right zero_le (one_le_mul_of_one_le_of_one_le le_add_self le_add_self)
   have hDp : (Cσ : V) ≤ kitD (Cσ : V) 0 := le_of_eq (by unfold kitD; simp)
   have hGp : growK B E (Cσ : V) ≤ growK B E (kitQ (Cσ : V) B E) := growK_mono hQp
-  have hS2 : setLen LAct Γ₂ ≤ topS2' B E Cσ 0 (setLen LAct Γ₀) (fvOccS LAct Γ₀) (len (rootSteps x)) := by
+  have hS2 : sequentLen LAct Γ₂ ≤ topS2' B E Cσ 0 (sequentLen LAct Γ₀) (fvOccS LAct Γ₀) (len (rootSteps x)) := by
     unfold topS2' ctxB
     rw [e01]
     refine le_trans pS' (add_le_add (add_le_add rS' (mul_le_mul plen rF' zero_le zero_le)) ?_)
@@ -657,23 +657,23 @@ theorem top_mainC (σ : Sentence LAct) (m : ℕ) {tbl N B Wl Wc W₁ W₂ W tN A
     unfold topF2'
     rw [e01]
     exact le_trans pF' (add_le_add rF' (mul_le_mul plen hGp zero_le zero_le))
-  have hS3 : setLen LAct Γ₃ ≤ topS3'' B E Ck Cσ 0 (dlen TAct ρ) (setLen LAct Γ₀) (fvOccS LAct Γ₀) (len (rootSteps x)) m :=
+  have hS3 : sequentLen LAct Γ₃ ≤ topS3'' B E Ck Cσ 0 (proofLen TAct ρ) (sequentLen LAct Γ₀) (fvOccS LAct Γ₀) (len (rootSteps x)) m :=
     le_trans vS (ctxBoundG_le_ctxB hS2 hF2)
-  have hF3 : fvOccS LAct Γ₃ ≤ topF3'' B E Ck Cσ 0 (dlen TAct ρ) (fvOccS LAct Γ₀) (len (rootSteps x)) m :=
+  have hF3 : fvOccS LAct Γ₃ ≤ topF3'' B E Ck Cσ 0 (proofLen TAct ρ) (fvOccS LAct Γ₀) (len (rootSteps x)) m :=
     le_trans vF (add_le_add hF2 le_rfl)
   have hBE : B * E ≤ Q := by rw [hQdef, topQ'']; exact le_add_self
-  have hQg : 4 * formulaLen LAct (goalFact (^&js) (bnum (dlen TAct ρ))) ≤ Q := by
+  have hQg : 4 * formulaLen LAct (goalFact (^&js) (binNumeral (proofLen TAct ρ))) ≤ Q := by
     rw [hQdef, topQ'']
     exact le_trans (mul_le_mul_of_nonneg_left (le_trans hgoalLen hS3) zero_le) le_self_add
   have hsz : SizeOK Q D (closeStepsC σ b ρ js tN) := by
     unfold closeStepsC
-    refine sizeOK_appendV ((sizeOK_goalElim (D := D) (by simp) (isSemiterm_bnum_LAct 0 _)).mono hQg le_rfl) ?_
+    refine sizeOK_appendV ((sizeOK_goalElim (D := D) (by simp) (isSemiterm_binNumeral_LAct 0 _)).mono hQg le_rfl) ?_
     have hE1' : (1 : V) ≤ E := hE1
-    have hbd : IsSemiterm LAct (0 : V) (bnum (dlen TAct ρ)) := isSemiterm_bnum_LAct 0 _
+    have hbd : IsSemiterm LAct (0 : V) (binNumeral (proofLen TAct ρ)) := isSemiterm_binNumeral_LAct 0 _
     refine sizeOK_cons (stepSizeOK_sLemma
       (le_trans (formulaLen_leFact_le hE1' hbd hbb r_d r_b) (le_trans (mul_le_mul_of_nonneg_right hPle zero_le) hBE))
-      (le_trans (dlen_leCode_le' htblN hlen) (by rw [hDdef, closeD]))) ?_
-    refine sizeOK_cons (stepSizeOK_horn0 (ttag_dlenDefIntro rfl _)) ?_
+      (le_trans (proofLen_leCode_le' htblN hlen) (by rw [hDdef, closeD]))) ?_
+    refine sizeOK_cons (stepSizeOK_horn0 (ttag_proofLenDefIntro rfl _)) ?_
     refine sizeOK_cons (stepSizeOK_horn0 (ttag_proofIntro rfl _)) ?_
     refine sizeOK_cons (stepSizeOK_horn0 (ttag_leTrans _)) ?_
     refine sizeOK_cons (stepSizeOK_horn0 (ttag_lenDerIntro rfl _)) ?_
@@ -681,14 +681,14 @@ theorem top_mainC (σ : Sentence LAct) (m : ℕ) {tbl N B Wl Wc W₁ W₂ W tN A
   have ccost := costSum_le_of_sizeOK 8 hE1 htbl hB cok hsz
   rw [clen] at ccost
   obtain ⟨_, cS⟩ := ctxVec_len_le_sizeOK 8 hE1 htbl hB cok hsz (len (closeStepsC σ b ρ js tN)) le_rfl
-  have cS' : setLen LAct Γ₄ ≤ setLen LAct Γ₃ + len (closeStepsC σ b ρ js tN) * fvOccS LAct Γ₃ +
+  have cS' : sequentLen LAct Γ₄ ≤ sequentLen LAct Γ₃ + len (closeStepsC σ b ρ js tN) * fvOccS LAct Γ₃ +
       (len (closeStepsC σ b ρ js tN) * len (closeStepsC σ b ρ js tN) + len (closeStepsC σ b ρ js tN)) * growK B E Q := cS
   rw [clen] at cS'
   have h11 : (11 : V) ≤ 15 := by norm_num
   have h132 : (11 * 11 + 11 : V) ≤ 15 * 15 + 15 := by norm_num
   -- the total
-  refine ⟨dlen TAct (chainCode tbl Γ₀ S (axL Γ₄ T)), len (rootSteps x), ?_, rlen, ?_⟩
-  · refine ⟨chainCode tbl Γ₀ S (axL Γ₄ T), ?_, le_refl (dlen TAct (chainCode tbl Γ₀ S (axL Γ₄ T)))⟩
+  refine ⟨proofLen TAct (chainCode tbl Γ₀ S (axL Γ₄ T)), len (rootSteps x), ?_, rlen, ?_⟩
+  · refine ⟨chainCode tbl Γ₀ S (axL Γ₄ T), ?_, le_refl (proofLen TAct (chainCode tbl Γ₀ S (axL Γ₄ T)))⟩
     rw [boxSentenceCode_eq, ← hTdef]
     have e : insert T (∅ : V) = {T} := mem_ext fun _ ↦ by simp
     show DerivationOf TAct _ {T}
@@ -697,34 +697,34 @@ theorem top_mainC (σ : Sentence LAct) (m : ℕ) {tbl N B Wl Wc W₁ W₂ W tN A
         (costSum N E Γ₁ P + (costSum N E Γ₂ L₁ + costSum N E Γ₃ (closeStepsC σ b ρ js tN))) := by
       rw [hSdef, topListC, ← hxdef, ← hjsdef, costSum_appendV, costSum_appendV, costSum_appendV, ← hΓ₁def, ← hΓ₂def,
         ← hΓ₃def]
-    have h_leaf : setLen LAct Γ₄ + 1 ≤ topS3'' B E Ck Cσ 0 (dlen TAct ρ) (setLen LAct Γ₀) (fvOccS LAct Γ₀) (len (rootSteps x)) m +
-        15 * topF3'' B E Ck Cσ 0 (dlen TAct ρ) (fvOccS LAct Γ₀) (len (rootSteps x)) m + (15 * 15 + 15) * growK B E Q + 1 :=
+    have h_leaf : sequentLen LAct Γ₄ + 1 ≤ topS3'' B E Ck Cσ 0 (proofLen TAct ρ) (sequentLen LAct Γ₀) (fvOccS LAct Γ₀) (len (rootSteps x)) m +
+        15 * topF3'' B E Ck Cσ 0 (proofLen TAct ρ) (fvOccS LAct Γ₀) (len (rootSteps x)) m + (15 * 15 + 15) * growK B E Q + 1 :=
       add_le_add (le_trans cS' (add_le_add (add_le_add hS3 (mul_le_mul h11 hF3 zero_le zero_le))
         (mul_le_mul_of_nonneg_right h132 zero_le))) le_rfl
     have h_root : costSum N E Γ₀ (rootSteps x) ≤
-        len (rootSteps x) * (stepK N E B + 36 * topS1 B E (setLen LAct Γ₀) (fvOccS LAct Γ₀) (len (rootSteps x))) := by
+        len (rootSteps x) * (stepK N E B + 36 * topS1 B E (sequentLen LAct Γ₀) (fvOccS LAct Γ₀) (len (rootSteps x))) := by
       unfold topS1; unfold ctxBound at rcost; exact rcost
     have h_pin : costSum N E Γ₁ P ≤ (Cσ : V) * (0 + 1) *
         (costK N E B ((9 : ℕ) : V) (kitQ (Cσ : V) B E) (kitD (Cσ : V) 0) +
-          38 * (ctxB (growK B E (kitQ (Cσ : V) B E)) (topS1 B E (setLen LAct Γ₀) (fvOccS LAct Γ₀) (len (rootSteps x)))
+          38 * (ctxB (growK B E (kitQ (Cσ : V) B E)) (topS1 B E (sequentLen LAct Γ₀) (fvOccS LAct Γ₀) (len (rootSteps x)))
             (topF1 B E (fvOccS LAct Γ₀) (len (rootSteps x))) ((Cσ : V) * (0 + 1)) +
             (topF1 B E (fvOccS LAct Γ₀) (len (rootSteps x)) + (Cσ : V) * (0 + 1) * growK B E (kitQ (Cσ : V) B E)))) := by
       rw [e01]
       refine le_trans pcost (mul_le_mul_of_nonneg_left (add_le_add (costK_mono hQp hDp) (mul_le_mul_of_nonneg_left
         (add_le_add (le_trans (ctxBoundG_mono2 hGp le_rfl) (ctxBoundG_le_ctxB rS' rF'))
           (add_le_add rF' (mul_le_mul_of_nonneg_left hGp zero_le))) zero_le)) zero_le)
-    have h_ver : costSum N E Γ₂ L₁ ≤ (Ck : V) * (dlen TAct ρ + 1) ^ m *
-        (costK N E B ((9 : ℕ) : V) (kitQ (Ck : V) B E) (kitD (Ck : V) (dlen TAct ρ)) +
-          38 * (ctxB (growK B E (kitQ (Ck : V) B E)) (topS2' B E Cσ 0 (setLen LAct Γ₀) (fvOccS LAct Γ₀) (len (rootSteps x)))
-            (topF2' B E Cσ 0 (fvOccS LAct Γ₀) (len (rootSteps x))) ((Ck : V) * (dlen TAct ρ + 1) ^ m) +
-            (topF2' B E Cσ 0 (fvOccS LAct Γ₀) (len (rootSteps x)) + (Ck : V) * (dlen TAct ρ + 1) ^ m * growK B E (kitQ (Ck : V) B E)))) :=
+    have h_ver : costSum N E Γ₂ L₁ ≤ (Ck : V) * (proofLen TAct ρ + 1) ^ m *
+        (costK N E B ((9 : ℕ) : V) (kitQ (Ck : V) B E) (kitD (Ck : V) (proofLen TAct ρ)) +
+          38 * (ctxB (growK B E (kitQ (Ck : V) B E)) (topS2' B E Cσ 0 (sequentLen LAct Γ₀) (fvOccS LAct Γ₀) (len (rootSteps x)))
+            (topF2' B E Cσ 0 (fvOccS LAct Γ₀) (len (rootSteps x))) ((Ck : V) * (proofLen TAct ρ + 1) ^ m) +
+            (topF2' B E Cσ 0 (fvOccS LAct Γ₀) (len (rootSteps x)) + (Ck : V) * (proofLen TAct ρ + 1) ^ m * growK B E (kitQ (Ck : V) B E)))) :=
       le_trans vcost (mul_le_mul_of_nonneg_left (add_le_add le_rfl (mul_le_mul_of_nonneg_left
         (add_le_add (ctxBoundG_le_ctxB hS2 hF2) (add_le_add hF2 le_rfl)) zero_le)) zero_le)
     have h_close : costSum N E Γ₃ (closeStepsC σ b ρ js tN) ≤
         15 * (costK N E B ((8 : ℕ) : V) Q D + (3 * ((8 : ℕ) : V) + 11) *
-          ((topS3'' B E Ck Cσ 0 (dlen TAct ρ) (setLen LAct Γ₀) (fvOccS LAct Γ₀) (len (rootSteps x)) m +
-            15 * topF3'' B E Ck Cσ 0 (dlen TAct ρ) (fvOccS LAct Γ₀) (len (rootSteps x)) m + (15 * 15 + 15) * growK B E Q) +
-           (topF3'' B E Ck Cσ 0 (dlen TAct ρ) (fvOccS LAct Γ₀) (len (rootSteps x)) m + 15 * growK B E Q))) := by
+          ((topS3'' B E Ck Cσ 0 (proofLen TAct ρ) (sequentLen LAct Γ₀) (fvOccS LAct Γ₀) (len (rootSteps x)) m +
+            15 * topF3'' B E Ck Cσ 0 (proofLen TAct ρ) (fvOccS LAct Γ₀) (len (rootSteps x)) m + (15 * 15 + 15) * growK B E Q) +
+           (topF3'' B E Ck Cσ 0 (proofLen TAct ρ) (fvOccS LAct Γ₀) (len (rootSteps x)) m + 15 * growK B E Q))) := by
       refine le_trans ccost (mul_le_mul h11 (add_le_add le_rfl (mul_le_mul_of_nonneg_left
         (add_le_add ?_ (add_le_add hF3 (mul_le_mul h11 le_rfl zero_le zero_le))) zero_le)) zero_le zero_le)
       unfold ctxBoundG
@@ -732,9 +732,9 @@ theorem top_mainC (σ : Sentence LAct) (m : ℕ) {tbl N B Wl Wc W₁ W₂ W tN A
     refine le_trans hcost ?_
     rw [hdlen_leaf, hsplit]
     unfold topBound''
-    calc setLen LAct Γ₄ + 1 + (costSum N E Γ₀ (rootSteps x) + (costSum N E Γ₁ P +
+    calc sequentLen LAct Γ₄ + 1 + (costSum N E Γ₀ (rootSteps x) + (costSum N E Γ₁ P +
           (costSum N E Γ₂ L₁ + costSum N E Γ₃ (closeStepsC σ b ρ js tN))))
-        = (setLen LAct Γ₄ + 1) + costSum N E Γ₀ (rootSteps x) + costSum N E Γ₁ P + costSum N E Γ₂ L₁ +
+        = (sequentLen LAct Γ₄ + 1) + costSum N E Γ₀ (rootSteps x) + costSum N E Γ₁ P + costSum N E Γ₂ L₁ +
           costSum N E Γ₃ (closeStepsC σ b ρ js tN) := by ring
       _ ≤ _ := add_le_add (add_le_add (add_le_add (add_le_add h_leaf h_root) h_pin) h_ver) h_close
 
@@ -752,7 +752,7 @@ def KitPackageC (N B N' B' Ck Cv : ℕ) (Cσ : Sentence LAct → ℕ) (m : ℕ) 
     ∃ tbl Wl Wc W₁ W₂ W T : V, TableOK tbl N ∧ ClosedTable tbl ∧
       (∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ B) ∧ formulaLen LAct (Ple : V) ≤ B ∧
       NumTableOK T N' B' ∧
-      (∀ ρ E : V, Derivation TAct ρ → (Cv : V) * p3 (dlen TAct ρ + 1) + 6 * dlen TAct ρ + 1 ≤ E →
+      (∀ ρ E : V, Derivation TAct ρ → (Cv : V) * p3 (proofLen TAct ρ + 1) + 6 * proofLen TAct ρ + 1 ≤ E →
         ∃ A L : V, AxmTableOK' tbl E walkPieces A Cv ∧ VerifyGraph'' walkPieces Wl Wc W₁ W₂ W T A ρ L) ∧
       VerifyKit''' tbl N B Wl Wc W₁ W₂ W T Cv Ck m ∧
       ∀ σ : Sentence LAct, ∀ {Γ i E : V}, IsFormulaSet LAct Γ → DossF walkPieces Γ 0 (⌜σ⌝ : V) i →
@@ -806,8 +806,8 @@ lemma closeD_pb {G : V} (hc : PBCtx G (1 : V)) (N' B' : ℕ) {b d : V} (hb : PB 
 theorem closedInnerNec_of_kit (m : ℕ) (hm3 : 3 ≤ m) {N B N' B' Ck Cv : ℕ} {Cσ : Sentence LAct → ℕ}
     (hpkg : KitPackageC N B N' B' Ck Cv Cσ m) :
     ∀ σ : Sentence LAct, ∃ C : ℕ, ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] (b : V),
-      LenDerivable TAct b (⌜σ⌝ : V) →
-        ∃ e : V, e ≤ (C : V) * (b ^ (deg m) + 1) ∧ LenDerivable TAct e (boxSentenceCode σ b) := by
+      LenBoxUnbounded TAct b (⌜σ⌝ : V) →
+        ∃ e : V, e ≤ (C : V) * (b ^ (deg m) + 1) ∧ LenBoxUnbounded TAct e (boxSentenceCode σ b) := by
   intro σ
   obtain ⟨n, hn_def⟩ : ∃ n : ℕ, n = max m 1 := ⟨_, rfl⟩
   have hn : 1 ≤ n := hn_def ▸ le_max_right m 1
@@ -815,27 +815,27 @@ theorem closedInnerNec_of_kit (m : ℕ) (hm3 : 3 ≤ m) {N B N' B' Ck Cv : ℕ} 
   exact ⟨_, fun V _ _ b hb ↦ by
     obtain ⟨tbl, Wl, Wc, W₁, W₂, W, T, htbl, hC, hB, hPle, htblN, hex, hkit, hpin⟩ := hpkg V
     obtain ⟨ρ, hρ, hlen⟩ := hb
-    obtain ⟨A, L, hA, hL⟩ := hex ρ (EtopCv σ b (dlen TAct ρ) Ck (Cσ σ) Cv m) hρ.2
-      (le_EtopCv_axm σ b (dlen TAct ρ) Ck (Cσ σ) Cv m)
+    obtain ⟨A, L, hA, hL⟩ := hex ρ (EtopCv σ b (proofLen TAct ρ) Ck (Cσ σ) Cv m) hρ.2
+      (le_EtopCv_axm σ b (proofLen TAct ρ) Ck (Cσ σ) Cv m)
     obtain ⟨e, Lr, he, hLr, hbound⟩ := top_mainC σ m htbl hC hB hPle htblN hkit (hpin σ) hρ hlen hL hA
-      (le_EtopCv_top σ b (dlen TAct ρ) Ck (Cσ σ) Cv m)
+      (le_EtopCv_top σ b (proofLen TAct ρ) Ck (Cσ σ) Cv m)
     refine ⟨e, ?_, he⟩
     have hc := pbCtx_closed b
     -- the graded inputs (`G = b + 1`, `u = 1`)
     have hone : PB (b + 1) (1 : V) 1 (1 : V) 0 0 := PB.one'
     have hb1 : PB (b + 1) (1 : V) 1 b 1 0 := (PB.G_ hc).of_le le_self_add
     have hlb : PB (b + 1) (1 : V) 1 ‖b‖ 1 0 := hb1.of_le (length_le b)
-    have hd1 : PB (b + 1) (1 : V) 1 (dlen TAct ρ + 1) 1 0 := (PB.G_ hc).of_le (add_le_add hlen le_rfl)
-    have hd0 : PB (b + 1) (1 : V) 1 (dlen TAct ρ) 1 0 := hb1.of_le hlen
-    have hld : PB (b + 1) (1 : V) 1 ‖dlen TAct ρ‖ 1 0 := hd0.of_le (length_le _)
+    have hd1 : PB (b + 1) (1 : V) 1 (proofLen TAct ρ + 1) 1 0 := (PB.G_ hc).of_le (add_le_add hlen le_rfl)
+    have hd0 : PB (b + 1) (1 : V) 1 (proofLen TAct ρ) 1 0 := hb1.of_le hlen
+    have hld : PB (b + 1) (1 : V) 1 ‖proofLen TAct ρ‖ 1 0 := hd0.of_le (length_le _)
     have hCk : PB (b + 1) (1 : V) Ck (Ck : V) 0 0 := PB.const Ck
     have hCσ : PB (b + 1) (1 : V) (Cσ σ) (Cσ σ : V) 0 0 := PB.const _
     have hCv : PB (b + 1) (1 : V) Cv (Cv : V) 0 0 := PB.const Cv
     have hqN : PB (b + 1) (1 : V) (2 * (⌜σ⌝ : ℕ) + 1) (termLen LAct (qNumS σ : V)) 0 0 :=
       PB.natCast _ (termLen_qNumS_le σ)
-    have hx : PB (b + 1) (1 : V) (flen (Rewriting.emb σ : Semiproposition LAct 0)) (formulaLen LAct (⌜σ⌝ : V)) 0 0 :=
+    have hx : PB (b + 1) (1 : V) (formulaLenMeta (Rewriting.emb σ : Semiproposition LAct 0)) (formulaLen LAct (⌜σ⌝ : V)) 0 0 :=
       PB.natCast _ (le_of_eq (formulaLen_quote_semisentence_V' σ))
-    have hdm : PB (b + 1) (1 : V) (1 ^ m) ((dlen TAct ρ + 1) ^ m) n 0 :=
+    have hdm : PB (b + 1) (1 : V) (1 ^ m) ((proofLen TAct ρ + 1) ^ m) n 0 :=
       (hd1.pow m).mono hc (e' := n) (f' := 0) (by omega) (by omega)
     -- `E = EtopCv`: each summand is `≲ G^n`
     have e1 := ((PB.two.mul hx).add (PB.natCast (q := (8 : V)) 8 (by norm_num))).mono hc (e' := n) (f' := 0) (by omega) le_rfl
@@ -845,33 +845,33 @@ theorem closedInnerNec_of_kit (m : ℕ) (hm3 : 3 ≤ m) {N B N' B' Ck Cv : ℕ} 
       ((hCk.mul hdm).mono hc (e' := n) (f' := 0) (by omega) le_rfl)).add
       ((PB.natCast (q := (4 : V)) 4 (by norm_num)).mono hc (e' := n) (f' := 0) (by omega) le_rfl)
     have e5 := hqN.mono hc (e' := n) (f' := 0) (by omega) le_rfl
-    have e6 := (PB.of_le (termLen_bnum_le_V b) ((hlb.smul 6).add (hone.mono hc (e' := 1) (f' := 0) (by omega) le_rfl))).mono hc
+    have e6 := (PB.of_le (termLen_binNumeral_le_V b) ((hlb.smul 6).add (hone.mono hc (e' := 1) (f' := 0) (by omega) le_rfl))).mono hc
       (e' := n) (f' := 0) (by omega) le_rfl
-    have e7 := (PB.of_le (termLen_bnum_le_V (dlen TAct ρ)) ((hld.smul 6).add (hone.mono hc (e' := 1) (f' := 0) (by omega) le_rfl))).mono hc
+    have e7 := (PB.of_le (termLen_binNumeral_le_V (proofLen TAct ρ)) ((hld.smul 6).add (hone.mono hc (e' := 1) (f' := 0) (by omega) le_rfl))).mono hc
       (e' := n) (f' := 0) (by omega) le_rfl
     have e8a := (hCv.mul ((hd1.mul hd1).mul hd1)).mono hc (e' := n) (f' := 0) (by omega) le_rfl
     have e8b := ((hd0.smul 6).add (hone.mono hc (e' := 1) (f' := 0) (by omega) le_rfl)).mono hc (e' := n) (f' := 0) (by omega) le_rfl
     have e8 := e8a.add e8b
     have hE₀ := ((((((e1.add e2).add e3).add e4).add e5).add e6).add e7).add e8
-    have hE := PB.of_le (q := EtopCv σ b (dlen TAct ρ) Ck (Cσ σ) Cv m) (le_of_eq (by
+    have hE := PB.of_le (q := EtopCv σ b (proofLen TAct ρ) Ck (Cσ σ) Cv m) (le_of_eq (by
       unfold EtopCv EtopC eWalkC ePinC eVerC eJsC eQC eK eD p3; push_cast; ring)) hE₀
-    -- `S₀, F₀ ≤ |PlenDer| · (|bnum b| + |numeral ⌜σ⌝|)`, linear in `G`
+    -- `S₀, F₀ ≤ |PlenDer| · (|binNumeral b| + |numeral ⌜σ⌝|)`, linear in `G`
     have hq : IsSemiterm LAct (0 : V) (qNumS σ) := isSemiterm_qNumS σ
-    have hbb : IsSemiterm LAct (0 : V) (bnum b) := isSemiterm_bnum_LAct 0 b
-    have hTf : IsFormula LAct (lenDerFact (bnum b) (qNumS σ)) := isFormula_lenDerFact hbb hq
-    have hB' : formulaLen LAct (lenDerFact (bnum b) (qNumS σ)) ≤
+    have hbb : IsSemiterm LAct (0 : V) (binNumeral b) := isSemiterm_binNumeral_LAct 0 b
+    have hTf : IsFormula LAct (lenDerFact (binNumeral b) (qNumS σ)) := isFormula_lenDerFact hbb hq
+    have hB' : formulaLen LAct (lenDerFact (binNumeral b) (qNumS σ)) ≤
         formulaLen LAct (PlenDer : V) * ((6 * ‖b‖ + 1) + ((2 * (⌜σ⌝ : ℕ) + 1 : ℕ) : V)) :=
       formulaLen_lenDerFact_le (le_trans le_add_self le_self_add) hbb hq
-        (le_trans (termLen_bnum_le_V b) le_self_add) (le_trans (termLen_qNumS_le σ) le_add_self)
+        (le_trans (termLen_binNumeral_le_V b) le_self_add) (le_trans (termLen_qNumS_le σ) le_add_self)
     have hBp := ((hlb.smul 6).add (hone.mono hc (e' := 1) (f' := 0) (by omega) le_rfl)).add
       ((PB.const (2 * (⌜σ⌝ : ℕ) + 1)).mono hc (e' := 1) (f' := 0) (by omega) le_rfl)
     have hPb := PB.natCast (G := b + 1) (u := (1 : V))
-      (flen (Rewriting.emb (Semiformula.lMap emb (↑(lenDerivableDef TAct) : ArithmeticSemisentence 2)) : Semiproposition LAct 2))
+      (formulaLenMeta (Rewriting.emb (Semiformula.lMap emb (↑(lenBoxUnboundedDef TAct) : ArithmeticSemisentence 2)) : Semiproposition LAct 2))
       (le_of_eq (formulaLen_quote_semisentence_V' _))
     have hTlen := PB.of_le hB' (hPb.mul hBp)
-    have hS := PB.of_le (le_trans (setLen_insert_le (L := LAct) (lenDerFact (bnum b) (qNumS σ)) (∅ : V))
-      (by rw [setLen_empty', zero_add])) hTlen
-    have hF := PB.of_le (le_trans (fvOccS_insert_le (L := LAct) (lenDerFact (bnum b) (qNumS σ)) (∅ : V))
+    have hS := PB.of_le (le_trans (sequentLen_insert_le (L := LAct) (lenDerFact (binNumeral b) (qNumS σ)) (∅ : V))
+      (by rw [sequentLen_empty', zero_add])) hTlen
+    have hF := PB.of_le (le_trans (fvOccS_insert_le (L := LAct) (lenDerFact (binNumeral b) (qNumS σ)) (∅ : V))
       (by rw [fvOccS_empty, zero_add]; exact fvOccF_le_formulaLen hTf.isUFormula)) hTlen
     -- `Lr ≤ 12|⌜σ⌝| + 9`, a constant
     have h1 : Lr ≤ 12 * formulaLen LAct (⌜σ⌝ : V) + 9 := by
@@ -895,19 +895,19 @@ end packageC
 /-- **U10 in closed-sentence, arbitrary-budget form**: for every `LAct`-sentence `σ` there is a standard
 constant `C` such that, in every model `V` and at every budget `b : V`, a `TAct`-proof of `⌜σ⌝` of length
 `≤ b` yields a `TAct`-proof of the closed box code `boxSentenceCode σ b` — the sentence "`σ` has a proof of
-length `≤ b`", the budget written as the binary numeral `bnum b` — of length `≤ C·(b^16 + 1)`. -/
+length `≤ b`", the budget written as the binary numeral `binNumeral b` — of length `≤ C·(b^16 + 1)`. -/
 theorem closedInnerNec_sixteen : ∀ σ : Sentence LAct, ∃ C : ℕ,
     ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] (b : V),
-      LenDerivable TAct b (⌜σ⌝ : V) →
-        ∃ e : V, e ≤ (C : V) * (b ^ 16 + 1) ∧ LenDerivable TAct e (boxSentenceCode σ b) := by
+      LenBoxUnbounded TAct b (⌜σ⌝ : V) →
+        ∃ e : V, e ≤ (C : V) * (b ^ 16 + 1) ∧ LenBoxUnbounded TAct e (boxSentenceCode σ b) := by
   obtain ⟨N, B, N', B', Ck, Cv, Cσ, hpkg⟩ := kitPackageC_of
   exact closedInnerNec_of_kit 4 (by norm_num) hpkg
 
-/-- The same with the box code written out as the fact `lenDerFact (bnum b) (numeral ⌜σ⌝)`. -/
+/-- The same with the box code written out as the fact `lenDerFact (binNumeral b) (numeral ⌜σ⌝)`. -/
 theorem closedInnerNec_sixteen' : ∀ σ : Sentence LAct, ∃ C : ℕ,
     ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] (b : V),
-      LenDerivable TAct b (⌜σ⌝ : V) →
-        ∃ e : V, e ≤ (C : V) * (b ^ 16 + 1) ∧ LenDerivable TAct e (lenDerFact (bnum b) (numeral (⌜σ⌝ : V))) := by
+      LenBoxUnbounded TAct b (⌜σ⌝ : V) →
+        ∃ e : V, e ≤ (C : V) * (b ^ 16 + 1) ∧ LenBoxUnbounded TAct e (lenDerFact (binNumeral b) (numeral (⌜σ⌝ : V))) := by
   intro σ
   obtain ⟨C, hC⟩ := closedInnerNec_sixteen σ
   refine ⟨C, fun V _ _ b hb ↦ ?_⟩

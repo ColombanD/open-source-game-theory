@@ -16,24 +16,24 @@ namespace ArithS
 
 -- M4 U0 — programs described by TERMS over the polynomial pairing: Dupoc's guard sentence
 -- against itself is the `k`-instance `q ⇜ ![k̂]` of ONE fixed one-variable formula (meta), and on
--- codes `subst (bnum k ∷ 0) cq` (Critch's "source with `k` written in binary"); the description
--- of a program denotes its code (`val_progTT`) and codes are what the guard names (`quote_progTT`).
+-- codes `subst (binNumeral k ∷ 0) cq` (Critch's "source with `k` written in binary"); the description
+-- of a program denotes its code (`val_codeTermMeta`) and codes are what the guard names (`quote_codeTermMeta`).
 #print axioms exists_dupoc_instance
 #print axioms exists_dupoc_instance_code
 #print axioms exists_dupoc_instance_code_V
-#print axioms quote_progTT
-#print axioms val_progTT
-#print axioms size_le_tlen_progTT
+#print axioms quote_codeTermMeta
+#print axioms val_codeTermMeta
+#print axioms size_le_termLenMeta_codeTermMeta
 
 -- Code translation: substitution code equations and τ on the search-bot fragment.
-#print axioms pcode_subst
-#print axioms tcode_subst
-#print axioms swapcode_pcode
+#print axioms progCode_subst
+#print axioms templateCode_subst
+#print axioms transposeCode_progCode
 
 -- FitBox: Critch's (b) for box-carrying guards — the positive budget-linear bound and the
 -- obstruction: under Cantor pairing a searcher whose guard names its own budget cannot fit.
-#print axioms size_bnum_ge
-#print axioms exists_flen_tmpl_const
+#print axioms size_binNumeral_ge
+#print axioms exists_formulaLenMeta_template_const
 #print axioms box_guard_never_fits
 #print axioms legibleBot_guard_never_fits
 

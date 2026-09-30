@@ -15,7 +15,7 @@ verification U10 proves (polynomial, degree 16) and the budgets compose doubly-e
 nested boxes. B never transfers an engine proof. Each cell is re-proved by Critch's UNIFORM argument,
 which necessitates only constant-length proofs and inner-necessitates only at the polylog subscript
 `gBudget k = ‖k‖³`, so the verification cost `E(g(k))` stays `≺ k`. The citation cost is paid, but
-only where it is cheap. That is how `dupoc_self_coop_unconditional` went through. What B gives up:
+only where it is cheap. That is how `dupoc_self_coop` went through. What B gives up:
 a rule-level theorem "engine rule ⇒ `S'` rule" (false at polynomial budgets; stated instead as the two
 proven sentences below), one `S'` proof per family (labour), polynomial staggers instead of `2k+64`.
 
@@ -25,14 +25,14 @@ rejected (nominal budgets). Route C only if months appear (the box would mean `S
 
 ## 1. In hand (all three standard axioms)
 
-* The system: `LenDerivable`/`LenProvableV`, properness, τ-symmetry; the evaluator covers every
+* The system: `LenBoxUnbounded`/`LenBox`, properness, τ-symmetry; the evaluator covers every
   base constructor (`const/self/opp/bot/sim/ite/search`).
 * The M4 kit: bounded D2 (`CutV`), instantiation (`InstV`), the parametric diagonal lemma (`Diag`),
-  `ProperV`, `NumeralFacts`, Dupoc's truth equations (`Transparency`), the conjunction family and
+  `ProperBound`, `NumeralFacts`, Dupoc's truth equations (`Transparency`), the conjunction family and
   ∧-elimination on codes (`Assembly/Prep`).
 * U10: `boundedInnerNec_sixteen : BoundedInnerNec 16` (`Necessitation/Package.lean`) — PARAMETRIC
   ONLY: stated for `instB ⌜χ⌝ k` at budget `gBudget k`.
-* Two cells: `red_cell` (every `k`), `dupoc_self_coop_unconditional` (all large `k`).
+* Two cells: `red_cell` (every `k`), `dupoc_self_coop` (all large `k`).
 * The atom re-cost (`colomban-recost`, engine): keep regardless.
 
 ## 2. The census (155 cells, 18 bots), by mechanism
@@ -62,8 +62,8 @@ closes the red cell. The floor hypothesis is needed only where a PA PROOF must a
 ## 3. Phases
 
 **Phase 0 — packaging and census (~2 days).**
-* U10 in closed-sentence, arbitrary-budget form: `∀ σ, ∃ C_σ, ∀ V b, LenDerivable TAct b ⌜σ⌝ →
-  LenDerivable TAct (C_σ·(b^16+1)) ⌜□_b σ⌝` (with `□_b σ` the `LenDerivable`/`bewB` sentence at the
+* U10 in closed-sentence, arbitrary-budget form: `∀ σ, ∃ C_σ, ∀ V b, LenBoxUnbounded TAct b ⌜σ⌝ →
+  LenBoxUnbounded TAct (C_σ·(b^16+1)) ⌜□_b σ⌝` (with `□_b σ` the `LenBoxUnbounded`/`bewB` sentence at the
   budget `b` written as a term), re-packaged from `Necessitation/Top.lean`'s kit. Needed the moment one
   bot cites another searcher's success at the partner's FULL budget (asymmetric cells).
 * The bounded diagonal-lemma wrapper (`Diag.tact_parametric_diagonal_inst` carries no length; the
@@ -76,9 +76,9 @@ closes the red cell. The floor hypothesis is needed only where a PA PROOF must a
 `exists_psi_instance_length`, `cell_core`). Abstract them over the FAMILY: a target
 `p : Semisentence LAct 1` and the bounded Löb premise as a hypothesis ("a proof of the `k`-instance
 of `p` within budget `k` makes `p(k)` true in both standard readings"); output the arithmetized
-`pblt_engine`: `∃ k₀, ∀ k > k₀, ∃ a ≤ k, LenDerivable TAct a (instB ⌜p⌝ k)` (the family's box is
+`pblt_engine`: `∃ k₀, ∀ k > k₀, ∃ a ≤ k, LenBoxUnbounded TAct a (instB ⌜p⌝ k)` (the family's box is
 found within its budget, at ℕ and V-generic) and the uniform `TAct ⊢ ∀k ≥ k̂, psi_p(k)`. GATE:
-`dupoc_self_coop_unconditional` and `pblt_unconditional` re-derived with BYTE-IDENTICAL statements
+`dupoc_self_coop` and `pblt` re-derived with BYTE-IDENTICAL statements
 (`Package.lean` unchanged), census unchanged, build green. Also needed here: the `.sim` clause in
 `V` (Mirror-facing cells; `Subst.lean`/`SimTest.lean` hold the ℕ side).
 
@@ -95,11 +95,11 @@ CupodTroll×Dupoc at POLYNOMIAL staggers, conditional; and the honest negative l
 floor cells are NOT claimed. Its discharge (proof-length lower bounds, Pudlák) is OUT.
 
 **Phase 4 — the SF/POS/SND census (~2 days).** SF and POS mechanical (`AgentConverse` + `Inst`); SND = the
-red cell's soundness argument per cell (guard false in ℕ ⇒ `¬LenProvableV` at every budget ⇒ else branch):
+red cell's soundness argument per cell (guard false in ℕ ⇒ `¬LenBox` at every budget ⇒ else branch):
 78 cells unconditional. Then the 10 unreadability cells (cenU + WV) re-evaluated in `S'` — expected to
 split into POS-like and genuine FLOOR(cen).
 
-**Phase 5 (optional) — LegibleBot** via box budgets/bodies as node data in `tmpl` (`FitBox`'s fix).
+**Phase 5 (optional) — LegibleBot** via box budgets/bodies as node data in `template` (`FitBox`'s fix).
 
 ## 4. Statement conventions (unchanged from M4/M5)
 
@@ -125,9 +125,9 @@ no polynomial budget-preserving embedding of the citation rule exists.*
   53/53 statements byte-identical, `Package.lean`/`Prep.lean` untouched, census 926 all standard.
   Deviation: `theta/psi/psi_fixed_point` stay in `Prep.lean`, bridged by `rfl` (`psi = psiF pConj`).
 * 2026-09-23 (later): **Phase 0 item 1 DONE** (`715851b`, `Necessitation/ClosedNec.lean`):
-  `closedInnerNec_sixteen : ∀ σ : Sentence LAct, ∃ C, ∀ V b, LenDerivable TAct b ⌜σ⌝ → ∃ e ≤ C·(b^16+1),
-  LenDerivable TAct e (boxSentenceCode σ b)` with `boxSentenceCode σ b = instB ⌜boxClosed σ⌝ b` (budget as
-  the BINARY numeral `bnum b`, `σ` by its Gödel numeral — the `Box_g` discipline; semantics
+  `closedInnerNec_sixteen : ∀ σ : Sentence LAct, ∃ C, ∀ V b, LenBoxUnbounded TAct b ⌜σ⌝ → ∃ e ≤ C·(b^16+1),
+  LenBoxUnbounded TAct e (boxSentenceCode σ b)` with `boxSentenceCode σ b = instB ⌜boxClosed σ⌝ b` (budget as
+  the BINARY numeral `binNumeral b`, `σ` by its Gödel numeral — the `Box_g` discipline; semantics
   `eval_boxSentence_iff`). The verification kit (`Assemble.VerifyKit'''`) was re-used VERBATIM for an
   arbitrary conclusion; only the pin (`NumId.numId_sentence` on the root dossier), the closing block
   (`closeStepsC`, one appended library row `lenDerCong` in `closedRows := indRecRows ++ [lenDerCongRow]`)
@@ -150,7 +150,7 @@ no polynomial budget-preserving embedding of the citation rule exists.*
   axioms; NO generalization of `Instance*`/`Guard`/`Template` was needed — a closed opponent goes
   through the existing `quote_emb_cl_V`/`termSubst_closed` route. Full build 3298 jobs, census 984
   (+27). The engine is now used as a FUNCTION OF THE FAMILY: a cell = its truth equation + one
-  `LoebSound` proof. IN FLIGHT: `Cells/DIMCID.lean` (the `.impl` guard via `tmpl`: DIMCID×DIMCID,
+  `LoebSound` proof. IN FLIGHT: `Cells/DIMCID.lean` (the `.impl` guard via `template`: DIMCID×DIMCID,
   DIMCID×Mirror, then DIMCID×Cupod mutual) and `Cells/JustBot.lean` (the frozen `.bot (Dupoc k)`
   guard: bot-wrapped Dupoc self-coop, Just×Just, Just×Mirror, then Just×Dupoc mutual).
 * 2026-09-27 (hygiene, three commits): (1) the dead `Assemble.SizeOracle` path deleted — `SizeOracle`,
@@ -160,11 +160,11 @@ no polynomial budget-preserving embedding of the citation rule exists.*
   flight"/"pending" docstrings of `Assemble`/`Package`/`Verify5`/`Top`/`Verify`/`Prologue` rewritten to the
   live path. (2) The naming scheme `<method>_<L>_vs_<R>[_<suffix>]` made PRIMARY: 166 declarations renamed
   in place (statements byte-identical modulo the map, header diff 0 changed), `Cells/Names.lean` turned into
-  the deprecation layer, Audit prints on the new names; `dupoc_self_coop_unconditional` deliberately not
+  the deprecation layer, Audit prints on the new names; `dupoc_self_coop` deliberately not
   flipped. (3) Reading orders updated (`SPRIME_DESIGN_RATIONALE.md` §10, `arith/README.md`). Census: 1860 →
   1856 prints (the four deliberate deletions), all standard but the 4 pre-existing subsets.
 
-## 7. FINDING (2026-09-23): budget-dependent snapshots inside a guard are not `bnum k`-instances
+## 7. FINDING (2026-09-23): budget-dependent snapshots inside a guard are not `binNumeral k`-instances
 
 `Cells/JustBot.lean` (`8df39b4`, `b9d0dcf`) landed the bot-wrapped Dupoc self-cooperation
 (`botDupoc_self_coop_unconditional : ∃ k₀, ∀ k > k₀, EvalGraph 3 (pBot (Dupoc k)) (pBot (Dupoc k))
@@ -178,11 +178,11 @@ equation `eval_GtmplA_subst_iff` that make each new instance equation a one-line
 `JustBot k := .search k (.plays .opp (.bot (DupocBot k)) C)` carries the budget `k` TWICE: as its search
 budget and INSIDE its guard, in the frozen snapshot `DupocBot k`. Its arithmetized code
 `JustV k = pSearch k (gJ k) …` therefore stores a template `gJ k = subst (jVec k) ⌜guardTemplate 0⌝` whose CODE
-depends on `k`, and the canonical description `progT (dnum (JustV k))` has the leaf `bnum (gJ k)` — the
-binary numeral of a `k`-dependent formula code, which is NOT `termSubst (bnum k ∷ 0)` of any fixed term.
+depends on `k`, and the canonical description `codeTerm (canonical (JustV k))` has the leaf `binNumeral (gJ k)` — the
+binary numeral of a `k`-dependent formula code, which is NOT `termSubst (binNumeral k ∷ 0)` of any fixed term.
 So a guard that DESCRIBES `Just k` ("Just k plays C against …") is not `instB ⌜q⌝ k` for any fixed
 `q : Semisentence LAct 1`, and `Assembly/Family.family_found` (Critch's uniform argument, which needs
-the family to be the `bnum k`-instance of ONE formula) does not apply. Dupoc/Cupod/Mirror never hit this
+the family to be the `binNumeral k`-instance of ONE formula) does not apply. Dupoc/Cupod/Mirror never hit this
 because their stored templates are CONSTANTS (`⌜guardTemplate a⌝`) — the M4 brief's `ppair` fix (§2 there) made
 the PROGRAM description a term in `k`, but a `k`-dependent TEMPLATE inside the program is the same
 mismatch one level down. The engine never sees it: `search_t` CITES the fact at `O(log k)`.
@@ -200,7 +200,7 @@ Three routes (USER DECISION):
      natural substrate), days.
  (b) **Fix the snapshot's budget** — the engine's own two-tier `JustBot2 K k` (`JustBot k = JustBot2 k k`,
      the FREEZE TRICK): at a FIXED snapshot budget `k₀` the template is a constant and `JustBot2 K k₀`
-     IS a `bnum K`-instance of a fixed formula, so the family machinery applies verbatim and gives
+     IS a `binNumeral K`-instance of a fixed formula, so the family machinery applies verbatim and gives
      "for all large `K`" cells at each fixed `k₀` (with `k₀` large enough for the snapshot's own Löb).
      Honest, cheap, matches the engine's `outcome_JustBot2_vs_*` variants — but it is a statement
      about `JustBot2`, not the same-`k` `JustBot k` cell.
@@ -215,8 +215,8 @@ together with the LegibleBot node-data question (Phase 5) — they are the same 
   Just × Mirror DONE unconditional (`8df39b4`, `b9d0dcf`); Just × Just / Just × Dupoc blocked by §7.
 * 2026-09-23 (later): **Phase 2 DIMCID family DONE** (`c5f83f6`, `da5bd3c`, `Cells/DIMCID.lean`):
   DIMCID × DIMCID `(D, D)`, DIMCID × Mirror `(D, D)` and the first MUTUAL cell DIMCID × Cupod `(D, D)`,
-  all unconditional. The guard went through the GENERAL translation `tmpl φD` (new: the truth of `tmpl`
-  at the pronoun atoms in every model, `eval_tmpl_plays_self_opp_V/_opp_self_V`; fixed formulas
+  all unconditional. The guard went through the GENERAL translation `template φD` (new: the truth of `template`
+  at the pronoun atoms in every model, `eval_template_plays_self_opp_V/_opp_self_V`; fixed formulas
   generic in the opponent triple `pG X U W`); the mutual family is `pDC = pG TD uC wC ⋏ (qCD ⋏ τqCD)`,
   four guards from one box by a two-level ∧-elimination at slack `(14, 16)`. **MERGED GATE on
   `da5bd3c`: 3301 jobs, 0 errors, census 1071 standard.** Phase 2 tally: 8 cells unconditional
@@ -236,9 +236,9 @@ together with the LegibleBot node-data question (Phase 5) — they are the same 
 * 2026-09-23 (later): **Phase 2 Prudent × Mirror DONE** (`9a71612`, `Cells/PrudentMirror.lean`):
   `prudent_mirror_coop_unconditional : ∃ k₀, ∀ k > k₀, EvalGraph 3 (Prudent k) Mirror (Prudent k) 0 ∧
   EvalGraph 4 Mirror (Prudent k) Mirror 0` (fuels 3/4: outer search, inner search, constant), the τ-twin
-  `(D, D)`, box forms for BOTH guards, bridge `pcode_PrudentBot`. **STEP-0 verdict: nested searches are
+  `(D, D)`, box forms for BOTH guards, bridge `progCode_PrudentBot`. **STEP-0 verdict: nested searches are
   NOT the §7 obstruction** — Prudent's two stored templates are budget-free constants (`.bot DefectBot`
-  is closed), `k` sits only in the two `pSearch` budget slots, so `PrudentV k` IS a `bnum k`-instance of a
+  is closed), `k` sits only in the two `pSearch` budget slots, so `PrudentV k` IS a `binNumeral k`-instance of a
   fixed two-`#0` term. What nesting costs: the canonical description compares two `k`-dependent codes
   (`PrudentV k` vs its transposition), uniform only ABOVE a standard threshold `KP` (`nested_search_lt`,
   an ordered-semiring argument on `ppair`); every description/instance/truth equation carries
@@ -248,12 +248,12 @@ together with the LegibleBot node-data question (Phase 5) — they are the same 
   inner-search citation (`searchThenSearch_t`) is ∧-elimination from the family's box, so both searches
   fire from ONE Löb fixed point (`pPM = (qPM ⋏ qPP) ⋏ (qPMT ⋏ qPPT)`, `loebSound_pPM : LoebSound pPM
   (14 + KP) 16`). Generic pieces added for any six-variable template: `qT`, `guardCode_qT_eq_instB`,
-  `eval_qT_iff`, `eval_tmpl_plays_opp_closed_V`. **FINAL GATE on `9a71612`: 3305 jobs, 0 errors, census
+  `eval_qT_iff`, `eval_template_plays_opp_closed_V`. **FINAL GATE on `9a71612`: 3305 jobs, 0 errors, census
   1163 standard.** **Phase 2 tally: 12 cells unconditional; of the 14 in-scope LOEB-FF cells of the
   census, 11 are done; Just × Just, Just × Dupoc, CIMCIC × Just parked on §7.** TRAPS: in this Mathlib
   `add_le_add_left h a : h.lhs + a ≤ h.rhs + a` and `add_le_add_right h a : a + … ≤ a + …` (`_root_.`
   needed, Foundation shadows them); a statement mentioning only `MirrorV`/`pBot`/`pConst` without a
-  `V`-pinned term elaborates at ℕ silently (write `(MirrorV : V)`); `rw [relabel_const]` rewrites every
+  `V`-pinned term elaborates at ℕ silently (write `(MirrorV : V)`); `rw [revalue_const]` rewrites every
   `pConst 1` at once; zsh: `${pipestatus[1]}`, not `${PIPESTATUS[0]}`, to read `lake env lean`'s exit
   code through a pipe.
 
@@ -261,7 +261,7 @@ together with the LegibleBot node-data question (Phase 5) — they are the same 
 
 1. **§7 route: try (c) — templates with a BUDGET SLOT — with (a) the transparency lift as the fallback.**
    Design of (c): a stored template may have a 7th free variable; the evaluator's `search` clause fills
-   it with the NODE'S OWN budget at guard time, `guardCode g me opp k := subst (descVec me opp ++ [bnum k])
+   it with the NODE'S OWN budget at guard time, `guardCode g me opp k := subst (descriptions me opp ++ [binNumeral k])
    g`, so a frozen snapshot whose budget equals the searcher's is described by a TERM in the slot and the
    stored template is a constant (`JustBot k = JustBot2 k k`, the diagonal; `JustBot2 K k` keeps a constant
    description as today). Existing 6-variable templates are untouched iff `subst` ignores entries beyond
@@ -276,10 +276,10 @@ Also: the thesis is DONE (2026-09-23); the audience from here is the JMLR paper 
 Phase 4 starts with the search-free cells (they never unfold the `search` clause, so they are safe
 alongside (c)); SND/POS wait for (c) to settle.
 * 2026-09-23 (evening): **Phase 4 search-free class DONE** (`8c49ec4`, `Cells/SearchFree.lean`): all 28 SF
-  cells of the census as `sf_<L>_vs_<R> : EvalGraph n (pcode L) (pcode R) (pcode L) a ∧ EvalGraph n (pcode R)
-  (pcode L) (pcode R) b` at an EXPLICIT fuel, by TRANSFER from the engine's `OutcomeSpec` theorems
+  cells of the census as `sf_<L>_vs_<R> : EvalGraph n (progCode L) (progCode R) (progCode L) a ∧ EvalGraph n (progCode R)
+  (progCode L) (progCode R) b` at an EXPLICIT fuel, by TRANSFER from the engine's `OutcomeSpec` theorems
   (`outcomeSpec_evalGraph_of_searchFree`); Mirror × Mirror as non-termination (`SimTest.mirror_vs_mirror`);
-  the PA corollary `pa_proves_trAt_of_evalGraph` (certificate-free Σ₁-completeness) with 27 instances (54
+  the PA corollary `pa_proves_sentenceAt_of_evalGraph` (certificate-free Σ₁-completeness) with 27 instances (54
   atoms); summary `searchFree_census`/`searchFree_pa_census`. FINDING: the engine's `eval` and `EvalGraph`
   step in LOCKSTEP on `const/self/opp/bot/sim/ite` (`evalGraph_of_eval_searchFree_core` at the SAME
   fuel — stronger than `AgentConverse.evalGraph_of_eval`'s existential `N`, and it would hold with
@@ -289,12 +289,12 @@ alongside (c)); SND/POS wait for (c) to settle.
 * 2026-09-23 (night): **ROUTE (c) DONE** — `271f6d7` (trusted base) + `f2cf619` (`Cells/JustSlot.lean`).
   THE GATE LEMMA IS A THEOREM: `guardCodeB_of_template : IsSemiformula LAct 6 g → guardCodeB g me opp k =
   guardCode g me opp` (a seventh entry is never read; via the identity vector `idVec6`, `subst_eq_self`,
-  `substs_substs`). Representation: the budget slot is `#6`, LAST (`descVecB me opp k = descVec me opp ++
-  [bnum k]`), so every six-variable template, `descVec`, `guardCode`, `gsubst`, `psubst` are
+  `substs_substs`). Representation: the budget slot is `#6`, LAST (`descriptionsB me opp k = descriptions me opp ++
+  [binNumeral k]`), so every six-variable template, `descriptions`, `guardCode`, `substTemplate`, `substCode` are
   byte-identical; the evaluator's `search` clause (Phi, Δ₁ blueprint, `case_iff`, `EvalN.search_iff`)
   now consults `guardCodeB g me opp k`; `search_iff₆` is the old reading on six-variable templates. Blast
   radius: 14 files, 34 sites, each one rewrite; **`Necessitation/` untouched** (rebuilt, green). The
-  three parked cells, all unconditional on the constant-template diagonal `Just7 k := pSearch k ⌜GtmplJ7⌝
+  three parked cells, all unconditional on the constant-template diagonal `Just7 k := pSearch k ⌜guardTemplateJust7⌝
   …` (`evalGraph_JustV7_iff`: identical PLAY to `Just k` in every frame at every fuel — an opponent's guard
   that DESCRIBES the code is what differs, by design): `just7_self_coop_unconditional` (`(C, C)`),
   `just7_dupoc_coop_unconditional` (`(C, C)`, a THREE-guard mutual family, three-level ∧-elimination at
@@ -303,27 +303,27 @@ alongside (c)); SND/POS wait for (c) to settle.
   LOEB-FF cells of the census are done.**
   DESIGN DEBT — DISCHARGED 2026-09-24 (the recipe below, executed; `Subst.lean`, `Guard.lean`,
   `SimTest.lean`, `Cells/SimSlot.lean`). The debt: a seven-variable template is not `IsSemiformula
-  LAct 6`, so `gsubst` left it and `psubst` never filled its frame slots — faithful for every program
+  LAct 6`, so `substTemplate` left it and `substCode` never filled its frame slots — faithful for every program
   that never `.sim`s a seven-variable searcher (none of the three cells does), but a `.sim`-wrapped
-  `Just7` would have read the INNER frame. The extension: `gsubst` has a MIDDLE case — `¬IsSemiformula
-  LAct 6 g ∧ IsSemiformula LAct 7 g ↦ guardCodeSlot g me opp := subst (descVecSlot me opp) g` with
-  `descVecSlot me opp = descVec me opp` extended by the VARIABLE `^#6` (`Guard.lean`, Σ₁ graphs
-  `descVecSlotGraph`/`guardCodeSlotGraph`; `gsubstGraph` has the third disjunct) — fill `#0..#5` with
-  the outer descriptions, keep the slot. THE LEMMA: `guardCodeB_gsubst₇ : IsSemiformula LAct 7 g →
-  guardCodeB (gsubst me opp g) me' opp' k = guardCodeB g me opp k` (a seven-variable guard inside a
+  `Just7` would have read the INNER frame. The extension: `substTemplate` has a MIDDLE case — `¬IsSemiformula
+  LAct 6 g ∧ IsSemiformula LAct 7 g ↦ guardCodeSlot g me opp := subst (descriptionsSlot me opp) g` with
+  `descriptionsSlot me opp = descriptions me opp` extended by the VARIABLE `^#6` (`Guard.lean`, Σ₁ graphs
+  `descriptionsSlotGraph`/`guardCodeSlotGraph`; `substTemplateGraph` has the third disjunct) — fill `#0..#5` with
+  the outer descriptions, keep the slot. THE LEMMA: `guardCodeB_substTemplate₇ : IsSemiformula LAct 7 g →
+  guardCodeB (substTemplate me opp g) me' opp' k = guardCodeB g me opp k` (a seven-variable guard inside a
   simulated program is evaluated against the OUTER players at the RUNNING node's budget; via
-  `substs_substs` at `(7, 7, 0)` and `termSubstVec_descVecB_descVecSlot`: the six closed entries are
-  fixed, `#6 ↦ bnum k`), the seven-variable twin of `guardCode_gsubst`. Statement changes: exactly
-  TWO — `gsubst_of_not`'s hypothesis is now `¬IsSemiformula LAct 7 g` (one use site, inside
-  `relabelTemplate_gsubst`; arity monotonicity `isSemiformula_of_le`/`isSemiformula_seven_of_six` from
-  the `IsSemiformula` structure) and `gsubstGraph`'s definition; `gsubst_of_template`,
-  `guardCode_gsubst`, `guardCodeB_gsubst`, `relabelTemplate_gsubst` (middle case via
-  `termRelabelVec_descVecSlot`: the swap fixes `^#6`), `swapcode_psubst`, `psubst_search`, the
-  `Psubst` blueprint (it cites `gsubstGraph` by name) all byte-identical. Faithfulness witnesses:
+  `substs_substs` at `(7, 7, 0)` and `termSubstVec_descriptionsB_descriptionsSlot`: the six closed entries are
+  fixed, `#6 ↦ binNumeral k`), the seven-variable twin of `guardCode_substTemplate`. Statement changes: exactly
+  TWO — `substTemplate_of_not`'s hypothesis is now `¬IsSemiformula LAct 7 g` (one use site, inside
+  `revalueTemplate_substTemplate`; arity monotonicity `isSemiformula_of_le`/`isSemiformula_seven_of_six` from
+  the `IsSemiformula` structure) and `substTemplateGraph`'s definition; `substTemplate_of_template`,
+  `guardCode_substTemplate`, `guardCodeB_substTemplate`, `revalueTemplate_substTemplate` (middle case via
+  `termRelabelVec_descriptionsSlot`: the swap fixes `^#6`), `transposeCode_substCode`, `substCode_search`, the
+  `SubstCode` blueprint (it cites `substTemplateGraph` by name) all byte-identical. Faithfulness witnesses:
   `SimTest.sim_search_outer_guard₇` (any seven-variable searcher under `sim` reads the outer frame at
   its own budget `k`) and `Cells/SimSlot.evalGraph_sim_JustV7` (`pSim (JustV7 k) q` in `(me, opp)`
   runs Just's guard `guardCode ⌜guardTemplate 0⌝ (pBot (DupocV k)) opp` — the OUTER `opp`, not the simulated
-  `psubst me opp q` — the engine's `.sim (JustBot k) q`), `evalGraph_psubst_JustV7_iff`. `JustSlot`,
+  `substCode me opp q` — the engine's `.sim (JustBot k) q`), `evalGraph_substCode_JustV7_iff`. `JustSlot`,
   `KhatCells`, `FlipCells` unchanged. `SPRIME_DESIGN_RATIONALE.md` §4/§5 updated. GATE: `lake build
   ArithS` 3349 jobs, 0 errors; census 1530 rows (+14: the new `Audit.lean` block), all standard but the 4
   pre-existing subsets.
@@ -333,18 +333,18 @@ alongside (c)); SND/POS wait for (c) to settle.
   `simp only`); a `-/` inside prose (`four-/seven-`) closes a docstring.
 * 2026-09-23 (night, later): **Phase 4 SND + POS classes DONE** (`5df270d`, `541cbb8`, `d988e63`, `7b7f609`;
   `Cells/SoundnessCells.lean` 1080 lines, `Cells/PositiveCells.lean` 990 lines). **SND (36 of 36)**: the general
-  lemma `snd_else_of_false : ¬ (ℕ ⊨ trAt me opp φ) → ¬ LenProvableV TAct k (guardOf φ me opp)` (soundness of
-  `TAct` in ℕ) + `trAt_subst` (the realization of a fragment guard in a proper frame IS the realization of its
+  lemma `snd_else_of_false : ¬ (ℕ ⊨ sentenceAt me opp φ) → ¬ LenBox TAct k (guardOf φ me opp)` (soundness of
+  `TAct` in ℕ) + `sentenceAt_subst` (the realization of a fragment guard in a proper frame IS the realization of its
   closed instantiation) + per-shape "not found" lemmas (`.plays .opp .self`, `.plays .opp (.bot P)`, `.neg`, `.eq`)
   + the search-free probers' plays from their probe results; NO engine transfer for SND (the falsity of a guard
   needs the arithmetized sub-play, which is the cell itself — the SF lockstep transfer stays the template;
   `search_either` handles nodes whose branches agree, e.g. Prudent's outer guard and Dupoc's/Just's probe against
-  `.bot CooperateBot` inside OBot). All 36 on the ENGINE's own codes `pcode (L k)` at the engine's pads: 30 at
+  `.bot CooperateBot` inside OBot). All 36 on the ENGINE's own codes `progCode (L k)` at the engine's pads: 30 at
   every `k`, 6 for large `k` (they need a positive sub-fact: Guardian × EBot/OBot, Cupod × DBot/EBot, Wary ×
   DBot/EBot). **POS (10 of 13)**: `pos_GuardianBot_vs_DefectBot`/`_DBot` (fixed closed atoms: Guardian's guard
-  names no `.self`, `tact_proves_plays_closed` by Σ₁-completeness in both readings + `tact_complete'`),
+  names no `.self`, `tact_proves_plays_closed` by Σ₁-completeness in both readings + `TAct_complete_of_readings`),
   `pos_DupocBot_vs_CooperateBot`, `pos_CupodBot_vs_DefectBot`, `pos_CIMCIC_vs_CooperateBot`,
-  `pos_DIMCID_vs_DefectBot`, `pos_JustBot_vs_CooperateBot` (on `pcode (JustBot k)`: `guardCode_JustBot_eq`),
+  `pos_DIMCID_vs_DefectBot`, `pos_JustBot_vs_CooperateBot` (on `progCode (JustBot k)`: `guardCode_JustBot_eq`),
   `pos_WaryBot_vs_DefectBot` (the `.neg` guard, a Π₁ truth by determinism — `Pf.atomNeg`'s twin) — via the
   GENERIC engine-searcher description layer `SV g a` (Dupoc/Cupod/Wary ENGINE codes described like
   CIMCIC/DIMCID), `tact_all_of_both`, `found_of_all` (`K₀ + K₁·size k ≤ k`). NOT done (the "k̂ chain": the
@@ -359,24 +359,24 @@ alongside (c)); SND/POS wait for (c) to settle.
   `7b7f609`+audit fix: 3346 jobs, 0 errors, census 1436 lines = 1436 commands, 1428 standard triples (the 7
   pre-existing subsets/axiom-free lines + `sfp_transpose` `[propext]`).** Tally: 43 + 36 SND + 10 POS + 3
   re-evaluated = 92 cells in `S'`. TRAPS: BSD `sed` has no `\b` (use `perl -pi`); `closedP` is FALSE on DBot/EBot/
-  TFT/OBot (pronouns inside `.sim`) — `fragF` of a closed atom over them fails, so τ on `tmpl (.plays p q a)` must
-  be stated with `fragP` only (`lMap_swap_tmpl_plays`); `pgrep -f "lake env lean …"` matches the polling shell's
-  own command line (anchor with `^lean`, or poll a sentinel file); a `simp [closedDesc, descF, cl, dnumT]` on a
-  template hangs (giant terms) — separate templates SEMANTICALLY (`tcode_ne_of_models`), Wary from Cupod at the
+  TFT/OBot (pronouns inside `.sim`) — `fragF` of a closed atom over them fails, so τ on `template (.plays p q a)` must
+  be stated with `fragP` only (`lMap_swap_template_plays`); `pgrep -f "lake env lean …"` matches the polling shell's
+  own command line (anchor with `^lean`, or poll a sentinel file); a `simp [closedDesc, descF, cl, canonicalMeta]` on a
+  template hangs (giant terms) — separate templates SEMANTICALLY (`templateCode_ne_of_models`), Wary from Cupod at the
   non-terminating frame `(Mirror, Mirror)`; `EvalGraph.mono_le (by omega)` needs the source fuel explicit
   (`const_play 3 _ _ _`, not `_`); `one_ne_zero` is ambiguous under `open Arithmetic` (`_root_.`).
 * 2026-09-23 (late): NEXT STEPS STARTED (Colomban: "go with all"): `Cells/FlipCells.lean` (the five
   verdict-only flips as theorems), `Cells/KhatCells.lean` (`found_of_all_above`, the 3 TFT `k̂`-chain cells,
   the budget-slot `CupodTroll7`, CupodTroll × Cupod), `SPRIME_DESIGN_RATIONALE.md` (the trusted base,
-  written against the post-route-(c) tree); the `gsubst` `.sim` debt is queued AFTER the two cell agents
+  written against the post-route-(c) tree); the `substTemplate` `.sim` debt is queued AFTER the two cell agents
   land (it rebuilds everything downstream of `Subst.lean`).
 * 2026-09-24: **`Cells/KhatCells.lean` DONE** (`1995f5a`, `1239a5b`): the `k̂`-CHAIN as general lemmas
   (`found_of_all_V`, `tact_all_above_of_both`, `exists_instance_length_above`, **`found_of_all_above`** —
   a positive guard true only above a threshold is found for all large `k`, cost `K₀ + K₁·size k +
   K₂·size k²`); TFT in every model; the three TFT cells `khat_DupocBot/JustBot/CIMCIC_vs_TitForTatBot`
-  `(C, C)` at pads 4/5/6 on the ENGINE's codes; **the budget-slot `CupodTroll7`** (`GtmplT7`, the `.eq`
+  `(C, C)` at pads 4/5/6 on the ENGINE's codes; **the budget-slot `CupodTroll7`** (`guardTemplateTroll7`, the `.eq`
   template with the frozen `CupodBot k` as a term in `#6`; `evalGraph_CupodTroll7_iff`: same play as
-  `pcode (CupodTrollBot k)` in every frame; engine bridge `guardCodeB_GtmplT7_nat`); CupodTroll × Cupod
+  `progCode (CupodTrollBot k)` in every frame; engine bridge `guardCodeB_guardTemplateTroll7_nat`); CupodTroll × Cupod
   `(D, D)` (`khat_CupodTrollBot_vs_CupodBot`: the `.eq` guard is true by `rfl` in both readings —
   `eqRefl`'s twin — then Cupod's guard above `k̂`). **POS class 14/14.** Gate 3348 jobs, census 1486 all
   standard. TRAPS: `add_lt_add_right` is the LEFT version (Foundation shadowing); Cantor pairing is not
@@ -391,7 +391,7 @@ alongside (c)); SND/POS wait for (c) to settle.
   `BoxConseq`/`box_conseq_uniform`/`found_of_box_conseq` (the `k̂`-chain through another searcher's box,
   in every model — the brief's "truth above `k̂` in both readings" route was NOT viable: it needs
   found-ness at NONSTANDARD budgets, and `NumeralFacts` is ℕ-only). **GATE: 3348 jobs, census 1512
-  standard. 105 cells stated in `S'`, 8 disagree with the engine.** NEXT: the `gsubst` `.sim` debt (+ the
+  standard. 105 cells stated in `S'`, 8 disagree with the engine.** NEXT: the `substTemplate` `.sim` debt (+ the
   stale `Package.lean` docstring), then DIMCID × DBot / EBot (floor-class cells expected to flip).
   TRAPS: never restate at ℕ a term carrying `‖k‖ ^ d` (pow instance mismatch) — take the Nat inequality
   with sides INFERRED (`nat_le_of_le_def (le_def.mp h)`); `set t := …` AFTER the facts that mention it
@@ -406,11 +406,11 @@ alongside (c)); SND/POS wait for (c) to settle.
   (engine codes; Dupoc's guard false ⇒ SND, `dupoc_guard_vs_DIMCID_not_found`) — the two systems CONTRADICT each
   other on a universal cell, `loeb_DIMCID_vs_JustBot` `(C, D)` → `(D, D)` (on the budget-slot `Just7 k`:
   `just7_else_V` + `evalGraph_of_guard`; Just's half ALSO on the engine code, `just_engine_vs_DIMCID_defects`,
-  through `.bot (DupocBot k) = pBot (SV gDu 0 k)`; no `Describes` for `pcode (JustBot k)`, §7),
+  through `.bot (DupocBot k) = pBot (SV gDu 0 k)`; no `Describes` for `progCode (JustBot k)`, §7),
   `loeb_DIMCID_vs_PrudentBot` `(C, D)` → `(D, D)` (engine codes, above `KP`), `loeb_CIMCIC_vs_DIMCID` `(D, C)` →
   `(D, D)` (engine codes, CIMCIC's guard self-refuting). Machinery: **`describes_closed P` — EVERY closed code
-  `P : ℕ` is described** by the generic triple `(cl (dnumT P), dUT P, dWT P)` of `Template.lean` in every model
-  (`cast_swapcode`/`cast_dnum` absoluteness; no per-bot code-order `norm_num`) ⇒ `dimcid_vs_closed`: DIMCID
+  `P : ℕ` is described** by the generic triple `(cl (canonicalMeta P), revalueUMeta P, revalueWMeta P)` of `Template.lean` in every model
+  (`cast_transposeCode`/`cast_canonical` absoluteness; no per-bot code-order `norm_num`) ⇒ `dimcid_vs_closed`: DIMCID
   defects against every closed code; `DescribesAbove K` (Prudent's `KP`; `loebSound_pG_of_above`, slack
   `(7 + K, 8)`; `dimcid_vs_described_above`); instances `describes_botSV g a` (bot-wrapped engine searcher),
   `describes_dupocV`/`describes_botDupoc` (the `TD`/`TBD` towers), `describes_just7`, `describesAbove_prudent`.
@@ -421,8 +421,8 @@ alongside (c)); SND/POS wait for (c) to settle.
   V-generic lemmas at ℕ want Foundation's `Nat.cast` — never state the threshold hypothesis separately, discharge
   it INLINE at the use site (`h.hX ℕ k (by rw [natCast_nat]; exact le_def.mpr (Nat.eq_or_lt_of_le (by omega)))`,
   and `descVal_prudent (k := k) (by …)` inside `rw`, the implicit pinned so the `by` block sees its goal);
-  `Nat.cast_id` does not fire on that cast either (`natCast_nat` does); `Template.lMap_swap_dnumT` already
-  exists with the OTHER normal form (`dnumT (swapcode x)`) — a same-named local lemma is silently shadowed
+  `Nat.cast_id` does not fire on that cast either (`natCast_nat` does); `Template.lMap_swap_canonicalMeta` already
+  exists with the OTHER normal form (`canonicalMeta (transposeCode x)`) — a same-named local lemma is silently shadowed
   by the import and the `rw` picks the import's.
 * 2026-09-24 (housekeeping, Colomban's "3 first"): `CLAUDE.md` Part III (the `arith/` layer table, the
   ledger, conventions) — `c076838`; `arith/README.md` refreshed for route B; `ARITH_TRAPS.md` (the
@@ -434,11 +434,11 @@ alongside (c)); SND/POS wait for (c) to settle.
   (`ROUTE_B_CELLS_MAP.md`) held at every stage: every existing theorem/lemma/def NAME and STATEMENT
   byte-identical (script over the `^(theorem|lemma|def|…) <name> … :=` headers of ALL `ArithS/**/*.lean`: 0
   missing, 0 changed), no definition body changed (`Describes`, `SV` with its `variable (g) (a)` block,
-  `descVal`, `qT`, `qG`, `pQ`, `gVec`/`tmplVec`, the bot codes and towers all verbatim), `lake build ArithS`
+  `descVal`, `qT`, `qG`, `pQ`, `gVec`/`templateVec`, the bot codes and towers all verbatim), `lake build ArithS`
   green after every stage (3351 → 3357 jobs), census 1579 → 1757 (+178 prints of moved names, no line lost,
   all standard but the 4 pre-existing subsets). The duplicates are gone as duplicates: FlipCells' `TFTV`/
   `TFTTV`/`TTFT` keep their bodies but sit next to the `Tft` block with `rfl` bridges and one-liner lemmas;
-  `tmplVec_eq_gVec : … := rfl`; `DimcidV_eq_SV`/`CimcicV_eq_SV` bridge the two searcher towers to the generic
+  `templateVec_eq_gVec : … := rfl`; `DimcidV_eq_SV`/`CimcicV_eq_SV` bridge the two searcher towers to the generic
   `SV` (`DupocV` deliberately NOT — the hand template). Generic-first: `search_then_V₆`/`search_else_V₆`,
   `loebSound_pQ_of` (Wary's two premises are corollaries), `slack_depth_le` (the `(7d, 8d)` slack at any depth;
   `slack4_*`/`slack6_*` corollaries in place; `pConj_slack_nat` untouched — `Assembly/Cell` is upstream),
@@ -474,12 +474,12 @@ alongside (c)); SND/POS wait for (c) to settle.
   directions, and the two answers give DIFFERENT cell values; the engine's `+k` stipulates the negative
   side. Decision: **dichotomy theorems, hypothesis-free** (`Cells/FloorDichotomy.lean`, in flight): per
   genuine floor cell `∃ k₀, ∀ k > k₀, (¬A_k → engine value) ∧ (A_k → the other value)` with the hinge
-  `A_k = LenProvableV TAct k (the outer guard)` stated INLINE; no named hypothesis, no conditional value
+  `A_k = LenBox TAct k (the outer guard)` stated INLINE; no named hypothesis, no conditional value
   in the ledger (that was door (2), declined). Plus one reduction theorem (Dupoc × DBot): the hinge is at
   least as hard as bounded consistency at `k`.
 * 2026-09-27 (later): **THE DICHOTOMY THEOREMS DONE** (`1704ad6`, `5e5bde0`; `Cells/FloorDichotomy.lean`, ~1000 lines):
   all 26 genuine floors as hypothesis-free dichotomies `dich_<L>_vs_<R> : ∃ k₀, ∀ k > k₀, (¬A_k → engine value) ∧
-  (A_k → the found-branch value)`, the hinge `A_k = LenProvableV TAct k (guardCodeB (tcode φ) (pcode me) (pcode opp) k)`
+  (A_k → the found-branch value)`, the hinge `A_k = LenBox TAct k (guardCodeB (templateCode φ) (progCode me) (progCode opp) k)`
   INLINE (the evaluator's literal clause; `hingeB` bridges to `guardCode`), both worlds at the engine's fuel on the
   engine's codes; nested over two/three hinges for the 7 bistable pairs and the 3 prudence floors (every determined
   case proved; Prudent's prudence guard stays a hinge where rated (P), FOUND vs EBot by `prudence_found_vs_EBot`;
@@ -493,18 +493,18 @@ alongside (c)); SND/POS wait for (c) to settle.
   `not_found_of_SV_play`. GATE: `lake build ArithS` 3359 jobs, 0 errors; census 1855 (1851 standard + the 4 subsets).
   Docs: `ARITHMETIZED_S_RESULTS.md` "The floors as dichotomies" (the per-cell hinge table, the reduction), the census
   table's last column. TRAPS: the swapped reading of a play atom over a CLOSED opponent needs `descVal_closed_T` and the
-  transposed program's code (`swapcode_DBotV`); `lMap_swap_gDu` must be re-applied after `hme_SVT` re-introduces
+  transposed program's code (`transposeCode_DBotV`); `lMap_swap_gDu` must be re-applied after `hme_SVT` re-introduces
   `lMap swap gDu`; internal τ-invariance of `□_k` is NOT available, so a uniform implication whose consequent is a box
   needs the τ-symmetrized (∨) form — take the ∧ form for the converse; `Describes` fields force `{V : Type}` (not
-  `Type*`) on the section; `set` the `flen` atoms AFTER `lenProvable_inst_size`/`flen_subst_bnumT_le` so `omega`/`gcongr`
+  `Type*`) on the section; `set` the `formulaLenMeta` atoms AFTER `lenBoxNat_inst_size`/`formulaLenMeta_subst_binNumeralMeta_le` so `omega`/`gcongr`
   see one atom.
 
 ## 9. FINDING (2026-09-27): LegibleBot is blocked on a THIRD necessitation, not on lengths
 
 Spike (no commit, tree clean). Two corrections to §6/`CLAUDE.md`'s earlier line "a body slot would fix it":
-1. **What is exponential is the box BUDGET's numeral, not the body's.** `tmpl (.box k ψ)` carries `cl (numTB k)`
-   and `cl (numTB (tcode ψ))`; `FitBox`'s negative half is indexed by the BUDGET: the searcher's own description
-   contains `bnum kIn ≥ 2^(kIn+1)`, so the box body "me plays C vs opp" is longer than `kIn` and `□_kIn σ` is
+1. **What is exponential is the box BUDGET's numeral, not the body's.** `template (.box k ψ)` carries `cl (numTB k)`
+   and `cl (numTB (templateCode ψ))`; `FitBox`'s negative half is indexed by the BUDGET: the searcher's own description
+   contains `binNumeral kIn ≥ 2^(kIn+1)`, so the box body "me plays C vs opp" is longer than `kIn` and `□_kIn σ` is
    vacuously false at every outer budget (`legibleBot_staggered_guard_never_fits`). The body numeral is a
    `k`-INDEPENDENT constant — astronomical but harmless in the existential-threshold regime.
 2. **Lengths ARE fixable inside route (c), with no trusted-base change:** the inner budget as a Δ₁ function of
@@ -513,16 +513,16 @@ Spike (no commit, tree clean). Two corrections to §6/`CLAUDE.md`'s earlier line
    (2k+64) k`. A LINEAR stagger is impossible in `S'` (necessitation is polynomial, degree 16): the honest
    stagger is polylog-inner / any-outer. `#6` itself cannot serve (same-budget Legible is a hinge).
 **The blocker:** every Legible cell is a two-box Löb needing bounded inner necessitation for a box whose BODY
-is COMPUTED FROM THE FRAME (`∃ g, guardCodeG g ⌜tmpl ψ⌝ me opp ∧ lenProvG h g`, me/opp rebuilt from the
+is COMPUTED FROM THE FRAME (`∃ g, guardCodeG g ⌜template ψ⌝ me opp ∧ lenProvG h g`, me/opp rebuilt from the
 description triples). The two certified necessitations do not have that shape: `boundedInnerNec_sixteen` boxes
-the `bnum K`-instance of a FIXED formula named by its Gödel numeral (the pin certifies ONE term substitution);
+the `binNumeral K`-instance of a FIXED formula named by its Gödel numeral (the pin certifies ONE term substitution);
 `closedInnerNec_sixteen` boxes a CLOSED sentence by its unary numeral (never fits a `K`-family). Reusing the
 first verbatim is syntactically CIRCULAR (`GL = Box_g p_X ⇜ ![#6]` with `p_X` describing `pSearch #0 ⌜GL⌝ …`).
-A body slot does not help: `#7 ↦ numeral ⌜σ_K⌝` is ClosedNec's sentence; `#7 ↦ bnum ⌜σ_K⌝` fits but has NO
-necessitation theorem — a `bnum`-body pin is the same new kit work. The `k̂`-chain/completeness route does not
+A body slot does not help: `#7 ↦ numeral ⌜σ_K⌝` is ClosedNec's sentence; `#7 ↦ binNumeral ⌜σ_K⌝` fits but has NO
+necessitation theorem — a `binNumeral`-body pin is the same new kit work. The `k̂`-chain/completeness route does not
 avoid it (`LoebSound` needs the guard proved within `K` in every model — the necessitation itself). **What it
-takes: a third instance of the U10 kit** — a `descVec`-substitution pin for the frame-computed box (or a
-`bnum`-body pin for an evaluator-filled body slot, the smaller variant; still body-template node data unless
+takes: a third instance of the U10 kit** — a `descriptions`-substitution pin for the frame-computed box (or a
+`binNumeral`-body pin for an evaluator-filled body slot, the smaller variant; still body-template node data unless
 computed from `g`). `ClosedNec`, the smaller earlier variant, took a full session; this is days-to-weeks, and
 it is the SAME decision as OptimBot. Expected values if unblocked: the 15 LOEB-FF cells at the polylog stagger,
 Legible's side C; **Legible × DIMCID a FLIP `(C, C)` → `(C, D)`** (`dimcid_vs_described`: `LegV K` is a
@@ -530,7 +530,7 @@ described searcher). Blast radius of an 8th slot if ever wanted: 25 files, ~345 
 (`guardCodeBB_of_template₇` is `guardCodeB_of_template` one slot further). Decision: USER.
 * 2026-09-27 (later; Colomban: "Prudent loose ends"): **DONE** (`cefdb43`, `4e21d83`; `Cells/PrudentLoose.lean`, imported by
   `ArithS.lean` and `Audit.lean`). (a) The prudence `k̂`-chain, where the verdict pass rated it (P): against an engine
-  searcher `SV g a k` the prudence guard is the `bnum k`-instance of the fixed formula `qPiS g a`, TRUE in every model above a
+  searcher `SV g a k` the prudence guard is the `binNumeral k`-instance of the fixed formula `qPiS g a`, TRUE in every model above a
   threshold when the opponent's defection against `.bot DefectBot` is its THEN-branch, hence a `TAct`-theorem `∀¹ (k̂ ≤ #0 🡒 …)`
   by completeness and FOUND for all large `k` (`prudence_found_of_SV`; new V-generic probes `guardian_botDB_V`,
   `guardianT_botCB_V`, `wary_botDB_V`, `waryT_botCB_V`): `prudence_found_vs_GuardianBot/_WaryBot/_CupodBot`, and the four nested

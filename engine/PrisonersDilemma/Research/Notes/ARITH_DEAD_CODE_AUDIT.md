@@ -21,10 +21,10 @@ Output: `name  module  kind  startLine  endLine  ROOT|LIVE|DEAD  aux` (31745 row
 constant; no live projection was flagged (`VerifyKit.ok` etc. are LIVE), so the effect is nil here.
 (2) A declaration used only by an `example`, a `#check`, a `#eval` or a docstring is DEAD by this
 definition — correctly, from the census' point of view, but such items are usually documentation and
-are marked as such below. (3) Sanity: all 14 trusted-base definitions (`TAct`, `dlen`, `fbound`,
-`LenProvableV`, `ppair`, `progT`, `descVec`/`descVecB`, `guardCode`/`guardCodeB`, `psubst`, `gsubst`,
-`tmpl`, `EvalGraph`) are LIVE; the headline theorems (`red_cell`, `boundedInnerNec_sixteen`,
-`closedInnerNec_sixteen`, `pblt_unconditional`, `dupoc_self_coop_unconditional`, `dimcid_vs_closed`)
+are marked as such below. (3) Sanity: all 14 trusted-base definitions (`TAct`, `proofLen`, `codeBound`,
+`LenBox`, `ppair`, `codeTerm`, `descriptions`/`descriptionsB`, `guardCode`/`guardCodeB`, `substCode`, `substTemplate`,
+`template`, `EvalGraph`) are LIVE; the headline theorems (`red_cell`, `boundedInnerNec_sixteen`,
+`closedInnerNec_sixteen`, `pblt`, `dupoc_self_coop`, `dimcid_vs_closed`)
 are ROOTS. (4) Textual cross-check: the ten largest blocks flagged dead by the buggy first run were
 each textually referenced from a ROOT — the corrected run flags none of them.
 
@@ -93,7 +93,7 @@ SearchFree,PositiveCells,FlipCells,DimcidFlips,FloorDichotomy,FloorVerdicts,SimS
 | Agents.FitBox | 104 | 5 | 695 | 30 | 4 |
 | Necessitation.IndRec | 153 | 13 | 3125 | 29 | 1 |
 | Necessitation.Top | 290 | 11 | 2645 | 26 | 1 |
-| Agents.ProgT | 100 | 8 | 584 | 26 | 4 |
+| Agents.CodeTerm | 100 | 8 | 584 | 26 | 4 |
 | Eval.SimTest | 8 | 5 | 50 | 26 | 52 |
 | Cells.DupocMirror | 42 | 3 | 335 | 25 | 7 |
 | Cells.DIMCID | 135 | 5 | 892 | 25 | 3 |
@@ -103,7 +103,7 @@ SearchFree,PositiveCells,FlipCells,DimcidFlips,FloorDichotomy,FloorVerdicts,SimS
 | Necessitation.Bounds | 44 | 4 | 414 | 21 | 5 |
 | Cells.CIMCIC | 125 | 5 | 806 | 21 | 3 |
 | Cells.JustBot | 82 | 4 | 469 | 20 | 4 |
-| Box.ProperV | 80 | 8 | 605 | 20 | 3 |
+| Box.ProperBound | 80 | 8 | 605 | 20 | 3 |
 
 The remaining ~55 modules have under 20 dead lines each (1–2-line `X.definable`/`X.definable'`
 Foundation boilerplate, a stray `_V` twin, an unused `_inj`).
@@ -143,7 +143,7 @@ regen + build is the check.
 
 * `*_definable` / `*.definable'` theorems (Foundation's definability boilerplate, 1–2 lines each,
   produced next to the `.defined` lemmas that ARE used): ~120 declarations across `Cert`, `Describe`,
-  `Verify`, `Verify2`, `NumSteps`, `Guard`, `Prog`, `ProgT`, `Subst`, `Bnum`, `ProperV`, `BewV`,
+  `Verify`, `Verify2`, `NumSteps`, `Guard`, `Prog`, `CodeTerm`, `Subst`, `BinNumeral`, `ProperBound`, `BewV`,
   `WalkLemmas`. Harmless; deleting them is churn for ~200 lines.
 * `Layout.lean`: the `ltag_cong*` family (12 × 4 lines, `Layout:828–981`) and `tagAr_defined`/
   `tagAnts_defined` (42 lines each) — a superseded tagging route; 320 lines.
@@ -151,7 +151,7 @@ regen + build is the check.
   `dossT_func_isFunc` (33 lines) — 631 lines, spread over 164 small declarations.
 * `Prologue.lean` 214 lines, `WalkLemmas.lean` 117 (`cTV_*`/`cT_*` LOR-side twins), `Verify.lean`
   67 (gen-1 `VerifyGraph.*_iff` case lemmas — the gen-1 graph itself is LIVE, the later generations
-  build on it), `Verify2.lean` 88, `NodeSize.lean` 57 (`Derivation.*_inv`, `formulaLen_*_le_dlen_*`),
+  build on it), `Verify2.lean` 88, `NodeSize.lean` 57 (`Derivation.*_inv`, `formulaLen_*_le_proofLen_*`),
   `RowInstC.lean` 64 (§3.C rows never cited), `Frag1.lean` 89 (`costSum_node*_le`).
 * The four superseded U10 GENERATIONS are NOT dead: `VerifyKit`/`'`/`''`/`'''`, `boundedInnerNec_three/
   four_of_kit`, `topBound*_pb`, `deg_one/three/four`, `top_main*` are all ROOTS (the census prints
@@ -163,23 +163,23 @@ regen + build is the check.
 
 | where | dead | what it is | verdict |
 |---|---:|---|---|
-| `Agents/Fit.lean` | 85 | `size_*_le`, `ppair_le_sq`, `dnum_le_self`, `size_dnum_Dupoc/Cupod_le`, `exists_size_const`, `tlen_emb_*` | the pre-route-(c) fit arithmetic; superseded by `FitBox`/`guard_fits` | delete |
-| `Agents/FitBox.lean` | 30 | `not_box_guard_fits`, `legibleBot_staggered_guard_never_fits`, `exists_flen_tmpl_legible_const`, `bnum_le_quote_emb_subst`, `FOcc_rel` | **negative results cited by the notes** (`box_guard_never_fits` family, `ROUTE_B_SCOPE` §9) — dead only because the census never prints them | ADD to census (`#print axioms`), do not delete |
-| `Bridge/Neg.lean` | 83 | `pBotIter`, `size_le_tlen_bnumT`, `size_dnum_le_flen_trAt`, … | T2 bridge material (frozen by decision) | leave with T2 |
-| `Agents/Code.lean` | 75 | `noTauP`/`noTauP_subst`/`noDiag` (the tau/diag exclusion, 40 lines), `subst_of_closedF`, `pcode_tvote/sys/selfIdx`, `*_DupocBot` samples | `noTauP`/`noDiag` document the scope restriction; the rest is scaffolding | keep `noTauP`/`noDiag` (or cite them), delete the rest |
+| `Agents/Fit.lean` | 85 | `size_*_le`, `ppair_le_sq`, `canonical_le_self`, `size_canonical_Dupoc/Cupod_le`, `exists_size_const`, `termLenMeta_emb_*` | the pre-route-(c) fit arithmetic; superseded by `FitBox`/`guard_fits` | delete |
+| `Agents/FitBox.lean` | 30 | `not_box_guard_fits`, `legibleBot_staggered_guard_never_fits`, `exists_formulaLenMeta_template_legible_const`, `binNumeral_le_quote_emb_subst`, `FOcc_rel` | **negative results cited by the notes** (`box_guard_never_fits` family, `ROUTE_B_SCOPE` §9) — dead only because the census never prints them | ADD to census (`#print axioms`), do not delete |
+| `Bridge/Neg.lean` | 83 | `pBotIter`, `size_le_termLenMeta_binNumeralMeta`, `size_canonical_le_formulaLenMeta_sentenceAt`, … | T2 bridge material (frozen by decision) | leave with T2 |
+| `Agents/Code.lean` | 75 | `noTauP`/`noTauP_subst`/`noDiag` (the tau/diag exclusion, 40 lines), `subst_of_closedF`, `progCode_tvote/sys/selfIdx`, `*_DupocBot` samples | `noTauP`/`noDiag` document the scope restriction; the rest is scaffolding | keep `noTauP`/`noDiag` (or cite them), delete the rest |
 | `Agents/Guard.lean` | 41 | 22 × `.definable` boilerplate + `actTermCode*` (an unused term-level code) | delete `actTermCode*` (13 lines), boilerplate optional |
-| `Box/Bew.lean` | 39 | `lenProvable`, `lenGödel`, `Arithmetic.*_lenGödel`, `Arithmetic.Proper` — the ℕ-level box | superseded by `Box/BewV` (9 of 12 declarations dead); the `ProofLength` lemmas `flen_le_mlen`/`flen_le_of_lenProvable` (17 lines) hang off it | delete both together, after the rationale note's mention of `lenProvable` is repointed |
+| `Box/Bew.lean` | 39 | `lenBoxNat`, `lenGödel`, `Arithmetic.*_lenGödel`, `Arithmetic.Proper` — the ℕ-level box | superseded by `Box/BewV` (9 of 12 declarations dead); the `ProofLength` lemmas `formulaLenMeta_le_proofLenMeta`/`formulaLenMeta_le_of_lenBoxNat` (17 lines) hang off it | delete both together, after the rationale note's mention of `lenBoxNat` is repointed |
 | `Agents/Prog.lean` | 36 | `ppair_lt/le_ppair_*` order lemmas, `pBot_inj`/`pSim_inj`/`pIte_inj`, `.definable` | small; the `_inj` lemmas are the sort a future proof wants | optional |
-| `Audit/RedCellUnsound.lean` | 33 | `evalGraphBadDef/_defined`, `lMap_swap_axEq*`, `exists_lenProvableV_TBad` | part of the "EvalGraphBad is a copy" debt | leave until that debt is paid |
+| `Audit/RedCellUnsound.lean` | 33 | `evalGraphBadDef/_defined`, `lMap_swap_axEq*`, `exists_lenBox_TBad` | part of the "EvalGraphBad is a copy" debt | leave until that debt is paid |
 | `Assembly/Uniform.lean` | 30 | `eval_psi_fixed_point_std/swap`, `chi₁_def`, `instB_quote_chi₁`, `chainBound_PLE`, `exists_forward_length` | the pre-family PBLT assembly, superseded by `Assembly/Family` | delete |
-| `Eval/SimTest.lean` | 26 | `mirror_vs_const`, `swapcode_Mirror`, `sim_search_outer_guard` (5 of 8) | smoke tests of `EvalGraph` (the file's purpose) | either add to census or delete the file |
+| `Eval/SimTest.lean` | 26 | `mirror_vs_const`, `transposeCode_Mirror`, `sim_search_outer_guard` (5 of 8) | smoke tests of `EvalGraph` (the file's purpose) | either add to census or delete the file |
 | `Bridge/AgentConverse.lean` | 25 | `GuardAgree.of_forall/of_T/toT`, `evalGraph_actCode` | T2, frozen | leave with T2 |
-| `Cells/DupocMirror` 25, `Cells/DIMCID` 25, `Cells/CIMCIC` 21, `Cells/JustBot` 20 | 91 | `semitermVec_val_q*` (15-line valuation lemmas), `*_instB_V`, `*V_nat`, `swapcode_*TV`, `phiD_transpose` | leftovers of earlier proof routes inside otherwise fully-live cell files | delete |
+| `Cells/DupocMirror` 25, `Cells/DIMCID` 25, `Cells/CIMCIC` 21, `Cells/JustBot` 20 | 91 | `semitermVec_val_q*` (15-line valuation lemmas), `*_instB_V`, `*V_nat`, `transposeCode_*TV`, `phiD_transpose` | leftovers of earlier proof routes inside otherwise fully-live cell files | delete |
 | `Bridge/Core/Tr.lean` | 17 | `Core.tr_*` equation lemmas, `leaf_eq*_sound` | T2, frozen | leave |
-| `Theory/Symmetry.lean` | 15 | `ProvableLen`, `provableLen_swap(_iff)` — the pre-`dlen` symmetry statement | superseded by `Theory/Transpose` (`sfp_transpose`) | delete |
-| `Theory/TheoryAct.lean` | 13 | `mem_TAct_iff`, `tact_proves_axAct'`, `quote_func/rel_emb`, `stdActS_nat`, `eval_axAct*_swapActS` | tiny | optional |
+| `Theory/Symmetry.lean` | 15 | `ProvableLen`, `provableLen_swap(_iff)` — the pre-`proofLen` symmetry statement | superseded by `Theory/Transpose` (`sfp_transpose`) | delete |
+| `Theory/TheoryAct.lean` | 13 | `mem_TAct_iff`, `tact_proves_actionAxiom'`, `quote_func/rel_emb`, `stdReading_nat`, `eval_actionAxiom*_swappedReading` | tiny | optional |
 | `Theory/LangAct.lean` | 11 | `LAct.encode_*` (4), `instReprAct`, `LAct.instORing`, `swap_inl` | tiny | optional |
-| `Length/Proper` 16, `Box/CutV` 14 (`properV_nat` — the ℕ properness bridge), `Box/ProperV` 20 (`*_LOR`, `_V` twins), `Loeb/InstV` 13, `Agents/Subst` 22, `Agents/ProgT` 26, `Agents/Template` 12, `Agents/RelabelTemplate` 13, `Agents/InstanceV` 14, `Agents/Bnum` 11, `Assembly/Prep` 13 | 174 | duplicate `_V`/`_nat`/`'` twins, `.definable` boilerplate, `tlen_emb_progTT_*` | the textual duplicate list (§5) covers the twins |
+| `Length/Proper` 16, `Box/CutV` 14 (`properBound_nat` — the ℕ properness bridge), `Box/ProperBound` 20 (`*_LOR`, `_V` twins), `Loeb/InstV` 13, `Agents/Subst` 22, `Agents/CodeTerm` 26, `Agents/Template` 12, `Agents/RevalueTemplate` 13, `Agents/InstanceV` 14, `Agents/BinNumeral` 11, `Assembly/Prep` 13 | 174 | duplicate `_V`/`_nat`/`'` twins, `.definable` boilerplate, `termLenMeta_emb_codeTermMeta_*` | the textual duplicate list (§5) covers the twins |
 
 ### 3.4 `Cells/Names.lean` (174 lines, 100 % dead by construction)
 
@@ -229,24 +229,24 @@ note).
 
 Identical statements under two names (candidates for one `abbrev`/alias each, or deleting the unused
 twin — the audit says which twin is dead):
-`termSubst_closed`=`termSubst_of_closed`; `relabel_param_eq`=`psubst_param_eq` (both private, both
-dead); `val_ppairTT`=`val_ppairTT_V`; `val_succTT`=`val_succTT_V`; `isFunc_LAct`=`isFunc_LAct_iff_V`;
-`IsSemiterm.LAct_of_LOR`=`isSemiterm_LAct_of_LOR`; `nth_descVecB_budget`=`nth_descVecB_six`;
+`termSubst_closed`=`termSubst_of_closed`; `revalue_param_eq`=`substCode_param_eq` (both private, both
+dead); `val_ppairTermMeta`=`val_ppairTermMeta_V`; `val_succTT`=`val_succTT_V`; `isFunc_LAct`=`isFunc_LAct_iff_V`;
+`IsSemiterm.LAct_of_LOR`=`isSemiterm_LAct_of_LOR`; `nth_descriptionsB_budget`=`nth_descriptionsB_six`;
 `term_emb_lMap_emb`=`term_emb_lMap_emb'` (and `typed_val_emb`, each defined in `Template`, `InstV` and
-`Diag`); `val_cterm_C/D`=`_V`; `termLen_bnum_le_V`=`termLen_bnum_le`; `one_le_termLen_V`=
+`Diag`); `val_cterm_C/D`=`_V`; `termLen_binNumeral_le_V`=`termLen_binNumeral_le`; `one_le_termLen_V`=
 `one_le_termLen` (the `_V` one is dead); `isFunc_LOR` (defined twice: `Subst`, `InstV`)=
 `isFunc_LOR_iff_V`; `isFunc_LAct_of_LOR` (twice). Deliberate twins to KEEP: `guard_fits`=
 `search_is_real`, `red_cell_words`=`red_cell`, `red_cell_deterministic`=`red_cell_unique` (audit
-statements). The `eval_*_iff` groups the regex flagged are NOT duplicates (truncated at `(s := stdActS V)`).
+statements). The `eval_*_iff` groups the regex flagged are NOT duplicates (truncated at `(s := stdReading V)`).
 
 ## 6. Unused library members (for Tier B)
 
-`Lib/Frag` (70): adjoinFun, bnumFun, bnumOddCert, bvAll, bvExs, bvFalsum, bvFun, bvNRel, bvOr, bvRel,
+`Lib/Frag` (70): adjoinFun, binNumeralFun, binNumeralOddCert, bvAll, bvExs, bvFalsum, bvFun, bvNRel, bvOr, bvRel,
 bvTotal, bvVerum, congInsertL, congIsFormulaSet, congNegL, congSubsetR, congSubstL, congUfPi,
 formulaLenFun, freeFun, fstIdxFun, fvarVecFun, fvarVecNth, fvarVecTotal, gIntro, insertFun, lengthFun,
 lengthTotal, lengthTwoMul, lengthTwoMulOne, listMaxAdj, listMaxNil, listSumFun, maxEqLeft, maxEqRight,
 maxTotal, negFun, nthFun, qVecFun, qqAllFun, qqAllsFun, qqBvarFun, qqExsFun, qqFalsumFun, qqFuncFun,
-qqFvarFun, qqNRelFun, qqOrFun, qqRelFun, qqVerumFun, setLenFun, shiftFun, subAddCancel, subOfLe,
+qqFvarFun, qqNRelFun, qqOrFun, qqRelFun, qqVerumFun, sequentLenFun, shiftFun, subAddCancel, subOfLe,
 subTotal, substs1Fun, substsFun, termBShiftFun, termBVBvar, termBVFunc, termBVFvar, termBVVecAdj,
 termBVVecNil, termLenFun, termLenVecFun, termShiftFun, termShiftVecFun, termSubstFun, termSubstVecFun,
 twoMulOneMul.
@@ -273,8 +273,8 @@ termShiftVecGraphOROfLAct, termSubstVecGraphOROfLAct.
 fvOccFNRel, fvOccFOr, fvOccFRel, fvOccFShift, fvOccFTotal, fvOccFVerum, fvOccFvar, fvOccLeTermLen,
 fvOccSEmpty, fvOccSLeSetLen, fvOccSSetShiftLe, fvOccTermShift, fvOccVecTotal, leAddLeft, leOfEqLe.
 
-`Lib/Lengths` (20): addAssoc, addComm, bnumOdd, bnumTotal, formulaLenNRel, formulaLenNeg,
-formulaLenRel, leAddRight, leOfEq, leOfLeEq, listSumTotal, setLenEmpty, setLenTotal, succLeSucc,
+`Lib/Lengths` (20): addAssoc, addComm, binNumeralOdd, binNumeralTotal, formulaLenNRel, formulaLenNeg,
+formulaLenRel, leAddRight, leOfEq, leOfLeEq, listSumTotal, sequentLenEmpty, sequentLenTotal, succLeSucc,
 termLenFunc, termLenVecTotal, twoMulAdd, twoMulAddOne, twoMulOneAdd, twoMulOneSucc.
 
 `Lib/Sets` (18): emptySubset, freeTotal, insertTotal, isFormulaSetInsertInv, isFormulaSetMem,
@@ -282,8 +282,8 @@ isFormulaSetOfNoMem, isFormulaSetOfSetShift, isFormulaSetPiSigma, isFormulaSetSe
 isFormulaSetSigmaPi, isSemiformulaPiSigma, memInsertSelf, notMemEmpty, shiftTotal, subsetInsert,
 subsetMem, subsetRefl, subsetTrans.
 
-`Lib/Nodes` (10): axPiSigma, axSigmaPi, axiomRec_axAct', axiomRec_axNe, axiomRec_axNe', axiomRec_paMinus,
-derivationSigmaPi, dlenGraphPiSigma, dlenGraphSigmaPi, totIndBody.
+`Lib/Nodes` (10): axPiSigma, axSigmaPi, axiomRec_actionAxiom', axiomRec_constNe, axiomRec_constNe', axiomRec_paMinus,
+derivationSigmaPi, proofLenGraphPiSigma, proofLenGraphSigmaPi, totIndBody.
 
 `RowInst` dead `inst_` rows (44) and `RowInstB` (75) follow from the lists above (plus `RowInst`:
 isSemiformulaSubst, isSemitermVecQVec, negTotal, shiftTotal, substs1Substs; `RowInstB`: bvAnd,

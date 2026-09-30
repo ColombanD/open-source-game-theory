@@ -57,9 +57,9 @@ theorem outcome_JustBot_vs_TitForTatBot :
 
 /-! ### On the hand-template twins
 
-These cells are stated on arith codes that are NOT the engine's `pcode`:
-* `Just k` (`Cells/JustBot.lean`): JustBot on the hand template `GtmplJ k`.
-* `Dupoc k` (`Cells/RedCell.lean`): the searcher on the HAND template `guardTemplate 0`; the engine's `DupocBot k` carries the translated template `tmpl (.plays .opp .self .C)` — a different code with a provably equivalent guard (`Agents/Code.lean`, "Sanity"), on which the Löb cells are not yet re-proved.
+These cells are stated on arith codes that are NOT the engine's `progCode`:
+* `Just k` (`Cells/JustBot.lean`): JustBot on the hand template `guardTemplateJust k`.
+* `Dupoc k` (`Cells/RedCell.lean`): the searcher on the HAND template `guardTemplate 0`; the engine's `DupocBot k` carries the translated template `template (.plays .opp .self .C)` — a different code with a provably equivalent guard (`Agents/Code.lean`, "Sanity"), on which the Löb cells are not yet re-proved.
 * `Just7 k` (`Cells/JustSlot.lean`): JustBot with the CONSTANT budget-slot template (route (c)); plays as `Just k` at every fuel (`evalGraph_Just7_iff`).
 -/
 
@@ -68,7 +68,7 @@ theorem outcome_Just_vs_MirrorBot :
     OutcomeSpecA .eventual Just (const MirrorBot) (some (.C, .C)) :=
   OutcomeSpecA.eventual_of (by
     obtain ⟨k₀, h⟩ := loeb_Just_vs_Mirror
-    exact ⟨k₀, fun k hk ↦ by dsimp only [bot, const]; rw [pcode_MirrorBot]; exact OutcomeAtA.of_evalGraph (h k hk)⟩)
+    exact ⟨k₀, fun k hk ↦ by dsimp only [bot, const]; rw [progCode_MirrorBot]; exact OutcomeAtA.of_evalGraph (h k hk)⟩)
 
 /-- `loeb_Just7_vs_Dupoc` -/
 theorem outcome_Just7_vs_Dupoc :

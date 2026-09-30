@@ -8,22 +8,22 @@ import ArithS.Necessitation.Lib.Basic
 `pa_proves_x`, `lib_x`). Two layers:
 
 1. **Code level** (the `ℒₒᵣ` DSL over the package's graphs): totality of `formulaLen`,
-   `termLen`, `termLenVec`, `listSum`, `setLen`, `bnum`; `setLen (insert x s) ≤ setLen s +
-   formulaLen x` and `setLen ∅ = 0` (§4.2: the sequent length is BOUNDED, never computed);
+   `termLen`, `termLenVec`, `listSum`, `sequentLen`, `binNumeral`; `sequentLen (insert x s) ≤ sequentLen s +
+   formulaLen x` and `sequentLen ∅ = 0` (§4.2: the sequent length is BOUNDED, never computed);
    `formulaLen` of every constructor (`|p ⋏ q| = |p| + |q| + 1`, …, `|rel k R v| = Σ|vᵢ| + 1`),
    `formulaLen (neg p) = formulaLen p`, `termLen` of `#z`, `&x`, `func k f v`; and the
-   bit-recursion laws of the binary-numeral CODE `bnum` (`bnum (2m) = 𝟐 ^* bnum m`,
-   `bnum (2m+1) = (𝟐 ^* bnum m) ^+ 𝟏`, `Bnum.lean:345-348`).
+   bit-recursion laws of the binary-numeral CODE `binNumeral` (`binNumeral (2m) = 𝟐 ^* binNumeral m`,
+   `binNumeral (2m+1) = (𝟐 ^* binNumeral m) ^+ 𝟏`, `BinNumeral.lean:345-348`).
 2. **Term level** (§4.1, the `NumeralFacts.lean` pattern, in ITS syntax — `leF`, `twoMul`,
-   `twoMulOne` — so the meta-level assembly instantiates them at `bnumT` exactly as
+   `twoMulOne` — so the meta-level assembly instantiates them at `binNumeralMeta` exactly as
    `leEven`/`leOdd`): the laws that add two binary numerals bit by bit,
    `2x + 2y = 2(x+y)`, `2x + (2y+1) = 2(x+y)+1`, `(2x+1) + 2y = 2(x+y)+1`,
    `(2x+1) + (2y+1) = 2(x+y+1)`, the carry `(2x+1) + 1 = 2(x+1)`, and the order glue
    `n ≤ x → m ≤ y → n + m ≤ x + y`, `n ≤ x → n ≤ x + y`, transitivity, `x = y → x ≤ y`,
    `x ≤ y → x + 1 ≤ y + 1`, associativity/commutativity of `+`.
 
-   Why no "internal value" law: a numeral in a sequent is a TERM, so "`n ≤ val (bnum a)`" is
-   the formula `n ≤ bnumT a` and the bit laws above are exactly what the assembly needs (the
+   Why no "internal value" law: a numeral in a sequent is a TERM, so "`n ≤ val (binNumeral a)`" is
+   the formula `n ≤ binNumeralMeta a` and the bit laws above are exactly what the assembly needs (the
    package has no `termVal` graph, and none is required).
 -/
 
@@ -62,26 +62,26 @@ theorem pa_proves_termLenTotal : 𝗣𝗔 ⊢ termLenTotal :=
 
 theorem lib_termLenTotal : Lib termLenTotal := Lib.of_pa pa_proves_termLenTotal
 
-/-! ### Code level: `setLen` -/
+/-! ### Code level: `sequentLen` -/
 
-/-- `setLen (insert x s) ≤ setLen s + formulaLen x`. -/
-noncomputable def setLenInsertLeB : ArithmeticSemisentence 6 :=
-  “lx ls l t s x. !insertDef t x s → !(setLenDef LAct) l t → !(setLenDef LAct) ls s →
+/-- `sequentLen (insert x s) ≤ sequentLen s + formulaLen x`. -/
+noncomputable def sequentLenInsertLeB : ArithmeticSemisentence 6 :=
+  “lx ls l t s x. !insertDef t x s → !(sequentLenDef LAct) l t → !(sequentLenDef LAct) ls s →
     !(formulaLenGraph LAct) lx x → l ≤ ls + lx”
-noncomputable def setLenInsertLe : ArithmeticSentence := ∀¹* setLenInsertLeB
+noncomputable def sequentLenInsertLe : ArithmeticSentence := ∀¹* sequentLenInsertLeB
 
-lemma models_setLenInsertLe :
-    V↓[ℒₒᵣ] ⊧ setLenInsertLe ↔
-    ∀ lx ls l t s x : V, t = insert x s → l = setLen LAct t → ls = setLen LAct s →
+lemma models_sequentLenInsertLe :
+    V↓[ℒₒᵣ] ⊧ sequentLenInsertLe ↔
+    ∀ lx ls l t s x : V, t = insert x s → l = sequentLen LAct t → ls = sequentLen LAct s →
       lx = formulaLen LAct x → l ≤ ls + lx := by
-  simp [setLenInsertLe, setLenInsertLeB, models_iff, Matrix.vecForall_iff, setLen_defined.iff,
+  simp [sequentLenInsertLe, sequentLenInsertLeB, models_iff, Matrix.vecForall_iff, sequentLen_defined.iff,
     formulaLen.defined.iff]
 
-theorem pa_proves_setLenInsertLe : 𝗣𝗔 ⊢ setLenInsertLe :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_setLenInsertLe.mpr fun _ _ _ _ s x ht hl hls hlx ↦ by
-    subst ht; subst hl; subst hls; subst hlx; exact setLen_insert_le x s
+theorem pa_proves_sequentLenInsertLe : 𝗣𝗔 ⊢ sequentLenInsertLe :=
+  Lib.pa_proves_of_models fun _ _ _ ↦ models_sequentLenInsertLe.mpr fun _ _ _ _ s x ht hl hls hlx ↦ by
+    subst ht; subst hl; subst hls; subst hlx; exact sequentLen_insert_le x s
 
-theorem lib_setLenInsertLe : Lib setLenInsertLe := Lib.of_pa pa_proves_setLenInsertLe
+theorem lib_sequentLenInsertLe : Lib sequentLenInsertLe := Lib.of_pa pa_proves_sequentLenInsertLe
 
 /-! ### Code level: `formulaLen`/`termLen` of the constructors -/
 
@@ -219,26 +219,26 @@ theorem pa_proves_termLenFvar : 𝗣𝗔 ⊢ termLenFvar :=
 
 theorem lib_termLenFvar : Lib termLenFvar := Lib.of_pa pa_proves_termLenFvar
 
-/-! ### Code level: the bit recursion of the binary-numeral code `bnum` -/
+/-! ### Code level: the bit recursion of the binary-numeral code `binNumeral` -/
 
-/-- `1 ≤ m → bnum (2m) = 𝟐 ^* bnum m` (`𝟐 = 𝟏 ^+ 𝟏`, `𝟏` the code of the term `1`). -/
-noncomputable def bnumEvenB : ArithmeticSemisentence 3 :=
-  “u t m. 1 ≤ m → !bnumGraph t m → !bnumGraph u (2 * m) →
+/-- `1 ≤ m → binNumeral (2m) = 𝟐 ^* binNumeral m` (`𝟐 = 𝟏 ^+ 𝟏`, `𝟏` the code of the term `1`). -/
+noncomputable def binNumeralEvenB : ArithmeticSemisentence 3 :=
+  “u t m. 1 ≤ m → !binNumeralGraph t m → !binNumeralGraph u (2 * m) →
     ∃ one two, one = ↑Arithmetic.one ∧ !qqAddGraph two one one ∧ !qqMulGraph u two t”
-noncomputable def bnumEven : ArithmeticSentence := ∀¹* bnumEvenB
+noncomputable def binNumeralEven : ArithmeticSentence := ∀¹* binNumeralEvenB
 
-lemma models_bnumEven :
-    V↓[ℒₒᵣ] ⊧ bnumEven ↔
-    ∀ u t m : V, 1 ≤ m → t = bnum m → u = bnum (2 * m) →
+lemma models_binNumeralEven :
+    V↓[ℒₒᵣ] ⊧ binNumeralEven ↔
+    ∀ u t m : V, 1 ≤ m → t = binNumeral m → u = binNumeral (2 * m) →
       ∃ one two : V, one = ((𝟏 : ℕ) : V) ∧ two = one ^+ one ∧ u = two ^* t := by
-  simp [bnumEven, bnumEvenB, models_iff, Matrix.vecForall_iff, bnum.defined.iff,
+  simp [binNumeralEven, binNumeralEvenB, models_iff, Matrix.vecForall_iff, binNumeral.defined.iff,
     qqAdd_defined.iff, qqMul_defined.iff, numeral_eq_natCast]
 
-theorem pa_proves_bnumEven : 𝗣𝗔 ⊢ bnumEven :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_bnumEven.mpr fun _ _ _ hm ht hu ↦ by
-    subst ht; subst hu; exact ⟨_, _, rfl, rfl, by rw [bnum_two_mul hm]; rfl⟩
+theorem pa_proves_binNumeralEven : 𝗣𝗔 ⊢ binNumeralEven :=
+  Lib.pa_proves_of_models fun _ _ _ ↦ models_binNumeralEven.mpr fun _ _ _ hm ht hu ↦ by
+    subst ht; subst hu; exact ⟨_, _, rfl, rfl, by rw [binNumeral_two_mul hm]; rfl⟩
 
-theorem lib_bnumEven : Lib bnumEven := Lib.of_pa pa_proves_bnumEven
+theorem lib_binNumeralEven : Lib binNumeralEven := Lib.of_pa pa_proves_binNumeralEven
 
 /-! ### Term level: the binary-numeral laws in `NumeralFacts`' syntax -/
 

@@ -2,6 +2,6 @@
 # minus the rfl-lemmas and the names still mentioned in code (simp sets, macros) that the closure cannot
 # see; dropped by scripts/prune.py at generation time. Delete a line to resurrect the declaration.
 isSemiformula_leOfEqP_as
-isSemiformula_setLenEmptyLe_as
-isSemiformula_setLenSingLe_as
+isSemiformula_sequentLenEmptyLe_as
+isSemiformula_sequentLenSingLe_as
 ptag_leOfEqP

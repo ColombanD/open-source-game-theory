@@ -14,18 +14,18 @@ the nine per-layer files; each line must read `[propext, Classical.choice, Quot.
 namespace ArithS
 
 -- τ-closure of TAct at every proof length (the engine's `Pf.transpose`, on codes).
-#print axioms lenProvable_fbound_swap_iff
-#print axioms swapcode_swapcode
-#print axioms swapcode_psubst
+#print axioms lenBoxNat_swap_iff
+#print axioms transposeCode_transposeCode
+#print axioms transposeCode_substCode
 
--- U0b (TheoryAct, 2026-09-12): the action axiom `axAct : (c_C = 0 ∧ c_D = 1) ∨ (c_C = 1 ∧ c_D = 0)`
--- — TAct proves it, its model class is exactly the two standard readings (`stdActS`/`swapActS`),
+-- U0b (TheoryAct, 2026-09-12): the action axiom `actionAxiom : (c_C = 0 ∧ c_D = 1) ∨ (c_C = 1 ∧ c_D = 0)`
+-- — TAct proves it, its model class is exactly the two standard readings (`stdReading`/`swappedReading`),
 -- and ℕ satisfies it. Without it no guard sentence was TAct-provable (a vacuity).
-#print axioms tact_proves_axAct
-#print axioms models_axAct_iff
-#print axioms eval_axAct_iff
-#print axioms structure_eq_of_axAct
-#print axioms models_axAct
-#print axioms lMap_swap_axAct
+#print axioms tact_proves_actionAxiom
+#print axioms models_actionAxiom_iff
+#print axioms eval_actionAxiom_iff
+#print axioms structure_eq_of_actionAxiom
+#print axioms models_actionAxiom
+#print axioms lMap_swap_actionAxiom
 
 end ArithS

@@ -12,7 +12,7 @@ import ArithS.Assembly.Uniform
 the carrying size statement outright — `sizeThmAll_holds : SizeThmAll`, from `Verify5.armHypsAll_of_arms`
 and `verifyGraph''_size4_of_arms` (the ten-arm length/size glue of the verification list, landed
 2026-09-16, U10) — and §4 draws `boundedInnerNec_sixteen : BoundedInnerNec 16`,
-`dupoc_self_coop_unconditional` (Critch's Theorem 3.7 in `PA`-`S`) and `pblt_unconditional` (the
+`dupoc_self_coop` (Critch's Theorem 3.7 in `PA`-`S`) and `pblt` (the
 uniform parametric bounded Löb theorem) with no hypothesis. The `_of_sizeThm` forms of §3 are the
 same theorems with `SizeThmAll` still a binder; they are kept because they document WHAT the size
 glue has to deliver, and §4 is their instantiation at `sizeThmAll_holds`.
@@ -60,8 +60,8 @@ requires, and is harmless at the use site: the package fixes `N'`, `B'` first (`
 then asks for `Cz`.
 
 Everything else is `VerifySizeOracle`'s shape verbatim: on every `IndRec` table with its row-body bound, every graph
-list `L` of a `VerifyGraph''` is `≤ Cz·(dlen ρ + 1)^4` long and size-disciplined at the kit class
-`Q = kitQ Cz B E`, `D = kitD Cz (dlen ρ)`. -/
+list `L` of a `VerifyGraph''` is `≤ Cz·(proofLen ρ + 1)^4` long and size-disciplined at the kit class
+`Q = kitQ Cz B E`, `D = kitD Cz (proofLen ρ)`. -/
 def SizeThm (N N' B' Cv Cz : ℕ) : Prop :=
   ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] (tbl B T : V),
     TableOK tbl (N : V) → IndRecTable tbl →
@@ -161,11 +161,11 @@ theorem boundedInnerNec_sixteen_of_sizeThm (hsz : SizeThmAll) : BoundedInnerNec 
   exact boundedInnerNec_of_kit''' 4 (by norm_num) hpkg
 
 /-- **Critch's Theorem 3.7 in PA-`S`**: for all large `k`, `Dupoc k` cooperates with itself and `Cupod k` defects
-against itself (`Assembly/Cell.dupoc_self_coop` at `d = 16`). -/
+against itself (`Assembly/Cell.dupoc_self_coop_of_nec` at `d = 16`). -/
 theorem dupoc_self_coop_of_sizeThm (hsz : SizeThmAll) :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 2 (Dupoc k) (Dupoc k) (Dupoc k) 0 ∧ EvalGraph 2 (Cupod k) (Cupod k) (Cupod k) 1 :=
-  dupoc_self_coop (boundedInnerNec_sixteen_of_sizeThm hsz)
+  dupoc_self_coop_of_nec (boundedInnerNec_sixteen_of_sizeThm hsz)
 
 /-- **The parametric bounded Löb theorem (PBLT) in PA-`S`**, uniform in the budget
 (`Assembly/Uniform.pblt_uniform` at `d = 16`). -/
@@ -187,13 +187,13 @@ theorem boundedInnerNec_sixteen : BoundedInnerNec 16 :=
   boundedInnerNec_sixteen_of_sizeThm sizeThmAll_holds
 
 /-- **Dupoc's self-cooperation, unconditional** (Critch Thm 3.7 in `PA`-`S`). -/
-theorem dupoc_self_coop_unconditional :
+theorem dupoc_self_coop :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       EvalGraph 2 (Dupoc k) (Dupoc k) (Dupoc k) 0 ∧ EvalGraph 2 (Cupod k) (Cupod k) (Cupod k) 1 :=
   dupoc_self_coop_of_sizeThm sizeThmAll_holds
 
 /-- **The uniform parametric bounded Löb theorem, unconditional.** -/
-theorem pblt_unconditional :
+theorem pblt :
     ∃ kHat : ℕ, TAct ⊢ ∀¹ ((leF (↑kHat) #0 : Semisentence LAct 1) 🡒 psi) :=
   pblt_of_sizeThm sizeThmAll_holds
 

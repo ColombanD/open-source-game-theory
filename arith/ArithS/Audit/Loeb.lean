@@ -13,43 +13,43 @@ the nine per-layer files; each line must read `[propext, Classical.choice, Quot.
 
 namespace ArithS
 
--- M4, U1 + U3 (InstV): the bnum-instance operator `instB` (Σ₁ graph, code equation, length
--- `|instB n k| ≤ |n|·|bnum k|`), the parametric box `bewB` (Σ₁), and Quantifier Distribution
--- on codes with dlen accounting (`N + 5|χ[bnum k]| + 3|χ| + |bnum k| + 7`) — V-generic, its
+-- M4, U1 + U3 (InstV): the binNumeral-instance operator `instB` (Σ₁ graph, code equation, length
+-- `|instB n k| ≤ |n|·|binNumeral k|`), the parametric box `bewB` (Σ₁), and Quantifier Distribution
+-- on codes with proofLen accounting (`N + 5|χ[binNumeral k]| + 3|χ| + |binNumeral k| + 7`) — V-generic, its
 -- meta twin at ℕ (the final PBLT step), and as ONE ℒₒᵣ-sentence proved by IΣ₁/PA/TAct.
 #print axioms instB.defined
 #print axioms quote_instB
 #print axioms formulaLen_instB_le
 #print axioms bewB.defined
-#print axioms lenDerivable_inst_V
-#print axioms lenDerivable_instB_V
-#print axioms lenDerivable_instB_V'
-#print axioms lenProvable_inst
-#print axioms lenProvable_inst_size
+#print axioms lenBoxUnbounded_inst_V
+#print axioms lenBoxUnbounded_instB_V
+#print axioms lenBoxUnbounded_instB_V'
+#print axioms lenBoxNat_inst
+#print axioms lenBoxNat_inst_size
 #print axioms pa_proves_instSentence
 #print axioms tact_proves_instSentence
 
--- M4, U9 step 2 (NumeralFacts): short TAct proofs of the antecedent `numeral c ≤ bnumT k` —
+-- M4, U9 step 2 (NumeralFacts): short TAct proofs of the antecedent `numeral c ≤ binNumeralMeta k` —
 -- bit recursion on the binary numeral (two uniform PA lemmas cut in once per bit, base range
 -- by completeness), length `C₀ + C₁·size k·size k`; the strict twin; the instance shape
 -- (`(leF ↑c #0 🡒 ψ) ⇜ ![t] = leF ↑c t 🡒 ψ ⇜ ![t]`) and `lMap emb ↑c = ↑c`.
-#print axioms lenProvable_of_provable
+#print axioms lenBoxNat_of_provable
 #print axioms lMap_emb_numeral
 #print axioms substs_leF_imp
 #print axioms tact_proves_leEvenA
-#print axioms tact_proves_le_bnumT
+#print axioms tact_proves_le_binNumeralMeta
 #print axioms step_le
-#print axioms lenProvable_le_bnumT
-#print axioms lenProvable_lt_bnumT
+#print axioms lenBoxNat_le_binNumeralMeta
+#print axioms lenBoxNat_lt_binNumeralMeta
 
 -- M4, U6 (Diag): the parametric diagonal lemma over TAct for LAct formulas — Foundation's
 -- construction transported along the reduct (`substNumeralParamsA` twin of `substNumeralParams`,
--- `tactFixedpoint`), through completeness with equality (`𝗘𝗤 LAct ⪯ TAct`, `tact_complete`);
--- the instances at `bnum k` (∀-elimination), their truth in every model and their internal
+-- `tactFixedpoint`), through completeness with equality (`𝗘𝗤 LAct ⪯ TAct`, `TAct_complete`);
+-- the instances at `binNumeral k` (∀-elimination), their truth in every model and their internal
 -- provability (D1).
 #print axioms eqAxiom_weakerThan_TAct
-#print axioms tact_complete
-#print axioms tact_complete'
+#print axioms TAct_complete
+#print axioms TAct_complete_of_readings
 #print axioms substNumeralParamsA_app_quote
 #print axioms tact_parametric_diagonal₁
 #print axioms tact_parametric_diagonal
@@ -58,9 +58,9 @@ namespace ArithS
 #print axioms provable_code_parametric_diagonal_inst
 
 -- M4 assembly prep (Assembly/Prep, 2026-09-12): Cupod's instance equation on codes and search
--- clause in every model; the truth equations in BOTH readings (`swapActS` pulled back to
--- `stdActS`); the conjunction family `pConj = qDupoc ⋏ qCupod` with `instB` distributing over
--- the code connectives and ∧-elimination on codes with dlen accounting (`a + 8(|x|+|y|) + 7`),
+-- clause in every model; the truth equations in BOTH readings (`swappedReading` pulled back to
+-- `stdReading`); the conjunction family `pConj = qDupoc ⋏ qCupod` with `instB` distributing over
+-- the code connectives and ∧-elimination on codes with proofLen accounting (`a + 8(|x|+|y|) + 7`),
 -- so a box of the `k`-instance of `pConj` makes BOTH searchers find their guards; the box
 -- formula `Box_g` (`g k = ‖k‖³`) with its semantics, `θ` (`#0` = code slot, `#1` = budget) and
 -- the fixed point `psi` with `TAct ⊢ ∀¹ (psi 🡘 (Box_g psi 🡒 pConj))`; Σ₁ upward transfer of a
@@ -68,15 +68,15 @@ namespace ArithS
 #print axioms guardCode_CupodV_eq_instB
 #print axioms cupod_search_V
 #print axioms eval_qCupod_iff_V
-#print axioms eval_swapActS
+#print axioms eval_swappedReading
 #print axioms eval_qDupoc_swap_iff_V
 #print axioms eval_qCupod_swap_iff_V
 #print axioms instB_quote_pConj
 #print axioms instB_imp
-#print axioms lenDerivable_andL_V_sharp
-#print axioms lenDerivable_andR_V_sharp
-#print axioms lenDerivable_andL_V
-#print axioms lenDerivable_andR_V
+#print axioms lenBoxUnbounded_andL_V_sharp
+#print axioms lenBoxUnbounded_andR_V_sharp
+#print axioms lenBoxUnbounded_andL_V
+#print axioms lenBoxUnbounded_andR_V
 #print axioms pconj_both_V
 #print axioms eval_pConj_iff_std
 #print axioms eval_pConj_iff_swap
@@ -85,22 +85,22 @@ namespace ArithS
 #print axioms theta_subst_code
 #print axioms psi_fixed_point
 #print axioms models_psi_fixed_point
-#print axioms lenDerivable_of_nat
-#print axioms lenDerivable_of_proof
-#print axioms exists_lenDerivable_V_of_proof
+#print axioms lenBoxUnbounded_of_nat
+#print axioms lenBoxUnbounded_of_proof
+#print axioms exists_lenBoxUnbounded_V_of_proof
 
 -- M4 U8 — the uniform PBLT chain (Assembly/Uniform, 2026-09-12), conditional on
 -- `BoundedInnerNec d` (a per-χ constant, polynomial expansion `C_χ·(g(k)^d + 1)`):
--- `|bnum k| ≤ 6‖k‖ + 1` in every model; polynomials in the bit length are
+-- `|binNumeral k| ≤ 6‖k‖ + 1` in every model; polynomials in the bit length are
 -- eventually below `k` in EVERY model (standard threshold, nonstandard `k` included); the two
 -- standard readings are models of `TAct`; the forward direction of the fixed point with a
 -- length, instantiated; the chain (cut, necessitation, cut, ∧-elimination) with its budget
 -- `chainBound ≤ C·‖k‖^{3d+3}`; `psi(k)` true in both readings for all large `k`; and
 -- `TAct ⊢ ∀ k, (k̂ ≤ k → psi(k))`.
-#print axioms termLen_bnum_le_V
+#print axioms termLen_binNumeral_le_V
 #print axioms poly_size_le_eventually
-#print axioms stdActS_models_TAct
-#print axioms swapActS_models_TAct
+#print axioms stdReading_models_TAct
+#print axioms swappedReading_models_TAct
 #print axioms psi_forward
 #print axioms forward_inst_V
 #print axioms chain_core_V
@@ -111,15 +111,15 @@ namespace ArithS
 #print axioms pblt_uniform
 
 -- M4 U9 — the Löbian cell at ℕ (Assembly/Cell, 2026-09-12), conditional on `BoundedInnerNec d`:
--- `‖·‖ = Nat.size` at ℕ; the meta closure `LenProvable fbound (K₀ + K₁·size k + K₂·size k²) TAct
--- ⌜psi ⇜ ![bnumT k]⌝` (the uniform theorem instantiated, its antecedent cut away by
+-- `‖·‖ = Nat.size` at ℕ; the meta closure `LenBoxNat codeBound (K₀ + K₁·size k + K₂·size k²) TAct
+-- ⌜psi ⇜ ![binNumeralMeta k]⌝` (the uniform theorem instantiated, its antecedent cut away by
 -- NumeralFacts); below the cube budget; and the cell: for all large `k`, `Dupoc k` cooperates
 -- with itself and `Cupod k` defects against itself (fuel 2), and both FIND their guards
--- (`LenProvableV TAct k (guard)`) — Critch's Theorem 3.7 in PA-S.
+-- (`LenBox TAct k (guard)`) — Critch's Theorem 3.7 in PA-S.
 #print axioms size_eq_length
 #print axioms exists_psi_instance_length
 #print axioms cell_core
-#print axioms dupoc_self_coop
+#print axioms dupoc_self_coop_of_nec
 #print axioms dupoc_finds_guard
 
 -- Route B Phase 1 — the family-parametric assembly (Assembly/Family, 2026-09-23): everything U8/U9

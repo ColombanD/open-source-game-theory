@@ -106,135 +106,135 @@ No declarations (smoke test, M0).
 - L14 `open FFL FFL.FirstOrder Arithmetic Bootstrapping`; L15 `open Classical`
 - L17 `variable {V : Type*} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]`; L18 `variable {L : Language} [L.Encodable] [L.LORDefinable]`
 
-`namespace SetLen`:
+`namespace SequentLen`:
 - L25 `noncomputable def blueprint : PR.Blueprint 1 where zero := .mkSigma “y s. y = 0”; succ := .mkSigma “y ih i s. (i ∈ s → ∃ l, !(formulaLenGraph L) l i ∧ y = ih + l) ∧ (¬i ∈ s → y = ih)”`
 - L29 `noncomputable def construction : PR.Construction V (blueprint L) where zero := fun _ ↦ 0; succ := fun v i ih ↦ if i ∈ v 0 then ih + formulaLen L i else ih; …`
 
-- L47 `noncomputable def setLenAux (s i : V) : V := (SetLen.construction L).result ![s] i` — partial sum `Σ_{p ∈ s, p < i} formulaLen p`
-- L50 `noncomputable def setLen (s : V) : V := setLenAux L s s` — `Σ_{p ∈ s} formulaLen p`
-- L54 `@[simp] lemma setLenAux_zero (s : V) : setLenAux L s 0 = 0`
-- L57 `lemma setLenAux_succ (s i : V) : setLenAux L s (i + 1) = if i ∈ s then setLenAux L s i + formulaLen L i else setLenAux L s i`
-- L61 `@[simp] lemma setLenAux_succ_of_mem {s i : V} (h : i ∈ s) : setLenAux L s (i + 1) = setLenAux L s i + formulaLen L i`
-- L64 `@[simp] lemma setLenAux_succ_of_not_mem {s i : V} (h : i ∉ s) : setLenAux L s (i + 1) = setLenAux L s i`
-- L71 `noncomputable def setLenAuxDef : 𝚺₁.Semisentence 3 := (SetLen.blueprint L).resultDef |>.rew (Rew.subst ![#0, #2, #1])`
-- L76 `instance setLenAux_defined : 𝚺₁-Function₂[V] setLenAux L via setLenAuxDef L`
-- L79 `instance setLenAux_definable : 𝚺₁-Function₂[V] setLenAux L`
-- L81 `instance setLenAux_definable' (Γ m) : Γ-[m + 1]-Function₂ (setLenAux (V := V) L)`
-- L89 `noncomputable def setLenDef : 𝚺₁.Semisentence 2 := (setLenAuxDef L).rew (Rew.subst ![#0, #1, #1])` — doc warns: NOT a `“ ”`-DSL wrapper (simp on the wrapper form runs away, 17 GB)
-- L93 `instance setLen_defined : 𝚺₁-Function₁[V] setLen L via setLenDef L`
-- L96 `instance setLen_definable : 𝚺₁-Function₁[V] setLen L`
-- L98 `instance setLen_definable' (Γ m) : Γ-[m + 1]-Function₁ (setLen (V := V) L)`
+- L47 `noncomputable def sequentLenAux (s i : V) : V := (SequentLen.construction L).result ![s] i` — partial sum `Σ_{p ∈ s, p < i} formulaLen p`
+- L50 `noncomputable def sequentLen (s : V) : V := sequentLenAux L s s` — `Σ_{p ∈ s} formulaLen p`
+- L54 `@[simp] lemma sequentLenAux_zero (s : V) : sequentLenAux L s 0 = 0`
+- L57 `lemma sequentLenAux_succ (s i : V) : sequentLenAux L s (i + 1) = if i ∈ s then sequentLenAux L s i + formulaLen L i else sequentLenAux L s i`
+- L61 `@[simp] lemma sequentLenAux_succ_of_mem {s i : V} (h : i ∈ s) : sequentLenAux L s (i + 1) = sequentLenAux L s i + formulaLen L i`
+- L64 `@[simp] lemma sequentLenAux_succ_of_not_mem {s i : V} (h : i ∉ s) : sequentLenAux L s (i + 1) = sequentLenAux L s i`
+- L71 `noncomputable def sequentLenAuxDef : 𝚺₁.Semisentence 3 := (SequentLen.blueprint L).resultDef |>.rew (Rew.subst ![#0, #2, #1])`
+- L76 `instance sequentLenAux_defined : 𝚺₁-Function₂[V] sequentLenAux L via sequentLenAuxDef L`
+- L79 `instance sequentLenAux_definable : 𝚺₁-Function₂[V] sequentLenAux L`
+- L81 `instance sequentLenAux_definable' (Γ m) : Γ-[m + 1]-Function₂ (sequentLenAux (V := V) L)`
+- L89 `noncomputable def sequentLenDef : 𝚺₁.Semisentence 2 := (sequentLenAuxDef L).rew (Rew.subst ![#0, #1, #1])` — doc warns: NOT a `“ ”`-DSL wrapper (simp on the wrapper form runs away, 17 GB)
+- L93 `instance sequentLen_defined : 𝚺₁-Function₁[V] sequentLen L via sequentLenDef L`
+- L96 `instance sequentLen_definable : 𝚺₁-Function₁[V] sequentLen L`
+- L98 `instance sequentLen_definable' (Γ m) : Γ-[m + 1]-Function₁ (sequentLen (V := V) L)`
 
 ## 4. `ArithS/DerivationLength.lean` (420 lines) — `namespace ArithS`
 
 - L21 `open FFL FFL.FirstOrder Arithmetic Bootstrapping`; L22 `open PeanoMinus ISigma0 ISigma1`
 - L24 `variable {V : Type*} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]`; L25 `variable {L : Language} [L.Encodable] [L.LORDefinable]`
 
-`namespace DLen`:
+`namespace ProofLen`:
 - L32 `def Phi (C : Set V) (pr : V) : Prop :=` (verbatim, ten arms)
   ```
-  (∃ s p, pr = ⟪axL s p, setLen L s + 1⟫) ∨
-  (∃ s, pr = ⟪verumIntro s, setLen L s + 1⟫) ∨
-  (∃ s p q dp dq np nq, ⟪dp, np⟫ ∈ C ∧ ⟪dq, nq⟫ ∈ C ∧ pr = ⟪andIntro s p q dp dq, setLen L s + np + nq + 1⟫) ∨
-  (∃ s p q d n', ⟪d, n'⟫ ∈ C ∧ pr = ⟪orIntro s p q d, setLen L s + n' + 1⟫) ∨
-  (∃ s p d n', ⟪d, n'⟫ ∈ C ∧ pr = ⟪allIntro s p d, setLen L s + n' + 1⟫) ∨
-  (∃ s p t d n', ⟪d, n'⟫ ∈ C ∧ pr = ⟪exsIntro s p t d, setLen L s + termLen L t + n' + 1⟫) ∨
-  (∃ s d n', ⟪d, n'⟫ ∈ C ∧ pr = ⟪wkRule s d, setLen L s + n' + 1⟫) ∨
-  (∃ s d n', ⟪d, n'⟫ ∈ C ∧ pr = ⟪shiftRule s d, setLen L s + n' + 1⟫) ∨
-  (∃ s p d₁ d₂ n₁ n₂, ⟪d₁, n₁⟫ ∈ C ∧ ⟪d₂, n₂⟫ ∈ C ∧ pr = ⟪cutRule s p d₁ d₂, setLen L s + n₁ + n₂ + 1⟫) ∨
-  (∃ s p, pr = ⟪axm s p, setLen L s + 1⟫)
+  (∃ s p, pr = ⟪axL s p, sequentLen L s + 1⟫) ∨
+  (∃ s, pr = ⟪verumIntro s, sequentLen L s + 1⟫) ∨
+  (∃ s p q dp dq np nq, ⟪dp, np⟫ ∈ C ∧ ⟪dq, nq⟫ ∈ C ∧ pr = ⟪andIntro s p q dp dq, sequentLen L s + np + nq + 1⟫) ∨
+  (∃ s p q d n', ⟪d, n'⟫ ∈ C ∧ pr = ⟪orIntro s p q d, sequentLen L s + n' + 1⟫) ∨
+  (∃ s p d n', ⟪d, n'⟫ ∈ C ∧ pr = ⟪allIntro s p d, sequentLen L s + n' + 1⟫) ∨
+  (∃ s p t d n', ⟪d, n'⟫ ∈ C ∧ pr = ⟪exsIntro s p t d, sequentLen L s + termLen L t + n' + 1⟫) ∨
+  (∃ s d n', ⟪d, n'⟫ ∈ C ∧ pr = ⟪wkRule s d, sequentLen L s + n' + 1⟫) ∨
+  (∃ s d n', ⟪d, n'⟫ ∈ C ∧ pr = ⟪shiftRule s d, sequentLen L s + n' + 1⟫) ∨
+  (∃ s p d₁ d₂ n₁ n₂, ⟪d₁, n₁⟫ ∈ C ∧ ⟪d₂, n₂⟫ ∈ C ∧ pr = ⟪cutRule s p d₁ d₂, sequentLen L s + n₁ + n₂ + 1⟫) ∨
+  (∃ s p, pr = ⟪axm s p, sequentLen L s + 1⟫)
   ```
-- L46 `noncomputable def blueprint : Fixpoint.Blueprint 0 := ⟨.mkDelta (.mkSigma “pr C. ∃ d <⁺ pr, ∃ n <⁺ pr, !pairDef pr d n ∧ (…ten arms using !axLGraph/!verumIntroGraph/!andIntroGraph/!orIntroGraph/!allIntroGraph/!exsIntroGraph/!wkRuleGraph/!shiftRuleGraph/!cutRuleGraph/!axmGraph, !(setLenDef L), !(termLenGraph L), :⟪·,·⟫:∈ C…)”) (.mkPi “…same with ∀ l, !(setLenDef L) l s → …”)⟩` (L46–90)
+- L46 `noncomputable def blueprint : Fixpoint.Blueprint 0 := ⟨.mkDelta (.mkSigma “pr C. ∃ d <⁺ pr, ∃ n <⁺ pr, !pairDef pr d n ∧ (…ten arms using !axLGraph/!verumIntroGraph/!andIntroGraph/!orIntroGraph/!allIntroGraph/!exsIntroGraph/!wkRuleGraph/!shiftRuleGraph/!cutRuleGraph/!axmGraph, !(sequentLenDef L), !(termLenGraph L), :⟪·,·⟫:∈ C…)”) (.mkPi “…same with ∀ l, !(sequentLenDef L) l s → …”)⟩` (L46–90)
 - L94–97 `private lemma le_sum₀ (a b : V) : b ≤ a + b + 1`; `le_sum₁ (a b c : V) : b ≤ a + b + c + 1`; `le_sum₂ (a b c : V) : c ≤ a + b + c + 1`
 - L100 `private lemma phi_iff (C pr : V) : Phi L {x | x ∈ C} pr ↔ ∃ d ≤ pr, ∃ n ≤ pr, pr = ⟪d, n⟫ ∧ (…bounded form of the ten arms…)`
 - L163 `noncomputable def construction : Fixpoint.Construction V (blueprint L) where Φ := fun _ ↦ Phi L; defined := …; monotone := …`
 - L189 `instance : (construction L).StrongFinite V`
 
-- L219 `def DlenGraph (d n : V) : Prop := (DLen.construction L).Fixpoint ![] ⟪d, n⟫`
-- L221 `noncomputable def dlenGraphDef : 𝚫₁.Semisentence 2 := .mkDelta (.mkSigma “d n. ∃ pr <⁺ (d + n + 1)², !pairDef pr d n ∧ !(DLen.blueprint L).fixpointDefΔ₁.sigma pr”) (.mkPi “d n. ∀ pr <⁺ (d + n + 1)², !pairDef pr d n → !(DLen.blueprint L).fixpointDefΔ₁.pi pr”)`
-- L229 `private lemma fixpoint_param_eq (p : Fin 0 → V) (x : V) : (DLen.construction L).Fixpoint p x = (DLen.construction L).Fixpoint ![] x`
-- L233 `instance dlenGraph_defined : 𝚫₁-Relation[V] DlenGraph L via dlenGraphDef L`
-- L245 `instance dlenGraph_definable : 𝚫₁-Relation[V] DlenGraph L`
-- L247 `instance dlenGraph_definable' : Γ-[m + 1]-Relation[V] DlenGraph L`
-- L253 `lemma DlenGraph.case_iff {d n : V} : DlenGraph L d n ↔ (∃ s p, d = axL s p ∧ n = setLen L s + 1) ∨ (∃ s, d = verumIntro s ∧ n = setLen L s + 1) ∨ (∃ s p q dp dq np nq, DlenGraph L dp np ∧ DlenGraph L dq nq ∧ d = andIntro s p q dp dq ∧ n = setLen L s + np + nq + 1) ∨ (∃ s p q d' n', DlenGraph L d' n' ∧ d = orIntro s p q d' ∧ n = setLen L s + n' + 1) ∨ (∃ s p d' n', DlenGraph L d' n' ∧ d = allIntro s p d' ∧ n = setLen L s + n' + 1) ∨ (∃ s p t d' n', DlenGraph L d' n' ∧ d = exsIntro s p t d' ∧ n = setLen L s + termLen L t + n' + 1) ∨ (∃ s d' n', DlenGraph L d' n' ∧ d = wkRule s d' ∧ n = setLen L s + n' + 1) ∨ (∃ s d' n', DlenGraph L d' n' ∧ d = shiftRule s d' ∧ n = setLen L s + n' + 1) ∨ (∃ s p d₁ d₂ n₁ n₂, DlenGraph L d₁ n₁ ∧ DlenGraph L d₂ n₂ ∧ d = cutRule s p d₁ d₂ ∧ n = setLen L s + n₁ + n₂ + 1) ∨ (∃ s p, d = axm s p ∧ n = setLen L s + 1)`
+- L219 `def ProofLenGraph (d n : V) : Prop := (ProofLen.construction L).Fixpoint ![] ⟪d, n⟫`
+- L221 `noncomputable def proofLenGraphDef : 𝚫₁.Semisentence 2 := .mkDelta (.mkSigma “d n. ∃ pr <⁺ (d + n + 1)², !pairDef pr d n ∧ !(ProofLen.blueprint L).fixpointDefΔ₁.sigma pr”) (.mkPi “d n. ∀ pr <⁺ (d + n + 1)², !pairDef pr d n → !(ProofLen.blueprint L).fixpointDefΔ₁.pi pr”)`
+- L229 `private lemma fixpoint_param_eq (p : Fin 0 → V) (x : V) : (ProofLen.construction L).Fixpoint p x = (ProofLen.construction L).Fixpoint ![] x`
+- L233 `instance proofLenGraph_defined : 𝚫₁-Relation[V] ProofLenGraph L via proofLenGraphDef L`
+- L245 `instance proofLenGraph_definable : 𝚫₁-Relation[V] ProofLenGraph L`
+- L247 `instance proofLenGraph_definable' : Γ-[m + 1]-Relation[V] ProofLenGraph L`
+- L253 `lemma ProofLenGraph.case_iff {d n : V} : ProofLenGraph L d n ↔ (∃ s p, d = axL s p ∧ n = sequentLen L s + 1) ∨ (∃ s, d = verumIntro s ∧ n = sequentLen L s + 1) ∨ (∃ s p q dp dq np nq, ProofLenGraph L dp np ∧ ProofLenGraph L dq nq ∧ d = andIntro s p q dp dq ∧ n = sequentLen L s + np + nq + 1) ∨ (∃ s p q d' n', ProofLenGraph L d' n' ∧ d = orIntro s p q d' ∧ n = sequentLen L s + n' + 1) ∨ (∃ s p d' n', ProofLenGraph L d' n' ∧ d = allIntro s p d' ∧ n = sequentLen L s + n' + 1) ∨ (∃ s p t d' n', ProofLenGraph L d' n' ∧ d = exsIntro s p t d' ∧ n = sequentLen L s + termLen L t + n' + 1) ∨ (∃ s d' n', ProofLenGraph L d' n' ∧ d = wkRule s d' ∧ n = sequentLen L s + n' + 1) ∨ (∃ s d' n', ProofLenGraph L d' n' ∧ d = shiftRule s d' ∧ n = sequentLen L s + n' + 1) ∨ (∃ s p d₁ d₂ n₁ n₂, ProofLenGraph L d₁ n₁ ∧ ProofLenGraph L d₂ n₂ ∧ d = cutRule s p d₁ d₂ ∧ n = sequentLen L s + n₁ + n₂ + 1) ∨ (∃ s p, d = axm s p ∧ n = sequentLen L s + 1)`
 - L272 `attribute [local simp] axL verumIntro andIntro orIntro allIntro exsIntro wkRule shiftRule cutRule axm` (section inversion)
-- L274 `lemma DlenGraph.axL_iff {s p n : V} : DlenGraph L (axL s p) n ↔ n = setLen L s + 1`
-- L277 `lemma DlenGraph.verumIntro_iff {s n : V} : DlenGraph L (verumIntro s) n ↔ n = setLen L s + 1`
-- L280 `lemma DlenGraph.axm_iff {s p n : V} : DlenGraph L (axm s p) n ↔ n = setLen L s + 1`
-- L283 `lemma DlenGraph.andIntro_iff {s p q dp dq n : V} : DlenGraph L (andIntro s p q dp dq) n ↔ ∃ np nq, DlenGraph L dp np ∧ DlenGraph L dq nq ∧ n = setLen L s + np + nq + 1`
-- L288 `lemma DlenGraph.orIntro_iff {s p q d' n : V} : DlenGraph L (orIntro s p q d') n ↔ ∃ n', DlenGraph L d' n' ∧ n = setLen L s + n' + 1`
-- L292 `lemma DlenGraph.allIntro_iff {s p d' n : V} : DlenGraph L (allIntro s p d') n ↔ ∃ n', DlenGraph L d' n' ∧ n = setLen L s + n' + 1`
-- L296 `lemma DlenGraph.exsIntro_iff {s p t d' n : V} : DlenGraph L (exsIntro s p t d') n ↔ ∃ n', DlenGraph L d' n' ∧ n = setLen L s + termLen L t + n' + 1`
-- L301 `lemma DlenGraph.wkRule_iff {s d' n : V} : DlenGraph L (wkRule s d') n ↔ ∃ n', DlenGraph L d' n' ∧ n = setLen L s + n' + 1`
-- L305 `lemma DlenGraph.shiftRule_iff {s d' n : V} : DlenGraph L (shiftRule s d') n ↔ ∃ n', DlenGraph L d' n' ∧ n = setLen L s + n' + 1`
-- L309 `lemma DlenGraph.cutRule_iff {s p d₁ d₂ n : V} : DlenGraph L (cutRule s p d₁ d₂) n ↔ ∃ n₁ n₂, DlenGraph L d₁ n₁ ∧ DlenGraph L d₂ n₂ ∧ n = setLen L s + n₁ + n₂ + 1`
+- L274 `lemma ProofLenGraph.axL_iff {s p n : V} : ProofLenGraph L (axL s p) n ↔ n = sequentLen L s + 1`
+- L277 `lemma ProofLenGraph.verumIntro_iff {s n : V} : ProofLenGraph L (verumIntro s) n ↔ n = sequentLen L s + 1`
+- L280 `lemma ProofLenGraph.axm_iff {s p n : V} : ProofLenGraph L (axm s p) n ↔ n = sequentLen L s + 1`
+- L283 `lemma ProofLenGraph.andIntro_iff {s p q dp dq n : V} : ProofLenGraph L (andIntro s p q dp dq) n ↔ ∃ np nq, ProofLenGraph L dp np ∧ ProofLenGraph L dq nq ∧ n = sequentLen L s + np + nq + 1`
+- L288 `lemma ProofLenGraph.orIntro_iff {s p q d' n : V} : ProofLenGraph L (orIntro s p q d') n ↔ ∃ n', ProofLenGraph L d' n' ∧ n = sequentLen L s + n' + 1`
+- L292 `lemma ProofLenGraph.allIntro_iff {s p d' n : V} : ProofLenGraph L (allIntro s p d') n ↔ ∃ n', ProofLenGraph L d' n' ∧ n = sequentLen L s + n' + 1`
+- L296 `lemma ProofLenGraph.exsIntro_iff {s p t d' n : V} : ProofLenGraph L (exsIntro s p t d') n ↔ ∃ n', ProofLenGraph L d' n' ∧ n = sequentLen L s + termLen L t + n' + 1`
+- L301 `lemma ProofLenGraph.wkRule_iff {s d' n : V} : ProofLenGraph L (wkRule s d') n ↔ ∃ n', ProofLenGraph L d' n' ∧ n = sequentLen L s + n' + 1`
+- L305 `lemma ProofLenGraph.shiftRule_iff {s d' n : V} : ProofLenGraph L (shiftRule s d') n ↔ ∃ n', ProofLenGraph L d' n' ∧ n = sequentLen L s + n' + 1`
+- L309 `lemma ProofLenGraph.cutRule_iff {s p d₁ d₂ n : V} : ProofLenGraph L (cutRule s p d₁ d₂) n ↔ ∃ n₁ n₂, ProofLenGraph L d₁ n₁ ∧ ProofLenGraph L d₂ n₂ ∧ n = sequentLen L s + n₁ + n₂ + 1`
 - L320 `variable {T : Theory L} [T.Δ₁]`
-- L322 `lemma dlenGraph_exists {d : V} (hd : Derivation T d) : ∃ n, DlenGraph L d n` (via `Derivation.induction1 𝚺`)
-- L337 `lemma dlenGraph_unique {d : V} (hd : Derivation T d) : ∀ n₁ n₂, DlenGraph L d n₁ → DlenGraph L d n₂ → n₁ = n₂` (via `Derivation.induction1 𝚷`)
-- L376 `lemma dlenGraph_existsUnique {d : V} (hd : Derivation T d) : ∃! n, DlenGraph L d n`
-- L382 `lemma dlenGraph_existsUnique_total (d : V) : ∃! n, (Derivation T d → DlenGraph L d n) ∧ (¬Derivation T d → n = 0)` (explicit `(T)`)
-- L389 `noncomputable def dlen (d : V) : V := Classical.choose! (dlenGraph_existsUnique_total (L := L) T d)` (explicit `(T)`; `0` on non-derivations)
-- L393 `theorem dlen_graph {d : V} (hd : Derivation T d) : DlenGraph L d (dlen T d)`
-- L396 `theorem dlen_of_not {d : V} (hd : ¬Derivation T d) : dlen T d = 0`
-- L399 `lemma dlen_eq_of_graph {d n : V} (hd : Derivation T d) (h : DlenGraph L d n) : dlen T d = n`
-- L404 `noncomputable def dlenDef : 𝚺₁.Semisentence 2 := .mkSigma “n d. (!(derivation T).pi d → !(dlenGraphDef L).sigma d n) ∧ (¬!(derivation T).sigma d → n = 0)”` (explicit `(T)`)
-- L409 `instance dlen_defined : 𝚺₁-Function₁[V] dlen (L := L) T via dlenDef T`
-- L414 `instance dlen_definable : 𝚺₁-Function₁[V] dlen (L := L) T`
-- L416 `instance dlen_definable' : Γ-[m + 1]-Function₁[V] dlen (L := L) T`
+- L322 `lemma proofLenGraph_exists {d : V} (hd : Derivation T d) : ∃ n, ProofLenGraph L d n` (via `Derivation.induction1 𝚺`)
+- L337 `lemma proofLenGraph_unique {d : V} (hd : Derivation T d) : ∀ n₁ n₂, ProofLenGraph L d n₁ → ProofLenGraph L d n₂ → n₁ = n₂` (via `Derivation.induction1 𝚷`)
+- L376 `lemma proofLenGraph_existsUnique {d : V} (hd : Derivation T d) : ∃! n, ProofLenGraph L d n`
+- L382 `lemma proofLenGraph_existsUnique_total (d : V) : ∃! n, (Derivation T d → ProofLenGraph L d n) ∧ (¬Derivation T d → n = 0)` (explicit `(T)`)
+- L389 `noncomputable def proofLen (d : V) : V := Classical.choose! (proofLenGraph_existsUnique_total (L := L) T d)` (explicit `(T)`; `0` on non-derivations)
+- L393 `theorem proofLen_graph {d : V} (hd : Derivation T d) : ProofLenGraph L d (proofLen T d)`
+- L396 `theorem proofLen_of_not {d : V} (hd : ¬Derivation T d) : proofLen T d = 0`
+- L399 `lemma proofLen_eq_of_graph {d n : V} (hd : Derivation T d) (h : ProofLenGraph L d n) : proofLen T d = n`
+- L404 `noncomputable def proofLenDef : 𝚺₁.Semisentence 2 := .mkSigma “n d. (!(derivation T).pi d → !(proofLenGraphDef L).sigma d n) ∧ (¬!(derivation T).sigma d → n = 0)”` (explicit `(T)`)
+- L409 `instance proofLen_defined : 𝚺₁-Function₁[V] proofLen (L := L) T via proofLenDef T`
+- L414 `instance proofLen_definable : 𝚺₁-Function₁[V] proofLen (L := L) T`
+- L416 `instance proofLen_definable' : Γ-[m + 1]-Function₁[V] proofLen (L := L) T`
 
 ## 5. `ArithS/Bew.lean` (179 lines)
 
 `namespace ArithS` (L25–83): L27 `open FFL FFL.FirstOrder Arithmetic Bootstrapping`; L28 `open PeanoMinus ISigma0 ISigma1`; L30 `variable {V : Type*} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]`; L31 `variable {L : Language} [L.Encodable] [L.LORDefinable]`; L32 `variable {T : Theory L} [T.Δ₁]`.
 
-- L35 `def LenProvable (f : V → V) (k : ℕ) (T : Theory L) [T.Δ₁] (φ : V) : Prop := ∃ d < f (ORingStructure.numeral k), Proof T d φ ∧ dlen T d ≤ ORingStructure.numeral k`
-- L40 `noncomputable def lenProvable (fDef : 𝚺₁.Semisentence 2) (k : ℕ) : 𝚷₁.Semisentence 1 := .mkPi “φ. ∀ E, !fDef E !k → ∃ d < E, !(proof T).pi d φ ∧ ∀ n, !(dlenDef T) n d → n ≤ !k”` (explicit `(T)`)
-- L44 `noncomputable abbrev lenProvabilityPred (fDef : 𝚺₁.Semisentence 2) (k : ℕ) (σ : Sentence L) : ArithmeticSentence := (lenProvable T fDef k).val/[⌜σ⌝]` (explicit `(T)`)
-- L49 `instance LenProvable.defined {f : V → V} {fDef : 𝚺₁.Semisentence 2} [𝚺₁-Function₁[V] f via fDef] {k} : 𝚷₁-Predicate[V] (LenProvable f k T) via (lenProvable T fDef k)`
-- L53 `lemma LenProvable.mono {f : V → V} (hf : Monotone f) {k k' : ℕ} (h : k ≤ k') {φ : V} : LenProvable f k T φ → LenProvable f k' T φ`
-- L60 `lemma LenProvable.provable {f : V → V} {k : ℕ} {φ : V} : LenProvable f k T φ → Provable T φ`
-- L70 `noncomputable abbrev lenGödel (fDef : 𝚺₁.Semisentence 2) (k : ℕ) : ArithmeticSentence := fixedpoint (∼(lenProvable T fDef k))` (explicit `(T)`)
-- L73 `private noncomputable abbrev lenGödel' (fDef : 𝚺₁.Semisentence 2) (k : ℕ) : ArithmeticSentence := ∼(lenProvable T fDef k).val/[⌜lenGödel T fDef k⌝]`
+- L35 `def LenBoxNat (f : V → V) (k : ℕ) (T : Theory L) [T.Δ₁] (φ : V) : Prop := ∃ d < f (ORingStructure.numeral k), Proof T d φ ∧ proofLen T d ≤ ORingStructure.numeral k`
+- L40 `noncomputable def lenBoxNat (fDef : 𝚺₁.Semisentence 2) (k : ℕ) : 𝚷₁.Semisentence 1 := .mkPi “φ. ∀ E, !fDef E !k → ∃ d < E, !(proof T).pi d φ ∧ ∀ n, !(proofLenDef T) n d → n ≤ !k”` (explicit `(T)`)
+- L44 `noncomputable abbrev lenProvabilityPred (fDef : 𝚺₁.Semisentence 2) (k : ℕ) (σ : Sentence L) : ArithmeticSentence := (lenBoxNat T fDef k).val/[⌜σ⌝]` (explicit `(T)`)
+- L49 `instance LenBoxNat.defined {f : V → V} {fDef : 𝚺₁.Semisentence 2} [𝚺₁-Function₁[V] f via fDef] {k} : 𝚷₁-Predicate[V] (LenBoxNat f k T) via (lenBoxNat T fDef k)`
+- L53 `lemma LenBoxNat.mono {f : V → V} (hf : Monotone f) {k k' : ℕ} (h : k ≤ k') {φ : V} : LenBoxNat f k T φ → LenBoxNat f k' T φ`
+- L60 `lemma LenBoxNat.provable {f : V → V} {k : ℕ} {φ : V} : LenBoxNat f k T φ → Provable T φ`
+- L70 `noncomputable abbrev lenGödel (fDef : 𝚺₁.Semisentence 2) (k : ℕ) : ArithmeticSentence := fixedpoint (∼(lenBoxNat T fDef k))` (explicit `(T)`)
+- L73 `private noncomputable abbrev lenGödel' (fDef : 𝚺₁.Semisentence 2) (k : ℕ) : ArithmeticSentence := ∼(lenBoxNat T fDef k).val/[⌜lenGödel T fDef k⌝]`
 - L78 `private lemma lenGödel'_sigmaOne {fDef : 𝚺₁.Semisentence 2} {k : ℕ} : Hierarchy 𝚺 1 (lenGödel' T fDef k)`
 
 `namespace ArithS.Arithmetic` (L85–179): L87 `open FFL FFL.FirstOrder Arithmetic Bootstrapping ArithS`; L88 `open PeanoMinus ISigma0 ISigma1`; L90 `variable {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]`; L91 `variable {T U : ArithmeticTheory} [T.Δ₁]`; L92 `variable {fDef : 𝚺₁.Semisentence 2} {k : ℕ}`.
-- L94 `lemma def_lenGödel [𝗜𝚺₁ ⪯ U] : U ⊢ lenGödel T fDef k 🡘 (∼(lenProvable T fDef k).val)/[⌜lenGödel T fDef k⌝]`
-- L97 `private lemma def_lenGödel' [𝗜𝚺₁ ⪯ U] : U ⊢ lenGödel' T fDef k 🡘 (∼(lenProvable T fDef k).val)/[⌜lenGödel T fDef k⌝]`
+- L94 `lemma def_lenGödel [𝗜𝚺₁ ⪯ U] : U ⊢ lenGödel T fDef k 🡘 (∼(lenBoxNat T fDef k).val)/[⌜lenGödel T fDef k⌝]`
+- L97 `private lemma def_lenGödel' [𝗜𝚺₁ ⪯ U] : U ⊢ lenGödel' T fDef k 🡘 (∼(lenBoxNat T fDef k).val)/[⌜lenGödel T fDef k⌝]`
 - L100 `private lemma provable_E_lenGödel_lenGödel' [𝗜𝚺₁ ⪯ U] : U ⊢ lenGödel T fDef k 🡘 lenGödel' T fDef k`
 - L105 `private lemma iff_provable_lenGödel_provable_lenGödel' [𝗜𝚺₁ ⪯ U] : U ⊢ lenGödel T fDef k ↔ U ⊢ lenGödel' T fDef k`
 - L109 `private lemma iff_true_lenGödel_true_lenGödel' : ℕ↓[ℒₒᵣ] ⊧ lenGödel T fDef k ↔ ℕ↓[ℒₒᵣ] ⊧ lenGödel' T fDef k`
-- L115 `lemma models_lenGödel (f : V → V) [𝚺₁-Function₁[V] f via fDef] : V↓[ℒₒᵣ] ⊧ lenGödel T fDef k ↔ ∀ x : V, x < f (ORingStructure.numeral k) → ¬(Proof T x (⌜lenGödel T fDef k⌝) ∧ dlen T x ≤ ORingStructure.numeral k)`
-- L122 `private lemma models_neg_lenGödel (f : V → V) [𝚺₁-Function₁[V] f via fDef] : ¬V↓[ℒₒᵣ] ⊧ lenGödel T fDef k ↔ ∃ x : V, x < f (ORingStructure.numeral k) ∧ Proof T x (⌜lenGödel T fDef k⌝) ∧ dlen T x ≤ ORingStructure.numeral k`
+- L115 `lemma models_lenGödel (f : V → V) [𝚺₁-Function₁[V] f via fDef] : V↓[ℒₒᵣ] ⊧ lenGödel T fDef k ↔ ∀ x : V, x < f (ORingStructure.numeral k) → ¬(Proof T x (⌜lenGödel T fDef k⌝) ∧ proofLen T x ≤ ORingStructure.numeral k)`
+- L122 `private lemma models_neg_lenGödel (f : V → V) [𝚺₁-Function₁[V] f via fDef] : ¬V↓[ℒₒᵣ] ⊧ lenGödel T fDef k ↔ ∃ x : V, x < f (ORingStructure.numeral k) ∧ Proof T x (⌜lenGödel T fDef k⌝) ∧ proofLen T x ≤ ORingStructure.numeral k`
 - L128 `variable [𝗜𝚺₁ ⪯ T] [T.SoundOnHierarchy 𝚺 1]`
 - L131 `theorem true_lenGödel (f : ℕ → ℕ) [𝚺₁-Function₁ f via fDef] : ℕ↓[ℒₒᵣ] ⊧ lenGödel T fDef k`
 - L142 `theorem provable_lenGödel (f : ℕ → ℕ) [𝚺₁-Function₁ f via fDef] : T ⊢ lenGödel T fDef k`
-- L148 `theorem lower_bound_proof_lenGödel (f : ℕ → ℕ) [𝚺₁-Function₁ f via fDef] : ∀ b : T ⊢! lenGödel T fDef k, f k ≤ ⌜b⌝ ∨ k < dlen T (⌜b⌝ : ℕ)`
-- L164 `def Proper (f : ℕ → ℕ) (k : ℕ) (T : ArithmeticTheory) [T.Δ₁] : Prop := ∀ b : T ⊢! lenGödel T fDef k, dlen T (⌜b⌝ : ℕ) ≤ k → ⌜b⌝ < f k` (implicit `{fDef}` from the section variable)
-- L170 `theorem lower_bound_dlen_proof_lenGödel (f : ℕ → ℕ) [𝚺₁-Function₁ f via fDef] (hf : Proper (fDef := fDef) f k T) : ∀ b : T ⊢! lenGödel T fDef k, k < dlen T (⌜b⌝ : ℕ)` — "the M1 gate"
+- L148 `theorem lower_bound_proof_lenGödel (f : ℕ → ℕ) [𝚺₁-Function₁ f via fDef] : ∀ b : T ⊢! lenGödel T fDef k, f k ≤ ⌜b⌝ ∨ k < proofLen T (⌜b⌝ : ℕ)`
+- L164 `def Proper (f : ℕ → ℕ) (k : ℕ) (T : ArithmeticTheory) [T.Δ₁] : Prop := ∀ b : T ⊢! lenGödel T fDef k, proofLen T (⌜b⌝ : ℕ) ≤ k → ⌜b⌝ < f k` (implicit `{fDef}` from the section variable)
+- L170 `theorem lower_bound_proofLen_proof_lenGödel (f : ℕ → ℕ) [𝚺₁-Function₁ f via fDef] (hf : Proper (fDef := fDef) f k T) : ∀ b : T ⊢! lenGödel T fDef k, k < proofLen T (⌜b⌝ : ℕ)` — "the M1 gate"
 
 ## 6. `ArithS/MetaLength.lean` (253 lines) — `namespace ArithS`
 
 - L17 `open FFL FFL.FirstOrder Arithmetic Bootstrapping`; L18 `open PeanoMinus ISigma0 ISigma1`
 - L20 `variable {V : Type*} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]`; L21 `variable {L : Language} [L.Encodable] [L.LORDefinable]`
-- L27 `def tlen {n : ℕ} : SyntacticSemiterm L n → ℕ | #x => x + 1 | &x => x + 1 | FirstOrder.Semiterm.func _ v => (∑ i, tlen (v i)) + 1`
-- L32 `@[simp] lemma tlen_bvar {n : ℕ} (x : Fin n) : tlen (#x : SyntacticSemiterm L n) = x + 1`
-- L34 `@[simp] lemma tlen_fvar {n : ℕ} (x : ℕ) : tlen (&x : SyntacticSemiterm L n) = x + 1`
-- L36 `@[simp] lemma tlen_func {n k : ℕ} (f : L.Func k) (v : Fin k → SyntacticSemiterm L n) : tlen (FirstOrder.Semiterm.func f v) = (∑ i, tlen (v i)) + 1`
+- L27 `def termLenMeta {n : ℕ} : SyntacticSemiterm L n → ℕ | #x => x + 1 | &x => x + 1 | FirstOrder.Semiterm.func _ v => (∑ i, termLenMeta (v i)) + 1`
+- L32 `@[simp] lemma termLenMeta_bvar {n : ℕ} (x : Fin n) : termLenMeta (#x : SyntacticSemiterm L n) = x + 1`
+- L34 `@[simp] lemma termLenMeta_fvar {n : ℕ} (x : ℕ) : termLenMeta (&x : SyntacticSemiterm L n) = x + 1`
+- L36 `@[simp] lemma termLenMeta_func {n k : ℕ} (f : L.Func k) (v : Fin k → SyntacticSemiterm L n) : termLenMeta (FirstOrder.Semiterm.func f v) = (∑ i, termLenMeta (v i)) + 1`
 - L39 `lemma listSum_termLenVec {k n : ℕ} (w : SemitermVec V L k n) : listSum (termLenVec L ↑k w.val) = ∑ i, termLen L (w i).val`
-- L51 `theorem termLen_quote {n : ℕ} (t : SyntacticSemiterm L n) : termLen L (⌜t⌝ : V) = ↑(tlen t)`
-- L66 `def flen {n : ℕ} : Semiproposition L n → ℕ | .rel _ v => (∑ i, tlen (v i)) + 1 | .nrel _ v => (∑ i, tlen (v i)) + 1 | .verum => 1 | .falsum => 1 | .and φ ψ => flen φ + flen ψ + 1 | .or φ ψ => flen φ + flen ψ + 1 | .all φ => flen φ + 1 | .exs φ => flen φ + 1`
-- L76 `theorem formulaLen_quote {n : ℕ} (φ : Semiproposition L n) : formulaLen L (⌜φ⌝ : V) = ↑(flen φ)`
+- L51 `theorem termLen_quote {n : ℕ} (t : SyntacticSemiterm L n) : termLen L (⌜t⌝ : V) = ↑(termLenMeta t)`
+- L66 `def formulaLenMeta {n : ℕ} : Semiproposition L n → ℕ | .rel _ v => (∑ i, termLenMeta (v i)) + 1 | .nrel _ v => (∑ i, termLenMeta (v i)) + 1 | .verum => 1 | .falsum => 1 | .and φ ψ => formulaLenMeta φ + formulaLenMeta ψ + 1 | .or φ ψ => formulaLenMeta φ + formulaLenMeta ψ + 1 | .all φ => formulaLenMeta φ + 1 | .exs φ => formulaLenMeta φ + 1`
+- L76 `theorem formulaLen_quote {n : ℕ} (φ : Semiproposition L n) : formulaLen L (⌜φ⌝ : V) = ↑(formulaLenMeta φ)`
 
 `section sequent` (L114–170): L116 `variable {L : Language} [L.DecidableEq] [L.Encodable] [L.LORDefinable]`; L118 `open Classical`. (All at `V = ℕ`.)
-- L121 `lemma setLenAux_eq_of_le {s i : ℕ} (h : s ≤ i) : setLenAux L s i = setLen L s`
-- L133 `lemma setLenAux_insert_of_not_mem {x s : ℕ} (hx : x ∉ s) (i : ℕ) : setLenAux L (insert x s) i = setLenAux L s i + (if x < i then formulaLen L x else 0)`
-- L151 `lemma setLen_insert_of_not_mem {x s : ℕ} (hx : x ∉ s) : setLen L (insert x s) = setLen L s + formulaLen L x`
-- L161 `theorem setLen_quote (Γ : Finset (Proposition L)) : setLen L (⌜Γ⌝ : ℕ) = ∑ φ ∈ Γ, flen φ`
+- L121 `lemma sequentLenAux_eq_of_le {s i : ℕ} (h : s ≤ i) : sequentLenAux L s i = sequentLen L s`
+- L133 `lemma sequentLenAux_insert_of_not_mem {x s : ℕ} (hx : x ∉ s) (i : ℕ) : sequentLenAux L (insert x s) i = sequentLenAux L s i + (if x < i then formulaLen L x else 0)`
+- L151 `lemma sequentLen_insert_of_not_mem {x s : ℕ} (hx : x ∉ s) : sequentLen L (insert x s) = sequentLen L s + formulaLen L x`
+- L161 `theorem sequentLen_quote (Γ : Finset (Proposition L)) : sequentLen L (⌜Γ⌝ : ℕ) = ∑ φ ∈ Γ, formulaLenMeta φ`
 
 `section derivation` (L174–251): L176 `variable {L : Language} [L.DecidableEq] [L.Encodable] [L.LORDefinable]`; L177 `variable {T : Theory L} [T.Δ₁]`.
-- L180 `abbrev sqlen (Γ : Finset (Proposition L)) : ℕ := ∑ φ ∈ Γ, flen φ`
-- L184 `def mlen : {Γ : Finset (Proposition L)} → T ⟹₂ Γ → ℕ | Γ, .closed _ _ _ _ => sqlen Γ + 1 | Γ, .axm _ _ _ => sqlen Γ + 1 | Γ, .verum _ => sqlen Γ + 1 | Γ, .and _ d₁ d₂ => sqlen Γ + mlen d₁ + mlen d₂ + 1 | Γ, .or _ d => sqlen Γ + mlen d + 1 | Γ, .all _ d => sqlen Γ + mlen d + 1 | Γ, .exs _ t d => sqlen Γ + tlen t + mlen d + 1 | Γ, .wk d _ => sqlen Γ + mlen d + 1 | _, .shift (Γ := Γ) d => sqlen (Γ.image Rewriting.shift) + mlen d + 1 | Γ, .cut d₁ d₂ => sqlen Γ + mlen d₁ + mlen d₂ + 1`
+- L180 `abbrev sequentLenMeta (Γ : Finset (Proposition L)) : ℕ := ∑ φ ∈ Γ, formulaLenMeta φ`
+- L184 `def proofLenMeta : {Γ : Finset (Proposition L)} → T ⟹₂ Γ → ℕ | Γ, .closed _ _ _ _ => sequentLenMeta Γ + 1 | Γ, .axm _ _ _ => sequentLenMeta Γ + 1 | Γ, .verum _ => sequentLenMeta Γ + 1 | Γ, .and _ d₁ d₂ => sequentLenMeta Γ + proofLenMeta d₁ + proofLenMeta d₂ + 1 | Γ, .or _ d => sequentLenMeta Γ + proofLenMeta d + 1 | Γ, .all _ d => sequentLenMeta Γ + proofLenMeta d + 1 | Γ, .exs _ t d => sequentLenMeta Γ + termLenMeta t + proofLenMeta d + 1 | Γ, .wk d _ => sequentLenMeta Γ + proofLenMeta d + 1 | _, .shift (Γ := Γ) d => sequentLenMeta (Γ.image Rewriting.shift) + proofLenMeta d + 1 | Γ, .cut d₁ d₂ => sequentLenMeta Γ + proofLenMeta d₁ + proofLenMeta d₂ + 1`
 - L197 `lemma derivation_quote {Γ : Finset (Proposition L)} (d : T ⟹₂ Γ) : Derivation T (⌜d⌝ : ℕ)`
-- L201 `theorem dlen_quote {Γ : Finset (Proposition L)} (d : T ⟹₂ Γ) : dlen T (⌜d⌝ : ℕ) = mlen d` — "the bridge"
+- L201 `theorem proofLen_quote {Γ : Finset (Proposition L)} (d : T ⟹₂ Γ) : proofLen T (⌜d⌝ : ℕ) = proofLenMeta d` — "the bridge"
 
 ## 7. `ArithS/Proper.lean` (646 lines) — `namespace ArithS`
 
@@ -254,46 +254,46 @@ No declarations (smoke test, M0).
   - L112 `lemma vec_E {k : ℕ} {s : ℕ} (w : Fin k → ℕ) (hw : ∀ i, w i ≤ E s) : matrixToVec w ≤ E (s + 2 * k)`
 - `section termBound` L130–213:
   - L135 `lemma sup_add_pred_card_le_sum {k : ℕ} (g : Fin (k + 1) → ℕ) (hg : ∀ i, 1 ≤ g i) : Finset.univ.sup g + k ≤ ∑ i, g i`
-  - L146 `lemma tlen_pos {n : ℕ} (t : SyntacticSemiterm L n) : 1 ≤ tlen t`
+  - L146 `lemma termLenMeta_pos {n : ℕ} (t : SyntacticSemiterm L n) : 1 ≤ termLenMeta t`
   - L150 `def SmallCodes (L : Language) [L.Encodable] : Prop := ∀ {k : ℕ} (f : L.Func k), Encodable.encode f ≤ 8`
   - L153 `lemma eight_le_E {s : ℕ} (h : 2 ≤ s) : 8 ≤ E s`
   - L156 `lemma quote_bvar_eq {n : ℕ} (x : Fin n) : (⌜(#x : SyntacticSemiterm L n)⌝ : ℕ) = ⟪0, (x : ℕ)⟫ + 1`
   - L159 `lemma quote_fvar_eq {n : ℕ} (x : ℕ) : (⌜(&x : SyntacticSemiterm L n)⌝ : ℕ) = ⟪1, x⟫ + 1`
   - L161 `lemma quote_func_eq {n k : ℕ} (f : L.Func k) (v : Fin k → SyntacticSemiterm L n) : (⌜Semiterm.func f v⌝ : ℕ) = ⟪2, ⟪(k : ℕ), ⟪Encodable.encode f, matrixToVec fun i ↦ (⌜v i⌝ : ℕ)⟫⟫⟫ + 1`
-  - L170 `theorem quote_term_le (hL : SmallCodes L) {n : ℕ} (t : SyntacticSemiterm L n) : (⌜t⌝ : ℕ) ≤ E (8 * tlen t)`
+  - L170 `theorem quote_term_le (hL : SmallCodes L) {n : ℕ} (t : SyntacticSemiterm L n) : (⌜t⌝ : ℕ) ≤ E (8 * termLenMeta t)`
 - `section formulaBound` L217–335:
   - L222 `def SmallRelCodes (L : Language) [L.Encodable] : Prop := ∀ {k : ℕ} (r : L.Rel k), Encodable.encode r ≤ 8`
-  - L225 `lemma flen_pos {n : ℕ} (φ : Semiproposition L n) : 1 ≤ flen φ`
+  - L225 `lemma formulaLenMeta_pos {n : ℕ} (φ : Semiproposition L n) : 1 ≤ formulaLenMeta φ`
   - L228 `lemma quote_rel_eq {n k : ℕ} (R : L.Rel k) (v : Fin k → SyntacticSemiterm L n) : (⌜Semiformula.rel R v⌝ : ℕ) = ⟪0, ⟪(k : ℕ), ⟪Encodable.encode R, matrixToVec fun i ↦ (⌜v i⌝ : ℕ)⟫⟫⟫ + 1`
   - L236 `lemma quote_nrel_eq … : (⌜Semiformula.nrel R v⌝ : ℕ) = ⟪1, ⟪(k : ℕ), ⟪Encodable.encode R, matrixToVec fun i ↦ (⌜v i⌝ : ℕ)⟫⟫⟫ + 1`
   - L245 `private lemma rel_chain {t k M S : ℕ} (ht : t ≤ 2) (hMS : M + k ≤ S) {r vec : ℕ} (hr : r ≤ 8) (hvec : vec ≤ E (8 * M + 2 * (k + 1))) : (⟪t, ⟪(k + 1 : ℕ), ⟪r, vec⟫⟫⟫ : ℕ) + 1 ≤ E (8 * (S + 1))`
   - L256 `private lemma rel_chain₀ {t : ℕ} (ht : t ≤ 2) {r : ℕ} (hr : r ≤ 8) : (⟪t, ⟪(0 : ℕ), ⟪r, (0 : ℕ)⟫⟫⟫ : ℕ) + 1 ≤ E 8`
-  - L263 `theorem quote_formula_le (hL : SmallCodes L) (hR : SmallRelCodes L) {n : ℕ} (φ : Semiproposition L n) : (⌜φ⌝ : ℕ) ≤ E (8 * flen φ)`
+  - L263 `theorem quote_formula_le (hL : SmallCodes L) (hR : SmallRelCodes L) {n : ℕ} (φ : Semiproposition L n) : (⌜φ⌝ : ℕ) ≤ E (8 * formulaLenMeta φ)`
 - `section sequentBound` L339–359, `variable {L : Language} [L.DecidableEq] [L.Encodable] [L.LORDefinable]`:
-  - L343 `lemma flen_le_sqlen {Γ : Finset (Proposition L)} {φ : Proposition L} (h : φ ∈ Γ) : flen φ ≤ sqlen Γ`
-  - L347 `theorem quote_sequent_le (hL : SmallCodes L) (hR : SmallRelCodes L) (Γ : Finset (Proposition L)) : (⌜Γ⌝ : ℕ) ≤ F (8 * sqlen Γ + 1)`
+  - L343 `lemma formulaLenMeta_le_sequentLenMeta {Γ : Finset (Proposition L)} {φ : Proposition L} (h : φ ∈ Γ) : formulaLenMeta φ ≤ sequentLenMeta Γ`
+  - L347 `theorem quote_sequent_le (hL : SmallCodes L) (hR : SmallRelCodes L) (Γ : Finset (Proposition L)) : (⌜Γ⌝ : ℕ) ≤ F (8 * sequentLenMeta Γ + 1)`
 - `section derivationBound` L363–572, `variable {T : Theory L} [T.Δ₁]`:
   - L368 `lemma pair_F' {a b s : ℕ} (ha : a ≤ F s) (hb : b ≤ F s) : (⟪a, b⟫ : ℕ) + 1 ≤ F (s + 2)`
   - L371 `lemma pair_F_le {a b s : ℕ} (ha : a ≤ F s) (hb : b ≤ F s) : (⟪a, b⟫ : ℕ) ≤ F (s + 2)`
   - L374 `lemma tag_le_F {t s : ℕ} (ht : t ≤ 9) (hs : 2 ≤ s) : t ≤ F s`
-  - L377 `lemma quote_formula_le_F (hL : SmallCodes L) (hR : SmallRelCodes L) {n : ℕ} (φ : Semiproposition L n) : (⌜φ⌝ : ℕ) ≤ F (8 * flen φ)`
-  - L381 `lemma quote_term_le_F (hL : SmallCodes L) {n : ℕ} (t : SyntacticSemiterm L n) : (⌜t⌝ : ℕ) ≤ F (8 * tlen t)`
-  - L385 `lemma mlen_pos {Γ : Finset (Proposition L)} (d : T ⟹₂ Γ) : 1 ≤ mlen d`
-  - L388 `lemma sqlen_pos_of_mem {Γ : Finset (Proposition L)} {φ : Proposition L} (h : φ ∈ Γ) : 1 ≤ sqlen Γ`
-  - L391 `lemma sqlen_le_mlen {Γ : Finset (Proposition L)} (d : T ⟹₂ Γ) : sqlen Γ ≤ mlen d`
+  - L377 `lemma quote_formula_le_F (hL : SmallCodes L) (hR : SmallRelCodes L) {n : ℕ} (φ : Semiproposition L n) : (⌜φ⌝ : ℕ) ≤ F (8 * formulaLenMeta φ)`
+  - L381 `lemma quote_term_le_F (hL : SmallCodes L) {n : ℕ} (t : SyntacticSemiterm L n) : (⌜t⌝ : ℕ) ≤ F (8 * termLenMeta t)`
+  - L385 `lemma proofLenMeta_pos {Γ : Finset (Proposition L)} (d : T ⟹₂ Γ) : 1 ≤ proofLenMeta d`
+  - L388 `lemma sequentLenMeta_pos_of_mem {Γ : Finset (Proposition L)} {φ : Proposition L} (h : φ ∈ Γ) : 1 ≤ sequentLenMeta Γ`
+  - L391 `lemma sequentLenMeta_le_proofLenMeta {Γ : Finset (Proposition L)} (d : T ⟹₂ Γ) : sequentLenMeta Γ ≤ proofLenMeta d`
   - L395 `private lemma step {a b X : ℕ} (ha : a ≤ F X) (hb : b ≤ F X) : (⟪a, b⟫ : ℕ) ≤ F (X + 2)`
-  - L399 `theorem quote_derivation_le (hL : SmallCodes L) (hR : SmallRelCodes L) {Γ : Finset (Proposition L)} (d : T ⟹₂ Γ) : (⌜d⌝ : ℕ) ≤ F (12 * mlen d)`
-- `section fbound` L576–595, `variable {V : Type*} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]`:
-  - L581 `noncomputable def fbound (k : V) : V := Exp.exp (Exp.exp (Exp.exp (12 * k))) + 1`
-  - L583 `def fboundDef : 𝚺₁.Semisentence 2 := .mkSigma “y k. ∃ a, !(expDef.ofZero 𝚺₁) a (12 * k) ∧ ∃ b, !(expDef.ofZero 𝚺₁) b a ∧ ∃ c, !(expDef.ofZero 𝚺₁) c b ∧ y = c + 1”`
-  - L587 `instance fbound_defined : 𝚺₁-Function₁[V] fbound via fboundDef`
-  - L590 `instance fbound_definable : 𝚺₁-Function₁[V] fbound`
-  - L592 `lemma fbound_nat (k : ℕ) : fbound k = F (12 * k) + 1`
+  - L399 `theorem quote_derivation_le (hL : SmallCodes L) (hR : SmallRelCodes L) {Γ : Finset (Proposition L)} (d : T ⟹₂ Γ) : (⌜d⌝ : ℕ) ≤ F (12 * proofLenMeta d)`
+- `section codeBound` L576–595, `variable {V : Type*} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]`:
+  - L581 `noncomputable def codeBound (k : V) : V := Exp.exp (Exp.exp (Exp.exp (12 * k))) + 1`
+  - L583 `def codeBoundDef : 𝚺₁.Semisentence 2 := .mkSigma “y k. ∃ a, !(expDef.ofZero 𝚺₁) a (12 * k) ∧ ∃ b, !(expDef.ofZero 𝚺₁) b a ∧ ∃ c, !(expDef.ofZero 𝚺₁) c b ∧ y = c + 1”`
+  - L587 `instance codeBound_defined : 𝚺₁-Function₁[V] codeBound via codeBoundDef`
+  - L590 `instance codeBound_definable : 𝚺₁-Function₁[V] codeBound`
+  - L592 `lemma codeBound_nat (k : ℕ) : codeBound k = F (12 * k) + 1`
 - `section properness` L597–611, `variable {L : Language} [L.DecidableEq] [L.Encodable] [L.LORDefinable]`, `variable {T : Theory L} [T.Δ₁]`:
-  - L603 `theorem proper_of_small (hL : SmallCodes L) (hR : SmallRelCodes L) {k : ℕ} {σ : Sentence L} (b : T ⊢! σ) (h : dlen T (⌜b⌝ : ℕ) ≤ k) : (⌜b⌝ : ℕ) < fbound k`
+  - L603 `theorem properPlayer_of_small (hL : SmallCodes L) (hR : SmallRelCodes L) {k : ℕ} {σ : Sentence L} (b : T ⊢! σ) (h : proofLen T (⌜b⌝ : ℕ) ≤ k) : (⌜b⌝ : ℕ) < codeBound k`
 - L615 `lemma smallCodes_LOR : SmallCodes ℒₒᵣ`; L619 `lemma smallRelCodes_LOR : SmallRelCodes ℒₒᵣ`; L622 `lemma smallCodes_LAct : SmallCodes LAct`; L626 `lemma smallRelCodes_LAct : SmallRelCodes LAct`
 - `namespace Arithmetic` L631–644: L633 `open ArithS.Arithmetic`; L635 `variable {T : ArithmeticTheory} [T.Δ₁] [𝗜𝚺₁ ⪯ T] [T.SoundOnHierarchy 𝚺 1] {k : ℕ}`
-  - L639 `theorem lower_bound_dlen_proof_lenGödel_fbound : ∀ b : T ⊢! lenGödel T fboundDef k, k < dlen T (⌜b⌝ : ℕ)` — the M1 gate, unconditional.
+  - L639 `theorem lower_bound_proofLen_proof_lenGödel_codeBound : ∀ b : T ⊢! lenGödel T codeBoundDef k, k < proofLen T (⌜b⌝ : ℕ)` — the M1 gate, unconditional.
 
 ## 8. `ArithS/LangAct.lean` (219 lines) — `namespace ArithS`
 
@@ -327,19 +327,19 @@ No declarations (smoke test, M0).
 - L170 `lemma swap_emb {k : ℕ} (f : Language.Func ℒₒᵣ k) : swap.func (emb.func f) = emb.func f := rfl`
 
 `section lengthInvariance` (L176–217), `variable {L₁ L₂ : Language} (Φ : L₁ →ᵥ L₂)`:
-- L180 `lemma tlen_lMap {n : ℕ} (t : SyntacticSemiterm L₁ n) : tlen (Semiterm.lMap Φ t) = tlen t`
-- L186 `lemma flen_lMap {n : ℕ} (φ : Semiproposition L₁ n) : flen (Semiformula.lMap Φ φ) = flen φ`
+- L180 `lemma termLenMeta_lMap {n : ℕ} (t : SyntacticSemiterm L₁ n) : termLenMeta (Semiterm.lMap Φ t) = termLenMeta t`
+- L186 `lemma formulaLenMeta_lMap {n : ℕ} (φ : Semiproposition L₁ n) : formulaLenMeta (Semiformula.lMap Φ φ) = formulaLenMeta φ`
 
 ## 9. `ArithS/TheoryAct.lean` (244 lines) — `namespace ArithS`
 
 - L19 `open FFL FFL.FirstOrder Arithmetic Bootstrapping`; L20 `open LAct`
-- L25 `instance stdAct : Structure LAct ℕ where func _ f := match f with | Sum.inl f => (standardModel ℕ).func f | Sum.inr (Language.Constant.Func.const Act.C) => fun _ ↦ 0 | Sum.inr (Language.Constant.Func.const Act.D) => fun _ ↦ 1; rel _ r := match r with | Sum.inl r => (standardModel ℕ).rel r | Sum.inr e => PEmpty.elim e`
-- L34 `lemma stdAct_lMap_emb : Structure.lMap emb stdAct = standardModel ℕ`
+- L25 `instance stdReadingNat : Structure LAct ℕ where func _ f := match f with | Sum.inl f => (standardModel ℕ).func f | Sum.inr (Language.Constant.Func.const Act.C) => fun _ ↦ 0 | Sum.inr (Language.Constant.Func.const Act.D) => fun _ ↦ 1; rel _ r := match r with | Sum.inl r => (standardModel ℕ).rel r | Sum.inr e => PEmpty.elim e`
+- L34 `lemma stdReadingNat_lMap_emb : Structure.lMap emb stdReadingNat = standardModel ℕ`
 - L38 `lemma models_lMap_emb (σ : Sentence ℒₒᵣ) : ℕ↓[LAct] ⊧ Semiformula.lMap emb σ ↔ ℕ↓[ℒₒᵣ] ⊧ σ`
 - L47 `def cterm (a : Act) {ξ : Type*} {n : ℕ} : Semiterm LAct ξ n := Semiterm.func (const a) ![]`
-- L50 `def axNe : Sentence LAct := Semiformula.nrel Language.Eq.eq ![cterm Act.C, cterm Act.D]`
-- L53 `def axNe' : Sentence LAct := Semiformula.nrel Language.Eq.eq ![cterm Act.D, cterm Act.C]`
-- L56 `abbrev TAct : Theory LAct := insert axNe (insert axNe' (Theory.lMap emb 𝗣𝗔))`
+- L50 `def constNe : Sentence LAct := Semiformula.nrel Language.Eq.eq ![cterm Act.C, cterm Act.D]`
+- L53 `def constNe' : Sentence LAct := Semiformula.nrel Language.Eq.eq ![cterm Act.D, cterm Act.C]`
+- L56 `abbrev TAct : Theory LAct := insert constNe (insert constNe' (Theory.lMap emb 𝗣𝗔))`
 
 `section codes` (L60–121), `variable {V : Type*} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]`:
 - L64 `lemma quote_func_emb {k : ℕ} (f : Language.Func ℒₒᵣ k) : (⌜emb.func f⌝ : V) = (⌜f⌝ : V) := rfl`; L65 `lemma quote_rel_emb {k : ℕ} (r : Language.Rel ℒₒᵣ k) : (⌜emb.rel r⌝ : V) = (⌜r⌝ : V) := rfl`
@@ -360,7 +360,7 @@ No declarations (smoke test, M0).
 - L185 `lemma lMap_swap_emb {n : ℕ} {ξ : Type*} (φ : Semiformula ℒₒᵣ ξ n) : Semiformula.lMap swap (Semiformula.lMap emb φ) = Semiformula.lMap emb φ`
 - L209 `lemma lMap_swap_cterm_C {ξ : Type*} {n : ℕ} : Semiterm.lMap swap (cterm Act.C : Semiterm LAct ξ n) = cterm Act.D`
 - L216 `lemma lMap_swap_cterm_D {ξ : Type*} {n : ℕ} : Semiterm.lMap swap (cterm Act.D : Semiterm LAct ξ n) = cterm Act.C`
-- L223 `lemma lMap_swap_axNe : Semiformula.lMap swap axNe = axNe'`; L229 `lemma lMap_swap_axNe' : Semiformula.lMap swap axNe' = axNe`
+- L223 `lemma lMap_swap_constNe : Semiformula.lMap swap constNe = constNe'`; L229 `lemma lMap_swap_constNe' : Semiformula.lMap swap constNe' = constNe`
 - L236 `theorem lMap_swap_mem_TAct {σ : Sentence LAct} (h : σ ∈ TAct) : Semiformula.lMap swap σ ∈ TAct`
 
 ## 10. `ArithS/Transpose.lean` (158 lines) — `namespace ArithS`
@@ -369,14 +369,14 @@ No declarations (smoke test, M0).
 - `section transport` L20–65, `variable {L₁ L₂ : Language} [L₁.DecidableEq] [L₂.DecidableEq] (Φ : L₁ →ᵥ L₂)`, `variable {T : Theory L₁} {T' : Theory L₂}`:
   - L26 `noncomputable def lMapT (hT : ∀ σ ∈ T, Semiformula.lMap Φ σ ∈ T') : {Γ : Finset (Proposition L₁)} → T ⟹₂ Γ → T' ⟹₂ Γ.image (Semiformula.lMap Φ)` (node-for-node transport; `exs` witness becomes `Semiterm.lMap Φ t`)
 - `section length` L69–108, `variable {L₁ L₂ : Language} [L₁.DecidableEq] [L₁.Encodable] [L₁.LORDefinable] [L₂.DecidableEq] [L₂.Encodable] [L₂.LORDefinable]`, `variable {T : Theory L₁} [T.Δ₁] {T' : Theory L₂} [T'.Δ₁]`:
-  - L75 `lemma mlen_cast {Γ Δ : Finset (Proposition L₁)} (d : T ⟹₂ Γ) (h : Γ = Δ) : mlen (d.cast h) = mlen d`
-  - L79 `lemma sqlen_image (Φ : L₁ →ᵥ L₂) (hinj : Function.Injective (Semiformula.lMap Φ : Proposition L₁ → Proposition L₂)) (Γ : Finset (Proposition L₁)) : sqlen (Γ.image (Semiformula.lMap Φ)) = sqlen Γ`
-  - L88 `theorem mlen_lMapT (Φ : L₁ →ᵥ L₂) (hT : ∀ σ ∈ T, Semiformula.lMap Φ σ ∈ T') (hinj : Function.Injective (Semiformula.lMap Φ : Proposition L₁ → Proposition L₂)) {Γ : Finset (Proposition L₁)} (d : T ⟹₂ Γ) : mlen (lMapT Φ hT d) = mlen d`
+  - L75 `lemma proofLenMeta_cast {Γ Δ : Finset (Proposition L₁)} (d : T ⟹₂ Γ) (h : Γ = Δ) : proofLenMeta (d.cast h) = proofLenMeta d`
+  - L79 `lemma sequentLenMeta_image (Φ : L₁ →ᵥ L₂) (hinj : Function.Injective (Semiformula.lMap Φ : Proposition L₁ → Proposition L₂)) (Γ : Finset (Proposition L₁)) : sequentLenMeta (Γ.image (Semiformula.lMap Φ)) = sequentLenMeta Γ`
+  - L88 `theorem proofLenMeta_lMapT (Φ : L₁ →ᵥ L₂) (hT : ∀ σ ∈ T, Semiformula.lMap Φ σ ∈ T') (hinj : Function.Injective (Semiformula.lMap Φ : Proposition L₁ → Proposition L₂)) {Γ : Finset (Proposition L₁)} (d : T ⟹₂ Γ) : proofLenMeta (lMapT Φ hT d) = proofLenMeta d`
 - `section swap` L112–156:
   - L114 `lemma term_lMap_swap_swap {n : ℕ} {ξ : Type*} (t : Semiterm LAct ξ n) : Semiterm.lMap swap (Semiterm.lMap swap t) = t`
   - L121 `lemma lMap_swap_swap {n : ℕ} {ξ : Type*} (φ : Semiformula LAct ξ n) : Semiformula.lMap swap (Semiformula.lMap swap φ) = φ`
   - L145 `lemma lMap_swap_injective {n : ℕ} {ξ : Type*} : Function.Injective (Semiformula.lMap swap : Semiformula LAct ξ n → Semiformula LAct ξ n)`
-  - L151 `theorem transpose_exists (φ : Proposition LAct) (d : TAct ⟹₂ {φ}) : ∃ d' : TAct ⟹₂ {Semiformula.lMap swap φ}, mlen d' = mlen d`
+  - L151 `theorem transpose_exists (φ : Proposition LAct) (d : TAct ⟹₂ {φ}) : ∃ d' : TAct ⟹₂ {Semiformula.lMap swap φ}, proofLenMeta d' = proofLenMeta d`
 
 ## 11. `ArithS/Sound.lean` (126 lines) — `namespace ArithS`
 
@@ -389,11 +389,11 @@ No declarations (smoke test, M0).
 ## 12. `ArithS/Symmetry.lean` (74 lines) — `namespace ArithS`
 
 - L20 `open FFL FFL.FirstOrder Arithmetic Bootstrapping`; L21 `open PeanoMinus`; L22 `open LAct`
-- L25 `def ProvableLen (T : Theory LAct) [T.Δ₁] (k : ℕ) (φ : Proposition LAct) : Prop := ∃ d : ℕ, Proof T d (⌜φ⌝ : ℕ) ∧ dlen T d ≤ k`
+- L25 `def ProvableLen (T : Theory LAct) [T.Δ₁] (k : ℕ) (φ : Proposition LAct) : Prop := ∃ d : ℕ, Proof T d (⌜φ⌝ : ℕ) ∧ proofLen T d ≤ k`
 - L28 `theorem provableLen_swap {k : ℕ} {φ : Proposition LAct} (h : ProvableLen TAct k φ) : ProvableLen TAct k (Semiformula.lMap swap φ)`
 - L38 `theorem provableLen_swap_iff (k : ℕ) (φ : Proposition LAct) : ProvableLen TAct k φ ↔ ProvableLen TAct k (Semiformula.lMap swap φ)`
-- L46 `theorem lenProvable_fbound_swap {k : ℕ} {φ : Sentence LAct} (h : LenProvable (fbound : ℕ → ℕ) k TAct (⌜φ⌝ : ℕ)) : LenProvable (fbound : ℕ → ℕ) k TAct (⌜Semiformula.lMap swap φ⌝ : ℕ)`
-- L69 `theorem lenProvable_fbound_swap_iff (k : ℕ) (φ : Sentence LAct) : LenProvable (fbound : ℕ → ℕ) k TAct (⌜φ⌝ : ℕ) ↔ LenProvable (fbound : ℕ → ℕ) k TAct (⌜Semiformula.lMap swap φ⌝ : ℕ)`
+- L46 `theorem lenBoxNat_codeBound_swap {k : ℕ} {φ : Sentence LAct} (h : LenBoxNat (codeBound : ℕ → ℕ) k TAct (⌜φ⌝ : ℕ)) : LenBoxNat (codeBound : ℕ → ℕ) k TAct (⌜Semiformula.lMap swap φ⌝ : ℕ)`
+- L69 `theorem lenBoxNat_swap_iff (k : ℕ) (φ : Sentence LAct) : LenBoxNat (codeBound : ℕ → ℕ) k TAct (⌜φ⌝ : ℕ) ↔ LenBoxNat (codeBound : ℕ → ℕ) k TAct (⌜Semiformula.lMap swap φ⌝ : ℕ)`
 
 ## 13. `ArithS/Prog.lean` (543 lines) — `namespace ArithS`
 
@@ -422,13 +422,13 @@ Constructors (action values `0 = C`, `1 = D`):
 Size facts (all `@[simp]`): L68 `p_lt_pBot (p : V) : p < pBot p`; L70 `p_lt_pSim (p q : V) : p < pSim p q`; L72 `q_lt_pSim … : q < pSim p q`; L74 `b_lt_pIte (b a p q : V) : b < pIte b a p q`; L76 `p_lt_pIte … : p < pIte b a p q`; L79 `q_lt_pIte … : q < pIte b a p q`; L82 `p_lt_pSearch (k g a p q : V) : p < pSearch k g a p q`; L85 `q_lt_pSearch … : q < pSearch k g a p q`; L147 `a_lt_pConst (a : V) : a < pConst a`; L148 `a_lt_pIte (b a p q : V) : a < pIte b a p q`; L150 `k_lt_pSearch (k g a p q : V) : k < pSearch k g a p q`; L152 `g_lt_pSearch … : g < pSearch k g a p q`; L154 `a_lt_pSearch … : a < pSearch k g a p q`.
 
 Re-valuing actions:
-- L92 `noncomputable def relabelAct (a u w : V) : V := if a = 0 then u else if a = 1 then w else a`
-- L94 `def relabelActGraph : 𝚺₀.Semisentence 4 := .mkSigma “y a u w. (a = 0 → y = u) ∧ (a = 1 → y = w) ∧ (a ≠ 0 → a ≠ 1 → y = a)”`
-- L97 `instance relabelAct.defined : 𝚺₀-Function₃ (relabelAct : V → V → V → V) via relabelActGraph`
-- L109 `noncomputable abbrev swapAct (a : V) : V := relabelAct a 1 0`
-- L111 `lemma relabelAct_le (a u w : V) : relabelAct a u w ≤ a + u + w`
-- L119 `@[simp] lemma relabelAct_zero_one (a : V) : relabelAct a 0 1 = a`
-- L127 `@[simp] lemma swapAct_swapAct (a : V) : swapAct (swapAct a) = a`
+- L92 `noncomputable def revalueAction (a u w : V) : V := if a = 0 then u else if a = 1 then w else a`
+- L94 `def revalueActionGraph : 𝚺₀.Semisentence 4 := .mkSigma “y a u w. (a = 0 → y = u) ∧ (a = 1 → y = w) ∧ (a ≠ 0 → a ≠ 1 → y = a)”`
+- L97 `instance revalueAction.defined : 𝚺₀-Function₃ (revalueAction : V → V → V → V) via revalueActionGraph`
+- L109 `noncomputable abbrev swapAction (a : V) : V := revalueAction a 1 0`
+- L111 `lemma revalueAction_le (a u w : V) : revalueAction a u w ≤ a + u + w`
+- L119 `@[simp] lemma revalueAction_zero_one (a : V) : revalueAction a 0 1 = a`
+- L127 `@[simp] lemma swapAction_swapAction (a : V) : swapAction (swapAction a) = a`
 
 Shapes:
 - L138 `def IsShape (x : V) : Prop := (∃ a, x = pConst a) ∨ x = pSelf ∨ x = pOpp ∨ (∃ p, x = pBot p) ∨ (∃ p q, x = pSim p q) ∨ (∃ b a p q, x = pIte b a p q) ∨ (∃ k g a p q, x = pSearch k g a p q)`
@@ -437,8 +437,8 @@ Shapes:
 - L184 `lemma lt_and_eq_succ_iff {a y : V} : (a < y ∧ y = a + 1) ↔ y = a + 1`
 - L187 `instance IsShape.defined : 𝚺₀-Predicate[V] IsShape via isShape`; L190 `instance IsShape.definable : 𝚺₀-Predicate[V] IsShape`; L192 `instance IsShape.definable' (Γ m) : Γ-[m]-Predicate[V] IsShape`
 
-`namespace Relabel` (L197–320):
-- L201 `def Phi (param : Fin 2 → V) (C : Set V) (pr : V) : Prop := (∃ a, pr = ⟪pConst a, pConst (relabelAct a (param 0) (param 1))⟫) ∨ pr = ⟪pSelf, pSelf⟫ ∨ pr = ⟪pOpp, pOpp⟫ ∨ (∃ p p', ⟪p, p'⟫ ∈ C ∧ pr = ⟪pBot p, pBot p'⟫) ∨ (∃ p q p' q', ⟪p, p'⟫ ∈ C ∧ ⟪q, q'⟫ ∈ C ∧ pr = ⟪pSim p q, pSim p' q'⟫) ∨ (∃ b a p q b' p' q', ⟪b, b'⟫ ∈ C ∧ ⟪p, p'⟫ ∈ C ∧ ⟪q, q'⟫ ∈ C ∧ pr = ⟪pIte b a p q, pIte b' (relabelAct a (param 0) (param 1)) p' q'⟫) ∨ (∃ k g a p q p' q', ⟪p, p'⟫ ∈ C ∧ ⟪q, q'⟫ ∈ C ∧ pr = ⟪pSearch k g a p q, pSearch k g (relabelAct a (param 0) (param 1)) p' q'⟫) ∨ (∃ x, ¬IsShape x ∧ pr = ⟪x, x⟫)` — NOTE: `pSearch`'s `k` and `g` are passed through UNCHANGED (only `a` is relabelled); `pIte`'s `a` is relabelled.
+`namespace Revalue` (L197–320):
+- L201 `def Phi (param : Fin 2 → V) (C : Set V) (pr : V) : Prop := (∃ a, pr = ⟪pConst a, pConst (revalueAction a (param 0) (param 1))⟫) ∨ pr = ⟪pSelf, pSelf⟫ ∨ pr = ⟪pOpp, pOpp⟫ ∨ (∃ p p', ⟪p, p'⟫ ∈ C ∧ pr = ⟪pBot p, pBot p'⟫) ∨ (∃ p q p' q', ⟪p, p'⟫ ∈ C ∧ ⟪q, q'⟫ ∈ C ∧ pr = ⟪pSim p q, pSim p' q'⟫) ∨ (∃ b a p q b' p' q', ⟪b, b'⟫ ∈ C ∧ ⟪p, p'⟫ ∈ C ∧ ⟪q, q'⟫ ∈ C ∧ pr = ⟪pIte b a p q, pIte b' (revalueAction a (param 0) (param 1)) p' q'⟫) ∨ (∃ k g a p q p' q', ⟪p, p'⟫ ∈ C ∧ ⟪q, q'⟫ ∈ C ∧ pr = ⟪pSearch k g a p q, pSearch k g (revalueAction a (param 0) (param 1)) p' q'⟫) ∨ (∃ x, ¬IsShape x ∧ pr = ⟪x, x⟫)` — NOTE: `pSearch`'s `k` and `g` are passed through UNCHANGED (only `a` is relabelled); `pIte`'s `a` is relabelled.
 - L212 `def core₀ : 𝚺₀.Semisentence 4 := .mkSigma “pr C u w. ∃ x <⁺ pr, ∃ y <⁺ pr, !pairDef pr x y ∧ (…eight arms…)”`
 - L228 `noncomputable def blueprint : Fixpoint.Blueprint 2 := ⟨core₀.ofZero _⟩`
 - L230 `private lemma phi_iff (param : Fin 2 → V) (C pr : V) : Phi param {x | x ∈ C} pr ↔ ∃ x ≤ pr, ∃ y ≤ pr, pr = ⟪x, y⟫ ∧ (…bounded arms…)`
@@ -446,50 +446,50 @@ Shapes:
 - L286 `noncomputable def construction : Fixpoint.Construction V blueprint where Φ := Phi; defined := core₀_defined.of_zero; monotone := …`
 - L303 `instance : construction.StrongFinite V`
 
-- L323 `def RelabelGraph (u w x y : V) : Prop := Relabel.construction.Fixpoint ![u, w] ⟪x, y⟫`
-- L325 `noncomputable def relabelGraphDef : 𝚫₁.Semisentence 4 := .mkDelta (.mkSigma “u w x y. ∃ pr <⁺ (x + y + 1)², !pairDef pr x y ∧ !Relabel.blueprint.fixpointDefΔ₁.sigma pr u w”) (.mkPi “u w x y. ∀ pr <⁺ (x + y + 1)², !pairDef pr x y → !Relabel.blueprint.fixpointDefΔ₁.pi pr u w”)`
-- L329 `private lemma relabel_param_eq (v : Fin 3 → V) : (fun i ↦ v i.succ) = ![v 1, v 2]`
-- L332 `instance relabelGraph_defined : 𝚫₁-Relation₄[V] RelabelGraph via relabelGraphDef`; L343 `instance relabelGraph_definable : 𝚫₁-Relation₄[V] RelabelGraph`; L345 `instance relabelGraph_definable' : Γ-[m + 1]-Relation₄[V] RelabelGraph`
-- L348 `lemma RelabelGraph.case_iff {u w x y : V} : RelabelGraph u w x y ↔ (∃ a, x = pConst a ∧ y = pConst (relabelAct a u w)) ∨ (x = pSelf ∧ y = pSelf) ∨ (x = pOpp ∧ y = pOpp) ∨ (∃ p p', RelabelGraph u w p p' ∧ x = pBot p ∧ y = pBot p') ∨ (∃ p q p' q', RelabelGraph u w p p' ∧ RelabelGraph u w q q' ∧ x = pSim p q ∧ y = pSim p' q') ∨ (∃ b a p q b' p' q', RelabelGraph u w b b' ∧ RelabelGraph u w p p' ∧ RelabelGraph u w q q' ∧ x = pIte b a p q ∧ y = pIte b' (relabelAct a u w) p' q') ∨ (∃ k g a p q p' q', RelabelGraph u w p p' ∧ RelabelGraph u w q q' ∧ x = pSearch k g a p q ∧ y = pSearch k g (relabelAct a u w) p' q') ∨ (¬IsShape y ∧ x = y)`
+- L323 `def RevalueGraph (u w x y : V) : Prop := Revalue.construction.Fixpoint ![u, w] ⟪x, y⟫`
+- L325 `noncomputable def revalueGraphDef : 𝚫₁.Semisentence 4 := .mkDelta (.mkSigma “u w x y. ∃ pr <⁺ (x + y + 1)², !pairDef pr x y ∧ !Revalue.blueprint.fixpointDefΔ₁.sigma pr u w”) (.mkPi “u w x y. ∀ pr <⁺ (x + y + 1)², !pairDef pr x y → !Revalue.blueprint.fixpointDefΔ₁.pi pr u w”)`
+- L329 `private lemma revalue_param_eq (v : Fin 3 → V) : (fun i ↦ v i.succ) = ![v 1, v 2]`
+- L332 `instance revalueGraph_defined : 𝚫₁-Relation₄[V] RevalueGraph via revalueGraphDef`; L343 `instance revalueGraph_definable : 𝚫₁-Relation₄[V] RevalueGraph`; L345 `instance revalueGraph_definable' : Γ-[m + 1]-Relation₄[V] RevalueGraph`
+- L348 `lemma RevalueGraph.case_iff {u w x y : V} : RevalueGraph u w x y ↔ (∃ a, x = pConst a ∧ y = pConst (revalueAction a u w)) ∨ (x = pSelf ∧ y = pSelf) ∨ (x = pOpp ∧ y = pOpp) ∨ (∃ p p', RevalueGraph u w p p' ∧ x = pBot p ∧ y = pBot p') ∨ (∃ p q p' q', RevalueGraph u w p p' ∧ RevalueGraph u w q q' ∧ x = pSim p q ∧ y = pSim p' q') ∨ (∃ b a p q b' p' q', RevalueGraph u w b b' ∧ RevalueGraph u w p p' ∧ RevalueGraph u w q q' ∧ x = pIte b a p q ∧ y = pIte b' (revalueAction a u w) p' q') ∨ (∃ k g a p q p' q', RevalueGraph u w p p' ∧ RevalueGraph u w q q' ∧ x = pSearch k g a p q ∧ y = pSearch k g (revalueAction a u w) p' q') ∨ (¬IsShape y ∧ x = y)`
 - L363 `attribute [local simp] pConst pSelf pOpp pBot pSim pIte pSearch IsShape` (section inversion)
-- L365 `lemma RelabelGraph.const_iff {u w a y : V} : RelabelGraph u w (pConst a) y ↔ y = pConst (relabelAct a u w)`
-- L369 `lemma RelabelGraph.self_iff {u w y : V} : RelabelGraph u w pSelf y ↔ y = pSelf`
-- L372 `lemma RelabelGraph.opp_iff {u w y : V} : RelabelGraph u w pOpp y ↔ y = pOpp`
-- L375 `lemma RelabelGraph.bot_iff {u w p y : V} : RelabelGraph u w (pBot p) y ↔ ∃ p', RelabelGraph u w p p' ∧ y = pBot p'`
-- L379 `lemma RelabelGraph.sim_iff {u w p q y : V} : RelabelGraph u w (pSim p q) y ↔ ∃ p' q', RelabelGraph u w p p' ∧ RelabelGraph u w q q' ∧ y = pSim p' q'`
-- L384 `lemma RelabelGraph.ite_iff {u w b a p q y : V} : RelabelGraph u w (pIte b a p q) y ↔ ∃ b' p' q', RelabelGraph u w b b' ∧ RelabelGraph u w p p' ∧ RelabelGraph u w q q' ∧ y = pIte b' (relabelAct a u w) p' q'`
-- L390 `lemma RelabelGraph.search_iff {u w k g a p q y : V} : RelabelGraph u w (pSearch k g a p q) y ↔ ∃ p' q', RelabelGraph u w p p' ∧ RelabelGraph u w q q' ∧ y = pSearch k g (relabelAct a u w) p' q'`
-- L395 `lemma RelabelGraph.of_not_shape {u w x y : V} (hx : ¬IsShape x) : RelabelGraph u w x y ↔ y = x`
-- L415 `lemma relabelGraph_exists (u w x : V) : ∃ y, RelabelGraph u w x y` (`ISigma1.sigma1_order_induction`)
-- L435 `lemma relabelGraph_unique (u w x : V) : ∀ y₁ y₂, RelabelGraph u w x y₁ → RelabelGraph u w x y₂ → y₁ = y₂` (`ISigma1.pi1_order_induction`)
-- L460 `lemma relabelGraph_existsUnique (u w x : V) : ∃! y, RelabelGraph u w x y`
-- L465 `noncomputable def relabel (u w x : V) : V := Classical.choose! (relabelGraph_existsUnique u w x)`
-- L467 `lemma relabel_graph (u w x : V) : RelabelGraph u w x (relabel u w x)`
-- L470 `lemma relabel_eq_of_graph {u w x y : V} (h : RelabelGraph u w x y) : relabel u w x = y`
-- L473 `noncomputable def relabelDef : 𝚺₁.Semisentence 4 := .mkSigma “y u w x. !relabelGraphDef.sigma u w x y”`
-- L475 `instance relabel_defined : 𝚺₁-Function₃ (relabel : V → V → V → V) via relabelDef`; L481 `instance relabel_definable : 𝚺₁-Function₃ (relabel : V → V → V → V)`; L483 `instance relabel_definable' : Γ-[m + 1]-Function₃ (relabel : V → V → V → V)`
-- L486 `@[simp] lemma relabel_const (u w a : V) : relabel u w (pConst a) = pConst (relabelAct a u w)`
-- L488 `@[simp] lemma relabel_self (u w : V) : relabel u w (pSelf : V) = pSelf`
-- L490 `@[simp] lemma relabel_opp (u w : V) : relabel u w (pOpp : V) = pOpp`
-- L492 `@[simp] lemma relabel_bot (u w p : V) : relabel u w (pBot p) = pBot (relabel u w p)`
-- L494 `@[simp] lemma relabel_sim (u w p q : V) : relabel u w (pSim p q) = pSim (relabel u w p) (relabel u w q)`
-- L497 `@[simp] lemma relabel_ite (u w b a p q : V) : relabel u w (pIte b a p q) = pIte (relabel u w b) (relabelAct a u w) (relabel u w p) (relabel u w q)`
-- L501 `@[simp] lemma relabel_search (u w k g a p q : V) : relabel u w (pSearch k g a p q) = pSearch k g (relabelAct a u w) (relabel u w p) (relabel u w q)`
-- L505 `lemma relabel_of_not_shape {u w x : V} (hx : ¬IsShape x) : relabel u w x = x`
-- L509 `theorem relabel_zero_one (x : V) : relabel 0 1 x = x`
-- L525 `noncomputable abbrev swapcode (x : V) : V := relabel 1 0 x`
-- L528 `theorem swapcode_swapcode (x : V) : swapcode (swapcode x) = x`
+- L365 `lemma RevalueGraph.const_iff {u w a y : V} : RevalueGraph u w (pConst a) y ↔ y = pConst (revalueAction a u w)`
+- L369 `lemma RevalueGraph.self_iff {u w y : V} : RevalueGraph u w pSelf y ↔ y = pSelf`
+- L372 `lemma RevalueGraph.opp_iff {u w y : V} : RevalueGraph u w pOpp y ↔ y = pOpp`
+- L375 `lemma RevalueGraph.bot_iff {u w p y : V} : RevalueGraph u w (pBot p) y ↔ ∃ p', RevalueGraph u w p p' ∧ y = pBot p'`
+- L379 `lemma RevalueGraph.sim_iff {u w p q y : V} : RevalueGraph u w (pSim p q) y ↔ ∃ p' q', RevalueGraph u w p p' ∧ RevalueGraph u w q q' ∧ y = pSim p' q'`
+- L384 `lemma RevalueGraph.ite_iff {u w b a p q y : V} : RevalueGraph u w (pIte b a p q) y ↔ ∃ b' p' q', RevalueGraph u w b b' ∧ RevalueGraph u w p p' ∧ RevalueGraph u w q q' ∧ y = pIte b' (revalueAction a u w) p' q'`
+- L390 `lemma RevalueGraph.search_iff {u w k g a p q y : V} : RevalueGraph u w (pSearch k g a p q) y ↔ ∃ p' q', RevalueGraph u w p p' ∧ RevalueGraph u w q q' ∧ y = pSearch k g (revalueAction a u w) p' q'`
+- L395 `lemma RevalueGraph.of_not_shape {u w x y : V} (hx : ¬IsShape x) : RevalueGraph u w x y ↔ y = x`
+- L415 `lemma revalueGraph_exists (u w x : V) : ∃ y, RevalueGraph u w x y` (`ISigma1.sigma1_order_induction`)
+- L435 `lemma revalueGraph_unique (u w x : V) : ∀ y₁ y₂, RevalueGraph u w x y₁ → RevalueGraph u w x y₂ → y₁ = y₂` (`ISigma1.pi1_order_induction`)
+- L460 `lemma revalueGraph_existsUnique (u w x : V) : ∃! y, RevalueGraph u w x y`
+- L465 `noncomputable def revalue (u w x : V) : V := Classical.choose! (revalueGraph_existsUnique u w x)`
+- L467 `lemma revalue_graph (u w x : V) : RevalueGraph u w x (revalue u w x)`
+- L470 `lemma revalue_eq_of_graph {u w x y : V} (h : RevalueGraph u w x y) : revalue u w x = y`
+- L473 `noncomputable def revalueDef : 𝚺₁.Semisentence 4 := .mkSigma “y u w x. !revalueGraphDef.sigma u w x y”`
+- L475 `instance revalue_defined : 𝚺₁-Function₃ (revalue : V → V → V → V) via revalueDef`; L481 `instance revalue_definable : 𝚺₁-Function₃ (revalue : V → V → V → V)`; L483 `instance revalue_definable' : Γ-[m + 1]-Function₃ (revalue : V → V → V → V)`
+- L486 `@[simp] lemma revalue_const (u w a : V) : revalue u w (pConst a) = pConst (revalueAction a u w)`
+- L488 `@[simp] lemma revalue_self (u w : V) : revalue u w (pSelf : V) = pSelf`
+- L490 `@[simp] lemma revalue_opp (u w : V) : revalue u w (pOpp : V) = pOpp`
+- L492 `@[simp] lemma revalue_bot (u w p : V) : revalue u w (pBot p) = pBot (revalue u w p)`
+- L494 `@[simp] lemma revalue_sim (u w p q : V) : revalue u w (pSim p q) = pSim (revalue u w p) (revalue u w q)`
+- L497 `@[simp] lemma revalue_ite (u w b a p q : V) : revalue u w (pIte b a p q) = pIte (revalue u w b) (revalueAction a u w) (revalue u w p) (revalue u w q)`
+- L501 `@[simp] lemma revalue_search (u w k g a p q : V) : revalue u w (pSearch k g a p q) = pSearch k g (revalueAction a u w) (revalue u w p) (revalue u w q)`
+- L505 `lemma revalue_of_not_shape {u w x : V} (hx : ¬IsShape x) : revalue u w x = x`
+- L509 `theorem revalue_zero_one (x : V) : revalue 0 1 x = x`
+- L525 `noncomputable abbrev transposeCode (x : V) : V := revalue 1 0 x`
+- L528 `theorem transposeCode_transposeCode (x : V) : transposeCode (transposeCode x) = x`
 
 ## 14. `ArithS/BewV.lean` (46 lines) — `namespace ArithS`
 
 - L15 `open FFL FFL.FirstOrder Arithmetic Bootstrapping`; L16 `open PeanoMinus ISigma0 ISigma1`
 - L18 `variable {V : Type*} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]`; L19 `variable {L : Language} [L.Encodable] [L.LORDefinable]`; L20 `variable (T : Theory L) [T.Δ₁]` (EXPLICIT `T`)
-- L23 `def LenProvableV (k φ : V) : Prop := ∃ d < fbound k, Proof T d φ ∧ dlen T d ≤ k`
-- L25 `noncomputable def lenProvableV : 𝚫₁.Semisentence 2 := .mkDelta (.mkSigma “k φ. ∃ E, !fboundDef E k ∧ ∃ d < E, !(proof T).sigma d φ ∧ ∃ n, !(dlenDef T) n d ∧ n ≤ k”) (.mkPi “k φ. ∀ E, !fboundDef E k → ∃ d < E, !(proof T).pi d φ ∧ ∀ n, !(dlenDef T) n d → n ≤ k”)`
-- L29 `instance LenProvableV.defined : 𝚫₁-Relation[V] (LenProvableV T) via lenProvableV T`
-- L37 `instance LenProvableV.definable : 𝚫₁-Relation[V] (LenProvableV T)`
-- L39 `instance LenProvableV.definable' : Γ-[m + 1]-Relation[V] (LenProvableV T)`
-- L43 `lemma lenProvableV_numeral (k : ℕ) (φ : V) : LenProvableV T (ORingStructure.numeral k) φ ↔ LenProvable (fbound : V → V) k T φ := Iff.rfl`
+- L23 `def LenBox (k φ : V) : Prop := ∃ d < codeBound k, Proof T d φ ∧ proofLen T d ≤ k`
+- L25 `noncomputable def lenBox : 𝚫₁.Semisentence 2 := .mkDelta (.mkSigma “k φ. ∃ E, !codeBoundDef E k ∧ ∃ d < E, !(proof T).sigma d φ ∧ ∃ n, !(proofLenDef T) n d ∧ n ≤ k”) (.mkPi “k φ. ∀ E, !codeBoundDef E k → ∃ d < E, !(proof T).pi d φ ∧ ∀ n, !(proofLenDef T) n d → n ≤ k”)`
+- L29 `instance LenBox.defined : 𝚫₁-Relation[V] (LenBox T) via lenBox T`
+- L37 `instance LenBox.definable : 𝚫₁-Relation[V] (LenBox T)`
+- L39 `instance LenBox.definable' : Γ-[m + 1]-Relation[V] (LenBox T)`
+- L43 `lemma lenBox_numeral (k : ℕ) (φ : V) : LenBox T (ORingStructure.numeral k) φ ↔ LenBoxNat (codeBound : V → V) k T φ := Iff.rfl`
 
 ## 15. `ArithS/Guard.lean` (173 lines) — `namespace ArithS`
 
@@ -498,23 +498,23 @@ Shapes:
 - L34 `noncomputable def csym (u : V) : V := ^func 0 (2 + u) 0` — term code of the constant with symbol code `2 + u` (`c_C` for `u = 0`, `c_D` for `u = 1`)
 - L36 `noncomputable def csymGraph : 𝚺₁.Semisentence 2 := .mkSigma “y u. !qqFuncDef y 0 (2 + u) 0”`
 - L38 `instance csym.defined : 𝚺₁-Function₁[V] csym via csymGraph`; L41 `instance csym.definable : 𝚺₁-Function₁[V] csym`; L42 `instance csym.definable' : Γ-[m + 1]-Function₁[V] csym`
-- L47 `noncomputable def dnum (x : V) : V := if x ≤ swapcode x then x else swapcode x`
-- L50 `noncomputable def dU (x : V) : V := if x < swapcode x then csym 0 else if swapcode x < x then csym 1 else numeral 0`
-- L54 `noncomputable def dW (x : V) : V := if x < swapcode x then csym 1 else if swapcode x < x then csym 0 else numeral 1`
+- L47 `noncomputable def canonical (x : V) : V := if x ≤ transposeCode x then x else transposeCode x`
+- L50 `noncomputable def revalueU (x : V) : V := if x < transposeCode x then csym 0 else if transposeCode x < x then csym 1 else numeral 0`
+- L54 `noncomputable def revalueW (x : V) : V := if x < transposeCode x then csym 1 else if transposeCode x < x then csym 0 else numeral 1`
 - L58 `noncomputable def actTermCode (a : V) : V := if a = 0 then csym 0 else if a = 1 then csym 1 else numeral a`
-- L63 `noncomputable def dnumGraph : 𝚺₁.Semisentence 2 := .mkSigma “y x. ∃ s, !relabelDef s 1 0 x ∧ (x ≤ s → y = x) ∧ (s < x → y = s)”`
-- L66 `instance dnum.defined : 𝚺₁-Function₁[V] dnum via dnumGraph`; L77 `instance dnum.definable`; L78 `instance dnum.definable' : Γ-[m + 1]-Function₁[V] dnum`
-- L80 `noncomputable def dUGraph : 𝚺₁.Semisentence 2 := .mkSigma “y x. ∃ s, !relabelDef s 1 0 x ∧ ∃ c0, !csymGraph c0 0 ∧ ∃ c1, !csymGraph c1 1 ∧ ∃ z, !numeralGraph z 0 ∧ (x < s → y = c0) ∧ (s < x → y = c1) ∧ (x = s → y = z)”`
-- L84 `instance dU.defined : 𝚺₁-Function₁[V] dU via dUGraph`; L97 `dU.definable`; L98 `dU.definable'`
-- L100 `noncomputable def dWGraph : 𝚺₁.Semisentence 2 := .mkSigma “y x. ∃ s, !relabelDef s 1 0 x ∧ ∃ c0, !csymGraph c0 0 ∧ ∃ c1, !csymGraph c1 1 ∧ ∃ z, !numeralGraph z 1 ∧ (x < s → y = c1) ∧ (s < x → y = c0) ∧ (x = s → y = z)”`
-- L104 `instance dW.defined : 𝚺₁-Function₁[V] dW via dWGraph`; L117 `dW.definable`; L118 `dW.definable'`
+- L63 `noncomputable def canonicalGraph : 𝚺₁.Semisentence 2 := .mkSigma “y x. ∃ s, !revalueDef s 1 0 x ∧ (x ≤ s → y = x) ∧ (s < x → y = s)”`
+- L66 `instance canonical.defined : 𝚺₁-Function₁[V] canonical via canonicalGraph`; L77 `instance canonical.definable`; L78 `instance canonical.definable' : Γ-[m + 1]-Function₁[V] canonical`
+- L80 `noncomputable def revalueUGraph : 𝚺₁.Semisentence 2 := .mkSigma “y x. ∃ s, !revalueDef s 1 0 x ∧ ∃ c0, !csymGraph c0 0 ∧ ∃ c1, !csymGraph c1 1 ∧ ∃ z, !numeralGraph z 0 ∧ (x < s → y = c0) ∧ (s < x → y = c1) ∧ (x = s → y = z)”`
+- L84 `instance revalueU.defined : 𝚺₁-Function₁[V] revalueU via revalueUGraph`; L97 `revalueU.definable`; L98 `revalueU.definable'`
+- L100 `noncomputable def revalueWGraph : 𝚺₁.Semisentence 2 := .mkSigma “y x. ∃ s, !revalueDef s 1 0 x ∧ ∃ c0, !csymGraph c0 0 ∧ ∃ c1, !csymGraph c1 1 ∧ ∃ z, !numeralGraph z 1 ∧ (x < s → y = c1) ∧ (s < x → y = c0) ∧ (x = s → y = z)”`
+- L104 `instance revalueW.defined : 𝚺₁-Function₁[V] revalueW via revalueWGraph`; L117 `revalueW.definable`; L118 `revalueW.definable'`
 - L120 `noncomputable def actTermCodeGraph : 𝚺₁.Semisentence 2 := .mkSigma “y a. ∃ c0, !csymGraph c0 0 ∧ ∃ c1, !csymGraph c1 1 ∧ ∃ z, !numeralGraph z a ∧ (a = 0 → y = c0) ∧ (a = 1 → y = c1) ∧ (a ≠ 0 → a ≠ 1 → y = z)”`
 - L124 `instance actTermCode.defined : 𝚺₁-Function₁[V] actTermCode via actTermCodeGraph`; L134 `actTermCode.definable`; L135 `actTermCode.definable'`
-- L143 `noncomputable def descVec (me opp a : V) : V := numeral (dnum me) ∷ dU me ∷ dW me ∷ numeral (dnum opp) ∷ dU opp ∷ dW opp ∷ actTermCode a ∷ 0`
-- L147 `noncomputable def guardCode (g me opp a : V) : V := subst LAct (descVec me opp a) g`
-- L149 `noncomputable def descVecGraph : 𝚺₁.Semisentence 4 := .mkSigma “y me opp a. ∃ n₁, !dnumGraph n₁ me ∧ ∃ t₁, !numeralGraph t₁ n₁ ∧ ∃ u₁, !dUGraph u₁ me ∧ ∃ w₁, !dWGraph w₁ me ∧ ∃ n₂, !dnumGraph n₂ opp ∧ ∃ t₂, !numeralGraph t₂ n₂ ∧ ∃ u₂, !dUGraph u₂ opp ∧ ∃ w₂, !dWGraph w₂ opp ∧ ∃ t, !actTermCodeGraph t a ∧ ∃ v₆, !adjoinDef v₆ t 0 ∧ ∃ v₅, !adjoinDef v₅ w₂ v₆ ∧ ∃ v₄, !adjoinDef v₄ u₂ v₅ ∧ ∃ v₃, !adjoinDef v₃ t₂ v₄ ∧ ∃ v₂, !adjoinDef v₂ w₁ v₃ ∧ ∃ v₁, !adjoinDef v₁ u₁ v₂ ∧ !adjoinDef y t₁ v₁”`
-- L156 `instance descVec.defined : 𝚺₁-Function₃ (descVec : V → V → V → V) via descVecGraph`; L159 `instance descVec.definable : 𝚺₁-Function₃ (descVec : V → V → V → V)`
-- L161 `noncomputable def guardCodeGraph : 𝚺₁.Semisentence 5 := .mkSigma “y g me opp a. ∃ w, !descVecGraph w me opp a ∧ !(substsGraph LAct) y w g”`
+- L143 `noncomputable def descriptions (me opp a : V) : V := numeral (canonical me) ∷ revalueU me ∷ revalueW me ∷ numeral (canonical opp) ∷ revalueU opp ∷ revalueW opp ∷ actTermCode a ∷ 0`
+- L147 `noncomputable def guardCode (g me opp a : V) : V := subst LAct (descriptions me opp a) g`
+- L149 `noncomputable def descriptionsGraph : 𝚺₁.Semisentence 4 := .mkSigma “y me opp a. ∃ n₁, !canonicalGraph n₁ me ∧ ∃ t₁, !numeralGraph t₁ n₁ ∧ ∃ u₁, !revalueUGraph u₁ me ∧ ∃ w₁, !revalueWGraph w₁ me ∧ ∃ n₂, !canonicalGraph n₂ opp ∧ ∃ t₂, !numeralGraph t₂ n₂ ∧ ∃ u₂, !revalueUGraph u₂ opp ∧ ∃ w₂, !revalueWGraph w₂ opp ∧ ∃ t, !actTermCodeGraph t a ∧ ∃ v₆, !adjoinDef v₆ t 0 ∧ ∃ v₅, !adjoinDef v₅ w₂ v₆ ∧ ∃ v₄, !adjoinDef v₄ u₂ v₅ ∧ ∃ v₃, !adjoinDef v₃ t₂ v₄ ∧ ∃ v₂, !adjoinDef v₂ w₁ v₃ ∧ ∃ v₁, !adjoinDef v₁ u₁ v₂ ∧ !adjoinDef y t₁ v₁”`
+- L156 `instance descriptions.defined : 𝚺₁-Function₃ (descriptions : V → V → V → V) via descriptionsGraph`; L159 `instance descriptions.definable : 𝚺₁-Function₃ (descriptions : V → V → V → V)`
+- L161 `noncomputable def guardCodeGraph : 𝚺₁.Semisentence 5 := .mkSigma “y g me opp a. ∃ w, !descriptionsGraph w me opp a ∧ !(substsGraph LAct) y w g”`
 - L164 `instance guardCode.defined : 𝚺₁-Function₄ (guardCode : V → V → V → V → V) via guardCodeGraph`; L167 `guardCode.definable`; L170 `instance guardCode.definable' : Γ-[m + 1]-Function₄ (guardCode : V → V → V → V → V)`
 
 ## 16. `ArithS/Eval.lean` (241 lines) — `namespace ArithS`
@@ -533,14 +533,14 @@ Shapes:
     ((r = a' ∧ ⟪n, me, opp, p, a⟫ ∈ C) ∨ (r ≠ a' ∧ ⟪n, me, opp, q, a⟫ ∈ C)) ∧
     pr = ⟪n + 1, me, opp, pIte b a' p q, a⟫) ∨
   (∃ n me opp k g a' p q a,
-    ((LenProvableV TAct k (guardCode g me opp a') ∧ ⟪n, me, opp, p, a⟫ ∈ C) ∨
-      (¬LenProvableV TAct k (guardCode g me opp a') ∧ ⟪n, me, opp, q, a⟫ ∈ C)) ∧
+    ((LenBox TAct k (guardCode g me opp a') ∧ ⟪n, me, opp, p, a⟫ ∈ C) ∨
+      (¬LenBox TAct k (guardCode g me opp a') ∧ ⟪n, me, opp, q, a⟫ ∈ C)) ∧
     pr = ⟪n + 1, me, opp, pSearch k g a' p q, a⟫)
   ```
-- L46 `noncomputable def blueprint : Fixpoint.Blueprint 0 := ⟨.mkDelta (.mkSigma “pr C. ∃ n <⁺ pr, ∃ me <⁺ pr, ∃ opp <⁺ pr, ∃ p <⁺ pr, ∃ a <⁺ pr, !pair₅Def pr (n + 1) me opp p a ∧ ( !pConstGraph p a ∨ (!pSelfGraph p ∧ ∃ t, !pair₅Def t n me opp me a ∧ t ∈ C) ∨ (!pOppGraph p ∧ ∃ t, !pair₅Def t n me opp opp a ∧ t ∈ C) ∨ (∃ p' < p, !pBotGraph p p' ∧ ∃ t, !pair₅Def t n me opp p' a ∧ t ∈ C) ∨ (∃ b < p, ∃ a' < p, ∃ p' < p, ∃ q < p, !pIteGraph p b a' p' q ∧ ∃ r < pr + C + 1, (∃ t, !pair₅Def t n me opp b r ∧ t ∈ C) ∧ ((r = a' ∧ ∃ t, !pair₅Def t n me opp p' a ∧ t ∈ C) ∨ (r ≠ a' ∧ ∃ t, !pair₅Def t n me opp q a ∧ t ∈ C))) ∨ (∃ k < p, ∃ g < p, ∃ a' < p, ∃ p' < p, ∃ q < p, !pSearchGraph p k g a' p' q ∧ ∃ gc, !guardCodeGraph gc g me opp a' ∧ ((!(lenProvableV TAct).sigma k gc ∧ ∃ t, !pair₅Def t n me opp p' a ∧ t ∈ C) ∨ (¬!(lenProvableV TAct).pi k gc ∧ ∃ t, !pair₅Def t n me opp q a ∧ t ∈ C))) )”) (.mkPi “…∀-dual, with !(lenProvableV TAct).pi / ¬!(lenProvableV TAct).sigma swapped…”)⟩` (L46–74)
+- L46 `noncomputable def blueprint : Fixpoint.Blueprint 0 := ⟨.mkDelta (.mkSigma “pr C. ∃ n <⁺ pr, ∃ me <⁺ pr, ∃ opp <⁺ pr, ∃ p <⁺ pr, ∃ a <⁺ pr, !pair₅Def pr (n + 1) me opp p a ∧ ( !pConstGraph p a ∨ (!pSelfGraph p ∧ ∃ t, !pair₅Def t n me opp me a ∧ t ∈ C) ∨ (!pOppGraph p ∧ ∃ t, !pair₅Def t n me opp opp a ∧ t ∈ C) ∨ (∃ p' < p, !pBotGraph p p' ∧ ∃ t, !pair₅Def t n me opp p' a ∧ t ∈ C) ∨ (∃ b < p, ∃ a' < p, ∃ p' < p, ∃ q < p, !pIteGraph p b a' p' q ∧ ∃ r < pr + C + 1, (∃ t, !pair₅Def t n me opp b r ∧ t ∈ C) ∧ ((r = a' ∧ ∃ t, !pair₅Def t n me opp p' a ∧ t ∈ C) ∨ (r ≠ a' ∧ ∃ t, !pair₅Def t n me opp q a ∧ t ∈ C))) ∨ (∃ k < p, ∃ g < p, ∃ a' < p, ∃ p' < p, ∃ q < p, !pSearchGraph p k g a' p' q ∧ ∃ gc, !guardCodeGraph gc g me opp a' ∧ ((!(lenBox TAct).sigma k gc ∧ ∃ t, !pair₅Def t n me opp p' a ∧ t ∈ C) ∨ (¬!(lenBox TAct).pi k gc ∧ ∃ t, !pair₅Def t n me opp q a ∧ t ∈ C))) )”) (.mkPi “…∀-dual, with !(lenBox TAct).pi / ¬!(lenBox TAct).sigma swapped…”)⟩` (L46–74)
 - L77 `private lemma lt_of_tuple_mem {n me opp b r C : V} (h : ⟪n, me, opp, b, r⟫ ∈ C) : r < C`
 - L81 `private lemma tuple_bounds (n me opp p a : V) : n ≤ ⟪n + 1, me, opp, p, a⟫ ∧ me ≤ … ∧ opp ≤ … ∧ p ≤ … ∧ a ≤ ⟪n + 1, me, opp, p, a⟫`
-- L92 `private lemma phi_iff (C pr : V) : Phi {x | x ∈ C} pr ↔ ∃ n ≤ pr, ∃ me ≤ pr, ∃ opp ≤ pr, ∃ p ≤ pr, ∃ a ≤ pr, pr = ⟪n + 1, me, opp, p, a⟫ ∧ (p = pConst a ∨ (p = pSelf ∧ ⟪n, me, opp, me, a⟫ ∈ C) ∨ (p = pOpp ∧ ⟪n, me, opp, opp, a⟫ ∈ C) ∨ (∃ p' < p, p = pBot p' ∧ ⟪n, me, opp, p', a⟫ ∈ C) ∨ (∃ b < p, ∃ a' < p, ∃ p' < p, ∃ q < p, p = pIte b a' p' q ∧ ∃ r < pr + C + 1, ⟪n, me, opp, b, r⟫ ∈ C ∧ ((r = a' ∧ ⟪n, me, opp, p', a⟫ ∈ C) ∨ (r ≠ a' ∧ ⟪n, me, opp, q, a⟫ ∈ C))) ∨ (∃ k < p, ∃ g < p, ∃ a' < p, ∃ p' < p, ∃ q < p, p = pSearch k g a' p' q ∧ ((LenProvableV TAct k (guardCode g me opp a') ∧ ⟪n, me, opp, p', a⟫ ∈ C) ∨ (¬LenProvableV TAct k (guardCode g me opp a') ∧ ⟪n, me, opp, q, a⟫ ∈ C))) )`
+- L92 `private lemma phi_iff (C pr : V) : Phi {x | x ∈ C} pr ↔ ∃ n ≤ pr, ∃ me ≤ pr, ∃ opp ≤ pr, ∃ p ≤ pr, ∃ a ≤ pr, pr = ⟪n + 1, me, opp, p, a⟫ ∧ (p = pConst a ∨ (p = pSelf ∧ ⟪n, me, opp, me, a⟫ ∈ C) ∨ (p = pOpp ∧ ⟪n, me, opp, opp, a⟫ ∈ C) ∨ (∃ p' < p, p = pBot p' ∧ ⟪n, me, opp, p', a⟫ ∈ C) ∨ (∃ b < p, ∃ a' < p, ∃ p' < p, ∃ q < p, p = pIte b a' p' q ∧ ∃ r < pr + C + 1, ⟪n, me, opp, b, r⟫ ∈ C ∧ ((r = a' ∧ ⟪n, me, opp, p', a⟫ ∈ C) ∨ (r ≠ a' ∧ ⟪n, me, opp, q, a⟫ ∈ C))) ∨ (∃ k < p, ∃ g < p, ∃ a' < p, ∃ p' < p, ∃ q < p, p = pSearch k g a' p' q ∧ ((LenBox TAct k (guardCode g me opp a') ∧ ⟪n, me, opp, p', a⟫ ∈ C) ∨ (¬LenBox TAct k (guardCode g me opp a') ∧ ⟪n, me, opp, q, a⟫ ∈ C))) )`
 - L134 `noncomputable def construction : Fixpoint.Construction V blueprint where Φ := fun _ ↦ Phi; defined := …; monotone := …`
 - L162 `instance : construction.Finite V` (**`Finite`, NOT `StrongFinite`** — sub-calls decrease fuel but may grow other components)
 
@@ -549,7 +549,7 @@ Shapes:
 - L196 `private lemma eval_param_eq (p : Fin 0 → V) (x : V) : EvalFix.construction.Fixpoint p x = EvalFix.construction.Fixpoint ![] x`
 - L200 `lemma evalGraph_defined : 𝚺₁.Defined (fun v : Fin 5 → V ↦ EvalGraph (v 0) (v 1) (v 2) (v 3) (v 4)) evalGraphDef`
 - L205 `instance evalGraph_definable : 𝚺₁-Relation₅[V] EvalGraph`
-- L207 `lemma EvalGraph.case_iff {n me opp p a : V} : EvalGraph n me opp p a ↔ ∃ n', n = n' + 1 ∧ ( p = pConst a ∨ (p = pSelf ∧ EvalGraph n' me opp me a) ∨ (p = pOpp ∧ EvalGraph n' me opp opp a) ∨ (∃ p', p = pBot p' ∧ EvalGraph n' me opp p' a) ∨ (∃ b a' p' q r, p = pIte b a' p' q ∧ EvalGraph n' me opp b r ∧ ((r = a' ∧ EvalGraph n' me opp p' a) ∨ (r ≠ a' ∧ EvalGraph n' me opp q a))) ∨ (∃ k g a' p' q, p = pSearch k g a' p' q ∧ ((LenProvableV TAct k (guardCode g me opp a') ∧ EvalGraph n' me opp p' a) ∨ (¬LenProvableV TAct k (guardCode g me opp a') ∧ EvalGraph n' me opp q a))) )`
+- L207 `lemma EvalGraph.case_iff {n me opp p a : V} : EvalGraph n me opp p a ↔ ∃ n', n = n' + 1 ∧ ( p = pConst a ∨ (p = pSelf ∧ EvalGraph n' me opp me a) ∨ (p = pOpp ∧ EvalGraph n' me opp opp a) ∨ (∃ p', p = pBot p' ∧ EvalGraph n' me opp p' a) ∨ (∃ b a' p' q r, p = pIte b a' p' q ∧ EvalGraph n' me opp b r ∧ ((r = a' ∧ EvalGraph n' me opp p' a) ∨ (r ≠ a' ∧ EvalGraph n' me opp q a))) ∨ (∃ k g a' p' q, p = pSearch k g a' p' q ∧ ((LenBox TAct k (guardCode g me opp a') ∧ EvalGraph n' me opp p' a) ∨ (¬LenBox TAct k (guardCode g me opp a') ∧ EvalGraph n' me opp q a))) )`
 
 ## 17. `ArithS/EvalN.lean` (142 lines) — `namespace ArithS`
 
@@ -562,7 +562,7 @@ Shapes:
   - L38 `lemma EvalGraph.bot_iff {n me opp p a : V} : EvalGraph (n + 1) me opp (pBot p) a ↔ EvalGraph n me opp p a`
   - L42 `lemma EvalGraph.sim_iff {n me opp p q a : V} : ¬EvalGraph (n + 1) me opp (pSim p q) a` — **`pSim` never evaluates**
   - L45 `lemma EvalGraph.ite_iff {n me opp b a' p q a : V} : EvalGraph (n + 1) me opp (pIte b a' p q) a ↔ ∃ r, EvalGraph n me opp b r ∧ ((r = a' ∧ EvalGraph n me opp p a) ∨ (r ≠ a' ∧ EvalGraph n me opp q a))`
-  - L51 `lemma EvalGraph.search_iff {n me opp k g a' p q a : V} : EvalGraph (n + 1) me opp (pSearch k g a' p q) a ↔ ((LenProvableV TAct k (guardCode g me opp a') ∧ EvalGraph n me opp p a) ∨ (¬LenProvableV TAct k (guardCode g me opp a') ∧ EvalGraph n me opp q a))`
+  - L51 `lemma EvalGraph.search_iff {n me opp k g a' p q a : V} : EvalGraph (n + 1) me opp (pSearch k g a' p q) a ↔ ((LenBox TAct k (guardCode g me opp a') ∧ EvalGraph n me opp p a) ∨ (¬LenBox TAct k (guardCode g me opp a') ∧ EvalGraph n me opp q a))`
 - `section nat` L61–140 (all at `ℕ`):
   - L64 `theorem EvalGraph.unique (n : ℕ) : ∀ me opp p a₁ a₂ : ℕ, EvalGraph n me opp p a₁ → EvalGraph n me opp p a₂ → a₁ = a₂`
   - L103 `theorem EvalGraph.mono (n : ℕ) : ∀ me opp p a : ℕ, EvalGraph n me opp p a → EvalGraph (n + 1) me opp p a`
@@ -574,44 +574,44 @@ Shapes:
 ## 18. `ArithS/Template.lean` (296 lines) — `namespace ArithS`
 
 - L23 `open FFL FFL.FirstOrder Arithmetic Bootstrapping`; L24 `open PeanoMinus ISigma0 ISigma1`; L25 `open FFL.FirstOrder.Arithmetic.Bootstrapping.Arithmetic`; L26 `open LAct`
-- L31 `noncomputable def gtmpl : 𝚺₁.Semisentence 7 := .mkSigma “x₁ u₁ w₁ x₂ u₂ w₂ t. ∃ me, !relabelDef me u₁ w₁ x₁ ∧ ∃ opp, !relabelDef opp u₂ w₂ x₂ ∧ ∃ n, !evalGraphDef n opp me opp t”` — an ℒₒᵣ-semisentence (7 free vars). Reading: variable 0–2 describe "me" (`x₁ u₁ w₁`), 3–5 describe "opp" (`x₂ u₂ w₂`), 6 is the action `t`; the body says the OPPONENT (`relabel u₂ w₂ x₂`) playing in frame `(opp, me)` plays `t`, i.e. "opp plays `t` against me".
-- L39 `lemma eval_gtmpl (v : Fin 7 → V) : V ⊧/v gtmpl.val ↔ ∃ n, EvalGraph n (relabel (v 4) (v 5) (v 3)) (relabel (v 1) (v 2) (v 0)) (relabel (v 4) (v 5) (v 3)) (v 6)` (section `eval`, `variable {V …}`)
-- L47 `noncomputable def Gtmpl : Semisentence LAct 7 := Semiformula.lMap emb gtmpl.val`
-- L49 `lemma lMap_swap_Gtmpl : Semiformula.lMap swap Gtmpl = Gtmpl`
+- L31 `noncomputable def guardTemplateRaw : 𝚺₁.Semisentence 7 := .mkSigma “x₁ u₁ w₁ x₂ u₂ w₂ t. ∃ me, !revalueDef me u₁ w₁ x₁ ∧ ∃ opp, !revalueDef opp u₂ w₂ x₂ ∧ ∃ n, !evalGraphDef n opp me opp t”` — an ℒₒᵣ-semisentence (7 free vars). Reading: variable 0–2 describe "me" (`x₁ u₁ w₁`), 3–5 describe "opp" (`x₂ u₂ w₂`), 6 is the action `t`; the body says the OPPONENT (`revalue u₂ w₂ x₂`) playing in frame `(opp, me)` plays `t`, i.e. "opp plays `t` against me".
+- L39 `lemma eval_guardTemplateRaw (v : Fin 7 → V) : V ⊧/v guardTemplateRaw.val ↔ ∃ n, EvalGraph n (revalue (v 4) (v 5) (v 3)) (revalue (v 1) (v 2) (v 0)) (revalue (v 4) (v 5) (v 3)) (v 6)` (section `eval`, `variable {V …}`)
+- L47 `noncomputable def guardTemplate7 : Semisentence LAct 7 := Semiformula.lMap emb guardTemplateRaw.val`
+- L49 `lemma lMap_swap_guardTemplate7 : Semiformula.lMap swap guardTemplate7 = guardTemplate7`
 - L54 `noncomputable def numT (k : ℕ) : ClosedSemiterm LAct 0 := Semiterm.lMap emb (↑k : ClosedSemiterm ℒₒᵣ 0)`
-- L57 `noncomputable def dnumT (x : ℕ) : ClosedSemiterm LAct 0 := numT (dnum x)`
-- L60 `noncomputable def dUT (x : ℕ) : ClosedSemiterm LAct 0 := if x < swapcode x then cterm Act.C else if swapcode x < x then cterm Act.D else numT 0`
-- L64 `noncomputable def dWT (x : ℕ) : ClosedSemiterm LAct 0 := if x < swapcode x then cterm Act.D else if swapcode x < x then cterm Act.C else numT 1`
+- L57 `noncomputable def canonicalMeta (x : ℕ) : ClosedSemiterm LAct 0 := numT (canonical x)`
+- L60 `noncomputable def revalueUMeta (x : ℕ) : ClosedSemiterm LAct 0 := if x < transposeCode x then cterm Act.C else if transposeCode x < x then cterm Act.D else numT 0`
+- L64 `noncomputable def revalueWMeta (x : ℕ) : ClosedSemiterm LAct 0 := if x < transposeCode x then cterm Act.D else if transposeCode x < x then cterm Act.C else numT 1`
 - L68 `noncomputable def actT (a : ℕ) : ClosedSemiterm LAct 0 := if a = 0 then cterm Act.C else if a = 1 then cterm Act.D else numT a`
-- L71 `noncomputable def descTerms (me opp a : ℕ) : Fin 7 → ClosedSemiterm LAct 0 := ![dnumT me, dUT me, dWT me, dnumT opp, dUT opp, dWT opp, actT a]`
-- L75 `noncomputable def guardSentence (me opp a : ℕ) : Sentence LAct := Gtmpl ⇜ descTerms me opp a`
+- L71 `noncomputable def descriptionTerms (me opp a : ℕ) : Fin 7 → ClosedSemiterm LAct 0 := ![canonicalMeta me, revalueUMeta me, revalueWMeta me, canonicalMeta opp, revalueUMeta opp, revalueWMeta opp, actT a]`
+- L75 `noncomputable def guardSentence (me opp a : ℕ) : Sentence LAct := guardTemplate7 ⇜ descriptionTerms me opp a`
 - L79 `lemma lMap_swap_numT (k : ℕ) : Semiterm.lMap swap (numT k) = numT k`
-- `section dnum` L81–105 (generic `V`): L85 `lemma dnum_of_lt {x : V} (h : x < swapcode x) : dnum x = x`; L88 `lemma dnum_of_eq {x : V} (h : x = swapcode x) : dnum x = x`; L91 `lemma dnum_of_gt {x : V} (h : swapcode x < x) : dnum x = swapcode x`; L99 `lemma dnum_swapcode (x : V) : dnum (swapcode x) = dnum x`
-- L107 `lemma lMap_swap_dUT (x : ℕ) : Semiterm.lMap swap (dUT x) = dUT (swapcode x)`
-- L116 `lemma lMap_swap_dWT (x : ℕ) : Semiterm.lMap swap (dWT x) = dWT (swapcode x)`
-- L125 `lemma lMap_swap_actT (a : ℕ) : Semiterm.lMap swap (actT a) = actT (swapAct a)`
-- L133 `lemma lMap_swap_dnumT (x : ℕ) : Semiterm.lMap swap (dnumT x) = dnumT (swapcode x)`
-- L138 `theorem lMap_swap_guardSentence (me opp a : ℕ) : Semiformula.lMap swap (guardSentence me opp a) = guardSentence (swapcode me) (swapcode opp) (swapAct a)` — **the swap equation**
-- `section codes` L148–186 (generic `V`): L152 `lemma quote_Gtmpl : (⌜Gtmpl⌝ : V) = ⌜gtmpl.val⌝`; L156 `lemma term_emb_lMap_emb (t : ClosedSemiterm ℒₒᵣ 0) : (Rew.emb (Semiterm.lMap emb t) : SyntacticSemiterm LAct 0) = Semiterm.lMap emb (Rew.emb t)`; L163 `lemma quote_numT (k : ℕ) : (⌜numT k⌝ : V) = numeral (k : V)`; L170 `lemma encode_const_C : Encodable.encode (const Act.C) = 2 := rfl`; L171 `lemma encode_const_D : Encodable.encode (const Act.D) = 3 := rfl`; L173 `lemma quote_cterm_C : (⌜(cterm Act.C : ClosedSemiterm LAct 0)⌝ : V) = csym 0`; L179 `lemma quote_cterm_D : (⌜(cterm Act.D : ClosedSemiterm LAct 0)⌝ : V) = csym 1`
-- L188 `lemma quote_dnumT (x : ℕ) : (⌜dnumT x⌝ : ℕ) = numeral (dnum x)`; L191 `lemma quote_dUT (x : ℕ) : (⌜dUT x⌝ : ℕ) = dU x`; L199 `lemma quote_dWT (x : ℕ) : (⌜dWT x⌝ : ℕ) = dW x`; L207 `lemma quote_actT (a : ℕ) : (⌜actT a⌝ : ℕ) = actTermCode a`
+- `section canonical` L81–105 (generic `V`): L85 `lemma canonical_of_lt {x : V} (h : x < transposeCode x) : canonical x = x`; L88 `lemma canonical_of_eq {x : V} (h : x = transposeCode x) : canonical x = x`; L91 `lemma canonical_of_gt {x : V} (h : transposeCode x < x) : canonical x = transposeCode x`; L99 `lemma canonical_transposeCode (x : V) : canonical (transposeCode x) = canonical x`
+- L107 `lemma lMap_swap_revalueUMeta (x : ℕ) : Semiterm.lMap swap (revalueUMeta x) = revalueUMeta (transposeCode x)`
+- L116 `lemma lMap_swap_revalueWMeta (x : ℕ) : Semiterm.lMap swap (revalueWMeta x) = revalueWMeta (transposeCode x)`
+- L125 `lemma lMap_swap_actT (a : ℕ) : Semiterm.lMap swap (actT a) = actT (swapAction a)`
+- L133 `lemma lMap_swap_canonicalMeta (x : ℕ) : Semiterm.lMap swap (canonicalMeta x) = canonicalMeta (transposeCode x)`
+- L138 `theorem lMap_swap_guardSentence (me opp a : ℕ) : Semiformula.lMap swap (guardSentence me opp a) = guardSentence (transposeCode me) (transposeCode opp) (swapAction a)` — **the swap equation**
+- `section codes` L148–186 (generic `V`): L152 `lemma quote_guardTemplate7 : (⌜guardTemplate7⌝ : V) = ⌜guardTemplateRaw.val⌝`; L156 `lemma term_emb_lMap_emb (t : ClosedSemiterm ℒₒᵣ 0) : (Rew.emb (Semiterm.lMap emb t) : SyntacticSemiterm LAct 0) = Semiterm.lMap emb (Rew.emb t)`; L163 `lemma quote_numT (k : ℕ) : (⌜numT k⌝ : V) = numeral (k : V)`; L170 `lemma encode_const_C : Encodable.encode (const Act.C) = 2 := rfl`; L171 `lemma encode_const_D : Encodable.encode (const Act.D) = 3 := rfl`; L173 `lemma quote_cterm_C : (⌜(cterm Act.C : ClosedSemiterm LAct 0)⌝ : V) = csym 0`; L179 `lemma quote_cterm_D : (⌜(cterm Act.D : ClosedSemiterm LAct 0)⌝ : V) = csym 1`
+- L188 `lemma quote_canonicalMeta (x : ℕ) : (⌜canonicalMeta x⌝ : ℕ) = numeral (canonical x)`; L191 `lemma quote_revalueUMeta (x : ℕ) : (⌜revalueUMeta x⌝ : ℕ) = revalueU x`; L199 `lemma quote_revalueWMeta (x : ℕ) : (⌜revalueWMeta x⌝ : ℕ) = revalueW x`; L207 `lemma quote_actT (a : ℕ) : (⌜actT a⌝ : ℕ) = actTermCode a`
 - L215 `lemma typed_val_emb (t : ClosedSemiterm LAct 0) : ((⌜(Rew.emb t : SyntacticSemiterm LAct 0)⌝ : Bootstrapping.Semiterm ℕ LAct 0)).val = (⌜t⌝ : ℕ) := rfl`
-- L219 `lemma semitermVec_val_descTerms (me opp a : ℕ) : SemitermVec.val (fun i ↦ (⌜(Rew.emb (descTerms me opp a i) : SyntacticSemiterm LAct 0)⌝ : Bootstrapping.Semiterm ℕ LAct 0)) = descVec me opp a`
-- L235 `theorem quote_guardSentence (me opp a : ℕ) : (⌜guardSentence me opp a⌝ : ℕ) = guardCode (⌜Gtmpl⌝ : ℕ) me opp a` — **the code equation**
-- `section truth` L246–294: L248 `lemma val_numT (k : ℕ) : (numT k).val (s := stdAct) ![] Empty.elim = k`; L253 `lemma val_cterm_C : (cterm Act.C : ClosedSemiterm LAct 0).val (s := stdAct) ![] Empty.elim = 0 := rfl`; L254 `lemma val_cterm_D : … = 1 := rfl`; L256 `lemma val_dnumT (x : ℕ) : (dnumT x).val (s := stdAct) ![] Empty.elim = dnum x`; L259 `lemma relabel_val_desc (x : ℕ) : relabel ((dUT x).val (s := stdAct) ![] Empty.elim) ((dWT x).val (s := stdAct) ![] Empty.elim) (dnum x) = x`; L272 `lemma val_actT (a : ℕ) : (actT a).val (s := stdAct) ![] Empty.elim = a`
+- L219 `lemma semitermVec_val_descriptionTerms (me opp a : ℕ) : SemitermVec.val (fun i ↦ (⌜(Rew.emb (descriptionTerms me opp a i) : SyntacticSemiterm LAct 0)⌝ : Bootstrapping.Semiterm ℕ LAct 0)) = descriptions me opp a`
+- L235 `theorem quote_guardSentence (me opp a : ℕ) : (⌜guardSentence me opp a⌝ : ℕ) = guardCode (⌜guardTemplate7⌝ : ℕ) me opp a` — **the code equation**
+- `section truth` L246–294: L248 `lemma val_numT (k : ℕ) : (numT k).val (s := stdReadingNat) ![] Empty.elim = k`; L253 `lemma val_cterm_C : (cterm Act.C : ClosedSemiterm LAct 0).val (s := stdReadingNat) ![] Empty.elim = 0 := rfl`; L254 `lemma val_cterm_D : … = 1 := rfl`; L256 `lemma val_canonicalMeta (x : ℕ) : (canonicalMeta x).val (s := stdReadingNat) ![] Empty.elim = canonical x`; L259 `lemma revalue_val_desc (x : ℕ) : revalue ((revalueUMeta x).val (s := stdReadingNat) ![] Empty.elim) ((revalueWMeta x).val (s := stdReadingNat) ![] Empty.elim) (canonical x) = x`; L272 `lemma val_actT (a : ℕ) : (actT a).val (s := stdReadingNat) ![] Empty.elim = a`
 - L281 `theorem models_guardSentence_iff (me opp a : ℕ) : ℕ↓[LAct] ⊧ guardSentence me opp a ↔ ∃ n, EvalGraph n opp me opp a` — **the truth equation**
 
 ## 19. `ArithS/RedCell.lean` (128 lines) — `namespace ArithS`
 
 - L22 `open FFL FFL.FirstOrder Arithmetic Bootstrapping`; L23 `open PeanoMinus`; L24 `open LAct`
-- L29 `noncomputable def Dupoc (k : ℕ) : ℕ := pSearch k (⌜Gtmpl⌝ : ℕ) 0 (pConst 0) (pConst 1)`
-- L32 `noncomputable def Cupod (k : ℕ) : ℕ := pSearch k (⌜Gtmpl⌝ : ℕ) 1 (pConst 1) (pConst 0)`
-- L34 `lemma swapAct_zero : swapAct (0 : ℕ) = 1`; L35 `lemma swapAct_one : swapAct (1 : ℕ) = 0`
-- L38 `theorem swapcode_Dupoc (k : ℕ) : swapcode (Dupoc k) = Cupod k`; L43 `theorem swapcode_Cupod (k : ℕ) : swapcode (Cupod k) = Dupoc k`
-- L48 `lemma models_axNe : ℕ↓[LAct] ⊧ axNe`; L55 `lemma models_axNe' : ℕ↓[LAct] ⊧ axNe'`
+- L29 `noncomputable def Dupoc (k : ℕ) : ℕ := pSearch k (⌜guardTemplate7⌝ : ℕ) 0 (pConst 0) (pConst 1)`
+- L32 `noncomputable def Cupod (k : ℕ) : ℕ := pSearch k (⌜guardTemplate7⌝ : ℕ) 1 (pConst 1) (pConst 0)`
+- L34 `lemma swapAction_zero : swapAction (0 : ℕ) = 1`; L35 `lemma swapAction_one : swapAction (1 : ℕ) = 0`
+- L38 `theorem transposeCode_Dupoc (k : ℕ) : transposeCode (Dupoc k) = Cupod k`; L43 `theorem transposeCode_Cupod (k : ℕ) : transposeCode (Cupod k) = Dupoc k`
+- L48 `lemma models_constNe : ℕ↓[LAct] ⊧ constNe`; L55 `lemma models_constNe' : ℕ↓[LAct] ⊧ constNe'`
 - L62 `instance models_TAct : ℕ↓[LAct] ⊧* TAct`
-- L74 `lemma lenProvableV_nat (k φ : ℕ) : LenProvableV TAct k φ ↔ LenProvable (fbound : ℕ → ℕ) k TAct φ`
-- L80 `theorem evalGraph_of_guard {k me opp a : ℕ} (h : LenProvableV TAct k (guardCode (⌜Gtmpl⌝ : ℕ) me opp a)) : ∃ n, EvalGraph n opp me opp a` — guard soundness (via `provable_iff_provable`, `models_of_provable models_TAct`)
-- L89 `theorem guard_Dupoc_iff_guard_Cupod (k : ℕ) : LenProvableV TAct k (guardCode (⌜Gtmpl⌝ : ℕ) (Dupoc k) (Cupod k) 0) ↔ LenProvableV TAct k (guardCode (⌜Gtmpl⌝ : ℕ) (Cupod k) (Dupoc k) 1)`
+- L74 `lemma lenBox_nat (k φ : ℕ) : LenBox TAct k φ ↔ LenBoxNat (codeBound : ℕ → ℕ) k TAct φ`
+- L80 `theorem evalGraph_of_guard {k me opp a : ℕ} (h : LenBox TAct k (guardCode (⌜guardTemplate7⌝ : ℕ) me opp a)) : ∃ n, EvalGraph n opp me opp a` — guard soundness (via `provable_iff_provable`, `models_of_provable models_TAct`)
+- L89 `theorem guard_Dupoc_iff_guard_Cupod (k : ℕ) : LenBox TAct k (guardCode (⌜guardTemplate7⌝ : ℕ) (Dupoc k) (Cupod k) 0) ↔ LenBox TAct k (guardCode (⌜guardTemplate7⌝ : ℕ) (Cupod k) (Dupoc k) 1)`
 - **L99 `theorem red_cell (k : ℕ) : EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph 2 (Cupod k) (Dupoc k) (Cupod k) 0`** — Dupoc plays `1` (= D) vs Cupod, Cupod plays `0` (= C) vs Dupoc, every shared `k`, fuel `2`.
 - L123 `theorem red_cell_unique (k n : ℕ) {a b : ℕ} (ha : EvalGraph n (Dupoc k) (Cupod k) (Dupoc k) a) (hb : EvalGraph n (Cupod k) (Dupoc k) (Cupod k) b) : a = 1 ∧ b = 0`
 
@@ -648,15 +648,15 @@ plus `ProgList (nil | cons)`, `VoteList (nil | cons : Nat → Prog → VoteList 
 
 ### ArithS code-level constructors (Prog.lean:29–35) and their status
 
-| Engine ctor | ArithS code | `IsShape` arm | `relabel`/`swapcode` clause | `EvalFix.Phi` clause (Eval.lean:33) | `EvalGraph.*_iff` |
+| Engine ctor | ArithS code | `IsShape` arm | `revalue`/`transposeCode` clause | `EvalFix.Phi` clause (Eval.lean:33) | `EvalGraph.*_iff` |
 |---|---|---|---|---|---|
-| `.const a` | `pConst a = ⟪0,a⟫+1` | yes | `pConst (relabelAct a u w)` | **yes** (arm 1) | `const_iff` |
+| `.const a` | `pConst a = ⟪0,a⟫+1` | yes | `pConst (revalueAction a u w)` | **yes** (arm 1) | `const_iff` |
 | `.self` | `pSelf = ⟪1,0⟫+1` | yes | fixed | **yes** (arm 2: runs `me` in same frame) | `self_iff` |
 | `.opp` | `pOpp = ⟪2,0⟫+1` | yes | fixed | **yes** (arm 3: runs `opp` in same frame) | `opp_iff` |
-| `.bot p` | `pBot p = ⟪3,p⟫+1` | yes | `pBot (relabel p)` | **yes** (arm 4) | `bot_iff` |
-| `.sim p q` | `pSim p q = ⟪4,p,q⟫+1` | yes | `pSim (relabel p) (relabel q)` | **NO clause** — code exists, relabel descends, but `EvalFix.Phi` has no `pSim` arm; `EvalGraph.sim_iff : ¬EvalGraph (n+1) me opp (pSim p q) a` (EvalN.lean:42). Eval.lean doc L14–15: "the engine substitutes the frame into `p`, `q` first, which needs a program-substitution function — deferred generalisation". No `subst` on program codes exists in ArithS. | `sim_iff` (negative) |
-| `.ite b a p q` | `pIte b a p q = ⟪5,b,a,p,q⟫+1` | yes | `pIte (relabel b) (relabelAct a) (relabel p) (relabel q)` | **yes** (arm 5: `r ≠ a'` else-branch, matches engine `if r == a`) | `ite_iff` |
-| `.search k φ p q` | `pSearch k g a p q = ⟪6,k,g,a,p,q⟫+1` | yes | `pSearch k g (relabelAct a) (relabel p) (relabel q)` (k, g untouched) | **yes** (arm 6) | `search_iff` |
+| `.bot p` | `pBot p = ⟪3,p⟫+1` | yes | `pBot (revalue p)` | **yes** (arm 4) | `bot_iff` |
+| `.sim p q` | `pSim p q = ⟪4,p,q⟫+1` | yes | `pSim (revalue p) (revalue q)` | **NO clause** — code exists, revalue descends, but `EvalFix.Phi` has no `pSim` arm; `EvalGraph.sim_iff : ¬EvalGraph (n+1) me opp (pSim p q) a` (EvalN.lean:42). Eval.lean doc L14–15: "the engine substitutes the frame into `p`, `q` first, which needs a program-substitution function — deferred generalisation". No `subst` on program codes exists in ArithS. | `sim_iff` (negative) |
+| `.ite b a p q` | `pIte b a p q = ⟪5,b,a,p,q⟫+1` | yes | `pIte (revalue b) (revalueAction a) (revalue p) (revalue q)` | **yes** (arm 5: `r ≠ a'` else-branch, matches engine `if r == a`) | `ite_iff` |
+| `.search k φ p q` | `pSearch k g a p q = ⟪6,k,g,a,p,q⟫+1` | yes | `pSearch k g (revalueAction a) (revalue p) (revalue q)` (k, g untouched) | **yes** (arm 6) | `search_iff` |
 | `.tvote v θ p q` | **none** | — | — | — | — |
 | `.sys defs i` | **none** | — | — | — | — |
 | `.selfIdx j` | **none** | — | — | — | — |
@@ -669,41 +669,41 @@ Fuel: engine `eval 0 _ _ _ = none`; ArithS `EvalGraph.zero_iff : ¬EvalGraph 0 m
 Engine (Dynamics.lean:34–37): `| .search k φ p q => if proofSearch k (φ.subst me opponent) then eval n me opponent p else eval n me opponent q`, where `φ : Formula` (an arbitrary DSL formula, closed by `Formula.subst me opponent`) and `proofSearch k φ := decide (Pf k φ)`.
 
 ArithS `pSearch k g a p q` stores FIVE components (Prog.lean:35):
-- `k` — the proof-length budget (an element of `V`, passed as the first argument of `LenProvableV TAct k _` — object-level, NOT `ℕ`);
-- `g` — a **formula CODE** of an ℒₒᵣ/LAct semisentence with 7 free variables (the "template"); in the red cell it is `⌜Gtmpl⌝ : ℕ` (RedCell.lean:29,32);
+- `k` — the proof-length budget (an element of `V`, passed as the first argument of `LenBox TAct k _` — object-level, NOT `ℕ`);
+- `g` — a **formula CODE** of an ℒₒᵣ/LAct semisentence with 7 free variables (the "template"); in the red cell it is `⌜guardTemplate7⌝ : ℕ` (RedCell.lean:29,32);
 - `a` — the action value (`0 = C`, `1 = D`) that the guard asserts "opp plays `a` against me";
 - `p`, `q` — then/else sub-programs.
 
-Evaluation (Eval.lean:41–44): `LenProvableV TAct k (guardCode g me opp a')` decides the branch, where `guardCode g me opp a' = subst LAct (descVec me opp a') g` (Guard.lean:147). So the only guard FORM available is "the 7-variable template `g` instantiated at the canonical descriptions of `(me, opp)` and action `a`" — the engine's `Formula.plays/impl/neg/box/eq/diag` structure has NO counterpart; there is no ArithS code-level `Formula` type at all. The template `g` is arbitrary as a code (any `g` is a valid `pSearch` component and `IsShape` accepts any `g < x`), but only `Gtmpl` (= "opp plays `t` against me", the `.plays .opp .self a` guard of DupocBot/CupodBot) has a meta sentence, code equation, swap equation and truth equation (Template.lean). `guardCode` substitutes the description vector positionally: variable `#0 ↦ numeral (dnum me)`, `#1 ↦ dU me`, `#2 ↦ dW me`, `#3 ↦ numeral (dnum opp)`, `#4 ↦ dU opp`, `#5 ↦ dW opp`, `#6 ↦ actTermCode a` (Guard.lean:143–147).
+Evaluation (Eval.lean:41–44): `LenBox TAct k (guardCode g me opp a')` decides the branch, where `guardCode g me opp a' = subst LAct (descriptions me opp a') g` (Guard.lean:147). So the only guard FORM available is "the 7-variable template `g` instantiated at the canonical descriptions of `(me, opp)` and action `a`" — the engine's `Formula.plays/impl/neg/box/eq/diag` structure has NO counterpart; there is no ArithS code-level `Formula` type at all. The template `g` is arbitrary as a code (any `g` is a valid `pSearch` component and `IsShape` accepts any `g < x`), but only `guardTemplate7` (= "opp plays `t` against me", the `.plays .opp .self a` guard of DupocBot/CupodBot) has a meta sentence, code equation, swap equation and truth equation (Template.lean). `guardCode` substitutes the description vector positionally: variable `#0 ↦ numeral (canonical me)`, `#1 ↦ revalueU me`, `#2 ↦ revalueW me`, `#3 ↦ numeral (canonical opp)`, `#4 ↦ revalueU opp`, `#5 ↦ revalueW opp`, `#6 ↦ actTermCode a` (Guard.lean:143–147).
 
-### How `guardCode` / `descVec` / canonical descriptions work
+### How `guardCode` / `descriptions` / canonical descriptions work
 
-- A program code `x` is described by the triple `(numeral (dnum x), dU x, dW x)` meaning `relabel (dU x) (dW x) (dnum x) = x` (Template.lean:259 `relabel_val_desc`, at the standard model `stdAct` where `c_C ↦ 0`, `c_D ↦ 1`):
-  - `dnum x = if x ≤ swapcode x then x else swapcode x` (Guard.lean:47) — the canonical (smaller) representative of the τ-orbit `{x, swapcode x}`, inserted as a NUMERAL;
-  - `dU x` / `dW x` (Guard.lean:50,54): if `x < swapcode x` then `(c_C, c_D)` (`csym 0, csym 1`); if `swapcode x < x` then `(c_D, c_C)`; on a tie `(numeral 0, numeral 1)`.
+- A program code `x` is described by the triple `(numeral (canonical x), revalueU x, revalueW x)` meaning `revalue (revalueU x) (revalueW x) (canonical x) = x` (Template.lean:259 `revalue_val_desc`, at the standard model `stdReadingNat` where `c_C ↦ 0`, `c_D ↦ 1`):
+  - `canonical x = if x ≤ transposeCode x then x else transposeCode x` (Guard.lean:47) — the canonical (smaller) representative of the τ-orbit `{x, transposeCode x}`, inserted as a NUMERAL;
+  - `revalueU x` / `revalueW x` (Guard.lean:50,54): if `x < transposeCode x` then `(c_C, c_D)` (`csym 0, csym 1`); if `transposeCode x < x` then `(c_D, c_C)`; on a tie `(numeral 0, numeral 1)`.
   - `csym u = ^func 0 (2 + u) 0` (Guard.lean:34) is the term code of the LAct constant with symbol code `2 + u` (`encode_const_C = 2`, `encode_const_D = 3`, LangAct.lean:94–95).
   - `actTermCode a = if a = 0 then csym 0 else if a = 1 then csym 1 else numeral a` (Guard.lean:58).
-- `swap : LAct →ᵥ LAct` exchanges `c_C ↔ c_D` syntactically, so `lMap swap` sends the description of `x` to the description of `swapcode x` and `actT a` to `actT (swapAct a)` (Template.lean:107–133), whence `lMap_swap_guardSentence` (Template.lean:138). This is what makes the τ-argument work WITHOUT numerals being swapped (numerals are `swap`-invariant: `lMap_swap_numT`).
-- All of `csym, dnum, dU, dW, actTermCode, descVec, guardCode` are Σ₁-definable with graphs `csymGraph, dnumGraph (via relabelDef s 1 0 x), dUGraph, dWGraph, actTermCodeGraph, descVecGraph, guardCodeGraph (via substsGraph LAct)`.
-- Meta side (Template.lean): `numT k`, `dnumT x`, `dUT x`, `dWT x`, `actT a : ClosedSemiterm LAct 0`; `descTerms me opp a : Fin 7 → ClosedSemiterm LAct 0`; `guardSentence me opp a := Gtmpl ⇜ descTerms me opp a`; code equation `⌜guardSentence me opp a⌝ = guardCode ⌜Gtmpl⌝ me opp a` (ℕ only); truth equation `ℕ↓[LAct] ⊧ guardSentence me opp a ↔ ∃ n, EvalGraph n opp me opp a`.
+- `swap : LAct →ᵥ LAct` exchanges `c_C ↔ c_D` syntactically, so `lMap swap` sends the description of `x` to the description of `transposeCode x` and `actT a` to `actT (swapAction a)` (Template.lean:107–133), whence `lMap_swap_guardSentence` (Template.lean:138). This is what makes the τ-argument work WITHOUT numerals being swapped (numerals are `swap`-invariant: `lMap_swap_numT`).
+- All of `csym, canonical, revalueU, revalueW, actTermCode, descriptions, guardCode` are Σ₁-definable with graphs `csymGraph, canonicalGraph (via revalueDef s 1 0 x), revalueUGraph, revalueWGraph, actTermCodeGraph, descriptionsGraph, guardCodeGraph (via substsGraph LAct)`.
+- Meta side (Template.lean): `numT k`, `canonicalMeta x`, `revalueUMeta x`, `revalueWMeta x`, `actT a : ClosedSemiterm LAct 0`; `descriptionTerms me opp a : Fin 7 → ClosedSemiterm LAct 0`; `guardSentence me opp a := guardTemplate7 ⇜ descriptionTerms me opp a`; code equation `⌜guardSentence me opp a⌝ = guardCode ⌜guardTemplate7⌝ me opp a` (ℕ only); truth equation `ℕ↓[LAct] ⊧ guardSentence me opp a ↔ ∃ n, EvalGraph n opp me opp a`.
 
-### `LenProvableV` / `LenProvable` / `ProvableLen` / `fbound`
+### `LenBox` / `LenBoxNat` / `ProvableLen` / `codeBound`
 
-- `LenProvable (f : V → V) (k : ℕ) (T : Theory L) [T.Δ₁] (φ : V) : Prop := ∃ d < f (numeral k), Proof T d φ ∧ dlen T d ≤ numeral k` (Bew.lean:35) — meta budget `k : ℕ`, parametric bound `f`; Π₁-defined by `lenProvable T fDef k : 𝚷₁.Semisentence 1` (Bew.lean:40); `lenProvabilityPred T fDef k σ := (lenProvable T fDef k).val/[⌜σ⌝]` is the sentence `□_k σ`.
-- `LenProvableV (T) (k φ : V) : Prop := ∃ d < fbound k, Proof T d φ ∧ dlen T d ≤ k` (BewV.lean:23) — budget as an OBJECT variable, bound fixed to `fbound`; Δ₁-defined by `lenProvableV T : 𝚫₁.Semisentence 2`; `lenProvableV_numeral : LenProvableV T (numeral k) φ ↔ LenProvable fbound k T φ := Iff.rfl`; at ℕ `lenProvableV_nat` (RedCell.lean:74). This is what `EvalFix.Phi`'s search arm consults, with `T := TAct`.
-- `ProvableLen (T : Theory LAct) [T.Δ₁] (k : ℕ) (φ : Proposition LAct) : Prop := ∃ d : ℕ, Proof T d ⌜φ⌝ ∧ dlen T d ≤ k` (Symmetry.lean:25) — the code-bound-FREE reading at ℕ; τ-closure `provableLen_swap_iff`.
-- `fbound (k : V) : V := Exp.exp (Exp.exp (Exp.exp (12 * k))) + 1` (Proper.lean:581), `fbound_nat : fbound k = F (12 * k) + 1` with `F s = 2^(2^(2^s))`; Σ₁ graph `fboundDef`. Properness: `proper_of_small (hL : SmallCodes L) (hR : SmallRelCodes L) (b : T ⊢! σ) (h : dlen T ⌜b⌝ ≤ k) : ⌜b⌝ < fbound k` — hence the code bound never bites for `ℒₒᵣ` (`smallCodes_LOR`) or `LAct` (`smallCodes_LAct`, `smallRelCodes_LAct`), and `lenProvable_fbound_swap_iff` (Symmetry.lean:69) holds for `LenProvable fbound k TAct` on sentence codes.
-- `dlen T d` (DerivationLength.lean:389): `Classical.choose!` of the Δ₁ graph `DlenGraph L d n` (Fixpoint on `⟪d, n⟫`, `StrongFinite`), `0` on non-derivations; cost model per node = `setLen L s + 1` (+ sub-lengths, + `termLen L t` at `exsIntro`); meta twin `mlen` with bridge `dlen_quote : dlen T ⌜d⌝ = mlen d` (ℕ).
+- `LenBoxNat (f : V → V) (k : ℕ) (T : Theory L) [T.Δ₁] (φ : V) : Prop := ∃ d < f (numeral k), Proof T d φ ∧ proofLen T d ≤ numeral k` (Bew.lean:35) — meta budget `k : ℕ`, parametric bound `f`; Π₁-defined by `lenBoxNat T fDef k : 𝚷₁.Semisentence 1` (Bew.lean:40); `lenProvabilityPred T fDef k σ := (lenBoxNat T fDef k).val/[⌜σ⌝]` is the sentence `□_k σ`.
+- `LenBox (T) (k φ : V) : Prop := ∃ d < codeBound k, Proof T d φ ∧ proofLen T d ≤ k` (BewV.lean:23) — budget as an OBJECT variable, bound fixed to `codeBound`; Δ₁-defined by `lenBox T : 𝚫₁.Semisentence 2`; `lenBox_numeral : LenBox T (numeral k) φ ↔ LenBoxNat codeBound k T φ := Iff.rfl`; at ℕ `lenBox_nat` (RedCell.lean:74). This is what `EvalFix.Phi`'s search arm consults, with `T := TAct`.
+- `ProvableLen (T : Theory LAct) [T.Δ₁] (k : ℕ) (φ : Proposition LAct) : Prop := ∃ d : ℕ, Proof T d ⌜φ⌝ ∧ proofLen T d ≤ k` (Symmetry.lean:25) — the code-bound-FREE reading at ℕ; τ-closure `provableLen_swap_iff`.
+- `codeBound (k : V) : V := Exp.exp (Exp.exp (Exp.exp (12 * k))) + 1` (Proper.lean:581), `codeBound_nat : codeBound k = F (12 * k) + 1` with `F s = 2^(2^(2^s))`; Σ₁ graph `codeBoundDef`. Properness: `properPlayer_of_small (hL : SmallCodes L) (hR : SmallRelCodes L) (b : T ⊢! σ) (h : proofLen T ⌜b⌝ ≤ k) : ⌜b⌝ < codeBound k` — hence the code bound never bites for `ℒₒᵣ` (`smallCodes_LOR`) or `LAct` (`smallCodes_LAct`, `smallRelCodes_LAct`), and `lenBoxNat_swap_iff` (Symmetry.lean:69) holds for `LenBoxNat codeBound k TAct` on sentence codes.
+- `proofLen T d` (DerivationLength.lean:389): `Classical.choose!` of the Δ₁ graph `ProofLenGraph L d n` (Fixpoint on `⟪d, n⟫`, `StrongFinite`), `0` on non-derivations; cost model per node = `sequentLen L s + 1` (+ sub-lengths, + `termLen L t` at `exsIntro`); meta twin `proofLenMeta` with bridge `proofLen_quote : proofLen T ⌜d⌝ = proofLenMeta d` (ℕ).
 
 ### `TAct` / `LAct` / `swap`
 
 - `LAct : Language := ℒₒᵣ + Language.constant Act` (LangAct.lean:26), `Act := C | D`; hand-written `Encodable` keeping ℒₒᵣ codes and `c_C ↦ 2`, `c_D ↦ 3`; `LAct.LORDefinable` instance with `func := “k f. (k = 0 ∧ f = 0) ∨ (k = 0 ∧ f = 1) ∨ (k = 0 ∧ f = 2) ∨ (k = 0 ∧ f = 3) ∨ (k = 2 ∧ f = 0) ∨ (k = 2 ∧ f = 1)”`, `rel := “k r. (k = 2 ∧ r = 0) ∨ (k = 2 ∧ r = 1)”`; `Language.ORing LAct` instance; `emb : ℒₒᵣ →ᵥ LAct := Language.Hom.add₁ _ _`.
 - `swap : LAct →ᵥ LAct` (LangAct.lean:155): `func`: `Sum.inl f ↦ Sum.inl f`, `const C ↦ const D`, `const D ↦ const C`; `rel r := r`. Involution on symbols (`swap_swap_func`), on terms/formulas (`term_lMap_swap_swap`, `lMap_swap_swap`), injective (`lMap_swap_injective`), fixes the ℒₒᵣ image (`lMap_swap_emb`).
-- `TAct : Theory LAct := insert axNe (insert axNe' (Theory.lMap emb 𝗣𝗔))` (TheoryAct.lean:56), `axNe = nrel eq ![cterm C, cterm D]`, `axNe' = nrel eq ![cterm D, cterm C]`; `cterm a := Semiterm.func (const a) ![]`. Δ₁ instance `embPA_delta1` with `ch := isFormulaOR ⋏ Theory.Δ₁ch 𝗣𝗔`; `noncomputable instance : TAct.Δ₁`. Literally closed under swap (`lMap_swap_mem_TAct`). Standard model `stdAct : Structure LAct ℕ` (`c_C ↦ 0`, `c_D ↦ 1`), `models_TAct : ℕ↓[LAct] ⊧* TAct` (RedCell.lean:62).
+- `TAct : Theory LAct := insert constNe (insert constNe' (Theory.lMap emb 𝗣𝗔))` (TheoryAct.lean:56), `constNe = nrel eq ![cterm C, cterm D]`, `constNe' = nrel eq ![cterm D, cterm C]`; `cterm a := Semiterm.func (const a) ![]`. Δ₁ instance `embPA_delta1` with `ch := isFormulaOR ⋏ Theory.Δ₁ch 𝗣𝗔`; `noncomputable instance : TAct.Δ₁`. Literally closed under swap (`lMap_swap_mem_TAct`). Standard model `stdReadingNat : Structure LAct ℕ` (`c_C ↦ 0`, `c_D ↦ 1`), `models_TAct : ℕ↓[LAct] ⊧* TAct` (RedCell.lean:62).
 
 ### Other observations relevant to M3
 
-- `Gtmpl`'s body is Σ₁ (`∃ me, ∃ opp, ∃ n, …`); its instantiated guard is a Σ₁ LAct-sentence about `EvalGraph`. There is no arithmetized `Pf`/box/Löb layer: provability in ArithS is Foundation's `Proof TAct d φ` + `dlen`, not a mirror of the engine's 33-constructor `Pf`.
-- No transfer theorem (`Pf k φ → LenProvableV …` or converse) exists anywhere in `arith/`; the engine is never imported (lakefile comment: "the engine is required only from milestone M3").
-- The description scheme depends on `<` comparing `x` and `swapcode x` on `V`; `dnum/dU/dW` are defined for general `V` but `dnumT/dUT/dWT/actT/guardSentence` and all `quote_*`/truth lemmas are ℕ-only.
+- `guardTemplate7`'s body is Σ₁ (`∃ me, ∃ opp, ∃ n, …`); its instantiated guard is a Σ₁ LAct-sentence about `EvalGraph`. There is no arithmetized `Pf`/box/Löb layer: provability in ArithS is Foundation's `Proof TAct d φ` + `proofLen`, not a mirror of the engine's 33-constructor `Pf`.
+- No transfer theorem (`Pf k φ → LenBox …` or converse) exists anywhere in `arith/`; the engine is never imported (lakefile comment: "the engine is required only from milestone M3").
+- The description scheme depends on `<` comparing `x` and `transposeCode x` on `V`; `canonical/revalueU/revalueW` are defined for general `V` but `canonicalMeta/revalueUMeta/revalueWMeta/actT/guardSentence` and all `quote_*`/truth lemmas are ℕ-only.
 - Stale docs to be aware of: Prog.lean L13 (five-tuple `pSearch`), EvalN.lean L7 (`evalN` does not exist).

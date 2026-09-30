@@ -46,15 +46,15 @@ NEW_ROWS = [
  ('introShift', ['e', 'ss', 'c', 'd'],
   [A('fstIdx', 'c', 'd'), A('setShiftG', 'ss', 'c'), A('deriv', 'd'), A('shiftRule', 'e', 'ss', 'd')],
   A('deriv', 'e')),
- # Nodes: dlen rows
- ('dlenAll', ['l', 'n', 'd', 'p', 's', 'e'],
-  [A('allIntro', 'e', 's', 'p', 'd'), A('dlen', 'd', 'n'), A('setLen', 'l', 's')], A('dlen', 'e', S(P('l', 'n')))),
- ('dlenExs', ['lt', 'l', 'n', 'd', 't', 'p', 's', 'e'],
-  [A('exsIntro', 'e', 's', 'p', 't', 'd'), A('dlen', 'd', 'n'), A('setLen', 'l', 's'), A('tlenG', 'lt', 't')],
-  A('dlen', 'e', S(P(P('l', 'lt'), 'n')))),
- ('dlenShift', ['l', 'n', 'd', 's', 'e'],
-  [A('shiftRule', 'e', 's', 'd'), A('dlen', 'd', 'n'), A('setLen', 'l', 's')], A('dlen', 'e', S(P('l', 'n')))),
- ('dlenAxm', ['l', 'p', 's', 'e'], [A('axm', 'e', 's', 'p'), A('setLen', 'l', 's')], A('dlen', 'e', S('l'))),
+ # Nodes: proofLen rows
+ ('proofLenAll', ['l', 'n', 'd', 'p', 's', 'e'],
+  [A('allIntro', 'e', 's', 'p', 'd'), A('proofLen', 'd', 'n'), A('sequentLen', 'l', 's')], A('proofLen', 'e', S(P('l', 'n')))),
+ ('proofLenExs', ['lt', 'l', 'n', 'd', 't', 'p', 's', 'e'],
+  [A('exsIntro', 'e', 's', 'p', 't', 'd'), A('proofLen', 'd', 'n'), A('sequentLen', 'l', 's'), A('termLenMetaG', 'lt', 't')],
+  A('proofLen', 'e', S(P(P('l', 'lt'), 'n')))),
+ ('proofLenShift', ['l', 'n', 'd', 's', 'e'],
+  [A('shiftRule', 'e', 's', 'd'), A('proofLen', 'd', 'n'), A('sequentLen', 'l', 's')], A('proofLen', 'e', S(P('l', 'n')))),
+ ('proofLenAxm', ['l', 'p', 's', 'e'], [A('axm', 'e', 's', 'p'), A('sequentLen', 'l', 's')], A('proofLen', 'e', S('l'))),
  # Sets / prologue plumbing
  ('introAxm', ['e', 'p', 's'],
   [A('fsetPi', 's'), A('mem', 'p', 's'), A('axch', 'p'), A('axm', 'e', 's', 'p')], A('deriv', 'e')),
@@ -304,8 +304,8 @@ for name in TABLE:
     E('')
 
 # ---- the Frag1 rows Frag2 uses, transferred to the Frag2 pieces
-FRAG1_USED = ['leRefl', 'leTrans', 'dlenLeafLe', 'dlenUnaryLe', 'dlenBinaryLe', 'congFstIdx',
-              'introAxm', 'fstIdxAxm', 'dlenAxm2']
+FRAG1_USED = ['leRefl', 'leTrans', 'proofLenLeafLe', 'proofLenUnaryLe', 'proofLenBinaryLe', 'congFstIdx',
+              'introAxm', 'fstIdxAxm', 'proofLenAxm2']
 # `introAxm`/`fstIdxAxm` live in Frag1Rows? — resolved below by presence test
 frag1 = open('ArithS/Necessitation/Frag1Rows.lean').read()
 FRAG1_USED = [n for n in FRAG1_USED if ('lemma fok_%s ' % n) in frag1]
@@ -328,7 +328,7 @@ for name in FRAG1_USED:
     E('')
 # the layout rows Frag2 uses, transferred
 LAYOUT_USED = ['eqRefl', 'eqSymm', 'insertTotalC', 'memInsertSelfC', 'subsetInsertC', 'subsetTransC',
-               'subsetMemC', 'emptySubsetC', 'isFormulaSetInsertC', 'fsetSigmaPiC', 'setLenTotalC',
+               'subsetMemC', 'emptySubsetC', 'isFormulaSetInsertC', 'fsetSigmaPiC', 'sequentLenTotalC',
                'subsetReflC', 'subsetAntisymm', 'congMem']
 E('/-! ### The layout rows Frag2 uses, read from the Frag2 pieces -/')
 E('')
@@ -362,7 +362,7 @@ head = '''import ArithS.Necessitation.Frag1Rows
    with their `quote_row_`/`inst_` lemmas (the originals in `Lib/Nodes.lean`, `Lib/Sets.lean`,
    `Lib/Frag.lean`; blocks produced by `gen_frag.py`'s `gen_row`, same names, same DSL): the
    totalities `totAllIntro`/`totExsIntro`/`totShiftRule`/`totAxm`, the `introAll`/`introExs`/
-   `introShift` and `dlenAll`/`dlenExs`/`dlenShift`/`dlenAxm` node rows, and the sequent plumbing
+   `introShift` and `proofLenAll`/`proofLenExs`/`proofLenShift`/`proofLenAxm` node rows, and the sequent plumbing
    `setShiftTotal`, `shiftMemSetShift`.
 2. The fragment-2 table: `frag2Rows := frag1Rows ++ frag2ExtraRows` — Frag1's 126 rows at their
    indices, then the rows above and the `fstIdx<Tag>`/`setShift*`/congruence rows of `RowInstB` at

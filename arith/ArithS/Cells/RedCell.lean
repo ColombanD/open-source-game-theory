@@ -34,31 +34,31 @@ noncomputable def Dupoc (k : ℕ) : ℕ := pSearch k (⌜guardTemplate 0⌝ : �
 (the template instance `guardTemplate 1`, "opp plays `D` against me"). -/
 noncomputable def Cupod (k : ℕ) : ℕ := pSearch k (⌜guardTemplate 1⌝ : ℕ) (pConst 1) (pConst 0)
 
-lemma swapAct_zero : swapAct (0 : ℕ) = 1 := by simp [relabelAct]
-lemma swapAct_one : swapAct (1 : ℕ) = 0 := by simp [relabelAct]
+lemma swapAction_zero : swapAction (0 : ℕ) = 1 := by simp [revalueAction]
+lemma swapAction_one : swapAction (1 : ℕ) = 0 := by simp [revalueAction]
 
 /-- `Cupod` is the transposition of `Dupoc`: τ swaps the constants in the stored template
-(`relabelTemplate_quote_GtmplA`) and the two action values. -/
-theorem swapcode_Dupoc (k : ℕ) : swapcode (Dupoc k) = Cupod k := by
-  unfold Dupoc Cupod swapcode
-  rw [relabel_search, relabel_const, relabel_const, relabelTemplate_quote_GtmplA, swapAct_zero]
-  simp [relabelAct]
+(`revalueTemplate_quote_GtmplA`) and the two action values. -/
+theorem transposeCode_Dupoc (k : ℕ) : transposeCode (Dupoc k) = Cupod k := by
+  unfold Dupoc Cupod transposeCode
+  rw [revalue_search, revalue_const, revalue_const, revalueTemplate_quote_GtmplA, swapAction_zero]
+  simp [revalueAction]
 
-theorem swapcode_Cupod (k : ℕ) : swapcode (Cupod k) = Dupoc k := by
-  rw [← swapcode_Dupoc, swapcode_swapcode]
+theorem transposeCode_Cupod (k : ℕ) : transposeCode (Cupod k) = Dupoc k := by
+  rw [← transposeCode_Dupoc, transposeCode_transposeCode]
 
 /-! ### `ℕ` is a model of `TAct` -/
 
-lemma models_axNe : ℕ↓[LAct] ⊧ axNe := by
+lemma models_constNe : ℕ↓[LAct] ⊧ constNe := by
   rw [models_iff]
-  unfold axNe Semiformula.Realize
+  unfold constNe Semiformula.Realize
   simp [Semiformula.eval_nrel, cterm]
   change ¬((0 : ℕ) = 1)
   decide
 
-lemma models_axNe' : ℕ↓[LAct] ⊧ axNe' := by
+lemma models_constNe' : ℕ↓[LAct] ⊧ constNe' := by
   rw [models_iff]
-  unfold axNe' Semiformula.Realize
+  unfold constNe' Semiformula.Realize
   simp [Semiformula.eval_nrel, cterm]
   change ¬((1 : ℕ) = 0)
   decide
@@ -67,45 +67,45 @@ instance models_TAct : ℕ↓[LAct] ⊧* TAct := by
   rw [models_theory_iff]
   intro φ hφ
   rcases hφ with rfl | rfl | rfl | rfl | ⟨σ, hσ, rfl⟩
-  · exact models_axAct
-  · exact models_axAct'
-  · exact models_axNe
-  · exact models_axNe'
+  · exact models_actionAxiom
+  · exact models_actionAxiom'
+  · exact models_constNe
+  · exact models_constNe'
   · rw [models_lMap_emb]
     exact Theory.models ℕ 𝗣𝗔 hσ
 
 /-! ### From the guard predicate to the evaluator -/
 
-/-- The internal guard predicate at a meta budget is `LenProvable fbound`. -/
-lemma lenProvableV_nat (k φ : ℕ) :
-    LenProvableV TAct k φ ↔ LenProvable (fbound : ℕ → ℕ) k TAct φ := by
-  have := lenProvableV_numeral (V := ℕ) TAct k φ
+/-- The internal guard predicate at a meta budget is `LenBoxNat codeBound`. -/
+lemma lenBox_nat (k φ : ℕ) :
+    LenBox TAct k φ ↔ LenBoxNat (codeBound : ℕ → ℕ) k TAct φ := by
+  have := lenBox_numeral (V := ℕ) TAct k φ
   rwa [Nat.numeral_eq] at this
 
-/-- Bounded D2 in rule form for the object-variable predicate `LenProvableV` at `ℕ`
-(`ArithS.Cut.lenProvable_mp` through `lenProvableV_nat`). -/
-theorem lenProvableV_mp {k₁ k₂ : ℕ} {φ ψ : Sentence LAct}
-    (h₁ : LenProvableV TAct k₁ (⌜φ 🡒 ψ⌝ : ℕ)) (h₂ : LenProvableV TAct k₂ (⌜φ⌝ : ℕ)) :
-    LenProvableV TAct (k₁ + k₂ + 10 * (flen (φ : Proposition LAct) + flen (ψ : Proposition LAct)) + 9)
+/-- Bounded D2 in rule form for the object-variable predicate `LenBox` at `ℕ`
+(`ArithS.Cut.lenBoxNat_mp` through `lenBox_nat`). -/
+theorem lenBox_mp_nat {k₁ k₂ : ℕ} {φ ψ : Sentence LAct}
+    (h₁ : LenBox TAct k₁ (⌜φ 🡒 ψ⌝ : ℕ)) (h₂ : LenBox TAct k₂ (⌜φ⌝ : ℕ)) :
+    LenBox TAct (k₁ + k₂ + 10 * (formulaLenMeta (φ : Proposition LAct) + formulaLenMeta (ψ : Proposition LAct)) + 9)
       (⌜ψ⌝ : ℕ) := by
-  rw [lenProvableV_nat] at h₁ h₂ ⊢
-  exact lenProvable_mp h₁ h₂
+  rw [lenBox_nat] at h₁ h₂ ⊢
+  exact lenBoxNat_mp h₁ h₂
 
 /-- **Soundness of the guard**: if the guard is found, it is true. -/
 theorem evalGraph_of_guard {k me opp a : ℕ}
-    (h : LenProvableV TAct k (guardCode (⌜guardTemplate a⌝ : ℕ) me opp)) :
+    (h : LenBox TAct k (guardCode (⌜guardTemplate a⌝ : ℕ) me opp)) :
     ∃ n, EvalGraph n opp me opp a := by
-  rw [← quote_guardSentenceA, lenProvableV_nat] at h
-  have hp : TAct ⊢ guardSentenceA a me opp := provable_iff_provable.mp h.provable
-  exact (models_guardSentenceA_iff a me opp).mp (models_of_provable models_TAct hp)
+  rw [← quote_guardSentence, lenBox_nat] at h
+  have hp : TAct ⊢ guardSentence a me opp := provable_iff_provable.mp h.provable
+  exact (models_guardSentence_iff a me opp).mp (models_of_provable models_TAct hp)
 
 /-- **Symmetry of the guards**: Dupoc's guard against Cupod is found iff Cupod's guard against
 Dupoc is. -/
 theorem guard_Dupoc_iff_guard_Cupod (k : ℕ) :
-    LenProvableV TAct k (guardCode (⌜guardTemplate 0⌝ : ℕ) (Dupoc k) (Cupod k)) ↔
-    LenProvableV TAct k (guardCode (⌜guardTemplate 1⌝ : ℕ) (Cupod k) (Dupoc k)) := by
-  rw [← quote_guardSentenceA, ← quote_guardSentenceA, lenProvableV_nat, lenProvableV_nat,
-    lenProvable_fbound_swap_iff, lMap_swap_guardSentenceA, swapcode_Dupoc, swapcode_Cupod, swapAct_zero]
+    LenBox TAct k (guardCode (⌜guardTemplate 0⌝ : ℕ) (Dupoc k) (Cupod k)) ↔
+    LenBox TAct k (guardCode (⌜guardTemplate 1⌝ : ℕ) (Cupod k) (Dupoc k)) := by
+  rw [← quote_guardSentence, ← quote_guardSentence, lenBox_nat, lenBox_nat,
+    lenBoxNat_swap_iff, lMap_swap_guardSentence, transposeCode_Dupoc, transposeCode_Cupod, swapAction_zero]
 
 /-! ### The theorem -/
 
@@ -113,7 +113,7 @@ theorem guard_Dupoc_iff_guard_Cupod (k : ℕ) :
 `Dupoc k`, at every shared budget `k` (fuel `2` suffices). -/
 theorem red_cell (k : ℕ) :
     EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph 2 (Cupod k) (Dupoc k) (Cupod k) 0 := by
-  have hG : ¬LenProvableV TAct k (guardCode (⌜guardTemplate 0⌝ : ℕ) (Dupoc k) (Cupod k)) := by
+  have hG : ¬LenBox TAct k (guardCode (⌜guardTemplate 0⌝ : ℕ) (Dupoc k) (Cupod k)) := by
     intro hD
     have hC := (guard_Dupoc_iff_guard_Cupod k).mp hD
     -- Cupod's guard is true: Dupoc defects against Cupod.
@@ -124,7 +124,7 @@ theorem red_cell (k : ℕ) :
       rw [EvalGraph.search_iff₆ (isSemiformula_quote₆ (guardTemplate 0))]
       exact Or.inl ⟨hD, (EvalGraph.const_iff (n := 0)).mpr rfl⟩
     exact absurd (EvalGraph.unique' hn hcoop) (by decide)
-  have hG' : ¬LenProvableV TAct k (guardCode (⌜guardTemplate 1⌝ : ℕ) (Cupod k) (Dupoc k)) :=
+  have hG' : ¬LenBox TAct k (guardCode (⌜guardTemplate 1⌝ : ℕ) (Cupod k) (Dupoc k)) :=
     fun h ↦ hG ((guard_Dupoc_iff_guard_Cupod k).mpr h)
   constructor
   · show EvalGraph (1 + 1) (Dupoc k) (Cupod k) (pSearch k (⌜guardTemplate 0⌝ : ℕ) (pConst 0) (pConst 1)) 1

@@ -17,19 +17,19 @@ its play certificate, never by the size of its conclusion: `AtomProvable.mk` nee
 `n ≤ k` for the run cost `n`, so `Pf 1 (.plays (.const C) q C)` held for EVERY program `q`
 (`PlaysProof.const` costs `c_leaf = 1`; this is the exception in `Base/Exclusion.pf_size_or_atom`).
 Any arithmetical realization of that atom must WRITE `q` — at least the canonical numeral of
-its code — and a `TAct`-proof is at least as long as its conclusion (`flen_le_of_lenProvable`,
+its code — and a `TAct`-proof is at least as long as its conclusion (`formulaLenMeta_le_of_lenBoxNat`,
 `ArithS.ProofLength`). So for the bot-iterates `q = .bot^n (.const C)`, whose codes have bit
 length `≥ n`, the shortest proof of the realized atom grows without bound while the engine's
 budget stays `1`: no function `e` can make `Pf k φ → TAct ⊢_{e k} tr φ` true.
 
 * `no_budget_keeping_transfer`: the impossibility, PARAMETRIC in the realization `tr` — the
   one hypothesis is that `tr (.plays p q a)` is at least as long as the bit length of the
-  canonical numeral `dnum (pcode q)` of a closed `q`;
-* `size_dnum_le_flen_trAt`: the hypothesis holds for the concrete bounded translation
-  `trAt me opp φ := tmpl φ ⇜ descTerms (pcode me) (pcode opp)` of `ArithS.Code` (the closed
+  canonical numeral `canonical (progCode q)` of a closed `q`;
+* `size_canonical_le_formulaLenMeta_sentenceAt`: the hypothesis holds for the concrete bounded translation
+  `sentenceAt me opp φ := template φ ⇜ descriptionTerms (progCode me) (progCode opp)` of `ArithS.Code` (the closed
   description of `q` is a binary numeral whose length is at least the bit length);
-* `no_budget_keeping_transfer_tmpl` / `no_budget_keeping_transfer_guardCode`: the instance,
-  the second one phrased on the code `guardCode (tcode φ) (pcode me) (pcode opp)` that the
+* `no_budget_keeping_transfer_template` / `no_budget_keeping_transfer_guardCode`: the instance,
+  the second one phrased on the code `guardCode (templateCode φ) (progCode me) (progCode opp)` that the
   arithmetized evaluator actually consults.
 
 This is the precise reason T2 is stated as T2-NEG + T2-AGENT + T2-CORE (roadmap "M3 DESIGN
@@ -58,17 +58,17 @@ noncomputable def pBotIter : ℕ → ℕ → ℕ
   | 0, x => x
   | n + 1, x => pBot (pBotIter n x)
 
-lemma pcode_botIter (n : ℕ) (p : PD.Prog) : pcode (botIter n p) = pBotIter n (pcode p) := by
+lemma progCode_botIter (n : ℕ) (p : PD.Prog) : progCode (botIter n p) = pBotIter n (progCode p) := by
   induction n with
   | zero => rfl
   | succ n ih => simp [botIter, pBotIter, ih]
 
 lemma closedP_botIter_succ (n : ℕ) (p : PD.Prog) : closedP (botIter (n + 1) p) = true := rfl
 
-lemma swapcode_pBotIter (n x : ℕ) : swapcode (pBotIter n x) = pBotIter n (swapcode x) := by
+lemma transposeCode_pBotIter (n x : ℕ) : transposeCode (pBotIter n x) = pBotIter n (transposeCode x) := by
   induction n with
   | zero => rfl
-  | succ n ih => simp [pBotIter, swapcode, ih]
+  | succ n ih => simp [pBotIter, transposeCode, ih]
 
 /-- `pBot` more than doubles: `ppair 3 x + 1 = (3 + x)² + x + 1 > 2x`. -/
 lemma two_mul_lt_pBot (x : ℕ) : 2 * x < pBot x := by
@@ -93,71 +93,71 @@ lemma le_size_pBotIter (n x : ℕ) : n ≤ Nat.size (pBotIter n x) := by
     show n + 1 ≤ Nat.size (pBot (pBotIter n x))
     omega
 
-/-- The canonical numeral of a bot-iterate's code (`dnum`: the smaller of the code and its
+/-- The canonical numeral of a bot-iterate's code (`canonical`: the smaller of the code and its
 transposition, itself a bot-iterate) has bit length at least `n`. -/
-lemma le_size_dnum_pBotIter (n x : ℕ) : n ≤ Nat.size (dnum (pBotIter n x)) := by
-  unfold dnum
+lemma le_size_canonical_pBotIter (n x : ℕ) : n ≤ Nat.size (canonical (pBotIter n x)) := by
+  unfold canonical
   split_ifs with h
   · exact le_size_pBotIter n x
-  · rw [swapcode_pBotIter]; exact le_size_pBotIter n _
+  · rw [transposeCode_pBotIter]; exact le_size_pBotIter n _
 
 /-! ### A binary numeral is at least as long as the bit length it writes -/
 
-/-- The lower bound matching `tlen_bnumT`: `size n ≤ tlen (bnumT n)`. -/
-theorem size_le_tlen_bnumT (n : ℕ) :
-    Nat.size n ≤ tlen (Rew.emb (bnumT n) : SyntacticSemiterm ℒₒᵣ 0) := by
+/-- The lower bound matching `termLenMeta_binNumeralMeta`: `size n ≤ termLenMeta (binNumeralMeta n)`. -/
+theorem size_le_termLenMeta_binNumeralMeta (n : ℕ) :
+    Nat.size n ≤ termLenMeta (Rew.emb (binNumeralMeta n) : SyntacticSemiterm ℒₒᵣ 0) := by
   induction n using Nat.strong_induction_on with
   | _ n ih =>
     rcases n with _ | _ | k
-    · rw [bnumT_zero, tlen_emb_closed_zero, Nat.size_zero]; omega
-    · rw [bnumT_one, tlen_emb_closed_one, Nat.size_one]
+    · rw [binNumeralMeta_zero, termLenMeta_emb_closed_zero, Nat.size_zero]; omega
+    · rw [binNumeralMeta_one, termLenMeta_emb_closed_one, Nat.size_one]
     · have hs : Nat.size (k + 1 + 1) ≤ Nat.size ((k + 1 + 1) / 2) + 1 := by
         rw [Nat.size_le, Nat.pow_succ]
         have := Nat.lt_size_self ((k + 1 + 1) / 2)
         omega
       have ih' := ih ((k + 1 + 1) / 2) (by omega)
       by_cases he : (k + 1 + 1) % 2 = 0
-      · rw [bnumT_even (by omega) he, tlen_emb_closed_mul, tlen_emb_twoT]
+      · rw [binNumeralMeta_even (by omega) he, termLenMeta_emb_closed_mul, termLenMeta_emb_twoT]
         omega
-      · rw [bnumT_odd (by omega) (by omega), tlen_emb_closed_add, tlen_emb_closed_mul, tlen_emb_twoT,
-          tlen_emb_closed_one]
+      · rw [binNumeralMeta_odd (by omega) (by omega), termLenMeta_emb_closed_add, termLenMeta_emb_closed_mul, termLenMeta_emb_twoT,
+          termLenMeta_emb_closed_one]
         omega
 
 /-! ### The realized atom writes the description of its second program -/
 
 /-- A description is longer than its numeral term. -/
-lemma flen_emb_descF_ge {n : ℕ} (X T U W : Semiterm LAct Empty (n + 1)) :
-    tlen (Rew.emb T : SyntacticSemiterm LAct (n + 1)) + 1 ≤
-      flen (Rewriting.emb (descF X T U W) : Semiproposition LAct n) := by
+lemma formulaLenMeta_emb_descF_ge {n : ℕ} (X T U W : Semiterm LAct Empty (n + 1)) :
+    termLenMeta (Rew.emb T : SyntacticSemiterm LAct (n + 1)) + 1 ≤
+      formulaLenMeta (Rewriting.emb (descF X T U W) : Semiproposition LAct n) := by
   unfold descF
   simp only [Rewriting.emb, Rewriting.app_exs, Rew.q_emb, LogicalConnective.HomClass.map_and,
-    Semiformula.rew_rel, flen_exs, flen_and, flen_rel, Fin.sum_univ_two, Matrix.cons_val_zero,
+    Semiformula.rew_rel, formulaLenMeta_exs, formulaLenMeta_and, formulaLenMeta_rel, Fin.sum_univ_two, Matrix.cons_val_zero,
     Matrix.cons_val_one]
   omega
 
-/-- **The concrete translation writes `q`**: for a closed `q`, the sentence `trAt me opp
-(.plays p q a)` is at least as long as the bit length of the canonical numeral of `pcode q`. -/
-theorem size_dnum_le_flen_trAt (me opp p q : PD.Prog) (a : PD.Action) (hq : closedP q = true) :
-    Nat.size (dnum (pcode q)) ≤ flen (Rewriting.emb (trAt me opp (.plays p q a)) : Proposition LAct) := by
-  unfold trAt
-  rw [tmpl_plays]
+/-- **The concrete translation writes `q`**: for a closed `q`, the sentence `sentenceAt me opp
+(.plays p q a)` is at least as long as the bit length of the canonical numeral of `progCode q`. -/
+theorem size_canonical_le_formulaLenMeta_sentenceAt (me opp p q : PD.Prog) (a : PD.Action) (hq : closedP q = true) :
+    Nat.size (canonical (progCode q)) ≤ formulaLenMeta (Rewriting.emb (sentenceAt me opp (.plays p q a)) : Proposition LAct) := by
+  unfold sentenceAt
+  rw [template_plays]
   unfold progGraph
   rw [progAux_of_ne (closedP_ne_self hq) (closedP_ne_opp hq), closedDesc_subst]
   simp only [Rewriting.subst, Rewriting.emb, Rewriting.app_exs, Rew.q_emb, LogicalConnective.HomClass.map_and,
-    rew_descF, rew_cl, flen_exs, flen_and]
-  have hB : tlen (Rew.emb (cl (dnumT (pcode q))) : SyntacticSemiterm LAct 4) + 1 ≤
-      flen ((Rewriting.app Rew.emb) (descF
-        ((Rew.subst (descTerms (pcode me) (pcode opp))).q.q.q.q (Rew.bShift (![#1, #3, #4, #5, #6, #7, #8] 0)))
-        (cl (dnumT (pcode q))) (cl (dUT (pcode q))) (cl (dWT (pcode q))))) := by
-    have h := flen_emb_descF_ge (n := 3)
-      ((Rew.subst (descTerms (pcode me) (pcode opp))).q.q.q.q (Rew.bShift (![#1, #3, #4, #5, #6, #7, #8] 0)))
-      (cl (dnumT (pcode q))) (cl (dUT (pcode q))) (cl (dWT (pcode q)))
+    rew_descF, rew_cl, formulaLenMeta_exs, formulaLenMeta_and]
+  have hB : termLenMeta (Rew.emb (cl (canonicalMeta (progCode q))) : SyntacticSemiterm LAct 4) + 1 ≤
+      formulaLenMeta ((Rewriting.app Rew.emb) (descF
+        ((Rew.subst (descriptionTerms (progCode me) (progCode opp))).q.q.q.q (Rew.bShift (![#1, #3, #4, #5, #6, #7, #8] 0)))
+        (cl (canonicalMeta (progCode q))) (cl (revalueUMeta (progCode q))) (cl (revalueWMeta (progCode q))))) := by
+    have h := formulaLenMeta_emb_descF_ge (n := 3)
+      ((Rew.subst (descriptionTerms (progCode me) (progCode opp))).q.q.q.q (Rew.bShift (![#1, #3, #4, #5, #6, #7, #8] 0)))
+      (cl (canonicalMeta (progCode q))) (cl (revalueUMeta (progCode q))) (cl (revalueWMeta (progCode q)))
     exact h
-  have hT : Nat.size (dnum (pcode q)) ≤ tlen (Rew.emb (cl (dnumT (pcode q))) : SyntacticSemiterm LAct 4) := by
-    rw [tlen_emb_cl]
-    unfold dnumT
-    rw [tlen_emb_lMap_emb]
-    exact size_le_tlen_progTT _
+  have hT : Nat.size (canonical (progCode q)) ≤ termLenMeta (Rew.emb (cl (canonicalMeta (progCode q))) : SyntacticSemiterm LAct 4) := by
+    rw [termLenMeta_emb_cl]
+    unfold canonicalMeta
+    rw [termLenMeta_emb_lMap_emb]
+    exact size_le_termLenMeta_codeTermMeta _
   omega
 
 /-! ### T2-NEG, RETIRED by the re-cost — the witness now pays
@@ -168,12 +168,12 @@ side condition `n ≤ k`, run cost only) this file proved
 ```
 theorem no_budget_keeping_transfer (e : ℕ → ℕ) (tr : PD.Formula → Sentence LAct)
     (htr : ∀ p q a, closedP q = true →
-      Nat.size (dnum (pcode q)) ≤ flen (Rewriting.emb (tr (.plays p q a)) : Proposition LAct)) :
-    ∃ k φ, PD.Pf k φ ∧ ¬ LenProvable (fbound : ℕ → ℕ) (e k) TAct (⌜tr φ⌝ : ℕ)
+      Nat.size (canonical (progCode q)) ≤ formulaLenMeta (Rewriting.emb (tr (.plays p q a)) : Proposition LAct)) :
+    ∃ k φ, PD.Pf k φ ∧ ¬ LenBoxNat (codeBound : ℕ → ℕ) (e k) TAct (⌜tr φ⌝ : ℕ)
 ```
 
 with the witness `k = 1`, `φ = .plays (.const C) (botIter (e 1 + 1) (.const C)) C`, plus its
-instances `_tmpl` (for `trAt`) and `_guardCode` (on the code the evaluator consults) — T2-NEG,
+instances `_template` (for `sentenceAt`) and `_guardCode` (on the code the evaluator consults) — T2-NEG,
 three standard axioms, last checked at commit 0c8b410 of `colomban-arith-u10`. It is exactly why
 the engine's atom rule was RE-COSTED on 2026-09-16 (`ProofSystem.lean` §3, roadmap M6): the rule now
 charges `n + (Formula.plays me opponent a).size ≤ k`, the whole conclusion, so the witness can no

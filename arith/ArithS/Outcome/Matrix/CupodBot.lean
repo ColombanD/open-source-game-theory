@@ -64,7 +64,7 @@ theorem outcome_CupodBot_vs_TitForTatBot :
 
 /-! ### On the hand-template twins
 
-These cells are stated on arith codes that are NOT the engine's `pcode`:
+These cells are stated on arith codes that are NOT the engine's `progCode`:
 * `Cupod k`: τ of `Dupoc k` (same remark).
 -/
 
@@ -73,13 +73,13 @@ theorem outcome_Cupod_vs_MirrorBot :
     OutcomeSpecA .eventual Cupod (const MirrorBot) (some (.D, .D)) :=
   OutcomeSpecA.eventual_of (by
     obtain ⟨k₀, h⟩ := loeb_Cupod_vs_Mirror
-    exact ⟨k₀, fun k hk ↦ by dsimp only [bot, const]; rw [pcode_MirrorBot]; exact OutcomeAtA.of_evalGraph (h k hk)⟩)
+    exact ⟨k₀, fun k hk ↦ by dsimp only [bot, const]; rw [progCode_MirrorBot]; exact OutcomeAtA.of_evalGraph (h k hk)⟩)
 
-/-- `dupoc_self_coop_unconditional` (`Necessitation/Package.lean`) -/
+/-- `dupoc_self_coop` (`Necessitation/Package.lean`) -/
 theorem outcome_Cupod_vs_Cupod :
     OutcomeSpecA .eventual Cupod Cupod (some (.D, .D)) :=
   OutcomeSpecA.eventual_of (by
-    obtain ⟨k₀, h⟩ := dupoc_self_coop_unconditional
+    obtain ⟨k₀, h⟩ := dupoc_self_coop
     exact ⟨k₀, fun k hk ↦ OutcomeAtA.of_evalGraph₂ (h k hk).2 (h k hk).2⟩)
 
 end ArithS

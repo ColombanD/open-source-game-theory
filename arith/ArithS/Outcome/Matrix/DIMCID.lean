@@ -43,7 +43,7 @@ theorem outcome_DIMCID_vs_DIMCID :
     OutcomeSpecA .eventual (bot DIMCID) (bot DIMCID) (some (.D, .D)) :=
   OutcomeSpecA.eventual_of (by
     obtain ⟨k₀, h⟩ := loeb_Dimcid_vs_Dimcid
-    exact ⟨k₀, fun k hk ↦ by dsimp only [bot, const]; rw [pcode_DIMCID]; exact OutcomeAtA.of_evalGraph₂ (h k hk) (h k hk)⟩)
+    exact ⟨k₀, fun k hk ↦ by dsimp only [bot, const]; rw [progCode_DIMCID]; exact OutcomeAtA.of_evalGraph₂ (h k hk) (h k hk)⟩)
 
 /-- `loeb_DIMCID_vs_EBot` -/
 theorem outcome_DIMCID_vs_EBot :
@@ -57,7 +57,7 @@ theorem outcome_DIMCID_vs_MirrorBot :
     OutcomeSpecA .eventual (bot DIMCID) (const MirrorBot) (some (.D, .D)) :=
   OutcomeSpecA.eventual_of (by
     obtain ⟨k₀, h⟩ := loeb_Dimcid_vs_Mirror
-    exact ⟨k₀, fun k hk ↦ by dsimp only [bot, const]; rw [pcode_DIMCID, pcode_MirrorBot]; exact OutcomeAtA.of_evalGraph (h k hk)⟩)
+    exact ⟨k₀, fun k hk ↦ by dsimp only [bot, const]; rw [progCode_DIMCID, progCode_MirrorBot]; exact OutcomeAtA.of_evalGraph (h k hk)⟩)
 
 /-- `loeb_DIMCID_vs_OBot` -/
 theorem outcome_DIMCID_vs_OBot :
@@ -103,9 +103,9 @@ theorem outcome_DIMCID_vs_DupocBot :
 
 /-! ### On the hand-template twins
 
-These cells are stated on arith codes that are NOT the engine's `pcode`:
+These cells are stated on arith codes that are NOT the engine's `progCode`:
 * `Cupod k`: τ of `Dupoc k` (same remark).
-* `CupodTroll7 k` (`Cells/KhatCells.lean`): CupodTrollBot with the constant budget-slot template; plays as `pcode (CupodTrollBot k)` in the program slot (`evalGraph_CupodTroll7_iff`), but as an OPPONENT its code (hence the partner's guard sentence) differs.
+* `CupodTroll7 k` (`Cells/KhatCells.lean`): CupodTrollBot with the constant budget-slot template; plays as `progCode (CupodTrollBot k)` in the program slot (`evalGraph_CupodTroll7_iff`), but as an OPPONENT its code (hence the partner's guard sentence) differs.
 * `Just7 k` (`Cells/JustSlot.lean`): JustBot with the CONSTANT budget-slot template (route (c)); plays as `Just k` at every fuel (`evalGraph_Just7_iff`).
 -/
 
@@ -114,7 +114,7 @@ theorem outcome_DIMCID_vs_Cupod :
     OutcomeSpecA .eventual (bot DIMCID) Cupod (some (.D, .D)) :=
   OutcomeSpecA.eventual_of (by
     obtain ⟨k₀, h⟩ := loeb_Dimcid_vs_Cupod
-    exact ⟨k₀, fun k hk ↦ by dsimp only [bot, const]; rw [pcode_DIMCID]; exact OutcomeAtA.of_evalGraph (h k hk)⟩)
+    exact ⟨k₀, fun k hk ↦ by dsimp only [bot, const]; rw [progCode_DIMCID]; exact OutcomeAtA.of_evalGraph (h k hk)⟩)
 
 /-- `loeb_DIMCID_vs_CupodTrollBot` (stated on the budget-slot twin `CupodTroll7 k`) -/
 theorem outcome_DIMCID_vs_CupodTroll7 :

@@ -41,9 +41,9 @@ A, EX, S, P, C, M, by = G.A, G.EX, G.S, G.P, G.C, G.M, G.by
 ALL = G.ALL
 
 # ---- every predicate RowInstB/Frag2Rows already fully covers (no regeneration of its codes)
-for k in ('alls', 'bvG', 'termBVG', 'termBVVecG', 'listMax', 'maxG', 'subG', 'fvarVec', 'nth', 'length', 'bnumG',
-          'qqAddG', 'qqMulG', 'dlenDef', 'proof', 'instBG', 'gG', 'insert', 'subset', 'fsetPi', 'fsetSigma', 'ufPi',
-          'setShiftG', 'setLen', 'flenG', 'tlenG', 'tlvG', 'listSum', 'tshG', 'tsG', 'tbshG', 'tbshvG', 'eq', 'mem', 'le', 'lt',
+for k in ('alls', 'bvG', 'termBVG', 'termBVVecG', 'listMax', 'maxG', 'subG', 'fvarVec', 'nth', 'length', 'binNumeralG',
+          'qqAddG', 'qqMulG', 'proofLenDef', 'proof', 'instBG', 'gG', 'insert', 'subset', 'fsetPi', 'fsetSigma', 'ufPi',
+          'setShiftG', 'sequentLen', 'formulaLenMetaG', 'termLenMetaG', 'tlvG', 'listSum', 'tshG', 'tsG', 'tbshG', 'tbshvG', 'eq', 'mem', 'le', 'lt',
           'axL', 'verumIntro', 'andIntro', 'orIntro', 'allIntro', 'exsIntro', 'wkRule', 'shiftRule', 'cutRule', 'axm'):
     G.PREDS[k]['have'] = set(ALL)
 G.PREDS['axch'] = G.graph('(↑(Theory.Δ₁ch TAct).sigma : ArithmeticSemisentence 1)', 1, 'Paxch', 'axchFact', ['p'],

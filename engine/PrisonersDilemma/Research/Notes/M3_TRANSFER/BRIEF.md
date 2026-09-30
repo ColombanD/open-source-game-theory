@@ -10,23 +10,23 @@ FACT. Standalone package `arith/` (`ArithS`, Lean v4.33.1, Foundation commit 58c
 branch `colomban-arith-s`. Files in import order: Length, SequentLength, DerivationLength,
 Bew, MetaLength, Proper, LangAct, TheoryAct, Transpose, Sound, Symmetry, Prog, BewV,
 Guard, Eval, EvalN, Template, RedCell. Key objects:
-- `termLen/formulaLen/setLen/dlen`: STRUCTURAL symbol counts on Foundation's codes
+- `termLen/formulaLen/sequentLen/proofLen`: STRUCTURAL symbol counts on Foundation's codes
   (function/relation symbols cost 1, variable index i costs i+1, a numeral n is the term
-  `1+1+…+1` and costs ~2n). `mlen : T ⟹₂ Γ → ℕ` is the meta twin; every node adds
-  `sqlen Γ` (the whole sequent), so `mlen d ≥ flen σ` for any proof d of σ.
-- `LenProvable f k T φ := ∃ d < f (numeral k), Proof T d φ ∧ dlen T d ≤ numeral k`;
-  `fbound k = exp³(12k)+1` is PROPER: every derivation of length ≤ k has code < fbound k
-  (`quote_derivation_le`). `LenProvableV T k φ` is the same with k an object variable (Δ₁).
+  `1+1+…+1` and costs ~2n). `proofLenMeta : T ⟹₂ Γ → ℕ` is the meta twin; every node adds
+  `sequentLenMeta Γ` (the whole sequent), so `proofLenMeta d ≥ formulaLenMeta σ` for any proof d of σ.
+- `LenBoxNat f k T φ := ∃ d < f (numeral k), Proof T d φ ∧ proofLen T d ≤ numeral k`;
+  `codeBound k = exp³(12k)+1` is PROPER: every derivation of length ≤ k has code < codeBound k
+  (`quote_derivation_le`). `LenBox T k φ` is the same with k an object variable (Δ₁).
 - `LAct = ℒₒᵣ + {c_C, c_D}`, `TAct = PA ∪ {c_C ≠ c_D, c_D ≠ c_C}` (Δ₁, swap-closed);
-  `swap` the constant transposition; `lenProvable_fbound_swap_iff : TAct ⊢_k ⌜φ⌝ ↔ TAct ⊢_k ⌜swap φ⌝`.
+  `swap` the constant transposition; `lenBoxNat_swap_iff : TAct ⊢_k ⌜φ⌝ ↔ TAct ⊢_k ⌜swap φ⌝`.
 - Program codes: `pConst a | pSelf | pOpp | pBot p | pSim p q | pIte b a p q | pSearch k g a p q`
   (actions 0 = C, 1 = D; `g` = a template code with seven description variables; `a` the
-  action the template is tested against). `relabel u w x` re-values actions, `swapcode = relabel 1 0`.
+  action the template is tested against). `revalue u w x` re-values actions, `transposeCode = revalue 1 0`.
 - `EvalGraph n me opp p a` (Σ₁ Finite fixpoint on ⟪n,me,opp,p,a⟫): clauses for const, self,
-  opp, bot, ite, search; the search clause tests `LenProvableV TAct k (guardCode g me opp a')`;
+  opp, bot, ite, search; the search clause tests `LenBox TAct k (guardCode g me opp a')`;
   NO clause for `pSim` (and none for the engine's tau constructors tvote/sys/selfIdx).
   Determinism and fuel monotonicity at ℕ (`EvalN`).
-- Restricted template `Gtmpl` ("opp plays a against me") with code/swap/truth equations
+- Restricted template `guardTemplate7` ("opp plays a against me") with code/swap/truth equations
   (`Template.lean`), and `red_cell : EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ …` for
   every k, three standard axioms.
 
@@ -43,10 +43,10 @@ Löb is DERIVED (`bloeb_engine` via the internalized fixpoint `Formula.diag` and
 ## 2. A finding that changes what T1 means (verify it, then fix it)
 
 ANALYSIS (to be turned into a Lean lemma). Under the current `len`, numerals are unary.
-The guard sentence of `Dupoc k` against anybody contains `numeral (dnum (Dupoc k))` and
-`dnum (Dupoc k) ≥ k` (the code of `pSearch k …` is a nested Cantor pair containing k). So
-`flen (guardSentence (Dupoc k) opp a) ≥ 2k`, hence `mlen d ≥ 2k > k` for every proof d,
-hence `LenProvableV TAct k (guardCode ⌜Gtmpl⌝ (Dupoc k) opp a)` is FALSE for every k, opp,
+The guard sentence of `Dupoc k` against anybody contains `numeral (canonical (Dupoc k))` and
+`canonical (Dupoc k) ≥ k` (the code of `pSearch k …` is a nested Cantor pair containing k). So
+`formulaLenMeta (guardSentence (Dupoc k) opp a) ≥ 2k`, hence `proofLenMeta d ≥ 2k > k` for every proof d,
+hence `LenBox TAct k (guardCode ⌜guardTemplate7⌝ (Dupoc k) opp a)` is FALSE for every k, opp,
 a. Dupoc never finds anything: under this coding it is DefectBot in disguise, Cupod is
 CooperateBot in disguise, and `red_cell` is true for a reason that has nothing to do with
 symmetry. The symmetry proof is still valid and coding-independent, but the MODEL is
@@ -58,10 +58,10 @@ Required fix (part of M3, before any bounded transfer is meaningful): charge a n
 term of value n as `‖n‖ + 1` (Foundation's binary length `‖·‖`, `Exponential/Log.lean`,
 Δ₀-definable via `length_graph`; `numeralGraph` is Σ₁ and `numeral n ≥ n`, so
 "t is a numeral" is a bounded search `∃ n ≤ t, t = numeral n`). Consequences: `termLen`'s
-func clause gets a numeral case; `tlen` (meta) gets the matching case; `termLen_quote`,
-`quote_term_le`/`quote_formula_le`/`quote_derivation_le` and `fbound` need a taller tower
-(a numeral of length L has value ≤ 2^L and code ≤ a tower over that); `tlen_lMap`
-invariance survives (homs map numerals to numerals). Then `flen (guardSentence (Dupoc k) opp a)
+func clause gets a numeral case; `termLenMeta` (meta) gets the matching case; `termLen_quote`,
+`quote_term_le`/`quote_formula_le`/`quote_derivation_le` and `codeBound` need a taller tower
+(a numeral of length L has value ≤ 2^L and code ≤ a tower over that); `termLenMeta_lMap`
+invariance survives (homs map numerals to numerals). Then `formulaLenMeta (guardSentence (Dupoc k) opp a)
 = O(‖k‖) + C` for a constant C (the template code and the pairing overhead), so guards fit
 in the budget for all large k. State this as a theorem (`guard_len_le`). Note Cantor
 pairing makes `‖code⌝‖` exponential in the nesting DEPTH of the syntax; that is a
@@ -77,7 +77,7 @@ Let `φ*` be an arithmetical realization of engine formulas. Two natural choices
     fails: from the IH `PA ⊢ ¬g*` one needs `PA ⊢ ¬□g*`, which is PA proving a
     consistency-like statement (Gödel II). Dead for the refutation rules.
 
-(B) budget-KEEPING: `(.box k ψ)* = Bew_k(⌜ψ*⌝)` (the Δ₁ `LenProvableV`), programs keep
+(B) budget-KEEPING: `(.box k ψ)* = Bew_k(⌜ψ*⌝)` (the Δ₁ `LenBox`), programs keep
     their k. `search_f` works: IH gives `PA ⊢ ¬g*`, PA is sound (ℕ ⊧ PA), so PA ⊬ g* at
     all, so `¬Bew_k(⌜g*⌝)` is a TRUE Δ₁ sentence, hence PA-provable (Σ₁-completeness on
     the Σ₁ form of the Δ₁ predicate). `boxIntro`/necessitation fails: from `PA ⊢ ψ*` one

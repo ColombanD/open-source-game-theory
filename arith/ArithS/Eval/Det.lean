@@ -4,25 +4,25 @@ import ArithS.Bridge.Inst
 # ArithS.Det — PA-internal determinism of the arithmetized evaluator: the `atomNeg` leaf of T2-CORE
 
 Closes the last non-source-reading leaf of `transfer_of_leaves` (`ArithS.Inst`): the NEGATIVE
-atom. Its conclusion `∼ lMap inst (trAt me' opp' (.plays me opp aN))` is `Π₁` (the negation of a
+atom. Its conclusion `∼ lMap inst (sentenceAt me' opp' (.plays me opp aN))` is `Π₁` (the negation of a
 `Σ₁` sentence), so Σ₁-completeness does not apply. The route is the COMPLETENESS THEOREM
 (`Arithmetic.complete`: a sentence true in every model of PA is a PA theorem): in a model
 `V ⊧* 𝗣𝗔`,
 
-1. the POSITIVE atom of the actual play `b ≠ aN` is a PA theorem (`pa_proves_trAt_inst`,
+1. the POSITIVE atom of the actual play `b ≠ aN` is a PA theorem (`pa_proves_sentenceAt_inst`,
    Σ₁-completeness), hence true in `V` (`models_of_provable`);
 2. both atom sentences unfold in `V` to `∃ N, EvalGraph N ⌜me⌝ ⌜opp⌝ ⌜me⌝ (actCode _)` about
-   `V`-elements — `models_trAt_plays_V`, the truth equation of `ArithS.Agent` re-proved over
+   `V`-elements — `models_sentenceAt_plays_V`, the truth equation of `ArithS.Agent` re-proved over
    EVERY model of `𝗜𝚺₁`: the description terms evaluate to the CASTS of their standard values
-   (`val_bnumT_V`/`val_progTT_V`, `relabel_val_desc_V` — the latter through Foundation's Σ₁-absoluteness of
-   the `relabel` function, `DefinedFunction.shigmaOne_absolute_func`);
+   (`val_binNumeralMeta_V`/`val_codeTermMeta_V`, `revalue_val_desc_V` — the latter through Foundation's Σ₁-absoluteness of
+   the `revalue` function, `DefinedFunction.shigmaOne_absolute_func`);
 3. the evaluator is deterministic INSIDE the model — `EvalGraph.unique_V'`, at every pair of
    fuels at once, by `ISigma1.pi1_order_induction` on the fuel (the statement
    `∀ n' me opp p a₁ a₂, EvalGraph n … a₁ → EvalGraph n' … a₂ → a₁ = a₂` is `Π₁` in `n`, `EvalGraph`
    being `Σ₁`; the case analysis is `EvalN.unique`'s, through the `V`-general inversion lemmas);
 4. `(actCode b : V) ≠ (actCode aN : V)` by injectivity of `Nat.cast` into a model of `𝗣𝗔⁻`.
 
-Hence `pa_proves_neg_trAt_inst`, and the leaf discharges `leaf_atomNeg_sound` (under
+Hence `pa_proves_neg_sentenceAt_inst`, and the leaf discharges `leaf_atomNeg_sound` (under
 `GuardAgree`, proper modest players) and `leaf_atomNeg_sound_searchFree` (search-free players,
 NO oracle).
 
@@ -110,16 +110,16 @@ section desc
 variable (V : Type*) [ORingStructure V]
 
 /-- `V` as an `LAct`-structure: arithmetic as `V`, `c_C ↦ 0`, `c_D ↦ 1` — the pull-back of the
-standard `ℒₒᵣ`-structure along the instantiation `inst`. (At `V = ℕ` this is `stdAct`,
-`lMap_inst_std`.) Not an instance: `ℕ` already carries `stdAct`. -/
-@[instance_reducible] noncomputable def stdActV : Structure LAct V :=
+standard `ℒₒᵣ`-structure along the instantiation `inst`. (At `V = ℕ` this is `stdReadingNat`,
+`lMap_inst_std`.) Not an instance: `ℕ` already carries `stdReadingNat`. -/
+@[instance_reducible] noncomputable def stdReadingV : Structure LAct V :=
   Structure.lMap inst (standardModel V)
 
-lemma stdActV_lMap_emb : Structure.lMap emb (stdActV V) = standardModel V := by
+lemma stdReadingV_lMap_emb : Structure.lMap emb (stdReadingV V) = standardModel V := by
   ext <;> rfl
 
-/-- `stdActV V` is `stdActS V` (`ArithS.TheoryAct`): both read `c_C ↦ 0`, `c_D ↦ 1`. -/
-lemma stdActV_eq_stdActS : stdActV V = stdActS V := by
+/-- `stdReadingV V` is `stdReading V` (`ArithS.TheoryAct`): both read `c_C ↦ 0`, `c_D ↦ 1`. -/
+lemma stdReadingV_eq_stdReading : stdReadingV V = stdReading V := by
   refine Structure.ext ?_ ?_
   · funext k f v
     rcases f with f | ⟨(_ | _)⟩ <;> rfl
@@ -130,44 +130,44 @@ lemma stdActV_eq_stdActS : stdActV V = stdActS V := by
 
 variable {V}
 
-/-- Truth of an instantiated `LAct`-sentence in `V` is its truth in `stdActV V`. -/
+/-- Truth of an instantiated `LAct`-sentence in `V` is its truth in `stdReadingV V`. -/
 lemma models_inst_V (σ : Sentence LAct) :
-    V↓[ℒₒᵣ] ⊧ Semiformula.lMap inst σ ↔ Semiformula.Eval (s := stdActV V) ![] Empty.elim σ := by
+    V↓[ℒₒᵣ] ⊧ Semiformula.lMap inst σ ↔ Semiformula.Eval (s := stdReadingV V) ![] Empty.elim σ := by
   rw [models_iff]
   unfold Semiformula.Realize
   rw [Semiformula.eval_lMap]
 
 lemma val_cl_V {n : ℕ} (t : ClosedSemiterm LAct 0) (b : Fin n → V) :
-    (cl t : Semiterm LAct Empty n).val (s := stdActV V) b Empty.elim =
-      t.val (s := stdActV V) ![] Empty.elim := by
+    (cl t : Semiterm LAct Empty n).val (s := stdReadingV V) b Empty.elim =
+      t.val (s := stdReadingV V) ![] Empty.elim := by
   unfold cl
   rw [Semiterm.val_castLE, Subsingleton.elim (fun x : Fin 0 ↦ b (x.castLE (Nat.zero_le n))) ![]]
 
-lemma stdActV_rel_eq (v : Fin 2 → V) :
-    (stdActV V).rel (Language.Eq.eq : LAct.Rel 2) v ↔ v 0 = v 1 := Iff.rfl
+lemma stdReadingV_rel_eq (v : Fin 2 → V) :
+    (stdReadingV V).rel (Language.Eq.eq : LAct.Rel 2) v ↔ v 0 = v 1 := Iff.rfl
 
-lemma val_cterm_C_V : (cterm Act.C : ClosedSemiterm LAct 0).val (s := stdActV V) ![] Empty.elim = 0 := rfl
-lemma val_cterm_D_V : (cterm Act.D : ClosedSemiterm LAct 0).val (s := stdActV V) ![] Empty.elim = 1 := rfl
+lemma val_cterm_C_V : (cterm Act.C : ClosedSemiterm LAct 0).val (s := stdReadingV V) ![] Empty.elim = 0 := rfl
+lemma val_cterm_D_V : (cterm Act.D : ClosedSemiterm LAct 0).val (s := stdReadingV V) ![] Empty.elim = 1 := rfl
 
 variable [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
 
-lemma val_numT_V (k : ℕ) : (numT k).val (s := stdActV V) ![] Empty.elim = (k : V) := by
+lemma val_numT_V (k : ℕ) : (numT k).val (s := stdReadingV V) ![] Empty.elim = (k : V) := by
   unfold numT
-  rw [Semiterm.val_lMap, stdActV_lMap_emb]
+  rw [Semiterm.val_lMap, stdReadingV_lMap_emb]
   simp [numeral_eq_natCast]
 
 lemma val_twoT_V : twoT.val (s := standardModel V) ![] Empty.elim = 2 := by
   unfold twoT; simp [one_add_one_eq_two]
 
 /-- The binary numeral of `n` denotes the cast of `n` in every model. -/
-theorem val_bnumT_V (n : ℕ) : (bnumT n).val (s := standardModel V) ![] Empty.elim = (n : V) := by
+theorem val_binNumeralMeta_V (n : ℕ) : (binNumeralMeta n).val (s := standardModel V) ![] Empty.elim = (n : V) := by
   induction n using Nat.strong_induction_on with
   | _ n ih =>
     rcases n with _ | _ | k
-    · rw [bnumT_zero]; simp
-    · rw [bnumT_one]; simp
+    · rw [binNumeralMeta_zero]; simp
+    · rw [binNumeralMeta_one]; simp
     · by_cases he : (k + 1 + 1) % 2 = 0
-      · rw [bnumT_even (by omega) he]
+      · rw [binNumeralMeta_even (by omega) he]
         simp [val_twoT_V, ih ((k + 1 + 1) / 2) (by omega)]
         have h2 : k + 1 + 1 = 2 * ((k + 1 + 1) / 2) := by omega
         have h3 : ((k : V) + 1 + 1) = ((k + 1 + 1 : ℕ) : V) := by norm_cast
@@ -175,7 +175,7 @@ theorem val_bnumT_V (n : ℕ) : (bnumT n).val (s := standardModel V) ![] Empty.e
         conv_rhs => rw [h2]
         push_cast
         rfl
-      · rw [bnumT_odd (by omega) (by omega)]
+      · rw [binNumeralMeta_odd (by omega) (by omega)]
         simp [val_twoT_V, ih ((k + 1 + 1) / 2) (by omega)]
         have h2 : k + 1 = 2 * ((k + 1 + 1) / 2) := by omega
         have h3 : ((k : V) + 1) = ((k + 1 : ℕ) : V) := by norm_cast
@@ -184,73 +184,73 @@ theorem val_bnumT_V (n : ℕ) : (bnumT n).val (s := standardModel V) ![] Empty.e
         push_cast
         rfl
 
-lemma val_ppairTT_V (s t : ClosedSemiterm ℒₒᵣ 0) :
-    (ppairTT s t).val (s := standardModel V) ![] Empty.elim =
+lemma val_ppairTermMeta_V (s t : ClosedSemiterm ℒₒᵣ 0) :
+    (ppairTermMeta s t).val (s := standardModel V) ![] Empty.elim =
     ppair (s.val (s := standardModel V) ![] Empty.elim) (t.val (s := standardModel V) ![] Empty.elim) := by
-  simp [ppairTT, ppair]
+  simp [ppairTermMeta, ppair]
 
 lemma val_succTT_V (t : ClosedSemiterm ℒₒᵣ 0) :
     (succTT t).val (s := standardModel V) ![] Empty.elim = t.val (s := standardModel V) ![] Empty.elim + 1 := by
   simp [succTT]
 
 /-- The structural term of `x` denotes the cast of `x` in every model. -/
-theorem val_progTT_V (x : ℕ) : (progTT x).val (s := standardModel V) ![] Empty.elim = (x : V) := by
+theorem val_codeTermMeta_V (x : ℕ) : (codeTermMeta x).val (s := standardModel V) ![] Empty.elim = (x : V) := by
   induction x using Nat.strong_induction_on with
   | _ x ih =>
     by_cases hx : IsShape x
     · rcases hx with ⟨a, rfl⟩ | rfl | rfl | ⟨p, rfl⟩ | ⟨p, q, rfl⟩ | ⟨b, a, p, q, rfl⟩ | ⟨k, g, p, q, rfl⟩
-      · rw [progTT_const, val_succTT_V, val_ppairTT_V, val_bnumT_V, val_bnumT_V, cast_pConst]
+      · rw [codeTermMeta_const, val_succTT_V, val_ppairTermMeta_V, val_binNumeralMeta_V, val_binNumeralMeta_V, cast_pConst]
         unfold pConst; push_cast; rfl
-      · rw [progTT_self, val_succTT_V, val_ppairTT_V, val_bnumT_V, val_bnumT_V, cast_pSelf]
+      · rw [codeTermMeta_self, val_succTT_V, val_ppairTermMeta_V, val_binNumeralMeta_V, val_binNumeralMeta_V, cast_pSelf]
         unfold pSelf; push_cast; rfl
-      · rw [progTT_opp, val_succTT_V, val_ppairTT_V, val_bnumT_V, val_bnumT_V, cast_pOpp]
+      · rw [codeTermMeta_opp, val_succTT_V, val_ppairTermMeta_V, val_binNumeralMeta_V, val_binNumeralMeta_V, cast_pOpp]
         unfold pOpp; push_cast; rfl
-      · rw [progTT_bot, val_succTT_V, val_ppairTT_V, val_bnumT_V, ih p (by simp), cast_pBot]
+      · rw [codeTermMeta_bot, val_succTT_V, val_ppairTermMeta_V, val_binNumeralMeta_V, ih p (by simp), cast_pBot]
         unfold pBot; push_cast; rfl
-      · rw [progTT_sim, val_succTT_V, val_ppairTT_V, val_ppairTT_V, val_bnumT_V, ih p (by simp),
+      · rw [codeTermMeta_sim, val_succTT_V, val_ppairTermMeta_V, val_ppairTermMeta_V, val_binNumeralMeta_V, ih p (by simp),
           ih q (by simp), cast_pSim]
         unfold pSim; push_cast; rfl
-      · rw [progTT_ite, val_succTT_V, val_ppairTT_V, val_ppairTT_V, val_ppairTT_V, val_ppairTT_V,
-          val_bnumT_V, val_bnumT_V, ih b (by simp), ih p (by simp), ih q (by simp), cast_pIte]
+      · rw [codeTermMeta_ite, val_succTT_V, val_ppairTermMeta_V, val_ppairTermMeta_V, val_ppairTermMeta_V, val_ppairTermMeta_V,
+          val_binNumeralMeta_V, val_binNumeralMeta_V, ih b (by simp), ih p (by simp), ih q (by simp), cast_pIte]
         unfold pIte; push_cast; rfl
-      · rw [progTT_search, val_succTT_V, val_ppairTT_V, val_ppairTT_V, val_ppairTT_V, val_ppairTT_V,
-          val_bnumT_V, val_bnumT_V, val_bnumT_V, ih p (by simp), ih q (by simp), cast_pSearch]
+      · rw [codeTermMeta_search, val_succTT_V, val_ppairTermMeta_V, val_ppairTermMeta_V, val_ppairTermMeta_V, val_ppairTermMeta_V,
+          val_binNumeralMeta_V, val_binNumeralMeta_V, val_binNumeralMeta_V, ih p (by simp), ih q (by simp), cast_pSearch]
         unfold pSearch; push_cast; rfl
-    · rw [progTT_of_not_shape hx, val_bnumT_V]
+    · rw [codeTermMeta_of_not_shape hx, val_binNumeralMeta_V]
 
-lemma val_dnumT_V (x : ℕ) : (dnumT x).val (s := stdActV V) ![] Empty.elim = ((dnum x : ℕ) : V) := by
-  unfold dnumT
-  rw [Semiterm.val_lMap, stdActV_lMap_emb]
-  exact val_progTT_V _
+lemma val_canonicalMeta_V (x : ℕ) : (canonicalMeta x).val (s := stdReadingV V) ![] Empty.elim = ((canonical x : ℕ) : V) := by
+  unfold canonicalMeta
+  rw [Semiterm.val_lMap, stdReadingV_lMap_emb]
+  exact val_codeTermMeta_V _
 
-/-- `relabel` is absolute: its value on casts is the cast of its value (Σ₁-definable function). -/
-lemma cast_relabel (u w x : ℕ) : ((relabel u w x : ℕ) : V) = relabel (u : V) (w : V) (x : V) := by
-  have := DefinedFunction.shigmaOne_absolute_func V (relabel_defined (V := ℕ)) (relabel_defined (V := V))
+/-- `revalue` is absolute: its value on casts is the cast of its value (Σ₁-definable function). -/
+lemma cast_revalue (u w x : ℕ) : ((revalue u w x : ℕ) : V) = revalue (u : V) (w : V) (x : V) := by
+  have := DefinedFunction.shigmaOne_absolute_func V (revalue_defined (V := ℕ)) (revalue_defined (V := V))
     ![u, w, x]
   simpa [Function.comp_def] using this
 
 /-- The descriptions reconstruct the (cast) program, in every model. -/
-lemma relabel_val_desc_V (x : ℕ) :
-    relabel ((dUT x).val (s := stdActV V) ![] Empty.elim) ((dWT x).val (s := stdActV V) ![] Empty.elim)
-      ((dnum x : ℕ) : V) = (x : V) := by
-  rcases lt_trichotomy x (swapcode x) with h | h | h
-  · unfold dUT dWT
-    rw [if_pos h, if_pos h, dnum_of_lt h, val_cterm_C_V, val_cterm_D_V, relabel_zero_one]
-  · unfold dUT dWT
-    have hs : swapcode x = x := h.symm
+lemma revalue_val_desc_V (x : ℕ) :
+    revalue ((revalueUMeta x).val (s := stdReadingV V) ![] Empty.elim) ((revalueWMeta x).val (s := stdReadingV V) ![] Empty.elim)
+      ((canonical x : ℕ) : V) = (x : V) := by
+  rcases lt_trichotomy x (transposeCode x) with h | h | h
+  · unfold revalueUMeta revalueWMeta
+    rw [if_pos h, if_pos h, canonical_of_lt h, val_cterm_C_V, val_cterm_D_V, revalue_zero_one]
+  · unfold revalueUMeta revalueWMeta
+    have hs : transposeCode x = x := h.symm
     rw [hs, if_neg (_root_.lt_irrefl _), if_neg (_root_.lt_irrefl _), if_neg (_root_.lt_irrefl _),
-      if_neg (_root_.lt_irrefl _), dnum_of_eq h, val_numT_V, val_numT_V, Nat.cast_zero, Nat.cast_one,
-      relabel_zero_one]
-  · unfold dUT dWT
-    rw [if_neg (lt_asymm h), if_pos h, if_neg (lt_asymm h), if_pos h, dnum_of_gt h, val_cterm_D_V,
+      if_neg (_root_.lt_irrefl _), canonical_of_eq h, val_numT_V, val_numT_V, Nat.cast_zero, Nat.cast_one,
+      revalue_zero_one]
+  · unfold revalueUMeta revalueWMeta
+    rw [if_neg (lt_asymm h), if_pos h, if_neg (lt_asymm h), if_pos h, canonical_of_gt h, val_cterm_D_V,
       val_cterm_C_V]
-    have e : ((relabel 1 0 (swapcode x) : ℕ) : V) = relabel (1 : V) (0 : V) ((swapcode x : ℕ) : V) := by
-      have := cast_relabel (V := V) 1 0 (swapcode x)
+    have e : ((revalue 1 0 (transposeCode x) : ℕ) : V) = revalue (1 : V) (0 : V) ((transposeCode x : ℕ) : V) := by
+      have := cast_revalue (V := V) 1 0 (transposeCode x)
       rwa [Nat.cast_one, Nat.cast_zero] at this
     rw [← e]
-    exact congrArg _ (swapcode_swapcode x)
+    exact congrArg _ (transposeCode_transposeCode x)
 
-lemma val_actT_V (a : ℕ) : (actT a).val (s := stdActV V) ![] Empty.elim = (a : V) := by
+lemma val_actT_V (a : ℕ) : (actT a).val (s := stdReadingV V) ![] Empty.elim = (a : V) := by
   unfold actT
   by_cases h0 : a = 0
   · subst h0; simp [val_cterm_C_V]
@@ -258,44 +258,44 @@ lemma val_actT_V (a : ℕ) : (actT a).val (s := stdActV V) ![] Empty.elim = (a :
     · subst h1; simp [val_cterm_D_V]
     · simp [h0, h1, val_numT_V]
 
-/-- `relDesc` in `V` is the graph of `relabel`. -/
+/-- `relDesc` in `V` is the graph of `revalue`. -/
 lemma eval_relDesc_V (v : Fin 4 → V) :
-    Semiformula.Eval (s := stdActV V) v Empty.elim relDesc ↔ v 0 = relabel (v 1) (v 2) (v 3) := by
+    Semiformula.Eval (s := stdReadingV V) v Empty.elim relDesc ↔ v 0 = revalue (v 1) (v 2) (v 3) := by
   unfold relDesc
-  rw [Semiformula.eval_lMap, stdActV_lMap_emb]
-  exact relabel_defined.df v
+  rw [Semiformula.eval_lMap, stdReadingV_lMap_emb]
+  exact revalue_defined.df v
 
 /-- `evalG` in `V` is `EvalGraph`. -/
 lemma eval_evalG_V (v : Fin 5 → V) :
-    Semiformula.Eval (s := stdActV V) v Empty.elim evalG ↔ EvalGraph (v 0) (v 1) (v 2) (v 3) (v 4) := by
+    Semiformula.Eval (s := stdReadingV V) v Empty.elim evalG ↔ EvalGraph (v 0) (v 1) (v 2) (v 3) (v 4) := by
   unfold evalG
-  rw [Semiformula.eval_lMap, stdActV_lMap_emb]
+  rw [Semiformula.eval_lMap, stdReadingV_lMap_emb]
   exact evalGraph_defined.df v
 
 /-- A closed description in `V` pins the cast of the program. -/
 lemma eval_closedDesc_V (c : ℕ) (b : Fin 7 → V) :
-    Semiformula.Eval (s := stdActV V) b Empty.elim (closedDesc c) ↔ b 0 = (c : V) := by
+    Semiformula.Eval (s := stdReadingV V) b Empty.elim (closedDesc c) ↔ b 0 = (c : V) := by
   unfold closedDesc descF
   simp only [Semiformula.eval_ex, LogicalConnective.HomClass.map_and, LogicalConnective.Prop.and_eq,
-    Semiformula.eval_rel, Semiformula.eval_substs, eval_relDesc_V, stdActV_rel_eq, Function.comp_def,
+    Semiformula.eval_rel, Semiformula.eval_substs, eval_relDesc_V, stdReadingV_rel_eq, Function.comp_def,
     Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two, Matrix.cons_val_three,
-    Matrix.cons_val_succ, Matrix.vecHead, Matrix.vecTail, Semiterm.val_bvar, val_cl_V, val_dnumT_V]
+    Matrix.cons_val_succ, Matrix.vecHead, Matrix.vecTail, Semiterm.val_bvar, val_cl_V, val_canonicalMeta_V]
   constructor
   · rintro ⟨x, rfl, h⟩
-    rwa [relabel_val_desc_V] at h
+    rwa [revalue_val_desc_V] at h
   · intro h
-    exact ⟨_, rfl, by rw [relabel_val_desc_V]; exact h⟩
+    exact ⟨_, rfl, by rw [revalue_val_desc_V]; exact h⟩
 
 /-- **The truth equation in every model of `𝗜𝚺₁`**: for PROPER programs the instantiated play-atom
 holds in `V` iff the arithmetized `play` on the CAST codes yields the cast action code; the frame
 `(me', opp')` is irrelevant. -/
-theorem models_trAt_plays_V (me' opp' me opp : PD.Prog) (a : PD.Action)
-    (hme : Proper me) (hopp : Proper opp) :
-    V↓[ℒₒᵣ] ⊧ Semiformula.lMap inst (trAt me' opp' (.plays me opp a)) ↔
-      ∃ N : V, EvalGraph N (pcode me : V) (pcode opp : V) (pcode me : V) (actCode a : V) := by
+theorem models_sentenceAt_plays_V (me' opp' me opp : PD.Prog) (a : PD.Action)
+    (hme : ProperPlayer me) (hopp : ProperPlayer opp) :
+    V↓[ℒₒᵣ] ⊧ Semiformula.lMap inst (sentenceAt me' opp' (.plays me opp a)) ↔
+      ∃ N : V, EvalGraph N (progCode me : V) (progCode opp : V) (progCode me : V) (actCode a : V) := by
   rw [models_inst_V]
-  unfold trAt
-  rw [tmpl_plays]
+  unfold sentenceAt
+  rw [template_plays]
   unfold progGraph
   rw [progAux_of_ne hme.1 hme.2, progAux_of_ne hopp.1 hopp.2]
   simp only [Semiformula.eval_substs, Semiformula.eval_ex, LogicalConnective.HomClass.map_and,
@@ -316,47 +316,47 @@ end desc
 /-- In a model of PA, a PA-provable positive atom for the play `b` refutes the atom for any
 `aN ≠ b`: the positive run transfers to `V`, the negative one would be a second run, and the
 evaluator is deterministic inside `V`. -/
-theorem models_neg_inst_trAt_plays_V (V : Type*) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗣𝗔]
+theorem models_neg_inst_sentenceAt_plays_V (V : Type*) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗣𝗔]
     (me' opp' me opp : PD.Prog) {b aN : PD.Action} (hne : b ≠ aN)
-    (hme : Proper me) (hopp : Proper opp)
-    (hpos : 𝗣𝗔 ⊢ Semiformula.lMap inst (trAt me' opp' (.plays me opp b))) :
-    V↓[ℒₒᵣ] ⊧ ∼ Semiformula.lMap inst (trAt me' opp' (.plays me opp aN)) := by
-  have hV : V↓[ℒₒᵣ] ⊧ Semiformula.lMap inst (trAt me' opp' (.plays me opp b)) :=
+    (hme : ProperPlayer me) (hopp : ProperPlayer opp)
+    (hpos : 𝗣𝗔 ⊢ Semiformula.lMap inst (sentenceAt me' opp' (.plays me opp b))) :
+    V↓[ℒₒᵣ] ⊧ ∼ Semiformula.lMap inst (sentenceAt me' opp' (.plays me opp aN)) := by
+  have hV : V↓[ℒₒᵣ] ⊧ Semiformula.lMap inst (sentenceAt me' opp' (.plays me opp b)) :=
     models_of_provable inferInstance hpos
-  rw [models_trAt_plays_V me' opp' me opp b hme hopp] at hV
+  rw [models_sentenceAt_plays_V me' opp' me opp b hme hopp] at hV
   obtain ⟨N, hN⟩ := hV
-  rw [Semantics.Not.models_not, models_trAt_plays_V me' opp' me opp aN hme hopp]
+  rw [Semantics.Not.models_not, models_sentenceAt_plays_V me' opp' me opp aN hme hopp]
   rintro ⟨N', hN'⟩
   have e : (actCode b : V) = (actCode aN : V) := EvalGraph.unique_V' N N' _ _ _ _ _ hN hN'
   exact hne (actCode_inj (nat_cast_inj.mp e))
 
 /-- **PA refutes the wrong atom, given the right one**: from `𝗣𝗔 ⊢ atom(b)` and `b ≠ aN`,
-`𝗣𝗔 ⊢ ∼ atom(aN)` — by the completeness theorem over `models_neg_inst_trAt_plays_V`. -/
-theorem pa_proves_neg_trAt_inst_of_pos (me' opp' me opp : PD.Prog) {b aN : PD.Action} (hne : b ≠ aN)
-    (hme : Proper me) (hopp : Proper opp)
-    (hpos : 𝗣𝗔 ⊢ Semiformula.lMap inst (trAt me' opp' (.plays me opp b))) :
-    𝗣𝗔 ⊢ ∼ Semiformula.lMap inst (trAt me' opp' (.plays me opp aN)) :=
+`𝗣𝗔 ⊢ ∼ atom(aN)` — by the completeness theorem over `models_neg_inst_sentenceAt_plays_V`. -/
+theorem pa_proves_neg_sentenceAt_inst_of_pos (me' opp' me opp : PD.Prog) {b aN : PD.Action} (hne : b ≠ aN)
+    (hme : ProperPlayer me) (hopp : ProperPlayer opp)
+    (hpos : 𝗣𝗔 ⊢ Semiformula.lMap inst (sentenceAt me' opp' (.plays me opp b))) :
+    𝗣𝗔 ⊢ ∼ Semiformula.lMap inst (sentenceAt me' opp' (.plays me opp aN)) :=
   Arithmetic.complete 𝗣𝗔 _ fun (V : Type) _ _ ↦
-    models_neg_inst_trAt_plays_V V me' opp' me opp hne hme hopp hpos
+    models_neg_inst_sentenceAt_plays_V V me' opp' me opp hne hme hopp hpos
 
 /-- **PA proves the negative atom sentences of modest plays**: for proper modest players, given
 `GuardAgree`, an engine play `me(opp) = b` with `b ≠ aN` makes
-`∼ lMap inst (trAt me' opp' (.plays me opp aN))` a theorem of PA. -/
-theorem pa_proves_neg_trAt_inst (hga : GuardAgree) (me' opp' me opp : PD.Prog) {b aN : PD.Action}
-    (hne : b ≠ aN) (hme : Proper me) (hopp : Proper opp) (hm : modestP me = true) (hm' : modestP opp = true)
+`∼ lMap inst (sentenceAt me' opp' (.plays me opp aN))` a theorem of PA. -/
+theorem pa_proves_neg_sentenceAt_inst (hga : GuardAgree) (me' opp' me opp : PD.Prog) {b aN : PD.Action}
+    (hne : b ≠ aN) (hme : ProperPlayer me) (hopp : ProperPlayer opp) (hm : modestP me = true) (hm' : modestP opp = true)
     (h : ∃ n, PD.play n me opp = some b) :
-    𝗣𝗔 ⊢ ∼ Semiformula.lMap inst (trAt me' opp' (.plays me opp aN)) :=
-  pa_proves_neg_trAt_inst_of_pos me' opp' me opp hne hme hopp
-    (pa_proves_trAt_inst hga me' opp' me opp b hme hopp hm hm' h)
+    𝗣𝗔 ⊢ ∼ Semiformula.lMap inst (sentenceAt me' opp' (.plays me opp aN)) :=
+  pa_proves_neg_sentenceAt_inst_of_pos me' opp' me opp hne hme hopp
+    (pa_proves_sentenceAt_inst hga me' opp' me opp b hme hopp hm hm' h)
 
 /-- The search-free, unconditional form (no oracle): from an engine certificate of the play `b`. -/
-theorem pa_proves_neg_trAt_inst_searchFree (me' opp' : PD.Prog) {k : ℕ} {me opp : PD.Prog}
+theorem pa_proves_neg_sentenceAt_inst_searchFree (me' opp' : PD.Prog) {k : ℕ} {me opp : PD.Prog}
     {b aN : PD.Action} (h : PD.AtomProvable k (.plays me opp b)) (hne : b ≠ aN)
-    (hme : Proper me) (hopp : Proper opp) (hm : modestP me = true) (hm' : modestP opp = true)
+    (hme : ProperPlayer me) (hopp : ProperPlayer opp) (hm : modestP me = true) (hm' : modestP opp = true)
     (hsme : me.hasSearch = false) (hsopp : opp.hasSearch = false) :
-    𝗣𝗔 ⊢ ∼ Semiformula.lMap inst (trAt me' opp' (.plays me opp aN)) :=
-  pa_proves_neg_trAt_inst_of_pos me' opp' me opp hne hme hopp
-    (pa_proves_trAt_inst_searchFree me' opp' h hme hopp hm hm' hsme hsopp)
+    𝗣𝗔 ⊢ ∼ Semiformula.lMap inst (sentenceAt me' opp' (.plays me opp aN)) :=
+  pa_proves_neg_sentenceAt_inst_of_pos me' opp' me opp hne hme hopp
+    (pa_proves_sentenceAt_inst_searchFree me' opp' h hme hopp hm hm' hsme hsopp)
 
 /-! ### The `atomNeg` leaf of T2-CORE -/
 
@@ -365,23 +365,23 @@ theorem pa_proves_neg_trAt_inst_searchFree (me' opp' : PD.Prog) {k : ℕ} {me op
 play `b ≠ aN`. -/
 theorem leaf_atomNeg_sound (hga : GuardAgree) {m : ℕ} {me opp : PD.Prog} {b aN : PD.Action}
     (h : PD.AtomProvable m (.plays me opp b)) (hne : b ≠ aN)
-    (hme : Proper me) (hopp : Proper opp) (hm : modestP me = true) (hm' : modestP opp = true) :
+    (hme : ProperPlayer me) (hopp : ProperPlayer opp) (hm : modestP me = true) (hm' : modestP opp = true) :
     𝗣𝗔 ⊢ Core.tr Aι (.neg (.plays me opp aN)) :=
-  pa_proves_neg_trAt_inst_of_pos me opp me opp hne hme hopp
-    (pa_proves_trAt_inst_of_atomProvable hga me opp h hme hopp hm hm')
+  pa_proves_neg_sentenceAt_inst_of_pos me opp me opp hne hme hopp
+    (pa_proves_sentenceAt_inst_of_atomProvable hga me opp h hme hopp hm hm')
 
 /-- The `Leaf.atomNeg` shape, search-free players, no oracle. -/
 theorem leaf_atomNeg_sound_searchFree {m : ℕ} {me opp : PD.Prog} {b aN : PD.Action}
     (h : PD.AtomProvable m (.plays me opp b)) (hne : b ≠ aN)
-    (hme : Proper me) (hopp : Proper opp) (hm : modestP me = true) (hm' : modestP opp = true)
+    (hme : ProperPlayer me) (hopp : ProperPlayer opp) (hm : modestP me = true) (hm' : modestP opp = true)
     (hsme : me.hasSearch = false) (hsopp : opp.hasSearch = false) :
     𝗣𝗔 ⊢ Core.tr Aι (.neg (.plays me opp aN)) :=
-  pa_proves_neg_trAt_inst_searchFree me opp h hne hme hopp hm hm' hsme hsopp
+  pa_proves_neg_sentenceAt_inst_searchFree me opp h hne hme hopp hm hm' hsme hsopp
 
 end ArithS
 
 #print axioms ArithS.EvalGraph.unique_V'
-#print axioms ArithS.models_trAt_plays_V
-#print axioms ArithS.pa_proves_neg_trAt_inst
+#print axioms ArithS.models_sentenceAt_plays_V
+#print axioms ArithS.pa_proves_neg_sentenceAt_inst
 #print axioms ArithS.leaf_atomNeg_sound
 #print axioms ArithS.leaf_atomNeg_sound_searchFree

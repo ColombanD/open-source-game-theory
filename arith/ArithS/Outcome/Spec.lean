@@ -20,8 +20,8 @@ system, so that a cell of `S'` reads the way a cell of `S` does:
   `nobudget` (closed bots), `universal` (every `k`), `eventual` (`∃ k₀, ∀ k > k₀`). The regime
   type IS the engine's `PD.BudgetRegime`. Fuel is existential here (`∃ n`), which by fuel
   monotonicity (`EvalGraph.mono_le`) is the same as the engine's cofinite pad.
-* `bot P` / `const P`: the engine's bots as budget-indexed codes, through `pcode`.
-* `□[k] φ`: the box, `LenProvableV TAct k φ` — the notation `□_k σ` of the notes.
+* `bot P` / `const P`: the engine's bots as budget-indexed codes, through `progCode`.
+* `□[k] φ`: the box, `LenBox TAct k φ` — the notation `□_k σ` of the notes.
 
 The per-left-bot files `Outcome/Matrix/<L>.lean` state every cell of the ledger
 (`Research/Notes/ROUTE_B_CENSUS.md`, "S' status per cell") in this form, each proved from the
@@ -37,8 +37,8 @@ open LAct
 
 /-! ### The box, as notation -/
 
-/-- `□[k] φ`: the code `φ` has a `TAct`-proof of length `≤ k` (`LenProvableV`). -/
-scoped notation:max "□[" k "] " φ:max => LenProvableV TAct k φ
+/-- `□[k] φ`: the code `φ` has a `TAct`-proof of length `≤ k` (`LenBox`). -/
+scoped notation:max "□[" k "] " φ:max => LenBox TAct k φ
 
 /-! ### Plays and outcomes on codes -/
 
@@ -70,10 +70,10 @@ def OutcomeSpecA (b : PD.BudgetRegime) (L R : ℕ → ℕ) (r : Option PD.Outcom
   | .eventual => ∃ k₀, ∀ k, k₀ < k → OutcomeAtA (L k) (R k) r
 
 /-- An engine bot with a budget, as a budget-indexed code. -/
-noncomputable abbrev bot (P : ℕ → PD.Prog) : ℕ → ℕ := fun k ↦ pcode (P k)
+noncomputable abbrev bot (P : ℕ → PD.Prog) : ℕ → ℕ := fun k ↦ progCode (P k)
 
 /-- A closed engine bot, as a (constant) budget-indexed code. -/
-noncomputable abbrev const (P : PD.Prog) : ℕ → ℕ := fun _ ↦ pcode P
+noncomputable abbrev const (P : PD.Prog) : ℕ → ℕ := fun _ ↦ progCode P
 
 /-! ### Constructors, from the shapes the cell theorems have -/
 

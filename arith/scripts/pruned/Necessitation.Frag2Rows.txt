@@ -10,9 +10,9 @@ fvOccF_axchFact_le
 gIdx_congShiftL
 gIdx_setShiftFun
 gfok_congFstIdx
-gfok_dlenBinaryLe
-gfok_dlenLeafLe
-gfok_dlenUnaryLe
+gfok_proofLenBinaryLe
+gfok_proofLenLeafLe
+gfok_proofLenUnaryLe
 gfok_leRefl
 gfok_leTrans
 glok_congMem
@@ -23,7 +23,7 @@ glok_fsetSigmaPiC
 glok_insertTotalC
 glok_isFormulaSetInsertC
 glok_memInsertSelfC
-glok_setLenTotalC
+glok_sequentLenTotalC
 glok_subsetAntisymm
 glok_subsetInsertC
 glok_subsetMemC
@@ -36,10 +36,10 @@ gok_setShiftFun
 gtag_congShiftL
 gtag_setShiftFun
 gtag_substsSubsts1
-isSemiformula_dlenAll_as
-isSemiformula_dlenAxm_as
-isSemiformula_dlenExs_as
-isSemiformula_dlenShift_as
+isSemiformula_proofLenAll_as
+isSemiformula_proofLenAxm_as
+isSemiformula_proofLenExs_as
+isSemiformula_proofLenShift_as
 isSemiformula_introAll_as
 isSemiformula_introAxm_as
 isSemiformula_introExs_as

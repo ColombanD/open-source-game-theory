@@ -2,20 +2,20 @@ import ArithS.Necessitation.NumSteps
 import ArithS.Necessitation.RowInstB
 
 /-!
-# ArithS.Necessitation.NumMul — N4: `bnum a · bnum b = bnum (a · b)` as a derivation code
+# ArithS.Necessitation.NumMul — N4: `binNumeral a · binNumeral b = binNumeral (a · b)` as a derivation code
 
-`M4_BOUNDED_HBL/DESIGN_fragments.md` §2.4 (row N4) and §7 step 8 (the cube `bnum ‖k‖ ·
-bnum ‖k‖ · bnum ‖k‖` the budget is compared against): the closed fact `mulFact a b :=
-eqFact (bnum a ^* bnum b) (bnum (a * b))` as ONE `sLemma` step. The prover `mulEqCode tblM tbl a b`
+`M4_BOUNDED_HBL/DESIGN_fragments.md` §2.4 (row N4) and §7 step 8 (the cube `binNumeral ‖k‖ ·
+binNumeral ‖k‖ · binNumeral ‖k‖` the budget is compared against): the closed fact `mulFact a b :=
+eqFact (binNumeral a ^* binNumeral b) (binNumeral (a * b))` as ONE `sLemma` step. The prover `mulEqCode tblM tbl a b`
 is `NumSteps.lean`'s `addCode` pattern — a `Fixpoint` on `⟪a, b, d⟫` recursing on the BITS OF `b`
 with `a` fixed — over its own five-row table (`MulTableOK`: `zeroMul`, `mulZero`, `mulOne`, and the
 two COMBINED bit rows `twoMulMulS : x·y = z → x·(2y) = 2z` and
 `twoMulOneMulS : x·y = z → 2z + x = w → x·(2y + 1) = w`) plus the numeral table (`addCode` for the
 odd bit's `2(am) + a`). The combined rows fold the congruence into the bit step so that the
-conclusion is SYNTACTICALLY `mulFact a (2m)` / `mulFact a (2m + 1)` (`bnum (2·(am)) = 𝟐 ^* bnum (am)`
-for `am ≥ 1`); the case `a = 0` (where `bnum (2·0) = 𝟎`) is its own row.
+conclusion is SYNTACTICALLY `mulFact a (2m)` / `mulFact a (2m + 1)` (`binNumeral (2·(am)) = 𝟐 ^* binNumeral (am)`
+for `am ≥ 1`); the case `a = 0` (where `binNumeral (2·0) = 𝟎`) is its own row.
 
-Delivered: `mulEqCode_proof`, `dlen_mulEqCode_le` (`≤ (‖b‖ + 1) · mulNodeCap`, cubic in the bit
+Delivered: `mulEqCode_proof`, `proofLen_mulEqCode_le` (`≤ (‖b‖ + 1) · mulNodeCap`, cubic in the bit
 length through `addCode`), `lemmaOK_mulEq`, `stepCost_lemma_mulEq`. A leaf file — `NumTableOK` and
 every existing row index stay byte-stable.
 -/
@@ -38,17 +38,17 @@ section mulFact
 
 lemma eqFactB_eq_eqFact' (a b : V) : eqFactB a b = eqFact a b := rfl
 
-/-- **N4's fact**: `mulFact a b := bnum a · bnum b = bnum (a · b)`. -/
-noncomputable def mulFact (a b : V) : V := eqFact (bnum a ^* bnum b) (bnum (a * b))
+/-- **N4's fact**: `mulFact a b := binNumeral a · binNumeral b = binNumeral (a · b)`. -/
+noncomputable def mulFact (a b : V) : V := eqFact (binNumeral a ^* binNumeral b) (binNumeral (a * b))
 noncomputable def mulFactDef : 𝚺₁.Semisentence 3 := .mkSigma
-  “y a b. ∃ ta, !bnumGraph ta a ∧ ∃ tb, !bnumGraph tb b ∧ ∃ p, !qqMulGraph p ta tb ∧
-    ∃ tab, !bnumGraph tab (a * b) ∧ !eqFactDef y p tab”
+  “y a b. ∃ ta, !binNumeralGraph ta a ∧ ∃ tb, !binNumeralGraph tb b ∧ ∃ p, !qqMulGraph p ta tb ∧
+    ∃ tab, !binNumeralGraph tab (a * b) ∧ !eqFactDef y p tab”
 instance mulFact_defined : 𝚺₁-Function₂ (mulFact : V → V → V) via mulFactDef := .mk fun v ↦ by
-  simp [mulFactDef, bnum.defined.iff, qqMul_defined.iff, eqFact_defined.iff, mulFact]
+  simp [mulFactDef, binNumeral.defined.iff, qqMul_defined.iff, eqFact_defined.iff, mulFact]
 instance mulFact_definable : 𝚺₁-Function₂ (mulFact : V → V → V) := mulFact_defined.to_definable
 
 lemma isFormula_mulFact (a b : V) : IsFormula LAct (mulFact a b) :=
-  isFormula_eqFact (isSemiterm_qqMul_LAct (isSemiterm_bnum_LAct 0 _) (isSemiterm_bnum_LAct 0 _)) (isSemiterm_bnum_LAct 0 _)
+  isFormula_eqFact (isSemiterm_qqMul_LAct (isSemiterm_binNumeral_LAct 0 _) (isSemiterm_binNumeral_LAct 0 _)) (isSemiterm_binNumeral_LAct 0 _)
 
 /-- The size parameter of the product node: `a·b + a + b` dominates `a`, `b`, `a·b`. -/
 lemma le_mulS_left (a b : V) : a ≤ a * b + a + b := le_trans le_add_self le_self_add
@@ -59,44 +59,44 @@ lemma mul_le_mulS (a b : V) : a * b ≤ a * b + a + b := le_trans le_self_add le
 lemma formulaLen_mulFact_le {B E a b : V} (hPeq : formulaLen LAct (Peq : V) ≤ B) (hE : 12 * ‖a * b + a + b‖ + 3 ≤ E) :
     formulaLen LAct (mulFact a b) ≤ B * E := by
   have hE1 : 1 ≤ E := le_trans one_le_addE hE
-  have h1 : termLen LAct (bnum a ^* bnum b) ≤ E := by
-    rw [termLen_qqMulL (isSemiterm_bnum_LAct 0 a).isUTerm (isSemiterm_bnum_LAct 0 b).isUTerm]
-    have ha := termLen_bnum_le a
-    have hb := termLen_bnum_le b
+  have h1 : termLen LAct (binNumeral a ^* binNumeral b) ≤ E := by
+    rw [termLen_qqMulL (isSemiterm_binNumeral_LAct 0 a).isUTerm (isSemiterm_binNumeral_LAct 0 b).isUTerm]
+    have ha := termLen_binNumeral_le a
+    have hb := termLen_binNumeral_le b
     have hla := length_monotone (le_mulS_left a b)
     have hlb := length_monotone (le_mulS_right a b)
-    calc termLen LAct (bnum a) + termLen LAct (bnum b) + 1 ≤ (6 * ‖a‖ + 1) + (6 * ‖b‖ + 1) + 1 :=
+    calc termLen LAct (binNumeral a) + termLen LAct (binNumeral b) + 1 ≤ (6 * ‖a‖ + 1) + (6 * ‖b‖ + 1) + 1 :=
           add_le_add (add_le_add ha hb) le_rfl
       _ ≤ (6 * ‖a * b + a + b‖ + 1) + (6 * ‖a * b + a + b‖ + 1) + 1 :=
           add_le_add (add_le_add (add_le_add (mul_le_mul_of_nonneg_left hla zero_le) le_rfl)
             (add_le_add (mul_le_mul_of_nonneg_left hlb zero_le) le_rfl)) le_rfl
       _ = 12 * ‖a * b + a + b‖ + 3 := by ring
       _ ≤ E := hE
-  have h2 : termLen LAct (bnum (a * b)) ≤ E := termLen_bnum_le_E' (mul_le_mulS a b) hE
-  exact le_trans (formulaLen_eqFact_le hE1 (isSemiterm_qqMul_LAct (isSemiterm_bnum_LAct 0 _) (isSemiterm_bnum_LAct 0 _))
-    (isSemiterm_bnum_LAct 0 _) h1 h2) (mul_le_mul_of_nonneg_right hPeq zero_le)
+  have h2 : termLen LAct (binNumeral (a * b)) ≤ E := termLen_binNumeral_le_E' (mul_le_mulS a b) hE
+  exact le_trans (formulaLen_eqFact_le hE1 (isSemiterm_qqMul_LAct (isSemiterm_binNumeral_LAct 0 _) (isSemiterm_binNumeral_LAct 0 _))
+    (isSemiterm_binNumeral_LAct 0 _) h1 h2) (mul_le_mul_of_nonneg_right hPeq zero_le)
 
 lemma one_le_mul_of_one_le' {a m : V} (ha : 1 ≤ a) (hm : 1 ≤ m) : 1 ≤ a * m :=
   le_trans ha (le_mul_of_one_le_right zero_le hm)
 
-lemma mulFact_zero_right (a : V) : mulFact a 0 = eqFact (bnum a ^* (𝟎 : V)) (𝟎 : V) := by
-  unfold mulFact; rw [mul_zero, bnum_zero]
-lemma mulFact_one_right (a : V) : mulFact a 1 = eqFact (bnum a ^* (𝟏 : V)) (bnum a) := by
-  unfold mulFact; rw [mul_one, bnum_one]
-lemma mulFact_zero_left (b : V) : mulFact 0 b = eqFact ((𝟎 : V) ^* bnum b) (𝟎 : V) := by
-  unfold mulFact; rw [zero_mul, bnum_zero]
+lemma mulFact_zero_right (a : V) : mulFact a 0 = eqFact (binNumeral a ^* (𝟎 : V)) (𝟎 : V) := by
+  unfold mulFact; rw [mul_zero, binNumeral_zero]
+lemma mulFact_one_right (a : V) : mulFact a 1 = eqFact (binNumeral a ^* (𝟏 : V)) (binNumeral a) := by
+  unfold mulFact; rw [mul_one, binNumeral_one]
+lemma mulFact_zero_left (b : V) : mulFact 0 b = eqFact ((𝟎 : V) ^* binNumeral b) (𝟎 : V) := by
+  unfold mulFact; rw [zero_mul, binNumeral_zero]
 lemma mulFact_two_mul {a m : V} (ha : 1 ≤ a) (hm : 1 ≤ m) :
-    mulFact a (2 * m) = eqFact (bnum a ^* (((𝟏 : V) ^+ (𝟏 : V)) ^* bnum m)) (((𝟏 : V) ^+ (𝟏 : V)) ^* bnum (a * m)) := by
+    mulFact a (2 * m) = eqFact (binNumeral a ^* (((𝟏 : V) ^+ (𝟏 : V)) ^* binNumeral m)) (((𝟏 : V) ^+ (𝟏 : V)) ^* binNumeral (a * m)) := by
   unfold mulFact
-  rw [bnum_two_mul hm, mul_left_comm, bnum_two_mul (one_le_mul_of_one_le' ha hm)]; rfl
+  rw [binNumeral_two_mul hm, mul_left_comm, binNumeral_two_mul (one_le_mul_of_one_le' ha hm)]; rfl
 lemma mulFact_two_mul_add_one {a m : V} (hm : 1 ≤ m) :
-    mulFact a (2 * m + 1) = eqFact (bnum a ^* ((((𝟏 : V) ^+ (𝟏 : V)) ^* bnum m) ^+ (𝟏 : V))) (bnum (a * (2 * m + 1))) := by
+    mulFact a (2 * m + 1) = eqFact (binNumeral a ^* ((((𝟏 : V) ^+ (𝟏 : V)) ^* binNumeral m) ^+ (𝟏 : V))) (binNumeral (a * (2 * m + 1))) := by
   unfold mulFact
-  rw [bnum_two_mul_add_one hm]; rfl
+  rw [binNumeral_two_mul_add_one hm]; rfl
 lemma addFact_two_mul_mul {a m : V} (ha : 1 ≤ a) (hm : 1 ≤ m) :
-    addFact (2 * (a * m)) a = eqFact ((((𝟏 : V) ^+ (𝟏 : V)) ^* bnum (a * m)) ^+ bnum a) (bnum (a * (2 * m + 1))) := by
+    addFact (2 * (a * m)) a = eqFact ((((𝟏 : V) ^+ (𝟏 : V)) ^* binNumeral (a * m)) ^+ binNumeral a) (binNumeral (a * (2 * m + 1))) := by
   unfold addFact
-  rw [bnum_two_mul (one_le_mul_of_one_le' ha hm), show 2 * (a * m) + a = a * (2 * m + 1) by ring]; rfl
+  rw [binNumeral_two_mul (one_le_mul_of_one_le' ha hm), show 2 * (a * m) + a = a * (2 * m + 1) by ring]; rfl
 
 end mulFact
 
@@ -273,7 +273,7 @@ theorem exists_mulTable : ∃ N B : ℕ, ∀ (V : Type) [ORingStructure V] [V↓
   obtain ⟨N3, h3⟩ := (lib_twoMulMulS).univ_code
   obtain ⟨N4, h4⟩ := (lib_twoMulOneMulS).univ_code
   refine ⟨N0 + N1 + N2 + N3 + N4, rowLen zeroMulB + rowLen mulZeroB + rowLen mulOneB + rowLen twoMulMulSB
-    + rowLen twoMulOneMulSB + flen (Rewriting.emb eqS : Semiproposition LAct 2) + 1, fun V _ _ ↦ ?_⟩
+    + rowLen twoMulOneMulSB + formulaLenMeta (Rewriting.emb eqS : Semiproposition LAct 2) + 1, fun V _ _ ↦ ?_⟩
   obtain ⟨d0, hd0, hl0⟩ := h0 V
   obtain ⟨d1, hd1, hl1⟩ := h1 V
   obtain ⟨d2, hd2, hl2⟩ := h2 V
@@ -285,22 +285,22 @@ theorem exists_mulTable : ∃ N B : ℕ, ∀ (V : Type) [ORingStructure V] [V↓
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · exact numRowOK_of zeroMulB (by unfold rZeroMul; rw [nth_vecOf _ 0 (by simp)]; rfl) quote_row_zeroMul hd0
       (le_trans hl0 (by exact_mod_cast (by omega : N0 ≤ N0 + N1 + N2 + N3 + N4)))
-      (by exact_mod_cast (by omega : rowLen zeroMulB ≤ rowLen zeroMulB + rowLen mulZeroB + rowLen mulOneB + rowLen twoMulMulSB + rowLen twoMulOneMulSB + flen (Rewriting.emb eqS : Semiproposition LAct 2) + 1))
+      (by exact_mod_cast (by omega : rowLen zeroMulB ≤ rowLen zeroMulB + rowLen mulZeroB + rowLen mulOneB + rowLen twoMulMulSB + rowLen twoMulOneMulSB + formulaLenMeta (Rewriting.emb eqS : Semiproposition LAct 2) + 1))
   · exact numRowOK_of mulZeroB (by unfold rMulZero; rw [nth_vecOf _ 1 (by simp)]; rfl) quote_row_mulZero hd1
       (le_trans hl1 (by exact_mod_cast (by omega : N1 ≤ N0 + N1 + N2 + N3 + N4)))
-      (by exact_mod_cast (by omega : rowLen mulZeroB ≤ rowLen zeroMulB + rowLen mulZeroB + rowLen mulOneB + rowLen twoMulMulSB + rowLen twoMulOneMulSB + flen (Rewriting.emb eqS : Semiproposition LAct 2) + 1))
+      (by exact_mod_cast (by omega : rowLen mulZeroB ≤ rowLen zeroMulB + rowLen mulZeroB + rowLen mulOneB + rowLen twoMulMulSB + rowLen twoMulOneMulSB + formulaLenMeta (Rewriting.emb eqS : Semiproposition LAct 2) + 1))
   · exact numRowOK_of mulOneB (by unfold rMulOne; rw [nth_vecOf _ 2 (by simp)]; rfl) quote_row_mulOne hd2
       (le_trans hl2 (by exact_mod_cast (by omega : N2 ≤ N0 + N1 + N2 + N3 + N4)))
-      (by exact_mod_cast (by omega : rowLen mulOneB ≤ rowLen zeroMulB + rowLen mulZeroB + rowLen mulOneB + rowLen twoMulMulSB + rowLen twoMulOneMulSB + flen (Rewriting.emb eqS : Semiproposition LAct 2) + 1))
+      (by exact_mod_cast (by omega : rowLen mulOneB ≤ rowLen zeroMulB + rowLen mulZeroB + rowLen mulOneB + rowLen twoMulMulSB + rowLen twoMulOneMulSB + formulaLenMeta (Rewriting.emb eqS : Semiproposition LAct 2) + 1))
   · exact numRowOK_of twoMulMulSB (by unfold rTwoMulMul; rw [nth_vecOf _ 3 (by simp)]; rfl) quote_row_twoMulMulS hd3
       (le_trans hl3 (by exact_mod_cast (by omega : N3 ≤ N0 + N1 + N2 + N3 + N4)))
-      (by exact_mod_cast (by omega : rowLen twoMulMulSB ≤ rowLen zeroMulB + rowLen mulZeroB + rowLen mulOneB + rowLen twoMulMulSB + rowLen twoMulOneMulSB + flen (Rewriting.emb eqS : Semiproposition LAct 2) + 1))
+      (by exact_mod_cast (by omega : rowLen twoMulMulSB ≤ rowLen zeroMulB + rowLen mulZeroB + rowLen mulOneB + rowLen twoMulMulSB + rowLen twoMulOneMulSB + formulaLenMeta (Rewriting.emb eqS : Semiproposition LAct 2) + 1))
   · exact numRowOK_of twoMulOneMulSB (by unfold rTwoMulOneMul; rw [nth_vecOf _ 4 (by simp)]; rfl) quote_row_twoMulOneMulS hd4
       (le_trans hl4 (by exact_mod_cast (by omega : N4 ≤ N0 + N1 + N2 + N3 + N4)))
-      (by exact_mod_cast (by omega : rowLen twoMulOneMulSB ≤ rowLen zeroMulB + rowLen mulZeroB + rowLen mulOneB + rowLen twoMulMulSB + rowLen twoMulOneMulSB + flen (Rewriting.emb eqS : Semiproposition LAct 2) + 1))
+      (by exact_mod_cast (by omega : rowLen twoMulOneMulSB ≤ rowLen zeroMulB + rowLen mulZeroB + rowLen mulOneB + rowLen twoMulMulSB + rowLen twoMulOneMulSB + formulaLenMeta (Rewriting.emb eqS : Semiproposition LAct 2) + 1))
   · rw [Peq, formulaLen_quote_semisentence_V']
-    exact_mod_cast (by omega : flen (Rewriting.emb eqS : Semiproposition LAct 2) ≤ rowLen zeroMulB + rowLen mulZeroB + rowLen mulOneB + rowLen twoMulMulSB + rowLen twoMulOneMulSB + flen (Rewriting.emb eqS : Semiproposition LAct 2) + 1)
-  · exact_mod_cast (by omega : 1 ≤ rowLen zeroMulB + rowLen mulZeroB + rowLen mulOneB + rowLen twoMulMulSB + rowLen twoMulOneMulSB + flen (Rewriting.emb eqS : Semiproposition LAct 2) + 1)
+    exact_mod_cast (by omega : formulaLenMeta (Rewriting.emb eqS : Semiproposition LAct 2) ≤ rowLen zeroMulB + rowLen mulZeroB + rowLen mulOneB + rowLen twoMulMulSB + rowLen twoMulOneMulSB + formulaLenMeta (Rewriting.emb eqS : Semiproposition LAct 2) + 1)
+  · exact_mod_cast (by omega : 1 ≤ rowLen zeroMulB + rowLen mulZeroB + rowLen mulOneB + rowLen twoMulMulSB + rowLen twoMulOneMulSB + formulaLenMeta (Rewriting.emb eqS : Semiproposition LAct 2) + 1)
 
 end table
 
@@ -313,48 +313,48 @@ namespace MulG
 /-- The graph: `⟪a, b, d⟫` where `d` is the product-fact derivation of `(a, b)`. -/
 def Phi (tblM tbl : V) (C : Set V) (pr : V) : Prop :=
   ∃ a b d, pr = ⟪a, b, d⟫ ∧
-  ( (b = 0 ∧ d = step0 tblM 1 (vecOf [bnum a]) (mulFact a 0)) ∨
-    (b = 1 ∧ d = step0 tblM 2 (vecOf [bnum a]) (mulFact a 1)) ∨
-    (a = 0 ∧ 2 ≤ b ∧ d = step0 tblM 0 (vecOf [bnum b]) (mulFact 0 b)) ∨
+  ( (b = 0 ∧ d = step0 tblM 1 (vecOf [binNumeral a]) (mulFact a 0)) ∨
+    (b = 1 ∧ d = step0 tblM 2 (vecOf [binNumeral a]) (mulFact a 1)) ∨
+    (a = 0 ∧ 2 ≤ b ∧ d = step0 tblM 0 (vecOf [binNumeral b]) (mulFact 0 b)) ∨
     (∃ m d', 1 ≤ a ∧ 1 ≤ m ∧ b = 2 * m ∧ ⟪a, m, d'⟫ ∈ C ∧
-      d = step1 tblM 3 (mulFact a m) d' (vecOf [bnum a, bnum m, bnum (a * m)]) (mulFact a b)) ∨
+      d = step1 tblM 3 (mulFact a m) d' (vecOf [binNumeral a, binNumeral m, binNumeral (a * m)]) (mulFact a b)) ∨
     (∃ m d', 1 ≤ a ∧ 1 ≤ m ∧ b = 2 * m + 1 ∧ ⟪a, m, d'⟫ ∈ C ∧
       d = step2 tblM 4 (mulFact a m) d' (addFact (2 * (a * m)) a) (addCode tbl (2 * (a * m)) a)
-            (vecOf [bnum a, bnum m, bnum (a * m), bnum (a * b)]) (mulFact a b)) )
+            (vecOf [binNumeral a, binNumeral m, binNumeral (a * m), binNumeral (a * b)]) (mulFact a b)) )
 
 noncomputable def blueprint : Fixpoint.Blueprint 2 := ⟨.mkDelta
   (.mkSigma “pr C tblM tbl.
     ∃ a <⁺ pr, ∃ q <⁺ pr, !pairDef pr a q ∧ ∃ b <⁺ q, ∃ d <⁺ q, !pairDef q b d ∧
-    ( (b = 0 ∧ ∃ ta, !bnumGraph ta a ∧ ∃ ev, !adjoinDef ev ta 0 ∧ ∃ A, !mulFactDef A a 0 ∧
+    ( (b = 0 ∧ ∃ ta, !binNumeralGraph ta a ∧ ∃ ev, !adjoinDef ev ta 0 ∧ ∃ A, !mulFactDef A a 0 ∧
         ∃ x, !step0Def x tblM 1 ev A ∧ d = x) ∨
-      (b = 1 ∧ ∃ ta, !bnumGraph ta a ∧ ∃ ev, !adjoinDef ev ta 0 ∧ ∃ A, !mulFactDef A a 1 ∧
+      (b = 1 ∧ ∃ ta, !binNumeralGraph ta a ∧ ∃ ev, !adjoinDef ev ta 0 ∧ ∃ A, !mulFactDef A a 1 ∧
         ∃ x, !step0Def x tblM 2 ev A ∧ d = x) ∨
-      (a = 0 ∧ 2 ≤ b ∧ ∃ tb, !bnumGraph tb b ∧ ∃ ev, !adjoinDef ev tb 0 ∧ ∃ A, !mulFactDef A 0 b ∧
+      (a = 0 ∧ 2 ≤ b ∧ ∃ tb, !binNumeralGraph tb b ∧ ∃ ev, !adjoinDef ev tb 0 ∧ ∃ A, !mulFactDef A 0 b ∧
         ∃ x, !step0Def x tblM 0 ev A ∧ d = x) ∨
       (∃ m < b, ∃ d' < d, 1 ≤ a ∧ 1 ≤ m ∧ b = 2 * m ∧ (∃ q', !pairDef q' m d' ∧ :⟪a, q'⟫:∈ C) ∧
-        ∃ F, !mulFactDef F a m ∧ ∃ ta, !bnumGraph ta a ∧ ∃ tm, !bnumGraph tm m ∧ ∃ tam, !bnumGraph tam (a * m) ∧
+        ∃ F, !mulFactDef F a m ∧ ∃ ta, !binNumeralGraph ta a ∧ ∃ tm, !binNumeralGraph tm m ∧ ∃ tam, !binNumeralGraph tam (a * m) ∧
         ∃ v0, !adjoinDef v0 tam 0 ∧ ∃ v1, !adjoinDef v1 tm v0 ∧ ∃ ev, !adjoinDef ev ta v1 ∧
         ∃ A, !mulFactDef A a b ∧ ∃ x, !step1Def x tblM 3 F d' ev A ∧ d = x) ∨
       (∃ m < b, ∃ d' < d, 1 ≤ a ∧ 1 ≤ m ∧ b = 2 * m + 1 ∧ (∃ q', !pairDef q' m d' ∧ :⟪a, q'⟫:∈ C) ∧
         ∃ F, !mulFactDef F a m ∧ ∃ G, !addFactDef G (2 * (a * m)) a ∧ ∃ dG, !addCodeDef dG tbl (2 * (a * m)) a ∧
-        ∃ ta, !bnumGraph ta a ∧ ∃ tm, !bnumGraph tm m ∧ ∃ tam, !bnumGraph tam (a * m) ∧ ∃ tab, !bnumGraph tab (a * b) ∧
+        ∃ ta, !binNumeralGraph ta a ∧ ∃ tm, !binNumeralGraph tm m ∧ ∃ tam, !binNumeralGraph tam (a * m) ∧ ∃ tab, !binNumeralGraph tab (a * b) ∧
         ∃ v0, !adjoinDef v0 tab 0 ∧ ∃ v1, !adjoinDef v1 tam v0 ∧ ∃ v2, !adjoinDef v2 tm v1 ∧ ∃ ev, !adjoinDef ev ta v2 ∧
         ∃ A, !mulFactDef A a b ∧ ∃ x, !step2Def x tblM 4 F d' G dG ev A ∧ d = x) )”)
   (.mkPi “pr C tblM tbl.
     ∃ a <⁺ pr, ∃ q <⁺ pr, !pairDef pr a q ∧ ∃ b <⁺ q, ∃ d <⁺ q, !pairDef q b d ∧
-    ( (b = 0 ∧ ∀ ta, !bnumGraph ta a → ∀ ev, !adjoinDef ev ta 0 → ∀ A, !mulFactDef A a 0 →
+    ( (b = 0 ∧ ∀ ta, !binNumeralGraph ta a → ∀ ev, !adjoinDef ev ta 0 → ∀ A, !mulFactDef A a 0 →
         ∀ x, !step0Def x tblM 1 ev A → d = x) ∨
-      (b = 1 ∧ ∀ ta, !bnumGraph ta a → ∀ ev, !adjoinDef ev ta 0 → ∀ A, !mulFactDef A a 1 →
+      (b = 1 ∧ ∀ ta, !binNumeralGraph ta a → ∀ ev, !adjoinDef ev ta 0 → ∀ A, !mulFactDef A a 1 →
         ∀ x, !step0Def x tblM 2 ev A → d = x) ∨
-      (a = 0 ∧ 2 ≤ b ∧ ∀ tb, !bnumGraph tb b → ∀ ev, !adjoinDef ev tb 0 → ∀ A, !mulFactDef A 0 b →
+      (a = 0 ∧ 2 ≤ b ∧ ∀ tb, !binNumeralGraph tb b → ∀ ev, !adjoinDef ev tb 0 → ∀ A, !mulFactDef A 0 b →
         ∀ x, !step0Def x tblM 0 ev A → d = x) ∨
       (∃ m < b, ∃ d' < d, 1 ≤ a ∧ 1 ≤ m ∧ b = 2 * m ∧ (∀ q', !pairDef q' m d' → :⟪a, q'⟫:∈ C) ∧
-        ∀ F, !mulFactDef F a m → ∀ ta, !bnumGraph ta a → ∀ tm, !bnumGraph tm m → ∀ tam, !bnumGraph tam (a * m) →
+        ∀ F, !mulFactDef F a m → ∀ ta, !binNumeralGraph ta a → ∀ tm, !binNumeralGraph tm m → ∀ tam, !binNumeralGraph tam (a * m) →
         ∀ v0, !adjoinDef v0 tam 0 → ∀ v1, !adjoinDef v1 tm v0 → ∀ ev, !adjoinDef ev ta v1 →
         ∀ A, !mulFactDef A a b → ∀ x, !step1Def x tblM 3 F d' ev A → d = x) ∨
       (∃ m < b, ∃ d' < d, 1 ≤ a ∧ 1 ≤ m ∧ b = 2 * m + 1 ∧ (∀ q', !pairDef q' m d' → :⟪a, q'⟫:∈ C) ∧
         ∀ F, !mulFactDef F a m → ∀ G, !addFactDef G (2 * (a * m)) a → ∀ dG, !addCodeDef dG tbl (2 * (a * m)) a →
-        ∀ ta, !bnumGraph ta a → ∀ tm, !bnumGraph tm m → ∀ tam, !bnumGraph tam (a * m) → ∀ tab, !bnumGraph tab (a * b) →
+        ∀ ta, !binNumeralGraph ta a → ∀ tm, !binNumeralGraph tm m → ∀ tam, !binNumeralGraph tam (a * m) → ∀ tab, !binNumeralGraph tab (a * b) →
         ∀ v0, !adjoinDef v0 tab 0 → ∀ v1, !adjoinDef v1 tam v0 → ∀ v2, !adjoinDef v2 tm v1 → ∀ ev, !adjoinDef ev ta v2 →
         ∀ A, !mulFactDef A a b → ∀ x, !step2Def x tblM 4 F d' G dG ev A → d = x) )”)⟩
 
@@ -362,14 +362,14 @@ noncomputable def blueprint : Fixpoint.Blueprint 2 := ⟨.mkDelta
 private lemma phi_iff (tblM tbl C pr : V) :
     Phi tblM tbl {x | x ∈ C} pr ↔
     ∃ a ≤ pr, ∃ q ≤ pr, pr = ⟪a, q⟫ ∧ ∃ b ≤ q, ∃ d ≤ q, q = ⟪b, d⟫ ∧
-    ( (b = 0 ∧ d = step0 tblM 1 (vecOf [bnum a]) (mulFact a 0)) ∨
-      (b = 1 ∧ d = step0 tblM 2 (vecOf [bnum a]) (mulFact a 1)) ∨
-      (a = 0 ∧ 2 ≤ b ∧ d = step0 tblM 0 (vecOf [bnum b]) (mulFact 0 b)) ∨
+    ( (b = 0 ∧ d = step0 tblM 1 (vecOf [binNumeral a]) (mulFact a 0)) ∨
+      (b = 1 ∧ d = step0 tblM 2 (vecOf [binNumeral a]) (mulFact a 1)) ∨
+      (a = 0 ∧ 2 ≤ b ∧ d = step0 tblM 0 (vecOf [binNumeral b]) (mulFact 0 b)) ∨
       (∃ m < b, ∃ d' < d, 1 ≤ a ∧ 1 ≤ m ∧ b = 2 * m ∧ ⟪a, m, d'⟫ ∈ C ∧
-        d = step1 tblM 3 (mulFact a m) d' (vecOf [bnum a, bnum m, bnum (a * m)]) (mulFact a b)) ∨
+        d = step1 tblM 3 (mulFact a m) d' (vecOf [binNumeral a, binNumeral m, binNumeral (a * m)]) (mulFact a b)) ∨
       (∃ m < b, ∃ d' < d, 1 ≤ a ∧ 1 ≤ m ∧ b = 2 * m + 1 ∧ ⟪a, m, d'⟫ ∈ C ∧
         d = step2 tblM 4 (mulFact a m) d' (addFact (2 * (a * m)) a) (addCode tbl (2 * (a * m)) a)
-              (vecOf [bnum a, bnum m, bnum (a * m), bnum (a * b)]) (mulFact a b)) ) := by
+              (vecOf [binNumeral a, binNumeral m, binNumeral (a * m), binNumeral (a * b)]) (mulFact a b)) ) := by
   constructor
   · rintro ⟨a, b, d, rfl, h⟩
     refine ⟨a, le_pair_left _ _, ⟪b, d⟫, le_pair_right _ _, rfl, b, le_pair_left _ _, d, le_pair_right _ _, rfl, ?_⟩
@@ -378,9 +378,9 @@ private lemma phi_iff (tblM tbl C pr : V) :
     · exact Or.inr (Or.inl h)
     · exact Or.inr (Or.inr (Or.inl h))
     · exact Or.inr (Or.inr (Or.inr (Or.inl
-        ⟨m, Bnum.lt_two_mul hm, d', SuccG.d_lt_step1 _ _ _ _ _ _, ha, hm, rfl, hC, rfl⟩)))
+        ⟨m, BinNumeral.lt_two_mul hm, d', SuccG.d_lt_step1 _ _ _ _ _ _, ha, hm, rfl, hC, rfl⟩)))
     · exact Or.inr (Or.inr (Or.inr (Or.inr
-        ⟨m, Bnum.lt_two_mul_add_one hm, d', d_lt_step2 _ _ _ _ _ _ _ _, ha, hm, rfl, hC, rfl⟩)))
+        ⟨m, BinNumeral.lt_two_mul_add_one hm, d', d_lt_step2 _ _ _ _ _ _ _ _, ha, hm, rfl, hC, rfl⟩)))
   · rintro ⟨a, _, q, _, rfl, b, _, d, _, rfl, h⟩
     refine ⟨a, b, d, rfl, ?_⟩
     rcases h with h | h | h | ⟨m, _, d', _, ha, hm, rfl, hC, rfl⟩ | ⟨m, _, d', _, ha, hm, rfl, hC, rfl⟩
@@ -396,11 +396,11 @@ noncomputable def construction : Fixpoint.Construction V blueprint where
   defined := .mk <| by
     constructor
     · intro v
-      simp [blueprint, mulFact_defined.iff, addFact_defined.iff, addCode_defined.iff, bnum.defined.iff,
+      simp [blueprint, mulFact_defined.iff, addFact_defined.iff, addCode_defined.iff, binNumeral.defined.iff,
         step0_defined.iff, step1_defined.iff, step2_defined.iff, numeral_eq_natCast]
     · intro v
       symm
-      simpa [blueprint, mulFact_defined.iff, addFact_defined.iff, addCode_defined.iff, bnum.defined.iff,
+      simpa [blueprint, mulFact_defined.iff, addFact_defined.iff, addCode_defined.iff, binNumeral.defined.iff,
         step0_defined.iff, step1_defined.iff, step2_defined.iff, numeral_eq_natCast] using phi_iff (v 2) (v 3) (v 1) (v 0)
   monotone := by
     rintro C C' hC _ pr ⟨a, b, d, rfl, h⟩
@@ -440,17 +440,17 @@ instance mulGraph_definable : 𝚺₁.Definable (fun v : Fin 5 → V ↦ MulGrap
 
 lemma MulGraph.case_iff {tblM tbl a b d : V} :
     MulGraph tblM tbl a b d ↔
-    (b = 0 ∧ d = step0 tblM 1 (vecOf [bnum a]) (mulFact a 0)) ∨
-    (b = 1 ∧ d = step0 tblM 2 (vecOf [bnum a]) (mulFact a 1)) ∨
-    (a = 0 ∧ 2 ≤ b ∧ d = step0 tblM 0 (vecOf [bnum b]) (mulFact 0 b)) ∨
+    (b = 0 ∧ d = step0 tblM 1 (vecOf [binNumeral a]) (mulFact a 0)) ∨
+    (b = 1 ∧ d = step0 tblM 2 (vecOf [binNumeral a]) (mulFact a 1)) ∨
+    (a = 0 ∧ 2 ≤ b ∧ d = step0 tblM 0 (vecOf [binNumeral b]) (mulFact 0 b)) ∨
     (∃ m d', 1 ≤ a ∧ 1 ≤ m ∧ b = 2 * m ∧ MulGraph tblM tbl a m d' ∧
-      d = step1 tblM 3 (mulFact a m) d' (vecOf [bnum a, bnum m, bnum (a * m)]) (mulFact a b)) ∨
+      d = step1 tblM 3 (mulFact a m) d' (vecOf [binNumeral a, binNumeral m, binNumeral (a * m)]) (mulFact a b)) ∨
     (∃ m d', 1 ≤ a ∧ 1 ≤ m ∧ b = 2 * m + 1 ∧ MulGraph tblM tbl a m d' ∧
       d = step2 tblM 4 (mulFact a m) d' (addFact (2 * (a * m)) a) (addCode tbl (2 * (a * m)) a)
-            (vecOf [bnum a, bnum m, bnum (a * m), bnum (a * b)]) (mulFact a b)) :=
+            (vecOf [binNumeral a, binNumeral m, binNumeral (a * m), binNumeral (a * b)]) (mulFact a b)) :=
   Iff.trans MulG.construction.case (by simp [MulG.construction, MulG.Phi, MulGraph])
 
-lemma MulGraph.zero_iff {tblM tbl a d : V} : MulGraph tblM tbl a 0 d ↔ d = step0 tblM 1 (vecOf [bnum a]) (mulFact a 0) := by
+lemma MulGraph.zero_iff {tblM tbl a d : V} : MulGraph tblM tbl a 0 d ↔ d = step0 tblM 1 (vecOf [binNumeral a]) (mulFact a 0) := by
   rw [MulGraph.case_iff]
   constructor
   · rintro (⟨_, rfl⟩ | ⟨h, _⟩ | ⟨_, h, _⟩ | ⟨m, _, _, hm, h, _⟩ | ⟨m, _, _, hm, h, _⟩)
@@ -461,7 +461,7 @@ lemma MulGraph.zero_iff {tblM tbl a d : V} : MulGraph tblM tbl a 0 d ↔ d = ste
     · exact absurd h (zero_ne_two_mul_add_one m)
   · rintro rfl; exact Or.inl ⟨rfl, rfl⟩
 
-lemma MulGraph.one_iff {tblM tbl a d : V} : MulGraph tblM tbl a 1 d ↔ d = step0 tblM 2 (vecOf [bnum a]) (mulFact a 1) := by
+lemma MulGraph.one_iff {tblM tbl a d : V} : MulGraph tblM tbl a 1 d ↔ d = step0 tblM 2 (vecOf [binNumeral a]) (mulFact a 1) := by
   rw [MulGraph.case_iff]
   constructor
   · rintro (⟨h, _⟩ | ⟨_, rfl⟩ | ⟨_, h, _⟩ | ⟨m, _, _, hm, h, _⟩ | ⟨m, _, _, hm, h, _⟩)
@@ -473,7 +473,7 @@ lemma MulGraph.one_iff {tblM tbl a d : V} : MulGraph tblM tbl a 1 d ↔ d = step
   · rintro rfl; exact Or.inr (Or.inl ⟨rfl, rfl⟩)
 
 lemma MulGraph.zero_left_iff {tblM tbl b d : V} (hb : 2 ≤ b) :
-    MulGraph tblM tbl 0 b d ↔ d = step0 tblM 0 (vecOf [bnum b]) (mulFact 0 b) := by
+    MulGraph tblM tbl 0 b d ↔ d = step0 tblM 0 (vecOf [binNumeral b]) (mulFact 0 b) := by
   rw [MulGraph.case_iff]
   constructor
   · rintro (⟨h, _⟩ | ⟨h, _⟩ | ⟨_, _, rfl⟩ | ⟨m, _, ha, _, _, _⟩ | ⟨m, _, ha, _, _, _⟩)
@@ -486,7 +486,7 @@ lemma MulGraph.zero_left_iff {tblM tbl b d : V} (hb : 2 ≤ b) :
 
 lemma MulGraph.two_mul_iff {tblM tbl a m d : V} (ha : 1 ≤ a) (hm : 1 ≤ m) :
     MulGraph tblM tbl a (2 * m) d ↔ ∃ d', MulGraph tblM tbl a m d' ∧
-      d = step1 tblM 3 (mulFact a m) d' (vecOf [bnum a, bnum m, bnum (a * m)]) (mulFact a (2 * m)) := by
+      d = step1 tblM 3 (mulFact a m) d' (vecOf [binNumeral a, binNumeral m, binNumeral (a * m)]) (mulFact a (2 * m)) := by
   rw [MulGraph.case_iff]
   constructor
   · rintro (⟨h, _⟩ | ⟨h, _⟩ | ⟨h, _, _⟩ | ⟨m', d', _, _, h, hd', rfl⟩ | ⟨m', _, _, _, h, _⟩)
@@ -500,7 +500,7 @@ lemma MulGraph.two_mul_iff {tblM tbl a m d : V} (ha : 1 ≤ a) (hm : 1 ≤ m) :
 lemma MulGraph.two_mul_add_one_iff {tblM tbl a m d : V} (ha : 1 ≤ a) (hm : 1 ≤ m) :
     MulGraph tblM tbl a (2 * m + 1) d ↔ ∃ d', MulGraph tblM tbl a m d' ∧
       d = step2 tblM 4 (mulFact a m) d' (addFact (2 * (a * m)) a) (addCode tbl (2 * (a * m)) a)
-            (vecOf [bnum a, bnum m, bnum (a * m), bnum (a * (2 * m + 1))]) (mulFact a (2 * m + 1)) := by
+            (vecOf [binNumeral a, binNumeral m, binNumeral (a * m), binNumeral (a * (2 * m + 1))]) (mulFact a (2 * m + 1)) := by
   rw [MulGraph.case_iff]
   constructor
   · rintro (⟨h, _⟩ | ⟨h, _⟩ | ⟨h, _, _⟩ | ⟨m', _, _, _, h, _⟩ | ⟨m', d', _, _, h, hd', rfl⟩)
@@ -566,7 +566,7 @@ lemma mulGraph_existsUnique (tblM tbl a b : V) : ∃! d, MulGraph tblM tbl a b d
   obtain ⟨d, hd⟩ := mulGraph_exists tblM tbl a b
   exact ExistsUnique.intro d hd (fun d' h' ↦ mulGraph_unique tblM tbl a b d' d h' hd)
 
-/-- **N4's prover**: the derivation code of `{bnum a · bnum b = bnum (a · b)}`. -/
+/-- **N4's prover**: the derivation code of `{binNumeral a · binNumeral b = binNumeral (a · b)}`. -/
 noncomputable def mulEqCode (tblM tbl a b : V) : V := Classical.choose! (mulGraph_existsUnique tblM tbl a b)
 
 lemma mulEqCode_graph (tblM tbl a b : V) : MulGraph tblM tbl a b (mulEqCode tblM tbl a b) :=
@@ -605,11 +605,11 @@ lemma mulE_mono {s s' : V} (h : s ≤ s') : 12 * ‖s‖ + 3 ≤ 12 * ‖s'‖ +
   add_le_add (mul_le_mul_of_nonneg_left (length_monotone h) zero_le) le_rfl
 
 /-- The odd bit's addition sub-derivation, capped at the node's size. -/
-lemma dlen_addCode_mul_le {tbl N B : V} (htbl : NumTableOK tbl N B) {a m : V} (hm : 1 ≤ m) :
-    dlen TAct (addCode tbl (2 * (a * m)) a) ≤
+lemma proofLen_addCode_mul_le {tbl N B : V} (htbl : NumTableOK tbl N B) {a m : V} (hm : 1 ≤ m) :
+    proofLen TAct (addCode tbl (2 * (a * m)) a) ≤
       (‖a * (2 * m + 1) + a + (2 * m + 1)‖ + 1) * (‖a * (2 * m + 1) + a + (2 * m + 1)‖ + 2)
         * nodeCost N B (12 * ‖a * (2 * m + 1) + a + (2 * m + 1)‖ + 3) := by
-  refine le_trans (dlen_addCode_le htbl _ _) ?_
+  refine le_trans (proofLen_addCode_le htbl _ _) ?_
   have e : 2 * (a * m) + a = a * (2 * m + 1) := by ring
   rw [e]
   have h1 : a * (2 * m + 1) ≤ a * (2 * m + 1) + a + (2 * m + 1) := mul_le_mulS _ _
@@ -624,23 +624,23 @@ lemma dlen_addCode_mul_le {tbl N B : V} (htbl : NumTableOK tbl N B) {a m : V} (h
 /-- **Soundness and length of the product chain**, by Π₁ order induction on `b` (`a` fixed). -/
 theorem mulGraph_sound {tbl N B tblM N' B' : V} (htbl : NumTableOK tbl N B) (htblM : MulTableOK tblM N' B') (a b : V) :
     ∀ d, MulGraph tblM tbl a b d →
-      DerivationOf TAct d (sing (mulFact a b)) ∧ dlen TAct d ≤ mulEqBound N B N' B' a b := by
+      DerivationOf TAct d (sing (mulFact a b)) ∧ proofLen TAct d ≤ mulEqBound N B N' B' a b := by
   induction b using ISigma1.pi1_order_induction with
   | hP => simp only [mulEqBound, mulNodeCap]; definability
   | ind b ih =>
     intro d hd
     obtain ⟨hr0, hr1, hr2, hr3, hr4, hPeq, hB⟩ := htblM
-    have hxa : IsSemiterm LAct 0 (bnum a) := isSemiterm_bnum_LAct 0 _
+    have hxa : IsSemiterm LAct 0 (binNumeral a) := isSemiterm_binNumeral_LAct 0 _
     rcases zero_one_or_two_le b with rfl | rfl | h2
     · rw [MulGraph.zero_iff] at hd
       subst hd
-      have hc : instOuter LAct [bnum a] row_mulZero_c = mulFact a 0 := by
+      have hc : instOuter LAct [binNumeral a] row_mulZero_c = mulFact a 0 := by
         rw [(inst_mulZero hxa).2, mulFact_zero_right]; rfl
-      have hes : ∀ e ∈ [bnum a], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ 12 * ‖a * 0 + a + 0‖ + 3 := by
+      have hes : ∀ e ∈ [binNumeral a], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ 12 * ‖a * 0 + a + 0‖ + 3 := by
         simp only [List.mem_singleton, forall_eq]
-        exact ⟨hxa, termLen_bnum_le_E' (le_mulS_left a 0) le_rfl⟩
-      have hpf := step0_proof hr1 [bnum a] rfl (fun e he ↦ (hes e he).1) (isFormula_mulFact a 0) (inst_mulZero hxa).1 hc
-      have hlen := dlen_step0_le hr1 [bnum a] rfl hes one_le_addE hB (isFormula_mulFact a 0) (inst_mulZero hxa).1 hc
+        exact ⟨hxa, termLen_binNumeral_le_E' (le_mulS_left a 0) le_rfl⟩
+      have hpf := step0_proof hr1 [binNumeral a] rfl (fun e he ↦ (hes e he).1) (isFormula_mulFact a 0) (inst_mulZero hxa).1 hc
+      have hlen := proofLen_step0_le hr1 [binNumeral a] rfl hes one_le_addE hB (isFormula_mulFact a 0) (inst_mulZero hxa).1 hc
         (by norm_num) (by simp [row_mulZero_as]) (formulaLen_mulFact_le hPeq le_rfl)
       rw [cast_rMulZero] at hpf hlen
       refine ⟨hpf, ?_⟩
@@ -648,13 +648,13 @@ theorem mulGraph_sound {tbl N B tblM N' B' : V} (htbl : NumTableOK tbl N B) (htb
       exact le_trans hlen (le_trans le_self_add (le_mul_of_one_le_left zero_le le_add_self))
     · rw [MulGraph.one_iff] at hd
       subst hd
-      have hc : instOuter LAct [bnum a] row_mulOne_c = mulFact a 1 := by
+      have hc : instOuter LAct [binNumeral a] row_mulOne_c = mulFact a 1 := by
         rw [(inst_mulOne hxa).2, mulFact_one_right]; rfl
-      have hes : ∀ e ∈ [bnum a], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ 12 * ‖a * 1 + a + 1‖ + 3 := by
+      have hes : ∀ e ∈ [binNumeral a], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ 12 * ‖a * 1 + a + 1‖ + 3 := by
         simp only [List.mem_singleton, forall_eq]
-        exact ⟨hxa, termLen_bnum_le_E' (le_mulS_left a 1) le_rfl⟩
-      have hpf := step0_proof hr2 [bnum a] rfl (fun e he ↦ (hes e he).1) (isFormula_mulFact a 1) (inst_mulOne hxa).1 hc
-      have hlen := dlen_step0_le hr2 [bnum a] rfl hes one_le_addE hB (isFormula_mulFact a 1) (inst_mulOne hxa).1 hc
+        exact ⟨hxa, termLen_binNumeral_le_E' (le_mulS_left a 1) le_rfl⟩
+      have hpf := step0_proof hr2 [binNumeral a] rfl (fun e he ↦ (hes e he).1) (isFormula_mulFact a 1) (inst_mulOne hxa).1 hc
+      have hlen := proofLen_step0_le hr2 [binNumeral a] rfl hes one_le_addE hB (isFormula_mulFact a 1) (inst_mulOne hxa).1 hc
         (by norm_num) (by simp [row_mulOne_as]) (formulaLen_mulFact_le hPeq le_rfl)
       rw [cast_rMulOne] at hpf hlen
       refine ⟨hpf, ?_⟩
@@ -664,14 +664,14 @@ theorem mulGraph_sound {tbl N B tblM N' B' : V} (htbl : NumTableOK tbl N B) (htb
     · subst ha0
       rw [MulGraph.zero_left_iff h2] at hd
       subst hd
-      have hxb : IsSemiterm LAct 0 (bnum b) := isSemiterm_bnum_LAct 0 _
-      have hc : instOuter LAct [bnum b] row_zeroMul_c = mulFact 0 b := by
+      have hxb : IsSemiterm LAct 0 (binNumeral b) := isSemiterm_binNumeral_LAct 0 _
+      have hc : instOuter LAct [binNumeral b] row_zeroMul_c = mulFact 0 b := by
         rw [(inst_zeroMul hxb).2, mulFact_zero_left]; rfl
-      have hes : ∀ e ∈ [bnum b], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ 12 * ‖0 * b + 0 + b‖ + 3 := by
+      have hes : ∀ e ∈ [binNumeral b], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ 12 * ‖0 * b + 0 + b‖ + 3 := by
         simp only [List.mem_singleton, forall_eq]
-        exact ⟨hxb, termLen_bnum_le_E' (le_mulS_right 0 b) le_rfl⟩
-      have hpf := step0_proof hr0 [bnum b] rfl (fun e he ↦ (hes e he).1) (isFormula_mulFact 0 b) (inst_zeroMul hxb).1 hc
-      have hlen := dlen_step0_le hr0 [bnum b] rfl hes one_le_addE hB (isFormula_mulFact 0 b) (inst_zeroMul hxb).1 hc
+        exact ⟨hxb, termLen_binNumeral_le_E' (le_mulS_right 0 b) le_rfl⟩
+      have hpf := step0_proof hr0 [binNumeral b] rfl (fun e he ↦ (hes e he).1) (isFormula_mulFact 0 b) (inst_zeroMul hxb).1 hc
+      have hlen := proofLen_step0_le hr0 [binNumeral b] rfl hes one_le_addE hB (isFormula_mulFact 0 b) (inst_zeroMul hxb).1 hc
         (by norm_num) (by simp [row_zeroMul_as]) (formulaLen_mulFact_le hPeq le_rfl)
       rw [cast_rZeroMul] at hpf hlen
       refine ⟨hpf, ?_⟩
@@ -685,48 +685,48 @@ theorem mulGraph_sound {tbl N B tblM N' B' : V} (htbl : NumTableOK tbl N B) (htb
         obtain ⟨d', hd', rfl⟩ := (MulGraph.two_mul_iff ha hm).mp hd
         obtain ⟨hpf', hlen'⟩ := ih (b / 2) hlt d' hd'
         set m := b / 2 with hm_def
-        have hxm : IsSemiterm LAct 0 (bnum m) := isSemiterm_bnum_LAct 0 _
-        have hxam : IsSemiterm LAct 0 (bnum (a * m)) := isSemiterm_bnum_LAct 0 _
-        have hmb : m ≤ 2 * m := le_of_lt (Bnum.lt_two_mul hm)
+        have hxm : IsSemiterm LAct 0 (binNumeral m) := isSemiterm_binNumeral_LAct 0 _
+        have hxam : IsSemiterm LAct 0 (binNumeral (a * m)) := isSemiterm_binNumeral_LAct 0 _
+        have hmb : m ≤ 2 * m := le_of_lt (BinNumeral.lt_two_mul hm)
         have hsS : a * m + a + m ≤ a * (2 * m) + a + 2 * m := mulS_mono_right hmb
         have hE : 12 * ‖a * m + a + m‖ + 3 ≤ 12 * ‖a * (2 * m) + a + 2 * m‖ + 3 := mulE_mono hsS
-        have hes : ∀ e ∈ [bnum a, bnum m, bnum (a * m)],
+        have hes : ∀ e ∈ [binNumeral a, binNumeral m, binNumeral (a * m)],
             IsSemiterm LAct 0 e ∧ termLen LAct e ≤ 12 * ‖a * (2 * m) + a + 2 * m‖ + 3 := by
           intro e he
           simp only [List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false] at he
           rcases he with rfl | rfl | rfl
-          · exact ⟨hxa, termLen_bnum_le_E' (le_mulS_left _ _) le_rfl⟩
-          · exact ⟨hxm, termLen_bnum_le_E' (le_trans hmb (le_mulS_right _ _)) le_rfl⟩
-          · exact ⟨hxam, termLen_bnum_le_E' (le_trans (mul_le_mulS a m) hsS) le_rfl⟩
+          · exact ⟨hxa, termLen_binNumeral_le_E' (le_mulS_left _ _) le_rfl⟩
+          · exact ⟨hxm, termLen_binNumeral_le_E' (le_trans hmb (le_mulS_right _ _)) le_rfl⟩
+          · exact ⟨hxam, termLen_binNumeral_le_E' (le_trans (mul_le_mulS a m) hsS) le_rfl⟩
         set ps : List (V × V) := [(mulFact a m, d')] with hps_def
         have hps : ∀ p ∈ ps, IsFormula LAct p.1 ∧ DerivationOf TAct p.2 (sing p.1) := by
           intro p hp
           simp only [hps_def, List.mem_singleton] at hp
           subst hp; exact ⟨isFormula_mulFact a m, hpf'⟩
-        have hmap : row_twoMulMulS_as.map (instOuter LAct [bnum a, bnum m, bnum (a * m)]) = ps.map Prod.fst := by
+        have hmap : row_twoMulMulS_as.map (instOuter LAct [binNumeral a, binNumeral m, binNumeral (a * m)]) = ps.map Prod.fst := by
           rw [(inst_twoMulMulS hxa hxm hxam).1]
           simp only [hps_def, List.map_cons, List.map_nil, mulFact, eqFactB_eq_eqFact']
-        have hc : instOuter LAct [bnum a, bnum m, bnum (a * m)] row_twoMulMulS_c = mulFact a (2 * m) := by
+        have hc : instOuter LAct [binNumeral a, binNumeral m, binNumeral (a * m)] row_twoMulMulS_c = mulFact a (2 * m) := by
           rw [(inst_twoMulMulS hxa hxm hxam).2, mulFact_two_mul ha hm]; rfl
         have hpsP : ∀ p ∈ ps, formulaLen LAct p.1 ≤ B' * (12 * ‖a * (2 * m) + a + 2 * m‖ + 3) := by
           intro p hp
           simp only [hps_def, List.mem_singleton] at hp
           subst hp; exact formulaLen_mulFact_le hPeq hE
         rw [← stepL_one]
-        have hpf := stepL_proof hr3 ps [bnum a, bnum m, bnum (a * m)] rfl (fun e he ↦ (hes e he).1)
+        have hpf := stepL_proof hr3 ps [binNumeral a, binNumeral m, binNumeral (a * m)] rfl (fun e he ↦ (hes e he).1)
           (isFormula_mulFact _ _) hps hmap hc
-        have hlen := dlen_stepL_le hr3 ps [bnum a, bnum m, bnum (a * m)] rfl hes one_le_addE hB
+        have hlen := proofLen_stepL_le hr3 ps [binNumeral a, binNumeral m, binNumeral (a * m)] rfl hes one_le_addE hB
           (isFormula_mulFact _ _) hps hmap hc (by norm_num) (by simp [row_twoMulMulS_as])
           (formulaLen_mulFact_le hPeq le_rfl) hpsP
         rw [cast_rTwoMulMul] at hpf hlen
         refine ⟨hpf, ?_⟩
-        have h1 : dlen TAct d' ≤ (‖m‖ + 1) * mulNodeCap N B N' B' (a * (2 * m) + a + 2 * m) := by
+        have h1 : proofLen TAct d' ≤ (‖m‖ + 1) * mulNodeCap N B N' B' (a * (2 * m) + a + 2 * m) := by
           unfold mulEqBound at hlen'
           exact le_trans hlen' (mul_le_mul_of_nonneg_left (mulNodeCap_mono hsS) zero_le)
         unfold mulEqBound
-        calc dlen TAct (stepL tblM 3 ps (vecOf [bnum a, bnum m, bnum (a * m)]) (mulFact a (2 * m)))
+        calc proofLen TAct (stepL tblM 3 ps (vecOf [binNumeral a, binNumeral m, binNumeral (a * m)]) (mulFact a (2 * m)))
             ≤ factsDlen ps + nodeCost N' B' (12 * ‖a * (2 * m) + a + 2 * m‖ + 3) := hlen
-          _ = dlen TAct d' + nodeCost N' B' (12 * ‖a * (2 * m) + a + 2 * m‖ + 3) := by
+          _ = proofLen TAct d' + nodeCost N' B' (12 * ‖a * (2 * m) + a + 2 * m‖ + 3) := by
               simp only [hps_def, factsDlen_cons, factsDlen_nil]; ring
           _ ≤ (‖m‖ + 1) * mulNodeCap N B N' B' (a * (2 * m) + a + 2 * m)
               + mulNodeCap N B N' B' (a * (2 * m) + a + 2 * m) := by
@@ -739,23 +739,23 @@ theorem mulGraph_sound {tbl N B tblM N' B' : V} (htbl : NumTableOK tbl N B) (htb
         obtain ⟨d', hd', rfl⟩ := (MulGraph.two_mul_add_one_iff ha hm).mp hd
         obtain ⟨hpf', hlen'⟩ := ih (b / 2) hlt d' hd'
         set m := b / 2 with hm_def
-        have hxm : IsSemiterm LAct 0 (bnum m) := isSemiterm_bnum_LAct 0 _
-        have hxam : IsSemiterm LAct 0 (bnum (a * m)) := isSemiterm_bnum_LAct 0 _
-        have hxab : IsSemiterm LAct 0 (bnum (a * (2 * m + 1))) := isSemiterm_bnum_LAct 0 _
-        have hmb : m ≤ 2 * m + 1 := le_of_lt (Bnum.lt_two_mul_add_one hm)
+        have hxm : IsSemiterm LAct 0 (binNumeral m) := isSemiterm_binNumeral_LAct 0 _
+        have hxam : IsSemiterm LAct 0 (binNumeral (a * m)) := isSemiterm_binNumeral_LAct 0 _
+        have hxab : IsSemiterm LAct 0 (binNumeral (a * (2 * m + 1))) := isSemiterm_binNumeral_LAct 0 _
+        have hmb : m ≤ 2 * m + 1 := le_of_lt (BinNumeral.lt_two_mul_add_one hm)
         have hsS : a * m + a + m ≤ a * (2 * m + 1) + a + (2 * m + 1) := mulS_mono_right hmb
         have hE : 12 * ‖a * m + a + m‖ + 3 ≤ 12 * ‖a * (2 * m + 1) + a + (2 * m + 1)‖ + 3 := mulE_mono hsS
         have hab : 2 * (a * m) + a ≤ a * (2 * m + 1) + a + (2 * m + 1) := by
           rw [show 2 * (a * m) + a = a * (2 * m + 1) by ring]; exact mul_le_mulS _ _
-        have hes : ∀ e ∈ [bnum a, bnum m, bnum (a * m), bnum (a * (2 * m + 1))],
+        have hes : ∀ e ∈ [binNumeral a, binNumeral m, binNumeral (a * m), binNumeral (a * (2 * m + 1))],
             IsSemiterm LAct 0 e ∧ termLen LAct e ≤ 12 * ‖a * (2 * m + 1) + a + (2 * m + 1)‖ + 3 := by
           intro e he
           simp only [List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false] at he
           rcases he with rfl | rfl | rfl | rfl
-          · exact ⟨hxa, termLen_bnum_le_E' (le_mulS_left _ _) le_rfl⟩
-          · exact ⟨hxm, termLen_bnum_le_E' (le_trans hmb (le_mulS_right _ _)) le_rfl⟩
-          · exact ⟨hxam, termLen_bnum_le_E' (le_trans (mul_le_mulS a m) hsS) le_rfl⟩
-          · exact ⟨hxab, termLen_bnum_le_E' (mul_le_mulS _ _) le_rfl⟩
+          · exact ⟨hxa, termLen_binNumeral_le_E' (le_mulS_left _ _) le_rfl⟩
+          · exact ⟨hxm, termLen_binNumeral_le_E' (le_trans hmb (le_mulS_right _ _)) le_rfl⟩
+          · exact ⟨hxam, termLen_binNumeral_le_E' (le_trans (mul_le_mulS a m) hsS) le_rfl⟩
+          · exact ⟨hxab, termLen_binNumeral_le_E' (mul_le_mulS _ _) le_rfl⟩
         set ps : List (V × V) := [(mulFact a m, d'), (addFact (2 * (a * m)) a, addCode tbl (2 * (a * m)) a)] with hps_def
         have hps : ∀ p ∈ ps, IsFormula LAct p.1 ∧ DerivationOf TAct p.2 (sing p.1) := by
           intro p hp
@@ -763,11 +763,11 @@ theorem mulGraph_sound {tbl N B tblM N' B' : V} (htbl : NumTableOK tbl N B) (htb
           rcases hp with rfl | rfl
           · exact ⟨isFormula_mulFact a m, hpf'⟩
           · exact ⟨isFormula_addFact _ _, addCode_proof htbl _ _⟩
-        have hmap : row_twoMulOneMulS_as.map (instOuter LAct [bnum a, bnum m, bnum (a * m), bnum (a * (2 * m + 1))])
+        have hmap : row_twoMulOneMulS_as.map (instOuter LAct [binNumeral a, binNumeral m, binNumeral (a * m), binNumeral (a * (2 * m + 1))])
             = ps.map Prod.fst := by
           rw [(inst_twoMulOneMulS hxa hxm hxam hxab).1]
           simp only [hps_def, List.map_cons, List.map_nil, mulFact, eqFactB_eq_eqFact', addFact_two_mul_mul ha hm]
-        have hc : instOuter LAct [bnum a, bnum m, bnum (a * m), bnum (a * (2 * m + 1))] row_twoMulOneMulS_c
+        have hc : instOuter LAct [binNumeral a, binNumeral m, binNumeral (a * m), binNumeral (a * (2 * m + 1))] row_twoMulOneMulS_c
             = mulFact a (2 * m + 1) := by
           rw [(inst_twoMulOneMulS hxa hxm hxam hxab).2, mulFact_two_mul_add_one hm]; rfl
         have hpsP : ∀ p ∈ ps, formulaLen LAct p.1 ≤ B' * (12 * ‖a * (2 * m + 1) + a + (2 * m + 1)‖ + 3) := by
@@ -777,21 +777,21 @@ theorem mulGraph_sound {tbl N B tblM N' B' : V} (htbl : NumTableOK tbl N B) (htb
           · exact formulaLen_mulFact_le hPeq hE
           · exact formulaLen_addFact_le hPeq (mulE_mono hab)
         rw [← stepL_two]
-        have hpf := stepL_proof hr4 ps [bnum a, bnum m, bnum (a * m), bnum (a * (2 * m + 1))] rfl
+        have hpf := stepL_proof hr4 ps [binNumeral a, binNumeral m, binNumeral (a * m), binNumeral (a * (2 * m + 1))] rfl
           (fun e he ↦ (hes e he).1) (isFormula_mulFact _ _) hps hmap hc
-        have hlen := dlen_stepL_le hr4 ps [bnum a, bnum m, bnum (a * m), bnum (a * (2 * m + 1))] rfl hes one_le_addE hB
+        have hlen := proofLen_stepL_le hr4 ps [binNumeral a, binNumeral m, binNumeral (a * m), binNumeral (a * (2 * m + 1))] rfl hes one_le_addE hB
           (isFormula_mulFact _ _) hps hmap hc (by norm_num) (by simp [row_twoMulOneMulS_as])
           (formulaLen_mulFact_le hPeq le_rfl) hpsP
         rw [cast_rTwoMulOneMul] at hpf hlen
         refine ⟨hpf, ?_⟩
-        have h1 : dlen TAct d' ≤ (‖m‖ + 1) * mulNodeCap N B N' B' (a * (2 * m + 1) + a + (2 * m + 1)) := by
+        have h1 : proofLen TAct d' ≤ (‖m‖ + 1) * mulNodeCap N B N' B' (a * (2 * m + 1) + a + (2 * m + 1)) := by
           unfold mulEqBound at hlen'
           exact le_trans hlen' (mul_le_mul_of_nonneg_left (mulNodeCap_mono hsS) zero_le)
-        have h2 := dlen_addCode_mul_le htbl (a := a) hm
+        have h2 := proofLen_addCode_mul_le htbl (a := a) hm
         unfold mulEqBound
-        calc dlen TAct (stepL tblM 4 ps (vecOf [bnum a, bnum m, bnum (a * m), bnum (a * (2 * m + 1))]) (mulFact a (2 * m + 1)))
+        calc proofLen TAct (stepL tblM 4 ps (vecOf [binNumeral a, binNumeral m, binNumeral (a * m), binNumeral (a * (2 * m + 1))]) (mulFact a (2 * m + 1)))
             ≤ factsDlen ps + nodeCost N' B' (12 * ‖a * (2 * m + 1) + a + (2 * m + 1)‖ + 3) := hlen
-          _ = dlen TAct d' + dlen TAct (addCode tbl (2 * (a * m)) a)
+          _ = proofLen TAct d' + proofLen TAct (addCode tbl (2 * (a * m)) a)
               + nodeCost N' B' (12 * ‖a * (2 * m + 1) + a + (2 * m + 1)‖ + 3) := by
               simp only [hps_def, factsDlen_cons, factsDlen_nil]; ring
           _ ≤ (‖m‖ + 1) * mulNodeCap N B N' B' (a * (2 * m + 1) + a + (2 * m + 1))
@@ -802,14 +802,14 @@ theorem mulGraph_sound {tbl N B tblM N' B' : V} (htbl : NumTableOK tbl N B) (htb
           _ = (‖2 * m + 1‖ + 1) * mulNodeCap N B N' B' (a * (2 * m + 1) + a + (2 * m + 1)) := by
               unfold mulNodeCap; rw [length_two_mul_add_one]; ring
 
-/-- **`mulEqCode` is a derivation of `{bnum a · bnum b = bnum (a · b)}`**, in every model, over any sound tables. -/
+/-- **`mulEqCode` is a derivation of `{binNumeral a · binNumeral b = binNumeral (a · b)}`**, in every model, over any sound tables. -/
 theorem mulEqCode_proof {tbl N B tblM N' B' : V} (htbl : NumTableOK tbl N B) (htblM : MulTableOK tblM N' B') (a b : V) :
     DerivationOf TAct (mulEqCode tblM tbl a b) (sing (mulFact a b)) :=
   (mulGraph_sound htbl htblM a b _ (mulEqCode_graph tblM tbl a b)).1
 
-/-- **`dlen (mulEqCode tblM tbl a b) ≤ (‖b‖ + 1) · mulNodeCap (a·b + a + b)`** — cubic in the bit length. -/
-theorem dlen_mulEqCode_le {tbl N B tblM N' B' : V} (htbl : NumTableOK tbl N B) (htblM : MulTableOK tblM N' B') (a b : V) :
-    dlen TAct (mulEqCode tblM tbl a b) ≤ mulEqBound N B N' B' a b :=
+/-- **`proofLen (mulEqCode tblM tbl a b) ≤ (‖b‖ + 1) · mulNodeCap (a·b + a + b)`** — cubic in the bit length. -/
+theorem proofLen_mulEqCode_le {tbl N B tblM N' B' : V} (htbl : NumTableOK tbl N B) (htblM : MulTableOK tblM N' B') (a b : V) :
+    proofLen TAct (mulEqCode tblM tbl a b) ≤ mulEqBound N B N' B' a b :=
   (mulGraph_sound htbl htblM a b _ (mulEqCode_graph tblM tbl a b)).2
 
 /-- The `sLemma` step of N4 is applicable … -/
@@ -820,9 +820,9 @@ theorem lemmaOK_mulEq {tbl N B tblM N' B' : V} (htbl : NumTableOK tbl N B) (htbl
 /-- … and its cost: `≤ mulEqBound + 2|Γ| + 2|mulFact a b| + 2`. -/
 theorem stepCost_lemma_mulEq {tbl N B tblM N' B' N'' E Γ : V} (htbl : NumTableOK tbl N B) (htblM : MulTableOK tblM N' B') (a b : V) :
     stepCost N'' E Γ (sLemma (mulFact a b) (mulEqCode tblM tbl a b)) ≤
-      mulEqBound N B N' B' a b + 2 * setLen LAct Γ + 2 * formulaLen LAct (mulFact a b) + 2 := by
+      mulEqBound N B N' B' a b + 2 * sequentLen LAct Γ + 2 * formulaLen LAct (mulFact a b) + 2 := by
   rw [stepCost_sLemma]
-  exact add_le_add (add_le_add (add_le_add (dlen_mulEqCode_le htbl htblM a b) le_rfl) le_rfl) le_rfl
+  exact add_le_add (add_le_add (add_le_add (proofLen_mulEqCode_le htbl htblM a b) le_rfl) le_rfl) le_rfl
 
 end mulSound
 

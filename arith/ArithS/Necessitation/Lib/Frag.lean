@@ -18,7 +18,7 @@ on the sentence structure), `pa_proves_x` (truth in every model of `𝗜𝚺₁`
 `lib_x`. Δ₁ hypotheses are taken `.pi`, conclusions `.sigma`; every auxiliary object is a
 universal variable with its graph as a hypothesis; arities and indices are variables (the walk
 instantiates them at chain numerals `cT`); the DSL literals `0`/`1`/`2` are the codes `𝟎`/`𝟏`/
-`𝟏 ^+ 𝟏`; `bnumZeroCert`/`bnumOneCert` write `𝟎`/`𝟏` as the walk does (`func 0 0 0`,
+`𝟏 ^+ 𝟏`; `binNumeralZeroCert`/`binNumeralOneCert` write `𝟎`/`𝟏` as the walk does (`func 0 0 0`,
 `func 0 (0 + 1) 0`).
 
 ## Design row → delivered name
@@ -27,22 +27,22 @@ instantiates them at chain numerals `cT`); the DSL literals `0`/`1`/`2` are the 
 |---|---|
 | copy | `eqTotal`, `eqRefl`, `eqSymm`, `eqTrans`, `congPi`, `congTPi`, `congTvPi`, `congUtvPi`, `congUfPi`, `congAnd`, `congOr`, `congAll`, `congExs`, `congRel`, `congNRel`, `congVerum`, `congFalsum`, `congFunc`, `congBvar`, `congFvar`, `congAdj`, `congLen`, `congTLen`, `congLenNum`, `congTLenNum`, `congMem`, `congMemSet`, `congFstIdx`, `congSubsetL`, `congSubsetR`, `congSetShiftL`, `congSetShiftR`, `congShiftL`, `congNegL`, `congSubstArg`, `congSubstL`, `congInsertL`, `congInsertS`, `congSetLenR`, `congIsFormulaSet` |
 | ident | `eqOfAnd`, `eqOfOr`, `eqOfAll`, `eqOfExs`, `eqOfRel`, `eqOfNRel`, `eqOfVerum`, `eqOfFalsum`, `eqOfFunc`, `eqOfBvar`, `eqOfFvar`, `eqOfAdj` |
-| fun | `qqAndFun`, `qqOrFun`, `qqAllFun`, `qqExsFun`, `qqRelFun`, `qqNRelFun`, `qqVerumFun`, `qqFalsumFun`, `qqFuncFun`, `qqBvarFun`, `qqFvarFun`, `adjoinFun`, `setShiftFun`, `setLenFun`, `lengthFun`, `termLenVecFun`, `listSumFun`, `formulaLenFun`, `termLenFun`, `fstIdxFun`, `insertFun`, `negFun`, `shiftFun`, `substsFun`, `substs1Fun`, `freeFun`, `bnumFun`, `nthFun`, `fvarVecFun`, `termShiftFun`, `termSubstFun`, `termBShiftFun`, `qqAllsFun`, `bvFun`, `qVecFun`, `termShiftVecFun`, `termSubstVecFun` |
+| fun | `qqAndFun`, `qqOrFun`, `qqAllFun`, `qqExsFun`, `qqRelFun`, `qqNRelFun`, `qqVerumFun`, `qqFalsumFun`, `qqFuncFun`, `qqBvarFun`, `qqFvarFun`, `adjoinFun`, `setShiftFun`, `sequentLenFun`, `lengthFun`, `termLenVecFun`, `listSumFun`, `formulaLenFun`, `termLenFun`, `fstIdxFun`, `insertFun`, `negFun`, `shiftFun`, `substsFun`, `substs1Fun`, `freeFun`, `binNumeralFun`, `nthFun`, `fvarVecFun`, `termShiftFun`, `termSubstFun`, `termBShiftFun`, `qqAllsFun`, `bvFun`, `qVecFun`, `termShiftVecFun`, `termSubstVecFun` |
 | sets | `subsetAntisymm`, `setShiftInsert`, `setShiftEmpty` |
 | fstIdx | `fstIdxAxL`, `fstIdxVerum`, `fstIdxAnd`, `fstIdxOr`, `fstIdxAll`, `fstIdxExs`, `fstIdxWk`, `fstIdxShift`, `fstIdxCut`, `fstIdxAxm` |
-| nodes | `dlenDefIntro`, `proofIntro`, `instBIntro`, `gIntro`, `lengthTotal`, `bnumZeroCert`, `bnumOneCert`, `bnumEvenCert`, `bnumOddCert` |
+| nodes | `proofLenDefIntro`, `proofIntro`, `instBIntro`, `gIntro`, `lengthTotal`, `binNumeralZeroCert`, `binNumeralOneCert`, `binNumeralEvenCert`, `binNumeralOddCert` |
 | lengths | `termLenVecNil`, `termLenVecAdj`, `listSumNil`, `listSumAdj`, `formulaLenRelCert`, `formulaLenNRelCert`, `termLenFuncCert` |
 | cert | `negRelCert`, `negNRelCert`, `negVerumCert`, `negFalsumCert`, `negAndCert`, `negOrCert`, `negAllCert`, `negExsCert`, `shiftRelCert`, `shiftNRelCert`, `shiftVerumCert`, `shiftFalsumCert`, `shiftAndCert`, `shiftOrCert`, `shiftAllCert`, `shiftExsCert`, `substsRelCert`, `substsNRelCert`, `substsVerumCert`, `substsFalsumCert`, `substsAndCert`, `substsOrCert`, `substsAllCert`, `substsExsCert`, `freeCert`, `substsSubsts1`, `tshvNilCert`, `tshvAdjCert`, `termShiftBvarCert`, `termShiftFvarCert`, `termShiftFuncCert`, `tsvNilCert`, `tsvAdjCert`, `termSubstBvarCert`, `termSubstFvarCert`, `termSubstFuncCert`, `tbshvNilCert`, `tbshvAdjCert`, `termBShiftBvarCert`, `termBShiftFvarCert`, `termBShiftFuncCert`, `qVecCert`, `qVecNth0`, `qVecNthSucc`, `nthAdjoinZero`, `nthAdjoinSucc` |
 | num | `twoMulMul`, `twoMulOneMul`, `lengthZero`, `lengthOne`, `lengthTwoMul`, `lengthTwoMulOne` |
 | axm | `qqAllsZero`, `qqAllsSucc`, `bvRel`, `bvNRel`, `bvVerum`, `bvFalsum`, `bvAnd`, `bvOr`, `bvAll`, `bvExs`, `termBVBvar`, `termBVFvar`, `termBVFunc`, `termBVVecNil`, `termBVVecAdj`, `listMaxNil`, `listMaxAdj`, `bvTotal`, `fvarVecTotal`, `fvarVecNth`, `maxTotal`, `subTotal`, `maxEqLeft`, `maxEqRight`, `subAddCancel`, `subOfLe` |
-| chain | `insertTotalC`, `memInsertSelfC`, `subsetInsertC`, `subsetTransC`, `subsetMemC`, `emptySubsetC`, `fsetOfSubsetZeroC`, `isFormulaSetInsertC`, `fsetSigmaPiC`, `setLenTotalC`, `subsetReflC` |
+| chain | `insertTotalC`, `memInsertSelfC`, `subsetInsertC`, `subsetTransC`, `subsetMemC`, `emptySubsetC`, `fsetOfSubsetZeroC`, `isFormulaSetInsertC`, `fsetSigmaPiC`, `sequentLenTotalC`, `subsetReflC` |
 
 Skipped / renamed, with the reason:
 * `congTvPi`/`congUtvPi` conclude `.sigma` (the polarity convention; `isSemitermVecSigmaPiLAct`
   bridges), `congPi`/`congTPi` likewise; `congUfPi` keeps `.pi` on both sides (`indRec` consumes `.pi`).
-* `dlenDefIntro` takes only `derivation.sigma d` (the `.pi` premise of §7.1 is redundant:
-  `dlen_eq_of_graph`).
-* `bnumEvenCert`/`bnumOddCert` are stated on the walk's `func`/`∷` facts for `𝟏`, `𝟐`, `𝟐 ^* t`,
+* `proofLenDefIntro` takes only `derivation.sigma d` (the `.pi` premise of §7.1 is redundant:
+  `proofLen_eq_of_graph`).
+* `binNumeralEvenCert`/`binNumeralOddCert` are stated on the walk's `func`/`∷` facts for `𝟏`, `𝟐`, `𝟐 ^* t`,
   `(𝟐 ^* t) ^+ 𝟏` (no `qqAddGraph`/`qqMulGraph` objects — the walk never emits those).
 * `twoMulMul`/`twoMulOneMul` and the `length*` rows are written in the DSL (`2 * x`), not in
   `Lengths.lean`'s `eqO/addO/twoMul` term syntax; a `numSteps` producer that mixes both crosses
@@ -416,12 +416,12 @@ theorem pa_proves_congInsertS : 𝗣𝗔 ⊢ congInsertS :=
   Lib.pa_proves_of_models fun _ _ _ ↦ models_congInsertS.mpr fun _ _ _ _ h1 h2 ↦ by subst_vars; first | rfl | assumption | trivial
 theorem lib_congInsertS : Lib congInsertS := Lib.of_pa pa_proves_congInsertS
 
-/-- `s' = s → l = setLen s → l = setLen s'`. -/
+/-- `s' = s → l = sequentLen s → l = sequentLen s'`. -/
 noncomputable def congSetLenRB : ArithmeticSemisentence 3 :=
-  “l s' s. s' = s → !(setLenDef LAct) l s → !(setLenDef LAct) l s'”
+  “l s' s. s' = s → !(sequentLenDef LAct) l s → !(sequentLenDef LAct) l s'”
 noncomputable def congSetLenR : ArithmeticSentence := ∀¹* congSetLenRB
-lemma models_congSetLenR : V↓[ℒₒᵣ] ⊧ congSetLenR ↔ ∀ l s' s : V, s' = s → l = setLen LAct s → l = setLen LAct s' := by
-  simp [congSetLenR, congSetLenRB, models_iff, Matrix.vecForall_iff, setLen_defined.iff]
+lemma models_congSetLenR : V↓[ℒₒᵣ] ⊧ congSetLenR ↔ ∀ l s' s : V, s' = s → l = sequentLen LAct s → l = sequentLen LAct s' := by
+  simp [congSetLenR, congSetLenRB, models_iff, Matrix.vecForall_iff, sequentLen_defined.iff]
 theorem pa_proves_congSetLenR : 𝗣𝗔 ⊢ congSetLenR :=
   Lib.pa_proves_of_models fun _ _ _ ↦ models_congSetLenR.mpr fun _ _ _ h1 h2 ↦ by subst_vars; first | rfl | assumption | trivial
 theorem lib_congSetLenR : Lib congSetLenR := Lib.of_pa pa_proves_congSetLenR
@@ -704,17 +704,17 @@ theorem pa_proves_fstIdxAxm : 𝗣𝗔 ⊢ fstIdxAxm :=
   Lib.pa_proves_of_models fun _ _ _ ↦ models_fstIdxAxm.mpr fun _ _ _ h₁ ↦ by subst_vars; simp
 theorem lib_fstIdxAxm : Lib fstIdxAxm := Lib.of_pa pa_proves_fstIdxAxm
 
-/-! ### F. The top: `dlenDef`, `proof`, `instB`, `gBudget`, `‖·‖`, the `bnum` certification (§7.1) -/
+/-! ### F. The top: `proofLenDef`, `proof`, `instB`, `gBudget`, `‖·‖`, the `binNumeral` certification (§7.1) -/
 
-/-- `derivation d → dlenGraph d n → dlen d = n` (the `dlenDef` graph from the derivation graph, §7.1 step 7). -/
-noncomputable def dlenDefIntroB : ArithmeticSemisentence 2 :=
-  “n d. !(derivation TAct).sigma d → !(dlenGraphDef LAct).sigma d n → !(dlenDef TAct) n d”
-noncomputable def dlenDefIntro : ArithmeticSentence := ∀¹* dlenDefIntroB
-lemma models_dlenDefIntro : V↓[ℒₒᵣ] ⊧ dlenDefIntro ↔ ∀ n d : V, Derivation TAct d → DlenGraph LAct d n → n = dlen TAct d := by
-  simp [dlenDefIntro, dlenDefIntroB, models_iff, Matrix.vecForall_iff, dlen_defined.iff]
-theorem pa_proves_dlenDefIntro : 𝗣𝗔 ⊢ dlenDefIntro :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_dlenDefIntro.mpr fun _ _ h₁ h₂ ↦ (dlen_eq_of_graph h₁ h₂).symm
-theorem lib_dlenDefIntro : Lib dlenDefIntro := Lib.of_pa pa_proves_dlenDefIntro
+/-- `derivation d → proofLenGraph d n → proofLen d = n` (the `proofLenDef` graph from the derivation graph, §7.1 step 7). -/
+noncomputable def proofLenDefIntroB : ArithmeticSemisentence 2 :=
+  “n d. !(derivation TAct).sigma d → !(proofLenGraphDef LAct).sigma d n → !(proofLenDef TAct) n d”
+noncomputable def proofLenDefIntro : ArithmeticSentence := ∀¹* proofLenDefIntroB
+lemma models_proofLenDefIntro : V↓[ℒₒᵣ] ⊧ proofLenDefIntro ↔ ∀ n d : V, Derivation TAct d → ProofLenGraph LAct d n → n = proofLen TAct d := by
+  simp [proofLenDefIntro, proofLenDefIntroB, models_iff, Matrix.vecForall_iff, proofLen_defined.iff]
+theorem pa_proves_proofLenDefIntro : 𝗣𝗔 ⊢ proofLenDefIntro :=
+  Lib.pa_proves_of_models fun _ _ _ ↦ models_proofLenDefIntro.mpr fun _ _ h₁ h₂ ↦ (proofLen_eq_of_graph h₁ h₂).symm
+theorem lib_proofLenDefIntro : Lib proofLenDefIntro := Lib.of_pa pa_proves_proofLenDefIntro
 
 /-- `s = insert g ∅ → fstIdx d = s → derivation d → proof d g`. -/
 noncomputable def proofIntroB : ArithmeticSemisentence 3 :=
@@ -726,49 +726,49 @@ theorem pa_proves_proofIntro : 𝗣𝗔 ⊢ proofIntro :=
   Lib.pa_proves_of_models fun _ _ _ ↦ models_proofIntro.mpr fun _ _ _ h₁ h₂ h₃ ↦ ⟨by rw [← h₂, h₁]; exact mem_ext fun _ ↦ by simp, h₃⟩
 theorem lib_proofIntro : Lib proofIntro := Lib.of_pa pa_proves_proofIntro
 
-/-- `t = bnum k → v = t ∷ 0 → g = subst v n → g = instB n k`. -/
+/-- `t = binNumeral k → v = t ∷ 0 → g = subst v n → g = instB n k`. -/
 noncomputable def instBIntroB : ArithmeticSemisentence 5 :=
-  “g v t k n. !bnumGraph t k → !adjoinDef v t 0 → !(substsGraph LAct) g v n → !instBGraph g n k”
+  “g v t k n. !binNumeralGraph t k → !adjoinDef v t 0 → !(substsGraph LAct) g v n → !instBGraph g n k”
 noncomputable def instBIntro : ArithmeticSentence := ∀¹* instBIntroB
-lemma models_instBIntro : V↓[ℒₒᵣ] ⊧ instBIntro ↔ ∀ g v t k n : V, t = bnum k → v = t ∷ (0 : V) → g = subst LAct v n → g = instB n k := by
-  simp [instBIntro, instBIntroB, models_iff, Matrix.vecForall_iff, bnum.defined.iff, subst.defined.iff, instB.defined.iff]
+lemma models_instBIntro : V↓[ℒₒᵣ] ⊧ instBIntro ↔ ∀ g v t k n : V, t = binNumeral k → v = t ∷ (0 : V) → g = subst LAct v n → g = instB n k := by
+  simp [instBIntro, instBIntroB, models_iff, Matrix.vecForall_iff, binNumeral.defined.iff, subst.defined.iff, instB.defined.iff]
 theorem pa_proves_instBIntro : 𝗣𝗔 ⊢ instBIntro :=
   Lib.pa_proves_of_models fun _ _ _ ↦ models_instBIntro.mpr fun _ _ _ _ _ h1 h2 h3 ↦ by subst_vars; first | rfl | assumption | trivial
 theorem lib_instBIntro : Lib instBIntro := Lib.of_pa pa_proves_instBIntro
 
-/-- `t = func 0 0 0 → t = bnum 0` (`𝟎` as the walk writes it). -/
-noncomputable def bnumZeroCertB : ArithmeticSemisentence 1 :=
-  “t. !qqFuncDef t 0 0 0 → !bnumGraph t 0”
-noncomputable def bnumZeroCert : ArithmeticSentence := ∀¹* bnumZeroCertB
-lemma models_bnumZeroCert : V↓[ℒₒᵣ] ⊧ bnumZeroCert ↔ ∀ t : V, t = ^func (0 : V) (0 : V) (0 : V) → t = bnum (0 : V) := by
-  simp [bnumZeroCert, bnumZeroCertB, models_iff, Matrix.vecForall_iff, bnum.defined.iff]
-theorem pa_proves_bnumZeroCert : 𝗣𝗔 ⊢ bnumZeroCert :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_bnumZeroCert.mpr fun _ h₁ ↦ by subst_vars; rw [bnum_zero]; simp only [Arithmetic.zero, qqFuncN_eq_qqFunc, qqFunc_absolute, coe_zeroIndex_eq, Nat.cast_zero]
-theorem lib_bnumZeroCert : Lib bnumZeroCert := Lib.of_pa pa_proves_bnumZeroCert
+/-- `t = func 0 0 0 → t = binNumeral 0` (`𝟎` as the walk writes it). -/
+noncomputable def binNumeralZeroCertB : ArithmeticSemisentence 1 :=
+  “t. !qqFuncDef t 0 0 0 → !binNumeralGraph t 0”
+noncomputable def binNumeralZeroCert : ArithmeticSentence := ∀¹* binNumeralZeroCertB
+lemma models_binNumeralZeroCert : V↓[ℒₒᵣ] ⊧ binNumeralZeroCert ↔ ∀ t : V, t = ^func (0 : V) (0 : V) (0 : V) → t = binNumeral (0 : V) := by
+  simp [binNumeralZeroCert, binNumeralZeroCertB, models_iff, Matrix.vecForall_iff, binNumeral.defined.iff]
+theorem pa_proves_binNumeralZeroCert : 𝗣𝗔 ⊢ binNumeralZeroCert :=
+  Lib.pa_proves_of_models fun _ _ _ ↦ models_binNumeralZeroCert.mpr fun _ h₁ ↦ by subst_vars; rw [binNumeral_zero]; simp only [Arithmetic.zero, qqFuncN_eq_qqFunc, qqFunc_absolute, coe_zeroIndex_eq, Nat.cast_zero]
+theorem lib_binNumeralZeroCert : Lib binNumeralZeroCert := Lib.of_pa pa_proves_binNumeralZeroCert
 
-/-- `t = func 0 (0 + 1) 0 → t = bnum 1` (`𝟏` as the walk writes it). -/
-noncomputable def bnumOneCertB : ArithmeticSemisentence 1 :=
-  “t. !qqFuncDef t 0 (0 + 1) 0 → !bnumGraph t 1”
-noncomputable def bnumOneCert : ArithmeticSentence := ∀¹* bnumOneCertB
-lemma models_bnumOneCert : V↓[ℒₒᵣ] ⊧ bnumOneCert ↔ ∀ t : V, t = ^func (0 : V) ((0 : V) + 1) (0 : V) → t = bnum (1 : V) := by
-  simp [bnumOneCert, bnumOneCertB, models_iff, Matrix.vecForall_iff, bnum.defined.iff]
-theorem pa_proves_bnumOneCert : 𝗣𝗔 ⊢ bnumOneCert :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_bnumOneCert.mpr fun _ h₁ ↦ by subst_vars; rw [bnum_one]; simp only [Arithmetic.one, qqFuncN_eq_qqFunc, qqFunc_absolute, coe_oneIndex_eq, Nat.cast_zero, zero_add]
-theorem lib_bnumOneCert : Lib bnumOneCert := Lib.of_pa pa_proves_bnumOneCert
+/-- `t = func 0 (0 + 1) 0 → t = binNumeral 1` (`𝟏` as the walk writes it). -/
+noncomputable def binNumeralOneCertB : ArithmeticSemisentence 1 :=
+  “t. !qqFuncDef t 0 (0 + 1) 0 → !binNumeralGraph t 1”
+noncomputable def binNumeralOneCert : ArithmeticSentence := ∀¹* binNumeralOneCertB
+lemma models_binNumeralOneCert : V↓[ℒₒᵣ] ⊧ binNumeralOneCert ↔ ∀ t : V, t = ^func (0 : V) ((0 : V) + 1) (0 : V) → t = binNumeral (1 : V) := by
+  simp [binNumeralOneCert, binNumeralOneCertB, models_iff, Matrix.vecForall_iff, binNumeral.defined.iff]
+theorem pa_proves_binNumeralOneCert : 𝗣𝗔 ⊢ binNumeralOneCert :=
+  Lib.pa_proves_of_models fun _ _ _ ↦ models_binNumeralOneCert.mpr fun _ h₁ ↦ by subst_vars; rw [binNumeral_one]; simp only [Arithmetic.one, qqFuncN_eq_qqFunc, qqFunc_absolute, coe_oneIndex_eq, Nat.cast_zero, zero_add]
+theorem lib_binNumeralOneCert : Lib binNumeralOneCert := Lib.of_pa pa_proves_binNumeralOneCert
 
-/-- `1 ≤ m → t = bnum m → u = 𝟐 ^* t (as `func`/`∷` facts) → u = bnum (2 * m)` (`bnum_two_mul`). -/
-noncomputable def bnumEvenCertB : ArithmeticSemisentence 9 :=
-  “u v v' two w w' one t m. 1 ≤ m → !bnumGraph t m → !qqFuncDef one 0 (0 + 1) 0 → !adjoinDef w' one 0 → !adjoinDef w one w' → !qqFuncDef two (0 + 1 + 1) 0 w → !adjoinDef v' t 0 → !adjoinDef v two v' → !qqFuncDef u (0 + 1 + 1) (0 + 1) v → !bnumGraph u (2 * m)”
-noncomputable def bnumEvenCert : ArithmeticSentence := ∀¹* bnumEvenCertB
-lemma models_bnumEvenCert : V↓[ℒₒᵣ] ⊧ bnumEvenCert ↔ ∀ u v v' two w w' one t m : V, (1 : V) ≤ m → t = bnum m → one = ^func (0 : V) ((0 : V) + 1) (0 : V) → w' = one ∷ (0 : V) → w = one ∷ w' → two = ^func ((0 : V) + 1 + 1) (0 : V) w → v' = t ∷ (0 : V) → v = two ∷ v' → u = ^func ((0 : V) + 1 + 1) ((0 : V) + 1) v → u = bnum ((2 : V) * m) := by
-  simp [bnumEvenCert, bnumEvenCertB, models_iff, Matrix.vecForall_iff, bnum.defined.iff]
-theorem pa_proves_bnumEvenCert : 𝗣𝗔 ⊢ bnumEvenCert :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_bnumEvenCert.mpr fun _ _ _ _ _ _ _ _ _ h₁ h₂ h₃ h₄ h₅ h₆ h₇ h₈ h₉ ↦ by subst_vars; rw [bnum_two_mul h₁]; simp only [qqTwo, qqMul, qqAdd, coe_mulIndex_eq, coe_addIndex_eq, Arithmetic.one, qqFuncN_eq_qqFunc, qqFunc_absolute, coe_oneIndex_eq, Nat.cast_zero, zero_add, one_add_one_eq_two]
-theorem lib_bnumEvenCert : Lib bnumEvenCert := Lib.of_pa pa_proves_bnumEvenCert
+/-- `1 ≤ m → t = binNumeral m → u = 𝟐 ^* t (as `func`/`∷` facts) → u = binNumeral (2 * m)` (`binNumeral_two_mul`). -/
+noncomputable def binNumeralEvenCertB : ArithmeticSemisentence 9 :=
+  “u v v' two w w' one t m. 1 ≤ m → !binNumeralGraph t m → !qqFuncDef one 0 (0 + 1) 0 → !adjoinDef w' one 0 → !adjoinDef w one w' → !qqFuncDef two (0 + 1 + 1) 0 w → !adjoinDef v' t 0 → !adjoinDef v two v' → !qqFuncDef u (0 + 1 + 1) (0 + 1) v → !binNumeralGraph u (2 * m)”
+noncomputable def binNumeralEvenCert : ArithmeticSentence := ∀¹* binNumeralEvenCertB
+lemma models_binNumeralEvenCert : V↓[ℒₒᵣ] ⊧ binNumeralEvenCert ↔ ∀ u v v' two w w' one t m : V, (1 : V) ≤ m → t = binNumeral m → one = ^func (0 : V) ((0 : V) + 1) (0 : V) → w' = one ∷ (0 : V) → w = one ∷ w' → two = ^func ((0 : V) + 1 + 1) (0 : V) w → v' = t ∷ (0 : V) → v = two ∷ v' → u = ^func ((0 : V) + 1 + 1) ((0 : V) + 1) v → u = binNumeral ((2 : V) * m) := by
+  simp [binNumeralEvenCert, binNumeralEvenCertB, models_iff, Matrix.vecForall_iff, binNumeral.defined.iff]
+theorem pa_proves_binNumeralEvenCert : 𝗣𝗔 ⊢ binNumeralEvenCert :=
+  Lib.pa_proves_of_models fun _ _ _ ↦ models_binNumeralEvenCert.mpr fun _ _ _ _ _ _ _ _ _ h₁ h₂ h₃ h₄ h₅ h₆ h₇ h₈ h₉ ↦ by subst_vars; rw [binNumeral_two_mul h₁]; simp only [qqTwo, qqMul, qqAdd, coe_mulIndex_eq, coe_addIndex_eq, Arithmetic.one, qqFuncN_eq_qqFunc, qqFunc_absolute, coe_oneIndex_eq, Nat.cast_zero, zero_add, one_add_one_eq_two]
+theorem lib_binNumeralEvenCert : Lib binNumeralEvenCert := Lib.of_pa pa_proves_binNumeralEvenCert
 
-/-- `1 ≤ m → t = bnum m → u = (𝟐 ^* t) ^+ 𝟏 (as `func`/`∷` facts) → u = bnum (2 * m + 1)` (`bnum_two_mul_add_one`). -/
-noncomputable def bnumOddCertB : ArithmeticSemisentence 12 :=
-  “u x x' s v v' two w w' one t m. 1 ≤ m → !bnumGraph t m → !qqFuncDef one 0 (0 + 1) 0 → !adjoinDef w' one 0 → !adjoinDef w one w' → !qqFuncDef two (0 + 1 + 1) 0 w → !adjoinDef v' t 0 → !adjoinDef v two v' → !qqFuncDef s (0 + 1 + 1) (0 + 1) v → !adjoinDef x' one 0 → !adjoinDef x s x' → !qqFuncDef u (0 + 1 + 1) 0 x → !bnumGraph u ((2 * m) + 1)”
+/-- `1 ≤ m → t = binNumeral m → u = (𝟐 ^* t) ^+ 𝟏 (as `func`/`∷` facts) → u = binNumeral (2 * m + 1)` (`binNumeral_two_mul_add_one`). -/
+noncomputable def binNumeralOddCertB : ArithmeticSemisentence 12 :=
+  “u x x' s v v' two w w' one t m. 1 ≤ m → !binNumeralGraph t m → !qqFuncDef one 0 (0 + 1) 0 → !adjoinDef w' one 0 → !adjoinDef w one w' → !qqFuncDef two (0 + 1 + 1) 0 w → !adjoinDef v' t 0 → !adjoinDef v two v' → !qqFuncDef s (0 + 1 + 1) (0 + 1) v → !adjoinDef x' one 0 → !adjoinDef x s x' → !qqFuncDef u (0 + 1 + 1) 0 x → !binNumeralGraph u ((2 * m) + 1)”
 
 /-! ### G. Lengths: `termLenVec`/`listSum` bottom-up, the atom lengths with universal `M, s` (§3.6) -/
 
@@ -1460,15 +1460,15 @@ theorem pa_proves_fsetSigmaPiC : 𝗣𝗔 ⊢ fsetSigmaPiC :=
   Lib.pa_proves_of_models fun _ _ _ ↦ models_fsetSigmaPiC.mpr fun _ h ↦ h
 theorem lib_fsetSigmaPiC : Lib fsetSigmaPiC := Lib.of_pa pa_proves_fsetSigmaPiC
 
-/-- `∀ s, ∃ l, l = setLen s` (`Lengths.setLenTotal`). -/
-noncomputable def setLenTotalCB : ArithmeticSemisentence 1 :=
-  “s. ∃ l, !(setLenDef LAct) l s”
-noncomputable def setLenTotalC : ArithmeticSentence := ∀¹* setLenTotalCB
-lemma models_setLenTotalC : V↓[ℒₒᵣ] ⊧ setLenTotalC ↔ ∀ s : V, ∃ l, l = setLen LAct s := by
-  simp [setLenTotalC, setLenTotalCB, models_iff, Matrix.vecForall_iff, setLen_defined.iff]
-theorem pa_proves_setLenTotalC : 𝗣𝗔 ⊢ setLenTotalC :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_setLenTotalC.mpr fun _ ↦ ⟨_, rfl⟩
-theorem lib_setLenTotalC : Lib setLenTotalC := Lib.of_pa pa_proves_setLenTotalC
+/-- `∀ s, ∃ l, l = sequentLen s` (`Lengths.sequentLenTotal`). -/
+noncomputable def sequentLenTotalCB : ArithmeticSemisentence 1 :=
+  “s. ∃ l, !(sequentLenDef LAct) l s”
+noncomputable def sequentLenTotalC : ArithmeticSentence := ∀¹* sequentLenTotalCB
+lemma models_sequentLenTotalC : V↓[ℒₒᵣ] ⊧ sequentLenTotalC ↔ ∀ s : V, ∃ l, l = sequentLen LAct s := by
+  simp [sequentLenTotalC, sequentLenTotalCB, models_iff, Matrix.vecForall_iff, sequentLen_defined.iff]
+theorem pa_proves_sequentLenTotalC : 𝗣𝗔 ⊢ sequentLenTotalC :=
+  Lib.pa_proves_of_models fun _ _ _ ↦ models_sequentLenTotalC.mpr fun _ ↦ ⟨_, rfl⟩
+theorem lib_sequentLenTotalC : Lib sequentLenTotalC := Lib.of_pa pa_proves_sequentLenTotalC
 
 /-- `s ⊆ s` (`Sets.subsetRefl`). -/
 noncomputable def subsetReflCB : ArithmeticSemisentence 1 :=

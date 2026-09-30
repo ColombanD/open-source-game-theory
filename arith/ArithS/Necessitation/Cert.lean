@@ -91,7 +91,7 @@ def DossF (W Γ n r i : V) : Prop := ∀ f ∈ finalCtx 0 (describeF W n r), shi
 def DossT (W Γ n t i : V) : Prop := ∀ f ∈ finalCtx 0 (describeT W n t), shiftIterV f i ∈ Γ
 /-- The dossier of the walk of the last `j` entries of the vector `v` (of length `k`) at offset `i`. -/
 def DossV (W Γ n k v j i : V) : Prop :=
-  ∀ f ∈ finalCtx 0 (π₂ (descVecAux W n (descTVec W n k v) j)), shiftIterV f i ∈ Γ
+  ∀ f ∈ finalCtx 0 (π₂ (descriptionsAux W n (descTVec W n k v) j)), shiftIterV f i ∈ Γ
 
 instance dossF_definable : 𝚫₁-Relation₅ (DossF : V → V → V → V → V → Prop) := by
   unfold DossF; definability
@@ -374,17 +374,17 @@ lemma shiftIterV_lenFact {l p : V} (hl : IsSemiterm LAct 0 l) (hp : IsSemiterm L
   | succ m ih =>
     rw [shiftIterV_succ, ih, shift_lenFact (isSemiterm_termShiftIterV hl m) (isSemiterm_termShiftIterV hp m), termShiftIterV_succ, termShiftIterV_succ]
 
-instance tlenFact_definable : 𝚺₁-Function₂ (tlenFact : V → V → V) := by
-  have : (tlenFact : V → V → V) = fun l t ↦ subst LAct (l ∷ t ∷ 0) PtlenG := rfl
+instance termLenMetaFact_definable : 𝚺₁-Function₂ (termLenMetaFact : V → V → V) := by
+  have : (termLenMetaFact : V → V → V) = fun l t ↦ subst LAct (l ∷ t ∷ 0) PtlenG := rfl
   rw [this]; definability
-lemma shiftIterV_tlenFact {l t : V} (hl : IsSemiterm LAct 0 l) (ht : IsSemiterm LAct 0 t) :
-    ∀ m, shiftIterV (tlenFact l t) m = tlenFact (termShiftIterV l m) (termShiftIterV t m) := by
+lemma shiftIterV_termLenMetaFact {l t : V} (hl : IsSemiterm LAct 0 l) (ht : IsSemiterm LAct 0 t) :
+    ∀ m, shiftIterV (termLenMetaFact l t) m = termLenMetaFact (termShiftIterV l m) (termShiftIterV t m) := by
   intro m
   induction m using ISigma1.sigma1_succ_induction with
   | hP => definability
   | zero => simp
   | succ m ih =>
-    rw [shiftIterV_succ, ih, shift_tlenFact (isSemiterm_termShiftIterV hl m) (isSemiterm_termShiftIterV ht m), termShiftIterV_succ, termShiftIterV_succ]
+    rw [shiftIterV_succ, ih, shift_termLenMetaFact (isSemiterm_termShiftIterV hl m) (isSemiterm_termShiftIterV ht m), termShiftIterV_succ, termShiftIterV_succ]
 
 lemma shiftIterV_tlvFact {M k v : V} (hM : IsSemiterm LAct 0 M) (hk : IsSemiterm LAct 0 k) (hv : IsSemiterm LAct 0 v) :
     ∀ m, shiftIterV (tlvFact M k v) m = tlvFact (termShiftIterV M m) (termShiftIterV k m) (termShiftIterV v m) := by
@@ -715,7 +715,7 @@ theorem dossT_func {Γ n k f v i : V} (hkf : LAct.IsFunc k f) (hv : IsSemitermVe
     neg LAct (funcFact (^&i) (cTV k) (cTV f) (vRef (i + 1) k)) ∈ Γ ∧ neg LAct (tPiFact (cTV n) (^&i)) ∈ Γ ∧
     neg LAct (utvPiFact (cTV k) (vRef (i + 1) k)) ∈ Γ ∧ DossV W Γ n k v k (i + 1) := by
   have hS := describeT_func W n hkf hv.isUTerm
-  set Sv := π₂ (descVecAux W n (descTVec W n k v) k) with hSv
+  set Sv := π₂ (descriptionsAux W n (descTVec W n k v) k) with hSv
   have hctx : finalCtx 0 (describeT W n (^func k f v)) =
       ctxAfter (ctxAfter (ctxAfter (ctxAfter (ctxAfter (ctxAfter (finalCtx 0 Sv) (mkStep W (funcRow k f) 0))
         (mkStep W 7 ?[cTV k, cTV f, vRef 0 k])) (mkStep W 8 ?[cTV n, cTV k, cTV f, vRef 1 k, ^&0]))
@@ -783,13 +783,13 @@ theorem dossV_succ {Γ n k v j i : V} (hv : IsSemitermVec LAct k n v) (hj : j + 
       nth_descTVec W n hv.isUTerm hi]
   set t := v.[k - (j + 1)] with htdef
   set ct := descCountT W n t with hct
-  set Sv := π₂ (descVecAux W n (descTVec W n k v) j) with hSv
-  have hS : π₂ (descVecAux W n (descTVec W n k v) (j + 1)) =
+  set Sv := π₂ (descriptionsAux W n (descTVec W n k v) j) with hSv
+  have hS : π₂ (descriptionsAux W n (descTVec W n k v) (j + 1)) =
       appendV Sv (appendV (describeT W n t)
         ?[mkStep W 17 ?[^&0, vRef ct j], mkStep W 18 ?[cTV j, cTV n, vRef (ct + 1) j, ^&1, ^&0],
           mkStep W 16 ?[cTV (j + 1), cTV n, ^&0]]) := by
-    rw [descVecAux_succ, hnth, adjNode, pi₂_pair]; rfl
-  have hctx : finalCtx 0 (π₂ (descVecAux W n (descTVec W n k v) (j + 1))) =
+    rw [descriptionsAux_succ, hnth, adjNode, pi₂_pair]; rfl
+  have hctx : finalCtx 0 (π₂ (descriptionsAux W n (descTVec W n k v) (j + 1))) =
       ctxAfter (ctxAfter (ctxAfter (finalCtx (finalCtx 0 Sv) (describeT W n t)) (mkStep W 17 ?[^&0, vRef ct j]))
         (mkStep W 18 ?[cTV j, cTV n, vRef (ct + 1) j, ^&1, ^&0])) (mkStep W 16 ?[cTV (j + 1), cTV n, ^&0]) := by
     rw [hS, finalCtx_appendV, finalCtx_three]
@@ -798,17 +798,17 @@ theorem dossV_succ {Γ n k v j i : V} (hv : IsSemitermVec LAct k n v) (hj : j + 
     (Γ := 0) IsFormulaSet.empty
   rw [← hWp] at hndT hshT
   have hr : IsSemiterm LAct 0 (vRef ct j) := isSemiterm_vRef _ _
-  have h1 : neg LAct (adjFact (^&0) (^&1) (vRef (ct + 1) j)) ∈ finalCtx 0 (π₂ (descVecAux W n (descTVec W n k v) (j + 1))) := by
+  have h1 : neg LAct (adjFact (^&0) (^&1) (vRef (ct + 1) j)) ∈ finalCtx 0 (π₂ (descriptionsAux W n (descTVec W n k v) (j + 1))) := by
     rw [hctx]
     refine mem_ctxAfter_of_noShift (Or.inl (tag_isSemitermVecSigmaPiLAct hWp _))
       (mem_ctxAfter_of_noShift (Or.inl (tag_isSemitermVecAdjoin hWp _)) ?_)
     rw [ctx_adjoinTotal hWp (by simp) hr, termShift_fvar, zero_add, termShift_vRef]
     exact mem_insert_self'
-  have h2 : neg LAct (tvPiFact (cTV (j + 1)) (cTV n) (^&0)) ∈ finalCtx 0 (π₂ (descVecAux W n (descTVec W n k v) (j + 1))) := by
+  have h2 : neg LAct (tvPiFact (cTV (j + 1)) (cTV n) (^&0)) ∈ finalCtx 0 (π₂ (descriptionsAux W n (descTVec W n k v) (j + 1))) := by
     rw [hctx, ctx_isSemitermVecSigmaPiLAct hWp (cTV_semiterm_LAct 0 _) (cTV_semiterm_LAct 0 _) (by simp)]
     exact mem_insert_self'
   have hlift : ∀ g ∈ finalCtx (finalCtx 0 Sv) (describeT W n t),
-      shift LAct g ∈ finalCtx 0 (π₂ (descVecAux W n (descTVec W n k v) (j + 1))) := by
+      shift LAct g ∈ finalCtx 0 (π₂ (descriptionsAux W n (descTVec W n k v) (j + 1))) := by
     intro g hg
     rw [hctx]
     refine mem_ctxAfter_of_noShift (Or.inl (tag_isSemitermVecSigmaPiLAct hWp _))
@@ -1071,7 +1071,7 @@ theorem dossF_rel {Γ n k R v i : V} (hkR : LAct.IsRel k R) (hv : IsSemitermVec 
     (h : DossF W Γ n (^rel k R v) i) :
     neg LAct (relFact (^&i) (cTV k) (cTV R) (vRef (i + 1) k)) ∈ Γ ∧ neg LAct (piFact (cTV n) (^&i)) ∈ Γ ∧
     neg LAct (utvPiFact (cTV k) (vRef (i + 1) k)) ∈ Γ ∧ DossV W Γ n k v k (i + 1) := by
-  set Sv := π₂ (descVecAux W n (descTVec W n k v) k) with hSv
+  set Sv := π₂ (descriptionsAux W n (descTVec W n k v) k) with hSv
   have hS : describeF W n (^rel k R v) = appendV Sv
       ?[mkStep W (relRow R) 0, mkStep W 32 ?[cTV k, cTV R, vRef 0 k], mkStep W 33 ?[cTV n, cTV k, cTV R, vRef 1 k, ^&0],
         mkStep W 21 ?[cTV n, ^&0], mkStep W 38 ?[cTV k, cTV n, vRef 1 k], mkStep W 39 ?[cTV k, vRef 1 k]] := by
@@ -1129,7 +1129,7 @@ theorem dossF_nrel {Γ n k R v i : V} (hkR : LAct.IsRel k R) (hv : IsSemitermVec
     (h : DossF W Γ n (^nrel k R v) i) :
     neg LAct (nrelFact (^&i) (cTV k) (cTV R) (vRef (i + 1) k)) ∈ Γ ∧ neg LAct (piFact (cTV n) (^&i)) ∈ Γ ∧
     neg LAct (utvPiFact (cTV k) (vRef (i + 1) k)) ∈ Γ ∧ DossV W Γ n k v k (i + 1) := by
-  set Sv := π₂ (descVecAux W n (descTVec W n k v) k) with hSv
+  set Sv := π₂ (descriptionsAux W n (descTVec W n k v) k) with hSv
   have hS : describeF W n (^nrel k R v) = appendV Sv
       ?[mkStep W (relRow R) 0, mkStep W 34 ?[cTV k, cTV R, vRef 0 k], mkStep W 35 ?[cTV n, cTV k, cTV R, vRef 1 k, ^&0],
         mkStep W 21 ?[cTV n, ^&0], mkStep W 38 ?[cTV k, cTV n, vRef 1 k], mkStep W 39 ?[cTV k, vRef 1 k]] := by
@@ -1601,8 +1601,8 @@ lemma passTGraph_exists_bounded (W ν n B : V) : ∀ t, IsSemiterm LAct n t →
     have hk := arity_le_two hkf
     rw [descCountT_func W n hkf hv.isUTerm] at hiB hjB
     -- the vector level, by induction on the number of entries from the end
-    have key : ∀ m ≤ k, ∀ i ≤ B, ∀ j ≤ B, i + π₁ (descVecAux W n (descTVec W n k v) m) ≤ B →
-        j + π₁ (descVecAux W n (descTVec W n k v) m) ≤ B → ∃ yv, PassVGraph W ν n k v m i j yv := by
+    have key : ∀ m ≤ k, ∀ i ≤ B, ∀ j ≤ B, i + π₁ (descriptionsAux W n (descTVec W n k v) m) ≤ B →
+        j + π₁ (descriptionsAux W n (descTVec W n k v) m) ≤ B → ∃ yv, PassVGraph W ν n k v m i j yv := by
       intro m
       induction m using ISigma1.sigma1_succ_induction with
       | hP => definability
@@ -1617,12 +1617,12 @@ lemma passTGraph_exists_bounded (W ν n B : V) : ∀ t, IsSemiterm LAct n t →
             nth_descTVec W n hv.isUTerm hlt]
         have hnth' : nthFromEnd v m = v.[k - (m + 1)] :=
           nthFromEnd_eq (a := k - (m + 1)) (by rw [hvlen, tsub_add_cancel_of_le hm])
-        have hC : π₁ (descVecAux W n (descTVec W n k v) (m + 1)) =
-            π₁ (descVecAux W n (descTVec W n k v) m) + descCountT W n v.[k - (m + 1)] + 1 := by
-          rw [descVecAux_succ, hnth, adjNode, pi₁_pair]; rfl
+        have hC : π₁ (descriptionsAux W n (descTVec W n k v) (m + 1)) =
+            π₁ (descriptionsAux W n (descTVec W n k v) m) + descCountT W n v.[k - (m + 1)] + 1 := by
+          rw [descriptionsAux_succ, hnth, adjNode, pi₁_pair]; rfl
         rw [hC] at hiB hjB
         set ct := descCountT W n v.[k - (m + 1)] with hct
-        set cv := π₁ (descVecAux W n (descTVec W n k v) m) with hcv
+        set cv := π₁ (descriptionsAux W n (descTVec W n k v) m) with hcv
         have hiB' : i + 1 + ct ≤ B :=
           le_trans (le_trans (le_of_eq (by rw [add_assoc, add_comm 1 ct]))
             (add_le_add (le_refl i) (add_le_add le_add_self (le_refl 1)))) hiB
@@ -1712,10 +1712,10 @@ lemma passVGraph_unique {W ν n k v : V} (hv : IsSemitermVec LAct k n v) :
 /-- **Existence at the vector level**, from the term level. The motive must be Σ₁, so the
 offsets are bounded quantifiers; as at the term level (`passTGraph_exists_bounded`) the bound `B`
 must dominate the offsets the descent reaches, i.e. `i + cv ≤ B` and `j + cv ≤ B` for
-`cv = π₁ (descVecAux …)` the vector's own eigenvariable count. -/
+`cv = π₁ (descriptionsAux …)` the vector's own eigenvariable count. -/
 lemma passVGraph_exists_bounded (W ν n B : V) {k v : V} (hv : IsSemitermVec LAct k n v) :
-    ∀ m ≤ k, ∀ i ≤ B, ∀ j ≤ B, i + π₁ (descVecAux W n (descTVec W n k v) m) ≤ B →
-      j + π₁ (descVecAux W n (descTVec W n k v) m) ≤ B → ∃ y, PassVGraph W ν n k v m i j y := by
+    ∀ m ≤ k, ∀ i ≤ B, ∀ j ≤ B, i + π₁ (descriptionsAux W n (descTVec W n k v) m) ≤ B →
+      j + π₁ (descriptionsAux W n (descTVec W n k v) m) ≤ B → ∃ y, PassVGraph W ν n k v m i j y := by
   have hvlen : len v = k := hv.lh
   intro m
   induction m using ISigma1.sigma1_succ_induction with
@@ -1730,12 +1730,12 @@ lemma passVGraph_exists_bounded (W ν n B : V) {k v : V} (hv : IsSemitermVec LAc
         nth_descTVec W n hv.isUTerm hlt]
     have hnth' : nthFromEnd v m = v.[k - (m + 1)] :=
       nthFromEnd_eq (a := k - (m + 1)) (by rw [hvlen, tsub_add_cancel_of_le hm])
-    have hC : π₁ (descVecAux W n (descTVec W n k v) (m + 1)) =
-        π₁ (descVecAux W n (descTVec W n k v) m) + descCountT W n v.[k - (m + 1)] + 1 := by
-      rw [descVecAux_succ, hnth, adjNode, pi₁_pair]; rfl
+    have hC : π₁ (descriptionsAux W n (descTVec W n k v) (m + 1)) =
+        π₁ (descriptionsAux W n (descTVec W n k v) m) + descCountT W n v.[k - (m + 1)] + 1 := by
+      rw [descriptionsAux_succ, hnth, adjNode, pi₁_pair]; rfl
     rw [hC] at hiB hjB
     set ct := descCountT W n v.[k - (m + 1)] with hct
-    set cv := π₁ (descVecAux W n (descTVec W n k v) m) with hcv
+    set cv := π₁ (descriptionsAux W n (descTVec W n k v) m) with hcv
     have hiB' : i + 1 + ct ≤ B :=
       le_trans (le_trans (le_of_eq (by rw [add_assoc, add_comm 1 ct]))
         (add_le_add (le_refl i) (add_le_add le_add_self (le_refl 1)))) hiB
@@ -1753,7 +1753,7 @@ lemma passVGraph_exists_bounded (W ν n B : V) {k v : V} (hv : IsSemitermVec LAc
 
 lemma passVGraph_exists (W ν n : V) {k v : V} (hv : IsSemitermVec LAct k n v)
     {m : V} (hm : m ≤ k) (i j : V) : ∃ y, PassVGraph W ν n k v m i j y := by
-  set cv := π₁ (descVecAux W n (descTVec W n k v) m) with hcv
+  set cv := π₁ (descriptionsAux W n (descTVec W n k v) m) with hcv
   exact passVGraph_exists_bounded W ν n (i + j + cv) hv m hm i (le_trans le_self_add le_self_add) j
     (le_trans le_add_self le_self_add) (add_le_add le_self_add (le_refl cv)) (add_le_add le_add_self (le_refl cv))
 
@@ -2203,10 +2203,10 @@ lemma descCountF_exs (W n : V) {p : V} (hp : IsSemiformula LAct (n + 1) p) :
 lemma descCountF_falsum (W n : V) : descCountF W n ^⊥ = 1 := by
   rw [descCountF, descFw_falsum, constNode, pi₁_pair]
 lemma descCountF_rel (W n : V) {k R v : V} (hR : LAct.IsRel k R) (hv : IsSemitermVec LAct k n v) :
-    descCountF W n (^rel k R v) = π₁ (descVecAux W n (descTVec W n k v) k) + 1 := by
+    descCountF W n (^rel k R v) = π₁ (descriptionsAux W n (descTVec W n k v) k) + 1 := by
   rw [descCountF, descFw_rel W n hR hv, atomNode, pi₁_pair]
 lemma descCountF_nrel (W n : V) {k R v : V} (hR : LAct.IsRel k R) (hv : IsSemitermVec LAct k n v) :
-    descCountF W n (^nrel k R v) = π₁ (descVecAux W n (descTVec W n k v) k) + 1 := by
+    descCountF W n (^nrel k R v) = π₁ (descriptionsAux W n (descTVec W n k v) k) + 1 := by
   rw [descCountF, descFw_nrel W n hR hv, atomNode, pi₁_pair]
 
 /-- The image of an `and` under the pass's family is a binary node with the corresponding children. -/
@@ -3061,11 +3061,11 @@ lemma pi1_eqT_eq_descCountT (W n : V) : ∀ t, IsSemiterm LAct n t → π₁ (eq
   · intro z _; rw [eqT_bvar, pi1_bvarT, descCountT_bvar]
   · intro a; rw [eqT_fvar, pi1_fvarT, descCountT_fvar]
   · intro k f v hkf hv ih
-    have key : ∀ m ≤ k, π₁ (eqVecAux (eqTVec k v) m) = π₁ (descVecAux W n (descTVec W n k v) m) := by
+    have key : ∀ m ≤ k, π₁ (eqVecAux (eqTVec k v) m) = π₁ (descriptionsAux W n (descTVec W n k v) m) := by
       intro m
       induction m using ISigma1.pi1_succ_induction with
       | hP => definability
-      | zero => intro _; rw [eqVecAux_zero, pi1_nilT, descVecAux_zero, nilNode, pi₁_pair]
+      | zero => intro _; rw [eqVecAux_zero, pi1_nilT, descriptionsAux_zero, nilNode, pi₁_pair]
       | succ m ihm =>
         intro hm
         have hk0 : (0 : V) < k := lt_of_lt_of_le (lt_of_lt_of_le _root_.zero_lt_one le_add_self) hm
@@ -3076,7 +3076,7 @@ lemma pi1_eqT_eq_descCountT (W n : V) : ∀ t, IsSemiterm LAct n t → π₁ (eq
         have h2 : nthFromEnd (descTVec W n k v) m = descT W n v.[k - (m + 1)] := by
           rw [nthFromEnd_eq (a := k - (m + 1)) (by rw [len_descTVec W n hv.isUTerm, tsub_add_cancel_of_le hm]),
             nth_descTVec W n hv.isUTerm hlt]
-        rw [eqVecAux_succ, h1, pi1_adjT, descVecAux_succ, h2, adjNode, pi₁_pair,
+        rw [eqVecAux_succ, h1, pi1_adjT, descriptionsAux_succ, h2, adjNode, pi₁_pair,
           ihm (le_trans le_self_add hm), ih _ hlt]
         rfl
     rw [eqT_func hkf hv.isUTerm, pi1_funcT, descCountT_func W n hkf hv.isUTerm, key k le_rfl]
@@ -3089,11 +3089,11 @@ theorem eqCount_eq_descCountF (W : V) : ∀ {n r : V}, IsSemiformula LAct n r �
   apply IsSemiformula.pi1_structural_induction (P := fun n r ↦ eqCount r = descCountF W n r)
   · definability
   · intro n k R v hkR hv
-    have key : ∀ m ≤ k, π₁ (eqVecAux (eqTVec k v) m) = π₁ (descVecAux W n (descTVec W n k v) m) := by
+    have key : ∀ m ≤ k, π₁ (eqVecAux (eqTVec k v) m) = π₁ (descriptionsAux W n (descTVec W n k v) m) := by
       intro m
       induction m using ISigma1.pi1_succ_induction with
       | hP => definability
-      | zero => intro _; rw [eqVecAux_zero, pi1_nilT, descVecAux_zero, nilNode, pi₁_pair]
+      | zero => intro _; rw [eqVecAux_zero, pi1_nilT, descriptionsAux_zero, nilNode, pi₁_pair]
       | succ m ihm =>
         intro hm
         have hk0 : (0 : V) < k := lt_of_lt_of_le (lt_of_lt_of_le _root_.zero_lt_one le_add_self) hm
@@ -3104,16 +3104,16 @@ theorem eqCount_eq_descCountF (W : V) : ∀ {n r : V}, IsSemiformula LAct n r �
         have h2 : nthFromEnd (descTVec W n k v) m = descT W n v.[k - (m + 1)] := by
           rw [nthFromEnd_eq (a := k - (m + 1)) (by rw [len_descTVec W n hv.isUTerm, tsub_add_cancel_of_le hm]),
             nth_descTVec W n hv.isUTerm hlt]
-        rw [eqVecAux_succ, h1, pi1_adjT, descVecAux_succ, h2, adjNode, pi₁_pair,
+        rw [eqVecAux_succ, h1, pi1_adjT, descriptionsAux_succ, h2, adjNode, pi₁_pair,
           ihm (le_trans le_self_add hm), pi1_eqT_eq_descCountT W n _ (hv.nth hlt)]
         rfl
     rw [eqCount, eqFT_rel hkR hv.isUTerm, pi1_atomT, descCountF_rel W n hkR hv, key k le_rfl]
   · intro n k R v hkR hv
-    have key : ∀ m ≤ k, π₁ (eqVecAux (eqTVec k v) m) = π₁ (descVecAux W n (descTVec W n k v) m) := by
+    have key : ∀ m ≤ k, π₁ (eqVecAux (eqTVec k v) m) = π₁ (descriptionsAux W n (descTVec W n k v) m) := by
       intro m
       induction m using ISigma1.pi1_succ_induction with
       | hP => definability
-      | zero => intro _; rw [eqVecAux_zero, pi1_nilT, descVecAux_zero, nilNode, pi₁_pair]
+      | zero => intro _; rw [eqVecAux_zero, pi1_nilT, descriptionsAux_zero, nilNode, pi₁_pair]
       | succ m ihm =>
         intro hm
         have hk0 : (0 : V) < k := lt_of_lt_of_le (lt_of_lt_of_le _root_.zero_lt_one le_add_self) hm
@@ -3124,7 +3124,7 @@ theorem eqCount_eq_descCountF (W : V) : ∀ {n r : V}, IsSemiformula LAct n r �
         have h2 : nthFromEnd (descTVec W n k v) m = descT W n v.[k - (m + 1)] := by
           rw [nthFromEnd_eq (a := k - (m + 1)) (by rw [len_descTVec W n hv.isUTerm, tsub_add_cancel_of_le hm]),
             nth_descTVec W n hv.isUTerm hlt]
-        rw [eqVecAux_succ, h1, pi1_adjT, descVecAux_succ, h2, adjNode, pi₁_pair,
+        rw [eqVecAux_succ, h1, pi1_adjT, descriptionsAux_succ, h2, adjNode, pi₁_pair,
           ihm (le_trans le_self_add hm), pi1_eqT_eq_descCountT W n _ (hv.nth hlt)]
         rfl
     rw [eqCount, eqFT_nrel hkR hv.isUTerm, pi1_atomT, descCountF_nrel W n hkR hv, key k le_rfl]
@@ -3167,7 +3167,7 @@ them. Every step is then applicable and the final context holds `tshFact &j &i`.
 /-! ### 4.-1 The walk is the same over `certPieces` as over `walkPieces`
 
 The walk only ever names rows `< walkRowCount`, and `certPieces` extends `walkPieces` entrywise
-(`mkStep_certPieces_lt`), so every walk object — `descT`, `descTVec`, `descVecAux`, `descFw` and
+(`mkStep_certPieces_lt`), so every walk object — `descT`, `descTVec`, `descriptionsAux`, `descFw` and
 hence `describeT`/`describeF`/`descCountT`/`descCountF` — is UNCHANGED. The pass may therefore run
 over ONE piece table, `certPieces`, with the dossiers stated at `walkPieces` and transported here.
 -/
@@ -3182,14 +3182,14 @@ theorem descCountT_certPieces (n : V) : ∀ t, IsSemiterm LAct n t →
   · intro z _; rw [descCountT_bvar, descCountT_bvar]
   · intro a; rw [descCountT_fvar, descCountT_fvar]
   · intro k f v hkf hv ih
-    have key : ∀ m ≤ k, π₁ (descVecAux (certPieces : V) n (descTVec (certPieces : V) n k v) m) =
-        π₁ (descVecAux (walkPieces : V) n (descTVec (walkPieces : V) n k v) m) := by
+    have key : ∀ m ≤ k, π₁ (descriptionsAux (certPieces : V) n (descTVec (certPieces : V) n k v) m) =
+        π₁ (descriptionsAux (walkPieces : V) n (descTVec (walkPieces : V) n k v) m) := by
       intro m
       induction m using ISigma1.pi1_succ_induction with
       | hP => definability
       | zero =>
         intro _
-        rw [descVecAux_zero, descVecAux_zero, nilNode, nilNode, pi₁_pair, pi₁_pair]
+        rw [descriptionsAux_zero, descriptionsAux_zero, nilNode, nilNode, pi₁_pair, pi₁_pair]
       | succ m ihm =>
         intro hm
         have hk0 : (0 : V) < k := lt_of_lt_of_le (lt_of_lt_of_le _root_.zero_lt_one le_add_self) hm
@@ -3198,7 +3198,7 @@ theorem descCountT_certPieces (n : V) : ∀ t, IsSemiterm LAct n t →
           rw [nthFromEnd_eq (a := k - (m + 1))
             (by rw [len_descTVec Wx n hv.isUTerm, tsub_add_cancel_of_le hm]),
             nth_descTVec Wx n hv.isUTerm hlt]
-        rw [descVecAux_succ, h1, adjNode, pi₁_pair, descVecAux_succ, h1, adjNode, pi₁_pair,
+        rw [descriptionsAux_succ, h1, adjNode, pi₁_pair, descriptionsAux_succ, h1, adjNode, pi₁_pair,
           ihm (le_trans le_self_add hm)]
         have := ih _ hlt
         rw [descCountT, descCountT] at this
@@ -3227,12 +3227,12 @@ theorem descCountT_termShift (Wd n : V) : ∀ t, IsSemiterm LAct n t →
   · intro a; rw [termShift_fvar, descCountT_fvar, descCountT_fvar]
   · intro k f v hkf hv ih
     have hvs : IsSemitermVec LAct k n (termShiftVec LAct k v) := hv.termShiftVec
-    have key : ∀ m ≤ k, π₁ (descVecAux Wd n (descTVec Wd n k (termShiftVec LAct k v)) m) =
-        π₁ (descVecAux Wd n (descTVec Wd n k v) m) := by
+    have key : ∀ m ≤ k, π₁ (descriptionsAux Wd n (descTVec Wd n k (termShiftVec LAct k v)) m) =
+        π₁ (descriptionsAux Wd n (descTVec Wd n k v) m) := by
       intro m
       induction m using ISigma1.pi1_succ_induction with
       | hP => definability
-      | zero => intro _; rw [descVecAux_zero, descVecAux_zero, nilNode, pi₁_pair]
+      | zero => intro _; rw [descriptionsAux_zero, descriptionsAux_zero, nilNode, pi₁_pair]
       | succ m ihm =>
         intro hm
         have hk0 : (0 : V) < k := lt_of_lt_of_le (lt_of_lt_of_le _root_.zero_lt_one le_add_self) hm
@@ -3248,7 +3248,7 @@ theorem descCountT_termShift (Wd n : V) : ∀ t, IsSemiterm LAct n t →
             nth_descTVec Wd n hv.isUTerm hlt]
         have h3 : (termShiftVec LAct k v).[k - (m + 1)] = termShift LAct v.[k - (m + 1)] :=
           nth_termShiftVec hv.isUTerm hlt
-        rw [descVecAux_succ, h1, h3, adjNode, pi₁_pair, descVecAux_succ, h2, adjNode, pi₁_pair,
+        rw [descriptionsAux_succ, h1, h3, adjNode, pi₁_pair, descriptionsAux_succ, h2, adjNode, pi₁_pair,
           ihm (le_trans le_self_add hm)]
         have := ih _ hlt
         rw [descCountT, descCountT] at this
@@ -3268,12 +3268,12 @@ theorem descCountF_shift (Wd : V) : ∀ {n r : V}, IsSemiformula LAct n r →
   · definability
   · intro n k R v hkR hv
     have hvs : IsSemitermVec LAct k n (termShiftVec LAct k v) := hv.termShiftVec
-    have key : ∀ m ≤ k, π₁ (descVecAux Wd n (descTVec Wd n k (termShiftVec LAct k v)) m) =
-        π₁ (descVecAux Wd n (descTVec Wd n k v) m) := by
+    have key : ∀ m ≤ k, π₁ (descriptionsAux Wd n (descTVec Wd n k (termShiftVec LAct k v)) m) =
+        π₁ (descriptionsAux Wd n (descTVec Wd n k v) m) := by
       intro m
       induction m using ISigma1.pi1_succ_induction with
       | hP => definability
-      | zero => intro _; rw [descVecAux_zero, descVecAux_zero, nilNode, pi₁_pair]
+      | zero => intro _; rw [descriptionsAux_zero, descriptionsAux_zero, nilNode, pi₁_pair]
       | succ m ihm =>
         intro hm
         have hk0 : (0 : V) < k := lt_of_lt_of_le (lt_of_lt_of_le _root_.zero_lt_one le_add_self) hm
@@ -3289,7 +3289,7 @@ theorem descCountF_shift (Wd : V) : ∀ {n r : V}, IsSemiformula LAct n r →
             nth_descTVec Wd n hv.isUTerm hlt]
         have h3 : (termShiftVec LAct k v).[k - (m + 1)] = termShift LAct v.[k - (m + 1)] :=
           nth_termShiftVec hv.isUTerm hlt
-        rw [descVecAux_succ, h1, h3, adjNode, pi₁_pair, descVecAux_succ, h2, adjNode, pi₁_pair,
+        rw [descriptionsAux_succ, h1, h3, adjNode, pi₁_pair, descriptionsAux_succ, h2, adjNode, pi₁_pair,
           ihm (le_trans le_self_add hm)]
         have := descCountT_termShift Wd n _ (hv.nth hlt)
         rw [descCountT, descCountT] at this
@@ -3297,12 +3297,12 @@ theorem descCountF_shift (Wd : V) : ∀ {n r : V}, IsSemiformula LAct n r →
     rw [shift_rel hkR hv.isUTerm, descCountF_rel Wd n hkR hvs, descCountF_rel Wd n hkR hv, key k le_rfl]
   · intro n k R v hkR hv
     have hvs : IsSemitermVec LAct k n (termShiftVec LAct k v) := hv.termShiftVec
-    have key : ∀ m ≤ k, π₁ (descVecAux Wd n (descTVec Wd n k (termShiftVec LAct k v)) m) =
-        π₁ (descVecAux Wd n (descTVec Wd n k v) m) := by
+    have key : ∀ m ≤ k, π₁ (descriptionsAux Wd n (descTVec Wd n k (termShiftVec LAct k v)) m) =
+        π₁ (descriptionsAux Wd n (descTVec Wd n k v) m) := by
       intro m
       induction m using ISigma1.pi1_succ_induction with
       | hP => definability
-      | zero => intro _; rw [descVecAux_zero, descVecAux_zero, nilNode, pi₁_pair]
+      | zero => intro _; rw [descriptionsAux_zero, descriptionsAux_zero, nilNode, pi₁_pair]
       | succ m ihm =>
         intro hm
         have hk0 : (0 : V) < k := lt_of_lt_of_le (lt_of_lt_of_le _root_.zero_lt_one le_add_self) hm
@@ -3318,7 +3318,7 @@ theorem descCountF_shift (Wd : V) : ∀ {n r : V}, IsSemiformula LAct n r →
             nth_descTVec Wd n hv.isUTerm hlt]
         have h3 : (termShiftVec LAct k v).[k - (m + 1)] = termShift LAct v.[k - (m + 1)] :=
           nth_termShiftVec hv.isUTerm hlt
-        rw [descVecAux_succ, h1, h3, adjNode, pi₁_pair, descVecAux_succ, h2, adjNode, pi₁_pair,
+        rw [descriptionsAux_succ, h1, h3, adjNode, pi₁_pair, descriptionsAux_succ, h2, adjNode, pi₁_pair,
           ihm (le_trans le_self_add hm)]
         have := descCountT_termShift Wd n _ (hv.nth hlt)
         rw [descCountT, descCountT] at this
@@ -3396,8 +3396,8 @@ lemma descCountF_walk_le {n r : V} (hr : IsSemiformula LAct n r) : descCountF Wd
 /-- The empty vector's dossier: `tvPiF (cT 0) (cT n) (cT 0)` (the `nilNode`'s bridge row). -/
 lemma dossV_zero {Γ n k v i : V} (h : DossV Wd Γ n k v 0 i) :
     neg LAct (tvPiFact (cTV 0) (cTV n) (cTV 0)) ∈ Γ := by
-  have h2 : neg LAct (tvPiFact (cTV 0) (cTV n) (cTV 0)) ∈ finalCtx 0 (π₂ (descVecAux Wd n (descTVec Wd n k v) 0)) := by
-    rw [descVecAux_zero, nilNode, pi₂_pair, finalCtx_cons, finalCtx_single,
+  have h2 : neg LAct (tvPiFact (cTV 0) (cTV n) (cTV 0)) ∈ finalCtx 0 (π₂ (descriptionsAux Wd n (descTVec Wd n k v) 0)) := by
+    rw [descriptionsAux_zero, nilNode, pi₂_pair, finalCtx_cons, finalCtx_single,
       ctx_isSemitermVecSigmaPiLAct hWd (cTV_semiterm_LAct 0 _) (cTV_semiterm_LAct 0 _) (cTV_semiterm_LAct 0 _)]
     exact mem_insert_self'
   have := h _ h2
@@ -3418,15 +3418,15 @@ end certHelpers
 section countBridges
 
 /-- The vector walk's count is the same over the two piece tables. -/
-theorem descVecAux_count_certPieces (n : V) {k v : V} (hv : IsSemitermVec LAct k n v) :
-    ∀ m ≤ k, π₁ (descVecAux (certPieces : V) n (descTVec (certPieces : V) n k v) m) =
-      π₁ (descVecAux (walkPieces : V) n (descTVec (walkPieces : V) n k v) m) := by
+theorem descriptionsAux_count_certPieces (n : V) {k v : V} (hv : IsSemitermVec LAct k n v) :
+    ∀ m ≤ k, π₁ (descriptionsAux (certPieces : V) n (descTVec (certPieces : V) n k v) m) =
+      π₁ (descriptionsAux (walkPieces : V) n (descTVec (walkPieces : V) n k v) m) := by
   intro m
   induction m using ISigma1.pi1_succ_induction with
   | hP => definability
   | zero =>
     intro _
-    rw [descVecAux_zero, descVecAux_zero, nilNode, nilNode, pi₁_pair, pi₁_pair]
+    rw [descriptionsAux_zero, descriptionsAux_zero, nilNode, nilNode, pi₁_pair, pi₁_pair]
   | succ m ihm =>
     intro hm
     have hk0 : (0 : V) < k := lt_of_lt_of_le (lt_of_lt_of_le _root_.zero_lt_one le_add_self) hm
@@ -3435,7 +3435,7 @@ theorem descVecAux_count_certPieces (n : V) {k v : V} (hv : IsSemitermVec LAct k
       rw [nthFromEnd_eq (a := k - (m + 1))
         (by rw [len_descTVec Wx n hv.isUTerm, tsub_add_cancel_of_le hm]),
         nth_descTVec Wx n hv.isUTerm hlt]
-    rw [descVecAux_succ, h1, adjNode, pi₁_pair, descVecAux_succ, h1, adjNode, pi₁_pair,
+    rw [descriptionsAux_succ, h1, adjNode, pi₁_pair, descriptionsAux_succ, h1, adjNode, pi₁_pair,
       ihm (le_trans le_self_add hm)]
     have := descCountT_certPieces n _ (hv.nth hlt)
     rw [descCountT, descCountT] at this
@@ -3449,9 +3449,9 @@ theorem descCountF_certPieces : ∀ {n r : V}, IsSemiformula LAct n r →
     (P := fun n r ↦ descCountF (certPieces : V) n r = descCountF (walkPieces : V) n r)
   · definability
   · intro n k R v hkR hv
-    rw [descCountF_rel _ n hkR hv, descCountF_rel _ n hkR hv, descVecAux_count_certPieces n hv k le_rfl]
+    rw [descCountF_rel _ n hkR hv, descCountF_rel _ n hkR hv, descriptionsAux_count_certPieces n hv k le_rfl]
   · intro n k R v hkR hv
-    rw [descCountF_nrel _ n hkR hv, descCountF_nrel _ n hkR hv, descVecAux_count_certPieces n hv k le_rfl]
+    rw [descCountF_nrel _ n hkR hv, descCountF_nrel _ n hkR hv, descriptionsAux_count_certPieces n hv k le_rfl]
   · intro n; rw [descCountF_verum, descCountF_verum]
   · intro n; rw [descCountF_falsum, descCountF_falsum]
   · intro n p q hp hq ihp ihq
@@ -3589,7 +3589,7 @@ instance tShiftOK_definable : 𝚷₁-Relation₅ (TShiftOK : V → V → V → 
 
 set_option maxHeartbeats 4000000 in
 /-- **The vector-level shift pass is applicable**, tail first (the entries' invariant as a hypothesis,
-the `descVecAux_ok` pattern): it certifies `tshvFact ⟨v⟩ⱼ (cT m) ⟨v⟩ᵢ` for the last `m` entries. -/
+the `descriptionsAux_ok` pattern): it certifies `tshvFact ⟨v⟩ⱼ (cT m) ⟨v⟩ᵢ` for the last `m` entries. -/
 lemma passVGraph_shift_ok_aux {tbl N : V} (htbl : TableOK tbl N) (hC : CertTable tbl) {Wd W : V}
     (hWd : Wd = walkPieces) (hWp : W = certPieces) (n : V) {k v : V} (hk : k ≤ 2)
     (hv : IsSemitermVec LAct k n v) (ih : ∀ a < k, TShiftOK tbl Wd W n v.[a]) :
@@ -4784,15 +4784,15 @@ end certMain
 
 **`lenSteps` — NOT started; one missing row.** The bottom-up plan (§3.6 "lengths") is sound:
 `formulaLenTotal [&i]` (`cok_formulaLenTotal`, tag 2 — one eigenvariable per node, offsets move),
-the `formulaLen*` rows at NUMERAL child witnesses (`lenFact (bnum|p|) &p` from the children) giving
-`eqFactB &0 (bnum|p| ^+ bnum|q| ^+ 𝟏)`, then the closed numeral fact, `eqTrans`, `congLenNum`.
-The closed fact `bnum|p| ^+ bnum|q| ^+ 𝟏 = bnum (|p| + |q| + 1)` is NOT among `NumSteps`' lemma
+the `formulaLen*` rows at NUMERAL child witnesses (`lenFact (binNumeral|p|) &p` from the children) giving
+`eqFactB &0 (binNumeral|p| ^+ binNumeral|q| ^+ 𝟏)`, then the closed numeral fact, `eqTrans`, `congLenNum`.
+The closed fact `binNumeral|p| ^+ binNumeral|q| ^+ 𝟏 = binNumeral (|p| + |q| + 1)` is NOT among `NumSteps`' lemma
 facts (`addFact`, `succFact` are, `bin2Fact` is the `≤` version) and cannot be assembled from them
 in context: the successor congruence `“y x. x = y → x + 1 = y + 1”` exists NOWHERE in the row
 library (checked `Lib/*.lean`, `NumSteps`). Either add that row (`Lib/Frag` + `RowInstB`, then
-`gen_cert.py`'s `TABLE`) or add an `addSuccFact a b : eqFact (bnum a ^+ bnum b ^+ 𝟏) (bnum (a + b + 1))`
+`gen_cert.py`'s `TABLE`) or add an `addSuccFact a b : eqFact (binNumeral a ^+ binNumeral b ^+ 𝟏) (binNumeral (a + b + 1))`
 lemma code to `NumSteps` (a cut of `addFact` and `succFact` through that same congruence — so the
-row is needed either way). With the `≤` facts only, `leOfEqLe` yields `&0 ≤ bnum|r|`, an inexact
+row is needed either way). With the `≤` facts only, `leOfEqLe` yields `&0 ≤ binNumeral|r|`, an inexact
 length no consumer row reads (`congLenNum` needs `=`). State `lenSteps_ok` with `NoDrop'`.
 -/
 
@@ -4812,12 +4812,12 @@ at numeral sums, then `formulaLenRelCert`/`termLenFuncCert`. NOT shift-free: `sh
 
 section lenPrelim
 
-lemma termShiftIterV_bnum (z : V) : ∀ k : V, termShiftIterV (bnum z) k = bnum z := by
+lemma termShiftIterV_binNumeral (z : V) : ∀ k : V, termShiftIterV (binNumeral z) k = binNumeral z := by
   intro k
   induction k using ISigma1.sigma1_succ_induction with
   | hP => definability
   | zero => simp [termShiftIterV_zero]
-  | succ k ih => rw [termShiftIterV_succ, ih, termShift_bnum]
+  | succ k ih => rw [termShiftIterV_succ, ih, termShift_binNumeral]
 
 /-- A dossier survives a cut-admitting list too, moved up by its eigenvariable count. -/
 lemma dossF_transport' {W Γ n r i S : V} (hS : NoDrop' S) (h : DossF W Γ n r i) :
@@ -4843,40 +4843,40 @@ end lenPrelim
 section lenBuilders
 
 /-- A constant node (`verum` at row `147`, `falsum` at `148`): introduce the length, read `l = 1`, move the
-numeral `bnum 1` onto the node. -/
+numeral `binNumeral 1` onto the node. -/
 noncomputable def lnConstSteps (W c i : V) : V :=
-  ?[mkStep W 155 ?[^&i], mkStep W c ?[^&(i + 1), ^&0], mkStep W 145 ?[^&(i + 1), ^&0, bnum 1]]
+  ?[mkStep W 155 ?[^&i], mkStep W c ?[^&(i + 1), ^&0], mkStep W 145 ?[^&(i + 1), ^&0, binNumeral 1]]
 
 noncomputable def lnConstStepsDef : 𝚺₁.Semisentence 4 := .mkSigma
-  “y W c i. ∃ fi, !qqFvarDef fi i ∧ ∃ fi', !qqFvarDef fi' (i + 1) ∧ ∃ f0, !qqFvarDef f0 0 ∧ ∃ b1, !bnumGraph b1 1 ∧
+  “y W c i. ∃ fi, !qqFvarDef fi i ∧ ∃ fi', !qqFvarDef fi' (i + 1) ∧ ∃ f0, !qqFvarDef f0 0 ∧ ∃ b1, !binNumeralGraph b1 1 ∧
     ∃ e₁, !mkVec₁Def e₁ fi ∧ ∃ s₁, !mkStepDef s₁ W 155 e₁ ∧
     ∃ e₂, !mkVec₂Def e₂ fi' f0 ∧ ∃ s₂, !mkStepDef s₂ W c e₂ ∧
     ∃ e₃₀, !mkVec₂Def e₃₀ f0 b1 ∧ ∃ e₃, !adjoinDef e₃ fi' e₃₀ ∧ ∃ s₃, !mkStepDef s₃ W 145 e₃ ∧
     ∃ l₃, !mkVec₁Def l₃ s₃ ∧ ∃ l₂, !adjoinDef l₂ s₂ l₃ ∧ !adjoinDef y s₁ l₂”
 
 instance lnConstSteps_defined : 𝚺₁-Function₃ (lnConstSteps : V → V → V → V) via lnConstStepsDef := .mk
-  fun v ↦ by simp [lnConstStepsDef, lnConstSteps, numeral_eq_natCast, mkStep_defined.iff, bnum.defined.iff]
+  fun v ↦ by simp [lnConstStepsDef, lnConstSteps, numeral_eq_natCast, mkStep_defined.iff, binNumeral.defined.iff]
 
 /-- A binary node (`and` at row `149`, `or` at `150`) after the RIGHT child's list `yq` (offset `i + 1`,
 shifts `sq`) and the LEFT child's `yp` (offset `i + cq + 1 + sq`, shifts `sp`), `S = sq + sp`: introduce the
-length at `&(i + S)`, read `l = bnum lp + bnum lq + 1`, close by `addFact lp lq`, `congSucc`,
+length at `&(i + S)`, read `l = binNumeral lp + binNumeral lq + 1`, close by `addFact lp lq`, `congSucc`,
 `succFact (lp + lq)` and two `eqTrans`, then `congLenNum`. -/
 noncomputable def lnBinSteps (W T c n cq lp lq i sq sp yq yp : V) : V :=
   appendV yq (appendV yp
     ?[mkStep W 155 ?[^&(i + (sq + sp))],
-      mkStep W c ?[cTV n, ^&(i + cq + 1 + (sq + sp) + 1), ^&(i + 1 + (sq + sp) + 1), ^&(i + (sq + sp) + 1), bnum lp, bnum lq, ^&0],
+      mkStep W c ?[cTV n, ^&(i + cq + 1 + (sq + sp) + 1), ^&(i + 1 + (sq + sp) + 1), ^&(i + (sq + sp) + 1), binNumeral lp, binNumeral lq, ^&0],
       sLemma (addFact lp lq) (addCode T lp lq),
-      mkStep W 184 ?[bnum lp ^+ bnum lq, bnum (lp + lq)],
+      mkStep W 184 ?[binNumeral lp ^+ binNumeral lq, binNumeral (lp + lq)],
       sLemma (succFact (lp + lq)) (succCode T (lp + lq)),
-      mkStep W 123 ?[^&0, bnum lp ^+ bnum lq ^+ (𝟏 : V), bnum (lp + lq) ^+ (𝟏 : V)],
-      mkStep W 123 ?[^&0, bnum (lp + lq) ^+ (𝟏 : V), bnum (lp + lq + 1)],
-      mkStep W 145 ?[^&(i + (sq + sp) + 1), ^&0, bnum (lp + lq + 1)]])
+      mkStep W 123 ?[^&0, binNumeral lp ^+ binNumeral lq ^+ (𝟏 : V), binNumeral (lp + lq) ^+ (𝟏 : V)],
+      mkStep W 123 ?[^&0, binNumeral (lp + lq) ^+ (𝟏 : V), binNumeral (lp + lq + 1)],
+      mkStep W 145 ?[^&(i + (sq + sp) + 1), ^&0, binNumeral (lp + lq + 1)]])
 
 noncomputable def lnBinStepsDef : 𝚺₁.Semisentence 13 := .mkSigma
   “y W T c n cq lp lq i sq sp yq yp. ∃ S, S = sq + sp ∧
     ∃ fS, !qqFvarDef fS (i + S) ∧ ∃ fp, !qqFvarDef fp (i + cq + 1 + S + 1) ∧ ∃ fq, !qqFvarDef fq (i + 1 + S + 1) ∧
     ∃ fr, !qqFvarDef fr (i + S + 1) ∧ ∃ f0, !qqFvarDef f0 0 ∧ ∃ cn, !cTVGraph cn n ∧
-    ∃ bp, !bnumGraph bp lp ∧ ∃ bq, !bnumGraph bq lq ∧ ∃ bs, !bnumGraph bs (lp + lq) ∧ ∃ bs1, !bnumGraph bs1 (lp + lq + 1) ∧
+    ∃ bp, !binNumeralGraph bp lp ∧ ∃ bq, !binNumeralGraph bq lq ∧ ∃ bs, !binNumeralGraph bs (lp + lq) ∧ ∃ bs1, !binNumeralGraph bs1 (lp + lq + 1) ∧
     ∃ pq, !qqAddGraph pq bp bq ∧ ∃ pq1, !qqAddGraph pq1 pq ↑Arithmetic.one ∧ ∃ bs1', !qqAddGraph bs1' bs ↑Arithmetic.one ∧
     ∃ e₁, !mkVec₁Def e₁ fS ∧ ∃ s₁, !mkStepDef s₁ W 155 e₁ ∧
     ∃ e₂₀, !mkVec₂Def e₂₀ bq f0 ∧ ∃ e₂₁, !adjoinDef e₂₁ bp e₂₀ ∧ ∃ e₂₂, !adjoinDef e₂₂ fr e₂₁ ∧ ∃ e₂₃, !adjoinDef e₂₃ fq e₂₂ ∧
@@ -4895,25 +4895,25 @@ instance lnBinSteps_defined :
     𝚺₁.DefinedFunction (fun v : Fin 12 → V ↦ lnBinSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10) (v 11))
       lnBinStepsDef := .mk
   fun v ↦ by
-    simp [lnBinStepsDef, lnBinSteps, numeral_eq_natCast, mkStep_defined.iff, bnum.defined.iff, cTV.defined.iff,
+    simp [lnBinStepsDef, lnBinSteps, numeral_eq_natCast, mkStep_defined.iff, binNumeral.defined.iff, cTV.defined.iff,
       qqAdd_defined.iff, addFact_defined.iff, addCode_defined.iff, succFact_defined.iff, succCode_defined.iff,
       appendV_defined.iff, sLemma]
 
 /-- A quantifier node (`all` at row `151`, `exs` at `152`) after the body's list `yb` (offset `i + 1`, level
-`n + 1`, shifts `sb`): introduce the length at `&(i + sb)`, read `l = bnum lp + 1`, close by
+`n + 1`, shifts `sb`): introduce the length at `&(i + sb)`, read `l = binNumeral lp + 1`, close by
 `succFact lp` and `eqTrans`, then `congLenNum`. -/
 noncomputable def lnQuantSteps (W T c n lp i sb yb : V) : V :=
   appendV yb
     ?[mkStep W 155 ?[^&(i + sb)],
-      mkStep W c ?[cTV n, ^&(i + 1 + sb + 1), ^&(i + sb + 1), bnum lp, ^&0],
+      mkStep W c ?[cTV n, ^&(i + 1 + sb + 1), ^&(i + sb + 1), binNumeral lp, ^&0],
       sLemma (succFact lp) (succCode T lp),
-      mkStep W 123 ?[^&0, bnum lp ^+ (𝟏 : V), bnum (lp + 1)],
-      mkStep W 145 ?[^&(i + sb + 1), ^&0, bnum (lp + 1)]]
+      mkStep W 123 ?[^&0, binNumeral lp ^+ (𝟏 : V), binNumeral (lp + 1)],
+      mkStep W 145 ?[^&(i + sb + 1), ^&0, binNumeral (lp + 1)]]
 
 noncomputable def lnQuantStepsDef : 𝚺₁.Semisentence 9 := .mkSigma
   “y W T c n lp i sb yb.
     ∃ fS, !qqFvarDef fS (i + sb) ∧ ∃ fp, !qqFvarDef fp (i + 1 + sb + 1) ∧ ∃ fr, !qqFvarDef fr (i + sb + 1) ∧
-    ∃ f0, !qqFvarDef f0 0 ∧ ∃ cn, !cTVGraph cn n ∧ ∃ bp, !bnumGraph bp lp ∧ ∃ bp1, !bnumGraph bp1 (lp + 1) ∧
+    ∃ f0, !qqFvarDef f0 0 ∧ ∃ cn, !cTVGraph cn n ∧ ∃ bp, !binNumeralGraph bp lp ∧ ∃ bp1, !binNumeralGraph bp1 (lp + 1) ∧
     ∃ bp1', !qqAddGraph bp1' bp ↑Arithmetic.one ∧
     ∃ e₁, !mkVec₁Def e₁ fS ∧ ∃ s₁, !mkStepDef s₁ W 155 e₁ ∧
     ∃ e₂₀, !mkVec₂Def e₂₀ bp f0 ∧ ∃ e₂₁, !adjoinDef e₂₁ fr e₂₀ ∧ ∃ e₂₂, !adjoinDef e₂₂ fp e₂₁ ∧ ∃ e₂, !adjoinDef e₂ cn e₂₂ ∧
@@ -4927,27 +4927,27 @@ noncomputable def lnQuantStepsDef : 𝚺₁.Semisentence 9 := .mkSigma
 instance lnQuantSteps_defined :
     𝚺₁.DefinedFunction (fun v : Fin 8 → V ↦ lnQuantSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7)) lnQuantStepsDef := .mk
   fun v ↦ by
-    simp [lnQuantStepsDef, lnQuantSteps, numeral_eq_natCast, mkStep_defined.iff, bnum.defined.iff, cTV.defined.iff,
+    simp [lnQuantStepsDef, lnQuantSteps, numeral_eq_natCast, mkStep_defined.iff, binNumeral.defined.iff, cTV.defined.iff,
       qqAdd_defined.iff, succFact_defined.iff, succCode_defined.iff, appendV_defined.iff, sLemma]
 
 /-- An atom (`rel` at row `142`, `nrel` at `143`) after the vector's list `yv` (offset `i + 1`, shifts `sv`,
-leaving the length vector at `&0` (`vRef 0 k`) and `listSumFact (bnum σ) ⟨M⟩`): the closed symbol row, the
-length at `&(i + sv)`, `formulaLenRelCert` at `[cT k, cT R, ⟨v⟩, &p, ⟨M⟩, bnum σ, &0]` reading
-`l = bnum σ + 1`, `succFact σ`, `eqTrans`, `congLenNum`. -/
+leaving the length vector at `&0` (`vRef 0 k`) and `listSumFact (binNumeral σ) ⟨M⟩`): the closed symbol row, the
+length at `&(i + sv)`, `formulaLenRelCert` at `[cT k, cT R, ⟨v⟩, &p, ⟨M⟩, binNumeral σ, &0]` reading
+`l = binNumeral σ + 1`, `succFact σ`, `eqTrans`, `congLenNum`. -/
 noncomputable def lnAtomSteps (W T c k R σ i sv yv : V) : V :=
   appendV yv
     ?[mkStep W (relRow R) 0,
       mkStep W 155 ?[^&(i + sv)],
-      mkStep W c ?[cTV k, cTV R, vRef (i + 1 + sv + 1) k, ^&(i + sv + 1), vRef 1 k, bnum σ, ^&0],
+      mkStep W c ?[cTV k, cTV R, vRef (i + 1 + sv + 1) k, ^&(i + sv + 1), vRef 1 k, binNumeral σ, ^&0],
       sLemma (succFact σ) (succCode T σ),
-      mkStep W 123 ?[^&0, bnum σ ^+ (𝟏 : V), bnum (σ + 1)],
-      mkStep W 145 ?[^&(i + sv + 1), ^&0, bnum (σ + 1)]]
+      mkStep W 123 ?[^&0, binNumeral σ ^+ (𝟏 : V), binNumeral (σ + 1)],
+      mkStep W 145 ?[^&(i + sv + 1), ^&0, binNumeral (σ + 1)]]
 
 noncomputable def lnAtomStepsDef : 𝚺₁.Semisentence 10 := .mkSigma
   “y W T c k R σ i sv yv. ∃ ρ, !relRowDef ρ R ∧ ∃ s₀, !mkStepDef s₀ W ρ 0 ∧
     ∃ fS, !qqFvarDef fS (i + sv) ∧ ∃ fr, !qqFvarDef fr (i + sv + 1) ∧ ∃ f0, !qqFvarDef f0 0 ∧
     ∃ ck, !cTVGraph ck k ∧ ∃ cR, !cTVGraph cR R ∧ ∃ rv, !vRefDef rv (i + 1 + sv + 1) k ∧ ∃ rM, !vRefDef rM 1 k ∧
-    ∃ bσ, !bnumGraph bσ σ ∧ ∃ bσ1, !bnumGraph bσ1 (σ + 1) ∧ ∃ bσ1', !qqAddGraph bσ1' bσ ↑Arithmetic.one ∧
+    ∃ bσ, !binNumeralGraph bσ σ ∧ ∃ bσ1, !binNumeralGraph bσ1 (σ + 1) ∧ ∃ bσ1', !qqAddGraph bσ1' bσ ↑Arithmetic.one ∧
     ∃ e₁, !mkVec₁Def e₁ fS ∧ ∃ s₁, !mkStepDef s₁ W 155 e₁ ∧
     ∃ e₂₀, !mkVec₂Def e₂₀ bσ f0 ∧ ∃ e₂₁, !adjoinDef e₂₁ rM e₂₀ ∧ ∃ e₂₂, !adjoinDef e₂₂ fr e₂₁ ∧ ∃ e₂₃, !adjoinDef e₂₃ rv e₂₂ ∧
     ∃ e₂₄, !adjoinDef e₂₄ cR e₂₃ ∧ ∃ e₂, !adjoinDef e₂ ck e₂₄ ∧ ∃ s₂, !mkStepDef s₂ W c e₂ ∧
@@ -4960,23 +4960,23 @@ noncomputable def lnAtomStepsDef : 𝚺₁.Semisentence 10 := .mkSigma
 instance lnAtomSteps_defined :
     𝚺₁.DefinedFunction (fun v : Fin 9 → V ↦ lnAtomSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8)) lnAtomStepsDef := .mk
   fun v ↦ by
-    simp [lnAtomStepsDef, lnAtomSteps, numeral_eq_natCast, mkStep_defined.iff, bnum.defined.iff, cTV.defined.iff,
+    simp [lnAtomStepsDef, lnAtomSteps, numeral_eq_natCast, mkStep_defined.iff, binNumeral.defined.iff, cTV.defined.iff,
       vRef_defined.iff, relRow_defined.iff, qqAdd_defined.iff, succFact_defined.iff, succCode_defined.iff,
       appendV_defined.iff, sLemma]
 
 /-- A term leaf (`bvar` at row `153`, `fvar` at `154`, index `z`): `termLenTotal`, the row reading
-`l = cT z + 1`, the closed `cTEqFact (z + 1)` (`cT (z + 1) = bnum (z + 1)`, and `cT (z + 1) = cT z + 1`
+`l = cT z + 1`, the closed `cTEqFact (z + 1)` (`cT (z + 1) = binNumeral (z + 1)`, and `cT (z + 1) = cT z + 1`
 syntactically), `eqTrans`, `congTLenNum`. -/
 noncomputable def lnLeafSteps (W T c z i : V) : V :=
   ?[mkStep W 156 ?[^&i],
     mkStep W c ?[cTV z, ^&(i + 1), ^&0],
     sLemma (cTEqFact (z + 1)) (cTEqCode T (z + 1)),
-    mkStep W 123 ?[^&0, cTV (z + 1), bnum (z + 1)],
-    mkStep W 146 ?[^&(i + 1), ^&0, bnum (z + 1)]]
+    mkStep W 123 ?[^&0, cTV (z + 1), binNumeral (z + 1)],
+    mkStep W 146 ?[^&(i + 1), ^&0, binNumeral (z + 1)]]
 
 noncomputable def lnLeafStepsDef : 𝚺₁.Semisentence 6 := .mkSigma
   “y W T c z i. ∃ fi, !qqFvarDef fi i ∧ ∃ fi', !qqFvarDef fi' (i + 1) ∧ ∃ f0, !qqFvarDef f0 0 ∧
-    ∃ cz, !cTVGraph cz z ∧ ∃ cz1, !cTVGraph cz1 (z + 1) ∧ ∃ bz1, !bnumGraph bz1 (z + 1) ∧
+    ∃ cz, !cTVGraph cz z ∧ ∃ cz1, !cTVGraph cz1 (z + 1) ∧ ∃ bz1, !binNumeralGraph bz1 (z + 1) ∧
     ∃ e₁, !mkVec₁Def e₁ fi ∧ ∃ s₁, !mkStepDef s₁ W 156 e₁ ∧
     ∃ e₂₀, !mkVec₂Def e₂₀ fi' f0 ∧ ∃ e₂, !adjoinDef e₂ cz e₂₀ ∧ ∃ s₂, !mkStepDef s₂ W c e₂ ∧
     ∃ A₃, !cTEqFactDef A₃ (z + 1) ∧ ∃ d₃, !cTEqCodeDef d₃ T (z + 1) ∧ ∃ q₃, !pairDef q₃ A₃ d₃ ∧ ∃ s₃, !pairDef s₃ 7 q₃ ∧
@@ -4988,7 +4988,7 @@ noncomputable def lnLeafStepsDef : 𝚺₁.Semisentence 6 := .mkSigma
 instance lnLeafSteps_defined :
     𝚺₁.DefinedFunction (fun v : Fin 5 → V ↦ lnLeafSteps (v 0) (v 1) (v 2) (v 3) (v 4)) lnLeafStepsDef := .mk
   fun v ↦ by
-    simp [lnLeafStepsDef, lnLeafSteps, numeral_eq_natCast, mkStep_defined.iff, bnum.defined.iff, cTV.defined.iff,
+    simp [lnLeafStepsDef, lnLeafSteps, numeral_eq_natCast, mkStep_defined.iff, binNumeral.defined.iff, cTV.defined.iff,
       cTEqFact_defined.iff, cTEqCode_defined.iff, sLemma]
 
 /-- A function node after the vector's list `yv` (as `lnAtomSteps`, with `termLenFuncCert` (row `144`) and
@@ -4997,16 +4997,16 @@ noncomputable def lnFuncSteps (W T k f σ i sv yv : V) : V :=
   appendV yv
     ?[mkStep W (funcRow k f) 0,
       mkStep W 156 ?[^&(i + sv)],
-      mkStep W 144 ?[cTV k, cTV f, vRef (i + 1 + sv + 1) k, ^&(i + sv + 1), vRef 1 k, bnum σ, ^&0],
+      mkStep W 144 ?[cTV k, cTV f, vRef (i + 1 + sv + 1) k, ^&(i + sv + 1), vRef 1 k, binNumeral σ, ^&0],
       sLemma (succFact σ) (succCode T σ),
-      mkStep W 123 ?[^&0, bnum σ ^+ (𝟏 : V), bnum (σ + 1)],
-      mkStep W 146 ?[^&(i + sv + 1), ^&0, bnum (σ + 1)]]
+      mkStep W 123 ?[^&0, binNumeral σ ^+ (𝟏 : V), binNumeral (σ + 1)],
+      mkStep W 146 ?[^&(i + sv + 1), ^&0, binNumeral (σ + 1)]]
 
 noncomputable def lnFuncStepsDef : 𝚺₁.Semisentence 9 := .mkSigma
   “y W T k f σ i sv yv. ∃ ρ, !funcRowDef ρ k f ∧ ∃ s₀, !mkStepDef s₀ W ρ 0 ∧
     ∃ fS, !qqFvarDef fS (i + sv) ∧ ∃ fr, !qqFvarDef fr (i + sv + 1) ∧ ∃ f0, !qqFvarDef f0 0 ∧
     ∃ ck, !cTVGraph ck k ∧ ∃ cf, !cTVGraph cf f ∧ ∃ rv, !vRefDef rv (i + 1 + sv + 1) k ∧ ∃ rM, !vRefDef rM 1 k ∧
-    ∃ bσ, !bnumGraph bσ σ ∧ ∃ bσ1, !bnumGraph bσ1 (σ + 1) ∧ ∃ bσ1', !qqAddGraph bσ1' bσ ↑Arithmetic.one ∧
+    ∃ bσ, !binNumeralGraph bσ σ ∧ ∃ bσ1, !binNumeralGraph bσ1 (σ + 1) ∧ ∃ bσ1', !qqAddGraph bσ1' bσ ↑Arithmetic.one ∧
     ∃ e₁, !mkVec₁Def e₁ fS ∧ ∃ s₁, !mkStepDef s₁ W 156 e₁ ∧
     ∃ e₂₀, !mkVec₂Def e₂₀ bσ f0 ∧ ∃ e₂₁, !adjoinDef e₂₁ rM e₂₀ ∧ ∃ e₂₂, !adjoinDef e₂₂ fr e₂₁ ∧ ∃ e₂₃, !adjoinDef e₂₃ rv e₂₂ ∧
     ∃ e₂₄, !adjoinDef e₂₄ cf e₂₃ ∧ ∃ e₂, !adjoinDef e₂ ck e₂₄ ∧ ∃ s₂, !mkStepDef s₂ W 144 e₂ ∧
@@ -5019,7 +5019,7 @@ noncomputable def lnFuncStepsDef : 𝚺₁.Semisentence 9 := .mkSigma
 instance lnFuncSteps_defined :
     𝚺₁.DefinedFunction (fun v : Fin 8 → V ↦ lnFuncSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7)) lnFuncStepsDef := .mk
   fun v ↦ by
-    simp [lnFuncStepsDef, lnFuncSteps, numeral_eq_natCast, mkStep_defined.iff, bnum.defined.iff, cTV.defined.iff,
+    simp [lnFuncStepsDef, lnFuncSteps, numeral_eq_natCast, mkStep_defined.iff, binNumeral.defined.iff, cTV.defined.iff,
       vRef_defined.iff, funcRow_defined.iff, qqAdd_defined.iff, succFact_defined.iff, succCode_defined.iff,
       appendV_defined.iff, sLemma]
 
@@ -5034,23 +5034,23 @@ instance lnNilSteps_defined : 𝚺₁-Function₁ (lnNilSteps : V → V) via lnN
   fun v ↦ by simp [lnNilStepsDef, lnNilSteps, numeral_eq_natCast, mkStep_defined.iff, cTV.defined.iff]
 
 /-- A vector node with `m` tail entries: the entry's list `yt` (offset `i + 1`, shifts `st`), the tail's `yv`
-(offset `i + 1 + ct + st`, shifts `sv`; its length vector at `&0` = `vRef 0 m`, sum `bnum σ'`), `S = st + sv + 1`:
-`adjoinTotal [bnum lt, ⟨M⟩]` (the new length vector `&0`), the tail's `utvPi` bridge (rows 38/39),
-`termLenVecAdj [cT n, cT m, ⟨tail⟩, &v', &t, bnum lt, ⟨M⟩, &0]`, `addFact lt σ'`, and
-`listSumAdjI [&0, ⟨M⟩, bnum lt, bnum σ', bnum (lt + σ')]`. -/
+(offset `i + 1 + ct + st`, shifts `sv`; its length vector at `&0` = `vRef 0 m`, sum `binNumeral σ'`), `S = st + sv + 1`:
+`adjoinTotal [binNumeral lt, ⟨M⟩]` (the new length vector `&0`), the tail's `utvPi` bridge (rows 38/39),
+`termLenVecAdj [cT n, cT m, ⟨tail⟩, &v', &t, binNumeral lt, ⟨M⟩, &0]`, `addFact lt σ'`, and
+`listSumAdjI [&0, ⟨M⟩, binNumeral lt, binNumeral σ', binNumeral (lt + σ')]`. -/
 noncomputable def lnAdjSteps (W T n m ct lt σ' i st sv yt yv : V) : V :=
   appendV yt (appendV yv
-    ?[mkStep W 17 ?[bnum lt, vRef 0 m],
+    ?[mkStep W 17 ?[binNumeral lt, vRef 0 m],
       mkStep W 38 ?[cTV m, cTV n, vRef (i + 1 + ct + (st + sv + 1)) m],
       mkStep W 39 ?[cTV m, vRef (i + 1 + ct + (st + sv + 1)) m],
       mkStep W 139 ?[cTV n, cTV m, vRef (i + 1 + ct + (st + sv + 1)) m, ^&(i + (st + sv + 1)), ^&(i + 1 + (st + sv + 1)),
-        bnum lt, vRef 1 m, ^&0],
+        binNumeral lt, vRef 1 m, ^&0],
       sLemma (addFact lt σ') (addCode T lt σ'),
-      mkStep W 185 ?[^&0, vRef 1 m, bnum lt, bnum σ', bnum (lt + σ')]])
+      mkStep W 185 ?[^&0, vRef 1 m, binNumeral lt, binNumeral σ', binNumeral (lt + σ')]])
 
 noncomputable def lnAdjStepsDef : 𝚺₁.Semisentence 13 := .mkSigma
   “y W T n m ct lt σ' i st sv yt yv. ∃ S, S = st + sv + 1 ∧
-    ∃ bt, !bnumGraph bt lt ∧ ∃ bσ, !bnumGraph bσ σ' ∧ ∃ bs, !bnumGraph bs (lt + σ') ∧
+    ∃ bt, !binNumeralGraph bt lt ∧ ∃ bσ, !binNumeralGraph bσ σ' ∧ ∃ bs, !binNumeralGraph bs (lt + σ') ∧
     ∃ r0, !vRefDef r0 0 m ∧ ∃ r1, !vRefDef r1 1 m ∧ ∃ rt, !vRefDef rt (i + 1 + ct + S) m ∧
     ∃ cn, !cTVGraph cn n ∧ ∃ cm, !cTVGraph cm m ∧ ∃ fv, !qqFvarDef fv (i + S) ∧ ∃ ft, !qqFvarDef ft (i + 1 + S) ∧
     ∃ f0, !qqFvarDef f0 0 ∧
@@ -5069,7 +5069,7 @@ instance lnAdjSteps_defined :
     𝚺₁.DefinedFunction (fun v : Fin 12 → V ↦ lnAdjSteps (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7) (v 8) (v 9) (v 10) (v 11))
       lnAdjStepsDef := .mk
   fun v ↦ by
-    simp [lnAdjStepsDef, lnAdjSteps, numeral_eq_natCast, mkStep_defined.iff, bnum.defined.iff, cTV.defined.iff,
+    simp [lnAdjStepsDef, lnAdjSteps, numeral_eq_natCast, mkStep_defined.iff, binNumeral.defined.iff, cTV.defined.iff,
       vRef_defined.iff, addFact_defined.iff, addCode_defined.iff, appendV_defined.iff, sLemma]
 
 end lenBuilders
@@ -5655,7 +5655,7 @@ lemma lenTGraph_exists_bounded (W T n B : V) : ∀ t, IsSemiterm LAct n t →
   · intro k f v hkf hv ih i hi hiB
     rw [descCountT_func W n hkf hv.isUTerm, termLen_func hkf hv.isUTerm] at hiB
     have key : ∀ m ≤ k, IsUTermVec LAct m (takeLast v m) ∧ ∀ i ≤ B,
-        i + π₁ (descVecAux W n (descTVec W n k v) m) + 16 * listSum (termLenVec LAct m (takeLast v m)) + 1 ≤ B →
+        i + π₁ (descriptionsAux W n (descTVec W n k v) m) + 16 * listSum (termLenVec LAct m (takeLast v m)) + 1 ≤ B →
         ∃ yv, LenVGraph W T n k v m i yv := by
       intro m
       induction m using ISigma1.sigma1_succ_induction with
@@ -5678,12 +5678,12 @@ lemma lenTGraph_exists_bounded (W T n B : V) : ∀ t, IsSemiterm LAct n t →
             nth_descTVec W n hv.isUTerm hlt]
         have hnth' : nthFromEnd v m = v.[k - (m + 1)] :=
           nthFromEnd_eq (a := k - (m + 1)) (by rw [hvlen, tsub_add_cancel_of_le hm])
-        have hC : π₁ (descVecAux W n (descTVec W n k v) (m + 1)) =
-            π₁ (descVecAux W n (descTVec W n k v) m) + descCountT W n v.[k - (m + 1)] + 1 := by
-          rw [descVecAux_succ, hnth, adjNode, pi₁_pair]; rfl
+        have hC : π₁ (descriptionsAux W n (descTVec W n k v) (m + 1)) =
+            π₁ (descriptionsAux W n (descTVec W n k v) m) + descCountT W n v.[k - (m + 1)] + 1 := by
+          rw [descriptionsAux_succ, hnth, adjNode, pi₁_pair]; rfl
         rw [hC, htake, termLenVec_cons ht.isUTerm hU, listSum_adjoin] at hiB
         set ct := descCountT W n v.[k - (m + 1)] with hct
-        set cv := π₁ (descVecAux W n (descTVec W n k v) m) with hcv
+        set cv := π₁ (descriptionsAux W n (descTVec W n k v) m) with hcv
         set lt := termLen LAct v.[k - (m + 1)] with hlt'
         set σ' := listSum (termLenVec LAct m (takeLast v m)) with hσ'
         -- hiB : i + (cv + ct + 1) + 16 * (lt + σ') + 1 ≤ B
@@ -5708,12 +5708,12 @@ lemma lenTGraph_exists_bounded (W T n B : V) : ∀ t, IsSemiterm LAct n t →
         · rw [hnth']; exact hyt
         · rw [hnth']; exact hyv
     have htl : takeLast v k = v := by rw [← hv.lh]; exact takeLast_len_self v
-    have hiV : i + 1 + π₁ (descVecAux W n (descTVec W n k v) k) + 16 * listSum (termLenVec LAct k (takeLast v k)) + 1 ≤ B := by
+    have hiV : i + 1 + π₁ (descriptionsAux W n (descTVec W n k v) k) + 16 * listSum (termLenVec LAct k (takeLast v k)) + 1 ≤ B := by
       rw [htl]
-      calc i + 1 + π₁ (descVecAux W n (descTVec W n k v) k) + 16 * listSum (termLenVec LAct k v) + 1
-          = i + (π₁ (descVecAux W n (descTVec W n k v) k) + 1) + 16 * listSum (termLenVec LAct k v) + 1 := by ring
-        _ ≤ i + (π₁ (descVecAux W n (descTVec W n k v) k) + 1) + 16 * listSum (termLenVec LAct k v) + 16 := by gcongr; norm_num
-        _ = i + (π₁ (descVecAux W n (descTVec W n k v) k) + 1) + 16 * (listSum (termLenVec LAct k v) + 1) := by ring
+      calc i + 1 + π₁ (descriptionsAux W n (descTVec W n k v) k) + 16 * listSum (termLenVec LAct k v) + 1
+          = i + (π₁ (descriptionsAux W n (descTVec W n k v) k) + 1) + 16 * listSum (termLenVec LAct k v) + 1 := by ring
+        _ ≤ i + (π₁ (descriptionsAux W n (descTVec W n k v) k) + 1) + 16 * listSum (termLenVec LAct k v) + 16 := by gcongr; norm_num
+        _ = i + (π₁ (descriptionsAux W n (descTVec W n k v) k) + 1) + 16 * (listSum (termLenVec LAct k v) + 1) := by ring
         _ ≤ B := hiB
     obtain ⟨yv, hyv⟩ := (key k le_rfl).2 (i + 1) (le_trans (le_trans le_self_add le_self_add) (le_trans le_self_add hiV)) hiV
     exact ⟨_, LenTGraph.func_iff.mpr ⟨yv, le_lnFuncSteps _ _ _ _ _ _ _ _, hyv, rfl⟩⟩
@@ -5725,7 +5725,7 @@ lemma lenTGraph_exists (W T n : V) {t : V} (ht : IsSemiterm LAct n t) (i : V) : 
 set_option maxHeartbeats 2000000 in
 lemma lenVGraph_exists_bounded (W T n B : V) {k v : V} (hv : IsSemitermVec LAct k n v) :
     ∀ m ≤ k, IsUTermVec LAct m (takeLast v m) ∧ ∀ i ≤ B,
-      i + π₁ (descVecAux W n (descTVec W n k v) m) + 16 * listSum (termLenVec LAct m (takeLast v m)) + 1 ≤ B →
+      i + π₁ (descriptionsAux W n (descTVec W n k v) m) + 16 * listSum (termLenVec LAct m (takeLast v m)) + 1 ≤ B →
       ∃ y, LenVGraph W T n k v m i y := by
   have hvlen : len v = k := hv.lh
   intro m
@@ -5748,12 +5748,12 @@ lemma lenVGraph_exists_bounded (W T n B : V) {k v : V} (hv : IsSemitermVec LAct 
         nth_descTVec W n hv.isUTerm hlt]
     have hnth' : nthFromEnd v m = v.[k - (m + 1)] :=
       nthFromEnd_eq (a := k - (m + 1)) (by rw [hvlen, tsub_add_cancel_of_le hm])
-    have hC : π₁ (descVecAux W n (descTVec W n k v) (m + 1)) =
-        π₁ (descVecAux W n (descTVec W n k v) m) + descCountT W n v.[k - (m + 1)] + 1 := by
-      rw [descVecAux_succ, hnth, adjNode, pi₁_pair]; rfl
+    have hC : π₁ (descriptionsAux W n (descTVec W n k v) (m + 1)) =
+        π₁ (descriptionsAux W n (descTVec W n k v) m) + descCountT W n v.[k - (m + 1)] + 1 := by
+      rw [descriptionsAux_succ, hnth, adjNode, pi₁_pair]; rfl
     rw [hC, htake, termLenVec_cons ht.isUTerm hU, listSum_adjoin] at hiB
     set ct := descCountT W n v.[k - (m + 1)] with hct
-    set cv := π₁ (descVecAux W n (descTVec W n k v) m) with hcv
+    set cv := π₁ (descriptionsAux W n (descTVec W n k v) m) with hcv
     set lt := termLen LAct v.[k - (m + 1)] with hlt'
     set σ' := listSum (termLenVec LAct m (takeLast v m)) with hσ'
     obtain ⟨yt, hyt⟩ := lenTGraph_exists W T n ht (i + 1)
@@ -5776,7 +5776,7 @@ lemma lenVGraph_exists_bounded (W T n B : V) {k v : V} (hv : IsSemitermVec LAct 
 lemma lenVGraph_exists (W T n : V) {k v : V} (hv : IsSemitermVec LAct k n v) {m : V} (hm : m ≤ k) (i : V) :
     ∃ y, LenVGraph W T n k v m i y :=
   (lenVGraph_exists_bounded W T n
-    (i + π₁ (descVecAux W n (descTVec W n k v) m) + 16 * listSum (termLenVec LAct m (takeLast v m)) + 1) hv m hm).2 i
+    (i + π₁ (descriptionsAux W n (descTVec W n k v) m) + 16 * listSum (termLenVec LAct m (takeLast v m)) + 1) hv m hm).2 i
     (le_trans (le_trans le_self_add le_self_add) le_self_add) le_rfl
 
 set_option maxHeartbeats 2000000 in
@@ -6511,7 +6511,7 @@ lemma lenFGraph_existsUnique_total (W T n r i : V) :
   · simp [h]
 
 /-- **The exact-length producer `lenSteps W T n r i`** (§3.6 "lengths"): the step list which, from the walk
-dossier of `r` at offset `i`, derives `lenFact (bnum |r|) (^&(i + shiftsV (lenSteps …)))` — the numeral length
+dossier of `r` at offset `i`, derives `lenFact (binNumeral |r|) (^&(i + shiftsV (lenSteps …)))` — the numeral length
 in the graph position; `W` the certification pieces, `T` the `NumSteps` table; `0` off semiformulas. -/
 noncomputable def lenSteps (W T n r i : V) : V := Classical.choose! (lenFGraph_existsUnique_total W T n r i)
 
@@ -6557,7 +6557,7 @@ end lenFFun
 section lenOKHelpers
 
 /-- The side conditions of a length pass: the cap `E` bounds the arity part (`13·D` — the numeral sums
-`bnum a + bnum b + 1` at `a, b ≤ D`) and the offset part (`5·D` — the eigenvariable indices, which move
+`binNumeral a + binNumeral b + 1` at `a, b ≤ D`) and the offset part (`5·D` — the eigenvariable indices, which move
 with the shifts). -/
 def LenPre (D n i E Γ : V) : Prop := 2 * n + 13 * D + 8 ≤ E ∧ i + 5 * D + 2 ≤ E ∧ IsFormulaSet LAct Γ
 instance lenPre_definable : 𝚫₁-Relation₅ (LenPre : V → V → V → V → V → Prop) := by
@@ -6574,29 +6574,29 @@ instance lenPost_definable : 𝚫₁-Relation₅ (LenPost : V → V → V → V 
 def LenPostV (tbl E Γ y F₁ F₂ : V) : Prop :=
   ListOK tbl E ((8 : ℕ) : V) Γ y ∧ neg LAct F₁ ∈ finalCtx Γ y ∧ neg LAct F₂ ∈ finalCtx Γ y
 
-lemma isSemiterm_bnum_add (a b : V) : IsSemiterm LAct 0 (bnum a ^+ bnum b) := by simp [isSemiterm_bnum_LAct]
-lemma isSemiterm_bnum_succ (a : V) : IsSemiterm LAct 0 (bnum a ^+ (𝟏 : V)) := by simp [isSemiterm_bnum_LAct]
-lemma isSemiterm_bnum_add_succ (a b : V) : IsSemiterm LAct 0 (bnum a ^+ bnum b ^+ (𝟏 : V)) := by simp [isSemiterm_bnum_LAct]
+lemma isSemiterm_binNumeral_add (a b : V) : IsSemiterm LAct 0 (binNumeral a ^+ binNumeral b) := by simp [isSemiterm_binNumeral_LAct]
+lemma isSemiterm_binNumeral_succ (a : V) : IsSemiterm LAct 0 (binNumeral a ^+ (𝟏 : V)) := by simp [isSemiterm_binNumeral_LAct]
+lemma isSemiterm_binNumeral_add_succ (a b : V) : IsSemiterm LAct 0 (binNumeral a ^+ binNumeral b ^+ (𝟏 : V)) := by simp [isSemiterm_binNumeral_LAct]
 
-lemma E_bnum {z D E : V} (hz : z ≤ D) (hE : 6 * D + 1 ≤ E) : termLen LAct (bnum z) ≤ E :=
-  le_trans (termLen_bnum_le z)
+lemma E_binNumeral {z D E : V} (hz : z ≤ D) (hE : 6 * D + 1 ≤ E) : termLen LAct (binNumeral z) ≤ E :=
+  le_trans (termLen_binNumeral_le z)
     (le_trans (add_le_add (mul_le_mul_of_nonneg_left (le_trans (length_le z) hz) zero_le) (le_refl (1 : V))) hE)
-lemma E_bnum_add {a b D E : V} (ha : a ≤ D) (hb : b ≤ D) (hE : 12 * D + 3 ≤ E) : termLen LAct (bnum a ^+ bnum b) ≤ E := by
-  rw [termLen_qqAdd isFunc_LAct_addIndex (isSemiterm_bnum_LAct 0 a).isUTerm (isSemiterm_bnum_LAct 0 b).isUTerm]
-  calc termLen LAct (bnum a) + termLen LAct (bnum b) + 1 ≤ (6 * D + 1) + (6 * D + 1) + 1 :=
-        add_le_add (add_le_add (E_bnum ha le_rfl) (E_bnum hb le_rfl)) (le_refl (1 : V))
+lemma E_binNumeral_add {a b D E : V} (ha : a ≤ D) (hb : b ≤ D) (hE : 12 * D + 3 ≤ E) : termLen LAct (binNumeral a ^+ binNumeral b) ≤ E := by
+  rw [termLen_qqAdd isFunc_LAct_addIndex (isSemiterm_binNumeral_LAct 0 a).isUTerm (isSemiterm_binNumeral_LAct 0 b).isUTerm]
+  calc termLen LAct (binNumeral a) + termLen LAct (binNumeral b) + 1 ≤ (6 * D + 1) + (6 * D + 1) + 1 :=
+        add_le_add (add_le_add (E_binNumeral ha le_rfl) (E_binNumeral hb le_rfl)) (le_refl (1 : V))
     _ = 12 * D + 3 := by ring
     _ ≤ E := hE
-lemma E_bnum_succ {a D E : V} (ha : a ≤ D) (hE : 6 * D + 3 ≤ E) : termLen LAct (bnum a ^+ (𝟏 : V)) ≤ E := by
-  rw [termLen_bnum_add_one]
-  calc termLen LAct (bnum a) + 2 ≤ (6 * D + 1) + 2 := add_le_add (E_bnum ha le_rfl) (le_refl (2 : V))
+lemma E_binNumeral_succ {a D E : V} (ha : a ≤ D) (hE : 6 * D + 3 ≤ E) : termLen LAct (binNumeral a ^+ (𝟏 : V)) ≤ E := by
+  rw [termLen_binNumeral_add_one]
+  calc termLen LAct (binNumeral a) + 2 ≤ (6 * D + 1) + 2 := add_le_add (E_binNumeral ha le_rfl) (le_refl (2 : V))
     _ = 6 * D + 3 := by ring
     _ ≤ E := hE
-lemma E_bnum_add_succ {a b D E : V} (ha : a ≤ D) (hb : b ≤ D) (hE : 12 * D + 5 ≤ E) :
-    termLen LAct (bnum a ^+ bnum b ^+ (𝟏 : V)) ≤ E := by
-  rw [termLen_qqAdd isFunc_LAct_addIndex (isSemiterm_bnum_add a b).isUTerm qqOne_uterm_LAct, termLen_qqOne isFunc_LAct_oneIndex]
-  calc termLen LAct (bnum a ^+ bnum b) + 1 + 1 ≤ (12 * D + 3) + 1 + 1 :=
-        add_le_add (add_le_add (E_bnum_add ha hb le_rfl) (le_refl (1 : V))) (le_refl (1 : V))
+lemma E_binNumeral_add_succ {a b D E : V} (ha : a ≤ D) (hb : b ≤ D) (hE : 12 * D + 5 ≤ E) :
+    termLen LAct (binNumeral a ^+ binNumeral b ^+ (𝟏 : V)) ≤ E := by
+  rw [termLen_qqAdd isFunc_LAct_addIndex (isSemiterm_binNumeral_add a b).isUTerm qqOne_uterm_LAct, termLen_qqOne isFunc_LAct_oneIndex]
+  calc termLen LAct (binNumeral a ^+ binNumeral b) + 1 + 1 ≤ (12 * D + 3) + 1 + 1 :=
+        add_le_add (add_le_add (E_binNumeral_add ha hb le_rfl) (le_refl (1 : V))) (le_refl (1 : V))
     _ = 12 * D + 5 := by ring
     _ ≤ E := hE
 
@@ -6613,19 +6613,19 @@ lemma LenPre.eCTVle {D n i E Γ : V} (h : LenPre D n i E Γ) {m : V} (hm : m ≤
 lemma LenPre.eCTVsmall {D n i E Γ : V} (h : LenPre D n i E Γ) {m : V} (hm : m ≤ 3) : termLen LAct (cTV m) ≤ E :=
   termLen_cTV_le (le_trans (add_le_add (mul_le_mul_of_nonneg_left hm zero_le) (le_refl (1 : V)))
     (le_trans (by norm_num) h.eight))
-lemma LenPre.eBnum {D n i E Γ : V} (h : LenPre D n i E Γ) {z : V} (hz : z ≤ D) : termLen LAct (bnum z) ≤ E :=
-  E_bnum hz (le_trans (add_le_add (mul_le_mul_of_nonneg_right (by norm_num : (6 : V) ≤ 13) zero_le)
+lemma LenPre.eBnum {D n i E Γ : V} (h : LenPre D n i E Γ) {z : V} (hz : z ≤ D) : termLen LAct (binNumeral z) ≤ E :=
+  E_binNumeral hz (le_trans (add_le_add (mul_le_mul_of_nonneg_right (by norm_num : (6 : V) ≤ 13) zero_le)
     (by norm_num : (1 : V) ≤ 8)) h.arityD)
 lemma LenPre.eBnumAdd {D n i E Γ : V} (h : LenPre D n i E Γ) {a b : V} (ha : a ≤ D) (hb : b ≤ D) :
-    termLen LAct (bnum a ^+ bnum b) ≤ E :=
-  E_bnum_add ha hb (le_trans (add_le_add (mul_le_mul_of_nonneg_right (by norm_num : (12 : V) ≤ 13) zero_le)
+    termLen LAct (binNumeral a ^+ binNumeral b) ≤ E :=
+  E_binNumeral_add ha hb (le_trans (add_le_add (mul_le_mul_of_nonneg_right (by norm_num : (12 : V) ≤ 13) zero_le)
     (by norm_num : (3 : V) ≤ 8)) h.arityD)
-lemma LenPre.eBnumSucc {D n i E Γ : V} (h : LenPre D n i E Γ) {a : V} (ha : a ≤ D) : termLen LAct (bnum a ^+ (𝟏 : V)) ≤ E :=
-  E_bnum_succ ha (le_trans (add_le_add (mul_le_mul_of_nonneg_right (by norm_num : (6 : V) ≤ 13) zero_le)
+lemma LenPre.eBnumSucc {D n i E Γ : V} (h : LenPre D n i E Γ) {a : V} (ha : a ≤ D) : termLen LAct (binNumeral a ^+ (𝟏 : V)) ≤ E :=
+  E_binNumeral_succ ha (le_trans (add_le_add (mul_le_mul_of_nonneg_right (by norm_num : (6 : V) ≤ 13) zero_le)
     (by norm_num : (3 : V) ≤ 8)) h.arityD)
 lemma LenPre.eBnumAddSucc {D n i E Γ : V} (h : LenPre D n i E Γ) {a b : V} (ha : a ≤ D) (hb : b ≤ D) :
-    termLen LAct (bnum a ^+ bnum b ^+ (𝟏 : V)) ≤ E :=
-  E_bnum_add_succ ha hb (le_trans (add_le_add (mul_le_mul_of_nonneg_right (by norm_num : (12 : V) ≤ 13) zero_le)
+    termLen LAct (binNumeral a ^+ binNumeral b ^+ (𝟏 : V)) ≤ E :=
+  E_binNumeral_add_succ ha hb (le_trans (add_le_add (mul_le_mul_of_nonneg_right (by norm_num : (12 : V) ≤ 13) zero_le)
     (by norm_num : (5 : V) ≤ 8)) h.arityD)
 /-- Two offset bounds used at every leaf: `i + 1 ≤ i + 5D + 2` and `i + 1 + 1 ≤ i + 5D + 2`. -/
 lemma off_i {i D : V} : i + 1 ≤ i + 5 * D + 2 :=
@@ -6653,27 +6653,27 @@ lemma LenPreV.ctx {D n i E Γ Γ' : V} (h : LenPreV D n i E Γ) (hΓ' : IsFormul
 
 /-! Transport of the four RESULT fact shapes through a cut-admitting list. -/
 
-lemma tlenFact_transport {Γ S l m : V} (hS : NoDrop' S) (h : neg LAct (tlenFact (bnum l) (^&m)) ∈ Γ) :
-    neg LAct (tlenFact (bnum l) (^&(m + shiftsV S))) ∈ finalCtx Γ S := by
+lemma termLenMetaFact_transport {Γ S l m : V} (hS : NoDrop' S) (h : neg LAct (termLenMetaFact (binNumeral l) (^&m)) ∈ Γ) :
+    neg LAct (termLenMetaFact (binNumeral l) (^&(m + shiftsV S))) ∈ finalCtx Γ S := by
   have := mem_finalCtx_of_mem' hS h
-  rwa [shiftIterV_neg (isFormula_tlenFact (isSemiterm_bnum_LAct 0 l) (by simp)),
-    shiftIterV_tlenFact (isSemiterm_bnum_LAct 0 l) (by simp), termShiftIterV_bnum, termShiftIterV_fvar] at this
-lemma lenFact_transport {Γ S l m : V} (hS : NoDrop' S) (h : neg LAct (lenFact (bnum l) (^&m)) ∈ Γ) :
-    neg LAct (lenFact (bnum l) (^&(m + shiftsV S))) ∈ finalCtx Γ S := by
+  rwa [shiftIterV_neg (isFormula_termLenMetaFact (isSemiterm_binNumeral_LAct 0 l) (by simp)),
+    shiftIterV_termLenMetaFact (isSemiterm_binNumeral_LAct 0 l) (by simp), termShiftIterV_binNumeral, termShiftIterV_fvar] at this
+lemma lenFact_transport {Γ S l m : V} (hS : NoDrop' S) (h : neg LAct (lenFact (binNumeral l) (^&m)) ∈ Γ) :
+    neg LAct (lenFact (binNumeral l) (^&(m + shiftsV S))) ∈ finalCtx Γ S := by
   have := mem_finalCtx_of_mem' hS h
-  rwa [shiftIterV_neg (isFormula_lenFact (isSemiterm_bnum_LAct 0 l) (by simp)),
-    shiftIterV_lenFact (isSemiterm_bnum_LAct 0 l) (by simp), termShiftIterV_bnum, termShiftIterV_fvar] at this
+  rwa [shiftIterV_neg (isFormula_lenFact (isSemiterm_binNumeral_LAct 0 l) (by simp)),
+    shiftIterV_lenFact (isSemiterm_binNumeral_LAct 0 l) (by simp), termShiftIterV_binNumeral, termShiftIterV_fvar] at this
 lemma tlvFact_transport {Γ S m c : V} (hS : NoDrop' S) (h : neg LAct (tlvFact (vRef 0 m) (cTV m) (vRef c m)) ∈ Γ) :
     neg LAct (tlvFact (vRef (shiftsV S) m) (cTV m) (vRef (c + shiftsV S) m)) ∈ finalCtx Γ S := by
   have := mem_finalCtx_of_mem' hS h
   rwa [shiftIterV_neg (isFormula_tlvFact (isSemiterm_vRef _ _) (cTV_semiterm_LAct 0 _) (isSemiterm_vRef _ _)),
     shiftIterV_tlvFact (isSemiterm_vRef _ _) (cTV_semiterm_LAct 0 _) (isSemiterm_vRef _ _),
     termShiftIterV_vRef, termShiftIterV_vRef, termShiftIterV_cTV, zero_add] at this
-lemma listSumFact_transport {Γ S σ m : V} (hS : NoDrop' S) (h : neg LAct (listSumFact (bnum σ) (vRef 0 m)) ∈ Γ) :
-    neg LAct (listSumFact (bnum σ) (vRef (shiftsV S) m)) ∈ finalCtx Γ S := by
+lemma listSumFact_transport {Γ S σ m : V} (hS : NoDrop' S) (h : neg LAct (listSumFact (binNumeral σ) (vRef 0 m)) ∈ Γ) :
+    neg LAct (listSumFact (binNumeral σ) (vRef (shiftsV S) m)) ∈ finalCtx Γ S := by
   have := mem_finalCtx_of_mem' hS h
-  rwa [shiftIterV_neg (isFormula_listSumFact (isSemiterm_bnum_LAct 0 σ) (isSemiterm_vRef _ _)),
-    shiftIterV_listSumFact (isSemiterm_bnum_LAct 0 σ) (isSemiterm_vRef _ _), termShiftIterV_bnum, termShiftIterV_vRef,
+  rwa [shiftIterV_neg (isFormula_listSumFact (isSemiterm_binNumeral_LAct 0 σ) (isSemiterm_vRef _ _)),
+    shiftIterV_listSumFact (isSemiterm_binNumeral_LAct 0 σ) (isSemiterm_vRef _ _), termShiftIterV_binNumeral, termShiftIterV_vRef,
     zero_add] at this
 lemma isFuncFact_transport {Γ S k f : V} (hS : NoDrop' S) (h : neg LAct (isFuncFact (cTV k) (cTV f)) ∈ Γ) :
     neg LAct (isFuncFact (cTV k) (cTV f)) ∈ finalCtx Γ S := by
@@ -6691,10 +6691,10 @@ end lenOKHelpers
 section lenTOK
 
 /-- The term-level invariant (Π₁ motive): with the dossier at `i`, the list is applicable and leaves
-`tlenFact (bnum |t|) &(i + shifts)`. -/
+`termLenMetaFact (binNumeral |t|) &(i + shifts)`. -/
 def TLenOK (tbl Wd W T n t : V) : Prop :=
   ∀ i y E Γ : V, LenTGraph W T n t i y → LenPre (termLen LAct t) n i E Γ → DossT Wd Γ n t i →
-    LenPost tbl E Γ y (tlenFact (bnum (termLen LAct t)) (^&(i + shiftsV y)))
+    LenPost tbl E Γ y (termLenMetaFact (binNumeral (termLen LAct t)) (^&(i + shiftsV y)))
 
 /-- The leaf lists are applicable (`bvar` at row 153 with `termLen_bvar`, `fvar` at 154 with `termLen_fvar`):
 the leaf's own shape fact is needed in the SHIFTED context (after `termLenTotal`). -/
@@ -6704,19 +6704,19 @@ lemma lnLeafSteps_ok {tbl N N' B' W T : V} (htbl : TableOK tbl N) (hC : CertTabl
     (hfact : (c = 153 ∧ neg LAct (bvarFact (^&(i + 1)) (cTV z)) ∈ setShift LAct Γ) ∨
       (c = 154 ∧ neg LAct (fvarFact (^&(i + 1)) (cTV z)) ∈ setShift LAct Γ)) :
     ListOK tbl E ((8 : ℕ) : V) Γ (lnLeafSteps W T c z i) ∧
-    neg LAct (tlenFact (bnum (z + 1)) (^&(i + 1))) ∈ finalCtx Γ (lnLeafSteps W T c z i) := by
+    neg LAct (termLenMetaFact (binNumeral (z + 1)) (^&(i + 1))) ∈ finalCtx Γ (lnLeafSteps W T c z i) := by
   have hΓ := hP.fset
   have hi0 : termLen LAct (^&i : V) ≤ E := hP.eFvar off_i
   have hi1 : termLen LAct (^&(i + 1) : V) ≤ E := hP.eFvar off_i1
   have hz : termLen LAct (cTV z) ≤ E := hP.eCTVle le_self_add
   have hz1' : termLen LAct (cTV (z + 1)) ≤ E := hP.eCTVle le_rfl
-  have hb : termLen LAct (bnum (z + 1)) ≤ E := hP.eBnum le_rfl
+  have hb : termLen LAct (binNumeral (z + 1)) ≤ E := hP.eBnum le_rfl
   -- s₁ : termLenTotal [&i]
   obtain ⟨ok₁, _, cx₁⟩ := cok_termLenTotal htbl hC hWp hΓ (wt := ^&i) (by simp) hi0
   rw [termShift_fvar, Nat.cast_zero] at cx₁
-  set Γ₁ := insert (neg LAct (tlenFact (^&(0 : V)) (^&(i + 1)))) (setShift LAct Γ) with hΓ₁
+  set Γ₁ := insert (neg LAct (termLenMetaFact (^&(0 : V)) (^&(i + 1)))) (setShift LAct Γ) with hΓ₁
   have hΓ₁s : IsFormulaSet LAct Γ₁ := by rw [← cx₁]; exact isFormulaSet_ctxAfter 8 htbl ok₁
-  have hlen₁ : neg LAct (tlenFact (^&(0 : V)) (^&(i + 1))) ∈ Γ₁ := by rw [hΓ₁]; exact mem_insert_self'
+  have hlen₁ : neg LAct (termLenMetaFact (^&(0 : V)) (^&(i + 1))) ∈ Γ₁ := by rw [hΓ₁]; exact mem_insert_self'
   -- s₂ : the leaf row at [cT z, &(i+1), &0]
   have step₂ : StepOK tbl E ((8 : ℕ) : V) Γ₁ (mkStep W c ?[cTV z, ^&(i + 1), ^&0]) ∧
       ctxAfter Γ₁ (mkStep W c ?[cTV z, ^&(i + 1), ^&0]) = insert (neg LAct (eqFactB (^&0) (cTV z ^+ (𝟏 : V)))) Γ₁ := by
@@ -6730,20 +6730,20 @@ lemma lnLeafSteps_ok {tbl N N' B' W T : V} (htbl : TableOK tbl N) (hC : CertTabl
   obtain ⟨ok₂, cx₂⟩ := step₂
   set Γ₂ := insert (neg LAct (eqFactB (^&0) (cTV z ^+ (𝟏 : V)))) Γ₁ with hΓ₂
   have hΓ₂s : IsFormulaSet LAct Γ₂ := by rw [← cx₂]; exact isFormulaSet_ctxAfter 8 htbl ok₂
-  -- s₃ : the closed cT (z+1) = bnum (z+1)
+  -- s₃ : the closed cT (z+1) = binNumeral (z+1)
   have ok₃ : StepOK tbl E ((8 : ℕ) : V) Γ₂ (sLemma (cTEqFact (z + 1)) (cTEqCode T (z + 1))) :=
     stepOK_sLemma hΓ₂s (lemmaOK_cTEq htblN (z + 1))
   have cx₃ := ctxAfter_sLemma Γ₂ (cTEqFact (z + 1)) (cTEqCode T (z + 1))
   set Γ₃ := insert (neg LAct (cTEqFact (z + 1))) Γ₂ with hΓ₃
   have hΓ₃s : IsFormulaSet LAct Γ₃ := by rw [← cx₃]; exact isFormulaSet_ctxAfter 8 htbl ok₃
-  -- s₄ : eqTrans [&0, cT (z+1), bnum (z+1)]
-  obtain ⟨ok₄, _, cx₄⟩ := cok_eqTrans htbl hC hWp hΓ₃s (by simp) hP.eFvar0 (cTV_semiterm_LAct 0 _) hz1' (isSemiterm_bnum_LAct 0 _) hb
+  -- s₄ : eqTrans [&0, cT (z+1), binNumeral (z+1)]
+  obtain ⟨ok₄, _, cx₄⟩ := cok_eqTrans htbl hC hWp hΓ₃s (by simp) hP.eFvar0 (cTV_semiterm_LAct 0 _) hz1' (isSemiterm_binNumeral_LAct 0 _) hb
     (by rw [hΓ₃, hΓ₂, cTV_succ]; exact mem_insert_of_mem' mem_insert_self')
     (by rw [hΓ₃]; exact mem_insert_self')
-  set Γ₄ := insert (neg LAct (eqFactB (^&0) (bnum (z + 1)))) Γ₃ with hΓ₄
+  set Γ₄ := insert (neg LAct (eqFactB (^&0) (binNumeral (z + 1)))) Γ₃ with hΓ₄
   have hΓ₄s : IsFormulaSet LAct Γ₄ := by rw [← cx₄]; exact isFormulaSet_ctxAfter 8 htbl ok₄
-  -- s₅ : congTLenNum [&(i+1), &0, bnum (z+1)]
-  obtain ⟨ok₅, _, cx₅⟩ := cok_congTLenNum htbl hC hWp hΓ₄s (by simp) hi1 (by simp) hP.eFvar0 (isSemiterm_bnum_LAct 0 _) hb
+  -- s₅ : congTLenNum [&(i+1), &0, binNumeral (z+1)]
+  obtain ⟨ok₅, _, cx₅⟩ := cok_congTLenNum htbl hC hWp hΓ₄s (by simp) hi1 (by simp) hP.eFvar0 (isSemiterm_binNumeral_LAct 0 _) hb
     (by rw [hΓ₄]; exact mem_insert_self')
     (by rw [hΓ₄, hΓ₃, hΓ₂]; exact mem_insert_of_mem' (mem_insert_of_mem' (mem_insert_of_mem' hlen₁)))
   refine ⟨?_, ?_⟩
@@ -6762,30 +6762,30 @@ lemma lnLeafSteps_ok {tbl N N' B' W T : V} (htbl : TableOK tbl N) (hC : CertTabl
 
 /-- The tails of the vector/function lists, named (definitional unfoldings of the builders). -/
 noncomputable def lnAdjTail (W T n m ct lt σ' i st sv : V) : V :=
-  ?[mkStep W 17 ?[bnum lt, vRef 0 m],
+  ?[mkStep W 17 ?[binNumeral lt, vRef 0 m],
     mkStep W 38 ?[cTV m, cTV n, vRef (i + 1 + ct + (st + sv + 1)) m],
     mkStep W 39 ?[cTV m, vRef (i + 1 + ct + (st + sv + 1)) m],
     mkStep W 139 ?[cTV n, cTV m, vRef (i + 1 + ct + (st + sv + 1)) m, ^&(i + (st + sv + 1)), ^&(i + 1 + (st + sv + 1)),
-      bnum lt, vRef 1 m, ^&0],
+      binNumeral lt, vRef 1 m, ^&0],
     sLemma (addFact lt σ') (addCode T lt σ'),
-    mkStep W 185 ?[^&0, vRef 1 m, bnum lt, bnum σ', bnum (lt + σ')]]
+    mkStep W 185 ?[^&0, vRef 1 m, binNumeral lt, binNumeral σ', binNumeral (lt + σ')]]
 lemma lnAdjSteps_eq (W T n m ct lt σ' i st sv yt yv : V) :
     lnAdjSteps W T n m ct lt σ' i st sv yt yv = appendV yt (appendV yv (lnAdjTail W T n m ct lt σ' i st sv)) := rfl
 noncomputable def lnFuncTail (W T k f σ i sv : V) : V :=
   ?[mkStep W (funcRow k f) 0,
     mkStep W 156 ?[^&(i + sv)],
-    mkStep W 144 ?[cTV k, cTV f, vRef (i + 1 + sv + 1) k, ^&(i + sv + 1), vRef 1 k, bnum σ, ^&0],
+    mkStep W 144 ?[cTV k, cTV f, vRef (i + 1 + sv + 1) k, ^&(i + sv + 1), vRef 1 k, binNumeral σ, ^&0],
     sLemma (succFact σ) (succCode T σ),
-    mkStep W 123 ?[^&0, bnum σ ^+ (𝟏 : V), bnum (σ + 1)],
-    mkStep W 146 ?[^&(i + sv + 1), ^&0, bnum (σ + 1)]]
+    mkStep W 123 ?[^&0, binNumeral σ ^+ (𝟏 : V), binNumeral (σ + 1)],
+    mkStep W 146 ?[^&(i + sv + 1), ^&0, binNumeral (σ + 1)]]
 lemma lnFuncSteps_eq (W T k f σ i sv yv : V) : lnFuncSteps W T k f σ i sv yv = appendV yv (lnFuncTail W T k f σ i sv) := rfl
 
-/-- The empty vector's list is applicable and leaves `tlvFact 𝟎 (cT 0) 𝟎`, `listSumFact (bnum 0) 𝟎`. -/
+/-- The empty vector's list is applicable and leaves `tlvFact 𝟎 (cT 0) 𝟎`, `listSumFact (binNumeral 0) 𝟎`. -/
 lemma lnNilSteps_ok {tbl N W : V} (htbl : TableOK tbl N) (hC : CertTable tbl) (hWp : W = certPieces) {E Γ : V}
     (h8 : (8 : V) ≤ E) (hΓ : IsFormulaSet LAct Γ) :
     ListOK tbl E ((8 : ℕ) : V) Γ (lnNilSteps W) ∧
     neg LAct (tlvFact (vRef 0 0) (cTV 0) (vRef 0 0)) ∈ finalCtx Γ (lnNilSteps W) ∧
-    neg LAct (listSumFact (bnum 0) (vRef 0 0)) ∈ finalCtx Γ (lnNilSteps W) := by
+    neg LAct (listSumFact (binNumeral 0) (vRef 0 0)) ∈ finalCtx Γ (lnNilSteps W) := by
   have hc0 : termLen LAct (cTV 0) ≤ E := E_cT_le_two (by norm_num) h8
   obtain ⟨ok₁, _, cx₁⟩ := cok_termLenVecNil htbl hC hWp hΓ (wx := cTV 0) (cTV_semiterm_LAct 0 0) hc0
   have hΓ₁ : IsFormulaSet LAct (insert (neg LAct (tlvFact (𝟎 : V) (𝟎 : V) (𝟎 : V))) Γ) := by
@@ -6798,7 +6798,7 @@ lemma lnNilSteps_ok {tbl N W : V} (htbl : TableOK tbl N) (hC : CertTable tbl) (h
     exact listOK_single ok₂
   · rw [lnNilSteps, finalCtx_cons, cx₁, finalCtx_single, cx₂, vRef_zero, cTV_zero]
     exact mem_insert_of_mem' mem_insert_self'
-  · rw [lnNilSteps, finalCtx_cons, cx₁, finalCtx_single, cx₂, vRef_zero, bnum_zero]
+  · rw [lnNilSteps, finalCtx_cons, cx₁, finalCtx_single, cx₂, vRef_zero, binNumeral_zero]
     exact mem_insert_self'
 
 /-- The walk's `adjoinTotal` (row 17) and the two `utvPi` bridge rows (38/39), read from the certification pieces. -/
@@ -6808,19 +6808,19 @@ lemma mkStep_certPieces_17 {W : V} (hWp : W = certPieces) (ev : V) : mkStep W 17
 set_option maxHeartbeats 2000000 in
 /-- **The adjoin tail is applicable**: in the context after the entry's and the tail's lists (their result
 facts at the shifted offsets, the parent vector's dossier transported to `i + st + sv`), it leaves the new
-length vector `&0` with `tlvFact &0 (cT m + 1) &(i + S)` and `listSumFact (bnum (lt + σ')) &0`. -/
+length vector `&0` with `tlvFact &0 (cT m + 1) &(i + S)` and `listSumFact (binNumeral (lt + σ')) &0`. -/
 lemma lnAdjTail_ok {tbl N N' B' Wd W T : V} (htbl : TableOK tbl N) (hC : CertTable tbl) (htblN : NumTableOK T N' B')
     (hWd : Wd = walkPieces) (hWp : W = certPieces) {n k v m i E Γ : V} (hv : IsSemitermVec LAct k n v) (hm : m + 1 ≤ k) (hk : k ≤ 2)
     {ct lt σ' st sv : V} (hct : ct = descCountT Wd n v.[k - (m + 1)]) (hlt : lt = termLen LAct v.[k - (m + 1)])
     (hct_le : ct + 1 ≤ 2 * lt) (hst : st + 1 ≤ 2 * lt) (hsv : sv ≤ 2 * σ')
     (hP : LenPreV (lt + σ') n i E Γ)
-    (hT : neg LAct (tlenFact (bnum lt) (^&(i + 1 + st + sv))) ∈ Γ)
+    (hT : neg LAct (termLenMetaFact (binNumeral lt) (^&(i + 1 + st + sv))) ∈ Γ)
     (hM : neg LAct (tlvFact (vRef 0 m) (cTV m) (vRef (i + 1 + ct + st + sv) m)) ∈ Γ)
-    (hSum : neg LAct (listSumFact (bnum σ') (vRef 0 m)) ∈ Γ)
+    (hSum : neg LAct (listSumFact (binNumeral σ') (vRef 0 m)) ∈ Γ)
     (hD : DossV Wd Γ n k v (m + 1) (i + st + sv)) :
     ListOK tbl E ((8 : ℕ) : V) Γ (lnAdjTail W T n m ct lt σ' i st sv) ∧
     neg LAct (tlvFact (^&0) (cTV m ^+ (𝟏 : V)) (^&(i + (st + sv + 1)))) ∈ finalCtx Γ (lnAdjTail W T n m ct lt σ' i st sv) ∧
-    neg LAct (listSumFact (bnum (lt + σ')) (^&0)) ∈ finalCtx Γ (lnAdjTail W T n m ct lt σ' i st sv) := by
+    neg LAct (listSumFact (binNumeral (lt + σ')) (^&0)) ∈ finalCtx Γ (lnAdjTail W T n m ct lt σ' i st sv) := by
   have hW : WalkTable tbl := hC.walkTable
   have hΓ := hP.fset
   have hmk : m ≤ k := le_trans le_self_add hm
@@ -6831,9 +6831,9 @@ lemma lnAdjTail_ok {tbl N N' B' Wd W T : V} (htbl : TableOK tbl N) (hC : CertTab
   -- the witness bounds
   have hD1 : lt ≤ lt + σ' := le_self_add
   have hD2 : σ' ≤ lt + σ' := le_add_self
-  have hbt : termLen LAct (bnum lt) ≤ E := hP.toPre.eBnum hD1
-  have hbσ : termLen LAct (bnum σ') ≤ E := hP.toPre.eBnum hD2
-  have hbs : termLen LAct (bnum (lt + σ')) ≤ E := hP.toPre.eBnum le_rfl
+  have hbt : termLen LAct (binNumeral lt) ≤ E := hP.toPre.eBnum hD1
+  have hbσ : termLen LAct (binNumeral σ') ≤ E := hP.toPre.eBnum hD2
+  have hbs : termLen LAct (binNumeral (lt + σ')) ≤ E := hP.toPre.eBnum le_rfl
   have hcm : termLen LAct (cTV m) ≤ E := hP.toPre.eCTVsmall (le_trans hmk (le_trans hk (by norm_num)))
   have hcn : termLen LAct (cTV n) ≤ E := hP.toPre.eCTVn
   have hr0 : termLen LAct (vRef 0 m) ≤ E := termLen_vRef_le (by rw [zero_add]; exact hP.toPre.one)
@@ -6858,26 +6858,26 @@ lemma lnAdjTail_ok {tbl N N' B' Wd W T : V} (htbl : TableOK tbl N) (hC : CertTab
     (calc i + 1 + S + 1 ≤ i + 1 + S + 1 + ct := le_self_add
       _ = i + 1 + ct + S + 1 := by ring
       _ ≤ i + 5 * (lt + σ') + 3 := hoff)
-  -- s₁ : adjoinTotal [bnum lt, ⟨M⟩]  (walk row 17)
-  have er := mkStep_certPieces_17 hWp (?[bnum lt, vRef 0 m] : V)
-  obtain ⟨ok₁, tag₁, cx₁⟩ := ok_adjoinTotal htbl hW rfl hΓ (isSemiterm_bnum_LAct 0 lt) hbt (isSemiterm_vRef 0 m) hr0
+  -- s₁ : adjoinTotal [binNumeral lt, ⟨M⟩]  (walk row 17)
+  have er := mkStep_certPieces_17 hWp (?[binNumeral lt, vRef 0 m] : V)
+  obtain ⟨ok₁, tag₁, cx₁⟩ := ok_adjoinTotal htbl hW rfl hΓ (isSemiterm_binNumeral_LAct 0 lt) hbt (isSemiterm_vRef 0 m) hr0
   rw [← er] at ok₁ tag₁ cx₁
-  rw [termShift_bnum, termShift_vRef, zero_add, Nat.cast_zero] at cx₁
-  set Γ₁ := insert (neg LAct (adjFact (^&(0 : V)) (bnum lt) (vRef 1 m))) (setShift LAct Γ) with hΓ₁
+  rw [termShift_binNumeral, termShift_vRef, zero_add, Nat.cast_zero] at cx₁
+  set Γ₁ := insert (neg LAct (adjFact (^&(0 : V)) (binNumeral lt) (vRef 1 m))) (setShift LAct Γ) with hΓ₁
   have hΓ₁s : IsFormulaSet LAct Γ₁ := by rw [← cx₁]; exact isFormulaSet_ctxAfter 8 htbl ok₁
-  have hnd₁ : NoDrop' (?[mkStep W 17 ?[bnum lt, vRef 0 m]] : V) := noDrop'_single_tag2 tag₁
-  have hs₁ : shiftsV (?[mkStep W 17 ?[bnum lt, vRef 0 m]] : V) = 1 := shiftsV_single_tag2 tag₁
+  have hnd₁ : NoDrop' (?[mkStep W 17 ?[binNumeral lt, vRef 0 m]] : V) := noDrop'_single_tag2 tag₁
+  have hs₁ : shiftsV (?[mkStep W 17 ?[binNumeral lt, vRef 0 m]] : V) = 1 := shiftsV_single_tag2 tag₁
   -- the transported facts and dossier
-  have hT₁ : neg LAct (tlenFact (bnum lt) (^&(i + 1 + S))) ∈ Γ₁ := by
-    have := tlenFact_transport hnd₁ hT
+  have hT₁ : neg LAct (termLenMetaFact (binNumeral lt) (^&(i + 1 + S))) ∈ Γ₁ := by
+    have := termLenMetaFact_transport hnd₁ hT
     rwa [hs₁, finalCtx_single, cx₁, show i + 1 + st + sv + 1 = i + 1 + S by rw [hS]; ring] at this
   have hM₁ : neg LAct (tlvFact (vRef 1 m) (cTV m) (vRef (i + 1 + ct + S) m)) ∈ Γ₁ := by
     have := tlvFact_transport hnd₁ hM
     rwa [hs₁, finalCtx_single, cx₁, show i + 1 + ct + st + sv + 1 = i + 1 + ct + S by rw [hS]; ring] at this
-  have hSum₁ : neg LAct (listSumFact (bnum σ') (vRef 1 m)) ∈ Γ₁ := by
+  have hSum₁ : neg LAct (listSumFact (binNumeral σ') (vRef 1 m)) ∈ Γ₁ := by
     have := listSumFact_transport hnd₁ hSum
     rwa [hs₁, finalCtx_single, cx₁] at this
-  have hadjM : neg LAct (adjFact (^&(0 : V)) (bnum lt) (vRef 1 m)) ∈ Γ₁ := by rw [hΓ₁]; exact mem_insert_self'
+  have hadjM : neg LAct (adjFact (^&(0 : V)) (binNumeral lt) (vRef 1 m)) ∈ Γ₁ := by rw [hΓ₁]; exact mem_insert_self'
   have hD₁ : DossV Wd Γ₁ n k v (m + 1) (i + S) := by
     have := dossV_transport' hnd₁ hD
     rwa [hs₁, finalCtx_single, cx₁, show i + st + sv + 1 = i + S by rw [hS]; ring] at this
@@ -6906,7 +6906,7 @@ lemma lnAdjTail_ok {tbl N N' B' Wd W T : V} (htbl : TableOK tbl N) (hC : CertTab
   have hΓ₃s : IsFormulaSet LAct Γ₃ := by rw [← cx₃]; exact isFormulaSet_ctxAfter 8 htbl ok₃
   -- s₄ : termLenVecAdj
   obtain ⟨ok₄, _, cx₄⟩ := cok_termLenVecAdj htbl hC hWp hΓ₃s (cTV_semiterm_LAct 0 _) hcn (cTV_semiterm_LAct 0 _) hcm
-    (isSemiterm_vRef _ _) hrt (by simp) hfS (by simp) hf1S (isSemiterm_bnum_LAct 0 _) hbt (isSemiterm_vRef _ _) hr1 (by simp) hP.toPre.eFvar0
+    (isSemiterm_vRef _ _) hrt (by simp) hfS (by simp) hf1S (isSemiterm_binNumeral_LAct 0 _) hbt (isSemiterm_vRef _ _) hr1 (by simp) hP.toPre.eFvar0
     (by rw [hΓ₃, hΓ₂]; exact mem_insert_of_mem' (mem_insert_of_mem' htPi))
     (by rw [hΓ₃]; exact mem_insert_self')
     (by rw [hΓ₃, hΓ₂]; exact mem_insert_of_mem' (mem_insert_of_mem' hT₁))
@@ -6921,9 +6921,9 @@ lemma lnAdjTail_ok {tbl N N' B' Wd W T : V} (htbl : TableOK tbl N) (hC : CertTab
   have cx₅ := ctxAfter_sLemma Γ₄ (addFact lt σ') (addCode T lt σ')
   set Γ₅ := insert (neg LAct (addFact lt σ')) Γ₄ with hΓ₅
   have hΓ₅s : IsFormulaSet LAct Γ₅ := by rw [← cx₅]; exact isFormulaSet_ctxAfter 8 htbl ok₅
-  -- s₆ : listSumAdjI [&0, ⟨M⟩, bnum lt, bnum σ', bnum (lt + σ')]
+  -- s₆ : listSumAdjI [&0, ⟨M⟩, binNumeral lt, binNumeral σ', binNumeral (lt + σ')]
   obtain ⟨ok₆, _, cx₆⟩ := cok_listSumAdjI htbl hC hWp hΓ₅s (by simp) hP.toPre.eFvar0 (isSemiterm_vRef _ _) hr1
-    (isSemiterm_bnum_LAct 0 _) hbt (isSemiterm_bnum_LAct 0 _) hbσ (isSemiterm_bnum_LAct 0 _) hbs
+    (isSemiterm_binNumeral_LAct 0 _) hbt (isSemiterm_binNumeral_LAct 0 _) hbσ (isSemiterm_binNumeral_LAct 0 _) hbs
     (by rw [hΓ₅, hΓ₄, hΓ₃, hΓ₂]; exact mem_insert_of_mem' (mem_insert_of_mem' (mem_insert_of_mem' (mem_insert_of_mem' hSum₁))))
     (by rw [hΓ₅, hΓ₄, hΓ₃, hΓ₂]; exact mem_insert_of_mem' (mem_insert_of_mem' (mem_insert_of_mem' (mem_insert_of_mem' hadjM))))
     (by rw [hΓ₅]; exact mem_insert_self')
@@ -6963,21 +6963,21 @@ lemma subset_insert' {x Γ : V} : Γ ⊆ insert x Γ := fun _ h ↦ mem_insert_o
 
 set_option maxHeartbeats 2000000 in
 /-- **The function tail is applicable**: after the vector's list (its two result facts, the node's dossier
-transported to `i + sv`), it leaves `tlenFact (bnum (σ + 1)) &(i + sv + 1)`. -/
+transported to `i + sv`), it leaves `termLenMetaFact (binNumeral (σ + 1)) &(i + sv + 1)`. -/
 lemma lnFuncTail_ok {tbl N N' B' Wd W T : V} (htbl : TableOK tbl N) (hC : CertTable tbl) (htblN : NumTableOK T N' B')
     (hWd : Wd = walkPieces) (hWp : W = certPieces) {n k f v i E Γ : V} (hkf : LAct.IsFunc k f) (hv : IsSemitermVec LAct k n v)
     {σ sv : V} (hσ : σ = listSum (termLenVec LAct k v)) (hsv : sv ≤ 2 * σ) (hP : LenPre (σ + 1) n i E Γ)
     (hM : neg LAct (tlvFact (vRef 0 k) (cTV k) (vRef (i + 1 + sv) k)) ∈ Γ)
-    (hSum : neg LAct (listSumFact (bnum σ) (vRef 0 k)) ∈ Γ)
+    (hSum : neg LAct (listSumFact (binNumeral σ) (vRef 0 k)) ∈ Γ)
     (hD : DossT Wd Γ n (^func k f v) (i + sv)) :
     ListOK tbl E ((8 : ℕ) : V) Γ (lnFuncTail W T k f σ i sv) ∧
-    neg LAct (tlenFact (bnum (σ + 1)) (^&(i + sv + 1))) ∈ finalCtx Γ (lnFuncTail W T k f σ i sv) := by
+    neg LAct (termLenMetaFact (binNumeral (σ + 1)) (^&(i + sv + 1))) ∈ finalCtx Γ (lnFuncTail W T k f σ i sv) := by
   have hW : WalkTable tbl := hC.walkTable
   have hΓ := hP.fset
   -- witness bounds
-  have hbσ : termLen LAct (bnum σ) ≤ E := hP.eBnum le_self_add
-  have hbσ1 : termLen LAct (bnum (σ + 1)) ≤ E := hP.eBnum le_rfl
-  have hbs : termLen LAct (bnum σ ^+ (𝟏 : V)) ≤ E := hP.eBnumSucc le_self_add
+  have hbσ : termLen LAct (binNumeral σ) ≤ E := hP.eBnum le_self_add
+  have hbσ1 : termLen LAct (binNumeral (σ + 1)) ≤ E := hP.eBnum le_rfl
+  have hbs : termLen LAct (binNumeral σ ^+ (𝟏 : V)) ≤ E := hP.eBnumSucc le_self_add
   have hr1 : termLen LAct (vRef 1 k) ≤ E := termLen_vRef_le (le_trans (by norm_num) hP.eight)
   have hoff : i + 1 + sv + 1 + 1 ≤ i + 5 * (σ + 1) + 2 :=
     calc i + 1 + sv + 1 + 1 ≤ i + 1 + 2 * σ + 1 + 1 := add_le_add (add_le_add (add_le_add (le_refl _) hsv) (le_refl _)) (le_refl _)
@@ -7002,15 +7002,15 @@ lemma lnFuncTail_ok {tbl N N' B' Wd W T : V} (htbl : TableOK tbl N) (hC : CertTa
   -- s₁ : termLenTotal [&(i + sv)]
   obtain ⟨ok₁, tag₁, cx₁⟩ := cok_termLenTotal htbl hC hWp hΓ₀s (wt := ^&(i + sv)) (by simp) hfsv
   rw [termShift_fvar, Nat.cast_zero] at cx₁
-  set Γ₁ := insert (neg LAct (tlenFact (^&(0 : V)) (^&(i + sv + 1)))) (setShift LAct Γ₀) with hΓ₁
+  set Γ₁ := insert (neg LAct (termLenMetaFact (^&(0 : V)) (^&(i + sv + 1)))) (setShift LAct Γ₀) with hΓ₁
   have hΓ₁s : IsFormulaSet LAct Γ₁ := by rw [← cx₁]; exact isFormulaSet_ctxAfter 8 htbl ok₁
   have hnd₁ : NoDrop' (?[mkStep W 156 ?[^&(i + sv)]] : V) := noDrop'_single_tag2 tag₁
   have hs₁ : shiftsV (?[mkStep W 156 ?[^&(i + sv)]] : V) = 1 := shiftsV_single_tag2 tag₁
-  have hlen₁ : neg LAct (tlenFact (^&(0 : V)) (^&(i + sv + 1))) ∈ Γ₁ := by rw [hΓ₁]; exact mem_insert_self'
+  have hlen₁ : neg LAct (termLenMetaFact (^&(0 : V)) (^&(i + sv + 1))) ∈ Γ₁ := by rw [hΓ₁]; exact mem_insert_self'
   have hM₁ : neg LAct (tlvFact (vRef 1 k) (cTV k) (vRef (i + 1 + sv + 1) k)) ∈ Γ₁ := by
     have := tlvFact_transport hnd₁ (mem_insert_of_mem' hM : _ ∈ Γ₀)
     rwa [hs₁, finalCtx_single, cx₁] at this
-  have hSum₁ : neg LAct (listSumFact (bnum σ) (vRef 1 k)) ∈ Γ₁ := by
+  have hSum₁ : neg LAct (listSumFact (binNumeral σ) (vRef 1 k)) ∈ Γ₁ := by
     have := listSumFact_transport hnd₁ (mem_insert_of_mem' hSum : _ ∈ Γ₀)
     rwa [hs₁, finalCtx_single, cx₁] at this
   have hisF₁ : neg LAct (isFuncFact (cTV k) (cTV f)) ∈ Γ₁ := by
@@ -7021,25 +7021,25 @@ lemma lnFuncTail_ok {tbl N N' B' Wd W T : V} (htbl : TableOK tbl N) (hC : CertTa
     rwa [hs₁, finalCtx_single, cx₁] at this
   obtain ⟨hfF, htPi, hutv, _⟩ := dossT_func htbl hW hWd hkf hv hD₁
   rw [show i + sv + 1 + 1 = i + 1 + sv + 1 by ring] at hfF hutv
-  -- s₂ : termLenFuncCert [cT k, cT f, ⟨v⟩, &(i+sv+1), ⟨M⟩, bnum σ, &0]
+  -- s₂ : termLenFuncCert [cT k, cT f, ⟨v⟩, &(i+sv+1), ⟨M⟩, binNumeral σ, &0]
   obtain ⟨ok₂, _, cx₂⟩ := cok_termLenFuncCert htbl hC hWp hΓ₁s (cTV_semiterm_LAct 0 _) hEk (cTV_semiterm_LAct 0 _) hEf
-    (isSemiterm_vRef _ _) hrv (by simp) hfsv1 (isSemiterm_vRef _ _) hr1 (isSemiterm_bnum_LAct 0 _) hbσ (by simp) hP.eFvar0
+    (isSemiterm_vRef _ _) hrv (by simp) hfsv1 (isSemiterm_vRef _ _) hr1 (isSemiterm_binNumeral_LAct 0 _) hbσ (by simp) hP.eFvar0
     hisF₁ hutv hfF hM₁ hSum₁ hlen₁
-  set Γ₂ := insert (neg LAct (eqFactB (^&0) (bnum σ ^+ (𝟏 : V)))) Γ₁ with hΓ₂
+  set Γ₂ := insert (neg LAct (eqFactB (^&0) (binNumeral σ ^+ (𝟏 : V)))) Γ₁ with hΓ₂
   have hΓ₂s : IsFormulaSet LAct Γ₂ := by rw [← cx₂]; exact isFormulaSet_ctxAfter 8 htbl ok₂
   -- s₃ : the closed succFact
   have ok₃ : StepOK tbl E ((8 : ℕ) : V) Γ₂ (sLemma (succFact σ) (succCode T σ)) := stepOK_sLemma hΓ₂s (lemmaOK_succ htblN σ)
   have cx₃ := ctxAfter_sLemma Γ₂ (succFact σ) (succCode T σ)
   set Γ₃ := insert (neg LAct (succFact σ)) Γ₂ with hΓ₃
   have hΓ₃s : IsFormulaSet LAct Γ₃ := by rw [← cx₃]; exact isFormulaSet_ctxAfter 8 htbl ok₃
-  -- s₄ : eqTrans [&0, bnum σ + 1, bnum (σ+1)]
-  obtain ⟨ok₄, _, cx₄⟩ := cok_eqTrans htbl hC hWp hΓ₃s (by simp) hP.eFvar0 (isSemiterm_bnum_succ σ) hbs (isSemiterm_bnum_LAct 0 _) hbσ1
+  -- s₄ : eqTrans [&0, binNumeral σ + 1, binNumeral (σ+1)]
+  obtain ⟨ok₄, _, cx₄⟩ := cok_eqTrans htbl hC hWp hΓ₃s (by simp) hP.eFvar0 (isSemiterm_binNumeral_succ σ) hbs (isSemiterm_binNumeral_LAct 0 _) hbσ1
     (by rw [hΓ₃, hΓ₂]; exact mem_insert_of_mem' mem_insert_self')
     (by rw [hΓ₃]; exact mem_insert_self')
-  set Γ₄ := insert (neg LAct (eqFactB (^&0) (bnum (σ + 1)))) Γ₃ with hΓ₄
+  set Γ₄ := insert (neg LAct (eqFactB (^&0) (binNumeral (σ + 1)))) Γ₃ with hΓ₄
   have hΓ₄s : IsFormulaSet LAct Γ₄ := by rw [← cx₄]; exact isFormulaSet_ctxAfter 8 htbl ok₄
-  -- s₅ : congTLenNum [&(i+sv+1), &0, bnum (σ+1)]
-  obtain ⟨ok₅, _, cx₅⟩ := cok_congTLenNum htbl hC hWp hΓ₄s (by simp) hfsv1 (by simp) hP.eFvar0 (isSemiterm_bnum_LAct 0 _) hbσ1
+  -- s₅ : congTLenNum [&(i+sv+1), &0, binNumeral (σ+1)]
+  obtain ⟨ok₅, _, cx₅⟩ := cok_congTLenNum htbl hC hWp hΓ₄s (by simp) hfsv1 (by simp) hP.eFvar0 (isSemiterm_binNumeral_LAct 0 _) hbσ1
     (by rw [hΓ₄]; exact mem_insert_self')
     (by rw [hΓ₄, hΓ₃, hΓ₂]; exact mem_insert_of_mem' (mem_insert_of_mem' (mem_insert_of_mem' hlen₁)))
   refine ⟨?_, ?_⟩
@@ -7061,15 +7061,15 @@ lemma lnFuncTail_ok {tbl N N' B' Wd W T : V} (htbl : TableOK tbl N) (hC : CertTa
 
 set_option maxHeartbeats 4000000 in
 /-- **The vector-level length lists are applicable** (entries' invariant as a hypothesis, the
-`descVecAux_ok` pattern): for the last `m` entries at `i` they leave the length vector at `&0` with
-`tlvFact ⟨M⟩ (cT m) ⟨v⟩` and `listSumFact (bnum Σ) ⟨M⟩`. -/
+`descriptionsAux_ok` pattern): for the last `m` entries at `i` they leave the length vector at `&0` with
+`tlvFact ⟨M⟩ (cT m) ⟨v⟩` and `listSumFact (binNumeral Σ) ⟨M⟩`. -/
 lemma lenVGraph_ok_aux {tbl N N' B' Wd W T : V} (htbl : TableOK tbl N) (hC : CertTable tbl) (htblN : NumTableOK T N' B')
     (hWd : Wd = walkPieces) (hWp : W = certPieces) (n : V) {k v : V} (hk : k ≤ 2) (hv : IsSemitermVec LAct k n v)
     (ih : ∀ a < k, TLenOK tbl Wd W T n v.[a]) :
     ∀ m ≤ k, IsUTermVec LAct m (takeLast v m) ∧ ∀ i z E Γ : V, LenVGraph W T n k v m i z →
       LenPreV (listSum (termLenVec LAct m (takeLast v m))) n i E Γ → DossV Wd Γ n k v m i →
       LenPostV tbl E Γ z (tlvFact (vRef 0 m) (cTV m) (vRef (i + shiftsV z) m))
-        (listSumFact (bnum (listSum (termLenVec LAct m (takeLast v m)))) (vRef 0 m)) := by
+        (listSumFact (binNumeral (listSum (termLenVec LAct m (takeLast v m)))) (vRef 0 m)) := by
   have hW : WalkTable tbl := hC.walkTable
   have hvlen : len v = k := hv.lh
   intro m
@@ -7141,8 +7141,8 @@ lemma lenVGraph_ok_aux {tbl N N' B' Wd W T : V} (htbl : TableOK tbl N) (hC : Cer
        hoffV, hΓ₁⟩
     obtain ⟨okV, hM, hSum⟩ := hrest _ yv E _ hyv hPv hDv₁
     have hΓ₂ : IsFormulaSet LAct (finalCtx (finalCtx Γ yt) yv) := finalCtx_isFormulaSet 8 htbl hΓ₁ okV
-    have hT₂ : neg LAct (tlenFact (bnum lt) (^&(i + 1 + shiftsV yt + shiftsV yv))) ∈ finalCtx (finalCtx Γ yt) yv :=
-      tlenFact_transport hndV hfT
+    have hT₂ : neg LAct (termLenMetaFact (binNumeral lt) (^&(i + 1 + shiftsV yt + shiftsV yv))) ∈ finalCtx (finalCtx Γ yt) yv :=
+      termLenMetaFact_transport hndV hfT
     have hD₂ : DossV Wd (finalCtx (finalCtx Γ yt) yv) n k v (m + 1) (i + shiftsV yt + shiftsV yv) :=
       dossV_transport' hndV (dossV_transport' hndT hD)
     have hPv' : LenPreV (lt + σ') n i E (finalCtx (finalCtx Γ yt) yv) := hP.ctx hΓ₂
@@ -7214,28 +7214,28 @@ section lenFOK
 noncomputable def lnAtomTail (W T c k R σ i sv : V) : V :=
   ?[mkStep W (relRow R) 0,
     mkStep W 155 ?[^&(i + sv)],
-    mkStep W c ?[cTV k, cTV R, vRef (i + 1 + sv + 1) k, ^&(i + sv + 1), vRef 1 k, bnum σ, ^&0],
+    mkStep W c ?[cTV k, cTV R, vRef (i + 1 + sv + 1) k, ^&(i + sv + 1), vRef 1 k, binNumeral σ, ^&0],
     sLemma (succFact σ) (succCode T σ),
-    mkStep W 123 ?[^&0, bnum σ ^+ (𝟏 : V), bnum (σ + 1)],
-    mkStep W 145 ?[^&(i + sv + 1), ^&0, bnum (σ + 1)]]
+    mkStep W 123 ?[^&0, binNumeral σ ^+ (𝟏 : V), binNumeral (σ + 1)],
+    mkStep W 145 ?[^&(i + sv + 1), ^&0, binNumeral (σ + 1)]]
 lemma lnAtomSteps_eq (W T c k R σ i sv yv : V) : lnAtomSteps W T c k R σ i sv yv = appendV yv (lnAtomTail W T c k R σ i sv) := rfl
 noncomputable def lnBinTail (W T c n cq lp lq i sq sp : V) : V :=
   ?[mkStep W 155 ?[^&(i + (sq + sp))],
-    mkStep W c ?[cTV n, ^&(i + cq + 1 + (sq + sp) + 1), ^&(i + 1 + (sq + sp) + 1), ^&(i + (sq + sp) + 1), bnum lp, bnum lq, ^&0],
+    mkStep W c ?[cTV n, ^&(i + cq + 1 + (sq + sp) + 1), ^&(i + 1 + (sq + sp) + 1), ^&(i + (sq + sp) + 1), binNumeral lp, binNumeral lq, ^&0],
     sLemma (addFact lp lq) (addCode T lp lq),
-    mkStep W 184 ?[bnum lp ^+ bnum lq, bnum (lp + lq)],
+    mkStep W 184 ?[binNumeral lp ^+ binNumeral lq, binNumeral (lp + lq)],
     sLemma (succFact (lp + lq)) (succCode T (lp + lq)),
-    mkStep W 123 ?[^&0, bnum lp ^+ bnum lq ^+ (𝟏 : V), bnum (lp + lq) ^+ (𝟏 : V)],
-    mkStep W 123 ?[^&0, bnum (lp + lq) ^+ (𝟏 : V), bnum (lp + lq + 1)],
-    mkStep W 145 ?[^&(i + (sq + sp) + 1), ^&0, bnum (lp + lq + 1)]]
+    mkStep W 123 ?[^&0, binNumeral lp ^+ binNumeral lq ^+ (𝟏 : V), binNumeral (lp + lq) ^+ (𝟏 : V)],
+    mkStep W 123 ?[^&0, binNumeral (lp + lq) ^+ (𝟏 : V), binNumeral (lp + lq + 1)],
+    mkStep W 145 ?[^&(i + (sq + sp) + 1), ^&0, binNumeral (lp + lq + 1)]]
 lemma lnBinSteps_eq (W T c n cq lp lq i sq sp yq yp : V) :
     lnBinSteps W T c n cq lp lq i sq sp yq yp = appendV yq (appendV yp (lnBinTail W T c n cq lp lq i sq sp)) := rfl
 noncomputable def lnQuantTail (W T c n lp i sb : V) : V :=
   ?[mkStep W 155 ?[^&(i + sb)],
-    mkStep W c ?[cTV n, ^&(i + 1 + sb + 1), ^&(i + sb + 1), bnum lp, ^&0],
+    mkStep W c ?[cTV n, ^&(i + 1 + sb + 1), ^&(i + sb + 1), binNumeral lp, ^&0],
     sLemma (succFact lp) (succCode T lp),
-    mkStep W 123 ?[^&0, bnum lp ^+ (𝟏 : V), bnum (lp + 1)],
-    mkStep W 145 ?[^&(i + sb + 1), ^&0, bnum (lp + 1)]]
+    mkStep W 123 ?[^&0, binNumeral lp ^+ (𝟏 : V), binNumeral (lp + 1)],
+    mkStep W 145 ?[^&(i + sb + 1), ^&0, binNumeral (lp + 1)]]
 lemma lnQuantSteps_eq (W T c n lp i sb yb : V) : lnQuantSteps W T c n lp i sb yb = appendV yb (lnQuantTail W T c n lp i sb) := rfl
 
 lemma verumFact_setShift {Γ i : V} (h : neg LAct (verumFact (^&i)) ∈ Γ) : neg LAct (verumFact (^&(i + 1))) ∈ setShift LAct Γ := by
@@ -7251,11 +7251,11 @@ lemma lnConstSteps_ok {tbl N W : V} (htbl : TableOK tbl N) (hC : CertTable tbl) 
     (hfact : (c = 147 ∧ neg LAct (verumFact (^&(i + 1))) ∈ setShift LAct Γ) ∨
       (c = 148 ∧ neg LAct (falsumFact (^&(i + 1))) ∈ setShift LAct Γ)) :
     ListOK tbl E ((8 : ℕ) : V) Γ (lnConstSteps W c i) ∧
-    neg LAct (lenFact (bnum 1) (^&(i + 1))) ∈ finalCtx Γ (lnConstSteps W c i) := by
+    neg LAct (lenFact (binNumeral 1) (^&(i + 1))) ∈ finalCtx Γ (lnConstSteps W c i) := by
   have hΓ := hP.fset
   have hi0 : termLen LAct (^&i : V) ≤ E := hP.eFvar off_i
   have hi1 : termLen LAct (^&(i + 1) : V) ≤ E := hP.eFvar off_i1
-  have hb1 : termLen LAct (bnum 1) ≤ E := hP.eBnum le_rfl
+  have hb1 : termLen LAct (binNumeral 1) ≤ E := hP.eBnum le_rfl
   obtain ⟨ok₁, _, cx₁⟩ := cok_formulaLenTotal htbl hC hWp hΓ (wp := ^&i) (by simp) hi0
   rw [termShift_fvar, Nat.cast_zero] at cx₁
   set Γ₁ := insert (neg LAct (lenFact (^&(0 : V)) (^&(i + 1)))) (setShift LAct Γ) with hΓ₁
@@ -7273,8 +7273,8 @@ lemma lnConstSteps_ok {tbl N W : V} (htbl : TableOK tbl N) (hC : CertTable tbl) 
   obtain ⟨ok₂, cx₂⟩ := step₂
   set Γ₂ := insert (neg LAct (eqFactB (^&0) (𝟏 : V))) Γ₁ with hΓ₂
   have hΓ₂s : IsFormulaSet LAct Γ₂ := by rw [← cx₂]; exact isFormulaSet_ctxAfter 8 htbl ok₂
-  obtain ⟨ok₃, _, cx₃⟩ := cok_congLenNum htbl hC hWp hΓ₂s (by simp) hi1 (by simp) hP.eFvar0 (isSemiterm_bnum_LAct 0 _) hb1
-    (by rw [hΓ₂, bnum_one]; exact mem_insert_self')
+  obtain ⟨ok₃, _, cx₃⟩ := cok_congLenNum htbl hC hWp hΓ₂s (by simp) hi1 (by simp) hP.eFvar0 (isSemiterm_binNumeral_LAct 0 _) hb1
+    (by rw [hΓ₂, binNumeral_one]; exact mem_insert_self')
     (by rw [hΓ₂]; exact mem_insert_of_mem' hlen₁)
   refine ⟨?_, ?_⟩
   · rw [lnConstSteps]
@@ -7291,15 +7291,15 @@ set_option maxHeartbeats 2000000 in
 lemma lnQuantTail_ok {tbl N N' B' Wd W T : V} (htbl : TableOK tbl N) (hC : CertTable tbl) (htblN : NumTableOK T N' B')
     (hWd : Wd = walkPieces) (hWp : W = certPieces) {n p i E Γ : V} (hp : IsSemiformula LAct (n + 1) p) {c lp sb : V}
     (hlp : lp = formulaLen LAct p) (hsb : sb + 1 ≤ 2 * lp) (hP : LenPre (lp + 1) n i E Γ)
-    (hb : neg LAct (lenFact (bnum lp) (^&(i + 1 + sb))) ∈ Γ)
+    (hb : neg LAct (lenFact (binNumeral lp) (^&(i + 1 + sb))) ∈ Γ)
     (hD : (c = 151 ∧ DossF Wd Γ n (^∀ p) (i + sb)) ∨ (c = 152 ∧ DossF Wd Γ n (^∃ p) (i + sb))) :
     ListOK tbl E ((8 : ℕ) : V) Γ (lnQuantTail W T c n lp i sb) ∧
-    neg LAct (lenFact (bnum (lp + 1)) (^&(i + sb + 1))) ∈ finalCtx Γ (lnQuantTail W T c n lp i sb) := by
+    neg LAct (lenFact (binNumeral (lp + 1)) (^&(i + sb + 1))) ∈ finalCtx Γ (lnQuantTail W T c n lp i sb) := by
   have hW : WalkTable tbl := hC.walkTable
   have hΓ := hP.fset
-  have hbp : termLen LAct (bnum lp) ≤ E := hP.eBnum le_self_add
-  have hbp1 : termLen LAct (bnum (lp + 1)) ≤ E := hP.eBnum le_rfl
-  have hbs : termLen LAct (bnum lp ^+ (𝟏 : V)) ≤ E := hP.eBnumSucc le_self_add
+  have hbp : termLen LAct (binNumeral lp) ≤ E := hP.eBnum le_self_add
+  have hbp1 : termLen LAct (binNumeral (lp + 1)) ≤ E := hP.eBnum le_rfl
+  have hbs : termLen LAct (binNumeral lp ^+ (𝟏 : V)) ≤ E := hP.eBnumSucc le_self_add
   have hoff : i + 1 + sb + 1 + 1 ≤ i + 5 * (lp + 1) + 2 :=
     calc i + 1 + sb + 1 + 1 = i + (sb + 1) + 2 := by ring
       _ ≤ i + 2 * lp + 2 := add_le_add (add_le_add (le_refl i) hsb) (le_refl 2)
@@ -7322,13 +7322,13 @@ lemma lnQuantTail_ok {tbl N N' B' Wd W T : V} (htbl : TableOK tbl N) (hC : CertT
   have hnd₁ : NoDrop' (?[mkStep W 155 ?[^&(i + sb)]] : V) := noDrop'_single_tag2 tag₁
   have hs₁ : shiftsV (?[mkStep W 155 ?[^&(i + sb)]] : V) = 1 := shiftsV_single_tag2 tag₁
   have hlen₁ : neg LAct (lenFact (^&(0 : V)) (^&(i + sb + 1))) ∈ Γ₁ := by rw [hΓ₁]; exact mem_insert_self'
-  have hb₁ : neg LAct (lenFact (bnum lp) (^&(i + 1 + sb + 1))) ∈ Γ₁ := by
+  have hb₁ : neg LAct (lenFact (binNumeral lp) (^&(i + 1 + sb + 1))) ∈ Γ₁ := by
     have := lenFact_transport hnd₁ hb
     rwa [hs₁, finalCtx_single, cx₁] at this
   -- the node's shape facts after the shift
-  have hshape : StepOK tbl E ((8 : ℕ) : V) Γ₁ (mkStep W c ?[cTV n, ^&(i + 1 + sb + 1), ^&(i + sb + 1), bnum lp, ^&0]) ∧
-      ctxAfter Γ₁ (mkStep W c ?[cTV n, ^&(i + 1 + sb + 1), ^&(i + sb + 1), bnum lp, ^&0]) =
-        insert (neg LAct (eqFactB (^&0) (bnum lp ^+ (𝟏 : V)))) Γ₁ := by
+  have hshape : StepOK tbl E ((8 : ℕ) : V) Γ₁ (mkStep W c ?[cTV n, ^&(i + 1 + sb + 1), ^&(i + sb + 1), binNumeral lp, ^&0]) ∧
+      ctxAfter Γ₁ (mkStep W c ?[cTV n, ^&(i + 1 + sb + 1), ^&(i + sb + 1), binNumeral lp, ^&0]) =
+        insert (neg LAct (eqFactB (^&0) (binNumeral lp ^+ (𝟏 : V)))) Γ₁ := by
     rcases hD with ⟨rfl, hD⟩ | ⟨rfl, hD⟩
     · have hD₁ : DossF Wd Γ₁ n (^∀ p) (i + sb + 1) := by
         have := dossF_transport' hnd₁ hD
@@ -7338,7 +7338,7 @@ lemma lnQuantTail_ok {tbl N N' B' Wd W T : V} (htbl : TableOK tbl N) (hC : CertT
       have hpi : neg LAct (piFact (cTV n ^+ (𝟏 : V)) (^&(i + 1 + sb + 1))) ∈ Γ₁ := by
         rw [← cTV_succ]; exact dossF_pi htbl hW hWd hp hDp
       obtain ⟨ok, _, cx⟩ := cok_formulaLenAll htbl hC hWp hΓ₁s (cTV_semiterm_LAct 0 _) hP.eCTVn (by simp) hf1sb1 (by simp) hfsb1
-        (isSemiterm_bnum_LAct 0 _) hbp (by simp) hP.eFvar0 hpi hall hb₁ hlen₁
+        (isSemiterm_binNumeral_LAct 0 _) hbp (by simp) hP.eFvar0 hpi hall hb₁ hlen₁
       exact ⟨ok, cx⟩
     · have hD₁ : DossF Wd Γ₁ n (^∃ p) (i + sb + 1) := by
         have := dossF_transport' hnd₁ hD
@@ -7348,21 +7348,21 @@ lemma lnQuantTail_ok {tbl N N' B' Wd W T : V} (htbl : TableOK tbl N) (hC : CertT
       have hpi : neg LAct (piFact (cTV n ^+ (𝟏 : V)) (^&(i + 1 + sb + 1))) ∈ Γ₁ := by
         rw [← cTV_succ]; exact dossF_pi htbl hW hWd hp hDp
       obtain ⟨ok, _, cx⟩ := cok_formulaLenExs htbl hC hWp hΓ₁s (cTV_semiterm_LAct 0 _) hP.eCTVn (by simp) hf1sb1 (by simp) hfsb1
-        (isSemiterm_bnum_LAct 0 _) hbp (by simp) hP.eFvar0 hpi hexs hb₁ hlen₁
+        (isSemiterm_binNumeral_LAct 0 _) hbp (by simp) hP.eFvar0 hpi hexs hb₁ hlen₁
       exact ⟨ok, cx⟩
   obtain ⟨ok₂, cx₂⟩ := hshape
-  set Γ₂ := insert (neg LAct (eqFactB (^&0) (bnum lp ^+ (𝟏 : V)))) Γ₁ with hΓ₂
+  set Γ₂ := insert (neg LAct (eqFactB (^&0) (binNumeral lp ^+ (𝟏 : V)))) Γ₁ with hΓ₂
   have hΓ₂s : IsFormulaSet LAct Γ₂ := by rw [← cx₂]; exact isFormulaSet_ctxAfter 8 htbl ok₂
   have ok₃ : StepOK tbl E ((8 : ℕ) : V) Γ₂ (sLemma (succFact lp) (succCode T lp)) := stepOK_sLemma hΓ₂s (lemmaOK_succ htblN lp)
   have cx₃ := ctxAfter_sLemma Γ₂ (succFact lp) (succCode T lp)
   set Γ₃ := insert (neg LAct (succFact lp)) Γ₂ with hΓ₃
   have hΓ₃s : IsFormulaSet LAct Γ₃ := by rw [← cx₃]; exact isFormulaSet_ctxAfter 8 htbl ok₃
-  obtain ⟨ok₄, _, cx₄⟩ := cok_eqTrans htbl hC hWp hΓ₃s (by simp) hP.eFvar0 (isSemiterm_bnum_succ lp) hbs (isSemiterm_bnum_LAct 0 _) hbp1
+  obtain ⟨ok₄, _, cx₄⟩ := cok_eqTrans htbl hC hWp hΓ₃s (by simp) hP.eFvar0 (isSemiterm_binNumeral_succ lp) hbs (isSemiterm_binNumeral_LAct 0 _) hbp1
     (by rw [hΓ₃, hΓ₂]; exact mem_insert_of_mem' mem_insert_self')
     (by rw [hΓ₃]; exact mem_insert_self')
-  set Γ₄ := insert (neg LAct (eqFactB (^&0) (bnum (lp + 1)))) Γ₃ with hΓ₄
+  set Γ₄ := insert (neg LAct (eqFactB (^&0) (binNumeral (lp + 1)))) Γ₃ with hΓ₄
   have hΓ₄s : IsFormulaSet LAct Γ₄ := by rw [← cx₄]; exact isFormulaSet_ctxAfter 8 htbl ok₄
-  obtain ⟨ok₅, _, cx₅⟩ := cok_congLenNum htbl hC hWp hΓ₄s (by simp) hfsb1 (by simp) hP.eFvar0 (isSemiterm_bnum_LAct 0 _) hbp1
+  obtain ⟨ok₅, _, cx₅⟩ := cok_congLenNum htbl hC hWp hΓ₄s (by simp) hfsb1 (by simp) hP.eFvar0 (isSemiterm_binNumeral_LAct 0 _) hbp1
     (by rw [hΓ₄]; exact mem_insert_self')
     (by rw [hΓ₄, hΓ₃, hΓ₂]; exact mem_insert_of_mem' (mem_insert_of_mem' (mem_insert_of_mem' hlen₁)))
   refine ⟨?_, ?_⟩
@@ -7385,24 +7385,24 @@ lemma lnBinTail_ok {tbl N N' B' Wd W T : V} (htbl : TableOK tbl N) (hC : CertTab
     (hWd : Wd = walkPieces) (hWp : W = certPieces) {n p q i E Γ : V} (hp : IsSemiformula LAct n p) (hq : IsSemiformula LAct n q)
     {c cq lp lq sq sp : V} (hcq : cq = descCountF Wd n q) (hlp : lp = formulaLen LAct p) (hlq : lq = formulaLen LAct q)
     (hcq_le : cq + 1 ≤ 2 * lq) (hsq : sq + 1 ≤ 2 * lq) (hsp : sp + 1 ≤ 2 * lp) (hP : LenPre (lp + lq + 1) n i E Γ)
-    (hfq : neg LAct (lenFact (bnum lq) (^&(i + 1 + sq + sp))) ∈ Γ)
-    (hfp : neg LAct (lenFact (bnum lp) (^&(i + cq + 1 + sq + sp))) ∈ Γ)
+    (hfq : neg LAct (lenFact (binNumeral lq) (^&(i + 1 + sq + sp))) ∈ Γ)
+    (hfp : neg LAct (lenFact (binNumeral lp) (^&(i + cq + 1 + sq + sp))) ∈ Γ)
     (hD : (c = 149 ∧ DossF Wd Γ n (p ^⋏ q) (i + sq + sp)) ∨ (c = 150 ∧ DossF Wd Γ n (p ^⋎ q) (i + sq + sp))) :
     ListOK tbl E ((8 : ℕ) : V) Γ (lnBinTail W T c n cq lp lq i sq sp) ∧
-    neg LAct (lenFact (bnum (lp + lq + 1)) (^&(i + (sq + sp) + 1))) ∈ finalCtx Γ (lnBinTail W T c n cq lp lq i sq sp) := by
+    neg LAct (lenFact (binNumeral (lp + lq + 1)) (^&(i + (sq + sp) + 1))) ∈ finalCtx Γ (lnBinTail W T c n cq lp lq i sq sp) := by
   have hW : WalkTable tbl := hC.walkTable
   have hΓ := hP.fset
   set S := sq + sp with hS
   have hDp : lp ≤ lp + lq + 1 := le_trans le_self_add le_self_add
   have hDq : lq ≤ lp + lq + 1 := le_trans le_add_self le_self_add
   have hDs : lp + lq ≤ lp + lq + 1 := le_self_add
-  have hbp : termLen LAct (bnum lp) ≤ E := hP.eBnum hDp
-  have hbq : termLen LAct (bnum lq) ≤ E := hP.eBnum hDq
-  have hbs : termLen LAct (bnum (lp + lq)) ≤ E := hP.eBnum hDs
-  have hbs1 : termLen LAct (bnum (lp + lq + 1)) ≤ E := hP.eBnum le_rfl
-  have hbpq : termLen LAct (bnum lp ^+ bnum lq) ≤ E := hP.eBnumAdd hDp hDq
-  have hbpq1 : termLen LAct (bnum lp ^+ bnum lq ^+ (𝟏 : V)) ≤ E := hP.eBnumAddSucc hDp hDq
-  have hbs' : termLen LAct (bnum (lp + lq) ^+ (𝟏 : V)) ≤ E := hP.eBnumSucc hDs
+  have hbp : termLen LAct (binNumeral lp) ≤ E := hP.eBnum hDp
+  have hbq : termLen LAct (binNumeral lq) ≤ E := hP.eBnum hDq
+  have hbs : termLen LAct (binNumeral (lp + lq)) ≤ E := hP.eBnum hDs
+  have hbs1 : termLen LAct (binNumeral (lp + lq + 1)) ≤ E := hP.eBnum le_rfl
+  have hbpq : termLen LAct (binNumeral lp ^+ binNumeral lq) ≤ E := hP.eBnumAdd hDp hDq
+  have hbpq1 : termLen LAct (binNumeral lp ^+ binNumeral lq ^+ (𝟏 : V)) ≤ E := hP.eBnumAddSucc hDp hDq
+  have hbs' : termLen LAct (binNumeral (lp + lq) ^+ (𝟏 : V)) ≤ E := hP.eBnumSucc hDs
   have hSle : S + 2 ≤ 2 * lq + 2 * lp := by
     rw [hS]
     calc sq + sp + 2 = (sq + 1) + (sp + 1) := by ring
@@ -7435,17 +7435,17 @@ lemma lnBinTail_ok {tbl N N' B' Wd W T : V} (htbl : TableOK tbl N) (hC : CertTab
   have hnd₁ : NoDrop' (?[mkStep W 155 ?[^&(i + S)]] : V) := noDrop'_single_tag2 tag₁
   have hs₁ : shiftsV (?[mkStep W 155 ?[^&(i + S)]] : V) = 1 := shiftsV_single_tag2 tag₁
   have hlen₁ : neg LAct (lenFact (^&(0 : V)) (^&(i + S + 1))) ∈ Γ₁ := by rw [hΓ₁]; exact mem_insert_self'
-  have hfq₁ : neg LAct (lenFact (bnum lq) (^&(i + 1 + S + 1))) ∈ Γ₁ := by
+  have hfq₁ : neg LAct (lenFact (binNumeral lq) (^&(i + 1 + S + 1))) ∈ Γ₁ := by
     have := lenFact_transport hnd₁ hfq
     rwa [hs₁, finalCtx_single, cx₁, show i + 1 + sq + sp + 1 = i + 1 + S + 1 by rw [hS]; ring] at this
-  have hfp₁ : neg LAct (lenFact (bnum lp) (^&(i + cq + 1 + S + 1))) ∈ Γ₁ := by
+  have hfp₁ : neg LAct (lenFact (binNumeral lp) (^&(i + cq + 1 + S + 1))) ∈ Γ₁ := by
     have := lenFact_transport hnd₁ hfp
     rwa [hs₁, finalCtx_single, cx₁, show i + cq + 1 + sq + sp + 1 = i + cq + 1 + S + 1 by rw [hS]; ring] at this
-  -- s₂ : the row at [cT n, &p, &q, &r, bnum lp, bnum lq, &0]
+  -- s₂ : the row at [cT n, &p, &q, &r, binNumeral lp, binNumeral lq, &0]
   have hshape : StepOK tbl E ((8 : ℕ) : V) Γ₁
-        (mkStep W c ?[cTV n, ^&(i + cq + 1 + S + 1), ^&(i + 1 + S + 1), ^&(i + S + 1), bnum lp, bnum lq, ^&0]) ∧
-      ctxAfter Γ₁ (mkStep W c ?[cTV n, ^&(i + cq + 1 + S + 1), ^&(i + 1 + S + 1), ^&(i + S + 1), bnum lp, bnum lq, ^&0]) =
-        insert (neg LAct (eqFactB (^&0) (bnum lp ^+ bnum lq ^+ (𝟏 : V)))) Γ₁ := by
+        (mkStep W c ?[cTV n, ^&(i + cq + 1 + S + 1), ^&(i + 1 + S + 1), ^&(i + S + 1), binNumeral lp, binNumeral lq, ^&0]) ∧
+      ctxAfter Γ₁ (mkStep W c ?[cTV n, ^&(i + cq + 1 + S + 1), ^&(i + 1 + S + 1), ^&(i + S + 1), binNumeral lp, binNumeral lq, ^&0]) =
+        insert (neg LAct (eqFactB (^&0) (binNumeral lp ^+ binNumeral lq ^+ (𝟏 : V)))) Γ₁ := by
     rcases hD with ⟨rfl, hD⟩ | ⟨rfl, hD⟩
     · have hD₁ : DossF Wd Γ₁ n (p ^⋏ q) (i + S + 1) := by
         have := dossF_transport' hnd₁ hD
@@ -7458,7 +7458,7 @@ lemma lnBinTail_ok {tbl N N' B' Wd W T : V} (htbl : TableOK tbl N) (hC : CertTab
       have hpip : neg LAct (piFact (cTV n) (^&(i + cq + 1 + S + 1))) ∈ Γ₁ := dossF_pi htbl hW hWd hp hDp
       have hpiq : neg LAct (piFact (cTV n) (^&(i + 1 + S + 1))) ∈ Γ₁ := dossF_pi htbl hW hWd hq hDq
       obtain ⟨ok, _, cx⟩ := cok_formulaLenAnd htbl hC hWp hΓ₁s (cTV_semiterm_LAct 0 _) hP.eCTVn (by simp) hfcq (by simp) hf1S1
-        (by simp) hfS1 (isSemiterm_bnum_LAct 0 _) hbp (isSemiterm_bnum_LAct 0 _) hbq (by simp) hP.eFvar0
+        (by simp) hfS1 (isSemiterm_binNumeral_LAct 0 _) hbp (isSemiterm_binNumeral_LAct 0 _) hbq (by simp) hP.eFvar0
         hpip hpiq hand hfp₁ hfq₁ hlen₁
       exact ⟨ok, cx⟩
     · have hD₁ : DossF Wd Γ₁ n (p ^⋎ q) (i + S + 1) := by
@@ -7472,21 +7472,21 @@ lemma lnBinTail_ok {tbl N N' B' Wd W T : V} (htbl : TableOK tbl N) (hC : CertTab
       have hpip : neg LAct (piFact (cTV n) (^&(i + cq + 1 + S + 1))) ∈ Γ₁ := dossF_pi htbl hW hWd hp hDp
       have hpiq : neg LAct (piFact (cTV n) (^&(i + 1 + S + 1))) ∈ Γ₁ := dossF_pi htbl hW hWd hq hDq
       obtain ⟨ok, _, cx⟩ := cok_formulaLenOr htbl hC hWp hΓ₁s (cTV_semiterm_LAct 0 _) hP.eCTVn (by simp) hfcq (by simp) hf1S1
-        (by simp) hfS1 (isSemiterm_bnum_LAct 0 _) hbp (isSemiterm_bnum_LAct 0 _) hbq (by simp) hP.eFvar0
+        (by simp) hfS1 (isSemiterm_binNumeral_LAct 0 _) hbp (isSemiterm_binNumeral_LAct 0 _) hbq (by simp) hP.eFvar0
         hpip hpiq hor hfp₁ hfq₁ hlen₁
       exact ⟨ok, cx⟩
   obtain ⟨ok₂, cx₂⟩ := hshape
-  set Γ₂ := insert (neg LAct (eqFactB (^&0) (bnum lp ^+ bnum lq ^+ (𝟏 : V)))) Γ₁ with hΓ₂
+  set Γ₂ := insert (neg LAct (eqFactB (^&0) (binNumeral lp ^+ binNumeral lq ^+ (𝟏 : V)))) Γ₁ with hΓ₂
   have hΓ₂s : IsFormulaSet LAct Γ₂ := by rw [← cx₂]; exact isFormulaSet_ctxAfter 8 htbl ok₂
   -- s₃ : addFact lp lq
   have ok₃ : StepOK tbl E ((8 : ℕ) : V) Γ₂ (sLemma (addFact lp lq) (addCode T lp lq)) := stepOK_sLemma hΓ₂s (lemmaOK_add htblN lp lq)
   have cx₃ := ctxAfter_sLemma Γ₂ (addFact lp lq) (addCode T lp lq)
   set Γ₃ := insert (neg LAct (addFact lp lq)) Γ₂ with hΓ₃
   have hΓ₃s : IsFormulaSet LAct Γ₃ := by rw [← cx₃]; exact isFormulaSet_ctxAfter 8 htbl ok₃
-  -- s₄ : congSucc [bnum lp + bnum lq, bnum (lp + lq)]
-  obtain ⟨ok₄, _, cx₄⟩ := cok_congSucc htbl hC hWp hΓ₃s (isSemiterm_bnum_add lp lq) hbpq (isSemiterm_bnum_LAct 0 _) hbs
+  -- s₄ : congSucc [binNumeral lp + binNumeral lq, binNumeral (lp + lq)]
+  obtain ⟨ok₄, _, cx₄⟩ := cok_congSucc htbl hC hWp hΓ₃s (isSemiterm_binNumeral_add lp lq) hbpq (isSemiterm_binNumeral_LAct 0 _) hbs
     (by rw [hΓ₃]; exact mem_insert_self')
-  set Γ₄ := insert (neg LAct (eqFactB (bnum lp ^+ bnum lq ^+ (𝟏 : V)) (bnum (lp + lq) ^+ (𝟏 : V)))) Γ₃ with hΓ₄
+  set Γ₄ := insert (neg LAct (eqFactB (binNumeral lp ^+ binNumeral lq ^+ (𝟏 : V)) (binNumeral (lp + lq) ^+ (𝟏 : V)))) Γ₃ with hΓ₄
   have hΓ₄s : IsFormulaSet LAct Γ₄ := by rw [← cx₄]; exact isFormulaSet_ctxAfter 8 htbl ok₄
   -- s₅ : succFact (lp + lq)
   have ok₅ : StepOK tbl E ((8 : ℕ) : V) Γ₄ (sLemma (succFact (lp + lq)) (succCode T (lp + lq))) :=
@@ -7494,21 +7494,21 @@ lemma lnBinTail_ok {tbl N N' B' Wd W T : V} (htbl : TableOK tbl N) (hC : CertTab
   have cx₅ := ctxAfter_sLemma Γ₄ (succFact (lp + lq)) (succCode T (lp + lq))
   set Γ₅ := insert (neg LAct (succFact (lp + lq))) Γ₄ with hΓ₅
   have hΓ₅s : IsFormulaSet LAct Γ₅ := by rw [← cx₅]; exact isFormulaSet_ctxAfter 8 htbl ok₅
-  -- s₆ : eqTrans [&0, bnum lp + bnum lq + 1, bnum (lp+lq) + 1]
-  obtain ⟨ok₆, _, cx₆⟩ := cok_eqTrans htbl hC hWp hΓ₅s (by simp) hP.eFvar0 (isSemiterm_bnum_add_succ lp lq) hbpq1
-    (isSemiterm_bnum_succ _) hbs'
+  -- s₆ : eqTrans [&0, binNumeral lp + binNumeral lq + 1, binNumeral (lp+lq) + 1]
+  obtain ⟨ok₆, _, cx₆⟩ := cok_eqTrans htbl hC hWp hΓ₅s (by simp) hP.eFvar0 (isSemiterm_binNumeral_add_succ lp lq) hbpq1
+    (isSemiterm_binNumeral_succ _) hbs'
     (by rw [hΓ₅, hΓ₄, hΓ₃, hΓ₂]; exact mem_insert_of_mem' (mem_insert_of_mem' (mem_insert_of_mem' mem_insert_self')))
     (by rw [hΓ₅, hΓ₄]; exact mem_insert_of_mem' mem_insert_self')
-  set Γ₆ := insert (neg LAct (eqFactB (^&0) (bnum (lp + lq) ^+ (𝟏 : V)))) Γ₅ with hΓ₆
+  set Γ₆ := insert (neg LAct (eqFactB (^&0) (binNumeral (lp + lq) ^+ (𝟏 : V)))) Γ₅ with hΓ₆
   have hΓ₆s : IsFormulaSet LAct Γ₆ := by rw [← cx₆]; exact isFormulaSet_ctxAfter 8 htbl ok₆
-  -- s₇ : eqTrans [&0, bnum (lp+lq) + 1, bnum (lp+lq+1)]
-  obtain ⟨ok₇, _, cx₇⟩ := cok_eqTrans htbl hC hWp hΓ₆s (by simp) hP.eFvar0 (isSemiterm_bnum_succ _) hbs' (isSemiterm_bnum_LAct 0 _) hbs1
+  -- s₇ : eqTrans [&0, binNumeral (lp+lq) + 1, binNumeral (lp+lq+1)]
+  obtain ⟨ok₇, _, cx₇⟩ := cok_eqTrans htbl hC hWp hΓ₆s (by simp) hP.eFvar0 (isSemiterm_binNumeral_succ _) hbs' (isSemiterm_binNumeral_LAct 0 _) hbs1
     (by rw [hΓ₆]; exact mem_insert_self')
     (by rw [hΓ₆, hΓ₅]; exact mem_insert_of_mem' mem_insert_self')
-  set Γ₇ := insert (neg LAct (eqFactB (^&0) (bnum (lp + lq + 1)))) Γ₆ with hΓ₇
+  set Γ₇ := insert (neg LAct (eqFactB (^&0) (binNumeral (lp + lq + 1)))) Γ₆ with hΓ₇
   have hΓ₇s : IsFormulaSet LAct Γ₇ := by rw [← cx₇]; exact isFormulaSet_ctxAfter 8 htbl ok₇
-  -- s₈ : congLenNum [&(i + S + 1), &0, bnum (lp+lq+1)]
-  obtain ⟨ok₈, _, cx₈⟩ := cok_congLenNum htbl hC hWp hΓ₇s (by simp) hfS1 (by simp) hP.eFvar0 (isSemiterm_bnum_LAct 0 _) hbs1
+  -- s₈ : congLenNum [&(i + S + 1), &0, binNumeral (lp+lq+1)]
+  obtain ⟨ok₈, _, cx₈⟩ := cok_congLenNum htbl hC hWp hΓ₇s (by simp) hfS1 (by simp) hP.eFvar0 (isSemiterm_binNumeral_LAct 0 _) hbs1
     (by rw [hΓ₇]; exact mem_insert_self')
     (by rw [hΓ₇, hΓ₆, hΓ₅, hΓ₄, hΓ₃, hΓ₂]
         exact mem_insert_of_mem' (mem_insert_of_mem' (mem_insert_of_mem' (mem_insert_of_mem' (mem_insert_of_mem' (mem_insert_of_mem' hlen₁))))))
@@ -7539,15 +7539,15 @@ lemma lnAtomTail_ok {tbl N N' B' Wd W T : V} (htbl : TableOK tbl N) (hC : CertTa
     (hWd : Wd = walkPieces) (hWp : W = certPieces) {n k R v i E Γ : V} (hkR : LAct.IsRel k R) (hv : IsSemitermVec LAct k n v)
     {c σ sv : V} (hσ : σ = listSum (termLenVec LAct k v)) (hsv : sv ≤ 2 * σ) (hP : LenPre (σ + 1) n i E Γ)
     (hM : neg LAct (tlvFact (vRef 0 k) (cTV k) (vRef (i + 1 + sv) k)) ∈ Γ)
-    (hSum : neg LAct (listSumFact (bnum σ) (vRef 0 k)) ∈ Γ)
+    (hSum : neg LAct (listSumFact (binNumeral σ) (vRef 0 k)) ∈ Γ)
     (hD : (c = 142 ∧ DossF Wd Γ n (^rel k R v) (i + sv)) ∨ (c = 143 ∧ DossF Wd Γ n (^nrel k R v) (i + sv))) :
     ListOK tbl E ((8 : ℕ) : V) Γ (lnAtomTail W T c k R σ i sv) ∧
-    neg LAct (lenFact (bnum (σ + 1)) (^&(i + sv + 1))) ∈ finalCtx Γ (lnAtomTail W T c k R σ i sv) := by
+    neg LAct (lenFact (binNumeral (σ + 1)) (^&(i + sv + 1))) ∈ finalCtx Γ (lnAtomTail W T c k R σ i sv) := by
   have hW : WalkTable tbl := hC.walkTable
   have hΓ := hP.fset
-  have hbσ : termLen LAct (bnum σ) ≤ E := hP.eBnum le_self_add
-  have hbσ1 : termLen LAct (bnum (σ + 1)) ≤ E := hP.eBnum le_rfl
-  have hbs : termLen LAct (bnum σ ^+ (𝟏 : V)) ≤ E := hP.eBnumSucc le_self_add
+  have hbσ : termLen LAct (binNumeral σ) ≤ E := hP.eBnum le_self_add
+  have hbσ1 : termLen LAct (binNumeral (σ + 1)) ≤ E := hP.eBnum le_rfl
+  have hbs : termLen LAct (binNumeral σ ^+ (𝟏 : V)) ≤ E := hP.eBnumSucc le_self_add
   have hr1 : termLen LAct (vRef 1 k) ≤ E := termLen_vRef_le (le_trans (by norm_num) hP.eight)
   have hoff : i + 1 + sv + 1 + 1 ≤ i + 5 * (σ + 1) + 2 :=
     calc i + 1 + sv + 1 + 1 ≤ i + 1 + 2 * σ + 1 + 1 := add_le_add (add_le_add (add_le_add (le_refl _) hsv) (le_refl _)) (le_refl _)
@@ -7580,7 +7580,7 @@ lemma lnAtomTail_ok {tbl N N' B' Wd W T : V} (htbl : TableOK tbl N) (hC : CertTa
   have hM₁ : neg LAct (tlvFact (vRef 1 k) (cTV k) (vRef (i + 1 + sv + 1) k)) ∈ Γ₁ := by
     have := tlvFact_transport hnd₁ (mem_insert_of_mem' hM : _ ∈ Γ₀)
     rwa [hs₁, finalCtx_single, cx₁] at this
-  have hSum₁ : neg LAct (listSumFact (bnum σ) (vRef 1 k)) ∈ Γ₁ := by
+  have hSum₁ : neg LAct (listSumFact (binNumeral σ) (vRef 1 k)) ∈ Γ₁ := by
     have := listSumFact_transport hnd₁ (mem_insert_of_mem' hSum : _ ∈ Γ₀)
     rwa [hs₁, finalCtx_single, cx₁] at this
   have hisR₁ : neg LAct (isRelFact (cTV k) (cTV R)) ∈ Γ₁ := by
@@ -7588,9 +7588,9 @@ lemma lnAtomTail_ok {tbl N N' B' Wd W T : V} (htbl : TableOK tbl N) (hC : CertTa
     rwa [finalCtx_single, cx₁, shiftIterV_neg (isFormula_isRelFact (cTV_semiterm_LAct 0 _) (cTV_semiterm_LAct 0 _)),
       shiftIterV_isRelFact (cTV_semiterm_LAct 0 _) (cTV_semiterm_LAct 0 _), termShiftIterV_cTV, termShiftIterV_cTV] at this
   have hshape : StepOK tbl E ((8 : ℕ) : V) Γ₁
-        (mkStep W c ?[cTV k, cTV R, vRef (i + 1 + sv + 1) k, ^&(i + sv + 1), vRef 1 k, bnum σ, ^&0]) ∧
-      ctxAfter Γ₁ (mkStep W c ?[cTV k, cTV R, vRef (i + 1 + sv + 1) k, ^&(i + sv + 1), vRef 1 k, bnum σ, ^&0]) =
-        insert (neg LAct (eqFactB (^&0) (bnum σ ^+ (𝟏 : V)))) Γ₁ := by
+        (mkStep W c ?[cTV k, cTV R, vRef (i + 1 + sv + 1) k, ^&(i + sv + 1), vRef 1 k, binNumeral σ, ^&0]) ∧
+      ctxAfter Γ₁ (mkStep W c ?[cTV k, cTV R, vRef (i + 1 + sv + 1) k, ^&(i + sv + 1), vRef 1 k, binNumeral σ, ^&0]) =
+        insert (neg LAct (eqFactB (^&0) (binNumeral σ ^+ (𝟏 : V)))) Γ₁ := by
     rcases hD with ⟨rfl, hD⟩ | ⟨rfl, hD⟩
     · have hD₁ : DossF Wd Γ₁ n (^rel k R v) (i + sv + 1) := by
         have := dossF_transport' hnd₁ (hD.mono (subset_insert' : Γ ⊆ Γ₀))
@@ -7598,7 +7598,7 @@ lemma lnAtomTail_ok {tbl N N' B' Wd W T : V} (htbl : TableOK tbl N) (hC : CertTa
       obtain ⟨hrel, _, hutv, _⟩ := dossF_rel htbl hW hWd hkR hv hD₁
       rw [show i + sv + 1 + 1 = i + 1 + sv + 1 by ring] at hrel hutv
       obtain ⟨ok, _, cx⟩ := cok_formulaLenRelCert htbl hC hWp hΓ₁s (cTV_semiterm_LAct 0 _) hEk (cTV_semiterm_LAct 0 _) hER
-        (isSemiterm_vRef _ _) hrv (by simp) hfsv1 (isSemiterm_vRef _ _) hr1 (isSemiterm_bnum_LAct 0 _) hbσ (by simp) hP.eFvar0
+        (isSemiterm_vRef _ _) hrv (by simp) hfsv1 (isSemiterm_vRef _ _) hr1 (isSemiterm_binNumeral_LAct 0 _) hbσ (by simp) hP.eFvar0
         hisR₁ hutv hrel hM₁ hSum₁ hlen₁
       exact ⟨ok, cx⟩
     · have hD₁ : DossF Wd Γ₁ n (^nrel k R v) (i + sv + 1) := by
@@ -7607,22 +7607,22 @@ lemma lnAtomTail_ok {tbl N N' B' Wd W T : V} (htbl : TableOK tbl N) (hC : CertTa
       obtain ⟨hrel, _, hutv, _⟩ := dossF_nrel htbl hW hWd hkR hv hD₁
       rw [show i + sv + 1 + 1 = i + 1 + sv + 1 by ring] at hrel hutv
       obtain ⟨ok, _, cx⟩ := cok_formulaLenNRelCert htbl hC hWp hΓ₁s (cTV_semiterm_LAct 0 _) hEk (cTV_semiterm_LAct 0 _) hER
-        (isSemiterm_vRef _ _) hrv (by simp) hfsv1 (isSemiterm_vRef _ _) hr1 (isSemiterm_bnum_LAct 0 _) hbσ (by simp) hP.eFvar0
+        (isSemiterm_vRef _ _) hrv (by simp) hfsv1 (isSemiterm_vRef _ _) hr1 (isSemiterm_binNumeral_LAct 0 _) hbσ (by simp) hP.eFvar0
         hisR₁ hutv hrel hM₁ hSum₁ hlen₁
       exact ⟨ok, cx⟩
   obtain ⟨ok₂, cx₂⟩ := hshape
-  set Γ₂ := insert (neg LAct (eqFactB (^&0) (bnum σ ^+ (𝟏 : V)))) Γ₁ with hΓ₂
+  set Γ₂ := insert (neg LAct (eqFactB (^&0) (binNumeral σ ^+ (𝟏 : V)))) Γ₁ with hΓ₂
   have hΓ₂s : IsFormulaSet LAct Γ₂ := by rw [← cx₂]; exact isFormulaSet_ctxAfter 8 htbl ok₂
   have ok₃ : StepOK tbl E ((8 : ℕ) : V) Γ₂ (sLemma (succFact σ) (succCode T σ)) := stepOK_sLemma hΓ₂s (lemmaOK_succ htblN σ)
   have cx₃ := ctxAfter_sLemma Γ₂ (succFact σ) (succCode T σ)
   set Γ₃ := insert (neg LAct (succFact σ)) Γ₂ with hΓ₃
   have hΓ₃s : IsFormulaSet LAct Γ₃ := by rw [← cx₃]; exact isFormulaSet_ctxAfter 8 htbl ok₃
-  obtain ⟨ok₄, _, cx₄⟩ := cok_eqTrans htbl hC hWp hΓ₃s (by simp) hP.eFvar0 (isSemiterm_bnum_succ σ) hbs (isSemiterm_bnum_LAct 0 _) hbσ1
+  obtain ⟨ok₄, _, cx₄⟩ := cok_eqTrans htbl hC hWp hΓ₃s (by simp) hP.eFvar0 (isSemiterm_binNumeral_succ σ) hbs (isSemiterm_binNumeral_LAct 0 _) hbσ1
     (by rw [hΓ₃, hΓ₂]; exact mem_insert_of_mem' mem_insert_self')
     (by rw [hΓ₃]; exact mem_insert_self')
-  set Γ₄ := insert (neg LAct (eqFactB (^&0) (bnum (σ + 1)))) Γ₃ with hΓ₄
+  set Γ₄ := insert (neg LAct (eqFactB (^&0) (binNumeral (σ + 1)))) Γ₃ with hΓ₄
   have hΓ₄s : IsFormulaSet LAct Γ₄ := by rw [← cx₄]; exact isFormulaSet_ctxAfter 8 htbl ok₄
-  obtain ⟨ok₅, _, cx₅⟩ := cok_congLenNum htbl hC hWp hΓ₄s (by simp) hfsv1 (by simp) hP.eFvar0 (isSemiterm_bnum_LAct 0 _) hbσ1
+  obtain ⟨ok₅, _, cx₅⟩ := cok_congLenNum htbl hC hWp hΓ₄s (by simp) hfsv1 (by simp) hP.eFvar0 (isSemiterm_binNumeral_LAct 0 _) hbσ1
     (by rw [hΓ₄]; exact mem_insert_self')
     (by rw [hΓ₄, hΓ₃, hΓ₂]; exact mem_insert_of_mem' (mem_insert_of_mem' (mem_insert_of_mem' hlen₁)))
   refine ⟨?_, ?_⟩
@@ -7645,7 +7645,7 @@ lemma lnAtomTail_ok {tbl N N' B' Wd W T : V} (htbl : TableOK tbl N) (hC : CertTa
 /-- The formula-level invariant. -/
 def FLenOK (tbl Wd W T n r : V) : Prop :=
   ∀ i y E Γ : V, LenFGraph W T n r i y → LenPre (formulaLen LAct r) n i E Γ → DossF Wd Γ n r i →
-    LenPost tbl E Γ y (lenFact (bnum (formulaLen LAct r)) (^&(i + shiftsV y)))
+    LenPost tbl E Γ y (lenFact (binNumeral (formulaLen LAct r)) (^&(i + shiftsV y)))
 
 set_option maxHeartbeats 4000000 in
 /-- **The formula length lists are applicable.** -/
@@ -7762,7 +7762,7 @@ theorem lenFGraph_ok {tbl N N' B' Wd W T : V} (htbl : TableOK tbl N) (hC : CertT
        hΓ₁⟩
     obtain ⟨okp, hfp⟩ := ihp _ yp E _ hyp hPp hDp₁
     have hΓ₂ : IsFormulaSet LAct (finalCtx (finalCtx Γ yq) yp) := finalCtx_isFormulaSet 8 htbl hΓ₁ okp
-    have hfq₂ : neg LAct (lenFact (bnum lq) (^&(i + 1 + shiftsV yq + shiftsV yp))) ∈ finalCtx (finalCtx Γ yq) yp :=
+    have hfq₂ : neg LAct (lenFact (binNumeral lq) (^&(i + 1 + shiftsV yq + shiftsV yp))) ∈ finalCtx (finalCtx Γ yq) yp :=
       lenFact_transport hndp hfq
     have hD₂ : DossF Wd (finalCtx (finalCtx Γ yq) yp) n (p ^⋏ q) (i + shiftsV yq + shiftsV yp) :=
       dossF_transport' hndp (dossF_transport' hndq hD)
@@ -7814,7 +7814,7 @@ theorem lenFGraph_ok {tbl N N' B' Wd W T : V} (htbl : TableOK tbl N) (hC : CertT
        hΓ₁⟩
     obtain ⟨okp, hfp⟩ := ihp _ yp E _ hyp hPp hDp₁
     have hΓ₂ : IsFormulaSet LAct (finalCtx (finalCtx Γ yq) yp) := finalCtx_isFormulaSet 8 htbl hΓ₁ okp
-    have hfq₂ : neg LAct (lenFact (bnum lq) (^&(i + 1 + shiftsV yq + shiftsV yp))) ∈ finalCtx (finalCtx Γ yq) yp :=
+    have hfq₂ : neg LAct (lenFact (binNumeral lq) (^&(i + 1 + shiftsV yq + shiftsV yp))) ∈ finalCtx (finalCtx Γ yq) yp :=
       lenFact_transport hndp hfq
     have hD₂ : DossF Wd (finalCtx (finalCtx Γ yq) yp) n (p ^⋎ q) (i + shiftsV yq + shiftsV yp) :=
       dossF_transport' hndp (dossF_transport' hndq hD)
@@ -7878,7 +7878,7 @@ theorem lenFGraph_ok {tbl N N' B' Wd W T : V} (htbl : TableOK tbl N) (hC : CertT
 offset `i` in a formula-set context whose cap `E` bounds the arity part (`2n + 13|r| + 8`) and the offset part
 (`i + 5|r| + 2`), the list is `ListOK` at cap 8, cut-admitting (`NoDrop'`, tags 0/2/7 only), introduces
 `shiftsV + 1 ≤ 2|r|` eigenvariables (one per node — NOT shift-free, the offsets move), has at most `14|r|`
-steps, and leaves `lenFact (bnum |r|) &(i + shifts)` — the numeral length in the graph position — in its
+steps, and leaves `lenFact (binNumeral |r|) &(i + shifts)` — the numeral length in the graph position — in its
 final context. -/
 theorem lenSteps_ok {tbl N N' B' Wd W T n r i E Γ : V} (htbl : TableOK tbl N) (hC : CertTable tbl)
     (htblN : NumTableOK T N' B') (hWd : Wd = walkPieces) (hWp : W = certPieces) (hr : IsSemiformula LAct n r)
@@ -7886,7 +7886,7 @@ theorem lenSteps_ok {tbl N N' B' Wd W T n r i E Γ : V} (htbl : TableOK tbl N) (
     (hD : DossF Wd Γ n r i) :
     ListOK tbl E ((8 : ℕ) : V) Γ (lenSteps W T n r i) ∧ NoDrop' (lenSteps W T n r i) ∧
     shiftsV (lenSteps W T n r i) + 1 ≤ 2 * formulaLen LAct r ∧ len (lenSteps W T n r i) ≤ 14 * formulaLen LAct r ∧
-    neg LAct (lenFact (bnum (formulaLen LAct r)) (^&(i + shiftsV (lenSteps W T n r i)))) ∈ finalCtx Γ (lenSteps W T n r i) := by
+    neg LAct (lenFact (binNumeral (formulaLen LAct r)) (^&(i + shiftsV (lenSteps W T n r i)))) ∈ finalCtx Γ (lenSteps W T n r i) := by
   have h := lenFGraph_ok htbl hC htblN hWd hWp hr
   unfold FLenOK at h
   obtain ⟨hok, hf⟩ := h i _ E Γ (lenSteps_graph hr) ⟨hE, hEi, hΓ⟩ hD
@@ -7915,7 +7915,7 @@ lemma NumTableOK.peq {tbl N B : V} (h : NumTableOK tbl N B) : formulaLen LAct (P
   exact hPeq
 
 lemma succ_fits {T N' B' L z : V} (htblN : NumTableOK T N' B') (hz : z ≤ L) :
-    formulaLen LAct (succFact z) ≤ lenQ B' L ∧ dlen TAct (succCode T z) ≤ lenD N' B' L := by
+    formulaLen LAct (succFact z) ≤ lenQ B' L ∧ proofLen TAct (succCode T z) ≤ lenD N' B' L := by
   have hz1 : ‖z + 1‖ ≤ ‖L + 1‖ := length_monotone (add_le_add hz (le_refl (1 : V)))
   have hE : 6 * ‖z + 1‖ + 3 ≤ cTE L := by
     unfold cTE
@@ -7923,7 +7923,7 @@ lemma succ_fits {T N' B' L z : V} (htblN : NumTableOK T N' B') (hz : z ≤ L) :
           add_le_add (le_trans (mul_le_mul_of_nonneg_left hz1 zero_le) (mul_le_mul_of_nonneg_right (by norm_num) zero_le)) (by norm_num)
       _ ≤ 2 * L + 12 * ‖L + 1‖ + 5 := by rw [add_assoc]; exact le_add_self
   refine ⟨formulaLen_succFact_le htblN.peq hE, ?_⟩
-  refine le_trans (dlen_succCode_le htblN z) ?_
+  refine le_trans (proofLen_succCode_le htblN z) ?_
   unfold lenD
   calc (‖z‖ + 1) * nodeCost N' B' (6 * ‖z + 1‖ + 3)
       ≤ (L + 1) * nodeCost N' B' (cTE L) :=
@@ -7933,7 +7933,7 @@ lemma succ_fits {T N' B' L z : V} (htblN : NumTableOK T N' B') (hz : z ≤ L) :
         mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left (le_trans (by norm_num) le_add_self) zero_le) zero_le
 
 lemma add_fits {T N' B' L a b : V} (htblN : NumTableOK T N' B') (hab : a + b ≤ L) :
-    formulaLen LAct (addFact a b) ≤ lenQ B' L ∧ dlen TAct (addCode T a b) ≤ lenD N' B' L := by
+    formulaLen LAct (addFact a b) ≤ lenQ B' L ∧ proofLen TAct (addCode T a b) ≤ lenD N' B' L := by
   have hab' : ‖a + b‖ ≤ ‖L‖ := length_monotone hab
   have hE : 12 * ‖a + b‖ + 3 ≤ cTE L := by
     unfold cTE
@@ -7941,15 +7941,15 @@ lemma add_fits {T N' B' L a b : V} (htblN : NumTableOK T N' B') (hab : a + b ≤
           add_le_add (mul_le_mul_of_nonneg_left (le_trans hab' (length_monotone le_self_add)) zero_le) (by norm_num)
       _ ≤ 2 * L + 12 * ‖L + 1‖ + 5 := by rw [add_assoc]; exact le_add_self
   refine ⟨formulaLen_addFact_le htblN.peq hE, ?_⟩
-  refine le_trans (dlen_addCode_le htblN a b) ?_
+  refine le_trans (proofLen_addCode_le htblN a b) ?_
   unfold lenD
   exact mul_le_mul (mul_le_mul (add_le_add (le_trans (length_le a) (le_trans le_self_add hab)) (le_refl 1))
     (add_le_add hab' (le_refl 2)) zero_le zero_le) (nodeCost_mono hE) zero_le zero_le
 
 lemma cTEq_fits {T N' B' L z : V} (htblN : NumTableOK T N' B') (hz : z ≤ L) :
-    formulaLen LAct (cTEqFact z) ≤ lenQ B' L ∧ dlen TAct (cTEqCode T z) ≤ lenD N' B' L := by
+    formulaLen LAct (cTEqFact z) ≤ lenQ B' L ∧ proofLen TAct (cTEqCode T z) ≤ lenD N' B' L := by
   refine ⟨le_trans (formulaLen_cTEqFact_le htblN.peq) (mul_le_mul_of_nonneg_left (cTE_mono hz) zero_le), ?_⟩
-  refine le_trans (dlen_cTEqCode_le htblN z) ?_
+  refine le_trans (proofLen_cTEqCode_le htblN z) ?_
   unfold lenD
   exact mul_le_mul (mul_le_mul (add_le_add hz (le_refl 1)) (add_le_add (length_monotone hz) (le_refl 2)) zero_le zero_le)
     (nodeCost_mono (cTE_mono hz)) zero_le zero_le
@@ -8172,8 +8172,8 @@ end lenCost
 **`lenSteps` LANDED** (Part 5): the term/vector fixpoint `LenT` (`lenT`/`lenV`) and the formula fixpoint
 `LenF` (`lenSteps W T n r i`, `T` the `NumSteps` table), NOT shift-free — one `formulaLenTotal`/`termLenTotal`
 eigenvariable per node and one `adjoinTotal` per vector entry, `shiftsV + 1 ≤ 2|r|`, `len ≤ 14|r|` — with
-`lenSteps_ok` (`ListOK` at cap 8, `NoDrop'`, `lenFact (bnum |r|) &(i + shiftsV (lenSteps …))` in the final
-context; the numeral in the GRAPH position, which `setLenInsertLe`/`dlenExs` consume; the offsets move, so
+`lenSteps_ok` (`ListOK` at cap 8, `NoDrop'`, `lenFact (binNumeral |r|) &(i + shiftsV (lenSteps …))` in the final
+context; the numeral in the GRAPH position, which `sequentLenInsertLe`/`proofLenExs` consume; the offsets move, so
 the consumer reads the root at `&(i + shiftsV …)`) and `costSum_lenSteps_le` (`Frag1`'s size discipline at
 `Q = B'·cTE |r|`, `D = (|r| + 1)(‖|r|‖ + 2)·nodeCost N' B' (cTE |r|)`, `14|r|` steps — cubic in `‖|r|‖`).
 The rows §4.7 asked for were APPENDED (index-stable): `congAdd` (cIdx 183, `x = x' → y = y' → x + y = x' + y'`),
@@ -8450,11 +8450,11 @@ lemma isUTermVec_takeLast {k n v : V} (hv : IsSemitermVec LAct k n v) : ∀ j �
 
 section nthChainFun
 
-/-- **Existence** (Σ₁ motive, offsets bounded by `B`; the potential `off + π₁ (descVecAux … j)` is CONSTANT along
+/-- **Existence** (Σ₁ motive, offsets bounded by `B`; the potential `off + π₁ (descriptionsAux … j)` is CONSTANT along
 the descent — the offset of the deeper sub-vector plus its count is the offset of this one plus this count). -/
 lemma nthCGraph_exists_bounded (W m : V) {n w : V} (hv : IsSemitermVec LAct n m w) {B : V} (hn : n ≤ B) :
     ∀ d, ∀ s ≤ B, ∀ j ≤ B, ∀ off ≤ B, s + j = n → d < j →
-      off + π₁ (descVecAux W m (descTVec W m n w) j) ≤ B → ∃ e y, NthCGraph W m w s j d off e y := by
+      off + π₁ (descriptionsAux W m (descTVec W m n w) j) ≤ B → ∃ e y, NthCGraph W m w s j d off e y := by
   intro d
   induction d using ISigma1.sigma1_succ_induction with
   | hP => definability
@@ -8474,13 +8474,13 @@ lemma nthCGraph_exists_bounded (W m : V) {n w : V} (hv : IsSemitermVec LAct n m 
       rw [nthFromEnd_eq (a := n - (j' + 1)) (by rw [len_descTVec W m hv.isUTerm, tsub_add_cancel_of_le (hsj ▸ le_add_self)]),
         nth_descTVec W m hv.isUTerm hlt]
     have hs' : n - (j' + 1) = s := by rw [← hsj, add_tsub_cancel_right]
-    have hpot' : off + 1 + descCountT W m w.[s] + π₁ (descVecAux W m (descTVec W m n w) j') ≤ B := by
-      have : π₁ (descVecAux W m (descTVec W m n w) (j' + 1)) =
-          π₁ (descVecAux W m (descTVec W m n w) j') + descCountT W m w.[s] + 1 := by
-        rw [descVecAux_succ, hnth, adjNode, pi₁_pair, hs']; rfl
+    have hpot' : off + 1 + descCountT W m w.[s] + π₁ (descriptionsAux W m (descTVec W m n w) j') ≤ B := by
+      have : π₁ (descriptionsAux W m (descTVec W m n w) (j' + 1)) =
+          π₁ (descriptionsAux W m (descTVec W m n w) j') + descCountT W m w.[s] + 1 := by
+        rw [descriptionsAux_succ, hnth, adjNode, pi₁_pair, hs']; rfl
       rw [this] at hpot
-      calc off + 1 + descCountT W m w.[s] + π₁ (descVecAux W m (descTVec W m n w) j')
-          = off + (π₁ (descVecAux W m (descTVec W m n w) j') + descCountT W m w.[s] + 1) := by ring
+      calc off + 1 + descCountT W m w.[s] + π₁ (descriptionsAux W m (descTVec W m n w) j')
+          = off + (π₁ (descriptionsAux W m (descTVec W m n w) j') + descCountT W m w.[s] + 1) := by ring
         _ ≤ B := hpot
     obtain ⟨e, y', hy'⟩ := ih (s + 1) (le_trans (by rw [← hsj]; exact add_le_add (le_refl s) (by simp)) hn)
       j' (le_trans le_self_add hj) (off + 1 + descCountT W m w.[s]) (le_trans le_self_add hpot')
@@ -8489,7 +8489,7 @@ lemma nthCGraph_exists_bounded (W m : V) {n w : V} (hv : IsSemitermVec LAct n m 
 
 lemma nthCGraph_exists (W m : V) {n w : V} (hv : IsSemitermVec LAct n m w) {s j d off : V} (hsj : s + j = n) (hd : d < j) :
     ∃ e y, NthCGraph W m w s j d off e y :=
-  nthCGraph_exists_bounded W m hv (B := s + j + off + π₁ (descVecAux W m (descTVec W m n w) j))
+  nthCGraph_exists_bounded W m hv (B := s + j + off + π₁ (descriptionsAux W m (descTVec W m n w) j))
     (by rw [← hsj]; exact le_trans le_self_add le_self_add) d s
     (le_trans (le_trans le_self_add le_self_add) le_self_add) j (le_trans (le_trans le_add_self le_self_add) le_self_add)
     off (le_trans le_add_self le_self_add) hsj hd (by rw [add_assoc (s + j)]; exact le_add_self)
@@ -9213,14 +9213,14 @@ lemma subImg_func {n m k f v μ : V} (hw : μ = 0 → IsSemitermVec LAct n m w) 
 /-- The image count of a function node: the image vector's count plus one. -/
 lemma subImgCount_func {n m k f v μ : V} (hw : μ = 0 → IsSemitermVec LAct n m w) (hkf : LAct.IsFunc k f) (hv : IsSemitermVec LAct k n v)
     (W : V) : subImgCount W w m μ n (^func k f v) =
-      π₁ (descVecAux W (subAr m μ n) (descTVec W (subAr m μ n) k (subImgVec w μ k v)) k) + 1 := by
+      π₁ (descriptionsAux W (subAr m μ n) (descTVec W (subAr m μ n) k (subImgVec w μ k v)) k) + 1 := by
   rw [subImgCount, subImg_func hw hkf hv, descCountT_func W _ hkf (isSemitermVec_subImgVec hw hv).isUTerm]
 
 /-- The image vector's count grows by the image entry's count plus one. -/
 lemma subImgVec_count_succ {n m k v μ : V} (hw : μ = 0 → IsSemitermVec LAct n m w) (hv : IsSemitermVec LAct k n v) (W : V)
     {m' : V} (hm : m' + 1 ≤ k) :
-    π₁ (descVecAux W (subAr m μ n) (descTVec W (subAr m μ n) k (subImgVec w μ k v)) (m' + 1)) =
-      π₁ (descVecAux W (subAr m μ n) (descTVec W (subAr m μ n) k (subImgVec w μ k v)) m') +
+    π₁ (descriptionsAux W (subAr m μ n) (descTVec W (subAr m μ n) k (subImgVec w μ k v)) (m' + 1)) =
+      π₁ (descriptionsAux W (subAr m μ n) (descTVec W (subAr m μ n) k (subImgVec w μ k v)) m') +
         subImgCount W w m μ n v.[k - (m' + 1)] + 1 := by
   have hvs := isSemitermVec_subImgVec hw hv
   have hk0 : (0 : V) < k := lt_of_lt_of_le (lt_of_lt_of_le _root_.zero_lt_one le_add_self) hm
@@ -9229,7 +9229,7 @@ lemma subImgVec_count_succ {n m k v μ : V} (hw : μ = 0 → IsSemitermVec LAct 
       descT W (subAr m μ n) (subImgVec w μ k v).[k - (m' + 1)] := by
     rw [nthFromEnd_eq (a := k - (m' + 1)) (by rw [len_descTVec W _ hvs.isUTerm, tsub_add_cancel_of_le hm]),
       nth_descTVec W _ hvs.isUTerm hlt]
-  rw [descVecAux_succ, hnth, adjNode, pi₁_pair, nth_subImgVec hw hv hlt, subImgCount]; rfl
+  rw [descriptionsAux_succ, hnth, adjNode, pi₁_pair, nth_subImgVec hw hv hlt, subImgCount]; rfl
 
 section subTermFun
 
@@ -9245,8 +9245,8 @@ lemma subTGraph_exists_bounded (W iw μ B : V) {n m w : V} (hw : μ = 0 → IsSe
   · intro k f v hkf hv ih i hi j hj hiB hjB
     rw [descCountT_func W n hkf hv.isUTerm] at hiB
     rw [subImgCount_func hw hkf hv] at hjB
-    have key : ∀ m' ≤ k, ∀ i ≤ B, ∀ j ≤ B, i + π₁ (descVecAux W n (descTVec W n k v) m') ≤ B →
-        j + π₁ (descVecAux W (subAr m μ n) (descTVec W (subAr m μ n) k (subImgVec w μ k v)) m') ≤ B →
+    have key : ∀ m' ≤ k, ∀ i ≤ B, ∀ j ≤ B, i + π₁ (descriptionsAux W n (descTVec W n k v) m') ≤ B →
+        j + π₁ (descriptionsAux W (subAr m μ n) (descTVec W (subAr m μ n) k (subImgVec w μ k v)) m') ≤ B →
         ∃ yv, SubVGraph W w iw m μ n k v m' i j yv := by
       intro m'
       induction m' using ISigma1.sigma1_succ_induction with
@@ -9262,9 +9262,9 @@ lemma subTGraph_exists_bounded (W iw μ B : V) {n m w : V} (hw : μ = 0 → IsSe
             nth_descTVec W n hv.isUTerm hlt]
         have hnth' : nthFromEnd v m' = v.[k - (m' + 1)] :=
           nthFromEnd_eq (a := k - (m' + 1)) (by rw [hvlen, tsub_add_cancel_of_le hm])
-        have hC : π₁ (descVecAux W n (descTVec W n k v) (m' + 1)) =
-            π₁ (descVecAux W n (descTVec W n k v) m') + descCountT W n v.[k - (m' + 1)] + 1 := by
-          rw [descVecAux_succ, hnth, adjNode, pi₁_pair]; rfl
+        have hC : π₁ (descriptionsAux W n (descTVec W n k v) (m' + 1)) =
+            π₁ (descriptionsAux W n (descTVec W n k v) m') + descCountT W n v.[k - (m' + 1)] + 1 := by
+          rw [descriptionsAux_succ, hnth, adjNode, pi₁_pair]; rfl
         rw [hC] at hiB
         rw [subImgVec_count_succ hw hv W hm] at hjB
         have hiB' : i + 1 + descCountT W n v.[k - (m' + 1)] ≤ B :=
@@ -9353,8 +9353,8 @@ lemma subVGraph_unique {W w iw m μ n k v : V} (hv : IsSemitermVec LAct k n v) :
 set_option maxHeartbeats 4000000 in
 /-- **Existence at the vector level** (the source and image potentials). -/
 lemma subVGraph_exists_bounded (W iw μ B : V) {n m w : V} (hw : μ = 0 → IsSemitermVec LAct n m w) {k v : V} (hv : IsSemitermVec LAct k n v) :
-    ∀ m' ≤ k, ∀ i ≤ B, ∀ j ≤ B, i + π₁ (descVecAux W n (descTVec W n k v) m') ≤ B →
-      j + π₁ (descVecAux W (subAr m μ n) (descTVec W (subAr m μ n) k (subImgVec w μ k v)) m') ≤ B →
+    ∀ m' ≤ k, ∀ i ≤ B, ∀ j ≤ B, i + π₁ (descriptionsAux W n (descTVec W n k v) m') ≤ B →
+      j + π₁ (descriptionsAux W (subAr m μ n) (descTVec W (subAr m μ n) k (subImgVec w μ k v)) m') ≤ B →
       ∃ y, SubVGraph W w iw m μ n k v m' i j y := by
   have hvlen : len v = k := hv.lh
   intro m'
@@ -9370,9 +9370,9 @@ lemma subVGraph_exists_bounded (W iw μ B : V) {n m w : V} (hw : μ = 0 → IsSe
         nth_descTVec W n hv.isUTerm hlt]
     have hnth' : nthFromEnd v m' = v.[k - (m' + 1)] :=
       nthFromEnd_eq (a := k - (m' + 1)) (by rw [hvlen, tsub_add_cancel_of_le hm])
-    have hC : π₁ (descVecAux W n (descTVec W n k v) (m' + 1)) =
-        π₁ (descVecAux W n (descTVec W n k v) m') + descCountT W n v.[k - (m' + 1)] + 1 := by
-      rw [descVecAux_succ, hnth, adjNode, pi₁_pair]; rfl
+    have hC : π₁ (descriptionsAux W n (descTVec W n k v) (m' + 1)) =
+        π₁ (descriptionsAux W n (descTVec W n k v) m') + descCountT W n v.[k - (m' + 1)] + 1 := by
+      rw [descriptionsAux_succ, hnth, adjNode, pi₁_pair]; rfl
     rw [hC] at hiB
     rw [subImgVec_count_succ hw hv W hm] at hjB
     have hiB' : i + 1 + descCountT W n v.[k - (m' + 1)] ≤ B :=
@@ -9394,13 +9394,13 @@ lemma subVGraph_exists_bounded (W iw μ B : V) {n m w : V} (hw : μ = 0 → IsSe
 lemma subVGraph_exists (W iw μ : V) {n m w : V} (hw : μ = 0 → IsSemitermVec LAct n m w) {k v : V} (hv : IsSemitermVec LAct k n v)
     {m' : V} (hm : m' ≤ k) (i j : V) : ∃ y, SubVGraph W w iw m μ n k v m' i j y :=
   subVGraph_exists_bounded W iw μ
-    (i + j + π₁ (descVecAux W n (descTVec W n k v) m') + π₁ (descVecAux W (subAr m μ n) (descTVec W (subAr m μ n) k (subImgVec w μ k v)) m'))
+    (i + j + π₁ (descriptionsAux W n (descTVec W n k v) m') + π₁ (descriptionsAux W (subAr m μ n) (descTVec W (subAr m μ n) k (subImgVec w μ k v)) m'))
     hw hv m' hm i (le_trans (le_trans le_self_add le_self_add) le_self_add) j (le_trans (le_trans le_add_self le_self_add) le_self_add)
     (le_trans (add_le_add le_self_add (le_refl _)) le_self_add)
-    (by rw [show i + j + π₁ (descVecAux W n (descTVec W n k v) m') +
-          π₁ (descVecAux W (subAr m μ n) (descTVec W (subAr m μ n) k (subImgVec w μ k v)) m') =
-          j + π₁ (descVecAux W (subAr m μ n) (descTVec W (subAr m μ n) k (subImgVec w μ k v)) m') +
-          (i + π₁ (descVecAux W n (descTVec W n k v) m')) by ring]
+    (by rw [show i + j + π₁ (descriptionsAux W n (descTVec W n k v) m') +
+          π₁ (descriptionsAux W (subAr m μ n) (descTVec W (subAr m μ n) k (subImgVec w μ k v)) m') =
+          j + π₁ (descriptionsAux W (subAr m μ n) (descTVec W (subAr m μ n) k (subImgVec w μ k v)) m') +
+          (i + π₁ (descriptionsAux W n (descTVec W n k v) m')) by ring]
         exact le_self_add)
 
 lemma subVGraph_existsUnique_total (W w iw m μ n k v m' i j : V) :
@@ -10195,11 +10195,11 @@ the mode-`0` vector pass on the symbol's argument vector. -/
 section subFormulaBuilders
 
 /-- The walk of `qVec w` (length `n + 1`, arity `m + 1`), as the pair `⟪count, steps⟫`. -/
-noncomputable def qWalkP (Wd m n w : V) : V := descVecAux Wd (m + 1) (descTVec Wd (m + 1) (n + 1) (qVec LAct w)) (n + 1)
+noncomputable def qWalkP (Wd m n w : V) : V := descriptionsAux Wd (m + 1) (descTVec Wd (m + 1) (n + 1) (qVec LAct w)) (n + 1)
 noncomputable def qWalkPDef : 𝚺₁.Semisentence 5 := .mkSigma
-  “y Wd m n w. ∃ u, !(qVecGraph LAct) u w ∧ ∃ DT, !descTVecDef DT Wd (m + 1) (n + 1) u ∧ !descVecAuxDef y Wd (m + 1) DT (n + 1)”
+  “y Wd m n w. ∃ u, !(qVecGraph LAct) u w ∧ ∃ DT, !descTVecDef DT Wd (m + 1) (n + 1) u ∧ !descriptionsAuxDef y Wd (m + 1) DT (n + 1)”
 instance qWalkP_defined : 𝚺₁-Function₄ (qWalkP : V → V → V → V → V) via qWalkPDef := .mk
-  fun v ↦ by simp [qWalkPDef, qWalkP, qVec.defined.iff, descTVec_defined.iff, descVecAux_defined.iff]
+  fun v ↦ by simp [qWalkPDef, qWalkP, qVec.defined.iff, descTVec_defined.iff, descriptionsAux_defined.iff]
 instance qWalkP_definable : 𝚺₁-Function₄ (qWalkP : V → V → V → V → V) := qWalkP_defined.to_definable
 
 /-- A constant node: `substsVerumCert/substsFalsumCert [⟨w⟩, &i, &j]`. -/
@@ -11324,18 +11324,18 @@ end subFExists
 
 /-! ### 6.4 Applicability of the formula pass: `certSubst_ok`
 
-Helpers: the vector walk is applicable at ANY length (`descVecAux_ok'`, the `k ≤ 2` of `descVecAux_ok` was only a
+Helpers: the vector walk is applicable at ANY length (`descriptionsAux_ok'`, the `k ≤ 2` of `descriptionsAux_ok` was only a
 cap convenience), a freshly walked vector has its dossier at offset `0`, the walk of the last `n` entries of
 `qVec w` IS the walk of `termBShiftVec n w`, `qVecIterV` commutes with `qVec`, and the fact transports. -/
 
 section subFOKHelpers
 
 /-- **The vector walk is applicable at any length** (cap `E ≥ 2n + 2k + 2Σ + 8`). -/
-theorem descVecAux_ok' {tbl N W n k v : V} (htbl : TableOK tbl N) (hW : WalkTable tbl) (hWp : W = walkPieces)
+theorem descriptionsAux_ok' {tbl N W n k v : V} (htbl : TableOK tbl N) (hW : WalkTable tbl) (hWp : W = walkPieces)
     (hv : IsSemitermVec LAct k n v) {E : V} (hE : 2 * n + 2 * k + 2 * listSum (termLenVec LAct k v) + 8 ≤ E) :
     ∀ j ≤ k, IsUTermVec LAct j (takeLast v j) ∧
-      π₁ (descVecAux W n (descTVec W n k v) j) ≤ 2 * listSum (termLenVec LAct j (takeLast v j)) ∧
-      ∀ Γ, IsFormulaSet LAct Γ → VecFacts tbl E W n j Γ (descVecAux W n (descTVec W n k v) j) := by
+      π₁ (descriptionsAux W n (descTVec W n k v) j) ≤ 2 * listSum (termLenVec LAct j (takeLast v j)) ∧
+      ∀ Γ, IsFormulaSet LAct Γ → VecFacts tbl E W n j Γ (descriptionsAux W n (descTVec W n k v) j) := by
   have ih : ∀ i < k, TermOK tbl W n v.[i] := fun i hi ↦ termOK_of_isSemiterm htbl hW hWp n _ (hv.nth hi)
   intro j
   induction j using ISigma1.pi1_succ_induction with
@@ -11343,7 +11343,7 @@ theorem descVecAux_ok' {tbl N W n k v : V} (htbl : TableOK tbl N) (hW : WalkTabl
   | zero =>
     intro _
     refine ⟨by simp, by simp [nilNode], fun Γ hΓ ↦ ?_⟩
-    rw [descVecAux_zero]
+    rw [descriptionsAux_zero]
     have hE1 : 2 * n + 1 ≤ E :=
       calc 2 * n + 1 ≤ 2 * n + 1 + (2 * k + 2 * listSum (termLenVec LAct k v) + 7) := le_self_add
         _ = 2 * n + 2 * k + 2 * listSum (termLenVec LAct k v) + 8 := by ring
@@ -11382,30 +11382,30 @@ theorem descVecAux_ok' {tbl N W n k v : V} (htbl : TableOK tbl N) (hW : WalkTabl
       rw [takeLast_succ_of_lt hjk, hvlen]
     refine ⟨?_, ?_, fun Γ hΓ ↦ ?_⟩
     · rw [htake]; exact hU.adjoin ht.isUTerm
-    · rw [descVecAux_succ, hnth, htake, termLenVec_cons ht.isUTerm hU, listSum_adjoin, mul_add]
-      have hC : π₁ (adjNode W n j (descT W n v.[k - (j + 1)]) (descVecAux W n (descTVec W n k v) j)) =
-          π₁ (descVecAux W n (descTVec W n k v) j) + π₁ (descT W n v.[k - (j + 1)]) + 1 := by simp [adjNode]
+    · rw [descriptionsAux_succ, hnth, htake, termLenVec_cons ht.isUTerm hU, listSum_adjoin, mul_add]
+      have hC : π₁ (adjNode W n j (descT W n v.[k - (j + 1)]) (descriptionsAux W n (descTVec W n k v) j)) =
+          π₁ (descriptionsAux W n (descTVec W n k v) j) + π₁ (descT W n v.[k - (j + 1)]) + 1 := by simp [adjNode]
       rw [hC, add_assoc, add_comm (2 * termLen LAct v.[k - (j + 1)])]
       exact add_le_add hcv hcnt
-    · rw [descVecAux_succ, hnth]
+    · rw [descriptionsAux_succ, hnth]
       exact adjNode_ok htbl hW hWp hEadj hTF hΓ (hF Γ hΓ)
 
 /-- A freshly walked vector has its dossier at offset `0` (for a non-dropping walk). -/
-lemma dossV_of_walk {W Γ n k v j : V} (hnd : NoDrop (π₂ (descVecAux W n (descTVec W n k v) j))) :
-    DossV W (finalCtx Γ (π₂ (descVecAux W n (descTVec W n k v) j))) n k v j 0 := by
+lemma dossV_of_walk {W Γ n k v j : V} (hnd : NoDrop (π₂ (descriptionsAux W n (descTVec W n k v) j))) :
+    DossV W (finalCtx Γ (π₂ (descriptionsAux W n (descTVec W n k v) j))) n k v j 0 := by
   intro f hf
   rw [shiftIterV_zero]
   exact finalCtx_mono hnd (fun x hx ↦ by simp at hx) hf
 
 /-- The walk of the last `j ≤ n` entries of `qVec w` is the walk of the last `j` entries of `termBShiftVec n w`. -/
-lemma descVecAux_qVec_tail (W a : V) {n m w : V} (hw : IsSemitermVec LAct n m w) :
-    ∀ j ≤ n, descVecAux W a (descTVec W a (n + 1) (qVec LAct w)) j = descVecAux W a (descTVec W a n (termBShiftVec LAct n w)) j := by
+lemma descriptionsAux_qVec_tail (W a : V) {n m w : V} (hw : IsSemitermVec LAct n m w) :
+    ∀ j ≤ n, descriptionsAux W a (descTVec W a (n + 1) (qVec LAct w)) j = descriptionsAux W a (descTVec W a n (termBShiftVec LAct n w)) j := by
   have hq : IsUTermVec LAct (n + 1) (qVec LAct w) := hw.qVec.isUTerm
   have hb : IsUTermVec LAct n (termBShiftVec LAct n w) := hw.termBShiftVec.isUTerm
   intro j
   induction j using ISigma1.pi1_succ_induction with
   | hP => definability
-  | zero => intro _; rw [descVecAux_zero, descVecAux_zero]
+  | zero => intro _; rw [descriptionsAux_zero, descriptionsAux_zero]
   | succ j ih =>
     intro hj
     have hn0 : (0 : V) < n := lt_of_lt_of_le (lt_of_lt_of_le _root_.zero_lt_one le_add_self) hj
@@ -11419,7 +11419,7 @@ lemma descVecAux_qVec_tail (W a : V) {n m w : V} (hw : IsSemitermVec LAct n m w)
         nth_descTVec W a hb hlt]
     have h3 : (qVec LAct w).[n + 1 - (j + 1)] = (termBShiftVec LAct n w).[n - (j + 1)] := by
       rw [show n + 1 - (j + 1) = n - (j + 1) + 1 by rw [tsub_add_eq_add_tsub hj], qVec, hw.lh, nth_adjoin_succ]
-    rw [descVecAux_succ, descVecAux_succ, h1, h2, h3, ih (le_trans le_self_add hj)]
+    rw [descriptionsAux_succ, descriptionsAux_succ, h1, h2, h3, ih (le_trans le_self_add hj)]
 
 /-- `qVecIterV (qVec w) e = qVecIterV w (e + 1)`. -/
 lemma qVecIterV_qVec (w : V) : ∀ e, qVecIterV LAct (qVec LAct w) e = qVecIterV LAct w (e + 1) := by
@@ -11991,7 +11991,7 @@ theorem subFGraph_ok {tbl N : V} (htbl : TableOK tbl N) (hC : CertTable tbl) {Wd
     have hEm := hP.hEm
     -- the walk of `qVec w`
     have hEw : 2 * (m + 1) + 2 * (n + 1) + 2 * S1 + 8 ≤ E := le_trans (add_le_add (le_refl _) (by norm_num : (8 : V) ≤ 9)) hAr1
-    obtain ⟨_, hcu, hVF⟩ := descVecAux_ok' htbl hW hWd hq hEw (n + 1) le_rfl
+    obtain ⟨_, hcu, hVF⟩ := descriptionsAux_ok' htbl hW hWd hq hEw (n + 1) le_rfl
     have htlq : takeLast (qVec LAct w) (n + 1) = qVec LAct w := by
       have := takeLast_len_self (qVec LAct w); rwa [hq.lh] at this
     rw [htlq] at hcu
@@ -12000,7 +12000,7 @@ theorem subFGraph_ok {tbl N : V} (htbl : TableOK tbl N) (hC : CertTable tbl) {Wd
     have okU' : ListOK tbl E ((8 : ℕ) : V) Γ (π₂ (qWalkP Wd m n w)) := okU
     have ndU' : NoDrop (π₂ (qWalkP Wd m n w)) := ndU
     have hoU' : HornOnly (π₂ (qWalkP Wd m n w)) :=
-      hornOnly_descVecAux hWd hq (fun i hi ↦ by have := hornOnly_describeT hWd (m + 1) _ (hq.nth hi); rwa [describeT] at this) (n + 1) le_rfl
+      hornOnly_descriptionsAux hWd hq (fun i hi ↦ by have := hornOnly_describeT hWd (m + 1) _ (hq.nth hi); rwa [describeT] at this) (n + 1) le_rfl
     have hshU : shiftsV (π₂ (qWalkP Wd m n w)) = π₁ (qWalkP Wd m n w) := shU
     have hDu : DossV Wd (finalCtx Γ (π₂ (qWalkP Wd m n w))) (m + 1) (n + 1) (qVec LAct w) (n + 1) 0 := dossV_of_walk ndU
     set cu := π₁ (qWalkP Wd m n w) with hcu_def
@@ -12025,7 +12025,7 @@ theorem subFGraph_ok {tbl N : V} (htbl : TableOK tbl N) (hC : CertTable tbl) {Wd
     rw [cTV_zero] at hbz
     have hDtail' : DossV Wd (finalCtx Γ Lu) (m + 1) n (termBShiftVec LAct n w) n 2 := by
       unfold DossV at hDtail ⊢
-      rwa [← descVecAux_qVec_tail Wd (m + 1) hw n le_rfl]
+      rwa [← descriptionsAux_qVec_tail Wd (m + 1) hw n le_rfl]
     -- the mode-`1` pass of `w` against the tail of `qVec w`
     have hPreB : SubPre (2 * listSum (termLenVec LAct n (takeLast w n)) + 1)
         (2 * listSum (termLenVec LAct n (takeLast (subImgVec w 1 n w) n)) + 1) m (iw + cu) 2 E (finalCtx Γ Lu) := by
@@ -12218,7 +12218,7 @@ theorem subFGraph_ok {tbl N : V} (htbl : TableOK tbl N) (hC : CertTable tbl) {Wd
     have hEm := hP.hEm
     -- the walk of `qVec w`
     have hEw : 2 * (m + 1) + 2 * (n + 1) + 2 * S1 + 8 ≤ E := le_trans (add_le_add (le_refl _) (by norm_num : (8 : V) ≤ 9)) hAr1
-    obtain ⟨_, hcu, hVF⟩ := descVecAux_ok' htbl hW hWd hq hEw (n + 1) le_rfl
+    obtain ⟨_, hcu, hVF⟩ := descriptionsAux_ok' htbl hW hWd hq hEw (n + 1) le_rfl
     have htlq : takeLast (qVec LAct w) (n + 1) = qVec LAct w := by
       have := takeLast_len_self (qVec LAct w); rwa [hq.lh] at this
     rw [htlq] at hcu
@@ -12227,7 +12227,7 @@ theorem subFGraph_ok {tbl N : V} (htbl : TableOK tbl N) (hC : CertTable tbl) {Wd
     have okU' : ListOK tbl E ((8 : ℕ) : V) Γ (π₂ (qWalkP Wd m n w)) := okU
     have ndU' : NoDrop (π₂ (qWalkP Wd m n w)) := ndU
     have hoU' : HornOnly (π₂ (qWalkP Wd m n w)) :=
-      hornOnly_descVecAux hWd hq (fun i hi ↦ by have := hornOnly_describeT hWd (m + 1) _ (hq.nth hi); rwa [describeT] at this) (n + 1) le_rfl
+      hornOnly_descriptionsAux hWd hq (fun i hi ↦ by have := hornOnly_describeT hWd (m + 1) _ (hq.nth hi); rwa [describeT] at this) (n + 1) le_rfl
     have hshU : shiftsV (π₂ (qWalkP Wd m n w)) = π₁ (qWalkP Wd m n w) := shU
     have hDu : DossV Wd (finalCtx Γ (π₂ (qWalkP Wd m n w))) (m + 1) (n + 1) (qVec LAct w) (n + 1) 0 := dossV_of_walk ndU
     set cu := π₁ (qWalkP Wd m n w) with hcu_def
@@ -12252,7 +12252,7 @@ theorem subFGraph_ok {tbl N : V} (htbl : TableOK tbl N) (hC : CertTable tbl) {Wd
     rw [cTV_zero] at hbz
     have hDtail' : DossV Wd (finalCtx Γ Lu) (m + 1) n (termBShiftVec LAct n w) n 2 := by
       unfold DossV at hDtail ⊢
-      rwa [← descVecAux_qVec_tail Wd (m + 1) hw n le_rfl]
+      rwa [← descriptionsAux_qVec_tail Wd (m + 1) hw n le_rfl]
     -- the mode-`1` pass of `w` against the tail of `qVec w`
     have hPreB : SubPre (2 * listSum (termLenVec LAct n (takeLast w n)) + 1)
         (2 * listSum (termLenVec LAct n (takeLast (subImgVec w 1 n w) n)) + 1) m (iw + cu) 2 E (finalCtx Γ Lu) := by
@@ -12493,7 +12493,7 @@ lemma listSum_termLenVec_fvec : listSum (termLenVec LAct 1 (fvec : V)) = 1 := by
   rw [this, listSum_adjoin, termLen_fvar, termLenVec_nil, listSum_nil]; simp
 
 /-- The walk of `fvec` at arity `0`. -/
-noncomputable def freeWalk (Wd : V) : V := descVecAux Wd 0 (descTVec Wd 0 1 fvec) 1
+noncomputable def freeWalk (Wd : V) : V := descriptionsAux Wd 0 (descTVec Wd 0 1 fvec) 1
 /-- Its eigenvariable count (`= 2`). -/
 noncomputable def freeCw (Wd : V) : V := π₁ (freeWalk Wd)
 /-- The shift count of the substitution pass. -/
@@ -12548,13 +12548,13 @@ theorem certFree_ok {tbl N Wd W p ip isp ifp E Γ Q L : V} (htbl : TableOK tbl N
   -- the walk of `fvec`
   have hEw : 2 * 0 + 2 * 1 + 2 * listSum (termLenVec LAct 1 (fvec : V)) + 8 ≤ E :=
     le_trans (add_le_add (le_refl _) (by norm_num : (8 : V) ≤ 9)) hP.hE0
-  obtain ⟨_, hcu, hVF⟩ := descVecAux_ok' htbl hW hWd hw hEw 1 le_rfl
+  obtain ⟨_, hcu, hVF⟩ := descriptionsAux_ok' htbl hW hWd hw hEw 1 le_rfl
   rw [htl, hS1] at hcu
   obtain ⟨okU, ndU, shU, _⟩ := hVF Γ hΓ
   have hDu : DossV Wd (finalCtx Γ (π₂ (freeWalk Wd))) 0 1 fvec 1 0 := dossV_of_walk ndU
   have hoU : HornOnly (π₂ (freeWalk Wd)) :=
-    hornOnly_descVecAux hWd hw (fun i hi ↦ by have := hornOnly_describeT hWd 0 _ (hw.nth hi); rwa [describeT] at this) 1 le_rfl
-  obtain ⟨_, hlU⟩ := len_descVecAux_le hw (fun i hi ↦ len_describeT_le Wd 0 _ (hw.nth hi)) 1 le_rfl
+    hornOnly_descriptionsAux hWd hw (fun i hi ↦ by have := hornOnly_describeT hWd 0 _ (hw.nth hi); rwa [describeT] at this) 1 le_rfl
+  obtain ⟨_, hlU⟩ := len_descriptionsAux_le hw (fun i hi ↦ len_describeT_le Wd 0 _ (hw.nth hi)) 1 le_rfl
   rw [htl, hS1] at hlU
   set cw := freeCw Wd with hcw_def
   set Lu := π₂ (freeWalk Wd) with hLu_def
@@ -12758,7 +12758,7 @@ lemma len_qWalkP_le {B n m w Wd : V} (hw : IsSemitermVec LAct n m w) (h : SubstI
   have hinv : SubstInv LAct B (qVecIterV LAct w (e + 1)) := substInv_qVecIterV hw h (e + 1)
   have htl : takeLast (qVecIterV LAct w (e + 1)) (n + e + 1) = qVecIterV LAct w (e + 1) := by
     rw [← hv.lh]; exact takeLast_len_self _
-  obtain ⟨_, hl⟩ := len_descVecAux_le hv (fun i hi ↦ len_describeT_le Wd _ _ (hv.nth hi)) (n + e + 1) le_rfl
+  obtain ⟨_, hl⟩ := len_descriptionsAux_le hv (fun i hi ↦ len_describeT_le Wd _ _ (hv.nth hi)) (n + e + 1) le_rfl
   rw [htl] at hl
   unfold qWalkP
   rw [← qVecIterV_succ]

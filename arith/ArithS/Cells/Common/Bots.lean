@@ -10,7 +10,7 @@ Consolidation stage 2 (`Research/Notes/ROUTE_B_CELLS_MAP.md`, 2026-09-24). Every
 unchanged (names, statements, definition bodies) out of `Cells/DupocMirror`, `Cells/KhatCells`,
 `Cells/PositiveCells` and `Cells/FlipCells`:
 
-1. **Mirror in every model** (`MirrorV`, `cast_Mirror`, `swapcode/dnum/dU/dW_MirrorV`) and its closed
+1. **Mirror in every model** (`MirrorV`, `cast_Mirror`, `transposeCode/canonical/revalueU/revalueW_MirrorV`) and its closed
    description term `TM` (`val_TM_V`, `quote_emb_TM`). The sim step and the copy lemmas stay with the
    probers (`Cells/DupocMirror` until stage 4).
 2. **TitForTatBot in every model**: the `Tft` block (`TftV`/`TftTV`, `TTft`, the canonical-code facts,
@@ -22,14 +22,14 @@ unchanged (names, statements, definition bodies) out of `Cells/DupocMirror`, `Ce
    description hypotheses and values.
 4. **The generic engine searcher** `SV g a k := pSearch k ⌜g⌝ (pConst a) (pConst (1 - a))` with its
    `variable (g) (a)` block kept verbatim (binder names and order — the `rfl`-bridges downstream depend
-   on it): `innerS`, `swapcode_SV`, the canonical triple `gS/pS/qS/uS/wS`, `dnum/dU/dW_SV`, the tower
+   on it): `innerS`, `transposeCode_SV`, the canonical triple `gS/pS/qS/uS/wS`, `canonical/revalueU/revalueW_SV`, the tower
    `TS`, `hX/hU/hW_SV`, the value reconstructions; then `desc_SV`/`descT_SV`.
 5. **The explicit engine templates** `gDu/gCu/gW/gWT` and the bot-wrapped searcher's tower `TBS`
    (`termSubst_TBS`, `hU/hW_botSV`, `desc_botSV`/`descT_botSV`). The engine-code bridges
-   `pcode_DupocBot_SV`/`pcode_CupodBot_SV`/`pcode_WaryBot_SV` stay in `Cells/PositiveCells` (they need
-   the ℕ-branch's `pcode_*` lemmas). The bridges `DimcidV_eq_SV`/`CimcicV_eq_SV` live next to
+   `progCode_DupocBot_SV`/`progCode_CupodBot_SV`/`progCode_WaryBot_SV` stay in `Cells/PositiveCells` (they need
+   the ℕ-branch's `progCode_*` lemmas). The bridges `DimcidV_eq_SV`/`CimcicV_eq_SV` live next to
    `DimcidV`/`CimcicV` (`Cells/DIMCID`, `Cells/CIMCIC`); `DupocV`/`CupodV` are NOT `SV` instances
-   (hand template `guardTemplate a` vs `tmpl (.plays .opp .self _)`, `Code.lean`) — never merge them.
+   (hand template `guardTemplate a` vs `template (.plays .opp .self _)`, `Code.lean`) — never merge them.
 -/
 
 set_option linter.constructorNameAsVariable false
@@ -57,34 +57,34 @@ lemma cast_Mirror : ((Mirror : ℕ) : V) = MirrorV := by
   unfold Mirror MirrorV
   rw [cast_pSim, cast_pOpp, cast_pSelf]
 
-theorem swapcode_MirrorV : swapcode (MirrorV : V) = MirrorV := by
-  unfold MirrorV swapcode; simp
+theorem transposeCode_MirrorV : transposeCode (MirrorV : V) = MirrorV := by
+  unfold MirrorV transposeCode; simp
 
-lemma dnum_MirrorV : dnum (MirrorV : V) = MirrorV := dnum_of_eq swapcode_MirrorV.symm
+lemma canonical_MirrorV : canonical (MirrorV : V) = MirrorV := canonical_of_eq transposeCode_MirrorV.symm
 
-lemma dU_MirrorV : dU (MirrorV : V) = numeral 0 := by
-  unfold dU
-  rw [swapcode_MirrorV, if_neg (_root_.lt_irrefl _), if_neg (_root_.lt_irrefl _)]
+lemma revalueU_MirrorV : revalueU (MirrorV : V) = numeral 0 := by
+  unfold revalueU
+  rw [transposeCode_MirrorV, if_neg (_root_.lt_irrefl _), if_neg (_root_.lt_irrefl _)]
 
-lemma dW_MirrorV : dW (MirrorV : V) = numeral 1 := by
-  unfold dW
-  rw [swapcode_MirrorV, if_neg (_root_.lt_irrefl _), if_neg (_root_.lt_irrefl _)]
+lemma revalueW_MirrorV : revalueW (MirrorV : V) = numeral 1 := by
+  unfold revalueW
+  rw [transposeCode_MirrorV, if_neg (_root_.lt_irrefl _), if_neg (_root_.lt_irrefl _)]
 
 
 /-- **Mirror's closed description term** (over `LAct`): the structural term of its code. -/
-noncomputable def TM : ClosedSemiterm LAct 0 := Semiterm.lMap emb (progTT Mirror)
+noncomputable def TM : ClosedSemiterm LAct 0 := Semiterm.lMap emb (codeTermMeta Mirror)
 
 lemma lMap_swap_TM : Semiterm.lMap swap TM = TM := term_lMap_swap_emb _
 
 /-- `TM` denotes `MirrorV` in every model. -/
-theorem val_TM_V : TM.val (s := stdActV V) ![] Empty.elim = MirrorV := by
+theorem val_TM_V : TM.val (s := stdReadingV V) ![] Empty.elim = MirrorV := by
   unfold TM
-  rw [Semiterm.val_lMap, stdActV_lMap_emb, val_progTT_V, cast_Mirror]
+  rw [Semiterm.val_lMap, stdReadingV_lMap_emb, val_codeTermMeta_V, cast_Mirror]
 
 /-- The code of `TM` is the structural term code of `MirrorV`. -/
-theorem quote_emb_TM : (⌜(Rew.emb TM : SyntacticSemiterm LAct 0)⌝ : V) = progT MirrorV := by
+theorem quote_emb_TM : (⌜(Rew.emb TM : SyntacticSemiterm LAct 0)⌝ : V) = codeTerm MirrorV := by
   unfold TM
-  rw [term_emb_lMap_emb, quote_term_lMap_emb, ← Semiterm.empty_quote_def, quote_progTT, cast_Mirror]
+  rw [term_emb_lMap_emb, quote_term_lMap_emb, ← Semiterm.empty_quote_def, quote_codeTermMeta, cast_Mirror]
 
 end mirror
 
@@ -98,69 +98,69 @@ noncomputable def TftV : V := pIte (pSim pOpp (pBot (pConst 0))) 0 (pConst 0) (p
 /-- The transposed TitForTatBot: `ite (sim opp (bot DefectBot)) D (const D) (const C)`. -/
 noncomputable def TftTV : V := pIte (pSim pOpp (pBot (pConst 1))) 1 (pConst 1) (pConst 0)
 
-lemma pcode_TFT : pcode TitForTatBot = pIte (pSim pOpp (pBot (pConst 0))) 0 (pConst 0) (pConst 1) := by
+lemma progCode_TFT : progCode TitForTatBot = pIte (pSim pOpp (pBot (pConst 0))) 0 (pConst 0) (pConst 1) := by
   simp [TitForTatBot, CooperateBot, actCode]
 
-lemma TftV_nat : TftV (V := ℕ) = pcode TitForTatBot := by rw [pcode_TFT]; rfl
+lemma TftV_nat : TftV (V := ℕ) = progCode TitForTatBot := by rw [progCode_TFT]; rfl
 
-lemma cast_Tft : ((pcode TitForTatBot : ℕ) : V) = TftV := by
-  rw [pcode_TFT, cast_pIte, cast_pSim, cast_pOpp, cast_pBot, cast_pConst, cast_pConst]
+lemma cast_Tft : ((progCode TitForTatBot : ℕ) : V) = TftV := by
+  rw [progCode_TFT, cast_pIte, cast_pSim, cast_pOpp, cast_pBot, cast_pConst, cast_pConst]
   simp [TftV]
 
-theorem swapcode_TftV : swapcode (TftV : V) = TftTV := by
-  unfold TftV TftTV swapcode
-  simp [relabelAct]
+theorem transposeCode_TftV : transposeCode (TftV : V) = TftTV := by
+  unfold TftV TftTV transposeCode
+  simp [revalueAction]
 
-theorem swapcode_TftTV : swapcode (TftTV : V) = TftV := by
-  rw [← swapcode_TftV, swapcode_swapcode]
+theorem transposeCode_TftTV : transposeCode (TftTV : V) = TftV := by
+  rw [← transposeCode_TftV, transposeCode_transposeCode]
 
 /-- TFT is CANONICAL: its code is below its transposition's (the probe's constant decides). -/
 theorem TftV_lt_TftTV : (TftV : V) < TftTV := by
   unfold TftV TftTV pIte pSim pBot pConst pOpp ppair
   norm_num
 
-lemma dnum_TftV : dnum (TftV : V) = TftV :=
-  dnum_of_lt (by rw [swapcode_TftV]; exact TftV_lt_TftTV)
+lemma canonical_TftV : canonical (TftV : V) = TftV :=
+  canonical_of_lt (by rw [transposeCode_TftV]; exact TftV_lt_TftTV)
 
-lemma dU_TftV : dU (TftV : V) = csym 0 := by
-  unfold dU; rw [swapcode_TftV, if_pos TftV_lt_TftTV]
+lemma revalueU_TftV : revalueU (TftV : V) = csym 0 := by
+  unfold revalueU; rw [transposeCode_TftV, if_pos TftV_lt_TftTV]
 
-lemma dW_TftV : dW (TftV : V) = csym 1 := by
-  unfold dW; rw [swapcode_TftV, if_pos TftV_lt_TftTV]
+lemma revalueW_TftV : revalueW (TftV : V) = csym 1 := by
+  unfold revalueW; rw [transposeCode_TftV, if_pos TftV_lt_TftTV]
 
 /-- TFT's closed description term: the structural term of its code. -/
-noncomputable def TTft : ClosedSemiterm LAct 0 := Semiterm.lMap emb (progTT (pcode TitForTatBot))
+noncomputable def TTft : ClosedSemiterm LAct 0 := Semiterm.lMap emb (codeTermMeta (progCode TitForTatBot))
 
 lemma lMap_swap_TTft : Semiterm.lMap swap TTft = TTft := term_lMap_swap_emb _
 
-theorem val_TTft_V : TTft.val (s := stdActV V) ![] Empty.elim = TftV := by
+theorem val_TTft_V : TTft.val (s := stdReadingV V) ![] Empty.elim = TftV := by
   unfold TTft
-  rw [Semiterm.val_lMap, stdActV_lMap_emb, val_progTT_V, cast_Tft]
+  rw [Semiterm.val_lMap, stdReadingV_lMap_emb, val_codeTermMeta_V, cast_Tft]
 
-theorem quote_emb_TTft : (⌜(Rew.emb TTft : SyntacticSemiterm LAct 0)⌝ : V) = progT TftV := by
+theorem quote_emb_TTft : (⌜(Rew.emb TTft : SyntacticSemiterm LAct 0)⌝ : V) = codeTerm TftV := by
   unfold TTft
-  rw [term_emb_lMap_emb, quote_term_lMap_emb, ← Semiterm.empty_quote_def, quote_progTT, cast_Tft]
+  rw [term_emb_lMap_emb, quote_term_lMap_emb, ← Semiterm.empty_quote_def, quote_codeTermMeta, cast_Tft]
 
 /-- The description hypotheses of the triple `(cl TTft, cterm C, cterm D)`. -/
 lemma hX_tft (k : V) :
-    termSubst LAct (bnum k ∷ (0 : V)) (⌜(Rew.emb (cl TTft : Semiterm LAct Empty 1) : SyntacticSemiterm LAct 1)⌝ : V) =
-      progT (dnum TftV) := by
-  rw [quote_emb_cl_V, termSubst_closed _ (semiterm_quote_emb₀ _), quote_emb_TTft, dnum_TftV]
-lemma hU_tft : (⌜(cterm Act.C : ClosedSemiterm LAct 0)⌝ : V) = dU TftV := by rw [quote_cterm_C, dU_TftV]
-lemma hW_tft : (⌜(cterm Act.D : ClosedSemiterm LAct 0)⌝ : V) = dW TftV := by rw [quote_cterm_D, dW_TftV]
+    termSubst LAct (binNumeral k ∷ (0 : V)) (⌜(Rew.emb (cl TTft : Semiterm LAct Empty 1) : SyntacticSemiterm LAct 1)⌝ : V) =
+      codeTerm (canonical TftV) := by
+  rw [quote_emb_cl_V, termSubst_closed _ (semiterm_quote_emb₀ _), quote_emb_TTft, canonical_TftV]
+lemma hU_tft : (⌜(cterm Act.C : ClosedSemiterm LAct 0)⌝ : V) = revalueU TftV := by rw [quote_cterm_C, revalueU_TftV]
+lemma hW_tft : (⌜(cterm Act.D : ClosedSemiterm LAct 0)⌝ : V) = revalueW TftV := by rw [quote_cterm_D, revalueW_TftV]
 
 /-- The values: the triple reconstructs TFT; the swapped triple its transposition. -/
 lemma val_desc_tft (k : V) :
-    relabel ((cterm Act.C : ClosedSemiterm LAct 0).val (s := stdActV V) ![] Empty.elim)
-      ((cterm Act.D : ClosedSemiterm LAct 0).val (s := stdActV V) ![] Empty.elim)
-      ((cl TTft : Semiterm LAct Empty 1).val (s := stdActV V) ![k] Empty.elim) = TftV := by
-  rw [val_cl_V, val_TTft_V, val_cterm_C_V, val_cterm_D_V, relabel_zero_one]
+    revalue ((cterm Act.C : ClosedSemiterm LAct 0).val (s := stdReadingV V) ![] Empty.elim)
+      ((cterm Act.D : ClosedSemiterm LAct 0).val (s := stdReadingV V) ![] Empty.elim)
+      ((cl TTft : Semiterm LAct Empty 1).val (s := stdReadingV V) ![k] Empty.elim) = TftV := by
+  rw [val_cl_V, val_TTft_V, val_cterm_C_V, val_cterm_D_V, revalue_zero_one]
 lemma val_desc_tft_swap (k : V) :
-    relabel ((cterm Act.D : ClosedSemiterm LAct 0).val (s := stdActV V) ![] Empty.elim)
-      ((cterm Act.C : ClosedSemiterm LAct 0).val (s := stdActV V) ![] Empty.elim)
-      ((cl TTft : Semiterm LAct Empty 1).val (s := stdActV V) ![k] Empty.elim) = TftTV := by
+    revalue ((cterm Act.D : ClosedSemiterm LAct 0).val (s := stdReadingV V) ![] Empty.elim)
+      ((cterm Act.C : ClosedSemiterm LAct 0).val (s := stdReadingV V) ![] Empty.elim)
+      ((cl TTft : Semiterm LAct Empty 1).val (s := stdReadingV V) ![k] Empty.elim) = TftTV := by
   rw [val_cl_V, val_TTft_V, val_cterm_C_V, val_cterm_D_V]
-  exact swapcode_TftV
+  exact transposeCode_TftV
 
 /-! #### `Cells/FlipCells`' twins of the block above (same definitions; the lemmas are one-liners) -/
 
@@ -173,39 +173,39 @@ noncomputable def TFTTV : V := pIte (pSim pOpp (pBot (pConst 1))) 1 (pConst 1) (
 lemma TFTV_eq_TftV : (TFTV : V) = TftV := rfl
 lemma TFTTV_eq_TftTV : (TFTTV : V) = TftTV := rfl
 
-lemma cast_TFT : ((pcode TitForTatBot : ℕ) : V) = TFTV := by
+lemma cast_TFT : ((progCode TitForTatBot : ℕ) : V) = TFTV := by
   rw [TFTV_eq_TftV]; exact cast_Tft
 
-lemma TFTV_nat : TFTV (V := ℕ) = pcode TitForTatBot := by
+lemma TFTV_nat : TFTV (V := ℕ) = progCode TitForTatBot := by
   rw [TFTV_eq_TftV]; exact TftV_nat
 
-theorem swapcode_TFTV : swapcode (TFTV : V) = TFTTV := by
-  rw [TFTV_eq_TftV, TFTTV_eq_TftTV]; exact swapcode_TftV
+theorem transposeCode_TFTV : transposeCode (TFTV : V) = TFTTV := by
+  rw [TFTV_eq_TftV, TFTTV_eq_TftTV]; exact transposeCode_TftV
 
 /-- The code of TFT is below the code of its transposition (the probe `.bot CooperateBot` is the smaller). -/
 theorem TFTV_lt_TFTTV : (TFTV : V) < TFTTV := by
   rw [TFTV_eq_TftV, TFTTV_eq_TftTV]; exact TftV_lt_TftTV
 
-lemma dnum_TFTV : dnum (TFTV : V) = TFTV := by
-  rw [TFTV_eq_TftV]; exact dnum_TftV
+lemma canonical_TFTV : canonical (TFTV : V) = TFTV := by
+  rw [TFTV_eq_TftV]; exact canonical_TftV
 
-lemma dU_TFTV : dU (TFTV : V) = csym 0 := by
-  rw [TFTV_eq_TftV]; exact dU_TftV
+lemma revalueU_TFTV : revalueU (TFTV : V) = csym 0 := by
+  rw [TFTV_eq_TftV]; exact revalueU_TftV
 
-lemma dW_TFTV : dW (TFTV : V) = csym 1 := by
-  rw [TFTV_eq_TftV]; exact dW_TftV
+lemma revalueW_TFTV : revalueW (TFTV : V) = csym 1 := by
+  rw [TFTV_eq_TftV]; exact revalueW_TftV
 
 /-- The closed structural term of TitForTatBot's code. -/
-noncomputable def TTFT : ClosedSemiterm LAct 0 := Semiterm.lMap emb (progTT (pcode TitForTatBot))
+noncomputable def TTFT : ClosedSemiterm LAct 0 := Semiterm.lMap emb (codeTermMeta (progCode TitForTatBot))
 
 lemma TTFT_eq_TTft : TTFT = TTft := rfl
 
 lemma lMap_swap_TTFT : Semiterm.lMap swap TTFT = TTFT := term_lMap_swap_emb _
 
-theorem val_TTFT_V : TTFT.val (s := stdActV V) ![] Empty.elim = TFTV := by
+theorem val_TTFT_V : TTFT.val (s := stdReadingV V) ![] Empty.elim = TFTV := by
   rw [TTFT_eq_TTft, TFTV_eq_TftV]; exact val_TTft_V
 
-theorem quote_emb_TTFT : (⌜(Rew.emb TTFT : SyntacticSemiterm LAct 0)⌝ : V) = progT TFTV := by
+theorem quote_emb_TTFT : (⌜(Rew.emb TTFT : SyntacticSemiterm LAct 0)⌝ : V) = codeTerm TFTV := by
   rw [TTFT_eq_TTft, TFTV_eq_TftV]; exact quote_emb_TTft
 
 end tft
@@ -215,88 +215,88 @@ end tft
 section constants
 
 /-- The closed structural term of the code `pConst 0` (the canonical code of both constants). -/
-noncomputable def T0 : ClosedSemiterm LAct 0 := Semiterm.lMap emb (progTT (pConst 0))
+noncomputable def T0 : ClosedSemiterm LAct 0 := Semiterm.lMap emb (codeTermMeta (pConst 0))
 
 lemma lMap_swap_T0 : Semiterm.lMap swap T0 = T0 := term_lMap_swap_emb _
 
-theorem val_T0_V : T0.val (s := stdActV V) ![] Empty.elim = pConst 0 := by
+theorem val_T0_V : T0.val (s := stdReadingV V) ![] Empty.elim = pConst 0 := by
   unfold T0
-  rw [Semiterm.val_lMap, stdActV_lMap_emb, val_progTT_V, cast_pConst, Nat.cast_zero]
+  rw [Semiterm.val_lMap, stdReadingV_lMap_emb, val_codeTermMeta_V, cast_pConst, Nat.cast_zero]
 
-theorem quote_emb_T0 : (⌜(Rew.emb T0 : SyntacticSemiterm LAct 0)⌝ : V) = progT (pConst 0) := by
+theorem quote_emb_T0 : (⌜(Rew.emb T0 : SyntacticSemiterm LAct 0)⌝ : V) = codeTerm (pConst 0) := by
   unfold T0
-  rw [term_emb_lMap_emb, quote_term_lMap_emb, ← Semiterm.empty_quote_def, quote_progTT, cast_pConst, Nat.cast_zero]
+  rw [term_emb_lMap_emb, quote_term_lMap_emb, ← Semiterm.empty_quote_def, quote_codeTermMeta, cast_pConst, Nat.cast_zero]
 
 /-- The closed structural term of the code `pBot (pConst 0)`. -/
-noncomputable def TB0 : ClosedSemiterm LAct 0 := Semiterm.lMap emb (progTT (pBot (pConst 0)))
+noncomputable def TB0 : ClosedSemiterm LAct 0 := Semiterm.lMap emb (codeTermMeta (pBot (pConst 0)))
 
 lemma lMap_swap_TB0 : Semiterm.lMap swap TB0 = TB0 := term_lMap_swap_emb _
 
-theorem val_TB0_V : TB0.val (s := stdActV V) ![] Empty.elim = pBot (pConst 0) := by
+theorem val_TB0_V : TB0.val (s := stdReadingV V) ![] Empty.elim = pBot (pConst 0) := by
   unfold TB0
-  rw [Semiterm.val_lMap, stdActV_lMap_emb, val_progTT_V, cast_pBot, cast_pConst, Nat.cast_zero]
+  rw [Semiterm.val_lMap, stdReadingV_lMap_emb, val_codeTermMeta_V, cast_pBot, cast_pConst, Nat.cast_zero]
 
-theorem quote_emb_TB0 : (⌜(Rew.emb TB0 : SyntacticSemiterm LAct 0)⌝ : V) = progT (pBot (pConst 0)) := by
+theorem quote_emb_TB0 : (⌜(Rew.emb TB0 : SyntacticSemiterm LAct 0)⌝ : V) = codeTerm (pBot (pConst 0)) := by
   unfold TB0
-  rw [term_emb_lMap_emb, quote_term_lMap_emb, ← Semiterm.empty_quote_def, quote_progTT, cast_pBot, cast_pConst,
+  rw [term_emb_lMap_emb, quote_term_lMap_emb, ← Semiterm.empty_quote_def, quote_codeTermMeta, cast_pBot, cast_pConst,
     Nat.cast_zero]
 
 /-- The `X'`-hypothesis of `guardCode_qT_eq_instB` for the four constant opponents. -/
 lemma hX_const_zero (k : V) :
-    termSubst LAct (bnum k ∷ (0 : V)) (⌜(Rew.emb (cl T0 : Semiterm LAct Empty 1) : SyntacticSemiterm LAct 1)⌝ : V) =
-      progT (dnum (pConst 0)) := by
-  rw [quote_emb_cl_V, termSubst_closed _ (semiterm_quote_emb₀ _), quote_emb_T0, dnum_pConst_zero]
+    termSubst LAct (binNumeral k ∷ (0 : V)) (⌜(Rew.emb (cl T0 : Semiterm LAct Empty 1) : SyntacticSemiterm LAct 1)⌝ : V) =
+      codeTerm (canonical (pConst 0)) := by
+  rw [quote_emb_cl_V, termSubst_closed _ (semiterm_quote_emb₀ _), quote_emb_T0, canonical_pConst_zero]
 lemma hX_const_one (k : V) :
-    termSubst LAct (bnum k ∷ (0 : V)) (⌜(Rew.emb (cl T0 : Semiterm LAct Empty 1) : SyntacticSemiterm LAct 1)⌝ : V) =
-      progT (dnum (pConst 1)) := by
-  rw [quote_emb_cl_V, termSubst_closed _ (semiterm_quote_emb₀ _), quote_emb_T0, dnum_pConst_one]
+    termSubst LAct (binNumeral k ∷ (0 : V)) (⌜(Rew.emb (cl T0 : Semiterm LAct Empty 1) : SyntacticSemiterm LAct 1)⌝ : V) =
+      codeTerm (canonical (pConst 1)) := by
+  rw [quote_emb_cl_V, termSubst_closed _ (semiterm_quote_emb₀ _), quote_emb_T0, canonical_pConst_one]
 lemma hX_bot_zero (k : V) :
-    termSubst LAct (bnum k ∷ (0 : V)) (⌜(Rew.emb (cl TB0 : Semiterm LAct Empty 1) : SyntacticSemiterm LAct 1)⌝ : V) =
-      progT (dnum (pBot (pConst 0))) := by
-  rw [quote_emb_cl_V, termSubst_closed _ (semiterm_quote_emb₀ _), quote_emb_TB0, dnum_pBot, dnum_pConst_zero]
+    termSubst LAct (binNumeral k ∷ (0 : V)) (⌜(Rew.emb (cl TB0 : Semiterm LAct Empty 1) : SyntacticSemiterm LAct 1)⌝ : V) =
+      codeTerm (canonical (pBot (pConst 0))) := by
+  rw [quote_emb_cl_V, termSubst_closed _ (semiterm_quote_emb₀ _), quote_emb_TB0, canonical_pBot, canonical_pConst_zero]
 lemma hX_bot_one (k : V) :
-    termSubst LAct (bnum k ∷ (0 : V)) (⌜(Rew.emb (cl TB0 : Semiterm LAct Empty 1) : SyntacticSemiterm LAct 1)⌝ : V) =
-      progT (dnum (pBot (pConst 1))) := by
-  rw [quote_emb_cl_V, termSubst_closed _ (semiterm_quote_emb₀ _), quote_emb_TB0, dnum_pBot, dnum_pConst_one]
+    termSubst LAct (binNumeral k ∷ (0 : V)) (⌜(Rew.emb (cl TB0 : Semiterm LAct Empty 1) : SyntacticSemiterm LAct 1)⌝ : V) =
+      codeTerm (canonical (pBot (pConst 1))) := by
+  rw [quote_emb_cl_V, termSubst_closed _ (semiterm_quote_emb₀ _), quote_emb_TB0, canonical_pBot, canonical_pConst_one]
 
-lemma hU_C_zero : (⌜(cterm Act.C : ClosedSemiterm LAct 0)⌝ : V) = dU (pConst 0) := by
-  rw [quote_cterm_C, dU_pConst_zero]
-lemma hW_D_zero : (⌜(cterm Act.D : ClosedSemiterm LAct 0)⌝ : V) = dW (pConst 0) := by
-  rw [quote_cterm_D, dW_pConst_zero]
-lemma hU_D_one : (⌜(cterm Act.D : ClosedSemiterm LAct 0)⌝ : V) = dU (pConst 1) := by
-  rw [quote_cterm_D, dU_pConst_one]
-lemma hW_C_one : (⌜(cterm Act.C : ClosedSemiterm LAct 0)⌝ : V) = dW (pConst 1) := by
-  rw [quote_cterm_C, dW_pConst_one]
-lemma hU_C_bot_zero : (⌜(cterm Act.C : ClosedSemiterm LAct 0)⌝ : V) = dU (pBot (pConst 0)) := by
-  rw [quote_cterm_C, dU_pBot, dU_pConst_zero]
-lemma hW_D_bot_zero : (⌜(cterm Act.D : ClosedSemiterm LAct 0)⌝ : V) = dW (pBot (pConst 0)) := by
-  rw [quote_cterm_D, dW_pBot, dW_pConst_zero]
-lemma hU_D_bot_one : (⌜(cterm Act.D : ClosedSemiterm LAct 0)⌝ : V) = dU (pBot (pConst 1)) := by
-  rw [quote_cterm_D, dU_pBot, dU_pConst_one]
-lemma hW_C_bot_one : (⌜(cterm Act.C : ClosedSemiterm LAct 0)⌝ : V) = dW (pBot (pConst 1)) := by
-  rw [quote_cterm_C, dW_pBot, dW_pConst_one]
+lemma hU_C_zero : (⌜(cterm Act.C : ClosedSemiterm LAct 0)⌝ : V) = revalueU (pConst 0) := by
+  rw [quote_cterm_C, revalueU_pConst_zero]
+lemma hW_D_zero : (⌜(cterm Act.D : ClosedSemiterm LAct 0)⌝ : V) = revalueW (pConst 0) := by
+  rw [quote_cterm_D, revalueW_pConst_zero]
+lemma hU_D_one : (⌜(cterm Act.D : ClosedSemiterm LAct 0)⌝ : V) = revalueU (pConst 1) := by
+  rw [quote_cterm_D, revalueU_pConst_one]
+lemma hW_C_one : (⌜(cterm Act.C : ClosedSemiterm LAct 0)⌝ : V) = revalueW (pConst 1) := by
+  rw [quote_cterm_C, revalueW_pConst_one]
+lemma hU_C_bot_zero : (⌜(cterm Act.C : ClosedSemiterm LAct 0)⌝ : V) = revalueU (pBot (pConst 0)) := by
+  rw [quote_cterm_C, revalueU_pBot, revalueU_pConst_zero]
+lemma hW_D_bot_zero : (⌜(cterm Act.D : ClosedSemiterm LAct 0)⌝ : V) = revalueW (pBot (pConst 0)) := by
+  rw [quote_cterm_D, revalueW_pBot, revalueW_pConst_zero]
+lemma hU_D_bot_one : (⌜(cterm Act.D : ClosedSemiterm LAct 0)⌝ : V) = revalueU (pBot (pConst 1)) := by
+  rw [quote_cterm_D, revalueU_pBot, revalueU_pConst_one]
+lemma hW_C_bot_one : (⌜(cterm Act.C : ClosedSemiterm LAct 0)⌝ : V) = revalueW (pBot (pConst 1)) := by
+  rw [quote_cterm_C, revalueW_pBot, revalueW_pConst_one]
 
 /-- The values: the four constant triples reconstruct their programs. -/
 lemma val_desc_const_zero (k : V) :
-    relabel ((cterm Act.C : ClosedSemiterm LAct 0).val (s := stdActV V) ![] Empty.elim)
-      ((cterm Act.D : ClosedSemiterm LAct 0).val (s := stdActV V) ![] Empty.elim)
-      ((cl T0 : Semiterm LAct Empty 1).val (s := stdActV V) ![k] Empty.elim) = pConst 0 := by
-  rw [val_cl_V, val_T0_V, val_cterm_C_V, val_cterm_D_V, relabel_zero_one]
+    revalue ((cterm Act.C : ClosedSemiterm LAct 0).val (s := stdReadingV V) ![] Empty.elim)
+      ((cterm Act.D : ClosedSemiterm LAct 0).val (s := stdReadingV V) ![] Empty.elim)
+      ((cl T0 : Semiterm LAct Empty 1).val (s := stdReadingV V) ![k] Empty.elim) = pConst 0 := by
+  rw [val_cl_V, val_T0_V, val_cterm_C_V, val_cterm_D_V, revalue_zero_one]
 lemma val_desc_const_one (k : V) :
-    relabel ((cterm Act.D : ClosedSemiterm LAct 0).val (s := stdActV V) ![] Empty.elim)
-      ((cterm Act.C : ClosedSemiterm LAct 0).val (s := stdActV V) ![] Empty.elim)
-      ((cl T0 : Semiterm LAct Empty 1).val (s := stdActV V) ![k] Empty.elim) = pConst 1 := by
-  rw [val_cl_V, val_T0_V, val_cterm_C_V, val_cterm_D_V, relabel_const]; simp [relabelAct]
+    revalue ((cterm Act.D : ClosedSemiterm LAct 0).val (s := stdReadingV V) ![] Empty.elim)
+      ((cterm Act.C : ClosedSemiterm LAct 0).val (s := stdReadingV V) ![] Empty.elim)
+      ((cl T0 : Semiterm LAct Empty 1).val (s := stdReadingV V) ![k] Empty.elim) = pConst 1 := by
+  rw [val_cl_V, val_T0_V, val_cterm_C_V, val_cterm_D_V, revalue_const]; simp [revalueAction]
 lemma val_desc_bot_zero (k : V) :
-    relabel ((cterm Act.C : ClosedSemiterm LAct 0).val (s := stdActV V) ![] Empty.elim)
-      ((cterm Act.D : ClosedSemiterm LAct 0).val (s := stdActV V) ![] Empty.elim)
-      ((cl TB0 : Semiterm LAct Empty 1).val (s := stdActV V) ![k] Empty.elim) = pBot (pConst 0) := by
-  rw [val_cl_V, val_TB0_V, val_cterm_C_V, val_cterm_D_V, relabel_zero_one]
+    revalue ((cterm Act.C : ClosedSemiterm LAct 0).val (s := stdReadingV V) ![] Empty.elim)
+      ((cterm Act.D : ClosedSemiterm LAct 0).val (s := stdReadingV V) ![] Empty.elim)
+      ((cl TB0 : Semiterm LAct Empty 1).val (s := stdReadingV V) ![k] Empty.elim) = pBot (pConst 0) := by
+  rw [val_cl_V, val_TB0_V, val_cterm_C_V, val_cterm_D_V, revalue_zero_one]
 lemma val_desc_bot_one (k : V) :
-    relabel ((cterm Act.D : ClosedSemiterm LAct 0).val (s := stdActV V) ![] Empty.elim)
-      ((cterm Act.C : ClosedSemiterm LAct 0).val (s := stdActV V) ![] Empty.elim)
-      ((cl TB0 : Semiterm LAct Empty 1).val (s := stdActV V) ![k] Empty.elim) = pBot (pConst 1) := by
-  rw [val_cl_V, val_TB0_V, val_cterm_C_V, val_cterm_D_V, relabel_bot, relabel_const]; simp [relabelAct]
+    revalue ((cterm Act.D : ClosedSemiterm LAct 0).val (s := stdReadingV V) ![] Empty.elim)
+      ((cterm Act.C : ClosedSemiterm LAct 0).val (s := stdReadingV V) ![] Empty.elim)
+      ((cl TB0 : Semiterm LAct Empty 1).val (s := stdReadingV V) ![k] Empty.elim) = pBot (pConst 1) := by
+  rw [val_cl_V, val_TB0_V, val_cterm_C_V, val_cterm_D_V, revalue_bot, revalue_const]; simp [revalueAction]
 
 end constants
 
@@ -328,20 +328,20 @@ lemma SV_eq_inner (k : V) : SV g a k = ppair 6 (ppair k (innerS g a : V)) + 1 :=
 variable (ha : a = 0 ∨ a = 1)
 include ha
 
-lemma swapAct_cast : swapAct (a : V) = ((1 - a : ℕ) : V) := by
-  rcases ha with rfl | rfl <;> simp [relabelAct]
+lemma swapAction_cast : swapAction (a : V) = ((1 - a : ℕ) : V) := by
+  rcases ha with rfl | rfl <;> simp [revalueAction]
 
-lemma swapAct_cast' : swapAct ((1 - a : ℕ) : V) = (a : V) := by
-  rcases ha with rfl | rfl <;> simp [relabelAct]
+lemma swapAction_cast' : swapAction ((1 - a : ℕ) : V) = (a : V) := by
+  rcases ha with rfl | rfl <;> simp [revalueAction]
 
 lemma one_sub_one_sub : 1 - (1 - a) = a := by rcases ha with rfl | rfl <;> rfl
 
 /-- τ on the searcher: the transposed template, the branches exchanged. -/
-theorem swapcode_SV (k : V) : swapcode (SV g a k) = SV (Semiformula.lMap swap g) (1 - a) k := by
-  unfold SV swapcode
-  rw [relabel_search, relabel_const, relabel_const, relabelTemplate_quote_sentence₆_V]
-  show pSearch k _ (pConst (swapAct _)) (pConst (swapAct _)) = _
-  rw [swapAct_cast a ha, swapAct_cast' a ha, one_sub_one_sub a ha]
+theorem transposeCode_SV (k : V) : transposeCode (SV g a k) = SV (Semiformula.lMap swap g) (1 - a) k := by
+  unfold SV transposeCode
+  rw [revalue_search, revalue_const, revalue_const, revalueTemplate_quote_sentence₆_V]
+  show pSearch k _ (pConst (swapAction _)) (pConst (swapAction _)) = _
+  rw [swapAction_cast a ha, swapAction_cast' a ha, one_sub_one_sub a ha]
 
 lemma SV_lt_SVT_iff (k : V) :
     SV g a k < SV (Semiformula.lMap swap g) (1 - a) k ↔ innerS g a < innerS (Semiformula.lMap swap g) (1 - a) := by
@@ -383,22 +383,22 @@ lemma SVT_eq_cast (k : V) :
   unfold SV; rw [coe_quote_sentence₆, cast_pConst, cast_pConst, one_sub_one_sub a ha]
 
 /-- **The canonical code of the searcher is a searcher with the (cast) `k`-independent inner triple.** -/
-theorem dnum_SV (k : V) : dnum (SV g a k) = pSearch k (gS g a : V) (pS g a : V) (qS g a : V) := by
+theorem canonical_SV (k : V) : canonical (SV g a k) = pSearch k (gS g a : V) (pS g a : V) (qS g a : V) := by
   by_cases h : innerS g a ≤ innerS (Semiformula.lMap swap g) (1 - a)
   · simp only [gS, pS, qS, if_pos h]
     rcases Nat.lt_or_eq_of_le h with h' | h'
-    · rw [dnum_of_lt (by rw [swapcode_SV g a ha]; exact (SV_lt_SVT_iff g a ha k).mpr h')]
+    · rw [canonical_of_lt (by rw [transposeCode_SV g a ha]; exact (SV_lt_SVT_iff g a ha k).mpr h')]
       exact SV_eq_cast g a k
-    · rw [dnum_of_eq (by rw [swapcode_SV g a ha, SV_eq_inner, SV_eq_inner, h'])]
+    · rw [canonical_of_eq (by rw [transposeCode_SV g a ha, SV_eq_inner, SV_eq_inner, h'])]
       exact SV_eq_cast g a k
   · simp only [gS, pS, qS, if_neg h]
-    rw [dnum_of_gt (by rw [swapcode_SV g a ha]; exact (SVT_lt_SV_iff g a ha k).mpr (Nat.lt_of_not_le h)),
-      swapcode_SV g a ha]
+    rw [canonical_of_gt (by rw [transposeCode_SV g a ha]; exact (SVT_lt_SV_iff g a ha k).mpr (Nat.lt_of_not_le h)),
+      transposeCode_SV g a ha]
     exact SVT_eq_cast g a ha k
 
-theorem dU_SV (k : V) : dU (SV g a k) = (⌜uS g a⌝ : V) := by
-  unfold dU uS
-  rw [swapcode_SV g a ha]
+theorem revalueU_SV (k : V) : revalueU (SV g a k) = (⌜uS g a⌝ : V) := by
+  unfold revalueU uS
+  rw [transposeCode_SV g a ha]
   by_cases h1 : innerS g a < innerS (Semiformula.lMap swap g) (1 - a)
   · rw [if_pos ((SV_lt_SVT_iff g a ha k).mpr h1), if_pos h1, quote_cterm_C]
   · rw [if_neg (fun h ↦ h1 ((SV_lt_SVT_iff g a ha k).mp h)), if_neg h1]
@@ -407,9 +407,9 @@ theorem dU_SV (k : V) : dU (SV g a k) = (⌜uS g a⌝ : V) := by
     · rw [if_neg (fun h ↦ h2 ((SVT_lt_SV_iff g a ha k).mp h)), if_neg h2, quote_numT]
       simp
 
-theorem dW_SV (k : V) : dW (SV g a k) = (⌜wS g a⌝ : V) := by
-  unfold dW wS
-  rw [swapcode_SV g a ha]
+theorem revalueW_SV (k : V) : revalueW (SV g a k) = (⌜wS g a⌝ : V) := by
+  unfold revalueW wS
+  rw [transposeCode_SV g a ha]
   by_cases h1 : innerS g a < innerS (Semiformula.lMap swap g) (1 - a)
   · rw [if_pos ((SV_lt_SVT_iff g a ha k).mpr h1), if_pos h1, quote_cterm_D]
   · rw [if_neg (fun h ↦ h1 ((SV_lt_SVT_iff g a ha k).mp h)), if_neg h1]
@@ -427,62 +427,62 @@ lemma lMap_swap_TS : Semiterm.lMap swap (TS g a) = TS g a := term_lMap_swap_emb 
 
 theorem quote_emb_TS :
     (⌜(Rew.emb (TS g a) : SyntacticSemiterm LAct 1)⌝ : V) =
-    ppairT (bnum 6) (ppairT (^#0) (ppairT (bnum (gS g a : V)) (ppairT (progT (pS g a : V)) (progT (qS g a : V))))) ^+ 𝟏 := by
+    ppairTerm (binNumeral 6) (ppairTerm (^#0) (ppairTerm (binNumeral (gS g a : V)) (ppairTerm (codeTerm (pS g a : V)) (codeTerm (qS g a : V))))) ^+ 𝟏 := by
   unfold TS
   rw [term_emb_lMap_emb_n, quote_term_lMap_emb, quote_emb_searchT1]
 
 include ha
 
 /-- `TS` at the budget `k` denotes the canonical code of the searcher. -/
-theorem val_TS_V (k : V) : (TS g a).val (s := stdActV V) ![k] Empty.elim = dnum (SV g a k) := by
+theorem val_TS_V (k : V) : (TS g a).val (s := stdReadingV V) ![k] Empty.elim = canonical (SV g a k) := by
   unfold TS
-  rw [Semiterm.val_lMap, stdActV_lMap_emb, val_searchT1_V, dnum_SV g a ha]
+  rw [Semiterm.val_lMap, stdReadingV_lMap_emb, val_searchT1_V, canonical_SV g a ha]
 
 /-- The `X`-hypothesis of the instance equations: the tower describes the searcher on codes. -/
 theorem hX_SV (k : V) :
-    termSubst LAct (bnum k ∷ (0 : V)) (⌜(Rew.emb (TS g a) : SyntacticSemiterm LAct 1)⌝ : V) =
-      progT (dnum (SV g a k)) := by
-  rw [quote_emb_TS, termSubst_tower, dnum_SV g a ha]
+    termSubst LAct (binNumeral k ∷ (0 : V)) (⌜(Rew.emb (TS g a) : SyntacticSemiterm LAct 1)⌝ : V) =
+      codeTerm (canonical (SV g a k)) := by
+  rw [quote_emb_TS, termSubst_tower, canonical_SV g a ha]
 
-lemma hU_SV (k : V) : (⌜uS g a⌝ : V) = dU (SV g a k) := (dU_SV g a ha k).symm
-lemma hW_SV (k : V) : (⌜wS g a⌝ : V) = dW (SV g a k) := (dW_SV g a ha k).symm
+lemma hU_SV (k : V) : (⌜uS g a⌝ : V) = revalueU (SV g a k) := (revalueU_SV g a ha k).symm
+lemma hW_SV (k : V) : (⌜wS g a⌝ : V) = revalueW (SV g a k) := (revalueW_SV g a ha k).symm
 
 /-- The re-valuation terms reconstruct the searcher from its canonical code. -/
-theorem relabel_val_uS_wS_V (k : V) :
-    relabel ((uS g a).val (s := stdActV V) ![] Empty.elim) ((wS g a).val (s := stdActV V) ![] Empty.elim)
-      (dnum (SV g a k)) = SV g a k := by
+theorem revalue_val_uS_wS_V (k : V) :
+    revalue ((uS g a).val (s := stdReadingV V) ![] Empty.elim) ((wS g a).val (s := stdReadingV V) ![] Empty.elim)
+      (canonical (SV g a k)) = SV g a k := by
   unfold uS wS
   by_cases h1 : innerS g a < innerS (Semiformula.lMap swap g) (1 - a)
   · rw [if_pos h1, if_pos h1, val_cterm_C_V, val_cterm_D_V,
-      dnum_of_lt (by rw [swapcode_SV g a ha]; exact (SV_lt_SVT_iff g a ha k).mpr h1), relabel_zero_one]
+      canonical_of_lt (by rw [transposeCode_SV g a ha]; exact (SV_lt_SVT_iff g a ha k).mpr h1), revalue_zero_one]
   · rw [if_neg h1, if_neg h1]
     by_cases h2 : innerS (Semiformula.lMap swap g) (1 - a) < innerS g a
     · rw [if_pos h2, if_pos h2, val_cterm_D_V, val_cterm_C_V,
-        dnum_of_gt (by rw [swapcode_SV g a ha]; exact (SVT_lt_SV_iff g a ha k).mpr h2)]
-      exact swapcode_swapcode _
+        canonical_of_gt (by rw [transposeCode_SV g a ha]; exact (SVT_lt_SV_iff g a ha k).mpr h2)]
+      exact transposeCode_transposeCode _
     · have h' : innerS g a = innerS (Semiformula.lMap swap g) (1 - a) := le_antisymm (not_lt.mp h2) (not_lt.mp h1)
       rw [if_neg h2, if_neg h2, val_numT_V, val_numT_V, Nat.cast_zero, Nat.cast_one,
-        dnum_of_eq (by rw [swapcode_SV g a ha, SV_eq_inner, SV_eq_inner, h']), relabel_zero_one]
+        canonical_of_eq (by rw [transposeCode_SV g a ha, SV_eq_inner, SV_eq_inner, h']), revalue_zero_one]
 
 /-- The transposed re-valuation terms reconstruct the TRANSPOSED searcher from the canonical code. -/
-theorem relabel_val_uST_wST_V (k : V) :
-    relabel ((Semiterm.lMap swap (uS g a)).val (s := stdActV V) ![] Empty.elim)
-      ((Semiterm.lMap swap (wS g a)).val (s := stdActV V) ![] Empty.elim)
-      (dnum (SV g a k)) = SV (Semiformula.lMap swap g) (1 - a) k := by
+theorem revalue_val_uST_wST_V (k : V) :
+    revalue ((Semiterm.lMap swap (uS g a)).val (s := stdReadingV V) ![] Empty.elim)
+      ((Semiterm.lMap swap (wS g a)).val (s := stdReadingV V) ![] Empty.elim)
+      (canonical (SV g a k)) = SV (Semiformula.lMap swap g) (1 - a) k := by
   unfold uS wS
   by_cases h1 : innerS g a < innerS (Semiformula.lMap swap g) (1 - a)
   · rw [if_pos h1, if_pos h1, lMap_swap_cterm_C, lMap_swap_cterm_D, val_cterm_D_V, val_cterm_C_V,
-      dnum_of_lt (by rw [swapcode_SV g a ha]; exact (SV_lt_SVT_iff g a ha k).mpr h1)]
-    exact swapcode_SV g a ha k
+      canonical_of_lt (by rw [transposeCode_SV g a ha]; exact (SV_lt_SVT_iff g a ha k).mpr h1)]
+    exact transposeCode_SV g a ha k
   · rw [if_neg h1, if_neg h1]
     by_cases h2 : innerS (Semiformula.lMap swap g) (1 - a) < innerS g a
     · rw [if_pos h2, if_pos h2, lMap_swap_cterm_D, lMap_swap_cterm_C, val_cterm_C_V, val_cterm_D_V,
-        dnum_of_gt (by rw [swapcode_SV g a ha]; exact (SVT_lt_SV_iff g a ha k).mpr h2), swapcode_SV g a ha,
-        relabel_zero_one]
+        canonical_of_gt (by rw [transposeCode_SV g a ha]; exact (SVT_lt_SV_iff g a ha k).mpr h2), transposeCode_SV g a ha,
+        revalue_zero_one]
     · have h' : innerS g a = innerS (Semiformula.lMap swap g) (1 - a) := le_antisymm (not_lt.mp h2) (not_lt.mp h1)
       have hST : SV g a k = SV (Semiformula.lMap swap g) (1 - a) k := by rw [SV_eq_inner, SV_eq_inner, h']
       rw [if_neg h2, if_neg h2, lMap_swap_numT, lMap_swap_numT, val_numT_V, val_numT_V, Nat.cast_zero,
-        Nat.cast_one, dnum_of_eq (by rw [swapcode_SV g a ha, hST]), relabel_zero_one, hST]
+        Nat.cast_one, canonical_of_eq (by rw [transposeCode_SV g a ha, hST]), revalue_zero_one, hST]
 
 end searcher
 
@@ -490,16 +490,16 @@ section values
 
 /-- The searcher's triple describes it (values). -/
 theorem desc_SV (g : Semisentence LAct 6) (a : ℕ) (ha : a = 0 ∨ a = 1) (k : V) :
-    relabel ((uS g a).val (s := stdActV V) ![] Empty.elim) ((wS g a).val (s := stdActV V) ![] Empty.elim)
-      ((TS g a).val (s := stdActV V) ![k] Empty.elim) = SV g a k := by
-  rw [val_TS_V g a ha, relabel_val_uS_wS_V g a ha]
+    revalue ((uS g a).val (s := stdReadingV V) ![] Empty.elim) ((wS g a).val (s := stdReadingV V) ![] Empty.elim)
+      ((TS g a).val (s := stdReadingV V) ![k] Empty.elim) = SV g a k := by
+  rw [val_TS_V g a ha, revalue_val_uS_wS_V g a ha]
 
 /-- The transposed triple describes the transposed searcher (values). -/
 theorem descT_SV (g : Semisentence LAct 6) (a : ℕ) (ha : a = 0 ∨ a = 1) (k : V) :
-    relabel ((Semiterm.lMap swap (uS g a)).val (s := stdActV V) ![] Empty.elim)
-      ((Semiterm.lMap swap (wS g a)).val (s := stdActV V) ![] Empty.elim)
-      ((Semiterm.lMap swap (TS g a)).val (s := stdActV V) ![k] Empty.elim) = SV (Semiformula.lMap swap g) (1 - a) k := by
-  rw [lMap_swap_TS, val_TS_V g a ha, relabel_val_uST_wST_V g a ha]
+    revalue ((Semiterm.lMap swap (uS g a)).val (s := stdReadingV V) ![] Empty.elim)
+      ((Semiterm.lMap swap (wS g a)).val (s := stdReadingV V) ![] Empty.elim)
+      ((Semiterm.lMap swap (TS g a)).val (s := stdReadingV V) ![k] Empty.elim) = SV (Semiformula.lMap swap g) (1 - a) k := by
+  rw [lMap_swap_TS, val_TS_V g a ha, revalue_val_uST_wST_V g a ha]
 
 end values
 
@@ -509,34 +509,34 @@ section instances
 
 /-- The one-variable structural term of a bot-wrapped program. -/
 noncomputable def botT1 (t : Semiterm ℒₒᵣ Empty 1) : Semiterm ℒₒᵣ Empty 1 :=
-  succT1 (ppairT1 (Rew.bShift (bnumT 3)) t)
+  succT1 (ppairT1 (Rew.bShift (binNumeralMeta 3)) t)
 
 lemma val_botT1_V (t : Semiterm ℒₒᵣ Empty 1) (k : V) :
     (botT1 t).val (s := standardModel V) ![k] Empty.elim = pBot (t.val (s := standardModel V) ![k] Empty.elim) := by
-  rw [botT1, val_succT1_V, val_ppairT1_V, val_bShift₁_V, val_bnumT_V]
+  rw [botT1, val_succT1_V, val_ppairT1_V, val_bShift₁_V, val_binNumeralMeta_V]
   unfold pBot
   push_cast
   rfl
 
 lemma quote_emb_botT1 (t : Semiterm ℒₒᵣ Empty 1) :
     (⌜(Rew.emb (botT1 t) : SyntacticSemiterm ℒₒᵣ 1)⌝ : V) =
-    ppairT (bnum 3) (⌜(Rew.emb t : SyntacticSemiterm ℒₒᵣ 1)⌝ : V) ^+ 𝟏 := by
-  rw [botT1, quote_emb_succT1, quote_emb_ppairT1, quote_emb_bShift, ← Semiterm.empty_quote_def, quote_bnumT]
+    ppairTerm (binNumeral 3) (⌜(Rew.emb t : SyntacticSemiterm ℒₒᵣ 1)⌝ : V) ^+ 𝟏 := by
+  rw [botT1, quote_emb_succT1, quote_emb_ppairT1, quote_emb_bShift, ← Semiterm.empty_quote_def, quote_binNumeralMeta]
   push_cast
   rfl
 
 /-- Dupoc's guard template, explicitly. -/
-noncomputable abbrev gDu : Semisentence LAct 6 := tmpl (.plays .opp .self .C)
+noncomputable abbrev gDu : Semisentence LAct 6 := template (.plays .opp .self .C)
 /-- Cupod's guard template, explicitly. -/
-noncomputable abbrev gCu : Semisentence LAct 6 := tmpl (.plays .opp .self .D)
+noncomputable abbrev gCu : Semisentence LAct 6 := template (.plays .opp .self .D)
 /-- Wary's guard template, explicitly. -/
-noncomputable abbrev gW : Semisentence LAct 6 := tmpl (.neg (.plays .opp .self .C))
+noncomputable abbrev gW : Semisentence LAct 6 := template (.neg (.plays .opp .self .C))
 /-- The transposed Wary template. -/
-noncomputable abbrev gWT : Semisentence LAct 6 := tmpl (.neg (.plays .opp .self .D))
+noncomputable abbrev gWT : Semisentence LAct 6 := template (.neg (.plays .opp .self .D))
 
-lemma lMap_swap_gDu : Semiformula.lMap swap gDu = gCu := lMap_swap_tmpl _ rfl
-lemma lMap_swap_gCu : Semiformula.lMap swap gCu = gDu := lMap_swap_tmpl _ rfl
-lemma lMap_swap_gW : Semiformula.lMap swap gW = gWT := lMap_swap_tmpl _ rfl
+lemma lMap_swap_gDu : Semiformula.lMap swap gDu = gCu := lMap_swap_template _ rfl
+lemma lMap_swap_gCu : Semiformula.lMap swap gCu = gDu := lMap_swap_template _ rfl
+lemma lMap_swap_gW : Semiformula.lMap swap gW = gWT := lMap_swap_template _ rfl
 
 /-- The one-variable description term of the bot-wrapped searcher `pBot (SV g a k)`. -/
 noncomputable def TBS (g : Semisentence LAct 6) (a : ℕ) : Semiterm LAct Empty 1 :=
@@ -546,62 +546,62 @@ lemma lMap_swap_TBS (g : Semisentence LAct 6) (a : ℕ) : Semiterm.lMap swap (TB
   term_lMap_swap_emb _
 
 theorem val_TBS_V (g : Semisentence LAct 6) (a : ℕ) (ha : a = 0 ∨ a = 1) (k : V) :
-    (TBS g a).val (s := stdActV V) ![k] Empty.elim = dnum (pBot (SV g a k)) := by
+    (TBS g a).val (s := stdReadingV V) ![k] Empty.elim = canonical (pBot (SV g a k)) := by
   unfold TBS
-  rw [Semiterm.val_lMap, stdActV_lMap_emb, val_botT1_V, val_searchT1_V, dnum_pBot, dnum_SV g a ha]
+  rw [Semiterm.val_lMap, stdReadingV_lMap_emb, val_botT1_V, val_searchT1_V, canonical_pBot, canonical_SV g a ha]
 
 theorem quote_emb_TBS (g : Semisentence LAct 6) (a : ℕ) :
     (⌜(Rew.emb (TBS g a) : SyntacticSemiterm LAct 1)⌝ : V) =
-    ppairT (bnum 3)
-      (ppairT (bnum 6) (ppairT (^#0) (ppairT (bnum (gS g a : V)) (ppairT (progT (pS g a : V)) (progT (qS g a : V))))) ^+ 𝟏)
+    ppairTerm (binNumeral 3)
+      (ppairTerm (binNumeral 6) (ppairTerm (^#0) (ppairTerm (binNumeral (gS g a : V)) (ppairTerm (codeTerm (pS g a : V)) (codeTerm (qS g a : V))))) ^+ 𝟏)
       ^+ 𝟏 := by
   unfold TBS
   rw [term_emb_lMap_emb_n, quote_term_lMap_emb, quote_emb_botT1, quote_emb_searchT1]
 
 /-- Filling the budget slot of the bot tower (`termSubst_TBD`, generic in the inner triple). -/
 theorem termSubst_TBS (g : Semisentence LAct 6) (a : ℕ) (ha : a = 0 ∨ a = 1) (k : V) :
-    termSubst LAct (bnum k ∷ (0 : V)) (⌜(Rew.emb (TBS g a) : SyntacticSemiterm LAct 1)⌝ : V) =
-      progT (dnum (pBot (SV g a k))) := by
-  have hb3 : IsUTerm LAct (bnum (3 : V)) := (bnum_semiterm_LAct 0 _).isUTerm
-  have hb6 : IsUTerm LAct (bnum (6 : V)) := (bnum_semiterm_LAct 0 _).isUTerm
-  have hbg : IsUTerm LAct (bnum (gS g a : V)) := (bnum_semiterm_LAct 0 _).isUTerm
-  have hp : IsUTerm LAct (progT (pS g a : V)) := (progT_semiterm_LAct 0 _).isUTerm
-  have hq : IsUTerm LAct (progT (qS g a : V)) := (progT_semiterm_LAct 0 _).isUTerm
+    termSubst LAct (binNumeral k ∷ (0 : V)) (⌜(Rew.emb (TBS g a) : SyntacticSemiterm LAct 1)⌝ : V) =
+      codeTerm (canonical (pBot (SV g a k))) := by
+  have hb3 : IsUTerm LAct (binNumeral (3 : V)) := (binNumeral_semiterm_LAct 0 _).isUTerm
+  have hb6 : IsUTerm LAct (binNumeral (6 : V)) := (binNumeral_semiterm_LAct 0 _).isUTerm
+  have hbg : IsUTerm LAct (binNumeral (gS g a : V)) := (binNumeral_semiterm_LAct 0 _).isUTerm
+  have hp : IsUTerm LAct (codeTerm (pS g a : V)) := (codeTerm_semiterm_LAct 0 _).isUTerm
+  have hq : IsUTerm LAct (codeTerm (qS g a : V)) := (codeTerm_semiterm_LAct 0 _).isUTerm
   have hone : IsUTerm LAct (𝟏 : V) := (IsSemiterm.LAct_of_LOR (one_semiterm (n := 0))).isUTerm
-  have h1 : IsUTerm LAct (ppairT (progT (pS g a : V)) (progT (qS g a : V))) := ppairT_uterm_LAct hp hq
-  have h2 : IsUTerm LAct (ppairT (bnum (gS g a : V)) (ppairT (progT (pS g a : V)) (progT (qS g a : V)))) :=
-    ppairT_uterm_LAct hbg h1
-  have h3 : IsUTerm LAct (ppairT (^#0) (ppairT (bnum (gS g a : V)) (ppairT (progT (pS g a : V)) (progT (qS g a : V))))) :=
-    ppairT_uterm_LAct bvar_zero_uterm h2
-  have h4 : IsUTerm LAct (ppairT (bnum 6)
-      (ppairT (^#0) (ppairT (bnum (gS g a : V)) (ppairT (progT (pS g a : V)) (progT (qS g a : V)))))) :=
-    ppairT_uterm_LAct hb6 h3
-  have h5 : IsUTerm LAct (ppairT (bnum 6)
-      (ppairT (^#0) (ppairT (bnum (gS g a : V)) (ppairT (progT (pS g a : V)) (progT (qS g a : V))))) ^+ 𝟏) :=
+  have h1 : IsUTerm LAct (ppairTerm (codeTerm (pS g a : V)) (codeTerm (qS g a : V))) := ppairTerm_uterm_LAct hp hq
+  have h2 : IsUTerm LAct (ppairTerm (binNumeral (gS g a : V)) (ppairTerm (codeTerm (pS g a : V)) (codeTerm (qS g a : V)))) :=
+    ppairTerm_uterm_LAct hbg h1
+  have h3 : IsUTerm LAct (ppairTerm (^#0) (ppairTerm (binNumeral (gS g a : V)) (ppairTerm (codeTerm (pS g a : V)) (codeTerm (qS g a : V))))) :=
+    ppairTerm_uterm_LAct bvar_zero_uterm h2
+  have h4 : IsUTerm LAct (ppairTerm (binNumeral 6)
+      (ppairTerm (^#0) (ppairTerm (binNumeral (gS g a : V)) (ppairTerm (codeTerm (pS g a : V)) (codeTerm (qS g a : V)))))) :=
+    ppairTerm_uterm_LAct hb6 h3
+  have h5 : IsUTerm LAct (ppairTerm (binNumeral 6)
+      (ppairTerm (^#0) (ppairTerm (binNumeral (gS g a : V)) (ppairTerm (codeTerm (pS g a : V)) (codeTerm (qS g a : V))))) ^+ 𝟏) :=
     qqAdd_uterm_LAct h4 hone
-  have h6 : IsUTerm LAct (ppairT (bnum 3)
-      (ppairT (bnum 6) (ppairT (^#0) (ppairT (bnum (gS g a : V)) (ppairT (progT (pS g a : V)) (progT (qS g a : V))))) ^+ 𝟏)) :=
-    ppairT_uterm_LAct hb3 h5
-  rw [quote_emb_TBS, termSubst_qqAdd _ h6 hone, termSubst_ppairT _ hb3 h5,
-    termSubst_closed _ (bnum_semiterm_LAct 0 _), termSubst_closed _ (IsSemiterm.LAct_of_LOR one_semiterm),
-    termSubst_tower, dnum_pBot, dnum_SV g a ha, progT_bot]
+  have h6 : IsUTerm LAct (ppairTerm (binNumeral 3)
+      (ppairTerm (binNumeral 6) (ppairTerm (^#0) (ppairTerm (binNumeral (gS g a : V)) (ppairTerm (codeTerm (pS g a : V)) (codeTerm (qS g a : V))))) ^+ 𝟏)) :=
+    ppairTerm_uterm_LAct hb3 h5
+  rw [quote_emb_TBS, termSubst_qqAdd _ h6 hone, termSubst_ppairTerm _ hb3 h5,
+    termSubst_closed _ (binNumeral_semiterm_LAct 0 _), termSubst_closed _ (IsSemiterm.LAct_of_LOR one_semiterm),
+    termSubst_tower, canonical_pBot, canonical_SV g a ha, codeTerm_bot]
 
 lemma hU_botSV (g : Semisentence LAct 6) (a : ℕ) (ha : a = 0 ∨ a = 1) (k : V) :
-    (⌜uS g a⌝ : V) = dU (pBot (SV g a k)) := by rw [dU_pBot]; exact hU_SV g a ha k
+    (⌜uS g a⌝ : V) = revalueU (pBot (SV g a k)) := by rw [revalueU_pBot]; exact hU_SV g a ha k
 lemma hW_botSV (g : Semisentence LAct 6) (a : ℕ) (ha : a = 0 ∨ a = 1) (k : V) :
-    (⌜wS g a⌝ : V) = dW (pBot (SV g a k)) := by rw [dW_pBot]; exact hW_SV g a ha k
+    (⌜wS g a⌝ : V) = revalueW (pBot (SV g a k)) := by rw [revalueW_pBot]; exact hW_SV g a ha k
 
 theorem desc_botSV (g : Semisentence LAct 6) (a : ℕ) (ha : a = 0 ∨ a = 1) (k : V) :
-    relabel ((uS g a).val (s := stdActV V) ![] Empty.elim) ((wS g a).val (s := stdActV V) ![] Empty.elim)
-      ((TBS g a).val (s := stdActV V) ![k] Empty.elim) = pBot (SV g a k) := by
-  rw [val_TBS_V g a ha, dnum_pBot, relabel_bot, relabel_val_uS_wS_V g a ha]
+    revalue ((uS g a).val (s := stdReadingV V) ![] Empty.elim) ((wS g a).val (s := stdReadingV V) ![] Empty.elim)
+      ((TBS g a).val (s := stdReadingV V) ![k] Empty.elim) = pBot (SV g a k) := by
+  rw [val_TBS_V g a ha, canonical_pBot, revalue_bot, revalue_val_uS_wS_V g a ha]
 
 theorem descT_botSV (g : Semisentence LAct 6) (a : ℕ) (ha : a = 0 ∨ a = 1) (k : V) :
-    relabel ((Semiterm.lMap swap (uS g a)).val (s := stdActV V) ![] Empty.elim)
-      ((Semiterm.lMap swap (wS g a)).val (s := stdActV V) ![] Empty.elim)
-      ((Semiterm.lMap swap (TBS g a)).val (s := stdActV V) ![k] Empty.elim) =
+    revalue ((Semiterm.lMap swap (uS g a)).val (s := stdReadingV V) ![] Empty.elim)
+      ((Semiterm.lMap swap (wS g a)).val (s := stdReadingV V) ![] Empty.elim)
+      ((Semiterm.lMap swap (TBS g a)).val (s := stdReadingV V) ![k] Empty.elim) =
       pBot (SV (Semiformula.lMap swap g) (1 - a) k) := by
-  rw [lMap_swap_TBS, val_TBS_V g a ha, dnum_pBot, relabel_bot, relabel_val_uST_wST_V g a ha]
+  rw [lMap_swap_TBS, val_TBS_V g a ha, canonical_pBot, revalue_bot, revalue_val_uST_wST_V g a ha]
 
 end instances
 

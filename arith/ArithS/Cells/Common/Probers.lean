@@ -41,14 +41,14 @@ section search
 `k` and the then-branch playing `a` at fuel `n` make the searcher play `a` at fuel `n + 1`
 (`EvalGraph.search_iff₆`, the left disjunct). -/
 theorem search_then_V₆ {n me opp k g p q a : V} (hg : IsSemiformula LAct 6 g)
-    (h : LenProvableV TAct k (guardCode g me opp)) (hp : EvalGraph n me opp p a) :
+    (h : LenBox TAct k (guardCode g me opp)) (hp : EvalGraph n me opp p a) :
     EvalGraph (n + 1) me opp (pSearch k g p q) a :=
   (EvalGraph.search_iff₆ hg).mpr (Or.inl ⟨h, hp⟩)
 
 /-- **The else-clause**: the guard NOT found within `k` and the else-branch playing `a` at fuel `n` make the
 searcher play `a` at fuel `n + 1` (the right disjunct). -/
 theorem search_else_V₆ {n me opp k g p q a : V} (hg : IsSemiformula LAct 6 g)
-    (h : ¬ LenProvableV TAct k (guardCode g me opp)) (hq : EvalGraph n me opp q a) :
+    (h : ¬ LenBox TAct k (guardCode g me opp)) (hq : EvalGraph n me opp q a) :
     EvalGraph (n + 1) me opp (pSearch k g p q) a :=
   (EvalGraph.search_iff₆ hg).mpr (Or.inr ⟨h, hq⟩)
 
@@ -61,7 +61,7 @@ section searchers
 /-- **The generic searcher's then-clause in ANY frame** (fuel 2): a proof of `guardCode ⌜g⌝ me opp`
 within `k` makes `SV g a k` play `a`. -/
 theorem SV_then_V (g : Semisentence LAct 6) (a : ℕ) (k me opp : V)
-    (h : LenProvableV TAct k (guardCode (⌜g⌝ : V) me opp)) : EvalGraph 2 me opp (SV g a k) (a : V) := by
+    (h : LenBox TAct k (guardCode (⌜g⌝ : V) me opp)) : EvalGraph 2 me opp (SV g a k) (a : V) := by
   rw [show (2 : V) = 1 + 1 from one_add_one_eq_two.symm]
   show EvalGraph (1 + 1) me opp (pSearch k (⌜g⌝ : V) (pConst (a : V)) (pConst ((1 - a : ℕ) : V))) (a : V)
   rw [EvalGraph.search_iff₆ (isSemiformula_quote₆ g)]
@@ -71,13 +71,13 @@ theorem SV_then_V (g : Semisentence LAct 6) (a : ℕ) (k me opp : V)
 
 /-- The bot-wrapped generic searcher's then-clause in any frame (fuel 3). -/
 theorem botSV_then_V (g : Semisentence LAct 6) (a : ℕ) (k me opp : V)
-    (h : LenProvableV TAct k (guardCode (⌜g⌝ : V) me opp)) : EvalGraph 3 me opp (pBot (SV g a k)) (a : V) := by
+    (h : LenBox TAct k (guardCode (⌜g⌝ : V) me opp)) : EvalGraph 3 me opp (pBot (SV g a k)) (a : V) := by
   rw [show (3 : V) = 2 + 1 from two_add_one_eq_three.symm, EvalGraph.bot_iff]
   exact SV_then_V g a k me opp h
 
 /-- **The search clause of the generic engine searcher in every model** (fuel 2): found ⇒ the then-branch. -/
 theorem SV_search_V (g : Semisentence LAct 6) (a : ℕ) (k opp : V)
-    (h : LenProvableV TAct k (guardCode (⌜g⌝ : V) (SV g a k) opp)) :
+    (h : LenBox TAct k (guardCode (⌜g⌝ : V) (SV g a k) opp)) :
     EvalGraph 2 (SV g a k) opp (SV g a k) (a : V) := by
   rw [show (2 : V) = 1 + 1 from one_add_one_eq_two.symm]
   show EvalGraph (1 + 1) (SV g a k) opp (pSearch k (⌜g⌝ : V) (pConst (a : V)) (pConst ((1 - a : ℕ) : V))) (a : V)
@@ -90,7 +90,7 @@ theorem SV_search_V (g : Semisentence LAct 6) (a : ℕ) (k opp : V)
 /-- **Dupoc's search clause in ANY frame** (fuel 2): `DupocV k` run in the frame `(me, opp)` plays
 `C` if `guardCode ⌜guardTemplate 0⌝ me opp` is provable within `k`. -/
 theorem dupoc_frame_search_V (k me opp : V) :
-    LenProvableV TAct k (guardCode (⌜guardTemplate 0⌝ : V) me opp) → EvalGraph 2 me opp (DupocV k) 0 := by
+    LenBox TAct k (guardCode (⌜guardTemplate 0⌝ : V) me opp) → EvalGraph 2 me opp (DupocV k) 0 := by
   intro h
   rw [show (2 : V) = 1 + 1 from one_add_one_eq_two.symm]
   show EvalGraph (1 + 1) me opp (pSearch k (⌜guardTemplate 0⌝ : V) (pConst 0) (pConst 1)) 0
@@ -101,7 +101,7 @@ theorem dupoc_frame_search_V (k me opp : V) :
 
 /-- **Cupod's search clause in ANY frame** (fuel 2). -/
 theorem cupod_frame_search_V (k me opp : V) :
-    LenProvableV TAct k (guardCode (⌜guardTemplate 1⌝ : V) me opp) → EvalGraph 2 me opp (CupodV k) 1 := by
+    LenBox TAct k (guardCode (⌜guardTemplate 1⌝ : V) me opp) → EvalGraph 2 me opp (CupodV k) 1 := by
   intro h
   rw [show (2 : V) = 1 + 1 from one_add_one_eq_two.symm]
   show EvalGraph (1 + 1) me opp (pSearch k (⌜guardTemplate 1⌝ : V) (pConst 1) (pConst 0)) 1
@@ -114,20 +114,20 @@ theorem cupod_frame_search_V (k me opp : V) :
 /-- **The bot-wrapped Dupoc's search clause in any frame** (fuel 3: the bot step, the search step,
 the constant). -/
 theorem botDupoc_frame_search_V (k me opp : V) :
-    LenProvableV TAct k (guardCode (⌜guardTemplate 0⌝ : V) me opp) → EvalGraph 3 me opp (pBot (DupocV k)) 0 := by
+    LenBox TAct k (guardCode (⌜guardTemplate 0⌝ : V) me opp) → EvalGraph 3 me opp (pBot (DupocV k)) 0 := by
   intro h
   rw [show (3 : V) = 2 + 1 from two_add_one_eq_three.symm, EvalGraph.bot_iff]
   exact dupoc_frame_search_V k me opp h
 
 theorem botCupod_frame_search_V (k me opp : V) :
-    LenProvableV TAct k (guardCode (⌜guardTemplate 1⌝ : V) me opp) → EvalGraph 3 me opp (pBot (CupodV k)) 1 := by
+    LenBox TAct k (guardCode (⌜guardTemplate 1⌝ : V) me opp) → EvalGraph 3 me opp (pBot (CupodV k)) 1 := by
   intro h
   rw [show (3 : V) = 2 + 1 from two_add_one_eq_three.symm, EvalGraph.bot_iff]
   exact cupod_frame_search_V k me opp h
 
 /-- **Cupod's search clause against ANY opponent in every model** (fuel `2`). -/
 theorem cupod_search_any_V (k opp : V) :
-    LenProvableV TAct k (guardCode (⌜guardTemplate 1⌝ : V) (CupodV k) opp) →
+    LenBox TAct k (guardCode (⌜guardTemplate 1⌝ : V) (CupodV k) opp) →
       EvalGraph 2 (CupodV k) opp (CupodV k) 1 := by
   intro h
   rw [show (2 : V) = 1 + 1 from one_add_one_eq_two.symm]
@@ -140,7 +140,7 @@ theorem cupod_search_any_V (k opp : V) :
 
 /-- **Dupoc's search clause against ANY opponent in every model** (fuel `2`). -/
 theorem dupoc_search_any_V (k opp : V) :
-    LenProvableV TAct k (guardCode (⌜guardTemplate 0⌝ : V) (DupocV k) opp) →
+    LenBox TAct k (guardCode (⌜guardTemplate 0⌝ : V) (DupocV k) opp) →
       EvalGraph 2 (DupocV k) opp (DupocV k) 0 := by
   intro h
   rw [show (2 : V) = 1 + 1 from one_add_one_eq_two.symm]
@@ -157,11 +157,11 @@ end searchers
 section mirror
 
 /-- **Mirror's sim step in every model**: Mirror in the frame `(Mirror, opp)` runs `opp` in the
-frame `(opp, Mirror)` (`EvalGraph.sim_iff` + `psubst_opp`/`psubst_self`). -/
+frame `(opp, Mirror)` (`EvalGraph.sim_iff` + `substCode_opp`/`substCode_self`). -/
 theorem mirror_step_V (n opp a : V) :
     EvalGraph (n + 1) MirrorV opp MirrorV a ↔ EvalGraph n opp MirrorV opp a := by
   have h := EvalGraph.sim_iff (n := n) (me := MirrorV) (opp := opp) (p := pOpp) (q := pSelf) (a := a)
-  rw [psubst_opp, psubst_self] at h
+  rw [substCode_opp, substCode_self] at h
   exact h
 
 /-- Mirror copies, in every model: a fuel-2 play of `opp` against Mirror is Mirror's fuel-3 play
@@ -208,7 +208,7 @@ theorem tft_C_of_probe_C_V {x n : V} (h : EvalGraph n x (pBot (pConst 0)) x 0) :
   unfold TftV
   rw [EvalGraph.ite_iff]
   refine ⟨0, ?_, Or.inl ⟨rfl, EvalGraph.const_iff.mpr rfl⟩⟩
-  rw [EvalGraph.sim_iff, psubst_opp, psubst_bot]
+  rw [EvalGraph.sim_iff, substCode_opp, substCode_bot]
   exact h
 
 /-- **The transposed TFT defects against `x` when `x` defects against `.bot DefectBot`** (fuel `+2`). -/
@@ -217,7 +217,7 @@ theorem tftT_D_of_probe_D_V {x n : V} (h : EvalGraph n x (pBot (pConst 1)) x 1) 
   unfold TftTV
   rw [EvalGraph.ite_iff]
   refine ⟨1, ?_, Or.inl ⟨rfl, EvalGraph.const_iff.mpr rfl⟩⟩
-  rw [EvalGraph.sim_iff, psubst_opp, psubst_bot]
+  rw [EvalGraph.sim_iff, substCode_opp, substCode_bot]
   exact h
 
 end tft

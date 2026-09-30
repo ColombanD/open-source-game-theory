@@ -39,7 +39,7 @@ theorem outcome_CupodTrollBot_vs_CooperateBot :
 /-! ### On the hand-template twins
 
 * `CupodTroll7 k` (`Cells/KhatCells.lean`): CupodTrollBot with the constant budget-slot template; plays as
-  `pcode (CupodTrollBot k)` in the program slot (`evalGraph_CupodTroll7_iff`), but as an OPPONENT its code
+  `progCode (CupodTrollBot k)` in the program slot (`evalGraph_CupodTroll7_iff`), but as an OPPONENT its code
   (hence the partner's guard sentence) differs, so the cell stays on the twin.
 -/
 

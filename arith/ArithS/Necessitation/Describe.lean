@@ -7,7 +7,7 @@ import ArithS.Necessitation.ChainOcc
 `M4_BOUNDED_HBL/DESIGN_describe.md`: from a context `Γ`, introduce one eigenvariable per node of
 a code's syntax tree and leave, for the top node's eigenvariable `&0`, its SHAPE fact and its
 FORMATION fact (`(isSemiterm LAct).pi n &0`, …) — as a LIST of `Chain.lean` steps, a Σ₁
-function of the code alone (never of `Γ`), so that `chainCode_proof`/`dlen_chainCode_le` give
+function of the code alone (never of `Γ`), so that `chainCode_proof`/`proofLen_chainCode_le` give
 the derivation and its length.
 
 ## Part 0 — infrastructure on step lists
@@ -33,7 +33,7 @@ WalkTable tbl` from `Lib.univ_code` row by row.
 ## Part 2 — the term walk (D2 for terms)
 
 `descT W n t = ⟪count, steps⟫` by a `TermRec` construction with the parameters `(W, n)` —
-terms carry no arity change — with the vector fold `descVecAux` (primitive recursion from the
+terms carry no arity change — with the vector fold `descriptionsAux` (primitive recursion from the
 END of the vector: tail first) and the node emitters `bvarNode` (the `z < n` chain `ltSteps`
 + 3 steps), `fvarNode`, `funcNode`, `adjNode`, `nilNode`; `describeT`, `descCountT`,
 `descTVec` and their per-constructor equations.
@@ -44,7 +44,7 @@ END of the vector: tail first) and the node emitters `bvarNode` (the `z < n` cha
 per-row lemmas `ok_<row>` (`mkStep walkPieces k ev` is applicable and its `ctxAfter` inserts
 the canonical fact — from `mkStep_<row>`, `walkTable_<row>`, `inst_<row>`), the `z < n`
 chain (`ltAux_ok`), the node lemmas (`bvarNode_ok`, `fvarNode_ok`, `nilNode_ok`, `adjNode_ok`,
-`funcNode_ok`), the vector induction `descVecAux_ok` (tail first, PR on the number of entries
+`funcNode_ok`), the vector induction `descriptionsAux_ok` (tail first, PR on the number of entries
 folded, the entries' facts from the Lean-level hypothesis) and **`termOK_of_isSemiterm`**
 (`IsSemiterm.induction 𝚷` on the Π₁ invariant `TermOK`): `describeT_ok`, `describeT_chain`.
 
@@ -71,8 +71,8 @@ D4 shape facts `describeF_shape_and/all/verum/rel`.
 `stepK N E B + 36·|Γᵢ|` per step with the contexts growing additively
 (`ctxAfter_len_le`, `ctxVec_len_le` — the `ShiftLen` law, never the doubling), hence
 `costSum_le_of_hornOnly`; the walk is Horn-only (`hornOnly_describeT/F`), so
-**`costSum_describeF_le`** and **`dlen_describeF_chain_le`**:
-`dlen (chainCode tbl Γ (describeF n r) d) ≤ dlen d + 12|r|·(stepK N E B + 36·ctxBound E B Γ (12|r|))`
+**`costSum_describeF_le`** and **`proofLen_describeF_chain_le`**:
+`proofLen (chainCode tbl Γ (describeF n r) d) ≤ proofLen d + 12|r|·(stepK N E B + 36·ctxBound E B Γ (12|r|))`
 with `ctxBound E B Γ L = |Γ| + L·fvOccS Γ + (L² + L)·4BE` — DESIGN §6.3's
 `C₁|r|(N + |Γ|) + C₂|r|²·fvOccS Γ + C₃|r|³·B·E`.
 -/
@@ -498,7 +498,7 @@ structure WRow where
 
 /-- A sound table row of length `≤ N` (one conjunct of `TableOK`). -/
 def RowOK (r N : V) : Prop :=
-  IsSemiformula LAct (rowM r) (rowB r) ∧ Proof TAct (rowD r) (qqAlls (rowB r) (rowM r)) ∧ dlen TAct (rowD r) ≤ N
+  IsSemiformula LAct (rowM r) (rowB r) ∧ Proof TAct (rowD r) (qqAlls (rowB r) (rowM r)) ∧ proofLen TAct (rowD r) ≤ N
 
 lemma RowOK.mono {r N N' : V} (h : RowOK r N) (hN : N ≤ N') : RowOK r N' :=
   ⟨h.1, h.2.1, le_trans h.2.2 hN⟩
@@ -1684,23 +1684,23 @@ noncomputable def construction : PR.Construction V blueprint where
 
 end DescVecAux
 
-/-- `descVecAux W n w j` — the vector walk over the LAST `j` entries of the result vector `w`
+/-- `descriptionsAux W n w j` — the vector walk over the LAST `j` entries of the result vector `w`
 (entry `w.[i] = ⟪count, steps⟫` of the `i`-th term), tail first. -/
-noncomputable def descVecAux (W n w j : V) : V := DescVecAux.construction.result ![W, n, w] j
+noncomputable def descriptionsAux (W n w j : V) : V := DescVecAux.construction.result ![W, n, w] j
 
-@[simp] lemma descVecAux_zero (W n w : V) : descVecAux W n w 0 = nilNode W n := by
-  simp [descVecAux, DescVecAux.construction]
-@[simp] lemma descVecAux_succ (W n w j : V) :
-    descVecAux W n w (j + 1) = adjNode W n j (nthFromEnd w j) (descVecAux W n w j) := by
-  simp [descVecAux, DescVecAux.construction]
+@[simp] lemma descriptionsAux_zero (W n w : V) : descriptionsAux W n w 0 = nilNode W n := by
+  simp [descriptionsAux, DescVecAux.construction]
+@[simp] lemma descriptionsAux_succ (W n w j : V) :
+    descriptionsAux W n w (j + 1) = adjNode W n j (nthFromEnd w j) (descriptionsAux W n w j) := by
+  simp [descriptionsAux, DescVecAux.construction]
 
-noncomputable def descVecAuxDef : 𝚺₁.Semisentence 5 :=
+noncomputable def descriptionsAuxDef : 𝚺₁.Semisentence 5 :=
   DescVecAux.blueprint.resultDef |>.rew (Rew.subst ![#0, #4, #1, #2, #3])
 
-instance descVecAux_defined : 𝚺₁-Function₄ (descVecAux : V → V → V → V → V) via descVecAuxDef := .mk
-  fun v ↦ by simp [DescVecAux.construction.result_defined_iff, descVecAuxDef]; rfl
-instance descVecAux_definable : 𝚺₁-Function₄ (descVecAux : V → V → V → V → V) :=
-  descVecAux_defined.to_definable
+instance descriptionsAux_defined : 𝚺₁-Function₄ (descriptionsAux : V → V → V → V → V) via descriptionsAuxDef := .mk
+  fun v ↦ by simp [DescVecAux.construction.result_defined_iff, descriptionsAuxDef]; rfl
+instance descriptionsAux_definable : 𝚺₁-Function₄ (descriptionsAux : V → V → V → V → V) :=
+  descriptionsAux_defined.to_definable
 
 /-- The row of the closed symbol fact `isFunc k f` (`LAct`: `(0,0)` zero, `(0,1)` one, `(0,2)` c_C,
 `(0,3)` c_D, `(2,0)` add, `(2,1)` mul). -/
@@ -1764,15 +1764,15 @@ namespace DescT
 noncomputable def blueprint : Language.TermRec.Blueprint 2 where
   bvar := .mkSigma “y z W n. ∃ s, !bvarNodeDef s W n z ∧ y = s”
   fvar := .mkSigma “y x W n. ∃ s, !fvarNodeDef s W n x ∧ y = s”
-  func := .mkSigma “y k f v w W n. ∃ d, !descVecAuxDef d W n w k ∧ ∃ s, !funcNodeDef s W n k f d ∧ y = s”
+  func := .mkSigma “y k f v w W n. ∃ d, !descriptionsAuxDef d W n w k ∧ ∃ s, !funcNodeDef s W n k f d ∧ y = s”
 
 noncomputable def construction : Language.TermRec.Construction V blueprint where
   bvar := fun param z ↦ bvarNode (param 0) (param 1) z
   fvar := fun param x ↦ fvarNode (param 0) (param 1) x
-  func := fun param k f _ w ↦ funcNode (param 0) (param 1) k f (descVecAux (param 0) (param 1) w k)
+  func := fun param k f _ w ↦ funcNode (param 0) (param 1) k f (descriptionsAux (param 0) (param 1) w k)
   bvar_defined := .mk fun v ↦ by simp [blueprint, bvarNode_defined.iff]
   fvar_defined := .mk fun v ↦ by simp [blueprint, fvarNode_defined.iff]
-  func_defined := .mk fun v ↦ by simp [blueprint, descVecAux_defined.iff, funcNode_defined.iff]
+  func_defined := .mk fun v ↦ by simp [blueprint, descriptionsAux_defined.iff, funcNode_defined.iff]
 
 end DescT
 
@@ -1791,7 +1791,7 @@ noncomputable def descCountT (W n t : V) : V := π₁ (descT W n t)
 @[simp] lemma descT_fvar (W n x : V) : descT W n (^&x) = fvarNode W n x := by
   simp [descT, DescT.construction]
 lemma descT_func (W n : V) {k f v : V} (hkf : LAct.IsFunc k f) (hv : IsUTermVec LAct k v) :
-    descT W n (^func k f v) = funcNode W n k f (descVecAux W n (descTVec W n k v) k) := by
+    descT W n (^func k f v) = funcNode W n k f (descriptionsAux W n (descTVec W n k v) k) := by
   simp [descT, descTVec, DescT.construction, hkf, hv]
 
 lemma len_descTVec (W n : V) {k v : V} (hv : IsUTermVec LAct k v) : len (descTVec W n k v) = k :=
@@ -1836,7 +1836,7 @@ lemma describeT_fvar (W n x : V) : describeT W n (^&x) =
 lemma descCountT_fvar (W n x : V) : descCountT W n (^&x) = 1 := by simp [descCountT, fvarNode]
 lemma describeT_func (W n : V) {k f v : V} (hkf : LAct.IsFunc k f) (hv : IsUTermVec LAct k v) :
     describeT W n (^func k f v) =
-      appendV (π₂ (descVecAux W n (descTVec W n k v) k))
+      appendV (π₂ (descriptionsAux W n (descTVec W n k v) k))
         ?[mkStep W (funcRow k f) 0,
           mkStep W 7 ?[cTV k, cTV f, vRef 0 k],
           mkStep W 8 ?[cTV n, cTV k, cTV f, vRef 1 k, ^&0],
@@ -1845,7 +1845,7 @@ lemma describeT_func (W n : V) {k f v : V} (hkf : LAct.IsFunc k f) (hv : IsUTerm
           mkStep W 39 ?[cTV k, vRef 1 k]] := by
   rw [describeT, descT_func W n hkf hv]; simp [funcNode]
 lemma descCountT_func (W n : V) {k f v : V} (hkf : LAct.IsFunc k f) (hv : IsUTermVec LAct k v) :
-    descCountT W n (^func k f v) = π₁ (descVecAux W n (descTVec W n k v) k) + 1 := by
+    descCountT W n (^func k f v) = π₁ (descriptionsAux W n (descTVec W n k v) k) + 1 := by
   rw [descCountT, descT_func W n hkf hv]; simp [funcNode]
 
 end termWalk
@@ -2884,19 +2884,19 @@ instance termOK_definable : 𝚷₁-Relation₄ (TermOK : V → V → V → V �
 
 /-- **The vector walk is applicable**, tail first: after the last `j` entries of a vector of length
 `k ≤ 2` whose entries satisfy the invariant. -/
-theorem descVecAux_ok {tbl N W n k v : V} (htbl : TableOK tbl N) (hW : WalkTable tbl) (hWp : W = walkPieces)
+theorem descriptionsAux_ok {tbl N W n k v : V} (htbl : TableOK tbl N) (hW : WalkTable tbl) (hWp : W = walkPieces)
     (hk : k ≤ 2) (hv : IsSemitermVec LAct k n v) (ih : ∀ i < k, TermOK tbl W n v.[i])
     {E : V} (hE : 2 * n + 2 * listSum (termLenVec LAct k v) + 8 ≤ E) :
     ∀ j ≤ k, IsUTermVec LAct j (takeLast v j) ∧
-      π₁ (descVecAux W n (descTVec W n k v) j) ≤ 2 * listSum (termLenVec LAct j (takeLast v j)) ∧
-      ∀ Γ, IsFormulaSet LAct Γ → VecFacts tbl E W n j Γ (descVecAux W n (descTVec W n k v) j) := by
+      π₁ (descriptionsAux W n (descTVec W n k v) j) ≤ 2 * listSum (termLenVec LAct j (takeLast v j)) ∧
+      ∀ Γ, IsFormulaSet LAct Γ → VecFacts tbl E W n j Γ (descriptionsAux W n (descTVec W n k v) j) := by
   intro j
   induction j using ISigma1.pi1_succ_induction with
   | hP => unfold VecFacts; definability
   | zero =>
     intro _
     refine ⟨by simp, by simp [nilNode], fun Γ hΓ ↦ ?_⟩
-    rw [descVecAux_zero]
+    rw [descriptionsAux_zero]
     obtain ⟨a, b, c, d⟩ := nilNode_ok htbl hW hWp (E := E)
       (le_trans (add_le_add le_self_add (by norm_num)) hE) Γ hΓ
     exact ⟨a, b, by rw [c]; simp [nilNode], d⟩
@@ -2934,12 +2934,12 @@ theorem descVecAux_ok {tbl N W n k v : V} (htbl : TableOK tbl N) (hW : WalkTable
       rw [takeLast_succ_of_lt hjk, hvlen]
     refine ⟨?_, ?_, fun Γ hΓ ↦ ?_⟩
     · rw [htake]; exact hU.adjoin ht.isUTerm
-    · rw [descVecAux_succ, hnth, htake, termLenVec_cons ht.isUTerm hU, listSum_adjoin, mul_add]
-      have hC : π₁ (adjNode W n j (descT W n v.[k - (j + 1)]) (descVecAux W n (descTVec W n k v) j)) =
-          π₁ (descVecAux W n (descTVec W n k v) j) + π₁ (descT W n v.[k - (j + 1)]) + 1 := by simp [adjNode]
+    · rw [descriptionsAux_succ, hnth, htake, termLenVec_cons ht.isUTerm hU, listSum_adjoin, mul_add]
+      have hC : π₁ (adjNode W n j (descT W n v.[k - (j + 1)]) (descriptionsAux W n (descTVec W n k v) j)) =
+          π₁ (descriptionsAux W n (descTVec W n k v) j) + π₁ (descT W n v.[k - (j + 1)]) + 1 := by simp [adjNode]
       rw [hC, add_assoc, add_comm (2 * termLen LAct v.[k - (j + 1)])]
       exact add_le_add hcv hcnt
-    · rw [descVecAux_succ, hnth]
+    · rw [descriptionsAux_succ, hnth]
       exact adjNode_ok htbl hW hWp hEadj hTF hΓ (hF Γ hΓ)
 
 /-- **D3 for terms — the invariant holds for every semiterm.** -/
@@ -2975,7 +2975,7 @@ theorem termOK_of_isSemiterm {tbl N W : V} (htbl : TableOK tbl N) (hW : WalkTabl
       rw [hlen]
       exact add_le_add (add_le_add le_rfl (mul_le_mul_of_nonneg_left le_self_add zero_le)) le_rfl
     have hE' : 2 * n + 8 ≤ E := le_trans (add_le_add le_self_add le_rfl) hES
-    obtain ⟨_, hcnt, hF⟩ := descVecAux_ok htbl hW hWp hk hv ih hES k le_rfl
+    obtain ⟨_, hcnt, hF⟩ := descriptionsAux_ok htbl hW hWp hk hv ih hES k le_rfl
     have htl : takeLast v k = v := by rw [← hv.lh]; exact takeLast_len_self v
     rw [htl] at hcnt
     refine ⟨?_, ?_⟩
@@ -3123,9 +3123,9 @@ namespace DescF
 def Phi (W : V) (C : Set V) (pr : V) : Prop :=
   ∃ n ≤ pr, ∃ q ≤ pr, pr = ⟪n, q⟫ ∧ ∃ r ≤ q, ∃ y ≤ q, q = ⟪r, y⟫ ∧
   ( (∃ k < r, ∃ R < r, ∃ v < r, r = ^rel k R v ∧
-      y = atomNode W n 32 33 k R (descVecAux W n (descTVec W n k v) k)) ∨
+      y = atomNode W n 32 33 k R (descriptionsAux W n (descTVec W n k v) k)) ∨
     (∃ k < r, ∃ R < r, ∃ v < r, r = ^nrel k R v ∧
-      y = atomNode W n 34 35 k R (descVecAux W n (descTVec W n k v) k)) ∨
+      y = atomNode W n 34 35 k R (descriptionsAux W n (descTVec W n k v) k)) ∨
     (r = ^⊤ ∧ y = constNode W n 19 20) ∨
     (r = ^⊥ ∧ y = constNode W n 22 23) ∨
     (∃ p < r, ∃ p' < r, r = p ^⋏ p' ∧ ∃ yp ≤ y, ∃ yq ≤ y, ⟪n, p, yp⟫ ∈ C ∧ ⟪n, p', yq⟫ ∈ C ∧
@@ -3139,9 +3139,9 @@ noncomputable def blueprint : Fixpoint.Blueprint 1 := ⟨.mkDelta
   (.mkSigma “pr C W.
     ∃ n <⁺ pr, ∃ q <⁺ pr, !pairDef pr n q ∧ ∃ r <⁺ q, ∃ y <⁺ q, !pairDef q r y ∧
     ( (∃ k < r, ∃ R < r, ∃ v < r, !qqRelDef r k R v ∧
-        ∃ w, !descTVecDef w W n k v ∧ ∃ d, !descVecAuxDef d W n w k ∧ ∃ s, !atomNodeDef s W n 32 33 k R d ∧ y = s) ∨
+        ∃ w, !descTVecDef w W n k v ∧ ∃ d, !descriptionsAuxDef d W n w k ∧ ∃ s, !atomNodeDef s W n 32 33 k R d ∧ y = s) ∨
       (∃ k < r, ∃ R < r, ∃ v < r, !qqNRelDef r k R v ∧
-        ∃ w, !descTVecDef w W n k v ∧ ∃ d, !descVecAuxDef d W n w k ∧ ∃ s, !atomNodeDef s W n 34 35 k R d ∧ y = s) ∨
+        ∃ w, !descTVecDef w W n k v ∧ ∃ d, !descriptionsAuxDef d W n w k ∧ ∃ s, !atomNodeDef s W n 34 35 k R d ∧ y = s) ∨
       (!qqVerumDef r ∧ ∃ s, !constNodeDef s W n 19 20 ∧ y = s) ∨
       (!qqFalsumDef r ∧ ∃ s, !constNodeDef s W n 22 23 ∧ y = s) ∨
       (∃ p < r, ∃ p' < r, !qqAndDef r p p' ∧ ∃ yp <⁺ y, ∃ yq <⁺ y, :⟪n, p, yp⟫:∈ C ∧ :⟪n, p', yq⟫:∈ C ∧
@@ -3153,9 +3153,9 @@ noncomputable def blueprint : Fixpoint.Blueprint 1 := ⟨.mkDelta
   (.mkPi “pr C W.
     ∃ n <⁺ pr, ∃ q <⁺ pr, !pairDef pr n q ∧ ∃ r <⁺ q, ∃ y <⁺ q, !pairDef q r y ∧
     ( (∃ k < r, ∃ R < r, ∃ v < r, !qqRelDef r k R v ∧
-        ∀ w, !descTVecDef w W n k v → ∀ d, !descVecAuxDef d W n w k → ∀ s, !atomNodeDef s W n 32 33 k R d → y = s) ∨
+        ∀ w, !descTVecDef w W n k v → ∀ d, !descriptionsAuxDef d W n w k → ∀ s, !atomNodeDef s W n 32 33 k R d → y = s) ∨
       (∃ k < r, ∃ R < r, ∃ v < r, !qqNRelDef r k R v ∧
-        ∀ w, !descTVecDef w W n k v → ∀ d, !descVecAuxDef d W n w k → ∀ s, !atomNodeDef s W n 34 35 k R d → y = s) ∨
+        ∀ w, !descTVecDef w W n k v → ∀ d, !descriptionsAuxDef d W n w k → ∀ s, !atomNodeDef s W n 34 35 k R d → y = s) ∨
       (!qqVerumDef r ∧ ∀ s, !constNodeDef s W n 19 20 → y = s) ∨
       (!qqFalsumDef r ∧ ∀ s, !constNodeDef s W n 22 23 → y = s) ∨
       (∃ p < r, ∃ p' < r, !qqAndDef r p p' ∧ ∃ yp <⁺ y, ∃ yq <⁺ y, :⟪n, p, yp⟫:∈ C ∧ :⟪n, p', yq⟫:∈ C ∧
@@ -3170,10 +3170,10 @@ noncomputable def construction : Fixpoint.Construction V blueprint where
   defined := .mk <| by
     constructor
     · intro v
-      simp [blueprint, descTVec_defined.iff, descVecAux_defined.iff, atomNode_defined.iff, constNode_defined.iff,
+      simp [blueprint, descTVec_defined.iff, descriptionsAux_defined.iff, atomNode_defined.iff, constNode_defined.iff,
         binNode_defined.iff, quantNode_defined.iff, numeral_eq_natCast]
     · intro v
-      simp [blueprint, Phi, descTVec_defined.iff, descVecAux_defined.iff, atomNode_defined.iff,
+      simp [blueprint, Phi, descTVec_defined.iff, descriptionsAux_defined.iff, atomNode_defined.iff,
         constNode_defined.iff, binNode_defined.iff, quantNode_defined.iff, numeral_eq_natCast]
   monotone := by
     rintro C C' hC v pr ⟨n, hn, q, hq, rfl, r, hr, y, hy, rfl, h⟩
@@ -3215,8 +3215,8 @@ instance : construction.Finite V where
 /-- `Phi` at a triple, the bounds discharged. -/
 lemma phi_iff (W : V) (C : Set V) (n r y : V) :
     Phi W C ⟪n, r, y⟫ ↔
-    ( (∃ k R v, r = ^rel k R v ∧ y = atomNode W n 32 33 k R (descVecAux W n (descTVec W n k v) k)) ∨
-      (∃ k R v, r = ^nrel k R v ∧ y = atomNode W n 34 35 k R (descVecAux W n (descTVec W n k v) k)) ∨
+    ( (∃ k R v, r = ^rel k R v ∧ y = atomNode W n 32 33 k R (descriptionsAux W n (descTVec W n k v) k)) ∨
+      (∃ k R v, r = ^nrel k R v ∧ y = atomNode W n 34 35 k R (descriptionsAux W n (descTVec W n k v) k)) ∨
       (r = ^⊤ ∧ y = constNode W n 19 20) ∨
       (r = ^⊥ ∧ y = constNode W n 22 23) ∨
       (∃ p p' yp yq, r = p ^⋏ p' ∧ yp ≤ y ∧ yq ≤ y ∧ ⟪n, p, yp⟫ ∈ C ∧ ⟪n, p', yq⟫ ∈ C ∧ y = binNode W n 24 25 yp yq) ∨
@@ -3269,8 +3269,8 @@ instance descFGraph_definable : 𝚺₁-Relation₄ (DescFGraph : V → V → V 
 
 lemma DescFGraph.case_iff {W n r y : V} :
     DescFGraph W n r y ↔
-    ( (∃ k R v, r = ^rel k R v ∧ y = atomNode W n 32 33 k R (descVecAux W n (descTVec W n k v) k)) ∨
-      (∃ k R v, r = ^nrel k R v ∧ y = atomNode W n 34 35 k R (descVecAux W n (descTVec W n k v) k)) ∨
+    ( (∃ k R v, r = ^rel k R v ∧ y = atomNode W n 32 33 k R (descriptionsAux W n (descTVec W n k v) k)) ∨
+      (∃ k R v, r = ^nrel k R v ∧ y = atomNode W n 34 35 k R (descriptionsAux W n (descTVec W n k v) k)) ∨
       (r = ^⊤ ∧ y = constNode W n 19 20) ∨
       (r = ^⊥ ∧ y = constNode W n 22 23) ∨
       (∃ p p' yp yq, r = p ^⋏ p' ∧ yp ≤ y ∧ yq ≤ y ∧ DescFGraph W n p yp ∧ DescFGraph W n p' yq ∧
@@ -3292,10 +3292,10 @@ lemma DescFGraph.verum_iff {W n y : V} : DescFGraph W n ^⊤ y ↔ y = constNode
 lemma DescFGraph.falsum_iff {W n y : V} : DescFGraph W n ^⊥ y ↔ y = constNode W n 22 23 := by
   rw [DescFGraph.case_iff]; simp
 lemma DescFGraph.rel_iff {W n k R v y : V} :
-    DescFGraph W n (^rel k R v) y ↔ y = atomNode W n 32 33 k R (descVecAux W n (descTVec W n k v) k) := by
+    DescFGraph W n (^rel k R v) y ↔ y = atomNode W n 32 33 k R (descriptionsAux W n (descTVec W n k v) k) := by
   rw [DescFGraph.case_iff]; simp
 lemma DescFGraph.nrel_iff {W n k R v y : V} :
-    DescFGraph W n (^nrel k R v) y ↔ y = atomNode W n 34 35 k R (descVecAux W n (descTVec W n k v) k) := by
+    DescFGraph W n (^nrel k R v) y ↔ y = atomNode W n 34 35 k R (descriptionsAux W n (descTVec W n k v) k) := by
   rw [DescFGraph.case_iff]; simp
 lemma DescFGraph.and_iff {W n p q y : V} :
     DescFGraph W n (p ^⋏ q) y ↔
@@ -3430,10 +3430,10 @@ lemma descFw_verum (W n : V) : descFw W n ^⊤ = constNode W n 19 20 :=
 lemma descFw_falsum (W n : V) : descFw W n ^⊥ = constNode W n 22 23 :=
   descFw_eq_of_graph (by simp) (DescFGraph.falsum_iff.mpr rfl)
 lemma descFw_rel (W n : V) {k R v : V} (hR : LAct.IsRel k R) (hv : IsSemitermVec LAct k n v) :
-    descFw W n (^rel k R v) = atomNode W n 32 33 k R (descVecAux W n (descTVec W n k v) k) :=
+    descFw W n (^rel k R v) = atomNode W n 32 33 k R (descriptionsAux W n (descTVec W n k v) k) :=
   descFw_eq_of_graph (by simp [hR, hv]) (DescFGraph.rel_iff.mpr rfl)
 lemma descFw_nrel (W n : V) {k R v : V} (hR : LAct.IsRel k R) (hv : IsSemitermVec LAct k n v) :
-    descFw W n (^nrel k R v) = atomNode W n 34 35 k R (descVecAux W n (descTVec W n k v) k) :=
+    descFw W n (^nrel k R v) = atomNode W n 34 35 k R (descriptionsAux W n (descTVec W n k v) k) :=
   descFw_eq_of_graph (by simp [hR, hv]) (DescFGraph.nrel_iff.mpr rfl)
 lemma descFw_and (W n : V) {p q : V} (hp : IsSemiformula LAct n p) (hq : IsSemiformula LAct n q) :
     descFw W n (p ^⋏ q) = binNode W n 24 25 (descFw W n p) (descFw W n q) :=
@@ -4400,7 +4400,7 @@ theorem formOK_of_isSemiformula {tbl N W : V} (htbl : TableOK tbl N) (hW : WalkT
       rw [hlen]
       exact add_le_add (add_le_add le_rfl (mul_le_mul_of_nonneg_left le_self_add zero_le)) le_rfl
     have hE' : 2 * n + 8 ≤ E := le_trans (add_le_add le_self_add le_rfl) hES
-    obtain ⟨_, hcnt, hF⟩ := descVecAux_ok htbl hW hWp hk hv
+    obtain ⟨_, hcnt, hF⟩ := descriptionsAux_ok htbl hW hWp hk hv
       (fun i hi ↦ termOK_of_isSemiterm htbl hW hWp n _ (hv.nth hi)) hES k le_rfl
     have htl : takeLast v k = v := by rw [← hv.lh]; exact takeLast_len_self v
     rw [htl] at hcnt
@@ -4420,7 +4420,7 @@ theorem formOK_of_isSemiformula {tbl N W : V} (htbl : TableOK tbl N) (hW : WalkT
       rw [hlen]
       exact add_le_add (add_le_add le_rfl (mul_le_mul_of_nonneg_left le_self_add zero_le)) le_rfl
     have hE' : 2 * n + 8 ≤ E := le_trans (add_le_add le_self_add le_rfl) hES
-    obtain ⟨_, hcnt, hF⟩ := descVecAux_ok htbl hW hWp hk hv
+    obtain ⟨_, hcnt, hF⟩ := descriptionsAux_ok htbl hW hWp hk hv
       (fun i hi ↦ termOK_of_isSemiterm htbl hW hWp n _ (hv.nth hi)) hES k le_rfl
     have htl : takeLast v k = v := by rw [← hv.lh]; exact takeLast_len_self v
     rw [htl] at hcnt
@@ -4590,7 +4590,7 @@ theorem describeF_shape_rel {tbl N : V} (htbl : TableOK tbl N) (hW : WalkTable t
     rw [hlen]
     exact add_le_add (add_le_add le_rfl (mul_le_mul_of_nonneg_left le_self_add zero_le)) le_rfl
   have hE' : 2 * n + 8 ≤ E := le_trans (add_le_add le_self_add le_rfl) hES
-  obtain ⟨_, _, hF⟩ := descVecAux_ok htbl hW rfl hk hv
+  obtain ⟨_, _, hF⟩ := descriptionsAux_ok htbl hW rfl hk hv
     (fun i hi ↦ termOK_of_isSemiterm htbl hW rfl n _ (hv.nth hi)) hES k le_rfl
   rw [describeF, descFw_rel _ n hkR hv]
   exact (atomNode_ok_rel htbl hW rfl hkR hE' hΓ (hF Γ hΓ)).2.2.2.2
@@ -4634,14 +4634,14 @@ lemma len_atomNode (W n i₁ i₂ k R d : V) : len (π₂ (atomNode W n i₁ i�
   rw [atomNode, pi₂_pair, len_appendV]; simp; norm_num
 
 /-- The vector walk over the last `j` entries: `len + 2 ≤ 12 · Σ termLen + 4`. -/
-lemma len_descVecAux_le {W n k v : V} (hv : IsSemitermVec LAct k n v)
+lemma len_descriptionsAux_le {W n k v : V} (hv : IsSemitermVec LAct k n v)
     (ih : ∀ i < k, len (π₂ (descT W n v.[i])) + 4 ≤ 12 * termLen LAct v.[i]) :
     ∀ j ≤ k, IsUTermVec LAct j (takeLast v j) ∧
-      len (π₂ (descVecAux W n (descTVec W n k v) j)) + 2 ≤ 12 * listSum (termLenVec LAct j (takeLast v j)) + 4 := by
+      len (π₂ (descriptionsAux W n (descTVec W n k v) j)) + 2 ≤ 12 * listSum (termLenVec LAct j (takeLast v j)) + 4 := by
   intro j
   induction j using ISigma1.pi1_succ_induction with
   | hP => definability
-  | zero => intro _; refine ⟨by simp, ?_⟩; rw [descVecAux_zero, len_nilNode]; simp; norm_num
+  | zero => intro _; refine ⟨by simp, ?_⟩; rw [descriptionsAux_zero, len_nilNode]; simp; norm_num
   | succ j ihj =>
     intro hj
     obtain ⟨hU, hl⟩ := ihj (le_trans le_self_add hj)
@@ -4656,13 +4656,13 @@ lemma len_descVecAux_le {W n k v : V} (hv : IsSemitermVec LAct k n v)
     have htake : takeLast v (j + 1) = v.[k - (j + 1)] ∷ takeLast v j := by
       rw [takeLast_succ_of_lt hjk, hvlen]
     refine ⟨by rw [htake]; exact hU.adjoin ht.isUTerm, ?_⟩
-    rw [descVecAux_succ, hnth, len_adjNode, htake, termLenVec_cons ht.isUTerm hU, listSum_adjoin, mul_add]
+    rw [descriptionsAux_succ, hnth, len_adjNode, htake, termLenVec_cons ht.isUTerm hU, listSum_adjoin, mul_add]
     have h1 := ih _ hi
     have h2 := add_le_add hl h1
-    calc len (π₂ (descVecAux W n (descTVec W n k v) j)) + len (π₂ (descT W n v.[k - (j + 1)])) + 3 + 2
-        ≤ (len (π₂ (descVecAux W n (descTVec W n k v) j)) + 2) + (len (π₂ (descT W n v.[k - (j + 1)])) + 4) := by
-          rw [show (len (π₂ (descVecAux W n (descTVec W n k v) j)) + 2) + (len (π₂ (descT W n v.[k - (j + 1)])) + 4)
-              = len (π₂ (descVecAux W n (descTVec W n k v) j)) + len (π₂ (descT W n v.[k - (j + 1)])) + 3 + 2 + 1 by ring]
+    calc len (π₂ (descriptionsAux W n (descTVec W n k v) j)) + len (π₂ (descT W n v.[k - (j + 1)])) + 3 + 2
+        ≤ (len (π₂ (descriptionsAux W n (descTVec W n k v) j)) + 2) + (len (π₂ (descT W n v.[k - (j + 1)])) + 4) := by
+          rw [show (len (π₂ (descriptionsAux W n (descTVec W n k v) j)) + 2) + (len (π₂ (descT W n v.[k - (j + 1)])) + 4)
+              = len (π₂ (descriptionsAux W n (descTVec W n k v) j)) + len (π₂ (descT W n v.[k - (j + 1)])) + 3 + 2 + 1 by ring]
           exact le_self_add
       _ ≤ (12 * listSum (termLenVec LAct j (takeLast v j)) + 4) + 12 * termLen LAct v.[k - (j + 1)] := h2
       _ = 12 * termLen LAct v.[k - (j + 1)] + 12 * listSum (termLenVec LAct j (takeLast v j)) + 4 := by ring
@@ -4686,14 +4686,14 @@ theorem len_describeT_le (W n : V) : ∀ t, IsSemiterm LAct n t → len (describ
       _ ≤ 12 * x + 12 := le_add_self
       _ = 12 * (x + 1) := by ring
   · intro k f v hkf hv ih
-    obtain ⟨_, hl⟩ := len_descVecAux_le hv (fun i hi ↦ by
+    obtain ⟨_, hl⟩ := len_descriptionsAux_le hv (fun i hi ↦ by
       have := ih i hi; rwa [describeT] at this) k le_rfl
     have htl : takeLast v k = v := by rw [← hv.lh]; exact takeLast_len_self v
     rw [htl] at hl
     show len (describeT W n (^func k f v)) + 4 ≤ 12 * termLen LAct (^func k f v)
     rw [describeT, descT_func W n hkf hv.isUTerm, len_funcNode, termLen_func hkf hv.isUTerm]
-    calc len (π₂ (descVecAux W n (descTVec W n k v) k)) + 6 + 4
-        = (len (π₂ (descVecAux W n (descTVec W n k v) k)) + 2) + 8 := by ring
+    calc len (π₂ (descriptionsAux W n (descTVec W n k v) k)) + 6 + 4
+        = (len (π₂ (descriptionsAux W n (descTVec W n k v) k)) + 2) + 8 := by ring
       _ ≤ (12 * listSum (termLenVec LAct k v) + 4) + 8 := add_le_add hl le_rfl
       _ = 12 * (listSum (termLenVec LAct k v) + 1) := by ring
 
@@ -4704,21 +4704,21 @@ theorem len_describeF_le (W : V) : ∀ {n r : V}, IsSemiformula LAct n r →
   apply IsSemiformula.pi1_structural_induction (P := fun n r ↦ len (describeF W n r) + 4 ≤ 12 * formulaLen LAct r)
   · definability
   · intro n k R v hkR hv
-    obtain ⟨_, hl⟩ := len_descVecAux_le hv (fun i hi ↦ len_describeT_le W n _ (hv.nth hi)) k le_rfl
+    obtain ⟨_, hl⟩ := len_descriptionsAux_le hv (fun i hi ↦ len_describeT_le W n _ (hv.nth hi)) k le_rfl
     have htl : takeLast v k = v := by rw [← hv.lh]; exact takeLast_len_self v
     rw [htl] at hl
     rw [describeF, descFw_rel W n hkR hv, len_atomNode, formulaLen_rel hkR hv.isUTerm]
-    calc len (π₂ (descVecAux W n (descTVec W n k v) k)) + 6 + 4
-        = (len (π₂ (descVecAux W n (descTVec W n k v) k)) + 2) + 8 := by ring
+    calc len (π₂ (descriptionsAux W n (descTVec W n k v) k)) + 6 + 4
+        = (len (π₂ (descriptionsAux W n (descTVec W n k v) k)) + 2) + 8 := by ring
       _ ≤ (12 * listSum (termLenVec LAct k v) + 4) + 8 := add_le_add hl le_rfl
       _ = 12 * (listSum (termLenVec LAct k v) + 1) := by ring
   · intro n k R v hkR hv
-    obtain ⟨_, hl⟩ := len_descVecAux_le hv (fun i hi ↦ len_describeT_le W n _ (hv.nth hi)) k le_rfl
+    obtain ⟨_, hl⟩ := len_descriptionsAux_le hv (fun i hi ↦ len_describeT_le W n _ (hv.nth hi)) k le_rfl
     have htl : takeLast v k = v := by rw [← hv.lh]; exact takeLast_len_self v
     rw [htl] at hl
     rw [describeF, descFw_nrel W n hkR hv, len_atomNode, formulaLen_nrel hkR hv.isUTerm]
-    calc len (π₂ (descVecAux W n (descTVec W n k v) k)) + 6 + 4
-        = (len (π₂ (descVecAux W n (descTVec W n k v) k)) + 2) + 8 := by ring
+    calc len (π₂ (descriptionsAux W n (descTVec W n k v) k)) + 6 + 4
+        = (len (π₂ (descriptionsAux W n (descTVec W n k v) k)) + 2) + 8 := by ring
       _ ≤ (12 * listSum (termLenVec LAct k v) + 4) + 8 := add_le_add hl le_rfl
       _ = 12 * (listSum (termLenVec LAct k v) + 1) := by ring
   · intro n; rw [describeF, descFw_verum, len_constNode, formulaLen_verum]; norm_num
@@ -4793,40 +4793,40 @@ instance hornOnly_definable : 𝚫₁-Predicate (HornOnly : V → Prop) := by
 /-- **The per-step cost of a Horn step** whose row body has length `≤ B`. -/
 theorem stepCost_le_of_stepOK {tbl N E B Γ s : V} (hok : StepOK tbl E ((8 : ℕ) : V) Γ s)
     (ht : sTag s = 0 ∨ sTag s = 1 ∨ sTag s = 2) (hB : formulaLen LAct (rowB tbl.[sRow s]) ≤ B) :
-    stepCost N E Γ s ≤ stepK N E B + 36 * setLen LAct Γ := by
+    stepCost N E Γ s ≤ stepK N E B + 36 * sequentLen LAct Γ := by
   obtain ⟨_, h⟩ := hok
   rcases h with ⟨ht0, hh, hrow⟩ | ⟨ht1, hh, hrow⟩ | ⟨ht2, hh, hrow⟩ | ⟨ht3, _⟩ | ⟨ht4, _⟩ | ⟨ht5, _⟩ | ⟨ht6, _⟩ | ⟨ht7, _⟩
   · rw [stepCost_tag0 ht0]
     rw [hrow] at hB
     have hm : len (sEv s) ≤ 8 := by have := hh.2.2.1; rwa [Nat.cast_ofNat] at this
     have hj : len (sAs s) ≤ 8 := by have := hh.2.2.2.1; rwa [Nat.cast_ofNat] at this
-    calc hornCost N E (setLen LAct Γ) (len (sEv s)) (len (sAs s)) (formulaLen LAct (impChainV LAct (sAs s) (sC s)))
-        ≤ hornCost N E (setLen LAct Γ) 8 8 B := by unfold hornCost; gcongr
-      _ = hornCost N E 0 8 8 B + 28 * setLen LAct Γ := hornCost_G _ _ _ _
-      _ ≤ stepK N E B + 36 * setLen LAct Γ := by
+    calc hornCost N E (sequentLen LAct Γ) (len (sEv s)) (len (sAs s)) (formulaLen LAct (impChainV LAct (sAs s) (sC s)))
+        ≤ hornCost N E (sequentLen LAct Γ) 8 8 B := by unfold hornCost; gcongr
+      _ = hornCost N E 0 8 8 B + 28 * sequentLen LAct Γ := hornCost_G _ _ _ _
+      _ ≤ stepK N E B + 36 * sequentLen LAct Γ := by
           unfold stepK
           exact add_le_add (le_trans le_self_add le_self_add) (mul_le_mul_of_nonneg_right (by norm_num) zero_le)
   · rw [stepCost_tag1 ht1]
     rw [hrow] at hB
     have hm : len (sEv s) ≤ 8 := by have := hh.2.2.1; rwa [Nat.cast_ofNat] at this
     have hj : len (sAs s) ≤ 8 := by have := hh.2.2.2.1; rwa [Nat.cast_ofNat] at this
-    calc hornCost N E (setLen LAct Γ) (len (sEv s)) (len (sAs s))
+    calc hornCost N E (sequentLen LAct Γ) (len (sEv s)) (len (sAs s))
             (formulaLen LAct (impChainV LAct (sAs s) ((π₁ (sC s)) ^⋏ (π₂ (sC s)))))
-          + 2 * setLen LAct Γ + 6 * (formulaLen LAct (impChainV LAct (sAs s) ((π₁ (sC s)) ^⋏ (π₂ (sC s)))) * E) + 4
-        ≤ hornCost N E (setLen LAct Γ) 8 8 B + 2 * setLen LAct Γ + 6 * (B * E) + 4 := by
+          + 2 * sequentLen LAct Γ + 6 * (formulaLen LAct (impChainV LAct (sAs s) ((π₁ (sC s)) ^⋏ (π₂ (sC s)))) * E) + 4
+        ≤ hornCost N E (sequentLen LAct Γ) 8 8 B + 2 * sequentLen LAct Γ + 6 * (B * E) + 4 := by
           gcongr <;> (unfold hornCost; gcongr)
-      _ = (hornCost N E 0 8 8 B + (6 * (B * E) + 4)) + 30 * setLen LAct Γ := by rw [hornCost_G]; ring
-      _ ≤ stepK N E B + 36 * setLen LAct Γ := by
+      _ = (hornCost N E 0 8 8 B + (6 * (B * E) + 4)) + 30 * sequentLen LAct Γ := by rw [hornCost_G]; ring
+      _ ≤ stepK N E B + 36 * sequentLen LAct Γ := by
           unfold stepK
           exact add_le_add le_self_add (mul_le_mul_of_nonneg_right (by norm_num) zero_le)
   · rw [stepCost_tag2 ht2]
     rw [hrow] at hB
     have hm : len (sEv s) ≤ 8 := by have := hh.2.2.1; rwa [Nat.cast_ofNat] at this
     have hj : len (sAs s) ≤ 8 := by have := hh.2.2.2.1; rwa [Nat.cast_ofNat] at this
-    calc introCost N E (setLen LAct Γ) (len (sEv s)) (len (sAs s)) (formulaLen LAct (impChainV LAct (sAs s) (^∃ (sC s))))
-        ≤ introCost N E (setLen LAct Γ) 8 8 B := by unfold introCost; gcongr
-      _ = introCost N E 0 8 8 B + 34 * setLen LAct Γ := introCost_G _ _ _ _
-      _ ≤ stepK N E B + 36 * setLen LAct Γ := by
+    calc introCost N E (sequentLen LAct Γ) (len (sEv s)) (len (sAs s)) (formulaLen LAct (impChainV LAct (sAs s) (^∃ (sC s))))
+        ≤ introCost N E (sequentLen LAct Γ) 8 8 B := by unfold introCost; gcongr
+      _ = introCost N E 0 8 8 B + 34 * sequentLen LAct Γ := introCost_G _ _ _ _
+      _ ≤ stepK N E B + 36 * sequentLen LAct Γ := by
           unfold stepK
           exact add_le_add le_add_self (mul_le_mul_of_nonneg_right (by norm_num) zero_le)
   · exfalso; rw [ht3] at ht; norm_num at ht
@@ -4850,7 +4850,7 @@ lemma formulaLen_le_impChain {n : V} : ∀ {as : List V} {c : V}, (∀ a ∈ as,
 theorem ctxAfter_len_le {tbl N E B Γ s : V} (hE : 1 ≤ E) (htbl : TableOK tbl N)
     (hok : StepOK tbl E ((8 : ℕ) : V) Γ s) (ht : sTag s = 0 ∨ sTag s = 1 ∨ sTag s = 2)
     (hB : formulaLen LAct (rowB tbl.[sRow s]) ≤ B) :
-    setLen LAct (ctxAfter Γ s) ≤ setLen LAct Γ + fvOccS LAct Γ + 4 * (B * E) ∧
+    sequentLen LAct (ctxAfter Γ s) ≤ sequentLen LAct Γ + fvOccS LAct Γ + 4 * (B * E) ∧
     fvOccS LAct (ctxAfter Γ s) ≤ fvOccS LAct Γ + 4 * (B * E) := by
   obtain ⟨hΓ, h⟩ := hok
   rcases h with ⟨ht0, hh, hrow⟩ | ⟨ht1, hh, hrow⟩ | ⟨ht2, hh, hrow⟩ | ⟨ht3, _⟩ | ⟨ht4, _⟩ | ⟨ht5, _⟩ | ⟨ht6, _⟩ | ⟨ht7, _⟩
@@ -4866,11 +4866,11 @@ theorem ctxAfter_len_le {tbl N E B Γ s : V} (hE : 1 ≤ E) (htbl : TableOK tbl 
     have hF : IsFormula LAct (instOuter LAct es (sC s)) := isFormula_instOuter es hc hes
     rw [ctxAfter_tag0 ht0, hes_eq, subst_revV_vecOf es hc hes]
     constructor
-    · calc setLen LAct (insert (neg LAct (instOuter LAct es (sC s))) Γ)
-          ≤ setLen LAct Γ + formulaLen LAct (neg LAct (instOuter LAct es (sC s))) := setLen_insert_le _ _
-        _ = setLen LAct Γ + formulaLen LAct (instOuter LAct es (sC s)) := by rw [formulaLen_neg hF.isUFormula]
-        _ ≤ setLen LAct Γ + B * E := add_le_add le_rfl hlen
-        _ ≤ setLen LAct Γ + fvOccS LAct Γ + 4 * (B * E) := by
+    · calc sequentLen LAct (insert (neg LAct (instOuter LAct es (sC s))) Γ)
+          ≤ sequentLen LAct Γ + formulaLen LAct (neg LAct (instOuter LAct es (sC s))) := sequentLen_insert_le _ _
+        _ = sequentLen LAct Γ + formulaLen LAct (instOuter LAct es (sC s)) := by rw [formulaLen_neg hF.isUFormula]
+        _ ≤ sequentLen LAct Γ + B * E := add_le_add le_rfl hlen
+        _ ≤ sequentLen LAct Γ + fvOccS LAct Γ + 4 * (B * E) := by
             rw [add_assoc]; exact add_le_add le_rfl (le_trans (le_trans (le_of_eq (one_mul _).symm)
               (mul_le_mul_of_nonneg_right (by norm_num) zero_le)) le_add_self)
     · calc fvOccS LAct (insert (neg LAct (instOuter LAct es (sC s))) Γ)
@@ -4900,16 +4900,16 @@ theorem ctxAfter_len_le {tbl N E B Γ s : V} (hE : 1 ≤ E) (htbl : TableOK tbl 
     have h4 : B * E + B * E ≤ 4 * (B * E) := by
       rw [show B * E + B * E = 2 * (B * E) by ring]; exact mul_le_mul_of_nonneg_right (by norm_num) zero_le
     constructor
-    · calc setLen LAct (insert (neg LAct (instOuter LAct es (π₁ (sC s))))
+    · calc sequentLen LAct (insert (neg LAct (instOuter LAct es (π₁ (sC s))))
               (insert (neg LAct (instOuter LAct es (π₂ (sC s)))) Γ))
-          ≤ setLen LAct (insert (neg LAct (instOuter LAct es (π₂ (sC s)))) Γ)
-              + formulaLen LAct (neg LAct (instOuter LAct es (π₁ (sC s)))) := setLen_insert_le _ _
-        _ ≤ (setLen LAct Γ + formulaLen LAct (neg LAct (instOuter LAct es (π₂ (sC s)))))
-              + formulaLen LAct (neg LAct (instOuter LAct es (π₁ (sC s)))) := add_le_add (setLen_insert_le _ _) le_rfl
-        _ ≤ (setLen LAct Γ + B * E) + B * E := by
+          ≤ sequentLen LAct (insert (neg LAct (instOuter LAct es (π₂ (sC s)))) Γ)
+              + formulaLen LAct (neg LAct (instOuter LAct es (π₁ (sC s)))) := sequentLen_insert_le _ _
+        _ ≤ (sequentLen LAct Γ + formulaLen LAct (neg LAct (instOuter LAct es (π₂ (sC s)))))
+              + formulaLen LAct (neg LAct (instOuter LAct es (π₁ (sC s)))) := add_le_add (sequentLen_insert_le _ _) le_rfl
+        _ ≤ (sequentLen LAct Γ + B * E) + B * E := by
             rw [formulaLen_neg hF₁.isUFormula, formulaLen_neg hF₂.isUFormula]
             exact add_le_add (add_le_add le_rfl hlen₂) hlen₁
-        _ ≤ setLen LAct Γ + fvOccS LAct Γ + 4 * (B * E) := by
+        _ ≤ sequentLen LAct Γ + fvOccS LAct Γ + 4 * (B * E) := by
             rw [add_assoc, add_assoc]; exact add_le_add le_rfl (le_trans h4 le_add_self)
     · calc fvOccS LAct (insert (neg LAct (instOuter LAct es (π₁ (sC s))))
               (insert (neg LAct (instOuter LAct es (π₂ (sC s)))) Γ))
@@ -4948,12 +4948,12 @@ theorem ctxAfter_len_le {tbl N E B Γ s : V} (hE : 1 ≤ E) (htbl : TableOK tbl 
     rw [ctxAfter_tag2 ht2, hes_eq, subst_qVec_revV_vecOf es hR hes]
     have h2 : 2 * (B * E) ≤ 4 * (B * E) := mul_le_mul_of_nonneg_right (by norm_num) zero_le
     constructor
-    · calc setLen LAct (insert (neg LAct (free LAct (instOuterAt LAct 1 es (sC s)))) (setShift LAct Γ))
-          ≤ setLen LAct (setShift LAct Γ) + formulaLen LAct (neg LAct (free LAct (instOuterAt LAct 1 es (sC s)))) :=
-            setLen_insert_le _ _
-        _ ≤ (setLen LAct Γ + fvOccS LAct Γ) + 2 * (B * E) := by
-            rw [formulaLen_neg hF.isUFormula]; exact add_le_add (setLen_setShift_le_occ hΓ) hfree
-        _ ≤ setLen LAct Γ + fvOccS LAct Γ + 4 * (B * E) := add_le_add le_rfl h2
+    · calc sequentLen LAct (insert (neg LAct (free LAct (instOuterAt LAct 1 es (sC s)))) (setShift LAct Γ))
+          ≤ sequentLen LAct (setShift LAct Γ) + formulaLen LAct (neg LAct (free LAct (instOuterAt LAct 1 es (sC s)))) :=
+            sequentLen_insert_le _ _
+        _ ≤ (sequentLen LAct Γ + fvOccS LAct Γ) + 2 * (B * E) := by
+            rw [formulaLen_neg hF.isUFormula]; exact add_le_add (sequentLen_setShift_le_occ hΓ) hfree
+        _ ≤ sequentLen LAct Γ + fvOccS LAct Γ + 4 * (B * E) := add_le_add le_rfl h2
     · calc fvOccS LAct (insert (neg LAct (free LAct (instOuterAt LAct 1 es (sC s)))) (setShift LAct Γ))
           ≤ fvOccS LAct (setShift LAct Γ) + fvOccF LAct (neg LAct (free LAct (instOuterAt LAct 1 es (sC s)))) :=
             fvOccS_insert_le _ _
@@ -4972,7 +4972,7 @@ theorem ctxVec_len_le {tbl N E B Γ S : V} (hE : 1 ≤ E) (htbl : TableOK tbl N)
     (hok : ListOK tbl E ((8 : ℕ) : V) Γ S) (ht : HornOnly S)
     (hB : ∀ i < len S, formulaLen LAct (rowB tbl.[sRow S.[i]]) ≤ B) :
     ∀ i ≤ len S, fvOccS LAct (ctxVec Γ S).[i] ≤ fvOccS LAct Γ + i * (4 * (B * E)) ∧
-      setLen LAct (ctxVec Γ S).[i] ≤ setLen LAct Γ + i * fvOccS LAct Γ + (i * i + i) * (4 * (B * E)) := by
+      sequentLen LAct (ctxVec Γ S).[i] ≤ sequentLen LAct Γ + i * fvOccS LAct Γ + (i * i + i) * (4 * (B * E)) := by
   intro i
   induction i using ISigma1.pi1_succ_induction with
   | hP => definability
@@ -4988,22 +4988,22 @@ theorem ctxVec_len_le {tbl N E B Γ S : V} (hE : 1 ≤ E) (htbl : TableOK tbl N)
           ≤ fvOccS LAct (ctxVec Γ S).[i] + 4 * (B * E) := hO'
         _ ≤ (fvOccS LAct Γ + i * (4 * (B * E))) + 4 * (B * E) := add_le_add hO le_rfl
         _ = fvOccS LAct Γ + (i + 1) * (4 * (B * E)) := by ring
-    · calc setLen LAct (ctxAfter (ctxVec Γ S).[i] S.[i])
-          ≤ setLen LAct (ctxVec Γ S).[i] + fvOccS LAct (ctxVec Γ S).[i] + 4 * (B * E) := hG'
-        _ ≤ (setLen LAct Γ + i * fvOccS LAct Γ + (i * i + i) * (4 * (B * E)))
+    · calc sequentLen LAct (ctxAfter (ctxVec Γ S).[i] S.[i])
+          ≤ sequentLen LAct (ctxVec Γ S).[i] + fvOccS LAct (ctxVec Γ S).[i] + 4 * (B * E) := hG'
+        _ ≤ (sequentLen LAct Γ + i * fvOccS LAct Γ + (i * i + i) * (4 * (B * E)))
               + (fvOccS LAct Γ + i * (4 * (B * E))) + 4 * (B * E) := add_le_add (add_le_add hG hO) le_rfl
-        _ = setLen LAct Γ + (i + 1) * fvOccS LAct Γ + ((i + 1) * (i + 1)) * (4 * (B * E)) := by ring
-        _ ≤ setLen LAct Γ + (i + 1) * fvOccS LAct Γ + ((i + 1) * (i + 1) + (i + 1)) * (4 * (B * E)) := by
+        _ = sequentLen LAct Γ + (i + 1) * fvOccS LAct Γ + ((i + 1) * (i + 1)) * (4 * (B * E)) := by ring
+        _ ≤ sequentLen LAct Γ + (i + 1) * fvOccS LAct Γ + ((i + 1) * (i + 1) + (i + 1)) * (4 * (B * E)) := by
             rw [add_mul ((i + 1) * (i + 1))]; exact add_le_add le_rfl le_self_add
 
 /-- The uniform context bound of a Horn-only list of `L` steps. -/
 noncomputable def ctxBound (E B Γ L : V) : V :=
-  setLen LAct Γ + L * fvOccS LAct Γ + (L * L + L) * (4 * (B * E))
+  sequentLen LAct Γ + L * fvOccS LAct Γ + (L * L + L) * (4 * (B * E))
 
 lemma ctxVec_len_le' {tbl N E B Γ S : V} (hE : 1 ≤ E) (htbl : TableOK tbl N)
     (hok : ListOK tbl E ((8 : ℕ) : V) Γ S) (ht : HornOnly S)
     (hB : ∀ i < len S, formulaLen LAct (rowB tbl.[sRow S.[i]]) ≤ B) :
-    ∀ i ≤ len S, setLen LAct (ctxVec Γ S).[i] ≤ ctxBound E B Γ (len S) := by
+    ∀ i ≤ len S, sequentLen LAct (ctxVec Γ S).[i] ≤ ctxBound E B Γ (len S) := by
   intro i hi
   refine le_trans (ctxVec_len_le hE htbl hok ht hB i hi).2 ?_
   unfold ctxBound
@@ -5030,7 +5030,7 @@ theorem costSum_le_of_hornOnly {tbl N E B Γ S : V} (hE : 1 ≤ E) (htbl : Table
       have hS : nthFromEnd S j = S.[i] := nthFromEnd_eq (a := i) hi
       rw [costAux_succ, hC, hS]
       calc costAux N E (ctxVec Γ S) S j + stepCost N E (ctxVec Γ S).[i] S.[i]
-          ≤ j * (stepK N E B + 36 * ctxBound E B Γ (len S)) + (stepK N E B + 36 * setLen LAct (ctxVec Γ S).[i]) :=
+          ≤ j * (stepK N E B + 36 * ctxBound E B Γ (len S)) + (stepK N E B + 36 * sequentLen LAct (ctxVec Γ S).[i]) :=
             add_le_add (ihj hj') (stepCost_le_of_stepOK (hok i hi') (ht i hi') (hB i hi'))
         _ ≤ j * (stepK N E B + 36 * ctxBound E B Γ (len S)) + (stepK N E B + 36 * ctxBound E B Γ (len S)) :=
             add_le_add le_rfl (add_le_add le_rfl (mul_le_mul_of_nonneg_left (hbound i (le_of_lt hi')) zero_le))
@@ -5390,13 +5390,13 @@ lemma hornOnly_funcNode {W : V} (hWp : W = walkPieces) {n k f d : V} (hd : HornO
     (hornOnly_cons (Or.inl (tag_isSemitermFunc hWp _)) (hornOnly_cons (Or.inl (tag_isSemitermSigmaPiLAct hWp _))
     (hornOnly_cons (Or.inl (tag_isUTermVecOfSemitermVecLAct hWp _)) (hornOnly_single (Or.inl (tag_isUTermVecSigmaPiLAct hWp _))))))))
 
-lemma hornOnly_descVecAux {W : V} (hWp : W = walkPieces) {n k v : V} (hv : IsSemitermVec LAct k n v)
+lemma hornOnly_descriptionsAux {W : V} (hWp : W = walkPieces) {n k v : V} (hv : IsSemitermVec LAct k n v)
     (ih : ∀ i < k, HornOnly (π₂ (descT W n v.[i]))) :
-    ∀ j ≤ k, HornOnly (π₂ (descVecAux W n (descTVec W n k v) j)) := by
+    ∀ j ≤ k, HornOnly (π₂ (descriptionsAux W n (descTVec W n k v) j)) := by
   intro j
   induction j using ISigma1.pi1_succ_induction with
   | hP => definability
-  | zero => intro _; rw [descVecAux_zero]; exact hornOnly_nilNode hWp n
+  | zero => intro _; rw [descriptionsAux_zero]; exact hornOnly_nilNode hWp n
   | succ j ihj =>
     intro hj
     have hk0 : (0 : V) < k := lt_of_lt_of_le (lt_of_lt_of_le _root_.zero_lt_one le_add_self) hj
@@ -5404,7 +5404,7 @@ lemma hornOnly_descVecAux {W : V} (hWp : W = walkPieces) {n k v : V} (hv : IsSem
     have hnth : nthFromEnd (descTVec W n k v) j = descT W n v.[k - (j + 1)] := by
       rw [nthFromEnd_eq (a := k - (j + 1)) (by rw [len_descTVec _ n hv.isUTerm, tsub_add_cancel_of_le hj]),
         nth_descTVec _ n hv.isUTerm hi]
-    rw [descVecAux_succ, hnth]
+    rw [descriptionsAux_succ, hnth]
     exact hornOnly_adjNode hWp (ih _ hi) (ihj (le_trans le_self_add hj))
 
 /-- **The term walk is Horn-only.** -/
@@ -5417,7 +5417,7 @@ theorem hornOnly_describeT {W : V} (hWp : W = walkPieces) (n : V) : ∀ t, IsSem
   · intro k f v hkf hv ih
     show HornOnly (describeT W n (^func k f v))
     rw [describeT, descT_func _ n hkf hv.isUTerm]
-    exact hornOnly_funcNode hWp (hornOnly_descVecAux hWp hv (fun i hi ↦ by have := ih i hi; rwa [describeT] at this) k le_rfl)
+    exact hornOnly_funcNode hWp (hornOnly_descriptionsAux hWp hv (fun i hi ↦ by have := ih i hi; rwa [describeT] at this) k le_rfl)
 
 /-- **The formula walk is Horn-only.** -/
 theorem hornOnly_describeF {W : V} (hWp : W = walkPieces) : ∀ {n r : V}, IsSemiformula LAct n r → HornOnly (describeF W n r) := by
@@ -5426,14 +5426,14 @@ theorem hornOnly_describeF {W : V} (hWp : W = walkPieces) : ∀ {n r : V}, IsSem
   · definability
   · intro n k R v hkR hv
     rw [describeF, descFw_rel _ n hkR hv, atomNode, pi₂_pair]
-    refine hornOnly_appendV (hornOnly_descVecAux hWp hv (fun i hi ↦ by
+    refine hornOnly_appendV (hornOnly_descriptionsAux hWp hv (fun i hi ↦ by
       have := hornOnly_describeT hWp n _ (hv.nth hi); rwa [describeT] at this) k le_rfl) ?_
     exact hornOnly_cons (Or.inl (tag_relRow hWp _ _)) (hornOnly_cons (Or.inr (Or.inr (tag_qqRelTotal hWp _)))
       (hornOnly_cons (Or.inl (tag_isSemiformulaRel hWp _)) (hornOnly_cons (Or.inl (tag_isSemiformulaSigmaPi hWp _))
       (hornOnly_cons (Or.inl (tag_isUTermVecOfSemitermVecLAct hWp _)) (hornOnly_single (Or.inl (tag_isUTermVecSigmaPiLAct hWp _)))))))
   · intro n k R v hkR hv
     rw [describeF, descFw_nrel _ n hkR hv, atomNode, pi₂_pair]
-    refine hornOnly_appendV (hornOnly_descVecAux hWp hv (fun i hi ↦ by
+    refine hornOnly_appendV (hornOnly_descriptionsAux hWp hv (fun i hi ↦ by
       have := hornOnly_describeT hWp n _ (hv.nth hi); rwa [describeT] at this) k le_rfl) ?_
     exact hornOnly_cons (Or.inl (tag_relRow hWp _ _)) (hornOnly_cons (Or.inr (Or.inr (tag_qqNRelTotal hWp _)))
       (hornOnly_cons (Or.inl (tag_isSemiformulaNRel hWp _)) (hornOnly_cons (Or.inl (tag_isSemiformulaSigmaPi hWp _))
@@ -5508,18 +5508,18 @@ theorem costSum_describeF_le {tbl N E B : V} (htbl : TableOK tbl N) (hW : WalkTa
   gcongr
 
 /-- **The derivation the formula walk yields, with its length.** -/
-theorem dlen_describeF_chain_le {tbl N E B : V} (htbl : TableOK tbl N) (hW : WalkTable tbl)
+theorem proofLen_describeF_chain_le {tbl N E B : V} (htbl : TableOK tbl N) (hW : WalkTable tbl)
     (hB : ∀ i < len tbl, formulaLen LAct (rowB tbl.[i]) ≤ B)
     {n r : V} (hr : IsSemiformula LAct n r) (hE : 2 * n + 2 * formulaLen LAct r + 8 ≤ E)
     {Γ : V} (hΓ : IsFormulaSet LAct Γ) {d : V}
     (hd : DerivationOf TAct d (finalCtx Γ (describeF walkPieces n r))) :
     DerivationOf TAct (chainCode tbl Γ (describeF walkPieces n r) d) Γ ∧
-    dlen TAct (chainCode tbl Γ (describeF walkPieces n r) d) ≤
-      dlen TAct d + 12 * formulaLen LAct r * (stepK N E B + 36 * ctxBound E B Γ (12 * formulaLen LAct r)) := by
+    proofLen TAct (chainCode tbl Γ (describeF walkPieces n r) d) ≤
+      proofLen TAct d + 12 * formulaLen LAct r * (stepK N E B + 36 * ctxBound E B Γ (12 * formulaLen LAct r)) := by
   have hE1 : 1 ≤ E := le_trans (le_trans (by norm_num) (le_add_self : 8 ≤ 2 * n + 2 * formulaLen LAct r + 8)) hE
   have hok := (describeF_ok htbl hW hr hE hΓ).1
   exact ⟨chainCode_proof 8 htbl hok hd,
-    le_trans (dlen_chainCode_le 8 hE1 htbl hok hd) (add_le_add le_rfl (costSum_describeF_le htbl hW hB hr hE hΓ))⟩
+    le_trans (proofLen_chainCode_le 8 hE1 htbl hok hd) (add_le_add le_rfl (costSum_describeF_le htbl hW hB hr hE hΓ))⟩
 
 end walkCost
 

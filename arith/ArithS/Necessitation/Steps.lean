@@ -45,8 +45,8 @@ library has (`Lib/Sets`, `Lib/Formulas`, `Lib/Lengths`, `Lib/Nodes`):
    Δ₁ fact in the `.pi` reading (what rows consume) and, when a row DELIVERS it in the `.sigma`
    reading, converts once with the bridge row (`lib_isSemiformulaSigmaPi`, …) by one more
    `useHornCode` — as `describeAndCode` does below.
-6. **Length bookkeeping.** Every step's `dlen` is `dlen dΛ + dlen d + (linear in |Γ|) +
-   (a polynomial in `m`, `j`, `|B|·E`)`; the stored-proof length `dlen dΛ ≤ N_Λ` is a constant of
+6. **Length bookkeeping.** Every step's `proofLen` is `proofLen dΛ + proofLen d + (linear in |Γ|) +
+   (a polynomial in `m`, `j`, `|B|·E`)`; the stored-proof length `proofLen dΛ ≤ N_Λ` is a constant of
    the row (threaded as a hypothesis `hN`), and `E` is a constant of the fragment (witnesses are
    eigenvariables — one symbol each, so `E = 1` — or the small symbol-code numerals). Hence a
    fragment costs `O(|Γ|)` per row use plus a constant, the `O(w_ν · L_ν)` of the design note.
@@ -72,10 +72,10 @@ The smoke test `describeAndCode` (bottom of the file) runs the protocol end to e
 at the fresh `z = &0` (`lib_qqAndTotal`, `introFactCode`, context shifted: `ctx1`), then
 `IsFormula z` in the `.sigma` reading (`lib_isSemiformulaAnd`, `useHornCode`, `ctx2`), then in
 the `.pi` reading (`lib_isSemiformulaSigmaPi`, `useHornCode`, `ctx3`), and hand the continuation
-`ctx3`; `describeAndCode_proof`, and `dlen_describeAndCode_le`:
-`dlen ≤ dlen d + N₁ + N₂ + N₃ + 56|Γ| + (68|B₁| + 61|B₂| + 15|B₃| + 8)·E + |B₁| + |B₂| + |B₃| + 181`
+`ctx3`; `describeAndCode_proof`, and `proofLen_describeAndCode_le`:
+`proofLen ≤ proofLen d + N₁ + N₂ + N₃ + 56|Γ| + (68|B₁| + 61|B₂| + 15|B₃| + 8)·E + |B₁| + |B₂| + |B₃| + 181`
 with `E ≥ 1, 2|a|, 2|b|, 2|nc|` (the witness bound — `nc` is the arity witness, `E` absorbs the
-shift's doubling), `Nᵢ ≥ dlen dΛᵢ` the stored-proof lengths and `|Bᵢ|` the row bodies' lengths;
+shift's doubling), `Nᵢ ≥ proofLen dΛᵢ` the stored-proof lengths and `|Bᵢ|` the row bodies' lengths;
 `describeAndCode_exists` packages the rows through `Lib.univ_code` (one standard `N`, every model).
 
 V-generic (every model of `𝗜𝚺₁`); `L`, `T` generic in the steps, `LAct`/`TAct` in the smoke test.
@@ -290,24 +290,24 @@ theorem hornClose_proof : ∀ (as : List V) {c S Γ d : V},
     simp
 
 /-- **The length of the closing chain** (`j = as.length`, `F ≥ |A₁ → … → C|`, `G ≥ |S|`):
-`dlen ≤ dlen d + (2j + 1)·(G + (j + 1)·F + 1)` — `2j + 1` sequents, each of size
+`proofLen ≤ proofLen d + (2j + 1)·(G + (j + 1)·F + 1)` — `2j + 1` sequents, each of size
 `≤ G + (j + 1)·F` (the accumulated suffixes plus the principal formula). -/
-theorem dlen_hornClose_le {F : V} : ∀ (as : List V) {c S Γ d G : V},
+theorem proofLen_hornClose_le {F : V} : ∀ (as : List V) {c S Γ d G : V},
     (∀ a ∈ as, IsFormula L a) → IsFormula L c → IsFormulaSet L S →
     (∀ a ∈ as, neg L a ∈ S) → Γ ⊆ S → DerivationOf T d (insert (neg L c) Γ) →
-    formulaLen L (impChain L as c) ≤ F → setLen L S ≤ G →
-    dlen T (hornClose L as c S d) ≤
-      dlen T d + (2 * (as.length : V) + 1) * (G + ((as.length : V) + 1) * F + 1)
+    formulaLen L (impChain L as c) ≤ F → sequentLen L S ≤ G →
+    proofLen T (hornClose L as c S d) ≤
+      proofLen T d + (2 * (as.length : V) + 1) * (G + ((as.length : V) + 1) * F + 1)
   | [], c, S, Γ, d, G, _, hc, hS, _, hΓ, hd, hF, hG => by
     have hpf := hornClose_proof (T := T) [] (by simp) hc hS (by simp) hΓ hd
-    have hlen : dlen T (hornClose L [] c S d) = setLen L (insert (neg L c) S) + dlen T d + 1 :=
-      dlen_eq_of_graph hpf.2 (DlenGraph.wkRule_iff.mpr ⟨_, dlen_graph hd.2, rfl⟩)
-    have h1 : setLen L (insert (neg L c) S) ≤ G + F := by
-      refine le_trans (setLen_insert_le _ _) (add_le_add hG ?_)
+    have hlen : proofLen T (hornClose L [] c S d) = sequentLen L (insert (neg L c) S) + proofLen T d + 1 :=
+      proofLen_eq_of_graph hpf.2 (ProofLenGraph.wkRule_iff.mpr ⟨_, proofLen_graph hd.2, rfl⟩)
+    have h1 : sequentLen L (insert (neg L c) S) ≤ G + F := by
+      refine le_trans (sequentLen_insert_le _ _) (add_le_add hG ?_)
       rw [formulaLen_neg hc.isUFormula]; simpa using hF
     rw [hlen]
-    calc setLen L (insert (neg L c) S) + dlen T d + 1 ≤ (G + F) + dlen T d + 1 := by gcongr
-      _ = dlen T d + (2 * (([] : List V).length : V) + 1) * (G + ((([] : List V).length : V) + 1) * F + 1) := by
+    calc sequentLen L (insert (neg L c) S) + proofLen T d + 1 ≤ (G + F) + proofLen T d + 1 := by gcongr
+      _ = proofLen T d + (2 * (([] : List V).length : V) + 1) * (G + ((([] : List V).length : V) + 1) * F + 1) := by
         simp only [List.length_nil, Nat.cast_zero]; ring
   | a :: as, c, S, Γ, d, G, has, hc, hS, hneg, hΓ, hd, hF, hG => by
     have ha : IsFormula L a := has a (by simp)
@@ -320,33 +320,33 @@ theorem dlen_hornClose_le {F : V} : ∀ (as : List V) {c S Γ d G : V},
     have hΓ₁ : Γ ⊆ insert (neg L (impChain L (a :: as) c)) S := subset_insert_of_subset _ hΓ
     have e₂ := hornClose_proof (T := T) as has' hc hS₁ hneg₁ hΓ₁ hd
     have hpf := hornClose_proof (T := T) (a :: as) has hc hS hneg hΓ hd
-    have hlen : dlen T (hornClose L (a :: as) c S d) =
-        setLen L (insert (neg L (impChain L (a :: as) c)) S)
-          + (setLen L (insert a (insert (neg L (impChain L (a :: as) c)) S)) + 1)
-          + dlen T (hornClose L as c (insert (neg L (impChain L (a :: as) c)) S) d) + 1 :=
-      dlen_eq_of_graph hpf.2
-        (DlenGraph.andIntro_iff.mpr ⟨_, _, DlenGraph.axL_iff.mpr rfl, dlen_graph e₂.2, rfl⟩)
+    have hlen : proofLen T (hornClose L (a :: as) c S d) =
+        sequentLen L (insert (neg L (impChain L (a :: as) c)) S)
+          + (sequentLen L (insert a (insert (neg L (impChain L (a :: as) c)) S)) + 1)
+          + proofLen T (hornClose L as c (insert (neg L (impChain L (a :: as) c)) S) d) + 1 :=
+      proofLen_eq_of_graph hpf.2
+        (ProofLenGraph.andIntro_iff.mpr ⟨_, _, ProofLenGraph.axL_iff.mpr rfl, proofLen_graph e₂.2, rfl⟩)
     have hlenF : formulaLen L (impChain L as c) ≤ F :=
       le_trans (formulaLen_le_impChain_cons ha has' hc).2 hF
     have haF : formulaLen L a ≤ F := le_trans (formulaLen_le_impChain_cons ha has' hc).1 hF
-    have hS₁G : setLen L (insert (neg L (impChain L (a :: as) c)) S) ≤ G + F := by
-      refine le_trans (setLen_insert_le _ _) (add_le_add hG ?_)
+    have hS₁G : sequentLen L (insert (neg L (impChain L (a :: as) c)) S) ≤ G + F := by
+      refine le_trans (sequentLen_insert_le _ _) (add_le_add hG ?_)
       rw [formulaLen_neg hfull.isUFormula]; exact hF
-    have hS₁a : setLen L (insert a (insert (neg L (impChain L (a :: as) c)) S)) ≤ G + F + F :=
-      le_trans (setLen_insert_le _ _) (add_le_add hS₁G haF)
-    have hIH := dlen_hornClose_le (F := F) as has' hc hS₁ hneg₁ hΓ₁ hd hlenF hS₁G
+    have hS₁a : sequentLen L (insert a (insert (neg L (impChain L (a :: as) c)) S)) ≤ G + F + F :=
+      le_trans (sequentLen_insert_le _ _) (add_le_add hS₁G haF)
+    have hIH := proofLen_hornClose_le (F := F) as has' hc hS₁ hneg₁ hΓ₁ hd hlenF hS₁G
     rw [hlen]
-    calc setLen L (insert (neg L (impChain L (a :: as) c)) S)
-          + (setLen L (insert a (insert (neg L (impChain L (a :: as) c)) S)) + 1)
-          + dlen T (hornClose L as c (insert (neg L (impChain L (a :: as) c)) S) d) + 1
+    calc sequentLen L (insert (neg L (impChain L (a :: as) c)) S)
+          + (sequentLen L (insert a (insert (neg L (impChain L (a :: as) c)) S)) + 1)
+          + proofLen T (hornClose L as c (insert (neg L (impChain L (a :: as) c)) S) d) + 1
         ≤ (G + F) + ((G + F + F) + 1)
-          + (dlen T d + (2 * (as.length : V) + 1) * ((G + F) + ((as.length : V) + 1) * F + 1)) + 1 := by
+          + (proofLen T d + (2 * (as.length : V) + 1) * ((G + F) + ((as.length : V) + 1) * F + 1)) + 1 := by
           gcongr
-      _ = (dlen T d + (2 * (as.length : V) + 1) * (G + ((as.length : V) + 1 + 1) * F + 1))
+      _ = (proofLen T d + (2 * (as.length : V) + 1) * (G + ((as.length : V) + 1 + 1) * F + 1))
           + (2 * G + 3 * F + 2) := by ring
-      _ ≤ (dlen T d + (2 * (as.length : V) + 1) * (G + ((as.length : V) + 1 + 1) * F + 1))
+      _ ≤ (proofLen T d + (2 * (as.length : V) + 1) * (G + ((as.length : V) + 1 + 1) * F + 1))
           + (2 * G + 3 * F + 2) + (2 * (as.length : V) + 1) * F := le_self_add
-      _ = dlen T d + (2 * ((a :: as).length : V) + 1) * (G + (((a :: as).length : V) + 1) * F + 1) := by
+      _ = proofLen T d + (2 * ((a :: as).length : V) + 1) * (G + (((a :: as).length : V) + 1) * F + 1) := by
           simp only [List.length_cons, Nat.cast_succ]; ring
 
 variable (L) in
@@ -385,20 +385,20 @@ theorem useHornCode_proof {Γ Γ₀ : V} {es as : List V} {c dΛ d : V}
 
 /-- **The bound for `useHornCode`** (`m = es.length`, `j = as.length`, `E ≥ 1` bounds the witness
 lengths, `F ≥ |A₁ → … → C|·E` bounds every instantiated piece):
-`dlen ≤ dlen dΛ + dlen d + (m + 3)·|Γ| + (m + 1)²·(F + m) + |B| + m·E + 2m + 3
+`proofLen ≤ proofLen dΛ + proofLen d + (m + 3)·|Γ| + (m + 1)²·(F + m) + |B| + m·E + 2m + 3
   + (2j + 1)·(|Γ| + (j + 1)·F + 1)`. -/
-theorem dlen_useHornCode_le {E F : V} (hE : 1 ≤ E) {Γ Γ₀ : V} {es as : List V} {c dΛ d : V}
+theorem proofLen_useHornCode_le {E F : V} (hE : 1 ≤ E) {Γ Γ₀ : V} {es as : List V} {c dΛ d : V}
     (has : ∀ a ∈ as, IsSemiformula L (es.length : V) a) (hc : IsSemiformula L (es.length : V) c)
     (hes : ∀ e ∈ es, IsTerm L e ∧ termLen L e ≤ E) (hΓ : IsFormulaSet L Γ) (hsub : Γ₀ ⊆ Γ)
     (hneg : ∀ a ∈ as, neg L (instOuter L es a) ∈ Γ)
     (hΛ : Proof T dΛ (allsIter es.length (impChain L as c)))
     (hd : DerivationOf T d (insert (neg L (instOuter L es c)) Γ₀))
     (hF : formulaLen L (impChain L as c) * E ≤ F) :
-    dlen T (useHornCode L Γ es as c dΛ d) ≤
-      dlen T dΛ + dlen T d + ((es.length : V) + 3) * setLen L Γ
+    proofLen T (useHornCode L Γ es as c dΛ d) ≤
+      proofLen T dΛ + proofLen T d + ((es.length : V) + 3) * sequentLen L Γ
         + ((es.length : V) + 1) * ((es.length : V) + 1) * (F + (es.length : V))
         + formulaLen L (impChain L as c) + (es.length : V) * E + 2 * (es.length : V) + 3
-        + (2 * (as.length : V) + 1) * (setLen L Γ + ((as.length : V) + 1) * F + 1) := by
+        + (2 * (as.length : V) + 1) * (sequentLen L Γ + ((as.length : V) + 1) * F + 1) := by
   have hB : IsSemiformula L (es.length : V) (impChain L as c) := isSemiformula_impChain has hc
   have hes₁ : ∀ e ∈ es, IsTerm L e := fun e he ↦ (hes e he).1
   have hinst := hornClose_instances has hes₁ hneg
@@ -410,20 +410,20 @@ theorem dlen_useHornCode_le {E F : V} (hE : 1 ≤ E) {Γ Γ₀ : V} {es as : Lis
       (insert (neg L (instOuter L es (impChain L as c))) Γ) := by
     rw [instOuter_impChain es hes₁ has hc]
     exact hornClose_proof _ hinst.1 hc' hΓ hinst.2 hsub hd
-  have h₁ := dlen_useLemmaCode_le (T := T) hE hB hes hΓ (subset_refl Γ) hΛ hcont
+  have h₁ := proofLen_useLemmaCode_le (T := T) hE hB hes hΓ (subset_refl Γ) hΛ hcont
     (F := F + (es.length : V)) (add_le_add hF (le_refl _))
-  have h₂ := dlen_hornClose_le (T := T) (F := F) (as.map (instOuter L es)) hinst.1 hc' hΓ hinst.2
-    hsub hd hlen (le_refl (setLen L Γ))
+  have h₂ := proofLen_hornClose_le (T := T) (F := F) (as.map (instOuter L es)) hinst.1 hc' hΓ hinst.2
+    hsub hd hlen (le_refl (sequentLen L Γ))
   rw [formulaLen_allsIter hB.isUFormula] at h₁
   simp only [List.length_map] at h₂
   unfold useHornCode
   refine le_trans h₁ ?_
-  calc dlen T dΛ + dlen T (hornClose L (as.map (instOuter L es)) (instOuter L es c) Γ d)
-        + ((es.length : V) + 3) * setLen L Γ + (formulaLen L (impChain L as c) + (es.length : V))
+  calc proofLen T dΛ + proofLen T (hornClose L (as.map (instOuter L es)) (instOuter L es c) Γ d)
+        + ((es.length : V) + 3) * sequentLen L Γ + (formulaLen L (impChain L as c) + (es.length : V))
         + ((es.length : V) + 1) * ((es.length : V) + 1) * (F + (es.length : V))
         + (es.length : V) * E + (es.length : V) + 3
-      ≤ dlen T dΛ + (dlen T d + (2 * (as.length : V) + 1) * (setLen L Γ + ((as.length : V) + 1) * F + 1))
-        + ((es.length : V) + 3) * setLen L Γ + (formulaLen L (impChain L as c) + (es.length : V))
+      ≤ proofLen T dΛ + (proofLen T d + (2 * (as.length : V) + 1) * (sequentLen L Γ + ((as.length : V) + 1) * F + 1))
+        + ((es.length : V) + 3) * sequentLen L Γ + (formulaLen L (impChain L as c) + (es.length : V))
         + ((es.length : V) + 1) * ((es.length : V) + 1) * (F + (es.length : V))
         + (es.length : V) * E + (es.length : V) + 3 := by gcongr
     _ = _ := by ring
@@ -449,45 +449,45 @@ theorem splitAndCode_proof {Γ Γ₀ p q d : V} (hp : IsFormula L p) (hq : IsFor
         (subset_insert_of_subset _ hsub))) hd⟩
   exact ⟨by simp [splitAndCode], Derivation.orIntro (by simp) e⟩
 
-theorem dlen_splitAndCode {Γ Γ₀ p q d : V} (hp : IsFormula L p) (hq : IsFormula L q)
+theorem proofLen_splitAndCode {Γ Γ₀ p q d : V} (hp : IsFormula L p) (hq : IsFormula L q)
     (hΓ : IsFormulaSet L Γ) (hsub : Γ₀ ⊆ Γ)
     (hd : DerivationOf T d (insert (neg L p) (insert (neg L q) Γ₀))) :
-    dlen T (splitAndCode L Γ p q d) =
-      setLen L (insert (neg L p ^⋎ neg L q) Γ)
-        + (setLen L (insert (neg L p) (insert (neg L q) (insert (neg L p ^⋎ neg L q) Γ))) + dlen T d + 1)
+    proofLen T (splitAndCode L Γ p q d) =
+      sequentLen L (insert (neg L p ^⋎ neg L q) Γ)
+        + (sequentLen L (insert (neg L p) (insert (neg L q) (insert (neg L p ^⋎ neg L q) Γ))) + proofLen T d + 1)
         + 1 := by
-  apply dlen_eq_of_graph (splitAndCode_proof hp hq hΓ hsub hd).2
+  apply proofLen_eq_of_graph (splitAndCode_proof hp hq hΓ hsub hd).2
   unfold splitAndCode
-  exact DlenGraph.orIntro_iff.mpr ⟨_, DlenGraph.wkRule_iff.mpr ⟨_, dlen_graph hd.2, rfl⟩, rfl⟩
+  exact ProofLenGraph.orIntro_iff.mpr ⟨_, ProofLenGraph.wkRule_iff.mpr ⟨_, proofLen_graph hd.2, rfl⟩, rfl⟩
 
-/-- `dlen (splitAndCode) ≤ dlen d + 2|Γ| + 3|p| + 3|q| + 4`. -/
-theorem dlen_splitAndCode_le {Γ Γ₀ p q d : V} (hp : IsFormula L p) (hq : IsFormula L q)
+/-- `proofLen (splitAndCode) ≤ proofLen d + 2|Γ| + 3|p| + 3|q| + 4`. -/
+theorem proofLen_splitAndCode_le {Γ Γ₀ p q d : V} (hp : IsFormula L p) (hq : IsFormula L q)
     (hΓ : IsFormulaSet L Γ) (hsub : Γ₀ ⊆ Γ)
     (hd : DerivationOf T d (insert (neg L p) (insert (neg L q) Γ₀))) :
-    dlen T (splitAndCode L Γ p q d) ≤
-      dlen T d + 2 * setLen L Γ + 3 * formulaLen L p + 3 * formulaLen L q + 4 := by
+    proofLen T (splitAndCode L Γ p q d) ≤
+      proofLen T d + 2 * sequentLen L Γ + 3 * formulaLen L p + 3 * formulaLen L q + 4 := by
   have hp' := hp.isUFormula
   have hq' := hq.isUFormula
-  have h₁ : setLen L (insert (neg L p ^⋎ neg L q) Γ) ≤ setLen L Γ + (formulaLen L p + formulaLen L q + 1) := by
-    have := setLen_insert_le (L := L) (neg L p ^⋎ neg L q) Γ
+  have h₁ : sequentLen L (insert (neg L p ^⋎ neg L q) Γ) ≤ sequentLen L Γ + (formulaLen L p + formulaLen L q + 1) := by
+    have := sequentLen_insert_le (L := L) (neg L p ^⋎ neg L q) Γ
     rwa [formulaLen_or hp'.neg hq'.neg, formulaLen_neg hp', formulaLen_neg hq'] at this
-  have h₂ : setLen L (insert (neg L p) (insert (neg L q) (insert (neg L p ^⋎ neg L q) Γ))) ≤
-      setLen L Γ + (formulaLen L p + formulaLen L q + 1) + formulaLen L q + formulaLen L p := by
-    calc setLen L (insert (neg L p) (insert (neg L q) (insert (neg L p ^⋎ neg L q) Γ)))
-        ≤ setLen L (insert (neg L q) (insert (neg L p ^⋎ neg L q) Γ)) + formulaLen L (neg L p) :=
-          setLen_insert_le _ _
-      _ ≤ (setLen L (insert (neg L p ^⋎ neg L q) Γ) + formulaLen L (neg L q)) + formulaLen L (neg L p) :=
-          add_le_add (setLen_insert_le _ _) (le_refl _)
-      _ ≤ setLen L Γ + (formulaLen L p + formulaLen L q + 1) + formulaLen L q + formulaLen L p := by
+  have h₂ : sequentLen L (insert (neg L p) (insert (neg L q) (insert (neg L p ^⋎ neg L q) Γ))) ≤
+      sequentLen L Γ + (formulaLen L p + formulaLen L q + 1) + formulaLen L q + formulaLen L p := by
+    calc sequentLen L (insert (neg L p) (insert (neg L q) (insert (neg L p ^⋎ neg L q) Γ)))
+        ≤ sequentLen L (insert (neg L q) (insert (neg L p ^⋎ neg L q) Γ)) + formulaLen L (neg L p) :=
+          sequentLen_insert_le _ _
+      _ ≤ (sequentLen L (insert (neg L p ^⋎ neg L q) Γ) + formulaLen L (neg L q)) + formulaLen L (neg L p) :=
+          add_le_add (sequentLen_insert_le _ _) (le_refl _)
+      _ ≤ sequentLen L Γ + (formulaLen L p + formulaLen L q + 1) + formulaLen L q + formulaLen L p := by
           rw [formulaLen_neg hp', formulaLen_neg hq']; gcongr
-  rw [dlen_splitAndCode hp hq hΓ hsub hd]
-  calc setLen L (insert (neg L p ^⋎ neg L q) Γ)
-        + (setLen L (insert (neg L p) (insert (neg L q) (insert (neg L p ^⋎ neg L q) Γ))) + dlen T d + 1)
+  rw [proofLen_splitAndCode hp hq hΓ hsub hd]
+  calc sequentLen L (insert (neg L p ^⋎ neg L q) Γ)
+        + (sequentLen L (insert (neg L p) (insert (neg L q) (insert (neg L p ^⋎ neg L q) Γ))) + proofLen T d + 1)
         + 1
-      ≤ (setLen L Γ + (formulaLen L p + formulaLen L q + 1))
-        + ((setLen L Γ + (formulaLen L p + formulaLen L q + 1) + formulaLen L q + formulaLen L p) + dlen T d + 1)
+      ≤ (sequentLen L Γ + (formulaLen L p + formulaLen L q + 1))
+        + ((sequentLen L Γ + (formulaLen L p + formulaLen L q + 1) + formulaLen L q + formulaLen L p) + proofLen T d + 1)
         + 1 := by gcongr
-    _ = dlen T d + 2 * setLen L Γ + 3 * formulaLen L p + 3 * formulaLen L q + 4 := by ring
+    _ = proofLen T d + 2 * sequentLen L Γ + 3 * formulaLen L p + 3 * formulaLen L q + 4 := by ring
 
 variable (L) in
 /-- **Use a Horn row with a conjunctive conclusion** `∀^m (A₁ → … → C₁ ⋏ C₂)`, delivering BOTH
@@ -508,8 +508,8 @@ theorem useHornAndCode_proof {Γ Γ₀ : V} {es as : List V} {c₁ c₂ dΛ d : 
   exact splitAndCode_proof (isFormula_instOuter es hc₁ hes) (isFormula_instOuter es hc₂ hes) hΓ hsub hd
 
 /-- **The bound for `useHornAndCode`**: the `useHornCode` bound with the continuation's
-`dlen d` replaced by `dlen d + 2|Γ| + 6F + 4` (`F ≥ |B|·E` bounds both instantiated conjuncts). -/
-theorem dlen_useHornAndCode_le {E F : V} (hE : 1 ≤ E) {Γ Γ₀ : V} {es as : List V} {c₁ c₂ dΛ d : V}
+`proofLen d` replaced by `proofLen d + 2|Γ| + 6F + 4` (`F ≥ |B|·E` bounds both instantiated conjuncts). -/
+theorem proofLen_useHornAndCode_le {E F : V} (hE : 1 ≤ E) {Γ Γ₀ : V} {es as : List V} {c₁ c₂ dΛ d : V}
     (has : ∀ a ∈ as, IsSemiformula L (es.length : V) a)
     (hc₁ : IsSemiformula L (es.length : V) c₁) (hc₂ : IsSemiformula L (es.length : V) c₂)
     (hes : ∀ e ∈ es, IsTerm L e ∧ termLen L e ≤ E) (hΓ : IsFormulaSet L Γ) (hsub : Γ₀ ⊆ Γ)
@@ -517,11 +517,11 @@ theorem dlen_useHornAndCode_le {E F : V} (hE : 1 ≤ E) {Γ Γ₀ : V} {es as : 
     (hΛ : Proof T dΛ (allsIter es.length (impChain L as (c₁ ^⋏ c₂))))
     (hd : DerivationOf T d (insert (neg L (instOuter L es c₁)) (insert (neg L (instOuter L es c₂)) Γ₀)))
     (hF : formulaLen L (impChain L as (c₁ ^⋏ c₂)) * E ≤ F) :
-    dlen T (useHornAndCode L Γ es as c₁ c₂ dΛ d) ≤
-      dlen T dΛ + (dlen T d + 2 * setLen L Γ + 6 * F + 4) + ((es.length : V) + 3) * setLen L Γ
+    proofLen T (useHornAndCode L Γ es as c₁ c₂ dΛ d) ≤
+      proofLen T dΛ + (proofLen T d + 2 * sequentLen L Γ + 6 * F + 4) + ((es.length : V) + 3) * sequentLen L Γ
         + ((es.length : V) + 1) * ((es.length : V) + 1) * (F + (es.length : V))
         + formulaLen L (impChain L as (c₁ ^⋏ c₂)) + (es.length : V) * E + 2 * (es.length : V) + 3
-        + (2 * (as.length : V) + 1) * (setLen L Γ + ((as.length : V) + 1) * F + 1) := by
+        + (2 * (as.length : V) + 1) * (sequentLen L Γ + ((as.length : V) + 1) * F + 1) := by
   have hes₁ : ∀ e ∈ es, IsTerm L e := fun e he ↦ (hes e he).1
   have hc : IsSemiformula L (es.length : V) (c₁ ^⋏ c₂) := by simp [hc₁, hc₂]
   have hB : IsSemiformula L (es.length : V) (impChain L as (c₁ ^⋏ c₂)) := isSemiformula_impChain has hc
@@ -541,15 +541,15 @@ theorem dlen_useHornAndCode_le {E F : V} (hE : 1 ≤ E) {Γ Γ₀ : V} {es as : 
       (insert (neg L (instOuter L es (c₁ ^⋏ c₂))) Γ) := by
     rw [instOuter_and es hc₁ hc₂ hes₁]
     exact splitAndCode_proof hc₁' hc₂' hΓ hsub hd
-  have hsl := dlen_splitAndCode_le (T := T) hc₁' hc₂' hΓ hsub hd
-  have hsl' : dlen T (splitAndCode L Γ (instOuter L es c₁) (instOuter L es c₂) d) ≤
-      dlen T d + 2 * setLen L Γ + 6 * F + 4 := by
+  have hsl := proofLen_splitAndCode_le (T := T) hc₁' hc₂' hΓ hsub hd
+  have hsl' : proofLen T (splitAndCode L Γ (instOuter L es c₁) (instOuter L es c₂) d) ≤
+      proofLen T d + 2 * sequentLen L Γ + 6 * F + 4 := by
     refine le_trans hsl ?_
-    calc dlen T d + 2 * setLen L Γ + 3 * formulaLen L (instOuter L es c₁) + 3 * formulaLen L (instOuter L es c₂) + 4
-        ≤ dlen T d + 2 * setLen L Γ + 3 * F + 3 * F + 4 := by gcongr
-      _ = dlen T d + 2 * setLen L Γ + 6 * F + 4 := by ring
+    calc proofLen T d + 2 * sequentLen L Γ + 3 * formulaLen L (instOuter L es c₁) + 3 * formulaLen L (instOuter L es c₂) + 4
+        ≤ proofLen T d + 2 * sequentLen L Γ + 3 * F + 3 * F + 4 := by gcongr
+      _ = proofLen T d + 2 * sequentLen L Γ + 6 * F + 4 := by ring
   unfold useHornAndCode
-  refine le_trans (dlen_useHornCode_le hE has hc hes hΓ (subset_refl Γ) hneg hΛ hsplit hF) ?_
+  refine le_trans (proofLen_useHornCode_le hE has hc hes hΓ (subset_refl Γ) hneg hΛ hsplit hF) ?_
   gcongr
 
 /-! ### Step 3 — `introFactCode`: a totality row, the witness as a fresh eigenvariable -/
@@ -612,30 +612,30 @@ lemma formulaLen_exs_instOuterAt_le {E F : V} (hE : 1 ≤ E) {es as : List V} {R
   exact mul_le_mul_of_nonneg_right (formulaLen_concl_le_impChain has hc) zero_le
 
 /-- **The Horn-closing sub-bound of `introFactCode`**: the `useHornCode` on the context extended
-by `∃ R[ē]` with the one-node `axL` continuation (`dlen_useHornCode_le` at `|Γ'| ≤ |Γ| + F`,
-`|∃ R[ē]| ≤ F`). Shared by `dlen_introFactCode_le` and `dlen_introFactCode_le_occ`. -/
-theorem dlen_introFactCode_horn_le {E F : V} (hE : 1 ≤ E) {Γ : V} {es as : List V} {R dΛ : V}
+by `∃ R[ē]` with the one-node `axL` continuation (`proofLen_useHornCode_le` at `|Γ'| ≤ |Γ| + F`,
+`|∃ R[ē]| ≤ F`). Shared by `proofLen_introFactCode_le` and `proofLen_introFactCode_le_occ`. -/
+theorem proofLen_introFactCode_horn_le {E F : V} (hE : 1 ≤ E) {Γ : V} {es as : List V} {R dΛ : V}
     (has : ∀ a ∈ as, IsSemiformula L (es.length : V) a)
     (hR : IsSemiformula L ((es.length : V) + 1) R)
     (hes : ∀ e ∈ es, IsTerm L e ∧ termLen L e ≤ E) (hΓ : IsFormulaSet L Γ)
     (hneg : ∀ a ∈ as, neg L (instOuter L es a) ∈ Γ)
     (hΛ : Proof T dΛ (allsIter es.length (impChain L as (^∃ R))))
     (hF : formulaLen L (impChain L as (^∃ R)) * E ≤ F) :
-    dlen T (useHornCode L (insert (^∃ (instOuterAt L 1 es R)) Γ) es as (^∃ R) dΛ
+    proofLen T (useHornCode L (insert (^∃ (instOuterAt L 1 es R)) Γ) es as (^∃ R) dΛ
         (axL (insert (neg L (^∃ (instOuterAt L 1 es R))) (insert (^∃ (instOuterAt L 1 es R)) Γ))
           (^∃ (instOuterAt L 1 es R)))) ≤
-      dlen T dΛ + (setLen L Γ + 2 * F + 1) + ((es.length : V) + 3) * (setLen L Γ + F)
+      proofLen T dΛ + (sequentLen L Γ + 2 * F + 1) + ((es.length : V) + 3) * (sequentLen L Γ + F)
         + ((es.length : V) + 1) * ((es.length : V) + 1) * (F + (es.length : V))
         + formulaLen L (impChain L as (^∃ R)) + (es.length : V) * E + 2 * (es.length : V) + 3
-        + (2 * (as.length : V) + 1) * ((setLen L Γ + F) + ((as.length : V) + 1) * F + 1) := by
+        + (2 * (as.length : V) + 1) * ((sequentLen L Γ + F) + ((as.length : V) + 1) * F + 1) := by
   have hes₁ : ∀ e ∈ es, IsTerm L e := fun e he ↦ (hes e he).1
   have hP : IsSemiformula L 1 (instOuterAt L 1 es R) := isSemiformula_one_instOuterAt es hR hes₁
   have hEx : IsFormula L (^∃ (instOuterAt L 1 es R)) := by simp [hP]
   have hΓ₁ : IsFormulaSet L (insert (^∃ (instOuterAt L 1 es R)) Γ) := by simp [hEx, hΓ]
   have hc : IsSemiformula L (es.length : V) (^∃ R) := by simp [hR]
   have hExF : formulaLen L (^∃ (instOuterAt L 1 es R)) ≤ F := formulaLen_exs_instOuterAt_le hE has hR hes hF
-  have hΓ₁F : setLen L (insert (^∃ (instOuterAt L 1 es R)) Γ) ≤ setLen L Γ + F :=
-    le_trans (setLen_insert_le _ _) (add_le_add (le_refl _) hExF)
+  have hΓ₁F : sequentLen L (insert (^∃ (instOuterAt L 1 es R)) Γ) ≤ sequentLen L Γ + F :=
+    le_trans (sequentLen_insert_le _ _) (add_le_add (le_refl _) hExF)
   -- the one-node continuation
   have hax : DerivationOf T
       (axL (insert (neg L (^∃ (instOuterAt L 1 es R))) (insert (^∃ (instOuterAt L 1 es R)) Γ))
@@ -643,25 +643,25 @@ theorem dlen_introFactCode_horn_le {E F : V} (hE : 1 ≤ E) {Γ : V} {es as : Li
       (insert (neg L (instOuter L es (^∃ R))) (insert (^∃ (instOuterAt L 1 es R)) Γ)) := by
     rw [instOuter_exs es hR hes₁]
     exact ⟨by simp, Derivation.axL (by simp [hEx, hΓ₁]) (by simp) (by simp)⟩
-  have haxlen : dlen T (axL (insert (neg L (^∃ (instOuterAt L 1 es R))) (insert (^∃ (instOuterAt L 1 es R)) Γ))
-        (^∃ (instOuterAt L 1 es R))) ≤ setLen L Γ + 2 * F + 1 := by
-    rw [dlen_eq_of_graph hax.2 (DlenGraph.axL_iff.mpr rfl)]
-    have : setLen L (insert (neg L (^∃ (instOuterAt L 1 es R))) (insert (^∃ (instOuterAt L 1 es R)) Γ))
-        ≤ setLen L Γ + F + F := by
-      refine le_trans (setLen_insert_le _ _) (add_le_add hΓ₁F ?_)
+  have haxlen : proofLen T (axL (insert (neg L (^∃ (instOuterAt L 1 es R))) (insert (^∃ (instOuterAt L 1 es R)) Γ))
+        (^∃ (instOuterAt L 1 es R))) ≤ sequentLen L Γ + 2 * F + 1 := by
+    rw [proofLen_eq_of_graph hax.2 (ProofLenGraph.axL_iff.mpr rfl)]
+    have : sequentLen L (insert (neg L (^∃ (instOuterAt L 1 es R))) (insert (^∃ (instOuterAt L 1 es R)) Γ))
+        ≤ sequentLen L Γ + F + F := by
+      refine le_trans (sequentLen_insert_le _ _) (add_le_add hΓ₁F ?_)
       rw [formulaLen_neg hEx.isUFormula]; exact hExF
-    calc _ ≤ setLen L Γ + F + F + 1 := by gcongr
-      _ = setLen L Γ + 2 * F + 1 := by ring
-  have hhorn := dlen_useHornCode_le (T := T) hE has hc hes hΓ₁ (subset_refl _)
+    calc _ ≤ sequentLen L Γ + F + F + 1 := by gcongr
+      _ = sequentLen L Γ + 2 * F + 1 := by ring
+  have hhorn := proofLen_useHornCode_le (T := T) hE has hc hes hΓ₁ (subset_refl _)
     (fun a ha ↦ by simp [hneg a ha]) hΛ hax hF
   refine le_trans hhorn ?_
   gcongr
 
 /-- **The bound for `introFactCode`** (`m = es.length`, `j = as.length`, `E ≥ 1`,
 `F ≥ |A₁ → … → ∃ R|·E`, so `|∃ R[ē]| ≤ F`):
-`dlen ≤ dlen dΛ + dlen d + (m + 2j + 10)·|Γ| + (m + 11)·F + (m + 1)²·(F + m) + |B| + m·E + 2m
+`proofLen ≤ proofLen dΛ + proofLen d + (m + 2j + 10)·|Γ| + (m + 11)·F + (m + 1)²·(F + m) + |B| + m·E + 2m
   + (2j + 1)·((j + 2)·F + 1) + 12`. -/
-theorem dlen_introFactCode_le {E F : V} (hE : 1 ≤ E) {Γ : V} {es as : List V} {R dΛ d : V}
+theorem proofLen_introFactCode_le {E F : V} (hE : 1 ≤ E) {Γ : V} {es as : List V} {R dΛ d : V}
     (has : ∀ a ∈ as, IsSemiformula L (es.length : V) a)
     (hR : IsSemiformula L ((es.length : V) + 1) R)
     (hes : ∀ e ∈ es, IsTerm L e ∧ termLen L e ≤ E) (hΓ : IsFormulaSet L Γ)
@@ -669,8 +669,8 @@ theorem dlen_introFactCode_le {E F : V} (hE : 1 ≤ E) {Γ : V} {es as : List V}
     (hΛ : Proof T dΛ (allsIter es.length (impChain L as (^∃ R))))
     (hd : DerivationOf T d (insert (neg L (free L (instOuterAt L 1 es R))) (setShift L Γ)))
     (hF : formulaLen L (impChain L as (^∃ R)) * E ≤ F) :
-    dlen T (introFactCode L Γ es as R dΛ d) ≤
-      dlen T dΛ + dlen T d + ((es.length : V) + 2 * (as.length : V) + 10) * setLen L Γ
+    proofLen T (introFactCode L Γ es as R dΛ d) ≤
+      proofLen T dΛ + proofLen T d + ((es.length : V) + 2 * (as.length : V) + 10) * sequentLen L Γ
         + ((es.length : V) + 11) * F
         + ((es.length : V) + 1) * ((es.length : V) + 1) * (F + (es.length : V))
         + formulaLen L (impChain L as (^∃ R)) + (es.length : V) * E + 2 * (es.length : V)
@@ -681,24 +681,24 @@ theorem dlen_introFactCode_le {E F : V} (hE : 1 ≤ E) {Γ : V} {es as : List V}
     have h := formulaLen_exs_instOuterAt_le hE has hR hes hF
     rw [formulaLen_exs hP.isUFormula] at h
     exact le_trans le_self_add h
-  have hhorn := dlen_introFactCode_horn_le (T := T) hE has hR hes hΓ hneg hΛ hF
+  have hhorn := proofLen_introFactCode_horn_le (T := T) hE has hR hes hΓ hneg hΛ hF
   have hD := introFactCode_horn_proof (T := T) has hR hes₁ hΓ hneg hΛ
   unfold introFactCode
-  refine le_trans (dlen_elimExistsCode_le' hP hΓ (subset_refl Γ) hD hd) ?_
-  calc _ ≤ (dlen T dΛ + (setLen L Γ + 2 * F + 1) + ((es.length : V) + 3) * (setLen L Γ + F)
+  refine le_trans (proofLen_elimExistsCode_le' hP hΓ (subset_refl Γ) hD hd) ?_
+  calc _ ≤ (proofLen T dΛ + (sequentLen L Γ + 2 * F + 1) + ((es.length : V) + 3) * (sequentLen L Γ + F)
         + ((es.length : V) + 1) * ((es.length : V) + 1) * (F + (es.length : V))
         + formulaLen L (impChain L as (^∃ R)) + (es.length : V) * E + 2 * (es.length : V) + 3
-        + (2 * (as.length : V) + 1) * ((setLen L Γ + F) + ((as.length : V) + 1) * F + 1))
-        + dlen T d + 5 * setLen L Γ + 6 * F + 8 := by gcongr
+        + (2 * (as.length : V) + 1) * ((sequentLen L Γ + F) + ((as.length : V) + 1) * F + 1))
+        + proofLen T d + 5 * sequentLen L Γ + 6 * F + 8 := by gcongr
     _ = _ := by ring
 
-/-- **The bound for `introFactCode` with the additive shift term** (`dlen_elimExistsCode_le_occ`
-in place of `dlen_elimExistsCode_le'`): one `|Γ|` of the `(m + 2j + 10)·|Γ|` becomes `fvOccS Γ`,
+/-- **The bound for `introFactCode` with the additive shift term** (`proofLen_elimExistsCode_le_occ`
+in place of `proofLen_elimExistsCode_le'`): one `|Γ|` of the `(m + 2j + 10)·|Γ|` becomes `fvOccS Γ`,
 the number of free-variable occurrences in the context — the doubled `|setShift Γ| ≤ 2|Γ|` is
 gone:
-`dlen ≤ dlen dΛ + dlen d + (m + 2j + 9)·|Γ| + fvOccS Γ + (m + 11)·F + (m + 1)²·(F + m) + |B| + m·E
+`proofLen ≤ proofLen dΛ + proofLen d + (m + 2j + 9)·|Γ| + fvOccS Γ + (m + 11)·F + (m + 1)²·(F + m) + |B| + m·E
   + 2m + (2j + 1)·((j + 2)·F + 1) + 12`. -/
-theorem dlen_introFactCode_le_occ {E F : V} (hE : 1 ≤ E) {Γ : V} {es as : List V} {R dΛ d : V}
+theorem proofLen_introFactCode_le_occ {E F : V} (hE : 1 ≤ E) {Γ : V} {es as : List V} {R dΛ d : V}
     (has : ∀ a ∈ as, IsSemiformula L (es.length : V) a)
     (hR : IsSemiformula L ((es.length : V) + 1) R)
     (hes : ∀ e ∈ es, IsTerm L e ∧ termLen L e ≤ E) (hΓ : IsFormulaSet L Γ)
@@ -706,8 +706,8 @@ theorem dlen_introFactCode_le_occ {E F : V} (hE : 1 ≤ E) {Γ : V} {es as : Lis
     (hΛ : Proof T dΛ (allsIter es.length (impChain L as (^∃ R))))
     (hd : DerivationOf T d (insert (neg L (free L (instOuterAt L 1 es R))) (setShift L Γ)))
     (hF : formulaLen L (impChain L as (^∃ R)) * E ≤ F) :
-    dlen T (introFactCode L Γ es as R dΛ d) ≤
-      dlen T dΛ + dlen T d + ((es.length : V) + 2 * (as.length : V) + 9) * setLen L Γ + fvOccS L Γ
+    proofLen T (introFactCode L Γ es as R dΛ d) ≤
+      proofLen T dΛ + proofLen T d + ((es.length : V) + 2 * (as.length : V) + 9) * sequentLen L Γ + fvOccS L Γ
         + ((es.length : V) + 11) * F
         + ((es.length : V) + 1) * ((es.length : V) + 1) * (F + (es.length : V))
         + formulaLen L (impChain L as (^∃ R)) + (es.length : V) * E + 2 * (es.length : V)
@@ -718,15 +718,15 @@ theorem dlen_introFactCode_le_occ {E F : V} (hE : 1 ≤ E) {Γ : V} {es as : Lis
     have h := formulaLen_exs_instOuterAt_le hE has hR hes hF
     rw [formulaLen_exs hP.isUFormula] at h
     exact le_trans le_self_add h
-  have hhorn := dlen_introFactCode_horn_le (T := T) hE has hR hes hΓ hneg hΛ hF
+  have hhorn := proofLen_introFactCode_horn_le (T := T) hE has hR hes hΓ hneg hΛ hF
   have hD := introFactCode_horn_proof (T := T) has hR hes₁ hΓ hneg hΛ
   unfold introFactCode
-  refine le_trans (dlen_elimExistsCode_le_occ hP hΓ (subset_refl Γ) hD hd) ?_
-  calc _ ≤ (dlen T dΛ + (setLen L Γ + 2 * F + 1) + ((es.length : V) + 3) * (setLen L Γ + F)
+  refine le_trans (proofLen_elimExistsCode_le_occ hP hΓ (subset_refl Γ) hD hd) ?_
+  calc _ ≤ (proofLen T dΛ + (sequentLen L Γ + 2 * F + 1) + ((es.length : V) + 3) * (sequentLen L Γ + F)
         + ((es.length : V) + 1) * ((es.length : V) + 1) * (F + (es.length : V))
         + formulaLen L (impChain L as (^∃ R)) + (es.length : V) * E + 2 * (es.length : V) + 3
-        + (2 * (as.length : V) + 1) * ((setLen L Γ + F) + ((as.length : V) + 1) * F + 1))
-        + dlen T d + 4 * setLen L Γ + fvOccS L Γ + 6 * F + 8 := by gcongr
+        + (2 * (as.length : V) + 1) * ((sequentLen L Γ + F) + ((as.length : V) + 1) * F + 1))
+        + proofLen T d + 4 * sequentLen L Γ + fvOccS L Γ + 6 * F + 8 := by gcongr
     _ = _ := by ring
 
 /-! ### Leaves — `axLFactCode`, `wkToCode` -/
@@ -738,14 +738,14 @@ theorem axLFactCode_proof {Γ φ : V} (hφ : IsFormula L φ) (hΓ : IsFormulaSet
     DerivationOf T (axLFactCode Γ φ) (insert φ Γ) :=
   ⟨by simp [axLFactCode], Derivation.axL (by simp [hφ, hΓ]) (by simp) (by simp [h])⟩
 
-theorem dlen_axLFactCode {Γ φ : V} (hφ : IsFormula L φ) (hΓ : IsFormulaSet L Γ) (h : neg L φ ∈ Γ) :
-    dlen T (axLFactCode Γ φ) = setLen L (insert φ Γ) + 1 :=
-  dlen_eq_of_graph (axLFactCode_proof hφ hΓ h).2 (DlenGraph.axL_iff.mpr rfl)
+theorem proofLen_axLFactCode {Γ φ : V} (hφ : IsFormula L φ) (hΓ : IsFormulaSet L Γ) (h : neg L φ ∈ Γ) :
+    proofLen T (axLFactCode Γ φ) = sequentLen L (insert φ Γ) + 1 :=
+  proofLen_eq_of_graph (axLFactCode_proof hφ hΓ h).2 (ProofLenGraph.axL_iff.mpr rfl)
 
-theorem dlen_axLFactCode_le {Γ φ : V} (hφ : IsFormula L φ) (hΓ : IsFormulaSet L Γ) (h : neg L φ ∈ Γ) :
-    dlen T (axLFactCode Γ φ) ≤ setLen L Γ + formulaLen L φ + 1 := by
-  rw [dlen_axLFactCode hφ hΓ h]
-  exact add_le_add (setLen_insert_le _ _) (le_refl _)
+theorem proofLen_axLFactCode_le {Γ φ : V} (hφ : IsFormula L φ) (hΓ : IsFormulaSet L Γ) (h : neg L φ ∈ Γ) :
+    proofLen T (axLFactCode Γ φ) ≤ sequentLen L Γ + formulaLen L φ + 1 := by
+  rw [proofLen_axLFactCode hφ hΓ h]
+  exact add_le_add (sequentLen_insert_le _ _) (le_refl _)
 
 /-- Weaken a derivation of `Γ' ⊆ Γ` to `Γ`: one `wkRule`. -/
 noncomputable def wkToCode (Γ d : V) : V := wkRule Γ d
@@ -754,9 +754,9 @@ theorem wkToCode_proof {Γ Γ' d : V} (hΓ : IsFormulaSet L Γ) (h : Γ' ⊆ Γ)
     (hd : DerivationOf T d Γ') : DerivationOf T (wkToCode Γ d) Γ :=
   ⟨by simp [wkToCode], Derivation.wkRule hΓ h hd⟩
 
-theorem dlen_wkToCode {Γ Γ' d : V} (hΓ : IsFormulaSet L Γ) (h : Γ' ⊆ Γ)
-    (hd : DerivationOf T d Γ') : dlen T (wkToCode Γ d) = setLen L Γ + dlen T d + 1 :=
-  dlen_eq_of_graph (wkToCode_proof hΓ h hd).2 (DlenGraph.wkRule_iff.mpr ⟨_, dlen_graph hd.2, rfl⟩)
+theorem proofLen_wkToCode {Γ Γ' d : V} (hΓ : IsFormulaSet L Γ) (h : Γ' ⊆ Γ)
+    (hd : DerivationOf T d Γ') : proofLen T (wkToCode Γ d) = sequentLen L Γ + proofLen T d + 1 :=
+  proofLen_eq_of_graph (wkToCode_proof hΓ h hd).2 (ProofLenGraph.wkRule_iff.mpr ⟨_, proofLen_graph hd.2, rfl⟩)
 
 end steps
 
@@ -1418,10 +1418,10 @@ lemma row3_witnesses {E nc : V} (hE : 1 ≤ E) (hnc : IsSemiterm LAct 0 nc) (hEn
 
 /-- `|ctx1| ≤ 2|Γ| + 2·|B₁|·E` (the shift doubles, the new fact is the row's body under the
 witnesses, freed). -/
-lemma setLen_ctx1_le {E Γ a b : V} (hE : 1 ≤ E) (hΓ : IsFormulaSet LAct Γ) (ha : IsSemiterm LAct 0 a)
+lemma sequentLen_ctx1_le {E Γ a b : V} (hE : 1 ≤ E) (hΓ : IsFormulaSet LAct Γ) (ha : IsSemiterm LAct 0 a)
     (hb : IsSemiterm LAct 0 b) (hEa : 2 * termLen LAct a ≤ E) (hEb : 2 * termLen LAct b ≤ E) :
-    setLen LAct (ctx1 Γ a b) ≤
-      2 * setLen LAct Γ + 2 * (formulaLen LAct (impChain LAct [] (^∃ rowAndTotalR)) * E) := by
+    sequentLen LAct (ctx1 Γ a b) ≤
+      2 * sequentLen LAct Γ + 2 * (formulaLen LAct (impChain LAct [] (^∃ rowAndTotalR)) * E) := by
   have hes := row1_witnesses ha hb hEa hEb
   have hR3 : IsSemiformula LAct ((([a, b] : List V).length : V) + 1) rowAndTotalR := by
     rw [show ((([a, b] : List V).length : ℕ) : V) + 1 = ((3 : ℕ) : V) by
@@ -1438,24 +1438,24 @@ lemma setLen_ctx1_le {E Γ a b : V} (hE : 1 ≤ E) (hΓ : IsFormulaSet LAct Γ) 
     rw [instOuter_exs [a, b] hR3 (fun e he ↦ (hes e he).1), formulaLen_exs hR'.isUFormula]
     exact le_self_add
   unfold ctx1
-  refine le_trans (setLen_insert_le _ _) ?_
+  refine le_trans (sequentLen_insert_le _ _) ?_
   rw [← free_inst_rowAndTotalR ha hb, formulaLen_neg hR'.free.isUFormula]
-  calc setLen LAct (setShift LAct Γ) + formulaLen LAct (free LAct (instOuterAt LAct 1 [a, b] rowAndTotalR))
-      ≤ 2 * setLen LAct Γ + 2 * formulaLen LAct (instOuterAt LAct 1 [a, b] rowAndTotalR) :=
-        add_le_add (setLen_setShift_le hΓ) (formulaLen_free_le hR')
-    _ ≤ 2 * setLen LAct Γ + 2 * (formulaLen LAct (impChain LAct [] (^∃ rowAndTotalR)) * E) := by gcongr
+  calc sequentLen LAct (setShift LAct Γ) + formulaLen LAct (free LAct (instOuterAt LAct 1 [a, b] rowAndTotalR))
+      ≤ 2 * sequentLen LAct Γ + 2 * formulaLen LAct (instOuterAt LAct 1 [a, b] rowAndTotalR) :=
+        add_le_add (sequentLen_setShift_le hΓ) (formulaLen_free_le hR')
+    _ ≤ 2 * sequentLen LAct Γ + 2 * (formulaLen LAct (impChain LAct [] (^∃ rowAndTotalR)) * E) := by gcongr
 
 /-- `|ctx2| ≤ |ctx1| + |B₂|·E`. -/
-lemma setLen_ctx2_le {E Γ nc a b : V} (hE : 1 ≤ E) (hnc : IsSemiterm LAct 0 nc) (ha : IsSemiterm LAct 0 a)
+lemma sequentLen_ctx2_le {E Γ nc a b : V} (hE : 1 ≤ E) (hnc : IsSemiterm LAct 0 nc) (ha : IsSemiterm LAct 0 a)
     (hb : IsSemiterm LAct 0 b) (hEn : 2 * termLen LAct nc ≤ E) (hEa : 2 * termLen LAct a ≤ E)
     (hEb : 2 * termLen LAct b ≤ E) :
-    setLen LAct (ctx2 Γ nc a b) ≤
-      setLen LAct (ctx1 Γ a b) + formulaLen LAct (impChain LAct rowIsAndAs rowIsAndC) * E := by
+    sequentLen LAct (ctx2 Γ nc a b) ≤
+      sequentLen LAct (ctx1 Γ a b) + formulaLen LAct (impChain LAct rowIsAndAs rowIsAndC) * E := by
   have hes := row2_witnesses hE hnc ha hb hEn hEa hEb
   have hz : IsSemiterm LAct 0 (^&0 : V) := by simp
   obtain ⟨_, hC⟩ := inst_rowIsAnd hnc.termShift ha.termShift hb.termShift hz
   unfold ctx2
-  refine le_trans (setLen_insert_le _ _) (add_le_add (le_refl _) ?_)
+  refine le_trans (sequentLen_insert_le _ _) (add_le_add (le_refl _) ?_)
   rw [formulaLen_neg (isFormula_sigmaFact hnc.termShift hz).isUFormula, ← hC]
   refine le_trans (formulaLen_instOuter_le hE _ isSemiformula_rowIsAnd.2 hes) ?_
   exact mul_le_mul_of_nonneg_right
@@ -1515,38 +1515,38 @@ lemma row1_hR {a b : V} : IsSemiformula LAct ((([a, b] : List V).length : V) + 1
     simp only [List.length_cons, List.length_nil]; push_cast; ring]
   exact isSemiformula_rowAndTotalR
 
-/-- Row 3: `dlen ≤ dlen dΛ₃ + dlen d + 8|ctx2| + 15|B₃|E + |B₃| + 2E + 28`. -/
-theorem dlen_describeAnd_row3_le {E Γ nc a b dΛ₃ d : V} (hE : 1 ≤ E) (hΓ : IsFormulaSet LAct Γ)
+/-- Row 3: `proofLen ≤ proofLen dΛ₃ + proofLen d + 8|ctx2| + 15|B₃|E + |B₃| + 2E + 28`. -/
+theorem proofLen_describeAnd_row3_le {E Γ nc a b dΛ₃ d : V} (hE : 1 ≤ E) (hΓ : IsFormulaSet LAct Γ)
     (hnc : IsSemiterm LAct 0 nc) (ha : IsSemiterm LAct 0 a) (hb : IsSemiterm LAct 0 b)
     (hEn : 2 * termLen LAct nc ≤ E)
     (hΛ₃ : Proof TAct dΛ₃ (qqAlls (⌜Semiformula.lMap emb isSemiformulaSigmaPiB⌝ : V) ((2 : ℕ) : V)))
     (hd : DerivationOf TAct d (ctx3 Γ nc a b)) :
-    dlen TAct (useHornCode LAct (ctx2 Γ nc a b) [termShift LAct nc, ^&0] [rowSigmaPiA] rowSigmaPiC dΛ₃ d) ≤
-      dlen TAct dΛ₃ + dlen TAct d + 8 * setLen LAct (ctx2 Γ nc a b)
+    proofLen TAct (useHornCode LAct (ctx2 Γ nc a b) [termShift LAct nc, ^&0] [rowSigmaPiA] rowSigmaPiC dΛ₃ d) ≤
+      proofLen TAct dΛ₃ + proofLen TAct d + 8 * sequentLen LAct (ctx2 Γ nc a b)
         + 15 * (formulaLen LAct (impChain LAct [rowSigmaPiA] rowSigmaPiC) * E)
         + formulaLen LAct (impChain LAct [rowSigmaPiA] rowSigmaPiC) + 2 * E + 28 := by
   rw [qqAlls_natCast, quote_isSemiformulaSigmaPiB] at hΛ₃
-  have h := dlen_useHornCode_le (T := TAct) hE row3_has isSemiformula_rowSigmaPi.2
+  have h := proofLen_useHornCode_le (T := TAct) hE row3_has isSemiformula_rowSigmaPi.2
     (row3_witnesses hE hnc hEn) (isFormulaSet_ctx2 hΓ hnc ha hb) (subset_refl _) (row3_hneg hnc) hΛ₃
     (row3_cont hnc hd) (le_refl _)
   refine le_trans h (le_of_eq ?_)
   simp only [List.length_cons, List.length_nil, Nat.cast_ofNat, Nat.cast_one, Nat.zero_add, Nat.reduceAdd]
   ring
 
-/-- Row 2: `dlen ≤ dlen dΛ₂ + dlen d₃ + 14|ctx1| + 53|B₂|E + |B₂| + 4E + 118`. -/
-theorem dlen_describeAnd_row2_le {E Γ nc a b dΛ₂ d₃ : V} (hE : 1 ≤ E) (hΓ : IsFormulaSet LAct Γ)
+/-- Row 2: `proofLen ≤ proofLen dΛ₂ + proofLen d₃ + 14|ctx1| + 53|B₂|E + |B₂| + 4E + 118`. -/
+theorem proofLen_describeAnd_row2_le {E Γ nc a b dΛ₂ d₃ : V} (hE : 1 ≤ E) (hΓ : IsFormulaSet LAct Γ)
     (hnc : IsSemiterm LAct 0 nc) (ha : IsSemiterm LAct 0 a) (hb : IsSemiterm LAct 0 b)
     (hEn : 2 * termLen LAct nc ≤ E) (hEa : 2 * termLen LAct a ≤ E) (hEb : 2 * termLen LAct b ≤ E)
     (hfa : neg LAct (piFact nc a) ∈ Γ) (hfb : neg LAct (piFact nc b) ∈ Γ)
     (hΛ₂ : Proof TAct dΛ₂ (qqAlls (⌜Semiformula.lMap emb isSemiformulaAndB⌝ : V) ((4 : ℕ) : V)))
     (hd₃ : DerivationOf TAct d₃ (ctx2 Γ nc a b)) :
-    dlen TAct (useHornCode LAct (ctx1 Γ a b) [termShift LAct nc, termShift LAct a, termShift LAct b, ^&0]
+    proofLen TAct (useHornCode LAct (ctx1 Γ a b) [termShift LAct nc, termShift LAct a, termShift LAct b, ^&0]
         rowIsAndAs rowIsAndC dΛ₂ d₃) ≤
-      dlen TAct dΛ₂ + dlen TAct d₃ + 14 * setLen LAct (ctx1 Γ a b)
+      proofLen TAct dΛ₂ + proofLen TAct d₃ + 14 * sequentLen LAct (ctx1 Γ a b)
         + 53 * (formulaLen LAct (impChain LAct rowIsAndAs rowIsAndC) * E)
         + formulaLen LAct (impChain LAct rowIsAndAs rowIsAndC) + 4 * E + 118 := by
   rw [qqAlls_natCast, quote_isSemiformulaAndB] at hΛ₂
-  have h := dlen_useHornCode_le (T := TAct) hE
+  have h := proofLen_useHornCode_le (T := TAct) hE
     (es := [termShift LAct nc, termShift LAct a, termShift LAct b, ^&0])
     isSemiformula_rowIsAnd.1 isSemiformula_rowIsAnd.2 (row2_witnesses hE hnc ha hb hEn hEa hEb) (isFormulaSet_ctx1 hΓ ha hb) (subset_refl _)
     (row2_hneg hnc ha hb hfa hfb) hΛ₂ (row2_cont hnc ha hb hd₃) (le_refl _)
@@ -1554,18 +1554,18 @@ theorem dlen_describeAnd_row2_le {E Γ nc a b dΛ₂ d₃ : V} (hE : 1 ≤ E) (h
   simp only [rowIsAndAs, List.length_cons, List.length_nil, Nat.cast_ofNat, Nat.zero_add, Nat.reduceAdd]
   ring
 
-/-- Row 1: `dlen ≤ dlen dΛ₁ + dlen d₂ + 12|Γ| + 24|B₁|E + |B₁| + 2E + 35`. -/
-theorem dlen_describeAnd_row1_le {E Γ a b dΛ₁ d₂ : V} (hE : 1 ≤ E) (hΓ : IsFormulaSet LAct Γ)
+/-- Row 1: `proofLen ≤ proofLen dΛ₁ + proofLen d₂ + 12|Γ| + 24|B₁|E + |B₁| + 2E + 35`. -/
+theorem proofLen_describeAnd_row1_le {E Γ a b dΛ₁ d₂ : V} (hE : 1 ≤ E) (hΓ : IsFormulaSet LAct Γ)
     (ha : IsSemiterm LAct 0 a) (hb : IsSemiterm LAct 0 b)
     (hEa : 2 * termLen LAct a ≤ E) (hEb : 2 * termLen LAct b ≤ E)
     (hΛ₁ : Proof TAct dΛ₁ (qqAlls (⌜Semiformula.lMap emb qqAndTotalB⌝ : V) ((2 : ℕ) : V)))
     (hd₂ : DerivationOf TAct d₂ (ctx1 Γ a b)) :
-    dlen TAct (introFactCode LAct Γ [a, b] [] rowAndTotalR dΛ₁ d₂) ≤
-      dlen TAct dΛ₁ + dlen TAct d₂ + 12 * setLen LAct Γ
+    proofLen TAct (introFactCode LAct Γ [a, b] [] rowAndTotalR dΛ₁ d₂) ≤
+      proofLen TAct dΛ₁ + proofLen TAct d₂ + 12 * sequentLen LAct Γ
         + 24 * (formulaLen LAct (impChain LAct [] (^∃ rowAndTotalR)) * E)
         + formulaLen LAct (impChain LAct [] (^∃ rowAndTotalR)) + 2 * E + 35 := by
   rw [qqAlls_natCast, quote_qqAndTotalB] at hΛ₁
-  have h := dlen_introFactCode_le (T := TAct) hE (by simp) row1_hR (row1_witnesses ha hb hEa hEb) hΓ
+  have h := proofLen_introFactCode_le (T := TAct) hE (by simp) row1_hR (row1_witnesses ha hb hEa hEb) hΓ
     (by simp) hΛ₁ (row1_cont ha hb hd₂) (le_refl _)
   refine le_trans h (le_of_eq ?_)
   simp only [List.length_cons, List.length_nil, Nat.cast_ofNat, Nat.cast_zero, Nat.zero_add, Nat.reduceAdd]
@@ -1574,8 +1574,8 @@ theorem dlen_describeAnd_row1_le {E Γ a b dΛ₁ d₂ : V} (hE : 1 ≤ E) (hΓ 
 /-- **The smoke test's length**: with `E` a bound on the witness lengths (`1 ≤ E`,
 `2|a|, 2|b|, 2|nc| ≤ E` — the shift may double a witness), `N_i` the three rows' stored-proof
 lengths and `|B_i|` their bodies' lengths (constants of the rows),
-`dlen ≤ dlen d + N₁ + N₂ + N₃ + 56·|Γ| + (68|B₁| + 61|B₂| + 15|B₃| + 8)·E + |B₁| + |B₂| + |B₃| + 181`. -/
-theorem dlen_describeAndCode_le {E N₁ N₂ N₃ Γ nc a b dΛ₁ dΛ₂ dΛ₃ d : V} (hE : 1 ≤ E)
+`proofLen ≤ proofLen d + N₁ + N₂ + N₃ + 56·|Γ| + (68|B₁| + 61|B₂| + 15|B₃| + 8)·E + |B₁| + |B₂| + |B₃| + 181`. -/
+theorem proofLen_describeAndCode_le {E N₁ N₂ N₃ Γ nc a b dΛ₁ dΛ₂ dΛ₃ d : V} (hE : 1 ≤ E)
     (hΓ : IsFormulaSet LAct Γ)
     (hnc : IsSemiterm LAct 0 nc) (ha : IsSemiterm LAct 0 a) (hb : IsSemiterm LAct 0 b)
     (hEn : 2 * termLen LAct nc ≤ E) (hEa : 2 * termLen LAct a ≤ E) (hEb : 2 * termLen LAct b ≤ E)
@@ -1583,10 +1583,10 @@ theorem dlen_describeAndCode_le {E N₁ N₂ N₃ Γ nc a b dΛ₁ dΛ₂ dΛ₃
     (hΛ₁ : Proof TAct dΛ₁ (qqAlls (⌜Semiformula.lMap emb qqAndTotalB⌝ : V) ((2 : ℕ) : V)))
     (hΛ₂ : Proof TAct dΛ₂ (qqAlls (⌜Semiformula.lMap emb isSemiformulaAndB⌝ : V) ((4 : ℕ) : V)))
     (hΛ₃ : Proof TAct dΛ₃ (qqAlls (⌜Semiformula.lMap emb isSemiformulaSigmaPiB⌝ : V) ((2 : ℕ) : V)))
-    (hN₁ : dlen TAct dΛ₁ ≤ N₁) (hN₂ : dlen TAct dΛ₂ ≤ N₂) (hN₃ : dlen TAct dΛ₃ ≤ N₃)
+    (hN₁ : proofLen TAct dΛ₁ ≤ N₁) (hN₂ : proofLen TAct dΛ₂ ≤ N₂) (hN₃ : proofLen TAct dΛ₃ ≤ N₃)
     (hd : DerivationOf TAct d (ctx3 Γ nc a b)) :
-    dlen TAct (describeAndCode Γ nc a b dΛ₁ dΛ₂ dΛ₃ d) ≤
-      dlen TAct d + N₁ + N₂ + N₃ + 56 * setLen LAct Γ
+    proofLen TAct (describeAndCode Γ nc a b dΛ₁ dΛ₂ dΛ₃ d) ≤
+      proofLen TAct d + N₁ + N₂ + N₃ + 56 * sequentLen LAct Γ
         + (68 * formulaLen LAct (⌜Semiformula.lMap emb qqAndTotalB⌝ : V)
             + 61 * formulaLen LAct (⌜Semiformula.lMap emb isSemiformulaAndB⌝ : V)
             + 15 * formulaLen LAct (⌜Semiformula.lMap emb isSemiformulaSigmaPiB⌝ : V) + 8) * E
@@ -1596,36 +1596,36 @@ theorem dlen_describeAndCode_le {E N₁ N₂ N₃ Γ nc a b dΛ₁ dΛ₂ dΛ₃
   rw [quote_qqAndTotalB, quote_isSemiformulaAndB, quote_isSemiformulaSigmaPiB]
   have hd₃ := describeAnd_row3_proof hΓ hnc ha hb hΛ₃ hd
   have hd₂ := describeAnd_row2_proof hΓ hnc ha hb hfa hfb hΛ₂ hd₃
-  have h₁ := dlen_describeAnd_row1_le hE hΓ ha hb hEa hEb hΛ₁ hd₂
-  have h₂ := dlen_describeAnd_row2_le hE hΓ hnc ha hb hEn hEa hEb hfa hfb hΛ₂ hd₃
-  have h₃ := dlen_describeAnd_row3_le hE hΓ hnc ha hb hEn hΛ₃ hd
-  have hc1 := setLen_ctx1_le hE hΓ ha hb hEa hEb
-  have hc2 := setLen_ctx2_le (Γ := Γ) hE hnc ha hb hEn hEa hEb
+  have h₁ := proofLen_describeAnd_row1_le hE hΓ ha hb hEa hEb hΛ₁ hd₂
+  have h₂ := proofLen_describeAnd_row2_le hE hΓ hnc ha hb hEn hEa hEb hfa hfb hΛ₂ hd₃
+  have h₃ := proofLen_describeAnd_row3_le hE hΓ hnc ha hb hEn hΛ₃ hd
+  have hc1 := sequentLen_ctx1_le hE hΓ ha hb hEa hEb
+  have hc2 := sequentLen_ctx2_le (Γ := Γ) hE hnc ha hb hEn hEa hEb
   unfold describeAndCode
   calc _ ≤ _ := h₁
-    _ ≤ N₁ + (dlen TAct dΛ₂ + dlen TAct (useHornCode LAct (ctx2 Γ nc a b) [termShift LAct nc, ^&0]
-            [rowSigmaPiA] rowSigmaPiC dΛ₃ d) + 14 * setLen LAct (ctx1 Γ a b)
+    _ ≤ N₁ + (proofLen TAct dΛ₂ + proofLen TAct (useHornCode LAct (ctx2 Γ nc a b) [termShift LAct nc, ^&0]
+            [rowSigmaPiA] rowSigmaPiC dΛ₃ d) + 14 * sequentLen LAct (ctx1 Γ a b)
           + 53 * (formulaLen LAct (impChain LAct rowIsAndAs rowIsAndC) * E)
           + formulaLen LAct (impChain LAct rowIsAndAs rowIsAndC) + 4 * E + 118)
-        + 12 * setLen LAct Γ + 24 * (formulaLen LAct (impChain LAct [] (^∃ rowAndTotalR)) * E)
+        + 12 * sequentLen LAct Γ + 24 * (formulaLen LAct (impChain LAct [] (^∃ rowAndTotalR)) * E)
         + formulaLen LAct (impChain LAct [] (^∃ rowAndTotalR)) + 2 * E + 35 := by gcongr
-    _ ≤ N₁ + (N₂ + (dlen TAct dΛ₃ + dlen TAct d + 8 * setLen LAct (ctx2 Γ nc a b)
+    _ ≤ N₁ + (N₂ + (proofLen TAct dΛ₃ + proofLen TAct d + 8 * sequentLen LAct (ctx2 Γ nc a b)
             + 15 * (formulaLen LAct (impChain LAct [rowSigmaPiA] rowSigmaPiC) * E)
             + formulaLen LAct (impChain LAct [rowSigmaPiA] rowSigmaPiC) + 2 * E + 28)
-          + 14 * setLen LAct (ctx1 Γ a b)
+          + 14 * sequentLen LAct (ctx1 Γ a b)
           + 53 * (formulaLen LAct (impChain LAct rowIsAndAs rowIsAndC) * E)
           + formulaLen LAct (impChain LAct rowIsAndAs rowIsAndC) + 4 * E + 118)
-        + 12 * setLen LAct Γ + 24 * (formulaLen LAct (impChain LAct [] (^∃ rowAndTotalR)) * E)
+        + 12 * sequentLen LAct Γ + 24 * (formulaLen LAct (impChain LAct [] (^∃ rowAndTotalR)) * E)
         + formulaLen LAct (impChain LAct [] (^∃ rowAndTotalR)) + 2 * E + 35 := by gcongr
-    _ ≤ N₁ + (N₂ + (N₃ + dlen TAct d
-            + 8 * ((2 * setLen LAct Γ + 2 * (formulaLen LAct (impChain LAct [] (^∃ rowAndTotalR)) * E))
+    _ ≤ N₁ + (N₂ + (N₃ + proofLen TAct d
+            + 8 * ((2 * sequentLen LAct Γ + 2 * (formulaLen LAct (impChain LAct [] (^∃ rowAndTotalR)) * E))
                 + formulaLen LAct (impChain LAct rowIsAndAs rowIsAndC) * E)
             + 15 * (formulaLen LAct (impChain LAct [rowSigmaPiA] rowSigmaPiC) * E)
             + formulaLen LAct (impChain LAct [rowSigmaPiA] rowSigmaPiC) + 2 * E + 28)
-          + 14 * (2 * setLen LAct Γ + 2 * (formulaLen LAct (impChain LAct [] (^∃ rowAndTotalR)) * E))
+          + 14 * (2 * sequentLen LAct Γ + 2 * (formulaLen LAct (impChain LAct [] (^∃ rowAndTotalR)) * E))
           + 53 * (formulaLen LAct (impChain LAct rowIsAndAs rowIsAndC) * E)
           + formulaLen LAct (impChain LAct rowIsAndAs rowIsAndC) + 4 * E + 118)
-        + 12 * setLen LAct Γ + 24 * (formulaLen LAct (impChain LAct [] (^∃ rowAndTotalR)) * E)
+        + 12 * sequentLen LAct Γ + 24 * (formulaLen LAct (impChain LAct [] (^∃ rowAndTotalR)) * E)
         + formulaLen LAct (impChain LAct [] (^∃ rowAndTotalR)) + 2 * E + 35 := by
         gcongr
         exact le_trans hc2 (add_le_add hc1 (le_refl _))
@@ -1634,7 +1634,7 @@ theorem dlen_describeAndCode_le {E N₁ N₂ N₃ Γ nc a b dΛ₁ dΛ₂ dΛ₃
 /-- **The smoke test, packaged along `Lib.univ_code`**: the three rows are library sentences, so
 for ONE standard `N` and in EVERY model of `𝗜𝚺₁` there are stored proofs `dΛ₁ dΛ₂ dΛ₃` with which
 `describeAndCode` derives `Γ` at length
-`≤ dlen d + 56·|Γ| + (68|B₁| + 61|B₂| + 15|B₃| + 8)·E + |B₁| + |B₂| + |B₃| + N`
+`≤ proofLen d + 56·|Γ| + (68|B₁| + 61|B₂| + 15|B₃| + 8)·E + |B₁| + |B₂| + |B₃| + N`
 (`|Bᵢ|` the rows' body lengths, constants of the rows; `E` the witness bound). -/
 theorem describeAndCode_exists : ∃ N : ℕ, ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁],
     ∃ dΛ₁ dΛ₂ dΛ₃ : V, ∀ {E Γ nc a b d : V}, 1 ≤ E → IsFormulaSet LAct Γ →
@@ -1643,8 +1643,8 @@ theorem describeAndCode_exists : ∃ N : ℕ, ∀ (V : Type) [ORingStructure V] 
       neg LAct (piFact nc a) ∈ Γ → neg LAct (piFact nc b) ∈ Γ →
       DerivationOf TAct d (ctx3 Γ nc a b) →
       DerivationOf TAct (describeAndCode Γ nc a b dΛ₁ dΛ₂ dΛ₃ d) Γ ∧
-      dlen TAct (describeAndCode Γ nc a b dΛ₁ dΛ₂ dΛ₃ d) ≤
-        dlen TAct d + 56 * setLen LAct Γ
+      proofLen TAct (describeAndCode Γ nc a b dΛ₁ dΛ₂ dΛ₃ d) ≤
+        proofLen TAct d + 56 * sequentLen LAct Γ
           + (68 * formulaLen LAct (⌜Semiformula.lMap emb qqAndTotalB⌝ : V)
               + 61 * formulaLen LAct (⌜Semiformula.lMap emb isSemiformulaAndB⌝ : V)
               + 15 * formulaLen LAct (⌜Semiformula.lMap emb isSemiformulaSigmaPiB⌝ : V) + 8) * E
@@ -1660,7 +1660,7 @@ theorem describeAndCode_exists : ∃ N : ℕ, ∀ (V : Type) [ORingStructure V] 
   obtain ⟨dΛ₃, hΛ₃, hN₃⟩ := h₃ V
   refine ⟨dΛ₁, dΛ₂, dΛ₃, fun {E Γ nc a b d} hE hΓ hnc ha hb hEn hEa hEb hfa hfb hd ↦ ?_⟩
   refine ⟨describeAndCode_proof hΓ hnc ha hb hfa hfb hΛ₁ hΛ₂ hΛ₃ hd, ?_⟩
-  refine le_trans (dlen_describeAndCode_le hE hΓ hnc ha hb hEn hEa hEb hfa hfb hΛ₁ hΛ₂ hΛ₃
+  refine le_trans (proofLen_describeAndCode_le hE hΓ hnc ha hb hEn hEa hEb hfa hfb hΛ₁ hΛ₂ hΛ₃
     hN₁ hN₂ hN₃ hd) (le_of_eq ?_)
   push_cast
   ring

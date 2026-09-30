@@ -91,28 +91,28 @@ lemma ProTable.frag1Table {tbl : V} (h : ProTable tbl) : Frag1Table tbl := h.top
 lemma ProTable.layoutTable {tbl : V} (h : ProTable tbl) : LayoutTable tbl := h.topTable.layoutTable
 lemma ProTable.walkTable {tbl : V} (h : ProTable tbl) : WalkTable tbl := h.topTable.walkTable
 
-/-- The reading of the prologue's own row `setLenSingLe` (what `pok_setLenSingLe` takes). -/
-lemma ProTable.setLenSingLe {tbl : V} (h : ProTable tbl) :
-    ((pIdx_setLenSingLe : ℕ) : V) < len tbl ∧
-    rowM tbl.[((pIdx_setLenSingLe : ℕ) : V)] = ((4 : ℕ) : V) ∧
-    rowB tbl.[((pIdx_setLenSingLe : ℕ) : V)] = impChainV LAct (vecOf row_setLenSingLe_as) row_setLenSingLe_c := by
-  have hlt : pIdx_setLenSingLe < proRows.length := by
-    rw [proRows_length]; simp only [proRowCount, proBase, pIdx_setLenSingLe, topRowCount, proExtraRowCount]; omega
-  have hr := h.2 pIdx_setLenSingLe hlt
-  have e' : proRows[pIdx_setLenSingLe]? = proExtraRows[0]? := by
-    have h1 : pIdx_setLenSingLe < (topRows ++ proExtraRows).length := by
-      rw [List.length_append]; simp only [pIdx_setLenSingLe, topRows_length, proExtraRows_length, topRowCount, proExtraRowCount]; omega
-    have h2 : topRows.length ≤ pIdx_setLenSingLe := by rw [topRows_length]; simp only [pIdx_setLenSingLe, topRowCount]; omega
+/-- The reading of the prologue's own row `sequentLenSingLe` (what `pok_sequentLenSingLe` takes). -/
+lemma ProTable.sequentLenSingLe {tbl : V} (h : ProTable tbl) :
+    ((pIdx_sequentLenSingLe : ℕ) : V) < len tbl ∧
+    rowM tbl.[((pIdx_sequentLenSingLe : ℕ) : V)] = ((4 : ℕ) : V) ∧
+    rowB tbl.[((pIdx_sequentLenSingLe : ℕ) : V)] = impChainV LAct (vecOf row_sequentLenSingLe_as) row_sequentLenSingLe_c := by
+  have hlt : pIdx_sequentLenSingLe < proRows.length := by
+    rw [proRows_length]; simp only [proRowCount, proBase, pIdx_sequentLenSingLe, topRowCount, proExtraRowCount]; omega
+  have hr := h.2 pIdx_sequentLenSingLe hlt
+  have e' : proRows[pIdx_sequentLenSingLe]? = proExtraRows[0]? := by
+    have h1 : pIdx_sequentLenSingLe < (topRows ++ proExtraRows).length := by
+      rw [List.length_append]; simp only [pIdx_sequentLenSingLe, topRows_length, proExtraRows_length, topRowCount, proExtraRowCount]; omega
+    have h2 : topRows.length ≤ pIdx_sequentLenSingLe := by rw [topRows_length]; simp only [pIdx_sequentLenSingLe, topRowCount]; omega
     unfold proRows
     rw [List.getElem?_append_left h1, List.getElem?_append_right h2]
     rfl
-  have e : proRows[pIdx_setLenSingLe] = proExtraRows[0] := by
+  have e : proRows[pIdx_sequentLenSingLe] = proExtraRows[0] := by
     rw [List.getElem?_eq_getElem hlt, List.getElem?_eq_getElem (by decide : 0 < proExtraRows.length)] at e'
     exact Option.some.inj e'
   rw [e] at hr
   refine ⟨lt_of_lt_of_le (by exact_mod_cast hlt) (proRows_length ▸ h.1), hr.1, ?_⟩
   rw [impChainV_vecOf, hr.2]
-  exact quote_row_setLenSingLe
+  exact quote_row_sequentLenSingLe
 
 theorem exists_proTable : ∃ N : ℕ, ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁],
     ∃ tbl : V, TableOK tbl (N : V) ∧ ProTable tbl := by
@@ -474,13 +474,13 @@ end proTable
 
 Members `xs = memberList s` (ascending, `k = len xs`). The layout at CHAIN OFFSET `i`:
 
-* the fresh length object `l_s = &i` with `setLenFact &i &(i + k + 1)` and the NUMERIC bound
-  `leFact &i (bnum (setLen s))`;
+* the fresh length object `l_s = &i` with `sequentLenFact &i &(i + k + 1)` and the NUMERIC bound
+  `leFact &i (binNumeral (sequentLen s))`;
 * the chain `s_j = &(i + k + 1 + j)` (`s = s_0`), with `insFact &(i+k+1+j) X_j (prev)` (`prev` = `s_{j+1}`,
   or the literal `𝟎` for the innermost member), `fsetPiFact &(i+k+1+j)` and `memFact X_j &(i+k+1)`;
 * the member objects `X_j = &(mTop i k o_j)` with `o_j = (offVec xs).[j]` (the offsets left by the member
   blocks: `o_j = mLen x_j + Σ_{j' > j} mShift x_{j'}`), each with its WALK dossier (`DossF`),
-  `piFact 𝟎 X_j` and its numeric length `lenFact (bnum |x_j|) X_j`.
+  `piFact 𝟎 X_j` and its numeric length `lenFact (binNumeral |x_j|) X_j`.
 
 The offsets are Σ₁ functions of `s` and the piece tables alone, so a child fragment recomputes them. -/
 
@@ -627,15 +627,15 @@ def Layout (Ww Wc T Γ s i : V) : Prop :=
   (∀ j < len (memberList s),
     DossF Ww Γ 0 (memberList s).[j] (mTop i (len (memberList s)) (offVec (memberList s) Ww Wc T).[j]) ∧
     neg LAct (piFact (𝟎 : V) (^&(mTop i (len (memberList s)) (offVec (memberList s) Ww Wc T).[j]))) ∈ Γ ∧
-    neg LAct (lenFact (bnum (formulaLen LAct (memberList s).[j]))
+    neg LAct (lenFact (binNumeral (formulaLen LAct (memberList s).[j]))
       (^&(mTop i (len (memberList s)) (offVec (memberList s) Ww Wc T).[j]))) ∈ Γ ∧
     neg LAct (insFact (^&(i + (len (memberList s) + 1 + j)))
       (^&(mTop i (len (memberList s)) (offVec (memberList s) Ww Wc T).[j])) (prevI i (len (memberList s)) j)) ∈ Γ ∧
     neg LAct (fsetPiFact (^&(i + (len (memberList s) + 1 + j)))) ∈ Γ ∧
     neg LAct (memFact (^&(mTop i (len (memberList s)) (offVec (memberList s) Ww Wc T).[j]))
       (^&(i + (len (memberList s) + 1)))) ∈ Γ) ∧
-  neg LAct (setLenFact (^&i) (^&(i + (len (memberList s) + 1)))) ∈ Γ ∧
-  neg LAct (leFact (^&i) (bnum (setLen LAct s))) ∈ Γ
+  neg LAct (sequentLenFact (^&i) (^&(i + (len (memberList s) + 1)))) ∈ Γ ∧
+  neg LAct (leFact (^&i) (binNumeral (sequentLen LAct s))) ∈ Γ
 
 /-! ### 1.1 The one transport lemma -/
 
@@ -656,9 +656,9 @@ lemma shiftIterV_leFact {n u : V} (hn : IsSemiterm LAct 0 n) (hu : IsSemiterm LA
     rw [shiftIterV_succ, ih, shift_leFact (isSemiterm_termShiftIterV hn c) (isSemiterm_termShiftIterV hu c),
       termShiftIterV_succ, termShiftIterV_succ]
 
-lemma termShiftIterV_bnum' (k : V) : ∀ c : V, termShiftIterV (bnum k) c = bnum k := termShiftIterV_bnumTop k
+lemma termShiftIterV_binNumeral' (k : V) : ∀ c : V, termShiftIterV (binNumeral k) c = binNumeral k := termShiftIterV_binNumeralTop k
 
-lemma isSemiterm_bnum0 (a : V) : IsSemiterm LAct 0 (bnum a) := isSemiterm_bnum_LAct 0 a
+lemma isSemiterm_bnum0 (a : V) : IsSemiterm LAct 0 (binNumeral a) := isSemiterm_binNumeral_LAct 0 a
 
 /-- **The layout survives any cut-admitting list, at the moved offset.** -/
 theorem Layout.transport {Ww Wc T Γ s i S : V} (hS : NoDrop' S) (h : Layout Ww Wc T Γ s i) :
@@ -681,7 +681,7 @@ theorem Layout.transport {Ww Wc T Γ s i S : V} (hS : NoDrop' S) (h : Layout Ww 
         termShiftIterV_fvar, ← hc, e1] at this
     · have := mem_finalCtx_of_mem' hS hln
       rwa [shiftIterV_neg (isFormula_lenFact (isSemiterm_bnum0 _) (by simp)),
-        shiftIterV_lenFact (isSemiterm_bnum0 _) (by simp), termShiftIterV_bnum', termShiftIterV_fvar, ← hc, e1] at this
+        shiftIterV_lenFact (isSemiterm_bnum0 _) (by simp), termShiftIterV_binNumeral', termShiftIterV_fvar, ← hc, e1] at this
     · have := mem_finalCtx_of_mem' hS hins
       unfold prevI at this ⊢
       rw [shiftIterV_neg (isFormula_insFact (by simp) (by simp) (isSemiterm_prevAt _ _)),
@@ -697,15 +697,15 @@ theorem Layout.transport {Ww Wc T Γ s i S : V} (hS : NoDrop' S) (h : Layout Ww 
         termShiftIterV_fvar, termShiftIterV_fvar, ← hc, e1, e3] at this
   · have := mem_finalCtx_of_mem' hS hsl
     have e3 : i + (k + 1) + c = i + c + (k + 1) := by ring
-    rwa [shiftIterV_neg (isFormula_setLenFact (by simp) (by simp)), shiftIterV_setLenFact (by simp) (by simp),
+    rwa [shiftIterV_neg (isFormula_sequentLenFact (by simp) (by simp)), shiftIterV_sequentLenFact (by simp) (by simp),
       termShiftIterV_fvar, termShiftIterV_fvar, ← hc, e3] at this
   · have := mem_finalCtx_of_mem' hS hle
     rwa [shiftIterV_neg (isFormula_leFact (by simp) (isSemiterm_bnum0 _)), shiftIterV_leFact (by simp) (isSemiterm_bnum0 _),
-      termShiftIterV_fvar, termShiftIterV_bnum', ← hc] at this
+      termShiftIterV_fvar, termShiftIterV_binNumeral', ← hc] at this
 
 end layoutDef
 
-/-! ## 2. The layout builder `layoutSteps` (member blocks, the chain, the `setLen` fold) -/
+/-! ## 2. The layout builder `layoutSteps` (member blocks, the chain, the `sequentLen` fold) -/
 
 section layoutBuild
 
@@ -780,45 +780,45 @@ instance psetAux_defined : 𝚺₁-Function₂ (psetAux : V → V → V) via pse
   fun v ↦ by simp [PsetAux.construction.result_defined_iff, psetAuxDef]; rfl
 instance psetAux_definable : 𝚺₁-Function₂ (psetAux : V → V → V) := psetAux_defined.to_definable
 
-/-! ### 2.3 The `setLen` fold: one block per member, innermost first -/
+/-! ### 2.3 The `sequentLen` fold: one block per member, innermost first -/
 
-/-- `sum2Fact a b n = leFact (bnum a ^+ bnum b) (bnum n)` as a Σ₁ graph. -/
+/-- `sum2Fact a b n = leFact (binNumeral a ^+ binNumeral b) (binNumeral n)` as a Σ₁ graph. -/
 noncomputable def sum2FactDef : 𝚺₁.Semisentence 4 := .mkSigma
-  “y a b n. ∃ x, !bnumGraph x a ∧ ∃ u, !bnumGraph u b ∧ ∃ p, !qqAddGraph p x u ∧ ∃ w, !bnumGraph w n ∧ !leFactDef y p w”
+  “y a b n. ∃ x, !binNumeralGraph x a ∧ ∃ u, !binNumeralGraph u b ∧ ∃ p, !qqAddGraph p x u ∧ ∃ w, !binNumeralGraph w n ∧ !leFactDef y p w”
 
 instance sum2Fact_defined : 𝚺₁-Function₃ (sum2Fact : V → V → V → V) via sum2FactDef := .mk fun v ↦ by
-  simp [sum2FactDef, sum2Fact, bnum.defined.iff, leFact_defined.iff, numeral_eq_natCast]
+  simp [sum2FactDef, sum2Fact, binNumeral.defined.iff, leFact_defined.iff, numeral_eq_natCast]
 
-/-- The innermost block (`c = 0`): a length object for `s_{k−1}` (at `&k`), then `setLenSingLe`. The member's
+/-- The innermost block (`c = 0`): a length object for `s_{k−1}` (at `&k`), then `sequentLenSingLe`. The member's
 object is at `&(o + (k + 1) + c + 1)` after the shift. -/
 noncomputable def foldBlock0 (W k c o x : V) : V :=
-  ?[mkStep W 85 ?[^&k], mkStep W 155 ?[^&(o + (k + 1) + c + 1), ^&(k + 1), ^&0, bnum (formulaLen LAct x)]]
+  ?[mkStep W 85 ?[^&k], mkStep W 155 ?[^&(o + (k + 1) + c + 1), ^&(k + 1), ^&0, binNumeral (formulaLen LAct x)]]
 
-/-- A general block (`c ≥ 1`): the length object, `setLenInsertLe`, `leRefl`, `leAddLeAdd`, the closed
-`sum2Fact L' |x| L` (`L' = setLen s_{j+1}`, `L = setLen s_j`), `leTrans`. -/
+/-- A general block (`c ≥ 1`): the length object, `sequentLenInsertLe`, `leRefl`, `leAddLeAdd`, the closed
+`sum2Fact L' |x| L` (`L' = sequentLen s_{j+1}`, `L = sequentLen s_j`), `leTrans`. -/
 noncomputable def foldBlockS (W T k c o x L' L : V) : V :=
   ?[mkStep W 85 ?[^&k],
-    mkStep W 111 ?[^&(o + (k + 1) + c + 1), ^&(k + 2), ^&(k + 1), ^&0, ^&1, bnum (formulaLen LAct x)],
-    mkStep W 109 ?[bnum (formulaLen LAct x)],
-    mkStep W 108 ?[^&0, ^&1, bnum (formulaLen LAct x), bnum L', bnum (formulaLen LAct x)],
+    mkStep W 111 ?[^&(o + (k + 1) + c + 1), ^&(k + 2), ^&(k + 1), ^&0, ^&1, binNumeral (formulaLen LAct x)],
+    mkStep W 109 ?[binNumeral (formulaLen LAct x)],
+    mkStep W 108 ?[^&0, ^&1, binNumeral (formulaLen LAct x), binNumeral L', binNumeral (formulaLen LAct x)],
     sLemma (sum2Fact L' (formulaLen LAct x) L) (sum2Code T L' (formulaLen LAct x) L),
-    mkStep W 110 ?[bnum L, bnum L' ^+ bnum (formulaLen LAct x), ^&0]]
+    mkStep W 110 ?[binNumeral L, binNumeral L' ^+ binNumeral (formulaLen LAct x), ^&0]]
 
 noncomputable def foldBlock0Def : 𝚺₁.Semisentence 6 := .mkSigma
   “y W k c o x. ∃ zk, !qqFvarDef zk k ∧ ∃ e₁, !adjoinDef e₁ zk 0 ∧ ∃ s₁, !mkStepDef s₁ W 85 e₁ ∧
     ∃ i₁, i₁ = o + (k + 1) + c + 1 ∧ ∃ zx, !qqFvarDef zx i₁ ∧ ∃ i₂, i₂ = k + 1 ∧ ∃ zs, !qqFvarDef zs i₂ ∧
-    ∃ z0, !qqFvarDef z0 0 ∧ ∃ fl, !(formulaLenGraph LAct) fl x ∧ ∃ bl, !bnumGraph bl fl ∧
+    ∃ z0, !qqFvarDef z0 0 ∧ ∃ fl, !(formulaLenGraph LAct) fl x ∧ ∃ bl, !binNumeralGraph bl fl ∧
     ∃ v₁, !adjoinDef v₁ bl 0 ∧ ∃ v₂, !adjoinDef v₂ z0 v₁ ∧ ∃ v₃, !adjoinDef v₃ zs v₂ ∧ ∃ e₂, !adjoinDef e₂ zx v₃ ∧
     ∃ s₂, !mkStepDef s₂ W 155 e₂ ∧ ∃ r₂, !adjoinDef r₂ s₂ 0 ∧ !adjoinDef y s₁ r₂”
 
 instance foldBlock0_defined : 𝚺₁-Function₅ (foldBlock0 : V → V → V → V → V → V) via foldBlock0Def := .mk fun v ↦ by
-  simp [foldBlock0Def, foldBlock0, mkStep_defined.iff, formulaLen.defined.iff, bnum.defined.iff, numeral_eq_natCast]
+  simp [foldBlock0Def, foldBlock0, mkStep_defined.iff, formulaLen.defined.iff, binNumeral.defined.iff, numeral_eq_natCast]
 
 noncomputable def foldBlockSDef : 𝚺₁.Semisentence 9 := .mkSigma
   “y W T k c o x L' L. ∃ zk, !qqFvarDef zk k ∧ ∃ e₁, !adjoinDef e₁ zk 0 ∧ ∃ s₁, !mkStepDef s₁ W 85 e₁ ∧
     ∃ i₁, i₁ = o + (k + 1) + c + 1 ∧ ∃ zx, !qqFvarDef zx i₁ ∧ ∃ i₂, i₂ = k + 2 ∧ ∃ zs₂, !qqFvarDef zs₂ i₂ ∧
     ∃ i₃, i₃ = k + 1 ∧ ∃ zs₁, !qqFvarDef zs₁ i₃ ∧ ∃ z0, !qqFvarDef z0 0 ∧ ∃ z1, !qqFvarDef z1 1 ∧
-    ∃ fl, !(formulaLenGraph LAct) fl x ∧ ∃ bl, !bnumGraph bl fl ∧ ∃ bL', !bnumGraph bL' L' ∧ ∃ bL, !bnumGraph bL L ∧
+    ∃ fl, !(formulaLenGraph LAct) fl x ∧ ∃ bl, !binNumeralGraph bl fl ∧ ∃ bL', !binNumeralGraph bL' L' ∧ ∃ bL, !binNumeralGraph bL L ∧
     ∃ u₁, !adjoinDef u₁ bl 0 ∧ ∃ u₂, !adjoinDef u₂ z1 u₁ ∧ ∃ u₃, !adjoinDef u₃ z0 u₂ ∧ ∃ u₄, !adjoinDef u₄ zs₁ u₃ ∧
     ∃ u₅, !adjoinDef u₅ zs₂ u₄ ∧ ∃ e₂, !adjoinDef e₂ zx u₅ ∧ ∃ s₂, !mkStepDef s₂ W 111 e₂ ∧
     ∃ e₃, !adjoinDef e₃ bl 0 ∧ ∃ s₃, !mkStepDef s₃ W 109 e₃ ∧
@@ -833,24 +833,24 @@ noncomputable def foldBlockSDef : 𝚺₁.Semisentence 9 := .mkSigma
 instance foldBlockS_defined :
     𝚺₁.DefinedFunction (fun v : Fin 8 → V ↦ foldBlockS (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7)) foldBlockSDef := .mk
   fun v ↦ by
-    simp [foldBlockSDef, foldBlockS, mkStep_defined.iff, formulaLen.defined.iff, bnum.defined.iff,
+    simp [foldBlockSDef, foldBlockS, mkStep_defined.iff, formulaLen.defined.iff, binNumeral.defined.iff,
       sum2Fact_defined.iff, sum2Code_defined.iff, sLemma, numeral_eq_natCast]
 
 /-- Block `c` of the fold: `x = nthFromEnd xs c` (the member), `o = nthFromEnd os c` (its offset). -/
 noncomputable def foldBlock (W T xs os k c : V) : V :=
   if c = 0 then foldBlock0 W k c (nthFromEnd os c) (nthFromEnd xs c)
-  else foldBlockS W T k c (nthFromEnd os c) (nthFromEnd xs c) (setLen LAct (psetAux xs c)) (setLen LAct (psetAux xs (c + 1)))
+  else foldBlockS W T k c (nthFromEnd os c) (nthFromEnd xs c) (sequentLen LAct (psetAux xs c)) (sequentLen LAct (psetAux xs (c + 1)))
 
 noncomputable def foldBlockDef : 𝚺₁.Semisentence 7 := .mkSigma
   “y W T xs os k c. ∃ o, !nthFromEndDef o os c ∧ ∃ x, !nthFromEndDef x xs c ∧
     (c = 0 → !foldBlock0Def y W k c o x) ∧
-    (c ≠ 0 → ∃ p', !psetAuxDef p' xs c ∧ ∃ L', !(setLenDef LAct) L' p' ∧ ∃ c1, c1 = c + 1 ∧
-      ∃ p, !psetAuxDef p xs c1 ∧ ∃ L, !(setLenDef LAct) L p ∧ !foldBlockSDef y W T k c o x L' L)”
+    (c ≠ 0 → ∃ p', !psetAuxDef p' xs c ∧ ∃ L', !(sequentLenDef LAct) L' p' ∧ ∃ c1, c1 = c + 1 ∧
+      ∃ p, !psetAuxDef p xs c1 ∧ ∃ L, !(sequentLenDef LAct) L p ∧ !foldBlockSDef y W T k c o x L' L)”
 
 instance foldBlock_defined :
     𝚺₁.DefinedFunction (fun v : Fin 6 → V ↦ foldBlock (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) foldBlockDef := .mk
   fun v ↦ by
-    simp [foldBlockDef, nthFromEnd_defined.iff, foldBlock0_defined.iff, psetAux_defined.iff, setLen_defined.iff,
+    simp [foldBlockDef, nthFromEnd_defined.iff, foldBlock0_defined.iff, psetAux_defined.iff, sequentLen_defined.iff,
       foldBlockS_defined.iff, numeral_eq_natCast]
     unfold foldBlock
     by_cases h : v 6 = 0
@@ -903,7 +903,7 @@ instance lenFoldAux_defined :
     𝚺₁.DefinedFunction (fun v : Fin 6 → V ↦ lenFoldAux (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) lenFoldAuxDef := .mk
   fun v ↦ by simp [lenFoldAuxDef, lenFoldAux, lenFoldAuxP_defined.iff]
 
-/-- **The `setLen` fold** of the whole chain: `k` blocks, innermost first. -/
+/-- **The `sequentLen` fold** of the whole chain: `k` blocks, innermost first. -/
 noncomputable def lenFold (W T xs os : V) : V := lenFoldAux W T xs os (len xs) (len xs)
 
 noncomputable def lenFoldDef : 𝚺₁.Semisentence 5 := .mkSigma
@@ -914,7 +914,7 @@ instance lenFold_defined : 𝚺₁-Function₄ (lenFold : V → V → V → V �
 
 /-! ### 2.4 The whole builder -/
 
-/-- **`layoutSteps s`**: the member blocks (ascending), the chain over the member objects, the `setLen` fold.
+/-- **`layoutSteps s`**: the member blocks (ascending), the chain over the member objects, the `sequentLen` fold.
 Pieces: `Ww` (walk), `Wl` (layout), `Wc` (certification), `W` (prologue); `T` the `NumSteps` table. -/
 noncomputable def layoutSteps (Ww Wl Wc W T s : V) : V :=
   appendV (memberBlocks (memberList s) Ww Wc T)
@@ -956,7 +956,7 @@ lemma mShift_le {tbl N : V} (htbl : TableOK tbl N) (hW : WalkTable tbl) {Wc : V}
     _ = 4 * formulaLen LAct x := by ring
 
 lemma tailShift_le {tbl N : V} (htbl : TableOK tbl N) (hW : WalkTable tbl) {Wc : V} (hWc : Wc = certPieces) (T : V) :
-    ∀ v : V, (∀ j < len v, IsSemiformula LAct 0 v.[j]) → tailShift v walkPieces Wc T ≤ 4 * listSum (flenVec v) := by
+    ∀ v : V, (∀ j < len v, IsSemiformula LAct 0 v.[j]) → tailShift v walkPieces Wc T ≤ 4 * listSum (formulaLenMetaVec v) := by
   intro v
   induction v using adjoin_ISigma1.pi1_succ_induction with
   | hP => definability
@@ -967,10 +967,10 @@ lemma tailShift_le {tbl N : V} (htbl : TableOK tbl N) (hW : WalkTable tbl) {Wc :
     have hv' : ∀ j < len v, IsSemiformula LAct 0 v.[j] := fun j hj ↦ by
       have := hv (j + 1) (by rw [len_adjoin]; exact (add_lt_add_iff_right 1).mpr hj)
       rwa [nth_adjoin_succ] at this
-    rw [tailShift_adjoin, flenVec_adjoin, listSum_adjoin]
+    rw [tailShift_adjoin, formulaLenMetaVec_adjoin, listSum_adjoin]
     calc mShift walkPieces Wc T x + tailShift v walkPieces Wc T
-        ≤ 4 * formulaLen LAct x + 4 * listSum (flenVec v) := add_le_add (mShift_le htbl hW hWc T hx) (ih hv')
-      _ = 4 * (formulaLen LAct x + listSum (flenVec v)) := by ring
+        ≤ 4 * formulaLen LAct x + 4 * listSum (formulaLenMetaVec v) := add_le_add (mShift_le htbl hW hWc T hx) (ih hv')
+      _ = 4 * (formulaLen LAct x + listSum (formulaLenMetaVec v)) := by ring
 
 lemma nth_offVec_le (Ww Wc T : V) : ∀ v : V, ∀ j < len v, (offVec v Ww Wc T).[j] ≤ tailShift v Ww Wc T := by
   intro v
@@ -987,7 +987,7 @@ lemma nth_offVec_le (Ww Wc T : V) : ∀ v : V, ∀ j < len v, (offVec v Ww Wc T)
       exact le_trans (ih j (by rw [len_adjoin] at hj; exact lt_of_add_lt_add_right hj)) le_add_self
 
 /-- **One member block is applicable**: it walks `x` and derives its numeric length; afterwards the walk dossier,
-`piFact 𝟎` and `lenFact (bnum |x|)` of `x` sit at `&(mLen x)`. -/
+`piFact 𝟎` and `lenFact (binNumeral |x|)` of `x` sit at `&(mLen x)`. -/
 theorem memberBlock_ok {tbl N N' B' Wc T x D E Γ : V} (htbl : TableOK tbl N) (hP : ProTable tbl)
     (htblN : NumTableOK T N' B') (hWc : Wc = certPieces)
     (hx : IsSemiformula LAct 0 x) (hxD : formulaLen LAct x ≤ D) (hE : 13 * D + 8 ≤ E) (hΓ : IsFormulaSet LAct Γ) :
@@ -996,7 +996,7 @@ theorem memberBlock_ok {tbl N N' B' Wc T x D E Γ : V} (htbl : TableOK tbl N) (h
     len (memberBlock walkPieces Wc T x) ≤ 26 * formulaLen LAct x ∧
     DossF walkPieces (finalCtx Γ (memberBlock walkPieces Wc T x)) 0 x (mLen Wc T x) ∧
     neg LAct (piFact (𝟎 : V) (^&(mLen Wc T x))) ∈ finalCtx Γ (memberBlock walkPieces Wc T x) ∧
-    neg LAct (lenFact (bnum (formulaLen LAct x)) (^&(mLen Wc T x))) ∈ finalCtx Γ (memberBlock walkPieces Wc T x) := by
+    neg LAct (lenFact (binNumeral (formulaLen LAct x)) (^&(mLen Wc T x))) ∈ finalCtx Γ (memberBlock walkPieces Wc T x) := by
   have hW := hP.walkTable
   have hC := hP.certTable
   have htblC := hP.tableOK_certView htbl
@@ -1036,10 +1036,10 @@ theorem memberBlock_ok {tbl N N' B' Wc T x D E Γ : V} (htbl : TableOK tbl N) (h
 /-- The invariant of the member blocks (packaged for `definability`). -/
 def MBOut (tbl E Ww Wc T v Γ : V) : Prop :=
   ListOK tbl E ((8 : ℕ) : V) Γ (memberBlocks v Ww Wc T) ∧ NoDrop' (memberBlocks v Ww Wc T) ∧
-  shiftsV (memberBlocks v Ww Wc T) = tailShift v Ww Wc T ∧ len (memberBlocks v Ww Wc T) ≤ 26 * listSum (flenVec v) ∧
+  shiftsV (memberBlocks v Ww Wc T) = tailShift v Ww Wc T ∧ len (memberBlocks v Ww Wc T) ≤ 26 * listSum (formulaLenMetaVec v) ∧
   ∀ j < len v, DossF Ww (finalCtx Γ (memberBlocks v Ww Wc T)) 0 v.[j] (offVec v Ww Wc T).[j] ∧
     neg LAct (piFact (𝟎 : V) (^&((offVec v Ww Wc T).[j]))) ∈ finalCtx Γ (memberBlocks v Ww Wc T) ∧
-    neg LAct (lenFact (bnum (formulaLen LAct v.[j])) (^&((offVec v Ww Wc T).[j]))) ∈ finalCtx Γ (memberBlocks v Ww Wc T)
+    neg LAct (lenFact (binNumeral (formulaLen LAct v.[j])) (^&((offVec v Ww Wc T).[j]))) ∈ finalCtx Γ (memberBlocks v Ww Wc T)
 
 /-- **The member blocks are applicable, member by member.** -/
 theorem memberBlocks_ok {tbl N N' B' Wc T D E : V} (htbl : TableOK tbl N) (hP : ProTable tbl)
@@ -1067,10 +1067,10 @@ theorem memberBlocks_ok {tbl N N' B' Wc T D E : V} (htbl : TableOK tbl N) (hP : 
     rw [MBOut, memberBlocks_adjoin]
     refine ⟨listOK_appendV bok vok, noDrop'_appendV bnd vnd, ?_, ?_, ?_⟩
     · rw [shiftsV_appendV, bsh, vsh, tailShift_adjoin]
-    · rw [len_appendV, flenVec_adjoin, listSum_adjoin]
+    · rw [len_appendV, formulaLenMetaVec_adjoin, listSum_adjoin]
       calc len (memberBlock walkPieces Wc T x) + len (memberBlocks v walkPieces Wc T)
-          ≤ 26 * formulaLen LAct x + 26 * listSum (flenVec v) := add_le_add blen vlen
-        _ = 26 * (formulaLen LAct x + listSum (flenVec v)) := by ring
+          ≤ 26 * formulaLen LAct x + 26 * listSum (formulaLenMetaVec v) := add_le_add blen vlen
+        _ = 26 * (formulaLen LAct x + listSum (formulaLenMetaVec v)) := by ring
     · intro j hj
       rw [finalCtx_appendV, ← hΓ₁]
       rcases zero_or_succ j with rfl | ⟨j, rfl⟩
@@ -1082,7 +1082,7 @@ theorem memberBlocks_ok {tbl N N' B' Wc T D E : V} (htbl : TableOK tbl N) (hP : 
             shiftIterV_piFact (isSemiterm_qqZero_LAct 0) (by simp), termShiftIterV_zeroV, termShiftIterV_fvar, vsh] at this
         · have := mem_finalCtx_of_mem' vnd bln
           rwa [shiftIterV_neg (isFormula_lenFact (isSemiterm_bnum0 _) (by simp)),
-            shiftIterV_lenFact (isSemiterm_bnum0 _) (by simp), termShiftIterV_bnum', termShiftIterV_fvar, vsh] at this
+            shiftIterV_lenFact (isSemiterm_bnum0 _) (by simp), termShiftIterV_binNumeral', termShiftIterV_fvar, vsh] at this
       · rw [nth_adjoin_succ, offVec_adjoin, nth_adjoin_succ]
         exact vfacts j (by rw [len_adjoin] at hj; exact lt_of_add_lt_add_right hj)
 
@@ -1133,13 +1133,13 @@ lemma nthFromEnd_not_mem_psetAux {s c : V} (hc : c < len (memberList s)) :
   subst h4
   exact _root_.lt_irrefl m hm
 
-lemma setLen_psetAux_succ {s c : V} (hc : c < len (memberList s)) :
-    setLen LAct (psetAux (memberList s) (c + 1)) =
-      setLen LAct (psetAux (memberList s) c) + formulaLen LAct (nthFromEnd (memberList s) c) := by
-  rw [psetAux_succ]; exact setLen_insert_of_not_mem_V (nthFromEnd_not_mem_psetAux hc)
+lemma sequentLen_psetAux_succ {s c : V} (hc : c < len (memberList s)) :
+    sequentLen LAct (psetAux (memberList s) (c + 1)) =
+      sequentLen LAct (psetAux (memberList s) c) + formulaLen LAct (nthFromEnd (memberList s) c) := by
+  rw [psetAux_succ]; exact sequentLen_insert_of_not_mem_V (nthFromEnd_not_mem_psetAux hc)
 
-lemma setLen_psetAux_zero (xs : V) : setLen LAct (psetAux xs 0) = 0 := by
-  rw [psetAux_zero]; exact setLen_empty
+lemma sequentLen_psetAux_zero (xs : V) : sequentLen LAct (psetAux xs 0) = 0 := by
+  rw [psetAux_zero]; exact sequentLen_empty
 
 /-- The whole chain is the sequent. -/
 lemma psetAux_len_eq (s : V) : psetAux (memberList s) (len (memberList s)) = s := by
@@ -1154,8 +1154,8 @@ lemma psetAux_len_eq (s : V) : psetAux (memberList s) (len (memberList s)) = s :
     rw [show a + (len (memberList s) - (a + 1) + 1) = len (memberList s) - (a + 1) + (a + 1) by ring,
       tsub_add_cancel_of_le (lt_iff_succ_le.mp ha)]
 
-lemma setLen_psetAux_mono (s : V) :
-    ∀ c ≤ len (memberList s), ∀ c' ≤ c, setLen LAct (psetAux (memberList s) c') ≤ setLen LAct (psetAux (memberList s) c) := by
+lemma sequentLen_psetAux_mono (s : V) :
+    ∀ c ≤ len (memberList s), ∀ c' ≤ c, sequentLen LAct (psetAux (memberList s) c') ≤ sequentLen LAct (psetAux (memberList s) c) := by
   intro c
   induction c using ISigma1.pi1_succ_induction with
   | hP => definability
@@ -1164,13 +1164,13 @@ lemma setLen_psetAux_mono (s : V) :
     intro hc c' hc'
     rcases lt_or_eq_of_le hc' with h | rfl
     · have := ih (le_trans le_self_add hc) c' (lt_succ_iff_le.mp h)
-      rw [setLen_psetAux_succ (lt_of_lt_of_le (lt_add_one c) hc)]
+      rw [sequentLen_psetAux_succ (lt_of_lt_of_le (lt_add_one c) hc)]
       exact le_trans this le_self_add
     · exact le_rfl
 
-lemma setLen_psetAux_le {s c : V} (hc : c ≤ len (memberList s)) :
-    setLen LAct (psetAux (memberList s) c) ≤ setLen LAct s := by
-  have := setLen_psetAux_mono s (len (memberList s)) le_rfl c hc
+lemma sequentLen_psetAux_le {s c : V} (hc : c ≤ len (memberList s)) :
+    sequentLen LAct (psetAux (memberList s) c) ≤ sequentLen LAct s := by
+  have := sequentLen_psetAux_mono s (len (memberList s)) le_rfl c hc
   rwa [psetAux_len_eq] at this
 
 end psetLemmas
@@ -1199,17 +1199,17 @@ lemma memInsSelf (f Γ : V) : f ∈ insert f Γ := by simp
 lemma termLen_fvar_le' {i E : V} (h : i + 1 ≤ E) : termLen LAct (^&i : V) ≤ E := by rw [termLen_fvar]; exact h
 
 set_option maxHeartbeats 4000000 in
-/-- **The innermost block** (`c = 0`): from the chain's `insFact &k X 𝟎` and `lenFact (bnum |x|) X`, a length object
-for `s_{k−1}` and `leFact &0 (bnum |x|)`. -/
+/-- **The innermost block** (`c = 0`): from the chain's `insFact &k X 𝟎` and `lenFact (binNumeral |x|) X`, a length object
+for `s_{k−1}` and `leFact &0 (binNumeral |x|)`. -/
 theorem foldBlock0_ok {tbl N W k c o x D E Γ : V} (htbl : TableOK tbl N) (hP : ProTable tbl) (hWp : W = proPieces)
     (hΓ : IsFormulaSet LAct Γ) (hkE : k + 3 ≤ E) (hXE : o + (k + 1) + c + 3 ≤ E) (hxD : formulaLen LAct x ≤ D)
     (hE : 18 * ‖D‖ + 7 ≤ E)
     (hins : neg LAct (insFact (^&k) (^&(o + (k + 1) + c)) (𝟎 : V)) ∈ Γ)
-    (hln : neg LAct (lenFact (bnum (formulaLen LAct x)) (^&(o + (k + 1) + c))) ∈ Γ) :
+    (hln : neg LAct (lenFact (binNumeral (formulaLen LAct x)) (^&(o + (k + 1) + c))) ∈ Γ) :
     ListOK tbl E ((8 : ℕ) : V) Γ (foldBlock0 W k c o x) ∧ NoDrop' (foldBlock0 W k c o x) ∧
     shiftsV (foldBlock0 W k c o x) = 1 ∧ len (foldBlock0 W k c o x) = 2 ∧
-    neg LAct (setLenFact (^&0) (^&(k + 1))) ∈ finalCtx Γ (foldBlock0 W k c o x) ∧
-    neg LAct (leFact (^&0) (bnum (formulaLen LAct x))) ∈ finalCtx Γ (foldBlock0 W k c o x) := by
+    neg LAct (sequentLenFact (^&0) (^&(k + 1))) ∈ finalCtx Γ (foldBlock0 W k c o x) ∧
+    neg LAct (leFact (^&0) (binNumeral (formulaLen LAct x))) ∈ finalCtx Γ (foldBlock0 W k c o x) := by
   subst hWp
   have hL := hP.layoutTable
   have e85 : ∀ ev : V, mkStep proPieces (85 : V) ev = mkStep layoutPieces (85 : V) ev := fun ev ↦ by
@@ -1217,24 +1217,24 @@ theorem foldBlock0_ok {tbl N W k c o x D E Γ : V} (htbl : TableOK tbl N) (hP : 
   have hE1 : (1 : V) ≤ E := le_trans (by norm_num) (le_trans le_add_self hkE)
   have h0 : IsSemiterm LAct (0 : V) (𝟎 : V) := isSemiterm_qqZero_LAct 0
   -- step 1
-  obtain ⟨ok₁, tg₁, cx₁⟩ := lok_setLenTotalC htbl hL rfl hΓ (by simp : IsSemiterm LAct 0 (^&k : V))
+  obtain ⟨ok₁, tg₁, cx₁⟩ := lok_sequentLenTotalC htbl hL rfl hΓ (by simp : IsSemiterm LAct 0 (^&k : V))
     (termLen_fvar_le' (le_trans (add_le_add le_rfl (by norm_num)) hkE))
   rw [← e85] at ok₁ tg₁ cx₁
   rw [Nat.cast_zero, termShift_fvar] at cx₁
-  set Γ₁ := insert (neg LAct (setLenFact (^&0) (^&(k + 1)))) (setShift LAct Γ) with hΓ₁
+  set Γ₁ := insert (neg LAct (sequentLenFact (^&0) (^&(k + 1)))) (setShift LAct Γ) with hΓ₁
   have hΓ₁f : IsFormulaSet LAct Γ₁ := by rw [← cx₁]; exact isFormulaSet_ctxAfter 8 htbl ok₁
   -- the shifted facts
   have hins' : neg LAct (insFact (^&(k + 1)) (^&(o + (k + 1) + c + 1)) (𝟎 : V)) ∈ Γ₁ := by
-    have := mem_shift_insert (f := neg LAct (setLenFact (^&0) (^&(k + 1)))) hins
+    have := mem_shift_insert (f := neg LAct (sequentLenFact (^&0) (^&(k + 1)))) hins
     rwa [shift_neg (isFormula_insFact (by simp) (by simp) h0), shift_insFact (by simp) (by simp) h0,
       termShift_fvar, termShift_fvar, termShift_zeroV] at this
-  have hln' : neg LAct (lenFact (bnum (formulaLen LAct x)) (^&(o + (k + 1) + c + 1))) ∈ Γ₁ := by
-    have := mem_shift_insert (f := neg LAct (setLenFact (^&0) (^&(k + 1)))) hln
+  have hln' : neg LAct (lenFact (binNumeral (formulaLen LAct x)) (^&(o + (k + 1) + c + 1))) ∈ Γ₁ := by
+    have := mem_shift_insert (f := neg LAct (sequentLenFact (^&0) (^&(k + 1)))) hln
     rwa [shift_neg (isFormula_lenFact (isSemiterm_bnum0 _) (by simp)), shift_lenFact (isSemiterm_bnum0 _) (by simp),
-      termShift_bnum, termShift_fvar] at this
-  have hsl₁ : neg LAct (setLenFact (^&0) (^&(k + 1))) ∈ Γ₁ := memInsSelf _ _
+      termShift_binNumeral, termShift_fvar] at this
+  have hsl₁ : neg LAct (sequentLenFact (^&0) (^&(k + 1))) ∈ Γ₁ := memInsSelf _ _
   -- step 2
-  obtain ⟨hlen, hrow⟩ := hP.setLenSingLe
+  obtain ⟨hlen, hrow⟩ := hP.sequentLenSingLe
   have hX1 : o + (k + 1) + c + 1 + 1 ≤ E := by
     rw [add_assoc (o + (k + 1) + c) 1 1, one_add_one_eq_two]
     exact le_trans (add_le_add le_rfl (by norm_num)) hXE
@@ -1244,9 +1244,9 @@ theorem foldBlock0_ok {tbl N W k c o x D E Γ : V} (htbl : TableOK tbl N) (hP : 
   have hX0 : IsSemiterm LAct 0 (^&(o + (k + 1) + c + 1) : V) := by simp
   have hk0 : IsSemiterm LAct 0 (^&(k + 1) : V) := by simp
   have h00 : IsSemiterm LAct 0 (^&0 : V) := by simp
-  obtain ⟨ok₂, tg₂, cx₂⟩ := pok_setLenSingLe htbl rfl hlen ⟨hrow.1, hrow.2⟩ hΓ₁f
+  obtain ⟨ok₂, tg₂, cx₂⟩ := pok_sequentLenSingLe htbl rfl hlen ⟨hrow.1, hrow.2⟩ hΓ₁f
     hX0 (termLen_fvar_le' hX1) hk0 (termLen_fvar_le' hk2) h00 (termLen_fvar_le' h01)
-    (isSemiterm_bnum0 _) (termLen_bnum_le_bkE hxD hE) hins' hsl₁ hln'
+    (isSemiterm_bnum0 _) (termLen_binNumeral_le_bkE hxD hE) hins' hsl₁ hln'
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
   · unfold foldBlock0
     exact listOK_cons ok₁ (by rw [cx₁]; exact listOK_single ok₂)
@@ -1263,21 +1263,21 @@ theorem foldBlock0_ok {tbl N W k c o x D E Γ : V} (htbl : TableOK tbl N) (hP : 
     exact memInsSelf _ _
 
 set_option maxHeartbeats 2000000 in
-/-- **A general block** (`c ≥ 1`): from the chain's `insFact &k X &(k+1)`, `lenFact (bnum |x|) X`, the previous
-length object `setLenFact &0 &(k+1)` and its bound `leFact &0 (bnum L')`, a new length object and
-`leFact &0 (bnum L)` (with `L' + |x| ≤ L`). -/
+/-- **A general block** (`c ≥ 1`): from the chain's `insFact &k X &(k+1)`, `lenFact (binNumeral |x|) X`, the previous
+length object `sequentLenFact &0 &(k+1)` and its bound `leFact &0 (binNumeral L')`, a new length object and
+`leFact &0 (binNumeral L)` (with `L' + |x| ≤ L`). -/
 theorem foldBlockS_ok {tbl N N' B' W T k c o x L' L D E Γ : V} (htbl : TableOK tbl N) (hP : ProTable tbl)
     (htblN : NumTableOK T N' B') (hWp : W = proPieces)
     (hΓ : IsFormulaSet LAct Γ) (hkE : k + 3 ≤ E) (hXE : o + (k + 1) + c + 3 ≤ E) (hxD : formulaLen LAct x ≤ D)
     (hL'D : L' ≤ D) (hLD : L ≤ D) (hLL : L' + formulaLen LAct x ≤ L) (hE : 18 * ‖D‖ + 7 ≤ E)
     (hins : neg LAct (insFact (^&k) (^&(o + (k + 1) + c)) (^&(k + 1))) ∈ Γ)
-    (hln : neg LAct (lenFact (bnum (formulaLen LAct x)) (^&(o + (k + 1) + c))) ∈ Γ)
-    (hsl : neg LAct (setLenFact (^&0) (^&(k + 1))) ∈ Γ)
-    (hle : neg LAct (leFact (^&0) (bnum L')) ∈ Γ) :
+    (hln : neg LAct (lenFact (binNumeral (formulaLen LAct x)) (^&(o + (k + 1) + c))) ∈ Γ)
+    (hsl : neg LAct (sequentLenFact (^&0) (^&(k + 1))) ∈ Γ)
+    (hle : neg LAct (leFact (^&0) (binNumeral L')) ∈ Γ) :
     ListOK tbl E ((8 : ℕ) : V) Γ (foldBlockS W T k c o x L' L) ∧ NoDrop' (foldBlockS W T k c o x L' L) ∧
     shiftsV (foldBlockS W T k c o x L' L) = 1 ∧ len (foldBlockS W T k c o x L' L) = 6 ∧
-    neg LAct (setLenFact (^&0) (^&(k + 1))) ∈ finalCtx Γ (foldBlockS W T k c o x L' L) ∧
-    neg LAct (leFact (^&0) (bnum L)) ∈ finalCtx Γ (foldBlockS W T k c o x L' L) := by
+    neg LAct (sequentLenFact (^&0) (^&(k + 1))) ∈ finalCtx Γ (foldBlockS W T k c o x L' L) ∧
+    neg LAct (leFact (^&0) (binNumeral L)) ∈ finalCtx Γ (foldBlockS W T k c o x L' L) := by
   subst hWp
   have hL := hP.layoutTable
   have hF := hP.frag1Table
@@ -1296,54 +1296,54 @@ theorem foldBlockS_ok {tbl N N' B' W T k c o x L' L D E Γ : V} (htbl : TableOK 
   have hk1 : k + 2 ≤ E := le_trans (add_le_add le_rfl (by norm_num)) hkE
   have hk2 : k + 1 + 1 ≤ E := by rw [add_assoc, one_add_one_eq_two]; exact hk1
   have hk3 : k + 2 + 1 ≤ E := by rw [add_assoc, show (2 : V) + 1 = 3 by norm_num]; exact hkE
-  have hbx : termLen LAct (bnum (formulaLen LAct x)) ≤ E := termLen_bnum_le_bkE hxD hE
-  have hbL' : termLen LAct (bnum L') ≤ E := termLen_bnum_le_bkE hL'D hE
-  have hbL : termLen LAct (bnum L) ≤ E := termLen_bnum_le_bkE hLD hE
-  have hsum : IsSemiterm LAct 0 (bnum L' ^+ bnum (formulaLen LAct x)) :=
+  have hbx : termLen LAct (binNumeral (formulaLen LAct x)) ≤ E := termLen_binNumeral_le_bkE hxD hE
+  have hbL' : termLen LAct (binNumeral L') ≤ E := termLen_binNumeral_le_bkE hL'D hE
+  have hbL : termLen LAct (binNumeral L) ≤ E := termLen_binNumeral_le_bkE hLD hE
+  have hsum : IsSemiterm LAct 0 (binNumeral L' ^+ binNumeral (formulaLen LAct x)) :=
     isSemiterm_qqAdd_LAct (isSemiterm_bnum0 _) (isSemiterm_bnum0 _)
-  have hsumE : termLen LAct (bnum L' ^+ bnum (formulaLen LAct x)) ≤ E := by
+  have hsumE : termLen LAct (binNumeral L' ^+ binNumeral (formulaLen LAct x)) ≤ E := by
     refine le_trans (termLen_qqAdd_le (isSemiterm_bnum0 _).isUTerm (isSemiterm_bnum0 _).isUTerm
-      (termLen_bnum_le_bk hL'D) (termLen_bnum_le_bk hxD)) ?_
+      (termLen_binNumeral_le_bk hL'D) (termLen_binNumeral_le_bk hxD)) ?_
     calc 6 * ‖D‖ + 1 + (6 * ‖D‖ + 1) + 1 = 12 * ‖D‖ + 3 := by ring
       _ ≤ 18 * ‖D‖ + 7 := add_le_add (mul_le_mul_of_nonneg_right (by norm_num) zero_le) (by norm_num)
       _ ≤ E := hE
   -- step 1: the length object of `s_j`
-  obtain ⟨ok₁, tg₁, cx₁⟩ := lok_setLenTotalC htbl hL rfl hΓ (by simp : IsSemiterm LAct 0 (^&k : V))
+  obtain ⟨ok₁, tg₁, cx₁⟩ := lok_sequentLenTotalC htbl hL rfl hΓ (by simp : IsSemiterm LAct 0 (^&k : V))
     (termLen_fvar_le' (le_trans (add_le_add le_rfl (by norm_num)) hkE))
   rw [← e85] at ok₁ tg₁ cx₁
   rw [Nat.cast_zero, termShift_fvar] at cx₁
-  set Γ₁ := insert (neg LAct (setLenFact (^&0) (^&(k + 1)))) (setShift LAct Γ) with hΓ₁
+  set Γ₁ := insert (neg LAct (sequentLenFact (^&0) (^&(k + 1)))) (setShift LAct Γ) with hΓ₁
   have hΓ₁f : IsFormulaSet LAct Γ₁ := by rw [← cx₁]; exact isFormulaSet_ctxAfter 8 htbl ok₁
   have hins' : neg LAct (insFact (^&(k + 1)) (^&(o + (k + 1) + c + 1)) (^&(k + 2))) ∈ Γ₁ := by
-    have := mem_shift_insert (f := neg LAct (setLenFact (^&0) (^&(k + 1)))) hins
+    have := mem_shift_insert (f := neg LAct (sequentLenFact (^&0) (^&(k + 1)))) hins
     rwa [shift_neg (isFormula_insFact (by simp) (by simp) (by simp)), shift_insFact (by simp) (by simp) (by simp),
       termShift_fvar, termShift_fvar, termShift_fvar, add_assoc k 1 1, one_add_one_eq_two] at this
-  have hln' : neg LAct (lenFact (bnum (formulaLen LAct x)) (^&(o + (k + 1) + c + 1))) ∈ Γ₁ := by
-    have := mem_shift_insert (f := neg LAct (setLenFact (^&0) (^&(k + 1)))) hln
+  have hln' : neg LAct (lenFact (binNumeral (formulaLen LAct x)) (^&(o + (k + 1) + c + 1))) ∈ Γ₁ := by
+    have := mem_shift_insert (f := neg LAct (sequentLenFact (^&0) (^&(k + 1)))) hln
     rwa [shift_neg (isFormula_lenFact (isSemiterm_bnum0 _) (by simp)), shift_lenFact (isSemiterm_bnum0 _) (by simp),
-      termShift_bnum, termShift_fvar] at this
-  have hsl' : neg LAct (setLenFact (^&1) (^&(k + 2))) ∈ Γ₁ := by
-    have := mem_shift_insert (f := neg LAct (setLenFact (^&0) (^&(k + 1)))) hsl
-    rwa [shift_neg (isFormula_setLenFact (by simp) (by simp)), shift_setLenFact (by simp) (by simp),
+      termShift_binNumeral, termShift_fvar] at this
+  have hsl' : neg LAct (sequentLenFact (^&1) (^&(k + 2))) ∈ Γ₁ := by
+    have := mem_shift_insert (f := neg LAct (sequentLenFact (^&0) (^&(k + 1)))) hsl
+    rwa [shift_neg (isFormula_sequentLenFact (by simp) (by simp)), shift_sequentLenFact (by simp) (by simp),
       termShift_fvar, termShift_fvar, zero_add, add_assoc k 1 1, one_add_one_eq_two] at this
-  have hle' : neg LAct (leFact (^&1) (bnum L')) ∈ Γ₁ := by
-    have := mem_shift_insert (f := neg LAct (setLenFact (^&0) (^&(k + 1)))) hle
+  have hle' : neg LAct (leFact (^&1) (binNumeral L')) ∈ Γ₁ := by
+    have := mem_shift_insert (f := neg LAct (sequentLenFact (^&0) (^&(k + 1)))) hle
     rwa [shift_neg (isFormula_leFact (by simp) (isSemiterm_bnum0 _)), shift_leFact (by simp) (isSemiterm_bnum0 _),
-      termShift_fvar, termShift_bnum, zero_add] at this
-  have hsl₁ : neg LAct (setLenFact (^&0) (^&(k + 1))) ∈ Γ₁ := memInsSelf _ _
-  -- step 2: setLenInsertLe
-  obtain ⟨ok₂, tg₂, cx₂⟩ := fok_setLenInsertLe htbl hF rfl hΓ₁f
+      termShift_fvar, termShift_binNumeral, zero_add] at this
+  have hsl₁ : neg LAct (sequentLenFact (^&0) (^&(k + 1))) ∈ Γ₁ := memInsSelf _ _
+  -- step 2: sequentLenInsertLe
+  obtain ⟨ok₂, tg₂, cx₂⟩ := fok_sequentLenInsertLe htbl hF rfl hΓ₁f
     (by simp) (termLen_fvar_le' (le_trans (by rw [add_assoc, show (1 : V) + 1 = 2 by norm_num]; exact add_le_add le_rfl (by norm_num)) hXE))
     (by simp) (termLen_fvar_le' hk3) (by simp) (termLen_fvar_le' hk2)
     (by simp) (termLen_fvar_le' (le_trans (by norm_num) hE1)) (by simp) (termLen_fvar_le' (le_trans (by norm_num) hE2))
     (isSemiterm_bnum0 _) hbx hins' hsl₁ hsl' hln'
   rw [← e111] at ok₂ tg₂ cx₂
-  set Γ₂ := insert (neg LAct (leFact (^&0) ((^&1 : V) ^+ bnum (formulaLen LAct x)))) Γ₁ with hΓ₂
+  set Γ₂ := insert (neg LAct (leFact (^&0) ((^&1 : V) ^+ binNumeral (formulaLen LAct x)))) Γ₁ with hΓ₂
   have hΓ₂f : IsFormulaSet LAct Γ₂ := by rw [← cx₂]; exact isFormulaSet_ctxAfter 8 htbl ok₂
   -- step 3: leRefl
   obtain ⟨ok₃, tg₃, cx₃⟩ := fok_leRefl htbl hF rfl hΓ₂f (isSemiterm_bnum0 (formulaLen LAct x)) hbx
   rw [← e109] at ok₃ tg₃ cx₃
-  set Γ₃ := insert (neg LAct (leFact (bnum (formulaLen LAct x)) (bnum (formulaLen LAct x)))) Γ₂ with hΓ₃
+  set Γ₃ := insert (neg LAct (leFact (binNumeral (formulaLen LAct x)) (binNumeral (formulaLen LAct x)))) Γ₂ with hΓ₃
   have hΓ₃f : IsFormulaSet LAct Γ₃ := by rw [← cx₃]; exact isFormulaSet_ctxAfter 8 htbl ok₃
   -- step 4: leAddLeAdd
   obtain ⟨ok₄, tg₄, cx₄⟩ := fok_leAddLeAdd htbl hF rfl hΓ₃f
@@ -1351,7 +1351,7 @@ theorem foldBlockS_ok {tbl N N' B' W T k c o x L' L D E Γ : V} (htbl : TableOK 
     (isSemiterm_bnum0 _) hbx (isSemiterm_bnum0 _) hbL' (isSemiterm_bnum0 _) hbx
     (memIns (memInsSelf _ _)) (memIns (memIns hle')) (memInsSelf _ _)
   rw [← e108] at ok₄ tg₄ cx₄
-  set Γ₄ := insert (neg LAct (leFact (^&0) (bnum L' ^+ bnum (formulaLen LAct x)))) Γ₃ with hΓ₄
+  set Γ₄ := insert (neg LAct (leFact (^&0) (binNumeral L' ^+ binNumeral (formulaLen LAct x)))) Γ₃ with hΓ₄
   have hΓ₄f : IsFormulaSet LAct Γ₄ := by rw [← cx₄]; exact isFormulaSet_ctxAfter 8 htbl ok₄
   -- step 5: the closed lemma
   have ok₅ : StepOK tbl E ((8 : ℕ) : V) Γ₄ (sLemma (sum2Fact L' (formulaLen LAct x) L) (sum2Code T L' (formulaLen LAct x) L)) :=
@@ -1404,15 +1404,15 @@ section foldInd
 `&(o_j + (k+1))`). -/
 def ChainOut (Γ xs os k : V) : Prop :=
   ∀ i < k, neg LAct (insFact (^&(i + 1)) (^&(os.[i] + (k + 1))) (prevAt (k + 1) (i + 1))) ∈ Γ ∧
-    neg LAct (lenFact (bnum (formulaLen LAct xs.[i])) (^&(os.[i] + (k + 1)))) ∈ Γ
+    neg LAct (lenFact (binNumeral (formulaLen LAct xs.[i])) (^&(os.[i] + (k + 1)))) ∈ Γ
 
 /-- The fold's invariant after `c` blocks, over the PACKED parameters `p = ⟪W, T, xs, os, k⟫` (5-ary, so
 that `definability`'s composition rules — which stop at arity 5 — apply to induction motives). -/
 def FOut (tbl E p Γ c : V) : Prop :=
   ListOK tbl E ((8 : ℕ) : V) Γ (lenFoldAuxP p c) ∧ NoDrop' (lenFoldAuxP p c) ∧
   shiftsV (lenFoldAuxP p c) = c ∧ len (lenFoldAuxP p c) ≤ 6 * c ∧
-  (1 ≤ c → neg LAct (setLenFact (^&0) (^&(π₂ (π₂ (π₂ (π₂ p))) + 1))) ∈ finalCtx Γ (lenFoldAuxP p c) ∧
-    neg LAct (leFact (^&0) (bnum (setLen LAct (psetAux (π₁ (π₂ (π₂ p))) c)))) ∈ finalCtx Γ (lenFoldAuxP p c))
+  (1 ≤ c → neg LAct (sequentLenFact (^&0) (^&(π₂ (π₂ (π₂ (π₂ p))) + 1))) ∈ finalCtx Γ (lenFoldAuxP p c) ∧
+    neg LAct (leFact (^&0) (binNumeral (sequentLen LAct (psetAux (π₁ (π₂ (π₂ p))) c)))) ∈ finalCtx Γ (lenFoldAuxP p c))
 
 set_option maxHeartbeats 1000000 in
 instance fOut_definable : 𝚫₁-Relation₅ (FOut : V → V → V → V → V → Prop) := by
@@ -1422,8 +1422,8 @@ instance fOut_definable : 𝚫₁-Relation₅ (FOut : V → V → V → V → V 
 lemma fOut_iff (tbl E W T xs os k Γ c : V) : FOut tbl E ⟪W, T, xs, os, k⟫ Γ c ↔
     (ListOK tbl E ((8 : ℕ) : V) Γ (lenFoldAux W T xs os k c) ∧ NoDrop' (lenFoldAux W T xs os k c) ∧
     shiftsV (lenFoldAux W T xs os k c) = c ∧ len (lenFoldAux W T xs os k c) ≤ 6 * c ∧
-    (1 ≤ c → neg LAct (setLenFact (^&0) (^&(k + 1))) ∈ finalCtx Γ (lenFoldAux W T xs os k c) ∧
-      neg LAct (leFact (^&0) (bnum (setLen LAct (psetAux xs c)))) ∈ finalCtx Γ (lenFoldAux W T xs os k c))) := by
+    (1 ≤ c → neg LAct (sequentLenFact (^&0) (^&(k + 1))) ∈ finalCtx Γ (lenFoldAux W T xs os k c) ∧
+      neg LAct (leFact (^&0) (binNumeral (sequentLen LAct (psetAux xs c)))) ∈ finalCtx Γ (lenFoldAux W T xs os k c))) := by
   simp only [FOut, lenFoldAux, pi₁_pair, pi₂_pair]
 
 lemma le_thirteen_mul {D : V} : D ≤ 13 * D := le_mul_of_one_le_left zero_le (by norm_num)
@@ -1433,12 +1433,12 @@ set_option maxHeartbeats 2000000 in
 motive must apply `FOut` to variables). -/
 theorem lenFoldAux_ok {tbl N N' B' W T s xs k os D E Γ : V} (htbl : TableOK tbl N) (hP : ProTable tbl)
     (htblN : NumTableOK T N' B') (hWp : W = proPieces)
-    (hs : IsFormulaSet LAct s) (hxs : xs = memberList s) (hk : k = len xs) (hsD : setLen LAct s ≤ D)
+    (hs : IsFormulaSet LAct s) (hxs : xs = memberList s) (hk : k = len xs) (hsD : sequentLen LAct s ≤ D)
     (hE : 13 * D + 18 * ‖D‖ + 8 ≤ E)
     (hos : len os = k) (hosD : ∀ i < k, os.[i] ≤ 4 * D)
     (hΓ : IsFormulaSet LAct Γ) (hCh : ChainOut Γ xs os k) :
     ∀ c ≤ k, FOut tbl E ⟪W, T, xs, os, k⟫ Γ c := by
-  have hkD : k ≤ D := by rw [hk, hxs]; exact le_trans (len_memberList_le_setLen hs) hsD
+  have hkD : k ≤ D := by rw [hk, hxs]; exact le_trans (len_memberList_le_sequentLen hs) hsD
   have hDE : 13 * D ≤ E := le_trans le_self_add (le_trans le_self_add hE)
   have hkE : k + 3 ≤ E :=
     le_trans (add_le_add (le_trans hkD le_thirteen_mul) (by norm_num)) (le_trans (add_le_add le_self_add le_rfl) hE)
@@ -1455,7 +1455,7 @@ theorem lenFoldAux_ok {tbl N N' B' W T s xs k os D E Γ : V} (htbl : TableOK tbl
   | succ c ih =>
     intro hc
     rw [fOut_iff] at ih ⊢
-    obtain ⟨fok, fnd, fsh, flen, ffacts⟩ := ih (le_trans le_self_add hc)
+    obtain ⟨fok, fnd, fsh, formulaLenMeta, ffacts⟩ := ih (le_trans le_self_add hc)
     rw [lenFoldAux_succ]
     set L := lenFoldAux W T xs os k c with hL
     set Γc := finalCtx Γ L with hΓc
@@ -1477,11 +1477,11 @@ theorem lenFoldAux_ok {tbl N N' B' W T s xs k os D E Γ : V} (htbl : TableOK tbl
       termShiftIterV_prevAt, ej] at hins'
     have hln' := mem_finalCtx_of_mem' fnd hln
     rw [fsh, shiftIterV_neg (isFormula_lenFact (isSemiterm_bnum0 _) (by simp)),
-      shiftIterV_lenFact (isSemiterm_bnum0 _) (by simp), termShiftIterV_bnum', termShiftIterV_fvar] at hln'
+      shiftIterV_lenFact (isSemiterm_bnum0 _) (by simp), termShiftIterV_binNumeral', termShiftIterV_fvar] at hln'
     have hmem : xs.[k - (c + 1)] ∈ s := by
       have := nth_memberList_mem (s := s) (m := k - (c + 1)) (by rw [← hxs, ← hk]; exact hjk)
       rwa [← hxs] at this
-    have hxD : formulaLen LAct xs.[k - (c + 1)] ≤ D := le_trans (formulaLen_le_setLen_of_mem hmem) hsD
+    have hxD : formulaLen LAct xs.[k - (c + 1)] ≤ D := le_trans (formulaLen_le_sequentLen_of_mem hmem) hsD
     have hoD : os.[k - (c + 1)] ≤ 4 * D := hosD _ hjk
     have hcD : c ≤ D := le_trans (le_of_lt hck) hkD
     have hXE : os.[k - (c + 1)] + (k + 1) + c + 3 ≤ E := by
@@ -1491,8 +1491,8 @@ theorem lenFoldAux_ok {tbl N N' B' W T s xs k os D E Γ : V} (htbl : TableOK tbl
         _ ≤ 13 * D + 18 * ‖D‖ + 8 :=
             add_le_add (le_trans (mul_le_mul_of_nonneg_right (by norm_num) zero_le) le_self_add) (by norm_num)
         _ ≤ E := hE
-    have hpsucc : setLen LAct (psetAux xs (c + 1)) = setLen LAct (psetAux xs c) + formulaLen LAct xs.[k - (c + 1)] := by
-      have := setLen_psetAux_succ hck'; rw [← hxs] at this; rw [this, hxj]
+    have hpsucc : sequentLen LAct (psetAux xs (c + 1)) = sequentLen LAct (psetAux xs c) + formulaLen LAct xs.[k - (c + 1)] := by
+      have := sequentLen_psetAux_succ hck'; rw [← hxs] at this; rw [this, hxj]
     by_cases hc0 : c = 0
     · have hprev : prevAt (k + 1 + c) k = (𝟎 : V) := by unfold prevAt; rw [if_pos (by rw [hc0, add_zero])]
       rw [hprev] at hins'
@@ -1501,11 +1501,11 @@ theorem lenFoldAux_ok {tbl N N' B' W T s xs k os D E Γ : V} (htbl : TableOK tbl
       obtain ⟨b0ok, b0nd, b0sh, b0len, b0sl, b0le⟩ := foldBlock0_ok htbl hP hWp hΓcf hkE hXE hxD hE' hins' hln'
       refine ⟨listOK_appendV fok b0ok, noDrop'_appendV fnd b0nd, by rw [shiftsV_appendV, fsh, b0sh], ?_, fun _ ↦ ?_⟩
       · rw [len_appendV, b0len]
-        calc len L + 2 ≤ 6 * c + 2 := add_le_add flen le_rfl
+        calc len L + 2 ≤ 6 * c + 2 := add_le_add formulaLenMeta le_rfl
           _ ≤ 6 * (c + 1) := by rw [mul_add, mul_one]; exact add_le_add le_rfl (by norm_num)
       · rw [finalCtx_appendV, ← hΓc]
         refine ⟨b0sl, ?_⟩
-        have hz : setLen LAct (psetAux xs c) = 0 := by rw [hc0]; exact setLen_psetAux_zero xs
+        have hz : sequentLen LAct (psetAux xs c) = 0 := by rw [hc0]; exact sequentLen_psetAux_zero xs
         rw [hpsucc, hz, zero_add]
         exact b0le
     · have hc1 : 1 ≤ c := by
@@ -1517,18 +1517,18 @@ theorem lenFoldAux_ok {tbl N N' B' W T s xs k os D E Γ : V} (htbl : TableOK tbl
       rw [hprev] at hins'
       unfold foldBlock
       rw [if_neg hc0, hoj, hxj]
-      have hL'D : setLen LAct (psetAux xs c) ≤ D := by
-        have := setLen_psetAux_le (s := s) (c := c) (by rw [← hxs, ← hk]; exact le_of_lt hck)
+      have hL'D : sequentLen LAct (psetAux xs c) ≤ D := by
+        have := sequentLen_psetAux_le (s := s) (c := c) (by rw [← hxs, ← hk]; exact le_of_lt hck)
         rw [← hxs] at this; exact le_trans this hsD
-      have hLD : setLen LAct (psetAux xs (c + 1)) ≤ D := by
-        have := setLen_psetAux_le (s := s) (c := c + 1) (by rw [← hxs, ← hk]; exact hc)
+      have hLD : sequentLen LAct (psetAux xs (c + 1)) ≤ D := by
+        have := sequentLen_psetAux_le (s := s) (c := c + 1) (by rw [← hxs, ← hk]; exact hc)
         rw [← hxs] at this; exact le_trans this hsD
-      have hLL : setLen LAct (psetAux xs c) + formulaLen LAct xs.[k - (c + 1)] ≤ setLen LAct (psetAux xs (c + 1)) := by
+      have hLL : sequentLen LAct (psetAux xs c) + formulaLen LAct xs.[k - (c + 1)] ≤ sequentLen LAct (psetAux xs (c + 1)) := by
         rw [hpsucc]
       obtain ⟨bok, bnd, bsh, blen, bsl, ble⟩ :=
         foldBlockS_ok htbl hP htblN hWp hΓcf hkE hXE hxD hL'D hLD hLL hE' hins' hln' fsl fle
       refine ⟨listOK_appendV fok bok, noDrop'_appendV fnd bnd, by rw [shiftsV_appendV, fsh, bsh],
-        by rw [len_appendV, blen]; exact le_trans (add_le_add flen le_rfl) (le_of_eq (by ring)), fun _ ↦ ?_⟩
+        by rw [len_appendV, blen]; exact le_trans (add_le_add formulaLenMeta le_rfl) (le_of_eq (by ring)), fun _ ↦ ?_⟩
       rw [finalCtx_appendV, ← hΓc]
       exact ⟨bsl, ble⟩
 
@@ -1540,32 +1540,32 @@ section layoutStepsOK
 
 set_option maxHeartbeats 2000000 in
 /-- **`layoutSteps` is applicable and leaves the canonical layout of `s` at chain offset `0`.**
-Hypotheses: a non-empty formula set `s` with `setLen s ≤ D`, the cap `13D + 18‖D‖ + 8 ≤ E`. Shifts:
-`tailShift + (k + 1) + k`; length `≤ 26·setLen s + 13k + 6`. -/
+Hypotheses: a non-empty formula set `s` with `sequentLen s ≤ D`, the cap `13D + 18‖D‖ + 8 ≤ E`. Shifts:
+`tailShift + (k + 1) + k`; length `≤ 26·sequentLen s + 13k + 6`. -/
 theorem layoutSteps_ok {tbl N N' B' Wl Wc W T s D E Γ : V} (htbl : TableOK tbl N) (hP : ProTable tbl)
     (htblN : NumTableOK T N' B') (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (hWp : W = proPieces)
-    (hs : IsFormulaSet LAct s) (hk1 : 1 ≤ len (memberList s)) (hsD : setLen LAct s ≤ D)
+    (hs : IsFormulaSet LAct s) (hk1 : 1 ≤ len (memberList s)) (hsD : sequentLen LAct s ≤ D)
     (hE : 13 * D + 18 * ‖D‖ + 8 ≤ E) (hΓ : IsFormulaSet LAct Γ) :
     ListOK tbl E ((8 : ℕ) : V) Γ (layoutSteps walkPieces Wl Wc W T s) ∧ NoDrop' (layoutSteps walkPieces Wl Wc W T s) ∧
     shiftsV (layoutSteps walkPieces Wl Wc W T s) =
       tailShift (memberList s) walkPieces Wc T + (len (memberList s) + 1) + len (memberList s) ∧
-    len (layoutSteps walkPieces Wl Wc W T s) ≤ 26 * setLen LAct s + 13 * len (memberList s) + 6 ∧
+    len (layoutSteps walkPieces Wl Wc W T s) ≤ 26 * sequentLen LAct s + 13 * len (memberList s) + 6 ∧
     Layout walkPieces Wc T (finalCtx Γ (layoutSteps walkPieces Wl Wc W T s)) s 0 := by
   have hW := hP.walkTable
   have hL := hP.layoutTable
   set k := len (memberList s) with hk
   set xs := memberList s with hxs
-  have hkD : k ≤ D := le_trans (len_memberList_le_setLen hs) hsD
+  have hkD : k ≤ D := le_trans (len_memberList_le_sequentLen hs) hsD
   have hE13 : 13 * D + 8 ≤ E := le_trans (add_le_add le_self_add le_rfl) hE
   have hmem : ∀ j < len xs, IsSemiformula LAct 0 xs.[j] ∧ formulaLen LAct xs.[j] ≤ D := fun j hj ↦
-    ⟨hs _ (nth_memberList_mem hj), le_trans (formulaLen_le_setLen_of_mem (nth_memberList_mem hj)) hsD⟩
+    ⟨hs _ (nth_memberList_mem hj), le_trans (formulaLen_le_sequentLen_of_mem (nth_memberList_mem hj)) hsD⟩
   -- the member blocks
-  obtain ⟨mok, mnd, msh, mlen, mfacts⟩ := memberBlocks_ok htbl hP htblN hWc hE13 xs hmem Γ hΓ
+  obtain ⟨mok, mnd, msh, proofLenMeta, mfacts⟩ := memberBlocks_ok htbl hP htblN hWc hE13 xs hmem Γ hΓ
   set Γ₂ := finalCtx Γ (memberBlocks xs walkPieces Wc T) with hΓ₂
   have hΓ₂f : IsFormulaSet LAct Γ₂ := finalCtx_isFormulaSet 8 htbl hΓ mok
   set os := offVec xs walkPieces Wc T with hos
   have hos_len : len os = k := by rw [hos, len_offVec]
-  have hsetLen : listSum (flenVec xs) = setLen LAct s := (setLen_eq_listSum_memberList s).symm
+  have hsetLen : listSum (formulaLenMetaVec xs) = sequentLen LAct s := (sequentLen_eq_listSum_memberList s).symm
   have hosD : ∀ i < k, os.[i] ≤ 4 * D := fun i hi ↦ by
     refine le_trans (nth_offVec_le _ _ _ xs i hi) ?_
     refine le_trans (tailShift_le htbl hW hWc T xs (fun j hj ↦ (hmem j hj).1)) ?_
@@ -1591,7 +1591,7 @@ theorem layoutSteps_ok {tbl N N' B' Wl Wc W T s D E Γ : V} (htbl : TableOK tbl 
   -- the member facts after the chain
   have mfacts₃ : ∀ j < k, DossF walkPieces Γ₃ 0 xs.[j] (os.[j] + (k + 1)) ∧
       neg LAct (piFact (𝟎 : V) (^&(os.[j] + (k + 1)))) ∈ Γ₃ ∧
-      neg LAct (lenFact (bnum (formulaLen LAct xs.[j])) (^&(os.[j] + (k + 1)))) ∈ Γ₃ := fun j hj ↦ by
+      neg LAct (lenFact (binNumeral (formulaLen LAct xs.[j])) (^&(os.[j] + (k + 1)))) ∈ Γ₃ := fun j hj ↦ by
     obtain ⟨hD, hpi, hln⟩ := mfacts j hj
     refine ⟨?_, ?_, ?_⟩
     · have := dossF_transport cnd hD; rwa [csh] at this
@@ -1600,13 +1600,13 @@ theorem layoutSteps_ok {tbl N N' B' Wl Wc W T s D E Γ : V} (htbl : TableOK tbl 
         shiftIterV_piFact (isSemiterm_qqZero_LAct 0) (by simp), termShiftIterV_zeroV, termShiftIterV_fvar] at this
     · have := mem_finalCtx_of_mem cnd hln
       rwa [csh, shiftIterV_neg (isFormula_lenFact (isSemiterm_bnum0 _) (by simp)),
-        shiftIterV_lenFact (isSemiterm_bnum0 _) (by simp), termShiftIterV_bnum', termShiftIterV_fvar] at this
+        shiftIterV_lenFact (isSemiterm_bnum0 _) (by simp), termShiftIterV_binNumeral', termShiftIterV_fvar] at this
   have hCh : ChainOut Γ₃ xs os k := fun i hi ↦ by
     obtain ⟨hins, _, _⟩ := cfacts i hi
     rw [hov, nth_fvarVec os i (hos_len ▸ hi), termShiftIterV_fvar] at hins
     exact ⟨hins, (mfacts₃ i hi).2.2⟩
   -- the fold
-  obtain ⟨fok, fnd, fsh, flen, ffacts⟩ :=
+  obtain ⟨fok, fnd, fsh, formulaLenMeta, ffacts⟩ :=
     (fOut_iff _ _ _ _ _ _ _ _ _).mp (lenFoldAux_ok htbl hP htblN hWp hs hxs hk hsD hE hos_len hosD hΓ₃f hCh k le_rfl)
   obtain ⟨fsl, fle⟩ := ffacts hk1
   have hfold : lenFold W T xs os = lenFoldAux W T xs os k k := by rw [lenFold, ← hk]
@@ -1620,8 +1620,8 @@ theorem layoutSteps_ok {tbl N N' B' Wl Wc W T s D E Γ : V} (htbl : TableOK tbl 
   · rw [shiftsV_appendV, shiftsV_appendV, msh, csh, fsh]; ring
   · rw [len_appendV, len_appendV]
     calc len (memberBlocks xs walkPieces Wc T) + (len (chainSteps Wl ov) + len (lenFoldAux W T xs os k k))
-        ≤ 26 * listSum (flenVec xs) + ((7 * k + 6) + 6 * k) := add_le_add mlen (add_le_add clen flen)
-      _ = 26 * setLen LAct s + 13 * k + 6 := by rw [hsetLen]; ring
+        ≤ 26 * listSum (formulaLenMetaVec xs) + ((7 * k + 6) + 6 * k) := add_le_add proofLenMeta (add_le_add clen formulaLenMeta)
+      _ = 26 * sequentLen LAct s + 13 * k + 6 := by rw [hsetLen]; ring
   · rw [finalCtx_appendV, finalCtx_appendV, ← hΓ₂, ← hΓ₃]
     set Γ₄ := finalCtx Γ₃ (lenFoldAux W T xs os k k) with hΓ₄
     refine ⟨fun j hj ↦ ?_, ?_, ?_⟩
@@ -1638,7 +1638,7 @@ theorem layoutSteps_ok {tbl N N' B' Wl Wc W T s D E Γ : V} (htbl : TableOK tbl 
           shiftIterV_piFact (isSemiterm_qqZero_LAct 0) (by simp), termShiftIterV_zeroV, termShiftIterV_fvar, e1] at this
       · have := mem_finalCtx_of_mem' fnd hln
         rwa [fsh, shiftIterV_neg (isFormula_lenFact (isSemiterm_bnum0 _) (by simp)),
-          shiftIterV_lenFact (isSemiterm_bnum0 _) (by simp), termShiftIterV_bnum', termShiftIterV_fvar, e1] at this
+          shiftIterV_lenFact (isSemiterm_bnum0 _) (by simp), termShiftIterV_binNumeral', termShiftIterV_fvar, e1] at this
       · have := mem_finalCtx_of_mem' fnd hins
         rw [fsh, shiftIterV_neg (isFormula_insFact (by simp) (by simp) (isSemiterm_prevAt _ _)),
           shiftIterV_insFact (by simp) (by simp) (isSemiterm_prevAt _ _), termShiftIterV_fvar, termShiftIterV_fvar,
@@ -1754,7 +1754,7 @@ instance proAxL_defined :
 lemma Layout.member {Ww Wc T Γ s i y : V} (h : Layout Ww Wc T Γ s i) (hy : y ∈ s) :
     DossF Ww Γ 0 y (memTop Ww Wc T s y i) ∧
     neg LAct (piFact (𝟎 : V) (^&(memTop Ww Wc T s y i))) ∈ Γ ∧
-    neg LAct (lenFact (bnum (formulaLen LAct y)) (^&(memTop Ww Wc T s y i))) ∈ Γ ∧
+    neg LAct (lenFact (binNumeral (formulaLen LAct y)) (^&(memTop Ww Wc T s y i))) ∈ Γ ∧
     neg LAct (memFact (^&(memTop Ww Wc T s y i)) (^&(i + (len (memberList s) + 1)))) ∈ Γ := by
   obtain ⟨hlt, heq⟩ := idxOf_spec hy
   obtain ⟨hD, hpi, hln, _, _, hm⟩ := h.1 _ hlt
@@ -1768,14 +1768,14 @@ lemma Layout.fsetPi {Ww Wc T Γ s i : V} (h : Layout Ww Wc T Γ s i) (hk : 1 ≤
   rwa [add_zero] at this
 
 lemma memTop_le {tbl N : V} (htbl : TableOK tbl N) (hW : WalkTable tbl) {Wc : V} (hWc : Wc = certPieces) (T : V)
-    {s y i D : V} (hs : IsFormulaSet LAct s) (hy : y ∈ s) (hsD : setLen LAct s ≤ D) :
+    {s y i D : V} (hs : IsFormulaSet LAct s) (hy : y ∈ s) (hsD : sequentLen LAct s ≤ D) :
     memTop walkPieces Wc T s y i ≤ i + 6 * D + 1 := by
   obtain ⟨hlt, _⟩ := idxOf_spec hy
-  have hkD : len (memberList s) ≤ D := le_trans (len_memberList_le_setLen hs) hsD
+  have hkD : len (memberList s) ≤ D := le_trans (len_memberList_le_sequentLen hs) hsD
   have ho : (offVec (memberList s) walkPieces Wc T).[idxOf (memberList s) y] ≤ 4 * D := by
     refine le_trans (nth_offVec_le _ _ _ _ _ hlt) ?_
     refine le_trans (tailShift_le htbl hW hWc T _ (fun j hj ↦ hs _ (nth_memberList_mem hj))) ?_
-    rw [← setLen_eq_listSum_memberList]; exact mul_le_mul_of_nonneg_left hsD zero_le
+    rw [← sequentLen_eq_listSum_memberList]; exact mul_le_mul_of_nonneg_left hsD zero_le
   unfold memTop mTop
   calc i + (2 * len (memberList s) + 1 + (offVec (memberList s) walkPieces Wc T).[idxOf (memberList s) y])
       ≤ i + (2 * D + 1 + 4 * D) := add_le_add le_rfl (add_le_add (add_le_add (mul_le_mul_of_nonneg_left hkD zero_le) le_rfl) ho)
@@ -1784,10 +1784,10 @@ lemma memTop_le {tbl N : V} (htbl : TableOK tbl N) (hW : WalkTable tbl) {Wc : V}
 set_option maxHeartbeats 1000000 in
 /-- **The `axL` prologue is applicable** and leaves `negFact X_np X_p`; together with the layout it discharges
 EVERY hypothesis of `fragAxL_ok` at `is = i + (k + 1)`, `il = i`, `ip = memTop s p i`, `inp = memTop s (neg p) i`,
-`L = setLen s` (the facts are listed in `fragAxL_ok`'s order). -/
+`L = sequentLen s` (the facts are listed in `fragAxL_ok`'s order). -/
 theorem proAxL_ok {tbl N N' B' Wc T s p D E Γ i : V} (htbl : TableOK tbl N) (hP : ProTable tbl)
     (htblN : NumTableOK T N' B') (hWc : Wc = certPieces)
-    (hs : IsFormulaSet LAct s) (hp : p ∈ s) (hnp : neg LAct p ∈ s) (hsD : setLen LAct s ≤ D)
+    (hs : IsFormulaSet LAct s) (hp : p ∈ s) (hnp : neg LAct p ∈ s) (hsD : sequentLen LAct s ≤ D)
     (hE : 13 * D + 18 * ‖D‖ + 8 ≤ E) (hiE : i + 8 * D + 3 ≤ E) (hΓ : IsFormulaSet LAct Γ)
     (hLay : Layout walkPieces Wc T Γ s i) :
     ListOK tbl E ((8 : ℕ) : V) Γ (proAxL walkPieces Wc T s p i) ∧ NoDrop (proAxL walkPieces Wc T s p i) ∧
@@ -1800,13 +1800,13 @@ theorem proAxL_ok {tbl N N' B' Wc T s p D E Γ i : V} (htbl : TableOK tbl N) (hP
        finalCtx Γ (proAxL walkPieces Wc T s p i) ∧
      neg LAct (memFact (^&(memTop walkPieces Wc T s (neg LAct p) i)) (^&(i + (len (memberList s) + 1)))) ∈
        finalCtx Γ (proAxL walkPieces Wc T s p i) ∧
-     neg LAct (setLenFact (^&i) (^&(i + (len (memberList s) + 1)))) ∈ finalCtx Γ (proAxL walkPieces Wc T s p i) ∧
-     neg LAct (leFact (^&i) (bnum (setLen LAct s))) ∈ finalCtx Γ (proAxL walkPieces Wc T s p i)) := by
+     neg LAct (sequentLenFact (^&i) (^&(i + (len (memberList s) + 1)))) ∈ finalCtx Γ (proAxL walkPieces Wc T s p i) ∧
+     neg LAct (leFact (^&i) (binNumeral (sequentLen LAct s))) ∈ finalCtx Γ (proAxL walkPieces Wc T s p i)) := by
   have hW := hP.walkTable
   have hC := hP.certTable
   have htblC := hP.tableOK_certView htbl
   have hpf : IsSemiformula LAct 0 p := hs p hp
-  have hpD : formulaLen LAct p ≤ D := le_trans (formulaLen_le_setLen_of_mem hp) hsD
+  have hpD : formulaLen LAct p ≤ D := le_trans (formulaLen_le_sequentLen_of_mem hp) hsD
   have hk1 : 1 ≤ len (memberList s) := by
     obtain ⟨hlt, _⟩ := idxOf_spec hp
     have := lt_iff_succ_le.mp (lt_of_le_of_lt zero_le hlt); rwa [zero_add] at this
@@ -1835,14 +1835,14 @@ theorem proAxL_ok {tbl N N' B' Wc T s p D E Γ i : V} (htbl : TableOK tbl N) (hP
 /-! ### 3.3 `verumIntro`: no steps — the layout already discharges every hypothesis of `fragVerum_ok` -/
 
 /-- With `⊤ ∈ s`, the layout at offset `i` discharges `fragVerum_ok`'s hypotheses at `is = i + (k + 1)`, `il = i`,
-`iv = memTop s ⊤ i`, `L = setLen s`. -/
+`iv = memTop s ⊤ i`, `L = sequentLen s`. -/
 theorem layout_verum {tbl N Wc T s Γ i : V} (htbl : TableOK tbl N) (hP : ProTable tbl)
     (hv : (^⊤ : V) ∈ s) (hLay : Layout walkPieces Wc T Γ s i) :
     neg LAct (fsetPiFact (^&(i + (len (memberList s) + 1)))) ∈ Γ ∧
     neg LAct (verumFact (^&(memTop walkPieces Wc T s ^⊤ i))) ∈ Γ ∧
     neg LAct (memFact (^&(memTop walkPieces Wc T s ^⊤ i)) (^&(i + (len (memberList s) + 1)))) ∈ Γ ∧
-    neg LAct (setLenFact (^&i) (^&(i + (len (memberList s) + 1)))) ∈ Γ ∧
-    neg LAct (leFact (^&i) (bnum (setLen LAct s))) ∈ Γ := by
+    neg LAct (sequentLenFact (^&i) (^&(i + (len (memberList s) + 1)))) ∈ Γ ∧
+    neg LAct (leFact (^&i) (binNumeral (sequentLen LAct s))) ∈ Γ := by
   have hk1 : 1 ≤ len (memberList s) := by
     obtain ⟨hlt, _⟩ := idxOf_spec hv
     have := lt_iff_succ_le.mp (lt_of_le_of_lt zero_le hlt); rwa [zero_add] at this
@@ -2304,20 +2304,20 @@ structure IdFrame (Ww Wc T Γ s p i₁ ip₁ σ : V) : Prop where
   dp : DossF Ww Γ 0 p ip₁
   cp : neg LAct (insFact (^&σ) (^&ip₁) (^&(i₁ + (len (memberList s) + 1)))) ∈ Γ
 
-/-- The caps: `D` bounds `setLen (insert p s)`. -/
+/-- The caps: `D` bounds `sequentLen (insert p s)`. -/
 structure IdCap (D E i₁ ip₁ σ : V) : Prop where
   hE : 13 * D + 18 * ‖D‖ + 12 ≤ E
   hi : i₁ + 8 * D + 3 ≤ E
   hip : ip₁ + 2 * D + 2 ≤ E
   hσ : σ + 1 ≤ E
 
-lemma setLen_le_insert (p s : V) : setLen LAct s ≤ setLen LAct (insert p s) := by
+lemma sequentLen_le_insert (p s : V) : sequentLen LAct s ≤ sequentLen LAct (insert p s) := by
   by_cases h : p ∈ s
   · have e : insert p s = s := mem_ext (fun x ↦ by
       rw [mem_bitInsert_iff]
       exact ⟨fun hx ↦ by rcases hx with rfl | hx; exact h; exact hx, fun hx ↦ Or.inr hx⟩)
     rw [e]
-  · rw [setLen_insert_of_not_mem_V h]; exact le_self_add
+  · rw [sequentLen_insert_of_not_mem_V h]; exact le_self_add
 
 /-- `6D + c ≤ 13D + 18‖D‖ + 12` for `c ≤ 12`. -/
 lemma six_le_cap {D c : V} (hc : c ≤ 12) : 6 * D + c ≤ 13 * D + 18 * ‖D‖ + 12 :=
@@ -2329,13 +2329,13 @@ lemma eight_le_cap {D c : V} (hc : c ≤ 12) : 8 * D + c ≤ 13 * D + 18 * ‖D�
 
 /-- The top of member `j` of a layout is at most `i + 6D + 1`. -/
 lemma mTop_le {tbl N : V} (htbl : TableOK tbl N) (hW : WalkTable tbl) {Wc : V} (hWc : Wc = certPieces) (T : V)
-    {s i D j : V} (hs : IsFormulaSet LAct s) (hsD : setLen LAct s ≤ D) (hj : j < len (memberList s)) :
+    {s i D j : V} (hs : IsFormulaSet LAct s) (hsD : sequentLen LAct s ≤ D) (hj : j < len (memberList s)) :
     mTop i (len (memberList s)) (offVec (memberList s) walkPieces Wc T).[j] ≤ i + 6 * D + 1 := by
-  have hkD : len (memberList s) ≤ D := le_trans (len_memberList_le_setLen hs) hsD
+  have hkD : len (memberList s) ≤ D := le_trans (len_memberList_le_sequentLen hs) hsD
   have ho : (offVec (memberList s) walkPieces Wc T).[j] ≤ 4 * D := by
     refine le_trans (nth_offVec_le _ _ _ _ _ hj) ?_
     refine le_trans (tailShift_le htbl hW hWc T _ (fun j hj ↦ hs _ (nth_memberList_mem hj))) ?_
-    rw [← setLen_eq_listSum_memberList]; exact mul_le_mul_of_nonneg_left hsD zero_le
+    rw [← sequentLen_eq_listSum_memberList]; exact mul_le_mul_of_nonneg_left hsD zero_le
   unfold mTop
   calc i + (2 * len (memberList s) + 1 + (offVec (memberList s) walkPieces Wc T).[j])
       ≤ i + (2 * D + 1 + 4 * D) := add_le_add le_rfl (add_le_add (add_le_add (mul_le_mul_of_nonneg_left hkD zero_le) le_rfl) ho)
@@ -2377,16 +2377,16 @@ theorem loopA_ok {tbl N Wl W Wc T s p i₁ ip₁ σ D E Γ q : V} (htbl : TableO
     (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (hWp : W = proPieces)
     (hq : q = qPack Wl W i₁ (len (memberList s)) (offVec (memberList s) walkPieces Wc T) (memberList s) ip₁
       (len (memberList (insert p s))) (offVec (memberList (insert p s)) walkPieces Wc T) (memberList (insert p s)) p σ)
-    (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 0 p) (hsD : setLen LAct (insert p s) ≤ D)
+    (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 0 p) (hsD : sequentLen LAct (insert p s) ≤ D)
     (hcap : IdCap D E i₁ ip₁ σ) (hΓ : IsFormulaSet LAct Γ) (hF : IdFrame walkPieces Wc T Γ s p i₁ ip₁ σ) :
     ∀ m ≤ len (memberList (insert p s)), AOut tbl E q Γ m := by
   have hW := hP.walkTable
   have hL := hP.layoutTable
   have hF1 := hP.frag1Table
   have hcs : IsFormulaSet LAct (insert p s) := IsFormulaSet.insert_iff.mpr ⟨hp, hs⟩
-  have hsD' : setLen LAct s ≤ D := le_trans (setLen_le_insert p s) hsD
-  have hpD : formulaLen LAct p ≤ D := le_trans (formulaLen_le_setLen_of_mem (by simp)) hsD
-  have hkD : len (memberList s) ≤ D := le_trans (len_memberList_le_setLen hs) hsD'
+  have hsD' : sequentLen LAct s ≤ D := le_trans (sequentLen_le_insert p s) hsD
+  have hpD : formulaLen LAct p ≤ D := le_trans (formulaLen_le_sequentLen_of_mem (by simp)) hsD
+  have hkD : len (memberList s) ≤ D := le_trans (len_memberList_le_sequentLen hs) hsD'
   have hE1 : (1 : V) ≤ E := le_trans (by norm_num) (le_trans le_add_self hcap.hE)
   have hD13 : 13 * D ≤ E := le_trans le_self_add (le_trans le_self_add hcap.hE)
   have e77 : ∀ ev : V, mkStep proPieces (77 : V) ev = mkStep layoutPieces (77 : V) ev := fun ev ↦ by
@@ -2412,7 +2412,7 @@ theorem loopA_ok {tbl N Wl W Wc T s p i₁ ip₁ σ D E Γ q : V} (htbl : TableO
     -- the child member
     have hym : (memberList (insert p s)).[m] ∈ insert p s := nth_memberList_mem hmk
     have hyf : IsSemiformula LAct 0 (memberList (insert p s)).[m] := hcs _ hym
-    have hyD : formulaLen LAct (memberList (insert p s)).[m] ≤ D := le_trans (formulaLen_le_setLen_of_mem hym) hsD
+    have hyD : formulaLen LAct (memberList (insert p s)).[m] ≤ D := le_trans (formulaLen_le_sequentLen_of_mem hym) hsD
     obtain ⟨hDy, _, _, _, _, hmy⟩ := hF.child.1 m hmk
     have hYD := dossierAt_of_dossF htbl hW rfl hyf hDy
     have hYle : mTop 0 (len (memberList (insert p s))) (offVec (memberList (insert p s)) walkPieces Wc T).[m] ≤ 0 + 6 * D + 1 :=
@@ -2533,14 +2533,14 @@ theorem loopB_ok {tbl N Wl W Wc T s p i₁ ip₁ σ D E Γ q : V} (htbl : TableO
     (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (hWp : W = proPieces)
     (hq : q = qPack Wl W i₁ (len (memberList s)) (offVec (memberList s) walkPieces Wc T) (memberList s) ip₁
       (len (memberList (insert p s))) (offVec (memberList (insert p s)) walkPieces Wc T) (memberList (insert p s)) p σ)
-    (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 0 p) (hsD : setLen LAct (insert p s) ≤ D)
+    (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 0 p) (hsD : sequentLen LAct (insert p s) ≤ D)
     (hcap : IdCap D E i₁ ip₁ σ) (hΓ : IsFormulaSet LAct Γ) (hF : IdFrame walkPieces Wc T Γ s p i₁ ip₁ σ) :
     ∀ m ≤ len (memberList s), BOut tbl E q Γ m := by
   have hW := hP.walkTable
   have hL := hP.layoutTable
   have hcs : IsFormulaSet LAct (insert p s) := IsFormulaSet.insert_iff.mpr ⟨hp, hs⟩
-  have hsD' : setLen LAct s ≤ D := le_trans (setLen_le_insert p s) hsD
-  have hk'D : len (memberList (insert p s)) ≤ D := le_trans (len_memberList_le_setLen hcs) hsD
+  have hsD' : sequentLen LAct s ≤ D := le_trans (sequentLen_le_insert p s) hsD
+  have hk'D : len (memberList (insert p s)) ≤ D := le_trans (len_memberList_le_sequentLen hcs) hsD
   have e42 : ∀ ev : V, mkStep proPieces (42 : V) ev = mkStep layoutPieces (42 : V) ev := fun ev ↦ by
     have := mkStep_pro_layout 42 (by decide) ev; simpa using this
   have e62 : ∀ ev : V, mkStep proPieces (62 : V) ev = mkStep layoutPieces (62 : V) ev := fun ev ↦ by
@@ -2568,7 +2568,7 @@ theorem loopB_ok {tbl N Wl W Wc T s p i₁ ip₁ σ D E Γ q : V} (htbl : TableO
     have hxm : (memberList s).[m] ∈ s := nth_memberList_mem hmk
     have hxc : (memberList s).[m] ∈ insert p s := mem_bitInsert_iff.mpr (Or.inr hxm)
     have hxf : IsSemiformula LAct 0 (memberList s).[m] := hs _ hxm
-    have hxD : formulaLen LAct (memberList s).[m] ≤ D := le_trans (formulaLen_le_setLen_of_mem hxm) hsD'
+    have hxD : formulaLen LAct (memberList s).[m] ≤ D := le_trans (formulaLen_le_sequentLen_of_mem hxm) hsD'
     obtain ⟨hDx, _, _, _, _, _⟩ := hF.parent.1 m hmk
     have hXD := (dossierAt_of_dossF htbl hW rfl hxf hDx).mono tr
     obtain ⟨hDy, _, _, hmy⟩ := hF.child.member hxc
@@ -2648,15 +2648,15 @@ theorem blockP_ok {tbl N Wl W Wc T s p i₁ ip₁ σ D E Γ q : V} (htbl : Table
     (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (hWp : W = proPieces)
     (hq : q = qPack Wl W i₁ (len (memberList s)) (offVec (memberList s) walkPieces Wc T) (memberList s) ip₁
       (len (memberList (insert p s))) (offVec (memberList (insert p s)) walkPieces Wc T) (memberList (insert p s)) p σ)
-    (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 0 p) (hsD : setLen LAct (insert p s) ≤ D)
+    (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 0 p) (hsD : sequentLen LAct (insert p s) ≤ D)
     (hcap : IdCap D E i₁ ip₁ σ) (hΓ : IsFormulaSet LAct Γ) (hF : IdFrame walkPieces Wc T Γ s p i₁ ip₁ σ) :
     ListOK tbl E ((8 : ℕ) : V) Γ (blockP q) ∧ NoDrop (blockP q) ∧ HornOnly (blockP q) ∧ shiftsV (blockP q) = 0 ∧
     neg LAct (memFact (^&ip₁) (^&(0 + (len (memberList (insert p s)) + 1)))) ∈ finalCtx Γ (blockP q) := by
   have hW := hP.walkTable
   have hL := hP.layoutTable
   have hcs : IsFormulaSet LAct (insert p s) := IsFormulaSet.insert_iff.mpr ⟨hp, hs⟩
-  have hpD : formulaLen LAct p ≤ D := le_trans (formulaLen_le_setLen_of_mem (by simp)) hsD
-  have hk'D : len (memberList (insert p s)) ≤ D := le_trans (len_memberList_le_setLen hcs) hsD
+  have hpD : formulaLen LAct p ≤ D := le_trans (formulaLen_le_sequentLen_of_mem (by simp)) hsD
+  have hk'D : len (memberList (insert p s)) ≤ D := le_trans (len_memberList_le_sequentLen hcs) hsD
   have e42 : ∀ ev : V, mkStep proPieces (42 : V) ev = mkStep layoutPieces (42 : V) ev := fun ev ↦ by
     have := mkStep_pro_layout 42 (by decide) ev; simpa using this
   have e62 : ∀ ev : V, mkStep proPieces (62 : V) ev = mkStep layoutPieces (62 : V) ev := fun ev ↦ by
@@ -2733,7 +2733,7 @@ theorem identIns_ok {tbl N Wl W Wc T s p i₁ ip₁ σ D E Γ q : V} (htbl : Tab
     (hq : q = qPack Wl W i₁ (len (memberList s)) (offVec (memberList s) walkPieces Wc T) (memberList s) ip₁
       (len (memberList (insert p s))) (offVec (memberList (insert p s)) walkPieces Wc T) (memberList (insert p s)) p σ)
     (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 0 p) (hk1 : 1 ≤ len (memberList s))
-    (hsD : setLen LAct (insert p s) ≤ D)
+    (hsD : sequentLen LAct (insert p s) ≤ D)
     (hcap : IdCap D E i₁ ip₁ σ) (hΓ : IsFormulaSet LAct Γ) (hF : IdFrame walkPieces Wc T Γ s p i₁ ip₁ σ) :
     ListOK tbl E ((8 : ℕ) : V) Γ (identIns q) ∧ NoDrop (identIns q) ∧ HornOnly (identIns q) ∧
     shiftsV (identIns q) = 0 ∧
@@ -2742,9 +2742,9 @@ theorem identIns_ok {tbl N Wl W Wc T s p i₁ ip₁ σ D E Γ q : V} (htbl : Tab
   have hL := hP.layoutTable
   have hF1 := hP.frag1Table
   have hcs : IsFormulaSet LAct (insert p s) := IsFormulaSet.insert_iff.mpr ⟨hp, hs⟩
-  have hsD' : setLen LAct s ≤ D := le_trans (setLen_le_insert p s) hsD
-  have hkD : len (memberList s) ≤ D := le_trans (len_memberList_le_setLen hs) hsD'
-  have hk'D : len (memberList (insert p s)) ≤ D := le_trans (len_memberList_le_setLen hcs) hsD
+  have hsD' : sequentLen LAct s ≤ D := le_trans (sequentLen_le_insert p s) hsD
+  have hkD : len (memberList s) ≤ D := le_trans (len_memberList_le_sequentLen hs) hsD'
+  have hk'D : len (memberList (insert p s)) ≤ D := le_trans (len_memberList_le_sequentLen hcs) hsD
   have hk1' : 1 ≤ len (memberList (insert p s)) := by
     obtain ⟨hlt, _⟩ := idxOf_spec (show p ∈ insert p s by simp)
     have := lt_iff_succ_le.mp (lt_of_le_of_lt zero_le hlt); rwa [zero_add] at this
@@ -2915,16 +2915,16 @@ instance proIns_defined :
 /-- The shifts of a layout are at most `6D + 1`. -/
 lemma proSig_le {tbl N Wl Wc W T c D : V} (htbl : TableOK tbl N) (hP : ProTable tbl) (hWc : Wc = certPieces)
     {N' B' E Γ : V} (htblN : NumTableOK T N' B') (hWl : Wl = layoutPieces) (hWp : W = proPieces)
-    (hc : IsFormulaSet LAct c) (hk1 : 1 ≤ len (memberList c)) (hcD : setLen LAct c ≤ D)
+    (hc : IsFormulaSet LAct c) (hk1 : 1 ≤ len (memberList c)) (hcD : sequentLen LAct c ≤ D)
     (hE : 13 * D + 18 * ‖D‖ + 8 ≤ E) (hΓ : IsFormulaSet LAct Γ) :
     proSig walkPieces Wl Wc W T c ≤ 6 * D + 1 := by
   obtain ⟨_, _, hsh, _, _⟩ := layoutSteps_ok htbl hP htblN hWl hWc hWp hc hk1 hcD hE hΓ
   unfold proSig
   rw [hsh]
-  have hkD : len (memberList c) ≤ D := le_trans (len_memberList_le_setLen hc) hcD
+  have hkD : len (memberList c) ≤ D := le_trans (len_memberList_le_sequentLen hc) hcD
   have ht : tailShift (memberList c) walkPieces Wc T ≤ 4 * D := by
     refine le_trans (tailShift_le htbl hP.walkTable hWc T _ (fun j hj ↦ hc _ (nth_memberList_mem hj))) ?_
-    rw [← setLen_eq_listSum_memberList]; exact mul_le_mul_of_nonneg_left hcD zero_le
+    rw [← sequentLen_eq_listSum_memberList]; exact mul_le_mul_of_nonneg_left hcD zero_le
   calc tailShift (memberList c) walkPieces Wc T + (len (memberList c) + 1) + len (memberList c)
       ≤ 4 * D + (D + 1) + D := add_le_add (add_le_add ht (add_le_add hkD le_rfl)) hkD
     _ = 6 * D + 1 := by ring
@@ -2936,7 +2936,7 @@ set_option maxHeartbeats 4000000 in
 theorem proIns_ok {tbl N N' B' Wl Wc W T s p i ip D E Γ : V} (htbl : TableOK tbl N) (hP : ProTable tbl)
     (htblN : NumTableOK T N' B') (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (hWp : W = proPieces)
     (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 0 p) (hk1 : 1 ≤ len (memberList s))
-    (hsD : setLen LAct (insert p s) ≤ D) (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E) (hiE : i + 14 * D + 5 ≤ E)
+    (hsD : sequentLen LAct (insert p s) ≤ D) (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E) (hiE : i + 14 * D + 5 ≤ E)
     (hipE : ip + 8 * D + 4 ≤ E) (hΓ : IsFormulaSet LAct Γ)
     (hLay : Layout walkPieces Wc T Γ s i) (hDp : DossF walkPieces Γ 0 p ip) :
     ListOK tbl E ((8 : ℕ) : V) Γ (proIns walkPieces Wl Wc W T s p i ip) ∧ NoDrop' (proIns walkPieces Wl Wc W T s p i ip) ∧
@@ -2949,8 +2949,8 @@ theorem proIns_ok {tbl N N' B' Wl Wc W T s p i ip D E Γ : V} (htbl : TableOK tb
       finalCtx Γ (proIns walkPieces Wl Wc W T s p i ip) := by
   have hL := hP.layoutTable
   have hcs : IsFormulaSet LAct (insert p s) := IsFormulaSet.insert_iff.mpr ⟨hp, hs⟩
-  have hsD' : setLen LAct s ≤ D := le_trans (setLen_le_insert p s) hsD
-  have hkD : len (memberList s) ≤ D := le_trans (len_memberList_le_setLen hs) hsD'
+  have hsD' : sequentLen LAct s ≤ D := le_trans (sequentLen_le_insert p s) hsD
+  have hkD : len (memberList s) ≤ D := le_trans (len_memberList_le_sequentLen hs) hsD'
   have hk1' : 1 ≤ len (memberList (insert p s)) := by
     obtain ⟨hlt, _⟩ := idxOf_spec (show p ∈ insert p s by simp)
     have := lt_iff_succ_le.mp (lt_of_le_of_lt zero_le hlt); rwa [zero_add] at this
@@ -3028,37 +3028,37 @@ theorem proIns_ok {tbl N N' B' Wl Wc W T s p i ip D E Γ : V} (htbl : TableOK tb
 `fstIdxFact s'' d` onto the row object `cp` by `congFstIdx` (the child's chain top and `cp` are at `s'' + 2`,
 `cp + 2` after the two eliminations). -/
 noncomputable def postIns (W s'' cp n : V) : V :=
-  appendV (goalElim (^&s'') (bnum n)) ?[mkStep W 122 ?[^&1, ^&(s'' + 2), ^&(cp + 2)]]
+  appendV (goalElim (^&s'') (binNumeral n)) ?[mkStep W 122 ?[^&1, ^&(s'' + 2), ^&(cp + 2)]]
 
 noncomputable def postInsDef : 𝚺₁.Semisentence 5 := .mkSigma
-  “y W s cp n. ∃ zs, !qqFvarDef zs s ∧ ∃ bn, !bnumGraph bn n ∧ ∃ G, !goalElimDef G zs bn ∧
+  “y W s cp n. ∃ zs, !qqFvarDef zs s ∧ ∃ bn, !binNumeralGraph bn n ∧ ∃ G, !goalElimDef G zs bn ∧
     ∃ z1, !qqFvarDef z1 1 ∧ ∃ s2, s2 = s + 2 ∧ ∃ zs2, !qqFvarDef zs2 s2 ∧ ∃ c2, c2 = cp + 2 ∧ ∃ zc2, !qqFvarDef zc2 c2 ∧
     ∃ e₁, !adjoinDef e₁ zc2 0 ∧ ∃ e₂, !adjoinDef e₂ zs2 e₁ ∧ ∃ e₃, !adjoinDef e₃ z1 e₂ ∧ ∃ st, !mkStepDef st W 122 e₃ ∧
     ∃ l, !adjoinDef l st 0 ∧ !appendVDef y G l”
 
 instance postIns_defined : 𝚺₁-Function₄ (postIns : V → V → V → V → V) via postInsDef := .mk fun v ↦ by
-  simp [postInsDef, postIns, bnum.defined.iff, goalElim_defined.iff, mkStep_defined.iff, appendV_defined.iff,
+  simp [postInsDef, postIns, binNumeral.defined.iff, goalElim_defined.iff, mkStep_defined.iff, appendV_defined.iff,
     numeral_eq_natCast]
 
 /-- **`postIns` is applicable** and leaves the child's four facts on the row object: `derFact &1`,
-`fstIdxFact &(cp + 2) &1`, `dlenFact &1 &0`, `leFact &0 (bnum n)`. -/
+`fstIdxFact &(cp + 2) &1`, `proofLenFact &1 &0`, `leFact &0 (binNumeral n)`. -/
 theorem postIns_ok {tbl N W s'' cp n E Γ : V} (htbl : TableOK tbl N) (hP : ProTable tbl) (hWp : W = proPieces)
     (hΓ : IsFormulaSet LAct Γ) (hsE : s'' + 3 ≤ E) (hcE : cp + 3 ≤ E)
-    (hg : neg LAct (goalFact (^&s'') (bnum n)) ∈ Γ) (heq : neg LAct (eqFactB (^&cp) (^&s'')) ∈ Γ) :
+    (hg : neg LAct (goalFact (^&s'') (binNumeral n)) ∈ Γ) (heq : neg LAct (eqFactB (^&cp) (^&s'')) ∈ Γ) :
     ListOK tbl E ((8 : ℕ) : V) Γ (postIns W s'' cp n) ∧ NoDrop' (postIns W s'' cp n) ∧
     shiftsV (postIns W s'' cp n) = 2 ∧ len (postIns W s'' cp n) = 6 ∧
     neg LAct (derFact (^&1 : V)) ∈ finalCtx Γ (postIns W s'' cp n) ∧
     neg LAct (fstIdxFact (^&(cp + 2)) (^&1)) ∈ finalCtx Γ (postIns W s'' cp n) ∧
-    neg LAct (dlenFact (^&1 : V) (^&0)) ∈ finalCtx Γ (postIns W s'' cp n) ∧
-    neg LAct (leFact (^&0) (bnum n)) ∈ finalCtx Γ (postIns W s'' cp n) := by
+    neg LAct (proofLenFact (^&1 : V) (^&0)) ∈ finalCtx Γ (postIns W s'' cp n) ∧
+    neg LAct (leFact (^&0) (binNumeral n)) ∈ finalCtx Γ (postIns W s'' cp n) := by
   have hF1 := hP.frag1Table
   have e122 : ∀ ev : V, mkStep proPieces (122 : V) ev = mkStep frag1Pieces (122 : V) ev := fun ev ↦ by
     have := mkStep_pro_frag1 122 (by decide) ev; simpa using this
   have hE2 : (2 : V) ≤ E := le_trans (by norm_num) (le_trans le_add_self hsE)
   obtain ⟨gok, gnd, gsh, _, gd, gf, gn, gl⟩ := goalElim_ok 8 htbl hΓ (by simp) (isSemiterm_bnum0 n) hg
   rw [termShift_fvar, termShift_fvar, add_assoc, one_add_one_eq_two] at gf
-  rw [termShift_bnum, termShift_bnum] at gl
-  set Γg := finalCtx Γ (goalElim (^&s'') (bnum n)) with hΓg
+  rw [termShift_binNumeral, termShift_binNumeral] at gl
+  set Γg := finalCtx Γ (goalElim (^&s'') (binNumeral n)) with hΓg
   have hΓgf : IsFormulaSet LAct Γg := finalCtx_isFormulaSet 8 htbl hΓ gok
   have heq' : neg LAct (eqFactB (^&(cp + 2)) (^&(s'' + 2))) ∈ Γg := by
     have hf : IsFormula LAct (eqFactB (^&cp) (^&s'')) := isFormula_eqFact (by simp) (by simp)
@@ -3139,10 +3139,10 @@ theorem proCutPre_ok {tbl N N' B' Wc T p D E Γ : V} (htbl : TableOK tbl N) (hP 
     ListOK tbl E ((8 : ℕ) : V) Γ (proCutPre walkPieces Wc T p) ∧ NoDrop' (proCutPre walkPieces Wc T p) ∧
     shiftsV (proCutPre walkPieces Wc T p) = mShift walkPieces Wc T p + mShift walkPieces Wc T (neg LAct p) ∧
     DossF walkPieces (finalCtx Γ (proCutPre walkPieces Wc T p)) 0 p (mLen Wc T p + mShift walkPieces Wc T (neg LAct p)) ∧
-    neg LAct (lenFact (bnum (formulaLen LAct p)) (^&(mLen Wc T p + mShift walkPieces Wc T (neg LAct p)))) ∈
+    neg LAct (lenFact (binNumeral (formulaLen LAct p)) (^&(mLen Wc T p + mShift walkPieces Wc T (neg LAct p)))) ∈
       finalCtx Γ (proCutPre walkPieces Wc T p) ∧
     DossF walkPieces (finalCtx Γ (proCutPre walkPieces Wc T p)) 0 (neg LAct p) (mLen Wc T (neg LAct p)) ∧
-    neg LAct (lenFact (bnum (formulaLen LAct (neg LAct p))) (^&(mLen Wc T (neg LAct p)))) ∈
+    neg LAct (lenFact (binNumeral (formulaLen LAct (neg LAct p))) (^&(mLen Wc T (neg LAct p)))) ∈
       finalCtx Γ (proCutPre walkPieces Wc T p) ∧
     neg LAct (negFact (^&(mLen Wc T (neg LAct p))) (^&(mLen Wc T p + mShift walkPieces Wc T (neg LAct p)))) ∈
       finalCtx Γ (proCutPre walkPieces Wc T p) := by
@@ -3160,10 +3160,10 @@ theorem proCutPre_ok {tbl N N' B' Wc T p D E Γ : V} (htbl : TableOK tbl N) (hP 
   have hΓ₂f : IsFormulaSet LAct Γ₂ := finalCtx_isFormulaSet 8 htbl hΓ₁f b2ok
   have hD₁ : DossF walkPieces Γ₂ 0 p (mLen Wc T p + mShift walkPieces Wc T (neg LAct p)) := by
     have := dossF_transport' b2nd b1D; rwa [b2sh] at this
-  have hln₁ : neg LAct (lenFact (bnum (formulaLen LAct p)) (^&(mLen Wc T p + mShift walkPieces Wc T (neg LAct p)))) ∈ Γ₂ := by
+  have hln₁ : neg LAct (lenFact (binNumeral (formulaLen LAct p)) (^&(mLen Wc T p + mShift walkPieces Wc T (neg LAct p)))) ∈ Γ₂ := by
     have := mem_finalCtx_of_mem' b2nd b1ln
     rwa [b2sh, shiftIterV_neg (isFormula_lenFact (isSemiterm_bnum0 _) (by simp)),
-      shiftIterV_lenFact (isSemiterm_bnum0 _) (by simp), termShiftIterV_bnum', termShiftIterV_fvar] at this
+      shiftIterV_lenFact (isSemiterm_bnum0 _) (by simp), termShiftIterV_binNumeral', termShiftIterV_fvar] at this
   -- the certification
   have hml : mLen Wc T p ≤ 2 * D := le_trans le_self_add (le_trans (mLen_succ_le hWc T hp) (mul_le_mul_of_nonneg_left hpD zero_le))
   have hmn : mLen Wc T (neg LAct p) ≤ 2 * D :=
@@ -3265,14 +3265,14 @@ theorem loopW_ok {tbl N Wl W Wc T s c i₁ D E Γ q : V} (htbl : TableOK tbl N) 
     (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (hWp : W = proPieces)
     (hq : q = qPack Wl W i₁ (len (memberList s)) (offVec (memberList s) walkPieces Wc T) (memberList s) 0
       (len (memberList c)) (offVec (memberList c) walkPieces Wc T) (memberList c) 0 0)
-    (hs : IsFormulaSet LAct s) (hc : c ⊆ s) (hsD : setLen LAct s ≤ D) (hcD : setLen LAct c ≤ D)
+    (hs : IsFormulaSet LAct s) (hc : c ⊆ s) (hsD : sequentLen LAct s ≤ D) (hcD : sequentLen LAct c ≤ D)
     (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E) (hi : i₁ + 8 * D + 3 ≤ E) (hΓ : IsFormulaSet LAct Γ)
     (hCL : Layout walkPieces Wc T Γ c 0) (hPL : Layout walkPieces Wc T Γ s i₁) :
     ∀ m ≤ len (memberList c), WOut tbl E q Γ m := by
   have hW := hP.walkTable
   have hL := hP.layoutTable
   have hcs : IsFormulaSet LAct c := fun x hx ↦ hs x (hc hx)
-  have hkD : len (memberList s) ≤ D := le_trans (len_memberList_le_setLen hs) hsD
+  have hkD : len (memberList s) ≤ D := le_trans (len_memberList_le_sequentLen hs) hsD
   have e62 : ∀ ev : V, mkStep proPieces (62 : V) ev = mkStep layoutPieces (62 : V) ev := fun ev ↦ by
     have := mkStep_pro_layout 62 (by decide) ev; simpa using this
   have hSE : i₁ + (len (memberList s) + 1) + 1 ≤ E := by
@@ -3297,7 +3297,7 @@ theorem loopW_ok {tbl N Wl W Wc T s c i₁ D E Γ q : V} (htbl : TableOK tbl N) 
     have hyc : (memberList c).[m] ∈ c := nth_memberList_mem hmk
     have hys : (memberList c).[m] ∈ s := hc hyc
     have hyf : IsSemiformula LAct 0 (memberList c).[m] := hcs _ hyc
-    have hyD : formulaLen LAct (memberList c).[m] ≤ D := le_trans (formulaLen_le_setLen_of_mem hyc) hcD
+    have hyD : formulaLen LAct (memberList c).[m] ≤ D := le_trans (formulaLen_le_sequentLen_of_mem hyc) hcD
     obtain ⟨hDy, _, _, _, _, _⟩ := hCL.1 m hmk
     have hYD := (dossierAt_of_dossF htbl hW rfl hyf hDy).mono tr
     obtain ⟨hDx, _, _, hmx⟩ := hPL.member hys
@@ -3395,7 +3395,7 @@ and `subsetFact &(k' + 1) &(i + σ + (k + 1))` holds (`σ = proSig … c`). -/
 theorem proWk_ok {tbl N N' B' Wl Wc W T s c i D E Γ : V} (htbl : TableOK tbl N) (hP : ProTable tbl)
     (htblN : NumTableOK T N' B') (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (hWp : W = proPieces)
     (hs : IsFormulaSet LAct s) (hc : c ⊆ s) (hk1 : 1 ≤ len (memberList c))
-    (hsD : setLen LAct s ≤ D) (hcD : setLen LAct c ≤ D) (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E) (hiE : i + 14 * D + 5 ≤ E)
+    (hsD : sequentLen LAct s ≤ D) (hcD : sequentLen LAct c ≤ D) (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E) (hiE : i + 14 * D + 5 ≤ E)
     (hΓ : IsFormulaSet LAct Γ) (hLay : Layout walkPieces Wc T Γ s i) :
     ListOK tbl E ((8 : ℕ) : V) Γ (proWk walkPieces Wl Wc W T s c i) ∧ NoDrop' (proWk walkPieces Wl Wc W T s c i) ∧
     shiftsV (proWk walkPieces Wl Wc W T s c i) = proSig walkPieces Wl Wc W T c ∧
@@ -3405,8 +3405,8 @@ theorem proWk_ok {tbl N N' B' Wl Wc W T s c i D E Γ : V} (htbl : TableOK tbl N)
       (^&(i + proSig walkPieces Wl Wc W T c + (len (memberList s) + 1)))) ∈ finalCtx Γ (proWk walkPieces Wl Wc W T s c i) := by
   have hW := hP.walkTable
   have hcs : IsFormulaSet LAct c := fun x hx ↦ hs x (hc hx)
-  have hkD : len (memberList s) ≤ D := le_trans (len_memberList_le_setLen hs) hsD
-  have hk'D : len (memberList c) ≤ D := le_trans (len_memberList_le_setLen hcs) hcD
+  have hkD : len (memberList s) ≤ D := le_trans (len_memberList_le_sequentLen hs) hsD
+  have hk'D : len (memberList c) ≤ D := le_trans (len_memberList_le_sequentLen hcs) hcD
   have hE8 : 13 * D + 18 * ‖D‖ + 8 ≤ E := le_trans (add_le_add le_rfl (by norm_num)) hE
   set σ := proSig walkPieces Wl Wc W T c with hσ
   have hσle : σ ≤ 6 * D + 1 := proSig_le htbl hP hWc htblN hWl hWp hcs hk1 hcD hE8 hΓ
@@ -3520,7 +3520,7 @@ set_option maxHeartbeats 4000000 in
 theorem proOr_ok {tbl N N' B' Wl Wc W T s p q i ip iq D E Γ : V} (htbl : TableOK tbl N) (hP : ProTable tbl)
     (htblN : NumTableOK T N' B') (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (hWp : W = proPieces)
     (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 0 p) (hq : IsSemiformula LAct 0 q) (hk1 : 1 ≤ len (memberList s))
-    (hsD : setLen LAct (insert p (insert q s)) ≤ D) (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E) (hiE : i + 14 * D + 5 ≤ E)
+    (hsD : sequentLen LAct (insert p (insert q s)) ≤ D) (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E) (hiE : i + 14 * D + 5 ≤ E)
     (hipE : ip + 14 * D + 6 ≤ E) (hiqE : iq + 8 * D + 4 ≤ E) (hΓ : IsFormulaSet LAct Γ)
     (hLay : Layout walkPieces Wc T Γ s i) (hDp : DossF walkPieces Γ 0 p ip) (hDq : DossF walkPieces Γ 0 q iq) :
     ListOK tbl E ((8 : ℕ) : V) Γ (proOr walkPieces Wl Wc W T s p q i ip iq) ∧
@@ -3543,8 +3543,8 @@ theorem proOr_ok {tbl N N' B' Wl Wc W T s p q i ip iq D E Γ : V} (htbl : TableO
       (^&(0 + (len (memberList (insert p (insert q s))) + 1)))) ∈ finalCtx Γ (proOr walkPieces Wl Wc W T s p q i ip iq) := by
   have hF1 := hP.frag1Table
   have hqs : IsFormulaSet LAct (insert q s) := IsFormulaSet.insert_iff.mpr ⟨hq, hs⟩
-  have hsD₁ : setLen LAct (insert q s) ≤ D := le_trans (setLen_le_insert p _) hsD
-  have hkq : len (memberList (insert q s)) ≤ D := le_trans (len_memberList_le_setLen hqs) hsD₁
+  have hsD₁ : sequentLen LAct (insert q s) ≤ D := le_trans (sequentLen_le_insert p _) hsD
+  have hkq : len (memberList (insert q s)) ≤ D := le_trans (len_memberList_le_sequentLen hqs) hsD₁
   have hkq1 : 1 ≤ len (memberList (insert q s)) := one_le_len_memberList_insert q s
   have hE8 : 13 * D + 18 * ‖D‖ + 8 ≤ E := le_trans (add_le_add le_rfl (by norm_num)) hE
   have e125 : ∀ ev : V, mkStep proPieces (125 : V) ev = mkStep frag1Pieces (125 : V) ev := fun ev ↦ by
@@ -3893,7 +3893,7 @@ theorem loopS_ok {tbl N N' B' W Wc T s c i₂ σ D E Γ q : V} (htbl : TableOK t
     (hq : q = shPack Wc W i₂ (len (memberList s)) (offVec (memberList s) walkPieces Wc T) (memberList s)
       (len (memberList c)) (offVec (memberList c) walkPieces Wc T) (memberList c) σ)
     (hs : IsFormulaSet LAct s) (hc : IsFormulaSet LAct c) (hsc : s = setShift LAct c)
-    (hsD : setLen LAct s ≤ D) (hcD : setLen LAct c ≤ D)
+    (hsD : sequentLen LAct s ≤ D) (hcD : sequentLen LAct c ≤ D)
     (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E) (hi : i₂ + 8 * D + 3 ≤ E) (hΓ : IsFormulaSet LAct Γ)
     (hCL : Layout walkPieces Wc T Γ c 0) (hPL : Layout walkPieces Wc T Γ s i₂) :
     ∀ m ≤ len (memberList c), SSOut tbl E q Γ m := by
@@ -3916,7 +3916,7 @@ theorem loopS_ok {tbl N N' B' W Wc T s c i₂ σ D E Γ q : V} (htbl : TableOK t
     have tr : ∀ x ∈ Γ, x ∈ Γm := fun x hx ↦ tr_of_zero snd ssh hx
     have hyc : (memberList c).[m] ∈ c := nth_memberList_mem hmk
     have hyf : IsSemiformula LAct 0 (memberList c).[m] := hc _ hyc
-    have hyD : formulaLen LAct (memberList c).[m] ≤ D := le_trans (formulaLen_le_setLen_of_mem hyc) hcD
+    have hyD : formulaLen LAct (memberList c).[m] ≤ D := le_trans (formulaLen_le_sequentLen_of_mem hyc) hcD
     have hxs : shift LAct (memberList c).[m] ∈ s := shift_mem_of_mem hsc hyc
     obtain ⟨hDy, _, _, _, _, _⟩ := hCL.1 m hmk
     obtain ⟨hDx, _, _, _⟩ := hPL.member hxs
@@ -4041,14 +4041,14 @@ theorem loopI_ok {tbl N W Wc T s c i₂ σ D E Γ q : V} (htbl : TableOK tbl N) 
     (hq : q = shPack Wc W i₂ (len (memberList s)) (offVec (memberList s) walkPieces Wc T) (memberList s)
       (len (memberList c)) (offVec (memberList c) walkPieces Wc T) (memberList c) σ)
     (hs : IsFormulaSet LAct s) (hc : IsFormulaSet LAct c) (hsc : s = setShift LAct c)
-    (hsD : setLen LAct s ≤ D) (hcD : setLen LAct c ≤ D) (hcap : ShCap D E i₂ σ) (hΓ : IsFormulaSet LAct Γ)
+    (hsD : sequentLen LAct s ≤ D) (hcD : sequentLen LAct c ≤ D) (hcap : ShCap D E i₂ σ) (hΓ : IsFormulaSet LAct Γ)
     (hCL : Layout walkPieces Wc T Γ c 0) (hin : ShIn Γ q) :
     ∀ m ≤ len (memberList c), IOut tbl E q Γ m := by
   have hW := hP.walkTable
   have hF2 := hP.frag2Table
   have e144 : ∀ ev : V, mkStep proPieces (144 : V) ev = mkStep frag2Pieces (144 : V) ev := fun ev ↦ by
     have := mkStep_pro_frag2 144 (by decide) ev; simpa using this
-  have hk'D : len (memberList c) ≤ D := le_trans (len_memberList_le_setLen hc) hcD
+  have hk'D : len (memberList c) ≤ D := le_trans (len_memberList_le_sequentLen hc) hcD
   intro m
   induction m using ISigma1.pi1_succ_induction with
   | hP => definability
@@ -4220,7 +4220,7 @@ theorem uSubAux_ok {tbl N W Wc T s c i₂ σ D E Γ q : V} (htbl : TableOK tbl N
     (hq : q = shPack Wc W i₂ (len (memberList s)) (offVec (memberList s) walkPieces Wc T) (memberList s)
       (len (memberList c)) (offVec (memberList c) walkPieces Wc T) (memberList c) σ)
     (hs : IsFormulaSet LAct s) (hc : IsFormulaSet LAct c) (hsc : s = setShift LAct c)
-    (hsD : setLen LAct s ≤ D) (hcD : setLen LAct c ≤ D) (hcap : ShCap D E i₂ σ) (hΓ : IsFormulaSet LAct Γ)
+    (hsD : sequentLen LAct s ≤ D) (hcD : sequentLen LAct c ≤ D) (hcap : ShCap D E i₂ σ) (hΓ : IsFormulaSet LAct Γ)
     (hPL : Layout walkPieces Wc T Γ s i₂) (hin : ShIn Γ q) :
     ∀ m ≤ len (memberList c), UOut tbl E q Γ m := by
   have hW := hP.walkTable
@@ -4230,8 +4230,8 @@ theorem uSubAux_ok {tbl N W Wc T s c i₂ σ D E Γ q : V} (htbl : TableOK tbl N
     have := mkStep_pro_layout 81 (by decide) ev; simpa using this
   have e112 : ∀ ev : V, mkStep proPieces (112 : V) ev = mkStep frag1Pieces (112 : V) ev := fun ev ↦ by
     have := mkStep_pro_frag1 112 (by decide) ev; simpa using this
-  have hkD : len (memberList s) ≤ D := le_trans (len_memberList_le_setLen hs) hsD
-  have hk'D : len (memberList c) ≤ D := le_trans (len_memberList_le_setLen hc) hcD
+  have hkD : len (memberList s) ≤ D := le_trans (len_memberList_le_sequentLen hs) hsD
+  have hk'D : len (memberList c) ≤ D := le_trans (len_memberList_le_sequentLen hc) hcD
   have hSE : i₂ + (len (memberList s) + 1) + 1 ≤ E := by
     calc i₂ + (len (memberList s) + 1) + 1 = i₂ + (len (memberList s) + 2) := by ring
       _ ≤ i₂ + (8 * D + 3) := add_le_add le_rfl (add_le_add (le_trans hkD (le_mul_of_one_le_left zero_le (by norm_num))) (by norm_num))
@@ -4332,7 +4332,7 @@ theorem uSub_ok {tbl N W Wc T s c i₂ σ D E Γ q : V} (htbl : TableOK tbl N) (
     (hq : q = shPack Wc W i₂ (len (memberList s)) (offVec (memberList s) walkPieces Wc T) (memberList s)
       (len (memberList c)) (offVec (memberList c) walkPieces Wc T) (memberList c) σ)
     (hs : IsFormulaSet LAct s) (hc : IsFormulaSet LAct c) (hsc : s = setShift LAct c) (hk1 : 1 ≤ len (memberList c))
-    (hsD : setLen LAct s ≤ D) (hcD : setLen LAct c ≤ D) (hcap : ShCap D E i₂ σ) (hΓ : IsFormulaSet LAct Γ)
+    (hsD : sequentLen LAct s ≤ D) (hcD : sequentLen LAct c ≤ D) (hcap : ShCap D E i₂ σ) (hΓ : IsFormulaSet LAct Γ)
     (hPL : Layout walkPieces Wc T Γ s i₂) (hin : ShIn Γ q) :
     ListOK tbl E ((8 : ℕ) : V) Γ (uSub q) ∧ NoDrop (uSub q) ∧ HornOnly (uSub q) ∧ shiftsV (uSub q) = 0 ∧
     len (uSub q) = len (memberList c) + 1 ∧
@@ -4411,7 +4411,7 @@ theorem loopM_ok {tbl N W Wc T s c i₂ σ D E Γ q : V} (htbl : TableOK tbl N) 
     (hq : q = shPack Wc W i₂ (len (memberList s)) (offVec (memberList s) walkPieces Wc T) (memberList s)
       (len (memberList c)) (offVec (memberList c) walkPieces Wc T) (memberList c) σ)
     (hs : IsFormulaSet LAct s) (hc : IsFormulaSet LAct c) (hsc : s = setShift LAct c)
-    (hsD : setLen LAct s ≤ D) (hcD : setLen LAct c ≤ D) (hcap : ShCap D E i₂ σ) (hΓ : IsFormulaSet LAct Γ)
+    (hsD : sequentLen LAct s ≤ D) (hcD : sequentLen LAct c ≤ D) (hcap : ShCap D E i₂ σ) (hΓ : IsFormulaSet LAct Γ)
     (hCL : Layout walkPieces Wc T Γ c 0) (hin : ShIn Γ q)
     (hss : neg LAct (setShiftFact (^&(0 + 1 + σ)) (^&(0 + (len (memberList c) + 1)))) ∈ Γ) :
     ∀ m ≤ len (memberList c), MOut tbl E q Γ m := by
@@ -4419,7 +4419,7 @@ theorem loopM_ok {tbl N W Wc T s c i₂ σ D E Γ q : V} (htbl : TableOK tbl N) 
   have hF2 := hP.frag2Table
   have e139 : ∀ ev : V, mkStep proPieces (139 : V) ev = mkStep frag2Pieces (139 : V) ev := fun ev ↦ by
     have := mkStep_pro_frag2 139 (by decide) ev; simpa using this
-  have hk'D : len (memberList c) ≤ D := le_trans (len_memberList_le_setLen hc) hcD
+  have hk'D : len (memberList c) ≤ D := le_trans (len_memberList_le_sequentLen hc) hcD
   have hs''E : 0 + (len (memberList c) + 1) + 1 ≤ E := by
     calc 0 + (len (memberList c) + 1) + 1 ≤ 0 + (D + 1) + 1 := add_le_add (add_le_add le_rfl (add_le_add hk'D le_rfl)) le_rfl
       _ = D + 2 := by ring
@@ -4603,7 +4603,7 @@ set_option maxHeartbeats 4000000 in
 theorem proShiftPre_ok {tbl N N' B' Wl Wc W T s c i D E Γ : V} (htbl : TableOK tbl N) (hP : ProTable tbl)
     (htblN : NumTableOK T N' B') (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (hWp : W = proPieces)
     (hs : IsFormulaSet LAct s) (hc : IsFormulaSet LAct c) (hsc : s = setShift LAct c) (hk1' : 1 ≤ (len (memberList c)))
-    (hsD : setLen LAct s ≤ D) (hcD : setLen LAct c ≤ D) (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E) (hiE : i + 16 * D + 8 ≤ E)
+    (hsD : sequentLen LAct s ≤ D) (hcD : sequentLen LAct c ≤ D) (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E) (hiE : i + 16 * D + 8 ≤ E)
     (hΓ : IsFormulaSet LAct Γ) (hLay : Layout walkPieces Wc T Γ s i) :
     ListOK tbl E ((8 : ℕ) : V) Γ (proShiftPre walkPieces Wl Wc W T s c i) ∧ NoDrop' (proShiftPre walkPieces Wl Wc W T s c i) ∧
     shiftsV (proShiftPre walkPieces Wl Wc W T s c i) = 1 + ((len (memberList c)) + 1) + proSig walkPieces Wl Wc W T c ∧
@@ -4614,8 +4614,8 @@ theorem proShiftPre_ok {tbl N N' B' Wl Wc W T s c i D E Γ : V} (htbl : TableOK 
       (memberList c) (proSig walkPieces Wl Wc W T c)) (len (memberList c))) := by
   have hW := hP.walkTable
   have hL := hP.layoutTable
-  have hkD : (len (memberList s)) ≤ D := le_trans (len_memberList_le_setLen hs) hsD
-  have hk'D : (len (memberList c)) ≤ D := le_trans (len_memberList_le_setLen hc) hcD
+  have hkD : (len (memberList s)) ≤ D := le_trans (len_memberList_le_sequentLen hs) hsD
+  have hk'D : (len (memberList c)) ≤ D := le_trans (len_memberList_le_sequentLen hc) hcD
   have hE8 : 13 * D + 18 * ‖D‖ + 8 ≤ E := le_trans (add_le_add le_rfl (by norm_num)) hE
   have hE1 : (1 : V) ≤ E := le_trans (by norm_num) (le_trans le_add_self hE)
   set σ := proSig walkPieces Wl Wc W T c with hσ
@@ -4719,7 +4719,7 @@ set_option maxHeartbeats 4000000 in
 theorem shTail2_ok {tbl N W Wc T s c i₂ σ D E Γ : V} (htbl : TableOK tbl N) (hP : ProTable tbl)
     (hWc : Wc = certPieces) (hWp : W = proPieces)
     (hs : IsFormulaSet LAct s) (hc : IsFormulaSet LAct c) (hsc : s = setShift LAct c) (hk1' : 1 ≤ (len (memberList c)))
-    (hsD : setLen LAct s ≤ D) (hcD : setLen LAct c ≤ D) (hcap : ShCap D E i₂ σ) (hSt : ShState Wc T Γ s c i₂ σ) :
+    (hsD : sequentLen LAct s ≤ D) (hcD : sequentLen LAct c ≤ D) (hcap : ShCap D E i₂ σ) (hSt : ShState Wc T Γ s c i₂ σ) :
     ListOK tbl E ((8 : ℕ) : V) Γ (shTail2 walkPieces Wc W T s c i₂ σ) ∧ NoDrop (shTail2 walkPieces Wc W T s c i₂ σ) ∧
     HornOnly (shTail2 walkPieces Wc W T s c i₂ σ) ∧ shiftsV (shTail2 walkPieces Wc W T s c i₂ σ) = 0 ∧
     neg LAct (setShiftFact (^&(i₂ + ((len (memberList s)) + 1))) (^&(0 + ((len (memberList c)) + 1)))) ∈
@@ -4734,8 +4734,8 @@ theorem shTail2_ok {tbl N W Wc T s c i₂ σ D E Γ : V} (htbl : TableOK tbl N) 
   have e148 : ∀ ev : V, mkStep proPieces (148 : V) ev = mkStep frag2Pieces (148 : V) ev := fun ev ↦ by
     have := mkStep_pro_frag2 148 (by decide) ev; simpa using this
   have hk1 : 1 ≤ (len (memberList s)) := one_le_len_memberList_setShift hsc hk1'
-  have hkD : (len (memberList s)) ≤ D := le_trans (len_memberList_le_setLen hs) hsD
-  have hk'D : (len (memberList c)) ≤ D := le_trans (len_memberList_le_setLen hc) hcD
+  have hkD : (len (memberList s)) ≤ D := le_trans (len_memberList_le_sequentLen hs) hsD
+  have hk'D : (len (memberList c)) ≤ D := le_trans (len_memberList_le_sequentLen hc) hcD
   -- the caps
   have hu0E : 0 + 1 + σ + 1 ≤ E := by
     calc 0 + 1 + σ + 1 ≤ 0 + 1 + (6 * D + 1) + 1 := add_le_add (add_le_add le_rfl hcap.hσ) le_rfl
@@ -4863,7 +4863,7 @@ set_option maxHeartbeats 2000000 in
 theorem proShift_ok {tbl N N' B' Wl Wc W T s c i D E Γ : V} (htbl : TableOK tbl N) (hP : ProTable tbl)
     (htblN : NumTableOK T N' B') (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (hWp : W = proPieces)
     (hs : IsFormulaSet LAct s) (hc : IsFormulaSet LAct c) (hsc : s = setShift LAct c) (hk1' : 1 ≤ len (memberList c))
-    (hsD : setLen LAct s ≤ D) (hcD : setLen LAct c ≤ D) (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E) (hiE : i + 16 * D + 8 ≤ E)
+    (hsD : sequentLen LAct s ≤ D) (hcD : sequentLen LAct c ≤ D) (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E) (hiE : i + 16 * D + 8 ≤ E)
     (hΓ : IsFormulaSet LAct Γ) (hLay : Layout walkPieces Wc T Γ s i) :
     ListOK tbl E ((8 : ℕ) : V) Γ (proShift walkPieces Wl Wc W T s c i) ∧ NoDrop' (proShift walkPieces Wl Wc W T s c i) ∧
     shiftsV (proShift walkPieces Wl Wc W T s c i) = 1 + (len (memberList c) + 1) + proSig walkPieces Wl Wc W T c ∧
@@ -4872,7 +4872,7 @@ theorem proShift_ok {tbl N N' B' Wl Wc W T s c i D E Γ : V} (htbl : TableOK tbl
       (i + 1 + (len (memberList c) + 1) + proSig walkPieces Wl Wc W T c) ∧
     neg LAct (setShiftFact (^&(i + 1 + (len (memberList c) + 1) + proSig walkPieces Wl Wc W T c + (len (memberList s) + 1)))
       (^&(0 + (len (memberList c) + 1)))) ∈ finalCtx Γ (proShift walkPieces Wl Wc W T s c i) := by
-  have hk'D : len (memberList c) ≤ D := le_trans (len_memberList_le_setLen hc) hcD
+  have hk'D : len (memberList c) ≤ D := le_trans (len_memberList_le_sequentLen hc) hcD
   have hE8 : 13 * D + 18 * ‖D‖ + 8 ≤ E := le_trans (add_le_add le_rfl (by norm_num)) hE
   have hσle : proSig walkPieces Wl Wc W T c ≤ 6 * D + 1 := proSig_le htbl hP hWc htblN hWl hWp hc hk1' hcD hE8 hΓ
   have hi₂le : i + 1 + (len (memberList c) + 1) + proSig walkPieces Wl Wc W T c + 8 * D + 3 ≤ E := by
@@ -4896,8 +4896,8 @@ end shiftChild
 
 /-! ## 11. Sizes and costs of the prologues (`DESIGN_fragments.md` §5, `Frag1` §5's `costSum_le_of_sizeOK`)
 
-Every prologue is a list at cap `8` whose only non-Horn steps are the closed lemmas of the `setLen` fold
-(`sLemma (sum2Fact L' |x| L) (sum2Code T L' |x| L)`, `L ≤ setLen s`) and those of the re-indexed `lenSteps`
+Every prologue is a list at cap `8` whose only non-Horn steps are the closed lemmas of the `sequentLen` fold
+(`sLemma (sum2Fact L' |x| L) (sum2Code T L' |x| L)`, `L ≤ sequentLen s`) and those of the re-indexed `lenSteps`
 (`sizeOK_lenSteps`). So `SizeOK Q D` holds at `Q = layQ B B' Dz`, `D = layD N' B' Dz` (`Dz` a bound on the sequent
 lengths), and `costSum_le_of_sizeOK` bounds the cost by `len · (costK N E B 8 Q D + 35 · (ctxBoundG … + …))`.
 The Horn-only parts (loops, chains, certifications) are `HornOnly` by their `_ok` theorems; `chainSteps` and the
@@ -4909,23 +4909,23 @@ section proSizes
 
 /-- `|sum2Fact a b n| ≤ B·(18‖Dz‖ + 7)` for `a + b ≤ n ≤ Dz`. -/
 noncomputable def sum2Q (B Dz : V) : V := B * (18 * ‖Dz‖ + 7)
-/-- `dlen (sum2Code T a b n) ≤ 4·(‖Dz‖ + 1)(‖Dz‖ + 2)·nodeCost N' B' (18‖Dz‖ + 7)` for `a + b ≤ n ≤ Dz`. -/
+/-- `proofLen (sum2Code T a b n) ≤ 4·(‖Dz‖ + 1)(‖Dz‖ + 2)·nodeCost N' B' (18‖Dz‖ + 7)` for `a + b ≤ n ≤ Dz`. -/
 noncomputable def sum2D (N' B' Dz : V) : V := 4 * ((‖Dz‖ + 1) * (‖Dz‖ + 2) * nodeCost N' B' (18 * ‖Dz‖ + 7))
 
 lemma formulaLen_sum2Fact_le {B a b n Dz : V} (hPle : formulaLen LAct (Ple : V) ≤ B) (hab : a + b ≤ n) (hn : n ≤ Dz) :
     formulaLen LAct (sum2Fact a b n) ≤ sum2Q B Dz := by
   unfold sum2Fact sum2Q
   have hlen : ‖n‖ ≤ ‖Dz‖ := length_monotone hn
-  have ht : termLen LAct (bnum a ^+ bnum b) ≤ 18 * ‖n‖ + 7 := by
+  have ht : termLen LAct (binNumeral a ^+ binNumeral b) ≤ 18 * ‖n‖ + 7 := by
     refine le_trans (termLen_qqAdd_le (isSemiterm_bnum0 _).isUTerm (isSemiterm_bnum0 _).isUTerm
-      (termLen_bnum_le_bk (le_trans le_self_add hab)) (termLen_bnum_le_bk (le_trans le_add_self hab))) ?_
+      (termLen_binNumeral_le_bk (le_trans le_self_add hab)) (termLen_binNumeral_le_bk (le_trans le_add_self hab))) ?_
     calc 6 * ‖n‖ + 1 + (6 * ‖n‖ + 1) + 1 = 12 * ‖n‖ + 3 := by ring
       _ ≤ 18 * ‖n‖ + 7 := add_le_add (mul_le_mul_of_nonneg_right (by norm_num) zero_le) (by norm_num)
   refine le_trans (formulaLen_leFact_bk hPle (isSemiterm_qqAdd_LAct (isSemiterm_bnum0 _) (isSemiterm_bnum0 _)) ht le_rfl) ?_
   exact mul_le_mul_of_nonneg_left (add_le_add (mul_le_mul_of_nonneg_left hlen zero_le) le_rfl) zero_le
 
-lemma dlen_sum2Code_le' {T N' B' a b n Dz : V} (htblN : NumTableOK T N' B') (hab : a + b ≤ n) (hn : n ≤ Dz) :
-    dlen TAct (sum2Code T a b n) ≤ sum2D N' B' Dz := by
+lemma proofLen_sum2Code_le' {T N' B' a b n Dz : V} (htblN : NumTableOK T N' B') (hab : a + b ≤ n) (hn : n ≤ Dz) :
+    proofLen TAct (sum2Code T a b n) ≤ sum2D N' B' Dz := by
   set K := (‖Dz‖ + 1) * (‖Dz‖ + 2) * nodeCost N' B' (18 * ‖Dz‖ + 7) with hK
   have hlen : ‖n‖ ≤ ‖Dz‖ := length_monotone hn
   have hlab : ‖a + b‖ ≤ ‖Dz‖ := length_monotone (le_trans hab hn)
@@ -4936,19 +4936,19 @@ lemma dlen_sum2Code_le' {T N' B' a b n Dz : V} (htblN : NumTableOK T N' B') (hab
     le_trans (by norm_num : (1 : V) ≤ 1 * 2) (mul_le_mul (le_add_self) (le_add_self) zero_le zero_le)
   have hK1 : nodeCost N' B' (18 * ‖Dz‖ + 7) ≤ K := by
     rw [hK]; exact le_mul_of_one_le_left zero_le h1
-  have hadd : dlen TAct (addCode T a b) ≤ K := by
-    refine le_trans (dlen_addCode_le htblN a b) ?_
+  have hadd : proofLen TAct (addCode T a b) ≤ K := by
+    refine le_trans (proofLen_addCode_le htblN a b) ?_
     rw [hK]
     exact mul_le_mul (mul_le_mul (add_le_add hla le_rfl) (add_le_add hlab le_rfl) zero_le zero_le) (hnc _ hlab) zero_le zero_le
-  have hadd' : dlen TAct (addCode T (a + b) (n - (a + b))) ≤ K := by
-    refine le_trans (dlen_addCode_le htblN (a + b) (n - (a + b))) ?_
+  have hadd' : proofLen TAct (addCode T (a + b) (n - (a + b))) ≤ K := by
+    refine le_trans (proofLen_addCode_le htblN (a + b) (n - (a + b))) ?_
     rw [add_tsub_cancel_of_le hab, hK]
     exact mul_le_mul (mul_le_mul (add_le_add hlab le_rfl) (add_le_add hlen le_rfl) zero_le zero_le) (hnc _ hlen) zero_le zero_le
-  have hle : dlen TAct (leCode T (a + b) n) ≤ K + K :=
-    le_trans (dlen_leCode_le htblN hab) (add_le_add hadd' (le_trans (hnc _ hlen) hK1))
+  have hle : proofLen TAct (leCode T (a + b) n) ≤ K + K :=
+    le_trans (proofLen_leCode_le htblN hab) (add_le_add hadd' (le_trans (hnc _ hlen) hK1))
   have hn' : nodeCost N' B' (18 * ‖n‖ + 7) ≤ K :=
     le_trans (nodeCost_mono (add_le_add (mul_le_mul_of_nonneg_left hlen zero_le) le_rfl)) hK1
-  calc dlen TAct (sum2Code T a b n) ≤ K + (K + K) + K := le_trans (dlen_sum2Code_le htblN hab) (add_le_add (add_le_add hadd hle) hn')
+  calc proofLen TAct (sum2Code T a b n) ≤ K + (K + K) + K := le_trans (proofLen_sum2Code_le htblN hab) (add_le_add (add_le_add hadd hle) hn')
     _ = sum2D N' B' Dz := by unfold sum2D; rw [← hK]; ring
 
 /-! ### 11.2 The fold blocks -/
@@ -4965,8 +4965,8 @@ lemma sizeOK_foldBlock0 {W k c o x : V} (hWp : W = proPieces) (Q D : V) : SizeOK
     have := mkStep_pro_layout 85 (by decide) ev; simpa using this
   unfold foldBlock0
   refine sizeOK_cons (stepSizeOK_of_tag ?_) (sizeOK_single (stepSizeOK_of_tag ?_))
-  · rw [e85, ltag_setLenTotalC rfl]; simp
-  · rw [ptag_setLenSingLe rfl]; simp
+  · rw [e85, ltag_sequentLenTotalC rfl]; simp
+  · rw [ptag_sequentLenSingLe rfl]; simp
 
 lemma sizeOK_foldBlockS {W T N' B' B k c o x L' L Dz : V} (hWp : W = proPieces) (htblN : NumTableOK T N' B')
     (hPle : formulaLen LAct (Ple : V) ≤ B) (hLL : L' + formulaLen LAct x ≤ L) (hL : L ≤ Dz) :
@@ -4985,18 +4985,18 @@ lemma sizeOK_foldBlockS {W T N' B' B k c o x L' L Dz : V} (hWp : W = proPieces) 
   unfold foldBlockS
   refine sizeOK_cons (stepSizeOK_of_tag ?_) (sizeOK_cons (stepSizeOK_of_tag ?_) (sizeOK_cons (stepSizeOK_of_tag ?_)
     (sizeOK_cons (stepSizeOK_of_tag ?_) (sizeOK_cons ?_ (sizeOK_single (stepSizeOK_of_tag ?_))))))
-  · rw [e85, ltag_setLenTotalC rfl]; simp
-  · rw [e111, ftag_setLenInsertLe rfl]; simp
+  · rw [e85, ltag_sequentLenTotalC rfl]; simp
+  · rw [e111, ftag_sequentLenInsertLe rfl]; simp
   · rw [e109, ftag_leRefl rfl]; simp
   · rw [e108, ftag_leAddLeAdd rfl]; simp
   · refine Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨by simp, ?_, ?_⟩)))))
     · rw [sLemA_sLemma]; exact formulaLen_sum2Fact_le hPle hLL hL
-    · rw [sLemD_sLemma]; exact dlen_sum2Code_le' htblN hLL hL
+    · rw [sLemD_sLemma]; exact proofLen_sum2Code_le' htblN hLL hL
   · rw [e110, ftag_leTrans rfl]; simp
 
 /-- The fold's blocks are size-disciplined (the induction motive over the PACKED parameters). -/
 theorem sizeOK_lenFoldAux {W T N' B' B s xs k os Dz : V} (hWp : W = proPieces) (htblN : NumTableOK T N' B')
-    (hPle : formulaLen LAct (Ple : V) ≤ B) (hxs : xs = memberList s) (hk : k = len xs) (hsD : setLen LAct s ≤ Dz) :
+    (hPle : formulaLen LAct (Ple : V) ≤ B) (hxs : xs = memberList s) (hk : k = len xs) (hsD : sequentLen LAct s ≤ Dz) :
     ∀ c ≤ k, SizeOK (sum2Q B Dz) (sum2D N' B' Dz) (lenFoldAuxP ⟪W, T, xs, os, k⟫ c) := by
   intro c
   induction c using ISigma1.pi1_succ_induction with
@@ -5011,14 +5011,14 @@ theorem sizeOK_lenFoldAux {W T N' B' B s xs k os Dz : V} (hWp : W = proPieces) (
     by_cases hc0 : c = 0
     · rw [if_pos hc0]; exact sizeOK_foldBlock0 hWp _ _
     · rw [if_neg hc0]
-      have hLL : setLen LAct (psetAux xs c) + formulaLen LAct (nthFromEnd xs c) ≤ setLen LAct (psetAux xs (c + 1)) := by
-        rw [hxs, setLen_psetAux_succ hck]
-      have hL : setLen LAct (psetAux xs (c + 1)) ≤ Dz := by
-        rw [hxs]; exact le_trans (setLen_psetAux_le (by rw [← hxs, ← hk]; exact hc)) hsD
+      have hLL : sequentLen LAct (psetAux xs c) + formulaLen LAct (nthFromEnd xs c) ≤ sequentLen LAct (psetAux xs (c + 1)) := by
+        rw [hxs, sequentLen_psetAux_succ hck]
+      have hL : sequentLen LAct (psetAux xs (c + 1)) ≤ Dz := by
+        rw [hxs]; exact le_trans (sequentLen_psetAux_le (by rw [← hxs, ← hk]; exact hc)) hsD
       exact sizeOK_foldBlockS hWp htblN hPle hLL hL
 
 theorem sizeOK_lenFold {W T N' B' B s Dz : V} (hWp : W = proPieces) (htblN : NumTableOK T N' B')
-    (hPle : formulaLen LAct (Ple : V) ≤ B) (hsD : setLen LAct s ≤ Dz) (os : V) :
+    (hPle : formulaLen LAct (Ple : V) ≤ B) (hsD : sequentLen LAct s ≤ Dz) (os : V) :
     SizeOK (sum2Q B Dz) (sum2D N' B' Dz) (lenFold W T (memberList s) os) :=
   sizeOK_lenFoldAux hWp htblN hPle rfl rfl hsD _ le_rfl
 
@@ -5078,7 +5078,7 @@ lemma hornOnly_chainB {W : V} (hWl : W = layoutPieces) (xs k : V) : ∀ c : V, H
 theorem hornOnly_chainSteps {W : V} (hWl : W = layoutPieces) (xs : V) : HornOnly (chainSteps W xs) := by
   unfold chainSteps
   refine hornOnly_appendV ?_ (hornOnly_appendV (hornOnly_chainA hWl xs _) (hornOnly_appendV ?_
-    (hornOnly_appendV (hornOnly_chainB hWl xs _ _) (hornOnly_single (by rw [ltag_setLenTotalC hWl]; simp)))))
+    (hornOnly_appendV (hornOnly_chainB hWl xs _ _) (hornOnly_single (by rw [ltag_sequentLenTotalC hWl]; simp)))))
   · unfold chainPre
     exact hornOnly_cons (by rw [ltag_emptySubsetC hWl]; simp) (hornOnly_cons (by rw [ltag_fsetOfSubsetZeroC hWl]; simp)
       (hornOnly_single (by rw [ltag_fsetSigmaPiC hWl]; simp)))
@@ -5087,33 +5087,33 @@ theorem hornOnly_chainSteps {W : V} (hWl : W = layoutPieces) (xs : V) : HornOnly
 
 /-! ### 11.4 The layout builder -/
 
-/-- The size class of a layout: the `lenSteps` lemmas and the fold's `sum2` lemmas at `Dz ≥ setLen s`. -/
+/-- The size class of a layout: the `lenSteps` lemmas and the fold's `sum2` lemmas at `Dz ≥ sequentLen s`. -/
 noncomputable def layQ (B B' Dz : V) : V := lenQ B' Dz + sum2Q B Dz
 noncomputable def layD (N' B' Dz : V) : V := lenD N' B' Dz + sum2D N' B' Dz
 
 /-- **`layoutSteps` is size-disciplined** by its structure alone (no applicability needed). -/
 theorem sizeOK_layoutSteps {Wl Wc W T N' B' B s Dz : V} (hWl : Wl = layoutPieces) (hWc : Wc = certPieces)
     (hWp : W = proPieces) (htblN : NumTableOK T N' B') (hPle : formulaLen LAct (Ple : V) ≤ B)
-    (hs : IsFormulaSet LAct s) (hsD : setLen LAct s ≤ Dz) :
+    (hs : IsFormulaSet LAct s) (hsD : sequentLen LAct s ≤ Dz) :
     SizeOK (layQ B B' Dz) (layD N' B' Dz) (layoutSteps walkPieces Wl Wc W T s) := by
   unfold layoutSteps layQ layD
   refine sizeOK_appendV (sizeOK_memberBlocks hWc htblN _ _ _ ?_) (sizeOK_appendV (sizeOK_of_hornOnly (hornOnly_chainSteps hWl _))
     ((sizeOK_lenFold hWp htblN hPle hsD _).mono le_add_self le_add_self))
   intro j hj
-  exact ⟨hs _ (nth_memberList_mem hj), le_trans (formulaLen_le_setLen_of_mem (nth_memberList_mem hj)) hsD⟩
+  exact ⟨hs _ (nth_memberList_mem hj), le_trans (formulaLen_le_sequentLen_of_mem (nth_memberList_mem hj)) hsD⟩
 
-/-- **The cost of `layoutSteps`**, in the shape of `costSum_le_of_sizeOK`: with `n = len (layoutSteps …) ≤ 26·setLen s +
+/-- **The cost of `layoutSteps`**, in the shape of `costSum_le_of_sizeOK`: with `n = len (layoutSteps …) ≤ 26·sequentLen s +
 13k + 6`, `costSum ≤ n·(costK N E B 8 (layQ B B' D) (layD N' B' D) + 35·(ctxBoundG (growK B E (layQ …)) Γ n + (fvOccS Γ + n·growK …)))`. -/
 theorem costSum_layoutSteps_le {tbl N N' B' B Wl Wc W T s D E Γ : V} (htbl : TableOK tbl N) (hP : ProTable tbl)
     (htblN : NumTableOK T N' B') (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (hWp : W = proPieces)
     (hBt : ∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ B) (hPle : formulaLen LAct (Ple : V) ≤ B)
-    (hs : IsFormulaSet LAct s) (hk1 : 1 ≤ len (memberList s)) (hsD : setLen LAct s ≤ D)
+    (hs : IsFormulaSet LAct s) (hk1 : 1 ≤ len (memberList s)) (hsD : sequentLen LAct s ≤ D)
     (hE : 13 * D + 18 * ‖D‖ + 8 ≤ E) (hΓ : IsFormulaSet LAct Γ) :
     costSum N E Γ (layoutSteps walkPieces Wl Wc W T s) ≤ len (layoutSteps walkPieces Wl Wc W T s) *
       (costK N E B 8 (layQ B B' D) (layD N' B' D) + (3 * ((8 : ℕ) : V) + 11) *
         (ctxBoundG (growK B E (layQ B B' D)) Γ (len (layoutSteps walkPieces Wl Wc W T s)) +
           (fvOccS LAct Γ + len (layoutSteps walkPieces Wl Wc W T s) * growK B E (layQ B B' D)))) ∧
-    len (layoutSteps walkPieces Wl Wc W T s) ≤ 26 * setLen LAct s + 13 * len (memberList s) + 6 := by
+    len (layoutSteps walkPieces Wl Wc W T s) ≤ 26 * sequentLen LAct s + 13 * len (memberList s) + 6 := by
   obtain ⟨lok, _, _, llen, _⟩ := layoutSteps_ok htbl hP htblN hWl hWc hWp hs hk1 hsD hE hΓ
   have hE1 : (1 : V) ≤ E := le_trans (by norm_num) (le_trans le_add_self hE)
   exact ⟨costSum_le_of_sizeOK 8 hE1 htbl hBt lok (sizeOK_layoutSteps hWl hWc hWp htblN hPle hs hsD), llen⟩
@@ -5123,7 +5123,7 @@ theorem costSum_layoutSteps_le {tbl N N' B' B Wl Wc W T s D E Γ : V} (htbl : Ta
 /-- `proAxL` is Horn-only (by `proAxL_ok`), hence size-disciplined at any class. -/
 theorem costSum_proAxL_le {tbl N N' B' B Wc T s p D E Γ i Q Dd : V} (htbl : TableOK tbl N) (hP : ProTable tbl)
     (htblN : NumTableOK T N' B') (hWc : Wc = certPieces) (hBt : ∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ B)
-    (hs : IsFormulaSet LAct s) (hp : p ∈ s) (hnp : neg LAct p ∈ s) (hsD : setLen LAct s ≤ D)
+    (hs : IsFormulaSet LAct s) (hp : p ∈ s) (hnp : neg LAct p ∈ s) (hsD : sequentLen LAct s ≤ D)
     (hE : 13 * D + 18 * ‖D‖ + 8 ≤ E) (hiE : i + 8 * D + 3 ≤ E) (hΓ : IsFormulaSet LAct Γ)
     (hLay : Layout walkPieces Wc T Γ s i) :
     costSum N E Γ (proAxL walkPieces Wc T s p i) ≤ len (proAxL walkPieces Wc T s p i) *
@@ -5134,9 +5134,9 @@ theorem costSum_proAxL_le {tbl N N' B' B Wc T s p D E Γ i Q Dd : V} (htbl : Tab
   have hE1 : (1 : V) ≤ E := le_trans (by norm_num) (le_trans le_add_self hE)
   exact ⟨costSum_le_of_sizeOK 8 hE1 htbl hBt ok (sizeOK_of_hornOnly ho), hlen⟩
 
-/-- `postIns` carries one goal cut of size `|goalFact s'' (bnum n)|` and one Horn step. -/
+/-- `postIns` carries one goal cut of size `|goalFact s'' (binNumeral n)|` and one Horn step. -/
 theorem sizeOK_postIns {W s'' cp n : V} (hWp : W = proPieces) (Dd : V) :
-    SizeOK (4 * formulaLen LAct (goalFact (^&s'') (bnum n))) Dd (postIns W s'' cp n) := by
+    SizeOK (4 * formulaLen LAct (goalFact (^&s'') (binNumeral n))) Dd (postIns W s'' cp n) := by
   subst hWp
   have e122 : ∀ ev : V, mkStep proPieces (122 : V) ev = mkStep frag1Pieces (122 : V) ev := fun ev ↦ by
     have := mkStep_pro_frag1 122 (by decide) ev; simpa using this
@@ -5147,11 +5147,11 @@ theorem sizeOK_postIns {W s'' cp n : V} (hWp : W = proPieces) (Dd : V) :
 theorem costSum_postIns_le {tbl N B W s'' cp n E Γ Dd : V} (htbl : TableOK tbl N) (hP : ProTable tbl) (hWp : W = proPieces)
     (hBt : ∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ B)
     (hΓ : IsFormulaSet LAct Γ) (hsE : s'' + 3 ≤ E) (hcE : cp + 3 ≤ E)
-    (hg : neg LAct (goalFact (^&s'') (bnum n)) ∈ Γ) (heq : neg LAct (eqFactB (^&cp) (^&s'')) ∈ Γ) :
+    (hg : neg LAct (goalFact (^&s'') (binNumeral n)) ∈ Γ) (heq : neg LAct (eqFactB (^&cp) (^&s'')) ∈ Γ) :
     costSum N E Γ (postIns W s'' cp n) ≤ 6 *
-      (costK N E B 8 (4 * formulaLen LAct (goalFact (^&s'') (bnum n))) Dd + (3 * ((8 : ℕ) : V) + 11) *
-        (ctxBoundG (growK B E (4 * formulaLen LAct (goalFact (^&s'') (bnum n)))) Γ 6 +
-          (fvOccS LAct Γ + 6 * growK B E (4 * formulaLen LAct (goalFact (^&s'') (bnum n)))))) := by
+      (costK N E B 8 (4 * formulaLen LAct (goalFact (^&s'') (binNumeral n))) Dd + (3 * ((8 : ℕ) : V) + 11) *
+        (ctxBoundG (growK B E (4 * formulaLen LAct (goalFact (^&s'') (binNumeral n)))) Γ 6 +
+          (fvOccS LAct Γ + 6 * growK B E (4 * formulaLen LAct (goalFact (^&s'') (binNumeral n)))))) := by
   obtain ⟨ok, _, _, hlen, _⟩ := postIns_ok htbl hP hWp hΓ hsE hcE hg heq
   have hE1 : (1 : V) ≤ E := le_trans (by norm_num) (le_trans le_add_self hsE)
   have := costSum_le_of_sizeOK 8 hE1 htbl hBt ok (sizeOK_postIns hWp Dd)
@@ -5164,14 +5164,14 @@ theorem sizeOK_proIns {tbl N N' B' B Wl Wc W T s p i ip D E Γ : V} (htbl : Tabl
     (htblN : NumTableOK T N' B') (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (hWp : W = proPieces)
     (hPle : formulaLen LAct (Ple : V) ≤ B)
     (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 0 p) (hk1 : 1 ≤ len (memberList s))
-    (hsD : setLen LAct (insert p s) ≤ D) (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E) (hiE : i + 14 * D + 5 ≤ E)
+    (hsD : sequentLen LAct (insert p s) ≤ D) (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E) (hiE : i + 14 * D + 5 ≤ E)
     (hipE : ip + 8 * D + 4 ≤ E) (hΓ : IsFormulaSet LAct Γ)
     (hLay : Layout walkPieces Wc T Γ s i) (hDp : DossF walkPieces Γ 0 p ip) :
     SizeOK (layQ B B' D) (layD N' B' D) (proIns walkPieces Wl Wc W T s p i ip) := by
   have hL := hP.layoutTable
   have hcs : IsFormulaSet LAct (insert p s) := IsFormulaSet.insert_iff.mpr ⟨hp, hs⟩
-  have hsD' : setLen LAct s ≤ D := le_trans (setLen_le_insert p s) hsD
-  have hkD : len (memberList s) ≤ D := le_trans (len_memberList_le_setLen hs) hsD'
+  have hsD' : sequentLen LAct s ≤ D := le_trans (sequentLen_le_insert p s) hsD
+  have hkD : len (memberList s) ≤ D := le_trans (len_memberList_le_sequentLen hs) hsD'
   have hk1' : 1 ≤ len (memberList (insert p s)) := one_le_len_memberList_insert p s
   have hE8 : 13 * D + 18 * ‖D‖ + 8 ≤ E := le_trans (add_le_add le_rfl (by norm_num)) hE
   have e76 : ∀ ev : V, mkStep proPieces (76 : V) ev = mkStep layoutPieces (76 : V) ev := fun ev ↦ by
@@ -5240,7 +5240,7 @@ theorem costSum_proIns_le {tbl N N' B' B Wl Wc W T s p i ip D E Γ : V} (htbl : 
     (htblN : NumTableOK T N' B') (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (hWp : W = proPieces)
     (hBt : ∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ B) (hPle : formulaLen LAct (Ple : V) ≤ B)
     (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 0 p) (hk1 : 1 ≤ len (memberList s))
-    (hsD : setLen LAct (insert p s) ≤ D) (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E) (hiE : i + 14 * D + 5 ≤ E)
+    (hsD : sequentLen LAct (insert p s) ≤ D) (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E) (hiE : i + 14 * D + 5 ≤ E)
     (hipE : ip + 8 * D + 4 ≤ E) (hΓ : IsFormulaSet LAct Γ)
     (hLay : Layout walkPieces Wc T Γ s i) (hDp : DossF walkPieces Γ 0 p ip) :
     costSum N E Γ (proIns walkPieces Wl Wc W T s p i ip) ≤ len (proIns walkPieces Wl Wc W T s p i ip) *
@@ -5320,13 +5320,13 @@ theorem sizeOK_proWk {tbl N N' B' B Wl Wc W T s c i D E Γ : V} (htbl : TableOK 
     (htblN : NumTableOK T N' B') (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (hWp : W = proPieces)
     (hPle : formulaLen LAct (Ple : V) ≤ B)
     (hs : IsFormulaSet LAct s) (hc : c ⊆ s) (hk1 : 1 ≤ len (memberList c))
-    (hsD : setLen LAct s ≤ D) (hcD : setLen LAct c ≤ D) (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E) (hiE : i + 14 * D + 5 ≤ E)
+    (hsD : sequentLen LAct s ≤ D) (hcD : sequentLen LAct c ≤ D) (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E) (hiE : i + 14 * D + 5 ≤ E)
     (hΓ : IsFormulaSet LAct Γ) (hLay : Layout walkPieces Wc T Γ s i) :
     SizeOK (layQ B B' D) (layD N' B' D) (proWk walkPieces Wl Wc W T s c i) := by
   have hW := hP.walkTable
   have hcs : IsFormulaSet LAct c := fun x hx ↦ hs x (hc hx)
-  have hkD : len (memberList s) ≤ D := le_trans (len_memberList_le_setLen hs) hsD
-  have hk'D : len (memberList c) ≤ D := le_trans (len_memberList_le_setLen hcs) hcD
+  have hkD : len (memberList s) ≤ D := le_trans (len_memberList_le_sequentLen hs) hsD
+  have hk'D : len (memberList c) ≤ D := le_trans (len_memberList_le_sequentLen hcs) hcD
   have hE8 : 13 * D + 18 * ‖D‖ + 8 ≤ E := le_trans (add_le_add le_rfl (by norm_num)) hE
   set σ := proSig walkPieces Wl Wc W T c with hσ
   have hσle : σ ≤ 6 * D + 1 := proSig_le htbl hP hWc htblN hWl hWp hcs hk1 hcD hE8 hΓ
@@ -5378,7 +5378,7 @@ theorem costSum_proWk_le {tbl N N' B' B Wl Wc W T s c i D E Γ : V} (htbl : Tabl
     (htblN : NumTableOK T N' B') (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (hWp : W = proPieces)
     (hBt : ∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ B) (hPle : formulaLen LAct (Ple : V) ≤ B)
     (hs : IsFormulaSet LAct s) (hc : c ⊆ s) (hk1 : 1 ≤ len (memberList c))
-    (hsD : setLen LAct s ≤ D) (hcD : setLen LAct c ≤ D) (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E) (hiE : i + 14 * D + 5 ≤ E)
+    (hsD : sequentLen LAct s ≤ D) (hcD : sequentLen LAct c ≤ D) (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E) (hiE : i + 14 * D + 5 ≤ E)
     (hΓ : IsFormulaSet LAct Γ) (hLay : Layout walkPieces Wc T Γ s i) :
     costSum N E Γ (proWk walkPieces Wl Wc W T s c i) ≤ len (proWk walkPieces Wl Wc W T s c i) *
       (costK N E B 8 (layQ B B' D) (layD N' B' D) + (3 * ((8 : ℕ) : V) + 11) *
@@ -5394,12 +5394,12 @@ theorem sizeOK_proOr {tbl N N' B' B Wl Wc W T s p q i ip iq D E Γ : V} (htbl : 
     (htblN : NumTableOK T N' B') (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (hWp : W = proPieces)
     (hPle : formulaLen LAct (Ple : V) ≤ B)
     (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 0 p) (hq : IsSemiformula LAct 0 q) (hk1 : 1 ≤ len (memberList s))
-    (hsD : setLen LAct (insert p (insert q s)) ≤ D) (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E) (hiE : i + 14 * D + 5 ≤ E)
+    (hsD : sequentLen LAct (insert p (insert q s)) ≤ D) (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E) (hiE : i + 14 * D + 5 ≤ E)
     (hipE : ip + 14 * D + 6 ≤ E) (hiqE : iq + 8 * D + 4 ≤ E) (hΓ : IsFormulaSet LAct Γ)
     (hLay : Layout walkPieces Wc T Γ s i) (hDp : DossF walkPieces Γ 0 p ip) (hDq : DossF walkPieces Γ 0 q iq) :
     SizeOK (layQ B B' D) (layD N' B' D) (proOr walkPieces Wl Wc W T s p q i ip iq) := by
   have hqs : IsFormulaSet LAct (insert q s) := IsFormulaSet.insert_iff.mpr ⟨hq, hs⟩
-  have hsD₁ : setLen LAct (insert q s) ≤ D := le_trans (setLen_le_insert p _) hsD
+  have hsD₁ : sequentLen LAct (insert q s) ≤ D := le_trans (sequentLen_le_insert p _) hsD
   have hkq1 : 1 ≤ len (memberList (insert q s)) := one_le_len_memberList_insert q s
   have hE8 : 13 * D + 18 * ‖D‖ + 8 ≤ E := le_trans (add_le_add le_rfl (by norm_num)) hE
   have e125 : ∀ ev : V, mkStep proPieces (125 : V) ev = mkStep frag1Pieces (125 : V) ev := fun ev ↦ by
@@ -5428,7 +5428,7 @@ theorem costSum_proOr_le {tbl N N' B' B Wl Wc W T s p q i ip iq D E Γ : V} (htb
     (htblN : NumTableOK T N' B') (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (hWp : W = proPieces)
     (hBt : ∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ B) (hPle : formulaLen LAct (Ple : V) ≤ B)
     (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 0 p) (hq : IsSemiformula LAct 0 q) (hk1 : 1 ≤ len (memberList s))
-    (hsD : setLen LAct (insert p (insert q s)) ≤ D) (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E) (hiE : i + 14 * D + 5 ≤ E)
+    (hsD : sequentLen LAct (insert p (insert q s)) ≤ D) (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E) (hiE : i + 14 * D + 5 ≤ E)
     (hipE : ip + 14 * D + 6 ≤ E) (hiqE : iq + 8 * D + 4 ≤ E) (hΓ : IsFormulaSet LAct Γ)
     (hLay : Layout walkPieces Wc T Γ s i) (hDp : DossF walkPieces Γ 0 p ip) (hDq : DossF walkPieces Γ 0 q iq) :
     costSum N E Γ (proOr walkPieces Wl Wc W T s p q i ip iq) ≤ len (proOr walkPieces Wl Wc W T s p q i ip iq) *
@@ -5526,7 +5526,7 @@ theorem sizeOK_proShift {tbl N N' B' B Wl Wc W T s c i D E Γ : V} (htbl : Table
     (htblN : NumTableOK T N' B') (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (hWp : W = proPieces)
     (hPle : formulaLen LAct (Ple : V) ≤ B)
     (hs : IsFormulaSet LAct s) (hc : IsFormulaSet LAct c) (hsc : s = setShift LAct c) (hk1' : 1 ≤ len (memberList c))
-    (hsD : setLen LAct s ≤ D) (hcD : setLen LAct c ≤ D) (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E) (hiE : i + 16 * D + 8 ≤ E)
+    (hsD : sequentLen LAct s ≤ D) (hcD : sequentLen LAct c ≤ D) (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E) (hiE : i + 16 * D + 8 ≤ E)
     (hΓ : IsFormulaSet LAct Γ) (hLay : Layout walkPieces Wc T Γ s i) :
     SizeOK (layQ B B' D) (layD N' B' D) (proShift walkPieces Wl Wc W T s c i) := by
   obtain ⟨_, _, _, _, sho⟩ := proShiftPre_ok htbl hP htblN hWl hWc hWp hs hc hsc hk1' hsD hcD hE hiE hΓ hLay
@@ -5550,7 +5550,7 @@ theorem costSum_proShift_le {tbl N N' B' B Wl Wc W T s c i D E Γ : V} (htbl : T
     (htblN : NumTableOK T N' B') (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (hWp : W = proPieces)
     (hBt : ∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ B) (hPle : formulaLen LAct (Ple : V) ≤ B)
     (hs : IsFormulaSet LAct s) (hc : IsFormulaSet LAct c) (hsc : s = setShift LAct c) (hk1' : 1 ≤ len (memberList c))
-    (hsD : setLen LAct s ≤ D) (hcD : setLen LAct c ≤ D) (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E) (hiE : i + 16 * D + 8 ≤ E)
+    (hsD : sequentLen LAct s ≤ D) (hcD : sequentLen LAct c ≤ D) (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E) (hiE : i + 16 * D + 8 ≤ E)
     (hΓ : IsFormulaSet LAct Γ) (hLay : Layout walkPieces Wc T Γ s i) :
     costSum N E Γ (proShift walkPieces Wl Wc W T s c i) ≤ len (proShift walkPieces Wl Wc W T s c i) *
       (costK N E B 8 (layQ B B' D) (layD N' B' D) + (3 * ((8 : ℕ) : V) + 11) *
@@ -5569,35 +5569,35 @@ end proSizes
 model `V ⊧ ¬Con(TAct)` a node's sequent may be EMPTY (as the child of `wk`, as both sides of `shift`, as the parent of
 `cut`; never at a leaf, never as an `insert` child). "Every sequent of a derivation is nonempty" is therefore FALSE
 in general, and the honest treatment is a `k = 0` layout: `Layout0` = the `Layout` predicate at `s = 0` (vacuous
-members, `setLenFact &i &(i + 1)`, `leFact &i (bnum 0)`) TOGETHER WITH the identification `eqFactB &(i + 1) 𝟎` of the
+members, `sequentLenFact &i &(i + 1)`, `leFact &i (binNumeral 0)`) TOGETHER WITH the identification `eqFactB &(i + 1) 𝟎` of the
 sequent object — the fact every consumer needs in place of a chain. `layoutSteps0` builds it in five steps (rows
-`eqTotal`, `setLenTotalC`, `eqSymm`, `congSetLenR`, and the prologue row `setLenEmptyLe` = 156); the table rows
+`eqTotal`, `sequentLenTotalC`, `eqSymm`, `congSetLenR`, and the prologue row `sequentLenEmptyLe` = 156); the table rows
 `congSubsetL` (157) and `congSetShiftR` (158) move `emptySubsetC`/`setShiftFact` facts onto the object. -/
 
 section emptySequent
 
-/-- The reading of the prologue row `setLenEmptyLe` (156). -/
-lemma ProTable.setLenEmptyLe {tbl : V} (h : ProTable tbl) :
-    ((pIdx_setLenEmptyLe : ℕ) : V) < len tbl ∧
-    rowM tbl.[((pIdx_setLenEmptyLe : ℕ) : V)] = ((1 : ℕ) : V) ∧
-    rowB tbl.[((pIdx_setLenEmptyLe : ℕ) : V)] = impChainV LAct (vecOf row_setLenEmptyLe_as) row_setLenEmptyLe_c := by
-  have hlt : pIdx_setLenEmptyLe < proRows.length := by
-    rw [proRows_length]; simp only [proRowCount, proBase, pIdx_setLenEmptyLe, topRowCount, proExtraRowCount]; omega
-  have hr := h.2 pIdx_setLenEmptyLe hlt
-  have e' : proRows[pIdx_setLenEmptyLe]? = proExtraRows[1]? := by
-    have h1 : pIdx_setLenEmptyLe < (topRows ++ proExtraRows).length := by
-      rw [List.length_append]; simp only [pIdx_setLenEmptyLe, topRows_length, proExtraRows_length, topRowCount, proExtraRowCount]; omega
-    have h2 : topRows.length ≤ pIdx_setLenEmptyLe := by rw [topRows_length]; simp only [pIdx_setLenEmptyLe, topRowCount]; omega
+/-- The reading of the prologue row `sequentLenEmptyLe` (156). -/
+lemma ProTable.sequentLenEmptyLe {tbl : V} (h : ProTable tbl) :
+    ((pIdx_sequentLenEmptyLe : ℕ) : V) < len tbl ∧
+    rowM tbl.[((pIdx_sequentLenEmptyLe : ℕ) : V)] = ((1 : ℕ) : V) ∧
+    rowB tbl.[((pIdx_sequentLenEmptyLe : ℕ) : V)] = impChainV LAct (vecOf row_sequentLenEmptyLe_as) row_sequentLenEmptyLe_c := by
+  have hlt : pIdx_sequentLenEmptyLe < proRows.length := by
+    rw [proRows_length]; simp only [proRowCount, proBase, pIdx_sequentLenEmptyLe, topRowCount, proExtraRowCount]; omega
+  have hr := h.2 pIdx_sequentLenEmptyLe hlt
+  have e' : proRows[pIdx_sequentLenEmptyLe]? = proExtraRows[1]? := by
+    have h1 : pIdx_sequentLenEmptyLe < (topRows ++ proExtraRows).length := by
+      rw [List.length_append]; simp only [pIdx_sequentLenEmptyLe, topRows_length, proExtraRows_length, topRowCount, proExtraRowCount]; omega
+    have h2 : topRows.length ≤ pIdx_sequentLenEmptyLe := by rw [topRows_length]; simp only [pIdx_sequentLenEmptyLe, topRowCount]; omega
     unfold proRows
     rw [List.getElem?_append_left h1, List.getElem?_append_right h2]
     rfl
-  have e : proRows[pIdx_setLenEmptyLe] = proExtraRows[1] := by
+  have e : proRows[pIdx_sequentLenEmptyLe] = proExtraRows[1] := by
     rw [List.getElem?_eq_getElem hlt, List.getElem?_eq_getElem (by decide : 1 < proExtraRows.length)] at e'
     exact Option.some.inj e'
   rw [e] at hr
   refine ⟨lt_of_lt_of_le (by exact_mod_cast hlt) (proRows_length ▸ h.1), hr.1, ?_⟩
   rw [impChainV_vecOf, hr.2]
-  exact quote_row_setLenEmptyLe
+  exact quote_row_sequentLenEmptyLe
 
 /-- The reading of the table row `congSubsetL` (157). -/
 lemma ProTable.congSubsetL {tbl : V} (h : ProTable tbl) :
@@ -5669,8 +5669,8 @@ theorem Layout0.transport {Ww Wc T Γ i S : V} (hS : NoDrop' S) (h : Layout0 Ww 
   rwa [shiftIterV_neg (isFormula_eqFactB (by simp) isSemiterm_zeroV), shiftIterV_eqFactB (by simp) isSemiterm_zeroV,
     termShiftIterV_fvar, termShiftIterV_zeroV, add_right_comm] at this
 
-/-- **`layoutSteps0`**: `eqTotal [𝟎]` (the sequent object `&0 = 𝟎`), `setLenTotalC [&0]` (its length `&0`), `eqSymm [&1, 𝟎]`,
-`congSetLenR [&1, 𝟎, &0]` (`setLenFact &0 𝟎`), `setLenEmptyLe [&0]` (`leFact &0 𝟎 = leFact &0 (bnum 0)`). -/
+/-- **`layoutSteps0`**: `eqTotal [𝟎]` (the sequent object `&0 = 𝟎`), `sequentLenTotalC [&0]` (its length `&0`), `eqSymm [&1, 𝟎]`,
+`congSetLenR [&1, 𝟎, &0]` (`sequentLenFact &0 𝟎`), `sequentLenEmptyLe [&0]` (`leFact &0 𝟎 = leFact &0 (binNumeral 0)`). -/
 noncomputable def layoutSteps0 (W : V) : V :=
   mkStep W 40 ?[(𝟎 : V)] ∷ mkStep W 85 ?[^&0] ∷ mkStep W 42 ?[^&1, (𝟎 : V)] ∷ mkStep W 124 ?[^&1, (𝟎 : V), ^&0] ∷
     mkStep W 156 ?[^&0] ∷ (0 : V)
@@ -5717,31 +5717,31 @@ theorem layoutSteps0_ok {tbl N W Wc T E Γ : V} (htbl : TableOK tbl N) (hP : Pro
   rw [Nat.cast_zero, termShift_zeroV] at cx₁
   have hΓ₁f : IsFormulaSet LAct (insert (neg LAct (eqFactB (^&0) (𝟎 : V))) (setShift LAct Γ)) := by
     rw [← cx₁]; exact isFormulaSet_ctxAfter 8 htbl ok₁
-  -- step 2: its length `&0`, with `setLenFact &0 &1`; the object moves to `&1`
-  obtain ⟨ok₂, tg₂, cx₂⟩ := lok_setLenTotalC htbl hL rfl hΓ₁f hf0 hf0E
+  -- step 2: its length `&0`, with `sequentLenFact &0 &1`; the object moves to `&1`
+  obtain ⟨ok₂, tg₂, cx₂⟩ := lok_sequentLenTotalC htbl hL rfl hΓ₁f hf0 hf0E
   rw [← e85, ← hWp] at ok₂ tg₂ cx₂
   rw [Nat.cast_zero, termShift_fvar, zero_add] at cx₂
   have heq₂ : neg LAct (eqFactB (^&1) (𝟎 : V)) ∈
-      insert (neg LAct (setLenFact (^&0) (^&1))) (setShift LAct (insert (neg LAct (eqFactB (^&0) (𝟎 : V))) (setShift LAct Γ))) := by
-    have := mem_shift_insert (f := neg LAct (setLenFact (^&0) (^&1))) (memInsSelf (neg LAct (eqFactB (^&0) (𝟎 : V))) (setShift LAct Γ))
+      insert (neg LAct (sequentLenFact (^&0) (^&1))) (setShift LAct (insert (neg LAct (eqFactB (^&0) (𝟎 : V))) (setShift LAct Γ))) := by
+    have := mem_shift_insert (f := neg LAct (sequentLenFact (^&0) (^&1))) (memInsSelf (neg LAct (eqFactB (^&0) (𝟎 : V))) (setShift LAct Γ))
     rwa [shift_neg (isFormula_eqFactB hf0 h0), shift_eqFactB hf0 h0, termShift_fvar, termShift_zeroV, zero_add] at this
-  have hΓ₂f : IsFormulaSet LAct (insert (neg LAct (setLenFact (^&0) (^&1))) (setShift LAct (insert (neg LAct (eqFactB (^&0) (𝟎 : V))) (setShift LAct Γ)))) := by
+  have hΓ₂f : IsFormulaSet LAct (insert (neg LAct (sequentLenFact (^&0) (^&1))) (setShift LAct (insert (neg LAct (eqFactB (^&0) (𝟎 : V))) (setShift LAct Γ)))) := by
     rw [← cx₂]; exact isFormulaSet_ctxAfter 8 htbl ok₂
   -- step 3: `eqSymm`
   obtain ⟨ok₃, tg₃, cx₃⟩ := lok_eqSymm htbl hL rfl hΓ₂f hf1 hf1E h0 h0E heq₂
   rw [← e42, ← hWp] at ok₃ tg₃ cx₃
-  have hΓ₃f : IsFormulaSet LAct (insert (neg LAct (eqFactB (𝟎 : V) (^&1))) (insert (neg LAct (setLenFact (^&0) (^&1)))
+  have hΓ₃f : IsFormulaSet LAct (insert (neg LAct (eqFactB (𝟎 : V) (^&1))) (insert (neg LAct (sequentLenFact (^&0) (^&1)))
       (setShift LAct (insert (neg LAct (eqFactB (^&0) (𝟎 : V))) (setShift LAct Γ))))) := by
     rw [← cx₃]; exact isFormulaSet_ctxAfter 8 htbl ok₃
   -- step 4: `congSetLenR`
   obtain ⟨ok₄, tg₄, cx₄⟩ := fok_congSetLenR htbl hF1 rfl hΓ₃f hf1 hf1E h0 h0E hf0 hf0E (memInsSelf _ _) (memIns (memInsSelf _ _))
   rw [← e124, ← hWp] at ok₄ tg₄ cx₄
-  have hΓ₄f : IsFormulaSet LAct (insert (neg LAct (setLenFact (^&0) (𝟎 : V))) (insert (neg LAct (eqFactB (𝟎 : V) (^&1)))
-      (insert (neg LAct (setLenFact (^&0) (^&1))) (setShift LAct (insert (neg LAct (eqFactB (^&0) (𝟎 : V))) (setShift LAct Γ)))))) := by
+  have hΓ₄f : IsFormulaSet LAct (insert (neg LAct (sequentLenFact (^&0) (𝟎 : V))) (insert (neg LAct (eqFactB (𝟎 : V) (^&1)))
+      (insert (neg LAct (sequentLenFact (^&0) (^&1))) (setShift LAct (insert (neg LAct (eqFactB (^&0) (𝟎 : V))) (setShift LAct Γ)))))) := by
     rw [← cx₄]; exact isFormulaSet_ctxAfter 8 htbl ok₄
-  -- step 5: `setLenEmptyLe`
-  obtain ⟨hlen, hrow⟩ := hP.setLenEmptyLe
-  obtain ⟨ok₅, tg₅, cx₅⟩ := pok_setLenEmptyLe htbl hWp hlen hrow hΓ₄f hf0 hf0E (memInsSelf _ _)
+  -- step 5: `sequentLenEmptyLe`
+  obtain ⟨hlen, hrow⟩ := hP.sequentLenEmptyLe
+  obtain ⟨ok₅, tg₅, cx₅⟩ := pok_sequentLenEmptyLe htbl hWp hlen hrow hΓ₄f hf0 hf0E (memInsSelf _ _)
   refine ⟨?_, ?_, ?_, ?_, ?_⟩
   · unfold layoutSteps0
     refine listOK_cons ok₁ ?_
@@ -5765,7 +5765,7 @@ theorem layoutSteps0_ok {tbl N W Wc T E Γ : V} (htbl : TableOK tbl N) (hP : Pro
     refine ⟨⟨fun j hj ↦ ?_, ?_, ?_⟩, ?_⟩
     · rw [len_memberList_zero] at hj; exact absurd hj (by simp)
     · rw [len_memberList_zero, zero_add, zero_add]; exact memIns (memIns (memIns (memInsSelf _ _)))
-    · rw [← emptyset_def, setLen_empty, bnum_zero]; exact memInsSelf _ _
+    · rw [← emptyset_def, sequentLen_empty, binNumeral_zero]; exact memInsSelf _ _
     · rw [zero_add]; exact memIns (memIns (memIns heq₂))
 
 /-- **`proWk0 s i`** — the `wk` child is EMPTY: `layoutSteps0` (the child's `Layout0` at `0`, its object `&1`), then
@@ -6063,13 +6063,13 @@ theorem loopE_ok {tbl N Wl W Wc T s i₁ D E Γ q : V} (htbl : TableOK tbl N) (h
     (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (hWp : W = proPieces)
     (hq : q = qPack Wl W i₁ (len (memberList s)) (offVec (memberList s) walkPieces Wc T) (memberList s) 0
       (len (memberList s)) (offVec (memberList s) walkPieces Wc T) (memberList s) 0 0)
-    (hs : IsFormulaSet LAct s) (hsD : setLen LAct s ≤ D)
+    (hs : IsFormulaSet LAct s) (hsD : sequentLen LAct s ≤ D)
     (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E) (hi : i₁ + 8 * D + 3 ≤ E) (hΓ : IsFormulaSet LAct Γ)
     (hFL : Layout walkPieces Wc T Γ s 0) (hPL : Layout walkPieces Wc T Γ s i₁) :
     ∀ m ≤ len (memberList s), EOut tbl E q Γ m := by
   have hW := hP.walkTable
   have hL := hP.layoutTable
-  have hkD : len (memberList s) ≤ D := le_trans (len_memberList_le_setLen hs) hsD
+  have hkD : len (memberList s) ≤ D := le_trans (len_memberList_le_sequentLen hs) hsD
   have e42 : ∀ ev : V, mkStep proPieces (42 : V) ev = mkStep layoutPieces (42 : V) ev := fun ev ↦ by
     have := mkStep_pro_layout 42 (by decide) ev; simpa using this
   have e62 : ∀ ev : V, mkStep proPieces (62 : V) ev = mkStep layoutPieces (62 : V) ev := fun ev ↦ by
@@ -6100,7 +6100,7 @@ theorem loopE_ok {tbl N Wl W Wc T s i₁ D E Γ q : V} (htbl : TableOK tbl N) (h
     have tr : ∀ x ∈ Γ, x ∈ Γm := fun x hx ↦ tr_of_zero bnd bsh hx
     have hxm : (memberList s).[m] ∈ s := nth_memberList_mem hmk
     have hxf : IsSemiformula LAct 0 (memberList s).[m] := hs _ hxm
-    have hxD : formulaLen LAct (memberList s).[m] ≤ D := le_trans (formulaLen_le_setLen_of_mem hxm) hsD
+    have hxD : formulaLen LAct (memberList s).[m] ≤ D := le_trans (formulaLen_le_sequentLen_of_mem hxm) hsD
     obtain ⟨hDx, _, _, _, _, hmx⟩ := hPL.1 m hmk
     have hXD := (dossierAt_of_dossF htbl hW rfl hxf hDx).mono tr
     obtain ⟨hDy, _, _, _, _, hmy⟩ := hFL.1 m hmk
@@ -6218,7 +6218,7 @@ set_option maxHeartbeats 4000000 in
 /-- **The identification is applicable**: Horn-only, shift-free, `setShiftFact vt S` afterwards. -/
 theorem ssIdent_ok {tbl N Wl W Wc T s i₁ vt D E Γ : V} (htbl : TableOK tbl N) (hP : ProTable tbl)
     (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (hWp : W = proPieces)
-    (hs : IsFormulaSet LAct s) (hk1 : 1 ≤ len (memberList s)) (hsD : setLen LAct s ≤ D)
+    (hs : IsFormulaSet LAct s) (hk1 : 1 ≤ len (memberList s)) (hsD : sequentLen LAct s ≤ D)
     (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E) (hi : i₁ + 8 * D + 3 ≤ E) (hvt : vt + 1 ≤ E) (hΓ : IsFormulaSet LAct Γ)
     (hFL : Layout walkPieces Wc T Γ s 0) (hPL : Layout walkPieces Wc T Γ s i₁)
     (hss : neg LAct (setShiftFact (^&vt) (^&(0 + (len (memberList s) + 1)))) ∈ Γ) :
@@ -6232,7 +6232,7 @@ theorem ssIdent_ok {tbl N Wl W Wc T s i₁ vt D E Γ : V} (htbl : TableOK tbl N)
   have hL := hP.layoutTable
   have e75 : ∀ ev : V, mkStep proPieces (75 : V) ev = mkStep layoutPieces (75 : V) ev := fun ev ↦ by
     have := mkStep_pro_layout 75 (by decide) ev; simpa using this
-  have hkD : len (memberList s) ≤ D := le_trans (len_memberList_le_setLen hs) hsD
+  have hkD : len (memberList s) ≤ D := le_trans (len_memberList_le_sequentLen hs) hsD
   have hs''E : 0 + (len (memberList s) + 1) + 1 ≤ E := by
     calc 0 + (len (memberList s) + 1) + 1 = len (memberList s) + 2 := by ring
       _ ≤ 6 * D + 2 := add_le_add (le_trans hkD (le_mul_of_one_le_left zero_le (by norm_num))) le_rfl
@@ -6357,8 +6357,8 @@ set_option maxHeartbeats 4000000 in
 (`V_top = &(iV + (k_V + 1))`, `S = &(i' + (k + 1))`). -/
 theorem proSS_ok {tbl N N' B' Wl Wc W T s i D E Γ : V} (htbl : TableOK tbl N) (hP : ProTable tbl)
     (htblN : NumTableOK T N' B') (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (hWp : W = proPieces)
-    (hs : IsFormulaSet LAct s) (hk1 : 1 ≤ len (memberList s)) (hsD : setLen LAct s ≤ D)
-    (hvD : setLen LAct (setShift LAct s) ≤ D)
+    (hs : IsFormulaSet LAct s) (hk1 : 1 ≤ len (memberList s)) (hsD : sequentLen LAct s ≤ D)
+    (hvD : sequentLen LAct (setShift LAct s) ≤ D)
     (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E) (hiE : i + 22 * D + 8 ≤ E)
     (hΓ : IsFormulaSet LAct Γ) (hLay : Layout walkPieces Wc T Γ s i) :
     ListOK tbl E ((8 : ℕ) : V) Γ (proSS walkPieces Wl Wc W T s i) ∧ NoDrop' (proSS walkPieces Wl Wc W T s i) ∧
@@ -6374,8 +6374,8 @@ theorem proSS_ok {tbl N N' B' Wl Wc W T s i D E Γ : V} (htbl : TableOK tbl N) (
         (len (memberList s) + 1)))) ∈ finalCtx Γ (proSS walkPieces Wl Wc W T s i) := by
   have hV : IsFormulaSet LAct (setShift LAct s) := hs.setShift
   have hkV1 : 1 ≤ len (memberList (setShift LAct s)) := one_le_len_memberList_setShift rfl hk1
-  have hkD : len (memberList s) ≤ D := le_trans (len_memberList_le_setLen hs) hsD
-  have hkVD : len (memberList (setShift LAct s)) ≤ D := le_trans (len_memberList_le_setLen hV) hvD
+  have hkD : len (memberList s) ≤ D := le_trans (len_memberList_le_sequentLen hs) hsD
+  have hkVD : len (memberList (setShift LAct s)) ≤ D := le_trans (len_memberList_le_sequentLen hV) hvD
   have hE8 : 13 * D + 18 * ‖D‖ + 8 ≤ E := le_trans (add_le_add le_rfl (by norm_num)) hE
   have hσ₁ : proSig walkPieces Wl Wc W T (setShift LAct s) ≤ 6 * D + 1 := proSig_le htbl hP hWc htblN hWl hWp hV hkV1 hvD hE8 hΓ
   have hσ₂ : proSig walkPieces Wl Wc W T s ≤ 6 * D + 1 := proSig_le htbl hP hWc htblN hWl hWp hs hk1 hsD hE8 hΓ
@@ -6438,7 +6438,7 @@ theorem proSS_ok {tbl N N' B' Wl Wc W T s i D E Γ : V} (htbl : TableOK tbl N) (
 walk, the substitution pass, the shift pass, the rows `substsSubsts1` (166) and `freeCert` (165). -/
 noncomputable def certFreeDef : 𝚺₁.Semisentence 7 := .mkSigma
   “y W Wd p ip isp ifp. ∃ z0, !qqFvarDef z0 0 ∧ ∃ fv, !adjoinDef fv z0 0 ∧ ∃ dv, !descTVecDef dv Wd 0 1 fv ∧
-    ∃ FW, !descVecAuxDef FW Wd 0 dv 1 ∧ ∃ cw, !pi₁Def cw FW ∧ ∃ Lu, !pi₂Def Lu FW ∧
+    ∃ FW, !descriptionsAuxDef FW Wd 0 dv 1 ∧ ∃ cw, !pi₁Def cw FW ∧ ∃ Lu, !pi₂Def Lu FW ∧
     ∃ sp, !(shiftGraph LAct) sp p ∧ ∃ a, a = isp + cw ∧ ∃ b, b = ifp + cw ∧ ∃ Ls, !certSubstDef Ls W Wd 1 0 fv 0 sp a b ∧
     ∃ s, !shiftsVDef s Ls ∧ ∃ c, c = ip + cw + s ∧ ∃ d, d = isp + cw + s ∧ ∃ e, e = ifp + cw + s ∧
     ∃ Lsh, !passFDef Lsh W 2 1 p c d ∧
@@ -6455,7 +6455,7 @@ set_option maxHeartbeats 2000000 in
 instance certFree_defined :
     𝚺₁.DefinedFunction (fun v : Fin 6 → V ↦ certFree (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) certFreeDef := .mk
   fun v ↦ by
-    simp [certFreeDef, certFree, freeWalk, freeCw, freeS, certShift, fvec, descTVec_defined.iff, descVecAux_defined.iff,
+    simp [certFreeDef, certFree, freeWalk, freeCw, freeS, certShift, fvec, descTVec_defined.iff, descriptionsAux_defined.iff,
       shift.defined.iff, certSubst_defined.iff, shiftsV_defined.iff, passF_defined.iff, mkStep_defined.iff,
       appendV_defined.iff, numeral_eq_natCast]
 
@@ -6512,7 +6512,7 @@ set_option maxHeartbeats 4000000 in
 the fresh dossier of `free p` is at `allCf`, and `freeFact FP P` holds for the parent's dossier `P` of `p`. -/
 theorem allCert_ok {tbl N Wc T s p i D E Γ : V} (htbl : TableOK tbl N) (hP : ProTable tbl) (hWc : Wc = certPieces)
     (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 1 p) (hr : (^∀ p) ∈ s)
-    (hsD : setLen LAct s ≤ D) (hspD : formulaLen LAct (shift LAct p) ≤ D)
+    (hsD : sequentLen LAct s ≤ D) (hspD : formulaLen LAct (shift LAct p) ≤ D)
     (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E)
     (hEQ : 2 * ((1 + D) * (1 + D + 1)) * (D + 1) + 4 * D + 11 ≤ E)
     (hiE : i + 2 * ((1 + D) * (1 + D + 1)) * D + 40 * D + 20 ≤ E)
@@ -6683,7 +6683,7 @@ noncomputable def proAll (Ww Wl Wc W T s p i : V) : V :=
 noncomputable def proAllDef : 𝚺₁.Semisentence 9 := .mkSigma
   “y Ww Wl Wc W T s p i. ∃ A, !allCertDef A Ww Wc T s p i ∧ ∃ sp, !(shiftGraph LAct) sp p ∧ ∃ c₁, !descCountFDef c₁ Ww 1 sp ∧
     ∃ fp, !(freeGraph LAct) fp p ∧ ∃ c₂, !descCountFDef c₂ Ww 0 fp ∧
-    ∃ z0, !qqFvarDef z0 0 ∧ ∃ fv, !adjoinDef fv z0 0 ∧ ∃ dv, !descTVecDef dv Ww 0 1 fv ∧ ∃ FW, !descVecAuxDef FW Ww 0 dv 1 ∧
+    ∃ z0, !qqFvarDef z0 0 ∧ ∃ fv, !adjoinDef fv z0 0 ∧ ∃ dv, !descTVecDef dv Ww 0 1 fv ∧ ∃ FW, !descriptionsAuxDef FW Ww 0 dv 1 ∧
     ∃ cw, !pi₁Def cw FW ∧ ∃ a, a = c₂ + cw ∧ ∃ b, b = 0 + cw ∧ ∃ Ls, !certSubstDef Ls Wc Ww 1 0 fv 0 sp a b ∧
     ∃ fs, !shiftsVDef fs Ls ∧ ∃ cf, cf = cw + fs ∧ ∃ cA, cA = c₁ + c₂ + cf ∧ ∃ i', i' = i + cA ∧
     ∃ S, !proSSDef S Ww Wl Wc W T s i' ∧
@@ -6698,7 +6698,7 @@ instance proAll_defined :
     𝚺₁.DefinedFunction (fun v : Fin 8 → V ↦ proAll (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7)) proAllDef := .mk
   fun v ↦ by
     simp [proAllDef, proAll, allCf, allCertSig, freeS, freeCw, freeWalk, fvec, proSig, allCert_defined.iff, shift.defined.iff,
-      descCountF_defined.iff, free.defined.iff, descTVec_defined.iff, descVecAux_defined.iff, certSubst_defined.iff,
+      descCountF_defined.iff, free.defined.iff, descTVec_defined.iff, descriptionsAux_defined.iff, certSubst_defined.iff,
       shiftsV_defined.iff, proSS_defined.iff, setShift.defined.iff, memberList_defined.iff, layoutSteps_defined.iff,
       proIns_defined.iff, appendV_defined.iff, numeral_eq_natCast]
 
@@ -6711,7 +6711,7 @@ and — with `S = &(iP + (k + 1))`, `ir = memTop … (∀p) iP`, `P = &(ir + 1)`
 theorem proAll_ok {tbl N N' B' Wl Wc W T s p i D E Γ : V} (htbl : TableOK tbl N) (hP : ProTable tbl)
     (htblN : NumTableOK T N' B') (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (hWp : W = proPieces)
     (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 1 p) (hr : (^∀ p) ∈ s)
-    (hsD : setLen LAct s ≤ D) (hcD : setLen LAct (insert (free LAct p) (setShift LAct s)) ≤ D)
+    (hsD : sequentLen LAct s ≤ D) (hcD : sequentLen LAct (insert (free LAct p) (setShift LAct s)) ≤ D)
     (hspD : formulaLen LAct (shift LAct p) ≤ D)
     (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E)
     (hEQ : 2 * ((1 + D) * (1 + D + 1)) * (D + 1) + 4 * D + 11 ≤ E)
@@ -6752,9 +6752,9 @@ theorem proAll_ok {tbl N N' B' Wl Wc W T s p i D E Γ : V} (htbl : TableOK tbl N
     obtain ⟨hlt, _⟩ := idxOf_spec hr
     have := lt_iff_succ_le.mp (lt_of_le_of_lt zero_le hlt); rwa [zero_add] at this
   have hkV1 : 1 ≤ len (memberList (setShift LAct s)) := one_le_len_memberList_setShift rfl hk1
-  have hvD : setLen LAct (setShift LAct s) ≤ D := le_trans (setLen_le_insert _ _) hcD
-  have hkD : len (memberList s) ≤ D := le_trans (len_memberList_le_setLen hs) hsD
-  have hkVD : len (memberList (setShift LAct s)) ≤ D := le_trans (len_memberList_le_setLen hV) hvD
+  have hvD : sequentLen LAct (setShift LAct s) ≤ D := le_trans (sequentLen_le_insert _ _) hcD
+  have hkD : len (memberList s) ≤ D := le_trans (len_memberList_le_sequentLen hs) hsD
+  have hkVD : len (memberList (setShift LAct s)) ≤ D := le_trans (len_memberList_le_sequentLen hV) hvD
   have hE8 : 13 * D + 18 * ‖D‖ + 8 ≤ E := le_trans (add_le_add le_rfl (by norm_num)) hE
   have hσV : proSig walkPieces Wl Wc W T (setShift LAct s) ≤ 6 * D + 1 := proSig_le htbl hP hWc htblN hWl hWp hV hkV1 hvD hE8 hΓ
   have hσS : proSig walkPieces Wl Wc W T s ≤ 6 * D + 1 := proSig_le htbl hP hWc htblN hWl hWp hs hk1 hsD hE8 hΓ
@@ -6867,10 +6867,10 @@ end allChild
 
 /-! ## 14. The `exs` child: `insert (substs1 t p) s` (`DESIGN_fragments.md` §4.6)
 
-Route (2026-09-15): (1) the walk of the singleton vector `⟨t⟩` (`descVecAux`: the vector object at `0`, `t`'s dossier
-at `1`, `adjFact w T̂ 𝟎`), the re-indexed term `lenT` (`tlenFact (bnum |t|) T̂`), then `lenObj`: `eqTotal [bnum |t|]`
-(the LENGTH OBJECT `l = &0` with `l = bnum |t|`), `eqSymm`, the re-indexed cert row `congTLenNum` (`tlenFact l T̂`) and
-the prologue row `leOfEqP` (159; `leFact l (bnum |t|)`) — `nodeExs_ok`'s `htl`/`hlet`; (2) a fresh walk of
+Route (2026-09-15): (1) the walk of the singleton vector `⟨t⟩` (`descriptionsAux`: the vector object at `0`, `t`'s dossier
+at `1`, `adjFact w T̂ 𝟎`), the re-indexed term `lenT` (`termLenMetaFact (binNumeral |t|) T̂`), then `lenObj`: `eqTotal [binNumeral |t|]`
+(the LENGTH OBJECT `l = &0` with `l = binNumeral |t|`), `eqSymm`, the re-indexed cert row `congTLenNum` (`termLenMetaFact l T̂`) and
+the prologue row `leOfEqP` (159; `leFact l (binNumeral |t|)`) — `nodeExs_ok`'s `htl`/`hlet`; (2) a fresh walk of
 `substs1 t p` and the re-indexed `certSubst` at the singleton vector (`subFPre_single`) between the parent's dossier of
 `p` (the body of the member `∃p`) and the fresh one, then `substsSubsts1` (frag2 row 149): `substs1Fact PT T̂ P`;
 (3) `proIns_ok` REUSED on `(s, substs1 t p)`: the child at `0`, `insFact cp PT S`, `eqFactB cp s''`. -/
@@ -6904,9 +6904,9 @@ lemma ProTable.leOfEqP {tbl : V} (h : ProTable tbl) :
 /-! ### 14.2 The walk of the singleton vector `⟨t⟩` -/
 
 /-- The walk of `t ∷ 0` at arity `0`: the vector object at `0`, `t`'s dossier at `1`. -/
-noncomputable def vecWalk (Ww t : V) : V := π₂ (descVecAux Ww 0 (descTVec Ww 0 1 (t ∷ 0)) 1)
+noncomputable def vecWalk (Ww t : V) : V := π₂ (descriptionsAux Ww 0 (descTVec Ww 0 1 (t ∷ 0)) 1)
 /-- Its eigenvariable count (`≤ 2|t|`). -/
-noncomputable def vecCw (Ww t : V) : V := π₁ (descVecAux Ww 0 (descTVec Ww 0 1 (t ∷ 0)) 1)
+noncomputable def vecCw (Ww t : V) : V := π₁ (descriptionsAux Ww 0 (descTVec Ww 0 1 (t ∷ 0)) 1)
 
 lemma listSum_termLenVec_single {t : V} (ht : IsSemiterm LAct 0 t) :
     listSum (termLenVec LAct 1 (t ∷ (0 : V))) = termLen LAct t := by
@@ -6926,25 +6926,25 @@ theorem vecWalk_ok {tbl N t E Γ : V} (htbl : TableOK tbl N) (hP : ProTable tbl)
   have htl : takeLast (t ∷ (0 : V)) 1 = t ∷ 0 := by have := takeLast_len_self (t ∷ (0 : V)); rwa [hw.lh] at this
   have hEw : 2 * 0 + 2 * 1 + 2 * listSum (termLenVec LAct 1 (t ∷ (0 : V))) + 8 ≤ E := by
     rw [hS]; exact le_trans (le_of_eq (by ring)) hE
-  obtain ⟨_, hcu, hVF⟩ := descVecAux_ok' htbl hW rfl hw hEw 1 le_rfl
+  obtain ⟨_, hcu, hVF⟩ := descriptionsAux_ok' htbl hW rfl hw hEw 1 le_rfl
   rw [htl, hS] at hcu
   obtain ⟨okU, ndU, shU, _⟩ := hVF Γ hΓ
   have hoU : HornOnly (vecWalk walkPieces t) :=
-    hornOnly_descVecAux rfl hw (fun i hi ↦ by have := hornOnly_describeT rfl 0 _ (hw.nth hi); rwa [describeT] at this) 1 le_rfl
+    hornOnly_descriptionsAux rfl hw (fun i hi ↦ by have := hornOnly_describeT rfl 0 _ (hw.nth hi); rwa [describeT] at this) 1 le_rfl
   exact ⟨okU, ndU, hoU, shU, hcu, dossV_of_walk ndU⟩
 
-/-! ### 14.3 The length object `l = bnum |t|` -/
+/-! ### 14.3 The length object `l = binNumeral |t|` -/
 
-/-- `eqTotal [bnum lt]` (`&0 = bnum lt`), `eqSymm [&0, bnum lt]`, the re-indexed cert row `congTLenNum [T̂, bnum lt, &0]`
-(`tlenFact &0 T̂`, `T̂ = &(it₀ + 1)` after the eigenvariable), `leOfEqP [&0, bnum lt]` (`leFact &0 (bnum lt)`). -/
+/-- `eqTotal [binNumeral lt]` (`&0 = binNumeral lt`), `eqSymm [&0, binNumeral lt]`, the re-indexed cert row `congTLenNum [T̂, binNumeral lt, &0]`
+(`termLenMetaFact &0 T̂`, `T̂ = &(it₀ + 1)` after the eigenvariable), `leOfEqP [&0, binNumeral lt]` (`leFact &0 (binNumeral lt)`). -/
 noncomputable def lenObj (Wc W lt it₀ : V) : V :=
-  appendV ?[mkStep W 40 ?[bnum lt]]
-    (appendV ?[mkStep W 42 ?[^&0, bnum lt]]
-      (appendV (reidxL ?[mkStep Wc 146 ?[^&(it₀ + 1), bnum lt, ^&0]])
-        ?[mkStep W 159 ?[^&0, bnum lt]]))
+  appendV ?[mkStep W 40 ?[binNumeral lt]]
+    (appendV ?[mkStep W 42 ?[^&0, binNumeral lt]]
+      (appendV (reidxL ?[mkStep Wc 146 ?[^&(it₀ + 1), binNumeral lt, ^&0]])
+        ?[mkStep W 159 ?[^&0, binNumeral lt]]))
 
 noncomputable def lenObjDef : 𝚺₁.Semisentence 5 := .mkSigma
-  “y Wc W lt it. ∃ bn, !bnumGraph bn lt ∧ ∃ z0, !qqFvarDef z0 0 ∧ ∃ it1, it1 = it + 1 ∧ ∃ zi, !qqFvarDef zi it1 ∧
+  “y Wc W lt it. ∃ bn, !binNumeralGraph bn lt ∧ ∃ z0, !qqFvarDef z0 0 ∧ ∃ it1, it1 = it + 1 ∧ ∃ zi, !qqFvarDef zi it1 ∧
     ∃ e₁, !adjoinDef e₁ bn 0 ∧ ∃ s₁, !mkStepDef s₁ W 40 e₁ ∧ ∃ l₁, !adjoinDef l₁ s₁ 0 ∧
     ∃ e₂, !adjoinDef e₂ z0 e₁ ∧ ∃ s₂, !mkStepDef s₂ W 42 e₂ ∧ ∃ l₂, !adjoinDef l₂ s₂ 0 ∧
     ∃ e₃', !adjoinDef e₃' z0 0 ∧ ∃ e₃'', !adjoinDef e₃'' bn e₃' ∧ ∃ e₃, !adjoinDef e₃ zi e₃'' ∧ ∃ s₃, !mkStepDef s₃ Wc 146 e₃ ∧
@@ -6954,17 +6954,17 @@ noncomputable def lenObjDef : 𝚺₁.Semisentence 5 := .mkSigma
 
 set_option maxHeartbeats 1000000 in
 instance lenObj_defined : 𝚺₁-Function₄ (lenObj : V → V → V → V → V) via lenObjDef := .mk fun v ↦ by
-  simp [lenObjDef, lenObj, bnum.defined.iff, mkStep_defined.iff, reidxL_defined.iff, appendV_defined.iff, numeral_eq_natCast]
+  simp [lenObjDef, lenObj, binNumeral.defined.iff, mkStep_defined.iff, reidxL_defined.iff, appendV_defined.iff, numeral_eq_natCast]
 
 set_option maxHeartbeats 2000000 in
-/-- **`lenObj` is applicable**: one eigenvariable (`l = &0`), four steps, `tlenFact l T̂` and `leFact l (bnum lt)`. -/
+/-- **`lenObj` is applicable**: one eigenvariable (`l = &0`), four steps, `termLenMetaFact l T̂` and `leFact l (binNumeral lt)`. -/
 theorem lenObj_ok {tbl N Wc W lt it₀ E Γ : V} (htbl : TableOK tbl N) (hP : ProTable tbl) (hWc : Wc = certPieces)
-    (hWp : W = proPieces) (hΓ : IsFormulaSet LAct Γ) (hbE : termLen LAct (bnum lt) ≤ E) (hit : it₀ + 2 ≤ E)
-    (htl : neg LAct (tlenFact (bnum lt) (^&it₀)) ∈ Γ) :
+    (hWp : W = proPieces) (hΓ : IsFormulaSet LAct Γ) (hbE : termLen LAct (binNumeral lt) ≤ E) (hit : it₀ + 2 ≤ E)
+    (htl : neg LAct (termLenMetaFact (binNumeral lt) (^&it₀)) ∈ Γ) :
     ListOK tbl E ((8 : ℕ) : V) Γ (lenObj Wc W lt it₀) ∧ NoDrop' (lenObj Wc W lt it₀) ∧
     shiftsV (lenObj Wc W lt it₀) = 1 ∧ len (lenObj Wc W lt it₀) = 4 ∧
-    neg LAct (tlenFact (^&0) (^&(it₀ + 1))) ∈ finalCtx Γ (lenObj Wc W lt it₀) ∧
-    neg LAct (leFact (^&0) (bnum lt)) ∈ finalCtx Γ (lenObj Wc W lt it₀) ∧
+    neg LAct (termLenMetaFact (^&0) (^&(it₀ + 1))) ∈ finalCtx Γ (lenObj Wc W lt it₀) ∧
+    neg LAct (leFact (^&0) (binNumeral lt)) ∈ finalCtx Γ (lenObj Wc W lt it₀) ∧
     ∀ Q Dd : V, SizeOK Q Dd (lenObj Wc W lt it₀) := by
   have hL := hP.layoutTable
   have hC := hP.certTable
@@ -6974,32 +6974,32 @@ theorem lenObj_ok {tbl N Wc W lt it₀ E Γ : V} (htbl : TableOK tbl N) (hP : Pr
   have e42 : ∀ ev : V, mkStep proPieces (42 : V) ev = mkStep layoutPieces (42 : V) ev := fun ev ↦ by
     have := mkStep_pro_layout 42 (by decide) ev; simpa using this
   have hE1 : (1 : V) ≤ E := le_trans (by norm_num) (le_trans le_add_self hit)
-  have hb : IsSemiterm LAct 0 (bnum lt) := isSemiterm_bnum0 lt
+  have hb : IsSemiterm LAct 0 (binNumeral lt) := isSemiterm_bnum0 lt
   have hf0 : IsSemiterm LAct 0 (^&0 : V) := by simp
   have hf0E : termLen LAct (^&0 : V) ≤ E := termLen_fvar0_le hE1
   have hitE : it₀ + 1 + 1 ≤ E := by rw [add_assoc, one_add_one_eq_two]; exact hit
   -- step 1: the length object
   obtain ⟨ok₁, tg₁, cx₁⟩ := lok_eqTotal htbl hL rfl hΓ hb hbE
   rw [← e40, ← hWp] at ok₁ tg₁ cx₁
-  rw [Nat.cast_zero, termShift_bnum] at cx₁
-  have h1nd : NoDrop' (?[mkStep W 40 ?[bnum lt]] : V) := noDrop'_single (Or.inr (Or.inr (Or.inl tg₁)))
-  have h1sh : shiftsV (?[mkStep W 40 ?[bnum lt]] : V) = 1 := shiftsV_single_tag2 tg₁
-  obtain ⟨Γ₁, hΓ₁⟩ : ∃ Γ', Γ' = insert (neg LAct (eqFactB (^&0) (bnum lt))) (setShift LAct Γ) := ⟨_, rfl⟩
+  rw [Nat.cast_zero, termShift_binNumeral] at cx₁
+  have h1nd : NoDrop' (?[mkStep W 40 ?[binNumeral lt]] : V) := noDrop'_single (Or.inr (Or.inr (Or.inl tg₁)))
+  have h1sh : shiftsV (?[mkStep W 40 ?[binNumeral lt]] : V) = 1 := shiftsV_single_tag2 tg₁
+  obtain ⟨Γ₁, hΓ₁⟩ : ∃ Γ', Γ' = insert (neg LAct (eqFactB (^&0) (binNumeral lt))) (setShift LAct Γ) := ⟨_, rfl⟩
   have hΓ₁f : IsFormulaSet LAct Γ₁ := by rw [hΓ₁, ← cx₁]; exact isFormulaSet_ctxAfter 8 htbl ok₁
-  have htl₁ : neg LAct (tlenFact (bnum lt) (^&(it₀ + 1))) ∈ Γ₁ := by
-    have := tlenFact_transport h1nd htl
+  have htl₁ : neg LAct (termLenMetaFact (binNumeral lt) (^&(it₀ + 1))) ∈ Γ₁ := by
+    have := termLenMetaFact_transport h1nd htl
     rw [h1sh, finalCtx_single, cx₁] at this
     rw [hΓ₁]; exact this
-  have heq₁ : neg LAct (eqFactB (^&0) (bnum lt)) ∈ Γ₁ := by rw [hΓ₁]; exact memInsSelf _ _
+  have heq₁ : neg LAct (eqFactB (^&0) (binNumeral lt)) ∈ Γ₁ := by rw [hΓ₁]; exact memInsSelf _ _
   -- step 2: `eqSymm`
   obtain ⟨ok₂, tg₂, cx₂⟩ := lok_eqSymm htbl hL rfl hΓ₁f hf0 hf0E hb hbE heq₁
   rw [← e42, ← hWp] at ok₂ tg₂ cx₂
-  have hΓ₂f : IsFormulaSet LAct (insert (neg LAct (eqFactB (bnum lt) (^&0))) Γ₁) := by
+  have hΓ₂f : IsFormulaSet LAct (insert (neg LAct (eqFactB (binNumeral lt) (^&0))) Γ₁) := by
     rw [← cx₂]; exact isFormulaSet_ctxAfter 8 htbl ok₂
   -- step 3: `congTLenNum` (a cert row, re-indexed)
   obtain ⟨ok₃, tg₃, cx₃⟩ := cok_congTLenNum htblC hC hWc hΓ₂f (by simp) (termLen_fvar_le' hitE) hb hbE hf0 hf0E
     (memInsSelf _ _) (memIns htl₁)
-  have hΓ₃f : IsFormulaSet LAct (insert (neg LAct (tlenFact (^&0) (^&(it₀ + 1)))) (insert (neg LAct (eqFactB (bnum lt) (^&0))) Γ₁)) := by
+  have hΓ₃f : IsFormulaSet LAct (insert (neg LAct (termLenMetaFact (^&0) (^&(it₀ + 1)))) (insert (neg LAct (eqFactB (binNumeral lt) (^&0))) Γ₁)) := by
     rw [← cx₃]; exact isFormulaSet_ctxAfter 8 htblC ok₃
   -- step 4: `leOfEqP`
   have hrow := hP.leOfEqP
@@ -7063,7 +7063,7 @@ noncomputable def exsCert (Ww Wc W T s p t i : V) : V :=
                 ^&(exsIw Ww Wc T t p + exsSc Ww Wc T s p t i), ^&(exsSc Ww Wc T s p t i)]]))))
 
 noncomputable def exsCertDef : 𝚺₁.Semisentence 9 := .mkSigma
-  “y Ww Wc W T s p t i. ∃ tv, !adjoinDef tv t 0 ∧ ∃ dv, !descTVecDef dv Ww 0 1 tv ∧ ∃ VW, !descVecAuxDef VW Ww 0 dv 1 ∧
+  “y Ww Wc W T s p t i. ∃ tv, !adjoinDef tv t 0 ∧ ∃ dv, !descTVecDef dv Ww 0 1 tv ∧ ∃ VW, !descriptionsAuxDef VW Ww 0 dv 1 ∧
     ∃ cv, !pi₁Def cv VW ∧ ∃ Lv, !pi₂Def Lv VW ∧
     ∃ Lt, !lenTDef Lt Wc T 0 t 1 ∧ ∃ Rt, !reidxLDef Rt Lt ∧ ∃ sl, !shiftsVDef sl Lt ∧
     ∃ lt, !(termLenGraph LAct) lt t ∧ ∃ it₀, it₀ = 1 + sl ∧ ∃ Lo, !lenObjDef Lo Wc W lt it₀ ∧
@@ -7084,7 +7084,7 @@ instance exsCert_defined :
     𝚺₁.DefinedFunction (fun v : Fin 8 → V ↦ exsCert (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6) (v 7)) exsCertDef := .mk
   fun v ↦ by
     simp [exsCertDef, exsCert, vecWalk, vecCw, exsSl, exsC3, exsIw, exsIp, exsSc, memTop, mTop, descTVec_defined.iff,
-      descVecAux_defined.iff, lenT_defined.iff, reidxL_defined.iff, shiftsV_defined.iff, termLen.defined.iff,
+      descriptionsAux_defined.iff, lenT_defined.iff, reidxL_defined.iff, shiftsV_defined.iff, termLen.defined.iff,
       lenObj_defined.iff, substs1.defined.iff, describeF_defined.iff, descCountF_defined.iff, memberList_defined.iff,
       offVec_defined.iff, idxOf_defined.iff, certSubst_defined.iff, mkStep_defined.iff, appendV_defined.iff,
       numeral_eq_natCast]
@@ -7104,11 +7104,11 @@ theorem layout_exs {tbl N Wc T s p Γ i : V} (htbl : TableOK tbl N) (hP : ProTab
 set_option maxHeartbeats 4000000 in
 /-- **The certification prefix is applicable** (cap `9`): afterwards the parent is at `i + exsSig`, the fresh dossier
 of `PT = substs1 t p` is at `exsSc`, `T̂ = &(exsIw + exsSc + 1)` with `tPiFact 𝟎 T̂`, the length object
-`l = &(exsC3 + exsSc)` with `tlenFact l T̂` and `leFact l (bnum |t|)`, and `substs1Fact PT T̂ P`. -/
+`l = &(exsC3 + exsSc)` with `termLenMetaFact l T̂` and `leFact l (binNumeral |t|)`, and `substs1Fact PT T̂ P`. -/
 theorem exsCert_ok {tbl N N' B' Wc W T s p t i D E Γ : V} (htbl : TableOK tbl N) (hP : ProTable tbl)
     (htblN : NumTableOK T N' B') (hWc : Wc = certPieces) (hWp : W = proPieces)
     (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 1 p) (hr : (^∃ p) ∈ s) (ht : IsSemiterm LAct 0 t)
-    (hsD : setLen LAct s ≤ D) (htD : termLen LAct t ≤ D) (hptD : formulaLen LAct (substs1 LAct t p) ≤ D)
+    (hsD : sequentLen LAct s ≤ D) (htD : termLen LAct t ≤ D) (hptD : formulaLen LAct (substs1 LAct t p) ≤ D)
     (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E)
     (hEQ : 2 * ((1 + D) * (1 + D + D)) * (D + 1) + 4 * D + 11 ≤ E)
     (hiE : i + 2 * ((1 + D) * (1 + D + D)) * D + 40 * D + 20 ≤ E)
@@ -7121,9 +7121,9 @@ theorem exsCert_ok {tbl N N' B' Wc W T s p t i D E Γ : V} (htbl : TableOK tbl N
     DossF walkPieces (finalCtx Γ (exsCert walkPieces Wc W T s p t i)) 0 (substs1 LAct t p) (exsSc walkPieces Wc T s p t i) ∧
     neg LAct (tPiFact (𝟎 : V) (^&(exsIw walkPieces Wc T t p + exsSc walkPieces Wc T s p t i + 1))) ∈
       finalCtx Γ (exsCert walkPieces Wc W T s p t i) ∧
-    neg LAct (tlenFact (^&(exsC3 walkPieces t p + exsSc walkPieces Wc T s p t i))
+    neg LAct (termLenMetaFact (^&(exsC3 walkPieces t p + exsSc walkPieces Wc T s p t i))
       (^&(exsIw walkPieces Wc T t p + exsSc walkPieces Wc T s p t i + 1))) ∈ finalCtx Γ (exsCert walkPieces Wc W T s p t i) ∧
-    neg LAct (leFact (^&(exsC3 walkPieces t p + exsSc walkPieces Wc T s p t i)) (bnum (termLen LAct t))) ∈
+    neg LAct (leFact (^&(exsC3 walkPieces t p + exsSc walkPieces Wc T s p t i)) (binNumeral (termLen LAct t))) ∈
       finalCtx Γ (exsCert walkPieces Wc W T s p t i) ∧
     neg LAct (substs1Fact (^&(exsSc walkPieces Wc T s p t i)) (^&(exsIw walkPieces Wc T t p + exsSc walkPieces Wc T s p t i + 1))
       (^&(memTop walkPieces Wc T s (^∃ p) (i + exsSig walkPieces Wc T s p t i) + 1))) ∈
@@ -7140,7 +7140,7 @@ theorem exsCert_ok {tbl N N' B' Wc W T s p t i D E Γ : V} (htbl : TableOK tbl N
   have hpt : IsSemiformula LAct 0 (substs1 LAct t p) := hp.substs1 ht
   have hpD : formulaLen LAct p ≤ D := by
     have h1 := formulaLen_exs (L := LAct) hp.isUFormula
-    have h2 := formulaLen_le_setLen_of_mem (L := LAct) hr
+    have h2 := formulaLen_le_sequentLen_of_mem (L := LAct) hr
     rw [h1] at h2
     exact le_trans le_self_add (le_trans h2 hsD)
   have hQ : (1 + formulaLen LAct p) * (1 + formulaLen LAct p + termLen LAct t) ≤ (1 + D) * (1 + D + D) :=
@@ -7151,7 +7151,7 @@ theorem exsCert_ok {tbl N N' B' Wc W T s p t i D E Γ : V} (htbl : TableOK tbl N
     le_trans (add_le_add (le_trans (mul_le_mul_of_nonneg_right (by norm_num) zero_le) le_self_add) (by norm_num)) hE
   have hE18 : 18 * ‖D‖ + 7 ≤ E :=
     le_trans (add_le_add (le_add_self : 18 * ‖D‖ ≤ 13 * D + 18 * ‖D‖) (by norm_num : (7 : V) ≤ 12)) hE
-  have hbE : termLen LAct (bnum (termLen LAct t)) ≤ E := termLen_bnum_le_bkE htD hE18
+  have hbE : termLen LAct (binNumeral (termLen LAct t)) ≤ E := termLen_binNumeral_le_bkE htD hE18
   have h0 : (t ∷ (0 : V)).[1 - (0 + 1)] = t := by rw [zero_add, tsub_self]; simp
   -- (1) the vector walk
   obtain ⟨vok, vnd, vho, vsh, hcv, vD⟩ := vecWalk_ok htbl hP ht
@@ -7185,7 +7185,7 @@ theorem exsCert_ok {tbl N N' B' Wc W T s p t i D E Γ : V} (htbl : TableOK tbl N
   rw [hsl] at lfact
   obtain ⟨Γ₂, hΓ₂⟩ : ∃ Γ', Γ' = finalCtx Γ₁ (reidxL (lenT Wc T 0 t 1)) := ⟨_, rfl⟩
   have hΓ₂f : IsFormulaSet LAct Γ₂ := by rw [hΓ₂]; exact finalCtx_isFormulaSet 8 htbl hΓ₁f (listOK_reidxL hP lok)
-  have htl₂ : neg LAct (tlenFact (bnum (termLen LAct t)) (^&(1 + exsSl Wc T t))) ∈ Γ₂ := by rw [hΓ₂, finalCtx_reidxL]; exact lfact
+  have htl₂ : neg LAct (termLenMetaFact (binNumeral (termLen LAct t)) (^&(1 + exsSl Wc T t))) ∈ Γ₂ := by rw [hΓ₂, finalCtx_reidxL]; exact lfact
   have vD₂ : DossV walkPieces Γ₂ 0 1 (t ∷ 0) 1 (0 + exsSl Wc T t) := by
     rw [hΓ₂]; have := dossV_transport' (noDrop'_reidxL lnd) vD₁; rwa [shiftsV_reidxL, hsl] at this
   have hLay₂ : Layout walkPieces Wc T Γ₂ s (i + vecCw walkPieces t + exsSl Wc T t) := by
@@ -7197,8 +7197,8 @@ theorem exsCert_ok {tbl N N' B' Wc W T s p t i D E Γ : V} (htbl : TableOK tbl N
         _ ≤ E := hD13) htl₂
   obtain ⟨Γ₃, hΓ₃⟩ : ∃ Γ', Γ' = finalCtx Γ₂ (lenObj Wc W (termLen LAct t) (1 + exsSl Wc T t)) := ⟨_, rfl⟩
   have hΓ₃f : IsFormulaSet LAct Γ₃ := by rw [hΓ₃]; exact finalCtx_isFormulaSet 8 htbl hΓ₂f ook
-  have otl₃ : neg LAct (tlenFact (^&0) (^&(1 + exsSl Wc T t + 1))) ∈ Γ₃ := by rw [hΓ₃]; exact otl
-  have ole₃ : neg LAct (leFact (^&0) (bnum (termLen LAct t))) ∈ Γ₃ := by rw [hΓ₃]; exact ole
+  have otl₃ : neg LAct (termLenMetaFact (^&0) (^&(1 + exsSl Wc T t + 1))) ∈ Γ₃ := by rw [hΓ₃]; exact otl
+  have ole₃ : neg LAct (leFact (^&0) (binNumeral (termLen LAct t))) ∈ Γ₃ := by rw [hΓ₃]; exact ole
   have vD₃ : DossV walkPieces Γ₃ 0 1 (t ∷ 0) 1 (0 + exsSl Wc T t + 1) := by
     rw [hΓ₃]; have := dossV_transport' ond vD₂; rwa [osh] at this
   have hLay₃ : Layout walkPieces Wc T Γ₃ s (i + vecCw walkPieces t + exsSl Wc T t + 1) := by
@@ -7220,16 +7220,16 @@ theorem exsCert_ok {tbl N N' B' Wc W T s p t i D E Γ : V} (htbl : TableOK tbl N
     rw [hΓ₄]; have := dossV_transport pnd vD₃; rw [psh, zero_add] at this; exact this
   have hLay₄ : Layout walkPieces Wc T Γ₄ s (i + vecCw walkPieces t + exsSl Wc T t + 1 + exsC3 walkPieces t p) := by
     rw [hΓ₄]; have := hLay₃.transport pnd.noDrop'; rwa [psh] at this
-  have otl₄ : neg LAct (tlenFact (^&(0 + exsC3 walkPieces t p)) (^&(1 + exsSl Wc T t + 1 + exsC3 walkPieces t p))) ∈ Γ₄ := by
+  have otl₄ : neg LAct (termLenMetaFact (^&(0 + exsC3 walkPieces t p)) (^&(1 + exsSl Wc T t + 1 + exsC3 walkPieces t p))) ∈ Γ₄ := by
     rw [hΓ₄]
     have := mem_finalCtx_of_mem pnd otl₃
-    rwa [psh, shiftIterV_neg (isFormula_tlenFact (by simp) (by simp)), shiftIterV_tlenFact (by simp) (by simp),
+    rwa [psh, shiftIterV_neg (isFormula_termLenMetaFact (by simp) (by simp)), shiftIterV_termLenMetaFact (by simp) (by simp),
       termShiftIterV_fvar, termShiftIterV_fvar] at this
-  have ole₄ : neg LAct (leFact (^&(0 + exsC3 walkPieces t p)) (bnum (termLen LAct t))) ∈ Γ₄ := by
+  have ole₄ : neg LAct (leFact (^&(0 + exsC3 walkPieces t p)) (binNumeral (termLen LAct t))) ∈ Γ₄ := by
     rw [hΓ₄]
     have := mem_finalCtx_of_mem pnd ole₃
     rwa [psh, shiftIterV_neg (isFormula_leFact (by simp) (isSemiterm_bnum0 _)), shiftIterV_leFact (by simp) (isSemiterm_bnum0 _),
-      termShiftIterV_fvar, termShiftIterV_bnum'] at this
+      termShiftIterV_fvar, termShiftIterV_binNumeral'] at this
   obtain ⟨_, hDp₄, _⟩ := layout_exs htbl hP hp hr hLay₄
   have hip : memTop walkPieces Wc T s (^∃ p) (i + vecCw walkPieces t + exsSl Wc T t + 1 + exsC3 walkPieces t p) + 1 =
       exsIp walkPieces Wc T s p t i := rfl
@@ -7297,17 +7297,17 @@ theorem exsCert_ok {tbl N N' B' Wc W T s p t i D E Γ : V} (htbl : TableOK tbl N
     rw [hΓ₅]; have := dossF_transport' cnd' hDpt₄; rwa [csh', zero_add] at this
   have vD₅ : DossV walkPieces Γ₅ 0 1 (t ∷ 0) 1 (exsIw walkPieces Wc T t p + exsSc walkPieces Wc T s p t i) := by
     rw [hΓ₅]; have := dossV_transport (noDrop_reidxL (noDrop_of_hornOnly cho)) vD₄; rwa [csh'] at this
-  have otl₅ : neg LAct (tlenFact (^&(0 + exsC3 walkPieces t p + exsSc walkPieces Wc T s p t i))
+  have otl₅ : neg LAct (termLenMetaFact (^&(0 + exsC3 walkPieces t p + exsSc walkPieces Wc T s p t i))
       (^&(1 + exsSl Wc T t + 1 + exsC3 walkPieces t p + exsSc walkPieces Wc T s p t i))) ∈ Γ₅ := by
     rw [hΓ₅]
     have := mem_finalCtx_of_mem' cnd' otl₄
-    rwa [csh', shiftIterV_neg (isFormula_tlenFact (by simp) (by simp)), shiftIterV_tlenFact (by simp) (by simp),
+    rwa [csh', shiftIterV_neg (isFormula_termLenMetaFact (by simp) (by simp)), shiftIterV_termLenMetaFact (by simp) (by simp),
       termShiftIterV_fvar, termShiftIterV_fvar] at this
-  have ole₅ : neg LAct (leFact (^&(0 + exsC3 walkPieces t p + exsSc walkPieces Wc T s p t i)) (bnum (termLen LAct t))) ∈ Γ₅ := by
+  have ole₅ : neg LAct (leFact (^&(0 + exsC3 walkPieces t p + exsSc walkPieces Wc T s p t i)) (binNumeral (termLen LAct t))) ∈ Γ₅ := by
     rw [hΓ₅]
     have := mem_finalCtx_of_mem' cnd' ole₄
     rwa [csh', shiftIterV_neg (isFormula_leFact (by simp) (isSemiterm_bnum0 _)), shiftIterV_leFact (by simp) (isSemiterm_bnum0 _),
-      termShiftIterV_fvar, termShiftIterV_bnum'] at this
+      termShiftIterV_fvar, termShiftIterV_binNumeral'] at this
   have vD₅' : DossV walkPieces Γ₅ 0 1 (t ∷ 0) (0 + 1) (exsIw walkPieces Wc T t p + exsSc walkPieces Wc T s p t i) := by
     rw [zero_add]; exact vD₅
   obtain ⟨hadj₅, _, hDt₅, _⟩ := dossV_succ htbl hW rfl hw (j := 0) (by rw [zero_add]) vD₅'
@@ -7416,7 +7416,7 @@ noncomputable def proExs (Ww Wl Wc W T s p t i : V) : V :=
 
 noncomputable def proExsDef : 𝚺₁.Semisentence 10 := .mkSigma
   “y Ww Wl Wc W T s p t i. ∃ C, !exsCertDef C Ww Wc W T s p t i ∧
-    ∃ tv, !adjoinDef tv t 0 ∧ ∃ dv, !descTVecDef dv Ww 0 1 tv ∧ ∃ VW, !descVecAuxDef VW Ww 0 dv 1 ∧ ∃ cv, !pi₁Def cv VW ∧
+    ∃ tv, !adjoinDef tv t 0 ∧ ∃ dv, !descTVecDef dv Ww 0 1 tv ∧ ∃ VW, !descriptionsAuxDef VW Ww 0 dv 1 ∧ ∃ cv, !pi₁Def cv VW ∧
     ∃ Lt, !lenTDef Lt Wc T 0 t 1 ∧ ∃ sl, !shiftsVDef sl Lt ∧ ∃ pt, !(substs1Graph LAct) pt t p ∧ ∃ c₃, !descCountFDef c₃ Ww 0 pt ∧
     ∃ iw, iw = sl + 1 + c₃ ∧
     ∃ r, !qqExsDef r p ∧ ∃ xs, !memberListDef xs s ∧ ∃ k, !lenDef k xs ∧ ∃ os, !offVecDef os xs Ww Wc T ∧
@@ -7431,19 +7431,19 @@ instance proExs_defined :
   fun v ↦ by
     simp [proExsDef, proExs, exsSig, exsSc, exsIw, exsIp, exsSl, exsC3, vecCw, memTop, mTop, exsCert_defined.iff,
       lenT_defined.iff, shiftsV_defined.iff, substs1.defined.iff, descCountF_defined.iff, descTVec_defined.iff,
-      descVecAux_defined.iff, memberList_defined.iff, offVec_defined.iff, idxOf_defined.iff, certSubst_defined.iff,
+      descriptionsAux_defined.iff, memberList_defined.iff, offVec_defined.iff, idxOf_defined.iff, certSubst_defined.iff,
       proIns_defined.iff, appendV_defined.iff, numeral_eq_natCast]
 
 set_option maxHeartbeats 4000000 in
 /-- **The `exs` child's prologue is applicable** (cap `9`): afterwards the child `insert (substs1 t p) s` is laid out
 at `0`, the parent at `iP = i + exsSig + 1 + σ₃` (`σ₃ = proSig` of the child), and — with `S = &(iP + (k + 1))`,
 `ir = memTop … (∃p) iP`, `P = &(ir + 1)`, `T̂ = &it`, `l = &ilt`, `PT = &ipt`, `cp = &σ₃`, `s'' = &(k_c + 1)` —
-`tPiFact 𝟎 T̂`, `tlenFact l T̂`, `leFact l (bnum |t|)`, `substs1Fact PT T̂ P`, `insFact cp PT S`, `eqFactB cp s''`:
+`tPiFact 𝟎 T̂`, `termLenMetaFact l T̂`, `leFact l (binNumeral |t|)`, `substs1Fact PT T̂ P`, `insFact cp PT S`, `eqFactB cp s''`:
 every `nodeExs_ok` hypothesis except the child's own goal (`postIns`) is a fact here or follows from the two layouts. -/
 theorem proExs_ok {tbl N N' B' Wl Wc W T s p t i D E Γ : V} (htbl : TableOK tbl N) (hP : ProTable tbl)
     (htblN : NumTableOK T N' B') (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (hWp : W = proPieces)
     (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 1 p) (hr : (^∃ p) ∈ s) (ht : IsSemiterm LAct 0 t)
-    (hsD : setLen LAct s ≤ D) (hcD : setLen LAct (insert (substs1 LAct t p) s) ≤ D) (htD : termLen LAct t ≤ D)
+    (hsD : sequentLen LAct s ≤ D) (hcD : sequentLen LAct (insert (substs1 LAct t p) s) ≤ D) (htD : termLen LAct t ≤ D)
     (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E)
     (hEQ : 2 * ((1 + D) * (1 + D + D)) * (D + 1) + 4 * D + 11 ≤ E)
     (hiE : i + 2 * ((1 + D) * (1 + D + D)) * D + 40 * D + 20 ≤ E)
@@ -7456,11 +7456,11 @@ theorem proExs_ok {tbl N N' B' Wl Wc W T s p t i D E Γ : V} (htbl : TableOK tbl
       (i + exsSig walkPieces Wc T s p t i + 1 + proSig walkPieces Wl Wc W T (insert (substs1 LAct t p) s)) ∧
     neg LAct (tPiFact (𝟎 : V) (^&(exsIw walkPieces Wc T t p + exsSc walkPieces Wc T s p t i + 1 + 1 +
       proSig walkPieces Wl Wc W T (insert (substs1 LAct t p) s)))) ∈ finalCtx Γ (proExs walkPieces Wl Wc W T s p t i) ∧
-    neg LAct (tlenFact (^&(exsC3 walkPieces t p + exsSc walkPieces Wc T s p t i + 1 + proSig walkPieces Wl Wc W T (insert (substs1 LAct t p) s)))
+    neg LAct (termLenMetaFact (^&(exsC3 walkPieces t p + exsSc walkPieces Wc T s p t i + 1 + proSig walkPieces Wl Wc W T (insert (substs1 LAct t p) s)))
       (^&(exsIw walkPieces Wc T t p + exsSc walkPieces Wc T s p t i + 1 + 1 + proSig walkPieces Wl Wc W T (insert (substs1 LAct t p) s)))) ∈
       finalCtx Γ (proExs walkPieces Wl Wc W T s p t i) ∧
     neg LAct (leFact (^&(exsC3 walkPieces t p + exsSc walkPieces Wc T s p t i + 1 + proSig walkPieces Wl Wc W T (insert (substs1 LAct t p) s)))
-      (bnum (termLen LAct t))) ∈ finalCtx Γ (proExs walkPieces Wl Wc W T s p t i) ∧
+      (binNumeral (termLen LAct t))) ∈ finalCtx Γ (proExs walkPieces Wl Wc W T s p t i) ∧
     neg LAct (substs1Fact (^&(exsSc walkPieces Wc T s p t i + 1 + proSig walkPieces Wl Wc W T (insert (substs1 LAct t p) s)))
       (^&(exsIw walkPieces Wc T t p + exsSc walkPieces Wc T s p t i + 1 + 1 + proSig walkPieces Wl Wc W T (insert (substs1 LAct t p) s)))
       (^&(memTop walkPieces Wc T s (^∃ p) (i + exsSig walkPieces Wc T s p t i + 1 + proSig walkPieces Wl Wc W T (insert (substs1 LAct t p) s)) + 1))) ∈
@@ -7473,7 +7473,7 @@ theorem proExs_ok {tbl N N' B' Wl Wc W T s p t i D E Γ : V} (htbl : TableOK tbl
       (^&(0 + (len (memberList (insert (substs1 LAct t p) s)) + 1)))) ∈ finalCtx Γ (proExs walkPieces Wl Wc W T s p t i) := by
   have h89 : ((8 : ℕ) : V) ≤ ((9 : ℕ) : V) := by exact_mod_cast (by decide : (8 : ℕ) ≤ 9)
   have hpt : IsSemiformula LAct 0 (substs1 LAct t p) := hp.substs1 ht
-  have hptD : formulaLen LAct (substs1 LAct t p) ≤ D := le_trans (formulaLen_le_setLen_of_mem (by simp)) hcD
+  have hptD : formulaLen LAct (substs1 LAct t p) ≤ D := le_trans (formulaLen_le_sequentLen_of_mem (by simp)) hcD
   have hk1 : 1 ≤ len (memberList s) := by
     obtain ⟨hlt, _⟩ := idxOf_spec hr
     have := lt_iff_succ_le.mp (lt_of_le_of_lt zero_le hlt); rwa [zero_add] at this
@@ -7524,12 +7524,12 @@ theorem proExs_ok {tbl N N' B' Wl Wc W T s p t i D E Γ : V} (htbl : TableOK tbl
       termShiftIterV_zeroV, termShiftIterV_fvar, e₁] at this
   · rw [finalCtx_appendV, ← hΓ₁]
     have := mem_finalCtx_of_mem' ind ctl₁
-    rwa [ish, shiftIterV_neg (isFormula_tlenFact (by simp) (by simp)), shiftIterV_tlenFact (by simp) (by simp),
+    rwa [ish, shiftIterV_neg (isFormula_termLenMetaFact (by simp) (by simp)), shiftIterV_termLenMetaFact (by simp) (by simp),
       termShiftIterV_fvar, termShiftIterV_fvar, e₁, e₂] at this
   · rw [finalCtx_appendV, ← hΓ₁]
     have := mem_finalCtx_of_mem' ind cle₁
     rwa [ish, shiftIterV_neg (isFormula_leFact (by simp) (isSemiterm_bnum0 _)), shiftIterV_leFact (by simp) (isSemiterm_bnum0 _),
-      termShiftIterV_fvar, termShiftIterV_bnum', e₂] at this
+      termShiftIterV_fvar, termShiftIterV_binNumeral', e₂] at this
   · rw [finalCtx_appendV, ← hΓ₁]
     have := mem_finalCtx_of_mem' ind csub₁
     rwa [ish, shiftIterV_neg (isFormula_substs1Fact (by simp) (by simp) (by simp)), shiftIterV_substs1Fact (by simp) (by simp) (by simp),
@@ -7553,15 +7553,15 @@ set_option maxHeartbeats 4000000 in
 theorem sizeOK_proSS {tbl N N' B' B Wl Wc W T s i D E Γ : V} (htbl : TableOK tbl N) (hP : ProTable tbl)
     (htblN : NumTableOK T N' B') (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (hWp : W = proPieces)
     (hPle : formulaLen LAct (Ple : V) ≤ B)
-    (hs : IsFormulaSet LAct s) (hk1 : 1 ≤ len (memberList s)) (hsD : setLen LAct s ≤ D)
-    (hvD : setLen LAct (setShift LAct s) ≤ D)
+    (hs : IsFormulaSet LAct s) (hk1 : 1 ≤ len (memberList s)) (hsD : sequentLen LAct s ≤ D)
+    (hvD : sequentLen LAct (setShift LAct s) ≤ D)
     (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E) (hiE : i + 22 * D + 8 ≤ E)
     (hΓ : IsFormulaSet LAct Γ) (hLay : Layout walkPieces Wc T Γ s i) :
     SizeOK (layQ B B' D) (layD N' B' D) (proSS walkPieces Wl Wc W T s i) := by
   have hV : IsFormulaSet LAct (setShift LAct s) := hs.setShift
   have hkV1 : 1 ≤ len (memberList (setShift LAct s)) := one_le_len_memberList_setShift rfl hk1
-  have hkD : len (memberList s) ≤ D := le_trans (len_memberList_le_setLen hs) hsD
-  have hkVD : len (memberList (setShift LAct s)) ≤ D := le_trans (len_memberList_le_setLen hV) hvD
+  have hkD : len (memberList s) ≤ D := le_trans (len_memberList_le_sequentLen hs) hsD
+  have hkVD : len (memberList (setShift LAct s)) ≤ D := le_trans (len_memberList_le_sequentLen hV) hvD
   have hE8 : 13 * D + 18 * ‖D‖ + 8 ≤ E := le_trans (add_le_add le_rfl (by norm_num)) hE
   have hσ₁ : proSig walkPieces Wl Wc W T (setShift LAct s) ≤ 6 * D + 1 := proSig_le htbl hP hWc htblN hWl hWp hV hkV1 hvD hE8 hΓ
   have hσ₂ : proSig walkPieces Wl Wc W T s ≤ 6 * D + 1 := proSig_le htbl hP hWc htblN hWl hWp hs hk1 hsD hE8 hΓ
@@ -7613,7 +7613,7 @@ theorem sizeOK_proAll {tbl N N' B' B Wl Wc W T s p i D E Γ : V} (htbl : TableOK
     (htblN : NumTableOK T N' B') (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (hWp : W = proPieces)
     (hPle : formulaLen LAct (Ple : V) ≤ B)
     (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 1 p) (hr : (^∀ p) ∈ s)
-    (hsD : setLen LAct s ≤ D) (hcD : setLen LAct (insert (free LAct p) (setShift LAct s)) ≤ D)
+    (hsD : sequentLen LAct s ≤ D) (hcD : sequentLen LAct (insert (free LAct p) (setShift LAct s)) ≤ D)
     (hspD : formulaLen LAct (shift LAct p) ≤ D)
     (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E)
     (hEQ : 2 * ((1 + D) * (1 + D + 1)) * (D + 1) + 4 * D + 11 ≤ E)
@@ -7626,8 +7626,8 @@ theorem sizeOK_proAll {tbl N N' B' B Wl Wc W T s p i D E Γ : V} (htbl : TableOK
     obtain ⟨hlt, _⟩ := idxOf_spec hr
     have := lt_iff_succ_le.mp (lt_of_le_of_lt zero_le hlt); rwa [zero_add] at this
   have hkV1 : 1 ≤ len (memberList (setShift LAct s)) := one_le_len_memberList_setShift rfl hk1
-  have hvD : setLen LAct (setShift LAct s) ≤ D := le_trans (setLen_le_insert _ _) hcD
-  have hkD : len (memberList s) ≤ D := le_trans (len_memberList_le_setLen hs) hsD
+  have hvD : sequentLen LAct (setShift LAct s) ≤ D := le_trans (sequentLen_le_insert _ _) hcD
+  have hkD : len (memberList s) ≤ D := le_trans (len_memberList_le_sequentLen hs) hsD
   have hE8 : 13 * D + 18 * ‖D‖ + 8 ≤ E := le_trans (add_le_add le_rfl (by norm_num)) hE
   have hσV : proSig walkPieces Wl Wc W T (setShift LAct s) ≤ 6 * D + 1 := proSig_le htbl hP hWc htblN hWl hWp hV hkV1 hvD hE8 hΓ
   have hσS : proSig walkPieces Wl Wc W T s ≤ 6 * D + 1 := proSig_le htbl hP hWc htblN hWl hWp hs hk1 hsD hE8 hΓ
@@ -7681,7 +7681,7 @@ theorem costSum_proAll_le {tbl N N' B' B Wl Wc W T s p i D E Γ : V} (htbl : Tab
     (htblN : NumTableOK T N' B') (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (hWp : W = proPieces)
     (hBt : ∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ B) (hPle : formulaLen LAct (Ple : V) ≤ B)
     (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 1 p) (hr : (^∀ p) ∈ s)
-    (hsD : setLen LAct s ≤ D) (hcD : setLen LAct (insert (free LAct p) (setShift LAct s)) ≤ D)
+    (hsD : sequentLen LAct s ≤ D) (hcD : sequentLen LAct (insert (free LAct p) (setShift LAct s)) ≤ D)
     (hspD : formulaLen LAct (shift LAct p) ≤ D)
     (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E)
     (hEQ : 2 * ((1 + D) * (1 + D + 1)) * (D + 1) + 4 * D + 11 ≤ E)
@@ -7701,14 +7701,14 @@ theorem sizeOK_proExs {tbl N N' B' B Wl Wc W T s p t i D E Γ : V} (htbl : Table
     (htblN : NumTableOK T N' B') (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (hWp : W = proPieces)
     (hPle : formulaLen LAct (Ple : V) ≤ B)
     (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 1 p) (hr : (^∃ p) ∈ s) (ht : IsSemiterm LAct 0 t)
-    (hsD : setLen LAct s ≤ D) (hcD : setLen LAct (insert (substs1 LAct t p) s) ≤ D) (htD : termLen LAct t ≤ D)
+    (hsD : sequentLen LAct s ≤ D) (hcD : sequentLen LAct (insert (substs1 LAct t p) s) ≤ D) (htD : termLen LAct t ≤ D)
     (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E)
     (hEQ : 2 * ((1 + D) * (1 + D + D)) * (D + 1) + 4 * D + 11 ≤ E)
     (hiE : i + 2 * ((1 + D) * (1 + D + D)) * D + 40 * D + 20 ≤ E)
     (hΓ : IsFormulaSet LAct Γ) (hLay : Layout walkPieces Wc T Γ s i) :
     SizeOK (layQ B B' D) (layD N' B' D) (proExs walkPieces Wl Wc W T s p t i) := by
   have hpt : IsSemiformula LAct 0 (substs1 LAct t p) := hp.substs1 ht
-  have hptD : formulaLen LAct (substs1 LAct t p) ≤ D := le_trans (formulaLen_le_setLen_of_mem (by simp)) hcD
+  have hptD : formulaLen LAct (substs1 LAct t p) ≤ D := le_trans (formulaLen_le_sequentLen_of_mem (by simp)) hcD
   have hk1 : 1 ≤ len (memberList s) := by
     obtain ⟨hlt, _⟩ := idxOf_spec hr
     have := lt_iff_succ_le.mp (lt_of_le_of_lt zero_le hlt); rwa [zero_add] at this
@@ -7739,7 +7739,7 @@ theorem costSum_proExs_le {tbl N N' B' B Wl Wc W T s p t i D E Γ : V} (htbl : T
     (htblN : NumTableOK T N' B') (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (hWp : W = proPieces)
     (hBt : ∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ B) (hPle : formulaLen LAct (Ple : V) ≤ B)
     (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 1 p) (hr : (^∃ p) ∈ s) (ht : IsSemiterm LAct 0 t)
-    (hsD : setLen LAct s ≤ D) (hcD : setLen LAct (insert (substs1 LAct t p) s) ≤ D) (htD : termLen LAct t ≤ D)
+    (hsD : sequentLen LAct s ≤ D) (hcD : sequentLen LAct (insert (substs1 LAct t p) s) ≤ D) (htD : termLen LAct t ≤ D)
     (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E)
     (hEQ : 2 * ((1 + D) * (1 + D + D)) * (D + 1) + 4 * D + 11 ≤ E)
     (hiE : i + 2 * ((1 + D) * (1 + D + D)) * D + 40 * D + 20 ≤ E)
@@ -7800,7 +7800,7 @@ theorem identIns0_ok {tbl N Wl W Wc T p i₁ ip₁ σ D E Γ q : V} (htbl : Tabl
     (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (hWp : W = proPieces)
     (hq : q = qPack Wl W i₁ (len (memberList (0 : V))) (offVec (memberList (0 : V)) walkPieces Wc T) (memberList (0 : V)) ip₁
       (len (memberList (insert p (0 : V)))) (offVec (memberList (insert p (0 : V))) walkPieces Wc T) (memberList (insert p (0 : V))) p σ)
-    (hp : IsSemiformula LAct 0 p) (hsD : setLen LAct (insert p (0 : V)) ≤ D)
+    (hp : IsSemiformula LAct 0 p) (hsD : sequentLen LAct (insert p (0 : V)) ≤ D)
     (hcap : IdCap D E i₁ ip₁ σ) (hΓ : IsFormulaSet LAct Γ) (hF : IdFrame walkPieces Wc T Γ (0 : V) p i₁ ip₁ σ)
     (h0 : neg LAct (eqFactB (^&(i₁ + (len (memberList (0 : V)) + 1))) (𝟎 : V)) ∈ Γ) :
     ListOK tbl E ((8 : ℕ) : V) Γ (identIns0 q) ∧ NoDrop (identIns0 q) ∧ HornOnly (identIns0 q) ∧
@@ -7811,9 +7811,9 @@ theorem identIns0_ok {tbl N Wl W Wc T p i₁ ip₁ σ D E Γ q : V} (htbl : Tabl
   have hF1 := hP.frag1Table
   have hs : IsFormulaSet LAct (0 : V) := fun x hx ↦ by simp at hx
   have hcs : IsFormulaSet LAct (insert p (0 : V)) := IsFormulaSet.insert_iff.mpr ⟨hp, hs⟩
-  have hsD' : setLen LAct (0 : V) ≤ D := le_trans (setLen_le_insert p 0) hsD
-  have hkD : len (memberList (0 : V)) ≤ D := le_trans (len_memberList_le_setLen hs) hsD'
-  have hk'D : len (memberList (insert p (0 : V))) ≤ D := le_trans (len_memberList_le_setLen hcs) hsD
+  have hsD' : sequentLen LAct (0 : V) ≤ D := le_trans (sequentLen_le_insert p 0) hsD
+  have hkD : len (memberList (0 : V)) ≤ D := le_trans (len_memberList_le_sequentLen hs) hsD'
+  have hk'D : len (memberList (insert p (0 : V))) ≤ D := le_trans (len_memberList_le_sequentLen hcs) hsD
   have hk1' : 1 ≤ len (memberList (insert p (0 : V))) := one_le_len_memberList_insert p 0
   have e112 : ∀ ev : V, mkStep proPieces (112 : V) ev = mkStep frag1Pieces (112 : V) ev := fun ev ↦ by
     have := mkStep_pro_frag1 112 (by decide) ev; simpa using this
@@ -7974,7 +7974,7 @@ set_option maxHeartbeats 4000000 in
 parent's `Layout0` is at `i + 1 + σ`, and `insFact cp P S`, `eqFactB cp s''` hold (`cp = &σ`, `s'' = &(k' + 1)`). -/
 theorem proIns0_ok {tbl N N' B' Wl Wc W T p i ip D E Γ : V} (htbl : TableOK tbl N) (hP : ProTable tbl)
     (htblN : NumTableOK T N' B') (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (hWp : W = proPieces)
-    (hp : IsSemiformula LAct 0 p) (hsD : setLen LAct (insert p (0 : V)) ≤ D)
+    (hp : IsSemiformula LAct 0 p) (hsD : sequentLen LAct (insert p (0 : V)) ≤ D)
     (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E) (hiE : i + 14 * D + 5 ≤ E) (hipE : ip + 8 * D + 4 ≤ E)
     (hΓ : IsFormulaSet LAct Γ) (hLay : Layout0 walkPieces Wc T Γ i) (hDp : DossF walkPieces Γ 0 p ip) :
     ListOK tbl E ((8 : ℕ) : V) Γ (proIns0 walkPieces Wl Wc W T p i ip) ∧ NoDrop' (proIns0 walkPieces Wl Wc W T p i ip) ∧
@@ -7989,8 +7989,8 @@ theorem proIns0_ok {tbl N N' B' Wl Wc W T p i ip D E Γ : V} (htbl : TableOK tbl
   have hL := hP.layoutTable
   have hs : IsFormulaSet LAct (0 : V) := fun x hx ↦ by simp at hx
   have hcs : IsFormulaSet LAct (insert p (0 : V)) := IsFormulaSet.insert_iff.mpr ⟨hp, hs⟩
-  have hsD' : setLen LAct (0 : V) ≤ D := le_trans (setLen_le_insert p 0) hsD
-  have hkD : len (memberList (0 : V)) ≤ D := le_trans (len_memberList_le_setLen hs) hsD'
+  have hsD' : sequentLen LAct (0 : V) ≤ D := le_trans (sequentLen_le_insert p 0) hsD
+  have hkD : len (memberList (0 : V)) ≤ D := le_trans (len_memberList_le_sequentLen hs) hsD'
   have hk1' : 1 ≤ len (memberList (insert p (0 : V))) := one_le_len_memberList_insert p 0
   have hE8 : 13 * D + 18 * ‖D‖ + 8 ≤ E := le_trans (add_le_add le_rfl (by norm_num)) hE
   have e76 : ∀ ev : V, mkStep proPieces (76 : V) ev = mkStep layoutPieces (76 : V) ev := fun ev ↦ by
@@ -8091,10 +8091,10 @@ lemma sizeOK_layoutSteps0 {W : V} (hWp : W = proPieces) (Q Dd : V) : SizeOK Q Dd
   refine sizeOK_cons (stepSizeOK_of_tag ?_) (sizeOK_cons (stepSizeOK_of_tag ?_) (sizeOK_cons (stepSizeOK_of_tag ?_)
     (sizeOK_cons (stepSizeOK_of_tag ?_) (sizeOK_single (stepSizeOK_of_tag ?_)))))
   · rw [e40, ltag_eqTotal rfl]; simp
-  · rw [e85, ltag_setLenTotalC rfl]; simp
+  · rw [e85, ltag_sequentLenTotalC rfl]; simp
   · rw [e42, ltag_eqSymm rfl]; simp
   · rw [e124, ftag_congSetLenR rfl]; simp
-  · rw [ptag_setLenEmptyLe rfl]; simp
+  · rw [ptag_sequentLenEmptyLe rfl]; simp
 
 /-- `proWk0` is size-disciplined at every class. -/
 lemma sizeOK_proWk0 {W : V} (hWp : W = proPieces) (s i Q Dd : V) : SizeOK Q Dd (proWk0 W s i) := by
@@ -8162,15 +8162,15 @@ set_option maxHeartbeats 4000000 in
 theorem sizeOK_proIns0 {tbl N N' B' B Wl Wc W T p i ip D E Γ : V} (htbl : TableOK tbl N) (hP : ProTable tbl)
     (htblN : NumTableOK T N' B') (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (hWp : W = proPieces)
     (hPle : formulaLen LAct (Ple : V) ≤ B)
-    (hp : IsSemiformula LAct 0 p) (hsD : setLen LAct (insert p (0 : V)) ≤ D)
+    (hp : IsSemiformula LAct 0 p) (hsD : sequentLen LAct (insert p (0 : V)) ≤ D)
     (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E) (hiE : i + 14 * D + 5 ≤ E) (hipE : ip + 8 * D + 4 ≤ E)
     (hΓ : IsFormulaSet LAct Γ) (hLay : Layout0 walkPieces Wc T Γ i) (hDp : DossF walkPieces Γ 0 p ip) :
     SizeOK (layQ B B' D) (layD N' B' D) (proIns0 walkPieces Wl Wc W T p i ip) := by
   have hL := hP.layoutTable
   have hs : IsFormulaSet LAct (0 : V) := fun x hx ↦ by simp at hx
   have hcs : IsFormulaSet LAct (insert p (0 : V)) := IsFormulaSet.insert_iff.mpr ⟨hp, hs⟩
-  have hsD' : setLen LAct (0 : V) ≤ D := le_trans (setLen_le_insert p 0) hsD
-  have hkD : len (memberList (0 : V)) ≤ D := le_trans (len_memberList_le_setLen hs) hsD'
+  have hsD' : sequentLen LAct (0 : V) ≤ D := le_trans (sequentLen_le_insert p 0) hsD
+  have hkD : len (memberList (0 : V)) ≤ D := le_trans (len_memberList_le_sequentLen hs) hsD'
   have hk1' : 1 ≤ len (memberList (insert p (0 : V))) := one_le_len_memberList_insert p 0
   have hE8 : 13 * D + 18 * ‖D‖ + 8 ≤ E := le_trans (add_le_add le_rfl (by norm_num)) hE
   have e76 : ∀ ev : V, mkStep proPieces (76 : V) ev = mkStep layoutPieces (76 : V) ev := fun ev ↦ by
@@ -8240,7 +8240,7 @@ theorem sizeOK_proIns0 {tbl N N' B' B Wl Wc W T p i ip D E Γ : V} (htbl : Table
 theorem costSum_proIns0_le {tbl N N' B' B Wl Wc W T p i ip D E Γ : V} (htbl : TableOK tbl N) (hP : ProTable tbl)
     (htblN : NumTableOK T N' B') (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (hWp : W = proPieces)
     (hBt : ∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ B) (hPle : formulaLen LAct (Ple : V) ≤ B)
-    (hp : IsSemiformula LAct 0 p) (hsD : setLen LAct (insert p (0 : V)) ≤ D)
+    (hp : IsSemiformula LAct 0 p) (hsD : sequentLen LAct (insert p (0 : V)) ≤ D)
     (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E) (hiE : i + 14 * D + 5 ≤ E) (hipE : ip + 8 * D + 4 ≤ E)
     (hΓ : IsFormulaSet LAct Γ) (hLay : Layout0 walkPieces Wc T Γ i) (hDp : DossF walkPieces Γ 0 p ip) :
     costSum N E Γ (proIns0 walkPieces Wl Wc W T p i ip) ≤ len (proIns0 walkPieces Wl Wc W T p i ip) *
@@ -8253,10 +8253,10 @@ theorem costSum_proIns0_le {tbl N N' B' B Wl Wc W T p i ip D E Γ : V} (htbl : T
 
 end proSizes0
 
-/-! ## 18. The lengths and shifts of the prologues (`Top.lean` §9: `VerifyKit'.cost` needs `len ≤ Ck·(dlen ρ + 1)`)
+/-! ## 18. The lengths and shifts of the prologues (`Top.lean` §9: `VerifyKit'.cost` needs `len ≤ Ck·(proofLen ρ + 1)`)
 
 Every `costSum_pro<Tag>_le` of §11/§15/§17 has `len (pro…)` as its multiplier; this section bounds those lengths by the
-sizes the node charges in its own `dlen` (`NodeSize.lean`): the parent's and the child's `setLen`, the principal
+sizes the node charges in its own `proofLen` (`NodeSize.lean`): the parent's and the child's `sequentLen`, the principal
 formula, the `exs` witness. All bounds are STRUCTURAL (no context, no cap) except where a loop contains an `eqSteps`,
 whose only known length bound is the one `eqSteps_ok` gives — extracted once, by a double walk of the formula from the
 empty context (`len_eqSteps_le`, needs only the tables). The `sizeOK`/`costSum`/`_ok` statements above are untouched;
@@ -8269,13 +8269,13 @@ whose term-length sums are QUADRATIC in the depth (`Σ_{i<e}(i+1)` — unary bva
 degree 3 with `Pin`'s `len_certSubst_le_lin` (`sfL L Q = L + 24Q + 22`; `Pin` imports this file, so the linear-in-`Q`
 bound cannot be used here — the parametric lemmas `len_allCert_le_of`/`len_proAll_le_of`/`len_exsCert_le_of`/
 `len_proExs_le_of` take the substitution pass's length as a hypothesis for exactly that reason). Consequence for
-`VerifyKit'.cost` as stated: `len ≤ Ck·(dlen ρ + 1)` is NOT what these producers give at `all`/`exs` nodes; the honest
-shape is `Ck·(dlen ρ + 1)³` (with the `Pin` bound) — one degree more per factor of `len` in `boundedInnerNec_four_of_kit`
+`VerifyKit'.cost` as stated: `len ≤ Ck·(proofLen ρ + 1)` is NOT what these producers give at `all`/`exs` nodes; the honest
+shape is `Ck·(proofLen ρ + 1)³` (with the `Pin` bound) — one degree more per factor of `len` in `boundedInnerNec_four_of_kit`
 unless the substitution certificate is restructured (a `qVec` walk shared across the depths).
 
 Contents: 18.1 prefix sums `preSum`; 18.2 `len_relocS`, `len_eqSteps_le`; 18.3 the identification blocks/loops
 (A, B, W, E, `p`); 18.4 the exact Horn-only loops (`subChain`, `uSub`, `loopI`, `loopM`, `loopS`); 18.5 the layout
-builder (`memberBlock(s)`, `chainSteps`, `lenFold`, `layoutSteps ≤ 26·setLen s + 13k + 6 ≤ 39·setLen s + 6`,
+builder (`memberBlock(s)`, `chainSteps`, `lenFold`, `layoutSteps ≤ 26·sequentLen s + 13k + 6 ≤ 39·sequentLen s + 6`,
 `layoutSteps0 = 5`, `shBase = 4`, `postIns = 6`, `proWk0 = 7`, `proShift0 = 11`, `lenObj = 4`, `proAxL + 4 ≤ 12|p|`,
 `proCutPre ≤ 64|p|`); 18.6 `identIns ≤ 16·S' + 5`, `proIns ≤ 55·S' + 12`, `proOr ≤ 110·S'' + 25`, `proWk ≤ 44·Sc + 7`;
 18.7 `shTail`, `proShift ≤ 61·Sc + Ss + 20`, `ssIdent ≤ 8·Ss + 4`, `proSS ≤ 40·Sv + 69·Ss + 30`; 18.8 the structural
@@ -8322,12 +8322,12 @@ lemma preSum_adjoin_succ (x v : V) : ∀ m : V, preSum (x ∷ v) (m + 1) = formu
   | succ m ih => rw [preSum_succ, ih, nth_adjoin_succ, preSum_succ, add_assoc]
 
 /-- The whole prefix sum is the list sum of the lengths. -/
-lemma preSum_len_eq : ∀ ys : V, preSum ys (len ys) = listSum (flenVec ys) := by
+lemma preSum_len_eq : ∀ ys : V, preSum ys (len ys) = listSum (formulaLenMetaVec ys) := by
   intro ys
   induction ys using adjoin_ISigma1.pi1_succ_induction with
   | hP => definability
   | nil => simp
-  | adjoin x v ih => rw [len_adjoin, preSum_adjoin_succ, ih, flenVec_adjoin, listSum_adjoin]
+  | adjoin x v ih => rw [len_adjoin, preSum_adjoin_succ, ih, formulaLenMetaVec_adjoin, listSum_adjoin]
 
 lemma preSum_mono (ys m : V) : ∀ c : V, preSum ys m ≤ preSum ys (m + c) := by
   intro c
@@ -8336,12 +8336,12 @@ lemma preSum_mono (ys m : V) : ∀ c : V, preSum ys m ≤ preSum ys (m + c) := b
   | zero => rw [add_zero]
   | succ c ih => rw [← add_assoc, preSum_succ]; exact le_trans ih le_self_add
 
-lemma preSum_le_listSum {ys m : V} (hm : m ≤ len ys) : preSum ys m ≤ listSum (flenVec ys) := by
+lemma preSum_le_listSum {ys m : V} (hm : m ≤ len ys) : preSum ys m ≤ listSum (formulaLenMetaVec ys) := by
   obtain ⟨c, hc⟩ := exists_add_of_le hm
   rw [← preSum_len_eq, hc]; exact preSum_mono ys m c
 
-lemma preSum_memberList_le (s m : V) (hm : m ≤ len (memberList s)) : preSum (memberList s) m ≤ setLen LAct s := by
-  rw [setLen_eq_listSum_memberList]; exact preSum_le_listSum hm
+lemma preSum_memberList_le (s m : V) (hm : m ≤ len (memberList s)) : preSum (memberList s) m ≤ sequentLen LAct s := by
+  rw [sequentLen_eq_listSum_memberList]; exact preSum_le_listSum hm
 
 /-! ### 18.2 `eqSteps` has at most `2·eqCount + 1` steps (a structural fact, extracted by a double walk) -/
 
@@ -8559,7 +8559,7 @@ lemma len_memberBlock_le {Wc : V} (hWc : Wc = certPieces) (Ww T : V) {x : V} (hx
     _ = 26 * formulaLen LAct x := by ring
 
 lemma len_memberBlocks_le {Wc : V} (hWc : Wc = certPieces) (Ww T : V) :
-    ∀ v : V, (∀ j < len v, IsSemiformula LAct 0 v.[j]) → len (memberBlocks v Ww Wc T) ≤ 26 * listSum (flenVec v) := by
+    ∀ v : V, (∀ j < len v, IsSemiformula LAct 0 v.[j]) → len (memberBlocks v Ww Wc T) ≤ 26 * listSum (formulaLenMetaVec v) := by
   intro v
   induction v using adjoin_ISigma1.pi1_succ_induction with
   | hP => definability
@@ -8570,10 +8570,10 @@ lemma len_memberBlocks_le {Wc : V} (hWc : Wc = certPieces) (Ww T : V) :
     have hv' : ∀ j < len v, IsSemiformula LAct 0 v.[j] := fun j hj ↦ by
       have := hv (j + 1) (by rw [len_adjoin]; exact (add_lt_add_iff_right 1).mpr hj)
       rwa [nth_adjoin_succ] at this
-    rw [memberBlocks_adjoin, len_appendV, flenVec_adjoin, listSum_adjoin]
+    rw [memberBlocks_adjoin, len_appendV, formulaLenMetaVec_adjoin, listSum_adjoin]
     calc len (memberBlock Ww Wc T x) + len (memberBlocks v Ww Wc T)
-        ≤ 26 * formulaLen LAct x + 26 * listSum (flenVec v) := add_le_add (len_memberBlock_le hWc Ww T hx) (ih hv')
-      _ = 26 * (formulaLen LAct x + listSum (flenVec v)) := by ring
+        ≤ 26 * formulaLen LAct x + 26 * listSum (formulaLenMetaVec v) := add_le_add (len_memberBlock_le hWc Ww T hx) (ih hv')
+      _ = 26 * (formulaLen LAct x + listSum (formulaLenMetaVec v)) := by ring
 
 lemma len_chainA (W xs : V) : ∀ c : V, len (chainA W xs c) = 3 * c := by
   intro c
@@ -8633,30 +8633,30 @@ lemma len_lenFoldAux_le (W T xs os k : V) : ∀ c : V, len (lenFoldAux W T xs os
   intro c
   exact key c
 
-/-- **The layout builder has `≤ 26·setLen s + 13·k + 6` steps** (structurally, any walk/layout pieces). -/
+/-- **The layout builder has `≤ 26·sequentLen s + 13·k + 6` steps** (structurally, any walk/layout pieces). -/
 theorem len_layoutSteps_le {Wc : V} (hWc : Wc = certPieces) (Ww Wl W T : V) {s : V} (hs : IsFormulaSet LAct s) :
-    len (layoutSteps Ww Wl Wc W T s) ≤ 26 * setLen LAct s + 13 * len (memberList s) + 6 := by
+    len (layoutSteps Ww Wl Wc W T s) ≤ 26 * sequentLen LAct s + 13 * len (memberList s) + 6 := by
   unfold layoutSteps
   rw [len_appendV, len_appendV]
-  have h1 : len (memberBlocks (memberList s) Ww Wc T) ≤ 26 * setLen LAct s := by
-    rw [setLen_eq_listSum_memberList]
+  have h1 : len (memberBlocks (memberList s) Ww Wc T) ≤ 26 * sequentLen LAct s := by
+    rw [sequentLen_eq_listSum_memberList]
     exact len_memberBlocks_le hWc Ww T _ (fun j hj ↦ hs _ (nth_memberList_mem hj))
   have h2 : len (chainSteps Wl (fvarVec (offVec (memberList s) Ww Wc T))) ≤ 7 * len (memberList s) + 6 := by
     have := len_chainSteps_le Wl (fvarVec (offVec (memberList s) Ww Wc T))
     rwa [len_fvarVec, len_offVec] at this
   have h3 : len (lenFold W T (memberList s) (offVec (memberList s) Ww Wc T)) ≤ 6 * len (memberList s) :=
     len_lenFoldAux_le _ _ _ _ _ _
-  calc _ ≤ 26 * setLen LAct s + ((7 * len (memberList s) + 6) + 6 * len (memberList s)) := add_le_add h1 (add_le_add h2 h3)
-    _ = 26 * setLen LAct s + 13 * len (memberList s) + 6 := by ring
+  calc _ ≤ 26 * sequentLen LAct s + ((7 * len (memberList s) + 6) + 6 * len (memberList s)) := add_le_add h1 (add_le_add h2 h3)
+    _ = 26 * sequentLen LAct s + 13 * len (memberList s) + 6 := by ring
 
-/-- The same with the member count absorbed: `≤ 39·setLen s + 6`. -/
+/-- The same with the member count absorbed: `≤ 39·sequentLen s + 6`. -/
 theorem len_layoutSteps_le' {Wc : V} (hWc : Wc = certPieces) (Ww Wl W T : V) {s : V} (hs : IsFormulaSet LAct s) :
-    len (layoutSteps Ww Wl Wc W T s) ≤ 39 * setLen LAct s + 6 := by
+    len (layoutSteps Ww Wl Wc W T s) ≤ 39 * sequentLen LAct s + 6 := by
   refine le_trans (len_layoutSteps_le hWc Ww Wl W T hs) ?_
-  have hk := len_memberList_le_setLen hs
-  calc 26 * setLen LAct s + 13 * len (memberList s) + 6 ≤ 26 * setLen LAct s + 13 * setLen LAct s + 6 :=
+  have hk := len_memberList_le_sequentLen hs
+  calc 26 * sequentLen LAct s + 13 * len (memberList s) + 6 ≤ 26 * sequentLen LAct s + 13 * sequentLen LAct s + 6 :=
         add_le_add (add_le_add le_rfl (mul_le_mul_of_nonneg_left hk zero_le)) le_rfl
-    _ = 39 * setLen LAct s + 6 := by ring
+    _ = 39 * sequentLen LAct s + 6 := by ring
 
 lemma len_layoutSteps0 (W : V) : len (layoutSteps0 W) = 5 := by
   unfold layoutSteps0; rw [len_adjoin, len_adjoin, len_adjoin, len_adjoin, len_adjoin, len_nil]; norm_num
@@ -8692,16 +8692,16 @@ theorem len_proCutPre_le {Wc : V} (hWc : Wc = certPieces) (Ww T : V) {p : V} (hp
 
 /-! ### 18.6 The per-tag prologues: `and`/`cut` (`proIns`), `or`, `wk` -/
 
-/-- **The identification has `≤ 16·setLen (insert p s) + 5` steps** (Loops A and B, the two `subChain`s, the `p` block). -/
+/-- **The identification has `≤ 16·sequentLen (insert p s) + 5` steps** (Loops A and B, the two `subChain`s, the `p` block). -/
 theorem len_identIns_le {tbl N : V} (htbl : TableOK tbl N) (hP : ProTable tbl) {Wl : V} (hWl : Wl = layoutPieces)
     (W i₁ os ip₁ os' σ : V) {s p : V} (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 0 p) :
     len (identIns (qPack Wl W i₁ (len (memberList s)) os (memberList s) ip₁ (len (memberList (insert p s))) os'
-      (memberList (insert p s)) p σ)) ≤ 16 * setLen LAct (insert p s) + 5 := by
+      (memberList (insert p s)) p σ)) ≤ 16 * sequentLen LAct (insert p s) + 5 := by
   have hcs : IsFormulaSet LAct (insert p s) := IsFormulaSet.insert_iff.mpr ⟨hp, hs⟩
-  have hS : setLen LAct s ≤ setLen LAct (insert p s) := setLen_le_insert p s
-  have hk : len (memberList s) ≤ setLen LAct (insert p s) := le_trans (len_memberList_le_setLen hs) hS
-  have hk' : len (memberList (insert p s)) ≤ setLen LAct (insert p s) := len_memberList_le_setLen hcs
-  have hpS : formulaLen LAct p ≤ setLen LAct (insert p s) := formulaLen_le_setLen_of_mem (by simp)
+  have hS : sequentLen LAct s ≤ sequentLen LAct (insert p s) := sequentLen_le_insert p s
+  have hk : len (memberList s) ≤ sequentLen LAct (insert p s) := le_trans (len_memberList_le_sequentLen hs) hS
+  have hk' : len (memberList (insert p s)) ≤ sequentLen LAct (insert p s) := len_memberList_le_sequentLen hcs
+  have hpS : formulaLen LAct p ≤ sequentLen LAct (insert p s) := formulaLen_le_sequentLen_of_mem (by simp)
   have hA := len_loopA_le htbl hP (q := qPack Wl W i₁ (len (memberList s)) os (memberList s) ip₁ (len (memberList (insert p s))) os'
     (memberList (insert p s)) p σ) (by rw [qWl_pack]; exact hWl) (len (memberList (insert p s)))
     (fun j hj ↦ by rw [qYs_pack]; exact hcs _ (nth_memberList_mem hj))
@@ -8718,48 +8718,48 @@ theorem len_identIns_le {tbl N : V} (htbl : TableOK tbl N) (hP : ProTable tbl) {
   unfold identIns
   simp only [qW_pack, qK'_pack, qOs'_pack, qSig_pack, qI_pack, qK_pack, qOs_pack, qIp_pack]
   rw [len_appendV, len_appendV, len_appendV, len_appendV, len_appendV, len_vec2, len_subChain, len_subChain]
-  calc _ ≤ (4 * setLen LAct (insert p s) + setLen LAct (insert p s)) + ((setLen LAct (insert p s) + 1) +
-      ((4 * setLen LAct (insert p s) + setLen LAct (insert p s)) + ((4 * setLen LAct (insert p s) + 1) +
-        ((setLen LAct (insert p s) + 1) + 2)))) := by
+  calc _ ≤ (4 * sequentLen LAct (insert p s) + sequentLen LAct (insert p s)) + ((sequentLen LAct (insert p s) + 1) +
+      ((4 * sequentLen LAct (insert p s) + sequentLen LAct (insert p s)) + ((4 * sequentLen LAct (insert p s) + 1) +
+        ((sequentLen LAct (insert p s) + 1) + 2)))) := by
         refine add_le_add (le_trans hA (add_le_add (mul_le_mul_of_nonneg_left hpre zero_le) hk'))
           (add_le_add (add_le_add hk' le_rfl) (add_le_add
             (le_trans hB (add_le_add (mul_le_mul_of_nonneg_left (le_trans hpre' hS) zero_le) hk))
             (add_le_add (le_trans hPb (add_le_add (mul_le_mul_of_nonneg_left hpS zero_le) le_rfl))
               (add_le_add (add_le_add hk le_rfl) le_rfl))))
-    _ = 16 * setLen LAct (insert p s) + 5 := by ring
+    _ = 16 * sequentLen LAct (insert p s) + 5 := by ring
 
-/-- **`proIns` has `≤ 55·setLen (insert p s) + 12` steps.** -/
+/-- **`proIns` has `≤ 55·sequentLen (insert p s) + 12` steps.** -/
 theorem len_proIns_le {tbl N : V} (htbl : TableOK tbl N) (hP : ProTable tbl) {Wl Wc : V} (hWl : Wl = layoutPieces)
     (hWc : Wc = certPieces) (Ww W T i ip : V) {s p : V} (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 0 p) :
-    len (proIns Ww Wl Wc W T s p i ip) ≤ 55 * setLen LAct (insert p s) + 12 := by
+    len (proIns Ww Wl Wc W T s p i ip) ≤ 55 * sequentLen LAct (insert p s) + 12 := by
   have hcs : IsFormulaSet LAct (insert p s) := IsFormulaSet.insert_iff.mpr ⟨hp, hs⟩
   unfold proIns
   rw [len_appendV, len_appendV, len_vec1]
   have h1 := len_layoutSteps_le' hWc Ww Wl W T hcs
   have h2 := len_identIns_le htbl hP hWl W (i + 1 + proSig Ww Wl Wc W T (insert p s)) (offVec (memberList s) Ww Wc T)
     (ip + 1 + proSig Ww Wl Wc W T (insert p s)) (offVec (memberList (insert p s)) Ww Wc T) (proSig Ww Wl Wc W T (insert p s)) hs hp
-  calc _ ≤ 1 + ((39 * setLen LAct (insert p s) + 6) + (16 * setLen LAct (insert p s) + 5)) := add_le_add le_rfl (add_le_add h1 h2)
-    _ = 55 * setLen LAct (insert p s) + 12 := by ring
+  calc _ ≤ 1 + ((39 * sequentLen LAct (insert p s) + 6) + (16 * sequentLen LAct (insert p s) + 5)) := add_le_add le_rfl (add_le_add h1 h2)
+    _ = 55 * sequentLen LAct (insert p s) + 12 := by ring
 
-/-- **`proOr` has `≤ 110·setLen (insert p (insert q s)) + 25` steps.** -/
+/-- **`proOr` has `≤ 110·sequentLen (insert p (insert q s)) + 25` steps.** -/
 theorem len_proOr_le {tbl N : V} (htbl : TableOK tbl N) (hP : ProTable tbl) {Wl Wc : V} (hWl : Wl = layoutPieces)
     (hWc : Wc = certPieces) (Ww W T i ip iq : V) {s p q : V} (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 0 p)
     (hq : IsSemiformula LAct 0 q) :
-    len (proOr Ww Wl Wc W T s p q i ip iq) ≤ 110 * setLen LAct (insert p (insert q s)) + 25 := by
+    len (proOr Ww Wl Wc W T s p q i ip iq) ≤ 110 * sequentLen LAct (insert p (insert q s)) + 25 := by
   have hqs : IsFormulaSet LAct (insert q s) := IsFormulaSet.insert_iff.mpr ⟨hq, hs⟩
   unfold proOr
   rw [len_appendV, len_appendV, len_vec1]
   have h1 := len_proIns_le htbl hP hWl hWc Ww W T i iq hs hq
   have h2 := len_proIns_le htbl hP hWl hWc Ww W T 0 (ip + 1 + proSig Ww Wl Wc W T (insert q s)) hqs hp
-  have hS : setLen LAct (insert q s) ≤ setLen LAct (insert p (insert q s)) := setLen_le_insert p _
-  calc _ ≤ (55 * setLen LAct (insert p (insert q s)) + 12) + ((55 * setLen LAct (insert p (insert q s)) + 12) + 1) :=
+  have hS : sequentLen LAct (insert q s) ≤ sequentLen LAct (insert p (insert q s)) := sequentLen_le_insert p _
+  calc _ ≤ (55 * sequentLen LAct (insert p (insert q s)) + 12) + ((55 * sequentLen LAct (insert p (insert q s)) + 12) + 1) :=
         add_le_add (le_trans h1 (add_le_add (mul_le_mul_of_nonneg_left hS zero_le) le_rfl)) (add_le_add h2 le_rfl)
-    _ = 110 * setLen LAct (insert p (insert q s)) + 25 := by ring
+    _ = 110 * sequentLen LAct (insert p (insert q s)) + 25 := by ring
 
-/-- **`proWk` has `≤ 44·setLen c + 7` steps** (the child's layout, Loop W, the child's `subChain`). -/
+/-- **`proWk` has `≤ 44·sequentLen c + 7` steps** (the child's layout, Loop W, the child's `subChain`). -/
 theorem len_proWk_le {tbl N : V} (htbl : TableOK tbl N) (hP : ProTable tbl) {Wl Wc : V} (hWl : Wl = layoutPieces)
     (hWc : Wc = certPieces) (Ww W T s i : V) {c : V} (hc : IsFormulaSet LAct c) :
-    len (proWk Ww Wl Wc W T s c i) ≤ 44 * setLen LAct c + 7 := by
+    len (proWk Ww Wl Wc W T s c i) ≤ 44 * sequentLen LAct c + 7 := by
   unfold proWk
   rw [len_appendV, len_appendV, len_subChain]
   have h1 := len_layoutSteps_le' hWc Ww Wl W T hc
@@ -8768,20 +8768,20 @@ theorem len_proWk_le {tbl N : V} (htbl : TableOK tbl N) (hP : ProTable tbl) {Wl 
     (len (memberList c)) (fun j hj ↦ by rw [qYs_pack]; exact hc _ (nth_memberList_mem hj))
   rw [qYs_pack] at h2
   have hpre := preSum_memberList_le c _ le_rfl
-  have hk' := len_memberList_le_setLen hc
-  calc _ ≤ (39 * setLen LAct c + 6) + (4 * setLen LAct c + (setLen LAct c + 1)) :=
+  have hk' := len_memberList_le_sequentLen hc
+  calc _ ≤ (39 * sequentLen LAct c + 6) + (4 * sequentLen LAct c + (sequentLen LAct c + 1)) :=
         add_le_add h1 (add_le_add (le_trans h2 (mul_le_mul_of_nonneg_left hpre zero_le)) (add_le_add hk' le_rfl))
-    _ = 44 * setLen LAct c + 7 := by ring
+    _ = 44 * sequentLen LAct c + 7 := by ring
 
 /-! ### 18.7 `shift`: the tail and the whole prologue; `proSS` -/
 
-/-- The Horn-only tail of `proShift`: Loop S (`≤ 12·setLen c`), Loops I/M and Fold U (`k'` each, `+1`), the parent's
+/-- The Horn-only tail of `proShift`: Loop S (`≤ 12·sequentLen c`), Loops I/M and Fold U (`k'` each, `+1`), the parent's
 `subChain` (`k + 1`), two steps. -/
 theorem len_shTail_le {Wc : V} (hWc : Wc = certPieces) (Ww W T i₂ σ : V) {s c : V} (hs : IsFormulaSet LAct s)
     (hc : IsFormulaSet LAct c) :
-    len (shTail Ww Wc W T s c i₂ σ) ≤ 15 * setLen LAct c + setLen LAct s + 4 := by
-  have hk := len_memberList_le_setLen hs
-  have hk' := len_memberList_le_setLen hc
+    len (shTail Ww Wc W T s c i₂ σ) ≤ 15 * sequentLen LAct c + sequentLen LAct s + 4 := by
+  have hk := len_memberList_le_sequentLen hs
+  have hk' := len_memberList_le_sequentLen hc
   have hS := len_loopS_le (shPack Wc W i₂ (len (memberList s)) (offVec (memberList s) Ww Wc T) (memberList s) (len (memberList c))
     (offVec (memberList c) Ww Wc T) (memberList c) σ) (len (memberList c))
     (fun j hj ↦ by rw [qYs_shPack]; exact hc _ (nth_memberList_mem hj))
@@ -8790,49 +8790,49 @@ theorem len_shTail_le {Wc : V} (hWc : Wc = certPieces) (Ww W T i₂ σ : V) {s c
   unfold shTail
   rw [len_appendV, len_appendV, len_appendV, len_appendV, len_appendV, len_vec2, len_loopI, len_uSub, len_loopM, len_subChain]
   simp only [shPack, qK'_pack]
-  calc _ ≤ 12 * setLen LAct c + (setLen LAct c + ((setLen LAct c + 1) + (setLen LAct c + ((setLen LAct s + 1) + 2)))) :=
+  calc _ ≤ 12 * sequentLen LAct c + (sequentLen LAct c + ((sequentLen LAct c + 1) + (sequentLen LAct c + ((sequentLen LAct s + 1) + 2)))) :=
         add_le_add (le_trans hS (mul_le_mul_of_nonneg_left hpre zero_le))
           (add_le_add hk' (add_le_add (add_le_add hk' le_rfl) (add_le_add hk' (add_le_add (add_le_add hk le_rfl) le_rfl))))
-    _ = 15 * setLen LAct c + setLen LAct s + 4 := by ring
+    _ = 15 * sequentLen LAct c + sequentLen LAct s + 4 := by ring
 
-/-- **`proShift` has `≤ 61·setLen c + setLen s + 20` steps** (`shBase`, the parent's chain, the child's layout, the tail). -/
+/-- **`proShift` has `≤ 61·sequentLen c + sequentLen s + 20` steps** (`shBase`, the parent's chain, the child's layout, the tail). -/
 theorem len_proShift_le {Wc : V} (hWc : Wc = certPieces) (Ww Wl W T i : V) {s c : V} (hs : IsFormulaSet LAct s)
     (hc : IsFormulaSet LAct c) :
-    len (proShift Ww Wl Wc W T s c i) ≤ 61 * setLen LAct c + setLen LAct s + 20 := by
-  have hk' := len_memberList_le_setLen hc
+    len (proShift Ww Wl Wc W T s c i) ≤ 61 * sequentLen LAct c + sequentLen LAct s + 20 := by
+  have hk' := len_memberList_le_sequentLen hc
   unfold proShift
   rw [len_appendV, len_appendV, len_appendV, len_shBase]
   have h1 : len (chainSteps Wl (fvarVec (shPos (memberList c) (memberList s) (offVec (memberList s) Ww Wc T) (len (memberList s)) (i + 1)))) ≤
-      7 * setLen LAct c + 6 := by
+      7 * sequentLen LAct c + 6 := by
     have := len_chainSteps_le Wl (fvarVec (shPos (memberList c) (memberList s) (offVec (memberList s) Ww Wc T) (len (memberList s)) (i + 1)))
     rw [len_fvarVec, len_shPos] at this
     exact le_trans this (add_le_add (mul_le_mul_of_nonneg_left hk' zero_le) le_rfl)
   have h2 := len_layoutSteps_le' hWc Ww Wl W T hc
   have h3 := len_shTail_le hWc Ww W T (i + 1 + (len (memberList c) + 1) + proSig Ww Wl Wc W T c) (proSig Ww Wl Wc W T c) hs hc
-  calc _ ≤ 4 + ((7 * setLen LAct c + 6) + ((39 * setLen LAct c + 6) + (15 * setLen LAct c + setLen LAct s + 4))) :=
+  calc _ ≤ 4 + ((7 * sequentLen LAct c + 6) + ((39 * sequentLen LAct c + 6) + (15 * sequentLen LAct c + sequentLen LAct s + 4))) :=
         add_le_add le_rfl (add_le_add h1 (add_le_add h2 h3))
-    _ = 61 * setLen LAct c + setLen LAct s + 20 := by ring
+    _ = 61 * sequentLen LAct c + sequentLen LAct s + 20 := by ring
 
-/-- The identification of the fresh chain top with the parent's: `≤ 8·setLen s + 4`. -/
+/-- The identification of the fresh chain top with the parent's: `≤ 8·sequentLen s + 4`. -/
 theorem len_ssIdent_le {tbl N : V} (htbl : TableOK tbl N) (hP : ProTable tbl) {Wl : V} (hWl : Wl = layoutPieces)
     (W i₁ os vt : V) {s : V} (hs : IsFormulaSet LAct s) :
-    len (ssIdent Wl W i₁ (len (memberList s)) os (memberList s) vt) ≤ 8 * setLen LAct s + 4 := by
-  have hk := len_memberList_le_setLen hs
+    len (ssIdent Wl W i₁ (len (memberList s)) os (memberList s) vt) ≤ 8 * sequentLen LAct s + 4 := by
+  have hk := len_memberList_le_sequentLen hs
   have hE := len_loopE_le htbl hP (q := qPack Wl W i₁ (len (memberList s)) os (memberList s) 0 (len (memberList s)) os (memberList s) 0 0)
     (by rw [qWl_pack]; exact hWl) (len (memberList s)) (fun j hj ↦ by rw [qXs_pack]; exact hs _ (nth_memberList_mem hj))
   rw [qXs_pack] at hE
   have hpre := preSum_memberList_le s _ le_rfl
   unfold ssIdent
   rw [len_appendV, len_appendV, len_appendV, len_vec2, len_subChain, len_subChain]
-  calc _ ≤ (4 * setLen LAct s + 2 * setLen LAct s) + ((setLen LAct s + 1) + ((setLen LAct s + 1) + 2)) :=
+  calc _ ≤ (4 * sequentLen LAct s + 2 * sequentLen LAct s) + ((sequentLen LAct s + 1) + ((sequentLen LAct s + 1) + 2)) :=
         add_le_add (le_trans hE (add_le_add (mul_le_mul_of_nonneg_left hpre zero_le) (mul_le_mul_of_nonneg_left hk zero_le)))
           (add_le_add (add_le_add hk le_rfl) (add_le_add (add_le_add hk le_rfl) le_rfl))
-    _ = 8 * setLen LAct s + 4 := by ring
+    _ = 8 * sequentLen LAct s + 4 := by ring
 
-/-- **`proSS` has `≤ 40·setLen (setShift s) + 69·setLen s + 30` steps.** -/
+/-- **`proSS` has `≤ 40·sequentLen (setShift s) + 69·sequentLen s + 30` steps.** -/
 theorem len_proSS_le {tbl N : V} (htbl : TableOK tbl N) (hP : ProTable tbl) {Wl Wc : V} (hWl : Wl = layoutPieces)
     (hWc : Wc = certPieces) (Ww W T i : V) {s : V} (hs : IsFormulaSet LAct s) :
-    len (proSS Ww Wl Wc W T s i) ≤ 40 * setLen LAct (setShift LAct s) + 69 * setLen LAct s + 30 := by
+    len (proSS Ww Wl Wc W T s i) ≤ 40 * sequentLen LAct (setShift LAct s) + 69 * sequentLen LAct s + 30 := by
   have hv : IsFormulaSet LAct (setShift LAct s) := hs.setShift
   unfold proSS
   rw [len_appendV, len_appendV]
@@ -8840,9 +8840,9 @@ theorem len_proSS_le {tbl N : V} (htbl : TableOK tbl N) (hP : ProTable tbl) {Wl 
   have h2 := len_proShift_le hWc Ww Wl W T 0 hv hs
   have h3 := len_ssIdent_le htbl hP hWl W (i + proSig Ww Wl Wc W T (setShift LAct s) + (1 + (len (memberList s) + 1) + proSig Ww Wl Wc W T s))
     (offVec (memberList s) Ww Wc T) (0 + 1 + (len (memberList s) + 1) + proSig Ww Wl Wc W T s + (len (memberList (setShift LAct s)) + 1)) hs
-  calc _ ≤ (39 * setLen LAct (setShift LAct s) + 6) + ((61 * setLen LAct s + setLen LAct (setShift LAct s) + 20) + (8 * setLen LAct s + 4)) :=
+  calc _ ≤ (39 * sequentLen LAct (setShift LAct s) + 6) + ((61 * sequentLen LAct s + sequentLen LAct (setShift LAct s) + 20) + (8 * sequentLen LAct s + 4)) :=
         add_le_add h1 (add_le_add h2 h3)
-    _ = 40 * setLen LAct (setShift LAct s) + 69 * setLen LAct s + 30 := by ring
+    _ = 40 * sequentLen LAct (setShift LAct s) + 69 * sequentLen LAct s + 30 := by ring
 
 /-! ### 18.8 The certified substitution, structurally: `len (certSubst …) ≤ sfK L Q · |r|` -/
 
@@ -8904,7 +8904,7 @@ theorem len_certSubst_single_le {Wd W m w iw r i j B D : V} (hw : IsSemitermVec 
 
 lemma len_freeWalk_le (Wd : V) : len (π₂ (freeWalk Wd)) ≤ 14 := by
   have hw : IsSemitermVec LAct 1 0 (fvec : V) := isSemitermVec_fvec
-  obtain ⟨_, hl⟩ := len_descVecAux_le hw (fun i hi ↦ len_describeT_le Wd 0 _ (hw.nth hi)) 1 le_rfl
+  obtain ⟨_, hl⟩ := len_descriptionsAux_le hw (fun i hi ↦ len_describeT_le Wd 0 _ (hw.nth hi)) 1 le_rfl
   have htl : takeLast (fvec : V) 1 = fvec := by have := takeLast_len_self (fvec : V); rwa [hw.lh] at this
   rw [htl, listSum_termLenVec_fvec] at hl
   have h2 : len (π₂ (freeWalk Wd)) + 2 ≤ 14 + 2 := by
@@ -8965,13 +8965,13 @@ theorem len_allCert_le {Wc : V} (hWc : Wc = certPieces) (Ww T s i : V) {p D : V}
 /-- **`proAll` parametrically**: `≤ 200·D + 58 + Lc` with `Lc` bounding the substitution pass. -/
 theorem len_proAll_le_of {tbl N : V} (htbl : TableOK tbl N) (hP : ProTable tbl) {Wl Wc : V} (hWl : Wl = layoutPieces)
     (hWc : Wc = certPieces) (Ww W T i : V) {s p D Lc : V} (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 1 p)
-    (hsD : setLen LAct s ≤ D) (hcD : setLen LAct (insert (free LAct p) (setShift LAct s)) ≤ D)
+    (hsD : sequentLen LAct s ≤ D) (hcD : sequentLen LAct (insert (free LAct p) (setShift LAct s)) ≤ D)
     (hspD : formulaLen LAct (shift LAct p) ≤ D) (hpD : formulaLen LAct p ≤ D)
     (hcs : ∀ a b : V, len (certSubst Wc Ww 1 0 fvec 0 (shift LAct p) a b) ≤ Lc) :
     len (proAll Ww Wl Wc W T s p i) ≤ 200 * D + 58 + Lc := by
   have hv : IsFormulaSet LAct (setShift LAct s) := hs.setShift
-  have hvD : setLen LAct (setShift LAct s) ≤ D := le_trans (setLen_le_insert _ _) hcD
-  have hfpD : formulaLen LAct (free LAct p) ≤ D := le_trans (formulaLen_le_setLen_of_mem (by simp)) hcD
+  have hvD : sequentLen LAct (setShift LAct s) ≤ D := le_trans (sequentLen_le_insert _ _) hcD
+  have hfpD : formulaLen LAct (free LAct p) ≤ D := le_trans (formulaLen_le_sequentLen_of_mem (by simp)) hcD
   unfold proAll
   rw [len_appendV, len_appendV]
   have h1 := len_allCert_le_of (Wc := Wc) Ww T s i hp hcs
@@ -8989,7 +8989,7 @@ theorem len_proAll_le_of {tbl N : V} (htbl : TableOK tbl N) (hP : ProTable tbl) 
 /-- **`proAll` has `≤ 450·(D+1)⁵` steps** at the size bound `D` of `proAll_ok` (`|p| ≤ D` from `∀p ∈ s`). -/
 theorem len_proAll_le {tbl N : V} (htbl : TableOK tbl N) (hP : ProTable tbl) {Wl Wc : V} (hWl : Wl = layoutPieces)
     (hWc : Wc = certPieces) (Ww W T i : V) {s p D : V} (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 1 p) (hr : (^∀ p) ∈ s)
-    (hsD : setLen LAct s ≤ D) (hcD : setLen LAct (insert (free LAct p) (setShift LAct s)) ≤ D)
+    (hsD : sequentLen LAct s ≤ D) (hcD : sequentLen LAct (insert (free LAct p) (setShift LAct s)) ≤ D)
     (hspD : formulaLen LAct (shift LAct p) ≤ D) :
     len (proAll Ww Wl Wc W T s p i) ≤ 450 * (D + 1) ^ 5 := by
   have hX := one_le_sq D
@@ -9000,7 +9000,7 @@ theorem len_proAll_le {tbl N : V} (htbl : TableOK tbl N) (hP : ProTable tbl) {Wl
           mul_le_mul_of_nonneg_left (le_trans (by norm_num : (1 : V) ≤ 1 * 1) (mul_le_mul hX hX zero_le zero_le)) zero_le
       _ = (D + 1) ^ 5 := by ring
   have hpD : formulaLen LAct p ≤ D := by
-    have := formulaLen_le_setLen_of_mem (L := LAct) hr
+    have := formulaLen_le_sequentLen_of_mem (L := LAct) hr
     rw [formulaLen_all hp.isUFormula] at this
     exact le_trans le_self_add (le_trans this hsD)
   have hcs : ∀ a b : V, len (certSubst Wc Ww 1 0 fvec 0 (shift LAct p) a b) ≤ 192 * (D + 1) ^ 5 := fun a b ↦
@@ -9017,7 +9017,7 @@ theorem len_proAll_le {tbl N : V} (htbl : TableOK tbl N) (hP : ProTable tbl) {Wl
 
 lemma len_vecWalk_le (Ww : V) {t : V} (ht : IsSemiterm LAct 0 t) : len (vecWalk Ww t) ≤ 12 * termLen LAct t + 2 := by
   have hw : IsSemitermVec LAct 1 0 (t ∷ (0 : V)) := by simp [ht]
-  obtain ⟨_, hl⟩ := len_descVecAux_le hw (fun i hi ↦ len_describeT_le Ww 0 _ (hw.nth hi)) 1 le_rfl
+  obtain ⟨_, hl⟩ := len_descriptionsAux_le hw (fun i hi ↦ len_describeT_le Ww 0 _ (hw.nth hi)) 1 le_rfl
   have htl : takeLast (t ∷ (0 : V)) 1 = t ∷ 0 := by have := takeLast_len_self (t ∷ (0 : V)); rwa [hw.lh] at this
   rw [htl, listSum_termLenVec_single ht] at hl
   unfold vecWalk
@@ -9065,10 +9065,10 @@ theorem len_exsCert_le {Wc : V} (Ww W T s i : V) {p t D : V} (hp : IsSemiformula
 /-- **`proExs` parametrically**: `≤ 93·D + 19 + Lc`. -/
 theorem len_proExs_le_of {tbl N : V} (htbl : TableOK tbl N) (hP : ProTable tbl) {Wl Wc : V} (hWl : Wl = layoutPieces)
     (hWc : Wc = certPieces) (Ww W T i : V) {s p t D Lc : V} (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 1 p)
-    (ht : IsSemiterm LAct 0 t) (hcD : setLen LAct (insert (substs1 LAct t p) s) ≤ D) (htD : termLen LAct t ≤ D)
+    (ht : IsSemiterm LAct 0 t) (hcD : sequentLen LAct (insert (substs1 LAct t p) s) ≤ D) (htD : termLen LAct t ≤ D)
     (hcs : ∀ a b : V, len (certSubst Wc Ww 1 0 (t ∷ 0) a p b 0) ≤ Lc) :
     len (proExs Ww Wl Wc W T s p t i) ≤ 93 * D + 19 + Lc := by
-  have hptD : formulaLen LAct (substs1 LAct t p) ≤ D := le_trans (formulaLen_le_setLen_of_mem (by simp)) hcD
+  have hptD : formulaLen LAct (substs1 LAct t p) ≤ D := le_trans (formulaLen_le_sequentLen_of_mem (by simp)) hcD
   unfold proExs
   rw [len_appendV]
   have h1 := len_exsCert_le_of (Wc := Wc) Ww W T s i hp ht hcs
@@ -9081,8 +9081,8 @@ theorem len_proExs_le_of {tbl N : V} (htbl : TableOK tbl N) (hP : ProTable tbl) 
 /-- **`proExs` has `≤ 310·(D+1)⁵` steps** at the size bound `D` of `proExs_ok` (`|p| ≤ D` from `∃p ∈ s`). -/
 theorem len_proExs_le {tbl N : V} (htbl : TableOK tbl N) (hP : ProTable tbl) {Wl Wc : V} (hWl : Wl = layoutPieces)
     (hWc : Wc = certPieces) (Ww W T i : V) {s p t D : V} (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 1 p)
-    (hr : (^∃ p) ∈ s) (ht : IsSemiterm LAct 0 t) (hsD : setLen LAct s ≤ D)
-    (hcD : setLen LAct (insert (substs1 LAct t p) s) ≤ D) (htD : termLen LAct t ≤ D) :
+    (hr : (^∃ p) ∈ s) (ht : IsSemiterm LAct 0 t) (hsD : sequentLen LAct s ≤ D)
+    (hcD : sequentLen LAct (insert (substs1 LAct t p) s) ≤ D) (htD : termLen LAct t ≤ D) :
     len (proExs Ww Wl Wc W T s p t i) ≤ 310 * (D + 1) ^ 5 := by
   have hX := one_le_sq D
   have hD1 : (1 : V) ≤ D + 1 := le_add_self
@@ -9092,7 +9092,7 @@ theorem len_proExs_le {tbl N : V} (htbl : TableOK tbl N) (hP : ProTable tbl) {Wl
           mul_le_mul_of_nonneg_left (le_trans (by norm_num : (1 : V) ≤ 1 * 1) (mul_le_mul hX hX zero_le zero_le)) zero_le
       _ = (D + 1) ^ 5 := by ring
   have hpD : formulaLen LAct p ≤ D := by
-    have := formulaLen_le_setLen_of_mem (L := LAct) hr
+    have := formulaLen_le_sequentLen_of_mem (L := LAct) hr
     rw [formulaLen_exs hp.isUFormula] at this
     exact le_trans le_self_add (le_trans this hsD)
   have hw : IsSemitermVec LAct 1 0 (t ∷ (0 : V)) := by simp [ht]
@@ -9111,10 +9111,10 @@ theorem len_proExs_le {tbl N : V} (htbl : TableOK tbl N) (hP : ProTable tbl) {Wl
 theorem len_identIns0_le {tbl N : V} (htbl : TableOK tbl N) (hP : ProTable tbl) {Wl : V} (hWl : Wl = layoutPieces)
     (W i₁ os ip₁ os' σ : V) {p : V} (hp : IsSemiformula LAct 0 p) :
     len (identIns0 (qPack Wl W i₁ (len (memberList (0 : V))) os (memberList (0 : V)) ip₁ (len (memberList (insert p (0 : V)))) os'
-      (memberList (insert p (0 : V))) p σ)) ≤ 10 * setLen LAct (insert p (0 : V)) + 6 := by
+      (memberList (insert p (0 : V))) p σ)) ≤ 10 * sequentLen LAct (insert p (0 : V)) + 6 := by
   have hcs : IsFormulaSet LAct (insert p (0 : V)) := IsFormulaSet.insert_iff.mpr ⟨hp, fun x hx ↦ by simp at hx⟩
-  have hk' : len (memberList (insert p (0 : V))) ≤ setLen LAct (insert p (0 : V)) := len_memberList_le_setLen hcs
-  have hpS : formulaLen LAct p ≤ setLen LAct (insert p (0 : V)) := formulaLen_le_setLen_of_mem (by simp)
+  have hk' : len (memberList (insert p (0 : V))) ≤ sequentLen LAct (insert p (0 : V)) := len_memberList_le_sequentLen hcs
+  have hpS : formulaLen LAct p ≤ sequentLen LAct (insert p (0 : V)) := formulaLen_le_sequentLen_of_mem (by simp)
   have hA := len_loopA_le htbl hP (q := qPack Wl W i₁ (len (memberList (0 : V))) os (memberList (0 : V)) ip₁
     (len (memberList (insert p (0 : V)))) os' (memberList (insert p (0 : V))) p σ) (by rw [qWl_pack]; exact hWl)
     (len (memberList (insert p (0 : V)))) (fun j hj ↦ by rw [qYs_pack]; exact hcs _ (nth_memberList_mem hj))
@@ -9126,17 +9126,17 @@ theorem len_identIns0_le {tbl N : V} (htbl : TableOK tbl N) (hP : ProTable tbl) 
   unfold identIns0
   simp only [qW_pack, qK'_pack, qOs'_pack, qSig_pack, qI_pack, qK_pack, qIp_pack]
   rw [len_appendV, len_appendV, len_appendV, len_appendV, len_vec2, len_vec2, len_subChain]
-  calc _ ≤ (4 * setLen LAct (insert p (0 : V)) + setLen LAct (insert p (0 : V))) + ((setLen LAct (insert p (0 : V)) + 1) +
-      (2 + ((4 * setLen LAct (insert p (0 : V)) + 1) + 2))) := by
+  calc _ ≤ (4 * sequentLen LAct (insert p (0 : V)) + sequentLen LAct (insert p (0 : V))) + ((sequentLen LAct (insert p (0 : V)) + 1) +
+      (2 + ((4 * sequentLen LAct (insert p (0 : V)) + 1) + 2))) := by
         refine add_le_add (le_trans hA (add_le_add (mul_le_mul_of_nonneg_left hpre zero_le) hk'))
           (add_le_add (add_le_add hk' le_rfl) (add_le_add le_rfl (add_le_add
             (le_trans hPb (add_le_add (mul_le_mul_of_nonneg_left hpS zero_le) le_rfl)) le_rfl)))
-    _ = 10 * setLen LAct (insert p (0 : V)) + 6 := by ring
+    _ = 10 * sequentLen LAct (insert p (0 : V)) + 6 := by ring
 
-/-- **`proIns0` has `≤ 49·setLen (insert p ∅) + 13` steps.** -/
+/-- **`proIns0` has `≤ 49·sequentLen (insert p ∅) + 13` steps.** -/
 theorem len_proIns0_le {tbl N : V} (htbl : TableOK tbl N) (hP : ProTable tbl) {Wl Wc : V} (hWl : Wl = layoutPieces)
     (hWc : Wc = certPieces) (Ww W T i ip : V) {p : V} (hp : IsSemiformula LAct 0 p) :
-    len (proIns0 Ww Wl Wc W T p i ip) ≤ 49 * setLen LAct (insert p (0 : V)) + 13 := by
+    len (proIns0 Ww Wl Wc W T p i ip) ≤ 49 * sequentLen LAct (insert p (0 : V)) + 13 := by
   have hcs : IsFormulaSet LAct (insert p (0 : V)) := IsFormulaSet.insert_iff.mpr ⟨hp, fun x hx ↦ by simp at hx⟩
   unfold proIns0
   rw [len_appendV, len_appendV, len_vec1]
@@ -9144,9 +9144,9 @@ theorem len_proIns0_le {tbl N : V} (htbl : TableOK tbl N) (hP : ProTable tbl) {W
   have h2 := len_identIns0_le htbl hP hWl W (i + 1 + proSig Ww Wl Wc W T (insert p (0 : V))) (offVec (memberList (0 : V)) Ww Wc T)
     (ip + 1 + proSig Ww Wl Wc W T (insert p (0 : V))) (offVec (memberList (insert p (0 : V))) Ww Wc T)
     (proSig Ww Wl Wc W T (insert p (0 : V))) hp
-  calc _ ≤ 1 + ((39 * setLen LAct (insert p (0 : V)) + 6) + (10 * setLen LAct (insert p (0 : V)) + 6)) :=
+  calc _ ≤ 1 + ((39 * sequentLen LAct (insert p (0 : V)) + 6) + (10 * sequentLen LAct (insert p (0 : V)) + 6)) :=
         add_le_add le_rfl (add_le_add h1 h2)
-    _ = 49 * setLen LAct (insert p (0 : V)) + 13 := by ring
+    _ = 49 * sequentLen LAct (insert p (0 : V)) + 13 := by ring
 
 /-! ### 18.12 The coarse cost shape is monotone in the length; the cost corollaries with concrete lengths -/
 
@@ -9162,7 +9162,7 @@ theorem costSum_proIns_le' {tbl N N' B' B Wl Wc W T s p i ip D E Γ : V} (htbl :
     (htblN : NumTableOK T N' B') (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (hWp : W = proPieces)
     (hBt : ∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ B) (hPle : formulaLen LAct (Ple : V) ≤ B)
     (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 0 p) (hk1 : 1 ≤ len (memberList s))
-    (hsD : setLen LAct (insert p s) ≤ D) (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E) (hiE : i + 14 * D + 5 ≤ E)
+    (hsD : sequentLen LAct (insert p s) ≤ D) (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E) (hiE : i + 14 * D + 5 ≤ E)
     (hipE : ip + 8 * D + 4 ≤ E) (hΓ : IsFormulaSet LAct Γ)
     (hLay : Layout walkPieces Wc T Γ s i) (hDp : DossF walkPieces Γ 0 p ip) :
     costSum N E Γ (proIns walkPieces Wl Wc W T s p i ip) ≤ (55 * D + 12) *
@@ -9175,14 +9175,14 @@ theorem costSum_proShift_le' {tbl N N' B' B Wl Wc W T s c i D E Γ : V} (htbl : 
     (htblN : NumTableOK T N' B') (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (hWp : W = proPieces)
     (hBt : ∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ B) (hPle : formulaLen LAct (Ple : V) ≤ B)
     (hs : IsFormulaSet LAct s) (hc : IsFormulaSet LAct c) (hsc : s = setShift LAct c) (hk1' : 1 ≤ len (memberList c))
-    (hsD : setLen LAct s ≤ D) (hcD : setLen LAct c ≤ D) (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E) (hiE : i + 16 * D + 8 ≤ E)
+    (hsD : sequentLen LAct s ≤ D) (hcD : sequentLen LAct c ≤ D) (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E) (hiE : i + 16 * D + 8 ≤ E)
     (hΓ : IsFormulaSet LAct Γ) (hLay : Layout walkPieces Wc T Γ s i) :
     costSum N E Γ (proShift walkPieces Wl Wc W T s c i) ≤ (62 * D + 20) *
       (costK N E B 8 (layQ B B' D) (layD N' B' D) + (3 * ((8 : ℕ) : V) + 11) *
         (ctxBoundG (growK B E (layQ B B' D)) Γ (62 * D + 20) + (fvOccS LAct Γ + (62 * D + 20) * growK B E (layQ B B' D)))) := by
   have hl : len (proShift walkPieces Wl Wc W T s c i) ≤ 62 * D + 20 := by
     refine le_trans (len_proShift_le hWc walkPieces Wl W T i hs hc) ?_
-    calc 61 * setLen LAct c + setLen LAct s + 20 ≤ 61 * D + D + 20 := add_le_add (add_le_add (mul_le_mul_of_nonneg_left hcD zero_le) hsD) le_rfl
+    calc 61 * sequentLen LAct c + sequentLen LAct s + 20 ≤ 61 * D + D + 20 := add_le_add (add_le_add (mul_le_mul_of_nonneg_left hcD zero_le) hsD) le_rfl
       _ = 62 * D + 20 := by ring
   exact le_trans (costSum_proShift_le htbl hP htblN hWl hWc hWp hBt hPle hs hc hsc hk1' hsD hcD hE hiE hΓ hLay) (costShape_mono hl)
 
@@ -9190,7 +9190,7 @@ theorem costSum_proAll_le' {tbl N N' B' B Wl Wc W T s p i D E Γ : V} (htbl : Ta
     (htblN : NumTableOK T N' B') (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (hWp : W = proPieces)
     (hBt : ∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ B) (hPle : formulaLen LAct (Ple : V) ≤ B)
     (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 1 p) (hr : (^∀ p) ∈ s)
-    (hsD : setLen LAct s ≤ D) (hcD : setLen LAct (insert (free LAct p) (setShift LAct s)) ≤ D)
+    (hsD : sequentLen LAct s ≤ D) (hcD : sequentLen LAct (insert (free LAct p) (setShift LAct s)) ≤ D)
     (hspD : formulaLen LAct (shift LAct p) ≤ D)
     (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E)
     (hEQ : 2 * ((1 + D) * (1 + D + 1)) * (D + 1) + 4 * D + 11 ≤ E)
@@ -9207,7 +9207,7 @@ theorem costSum_proExs_le' {tbl N N' B' B Wl Wc W T s p t i D E Γ : V} (htbl : 
     (htblN : NumTableOK T N' B') (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (hWp : W = proPieces)
     (hBt : ∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ B) (hPle : formulaLen LAct (Ple : V) ≤ B)
     (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 1 p) (hr : (^∃ p) ∈ s) (ht : IsSemiterm LAct 0 t)
-    (hsD : setLen LAct s ≤ D) (hcD : setLen LAct (insert (substs1 LAct t p) s) ≤ D) (htD : termLen LAct t ≤ D)
+    (hsD : sequentLen LAct s ≤ D) (hcD : sequentLen LAct (insert (substs1 LAct t p) s) ≤ D) (htD : termLen LAct t ≤ D)
     (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E)
     (hEQ : 2 * ((1 + D) * (1 + D + D)) * (D + 1) + 4 * D + 11 ≤ E)
     (hiE : i + 2 * ((1 + D) * (1 + D + D)) * D + 40 * D + 20 ≤ E)
@@ -9223,15 +9223,15 @@ theorem costSum_proExs_le' {tbl N N' B' B Wl Wc W T s p t i D E Γ : V} (htbl : 
 
 theorem shiftsV_proAll_le {tbl N : V} (htbl : TableOK tbl N) (hP : ProTable tbl) {Wl Wc : V} (hWl : Wl = layoutPieces)
     (hWc : Wc = certPieces) (Ww W T i : V) {s p D : V} (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 1 p) (hr : (^∀ p) ∈ s)
-    (hsD : setLen LAct s ≤ D) (hcD : setLen LAct (insert (free LAct p) (setShift LAct s)) ≤ D)
+    (hsD : sequentLen LAct s ≤ D) (hcD : sequentLen LAct (insert (free LAct p) (setShift LAct s)) ≤ D)
     (hspD : formulaLen LAct (shift LAct p) ≤ D) :
     shiftsV (proAll Ww Wl Wc W T s p i) ≤ 450 * (D + 1) ^ 5 :=
   le_trans (shiftsV_le_len _) (len_proAll_le htbl hP hWl hWc Ww W T i hs hp hr hsD hcD hspD)
 
 theorem shiftsV_proExs_le {tbl N : V} (htbl : TableOK tbl N) (hP : ProTable tbl) {Wl Wc : V} (hWl : Wl = layoutPieces)
     (hWc : Wc = certPieces) (Ww W T i : V) {s p t D : V} (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 1 p)
-    (hr : (^∃ p) ∈ s) (ht : IsSemiterm LAct 0 t) (hsD : setLen LAct s ≤ D)
-    (hcD : setLen LAct (insert (substs1 LAct t p) s) ≤ D) (htD : termLen LAct t ≤ D) :
+    (hr : (^∃ p) ∈ s) (ht : IsSemiterm LAct 0 t) (hsD : sequentLen LAct s ≤ D)
+    (hcD : sequentLen LAct (insert (substs1 LAct t p) s) ≤ D) (htD : termLen LAct t ≤ D) :
     shiftsV (proExs Ww Wl Wc W T s p t i) ≤ 310 * (D + 1) ^ 5 :=
   le_trans (shiftsV_le_len _) (len_proExs_le htbl hP hWl hWc Ww W T i hs hp hr ht hsD hcD htD)
 
@@ -9239,7 +9239,7 @@ theorem shiftsV_proExs_le {tbl N : V} (htbl : TableOK tbl N) (hP : ProTable tbl)
 theorem shiftsV_proIns_le' {tbl N N' B' Wl Wc W T s p i ip D E Γ : V} (htbl : TableOK tbl N) (hP : ProTable tbl)
     (htblN : NumTableOK T N' B') (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (hWp : W = proPieces)
     (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 0 p) (hk1 : 1 ≤ len (memberList s))
-    (hsD : setLen LAct (insert p s) ≤ D) (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E) (hiE : i + 14 * D + 5 ≤ E)
+    (hsD : sequentLen LAct (insert p s) ≤ D) (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E) (hiE : i + 14 * D + 5 ≤ E)
     (hipE : ip + 8 * D + 4 ≤ E) (hΓ : IsFormulaSet LAct Γ)
     (hLay : Layout walkPieces Wc T Γ s i) (hDp : DossF walkPieces Γ 0 p ip) :
     shiftsV (proIns walkPieces Wl Wc W T s p i ip) ≤ 6 * D + 2 := by
@@ -9260,7 +9260,7 @@ DELIVERED since the morning entry: §9 `proOr`/`proOr_ok` (two `proIns` + `congI
 `sizeOK_lenFoldAux` by the packed induction) and the per-tag `sizeOK_pro<Tag>`/`costSum_pro<Tag>_le` for `axL`, `postIns`,
 `proIns`, `proCutPre`, `proWk`, `proOr`, `proShift`, all in the `costSum_le_of_sizeOK 8` shape
 `len · (costK N E B 8 Q D + 35 · (ctxBoundG (growK B E Q) Γ len + (fvOccS Γ + len · growK B E Q)))`; the rows 156–158
-(`setLenEmptyLe`, `congSubsetL`, `congSetShiftR`) for the empty sequent (§12 `Layout0`/`layoutSteps0` drafted).
+(`sequentLenEmptyLe`, `congSubsetL`, `congSetShiftR`) for the empty sequent (§12 `Layout0`/`layoutSteps0` drafted).
 
 * **The EMPTY sequent — DECISION: the `k = 0` case, not an invariant.** `Derivation` (Foundation `Proof/Basic.lean`)
   admits `wkRule s d'` with `fstIdx d' ⊆ s` and `shiftRule s d'` with `s = setShift (fstIdx d')`, so in a model of
@@ -9268,7 +9268,7 @@ DELIVERED since the morning entry: §9 `proOr`/`proOr_ok` (two `proIns` + `congI
   as both sides of `shift`, and as the PARENT of `cut` (its children `insert p ∅` are nonempty; leaves and the
   `and/or/all/exs` children are inserts, never empty). "Every node's sequent is nonempty" is FALSE. The honest
   treatment: `Layout0 Γ i := Layout … 0 i ∧ eqFactB &(i + 1) 𝟎` (§12; the object identified with `𝟎` replaces the
-  chain), built by `layoutSteps0` (rows `eqTotal`, `setLenTotalC`, `eqSymm`, `congSetLenR`, `setLenEmptyLe`; 2
+  chain), built by `layoutSteps0` (rows `eqTotal`, `sequentLenTotalC`, `eqSymm`, `congSetLenR`, `sequentLenEmptyLe`; 2
   eigenvariables; `layoutSteps0_ok`). DELIVERED on top of it (§12): `proWk0_ok` (child `∅`: `layoutSteps0 ++
   emptySubsetC [S] ++ congSubsetL [𝟎, &1, S]` → `subsetFact &1 S`) and `proShift0_ok` (both `∅`: `layoutSteps0 ++
   setShiftTotal [𝟎] ++ setShiftEmpty ++ eqSymm ++ eqTrans [S, 𝟎, &0] ++ congSetShiftL ++ congSetShiftR [S, 𝟎, &2]` →
@@ -9292,7 +9292,7 @@ DELIVERED since the morning entry: §9 `proOr`/`proOr_ok` (two `proIns` + `congI
   `SubFPre E Q 1 0 fvec (shift p) …` and `hL` need bounds on `listSum (termLenVec (1 + e) (qVecIterV fvec e))`
   (`= e + 1`, no lemma yet) and on `len (π₂ (qWalkP Wd e (1 + e) (qVecIterV fvec e)))` (no lemma yet) — a small
   `qVec` theory in `Cert`'s vocabulary, not this file's.
-* **`exs` (§4.6)**: `describeT t` + the term `lenSteps` (`tPiFact`/`tlenFact`), `certSubst` at the singleton vector
+* **`exs` (§4.6)**: `describeT t` + the term `lenSteps` (`tPiFact`/`termLenMetaFact`), `certSubst` at the singleton vector
   `?[t]` (its `SubFPre` needs the same `qVecIterV` bounds as `all`) + `substsSubsts1` → `substs1Fact PT T P`, then
   `proIns`/`postIns` for `insert (substs1 t p) s` — routine once the `qVec` bounds exist.
 * **The splice**: `fragAxL_ok`/`node<Tag>_ok` are stated at `W = frag1Pieces`/`frag2Pieces`, the prologues at
@@ -9321,7 +9321,7 @@ layout of `s` at `0`), then identifies the fresh chain top with the parent's `S`
 `congMem` directions) + two `subChain`s + `subsetAntisymm` + row 158 `congSetShiftR`; (b) `proIns_ok` is REUSED for the
 `insert` in both tags (`insert (free p) (setShift s)`, `insert (substs1 t p) s`) — the fresh dossiers of `free p` /
 `substs1 t p` are walked BEFORE the layouts, so `certFree`/`certSubst` run between fresh dossiers and the child stays at `0`;
-(c) `exs`'s length OBJECT: `eqTotal [bnum |t|]`, `eqSymm`, the re-indexed cert row `congTLenNum`, `leOfEqP` (159) —
+(c) `exs`'s length OBJECT: `eqTotal [binNumeral |t|]`, `eqSymm`, the re-indexed cert row `congTLenNum`, `leOfEqP` (159) —
 `nodeExs_ok`'s `&ilt` is a variable, not the numeral. CAPS: `D` bounds the parent, the child, `|shift p|` (all) / `|t|`
 (exs); besides `13D + 18‖D‖ + 12 ≤ E` the quadratic `2·QD·(D+1) + 4D + 11 ≤ E` and `i + 2·QD·D + 40D + 20 ≤ E` with
 `QD = (1+D)(2+D)` (all: `subFPre_single` at `fvec`, `B = 1`) or `(1+D)(1+2D)` (exs: `B = |t|`). `certFreeDef` (§13.3) is the
@@ -9343,9 +9343,9 @@ class: tags `0/2` only) with `costSum_*_le` at cap `8`; `sizeOK_proIns0`/`costSu
 DONE: `axm`, the `Verify` clause edit, the verify recursion carrying `1 ≤ k ∧ Layout ∨ k = 0 ∧ Layout0`. 
 **2026-09-15, evening — §18 the LENGTH and SHIFT bounds DELIVERED** (the `len (pro…)` multipliers of every cost lemma made
 concrete; see §18's head docstring for the list and THE FINDING: `all`/`exs` are degree 5 in the size bound here, degree 3
-with `Pin`'s linear-in-`Q` `certSubst` bound — `VerifyKit'.cost`'s `len ≤ Ck·(dlen ρ + 1)` is not linear at those nodes).
-`NodeSize.lean` (new, imports `DerivationLength` + `ProperV`) has the node laws: `setLen (fstIdx d) ≤ dlen d`, the
-principal formulas/witness/children `≤ dlen d`. TRAPS: `formulaLen_le_setLen_of_mem` needs `(L := LAct)` when `L` is not
+with `Pin`'s linear-in-`Q` `certSubst` bound — `VerifyKit'.cost`'s `len ≤ Ck·(proofLen ρ + 1)` is not linear at those nodes).
+`NodeSize.lean` (new, imports `DerivationLength` + `ProperBound`) has the node laws: `sequentLen (fstIdx d) ≤ proofLen d`, the
+principal formulas/witness/children `≤ proofLen d`. TRAPS: `formulaLen_le_sequentLen_of_mem` needs `(L := LAct)` when `L` is not
 fixed by the membership; `isSemitermVec_fvec`/`substInv_fvec` need their type ascribed (`(… : IsSemitermVec LAct 1 0
 (fvec : V))`); `lenFoldAux` is 6-ary — induct on the packed `lenFoldAuxP ⟪W, T, xs, os, k⟫`; `len_subFGraph_le`'s implicit
 `Wd W iw i j` must be named when nothing downstream fixes them; `norm_num` turned a true `12 * 1 + 4 = 14` goal into

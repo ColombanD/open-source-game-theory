@@ -1,6 +1,6 @@
 """gen_prologue.py — generates arith/ArithS/Necessitation/PrologueRows.lean (2026-09-14):
 the rows the PROLOGUE producers (`Prologue.lean`) need beyond the top table, on the `gen_frag2.py`
-template — currently ONE row, `setLenSingLe` (`setLen (insert x ∅) ≤ |x|`, the base of the `setLen`
+template — currently ONE row, `sequentLenSingLe` (`sequentLen (insert x ∅) ≤ |x|`, the base of the `sequentLen`
 fold of `DESIGN_fragments.md` §3.4), with its `Lib` block (`gen_frag.py`'s `gen_frag_row`), its
 `quote_row_`/`inst_` block (`gen_row`), the extra rows `proExtraRows` at `pIdx_<row> = topRowCount + k`
 (APPEND-ONLY: never reorder), the piece table `proPieces` extending `topPieces` entrywise
@@ -23,14 +23,14 @@ A, EX, S, P, C, by = G.A, G.EX, G.S, G.P, G.C, G.by
 
 # ---- the new rows: (name, binders, ants, conc, proof, doc)
 NEW_ROWS = [
- ('setLenSingLe', ['lx', 'l', 't', 'x'],
-  [A('insert', 't', 'x', 'Z'), A('setLen', 'l', 't'), A('flenG', 'lx', 'x')], A('le', 'l', 'lx'),
-  by("subst_vars; rw [setLen_insert_of_not_mem_V (L := LAct) (by simp), ← emptyset_def, setLen_empty, zero_add]"),
-  '`t = insert x ∅ → l = setLen t → lx = |x| → l ≤ lx` (the base of the `setLen` fold: a singleton is at most its member).'),
- ('setLenEmptyLe', ['l'],
-  [A('setLen', 'l', 'Z')], A('le', 'l', 'Z'),
-  by("subst_vars; rw [← emptyset_def, setLen_empty]; try exact le_refl _"),
-  '`l = setLen ∅ → l ≤ 0` (the empty sequent: its length object is bounded by the numeral `bnum 0 = 𝟎`).'),
+ ('sequentLenSingLe', ['lx', 'l', 't', 'x'],
+  [A('insert', 't', 'x', 'Z'), A('sequentLen', 'l', 't'), A('formulaLenMetaG', 'lx', 'x')], A('le', 'l', 'lx'),
+  by("subst_vars; rw [sequentLen_insert_of_not_mem_V (L := LAct) (by simp), ← emptyset_def, sequentLen_empty, zero_add]"),
+  '`t = insert x ∅ → l = sequentLen t → lx = |x| → l ≤ lx` (the base of the `sequentLen` fold: a singleton is at most its member).'),
+ ('sequentLenEmptyLe', ['l'],
+  [A('sequentLen', 'l', 'Z')], A('le', 'l', 'Z'),
+  by("subst_vars; rw [← emptyset_def, sequentLen_empty]; try exact le_refl _"),
+  '`l = sequentLen ∅ → l ≤ 0` (the empty sequent: its length object is bounded by the numeral `binNumeral 0 = 𝟎`).'),
 ]
 # Rows whose `Lib` block AND `quote_row_`/`inst_` block already exist (`Lib/Frag.lean`, `RowInstB.lean`) but which sit
 # in no piece table: only their table entries are generated here (APPEND-ONLY).
@@ -40,7 +40,7 @@ NEW_ROWS_2 = [
  ('leOfEqP', ['y', 'x'],
   [A('eq', 'x', 'y')], A('le', 'x', 'y'),
   by("subst_vars; exact le_refl _"),
-  '`x = y → x ≤ y` (the `exs` witness term: from `eqTotal`\'s eigenvariable `l = bnum |t|` to `leFact l (bnum |t|)`; the library\'s `leOfEq` has no `inst_` block).'),
+  '`x = y → x ≤ y` (the `exs` witness term: from `eqTotal`\'s eigenvariable `l = binNumeral |t|` to `leFact l (binNumeral |t|)`; the library\'s `leOfEq` has no `inst_` block).'),
 ]
 
 G.frag = []
@@ -228,9 +228,9 @@ The rows `Prologue.lean` needs beyond the top table, each with its `Lib` block (
 The applicability lemmas take the table readings at the row's index as EXPLICIT hypotheses — no table
 predicate is defined here (`Prologue.lean`'s `ProTable` places these rows and the certification tail).
 
-Currently: `setLenSingLe` (155) — `t = insert x ∅ → l = setLen t → lx = |x| → l ≤ lx`, the base of the
-`setLen` fold (`DESIGN_fragments.md` §3.4; the library's `setLenInsertLe` needs a length object of the
-set below, and the empty set has none in any table); `setLenEmptyLe` (156) — `l = setLen ∅ → l ≤ 0`, the
+Currently: `sequentLenSingLe` (155) — `t = insert x ∅ → l = sequentLen t → lx = |x| → l ≤ lx`, the base of the
+`sequentLen` fold (`DESIGN_fragments.md` §3.4; the library's `sequentLenInsertLe` needs a length object of the
+set below, and the empty set has none in any table); `sequentLenEmptyLe` (156) — `l = sequentLen ∅ → l ≤ 0`, the
 EMPTY sequent's layout; and two library rows that were in no piece table, `congSubsetL` (157) and
 `congSetShiftR` (158) (their `Lib` and `inst_` blocks live in `Lib/Frag.lean` / `RowInstB.lean`).
 -/

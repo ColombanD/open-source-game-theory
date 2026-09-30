@@ -111,8 +111,8 @@ PREDS = {
                    '(derivation TAct).sigma', lambda a: f'Derivation TAct {a[0]}', have=CHAIN, unfold=['derivS']),
   'fstIdx':  graph('(↑fstIdxDef : ArithmeticSemisentence 2)', 2, 'PfstIdx', 'fstIdxFact', ['s', 'e'],
                    'fstIdxDef', lambda a: f'{a[0]} = fstIdx {a[1]}', have=CHAIN, unfold=['fstIdxS']),
-  'dlen':    graph('(↑(dlenGraphDef LAct).sigma : ArithmeticSemisentence 2)', 2, 'Pdlen', 'dlenFact', ['e', 'n'],
-                   '(dlenGraphDef LAct).sigma', lambda a: f'DlenGraph LAct {a[0]} {a[1]}', have=CHAIN, unfold=['dlenS']),
+  'proofLen':    graph('(↑(proofLenGraphDef LAct).sigma : ArithmeticSemisentence 2)', 2, 'Pdlen', 'proofLenFact', ['e', 'n'],
+                   '(proofLenGraphDef LAct).sigma', lambda a: f'ProofLenGraph LAct {a[0]} {a[1]}', have=CHAIN, unfold=['proofLenS']),
   'le':      dict(dsl=lambda a: f'{a[0]} ≤ {a[1]}',
                   sem='(Rewriting.emb (Semiformula.Operator.LE.le : Semiformula.Operator ℒₒᵣ 2).sentence : ArithmeticSemisentence 2)',
                   ar=2, P='Ple', F='leFact', args=['n', 'u'], V=lambda a: f'{a[0]} ≤ {a[1]}', simps=[], have=set(CHAIN) | {'len'}, unfold=['leS']),  # `formulaLen_leFact_le` is in NumSteps.lean
@@ -135,11 +135,11 @@ PREDS = {
                    '(isUFormula LAct).pi', lambda a: f'IsUFormula LAct {a[0]}'),
   'setShiftG': graph('(↑(setShiftGraph LAct) : ArithmeticSemisentence 2)', 2, 'PsetShiftG', 'setShiftFact', ['t', 's'],
                    '(setShiftGraph LAct)', lambda a: f'{a[0]} = setShift LAct {a[1]}', simps=['setShift.defined.iff']),
-  'setLen':  graph('(↑(setLenDef LAct) : ArithmeticSemisentence 2)', 2, 'PsetLen', 'setLenFact', ['l', 's'],
-                   '(setLenDef LAct)', lambda a: f'{a[0]} = setLen LAct {a[1]}', simps=['setLen_defined.iff']),
-  'flenG':   graph('(↑(formulaLenGraph LAct) : ArithmeticSemisentence 2)', 2, 'PflenG', 'lenFact', ['l', 'p'],
+  'sequentLen':  graph('(↑(sequentLenDef LAct) : ArithmeticSemisentence 2)', 2, 'PsetLen', 'sequentLenFact', ['l', 's'],
+                   '(sequentLenDef LAct)', lambda a: f'{a[0]} = sequentLen LAct {a[1]}', simps=['sequentLen_defined.iff']),
+  'formulaLenMetaG':   graph('(↑(formulaLenGraph LAct) : ArithmeticSemisentence 2)', 2, 'PflenG', 'lenFact', ['l', 'p'],
                    '(formulaLenGraph LAct)', lambda a: f'{a[0]} = formulaLen LAct {a[1]}', simps=['formulaLen.defined.iff']),
-  'tlenG':   graph('(↑(termLenGraph LAct) : ArithmeticSemisentence 2)', 2, 'PtlenG', 'tlenFact', ['l', 't'],
+  'termLenMetaG':   graph('(↑(termLenGraph LAct) : ArithmeticSemisentence 2)', 2, 'PtlenG', 'termLenMetaFact', ['l', 't'],
                    '(termLenGraph LAct)', lambda a: f'{a[0]} = termLen LAct {a[1]}', simps=['termLen.defined.iff']),
   'tlvG':    graph('(↑(termLenVecGraph LAct) : ArithmeticSemisentence 3)', 3, 'PtlvG', 'tlvFact', ['M', 'k', 'v'],
                    '(termLenVecGraph LAct)', lambda a: f'{a[0]} = termLenVec LAct {a[1]} {a[2]}', simps=['termLenVec.defined.iff']),
@@ -173,14 +173,14 @@ PREDS = {
                    'fvarVecDef', lambda a: f'{a[0]} = fvarVec {a[1]}', simps=['fvarVec_defined.iff']),
   'length':  graph('(↑lengthDef : ArithmeticSemisentence 2)', 2, 'Plength', 'lengthFact', ['l', 'k'],
                    'lengthDef', lambda a: f'{a[0]} = ‖{a[1]}‖', simps=['length_defined.iff']),
-  'bnumG':   graph('(↑bnumGraph : ArithmeticSemisentence 2)', 2, 'Pbnum', 'bnumFact', ['t', 'k'],
-                   'bnumGraph', lambda a: f'{a[0]} = bnum {a[1]}', simps=['bnum.defined.iff']),
+  'binNumeralG':   graph('(↑binNumeralGraph : ArithmeticSemisentence 2)', 2, 'Pbnum', 'binNumeralFact', ['t', 'k'],
+                   'binNumeralGraph', lambda a: f'{a[0]} = binNumeral {a[1]}', simps=['binNumeral.defined.iff']),
   'qqAddG':  graph('(↑qqAddGraph : ArithmeticSemisentence 3)', 3, 'PqqAdd', 'qqAddFact', ['u', 'a', 'b'],
                    'qqAddGraph', lambda a: f'{a[0]} = {a[1]} ^+ {a[2]}', simps=['qqAdd_defined.iff']),
   'qqMulG':  graph('(↑qqMulGraph : ArithmeticSemisentence 3)', 3, 'PqqMul', 'qqMulFact', ['u', 'a', 'b'],
                    'qqMulGraph', lambda a: f'{a[0]} = {a[1]} ^* {a[2]}', simps=['qqMul_defined.iff']),
-  'dlenDef': graph('(↑(dlenDef TAct) : ArithmeticSemisentence 2)', 2, 'PdlenDef', 'dlenDefFact', ['n', 'd'],
-                   '(dlenDef TAct)', lambda a: f'{a[0]} = dlen TAct {a[1]}', simps=['dlen_defined.iff']),
+  'proofLenDef': graph('(↑(proofLenDef TAct) : ArithmeticSemisentence 2)', 2, 'PdlenDef', 'proofLenDefFact', ['n', 'd'],
+                   '(proofLenDef TAct)', lambda a: f'{a[0]} = proofLen TAct {a[1]}', simps=['proofLen_defined.iff']),
   'proof':   graph('(↑(proof TAct).sigma : ArithmeticSemisentence 2)', 2, 'Pproof', 'proofFact', ['d', 'g'],
                    '(proof TAct).sigma', lambda a: f'Proof TAct {a[0]} {a[1]}'),
   'instBG':  graph('(↑instBGraph : ArithmeticSemisentence 3)', 3, 'PinstB', 'instBFact', ['g', 'n', 'k'],
@@ -273,13 +273,13 @@ row('copy', 'congFvar', ["t'", 't', 'x'], [A('eq', "t'", 't'), A('qqFvar', 't', 
 row('copy', 'congAdj', ["w'", "v'", "t'", 'w', 'v', 't'],
     [A('eq', "w'", 'w'), A('eq', "t'", 't'), A('eq', "v'", 'v'), A('adjoin', 'w', 't', 'v')], A('adjoin', "w'", "t'", "v'"),
     doc="the `∷` congruence.")
-row('copy', 'congLen', ['y', 'x', 'l'], [A('eq', 'y', 'x'), A('flenG', 'l', 'x')], A('flenG', 'l', 'y'),
+row('copy', 'congLen', ['y', 'x', 'l'], [A('eq', 'y', 'x'), A('formulaLenMetaG', 'l', 'x')], A('formulaLenMetaG', 'l', 'y'),
     doc="`y = x → formulaLen x = l → formulaLen y = l`.")
-row('copy', 'congTLen', ['y', 'x', 'l'], [A('eq', 'y', 'x'), A('tlenG', 'l', 'x')], A('tlenG', 'l', 'y'),
+row('copy', 'congTLen', ['y', 'x', 'l'], [A('eq', 'y', 'x'), A('termLenMetaG', 'l', 'x')], A('termLenMetaG', 'l', 'y'),
     doc="`y = x → termLen x = l → termLen y = l`.")
-row('copy', 'congLenNum', ["l'", 'l', 'y'], [A('eq', 'l', "l'"), A('flenG', 'l', 'y')], A('flenG', "l'", 'y'),
+row('copy', 'congLenNum', ["l'", 'l', 'y'], [A('eq', 'l', "l'"), A('formulaLenMetaG', 'l', 'y')], A('formulaLenMetaG', "l'", 'y'),
     doc="`l = l' → formulaLen y = l → formulaLen y = l'` (the numeral into the graph position, §3.6).")
-row('copy', 'congTLenNum', ["l'", 'l', 't'], [A('eq', 'l', "l'"), A('tlenG', 'l', 't')], A('tlenG', "l'", 't'),
+row('copy', 'congTLenNum', ["l'", 'l', 't'], [A('eq', 'l', "l'"), A('termLenMetaG', 'l', 't')], A('termLenMetaG', "l'", 't'),
     doc="the term-length twin of `congLenNum`.")
 row('copy', 'congMem', ['s', 'y', 'x'], [A('eq', 'y', 'x'), A('mem', 'x', 's')], A('mem', 'y', 's'),
     doc="`y = x → x ∈ s → y ∈ s`.")
@@ -307,8 +307,8 @@ row('copy', 'congInsertL', ["t'", 't', 'x', 's'], [A('eq', "t'", 't'), A('insert
     doc="`t' = t → t = insert x s → t' = insert x s`.")
 row('copy', 'congInsertS', ["s'", 's', 'x', 't'], [A('eq', "s'", 's'), A('insert', 't', 'x', 's')], A('insert', 't', 'x', "s'"),
     doc="`s' = s → t = insert x s → t = insert x s'`.")
-row('copy', 'congSetLenR', ['l', "s'", 's'], [A('eq', "s'", 's'), A('setLen', 'l', 's')], A('setLen', 'l', "s'"),
-    doc="`s' = s → l = setLen s → l = setLen s'`.")
+row('copy', 'congSetLenR', ['l', "s'", 's'], [A('eq', "s'", 's'), A('sequentLen', 'l', 's')], A('sequentLen', 'l', "s'"),
+    doc="`s' = s → l = sequentLen s → l = sequentLen s'`.")
 row('copy', 'congIsFormulaSet', ["s'", 's'], [A('eq', "s'", 's'), A('fsetPi', 's')], A('fsetSigma', "s'"),
     doc="`s' = s → IsFormulaSet s → IsFormulaSet s'`.")
 
@@ -359,12 +359,12 @@ fun_row('qqBvarFun', 'qqBvar', 'y', ['z'], "functionality of `#z`.")
 fun_row('qqFvarFun', 'qqFvar', 'y', ['x'], "functionality of `&x`.")
 fun_row('adjoinFun', 'adjoin', 'y', ['t', 'v'], "functionality of `∷`.")
 fun_row('setShiftFun', 'setShiftG', 'y', ['s'], "functionality of `setShift`.")
-fun_row('setLenFun', 'setLen', 'y', ['s'], "functionality of `setLen`.")
+fun_row('sequentLenFun', 'sequentLen', 'y', ['s'], "functionality of `sequentLen`.")
 fun_row('lengthFun', 'length', 'y', ['k'], "functionality of `‖·‖`.")
 fun_row('termLenVecFun', 'tlvG', 'y', ['k', 'v'], "functionality of `termLenVec`.")
 fun_row('listSumFun', 'listSum', 'y', ['M'], "functionality of `listSum`.")
-fun_row('formulaLenFun', 'flenG', 'y', ['p'], "functionality of `formulaLen`.")
-fun_row('termLenFun', 'tlenG', 'y', ['t'], "functionality of `termLen`.")
+fun_row('formulaLenFun', 'formulaLenMetaG', 'y', ['p'], "functionality of `formulaLen`.")
+fun_row('termLenFun', 'termLenMetaG', 'y', ['t'], "functionality of `termLen`.")
 fun_row('fstIdxFun', 'fstIdx', 'y', ['d'], "functionality of `fstIdx`.")
 fun_row('insertFun', 'insert', 'y', ['x', 's'], "functionality of `insert`.")
 fun_row('negFun', 'negG', 'y', ['p'], "functionality of `neg`.")
@@ -372,7 +372,7 @@ fun_row('shiftFun', 'shiftG', 'y', ['p'], "functionality of `shift`.")
 fun_row('substsFun', 'substsG', 'y', ['w', 'p'], "functionality of `subst`.")
 fun_row('substs1Fun', 'substs1G', 'y', ['t', 'p'], "functionality of `substs1`.")
 fun_row('freeFun', 'freeG', 'y', ['p'], "functionality of `free`.")
-fun_row('bnumFun', 'bnumG', 'y', ['k'], "functionality of `bnum`.")
+fun_row('binNumeralFun', 'binNumeralG', 'y', ['k'], "functionality of `binNumeral`.")
 fun_row('nthFun', 'nth', 'y', ['w', 'i'], "functionality of `nth`.")
 fun_row('fvarVecFun', 'fvarVec', 'y', ['m'], "functionality of `fvarVec`.")
 fun_row('termShiftFun', 'tshG', 'y', ['t'], "functionality of `termShift`.")
@@ -418,53 +418,53 @@ row('fstIdx', 'fstIdxAxm', ['e', 'p', 's'], [A('axm', 'e', 's', 'p')], A('fstIdx
     by('subst_vars; simp'), "`e = axm s p → fstIdx e = s`.")
 
 # ===== F. the top's node rows (§7.1)
-row('nodes', 'dlenDefIntro', ['n', 'd'], [A('deriv', 'd'), A('dlen', 'd', 'n')], A('dlenDef', 'n', 'd'),
-    'fun _ _ h₁ h₂ ↦ (dlen_eq_of_graph h₁ h₂).symm',
-    "`derivation d → dlenGraph d n → dlen d = n` (the `dlenDef` graph from the derivation graph, §7.1 step 7).")
+row('nodes', 'proofLenDefIntro', ['n', 'd'], [A('deriv', 'd'), A('proofLen', 'd', 'n')], A('proofLenDef', 'n', 'd'),
+    'fun _ _ h₁ h₂ ↦ (proofLen_eq_of_graph h₁ h₂).symm',
+    "`derivation d → proofLenGraph d n → proofLen d = n` (the `proofLenDef` graph from the derivation graph, §7.1 step 7).")
 row('nodes', 'proofIntro', ['d', 'g', 's'], [A('insert', 's', 'g', 'Z'), A('fstIdx', 's', 'd'), A('deriv', 'd')], A('proof', 'd', 'g'),
     'fun _ _ _ h₁ h₂ h₃ ↦ ⟨by rw [← h₂, h₁]; exact mem_ext fun _ ↦ by simp, h₃⟩',
     "`s = insert g ∅ → fstIdx d = s → derivation d → proof d g`.")
-row('nodes', 'instBIntro', ['g', 'v', 't', 'k', 'n'], [A('bnumG', 't', 'k'), A('adjoin', 'v', 't', 'Z'), A('substsG', 'g', 'v', 'n')],
-    A('instBG', 'g', 'n', 'k'), doc="`t = bnum k → v = t ∷ 0 → g = subst v n → g = instB n k`.")
+row('nodes', 'instBIntro', ['g', 'v', 't', 'k', 'n'], [A('binNumeralG', 't', 'k'), A('adjoin', 'v', 't', 'Z'), A('substsG', 'g', 'v', 'n')],
+    A('instBG', 'g', 'n', 'k'), doc="`t = binNumeral k → v = t ∷ 0 → g = subst v n → g = instB n k`.")
 row('nodes', 'gIntro', ['a', 'l', 'k'], [A('length', 'l', 'k'), A('eq', 'a', M(M('l', 'l'), 'l'))], A('gG', 'a', 'k'),
     doc="`l = ‖k‖ → a = l * l * l → a = gBudget k`.")
 row('nodes', 'lengthTotal', ['k'], [], EX(['l'], [A('length', 'l', 'k')]), 'fun _ ↦ ⟨_, rfl⟩', "`∀ k, ∃ l, l = ‖k‖`.")
-row('nodes', 'bnumZeroCert', ['t'], [A('qqFunc', 't', 'Z', 'Z', 'Z')], A('bnumG', 't', 'Z'),
-    by('subst_vars; rw [bnum_zero]; simp only [Arithmetic.zero, qqFuncN_eq_qqFunc, qqFunc_absolute, coe_zeroIndex_eq, Nat.cast_zero]'), "`t = func 0 0 0 → t = bnum 0` (`𝟎` as the walk writes it).")
-row('nodes', 'bnumOneCert', ['t'], [A('qqFunc', 't', 'Z', C(1), 'Z')], A('bnumG', 't', 'One'),
-    by('subst_vars; rw [bnum_one]; simp only [Arithmetic.one, qqFuncN_eq_qqFunc, qqFunc_absolute, coe_oneIndex_eq, Nat.cast_zero, zero_add]'), "`t = func 0 (0 + 1) 0 → t = bnum 1` (`𝟏` as the walk writes it).")
-row('nodes', 'bnumEvenCert', ['u', 'v', "v'", 'two', 'w', "w'", 'one', 't', 'm'],
-    [A('le', 'One', 'm'), A('bnumG', 't', 'm'), A('qqFunc', 'one', 'Z', C(1), 'Z'), A('adjoin', "w'", 'one', 'Z'),
+row('nodes', 'binNumeralZeroCert', ['t'], [A('qqFunc', 't', 'Z', 'Z', 'Z')], A('binNumeralG', 't', 'Z'),
+    by('subst_vars; rw [binNumeral_zero]; simp only [Arithmetic.zero, qqFuncN_eq_qqFunc, qqFunc_absolute, coe_zeroIndex_eq, Nat.cast_zero]'), "`t = func 0 0 0 → t = binNumeral 0` (`𝟎` as the walk writes it).")
+row('nodes', 'binNumeralOneCert', ['t'], [A('qqFunc', 't', 'Z', C(1), 'Z')], A('binNumeralG', 't', 'One'),
+    by('subst_vars; rw [binNumeral_one]; simp only [Arithmetic.one, qqFuncN_eq_qqFunc, qqFunc_absolute, coe_oneIndex_eq, Nat.cast_zero, zero_add]'), "`t = func 0 (0 + 1) 0 → t = binNumeral 1` (`𝟏` as the walk writes it).")
+row('nodes', 'binNumeralEvenCert', ['u', 'v', "v'", 'two', 'w', "w'", 'one', 't', 'm'],
+    [A('le', 'One', 'm'), A('binNumeralG', 't', 'm'), A('qqFunc', 'one', 'Z', C(1), 'Z'), A('adjoin', "w'", 'one', 'Z'),
      A('adjoin', 'w', 'one', "w'"), A('qqFunc', 'two', C(2), 'Z', 'w'), A('adjoin', "v'", 't', 'Z'), A('adjoin', 'v', 'two', "v'"),
-     A('qqFunc', 'u', C(2), C(1), 'v')], A('bnumG', 'u', M('Two', 'm')),
-    by('subst_vars; rw [bnum_two_mul h₁]; simp only [qqTwo, qqMul, qqAdd, coe_mulIndex_eq, coe_addIndex_eq, Arithmetic.one, qqFuncN_eq_qqFunc, qqFunc_absolute, coe_oneIndex_eq, Nat.cast_zero, zero_add, one_add_one_eq_two]'),
-    "`1 ≤ m → t = bnum m → u = 𝟐 ^* t (as `func`/`∷` facts) → u = bnum (2 * m)` (`bnum_two_mul`).")
-row('nodes', 'bnumOddCert', ['u', 'x', "x'", 's', 'v', "v'", 'two', 'w', "w'", 'one', 't', 'm'],
-    [A('le', 'One', 'm'), A('bnumG', 't', 'm'), A('qqFunc', 'one', 'Z', C(1), 'Z'), A('adjoin', "w'", 'one', 'Z'),
+     A('qqFunc', 'u', C(2), C(1), 'v')], A('binNumeralG', 'u', M('Two', 'm')),
+    by('subst_vars; rw [binNumeral_two_mul h₁]; simp only [qqTwo, qqMul, qqAdd, coe_mulIndex_eq, coe_addIndex_eq, Arithmetic.one, qqFuncN_eq_qqFunc, qqFunc_absolute, coe_oneIndex_eq, Nat.cast_zero, zero_add, one_add_one_eq_two]'),
+    "`1 ≤ m → t = binNumeral m → u = 𝟐 ^* t (as `func`/`∷` facts) → u = binNumeral (2 * m)` (`binNumeral_two_mul`).")
+row('nodes', 'binNumeralOddCert', ['u', 'x', "x'", 's', 'v', "v'", 'two', 'w', "w'", 'one', 't', 'm'],
+    [A('le', 'One', 'm'), A('binNumeralG', 't', 'm'), A('qqFunc', 'one', 'Z', C(1), 'Z'), A('adjoin', "w'", 'one', 'Z'),
      A('adjoin', 'w', 'one', "w'"), A('qqFunc', 'two', C(2), 'Z', 'w'), A('adjoin', "v'", 't', 'Z'), A('adjoin', 'v', 'two', "v'"),
      A('qqFunc', 's', C(2), C(1), 'v'), A('adjoin', "x'", 'one', 'Z'), A('adjoin', 'x', 's', "x'"), A('qqFunc', 'u', C(2), 'Z', 'x')],
-    A('bnumG', 'u', P(M('Two', 'm'), 'One')),
-    by('subst_vars; rw [bnum_two_mul_add_one h₁]; simp only [qqTwo, qqMul, qqAdd, coe_mulIndex_eq, coe_addIndex_eq, Arithmetic.one, qqFuncN_eq_qqFunc, qqFunc_absolute, coe_oneIndex_eq, Nat.cast_zero, zero_add, one_add_one_eq_two]'),
-    "`1 ≤ m → t = bnum m → u = (𝟐 ^* t) ^+ 𝟏 (as `func`/`∷` facts) → u = bnum (2 * m + 1)` (`bnum_two_mul_add_one`).")
+    A('binNumeralG', 'u', P(M('Two', 'm'), 'One')),
+    by('subst_vars; rw [binNumeral_two_mul_add_one h₁]; simp only [qqTwo, qqMul, qqAdd, coe_mulIndex_eq, coe_addIndex_eq, Arithmetic.one, qqFuncN_eq_qqFunc, qqFunc_absolute, coe_oneIndex_eq, Nat.cast_zero, zero_add, one_add_one_eq_two]'),
+    "`1 ≤ m → t = binNumeral m → u = (𝟐 ^* t) ^+ 𝟏 (as `func`/`∷` facts) → u = binNumeral (2 * m + 1)` (`binNumeral_two_mul_add_one`).")
 
 # ===== G. lengths (§3.6)
 row('lengths', 'termLenVecNil', ['x'], [], A('tlvG', 'Z', 'Z', 'Z'), 'fun _ ↦ by exact termLenVec_nil.symm', "`termLenVec 0 0 = 0` (dummy binder `x`: a CLOSED row over a blueprint graph hangs `simp`).")
 row('lengths', 'termLenVecAdj', ["M'", 'M', 'l', 't', "v'", 'v', 'k', 'n'],
-    [A('tpi', 'n', 't'), A('utvpi', 'k', 'v'), A('tlenG', 'l', 't'), A('tlvG', 'M', 'k', 'v'), A('adjoin', "v'", 't', 'v'), A('adjoin', "M'", 'l', 'M')],
+    [A('tpi', 'n', 't'), A('utvpi', 'k', 'v'), A('termLenMetaG', 'l', 't'), A('tlvG', 'M', 'k', 'v'), A('adjoin', "v'", 't', 'v'), A('adjoin', "M'", 'l', 'M')],
     A('tlvG', "M'", S('k'), "v'"), by('subst_vars; exact (termLenVec_cons h₁.isUTerm h₂).symm'),
     "`termLenVec (k + 1) (t ∷ v) = termLen t ∷ termLenVec k v` bottom-up.")
 row('lengths', 'listSumNil', ['x'], [], A('listSum', 'Z', 'Z'), 'fun _ ↦ by exact listSum_nil.symm', "`listSum 0 = 0` (dummy binder).")
 row('lengths', 'listSumAdj', ["s'", 's', 'l', 'M', "M'"], [A('listSum', 's', 'M'), A('adjoin', "M'", 'l', 'M'), A('listSum', "s'", "M'")],
     A('eq', "s'", P('l', 's')), by('subst_vars; exact listSum_adjoin _ _'), "`listSum (l ∷ M) = l + listSum M`.")
 row('lengths', 'formulaLenRelCert', ['l', 's', 'M', 'p', 'v', 'R', 'k'],
-    [A('isRel', 'k', 'R'), A('utvpi', 'k', 'v'), A('qqRel', 'p', 'k', 'R', 'v'), A('tlvG', 'M', 'k', 'v'), A('listSum', 's', 'M'), A('flenG', 'l', 'p')],
+    [A('isRel', 'k', 'R'), A('utvpi', 'k', 'v'), A('qqRel', 'p', 'k', 'R', 'v'), A('tlvG', 'M', 'k', 'v'), A('listSum', 's', 'M'), A('formulaLenMetaG', 'l', 'p')],
     A('eq', 'l', S('s')), by('subst_vars; exact formulaLen_rel h₁ h₂'),
     "`formulaLen (rel k R v) = listSum (termLenVec k v) + 1` with `M, s` universal (§3.6).")
 row('lengths', 'formulaLenNRelCert', ['l', 's', 'M', 'p', 'v', 'R', 'k'],
-    [A('isRel', 'k', 'R'), A('utvpi', 'k', 'v'), A('qqNRel', 'p', 'k', 'R', 'v'), A('tlvG', 'M', 'k', 'v'), A('listSum', 's', 'M'), A('flenG', 'l', 'p')],
+    [A('isRel', 'k', 'R'), A('utvpi', 'k', 'v'), A('qqNRel', 'p', 'k', 'R', 'v'), A('tlvG', 'M', 'k', 'v'), A('listSum', 's', 'M'), A('formulaLenMetaG', 'l', 'p')],
     A('eq', 'l', S('s')), by('subst_vars; exact formulaLen_nrel h₁ h₂'), "the `nrel` twin.")
 row('lengths', 'termLenFuncCert', ['l', 's', 'M', 't', 'v', 'f', 'k'],
-    [A('isFunc', 'k', 'f'), A('utvpi', 'k', 'v'), A('qqFunc', 't', 'k', 'f', 'v'), A('tlvG', 'M', 'k', 'v'), A('listSum', 's', 'M'), A('tlenG', 'l', 't')],
+    [A('isFunc', 'k', 'f'), A('utvpi', 'k', 'v'), A('qqFunc', 't', 'k', 'f', 'v'), A('tlvG', 'M', 'k', 'v'), A('listSum', 's', 'M'), A('termLenMetaG', 'l', 't')],
     A('eq', 'l', S('s')), by('subst_vars; exact termLen_func h₁ h₂'),
     "`termLen (func k f v) = listSum (termLenVec k v) + 1` with `M, s` universal.")
 
@@ -680,8 +680,8 @@ row('chain', 'isFormulaSetInsertC', ['t', 'p', 's'], [A('fsetPi', 's'), A('pi', 
     "`IsFormulaSet s → IsFormula p → t = insert p s → IsFormulaSet t` (`Sets.isFormulaSetInsert`).")
 row('chain', 'fsetSigmaPiC', ['s'], [A('fsetSigma', 's')], A('fsetPi', 's'), 'fun _ h ↦ h',
     "`IsFormulaSet s → IsFormulaSet s` (the `.sigma → .pi` bridge, `Sets.isFormulaSetSigmaPi`).")
-row('chain', 'setLenTotalC', ['s'], [], EX(['l'], [A('setLen', 'l', 's')]), 'fun _ ↦ ⟨_, rfl⟩',
-    "`∀ s, ∃ l, l = setLen s` (`Lengths.setLenTotal`).")
+row('chain', 'sequentLenTotalC', ['s'], [], EX(['l'], [A('sequentLen', 'l', 's')]), 'fun _ ↦ ⟨_, rfl⟩',
+    "`∀ s, ∃ l, l = sequentLen s` (`Lengths.sequentLenTotal`).")
 row('chain', 'subsetReflC', ['s'], [], A('subset', 's', 's'), 'fun s ↦ subset_refl s',
     "`s ⊆ s` (`Sets.subsetRefl`).")
 
@@ -819,7 +819,7 @@ GROUP_TITLES = {
   'fun': 'C. Functionality (`pinSteps`, §4.10(i))',
   'sets': 'D. Sets: extensionality and `setShift` on a chain (§3.4, §4.5)',
   'fstIdx': 'E. The ten `fstIdx<Tag>` rows (§4.0 step 2)',
-  'nodes': 'F. The top: `dlenDef`, `proof`, `instB`, `gBudget`, `‖·‖`, the `bnum` certification (§7.1)',
+  'nodes': 'F. The top: `proofLenDef`, `proof`, `instB`, `gBudget`, `‖·‖`, the `binNumeral` certification (§7.1)',
   'lengths': 'G. Lengths: `termLenVec`/`listSum` bottom-up, the atom lengths with universal `M, s` (§3.6)',
   'cert': 'H. Certification: `neg`/`shift`/`subst`/`free` bottom-up, the term level, `qVec` (§3.6)',
   'num': 'I. Numerals N4/N5 (§2.4), in the DSL',

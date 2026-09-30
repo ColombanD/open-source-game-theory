@@ -17,16 +17,16 @@ A, EX, S, P = G.A, G.EX, G.S, G.P
 
 # ---- the ten length rows of Lib/Lengths.lean, re-issued with quote_row_/inst_ lemmas (same names, same DSL)
 LEN_ROWS = [
- ('formulaLenVerum', ['l','p'], [A('qqVerum','p'), A('flenG','l','p')], A('eq','l','One')),
- ('formulaLenFalsum', ['l','p'], [A('qqFalsum','p'), A('flenG','l','p')], A('eq','l','One')),
- ('formulaLenAnd', ['lr','lq','lp','r','q','p','n'], [A('pi','n','p'), A('pi','n','q'), A('qqAnd','r','p','q'), A('flenG','lp','p'), A('flenG','lq','q'), A('flenG','lr','r')], A('eq','lr',S(P('lp','lq')))),
- ('formulaLenOr', ['lr','lq','lp','r','q','p','n'], [A('pi','n','p'), A('pi','n','q'), A('qqOr','r','p','q'), A('flenG','lp','p'), A('flenG','lq','q'), A('flenG','lr','r')], A('eq','lr',S(P('lp','lq')))),
- ('formulaLenAll', ['lq','lp','q','p','n'], [A('pi',S('n'),'p'), A('qqAll','q','p'), A('flenG','lp','p'), A('flenG','lq','q')], A('eq','lq',S('lp'))),
- ('formulaLenExs', ['lq','lp','q','p','n'], [A('pi',S('n'),'p'), A('qqExs','q','p'), A('flenG','lp','p'), A('flenG','lq','q')], A('eq','lq',S('lp'))),
- ('termLenBvar', ['l','t','z'], [A('qqBvar','t','z'), A('tlenG','l','t')], A('eq','l',S('z'))),
- ('termLenFvar', ['l','t','x'], [A('qqFvar','t','x'), A('tlenG','l','t')], A('eq','l',S('x'))),
- ('formulaLenTotal', ['p'], [], EX(['l'], [A('flenG','l','p')])),
- ('termLenTotal', ['t'], [], EX(['l'], [A('tlenG','l','t')])),
+ ('formulaLenVerum', ['l','p'], [A('qqVerum','p'), A('formulaLenMetaG','l','p')], A('eq','l','One')),
+ ('formulaLenFalsum', ['l','p'], [A('qqFalsum','p'), A('formulaLenMetaG','l','p')], A('eq','l','One')),
+ ('formulaLenAnd', ['lr','lq','lp','r','q','p','n'], [A('pi','n','p'), A('pi','n','q'), A('qqAnd','r','p','q'), A('formulaLenMetaG','lp','p'), A('formulaLenMetaG','lq','q'), A('formulaLenMetaG','lr','r')], A('eq','lr',S(P('lp','lq')))),
+ ('formulaLenOr', ['lr','lq','lp','r','q','p','n'], [A('pi','n','p'), A('pi','n','q'), A('qqOr','r','p','q'), A('formulaLenMetaG','lp','p'), A('formulaLenMetaG','lq','q'), A('formulaLenMetaG','lr','r')], A('eq','lr',S(P('lp','lq')))),
+ ('formulaLenAll', ['lq','lp','q','p','n'], [A('pi',S('n'),'p'), A('qqAll','q','p'), A('formulaLenMetaG','lp','p'), A('formulaLenMetaG','lq','q')], A('eq','lq',S('lp'))),
+ ('formulaLenExs', ['lq','lp','q','p','n'], [A('pi',S('n'),'p'), A('qqExs','q','p'), A('formulaLenMetaG','lp','p'), A('formulaLenMetaG','lq','q')], A('eq','lq',S('lp'))),
+ ('termLenBvar', ['l','t','z'], [A('qqBvar','t','z'), A('termLenMetaG','l','t')], A('eq','l',S('z'))),
+ ('termLenFvar', ['l','t','x'], [A('qqFvar','t','x'), A('termLenMetaG','l','t')], A('eq','l',S('x'))),
+ ('formulaLenTotal', ['p'], [], EX(['l'], [A('formulaLenMetaG','l','p')])),
+ ('termLenTotal', ['t'], [], EX(['l'], [A('termLenMetaG','l','t')])),
  # ---- the three rows APPENDED 2026-09-14 for `lenSteps` (sentences + `lib_` proofs hand-written in `head` §0):
  ('congAdd', ["y'", 'y', "x'", 'x'], [A('eq','x',"x'"), A('eq','y',"y'")], A('eq', P('x','y'), P("x'","y'"))),
  ('congSucc', ["x'", 'x'], [A('eq','x',"x'")], A('eq', S('x'), S("x'"))),
@@ -340,7 +340,7 @@ set_option maxRecDepth 20000
 /-! ## 0. Three rows APPENDED 2026-09-14 for `lenSteps` (hand-written sentences and `lib_` proofs; their
 `quote_row_`/`inst_` blocks are generated below like the length rows): the addition congruence `congAdd`
 (`x = x' → y = y' → x + y = x' + y'`), the successor congruence `congSucc` (`x = x' → x + 1 = x' + 1` — the
-one `lenSteps` uses: the closed `bnum|p| + bnum|q| + 1 = bnum(|p| + |q| + 1)` is `addFact` + `congSucc` +
+one `lenSteps` uses: the closed `binNumeral|p| + binNumeral|q| + 1 = binNumeral(|p| + |q| + 1)` is `addFact` + `congSucc` +
 `succFact` + `eqTrans`; `congAdd` at `𝟏` would need the closed-constant witness), and the INTRO form of the
 list-sum adjoin `listSumAdjI` (`listSumDef s M → adjoinDef M' l M → l + s = s' → listSumDef s' M'` — the table's
 `listSumAdj` has all three `listSumDef` facts as antecedents, so no `listSumDef s' M'` was derivable for a

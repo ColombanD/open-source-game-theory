@@ -28,11 +28,11 @@ were (content untouched beyond `import` lines).
 | `Box/` | `ArithS/BewV.lean` | `ArithS/Box/BewV.lean` |
 | `Box/` | `ArithS/Cut.lean` | `ArithS/Box/Cut.lean` |
 | `Box/` | `ArithS/CutV.lean` | `ArithS/Box/CutV.lean` |
-| `Box/` | `ArithS/ProperV.lean` | `ArithS/Box/ProperV.lean` |
+| `Box/` | `ArithS/ProperBound.lean` | `ArithS/Box/ProperBound.lean` |
 | `Agents/` | `ArithS/Prog.lean` | `ArithS/Agents/Prog.lean` |
-| `Agents/` | `ArithS/ProgT.lean` | `ArithS/Agents/ProgT.lean` |
-| `Agents/` | `ArithS/RelabelTemplate.lean` | `ArithS/Agents/RelabelTemplate.lean` |
-| `Agents/` | `ArithS/Bnum.lean` | `ArithS/Agents/Bnum.lean` |
+| `Agents/` | `ArithS/CodeTerm.lean` | `ArithS/Agents/CodeTerm.lean` |
+| `Agents/` | `ArithS/RevalueTemplate.lean` | `ArithS/Agents/RevalueTemplate.lean` |
+| `Agents/` | `ArithS/BinNumeral.lean` | `ArithS/Agents/BinNumeral.lean` |
 | `Agents/` | `ArithS/Template.lean` | `ArithS/Agents/Template.lean` |
 | `Agents/` | `ArithS/Guard.lean` | `ArithS/Agents/Guard.lean` |
 | `Agents/` | `ArithS/Subst.lean` | `ArithS/Agents/Subst.lean` |
@@ -68,9 +68,9 @@ were (content untouched beyond `import` lines).
 
 | File | `#print axioms` lines | Blocks (former `Audit.lean` line ranges) |
 |---|---|---|
-| `Audit/Theory.lean` | 9 | τ-closure of `TAct` (127), the action axiom `axAct` (204) |
+| `Audit/Theory.lean` | 9 | τ-closure of `TAct` (127), the action axiom `actionAxiom` (204) |
 | `Audit/Length.lean` | 0 | placeholder — no headline theorem of the length layer is printed; its consumers are under `Box` |
-| `Audit/Box.lean` | 16 | bounded D2 in rule form (132), `CutV` (141), `ProperV` (151) |
+| `Audit/Box.lean` | 16 | bounded D2 in rule form (132), `CutV` (141), `ProperBound` (151) |
 | `Audit/Agents.lean` | 13 | programs by terms (214), the code translation (367), `FitBox` (379) |
 | `Audit/Eval.lean` | 16 | Dupoc transparency (225), `Det` (372) |
 | `Audit/Loeb.lean` | 77 | `InstV` (160), `NumeralFacts` (176), `Diag` (189), `Assembly/{Prep,Uniform,Cell,Family}` (243–308) |
@@ -94,11 +94,41 @@ Every new module is still imported in BOTH `ArithS.lean` and the census (now the
 | old | new | where |
 |---|---|---|
 | `GtmplA a` | `guardTemplate a` | `Agents/Template.lean` and every user (a word-boundary rename; notes updated) |
-| — | `□[k] φ` | scoped notation for `LenProvableV TAct k φ`, `Outcome/Spec.lean` |
+| — | `□[k] φ` | scoped notation for `LenBox TAct k φ`, `Outcome/Spec.lean` |
 | — | `plays`, `OutcomeAtA`, `OutcomeSpecA`, `bot`, `const` | the engine's outcome vocabulary on codes, `Outcome/Spec.lean` |
 | — | `outcome_<L>_vs_<R>` | one theorem per ledger cell, `Outcome/Matrix/<L>.lean` (107), proved from the `Cells/` theorems |
-| — | `snd_DupocBot_vs_CupodBot` | the red cell on the engine's `pcode`, `Cells/RedCellEngine.lean` |
+| — | `snd_DupocBot_vs_CupodBot` | the red cell on the engine's `progCode`, `Cells/RedCellEngine.lean` |
 
-`guardCode`/`guardCodeB` and `descVec`/`descVecB` were considered and kept: `guard` collides with the
+`guardCode`/`guardCodeB` and `descriptions`/`descriptionsB` were considered and kept: `guard` collides with the
 core library's `guard`, and the `B` suffix is the budget-slot marker every note uses. The reading guide
 is `ArithS/README.md`.
+
+## Renames (2026-09-30, the deep clean of the important names)
+
+Component renames: every identifier containing the old name as a component follows it (`dlenDef` →
+`proofLenDef`, `DlenGraph` → `ProofLenGraph`, `setLenFact` → `sequentLenFact`, …), in code, generators,
+pruned lists, notes and docs alike; no aliases. Conventions: the plain name is the code-level (inside PA)
+object, `…Meta` its twin on Lean syntax; the former `V` suffix (model-generic) is gone and the ℕ-only
+version, where one survives, is `…Nat`.
+
+| old | new | old | new |
+|---|---|---|---|
+| `stdAct` / `stdActS M` / `swapActS M` / `stdActV` | `stdReadingNat` / `stdReading M` / `swappedReading M` / `stdReadingV` | `axAct`, `axAct'`, `axNe`, `axNe'` | `actionAxiom`, `actionAxiom'`, `constNe`, `constNe'` |
+| `tact_complete'` / `tact_complete` | `TAct_complete_of_readings` / `TAct_complete` | `setLen`, `SetLen` | `sequentLen`, `SequentLen` |
+| `dlen`, `Dlen…`, `DLen` | `proofLen`, `ProofLen…` | `tlen`, `flen`, `sqlen`, `mlen` | `termLenMeta`, `formulaLenMeta`, `sequentLenMeta`, `proofLenMeta` |
+| `LenProvableV` / `lenProvableV` | `LenBox` / `lenBox` | `LenDerivable` / `lenDerivable` | `LenBoxUnbounded` / `lenBoxUnbounded` |
+| `LenProvable` / `lenProvable` (ℕ, parametric bound) | `LenBoxNat` / `lenBoxNat` | `fbound` | `codeBound` |
+| `ProperV`, `properV_*` | `ProperBound`, `properBound_*` | `Proper f k T` (`Bew.lean`) | `ProperBoundNat` |
+| `Proper (p : Prog)`, `proper_<Bot>` | `ProperPlayer`, `properPlayer_<Bot>` | `lenProvableV_cut_V'` / `…_sharp'` / `lenDerivable_cut_V` | `lenBox_mp` / `lenBox_mp_sharp` / `lenBoxUnbounded_mp` |
+| `lenDerivable_iff_lenProvableV` | `lenBoxUnbounded_iff_lenBox` | `lenProvable_fbound_swap_iff` | `lenBoxNat_swap_iff` |
+| `relabel`, `Relabel…`, `relabelAct`, `relabelTemplate` | `revalue`, `Revalue…`, `revalueAction`, `revalueTemplate` | `swapAct`, `swapcode` | `swapAction`, `transposeCode` |
+| `dnum`, `dU`, `dW` (+ `…T` meta) | `canonical`, `revalueU`, `revalueW` (+ `…Meta`) | `bnum`, `bnumT`, `Bnum…` | `binNumeral`, `binNumeralMeta`, `BinNumeral…` |
+| `progT`, `progTT`, `ProgT…` | `codeTerm`, `codeTermMeta`, `CodeTerm…` | `ppairT`, `ppairTT` | `ppairTerm`, `ppairTermMeta` |
+| `descVec`, `descVecB`, `descVecSlot`, `descTerms` | `descriptions`, `descriptionsB`, `descriptionsSlot`, `descriptionTerms` | `gtmpl`, `Gtmpl`, `guardSentenceA` | `guardTemplateRaw`, `guardTemplate7`, `guardSentence` |
+| `GtmplJ`, `GtmplJ7`, `GtmplJ7A`, `GtmplT7`, `GtmplT7A` | `guardTemplateJust`, `…Just7`, `…Just7A`, `…Troll7`, `…Troll7A` | `pcode`, `tcode`, `tmpl`, `trAt` | `progCode`, `templateCode`, `template`, `sentenceAt` |
+| `psubst`, `Psubst…`, `gsubst` | `substCode`, `SubstCode…`, `substTemplate` | `dupoc_self_coop_unconditional` / `dupoc_self_coop` (conditional) | `dupoc_self_coop` / `dupoc_self_coop_of_nec` |
+| `pblt_unconditional` | `pblt` | files `Agents/{Bnum,ProgT,RelabelTemplate}.lean` | `Agents/{BinNumeral,CodeTerm,RevalueTemplate}.lean` |
+
+Unchanged on purpose: `LAct`, `TAct`, `swap`, `emb`, `ppair`, `pConst…pSearch`, `EvalGraph`, `guardCode`/
+`guardCodeB`, `guardTemplate`, `termLen`/`formulaLen`, `red_cell`, `boundedInnerNec_sixteen`, the cell heads,
+and every name internal to `Necessitation/` except where a renamed definition is used there.

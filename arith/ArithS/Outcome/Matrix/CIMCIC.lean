@@ -36,7 +36,7 @@ theorem outcome_CIMCIC_vs_CIMCIC :
     OutcomeSpecA .eventual (bot CIMCIC) (bot CIMCIC) (some (.C, .C)) :=
   OutcomeSpecA.eventual_of (by
     obtain ⟨k₀, h⟩ := pos_Cimcic_vs_Cimcic
-    exact ⟨k₀, fun k hk ↦ by dsimp only [bot, const]; rw [pcode_CIMCIC]; exact OutcomeAtA.of_evalGraph₂ (h k hk) (h k hk)⟩)
+    exact ⟨k₀, fun k hk ↦ by dsimp only [bot, const]; rw [progCode_CIMCIC]; exact OutcomeAtA.of_evalGraph₂ (h k hk) (h k hk)⟩)
 
 /-- `loeb_CIMCIC_vs_DIMCID` -/
 theorem outcome_CIMCIC_vs_DIMCID :
@@ -50,7 +50,7 @@ theorem outcome_CIMCIC_vs_MirrorBot :
     OutcomeSpecA .eventual (bot CIMCIC) (const MirrorBot) (some (.C, .C)) :=
   OutcomeSpecA.eventual_of (by
     obtain ⟨k₀, h⟩ := loeb_Cimcic_vs_Mirror
-    exact ⟨k₀, fun k hk ↦ by dsimp only [bot, const]; rw [pcode_CIMCIC, pcode_MirrorBot]; exact OutcomeAtA.of_evalGraph (h k hk)⟩)
+    exact ⟨k₀, fun k hk ↦ by dsimp only [bot, const]; rw [progCode_CIMCIC, progCode_MirrorBot]; exact OutcomeAtA.of_evalGraph (h k hk)⟩)
 
 /-- `khat_CIMCIC_vs_TitForTatBot` -/
 theorem outcome_CIMCIC_vs_TitForTatBot :
@@ -80,8 +80,8 @@ theorem outcome_CIMCIC_vs_OBot :
 
 /-! ### On the hand-template twins
 
-These cells are stated on arith codes that are NOT the engine's `pcode`:
-* `Dupoc k` (`Cells/RedCell.lean`): the searcher on the HAND template `guardTemplate 0`; the engine's `DupocBot k` carries the translated template `tmpl (.plays .opp .self .C)` — a different code with a provably equivalent guard (`Agents/Code.lean`, "Sanity"), on which the Löb cells are not yet re-proved.
+These cells are stated on arith codes that are NOT the engine's `progCode`:
+* `Dupoc k` (`Cells/RedCell.lean`): the searcher on the HAND template `guardTemplate 0`; the engine's `DupocBot k` carries the translated template `template (.plays .opp .self .C)` — a different code with a provably equivalent guard (`Agents/Code.lean`, "Sanity"), on which the Löb cells are not yet re-proved.
 * `Just7 k` (`Cells/JustSlot.lean`): JustBot with the CONSTANT budget-slot template (route (c)); plays as `Just k` at every fuel (`evalGraph_Just7_iff`).
 -/
 
@@ -90,13 +90,13 @@ theorem outcome_CIMCIC_vs_Dupoc :
     OutcomeSpecA .eventual (bot CIMCIC) Dupoc (some (.C, .C)) :=
   OutcomeSpecA.eventual_of (by
     obtain ⟨k₀, h⟩ := loeb_Cimcic_vs_Dupoc
-    exact ⟨k₀, fun k hk ↦ by dsimp only [bot, const]; rw [pcode_CIMCIC]; exact OutcomeAtA.of_evalGraph (h k hk)⟩)
+    exact ⟨k₀, fun k hk ↦ by dsimp only [bot, const]; rw [progCode_CIMCIC]; exact OutcomeAtA.of_evalGraph (h k hk)⟩)
 
 /-- `loeb_Cimcic_vs_Just7` -/
 theorem outcome_CIMCIC_vs_Just7 :
     OutcomeSpecA .eventual (bot CIMCIC) Just7 (some (.C, .C)) :=
   OutcomeSpecA.eventual_of (by
     obtain ⟨k₀, h⟩ := loeb_Cimcic_vs_Just7
-    exact ⟨k₀, fun k hk ↦ by dsimp only [bot, const]; rw [pcode_CIMCIC]; exact OutcomeAtA.of_evalGraph (h k hk)⟩)
+    exact ⟨k₀, fun k hk ↦ by dsimp only [bot, const]; rw [progCode_CIMCIC]; exact OutcomeAtA.of_evalGraph (h k hk)⟩)
 
 end ArithS

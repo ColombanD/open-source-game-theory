@@ -13,19 +13,19 @@ The engine's `PlaysProof me opp body a n` (`ProofSystem.lean`) is the certificat
 the frame `(me, opp)`, the body plays `a` in `n` evaluation steps; its `search_t`/`search_f`
 arms consult the proof system on the CLOSED guard `φ.subst me opp` (a `Pf k` derivation,
 resp. a `Pf m` refutation). The arithmetized evaluator `EvalGraph N ⌜me⌝ ⌜opp⌝ ⌜body⌝ a`
-(`ArithS.Eval`) consults instead `LenProvableV TAct k (guardCode (tcode φ) (pcode me)
-(pcode opp))` — the code of the template `tmpl φ` filled with the players' descriptions,
+(`ArithS.Eval`) consults instead `LenBox TAct k (guardCode (templateCode φ) (progCode me)
+(progCode opp))` — the code of the template `template φ` filled with the players' descriptions,
 which on the fragment IS the template code of the closed instantiation
-(`guardOf_eq_tcode_subst`, from `tcode_subst`).
+(`guardOf_eq_templateCode_subst`, from `templateCode_subst`).
 
-* `guardOf φ me opp := guardCode (tcode φ) (pcode me) (pcode opp)` — the consulted guard;
-  `guardOf_eq_quote_trAt` (it is `⌜trAt me opp φ⌝`), `guardOf_eq_tcode_subst`.
+* `guardOf φ me opp := guardCode (templateCode φ) (progCode me) (progCode opp)` — the consulted guard;
+  `guardOf_eq_quote_sentenceAt` (it is `⌜sentenceAt me opp φ⌝`), `guardOf_eq_templateCode_subst`.
 * `GuardAgreeT` / `GuardAgreeF` — the two directions of "the engine's `Pf` verdict and the
   arithmetized `□_k` verdict agree on the consulted guards": a `Pf k` derivation of the
   closed guard yields a `TAct`-proof of length `≤ k` of its realization (bounded D1 — a
   HYPOTHESIS, named, never an axiom: T2-NEG shows no budget-keeping transfer exists in
   general, so this is exactly where Critch's (d) enters), and a `Pf m` refutation excludes
-  one. `models_trAt_of_lenProvableV` is the one-sided fact PA-soundness gives for free: a
+  one. `models_sentenceAt_of_lenBox` is the one-sided fact PA-soundness gives for free: a
   found arithmetized guard is TRUE in `ℕ`. Engine-refutability plus engine soundness
   (`PD.Pf_sound`) gives falsity of the ENGINE reading `Formula.interp` — a different
   sentence (`play`, not `EvalGraph`) — so `GuardAgreeF` is not derived from soundness here.
@@ -40,14 +40,14 @@ which on the fragment IS the template code of the closed instantiation
 * `playsProof_evalGraph_searchFree` — the UNCONDITIONAL version for search-free players
   and body (`Prog.hasSearch = false`): no guard is ever consulted, so no oracle hypothesis.
 * `atomProvable_evalGraph` — the atom form (`AtomProvable k (.plays me opp a)`).
-* `models_trAt_plays` — the TRUTH equation for the realized play-atom on PROPER programs
+* `models_sentenceAt_plays` — the TRUTH equation for the realized play-atom on PROPER programs
   (players that are not bare pronouns; searchers included):
-  `ℕ ⊧ trAt me' opp' (.plays me opp a) ↔ ∃ N, EvalGraph N ⌜me⌝ ⌜opp⌝ ⌜me⌝ a` (the frame
+  `ℕ ⊧ sentenceAt me' opp' (.plays me opp a) ↔ ∃ N, EvalGraph N ⌜me⌝ ⌜opp⌝ ⌜me⌝ a` (the frame
   `me'`, `opp'` is irrelevant for proper programs).
 
 ## Remaining gap (recorded, not forced)
 
-From TRUTH of `trAt me' opp' (.plays me opp a)` to `TAct ⊢ trAt …` (Σ₁-completeness):
+From TRUTH of `sentenceAt me' opp' (.plays me opp a)` to `TAct ⊢ sentenceAt …` (Σ₁-completeness):
 Foundation's `sigma_one_completeness` is stated for theories over `ℒₒᵣ`; `TAct` is a
 theory over `LAct`, and the realized sentence names the action constants `c_C`, `c_D`,
 which `TAct` leaves uninterpreted (only `c_C ≠ c_D` — the τ-symmetry of
@@ -69,18 +69,18 @@ open LAct
 /-- The guard code the arithmetized evaluator consults at the node `.search k φ p q` in the
 frame `(me, opp)`: the template code of `φ` filled with the players' descriptions. -/
 noncomputable def guardOf (φ : PD.Formula) (me opp : PD.Prog) : ℕ :=
-  guardCode (tcode φ) (pcode me) (pcode opp)
+  guardCode (templateCode φ) (progCode me) (progCode opp)
 
-lemma guardOf_eq_quote_trAt (φ : PD.Formula) (me opp : PD.Prog) :
-    guardOf φ me opp = ⌜trAt me opp φ⌝ :=
-  (quote_trAt me opp φ).symm
+lemma guardOf_eq_quote_sentenceAt (φ : PD.Formula) (me opp : PD.Prog) :
+    guardOf φ me opp = ⌜sentenceAt me opp φ⌝ :=
+  (quote_sentenceAt me opp φ).symm
 
 /-- On the fragment the consulted guard IS the template code of the CLOSED instantiation
 `φ.subst me opp` — the formula the engine's `search_t`/`search_f` premises are about. -/
-lemma guardOf_eq_tcode_subst {me opp : PD.Prog} (hme : me ≠ .self ∧ me ≠ .opp)
+lemma guardOf_eq_templateCode_subst {me opp : PD.Prog} (hme : me ≠ .self ∧ me ≠ .opp)
     (hopp : opp ≠ .self ∧ opp ≠ .opp) (φ : PD.Formula) (h : fragF φ = true) :
-    guardOf φ me opp = tcode (φ.subst me opp) := by
-  rw [tcode_subst hme hopp φ h, gsubst_of_template (isSemiformula_tcode φ)]
+    guardOf φ me opp = templateCode (φ.subst me opp) := by
+  rw [templateCode_subst hme hopp φ h, substTemplate_of_template (isSemiformula_templateCode φ)]
   rfl
 
 /-! ### The oracle hypotheses -/
@@ -89,19 +89,19 @@ lemma guardOf_eq_tcode_subst {me opp : PD.Prog} (hme : me ≠ .self ∧ me ≠ .
 a `TAct`-proof of length `≤ k` of its realization. -/
 def GuardAgreeT : Prop :=
   ∀ (φ : PD.Formula) (me opp : PD.Prog) (k : ℕ),
-    PD.Pf k (φ.subst me opp) → LenProvableV TAct k (guardOf φ me opp)
+    PD.Pf k (φ.subst me opp) → LenBox TAct k (guardOf φ me opp)
 
 /-- The negative direction: an engine refutation `⊢_m ¬guard` excludes a `TAct`-proof of
 length `≤ k` of the realization, at every `k`. -/
 def GuardAgreeF : Prop :=
   ∀ (φ : PD.Formula) (me opp : PD.Prog) (k m : ℕ),
-    PD.Pf m (.neg (φ.subst me opp)) → ¬ LenProvableV TAct k (guardOf φ me opp)
+    PD.Pf m (.neg (φ.subst me opp)) → ¬ LenBox TAct k (guardOf φ me opp)
 
 /-- **Soundness of a found guard**: if the arithmetized evaluator finds the guard, its
 realization is TRUE in `ℕ` (`TAct` is sound: `models_TAct`). -/
-theorem models_trAt_of_lenProvableV {φ : PD.Formula} {me opp : PD.Prog} {k : ℕ}
-    (h : LenProvableV TAct k (guardOf φ me opp)) : ℕ↓[LAct] ⊧ trAt me opp φ := by
-  rw [guardOf_eq_quote_trAt, lenProvableV_nat] at h
+theorem models_sentenceAt_of_lenBox {φ : PD.Formula} {me opp : PD.Prog} {k : ℕ}
+    (h : LenBox TAct k (guardOf φ me opp)) : ℕ↓[LAct] ⊧ sentenceAt me opp φ := by
+  rw [guardOf_eq_quote_sentenceAt, lenBox_nat] at h
   exact models_of_provable models_TAct (provable_iff_provable.mp h.provable)
 
 /-- What engine soundness gives on the OTHER side: a refuted closed guard is false in the
@@ -158,10 +158,10 @@ theorem fragP_of_modestP : ∀ p : PD.Prog, modestP p = true → fragP p = true
   | .sys _ _, h => by simp [modestP] at h
   | .selfIdx _, h => by simp [modestP] at h
 
-/-- A player is a program, not a pronoun (the side condition of `pcode_subst`). -/
-def Proper (p : PD.Prog) : Prop := p ≠ .self ∧ p ≠ .opp
+/-- A player is a program, not a pronoun (the side condition of `progCode_subst`). -/
+def ProperPlayer (p : PD.Prog) : Prop := p ≠ .self ∧ p ≠ .opp
 
-lemma proper_of_closedP {p : PD.Prog} (h : closedP p = true) : Proper p :=
+lemma properPlayer_of_closedP {p : PD.Prog} (h : closedP p = true) : ProperPlayer p :=
   ⟨closedP_ne_self h, closedP_ne_opp h⟩
 
 /-- `subst` of an atomic program is `me`, `opp`, or the (closed) program itself. -/
@@ -178,7 +178,7 @@ lemma subst_of_atomicP {p : PD.Prog} (hp : atomicP p = true) (me opp : PD.Prog) 
 /-- The invariant carried along a derivation: proper modest players, a modest body, and
 (when `sf = true`) no search node in any of them. -/
 def Inv (sf : Bool) (me opp body : PD.Prog) : Prop :=
-  Proper me ∧ Proper opp ∧ modestP me = true ∧ modestP opp = true ∧ modestP body = true ∧
+  ProperPlayer me ∧ ProperPlayer opp ∧ modestP me = true ∧ modestP opp = true ∧ modestP body = true ∧
     (sf = true → me.hasSearch = false ∧ opp.hasSearch = false ∧ body.hasSearch = false)
 
 namespace Inv
@@ -229,13 +229,13 @@ lemma sys {defs : PD.ProgList} {i : ℕ} (h : Inv sf me op (.sys defs i)) : Fals
 
 /-- The body of a `.sim` node is one atomic program at a time. -/
 lemma sim_arg {p : PD.Prog} (h : Inv sf me op p) (hp : atomicP p = true) :
-    Proper (p.subst me op) ∧ modestP (p.subst me op) = true ∧
+    ProperPlayer (p.subst me op) ∧ modestP (p.subst me op) = true ∧
       (sf = true → (p.subst me op).hasSearch = false) := by
   obtain ⟨hme, hop, hmm, hmo, hmp, hs⟩ := h
   rcases subst_of_atomicP hp me op with e | e | ⟨hc, e⟩
   · rw [e]; exact ⟨hme, hmm, fun h ↦ (hs h).1⟩
   · rw [e]; exact ⟨hop, hmo, fun h ↦ (hs h).2.1⟩
-  · rw [e]; exact ⟨proper_of_closedP hc, hmp, fun h ↦ (hs h).2.2⟩
+  · rw [e]; exact ⟨properPlayer_of_closedP hc, hmp, fun h ↦ (hs h).2.2⟩
 
 /-- **Closure under the `.sim` step**: the new frame `(p.subst me op, q.subst me op)` with
 body `p.subst me op` satisfies the invariant. -/
@@ -263,33 +263,33 @@ invariant forbids search nodes, so the oracle hypotheses are vacuous). -/
 theorem playsProof_evalGraph_core (sf : Bool) (hag : sf = false → GuardAgreeT)
     (hneg : sf = false → GuardAgreeF) {me opp body : PD.Prog} {a : PD.Action} {n : ℕ}
     (h : PD.PlaysProof me opp body a n) :
-    Inv sf me opp body → ∃ N, EvalGraph N (pcode me) (pcode opp) (pcode body) (actCode a) := by
+    Inv sf me opp body → ∃ N, EvalGraph N (progCode me) (progCode opp) (progCode body) (actCode a) := by
   refine PD.PlaysProof.induct
     (motive := fun me opp body a n _ ↦
-      Inv sf me opp body → ∃ N, EvalGraph N (pcode me) (pcode opp) (pcode body) (actCode a))
+      Inv sf me opp body → ∃ N, EvalGraph N (progCode me) (progCode opp) (progCode body) (actCode a))
     ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ h
   · -- const
     intro me opp a _
     refine ⟨1, ?_⟩
-    rw [pcode_const]
+    rw [progCode_const]
     exact (EvalGraph.const_iff (n := 0)).mpr rfl
   · -- self
     intro me opp a n _ ih hI
     obtain ⟨N, hN⟩ := ih (Inv.self hI)
     refine ⟨N + 1, ?_⟩
-    rw [pcode_self, EvalGraph.self_iff]
+    rw [progCode_self, EvalGraph.self_iff]
     exact hN
   · -- opp
     intro me opp a n _ ih hI
     obtain ⟨N, hN⟩ := ih (Inv.opp hI)
     refine ⟨N + 1, ?_⟩
-    rw [pcode_opp, EvalGraph.opp_iff]
+    rw [progCode_opp, EvalGraph.opp_iff]
     exact hN
   · -- bot
     intro me opp p a n _ ih hI
     obtain ⟨N, hN⟩ := ih (Inv.bot hI)
     refine ⟨N + 1, ?_⟩
-    rw [pcode_bot, EvalGraph.bot_iff]
+    rw [progCode_bot, EvalGraph.bot_iff]
     exact hN
   · -- sim
     intro a n me opp p q _ ih hI
@@ -302,9 +302,9 @@ theorem playsProof_evalGraph_core (sf : Bool) (hag : sf = false → GuardAgreeT)
       have := hI.2.2.2.2.1
       simp only [modestP, Bool.and_eq_true] at this
       exact this.2)
-    rw [pcode_subst hI.1 hI.2.1 p hp, pcode_subst hI.1 hI.2.1 q hq] at hN
+    rw [progCode_subst hI.1 hI.2.1 p hp, progCode_subst hI.1 hI.2.1 q hq] at hN
     refine ⟨N + 1, ?_⟩
-    rw [pcode_sim, EvalGraph.sim_iff]
+    rw [progCode_sim, EvalGraph.sim_iff]
     exact hN
   · -- ite_t
     intro me opp b r m a' p a n q _ hr _ ihb ihp hI
@@ -312,7 +312,7 @@ theorem playsProof_evalGraph_core (sf : Bool) (hag : sf = false → GuardAgreeT)
     obtain ⟨N₁, h₁⟩ := ihb hIb
     obtain ⟨N₂, h₂⟩ := ihp hIp
     refine ⟨max N₁ N₂ + 1, ?_⟩
-    rw [pcode_ite, EvalGraph.ite_iff]
+    rw [progCode_ite, EvalGraph.ite_iff]
     exact ⟨actCode r, EvalGraph.mono_le (le_max_left _ _) h₁,
       Or.inl ⟨actCode_eq_of_beq hr, EvalGraph.mono_le (le_max_right _ _) h₂⟩⟩
   · -- ite_f
@@ -321,7 +321,7 @@ theorem playsProof_evalGraph_core (sf : Bool) (hag : sf = false → GuardAgreeT)
     obtain ⟨N₁, h₁⟩ := ihb hIb
     obtain ⟨N₂, h₂⟩ := ihq hIq
     refine ⟨max N₁ N₂ + 1, ?_⟩
-    rw [pcode_ite, EvalGraph.ite_iff]
+    rw [progCode_ite, EvalGraph.ite_iff]
     exact ⟨actCode r, EvalGraph.mono_le (le_max_left _ _) h₁,
       Or.inr ⟨actCode_ne_of_beq_false hr, EvalGraph.mono_le (le_max_right _ _) h₂⟩⟩
   · -- search_t
@@ -329,14 +329,14 @@ theorem playsProof_evalGraph_core (sf : Bool) (hag : sf = false → GuardAgreeT)
     obtain ⟨hsf, hIp, _⟩ := Inv.search hI
     obtain ⟨N, hN⟩ := ih hIp
     refine ⟨N + 1, ?_⟩
-    rw [pcode_search, EvalGraph.search_iff₆ (isSemiformula_tcode φ)]
+    rw [progCode_search, EvalGraph.search_iff₆ (isSemiformula_templateCode φ)]
     exact Or.inl ⟨hag hsf φ me opp k hg, hN⟩
   · -- search_f
     intro m me opp q a n k φ p hg _ ih hI
     obtain ⟨hsf, _, hIq⟩ := Inv.search hI
     obtain ⟨N, hN⟩ := ih hIq
     refine ⟨N + 1, ?_⟩
-    rw [pcode_search, EvalGraph.search_iff₆ (isSemiformula_tcode φ)]
+    rw [progCode_search, EvalGraph.search_iff₆ (isSemiformula_templateCode φ)]
     exact Or.inr ⟨hneg hsf φ me opp k m hg, hN⟩
   · -- voteZero_t
     intro me opp p q a n v _ _ hI
@@ -362,19 +362,19 @@ arithmetized evaluator, at the same budgets, given agreement on the consulted `�
 (`GuardAgreeT`/`GuardAgreeF`). -/
 theorem playsProof_evalGraph (hag : GuardAgreeT) (hneg : GuardAgreeF)
     {me opp body : PD.Prog} {a : PD.Action} {n : ℕ} (h : PD.PlaysProof me opp body a n)
-    (hme : Proper me) (hopp : Proper opp)
+    (hme : ProperPlayer me) (hopp : ProperPlayer opp)
     (hmme : modestP me = true) (hmopp : modestP opp = true) (hbody : modestP body = true) :
-    ∃ N, EvalGraph N (pcode me) (pcode opp) (pcode body) (actCode a) :=
+    ∃ N, EvalGraph N (progCode me) (progCode opp) (progCode body) (actCode a) :=
   playsProof_evalGraph_core false (fun _ ↦ hag) (fun _ ↦ hneg) h
     ⟨hme, hopp, hmme, hmopp, hbody, fun h ↦ absurd h Bool.false_ne_true⟩
 
 /-- **T2-AGENT, search-free, unconditional**: no guard is consulted, no oracle hypothesis. -/
 theorem playsProof_evalGraph_searchFree
     {me opp body : PD.Prog} {a : PD.Action} {n : ℕ} (h : PD.PlaysProof me opp body a n)
-    (hme : Proper me) (hopp : Proper opp)
+    (hme : ProperPlayer me) (hopp : ProperPlayer opp)
     (hmme : modestP me = true) (hmopp : modestP opp = true) (hbody : modestP body = true)
     (hsme : me.hasSearch = false) (hsopp : opp.hasSearch = false) (hsbody : body.hasSearch = false) :
-    ∃ N, EvalGraph N (pcode me) (pcode opp) (pcode body) (actCode a) :=
+    ∃ N, EvalGraph N (progCode me) (progCode opp) (progCode body) (actCode a) :=
   playsProof_evalGraph_core true (fun h ↦ Bool.noConfusion h)
     (fun h ↦ Bool.noConfusion h) h
     ⟨hme, hopp, hmme, hmopp, hbody, fun _ ↦ ⟨hsme, hsopp, hsbody⟩⟩
@@ -383,70 +383,70 @@ theorem playsProof_evalGraph_searchFree
 arithmetized `play` (`eval me opp me`). -/
 theorem atomProvable_evalGraph (hag : GuardAgreeT) (hneg : GuardAgreeF)
     {k : ℕ} {me opp : PD.Prog} {a : PD.Action} (h : PD.AtomProvable k (.plays me opp a))
-    (hme : Proper me) (hopp : Proper opp) (hmme : modestP me = true) (hmopp : modestP opp = true) :
-    ∃ N, EvalGraph N (pcode me) (pcode opp) (pcode me) (actCode a) := by
+    (hme : ProperPlayer me) (hopp : ProperPlayer opp) (hmme : modestP me = true) (hmopp : modestP opp = true) :
+    ∃ N, EvalGraph N (progCode me) (progCode opp) (progCode me) (actCode a) := by
   cases h with
   | mk hp _ => exact playsProof_evalGraph hag hneg hp hme hopp hmme hmopp hmme
 
 /-- The atom form, search-free and unconditional. -/
 theorem atomProvable_evalGraph_searchFree
     {k : ℕ} {me opp : PD.Prog} {a : PD.Action} (h : PD.AtomProvable k (.plays me opp a))
-    (hme : Proper me) (hopp : Proper opp) (hmme : modestP me = true) (hmopp : modestP opp = true)
+    (hme : ProperPlayer me) (hopp : ProperPlayer opp) (hmme : modestP me = true) (hmopp : modestP opp = true)
     (hsme : me.hasSearch = false) (hsopp : opp.hasSearch = false) :
-    ∃ N, EvalGraph N (pcode me) (pcode opp) (pcode me) (actCode a) := by
+    ∃ N, EvalGraph N (progCode me) (progCode opp) (progCode me) (actCode a) := by
   cases h with
   | mk hp _ => exact playsProof_evalGraph_searchFree hp hme hopp hmme hmopp hmme hsme hsopp hsme
 
 /-! ### The truth equation for the realized play-atom -/
 
 lemma val_cl {n : ℕ} (t : ClosedSemiterm LAct 0) (b : Fin n → ℕ) :
-    (cl t : Semiterm LAct Empty n).val (s := stdAct) b Empty.elim = t.val (s := stdAct) ![] Empty.elim := by
+    (cl t : Semiterm LAct Empty n).val (s := stdReadingNat) b Empty.elim = t.val (s := stdReadingNat) ![] Empty.elim := by
   unfold cl
   rw [Semiterm.val_castLE, Subsingleton.elim (fun x : Fin 0 ↦ b (x.castLE (Nat.zero_le n))) ![]]
 
-lemma stdAct_rel_eq (v : Fin 2 → ℕ) :
-    stdAct.rel (Language.Eq.eq : LAct.Rel 2) v ↔ v 0 = v 1 := Iff.rfl
+lemma stdReadingNat_rel_eq (v : Fin 2 → ℕ) :
+    stdReadingNat.rel (Language.Eq.eq : LAct.Rel 2) v ↔ v 0 = v 1 := Iff.rfl
 
-/-- `relDesc` in `ℕ` is the graph of `relabel`. -/
+/-- `relDesc` in `ℕ` is the graph of `revalue`. -/
 lemma eval_relDesc (v : Fin 4 → ℕ) :
-    Semiformula.Eval (s := stdAct) v Empty.elim relDesc ↔ v 0 = relabel (v 1) (v 2) (v 3) := by
+    Semiformula.Eval (s := stdReadingNat) v Empty.elim relDesc ↔ v 0 = revalue (v 1) (v 2) (v 3) := by
   unfold relDesc
-  rw [Semiformula.eval_lMap, stdAct_lMap_emb]
-  exact relabel_defined.df v
+  rw [Semiformula.eval_lMap, stdReadingNat_lMap_emb]
+  exact revalue_defined.df v
 
 /-- `evalG` in `ℕ` is `EvalGraph`. -/
 lemma eval_evalG (v : Fin 5 → ℕ) :
-    Semiformula.Eval (s := stdAct) v Empty.elim evalG ↔ EvalGraph (v 0) (v 1) (v 2) (v 3) (v 4) := by
+    Semiformula.Eval (s := stdReadingNat) v Empty.elim evalG ↔ EvalGraph (v 0) (v 1) (v 2) (v 3) (v 4) := by
   unfold evalG
-  rw [Semiformula.eval_lMap, stdAct_lMap_emb]
+  rw [Semiformula.eval_lMap, stdReadingNat_lMap_emb]
   exact evalGraph_defined.df v
 
-/-- A closed description in `ℕ` pins the program: `∃ d, d = dnum c ∧ x = relabel (dU c) (dW c) d`
+/-- A closed description in `ℕ` pins the program: `∃ d, d = canonical c ∧ x = revalue (revalueU c) (revalueW c) d`
 is `x = c`. -/
 lemma eval_closedDesc (c : ℕ) (b : Fin 7 → ℕ) :
-    Semiformula.Eval (s := stdAct) b Empty.elim (closedDesc c) ↔ b 0 = c := by
+    Semiformula.Eval (s := stdReadingNat) b Empty.elim (closedDesc c) ↔ b 0 = c := by
   unfold closedDesc descF
   simp only [Semiformula.eval_ex, LogicalConnective.HomClass.map_and, LogicalConnective.Prop.and_eq,
-    Semiformula.eval_rel, Semiformula.eval_substs, eval_relDesc, stdAct_rel_eq, Function.comp_def,
+    Semiformula.eval_rel, Semiformula.eval_substs, eval_relDesc, stdReadingNat_rel_eq, Function.comp_def,
     Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two, Matrix.cons_val_three,
-    Matrix.cons_val_succ, Matrix.vecHead, Matrix.vecTail, Semiterm.val_bvar, val_cl, val_dnumT]
+    Matrix.cons_val_succ, Matrix.vecHead, Matrix.vecTail, Semiterm.val_bvar, val_cl, val_canonicalMeta]
   constructor
   · rintro ⟨x, rfl, h⟩
-    rwa [relabel_val_desc] at h
+    rwa [revalue_val_desc] at h
   · intro h
-    exact ⟨dnum c, rfl, by rw [relabel_val_desc]; exact h⟩
+    exact ⟨canonical c, rfl, by rw [revalue_val_desc]; exact h⟩
 
 /-- **The truth equation**: for PROPER programs (not the bare pronouns `.self`/`.opp` — every
-zoo bot, searchers included; `closedP` is NOT required, see `proper_of_closedP`) the realized
+zoo bot, searchers included; `closedP` is NOT required, see `properPlayer_of_closedP`) the realized
 play-atom holds in `ℕ` iff the arithmetized `play` yields `a`; the frame `(me', opp')` is
 irrelevant. -/
-theorem models_trAt_plays (me' opp' me opp : PD.Prog) (a : PD.Action)
-    (hme : Proper me) (hopp : Proper opp) :
-    ℕ↓[LAct] ⊧ trAt me' opp' (.plays me opp a) ↔
-      ∃ N, EvalGraph N (pcode me) (pcode opp) (pcode me) (actCode a) := by
+theorem models_sentenceAt_plays (me' opp' me opp : PD.Prog) (a : PD.Action)
+    (hme : ProperPlayer me) (hopp : ProperPlayer opp) :
+    ℕ↓[LAct] ⊧ sentenceAt me' opp' (.plays me opp a) ↔
+      ∃ N, EvalGraph N (progCode me) (progCode opp) (progCode me) (actCode a) := by
   rw [models_iff]
-  unfold trAt Semiformula.Realize
-  rw [tmpl_plays]
+  unfold sentenceAt Semiformula.Realize
+  rw [template_plays]
   unfold progGraph
   rw [progAux_of_ne hme.1 hme.2, progAux_of_ne hopp.1 hopp.2]
   simp only [Semiformula.eval_substs, Semiformula.eval_ex, LogicalConnective.HomClass.map_and,
@@ -464,7 +464,7 @@ theorem models_trAt_plays (me' opp' me opp : PD.Prog) (a : PD.Action)
 
 theorem modestP_DupocBot (k : ℕ) : modestP (PD.Bots.DupocBot k) = true := rfl
 
-theorem proper_DupocBot (k : ℕ) : Proper (PD.Bots.DupocBot k) := ⟨by simp [PD.Bots.DupocBot], by simp [PD.Bots.DupocBot]⟩
+theorem properPlayer_DupocBot (k : ℕ) : ProperPlayer (PD.Bots.DupocBot k) := ⟨by simp [PD.Bots.DupocBot], by simp [PD.Bots.DupocBot]⟩
 
 end ArithS
 

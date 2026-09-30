@@ -3,9 +3,9 @@
 # see; dropped by scripts/prune.py at generation time. Delete a line to resurrect the declaration.
 adjoinFun
 adjoinFunB
-bnumFun
-bnumFunB
-bnumOddCert
+binNumeralFun
+binNumeralFunB
+binNumeralOddCert
 bvAll
 bvAllB
 bvExs
@@ -61,8 +61,8 @@ lengthTwoMulB
 lengthTwoMulOne
 lengthTwoMulOneB
 lib_adjoinFun
-lib_bnumFun
-lib_bnumOddCert
+lib_binNumeralFun
+lib_binNumeralOddCert
 lib_bvAll
 lib_bvExs
 lib_bvFalsum
@@ -110,7 +110,7 @@ lib_qqNRelFun
 lib_qqOrFun
 lib_qqRelFun
 lib_qqVerumFun
-lib_setLenFun
+lib_sequentLenFun
 lib_shiftFun
 lib_subAddCancel
 lib_subOfLe
@@ -143,8 +143,8 @@ maxEqRightB
 maxTotal
 maxTotalB
 models_adjoinFun
-models_bnumFun
-models_bnumOddCert
+models_binNumeralFun
+models_binNumeralOddCert
 models_bvAll
 models_bvExs
 models_bvFalsum
@@ -192,7 +192,7 @@ models_qqNRelFun
 models_qqOrFun
 models_qqRelFun
 models_qqVerumFun
-models_setLenFun
+models_sequentLenFun
 models_shiftFun
 models_subAddCancel
 models_subOfLe
@@ -217,8 +217,8 @@ negFunB
 nthFun
 nthFunB
 pa_proves_adjoinFun
-pa_proves_bnumFun
-pa_proves_bnumOddCert
+pa_proves_binNumeralFun
+pa_proves_binNumeralOddCert
 pa_proves_bvAll
 pa_proves_bvExs
 pa_proves_bvFalsum
@@ -266,7 +266,7 @@ pa_proves_qqNRelFun
 pa_proves_qqOrFun
 pa_proves_qqRelFun
 pa_proves_qqVerumFun
-pa_proves_setLenFun
+pa_proves_sequentLenFun
 pa_proves_shiftFun
 pa_proves_subAddCancel
 pa_proves_subOfLe
@@ -310,8 +310,8 @@ qqRelFun
 qqRelFunB
 qqVerumFun
 qqVerumFunB
-setLenFun
-setLenFunB
+sequentLenFun
+sequentLenFunB
 shiftFun
 shiftFunB
 subAddCancel

@@ -115,7 +115,7 @@ lemma matrixToVec_fin5 (f : Fin 5 → V) : matrixToVec f = listToVec [f 0, f 1, 
 lemma matrixToVec_fin6 (f : Fin 6 → V) : matrixToVec f = listToVec [f 0, f 1, f 2, f 3, f 4, f 5] := rfl
 lemma matrixToVec_fin7 (f : Fin 7 → V) : matrixToVec f = listToVec [f 0, f 1, f 2, f 3, f 4, f 5, f 6] := rfl
 
-/-- The closed-term codes at any bound-variable count (`Bnum.lean` has the `m = 0` forms). -/
+/-- The closed-term codes at any bound-variable count (`BinNumeral.lean` has the `m = 0` forms). -/
 lemma quote_closed_add_m {m : ℕ} (t u : ClosedSemiterm ℒₒᵣ m) :
     (⌜(‘!!t + !!u’ : ClosedSemiterm ℒₒᵣ m)⌝ : V) = (⌜t⌝ : V) ^+ (⌜u⌝ : V) := by
   rw [Semiterm.empty_quote_eq, Semiterm.empty_typed_quote_add]; rfl

@@ -5,7 +5,7 @@ import ArithS.Necessitation.Top
 
 `DESIGN_fragments.md` §4.10 (i) / §7.1 step 3 (`pinSteps`): the object proof knows a code only
 through the EIGENVARIABLES of its walk dossier (`Cert.DossF`), but the target sentence of the top
-(`Top.lean`: `instB ⌜Box_g χ⌝ k = boxFact (qNum χ) (bnum k)`, `qNum χ = numeral ⌜χ⌝`) names the
+(`Top.lean`: `instB ⌜Box_g χ⌝ k = boxFact (qNum χ) (binNumeral k)`, `qNum χ = numeral ⌜χ⌝`) names the
 UNARY NUMERAL of the closed code. This file derives, for a STANDARD code — the quote `⌜φ⌝` of a
 meta-level (Lean) formula `φ` — the object fact `eqFact (^&i) (numeral ⌜φ⌝)` from the dossier of
 `⌜φ⌝` at `&i`, bottom-up over the dossier.
@@ -130,7 +130,7 @@ theorem lib_cfact_of_nat {k : ℕ} (P : 𝚺₀.Semisentence k) (ts : Fin k → 
 in the `sing`/`DerivationOf` form the `sLemma` step consumes (`lemmaOK_of`). -/
 def ClosedDer (A : ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁], V) : Prop :=
   ∃ N : ℕ, ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁],
-    ∃ d : V, DerivationOf TAct d (sing (A V)) ∧ dlen TAct d ≤ (N : V)
+    ∃ d : V, DerivationOf TAct d (sing (A V)) ∧ proofLen TAct d ≤ (N : V)
 
 lemma proof_sing {d A : V} (h : Proof TAct d A) : DerivationOf TAct d (sing A) := by
   unfold Proof at h
@@ -297,7 +297,7 @@ variable {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
 size `≤ Q`); `s` is a tag-0 step applicable once `neg A` is in the context, adding `neg F`. The two-step
 list is applicable at cap `9`, cut-admitting, shift-free, of length `2`, `SizeOK Q D`, and leaves `neg F`. -/
 theorem lemmaThenHorn_ok {tbl N E Γ A dA s F Q D : V} (htbl : TableOK tbl N) (hΓ : IsFormulaSet LAct Γ)
-    (hA : IsFormula LAct A) (hd : DerivationOf TAct dA (sing A)) (hQ : formulaLen LAct A ≤ Q) (hD : dlen TAct dA ≤ D)
+    (hA : IsFormula LAct A) (hd : DerivationOf TAct dA (sing A)) (hQ : formulaLen LAct A ≤ Q) (hD : proofLen TAct dA ≤ D)
     (hs : IsFormulaSet LAct (insert (neg LAct A) Γ) →
       StepOK tbl E ((9 : ℕ) : V) (insert (neg LAct A) Γ) s ∧ sTag s = 0 ∧
       ctxAfter (insert (neg LAct A) Γ) s = insert (neg LAct F) (insert (neg LAct A) Γ)) :
@@ -1305,7 +1305,7 @@ lemma ctxBoundG_mono {G Γ L L' : V} (h : L ≤ L') : ctxBoundG G Γ L ≤ ctxBo
     (mul_le_mul (add_le_add (mul_le_mul h h (by simp) (by simp)) h) (le_refl _) (by simp) (by simp))
 
 /-- **The cost of an invariant list** (`Frag1.costSum_le_of_sizeOK` at cap `9`, `len ≤ C`): LINEAR in
-`N`, `E`, `setLen Γ` and `fvOccS Γ` for a standard `C` and a standard row-body bound `B`. -/
+`N`, `E`, `sequentLen Γ` and `fvOccS Γ` for a standard `C` and a standard row-body bound `B`. -/
 theorem numInv_cost {tbl N E B Γ P F : V} {C : ℕ} (hE : 1 ≤ E) (htbl : TableOK tbl N)
     (hBt : ∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ B) (h : NumInv tbl E Γ C P F) :
     costSum N E Γ P ≤ (C : V) * (costK N E B ((9 : ℕ) : V) (C : V) (C : V) +

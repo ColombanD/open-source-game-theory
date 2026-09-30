@@ -18,14 +18,14 @@ the theory `TAct`. This module transports Foundation's construction along the re
   (the `instB` pattern of `ArithS.InstV`) and its code equation `substNumeralParamsA_app_quote`:
   `substNumeralParamsA ⌜σ⌝ ⌜τ⌝ = ⌜σ ⇜ ![lMap emb ⌜τ⌝, #0]⌝`, where `⌜τ⌝ : ArithmeticSemiterm Empty 1`
   is Foundation's unary Gödel numeral, embedded along `emb` — a CONSTANT of the construction whose
-  length never matters (the budget `k` enters the instances as `bnum k`, below).
+  length never matters (the budget `k` enters the instances as `binNumeral k`, below).
 * **`tactDiag θ := ∀¹ (ssnumParamsA[y, x, x] 🡒 θ[y, k])`** and
   **`tactFixedpoint θ := tactDiag θ ⇜ ![lMap emb ⌜tactDiag θ⌝, #0]`** — Foundation's
   `parameterizedDiag`/`parameterizedFixedpoint` at `k = 1`, over `LAct`.
 * **`tact_parametric_diagonal₁ θ : TAct ⊢ ∀¹ (tactFixedpoint θ 🡘 θ ⇜ ![lMap emb ⌜tactFixedpoint θ⌝, #0])`**
   and its existential packaging `tact_parametric_diagonal`. Proved, like Foundation's, by the
   completeness theorem: the equivalence holds in every model of `TAct`.
-* **Completeness over `TAct`, model-side (`tact_complete`)**: a sentence true in every
+* **Completeness over `TAct`, model-side (`TAct_complete`)**: a sentence true in every
   `LAct`-structure `S` on an `ORingStructure M` with `Structure.lMap emb S = standardModel M`,
   `M↓[ℒₒᵣ] ⊧* 𝗣𝗔` and the two action axioms is a `TAct`-theorem. This is
   `Theory.Proof.complete_on_eq_models` (equality interpreted as equality, through Foundation's
@@ -36,12 +36,12 @@ the theory `TAct`. This module transports Foundation's construction along the re
   of such an `S` is the standard structure of the ring operations read off `S`
   (`oringOfStructure`, `lMap_emb_eq_standardModel`).
 * **Instances at the binary numeral** (the code-level reading the Löb argument uses): for every
-  `k : ℕ`, `tact_parametric_diagonal_inst : TAct ⊢ ψ ⇜ ![lMap emb (bnumT k)] 🡘 (θ ⇜ ![⌜ψ⌝, #0]) ⇜ ![lMap emb (bnumT k)]`
+  `k : ℕ`, `tact_parametric_diagonal_inst : TAct ⊢ ψ ⇜ ![lMap emb (binNumeralMeta k)] 🡘 (θ ⇜ ![⌜ψ⌝, #0]) ⇜ ![lMap emb (binNumeralMeta k)]`
   by `∀`-elimination (`Theory.Proof.specialize`); `models_tact_parametric_diagonal_inst`, its
   truth in every model of `TAct`; `provable_code_parametric_diagonal_inst`, its internal
   provability `Provable TAct ⌜…⌝` in every model of `IΣ₁` (D1, `internalize_provability`). On
-  codes, `instB ⌜ψ⌝ k = ⌜ψ ⇜ ![lMap emb (bnumT k)]⌝` (`quote_instB`, `ArithS.InstV`), so the two
-  sides are the `bnum k`-instances `instB ⌜tactFixedpoint θ⌝ k` and
+  codes, `instB ⌜ψ⌝ k = ⌜ψ ⇜ ![lMap emb (binNumeralMeta k)]⌝` (`quote_instB`, `ArithS.InstV`), so the two
+  sides are the `binNumeral k`-instances `instB ⌜tactFixedpoint θ⌝ k` and
   `instB ⌜θ ⇜ ![lMap emb ⌜tactFixedpoint θ⌝, #0]⌝ k` — DIFFERENT codes (of different formulas)
   that `TAct` proves equivalent; `instB ⌜ψ⌝ k = instB ⌜θ ⇜ …⌝ k` is false and never needed.
 
@@ -169,15 +169,15 @@ end model
 /-- **Completeness over `TAct`, model-side.** To prove `TAct ⊢ σ` it suffices to prove `σ` in
 every `LAct`-structure `S` on a type `M` whose `ℒₒᵣ`-reduct is the standard structure of an
 `ORingStructure` modelling `PA` (so every V-generic lemma of the package applies to `M`) and which
-satisfies the four action axioms (`axAct`, `axAct'`, `axNe`, `axNe'`). Through
+satisfies the four action axioms (`actionAxiom`, `actionAxiom'`, `constNe`, `constNe'`). Through
 `Theory.Proof.complete_on_eq_models` (equality interpreted as equality) and
-`eqAxiom_weakerThan_TAct`. `tact_complete'` below is the same with the model class resolved:
-by `structure_eq_of_axAct` such an `S` is `stdActS M` or `swapActS M`. -/
-theorem tact_complete (σ : Sentence LAct)
+`eqAxiom_weakerThan_TAct`. `TAct_complete_of_readings` below is the same with the model class resolved:
+by `structure_eq_of_actionAxiom` such an `S` is `stdReading M` or `swappedReading M`. -/
+theorem TAct_complete (σ : Sentence LAct)
     (H : ∀ (M : Type) [ORingStructure M] (S : Structure LAct M),
       Structure.lMap emb S = standardModel M → [M↓[ℒₒᵣ] ⊧* 𝗣𝗔] →
-      Semiformula.Eval (s := S) ![] Empty.elim axAct → Semiformula.Eval (s := S) ![] Empty.elim axAct' →
-      Semiformula.Eval (s := S) ![] Empty.elim axNe → Semiformula.Eval (s := S) ![] Empty.elim axNe' →
+      Semiformula.Eval (s := S) ![] Empty.elim actionAxiom → Semiformula.Eval (s := S) ![] Empty.elim actionAxiom' →
+      Semiformula.Eval (s := S) ![] Empty.elim constNe → Semiformula.Eval (s := S) ![] Empty.elim constNe' →
       Semiformula.Eval (s := S) ![] Empty.elim σ) :
     TAct ⊢ σ := by
   refine Theory.Proof.complete_on_eq_models σ fun M _ S _ hT ↦ ?_
@@ -190,23 +190,23 @@ theorem tact_complete (σ : Sentence LAct)
       (Semiformula.models_lMap (s₂ := S) (Φ := emb) (σ := σ₀)).mp h
     rw [hS] at h'
     exact h'
-  have hAct : Semiformula.Eval (s := S) ![] Empty.elim axAct := hT.models_set axAct_mem_TAct
-  have hAct' : Semiformula.Eval (s := S) ![] Empty.elim axAct' := hT.models_set axAct'_mem_TAct
-  have hNe : Semiformula.Eval (s := S) ![] Empty.elim axNe := hT.models_set axNe_mem_TAct
-  have hNe' : Semiformula.Eval (s := S) ![] Empty.elim axNe' := hT.models_set axNe'_mem_TAct
+  have hAct : Semiformula.Eval (s := S) ![] Empty.elim actionAxiom := hT.models_set actionAxiom_mem_TAct
+  have hAct' : Semiformula.Eval (s := S) ![] Empty.elim actionAxiom' := hT.models_set actionAxiom'_mem_TAct
+  have hNe : Semiformula.Eval (s := S) ![] Empty.elim constNe := hT.models_set constNe_mem_TAct
+  have hNe' : Semiformula.Eval (s := S) ![] Empty.elim constNe' := hT.models_set constNe'_mem_TAct
   exact H M S hS hAct hAct' hNe hNe'
 
 /-- **Completeness over `TAct`, the two standard readings.** The real-equality models of `TAct`
-on `M` are exactly `stdActS M` (`c_C ↦ 0, c_D ↦ 1`) and `swapActS M` (`c_C ↦ 1, c_D ↦ 0`) with
-`M ⊧ PA` (`structure_eq_of_axAct`, from the action axiom `axAct`): a sentence true in both, for
+on `M` are exactly `stdReading M` (`c_C ↦ 0, c_D ↦ 1`) and `swappedReading M` (`c_C ↦ 1, c_D ↦ 0`) with
+`M ⊧ PA` (`structure_eq_of_actionAxiom`, from the action axiom `actionAxiom`): a sentence true in both, for
 every such `M`, is a `TAct`-theorem. -/
-theorem tact_complete' (σ : Sentence LAct)
+theorem TAct_complete_of_readings (σ : Sentence LAct)
     (H : ∀ (M : Type) [ORingStructure M] [M↓[ℒₒᵣ] ⊧* 𝗣𝗔],
-      Semiformula.Eval (s := stdActS M) ![] Empty.elim σ ∧
-      Semiformula.Eval (s := swapActS M) ![] Empty.elim σ) :
+      Semiformula.Eval (s := stdReading M) ![] Empty.elim σ ∧
+      Semiformula.Eval (s := swappedReading M) ![] Empty.elim σ) :
     TAct ⊢ σ :=
-  tact_complete σ fun M _ S hS _ hAct _ _ _ ↦ by
-    rcases structure_eq_of_axAct S hS hAct with rfl | rfl
+  TAct_complete σ fun M _ S hS _ hAct _ _ _ ↦ by
+    rcases structure_eq_of_actionAxiom S hS hAct with rfl | rfl
     · exact (H M).1
     · exact (H M).2
 
@@ -333,13 +333,13 @@ lemma eval_tactDiag (S : Structure LAct M) (hS : Structure.lMap emb S = standard
 
 /-- **The parametric diagonal lemma over `TAct`** (Foundation's `parameterized_diagonal₁`
 transported to `LAct`): `TAct ⊢ ∀ k, ψ(k) ↔ θ(⌜ψ⌝, k)` for `ψ := tactFixedpoint θ`, the numeral
-`⌜ψ⌝` being Foundation's unary Gödel numeral embedded along `emb`. By `tact_complete`: in every
+`⌜ψ⌝` being Foundation's unary Gödel numeral embedded along `emb`. By `TAct_complete`: in every
 model, `ψ(p) ↔ tactDiag θ (⌜tactDiag θ⌝, p) ↔ θ (substNumeralParamsA ⌜tactDiag θ⌝ ⌜tactDiag θ⌝, p)`
 and the code equation identifies the last argument with `⌜ψ⌝`. -/
 theorem tact_parametric_diagonal₁ (θ : Semisentence LAct 2) :
     TAct ⊢ ∀¹ (tactFixedpoint θ 🡘
       θ ⇜ ![Semiterm.lMap emb (⌜tactFixedpoint θ⌝ : ArithmeticSemiterm Empty 1), #0]) := by
-  refine tact_complete _ fun M _ S hS _ _ _ _ _ ↦ ?_
+  refine TAct_complete _ fun M _ S hS _ _ _ _ _ ↦ ?_
   have : M↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
   have ht : substNumeralParamsA (⌜tactDiag θ⌝ : M) ⌜tactDiag θ⌝ = ⌜tactFixedpoint θ⌝ := by
     rw [tactFixedpoint_def]
@@ -368,36 +368,36 @@ end diag
 section inst
 
 /-- **The fixed point at the binary numeral of `k`**: `∀`-elimination of
-`tact_parametric_diagonal₁` at `lMap emb (bnumT k)`. On codes (`quote_instB`), the left sentence
+`tact_parametric_diagonal₁` at `lMap emb (binNumeralMeta k)`. On codes (`quote_instB`), the left sentence
 is `instB ⌜tactFixedpoint θ⌝ k` and the right one `instB ⌜θ ⇜ ![lMap emb ⌜tactFixedpoint θ⌝, #0]⌝ k`. -/
 theorem tact_parametric_diagonal_inst (θ : Semisentence LAct 2) (k : ℕ) :
-    TAct ⊢ (tactFixedpoint θ ⇜ ![Semiterm.lMap emb (bnumT k)]) 🡘
+    TAct ⊢ (tactFixedpoint θ ⇜ ![Semiterm.lMap emb (binNumeralMeta k)]) 🡘
       ((θ ⇜ ![Semiterm.lMap emb (⌜tactFixedpoint θ⌝ : ArithmeticSemiterm Empty 1), #0]) ⇜
-        ![Semiterm.lMap emb (bnumT k)]) := by
+        ![Semiterm.lMap emb (binNumeralMeta k)]) := by
   have h := Theory.Proof.specialize (T := TAct)
     (tactFixedpoint θ 🡘 θ ⇜ ![Semiterm.lMap emb (⌜tactFixedpoint θ⌝ : ArithmeticSemiterm Empty 1), #0])
-    (Semiterm.lMap emb (bnumT k))
+    (Semiterm.lMap emb (binNumeralMeta k))
   have h' := Entailment.mdp h (tact_parametric_diagonal₁ θ)
   simpa only [LogicalConnective.HomClass.map_iff] using h'
 
 /-- The instance holds in every model of `TAct` (soundness). -/
 theorem models_tact_parametric_diagonal_inst {M : Type*} [Nonempty M] [Structure LAct M]
     [M↓[LAct] ⊧* TAct] (θ : Semisentence LAct 2) (k : ℕ) :
-    M↓[LAct] ⊧ (tactFixedpoint θ ⇜ ![Semiterm.lMap emb (bnumT k)]) ↔
+    M↓[LAct] ⊧ (tactFixedpoint θ ⇜ ![Semiterm.lMap emb (binNumeralMeta k)]) ↔
       M↓[LAct] ⊧ ((θ ⇜ ![Semiterm.lMap emb (⌜tactFixedpoint θ⌝ : ArithmeticSemiterm Empty 1), #0]) ⇜
-        ![Semiterm.lMap emb (bnumT k)]) := by
+        ![Semiterm.lMap emb (binNumeralMeta k)]) := by
   have := models_of_provable (M := M) inferInstance (tact_parametric_diagonal_inst θ k)
   simpa [models_iff] using this
 
 variable {V : Type*} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
 
 /-- The instance is internally provable in every model of `IΣ₁` (D1): `TAct` proves, on codes,
-that the `bnum k`-instance of the fixed point and the `bnum k`-instance of its unfolding are
+that the `binNumeral k`-instance of the fixed point and the `binNumeral k`-instance of its unfolding are
 equivalent. -/
 theorem provable_code_parametric_diagonal_inst (θ : Semisentence LAct 2) (k : ℕ) :
-    Provable TAct (⌜((tactFixedpoint θ ⇜ ![Semiterm.lMap emb (bnumT k)]) 🡘
+    Provable TAct (⌜((tactFixedpoint θ ⇜ ![Semiterm.lMap emb (binNumeralMeta k)]) 🡘
       ((θ ⇜ ![Semiterm.lMap emb (⌜tactFixedpoint θ⌝ : ArithmeticSemiterm Empty 1), #0]) ⇜
-        ![Semiterm.lMap emb (bnumT k)]) : Sentence LAct)⌝ : V) :=
+        ![Semiterm.lMap emb (binNumeralMeta k)]) : Sentence LAct)⌝ : V) :=
   internalize_provability (V := V) (tact_parametric_diagonal_inst θ k)
 
 end inst

@@ -1,33 +1,33 @@
 import ArithS.Loeb.InstV
 
 /-!
-# ArithS.NumeralFacts — short `TAct` proofs of `numeral c ≤ bnumT k`
+# ArithS.NumeralFacts — short `TAct` proofs of `numeral c ≤ binNumeralMeta k`
 
 M4 item U9 step 2 (`Research/Notes/M4_BOUNDED_HBL/BRIEF.md` §6): the final meta step of PBLT
-instantiates `TAct ⊢ ∀¹ (numeral k̂ ≤ #0 🡒 ψ)` at the binary numeral `bnumT k` and must
-discharge the antecedent `numeral k̂ ≤ bnumT k` with a SHORT proof — short in `size k` (the bit
+instantiates `TAct ⊢ ∀¹ (numeral k̂ ≤ #0 🡒 ψ)` at the binary numeral `binNumeralMeta k` and must
+discharge the antecedent `numeral k̂ ≤ binNumeralMeta k` with a SHORT proof — short in `size k` (the bit
 length), never in `k`.
 
-**Statement** (`lenProvable_le_bnumT`): for every constant `c` there are `C₀ C₁` with
-`LenProvable fbound (C₀ + C₁ · size k · size k) TAct ⌜numeral c ≤ bnumT k⌝` for all `k ≥ c`
-(and the strict twin `lenProvable_lt_bnumT` for `k > c`). The sentence is
-`leF (↑c) (Semiterm.lMap emb (bnumT k))` with `leF t u := t = u ⋎ t < u` (Foundation's `≤`
+**Statement** (`lenBoxNat_le_binNumeralMeta`): for every constant `c` there are `C₀ C₁` with
+`LenBoxNat codeBound (C₀ + C₁ · size k · size k) TAct ⌜numeral c ≤ binNumeralMeta k⌝` for all `k ≥ c`
+(and the strict twin `lenBoxNat_lt_binNumeralMeta` for `k > c`). The sentence is
+`leF (↑c) (Semiterm.lMap emb (binNumeralMeta k))` with `leF t u := t = u ⋎ t < u` (Foundation's `≤`
 operator on unfolding, `leF_eq_operator`) and `↑c` Foundation's unary numeral of the constant
 `c` in `LAct` (`lMap_emb_numeral`: the same as the `ℒₒᵣ` numeral embedded along `emb`, i.e.
 `Template.numT c`). It is EXACTLY the antecedent of the instance of `∀¹ (leF ↑c #0 🡒 ψ)` at
-`bnumT k` (`substs_leF_imp`), so a `Cut.lenProvable_mp` discharges it.
+`binNumeralMeta k` (`substs_leF_imp`), so a `Cut.lenBoxNat_mp` discharges it.
 
-**Construction** (all META: `Derivation2` terms and `mlen`, through the bridges of `Cut.lean`):
+**Construction** (all META: `Derivation2` terms and `proofLenMeta`, through the bridges of `Cut.lean`):
 1. Two uniform PA lemmas, `∀ x, c ≤ x → c ≤ 2x` and `∀ x, c ≤ x → c ≤ 2x + 1`, obtained by the
    completeness theorem (`Arithmetic.complete 𝗣𝗔`) and transported to `TAct` along `emb`
    (`CutV`'s pattern); their proof lengths are EXISTENTIAL constants
-   (`lenProvable_of_provable`: a `TAct ⊢ σ` is a `Derivation2`, quoted back at its `mlen`).
-2. Bit recursion on `k`: `bnumT k` is `2 · bnumT (k/2)` or `2 · bnumT (k/2) + 1`
-   (`bnumT_even`/`bnumT_odd`); instantiate the relevant lemma at `bnumT (k/2)`
-   (`InstV.lenProvable_inst_size`, cost `O(|instance| + size k)`) and cut with the fact for
-   `k/2` (`lenProvable_mp`, cost `O(|sentence|)`). Each step costs a constant plus
+   (`lenBoxNat_of_provable`: a `TAct ⊢ σ` is a `Derivation2`, quoted back at its `proofLenMeta`).
+2. Bit recursion on `k`: `binNumeralMeta k` is `2 · binNumeralMeta (k/2)` or `2 · binNumeralMeta (k/2) + 1`
+   (`binNumeralMeta_even`/`binNumeralMeta_odd`); instantiate the relevant lemma at `binNumeralMeta (k/2)`
+   (`InstV.lenBoxNat_inst_size`, cost `O(|instance| + size k)`) and cut with the fact for
+   `k/2` (`lenBoxNat_mp`, cost `O(|sentence|)`). Each step costs a constant plus
    `O(size k)` — the current numeral has `≤ 6 · size k + 1` symbols — and there are `size k`
-   steps: `O(size k)²` in total (`step_le`, then `lenProvable_le_bnumT`).
+   steps: `O(size k)²` in total (`step_le`, then `lenBoxNat_le_binNumeralMeta`).
 3. Base: `k ∈ [c, 2c + 1]` — finitely many TRUE Δ₀ sentences, each `TAct`-provable by
    completeness with SOME length; `C₀` is the maximum over the range (`base_le`).
 
@@ -93,9 +93,9 @@ lemma rew_twoMulOne [L.One] [L.Add] [L.Mul] (ω : Rew L ξ₁ n₁ ξ₂ n₂) (
 
 end atoms
 
-/-! ### `bnumT` in this syntax -/
+/-! ### `binNumeralMeta` in this syntax -/
 
-section bnum
+section binNumeral
 
 lemma oneT_eq : (‘1’ : ClosedSemiterm ℒₒᵣ 0) = FirstOrder.Semiterm.func Language.One.one ![] := by
   have e : (‘1’ : ClosedSemiterm ℒₒᵣ 0) = ↑(1 : ℕ) := by simp
@@ -122,15 +122,15 @@ lemma twoT_eq : twoT = FirstOrder.Semiterm.func Language.Add.add
   rw [show (‘1 + 1’ : ClosedSemiterm ℒₒᵣ 0) = ‘!!(‘1’ : ClosedSemiterm ℒₒᵣ 0) + !!(‘1’ : ClosedSemiterm ℒₒᵣ 0)’ from rfl,
     addT_eq, oneT_eq]
 
-/-- `bnumT_even` in the raw syntax: `bnumT n = twoMul (bnumT (n / 2))` for even `n ≥ 2`. -/
-lemma bnumT_even' {n : ℕ} (h2 : 2 ≤ n) (he : n % 2 = 0) : bnumT n = twoMul (bnumT (n / 2)) := by
-  rw [bnumT_even h2 he, mulT_eq, twoT_eq]; rfl
+/-- `binNumeralMeta_even` in the raw syntax: `binNumeralMeta n = twoMul (binNumeralMeta (n / 2))` for even `n ≥ 2`. -/
+lemma binNumeralMeta_even' {n : ℕ} (h2 : 2 ≤ n) (he : n % 2 = 0) : binNumeralMeta n = twoMul (binNumeralMeta (n / 2)) := by
+  rw [binNumeralMeta_even h2 he, mulT_eq, twoT_eq]; rfl
 
-/-- `bnumT_odd` in the raw syntax: `bnumT n = twoMulOne (bnumT (n / 2))` for odd `n ≥ 2`. -/
-lemma bnumT_odd' {n : ℕ} (h2 : 2 ≤ n) (ho : n % 2 = 1) : bnumT n = twoMulOne (bnumT (n / 2)) := by
-  rw [bnumT_odd h2 ho, addT_eq, mulT_eq, twoT_eq, oneT_eq]; rfl
+/-- `binNumeralMeta_odd` in the raw syntax: `binNumeralMeta n = twoMulOne (binNumeralMeta (n / 2))` for odd `n ≥ 2`. -/
+lemma binNumeralMeta_odd' {n : ℕ} (h2 : 2 ≤ n) (ho : n % 2 = 1) : binNumeralMeta n = twoMulOne (binNumeralMeta (n / 2)) := by
+  rw [binNumeralMeta_odd h2 ho, addT_eq, mulT_eq, twoT_eq, oneT_eq]; rfl
 
-end bnum
+end binNumeral
 
 /-! ### `lMap emb`: the `ℒₒᵣ` syntax is the `LAct` syntax -/
 
@@ -219,11 +219,11 @@ end emb
 /-! ### A `TAct`-theorem has SOME proof length -/
 
 /-- Every `TAct ⊢ σ` is a `Derivation2` (`provable_iff_derivable2`), quoted back at its own
-`mlen` (`lenProvable_of_derivation`): the length is an existential constant. -/
-theorem lenProvable_of_provable {σ : Sentence LAct} (h : TAct ⊢ σ) :
-    ∃ N : ℕ, LenProvable (fbound : ℕ → ℕ) N TAct (⌜σ⌝ : ℕ) := by
+`proofLenMeta` (`lenBoxNat_of_derivation`): the length is an existential constant. -/
+theorem lenBoxNat_of_provable {σ : Sentence LAct} (h : TAct ⊢ σ) :
+    ∃ N : ℕ, LenBoxNat (codeBound : ℕ → ℕ) N TAct (⌜σ⌝ : ℕ) := by
   obtain ⟨b⟩ := provable_iff_derivable2.mp h
-  exact ⟨mlen b, lenProvable_of_derivation smallCodes_LAct smallRelCodes_LAct b le_rfl⟩
+  exact ⟨proofLenMeta b, lenBoxNat_of_derivation smallCodes_LAct smallRelCodes_LAct b le_rfl⟩
 
 /-! ### The two uniform PA lemmas: `c ≤ x → c ≤ 2x` and `c ≤ x → c ≤ 2x + 1` -/
 
@@ -295,7 +295,7 @@ theorem tact_proves_leOddA (c : ℕ) : TAct ⊢ (∀¹ leOddA c : Sentence LAct)
 
 end paProves
 
-/-! ### The base cases: `c ≤ bnumT k` for each fixed `k ≥ c` -/
+/-! ### The base cases: `c ≤ binNumeralMeta k` for each fixed `k ≥ c` -/
 
 section base
 
@@ -305,15 +305,15 @@ lemma val_twoT_M : twoT.val (s := standardModel M) ![] Empty.elim = 2 := by
   unfold twoT; simp [one_add_one_eq_two]
 
 /-- The binary numeral of `n` denotes the cast of `n` in every model of `PA`
-(`Det.val_bnumT_V`, re-proved here: `Det` is not upstream). -/
-theorem val_bnumT_M (n : ℕ) : (bnumT n).val (s := standardModel M) ![] Empty.elim = (n : M) := by
+(`Det.val_binNumeralMeta_V`, re-proved here: `Det` is not upstream). -/
+theorem val_binNumeralMeta_M (n : ℕ) : (binNumeralMeta n).val (s := standardModel M) ![] Empty.elim = (n : M) := by
   induction n using Nat.strong_induction_on with
   | _ n ih =>
     rcases n with _ | _ | k
-    · rw [bnumT_zero]; simp
-    · rw [bnumT_one]; simp
+    · rw [binNumeralMeta_zero]; simp
+    · rw [binNumeralMeta_one]; simp
     · by_cases he : (k + 1 + 1) % 2 = 0
-      · rw [bnumT_even (by omega) he]
+      · rw [binNumeralMeta_even (by omega) he]
         simp [val_twoT_M, ih ((k + 1 + 1) / 2) (by omega)]
         have h2 : k + 1 + 1 = 2 * ((k + 1 + 1) / 2) := by omega
         have h3 : ((k : M) + 1 + 1) = ((k + 1 + 1 : ℕ) : M) := by norm_cast
@@ -321,7 +321,7 @@ theorem val_bnumT_M (n : ℕ) : (bnumT n).val (s := standardModel M) ![] Empty.e
         conv_rhs => rw [h2]
         push_cast
         rfl
-      · rw [bnumT_odd (by omega) (by omega)]
+      · rw [binNumeralMeta_odd (by omega) (by omega)]
         simp [val_twoT_M, ih ((k + 1 + 1) / 2) (by omega)]
         have h2 : k + 1 = 2 * ((k + 1 + 1) / 2) := by omega
         have h3 : ((k : M) + 1) = ((k + 1 : ℕ) : M) := by norm_cast
@@ -330,18 +330,18 @@ theorem val_bnumT_M (n : ℕ) : (bnumT n).val (s := standardModel M) ![] Empty.e
         push_cast
         rfl
 
-lemma models_le_bnumT {c k : ℕ} (h : c ≤ k) :
-    M↓[ℒₒᵣ] ⊧ (leF (↑c) (bnumT k) : Sentence ℒₒᵣ) := by
-  simp [leF, models_iff, numeral_eq_natCast, val_bnumT_M]
+lemma models_le_binNumeralMeta {c k : ℕ} (h : c ≤ k) :
+    M↓[ℒₒᵣ] ⊧ (leF (↑c) (binNumeralMeta k) : Sentence ℒₒᵣ) := by
+  simp [leF, models_iff, numeral_eq_natCast, val_binNumeralMeta_M]
   omega
 
-theorem pa_proves_le_bnumT {c k : ℕ} (h : c ≤ k) : 𝗣𝗔 ⊢ (leF (↑c) (bnumT k) : Sentence ℒₒᵣ) :=
-  complete 𝗣𝗔 _ fun (_ : Type) _ _ ↦ models_le_bnumT h
+theorem pa_proves_le_binNumeralMeta {c k : ℕ} (h : c ≤ k) : 𝗣𝗔 ⊢ (leF (↑c) (binNumeralMeta k) : Sentence ℒₒᵣ) :=
+  complete 𝗣𝗔 _ fun (_ : Type) _ _ ↦ models_le_binNumeralMeta h
 
-/-- Each base case is a `TAct` theorem: `c ≤ bnumT k` for `k ≥ c`. -/
-theorem tact_proves_le_bnumT {c k : ℕ} (h : c ≤ k) :
-    TAct ⊢ (leF (↑c) (Semiterm.lMap emb (bnumT k)) : Sentence LAct) := by
-  have := tact_proves_lMap_emb (pa_proves_le_bnumT h)
+/-- Each base case is a `TAct` theorem: `c ≤ binNumeralMeta k` for `k ≥ c`. -/
+theorem tact_proves_le_binNumeralMeta {c k : ℕ} (h : c ≤ k) :
+    TAct ⊢ (leF (↑c) (Semiterm.lMap emb (binNumeralMeta k)) : Sentence LAct) := by
+  have := tact_proves_lMap_emb (pa_proves_le_binNumeralMeta h)
   rwa [lMap_emb_leF, lMap_emb_numeral] at this
 
 end base
@@ -351,7 +351,7 @@ end base
 section lengths
 
 /-- The instance of `leF ↑c #0 🡒 ψ` at a closed term `t`: the antecedent is EXACTLY
-`leF ↑c t` (the shape `lenProvable_le_bnumT` delivers). -/
+`leF ↑c t` (the shape `lenBoxNat_le_binNumeralMeta` delivers). -/
 lemma substs_leF_imp (c : ℕ) (ψ : Semisentence LAct 1) (t : ClosedSemiterm LAct 0) :
     ((leF (↑c) #0 🡒 ψ : Semisentence LAct 1) ⇜ ![t] : Sentence LAct) =
       (leF (↑c) t 🡒 (ψ ⇜ ![t] : Sentence LAct)) := by
@@ -372,55 +372,55 @@ lemma substs_leOddA (c : ℕ) (t : ClosedSemiterm LAct 0) :
 
 variable {L : Language} [L.Encodable] [L.LORDefinable]
 
-lemma tlen_twoMul [L.One] [L.Add] [L.Mul] {n : ℕ} (t : SyntacticSemiterm L n) :
-    tlen (twoMul t) = tlen t + 4 := by
-  simp [twoMul, tlen_func, Fin.sum_univ_two]
+lemma termLenMeta_twoMul [L.One] [L.Add] [L.Mul] {n : ℕ} (t : SyntacticSemiterm L n) :
+    termLenMeta (twoMul t) = termLenMeta t + 4 := by
+  simp [twoMul, termLenMeta_func, Fin.sum_univ_two]
   omega
 
-lemma tlen_twoMulOne [L.One] [L.Add] [L.Mul] {n : ℕ} (t : SyntacticSemiterm L n) :
-    tlen (twoMulOne t) = tlen t + 6 := by
-  simp [twoMulOne, tlen_twoMul, Fin.sum_univ_two]
+lemma termLenMeta_twoMulOne [L.One] [L.Add] [L.Mul] {n : ℕ} (t : SyntacticSemiterm L n) :
+    termLenMeta (twoMulOne t) = termLenMeta t + 6 := by
+  simp [twoMulOne, termLenMeta_twoMul, Fin.sum_univ_two]
 
 omit [L.Encodable] [L.LORDefinable] in
-lemma flen_imply_sentence (φ ψ : Sentence L) :
-    flen ((φ 🡒 ψ : Sentence L) : Proposition L) =
-      flen (φ : Proposition L) + flen (ψ : Proposition L) + 1 := by
+lemma formulaLenMeta_imply_sentence (φ ψ : Sentence L) :
+    formulaLenMeta ((φ 🡒 ψ : Sentence L) : Proposition L) =
+      formulaLenMeta (φ : Proposition L) + formulaLenMeta (ψ : Proposition L) + 1 := by
   rw [show ((φ 🡒 ψ : Sentence L) : Proposition L) = (φ : Proposition L) 🡒 (ψ : Proposition L) by simp,
-    flen_imply]
+    formulaLenMeta_imply]
 
 omit [L.Encodable] [L.LORDefinable] in
 /-- `|t ≤ u| = 2|t| + 2|u| + 3`. -/
-lemma flen_leF_sentence [L.Eq] [L.LT] (t u : ClosedSemiterm L 0) :
-    flen ((leF t u : Sentence L) : Proposition L) =
-      2 * tlen (Rew.emb t : SyntacticSemiterm L 0) + 2 * tlen (Rew.emb u : SyntacticSemiterm L 0) + 3 := by
+lemma formulaLenMeta_leF_sentence [L.Eq] [L.LT] (t u : ClosedSemiterm L 0) :
+    formulaLenMeta ((leF t u : Sentence L) : Proposition L) =
+      2 * termLenMeta (Rew.emb t : SyntacticSemiterm L 0) + 2 * termLenMeta (Rew.emb u : SyntacticSemiterm L 0) + 3 := by
   simp [leF, Fin.sum_univ_two]
   omega
 
 omit [L.Encodable] [L.LORDefinable] in
-lemma flen_ltF_sentence [L.LT] (t u : ClosedSemiterm L 0) :
-    flen ((ltF t u : Sentence L) : Proposition L) =
-      tlen (Rew.emb t : SyntacticSemiterm L 0) + tlen (Rew.emb u : SyntacticSemiterm L 0) + 1 := by
+lemma formulaLenMeta_ltF_sentence [L.LT] (t u : ClosedSemiterm L 0) :
+    formulaLenMeta ((ltF t u : Sentence L) : Proposition L) =
+      termLenMeta (Rew.emb t : SyntacticSemiterm L 0) + termLenMeta (Rew.emb u : SyntacticSemiterm L 0) + 1 := by
   simp [ltF, Fin.sum_univ_two]
 
-/-- The embedded binary numeral has the meta length of the `ℒₒᵣ` term (`InstV.termLen_bnum_nat`'s
-route: `term_emb_lMap_emb'` + `tlen_lMap`). -/
-lemma tlen_emb_lMap_bnumT (k : ℕ) :
-    tlen (Rew.emb (Semiterm.lMap emb (bnumT k)) : SyntacticSemiterm LAct 0) =
-      tlen (Rew.emb (bnumT k) : SyntacticSemiterm ℒₒᵣ 0) := by
-  rw [term_emb_lMap_emb', tlen_lMap]
+/-- The embedded binary numeral has the meta length of the `ℒₒᵣ` term (`InstV.termLen_binNumeral_nat`'s
+route: `term_emb_lMap_emb'` + `termLenMeta_lMap`). -/
+lemma termLenMeta_emb_lMap_binNumeralMeta (k : ℕ) :
+    termLenMeta (Rew.emb (Semiterm.lMap emb (binNumeralMeta k)) : SyntacticSemiterm LAct 0) =
+      termLenMeta (Rew.emb (binNumeralMeta k) : SyntacticSemiterm ℒₒᵣ 0) := by
+  rw [term_emb_lMap_emb', termLenMeta_lMap]
 
-lemma tlen_emb_numeral (c : ℕ) :
-    tlen (Rew.emb (↑c : ClosedSemiterm LAct 0) : SyntacticSemiterm LAct 0) =
-      tlen (↑c : SyntacticSemiterm LAct 0) := by
+lemma termLenMeta_emb_numeral (c : ℕ) :
+    termLenMeta (Rew.emb (↑c : ClosedSemiterm LAct 0) : SyntacticSemiterm LAct 0) =
+      termLenMeta (↑c : SyntacticSemiterm LAct 0) := by
   simp
 
-lemma tlen_emb_twoMul (t : ClosedSemiterm LAct 0) :
-    tlen (Rew.emb (twoMul t) : SyntacticSemiterm LAct 0) = tlen (Rew.emb t : SyntacticSemiterm LAct 0) + 4 := by
-  rw [rew_twoMul, tlen_twoMul]
+lemma termLenMeta_emb_twoMul (t : ClosedSemiterm LAct 0) :
+    termLenMeta (Rew.emb (twoMul t) : SyntacticSemiterm LAct 0) = termLenMeta (Rew.emb t : SyntacticSemiterm LAct 0) + 4 := by
+  rw [rew_twoMul, termLenMeta_twoMul]
 
-lemma tlen_emb_twoMulOne (t : ClosedSemiterm LAct 0) :
-    tlen (Rew.emb (twoMulOne t) : SyntacticSemiterm LAct 0) = tlen (Rew.emb t : SyntacticSemiterm LAct 0) + 6 := by
-  rw [rew_twoMulOne, tlen_twoMulOne]
+lemma termLenMeta_emb_twoMulOne (t : ClosedSemiterm LAct 0) :
+    termLenMeta (Rew.emb (twoMulOne t) : SyntacticSemiterm LAct 0) = termLenMeta (Rew.emb t : SyntacticSemiterm LAct 0) + 6 := by
+  rw [rew_twoMulOne, termLenMeta_twoMulOne]
 
 end lengths
 
@@ -428,42 +428,42 @@ end lengths
 
 section step
 
-/-- One bit of the recursion: from `c ≤ bnumT (k/2)` at length `n` to `c ≤ bnumT k` at length
+/-- One bit of the recursion: from `c ≤ binNumeralMeta (k/2)` at length `n` to `c ≤ binNumeralMeta k` at length
 `n + A + B · size (k/2)`, for constants `A B` depending only on `c` (the two uniform lemmas'
 lengths, `|↑c|`, and the templates' lengths). -/
 theorem step_le (c : ℕ) : ∃ A B : ℕ, ∀ k : ℕ, 2 ≤ k → ∀ n : ℕ,
-    LenProvable (fbound : ℕ → ℕ) n TAct
-      (⌜(leF (↑c) (Semiterm.lMap emb (bnumT (k / 2))) : Sentence LAct)⌝ : ℕ) →
-    LenProvable (fbound : ℕ → ℕ) (n + A + B * Nat.size (k / 2)) TAct
-      (⌜(leF (↑c) (Semiterm.lMap emb (bnumT k)) : Sentence LAct)⌝ : ℕ) := by
-  obtain ⟨Ne, hNe⟩ := lenProvable_of_provable (tact_proves_leEvenA c)
-  obtain ⟨No, hNo⟩ := lenProvable_of_provable (tact_proves_leOddA c)
-  refine ⟨Ne + No + 60 * tlen (↑c : SyntacticSemiterm LAct 0)
-      + 3 * flen ((leEvenA c : Semisentence LAct 1) : Semiproposition LAct 1)
-      + 3 * flen ((leOddA c : Semisentence LAct 1) : Semiproposition LAct 1) + 400, 400,
+    LenBoxNat (codeBound : ℕ → ℕ) n TAct
+      (⌜(leF (↑c) (Semiterm.lMap emb (binNumeralMeta (k / 2))) : Sentence LAct)⌝ : ℕ) →
+    LenBoxNat (codeBound : ℕ → ℕ) (n + A + B * Nat.size (k / 2)) TAct
+      (⌜(leF (↑c) (Semiterm.lMap emb (binNumeralMeta k)) : Sentence LAct)⌝ : ℕ) := by
+  obtain ⟨Ne, hNe⟩ := lenBoxNat_of_provable (tact_proves_leEvenA c)
+  obtain ⟨No, hNo⟩ := lenBoxNat_of_provable (tact_proves_leOddA c)
+  refine ⟨Ne + No + 60 * termLenMeta (↑c : SyntacticSemiterm LAct 0)
+      + 3 * formulaLenMeta ((leEvenA c : Semisentence LAct 1) : Semiproposition LAct 1)
+      + 3 * formulaLenMeta ((leOddA c : Semisentence LAct 1) : Semiproposition LAct 1) + 400, 400,
     fun k h2 n h ↦ ?_⟩
-  have hβ := tlen_bnumT (k / 2)
+  have hβ := termLenMeta_binNumeralMeta (k / 2)
   by_cases he : k % 2 = 0
-  · have hi := lenProvable_inst_size (leEvenA c) (k / 2) hNe
+  · have hi := lenBoxNat_inst_size (leEvenA c) (k / 2) hNe
     rw [substs_leEvenA] at hi
-    have hcut := lenProvable_mp hi h
-    have ht : twoMul (Semiterm.lMap emb (bnumT (k / 2))) = Semiterm.lMap emb (bnumT k) := by
-      rw [bnumT_even' h2 he, lMap_emb_twoMul]
+    have hcut := lenBoxNat_mp hi h
+    have ht : twoMul (Semiterm.lMap emb (binNumeralMeta (k / 2))) = Semiterm.lMap emb (binNumeralMeta k) := by
+      rw [binNumeralMeta_even' h2 he, lMap_emb_twoMul]
     rw [ht] at hcut
-    refine lenProvable_fbound_mono ?_ hcut
-    rw [← ht, flen_imply_sentence, flen_leF_sentence, flen_leF_sentence, tlen_emb_twoMul,
-      tlen_emb_lMap_bnumT, tlen_emb_numeral]
+    refine lenBoxNat_codeBound_mono ?_ hcut
+    rw [← ht, formulaLenMeta_imply_sentence, formulaLenMeta_leF_sentence, formulaLenMeta_leF_sentence, termLenMeta_emb_twoMul,
+      termLenMeta_emb_lMap_binNumeralMeta, termLenMeta_emb_numeral]
     omega
   · have ho : k % 2 = 1 := by omega
-    have hi := lenProvable_inst_size (leOddA c) (k / 2) hNo
+    have hi := lenBoxNat_inst_size (leOddA c) (k / 2) hNo
     rw [substs_leOddA] at hi
-    have hcut := lenProvable_mp hi h
-    have ht : twoMulOne (Semiterm.lMap emb (bnumT (k / 2))) = Semiterm.lMap emb (bnumT k) := by
-      rw [bnumT_odd' h2 ho, lMap_emb_twoMulOne]
+    have hcut := lenBoxNat_mp hi h
+    have ht : twoMulOne (Semiterm.lMap emb (binNumeralMeta (k / 2))) = Semiterm.lMap emb (binNumeralMeta k) := by
+      rw [binNumeralMeta_odd' h2 ho, lMap_emb_twoMulOne]
     rw [ht] at hcut
-    refine lenProvable_fbound_mono ?_ hcut
-    rw [← ht, flen_imply_sentence, flen_leF_sentence, flen_leF_sentence, tlen_emb_twoMulOne,
-      tlen_emb_lMap_bnumT, tlen_emb_numeral]
+    refine lenBoxNat_codeBound_mono ?_ hcut
+    rw [← ht, formulaLenMeta_imply_sentence, formulaLenMeta_leF_sentence, formulaLenMeta_leF_sentence, termLenMeta_emb_twoMulOne,
+      termLenMeta_emb_lMap_binNumeralMeta, termLenMeta_emb_numeral]
     omega
 
 end step
@@ -474,32 +474,32 @@ section baseRange
 
 /-- For every bound `R`, ONE length `C₀` serves every base case `c ≤ k < R`. -/
 theorem base_le (c : ℕ) : ∀ R : ℕ, ∃ C₀ : ℕ, ∀ k : ℕ, k < R → c ≤ k →
-    LenProvable (fbound : ℕ → ℕ) C₀ TAct
-      (⌜(leF (↑c) (Semiterm.lMap emb (bnumT k)) : Sentence LAct)⌝ : ℕ)
+    LenBoxNat (codeBound : ℕ → ℕ) C₀ TAct
+      (⌜(leF (↑c) (Semiterm.lMap emb (binNumeralMeta k)) : Sentence LAct)⌝ : ℕ)
   | 0 => ⟨0, fun _ hk _ ↦ absurd hk (Nat.not_lt_zero _)⟩
   | R + 1 => by
     obtain ⟨C, hC⟩ := base_le c R
     by_cases hcR : c ≤ R
-    · obtain ⟨N, hN⟩ := lenProvable_of_provable (tact_proves_le_bnumT hcR)
+    · obtain ⟨N, hN⟩ := lenBoxNat_of_provable (tact_proves_le_binNumeralMeta hcR)
       refine ⟨max C N, fun k hk hck ↦ ?_⟩
       rcases Nat.lt_succ_iff_lt_or_eq.mp hk with h | rfl
-      · exact lenProvable_fbound_mono (le_max_left _ _) (hC k h hck)
-      · exact lenProvable_fbound_mono (le_max_right _ _) hN
+      · exact lenBoxNat_codeBound_mono (le_max_left _ _) (hC k h hck)
+      · exact lenBoxNat_codeBound_mono (le_max_right _ _) hN
     · exact ⟨C, fun k hk hck ↦ hC k (by omega) hck⟩
 
 end baseRange
 
 /-! ### The theorem -/
 
-/-- **Short `TAct` proofs of `c ≤ bnumT k`**: for every constant `c` there are `C₀ C₁` with a
-`TAct`-proof of `leF ↑c (lMap emb (bnumT k))` of length `≤ C₀ + C₁ · size k · size k` for every
+/-- **Short `TAct` proofs of `c ≤ binNumeralMeta k`**: for every constant `c` there are `C₀ C₁` with a
+`TAct`-proof of `leF ↑c (lMap emb (binNumeralMeta k))` of length `≤ C₀ + C₁ · size k · size k` for every
 `k ≥ c` — quadratic in the BIT LENGTH of `k`, `≺ k`. Strong induction on `k`: below `2c + 2`
 the base range (`base_le`); above, `k/2 ≥ c` and one recursion step (`step_le`) on the
 induction hypothesis, with `size (k/2) < size k` (`size_div_two_lt`) paying the step. -/
-theorem lenProvable_le_bnumT (c : ℕ) :
+theorem lenBoxNat_le_binNumeralMeta (c : ℕ) :
     ∃ C₀ C₁ : ℕ, ∀ k : ℕ, c ≤ k →
-      LenProvable (fbound : ℕ → ℕ) (C₀ + C₁ * Nat.size k * Nat.size k) TAct
-        (⌜(leF (↑c) (Semiterm.lMap emb (bnumT k)) : Sentence LAct)⌝ : ℕ) := by
+      LenBoxNat (codeBound : ℕ → ℕ) (C₀ + C₁ * Nat.size k * Nat.size k) TAct
+        (⌜(leF (↑c) (Semiterm.lMap emb (binNumeralMeta k)) : Sentence LAct)⌝ : ℕ) := by
   obtain ⟨A, B, hstep⟩ := step_le c
   obtain ⟨C₀, hbase⟩ := base_le c (2 * c + 2)
   refine ⟨C₀, A + B, fun k ↦ ?_⟩
@@ -507,10 +507,10 @@ theorem lenProvable_le_bnumT (c : ℕ) :
   | _ k ih =>
     intro hck
     by_cases hk : k < 2 * c + 2
-    · exact lenProvable_fbound_mono (Nat.le_add_right _ _) (hbase k hk hck)
+    · exact lenBoxNat_codeBound_mono (Nat.le_add_right _ _) (hbase k hk hck)
     · have h2 : 2 ≤ k := by omega
       have hj := ih (k / 2) (by omega) (by omega)
-      refine lenProvable_fbound_mono ?_ (hstep k h2 _ hj)
+      refine lenBoxNat_codeBound_mono ?_ (hstep k h2 _ hj)
       have hlt := size_div_two_lt k h2
       have hpos : 1 ≤ Nat.size (k / 2) := Nat.size_pos.mpr (by omega)
       set s' := Nat.size (k / 2) with hs'
@@ -520,7 +520,7 @@ theorem lenProvable_le_bnumT (c : ℕ) :
         Nat.mul_le_mul (Nat.mul_le_mul_left _ (by omega)) (by omega)
       nlinarith [e1, e3]
 
-/-! ### The strict twin: `c < bnumT k` for `k > c` -/
+/-! ### The strict twin: `c < binNumeralMeta k` for `k > c` -/
 
 section strict
 
@@ -554,26 +554,26 @@ lemma substs_leSuccLtA (c : ℕ) (t : ClosedSemiterm LAct 0) :
     (leSuccLtA c ⇜ ![t] : Sentence LAct) = (leF (↑(c + 1)) t 🡒 ltF (↑c) t) := by
   simp [leSuccLtA, rew_leF, rew_ltF]
 
-/-- **Short `TAct` proofs of `c < bnumT k`** for `k > c`: the `≤`-theorem at `c + 1` and one
-cut with the uniform lemma `c + 1 ≤ x → c < x` instantiated at `bnumT k` (`O(size k)` extra). -/
-theorem lenProvable_lt_bnumT (c : ℕ) :
+/-- **Short `TAct` proofs of `c < binNumeralMeta k`** for `k > c`: the `≤`-theorem at `c + 1` and one
+cut with the uniform lemma `c + 1 ≤ x → c < x` instantiated at `binNumeralMeta k` (`O(size k)` extra). -/
+theorem lenBoxNat_lt_binNumeralMeta (c : ℕ) :
     ∃ C₀ C₁ : ℕ, ∀ k : ℕ, c < k →
-      LenProvable (fbound : ℕ → ℕ) (C₀ + C₁ * Nat.size k * Nat.size k) TAct
-        (⌜(ltF (↑c) (Semiterm.lMap emb (bnumT k)) : Sentence LAct)⌝ : ℕ) := by
-  obtain ⟨D₀, D₁, hle⟩ := lenProvable_le_bnumT (c + 1)
-  obtain ⟨N, hN⟩ := lenProvable_of_provable (tact_proves_leSuccLtA c)
-  refine ⟨D₀ + N + 30 * tlen (↑(c + 1) : SyntacticSemiterm LAct 0)
-      + 15 * tlen (↑c : SyntacticSemiterm LAct 0)
-      + 3 * flen ((leSuccLtA c : Semisentence LAct 1) : Semiproposition LAct 1) + 200,
+      LenBoxNat (codeBound : ℕ → ℕ) (C₀ + C₁ * Nat.size k * Nat.size k) TAct
+        (⌜(ltF (↑c) (Semiterm.lMap emb (binNumeralMeta k)) : Sentence LAct)⌝ : ℕ) := by
+  obtain ⟨D₀, D₁, hle⟩ := lenBoxNat_le_binNumeralMeta (c + 1)
+  obtain ⟨N, hN⟩ := lenBoxNat_of_provable (tact_proves_leSuccLtA c)
+  refine ⟨D₀ + N + 30 * termLenMeta (↑(c + 1) : SyntacticSemiterm LAct 0)
+      + 15 * termLenMeta (↑c : SyntacticSemiterm LAct 0)
+      + 3 * formulaLenMeta ((leSuccLtA c : Semisentence LAct 1) : Semiproposition LAct 1) + 200,
     D₁ + 300, fun k hck ↦ ?_⟩
   have h := hle k hck
-  have hi := lenProvable_inst_size (leSuccLtA c) k hN
+  have hi := lenBoxNat_inst_size (leSuccLtA c) k hN
   rw [substs_leSuccLtA] at hi
-  have hcut := lenProvable_mp hi h
-  refine lenProvable_fbound_mono ?_ hcut
-  rw [flen_imply_sentence, flen_leF_sentence, flen_ltF_sentence, tlen_emb_lMap_bnumT,
-    tlen_emb_numeral, tlen_emb_numeral]
-  have hβ := tlen_bnumT k
+  have hcut := lenBoxNat_mp hi h
+  refine lenBoxNat_codeBound_mono ?_ hcut
+  rw [formulaLenMeta_imply_sentence, formulaLenMeta_leF_sentence, formulaLenMeta_ltF_sentence, termLenMeta_emb_lMap_binNumeralMeta,
+    termLenMeta_emb_numeral, termLenMeta_emb_numeral]
+  have hβ := termLenMeta_binNumeralMeta k
   have hs : Nat.size k ≤ Nat.size k * Nat.size k := Nat.le_mul_self _
   have e : (D₁ + 300) * Nat.size k * Nat.size k = D₁ * Nat.size k * Nat.size k + 300 * (Nat.size k * Nat.size k) := by
     ring

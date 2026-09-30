@@ -1,11 +1,11 @@
 """gen_frag1.py — generates arith/ArithS/Necessitation/Frag1Rows.lean (2026-09-14):
-the node rows of Lib/Nodes.lean (tot/intro/dlen for axL, verumIntro, andIntro, orIntro, wkRule, cutRule),
-the dlen bound rows of Lib/Occ.lean, `leTrans`/`setLenInsertLe` of Lib/Lengths.lean, the set rows
+the node rows of Lib/Nodes.lean (tot/intro/proofLen for axL, verumIntro, andIntro, orIntro, wkRule, cutRule),
+the proofLen bound rows of Lib/Occ.lean, `leTrans`/`sequentLenInsertLe` of Lib/Lengths.lean, the set rows
 `insertSubset`/`memInsertOfMem`/`insertEqOfMem` of Lib/Sets.lean and `negTotal` of Lib/Formulas.lean,
 re-issued with quote_row_/inst_ lemmas (via gen_frag.py's gen_row), and the fragment table
 (fIdx_<row> = 87 + k after the layout rows, Frag1Table ⇒ LayoutTable, exists_frag1Table, frag1Pieces
 extending layoutPieces, per-row readings and fok_<row> applicability lemmas — at M = 8, or M = 9 for the
-two nine-witness rows introAnd/dlenAnd — plus flok_<row> transfers of the layout rows Frag1 uses).
+two nine-witness rows introAnd/proofLenAnd — plus flok_<row> transfers of the layout rows Frag1 uses).
 Run from arith/: python3 scripts/gen_frag1.py
 """
 import sys, re, os, types
@@ -47,32 +47,32 @@ NEW_ROWS = [
  ('introCut', ['e', 'c₂', 'np', 'c₁', 'd₂', 'd₁', 'p', 's', 'x'],
   [A('cutRule', 'e', 's', 'p', 'd₁', 'd₂'), A('fstIdx', 'c₁', 'd₁'), A('insert', 'c₁', 'p', 's'), A('deriv', 'd₁'),
    A('fstIdx', 'c₂', 'd₂'), A('negG', 'np', 'p'), A('insert', 'c₂', 'np', 's'), A('deriv', 'd₂')], A('deriv', 'e')),
- # Nodes: dlen rows
- ('dlenAxL', ['l', 'p', 's', 'e'], [A('axL', 'e', 's', 'p'), A('setLen', 'l', 's')], A('dlen', 'e', S('l'))),
- ('dlenVerum', ['l', 's', 'e'], [A('verumIntro', 'e', 's'), A('setLen', 'l', 's')], A('dlen', 'e', S('l'))),
- ('dlenAnd', ['l', 'nq', 'np', 'dq', 'dp', 'q', 'p', 's', 'e'],
-  [A('andIntro', 'e', 's', 'p', 'q', 'dp', 'dq'), A('dlen', 'dp', 'np'), A('dlen', 'dq', 'nq'), A('setLen', 'l', 's')],
-  A('dlen', 'e', S(P(P('l', 'np'), 'nq')))),
- ('dlenOr', ['l', 'n', 'd', 'q', 'p', 's', 'e'],
-  [A('orIntro', 'e', 's', 'p', 'q', 'd'), A('dlen', 'd', 'n'), A('setLen', 'l', 's')], A('dlen', 'e', S(P('l', 'n')))),
- ('dlenWk', ['l', 'n', 'd', 's', 'e'],
-  [A('wkRule', 'e', 's', 'd'), A('dlen', 'd', 'n'), A('setLen', 'l', 's')], A('dlen', 'e', S(P('l', 'n')))),
- ('dlenCut', ['l', 'n₂', 'n₁', 'd₂', 'd₁', 'p', 's', 'e'],
-  [A('cutRule', 'e', 's', 'p', 'd₁', 'd₂'), A('dlen', 'd₁', 'n₁'), A('dlen', 'd₂', 'n₂'), A('setLen', 'l', 's')],
-  A('dlen', 'e', S(P(P('l', 'n₁'), 'n₂')))),
- # Occ: the dlen bounds and the `≤` glue
- ('dlenLeafLe', ['a', 'l', 'n'], [A('eq', 'n', S('l')), A('le', 'l', 'a')], A('le', 'n', S('a'))),
- ('dlenUnaryLe', ['b', 'a', 'np', 'l', 'n'],
+ # Nodes: proofLen rows
+ ('proofLenAxL', ['l', 'p', 's', 'e'], [A('axL', 'e', 's', 'p'), A('sequentLen', 'l', 's')], A('proofLen', 'e', S('l'))),
+ ('proofLenVerum', ['l', 's', 'e'], [A('verumIntro', 'e', 's'), A('sequentLen', 'l', 's')], A('proofLen', 'e', S('l'))),
+ ('proofLenAnd', ['l', 'nq', 'np', 'dq', 'dp', 'q', 'p', 's', 'e'],
+  [A('andIntro', 'e', 's', 'p', 'q', 'dp', 'dq'), A('proofLen', 'dp', 'np'), A('proofLen', 'dq', 'nq'), A('sequentLen', 'l', 's')],
+  A('proofLen', 'e', S(P(P('l', 'np'), 'nq')))),
+ ('proofLenOr', ['l', 'n', 'd', 'q', 'p', 's', 'e'],
+  [A('orIntro', 'e', 's', 'p', 'q', 'd'), A('proofLen', 'd', 'n'), A('sequentLen', 'l', 's')], A('proofLen', 'e', S(P('l', 'n')))),
+ ('proofLenWk', ['l', 'n', 'd', 's', 'e'],
+  [A('wkRule', 'e', 's', 'd'), A('proofLen', 'd', 'n'), A('sequentLen', 'l', 's')], A('proofLen', 'e', S(P('l', 'n')))),
+ ('proofLenCut', ['l', 'n₂', 'n₁', 'd₂', 'd₁', 'p', 's', 'e'],
+  [A('cutRule', 'e', 's', 'p', 'd₁', 'd₂'), A('proofLen', 'd₁', 'n₁'), A('proofLen', 'd₂', 'n₂'), A('sequentLen', 'l', 's')],
+  A('proofLen', 'e', S(P(P('l', 'n₁'), 'n₂')))),
+ # Occ: the proofLen bounds and the `≤` glue
+ ('proofLenLeafLe', ['a', 'l', 'n'], [A('eq', 'n', S('l')), A('le', 'l', 'a')], A('le', 'n', S('a'))),
+ ('proofLenUnaryLe', ['b', 'a', 'np', 'l', 'n'],
   [A('eq', 'n', S(P('l', 'np'))), A('le', 'l', 'a'), A('le', 'np', 'b')], A('le', 'n', S(P('a', 'b')))),
- ('dlenBinaryLe', ['c', 'b', 'a', 'nq', 'np', 'l', 'n'],
+ ('proofLenBinaryLe', ['c', 'b', 'a', 'nq', 'np', 'l', 'n'],
   [A('eq', 'n', S(P(P('l', 'np'), 'nq'))), A('le', 'l', 'a'), A('le', 'np', 'b'), A('le', 'nq', 'c')],
   A('le', 'n', S(P(P('a', 'b'), 'c')))),
  ('leAddLeAdd', ['b', 'a', 'z', 'y', 'x'], [A('le', 'x', P('y', 'z')), A('le', 'y', 'a'), A('le', 'z', 'b')], A('le', 'x', P('a', 'b'))),
  ('leRefl', ['x'], [], A('le', 'x', 'x')),
  # Lengths
  ('leTrans', ['x', 'y', 'z'], [A('le', 'x', 'y'), A('le', 'y', 'z')], A('le', 'x', 'z')),
- ('setLenInsertLe', ['lx', 'ls', 'l', 't', 's', 'x'],
-  [A('insert', 't', 'x', 's'), A('setLen', 'l', 't'), A('setLen', 'ls', 's'), A('flenG', 'lx', 'x')], A('le', 'l', P('ls', 'lx'))),
+ ('sequentLenInsertLe', ['lx', 'ls', 'l', 't', 's', 'x'],
+  [A('insert', 't', 'x', 's'), A('sequentLen', 'l', 't'), A('sequentLen', 'ls', 's'), A('formulaLenMetaG', 'lx', 'x')], A('le', 'l', P('ls', 'lx'))),
  # Sets
  ('insertSubset', ['u', 'x', 't', 's'], [A('subset', 's', 't'), A('mem', 'x', 't'), A('insert', 'u', 'x', 's')], A('subset', 'u', 't')),
  ('memInsertOfMem', ['t', 'y', 's', 'x'], [A('mem', 'x', 's'), A('insert', 't', 'y', 's')], A('mem', 'x', 't')),
@@ -325,7 +325,7 @@ for name in TABLE:
 
 # ---- the layout rows Frag1 uses, transferred to the fragment pieces
 LAYOUT_USED = ['eqRefl', 'eqSymm', 'insertTotalC', 'memInsertSelfC', 'subsetInsertC', 'subsetTransC', 'subsetMemC',
-               'emptySubsetC', 'isFormulaSetInsertC', 'fsetSigmaPiC', 'setLenTotalC', 'subsetReflC', 'subsetAntisymm',
+               'emptySubsetC', 'isFormulaSetInsertC', 'fsetSigmaPiC', 'sequentLenTotalC', 'subsetReflC', 'subsetAntisymm',
                'congMem']
 layout = open('ArithS/Necessitation/Layout.lean').read()
 E('/-! ### The layout rows Frag1 uses, read from the fragment pieces (`flok_<row>` from `lok_<row>`) -/')
@@ -357,15 +357,15 @@ import ArithS.Necessitation.NumSteps
 1. The rows the six re-description-free fragments use, re-issued with their `quote_row_`/`inst_` lemmas
    (the originals in `Lib/Nodes.lean`, `Lib/Occ.lean`, `Lib/Lengths.lean`, `Lib/Sets.lean`, `Lib/Formulas.lean`
    have none; blocks produced by `gen_frag.py`'s `gen_row`, same names, same DSL): the totalities
-   `tot<Tag>`, the `intro<Tag>` and `dlen<Tag>` node rows for `axL`, `verumIntro`, `andIntro`, `orIntro`,
-   `wkRule`, `cutRule`; the bounds `dlenLeafLe/dlenUnaryLe/dlenBinaryLe`, `leAddLeAdd`, `leRefl`, `leTrans`,
-   `setLenInsertLe`; the set rows `insertSubset`, `memInsertOfMem`, `insertEqOfMem` (`negTotal` is a walk
+   `tot<Tag>`, the `intro<Tag>` and `proofLen<Tag>` node rows for `axL`, `verumIntro`, `andIntro`, `orIntro`,
+   `wkRule`, `cutRule`; the bounds `proofLenLeafLe/proofLenUnaryLe/proofLenBinaryLe`, `leAddLeAdd`, `leRefl`, `leTrans`,
+   `sequentLenInsertLe`; the set rows `insertSubset`, `memInsertOfMem`, `insertEqOfMem` (`negTotal` is a walk
    row of `RowInst`, entered in the table only).
 2. The fragment table: `frag1Rows := layoutRows ++ frag1ExtraRows` — the 87 layout rows at their indices, then
    the rows above and the `fstIdx<Tag>`/congruence rows of `RowInstB` at `fIdx_<row> = 87 + k`. `Frag1Table tbl`
    (implies `LayoutTable tbl`), `exists_frag1Table`, the piece table `frag1Pieces` extending `layoutPieces`
    entrywise (`mkStep_frag1Pieces_lt`), and per row `frag1Table_<row>`, `fmk_<row>`, `ftag_<row>`, `fok_<row>`
-   (the step is applicable at `M = 8` — `M = 9` for the nine-witness rows `introAnd`/`dlenAnd` — and its
+   (the step is applicable at `M = 8` — `M = 9` for the nine-witness rows `introAnd`/`proofLenAnd` — and its
    `ctxAfter` inserts the canonical fact), plus `flok_<row>`: the layout rows Frag1 uses, read from `frag1Pieces`.
 -/
 

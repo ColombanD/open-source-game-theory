@@ -56,7 +56,7 @@ theorem outcome_PrudentBot_vs_MirrorBot :
     OutcomeSpecA .eventual (bot PrudentBot) (const MirrorBot) (some (.C, .C)) :=
   OutcomeSpecA.eventual_of (by
     obtain ⟨k₀, h⟩ := loeb_Prudent_vs_Mirror
-    exact ⟨k₀, fun k hk ↦ by dsimp only [bot, const]; rw [pcode_PrudentBot, pcode_MirrorBot]; exact OutcomeAtA.of_evalGraph (h k hk)⟩)
+    exact ⟨k₀, fun k hk ↦ by dsimp only [bot, const]; rw [progCode_PrudentBot, progCode_MirrorBot]; exact OutcomeAtA.of_evalGraph (h k hk)⟩)
 
 /-- `snd_PrudentBot_vs_OBot` -/
 theorem outcome_PrudentBot_vs_OBot :

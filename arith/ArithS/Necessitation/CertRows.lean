@@ -47,7 +47,7 @@ set_option maxRecDepth 20000
 /-! ## 0. Three rows APPENDED 2026-09-14 for `lenSteps` (hand-written sentences and `lib_` proofs; their
 `quote_row_`/`inst_` blocks are generated below like the length rows): the addition congruence `congAdd`
 (`x = x' → y = y' → x + y = x' + y'`), the successor congruence `congSucc` (`x = x' → x + 1 = x' + 1` — the
-one `lenSteps` uses: the closed `bnum|p| + bnum|q| + 1 = bnum(|p| + |q| + 1)` is `addFact` + `congSucc` +
+one `lenSteps` uses: the closed `binNumeral|p| + binNumeral|q| + 1 = binNumeral(|p| + |q| + 1)` is `addFact` + `congSucc` +
 `succFact` + `eqTrans`; `congAdd` at `𝟏` would need the closed-constant witness), and the INTRO form of the
 list-sum adjoin `listSumAdjI` (`listSumDef s M → adjoinDef M' l M → l + s = s' → listSumDef s' M'` — the table's
 `listSumAdj` has all three `listSumDef` facts as antecedents, so no `listSumDef s' M'` was derivable for a
@@ -265,7 +265,7 @@ lemma isSemiformula_termLenBvar_c : IsSemiformula LAct ((3 : ℕ) : V) row_termL
 
 /-- `termLenBvar` at the witnesses `[wz, wt, wl]` (the DSL variables right-to-left). -/
 lemma inst_termLenBvar {wz wt wl : V} (hwz : IsSemiterm LAct 0 wz) (hwt : IsSemiterm LAct 0 wt) (hwl : IsSemiterm LAct 0 wl) :
-    row_termLenBvar_as.map (instOuter LAct [wz, wt, wl]) = [bvarFact wt wz, tlenFact wl wt] ∧
+    row_termLenBvar_as.map (instOuter LAct [wz, wt, wl]) = [bvarFact wt wz, termLenMetaFact wl wt] ∧
     instOuter LAct [wz, wt, wl] row_termLenBvar_c = eqFactB wl (wz ^+ (𝟏 : V)) := by
   have hes : ∀ e ∈ ([wz, wt, wl] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwz, List.forall_mem_cons.mpr ⟨hwt, List.forall_mem_cons.mpr ⟨hwl, List.forall_mem_nil _⟩⟩⟩)
   unfold row_termLenBvar_as row_termLenBvar_c
@@ -289,7 +289,7 @@ lemma isSemiformula_termLenFvar_c : IsSemiformula LAct ((3 : ℕ) : V) row_termL
 
 /-- `termLenFvar` at the witnesses `[wx, wt, wl]` (the DSL variables right-to-left). -/
 lemma inst_termLenFvar {wx wt wl : V} (hwx : IsSemiterm LAct 0 wx) (hwt : IsSemiterm LAct 0 wt) (hwl : IsSemiterm LAct 0 wl) :
-    row_termLenFvar_as.map (instOuter LAct [wx, wt, wl]) = [fvarFact wt wx, tlenFact wl wt] ∧
+    row_termLenFvar_as.map (instOuter LAct [wx, wt, wl]) = [fvarFact wt wx, termLenMetaFact wl wt] ∧
     instOuter LAct [wx, wt, wl] row_termLenFvar_c = eqFactB wl (wx ^+ (𝟏 : V)) := by
   have hes : ∀ e ∈ ([wx, wt, wl] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwx, List.forall_mem_cons.mpr ⟨hwt, List.forall_mem_cons.mpr ⟨hwl, List.forall_mem_nil _⟩⟩⟩)
   unfold row_termLenFvar_as row_termLenFvar_c
@@ -348,7 +348,7 @@ lemma row_termLenTotal_R_eq : (row_termLenTotal_R : V) = exsIter 0 row_termLenTo
 /-- `termLenTotal` at the witnesses `[wt]` (the DSL variables right-to-left). -/
 lemma inst_termLenTotal {wt : V} (hwt : IsSemiterm LAct 0 wt) :
     row_termLenTotal_as.map (instOuter LAct [wt]) = [] ∧
-    freeIter LAct 1 (instOuterAt LAct 1 [wt] row_termLenTotal_body) = tlenFact (^&((0 : ℕ) : V)) (termShift LAct wt) := by
+    freeIter LAct 1 (instOuterAt LAct 1 [wt] row_termLenTotal_body) = termLenMetaFact (^&((0 : ℕ) : V)) (termShift LAct wt) := by
   have hes : ∀ e ∈ ([wt] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwt, List.forall_mem_nil _⟩)
   unfold row_termLenTotal_as row_termLenTotal_body
   simp only [List.map_cons, List.map_nil]
@@ -3112,7 +3112,7 @@ lemma cok_termLenVecNil {tbl N E Γ W : V} {wx : V} (htbl : TableOK tbl N) (hC :
 
 /-- Row `termLenVecAdj` as a step. -/
 lemma cok_termLenVecAdj {tbl N E Γ W : V} {wn wk wv wvp wt wl wM wMp : V} (htbl : TableOK tbl N) (hC : CertTable tbl) (hWp : W = certPieces)
-    (hΓ : IsFormulaSet LAct Γ) (hwn : IsSemiterm LAct 0 wn) (hEwn : termLen LAct wn ≤ E) (hwk : IsSemiterm LAct 0 wk) (hEwk : termLen LAct wk ≤ E) (hwv : IsSemiterm LAct 0 wv) (hEwv : termLen LAct wv ≤ E) (hwvp : IsSemiterm LAct 0 wvp) (hEwvp : termLen LAct wvp ≤ E) (hwt : IsSemiterm LAct 0 wt) (hEwt : termLen LAct wt ≤ E) (hwl : IsSemiterm LAct 0 wl) (hEwl : termLen LAct wl ≤ E) (hwM : IsSemiterm LAct 0 wM) (hEwM : termLen LAct wM ≤ E) (hwMp : IsSemiterm LAct 0 wMp) (hEwMp : termLen LAct wMp ≤ E) (hmem0 : neg LAct (tPiFact wn wt) ∈ Γ) (hmem1 : neg LAct (utvPiFact wk wv) ∈ Γ) (hmem2 : neg LAct (tlenFact wl wt) ∈ Γ) (hmem3 : neg LAct (tlvFact wM wk wv) ∈ Γ) (hmem4 : neg LAct (adjFact wvp wt wv) ∈ Γ) (hmem5 : neg LAct (adjFact wMp wl wM) ∈ Γ) :
+    (hΓ : IsFormulaSet LAct Γ) (hwn : IsSemiterm LAct 0 wn) (hEwn : termLen LAct wn ≤ E) (hwk : IsSemiterm LAct 0 wk) (hEwk : termLen LAct wk ≤ E) (hwv : IsSemiterm LAct 0 wv) (hEwv : termLen LAct wv ≤ E) (hwvp : IsSemiterm LAct 0 wvp) (hEwvp : termLen LAct wvp ≤ E) (hwt : IsSemiterm LAct 0 wt) (hEwt : termLen LAct wt ≤ E) (hwl : IsSemiterm LAct 0 wl) (hEwl : termLen LAct wl ≤ E) (hwM : IsSemiterm LAct 0 wM) (hEwM : termLen LAct wM ≤ E) (hwMp : IsSemiterm LAct 0 wMp) (hEwMp : termLen LAct wMp ≤ E) (hmem0 : neg LAct (tPiFact wn wt) ∈ Γ) (hmem1 : neg LAct (utvPiFact wk wv) ∈ Γ) (hmem2 : neg LAct (termLenMetaFact wl wt) ∈ Γ) (hmem3 : neg LAct (tlvFact wM wk wv) ∈ Γ) (hmem4 : neg LAct (adjFact wvp wt wv) ∈ Γ) (hmem5 : neg LAct (adjFact wMp wl wM) ∈ Γ) :
     StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 139 ?[wn, wk, wv, wvp, wt, wl, wM, wMp]) ∧ sTag (mkStep W 139 ?[wn, wk, wv, wvp, wt, wl, wM, wMp]) = 0 ∧
     ctxAfter Γ (mkStep W 139 ?[wn, wk, wv, wvp, wt, wl, wM, wMp]) = insert (neg LAct (tlvFact wMp (wk ^+ (𝟏 : V)) wvp)) Γ := by
   subst hWp
@@ -3188,7 +3188,7 @@ lemma cok_formulaLenNRelCert {tbl N E Γ W : V} {wk wR wv wp wM ws wl : V} (htbl
 
 /-- Row `termLenFuncCert` as a step. -/
 lemma cok_termLenFuncCert {tbl N E Γ W : V} {wk wf wv wt wM ws wl : V} (htbl : TableOK tbl N) (hC : CertTable tbl) (hWp : W = certPieces)
-    (hΓ : IsFormulaSet LAct Γ) (hwk : IsSemiterm LAct 0 wk) (hEwk : termLen LAct wk ≤ E) (hwf : IsSemiterm LAct 0 wf) (hEwf : termLen LAct wf ≤ E) (hwv : IsSemiterm LAct 0 wv) (hEwv : termLen LAct wv ≤ E) (hwt : IsSemiterm LAct 0 wt) (hEwt : termLen LAct wt ≤ E) (hwM : IsSemiterm LAct 0 wM) (hEwM : termLen LAct wM ≤ E) (hws : IsSemiterm LAct 0 ws) (hEws : termLen LAct ws ≤ E) (hwl : IsSemiterm LAct 0 wl) (hEwl : termLen LAct wl ≤ E) (hmem0 : neg LAct (isFuncFact wk wf) ∈ Γ) (hmem1 : neg LAct (utvPiFact wk wv) ∈ Γ) (hmem2 : neg LAct (funcFact wt wk wf wv) ∈ Γ) (hmem3 : neg LAct (tlvFact wM wk wv) ∈ Γ) (hmem4 : neg LAct (listSumFact ws wM) ∈ Γ) (hmem5 : neg LAct (tlenFact wl wt) ∈ Γ) :
+    (hΓ : IsFormulaSet LAct Γ) (hwk : IsSemiterm LAct 0 wk) (hEwk : termLen LAct wk ≤ E) (hwf : IsSemiterm LAct 0 wf) (hEwf : termLen LAct wf ≤ E) (hwv : IsSemiterm LAct 0 wv) (hEwv : termLen LAct wv ≤ E) (hwt : IsSemiterm LAct 0 wt) (hEwt : termLen LAct wt ≤ E) (hwM : IsSemiterm LAct 0 wM) (hEwM : termLen LAct wM ≤ E) (hws : IsSemiterm LAct 0 ws) (hEws : termLen LAct ws ≤ E) (hwl : IsSemiterm LAct 0 wl) (hEwl : termLen LAct wl ≤ E) (hmem0 : neg LAct (isFuncFact wk wf) ∈ Γ) (hmem1 : neg LAct (utvPiFact wk wv) ∈ Γ) (hmem2 : neg LAct (funcFact wt wk wf wv) ∈ Γ) (hmem3 : neg LAct (tlvFact wM wk wv) ∈ Γ) (hmem4 : neg LAct (listSumFact ws wM) ∈ Γ) (hmem5 : neg LAct (termLenMetaFact wl wt) ∈ Γ) :
     StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 144 ?[wk, wf, wv, wt, wM, ws, wl]) ∧ sTag (mkStep W 144 ?[wk, wf, wv, wt, wM, ws, wl]) = 0 ∧
     ctxAfter Γ (mkStep W 144 ?[wk, wf, wv, wt, wM, ws, wl]) = insert (neg LAct (eqFactB wl (ws ^+ (𝟏 : V)))) Γ := by
   subst hWp
@@ -3226,9 +3226,9 @@ lemma cok_congLenNum {tbl N E Γ W : V} {wy wl wlp : V} (htbl : TableOK tbl N) (
 
 /-- Row `congTLenNum` as a step. -/
 lemma cok_congTLenNum {tbl N E Γ W : V} {wt wl wlp : V} (htbl : TableOK tbl N) (hC : CertTable tbl) (hWp : W = certPieces)
-    (hΓ : IsFormulaSet LAct Γ) (hwt : IsSemiterm LAct 0 wt) (hEwt : termLen LAct wt ≤ E) (hwl : IsSemiterm LAct 0 wl) (hEwl : termLen LAct wl ≤ E) (hwlp : IsSemiterm LAct 0 wlp) (hEwlp : termLen LAct wlp ≤ E) (hmem0 : neg LAct (eqFactB wl wlp) ∈ Γ) (hmem1 : neg LAct (tlenFact wl wt) ∈ Γ) :
+    (hΓ : IsFormulaSet LAct Γ) (hwt : IsSemiterm LAct 0 wt) (hEwt : termLen LAct wt ≤ E) (hwl : IsSemiterm LAct 0 wl) (hEwl : termLen LAct wl ≤ E) (hwlp : IsSemiterm LAct 0 wlp) (hEwlp : termLen LAct wlp ≤ E) (hmem0 : neg LAct (eqFactB wl wlp) ∈ Γ) (hmem1 : neg LAct (termLenMetaFact wl wt) ∈ Γ) :
     StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 146 ?[wt, wl, wlp]) ∧ sTag (mkStep W 146 ?[wt, wl, wlp]) = 0 ∧
-    ctxAfter Γ (mkStep W 146 ?[wt, wl, wlp]) = insert (neg LAct (tlenFact wlp wt)) Γ := by
+    ctxAfter Γ (mkStep W 146 ?[wt, wl, wlp]) = insert (neg LAct (termLenMetaFact wlp wt)) Γ := by
   subst hWp
   have hk : ((cIdx_congTLenNum : ℕ) : V) = (146 : V) := by simp [cIdx_congTLenNum]
   have hstep := cmk_congTLenNum (V := V) ?[wt, wl, wlp]
@@ -3359,7 +3359,7 @@ lemma cok_formulaLenExs {tbl N E Γ W : V} {wn wp wq wlp wlq : V} (htbl : TableO
 
 /-- Row `termLenBvar` as a step. -/
 lemma cok_termLenBvar {tbl N E Γ W : V} {wz wt wl : V} (htbl : TableOK tbl N) (hC : CertTable tbl) (hWp : W = certPieces)
-    (hΓ : IsFormulaSet LAct Γ) (hwz : IsSemiterm LAct 0 wz) (hEwz : termLen LAct wz ≤ E) (hwt : IsSemiterm LAct 0 wt) (hEwt : termLen LAct wt ≤ E) (hwl : IsSemiterm LAct 0 wl) (hEwl : termLen LAct wl ≤ E) (hmem0 : neg LAct (bvarFact wt wz) ∈ Γ) (hmem1 : neg LAct (tlenFact wl wt) ∈ Γ) :
+    (hΓ : IsFormulaSet LAct Γ) (hwz : IsSemiterm LAct 0 wz) (hEwz : termLen LAct wz ≤ E) (hwt : IsSemiterm LAct 0 wt) (hEwt : termLen LAct wt ≤ E) (hwl : IsSemiterm LAct 0 wl) (hEwl : termLen LAct wl ≤ E) (hmem0 : neg LAct (bvarFact wt wz) ∈ Γ) (hmem1 : neg LAct (termLenMetaFact wl wt) ∈ Γ) :
     StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 153 ?[wz, wt, wl]) ∧ sTag (mkStep W 153 ?[wz, wt, wl]) = 0 ∧
     ctxAfter Γ (mkStep W 153 ?[wz, wt, wl]) = insert (neg LAct (eqFactB wl (wz ^+ (𝟏 : V)))) Γ := by
   subst hWp
@@ -3378,7 +3378,7 @@ lemma cok_termLenBvar {tbl N E Γ W : V} {wz wt wl : V} (htbl : TableOK tbl N) (
 
 /-- Row `termLenFvar` as a step. -/
 lemma cok_termLenFvar {tbl N E Γ W : V} {wx wt wl : V} (htbl : TableOK tbl N) (hC : CertTable tbl) (hWp : W = certPieces)
-    (hΓ : IsFormulaSet LAct Γ) (hwx : IsSemiterm LAct 0 wx) (hEwx : termLen LAct wx ≤ E) (hwt : IsSemiterm LAct 0 wt) (hEwt : termLen LAct wt ≤ E) (hwl : IsSemiterm LAct 0 wl) (hEwl : termLen LAct wl ≤ E) (hmem0 : neg LAct (fvarFact wt wx) ∈ Γ) (hmem1 : neg LAct (tlenFact wl wt) ∈ Γ) :
+    (hΓ : IsFormulaSet LAct Γ) (hwx : IsSemiterm LAct 0 wx) (hEwx : termLen LAct wx ≤ E) (hwt : IsSemiterm LAct 0 wt) (hEwt : termLen LAct wt ≤ E) (hwl : IsSemiterm LAct 0 wl) (hEwl : termLen LAct wl ≤ E) (hmem0 : neg LAct (fvarFact wt wx) ∈ Γ) (hmem1 : neg LAct (termLenMetaFact wl wt) ∈ Γ) :
     StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 154 ?[wx, wt, wl]) ∧ sTag (mkStep W 154 ?[wx, wt, wl]) = 0 ∧
     ctxAfter Γ (mkStep W 154 ?[wx, wt, wl]) = insert (neg LAct (eqFactB wl (wx ^+ (𝟏 : V)))) Γ := by
   subst hWp
@@ -3419,7 +3419,7 @@ lemma cok_formulaLenTotal {tbl N E Γ W : V} {wp : V} (htbl : TableOK tbl N) (hC
 lemma cok_termLenTotal {tbl N E Γ W : V} {wt : V} (htbl : TableOK tbl N) (hC : CertTable tbl) (hWp : W = certPieces)
     (hΓ : IsFormulaSet LAct Γ) (hwt : IsSemiterm LAct 0 wt) (hEwt : termLen LAct wt ≤ E)  :
     StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 156 ?[wt]) ∧ sTag (mkStep W 156 ?[wt]) = 2 ∧
-    ctxAfter Γ (mkStep W 156 ?[wt]) = insert (neg LAct (tlenFact (^&((0 : ℕ) : V)) (termShift LAct wt))) (setShift LAct Γ) := by
+    ctxAfter Γ (mkStep W 156 ?[wt]) = insert (neg LAct (termLenMetaFact (^&((0 : ℕ) : V)) (termShift LAct wt))) (setShift LAct Γ) := by
   subst hWp
   have hk : ((cIdx_termLenTotal : ℕ) : V) = (156 : V) := by simp [cIdx_termLenTotal]
   have hstep := cmk_termLenTotal (V := V) ?[wt]

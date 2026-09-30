@@ -12,8 +12,8 @@ of `p(k)`, as `S₀ + S₁·|instB ⌜p⌝ k|` — for `pConj` it is the ∧-eli
 The two pConj files are now instantiations of this one (`psi = psiF pConj` by `rfl`).
 
 0. **Generic material, moved verbatim** from `Uniform.lean` §0–§2 and §5 and `Cell.lean` §1–§2
-   (`termLen_bnum_le_V`, `poly_size_le_eventually`, the two readings as models of `TAct`, the `PLE`
-   calculus, `size_eq_length`, `quadratic_le_cube`, `flen_subst_bnumT_le`, `eval_leF_numeral_bvar`).
+   (`termLen_binNumeral_le_V`, `poly_size_le_eventually`, the two readings as models of `TAct`, the `PLE`
+   calculus, `size_eq_length`, `quadratic_le_cube`, `formulaLenMeta_subst_binNumeralMeta_le`, `eval_leF_numeral_bvar`).
 1. **The family's fixed point.** `thetaF p := boxCoreA 🡒 (p ⇜ ![#1])` (`#0` the code slot, `#1`
    the budget — `Prep.theta`'s convention), `psiF p := tactFixedpoint (thetaF p)`, the code slot
    resolved by `thetaF_subst_code` (`Prep.pConjL_subst` was already generic in the substituted
@@ -32,7 +32,7 @@ The two pConj files are now instantiations of this one (`psi = psiF pConj` by `r
    equations, `Uniform.loebSound_pConj`). Then `psiF_true_V` (`psiF p (k)` true in both readings
    for all large `k`, in every model) and **`pblt_uniformF`**: `TAct ⊢ ∀ k, (k̂ ≤ k → psiF p (k))`.
 5. **The cell half at ℕ**: `exists_psiF_instance_length` (the uniform theorem instantiated at
-   `bnumT k`, its antecedent cut away — quadratic in the bit length) and **`family_found`**, the
+   `binNumeralMeta k`, its antecedent cut away — quadratic in the bit length) and **`family_found`**, the
    arithmetized `pblt_engine`: for all large `k : ℕ` the `k`-instance of `p` has a `TAct`-proof
    code of length `a` with `a + S₀ + S₁·|instB ⌜p⌝ k| ≤ k` — the family's box is found within its
    budget, with the slack to spare.
@@ -56,7 +56,7 @@ variable {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
 
 /-! ### 0. The length of the binary numeral, in every model -/
 
-section bnumLen
+section binNumeralLen
 
 lemma termLen_zero_LAct : termLen LAct (𝟎 : V) = 1 := by
   rw [show (𝟎 : V) = ^func 0 (zeroIndex : V) 0 by
@@ -98,42 +98,42 @@ lemma termLen_qqTwo_LAct : termLen LAct (𝟐 : V) = 3 := by
   rw [qqTwo, termLen_qqAdd_LAct (one_semiterm (n := 0)).isUTerm (one_semiterm (n := 0)).isUTerm,
     termLen_one_LAct, one_add_one_eq_two, two_add_one_eq_three]
 
-/-- **The `LAct` symbol count of the binary numeral, in every model**: `|bnum n| ≤ 6‖n‖ + 1`
-(the V-generic twin of `tlen_bnumT`; by order induction on the bit recursion of `bnum`). -/
-theorem termLen_bnum_le_V (n : V) : termLen LAct (bnum n) ≤ 6 * ‖n‖ + 1 := by
+/-- **The `LAct` symbol count of the binary numeral, in every model**: `|binNumeral n| ≤ 6‖n‖ + 1`
+(the V-generic twin of `termLenMeta_binNumeralMeta`; by order induction on the bit recursion of `binNumeral`). -/
+theorem termLen_binNumeral_le_V (n : V) : termLen LAct (binNumeral n) ≤ 6 * ‖n‖ + 1 := by
   induction n using ISigma1.pi1_order_induction with
   | hP => definability
   | ind n ih =>
     rcases zero_one_or_two_le n with rfl | rfl | h2
-    · rw [bnum_zero, termLen_zero_LAct, length_zero]; simp
-    · rw [bnum_one, termLen_one_LAct, length_one, mul_one]
+    · rw [binNumeral_zero, termLen_zero_LAct, length_zero]; simp
+    · rw [binNumeral_one, termLen_one_LAct, length_one, mul_one]
       exact le_add_self
     obtain ⟨hm, hlt, he | ho⟩ := two_le_cases h2
     · have ih' := ih (n / 2) hlt
-      rw [he, bnum_two_mul hm, termLen_qqMul_LAct (qqTwo_semiterm (k := 0)).isUTerm (bnum_uterm _),
+      rw [he, binNumeral_two_mul hm, termLen_qqMul_LAct (qqTwo_semiterm (k := 0)).isUTerm (binNumeral_uterm _),
         termLen_qqTwo_LAct, length_two_mul_of_pos (lt_of_lt_of_le zero_lt_one hm)]
-      calc 3 + termLen LAct (bnum (n / 2)) + 1 ≤ 3 + (6 * ‖n / 2‖ + 1) + 1 := by gcongr
+      calc 3 + termLen LAct (binNumeral (n / 2)) + 1 ≤ 3 + (6 * ‖n / 2‖ + 1) + 1 := by gcongr
         _ = 6 * ‖n / 2‖ + 5 := by ring
         _ ≤ 6 * ‖n / 2‖ + 5 + 2 := le_self_add
         _ = 6 * (‖n / 2‖ + 1) + 1 := by ring
     · have ih' := ih (n / 2) hlt
-      rw [ho, bnum_two_mul_add_one hm,
+      rw [ho, binNumeral_two_mul_add_one hm,
         termLen_qqAdd_LAct
-          (by simp [qqMul, bnum_semiterm 0 (n / 2)] : IsSemiterm ℒₒᵣ 0 (𝟐 ^* bnum (n / 2))).isUTerm
+          (by simp [qqMul, binNumeral_semiterm 0 (n / 2)] : IsSemiterm ℒₒᵣ 0 (𝟐 ^* binNumeral (n / 2))).isUTerm
           (one_semiterm (n := 0)).isUTerm,
-        termLen_qqMul_LAct (qqTwo_semiterm (k := 0)).isUTerm (bnum_uterm _), termLen_qqTwo_LAct,
+        termLen_qqMul_LAct (qqTwo_semiterm (k := 0)).isUTerm (binNumeral_uterm _), termLen_qqTwo_LAct,
         termLen_one_LAct,
         length_two_mul_add_one]
-      calc 3 + termLen LAct (bnum (n / 2)) + 1 + 1 + 1 ≤ 3 + (6 * ‖n / 2‖ + 1) + 1 + 1 + 1 := by gcongr
+      calc 3 + termLen LAct (binNumeral (n / 2)) + 1 + 1 + 1 ≤ 3 + (6 * ‖n / 2‖ + 1) + 1 + 1 + 1 := by gcongr
         _ = 6 * (‖n / 2‖ + 1) + 1 := by ring
 
-/-- `|bnum n| ≤ 7‖n‖` once `1 ≤ ‖n‖`. -/
-lemma termLen_bnum_le_V' {n : V} (hn : 1 ≤ ‖n‖) : termLen LAct (bnum n) ≤ 7 * ‖n‖ :=
-  calc termLen LAct (bnum n) ≤ 6 * ‖n‖ + 1 := termLen_bnum_le_V n
+/-- `|binNumeral n| ≤ 7‖n‖` once `1 ≤ ‖n‖`. -/
+lemma termLen_binNumeral_le_V' {n : V} (hn : 1 ≤ ‖n‖) : termLen LAct (binNumeral n) ≤ 7 * ‖n‖ :=
+  calc termLen LAct (binNumeral n) ≤ 6 * ‖n‖ + 1 := termLen_binNumeral_le_V n
     _ ≤ 6 * ‖n‖ + ‖n‖ := by gcongr
     _ = 7 * ‖n‖ := by ring
 
-end bnumLen
+end binNumeralLen
 
 /-! ### 1. Polynomials in the bit length are eventually below `k`, in every model -/
 
@@ -237,37 +237,37 @@ section models
 
 variable (M : Type) [ORingStructure M] [M↓[ℒₒᵣ] ⊧* 𝗣𝗔]
 
-lemma eval_axNe_stdActS : Semiformula.Eval (s := stdActS M) ![] Empty.elim axNe := by
-  unfold axNe
+lemma eval_constNe_stdReading : Semiformula.Eval (s := stdReading M) ![] Empty.elim constNe := by
+  unfold constNe
   simp only [Semiformula.eval_nrel, cterm]
   change ¬ ((0 : M) = 1)
   exact zero_ne_one
 
-lemma eval_axNe'_stdActS : Semiformula.Eval (s := stdActS M) ![] Empty.elim axNe' := by
-  unfold axNe'
+lemma eval_constNe'_stdReading : Semiformula.Eval (s := stdReading M) ![] Empty.elim constNe' := by
+  unfold constNe'
   simp only [Semiformula.eval_nrel, cterm]
   change ¬ ((1 : M) = 0)
   exact _root_.one_ne_zero
 
 /-- **The standard reading is a model of `TAct`** for every `M ⊧ 𝗣𝗔`: the `PA` axioms through
 the reduct, the four action axioms by evaluation. -/
-theorem stdActS_models_TAct : (stdActS M).toStruc ⊧* TAct := by
+theorem stdReading_models_TAct : (stdReading M).toStruc ⊧* TAct := by
   refine Semantics.modelsSet_iff.mpr fun φ hφ ↦ ?_
   rcases hφ with rfl | rfl | rfl | rfl | ⟨σ, hσ, rfl⟩
-  · exact eval_axAct_stdActS
-  · exact eval_axAct'_stdActS
-  · exact eval_axNe_stdActS M
-  · exact eval_axNe'_stdActS M
-  · exact (Semiformula.models_lMap (s₂ := stdActS M) (Φ := emb)).mpr
-      (by rw [stdActS_lMap_emb]; exact Theory.models M 𝗣𝗔 hσ)
+  · exact eval_actionAxiom_stdReading
+  · exact eval_actionAxiom'_stdReading
+  · exact eval_constNe_stdReading M
+  · exact eval_constNe'_stdReading M
+  · exact (Semiformula.models_lMap (s₂ := stdReading M) (Φ := emb)).mpr
+      (by rw [stdReading_lMap_emb]; exact Theory.models M 𝗣𝗔 hσ)
 
 /-- **The transposed reading is a model of `TAct`**: `TAct` is τ-closed (`lMap_swap_mem_TAct`)
-and `swapActS M` is the pull-back of `stdActS M` along `swap`. -/
-theorem swapActS_models_TAct : (swapActS M).toStruc ⊧* TAct := by
+and `swappedReading M` is the pull-back of `stdReading M` along `swap`. -/
+theorem swappedReading_models_TAct : (swappedReading M).toStruc ⊧* TAct := by
   refine Semantics.modelsSet_iff.mpr fun φ hφ ↦ ?_
-  have h : (stdActS M).toStruc ⊧ Semiformula.lMap swap φ :=
-    Semantics.modelsSet_iff.mp (stdActS_models_TAct M) (lMap_swap_mem_TAct hφ)
-  exact (Semiformula.models_lMap (s₂ := stdActS M) (Φ := swap)).mp h
+  have h : (stdReading M).toStruc ⊧ Semiformula.lMap swap φ :=
+    Semantics.modelsSet_iff.mp (stdReading_models_TAct M) (lMap_swap_mem_TAct hφ)
+  exact (Semiformula.models_lMap (s₂ := stdReading M) (Φ := swap)).mp h
 
 /-! ### 3. The family's fixed point -/
 
@@ -326,11 +326,11 @@ theorem models_psiF_fixed_point (p : Semisentence LAct 1) {M : Type*} [Nonempty 
 
 /-- The fixed point, evaluated in the standard reading: `psiF p (x) ↔ (Box_g (psiF p) (x) → p(x))`. -/
 theorem eval_psiF_fixed_point_std (p : Semisentence LAct 1) (x : M) :
-    Semiformula.Eval (s := stdActS M) ![x] Empty.elim (psiF p) ↔
-      (Semiformula.Eval (s := stdActS M) ![x] Empty.elim (Box_g (psiF p)) →
-        Semiformula.Eval (s := stdActS M) ![x] Empty.elim p) := by
-  let _ : Structure LAct M := stdActS M
-  have : M↓[LAct] ⊧* TAct := stdActS_models_TAct M
+    Semiformula.Eval (s := stdReading M) ![x] Empty.elim (psiF p) ↔
+      (Semiformula.Eval (s := stdReading M) ![x] Empty.elim (Box_g (psiF p)) →
+        Semiformula.Eval (s := stdReading M) ![x] Empty.elim p) := by
+  let _ : Structure LAct M := stdReading M
+  have : M↓[LAct] ⊧* TAct := stdReading_models_TAct M
   have h := models_psiF_fixed_point p (M := M)
   rw [models_iff] at h
   simp only [Semiformula.Realize, Semiformula.eval_all, LogicalConnective.HomClass.map_iff,
@@ -340,11 +340,11 @@ theorem eval_psiF_fixed_point_std (p : Semisentence LAct 1) (x : M) :
 
 /-- The fixed point, evaluated in the transposed reading. -/
 theorem eval_psiF_fixed_point_swap (p : Semisentence LAct 1) (x : M) :
-    Semiformula.Eval (s := swapActS M) ![x] Empty.elim (psiF p) ↔
-      (Semiformula.Eval (s := swapActS M) ![x] Empty.elim (Box_g (psiF p)) →
-        Semiformula.Eval (s := swapActS M) ![x] Empty.elim p) := by
-  let _ : Structure LAct M := swapActS M
-  have : M↓[LAct] ⊧* TAct := swapActS_models_TAct M
+    Semiformula.Eval (s := swappedReading M) ![x] Empty.elim (psiF p) ↔
+      (Semiformula.Eval (s := swappedReading M) ![x] Empty.elim (Box_g (psiF p)) →
+        Semiformula.Eval (s := swappedReading M) ![x] Empty.elim p) := by
+  let _ : Structure LAct M := swappedReading M
+  have : M↓[LAct] ⊧* TAct := swappedReading_models_TAct M
   have h := models_psiF_fixed_point p (M := M)
   rw [models_iff] at h
   simp only [Semiformula.Realize, Semiformula.eval_all, LogicalConnective.HomClass.map_iff,
@@ -365,7 +365,7 @@ noncomputable abbrev chiF (p : Semisentence LAct 1) : Semisentence LAct 1 :=
 /-- **`TAct ⊢ ∀ k, psiF p (k) → (Box_g (psiF p) (k) → p(k))`** — the forward direction of
 `psiF_fixed_point`, by completeness over the two readings. -/
 theorem psiF_forward (p : Semisentence LAct 1) : TAct ⊢ ∀¹ chiF p := by
-  refine tact_complete' _ fun M _ _ ↦ ?_
+  refine TAct_complete_of_readings _ fun M _ _ ↦ ?_
   constructor
   · simp only [chiF, Semiformula.eval_all, LogicalConnective.HomClass.map_imply,
       LogicalConnective.Prop.arrow_eq]
@@ -379,8 +379,8 @@ theorem psiF_forward (p : Semisentence LAct 1) : TAct ⊢ ∀¹ chiF p := by
 /-- The forward direction has a bounded proof code, of some standard length `N₁`, in every model. -/
 theorem exists_forward_lengthF (p : Semisentence LAct 1) :
     ∃ N₁ : ℕ, ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁],
-      LenDerivable TAct (N₁ : V) (⌜(∀¹ chiF p : Sentence LAct)⌝ : V) :=
-  exists_lenDerivable_V_of_proof _ (psiF_forward p)
+      LenBoxUnbounded TAct (N₁ : V) (⌜(∀¹ chiF p : Sentence LAct)⌝ : V) :=
+  exists_lenBoxUnbounded_V_of_proof _ (psiF_forward p)
 
 /-- The `k`-instance of `⌜chiF p⌝` is the code implication `psiF p (k) → (Box_g (psiF p) (k) → p(k))`. -/
 lemma instB_quote_chiF (p : Semisentence LAct 1) (k : V) :
@@ -390,16 +390,16 @@ lemma instB_quote_chiF (p : Semisentence LAct 1) (k : V) :
   rw [chiF, instB_quote_imp, instB_quote_imp]
 
 /-- **The instantiated forward direction** (U8 step 1): from `□_{N₁} ∀¹ chiF p`, a proof code of
-`psiF p (k) → (Box_g (psiF p) (k) → p(k))` of length `≤ N₁ + 5|chiF p (k)| + 3|chiF p| + |bnum k| + 7`. -/
+`psiF p (k) → (Box_g (psiF p) (k) → p(k))` of length `≤ N₁ + 5|chiF p (k)| + 3|chiF p| + |binNumeral k| + 7`. -/
 theorem forward_inst_VF (p : Semisentence LAct 1) {N₁ : V}
-    (h : LenDerivable TAct N₁ (⌜(∀¹ chiF p : Sentence LAct)⌝ : V)) (k : V) :
-    LenDerivable TAct
+    (h : LenBoxUnbounded TAct N₁ (⌜(∀¹ chiF p : Sentence LAct)⌝ : V)) (k : V) :
+    LenBoxUnbounded TAct
       (N₁ + 5 * formulaLen LAct (instB (⌜chiF p⌝ : V) k) + 3 * formulaLen LAct (⌜chiF p⌝ : V)
-        + termLen LAct (bnum k) + 7)
+        + termLen LAct (binNumeral k) + 7)
       (Bootstrapping.imp LAct (instB (⌜psiF p⌝ : V) k)
         (Bootstrapping.imp LAct (instB (⌜Box_g (psiF p)⌝ : V) k) (instB (⌜p⌝ : V) k))) := by
   rw [quote_all_sentence] at h
-  obtain ⟨d, hd, hlen⟩ := lenDerivable_instB_V (k := k) (Sentence.quote_isSemiformul₁ (chiF p)) h
+  obtain ⟨d, hd, hlen⟩ := lenBoxUnbounded_instB_V (k := k) (Sentence.quote_isSemiformul₁ (chiF p)) h
   refine ⟨d, ?_, hlen⟩
   rwa [instB_quote_chiF] at hd
 
@@ -412,8 +412,8 @@ section chain
 /-- **Bounded inner necessitation at `psiF p`, in one model, with its constant `Cψ`** — the
 instance of `BoundedInnerNec.nec (psiF p)` the chain consumes. -/
 def NecAtF (p : Semisentence LAct 1) (d Cψ : ℕ) (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] : Prop :=
-  ∀ k : V, LenDerivable TAct (gBudget k) (instB (⌜psiF p⌝ : V) k) →
-    ∃ e : V, e ≤ (Cψ : V) * ((gBudget k) ^ d + 1) ∧ LenDerivable TAct e (instB (⌜Box_g (psiF p)⌝ : V) k)
+  ∀ k : V, LenBoxUnbounded TAct (gBudget k) (instB (⌜psiF p⌝ : V) k) →
+    ∃ e : V, e ≤ (Cψ : V) * ((gBudget k) ^ d + 1) ∧ LenBoxUnbounded TAct e (instB (⌜Box_g (psiF p)⌝ : V) k)
 
 /-- **The total budget consumed by the chain** at `k`, for the family `p` with slack `(S₀, S₁)`,
 the length `N₁` of the forward direction and the constants `d`, `Cψ` of bounded inner
@@ -422,7 +422,7 @@ necessitation expansion (U5), the second cut (U2) and the slack `S₀ + S₁·|p
 needs after the box (for `pConj`: the ∧-elimination of `pconj_both_V`). -/
 noncomputable def chainBoundF (p : Semisentence LAct 1) (S₀ S₁ N₁ d Cψ : ℕ) (k : V) : V :=
   ((N₁ : V) + 5 * formulaLen LAct (instB (⌜chiF p⌝ : V) k) + 3 * formulaLen LAct (⌜chiF p⌝ : V)
-      + termLen LAct (bnum k) + 7)
+      + termLen LAct (binNumeral k) + 7)
     + gBudget k + 5 * formulaLen LAct (instB (⌜psiF p⌝ : V) k)
       + 10 * (formulaLen LAct (instB (⌜Box_g (psiF p)⌝ : V) k) + formulaLen LAct (instB (⌜p⌝ : V) k) + 1) + 9
     + (Cψ : V) * (gBudget k ^ d + 1)
@@ -438,22 +438,22 @@ lemma isFormula_imp_instB (φ ψ : Semisentence LAct 1) (k : V) :
 `N₁`, the assumed box `□_{g k} psiF p (k)` and `chainBoundF ≤ k`, a proof code of `p(k)` of some
 length `a` with the slack to spare: `a + S₀ + S₁·|p(k)| ≤ k`. -/
 theorem chain_core_VF (p : Semisentence LAct 1) {S₀ S₁ d Cψ : ℕ} (hnec : NecAtF p d Cψ V)
-    {N₁ : ℕ} (hN₁ : LenDerivable TAct (N₁ : V) (⌜(∀¹ chiF p : Sentence LAct)⌝ : V)) (k : V)
+    {N₁ : ℕ} (hN₁ : LenBoxUnbounded TAct (N₁ : V) (⌜(∀¹ chiF p : Sentence LAct)⌝ : V)) (k : V)
     (hk : chainBoundF p S₀ S₁ N₁ d Cψ k ≤ k)
-    (hbox : LenDerivable TAct (gBudget k) (instB (⌜psiF p⌝ : V) k)) :
+    (hbox : LenBoxUnbounded TAct (gBudget k) (instB (⌜psiF p⌝ : V) k)) :
     ∃ a : V, a + (S₀ : V) + (S₁ : V) * formulaLen LAct (instB (⌜p⌝ : V) k) ≤ k ∧
-      LenDerivable TAct a (instB (⌜p⌝ : V) k) := by
+      LenBoxUnbounded TAct a (instB (⌜p⌝ : V) k) := by
   have hψ := isFormula_instB_quote (psiF p) k
   have hB := isFormula_instB_quote (Box_g (psiF p)) k
   have hP := isFormula_instB_quote p k
   -- step 1: the instantiated forward direction
   have h2 := forward_inst_VF p hN₁ k
   -- step 3: cut with the assumed box
-  have h3 := lenDerivable_cut_V hψ (isFormula_imp_instB (Box_g (psiF p)) p k) h2 hbox
+  have h3 := lenBoxUnbounded_mp hψ (isFormula_imp_instB (Box_g (psiF p)) p k) h2 hbox
   -- step 4: bounded inner necessitation
   obtain ⟨e, he, hBx⟩ := hnec k hbox
   -- step 5: cut again
-  have h5 := lenDerivable_cut_V hB hP h3 hBx
+  have h5 := lenBoxUnbounded_mp hB hP h3 hBx
   refine ⟨_, ?_, h5⟩
   refine le_trans ?_ hk
   unfold chainBoundF
@@ -514,22 +514,22 @@ end PLE
 
 /-- The code length of a quoted one-variable semisentence is its meta length, in every model. -/
 lemma formulaLen_quote_semisentence_V (χ : Semisentence LAct 1) :
-    formulaLen LAct (⌜χ⌝ : V) = ((flen (χ : Semiproposition LAct 1) : ℕ) : V) := by
+    formulaLen LAct (⌜χ⌝ : V) = ((formulaLenMeta (χ : Semiproposition LAct 1) : ℕ) : V) := by
   rw [Sentence.quote_def, formulaLen_quote]
 
 lemma PLE_quote (χ : Semisentence LAct 1) (k : V) :
-    PLE ‖k‖ (formulaLen LAct (⌜χ⌝ : V)) (flen (χ : Semiproposition LAct 1)) 0 := by
+    PLE ‖k‖ (formulaLen LAct (⌜χ⌝ : V)) (formulaLenMeta (χ : Semiproposition LAct 1)) 0 := by
   rw [formulaLen_quote_semisentence_V]; exact PLE.const _
 
-/-- `|bnum k| ≤ 7‖k‖` once `1 ≤ ‖k‖`, in the bookkeeping form. -/
-lemma PLE_bnum {k : V} (hs : 1 ≤ ‖k‖) : PLE ‖k‖ (termLen LAct (bnum k)) 7 1 :=
-  PLE.of_le (termLen_bnum_le_V' hs) (PLE.mono hs (PLE.mul (PLE.literal 7) PLE.var) le_rfl le_rfl)
+/-- `|binNumeral k| ≤ 7‖k‖` once `1 ≤ ‖k‖`, in the bookkeeping form. -/
+lemma PLE_binNumeral {k : V} (hs : 1 ≤ ‖k‖) : PLE ‖k‖ (termLen LAct (binNumeral k)) 7 1 :=
+  PLE.of_le (termLen_binNumeral_le_V' hs) (PLE.mono hs (PLE.mul (PLE.literal 7) PLE.var) le_rfl le_rfl)
 
-/-- `|instB ⌜χ⌝ k| ≤ (flen χ · 7)·‖k‖` once `1 ≤ ‖k‖`. -/
+/-- `|instB ⌜χ⌝ k| ≤ (formulaLenMeta χ · 7)·‖k‖` once `1 ≤ ‖k‖`. -/
 lemma PLE_instB (χ : Semisentence LAct 1) {k : V} (hs : 1 ≤ ‖k‖) :
-    PLE ‖k‖ (formulaLen LAct (instB (⌜χ⌝ : V) k)) (flen (χ : Semiproposition LAct 1) * 7) 1 :=
+    PLE ‖k‖ (formulaLen LAct (instB (⌜χ⌝ : V) k)) (formulaLenMeta (χ : Semiproposition LAct 1) * 7) 1 :=
   PLE.of_le (formulaLen_instB_le (Sentence.quote_isSemiformul₁ χ) k)
-    (PLE.mono hs (PLE.mul (PLE_quote χ k) (PLE_bnum hs)) le_rfl le_rfl)
+    (PLE.mono hs (PLE.mul (PLE_quote χ k) (PLE_binNumeral hs)) le_rfl le_rfl)
 
 /-- `gBudget k = ‖k‖³` is polynomial. -/
 lemma PLE_gBudget {k : V} (hs : 1 ≤ ‖k‖) : PLE ‖k‖ (gBudget k) 1 3 := by
@@ -555,7 +555,7 @@ theorem chainBoundF_PLE (p : Semisentence LAct 1) (S₀ S₁ N₁ d Cψ : ℕ) :
     have hP := PLE.mono hs (PLE_instB p hs) le_rfl hm1
     have hg := PLE.mono hs (PLE_gBudget hs) le_rfl hm3
     have hgd := PLE.mono hs (PLE.pow (PLE_gBudget hs) d) le_rfl hmd
-    have hT := PLE.mono hs (PLE_bnum hs) le_rfl hm1
+    have hT := PLE.mono hs (PLE_binNumeral hs) le_rfl hm1
     have hq := PLE.mono hs (PLE_quote (chiF p) k) le_rfl hm0
     have hcst : ∀ a : ℕ, PLE ‖k‖ (a : V) a (3 * d + 3) := fun a ↦ PLE.mono hs (PLE.const a) le_rfl hm0
     have hone : PLE ‖k‖ (1 : V) 1 (3 * d + 3) := PLE.mono hs PLE.one le_rfl hm0
@@ -607,9 +607,9 @@ plus the two search clauses and the truth equations (`Uniform.loebSound_pConj`, 
 def LoebSound (p : Semisentence LAct 1) (S₀ S₁ : ℕ) : Prop :=
   ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗣𝗔] (k a : V),
     a + (S₀ : V) + (S₁ : V) * formulaLen LAct (instB (⌜p⌝ : V) k) ≤ k →
-    LenDerivable TAct a (instB (⌜p⌝ : V) k) →
-    Semiformula.Eval (s := stdActS V) ![k] Empty.elim p ∧
-    Semiformula.Eval (s := swapActS V) ![k] Empty.elim p
+    LenBoxUnbounded TAct a (instB (⌜p⌝ : V) k) →
+    Semiformula.Eval (s := stdReading V) ![k] Empty.elim p ∧
+    Semiformula.Eval (s := swappedReading V) ![k] Empty.elim p
 
 /-- **`psiF p (k)` is true in both readings for every large `k`, in every model of `𝗣𝗔`**, given
 bounded inner necessitation and the family's Löb premise: for `k` above a standard threshold
@@ -618,8 +618,8 @@ hence `p(k)` (`LoebSound`), so `psiF p (k)` holds by the fixed point. -/
 theorem psiF_true_V (p : Semisentence LAct 1) {S₀ S₁ d : ℕ} (hE : BoundedInnerNec d)
     (hs : LoebSound p S₀ S₁) :
     ∃ kHat : ℕ, ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗣𝗔] (k : V), (kHat : V) ≤ k →
-      Semiformula.Eval (s := stdActS V) ![k] Empty.elim (psiF p) ∧
-      Semiformula.Eval (s := swapActS V) ![k] Empty.elim (psiF p) := by
+      Semiformula.Eval (s := stdReading V) ![k] Empty.elim (psiF p) ∧
+      Semiformula.Eval (s := swappedReading V) ![k] Empty.elim (psiF p) := by
   obtain ⟨N₁, hN₁⟩ := exists_forward_lengthF p
   obtain ⟨Cψ, hCψ⟩ := hE.nec (psiF p)
   obtain ⟨C, hC⟩ := chainBoundF_poly p S₀ S₁ N₁ d Cψ
@@ -656,20 +656,20 @@ lemma eval_leF_numeral_bvar {M : Type*} [ORingStructure M] [M↓[ℒₒᵣ] ⊧*
 /-- **The uniform theorem of a family (U8 step 8, the arithmetized parametric bounded Löb
 theorem)**: given bounded inner necessitation and the family's Löb premise, there is a standard
 `kHat` with `TAct ⊢ ∀ k, (kHat ≤ k → psiF p (k))` — the antecedent in the shape `leF ↑kHat #0`
-that `NumeralFacts.lenProvable_le_bnumT` discharges at ℕ. -/
+that `NumeralFacts.lenBoxNat_le_binNumeralMeta` discharges at ℕ. -/
 theorem pblt_uniformF (p : Semisentence LAct 1) {S₀ S₁ d : ℕ} (hE : BoundedInnerNec d)
     (hs : LoebSound p S₀ S₁) :
     ∃ kHat : ℕ, TAct ⊢ ∀¹ ((leF (↑kHat) #0 : Semisentence LAct 1) 🡒 psiF p) := by
   obtain ⟨kHat, hkHat⟩ := psiF_true_V p hE hs
-  refine ⟨kHat, tact_complete' _ fun M _ _ ↦ ?_⟩
+  refine ⟨kHat, TAct_complete_of_readings _ fun M _ _ ↦ ?_⟩
   have : M↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
   constructor
   · simp only [Semiformula.eval_all, LogicalConnective.HomClass.map_imply, LogicalConnective.Prop.arrow_eq]
     intro x hx
-    exact (hkHat M x ((eval_leF_numeral_bvar _ stdActS_lMap_emb kHat x).mp hx)).1
+    exact (hkHat M x ((eval_leF_numeral_bvar _ stdReading_lMap_emb kHat x).mp hx)).1
   · simp only [Semiformula.eval_all, LogicalConnective.HomClass.map_imply, LogicalConnective.Prop.arrow_eq]
     intro x hx
-    exact (hkHat M x ((eval_leF_numeral_bvar _ swapActS_lMap_emb kHat x).mp hx)).2
+    exact (hkHat M x ((eval_leF_numeral_bvar _ swappedReading_lMap_emb kHat x).mp hx)).2
 
 end uniform
 
@@ -710,63 +710,63 @@ lemma quadratic_le_cube (K₀ K₁ K₂ s : ℕ) (hs : K₀ + K₁ + K₂ + 1 �
 /-! #### The meta closure: a short proof of `psiF p (k)` at ℕ, quadratic in the bit length -/
 
 /-- The length of a substitution instance at the binary numeral, at `ℕ`:
-`flen (φ ⇜ ![bnumT k]) ≤ flen φ · (6·size k + 2)`. -/
-lemma flen_subst_bnumT_le (φ : Semisentence LAct 1) (k : ℕ) :
-    flen ((φ ⇜ ![Semiterm.lMap emb (bnumT k)] : Sentence LAct) : Proposition LAct) ≤
-      flen (φ : Semiproposition LAct 1) * (6 * Nat.size k + 2) := by
-  refine le_trans (flen_subst_le φ ![Semiterm.lMap emb (bnumT k)]) ?_
+`formulaLenMeta (φ ⇜ ![binNumeralMeta k]) ≤ formulaLenMeta φ · (6·size k + 2)`. -/
+lemma formulaLenMeta_subst_binNumeralMeta_le (φ : Semisentence LAct 1) (k : ℕ) :
+    formulaLenMeta ((φ ⇜ ![Semiterm.lMap emb (binNumeralMeta k)] : Sentence LAct) : Proposition LAct) ≤
+      formulaLenMeta (φ : Semiproposition LAct 1) * (6 * Nat.size k + 2) := by
+  refine le_trans (formulaLenMeta_subst_le φ ![Semiterm.lMap emb (binNumeralMeta k)]) ?_
   refine Nat.mul_le_mul_left _ ?_
   rw [Fin.sum_univ_one]
   simp only [Matrix.cons_val_zero]
-  rw [tlen_emb_lMap_bnumT]
-  have := tlen_bnumT k
+  rw [termLenMeta_emb_lMap_binNumeralMeta]
+  have := termLenMeta_binNumeralMeta k
   omega
 
 
 /-- **The meta closure (U9 steps 1–3, any family)**: given bounded inner necessitation and the
 family's Löb premise, there are standard `k̂ K₀ K₁ K₂` with
-`LenProvable fbound (K₀ + K₁·size k + K₂·size k²) TAct ⌜psiF p ⇜ ![bnumT k]⌝` for every `k > k̂`
+`LenBoxNat codeBound (K₀ + K₁·size k + K₂·size k²) TAct ⌜psiF p ⇜ ![binNumeralMeta k]⌝` for every `k > k̂`
 — the uniform theorem instantiated at `k` and its antecedent cut away. -/
 theorem exists_psiF_instance_length (p : Semisentence LAct 1) {S₀ S₁ d : ℕ} (hE : BoundedInnerNec d)
     (hs : LoebSound p S₀ S₁) :
     ∃ kHat K₀ K₁ K₂ : ℕ, ∀ k : ℕ, kHat < k →
-      LenProvable (fbound : ℕ → ℕ) (K₀ + K₁ * Nat.size k + K₂ * Nat.size k * Nat.size k) TAct
-        (⌜(psiF p ⇜ ![Semiterm.lMap emb (bnumT k)] : Sentence LAct)⌝ : ℕ) := by
+      LenBoxNat (codeBound : ℕ → ℕ) (K₀ + K₁ * Nat.size k + K₂ * Nat.size k * Nat.size k) TAct
+        (⌜(psiF p ⇜ ![Semiterm.lMap emb (binNumeralMeta k)] : Sentence LAct)⌝ : ℕ) := by
   obtain ⟨kHat, hprov⟩ := pblt_uniformF p hE hs
-  obtain ⟨N₃, hN₃⟩ := lenProvable_of_provable hprov
-  obtain ⟨C₀, C₁, hle⟩ := lenProvable_le_bnumT kHat
+  obtain ⟨N₃, hN₃⟩ := lenBoxNat_of_provable hprov
+  obtain ⟨C₀, C₁, hle⟩ := lenBoxNat_le_binNumeralMeta kHat
   refine ⟨kHat,
-    N₃ + 13 * flen (((leF (↑kHat) #0 : Semisentence LAct 1) 🡒 psiF p : Semisentence LAct 1) : Semiproposition LAct 1)
-      + 8 + C₀ + 20 * tlen (Rew.emb (↑kHat : ClosedSemiterm LAct 0) : SyntacticSemiterm LAct 0) + 50
-      + 20 * flen (psiF p : Semiproposition LAct 1) + 9,
-    30 * flen (((leF (↑kHat) #0 : Semisentence LAct 1) 🡒 psiF p : Semisentence LAct 1) : Semiproposition LAct 1)
-      + 126 + 60 * flen (psiF p : Semiproposition LAct 1),
+    N₃ + 13 * formulaLenMeta (((leF (↑kHat) #0 : Semisentence LAct 1) 🡒 psiF p : Semisentence LAct 1) : Semiproposition LAct 1)
+      + 8 + C₀ + 20 * termLenMeta (Rew.emb (↑kHat : ClosedSemiterm LAct 0) : SyntacticSemiterm LAct 0) + 50
+      + 20 * formulaLenMeta (psiF p : Semiproposition LAct 1) + 9,
+    30 * formulaLenMeta (((leF (↑kHat) #0 : Semisentence LAct 1) 🡒 psiF p : Semisentence LAct 1) : Semiproposition LAct 1)
+      + 126 + 60 * formulaLenMeta (psiF p : Semiproposition LAct 1),
     C₁, fun k hk ↦ ?_⟩
-  -- step 1: instantiate the uniform theorem at `bnumT k`; step 2: the antecedent (`NumeralFacts`)
-  have h1 := lenProvable_inst_size ((leF (↑kHat) #0 : Semisentence LAct 1) 🡒 psiF p) k hN₃
+  -- step 1: instantiate the uniform theorem at `binNumeralMeta k`; step 2: the antecedent (`NumeralFacts`)
+  have h1 := lenBoxNat_inst_size ((leF (↑kHat) #0 : Semisentence LAct 1) 🡒 psiF p) k hN₃
   have h2 := hle k (Nat.le_of_lt hk)
   -- abbreviations, introduced AFTER the facts so that they fold everywhere
-  set fχ := flen (((leF (↑kHat) #0 : Semisentence LAct 1) 🡒 psiF p : Semisentence LAct 1) : Semiproposition LAct 1)
+  set fχ := formulaLenMeta (((leF (↑kHat) #0 : Semisentence LAct 1) 🡒 psiF p : Semisentence LAct 1) : Semiproposition LAct 1)
     with hfχ
-  set fψ := flen (psiF p : Semiproposition LAct 1) with hfψ
-  set a := tlen (Rew.emb (↑kHat : ClosedSemiterm LAct 0) : SyntacticSemiterm LAct 0) with ha
-  set t : ClosedSemiterm LAct 0 := Semiterm.lMap emb (bnumT k) with ht
+  set fψ := formulaLenMeta (psiF p : Semiproposition LAct 1) with hfψ
+  set a := termLenMeta (Rew.emb (↑kHat : ClosedSemiterm LAct 0) : SyntacticSemiterm LAct 0) with ha
+  set t : ClosedSemiterm LAct 0 := Semiterm.lMap emb (binNumeralMeta k) with ht
   set s := Nat.size k with hs
-  have hχt : flen ((((leF (↑kHat) #0 : Semisentence LAct 1) 🡒 psiF p) ⇜ ![t] : Sentence LAct) : Proposition LAct)
-      ≤ fχ * (6 * s + 2) := flen_subst_bnumT_le _ k
-  have h1' : LenProvable (fbound : ℕ → ℕ) (N₃ + 5 * (fχ * (6 * s + 2)) + 3 * fχ + 6 * s + 8) TAct
+  have hχt : formulaLenMeta ((((leF (↑kHat) #0 : Semisentence LAct 1) 🡒 psiF p) ⇜ ![t] : Sentence LAct) : Proposition LAct)
+      ≤ fχ * (6 * s + 2) := formulaLenMeta_subst_binNumeralMeta_le _ k
+  have h1' : LenBoxNat (codeBound : ℕ → ℕ) (N₃ + 5 * (fχ * (6 * s + 2)) + 3 * fχ + 6 * s + 8) TAct
       (⌜(((leF (↑kHat) #0 : Semisentence LAct 1) 🡒 psiF p) ⇜ ![t] : Sentence LAct)⌝ : ℕ) :=
-    lenProvable_fbound_mono (by omega) h1
+    lenBoxNat_codeBound_mono (by omega) h1
   rw [substs_leF_imp] at h1'
   -- step 3: cut
-  have h3 := lenProvable_mp h1' h2
-  refine lenProvable_fbound_mono ?_ h3
+  have h3 := lenBoxNat_mp h1' h2
+  refine lenBoxNat_codeBound_mono ?_ h3
   -- the bookkeeping
-  have hψt : flen ((psiF p ⇜ ![t] : Sentence LAct) : Proposition LAct) ≤ fψ * (6 * s + 2) :=
-    flen_subst_bnumT_le (psiF p) k
-  have hleF : flen ((leF (↑kHat) t : Sentence LAct) : Proposition LAct) ≤ 2 * a + 2 * (6 * s + 1) + 3 := by
-    rw [flen_leF_sentence, ht, tlen_emb_lMap_bnumT]
-    have : tlen (Rew.emb (bnumT k) : SyntacticSemiterm ℒₒᵣ 0) ≤ 6 * s + 1 := tlen_bnumT k
+  have hψt : formulaLenMeta ((psiF p ⇜ ![t] : Sentence LAct) : Proposition LAct) ≤ fψ * (6 * s + 2) :=
+    formulaLenMeta_subst_binNumeralMeta_le (psiF p) k
+  have hleF : formulaLenMeta ((leF (↑kHat) t : Sentence LAct) : Proposition LAct) ≤ 2 * a + 2 * (6 * s + 1) + 3 := by
+    rw [formulaLenMeta_leF_sentence, ht, termLenMeta_emb_lMap_binNumeralMeta]
+    have : termLenMeta (Rew.emb (binNumeralMeta k) : SyntacticSemiterm ℒₒᵣ 0) ≤ 6 * s + 1 := termLenMeta_binNumeralMeta k
     omega
   calc _ ≤ N₃ + 5 * (fχ * (6 * s + 2)) + 3 * fχ + 6 * s + 8 + (C₀ + C₁ * s * s)
         + 10 * ((2 * a + 2 * (6 * s + 1) + 3) + fψ * (6 * s + 2)) + 9 := by gcongr
@@ -783,7 +783,7 @@ properness at ℕ, `quadratic_le_cube`). The `≤` is `Nat.le`; the V-generic ch
 theorem family_found (p : Semisentence LAct 1) {S₀ S₁ d : ℕ} (hE : BoundedInnerNec d)
     (hs : LoebSound p S₀ S₁) :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k → ∃ a : ℕ,
-      a + S₀ + S₁ * formulaLen LAct (instB (⌜p⌝ : ℕ) k) ≤ k ∧ LenDerivable TAct a (instB (⌜p⌝ : ℕ) k) := by
+      a + S₀ + S₁ * formulaLen LAct (instB (⌜p⌝ : ℕ) k) ≤ k ∧ LenBoxUnbounded TAct a (instB (⌜p⌝ : ℕ) k) := by
   obtain ⟨N₁, hN₁⟩ := exists_forward_lengthF p
   obtain ⟨Cψ, hCψ⟩ := hE.nec (psiF p)
   obtain ⟨C, hC⟩ := chainBoundF_poly p S₀ S₁ N₁ d Cψ
@@ -799,14 +799,14 @@ theorem family_found (p : Semisentence LAct 1) {S₀ S₁ d : ℕ} (hE : Bounded
   have hbound := le_def.mpr (le_def_trans (le_def.mp (hC ℕ k hs1))
     (le_def.mp (hkHat₁ ℕ k (le_def.mpr (Or.inr (by rw [natCast_nat]; omega))))))
   -- the meta closure, as the box on codes, below the budget
-  have hbox : LenDerivable TAct (gBudget k) (instB (⌜psiF p⌝ : ℕ) k) := by
+  have hbox : LenBoxUnbounded TAct (gBudget k) (instB (⌜psiF p⌝ : ℕ) k) := by
     have h := hmeta k (by omega)
-    rw [← lenProvableV_nat, ← lenDerivable_iff_lenProvableV] at h
-    have hq : instB (⌜psiF p⌝ : ℕ) k = ⌜(psiF p ⇜ ![Semiterm.lMap emb (bnumT k)] : Sentence LAct)⌝ := by
+    rw [← lenBox_nat, ← lenBoxUnbounded_iff_lenBox] at h
+    have hq : instB (⌜psiF p⌝ : ℕ) k = ⌜(psiF p ⇜ ![Semiterm.lMap emb (binNumeralMeta k)] : Sentence LAct)⌝ := by
       have := quote_instB (V := ℕ) (psiF p) k
       rwa [natCast_nat] at this
     rw [← hq] at h
-    refine lenDerivable_mono_V ?_ h
+    refine lenBoxUnbounded_mono_V ?_ h
     have hsize : K₀ + K₁ + K₂ + 1 ≤ Nat.size k := Nat.lt_size.mpr (by omega)
     have hcube := quadratic_le_cube K₀ K₁ K₂ (Nat.size k) hsize
     unfold gBudget

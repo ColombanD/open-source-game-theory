@@ -29,7 +29,7 @@ warning. The scheme —
 `method ∈ {sf, pa, snd, pos, loeb, khat, floor, dich}` is the PROOF METHOD (search-free transfer, PA-completeness,
 soundness/else-branch, positive/found without Löb, bounded Löb, the `k̂`-chain, the settled floor half, the
 hypothesis-free floor dichotomy); `L`/`R` are the exact head symbols of the statement — the ENGINE constructor
-(`DIMCID`, `DupocBot`, `TitForTatBot`, …) when the statement has `pcode (X k)`, the ARITH code name (`Dupoc`,
+(`DIMCID`, `DupocBot`, `TitForTatBot`, …) when the statement has `progCode (X k)`, the ARITH code name (`Dupoc`,
 `Cupod`, `Dimcid`, `Cimcic`, `Just`, `Just7`, `Prudent`, `PrudentT`, `Mirror`, `botDupoc`, `CupodTroll7`) when it
 has the ℕ-code, `botCB`/`botDB`/`botMirror` for the frozen `.bot` probes; `suffix ∈ {∅, _guard, _guards, _guardOf,
 _notFound, _engine, _core, _of_nec, _core_of_nec, _left, _right, _true}` (`_core` = the play AND the found guard in
@@ -39,10 +39,10 @@ one statement, `_of_nec` = the version still premised on `BoundedInnerNec d`, `_
 `dimcid_cupod_find_guards_unconditional` → `loeb_Dimcid_vs_Cupod_guards`, `cimcic_self_coop` →
 `pos_Cimcic_vs_Cimcic`, `snd_CupodBot_vs_DBot` → `pos_CupodBot_vs_DBot` (its proof needs a positive sub-fact).
 The helper renames at the end: `hopp_*`/`hme_*` → `desc_*`/`descT_*`, `hX_self` → `hX_dimcid`, `hX_bot` →
-`hX_botDupoc`, `pJJ_guard_V` → `pJJ_guards_V`, `pJD_boxes_V` → `pJD_guards_V`, `pcode_X'` → `pcode_X_search`,
+`hX_botDupoc`, `pJJ_guard_V` → `pJJ_guards_V`, `pJD_boxes_V` → `pJD_guards_V`, `progCode_X'` → `progCode_X_search`,
 `mirror_copies_V` → `mirror_copies2_V`; the `*_finds_guards*` spellings of the 2026-09-24 layer are kept as plain
 aliases of the scheme names. (`TFTV`/`TTFT` are handled by the `rfl` bridges of `Common/Bots`.) The one name NOT
-flipped: `dupoc_self_coop_unconditional` (`Necessitation/Package`, the headline theorem — a Necessitation statement,
+flipped: `dupoc_self_coop` (`Necessitation/Package`, the headline theorem — a Necessitation statement,
 left as is; `loeb_Dupoc_vs_Dupoc` stays a plain alias of it). No `#print axioms` here (an alias adds no axioms);
 `Audit.lean` prints the new names.
 -/
@@ -50,10 +50,10 @@ left as is; `loeb_Dupoc_vs_Dupoc` stays a plain alias of it). No `#print axioms`
 namespace ArithS
 
 /-! ### The Löb cells on the arith codes (`Cells/DupocMirror`, `JustBot`, `DIMCID`, `CIMCIC`, `JustSlot`,
-`PrudentMirror`; `dupoc_self_coop_unconditional` from `Necessitation/Package`) -/
+`PrudentMirror`; `dupoc_self_coop` from `Necessitation/Package`) -/
 
 /-- Not flipped: the headline theorem of `Necessitation/Package` keeps its name. -/
-alias loeb_Dupoc_vs_Dupoc := dupoc_self_coop_unconditional
+alias loeb_Dupoc_vs_Dupoc := dupoc_self_coop
 
 @[deprecated loeb_Dupoc_vs_Mirror (since := "2026-09-27")] alias dupoc_mirror_coop_unconditional := loeb_Dupoc_vs_Mirror
 @[deprecated loeb_Dupoc_vs_Mirror_of_nec (since := "2026-09-27")] alias dupoc_mirror_coop := loeb_Dupoc_vs_Mirror_of_nec
@@ -238,10 +238,10 @@ alias cimcic_dupoc_finds_guards := loeb_Cimcic_vs_Dupoc_guards_of_nec   -- secon
 alias cimcic_dupoc_finds_guards_unconditional := loeb_Cimcic_vs_Dupoc_guards   -- secondary spelling of the 2026-09-24 layer
 alias just7_dupoc_finds_guards_unconditional := loeb_Just7_vs_Dupoc_guards   -- secondary spelling of the 2026-09-24 layer
 alias cimcic_just7_finds_guards_unconditional := loeb_Cimcic_vs_Just7_guards   -- secondary spelling of the 2026-09-24 layer
-@[deprecated pcode_DupocBot_search (since := "2026-09-27")] alias pcode_DupocBot' := pcode_DupocBot_search
-@[deprecated pcode_PrudentBot_search (since := "2026-09-27")] alias pcode_PrudentBot' := pcode_PrudentBot_search
-@[deprecated pcode_CIMCIC_search (since := "2026-09-27")] alias pcode_CIMCIC' := pcode_CIMCIC_search
-@[deprecated pcode_DIMCID_search (since := "2026-09-27")] alias pcode_DIMCID' := pcode_DIMCID_search
+@[deprecated progCode_DupocBot_search (since := "2026-09-27")] alias progCode_DupocBot' := progCode_DupocBot_search
+@[deprecated progCode_PrudentBot_search (since := "2026-09-27")] alias progCode_PrudentBot' := progCode_PrudentBot_search
+@[deprecated progCode_CIMCIC_search (since := "2026-09-27")] alias progCode_CIMCIC' := progCode_CIMCIC_search
+@[deprecated progCode_DIMCID_search (since := "2026-09-27")] alias progCode_DIMCID' := progCode_DIMCID_search
 @[deprecated mirror_copies2_V (since := "2026-09-27")] alias mirror_copies_V := mirror_copies2_V
 
 /-! ### The floor modules (`Cells/FloorVerdicts`, `Cells/FloorDichotomy`, written after the alias layer): the four

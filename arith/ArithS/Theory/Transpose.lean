@@ -5,8 +5,8 @@ import ArithS.Theory.TheoryAct
 
 The renaming lemma of roadmap §2.4, on Foundation's meta calculus `Derivation2`: a language
 hom `Φ` that maps the axioms of `T` into `T'` sends every `T`-derivation of `Γ` to a
-`T'`-derivation of `Γ.image (lMap Φ)` (`lMapT`), node for node — so the symbol count `mlen`
-is preserved whenever `lMap Φ` is injective on propositions (`mlen_lMapT`). Specialised to
+`T'`-derivation of `Γ.image (lMap Φ)` (`lMapT`), node for node — so the symbol count `proofLenMeta`
+is preserved whenever `lMap Φ` is injective on propositions (`proofLenMeta_lMapT`). Specialised to
 `swap`, whose `lMap` is an involution, and to `TAct`, which is literally closed under `swap`
 (`lMap_swap_mem_TAct`): every `TAct`-proof of `φ` has a twin proof of `swap φ` of the SAME
 length (`transpose_exists`). This is the whole content of "τ-closure" for the red cell.
@@ -72,38 +72,38 @@ variable {L₁ L₂ : Language} [L₁.DecidableEq] [L₁.Encodable] [L₁.LORDef
   [L₂.DecidableEq] [L₂.Encodable] [L₂.LORDefinable]
 variable {T : Theory L₁} [T.Δ₁] {T' : Theory L₂} [T'.Δ₁]
 
-lemma mlen_cast {Γ Δ : Finset (Proposition L₁)} (d : T ⟹₂ Γ) (h : Γ = Δ) :
-    mlen (d.cast h) = mlen d := by
+lemma proofLenMeta_cast {Γ Δ : Finset (Proposition L₁)} (d : T ⟹₂ Γ) (h : Γ = Δ) :
+    proofLenMeta (d.cast h) = proofLenMeta d := by
   subst h; rfl
 
-lemma sqlen_image (Φ : L₁ →ᵥ L₂)
+lemma sequentLenMeta_image (Φ : L₁ →ᵥ L₂)
     (hinj : Function.Injective (Semiformula.lMap Φ : Proposition L₁ → Proposition L₂))
     (Γ : Finset (Proposition L₁)) :
-    sqlen (Γ.image (Semiformula.lMap Φ)) = sqlen Γ := by
-  unfold sqlen
+    sequentLenMeta (Γ.image (Semiformula.lMap Φ)) = sequentLenMeta Γ := by
+  unfold sequentLenMeta
   rw [Finset.sum_image (fun _ _ _ _ h ↦ hinj h)]
-  exact Finset.sum_congr rfl (fun φ _ ↦ flen_lMap Φ φ)
+  exact Finset.sum_congr rfl (fun φ _ ↦ formulaLenMeta_lMap Φ φ)
 
 /-- The transported derivation has the same symbol count. -/
-theorem mlen_lMapT (Φ : L₁ →ᵥ L₂) (hT : ∀ σ ∈ T, Semiformula.lMap Φ σ ∈ T')
+theorem proofLenMeta_lMapT (Φ : L₁ →ᵥ L₂) (hT : ∀ σ ∈ T, Semiformula.lMap Φ σ ∈ T')
     (hinj : Function.Injective (Semiformula.lMap Φ : Proposition L₁ → Proposition L₂))
     {Γ : Finset (Proposition L₁)} (d : T ⟹₂ Γ) :
-    mlen (lMapT Φ hT d) = mlen d := by
+    proofLenMeta (lMapT Φ hT d) = proofLenMeta d := by
   induction d with
-  | closed Γ φ h hn => simp [lMapT, mlen, sqlen_image Φ hinj]
-  | axm σ hT₀ hΓ => simp [lMapT, mlen, sqlen_image Φ hinj]
-  | verum h => simp [lMapT, mlen, sqlen_image Φ hinj]
-  | and h d₁ d₂ ih₁ ih₂ => simp [lMapT, mlen, mlen_cast, sqlen_image Φ hinj, ih₁, ih₂]
-  | or h d ih => simp [lMapT, mlen, mlen_cast, sqlen_image Φ hinj, ih]
-  | all h d ih => simp [lMapT, mlen, mlen_cast, sqlen_image Φ hinj, ih]
-  | exs h t d ih => simp [lMapT, mlen, mlen_cast, sqlen_image Φ hinj, ih, tlen_lMap]
-  | wk d ss ih => simp [lMapT, mlen, sqlen_image Φ hinj, ih]
+  | closed Γ φ h hn => simp [lMapT, proofLenMeta, sequentLenMeta_image Φ hinj]
+  | axm σ hT₀ hΓ => simp [lMapT, proofLenMeta, sequentLenMeta_image Φ hinj]
+  | verum h => simp [lMapT, proofLenMeta, sequentLenMeta_image Φ hinj]
+  | and h d₁ d₂ ih₁ ih₂ => simp [lMapT, proofLenMeta, proofLenMeta_cast, sequentLenMeta_image Φ hinj, ih₁, ih₂]
+  | or h d ih => simp [lMapT, proofLenMeta, proofLenMeta_cast, sequentLenMeta_image Φ hinj, ih]
+  | all h d ih => simp [lMapT, proofLenMeta, proofLenMeta_cast, sequentLenMeta_image Φ hinj, ih]
+  | exs h t d ih => simp [lMapT, proofLenMeta, proofLenMeta_cast, sequentLenMeta_image Φ hinj, ih, termLenMeta_lMap]
+  | wk d ss ih => simp [lMapT, proofLenMeta, sequentLenMeta_image Φ hinj, ih]
   | @shift Γ d ih =>
     have e : Finset.image Rewriting.shift (Finset.image (Semiformula.lMap Φ) Γ) =
         Finset.image (Semiformula.lMap Φ) (Finset.image Rewriting.shift Γ) := by
       simp [Finset.image_image, Function.comp_def, Semiformula.lMap_shift]
-    simp [lMapT, mlen, mlen_cast, ih, e, sqlen_image Φ hinj]
-  | cut d₁ d₂ ih₁ ih₂ => simp [lMapT, mlen, mlen_cast, sqlen_image Φ hinj, ih₁, ih₂]
+    simp [lMapT, proofLenMeta, proofLenMeta_cast, ih, e, sequentLenMeta_image Φ hinj]
+  | cut d₁ d₂ ih₁ ih₂ => simp [lMapT, proofLenMeta, proofLenMeta_cast, sequentLenMeta_image Φ hinj, ih₁, ih₂]
 
 end length
 
@@ -149,9 +149,9 @@ lemma lMap_swap_injective {n : ℕ} {ξ : Type*} :
 /-- **τ-closure of `TAct`, meta form**: every `TAct`-proof of `φ` has a twin proof of
 `swap φ` of exactly the same length. -/
 theorem transpose_exists (φ : Proposition LAct) (d : TAct ⟹₂ {φ}) :
-    ∃ d' : TAct ⟹₂ {Semiformula.lMap swap φ}, mlen d' = mlen d :=
+    ∃ d' : TAct ⟹₂ {Semiformula.lMap swap φ}, proofLenMeta d' = proofLenMeta d :=
   ⟨(lMapT swap (fun _ h ↦ lMap_swap_mem_TAct h) d).cast (by simp),
-    by rw [mlen_cast, mlen_lMapT swap (fun _ h ↦ lMap_swap_mem_TAct h) lMap_swap_injective]⟩
+    by rw [proofLenMeta_cast, proofLenMeta_lMapT swap (fun _ h ↦ lMap_swap_mem_TAct h) lMap_swap_injective]⟩
 
 end swap
 

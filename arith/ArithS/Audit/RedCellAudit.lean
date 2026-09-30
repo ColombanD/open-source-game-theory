@@ -58,7 +58,7 @@ If Dupoc's guard ("Cupod plays C against me") had a proof of length `≤ k`, the
 would return C against Dupoc. This is the truth equation the whole argument turns on. -/
 
 theorem guard_is_about_the_run (k : ℕ)
-    (h : LenProvableV TAct k (guardCode (⌜guardTemplate 0⌝ : ℕ) (Dupoc k) (Cupod k))) :
+    (h : LenBox TAct k (guardCode (⌜guardTemplate 0⌝ : ℕ) (Dupoc k) (Cupod k))) :
     ∃ n, EvalGraph n (Cupod k) (Dupoc k) (Cupod k) 0 :=
   evalGraph_of_guard h
 
@@ -68,9 +68,9 @@ Dupoc's guard is provable iff Cupod's is (`guard_Dupoc_iff_guard_Cupod`); if eit
 Dupoc would both cooperate (its search fired) and defect (Cupod's guard says so): contradiction. -/
 
 theorem guards_both_fail (k : ℕ) :
-    ¬ LenProvableV TAct k (guardCode (⌜guardTemplate 0⌝ : ℕ) (Dupoc k) (Cupod k)) ∧
-    ¬ LenProvableV TAct k (guardCode (⌜guardTemplate 1⌝ : ℕ) (Cupod k) (Dupoc k)) := by
-  have hD : ¬ LenProvableV TAct k (guardCode (⌜guardTemplate 0⌝ : ℕ) (Dupoc k) (Cupod k)) := fun hD ↦ by
+    ¬ LenBox TAct k (guardCode (⌜guardTemplate 0⌝ : ℕ) (Dupoc k) (Cupod k)) ∧
+    ¬ LenBox TAct k (guardCode (⌜guardTemplate 1⌝ : ℕ) (Cupod k) (Dupoc k)) := by
+  have hD : ¬ LenBox TAct k (guardCode (⌜guardTemplate 0⌝ : ℕ) (Dupoc k) (Cupod k)) := fun hD ↦ by
     obtain ⟨n, hn⟩ := evalGraph_of_guard ((guard_Dupoc_iff_guard_Cupod k).mp hD)
     have hcoop : EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 0 := by
       show EvalGraph (1 + 1) (Dupoc k) (Cupod k) (pSearch k (⌜guardTemplate 0⌝ : ℕ) (pConst 0) (pConst 1)) 0
@@ -86,7 +86,7 @@ longer than `k` characters. `guard_fits` says that from some `K` on it is not. -
 
 theorem search_is_real :
     ∃ K, ∀ k ≥ K, ∀ a ≤ 1,
-      flen (Rewriting.emb (guardSentenceA a (Dupoc k) (Cupod k)) : Proposition LAct) ≤ k :=
+      formulaLenMeta (Rewriting.emb (guardSentence a (Dupoc k) (Cupod k)) : Proposition LAct) ≤ k :=
   guard_fits
 
 /-! ### 8. Census -/

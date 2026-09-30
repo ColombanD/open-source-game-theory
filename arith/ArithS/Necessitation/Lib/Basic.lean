@@ -9,8 +9,8 @@ has a FIXED standard length `N_Λ`, in EVERY model of `𝗜𝚺₁` (so the frag
 cost `O(1)`).
 
 * `Lib σ` — "`σ` has a `TAct`-proof of some fixed standard length, in every model";
-  `Lib.of_tact`/`Lib.of_pa`/`Lib.of_isigma1` (transport along `emb` + `lenDerivable_of_proof`
-  + `lenDerivable_of_nat`, the `CutV`/`Prep` route); `Lib.code`, the unfolded reading.
+  `Lib.of_tact`/`Lib.of_pa`/`Lib.of_isigma1` (transport along `emb` + `lenBoxUnbounded_of_proof`
+  + `lenBoxUnbounded_of_nat`, the `CutV`/`Prep` route); `Lib.code`, the unfolded reading.
 * `quote_alls` — the code of the embedded universal closure `∀¹* B` is `qqAlls ⌜B⌝ m`;
   `Lib.univ_code` — the code-level reading a fragment instantiates at its witnesses.
 -/
@@ -25,13 +25,13 @@ open LAct
 `TAct`-proof code of length `≤ N` for ONE standard `N`, in EVERY model of `𝗜𝚺₁`. -/
 def Lib (σ : ArithmeticSentence) : Prop :=
   ∃ N : ℕ, ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁],
-    LenDerivable TAct (N : V) (⌜Semiformula.lMap emb σ⌝ : V)
+    LenBoxUnbounded TAct (N : V) (⌜Semiformula.lMap emb σ⌝ : V)
 
 namespace Lib
 
 /-- Every `TAct`-theorem (embedded form) is a library sentence. -/
 theorem of_tact {σ : ArithmeticSentence} (h : TAct ⊢ Semiformula.lMap emb σ) : Lib σ :=
-  exists_lenDerivable_V_of_proof _ h
+  exists_lenBoxUnbounded_V_of_proof _ h
 
 /-- Every `𝗣𝗔`-theorem is a library sentence (`tact_proves_lMap_emb`). -/
 theorem of_pa {σ : ArithmeticSentence} (h : 𝗣𝗔 ⊢ σ) : Lib σ :=
@@ -52,7 +52,7 @@ theorem of_models {σ : ArithmeticSentence}
 /-- The code-level reading: some standard `N` bounds a proof code of `⌜σ⌝` in every model. -/
 theorem code {σ : ArithmeticSentence} (h : Lib σ) :
     ∃ N : ℕ, ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁],
-      ∃ d, Proof TAct d (⌜Semiformula.lMap emb σ⌝ : V) ∧ dlen TAct d ≤ (N : V) := h
+      ∃ d, Proof TAct d (⌜Semiformula.lMap emb σ⌝ : V) ∧ proofLen TAct d ≤ (N : V) := h
 
 end Lib
 
@@ -88,7 +88,7 @@ quantifiers over the body `B`) has, for some standard `N`, in every model, a pro
 `qqAlls ⌜B⌝ m` of length `≤ N`. -/
 theorem univ_code {m : ℕ} {B : ArithmeticSemisentence m} (h : Lib (∀¹* B)) :
     ∃ N : ℕ, ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁],
-      ∃ d, Proof TAct d (qqAlls (⌜Semiformula.lMap emb B⌝ : V) (m : V)) ∧ dlen TAct d ≤ (N : V) := by
+      ∃ d, Proof TAct d (qqAlls (⌜Semiformula.lMap emb B⌝ : V) (m : V)) ∧ proofLen TAct d ≤ (N : V) := by
   obtain ⟨N, hN⟩ := h.code
   exact ⟨N, fun V _ _ ↦ by rw [← quote_alls]; exact hN V⟩
 

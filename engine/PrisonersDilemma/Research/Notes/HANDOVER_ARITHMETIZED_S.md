@@ -93,22 +93,22 @@ the root): a new module must be imported in BOTH `ArithS.lean` and the relevant 
 
 ## 3. What is achieved (all machine-checked, three standard axioms)
 
-**M1 — the predicate.** Structural `len` on Foundation's codes (Δ₁), meta twins, `dlen ⌜d⌝ = mlen d`;
-`LenProvable`/`LenProvableV` (`□_k`), Δ₁ via PROPERNESS (`fbound k = exp³(12k)+1`); the
+**M1 — the predicate.** Structural `len` on Foundation's codes (Δ₁), meta twins, `proofLen ⌜d⌝ = proofLenMeta d`;
+`LenBoxNat`/`LenBox` (`□_k`), Δ₁ via PROPERNESS (`codeBound k = exp³(12k)+1`); the
 length-restricted Gödel sentence true, provable, with a length lower bound. Files `Length/{Length,
 SequentLength, DerivationLength, MetaLength, Proper}, Box/Bew`.
 
 **M2 — agents and the red cell (T1).** `LAct = ℒₒᵣ + {c_C, c_D}`; `TAct = PA ∪ {c_C ≠ c_D,
-c_D ≠ c_C}` **∪ {axAct, axAct'}** (since 2026-09-12: the constants are `0` and `1` in one of the
+c_D ≠ c_C}` **∪ {actionAxiom, actionAxiom'}** (since 2026-09-12: the constants are `0` and `1` in one of the
 two orders — without it no guard sentence was `TAct`-provable, a vacuity found by the M4 work);
-τ = constant swap, `lenProvable_fbound_swap_iff`. **Program codes on the polynomial pairing
+τ = constant swap, `lenBoxNat_swap_iff`. **Program codes on the polynomial pairing
 `ppair x y = (x+y)²+y`** (since 2026-09-11; Foundation's `pair` has an `if` and is not a term),
-`pConst/…/pSearch k g p q`, `relabel`/`swapcode`, `psubst`; **programs are described by TERMS
-`progT`/`progTT` built from `ppair` and binary numerals** (so a searcher's guard is the
-`bnum k`-instance of a fixed formula: `guardCode_DupocV_eq_instB`, `exists_dupoc_instance`);
+`pConst/…/pSearch k g p q`, `revalue`/`transposeCode`, `substCode`; **programs are described by TERMS
+`codeTerm`/`codeTermMeta` built from `ppair` and binary numerals** (so a searcher's guard is the
+`binNumeral k`-instance of a fixed formula: `guardCode_DupocV_eq_instB`, `exists_dupoc_instance`);
 `guardCode`, the Σ₁ fixpoint evaluator `EvalGraph`. `red_cell : (Dupoc k, Cupod k) = (D, C)` at
 every `k`, non-vacuous (`guard_fits`). Files `Theory/{LangAct, TheoryAct, Transpose, Sound, Symmetry},
-Length/ProofLength, Box/{Cut, BewV}, Agents/{Prog, RelabelTemplate, Bnum, ProgT, Guard, Subst, Template,
+Length/ProofLength, Box/{Cut, BewV}, Agents/{Prog, RevalueTemplate, BinNumeral, CodeTerm, Guard, Subst, Template,
 Fit, Instance, InstanceV}, Eval/{Eval, EvalN, SimTest}, Cells/RedCell`.
 
 **M3 — `S` relative to PA (T2), as three theorems (DEFERRED, do not extend).** T2-CORE
@@ -118,19 +118,19 @@ Fit, Instance, InstanceV}, Eval/{Eval, EvalN, SimTest}, Cells/RedCell`.
 
 **M4 — PBLT and the Dupoc cell in PA-`S`, conditional on ONE hypothesis (2026-09-11/12).**
 Following Critch 2019's UNIFORM proof (one PA proof with `k` free; the bounded steps are
-V-generic lemmas on codes + the completeness theorem): `CutV` (bounded D2 on codes, `LenDerivable
-T k φ := ∃ d, Proof T d φ ∧ dlen T d ≤ k`), `ProperV` (properness in every model:
-`lenDerivable_iff_lenProvableV`), `InstV` (`instB n k := subst (bnum k ∷ 0) n`, the parametric
-box `bewB`, Quantifier Distribution `lenDerivable_instB_V`), `Diag` (parametric diagonal lemma
-over `TAct`; `tact_complete'` = completeness on the two standard readings), `NumeralFacts`
-(short proofs of `c ≤ bnumT k`), `Transparency` (Dupoc's truth equation and search clause in
+V-generic lemmas on codes + the completeness theorem): `CutV` (bounded D2 on codes, `LenBoxUnbounded
+T k φ := ∃ d, Proof T d φ ∧ proofLen T d ≤ k`), `ProperBound` (properness in every model:
+`lenBoxUnbounded_iff_lenBox`), `InstV` (`instB n k := subst (binNumeral k ∷ 0) n`, the parametric
+box `bewB`, Quantifier Distribution `lenBoxUnbounded_instB_V`), `Diag` (parametric diagonal lemma
+over `TAct`; `TAct_complete_of_readings` = completeness on the two standard readings), `NumeralFacts`
+(short proofs of `c ≤ binNumeralMeta k`), `Transparency` (Dupoc's truth equation and search clause in
 every model), `Assembly/Prep` (Cupod's instance, the conjunction family `pConj = qDupoc ⋏
 qCupod`, ∧-elimination on codes, `Box_g`, `psi` with `psi_fixed_point`, the hypothesis
 structure), `Assembly/Uniform` (`chain_V`, `psi_true_V`, **`pblt_uniform`**), `Assembly/Cell`
-(**`dupoc_self_coop`**, `dupoc_finds_guard`). The hypothesis:
+(**`dupoc_self_coop_of_nec`**, `dupoc_finds_guard`). The hypothesis:
 `BoundedInnerNec d := ∀ χ, ∃ C, ∀ V k, □_{‖k‖³} χ(k) → ∃ e ≤ C·(‖k‖^{3d}+1), □_e (□_{‖k‖³} χ(k))`
 inside every model — Critch's Property 4 / assumption (d), polynomial expansion. (Its first
-formulation with a uniform `c₁·flen χ` term was UNSATISFIABLE — the target names `χ` by a unary
+formulation with a uniform `c₁·formulaLenMeta χ` term was UNSATISFIABLE — the target names `χ` by a unary
 numeral — and was restated; brief §8.)
 
 **U10 (started 2026-09-12, branch `-u10`) — discharging `BoundedInnerNec 3`.** The verification
@@ -138,11 +138,11 @@ proof: a `TAct`-proof code that follows the tree of a derivation `ρ`, introduce
 talks about as an EIGENVARIABLE via ∃-elimination from a finite library of universal lemma-
 sentences, never writes a code as a numeral, expected cost `E(a) = O(a³)`. LANDED (all green,
 census 292): `Necessitation/Primitives` (`useLemmaCode`, `elimExistsCode`), `Lib/Basic`
-(`Lib σ := ∃ N, ∀ V, LenDerivable TAct N ⌜lMap emb σ⌝`, `Lib.univ_code`), `Lib/Sets` (26 rows),
-`Lib/Formulas` (84), `Lib/Lengths` (35), `Lib/Nodes` (the ten `Intro_tag`, ten `Dlen_tag`, ten
+(`Lib σ := ∃ N, ∀ V, LenBoxUnbounded TAct N ⌜lMap emb σ⌝`, `Lib.univ_code`), `Lib/Sets` (26 rows),
+`Lib/Formulas` (84), `Lib/Lengths` (35), `Lib/Nodes` (the ten `Intro_tag`, ten `ProofLen_tag`, ten
 node-code totalities, the axiom recognizer incl. induction instances), `Lib/Bridge` (ℒₒᵣ/LAct,
 49 rows), `Steps` (`useHornCode`, `useHornAndCode`, `introFactCode`, the fragment protocol,
-`instOuterAt_subst`), `ShiftLen` (free-variable occurrence counts; `setLen (setShift s) ≤ setLen s
+`instOuterAt_subst`), `ShiftLen` (free-variable occurrence counts; `sequentLen (setShift s) ≤ sequentLen s
 + fvOccS s` — the additive bound; the doubling bound composes exponentially), `Lib/Walk` +
 `WalkLemmas` (`lt` rows, closed symbol rows as chain numerals `cT`, `bvOcc`, `fvOccF_subst_le`,
 `instOuterAt_subst_bvList`, `freeIter_subst_listToVec`).
@@ -163,9 +163,9 @@ one workspace; results record; roadmap status log; the M4 brief and two U10 desi
 here (items 1–3 of it, `Chain`/`RowInst`/`describeSteps`, are DONE; item 4, the ten fragments, is
 DONE; item 5 is in progress). In brief: finish `Cert`'s `_ok` theorems and the remaining producers
 (deciding the `tvPiFact`/`utvPiFact` question first), apply `Verify` §3.6's clause edit and then
-uniqueness/`verifySteps`/`verifySteps_ok`/`dlen_verifySteps_le`, write the prologue producers that
+uniqueness/`verifySteps`/`verifySteps_ok`/`proofLen_verifySteps_le`, write the prologue producers that
 discharge the fragments' layout hypotheses, then the top and `boundedInnerNec_three`, which retires
-the hypothesis and makes `dupoc_self_coop` UNCONDITIONAL. Estimate from here: days to a couple of
+the hypothesis and makes `dupoc_self_coop_of_nec` UNCONDITIONAL. Estimate from here: days to a couple of
 weeks of agent work, the prologue producers and the top being the bulk; the per-tag layout theorems
 (`DESIGN_fragments` §9 risk 1) remain the place where surprises would appear.
 
@@ -206,13 +206,13 @@ sentences), syncing notes to `-s`, re-pinning LeanInteract.
   the kernel builds a numeral over `LEAN_NAT_MAX_SIZE`; prove for a VARIABLE sentence and
   instantiate. Never put a closed numeral inside a Δ₁ fixpoint blueprint (26 GB elaboration).
   In `TermRec`/`UformulaRec1` blueprints, ∃-wrap graph clauses (`∃ s, !listSumDef s v' ∧ y = s`).
-* Closed constants built from a giant DSL template (`flen (guardTemplate 0)`, `⌜guardTemplate 0⌝ ≤ ⌜guardTemplate 1⌝`)
+* Closed constants built from a giant DSL template (`formulaLenMeta (guardTemplate 0)`, `⌜guardTemplate 0⌝ ≤ ⌜guardTemplate 1⌝`)
   must never be evaluated: package them existentially, case-split with `le_total`.
-* Foundation numerals are unary; every budget entering a sentence goes through `bnum`; the code
-  of a binary numeral term is exponential under Cantor pairing (`size_bnum_ge`).
+* Foundation numerals are unary; every budget entering a sentence goes through `binNumeral`; the code
+  of a binary numeral term is exponential under Cantor pairing (`size_binNumeral_ge`).
 * `lake env lean` output is block-buffered when redirected; bisect slow files by truncation.
 * `Formula` is ambiguous with Foundation's: write `PD.Formula`. `simp` never rewrites the
-  instance-implicit structure argument of `Semiformula.Eval` — `rw [stdAct_lMap_emb]`.
+  instance-implicit structure argument of `Semiformula.Eval` — `rw [stdReadingNat_lMap_emb]`.
 * `k̂`/`lit` are not identifiers; uniform existential constants must be built as pure terms;
   `set` does not fold into later facts; pin `(k := 0)` on `qqTwo_semiterm.isUTerm`.
 * U10 specifics: witness lists are the row's DSL variable list read RIGHT-TO-LEFT; Foundation's
@@ -263,8 +263,8 @@ line is pre-existing); zero `sorry`, zero `axiom` declarations, zero `native_dec
 
 **THE RESULT.** `BoundedInnerNec` — the one hypothesis M4 rested on — is a THEOREM at degree 16,
 and the headline results are unconditional:
-`ArithS.boundedInnerNec_sixteen`, `ArithS.dupoc_self_coop_unconditional`,
-`ArithS.pblt_unconditional`, all in `Necessitation/Package.lean` §4.
+`ArithS.boundedInnerNec_sixteen`, `ArithS.dupoc_self_coop`,
+`ArithS.pblt`, all in `Necessitation/Package.lean` §4.
 
 **The chain, bottom to top** (all in `arith/ArithS/Necessitation/`): the row library and step
 language (`Lib/`, `Steps`, `Chain`) → the formula walk (`Describe`) → numeral provers (`NumSteps`,
@@ -309,7 +309,7 @@ Branch `colomban-route-b` (pushed by the user). Gate: `lake build ArithS` 3350 j
 (`MERGE_CROSSROAD.md`); the matrix is re-proved cell by cell (`ROUTE_B_SCOPE.md`, `ROUTE_B_CENSUS.md`):
 112 of 155 cells have an `S'` statement, 97 agree, 15 disagree (`ARITHMETIZED_S_RESULTS.md`, the last
 three addenda — DIMCID's row). Route (c) landed: templates may read the node budget (`guardCodeB`, slot
-`#6`), `gsubst`'s seven-variable middle case discharged the `.sim` debt. Floors are DROPPED from `S'`
+`#6`), `substTemplate`'s seven-variable middle case discharged the `.sim` debt. Floors are DROPPED from `S'`
 (user decision 2026-09-23). The trusted base is described in `SPRIME_DESIGN_RATIONALE.md`; the traps in
 `ARITH_TRAPS.md`; the layer table in the repo's `CLAUDE.md` Part III. Next, when resumed: port the
 flips back into the engine as a sound reading rule (Tier-2 constructor flow), or a body slot for

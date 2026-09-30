@@ -10,9 +10,9 @@ The rows `Prologue.lean` needs beyond the top table, each with its `Lib` block (
 The applicability lemmas take the table readings at the row's index as EXPLICIT hypotheses — no table
 predicate is defined here (`Prologue.lean`'s `ProTable` places these rows and the certification tail).
 
-Currently: `setLenSingLe` (155) — `t = insert x ∅ → l = setLen t → lx = |x| → l ≤ lx`, the base of the
-`setLen` fold (`DESIGN_fragments.md` §3.4; the library's `setLenInsertLe` needs a length object of the
-set below, and the empty set has none in any table); `setLenEmptyLe` (156) — `l = setLen ∅ → l ≤ 0`, the
+Currently: `sequentLenSingLe` (155) — `t = insert x ∅ → l = sequentLen t → lx = |x| → l ≤ lx`, the base of the
+`sequentLen` fold (`DESIGN_fragments.md` §3.4; the library's `sequentLenInsertLe` needs a length object of the
+set below, and the empty set has none in any table); `sequentLenEmptyLe` (156) — `l = sequentLen ∅ → l ≤ 0`, the
 EMPTY sequent's layout; and two library rows that were in no piece table, `congSubsetL` (157) and
 `congSetShiftR` (158) (their `Lib` and `inst_` blocks live in `Lib/Frag.lean` / `RowInstB.lean`).
 -/
@@ -36,27 +36,27 @@ set_option maxRecDepth 20000
 
 section proLib
 
-/-- `t = insert x ∅ → l = setLen t → lx = |x| → l ≤ lx` (the base of the `setLen` fold: a singleton is at most its member). -/
-noncomputable def setLenSingLeB : ArithmeticSemisentence 4 :=
-  “lx l t x. !insertDef t x 0 → !(setLenDef LAct) l t → !(formulaLenGraph LAct) lx x → l ≤ lx”
-noncomputable def setLenSingLe : ArithmeticSentence := ∀¹* setLenSingLeB
-lemma models_setLenSingLe : V↓[ℒₒᵣ] ⊧ setLenSingLe ↔ ∀ lx l t x : V, t = insert x (0 : V) → l = setLen LAct t → lx = formulaLen LAct x → l ≤ lx := by
-  simp [setLenSingLe, setLenSingLeB, models_iff, Matrix.vecForall_iff, setLen_defined.iff, formulaLen.defined.iff]
-theorem pa_proves_setLenSingLe : 𝗣𝗔 ⊢ setLenSingLe :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_setLenSingLe.mpr fun _ _ _ _ h₁ h₂ h₃ ↦ by subst_vars; rw [setLen_insert_of_not_mem_V (L := LAct) (by simp), ← emptyset_def, setLen_empty, zero_add]
-theorem lib_setLenSingLe : Lib setLenSingLe := Lib.of_pa pa_proves_setLenSingLe
+/-- `t = insert x ∅ → l = sequentLen t → lx = |x| → l ≤ lx` (the base of the `sequentLen` fold: a singleton is at most its member). -/
+noncomputable def sequentLenSingLeB : ArithmeticSemisentence 4 :=
+  “lx l t x. !insertDef t x 0 → !(sequentLenDef LAct) l t → !(formulaLenGraph LAct) lx x → l ≤ lx”
+noncomputable def sequentLenSingLe : ArithmeticSentence := ∀¹* sequentLenSingLeB
+lemma models_sequentLenSingLe : V↓[ℒₒᵣ] ⊧ sequentLenSingLe ↔ ∀ lx l t x : V, t = insert x (0 : V) → l = sequentLen LAct t → lx = formulaLen LAct x → l ≤ lx := by
+  simp [sequentLenSingLe, sequentLenSingLeB, models_iff, Matrix.vecForall_iff, sequentLen_defined.iff, formulaLen.defined.iff]
+theorem pa_proves_sequentLenSingLe : 𝗣𝗔 ⊢ sequentLenSingLe :=
+  Lib.pa_proves_of_models fun _ _ _ ↦ models_sequentLenSingLe.mpr fun _ _ _ _ h₁ h₂ h₃ ↦ by subst_vars; rw [sequentLen_insert_of_not_mem_V (L := LAct) (by simp), ← emptyset_def, sequentLen_empty, zero_add]
+theorem lib_sequentLenSingLe : Lib sequentLenSingLe := Lib.of_pa pa_proves_sequentLenSingLe
 
-/-- `l = setLen ∅ → l ≤ 0` (the empty sequent: its length object is bounded by the numeral `bnum 0 = 𝟎`). -/
-noncomputable def setLenEmptyLeB : ArithmeticSemisentence 1 :=
-  “l. !(setLenDef LAct) l 0 → l ≤ 0”
-noncomputable def setLenEmptyLe : ArithmeticSentence := ∀¹* setLenEmptyLeB
-lemma models_setLenEmptyLe : V↓[ℒₒᵣ] ⊧ setLenEmptyLe ↔ ∀ l : V, l = setLen LAct (0 : V) → l ≤ (0 : V) := by
-  simp [setLenEmptyLe, setLenEmptyLeB, models_iff, Matrix.vecForall_iff, setLen_defined.iff]
-theorem pa_proves_setLenEmptyLe : 𝗣𝗔 ⊢ setLenEmptyLe :=
-  Lib.pa_proves_of_models fun _ _ _ ↦ models_setLenEmptyLe.mpr fun _ h₁ ↦ by subst_vars; rw [← emptyset_def, setLen_empty]; try exact le_refl _
-theorem lib_setLenEmptyLe : Lib setLenEmptyLe := Lib.of_pa pa_proves_setLenEmptyLe
+/-- `l = sequentLen ∅ → l ≤ 0` (the empty sequent: its length object is bounded by the numeral `binNumeral 0 = 𝟎`). -/
+noncomputable def sequentLenEmptyLeB : ArithmeticSemisentence 1 :=
+  “l. !(sequentLenDef LAct) l 0 → l ≤ 0”
+noncomputable def sequentLenEmptyLe : ArithmeticSentence := ∀¹* sequentLenEmptyLeB
+lemma models_sequentLenEmptyLe : V↓[ℒₒᵣ] ⊧ sequentLenEmptyLe ↔ ∀ l : V, l = sequentLen LAct (0 : V) → l ≤ (0 : V) := by
+  simp [sequentLenEmptyLe, sequentLenEmptyLeB, models_iff, Matrix.vecForall_iff, sequentLen_defined.iff]
+theorem pa_proves_sequentLenEmptyLe : 𝗣𝗔 ⊢ sequentLenEmptyLe :=
+  Lib.pa_proves_of_models fun _ _ _ ↦ models_sequentLenEmptyLe.mpr fun _ h₁ ↦ by subst_vars; rw [← emptyset_def, sequentLen_empty]; try exact le_refl _
+theorem lib_sequentLenEmptyLe : Lib sequentLenEmptyLe := Lib.of_pa pa_proves_sequentLenEmptyLe
 
-/-- `x = y → x ≤ y` (the `exs` witness term: from `eqTotal`'s eigenvariable `l = bnum |t|` to `leFact l (bnum |t|)`; the library's `leOfEq` has no `inst_` block). -/
+/-- `x = y → x ≤ y` (the `exs` witness term: from `eqTotal`'s eigenvariable `l = binNumeral |t|` to `leFact l (binNumeral |t|)`; the library's `leOfEq` has no `inst_` block). -/
 noncomputable def leOfEqPB : ArithmeticSemisentence 2 :=
   “y x. x = y → x ≤ y”
 noncomputable def leOfEqP : ArithmeticSentence := ∀¹* leOfEqPB
@@ -72,49 +72,49 @@ end proLib
 
 section proRowInst
 
-/-! ### `setLenSingLe` — `“lx l t x. …”`, `m = 4` -/
+/-! ### `sequentLenSingLe` — `“lx l t x. …”`, `m = 4` -/
 
-noncomputable def row_setLenSingLe_as : List V := [subst LAct (listToVec [bv 2, bv 3, (𝟎 : V)]) Pinsert, subst LAct (listToVec [bv 1, bv 2]) PsetLen, subst LAct (listToVec [bv 0, bv 3]) PflenG]
-noncomputable def row_setLenSingLe_c : V := subst LAct (listToVec [bv 1, bv 0]) Ple
+noncomputable def row_sequentLenSingLe_as : List V := [subst LAct (listToVec [bv 2, bv 3, (𝟎 : V)]) Pinsert, subst LAct (listToVec [bv 1, bv 2]) PsetLen, subst LAct (listToVec [bv 0, bv 3]) PflenG]
+noncomputable def row_sequentLenSingLe_c : V := subst LAct (listToVec [bv 1, bv 0]) Ple
 
-theorem quote_row_setLenSingLe : (⌜Semiformula.lMap emb setLenSingLeB⌝ : V) = impChain LAct row_setLenSingLe_as row_setLenSingLe_c := by
-  unfold setLenSingLeB row_setLenSingLe_as row_setLenSingLe_c PflenG Pinsert Ple PsetLen leS
+theorem quote_row_sequentLenSingLe : (⌜Semiformula.lMap emb sequentLenSingLeB⌝ : V) = impChain LAct row_sequentLenSingLe_as row_sequentLenSingLe_c := by
+  unfold sequentLenSingLeB row_sequentLenSingLe_as row_sequentLenSingLe_c PflenG Pinsert Ple PsetLen leS
   all_goals row_shapeB
 
-lemma isSemiformula_setLenSingLe_c : IsSemiformula LAct ((4 : ℕ) : V) row_setLenSingLe_c := by
-  unfold row_setLenSingLe_c
+lemma isSemiformula_sequentLenSingLe_c : IsSemiformula LAct ((4 : ℕ) : V) row_sequentLenSingLe_c := by
+  unfold row_sequentLenSingLe_c
   exact isSemiformula_substRow isSemiformula_Ple _ (by rfl) (by row_entriesB)
 
-/-- `setLenSingLe` at the witnesses `[wx, wt, wl, wlx]` (the DSL variables right-to-left). -/
-lemma inst_setLenSingLe {wx wt wl wlx : V} (hwx : IsSemiterm LAct 0 wx) (hwt : IsSemiterm LAct 0 wt) (hwl : IsSemiterm LAct 0 wl) (hwlx : IsSemiterm LAct 0 wlx) :
-    row_setLenSingLe_as.map (instOuter LAct [wx, wt, wl, wlx]) = [insFact wt wx (𝟎 : V), setLenFact wl wt, lenFact wlx wx] ∧
-    instOuter LAct [wx, wt, wl, wlx] row_setLenSingLe_c = leFact wl wlx := by
+/-- `sequentLenSingLe` at the witnesses `[wx, wt, wl, wlx]` (the DSL variables right-to-left). -/
+lemma inst_sequentLenSingLe {wx wt wl wlx : V} (hwx : IsSemiterm LAct 0 wx) (hwt : IsSemiterm LAct 0 wt) (hwl : IsSemiterm LAct 0 wl) (hwlx : IsSemiterm LAct 0 wlx) :
+    row_sequentLenSingLe_as.map (instOuter LAct [wx, wt, wl, wlx]) = [insFact wt wx (𝟎 : V), sequentLenFact wl wt, lenFact wlx wx] ∧
+    instOuter LAct [wx, wt, wl, wlx] row_sequentLenSingLe_c = leFact wl wlx := by
   have hes : ∀ e ∈ ([wx, wt, wl, wlx] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwx, List.forall_mem_cons.mpr ⟨hwt, List.forall_mem_cons.mpr ⟨hwl, List.forall_mem_cons.mpr ⟨hwlx, List.forall_mem_nil _⟩⟩⟩⟩)
-  unfold row_setLenSingLe_as row_setLenSingLe_c
+  unfold row_sequentLenSingLe_as row_sequentLenSingLe_c
   simp only [List.map_cons, List.map_nil]
   rw [instOuter_subst_listToVec _ isSemiformula_Pinsert (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PsetLen (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PflenG (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Ple (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
-/-! ### `setLenEmptyLe` — `“l. …”`, `m = 1` -/
+/-! ### `sequentLenEmptyLe` — `“l. …”`, `m = 1` -/
 
-noncomputable def row_setLenEmptyLe_as : List V := [subst LAct (listToVec [bv 0, (𝟎 : V)]) PsetLen]
-noncomputable def row_setLenEmptyLe_c : V := subst LAct (listToVec [bv 0, (𝟎 : V)]) Ple
+noncomputable def row_sequentLenEmptyLe_as : List V := [subst LAct (listToVec [bv 0, (𝟎 : V)]) PsetLen]
+noncomputable def row_sequentLenEmptyLe_c : V := subst LAct (listToVec [bv 0, (𝟎 : V)]) Ple
 
-theorem quote_row_setLenEmptyLe : (⌜Semiformula.lMap emb setLenEmptyLeB⌝ : V) = impChain LAct row_setLenEmptyLe_as row_setLenEmptyLe_c := by
-  unfold setLenEmptyLeB row_setLenEmptyLe_as row_setLenEmptyLe_c Ple PsetLen leS
+theorem quote_row_sequentLenEmptyLe : (⌜Semiformula.lMap emb sequentLenEmptyLeB⌝ : V) = impChain LAct row_sequentLenEmptyLe_as row_sequentLenEmptyLe_c := by
+  unfold sequentLenEmptyLeB row_sequentLenEmptyLe_as row_sequentLenEmptyLe_c Ple PsetLen leS
   all_goals row_shapeB
 
-lemma isSemiformula_setLenEmptyLe_c : IsSemiformula LAct ((1 : ℕ) : V) row_setLenEmptyLe_c := by
-  unfold row_setLenEmptyLe_c
+lemma isSemiformula_sequentLenEmptyLe_c : IsSemiformula LAct ((1 : ℕ) : V) row_sequentLenEmptyLe_c := by
+  unfold row_sequentLenEmptyLe_c
   exact isSemiformula_substRow isSemiformula_Ple _ (by rfl) (by row_entriesB)
 
-/-- `setLenEmptyLe` at the witnesses `[wl]` (the DSL variables right-to-left). -/
-lemma inst_setLenEmptyLe {wl : V} (hwl : IsSemiterm LAct 0 wl) :
-    row_setLenEmptyLe_as.map (instOuter LAct [wl]) = [setLenFact wl (𝟎 : V)] ∧
-    instOuter LAct [wl] row_setLenEmptyLe_c = leFact wl (𝟎 : V) := by
+/-- `sequentLenEmptyLe` at the witnesses `[wl]` (the DSL variables right-to-left). -/
+lemma inst_sequentLenEmptyLe {wl : V} (hwl : IsSemiterm LAct 0 wl) :
+    row_sequentLenEmptyLe_as.map (instOuter LAct [wl]) = [sequentLenFact wl (𝟎 : V)] ∧
+    instOuter LAct [wl] row_sequentLenEmptyLe_c = leFact wl (𝟎 : V) := by
   have hes : ∀ e ∈ ([wl] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwl, List.forall_mem_nil _⟩)
-  unfold row_setLenEmptyLe_as row_setLenEmptyLe_c
+  unfold row_sequentLenEmptyLe_as row_sequentLenEmptyLe_c
   simp only [List.map_cons, List.map_nil]
   rw [instOuter_subst_listToVec _ isSemiformula_PsetLen (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Ple (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
@@ -150,8 +150,8 @@ end proRowInst
 
 section proRowsTable
 
-def pIdx_setLenSingLe : ℕ := 155
-def pIdx_setLenEmptyLe : ℕ := 156
+def pIdx_sequentLenSingLe : ℕ := 155
+def pIdx_sequentLenEmptyLe : ℕ := 156
 def pIdx_congSubsetL : ℕ := 157
 def pIdx_congSetShiftR : ℕ := 158
 def pIdx_leOfEqP : ℕ := 159
@@ -159,8 +159,8 @@ def proExtraRowCount : ℕ := 5
 
 /-- The extra rows at `topRowCount + k`, in index order (append-only). -/
 noncomputable def proExtraRows : List WRow := [
-  ⟨4, setLenSingLeB, lib_setLenSingLe⟩,
-  ⟨1, setLenEmptyLeB, lib_setLenEmptyLe⟩,
+  ⟨4, sequentLenSingLeB, lib_sequentLenSingLe⟩,
+  ⟨1, sequentLenEmptyLeB, lib_sequentLenEmptyLe⟩,
   ⟨3, congSubsetLB, lib_congSubsetL⟩,
   ⟨3, congSetShiftRB, lib_congSetShiftR⟩,
   ⟨2, leOfEqPB, lib_leOfEqP⟩
@@ -170,15 +170,15 @@ lemma proExtraRows_length : proExtraRows.length = proExtraRowCount := rfl
 
 /-! ### The piece table -/
 
-noncomputable def ppiece_setLenSingLe : V := ⟪(0 : V), vecOf row_setLenSingLe_as, row_setLenSingLe_c⟫
-noncomputable def ppiece_setLenEmptyLe : V := ⟪(0 : V), vecOf row_setLenEmptyLe_as, row_setLenEmptyLe_c⟫
+noncomputable def ppiece_sequentLenSingLe : V := ⟪(0 : V), vecOf row_sequentLenSingLe_as, row_sequentLenSingLe_c⟫
+noncomputable def ppiece_sequentLenEmptyLe : V := ⟪(0 : V), vecOf row_sequentLenEmptyLe_as, row_sequentLenEmptyLe_c⟫
 noncomputable def ppiece_congSubsetL : V := ⟪(0 : V), vecOf row_congSubsetL_as, row_congSubsetL_c⟫
 noncomputable def ppiece_congSetShiftR : V := ⟪(0 : V), vecOf row_congSetShiftR_as, row_congSetShiftR_c⟫
 noncomputable def ppiece_leOfEqP : V := ⟪(0 : V), vecOf row_leOfEqP_as, row_leOfEqP_c⟫
 
 noncomputable def proExtraPieceList : List V := [
-  ppiece_setLenSingLe,
-  ppiece_setLenEmptyLe,
+  ppiece_sequentLenSingLe,
+  ppiece_sequentLenEmptyLe,
   ppiece_congSubsetL,
   ppiece_congSetShiftR,
   ppiece_leOfEqP
@@ -202,35 +202,35 @@ lemma mkStep_proPieces_lt (i : ℕ) (hi : i < topRowCount) (ev : V) :
     mkStep proPieces (i : V) ev = mkStep topPieces (i : V) ev := by
   rw [mkStep, mkStep, proPieces_nth_lt i hi]
 
-lemma proPieces_setLenSingLe : (proPieces : V).[((pIdx_setLenSingLe : ℕ) : V)] = ppiece_setLenSingLe := by
+lemma proPieces_sequentLenSingLe : (proPieces : V).[((pIdx_sequentLenSingLe : ℕ) : V)] = ppiece_sequentLenSingLe := by
   unfold proPieces
-  rw [nth_vecOf _ pIdx_setLenSingLe (Nat.lt_of_sub_eq_succ rfl)]
+  rw [nth_vecOf _ pIdx_sequentLenSingLe (Nat.lt_of_sub_eq_succ rfl)]
   rfl
 
-lemma pmk_setLenSingLe (ev : V) :
-    mkStep proPieces ((pIdx_setLenSingLe : ℕ) : V) ev = sUseHorn ((pIdx_setLenSingLe : ℕ) : V) ev (vecOf row_setLenSingLe_as) row_setLenSingLe_c := by
-  rw [mkStep, proPieces_setLenSingLe]
-  simp [ppiece_setLenSingLe, sUseHorn]
+lemma pmk_sequentLenSingLe (ev : V) :
+    mkStep proPieces ((pIdx_sequentLenSingLe : ℕ) : V) ev = sUseHorn ((pIdx_sequentLenSingLe : ℕ) : V) ev (vecOf row_sequentLenSingLe_as) row_sequentLenSingLe_c := by
+  rw [mkStep, proPieces_sequentLenSingLe]
+  simp [ppiece_sequentLenSingLe, sUseHorn]
 
-lemma ptag_setLenSingLe {W : V} (hWp : W = proPieces) (ev : V) : sTag (mkStep W (155 : V) ev) = 0 := by
+lemma ptag_sequentLenSingLe {W : V} (hWp : W = proPieces) (ev : V) : sTag (mkStep W (155 : V) ev) = 0 := by
   subst hWp
-  have hk : ((pIdx_setLenSingLe : ℕ) : V) = (155 : V) := by simp [pIdx_setLenSingLe]
-  rw [← hk, pmk_setLenSingLe]; simp
+  have hk : ((pIdx_sequentLenSingLe : ℕ) : V) = (155 : V) := by simp [pIdx_sequentLenSingLe]
+  rw [← hk, pmk_sequentLenSingLe]; simp
 
-lemma proPieces_setLenEmptyLe : (proPieces : V).[((pIdx_setLenEmptyLe : ℕ) : V)] = ppiece_setLenEmptyLe := by
+lemma proPieces_sequentLenEmptyLe : (proPieces : V).[((pIdx_sequentLenEmptyLe : ℕ) : V)] = ppiece_sequentLenEmptyLe := by
   unfold proPieces
-  rw [nth_vecOf _ pIdx_setLenEmptyLe (Nat.lt_of_sub_eq_succ rfl)]
+  rw [nth_vecOf _ pIdx_sequentLenEmptyLe (Nat.lt_of_sub_eq_succ rfl)]
   rfl
 
-lemma pmk_setLenEmptyLe (ev : V) :
-    mkStep proPieces ((pIdx_setLenEmptyLe : ℕ) : V) ev = sUseHorn ((pIdx_setLenEmptyLe : ℕ) : V) ev (vecOf row_setLenEmptyLe_as) row_setLenEmptyLe_c := by
-  rw [mkStep, proPieces_setLenEmptyLe]
-  simp [ppiece_setLenEmptyLe, sUseHorn]
+lemma pmk_sequentLenEmptyLe (ev : V) :
+    mkStep proPieces ((pIdx_sequentLenEmptyLe : ℕ) : V) ev = sUseHorn ((pIdx_sequentLenEmptyLe : ℕ) : V) ev (vecOf row_sequentLenEmptyLe_as) row_sequentLenEmptyLe_c := by
+  rw [mkStep, proPieces_sequentLenEmptyLe]
+  simp [ppiece_sequentLenEmptyLe, sUseHorn]
 
-lemma ptag_setLenEmptyLe {W : V} (hWp : W = proPieces) (ev : V) : sTag (mkStep W (156 : V) ev) = 0 := by
+lemma ptag_sequentLenEmptyLe {W : V} (hWp : W = proPieces) (ev : V) : sTag (mkStep W (156 : V) ev) = 0 := by
   subst hWp
-  have hk : ((pIdx_setLenEmptyLe : ℕ) : V) = (156 : V) := by simp [pIdx_setLenEmptyLe]
-  rw [← hk, pmk_setLenEmptyLe]; simp
+  have hk : ((pIdx_sequentLenEmptyLe : ℕ) : V) = (156 : V) := by simp [pIdx_sequentLenEmptyLe]
+  rw [← hk, pmk_sequentLenEmptyLe]; simp
 
 lemma proPieces_congSubsetL : (proPieces : V).[((pIdx_congSubsetL : ℕ) : V)] = ppiece_congSubsetL := by
   unfold proPieces
@@ -274,45 +274,45 @@ lemma pmk_leOfEqP (ev : V) :
 
 /-! ### The per-row applicability lemmas `pok_<row>` (against explicit table readings) -/
 
-/-- Row `setLenSingLe` as a step, against the table readings `hlen`/`hrow` at its index. -/
-lemma pok_setLenSingLe {tbl N E Γ W : V} {wx wt wl wlx : V} (htbl : TableOK tbl N) (hWp : W = proPieces)
-    (hlen : ((pIdx_setLenSingLe : ℕ) : V) < len tbl)
-    (hrow : rowM tbl.[((pIdx_setLenSingLe : ℕ) : V)] = ((4 : ℕ) : V) ∧
-      rowB tbl.[((pIdx_setLenSingLe : ℕ) : V)] = impChainV LAct (vecOf row_setLenSingLe_as) row_setLenSingLe_c)
-    (hΓ : IsFormulaSet LAct Γ) (hwx : IsSemiterm LAct 0 wx) (hEwx : termLen LAct wx ≤ E) (hwt : IsSemiterm LAct 0 wt) (hEwt : termLen LAct wt ≤ E) (hwl : IsSemiterm LAct 0 wl) (hEwl : termLen LAct wl ≤ E) (hwlx : IsSemiterm LAct 0 wlx) (hEwlx : termLen LAct wlx ≤ E) (hmem0 : neg LAct (insFact wt wx (𝟎 : V)) ∈ Γ) (hmem1 : neg LAct (setLenFact wl wt) ∈ Γ) (hmem2 : neg LAct (lenFact wlx wx) ∈ Γ) :
+/-- Row `sequentLenSingLe` as a step, against the table readings `hlen`/`hrow` at its index. -/
+lemma pok_sequentLenSingLe {tbl N E Γ W : V} {wx wt wl wlx : V} (htbl : TableOK tbl N) (hWp : W = proPieces)
+    (hlen : ((pIdx_sequentLenSingLe : ℕ) : V) < len tbl)
+    (hrow : rowM tbl.[((pIdx_sequentLenSingLe : ℕ) : V)] = ((4 : ℕ) : V) ∧
+      rowB tbl.[((pIdx_sequentLenSingLe : ℕ) : V)] = impChainV LAct (vecOf row_sequentLenSingLe_as) row_sequentLenSingLe_c)
+    (hΓ : IsFormulaSet LAct Γ) (hwx : IsSemiterm LAct 0 wx) (hEwx : termLen LAct wx ≤ E) (hwt : IsSemiterm LAct 0 wt) (hEwt : termLen LAct wt ≤ E) (hwl : IsSemiterm LAct 0 wl) (hEwl : termLen LAct wl ≤ E) (hwlx : IsSemiterm LAct 0 wlx) (hEwlx : termLen LAct wlx ≤ E) (hmem0 : neg LAct (insFact wt wx (𝟎 : V)) ∈ Γ) (hmem1 : neg LAct (sequentLenFact wl wt) ∈ Γ) (hmem2 : neg LAct (lenFact wlx wx) ∈ Γ) :
     StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 155 ?[wx, wt, wl, wlx]) ∧ sTag (mkStep W 155 ?[wx, wt, wl, wlx]) = 0 ∧
     ctxAfter Γ (mkStep W 155 ?[wx, wt, wl, wlx]) = insert (neg LAct (leFact wl wlx)) Γ := by
   subst hWp
-  have hk : ((pIdx_setLenSingLe : ℕ) : V) = (155 : V) := by simp [pIdx_setLenSingLe]
-  have hstep := pmk_setLenSingLe (V := V) ?[wx, wt, wl, wlx]
+  have hk : ((pIdx_sequentLenSingLe : ℕ) : V) = (155 : V) := by simp [pIdx_sequentLenSingLe]
+  have hstep := pmk_sequentLenSingLe (V := V) ?[wx, wt, wl, wlx]
   rw [hk] at hstep hlen hrow
   have hes : ∀ e ∈ [wx, wt, wl, wlx], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E := List.forall_mem_cons.mpr ⟨⟨hwx, hEwx⟩, List.forall_mem_cons.mpr ⟨⟨hwt, hEwt⟩, List.forall_mem_cons.mpr ⟨⟨hwl, hEwl⟩, List.forall_mem_cons.mpr ⟨⟨hwlx, hEwlx⟩, List.forall_mem_nil _⟩⟩⟩⟩
-  have hinst := inst_setLenSingLe hwx hwt hwl hwlx
+  have hinst := inst_sequentLenSingLe hwx hwt hwl hwlx
   rw [hstep, show (?[wx, wt, wl, wlx] : V) = vecOf [wx, wt, wl, wlx] from rfl]
-  refine ⟨stepOK_useHorn htbl [wx, wt, wl, wlx] row_setLenSingLe_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : 4 ≤ 8))
-    (by rw [show row_setLenSingLe_as.length = 3 from rfl] <;> exact_mod_cast (by decide : 3 ≤ 8)) hes ?_, by simp, ?_⟩
+  refine ⟨stepOK_useHorn htbl [wx, wt, wl, wlx] row_sequentLenSingLe_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : 4 ≤ 8))
+    (by rw [show row_sequentLenSingLe_as.length = 3 from rfl] <;> exact_mod_cast (by decide : 3 ≤ 8)) hes ?_, by simp, ?_⟩
   · exact neg_mem_of_map hinst.1 (List.forall_mem_cons.mpr ⟨hmem0, List.forall_mem_cons.mpr ⟨hmem1, List.forall_mem_cons.mpr ⟨hmem2, List.forall_mem_nil _⟩⟩⟩)
-  · rw [ctxAfter_useHorn [wx, wt, wl, wlx] row_setLenSingLe_as isSemiformula_setLenSingLe_c (fun e he ↦ (hes e he).1), hinst.2]
+  · rw [ctxAfter_useHorn [wx, wt, wl, wlx] row_sequentLenSingLe_as isSemiformula_sequentLenSingLe_c (fun e he ↦ (hes e he).1), hinst.2]
 
-/-- Row `setLenEmptyLe` as a step, against the table readings `hlen`/`hrow` at its index. -/
-lemma pok_setLenEmptyLe {tbl N E Γ W : V} {wl : V} (htbl : TableOK tbl N) (hWp : W = proPieces)
-    (hlen : ((pIdx_setLenEmptyLe : ℕ) : V) < len tbl)
-    (hrow : rowM tbl.[((pIdx_setLenEmptyLe : ℕ) : V)] = ((1 : ℕ) : V) ∧
-      rowB tbl.[((pIdx_setLenEmptyLe : ℕ) : V)] = impChainV LAct (vecOf row_setLenEmptyLe_as) row_setLenEmptyLe_c)
-    (hΓ : IsFormulaSet LAct Γ) (hwl : IsSemiterm LAct 0 wl) (hEwl : termLen LAct wl ≤ E) (hmem0 : neg LAct (setLenFact wl (𝟎 : V)) ∈ Γ) :
+/-- Row `sequentLenEmptyLe` as a step, against the table readings `hlen`/`hrow` at its index. -/
+lemma pok_sequentLenEmptyLe {tbl N E Γ W : V} {wl : V} (htbl : TableOK tbl N) (hWp : W = proPieces)
+    (hlen : ((pIdx_sequentLenEmptyLe : ℕ) : V) < len tbl)
+    (hrow : rowM tbl.[((pIdx_sequentLenEmptyLe : ℕ) : V)] = ((1 : ℕ) : V) ∧
+      rowB tbl.[((pIdx_sequentLenEmptyLe : ℕ) : V)] = impChainV LAct (vecOf row_sequentLenEmptyLe_as) row_sequentLenEmptyLe_c)
+    (hΓ : IsFormulaSet LAct Γ) (hwl : IsSemiterm LAct 0 wl) (hEwl : termLen LAct wl ≤ E) (hmem0 : neg LAct (sequentLenFact wl (𝟎 : V)) ∈ Γ) :
     StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 156 ?[wl]) ∧ sTag (mkStep W 156 ?[wl]) = 0 ∧
     ctxAfter Γ (mkStep W 156 ?[wl]) = insert (neg LAct (leFact wl (𝟎 : V))) Γ := by
   subst hWp
-  have hk : ((pIdx_setLenEmptyLe : ℕ) : V) = (156 : V) := by simp [pIdx_setLenEmptyLe]
-  have hstep := pmk_setLenEmptyLe (V := V) ?[wl]
+  have hk : ((pIdx_sequentLenEmptyLe : ℕ) : V) = (156 : V) := by simp [pIdx_sequentLenEmptyLe]
+  have hstep := pmk_sequentLenEmptyLe (V := V) ?[wl]
   rw [hk] at hstep hlen hrow
   have hes : ∀ e ∈ [wl], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E := List.forall_mem_cons.mpr ⟨⟨hwl, hEwl⟩, List.forall_mem_nil _⟩
-  have hinst := inst_setLenEmptyLe hwl
+  have hinst := inst_sequentLenEmptyLe hwl
   rw [hstep, show (?[wl] : V) = vecOf [wl] from rfl]
-  refine ⟨stepOK_useHorn htbl [wl] row_setLenEmptyLe_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : 1 ≤ 8))
-    (by rw [show row_setLenEmptyLe_as.length = 1 from rfl] <;> exact_mod_cast (by decide : 1 ≤ 8)) hes ?_, by simp, ?_⟩
+  refine ⟨stepOK_useHorn htbl [wl] row_sequentLenEmptyLe_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : 1 ≤ 8))
+    (by rw [show row_sequentLenEmptyLe_as.length = 1 from rfl] <;> exact_mod_cast (by decide : 1 ≤ 8)) hes ?_, by simp, ?_⟩
   · exact neg_mem_of_map hinst.1 (List.forall_mem_cons.mpr ⟨hmem0, List.forall_mem_nil _⟩)
-  · rw [ctxAfter_useHorn [wl] row_setLenEmptyLe_as isSemiformula_setLenEmptyLe_c (fun e he ↦ (hes e he).1), hinst.2]
+  · rw [ctxAfter_useHorn [wl] row_sequentLenEmptyLe_as isSemiformula_sequentLenEmptyLe_c (fun e he ↦ (hes e he).1), hinst.2]
 
 /-- Row `congSubsetL` as a step, against the table readings `hlen`/`hrow` at its index. -/
 lemma pok_congSubsetL {tbl N E Γ W : V} {wt wtp wu : V} (htbl : TableOK tbl N) (hWp : W = proPieces)

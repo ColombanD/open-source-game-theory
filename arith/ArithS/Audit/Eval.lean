@@ -14,10 +14,10 @@ the nine per-layer files; each line must read `[propext, Classical.choice, Quot.
 namespace ArithS
 
 -- M4 U7 — Dupoc transparency (Critch's step 0) in EVERY model of IΣ₁, at every (possibly
--- nonstandard) budget `k : V`, in the `LAct`-structure `stdActV V` (`c_C ↦ 0`, `c_D ↦ 1`): the
+-- nonstandard) budget `k : V`, in the `LAct`-structure `stdReadingV V` (`c_C ↦ 0`, `c_D ↦ 1`): the
 -- description term denotes the canonical code, the truth equation of `qDupoc` ("Dupoc plays C
 -- against itself"), the search clause at fuel 2, the Löb premise `bewB k ⌜qDupoc⌝ k → qDupoc(k)`
--- under `ProperV V TAct` (unconditional at ℕ), and the uniform ℒₒᵣ-sentence with the Δ₁ box,
+-- under `ProperBound V TAct` (unconditional at ℕ), and the uniform ℒₒᵣ-sentence with the Δ₁ box,
 -- provable in IΣ₁/PA (completeness) and in TAct along `emb`.
 #print axioms val_TD_V
 #print axioms eval_qDupoc_iff_V
@@ -33,8 +33,8 @@ namespace ArithS
 
 -- Det: determinism in every model of IΣ₁; the negative atom; the atomNeg leaf of T2-CORE.
 #print axioms EvalGraph.unique_V'
-#print axioms models_trAt_plays_V
-#print axioms pa_proves_neg_trAt_inst
+#print axioms models_sentenceAt_plays_V
+#print axioms pa_proves_neg_sentenceAt_inst
 #print axioms leaf_atomNeg_sound
 #print axioms leaf_atomNeg_sound_searchFree
 

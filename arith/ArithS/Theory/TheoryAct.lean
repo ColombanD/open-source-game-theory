@@ -7,20 +7,20 @@ import Mathlib.Tactic.FinCases
 
 Roadmap §2.4. `PA` is transported along the inclusion `emb : ℒₒᵣ →ᵥ LAct`. The action axioms:
 
-* **`axAct : (c_C = 0 ∧ c_D = 1) ∨ (c_C = 1 ∧ c_D = 0)`** (U0b, 2026-09-12) — the action
+* **`actionAxiom : (c_C = 0 ∧ c_D = 1) ∨ (c_C = 1 ∧ c_D = 0)`** (U0b, 2026-09-12) — the action
   constants ARE the two action values, in one of the two orders. Without it (with only
   `c_C ≠ c_D`, the theory before U0b) a model of `TAct` may read `c_C ↦ 5, c_D ↦ 7`; the guard
-  sentences of the search bots feed the constants as action VALUES into `relabel` (only
+  sentences of the search bots feed the constants as action VALUES into `revalue` (only
   meaningful on `{0, 1}`), so in such a model the described program is garbage, its search finds
   nothing, and every guard sentence is FALSE there: `TAct ⊬ guard` for every `k`, and no Löbian
   cell could ever be proved in the arithmetized `S'` (the model-class finding of
   `ArithS/Transparency.lean`: the truth equations hold only in the standard readings). With
-  `axAct`, every real-equality model of `TAct` reads the constants as `(0, 1)` or `(1, 0)` —
-  `structure_eq_of_axAct`: the structure IS `stdActS M` or `swapActS M`.
-* `axNe : c_C ≠ c_D` (implied by `axAct` over PA; kept — the downstream membership chains
+  `actionAxiom`, every real-equality model of `TAct` reads the constants as `(0, 1)` or `(1, 0)` —
+  `structure_eq_of_actionAxiom`: the structure IS `stdReading M` or `swappedReading M`.
+* `constNe : c_C ≠ c_D` (implied by `actionAxiom` over PA; kept — the downstream membership chains
   expect it and it costs nothing).
 
-Every axiom is stated in BOTH orientations (`axAct'`, `axNe'`) so that the axiom set is
+Every axiom is stated in BOTH orientations (`actionAxiom'`, `constNe'`) so that the axiom set is
 literally closed under `swap` (closure up to a one-line derivation would cost `k` vs `k + c`,
 and the red cell needs an exact iff). `TAct` is Δ₁-axiomatized: since the encoding of `LAct`
 keeps the `ℒₒᵣ` codes, an `ℒₒᵣ`-formula has the same code in both languages
@@ -37,7 +37,7 @@ open LAct
 /-! ### The standard structure on ℕ -/
 
 /-- `ℕ` as an `LAct`-structure: arithmetic as usual, `c_C ↦ 0`, `c_D ↦ 1`. -/
-instance stdAct : Structure LAct ℕ where
+instance stdReadingNat : Structure LAct ℕ where
   func _ f := match f with
     | Sum.inl f => (standardModel ℕ).func f
     | Sum.inr (Language.Constant.Func.const Act.C) => fun _ ↦ 0
@@ -46,14 +46,14 @@ instance stdAct : Structure LAct ℕ where
     | Sum.inl r => (standardModel ℕ).rel r
     | Sum.inr e => PEmpty.elim e
 
-lemma stdAct_lMap_emb : Structure.lMap emb stdAct = standardModel ℕ := by
+lemma stdReadingNat_lMap_emb : Structure.lMap emb stdReadingNat = standardModel ℕ := by
   ext <;> rfl
 
 /-- Truth of a transported `ℒₒᵣ`-sentence in `ℕ` is its truth in `ℕ`. -/
 lemma models_lMap_emb (σ : Sentence ℒₒᵣ) :
     ℕ↓[LAct] ⊧ Semiformula.lMap emb σ ↔ ℕ↓[ℒₒᵣ] ⊧ σ := by
-  have := Semiformula.models_lMap (s₂ := stdAct) (Φ := emb) (σ := σ) (M := ℕ)
-  rw [stdAct_lMap_emb] at this
+  have := Semiformula.models_lMap (s₂ := stdReadingNat) (Φ := emb) (σ := σ) (M := ℕ)
+  rw [stdReadingNat_lMap_emb] at this
   exact this
 
 /-! ### The theory -/
@@ -62,10 +62,10 @@ lemma models_lMap_emb (σ : Sentence ℒₒᵣ) :
 def cterm (a : Act) {ξ : Type*} {n : ℕ} : Semiterm LAct ξ n := Semiterm.func (const a) ![]
 
 /-- `c_C ≠ c_D`. -/
-def axNe : Sentence LAct := Semiformula.nrel Language.Eq.eq ![cterm Act.C, cterm Act.D]
+def constNe : Sentence LAct := Semiformula.nrel Language.Eq.eq ![cterm Act.C, cterm Act.D]
 
 /-- `c_D ≠ c_C`. -/
-def axNe' : Sentence LAct := Semiformula.nrel Language.Eq.eq ![cterm Act.D, cterm Act.C]
+def constNe' : Sentence LAct := Semiformula.nrel Language.Eq.eq ![cterm Act.D, cterm Act.C]
 
 /-- The constant term `0` of `LAct` (the `ℒₒᵣ` symbol along `emb`). -/
 def zeroT {ξ : Type*} {n : ℕ} : Semiterm LAct ξ n := Semiterm.func (emb.func Language.Zero.zero) ![]
@@ -79,28 +79,28 @@ def eqF {ξ : Type*} {n : ℕ} (t u : Semiterm LAct ξ n) : Semiformula LAct ξ 
 
 /-- **The action axiom** `(c_C = 0 ∧ c_D = 1) ∨ (c_C = 1 ∧ c_D = 0)`: the constants are the two
 action values, in one of the two (τ-symmetric) orders. -/
-def axAct : Sentence LAct :=
+def actionAxiom : Sentence LAct :=
   (eqF (cterm Act.C) zeroT ⋏ eqF (cterm Act.D) oneT) ⋎ (eqF (cterm Act.C) oneT ⋏ eqF (cterm Act.D) zeroT)
 
 /-- The action axiom with the constants transposed, `(c_D = 0 ∧ c_C = 1) ∨ (c_D = 1 ∧ c_C = 0)`
-— literally `Semiformula.lMap swap axAct` (`lMap_swap_axAct`). -/
-def axAct' : Sentence LAct :=
+— literally `Semiformula.lMap swap actionAxiom` (`lMap_swap_actionAxiom`). -/
+def actionAxiom' : Sentence LAct :=
   (eqF (cterm Act.D) zeroT ⋏ eqF (cterm Act.C) oneT) ⋎ (eqF (cterm Act.D) oneT ⋏ eqF (cterm Act.C) zeroT)
 
-/-- `TAct := PA ∪ {axAct, axAct', c_C ≠ c_D, c_D ≠ c_C}` over `LAct`. -/
+/-- `TAct := PA ∪ {actionAxiom, actionAxiom', c_C ≠ c_D, c_D ≠ c_C}` over `LAct`. -/
 abbrev TAct : Theory LAct :=
-  insert axAct (insert axAct' (insert axNe (insert axNe' (Theory.lMap emb 𝗣𝗔))))
+  insert actionAxiom (insert actionAxiom' (insert constNe (insert constNe' (Theory.lMap emb 𝗣𝗔))))
 
 /-! The membership facts every consumer uses (never re-derive the `insert` chain downstream). -/
 
-lemma axAct_mem_TAct : axAct ∈ TAct := Set.mem_insert _ _
+lemma actionAxiom_mem_TAct : actionAxiom ∈ TAct := Set.mem_insert _ _
 
-lemma axAct'_mem_TAct : axAct' ∈ TAct := Set.mem_insert_of_mem _ (Set.mem_insert _ _)
+lemma actionAxiom'_mem_TAct : actionAxiom' ∈ TAct := Set.mem_insert_of_mem _ (Set.mem_insert _ _)
 
-lemma axNe_mem_TAct : axNe ∈ TAct :=
+lemma constNe_mem_TAct : constNe ∈ TAct :=
   Set.mem_insert_of_mem _ (Set.mem_insert_of_mem _ (Set.mem_insert _ _))
 
-lemma axNe'_mem_TAct : axNe' ∈ TAct :=
+lemma constNe'_mem_TAct : constNe' ∈ TAct :=
   Set.mem_insert_of_mem _ (Set.mem_insert_of_mem _ (Set.mem_insert_of_mem _ (Set.mem_insert _ _)))
 
 lemma lMap_emb_PA_subset_TAct : Theory.lMap emb 𝗣𝗔 ⊆ TAct := fun _ h ↦
@@ -111,13 +111,13 @@ lemma lMap_emb_mem_TAct {σ : Sentence ℒₒᵣ} (h : σ ∈ 𝗣𝗔) : Semifo
 
 /-- Case analysis on the axioms of `TAct`. -/
 lemma mem_TAct_iff {σ : Sentence LAct} :
-    σ ∈ TAct ↔ σ = axAct ∨ σ = axAct' ∨ σ = axNe ∨ σ = axNe' ∨ ∃ σ₀ ∈ 𝗣𝗔, Semiformula.lMap emb σ₀ = σ :=
+    σ ∈ TAct ↔ σ = actionAxiom ∨ σ = actionAxiom' ∨ σ = constNe ∨ σ = constNe' ∨ ∃ σ₀ ∈ 𝗣𝗔, Semiformula.lMap emb σ₀ = σ :=
   Iff.rfl
 
 /-- `TAct` proves its own action axiom (sanity). -/
-theorem tact_proves_axAct : TAct ⊢ axAct := Entailment.by_axm axAct_mem_TAct
+theorem tact_proves_actionAxiom : TAct ⊢ actionAxiom := Entailment.by_axm actionAxiom_mem_TAct
 
-theorem tact_proves_axAct' : TAct ⊢ axAct' := Entailment.by_axm axAct'_mem_TAct
+theorem tact_proves_actionAxiom' : TAct ⊢ actionAxiom' := Entailment.by_axm actionAxiom'_mem_TAct
 
 /-! ### Codes agree along the embedding -/
 
@@ -305,25 +305,25 @@ lemma lMap_swap_eqF {ξ : Type*} {n : ℕ} (t u : Semiterm LAct ξ n) :
   congr 1
   funext i; fin_cases i <;> rfl
 
-/-- `axAct'` IS the transposition of `axAct`. -/
-lemma lMap_swap_axAct : Semiformula.lMap swap axAct = axAct' := by
-  unfold axAct axAct'
+/-- `actionAxiom'` IS the transposition of `actionAxiom`. -/
+lemma lMap_swap_actionAxiom : Semiformula.lMap swap actionAxiom = actionAxiom' := by
+  unfold actionAxiom actionAxiom'
   simp only [LogicalConnective.HomClass.map_or, LogicalConnective.HomClass.map_and, lMap_swap_eqF,
     lMap_swap_cterm_C, lMap_swap_cterm_D, lMap_swap_zeroT, lMap_swap_oneT]
 
-lemma lMap_swap_axAct' : Semiformula.lMap swap axAct' = axAct := by
-  unfold axAct axAct'
+lemma lMap_swap_actionAxiom' : Semiformula.lMap swap actionAxiom' = actionAxiom := by
+  unfold actionAxiom actionAxiom'
   simp only [LogicalConnective.HomClass.map_or, LogicalConnective.HomClass.map_and, lMap_swap_eqF,
     lMap_swap_cterm_C, lMap_swap_cterm_D, lMap_swap_zeroT, lMap_swap_oneT]
 
-lemma lMap_swap_axNe : Semiformula.lMap swap axNe = axNe' := by
-  unfold axNe axNe'
+lemma lMap_swap_constNe : Semiformula.lMap swap constNe = constNe' := by
+  unfold constNe constNe'
   rw [Semiformula.lMap_nrel]
   congr 1
   funext i; fin_cases i <;> simp [lMap_swap_cterm_C, lMap_swap_cterm_D]
 
-lemma lMap_swap_axNe' : Semiformula.lMap swap axNe' = axNe := by
-  unfold axNe axNe'
+lemma lMap_swap_constNe' : Semiformula.lMap swap constNe' = constNe := by
+  unfold constNe constNe'
   rw [Semiformula.lMap_nrel]
   congr 1
   funext i; fin_cases i <;> simp [lMap_swap_cterm_C, lMap_swap_cterm_D]
@@ -331,24 +331,24 @@ lemma lMap_swap_axNe' : Semiformula.lMap swap axNe' = axNe := by
 /-- The axiom set of `TAct` is literally closed under the transposition. -/
 theorem lMap_swap_mem_TAct {σ : Sentence LAct} (h : σ ∈ TAct) : Semiformula.lMap swap σ ∈ TAct := by
   rcases h with rfl | rfl | rfl | rfl | ⟨σ₀, hσ₀, rfl⟩
-  · rw [lMap_swap_axAct]; exact axAct'_mem_TAct
-  · rw [lMap_swap_axAct']; exact axAct_mem_TAct
-  · rw [lMap_swap_axNe]; exact axNe'_mem_TAct
-  · rw [lMap_swap_axNe']; exact axNe_mem_TAct
+  · rw [lMap_swap_actionAxiom]; exact actionAxiom'_mem_TAct
+  · rw [lMap_swap_actionAxiom']; exact actionAxiom_mem_TAct
+  · rw [lMap_swap_constNe]; exact constNe'_mem_TAct
+  · rw [lMap_swap_constNe']; exact constNe_mem_TAct
   · rw [lMap_swap_emb]; exact lMap_emb_mem_TAct hσ₀
 
 end closure
 
-/-! ### The standard readings of the constants, and the model class of `axAct` -/
+/-! ### The standard readings of the constants, and the model class of `actionAxiom` -/
 
 section models
 
 variable {M : Type*}
 
 /-- `M` as an `LAct`-structure over its `ORingStructure`: arithmetic standard, `c_C ↦ 0`,
-`c_D ↦ 1` (`stdAct` for a general `M`; `ArithS.Det.stdActV` is the same structure, as the
-pull-back along `inst` — `stdActV_eq_stdActS`). -/
-@[instance_reducible] def stdActS (M : Type*) [ORingStructure M] : Structure LAct M where
+`c_D ↦ 1` (`stdReadingNat` for a general `M`; `ArithS.Det.stdReadingV` is the same structure, as the
+pull-back along `inst` — `stdReadingV_eq_stdReading`). -/
+@[instance_reducible] def stdReading (M : Type*) [ORingStructure M] : Structure LAct M where
   func _ f := match f with
     | Sum.inl f => (standardModel M).func f
     | Sum.inr (Language.Constant.Func.const Act.C) => fun _ ↦ 0
@@ -357,17 +357,17 @@ pull-back along `inst` — `stdActV_eq_stdActS`). -/
     | Sum.inl r => (standardModel M).rel r
     | Sum.inr e => PEmpty.elim e
 
-/-- The transposed reading `c_C ↦ 1`, `c_D ↦ 0`: the pull-back of `stdActS M` along `swap`. -/
-@[instance_reducible] def swapActS (M : Type*) [ORingStructure M] : Structure LAct M :=
-  Structure.lMap swap (stdActS M)
+/-- The transposed reading `c_C ↦ 1`, `c_D ↦ 0`: the pull-back of `stdReading M` along `swap`. -/
+@[instance_reducible] def swappedReading (M : Type*) [ORingStructure M] : Structure LAct M :=
+  Structure.lMap swap (stdReading M)
 
-lemma stdActS_nat : stdActS ℕ = stdAct := by
+lemma stdReading_nat : stdReading ℕ = stdReadingNat := by
   ext <;> rfl
 
-lemma stdActS_lMap_emb [ORingStructure M] : Structure.lMap emb (stdActS M) = standardModel M := by
+lemma stdReading_lMap_emb [ORingStructure M] : Structure.lMap emb (stdReading M) = standardModel M := by
   ext <;> rfl
 
-lemma swapActS_lMap_emb [ORingStructure M] : Structure.lMap emb (swapActS M) = standardModel M := by
+lemma swappedReading_lMap_emb [ORingStructure M] : Structure.lMap emb (swappedReading M) = standardModel M := by
   ext <;> rfl
 
 /-- The value of an action constant: the structure's reading of it. -/
@@ -406,36 +406,36 @@ lemma eval_eqF {n : ℕ} (t u : Semiterm LAct Empty n) (e : Fin n → M) :
   exact Iff.rfl
 
 /-- **The model class of the action axiom.** In an `LAct`-structure with standard reduct (in
-particular with real equality), `axAct` holds iff the constants read `(0, 1)` or `(1, 0)`. -/
-theorem eval_axAct_iff :
-    Semiformula.Eval (s := S) ![] Empty.elim axAct ↔
+particular with real equality), `actionAxiom` holds iff the constants read `(0, 1)` or `(1, 0)`. -/
+theorem eval_actionAxiom_iff :
+    Semiformula.Eval (s := S) ![] Empty.elim actionAxiom ↔
       (S.func (const Act.C) ![] = 0 ∧ S.func (const Act.D) ![] = 1) ∨
       (S.func (const Act.C) ![] = 1 ∧ S.func (const Act.D) ![] = 0) := by
-  unfold axAct
+  unfold actionAxiom
   simp only [LogicalConnective.HomClass.map_or, LogicalConnective.HomClass.map_and,
     LogicalConnective.Prop.or_eq, LogicalConnective.Prop.and_eq, eval_eqF S hS, val_cterm,
     val_zeroT S hS, val_oneT S hS]
 
-theorem eval_axAct'_iff :
-    Semiformula.Eval (s := S) ![] Empty.elim axAct' ↔
+theorem eval_actionAxiom'_iff :
+    Semiformula.Eval (s := S) ![] Empty.elim actionAxiom' ↔
       (S.func (const Act.D) ![] = 0 ∧ S.func (const Act.C) ![] = 1) ∨
       (S.func (const Act.D) ![] = 1 ∧ S.func (const Act.C) ![] = 0) := by
-  unfold axAct'
+  unfold actionAxiom'
   simp only [LogicalConnective.HomClass.map_or, LogicalConnective.HomClass.map_and,
     LogicalConnective.Prop.or_eq, LogicalConnective.Prop.and_eq, eval_eqF S hS, val_cterm,
     val_zeroT S hS, val_oneT S hS]
 
-/-- **The structures satisfying `axAct` are the two standard readings**: a structure with standard
-reduct satisfying `axAct` is `stdActS M` (`c_C ↦ 0, c_D ↦ 1`) or `swapActS M` (`c_C ↦ 1, c_D ↦ 0`). -/
-theorem structure_eq_of_axAct (hAct : Semiformula.Eval (s := S) ![] Empty.elim axAct) :
-    S = stdActS M ∨ S = swapActS M := by
+/-- **The structures satisfying `actionAxiom` are the two standard readings**: a structure with standard
+reduct satisfying `actionAxiom` is `stdReading M` (`c_C ↦ 0, c_D ↦ 1`) or `swappedReading M` (`c_C ↦ 1, c_D ↦ 0`). -/
+theorem structure_eq_of_actionAxiom (hAct : Semiformula.Eval (s := S) ![] Empty.elim actionAxiom) :
+    S = stdReading M ∨ S = swappedReading M := by
   have hfun : ∀ {k : ℕ} (f : Language.Func ℒₒᵣ k) (v : Fin k → M),
       S.func (emb.func f) v = (standardModel M).func f v := fun f v ↦
     congrArg (fun s : Structure ℒₒᵣ M ↦ s.func f v) hS
   have hrel : ∀ {k : ℕ} (r : Language.Rel ℒₒᵣ k) (v : Fin k → M),
       S.rel (emb.rel r) v = (standardModel M).rel r v := fun r v ↦
     congrArg (fun s : Structure ℒₒᵣ M ↦ s.rel r v) hS
-  rcases (eval_axAct_iff S hS).mp hAct with ⟨hC, hD⟩ | ⟨hC, hD⟩
+  rcases (eval_actionAxiom_iff S hS).mp hAct with ⟨hC, hD⟩ | ⟨hC, hD⟩
   · left
     refine Structure.ext ?_ ?_
     · funext k f v
@@ -461,36 +461,36 @@ theorem structure_eq_of_axAct (hAct : Semiformula.Eval (s := S) ![] Empty.elim a
 
 end reduct
 
-lemma eval_axAct_stdActS [ORingStructure M] : Semiformula.Eval (s := stdActS M) ![] Empty.elim axAct :=
-  (eval_axAct_iff _ stdActS_lMap_emb).mpr (Or.inl ⟨rfl, rfl⟩)
+lemma eval_actionAxiom_stdReading [ORingStructure M] : Semiformula.Eval (s := stdReading M) ![] Empty.elim actionAxiom :=
+  (eval_actionAxiom_iff _ stdReading_lMap_emb).mpr (Or.inl ⟨rfl, rfl⟩)
 
-lemma eval_axAct'_stdActS [ORingStructure M] : Semiformula.Eval (s := stdActS M) ![] Empty.elim axAct' :=
-  (eval_axAct'_iff _ stdActS_lMap_emb).mpr (Or.inr ⟨rfl, rfl⟩)
+lemma eval_actionAxiom'_stdReading [ORingStructure M] : Semiformula.Eval (s := stdReading M) ![] Empty.elim actionAxiom' :=
+  (eval_actionAxiom'_iff _ stdReading_lMap_emb).mpr (Or.inr ⟨rfl, rfl⟩)
 
-lemma eval_axAct_swapActS [ORingStructure M] : Semiformula.Eval (s := swapActS M) ![] Empty.elim axAct :=
-  (eval_axAct_iff _ swapActS_lMap_emb).mpr (Or.inr ⟨rfl, rfl⟩)
+lemma eval_actionAxiom_swappedReading [ORingStructure M] : Semiformula.Eval (s := swappedReading M) ![] Empty.elim actionAxiom :=
+  (eval_actionAxiom_iff _ swappedReading_lMap_emb).mpr (Or.inr ⟨rfl, rfl⟩)
 
-lemma eval_axAct'_swapActS [ORingStructure M] : Semiformula.Eval (s := swapActS M) ![] Empty.elim axAct' :=
-  (eval_axAct'_iff _ swapActS_lMap_emb).mpr (Or.inl ⟨rfl, rfl⟩)
+lemma eval_actionAxiom'_swappedReading [ORingStructure M] : Semiformula.Eval (s := swappedReading M) ![] Empty.elim actionAxiom' :=
+  (eval_actionAxiom'_iff _ swappedReading_lMap_emb).mpr (Or.inl ⟨rfl, rfl⟩)
 
-/-- **`models_axAct_iff`**: an `LAct`-structure (instance form) with standard reduct — in
-particular with real equality — satisfies `axAct` iff its constants read `(0, 1)` or `(1, 0)`. -/
-theorem models_axAct_iff [ORingStructure M] [Nonempty M] [Structure LAct M]
+/-- **`models_actionAxiom_iff`**: an `LAct`-structure (instance form) with standard reduct — in
+particular with real equality — satisfies `actionAxiom` iff its constants read `(0, 1)` or `(1, 0)`. -/
+theorem models_actionAxiom_iff [ORingStructure M] [Nonempty M] [Structure LAct M]
     (hS : Structure.lMap emb (inferInstance : Structure LAct M) = standardModel M) :
-    M↓[LAct] ⊧ axAct ↔
+    M↓[LAct] ⊧ actionAxiom ↔
       (Structure.func (const Act.C) ![] = (0 : M) ∧ Structure.func (const Act.D) ![] = (1 : M)) ∨
       (Structure.func (const Act.C) ![] = (1 : M) ∧ Structure.func (const Act.D) ![] = (0 : M)) := by
   rw [models_iff]
-  exact eval_axAct_iff _ hS
+  exact eval_actionAxiom_iff _ hS
 
 /-- `ℕ` (with `c_C ↦ 0`, `c_D ↦ 1`) satisfies the action axiom. -/
-lemma models_axAct : ℕ↓[LAct] ⊧ axAct := by
+lemma models_actionAxiom : ℕ↓[LAct] ⊧ actionAxiom := by
   rw [models_iff]
-  exact (eval_axAct_iff stdAct stdAct_lMap_emb).mpr (Or.inl ⟨rfl, rfl⟩)
+  exact (eval_actionAxiom_iff stdReadingNat stdReadingNat_lMap_emb).mpr (Or.inl ⟨rfl, rfl⟩)
 
-lemma models_axAct' : ℕ↓[LAct] ⊧ axAct' := by
+lemma models_actionAxiom' : ℕ↓[LAct] ⊧ actionAxiom' := by
   rw [models_iff]
-  exact (eval_axAct'_iff stdAct stdAct_lMap_emb).mpr (Or.inr ⟨rfl, rfl⟩)
+  exact (eval_actionAxiom'_iff stdReadingNat stdReadingNat_lMap_emb).mpr (Or.inr ⟨rfl, rfl⟩)
 
 end models
 

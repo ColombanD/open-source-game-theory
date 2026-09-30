@@ -13,17 +13,17 @@ a `TAct`-proof code `verifyCode ρ` that follows the tree of `ρ`, introduces ev
 about (sequents, formulas, terms, sub-derivations, lengths) as an EIGENVARIABLE obtained by
 ∃-elimination from a constant-size universal lemma, and cuts against a fixed library of
 universal `TAct`-theorems (the per-tag introduction clause of Foundation's `Derivation`
-fixpoint, the per-tag `DlenGraph` clause, totality of the Σ₁ graphs, a dozen set/formula
+fixpoint, the per-tag `ProofLenGraph` clause, totality of the Σ₁ graphs, a dozen set/formula
 facts). The fixpoint predicate `derivation TAct` is NEVER unfolded inside the proof — it is a
 black box that appears only in the statements of the library lemmas. With the package's
-current `dlen` (every node charges its whole sequent, free-variable indices charged UNARY —
+current `proofLen` (every node charges its whole sequent, free-variable indices charged UNARY —
 `Length.lean:16-19`, `termLen_fvar`), the honest bound is **`E(a) = O(a³)`** (safe), `O(a²)`
 with a refresh discipline, and **NOT linear**: linear needs Critch's abbreviation rule. Any
 polynomial suffices for PBLT with `gBudget k = ‖k‖²` and `f k = k` (`‖k‖⁶ ≺ k`). Two things
 found on the way must be fixed BEFORE anything is formalized: (1) the hypothesis
 `BoundedInnerNec` as written in `Assembly/Prep.lean:716-720` is FALSE for every choice of
-`d c c₁ c₀` (§4.4 — the additive term must be `flen (Box_g χ)`, which contains the unary
-numeral `⌜χ⌝`, not `flen χ`); (2) the `axm` nodes of `ρ` need a PA proof that an
+`d c c₁ c₀` (§4.4 — the additive term must be `formulaLenMeta (Box_g χ)`, which contains the unary
+numeral `⌜χ⌝`, not `formulaLenMeta χ`); (2) the `axm` nodes of `ρ` need a PA proof that an
 eigenvariable-described formula is a PA axiom, which depends on the SHAPE of Foundation's
 `𝗣𝗔.Δ₁` recognizer — the one library item whose cost is not obviously `O(|node|)` (§3.6).
 
@@ -59,7 +59,7 @@ eigenvariable-described formula is a PA axiom, which depends on the SHAPE of Fou
   `bitSubsetDef`, `qqVerumDef/qqAndDef/qqOrDef/qqAllDef/qqExsDef` (Σ₀), `negGraph`,
   `substs1Graph`, `freeGraph`, `setShiftGraph`, `(isSemiterm L).sigma/.pi`,
   `(isFormulaSet L).sigma/.pi`, and `T.Δ₁ch.sigma/.pi` — for `T = TAct` the Δ₁ recognizer of
-  `PA ∪ {axAct, axAct', axNe, axNe'}` (`TheoryAct.lean:25-48`, built from `𝗣𝗔.Δ₁`,
+  `PA ∪ {actionAxiom, actionAxiom', constNe, constNe'}` (`TheoryAct.lean:25-48`, built from `𝗣𝗔.Δ₁`,
   `Incompleteness/Definability.lean:1070`, with `Theory.Δ₁.insert`).
 * `construction T : Fixpoint.Construction V (blueprint T)` (:417), `monotone` (:420), and the
   `StrongFinite` instance (:437): every premise code is `< d` (`dp_lt_andIntro` etc.).
@@ -110,17 +110,17 @@ noncomputable def proof : 𝚫₁.Semisentence 2 := .mkDelta
 
 The package (FACT):
 
-* `LenDerivable T k φ := ∃ d, Proof T d φ ∧ dlen T d ≤ k` (`CutV.lean:158`);
-  `lenDerivableDef := .mkSigma “k φ. ∃ d, !(proof T).sigma d φ ∧ ∃ n, !(dlenDef T) n d ∧ n ≤ k”`
+* `LenBoxUnbounded T k φ := ∃ d, Proof T d φ ∧ proofLen T d ≤ k` (`CutV.lean:158`);
+  `lenBoxUnboundedDef := .mkSigma “k φ. ∃ d, !(proof T).sigma d φ ∧ ∃ n, !(proofLenDef T) n d ∧ n ≤ k”`
   (`CutV.lean:383-384`) — the **`.sigma`** of `proof`.
-* `dlenDef := .mkSigma “n d. (!(derivation T).pi d → !(dlenGraphDef L).sigma d n) ∧ (¬!(derivation T).sigma d → n = 0)”`
+* `proofLenDef := .mkSigma “n d. (!(derivation T).pi d → !(proofLenGraphDef L).sigma d n) ∧ (¬!(derivation T).sigma d → n = 0)”`
   (`DerivationLength.lean:404-405`) — mentions BOTH polarities of `derivation T`;
-  `dlenGraphDef` is the Δ₁ fixpoint formula of the length graph (`:82`), whose per-tag inversion
-  clauses are `DlenGraph.axL_iff` … `DlenGraph.cutRule_iff` (`:135-181`).
-* `instB n k := subst LAct (bnum k ∷ 0) n` (`InstV.lean:85`), Σ₁ graph
-  `instBGraph := “y n k. ∃ t, !bnumGraph t k ∧ ∃ v, !adjoinDef v t 0 ∧ !(substsGraph LAct) y v n”` (`:90-91`);
-  `bewB a n k := LenDerivable TAct a (instB n k)` (`:148`),
-  `bewBDef := “a n k. ∃ g, !instBGraph g n k ∧ !(lenDerivableDef TAct) a g”` (`:151-152`).
+  `proofLenGraphDef` is the Δ₁ fixpoint formula of the length graph (`:82`), whose per-tag inversion
+  clauses are `ProofLenGraph.axL_iff` … `ProofLenGraph.cutRule_iff` (`:135-181`).
+* `instB n k := subst LAct (binNumeral k ∷ 0) n` (`InstV.lean:85`), Σ₁ graph
+  `instBGraph := “y n k. ∃ t, !binNumeralGraph t k ∧ ∃ v, !adjoinDef v t 0 ∧ !(substsGraph LAct) y v n”` (`:90-91`);
+  `bewB a n k := LenBoxUnbounded TAct a (instB n k)` (`:148`),
+  `bewBDef := “a n k. ∃ g, !instBGraph g n k ∧ !(lenBoxUnboundedDef TAct) a g”` (`:151-152`).
 * `gBudget k := ‖k‖ * ‖k‖`, `gGraph := “y k. ∃ l, !lengthDef l k ∧ y = l * l”` (`Assembly/Prep.lean:554-557`);
   `boxCore := “n k. ∃ a, !gGraph a k ∧ !bewBDef a n k”` (`:567`), `boxCoreA := lMap emb boxCore` (`:570`),
   `Box_g χ := boxCoreA ⇜ ![Semiterm.lMap emb (⌜χ⌝ : ArithmeticSemiterm Empty 1), #0]` (`:575-579`),
@@ -132,16 +132,16 @@ The package (FACT):
 
 ```
 ∃ a ((∃ l, lengthDef l k̄ ∧ a = l·l)
-  ∧ ∃ g' ((∃ t, bnumGraph t k̄ ∧ ∃ v, adjoinDef v t 0 ∧ substsGraph g' v ⌜χ⌝)                    -- instBGraph g' ⌜χ⌝ k̄
+  ∧ ∃ g' ((∃ t, binNumeralGraph t k̄ ∧ ∃ v, adjoinDef v t 0 ∧ substsGraph g' v ⌜χ⌝)                    -- instBGraph g' ⌜χ⌝ k̄
       ∧ ∃ d ((∃ s, insertDef s g' 0 ∧ fstIdxDef s d ∧ ∃ L, limSeqDef L (d+1) ∧ d ∈ L)              -- proof.sigma d g'
-          ∧ ∃ n (((derivation.pi d → dlenGraphDef.sigma d n) ∧ (¬ derivation.sigma d → n = 0))     -- dlenDef n d
+          ∧ ∃ n (((derivation.pi d → proofLenGraphDef.sigma d n) ∧ (¬ derivation.sigma d → n = 0))     -- proofLenDef n d
                  ∧ n ≤ a))))
 ```
 
-with `k̄ = bnum k` (a binary numeral term, `O(‖k‖)` symbols) and `⌜χ⌝` the unary numeral of
-`encode χ` (≈ `encode χ` symbols, i.e. at least exponential in `flen χ` since Cantor tuples
+with `k̄ = binNumeral k` (a binary numeral term, `O(‖k‖)` symbols) and `⌜χ⌝` the unary numeral of
+`encode χ` (≈ `encode χ` symbols, i.e. at least exponential in `formulaLenMeta χ` since Cantor tuples
 square at each nesting level). ANALYSIS: any proof of this sentence has
-`dlen ≥ 1 + formulaLen(target) ≥ encode χ` — see §4.4.
+`proofLen ≥ 1 + formulaLen(target) ≥ encode χ` — see §4.4.
 
 ### 1.4 Is there an internal `case` lemma provable as ONE sentence? (FACT + ANALYSIS)
 
@@ -155,9 +155,9 @@ as a sentence of ℒₒᵣ with `Derivation` written as `(derivation T).sigma`, 
 
 is TRUE in every model of `𝗜𝚺₁` (the lemma + `eval_fixpointDefΔ₁`, `Fixpoint.lean:251`), hence
 `𝗜𝚺₁ ⊢ Intro_and` by `complete` (`Arithmetic/Basic/Model.lean:78`; for `TAct` over `LAct` by
-`lMap emb` and `tact_complete`/`tact_complete'`, `Diag.lean:176/203`). Its PROOF is a
+`lMap emb` and `TAct_complete`/`TAct_complete_of_readings`, `Diag.lean:176/203`). Its PROOF is a
 `Nonempty` from the completeness theorem: no derivation object, but SOME length `N_and : ℕ`
-exists (`Prep.lean:685 lenDerivable_of_proof`, then Σ₁-upward transfer `lenDerivable_of_nat`
+exists (`Prep.lean:685 lenBoxUnbounded_of_proof`, then Σ₁-upward transfer `lenBoxUnbounded_of_nat`
 `:671`). The same holds for the full `∀ d, derivation.sigma d ↔ (clauses)` if wanted; the
 construction only needs the ten intro directions. **So yes: one universal sentence per tag,
 provable in `TAct`, with an existential constant length.**
@@ -193,7 +193,7 @@ is the warning that Lean-side manipulation of these formulas must stay symbolic.
 **Cost (ANALYSIS).** A bounded `∀ x < n̄` costs `n` sub-proofs plus a disjunction formula of size
 `Θ(n · |𝕹 n|) = Θ(n²)` symbols — exponential in `‖n‖`; an `∃` writes its witness as a unary
 numeral of the witness's MAGNITUDE. For our sentence (§1.3) the witnesses are
-`d = ρ` (magnitude `≤ FV(12·dlen ρ)` by `ProperV.lean:731 derivation_le_FV_dlen`, and
+`d = ρ` (magnitude `≤ FV(12·proofLen ρ)` by `ProperBound.lean:731 derivation_le_FV_proofLen`, and
 `≥ exp(⌜g'⌝) ≥ 2^{2^{Ω(|g'|)}}` from `Sequent.quote = ∑ exp ⌜φ⌝`, `Proof/Coding.lean:21`, and the
 squaring pairing), `L = limSeq(d+1)` (larger still), `s = {g'}`, and every sub-code down the
 tree; the Δ₀ matrix contains bounded quantifiers `∀ x < u + (s+1)` (`succDef`) over ranges of
@@ -231,14 +231,14 @@ are finite SETS (`insert` on bit-sets, `Exponential/Bit.lean:227-243`: `insert x
 
 Hypotheses live in the sequent as their NEGATIONS; the goal of the subtree for a `ρ`-node `ν` is
 
-`G_ν :≡ ∃ d n, derivation.sigma d ∧ fstIdxDef s_ν d ∧ dlenGraphDef.sigma d n ∧ n ≤ ū_ν`
+`G_ν :≡ ∃ d n, derivation.sigma d ∧ fstIdxDef s_ν d ∧ proofLenGraphDef.sigma d n ∧ n ≤ ū_ν`
 
-with `s_ν` an eigenvariable already in scope (the node's sequent) and `ū_ν = bnum(dlen ν)` a
+with `s_ν` an eigenvariable already in scope (the node's sequent) and `ū_ν = binNumeral(proofLen ν)` a
 BINARY numeral (`O(‖g‖)` symbols; §4). Context of that subtree = the negated LIVE FACTS about
 `s_ν`: `IsFormulaSet s_ν`; for each formula `r` of `s_ν` that is principal somewhere in `ν`'s
 subtree ("live"), `r ∈ s_ν` plus the SHAPE facts of `r` and of whichever of its subformulas are
 decomposed below (`r = qqAnd r₁ r₂`, `r₁ = qqAll r₁₁`, …, down to atoms `r = qqRel k R v`); and
-the length fact `∃ l, setLenDef l s_ν ∧ l ≤ bnum(setLen s_ν)` (§4). All of constant size, all
+the length fact `∃ l, sequentLenDef l s_ν ∧ l ≤ binNumeral(sequentLen s_ν)` (§4). All of constant size, all
 about VARIABLES; nothing about `s_ν` is ever written as a numeral.
 
 **The library `Λ` (each a `TAct`-theorem via `complete`, from the cited V-lemma):**
@@ -246,11 +246,11 @@ about VARIABLES; nothing about `s_ν` is ever written as a numeral.
 | name | sentence | V-lemma |
 |---|---|---|
 | `Intro_tag` (10) | §1.4 | `Derivation.axL … axm`, `Proof/Basic.lean:603-660` |
-| `Dlen_tag` (10) | `∀ s p q dp dq np nq l, dlenGraph dp np → dlenGraph dq nq → setLenDef l s → ∃ n, n = l+np+nq+1 ∧ dlenGraph (andIntro …) n` etc. | `DlenGraph.*_iff`, `DerivationLength.lean:135-181` |
-| totality | `∀ x y ∃ z, insertDef z x y`; `∀ p q ∃ r, qqAndDef r p q` (and `qqOr/qqAll/qqExs/qqRel/qqNRel/qqVerum`); `∀ p ∃ y, negGraph y p`; `∀ t p ∃ y, substs1Graph y t p`; `∀ p ∃ y, freeGraph y p`; `∀ s ∃ y, setShiftGraph y s`; `∀ p ∃ y, shiftGraph y p`; `∀ k ∃ t, bnumGraph t k`; `∀ s ∃ l, setLenDef l s`; `∀ p ∃ l, formulaLenGraph l p`; `∀ s p q dp dq ∃ e, andIntroGraph e s p q dp dq` (10 node graphs); `∀ t v ∃ v', adjoinDef v' t v` | totality of Foundation's functions on `V` (all are `Classical.choose!`/`construction.result`, defined everywhere) |
+| `ProofLen_tag` (10) | `∀ s p q dp dq np nq l, proofLenGraph dp np → proofLenGraph dq nq → sequentLenDef l s → ∃ n, n = l+np+nq+1 ∧ proofLenGraph (andIntro …) n` etc. | `ProofLenGraph.*_iff`, `DerivationLength.lean:135-181` |
+| totality | `∀ x y ∃ z, insertDef z x y`; `∀ p q ∃ r, qqAndDef r p q` (and `qqOr/qqAll/qqExs/qqRel/qqNRel/qqVerum`); `∀ p ∃ y, negGraph y p`; `∀ t p ∃ y, substs1Graph y t p`; `∀ p ∃ y, freeGraph y p`; `∀ s ∃ y, setShiftGraph y s`; `∀ p ∃ y, shiftGraph y p`; `∀ k ∃ t, binNumeralGraph t k`; `∀ s ∃ l, sequentLenDef l s`; `∀ p ∃ l, formulaLenGraph l p`; `∀ s p q dp dq ∃ e, andIntroGraph e s p q dp dq` (10 node graphs); `∀ t v ∃ v', adjoinDef v' t v` | totality of Foundation's functions on `V` (all are `Classical.choose!`/`construction.result`, defined everywhere) |
 | sets | `x ∈ insert x s`; `x ∈ s → x ∈ insert y s`; `s ⊆ insert x s`; `s ⊆ t → x ∈ t → insert x s ⊆ t`; `∅ ⊆ s`; `x ∈ s → insert x s = s`; `IsFormulaSet ∅`; `IsFormulaSet s → IsFormula p → IsFormulaSet (insert p s)`; `y ∈ s → shift y ∈ setShift s`; `y ∈ setShift s → ∃ x ∈ s, y = shift x`; `IsFormulaSet s ↔ IsFormulaSet (setShift s)` | `mem_bitInsert_iff` (`Bit.lean:241`), `HFS/Basic.lean:24`, `IsFormulaSet.insert_iff/empty` (`Proof/Basic.lean:30-40`), `mem_setShift_iff` (:82), `shift_mem_setShift` (:97), `setShift_iff` (:106) |
 | formulas | `IsFormula p → IsFormula q → IsFormula (qqAnd p q)` (…all constructors); `neg (qqAnd p q) = qqOr (neg p) (neg q)` (…); `subst w (qqAnd p q) = qqAnd (subst w p) (subst w q)` (…); `shift (qqAnd p q) = qqAnd (shift p) (shift q)` (…); the same for `free`; `IsFormula p → IsTerm t → IsFormula (substs1 t p)`; injectivity/shape-inversion `shift r' = qqAnd p q → ∃ p' q', r' = qqAnd p' q' ∧ p = shift p' ∧ q = shift q'` (needs `IsFormula r'`) | `neg_and/neg_or` (`Formula/Functions.lean:88-91`), `substs_rel/and/or/all/ex` (:456-475), `shift_and` (:303), `IsSemiformula.case_iff` (`Formula/Basic.lean:1302`) |
-| lengths | `setLen (insert x s) ≤ setLen s + formulaLen x`; `setLen ∅ = 0`; `formulaLen (qqAnd p q) = formulaLen p + formulaLen q + 1` (…); `termLen (qqFunc k f v) = …`; the binary-numeral laws `bnum a + bnum b = bnum (a+b)` as bit-recursion lemmas (`NumeralFacts.lean` pattern) | `setLen_insert_le` (`CutV.lean:130`), `setLen_empty/singleton` (:135-138), `formulaLen_*` (`Length.lean:206-235`), `termLen_*` (:96-104) |
+| lengths | `sequentLen (insert x s) ≤ sequentLen s + formulaLen x`; `sequentLen ∅ = 0`; `formulaLen (qqAnd p q) = formulaLen p + formulaLen q + 1` (…); `termLen (qqFunc k f v) = …`; the binary-numeral laws `binNumeral a + binNumeral b = binNumeral (a+b)` as bit-recursion lemmas (`NumeralFacts.lean` pattern) | `sequentLen_insert_le` (`CutV.lean:130`), `sequentLen_empty/singleton` (:135-138), `formulaLen_*` (`Length.lean:206-235`), `termLen_*` (:96-104) |
 | axioms | `p = ⌜ax⌝ → TAct.Δ₁ch.sigma p` for each of the finitely many non-schema axioms; for the induction schema see §3.6 | `Δ₁Class.mem_iff` (`Theory.lean:85`), `𝗣𝗔.Δ₁` (`Definability.lean:1070`) |
 
 The library is FINITE and independent of `ρ`, `χ`, `k`. Every lemma is used `O(g)` times at
@@ -263,7 +263,7 @@ Every formula in every sequent of `ρ` is one of:
 1. **A subformula-instance of the root formula** `g' = instB ⌜χ⌝ k = subst (t ∷ 0) ⌜χ⌝` (its
    `and`/`or`/`all`/`exs`-descendants along `ρ`'s decompositions, and their `free`/`substs1`
    instances). Describe these ABSOLUTELY, not by a chain: at the top of the proof, introduce once
-   `t` (`bnumGraph t k̄`), `v = t ∷ 0`, and eigenvariables `c_i` for the `|χ|` subformula codes
+   `t` (`binNumeralGraph t k̄`), `v = t ∷ 0`, and eigenvariables `c_i` for the `|χ|` subformula codes
    with the numeral facts `c_i = ⌜χ_i⌝` — then prove the SHAPE facts `c_i = qqAnd c_j c_l`,
    `c_i = qqAll c_j`, … ONCE (they are Δ₀ identities between unary numerals: cost `N_χ`, a
    constant of the family, at least `encode χ` — the same order as the target sentence itself,
@@ -275,11 +275,11 @@ Every formula in every sequent of `ρ` is one of:
 2. **An arbitrary (possibly nonstandard) formula** entering by `cut` (the cut formula), `wk`
    (any formula of the bigger sequent), `axm` (an axiom instance), or `shift`. Describe it
    BOTTOM-UP by its syntax tree with one eigenvariable per node: `∃ z, qqRelDef z k̄ R̄ v̄`
-   (symbol codes are small numerals — `SmallCodesV`, `ProperV.lean`: every `LAct` symbol code
+   (symbol codes are small numerals — `SmallCodesV`, `ProperBound.lean`: every `LAct` symbol code
    `≤ 8`), `∃ v', adjoinDef v' z v`, `∃ y, qqAndDef y a b`, … — ONE totality-lemma use per symbol
    of the formula (and per symbol of each term inside it), so `O(|r|)` uses for a formula of
    `formulaLen r`; `IsFormula r` comes for free from the same walk (`IsFormula` intro lemmas).
-   The node of `ρ` that introduces `r` is charged `formulaLen r` by `dlen` (it is in its
+   The node of `ρ` that introduces `r` is charged `formulaLen r` by `proofLen` (it is in its
    sequent), so this is `O(1)` per unit of `ρ`'s own length.
 
 So the whole proof is a bottom-up description of `ρ`'s syntax with `O(1)` library uses per
@@ -299,7 +299,7 @@ eliminate its conclusion.
   the identity "that member IS `neg p`" is one `neg_*` shape lemma at the top constructor:
   `neg (qqAnd a b) = qqOr (neg a) (neg b)` — recursive down `p` if the two descriptions differ
   in depth; `O(|p|)`, paid by `ρ` at this node). Cut `Intro_axL[s, p]` → get `e` with
-  `axLGraph e s p ∧ derivation.sigma e`; cut `Dlen_axL[s, l]` with the length fact of `s` → `n`;
+  `axLGraph e s p ∧ derivation.sigma e`; cut `ProofLen_axL[s, l]` with the length fact of `s` → `n`;
   `∃`-introduce. Cost `O(1)` uses.
 * **`verumIntro s`**: `vrm ∈ s` with `qqVerumDef vrm` (a member described as `⊤` at its
   introduction). Same shape.
@@ -310,24 +310,24 @@ eliminate its conclusion.
   `s₂ = insert q s` (totality of `insertDef`). Build `Γ_{ν₁}`: `IsFormulaSet s₁` (lemma from
   `IsFormulaSet s` + `IsFormula p`, the latter from `p`'s shape or the `IsFormula`-part of
   `r`'s description); transport every live fact `x ∈ s` needed below `ν₁` to `x ∈ s₁`
-  (`x ∈ s → x ∈ insert p s`), and `p ∈ s₁` (`x ∈ insert x s`); length: `setLen s₁ ≤ setLen s +
-  formulaLen p` (`setLen_insert_le`) — with the numeral bookkeeping of §4. Run the `ν₁` subtree,
+  (`x ∈ s → x ∈ insert p s`), and `p ∈ s₁` (`x ∈ insert x s`); length: `sequentLen s₁ ≤ sequentLen s +
+  formulaLen p` (`sequentLen_insert_le`) — with the numeral bookkeeping of §4. Run the `ν₁` subtree,
   eliminate `d₁ n₁`; same for `ν₂`. Cut `Intro_and[s, p, q, d₁, d₂]` (its hypotheses
   `∃ c, fstIdxDef c dp ∧ insertDef c p s` are exactly `fstIdxDef s₁ d₁` and the `s₁`-fact);
-  cut `Dlen_and`; conclude. Uses: `O(1)` + `O(#live facts transported)`.
+  cut `ProofLen_and`; conclude. Uses: `O(1)` + `O(#live facts transported)`.
 * **`orIntro s p q d`**: as `and` with `s' = insert p (insert q s)` (two `insert`s) and one
   child.
 * **`allIntro s p d`**: live: `r ∈ s`, `r = qqAll p`. Get `fp` (`freeGraph fp p`), `ss`
   (`setShiftGraph ss s`), `s' = insert fp ss`. `Γ_{ν'}`: `IsFormulaSet ss` (`setShift_iff`),
   `IsFormulaSet s'`; every live fact `x ∈ s` becomes `x' ∈ ss` with `x' = shift x` (get `x'`
   by totality, membership by `shift_mem_setShift`), and the shape facts of `x` are transported to
-  `x'` by `shift_and/…` (one lemma per shape fact — `O(Σ |live shapes|) ≤ O(setLen s)`); the
+  `x'` by `shift_and/…` (one lemma per shape fact — `O(Σ |live shapes|) ≤ O(sequentLen s)`); the
   shape of `fp` from `p`'s by the `free`-commutation lemmas (`free p = substs1 (&0) (shift p)`,
   `Formula/Typed.lean:240`). This is where the decomposed formula's syntax is REBUILT after a
   substitution — `O(|p|)`, paid by `ρ` (the child's sequent contains `fp`).
 * **`exsIntro s p t d`**: live: `r ∈ s`, `r = qqExs p`, and the WITNESS TERM `t` must be
   introduced here: describe `t` bottom-up (§3.2(2), `O(termLen t)` — exactly `ρ`'s extra charge
-  at this node, `DLen.Phi`'s `termLen L t` summand), which also yields `IsTerm t`. Get
+  at this node, `ProofLen.Phi`'s `termLen L t` summand), which also yields `IsTerm t`. Get
   `pt` (`substs1Graph pt t p`), `s' = insert pt s`; shapes of `pt` from those of `p` via
   `substs_*` (atoms: `substs_rel` gives `qqRel k R (termSubstVec …)` — the term vector is a new
   eigenvariable from the `termSubstVec` graph's totality; its inside is never needed).
@@ -336,7 +336,7 @@ eliminate its conclusion.
   formula eigenvariable already in scope, since `s' ⊆ s`), prove `s' ⊆ s` by `|s'|` uses of
   `s ⊆ t → x ∈ t → insert x s ⊆ t` from `∅ ⊆ s`. Members of `s` that are NOT in `s'` were
   described (§3.2(2)) when `s` was built — `wk` is the rule that INTRODUCES arbitrary formulas.
-  Cost `O(|s'|)` uses, `≤ O(setLen s)`.
+  Cost `O(|s'|)` uses, `≤ O(sequentLen s)`.
 * **`shiftRule s d'`**: `s = setShift s'` where `s'` is the child's sequent. The live facts flow
   DOWN (from `ν`'s ancestors to its descendants), so we have `x ∈ s` and need `x' ∈ s'` with
   `x = shift x'`: `mem_setShift_iff` (backward direction) gives `x'`; the shape facts of `x`
@@ -349,7 +349,7 @@ eliminate its conclusion.
 * **`axm s p`**: live: `p ∈ s`, and `TAct.Δ₁ch.sigma p` must be PROVED for the
   eigenvariable-described `p` — §3.6.
 
-The **dlen output** of every fragment is `n ≤ ū_ν` with `ū_ν` binary, §4.
+The **proofLen output** of every fragment is `n ≤ ū_ν` with `ū_ν` binary, §4.
 
 ### 3.4 Membership and subset facts without writing codes — the transport discipline
 
@@ -357,9 +357,9 @@ Every side condition of `Intro_tag` is a Δ₀ fact about the specific eigenvari
 NEVER established by evaluating anything; each is a constant-size consequence of how the
 sequent was BUILT: `p ∈ insert p s`, `x ∈ s → x ∈ insert p s`, `s ⊆ insert p s`,
 `IsFormulaSet (insert p s) ← IsFormulaSet s ∧ IsFormula p`, `shift x ∈ setShift s ← x ∈ s`. The
-only question is WHICH facts are carried in which sequent, because `dlen` charges every
-formula of every sequent (`DLen.Phi`, `DerivationLength.lean:31-46`: every node pays
-`setLen s + 1`). The discipline:
+only question is WHICH facts are carried in which sequent, because `proofLen` charges every
+formula of every sequent (`ProofLen.Phi`, `DerivationLength.lean:31-46`: every node pays
+`sequentLen s + 1`). The discipline:
 
 * A fact is carried in a subtree iff it is used in that subtree (live). Dead facts are dropped
   by `wkRule` at the subtree root (one node, cost = the sequent once).
@@ -371,8 +371,8 @@ formula of every sequent (`DLen.Phi`, `DerivationLength.lean:31-46`: every node 
   to its last decomposition).
 
 With `L_ν` = number of live facts at `ν` (`≤` the number of formulas in `s_ν` plus their live
-shape facts, so `L_ν ≤ setLen s_ν ≤ w_ν`, where `w_ν := 1 + setLen s_ν (+ termLen t)` is `ν`'s
-own `dlen` charge), a fragment makes `O(w_ν)` library uses, each with a context of `O(L_ν)`
+shape facts, so `L_ν ≤ sequentLen s_ν ≤ w_ν`, where `w_ν := 1 + sequentLen s_ν (+ termLen t)` is `ν`'s
+own `proofLen` charge), a fragment makes `O(w_ν)` library uses, each with a context of `O(L_ν)`
 constant-size formulas: **`O(w_ν · L_ν) ≤ O(w_ν²)` symbols per node, before the index cost.**
 Summed, `Σ_ν w_ν² ≤ (Σ_ν w_ν)² = g²`.
 
@@ -395,7 +395,7 @@ shape facts are derived from `p`'s by `substs_and` (`Functions.lean:466`), `subs
 The recursion stops at atoms; term vectors inside atoms are opaque eigenvariables. The same
 pattern serves `neg` (`neg_and/neg_or`, :88-91; `neg (qqRel …) = qqNRel …`), `shift`
 (`shift_and`, :303) and `free`. No formula code is ever compared symbol-by-symbol EXCEPT when
-`ρ` inserts a formula that is already in the sequent (`insert p s = s`) and the dlen
+`ρ` inserts a formula that is already in the sequent (`insert p s = s`) and the proofLen
 bookkeeping needs `p ∈ s` (§4.2) — then the V-generic construction knows which member `x` of
 `s` equals `p` and proves `p = x` by walking the two shape descriptions in parallel
 (`qqAnd a b = qqAnd a' b' ← a = a' ∧ b = b'`, `O(|p|)`).
@@ -445,49 +445,49 @@ For PBLT any polynomial is enough (`BRIEF.md` §6 master inequality:
 **state `BoundedInnerNec` with `d = 3`** and prove it with the plain discipline; tighten later
 if the paper wants `d = 2`.
 
-## 4. The `dlen` clause and the final existential
+## 4. The `proofLen` clause and the final existential
 
 ### 4.1 The length of each node as a binary numeral
 
-Every fragment concludes `dlenGraphDef.sigma d n ∧ n ≤ ū_ν` where `ū_ν := bnum (dlen ν)` is
-the binary numeral (`Bnum.lean:320`, `bnumT`, `NumeralFacts.lean`) of the TRUE length of the
+Every fragment concludes `proofLenGraphDef.sigma d n ∧ n ≤ ū_ν` where `ū_ν := binNumeral (proofLen ν)` is
+the binary numeral (`BinNumeral.lean:320`, `binNumeralMeta`, `NumeralFacts.lean`) of the TRUE length of the
 sub-derivation (a `V`-element `≤ g`, so `O(‖g‖)` symbols). Recurrence at an `and` node:
-`Dlen_and[s, p, q, d₁, d₂, n₁, n₂, l]` gives `n = l + n₁ + n₂ + 1`; with the live facts
+`ProofLen_and[s, p, q, d₁, d₂, n₁, n₂, l]` gives `n = l + n₁ + n₂ + 1`; with the live facts
 `n₁ ≤ ū₁`, `n₂ ≤ ū₂`, `l ≤ ū_l` and the bit-recursion lemmas
-`bnum a + bnum b = bnum (a + b)` (`O(‖a‖ + ‖b‖)` uses of `∀ x y, …` laws on `2x`, `2x+1`;
+`binNumeral a + binNumeral b = binNumeral (a + b)` (`O(‖a‖ + ‖b‖)` uses of `∀ x y, …` laws on `2x`, `2x+1`;
 `NumeralFacts.lean:21-26` is the existing pattern: `∀ x, c ≤ x → c ≤ 2x`, `… ≤ 2x + 1`,
-instantiated bit by bit) we get `n ≤ bnum(dlen ν)`. Cost `O(‖g‖)` per node — negligible
+instantiated bit by bit) we get `n ≤ binNumeral(proofLen ν)`. Cost `O(‖g‖)` per node — negligible
 (`O(g ‖g‖)` total).
 
-### 4.2 `setLen` without deciding non-membership
+### 4.2 `sequentLen` without deciding non-membership
 
-`l` is obtained from the totality of `setLenDef` and BOUNDED, never computed: for the child's
-sequent `s' = insert p s`, `setLen s' ≤ setLen s + formulaLen p` (`CutV.lean:130
-setLen_insert_le`, unconditional) with `formulaLen p ≤ bnum |p|` from `p`'s shape facts
-(`formulaLen_and` etc., `Length.lean:220-235`, plus `bnum`-addition) — exact when `p ∉ s`,
-which is when `ρ`'s `dlen` really grows. When `p ∈ s` (so `insert p s = s` and `dlen` does NOT
+`l` is obtained from the totality of `sequentLenDef` and BOUNDED, never computed: for the child's
+sequent `s' = insert p s`, `sequentLen s' ≤ sequentLen s + formulaLen p` (`CutV.lean:130
+sequentLen_insert_le`, unconditional) with `formulaLen p ≤ binNumeral |p|` from `p`'s shape facts
+(`formulaLen_and` etc., `Length.lean:220-235`, plus `binNumeral`-addition) — exact when `p ∉ s`,
+which is when `ρ`'s `proofLen` really grows. When `p ∈ s` (so `insert p s = s` and `proofLen` does NOT
 grow), the V-generic construction proves `p ∈ s` instead (§3.5, positive membership only) and
-uses `x ∈ s → insert x s = s`; the bound stays exact. So every `ū_ν` equals `bnum (dlen ν)` and
+uses `x ∈ s → insert x s = s`; the bound stays exact. So every `ū_ν` equals `binNumeral (proofLen ν)` and
 no `∉` proof is ever needed. (The alternative "preprocess `ρ` into a duplicate-free `ρ'` with
-`dlen ρ' ≤ dlen ρ`" is unnecessary.) `formulaLen` of root-subformula instances
+`proofLen ρ' ≤ proofLen ρ`" is unnecessary.) `formulaLen` of root-subformula instances
 `subst v c_i` is bounded through the shape facts too, with the atom-level fact
-`termLen t ≤ bnum(c·‖k‖)` re-derived where used (`O(‖k‖)` per use).
+`termLen t ≤ binNumeral(c·‖k‖)` re-derived where used (`O(‖k‖)` per use).
 
 ### 4.3 Closing the target (the top of the proof, `O(1)` nodes of size `O(|target|)`)
 
-1. Get `t` (`bnumGraph t k̄`, totality), `v = t ∷ 0` (`adjoinDef`), `g'` (`substsGraph g' v ⌜χ⌝`,
+1. Get `t` (`binNumeralGraph t k̄`, totality), `v = t ∷ 0` (`adjoinDef`), `g'` (`substsGraph g' v ⌜χ⌝`,
    totality — **the numeral `⌜χ⌝` appears here, in `O(1)` sequents**), `s₀ = insert g' ∅`
    (`insertDef s₀ g' 0`); the `c_i`/shape facts of §3.2(1) (numerals appear `O(|χ|)` times, then
-   are `wk`-dropped). Establish `Γ_root = {IsFormulaSet s₀, g' ∈ s₀, shapes, setLen s₀ ≤ bnum |g'|}`.
+   are `wk`-dropped). Establish `Γ_root = {IsFormulaSet s₀, g' ∈ s₀, shapes, sequentLen s₀ ≤ binNumeral |g'|}`.
 2. `wk` the target formula out of the context; run the root fragment; eliminate `d, n` with
-   `derivation.sigma d ∧ fstIdxDef s₀ d ∧ dlenGraphDef.sigma d n ∧ n ≤ bnum (dlen ρ)`.
-3. `dlenDef n d` (`DerivationLength.lean:404`): its first conjunct from `dlenGraphDef.sigma d n`
+   `derivation.sigma d ∧ fstIdxDef s₀ d ∧ proofLenGraphDef.sigma d n ∧ n ≤ binNumeral (proofLen ρ)`.
+3. `proofLenDef n d` (`DerivationLength.lean:404`): its first conjunct from `proofLenGraphDef.sigma d n`
    by weakening under the implication; its second from `derivation.sigma d` (the antecedent is
    refuted) — two constant steps. `proof.sigma d g'` from `insertDef s₀ g' 0 ∧ fstIdxDef s₀ d ∧
    derivation.sigma d` by one `∃`-intro on `s₀`.
-4. `a`: get `l_k` with `lengthDef l_k k̄` (totality) and prove `l_k = bnum ‖k‖` by `O(‖k‖)`
+4. `a`: get `l_k` with `lengthDef l_k k̄` (totality) and prove `l_k = binNumeral ‖k‖` by `O(‖k‖)`
    bit-recursion uses (`‖2x‖ = ‖x‖ + 1`, `‖2x+1‖ = ‖x‖ + 1`); get `a = l_k · l_k`; prove
-   `bnum (dlen ρ) ≤ a` from the V-fact `dlen ρ ≤ gBudget k` by binary-numeral comparison and
+   `binNumeral (proofLen ρ) ≤ a` from the V-fact `proofLen ρ ≤ gBudget k` by binary-numeral comparison and
    multiplication lemmas (`O(‖k‖²)` uses — absorbed in `(gBudget k)^d`).
 5. `∃`-intros in order `n`, `d`, `g'`, `a`, each an `exsIntro` with an eigenvariable as witness
    (cost `|target|` per intro, `O(1)` intros), then `andIntro`s for the conjunctions; cut the
@@ -503,23 +503,23 @@ no `∉` proof is ever needed. (The alternative "preprocess `ρ` into a duplicat
 ```lean
 structure BoundedInnerNec (d c c₁ c₀ : ℕ) : Prop where
   nec : ∀ (V) …, ∀ (χ : Semisentence LAct 1) (k : V),
-    LenDerivable TAct (gBudget k) (instB ⌜χ⌝ k) →
-    ∃ e, e ≤ (gBudget k) ^ d + c + c₁ * (flen χ + ‖k‖) + c₀ ∧ LenDerivable TAct e (instB ⌜Box_g χ⌝ k)
+    LenBoxUnbounded TAct (gBudget k) (instB ⌜χ⌝ k) →
+    ∃ e, e ≤ (gBudget k) ^ d + c + c₁ * (formulaLenMeta χ + ‖k‖) + c₀ ∧ LenBoxUnbounded TAct e (instB ⌜Box_g χ⌝ k)
 ```
 
 ANALYSIS. `Box_g χ` contains the UNARY numeral `⌜χ⌝` (§1.3), so `formulaLen (instB ⌜Box_g χ⌝ k)
-≥ 2·encode χ`, and `dlen d ≥ 1 + setLen {φ} = 1 + formulaLen φ` for any proof `d` of `φ`
-(`DlenGraph.*_iff`, root node). Take `χ_m := ⊤ ⋎ (⊤ ⋎ (… ⋎ ⊤))` (`m` disjuncts, no `#0`):
+≥ 2·encode χ`, and `proofLen d ≥ 1 + sequentLen {φ} = 1 + formulaLen φ` for any proof `d` of `φ`
+(`ProofLenGraph.*_iff`, root node). Take `χ_m := ⊤ ⋎ (⊤ ⋎ (… ⋎ ⊤))` (`m` disjuncts, no `#0`):
 `instB ⌜χ_m⌝ k = ⌜χ_m⌝`, and `orIntro` over a `verumIntro` leaf proves it with
-`dlen ≈ 3·flen χ_m`; so the premise holds at every `k` with `‖k‖² ≥ 3m + 4`, e.g.
+`proofLen ≈ 3·formulaLenMeta χ_m`; so the premise holds at every `k` with `‖k‖² ≥ 3m + 4`, e.g.
 `‖k‖ = ⌈√(3m+4)⌉`, where the right-hand side is `poly(m)`; but `encode χ_m` grows at least
 exponentially in `m` (nested Cantor pairs square at each level). So for every `d c c₁ c₀` there
 is `(χ, k)` violating `nec`: the structure is uninhabited, and `pblt_uniform (hE : BoundedInnerNec …)`
 would be vacuous. The construction of §3–4 delivers instead
 
-`∀ χ, ∃ C : ℕ, ∀ V k, LenDerivable TAct (gBudget k) (instB ⌜χ⌝ k) → ∃ e ≤ C * ((gBudget k)^3 + 1), LenDerivable TAct e (instB ⌜Box_g χ⌝ k)`
+`∀ χ, ∃ C : ℕ, ∀ V k, LenBoxUnbounded TAct (gBudget k) (instB ⌜χ⌝ k) → ∃ e ≤ C * ((gBudget k)^3 + 1), LenBoxUnbounded TAct e (instB ⌜Box_g χ⌝ k)`
 
-(`C` absorbs `flen (Box_g χ)`, `N_χ`, `|derivation TAct|`, the `‖k‖²`-terms via `‖k‖² ≤ gBudget k`).
+(`C` absorbs `formulaLenMeta (Box_g χ)`, `N_χ`, `|derivation TAct|`, the `‖k‖²`-terms via `‖k‖² ≤ gBudget k`).
 This is what U8 consumes (χ = `psi` is fixed), and it is the honest shape: the constant depends
 on `χ` at least through `encode χ`. Recommended restatement (task 5(0)):
 `structure BoundedInnerNec (d : ℕ) : Prop where nec : ∀ χ, ∃ C : ℕ, ∀ V k, … ≤ C * ((gBudget k)^d + 1) …`,
@@ -530,50 +530,50 @@ allowed into the constant.)
 ## 5. Lean task list (ANALYSIS; sizes are estimates for one person familiar with the package)
 
 **5(0). Restate `BoundedInnerNec`** as in §4.4 and re-thread U8/U9 (`pblt_uniform`,
-`dupoc_self_coop`). ~50 lines, half a day. Do this first: it changes what (c) must produce.
+`dupoc_self_coop_of_nec`). ~50 lines, half a day. Do this first: it changes what (c) must produce.
 
 **5(a). The library `Λ` as `TAct`-theorems with existential lengths.** ~40 sentences (§3.1
 table). Each: write the ℒₒᵣ-sentence in the binder DSL using the SAME Δ₁/Σ₁ formula objects
-that appear in the target (`!(derivation TAct).sigma`, `!insertDef`, `!(dlenGraphDef LAct).sigma`,
-`!(setLenDef LAct)`, `!bnumGraph`, `!(substsGraph LAct)`, …); prove `Eval ↔` by `simp` with the
-`*.defined.iff` instances; close by `complete`/`tact_complete'` + the cited V-lemma; package the
-length by `lenDerivable_of_proof` (`Prep.lean:685`) + `lenDerivable_of_nat` (`:671`) into
-`∃ N, ∀ V, LenDerivable TAct N ⌜Λ⌝`. 20–40 lines each (the `Intro_tag` ones longer: the
+that appear in the target (`!(derivation TAct).sigma`, `!insertDef`, `!(proofLenGraphDef LAct).sigma`,
+`!(sequentLenDef LAct)`, `!binNumeralGraph`, `!(substsGraph LAct)`, …); prove `Eval ↔` by `simp` with the
+`*.defined.iff` instances; close by `complete`/`TAct_complete_of_readings` + the cited V-lemma; package the
+length by `lenBoxUnbounded_of_proof` (`Prep.lean:685`) + `lenBoxUnbounded_of_nat` (`:671`) into
+`∃ N, ∀ V, LenBoxUnbounded TAct N ⌜Λ⌝`. 20–40 lines each (the `Intro_tag` ones longer: the
 sentence must match the fixpoint blueprint's clause shape so that `Fixpoint.Construction.case`
 + `eval_fixpointDefΔ₁` discharge it) → **1000–1500 lines, 5–8 days.** Foundation lemmas needed:
 `Derivation.axL…axm` (`Proof/Basic.lean:603-660`), `Fixpoint.Construction.case/eval_fixpointDefΔ₁`
-(`Fixpoint.lean:222/251`), `DlenGraph.*_iff` (package), `mem_bitInsert_iff` (`Bit.lean:241`),
+(`Fixpoint.lean:222/251`), `ProofLenGraph.*_iff` (package), `mem_bitInsert_iff` (`Bit.lean:241`),
 `IsFormulaSet.insert_iff/setShift_iff` (`Proof/Basic.lean:40/106`), `mem_setShift_iff` (:82),
 `neg_and/or`, `substs_*`, `shift_and` (`Formula/Functions.lean:88-91,303,456-475`),
-`IsSemiformula.case_iff` (`Formula/Basic.lean:1302`), `setLen_insert_le` (`CutV.lean:130`),
-`formulaLen_*`/`termLen_*` (`Length.lean`), `bnum_two_mul*` (`Bnum.lean:345-368`), `𝗣𝗔.Δ₁`'s
+`IsSemiformula.case_iff` (`Formula/Basic.lean:1302`), `sequentLen_insert_le` (`CutV.lean:130`),
+`formulaLen_*`/`termLen_*` (`Length.lean`), `binNumeral_two_mul*` (`BinNumeral.lean:345-368`), `𝗣𝗔.Δ₁`'s
 `mem_iff` (`Definability.lean:1070`) for §3.6, `complete` (`Model.lean:78`),
-`Theory.Proof.complete_on_eq_models` (via `tact_complete`). Risk: §3.6 (the induction-instance
+`Theory.Proof.complete_on_eq_models` (via `TAct_complete`). Risk: §3.6 (the induction-instance
 recognizer's shape); the `simp` cost of `Eval` on sentences containing `derivation TAct`
 (`Proof/Basic.lean:495` warning — keep everything at the `.defined.iff` level, never unfold).
 
 **5(b). The fragments and `verifyCode`.** Two layers:
 
 * *Fragment codes* (Lean-level `noncomputable def`s built from the node constructors, in the
-  style of `cutCode` (`CutV.lean:176-260`, ~90 lines for a 5-node code with `Proof` + `dlen`
+  style of `cutCode` (`CutV.lean:176-260`, ~90 lines for a 5-node code with `Proof` + `proofLen`
   lemmas) and `instCode` (`InstV.lean:335-420`)): `useLemma Γ Λ ē` (§3.1 first move, `O(|ē|)`
   nodes), `elimExists Γ D` (second move), `describeFormula` (bottom-up syntax walk — itself a
-  recursion on the formula code: a `UformulaRec`-style Σ₁ construction like `relabelTemplate`,
-  `RelabelTemplate.lean`, 562 lines), `transportFacts`, and the ten per-tag fragments. Each
-  fragment needs its `DerivationOf` proof and its `dlen` bound. **~3000 lines, 4–6 weeks.**
-* *`verifyCode`*: the recursion on `ρ` is NOT structural in the `DLen` sense — the fragment
+  recursion on the formula code: a `UformulaRec`-style Σ₁ construction like `revalueTemplate`,
+  `RevalueTemplate.lean`, 562 lines), `transportFacts`, and the ten per-tag fragments. Each
+  fragment needs its `DerivationOf` proof and its `proofLen` bound. **~3000 lines, 4–6 weeks.**
+* *`verifyCode`*: the recursion on `ρ` is NOT structural in the `ProofLen` sense — the fragment
   for `ν` depends on a CONTEXT (which facts are live, the eigenvariable indices, the numerals
   `ū`), so define `verify : V → V → V` on `(ctx, d)` pairs by a `Fixpoint` on `⟪d, ctx, e⟫`
-  triples with `ctx` an HFS code of the live-fact list (the `DLen` pattern:
+  triples with `ctx` an HFS code of the live-fact list (the `ProofLen` pattern:
   `DerivationLength.lean` §`Phi`/`blueprint`, existence + uniqueness by
   `Derivation.induction1 𝚺` (`Proof/Basic.lean:560`) with a Σ₁ predicate
-  `∃ e, VerifyGraph d ctx e ∧ Derivation TAct e ∧ fstIdx e = … ∧ dlen e ≤ C·dlen d + …`),
+  `∃ e, VerifyGraph d ctx e ∧ Derivation TAct e ∧ fstIdx e = … ∧ proofLen e ≤ C·proofLen d + …`),
   or — simpler and recommended — prove only the EXISTENTIAL `∀ ctx, WellFormed ctx d → ∃ e, …`
   by `induction1` with the fragment codes as explicit witnesses (no function `verifyCode` at
   all; the statement of U5 is existential anyway). The blueprint of the ctx/live-fact
   bookkeeping is the ugliest part: every fragment's sequents are quoted lemma sentences
   `⌜Λ⌝` with `subst` at eigenvariables and `shift`s applied (`coe_quote_eq`,
-  `typed_quote_substs`, `Formula/Coding.lean:105`; `shift_substs`), and `dlen` of them must be
+  `typed_quote_substs`, `Formula/Coding.lean:105`; `shift_substs`), and `proofLen` of them must be
   bounded (`formulaLen` of a `subst`ed quote — `formulaLen_instB_le`-style lemmas,
   `InstV.lean`). **~3000–4000 lines, 6–10 weeks.** Risks: `simp` blow-ups on quoted formulas
   (Diag's kernel-numeral trap, `HANDOVER §6`); getting `IsFormulaSet` for every constructed
@@ -595,19 +595,19 @@ library lemmas are cited, not repeated; facts are cited, not carried; `E` become
 (Critch's system). Cost: a NEW `Derivation'` predicate (a copy of `Proof/Basic.lean` +
 `Fixpoint` blueprint, ~900 lines) with soundness "`Derivation' e → ∃ d, Derivation d`" by
 unfolding (exponential blow-up allowed, it is a `Prop`), and then EVERY length-carrying layer
-re-done for it: `dlen'`, `ProperV'` (the towers change), `CutV'`, `InstV'`, `Prep`'s
+re-done for it: `proofLen'`, `ProperBound'` (the towers change), `CutV'`, `InstV'`, `Prep`'s
 `andLCode`, and the box `bewBDef'` — i.e. most of M2–M3 (`~3000` lines) plus the §5 work on the
 new calculus. Not recommended unless the paper needs "linear" rather than "polynomial".
 
 **(ii) Accept an exponential `E`.** With `E(a) = 2^{c·a}` and the package's `gBudget k = ‖k‖²`
 the master inequality `E(g k) ≤ k` is false for all `k`. With the minimal `g(k) = A·‖k‖`
-(`A` above the KNOWN instantiation coefficient — `lenProvable_inst_size`'s `6·size k`,
+(`A` above the KNOWN instantiation coefficient — `lenBoxNat_inst_size`'s `6·size k`,
 `InstV.lean` — so that `C + 6‖k‖ ≤ A‖k‖` eventually; the circularity with the fixed point's
 constants is only through the additive `C`, so this is legitimate) one gets
 `E(g k) = k^{cA}`: PBLT then needs `f(k) ≻ k^{cA}`, i.e. a searcher whose BUDGET is a
 polynomial `k^m` of the parameter `k` written in its source. Not meaningless for self-play —
 but it is a change of the AGENT LANGUAGE (`Prog.lean`/`Eval`: the stored budget field `k` is
-read as `k^m` by the evaluator, so that `progT` still writes `bnum k` and the guard is still
+read as `k^m` by the evaluator, so that `codeTerm` still writes `binNumeral k` and the guard is still
 `instB ⌜q_D⌝ k`), and the engine's `Pf` side has no such family. The natural family
 (`f(k) = k`) is dead under exponential `E`, exactly as the brief says.
 
@@ -619,6 +619,6 @@ provides.
 
 **(iv) Cheaper partial wins worth doing regardless.** (1) Charge free-variable indices in
 binary in `Length.lean` (`termLen_fvar x = ‖x‖ + 1`): one factor `g` off `E`, and it is the
-`T3` cost-faithfulness item the file's docstring already records; every `dlen`-lemma downstream
+`T3` cost-faithfulness item the file's docstring already records; every `proofLen`-lemma downstream
 survives with adjusted constants. (2) Restate `BoundedInnerNec` (§4.4) now, so that U8/U9 are
 not vacuous even before U10.

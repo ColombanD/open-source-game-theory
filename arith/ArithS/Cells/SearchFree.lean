@@ -53,10 +53,10 @@ are unconditional: no oracle (`GuardAgree`), no Löb, no floor, no budget. Every
 3. **The seven players** are `SearchFreePlayer` (proper, modest, search-free), each by `rfl`/`simp`.
 4. **The 27 terminating cells** `sf_<L>_vs_<R> : EvalGraph pad ⌜L⌝ ⌜R⌝ ⌜L⌝ a ∧ EvalGraph pad ⌜R⌝ ⌜L⌝
    ⌜R⌝ b`, one line each, at the engine's pad; **`sf_MirrorBot_vs_MirrorBot`**, the `none` cell, is
-   NON-termination at every fuel (`SimTest.mirror_vs_mirror`, through `pcode_MirrorBot`).
-5. **PA proves every positive atom**: `pa_proves_trAt_of_evalGraph` (an arithmetized play at ℕ makes
-   the instantiated atom sentence a PA theorem — `models_trAt_plays` + `models_inst` +
-   Σ₁-completeness, the body of `Inst.pa_proves_trAt_inst_searchFree` without the engine
+   NON-termination at every fuel (`SimTest.mirror_vs_mirror`, through `progCode_MirrorBot`).
+5. **PA proves every positive atom**: `pa_proves_sentenceAt_of_evalGraph` (an arithmetized play at ℕ makes
+   the instantiated atom sentence a PA theorem — `models_sentenceAt_plays` + `models_inst` +
+   Σ₁-completeness, the body of `Inst.pa_proves_sentenceAt_inst_searchFree` without the engine
    certificate), `pa_cell_of_evalGraph` (both atoms of a cell as `Aι`, the `Leaf.atom` shape of
    T2-CORE), and the 27 instances `pa_<L>_vs_<R>`.
 6. **The census in one line**: `searchFree_census` (the 28 cells) and `searchFree_pa_census`
@@ -84,7 +84,7 @@ the `.search` arm is unreachable (`Inv.search` gives `true = false`). -/
 theorem evalGraph_of_eval_searchFree_core :
     ∀ (n : ℕ) (me opp body : PD.Prog) (a : PD.Action), Inv true me opp body →
       PD.eval n me opp body = some a →
-      EvalGraph n (pcode me) (pcode opp) (pcode body) (actCode a) := by
+      EvalGraph n (progCode me) (progCode opp) (progCode body) (actCode a) := by
   intro n
   induction n with
   | zero => intro me opp body a _ h; simp [PD.eval] at h
@@ -94,28 +94,28 @@ theorem evalGraph_of_eval_searchFree_core :
     | const c =>
       have hc : c = a := by simpa [PD.eval] using h
       subst hc
-      rw [pcode_const]
+      rw [progCode_const]
       exact EvalGraph.const_iff.mpr rfl
     | self =>
       rw [PD.eval] at h
-      rw [pcode_self, EvalGraph.self_iff]
+      rw [progCode_self, EvalGraph.self_iff]
       exact ih me opp me a (Inv.self hI) h
     | opp =>
       rw [PD.eval] at h
-      rw [pcode_opp, EvalGraph.opp_iff]
+      rw [progCode_opp, EvalGraph.opp_iff]
       exact ih me opp opp a (Inv.opp hI) h
     | bot p =>
       rw [PD.eval] at h
-      rw [pcode_bot, EvalGraph.bot_iff]
+      rw [progCode_bot, EvalGraph.bot_iff]
       exact ih me opp p a (Inv.bot hI) h
     | sim p q =>
       rw [PD.eval] at h
       have hN := ih _ _ _ a (Inv.sim hI) h
       have hmb := hI.2.2.2.2.1
       simp only [modestP, Bool.and_eq_true] at hmb
-      rw [pcode_subst hI.1 hI.2.1 p (fragP_of_modestP p hmb.1.2),
-        pcode_subst hI.1 hI.2.1 q (fragP_of_modestP q hmb.2)] at hN
-      rw [pcode_sim, EvalGraph.sim_iff]
+      rw [progCode_subst hI.1 hI.2.1 p (fragP_of_modestP p hmb.1.2),
+        progCode_subst hI.1 hI.2.1 q (fragP_of_modestP q hmb.2)] at hN
+      rw [progCode_sim, EvalGraph.sim_iff]
       exact hN
     | ite b c p q =>
       obtain ⟨hIb, hIp, hIq⟩ := Inv.ite hI
@@ -126,7 +126,7 @@ theorem evalGraph_of_eval_searchFree_core :
         rw [hb] at h
         simp only [bind, Option.bind] at h
         have h₁ := ih me opp b r hIb hb
-        rw [pcode_ite, EvalGraph.ite_iff]
+        rw [progCode_ite, EvalGraph.ite_iff]
         by_cases hr : (r == c) = true
         · rw [if_pos hr] at h
           exact ⟨actCode r, h₁, Or.inl ⟨actCode_eq_of_beq hr, ih me opp p a hIp h⟩⟩
@@ -140,20 +140,20 @@ theorem evalGraph_of_eval_searchFree_core :
 
 /-- A search-free player: proper (not a bare pronoun), modest, no `.search` node. -/
 def SearchFreePlayer (p : PD.Prog) : Prop :=
-  Proper p ∧ modestP p = true ∧ p.hasSearch = false
+  ProperPlayer p ∧ modestP p = true ∧ p.hasSearch = false
 
 /-- **The search-free transfer, same fuel**: no oracle, no certificate. -/
 theorem evalGraph_of_eval_searchFree {me opp body : PD.Prog} {a : PD.Action} {n : ℕ}
     (h : PD.eval n me opp body = some a) (hme : SearchFreePlayer me) (hopp : SearchFreePlayer opp)
     (hb : modestP body = true) (hsb : body.hasSearch = false) :
-    EvalGraph n (pcode me) (pcode opp) (pcode body) (actCode a) :=
+    EvalGraph n (progCode me) (progCode opp) (progCode body) (actCode a) :=
   evalGraph_of_eval_searchFree_core n me opp body a
     ⟨hme.1, hopp.1, hme.2.1, hopp.2.1, hb, fun _ ↦ ⟨hme.2.2, hopp.2.2, hsb⟩⟩ h
 
 /-- The play form (`eval me opp me`). -/
 theorem play_evalGraph_of_searchFree {me opp : PD.Prog} {a : PD.Action} {n : ℕ}
     (h : PD.play n me opp = some a) (hme : SearchFreePlayer me) (hopp : SearchFreePlayer opp) :
-    EvalGraph n (pcode me) (pcode opp) (pcode me) (actCode a) :=
+    EvalGraph n (progCode me) (progCode opp) (progCode me) (actCode a) :=
   evalGraph_of_eval_searchFree h hme hopp hme.2.1 hme.2.2
 
 /-! ### 2. The bridge -/
@@ -162,8 +162,8 @@ theorem play_evalGraph_of_searchFree {me opp : PD.Prog} {a : PD.Action} {n : ℕ
 the same fuel. -/
 theorem outcome_evalGraph_of_searchFree {L R : PD.Prog} {a b : PD.Action} {n : ℕ}
     (h : PD.outcome n L R = some (a, b)) (hL : SearchFreePlayer L) (hR : SearchFreePlayer R) :
-    EvalGraph n (pcode L) (pcode R) (pcode L) (actCode a) ∧
-    EvalGraph n (pcode R) (pcode L) (pcode R) (actCode b) :=
+    EvalGraph n (progCode L) (progCode R) (progCode L) (actCode a) ∧
+    EvalGraph n (progCode R) (progCode L) (progCode R) (actCode b) :=
   let ⟨ha, hb⟩ := (outcome_eq_some_iff n L R a b).mp h
   ⟨play_evalGraph_of_searchFree ha hL hR, play_evalGraph_of_searchFree hb hR hL⟩
 
@@ -172,30 +172,30 @@ the arithmetized cell at fuel `pad` (its `fuel = 0` instance). -/
 theorem outcomeSpec_evalGraph_of_searchFree {pad : ℕ} {L R : PD.Prog} {a b : PD.Action}
     (h : PD.OutcomeSpec .nobudget pad (fun _ => L) (fun _ => R) (some (a, b)))
     (hL : SearchFreePlayer L) (hR : SearchFreePlayer R) :
-    EvalGraph pad (pcode L) (pcode R) (pcode L) (actCode a) ∧
-    EvalGraph pad (pcode R) (pcode L) (pcode R) (actCode b) := by
+    EvalGraph pad (progCode L) (progCode R) (progCode L) (actCode a) ∧
+    EvalGraph pad (progCode R) (progCode L) (progCode R) (actCode b) := by
   have h0 : PD.outcome (0 + pad) L R = some (a, b) := h 0
   rw [Nat.zero_add] at h0
   exact outcome_evalGraph_of_searchFree h0 hL hR
 
 /-- **PA proves the atom of an arithmetized play** (no engine certificate, no oracle): a run of
-`EvalGraph` at ℕ makes the instantiated atom sentence true (`models_trAt_plays`, `models_inst`),
+`EvalGraph` at ℕ makes the instantiated atom sentence true (`models_sentenceAt_plays`, `models_inst`),
 hence a PA theorem by Σ₁-completeness. -/
-theorem pa_proves_trAt_of_evalGraph (me' opp' : PD.Prog) {me opp : PD.Prog} {a : PD.Action} {N : ℕ}
-    (h : EvalGraph N (pcode me) (pcode opp) (pcode me) (actCode a))
-    (hme : Proper me) (hopp : Proper opp) :
-    𝗣𝗔 ⊢ Semiformula.lMap inst (trAt me' opp' (.plays me opp a)) :=
-  sigma_one_completeness (T := 𝗣𝗔) (hierarchy_lMap_inst_trAt_plays me' opp' me opp a)
-    ((models_inst _).mpr ((models_trAt_plays me' opp' me opp a hme hopp).mpr ⟨N, h⟩))
+theorem pa_proves_sentenceAt_of_evalGraph (me' opp' : PD.Prog) {me opp : PD.Prog} {a : PD.Action} {N : ℕ}
+    (h : EvalGraph N (progCode me) (progCode opp) (progCode me) (actCode a))
+    (hme : ProperPlayer me) (hopp : ProperPlayer opp) :
+    𝗣𝗔 ⊢ Semiformula.lMap inst (sentenceAt me' opp' (.plays me opp a)) :=
+  sigma_one_completeness (T := 𝗣𝗔) (hierarchy_lMap_inst_sentenceAt_plays me' opp' me opp a)
+    ((models_inst _).mpr ((models_sentenceAt_plays me' opp' me opp a hme hopp).mpr ⟨N, h⟩))
 
-/-- Both atoms of a cell, as the T2-CORE realization `Aι` (`Aι L R a = lMap inst (trAt L R
+/-- Both atoms of a cell, as the T2-CORE realization `Aι` (`Aι L R a = lMap inst (sentenceAt L R
 (.plays L R a))`, the `Leaf.atom` shape). -/
 theorem pa_cell_of_evalGraph {L R : PD.Prog} {a b : PD.Action} {n : ℕ}
-    (h : EvalGraph n (pcode L) (pcode R) (pcode L) (actCode a) ∧
-      EvalGraph n (pcode R) (pcode L) (pcode R) (actCode b))
-    (hL : Proper L) (hR : Proper R) :
+    (h : EvalGraph n (progCode L) (progCode R) (progCode L) (actCode a) ∧
+      EvalGraph n (progCode R) (progCode L) (progCode R) (actCode b))
+    (hL : ProperPlayer L) (hR : ProperPlayer R) :
     𝗣𝗔 ⊢ Aι L R a ∧ 𝗣𝗔 ⊢ Aι R L b :=
-  ⟨pa_proves_trAt_of_evalGraph L R h.1 hL hR, pa_proves_trAt_of_evalGraph R L h.2 hR hL⟩
+  ⟨pa_proves_sentenceAt_of_evalGraph L R h.1 hL hR, pa_proves_sentenceAt_of_evalGraph R L h.2 hR hL⟩
 
 /-! ### 3. The seven search-free players -/
 
@@ -221,178 +221,178 @@ theorem sfp_OBot : SearchFreePlayer OBot :=
   ⟨⟨by simp [OBot], by simp [OBot]⟩, rfl, rfl⟩
 
 /-- The code of the engine's `MirrorBot` is `SimTest.Mirror`. -/
-theorem pcode_MirrorBot : pcode MirrorBot = Mirror := by
+theorem progCode_MirrorBot : progCode MirrorBot = Mirror := by
   simp [MirrorBot, Mirror]
 
 /-! ### 4. The 27 terminating cells, by transfer at the engine's pad -/
 
 /-- `CooperateBot × CooperateBot = (C, C)` at fuel 1 (engine `outcome_CooperateBot_vs_CooperateBot`, pad 1). -/
 theorem sf_CooperateBot_vs_CooperateBot :
-    EvalGraph 1 (pcode CooperateBot) (pcode CooperateBot) (pcode CooperateBot) (actCode .C) ∧
-    EvalGraph 1 (pcode CooperateBot) (pcode CooperateBot) (pcode CooperateBot) (actCode .C) :=
+    EvalGraph 1 (progCode CooperateBot) (progCode CooperateBot) (progCode CooperateBot) (actCode .C) ∧
+    EvalGraph 1 (progCode CooperateBot) (progCode CooperateBot) (progCode CooperateBot) (actCode .C) :=
   outcomeSpec_evalGraph_of_searchFree outcome_CooperateBot_vs_CooperateBot sfp_CooperateBot sfp_CooperateBot
 
 /-- `CooperateBot × DefectBot = (C, D)` at fuel 1 (engine `outcome_CooperateBot_vs_DefectBot`, pad 1). -/
 theorem sf_CooperateBot_vs_DefectBot :
-    EvalGraph 1 (pcode CooperateBot) (pcode DefectBot) (pcode CooperateBot) (actCode .C) ∧
-    EvalGraph 1 (pcode DefectBot) (pcode CooperateBot) (pcode DefectBot) (actCode .D) :=
+    EvalGraph 1 (progCode CooperateBot) (progCode DefectBot) (progCode CooperateBot) (actCode .C) ∧
+    EvalGraph 1 (progCode DefectBot) (progCode CooperateBot) (progCode DefectBot) (actCode .D) :=
   outcomeSpec_evalGraph_of_searchFree outcome_CooperateBot_vs_DefectBot sfp_CooperateBot sfp_DefectBot
 
 /-- `DBot × CooperateBot = (D, C)` at fuel 3 (engine `outcome_DBot_vs_CooperateBot`, pad 3). -/
 theorem sf_DBot_vs_CooperateBot :
-    EvalGraph 3 (pcode DBot) (pcode CooperateBot) (pcode DBot) (actCode .D) ∧
-    EvalGraph 3 (pcode CooperateBot) (pcode DBot) (pcode CooperateBot) (actCode .C) :=
+    EvalGraph 3 (progCode DBot) (progCode CooperateBot) (progCode DBot) (actCode .D) ∧
+    EvalGraph 3 (progCode CooperateBot) (progCode DBot) (progCode CooperateBot) (actCode .C) :=
   outcomeSpec_evalGraph_of_searchFree outcome_DBot_vs_CooperateBot sfp_DBot sfp_CooperateBot
 
 /-- `DBot × DBot = (D, D)` at fuel 6 (engine `outcome_DBot_vs_DBot`, pad 6). -/
 theorem sf_DBot_vs_DBot :
-    EvalGraph 6 (pcode DBot) (pcode DBot) (pcode DBot) (actCode .D) ∧
-    EvalGraph 6 (pcode DBot) (pcode DBot) (pcode DBot) (actCode .D) :=
+    EvalGraph 6 (progCode DBot) (progCode DBot) (progCode DBot) (actCode .D) ∧
+    EvalGraph 6 (progCode DBot) (progCode DBot) (progCode DBot) (actCode .D) :=
   outcomeSpec_evalGraph_of_searchFree outcome_DBot_vs_DBot sfp_DBot sfp_DBot
 
 /-- `DBot × DefectBot = (C, D)` at fuel 3 (engine `outcome_DBot_vs_DefectBot`, pad 3). -/
 theorem sf_DBot_vs_DefectBot :
-    EvalGraph 3 (pcode DBot) (pcode DefectBot) (pcode DBot) (actCode .C) ∧
-    EvalGraph 3 (pcode DefectBot) (pcode DBot) (pcode DefectBot) (actCode .D) :=
+    EvalGraph 3 (progCode DBot) (progCode DefectBot) (progCode DBot) (actCode .C) ∧
+    EvalGraph 3 (progCode DefectBot) (progCode DBot) (progCode DefectBot) (actCode .D) :=
   outcomeSpec_evalGraph_of_searchFree outcome_DBot_vs_DefectBot sfp_DBot sfp_DefectBot
 
 /-- `DefectBot × DefectBot = (D, D)` at fuel 1 (engine `outcome_DefectBot_vs_DefectBot`, pad 1). -/
 theorem sf_DefectBot_vs_DefectBot :
-    EvalGraph 1 (pcode DefectBot) (pcode DefectBot) (pcode DefectBot) (actCode .D) ∧
-    EvalGraph 1 (pcode DefectBot) (pcode DefectBot) (pcode DefectBot) (actCode .D) :=
+    EvalGraph 1 (progCode DefectBot) (progCode DefectBot) (progCode DefectBot) (actCode .D) ∧
+    EvalGraph 1 (progCode DefectBot) (progCode DefectBot) (progCode DefectBot) (actCode .D) :=
   outcomeSpec_evalGraph_of_searchFree outcome_DefectBot_vs_DefectBot sfp_DefectBot sfp_DefectBot
 
 /-- `EBot × CooperateBot = (D, C)` at fuel 3 (engine `outcome_EBot_vs_CooperateBot`, pad 3). -/
 theorem sf_EBot_vs_CooperateBot :
-    EvalGraph 3 (pcode EBot) (pcode CooperateBot) (pcode EBot) (actCode .D) ∧
-    EvalGraph 3 (pcode CooperateBot) (pcode EBot) (pcode CooperateBot) (actCode .C) :=
+    EvalGraph 3 (progCode EBot) (progCode CooperateBot) (progCode EBot) (actCode .D) ∧
+    EvalGraph 3 (progCode CooperateBot) (progCode EBot) (progCode CooperateBot) (actCode .C) :=
   outcomeSpec_evalGraph_of_searchFree outcome_EBot_vs_CooperateBot sfp_EBot sfp_CooperateBot
 
 /-- `EBot × DBot = (D, C)` at fuel 8 (engine `outcome_EBot_vs_DBot`, pad 8). -/
 theorem sf_EBot_vs_DBot :
-    EvalGraph 8 (pcode EBot) (pcode DBot) (pcode EBot) (actCode .D) ∧
-    EvalGraph 8 (pcode DBot) (pcode EBot) (pcode DBot) (actCode .C) :=
+    EvalGraph 8 (progCode EBot) (progCode DBot) (progCode EBot) (actCode .D) ∧
+    EvalGraph 8 (progCode DBot) (progCode EBot) (progCode DBot) (actCode .C) :=
   outcomeSpec_evalGraph_of_searchFree outcome_EBot_vs_DBot sfp_EBot sfp_DBot
 
 /-- `EBot × DefectBot = (D, D)` at fuel 5 (engine `outcome_EBot_vs_DefectBot`, pad 5). -/
 theorem sf_EBot_vs_DefectBot :
-    EvalGraph 5 (pcode EBot) (pcode DefectBot) (pcode EBot) (actCode .D) ∧
-    EvalGraph 5 (pcode DefectBot) (pcode EBot) (pcode DefectBot) (actCode .D) :=
+    EvalGraph 5 (progCode EBot) (progCode DefectBot) (progCode EBot) (actCode .D) ∧
+    EvalGraph 5 (progCode DefectBot) (progCode EBot) (progCode DefectBot) (actCode .D) :=
   outcomeSpec_evalGraph_of_searchFree outcome_EBot_vs_DefectBot sfp_EBot sfp_DefectBot
 
 /-- `EBot × EBot = (C, C)` at fuel 11 (engine `outcome_EBot_vs_EBot`, pad 11). -/
 theorem sf_EBot_vs_EBot :
-    EvalGraph 11 (pcode EBot) (pcode EBot) (pcode EBot) (actCode .C) ∧
-    EvalGraph 11 (pcode EBot) (pcode EBot) (pcode EBot) (actCode .C) :=
+    EvalGraph 11 (progCode EBot) (progCode EBot) (progCode EBot) (actCode .C) ∧
+    EvalGraph 11 (progCode EBot) (progCode EBot) (progCode EBot) (actCode .C) :=
   outcomeSpec_evalGraph_of_searchFree outcome_EBot_vs_EBot sfp_EBot sfp_EBot
 
 /-- `EBot × MirrorBot = (C, C)` at fuel 8 (engine `outcome_EBot_vs_MirrorBot`, pad 8). -/
 theorem sf_EBot_vs_MirrorBot :
-    EvalGraph 8 (pcode EBot) (pcode MirrorBot) (pcode EBot) (actCode .C) ∧
-    EvalGraph 8 (pcode MirrorBot) (pcode EBot) (pcode MirrorBot) (actCode .C) :=
+    EvalGraph 8 (progCode EBot) (progCode MirrorBot) (progCode EBot) (actCode .C) ∧
+    EvalGraph 8 (progCode MirrorBot) (progCode EBot) (progCode MirrorBot) (actCode .C) :=
   outcomeSpec_evalGraph_of_searchFree outcome_EBot_vs_MirrorBot sfp_EBot sfp_MirrorBot
 
 /-- `EBot × OBot = (C, D)` at fuel 8 (engine `outcome_EBot_vs_OBot`, pad 8). -/
 theorem sf_EBot_vs_OBot :
-    EvalGraph 8 (pcode EBot) (pcode OBot) (pcode EBot) (actCode .C) ∧
-    EvalGraph 8 (pcode OBot) (pcode EBot) (pcode OBot) (actCode .D) :=
+    EvalGraph 8 (progCode EBot) (progCode OBot) (progCode EBot) (actCode .C) ∧
+    EvalGraph 8 (progCode OBot) (progCode EBot) (progCode OBot) (actCode .D) :=
   outcomeSpec_evalGraph_of_searchFree outcome_EBot_vs_OBot sfp_EBot sfp_OBot
 
 /-- `EBot × TitForTatBot = (C, D)` at fuel 7 (engine `outcome_EBot_vs_TitForTatBot`, pad 7). -/
 theorem sf_EBot_vs_TitForTatBot :
-    EvalGraph 7 (pcode EBot) (pcode TitForTatBot) (pcode EBot) (actCode .C) ∧
-    EvalGraph 7 (pcode TitForTatBot) (pcode EBot) (pcode TitForTatBot) (actCode .D) :=
+    EvalGraph 7 (progCode EBot) (progCode TitForTatBot) (progCode EBot) (actCode .C) ∧
+    EvalGraph 7 (progCode TitForTatBot) (progCode EBot) (progCode TitForTatBot) (actCode .D) :=
   outcomeSpec_evalGraph_of_searchFree outcome_EBot_vs_TitForTatBot sfp_EBot sfp_TitForTatBot
 
 /-- `MirrorBot × CooperateBot = (C, C)` at fuel 3 (engine `outcome_MirrorBot_vs_CooperateBot`, pad 3). -/
 theorem sf_MirrorBot_vs_CooperateBot :
-    EvalGraph 3 (pcode MirrorBot) (pcode CooperateBot) (pcode MirrorBot) (actCode .C) ∧
-    EvalGraph 3 (pcode CooperateBot) (pcode MirrorBot) (pcode CooperateBot) (actCode .C) :=
+    EvalGraph 3 (progCode MirrorBot) (progCode CooperateBot) (progCode MirrorBot) (actCode .C) ∧
+    EvalGraph 3 (progCode CooperateBot) (progCode MirrorBot) (progCode CooperateBot) (actCode .C) :=
   outcomeSpec_evalGraph_of_searchFree outcome_MirrorBot_vs_CooperateBot sfp_MirrorBot sfp_CooperateBot
 
 /-- `MirrorBot × DBot = (C, C)` at fuel 6 (engine `outcome_MirrorBot_vs_DBot`, pad 6). -/
 theorem sf_MirrorBot_vs_DBot :
-    EvalGraph 6 (pcode MirrorBot) (pcode DBot) (pcode MirrorBot) (actCode .C) ∧
-    EvalGraph 6 (pcode DBot) (pcode MirrorBot) (pcode DBot) (actCode .C) :=
+    EvalGraph 6 (progCode MirrorBot) (progCode DBot) (progCode MirrorBot) (actCode .C) ∧
+    EvalGraph 6 (progCode DBot) (progCode MirrorBot) (progCode DBot) (actCode .C) :=
   outcomeSpec_evalGraph_of_searchFree outcome_MirrorBot_vs_DBot sfp_MirrorBot sfp_DBot
 
 /-- `MirrorBot × DefectBot = (D, D)` at fuel 3 (engine `outcome_MirrorBot_vs_DefectBot`, pad 3). -/
 theorem sf_MirrorBot_vs_DefectBot :
-    EvalGraph 3 (pcode MirrorBot) (pcode DefectBot) (pcode MirrorBot) (actCode .D) ∧
-    EvalGraph 3 (pcode DefectBot) (pcode MirrorBot) (pcode DefectBot) (actCode .D) :=
+    EvalGraph 3 (progCode MirrorBot) (progCode DefectBot) (progCode MirrorBot) (actCode .D) ∧
+    EvalGraph 3 (progCode DefectBot) (progCode MirrorBot) (progCode DefectBot) (actCode .D) :=
   outcomeSpec_evalGraph_of_searchFree outcome_MirrorBot_vs_DefectBot sfp_MirrorBot sfp_DefectBot
 
 /-- `MirrorBot × OBot = (D, D)` at fuel 7 (engine `outcome_MirrorBot_vs_OBot`, pad 7). -/
 theorem sf_MirrorBot_vs_OBot :
-    EvalGraph 7 (pcode MirrorBot) (pcode OBot) (pcode MirrorBot) (actCode .D) ∧
-    EvalGraph 7 (pcode OBot) (pcode MirrorBot) (pcode OBot) (actCode .D) :=
+    EvalGraph 7 (progCode MirrorBot) (progCode OBot) (progCode MirrorBot) (actCode .D) ∧
+    EvalGraph 7 (progCode OBot) (progCode MirrorBot) (progCode OBot) (actCode .D) :=
   outcomeSpec_evalGraph_of_searchFree outcome_MirrorBot_vs_OBot sfp_MirrorBot sfp_OBot
 
 /-- `MirrorBot × TitForTatBot = (C, C)` at fuel 6 (engine `outcome_MirrorBot_vs_TitForTatBot`, pad 6). -/
 theorem sf_MirrorBot_vs_TitForTatBot :
-    EvalGraph 6 (pcode MirrorBot) (pcode TitForTatBot) (pcode MirrorBot) (actCode .C) ∧
-    EvalGraph 6 (pcode TitForTatBot) (pcode MirrorBot) (pcode TitForTatBot) (actCode .C) :=
+    EvalGraph 6 (progCode MirrorBot) (progCode TitForTatBot) (progCode MirrorBot) (actCode .C) ∧
+    EvalGraph 6 (progCode TitForTatBot) (progCode MirrorBot) (progCode TitForTatBot) (actCode .C) :=
   outcomeSpec_evalGraph_of_searchFree outcome_MirrorBot_vs_TitForTatBot sfp_MirrorBot sfp_TitForTatBot
 
 /-- `OBot × CooperateBot = (C, C)` at fuel 5 (engine `outcome_OBot_vs_CooperateBot`, pad 5). -/
 theorem sf_OBot_vs_CooperateBot :
-    EvalGraph 5 (pcode OBot) (pcode CooperateBot) (pcode OBot) (actCode .C) ∧
-    EvalGraph 5 (pcode CooperateBot) (pcode OBot) (pcode CooperateBot) (actCode .C) :=
+    EvalGraph 5 (progCode OBot) (progCode CooperateBot) (progCode OBot) (actCode .C) ∧
+    EvalGraph 5 (progCode CooperateBot) (progCode OBot) (progCode CooperateBot) (actCode .C) :=
   outcomeSpec_evalGraph_of_searchFree outcome_OBot_vs_CooperateBot sfp_OBot sfp_CooperateBot
 
 /-- `OBot × DBot = (D, C)` at fuel 6 (engine `outcome_OBot_vs_DBot`, pad 6). -/
 theorem sf_OBot_vs_DBot :
-    EvalGraph 6 (pcode OBot) (pcode DBot) (pcode OBot) (actCode .D) ∧
-    EvalGraph 6 (pcode DBot) (pcode OBot) (pcode DBot) (actCode .C) :=
+    EvalGraph 6 (progCode OBot) (progCode DBot) (progCode OBot) (actCode .D) ∧
+    EvalGraph 6 (progCode DBot) (progCode OBot) (progCode DBot) (actCode .C) :=
   outcomeSpec_evalGraph_of_searchFree outcome_OBot_vs_DBot sfp_OBot sfp_DBot
 
 /-- `OBot × DefectBot = (D, D)` at fuel 3 (engine `outcome_OBot_vs_DefectBot`, pad 3). -/
 theorem sf_OBot_vs_DefectBot :
-    EvalGraph 3 (pcode OBot) (pcode DefectBot) (pcode OBot) (actCode .D) ∧
-    EvalGraph 3 (pcode DefectBot) (pcode OBot) (pcode DefectBot) (actCode .D) :=
+    EvalGraph 3 (progCode OBot) (progCode DefectBot) (progCode OBot) (actCode .D) ∧
+    EvalGraph 3 (progCode DefectBot) (progCode OBot) (progCode DefectBot) (actCode .D) :=
   outcomeSpec_evalGraph_of_searchFree outcome_OBot_vs_DefectBot sfp_OBot sfp_DefectBot
 
 /-- `OBot × OBot = (D, D)` at fuel 7 (engine `outcome_OBot_vs_OBot`, pad 7). -/
 theorem sf_OBot_vs_OBot :
-    EvalGraph 7 (pcode OBot) (pcode OBot) (pcode OBot) (actCode .D) ∧
-    EvalGraph 7 (pcode OBot) (pcode OBot) (pcode OBot) (actCode .D) :=
+    EvalGraph 7 (progCode OBot) (progCode OBot) (progCode OBot) (actCode .D) ∧
+    EvalGraph 7 (progCode OBot) (progCode OBot) (progCode OBot) (actCode .D) :=
   outcomeSpec_evalGraph_of_searchFree outcome_OBot_vs_OBot sfp_OBot sfp_OBot
 
 /-- `OBot × TitForTatBot = (D, C)` at fuel 7 (engine `outcome_OBot_vs_TitForTatBot`, pad 7). -/
 theorem sf_OBot_vs_TitForTatBot :
-    EvalGraph 7 (pcode OBot) (pcode TitForTatBot) (pcode OBot) (actCode .D) ∧
-    EvalGraph 7 (pcode TitForTatBot) (pcode OBot) (pcode TitForTatBot) (actCode .C) :=
+    EvalGraph 7 (progCode OBot) (progCode TitForTatBot) (progCode OBot) (actCode .D) ∧
+    EvalGraph 7 (progCode TitForTatBot) (progCode OBot) (progCode TitForTatBot) (actCode .C) :=
   outcomeSpec_evalGraph_of_searchFree outcome_OBot_vs_TitForTatBot sfp_OBot sfp_TitForTatBot
 
 /-- `TitForTatBot × CooperateBot = (C, C)` at fuel 3 (engine `outcome_TitForTatBot_vs_CooperateBot`, pad 3). -/
 theorem sf_TitForTatBot_vs_CooperateBot :
-    EvalGraph 3 (pcode TitForTatBot) (pcode CooperateBot) (pcode TitForTatBot) (actCode .C) ∧
-    EvalGraph 3 (pcode CooperateBot) (pcode TitForTatBot) (pcode CooperateBot) (actCode .C) :=
+    EvalGraph 3 (progCode TitForTatBot) (progCode CooperateBot) (progCode TitForTatBot) (actCode .C) ∧
+    EvalGraph 3 (progCode CooperateBot) (progCode TitForTatBot) (progCode CooperateBot) (actCode .C) :=
   outcomeSpec_evalGraph_of_searchFree outcome_TitForTatBot_vs_CooperateBot sfp_TitForTatBot sfp_CooperateBot
 
 /-- `TitForTatBot × DBot = (D, C)` at fuel 6 (engine `outcome_TitForTatBot_vs_DBot`, pad 6). -/
 theorem sf_TitForTatBot_vs_DBot :
-    EvalGraph 6 (pcode TitForTatBot) (pcode DBot) (pcode TitForTatBot) (actCode .D) ∧
-    EvalGraph 6 (pcode DBot) (pcode TitForTatBot) (pcode DBot) (actCode .C) :=
+    EvalGraph 6 (progCode TitForTatBot) (progCode DBot) (progCode TitForTatBot) (actCode .D) ∧
+    EvalGraph 6 (progCode DBot) (progCode TitForTatBot) (progCode DBot) (actCode .C) :=
   outcomeSpec_evalGraph_of_searchFree outcome_TitForTatBot_vs_DBot sfp_TitForTatBot sfp_DBot
 
 /-- `TitForTatBot × DefectBot = (D, D)` at fuel 3 (engine `outcome_TitForTatBot_vs_DefectBot`, pad 3). -/
 theorem sf_TitForTatBot_vs_DefectBot :
-    EvalGraph 3 (pcode TitForTatBot) (pcode DefectBot) (pcode TitForTatBot) (actCode .D) ∧
-    EvalGraph 3 (pcode DefectBot) (pcode TitForTatBot) (pcode DefectBot) (actCode .D) :=
+    EvalGraph 3 (progCode TitForTatBot) (progCode DefectBot) (progCode TitForTatBot) (actCode .D) ∧
+    EvalGraph 3 (progCode DefectBot) (progCode TitForTatBot) (progCode DefectBot) (actCode .D) :=
   outcomeSpec_evalGraph_of_searchFree outcome_TitForTatBot_vs_DefectBot sfp_TitForTatBot sfp_DefectBot
 
 /-- `TitForTatBot × TitForTatBot = (C, C)` at fuel 6 (engine `outcome_TitForTatBot_vs_TitForTatBot`, pad 6). -/
 theorem sf_TitForTatBot_vs_TitForTatBot :
-    EvalGraph 6 (pcode TitForTatBot) (pcode TitForTatBot) (pcode TitForTatBot) (actCode .C) ∧
-    EvalGraph 6 (pcode TitForTatBot) (pcode TitForTatBot) (pcode TitForTatBot) (actCode .C) :=
+    EvalGraph 6 (progCode TitForTatBot) (progCode TitForTatBot) (progCode TitForTatBot) (actCode .C) ∧
+    EvalGraph 6 (progCode TitForTatBot) (progCode TitForTatBot) (progCode TitForTatBot) (actCode .C) :=
   outcomeSpec_evalGraph_of_searchFree outcome_TitForTatBot_vs_TitForTatBot sfp_TitForTatBot sfp_TitForTatBot
 
 /-- `MirrorBot × MirrorBot = none`: NON-termination at every fuel (`SimTest.mirror_vs_mirror`;
 engine `outcome_MirrorBot_vs_MirrorBot`, the library's only proven no-outcome cell). -/
 theorem sf_MirrorBot_vs_MirrorBot :
-    ∀ n a, ¬ EvalGraph n (pcode MirrorBot) (pcode MirrorBot) (pcode MirrorBot) a := by
-  rw [pcode_MirrorBot]; exact mirror_vs_mirror
+    ∀ n a, ¬ EvalGraph n (progCode MirrorBot) (progCode MirrorBot) (progCode MirrorBot) a := by
+  rw [progCode_MirrorBot]; exact mirror_vs_mirror
 
 /-! ### 5. PA proves every positive atom of the 27 terminating cells -/
 
@@ -482,61 +482,61 @@ theorem pa_TitForTatBot_vs_TitForTatBot : 𝗣𝗔 ⊢ Aι TitForTatBot TitForTa
 /-- **The search-free census**: all 28 SF cells of `ROUTE_B_CENSUS.md` hold in PA-`S'` at ℕ, at
 the engine's pads; `MirrorBot × MirrorBot` is the non-termination cell. -/
 theorem searchFree_census :
-    (EvalGraph 1 (pcode CooperateBot) (pcode CooperateBot) (pcode CooperateBot) (actCode .C) ∧
-      EvalGraph 1 (pcode CooperateBot) (pcode CooperateBot) (pcode CooperateBot) (actCode .C)) ∧
-    (EvalGraph 1 (pcode CooperateBot) (pcode DefectBot) (pcode CooperateBot) (actCode .C) ∧
-      EvalGraph 1 (pcode DefectBot) (pcode CooperateBot) (pcode DefectBot) (actCode .D)) ∧
-    (EvalGraph 3 (pcode DBot) (pcode CooperateBot) (pcode DBot) (actCode .D) ∧
-      EvalGraph 3 (pcode CooperateBot) (pcode DBot) (pcode CooperateBot) (actCode .C)) ∧
-    (EvalGraph 6 (pcode DBot) (pcode DBot) (pcode DBot) (actCode .D) ∧
-      EvalGraph 6 (pcode DBot) (pcode DBot) (pcode DBot) (actCode .D)) ∧
-    (EvalGraph 3 (pcode DBot) (pcode DefectBot) (pcode DBot) (actCode .C) ∧
-      EvalGraph 3 (pcode DefectBot) (pcode DBot) (pcode DefectBot) (actCode .D)) ∧
-    (EvalGraph 1 (pcode DefectBot) (pcode DefectBot) (pcode DefectBot) (actCode .D) ∧
-      EvalGraph 1 (pcode DefectBot) (pcode DefectBot) (pcode DefectBot) (actCode .D)) ∧
-    (EvalGraph 3 (pcode EBot) (pcode CooperateBot) (pcode EBot) (actCode .D) ∧
-      EvalGraph 3 (pcode CooperateBot) (pcode EBot) (pcode CooperateBot) (actCode .C)) ∧
-    (EvalGraph 8 (pcode EBot) (pcode DBot) (pcode EBot) (actCode .D) ∧
-      EvalGraph 8 (pcode DBot) (pcode EBot) (pcode DBot) (actCode .C)) ∧
-    (EvalGraph 5 (pcode EBot) (pcode DefectBot) (pcode EBot) (actCode .D) ∧
-      EvalGraph 5 (pcode DefectBot) (pcode EBot) (pcode DefectBot) (actCode .D)) ∧
-    (EvalGraph 11 (pcode EBot) (pcode EBot) (pcode EBot) (actCode .C) ∧
-      EvalGraph 11 (pcode EBot) (pcode EBot) (pcode EBot) (actCode .C)) ∧
-    (EvalGraph 8 (pcode EBot) (pcode MirrorBot) (pcode EBot) (actCode .C) ∧
-      EvalGraph 8 (pcode MirrorBot) (pcode EBot) (pcode MirrorBot) (actCode .C)) ∧
-    (EvalGraph 8 (pcode EBot) (pcode OBot) (pcode EBot) (actCode .C) ∧
-      EvalGraph 8 (pcode OBot) (pcode EBot) (pcode OBot) (actCode .D)) ∧
-    (EvalGraph 7 (pcode EBot) (pcode TitForTatBot) (pcode EBot) (actCode .C) ∧
-      EvalGraph 7 (pcode TitForTatBot) (pcode EBot) (pcode TitForTatBot) (actCode .D)) ∧
-    (EvalGraph 3 (pcode MirrorBot) (pcode CooperateBot) (pcode MirrorBot) (actCode .C) ∧
-      EvalGraph 3 (pcode CooperateBot) (pcode MirrorBot) (pcode CooperateBot) (actCode .C)) ∧
-    (EvalGraph 6 (pcode MirrorBot) (pcode DBot) (pcode MirrorBot) (actCode .C) ∧
-      EvalGraph 6 (pcode DBot) (pcode MirrorBot) (pcode DBot) (actCode .C)) ∧
-    (EvalGraph 3 (pcode MirrorBot) (pcode DefectBot) (pcode MirrorBot) (actCode .D) ∧
-      EvalGraph 3 (pcode DefectBot) (pcode MirrorBot) (pcode DefectBot) (actCode .D)) ∧
-    (∀ n a, ¬ EvalGraph n (pcode MirrorBot) (pcode MirrorBot) (pcode MirrorBot) a) ∧
-    (EvalGraph 7 (pcode MirrorBot) (pcode OBot) (pcode MirrorBot) (actCode .D) ∧
-      EvalGraph 7 (pcode OBot) (pcode MirrorBot) (pcode OBot) (actCode .D)) ∧
-    (EvalGraph 6 (pcode MirrorBot) (pcode TitForTatBot) (pcode MirrorBot) (actCode .C) ∧
-      EvalGraph 6 (pcode TitForTatBot) (pcode MirrorBot) (pcode TitForTatBot) (actCode .C)) ∧
-    (EvalGraph 5 (pcode OBot) (pcode CooperateBot) (pcode OBot) (actCode .C) ∧
-      EvalGraph 5 (pcode CooperateBot) (pcode OBot) (pcode CooperateBot) (actCode .C)) ∧
-    (EvalGraph 6 (pcode OBot) (pcode DBot) (pcode OBot) (actCode .D) ∧
-      EvalGraph 6 (pcode DBot) (pcode OBot) (pcode DBot) (actCode .C)) ∧
-    (EvalGraph 3 (pcode OBot) (pcode DefectBot) (pcode OBot) (actCode .D) ∧
-      EvalGraph 3 (pcode DefectBot) (pcode OBot) (pcode DefectBot) (actCode .D)) ∧
-    (EvalGraph 7 (pcode OBot) (pcode OBot) (pcode OBot) (actCode .D) ∧
-      EvalGraph 7 (pcode OBot) (pcode OBot) (pcode OBot) (actCode .D)) ∧
-    (EvalGraph 7 (pcode OBot) (pcode TitForTatBot) (pcode OBot) (actCode .D) ∧
-      EvalGraph 7 (pcode TitForTatBot) (pcode OBot) (pcode TitForTatBot) (actCode .C)) ∧
-    (EvalGraph 3 (pcode TitForTatBot) (pcode CooperateBot) (pcode TitForTatBot) (actCode .C) ∧
-      EvalGraph 3 (pcode CooperateBot) (pcode TitForTatBot) (pcode CooperateBot) (actCode .C)) ∧
-    (EvalGraph 6 (pcode TitForTatBot) (pcode DBot) (pcode TitForTatBot) (actCode .D) ∧
-      EvalGraph 6 (pcode DBot) (pcode TitForTatBot) (pcode DBot) (actCode .C)) ∧
-    (EvalGraph 3 (pcode TitForTatBot) (pcode DefectBot) (pcode TitForTatBot) (actCode .D) ∧
-      EvalGraph 3 (pcode DefectBot) (pcode TitForTatBot) (pcode DefectBot) (actCode .D)) ∧
-    (EvalGraph 6 (pcode TitForTatBot) (pcode TitForTatBot) (pcode TitForTatBot) (actCode .C) ∧
-      EvalGraph 6 (pcode TitForTatBot) (pcode TitForTatBot) (pcode TitForTatBot) (actCode .C)) :=
+    (EvalGraph 1 (progCode CooperateBot) (progCode CooperateBot) (progCode CooperateBot) (actCode .C) ∧
+      EvalGraph 1 (progCode CooperateBot) (progCode CooperateBot) (progCode CooperateBot) (actCode .C)) ∧
+    (EvalGraph 1 (progCode CooperateBot) (progCode DefectBot) (progCode CooperateBot) (actCode .C) ∧
+      EvalGraph 1 (progCode DefectBot) (progCode CooperateBot) (progCode DefectBot) (actCode .D)) ∧
+    (EvalGraph 3 (progCode DBot) (progCode CooperateBot) (progCode DBot) (actCode .D) ∧
+      EvalGraph 3 (progCode CooperateBot) (progCode DBot) (progCode CooperateBot) (actCode .C)) ∧
+    (EvalGraph 6 (progCode DBot) (progCode DBot) (progCode DBot) (actCode .D) ∧
+      EvalGraph 6 (progCode DBot) (progCode DBot) (progCode DBot) (actCode .D)) ∧
+    (EvalGraph 3 (progCode DBot) (progCode DefectBot) (progCode DBot) (actCode .C) ∧
+      EvalGraph 3 (progCode DefectBot) (progCode DBot) (progCode DefectBot) (actCode .D)) ∧
+    (EvalGraph 1 (progCode DefectBot) (progCode DefectBot) (progCode DefectBot) (actCode .D) ∧
+      EvalGraph 1 (progCode DefectBot) (progCode DefectBot) (progCode DefectBot) (actCode .D)) ∧
+    (EvalGraph 3 (progCode EBot) (progCode CooperateBot) (progCode EBot) (actCode .D) ∧
+      EvalGraph 3 (progCode CooperateBot) (progCode EBot) (progCode CooperateBot) (actCode .C)) ∧
+    (EvalGraph 8 (progCode EBot) (progCode DBot) (progCode EBot) (actCode .D) ∧
+      EvalGraph 8 (progCode DBot) (progCode EBot) (progCode DBot) (actCode .C)) ∧
+    (EvalGraph 5 (progCode EBot) (progCode DefectBot) (progCode EBot) (actCode .D) ∧
+      EvalGraph 5 (progCode DefectBot) (progCode EBot) (progCode DefectBot) (actCode .D)) ∧
+    (EvalGraph 11 (progCode EBot) (progCode EBot) (progCode EBot) (actCode .C) ∧
+      EvalGraph 11 (progCode EBot) (progCode EBot) (progCode EBot) (actCode .C)) ∧
+    (EvalGraph 8 (progCode EBot) (progCode MirrorBot) (progCode EBot) (actCode .C) ∧
+      EvalGraph 8 (progCode MirrorBot) (progCode EBot) (progCode MirrorBot) (actCode .C)) ∧
+    (EvalGraph 8 (progCode EBot) (progCode OBot) (progCode EBot) (actCode .C) ∧
+      EvalGraph 8 (progCode OBot) (progCode EBot) (progCode OBot) (actCode .D)) ∧
+    (EvalGraph 7 (progCode EBot) (progCode TitForTatBot) (progCode EBot) (actCode .C) ∧
+      EvalGraph 7 (progCode TitForTatBot) (progCode EBot) (progCode TitForTatBot) (actCode .D)) ∧
+    (EvalGraph 3 (progCode MirrorBot) (progCode CooperateBot) (progCode MirrorBot) (actCode .C) ∧
+      EvalGraph 3 (progCode CooperateBot) (progCode MirrorBot) (progCode CooperateBot) (actCode .C)) ∧
+    (EvalGraph 6 (progCode MirrorBot) (progCode DBot) (progCode MirrorBot) (actCode .C) ∧
+      EvalGraph 6 (progCode DBot) (progCode MirrorBot) (progCode DBot) (actCode .C)) ∧
+    (EvalGraph 3 (progCode MirrorBot) (progCode DefectBot) (progCode MirrorBot) (actCode .D) ∧
+      EvalGraph 3 (progCode DefectBot) (progCode MirrorBot) (progCode DefectBot) (actCode .D)) ∧
+    (∀ n a, ¬ EvalGraph n (progCode MirrorBot) (progCode MirrorBot) (progCode MirrorBot) a) ∧
+    (EvalGraph 7 (progCode MirrorBot) (progCode OBot) (progCode MirrorBot) (actCode .D) ∧
+      EvalGraph 7 (progCode OBot) (progCode MirrorBot) (progCode OBot) (actCode .D)) ∧
+    (EvalGraph 6 (progCode MirrorBot) (progCode TitForTatBot) (progCode MirrorBot) (actCode .C) ∧
+      EvalGraph 6 (progCode TitForTatBot) (progCode MirrorBot) (progCode TitForTatBot) (actCode .C)) ∧
+    (EvalGraph 5 (progCode OBot) (progCode CooperateBot) (progCode OBot) (actCode .C) ∧
+      EvalGraph 5 (progCode CooperateBot) (progCode OBot) (progCode CooperateBot) (actCode .C)) ∧
+    (EvalGraph 6 (progCode OBot) (progCode DBot) (progCode OBot) (actCode .D) ∧
+      EvalGraph 6 (progCode DBot) (progCode OBot) (progCode DBot) (actCode .C)) ∧
+    (EvalGraph 3 (progCode OBot) (progCode DefectBot) (progCode OBot) (actCode .D) ∧
+      EvalGraph 3 (progCode DefectBot) (progCode OBot) (progCode DefectBot) (actCode .D)) ∧
+    (EvalGraph 7 (progCode OBot) (progCode OBot) (progCode OBot) (actCode .D) ∧
+      EvalGraph 7 (progCode OBot) (progCode OBot) (progCode OBot) (actCode .D)) ∧
+    (EvalGraph 7 (progCode OBot) (progCode TitForTatBot) (progCode OBot) (actCode .D) ∧
+      EvalGraph 7 (progCode TitForTatBot) (progCode OBot) (progCode TitForTatBot) (actCode .C)) ∧
+    (EvalGraph 3 (progCode TitForTatBot) (progCode CooperateBot) (progCode TitForTatBot) (actCode .C) ∧
+      EvalGraph 3 (progCode CooperateBot) (progCode TitForTatBot) (progCode CooperateBot) (actCode .C)) ∧
+    (EvalGraph 6 (progCode TitForTatBot) (progCode DBot) (progCode TitForTatBot) (actCode .D) ∧
+      EvalGraph 6 (progCode DBot) (progCode TitForTatBot) (progCode DBot) (actCode .C)) ∧
+    (EvalGraph 3 (progCode TitForTatBot) (progCode DefectBot) (progCode TitForTatBot) (actCode .D) ∧
+      EvalGraph 3 (progCode DefectBot) (progCode TitForTatBot) (progCode DefectBot) (actCode .D)) ∧
+    (EvalGraph 6 (progCode TitForTatBot) (progCode TitForTatBot) (progCode TitForTatBot) (actCode .C) ∧
+      EvalGraph 6 (progCode TitForTatBot) (progCode TitForTatBot) (progCode TitForTatBot) (actCode .C)) :=
   ⟨sf_CooperateBot_vs_CooperateBot, sf_CooperateBot_vs_DefectBot, sf_DBot_vs_CooperateBot, sf_DBot_vs_DBot, sf_DBot_vs_DefectBot, sf_DefectBot_vs_DefectBot, sf_EBot_vs_CooperateBot, sf_EBot_vs_DBot, sf_EBot_vs_DefectBot, sf_EBot_vs_EBot, sf_EBot_vs_MirrorBot, sf_EBot_vs_OBot, sf_EBot_vs_TitForTatBot, sf_MirrorBot_vs_CooperateBot, sf_MirrorBot_vs_DBot, sf_MirrorBot_vs_DefectBot, sf_MirrorBot_vs_MirrorBot, sf_MirrorBot_vs_OBot, sf_MirrorBot_vs_TitForTatBot, sf_OBot_vs_CooperateBot, sf_OBot_vs_DBot, sf_OBot_vs_DefectBot, sf_OBot_vs_OBot, sf_OBot_vs_TitForTatBot, sf_TitForTatBot_vs_CooperateBot, sf_TitForTatBot_vs_DBot, sf_TitForTatBot_vs_DefectBot, sf_TitForTatBot_vs_TitForTatBot⟩
 
 /-- **The PA census**: PA proves the 54 positive atoms (`Aι`, the `Leaf.atom` shape of T2-CORE

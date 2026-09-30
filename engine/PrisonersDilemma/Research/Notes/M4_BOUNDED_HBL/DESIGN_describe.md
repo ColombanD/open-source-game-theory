@@ -31,7 +31,7 @@ that §10 does not list and that the multi-existential library rows force.
 2. **`z < n` is derived, not assumed**: `z + 1` Horn steps (`0 < y + 1`, then `z` times
    `x < y → x + 1 < y + 1`) — two NEW rows — cost `O(z)` per bvar leaf, `Σ_leaves (z+1) ≤ |r|`.
    The bvar index is NOT an eigenvariable: bottom-up there is nothing to invert (§3.3).
-3. **`describeSteps` is a `Fixpoint` on `⟪n, r⟫`** (the `DlenGraph` pattern), NOT a
+3. **`describeSteps` is a `Fixpoint` on `⟪n, r⟫`** (the `ProofLenGraph` pattern), NOT a
    `UformulaRec1` construction: the arity changes under quantifiers and `UformulaRec1`'s
    `param` is fixed through the recursion (`Formula/Basic.lean:507-514`, `all : Semisentence 4`
    — `y param p₁ y₁`, no new parameter). §4.1.
@@ -45,7 +45,7 @@ that §10 does not list and that the multi-existential library rows force.
 6. **The walk's theorem is purely about codes**: `r` enters only as the argument of the Σ₁
    function `describeSteps` and through the numerals `cT z`, … inside witness codes; no clause
    says "`&0 = r`" (§7.3).
-7. **Cost**: `dlen (chainCode Γ (describeSteps 0 r) d) ≤ dlen d + C₁·|r|·(N + |Γ|) +
+7. **Cost**: `proofLen (chainCode Γ (describeSteps 0 r) d) ≤ proofLen d + C₁·|r|·(N + |Γ|) +
    C₂·|r|²·fvOccS Γ + C₃·|r|³` — using `ShiftLen.lean`'s ADDITIVE shift bound (§6). The naive
    doubling bound would give `2^{|r|}·|Γ|`.
 
@@ -113,12 +113,12 @@ lifted by the `LAct_of_LOR` family, `Bridge.lean:103-108`); `termLen LAct (cT n)
 DSL term with `n` `+ 1`s) — so a row written with the literal `0 + 1 + 1` instantiates to
 `cT 2`.
 
-Why NOT `bnum` (binary, `Bnum.lean:320`) for `z, x`: `ρ` already pays unary for them and the
+Why NOT `binNumeral` (binary, `BinNumeral.lean:320`) for `z, x`: `ρ` already pays unary for them and the
 `z < n` derivation (§3.3) is `O(z)` steps ONLY if both sides are chain terms. Why NOT
 Foundation's `numeral` for `k, R, f`: `numeral 1 = 1 ≠ 0 + 1`, so `numeral k` would not match
 the `(k + 1)` produced by the `adjoin` formation chain (`isSemitermVecAdjoinB`,
 `Formulas.lean:792`: conclusion `(isSemitermVec LAct).sigma (k + 1) n u`). Symbol codes are
-`≤ 8` (`smallCodesV_LAct`, `ProperV.lean:250`; `SmallCodesV`, `:227-234`) and `LAct` arities are
+`≤ 8` (`smallCodesV_LAct`, `ProperBound.lean:250`; `SmallCodesV`, `:227-234`) and `LAct` arities are
 `0` or `2` (`LAct = ℒₒᵣ + constant Act`, `Act = C | D`, `LangAct.lean:20-26`), so every
 `cT k`, `cT R`, `cT f` has `≤ 17` symbols — constants.
 
@@ -130,7 +130,7 @@ the `(k + 1)` produced by the `adjoin` formation chain (`isSemitermVecAdjoinB`,
 
 A step is `⟪tag, ρ, ws⟫`: `ρ` the index of a row in a fixed table `ROWS` (each entry: the
 stored proof code `dΛ_ρ`, the antecedent list `as_ρ`, the conclusion `c_ρ`, arity `m_ρ`,
-`j_ρ = len as_ρ`, body length `|B_ρ|`, `N_ρ ≥ dlen dΛ_ρ` from `Lib.univ_code`,
+`j_ρ = len as_ρ`, body length `|B_ρ|`, `N_ρ ≥ proofLen dΛ_ρ` from `Lib.univ_code`,
 `Basic.lean:96-101`); `ws` an HFS vector of `m_ρ` closed term codes — an eigenvariable
 `^&i` or a numeral `cT v`. `instOuter es B = subst (vecOf es.reverse) B` (`Chain.lean:17-18`),
 so with `w := revV ws` (`Chain.lean:72`) every instantiated piece is `subst w (·)`.
@@ -163,7 +163,7 @@ exactly the hypotheses of `useHornCode_proof` (`Steps.lean:339-346`: `has`, `hc`
 are Σ₁ functions with graphs, membership is Δ₀, the `∀ a ∈ as_ρ` is over a fixed finite list.
 
 `StepsOK Γ L := ∀ i < len L, StepOK (ctxVec Γ L).[i] L.[i]` (Δ₁, bounded ∀ over the list;
-`ctxVec` is PR over the list by `ctxAfter`). `chainCode_proof` and `dlen_chainCode_le` as in
+`ctxVec` is PR over the list by `ctxAfter`). `chainCode_proof` and `proofLen_chainCode_le` as in
 `BRIEF.md:318-321`.
 
 ### 2.3 Rows with conclusions `∃ x₁ … x_a (C₁ ∧ … ∧ C_j)` — the macro `useRowEx` (NEW)
@@ -199,23 +199,23 @@ The conjunction split: `impChain as (c₁ ⋏ (c₂ ⋏ c₃))` — `sSplit` on 
 
 ### 2.4 The generic "one row use" cost (FACT: the bounds of `Steps.lean`)
 
-With `m = m_ρ`, `j = j_ρ`, `G ≥ setLen Γ`, `E ≥ 1` a bound on every witness length (AFTER the
+With `m = m_ρ`, `j = j_ρ`, `G ≥ sequentLen Γ`, `E ≥ 1` a bound on every witness length (AFTER the
 shift for `sIntroFact`: the smoke test takes `2|a| ≤ E`, `Steps.lean:1333-1339`),
 `F := |B_ρ|·E`:
 
-* `sUseHorn`: `dlen ≤ dlen dΛ + dlen d + (m+3)G + (m+1)²(F+m) + |B| + mE + 2m + 3 +
-  (2j+1)(G + (j+1)F + 1)` (`dlen_useHornCode_le`, `Steps.lean:354-366`).
-* `sUseHornAnd`: the same with `dlen d` replaced by `dlen d + 2G + 6F + 4`
-  (`dlen_useHornAndCode_le`, `:505-517`).
-* `sIntroFact`: `dlen ≤ dlen dΛ + dlen d + (m + 2j + 10)G + (m+11)F + (m+1)²(F+m) + |B| + mE
-  + 2m + (2j+1)((j+2)F + 1) + 12` (`dlen_introFactCode_le`, `:608-619`) — this bound contains
-  the DOUBLING `|setShift Γ| ≤ 2|Γ|` through `dlen_elimExistsCode_le'` (`Primitives.lean:717`).
-  **Required (§10): `dlen_introFactCode_le_occ`**, the same proof through
-  `dlen_elimExistsCode_le_occ` (`ShiftLen.lean:684-698`: `4·setLen Γ + fvOccS Γ` instead of
-  `5·setLen Γ`), giving `(m + 2j + 9)G + fvOccS Γ + …`.
-* `sElimExs Q`: `dlen ≤ dlen d + 5G + fvOccS Γ + 7|Q| + 9` (`dlen_elimExistsCode_le_occ` with
-  `dlen (axLFactCode Γ (^∃ Q)) ≤ G + |^∃ Q| + 1`, `dlen_axLFactCode_le`, `Steps.lean:683`).
-* `sSplit`: `dlen = setLen Γ + dlen d + 1` (`DlenGraph.orIntro_iff`, as `dlen_splitAndCode`,
+* `sUseHorn`: `proofLen ≤ proofLen dΛ + proofLen d + (m+3)G + (m+1)²(F+m) + |B| + mE + 2m + 3 +
+  (2j+1)(G + (j+1)F + 1)` (`proofLen_useHornCode_le`, `Steps.lean:354-366`).
+* `sUseHornAnd`: the same with `proofLen d` replaced by `proofLen d + 2G + 6F + 4`
+  (`proofLen_useHornAndCode_le`, `:505-517`).
+* `sIntroFact`: `proofLen ≤ proofLen dΛ + proofLen d + (m + 2j + 10)G + (m+11)F + (m+1)²(F+m) + |B| + mE
+  + 2m + (2j+1)((j+2)F + 1) + 12` (`proofLen_introFactCode_le`, `:608-619`) — this bound contains
+  the DOUBLING `|setShift Γ| ≤ 2|Γ|` through `proofLen_elimExistsCode_le'` (`Primitives.lean:717`).
+  **Required (§10): `proofLen_introFactCode_le_occ`**, the same proof through
+  `proofLen_elimExistsCode_le_occ` (`ShiftLen.lean:684-698`: `4·sequentLen Γ + fvOccS Γ` instead of
+  `5·sequentLen Γ`), giving `(m + 2j + 9)G + fvOccS Γ + …`.
+* `sElimExs Q`: `proofLen ≤ proofLen d + 5G + fvOccS Γ + 7|Q| + 9` (`proofLen_elimExistsCode_le_occ` with
+  `proofLen (axLFactCode Γ (^∃ Q)) ≤ G + |^∃ Q| + 1`, `proofLen_axLFactCode_le`, `Steps.lean:683`).
+* `sSplit`: `proofLen = sequentLen Γ + proofLen d + 1` (`ProofLenGraph.orIntro_iff`, as `proofLen_splitAndCode`,
   `Steps.lean:487-491`).
 
 Since `m ≤ 7`, `j ≤ 4` over the whole library (`substsInvRelB` has 7 variables,
@@ -275,8 +275,8 @@ fact `z < n` in context; `z` (and `n`) may be nonstandard.
   no row outputs) there is nothing to invert: the leaf must be BUILT. Building `t = ^#z` needs
   a witness whose VALUE is `z`: a numeral.
 * "`numeral z` is impossible for nonstandard `z`" — FALSE at the code level: `cT z` is a
-  V-element for every `z : V` (Σ₁ primitive recursion, like `bnum`, `Bnum.lean:320-380`,
-  `bnum_semiterm : IsSemiterm ℒₒᵣ k (bnum n)` by `pi1_order_induction`). Its length
+  V-element for every `z : V` (Σ₁ primitive recursion, like `binNumeral`, `BinNumeral.lean:320-380`,
+  `binNumeral_semiterm : IsSemiterm ℒₒᵣ k (binNumeral n)` by `pi1_order_induction`). Its length
   `2z + 1` is nonstandard when `z` is — and so is `ρ`'s charge `termLen ^#z = z + 1`
   (`Length.lean:100`) for the same leaf. Nothing is lost: a nonstandard proof `ρ` has
   nonstandard length and the verification proof is allowed `poly(g)`.
@@ -318,7 +318,7 @@ arithmetic. The same for vector lengths: `isSemitermVecAdjoinB` concludes at `(k
 ### 4.1 Definition shape (ANALYSIS, decision 3)
 
 `describeSteps : V → V → V`, `(n, r) ↦` a list (HFS vector) of step codes, defined as a
-`Fixpoint` construction on the key `⟪n, r⟫` in the `DlenGraph` style (`DerivationLength.lean`,
+`Fixpoint` construction on the key `⟪n, r⟫` in the `ProofLenGraph` style (`DerivationLength.lean`,
 `Φ`/blueprint), Δ₁ graph, existence and uniqueness by `IsSemiformula.pi1_structural_induction`
 (`Formula/Basic.lean:1379`; cases `hrel hnrel hverum hfalsum hand hor hall hexs`, the last
 two at `n + 1` — exactly the recursion below) and, for the term part, `IsSemiterm.induction`
@@ -331,7 +331,7 @@ of a Δ₁ predicate inside the blueprint — row indices and `cT` must enter th
 parameters, not literals.
 
 Three mutually recursive producers (or one fixpoint on tagged keys):
-`describeSteps n r`, `describeTerm n t`, `descVec n k v` (the vector `v` of length `k`;
+`describeSteps n r`, `describeTerm n t`, `descriptions n k v` (the vector `v` of length `k`;
 includes the `nil` fact). Concatenation is `++` on HFS vectors; children's lists FIRST.
 
 ### 4.2 The tables
@@ -379,8 +379,8 @@ step, row (variable order), witnesses right-to-left, antecedents that must be in
 
 *(F∃)* identical with `qqExsTotal`, `isSemiformulaExs`, fact `exsF`.
 
-*(Frel) `r = ^rel k R v`, `k = len v`* — `descCount = cv + 1`, `6 + steps(descVec)`:
-0. `descVec n k v` (→ `⟨v⟩ = &0` if `k > 0`; `tvPiF (cT k) n̄ ⟨v⟩` in context).
+*(Frel) `r = ^rel k R v`, `k = len v`* — `descCount = cv + 1`, `6 + steps(descriptions)`:
+0. `descriptions n k v` (→ `⟨v⟩ = &0` if `k > 0`; `tvPiF (cT k) n̄ ⟨v⟩` in context).
 1. `sUseHorn isRelConst_R []` → `isRelF (cT k) (cT R)` (closed; §3.2).
 2. `sIntroFact qqRelTotal [cT k, cT R, ⟨v⟩]` (`“v R k. ∃ p, !qqRelDef p k R v”`, `:299` →
    `[k, R, v]`) → `x_r = &0`, `⟨v⟩` becomes `&1` (if non-empty); fact
@@ -398,14 +398,14 @@ step, row (variable order), witnesses right-to-left, antecedents that must be in
 
 *(Fnrel)* identical with `qqNRelTotal`, `isSemiformulaNRel`, fact `nrelF`.
 
-**Vectors — `descVec n k v`** (`v = t₁ ∷ (t₂ ∷ (… ∷ 0))`, described TAIL FIRST)
+**Vectors — `descriptions n k v`** (`v = t₁ ∷ (t₂ ∷ (… ∷ 0))`, described TAIL FIRST)
 
 *(V0) `v = 0`* — `descCount = 0`, 2 steps: `sUseHorn isSemitermVecNil [n̄]` (`“n.”`, `:777`)
 → `tvSigmaF (cT 0) n̄ (cT 0)`; `sUseHorn isSemitermVecSigmaPiLAct [cT 0, n̄, cT 0]` (`“v n k.”`,
 `Bridge.lean:838` → `[k, n, v]`) → `tvPiF (cT 0) n̄ (cT 0)`.
 
 *(V∷) `v = t ∷ v'`, `len v' = k'`* — `descCount = cv' + ct + 1`, `3 + …`:
-0. `descVec n k' v'` (→ `⟨v'⟩`, `tvPiF (cT k') n̄ ⟨v'⟩`); then `describeTerm n t` (→ `x_t = &0`,
+0. `descriptions n k' v'` (→ `⟨v'⟩`, `tvPiF (cT k') n̄ ⟨v'⟩`); then `describeTerm n t` (→ `x_t = &0`,
    `tPiF n̄ &0`; `⟨v'⟩ = &ct` if non-empty).
 1. `sIntroFact adjoinTotal [&0, ⟨v'⟩]` (`“v t. ∃ w, !adjoinDef w t v”`, `:453` → `[t, v]`) →
    `x_v = &0`, `x_t = &1`, `⟨v'⟩' = &(ct+1)`; fact `adjF &0 &1 ⟨v'⟩'`.
@@ -429,8 +429,8 @@ step, row (variable order), witnesses right-to-left, antecedents that must be in
 `:439`) → `fvarF &0 (cT x)`; `sUseHorn isSemitermFvar [n̄, cT x, &0]` (`“t x n.”`, `:763`) →
 `tSigmaF n̄ &0`; bridge → `tPiF n̄ &0`.
 
-*(Tf) `t = ^func k f v`* — `descCount = cv + 1`, `6 + steps(descVec)`:
-0. `descVec n k v`. 1. `sUseHorn isFuncConst_f []` → `isFuncF (cT k) (cT f)`.
+*(Tf) `t = ^func k f v`* — `descCount = cv + 1`, `6 + steps(descriptions)`:
+0. `descriptions n k v`. 1. `sUseHorn isFuncConst_f []` → `isFuncF (cT k) (cT f)`.
 2. `sIntroFact qqFuncTotal [cT k, cT f, ⟨v⟩]` (`“v f k. ∃ t, !qqFuncDef t k f v”`, `:411`) →
    `x_t = &0`; fact `funcF &0 (cT k) (cT f) ⟨v⟩'`.
 3. `sUseHorn isSemitermFunc [n̄, cT k, cT f, ⟨v⟩', &0]` (`“t v f k n.”`, `:735` →
@@ -501,15 +501,15 @@ decomposition sites (`introAllB` needs `freeGraph fp p`, `setShiftGraph ss s`, `
 
 ### 6.1 The honest growth of the context (FACT + ANALYSIS)
 
-Doubling per shift (`setLen_setShift_le : setLen (setShift s) ≤ 2·setLen s`,
+Doubling per shift (`sequentLen_setShift_le : sequentLen (setShift s) ≤ 2·sequentLen s`,
 `Primitives.lean:596`) chained through `descCount r` shifts gives `2^{|r|}·|Γ|` — useless.
 `ShiftLen.lean` (untracked, 698 lines, read 2026-09-12) supplies the sharp statements:
 `formulaLen_shift_eq : formulaLen (shift p) = formulaLen p + fvOccF p` (`:364`),
 `fvOccF_shift : fvOccF (shift p) = fvOccF p` (`:394`),
-`setLen_setShift_le_occ : setLen (setShift s) ≤ setLen s + fvOccS s` (`:605`),
-`fvOccS_setShift_le` (`:624`), `setLen_setShiftIter_le : setLen (setShift^[n] s) ≤ setLen s +
-n·fvOccS s` (`:662`), `fvOccS_le_setLen` (`:592`), `fvOccS_insert_le` (`:580`), and the
-restated primitive bound `dlen_elimExistsCode_le_occ` (`:684`). This is exactly the "sharper
+`sequentLen_setShift_le_occ : sequentLen (setShift s) ≤ sequentLen s + fvOccS s` (`:605`),
+`fvOccS_setShift_le` (`:624`), `sequentLen_setShiftIter_le : sequentLen (setShift^[n] s) ≤ sequentLen s +
+n·fvOccS s` (`:662`), `fvOccS_le_sequentLen` (`:592`), `fvOccS_insert_le` (`:580`), and the
+restated primitive bound `proofLen_elimExistsCode_le_occ` (`:684`). This is exactly the "sharper
 length lemma" the brief asks for; the walk needs, on top of it:
 
 * `fvOccF_subst_le : fvOccF (subst w P) ≤ fvOccF P + formulaLen P · listMax (fvOccVec w)` —
@@ -517,15 +517,15 @@ length lemma" the brief asks for; the walk needs, on top of it:
   `^&i` has `fvOcc = 1`, `fvOcc_fvar`, `ShiftLen.lean:132`; `cT` has `0`). NOT in
   `ShiftLen.lean` — the analogue of `formulaLen_subst_le` (`InstV.lean`, used at
   `ShiftLen.lean:437`).
-* `dlen_introFactCode_le_occ` (§2.4).
+* `proofLen_introFactCode_le_occ` (§2.4).
 * a V-indexed `setShiftIterV : V → V → V` (`ShiftLen.setShiftIter` is `ℕ`-indexed, `:640`;
   `descCount r` is a V-value).
 
-Per step `i` with context `Γ_i`, `G_i := setLen Γ_i`, `O_i := fvOccS Γ_i`, new fact `f_i`:
-* `sUseHorn`: `G_{i+1} ≤ G_i + |f_i|`, `O_{i+1} ≤ O_i + fvOccF f_i` (`setLen_insert_le`,
+Per step `i` with context `Γ_i`, `G_i := sequentLen Γ_i`, `O_i := fvOccS Γ_i`, new fact `f_i`:
+* `sUseHorn`: `G_{i+1} ≤ G_i + |f_i|`, `O_{i+1} ≤ O_i + fvOccF f_i` (`sequentLen_insert_le`,
   `CutV.lean:130`; `fvOccS_insert_le`);
 * `sIntroFact`/`sElimExs`: `G_{i+1} ≤ G_i + O_i + |f_i|`, `O_{i+1} ≤ O_i + fvOccF f_i`
-  (`setLen_setShift_le_occ`, `fvOccS_setShift_le`);
+  (`sequentLen_setShift_le_occ`, `fvOccS_setShift_le`);
 * `|f_i| ≤ 2·|B_ρ|·E_i` (`formulaLen_instOuter_le : |instOuter es B| ≤ |B|·E`,
   `Primitives.lean:311`; `free` adds `≤ |R'|`, `formulaLen_free_le`,
   `Primitives.lean:587`), `fvOccF f_i ≤ |B_ρ|` (`fvOccF_subst_le`).
@@ -541,15 +541,15 @@ the step's own shift `^&i ↦ ^&(i+1)`. Hence
 `N := max_ρ N_ρ`, `S := stepCount r ≤ 8|r|`, `s := descCount r ≤ |r|`)
 
 `O_i ≤ O_0 + i·B ≤ fvOccS Γ + S·B`;
-`G_i ≤ setLen Γ + s·(fvOccS Γ + S·B) + S·2B·E(r)`;
+`G_i ≤ sequentLen Γ + s·(fvOccS Γ + S·B) + S·2B·E(r)`;
 per step `≤ N + 25·G_i + O_i + K·B·E(r) + K'`; summing over `S` steps:
 
-`dlen (chainCode Γ (describeSteps n₀ r) d) ≤ dlen d + S·(N + K') + 25·S·setLen Γ +
+`proofLen (chainCode Γ (describeSteps n₀ r) d) ≤ proofLen d + S·(N + K') + 25·S·sequentLen Γ +
 (25·S·s + S)·fvOccS Γ + 25·S·s·S·B + 50·S²·B·E(r) + S·S·B + K·B·S·E(r)`
 
-i.e. **`≤ dlen d + C₁·|r|·(N + setLen Γ) + C₂·|r|²·fvOccS Γ + C₃·(|r| + n₀)·|r|²`** with
-`C₁ = 8·26`, `C₂ = 8·26`, `C₃ = O(B²)` (row-table constants). With `fvOccS Γ ≤ setLen Γ`
-(`fvOccS_le_setLen`): `O(|r|²·|Γ| + |r|³)`. Per `ρ`-node `ν` with `|r| ≤ w_ν` and
+i.e. **`≤ proofLen d + C₁·|r|·(N + sequentLen Γ) + C₂·|r|²·fvOccS Γ + C₃·(|r| + n₀)·|r|²`** with
+`C₁ = 8·26`, `C₂ = 8·26`, `C₃ = O(B²)` (row-table constants). With `fvOccS Γ ≤ sequentLen Γ`
+(`fvOccS_le_sequentLen`): `O(|r|²·|Γ| + |r|³)`. Per `ρ`-node `ν` with `|r| ≤ w_ν` and
 `|Γ_ν| = O(L_ν·(1 + D_ν))`: `O(w_ν²·L_ν·D_ν + w_ν³) ≤ O(w_ν²·g)` — the `O(w_ν · L_ν · (1 + D_ν))`
 of `DESIGN §3.7` times the walk's own `w_ν`, still `E(g) = O(g³)`. The `|r|³` term is the
 walk's `S` steps × its `≤ S` own facts × their index drift `≤ s` — reducible to `|r|² log`
@@ -573,11 +573,11 @@ theorem describeSteps_ok {n r : V} (hr : IsSemiformula LAct n r) :
     neg (piF (cT n) ^&0) ∈ ctxAfter* Γ (describeSteps n r) ∧
     neg (shapeF r) ∈ ctxAfter* Γ (describeSteps n r) ∧            -- the per-shape code of §4.2
     setShiftIterV (descCount r) Γ ⊆ ctxAfter* Γ (describeSteps n r) ∧
-    setLen (ctxAfter* …) ≤ setLen Γ + descCount r · fvOccS Γ + c·(|r| + n)·|r| ∧
+    sequentLen (ctxAfter* …) ≤ sequentLen Γ + descCount r · fvOccS Γ + c·(|r| + n)·|r| ∧
     fvOccS (ctxAfter* …) ≤ fvOccS Γ + c'·|r|
 ```
-(`ctxAfter*` = the last entry of `ctxVec`), and `dlen_describeSteps_le` = §6.3 via
-`dlen_chainCode_le`. `shapeF r` is defined by cases on `r` (`andF ^&0 ^&(cq+1) ^&1`, …) — a
+(`ctxAfter*` = the last entry of `ctxVec`), and `proofLen_describeSteps_le` = §6.3 via
+`proofLen_chainCode_le`. `shapeF r` is defined by cases on `r` (`andF ^&0 ^&(cq+1) ^&1`, …) — a
 Σ₁ function of `r`, so the clause is Δ₁ in `(r, Γ, y)`.
 
 ### 7.2 The proof (ANALYSIS)
@@ -596,7 +596,7 @@ iterated) and the identification lemmas `inst_row_ρ` (per row, the `inst_rowIsA
 `piF (cT (n+1)) ^&0` shifted once, equal by `cT_succ` and `shift_subst_listToVec` +
 `termShift (cT _) = cT _`. Atoms: the term part by `IsSemiterm.induction 𝚷`
 (`Term/Basic.lean:836`) — `hbvar` gives `z < n` for `ltSteps`; `hfunc` gives `∀ i < k, P v.[i]`,
-composed along `∷` by a lemma `descVec_ok` proved by `IsUTermVec` induction on the vector.
+composed along `∷` by a lemma `descriptions_ok` proved by `IsUTermVec` induction on the vector.
 The length clauses are the recurrences of §6.1 discharged per step.
 
 ### 7.3 What the theorem does NOT say — and the check against `useHornCode_proof` (FACT)
@@ -664,7 +664,7 @@ Formation of the output's sub-nodes (needed if `ρ` later inserts them into a se
 `relF y' (cT k) (cT R) &0`; `shiftAnd` (`:1091`), `shiftAll` (`:1119`, at `n + 1`) as for `neg`.
 Formation of sub-outputs by `isSemiformulaShift`. NB the term vector `u` stays opaque: the
 LENGTH of a shifted atom is not derivable from these rows (`fvOcc` would be needed) — the
-`dlen` bookkeeping at `allIntro`/`shiftRule` nodes (DESIGN §4) is NOT covered by the current
+`proofLen` bookkeeping at `allIntro`/`shiftRule` nodes (DESIGN §4) is NOT covered by the current
 library; either add `formulaLenShift` rows with an `fvOcc` graph, or re-describe the shifted
 formula bottom-up and identify it with `y` by a parallel injectivity walk, which at atoms needs
 term-level `termShiftVec` commutation rows (none exist). Flagged, out of scope here.
@@ -711,9 +711,9 @@ New V-lemmas:
 * `instOuter_subst_bvN` for `N ≤ 7` (or one general lemma over `bvarList`-indexed slot lists),
   `inst_row_ρ` per row (the `inst_rowIsAnd` pattern, `Steps.lean:1150`).
 * `freeIter_subst_listToVec` (§2.3); `subst w (A ⋏ B)` distribution for `sSplit`'s `ctxAfter`.
-* `fvOccF_subst_le`; `dlen_introFactCode_le_occ`; `setShiftIterV` (§6.1).
+* `fvOccF_subst_le`; `proofLen_introFactCode_le_occ`; `setShiftIterV` (§6.1).
 * `descCount`, `shapeF`, `stepCount` as Σ₁ functions with their equations; `describeSteps`
-  (`Fixpoint` on `⟪n, r⟫`, §4.1) with `descVec_ok` (§7.2).
+  (`Fixpoint` on `⟪n, r⟫`, §4.1) with `descriptions_ok` (§7.2).
 
 Traps carried over: never `simp` on quoted sentences (`BRIEF.md:270`); no closed numeral as a
 Δ₁-predicate argument inside a fixpoint blueprint (`BRIEF.md:294-297`); `pgrep -f 'bin/lake

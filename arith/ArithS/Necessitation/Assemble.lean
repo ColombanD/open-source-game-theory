@@ -22,7 +22,7 @@ so a kit mentioning `VerifyGraph'` has to sit ABOVE `Verify2` — here.
 **The root bridge (§2).** `verifyGraph'_ok` wants the root laid out CANONICALLY at offset `0`
 (`NodeLay … (fstIdx ρ)`: the member dossier at `&(3 + mLen x)`, the chain `&2 = insert &(3 + mLen x) 𝟎`, the
 fold base `&1`, the length `&0`, plus the numeric `lenFact`/`leFact`), while the top's `RootLayout Γ x i`
-has the consecutive triple `&i = setLen &(i+1)`, `&(i+1) = insert &(i+2) 𝟎`, `&(i+2) = x` and no numeric
+has the consecutive triple `&i = sequentLen &(i+1)`, `&(i+1) = insert &(i+2) 𝟎`, `&(i+2) = x` and no numeric
 length. The two shapes are incompatible at any common offset (the fold base sits between the length and
 the chain), so the bridge RE-LAYS the root sequent `{x}` from scratch (`layoutSteps`, a fresh copy of the
 member `x'` and of the sequent `s'`), and then IDENTIFIES the two copies: `eqSteps` (the identification walk
@@ -30,7 +30,7 @@ of the two dossiers of `x`) gives `x₀ = x'`, two `congMem`/`emptySubsetC`/`ins
 `s₀ ⊆ s'` and `s' ⊆ s₀`, `subsetAntisymm` gives `s₀ = s'`. After the verify list `L` (whose goal fact is
 about the FRESH sequent `s'`), a RETARGET block moves the goal onto the ROOT sequent `s₀`: `goalElim`
 (recover `d = &1`, `n = &0` and `fstIdxFact s' d`), `congFstIdx` (`fstIdxFact s₀ d`), `sGoal`
-(re-close `goalFact s₀ (bnum (dlen ρ))`). So the kit's list is `vList = bridge ++ L ++ retarget`, and its
+(re-close `goalFact s₀ (binNumeral (proofLen ρ))`). So the kit's list is `vList = bridge ++ L ++ retarget`, and its
 `ok` conjunct has EXACTLY `VerifyKit''.ok`'s shape — the goal at `&(i + 1 + shiftsV vList)` on the root
 sequent — which is why `top_main'''` is `top_main''` with the list renamed. **Index reconciliation chosen:**
 the goal is RETARGETED onto the root sequent (no index identity for the singleton is needed: the
@@ -261,11 +261,11 @@ section retargetRoot
 
 /-- **The retarget block** at `s' = &js'`, `s₀ = &js₀` (with `eqFactB &js₀ &js'` in context): recover `d = &1`,
 `n = &0` and `fstIdxFact &(js'+2) &1` (`goalElim`, 2 shifts), `congFstIdx` to `fstIdxFact &(js₀+2) &1`, then
-`sGoal &1 &0 &(js₀+2) (bnum d)` re-closes `goalFact &(js₀+2) (bnum d)`. -/
+`sGoal &1 &0 &(js₀+2) (binNumeral d)` re-closes `goalFact &(js₀+2) (binNumeral d)`. -/
 noncomputable def retargetRoot (js' js₀ d : V) : V :=
-  appendV (goalElim (^&js') (bnum d))
+  appendV (goalElim (^&js') (binNumeral d))
     (mkStep frag1Pieces 122 ?[^&1, ^&(js' + 2), ^&(js₀ + 2)] ∷
-     sGoal (^&1) (^&0) (^&(js₀ + 2)) (bnum d) ∷ (0 : V))
+     sGoal (^&1) (^&0) (^&(js₀ + 2)) (binNumeral d) ∷ (0 : V))
 
 lemma len_retargetRoot (js' js₀ d : V) : len (retargetRoot js' js₀ d) = 7 := by
   unfold retargetRoot; rw [len_appendV, len_goalElim]; simp [len_adjoin]; norm_num
@@ -273,12 +273,12 @@ lemma len_retargetRoot (js' js₀ d : V) : len (retargetRoot js' js₀ d) = 7 :=
 /-- **The retarget block is applicable** (cap `8`, cut-admitting, exactly two shifts) and leaves the goal fact on
 the root sequent, at `&(js₀ + 2)`. -/
 theorem retargetRoot_ok {tbl N js' js₀ d E Γ : V} (htbl : TableOK tbl N) (hF : Frag1Table tbl)
-    (hΓ : IsFormulaSet LAct Γ) (hE₀ : js₀ + 3 ≤ E) (hE' : js' + 3 ≤ E) (hEd : termLen LAct (bnum d) ≤ E)
-    (hgoal : neg LAct (goalFact (^&js') (bnum d)) ∈ Γ) (heq : neg LAct (eqFactB (^&js₀) (^&js')) ∈ Γ) :
+    (hΓ : IsFormulaSet LAct Γ) (hE₀ : js₀ + 3 ≤ E) (hE' : js' + 3 ≤ E) (hEd : termLen LAct (binNumeral d) ≤ E)
+    (hgoal : neg LAct (goalFact (^&js') (binNumeral d)) ∈ Γ) (heq : neg LAct (eqFactB (^&js₀) (^&js')) ∈ Γ) :
     ListOK tbl E ((8 : ℕ) : V) Γ (retargetRoot js' js₀ d) ∧ NoDrop' (retargetRoot js' js₀ d) ∧
     shiftsV (retargetRoot js' js₀ d) = 2 ∧
-    neg LAct (goalFact (^&(js₀ + 2)) (bnum d)) ∈ finalCtx Γ (retargetRoot js' js₀ d) := by
-  have hbd : IsSemiterm LAct (0 : V) (bnum d) := isSemiterm_bnum_LAct 0 d
+    neg LAct (goalFact (^&(js₀ + 2)) (binNumeral d)) ∈ finalCtx Γ (retargetRoot js' js₀ d) := by
+  have hbd : IsSemiterm LAct (0 : V) (binNumeral d) := isSemiterm_binNumeral_LAct 0 d
   have hE3 : (3 : V) ≤ E := le_trans le_add_self hE₀
   have hl0 : termLen LAct (^&0 : V) ≤ E := termLen_fvar_le' (le_trans (by norm_num) hE3)
   have hl1 : termLen LAct (^&1 : V) ≤ E := termLen_fvar_le' (le_trans (by norm_num) hE3)
@@ -292,8 +292,8 @@ theorem retargetRoot_ok {tbl N js' js₀ d E Γ : V} (htbl : TableOK tbl N) (hF 
   -- the recovery
   obtain ⟨gok, gnd, gsh, _, gder, gfst, gdlen, gle⟩ := goalElim_ok 8 htbl hΓ (hf_ js') hbd hgoal
   rw [termShift_fvar, termShift_fvar, e2'] at gfst
-  rw [termShift_bnum, termShift_bnum] at gle
-  obtain ⟨Γ₀, hΓ₀⟩ : ∃ Γ', Γ' = finalCtx Γ (goalElim (^&js') (bnum d)) := ⟨_, rfl⟩
+  rw [termShift_binNumeral, termShift_binNumeral] at gle
+  obtain ⟨Γ₀, hΓ₀⟩ : ∃ Γ', Γ' = finalCtx Γ (goalElim (^&js') (binNumeral d)) := ⟨_, rfl⟩
   rw [← hΓ₀] at gder gfst gdlen gle
   have hΓ₀f : IsFormulaSet LAct Γ₀ := by rw [hΓ₀]; exact finalCtx_isFormulaSet 8 htbl hΓ gok
   have heq₀ : neg LAct (eqFactB (^&(js₀ + 2)) (^&(js' + 2))) ∈ Γ₀ := by
@@ -309,9 +309,9 @@ theorem retargetRoot_ok {tbl N js' js₀ d E Γ : V} (htbl : TableOK tbl N) (hF 
   have tr₁ : ∀ y ∈ Γ₀, y ∈ Γ₁ := fun y hy ↦ by rw [hΓ₁]; exact memIns hy
   have f₁ : neg LAct (fstIdxFact (^&(js₀ + 2)) (^&1)) ∈ Γ₁ := by rw [hΓ₁]; exact memInsSelf _ _
   -- `sGoal`
-  have ok₂ : StepOK tbl E ((8 : ℕ) : V) Γ₁ (sGoal (^&1) (^&0) (^&(js₀ + 2)) (bnum d)) :=
+  have ok₂ : StepOK tbl E ((8 : ℕ) : V) Γ₁ (sGoal (^&1) (^&0) (^&(js₀ + 2)) (binNumeral d)) :=
     stepOK_sGoal hΓ₁f (hf_ 1) hl1 (hf_ 0) hl0 (hf_ (js₀ + 2)) hls₀ hbd hEd (tr₁ _ gder) f₁ (tr₁ _ gdlen) (tr₁ _ gle)
-  have cx₂ := ctxAfter_sGoal Γ₁ (^&1 : V) (^&0) (^&(js₀ + 2)) (bnum d)
+  have cx₂ := ctxAfter_sGoal Γ₁ (^&1 : V) (^&0) (^&(js₀ + 2)) (binNumeral d)
   refine ⟨?_, ?_, ?_, ?_⟩
   · unfold retargetRoot
     refine listOK_appendV gok ?_
@@ -328,12 +328,12 @@ theorem retargetRoot_ok {tbl N js' js₀ d E Γ : V} (htbl : TableOK tbl N) (hF 
     rw [finalCtx_appendV, ← hΓ₀, finalCtx_cons, cx₁, finalCtx_single, cx₂]
     exact memInsSelf _ _
 
-/-- The retarget block is size-disciplined once `Q` dominates `4·|goalFact &js' (bnum d)|` and
-`|goalFact &(js₀+2) (bnum d)|`. -/
-lemma sizeOK_retargetRoot {Q D js' js₀ d : V} (hQ : 4 * formulaLen LAct (goalFact (^&js') (bnum d)) ≤ Q)
-    (hQ' : formulaLen LAct (goalFact (^&(js₀ + 2)) (bnum d)) ≤ Q) : SizeOK Q D (retargetRoot js' js₀ d) := by
+/-- The retarget block is size-disciplined once `Q` dominates `4·|goalFact &js' (binNumeral d)|` and
+`|goalFact &(js₀+2) (binNumeral d)|`. -/
+lemma sizeOK_retargetRoot {Q D js' js₀ d : V} (hQ : 4 * formulaLen LAct (goalFact (^&js') (binNumeral d)) ≤ Q)
+    (hQ' : formulaLen LAct (goalFact (^&(js₀ + 2)) (binNumeral d)) ≤ Q) : SizeOK Q D (retargetRoot js' js₀ d) := by
   unfold retargetRoot
-  refine sizeOK_appendV ((sizeOK_goalElim (D := D) (hf_ js') (isSemiterm_bnum_LAct 0 d)).mono hQ le_rfl) ?_
+  refine sizeOK_appendV ((sizeOK_goalElim (D := D) (hf_ js') (isSemiterm_binNumeral_LAct 0 d)).mono hQ le_rfl) ?_
   exact sizeOK_cons (stepSizeOK_horn0 (ftag_congFstIdx rfl _)) (sizeOK_single (stepSizeOK_sGoal hQ'))
 
 end retargetRoot
@@ -350,7 +350,7 @@ noncomputable def vList (Wl Wc W T x i ρ L : V) : V :=
     (appendV (identRoot Wl x (i + shiftsV (layoutSteps walkPieces Wl Wc W T (insert x 0)) + 2) (sTop Wc T x 0)
         (i + shiftsV (layoutSteps walkPieces Wl Wc W T (insert x 0)) + 1) (0 + 2))
       (appendV L (retargetRoot (0 + 2 + shiftsV L)
-        (i + shiftsV (layoutSteps walkPieces Wl Wc W T (insert x 0)) + 1 + shiftsV L) (dlen TAct ρ))))
+        (i + shiftsV (layoutSteps walkPieces Wl Wc W T (insert x 0)) + 1 + shiftsV L) (proofLen TAct ρ))))
 
 lemma succ_le_pow4 (d : V) : d + 1 ≤ (d + 1) ^ 4 := le_pow4 (d + 1)
 
@@ -375,34 +375,34 @@ end vList
 
 section goalLen
 
-/-- `derFact (bv 1)` and `dlenFact (bv 1) (bv 0)` are codes of STANDARD semisentences (the two `goalBody`
+/-- `derFact (bv 1)` and `proofLenFact (bv 1) (bv 0)` are codes of STANDARD semisentences (the two `goalBody`
 conjuncts that mention only bound variables), so their lengths are standard constants. -/
 noncomputable def derB1 : ArithmeticSemisentence 2 :=
   (↑(derivation TAct).sigma : ArithmeticSemisentence 1) ⇜ ![#1]
-noncomputable def dlenB10 : ArithmeticSemisentence 2 :=
-  (↑(dlenGraphDef LAct).sigma : ArithmeticSemisentence 2) ⇜ ![#1, #0]
+noncomputable def proofLenB10 : ArithmeticSemisentence 2 :=
+  (↑(proofLenGraphDef LAct).sigma : ArithmeticSemisentence 2) ⇜ ![#1, #0]
 
 lemma derFact_bv1_eq : (derFact (bv 1) : V) = ⌜Semiformula.lMap emb derB1⌝ := by
   unfold derFact Pderiv derivS derB1
   symm; row_shapeB
 
-lemma dlenFact_bv10_eq : (dlenFact (bv 1) (bv 0) : V) = ⌜Semiformula.lMap emb dlenB10⌝ := by
-  unfold dlenFact Pdlen dlenS dlenB10
+lemma proofLenFact_bv10_eq : (proofLenFact (bv 1) (bv 0) : V) = ⌜Semiformula.lMap emb proofLenB10⌝ := by
+  unfold proofLenFact Pdlen proofLenS proofLenB10
   symm; row_shapeB
 
 /-- The three standard constants of the goal fact's length. -/
-noncomputable def cDer : ℕ := flen (Rewriting.emb (Semiformula.lMap emb derB1) : Semiproposition LAct 2)
-noncomputable def cDlen : ℕ := flen (Rewriting.emb (Semiformula.lMap emb dlenB10) : Semiproposition LAct 2)
-noncomputable def cFst : ℕ := flen (Rewriting.emb fstIdxS : Semiproposition LAct 2)
+noncomputable def cDer : ℕ := formulaLenMeta (Rewriting.emb (Semiformula.lMap emb derB1) : Semiproposition LAct 2)
+noncomputable def cDlen : ℕ := formulaLenMeta (Rewriting.emb (Semiformula.lMap emb proofLenB10) : Semiproposition LAct 2)
+noncomputable def cFst : ℕ := formulaLenMeta (Rewriting.emb fstIdxS : Semiproposition LAct 2)
 
 lemma formulaLen_derFact_bv1 : formulaLen LAct (derFact (bv 1) : V) = (cDer : V) := by
   rw [derFact_bv1_eq, formulaLen_quote_semisentence_V']; rfl
-lemma formulaLen_dlenFact_bv10 : formulaLen LAct (dlenFact (bv 1) (bv 0) : V) = (cDlen : V) := by
-  rw [dlenFact_bv10_eq, formulaLen_quote_semisentence_V']; rfl
+lemma formulaLen_proofLenFact_bv10 : formulaLen LAct (proofLenFact (bv 1) (bv 0) : V) = (cDlen : V) := by
+  rw [proofLenFact_bv10_eq, formulaLen_quote_semisentence_V']; rfl
 lemma formulaLen_PfstIdx : formulaLen LAct (PfstIdx : V) = (cFst : V) := by
   unfold PfstIdx; rw [formulaLen_quote_semisentence_V']; rfl
 
--- TRAP (2026-09-15): these are `flen`s of the GIANT `derivation`/`dlenGraph` sentences; any tactic that whnf's them
+-- TRAP (2026-09-15): these are `formulaLenMeta`s of the GIANT `derivation`/`proofLenGraph` sentences; any tactic that whnf's them
 -- (`push_cast`/`norm_num`/`omega` normalising a `Nat.cast`) evaluates the closed constant and STALLS — irreducible.
 attribute [irreducible] cDer cDlen cFst
 
@@ -445,7 +445,7 @@ lemma formulaLen_goalFact_le {B : V} (hB : 1 ≤ B) {s u : V} (hs : IsSemiterm L
   unfold goalBody
   rw [formulaLen_and h1.isUFormula (by simp [h2.isUFormula, h3.isUFormula, h4.isUFormula]),
     formulaLen_and h2.isUFormula (by simp [h3.isUFormula, h4.isUFormula]),
-    formulaLen_and h3.isUFormula h4.isUFormula, formulaLen_derFact_bv1, formulaLen_dlenFact_bv10]
+    formulaLen_and h3.isUFormula h4.isUFormula, formulaLen_derFact_bv1, formulaLen_proofLenFact_bv10]
   have hs2 : IsSemiterm LAct (2 : V) s := isSemiterm_of_le hs zero_le
   have hu2 : IsSemiterm LAct (2 : V) u := isSemiterm_of_le hu zero_le
   have hF : formulaLen LAct (fstIdxFact s (bv 1)) ≤ (cFst : V) * B := by
@@ -479,7 +479,7 @@ end goalLen
 section sizeHalf
 
 /-- **The size half of the verify list** (the interface `verifyKit'''_of` consumes): every graph list is
-`≤ Cz·(dlen ρ + 1)^4` long and size-disciplined at the kit's `Q = kitQ Cz B E`, `D = kitD Cz (dlen ρ)`.
+`≤ Cz·(proofLen ρ + 1)^4` long and size-disciplined at the kit's `Q = kitQ Cz B E`, `D = kitD Cz (proofLen ρ)`.
 `verifyGraph''_ok4` (`Verify4.lean`) proves `ListOK`/`NoDrop'`/`shiftsV`/the goal fact but NOT `len`/`SizeOK`; this
 predicate names the missing half. It is DISCHARGED by `Verify5.verifySizeOracle_of_arms` (a second
 `Derivation.induction1 𝚷` glue over the node layouts, the ten arms of `Verify5` §27, U10 2026-09-16) — at a numeral
@@ -488,12 +488,12 @@ is this predicate at a fixed table). -/
 def VerifySizeOracle (tbl B Wl Wc W₁ W₂ W T : V) (Cv Cz : ℕ) : Prop :=
   ∀ {E A ρ L : V}, AxmTableOK' tbl E walkPieces A (Cv : V) → Derivation TAct ρ →
     VerifyGraph'' walkPieces Wl Wc W₁ W₂ W T A ρ L →
-    (Cz : V) * (dlen TAct ρ + 1) ^ 4 ≤ E →
-    len L ≤ (Cz : V) * (dlen TAct ρ + 1) ^ 4 ∧ SizeOK (kitQ (Cz : V) B E) (kitD (Cz : V) (dlen TAct ρ)) L
+    (Cz : V) * (proofLen TAct ρ + 1) ^ 4 ≤ E →
+    len L ≤ (Cz : V) * (proofLen TAct ρ + 1) ^ 4 ∧ SizeOK (kitQ (Cz : V) B E) (kitD (Cz : V) (proofLen TAct ρ)) L
 
 /-- **The goal-fact size constant, PACKAGED EXISTENTIALLY** (`4·(cDer + cDlen + cFst + 6)`). TRAP (2026-09-15): a
 `def cGoal : ℕ := 4 * (cDer + …)` STALLS every proof that touches it (`unfold; push_cast; ring`, `omega` after
-`unfold`): the kernel's `Nat` arithmetic whnf's `cDer = flen ⌜derivation…⌝` to a literal — the giant-DSL-constant
+`unfold`): the kernel's `Nat` arithmetic whnf's `cDer = formulaLenMeta ⌜derivation…⌝` to a literal — the giant-DSL-constant
 trap of the handover. So the constant is a witness whose only interface is the cast identity, proved by pure `rw`s. -/
 theorem exists_cGoal : ∃ c : ℕ, ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁],
     (c : V) = 4 * ((cDer : V) + cDlen + cFst + 6) :=
@@ -591,8 +591,8 @@ lemma goalFact4_le_kitQ {Ckv B E j u : V} (hE1 : 1 ≤ E) (hPle : formulaLen LAc
 
 set_option maxHeartbeats 2000000 in
 /-- **The bridged verify list is applicable at the ROOT layout** (the `ok` half of the kit `VerifyKit3`): from
-`Proof TAct ρ x`, `RootLayout Γ x i` and the cap `Ck·((dlen ρ + 1)^6 + i) ≤ E`, every graph list `L` yields
-`vList` applicable at cap `9`, cut-admitting, with `shiftsV ≤ Ck·(dlen ρ + 1)^6`, leaving the goal fact on the
+`Proof TAct ρ x`, `RootLayout Γ x i` and the cap `Ck·((proofLen ρ + 1)^6 + i) ≤ E`, every graph list `L` yields
+`vList` applicable at cap `9`, cut-admitting, with `shiftsV ≤ Ck·(proofLen ρ + 1)^6`, leaving the goal fact on the
 ROOT sequent at `&(i + 1 + shiftsV vList)`. `Ck = Ck' + 50` with `Ck'` the constant of `verifyGraph''_ok_pow4`. -/
 theorem vList_full (N' B' Cz Cv : ℕ) : ∃ Ck : ℕ, 1 ≤ Ck ∧ ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
     {tbl N B Wl Wc W₁ W₂ W T A E ρ x Γ i L : V},
@@ -601,13 +601,13 @@ theorem vList_full (N' B' Cz Cv : ℕ) : ∃ Ck : ℕ, 1 ≤ Ck ∧ ∀ (V : Typ
     W₁ = frag1Pieces → W₂ = frag2Pieces → W = proPieces → VerifySizeOracle tbl B Wl Wc W₁ W₂ W T Cv Cz →
     AxmTableOK' tbl E walkPieces A (Cv : V) →
     Proof TAct ρ x → IsSemiformula LAct 0 x → RootLayout Γ x i → IsFormulaSet LAct Γ →
-    (Ck : V) * ((dlen TAct ρ + 1) ^ 4 + i) ≤ E → VerifyGraph'' walkPieces Wl Wc W₁ W₂ W T A ρ L →
+    (Ck : V) * ((proofLen TAct ρ + 1) ^ 4 + i) ≤ E → VerifyGraph'' walkPieces Wl Wc W₁ W₂ W T A ρ L →
     ListOK tbl E ((9 : ℕ) : V) Γ (vList Wl Wc W T x i ρ L) ∧ NoDrop' (vList Wl Wc W T x i ρ L) ∧
-    shiftsV (vList Wl Wc W T x i ρ L) ≤ (Ck : V) * (dlen TAct ρ + 1) ^ 4 ∧
-    neg LAct (goalFact (^&(i + 1 + shiftsV (vList Wl Wc W T x i ρ L))) (bnum (dlen TAct ρ))) ∈
+    shiftsV (vList Wl Wc W T x i ρ L) ≤ (Ck : V) * (proofLen TAct ρ + 1) ^ 4 ∧
+    neg LAct (goalFact (^&(i + 1 + shiftsV (vList Wl Wc W T x i ρ L))) (binNumeral (proofLen TAct ρ))) ∈
       finalCtx Γ (vList Wl Wc W T x i ρ L) ∧
-    len (vList Wl Wc W T x i ρ L) ≤ (Ck : V) * (dlen TAct ρ + 1) ^ 4 ∧
-    SizeOK (kitQ (Ck : V) B E) (kitD (Ck : V) (dlen TAct ρ)) (vList Wl Wc W T x i ρ L) := by
+    len (vList Wl Wc W T x i ρ L) ≤ (Ck : V) * (proofLen TAct ρ + 1) ^ 4 ∧
+    SizeOK (kitQ (Ck : V) B E) (kitD (Ck : V) (proofLen TAct ρ)) (vList Wl Wc W T x i ρ L) := by
   obtain ⟨Ck', hV⟩ := verifyGraph''_ok_pow4
   obtain ⟨cG, hcG⟩ := exists_cGoal
   have hle : ∀ a : ℕ, a ≤ asmCk Ck' Cz N' B' + cG → a ≤ (asmCk Ck' Cz N' B' + cG) * (Cv + 1) := fun a h ↦
@@ -618,18 +618,18 @@ theorem vList_full (N' B' Cz Cv : ℕ) : ∃ Ck : ℕ, 1 ≤ Ck ∧ ∀ (V : Typ
   have hF := hP.frag1Table
   have hd : Derivation TAct ρ := hρ.2
   have hfst : fstIdx ρ = insert x 0 := by rw [hρ.1]; exact singleton_eq_insert_zero x
-  obtain ⟨d, hdd⟩ : ∃ d, d = dlen TAct ρ := ⟨_, rfl⟩
+  obtain ⟨d, hdd⟩ : ∃ d, d = proofLen TAct ρ := ⟨_, rfl⟩
   obtain ⟨Ckv, hCkv⟩ : ∃ c : V, c = (((asmCk Ck' Cz N' B' + cG) * (Cv + 1) : ℕ) : V) := ⟨_, rfl⟩
   rw [← hCkv, ← hdd] at hE
   have hCk' : (Ck' : V) ≤ Ckv := by rw [hCkv]; exact_mod_cast (hle Ck' (by unfold asmCk; omega))
   have hC : ∀ a : ℕ, a ≤ 50 → ((a : ℕ) : V) ≤ Ckv := fun a ha ↦ by
     rw [hCkv]; exact_mod_cast (hle a (by unfold asmCk; omega))
   have hC1 : (1 : V) ≤ Ckv := by rw [hCkv]; exact_mod_cast (hle 1 (by unfold asmCk; omega))
-  have hd1 : (1 : V) ≤ d := hdd ▸ one_le_dlen hd
+  have hd1 : (1 : V) ≤ d := hdd ▸ one_le_proofLen hd
   -- sizes of the root member
   have hxs : IsFormulaSet LAct (insert x (0 : V)) := IsFormulaSet.insert_iff.mpr ⟨hx, IsFormulaSet.empty⟩
-  have hsD : setLen LAct (insert x (0 : V)) ≤ d := by rw [hdd, ← hfst]; exact setLen_fstIdx_le_dlen hd
-  have hxD : formulaLen LAct x ≤ d := le_trans (formulaLen_le_setLen_of_mem (L := LAct) (by simp)) hsD
+  have hsD : sequentLen LAct (insert x (0 : V)) ≤ d := by rw [hdd, ← hfst]; exact sequentLen_fstIdx_le_proofLen hd
+  have hxD : formulaLen LAct x ≤ d := le_trans (formulaLen_le_sequentLen_of_mem (L := LAct) (by simp)) hsD
   have hxD1 : formulaLen LAct x ≤ d + 1 := le_trans hxD le_self_add
   have hcnt : eqCount x + 1 ≤ 2 * (d + 1) := le_trans (eqCount_succ_le htbl hW hx) (mul_le_mul_of_nonneg_left hxD1 zero_le)
   have hmL : mLen Wc T x + 1 ≤ 2 * (d + 1) := le_trans (mLen_succ_le hWc T hx) (mul_le_mul_of_nonneg_left hxD1 zero_le)
@@ -707,7 +707,7 @@ theorem vList_full (N' B' Cz Cv : ℕ) : ∃ Ck : ℕ, 1 ≤ Ck ∧ ∀ (V : Typ
           Nat.add_le_add_left (Nat.le_mul_of_pos_right c (Nat.succ_pos Cv)) _
       _ = (Ck' + c) * (Cv + 1) := by ring
       _ ≤ (asmCk Ck' Cz N' B' + cG) * (Cv + 1) := Nat.mul_le_mul_right _ (by unfold asmCk; omega))
-  have hEv : (Ck' : V) * ((Cv : V) + 1) * (dlen TAct ρ + 1) ^ 4 ≤ E := by
+  have hEv : (Ck' : V) * ((Cv : V) + 1) * (proofLen TAct ρ + 1) ^ 4 ≤ E := by
     rw [← hdd]
     exact cap_gen hE (c := (Ck' : V) * ((Cv : V) + 1)) (a := 0) (b := 0) (by rw [add_zero]; exact hCkCv) zero_le
       (by rw [zero_mul, add_zero, zero_mul, add_zero])
@@ -738,10 +738,10 @@ theorem vList_full (N' B' Cz Cv : ℕ) : ∃ Ck : ℕ, 1 ≤ Ck ∧ ∀ (V : Typ
       rw [zero_mul, add_zero]
       calc 0 + 2 + σ + 3 = σ + 5 := by ring
         _ ≤ (Ck' : V) * ((Cv : V) + 1) * (d + 1) ^ 4 + 5 * (d + 1) := add_le_add hσle (le_mul_of_one_le_right zero_le le_add_self))
-  have hEd : termLen LAct (bnum d) ≤ E := cap_gen hE (c := 0) (a := 7) (b := 0)
+  have hEd : termLen LAct (binNumeral d) ≤ E := cap_gen hE (c := 0) (a := 7) (b := 0)
     (by rw [zero_add]; exact hC 7 (by norm_num)) zero_le (by
       rw [zero_mul, zero_add, zero_mul, add_zero]
-      calc termLen LAct (bnum d) ≤ 6 * ‖d‖ + 1 := termLen_bnum_le_V d
+      calc termLen LAct (binNumeral d) ≤ 6 * ‖d‖ + 1 := termLen_binNumeral_le_V d
         _ ≤ 6 * (d + 1) + 1 * (d + 1) :=
             add_le_add (mul_le_mul_of_nonneg_left (le_trans (length_le d) le_self_add) zero_le)
               (by rw [one_mul]; exact le_add_self)
@@ -784,7 +784,7 @@ theorem vList_full (N' B' Cz Cv : ℕ) : ∃ Ck : ℕ, 1 ≤ Ck ∧ ∀ (V : Typ
     rw [← hβ, ← hdd, ← hσ, len_appendV, len_appendV, len_appendV, len_retargetRoot]
     have h1 := len_layoutSteps_le hWc walkPieces Wl W T hxs
     rw [len_memberList_single] at h1
-    have hEcap : (Cz : V) * (dlen TAct ρ + 1) ^ 4 ≤ E := by
+    have hEcap : (Cz : V) * (proofLen TAct ρ + 1) ^ 4 ≤ E := by
       rw [← hdd]
       exact cap_gen hE (c := (Cz : V)) (a := 0) (b := 0)
         (by rw [add_zero, hCkv]; exact_mod_cast (hle (Cz) (by unfold asmCk; omega))) zero_le
@@ -821,7 +821,7 @@ theorem vList_full (N' B' Cz Cv : ℕ) : ∃ Ck : ℕ, 1 ≤ Ck ∧ ∀ (V : Typ
       (by rw [hCkv]; exact_mod_cast (hle (19 * B' + 25) (by unfold asmCk; omega))) zero_le)
     have hlD : layD (N' : V) (B' : V) d ≤ kitD Ckv d := le_trans (layD_le (N' : V) (B' : V) d) (mul_le_mul_of_nonneg_right
       (by rw [hCkv]; exact_mod_cast (hle (27 * N' + 525600 * B') (by unfold asmCk; omega))) zero_le)
-    have hEcap : (Cz : V) * (dlen TAct ρ + 1) ^ 4 ≤ E := by
+    have hEcap : (Cz : V) * (proofLen TAct ρ + 1) ^ 4 ≤ E := by
       rw [← hdd]
       exact cap_gen hE (c := (Cz : V)) (a := 0) (b := 0)
         (by rw [add_zero, hCkv]; exact_mod_cast (hle (Cz) (by unfold asmCk; omega))) zero_le
@@ -830,10 +830,10 @@ theorem vList_full (N' B' Cz Cv : ℕ) : ∃ Ck : ℕ, 1 ≤ Ck ∧ ∀ (V : Typ
     rw [← hdd] at hsz
     have hcGoal : 4 * ((cDer : V) + cDlen + cFst + 6) ≤ Ckv := by
       rw [← hcG V, hCkv]; exact_mod_cast (hle cG (by omega))
-    have hbd : IsSemiterm LAct (0 : V) (bnum d) := isSemiterm_bnum_LAct 0 d
-    have hg1 : 4 * formulaLen LAct (goalFact (^&(0 + 2 + σ)) (bnum d)) ≤ kitQ Ckv B E :=
+    have hbd : IsSemiterm LAct (0 : V) (binNumeral d) := isSemiterm_binNumeral_LAct 0 d
+    have hg1 : 4 * formulaLen LAct (goalFact (^&(0 + 2 + σ)) (binNumeral d)) ≤ kitQ Ckv B E :=
       goalFact4_le_kitQ hE1 hPle (le_trans (add_le_add (le_refl (0 + 2 + σ)) (by norm_num : (1 : V) ≤ 3)) hRE') hbd hEd hcGoal
-    have hg2 : formulaLen LAct (goalFact (^&(i + β + 1 + σ + 2)) (bnum d)) ≤ kitQ Ckv B E :=
+    have hg2 : formulaLen LAct (goalFact (^&(i + β + 1 + σ + 2)) (binNumeral d)) ≤ kitQ Ckv B E :=
       le_trans (le_mul_of_one_le_left zero_le (by norm_num : (1 : V) ≤ 4))
         (goalFact4_le_kitQ hE1 hPle (le_trans (le_of_eq (by ring)) hRE₀) hbd hEd hcGoal)
     refine sizeOK_appendV ((sizeOK_layoutSteps hWl hWc hWp htblN hPle hxs hsD).mono hlQ hlD) ?_
@@ -850,27 +850,27 @@ section kit3
 shifted `axm` certificate table `A` (`AxmTableOK' tbl E walkPieces A Cv`, `Cv` the table's standard constant) and the ROOT BRIDGE folded in:
 the list the kit certifies is `vList Wl Wc W T x i ρ L` (`layoutSteps {x} ++ identRoot ++ L ++ retargetRoot`), whose
 `ok`/`cost` conjuncts have EXACTLY `VerifyKit''`'s shapes (the goal on the root sequent at `&(i + 1 + shiftsV)`, the
-coarse cost at `Q = kitQ Ck B E`, `D = kitD Ck (dlen ρ)`, the multiplier `Ck·(dlen ρ + 1)^m`, the cap
-`Ck·((dlen ρ + 1)^m + i) ≤ E`). `IsSemiformula 0 x` is an extra hypothesis (the top has it). -/
+coarse cost at `Q = kitQ Ck B E`, `D = kitD Ck (proofLen ρ)`, the multiplier `Ck·(proofLen ρ + 1)^m`, the cap
+`Ck·((proofLen ρ + 1)^m + i) ≤ E`). `IsSemiformula 0 x` is an extra hypothesis (the top has it). -/
 structure VerifyKit''' (tbl N B Wl Wc W₁ W₂ W T : V) (Cv : ℕ) (Ck : ℕ) (m : ℕ) : Prop where
   ok : ∀ {ρ x Γ i E A L : V}, Proof TAct ρ x → IsSemiformula LAct 0 x → RootLayout Γ x i → IsFormulaSet LAct Γ →
-    (Ck : V) * ((dlen TAct ρ + 1) ^ m + i) ≤ E → AxmTableOK' tbl E walkPieces A (Cv : V) →
+    (Ck : V) * ((proofLen TAct ρ + 1) ^ m + i) ≤ E → AxmTableOK' tbl E walkPieces A (Cv : V) →
     VerifyGraph'' walkPieces Wl Wc W₁ W₂ W T A ρ L →
     ListOK tbl E ((9 : ℕ) : V) Γ (vList Wl Wc W T x i ρ L) ∧ NoDrop' (vList Wl Wc W T x i ρ L) ∧
-    shiftsV (vList Wl Wc W T x i ρ L) ≤ (Ck : V) * (dlen TAct ρ + 1) ^ m ∧
-    neg LAct (goalFact (^&(i + 1 + shiftsV (vList Wl Wc W T x i ρ L))) (bnum (dlen TAct ρ))) ∈
+    shiftsV (vList Wl Wc W T x i ρ L) ≤ (Ck : V) * (proofLen TAct ρ + 1) ^ m ∧
+    neg LAct (goalFact (^&(i + 1 + shiftsV (vList Wl Wc W T x i ρ L))) (binNumeral (proofLen TAct ρ))) ∈
       finalCtx Γ (vList Wl Wc W T x i ρ L)
   cost : ∀ {ρ x Γ i E A L : V}, Proof TAct ρ x → IsSemiformula LAct 0 x → RootLayout Γ x i → IsFormulaSet LAct Γ →
-    (Ck : V) * ((dlen TAct ρ + 1) ^ m + i) ≤ E → AxmTableOK' tbl E walkPieces A (Cv : V) →
+    (Ck : V) * ((proofLen TAct ρ + 1) ^ m + i) ≤ E → AxmTableOK' tbl E walkPieces A (Cv : V) →
     VerifyGraph'' walkPieces Wl Wc W₁ W₂ W T A ρ L →
-    costSum N E Γ (vList Wl Wc W T x i ρ L) ≤ (Ck : V) * (dlen TAct ρ + 1) ^ m *
-      (costK N E B ((9 : ℕ) : V) (kitQ (Ck : V) B E) (kitD (Ck : V) (dlen TAct ρ)) +
-        38 * (ctxBoundG (growK B E (kitQ (Ck : V) B E)) Γ ((Ck : V) * (dlen TAct ρ + 1) ^ m) +
-          (fvOccS LAct Γ + (Ck : V) * (dlen TAct ρ + 1) ^ m * growK B E (kitQ (Ck : V) B E)))) ∧
-    setLen LAct (finalCtx Γ (vList Wl Wc W T x i ρ L)) ≤
-      ctxBoundG (growK B E (kitQ (Ck : V) B E)) Γ ((Ck : V) * (dlen TAct ρ + 1) ^ m) ∧
+    costSum N E Γ (vList Wl Wc W T x i ρ L) ≤ (Ck : V) * (proofLen TAct ρ + 1) ^ m *
+      (costK N E B ((9 : ℕ) : V) (kitQ (Ck : V) B E) (kitD (Ck : V) (proofLen TAct ρ)) +
+        38 * (ctxBoundG (growK B E (kitQ (Ck : V) B E)) Γ ((Ck : V) * (proofLen TAct ρ + 1) ^ m) +
+          (fvOccS LAct Γ + (Ck : V) * (proofLen TAct ρ + 1) ^ m * growK B E (kitQ (Ck : V) B E)))) ∧
+    sequentLen LAct (finalCtx Γ (vList Wl Wc W T x i ρ L)) ≤
+      ctxBoundG (growK B E (kitQ (Ck : V) B E)) Γ ((Ck : V) * (proofLen TAct ρ + 1) ^ m) ∧
     fvOccS LAct (finalCtx Γ (vList Wl Wc W T x i ρ L)) ≤
-      fvOccS LAct Γ + (Ck : V) * (dlen TAct ρ + 1) ^ m * growK B E (kitQ (Ck : V) B E)
+      fvOccS LAct Γ + (Ck : V) * (proofLen TAct ρ + 1) ^ m * growK B E (kitQ (Ck : V) B E)
 
 /-- **`VerifyKit'''` holds at `m = 4`** on any prologue table, given the size oracle: the `ok` half is
 `vList_full`'s, the cost half is `Frag1.costSum_le_of_sizeOK 9`/`ctxVec_len_le_sizeOK 9` over the whole bridged list
@@ -891,7 +891,7 @@ theorem verifyKit'''_of (N' B' Cz Cv : ℕ) : ∃ Ck : ℕ, ∀ (V : Type) [ORin
     have hE1 : (1 : V) ≤ E := by
       refine le_trans ?_ hE
       exact one_le_mul_of_one_le_of_one_le (by exact_mod_cast hCk1)
-        (le_trans le_add_self (le_trans (succ_le_pow4 (dlen TAct ρ)) le_self_add))
+        (le_trans le_add_self (le_trans (succ_le_pow4 (proofLen TAct ρ)) le_self_add))
     have cost := costSum_le_of_sizeOK 9 hE1 htbl hBt ok hsz
     obtain ⟨hF, hS⟩ := ctxVec_len_le_sizeOK 9 hE1 htbl hBt ok hsz (len (vList Wl Wc W T x i ρ L)) le_rfl
     have h38 : (3 * ((9 : ℕ) : V) + 11) = 38 := by push_cast; norm_num
@@ -901,21 +901,21 @@ theorem verifyKit'''_of (N' B' Cz Cv : ℕ) : ∃ Ck : ℕ, ∀ (V : Type) [ORin
       refine mul_le_mul hlen ?_ zero_le zero_le
       refine add_le_add le_rfl (mul_le_mul_of_nonneg_left ?_ zero_le)
       exact add_le_add (ctxBoundG_mono2 le_rfl hlen) (add_le_add le_rfl (mul_le_mul_of_nonneg_right hlen zero_le))
-    · show setLen LAct (ctxVec Γ (vList Wl Wc W T x i ρ L)).[len (vList Wl Wc W T x i ρ L)] ≤ _
+    · show sequentLen LAct (ctxVec Γ (vList Wl Wc W T x i ρ L)).[len (vList Wl Wc W T x i ρ L)] ≤ _
       exact le_trans hS (ctxBoundG_mono2 le_rfl hlen)
     · show fvOccS LAct (ctxVec Γ (vList Wl Wc W T x i ρ L)).[len (vList Wl Wc W T x i ρ L)] ≤ _
       exact le_trans hF (add_le_add le_rfl (mul_le_mul_of_nonneg_right hlen zero_le))
 
 /-- **The kit package over `VerifyGraph'`**: one table per model (with the row-body bound `B` covering `Plength`,
 `Peq`, `Ple`), the three numeral tables, the six piece tables, the graph's EXISTENCE half (`A` per `ρ` and `E`, at
-the E-room `Cv·p3(dlen ρ + 1) + 6·dlen ρ + 1` — from `verifyGraph''_exists_unconditional`), the kit and the pins. -/
+the E-room `Cv·p3(proofLen ρ + 1) + 6·proofLen ρ + 1` — from `verifyGraph''_exists_unconditional`), the kit and the pins. -/
 def KitPackage''' (N B N' B' N₂ B₂ N₃ B₃ Ck Cv : ℕ) (Cχ : Semisentence LAct 1 → ℕ) (m : ℕ) : Prop :=
   ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁],
     ∃ tbl Wl Wc W₁ W₂ W T tblL tblM : V, TableOK tbl N ∧ TopTable tbl ∧
       (∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ B) ∧
       formulaLen LAct (Plength : V) ≤ B ∧ formulaLen LAct (Peq : V) ≤ B ∧ formulaLen LAct (Ple : V) ≤ B ∧
       NumTableOK T N' B' ∧ LenTableOK tblL N₂ B₂ ∧ MulTableOK tblM N₃ B₃ ∧
-      (∀ ρ E : V, Derivation TAct ρ → (Cv : V) * p3 (dlen TAct ρ + 1) + 6 * dlen TAct ρ + 1 ≤ E →
+      (∀ ρ E : V, Derivation TAct ρ → (Cv : V) * p3 (proofLen TAct ρ + 1) + 6 * proofLen TAct ρ + 1 ≤ E →
         ∃ A L : V, AxmTableOK' tbl E walkPieces A Cv ∧ VerifyGraph'' walkPieces Wl Wc W₁ W₂ W T A ρ L) ∧
       VerifyKit''' tbl N B Wl Wc W₁ W₂ W T Cv Ck m ∧ ∀ χ, PinKit' χ tbl N B (Cχ χ)
 
@@ -936,39 +936,39 @@ theorem top_main''' (χ : Semisentence LAct 1) (m : ℕ) {tbl N B Wl Wc W₁ W�
     (hPl : formulaLen LAct (Plength : V) ≤ B) (hPeq : formulaLen LAct (Peq : V) ≤ B) (hPle : formulaLen LAct (Ple : V) ≤ B)
     (htblN : NumTableOK tN N' B') (htblL : LenTableOK tblL N₂ B₂) (htblM : MulTableOK tblM N₃ B₃)
     (hkit : VerifyKit''' tbl N B Wl Wc W₁ W₂ W tN Cv Ck m) (hpin : PinKit' χ tbl N B Cχ)
-    {k ρ : V} (hρ : Proof TAct ρ (instB (⌜χ⌝ : V) k)) (hlen : dlen TAct ρ ≤ gBudget k)
+    {k ρ : V} (hρ : Proof TAct ρ (instB (⌜χ⌝ : V) k)) (hlen : proofLen TAct ρ ≤ gBudget k)
     {L E : V} (hL : VerifyGraph'' walkPieces Wl Wc W₁ W₂ W tN A ρ L) (hA : AxmTableOK' tbl E walkPieces A (Cv : V))
-    (hE : Etop'' χ k (dlen TAct ρ) Ck Cχ m ≤ E) :
-    ∃ e Lr : V, LenDerivable TAct e (instB (⌜Box_g χ⌝ : V) k) ∧
+    (hE : Etop'' χ k (proofLen TAct ρ) Ck Cχ m ≤ E) :
+    ∃ e Lr : V, LenBoxUnbounded TAct e (instB (⌜Box_g χ⌝ : V) k) ∧
       Lr + 4 ≤ 12 * formulaLen LAct (instB (⌜χ⌝ : V) k) + 13 ∧
-      e ≤ topBound'' N B E Ck Cχ ‖k‖ (dlen TAct ρ) (setLen LAct (insert (boxFact (qNum χ) (bnum k)) (∅ : V)))
-        (fvOccS LAct (insert (boxFact (qNum χ) (bnum k)) (∅ : V))) Lr (topD N' B' N₂ B₂ N₃ B₃ k (dlen TAct ρ)) m := by
+      e ≤ topBound'' N B E Ck Cχ ‖k‖ (proofLen TAct ρ) (sequentLen LAct (insert (boxFact (qNum χ) (binNumeral k)) (∅ : V)))
+        (fvOccS LAct (insert (boxFact (qNum χ) (binNumeral k)) (∅ : V))) Lr (topD N' B' N₂ B₂ N₃ B₃ k (proofLen TAct ρ)) m := by
   obtain ⟨x, hxdef⟩ : ∃ x, x = instB (⌜χ⌝ : V) k := ⟨_, rfl⟩
-  obtain ⟨T, hTdef⟩ : ∃ T, T = boxFact (qNum χ) (bnum k) := ⟨_, rfl⟩
+  obtain ⟨T, hTdef⟩ : ∃ T, T = boxFact (qNum χ) (binNumeral k) := ⟨_, rfl⟩
   obtain ⟨Γ₀, hΓ₀def⟩ : ∃ Γ₀ : V, Γ₀ = insert T (∅ : V) := ⟨_, rfl⟩
   rw [← hxdef] at hρ ⊢
   rw [← hTdef, ← hΓ₀def]
   have hx : IsSemiformula LAct 0 x := hxdef ▸ isFormula_instB_quote χ k
   have hq : IsSemiterm LAct (0 : V) (qNum χ) := isSemiterm_qNum χ
-  have hbk : IsSemiterm LAct (0 : V) (bnum k) := isSemiterm_bnum_LAct 0 k
+  have hbk : IsSemiterm LAct (0 : V) (binNumeral k) := isSemiterm_binNumeral_LAct 0 k
   have hTf : IsFormula LAct T := hTdef ▸ isFormula_boxFact hq hbk
   have hΓ₀ : IsFormulaSet LAct Γ₀ := hΓ₀def ▸ IsFormulaSet.insert_iff.mpr ⟨hTf, IsFormulaSet.empty⟩
   have hTmem : T ∈ Γ₀ := by rw [hΓ₀def]; simp
   -- the cap requirements, read off `Etop`
-  have hE0 : Etop'' χ k (dlen TAct ρ) Ck Cχ m ≤ E := hE
-  have r_walk : eWalk χ k ≤ E := le_trans (le_Etop''_walk χ k (dlen TAct ρ) Ck Cχ m) hE0
-  have r_pin : ePin k Cχ ≤ E := le_trans (le_Etop''_pin χ k (dlen TAct ρ) Ck Cχ m) hE0
-  have r_ver : eVer'' k (dlen TAct ρ) Ck Cχ m ≤ E := le_trans (le_Etop''_ver χ k (dlen TAct ρ) Ck Cχ m) hE0
-  have r_js : eJs'' k (dlen TAct ρ) Ck Cχ m ≤ E := le_trans (le_Etop''_js χ k (dlen TAct ρ) Ck Cχ m) hE0
-  have r_q : eQ χ ≤ E := le_trans (le_Etop''_q χ k (dlen TAct ρ) Ck Cχ m) hE0
-  have r_k : eK k ≤ E := le_trans (le_Etop''_k χ k (dlen TAct ρ) Ck Cχ m) hE0
-  have r_l : eL k ≤ E := le_trans (le_Etop''_l χ k (dlen TAct ρ) Ck Cχ m) hE0
-  have r_b : eB k ≤ E := le_trans (le_Etop''_b χ k (dlen TAct ρ) Ck Cχ m) hE0
-  have r_g : eG k ≤ E := le_trans (le_Etop''_g χ k (dlen TAct ρ) Ck Cχ m) hE0
-  have r_d : eD (dlen TAct ρ) ≤ E := le_trans (le_Etop''_d χ k (dlen TAct ρ) Ck Cχ m) hE0
-  have r_n5 : eN5 k ≤ E := le_trans (le_Etop''_n5 χ k (dlen TAct ρ) Ck Cχ m) hE0
-  have r_n4a : eN4a k ≤ E := le_trans (le_Etop''_n4a χ k (dlen TAct ρ) Ck Cχ m) hE0
-  have r_n4b : eN4b k ≤ E := le_trans (le_Etop''_n4b χ k (dlen TAct ρ) Ck Cχ m) hE0
+  have hE0 : Etop'' χ k (proofLen TAct ρ) Ck Cχ m ≤ E := hE
+  have r_walk : eWalk χ k ≤ E := le_trans (le_Etop''_walk χ k (proofLen TAct ρ) Ck Cχ m) hE0
+  have r_pin : ePin k Cχ ≤ E := le_trans (le_Etop''_pin χ k (proofLen TAct ρ) Ck Cχ m) hE0
+  have r_ver : eVer'' k (proofLen TAct ρ) Ck Cχ m ≤ E := le_trans (le_Etop''_ver χ k (proofLen TAct ρ) Ck Cχ m) hE0
+  have r_js : eJs'' k (proofLen TAct ρ) Ck Cχ m ≤ E := le_trans (le_Etop''_js χ k (proofLen TAct ρ) Ck Cχ m) hE0
+  have r_q : eQ χ ≤ E := le_trans (le_Etop''_q χ k (proofLen TAct ρ) Ck Cχ m) hE0
+  have r_k : eK k ≤ E := le_trans (le_Etop''_k χ k (proofLen TAct ρ) Ck Cχ m) hE0
+  have r_l : eL k ≤ E := le_trans (le_Etop''_l χ k (proofLen TAct ρ) Ck Cχ m) hE0
+  have r_b : eB k ≤ E := le_trans (le_Etop''_b χ k (proofLen TAct ρ) Ck Cχ m) hE0
+  have r_g : eG k ≤ E := le_trans (le_Etop''_g χ k (proofLen TAct ρ) Ck Cχ m) hE0
+  have r_d : eD (proofLen TAct ρ) ≤ E := le_trans (le_Etop''_d χ k (proofLen TAct ρ) Ck Cχ m) hE0
+  have r_n5 : eN5 k ≤ E := le_trans (le_Etop''_n5 χ k (proofLen TAct ρ) Ck Cχ m) hE0
+  have r_n4a : eN4a k ≤ E := le_trans (le_Etop''_n4a χ k (proofLen TAct ρ) Ck Cχ m) hE0
+  have r_n4b : eN4b k ≤ E := le_trans (le_Etop''_n4b χ k (proofLen TAct ρ) Ck Cχ m) hE0
   unfold eWalk at r_walk
   rw [← hxdef] at r_walk
   unfold ePin at r_pin
@@ -993,14 +993,14 @@ theorem top_main''' (χ : Semisentence LAct 1) (m : ℕ) {tbl N B Wl Wc W₁ W�
   have rcost := costSum_le_of_hornOnly hE1 htbl rok rho rB
   obtain ⟨rF, rS⟩ := ctxVec_len_le hE1 htbl rok rho rB (len (rootSteps x)) le_rfl
   have rF' : fvOccS LAct Γ₁ ≤ topF1 B E (fvOccS LAct Γ₀) (len (rootSteps x)) := rF
-  have rS' : setLen LAct Γ₁ ≤ topS1 B E (setLen LAct Γ₀) (fvOccS LAct Γ₀) (len (rootSteps x)) := rS
+  have rS' : sequentLen LAct Γ₁ ≤ topS1 B E (sequentLen LAct Γ₀) (fvOccS LAct Γ₀) (len (rootSteps x)) := rS
   -- (2) the pin block
   obtain ⟨P, pok, pnd, psh, pinst, pcost, pS, pF⟩ := hpin.pin k (hxdef ▸ rlay) hΓ₁ r_pin
   set Γ₂ := finalCtx Γ₁ P with hΓ₂def
   have hΓ₂ : IsFormulaSet LAct Γ₂ := finalCtx_isFormulaSet 9 htbl hΓ₁ pok
   have lay₂ : RootLayout Γ₂ x (0 + shiftsV P) := rlay.transport pnd
   -- (3) the verification block
-  have r_ver' : (Ck : V) * ((dlen TAct ρ + 1) ^ m + (0 + shiftsV P)) ≤ E :=
+  have r_ver' : (Ck : V) * ((proofLen TAct ρ + 1) ^ m + (0 + shiftsV P)) ≤ E :=
     le_trans (mul_le_mul_of_nonneg_left (add_le_add le_rfl (add_le_add le_rfl psh)) zero_le) r_ver
   obtain ⟨vok, vnd, vsh, vgoal⟩ := hkit.ok hρ hx lay₂ hΓ₂ r_ver' hA hL
   obtain ⟨vcost, vS, vF⟩ := hkit.cost hρ hx lay₂ hΓ₂ r_ver' hA hL
@@ -1015,19 +1015,19 @@ theorem top_main''' (χ : Semisentence LAct 1) (m : ℕ) {tbl N B Wl Wc W₁ W�
     have e1 : (0 : V) + shiftsV P + shiftsV L₁ + 1 = js := by rw [hjsdef]; ring
     have e2 : (0 : V) + shiftsV P + shiftsV L₁ + 2 = js + 1 := by rw [hjsdef]; ring
     rwa [e1, e2] at this
-  have hinst₃ : neg LAct (instBFact (^&(js + 1)) (qNum χ) (bnum k)) ∈ Γ₃ := by
+  have hinst₃ : neg LAct (instBFact (^&(js + 1)) (qNum χ) (binNumeral k)) ∈ Γ₃ := by
     have := mem_finalCtx_of_mem' vnd pinst
     rw [shiftIterV_neg (isFormula_instBFact (by simp) hq hbk), shiftIterV_instBFact (by simp) hq hbk,
-      termShiftIterV_fvar, termShiftIterV_qNum, termShiftIterV_bnumTop] at this
+      termShiftIterV_fvar, termShiftIterV_qNum, termShiftIterV_binNumeralTop] at this
     have e : (0 : V) + 2 + shiftsV P + shiftsV L₁ = js + 1 := by rw [hjsdef]; ring
     rwa [e] at this
   -- (4) the closing block
   have r_js' : js + 4 ≤ E := by
     refine le_trans ?_ r_js
     rw [hjsdef]
-    calc (0 : V) + shiftsV P + 1 + shiftsV L₁ + 4 ≤ 0 + (Cχ : V) * (‖k‖ + 1) + 1 + (Ck : V) * (dlen TAct ρ + 1) ^ m + 4 :=
+    calc (0 : V) + shiftsV P + 1 + shiftsV L₁ + 4 ≤ 0 + (Cχ : V) * (‖k‖ + 1) + 1 + (Ck : V) * (proofLen TAct ρ + 1) ^ m + 4 :=
           add_le_add (add_le_add (add_le_add (add_le_add le_rfl psh) le_rfl) vsh) le_rfl
-      _ = (Cχ : V) * (‖k‖ + 1) + 1 + (Ck : V) * (dlen TAct ρ + 1) ^ m + 4 := by rw [zero_add]
+      _ = (Cχ : V) * (‖k‖ + 1) + 1 + (Ck : V) * (proofLen TAct ρ + 1) ^ m + 4 := by rw [zero_add]
   obtain ⟨cok, cnd, csh, clen, cT⟩ := closeSteps_ok χ htbl hT htblN htblL htblM hΓ₃ hlen r_js' r_q r_k r_l r_b r_g r_d
     vgoal hins₃ hinst₃
   set Γ₄ := finalCtx Γ₃ (closeSteps χ k ρ js tN tblL tblM) with hΓ₄def
@@ -1059,44 +1059,44 @@ theorem top_main''' (χ : Semisentence LAct 1) (m : ℕ) {tbl N B Wl Wc W₁ W�
   have hleaf : DerivationOf TAct (axL Γ₄ T) Γ₄ := ⟨by simp, Derivation.axL hΓ₄ hT₄ hnT₄⟩
   have hleaf' : DerivationOf TAct (axL Γ₄ T) (ctxVec Γ₀ S).[len S] := by
     show DerivationOf TAct (axL Γ₄ T) (finalCtx Γ₀ S); rw [hSfin]; exact hleaf
-  have hdlen_leaf : dlen TAct (axL Γ₄ T) = setLen LAct Γ₄ + 1 :=
-    dlen_eq_of_graph hleaf.2 (DlenGraph.axL_iff.mpr rfl)
+  have hdlen_leaf : proofLen TAct (axL Γ₄ T) = sequentLen LAct Γ₄ + 1 :=
+    proofLen_eq_of_graph hleaf.2 (ProofLenGraph.axL_iff.mpr rfl)
   have hproof : DerivationOf TAct (chainCode tbl Γ₀ S (axL Γ₄ T)) Γ₀ := chainCode_proof 9 htbl hok hleaf'
-  have hcost := dlen_chainCode_le 9 hE1 htbl hok hleaf'
+  have hcost := proofLen_chainCode_le 9 hE1 htbl hok hleaf'
   -- the closing block's cost
-  have hgoalLen : formulaLen LAct (goalFact (^&js) (bnum (dlen TAct ρ))) ≤ setLen LAct Γ₃ := by
-    have h := formulaLen_le_setLen_of_mem (L := LAct) vgoal
-    rwa [formulaLen_neg_eq (isFormula_goalFact (by simp) (isSemiterm_bnum_LAct 0 _))] at h
-  set Q := topQ'' B E Ck Cχ ‖k‖ (dlen TAct ρ) (setLen LAct Γ₀) (fvOccS LAct Γ₀) (len (rootSteps x)) m with hQdef
-  set D := topD N' B' N₂ B₂ N₃ B₃ k (dlen TAct ρ) with hDdef
-  have hS2 : setLen LAct Γ₂ ≤ topS2' B E Cχ ‖k‖ (setLen LAct Γ₀) (fvOccS LAct Γ₀) (len (rootSteps x)) :=
+  have hgoalLen : formulaLen LAct (goalFact (^&js) (binNumeral (proofLen TAct ρ))) ≤ sequentLen LAct Γ₃ := by
+    have h := formulaLen_le_sequentLen_of_mem (L := LAct) vgoal
+    rwa [formulaLen_neg_eq (isFormula_goalFact (by simp) (isSemiterm_binNumeral_LAct 0 _))] at h
+  set Q := topQ'' B E Ck Cχ ‖k‖ (proofLen TAct ρ) (sequentLen LAct Γ₀) (fvOccS LAct Γ₀) (len (rootSteps x)) m with hQdef
+  set D := topD N' B' N₂ B₂ N₃ B₃ k (proofLen TAct ρ) with hDdef
+  have hS2 : sequentLen LAct Γ₂ ≤ topS2' B E Cχ ‖k‖ (sequentLen LAct Γ₀) (fvOccS LAct Γ₀) (len (rootSteps x)) :=
     le_trans pS (ctxBoundG_le_ctxB rS' rF')
   have hF2 : fvOccS LAct Γ₂ ≤ topF2' B E Cχ ‖k‖ (fvOccS LAct Γ₀) (len (rootSteps x)) :=
     le_trans pF (add_le_add rF' le_rfl)
-  have hS3 : setLen LAct Γ₃ ≤ topS3'' B E Ck Cχ ‖k‖ (dlen TAct ρ) (setLen LAct Γ₀) (fvOccS LAct Γ₀) (len (rootSteps x)) m :=
+  have hS3 : sequentLen LAct Γ₃ ≤ topS3'' B E Ck Cχ ‖k‖ (proofLen TAct ρ) (sequentLen LAct Γ₀) (fvOccS LAct Γ₀) (len (rootSteps x)) m :=
     le_trans vS (ctxBoundG_le_ctxB hS2 hF2)
-  have hF3 : fvOccS LAct Γ₃ ≤ topF3'' B E Ck Cχ ‖k‖ (dlen TAct ρ) (fvOccS LAct Γ₀) (len (rootSteps x)) m :=
+  have hF3 : fvOccS LAct Γ₃ ≤ topF3'' B E Ck Cχ ‖k‖ (proofLen TAct ρ) (fvOccS LAct Γ₀) (len (rootSteps x)) m :=
     le_trans vF (add_le_add hF2 le_rfl)
   have hBE : B * E ≤ Q := by rw [hQdef, topQ'']; exact le_add_self
-  have hQg : 4 * formulaLen LAct (goalFact (^&js) (bnum (dlen TAct ρ))) ≤ Q := by
+  have hQg : 4 * formulaLen LAct (goalFact (^&js) (binNumeral (proofLen TAct ρ))) ≤ Q := by
     rw [hQdef, topQ'']
     exact le_trans (mul_le_mul_of_nonneg_left (le_trans hgoalLen hS3) zero_le) le_self_add
   have hsz : SizeOK Q D (closeSteps χ k ρ js tN tblL tblM) := by
     unfold closeSteps
-    refine sizeOK_appendV ((sizeOK_goalElim (D := D) (by simp) (isSemiterm_bnum_LAct 0 _)).mono hQg le_rfl) ?_
+    refine sizeOK_appendV ((sizeOK_goalElim (D := D) (by simp) (isSemiterm_binNumeral_LAct 0 _)).mono hQg le_rfl) ?_
     have hE1' : (1 : V) ≤ E := hE1
-    have hbd : IsSemiterm LAct (0 : V) (bnum (dlen TAct ρ)) := isSemiterm_bnum_LAct 0 _
-    have hbg : IsSemiterm LAct (0 : V) (bnum (gBudget k)) := isSemiterm_bnum_LAct 0 _
+    have hbd : IsSemiterm LAct (0 : V) (binNumeral (proofLen TAct ρ)) := isSemiterm_binNumeral_LAct 0 _
+    have hbg : IsSemiterm LAct (0 : V) (binNumeral (gBudget k)) := isSemiterm_binNumeral_LAct 0 _
     refine sizeOK_cons (stepSizeOK_sLemma (le_trans (formulaLen_lengthEqFact_le hPl r_n5) hBE)
-      (le_trans (dlen_lengthEqCode_le htblN htblL k) (by rw [hDdef, topD]; exact le_trans le_self_add (le_trans le_self_add le_self_add)))) ?_
+      (le_trans (proofLen_lengthEqCode_le htblN htblL k) (by rw [hDdef, topD]; exact le_trans le_self_add (le_trans le_self_add le_self_add)))) ?_
     refine sizeOK_cons (stepSizeOK_sLemma (le_trans (formulaLen_mulFact_le hPeq r_n4a) hBE)
-      (le_trans (dlen_mulEqCode_le htblN htblM _ _) (by rw [hDdef, topD]; exact le_trans le_add_self (le_trans le_self_add le_self_add)))) ?_
+      (le_trans (proofLen_mulEqCode_le htblN htblM _ _) (by rw [hDdef, topD]; exact le_trans le_add_self (le_trans le_self_add le_self_add)))) ?_
     refine sizeOK_cons (stepSizeOK_sLemma (le_trans (formulaLen_mulFact_le hPeq r_n4b) hBE)
-      (le_trans (dlen_mulEqCode_le htblN htblM _ _) (by rw [hDdef, topD]; exact le_trans le_add_self le_self_add))) ?_
+      (le_trans (proofLen_mulEqCode_le htblN htblM _ _) (by rw [hDdef, topD]; exact le_trans le_add_self le_self_add))) ?_
     refine sizeOK_cons (stepSizeOK_sLemma
       (le_trans (formulaLen_leFact_le hE1' hbd hbg r_d r_g) (le_trans (mul_le_mul_of_nonneg_right hPle zero_le) hBE))
-      (le_trans (dlen_leCode_le' htblN hlen) (by rw [hDdef, topD]; exact le_add_self))) ?_
-    refine sizeOK_cons (stepSizeOK_horn0 (ttag_dlenDefIntro rfl _)) ?_
+      (le_trans (proofLen_leCode_le' htblN hlen) (by rw [hDdef, topD]; exact le_add_self))) ?_
+    refine sizeOK_cons (stepSizeOK_horn0 (ttag_proofLenDefIntro rfl _)) ?_
     refine sizeOK_cons (stepSizeOK_horn0 (ttag_proofIntro rfl _)) ?_
     refine sizeOK_cons (stepSizeOK_horn0 (ttag_leTrans _)) ?_
     refine sizeOK_cons (stepSizeOK_horn0 (ttag_lenDerIntro rfl _)) ?_
@@ -1105,13 +1105,13 @@ theorem top_main''' (χ : Semisentence LAct 1) (m : ℕ) {tbl N B Wl Wc W₁ W�
   have ccost := costSum_le_of_sizeOK 8 hE1 htbl hB cok hsz
   rw [clen] at ccost
   obtain ⟨_, cS⟩ := ctxVec_len_le_sizeOK 8 hE1 htbl hB cok hsz (len (closeSteps χ k ρ js tN tblL tblM)) le_rfl
-  have cS' : setLen LAct Γ₄ ≤ setLen LAct Γ₃ + len (closeSteps χ k ρ js tN tblL tblM) * fvOccS LAct Γ₃ +
+  have cS' : sequentLen LAct Γ₄ ≤ sequentLen LAct Γ₃ + len (closeSteps χ k ρ js tN tblL tblM) * fvOccS LAct Γ₃ +
       (len (closeSteps χ k ρ js tN tblL tblM) * len (closeSteps χ k ρ js tN tblL tblM) +
         len (closeSteps χ k ρ js tN tblL tblM)) * growK B E Q := cS
   rw [clen] at cS'
   -- the total
-  refine ⟨dlen TAct (chainCode tbl Γ₀ S (axL Γ₄ T)), len (rootSteps x), ?_, rlen, ?_⟩
-  · refine ⟨chainCode tbl Γ₀ S (axL Γ₄ T), ?_, le_refl (dlen TAct (chainCode tbl Γ₀ S (axL Γ₄ T)))⟩
+  refine ⟨proofLen TAct (chainCode tbl Γ₀ S (axL Γ₄ T)), len (rootSteps x), ?_, rlen, ?_⟩
+  · refine ⟨chainCode tbl Γ₀ S (axL Γ₄ T), ?_, le_refl (proofLen TAct (chainCode tbl Γ₀ S (axL Γ₄ T)))⟩
     rw [target_eq_boxFact, ← hTdef]
     have e : insert T (∅ : V) = {T} := mem_ext fun _ ↦ by simp
     show DerivationOf TAct _ {T}
@@ -1120,31 +1120,31 @@ theorem top_main''' (χ : Semisentence LAct 1) (m : ℕ) {tbl N B Wl Wc W₁ W�
         (costSum N E Γ₁ P + (costSum N E Γ₂ L₁ + costSum N E Γ₃ (closeSteps χ k ρ js tN tblL tblM))) := by
       rw [hSdef, topList, ← hxdef, ← hjsdef, costSum_appendV, costSum_appendV, costSum_appendV, ← hΓ₁def, ← hΓ₂def,
         ← hΓ₃def]
-    have h_leaf : setLen LAct Γ₄ + 1 ≤ topS3'' B E Ck Cχ ‖k‖ (dlen TAct ρ) (setLen LAct Γ₀) (fvOccS LAct Γ₀) (len (rootSteps x)) m +
-        15 * topF3'' B E Ck Cχ ‖k‖ (dlen TAct ρ) (fvOccS LAct Γ₀) (len (rootSteps x)) m + (15 * 15 + 15) * growK B E Q + 1 :=
+    have h_leaf : sequentLen LAct Γ₄ + 1 ≤ topS3'' B E Ck Cχ ‖k‖ (proofLen TAct ρ) (sequentLen LAct Γ₀) (fvOccS LAct Γ₀) (len (rootSteps x)) m +
+        15 * topF3'' B E Ck Cχ ‖k‖ (proofLen TAct ρ) (fvOccS LAct Γ₀) (len (rootSteps x)) m + (15 * 15 + 15) * growK B E Q + 1 :=
       add_le_add (le_trans cS' (add_le_add (add_le_add hS3 (mul_le_mul_of_nonneg_left hF3 zero_le)) le_rfl)) le_rfl
     have h_root : costSum N E Γ₀ (rootSteps x) ≤
-        len (rootSteps x) * (stepK N E B + 36 * topS1 B E (setLen LAct Γ₀) (fvOccS LAct Γ₀) (len (rootSteps x))) := by
+        len (rootSteps x) * (stepK N E B + 36 * topS1 B E (sequentLen LAct Γ₀) (fvOccS LAct Γ₀) (len (rootSteps x))) := by
       unfold topS1; unfold ctxBound at rcost; exact rcost
     have h_pin : costSum N E Γ₁ P ≤ (Cχ : V) * (‖k‖ + 1) *
         (costK N E B ((9 : ℕ) : V) (kitQ (Cχ : V) B E) (kitD (Cχ : V) ‖k‖) +
-          38 * (ctxB (growK B E (kitQ (Cχ : V) B E)) (topS1 B E (setLen LAct Γ₀) (fvOccS LAct Γ₀) (len (rootSteps x)))
+          38 * (ctxB (growK B E (kitQ (Cχ : V) B E)) (topS1 B E (sequentLen LAct Γ₀) (fvOccS LAct Γ₀) (len (rootSteps x)))
             (topF1 B E (fvOccS LAct Γ₀) (len (rootSteps x))) ((Cχ : V) * (‖k‖ + 1)) +
             (topF1 B E (fvOccS LAct Γ₀) (len (rootSteps x)) + (Cχ : V) * (‖k‖ + 1) * growK B E (kitQ (Cχ : V) B E)))) :=
       le_trans pcost (mul_le_mul_of_nonneg_left (add_le_add le_rfl (mul_le_mul_of_nonneg_left
         (add_le_add (ctxBoundG_le_ctxB rS' rF') (add_le_add rF' le_rfl)) zero_le)) zero_le)
-    have h_ver : costSum N E Γ₂ L₁ ≤ (Ck : V) * (dlen TAct ρ + 1) ^ m *
-        (costK N E B ((9 : ℕ) : V) (kitQ (Ck : V) B E) (kitD (Ck : V) (dlen TAct ρ)) +
-          38 * (ctxB (growK B E (kitQ (Ck : V) B E)) (topS2' B E Cχ ‖k‖ (setLen LAct Γ₀) (fvOccS LAct Γ₀) (len (rootSteps x)))
-            (topF2' B E Cχ ‖k‖ (fvOccS LAct Γ₀) (len (rootSteps x))) ((Ck : V) * (dlen TAct ρ + 1) ^ m) +
-            (topF2' B E Cχ ‖k‖ (fvOccS LAct Γ₀) (len (rootSteps x)) + (Ck : V) * (dlen TAct ρ + 1) ^ m * growK B E (kitQ (Ck : V) B E)))) :=
+    have h_ver : costSum N E Γ₂ L₁ ≤ (Ck : V) * (proofLen TAct ρ + 1) ^ m *
+        (costK N E B ((9 : ℕ) : V) (kitQ (Ck : V) B E) (kitD (Ck : V) (proofLen TAct ρ)) +
+          38 * (ctxB (growK B E (kitQ (Ck : V) B E)) (topS2' B E Cχ ‖k‖ (sequentLen LAct Γ₀) (fvOccS LAct Γ₀) (len (rootSteps x)))
+            (topF2' B E Cχ ‖k‖ (fvOccS LAct Γ₀) (len (rootSteps x))) ((Ck : V) * (proofLen TAct ρ + 1) ^ m) +
+            (topF2' B E Cχ ‖k‖ (fvOccS LAct Γ₀) (len (rootSteps x)) + (Ck : V) * (proofLen TAct ρ + 1) ^ m * growK B E (kitQ (Ck : V) B E)))) :=
       le_trans vcost (mul_le_mul_of_nonneg_left (add_le_add le_rfl (mul_le_mul_of_nonneg_left
         (add_le_add (ctxBoundG_le_ctxB hS2 hF2) (add_le_add hF2 le_rfl)) zero_le)) zero_le)
     have h_close : costSum N E Γ₃ (closeSteps χ k ρ js tN tblL tblM) ≤
         15 * (costK N E B ((8 : ℕ) : V) Q D + (3 * ((8 : ℕ) : V) + 11) *
-          ((topS3'' B E Ck Cχ ‖k‖ (dlen TAct ρ) (setLen LAct Γ₀) (fvOccS LAct Γ₀) (len (rootSteps x)) m +
-            15 * topF3'' B E Ck Cχ ‖k‖ (dlen TAct ρ) (fvOccS LAct Γ₀) (len (rootSteps x)) m + (15 * 15 + 15) * growK B E Q) +
-           (topF3'' B E Ck Cχ ‖k‖ (dlen TAct ρ) (fvOccS LAct Γ₀) (len (rootSteps x)) m + 15 * growK B E Q))) := by
+          ((topS3'' B E Ck Cχ ‖k‖ (proofLen TAct ρ) (sequentLen LAct Γ₀) (fvOccS LAct Γ₀) (len (rootSteps x)) m +
+            15 * topF3'' B E Ck Cχ ‖k‖ (proofLen TAct ρ) (fvOccS LAct Γ₀) (len (rootSteps x)) m + (15 * 15 + 15) * growK B E Q) +
+           (topF3'' B E Ck Cχ ‖k‖ (proofLen TAct ρ) (fvOccS LAct Γ₀) (len (rootSteps x)) m + 15 * growK B E Q))) := by
       refine le_trans ccost (mul_le_mul_of_nonneg_left (add_le_add le_rfl (mul_le_mul_of_nonneg_left
         (add_le_add ?_ (add_le_add hF3 le_rfl)) zero_le)) zero_le)
       unfold ctxBoundG
@@ -1152,9 +1152,9 @@ theorem top_main''' (χ : Semisentence LAct 1) (m : ℕ) {tbl N B Wl Wc W₁ W�
     refine le_trans hcost ?_
     rw [hdlen_leaf, hsplit]
     unfold topBound''
-    calc setLen LAct Γ₄ + 1 + (costSum N E Γ₀ (rootSteps x) + (costSum N E Γ₁ P +
+    calc sequentLen LAct Γ₄ + 1 + (costSum N E Γ₀ (rootSteps x) + (costSum N E Γ₁ P +
           (costSum N E Γ₂ L₁ + costSum N E Γ₃ (closeSteps χ k ρ js tN tblL tblM))))
-        = (setLen LAct Γ₄ + 1) + costSum N E Γ₀ (rootSteps x) + costSum N E Γ₁ P + costSum N E Γ₂ L₁ +
+        = (sequentLen LAct Γ₄ + 1) + costSum N E Γ₀ (rootSteps x) + costSum N E Γ₁ P + costSum N E Γ₂ L₁ +
           costSum N E Γ₃ (closeSteps χ k ρ js tN tblL tblM) := by ring
       _ ≤ _ := add_le_add (add_le_add (add_le_add (add_le_add h_leaf h_root) h_pin) h_ver) h_close
 
@@ -1170,10 +1170,10 @@ theorem boundedInnerNec_of_kit''' (m : ℕ) (hm3 : 3 ≤ m) {N B N' B' N₂ B₂
     exact ⟨_, fun V _ _ k hk ↦ by
       obtain ⟨tbl, Wl, Wc, W₁, W₂, W, T, tblL, tblM, htbl, hT, hB, hPl, hPeq, hPle, htblN, htblL, htblM, hex, hkit, hpin⟩ := hpkg V
       obtain ⟨ρ, hρ, hlen⟩ := hk
-      obtain ⟨A, L, hA, hL⟩ := hex ρ (Etop''' χ k (dlen TAct ρ) Ck (Cχ χ) Cv m) hρ.2
-        (le_Etop'''_axm χ k (dlen TAct ρ) Ck (Cχ χ) Cv m)
+      obtain ⟨A, L, hA, hL⟩ := hex ρ (Etop''' χ k (proofLen TAct ρ) Ck (Cχ χ) Cv m) hρ.2
+        (le_Etop'''_axm χ k (proofLen TAct ρ) Ck (Cχ χ) Cv m)
       obtain ⟨e, Lr, he, hLr, hbound⟩ := top_main''' χ m htbl hT hB hPl hPeq hPle htblN htblL htblM hkit (hpin χ) hρ hlen hL hA
-        (le_Etop'''_top χ k (dlen TAct ρ) Ck (Cχ χ) Cv m)
+        (le_Etop'''_top χ k (proofLen TAct ρ) Ck (Cχ χ) Cv m)
       refine ⟨e, ?_, he⟩
       -- the graded inputs (`G = gBudget k + 1`, `u = ‖k‖ + 1`)
       have hc := pbCtx_gBudget k
@@ -1181,25 +1181,25 @@ theorem boundedInnerNec_of_kit''' (m : ℕ) (hm3 : 3 ≤ m) {N B N' B' N₂ B₂
       have hone : PB (gBudget k + 1) (‖k‖ + 1) 1 (1 : V) 0 1 := PB.one'.mono hc (e' := 0) (f' := 1) le_rfl (by norm_num)
       have h1u : PB (gBudget k + 1) (‖k‖ + 1) 1 (1 : V) 1 0 := PB.one'.mono hc (e' := 1) (f' := 0) (by norm_num) le_rfl
       have h3u : PB (gBudget k + 1) (‖k‖ + 1) 3 (3 : V) 0 1 := PB.three.mono hc (e' := 0) (f' := 1) le_rfl (by norm_num)
-      have hbk : PB (gBudget k + 1) (‖k‖ + 1) 7 (termLen LAct (bnum k)) 0 1 := by
-        refine PB.of_le (termLen_bnum_le_V k) ?_
+      have hbk : PB (gBudget k + 1) (‖k‖ + 1) 7 (termLen LAct (binNumeral k)) 0 1 := by
+        refine PB.of_le (termLen_binNumeral_le_V k) ?_
         have := (hlk.smul 6).add hone
         simpa using this
       have hg1 : PB (gBudget k + 1) (‖k‖ + 1) 1 (gBudget k) 1 0 := (PB.G_ hc).of_le le_self_add
-      have hd1 : PB (gBudget k + 1) (‖k‖ + 1) 1 (dlen TAct ρ + 1) 1 0 := (PB.G_ hc).of_le (add_le_add hlen le_rfl)
-      have hd0 : PB (gBudget k + 1) (‖k‖ + 1) 1 (dlen TAct ρ) 1 0 := hg1.of_le hlen
+      have hd1 : PB (gBudget k + 1) (‖k‖ + 1) 1 (proofLen TAct ρ + 1) 1 0 := (PB.G_ hc).of_le (add_le_add hlen le_rfl)
+      have hd0 : PB (gBudget k + 1) (‖k‖ + 1) 1 (proofLen TAct ρ) 1 0 := hg1.of_le hlen
       have hCk : PB (gBudget k + 1) (‖k‖ + 1) Ck (Ck : V) 0 0 := PB.const Ck
       have hCχ : PB (gBudget k + 1) (‖k‖ + 1) (Cχ χ) (Cχ χ : V) 0 0 := PB.const _
       have hqN : PB (gBudget k + 1) (‖k‖ + 1) (2 * (⌜χ⌝ : ℕ) + 1) (termLen LAct (qNum χ : V)) 0 0 :=
         PB.natCast _ (termLen_qNum_le χ)
-      -- `|x| ≤ |χ|·|bnum k|`
-      have hx : PB (gBudget k + 1) (‖k‖ + 1) (flen (Rewriting.emb χ : Semiproposition LAct 1) * 7)
+      -- `|x| ≤ |χ|·|binNumeral k|`
+      have hx : PB (gBudget k + 1) (‖k‖ + 1) (formulaLenMeta (Rewriting.emb χ : Semiproposition LAct 1) * 7)
           (formulaLen LAct (instB (⌜χ⌝ : V) k)) 0 1 :=
         PB.of_le (by
           have := formulaLen_instB_le (Sentence.quote_isSemiformul₁ χ) k
           rwa [formulaLen_quote_semisentence_V'] at this) ((PB.const _).mul hbk)
       -- `E = Etop''`: each summand is `≲ G^n`, `n := max m 1`
-      have hdm : PB (gBudget k + 1) (‖k‖ + 1) (1 ^ m) ((dlen TAct ρ + 1) ^ m) n 0 :=
+      have hdm : PB (gBudget k + 1) (‖k‖ + 1) (1 ^ m) ((proofLen TAct ρ + 1) ^ m) n 0 :=
         (hd1.pow m).mono hc (e' := n) (f' := 0) (by omega) (by omega)
       have h1n : PB (gBudget k + 1) (‖k‖ + 1) 1 (1 : V) n 0 := PB.one'.mono hc (e' := n) (f' := 0) (by omega) le_rfl
       have h3n : PB (gBudget k + 1) (‖k‖ + 1) 3 (3 : V) n 0 := PB.three.mono hc (e' := n) (f' := 0) (by omega) le_rfl
@@ -1216,12 +1216,12 @@ theorem boundedInnerNec_of_kit''' (m : ℕ) (hm3 : 3 ≤ m) {N B N' B' N₂ B₂
         ((PB.natCast (q := (4 : V)) 4 (by norm_num)).mono hc (e' := n) (f' := 0) (by omega) le_rfl)
       have e5 := hqN.mono hc (e' := n) (f' := 0) (by omega) le_rfl
       have e6 := (PB.uG hc hbk).mono hc (e' := n) (f' := 0) (by omega) le_rfl
-      have e7 := (PB.uG hc (PB.of_le (termLen_bnum_le_V ‖k‖) (((hlk.of_le (length_le _)).smul 6).add hone))).mono hc (e' := n) (f' := 0) (by omega) le_rfl
-      have e8 := (PB.reduce hc (PB.of_le (termLen_bnum_le_V (‖k‖ * ‖k‖))
+      have e7 := (PB.uG hc (PB.of_le (termLen_binNumeral_le_V ‖k‖) (((hlk.of_le (length_le _)).smul 6).add hone))).mono hc (e' := n) (f' := 0) (by omega) le_rfl
+      have e8 := (PB.reduce hc (PB.of_le (termLen_binNumeral_le_V (‖k‖ * ‖k‖))
         (((((hlk.mul hlk).of_le (length_le _)).smul 6).add (hone.mono hc (e' := 0) (f' := 2) le_rfl (by norm_num))).mono hc
           (e' := 0) (f' := 3) le_rfl (by norm_num)))).mono hc (e' := n) (f' := 0) (by omega) le_rfl
-      have e9 := (PB.of_le (termLen_bnum_le_V (gBudget k)) (((hg1.of_le (length_le _)).smul 6).add h1u)).mono hc (e' := n) (f' := 0) (by omega) le_rfl
-      have e10 := (PB.of_le (termLen_bnum_le_V (dlen TAct ρ)) (((hd0.of_le (length_le _)).smul 6).add h1u)).mono hc (e' := n) (f' := 0) (by omega) le_rfl
+      have e9 := (PB.of_le (termLen_binNumeral_le_V (gBudget k)) (((hg1.of_le (length_le _)).smul 6).add h1u)).mono hc (e' := n) (f' := 0) (by omega) le_rfl
+      have e10 := (PB.of_le (termLen_binNumeral_le_V (proofLen TAct ρ)) (((hd0.of_le (length_le _)).smul 6).add h1u)).mono hc (e' := n) (f' := 0) (by omega) le_rfl
       have e11 := (PB.uG hc ((hlk.smul 12).add h3u)).mono hc (e' := n) (f' := 0) (by omega) le_rfl
       have hs1 := PB.of_le (length_le (‖k‖ * ‖k‖ + ‖k‖ + ‖k‖))
         (((hlk.mul hlk).add (hlk.mono hc (e' := 0) (f' := 2) le_rfl (by norm_num))).add
@@ -1237,25 +1237,25 @@ theorem boundedInnerNec_of_kit''' (m : ℕ) (hm3 : 3 ≤ m) {N B N' B' N₂ B₂
       have e14b := ((hd0.smul 6).add h1u).mono hc (e' := n) (f' := 0) (by omega) le_rfl
       have e14 := e14a.add e14b
       have hE₀ := (((((((((((((e1.add e2).add e3).add e4).add e5).add e6).add e7).add e8).add e9).add e10).add e11).add e12).add e13).add e14)
-      have hE := PB.of_le (q := Etop''' χ k (dlen TAct ρ) Ck (Cχ χ) Cv m) (le_of_eq (by
+      have hE := PB.of_le (q := Etop''' χ k (proofLen TAct ρ) Ck (Cχ χ) Cv m) (le_of_eq (by
         unfold Etop''' Etop'' eWalk ePin eVer'' eJs'' eQ eK eL eB eG eD eN5 eN4a eN4b p3; push_cast; ring)) hE₀
       -- `S₀, F₀ ≤ |Pbox| · (2⌜χ⌝ + 6‖k‖ + 9)`
       have hq : IsSemiterm LAct (0 : V) (qNum χ) := isSemiterm_qNum χ
-      have hbk' : IsSemiterm LAct (0 : V) (bnum k) := isSemiterm_bnum_LAct 0 k
-      have hTf : IsFormula LAct (boxFact (qNum χ) (bnum k)) := isFormula_boxFact hq hbk'
-      have hB' : formulaLen LAct (boxFact (qNum χ) (bnum k)) ≤
+      have hbk' : IsSemiterm LAct (0 : V) (binNumeral k) := isSemiterm_binNumeral_LAct 0 k
+      have hTf : IsFormula LAct (boxFact (qNum χ) (binNumeral k)) := isFormula_boxFact hq hbk'
+      have hB' : formulaLen LAct (boxFact (qNum χ) (binNumeral k)) ≤
           formulaLen LAct (Pbox : V) * (((2 * (⌜χ⌝ : ℕ) + 1 : ℕ) : V) + (6 * ‖k‖ + 1)) :=
         formulaLen_boxFact_le (le_trans (by norm_num) le_add_self) hq hbk' (le_trans (termLen_qNum_le χ) le_self_add)
-          (le_trans (termLen_bnum_le_V k) le_add_self)
+          (le_trans (termLen_binNumeral_le_V k) le_add_self)
       have hBp := PB.uG hc (((PB.const (2 * (⌜χ⌝ : ℕ) + 1)).mono hc (e' := 0) (f' := 1) le_rfl (by norm_num)).add
         ((hlk.smul 6).add hone))
       have hPb := PB.natCast (G := gBudget k + 1) (u := ‖k‖ + 1)
-        (flen (Rewriting.emb (Semiformula.lMap emb (↑boxCoreS : ArithmeticSemisentence 2)) : Semiproposition LAct 2))
+        (formulaLenMeta (Rewriting.emb (Semiformula.lMap emb (↑boxCoreS : ArithmeticSemisentence 2)) : Semiproposition LAct 2))
         (le_of_eq (formulaLen_quote_semisentence_V' _))
       have hTlen := PB.of_le hB' ((hPb.mul hBp).mono hc (e' := 1) (f' := 0) (by norm_num) le_rfl)
-      have hS := PB.of_le (le_trans (setLen_insert_le (L := LAct) (boxFact (qNum χ) (bnum k)) (∅ : V))
-        (by rw [setLen_empty', zero_add])) hTlen
-      have hF := PB.of_le (le_trans (fvOccS_insert_le (L := LAct) (boxFact (qNum χ) (bnum k)) (∅ : V))
+      have hS := PB.of_le (le_trans (sequentLen_insert_le (L := LAct) (boxFact (qNum χ) (binNumeral k)) (∅ : V))
+        (by rw [sequentLen_empty', zero_add])) hTlen
+      have hF := PB.of_le (le_trans (fvOccS_insert_le (L := LAct) (boxFact (qNum χ) (binNumeral k)) (∅ : V))
         (by rw [fvOccS_empty, zero_add]; exact fvOccF_le_formulaLen hTf.isUFormula)) hTlen
       -- `Lr ≤ 12|x| + 9`
       have h1 : Lr ≤ 12 * formulaLen LAct (instB (⌜χ⌝ : V) k) + 9 := by
@@ -1264,7 +1264,7 @@ theorem boundedInnerNec_of_kit''' (m : ℕ) (hm3 : 3 ≤ m) {N B N' B' N₂ B₂
         exact le_of_add_le_add_right this
       have hL := PB.of_le h1 (((PB.natCast (q := (12 : V)) 12 (by norm_num)).mul hx).add
         ((PB.natCast (q := (9 : V)) 9 (by norm_num)).mono hc (e' := 0) (f' := 1) le_rfl (by norm_num)))
-      have hD := topD_pb N' B' N₂ B₂ N₃ B₃ k (dlen TAct ρ) hlen
+      have hD := topD_pb N' B' N₂ B₂ N₃ B₃ k (proofLen TAct ρ) hlen
       have hmain := topBound''_pb hc m n hmn hn (PB.const N) (PB.const B) hE hCk hCχ (PB.u_ hc) hd1 hdm hS hF hL hD
       have hfin := PB.final_pow hc hmain
       rw [show deg m = 4 * n by rw [deg, hn_def]]
@@ -1280,7 +1280,7 @@ The three predicate lengths below `B`, the `IndRec` table with its row-body boun
 `deg 4 = 16`. The package itself — `KitPackage''' … 4` from the carrying size theorem `Package.SizeThm`,
 in the quantifier order `exists_numTable` FIRST (fixing `N'`, `B'` as naturals), the size constant `Cz`
 AFTER — is `Package.kitPackage'''_of_size'`, and the headline theorems `boundedInnerNec_sixteen`,
-`dupoc_self_coop_unconditional`, `pblt_unconditional` are unconditional there. History: this section
+`dupoc_self_coop`, `pblt` are unconditional there. History: this section
 once closed on a hypothesis `SizeOracle` that bound the numeral table with no `NumTableOK` — machine-checked
 UNPROVABLE as stated (2026-09-15, `Verify5.lean`'s header) — and its three `_of_size` consumers; that dead
 path was deleted 2026-09-27, `Package.lean`'s `SizeThm` path being the live one. -/
@@ -1288,9 +1288,9 @@ path was deleted 2026-09-27, `Package.lean`'s `SizeThm` path being the live one.
 section packageGlue
 
 /-- The standard lengths of the three predicate codes the closing block needs below `B`. -/
-noncomputable def cPlength : ℕ := flen (Rewriting.emb (Semiformula.lMap emb (↑lengthDef : ArithmeticSemisentence 2)) : Semiproposition LAct 2)
-noncomputable def cPeq : ℕ := flen (Rewriting.emb eqS : Semiproposition LAct 2)
-noncomputable def cPle : ℕ := flen (Rewriting.emb leS : Semiproposition LAct 2)
+noncomputable def cPlength : ℕ := formulaLenMeta (Rewriting.emb (Semiformula.lMap emb (↑lengthDef : ArithmeticSemisentence 2)) : Semiproposition LAct 2)
+noncomputable def cPeq : ℕ := formulaLenMeta (Rewriting.emb eqS : Semiproposition LAct 2)
+noncomputable def cPle : ℕ := formulaLenMeta (Rewriting.emb leS : Semiproposition LAct 2)
 
 lemma formulaLen_Plength_eq : formulaLen LAct (Plength : V) = (cPlength : V) := by
   unfold Plength; rw [formulaLen_quote_semisentence_V']; rfl

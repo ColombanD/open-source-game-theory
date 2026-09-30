@@ -6,7 +6,7 @@ bound for `shift` / `setShift`
 
 `Necessitation/Primitives.lean` bounds the symbol count of a shifted code by DOUBLING:
 `termLen (termShift t) ≤ 2·termLen t`, `formulaLen (shift p) ≤ 2·formulaLen p`,
-`setLen (setShift s) ≤ 2·setLen s`. Chained through `n` eigenvariable eliminations
+`sequentLen (setShift s) ≤ 2·sequentLen s`. Chained through `n` eigenvariable eliminations
 (`elimExistsCode`, `introFactCode`) that composes to `2ⁿ` — the cost-accounting risk of
 `M4_BOUNDED_HBL/BRIEF.md` §9 and `DESIGN_inner_necessitation.md` §3.7.
 
@@ -17,24 +17,24 @@ OCCURRENCE and nothing else. This module makes that exact:
 
 * `fvOcc L t` / `fvOccVec L k v` / `fvOccF L p` / `fvOccS L s` — the number of free-variable
   occurrences (`qqFvar` nodes) in a term / term vector / formula / formula-set code, Σ₁
-  functions by the same recursion schemes as `termLen` / `formulaLen` / `setLen`
+  functions by the same recursion schemes as `termLen` / `formulaLen` / `sequentLen`
   (`TermRec`, `UformulaRec1`, primitive recursion over the bit-set), with `defined` /
   `definable` instances and one equation per constructor;
 * the EXACT laws `termLen_termShift_eq : termLen (termShift t) = termLen t + fvOcc t`,
   `formulaLen_shift_eq : formulaLen (shift p) = formulaLen p + fvOccF p`, the set bound
-  `setLen_setShift_le_occ : setLen (setShift s) ≤ setLen s + fvOccS s` (`≤` only because
+  `sequentLen_setShift_le_occ : sequentLen (setShift s) ≤ sequentLen s + fvOccS s` (`≤` only because
   Foundation has no injectivity lemma for `shift` on codes; `setShift` might identify two
   members), and the invariances `fvOcc_termShift`, `fvOccF_shift`, `fvOccS_setShift_le`
   (again `≤`, for the same reason) — hence `n` shifts cost `n · fvOccS s`, LINEAR:
-  `setLen_setShiftIter_le : setLen (setShiftIter n s) ≤ setLen s + n · fvOccS s`;
-* the sanity bounds `fvOcc_le_termLen`, `fvOccF_le_formulaLen`, `fvOccS_le_setLen`, which
+  `sequentLen_setShiftIter_le : sequentLen (setShiftIter n s) ≤ sequentLen s + n · fvOccS s`;
+* the sanity bounds `fvOcc_le_termLen`, `fvOccF_le_formulaLen`, `fvOccS_le_sequentLen`, which
   recover the doubling bounds of `Primitives`, and `fvOccF_free_le : fvOccF (free p) ≤
   fvOccF p + formulaLen p` (`free` also instantiates `#0` by `&0`, once per `#0`-occurrence —
   a bound in terms of a bound-variable occurrence count is NOT delivered here, see the
   remark at the lemma);
-* the restated primitive bound `dlen_elimExistsCode_le_occ`: `dlen (elimExistsCode Γ P D d) ≤
-  dlen D + dlen d + 4·setLen Γ + fvOccS Γ + 6·formulaLen P + 8` — the `5·setLen Γ` of
-  `dlen_elimExistsCode_le'` with the doubled context replaced by the additive term.
+* the restated primitive bound `proofLen_elimExistsCode_le_occ`: `proofLen (elimExistsCode Γ P D d) ≤
+  proofLen D + proofLen d + 4·sequentLen Γ + fvOccS Γ + 6·formulaLen P + 8` — the `5·sequentLen Γ` of
+  `proofLen_elimExistsCode_le'` with the doubled context replaced by the additive term.
 
 Everything is V-generic (any model of `IΣ₁`) and `L`-generic, three standard axioms.
 -/
@@ -430,7 +430,7 @@ lemma fvOccF_free_le {p : V} (hp : IsSemiformula L 1 p) :
 
 end formula
 
-/-! ### Formula sets — `fvOccS` (primitive recursion over the bit-set, like `setLen`) -/
+/-! ### Formula sets — `fvOccS` (primitive recursion over the bit-set, like `sequentLen`) -/
 
 section set
 
@@ -500,7 +500,7 @@ instance fvOccSAux_definable : 𝚺₁-Function₂[V] fvOccSAux L := fvOccSAux_d
 variable (L)
 
 /-- `fvOccS` as a substitution instance of `fvOccSAuxDef` (not a `“ ”`-DSL wrapper — see the
-remark at `setLenDef`). -/
+remark at `sequentLenDef`). -/
 noncomputable def fvOccSDef : 𝚺₁.Semisentence 2 := (fvOccSAuxDef L).rew (Rew.subst ![#0, #1, #1])
 
 variable {L}
@@ -567,36 +567,36 @@ lemma fvOccS_insert_le (x s : V) : fvOccS L (insert x s) ≤ fvOccS L s + fvOccF
 @[simp] lemma fvOccS_empty : fvOccS L (∅ : V) = 0 := by
   simp [fvOccS, emptyset_def]
 
-/-- `fvOccS s ≤ setLen s` for a set of formulas. -/
-lemma fvOccS_le_setLen {s : V} (hs : IsFormulaSet L s) : fvOccS L s ≤ setLen L s := by
-  refine insert_induction_piOne (P := fun s ↦ IsFormulaSet L s → fvOccS L s ≤ setLen L s)
+/-- `fvOccS s ≤ sequentLen s` for a set of formulas. -/
+lemma fvOccS_le_sequentLen {s : V} (hs : IsFormulaSet L s) : fvOccS L s ≤ sequentLen L s := by
+  refine insert_induction_piOne (P := fun s ↦ IsFormulaSet L s → fvOccS L s ≤ sequentLen L s)
     ?_ ?_ ?_ s hs
   · definability
   · intro _; simp
   · intro a s ha ih hs
     have hs' : IsFormulaSet L s := (IsFormulaSet.insert_iff.mp hs).2
     have ha' : IsFormula L a := (IsFormulaSet.insert_iff.mp hs).1
-    rw [fvOccS_insert_of_not_mem ha, setLen_insert_of_not_mem_V ha]
+    rw [fvOccS_insert_of_not_mem ha, sequentLen_insert_of_not_mem_V ha]
     exact add_le_add (ih hs') (fvOccF_le_formulaLen ha'.isUFormula)
 
-/-- **The additive bound for sets**: `setLen (setShift s) ≤ setLen s + fvOccS s` (`≤`: without
+/-- **The additive bound for sets**: `sequentLen (setShift s) ≤ sequentLen s + fvOccS s` (`≤`: without
 an injectivity lemma for `shift` on codes, `setShift` may identify two members). -/
-lemma setLen_setShift_le_occ {s : V} (hs : IsFormulaSet L s) :
-    setLen L (setShift L s) ≤ setLen L s + fvOccS L s := by
+lemma sequentLen_setShift_le_occ {s : V} (hs : IsFormulaSet L s) :
+    sequentLen L (setShift L s) ≤ sequentLen L s + fvOccS L s := by
   refine insert_induction_piOne
-    (P := fun s ↦ IsFormulaSet L s → setLen L (setShift L s) ≤ setLen L s + fvOccS L s)
+    (P := fun s ↦ IsFormulaSet L s → sequentLen L (setShift L s) ≤ sequentLen L s + fvOccS L s)
     ?_ ?_ ?_ s hs
   · definability
   · intro _; simp
   · intro a s ha ih hs
     have hs' : IsFormulaSet L s := (IsFormulaSet.insert_iff.mp hs).2
     have ha' : IsFormula L a := (IsFormulaSet.insert_iff.mp hs).1
-    rw [mem_setShift_insert, setLen_insert_of_not_mem_V ha, fvOccS_insert_of_not_mem ha]
-    calc setLen L (insert (shift L a) (setShift L s))
-        ≤ setLen L (setShift L s) + formulaLen L (shift L a) := setLen_insert_le _ _
-      _ ≤ (setLen L s + fvOccS L s) + (formulaLen L a + fvOccF L a) :=
+    rw [mem_setShift_insert, sequentLen_insert_of_not_mem_V ha, fvOccS_insert_of_not_mem ha]
+    calc sequentLen L (insert (shift L a) (setShift L s))
+        ≤ sequentLen L (setShift L s) + formulaLen L (shift L a) := sequentLen_insert_le _ _
+      _ ≤ (sequentLen L s + fvOccS L s) + (formulaLen L a + fvOccF L a) :=
           add_le_add (ih hs') (le_of_eq (formulaLen_shift_eq ha'.isUFormula))
-      _ = setLen L s + formulaLen L a + (fvOccS L s + fvOccF L a) := by ring
+      _ = sequentLen L s + formulaLen L a + (fvOccS L s + fvOccF L a) := by ring
 
 /-- `setShift` does not increase the number of free-variable occurrences (`=` would need
 injectivity of `shift`). -/
@@ -636,15 +636,15 @@ lemma fvOccS_setShiftIter_le {n : ℕ} {s : V} (hs : IsFormulaSet L s) :
   | zero => exact le_refl _
   | succ n ih => exact le_trans (fvOccS_setShift_le (isFormulaSet_setShiftIter hs)) ih
 
-/-- **`n` shifts cost `n · fvOccS s`**, not `2ⁿ · setLen s`:
-`setLen (setShift^[n] s) ≤ setLen s + n · fvOccS s`. -/
-theorem setLen_setShiftIter_le {n : ℕ} {s : V} (hs : IsFormulaSet L s) :
-    setLen L (setShiftIter L n s) ≤ setLen L s + (n : V) * fvOccS L s := by
+/-- **`n` shifts cost `n · fvOccS s`**, not `2ⁿ · sequentLen s`:
+`sequentLen (setShift^[n] s) ≤ sequentLen s + n · fvOccS s`. -/
+theorem sequentLen_setShiftIter_le {n : ℕ} {s : V} (hs : IsFormulaSet L s) :
+    sequentLen L (setShiftIter L n s) ≤ sequentLen L s + (n : V) * fvOccS L s := by
   induction n with
   | zero => simp
   | succ n ih =>
     rw [setShiftIter_succ, Nat.cast_succ, add_mul, one_mul, ← add_assoc]
-    exact le_trans (setLen_setShift_le_occ (isFormulaSet_setShiftIter hs))
+    exact le_trans (sequentLen_setShift_le_occ (isFormulaSet_setShiftIter hs))
       (add_le_add ih (fvOccS_setShiftIter_le hs))
 
 end set
@@ -657,20 +657,20 @@ variable {L : Language} [L.Encodable] [L.LORDefinable]
 variable {T : Theory L} [T.Δ₁]
 
 /-- **The bound for `elimExistsCode` with the additive shift term**
-(`dlen_elimExistsCode_le` + `setLen_setShift_le_occ`):
-`dlen ≤ dlen D + dlen d + 4·|Γ| + fvOccS Γ + 6|P| + 8` — the `5·|Γ|` of
-`dlen_elimExistsCode_le'` had the doubled context `|setShift Γ| ≤ 2|Γ|` in it. -/
-theorem dlen_elimExistsCode_le_occ {Γ Δ P D d : V} (hP : IsSemiformula L 1 P) (hΓ : IsFormulaSet L Γ)
+(`proofLen_elimExistsCode_le` + `sequentLen_setShift_le_occ`):
+`proofLen ≤ proofLen D + proofLen d + 4·|Γ| + fvOccS Γ + 6|P| + 8` — the `5·|Γ|` of
+`proofLen_elimExistsCode_le'` had the doubled context `|setShift Γ| ≤ 2|Γ|` in it. -/
+theorem proofLen_elimExistsCode_le_occ {Γ Δ P D d : V} (hP : IsSemiformula L 1 P) (hΓ : IsFormulaSet L Γ)
     (hΔ : Δ ⊆ Γ) (hD : DerivationOf T D (insert (^∃ P) Δ))
     (hd : DerivationOf T d (insert (neg L (free L P)) (setShift L Γ))) :
-    dlen T (elimExistsCode L Γ P D d) ≤
-      dlen T D + dlen T d + 4 * setLen L Γ + fvOccS L Γ + 6 * formulaLen L P + 8 := by
-  refine le_trans (dlen_elimExistsCode_le hP hΓ hΔ hD hd) ?_
-  have := setLen_setShift_le_occ hΓ
-  calc dlen T D + dlen T d + 3 * setLen L Γ + setLen L (setShift L Γ) + 6 * formulaLen L P + 8
-      ≤ dlen T D + dlen T d + 3 * setLen L Γ + (setLen L Γ + fvOccS L Γ) + 6 * formulaLen L P + 8 := by
+    proofLen T (elimExistsCode L Γ P D d) ≤
+      proofLen T D + proofLen T d + 4 * sequentLen L Γ + fvOccS L Γ + 6 * formulaLen L P + 8 := by
+  refine le_trans (proofLen_elimExistsCode_le hP hΓ hΔ hD hd) ?_
+  have := sequentLen_setShift_le_occ hΓ
+  calc proofLen T D + proofLen T d + 3 * sequentLen L Γ + sequentLen L (setShift L Γ) + 6 * formulaLen L P + 8
+      ≤ proofLen T D + proofLen T d + 3 * sequentLen L Γ + (sequentLen L Γ + fvOccS L Γ) + 6 * formulaLen L P + 8 := by
         gcongr
-    _ = dlen T D + dlen T d + 4 * setLen L Γ + fvOccS L Γ + 6 * formulaLen L P + 8 := by ring
+    _ = proofLen T D + proofLen T d + 4 * sequentLen L Γ + fvOccS L Γ + 6 * formulaLen L P + 8 := by ring
 
 end elim
 

@@ -16,28 +16,28 @@ long as its conclusion; hence `search_never_found`: the guard is never found at 
 red cell held for a reason unrelated to symmetry.
 
 Since the descriptions are STRUCTURAL TERMS of the codes with binary-numeral leaves
-(`ArithS.ProgT`, `ArithS.Guard`; before 2026-09-11 the binary numeral of the whole code,
-`ArithS.Bnum`), this file proves the POSITIVE result that (b) demands, with explicit (ugly,
+(`ArithS.CodeTerm`, `ArithS.Guard`; before 2026-09-11 the binary numeral of the whole code,
+`ArithS.BinNumeral`), this file proves the POSITIVE result that (b) demands, with explicit (ugly,
 but explicit) constants:
 
-* `flen_subst_le`: a substitution instance `φ ⇜ w` of a template is at most `flen φ` times
-  the total length of the substituted closed terms (plus one) — via `flen_rew_le`, a bound
+* `formulaLenMeta_subst_le`: a substitution instance `φ ⇜ w` of a template is at most `formulaLenMeta φ` times
+  the total length of the substituted closed terms (plus one) — via `formulaLenMeta_rew_le`, a bound
   for every rewriter whose bound-variable images are variable-free or bare bound variables
   (the invariant that survives `Rew.q` under a quantifier);
-* `exists_guard_const`: `∃ c, flen (guardSentenceA a me opp) ≤ c · (|dnumT me| + |dnumT opp| + 5)`
-  for the actions `a ≤ 1`, with `c = cG 0 + cG 1`, `cG a = flen (guardTemplate a)` the symbol counts
-  of the two closed template instances, packaged existentially (`flen_guardSentence_le'` is
-  the per-instance form; `|dnumT x|` is the length of the description term of `x`);
-* `exists_desc_const`: `∃ D, ∀ k, |dnumT (Dupoc k)| ≤ 36 · size k + D ∧ |dnumT (Cupod k)| ≤
-  36 · size k + D` — the description of a searcher is `progTT (pSearch k G P Q)` for a
-  `k`-INDEPENDENT inner triple, whose length is `6 · |bnumT k|` plus a constant
-  (`tlen_emb_progTT_search`, `tlen_bnumT`); the constant carries `|bnumT ⌜guardTemplate a⌝|` and is
+* `exists_guard_const`: `∃ c, formulaLenMeta (guardSentence a me opp) ≤ c · (|canonicalMeta me| + |canonicalMeta opp| + 5)`
+  for the actions `a ≤ 1`, with `c = cG 0 + cG 1`, `cG a = formulaLenMeta (guardTemplate a)` the symbol counts
+  of the two closed template instances, packaged existentially (`formulaLenMeta_guardSentence_le'` is
+  the per-instance form; `|canonicalMeta x|` is the length of the description term of `x`);
+* `exists_desc_const`: `∃ D, ∀ k, |canonicalMeta (Dupoc k)| ≤ 36 · size k + D ∧ |canonicalMeta (Cupod k)| ≤
+  36 · size k + D` — the description of a searcher is `codeTermMeta (pSearch k G P Q)` for a
+  `k`-INDEPENDENT inner triple, whose length is `6 · |binNumeralMeta k|` plus a constant
+  (`termLenMeta_emb_codeTermMeta_search`, `termLenMeta_binNumeralMeta`); the constant carries `|binNumeralMeta ⌜guardTemplate a⌝|` and is
   never written into a closed arithmetic expression;
-* `size_dnum_Dupoc_le`: `size (dnum (Dupoc k)) ≤ 4 · size k + (4 · size cP + 26)`, by the
+* `size_canonical_Dupoc_le`: `size (canonical (Dupoc k)) ≤ 4 · size k + (4 · size cP + 26)`, by the
   polynomial-pairing bound `ppair a b ≤ (a + b + 1)²` (`ArithS.Prog`, 2026-09-11; `cP =
   ppair ⌜guardTemplate 0⌝ (ppair (pConst 0) (pConst 1))` is the constant part of the searcher's code)
   — the bit length of the CODE, kept for reference;
-* **`guard_fits`**: `∃ K, ∀ k ≥ K, ∀ a ≤ 1, flen (guardSentenceA a (Dupoc k) (Cupod k)) ≤ k`
+* **`guard_fits`**: `∃ K, ∀ k ≥ K, ∀ a ≤ 1, formulaLenMeta (guardSentence a (Dupoc k) (Cupod k)) ≤ k`
   (and `guard_fits'` with the roles swapped) — for all large budgets the searcher's own
   guard sentence fits inside its budget: the model is no longer degenerate, and whether the
   guard is actually PROVABLE within `k` becomes a genuine question (T3's).
@@ -47,7 +47,7 @@ but explicit) constants:
 ## Proof-craft note (2026-09-10)
 The first version of this file hung for hours: a theorem stated with closed constants
 (`10 * cG₀`, `Nat.size cP`) forced Lean's `Nat` defeq machinery to try to EVALUATE
-`cG₀ = flen Gtmpl` and `cP = ppair ⌜Gtmpl⌝ …` on the giant template term. The cure is
+`cG₀ = formulaLenMeta guardTemplate7` and `cP = ppair ⌜guardTemplate7⌝ …` on the giant template term. The cure is
 structural: the constants are packaged EXISTENTIALLY (`exists_guard_const`,
 `exists_size_const`) and every arithmetic step is over variables. `Vacuity.lean`
 (commit 470ee43) is retired because its theorems are false for the binary descriptions.
@@ -86,14 +86,14 @@ lemma BvFree.bShift {n : ℕ} : ∀ {t : SyntacticSemiterm L n}, BvFree t → Bv
     rw [Rew.func, bvFree_func]
     exact fun i ↦ BvFree.bShift ((bvFree_func f v).mp h i)
 
-lemma tlen_bShift_of_bvFree {n : ℕ} :
-    ∀ {t : SyntacticSemiterm L n}, BvFree t → tlen (Rew.bShift t) = tlen t
+lemma termLenMeta_bShift_of_bvFree {n : ℕ} :
+    ∀ {t : SyntacticSemiterm L n}, BvFree t → termLenMeta (Rew.bShift t) = termLenMeta t
   | #x, h => absurd h (bvFree_bvar x)
   | &x, _ => by rw [Rew.bShift_fvar]; rfl
   | .func f v, h => by
-    rw [Rew.func, tlen_func, tlen_func]
+    rw [Rew.func, termLenMeta_func, termLenMeta_func]
     congr 1
-    exact Finset.sum_congr rfl fun i _ ↦ tlen_bShift_of_bvFree ((bvFree_func f v).mp h i)
+    exact Finset.sum_congr rfl fun i _ ↦ termLenMeta_bShift_of_bvFree ((bvFree_func f v).mp h i)
 
 /-- The embedding of a closed term has no bound variable. -/
 lemma bvFree_emb : ∀ t : ClosedSemiterm L 0, BvFree (Rew.emb t : SyntacticSemiterm L 0)
@@ -107,7 +107,7 @@ lemma bvFree_emb : ∀ t : ClosedSemiterm L 0, BvFree (Rew.emb t : SyntacticSemi
 bound variable of index at most its own, and fixes the free variables. This is the invariant
 `Rew.q` preserves under a quantifier. -/
 def RewBounded {n m : ℕ} (B : ℕ) (ω : Rew L ℕ n ℕ m) : Prop :=
-  (∀ i : Fin n, (BvFree (ω #i) ∧ tlen (ω #i) ≤ B) ∨ (∃ j : Fin m, ω #i = #j ∧ (j : ℕ) ≤ i)) ∧
+  (∀ i : Fin n, (BvFree (ω #i) ∧ termLenMeta (ω #i) ≤ B) ∨ (∃ j : Fin m, ω #i = #j ∧ (j : ℕ) ≤ i)) ∧
   (∀ x : ℕ, ω &x = &x)
 
 lemma RewBounded.q {n m B : ℕ} {ω : Rew L ℕ n ℕ m} (h : RewBounded B ω) : RewBounded B ω.q := by
@@ -117,92 +117,92 @@ lemma RewBounded.q {n m B : ℕ} {ω : Rew L ℕ n ℕ m} (h : RewBounded B ω) 
   | succ i =>
     rw [Rew.q_bvar_succ]
     rcases h.1 i with ⟨hf, hl⟩ | ⟨j, hj, hle⟩
-    · exact Or.inl ⟨hf.bShift, by rw [tlen_bShift_of_bvFree hf]; exact hl⟩
+    · exact Or.inl ⟨hf.bShift, by rw [termLenMeta_bShift_of_bvFree hf]; exact hl⟩
     · exact Or.inr ⟨j.succ, by rw [hj, Rew.bShift_bvar],
         by rw [Fin.val_succ, Fin.val_succ]; exact Nat.succ_le_succ hle⟩
 
 /-- A bounded rewriter at most multiplies the length of a term by `B`. -/
-lemma tlen_rew_le {n m B : ℕ} (hB : 1 ≤ B) {ω : Rew L ℕ n ℕ m} (h : RewBounded B ω) :
-    ∀ t : SyntacticSemiterm L n, tlen (ω t) ≤ tlen t * B
+lemma termLenMeta_rew_le {n m B : ℕ} (hB : 1 ≤ B) {ω : Rew L ℕ n ℕ m} (h : RewBounded B ω) :
+    ∀ t : SyntacticSemiterm L n, termLenMeta (ω t) ≤ termLenMeta t * B
   | #i => by
     rcases h.1 i with ⟨_, hl⟩ | ⟨j, hj, hle⟩
-    · rw [tlen_bvar]; exact le_trans hl (Nat.le_mul_of_pos_left B (Nat.succ_pos _))
-    · rw [hj, tlen_bvar, tlen_bvar]
+    · rw [termLenMeta_bvar]; exact le_trans hl (Nat.le_mul_of_pos_left B (Nat.succ_pos _))
+    · rw [hj, termLenMeta_bvar, termLenMeta_bvar]
       exact le_trans (Nat.succ_le_succ hle) (Nat.le_mul_of_pos_right _ hB)
-  | &x => by rw [h.2, tlen_fvar]; exact Nat.le_mul_of_pos_right _ hB
+  | &x => by rw [h.2, termLenMeta_fvar]; exact Nat.le_mul_of_pos_right _ hB
   | .func f v => by
-    rw [Rew.func, tlen_func, tlen_func, add_mul, one_mul, Finset.sum_mul]
-    exact Nat.add_le_add (Finset.sum_le_sum fun i _ ↦ tlen_rew_le hB h (v i)) hB
+    rw [Rew.func, termLenMeta_func, termLenMeta_func, add_mul, one_mul, Finset.sum_mul]
+    exact Nat.add_le_add (Finset.sum_le_sum fun i _ ↦ termLenMeta_rew_le hB h (v i)) hB
 
 /-- A bounded rewriter at most multiplies the length of a formula by `B`. -/
-theorem flen_rew_le {B : ℕ} (hB : 1 ≤ B) {n : ℕ} (φ : Semiproposition L n) :
-    ∀ {m : ℕ} (ω : Rew L ℕ n ℕ m), RewBounded B ω → flen (ω ▹ φ) ≤ flen φ * B := by
+theorem formulaLenMeta_rew_le {B : ℕ} (hB : 1 ≤ B) {n : ℕ} (φ : Semiproposition L n) :
+    ∀ {m : ℕ} (ω : Rew L ℕ n ℕ m), RewBounded B ω → formulaLenMeta (ω ▹ φ) ≤ formulaLenMeta φ * B := by
   induction φ with
   | verum =>
     intro m ω _
-    show flen (ω ▹ (⊤ : Semiproposition L _)) ≤ flen (⊤ : Semiproposition L _) * B
-    rw [LogicalConnective.HomClass.map_top, flen_verum, flen_verum, one_mul]
+    show formulaLenMeta (ω ▹ (⊤ : Semiproposition L _)) ≤ formulaLenMeta (⊤ : Semiproposition L _) * B
+    rw [LogicalConnective.HomClass.map_top, formulaLenMeta_verum, formulaLenMeta_verum, one_mul]
     exact hB
   | falsum =>
     intro m ω _
-    show flen (ω ▹ (⊥ : Semiproposition L _)) ≤ flen (⊥ : Semiproposition L _) * B
-    rw [LogicalConnective.HomClass.map_bot, flen_falsum, flen_falsum, one_mul]
+    show formulaLenMeta (ω ▹ (⊥ : Semiproposition L _)) ≤ formulaLenMeta (⊥ : Semiproposition L _) * B
+    rw [LogicalConnective.HomClass.map_bot, formulaLenMeta_falsum, formulaLenMeta_falsum, one_mul]
     exact hB
   | rel R v =>
     intro m ω h
-    rw [Semiformula.rew_rel, flen_rel, flen_rel, add_mul, one_mul, Finset.sum_mul]
-    exact Nat.add_le_add (Finset.sum_le_sum fun i _ ↦ tlen_rew_le hB h (v i)) hB
+    rw [Semiformula.rew_rel, formulaLenMeta_rel, formulaLenMeta_rel, add_mul, one_mul, Finset.sum_mul]
+    exact Nat.add_le_add (Finset.sum_le_sum fun i _ ↦ termLenMeta_rew_le hB h (v i)) hB
   | nrel R v =>
     intro m ω h
-    rw [Semiformula.rew_nrel, flen_nrel, flen_nrel, add_mul, one_mul, Finset.sum_mul]
-    exact Nat.add_le_add (Finset.sum_le_sum fun i _ ↦ tlen_rew_le hB h (v i)) hB
+    rw [Semiformula.rew_nrel, formulaLenMeta_nrel, formulaLenMeta_nrel, add_mul, one_mul, Finset.sum_mul]
+    exact Nat.add_le_add (Finset.sum_le_sum fun i _ ↦ termLenMeta_rew_le hB h (v i)) hB
   | and φ ψ ihφ ihψ =>
     intro m ω h
-    show flen (ω ▹ (φ ⋏ ψ)) ≤ flen (φ ⋏ ψ) * B
-    rw [LogicalConnective.HomClass.map_and, flen_and, flen_and, add_mul, add_mul, one_mul]
+    show formulaLenMeta (ω ▹ (φ ⋏ ψ)) ≤ formulaLenMeta (φ ⋏ ψ) * B
+    rw [LogicalConnective.HomClass.map_and, formulaLenMeta_and, formulaLenMeta_and, add_mul, add_mul, one_mul]
     have h1 := ihφ ω h
     have h2 := ihψ ω h
     omega
   | or φ ψ ihφ ihψ =>
     intro m ω h
-    show flen (ω ▹ (φ ⋎ ψ)) ≤ flen (φ ⋎ ψ) * B
-    rw [LogicalConnective.HomClass.map_or, flen_or, flen_or, add_mul, add_mul, one_mul]
+    show formulaLenMeta (ω ▹ (φ ⋎ ψ)) ≤ formulaLenMeta (φ ⋎ ψ) * B
+    rw [LogicalConnective.HomClass.map_or, formulaLenMeta_or, formulaLenMeta_or, add_mul, add_mul, one_mul]
     have h1 := ihφ ω h
     have h2 := ihψ ω h
     omega
   | all φ ih =>
     intro m ω h
-    show flen (ω ▹ (∀¹ φ)) ≤ flen (∀¹ φ) * B
-    rw [Rewriting.app_all, flen_all, flen_all, add_mul, one_mul]
+    show formulaLenMeta (ω ▹ (∀¹ φ)) ≤ formulaLenMeta (∀¹ φ) * B
+    rw [Rewriting.app_all, formulaLenMeta_all, formulaLenMeta_all, add_mul, one_mul]
     have h1 := ih ω.q h.q
     omega
   | exs φ ih =>
     intro m ω h
-    show flen (ω ▹ (∃¹ φ)) ≤ flen (∃¹ φ) * B
-    rw [Rewriting.app_exs, flen_exs, flen_exs, add_mul, one_mul]
+    show formulaLenMeta (ω ▹ (∃¹ φ)) ≤ formulaLenMeta (∃¹ φ) * B
+    rw [Rewriting.app_exs, formulaLenMeta_exs, formulaLenMeta_exs, add_mul, one_mul]
     have h1 := ih ω.q h.q
     omega
 
 /-- A substitution of closed terms is bounded by their total length (plus one). -/
 lemma rewBounded_subst {k : ℕ} (w : Fin k → ClosedSemiterm L 0) :
-    RewBounded (∑ i, tlen (Rew.emb (w i) : SyntacticSemiterm L 0) + 1)
+    RewBounded (∑ i, termLenMeta (Rew.emb (w i) : SyntacticSemiterm L 0) + 1)
       (Rew.subst fun i ↦ (Rew.emb (w i) : SyntacticSemiterm L 0)) := by
   refine ⟨fun i ↦ Or.inl ⟨?_, ?_⟩, fun x ↦ Rew.subst_fvar _ x⟩
   · rw [Rew.subst_bvar]; exact bvFree_emb (w i)
   · rw [Rew.subst_bvar]
     exact le_trans
-      (Finset.single_le_sum (f := fun i ↦ tlen (Rew.emb (w i) : SyntacticSemiterm L 0))
+      (Finset.single_le_sum (f := fun i ↦ termLenMeta (Rew.emb (w i) : SyntacticSemiterm L 0))
         (fun _ _ ↦ Nat.zero_le _) (Finset.mem_univ i))
       (Nat.le_succ _)
 
 /-- **Length of a substitution instance**: at most the template's length times the total
 length of the substituted closed terms (plus one). -/
-theorem flen_subst_le {k : ℕ} (φ : Semisentence L k) (w : Fin k → ClosedSemiterm L 0) :
-    flen (Rewriting.emb (φ ⇜ w) : Proposition L) ≤
-    flen (Rewriting.emb φ : Semiproposition L k) *
-      (∑ i, tlen (Rew.emb (w i) : SyntacticSemiterm L 0) + 1) := by
+theorem formulaLenMeta_subst_le {k : ℕ} (φ : Semisentence L k) (w : Fin k → ClosedSemiterm L 0) :
+    formulaLenMeta (Rewriting.emb (φ ⇜ w) : Proposition L) ≤
+    formulaLenMeta (Rewriting.emb φ : Semiproposition L k) *
+      (∑ i, termLenMeta (Rew.emb (w i) : SyntacticSemiterm L 0) + 1) := by
   rw [Semiformula.coe_subst_eq_subst_coe]
-  exact flen_rew_le (Nat.succ_pos _) _ _ (rewBounded_subst w)
+  exact formulaLenMeta_rew_le (Nat.succ_pos _) _ _ (rewBounded_subst w)
 
 end rewriter
 
@@ -210,13 +210,13 @@ end rewriter
 
 section descriptions
 
-lemma tlen_emb_lMap_emb (t : ClosedSemiterm ℒₒᵣ 0) :
-    tlen (Rew.emb (Semiterm.lMap emb t) : SyntacticSemiterm LAct 0) =
-    tlen (Rew.emb t : SyntacticSemiterm ℒₒᵣ 0) := by
-  rw [term_emb_lMap_emb, tlen_lMap]
+lemma termLenMeta_emb_lMap_emb (t : ClosedSemiterm ℒₒᵣ 0) :
+    termLenMeta (Rew.emb (Semiterm.lMap emb t) : SyntacticSemiterm LAct 0) =
+    termLenMeta (Rew.emb t : SyntacticSemiterm ℒₒᵣ 0) := by
+  rw [term_emb_lMap_emb, termLenMeta_lMap]
 
-lemma tlen_emb_cterm (a : Act) :
-    tlen (Rew.emb (cterm a : ClosedSemiterm LAct 0) : SyntacticSemiterm LAct 0) = 1 := by
+lemma termLenMeta_emb_cterm (a : Act) :
+    termLenMeta (Rew.emb (cterm a : ClosedSemiterm LAct 0) : SyntacticSemiterm LAct 0) = 1 := by
   simp [cterm, Rew.func]
 
 lemma numeral_operator_add_two {m : ℕ} (k : ℕ) :
@@ -228,101 +228,101 @@ lemma numeral_operator_add_two {m : ℕ} (k : ℕ) :
   funext i; fin_cases i <;> rfl
 
 /-- The unary numeral `k` has at most `2k + 1` symbols. -/
-lemma tlen_numeral_operator_le {m : ℕ} :
-    ∀ k : ℕ, tlen ((Semiterm.Operator.numeral ℒₒᵣ k).operator ![] : SyntacticSemiterm ℒₒᵣ m) ≤ 2 * k + 1
-  | 0 => by rw [Semiterm.Operator.numeral_zero, tlen_zero_operator]
-  | 1 => by rw [Semiterm.Operator.numeral_one, tlen_one_operator]; omega
+lemma termLenMeta_numeral_operator_le {m : ℕ} :
+    ∀ k : ℕ, termLenMeta ((Semiterm.Operator.numeral ℒₒᵣ k).operator ![] : SyntacticSemiterm ℒₒᵣ m) ≤ 2 * k + 1
+  | 0 => by rw [Semiterm.Operator.numeral_zero, termLenMeta_zero_operator]
+  | 1 => by rw [Semiterm.Operator.numeral_one, termLenMeta_one_operator]; omega
   | k + 2 => by
-    rw [numeral_operator_add_two, tlen_add_operator]
-    have := tlen_numeral_operator_le (m := m) (k + 1)
-    simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.head_cons, tlen_one_operator]
+    rw [numeral_operator_add_two, termLenMeta_add_operator]
+    have := termLenMeta_numeral_operator_le (m := m) (k + 1)
+    simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.head_cons, termLenMeta_one_operator]
     omega
 
-lemma tlen_emb_numT_le (k : ℕ) : tlen (Rew.emb (numT k) : SyntacticSemiterm LAct 0) ≤ 2 * k + 1 := by
+lemma termLenMeta_emb_numT_le (k : ℕ) : termLenMeta (Rew.emb (numT k) : SyntacticSemiterm LAct 0) ≤ 2 * k + 1 := by
   unfold numT
-  rw [tlen_emb_lMap_emb]
+  rw [termLenMeta_emb_lMap_emb]
   have e : (Rew.emb (↑k : ClosedSemiterm ℒₒᵣ 0) : SyntacticSemiterm ℒₒᵣ 0) = ↑k := by simp
   rw [e]
-  exact tlen_numeral_operator_le k
+  exact termLenMeta_numeral_operator_le k
 
-lemma tlen_emb_numT_zero : tlen (Rew.emb (numT 0) : SyntacticSemiterm LAct 0) = 1 := by
+lemma termLenMeta_emb_numT_zero : termLenMeta (Rew.emb (numT 0) : SyntacticSemiterm LAct 0) = 1 := by
   unfold numT
-  rw [tlen_emb_lMap_emb]
-  exact tlen_emb_closed_zero
+  rw [termLenMeta_emb_lMap_emb]
+  exact termLenMeta_emb_closed_zero
 
-lemma tlen_emb_numT_one : tlen (Rew.emb (numT 1) : SyntacticSemiterm LAct 0) = 1 := by
+lemma termLenMeta_emb_numT_one : termLenMeta (Rew.emb (numT 1) : SyntacticSemiterm LAct 0) = 1 := by
   unfold numT
-  rw [tlen_emb_lMap_emb]
-  exact tlen_emb_closed_one
+  rw [termLenMeta_emb_lMap_emb]
+  exact termLenMeta_emb_closed_one
 
-lemma tlen_emb_dUT (x : ℕ) : tlen (Rew.emb (dUT x) : SyntacticSemiterm LAct 0) ≤ 1 := by
-  unfold dUT
+lemma termLenMeta_emb_revalueUMeta (x : ℕ) : termLenMeta (Rew.emb (revalueUMeta x) : SyntacticSemiterm LAct 0) ≤ 1 := by
+  unfold revalueUMeta
   split_ifs
-  · rw [tlen_emb_cterm]
-  · rw [tlen_emb_cterm]
-  · rw [tlen_emb_numT_zero]
+  · rw [termLenMeta_emb_cterm]
+  · rw [termLenMeta_emb_cterm]
+  · rw [termLenMeta_emb_numT_zero]
 
-lemma tlen_emb_dWT (x : ℕ) : tlen (Rew.emb (dWT x) : SyntacticSemiterm LAct 0) ≤ 1 := by
-  unfold dWT
+lemma termLenMeta_emb_revalueWMeta (x : ℕ) : termLenMeta (Rew.emb (revalueWMeta x) : SyntacticSemiterm LAct 0) ≤ 1 := by
+  unfold revalueWMeta
   split_ifs
-  · rw [tlen_emb_cterm]
-  · rw [tlen_emb_cterm]
-  · rw [tlen_emb_numT_one]
+  · rw [termLenMeta_emb_cterm]
+  · rw [termLenMeta_emb_cterm]
+  · rw [termLenMeta_emb_numT_one]
 
-lemma tlen_emb_actT (a : ℕ) : tlen (Rew.emb (actT a) : SyntacticSemiterm LAct 0) ≤ 2 * a + 1 := by
+lemma termLenMeta_emb_actT (a : ℕ) : termLenMeta (Rew.emb (actT a) : SyntacticSemiterm LAct 0) ≤ 2 * a + 1 := by
   unfold actT
   split_ifs
-  · rw [tlen_emb_cterm]; omega
-  · rw [tlen_emb_cterm]; omega
-  · exact tlen_emb_numT_le a
+  · rw [termLenMeta_emb_cterm]; omega
+  · rw [termLenMeta_emb_cterm]; omega
+  · exact termLenMeta_emb_numT_le a
 
 /-- The total length of the six description terms: the two program terms plus four one-symbol
 constants. -/
-theorem sum_tlen_descTerms_le (me opp : ℕ) :
-    ∑ i, tlen (Rew.emb (descTerms me opp i) : SyntacticSemiterm LAct 0) ≤
-    tlen (Rew.emb (dnumT me) : SyntacticSemiterm LAct 0) + tlen (Rew.emb (dnumT opp) : SyntacticSemiterm LAct 0) + 4 := by
-  have h1 := tlen_emb_dUT me
-  have h2 := tlen_emb_dWT me
-  have h4 := tlen_emb_dUT opp
-  have h5 := tlen_emb_dWT opp
-  simp only [descTerms, Fin.sum_univ_succ, Fin.sum_univ_zero, Matrix.cons_val_zero,
+theorem sum_termLenMeta_descriptionTerms_le (me opp : ℕ) :
+    ∑ i, termLenMeta (Rew.emb (descriptionTerms me opp i) : SyntacticSemiterm LAct 0) ≤
+    termLenMeta (Rew.emb (canonicalMeta me) : SyntacticSemiterm LAct 0) + termLenMeta (Rew.emb (canonicalMeta opp) : SyntacticSemiterm LAct 0) + 4 := by
+  have h1 := termLenMeta_emb_revalueUMeta me
+  have h2 := termLenMeta_emb_revalueWMeta me
+  have h4 := termLenMeta_emb_revalueUMeta opp
+  have h5 := termLenMeta_emb_revalueWMeta opp
+  simp only [descriptionTerms, Fin.sum_univ_succ, Fin.sum_univ_zero, Matrix.cons_val_zero,
     Matrix.cons_val_succ, add_zero]
   omega
 
 end descriptions
 
-/-! ### 3. The guard sentence is `O(|dnumT me| + |dnumT opp|)` -/
+/-! ### 3. The guard sentence is `O(|canonicalMeta me| + |canonicalMeta opp|)` -/
 
 /-- `cG a`: the symbol count of the closed template instance `guardTemplate a`. -/
-noncomputable def cG (a : ℕ) : ℕ := flen (Rewriting.emb (guardTemplate a) : Semiproposition LAct 6)
+noncomputable def cG (a : ℕ) : ℕ := formulaLenMeta (Rewriting.emb (guardTemplate a) : Semiproposition LAct 6)
 
 /-- The per-instance bound. -/
-theorem flen_guardSentence_le' (me opp a : ℕ) :
-    flen (Rewriting.emb (guardSentenceA a me opp) : Proposition LAct) ≤
-    cG a * (tlen (Rew.emb (dnumT me) : SyntacticSemiterm LAct 0) +
-      tlen (Rew.emb (dnumT opp) : SyntacticSemiterm LAct 0) + 5) :=
-  le_trans (flen_subst_le (guardTemplate a) (descTerms me opp))
-    (Nat.mul_le_mul_left _ (by have := sum_tlen_descTerms_le me opp; omega))
+theorem formulaLenMeta_guardSentence_le' (me opp a : ℕ) :
+    formulaLenMeta (Rewriting.emb (guardSentence a me opp) : Proposition LAct) ≤
+    cG a * (termLenMeta (Rew.emb (canonicalMeta me) : SyntacticSemiterm LAct 0) +
+      termLenMeta (Rew.emb (canonicalMeta opp) : SyntacticSemiterm LAct 0) + 5) :=
+  le_trans (formulaLenMeta_subst_le (guardTemplate a) (descriptionTerms me opp))
+    (Nat.mul_le_mul_left _ (by have := sum_termLenMeta_descriptionTerms_le me opp; omega))
 
 /- `cG a` is a closed natural number built from the giant template; Lean's `Nat`-literal
-defeq machinery would otherwise try to EVALUATE it (whnf of `flen` on the template) during
+defeq machinery would otherwise try to EVALUATE it (whnf of `formulaLenMeta` on the template) during
 unification. From here on it is an atom. -/
 attribute [irreducible] cG
 
 /-- **The guard bound, with its constant packaged existentially**: for the actions `a ∈ {0, 1}`
-the guard sentence of `me` against `opp` has at most `c · (|dnumT me| + |dnumT opp| + 5)`
+the guard sentence of `me` against `opp` has at most `c · (|canonicalMeta me| + |canonicalMeta opp| + 5)`
 symbols, for the constant `c = cG 0 + cG 1` (the symbol counts of the two template instances).
 The constant is never written into a closed arithmetic expression: Lean's `Nat` defeq machinery
-would try to evaluate it (that is what `flen (guardTemplate a)` on the giant template does), so every
+would try to evaluate it (that is what `formulaLenMeta (guardTemplate a)` on the giant template does), so every
 later argument takes `c` as a variable from this statement. -/
 theorem exists_guard_const : ∃ c : ℕ, ∀ me opp a : ℕ, a ≤ 1 →
-    flen (Rewriting.emb (guardSentenceA a me opp) : Proposition LAct) ≤
-    c * (tlen (Rew.emb (dnumT me) : SyntacticSemiterm LAct 0) +
-      tlen (Rew.emb (dnumT opp) : SyntacticSemiterm LAct 0) + 5) :=
+    formulaLenMeta (Rewriting.emb (guardSentence a me opp) : Proposition LAct) ≤
+    c * (termLenMeta (Rew.emb (canonicalMeta me) : SyntacticSemiterm LAct 0) +
+      termLenMeta (Rew.emb (canonicalMeta opp) : SyntacticSemiterm LAct 0) + 5) :=
   ⟨cG 0 + cG 1, fun me opp a ha ↦ by
     rcases (show a = 0 ∨ a = 1 by omega) with rfl | rfl
-    · exact le_trans (flen_guardSentence_le' me opp 0) (Nat.mul_le_mul_right _ (Nat.le_add_right _ _))
-    · exact le_trans (flen_guardSentence_le' me opp 1) (Nat.mul_le_mul_right _ (Nat.le_add_left _ _))⟩
+    · exact le_trans (formulaLenMeta_guardSentence_le' me opp 0) (Nat.mul_le_mul_right _ (Nat.le_add_right _ _))
+    · exact le_trans (formulaLenMeta_guardSentence_le' me opp 1) (Nat.mul_le_mul_right _ (Nat.le_add_left _ _))⟩
 
 /-! ### 3'. The description of a searcher is `O(size k)` symbols -/
 
@@ -330,57 +330,57 @@ section descLength
 
 /-- The length of the structural term of a searcher, in terms of the budget's bit length and
 the (budget-independent) lengths of the other leaves. -/
-lemma tlen_emb_progTT_search_le (k g p q : ℕ) :
-    tlen (Rew.emb (progTT (pSearch k g p q)) : SyntacticSemiterm ℒₒᵣ 0) ≤
+lemma termLenMeta_emb_codeTermMeta_search_le (k g p q : ℕ) :
+    termLenMeta (Rew.emb (codeTermMeta (pSearch k g p q)) : SyntacticSemiterm ℒₒᵣ 0) ≤
     36 * Nat.size k +
-      (2 * tlen (Rew.emb (bnumT 6) : SyntacticSemiterm ℒₒᵣ 0) + 18 * tlen (Rew.emb (bnumT g) : SyntacticSemiterm ℒₒᵣ 0) +
-        54 * tlen (Rew.emb (progTT p) : SyntacticSemiterm ℒₒᵣ 0) + 81 * tlen (Rew.emb (progTT q) : SyntacticSemiterm ℒₒᵣ 0) + 168) := by
-  rw [tlen_emb_progTT_search]
-  have := tlen_bnumT k
+      (2 * termLenMeta (Rew.emb (binNumeralMeta 6) : SyntacticSemiterm ℒₒᵣ 0) + 18 * termLenMeta (Rew.emb (binNumeralMeta g) : SyntacticSemiterm ℒₒᵣ 0) +
+        54 * termLenMeta (Rew.emb (codeTermMeta p) : SyntacticSemiterm ℒₒᵣ 0) + 81 * termLenMeta (Rew.emb (codeTermMeta q) : SyntacticSemiterm ℒₒᵣ 0) + 168) := by
+  rw [termLenMeta_emb_codeTermMeta_search]
+  have := termLenMeta_binNumeralMeta k
   omega
 
 /-- The canonical code of `Dupoc k` is `Dupoc k` or `Cupod k`; likewise for `Cupod k`. -/
-lemma dnum_Dupoc_or (k : ℕ) : dnum (Dupoc k) = Dupoc k ∨ dnum (Dupoc k) = Cupod k := by
-  unfold dnum; rw [swapcode_Dupoc]; split_ifs <;> simp
+lemma canonical_Dupoc_or (k : ℕ) : canonical (Dupoc k) = Dupoc k ∨ canonical (Dupoc k) = Cupod k := by
+  unfold canonical; rw [transposeCode_Dupoc]; split_ifs <;> simp
 
-lemma dnum_Cupod_or (k : ℕ) : dnum (Cupod k) = Dupoc k ∨ dnum (Cupod k) = Cupod k := by
-  unfold dnum; rw [swapcode_Cupod]; split_ifs <;> simp
+lemma canonical_Cupod_or (k : ℕ) : canonical (Cupod k) = Dupoc k ∨ canonical (Cupod k) = Cupod k := by
+  unfold canonical; rw [transposeCode_Cupod]; split_ifs <;> simp
 
 /-- The budget-independent part of the description length of the searcher of action `a`
-(`Dupoc` for `a = 0`, `Cupod` for `a = 1`): it carries `|bnumT ⌜guardTemplate a⌝|`, a closed number
+(`Dupoc` for `a = 0`, `Cupod` for `a = 1`): it carries `|binNumeralMeta ⌜guardTemplate a⌝|`, a closed number
 built from the giant template — never to be evaluated. -/
 noncomputable def cD (a : ℕ) : ℕ :=
-  2 * tlen (Rew.emb (bnumT 6) : SyntacticSemiterm ℒₒᵣ 0) +
-    18 * tlen (Rew.emb (bnumT (⌜guardTemplate a⌝ : ℕ)) : SyntacticSemiterm ℒₒᵣ 0) +
-    54 * tlen (Rew.emb (progTT (pConst a)) : SyntacticSemiterm ℒₒᵣ 0) +
-    81 * tlen (Rew.emb (progTT (pConst (swapAct a))) : SyntacticSemiterm ℒₒᵣ 0) + 168
+  2 * termLenMeta (Rew.emb (binNumeralMeta 6) : SyntacticSemiterm ℒₒᵣ 0) +
+    18 * termLenMeta (Rew.emb (binNumeralMeta (⌜guardTemplate a⌝ : ℕ)) : SyntacticSemiterm ℒₒᵣ 0) +
+    54 * termLenMeta (Rew.emb (codeTermMeta (pConst a)) : SyntacticSemiterm ℒₒᵣ 0) +
+    81 * termLenMeta (Rew.emb (codeTermMeta (pConst (swapAction a))) : SyntacticSemiterm ℒₒᵣ 0) + 168
 
-lemma tlen_emb_progTT_Dupoc_le (k : ℕ) :
-    tlen (Rew.emb (progTT (Dupoc k)) : SyntacticSemiterm ℒₒᵣ 0) ≤ 36 * Nat.size k + cD 0 := by
+lemma termLenMeta_emb_codeTermMeta_Dupoc_le (k : ℕ) :
+    termLenMeta (Rew.emb (codeTermMeta (Dupoc k)) : SyntacticSemiterm ℒₒᵣ 0) ≤ 36 * Nat.size k + cD 0 := by
   unfold cD
-  rw [swapAct_zero]
-  exact tlen_emb_progTT_search_le k _ _ _
+  rw [swapAction_zero]
+  exact termLenMeta_emb_codeTermMeta_search_le k _ _ _
 
-lemma tlen_emb_progTT_Cupod_le (k : ℕ) :
-    tlen (Rew.emb (progTT (Cupod k)) : SyntacticSemiterm ℒₒᵣ 0) ≤ 36 * Nat.size k + cD 1 := by
+lemma termLenMeta_emb_codeTermMeta_Cupod_le (k : ℕ) :
+    termLenMeta (Rew.emb (codeTermMeta (Cupod k)) : SyntacticSemiterm ℒₒᵣ 0) ≤ 36 * Nat.size k + cD 1 := by
   unfold cD
-  rw [swapAct_one]
-  exact tlen_emb_progTT_search_le k _ _ _
+  rw [swapAction_one]
+  exact termLenMeta_emb_codeTermMeta_search_le k _ _ _
 
 attribute [irreducible] cD
 
 /-- **The description of a searcher has `O(size k)` symbols, constant packaged existentially.** -/
 theorem exists_desc_const : ∃ D : ℕ, ∀ k : ℕ,
-    tlen (Rew.emb (dnumT (Dupoc k)) : SyntacticSemiterm LAct 0) ≤ 36 * Nat.size k + D ∧
-    tlen (Rew.emb (dnumT (Cupod k)) : SyntacticSemiterm LAct 0) ≤ 36 * Nat.size k + D := by
+    termLenMeta (Rew.emb (canonicalMeta (Dupoc k)) : SyntacticSemiterm LAct 0) ≤ 36 * Nat.size k + D ∧
+    termLenMeta (Rew.emb (canonicalMeta (Cupod k)) : SyntacticSemiterm LAct 0) ≤ 36 * Nat.size k + D := by
   refine ⟨cD 0 + cD 1, fun k ↦ ?_⟩
-  have h0 := tlen_emb_progTT_Dupoc_le k
-  have h1 := tlen_emb_progTT_Cupod_le k
+  have h0 := termLenMeta_emb_codeTermMeta_Dupoc_le k
+  have h1 := termLenMeta_emb_codeTermMeta_Cupod_le k
   constructor
-  · unfold dnumT; rw [tlen_emb_lMap_emb]
-    rcases dnum_Dupoc_or k with h | h <;> rw [h] <;> omega
-  · unfold dnumT; rw [tlen_emb_lMap_emb]
-    rcases dnum_Cupod_or k with h | h <;> rw [h] <;> omega
+  · unfold canonicalMeta; rw [termLenMeta_emb_lMap_emb]
+    rcases canonical_Dupoc_or k with h | h <;> rw [h] <;> omega
+  · unfold canonicalMeta; rw [termLenMeta_emb_lMap_emb]
+    rcases canonical_Cupod_or k with h | h <;> rw [h] <;> omega
 
 end descLength
 
@@ -429,11 +429,11 @@ lemma Dupoc_eq (k : ℕ) : Dupoc k = ppair 6 (ppair k cP) + 1 := rfl
 attribute [irreducible] cP
 
 /-- The canonical numeral of the orbit is at most the code. -/
-lemma dnum_le_self (x : ℕ) : dnum x ≤ x := by
-  rcases lt_trichotomy x (swapcode x) with h | h | h
-  · exact le_of_eq (dnum_of_lt h)
-  · exact le_of_eq (dnum_of_eq h)
-  · rw [dnum_of_gt h]; exact Nat.le_of_lt h
+lemma canonical_le_self (x : ℕ) : canonical x ≤ x := by
+  rcases lt_trichotomy x (transposeCode x) with h | h | h
+  · exact le_of_eq (canonical_of_lt h)
+  · exact le_of_eq (canonical_of_eq h)
+  · rw [canonical_of_gt h]; exact Nat.le_of_lt h
 
 theorem size_Dupoc_le (k : ℕ) : Nat.size (Dupoc k) ≤ 4 * Nat.size k + (4 * Nat.size cP + 26) := by
   rw [Dupoc_eq]
@@ -444,20 +444,20 @@ theorem size_Dupoc_le (k : ℕ) : Nat.size (Dupoc k) ≤ 4 * Nat.size k + (4 * N
   omega
 
 /-- **The description of `Dupoc k` has bit length `O(size k)`**: `A = 4`, `B = 4 · size cP + 26`. -/
-theorem size_dnum_Dupoc_le (k : ℕ) :
-    Nat.size (dnum (Dupoc k)) ≤ 4 * Nat.size k + (4 * Nat.size cP + 26) :=
-  le_trans (Nat.size_le_size (dnum_le_self _)) (size_Dupoc_le k)
+theorem size_canonical_Dupoc_le (k : ℕ) :
+    Nat.size (canonical (Dupoc k)) ≤ 4 * Nat.size k + (4 * Nat.size cP + 26) :=
+  le_trans (Nat.size_le_size (canonical_le_self _)) (size_Dupoc_le k)
 
-theorem size_dnum_Cupod_le (k : ℕ) :
-    Nat.size (dnum (Cupod k)) ≤ 4 * Nat.size k + (4 * Nat.size cP + 26) := by
-  rw [← swapcode_Dupoc, dnum_swapcode]
-  exact size_dnum_Dupoc_le k
+theorem size_canonical_Cupod_le (k : ℕ) :
+    Nat.size (canonical (Cupod k)) ≤ 4 * Nat.size k + (4 * Nat.size cP + 26) := by
+  rw [← transposeCode_Dupoc, canonical_transposeCode]
+  exact size_canonical_Dupoc_le k
 
 /-- The pairing constant of the searchers' codes, packaged existentially (same reason as
 `exists_guard_const`: `Nat.size cP` must never sit inside a closed arithmetic term). -/
 theorem exists_size_const : ∃ P : ℕ, ∀ k : ℕ,
-    Nat.size (dnum (Dupoc k)) ≤ 4 * Nat.size k + P ∧ Nat.size (dnum (Cupod k)) ≤ 4 * Nat.size k + P :=
-  ⟨4 * Nat.size cP + 26, fun k ↦ ⟨size_dnum_Dupoc_le k, size_dnum_Cupod_le k⟩⟩
+    Nat.size (canonical (Dupoc k)) ≤ 4 * Nat.size k + P ∧ Nat.size (canonical (Cupod k)) ≤ 4 * Nat.size k + P :=
+  ⟨4 * Nat.size cP + 26, fun k ↦ ⟨size_canonical_Dupoc_le k, size_canonical_Cupod_le k⟩⟩
 
 end size
 
@@ -498,15 +498,15 @@ Critch's assumption (b) holds for the structural descriptions. The threshold `K`
 on the fixed template. -/
 theorem guard_fits :
     ∃ K, ∀ k ≥ K, ∀ a ≤ 1,
-      flen (Rewriting.emb (guardSentenceA a (Dupoc k) (Cupod k)) : Proposition LAct) ≤ k := by
+      formulaLenMeta (Rewriting.emb (guardSentence a (Dupoc k) (Cupod k)) : Proposition LAct) ≤ k := by
   obtain ⟨c, hc⟩ := exists_guard_const
   obtain ⟨D, hD⟩ := exists_desc_const
   obtain ⟨K, hK⟩ := exists_linear_size_le (c * (2 * D + 5)) (72 * c)
   refine ⟨K, fun k hk a ha ↦ ?_⟩
   obtain ⟨h1, h2⟩ := hD k
-  calc flen (Rewriting.emb (guardSentenceA a (Dupoc k) (Cupod k)) : Proposition LAct)
-      ≤ c * (tlen (Rew.emb (dnumT (Dupoc k)) : SyntacticSemiterm LAct 0) +
-          tlen (Rew.emb (dnumT (Cupod k)) : SyntacticSemiterm LAct 0) + 5) := hc _ _ a ha
+  calc formulaLenMeta (Rewriting.emb (guardSentence a (Dupoc k) (Cupod k)) : Proposition LAct)
+      ≤ c * (termLenMeta (Rew.emb (canonicalMeta (Dupoc k)) : SyntacticSemiterm LAct 0) +
+          termLenMeta (Rew.emb (canonicalMeta (Cupod k)) : SyntacticSemiterm LAct 0) + 5) := hc _ _ a ha
     _ ≤ c * (72 * Nat.size k + 2 * D + 5) := Nat.mul_le_mul_left _ (by omega)
     _ = c * (2 * D + 5) + 72 * c * Nat.size k := by ring
     _ ≤ k := hK k hk
@@ -514,15 +514,15 @@ theorem guard_fits :
 /-- The same with the roles swapped: `Cupod k`'s guard against `Dupoc k` fits. -/
 theorem guard_fits' :
     ∃ K, ∀ k ≥ K, ∀ a ≤ 1,
-      flen (Rewriting.emb (guardSentenceA a (Cupod k) (Dupoc k)) : Proposition LAct) ≤ k := by
+      formulaLenMeta (Rewriting.emb (guardSentence a (Cupod k) (Dupoc k)) : Proposition LAct) ≤ k := by
   obtain ⟨c, hc⟩ := exists_guard_const
   obtain ⟨D, hD⟩ := exists_desc_const
   obtain ⟨K, hK⟩ := exists_linear_size_le (c * (2 * D + 5)) (72 * c)
   refine ⟨K, fun k hk a ha ↦ ?_⟩
   obtain ⟨h1, h2⟩ := hD k
-  calc flen (Rewriting.emb (guardSentenceA a (Cupod k) (Dupoc k)) : Proposition LAct)
-      ≤ c * (tlen (Rew.emb (dnumT (Cupod k)) : SyntacticSemiterm LAct 0) +
-          tlen (Rew.emb (dnumT (Dupoc k)) : SyntacticSemiterm LAct 0) + 5) := hc _ _ a ha
+  calc formulaLenMeta (Rewriting.emb (guardSentence a (Cupod k) (Dupoc k)) : Proposition LAct)
+      ≤ c * (termLenMeta (Rew.emb (canonicalMeta (Cupod k)) : SyntacticSemiterm LAct 0) +
+          termLenMeta (Rew.emb (canonicalMeta (Dupoc k)) : SyntacticSemiterm LAct 0) + 5) := hc _ _ a ha
     _ ≤ c * (72 * Nat.size k + 2 * D + 5) := Nat.mul_le_mul_left _ (by omega)
     _ = c * (2 * D + 5) + 72 * c * Nat.size k := by ring
     _ ≤ k := hK k hk

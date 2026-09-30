@@ -14,8 +14,8 @@ since the 2026-09-28 reorganization, map in `PATHS.md` — prints the census).
 | Theorem | Statement | File |
 |---|---|---|
 | `ArithS.red_cell` | Dupoc k vs Cupod k = (D, C) at **every** budget k — the cell Critch et al. leave open | `ArithS/Cells/RedCell.lean` |
-| `ArithS.dupoc_self_coop_unconditional` | Dupoc k cooperates with itself (and Cupod k defects against itself) at every sufficiently large k — Critch's Theorem 3.7 | `ArithS/Necessitation/Package.lean` |
-| `ArithS.pblt_unconditional` | the parametric bounded Löb theorem, uniform in the budget — Critch's Lemma 3.6 | `ArithS/Necessitation/Package.lean` |
+| `ArithS.dupoc_self_coop` | Dupoc k cooperates with itself (and Cupod k defects against itself) at every sufficiently large k — Critch's Theorem 3.7 | `ArithS/Necessitation/Package.lean` |
+| `ArithS.pblt` | the parametric bounded Löb theorem, uniform in the budget — Critch's Lemma 3.6 | `ArithS/Necessitation/Package.lean` |
 
 The last two rest on `ArithS.boundedInnerNec_sixteen` (same file): Critch's assumption (d),
 bounded inner necessitation with polynomial expansion (degree 16), **proved** rather than
@@ -43,12 +43,12 @@ PA, dropped), LegibleBot (a box inside a guard), OptimBot, WaryBot's floor cells
 ## What a reader must accept by eye (the trusted base)
 
 Nine definitions, under 350 lines in total: the theory `TAct` (PA plus two action constants,
-distinct and equal to 0/1 in some order — `Theory/TheoryAct.lean`), the length measure `dlen`
-(`Length/DerivationLength.lean`), the bounded box `LenProvableV` (`Box/BewV.lean`), the program codes
+distinct and equal to 0/1 in some order — `Theory/TheoryAct.lean`), the length measure `proofLen`
+(`Length/DerivationLength.lean`), the bounded box `LenBox` (`Box/BewV.lean`), the program codes
 (`Agents/Prog.lean`), the guard template and program descriptions (`Agents/Template.lean`, `Agents/Guard.lean`),
 the budget slot `guardCodeB` a template may read (`Agents/Guard.lean`, route (c), 2026-09-23 — with the
 gate lemma `guardCodeB_of_template` proving a six-variable template never reads it), the
-substitution `psubst`/`gsubst` (`Agents/Subst.lean`), and the evaluator `EvalGraph` (`Eval/Eval.lean`). Everything else is a theorem about these. Why each is
+substitution `substCode`/`substTemplate` (`Agents/Subst.lean`), and the evaluator `EvalGraph` (`Eval/Eval.lean`). Everything else is a theorem about these. Why each is
 what it is, the alternative, and what breaks without it:
 `../engine/PrisonersDilemma/Research/Notes/SPRIME_DESIGN_RATIONALE.md`.
 

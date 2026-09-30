@@ -31,14 +31,14 @@ and the shift bounds `shiftsV_pro*_le` through `shiftsV ≤ len`): the quintic i
   (`X ≤ Cs·p3 d → X + Cs·p4 y ≤ Cs·p4 d` for `d = y + m`, `m ≥ 1`), the caps `capE4`/`child_bound4`/`quad_cap3`/
   `lin_le_p3`, and the four node caps `allEQ_p3`/`alliE_p3`/`exsEQ_p3`/`exsiE_p3` + `allE_p4`/`exsE_p4` + `allNode_p4`
   + `axmLeaf_p4` in EXACTLY the shapes `Verify3.verifyGraph''_ok`'s `all`/`exs`/`axm` arms consume at `m = 6` —
-  so the re-glue at `m = 4` (list `≤ Cs·p4 (dlen ρ)`, E-room `Ck·p4 (dlen ρ + 1)`, top degree `deg 4 = 16`) is a
+  so the re-glue at `m = 4` (list `≤ Cs·p4 (proofLen ρ)`, E-room `Ck·p4 (proofLen ρ + 1)`, top degree `deg 4 = 16`) is a
   name-for-name copy of those arms. Also the LOCAL step `rec1_local`/`rec2_local` (`X ≤ Cs·p3 m → X + Cs·p3 y ≤
-  Cs·p3 (y+m)`, `p3_add_le`): with per-node accounting (`D` bounded by the node's OWN size `m = setLen s + 1`, not by
-  `dlen ρ`) the same cubic bounds would close at `m = 3` — but the `_ok`s take ONE `D` that also bounds the child
+  Cs·p3 (y+m)`, `p3_add_le`): with per-node accounting (`D` bounded by the node's OWN size `m = sequentLen s + 1`, not by
+  `proofLen ρ`) the same cubic bounds would close at `m = 3` — but the `_ok`s take ONE `D` that also bounds the child
   sequent and (for `exs`) `|substs1 t p|`, which is only globally bounded; not done here.
 * §5 the cost corollaries `costSum_proAll_le''`/`costSum_proExs_le''` (`costShape_mono` at the cubic lengths).
 
-WHY `m = 4` AND NOT LESS: `Verify2.rec1` needs the node's own shift contribution `X ≤ Cs·d^{m-1}` where `d = dlen` of
+WHY `m = 4` AND NOT LESS: `Verify2.rec1` needs the node's own shift contribution `X ≤ Cs·d^{m-1}` where `d = proofLen` of
 the node bounds every size (`D = 2d`); with `X` cubic in `D`, `m - 1 = 3`.
 -/
 
@@ -178,13 +178,13 @@ theorem len_allCert_le_cubic {Wc : V} (hWc : Wc = certPieces) (Ww T s i : V) {p 
 /-- **`proAll` is cubic**: `≤ 402·p3 (D+1)` — the hypotheses of `Prologue.len_proAll_le` (which gives `450·(D+1)⁵`). -/
 theorem len_proAll_le_cubic {tbl N : V} (htbl : TableOK tbl N) (hP : ProTable tbl) {Wl Wc : V} (hWl : Wl = layoutPieces)
     (hWc : Wc = certPieces) (Ww W T i : V) {s p D : V} (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 1 p) (hr : (^∀ p) ∈ s)
-    (hsD : setLen LAct s ≤ D) (hcD : setLen LAct (insert (free LAct p) (setShift LAct s)) ≤ D)
+    (hsD : sequentLen LAct s ≤ D) (hcD : sequentLen LAct (insert (free LAct p) (setShift LAct s)) ≤ D)
     (hspD : formulaLen LAct (shift LAct p) ≤ D) :
     len (proAll Ww Wl Wc W T s p i) ≤ 402 * p3 (D + 1) := by
   have hD1 : (1 : V) ≤ D + 1 := le_add_self
   have hpow : D + 1 ≤ p3 (D + 1) := le_p3_self hD1
   have hpD : formulaLen LAct p ≤ D := by
-    have := formulaLen_le_setLen_of_mem (L := LAct) hr
+    have := formulaLen_le_sequentLen_of_mem (L := LAct) hr
     rw [formulaLen_all hp.isUFormula] at this
     exact le_trans le_self_add (le_trans this hsD)
   have hcs : ∀ a b : V, len (certSubst Wc Ww 1 0 fvec 0 (shift LAct p) a b) ≤ 144 * p3 (D + 1) := fun a b ↦
@@ -219,13 +219,13 @@ theorem len_exsCert_le_cubic {Wc : V} (Ww W T s i : V) {p t D : V} (hp : IsSemif
 /-- **`proExs` is cubic**: `≤ 256·p3 (D+1)` — the hypotheses of `Prologue.len_proExs_le` (which gives `310·(D+1)⁵`). -/
 theorem len_proExs_le_cubic {tbl N : V} (htbl : TableOK tbl N) (hP : ProTable tbl) {Wl Wc : V} (hWl : Wl = layoutPieces)
     (hWc : Wc = certPieces) (Ww W T i : V) {s p t D : V} (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 1 p)
-    (hr : (^∃ p) ∈ s) (ht : IsSemiterm LAct 0 t) (hsD : setLen LAct s ≤ D)
-    (hcD : setLen LAct (insert (substs1 LAct t p) s) ≤ D) (htD : termLen LAct t ≤ D) :
+    (hr : (^∃ p) ∈ s) (ht : IsSemiterm LAct 0 t) (hsD : sequentLen LAct s ≤ D)
+    (hcD : sequentLen LAct (insert (substs1 LAct t p) s) ≤ D) (htD : termLen LAct t ≤ D) :
     len (proExs Ww Wl Wc W T s p t i) ≤ 256 * p3 (D + 1) := by
   have hD1 : (1 : V) ≤ D + 1 := le_add_self
   have hpow : D + 1 ≤ p3 (D + 1) := le_p3_self hD1
   have hpD : formulaLen LAct p ≤ D := by
-    have := formulaLen_le_setLen_of_mem (L := LAct) hr
+    have := formulaLen_le_sequentLen_of_mem (L := LAct) hr
     rw [formulaLen_exs hp.isUFormula] at this
     exact le_trans le_self_add (le_trans this hsD)
   have hw : IsSemitermVec LAct 1 0 (t ∷ (0 : V)) := by simp [ht]
@@ -247,15 +247,15 @@ section shifts
 /-- The drop-in for `Verify3`'s `hSA`: `shiftsV (proAll …) ≤ 402·p3 (D+1)`, no E-room, no layout. -/
 theorem shiftsV_proAll_le_cubic {tbl N : V} (htbl : TableOK tbl N) (hP : ProTable tbl) {Wl Wc : V} (hWl : Wl = layoutPieces)
     (hWc : Wc = certPieces) (Ww W T i : V) {s p D : V} (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 1 p) (hr : (^∀ p) ∈ s)
-    (hsD : setLen LAct s ≤ D) (hcD : setLen LAct (insert (free LAct p) (setShift LAct s)) ≤ D)
+    (hsD : sequentLen LAct s ≤ D) (hcD : sequentLen LAct (insert (free LAct p) (setShift LAct s)) ≤ D)
     (hspD : formulaLen LAct (shift LAct p) ≤ D) :
     shiftsV (proAll Ww Wl Wc W T s p i) ≤ 402 * p3 (D + 1) :=
   le_trans (shiftsV_le_len _) (len_proAll_le_cubic htbl hP hWl hWc Ww W T i hs hp hr hsD hcD hspD)
 
 theorem shiftsV_proExs_le_cubic {tbl N : V} (htbl : TableOK tbl N) (hP : ProTable tbl) {Wl Wc : V} (hWl : Wl = layoutPieces)
     (hWc : Wc = certPieces) (Ww W T i : V) {s p t D : V} (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 1 p)
-    (hr : (^∃ p) ∈ s) (ht : IsSemiterm LAct 0 t) (hsD : setLen LAct s ≤ D)
-    (hcD : setLen LAct (insert (substs1 LAct t p) s) ≤ D) (htD : termLen LAct t ≤ D) :
+    (hr : (^∃ p) ∈ s) (ht : IsSemiterm LAct 0 t) (hsD : sequentLen LAct s ≤ D)
+    (hcD : sequentLen LAct (insert (substs1 LAct t p) s) ≤ D) (htD : termLen LAct t ≤ D) :
     shiftsV (proExs Ww Wl Wc W T s p t i) ≤ 256 * p3 (D + 1) :=
   le_trans (shiftsV_le_len _) (len_proExs_le_cubic htbl hP hWl hWc Ww W T i hs hp hr ht hsD hcD htD)
 
@@ -266,7 +266,7 @@ plus three layouts' `proSig ≤ 6D + 1` and the member count: `≤ 2·(1+D)(2+D)
 theorem shiftsV_proAll_le_sharp {tbl N N' B' Wl Wc W T s p i D E Γ : V} (htbl : TableOK tbl N) (hP : ProTable tbl)
     (htblN : NumTableOK T N' B') (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (hWp : W = proPieces)
     (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 1 p) (hr : (^∀ p) ∈ s)
-    (hsD : setLen LAct s ≤ D) (hcD : setLen LAct (insert (free LAct p) (setShift LAct s)) ≤ D)
+    (hsD : sequentLen LAct s ≤ D) (hcD : sequentLen LAct (insert (free LAct p) (setShift LAct s)) ≤ D)
     (hspD : formulaLen LAct (shift LAct p) ≤ D)
     (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E)
     (hEQ : 2 * ((1 + D) * (1 + D + 1)) * (D + 1) + 4 * D + 11 ≤ E)
@@ -281,8 +281,8 @@ theorem shiftsV_proAll_le_sharp {tbl N N' B' Wl Wc W T s p i D E Γ : V} (htbl :
     obtain ⟨hlt, _⟩ := idxOf_spec hr
     have := lt_iff_succ_le.mp (lt_of_le_of_lt zero_le hlt); rwa [zero_add] at this
   have hkV1 : 1 ≤ len (memberList (setShift LAct s)) := one_le_len_memberList_setShift rfl hk1
-  have hvD : setLen LAct (setShift LAct s) ≤ D := le_trans (setLen_le_insert _ _) hcD
-  have hkD : len (memberList s) ≤ D := le_trans (len_memberList_le_setLen hs) hsD
+  have hvD : sequentLen LAct (setShift LAct s) ≤ D := le_trans (sequentLen_le_insert _ _) hcD
+  have hkD : len (memberList s) ≤ D := le_trans (len_memberList_le_sequentLen hs) hsD
   have hE8 : 13 * D + 18 * ‖D‖ + 8 ≤ E := le_trans (add_le_add le_rfl (by norm_num)) hE
   have hσV : proSig walkPieces Wl Wc W T (setShift LAct s) ≤ 6 * D + 1 :=
     proSig_le htbl hP hWc htblN hWl hWp hV hkV1 hvD hE8 hΓ
@@ -301,13 +301,13 @@ child's `proSig ≤ 6D + 1`: `≤ 2·(1+D)(1+2D)·D + 12D + 3`. -/
 theorem shiftsV_proExs_le_sharp {tbl N N' B' Wl Wc W T s p t i D E Γ : V} (htbl : TableOK tbl N) (hP : ProTable tbl)
     (htblN : NumTableOK T N' B') (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (hWp : W = proPieces)
     (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 1 p) (hr : (^∃ p) ∈ s) (ht : IsSemiterm LAct 0 t)
-    (hsD : setLen LAct s ≤ D) (hcD : setLen LAct (insert (substs1 LAct t p) s) ≤ D) (htD : termLen LAct t ≤ D)
+    (hsD : sequentLen LAct s ≤ D) (hcD : sequentLen LAct (insert (substs1 LAct t p) s) ≤ D) (htD : termLen LAct t ≤ D)
     (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E)
     (hEQ : 2 * ((1 + D) * (1 + D + D)) * (D + 1) + 4 * D + 11 ≤ E)
     (hiE : i + 2 * ((1 + D) * (1 + D + D)) * D + 40 * D + 20 ≤ E)
     (hΓ : IsFormulaSet LAct Γ) (hLay : Layout walkPieces Wc T Γ s i) :
     shiftsV (proExs walkPieces Wl Wc W T s p t i) ≤ 2 * ((1 + D) * (1 + D + D)) * D + 12 * D + 3 := by
-  have hptD : formulaLen LAct (substs1 LAct t p) ≤ D := le_trans (formulaLen_le_setLen_of_mem (by simp)) hcD
+  have hptD : formulaLen LAct (substs1 LAct t p) ≤ D := le_trans (formulaLen_le_sequentLen_of_mem (by simp)) hcD
   obtain ⟨_, _, hsh, _⟩ := proExs_ok htbl hP htblN hWl hWc hWp hs hp hr ht hsD hcD htD hE hEQ hiE hΓ hLay
   obtain ⟨_, _, _, _, hsig, _⟩ := exsCert_ok htbl hP htblN hWc hWp hs hp hr ht hsD htD hptD hE hEQ hiE hΓ hLay
   have hpt : IsSemiformula LAct 0 (substs1 LAct t p) := hp.substs1 ht
@@ -389,7 +389,7 @@ lemma proSA_add_le_p3 {Cs d : V} (hd : 1 ≤ d) (hCs : 25731 ≤ Cs) : 402 * p3 
 
 /-- **The `all`/`exs` node's shift inequality at `m = 4`**, in the shape `Verify3`'s arms close with: the cubic prologue
 shift (`SA = 402·p3 (2(d+1))` — `256 ≤ 402` covers `exs`), the child's `Cs·p4 y`, the node's `3`, under `Cs·p4 d` for
-`d = y + m'`, `m' ≥ 1` (`m' = setLen s + 1`, resp. `setLen s + termLen t + 1`). -/
+`d = y + m'`, `m' ≥ 1` (`m' = sequentLen s + 1`, resp. `sequentLen s + termLen t + 1`). -/
 lemma allNode_p4 {Cs y m' d : V} (hd1 : 1 ≤ d) (hm : 1 ≤ m') (hdeq : d = y + m') (hCs : 25731 ≤ Cs) :
     402 * p3 (2 * (d + 1)) + Cs * p4 y + 3 ≤ Cs * p4 d := by
   calc 402 * p3 (2 * (d + 1)) + Cs * p4 y + 3 = (402 * p3 (2 * (d + 1)) + 3) + Cs * p4 y := by ring
@@ -539,7 +539,7 @@ theorem costSum_proAll_le'' {tbl N N' B' B Wl Wc W T s p i D E Γ : V} (htbl : T
     (htblN : NumTableOK T N' B') (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (hWp : W = proPieces)
     (hBt : ∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ B) (hPle : formulaLen LAct (Ple : V) ≤ B)
     (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 1 p) (hr : (^∀ p) ∈ s)
-    (hsD : setLen LAct s ≤ D) (hcD : setLen LAct (insert (free LAct p) (setShift LAct s)) ≤ D)
+    (hsD : sequentLen LAct s ≤ D) (hcD : sequentLen LAct (insert (free LAct p) (setShift LAct s)) ≤ D)
     (hspD : formulaLen LAct (shift LAct p) ≤ D)
     (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E)
     (hEQ : 2 * ((1 + D) * (1 + D + 1)) * (D + 1) + 4 * D + 11 ≤ E)
@@ -556,7 +556,7 @@ theorem costSum_proExs_le'' {tbl N N' B' B Wl Wc W T s p t i D E Γ : V} (htbl :
     (htblN : NumTableOK T N' B') (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (hWp : W = proPieces)
     (hBt : ∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ B) (hPle : formulaLen LAct (Ple : V) ≤ B)
     (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 1 p) (hr : (^∃ p) ∈ s) (ht : IsSemiterm LAct 0 t)
-    (hsD : setLen LAct s ≤ D) (hcD : setLen LAct (insert (substs1 LAct t p) s) ≤ D) (htD : termLen LAct t ≤ D)
+    (hsD : sequentLen LAct s ≤ D) (hcD : sequentLen LAct (insert (substs1 LAct t p) s) ≤ D) (htD : termLen LAct t ≤ D)
     (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E)
     (hEQ : 2 * ((1 + D) * (1 + D + D)) * (D + 1) + 4 * D + 11 ≤ E)
     (hiE : i + 2 * ((1 + D) * (1 + D + D)) * D + 40 * D + 20 ≤ E)

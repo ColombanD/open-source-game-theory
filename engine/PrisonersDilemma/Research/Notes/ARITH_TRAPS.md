@@ -31,25 +31,25 @@ an agent-hour or more. Add to it when you lose one. Grouped by where it bites.*
 ## 2. Gödel quotes, numerals, giant DSL terms
 
 * NEVER `simp` a goal containing a closed quote of a big sentence (`⌜qDupoc⌝`, `⌜tactDiag θ⌝`,
-  `⌜tmplD⌝`): the kernel builds a numeral over `LEAN_NAT_MAX_SIZE`. State for a VARIABLE sentence,
+  `⌜templateD⌝`): the kernel builds a numeral over `LEAN_NAT_MAX_SIZE`. State for a VARIABLE sentence,
   instantiate, bridge by `rfl`. Never put a closed numeral inside a Δ₁ fixpoint blueprint (26 GB).
-* Closed constants built from a giant template (`flen (guardTemplate 0)`, `⌜guardTemplate 0⌝ ≤ ⌜guardTemplate 1⌝`, `KP`,
+* Closed constants built from a giant template (`formulaLenMeta (guardTemplate 0)`, `⌜guardTemplate 0⌝ ≤ ⌜guardTemplate 1⌝`, `KP`,
   `innerP2`) must never be evaluated: package existentially or as irreducible ℕ-constants; case-split
   with `le_total`; decide code ORDERS by `unfold … pConst pOpp ppair; norm_num` — Cantor pairing is NOT
   lexicographic, componentwise `ppair_lt_*` chains cannot decide `TftV < TftTV`.
-* `simp [closedDesc, descF, cl, dnumT]` on a template HANGS — separate templates SEMANTICALLY
-  (`tcode_ne_of_models`).
-* Foundation numerals are unary; every budget entering a sentence goes through `bnum`; the CODE of a
-  binary numeral term is exponential under Cantor pairing (`size_bnum_ge`, `box_guard_never_fits`).
+* `simp [closedDesc, descF, cl, canonicalMeta]` on a template HANGS — separate templates SEMANTICALLY
+  (`templateCode_ne_of_models`).
+* Foundation numerals are unary; every budget entering a sentence goes through `binNumeral`; the CODE of a
+  binary numeral term is exponential under Cantor pairing (`size_binNumeral_ge`, `box_guard_never_fits`).
 * A typed `Rewriting.subst` equality closed by bare `rfl` passes the ELABORATOR but times out in the
   KERNEL — factor into small `descF_*_subst` lemmas with explicit `show`.
-* `rw [show (4:V) = 0+1+1+1+1]` also rewrites the `4` inside `^#4`; `rw [relabel_const]` rewrites EVERY
+* `rw [show (4:V) = 0+1+1+1+1]` also rewrites the `4` inside `^#4`; `rw [revalue_const]` rewrites EVERY
   `pConst 1` at once; `rw [cast_pConst, cast_pConst, cast_pConst]` fails on the third (the first
   instantiates `a`).
 * `nth_adjoin_one/two` SHIFT (`(x ∷ v).[1] = v.[0]`) — finish with `simp only [nth_adjoin_zero, …]`.
 * `LogicalConnective.HomClass.map_and` fires on `Semiformula.Eval` — unfold the family defs and
   `simp only`, do not chain `rw [map_and, map_and]`.
-* `Template.lMap_swap_dnumT` already exists with the OTHER normal form — a same-named local lemma is
+* `Template.lMap_swap_canonicalMeta` already exists with the OTHER normal form — a same-named local lemma is
   silently shadowed by the import.
 
 ## 3. Fixpoints, blueprints, long lists (U10 territory)
@@ -68,16 +68,16 @@ an agent-hour or more. Add to it when you lose one. Grouped by where it bites.*
   `pi1_succ_induction`; `derivation TAct` only as `!(derivation TAct).sigma`; the `.pi`/`.sigma`
   polarity convention (hypotheses `.pi`, conclusions `.sigma`).
 
-## 4. `EvalGraph`, `psubst`, `closedP`
+## 4. `EvalGraph`, `substCode`, `closedP`
 
 * `EvalGraph.mono_le (by omega)` needs the SOURCE fuel explicit (`(n := 0+1+1)`, `const_play 3 _ _ _`).
 * `closedP` is FALSE on DBot/EBot/TFT/OBot (pronouns inside `.sim`), so `fragF` of a closed atom over
-  them fails — state τ on `tmpl (.plays p q a)` with `fragP` only (`lMap_swap_tmpl_plays`); `rfl` does
+  them fails — state τ on `template (.plays p q a)` with `fragP` only (`lMap_swap_template_plays`); `rfl` does
   not reduce `closedP` on concrete programs (mutual recursion) — `simp [closedP, …]`.
 * `Formula` is ambiguous with Foundation's: `PD.Formula`. `simp` never rewrites the instance-implicit
-  structure of `Semiformula.Eval` — `rw [stdAct_lMap_emb]`.
-* `set t := …`/`set s := Nat.size k` AFTER the facts that mention them (`lenProvable_inst_size`,
-  `lenProvable_le_bnumT`, `hE.nec`) or `omega` sees two atoms; `set` does not fold into later facts.
+  structure of `Semiformula.Eval` — `rw [stdReadingNat_lMap_emb]`.
+* `set t := …`/`set s := Nat.size k` AFTER the facts that mention them (`lenBoxNat_inst_size`,
+  `lenBoxNat_le_binNumeralMeta`, `hE.nec`) or `omega` sees two atoms; `set` does not fold into later facts.
 * `AgentConverse.eval_iff_evalGraph` quantifies `GuardAgree` over ALL formulas — it cannot be
   discharged per cell; the search-free/lockstep induction (`Cells/SearchFree`) is the template.
 * `k̂`/`lit` are not identifiers; uniform existential constants are pure terms; pin `(k := 0)` on

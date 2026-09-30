@@ -1085,8 +1085,8 @@ variable {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
 /-! ### 4.1 The walk of a `k`-entry vector at bound `n` (`Prologue.vecWalk_ok`, generalized) -/
 
 /-- The walk of the vector `v` (`k` entries at bound `n`): the vector object at `&0`. -/
-noncomputable def vecWalkN (Ww n k v : V) : V := π₂ (descVecAux Ww n (descTVec Ww n k v) k)
-noncomputable def vecCwN (Ww n k v : V) : V := π₁ (descVecAux Ww n (descTVec Ww n k v) k)
+noncomputable def vecWalkN (Ww n k v : V) : V := π₂ (descriptionsAux Ww n (descTVec Ww n k v) k)
+noncomputable def vecCwN (Ww n k v : V) : V := π₁ (descriptionsAux Ww n (descTVec Ww n k v) k)
 
 theorem vecWalkN_ok {tbl N n k v E Γ : V} (htbl : TableOK tbl N) (hW : WalkTable tbl) (hv : IsSemitermVec LAct k n v)
     (hE : 2 * n + 2 * k + 2 * listSum (termLenVec LAct k v) + 8 ≤ E) (hΓ : IsFormulaSet LAct Γ) :
@@ -1096,12 +1096,12 @@ theorem vecWalkN_ok {tbl N n k v E Γ : V} (htbl : TableOK tbl N) (hW : WalkTabl
     len (vecWalkN walkPieces n k v) + 2 ≤ 12 * listSum (termLenVec LAct k v) + 4 ∧
     DossV walkPieces (finalCtx Γ (vecWalkN walkPieces n k v)) n k v k 0 := by
   have htl : takeLast v k = v := by have := takeLast_len_self v; rwa [hv.lh] at this
-  obtain ⟨_, hcu, hVF⟩ := descVecAux_ok' htbl hW rfl hv hE k le_rfl
+  obtain ⟨_, hcu, hVF⟩ := descriptionsAux_ok' htbl hW rfl hv hE k le_rfl
   rw [htl] at hcu
   obtain ⟨okU, ndU, shU, _⟩ := hVF Γ hΓ
   have hoU : HornOnly (vecWalkN walkPieces n k v) :=
-    hornOnly_descVecAux rfl hv (fun i hi ↦ by have := hornOnly_describeT rfl n _ (hv.nth hi); rwa [describeT] at this) k le_rfl
-  obtain ⟨_, hl⟩ := len_descVecAux_le hv (fun i hi ↦ len_describeT_le walkPieces n _ (hv.nth hi)) k le_rfl
+    hornOnly_descriptionsAux rfl hv (fun i hi ↦ by have := hornOnly_describeT rfl n _ (hv.nth hi); rwa [describeT] at this) k le_rfl
+  obtain ⟨_, hl⟩ := len_descriptionsAux_le hv (fun i hi ↦ len_describeT_le walkPieces n _ (hv.nth hi)) k le_rfl
   rw [htl] at hl
   exact ⟨okU, ndU, hoU, shU, hcu, hl, dossV_of_walk ndU⟩
 
@@ -1278,7 +1278,7 @@ lemma len_qWalkP_c1v_le (Wd e : V) :
     have := isSemitermVec_qVecIterV isSemitermVec_c1v (e + 1); rwa [← add_assoc] at this
   have htl : takeLast (qVecIterV LAct c1v (e + 1)) (1 + e + 1) = qVecIterV LAct c1v (e + 1) := by
     rw [← hv.lh]; exact takeLast_len_self _
-  obtain ⟨_, hl⟩ := len_descVecAux_le hv (fun i hi ↦ len_describeT_le Wd _ _ (hv.nth hi)) (1 + e + 1) le_rfl
+  obtain ⟨_, hl⟩ := len_descriptionsAux_le hv (fun i hi ↦ len_describeT_le Wd _ _ (hv.nth hi)) (1 + e + 1) le_rfl
   rw [htl] at hl
   unfold qWalkP
   rw [← qVecIterV_succ]
@@ -2579,17 +2579,17 @@ def AxmIndOracle' (tbl E Wc T Γ s i C : V) : Prop :=
     ∃ P : V, ListOK tbl E ((9 : ℕ) : V) Γ P ∧ NoDrop' P ∧ HornOnly P ∧ shiftsV P ≤ C ∧ len P ≤ C ∧
       SizeOK C C P ∧ neg LAct (axchFact (^&(memTop walkPieces Wc T s p i + shiftsV P))) ∈ finalCtx Γ P
 
-/-- **`AxmIndOracle'` is DISCHARGED**: at the layout of `s` at `i` with `setLen s ≤ D`, with `Z := i + 6D + 1 + D(D+1)`
+/-- **`AxmIndOracle'` is DISCHARGED**: at the layout of `s` at `i` with `sequentLen s ≤ D`, with `Z := i + 6D + 1 + D(D+1)`
 and `E ≥ 200 Z³`, the honest oracle holds with `C = 4100 Z⁵`. -/
 theorem axmIndOracle_of {tbl N Wc T s D E Γ i : V} (htbl : TableOK tbl N) (hT : IndRecTable tbl) (hWc : Wc = certPieces)
-    (hs : IsFormulaSet LAct s) (hsD : setLen LAct s ≤ D) (hΓ : IsFormulaSet LAct Γ)
+    (hs : IsFormulaSet LAct s) (hsD : sequentLen LAct s ≤ D) (hΓ : IsFormulaSet LAct Γ)
     (hLay : Layout walkPieces Wc T Γ s i) (hE : 200 * gp (i + 6 * D + 1 + D * (D + 1)) 3 ≤ E) :
     AxmIndOracle' tbl E Wc T Γ s i (4100 * gp (i + 6 * D + 1 + D * (D + 1)) 5) := by
   intro p hp _ hI
   have hZ : (1 : V) ≤ i + 6 * D + 1 + D * (D + 1) := le_trans le_add_self le_self_add
   have hip : memTop walkPieces Wc T s p i ≤ i + 6 * D + 1 + D * (D + 1) :=
     le_trans (memTop_le htbl hT.walkTable hWc T hs hp hsD) le_self_add
-  have hpD : formulaLen LAct p ≤ D := le_trans (formulaLen_le_setLen_of_mem hp) hsD
+  have hpD : formulaLen LAct p ≤ D := le_trans (formulaLen_le_sequentLen_of_mem hp) hsD
   have hpZ : formulaLen LAct p * (formulaLen LAct p + 1) ≤ i + 6 * D + 1 + D * (D + 1) :=
     le_trans (mul_le_mul hpD (add_le_add hpD le_rfl) zero_le zero_le) le_add_self
   obtain ⟨P, h1, h2, h3, h4, h5, h6⟩ := axmInd_ok htbl hT hΓ hZ hI hip hpZ hE (hLay.member hp).1
@@ -2601,7 +2601,7 @@ end producer
 
 `axmInd_ok` bounds everything by `Z ≥ ip, |p|(|p|+1)`: the offset `ip` sits INSIDE the size polynomial and the lengths
 are quintic (`Cert`'s `sfK`). Both are wrong for the consumer (`Verify2`'s recursion has a fixed shift budget
-`Cs·(dlen ρ)^6` per node and `ip` accumulates every earlier shift). Two repairs, both ADDITIONS (every earlier statement
+`Cs·(proofLen ρ)^6` per node and `ip` accumulates every earlier shift). Two repairs, both ADDITIONS (every earlier statement
 untouched): (1) `formulaLen_subst_fvarVec_le` — `|subst (fvarVec m) b| ≤ |b|` (substitution by an INDEX-BOUNDED
 variable vector never lengthens: `termLen (#i) = termLen (&i) = i + 1`; the invariant `VarInv` is preserved by `qVec`),
 so every atom of the recognizer (`m`, `|b|`, `|s|`, `|K|`) is `≤ |p| ≤ D` and `Z := D + 1` — no more `|p|(|p|+1)`;
@@ -3440,16 +3440,16 @@ theorem axmInd_ok' {tbl N E Γ p ip D : V} (htbl : TableOK tbl N) (hT : IndRecTa
     exact gp_final hZ (add_gp_le hZ hlen hlP le_rfl le_rfl) le_rfl (by norm_num)
   · rw [hsh', finalCtx_appendV]; exact hfact
 
-/-- **`AxmIndOracle'` DISCHARGED with a bound in `D` alone**: at the layout of `s` at `i` with `setLen s ≤ D`, under
+/-- **`AxmIndOracle'` DISCHARGED with a bound in `D` alone**: at the layout of `s` at `i` with `sequentLen s ≤ D`, under
 `E ≥ i + 6D + 1 + 200 (D+1)³`, the honest oracle holds with `C = 1400 (D+1)³` — a CUBIC polynomial in the sequent
 bound `D`, independent of the offset `i` (which enters only the E-room). -/
 theorem axmIndOracle_of' {tbl N Wc T s D E Γ i : V} (htbl : TableOK tbl N) (hT : IndRecTable tbl) (hWc : Wc = certPieces)
-    (hs : IsFormulaSet LAct s) (hsD : setLen LAct s ≤ D) (hΓ : IsFormulaSet LAct Γ)
+    (hs : IsFormulaSet LAct s) (hsD : sequentLen LAct s ≤ D) (hΓ : IsFormulaSet LAct Γ)
     (hLay : Layout walkPieces Wc T Γ s i) (hE : i + 6 * D + 1 + 200 * gp (D + 1) 3 ≤ E) :
     AxmIndOracle' tbl E Wc T Γ s i (1400 * gp (D + 1) 3) := by
   intro p hp _ hI
   have hip : memTop walkPieces Wc T s p i ≤ i + 6 * D + 1 := memTop_le htbl hT.walkTable hWc T hs hp hsD
-  have hpD : formulaLen LAct p ≤ D := le_trans (formulaLen_le_setLen_of_mem hp) hsD
+  have hpD : formulaLen LAct p ≤ D := le_trans (formulaLen_le_sequentLen_of_mem hp) hsD
   obtain ⟨P, h1, h2, h3, h4, h5, h6⟩ := axmInd_ok' htbl hT hΓ hI hpD (le_trans (add_le_add hip le_rfl) hE) (hLay.member hp).1
   exact ⟨P, h1, h2, h3, le_trans h4 (mul_le_mul_of_nonneg_right (by norm_num) zero_le), h5, sizeOK_of_hornOnly h3, h6⟩
 

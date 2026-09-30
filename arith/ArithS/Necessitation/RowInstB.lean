@@ -11,11 +11,11 @@ codes and canonical fact codes those rows need beyond `RowInst.lean`/`Chain.lean
 (NumSteps.lean's `Peq`/`eqFact` are the SAME code — `PeqB = Peq` by `rfl` after `unfold eqS`; the names
 differ only so that both modules build side by side; unify when both have landed),
 `Pmem`/`memFact`, `Pinsert`/`insFact`, `Psubset`/`subsetFact`, `PfsetPi`/`fsetPiFact`,
-`PsetShiftG`/`setShiftFact`, `PsetLen`/`setLenFact`, `PflenG`/`lenFact`, the term-level graphs,
+`PsetShiftG`/`setShiftFact`, `PsetLen`/`sequentLenFact`, `PflenG`/`lenFact`, the term-level graphs,
 `Pnth`/`nthFact`, the `axm`(ii) graphs, the node graphs `PaxL`/`axLFact` … `Paxm`/`axmFact`, and
 the top's `PdlenDef`/`Pproof`/`PinstB`/`Pg` — each with `IsFormula`-ness, the shift law, the
 multiplicative length bound and the occurrence bound. `Chain.lean`'s `Pderiv`/`PfstIdx`/`Pdlen`/
-`Ple` (`derFact`/`fstIdxFact`/`dlenFact`/`leFact`) get the lemmas `Chain` does not state.
+`Ple` (`derFact`/`fstIdxFact`/`proofLenFact`/`leFact`) get the lemmas `Chain` does not state.
 
 **Generated** by `arith/scripts/gen_frag.py` (the row table is shared with `Lib/Frag.lean`); the
 header below (§1) is hand-written (`scripts/RowInstB.lean.head`). New over `RowInst.lean`'s §1:
@@ -115,12 +115,12 @@ noncomputable def PeqB : V := ⌜Semiformula.lMap emb (Rewriting.emb (Semiformul
 lemma isSemiformula_PeqB : IsSemiformula LAct ((2 : ℕ) : V) PeqB := Sentence.quote_isSemiformula _
 lemma shift_PeqB : shift LAct (PeqB : V) = PeqB := shift_quote_sentence _
 
-/-- The code of `flenG` (arity 2). -/
+/-- The code of `formulaLenMetaG` (arity 2). -/
 noncomputable def PflenG : V := ⌜Semiformula.lMap emb (↑(formulaLenGraph LAct) : ArithmeticSemisentence 2)⌝
 lemma isSemiformula_PflenG : IsSemiformula LAct ((2 : ℕ) : V) PflenG := Sentence.quote_isSemiformula _
 lemma shift_PflenG : shift LAct (PflenG : V) = PflenG := shift_quote_sentence _
 
-/-- The code of `tlenG` (arity 2). -/
+/-- The code of `termLenMetaG` (arity 2). -/
 noncomputable def PtlenG : V := ⌜Semiformula.lMap emb (↑(termLenGraph LAct) : ArithmeticSemisentence 2)⌝
 lemma isSemiformula_PtlenG : IsSemiformula LAct ((2 : ℕ) : V) PtlenG := Sentence.quote_isSemiformula _
 lemma shift_PtlenG : shift LAct (PtlenG : V) = PtlenG := shift_quote_sentence _
@@ -147,8 +147,8 @@ noncomputable def Pinsert : V := ⌜Semiformula.lMap emb (↑insertDef : Arithme
 lemma isSemiformula_Pinsert : IsSemiformula LAct ((3 : ℕ) : V) Pinsert := Sentence.quote_isSemiformula _
 lemma shift_Pinsert : shift LAct (Pinsert : V) = Pinsert := shift_quote_sentence _
 
-/-- The code of `setLen` (arity 2). -/
-noncomputable def PsetLen : V := ⌜Semiformula.lMap emb (↑(setLenDef LAct) : ArithmeticSemisentence 2)⌝
+/-- The code of `sequentLen` (arity 2). -/
+noncomputable def PsetLen : V := ⌜Semiformula.lMap emb (↑(sequentLenDef LAct) : ArithmeticSemisentence 2)⌝
 lemma isSemiformula_PsetLen : IsSemiformula LAct ((2 : ℕ) : V) PsetLen := Sentence.quote_isSemiformula _
 lemma shift_PsetLen : shift LAct (PsetLen : V) = PsetLen := shift_quote_sentence _
 
@@ -175,8 +175,8 @@ noncomputable def PlistSum : V := ⌜Semiformula.lMap emb (↑listSumDef : Arith
 lemma isSemiformula_PlistSum : IsSemiformula LAct ((2 : ℕ) : V) PlistSum := Sentence.quote_isSemiformula _
 lemma shift_PlistSum : shift LAct (PlistSum : V) = PlistSum := shift_quote_sentence _
 
-/-- The code of `bnumG` (arity 2). -/
-noncomputable def Pbnum : V := ⌜Semiformula.lMap emb (↑bnumGraph : ArithmeticSemisentence 2)⌝
+/-- The code of `binNumeralG` (arity 2). -/
+noncomputable def Pbnum : V := ⌜Semiformula.lMap emb (↑binNumeralGraph : ArithmeticSemisentence 2)⌝
 lemma isSemiformula_Pbnum : IsSemiformula LAct ((2 : ℕ) : V) Pbnum := Sentence.quote_isSemiformula _
 lemma shift_Pbnum : shift LAct (Pbnum : V) = Pbnum := shift_quote_sentence _
 
@@ -258,8 +258,8 @@ lemma shift_Pderiv : shift LAct (Pderiv : V) = Pderiv := shift_quote_sentence _
 
 lemma shift_Pdlen : shift LAct (Pdlen : V) = Pdlen := shift_quote_sentence _
 
-/-- The code of `dlenDef` (arity 2). -/
-noncomputable def PdlenDef : V := ⌜Semiformula.lMap emb (↑(dlenDef TAct) : ArithmeticSemisentence 2)⌝
+/-- The code of `proofLenDef` (arity 2). -/
+noncomputable def PdlenDef : V := ⌜Semiformula.lMap emb (↑(proofLenDef TAct) : ArithmeticSemisentence 2)⌝
 lemma isSemiformula_PdlenDef : IsSemiformula LAct ((2 : ℕ) : V) PdlenDef := Sentence.quote_isSemiformula _
 
 /-- The code of `proof` (arity 2). -/
@@ -301,12 +301,12 @@ lemma shift_lenFact {l p : V} (hl : IsSemiterm LAct 0 l) (hp : IsSemiterm LAct 0
   rw [shift_subst_listToVec [l, p] isSemiformula_PflenG shift_PflenG (n := 0) (List.forall_mem_cons.mpr ⟨hl, List.forall_mem_cons.mpr ⟨hp, List.forall_mem_nil _⟩⟩)]
   rfl
 
-noncomputable def tlenFact (l t : V) : V := subst LAct (listToVec [l, t]) PtlenG
-lemma isFormula_tlenFact {l t : V} (hl : IsSemiterm LAct 0 l) (ht : IsSemiterm LAct 0 t) : IsFormula LAct (tlenFact l t) :=
+noncomputable def termLenMetaFact (l t : V) : V := subst LAct (listToVec [l, t]) PtlenG
+lemma isFormula_termLenMetaFact {l t : V} (hl : IsSemiterm LAct 0 l) (ht : IsSemiterm LAct 0 t) : IsFormula LAct (termLenMetaFact l t) :=
   isFormula_fact isSemiformula_PtlenG _ rfl (List.forall_mem_cons.mpr ⟨hl, List.forall_mem_cons.mpr ⟨ht, List.forall_mem_nil _⟩⟩)
-lemma shift_tlenFact {l t : V} (hl : IsSemiterm LAct 0 l) (ht : IsSemiterm LAct 0 t) :
-    shift LAct (tlenFact l t) = tlenFact (termShift LAct l) (termShift LAct t) := by
-  unfold tlenFact
+lemma shift_termLenMetaFact {l t : V} (hl : IsSemiterm LAct 0 l) (ht : IsSemiterm LAct 0 t) :
+    shift LAct (termLenMetaFact l t) = termLenMetaFact (termShift LAct l) (termShift LAct t) := by
+  unfold termLenMetaFact
   rw [shift_subst_listToVec [l, t] isSemiformula_PtlenG shift_PtlenG (n := 0) (List.forall_mem_cons.mpr ⟨hl, List.forall_mem_cons.mpr ⟨ht, List.forall_mem_nil _⟩⟩)]
   rfl
 
@@ -352,12 +352,12 @@ lemma shift_insFact {t x s : V} (ht : IsSemiterm LAct 0 t) (hx : IsSemiterm LAct
   rw [shift_subst_listToVec [t, x, s] isSemiformula_Pinsert shift_Pinsert (n := 0) (List.forall_mem_cons.mpr ⟨ht, List.forall_mem_cons.mpr ⟨hx, List.forall_mem_cons.mpr ⟨hs, List.forall_mem_nil _⟩⟩⟩)]
   rfl
 
-noncomputable def setLenFact (l s : V) : V := subst LAct (listToVec [l, s]) PsetLen
-lemma isFormula_setLenFact {l s : V} (hl : IsSemiterm LAct 0 l) (hs : IsSemiterm LAct 0 s) : IsFormula LAct (setLenFact l s) :=
+noncomputable def sequentLenFact (l s : V) : V := subst LAct (listToVec [l, s]) PsetLen
+lemma isFormula_sequentLenFact {l s : V} (hl : IsSemiterm LAct 0 l) (hs : IsSemiterm LAct 0 s) : IsFormula LAct (sequentLenFact l s) :=
   isFormula_fact isSemiformula_PsetLen _ rfl (List.forall_mem_cons.mpr ⟨hl, List.forall_mem_cons.mpr ⟨hs, List.forall_mem_nil _⟩⟩)
-lemma shift_setLenFact {l s : V} (hl : IsSemiterm LAct 0 l) (hs : IsSemiterm LAct 0 s) :
-    shift LAct (setLenFact l s) = setLenFact (termShift LAct l) (termShift LAct s) := by
-  unfold setLenFact
+lemma shift_sequentLenFact {l s : V} (hl : IsSemiterm LAct 0 l) (hs : IsSemiterm LAct 0 s) :
+    shift LAct (sequentLenFact l s) = sequentLenFact (termShift LAct l) (termShift LAct s) := by
+  unfold sequentLenFact
   rw [shift_subst_listToVec [l, s] isSemiformula_PsetLen shift_PsetLen (n := 0) (List.forall_mem_cons.mpr ⟨hl, List.forall_mem_cons.mpr ⟨hs, List.forall_mem_nil _⟩⟩)]
   rfl
 
@@ -397,8 +397,8 @@ lemma shift_listSumFact {s M : V} (hs : IsSemiterm LAct 0 s) (hM : IsSemiterm LA
   rw [shift_subst_listToVec [s, M] isSemiformula_PlistSum shift_PlistSum (n := 0) (List.forall_mem_cons.mpr ⟨hs, List.forall_mem_cons.mpr ⟨hM, List.forall_mem_nil _⟩⟩)]
   rfl
 
-noncomputable def bnumFact (t k : V) : V := subst LAct (listToVec [t, k]) Pbnum
-lemma isFormula_bnumFact {t k : V} (ht : IsSemiterm LAct 0 t) (hk : IsSemiterm LAct 0 k) : IsFormula LAct (bnumFact t k) :=
+noncomputable def binNumeralFact (t k : V) : V := subst LAct (listToVec [t, k]) Pbnum
+lemma isFormula_binNumeralFact {t k : V} (ht : IsSemiterm LAct 0 t) (hk : IsSemiterm LAct 0 k) : IsFormula LAct (binNumeralFact t k) :=
   isFormula_fact isSemiformula_Pbnum _ rfl (List.forall_mem_cons.mpr ⟨ht, List.forall_mem_cons.mpr ⟨hk, List.forall_mem_nil _⟩⟩)
 
 noncomputable def nthFact (e w i : V) : V := subst LAct (listToVec [e, w, i]) Pnth
@@ -439,13 +439,13 @@ lemma shift_derFact {e : V} (he : IsSemiterm LAct 0 e) :
   rw [shift_subst_listToVec [e] isSemiformula_Pderiv shift_Pderiv (n := 0) (List.forall_mem_cons.mpr ⟨he, List.forall_mem_nil _⟩)]
   rfl
 
-lemma shift_dlenFact {e n : V} (he : IsSemiterm LAct 0 e) (hn : IsSemiterm LAct 0 n) :
-    shift LAct (dlenFact e n) = dlenFact (termShift LAct e) (termShift LAct n) := by
-  unfold dlenFact
+lemma shift_proofLenFact {e n : V} (he : IsSemiterm LAct 0 e) (hn : IsSemiterm LAct 0 n) :
+    shift LAct (proofLenFact e n) = proofLenFact (termShift LAct e) (termShift LAct n) := by
+  unfold proofLenFact
   rw [shift_subst_listToVec [e, n] isSemiformula_Pdlen shift_Pdlen (n := 0) (List.forall_mem_cons.mpr ⟨he, List.forall_mem_cons.mpr ⟨hn, List.forall_mem_nil _⟩⟩)]
   rfl
 
-noncomputable def dlenDefFact (n d : V) : V := subst LAct (listToVec [n, d]) PdlenDef
+noncomputable def proofLenDefFact (n d : V) : V := subst LAct (listToVec [n, d]) PdlenDef
 
 noncomputable def proofFact (d g : V) : V := subst LAct (listToVec [d, g]) Pproof
 
@@ -1002,8 +1002,8 @@ lemma isSemiformula_congTLen_c : IsSemiformula LAct ((3 : ℕ) : V) row_congTLen
 
 /-- `congTLen` at the witnesses `[wl, wx, wy]` (the DSL variables right-to-left). -/
 lemma inst_congTLen {wl wx wy : V} (hwl : IsSemiterm LAct 0 wl) (hwx : IsSemiterm LAct 0 wx) (hwy : IsSemiterm LAct 0 wy) :
-    row_congTLen_as.map (instOuter LAct [wl, wx, wy]) = [eqFactB wy wx, tlenFact wl wx] ∧
-    instOuter LAct [wl, wx, wy] row_congTLen_c = tlenFact wl wy := by
+    row_congTLen_as.map (instOuter LAct [wl, wx, wy]) = [eqFactB wy wx, termLenMetaFact wl wx] ∧
+    instOuter LAct [wl, wx, wy] row_congTLen_c = termLenMetaFact wl wy := by
   have hes : ∀ e ∈ ([wl, wx, wy] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwl, List.forall_mem_cons.mpr ⟨hwx, List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_nil _⟩⟩⟩)
   unfold row_congTLen_as row_congTLen_c
   simp only [List.map_cons, List.map_nil]
@@ -1050,8 +1050,8 @@ lemma isSemiformula_congTLenNum_c : IsSemiformula LAct ((3 : ℕ) : V) row_congT
 
 /-- `congTLenNum` at the witnesses `[wt, wl, wlp]` (the DSL variables right-to-left). -/
 lemma inst_congTLenNum {wt wl wlp : V} (hwt : IsSemiterm LAct 0 wt) (hwl : IsSemiterm LAct 0 wl) (hwlp : IsSemiterm LAct 0 wlp) :
-    row_congTLenNum_as.map (instOuter LAct [wt, wl, wlp]) = [eqFactB wl wlp, tlenFact wl wt] ∧
-    instOuter LAct [wt, wl, wlp] row_congTLenNum_c = tlenFact wlp wt := by
+    row_congTLenNum_as.map (instOuter LAct [wt, wl, wlp]) = [eqFactB wl wlp, termLenMetaFact wl wt] ∧
+    instOuter LAct [wt, wl, wlp] row_congTLenNum_c = termLenMetaFact wlp wt := by
   have hes : ∀ e ∈ ([wt, wl, wlp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwt, List.forall_mem_cons.mpr ⟨hwl, List.forall_mem_cons.mpr ⟨hwlp, List.forall_mem_nil _⟩⟩⟩)
   unfold row_congTLenNum_as row_congTLenNum_c
   simp only [List.map_cons, List.map_nil]
@@ -1252,8 +1252,8 @@ lemma isSemiformula_congSetLenR_c : IsSemiformula LAct ((3 : ℕ) : V) row_congS
 
 /-- `congSetLenR` at the witnesses `[ws, wsp, wl]` (the DSL variables right-to-left). -/
 lemma inst_congSetLenR {ws wsp wl : V} (hws : IsSemiterm LAct 0 ws) (hwsp : IsSemiterm LAct 0 wsp) (hwl : IsSemiterm LAct 0 wl) :
-    row_congSetLenR_as.map (instOuter LAct [ws, wsp, wl]) = [eqFactB wsp ws, setLenFact wl ws] ∧
-    instOuter LAct [ws, wsp, wl] row_congSetLenR_c = setLenFact wl wsp := by
+    row_congSetLenR_as.map (instOuter LAct [ws, wsp, wl]) = [eqFactB wsp ws, sequentLenFact wl ws] ∧
+    instOuter LAct [ws, wsp, wl] row_congSetLenR_c = sequentLenFact wl wsp := by
   have hes : ∀ e ∈ ([ws, wsp, wl] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hws, List.forall_mem_cons.mpr ⟨hwsp, List.forall_mem_cons.mpr ⟨hwl, List.forall_mem_nil _⟩⟩⟩)
   unfold row_congSetLenR_as row_congSetLenR_c
   simp only [List.map_cons, List.map_nil]
@@ -1558,17 +1558,17 @@ lemma inst_eqOfAdj {wt wv ww wtp wvp wwp : V} (hwt : IsSemiterm LAct 0 wt) (hwv 
 noncomputable def row_setShiftFun_as : List V := [subst LAct (listToVec [bv 2, bv 1]) PsetShiftG, subst LAct (listToVec [bv 0, bv 1]) PsetShiftG]
 noncomputable def row_setShiftFun_c : V := subst LAct (listToVec [bv 2, bv 0]) PeqB
 
-/-! ### `setLenFun` — `“y' s y. …”`, `m = 3` -/
+/-! ### `sequentLenFun` — `“y' s y. …”`, `m = 3` -/
 
-noncomputable def row_setLenFun_as : List V := [subst LAct (listToVec [bv 2, bv 1]) PsetLen, subst LAct (listToVec [bv 0, bv 1]) PsetLen]
-noncomputable def row_setLenFun_c : V := subst LAct (listToVec [bv 2, bv 0]) PeqB
+noncomputable def row_sequentLenFun_as : List V := [subst LAct (listToVec [bv 2, bv 1]) PsetLen, subst LAct (listToVec [bv 0, bv 1]) PsetLen]
+noncomputable def row_sequentLenFun_c : V := subst LAct (listToVec [bv 2, bv 0]) PeqB
 
-/-- `setLenFun` at the witnesses `[wy, ws, wyp]` (the DSL variables right-to-left). -/
-lemma inst_setLenFun {wy ws wyp : V} (hwy : IsSemiterm LAct 0 wy) (hws : IsSemiterm LAct 0 ws) (hwyp : IsSemiterm LAct 0 wyp) :
-    row_setLenFun_as.map (instOuter LAct [wy, ws, wyp]) = [setLenFact wy ws, setLenFact wyp ws] ∧
-    instOuter LAct [wy, ws, wyp] row_setLenFun_c = eqFactB wy wyp := by
+/-- `sequentLenFun` at the witnesses `[wy, ws, wyp]` (the DSL variables right-to-left). -/
+lemma inst_sequentLenFun {wy ws wyp : V} (hwy : IsSemiterm LAct 0 wy) (hws : IsSemiterm LAct 0 ws) (hwyp : IsSemiterm LAct 0 wyp) :
+    row_sequentLenFun_as.map (instOuter LAct [wy, ws, wyp]) = [sequentLenFact wy ws, sequentLenFact wyp ws] ∧
+    instOuter LAct [wy, ws, wyp] row_sequentLenFun_c = eqFactB wy wyp := by
   have hes : ∀ e ∈ ([wy, ws, wyp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwy, List.forall_mem_cons.mpr ⟨hws, List.forall_mem_cons.mpr ⟨hwyp, List.forall_mem_nil _⟩⟩⟩)
-  unfold row_setLenFun_as row_setLenFun_c
+  unfold row_sequentLenFun_as row_sequentLenFun_c
   simp only [List.map_cons, List.map_nil]
   rw [instOuter_subst_listToVec _ isSemiformula_PsetLen (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PsetLen (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PeqB (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
@@ -1890,27 +1890,27 @@ lemma inst_fstIdxAxm {ws wp we : V} (hws : IsSemiterm LAct 0 ws) (hwp : IsSemite
   all_goals try row_entries_simpB
   row_finish
 
-/-! ## F. The top: `dlenDef`, `proof`, `instB`, `gBudget`, `‖·‖`, the `bnum` certification (§7.1) -/
+/-! ## F. The top: `proofLenDef`, `proof`, `instB`, `gBudget`, `‖·‖`, the `binNumeral` certification (§7.1) -/
 
-/-! ### `dlenDefIntro` — `“n d. …”`, `m = 2` -/
+/-! ### `proofLenDefIntro` — `“n d. …”`, `m = 2` -/
 
-noncomputable def row_dlenDefIntro_as : List V := [subst LAct (listToVec [bv 1]) Pderiv, subst LAct (listToVec [bv 1, bv 0]) Pdlen]
-noncomputable def row_dlenDefIntro_c : V := subst LAct (listToVec [bv 0, bv 1]) PdlenDef
+noncomputable def row_proofLenDefIntro_as : List V := [subst LAct (listToVec [bv 1]) Pderiv, subst LAct (listToVec [bv 1, bv 0]) Pdlen]
+noncomputable def row_proofLenDefIntro_c : V := subst LAct (listToVec [bv 0, bv 1]) PdlenDef
 
-theorem quote_row_dlenDefIntro : (⌜Semiformula.lMap emb dlenDefIntroB⌝ : V) = impChain LAct row_dlenDefIntro_as row_dlenDefIntro_c := by
-  unfold dlenDefIntroB row_dlenDefIntro_as row_dlenDefIntro_c Pderiv Pdlen PdlenDef derivS dlenS
+theorem quote_row_proofLenDefIntro : (⌜Semiformula.lMap emb proofLenDefIntroB⌝ : V) = impChain LAct row_proofLenDefIntro_as row_proofLenDefIntro_c := by
+  unfold proofLenDefIntroB row_proofLenDefIntro_as row_proofLenDefIntro_c Pderiv Pdlen PdlenDef derivS proofLenS
   all_goals row_shapeB
 
-lemma isSemiformula_dlenDefIntro_c : IsSemiformula LAct ((2 : ℕ) : V) row_dlenDefIntro_c := by
-  unfold row_dlenDefIntro_c
+lemma isSemiformula_proofLenDefIntro_c : IsSemiformula LAct ((2 : ℕ) : V) row_proofLenDefIntro_c := by
+  unfold row_proofLenDefIntro_c
   exact isSemiformula_substRow isSemiformula_PdlenDef _ (by rfl) (by row_entriesB)
 
-/-- `dlenDefIntro` at the witnesses `[wd, wn]` (the DSL variables right-to-left). -/
-lemma inst_dlenDefIntro {wd wn : V} (hwd : IsSemiterm LAct 0 wd) (hwn : IsSemiterm LAct 0 wn) :
-    row_dlenDefIntro_as.map (instOuter LAct [wd, wn]) = [derFact wd, dlenFact wd wn] ∧
-    instOuter LAct [wd, wn] row_dlenDefIntro_c = dlenDefFact wn wd := by
+/-- `proofLenDefIntro` at the witnesses `[wd, wn]` (the DSL variables right-to-left). -/
+lemma inst_proofLenDefIntro {wd wn : V} (hwd : IsSemiterm LAct 0 wd) (hwn : IsSemiterm LAct 0 wn) :
+    row_proofLenDefIntro_as.map (instOuter LAct [wd, wn]) = [derFact wd, proofLenFact wd wn] ∧
+    instOuter LAct [wd, wn] row_proofLenDefIntro_c = proofLenDefFact wn wd := by
   have hes : ∀ e ∈ ([wd, wn] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwd, List.forall_mem_cons.mpr ⟨hwn, List.forall_mem_nil _⟩⟩)
-  unfold row_dlenDefIntro_as row_dlenDefIntro_c
+  unfold row_proofLenDefIntro_as row_proofLenDefIntro_c
   simp only [List.map_cons, List.map_nil]
   rw [instOuter_subst_listToVec _ isSemiformula_Pderiv (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pdlen (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_PdlenDef (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
@@ -1955,7 +1955,7 @@ lemma isSemiformula_instBIntro_c : IsSemiformula LAct ((5 : ℕ) : V) row_instBI
 
 /-- `instBIntro` at the witnesses `[wn, wk, wt, wv, wg]` (the DSL variables right-to-left). -/
 lemma inst_instBIntro {wn wk wt wv wg : V} (hwn : IsSemiterm LAct 0 wn) (hwk : IsSemiterm LAct 0 wk) (hwt : IsSemiterm LAct 0 wt) (hwv : IsSemiterm LAct 0 wv) (hwg : IsSemiterm LAct 0 wg) :
-    row_instBIntro_as.map (instOuter LAct [wn, wk, wt, wv, wg]) = [bnumFact wt wk, adjFact wv wt (𝟎 : V), substFact wg wv wn] ∧
+    row_instBIntro_as.map (instOuter LAct [wn, wk, wt, wv, wg]) = [binNumeralFact wt wk, adjFact wv wt (𝟎 : V), substFact wg wv wn] ∧
     instOuter LAct [wn, wk, wt, wv, wg] row_instBIntro_c = instBFact wg wn wk := by
   have hes : ∀ e ∈ ([wn, wk, wt, wv, wg] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwn, List.forall_mem_cons.mpr ⟨hwk, List.forall_mem_cons.mpr ⟨hwt, List.forall_mem_cons.mpr ⟨hwv, List.forall_mem_cons.mpr ⟨hwg, List.forall_mem_nil _⟩⟩⟩⟩⟩)
   unfold row_instBIntro_as row_instBIntro_c
@@ -1964,85 +1964,85 @@ lemma inst_instBIntro {wn wk wt wv wg : V} (hwn : IsSemiterm LAct 0 wn) (hwk : I
   all_goals try row_entries_simpB
   row_finish
 
-/-! ### `bnumZeroCert` — `“t. …”`, `m = 1` -/
+/-! ### `binNumeralZeroCert` — `“t. …”`, `m = 1` -/
 
-noncomputable def row_bnumZeroCert_as : List V := [subst LAct (listToVec [bv 0, (𝟎 : V), (𝟎 : V), (𝟎 : V)]) Pfunc]
-noncomputable def row_bnumZeroCert_c : V := subst LAct (listToVec [bv 0, (𝟎 : V)]) Pbnum
+noncomputable def row_binNumeralZeroCert_as : List V := [subst LAct (listToVec [bv 0, (𝟎 : V), (𝟎 : V), (𝟎 : V)]) Pfunc]
+noncomputable def row_binNumeralZeroCert_c : V := subst LAct (listToVec [bv 0, (𝟎 : V)]) Pbnum
 
-theorem quote_row_bnumZeroCert : (⌜Semiformula.lMap emb bnumZeroCertB⌝ : V) = impChain LAct row_bnumZeroCert_as row_bnumZeroCert_c := by
-  unfold bnumZeroCertB row_bnumZeroCert_as row_bnumZeroCert_c Pbnum Pfunc
+theorem quote_row_binNumeralZeroCert : (⌜Semiformula.lMap emb binNumeralZeroCertB⌝ : V) = impChain LAct row_binNumeralZeroCert_as row_binNumeralZeroCert_c := by
+  unfold binNumeralZeroCertB row_binNumeralZeroCert_as row_binNumeralZeroCert_c Pbnum Pfunc
   all_goals row_shapeB
 
-lemma isSemiformula_bnumZeroCert_c : IsSemiformula LAct ((1 : ℕ) : V) row_bnumZeroCert_c := by
-  unfold row_bnumZeroCert_c
+lemma isSemiformula_binNumeralZeroCert_c : IsSemiformula LAct ((1 : ℕ) : V) row_binNumeralZeroCert_c := by
+  unfold row_binNumeralZeroCert_c
   exact isSemiformula_substRow isSemiformula_Pbnum _ (by rfl) (by row_entriesB)
 
-/-- `bnumZeroCert` at the witnesses `[wt]` (the DSL variables right-to-left). -/
-lemma inst_bnumZeroCert {wt : V} (hwt : IsSemiterm LAct 0 wt) :
-    row_bnumZeroCert_as.map (instOuter LAct [wt]) = [funcFact wt (𝟎 : V) (𝟎 : V) (𝟎 : V)] ∧
-    instOuter LAct [wt] row_bnumZeroCert_c = bnumFact wt (𝟎 : V) := by
+/-- `binNumeralZeroCert` at the witnesses `[wt]` (the DSL variables right-to-left). -/
+lemma inst_binNumeralZeroCert {wt : V} (hwt : IsSemiterm LAct 0 wt) :
+    row_binNumeralZeroCert_as.map (instOuter LAct [wt]) = [funcFact wt (𝟎 : V) (𝟎 : V) (𝟎 : V)] ∧
+    instOuter LAct [wt] row_binNumeralZeroCert_c = binNumeralFact wt (𝟎 : V) := by
   have hes : ∀ e ∈ ([wt] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwt, List.forall_mem_nil _⟩)
-  unfold row_bnumZeroCert_as row_bnumZeroCert_c
+  unfold row_binNumeralZeroCert_as row_binNumeralZeroCert_c
   simp only [List.map_cons, List.map_nil]
   rw [instOuter_subst_listToVec _ isSemiformula_Pfunc (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pbnum (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
-/-! ### `bnumOneCert` — `“t. …”`, `m = 1` -/
+/-! ### `binNumeralOneCert` — `“t. …”`, `m = 1` -/
 
-noncomputable def row_bnumOneCert_as : List V := [subst LAct (listToVec [bv 0, (𝟎 : V), cT 1, (𝟎 : V)]) Pfunc]
-noncomputable def row_bnumOneCert_c : V := subst LAct (listToVec [bv 0, (𝟏 : V)]) Pbnum
+noncomputable def row_binNumeralOneCert_as : List V := [subst LAct (listToVec [bv 0, (𝟎 : V), cT 1, (𝟎 : V)]) Pfunc]
+noncomputable def row_binNumeralOneCert_c : V := subst LAct (listToVec [bv 0, (𝟏 : V)]) Pbnum
 
-theorem quote_row_bnumOneCert : (⌜Semiformula.lMap emb bnumOneCertB⌝ : V) = impChain LAct row_bnumOneCert_as row_bnumOneCert_c := by
-  unfold bnumOneCertB row_bnumOneCert_as row_bnumOneCert_c Pbnum Pfunc
+theorem quote_row_binNumeralOneCert : (⌜Semiformula.lMap emb binNumeralOneCertB⌝ : V) = impChain LAct row_binNumeralOneCert_as row_binNumeralOneCert_c := by
+  unfold binNumeralOneCertB row_binNumeralOneCert_as row_binNumeralOneCert_c Pbnum Pfunc
   all_goals row_shapeB
 
-lemma isSemiformula_bnumOneCert_c : IsSemiformula LAct ((1 : ℕ) : V) row_bnumOneCert_c := by
-  unfold row_bnumOneCert_c
+lemma isSemiformula_binNumeralOneCert_c : IsSemiformula LAct ((1 : ℕ) : V) row_binNumeralOneCert_c := by
+  unfold row_binNumeralOneCert_c
   exact isSemiformula_substRow isSemiformula_Pbnum _ (by rfl) (by row_entriesB)
 
-/-- `bnumOneCert` at the witnesses `[wt]` (the DSL variables right-to-left). -/
-lemma inst_bnumOneCert {wt : V} (hwt : IsSemiterm LAct 0 wt) :
-    row_bnumOneCert_as.map (instOuter LAct [wt]) = [funcFact wt (𝟎 : V) (cT 1) (𝟎 : V)] ∧
-    instOuter LAct [wt] row_bnumOneCert_c = bnumFact wt (𝟏 : V) := by
+/-- `binNumeralOneCert` at the witnesses `[wt]` (the DSL variables right-to-left). -/
+lemma inst_binNumeralOneCert {wt : V} (hwt : IsSemiterm LAct 0 wt) :
+    row_binNumeralOneCert_as.map (instOuter LAct [wt]) = [funcFact wt (𝟎 : V) (cT 1) (𝟎 : V)] ∧
+    instOuter LAct [wt] row_binNumeralOneCert_c = binNumeralFact wt (𝟏 : V) := by
   have hes : ∀ e ∈ ([wt] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwt, List.forall_mem_nil _⟩)
-  unfold row_bnumOneCert_as row_bnumOneCert_c
+  unfold row_binNumeralOneCert_as row_binNumeralOneCert_c
   simp only [List.map_cons, List.map_nil]
   rw [instOuter_subst_listToVec _ isSemiformula_Pfunc (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pbnum (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
-/-! ### `bnumEvenCert` — `“u v v' two w w' one t m. …”`, `m = 9` -/
+/-! ### `binNumeralEvenCert` — `“u v v' two w w' one t m. …”`, `m = 9` -/
 
-noncomputable def row_bnumEvenCert_as : List V := [subst LAct (listToVec [(𝟏 : V), bv 8]) Ple, subst LAct (listToVec [bv 7, bv 8]) Pbnum, subst LAct (listToVec [bv 6, (𝟎 : V), cT 1, (𝟎 : V)]) Pfunc, subst LAct (listToVec [bv 5, bv 6, (𝟎 : V)]) Padjoin, subst LAct (listToVec [bv 4, bv 6, bv 5]) Padjoin, subst LAct (listToVec [bv 3, cT 2, (𝟎 : V), bv 4]) Pfunc, subst LAct (listToVec [bv 2, bv 7, (𝟎 : V)]) Padjoin, subst LAct (listToVec [bv 1, bv 3, bv 2]) Padjoin, subst LAct (listToVec [bv 0, cT 2, cT 1, bv 1]) Pfunc]
-noncomputable def row_bnumEvenCert_c : V := subst LAct (listToVec [bv 0, (((𝟏 : V) ^+ (𝟏 : V)) ^* bv 8)]) Pbnum
+noncomputable def row_binNumeralEvenCert_as : List V := [subst LAct (listToVec [(𝟏 : V), bv 8]) Ple, subst LAct (listToVec [bv 7, bv 8]) Pbnum, subst LAct (listToVec [bv 6, (𝟎 : V), cT 1, (𝟎 : V)]) Pfunc, subst LAct (listToVec [bv 5, bv 6, (𝟎 : V)]) Padjoin, subst LAct (listToVec [bv 4, bv 6, bv 5]) Padjoin, subst LAct (listToVec [bv 3, cT 2, (𝟎 : V), bv 4]) Pfunc, subst LAct (listToVec [bv 2, bv 7, (𝟎 : V)]) Padjoin, subst LAct (listToVec [bv 1, bv 3, bv 2]) Padjoin, subst LAct (listToVec [bv 0, cT 2, cT 1, bv 1]) Pfunc]
+noncomputable def row_binNumeralEvenCert_c : V := subst LAct (listToVec [bv 0, (((𝟏 : V) ^+ (𝟏 : V)) ^* bv 8)]) Pbnum
 
-theorem quote_row_bnumEvenCert : (⌜Semiformula.lMap emb bnumEvenCertB⌝ : V) = impChain LAct row_bnumEvenCert_as row_bnumEvenCert_c := by
-  unfold bnumEvenCertB row_bnumEvenCert_as row_bnumEvenCert_c Padjoin Pbnum Pfunc Ple leS
+theorem quote_row_binNumeralEvenCert : (⌜Semiformula.lMap emb binNumeralEvenCertB⌝ : V) = impChain LAct row_binNumeralEvenCert_as row_binNumeralEvenCert_c := by
+  unfold binNumeralEvenCertB row_binNumeralEvenCert_as row_binNumeralEvenCert_c Padjoin Pbnum Pfunc Ple leS
   all_goals row_shapeB
 
-lemma isSemiformula_bnumEvenCert_c : IsSemiformula LAct ((9 : ℕ) : V) row_bnumEvenCert_c := by
-  unfold row_bnumEvenCert_c
+lemma isSemiformula_binNumeralEvenCert_c : IsSemiformula LAct ((9 : ℕ) : V) row_binNumeralEvenCert_c := by
+  unfold row_binNumeralEvenCert_c
   exact isSemiformula_substRow isSemiformula_Pbnum _ (by rfl) (by row_entriesB)
 
-/-- `bnumEvenCert` at the witnesses `[wm, wt, wone, wwp, ww, wtwo, wvp, wv, wu]` (the DSL variables right-to-left). -/
-lemma inst_bnumEvenCert {wm wt wone wwp ww wtwo wvp wv wu : V} (hwm : IsSemiterm LAct 0 wm) (hwt : IsSemiterm LAct 0 wt) (hwone : IsSemiterm LAct 0 wone) (hwwp : IsSemiterm LAct 0 wwp) (hww : IsSemiterm LAct 0 ww) (hwtwo : IsSemiterm LAct 0 wtwo) (hwvp : IsSemiterm LAct 0 wvp) (hwv : IsSemiterm LAct 0 wv) (hwu : IsSemiterm LAct 0 wu) :
-    row_bnumEvenCert_as.map (instOuter LAct [wm, wt, wone, wwp, ww, wtwo, wvp, wv, wu]) = [leFact (𝟏 : V) wm, bnumFact wt wm, funcFact wone (𝟎 : V) (cT 1) (𝟎 : V), adjFact wwp wone (𝟎 : V), adjFact ww wone wwp, funcFact wtwo (cT 2) (𝟎 : V) ww, adjFact wvp wt (𝟎 : V), adjFact wv wtwo wvp, funcFact wu (cT 2) (cT 1) wv] ∧
-    instOuter LAct [wm, wt, wone, wwp, ww, wtwo, wvp, wv, wu] row_bnumEvenCert_c = bnumFact wu (((𝟏 : V) ^+ (𝟏 : V)) ^* wm) := by
+/-- `binNumeralEvenCert` at the witnesses `[wm, wt, wone, wwp, ww, wtwo, wvp, wv, wu]` (the DSL variables right-to-left). -/
+lemma inst_binNumeralEvenCert {wm wt wone wwp ww wtwo wvp wv wu : V} (hwm : IsSemiterm LAct 0 wm) (hwt : IsSemiterm LAct 0 wt) (hwone : IsSemiterm LAct 0 wone) (hwwp : IsSemiterm LAct 0 wwp) (hww : IsSemiterm LAct 0 ww) (hwtwo : IsSemiterm LAct 0 wtwo) (hwvp : IsSemiterm LAct 0 wvp) (hwv : IsSemiterm LAct 0 wv) (hwu : IsSemiterm LAct 0 wu) :
+    row_binNumeralEvenCert_as.map (instOuter LAct [wm, wt, wone, wwp, ww, wtwo, wvp, wv, wu]) = [leFact (𝟏 : V) wm, binNumeralFact wt wm, funcFact wone (𝟎 : V) (cT 1) (𝟎 : V), adjFact wwp wone (𝟎 : V), adjFact ww wone wwp, funcFact wtwo (cT 2) (𝟎 : V) ww, adjFact wvp wt (𝟎 : V), adjFact wv wtwo wvp, funcFact wu (cT 2) (cT 1) wv] ∧
+    instOuter LAct [wm, wt, wone, wwp, ww, wtwo, wvp, wv, wu] row_binNumeralEvenCert_c = binNumeralFact wu (((𝟏 : V) ^+ (𝟏 : V)) ^* wm) := by
   have hes : ∀ e ∈ ([wm, wt, wone, wwp, ww, wtwo, wvp, wv, wu] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwm, List.forall_mem_cons.mpr ⟨hwt, List.forall_mem_cons.mpr ⟨hwone, List.forall_mem_cons.mpr ⟨hwwp, List.forall_mem_cons.mpr ⟨hww, List.forall_mem_cons.mpr ⟨hwtwo, List.forall_mem_cons.mpr ⟨hwvp, List.forall_mem_cons.mpr ⟨hwv, List.forall_mem_cons.mpr ⟨hwu, List.forall_mem_nil _⟩⟩⟩⟩⟩⟩⟩⟩⟩)
-  unfold row_bnumEvenCert_as row_bnumEvenCert_c
+  unfold row_binNumeralEvenCert_as row_binNumeralEvenCert_c
   simp only [List.map_cons, List.map_nil]
   rw [instOuter_subst_listToVec _ isSemiformula_Ple (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pbnum (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pfunc (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Padjoin (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Padjoin (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pfunc (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Padjoin (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Padjoin (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pfunc (by rfl) _ hes (by row_entriesB), instOuter_subst_listToVec _ isSemiformula_Pbnum (by rfl) _ hes (by row_entriesB)]
   all_goals try row_entries_simpB
   row_finish
 
-/-! ### `bnumOddCert` — `“u x x' s v v' two w w' one t m. …”`, `m = 12` -/
+/-! ### `binNumeralOddCert` — `“u x x' s v v' two w w' one t m. …”`, `m = 12` -/
 
-noncomputable def row_bnumOddCert_as : List V := [subst LAct (listToVec [(𝟏 : V), bv 11]) Ple, subst LAct (listToVec [bv 10, bv 11]) Pbnum, subst LAct (listToVec [bv 9, (𝟎 : V), cT 1, (𝟎 : V)]) Pfunc, subst LAct (listToVec [bv 8, bv 9, (𝟎 : V)]) Padjoin, subst LAct (listToVec [bv 7, bv 9, bv 8]) Padjoin, subst LAct (listToVec [bv 6, cT 2, (𝟎 : V), bv 7]) Pfunc, subst LAct (listToVec [bv 5, bv 10, (𝟎 : V)]) Padjoin, subst LAct (listToVec [bv 4, bv 6, bv 5]) Padjoin, subst LAct (listToVec [bv 3, cT 2, cT 1, bv 4]) Pfunc, subst LAct (listToVec [bv 2, bv 9, (𝟎 : V)]) Padjoin, subst LAct (listToVec [bv 1, bv 3, bv 2]) Padjoin, subst LAct (listToVec [bv 0, cT 2, (𝟎 : V), bv 1]) Pfunc]
-noncomputable def row_bnumOddCert_c : V := subst LAct (listToVec [bv 0, ((((𝟏 : V) ^+ (𝟏 : V)) ^* bv 11) ^+ (𝟏 : V))]) Pbnum
+noncomputable def row_binNumeralOddCert_as : List V := [subst LAct (listToVec [(𝟏 : V), bv 11]) Ple, subst LAct (listToVec [bv 10, bv 11]) Pbnum, subst LAct (listToVec [bv 9, (𝟎 : V), cT 1, (𝟎 : V)]) Pfunc, subst LAct (listToVec [bv 8, bv 9, (𝟎 : V)]) Padjoin, subst LAct (listToVec [bv 7, bv 9, bv 8]) Padjoin, subst LAct (listToVec [bv 6, cT 2, (𝟎 : V), bv 7]) Pfunc, subst LAct (listToVec [bv 5, bv 10, (𝟎 : V)]) Padjoin, subst LAct (listToVec [bv 4, bv 6, bv 5]) Padjoin, subst LAct (listToVec [bv 3, cT 2, cT 1, bv 4]) Pfunc, subst LAct (listToVec [bv 2, bv 9, (𝟎 : V)]) Padjoin, subst LAct (listToVec [bv 1, bv 3, bv 2]) Padjoin, subst LAct (listToVec [bv 0, cT 2, (𝟎 : V), bv 1]) Pfunc]
+noncomputable def row_binNumeralOddCert_c : V := subst LAct (listToVec [bv 0, ((((𝟏 : V) ^+ (𝟏 : V)) ^* bv 11) ^+ (𝟏 : V))]) Pbnum
 
-theorem quote_row_bnumOddCert : (⌜Semiformula.lMap emb bnumOddCertB⌝ : V) = impChain LAct row_bnumOddCert_as row_bnumOddCert_c := by
-  unfold bnumOddCertB row_bnumOddCert_as row_bnumOddCert_c Padjoin Pbnum Pfunc Ple leS
+theorem quote_row_binNumeralOddCert : (⌜Semiformula.lMap emb binNumeralOddCertB⌝ : V) = impChain LAct row_binNumeralOddCert_as row_binNumeralOddCert_c := by
+  unfold binNumeralOddCertB row_binNumeralOddCert_as row_binNumeralOddCert_c Padjoin Pbnum Pfunc Ple leS
   all_goals row_shapeB
 
 /-! ## G. Lengths: `termLenVec`/`listSum` bottom-up, the atom lengths with universal `M, s` (§3.6) -/
@@ -2086,7 +2086,7 @@ lemma isSemiformula_termLenVecAdj_c : IsSemiformula LAct ((8 : ℕ) : V) row_ter
 
 /-- `termLenVecAdj` at the witnesses `[wn, wk, wv, wvp, wt, wl, wM, wMp]` (the DSL variables right-to-left). -/
 lemma inst_termLenVecAdj {wn wk wv wvp wt wl wM wMp : V} (hwn : IsSemiterm LAct 0 wn) (hwk : IsSemiterm LAct 0 wk) (hwv : IsSemiterm LAct 0 wv) (hwvp : IsSemiterm LAct 0 wvp) (hwt : IsSemiterm LAct 0 wt) (hwl : IsSemiterm LAct 0 wl) (hwM : IsSemiterm LAct 0 wM) (hwMp : IsSemiterm LAct 0 wMp) :
-    row_termLenVecAdj_as.map (instOuter LAct [wn, wk, wv, wvp, wt, wl, wM, wMp]) = [tPiFact wn wt, utvPiFact wk wv, tlenFact wl wt, tlvFact wM wk wv, adjFact wvp wt wv, adjFact wMp wl wM] ∧
+    row_termLenVecAdj_as.map (instOuter LAct [wn, wk, wv, wvp, wt, wl, wM, wMp]) = [tPiFact wn wt, utvPiFact wk wv, termLenMetaFact wl wt, tlvFact wM wk wv, adjFact wvp wt wv, adjFact wMp wl wM] ∧
     instOuter LAct [wn, wk, wv, wvp, wt, wl, wM, wMp] row_termLenVecAdj_c = tlvFact wMp (wk ^+ (𝟏 : V)) wvp := by
   have hes : ∀ e ∈ ([wn, wk, wv, wvp, wt, wl, wM, wMp] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwn, List.forall_mem_cons.mpr ⟨hwk, List.forall_mem_cons.mpr ⟨hwv, List.forall_mem_cons.mpr ⟨hwvp, List.forall_mem_cons.mpr ⟨hwt, List.forall_mem_cons.mpr ⟨hwl, List.forall_mem_cons.mpr ⟨hwM, List.forall_mem_cons.mpr ⟨hwMp, List.forall_mem_nil _⟩⟩⟩⟩⟩⟩⟩⟩)
   unfold row_termLenVecAdj_as row_termLenVecAdj_c
@@ -2187,7 +2187,7 @@ lemma isSemiformula_termLenFuncCert_c : IsSemiformula LAct ((7 : ℕ) : V) row_t
 
 /-- `termLenFuncCert` at the witnesses `[wk, wf, wv, wt, wM, ws, wl]` (the DSL variables right-to-left). -/
 lemma inst_termLenFuncCert {wk wf wv wt wM ws wl : V} (hwk : IsSemiterm LAct 0 wk) (hwf : IsSemiterm LAct 0 wf) (hwv : IsSemiterm LAct 0 wv) (hwt : IsSemiterm LAct 0 wt) (hwM : IsSemiterm LAct 0 wM) (hws : IsSemiterm LAct 0 ws) (hwl : IsSemiterm LAct 0 wl) :
-    row_termLenFuncCert_as.map (instOuter LAct [wk, wf, wv, wt, wM, ws, wl]) = [isFuncFact wk wf, utvPiFact wk wv, funcFact wt wk wf wv, tlvFact wM wk wv, listSumFact ws wM, tlenFact wl wt] ∧
+    row_termLenFuncCert_as.map (instOuter LAct [wk, wf, wv, wt, wM, ws, wl]) = [isFuncFact wk wf, utvPiFact wk wv, funcFact wt wk wf wv, tlvFact wM wk wv, listSumFact ws wM, termLenMetaFact wl wt] ∧
     instOuter LAct [wk, wf, wv, wt, wM, ws, wl] row_termLenFuncCert_c = eqFactB wl (ws ^+ (𝟏 : V)) := by
   have hes : ∀ e ∈ ([wk, wf, wv, wt, wM, ws, wl] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hwk, List.forall_mem_cons.mpr ⟨hwf, List.forall_mem_cons.mpr ⟨hwv, List.forall_mem_cons.mpr ⟨hwt, List.forall_mem_cons.mpr ⟨hwM, List.forall_mem_cons.mpr ⟨hws, List.forall_mem_cons.mpr ⟨hwl, List.forall_mem_nil _⟩⟩⟩⟩⟩⟩⟩)
   unfold row_termLenFuncCert_as row_termLenFuncCert_c
@@ -3627,28 +3627,28 @@ lemma inst_fsetSigmaPiC {ws : V} (hws : IsSemiterm LAct 0 ws) :
   all_goals try row_entries_simpB
   row_finish
 
-/-! ### `setLenTotalC` — `“s. …”`, `m = 1` -/
+/-! ### `sequentLenTotalC` — `“s. …”`, `m = 1` -/
 
-noncomputable def row_setLenTotalC_as : List V := []
-noncomputable def row_setLenTotalC_body : V := subst LAct (listToVec [bv 0, bv 1]) PsetLen
-noncomputable def row_setLenTotalC_R : V := row_setLenTotalC_body
-noncomputable def row_setLenTotalC_c : V := ^∃ row_setLenTotalC_R
+noncomputable def row_sequentLenTotalC_as : List V := []
+noncomputable def row_sequentLenTotalC_body : V := subst LAct (listToVec [bv 0, bv 1]) PsetLen
+noncomputable def row_sequentLenTotalC_R : V := row_sequentLenTotalC_body
+noncomputable def row_sequentLenTotalC_c : V := ^∃ row_sequentLenTotalC_R
 
-theorem quote_row_setLenTotalC : (⌜Semiformula.lMap emb setLenTotalCB⌝ : V) = impChain LAct row_setLenTotalC_as row_setLenTotalC_c := by
-  unfold setLenTotalCB row_setLenTotalC_as row_setLenTotalC_c row_setLenTotalC_R row_setLenTotalC_body PsetLen
+theorem quote_row_sequentLenTotalC : (⌜Semiformula.lMap emb sequentLenTotalCB⌝ : V) = impChain LAct row_sequentLenTotalC_as row_sequentLenTotalC_c := by
+  unfold sequentLenTotalCB row_sequentLenTotalC_as row_sequentLenTotalC_c row_sequentLenTotalC_R row_sequentLenTotalC_body PsetLen
   all_goals row_shapeB
 
-lemma isSemiformula_setLenTotalC_R : IsSemiformula LAct ((2 : ℕ) : V) row_setLenTotalC_R := by
-  unfold row_setLenTotalC_R row_setLenTotalC_body
+lemma isSemiformula_sequentLenTotalC_R : IsSemiformula LAct ((2 : ℕ) : V) row_sequentLenTotalC_R := by
+  unfold row_sequentLenTotalC_R row_sequentLenTotalC_body
   exact isSemiformula_substRow isSemiformula_PsetLen _ (by rfl) (by row_entriesB)
-lemma row_setLenTotalC_R_eq : (row_setLenTotalC_R : V) = exsIter 0 row_setLenTotalC_body := rfl
+lemma row_sequentLenTotalC_R_eq : (row_sequentLenTotalC_R : V) = exsIter 0 row_sequentLenTotalC_body := rfl
 
-/-- `setLenTotalC` at the witnesses `[ws]` (the DSL variables right-to-left). -/
-lemma inst_setLenTotalC {ws : V} (hws : IsSemiterm LAct 0 ws) :
-    row_setLenTotalC_as.map (instOuter LAct [ws]) = [] ∧
-    freeIter LAct 1 (instOuterAt LAct 1 [ws] row_setLenTotalC_body) = setLenFact (^&((0 : ℕ) : V)) (termShift LAct ws) := by
+/-- `sequentLenTotalC` at the witnesses `[ws]` (the DSL variables right-to-left). -/
+lemma inst_sequentLenTotalC {ws : V} (hws : IsSemiterm LAct 0 ws) :
+    row_sequentLenTotalC_as.map (instOuter LAct [ws]) = [] ∧
+    freeIter LAct 1 (instOuterAt LAct 1 [ws] row_sequentLenTotalC_body) = sequentLenFact (^&((0 : ℕ) : V)) (termShift LAct ws) := by
   have hes : ∀ e ∈ ([ws] : List V), IsSemiterm LAct 0 e := (List.forall_mem_cons.mpr ⟨hws, List.forall_mem_nil _⟩)
-  unfold row_setLenTotalC_as row_setLenTotalC_body
+  unfold row_sequentLenTotalC_as row_sequentLenTotalC_body
   simp only [List.map_cons, List.map_nil]
   refine ⟨by ((try row_entries_simpB); row_finish), ?_⟩
   · rw [instOuterAt_subst_listToVec 1 _ isSemiformula_PsetLen (by rfl) _ hes (by row_entriesB)]

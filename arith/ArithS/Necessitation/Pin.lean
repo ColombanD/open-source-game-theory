@@ -1,25 +1,25 @@
 import ArithS.Necessitation.NumIdRows
 import ArithS.Necessitation.NumId
-import ArithS.Necessitation.BnumSteps
+import ArithS.Necessitation.BinNumeralSteps
 
 /-!
 # ArithS.Necessitation.Pin — towards `PinKit χ` (`DESIGN_fragments.md` §7.1 steps 1–4 / §7.2)
 
 `Top.lean` §3 states the pinning kit: from the root layout of `x = instB ⌜χ⌝ k` at `&(i+2)`, a list `P`
-leaving `instBFact (^&(i + 2 + shiftsV P)) (qNum χ) (bnum k)` in its final context, with `qNum χ =
+leaving `instBFact (^&(i + 2 + shiftsV P)) (qNum χ) (binNumeral k)` in its final context, with `qNum χ =
 numeral ⌜χ⌝` — the ONE place the closed code `⌜χ⌝` enters the object proof. This file delivers the
 pieces that exist:
 
 * §0 `NumIdTable` — the pin's table (`numIdRows := proRows ++ numIdExtraRows`, `NumIdRows.lean`):
-  the prologue table plus the six rows `instBIntro`, `congSubstArg`, `bnumZeroCert`, `bnumOneCert`,
-  `bnumEvenCert`, `bnumOddOfEven`; the readings `NumIdTable.<row>` that discharge the generated
+  the prologue table plus the six rows `instBIntro`, `congSubstArg`, `binNumeralZeroCert`, `binNumeralOneCert`,
+  `binNumeralEvenCert`, `binNumeralOddOfEven`; the readings `NumIdTable.<row>` that discharge the generated
   `nok_<row>` hypotheses; `exists_numIdTable`.
 * §1 the pin KERNEL `pinKernel_ok`: from `substFact &x &v &y` (the certified substitution), `eqFact &y
-  (numeral c)` (`NumId`), `bnumFact &t (bnum k)` and `adjFact &v &t 𝟎` (the vector `bnum k ∷ 0`) in the
+  (numeral c)` (`NumId`), `binNumeralFact &t (binNumeral k)` and `adjFact &v &t 𝟎` (the vector `binNumeral k ∷ 0`) in the
   context, the two-step shift-free list `congSubstArg ∷ instBIntro` leaves `instBFact &x (numeral c)
-  (bnum k)` — `c` a VARIABLE code, instantiated at `⌜χ⌝` by the assembly.
-* §2 the assembly `pin_assembly`: from the root layout and TWO producer ORACLES (`BnumOracle` — the
-  bit-wise certification of `bnum k`; `SubstOracle` — `certSubst` for `bnum k ∷ 0` re-indexed), the list
+  (binNumeral k)` — `c` a VARIABLE code, instantiated at `⌜χ⌝` by the assembly.
+* §2 the assembly `pin_assembly`: from the root layout and TWO producer ORACLES (`BinNumeralOracle` — the
+  bit-wise certification of `binNumeral k`; `SubstOracle` — `certSubst` for `binNumeral k ∷ 0` re-indexed), the list
   `describeF ⌜χ⌝ ++ vector walk ++ Pb ++ numId ++ Ps ++ kernel` with every `pin` conjunct of `PinKit χ`
   EXCEPT the cost, for an explicit standard `Cχ`.
 * §3 the status: what remains for `PinKit.pin`, and why `PinKit.cost` as stated cannot be met.
@@ -103,49 +103,49 @@ lemma NumIdTable.congSubstArg {tbl : V} (h : NumIdTable tbl) :
   rw [impChainV_vecOf, this.2.2]
   exact quote_row_congSubstArg
 
-lemma NumIdTable.bnumZeroCert {tbl : V} (h : NumIdTable tbl) :
-    ((nIdx_bnumZeroCert : ℕ) : V) < len tbl ∧
-    rowM tbl.[((nIdx_bnumZeroCert : ℕ) : V)] = ((1 : ℕ) : V) ∧
-    rowB tbl.[((nIdx_bnumZeroCert : ℕ) : V)] = impChainV LAct (vecOf row_bnumZeroCert_as) row_bnumZeroCert_c := by
+lemma NumIdTable.binNumeralZeroCert {tbl : V} (h : NumIdTable tbl) :
+    ((nIdx_binNumeralZeroCert : ℕ) : V) < len tbl ∧
+    rowM tbl.[((nIdx_binNumeralZeroCert : ℕ) : V)] = ((1 : ℕ) : V) ∧
+    rowB tbl.[((nIdx_binNumeralZeroCert : ℕ) : V)] = impChainV LAct (vecOf row_binNumeralZeroCert_as) row_binNumeralZeroCert_c := by
   have := h.extra 2 (by decide)
-  have e : ((nIdx_bnumZeroCert : ℕ) : V) = ((proRowCount + 2 : ℕ) : V) := rfl
+  have e : ((nIdx_binNumeralZeroCert : ℕ) : V) = ((proRowCount + 2 : ℕ) : V) := rfl
   rw [e]
   refine ⟨this.1, this.2.1, ?_⟩
   rw [impChainV_vecOf, this.2.2]
-  exact quote_row_bnumZeroCert
+  exact quote_row_binNumeralZeroCert
 
-lemma NumIdTable.bnumOneCert {tbl : V} (h : NumIdTable tbl) :
-    ((nIdx_bnumOneCert : ℕ) : V) < len tbl ∧
-    rowM tbl.[((nIdx_bnumOneCert : ℕ) : V)] = ((1 : ℕ) : V) ∧
-    rowB tbl.[((nIdx_bnumOneCert : ℕ) : V)] = impChainV LAct (vecOf row_bnumOneCert_as) row_bnumOneCert_c := by
+lemma NumIdTable.binNumeralOneCert {tbl : V} (h : NumIdTable tbl) :
+    ((nIdx_binNumeralOneCert : ℕ) : V) < len tbl ∧
+    rowM tbl.[((nIdx_binNumeralOneCert : ℕ) : V)] = ((1 : ℕ) : V) ∧
+    rowB tbl.[((nIdx_binNumeralOneCert : ℕ) : V)] = impChainV LAct (vecOf row_binNumeralOneCert_as) row_binNumeralOneCert_c := by
   have := h.extra 3 (by decide)
-  have e : ((nIdx_bnumOneCert : ℕ) : V) = ((proRowCount + 3 : ℕ) : V) := rfl
+  have e : ((nIdx_binNumeralOneCert : ℕ) : V) = ((proRowCount + 3 : ℕ) : V) := rfl
   rw [e]
   refine ⟨this.1, this.2.1, ?_⟩
   rw [impChainV_vecOf, this.2.2]
-  exact quote_row_bnumOneCert
+  exact quote_row_binNumeralOneCert
 
-lemma NumIdTable.bnumEvenCert {tbl : V} (h : NumIdTable tbl) :
-    ((nIdx_bnumEvenCert : ℕ) : V) < len tbl ∧
-    rowM tbl.[((nIdx_bnumEvenCert : ℕ) : V)] = ((9 : ℕ) : V) ∧
-    rowB tbl.[((nIdx_bnumEvenCert : ℕ) : V)] = impChainV LAct (vecOf row_bnumEvenCert_as) row_bnumEvenCert_c := by
+lemma NumIdTable.binNumeralEvenCert {tbl : V} (h : NumIdTable tbl) :
+    ((nIdx_binNumeralEvenCert : ℕ) : V) < len tbl ∧
+    rowM tbl.[((nIdx_binNumeralEvenCert : ℕ) : V)] = ((9 : ℕ) : V) ∧
+    rowB tbl.[((nIdx_binNumeralEvenCert : ℕ) : V)] = impChainV LAct (vecOf row_binNumeralEvenCert_as) row_binNumeralEvenCert_c := by
   have := h.extra 4 (by decide)
-  have e : ((nIdx_bnumEvenCert : ℕ) : V) = ((proRowCount + 4 : ℕ) : V) := rfl
+  have e : ((nIdx_binNumeralEvenCert : ℕ) : V) = ((proRowCount + 4 : ℕ) : V) := rfl
   rw [e]
   refine ⟨this.1, this.2.1, ?_⟩
   rw [impChainV_vecOf, this.2.2]
-  exact quote_row_bnumEvenCert
+  exact quote_row_binNumeralEvenCert
 
-lemma NumIdTable.bnumOddOfEven {tbl : V} (h : NumIdTable tbl) :
-    ((nIdx_bnumOddOfEven : ℕ) : V) < len tbl ∧
-    rowM tbl.[((nIdx_bnumOddOfEven : ℕ) : V)] = ((6 : ℕ) : V) ∧
-    rowB tbl.[((nIdx_bnumOddOfEven : ℕ) : V)] = impChainV LAct (vecOf row_bnumOddOfEven_as) row_bnumOddOfEven_c := by
+lemma NumIdTable.binNumeralOddOfEven {tbl : V} (h : NumIdTable tbl) :
+    ((nIdx_binNumeralOddOfEven : ℕ) : V) < len tbl ∧
+    rowM tbl.[((nIdx_binNumeralOddOfEven : ℕ) : V)] = ((6 : ℕ) : V) ∧
+    rowB tbl.[((nIdx_binNumeralOddOfEven : ℕ) : V)] = impChainV LAct (vecOf row_binNumeralOddOfEven_as) row_binNumeralOddOfEven_c := by
   have := h.extra 5 (by decide)
-  have e : ((nIdx_bnumOddOfEven : ℕ) : V) = ((proRowCount + 5 : ℕ) : V) := rfl
+  have e : ((nIdx_binNumeralOddOfEven : ℕ) : V) = ((proRowCount + 5 : ℕ) : V) := rfl
   rw [e]
   refine ⟨this.1, this.2.1, ?_⟩
   rw [impChainV_vecOf, this.2.2]
-  exact quote_row_bnumOddOfEven
+  exact quote_row_binNumeralOddOfEven
 
 /-- **A sound pin table exists in every model**, with one standard length bound. -/
 theorem exists_numIdTable : ∃ N : ℕ, ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁],
@@ -169,27 +169,27 @@ section kernel
 /-- The two kernel steps. -/
 noncomputable def pinKernelSteps (W x y v t c k : V) : V :=
   ?[mkStep W ((nIdx_congSubstArg : ℕ) : V) ?[^&x, ^&v, ^&y, numeral c],
-    mkStep W ((nIdx_instBIntro : ℕ) : V) ?[numeral c, bnum k, ^&t, ^&v, ^&x]]
+    mkStep W ((nIdx_instBIntro : ℕ) : V) ?[numeral c, binNumeral k, ^&t, ^&v, ^&x]]
 
 /-- **The pin kernel.** In a context holding `substFact &x &v &y` (the certified substitution
-`&x = subst &v &y`), `eqFact &y (numeral c)` (the numeral identification of the source), `bnumFact &t
-(bnum k)` (the certified binary numeral) and `adjFact &v &t 𝟎` (the substitution vector), the two Horn
-steps `congSubstArg [numeral c, &y, &v, &x]` and `instBIntro [numeral c, bnum k, &t, &v, &x]` are
-applicable at cap `9`, shift-free, and leave `instBFact &x (numeral c) (bnum k)`. -/
+`&x = subst &v &y`), `eqFact &y (numeral c)` (the numeral identification of the source), `binNumeralFact &t
+(binNumeral k)` (the certified binary numeral) and `adjFact &v &t 𝟎` (the substitution vector), the two Horn
+steps `congSubstArg [numeral c, &y, &v, &x]` and `instBIntro [numeral c, binNumeral k, &t, &v, &x]` are
+applicable at cap `9`, shift-free, and leave `instBFact &x (numeral c) (binNumeral k)`. -/
 theorem pinKernel_ok {tbl N E Γ W x y v t c k : V} (htbl : TableOK tbl N) (hT : NumIdTable tbl)
     (hWp : W = numIdPieces) (hΓ : IsFormulaSet LAct Γ)
     (hEx : x + 1 ≤ E) (hEy : y + 1 ≤ E) (hEv : v + 1 ≤ E) (hEt : t + 1 ≤ E)
-    (hEc : 2 * c + 1 ≤ E) (hEk : termLen LAct (bnum k) ≤ E)
+    (hEc : 2 * c + 1 ≤ E) (hEk : termLen LAct (binNumeral k) ≤ E)
     (hs : neg LAct (substFact (^&x) (^&v) (^&y)) ∈ Γ) (hy : neg LAct (eqFact (^&y) (numeral c)) ∈ Γ)
-    (hb : neg LAct (bnumFact (^&t) (bnum k)) ∈ Γ) (ha : neg LAct (adjFact (^&v) (^&t) (𝟎 : V)) ∈ Γ) :
+    (hb : neg LAct (binNumeralFact (^&t) (binNumeral k)) ∈ Γ) (ha : neg LAct (adjFact (^&v) (^&t) (𝟎 : V)) ∈ Γ) :
     ListOK tbl E ((9 : ℕ) : V) Γ (pinKernelSteps W x y v t c k) ∧ NoDrop' (pinKernelSteps W x y v t c k) ∧
     shiftsV (pinKernelSteps W x y v t c k) = 0 ∧ len (pinKernelSteps W x y v t c k) = 2 ∧
     SizeOK 0 0 (pinKernelSteps W x y v t c k) ∧
-    neg LAct (instBFact (^&x) (numeral c) (bnum k)) ∈ finalCtx Γ (pinKernelSteps W x y v t c k) := by
+    neg LAct (instBFact (^&x) (numeral c) (binNumeral k)) ∈ finalCtx Γ (pinKernelSteps W x y v t c k) := by
   unfold pinKernelSteps
   have hnc : IsSemiterm LAct 0 (numeral c) := isSemiterm_numeral_LAct c
   have hEnc : termLen LAct (numeral c) ≤ E := termLen_numeral_le' hEc
-  have hbk : IsSemiterm LAct 0 (bnum k) := bnum_term_LAct k
+  have hbk : IsSemiterm LAct 0 (binNumeral k) := binNumeral_term_LAct k
   obtain ⟨hr1, hr2, hr3⟩ := hT.congSubstArg
   obtain ⟨hi1, hi2, hi3⟩ := hT.instBIntro
   obtain ⟨ok1, tag1, ctx1⟩ := nok_congSubstArg htbl hWp hr1 ⟨hr2, hr3⟩ hΓ (by simp) (termLen_fvar_le hEx)
@@ -215,17 +215,17 @@ end kernel
 
 /-! ## 2. The assembly: `PinKit.pin` from two producer ORACLES
 
-The pin's list is `describeF ⌜χ⌝ ++ (vector walk of bnum k ∷ 0) ++ Pb ++ numId ++ Ps ++ kernel`. Two
+The pin's list is `describeF ⌜χ⌝ ++ (vector walk of binNumeral k ∷ 0) ++ Pb ++ numId ++ Ps ++ kernel`. Two
 producers do not exist yet and enter as ORACLES, stated exactly at the interface their producers will
 have (`DESIGN_fragments.md` §7.1 step 1 / `Cert.certSubst_ok` re-indexed through `reidxL`):
 
-* `BnumOracle` — the certification of the binary numeral along the bits of `k` (rows
-  `bnumZeroCert`/`bnumOneCert`/`bnumEvenCert`/`bnumOddOfEven`, now in the table): from the term dossier of
-  `bnum k` at `&j`, a cut-admitting list of `≤ Cb·(‖k‖+1)` eigenvariables leaving `bnumFact &(j+σ) (bnum k)`.
-* `SubstOracle` — `certSubst` for the vector `bnum k ∷ 0` and the source `⌜χ⌝`, re-indexed: from the three
+* `BinNumeralOracle` — the certification of the binary numeral along the bits of `k` (rows
+  `binNumeralZeroCert`/`binNumeralOneCert`/`binNumeralEvenCert`/`binNumeralOddOfEven`, now in the table): from the term dossier of
+  `binNumeral k` at `&j`, a cut-admitting list of `≤ Cb·(‖k‖+1)` eigenvariables leaving `binNumeralFact &(j+σ) (binNumeral k)`.
+* `SubstOracle` — `certSubst` for the vector `binNumeral k ∷ 0` and the source `⌜χ⌝`, re-indexed: from the three
   dossiers (source at `&y`, image `instB ⌜χ⌝ k` at `&x`, vector at `&iw`) a list leaving `substFact &(x+σ)
   &(iw+σ) &(y+σ)`. `certSubst_ok` delivers it under `SubFPre` and the `qWalkP` length bound; discharging
-  those for THIS vector (its `Q` is `≥ |bnum k|`) is the remaining `Cert`-side work.
+  those for THIS vector (its `Q` is `≥ |binNumeral k|`) is the remaining `Cert`-side work.
 
 Given the two, `pin_assembly` proves the `pin` conjuncts of `PinKit χ` EXCEPT the cost — see §3.
 -/
@@ -233,15 +233,15 @@ Given the two, `pin_assembly` proves the `pin` conjuncts of `PinKit χ` EXCEPT t
 section assembly
 
 /-- The binary-numeral certification oracle (§7.1 step 1). -/
-def BnumOracle (tbl E k : V) (Cb : ℕ) : Prop :=
-  ∀ {Γ j : V}, IsFormulaSet LAct Γ → DossT walkPieces Γ 0 (bnum k) j → (Cb : V) * (‖k‖ + j + 1) ≤ E →
+def BinNumeralOracle (tbl E k : V) (Cb : ℕ) : Prop :=
+  ∀ {Γ j : V}, IsFormulaSet LAct Γ → DossT walkPieces Γ 0 (binNumeral k) j → (Cb : V) * (‖k‖ + j + 1) ≤ E →
     ∃ Pb : V, ListOK tbl E ((9 : ℕ) : V) Γ Pb ∧ NoDrop' Pb ∧ shiftsV Pb ≤ (Cb : V) * (‖k‖ + 1) ∧
-      neg LAct (bnumFact (^&(j + shiftsV Pb)) (bnum k)) ∈ finalCtx Γ Pb
+      neg LAct (binNumeralFact (^&(j + shiftsV Pb)) (binNumeral k)) ∈ finalCtx Γ Pb
 
-/-- The certified-substitution oracle (`certSubst` re-indexed, for `w = bnum k ∷ 0` and the source `⌜χ⌝`). -/
+/-- The certified-substitution oracle (`certSubst` re-indexed, for `w = binNumeral k ∷ 0` and the source `⌜χ⌝`). -/
 def SubstOracle (tbl E : V) (χ : Semisentence LAct 1) (k : V) (Cs : ℕ) : Prop :=
   ∀ {Γ y x iw : V}, IsFormulaSet LAct Γ → DossF walkPieces Γ 1 (⌜χ⌝ : V) y →
-    DossF walkPieces Γ 0 (instB (⌜χ⌝ : V) k) x → DossV walkPieces Γ 0 1 (bnum k ∷ 0) 1 iw →
+    DossF walkPieces Γ 0 (instB (⌜χ⌝ : V) k) x → DossV walkPieces Γ 0 1 (binNumeral k ∷ 0) 1 iw →
     (Cs : V) * (‖k‖ + x + y + iw + 1) ≤ E →
     ∃ Ps : V, ListOK tbl E ((9 : ℕ) : V) Γ Ps ∧ NoDrop' Ps ∧ shiftsV Ps ≤ (Cs : V) * (‖k‖ + 1) ∧
       neg LAct (substFact (^&(x + shiftsV Ps)) (^&(iw + shiftsV Ps)) (^&(y + shiftsV Ps))) ∈ finalCtx Γ Ps
@@ -264,8 +264,8 @@ lemma shiftIterV_fact2 {P a b : V} (hP : IsSemiformula LAct ((2 : ℕ) : V) P) (
         List.forall_mem_cons.mpr ⟨isSemiterm_termShiftIterV hb c, List.forall_mem_nil _⟩⟩)]
     simp only [List.map_cons, List.map_nil, termShiftIterV_succ]
 
-lemma shiftIterV_bnumFact {t k : V} (ht : IsSemiterm LAct 0 t) (hk : IsSemiterm LAct 0 k) (c : V) :
-    shiftIterV (bnumFact t k) c = bnumFact (termShiftIterV t c) (termShiftIterV k c) :=
+lemma shiftIterV_binNumeralFact {t k : V} (ht : IsSemiterm LAct 0 t) (hk : IsSemiterm LAct 0 k) (c : V) :
+    shiftIterV (binNumeralFact t k) c = binNumeralFact (termShiftIterV t c) (termShiftIterV k c) :=
   shiftIterV_fact2 isSemiformula_Pbnum shift_Pbnum ht hk c
 
 lemma termShiftIterV_numeral (x : V) : ∀ c : V, termShiftIterV (numeral x) c = numeral x := by
@@ -275,11 +275,11 @@ lemma termShiftIterV_numeral (x : V) : ∀ c : V, termShiftIterV (numeral x) c =
   | zero => simp
   | succ c ih => rw [termShiftIterV_succ, ih, termShift_numeral_LAct]
 
-lemma transport_bnum {Γ S t k : V} (hS : NoDrop' S) (h : neg LAct (bnumFact (^&t) (bnum k)) ∈ Γ) :
-    neg LAct (bnumFact (^&(t + shiftsV S)) (bnum k)) ∈ finalCtx Γ S := by
+lemma transport_binNumeral {Γ S t k : V} (hS : NoDrop' S) (h : neg LAct (binNumeralFact (^&t) (binNumeral k)) ∈ Γ) :
+    neg LAct (binNumeralFact (^&(t + shiftsV S)) (binNumeral k)) ∈ finalCtx Γ S := by
   have := mem_finalCtx_of_mem' hS h
-  rwa [shiftIterV_neg (isFormula_bnumFact (by simp) (bnum_term_LAct k)), shiftIterV_bnumFact (by simp) (bnum_term_LAct k),
-    termShiftIterV_fvar, termShiftIterV_bnum] at this
+  rwa [shiftIterV_neg (isFormula_binNumeralFact (by simp) (binNumeral_term_LAct k)), shiftIterV_binNumeralFact (by simp) (binNumeral_term_LAct k),
+    termShiftIterV_fvar, termShiftIterV_binNumeral] at this
 
 lemma transport_adj {Γ S v t : V} (hS : NoDrop' S) (h : neg LAct (adjFact (^&v) (^&t) (𝟎 : V)) ∈ Γ) :
     neg LAct (adjFact (^&(v + shiftsV S)) (^&(t + shiftsV S)) (𝟎 : V)) ∈ finalCtx Γ S := by
@@ -330,13 +330,13 @@ lemma cap_master' {A Cχ : ℕ} {k i E z : V} (hA1 : 1 ≤ A) (hA : A ≤ Cχ) (
 set_option maxHeartbeats 2000000 in
 /-- **The assembly.** Given the two oracles, the `pin` conjuncts of `PinKit χ` except the cost: from the
 root layout of `instB ⌜χ⌝ k` at `&i`, a list `P` applicable at cap `9`, cut-admitting, with
-`shiftsV P ≤ Cχ·(‖k‖+1)`, leaving `instBFact &(i + 2 + shiftsV P) (qNum χ) (bnum k)`. -/
+`shiftsV P ≤ Cχ·(‖k‖+1)`, leaving `instBFact &(i + 2 + shiftsV P) (qNum χ) (binNumeral k)`. -/
 theorem pin_assembly (χ : Semisentence LAct 1) (Cb Cs : ℕ) :
     ∃ Cχ : ℕ, ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] {tbl N E Γ i k : V},
       TableOK tbl N → NumIdTable tbl → IsFormulaSet LAct Γ → RootLayout Γ (instB (⌜χ⌝ : V) k) i →
-      BnumOracle tbl E k Cb → SubstOracle tbl E χ k Cs → (Cχ : V) * (‖k‖ + i + 1) ≤ E →
+      BinNumeralOracle tbl E k Cb → SubstOracle tbl E χ k Cs → (Cχ : V) * (‖k‖ + i + 1) ≤ E →
       ∃ P : V, ListOK tbl E ((9 : ℕ) : V) Γ P ∧ NoDrop' P ∧ shiftsV P ≤ (Cχ : V) * (‖k‖ + 1) ∧
-        neg LAct (instBFact (^&(i + 2 + shiftsV P)) (qNum χ) (bnum k)) ∈ finalCtx Γ P := by
+        neg LAct (instBFact (^&(i + 2 + shiftsV P)) (qNum χ) (binNumeral k)) ∈ finalCtx Γ P := by
   obtain ⟨Cn, hCn⟩ := numId_sentence χ
   obtain ⟨fχ, hfχ⟩ : ∃ f : ℕ, f = flN (⌜χ⌝ : ℕ) := ⟨_, rfl⟩
   obtain ⟨qχ, hqχ⟩ : ∃ q : ℕ, q = (⌜χ⌝ : ℕ) := ⟨_, rfl⟩
@@ -351,7 +351,7 @@ theorem pin_assembly (χ : Semisentence LAct 1) (Cb Cs : ℕ) :
     rw [hfχ, ← Sentence.coe_quote_eq_quote (V := V) χ, flN_cast]
   have hqV : ((qχ : ℕ) : V) = ⌜χ⌝ := by rw [hqχ]; exact Sentence.coe_quote_eq_quote χ
   have hr : IsSemiformula LAct (1 : V) (⌜χ⌝ : V) := Sentence.quote_isSemiformul₁ χ
-  have hlenk : termLen LAct (bnum k) ≤ 6 * ‖k‖ + 1 := termLen_bnum_le_bk le_rfl
+  have hlenk : termLen LAct (binNumeral k) ≤ 6 * ‖k‖ + 1 := termLen_binNumeral_le_bk le_rfl
   have hAC : A ≤ Cχ := by rw [hCχ]; exact Nat.le_mul_of_pos_right A (by omega)
   have hACs : A + Cs ≤ Cχ := by
     rw [hCχ]
@@ -376,19 +376,19 @@ theorem pin_assembly (χ : Semisentence LAct 1) (Cb Cs : ℕ) :
   have hDχ₁ : DossF walkPieces Γ₁ 1 (⌜χ⌝ : V) 0 := dossF_of_walk nd₁
   have hR₁ : RootLayout Γ₁ (instB (⌜χ⌝ : V) k) (i + cχ) := by
     have := hR.transport nd₁.noDrop'; rwa [sh₁] at this
-  -- ===== block 2: the vector walk of w = bnum k ∷ 0
-  set w : V := bnum k ∷ 0 with hwdef
+  -- ===== block 2: the vector walk of w = binNumeral k ∷ 0
+  set w : V := binNumeral k ∷ 0 with hwdef
   have hw : IsSemitermVec LAct ((0 : V) + 1) (0 : V) w :=
-    IsSemitermVec.adjoin (IsSemitermVec.nil (L := LAct) (0 : V)) (bnum_term_LAct k)
+    IsSemitermVec.adjoin (IsSemitermVec.nil (L := LAct) (0 : V)) (binNumeral_term_LAct k)
   have hw' : IsSemitermVec LAct (1 : V) (0 : V) w := by rwa [zero_add] at hw
-  have hlenw : listSum (termLenVec LAct 1 w) = termLen LAct (bnum k) := by
+  have hlenw : listSum (termLenVec LAct 1 w) = termLen LAct (binNumeral k) := by
     rw [hwdef, show (1 : V) = 0 + 1 by rw [zero_add],
-      termLenVec_cons (bnum_term_LAct k).isUTerm (IsSemitermVec.nil (L := LAct) (0 : V)).isUTerm, termLenVec_nil,
+      termLenVec_cons (binNumeral_term_LAct k).isUTerm (IsSemitermVec.nil (L := LAct) (0 : V)).isUTerm, termLenVec_nil,
       listSum_adjoin, listSum_nil, add_zero]
   have cap2 : 2 * (0 : V) + 2 * listSum (termLenVec LAct 1 w) + 8 ≤ E := by
     rw [hlenw]
     refine cap_master' (A := A) (by omega) hAC hE ?_
-    calc 2 * (0 : V) + 2 * termLen LAct (bnum k) + 8 ≤ 2 * 0 + 2 * (6 * ‖k‖ + 1) + 8 :=
+    calc 2 * (0 : V) + 2 * termLen LAct (binNumeral k) + 8 ≤ 2 * 0 + 2 * (6 * ‖k‖ + 1) + 8 :=
           add_le_add (add_le_add (le_refl _) (mul_le_mul_of_nonneg_left hlenk (by simp))) (le_refl _)
       _ = 12 * ‖k‖ + 10 := by ring
       _ ≤ 12 * ‖k‖ + 12 := add_le_add (le_refl _) (by norm_num)
@@ -396,10 +396,10 @@ theorem pin_assembly (χ : Semisentence LAct 1) (Cb Cs : ℕ) :
       _ ≤ (A : V) * (‖k‖ + 1) := lin_mono (by omega) (le_refl _)
       _ ≤ (A : V) * (‖k‖ + 1) + i := le_self_add
   have ih : ∀ m < (1 : V), TermOK tbl walkPieces 0 w.[m] := fun m hm ↦ termOK_of_isSemiterm htbl hW rfl 0 _ (hw'.nth hm)
-  obtain ⟨_, hcnt₂, hVF⟩ := descVecAux_ok htbl hW rfl (by norm_num : (1 : V) ≤ 2) hw' ih cap2 1 le_rfl
+  obtain ⟨_, hcnt₂, hVF⟩ := descriptionsAux_ok htbl hW rfl (by norm_num : (1 : V) ≤ 2) hw' ih cap2 1 le_rfl
   obtain ⟨ok₂, nd₂, sh₂, _⟩ := hVF Γ₁ hΓ₁
-  set S₂ := π₂ (descVecAux walkPieces 0 (descTVec walkPieces 0 1 w) 1) with hS₂
-  set cw := π₁ (descVecAux walkPieces 0 (descTVec walkPieces 0 1 w) 1) with hcw
+  set S₂ := π₂ (descriptionsAux walkPieces 0 (descTVec walkPieces 0 1 w) 1) with hS₂
+  set cw := π₁ (descriptionsAux walkPieces 0 (descTVec walkPieces 0 1 w) 1) with hcw
   set Γ₂ := finalCtx Γ₁ S₂ with hΓ₂def
   have hΓ₂ : IsFormulaSet LAct Γ₂ := finalCtx_isFormulaSet 8 htbl hΓ₁ ok₂
   have hlw : len w = 1 := by rw [hwdef, len_adjoin, len_nil, zero_add]
@@ -407,7 +407,7 @@ theorem pin_assembly (χ : Semisentence LAct 1) (Cb Cs : ℕ) :
     have htl : takeLast w 1 = w := by have := takeLast_len_self w; rwa [hlw] at this
     have h2 := hcnt₂
     rw [htl, hlenw] at h2
-    calc cw ≤ 2 * termLen LAct (bnum k) := h2
+    calc cw ≤ 2 * termLen LAct (binNumeral k) := h2
       _ ≤ 2 * (6 * ‖k‖ + 1) := mul_le_mul_of_nonneg_left hlenk (by simp)
       _ = 12 * ‖k‖ + 2 := by ring
       _ ≤ 14 * ‖k‖ + 14 := add_le_add (mul_le_mul_of_nonneg_right (by norm_num) (by simp)) (by norm_num)
@@ -417,7 +417,7 @@ theorem pin_assembly (χ : Semisentence LAct 1) (Cb Cs : ℕ) :
     have := dossF_transport' nd₂.noDrop' hDχ₁; rwa [sh₂, zero_add] at this
   have hR₂ : RootLayout Γ₂ (instB (⌜χ⌝ : V) k) (i + cχ + cw) := by
     have := hR₁.transport nd₂.noDrop'; rwa [sh₂] at this
-  -- the entry's dossier (the term `bnum k` at `&1`) and the adj fact `&0 = &1 ∷ 𝟎`
+  -- the entry's dossier (the term `binNumeral k` at `&1`) and the adj fact `&0 = &1 ∷ 𝟎`
   have hDw₂' : DossV walkPieces Γ₂ 0 1 w ((0 : V) + 1) 0 := by rw [zero_add]; exact hDw₂
   obtain ⟨ha₂, _, hDt₂, _⟩ := dossV_succ htbl hW rfl hw' (by rw [zero_add]) hDw₂'
   have e10 : (1 : V) - ((0 : V) + 1) = 0 := by rw [zero_add]; exact tsub_eq_zero_of_le (le_refl _)
@@ -482,7 +482,7 @@ theorem pin_assembly (χ : Semisentence LAct 1) (Cb Cs : ℕ) :
   set Γ₅ := finalCtx Γ₄ Ps with hΓ₅def
   have hΓ₅ : IsFormulaSet LAct Γ₅ := finalCtx_isFormulaSet 9 htbl hΓ₄ oks
   have hy₅ := transport_eq nds hy₄
-  have hb₅ := transport_bnum nds hbf₄
+  have hb₅ := transport_binNumeral nds hbf₄
   have ha₅ := transport_adj nds ha₄
   -- ===== block 6: the kernel
   set x := i + cχ + cw + σb + 2 + σs with hxdef
@@ -514,9 +514,9 @@ theorem pin_assembly (χ : Semisentence LAct 1) (Cb Cs : ℕ) :
     calc 2 * ((qχ : ℕ) : V) + 1 = ((2 * qχ + 1 : ℕ) : V) := by push_cast; ring
       _ ≤ (A : V) * (‖k‖ + 1) := lin_mono (by omega) (lin_const hu1)
       _ ≤ (A : V) * (‖k‖ + 1) + i := le_self_add
-  have hcapk : termLen LAct (bnum k) ≤ E := by
+  have hcapk : termLen LAct (binNumeral k) ≤ E := by
     refine cap_master' (A := A) (by omega) hAC hE ?_
-    calc termLen LAct (bnum k) ≤ 6 * ‖k‖ + 1 := hlenk
+    calc termLen LAct (binNumeral k) ≤ 6 * ‖k‖ + 1 := hlenk
       _ ≤ 6 * ‖k‖ + 6 := add_le_add (le_refl _) (by norm_num)
       _ = ((6 : ℕ) : V) * (‖k‖ + 1) := by push_cast; ring
       _ ≤ (A : V) * (‖k‖ + 1) := lin_mono (by omega) (le_refl _)
@@ -551,42 +551,42 @@ end assembly
 
 **`PinKit.pin` still needs** (each is exactly one oracle):
 
-1. `BnumOracle tbl E k Cb` — a `Σ₁` producer `bnumSteps k j` over the bits of `k` on the TERM dossier of
-   `bnum k` (DESIGN §7.1 step 1): per bit one `sLemma` `𝟏 ≤ bnum m` (`NumSteps.oneLe_proof`) and one Horn
-   step `bnumEvenCert`/`bnumOddOfEven` (both now in the table at cap `9`, `NumIdRows.lean`) reading the
+1. `BinNumeralOracle tbl E k Cb` — a `Σ₁` producer `binNumeralSteps k j` over the bits of `k` on the TERM dossier of
+   `binNumeral k` (DESIGN §7.1 step 1): per bit one `sLemma` `𝟏 ≤ binNumeral m` (`NumSteps.oneLe_proof`) and one Horn
+   step `binNumeralEvenCert`/`binNumeralOddOfEven` (both now in the table at cap `9`, `NumIdRows.lean`) reading the
    dossier's `funcFact`/`adjFact`s; the two occurrences of `𝟏` inside `𝟐 = 𝟏 ^+ 𝟏` are different
    eigenvariables and must first be identified (`eqOfFunc` at `𝟎`, then `congAdj`). A PR/`Fixpoint`
    construction with its `_ok` by binary induction — the `NumSteps`/`Cert` Part-5 template.
 2. `SubstOracle tbl E χ k Cs` — `Cert.certSubst_ok` (re-indexed by `Prologue.reidxL`) at
-   `w = bnum k ∷ 0`, `r = ⌜χ⌝`, `m = 0`, `n = 1`: its `SubFPre E Q …` needs `Q ≥ listSum (termLenVec …
-   (qVecIterV w e))` for every `e ≤ |χ|`, i.e. bounds on the iterated `qVec` of the vector (`3e + |bnum k|`),
+   `w = binNumeral k ∷ 0`, `r = ⌜χ⌝`, `m = 0`, `n = 1`: its `SubFPre E Q …` needs `Q ≥ listSum (termLenVec …
+   (qVecIterV w e))` for every `e ≤ |χ|`, i.e. bounds on the iterated `qVec` of the vector (`3e + |binNumeral k|`),
    and the `qWalkP` length bound `L`; both are elementary but not written. NOTE its shift count
-   `2·Q·|χ|` with `Q ≥ |bnum k| ≈ 6‖k‖` is `O(‖k‖)` (fits `shiftsV ≤ Cs·(‖k‖+1)`), but its LENGTH bound
+   `2·Q·|χ|` with `Q ≥ |binNumeral k| ≈ 6‖k‖` is `O(‖k‖)` (fits `shiftsV ≤ Cs·(‖k‖+1)`), but its LENGTH bound
    `sfK L Q · |χ|` is QUADRATIC in `‖k‖`.
 
 **`PinKit.cost` cannot be discharged from the generic cost lemmas** (`Frag1.costSum_le_of_sizeOK`,
 `Cert.costSum_certSubst_le`): they charge the context growth at `4·B·E` per step (`ctxAfter_len_le`), so a
 list of `L` steps costs `≳ L²·B·E`; with `L = Θ(‖k‖)` this is `‖k‖²·E`, while the kit allows only
 `Cχ·(‖k‖+1)·E` — for the same reason `VerifyKit.cost` needs more than the generic accounting. The stated
-bound IS plausible for the pin (the added facts have size `O(i + ‖k‖)`, not `B·E`, and `setLen Γ ≥ ‖k‖·i`
+bound IS plausible for the pin (the added facts have size `O(i + ‖k‖)`, not `B·E`, and `sequentLen Γ ≥ ‖k‖·i`
 since `Γ` holds the dossier of `instB ⌜χ⌝ k`), but that is a finer cost analysis (actual witness sizes,
-and a lower bound on `setLen Γ` from `RootLayout`) that no existing lemma provides. Either the kit's cost
-conjunct is weakened at the top (`Top.lean`, e.g. to `Cχ·(‖k‖+1)²·(setLen Γ + N + E + (‖k‖+1)²)`, which
+and a lower bound on `sequentLen Γ` from `RootLayout`) that no existing lemma provides. Either the kit's cost
+conjunct is weakened at the top (`Top.lean`, e.g. to `Cχ·(‖k‖+1)²·(sequentLen Γ + N + E + (‖k‖+1)²)`, which
 `top_main`'s cubic budget may or may not absorb — `E` itself is `Θ(‖k‖)` there) or the finer analysis is
 written. Nothing here is an axiom; the two oracles are hypotheses of `pin_assembly`.
 -/
 
-/-! ## 4. The binary-numeral oracle, discharged (`BnumSteps.lean`) -/
+/-! ## 4. The binary-numeral oracle, discharged (`BinNumeralSteps.lean`) -/
 
-section bnumOracle
+section binNumeralOracle
 
 lemma NumIdTable.bnRows {tbl : V} (h : NumIdTable tbl) : BnRows tbl :=
-  ⟨h.bnumZeroCert, h.bnumOneCert, h.bnumEvenCert, h.bnumOddOfEven⟩
+  ⟨h.binNumeralZeroCert, h.binNumeralOneCert, h.binNumeralEvenCert, h.binNumeralOddOfEven⟩
 
-/-- **`BnumOracle` holds with the standard constant `27`**: the list `bnumSteps numIdPieces walkPieces tblN k j`
-(`NumTableOK tblN N' B'` for the `sLemma`s `𝟏 ≤ bnum m`). -/
-theorem bnumOracle_of {tbl N tblN N' B' E k : V} (htbl : TableOK tbl N) (hT : NumIdTable tbl)
-    (htblN : NumTableOK tblN N' B') : BnumOracle tbl E k 27 := by
+/-- **`BinNumeralOracle` holds with the standard constant `27`**: the list `binNumeralSteps numIdPieces walkPieces tblN k j`
+(`NumTableOK tblN N' B'` for the `sLemma`s `𝟏 ≤ binNumeral m`). -/
+theorem binNumeralOracle_of {tbl N tblN N' B' E k : V} (htbl : TableOK tbl N) (hT : NumIdTable tbl)
+    (htblN : NumTableOK tblN N' B') : BinNumeralOracle tbl E k 27 := by
   intro Γ j hΓ hD hE
   have hE' : j + 27 * (‖k‖ + 1) ≤ E := by
     refine le_trans ?_ hE
@@ -594,16 +594,16 @@ theorem bnumOracle_of {tbl N tblN N' B' E k : V} (htbl : TableOK tbl N) (hT : Nu
     calc j + 27 * (‖k‖ + 1) ≤ 27 * j + 27 * (‖k‖ + 1) :=
           add_le_add (le_mul_of_one_le_left zero_le (by norm_num)) le_rfl
       _ = 27 * (‖k‖ + j + 1) := by ring
-  obtain ⟨ok, nd, sh, _, _, hf⟩ := bnumSteps_ok htbl hT.layoutTable hT.bnRows htblN hΓ hD hE'
+  obtain ⟨ok, nd, sh, _, _, hf⟩ := binNumeralSteps_ok htbl hT.layoutTable hT.bnRows htblN hΓ hD hE'
   refine ⟨_, ok, nd, by rw [sh]; exact zero_le, ?_⟩
   rw [sh, add_zero]; exact hf
 
-end bnumOracle
+end binNumeralOracle
 
 /-! ## 5. The substitution oracle, discharged (`Cert.certSubst_ok` re-indexed)
 
 `Cert.len_subFGraph_le` bounds the length of the formula pass by `sfK L Q · |r|` with `sfK L Q = L + 12Q(Q + 1) +
-12(Q + 1) + 10` — QUADRATIC in the sum bound `Q`, hence quadratic in `‖k‖` for the vector `bnum k ∷ 0`. The
+12(Q + 1) + 10` — QUADRATIC in the sum bound `Q`, hence quadratic in `‖k‖` for the vector `binNumeral k ∷ 0`. The
 square is an artifact: in the quantifier case the mode-`1` vector pass is bounded by `len_subVGraph_le'` whose
 entry-length parameter `S` is vacuous at mode `1` (`μ = 0 → …`) and was instantiated at `S := Q`. Instantiating
 it at `S := 0` gives the LINEAR `sfL L Q = L + 24Q + 22` (`len_subFGraph_le_lin`, the same induction) — which
@@ -804,13 +804,13 @@ lemma capS {A Cs : ℕ} {k x y iw E z t : V} (hA1 : 1 ≤ Cs) (hA : A ≤ Cs) (h
     _ = (Cs : V) * (‖k‖ + x + y + iw + 1) := by ring
 
 set_option maxHeartbeats 2000000 in
-/-- **The certified substitution of `bnum k` into `χ`, re-indexed to the pin table**: from the three dossiers
-(source `⌜χ⌝` at `&y`, image `instB ⌜χ⌝ k` at `&x`, vector `bnum k ∷ 0` at `&iw`) a Horn-only, cut-admitting list
+/-- **The certified substitution of `binNumeral k` into `χ`, re-indexed to the pin table**: from the three dossiers
+(source `⌜χ⌝` at `&y`, image `instB ⌜χ⌝ k` at `&x`, vector `binNumeral k ∷ 0` at `&iw`) a Horn-only, cut-admitting list
 at cap `9` with shifts AND length `≤ Cs·(‖k‖ + 1)` (`Cs` standard, per `χ`) leaving `substFact &(x+σ) &(iw+σ) &(y+σ)`. -/
 theorem substSteps_ok (χ : Semisentence LAct 1) :
     ∃ Cs : ℕ, ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] {tbl N E Γ y x iw k : V},
       TableOK tbl N → ProTable tbl → IsFormulaSet LAct Γ → DossF walkPieces Γ 1 (⌜χ⌝ : V) y →
-      DossF walkPieces Γ 0 (instB (⌜χ⌝ : V) k) x → DossV walkPieces Γ 0 1 (bnum k ∷ 0) 1 iw →
+      DossF walkPieces Γ 0 (instB (⌜χ⌝ : V) k) x → DossV walkPieces Γ 0 1 (binNumeral k ∷ 0) 1 iw →
       (Cs : V) * (‖k‖ + x + y + iw + 1) ≤ E →
       ∃ Ps : V, ListOK tbl E ((9 : ℕ) : V) Γ Ps ∧ NoDrop' Ps ∧ HornOnly Ps ∧ shiftsV Ps ≤ (Cs : V) * (‖k‖ + 1) ∧
         len Ps ≤ (Cs : V) * (‖k‖ + 1) ∧
@@ -833,11 +833,11 @@ theorem substSteps_ok (χ : Semisentence LAct 1) :
   have hfV : formulaLen LAct c = (f : V) := by
     rw [hc, hf, ← Sentence.coe_quote_eq_quote (V := V) χ, flN_cast]
   rw [← hc] at hDy hDx
-  have hDx' : DossF walkPieces Γ 0 (subst LAct (bnum k ∷ 0) c) x := hDx
+  have hDx' : DossF walkPieces Γ 0 (subst LAct (binNumeral k ∷ 0) c) x := hDx
   -- the vector
-  have hbk : IsSemiterm LAct 0 (bnum k) := isSemiterm_bnum_LAct 0 k
-  have hw : IsSemitermVec LAct 1 0 (bnum k ∷ (0 : V)) := by simp [hbk]
-  have hB : termLen LAct (bnum k) ≤ 6 * ‖k‖ + 1 := termLen_bnum_le_bk le_rfl
+  have hbk : IsSemiterm LAct 0 (binNumeral k) := isSemiterm_binNumeral_LAct 0 k
+  have hw : IsSemitermVec LAct 1 0 (binNumeral k ∷ (0 : V)) := by simp [hbk]
+  have hB : termLen LAct (binNumeral k) ≤ 6 * ‖k‖ + 1 := termLen_binNumeral_le_bk le_rfl
   have hu1 : (1 : V) ≤ ‖k‖ + 1 := le_add_self
   have hB6 : 6 * ‖k‖ + 1 ≤ ((6 : ℕ) : V) * (‖k‖ + 1) := by
     push_cast; rw [mul_add, mul_one]; exact add_le_add le_rfl (by norm_num)
@@ -883,13 +883,13 @@ theorem substSteps_ok (χ : Semisentence LAct 1) :
           rw [hfV]
           exact add_le_add (add_le_add le_rfl (mul_le_mul_of_nonneg_left hQ1 zero_le)) (le_mul_of_one_le_right zero_le hu1)
       _ = (2 * (f : V) * ((q : V) + 1) + 1) * (‖k‖ + 1) + y := by ring
-  have hsub : formulaLen LAct (subst LAct (bnum k ∷ 0) c) ≤ formulaLen LAct c * (6 * ‖k‖ + 1) :=
+  have hsub : formulaLen LAct (subst LAct (binNumeral k ∷ 0) c) ≤ formulaLen LAct c * (6 * ‖k‖ + 1) :=
     formulaLen_subst_le (L := LAct) (le_trans (by norm_num) le_add_self) hr 0 _ hw (substInv_single hbk hB)
-  have cap3 : x + 2 * formulaLen LAct (subst LAct (bnum k ∷ 0) c) + 2 * Q * formulaLen LAct c + 1 ≤ E := by
+  have cap3 : x + 2 * formulaLen LAct (subst LAct (binNumeral k ∷ 0) c) + 2 * Q * formulaLen LAct c + 1 ≤ E := by
     refine capS hC1 (by omega : A₃ ≤ Cs) hE (t := x) (le_trans le_self_add le_self_add) ?_
     rw [hA₃]; push_cast
-    have h1 : 2 * formulaLen LAct (subst LAct (bnum k ∷ 0) c) ≤ 12 * (f : V) * (‖k‖ + 1) := by
-      calc 2 * formulaLen LAct (subst LAct (bnum k ∷ 0) c) ≤ 2 * (formulaLen LAct c * (6 * ‖k‖ + 1)) :=
+    have h1 : 2 * formulaLen LAct (subst LAct (binNumeral k ∷ 0) c) ≤ 12 * (f : V) * (‖k‖ + 1) := by
+      calc 2 * formulaLen LAct (subst LAct (binNumeral k ∷ 0) c) ≤ 2 * (formulaLen LAct c * (6 * ‖k‖ + 1)) :=
             mul_le_mul_of_nonneg_left hsub zero_le
         _ ≤ 2 * ((f : V) * (((6 : ℕ) : V) * (‖k‖ + 1))) := by
             rw [hfV]; exact mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left hB6 zero_le) zero_le
@@ -899,7 +899,7 @@ theorem substSteps_ok (χ : Semisentence LAct 1) :
       calc 2 * Q * (f : V) ≤ 2 * ((q : V) * (‖k‖ + 1)) * (f : V) :=
             mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left hQle zero_le) zero_le
         _ = 2 * (q : V) * (f : V) * (‖k‖ + 1) := by ring
-    calc x + 2 * formulaLen LAct (subst LAct (bnum k ∷ 0) c) + 2 * Q * formulaLen LAct c + 1
+    calc x + 2 * formulaLen LAct (subst LAct (binNumeral k ∷ 0) c) + 2 * Q * formulaLen LAct c + 1
         ≤ x + 12 * (f : V) * (‖k‖ + 1) + 2 * (q : V) * (f : V) * (‖k‖ + 1) + 1 * (‖k‖ + 1) :=
           add_le_add (add_le_add (add_le_add le_rfl h1) h2) (le_mul_of_one_le_right zero_le hu1)
       _ = (12 * (f : V) + 2 * (q : V) * (f : V) + 1) * (‖k‖ + 1) + x := by ring
@@ -910,17 +910,17 @@ theorem substSteps_ok (χ : Semisentence LAct 1) :
           add_le_add (add_le_add le_rfl (mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left hQle zero_le) zero_le))
             (le_mul_of_one_le_right zero_le hu1)
       _ = (2 * (q : V) * ((f : V) + 1) + 2) * (‖k‖ + 1) + iw := by ring
-  have hPre : SubFPre E Q 1 0 (bnum k ∷ 0) c y x iw Γ := by
+  have hPre : SubFPre E Q 1 0 (binNumeral k ∷ 0) c y x iw Γ := by
     rw [hQ]; exact subFPre_single hbk hB (by rw [← hQ]; exact cap1) (by rw [← hQ]; exact cap2) (by rw [← hQ]; exact cap3)
       (by rw [← hQ]; exact cap4) hΓ
-  have hLc : ∀ e ≤ formulaLen LAct c, len (π₂ (qWalkP walkPieces (0 + e) (1 + e) (qVecIterV LAct (bnum k ∷ 0) e))) ≤ L := by
+  have hLc : ∀ e ≤ formulaLen LAct c, len (π₂ (qWalkP walkPieces (0 + e) (1 + e) (qVecIterV LAct (binNumeral k ∷ 0) e))) ≤ L := by
     rw [hL]; exact qWalkP_single_cap hbk hB
   -- the certification at the view, re-indexed
   have htblV : TableOK (certView tbl) N := hP.tableOK_certView htbl
   have hC : CertTable (certView tbl) := hP.certTable
   obtain ⟨ok, nd, hho, hsh, _, hfact⟩ := certSubst_ok htblV hC rfl rfl hw hr hPre hLc hDy hDx' hDw
   have hlen := len_certSubst_le_lin (Wd := walkPieces) (W := certPieces) (iw := iw) (i := y) (j := x) hw hr hPre.2.1 hLc
-  refine ⟨reidxL (certSubst certPieces walkPieces 1 0 (bnum k ∷ 0) iw c y x), listOK_reidxL hP ok, noDrop'_reidxL nd,
+  refine ⟨reidxL (certSubst certPieces walkPieces 1 0 (binNumeral k ∷ 0) iw c y x), listOK_reidxL hP ok, noDrop'_reidxL nd,
     hornOnly_reidxL hho, ?_, ?_, ?_⟩
   · rw [shiftsV_reidxL]
     refine le_trans hsh ?_
@@ -957,7 +957,7 @@ end substOracle
 
 The cost is taken in ONE shot: `Frag1.costSum_le_of_sizeOK` over the whole assembled list (every block is
 `SizeOK` — the walks and `certSubst` are Horn-only, `NumId` is `SizeOK Cn Cn`, the kernel `SizeOK 0 0`, and
-`bnumSteps` is `SizeOK (bQ B' ‖k‖) (bD N' B' ‖k‖)`), at `Q := Cχ·(‖k‖ + 1) ≤ kitQ Cχ B E` and `D := Cχ·(‖k‖ + 1)³ =
+`binNumeralSteps` is `SizeOK (bQ B' ‖k‖) (bD N' B' ‖k‖)`), at `Q := Cχ·(‖k‖ + 1) ≤ kitQ Cχ B E` and `D := Cχ·(‖k‖ + 1)³ =
 kitD Cχ ‖k‖`, with `len P ≤ Cχ·(‖k‖ + 1)`; the end-context bounds are `ctxVec_len_le_sizeOK` at `len P`. This
 is equivalent to (and shorter than) summing the per-block cost lemmas through `costSum_appendV`. -/
 
@@ -978,17 +978,17 @@ lemma ctxBoundG_mono2 {G G' Γ L L' : V} (hG : G ≤ G') (hL : L ≤ L') : ctxBo
     (mul_le_mul (add_le_add (mul_le_mul hL hL zero_le zero_le) hL) hG zero_le zero_le)
 
 set_option maxHeartbeats 4000000 in
-/-- **The pin, fully produced** (`pin_assembly` with the two oracles DISCHARGED — `bnumSteps` and the re-indexed
+/-- **The pin, fully produced** (`pin_assembly` with the two oracles DISCHARGED — `binNumeralSteps` and the re-indexed
 `certSubst` — and the length and size discipline tracked): for an explicit standard `Cχ` (depending on `χ` and the
 `NumSteps` bounds `N' B'`), from the root layout of `instB ⌜χ⌝ k` at `&i`, a list `P` applicable at cap `9`,
-cut-admitting, `shiftsV P ≤ Cχ·(‖k‖+1)`, leaving `instBFact &(i + 2 + shiftsV P) (qNum χ) (bnum k)`, with
+cut-admitting, `shiftsV P ≤ Cχ·(‖k‖+1)`, leaving `instBFact &(i + 2 + shiftsV P) (qNum χ) (binNumeral k)`, with
 `len P ≤ Cχ·(‖k‖+1)` and `SizeOK (Cχ·(‖k‖+1)) (Cχ·(‖k‖+1)³) P`. -/
 theorem pin_full (χ : Semisentence LAct 1) (N' B' : ℕ) :
     ∃ Cχ : ℕ, 1 ≤ Cχ ∧ ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] {tbl N tblN E Γ i k : V},
       TableOK tbl N → NumIdTable tbl → NumTableOK tblN (N' : V) (B' : V) → IsFormulaSet LAct Γ →
       RootLayout Γ (instB (⌜χ⌝ : V) k) i → (Cχ : V) * (‖k‖ + i + 1) ≤ E →
       ∃ P : V, ListOK tbl E ((9 : ℕ) : V) Γ P ∧ NoDrop' P ∧ shiftsV P ≤ (Cχ : V) * (‖k‖ + 1) ∧
-        neg LAct (instBFact (^&(i + 2 + shiftsV P)) (qNum χ) (bnum k)) ∈ finalCtx Γ P ∧
+        neg LAct (instBFact (^&(i + 2 + shiftsV P)) (qNum χ) (binNumeral k)) ∈ finalCtx Γ P ∧
         len P ≤ (Cχ : V) * (‖k‖ + 1) ∧ SizeOK ((Cχ : V) * (‖k‖ + 1)) ((Cχ : V) * (‖k‖ + 1) ^ 3) P := by
   obtain ⟨Cn, hCn⟩ := numId_sentence χ
   obtain ⟨Cs, hCs⟩ := substSteps_ok χ
@@ -1007,7 +1007,7 @@ theorem pin_full (χ : Semisentence LAct 1) (N' B' : ℕ) :
     rw [hfχ, ← Sentence.coe_quote_eq_quote (V := V) χ, flN_cast]
   have hqV : ((qχ : ℕ) : V) = ⌜χ⌝ := by rw [hqχ]; exact Sentence.coe_quote_eq_quote χ
   have hr : IsSemiformula LAct (1 : V) (⌜χ⌝ : V) := Sentence.quote_isSemiformul₁ χ
-  have hlenk : termLen LAct (bnum k) ≤ 6 * ‖k‖ + 1 := termLen_bnum_le_bk le_rfl
+  have hlenk : termLen LAct (binNumeral k) ≤ 6 * ‖k‖ + 1 := termLen_binNumeral_le_bk le_rfl
   have hC₀C : C₀ ≤ Cχ := by rw [hCχ]; exact Nat.le_add_right _ _
   have hRC : R ≤ Cχ := by rw [hCχ]; exact Nat.le_add_left _ _
   have hAC₀ : A ≤ C₀ := by rw [hC₀]; exact Nat.le_mul_of_pos_right A (by omega)
@@ -1042,19 +1042,19 @@ theorem pin_full (χ : Semisentence LAct 1) (N' B' : ℕ) :
   have hDχ₁ : DossF walkPieces Γ₁ 1 (⌜χ⌝ : V) 0 := dossF_of_walk nd₁
   have hR₁ : RootLayout Γ₁ (instB (⌜χ⌝ : V) k) (i + cχ) := by
     have := hR.transport nd₁.noDrop'; rwa [sh₁] at this
-  -- ===== block 2: the vector walk of w = bnum k ∷ 0
-  set w : V := bnum k ∷ 0 with hwdef
+  -- ===== block 2: the vector walk of w = binNumeral k ∷ 0
+  set w : V := binNumeral k ∷ 0 with hwdef
   have hw : IsSemitermVec LAct ((0 : V) + 1) (0 : V) w :=
-    IsSemitermVec.adjoin (IsSemitermVec.nil (L := LAct) (0 : V)) (bnum_term_LAct k)
+    IsSemitermVec.adjoin (IsSemitermVec.nil (L := LAct) (0 : V)) (binNumeral_term_LAct k)
   have hw' : IsSemitermVec LAct (1 : V) (0 : V) w := by rwa [zero_add] at hw
-  have hlenw : listSum (termLenVec LAct 1 w) = termLen LAct (bnum k) := by
+  have hlenw : listSum (termLenVec LAct 1 w) = termLen LAct (binNumeral k) := by
     rw [hwdef, show (1 : V) = 0 + 1 by rw [zero_add],
-      termLenVec_cons (bnum_term_LAct k).isUTerm (IsSemitermVec.nil (L := LAct) (0 : V)).isUTerm, termLenVec_nil,
+      termLenVec_cons (binNumeral_term_LAct k).isUTerm (IsSemitermVec.nil (L := LAct) (0 : V)).isUTerm, termLenVec_nil,
       listSum_adjoin, listSum_nil, add_zero]
   have cap2 : 2 * (0 : V) + 2 * listSum (termLenVec LAct 1 w) + 8 ≤ E := by
     rw [hlenw]
     refine cap_master' (A := A) (by omega) hAC hE ?_
-    calc 2 * (0 : V) + 2 * termLen LAct (bnum k) + 8 ≤ 2 * 0 + 2 * (6 * ‖k‖ + 1) + 8 :=
+    calc 2 * (0 : V) + 2 * termLen LAct (binNumeral k) + 8 ≤ 2 * 0 + 2 * (6 * ‖k‖ + 1) + 8 :=
           add_le_add (add_le_add (le_refl _) (mul_le_mul_of_nonneg_left hlenk (by simp))) (le_refl _)
       _ = 12 * ‖k‖ + 10 := by ring
       _ ≤ 12 * ‖k‖ + 12 := add_le_add (le_refl _) (by norm_num)
@@ -1062,10 +1062,10 @@ theorem pin_full (χ : Semisentence LAct 1) (N' B' : ℕ) :
       _ ≤ (A : V) * (‖k‖ + 1) := lin_mono (by omega) (le_refl _)
       _ ≤ (A : V) * (‖k‖ + 1) + i := le_self_add
   have ih : ∀ m < (1 : V), TermOK tbl walkPieces 0 w.[m] := fun m hm ↦ termOK_of_isSemiterm htbl hW rfl 0 _ (hw'.nth hm)
-  obtain ⟨_, hcnt₂, hVF⟩ := descVecAux_ok htbl hW rfl (by norm_num : (1 : V) ≤ 2) hw' ih cap2 1 le_rfl
+  obtain ⟨_, hcnt₂, hVF⟩ := descriptionsAux_ok htbl hW rfl (by norm_num : (1 : V) ≤ 2) hw' ih cap2 1 le_rfl
   obtain ⟨ok₂, nd₂, sh₂, _⟩ := hVF Γ₁ hΓ₁
-  set S₂ := π₂ (descVecAux walkPieces 0 (descTVec walkPieces 0 1 w) 1) with hS₂
-  set cw := π₁ (descVecAux walkPieces 0 (descTVec walkPieces 0 1 w) 1) with hcw
+  set S₂ := π₂ (descriptionsAux walkPieces 0 (descTVec walkPieces 0 1 w) 1) with hS₂
+  set cw := π₁ (descriptionsAux walkPieces 0 (descTVec walkPieces 0 1 w) 1) with hcw
   set Γ₂ := finalCtx Γ₁ S₂ with hΓ₂def
   have hΓ₂ : IsFormulaSet LAct Γ₂ := finalCtx_isFormulaSet 8 htbl hΓ₁ ok₂
   have hlw : len w = 1 := by rw [hwdef, len_adjoin, len_nil, zero_add]
@@ -1073,21 +1073,21 @@ theorem pin_full (χ : Semisentence LAct 1) (N' B' : ℕ) :
   have hcwle : cw ≤ ((14 : ℕ) : V) * (‖k‖ + 1) := by
     have h2 := hcnt₂
     rw [htl, hlenw] at h2
-    calc cw ≤ 2 * termLen LAct (bnum k) := h2
+    calc cw ≤ 2 * termLen LAct (binNumeral k) := h2
       _ ≤ 2 * (6 * ‖k‖ + 1) := mul_le_mul_of_nonneg_left hlenk (by simp)
       _ = 12 * ‖k‖ + 2 := by ring
       _ ≤ 14 * ‖k‖ + 14 := add_le_add (mul_le_mul_of_nonneg_right (by norm_num) (by simp)) (by norm_num)
       _ = ((14 : ℕ) : V) * (‖k‖ + 1) := by push_cast; ring
   have hlen₂ : len S₂ ≤ ((86 : ℕ) : V) * (‖k‖ + 1) := by
-    obtain ⟨_, hl⟩ := len_descVecAux_le hw' (fun i hi ↦ len_describeT_le walkPieces 0 _ (hw'.nth hi)) 1 le_rfl
+    obtain ⟨_, hl⟩ := len_descriptionsAux_le hw' (fun i hi ↦ len_describeT_le walkPieces 0 _ (hw'.nth hi)) 1 le_rfl
     rw [htl, hlenw] at hl
-    calc len S₂ ≤ 12 * termLen LAct (bnum k) + 4 := le_trans le_self_add (le_trans hl (le_of_eq (by ring)))
+    calc len S₂ ≤ 12 * termLen LAct (binNumeral k) + 4 := le_trans le_self_add (le_trans hl (le_of_eq (by ring)))
       _ ≤ 12 * (6 * ‖k‖ + 1) + 4 := add_le_add (mul_le_mul_of_nonneg_left hlenk zero_le) le_rfl
       _ = 72 * ‖k‖ + 16 := by ring
       _ ≤ 86 * ‖k‖ + 86 := add_le_add (mul_le_mul_of_nonneg_right (by norm_num) zero_le) (by norm_num)
       _ = ((86 : ℕ) : V) * (‖k‖ + 1) := by push_cast; ring
   have hsz₂ : SizeOK ((Cχ : V) * (‖k‖ + 1)) ((Cχ : V) * (‖k‖ + 1) ^ 3) S₂ :=
-    sizeOK_of_hornOnly (hornOnly_descVecAux rfl hw' (fun i hi ↦ hornOnly_describeT rfl 0 _ (hw'.nth hi)) 1 le_rfl)
+    sizeOK_of_hornOnly (hornOnly_descriptionsAux rfl hw' (fun i hi ↦ hornOnly_describeT rfl 0 _ (hw'.nth hi)) 1 le_rfl)
   have hDw₂ : DossV walkPieces Γ₂ 0 1 w 1 0 := dossV_of_walk nd₂
   have hDχ₂ : DossF walkPieces Γ₂ 1 (⌜χ⌝ : V) cw := by
     have := dossF_transport' nd₂.noDrop' hDχ₁; rwa [sh₂, zero_add] at this
@@ -1098,18 +1098,18 @@ theorem pin_full (χ : Semisentence LAct 1) (N' B' : ℕ) :
   have e10 : (1 : V) - ((0 : V) + 1) = 0 := by rw [zero_add]; exact tsub_eq_zero_of_le (le_refl _)
   rw [e10, hwdef, nth_adjoin_zero, zero_add] at hDt₂
   rw [vRef_zero, zero_add] at ha₂
-  -- ===== block 3: the binary numeral certification (bnumSteps)
+  -- ===== block 3: the binary numeral certification (binNumeralSteps)
   have cap3 : (1 : V) + 27 * (‖k‖ + 1) ≤ E := by
     refine cap_master (A := 28) (by omega) hE ?_
     calc (1 : V) + 27 * (‖k‖ + 1) ≤ 1 * (‖k‖ + 1) + 27 * (‖k‖ + 1) :=
           add_le_add (le_mul_of_one_le_right zero_le hu1) le_rfl
       _ = ((28 : ℕ) : V) * (‖k‖ + 1) := by push_cast; ring
       _ ≤ ((28 : ℕ) : V) * (‖k‖ + 1) + ((28 : ℕ) : V) * i := le_self_add
-  obtain ⟨okb, ndb, shb, hlenb, hszb, hbf⟩ := bnumSteps_ok htbl hT.layoutTable hT.bnRows htblN hΓ₂ hDt₂ cap3
-  set Pb := bnumSteps numIdPieces walkPieces tblN k 1 with hPbdef
+  obtain ⟨okb, ndb, shb, hlenb, hszb, hbf⟩ := binNumeralSteps_ok htbl hT.layoutTable hT.bnRows htblN hΓ₂ hDt₂ cap3
+  set Pb := binNumeralSteps numIdPieces walkPieces tblN k 1 with hPbdef
   set Γ₃ := finalCtx Γ₂ Pb with hΓ₃def
   have hΓ₃ : IsFormulaSet LAct Γ₃ := finalCtx_isFormulaSet 9 htbl hΓ₂ okb
-  have hbf₃ : neg LAct (bnumFact (^&1) (bnum k)) ∈ Γ₃ := hbf
+  have hbf₃ : neg LAct (binNumeralFact (^&1) (binNumeral k)) ∈ Γ₃ := hbf
   have ha₃ : neg LAct (adjFact (^&0) (^&1) (𝟎 : V)) ∈ Γ₃ := by
     have := transport_adj ndb ha₂; rwa [shb, add_zero, add_zero] at this
   have hDχ₃ : DossF walkPieces Γ₃ 1 (⌜χ⌝ : V) cw := by
@@ -1203,7 +1203,7 @@ theorem pin_full (χ : Semisentence LAct 1) (N' B' : ℕ) :
   set Γ₅ := finalCtx Γ₄ Ps with hΓ₅def
   have hΓ₅ : IsFormulaSet LAct Γ₅ := finalCtx_isFormulaSet 9 htbl hΓ₄ oks
   have hy₅ := transport_eq nds hy₄
-  have hb₅ := transport_bnum nds hbf₄
+  have hb₅ := transport_binNumeral nds hbf₄
   have ha₅ := transport_adj nds ha₄
   have hszs : SizeOK ((Cχ : V) * (‖k‖ + 1)) ((Cχ : V) * (‖k‖ + 1) ^ 3) Ps := sizeOK_of_hornOnly hhos
   -- ===== block 6: the kernel
@@ -1235,9 +1235,9 @@ theorem pin_full (χ : Semisentence LAct 1) (N' B' : ℕ) :
     calc 2 * ((qχ : ℕ) : V) + 1 = ((2 * qχ + 1 : ℕ) : V) := by push_cast; ring
       _ ≤ (A : V) * (‖k‖ + 1) := lin_mono (by omega) (lin_const hu1)
       _ ≤ (A : V) * (‖k‖ + 1) + i := le_self_add
-  have hcapk : termLen LAct (bnum k) ≤ E := by
+  have hcapk : termLen LAct (binNumeral k) ≤ E := by
     refine cap_master' (A := A) (by omega) hAC hE ?_
-    calc termLen LAct (bnum k) ≤ 6 * ‖k‖ + 1 := hlenk
+    calc termLen LAct (binNumeral k) ≤ 6 * ‖k‖ + 1 := hlenk
       _ ≤ 6 * ‖k‖ + 6 := add_le_add (le_refl _) (by norm_num)
       _ = ((6 : ℕ) : V) * (‖k‖ + 1) := by push_cast; ring
       _ ≤ (A : V) * (‖k‖ + 1) := lin_mono (by omega) (le_refl _)
@@ -1303,7 +1303,7 @@ theorem pinKit'_of (χ : Semisentence LAct 1) (N' B' : ℕ) :
     refine mul_le_mul hlen ?_ zero_le zero_le
     refine add_le_add (costK_mono hQk hDk) (mul_le_mul_of_nonneg_left ?_ zero_le)
     exact add_le_add (ctxBoundG_mono2 hG hlen) (add_le_add le_rfl (mul_le_mul hlen hG zero_le zero_le))
-  · show setLen LAct (ctxVec Γ P).[len P] ≤ _
+  · show sequentLen LAct (ctxVec Γ P).[len P] ≤ _
     exact le_trans hS (ctxBoundG_mono2 hG hlen)
   · show fvOccS LAct (ctxVec Γ P).[len P] ≤ _
     exact le_trans hF (add_le_add le_rfl (mul_le_mul hlen hG zero_le zero_le))

@@ -18,7 +18,7 @@ on the sentence structure), `pa_proves_x` (truth in every model of `𝗜𝚺₁`
 `lib_x`. Δ₁ hypotheses are taken `.pi`, conclusions `.sigma`; every auxiliary object is a
 universal variable with its graph as a hypothesis; arities and indices are variables (the walk
 instantiates them at chain numerals `cT`); the DSL literals `0`/`1`/`2` are the codes `𝟎`/`𝟏`/
-`𝟏 ^+ 𝟏`; `bnumZeroCert`/`bnumOneCert` write `𝟎`/`𝟏` as the walk does (`func 0 0 0`,
+`𝟏 ^+ 𝟏`; `binNumeralZeroCert`/`binNumeralOneCert` write `𝟎`/`𝟏` as the walk does (`func 0 0 0`,
 `func 0 (0 + 1) 0`).
 
 ## Design row → delivered name
@@ -28,9 +28,9 @@ instantiates them at chain numerals `cT`); the DSL literals `0`/`1`/`2` are the 
 Skipped / renamed, with the reason:
 * `congTvPi`/`congUtvPi` conclude `.sigma` (the polarity convention; `isSemitermVecSigmaPiLAct`
   bridges), `congPi`/`congTPi` likewise; `congUfPi` keeps `.pi` on both sides (`indRec` consumes `.pi`).
-* `dlenDefIntro` takes only `derivation.sigma d` (the `.pi` premise of §7.1 is redundant:
-  `dlen_eq_of_graph`).
-* `bnumEvenCert`/`bnumOddCert` are stated on the walk's `func`/`∷` facts for `𝟏`, `𝟐`, `𝟐 ^* t`,
+* `proofLenDefIntro` takes only `derivation.sigma d` (the `.pi` premise of §7.1 is redundant:
+  `proofLen_eq_of_graph`).
+* `binNumeralEvenCert`/`binNumeralOddCert` are stated on the walk's `func`/`∷` facts for `𝟏`, `𝟐`, `𝟐 ^* t`,
   `(𝟐 ^* t) ^+ 𝟏` (no `qqAddGraph`/`qqMulGraph` objects — the walk never emits those).
 * `twoMulMul`/`twoMulOneMul` and the `length*` rows are written in the DSL (`2 * x`), not in
   `Lengths.lean`'s `eqO/addO/twoMul` term syntax; a `numSteps` producer that mixes both crosses

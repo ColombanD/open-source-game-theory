@@ -23,7 +23,7 @@ transfer; per row `lmk_<row>`, `layoutTable_<row>`, `ltag_<row>`, `lok_<row>`.
 
 A FACT TAG `⟪kind, args⟫` names one fact of the source object's dossier by its kind (`0` pi, `1`
 and, `2` or, `3` all, `4` exs, `5` rel, `6` nrel, `7` verum, `8` falsum, `9` len, `10` mem, `11`
-tpi, `12` func, `13` bvar, `14` fvar, `15` tlen, `16` adj, `17` tvpi, `18` utvpi) and the OTHER
+tpi, `12` func, `13` bvar, `14` fvar, `15` termLenMeta, `16` adj, `17` tvpi, `18` utvpi) and the OTHER
 witnesses of that fact (closed terms in the frame BEFORE the copy; for the shape facts also the
 NEW children, whose identification `eqFactB child' child` is assumed in context). `copySteps W i T`
 = `sIntroFact eqTotal [^&i]` (the fresh `&0` with `eqFactB &0 &(i+1)`, everything shifted once)
@@ -40,7 +40,7 @@ Horn-only, shifts exactly once, and its final context holds `eqFactB &0 &(i+1)` 
 membership facts in one backward pass (`subsetInsertC`/`subsetTransC` for `s_j ⊆ s_k`,
 `memInsertSelfC` + `subsetMemC`), the formula-set facts (`emptySubsetC` + `fsetOfSubsetZeroC` for
 `𝟎`, then `isFormulaSetInsertC` + `fsetSigmaPiC` per link, needing `piFact 𝟎 x_j` from the dossiers),
-and finally `setLenTotalC` for the length object `l_s = &0` (every chain object moves up by one).
+and finally `sequentLenTotalC` for the length object `l_s = &0` (every chain object moves up by one).
 
 ## Part 4 — identification (`eqSteps`, §3.5)
 
@@ -116,7 +116,7 @@ def lIdx_emptySubsetC : ℕ := 81
 def lIdx_fsetOfSubsetZeroC : ℕ := 82
 def lIdx_isFormulaSetInsertC : ℕ := 83
 def lIdx_fsetSigmaPiC : ℕ := 84
-def lIdx_setLenTotalC : ℕ := 85
+def lIdx_sequentLenTotalC : ℕ := 85
 def lIdx_subsetReflC : ℕ := 86
 def layoutRowCount : ℕ := 87
 
@@ -167,7 +167,7 @@ noncomputable def layoutExtraRows : List WRow := [
   ⟨1, fsetOfSubsetZeroCB, lib_fsetOfSubsetZeroC⟩,
   ⟨3, isFormulaSetInsertCB, lib_isFormulaSetInsertC⟩,
   ⟨1, fsetSigmaPiCB, lib_fsetSigmaPiC⟩,
-  ⟨1, setLenTotalCB, lib_setLenTotalC⟩,
+  ⟨1, sequentLenTotalCB, lib_sequentLenTotalC⟩,
   ⟨1, subsetReflCB, lib_subsetReflC⟩
 ]
 
@@ -617,14 +617,14 @@ lemma layoutTable_fsetSigmaPiC {tbl : V} (h : LayoutTable tbl) :
   refine ⟨this.1, ?_⟩
   rw [impChainV_vecOf, this.2, quote_row_fsetSigmaPiC]
 
-lemma layoutTable_setLenTotalC {tbl : V} (h : LayoutTable tbl) :
-    rowM tbl.[((lIdx_setLenTotalC : ℕ) : V)] = ((1 : ℕ) : V) ∧
-    rowB tbl.[((lIdx_setLenTotalC : ℕ) : V)] = impChainV LAct (vecOf row_setLenTotalC_as) (^∃ row_setLenTotalC_R) := by
-  have this : rowM tbl.[((lIdx_setLenTotalC : ℕ) : V)] = ((1 : ℕ) : V) ∧
-      rowB tbl.[((lIdx_setLenTotalC : ℕ) : V)] = ⌜Semiformula.lMap emb setLenTotalCB⌝ :=
-    h.2 lIdx_setLenTotalC (Nat.lt_of_sub_eq_succ rfl)
+lemma layoutTable_sequentLenTotalC {tbl : V} (h : LayoutTable tbl) :
+    rowM tbl.[((lIdx_sequentLenTotalC : ℕ) : V)] = ((1 : ℕ) : V) ∧
+    rowB tbl.[((lIdx_sequentLenTotalC : ℕ) : V)] = impChainV LAct (vecOf row_sequentLenTotalC_as) (^∃ row_sequentLenTotalC_R) := by
+  have this : rowM tbl.[((lIdx_sequentLenTotalC : ℕ) : V)] = ((1 : ℕ) : V) ∧
+      rowB tbl.[((lIdx_sequentLenTotalC : ℕ) : V)] = ⌜Semiformula.lMap emb sequentLenTotalCB⌝ :=
+    h.2 lIdx_sequentLenTotalC (Nat.lt_of_sub_eq_succ rfl)
   refine ⟨this.1, ?_⟩
-  rw [impChainV_vecOf, this.2, quote_row_setLenTotalC]
+  rw [impChainV_vecOf, this.2, quote_row_sequentLenTotalC]
   rfl
 
 lemma layoutTable_subsetReflC {tbl : V} (h : LayoutTable tbl) :
@@ -683,7 +683,7 @@ noncomputable def lpiece_emptySubsetC : V := ⟪(0 : V), vecOf row_emptySubsetC_
 noncomputable def lpiece_fsetOfSubsetZeroC : V := ⟪(0 : V), vecOf row_fsetOfSubsetZeroC_as, row_fsetOfSubsetZeroC_c⟫
 noncomputable def lpiece_isFormulaSetInsertC : V := ⟪(0 : V), vecOf row_isFormulaSetInsertC_as, row_isFormulaSetInsertC_c⟫
 noncomputable def lpiece_fsetSigmaPiC : V := ⟪(0 : V), vecOf row_fsetSigmaPiC_as, row_fsetSigmaPiC_c⟫
-noncomputable def lpiece_setLenTotalC : V := ⟪(2 : V), vecOf row_setLenTotalC_as, row_setLenTotalC_R⟫
+noncomputable def lpiece_sequentLenTotalC : V := ⟪(2 : V), vecOf row_sequentLenTotalC_as, row_sequentLenTotalC_R⟫
 noncomputable def lpiece_subsetReflC : V := ⟪(0 : V), vecOf row_subsetReflC_as, row_subsetReflC_c⟫
 
 /-- The extra pieces in index order. -/
@@ -733,7 +733,7 @@ noncomputable def layoutExtraPieceList : List V := [
   lpiece_fsetOfSubsetZeroC,
   lpiece_isFormulaSetInsertC,
   lpiece_fsetSigmaPiC,
-  lpiece_setLenTotalC,
+  lpiece_sequentLenTotalC,
   lpiece_subsetReflC
 ]
 
@@ -1285,20 +1285,20 @@ lemma ltag_fsetSigmaPiC {W : V} (hWp : W = layoutPieces) (ev : V) : sTag (mkStep
   have hk : ((lIdx_fsetSigmaPiC : ℕ) : V) = (84 : V) := by simp [lIdx_fsetSigmaPiC]
   rw [← hk, lmk_fsetSigmaPiC]; simp
 
-lemma layoutPieces_setLenTotalC : (layoutPieces : V).[((lIdx_setLenTotalC : ℕ) : V)] = lpiece_setLenTotalC := by
+lemma layoutPieces_sequentLenTotalC : (layoutPieces : V).[((lIdx_sequentLenTotalC : ℕ) : V)] = lpiece_sequentLenTotalC := by
   unfold layoutPieces
-  rw [nth_vecOf _ lIdx_setLenTotalC (Nat.lt_of_sub_eq_succ rfl)]
+  rw [nth_vecOf _ lIdx_sequentLenTotalC (Nat.lt_of_sub_eq_succ rfl)]
   rfl
 
-lemma lmk_setLenTotalC (ev : V) :
-    mkStep layoutPieces ((lIdx_setLenTotalC : ℕ) : V) ev = sIntroFact ((lIdx_setLenTotalC : ℕ) : V) ev (vecOf row_setLenTotalC_as) row_setLenTotalC_R := by
-  rw [mkStep, layoutPieces_setLenTotalC]
-  simp [lpiece_setLenTotalC, sIntroFact]
+lemma lmk_sequentLenTotalC (ev : V) :
+    mkStep layoutPieces ((lIdx_sequentLenTotalC : ℕ) : V) ev = sIntroFact ((lIdx_sequentLenTotalC : ℕ) : V) ev (vecOf row_sequentLenTotalC_as) row_sequentLenTotalC_R := by
+  rw [mkStep, layoutPieces_sequentLenTotalC]
+  simp [lpiece_sequentLenTotalC, sIntroFact]
 
-lemma ltag_setLenTotalC {W : V} (hWp : W = layoutPieces) (ev : V) : sTag (mkStep W (85 : V) ev) = 2 := by
+lemma ltag_sequentLenTotalC {W : V} (hWp : W = layoutPieces) (ev : V) : sTag (mkStep W (85 : V) ev) = 2 := by
   subst hWp
-  have hk : ((lIdx_setLenTotalC : ℕ) : V) = (85 : V) := by simp [lIdx_setLenTotalC]
-  rw [← hk, lmk_setLenTotalC]; simp
+  have hk : ((lIdx_sequentLenTotalC : ℕ) : V) = (85 : V) := by simp [lIdx_sequentLenTotalC]
+  rw [← hk, lmk_sequentLenTotalC]; simp
 
 lemma layoutPieces_subsetReflC : (layoutPieces : V).[((lIdx_subsetReflC : ℕ) : V)] = lpiece_subsetReflC := by
   unfold layoutPieces
@@ -1723,9 +1723,9 @@ lemma lok_congLen {tbl N E Γ W : V} {wl wx wy : V} (htbl : TableOK tbl N) (hL :
 
 /-- Row `congTLen` as a step. -/
 lemma lok_congTLen {tbl N E Γ W : V} {wl wx wy : V} (htbl : TableOK tbl N) (hL : LayoutTable tbl) (hWp : W = layoutPieces)
-    (hΓ : IsFormulaSet LAct Γ) (hwl : IsSemiterm LAct 0 wl) (hEwl : termLen LAct wl ≤ E) (hwx : IsSemiterm LAct 0 wx) (hEwx : termLen LAct wx ≤ E) (hwy : IsSemiterm LAct 0 wy) (hEwy : termLen LAct wy ≤ E) (hmem0 : neg LAct (eqFactB wy wx) ∈ Γ) (hmem1 : neg LAct (tlenFact wl wx) ∈ Γ) :
+    (hΓ : IsFormulaSet LAct Γ) (hwl : IsSemiterm LAct 0 wl) (hEwl : termLen LAct wl ≤ E) (hwx : IsSemiterm LAct 0 wx) (hEwx : termLen LAct wx ≤ E) (hwy : IsSemiterm LAct 0 wy) (hEwy : termLen LAct wy ≤ E) (hmem0 : neg LAct (eqFactB wy wx) ∈ Γ) (hmem1 : neg LAct (termLenMetaFact wl wx) ∈ Γ) :
     StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 61 ?[wl, wx, wy]) ∧ sTag (mkStep W 61 ?[wl, wx, wy]) = 0 ∧
-    ctxAfter Γ (mkStep W 61 ?[wl, wx, wy]) = insert (neg LAct (tlenFact wl wy)) Γ := by
+    ctxAfter Γ (mkStep W 61 ?[wl, wx, wy]) = insert (neg LAct (termLenMetaFact wl wy)) Γ := by
   subst hWp
   have hk : ((lIdx_congTLen : ℕ) : V) = (61 : V) := by simp [lIdx_congTLen]
   have hstep := lmk_congTLen (V := V) ?[wl, wx, wy]
@@ -2178,25 +2178,25 @@ lemma lok_fsetSigmaPiC {tbl N E Γ W : V} {ws : V} (htbl : TableOK tbl N) (hL : 
   · exact neg_mem_of_map hinst.1 (List.forall_mem_cons.mpr ⟨hmem0, List.forall_mem_nil _⟩)
   · rw [ctxAfter_useHorn [ws] row_fsetSigmaPiC_as isSemiformula_fsetSigmaPiC_c (fun e he ↦ (hes e he).1), hinst.2]
 
-/-- Row `setLenTotalC` as a step. -/
-lemma lok_setLenTotalC {tbl N E Γ W : V} {ws : V} (htbl : TableOK tbl N) (hL : LayoutTable tbl) (hWp : W = layoutPieces)
+/-- Row `sequentLenTotalC` as a step. -/
+lemma lok_sequentLenTotalC {tbl N E Γ W : V} {ws : V} (htbl : TableOK tbl N) (hL : LayoutTable tbl) (hWp : W = layoutPieces)
     (hΓ : IsFormulaSet LAct Γ) (hws : IsSemiterm LAct 0 ws) (hEws : termLen LAct ws ≤ E)  :
     StepOK tbl E ((8 : ℕ) : V) Γ (mkStep W 85 ?[ws]) ∧ sTag (mkStep W 85 ?[ws]) = 2 ∧
-    ctxAfter Γ (mkStep W 85 ?[ws]) = insert (neg LAct (setLenFact (^&((0 : ℕ) : V)) (termShift LAct ws))) (setShift LAct Γ) := by
+    ctxAfter Γ (mkStep W 85 ?[ws]) = insert (neg LAct (sequentLenFact (^&((0 : ℕ) : V)) (termShift LAct ws))) (setShift LAct Γ) := by
   subst hWp
-  have hk : ((lIdx_setLenTotalC : ℕ) : V) = (85 : V) := by simp [lIdx_setLenTotalC]
-  have hstep := lmk_setLenTotalC (V := V) ?[ws]
-  have hlen := layoutTable_len hL lIdx_setLenTotalC (by decide)
-  have hrow := layoutTable_setLenTotalC hL
+  have hk : ((lIdx_sequentLenTotalC : ℕ) : V) = (85 : V) := by simp [lIdx_sequentLenTotalC]
+  have hstep := lmk_sequentLenTotalC (V := V) ?[ws]
+  have hlen := layoutTable_len hL lIdx_sequentLenTotalC (by decide)
+  have hrow := layoutTable_sequentLenTotalC hL
   rw [hk] at hstep hlen hrow
   have hes : ∀ e ∈ [ws], IsSemiterm LAct 0 e ∧ termLen LAct e ≤ E := List.forall_mem_cons.mpr ⟨⟨hws, hEws⟩, List.forall_mem_nil _⟩
-  have hinst := inst_setLenTotalC hws
+  have hinst := inst_sequentLenTotalC hws
   rw [hstep, show (?[ws] : V) = vecOf [ws] from rfl]
-  refine ⟨stepOK_introFact htbl [ws] row_setLenTotalC_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : 1 ≤ 8))
-    (by rw [show row_setLenTotalC_as.length = 0 from rfl]; exact_mod_cast (by decide : 0 ≤ 8)) hes ?_, by simp, ?_⟩
+  refine ⟨stepOK_introFact htbl [ws] row_sequentLenTotalC_as hΓ hlen hrow.1 hrow.2 (by exact_mod_cast (by decide : 1 ≤ 8))
+    (by rw [show row_sequentLenTotalC_as.length = 0 from rfl]; exact_mod_cast (by decide : 0 ≤ 8)) hes ?_, by simp, ?_⟩
   · exact neg_mem_of_map hinst.1 (List.forall_mem_nil _)
-  · rw [ctxAfter_introFact [ws] row_setLenTotalC_as (by rw [← Nat.cast_succ]; exact isSemiformula_setLenTotalC_R) (fun e he ↦ (hes e he).1),
-      show row_setLenTotalC_R = row_setLenTotalC_body from rfl, ← freeIter_one, hinst.2]
+  · rw [ctxAfter_introFact [ws] row_sequentLenTotalC_as (by rw [← Nat.cast_succ]; exact isSemiformula_sequentLenTotalC_R) (fun e he ↦ (hes e he).1),
+      show row_sequentLenTotalC_R = row_sequentLenTotalC_body from rfl, ← freeIter_one, hinst.2]
 
 /-- Row `subsetReflC` as a step. -/
 lemma lok_subsetReflC {tbl N E Γ W : V} {ws : V} (htbl : TableOK tbl N) (hL : LayoutTable tbl) (hWp : W = layoutPieces)
@@ -2292,8 +2292,8 @@ instance eqFactB_definable' : 𝚺₁-Function₂ (eqFactB : V → V → V) := e
 noncomputable def lenFactDef : 𝚺₁.Semisentence 3 := fact2Def (Semiformula.lMap emb (↑(formulaLenGraph LAct) : ArithmeticSemisentence 2))
 instance lenFact_defined : 𝚺₁-Function₂ (lenFact : V → V → V) via lenFactDef := fact2_defined _
 
-noncomputable def tlenFactDef : 𝚺₁.Semisentence 3 := fact2Def (Semiformula.lMap emb (↑(termLenGraph LAct) : ArithmeticSemisentence 2))
-instance tlenFact_defined : 𝚺₁-Function₂ (tlenFact : V → V → V) via tlenFactDef := fact2_defined _
+noncomputable def termLenMetaFactDef : 𝚺₁.Semisentence 3 := fact2Def (Semiformula.lMap emb (↑(termLenGraph LAct) : ArithmeticSemisentence 2))
+instance termLenMetaFact_defined : 𝚺₁-Function₂ (termLenMetaFact : V → V → V) via termLenMetaFactDef := fact2_defined _
 
 noncomputable def memFactDef : 𝚺₁.Semisentence 3 := fact2Def (Semiformula.lMap emb (Rewriting.emb (Semiformula.Operator.Mem.mem : Semiformula.Operator ℒₒᵣ 2).sentence : ArithmeticSemisentence 2))
 instance memFact_defined : 𝚺₁-Function₂ (memFact : V → V → V) via memFactDef := fact2_defined _
@@ -2307,9 +2307,9 @@ noncomputable def fsetPiFactDef : 𝚺₁.Semisentence 2 := fact1Def (Semiformul
 instance fsetPiFact_defined : 𝚺₁-Function₁ (fsetPiFact : V → V) via fsetPiFactDef := fact1_defined _
 instance fsetPiFact_definable' : 𝚺₁-Function₁ (fsetPiFact : V → V) := fsetPiFact_defined.to_definable
 
-noncomputable def setLenFactDef : 𝚺₁.Semisentence 3 := fact2Def (Semiformula.lMap emb (↑(setLenDef LAct) : ArithmeticSemisentence 2))
-instance setLenFact_defined : 𝚺₁-Function₂ (setLenFact : V → V → V) via setLenFactDef := fact2_defined _
-instance setLenFact_definable' : 𝚺₁-Function₂ (setLenFact : V → V → V) := setLenFact_defined.to_definable
+noncomputable def sequentLenFactDef : 𝚺₁.Semisentence 3 := fact2Def (Semiformula.lMap emb (↑(sequentLenDef LAct) : ArithmeticSemisentence 2))
+instance sequentLenFact_defined : 𝚺₁-Function₂ (sequentLenFact : V → V → V) via sequentLenFactDef := fact2_defined _
+instance sequentLenFact_definable' : 𝚺₁-Function₂ (sequentLenFact : V → V → V) := sequentLenFact_defined.to_definable
 
 /-! ### 2.2 Fact tags, their arity, steps, antecedents and conclusion (if-chains on the kind, with
 explicit blueprints — `definability` does not go through an `ite`) -/
@@ -2425,7 +2425,7 @@ noncomputable def tagAnts (x t : V) : V :=
   else if π₁ t = 12 then ?[eqFactB (π₂ t).[3] (π₂ t).[2], funcFact x (π₂ t).[0] (π₂ t).[1] (π₂ t).[2]]
   else if π₁ t = 13 then ?[bvarFact x (π₂ t).[0]]
   else if π₁ t = 14 then ?[fvarFact x (π₂ t).[0]]
-  else if π₁ t = 15 then ?[tlenFact (π₂ t).[0] x]
+  else if π₁ t = 15 then ?[termLenMetaFact (π₂ t).[0] x]
   else if π₁ t = 16 then ?[eqFactB (π₂ t).[2] (π₂ t).[0], eqFactB (π₂ t).[3] (π₂ t).[1], adjFact x (π₂ t).[0] (π₂ t).[1]]
   else if π₁ t = 17 then ?[tvPiFact (π₂ t).[0] (π₂ t).[1] x]
   else if π₁ t = 18 then ?[utvPiFact (π₂ t).[0] x]
@@ -2448,7 +2448,7 @@ noncomputable def tagFact (t : V) : V :=
   else if π₁ t = 12 then funcFact (^&0) (termShift LAct (π₂ t).[0]) (termShift LAct (π₂ t).[1]) (termShift LAct (π₂ t).[3])
   else if π₁ t = 13 then bvarFact (^&0) (termShift LAct (π₂ t).[0])
   else if π₁ t = 14 then fvarFact (^&0) (termShift LAct (π₂ t).[0])
-  else if π₁ t = 15 then tlenFact (termShift LAct (π₂ t).[0]) (^&0)
+  else if π₁ t = 15 then termLenMetaFact (termShift LAct (π₂ t).[0]) (^&0)
   else if π₁ t = 16 then adjFact (^&0) (termShift LAct (π₂ t).[2]) (termShift LAct (π₂ t).[3])
   else if π₁ t = 17 then tvPiFact (termShift LAct (π₂ t).[0]) (termShift LAct (π₂ t).[1]) (^&0)
   else if π₁ t = 18 then utvPiFact (termShift LAct (π₂ t).[0]) (^&0)
@@ -2472,14 +2472,14 @@ noncomputable def tagFactDef : 𝚺₁.Semisentence 2 := .mkSigma
     (k = 12 → !funcFactDef y z s0 s1 s3) ∧
     (k = 13 → !bvarFactDef y z s0) ∧
     (k = 14 → !fvarFactDef y z s0) ∧
-    (k = 15 → !tlenFactDef y s0 z) ∧
+    (k = 15 → !termLenMetaFactDef y s0 z) ∧
     (k = 16 → !adjFactDef y z s2 s3) ∧
     (k = 17 → !tvPiFactDef y s0 s1 z) ∧
     (k = 18 → !utvPiFactDef y s0 z) ∧
     (k ≠ 0 → k ≠ 1 → k ≠ 2 → k ≠ 3 → k ≠ 4 → k ≠ 5 → k ≠ 6 → k ≠ 7 → k ≠ 8 → k ≠ 9 → k ≠ 10 → k ≠ 11 → k ≠ 12 → k ≠ 13 → k ≠ 14 → k ≠ 15 → k ≠ 16 → k ≠ 17 → k ≠ 18 → y = 0)”
 
 instance tagFact_defined : 𝚺₁-Function₁ (tagFact : V → V) via tagFactDef := .mk fun v ↦ by
-  simp [tagFactDef, numeral_eq_natCast, termShift.defined.iff, adjFact_defined.iff, allFact_defined.iff, andFact_defined.iff, bvarFact_defined.iff, exsFact_defined.iff, falsumFact_defined.iff, funcFact_defined.iff, fvarFact_defined.iff, lenFact_defined.iff, memFact_defined.iff, nrelFact_defined.iff, orFact_defined.iff, piFact_defined.iff, relFact_defined.iff, tPiFact_defined.iff, tlenFact_defined.iff, tvPiFact_defined.iff, utvPiFact_defined.iff, verumFact_defined.iff]
+  simp [tagFactDef, numeral_eq_natCast, termShift.defined.iff, adjFact_defined.iff, allFact_defined.iff, andFact_defined.iff, bvarFact_defined.iff, exsFact_defined.iff, falsumFact_defined.iff, funcFact_defined.iff, fvarFact_defined.iff, lenFact_defined.iff, memFact_defined.iff, nrelFact_defined.iff, orFact_defined.iff, piFact_defined.iff, relFact_defined.iff, tPiFact_defined.iff, termLenMetaFact_defined.iff, tvPiFact_defined.iff, utvPiFact_defined.iff, verumFact_defined.iff]
   unfold tagFact
   by_cases h0 : π₁ (v 1) = 0
   · simp [h0]
@@ -2601,8 +2601,8 @@ lemma tagFact_14 {t : V} (h : π₁ t = 14) : tagFact t = fvarFact (^&0) (termSh
 
 lemma tagAr_15 : tagAr (15 : V) = 1 := by simp [tagAr]
 lemma tagSteps_15 {W i t : V} (h : π₁ t = 15) : tagSteps W i t = ?[mkStep W 61 ?[(termShift LAct (π₂ t).[0]), (^&(i + 1)), (^&0)]] := by simp [tagSteps, h]
-lemma tagAnts_15 {x t : V} (h : π₁ t = 15) : tagAnts x t = ?[tlenFact (π₂ t).[0] x] := by simp [tagAnts, h]
-lemma tagFact_15 {t : V} (h : π₁ t = 15) : tagFact t = tlenFact (termShift LAct (π₂ t).[0]) (^&0) := by simp [tagFact, h]
+lemma tagAnts_15 {x t : V} (h : π₁ t = 15) : tagAnts x t = ?[termLenMetaFact (π₂ t).[0] x] := by simp [tagAnts, h]
+lemma tagFact_15 {t : V} (h : π₁ t = 15) : tagFact t = termLenMetaFact (termShift LAct (π₂ t).[0]) (^&0) := by simp [tagFact, h]
 
 lemma tagAr_16 : tagAr (16 : V) = 4 := by simp [tagAr]
 lemma tagSteps_16 {W i t : V} (h : π₁ t = 16) : tagSteps W i t = ?[mkStep W 59 ?[(termShift LAct (π₂ t).[0]), (termShift LAct (π₂ t).[1]), (^&(i + 1)), (termShift LAct (π₂ t).[2]), (termShift LAct (π₂ t).[3]), (^&0)]] := by simp [tagSteps, h]
@@ -2929,14 +2929,14 @@ theorem tagSteps_ok {tbl N : V} (htbl : TableOK tbl N) (hL : LayoutTable tbl) {W
     rw [shift_neg (isFormula_fvarFact hsrc ha0.1), shift_fvarFact hsrc ha0.1] at hm0
     rw [termShift_fvar] at hm0
     exact seg1_ok htbl (lok_congFvar htbl hL hWp hΓ₁ ha0.1.termShift ha0.2 hx hEx hy hEy heq hm0)
-  · -- kind 15: tlen
+  · -- kind 15: termLenMeta
     rw [tagSteps_15 hn, tagFact_15 hn]
     rw [tagAnts_15 hn] at hants
     rw [hn, tagAr_15] at hlen
     have ha0 := hargs 0 (by rw [hlen]; exact_mod_cast (by decide : (0 : ℕ) < 1))
     have hm0 := hants 0 (by rw [len_vec1]; exact_mod_cast (by decide : (0 : ℕ) < 1))
     rw [nth_adjoin_zero] at hm0
-    rw [shift_neg (isFormula_tlenFact ha0.1 hsrc), shift_tlenFact ha0.1 hsrc] at hm0
+    rw [shift_neg (isFormula_termLenMetaFact ha0.1 hsrc), shift_termLenMetaFact ha0.1 hsrc] at hm0
     rw [termShift_fvar] at hm0
     exact seg1_ok htbl (lok_congTLen htbl hL hWp hΓ₁ ha0.1.termShift ha0.2 hx hEx hy hEy heq hm0)
   · -- kind 16: adj
@@ -3047,12 +3047,12 @@ theorem copyAux_ok {tbl N : V} (htbl : TableOK tbl N) (hL : LayoutTable tbl) {W 
     have hΓ₂f : IsFormulaSet LAct (finalCtx Γ₁ (copyAux W i T j)) := finalCtx_isFormulaSet 8 htbl hΓ₁ hok
     have hsub : ∀ x ∈ Γ₁, x ∈ finalCtx Γ₁ (copyAux W i T j) := fun x hx ↦ by
       have := mem_finalCtx_of_mem hnd hx; rwa [hsv, shiftIterV_zero] at this
-    obtain ⟨tok, tnd, tho, tsv, tlen, tfact⟩ := tagSteps_ok htbl hL hWp hΓ₂f hiE hk hlen' hargs (hsub _ heq)
+    obtain ⟨tok, tnd, tho, tsv, termLenMeta, tfact⟩ := tagSteps_ok htbl hL hWp hΓ₂f hiE hk hlen' hargs (hsub _ heq)
       (fun m hm ↦ hsub _ (hsh _ (hants m hm)))
     rw [copyAux_succ]
     refine ⟨listOK_appendV hok tok, noDrop_appendV hnd tnd, hornOnly_appendV hho tho, ?_, ?_, ?_⟩
     · rw [shiftsV_appendV, hsv, tsv, add_zero]
-    · rw [len_appendV, mul_add, mul_one]; exact add_le_add hlen tlen
+    · rw [len_appendV, mul_add, mul_one]; exact add_le_add hlen termLenMeta
     · intro m hm
       rw [finalCtx_appendV]
       rcases lt_or_eq_of_le (lt_succ_iff_le.mp hm) with hmj | rfl
@@ -3116,10 +3116,10 @@ the `k` intro steps the prefix `s_i` sits at `&i` and its member is `x_i` (no in
 membership phase). Phases: (pre) `IsFormulaSet 𝟎` in three Horn steps; (A) per member, innermost
 first, `insertTotalC` + `isFormulaSetInsertC` + `fsetSigmaPiC` (`chainNodeA`, one shift each);
 (B) `subsetReflC`, `memInsertSelfC` for `x₀`, then per `i + 1 < k` the four Horn steps
-`subsetInsertC`/`subsetTransC`/`memInsertSelfC`/`subsetMemC` (`chainNodeB`); (D) `setLenTotalC` for
+`subsetInsertC`/`subsetTransC`/`memInsertSelfC`/`subsetMemC` (`chainNodeB`); (D) `sequentLenTotalC` for
 the length object (one more shift). FINAL LAYOUT (`k + 1` shifts, `X'ᵢ := termShiftIterV xᵢ (k+1)`):
 `l_s = &0`, `s = &1`, `s_i = &(i+1)`, with `insFact &(i+1) X'ᵢ (prevAt (k+1) (i+1))`, `fsetPiFact &(i+1)`,
-`memFact X'ᵢ &1` for every `i < k`, and `setLenFact &0 &1` (`chainSteps_ok`). -/
+`memFact X'ᵢ &1` for every `i < k`, and `sequentLenFact &0 &1` (`chainSteps_ok`). -/
 
 section chains
 
@@ -3666,7 +3666,7 @@ lemma chainB_last (W xs k' : V) : chainB W xs (k' + 1) (k' + 1) = chainB W xs (k
 
 /-- **`chainSteps` is applicable.** Final layout (`k := len xs`, `k + 1` shifts, `X'ᵢ := termShiftIterV xᵢ (k+1)`):
 `l_s = &0`, `s = &1`, `s_i = &(i+1)`; the facts `insFact &(i+1) X'ᵢ (prevAt (k+1) (i+1))`, `fsetPiFact &(i+1)`,
-`memFact X'ᵢ &1` for every `i < k`, and `setLenFact &0 &1`. -/
+`memFact X'ᵢ &1` for every `i < k`, and `sequentLenFact &0 &1`. -/
 theorem chainSteps_ok {tbl N : V} (htbl : TableOK tbl N) (hL : LayoutTable tbl) {W : V} (hWp : W = layoutPieces)
     {xs E Γ : V} (hΓ : IsFormulaSet LAct Γ) (hk1 : 1 ≤ len xs) (hE : len xs + 2 ≤ E)
     (hxs : ∀ i < len xs, IsSemiterm LAct 0 xs.[i] ∧ termLen LAct (termShiftIterV xs.[i] (len xs + 1)) ≤ E ∧
@@ -3677,7 +3677,7 @@ theorem chainSteps_ok {tbl N : V} (htbl : TableOK tbl N) (hL : LayoutTable tbl) 
       neg LAct (insFact (^&(i + 1)) (termShiftIterV xs.[i] (len xs + 1)) (prevAt (len xs + 1) (i + 1))) ∈ finalCtx Γ (chainSteps W xs) ∧
       neg LAct (fsetPiFact (^&(i + 1))) ∈ finalCtx Γ (chainSteps W xs) ∧
       neg LAct (memFact (termShiftIterV xs.[i] (len xs + 1)) (^&1)) ∈ finalCtx Γ (chainSteps W xs)) ∧
-    neg LAct (setLenFact (^&0) (^&1)) ∈ finalCtx Γ (chainSteps W xs) := by
+    neg LAct (sequentLenFact (^&0) (^&1)) ∈ finalCtx Γ (chainSteps W xs) := by
   set k := len xs with hk
   have hE1 : 1 ≤ E := le_trans (by exact_mod_cast (by decide : (1 : ℕ) ≤ 2)) (le_trans le_add_self hE)
   have hy : IsSemiterm LAct 0 (^&0 : V) := by simp
@@ -3719,10 +3719,10 @@ theorem chainSteps_ok {tbl N : V} (htbl : TableOK tbl N) (hL : LayoutTable tbl) 
   have htrC : ∀ x ∈ ΓB, x ∈ ΓC := fun x hx ↦ by
     have := mem_finalCtx_of_mem bnd hx; rwa [bsv, shiftIterV_zero] at this
   -- phase D
-  obtain ⟨dok, dtg, dcx⟩ := lok_setLenTotalC htbl hL hWp hΓCf hy hEy
+  obtain ⟨dok, dtg, dcx⟩ := lok_sequentLenTotalC htbl hL hWp hΓCf hy hEy
   rw [Nat.cast_zero, termShift_fvar, zero_add] at dcx
   -- assembly
-  have hfin : finalCtx Γ (chainSteps W xs) = insert (neg LAct (setLenFact (^&0) (^&1))) (setShift LAct ΓC) := by
+  have hfin : finalCtx Γ (chainSteps W xs) = insert (neg LAct (sequentLenFact (^&0) (^&1))) (setShift LAct ΓC) := by
     unfold chainSteps
     rw [← hk, finalCtx_appendV, finalCtx_appendV, finalCtx_appendV, ← hΓB, finalCtx_appendV, ← hΓC, finalCtx_single, dcx]
   have hokAll : ListOK tbl E ((8 : ℕ) : V) Γ (chainSteps W xs) := by
@@ -3754,13 +3754,13 @@ theorem chainSteps_ok {tbl N : V} (htbl : TableOK tbl N) (hL : LayoutTable tbl) 
     have hfi : IsSemiterm LAct 0 (^&i : V) := by simp
     have hxi := (hxs i hi).1
     refine ⟨?_, ?_, ?_⟩
-    · have h2 := mem_shift_insert (f := neg LAct (setLenFact (^&0) (^&1))) (htrC _ (htrB _ (hins i hi)))
+    · have h2 := mem_shift_insert (f := neg LAct (sequentLenFact (^&0) (^&1))) (htrC _ (htrB _ (hins i hi)))
       rwa [shift_neg (isFormula_insFact hfi (isSemiterm_termShiftIterV hxi k) (isSemiterm_prevAt k i)),
         shift_insFact hfi (isSemiterm_termShiftIterV hxi k) (isSemiterm_prevAt k i), termShift_fvar,
         ← termShiftIterV_succ, termShift_prevAt] at h2
-    · have h2 := mem_shift_insert (f := neg LAct (setLenFact (^&0) (^&1))) (htrC _ (htrB _ (hfsA i hi)))
+    · have h2 := mem_shift_insert (f := neg LAct (sequentLenFact (^&0) (^&1))) (htrC _ (htrB _ (hfsA i hi)))
       rwa [shift_neg (isFormula_fsetPiFact hfi), shift_fsetPiFact hfi, termShift_fvar] at h2
-    · have h2 := mem_shift_insert (f := neg LAct (setLenFact (^&0) (^&1))) (bfacts i (hk' ▸ hi)).2
+    · have h2 := mem_shift_insert (f := neg LAct (sequentLenFact (^&0) (^&1))) (bfacts i (hk' ▸ hi)).2
       rwa [shift_neg (isFormula_memFact (isSemiterm_termShiftIterV hxi k) hy), shift_memFact (isSemiterm_termShiftIterV hxi k) hy,
         termShift_fvar, ← termShiftIterV_succ, zero_add] at h2
   · rw [hfin]; simp

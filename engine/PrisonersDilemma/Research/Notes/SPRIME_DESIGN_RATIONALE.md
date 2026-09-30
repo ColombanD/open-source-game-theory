@@ -21,24 +21,24 @@ lines of definitions), which is what makes an audit feasible.
 | # | definition | file | the design choice, and why |
 |---|---|---|---|
 | 1 | `LAct = ℒₒᵣ + {c_C, c_D}`; `swap` exchanges the constants | `Theory/LangAct` | actions are CONSTANTS, not numerals: a numeral is rigid (a proof may reason about it arithmetically), a constant symbol is renamed node by node, so τ transports derivations and preserves length. Engine's 47-arm `Pf.transpose` becomes one generic theorem. |
-| 2 | `TAct = PA + {c_C ≠ c_D, c_D ≠ c_C, axAct, axAct'}`, `axAct : (c_C=0 ∧ c_D=1) ∨ (c_C=1 ∧ c_D=0)` | `Theory/TheoryAct` | each axiom in BOTH orientations so the set is literally swap-closed (an exact iff, not `k` vs `k+c`). `axAct` was the fix for a vacuity: with only `c_C ≠ c_D` a model could read the constants as any pair and no guard was ever provable. Consequence: `TAct` has exactly two standard readings (`stdActS`/`swapActS`). |
-| 3 | `dlen`: symbol count of a derivation code — every node charges its sequent, ∃-witnesses charged | `Length/DerivationLength`, meta twin `mlen` | symbol-BLIND (a symbol counts 1 whatever its code) ⇒ invariant under every language hom, hence under τ. Charges forced by properness (weakening, unconstrained witnesses). Residue: variable indices unary (the only cause of U10's degree 16 rather than 3). |
-| 4 | `□_k φ := ∃ d < fbound k, Proof TAct d φ ∧ dlen d ≤ k` (`LenProvableV`, Δ₁; `fbound k = exp³(12k)+1`) | `Box/BewV` | the code bound only makes the box Δ₁; properness (`quote_derivation_le`, `ProperV`) proves it never excludes a proof of length ≤ k, so it equals the Σ₁ `LenDerivable` in every model. The reader decides once that `dlen` is an acceptable "number of characters". |
-| 5 | program codes on `ppair x y = (x+y)²+y`: `pConst pSelf pOpp pBot pSim pIte pSearch`; `swapcode` | `Agents/Prog` | `ppair` is term-expressible (Foundation's `pair` is an `if`), so a searcher's guard is the `bnum k`-instance of ONE fixed formula — what the parametric Löb argument needs. |
-| 6 | descriptions: a program enters a sentence as `(progT (dnum x), dU x, dW x)` — a binary-numeral TERM of the canonical τ-orbit member plus the two constants in reconstructing order | `Agents/ProgT`, `Bnum`, `Guard` | τ acts on descriptions SYNTACTICALLY; length `O(log x)` (Critch's (b)). With unary numerals no search could ever succeed (the retired `Vacuity.lean`); `guard_fits` is the positive replacement. |
-| 7 | `guardTemplate a` ("the program described by the opp-triple plays `a` against the one described by the me-triple"); `tmpl : PD.Formula → sentence`, `pcode`; `guardCode g me opp` fills the six slots; `guardCodeB` adds slot `#6` = the node's own budget | `Agents/Template`, `Code`, `Guard` | the seventh slot (route (c)) exists because `JustBot k` freezes a budget-carrying snapshot in its guard, so no six-variable template describes it as a `bnum k`-instance; the gate lemma `guardCodeB_of_template` keeps every six-variable statement byte-identical. |
-| 8 | `psubst`/`gsubst`: the engine's ONE-SHOT `Prog.subst` on codes (`.bot` frozen, a simulated program's guard reads the OUTER players) | `Agents/Subst` | restricted to genuine templates (6 or 7 variables) because Foundation's `subst` truncates out-of-range variables; that restriction is what makes τ-equivariance hold on every code. `pcode_subst` proves agreement with the engine on the box-free fragment. |
+| 2 | `TAct = PA + {c_C ≠ c_D, c_D ≠ c_C, actionAxiom, actionAxiom'}`, `actionAxiom : (c_C=0 ∧ c_D=1) ∨ (c_C=1 ∧ c_D=0)` | `Theory/TheoryAct` | each axiom in BOTH orientations so the set is literally swap-closed (an exact iff, not `k` vs `k+c`). `actionAxiom` was the fix for a vacuity: with only `c_C ≠ c_D` a model could read the constants as any pair and no guard was ever provable. Consequence: `TAct` has exactly two standard readings (`stdReading`/`swappedReading`). |
+| 3 | `proofLen`: symbol count of a derivation code — every node charges its sequent, ∃-witnesses charged | `Length/DerivationLength`, meta twin `proofLenMeta` | symbol-BLIND (a symbol counts 1 whatever its code) ⇒ invariant under every language hom, hence under τ. Charges forced by properness (weakening, unconstrained witnesses). Residue: variable indices unary (the only cause of U10's degree 16 rather than 3). |
+| 4 | `□_k φ := ∃ d < codeBound k, Proof TAct d φ ∧ proofLen d ≤ k` (`LenBox`, Δ₁; `codeBound k = exp³(12k)+1`) | `Box/BewV` | the code bound only makes the box Δ₁; properness (`quote_derivation_le`, `ProperBound`) proves it never excludes a proof of length ≤ k, so it equals the Σ₁ `LenBoxUnbounded` in every model. The reader decides once that `proofLen` is an acceptable "number of characters". |
+| 5 | program codes on `ppair x y = (x+y)²+y`: `pConst pSelf pOpp pBot pSim pIte pSearch`; `transposeCode` | `Agents/Prog` | `ppair` is term-expressible (Foundation's `pair` is an `if`), so a searcher's guard is the `binNumeral k`-instance of ONE fixed formula — what the parametric Löb argument needs. |
+| 6 | descriptions: a program enters a sentence as `(codeTerm (canonical x), revalueU x, revalueW x)` — a binary-numeral TERM of the canonical τ-orbit member plus the two constants in reconstructing order | `Agents/CodeTerm`, `BinNumeral`, `Guard` | τ acts on descriptions SYNTACTICALLY; length `O(log x)` (Critch's (b)). With unary numerals no search could ever succeed (the retired `Vacuity.lean`); `guard_fits` is the positive replacement. |
+| 7 | `guardTemplate a` ("the program described by the opp-triple plays `a` against the one described by the me-triple"); `template : PD.Formula → sentence`, `progCode`; `guardCode g me opp` fills the six slots; `guardCodeB` adds slot `#6` = the node's own budget | `Agents/Template`, `Code`, `Guard` | the seventh slot (route (c)) exists because `JustBot k` freezes a budget-carrying snapshot in its guard, so no six-variable template describes it as a `binNumeral k`-instance; the gate lemma `guardCodeB_of_template` keeps every six-variable statement byte-identical. |
+| 8 | `substCode`/`substTemplate`: the engine's ONE-SHOT `Prog.subst` on codes (`.bot` frozen, a simulated program's guard reads the OUTER players) | `Agents/Subst` | restricted to genuine templates (6 or 7 variables) because Foundation's `subst` truncates out-of-range variables; that restriction is what makes τ-equivariance hold on every code. `progCode_subst` proves agreement with the engine on the box-free fragment. |
 | 9 | `EvalGraph n me opp p a`: a Σ₁ fixpoint mirroring `eval` clause by clause; `pSearch k g p q` runs `p` iff `□_k (guardCodeB g me opp k)` | `Eval/Eval` | determinism and fuel-monotonicity at ℕ (`EvalGraph.unique'`, `mono_le`); on search-free constructors in LOCKSTEP with the engine's `eval` at the same fuel (the 28 SF cells transfer). |
 
 ## 2. The two methods
 
-* **Positive (found guards).** Never by exhibiting a derivation: `tact_complete'` — a sentence true in BOTH
+* **Positive (found guards).** Never by exhibiting a derivation: `TAct_complete_of_readings` — a sentence true in BOTH
   readings of every model of PA is a `TAct`-theorem. The swap reading is, by the truth equations, the cell of
   the transposed programs, so one `LoebSound` proof covers a cell and its τ-twin. Then `found_of_all` (the
   `k`-instance of a `TAct`-theorem fits the budget for large `k`) or the Löb engine `family_found` with
   `BoundedInnerNec 16` (`Necessitation/Package.lean`).
 * **Negative (else branches).** Soundness of `TAct` in ℕ: a found guard is a true play
-  (`models_trAt_of_lenProvableV` + the truth equations `models_guardSentenceA_iff`, `models_trAt_plays`).
+  (`models_sentenceAt_of_lenBox` + the truth equations `models_guardSentence_iff`, `models_sentenceAt_plays`).
   This closes the red cell and the 36 SND cells; no negative is ever proved inside `TAct`.
 
 ## 3. Outside, by decision
@@ -60,10 +60,10 @@ lines of definitions), which is what makes an audit feasible.
 
 * Negative controls: the opposite outcomes of the red cell are REFUTED at every fuel; `search_is_real`
   (= `guard_fits`): "unprovable at `k`" is not "too long to state" (`Audit/RedCellAudit.lean`).
-* Executed mutations: swapping Dupoc's branches breaks the red cell; dropping `dlen` trivializes
+* Executed mutations: swapping Dupoc's branches breaks the red cell; dropping `proofLen` trivializes
   `guard_fits`; dropping soundness (`TBad = TAct + c_C = c_D`) makes both searchers find their guards and
   the cell FLIPS to `(C, D)` (`Audit/RedCellUnsound.lean`) — a vacuous box could not produce this.
 * Stated once, instantiated twice: the engine's abstract `RedCellFramework` is instantiated with `Pf` and
-  with `LenProvableV TAct`, sharing no code, agreeing on the conclusion.
-* Two vacuities were caught by asking for a POSITIVE fact (unary numerals; `TAct` without `axAct`); both
+  with `LenBox TAct`, sharing no code, agreeing on the conclusion.
+* Two vacuities were caught by asking for a POSITIVE fact (unary numerals; `TAct` without `actionAxiom`); both
   are now theorems in the opposite direction.

@@ -1,30 +1,30 @@
 import ArithS.Necessitation.NumIdRows
 
 /-!
-# ArithS.Necessitation.BnumSteps — the bit-wise certification of `bnum k` (`Pin.BnumOracle`)
+# ArithS.Necessitation.BinNumeralSteps — the bit-wise certification of `binNumeral k` (`Pin.BinNumeralOracle`)
 
-`DESIGN_fragments.md` §7.1 step 1. From the term dossier of the binary numeral `bnum k` at `&j`
-(`DossT walkPieces Γ 0 (bnum k) j`), a shift-free step list `bnumSteps Wn Wd T k j` leaves
-`bnumFact &j (bnum k)` — the object-level certificate "`&j` is the binary numeral of `k`", one Horn step
-per bit (rows `bnumZeroCert`/`bnumOneCert`/`bnumEvenCert`/`bnumOddOfEven` of `NumIdRows.lean`) plus, per
-bit `m ≥ 1`, the `sLemma` `𝟏 ≤ bnum m` (`NumSteps.oneLe_proof`, a closed `NumSteps` derivation) and, at an
+`DESIGN_fragments.md` §7.1 step 1. From the term dossier of the binary numeral `binNumeral k` at `&j`
+(`DossT walkPieces Γ 0 (binNumeral k) j`), a shift-free step list `binNumeralSteps Wn Wd T k j` leaves
+`binNumeralFact &j (binNumeral k)` — the object-level certificate "`&j` is the binary numeral of `k`", one Horn step
+per bit (rows `binNumeralZeroCert`/`binNumeralOneCert`/`binNumeralEvenCert`/`binNumeralOddOfEven` of `NumIdRows.lean`) plus, per
+bit `m ≥ 1`, the `sLemma` `𝟏 ≤ binNumeral m` (`NumSteps.oneLe_proof`, a closed `NumSteps` derivation) and, at an
 even bit, the identification of the two eigenvariables of `𝟐 = 𝟏 ^+ 𝟏` (`eqRefl`/`eqOfFunc`/`eqRefl`/
 `congAdj`, `Layout` rows `41/71/59`, read through the piece-table chain down to `layoutPieces`).
 
 * §0 the offsets and the two tails `bnEvenTail`/`bnOddTop` as Σ₁ functions (explicit `Def`s);
 * §1 the producer: a `Fixpoint` on `⟪k, j, y⟫` over the bits of `k` (parameters `Wn Wd T c₁ c₂`, `c₁ c₂`
   the dossier counts of `𝟏` and `𝟐`), `BnGraph`, the case lemma, existence (Σ₁ motive, offsets bounded);
-  `bnumSteps` by `Classical.choose` (no uniqueness needed — every statement runs over the graph);
-* §2 `bnumSteps_ok`: applicable at cap `9`, cut-admitting, SHIFT-FREE, `len ≤ 8‖k‖ + 1`, `SizeOK`, and the
-  fact `bnumFact &j (bnum k)` in the final context (Π₁ order induction on `k`);
-* §3 `bnumOracle_of : NumTableOK tblN … → BnumOracle tbl E k Cb` with the explicit standard `Cb`.
+  `binNumeralSteps` by `Classical.choose` (no uniqueness needed — every statement runs over the graph);
+* §2 `binNumeralSteps_ok`: applicable at cap `9`, cut-admitting, SHIFT-FREE, `len ≤ 8‖k‖ + 1`, `SizeOK`, and the
+  fact `binNumeralFact &j (binNumeral k)` in the final context (Π₁ order induction on `k`);
+* §3 `binNumeralOracle_of : NumTableOK tblN … → BinNumeralOracle tbl E k Cb` with the explicit standard `Cb`.
 
-Offsets of the dossier of `bnum (2m) = 𝟐 ^* bnum m = ^func 2 1 ?[𝟐, bnum m]` at `&j` (`Cert.dossT_func`,
+Offsets of the dossier of `binNumeral (2m) = 𝟐 ^* binNumeral m = ^func 2 1 ?[𝟐, binNumeral m]` at `&j` (`Cert.dossT_func`,
 `dossV_succ`): `funcFact &j (cT 2) (cT 1) &(j+1)`; `adjFact &(j+1) &(j+2) &(j+2+c₂)`; the dossier of `𝟐` at
 `j+2`: `funcFact &(j+2) (cT 2) 𝟎 &(j+3)`, `adjFact &(j+3) &(j+4) &(j+4+c₁)`, `funcFact &(j+4) 𝟎 (cT 1) 𝟎`,
 `adjFact &(j+4+c₁) &(j+5+c₁) 𝟎`, `funcFact &(j+5+c₁) 𝟎 (cT 1) 𝟎`; then `adjFact &(j+2+c₂) &(j+3+c₂) 𝟎` and the
-dossier of `bnum m` at `j+3+c₂`. For `bnum (2m+1) = (𝟐 ^* bnum m) ^+ 𝟏 = ^func 2 0 ?[𝟐 ^* bnum m, 𝟏]`:
-`funcFact &j (cT 2) 𝟎 &(j+1)`, `adjFact &(j+1) &(j+2) &(j+2+cₑ)` with `cₑ = descCountT (bnum (2m))`, the even
+dossier of `binNumeral m` at `j+3+c₂`. For `binNumeral (2m+1) = (𝟐 ^* binNumeral m) ^+ 𝟏 = ^func 2 0 ?[𝟐 ^* binNumeral m, 𝟏]`:
+`funcFact &j (cT 2) 𝟎 &(j+1)`, `adjFact &(j+1) &(j+2) &(j+2+cₑ)` with `cₑ = descCountT (binNumeral (2m))`, the even
 dossier at `j+2`, `adjFact &(j+2+cₑ) &(j+3+cₑ) 𝟎`, `funcFact &(j+3+cₑ) 𝟎 (cT 1) 𝟎`.
 -/
 
@@ -50,25 +50,25 @@ variable {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
 section tails
 
 /-- The even tail at offset `j` for `k = 2m`: `eqRefl 𝟎`, `eqOfFunc` (the two `𝟏`s of `𝟐`), `eqRefl`,
-`congAdj`, the `sLemma` `𝟏 ≤ bnum m`, `bnumEvenCert`. -/
+`congAdj`, the `sLemma` `𝟏 ≤ binNumeral m`, `binNumeralEvenCert`. -/
 noncomputable def bnEvenTail (Wn T c₁ c₂ m j : V) : V :=
   ?[mkStep Wn 41 ?[(𝟎 : V)],
     mkStep Wn 71 ?[^&(j + 4), (𝟎 : V), cT 1, (𝟎 : V), (𝟎 : V), ^&(j + 5 + c₁)],
     mkStep Wn 41 ?[^&(j + 4 + c₁)],
     mkStep Wn 59 ?[^&(j + 5 + c₁), (𝟎 : V), ^&(j + 4 + c₁), ^&(j + 4), (𝟎 : V), ^&(j + 4 + c₁)],
-    sLemma (leFact (𝟏 : V) (bnum m)) (leCode T 1 m),
-    mkStep Wn ((nIdx_bnumEvenCert : ℕ) : V)
-      ?[bnum m, ^&(j + 3 + c₂), ^&(j + 4), ^&(j + 4 + c₁), ^&(j + 3), ^&(j + 2), ^&(j + 2 + c₂), ^&(j + 1), ^&j]]
+    sLemma (leFact (𝟏 : V) (binNumeral m)) (leCode T 1 m),
+    mkStep Wn ((nIdx_binNumeralEvenCert : ℕ) : V)
+      ?[binNumeral m, ^&(j + 3 + c₂), ^&(j + 4), ^&(j + 4 + c₁), ^&(j + 3), ^&(j + 2), ^&(j + 2 + c₂), ^&(j + 1), ^&j]]
 
-/-- The top of the odd tail at offset `j` for `k = 2m + 1` (`ce` the dossier count of `bnum (2m)`): the
-`sLemma` `𝟏 ≤ bnum m` and `bnumOddOfEven`. -/
+/-- The top of the odd tail at offset `j` for `k = 2m + 1` (`ce` the dossier count of `binNumeral (2m)`): the
+`sLemma` `𝟏 ≤ binNumeral m` and `binNumeralOddOfEven`. -/
 noncomputable def bnOddTop (Wn T ce m j : V) : V :=
-  ?[sLemma (leFact (𝟏 : V) (bnum m)) (leCode T 1 m),
-    mkStep Wn ((nIdx_bnumOddOfEven : ℕ) : V) ?[bnum m, ^&(j + 3 + ce), ^&(j + 2), ^&(j + 2 + ce), ^&(j + 1), ^&j]]
+  ?[sLemma (leFact (𝟏 : V) (binNumeral m)) (leCode T 1 m),
+    mkStep Wn ((nIdx_binNumeralOddOfEven : ℕ) : V) ?[binNumeral m, ^&(j + 3 + ce), ^&(j + 2), ^&(j + 2 + ce), ^&(j + 1), ^&j]]
 
 noncomputable def bnEvenTailDef : 𝚺₁.Semisentence 7 := .mkSigma
   “y Wn T c₁ c₂ m j.
-    ∃ z, z = ↑Arithmetic.zero ∧ ∃ one, one = ↑Arithmetic.one ∧ ∃ ct1, !cTVGraph ct1 1 ∧ ∃ bm, !bnumGraph bm m ∧
+    ∃ z, z = ↑Arithmetic.zero ∧ ∃ one, one = ↑Arithmetic.one ∧ ∃ ct1, !cTVGraph ct1 1 ∧ ∃ bm, !binNumeralGraph bm m ∧
     ∃ f0, !qqFvarDef f0 j ∧ ∃ f1, !qqFvarDef f1 (j + 1) ∧ ∃ f2, !qqFvarDef f2 (j + 2) ∧ ∃ f3, !qqFvarDef f3 (j + 3) ∧
     ∃ f4, !qqFvarDef f4 (j + 4) ∧ ∃ f4c, !qqFvarDef f4c (j + 4 + c₁) ∧ ∃ f5c, !qqFvarDef f5c (j + 5 + c₁) ∧
     ∃ f2d, !qqFvarDef f2d (j + 2 + c₂) ∧ ∃ f3d, !qqFvarDef f3d (j + 3 + c₂) ∧
@@ -81,30 +81,30 @@ noncomputable def bnEvenTailDef : 𝚺₁.Semisentence 7 := .mkSigma
     ∃ A₅, !leFactDef A₅ one bm ∧ ∃ d₅, !leCodeDef d₅ T 1 m ∧ ∃ q₅, !pairDef q₅ A₅ d₅ ∧ ∃ s₅, !pairDef s₅ 7 q₅ ∧
     ∃ e₆₀, !mkVec₂Def e₆₀ f1 f0 ∧ ∃ e₆₁, !adjoinDef e₆₁ f2d e₆₀ ∧ ∃ e₆₂, !adjoinDef e₆₂ f2 e₆₁ ∧
     ∃ e₆₃, !adjoinDef e₆₃ f3 e₆₂ ∧ ∃ e₆₄, !adjoinDef e₆₄ f4c e₆₃ ∧ ∃ e₆₅, !adjoinDef e₆₅ f4 e₆₄ ∧
-    ∃ e₆₆, !adjoinDef e₆₆ f3d e₆₅ ∧ ∃ e₆, !adjoinDef e₆ bm e₆₆ ∧ ∃ s₆, !mkStepDef s₆ Wn ↑nIdx_bnumEvenCert e₆ ∧
+    ∃ e₆₆, !adjoinDef e₆₆ f3d e₆₅ ∧ ∃ e₆, !adjoinDef e₆ bm e₆₆ ∧ ∃ s₆, !mkStepDef s₆ Wn ↑nIdx_binNumeralEvenCert e₆ ∧
     ∃ l₆, !mkVec₁Def l₆ s₆ ∧ ∃ l₅, !adjoinDef l₅ s₅ l₆ ∧ ∃ l₄, !adjoinDef l₄ s₄ l₅ ∧ ∃ l₃, !adjoinDef l₃ s₃ l₄ ∧
     ∃ l₂, !adjoinDef l₂ s₂ l₃ ∧ !adjoinDef y s₁ l₂”
 
 instance bnEvenTail_defined :
     𝚺₁.DefinedFunction (fun v : Fin 6 → V ↦ bnEvenTail (v 0) (v 1) (v 2) (v 3) (v 4) (v 5)) bnEvenTailDef := .mk
   fun v ↦ by
-    simp [bnEvenTailDef, bnEvenTail, numeral_eq_natCast, mkStep_defined.iff, bnum.defined.iff, cTV.defined.iff,
+    simp [bnEvenTailDef, bnEvenTail, numeral_eq_natCast, mkStep_defined.iff, binNumeral.defined.iff, cTV.defined.iff,
       leFact_defined.iff, leCode_defined.iff, sLemma, cT]
 
 noncomputable def bnOddTopDef : 𝚺₁.Semisentence 6 := .mkSigma
   “y Wn T ce m j.
-    ∃ one, one = ↑Arithmetic.one ∧ ∃ bm, !bnumGraph bm m ∧
+    ∃ one, one = ↑Arithmetic.one ∧ ∃ bm, !binNumeralGraph bm m ∧
     ∃ f0, !qqFvarDef f0 j ∧ ∃ f1, !qqFvarDef f1 (j + 1) ∧ ∃ f2, !qqFvarDef f2 (j + 2) ∧
     ∃ f2e, !qqFvarDef f2e (j + 2 + ce) ∧ ∃ f3e, !qqFvarDef f3e (j + 3 + ce) ∧
     ∃ A₁, !leFactDef A₁ one bm ∧ ∃ d₁, !leCodeDef d₁ T 1 m ∧ ∃ q₁, !pairDef q₁ A₁ d₁ ∧ ∃ s₁, !pairDef s₁ 7 q₁ ∧
     ∃ e₂₀, !mkVec₂Def e₂₀ f1 f0 ∧ ∃ e₂₁, !adjoinDef e₂₁ f2e e₂₀ ∧ ∃ e₂₂, !adjoinDef e₂₂ f2 e₂₁ ∧
-    ∃ e₂₃, !adjoinDef e₂₃ f3e e₂₂ ∧ ∃ e₂, !adjoinDef e₂ bm e₂₃ ∧ ∃ s₂, !mkStepDef s₂ Wn ↑nIdx_bnumOddOfEven e₂ ∧
+    ∃ e₂₃, !adjoinDef e₂₃ f3e e₂₂ ∧ ∃ e₂, !adjoinDef e₂ bm e₂₃ ∧ ∃ s₂, !mkStepDef s₂ Wn ↑nIdx_binNumeralOddOfEven e₂ ∧
     ∃ l₂, !mkVec₁Def l₂ s₂ ∧ !adjoinDef y s₁ l₂”
 
 instance bnOddTop_defined :
     𝚺₁.DefinedFunction (fun v : Fin 5 → V ↦ bnOddTop (v 0) (v 1) (v 2) (v 3) (v 4)) bnOddTopDef := .mk
   fun v ↦ by
-    simp [bnOddTopDef, bnOddTop, numeral_eq_natCast, mkStep_defined.iff, bnum.defined.iff,
+    simp [bnOddTopDef, bnOddTop, numeral_eq_natCast, mkStep_defined.iff, binNumeral.defined.iff,
       leFact_defined.iff, leCode_defined.iff, sLemma]
 
 lemma len_bnEvenTail (Wn T c₁ c₂ m j : V) : len (bnEvenTail Wn T c₁ c₂ m j) = 6 := by
@@ -121,11 +121,11 @@ namespace BnSteps
 /-- The four cases: `k = 0`, `k = 1`, `k = 2m` (the sub-list at `j + 3 + c₂`, then the even tail), and
 `k = 2m + 1` (the sub-list at `j + 5 + c₂`, the even tail at `j + 2`, then the odd top). -/
 def Cases (Wn Wd T c₁ c₂ : V) (C : Set V) (k j y : V) : Prop :=
-  (k = 0 ∧ y = ?[mkStep Wn ((nIdx_bnumZeroCert : ℕ) : V) ?[^&j]]) ∨
-  (k = 1 ∧ y = ?[mkStep Wn ((nIdx_bnumOneCert : ℕ) : V) ?[^&j]]) ∨
+  (k = 0 ∧ y = ?[mkStep Wn ((nIdx_binNumeralZeroCert : ℕ) : V) ?[^&j]]) ∨
+  (k = 1 ∧ y = ?[mkStep Wn ((nIdx_binNumeralOneCert : ℕ) : V) ?[^&j]]) ∨
   (∃ m < k, 1 ≤ m ∧ k = 2 * m ∧ ∃ y' ≤ y, ⟪m, j + 3 + c₂, y'⟫ ∈ C ∧ y = appendV y' (bnEvenTail Wn T c₁ c₂ m j)) ∨
   (∃ m < k, 1 ≤ m ∧ k = 2 * m + 1 ∧ ∃ y' ≤ y, ⟪m, j + 5 + c₂, y'⟫ ∈ C ∧
-    y = appendV y' (appendV (bnEvenTail Wn T c₁ c₂ m (j + 2)) (bnOddTop Wn T (descCountT Wd 0 (bnum (2 * m))) m j)))
+    y = appendV y' (appendV (bnEvenTail Wn T c₁ c₂ m (j + 2)) (bnOddTop Wn T (descCountT Wd 0 (binNumeral (2 * m))) m j)))
 
 def Phi (Wn Wd T c₁ c₂ : V) (C : Set V) (pr : V) : Prop :=
   ∃ k ≤ pr, ∃ q₁ ≤ pr, pr = ⟪k, q₁⟫ ∧ ∃ j ≤ q₁, ∃ y ≤ q₁, q₁ = ⟪j, y⟫ ∧ Cases Wn Wd T c₁ c₂ C k j y
@@ -141,21 +141,21 @@ lemma phi_unpack (Wn Wd T c₁ c₂ : V) (C : Set V) (pr : V) :
 noncomputable def blueprint : Fixpoint.Blueprint 5 := ⟨.mkDelta
   (.mkSigma “pr C Wn Wd T c₁ c₂.
     ∃ k <⁺ pr, ∃ q₁ <⁺ pr, !pairDef pr k q₁ ∧ ∃ j <⁺ q₁, ∃ y <⁺ q₁, !pairDef q₁ j y ∧
-    ( (k = 0 ∧ ∃ f, !qqFvarDef f j ∧ ∃ e, !mkVec₁Def e f ∧ ∃ s, !mkStepDef s Wn ↑nIdx_bnumZeroCert e ∧ ∃ l, !mkVec₁Def l s ∧ y = l) ∨
-      (k = 1 ∧ ∃ f, !qqFvarDef f j ∧ ∃ e, !mkVec₁Def e f ∧ ∃ s, !mkStepDef s Wn ↑nIdx_bnumOneCert e ∧ ∃ l, !mkVec₁Def l s ∧ y = l) ∨
+    ( (k = 0 ∧ ∃ f, !qqFvarDef f j ∧ ∃ e, !mkVec₁Def e f ∧ ∃ s, !mkStepDef s Wn ↑nIdx_binNumeralZeroCert e ∧ ∃ l, !mkVec₁Def l s ∧ y = l) ∨
+      (k = 1 ∧ ∃ f, !qqFvarDef f j ∧ ∃ e, !mkVec₁Def e f ∧ ∃ s, !mkStepDef s Wn ↑nIdx_binNumeralOneCert e ∧ ∃ l, !mkVec₁Def l s ∧ y = l) ∨
       (∃ m < k, 1 ≤ m ∧ k = 2 * m ∧ ∃ y' <⁺ y, ∃ b₃, !pairDef b₃ (j + 3 + c₂) y' ∧ :⟪m, b₃⟫:∈ C ∧
         ∃ t, !bnEvenTailDef t Wn T c₁ c₂ m j ∧ ∃ a, !appendVDef a y' t ∧ y = a) ∨
       (∃ m < k, 1 ≤ m ∧ k = 2 * m + 1 ∧ ∃ y' <⁺ y, ∃ b₃, !pairDef b₃ (j + 5 + c₂) y' ∧ :⟪m, b₃⟫:∈ C ∧
-        ∃ t, !bnEvenTailDef t Wn T c₁ c₂ m (j + 2) ∧ ∃ b2, !bnumGraph b2 (2 * m) ∧ ∃ ce, !descCountTDef ce Wd 0 b2 ∧
+        ∃ t, !bnEvenTailDef t Wn T c₁ c₂ m (j + 2) ∧ ∃ b2, !binNumeralGraph b2 (2 * m) ∧ ∃ ce, !descCountTDef ce Wd 0 b2 ∧
         ∃ o, !bnOddTopDef o Wn T ce m j ∧ ∃ a₁, !appendVDef a₁ t o ∧ ∃ a, !appendVDef a y' a₁ ∧ y = a) )”)
   (.mkPi “pr C Wn Wd T c₁ c₂.
     ∃ k <⁺ pr, ∃ q₁ <⁺ pr, !pairDef pr k q₁ ∧ ∃ j <⁺ q₁, ∃ y <⁺ q₁, !pairDef q₁ j y ∧
-    ( (k = 0 ∧ ∀ f, !qqFvarDef f j → ∀ e, !mkVec₁Def e f → ∀ s, !mkStepDef s Wn ↑nIdx_bnumZeroCert e → ∀ l, !mkVec₁Def l s → y = l) ∨
-      (k = 1 ∧ ∀ f, !qqFvarDef f j → ∀ e, !mkVec₁Def e f → ∀ s, !mkStepDef s Wn ↑nIdx_bnumOneCert e → ∀ l, !mkVec₁Def l s → y = l) ∨
+    ( (k = 0 ∧ ∀ f, !qqFvarDef f j → ∀ e, !mkVec₁Def e f → ∀ s, !mkStepDef s Wn ↑nIdx_binNumeralZeroCert e → ∀ l, !mkVec₁Def l s → y = l) ∨
+      (k = 1 ∧ ∀ f, !qqFvarDef f j → ∀ e, !mkVec₁Def e f → ∀ s, !mkStepDef s Wn ↑nIdx_binNumeralOneCert e → ∀ l, !mkVec₁Def l s → y = l) ∨
       (∃ m < k, 1 ≤ m ∧ k = 2 * m ∧ ∃ y' <⁺ y, ∀ b₃, !pairDef b₃ (j + 3 + c₂) y' → :⟪m, b₃⟫:∈ C ∧
         ∀ t, !bnEvenTailDef t Wn T c₁ c₂ m j → ∀ a, !appendVDef a y' t → y = a) ∨
       (∃ m < k, 1 ≤ m ∧ k = 2 * m + 1 ∧ ∃ y' <⁺ y, ∀ b₃, !pairDef b₃ (j + 5 + c₂) y' → :⟪m, b₃⟫:∈ C ∧
-        ∀ t, !bnEvenTailDef t Wn T c₁ c₂ m (j + 2) → ∀ b2, !bnumGraph b2 (2 * m) → ∀ ce, !descCountTDef ce Wd 0 b2 →
+        ∀ t, !bnEvenTailDef t Wn T c₁ c₂ m (j + 2) → ∀ b2, !binNumeralGraph b2 (2 * m) → ∀ ce, !descCountTDef ce Wd 0 b2 →
         ∀ o, !bnOddTopDef o Wn T ce m j → ∀ a₁, !appendVDef a₁ t o → ∀ a, !appendVDef a y' a₁ → y = a) )”)⟩
 
 set_option maxHeartbeats 2000000 in
@@ -164,10 +164,10 @@ noncomputable def construction : Fixpoint.Construction V blueprint where
   defined := .mk <| by
     constructor
     · intro v
-      simp [blueprint, mkStep_defined.iff, bnEvenTail_defined.iff, bnOddTop_defined.iff, bnum.defined.iff,
+      simp [blueprint, mkStep_defined.iff, bnEvenTail_defined.iff, bnOddTop_defined.iff, binNumeral.defined.iff,
         descCountT_defined.iff, appendV_defined.iff, numeral_eq_natCast]
     · intro v
-      simp [blueprint, Phi, Cases, mkStep_defined.iff, bnEvenTail_defined.iff, bnOddTop_defined.iff, bnum.defined.iff,
+      simp [blueprint, Phi, Cases, mkStep_defined.iff, bnEvenTail_defined.iff, bnOddTop_defined.iff, binNumeral.defined.iff,
         descCountT_defined.iff, appendV_defined.iff, numeral_eq_natCast]
   monotone := by
     intro C C' hC w pr h
@@ -203,7 +203,7 @@ end BnSteps
 its `comp` rules stop at arity 5). -/
 def BnPackedP (P pr : V) : Prop :=
   BnSteps.construction.Fixpoint ![π₁ P, π₁ (π₂ P), π₁ (π₂ (π₂ P)), π₁ (π₂ (π₂ (π₂ P))), π₂ (π₂ (π₂ (π₂ P)))] pr
-/-- `BnGraph Wn Wd T c₁ c₂ k j y`: the certification list of `bnum k` at offset `j` is `y`. -/
+/-- `BnGraph Wn Wd T c₁ c₂ k j y`: the certification list of `binNumeral k` at offset `j` is `y`. -/
 def BnGraph (Wn Wd T c₁ c₂ k j y : V) : Prop := BnPackedP ⟪Wn, Wd, T, c₁, c₂⟫ ⟪k, j, y⟫
 
 noncomputable def bnPackedPDef : 𝚺₁.Semisentence 2 := .mkSigma
@@ -220,12 +220,12 @@ instance bnPackedP_definable : 𝚺₁-Relation (BnPackedP : V → V → Prop) :
 
 lemma BnGraph.case_iff {Wn Wd T c₁ c₂ k j y : V} :
     BnGraph Wn Wd T c₁ c₂ k j y ↔
-    ( (k = 0 ∧ y = ?[mkStep Wn ((nIdx_bnumZeroCert : ℕ) : V) ?[^&j]]) ∨
-      (k = 1 ∧ y = ?[mkStep Wn ((nIdx_bnumOneCert : ℕ) : V) ?[^&j]]) ∨
+    ( (k = 0 ∧ y = ?[mkStep Wn ((nIdx_binNumeralZeroCert : ℕ) : V) ?[^&j]]) ∨
+      (k = 1 ∧ y = ?[mkStep Wn ((nIdx_binNumeralOneCert : ℕ) : V) ?[^&j]]) ∨
       (∃ m < k, 1 ≤ m ∧ k = 2 * m ∧ ∃ y' ≤ y, BnGraph Wn Wd T c₁ c₂ m (j + 3 + c₂) y' ∧
         y = appendV y' (bnEvenTail Wn T c₁ c₂ m j)) ∨
       (∃ m < k, 1 ≤ m ∧ k = 2 * m + 1 ∧ ∃ y' ≤ y, BnGraph Wn Wd T c₁ c₂ m (j + 5 + c₂) y' ∧
-        y = appendV y' (appendV (bnEvenTail Wn T c₁ c₂ m (j + 2)) (bnOddTop Wn T (descCountT Wd 0 (bnum (2 * m))) m j))) ) := by
+        y = appendV y' (appendV (bnEvenTail Wn T c₁ c₂ m (j + 2)) (bnOddTop Wn T (descCountT Wd 0 (binNumeral (2 * m))) m j))) ) := by
   unfold BnGraph BnPackedP
   simp only [pi₁_pair, pi₂_pair]
   rw [BnSteps.construction.case]
@@ -235,7 +235,7 @@ lemma BnGraph.case_iff {Wn Wd T c₁ c₂ k j y : V} :
     exact h, fun h ↦ ⟨k, j, y, rfl, h⟩⟩
 
 lemma BnGraph.zero_iff {Wn Wd T c₁ c₂ j y : V} :
-    BnGraph Wn Wd T c₁ c₂ 0 j y ↔ y = ?[mkStep Wn ((nIdx_bnumZeroCert : ℕ) : V) ?[^&j]] := by
+    BnGraph Wn Wd T c₁ c₂ 0 j y ↔ y = ?[mkStep Wn ((nIdx_binNumeralZeroCert : ℕ) : V) ?[^&j]] := by
   rw [BnGraph.case_iff]
   constructor
   · rintro (⟨_, h⟩ | ⟨h, _⟩ | ⟨m, hm, h1, hk, _⟩ | ⟨m, hm, h1, hk, _⟩)
@@ -246,7 +246,7 @@ lemma BnGraph.zero_iff {Wn Wd T c₁ c₂ j y : V} :
   · intro h; exact Or.inl ⟨rfl, h⟩
 
 lemma BnGraph.one_iff {Wn Wd T c₁ c₂ j y : V} :
-    BnGraph Wn Wd T c₁ c₂ 1 j y ↔ y = ?[mkStep Wn ((nIdx_bnumOneCert : ℕ) : V) ?[^&j]] := by
+    BnGraph Wn Wd T c₁ c₂ 1 j y ↔ y = ?[mkStep Wn ((nIdx_binNumeralOneCert : ℕ) : V) ?[^&j]] := by
   rw [BnGraph.case_iff]
   constructor
   · rintro (⟨h, _⟩ | ⟨_, h⟩ | ⟨m, hm, h1, hk, _⟩ | ⟨m, hm, h1, hk, _⟩)
@@ -267,12 +267,12 @@ lemma BnGraph.even_iff {Wn Wd T c₁ c₂ m j y : V} (hm : 1 ≤ m) :
     · obtain rfl := two_mul_inj hk; exact ⟨y', hy, hg, rfl⟩
     · exact absurd hk (two_mul_ne_two_mul_add_one m m')
   · rintro ⟨y', hy, hg, rfl⟩
-    exact Or.inr (Or.inr (Or.inl ⟨m, Bnum.lt_two_mul hm, hm, rfl, y', hy, hg, rfl⟩))
+    exact Or.inr (Or.inr (Or.inl ⟨m, BinNumeral.lt_two_mul hm, hm, rfl, y', hy, hg, rfl⟩))
 
 lemma BnGraph.odd_iff {Wn Wd T c₁ c₂ m j y : V} (hm : 1 ≤ m) :
     BnGraph Wn Wd T c₁ c₂ (2 * m + 1) j y ↔
     ∃ y' ≤ y, BnGraph Wn Wd T c₁ c₂ m (j + 5 + c₂) y' ∧
-      y = appendV y' (appendV (bnEvenTail Wn T c₁ c₂ m (j + 2)) (bnOddTop Wn T (descCountT Wd 0 (bnum (2 * m))) m j)) := by
+      y = appendV y' (appendV (bnEvenTail Wn T c₁ c₂ m (j + 2)) (bnOddTop Wn T (descCountT Wd 0 (binNumeral (2 * m))) m j)) := by
   rw [BnGraph.case_iff]
   constructor
   · rintro (⟨h, _⟩ | ⟨h, _⟩ | ⟨m', _, _, hk, _⟩ | ⟨m', _, _, hk, y', hy, hg, rfl⟩)
@@ -281,7 +281,7 @@ lemma BnGraph.odd_iff {Wn Wd T c₁ c₂ m j y : V} (hm : 1 ≤ m) :
     · exact absurd hk.symm (two_mul_ne_two_mul_add_one m' m)
     · obtain rfl := two_mul_add_one_inj hk; exact ⟨y', hy, hg, rfl⟩
   · rintro ⟨y', hy, hg, rfl⟩
-    exact Or.inr (Or.inr (Or.inr ⟨m, Bnum.lt_two_mul_add_one hm, hm, rfl, y', hy, hg, rfl⟩))
+    exact Or.inr (Or.inr (Or.inr ⟨m, BinNumeral.lt_two_mul_add_one hm, hm, rfl, y', hy, hg, rfl⟩))
 
 section existence
 
@@ -343,14 +343,14 @@ lemma bnGraph_exists (Wn Wd T c₁ c₂ k j : V) : ∃ y, BnGraph Wn Wd T c₁ c
 
 end existence
 
-/-- **The producer `bnumSteps Wn Wd T k j`**: the certification list of `bnum k` at offset `j` (`Wn` the pin's
+/-- **The producer `binNumeralSteps Wn Wd T k j`**: the certification list of `binNumeral k` at offset `j` (`Wn` the pin's
 pieces, `Wd` the walk pieces, `T` the `NumSteps` table); a chosen graph witness — no uniqueness is needed, every
 statement below runs over `BnGraph`. -/
-noncomputable def bnumSteps (Wn Wd T k j : V) : V :=
+noncomputable def binNumeralSteps (Wn Wd T k j : V) : V :=
   Classical.choose (bnGraph_exists Wn Wd T (descCountT Wd 0 (𝟏 : V)) (descCountT Wd 0 (𝟐 : V)) k j)
 
-theorem bnumSteps_graph (Wn Wd T k j : V) :
-    BnGraph Wn Wd T (descCountT Wd 0 (𝟏 : V)) (descCountT Wd 0 (𝟐 : V)) k j (bnumSteps Wn Wd T k j) :=
+theorem binNumeralSteps_graph (Wn Wd T k j : V) :
+    BnGraph Wn Wd T (descCountT Wd 0 (𝟏 : V)) (descCountT Wd 0 (𝟐 : V)) k j (binNumeralSteps Wn Wd T k j) :=
   Classical.choose_spec (bnGraph_exists Wn Wd T _ _ k j)
 
 /-! ## 2. Applicability -/
@@ -412,16 +412,16 @@ end readers
 
 section tailsOK
 
-/-- The four `bnum` rows of `NumIdRows` read at their indices (what `Pin.NumIdTable` provides). -/
+/-- The four `binNumeral` rows of `NumIdRows` read at their indices (what `Pin.NumIdTable` provides). -/
 def BnRows (tbl : V) : Prop :=
-  (((nIdx_bnumZeroCert : ℕ) : V) < len tbl ∧ rowM tbl.[((nIdx_bnumZeroCert : ℕ) : V)] = ((1 : ℕ) : V) ∧
-    rowB tbl.[((nIdx_bnumZeroCert : ℕ) : V)] = impChainV LAct (vecOf row_bnumZeroCert_as) row_bnumZeroCert_c) ∧
-  (((nIdx_bnumOneCert : ℕ) : V) < len tbl ∧ rowM tbl.[((nIdx_bnumOneCert : ℕ) : V)] = ((1 : ℕ) : V) ∧
-    rowB tbl.[((nIdx_bnumOneCert : ℕ) : V)] = impChainV LAct (vecOf row_bnumOneCert_as) row_bnumOneCert_c) ∧
-  (((nIdx_bnumEvenCert : ℕ) : V) < len tbl ∧ rowM tbl.[((nIdx_bnumEvenCert : ℕ) : V)] = ((9 : ℕ) : V) ∧
-    rowB tbl.[((nIdx_bnumEvenCert : ℕ) : V)] = impChainV LAct (vecOf row_bnumEvenCert_as) row_bnumEvenCert_c) ∧
-  (((nIdx_bnumOddOfEven : ℕ) : V) < len tbl ∧ rowM tbl.[((nIdx_bnumOddOfEven : ℕ) : V)] = ((6 : ℕ) : V) ∧
-    rowB tbl.[((nIdx_bnumOddOfEven : ℕ) : V)] = impChainV LAct (vecOf row_bnumOddOfEven_as) row_bnumOddOfEven_c)
+  (((nIdx_binNumeralZeroCert : ℕ) : V) < len tbl ∧ rowM tbl.[((nIdx_binNumeralZeroCert : ℕ) : V)] = ((1 : ℕ) : V) ∧
+    rowB tbl.[((nIdx_binNumeralZeroCert : ℕ) : V)] = impChainV LAct (vecOf row_binNumeralZeroCert_as) row_binNumeralZeroCert_c) ∧
+  (((nIdx_binNumeralOneCert : ℕ) : V) < len tbl ∧ rowM tbl.[((nIdx_binNumeralOneCert : ℕ) : V)] = ((1 : ℕ) : V) ∧
+    rowB tbl.[((nIdx_binNumeralOneCert : ℕ) : V)] = impChainV LAct (vecOf row_binNumeralOneCert_as) row_binNumeralOneCert_c) ∧
+  (((nIdx_binNumeralEvenCert : ℕ) : V) < len tbl ∧ rowM tbl.[((nIdx_binNumeralEvenCert : ℕ) : V)] = ((9 : ℕ) : V) ∧
+    rowB tbl.[((nIdx_binNumeralEvenCert : ℕ) : V)] = impChainV LAct (vecOf row_binNumeralEvenCert_as) row_binNumeralEvenCert_c) ∧
+  (((nIdx_binNumeralOddOfEven : ℕ) : V) < len tbl ∧ rowM tbl.[((nIdx_binNumeralOddOfEven : ℕ) : V)] = ((6 : ℕ) : V) ∧
+    rowB tbl.[((nIdx_binNumeralOddOfEven : ℕ) : V)] = impChainV LAct (vecOf row_binNumeralOddOfEven_as) row_binNumeralOddOfEven_c)
 
 /-- A layout row read from the pin's pieces is the layout's step (the piece-table chain). -/
 lemma mkStep_numIdPieces_layout (i : ℕ) (hi : i < layoutRowCount) (ev : V) :
@@ -451,10 +451,10 @@ include htbl hL hR htblN
 
 set_option maxHeartbeats 2000000 in
 /-- **The even tail is applicable** (`k = 2m`, `m ≥ 1`), from the dossier facts at the offsets of
-`𝟐 ^* bnum m` at `&j` and the certified `bnumFact &(j+3+c₂) (bnum m)`; shift-free; leaves
-`bnumFact &j (𝟐 ^* bnum m)`. -/
+`𝟐 ^* binNumeral m` at `&j` and the certified `binNumeralFact &(j+3+c₂) (binNumeral m)`; shift-free; leaves
+`binNumeralFact &j (𝟐 ^* binNumeral m)`. -/
 theorem bnEvenTail_ok {E Γ m j c₁ c₂ : V} (hΓ : IsFormulaSet LAct Γ) (hm : 1 ≤ m)
-    (hc₁ : c₁ ≤ 1) (hc₂ : c₂ ≤ 5) (hEj : j + 9 ≤ E) (hEm : termLen LAct (bnum m) ≤ E)
+    (hc₁ : c₁ ≤ 1) (hc₂ : c₂ ≤ 5) (hEj : j + 9 ≤ E) (hEm : termLen LAct (binNumeral m) ≤ E)
     (f1 : neg LAct (funcFact (^&j) (cT 2) (cT 1) (^&(j + 1))) ∈ Γ)
     (f2 : neg LAct (adjFact (^&(j + 1)) (^&(j + 2)) (^&(j + 2 + c₂))) ∈ Γ)
     (f3 : neg LAct (funcFact (^&(j + 2)) (cT 2) (𝟎 : V) (^&(j + 3))) ∈ Γ)
@@ -463,10 +463,10 @@ theorem bnEvenTail_ok {E Γ m j c₁ c₂ : V} (hΓ : IsFormulaSet LAct Γ) (hm 
     (f6 : neg LAct (adjFact (^&(j + 4 + c₁)) (^&(j + 5 + c₁)) (𝟎 : V)) ∈ Γ)
     (f7 : neg LAct (funcFact (^&(j + 5 + c₁)) (𝟎 : V) (cT 1) (𝟎 : V)) ∈ Γ)
     (f8 : neg LAct (adjFact (^&(j + 2 + c₂)) (^&(j + 3 + c₂)) (𝟎 : V)) ∈ Γ)
-    (f9 : neg LAct (bnumFact (^&(j + 3 + c₂)) (bnum m)) ∈ Γ) :
+    (f9 : neg LAct (binNumeralFact (^&(j + 3 + c₂)) (binNumeral m)) ∈ Γ) :
     ListOK tbl E ((9 : ℕ) : V) Γ (bnEvenTail numIdPieces T c₁ c₂ m j) ∧ NoDrop' (bnEvenTail numIdPieces T c₁ c₂ m j) ∧
     shiftsV (bnEvenTail numIdPieces T c₁ c₂ m j) = 0 ∧
-    neg LAct (bnumFact (^&j) (𝟐 ^* bnum m)) ∈ finalCtx Γ (bnEvenTail numIdPieces T c₁ c₂ m j) := by
+    neg LAct (binNumeralFact (^&j) (𝟐 ^* binNumeral m)) ∈ finalCtx Γ (bnEvenTail numIdPieces T c₁ c₂ m j) := by
   have h89 : ((8 : ℕ) : V) ≤ ((9 : ℕ) : V) := by exact_mod_cast (by decide : 8 ≤ 9)
   have hE1 : (1 : V) ≤ E := le_trans (by norm_num) (le_trans le_add_self hEj)
   have hE3 : (3 : V) ≤ E := le_trans (by norm_num) (le_trans le_add_self hEj)
@@ -474,7 +474,7 @@ theorem bnEvenTail_ok {E Γ m j c₁ c₂ : V} (hΓ : IsFormulaSet LAct Γ) (hm 
   have h0E : termLen LAct (𝟎 : V) ≤ E := termLen_qqZero_le hE1
   have hc1 : IsSemiterm LAct 0 (cT 1 : V) := cTV_semiterm_LAct 0 _
   have hc1E : termLen LAct (cT 1 : V) ≤ E := termLen_cT_one_le hE3
-  have hbm : IsSemiterm LAct 0 (bnum m) := isSemiterm_bnum_LAct 0 m
+  have hbm : IsSemiterm LAct 0 (binNumeral m) := isSemiterm_binNumeral_LAct 0 m
   have fv : ∀ x : V, x + 1 ≤ j + 9 → termLen LAct (^&x : V) ≤ E := fun x hx ↦ termLen_fvar_le (le_trans hx hEj)
   have hx4 : j + 4 + 1 ≤ j + 9 := by
     calc j + 4 + 1 = j + 5 := by ring
@@ -530,17 +530,17 @@ theorem bnEvenTail_ok {E Γ m j c₁ c₂ : V} (hΓ : IsFormulaSet LAct Γ) (hm 
   rw [← mkStep_numId_59] at ok₄ tg₄ cx₄
   set Γ₄ := insert (neg LAct (adjFact (^&(j + 4 + c₁)) (^&(j + 4)) (𝟎 : V))) Γ₃ with hΓ₄
   have hΓ₄s : IsFormulaSet LAct Γ₄ := by rw [← cx₄]; exact isFormulaSet_ctxAfter 8 htbl ok₄
-  -- step 5: the closed fact 𝟏 ≤ bnum m
-  have ok₅ : StepOK tbl E ((9 : ℕ) : V) Γ₄ (sLemma (leFact (𝟏 : V) (bnum m)) (leCode T 1 m)) :=
+  -- step 5: the closed fact 𝟏 ≤ binNumeral m
+  have ok₅ : StepOK tbl E ((9 : ℕ) : V) Γ₄ (sLemma (leFact (𝟏 : V) (binNumeral m)) (leCode T 1 m)) :=
     stepOK_sLemma hΓ₄s (lemmaOK_of (isFormula_leFact (isSemiterm_qqOne_LAct 0) hbm) (oneLe_proof htblN hm))
-  have cx₅ := ctxAfter_sLemma Γ₄ (leFact (𝟏 : V) (bnum m)) (leCode T 1 m)
-  set Γ₅ := insert (neg LAct (leFact (𝟏 : V) (bnum m))) Γ₄ with hΓ₅
+  have cx₅ := ctxAfter_sLemma Γ₄ (leFact (𝟏 : V) (binNumeral m)) (leCode T 1 m)
+  set Γ₅ := insert (neg LAct (leFact (𝟏 : V) (binNumeral m))) Γ₄ with hΓ₅
   have hΓ₅s : IsFormulaSet LAct Γ₅ := by rw [← cx₅]; exact isFormulaSet_ctxAfter 9 htbl ok₅
-  -- step 6: bnumEvenCert
+  -- step 6: binNumeralEvenCert
   have hup : ∀ {x : V}, x ∈ Γ → x ∈ Γ₅ := fun hx ↦ by
     rw [hΓ₅, hΓ₄, hΓ₃, hΓ₂, hΓ₁]
     exact mem_insert_of_mem' (mem_insert_of_mem' (mem_insert_of_mem' (mem_insert_of_mem' (mem_insert_of_mem' hx))))
-  obtain ⟨ok₆, tg₆, cx₆⟩ := nok_bnumEvenCert htbl rfl hR.2.2.1.1 ⟨hR.2.2.1.2.1, hR.2.2.1.2.2⟩ hΓ₅s hbm hEm
+  obtain ⟨ok₆, tg₆, cx₆⟩ := nok_binNumeralEvenCert htbl rfl hR.2.2.1.1 ⟨hR.2.2.1.2.1, hR.2.2.1.2.2⟩ hΓ₅s hbm hEm
     (by simp) (fv _ hx3d) (by simp) (fv _ hx4) (by simp) (fv _ hx4c) (by simp) (fv _ hx3) (by simp) (fv _ hx2)
     (by simp) (fv _ hx2d) (by simp) (fv _ hx1) (by simp) (fv _ hx0)
     (by rw [hΓ₅]; exact mem_insert_self') (hup f9) (hup f5)
@@ -570,19 +570,19 @@ theorem bnEvenTail_ok {E Γ m j c₁ c₂ : V} (hΓ : IsFormulaSet LAct Γ) (hm 
     exact mem_insert_self'
 
 /-- **The odd top is applicable** (`k = 2m + 1`): from the certified even numeral at `&(j+2)` and the dossier
-facts of `(𝟐 ^* bnum m) ^+ 𝟏` at `&j` (`ce` the count of the even numeral's dossier). -/
+facts of `(𝟐 ^* binNumeral m) ^+ 𝟏` at `&j` (`ce` the count of the even numeral's dossier). -/
 theorem bnOddTop_ok {E Γ m j ce : V} (hΓ : IsFormulaSet LAct Γ) (hm : 1 ≤ m)
-    (hEj : j + 3 + ce + 1 ≤ E) (hEm : termLen LAct (bnum m) ≤ E)
+    (hEj : j + 3 + ce + 1 ≤ E) (hEm : termLen LAct (binNumeral m) ≤ E)
     (g1 : neg LAct (funcFact (^&j) (cT 2) (𝟎 : V) (^&(j + 1))) ∈ Γ)
     (g2 : neg LAct (adjFact (^&(j + 1)) (^&(j + 2)) (^&(j + 2 + ce))) ∈ Γ)
-    (g3 : neg LAct (bnumFact (^&(j + 2)) (𝟐 ^* bnum m)) ∈ Γ)
+    (g3 : neg LAct (binNumeralFact (^&(j + 2)) (𝟐 ^* binNumeral m)) ∈ Γ)
     (g4 : neg LAct (adjFact (^&(j + 2 + ce)) (^&(j + 3 + ce)) (𝟎 : V)) ∈ Γ)
     (g5 : neg LAct (funcFact (^&(j + 3 + ce)) (𝟎 : V) (cT 1) (𝟎 : V)) ∈ Γ) :
     ListOK tbl E ((9 : ℕ) : V) Γ (bnOddTop numIdPieces T ce m j) ∧ NoDrop' (bnOddTop numIdPieces T ce m j) ∧
     shiftsV (bnOddTop numIdPieces T ce m j) = 0 ∧
-    neg LAct (bnumFact (^&j) ((𝟐 ^* bnum m) ^+ 𝟏)) ∈ finalCtx Γ (bnOddTop numIdPieces T ce m j) := by
+    neg LAct (binNumeralFact (^&j) ((𝟐 ^* binNumeral m) ^+ 𝟏)) ∈ finalCtx Γ (bnOddTop numIdPieces T ce m j) := by
   have h89 : ((8 : ℕ) : V) ≤ ((9 : ℕ) : V) := by exact_mod_cast (by decide : 8 ≤ 9)
-  have hbm : IsSemiterm LAct 0 (bnum m) := isSemiterm_bnum_LAct 0 m
+  have hbm : IsSemiterm LAct 0 (binNumeral m) := isSemiterm_binNumeral_LAct 0 m
   have fv : ∀ x : V, x + 1 ≤ j + 3 + ce + 1 → termLen LAct (^&x : V) ≤ E := fun x hx ↦ termLen_fvar_le (le_trans hx hEj)
   have hx3e : j + 3 + ce + 1 ≤ j + 3 + ce + 1 := le_rfl
   have hx2e : j + 2 + ce + 1 ≤ j + 3 + ce + 1 := by
@@ -597,14 +597,14 @@ theorem bnOddTop_ok {E Γ m j ce : V} (hΓ : IsFormulaSet LAct Γ) (hm : 1 ≤ m
   have hx0 : j + 1 ≤ j + 3 + ce + 1 := by
     calc j + 1 ≤ j + 1 + (ce + 3) := le_self_add
       _ = j + 3 + ce + 1 := by ring
-  -- step 1: the closed fact 𝟏 ≤ bnum m
-  have ok₁ : StepOK tbl E ((9 : ℕ) : V) Γ (sLemma (leFact (𝟏 : V) (bnum m)) (leCode T 1 m)) :=
+  -- step 1: the closed fact 𝟏 ≤ binNumeral m
+  have ok₁ : StepOK tbl E ((9 : ℕ) : V) Γ (sLemma (leFact (𝟏 : V) (binNumeral m)) (leCode T 1 m)) :=
     stepOK_sLemma hΓ (lemmaOK_of (isFormula_leFact (isSemiterm_qqOne_LAct 0) hbm) (oneLe_proof htblN hm))
-  have cx₁ := ctxAfter_sLemma Γ (leFact (𝟏 : V) (bnum m)) (leCode T 1 m)
-  set Γ₁ := insert (neg LAct (leFact (𝟏 : V) (bnum m))) Γ with hΓ₁
+  have cx₁ := ctxAfter_sLemma Γ (leFact (𝟏 : V) (binNumeral m)) (leCode T 1 m)
+  set Γ₁ := insert (neg LAct (leFact (𝟏 : V) (binNumeral m))) Γ with hΓ₁
   have hΓ₁s : IsFormulaSet LAct Γ₁ := by rw [← cx₁]; exact isFormulaSet_ctxAfter 9 htbl ok₁
-  -- step 2: bnumOddOfEven
-  obtain ⟨ok₂, tg₂, cx₂⟩ := nok_bnumOddOfEven htbl rfl hR.2.2.2.1 ⟨hR.2.2.2.2.1, hR.2.2.2.2.2⟩ hΓ₁s hbm hEm
+  -- step 2: binNumeralOddOfEven
+  obtain ⟨ok₂, tg₂, cx₂⟩ := nok_binNumeralOddOfEven htbl rfl hR.2.2.2.1 ⟨hR.2.2.2.2.1, hR.2.2.2.2.2⟩ hΓ₁s hbm hEm
     (by simp) (fv _ hx3e) (by simp) (fv _ hx2) (by simp) (fv _ hx2e) (by simp) (fv _ hx1) (by simp) (fv _ hx0)
     (by rw [hΓ₁]; exact mem_insert_self') (mem_insert_of_mem' g3) (mem_insert_of_mem' g5) (mem_insert_of_mem' g4)
     (mem_insert_of_mem' g2) (mem_insert_of_mem' g1)
@@ -634,8 +634,8 @@ def BnPost (tbl E Γ y F : V) : Prop :=
 instance bnPost_definable : 𝚫₁-Relation₅ (BnPost : V → V → V → V → V → Prop) := by
   unfold BnPost; definability
 
-/-- The size parameters of the `sLemma` steps (`𝟏 ≤ bnum m`, `m ≤ k`, `‖k‖ ≤ L`): the fact `≤ B'·(6L + 1)`, the
-derivation `≤ 2(L + 2)·nodeCost N' B' (12L + 3) + nodeCost N' B' (12L + 3)` (`NumSteps.dlen_leCode_le'`). -/
+/-- The size parameters of the `sLemma` steps (`𝟏 ≤ binNumeral m`, `m ≤ k`, `‖k‖ ≤ L`): the fact `≤ B'·(6L + 1)`, the
+derivation `≤ 2(L + 2)·nodeCost N' B' (12L + 3) + nodeCost N' B' (12L + 3)` (`NumSteps.proofLen_leCode_le'`). -/
 noncomputable def bQ (B' L : V) : V := B' * (6 * L + 1)
 noncomputable def bD (N' B' L : V) : V := (1 + 1) * (L + 2) * nodeCost N' B' (12 * L + 3) + nodeCost N' B' (12 * L + 3)
 
@@ -643,19 +643,19 @@ lemma mem_final0 {Γ S x : V} (hS : NoDrop' S) (h0 : shiftsV S = 0) (hx : x ∈ 
   have := mem_finalCtx_of_mem' hS hx
   rwa [h0, shiftIterV_zero] at this
 
-lemma bnumFact_eq_subst (t k : V) : bnumFact t k = subst LAct (t ∷ k ∷ 0) Pbnum := rfl
+lemma binNumeralFact_eq_subst (t k : V) : binNumeralFact t k = subst LAct (t ∷ k ∷ 0) Pbnum := rfl
 
 variable {tbl N T N' B' : V} (htbl : TableOK tbl N) (hL : LayoutTable tbl) (hR : BnRows tbl) (htblN : NumTableOK T N' B')
 include htbl hL hR htblN
 
 set_option maxHeartbeats 4000000 in
 /-- **Applicability of every certification list** (over the graph; `Pb` an opaque copy of `Pbnum`, `Wn`/`Wd`/`c₁`/`c₂`
-opaque copies of the pieces and counts — the motive must not mention closed quotes): from the dossier of `bnum k`
-at `&j` under the cap `j + 27(‖k‖ + 1) ≤ E`, `BnPost` with the fact `bnumFact &j (bnum k)`. -/
+opaque copies of the pieces and counts — the motive must not mention closed quotes): from the dossier of `binNumeral k`
+at `&j` under the cap `j + 27(‖k‖ + 1) ≤ E`, `BnPost` with the fact `binNumeralFact &j (binNumeral k)`. -/
 theorem bnGraph_ok {Wn Wd c₁ c₂ Pb E : V} (hWn : Wn = numIdPieces) (hWd : Wd = walkPieces)
     (hc₁ : c₁ = descCountT walkPieces 0 (𝟏 : V)) (hc₂ : c₂ = descCountT walkPieces 0 (𝟐 : V)) (hPb : Pb = Pbnum) :
-    ∀ k : V, ∀ j y Γ : V, BnGraph Wn Wd T c₁ c₂ k j y → IsFormulaSet LAct Γ → DossT Wd Γ 0 (bnum k) j →
-      j + 27 * (‖k‖ + 1) ≤ E → BnPost tbl E Γ y (subst LAct (^&j ∷ bnum k ∷ 0) Pb) := by
+    ∀ k : V, ∀ j y Γ : V, BnGraph Wn Wd T c₁ c₂ k j y → IsFormulaSet LAct Γ → DossT Wd Γ 0 (binNumeral k) j →
+      j + 27 * (‖k‖ + 1) ≤ E → BnPost tbl E Γ y (subst LAct (^&j ∷ binNumeral k ∷ 0) Pb) := by
   have hW : WalkTable tbl := hL.walkTable
   have h89 : ((8 : ℕ) : V) ≤ ((9 : ℕ) : V) := by exact_mod_cast (by decide : 8 ≤ 9)
   have hc₁le : c₁ ≤ 1 := by rw [hc₁]; exact descCountT_one_le htbl hW
@@ -670,28 +670,28 @@ theorem bnGraph_ok {Wn Wd c₁ c₂ Pb E : V} (hWn : Wn = numIdPieces) (hWd : Wd
     · -- k = 0
       rw [BnGraph.zero_iff] at hg
       subst hg
-      rw [bnum_zero, qqZero_eq] at hD
+      rw [binNumeral_zero, qqZero_eq] at hD
       have f0 := dossT_const htbl hW isFunc_LAct_zeroIndex hD
       rw [coe_zeroIndex_eq, cTV_zero] at f0
       have hj : j + 1 ≤ E := le_trans (add_le_add le_rfl (by
         calc (1 : V) ≤ 27 := by norm_num
           _ ≤ 27 * (‖(0 : V)‖ + 1) := le_mul_of_one_le_right zero_le le_add_self)) hE
-      obtain ⟨ok₁, tg₁, cx₁⟩ := nok_bnumZeroCert htbl hWn hR.1.1 ⟨hR.1.2.1, hR.1.2.2⟩ hΓ (by simp) (termLen_fvar_le hj) f0
+      obtain ⟨ok₁, tg₁, cx₁⟩ := nok_binNumeralZeroCert htbl hWn hR.1.1 ⟨hR.1.2.1, hR.1.2.2⟩ hΓ (by simp) (termLen_fvar_le hj) f0
       refine ⟨listOK_single (ok₁.mono h89), noDrop'_single (Or.inl tg₁), shiftsV_single_tag0 tg₁, ?_⟩
-      rw [finalCtx_single, cx₁, hPb, ← bnumFact_eq_subst, bnum_zero]
+      rw [finalCtx_single, cx₁, hPb, ← binNumeralFact_eq_subst, binNumeral_zero]
       exact mem_insert_self'
     · -- k = 1
       rw [BnGraph.one_iff] at hg
       subst hg
-      rw [bnum_one, qqOne_eq] at hD
+      rw [binNumeral_one, qqOne_eq] at hD
       have f0 := dossT_const htbl hW isFunc_LAct_oneIndex hD
       rw [coe_oneIndex_eq, ← cT_one_eq] at f0
       have hj : j + 1 ≤ E := le_trans (add_le_add le_rfl (by
         calc (1 : V) ≤ 27 := by norm_num
           _ ≤ 27 * (‖(1 : V)‖ + 1) := le_mul_of_one_le_right zero_le le_add_self)) hE
-      obtain ⟨ok₁, tg₁, cx₁⟩ := nok_bnumOneCert htbl hWn hR.2.1.1 ⟨hR.2.1.2.1, hR.2.1.2.2⟩ hΓ (by simp) (termLen_fvar_le hj) f0
+      obtain ⟨ok₁, tg₁, cx₁⟩ := nok_binNumeralOneCert htbl hWn hR.2.1.1 ⟨hR.2.1.2.1, hR.2.1.2.2⟩ hΓ (by simp) (termLen_fvar_le hj) f0
       refine ⟨listOK_single (ok₁.mono h89), noDrop'_single (Or.inl tg₁), shiftsV_single_tag0 tg₁, ?_⟩
-      rw [finalCtx_single, cx₁, hPb, ← bnumFact_eq_subst, bnum_one]
+      rw [finalCtx_single, cx₁, hPb, ← binNumeralFact_eq_subst, binNumeral_one]
       exact mem_insert_self'
     obtain ⟨hm, hlt, he | ho⟩ := two_le_cases h2
     · -- k = 2 * m
@@ -700,9 +700,9 @@ theorem bnGraph_ok {Wn Wd c₁ c₂ Pb E : V} (hWn : Wn = numIdPieces) (hWd : Wd
       subst he
       have hlen : ‖2 * m‖ = ‖m‖ + 1 := length_two_mul_of_pos (lt_of_lt_of_le _root_.zero_lt_one hm)
       rw [hlen] at hE
-      have hbm : IsSemiterm LAct 0 (bnum m) := isSemiterm_bnum_LAct 0 m
-      have hEm : termLen LAct (bnum m) ≤ E := by
-        refine le_trans (termLen_bnum_le_bk (n := m) le_rfl) (le_trans ?_ (le_trans le_add_self hE))
+      have hbm : IsSemiterm LAct 0 (binNumeral m) := isSemiterm_binNumeral_LAct 0 m
+      have hEm : termLen LAct (binNumeral m) ≤ E := by
+        refine le_trans (termLen_binNumeral_le_bk (n := m) le_rfl) (le_trans ?_ (le_trans le_add_self hE))
         calc 6 * ‖m‖ + 1 ≤ 27 * ‖m‖ + 54 := add_le_add (mul_le_mul_of_nonneg_right (by norm_num) zero_le) (by norm_num)
           _ = 27 * (‖m‖ + 1 + 1) := by ring
       have hEj : j + 9 ≤ E := le_trans (add_le_add le_rfl (by
@@ -716,8 +716,8 @@ theorem bnGraph_ok {Wn Wd c₁ c₂ Pb E : V} (hWn : Wn = numIdPieces) (hWd : Wd
           _ = j + 27 * (‖m‖ + 1 + 1) := by ring
       obtain ⟨y', _, hg', rfl⟩ := (BnGraph.even_iff hm).mp hg
       -- the dossier facts
-      rw [bnum_two_mul hm] at hD
-      have hD' : DossT walkPieces Γ 0 (^func 2 (mulIndex : V) ?[(𝟐 : V), bnum m]) j := hD
+      rw [binNumeral_two_mul hm] at hD
+      have hD' : DossT walkPieces Γ 0 (^func 2 (mulIndex : V) ?[(𝟐 : V), binNumeral m]) j := hD
       obtain ⟨f1, f2, hD2, f8, hDm⟩ := dossT_pair htbl hW isFunc_LAct_mulIndex (isSemiterm_qqTwo_LAct 0) hbm hD'
       rw [coe_mulIndex_eq, ← cT_one_eq] at f1
       rw [← hc₂] at f2 f8 hDm
@@ -737,15 +737,15 @@ theorem bnGraph_ok {Wn Wd c₁ c₂ Pb E : V} (hWn : Wn = numIdPieces) (hWd : Wd
       obtain ⟨Γ', hΓ'⟩ : ∃ Γ', Γ' = finalCtx Γ y' := ⟨_, rfl⟩
       have hΓ's : IsFormulaSet LAct Γ' := by rw [hΓ']; exact finalCtx_isFormulaSet 9 htbl hΓ ok'
       have up : ∀ {x : V}, x ∈ Γ → x ∈ Γ' := fun hx ↦ by rw [hΓ']; exact mem_final0 nd' sh' hx
-      have f9 : neg LAct (bnumFact (^&(j + 3 + c₂)) (bnum m)) ∈ Γ' := by
-        rw [hΓ', bnumFact_eq_subst, ← hPb]; exact hf'
+      have f9 : neg LAct (binNumeralFact (^&(j + 3 + c₂)) (binNumeral m)) ∈ Γ' := by
+        rw [hΓ', binNumeralFact_eq_subst, ← hPb]; exact hf'
       obtain ⟨okT, ndT, shT, hfT⟩ := bnEvenTail_ok htbl hL hR htblN hΓ's hm hc₁le hc₂le hEj hEm
         (up f1) (up f2) (up f3) (up f4) (up f5) (up f6) (up f7) (up f8) f9
       rw [hWn]
       refine ⟨?_, noDrop'_appendV nd' ndT, ?_, ?_⟩
       · refine listOK_appendV ok' ?_; rw [← hΓ']; exact okT
       · rw [shiftsV_appendV, sh', shT, add_zero]
-      · rw [finalCtx_appendV, ← hΓ', bnum_two_mul hm, hPb, ← bnumFact_eq_subst]
+      · rw [finalCtx_appendV, ← hΓ', binNumeral_two_mul hm, hPb, ← binNumeralFact_eq_subst]
         exact hfT
     · -- k = 2 * m + 1
       obtain ⟨m, hmdef⟩ : ∃ m : V, m = k / 2 := ⟨_, rfl⟩
@@ -753,9 +753,9 @@ theorem bnGraph_ok {Wn Wd c₁ c₂ Pb E : V} (hWn : Wn = numIdPieces) (hWd : Wd
       subst ho
       have hlen : ‖2 * m + 1‖ = ‖m‖ + 1 := length_two_mul_add_one m
       rw [hlen] at hE
-      have hbm : IsSemiterm LAct 0 (bnum m) := isSemiterm_bnum_LAct 0 m
-      have hEm : termLen LAct (bnum m) ≤ E := by
-        refine le_trans (termLen_bnum_le_bk (n := m) le_rfl) (le_trans ?_ (le_trans le_add_self hE))
+      have hbm : IsSemiterm LAct 0 (binNumeral m) := isSemiterm_binNumeral_LAct 0 m
+      have hEm : termLen LAct (binNumeral m) ≤ E := by
+        refine le_trans (termLen_binNumeral_le_bk (n := m) le_rfl) (le_trans ?_ (le_trans le_add_self hE))
         calc 6 * ‖m‖ + 1 ≤ 27 * ‖m‖ + 54 := add_le_add (mul_le_mul_of_nonneg_right (by norm_num) zero_le) (by norm_num)
           _ = 27 * (‖m‖ + 1 + 1) := by ring
       have hEj : j + 2 + 9 ≤ E := le_trans (by
@@ -771,30 +771,30 @@ theorem bnGraph_ok {Wn Wd c₁ c₂ Pb E : V} (hWn : Wn = numIdPieces) (hWd : Wd
           _ = j + 27 * (‖m‖ + 1 + 1) := by ring
       obtain ⟨y', _, hg', rfl⟩ := (BnGraph.odd_iff hm).mp hg
       -- the dossier facts of the odd numeral
-      rw [bnum_two_mul_add_one hm] at hD
-      have hD' : DossT walkPieces Γ 0 (^func 2 (addIndex : V) ?[(𝟐 ^* bnum m : V), (𝟏 : V)]) j := hD
-      have hev : IsSemiterm LAct 0 (𝟐 ^* bnum m : V) := by simp [hbm]
+      rw [binNumeral_two_mul_add_one hm] at hD
+      have hD' : DossT walkPieces Γ 0 (^func 2 (addIndex : V) ?[(𝟐 ^* binNumeral m : V), (𝟏 : V)]) j := hD
+      have hev : IsSemiterm LAct 0 (𝟐 ^* binNumeral m : V) := by simp [hbm]
       obtain ⟨g1, g2, hDe, g4, hD1⟩ := dossT_pair htbl hW isFunc_LAct_addIndex hev (isSemiterm_qqOne_LAct 0) hD'
       rw [coe_addIndex_eq, cTV_zero] at g1
       rw [qqOne_eq] at hD1
       have g5 := dossT_const htbl hW isFunc_LAct_oneIndex hD1
       rw [coe_oneIndex_eq, ← cT_one_eq] at g5
-      obtain ⟨ce, hce⟩ : ∃ ce : V, ce = descCountT walkPieces 0 (𝟐 ^* bnum m : V) := ⟨_, rfl⟩
+      obtain ⟨ce, hce⟩ : ∃ ce : V, ce = descCountT walkPieces 0 (𝟐 ^* binNumeral m : V) := ⟨_, rfl⟩
       rw [← hce] at g2 g4 g5
       have hceE : j + 3 + ce + 1 ≤ E := by
         have h1 := descCountT_walk_le htbl hW rfl hev
-        rw [← hce, ← bnum_two_mul hm] at h1
-        have h2 : termLen LAct (bnum (2 * m)) ≤ 6 * ‖2 * m‖ + 1 := termLen_bnum_le_bk le_rfl
+        rw [← hce, ← binNumeral_two_mul hm] at h1
+        have h2 : termLen LAct (binNumeral (2 * m)) ≤ 6 * ‖2 * m‖ + 1 := termLen_binNumeral_le_bk le_rfl
         rw [length_two_mul_of_pos (lt_of_lt_of_le _root_.zero_lt_one hm)] at h2
         refine le_trans ?_ hE
         calc j + 3 + ce + 1 = j + 3 + (ce + 1) := by ring
-          _ ≤ j + 3 + 2 * termLen LAct (bnum (2 * m)) := add_le_add le_rfl h1
+          _ ≤ j + 3 + 2 * termLen LAct (binNumeral (2 * m)) := add_le_add le_rfl h1
           _ ≤ j + 3 + 2 * (6 * (‖m‖ + 1) + 1) := add_le_add le_rfl (mul_le_mul_of_nonneg_left h2 zero_le)
           _ = j + (12 * ‖m‖ + 17) := by ring
           _ ≤ j + (27 * ‖m‖ + 54) := add_le_add le_rfl (add_le_add (mul_le_mul_of_nonneg_right (by norm_num) zero_le) (by norm_num))
           _ = j + 27 * (‖m‖ + 1 + 1) := by ring
       -- the dossier facts of the even numeral at j + 2
-      have hDe' : DossT walkPieces Γ 0 (^func 2 (mulIndex : V) ?[(𝟐 : V), bnum m]) (j + 2) := hDe
+      have hDe' : DossT walkPieces Γ 0 (^func 2 (mulIndex : V) ?[(𝟐 : V), binNumeral m]) (j + 2) := hDe
       obtain ⟨f1, f2, hD2, f8, hDm⟩ := dossT_pair htbl hW isFunc_LAct_mulIndex (isSemiterm_qqTwo_LAct 0) hbm hDe'
       rw [coe_mulIndex_eq, ← cT_one_eq] at f1
       rw [← hc₂] at f2 f8 hDm
@@ -815,18 +815,18 @@ theorem bnGraph_ok {Wn Wd c₁ c₂ Pb E : V} (hWn : Wn = numIdPieces) (hWd : Wd
       obtain ⟨Γ', hΓ'⟩ : ∃ Γ', Γ' = finalCtx Γ y' := ⟨_, rfl⟩
       have hΓ's : IsFormulaSet LAct Γ' := by rw [hΓ']; exact finalCtx_isFormulaSet 9 htbl hΓ ok'
       have up : ∀ {x : V}, x ∈ Γ → x ∈ Γ' := fun hx ↦ by rw [hΓ']; exact mem_final0 nd' sh' hx
-      have f9 : neg LAct (bnumFact (^&(j + 2 + 3 + c₂)) (bnum m)) ∈ Γ' := by
-        rw [hΓ', bnumFact_eq_subst, ← hPb, show j + 2 + 3 + c₂ = j + 5 + c₂ by ring]; exact hf'
+      have f9 : neg LAct (binNumeralFact (^&(j + 2 + 3 + c₂)) (binNumeral m)) ∈ Γ' := by
+        rw [hΓ', binNumeralFact_eq_subst, ← hPb, show j + 2 + 3 + c₂ = j + 5 + c₂ by ring]; exact hf'
       -- the even tail at j + 2
       obtain ⟨okT, ndT, shT, hfT⟩ := bnEvenTail_ok htbl hL hR htblN hΓ's hm hc₁le hc₂le hEj hEm
         (up f1) (up f2) (up f3) (up f4) (up f5) (up f6) (up f7) (up f8) f9
       obtain ⟨Γ'', hΓ''⟩ : ∃ Γ'', Γ'' = finalCtx Γ' (bnEvenTail numIdPieces T c₁ c₂ m (j + 2)) := ⟨_, rfl⟩
       have hΓ''s : IsFormulaSet LAct Γ'' := by rw [hΓ'']; exact finalCtx_isFormulaSet 9 htbl hΓ's okT
       have up' : ∀ {x : V}, x ∈ Γ → x ∈ Γ'' := fun hx ↦ by rw [hΓ'']; exact mem_final0 ndT shT (up hx)
-      have g3 : neg LAct (bnumFact (^&(j + 2)) (𝟐 ^* bnum m)) ∈ Γ'' := by rw [hΓ'']; exact hfT
+      have g3 : neg LAct (binNumeralFact (^&(j + 2)) (𝟐 ^* binNumeral m)) ∈ Γ'' := by rw [hΓ'']; exact hfT
       -- the odd top
       obtain ⟨okO, ndO, shO, hfO⟩ := bnOddTop_ok htbl hL hR htblN hΓ''s hm hceE hEm (up' g1) (up' g2) g3 (up' g4) (up' g5)
-      rw [hWn, bnum_two_mul hm, ← hce]
+      rw [hWn, binNumeral_two_mul hm, ← hce]
       refine ⟨?_, noDrop'_appendV nd' (noDrop'_appendV ndT ndO), ?_, ?_⟩
       · refine listOK_appendV ok' ?_
         rw [← hΓ']
@@ -834,7 +834,7 @@ theorem bnGraph_ok {Wn Wd c₁ c₂ Pb E : V} (hWn : Wn = numIdPieces) (hWd : Wd
         rw [← hΓ'']
         exact okO
       · rw [shiftsV_appendV, shiftsV_appendV, sh', shT, shO, add_zero, add_zero]
-      · rw [finalCtx_appendV, finalCtx_appendV, ← hΓ', ← hΓ'', bnum_two_mul_add_one hm, hPb, ← bnumFact_eq_subst]
+      · rw [finalCtx_appendV, finalCtx_appendV, ← hΓ', ← hΓ'', binNumeral_two_mul_add_one hm, hPb, ← binNumeralFact_eq_subst]
         exact hfO
 
 set_option maxHeartbeats 2000000 in
@@ -844,19 +844,19 @@ theorem bnGraph_len_size {Wn Wd c₁ c₂ : V} (hWn : Wn = numIdPieces) :
     ∀ k : V, ∀ L : V, ‖k‖ ≤ L → ∀ j y : V, BnGraph Wn Wd T c₁ c₂ k j y →
       len y ≤ 8 * ‖k‖ + 1 ∧ SizeOK (bQ B' L) (bD N' B' L) y := by
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hPle, -, hB1⟩ := id htblN
-  -- the size data of the `sLemma` `𝟏 ≤ bnum m` for `‖m‖ ≤ L`
+  -- the size data of the `sLemma` `𝟏 ≤ binNumeral m` for `‖m‖ ≤ L`
   have hLem : ∀ {m L : V}, 1 ≤ m → ‖m‖ ≤ L →
-      StepSizeOK (bQ B' L) (bD N' B' L) (sLemma (leFact (𝟏 : V) (bnum m)) (leCode T 1 m)) := by
+      StepSizeOK (bQ B' L) (bD N' B' L) (sLemma (leFact (𝟏 : V) (binNumeral m)) (leCode T 1 m)) := by
     intro m L hm hmL
     refine stepSizeOK_sLemma ?_ ?_
     · have h6 : (1 : V) ≤ 6 * L + 1 := le_add_self
-      have hb : termLen LAct (bnum m) ≤ 6 * L + 1 :=
-        le_trans (termLen_bnum_le_bk (n := m) le_rfl) (add_le_add (mul_le_mul_of_nonneg_left hmL zero_le) le_rfl)
+      have hb : termLen LAct (binNumeral m) ≤ 6 * L + 1 :=
+        le_trans (termLen_binNumeral_le_bk (n := m) le_rfl) (add_le_add (mul_le_mul_of_nonneg_left hmL zero_le) le_rfl)
       have h1 : termLen LAct (𝟏 : V) ≤ 6 * L + 1 := by rw [termLen_qqOne isFunc_LAct_oneIndex]; exact h6
-      refine le_trans (formulaLen_leFact_le h6 (isSemiterm_qqOne_LAct 0) (isSemiterm_bnum_LAct 0 m) h1 hb) ?_
+      refine le_trans (formulaLen_leFact_le h6 (isSemiterm_qqOne_LAct 0) (isSemiterm_binNumeral_LAct 0 m) h1 hb) ?_
       unfold bQ
       exact mul_le_mul_of_nonneg_right hPle zero_le
-    · refine le_trans (dlen_leCode_le' htblN hm) ?_
+    · refine le_trans (proofLen_leCode_le' htblN hm) ?_
       unfold bD
       rw [length_one]
       have hn : nodeCost N' B' (12 * ‖m‖ + 3) ≤ nodeCost N' B' (12 * L + 3) :=
@@ -870,12 +870,12 @@ theorem bnGraph_len_size {Wn Wd c₁ c₂ : V} (hWn : Wn = numIdPieces) :
     refine sizeOK_cons (stepSizeOK_horn0 (by rw [hWn, mkStep_numId_41]; exact ltag_eqRefl rfl _)) ?_
     refine sizeOK_cons (stepSizeOK_horn0 (by rw [hWn, mkStep_numId_59]; exact ltag_congAdj rfl _)) ?_
     refine sizeOK_cons (hLem hm hmL) ?_
-    exact sizeOK_single (stepSizeOK_horn0 (ntag_bnumEvenCert hWn _))
+    exact sizeOK_single (stepSizeOK_horn0 (ntag_binNumeralEvenCert hWn _))
   have hTopO : ∀ {m L j ce : V}, 1 ≤ m → ‖m‖ ≤ L → SizeOK (bQ B' L) (bD N' B' L) (bnOddTop Wn T ce m j) := by
     intro m L j ce hm hmL
     unfold bnOddTop
     refine sizeOK_cons (hLem hm hmL) ?_
-    exact sizeOK_single (stepSizeOK_horn0 (ntag_bnumOddOfEven hWn _))
+    exact sizeOK_single (stepSizeOK_horn0 (ntag_binNumeralOddOfEven hWn _))
   intro k
   induction k using ISigma1.pi1_order_induction with
   | hP => simp only [BnGraph, bQ, bD]; definability
@@ -884,11 +884,11 @@ theorem bnGraph_len_size {Wn Wd c₁ c₂ : V} (hWn : Wn = numIdPieces) :
     rcases zero_one_or_two_le k with rfl | rfl | h2
     · rw [BnGraph.zero_iff] at hg
       subst hg
-      refine ⟨?_, sizeOK_single (stepSizeOK_horn0 (ntag_bnumZeroCert hWn _))⟩
+      refine ⟨?_, sizeOK_single (stepSizeOK_horn0 (ntag_binNumeralZeroCert hWn _))⟩
       rw [len_adjoin, len_nil, zero_add]; exact le_add_self
     · rw [BnGraph.one_iff] at hg
       subst hg
-      refine ⟨?_, sizeOK_single (stepSizeOK_horn0 (ntag_bnumOneCert hWn _))⟩
+      refine ⟨?_, sizeOK_single (stepSizeOK_horn0 (ntag_binNumeralOneCert hWn _))⟩
       rw [len_adjoin, len_nil, zero_add]; exact le_add_self
     obtain ⟨hm, hlt, he | ho⟩ := two_le_cases h2
     · obtain ⟨m, hmdef⟩ : ∃ m : V, m = k / 2 := ⟨_, rfl⟩
@@ -918,24 +918,24 @@ theorem bnGraph_len_size {Wn Wd c₁ c₂ : V} (hWn : Wn = numIdPieces) :
       calc len y' + (6 + 2) ≤ 8 * ‖m‖ + 1 + (6 + 2) := add_le_add hl le_rfl
         _ = 8 * (‖m‖ + 1) + 1 := by ring
 
-/-- **The certification list of `bnum k` is applicable** (the exact shape `Pin.BnumOracle` needs, plus the length
-and size discipline): from the dossier of `bnum k` at `&j` under `j + 27(‖k‖ + 1) ≤ E`, the list
-`bnumSteps numIdPieces walkPieces T k j` is applicable at cap `9`, cut-admitting, shift-free, of length
-`≤ 8‖k‖ + 1`, `SizeOK (bQ B' ‖k‖) (bD N' B' ‖k‖)`, and leaves `bnumFact &j (bnum k)`. -/
-theorem bnumSteps_ok {E Γ k j : V} (hΓ : IsFormulaSet LAct Γ) (hD : DossT walkPieces Γ 0 (bnum k) j)
+/-- **The certification list of `binNumeral k` is applicable** (the exact shape `Pin.BinNumeralOracle` needs, plus the length
+and size discipline): from the dossier of `binNumeral k` at `&j` under `j + 27(‖k‖ + 1) ≤ E`, the list
+`binNumeralSteps numIdPieces walkPieces T k j` is applicable at cap `9`, cut-admitting, shift-free, of length
+`≤ 8‖k‖ + 1`, `SizeOK (bQ B' ‖k‖) (bD N' B' ‖k‖)`, and leaves `binNumeralFact &j (binNumeral k)`. -/
+theorem binNumeralSteps_ok {E Γ k j : V} (hΓ : IsFormulaSet LAct Γ) (hD : DossT walkPieces Γ 0 (binNumeral k) j)
     (hE : j + 27 * (‖k‖ + 1) ≤ E) :
-    ListOK tbl E ((9 : ℕ) : V) Γ (bnumSteps numIdPieces walkPieces T k j) ∧
-    NoDrop' (bnumSteps numIdPieces walkPieces T k j) ∧ shiftsV (bnumSteps numIdPieces walkPieces T k j) = 0 ∧
-    len (bnumSteps numIdPieces walkPieces T k j) ≤ 8 * ‖k‖ + 1 ∧
-    SizeOK (bQ B' ‖k‖) (bD N' B' ‖k‖) (bnumSteps numIdPieces walkPieces T k j) ∧
-    neg LAct (bnumFact (^&j) (bnum k)) ∈ finalCtx Γ (bnumSteps numIdPieces walkPieces T k j) := by
+    ListOK tbl E ((9 : ℕ) : V) Γ (binNumeralSteps numIdPieces walkPieces T k j) ∧
+    NoDrop' (binNumeralSteps numIdPieces walkPieces T k j) ∧ shiftsV (binNumeralSteps numIdPieces walkPieces T k j) = 0 ∧
+    len (binNumeralSteps numIdPieces walkPieces T k j) ≤ 8 * ‖k‖ + 1 ∧
+    SizeOK (bQ B' ‖k‖) (bD N' B' ‖k‖) (binNumeralSteps numIdPieces walkPieces T k j) ∧
+    neg LAct (binNumeralFact (^&j) (binNumeral k)) ∈ finalCtx Γ (binNumeralSteps numIdPieces walkPieces T k j) := by
   obtain ⟨Pb, hPb⟩ : ∃ P : V, P = Pbnum := ⟨_, rfl⟩
-  have hg := bnumSteps_graph numIdPieces walkPieces T k j
+  have hg := binNumeralSteps_graph numIdPieces walkPieces T k j
   obtain ⟨ok, nd, sh, hf⟩ := bnGraph_ok htbl hL hR htblN rfl rfl rfl rfl hPb k j _ Γ hg hΓ hD hE
   obtain ⟨hl, hs⟩ := bnGraph_len_size htbl hL hR htblN (Wd := walkPieces) (c₁ := descCountT walkPieces 0 (𝟏 : V))
     (c₂ := descCountT walkPieces 0 (𝟐 : V)) rfl k ‖k‖ le_rfl j _ hg
   refine ⟨ok, nd, sh, hl, hs, ?_⟩
-  rw [bnumFact_eq_subst, ← hPb]
+  rw [binNumeralFact_eq_subst, ← hPb]
   exact hf
 
 end okInduction

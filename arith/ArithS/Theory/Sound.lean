@@ -5,7 +5,7 @@ import ArithS.Length.MetaLength
 
 Foundation's `Derivation.sound` reconstructs, from an internal derivation code `d`, SOME
 meta derivation of the decoded sequent. We need more: a meta derivation `b` with
-`⌜b⌝ = d` exactly, so that `dlen T d = mlen b` (`dlen_quote`) and the length-preserving
+`⌜b⌝ = d` exactly, so that `proofLen T d = proofLenMeta b` (`proofLen_quote`) and the length-preserving
 transposition of `ArithS.Transpose` can be pulled back to codes. The proof is Foundation's,
 with the `quote_*` equations threaded through every case.
 -/

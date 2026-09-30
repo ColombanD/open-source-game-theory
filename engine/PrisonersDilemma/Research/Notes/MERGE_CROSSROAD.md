@@ -30,7 +30,7 @@ bounded reflection); PA has neither.** Abbreviations and O(n) numberings (Critch
 make `e` linear, not additive — they shrink U10's degree, they do not rescue a uniform bridge.
 
 Independent fact: the red cell `red_cell` (Cupod vs Dupoc = (D, C), every k) and M5
-(`dupoc_self_coop_unconditional`, `pblt_unconditional`, all large k) are already theorems of
+(`dupoc_self_coop`, `pblt`, all large k) are already theorems of
 `S'` on three standard axioms; no route below changes them.
 
 ## The routes

@@ -25,7 +25,7 @@ its `axm` clause bakes the offset `0` into `vAxm`. This file is the seam (2026-0
   at the canonical context) and `verifyGraph''_exists` — no oracle hypothesis (`Verify2.AxmIndOracleC` and
   `ProAxm.AxmIndOracle` are RETIRED as hypotheses).
 * §5 `vAxm_ok'` (the transported layout, `Layout.transport`) and `verifyGraph''_ok`/`verifyGraph''_ok_pow` — the glue of
-  `Verify2.lean` §8.9 re-run with the `axm` case's shift budget `Cv·(|p|+1)³ + 1 ≤ (Cs + Cv)·(dlen ρ)^6`; the degree
+  `Verify2.lean` §8.9 re-run with the `axm` case's shift budget `Cv·(|p|+1)³ + 1 ≤ (Cs + Cv)·(proofLen ρ)^6`; the degree
   stays 6 (`m = 6`) and the constants become `Cs + Cv`, `Ck + 5·Cv`.
 -/
 
@@ -119,16 +119,16 @@ section assembler'
 `is = k + 1 + σ`, `il = σ`, `ip = memTop s p σ` — the `vAll`/`vExs` reading of an eigenvariable prologue. -/
 noncomputable def vAxm' (Ww Wc W₂ T s p pro : V) : V :=
   appendV pro (nodeAxm W₂ T (len (memberList s) + 1 + shiftsV pro) (shiftsV pro) (memTop Ww Wc T s p (shiftsV pro))
-    (setLen LAct s) (dlen TAct (axm s p)))
+    (sequentLen LAct s) (proofLen TAct (axm s p)))
 
 noncomputable def vAxm'Def : 𝚺₁.Semisentence 8 := .mkSigma
   “y Ww Wc W₂ T s p pro. ∃ xs, !memberListDef xs s ∧ ∃ k, !lenDef k xs ∧ ∃ σ, !shiftsVDef σ pro ∧ ∃ is, is = k + 1 + σ ∧
-    ∃ ip, !memTopDef ip Ww Wc T s p σ ∧ ∃ Ls, !(setLenDef LAct) Ls s ∧ ∃ d, !axmGraph d s p ∧ ∃ n, !(dlenDef TAct) n d ∧
+    ∃ ip, !memTopDef ip Ww Wc T s p σ ∧ ∃ Ls, !(sequentLenDef LAct) Ls s ∧ ∃ d, !axmGraph d s p ∧ ∃ n, !(proofLenDef TAct) n d ∧
     ∃ F, !nodeAxmDef F W₂ T is σ ip Ls n ∧ !appendVDef y pro F”
 
 instance vAxm'_defined :
     𝚺₁.DefinedFunction (fun v : Fin 7 → V ↦ vAxm' (v 0) (v 1) (v 2) (v 3) (v 4) (v 5) (v 6)) vAxm'Def := .mk fun v ↦ by
-  simp [vAxm'Def, vAxm', memberList_defined.iff, shiftsV_defined.iff, memTop_defined.iff, setLen_defined.iff, dlen_defined.iff,
+  simp [vAxm'Def, vAxm', memberList_defined.iff, shiftsV_defined.iff, memTop_defined.iff, sequentLen_defined.iff, proofLen_defined.iff,
     nodeAxm_defined.iff, appendV_defined.iff, numeral_eq_natCast]
 
 lemma le_vAxm' (Ww Wc W₂ T s p pro : V) : pro ≤ vAxm' Ww Wc W₂ T s p pro := by
@@ -561,7 +561,7 @@ theorem axmEntry_exists' : ∃ C : ℕ, ∀ (V : Type) [ORingStructure V] [V↓[
     obtain ⟨P, hok, hnd, hsh, hlen, hsz, hmem⟩ := hind p ip hF hI hE₁
     exact ⟨P, hok, hnd, le_trans hsh hCi, le_trans hlen hCi, hsz.mono hCi hCi, hmem⟩
 
-/-- The E-room passes to a child: `dlen d' + 1 ≤ dlen ρ`. -/
+/-- The E-room passes to a child: `proofLen d' + 1 ≤ proofLen ρ`. -/
 lemma eroom_child' {Cv E a b : V} (h : Cv * p3 (a + 1) + 6 * a + 1 ≤ E) (hab : b + 1 ≤ a) :
     Cv * p3 (b + 1) + 6 * b + 1 ≤ E :=
   le_trans (add_le_add (add_le_add (mul_le_mul_of_nonneg_left (p3_mono (le_trans hab le_self_add)) zero_le)
@@ -570,18 +570,18 @@ lemma eroom_child' {Cv E a b : V} (h : Cv * p3 (a + 1) + 6 * a + 1 ≤ E) (hab :
 set_option maxHeartbeats 2000000 in
 /-- **Every internal derivation has a verification list** (per model), the certificate table `A` built from case (i) and
 the oracle `AxmIndOracleC' tbl E Cind` (case (ii)): by `Derivation.induction1 𝚺`, the children's tables united
-(`mono_A`), the children's lists spliced by the assemblers; the E-room `Cv·(dlen ρ + 1)³ + 6·dlen ρ + 1 ≤ E` is what the
-`axm` entries need (`memTop ≤ 6·setLen s + 1`, `|p| + 1 ≤ setLen s + 1 = dlen (axm s p)`). -/
+(`mono_A`), the children's lists spliced by the assemblers; the E-room `Cv·(proofLen ρ + 1)³ + 6·proofLen ρ + 1 ≤ E` is what the
+`axm` entries need (`memTop ≤ 6·sequentLen s + 1`, `|p| + 1 ≤ sequentLen s + 1 = proofLen (axm s p)`). -/
 theorem verifyGraph''_exists' : ∃ C : ℕ, ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
     {tbl N E Ww Wl Wc W₁ W₂ W T ρ Cv : V} (Cind : ℕ), TableOK tbl N → ProAxmTable tbl → Ww = walkPieces → Wc = certPieces →
-    Cv = ((C + Cind : ℕ) : V) → Derivation TAct ρ → Cv * p3 (dlen TAct ρ + 1) + 6 * dlen TAct ρ + 1 ≤ E →
+    Cv = ((C + Cind : ℕ) : V) → Derivation TAct ρ → Cv * p3 (proofLen TAct ρ + 1) + 6 * proofLen TAct ρ + 1 ≤ E →
     AxmIndOracleC' tbl E Cind →
     ∃ A L : V, AxmTableOK' tbl E Ww A Cv ∧ VerifyGraph'' Ww Wl Wc W₁ W₂ W T A ρ L := by
   obtain ⟨C, hC⟩ := axmEntry_exists'
   refine ⟨C, fun V _ _ tbl N E Ww Wl Wc W₁ W₂ W T ρ Cv Cind htbl hT hWw hWc hCv hd hE hind ↦ ?_⟩
   revert hE
   apply Derivation.induction1 𝚺 (T := TAct)
-    (P := fun ρ ↦ Cv * p3 (dlen TAct ρ + 1) + 6 * dlen TAct ρ + 1 ≤ E →
+    (P := fun ρ ↦ Cv * p3 (proofLen TAct ρ + 1) + 6 * proofLen TAct ρ + 1 ≤ E →
       ∃ A L : V, AxmTableOK' tbl E Ww A Cv ∧ VerifyGraph'' Ww Wl Wc W₁ W₂ W T A ρ L)
     (by simp only [VerifyGraph'', p3]; definability) hd
   · intro s _ p _ _ _
@@ -590,56 +590,56 @@ theorem verifyGraph''_exists' : ∃ C : ℕ, ∀ (V : Type) [ORingStructure V] [
     exact ⟨0, _, axmTableOK'_empty _ _ _ _, VerifyGraph''.verumIntro_iff.mpr rfl⟩
   · intro s _ p q dp dq hpq hdp hdq ih₁ ih₂ hE
     have hD : Derivation TAct (andIntro s p q dp dq) := Derivation.andIntro hpq hdp hdq
-    obtain ⟨A₁, L₁, h₁, g₁⟩ := ih₁ (eroom_child' hE (dlen_dp_succ_le_andIntro hD))
-    obtain ⟨A₂, L₂, h₂, g₂⟩ := ih₂ (eroom_child' hE (dlen_dq_succ_le_andIntro hD))
+    obtain ⟨A₁, L₁, h₁, g₁⟩ := ih₁ (eroom_child' hE (proofLen_dp_succ_le_andIntro hD))
+    obtain ⟨A₂, L₂, h₂, g₂⟩ := ih₂ (eroom_child' hE (proofLen_dq_succ_le_andIntro hD))
     exact ⟨A₁ ∪ A₂, _, axmTableOK'_union h₁ h₂, VerifyGraph''.andIntro_iff.mpr
       ⟨L₁, le_vAnd_left _ _ _ _ _ _ _ _ _ _ _ _ _, g₁.mono_A (subset_cup_left _ _),
        L₂, le_vAnd_right _ _ _ _ _ _ _ _ _ _ _ _ _, g₂.mono_A (subset_cup_right _ _), rfl⟩⟩
   · intro s _ p q d' hpq hd' ih hE
     have hD : Derivation TAct (orIntro s p q d') := Derivation.orIntro hpq hd'
-    obtain ⟨A', L', h', g'⟩ := ih (eroom_child' hE (dlen_d_succ_le_orIntro hD))
+    obtain ⟨A', L', h', g'⟩ := ih (eroom_child' hE (proofLen_d_succ_le_orIntro hD))
     exact ⟨A', _, h', VerifyGraph''.orIntro_iff.mpr ⟨L', le_vOr _ _ _ _ _ _ _ _ _ _ _, g', rfl⟩⟩
   · intro s _ p d' hp hd' ih hE
     have hD : Derivation TAct (allIntro s p d') := Derivation.allIntro hp hd'
-    obtain ⟨A', L', h', g'⟩ := ih (eroom_child' hE (dlen_d_succ_le_allIntro hD))
+    obtain ⟨A', L', h', g'⟩ := ih (eroom_child' hE (proofLen_d_succ_le_allIntro hD))
     exact ⟨A', _, h', VerifyGraph''.allIntro_iff.mpr ⟨L', le_vAll _ _ _ _ _ _ _ _ _ _, g', rfl⟩⟩
   · intro s _ p t d' hp ht hd' ih hE
     have hD : Derivation TAct (exsIntro s p t d') := Derivation.exsIntro hp ht hd'
-    obtain ⟨A', L', h', g'⟩ := ih (eroom_child' hE (dlen_d_succ_le_exsIntro hD))
+    obtain ⟨A', L', h', g'⟩ := ih (eroom_child' hE (proofLen_d_succ_le_exsIntro hD))
     exact ⟨A', _, h', VerifyGraph''.exsIntro_iff.mpr ⟨L', le_vExs _ _ _ _ _ _ _ _ _ _ _, g', rfl⟩⟩
   · intro s hs d' hsub hd' ih hE
     have hD : Derivation TAct (wkRule s d') := Derivation.wkRule hs hsub ⟨rfl, hd'⟩
-    obtain ⟨A', L', h', g'⟩ := ih (eroom_child' hE (dlen_d_succ_le_wkRule hD))
+    obtain ⟨A', L', h', g'⟩ := ih (eroom_child' hE (proofLen_d_succ_le_wkRule hD))
     exact ⟨A', _, h', VerifyGraph''.wkRule_iff.mpr ⟨L', le_vWk _ _ _ _ _ _ _ _ _, g', rfl⟩⟩
   · rintro s _ d' rfl hd' ih hE
     have hD : Derivation TAct (shiftRule (setShift LAct (fstIdx d')) d') := Derivation.shiftRule ⟨rfl, hd'⟩
-    obtain ⟨A', L', h', g'⟩ := ih (eroom_child' hE (dlen_d_succ_le_shiftRule hD))
+    obtain ⟨A', L', h', g'⟩ := ih (eroom_child' hE (proofLen_d_succ_le_shiftRule hD))
     exact ⟨A', _, h', VerifyGraph''.shiftRule_iff.mpr ⟨L', le_vShift _ _ _ _ _ _ _ _ _, g', rfl⟩⟩
   · intro s _ p d₁ d₂ hd₁ hd₂ ih₁ ih₂ hE
     have hD : Derivation TAct (cutRule s p d₁ d₂) := Derivation.cutRule hd₁ hd₂
-    obtain ⟨A₁, L₁, h₁, g₁⟩ := ih₁ (eroom_child' hE (dlen_d₁_succ_le_cutRule hD))
-    obtain ⟨A₂, L₂, h₂, g₂⟩ := ih₂ (eroom_child' hE (dlen_d₂_succ_le_cutRule hD))
+    obtain ⟨A₁, L₁, h₁, g₁⟩ := ih₁ (eroom_child' hE (proofLen_d₁_succ_le_cutRule hD))
+    obtain ⟨A₂, L₂, h₂, g₂⟩ := ih₂ (eroom_child' hE (proofLen_d₂_succ_le_cutRule hD))
     exact ⟨A₁ ∪ A₂, _, axmTableOK'_union h₁ h₂, VerifyGraph''.cutRule_iff.mpr
       ⟨L₁, le_vCut_left _ _ _ _ _ _ _ _ _ _ _ _, g₁.mono_A (subset_cup_left _ _),
        L₂, le_vCut_right _ _ _ _ _ _ _ _ _ _ _ _, g₂.mono_A (subset_cup_right _ _), rfl⟩⟩
   · intro s hs p hp hax hE
     have hD : Derivation TAct (axm s p) := Derivation.axm hs hp hax
     have hpf : IsSemiformula LAct 0 p := hs p hp
-    have hip : memTop Ww Wc T s p 0 ≤ 6 * setLen LAct s + 1 := by
+    have hip : memTop Ww Wc T s p 0 ≤ 6 * sequentLen LAct s + 1 := by
       rw [hWw]
-      have := memTop_le htbl hT.walkTable hWc T hs hp (le_refl (setLen LAct s)) (i := 0)
+      have := memTop_le htbl hT.walkTable hWc T hs hp (le_refl (sequentLen LAct s)) (i := 0)
       rwa [zero_add] at this
-    have hpd : formulaLen LAct p + 1 ≤ dlen TAct (axm s p) + 1 := by
-      rw [dlen_axm hD]; exact add_le_add (le_trans (formulaLen_le_setLen_of_mem (L := LAct) hp) le_self_add) le_rfl
-    have hmt : memTop Ww Wc T s p 0 ≤ 6 * dlen TAct (axm s p) + 1 := by
-      rw [dlen_axm hD]
+    have hpd : formulaLen LAct p + 1 ≤ proofLen TAct (axm s p) + 1 := by
+      rw [proofLen_axm hD]; exact add_le_add (le_trans (formulaLen_le_sequentLen_of_mem (L := LAct) hp) le_self_add) le_rfl
+    have hmt : memTop Ww Wc T s p 0 ≤ 6 * proofLen TAct (axm s p) + 1 := by
+      rw [proofLen_axm hD]
       exact le_trans hip (add_le_add (mul_le_mul_of_nonneg_left le_self_add zero_le) (le_refl 1))
     have hEip : ((C + Cind : ℕ) : V) * p3 (formulaLen LAct p + 1) + memTop Ww Wc T s p 0 ≤ E := by
       rw [← hCv]
       calc Cv * p3 (formulaLen LAct p + 1) + memTop Ww Wc T s p 0
-          ≤ Cv * p3 (dlen TAct (axm s p) + 1) + (6 * dlen TAct (axm s p) + 1) :=
+          ≤ Cv * p3 (proofLen TAct (axm s p) + 1) + (6 * proofLen TAct (axm s p) + 1) :=
             add_le_add (mul_le_mul_of_nonneg_left (p3_mono hpd) zero_le) hmt
-        _ = Cv * p3 (dlen TAct (axm s p) + 1) + 6 * dlen TAct (axm s p) + 1 := by ring
+        _ = Cv * p3 (proofLen TAct (axm s p) + 1) + 6 * proofLen TAct (axm s p) + 1 := by ring
         _ ≤ E := hE
     obtain ⟨pro, hok, hnd, hsh, hlen, hsz, hmem⟩ := hC V Cind htbl hT hpf hax hEip hind
     have hentry : ListOK tbl E ((9 : ℕ) : V) (dossCtx Ww p (memTop Ww Wc T s p 0)) pro ∧ NoDrop' pro ∧
@@ -656,7 +656,7 @@ table and a verification list — NO oracle hypothesis (`Verify2.AxmIndOracleC` 
 `axmIndOracleC'_of_indRec` discharges case (ii) from the recognizer). -/
 theorem verifyGraph''_exists_unconditional : ∃ C : ℕ, ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
     {tbl N E Ww Wl Wc W₁ W₂ W T ρ Cv : V}, TableOK tbl N → IndRecTable tbl → Ww = walkPieces → Wc = certPieces →
-    Cv = (C : V) → Derivation TAct ρ → Cv * p3 (dlen TAct ρ + 1) + 6 * dlen TAct ρ + 1 ≤ E →
+    Cv = (C : V) → Derivation TAct ρ → Cv * p3 (proofLen TAct ρ + 1) + 6 * proofLen TAct ρ + 1 ≤ E →
     ∃ A L : V, AxmTableOK' tbl E Ww A Cv ∧ VerifyGraph'' Ww Wl Wc W₁ W₂ W T A ρ L := by
   obtain ⟨C, hC⟩ := verifyGraph''_exists'
   exact ⟨C + 1400, fun V _ _ tbl N E Ww Wl Wc W₁ W₂ W T ρ Cv htbl hT hWw hWc hCv hd hE ↦
@@ -673,20 +673,20 @@ from the canonical dossier context by `listOK_mono_subset`; the layout carried t
 `Layout.transport`, the `vAll`/`vExs` reading). -/
 theorem vAxm_ok' {tbl N N' B' Wc W₂ T s p pro D E Γ : V} (htbl : TableOK tbl N) (hP : ProTable tbl)
     (htblN : NumTableOK T N' B') (hWc : Wc = certPieces) (hW₂ : W₂ = frag2Pieces)
-    (hs : IsFormulaSet LAct s) (hp : p ∈ s) (hax : p ∈ TAct.Δ₁Class) (hsD : setLen LAct s ≤ D)
+    (hs : IsFormulaSet LAct s) (hp : p ∈ s) (hax : p ∈ TAct.Δ₁Class) (hsD : sequentLen LAct s ≤ D)
     (hiE : shiftsV pro + 6 * D + 3 ≤ E) (hkE : shiftsV pro + len (memberList s) + 3 ≤ E) (hlE : shiftsV pro + 4 ≤ E)
-    (hn : 18 * ‖setLen LAct s + 1‖ + 7 ≤ E)
+    (hn : 18 * ‖sequentLen LAct s + 1‖ + 7 ≤ E)
     (hΓ : IsFormulaSet LAct Γ) (hLay : Layout walkPieces Wc T Γ s 0)
     (hpro : ListOK tbl E ((9 : ℕ) : V) (dossCtx walkPieces p (memTop walkPieces Wc T s p 0)) pro ∧ NoDrop' pro ∧
       neg LAct (axchFact (^&(memTop walkPieces Wc T s p 0 + shiftsV pro))) ∈
         finalCtx (dossCtx walkPieces p (memTop walkPieces Wc T s p 0)) pro) :
     ListOK tbl E ((9 : ℕ) : V) Γ (vAxm' walkPieces Wc W₂ T s p pro) ∧ NoDrop' (vAxm' walkPieces Wc W₂ T s p pro) ∧
     shiftsV (vAxm' walkPieces Wc W₂ T s p pro) = shiftsV pro + 1 ∧
-    neg LAct (goalFact (^&(len (memberList s) + 1 + shiftsV pro + 1)) (bnum (dlen TAct (axm s p)))) ∈
+    neg LAct (goalFact (^&(len (memberList s) + 1 + shiftsV pro + 1)) (binNumeral (proofLen TAct (axm s p)))) ∈
       finalCtx Γ (vAxm' walkPieces Wc W₂ T s p pro) := by
   have hW : WalkTable tbl := hP.walkTable
   have hD : Derivation TAct (axm s p) := Derivation.axm hs hp hax
-  have hdl : dlen TAct (axm s p) = setLen LAct s + 1 := dlen_axm hD
+  have hdl : proofLen TAct (axm s p) = sequentLen LAct s + 1 := proofLen_axm hD
   obtain ⟨pok, pnd, pax⟩ := hpro
   obtain ⟨hDp, -, -, -⟩ := Layout.member hLay hp
   have hsub : dossCtx walkPieces p (memTop walkPieces Wc T s p 0) ⊆ Γ := dossCtx_subset hDp
@@ -705,10 +705,10 @@ theorem vAxm_ok' {tbl N N' B' Wc W₂ T s p pro D E Γ : V} (htbl : TableOK tbl 
   rw [add_comm (shiftsV pro) (len (memberList s) + 1)] at hfs hsl hmp'
   rw [← hΓ₁] at pax'
   have hmt : memTop walkPieces Wc T s p (shiftsV pro) ≤ shiftsV pro + 6 * D + 1 := memTop_le htbl hW hWc T hs hp hsD
-  have hn' : 18 * ‖dlen TAct (axm s p)‖ + 7 ≤ E := by rw [hdl]; exact hn
-  have hLn' : setLen LAct s + 1 ≤ dlen TAct (axm s p) := by rw [hdl]
+  have hn' : 18 * ‖proofLen TAct (axm s p)‖ + 7 ≤ E := by rw [hdl]; exact hn
+  have hLn' : sequentLen LAct s + 1 ≤ proofLen TAct (axm s p) := by rw [hdl]
   obtain ⟨fok, fnd, fsh, -, fgoal⟩ := nodeAxm_ok (E := E) (is := len (memberList s) + 1 + shiftsV pro) (il := shiftsV pro)
-    (ip := memTop walkPieces Wc T s p (shiftsV pro)) (L := setLen LAct s) (n := dlen TAct (axm s p))
+    (ip := memTop walkPieces Wc T s p (shiftsV pro)) (L := sequentLen LAct s) (n := proofLen TAct (axm s p))
     htbl hP.frag2Table hW₂ htblN hΓ₁f
     (le_trans (le_of_eq (by ring)) hkE) hlE
     (le_trans (add_le_add hmt (le_refl 2)) (le_trans (le_of_eq (by ring)) hiE))
@@ -724,19 +724,19 @@ section glueMain'
 
 set_option maxHeartbeats 20000000 in
 /-- **The node invariant for `VerifyGraph''`** (`Verify2.verifyGraph'_ok` with SHIFTED `axm` certificates): at a node laid
-out at offset `0`, every verification list is applicable at cap `9`, cut-admitting, has at most `(Cs + Cv)·(dlen ρ)^6`
-eigenvariables, and leaves the node's goal fact at `&(k + 1 + shiftsV L)`. The E-room is `(Ck + 5·Cv)·(dlen ρ + 1)^6 ≤ E`.
+out at offset `0`, every verification list is applicable at cap `9`, cut-admitting, has at most `(Cs + Cv)·(proofLen ρ)^6`
+eigenvariables, and leaves the node's goal fact at `&(k + 1 + shiftsV L)`. The E-room is `(Ck + 5·Cv)·(proofLen ρ + 1)^6 ≤ E`.
 The degree stays 6 (`m = 6`): the `axm` leaf's shift `shiftsV pro + 1 ≤ Cv·(|p|+1)³ + 1 ≤ (Cv + 1)·d^6` (`|p| + 1 ≤ d =
-setLen s + 1`) fits the budget once the shift constant absorbs `Cv`; the other nine cases are `Verify2.lean` §8.9 verbatim
+sequentLen s + 1`) fits the budget once the shift constant absorbs `Cv`; the other nine cases are `Verify2.lean` §8.9 verbatim
 at the constants `Csv = 500000 + Cv`, `Ckv = 2500000 + 5·Cv`. -/
 theorem verifyGraph''_ok : ∃ Cs Ck : ℕ, ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
     {tbl N N' B' Ww Wl Wc W₁ W₂ W T A Cv E ρ : V},
     TableOK tbl N → ProTable tbl → NumTableOK T N' B' → Ww = walkPieces → Wl = layoutPieces → Wc = certPieces →
     W₁ = frag1Pieces → W₂ = frag2Pieces → W = proPieces → AxmTableOK' tbl E Ww A Cv → Derivation TAct ρ →
-    (((Ck : ℕ) : V) + 5 * Cv) * p6 (dlen TAct ρ + 1) ≤ E →
+    (((Ck : ℕ) : V) + 5 * Cv) * p6 (proofLen TAct ρ + 1) ≤ E →
     ∀ L Γ : V, VerifyGraph'' Ww Wl Wc W₁ W₂ W T A ρ L → IsFormulaSet LAct Γ → NodeLay Ww Wc T Γ (fstIdx ρ) →
-      ListOK tbl E ((9 : ℕ) : V) Γ L ∧ NoDrop' L ∧ shiftsV L ≤ (((Cs : ℕ) : V) + Cv) * p6 (dlen TAct ρ) ∧
-      neg LAct (goalFact (^&(len (memberList (fstIdx ρ)) + 1 + shiftsV L)) (bnum (dlen TAct ρ))) ∈ finalCtx Γ L := by
+      ListOK tbl E ((9 : ℕ) : V) Γ L ∧ NoDrop' L ∧ shiftsV L ≤ (((Cs : ℕ) : V) + Cv) * p6 (proofLen TAct ρ) ∧
+      neg LAct (goalFact (^&(len (memberList (fstIdx ρ)) + 1 + shiftsV L)) (binNumeral (proofLen TAct ρ))) ∈ finalCtx Γ L := by
   refine ⟨500000, 2500000, fun V _ _ tbl N N' B' Ww Wl Wc W₁ W₂ W T A Cv E ρ htbl hP htblN hWw hWl hWc hW₁ hW₂ hWp hA hd ↦ ?_⟩
   obtain ⟨Csv, hCsv⟩ : ∃ x : V, x = ((500000 : ℕ) : V) + Cv := ⟨_, rfl⟩
   obtain ⟨Ckv, hCkv⟩ : ∃ x : V, x = ((2500000 : ℕ) : V) + 5 * Cv := ⟨_, rfl⟩
@@ -759,25 +759,25 @@ theorem verifyGraph''_ok : ∃ Cs Ck : ℕ, ∀ (V : Type) [ORingStructure V] [V
       _ = ((2500000 : ℕ) : V) + 5 * Cv := add_comm _ _
   subst hWw
   apply Derivation.induction1 𝚷 (T := TAct)
-    (P := fun ρ ↦ Ckv * p6 (dlen TAct ρ + 1) ≤ E → ∀ L Γ : V, VerifyGraph'' walkPieces Wl Wc W₁ W₂ W T A ρ L →
+    (P := fun ρ ↦ Ckv * p6 (proofLen TAct ρ + 1) ≤ E → ∀ L Γ : V, VerifyGraph'' walkPieces Wl Wc W₁ W₂ W T A ρ L →
       IsFormulaSet LAct Γ → NodeLay walkPieces Wc T Γ (fstIdx ρ) →
-      ListOK tbl E ((9 : ℕ) : V) Γ L ∧ NoDrop' L ∧ shiftsV L ≤ Csv * p6 (dlen TAct ρ) ∧
-      neg LAct (goalFact (^&(len (memberList (fstIdx ρ)) + 1 + shiftsV L)) (bnum (dlen TAct ρ))) ∈ finalCtx Γ L)
+      ListOK tbl E ((9 : ℕ) : V) Γ L ∧ NoDrop' L ∧ shiftsV L ≤ Csv * p6 (proofLen TAct ρ) ∧
+      neg LAct (goalFact (^&(len (memberList (fstIdx ρ)) + 1 + shiftsV L)) (binNumeral (proofLen TAct ρ))) ∈ finalCtx Γ L)
     (by simp only [VerifyGraph'', p6]; definability) hd
   · -- axL
     intro s hs p hp hnp hE L Γ hL hΓ hLay
     rw [VerifyGraph''.axL_iff] at hL; subst hL
     rw [fstIdx_axL] at hLay ⊢
     have hD : Derivation TAct (axL s p) := Derivation.axL hs hp hnp
-    have hd1 : 1 ≤ dlen TAct (axL s p) := one_le_dlen hD
-    have hsD : setLen LAct s ≤ dlen TAct (axL s p) := by have := setLen_fstIdx_le_dlen hD; rwa [fstIdx_axL] at this
-    have hkD : len (memberList s) ≤ dlen TAct (axL s p) := le_trans (len_memberList_le_setLen hs) hsD
-    obtain ⟨d, hdd⟩ : ∃ x, x = dlen TAct (axL s p) := ⟨_, rfl⟩
+    have hd1 : 1 ≤ proofLen TAct (axL s p) := one_le_proofLen hD
+    have hsD : sequentLen LAct s ≤ proofLen TAct (axL s p) := by have := sequentLen_fstIdx_le_proofLen hD; rwa [fstIdx_axL] at this
+    have hkD : len (memberList s) ≤ proofLen TAct (axL s p) := le_trans (len_memberList_le_sequentLen hs) hsD
+    obtain ⟨d, hdd⟩ : ∃ x, x = proofLen TAct (axL s p) := ⟨_, rfl⟩
     rw [← hdd] at hE hd1 hsD hkD
     have he1 : (1 : V) ≤ d + 1 := le_add_self
-    have hn : 18 * ‖setLen LAct s + 1‖ + 7 ≤ 43 * (d + 1) := by
-      have h1 : ‖setLen LAct s + 1‖ ≤ d + 1 := le_trans (length_le _) (add_le_add hsD (le_refl 1))
-      calc 18 * ‖setLen LAct s + 1‖ + 7 ≤ 18 * (d + 1) + 7 := add_le_add (mul_le_mul_of_nonneg_left h1 zero_le) (le_refl 7)
+    have hn : 18 * ‖sequentLen LAct s + 1‖ + 7 ≤ 43 * (d + 1) := by
+      have h1 : ‖sequentLen LAct s + 1‖ ≤ d + 1 := le_trans (length_le _) (add_le_add hsD (le_refl 1))
+      calc 18 * ‖sequentLen LAct s + 1‖ + 7 ≤ 18 * (d + 1) + 7 := add_le_add (mul_le_mul_of_nonneg_left h1 zero_le) (le_refl 7)
         _ ≤ 43 * (d + 1) := le_of_add_eq' (c := 25 * d + 18) (by ring)
     obtain ⟨ok, nd, sh, goal⟩ := vAxL_ok (D := d) htbl hP htblN hWc hW₁ hs hp hnp hsD
       (capE hE he1 (hCk 39 (by norm_num)) (by
@@ -796,16 +796,16 @@ theorem verifyGraph''_ok : ∃ Cs Ck : ℕ, ∀ (V : Type) [ORingStructure V] [V
     rw [VerifyGraph''.verumIntro_iff] at hL; subst hL
     rw [fstIdx_verumIntro] at hLay ⊢
     have hD : Derivation TAct (verumIntro s) := Derivation.verumIntro hs hv
-    have hd1 : 1 ≤ dlen TAct (verumIntro s) := one_le_dlen hD
-    have hsD : setLen LAct s ≤ dlen TAct (verumIntro s) := by
-      have := setLen_fstIdx_le_dlen hD; rwa [fstIdx_verumIntro] at this
-    have hkD : len (memberList s) ≤ dlen TAct (verumIntro s) := le_trans (len_memberList_le_setLen hs) hsD
-    obtain ⟨d, hdd⟩ : ∃ x, x = dlen TAct (verumIntro s) := ⟨_, rfl⟩
+    have hd1 : 1 ≤ proofLen TAct (verumIntro s) := one_le_proofLen hD
+    have hsD : sequentLen LAct s ≤ proofLen TAct (verumIntro s) := by
+      have := sequentLen_fstIdx_le_proofLen hD; rwa [fstIdx_verumIntro] at this
+    have hkD : len (memberList s) ≤ proofLen TAct (verumIntro s) := le_trans (len_memberList_le_sequentLen hs) hsD
+    obtain ⟨d, hdd⟩ : ∃ x, x = proofLen TAct (verumIntro s) := ⟨_, rfl⟩
     rw [← hdd] at hE hd1 hsD hkD
     have he1 : (1 : V) ≤ d + 1 := le_add_self
-    have hn : 18 * ‖setLen LAct s + 1‖ + 7 ≤ 43 * (d + 1) := by
-      have h1 : ‖setLen LAct s + 1‖ ≤ d + 1 := le_trans (length_le _) (add_le_add hsD (le_refl 1))
-      calc 18 * ‖setLen LAct s + 1‖ + 7 ≤ 18 * (d + 1) + 7 := add_le_add (mul_le_mul_of_nonneg_left h1 zero_le) (le_refl 7)
+    have hn : 18 * ‖sequentLen LAct s + 1‖ + 7 ≤ 43 * (d + 1) := by
+      have h1 : ‖sequentLen LAct s + 1‖ ≤ d + 1 := le_trans (length_le _) (add_le_add hsD (le_refl 1))
+      calc 18 * ‖sequentLen LAct s + 1‖ + 7 ≤ 18 * (d + 1) + 7 := add_le_add (mul_le_mul_of_nonneg_left h1 zero_le) (le_refl 7)
         _ ≤ 43 * (d + 1) := le_of_add_eq' (c := 25 * d + 18) (by ring)
     obtain ⟨ok, nd, sh, goal⟩ := vVerum_ok (D := d) htbl hP htblN hWc hW₁ hs hv hsD
       (capE hE he1 (hCk 9 (by norm_num)) (by push_cast; exact le_of_add_eq' (c := 3 * d + 6) (by ring)))
@@ -822,18 +822,18 @@ theorem verifyGraph''_ok : ∃ Cs Ck : ℕ, ∀ (V : Type) [ORingStructure V] [V
     obtain ⟨L₁, -, hL₁, L₂, -, hL₂, rfl⟩ := hL
     rw [fstIdx_andIntro] at hLay ⊢
     have hD : Derivation TAct (andIntro s p q dp dq) := Derivation.andIntro hpq hdp hdq
-    have hd1 : 1 ≤ dlen TAct (andIntro s p q dp dq) := one_le_dlen hD
-    have hsD : setLen LAct s ≤ dlen TAct (andIntro s p q dp dq) := by
-      have := setLen_fstIdx_le_dlen hD; rwa [fstIdx_andIntro] at this
-    have hc₁D := setLen_child_le_dlen_andIntro_left hD
-    have hc₂D := setLen_child_le_dlen_andIntro_right hD
-    have hy₁ := dlen_dp_succ_le_andIntro hD
-    have hy₂ := dlen_dq_succ_le_andIntro hD
-    have hdl := dlen_andIntro hD
-    obtain ⟨d, hdd⟩ : ∃ x, x = dlen TAct (andIntro s p q dp dq) := ⟨_, rfl⟩
+    have hd1 : 1 ≤ proofLen TAct (andIntro s p q dp dq) := one_le_proofLen hD
+    have hsD : sequentLen LAct s ≤ proofLen TAct (andIntro s p q dp dq) := by
+      have := sequentLen_fstIdx_le_proofLen hD; rwa [fstIdx_andIntro] at this
+    have hc₁D := sequentLen_child_le_proofLen_andIntro_left hD
+    have hc₂D := sequentLen_child_le_proofLen_andIntro_right hD
+    have hy₁ := proofLen_dp_succ_le_andIntro hD
+    have hy₂ := proofLen_dq_succ_le_andIntro hD
+    have hdl := proofLen_andIntro hD
+    obtain ⟨d, hdd⟩ : ∃ x, x = proofLen TAct (andIntro s p q dp dq) := ⟨_, rfl⟩
     rw [← hdd] at hE hd1 hsD hc₁D hc₂D hy₁ hy₂ hdl
-    obtain ⟨y₁, hy₁d⟩ : ∃ x, x = dlen TAct dp := ⟨_, rfl⟩
-    obtain ⟨y₂, hy₂d⟩ : ∃ x, x = dlen TAct dq := ⟨_, rfl⟩
+    obtain ⟨y₁, hy₁d⟩ : ∃ x, x = proofLen TAct dp := ⟨_, rfl⟩
+    obtain ⟨y₂, hy₂d⟩ : ∃ x, x = proofLen TAct dq := ⟨_, rfl⟩
     rw [← hy₁d] at hy₁ hdl; rw [← hy₂d] at hy₂ hdl
     have he1 : (1 : V) ≤ d + 1 := le_add_self
     have hm₁D : y₁ ≤ d := le_trans le_self_add hy₁
@@ -864,7 +864,7 @@ theorem verifyGraph''_ok : ∃ Cs Ck : ℕ, ∀ (V : Type) [ORingStructure V] [V
     refine ⟨ok, nd, ?_, goal⟩
     rw [← hdd]
     refine le_trans sh ?_
-    have hdeq : d = y₁ + y₂ + (setLen LAct s + 1) := by rw [hdl]; ring
+    have hdeq : d = y₁ + y₂ + (sequentLen LAct s + 1) := by rw [hdl]; ring
     have hX : 12 * d + 9 ≤ Csv * p5 d := lin_le_p5 hd1 (by
       rw [hCsv]; exact le_trans (b := ((500000 : ℕ) : V)) (by exact_mod_cast (by norm_num : 12 + 9 ≤ 500000)) le_self_add)
     calc 12 * d + Csv * p6 y₁ + Csv * p6 y₂ + 9 = (12 * d + 9) + Csv * p6 y₁ + Csv * p6 y₂ := by ring
@@ -875,15 +875,15 @@ theorem verifyGraph''_ok : ∃ Cs Ck : ℕ, ∀ (V : Type) [ORingStructure V] [V
     obtain ⟨L', -, hL', rfl⟩ := hL
     rw [fstIdx_orIntro] at hLay ⊢
     have hD : Derivation TAct (orIntro s p q d') := Derivation.orIntro hpq hd'
-    have hd1 : 1 ≤ dlen TAct (orIntro s p q d') := one_le_dlen hD
-    have hsD : setLen LAct s ≤ dlen TAct (orIntro s p q d') := by
-      have := setLen_fstIdx_le_dlen hD; rwa [fstIdx_orIntro] at this
-    have hcD := setLen_child_le_dlen_orIntro hD
-    have hy := dlen_d_succ_le_orIntro hD
-    have hdl := dlen_orIntro hD
-    obtain ⟨d, hdd⟩ : ∃ x, x = dlen TAct (orIntro s p q d') := ⟨_, rfl⟩
+    have hd1 : 1 ≤ proofLen TAct (orIntro s p q d') := one_le_proofLen hD
+    have hsD : sequentLen LAct s ≤ proofLen TAct (orIntro s p q d') := by
+      have := sequentLen_fstIdx_le_proofLen hD; rwa [fstIdx_orIntro] at this
+    have hcD := sequentLen_child_le_proofLen_orIntro hD
+    have hy := proofLen_d_succ_le_orIntro hD
+    have hdl := proofLen_orIntro hD
+    obtain ⟨d, hdd⟩ : ∃ x, x = proofLen TAct (orIntro s p q d') := ⟨_, rfl⟩
     rw [← hdd] at hE hd1 hsD hcD hy hdl
-    obtain ⟨y, hyd⟩ : ∃ x, x = dlen TAct d' := ⟨_, rfl⟩
+    obtain ⟨y, hyd⟩ : ∃ x, x = proofLen TAct d' := ⟨_, rfl⟩
     rw [← hyd] at hy hdl
     have he1 : (1 : V) ≤ d + 1 := le_add_self
     have hmD : y ≤ d := le_trans le_self_add hy
@@ -906,7 +906,7 @@ theorem verifyGraph''_ok : ∃ Cs Ck : ℕ, ∀ (V : Type) [ORingStructure V] [V
     refine ⟨ok, nd, ?_, goal⟩
     rw [← hdd]
     refine le_trans sh ?_
-    have hdeq : d = y + (setLen LAct s + 1) := by rw [hdl]; ring
+    have hdeq : d = y + (sequentLen LAct s + 1) := by rw [hdl]; ring
     have hX : 12 * d + 7 ≤ Csv * p5 d := lin_le_p5 hd1 (by
       rw [hCsv]; exact le_trans (b := ((500000 : ℕ) : V)) (by exact_mod_cast (by norm_num : 12 + 7 ≤ 500000)) le_self_add)
     calc 12 * d + Csv * p6 y + 7 = (12 * d + 7) + Csv * p6 y := by ring
@@ -917,21 +917,21 @@ theorem verifyGraph''_ok : ∃ Cs Ck : ℕ, ∀ (V : Type) [ORingStructure V] [V
     obtain ⟨L', -, hL', rfl⟩ := hL
     rw [fstIdx_allIntro] at hLay ⊢
     have hD : Derivation TAct (allIntro s p d') := Derivation.allIntro hr hd'
-    have hd1 : 1 ≤ dlen TAct (allIntro s p d') := one_le_dlen hD
-    have hsD : setLen LAct s ≤ dlen TAct (allIntro s p d') := by
-      have := setLen_fstIdx_le_dlen hD; rwa [fstIdx_allIntro] at this
-    have hcD := setLen_child_le_dlen_allIntro hD
-    have hy := dlen_d_succ_le_allIntro hD
-    have hdl := dlen_allIntro hD
+    have hd1 : 1 ≤ proofLen TAct (allIntro s p d') := one_le_proofLen hD
+    have hsD : sequentLen LAct s ≤ proofLen TAct (allIntro s p d') := by
+      have := sequentLen_fstIdx_le_proofLen hD; rwa [fstIdx_allIntro] at this
+    have hcD := sequentLen_child_le_proofLen_allIntro hD
+    have hy := proofLen_d_succ_le_allIntro hD
+    have hdl := proofLen_allIntro hD
     have hp1 : IsSemiformula LAct 1 p := by have := IsSemiformula.all.mp (hs _ hr); simpa using this
-    have hspD : formulaLen LAct (shift LAct p) ≤ 2 * dlen TAct (allIntro s p d') := by
+    have hspD : formulaLen LAct (shift LAct p) ≤ 2 * proofLen TAct (allIntro s p d') := by
       refine le_trans (formulaLen_shift_le hp1) (mul_le_mul_of_nonneg_left ?_ zero_le)
-      have := formulaLen_all_le_dlen_allIntro hD
+      have := formulaLen_all_le_proofLen_allIntro hD
       rw [formulaLen_all hp1.isUFormula] at this
       exact le_trans le_self_add this
-    obtain ⟨d, hdd⟩ : ∃ x, x = dlen TAct (allIntro s p d') := ⟨_, rfl⟩
+    obtain ⟨d, hdd⟩ : ∃ x, x = proofLen TAct (allIntro s p d') := ⟨_, rfl⟩
     rw [← hdd] at hE hd1 hsD hcD hy hdl hspD
-    obtain ⟨y, hyd⟩ : ∃ x, x = dlen TAct d' := ⟨_, rfl⟩
+    obtain ⟨y, hyd⟩ : ∃ x, x = proofLen TAct d' := ⟨_, rfl⟩
     rw [← hyd] at hy hdl
     have he1 : (1 : V) ≤ d + 1 := le_add_self
     have hmD : y ≤ d := le_trans le_self_add hy
@@ -988,7 +988,7 @@ theorem verifyGraph''_ok : ∃ Cs Ck : ℕ, ∀ (V : Type) [ORingStructure V] [V
     refine ⟨ok, nd, ?_, goal⟩
     rw [← hdd]
     refine le_trans sh ?_
-    have hdeq : d = y + (setLen LAct s + 1) := by rw [hdl]; ring
+    have hdeq : d = y + (sequentLen LAct s + 1) := by rw [hdl]; ring
     calc 450 * p5 (2 * (d + 1)) + Csv * p6 y + 3 = (450 * p5 (2 * (d + 1)) + 3) + Csv * p6 y := by ring
       _ ≤ Csv * p6 d := rec1 le_add_self hdeq (proSA_add_le_p5 hd1 hCs')
   · -- exsIntro
@@ -997,17 +997,17 @@ theorem verifyGraph''_ok : ∃ Cs Ck : ℕ, ∀ (V : Type) [ORingStructure V] [V
     obtain ⟨L', -, hL', rfl⟩ := hL
     rw [fstIdx_exsIntro] at hLay ⊢
     have hD : Derivation TAct (exsIntro s p t d') := Derivation.exsIntro hr ht hd'
-    have hd1 : 1 ≤ dlen TAct (exsIntro s p t d') := one_le_dlen hD
-    have hsD : setLen LAct s ≤ dlen TAct (exsIntro s p t d') := by
-      have := setLen_fstIdx_le_dlen hD; rwa [fstIdx_exsIntro] at this
-    have hcD := setLen_child_le_dlen_exsIntro hD
-    have htD := termLen_le_dlen_exsIntro hD
-    have hy := dlen_d_succ_le_exsIntro hD
-    have hdl := dlen_exsIntro hD
+    have hd1 : 1 ≤ proofLen TAct (exsIntro s p t d') := one_le_proofLen hD
+    have hsD : sequentLen LAct s ≤ proofLen TAct (exsIntro s p t d') := by
+      have := sequentLen_fstIdx_le_proofLen hD; rwa [fstIdx_exsIntro] at this
+    have hcD := sequentLen_child_le_proofLen_exsIntro hD
+    have htD := termLen_le_proofLen_exsIntro hD
+    have hy := proofLen_d_succ_le_exsIntro hD
+    have hdl := proofLen_exsIntro hD
     have hp1 : IsSemiformula LAct 1 p := by have := IsSemiformula.exs.mp (hs _ hr); simpa using this
-    obtain ⟨d, hdd⟩ : ∃ x, x = dlen TAct (exsIntro s p t d') := ⟨_, rfl⟩
+    obtain ⟨d, hdd⟩ : ∃ x, x = proofLen TAct (exsIntro s p t d') := ⟨_, rfl⟩
     rw [← hdd] at hE hd1 hsD hcD htD hy hdl
-    obtain ⟨y, hyd⟩ : ∃ x, x = dlen TAct d' := ⟨_, rfl⟩
+    obtain ⟨y, hyd⟩ : ∃ x, x = proofLen TAct d' := ⟨_, rfl⟩
     rw [← hyd] at hy hdl
     have he1 : (1 : V) ≤ d + 1 := le_add_self
     have hmD : y ≤ d := le_trans le_self_add hy
@@ -1066,7 +1066,7 @@ theorem verifyGraph''_ok : ∃ Cs Ck : ℕ, ∀ (V : Type) [ORingStructure V] [V
     refine ⟨ok, nd, ?_, goal⟩
     rw [← hdd]
     refine le_trans sh ?_
-    have hdeq : d = y + (setLen LAct s + termLen LAct t + 1) := by rw [hdl]; ring
+    have hdeq : d = y + (sequentLen LAct s + termLen LAct t + 1) := by rw [hdl]; ring
     calc 450 * p5 (2 * (d + 1)) + Csv * p6 y + 3 = (450 * p5 (2 * (d + 1)) + 3) + Csv * p6 y := by ring
       _ ≤ Csv * p6 d := rec1 le_add_self hdeq (proSA_add_le_p5 hd1 hCs')
   · -- wkRule
@@ -1075,15 +1075,15 @@ theorem verifyGraph''_ok : ∃ Cs Ck : ℕ, ∀ (V : Type) [ORingStructure V] [V
     obtain ⟨L', -, hL', rfl⟩ := hL
     rw [fstIdx_wkRule] at hLay ⊢
     have hD : Derivation TAct (wkRule s d') := Derivation.wkRule hs hsub ⟨rfl, hd'⟩
-    have hd1 : 1 ≤ dlen TAct (wkRule s d') := one_le_dlen hD
-    have hsD : setLen LAct s ≤ dlen TAct (wkRule s d') := by
-      have := setLen_fstIdx_le_dlen hD; rwa [fstIdx_wkRule] at this
-    have hcD := setLen_child_le_dlen_wkRule hD
-    have hy := dlen_d_succ_le_wkRule hD
-    have hdl := dlen_wkRule hD
-    obtain ⟨d, hdd⟩ : ∃ x, x = dlen TAct (wkRule s d') := ⟨_, rfl⟩
+    have hd1 : 1 ≤ proofLen TAct (wkRule s d') := one_le_proofLen hD
+    have hsD : sequentLen LAct s ≤ proofLen TAct (wkRule s d') := by
+      have := sequentLen_fstIdx_le_proofLen hD; rwa [fstIdx_wkRule] at this
+    have hcD := sequentLen_child_le_proofLen_wkRule hD
+    have hy := proofLen_d_succ_le_wkRule hD
+    have hdl := proofLen_wkRule hD
+    obtain ⟨d, hdd⟩ : ∃ x, x = proofLen TAct (wkRule s d') := ⟨_, rfl⟩
     rw [← hdd] at hE hd1 hsD hcD hy hdl
-    obtain ⟨y, hyd⟩ : ∃ x, x = dlen TAct d' := ⟨_, rfl⟩
+    obtain ⟨y, hyd⟩ : ∃ x, x = proofLen TAct d' := ⟨_, rfl⟩
     rw [← hyd] at hy hdl
     have he1 : (1 : V) ≤ d + 1 := le_add_self
     have hmD : y ≤ d := le_trans le_self_add hy
@@ -1106,7 +1106,7 @@ theorem verifyGraph''_ok : ∃ Cs Ck : ℕ, ∀ (V : Type) [ORingStructure V] [V
     refine ⟨ok, nd, ?_, goal⟩
     rw [← hdd]
     refine le_trans sh ?_
-    have hdeq : d = y + (setLen LAct s + 1) := by rw [hdl]; ring
+    have hdeq : d = y + (sequentLen LAct s + 1) := by rw [hdl]; ring
     have hX : 7 * d + 8 ≤ Csv * p5 d := lin_le_p5 hd1 (by
       rw [hCsv]; exact le_trans (b := ((500000 : ℕ) : V)) (by exact_mod_cast (by norm_num : 7 + 8 ≤ 500000)) le_self_add)
     calc 7 * d + Csv * p6 y + 8 = (7 * d + 8) + Csv * p6 y := by ring
@@ -1118,15 +1118,15 @@ theorem verifyGraph''_ok : ∃ Cs Ck : ℕ, ∀ (V : Type) [ORingStructure V] [V
     rw [fstIdx_shiftRule] at hLay ⊢
     have hD : Derivation TAct (shiftRule s d') := by
       have := Derivation.shiftRule (T := TAct) ⟨rfl, hd'⟩; rwa [← hsc] at this
-    have hd1 : 1 ≤ dlen TAct (shiftRule s d') := one_le_dlen hD
-    have hsD : setLen LAct s ≤ dlen TAct (shiftRule s d') := by
-      have := setLen_fstIdx_le_dlen hD; rwa [fstIdx_shiftRule] at this
-    have hcD := setLen_child_le_dlen_shiftRule hD
-    have hy := dlen_d_succ_le_shiftRule hD
-    have hdl := dlen_shiftRule hD
-    obtain ⟨d, hdd⟩ : ∃ x, x = dlen TAct (shiftRule s d') := ⟨_, rfl⟩
+    have hd1 : 1 ≤ proofLen TAct (shiftRule s d') := one_le_proofLen hD
+    have hsD : sequentLen LAct s ≤ proofLen TAct (shiftRule s d') := by
+      have := sequentLen_fstIdx_le_proofLen hD; rwa [fstIdx_shiftRule] at this
+    have hcD := sequentLen_child_le_proofLen_shiftRule hD
+    have hy := proofLen_d_succ_le_shiftRule hD
+    have hdl := proofLen_shiftRule hD
+    obtain ⟨d, hdd⟩ : ∃ x, x = proofLen TAct (shiftRule s d') := ⟨_, rfl⟩
     rw [← hdd] at hE hd1 hsD hcD hy hdl
-    obtain ⟨y, hyd⟩ : ∃ x, x = dlen TAct d' := ⟨_, rfl⟩
+    obtain ⟨y, hyd⟩ : ∃ x, x = proofLen TAct d' := ⟨_, rfl⟩
     rw [← hyd] at hy hdl
     have he1 : (1 : V) ≤ d + 1 := le_add_self
     have hmD : y ≤ d := le_trans le_self_add hy
@@ -1149,7 +1149,7 @@ theorem verifyGraph''_ok : ∃ Cs Ck : ℕ, ∀ (V : Type) [ORingStructure V] [V
     refine ⟨ok, nd, ?_, goal⟩
     rw [← hdd]
     refine le_trans sh ?_
-    have hdeq : d = y + (setLen LAct s + 1) := by rw [hdl]; ring
+    have hdeq : d = y + (sequentLen LAct s + 1) := by rw [hdl]; ring
     have hX : 7 * d + 8 ≤ Csv * p5 d := lin_le_p5 hd1 (by
       rw [hCsv]; exact le_trans (b := ((500000 : ℕ) : V)) (by exact_mod_cast (by norm_num : 7 + 8 ≤ 500000)) le_self_add)
     calc 7 * d + Csv * p6 y + 8 = (7 * d + 8) + Csv * p6 y := by ring
@@ -1160,18 +1160,18 @@ theorem verifyGraph''_ok : ∃ Cs Ck : ℕ, ∀ (V : Type) [ORingStructure V] [V
     obtain ⟨L₁, -, hL₁, L₂, -, hL₂, rfl⟩ := hL
     rw [fstIdx_cutRule] at hLay ⊢
     have hD : Derivation TAct (cutRule s p d₁ d₂) := Derivation.cutRule hd₁ hd₂
-    have hd1 : 1 ≤ dlen TAct (cutRule s p d₁ d₂) := one_le_dlen hD
-    have hsD : setLen LAct s ≤ dlen TAct (cutRule s p d₁ d₂) := by
-      have := setLen_fstIdx_le_dlen hD; rwa [fstIdx_cutRule] at this
-    have hc₁D := setLen_child_le_dlen_cutRule_left hD
-    have hc₂D := setLen_child_le_dlen_cutRule_right hD
-    have hy₁ := dlen_d₁_succ_le_cutRule hD
-    have hy₂ := dlen_d₂_succ_le_cutRule hD
-    have hdl := dlen_cutRule hD
-    obtain ⟨d, hdd⟩ : ∃ x, x = dlen TAct (cutRule s p d₁ d₂) := ⟨_, rfl⟩
+    have hd1 : 1 ≤ proofLen TAct (cutRule s p d₁ d₂) := one_le_proofLen hD
+    have hsD : sequentLen LAct s ≤ proofLen TAct (cutRule s p d₁ d₂) := by
+      have := sequentLen_fstIdx_le_proofLen hD; rwa [fstIdx_cutRule] at this
+    have hc₁D := sequentLen_child_le_proofLen_cutRule_left hD
+    have hc₂D := sequentLen_child_le_proofLen_cutRule_right hD
+    have hy₁ := proofLen_d₁_succ_le_cutRule hD
+    have hy₂ := proofLen_d₂_succ_le_cutRule hD
+    have hdl := proofLen_cutRule hD
+    obtain ⟨d, hdd⟩ : ∃ x, x = proofLen TAct (cutRule s p d₁ d₂) := ⟨_, rfl⟩
     rw [← hdd] at hE hd1 hsD hc₁D hc₂D hy₁ hy₂ hdl
-    obtain ⟨y₁, hy₁d⟩ : ∃ x, x = dlen TAct d₁ := ⟨_, rfl⟩
-    obtain ⟨y₂, hy₂d⟩ : ∃ x, x = dlen TAct d₂ := ⟨_, rfl⟩
+    obtain ⟨y₁, hy₁d⟩ : ∃ x, x = proofLen TAct d₁ := ⟨_, rfl⟩
+    obtain ⟨y₂, hy₂d⟩ : ∃ x, x = proofLen TAct d₂ := ⟨_, rfl⟩
     rw [← hy₁d] at hy₁ hdl; rw [← hy₂d] at hy₂ hdl
     have he1 : (1 : V) ≤ d + 1 := le_add_self
     have hm₁D : y₁ ≤ d := le_trans le_self_add hy₁
@@ -1202,7 +1202,7 @@ theorem verifyGraph''_ok : ∃ Cs Ck : ℕ, ∀ (V : Type) [ORingStructure V] [V
     refine ⟨ok, nd, ?_, goal⟩
     rw [← hdd]
     refine le_trans sh ?_
-    have hdeq : d = y₁ + y₂ + (setLen LAct s + 1) := by rw [hdl]; ring
+    have hdeq : d = y₁ + y₂ + (sequentLen LAct s + 1) := by rw [hdl]; ring
     have hX : 20 * d + 9 ≤ Csv * p5 d := lin_le_p5 hd1 (by
       rw [hCsv]; exact le_trans (b := ((500000 : ℕ) : V)) (by exact_mod_cast (by norm_num : 20 + 9 ≤ 500000)) le_self_add)
     calc 20 * d + Csv * p6 y₁ + Csv * p6 y₂ + 9 = (20 * d + 9) + Csv * p6 y₁ + Csv * p6 y₂ := by ring
@@ -1217,12 +1217,12 @@ theorem verifyGraph''_ok : ∃ Cs Ck : ℕ, ∀ (V : Type) [ORingStructure V] [V
     obtain ⟨e₂, e₃⟩ := pair_ext_iff.mp heq₂
     subst e₁; subst e₂; subst e₃
     have hD : Derivation TAct (axm s p) := Derivation.axm hs hps hpT
-    have hd1 : 1 ≤ dlen TAct (axm s p) := one_le_dlen hD
-    have hsD : setLen LAct s ≤ dlen TAct (axm s p) := by have := setLen_fstIdx_le_dlen hD; rwa [fstIdx_axm] at this
-    have hkD : len (memberList s) ≤ dlen TAct (axm s p) := le_trans (len_memberList_le_setLen hs) hsD
-    have hpd : formulaLen LAct p + 1 ≤ dlen TAct (axm s p) := by
-      rw [dlen_axm hD]; exact add_le_add (formulaLen_le_setLen_of_mem (L := LAct) hps) le_rfl
-    obtain ⟨d, hdd⟩ : ∃ x, x = dlen TAct (axm s p) := ⟨_, rfl⟩
+    have hd1 : 1 ≤ proofLen TAct (axm s p) := one_le_proofLen hD
+    have hsD : sequentLen LAct s ≤ proofLen TAct (axm s p) := by have := sequentLen_fstIdx_le_proofLen hD; rwa [fstIdx_axm] at this
+    have hkD : len (memberList s) ≤ proofLen TAct (axm s p) := le_trans (len_memberList_le_sequentLen hs) hsD
+    have hpd : formulaLen LAct p + 1 ≤ proofLen TAct (axm s p) := by
+      rw [proofLen_axm hD]; exact add_le_add (formulaLen_le_sequentLen_of_mem (L := LAct) hps) le_rfl
+    obtain ⟨d, hdd⟩ : ∃ x, x = proofLen TAct (axm s p) := ⟨_, rfl⟩
     rw [← hdd] at hE hd1 hsD hkD hpd
     have he1 : (1 : V) ≤ d + 1 := le_add_self
     -- the entry's shift under the budget
@@ -1235,9 +1235,9 @@ theorem verifyGraph''_ok : ∃ Cs Ck : ℕ, ∀ (V : Type) [ORingStructure V] [V
             add_le_add hσE (mul_le_mul hc (le_p6_self he1) zero_le zero_le)
         _ = (Cv + 9) * p6 (d + 1) := by ring
         _ ≤ Ckv * p6 (d + 1) := mul_le_mul_of_nonneg_right hCv9 zero_le
-    have hn : 18 * ‖setLen LAct s + 1‖ + 7 ≤ 43 * (d + 1) := by
-      have h1 : ‖setLen LAct s + 1‖ ≤ d + 1 := le_trans (length_le _) (add_le_add hsD (le_refl 1))
-      calc 18 * ‖setLen LAct s + 1‖ + 7 ≤ 18 * (d + 1) + 7 := add_le_add (mul_le_mul_of_nonneg_left h1 zero_le) (le_refl 7)
+    have hn : 18 * ‖sequentLen LAct s + 1‖ + 7 ≤ 43 * (d + 1) := by
+      have h1 : ‖sequentLen LAct s + 1‖ ≤ d + 1 := le_trans (length_le _) (add_le_add hsD (le_refl 1))
+      calc 18 * ‖sequentLen LAct s + 1‖ + 7 ≤ 18 * (d + 1) + 7 := add_le_add (mul_le_mul_of_nonneg_left h1 zero_le) (le_refl 7)
         _ ≤ 43 * (d + 1) := le_of_add_eq' (c := 25 * d + 18) (by ring)
     have hiE' : shiftsV pro + 6 * d + 3 ≤ E := capσ (c := 9) le_rfl (by
       rw [add_assoc]; exact add_le_add le_rfl (le_of_add_eq' (c := 3 * d + 6) (by ring)))
@@ -1256,26 +1256,26 @@ theorem verifyGraph''_ok : ∃ Cs Ck : ℕ, ∀ (V : Type) [ORingStructure V] [V
 
 end glueMain'
 
-/-! ### 5.1 The kit-facing form: `(dlen ρ + 1)^6`, the constant `Ck·(Cv + 1)` -/
+/-! ### 5.1 The kit-facing form: `(proofLen ρ + 1)^6`, the constant `Ck·(Cv + 1)` -/
 
 section kitForm'
 
-/-- `verifyGraph''_ok` restated with the `VerifyKit''`-style multiplier `(dlen ρ + 1)^6` and ONE constant `Ck·(Cv + 1)`
+/-- `verifyGraph''_ok` restated with the `VerifyKit''`-style multiplier `(proofLen ρ + 1)^6` and ONE constant `Ck·(Cv + 1)`
 (`Cv` the table's constant; `verifyGraph''_exists_unconditional` supplies a standard one). -/
 theorem verifyGraph''_ok_pow : ∃ Ck : ℕ, ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
     {tbl N N' B' Ww Wl Wc W₁ W₂ W T A Cv E ρ : V},
     TableOK tbl N → ProTable tbl → NumTableOK T N' B' → Ww = walkPieces → Wl = layoutPieces → Wc = certPieces →
     W₁ = frag1Pieces → W₂ = frag2Pieces → W = proPieces → AxmTableOK' tbl E Ww A Cv → Derivation TAct ρ →
-    (Ck : V) * (Cv + 1) * (dlen TAct ρ + 1) ^ 6 ≤ E →
+    (Ck : V) * (Cv + 1) * (proofLen TAct ρ + 1) ^ 6 ≤ E →
     ∀ L Γ : V, VerifyGraph'' Ww Wl Wc W₁ W₂ W T A ρ L → IsFormulaSet LAct Γ → NodeLay Ww Wc T Γ (fstIdx ρ) →
-      ListOK tbl E ((9 : ℕ) : V) Γ L ∧ NoDrop' L ∧ shiftsV L ≤ (Ck : V) * (Cv + 1) * (dlen TAct ρ + 1) ^ 6 ∧
-      neg LAct (goalFact (^&(len (memberList (fstIdx ρ)) + 1 + shiftsV L)) (bnum (dlen TAct ρ))) ∈ finalCtx Γ L := by
+      ListOK tbl E ((9 : ℕ) : V) Γ L ∧ NoDrop' L ∧ shiftsV L ≤ (Ck : V) * (Cv + 1) * (proofLen TAct ρ + 1) ^ 6 ∧
+      neg LAct (goalFact (^&(len (memberList (fstIdx ρ)) + 1 + shiftsV L)) (binNumeral (proofLen TAct ρ))) ∈ finalCtx Γ L := by
   obtain ⟨Cs, Ck, h⟩ := verifyGraph''_ok
   refine ⟨Cs + Ck + 5, fun V _ _ tbl N N' B' Ww Wl Wc W₁ W₂ W T A Cv E ρ htbl hP htblN hWw hWl hWc hW₁ hW₂ hWp hA hd hE
     L Γ hL hΓ hLay ↦ ?_⟩
-  have hp : (dlen TAct ρ + 1) ^ 6 = p6 (dlen TAct ρ + 1) := by simp only [p6]; ring
+  have hp : (proofLen TAct ρ + 1) ^ 6 = p6 (proofLen TAct ρ + 1) := by simp only [p6]; ring
   rw [hp] at hE ⊢
-  have hE' : (((Ck : ℕ) : V) + 5 * Cv) * p6 (dlen TAct ρ + 1) ≤ E := by
+  have hE' : (((Ck : ℕ) : V) + 5 * Cv) * p6 (proofLen TAct ρ + 1) ≤ E := by
     refine le_trans (mul_le_mul_of_nonneg_right ?_ zero_le) hE
     push_cast
     exact le_of_add_eq' (c := ((Cs : V) + Ck) * Cv + Cs + 5) (by ring)

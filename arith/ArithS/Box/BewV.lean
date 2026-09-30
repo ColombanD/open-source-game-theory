@@ -3,10 +3,10 @@ import ArithS.Length.Proper
 /-!
 # ArithS.BewV — `□_k` with the budget `k` as a formula variable
 
-`LenProvableV T k φ := ∃ d < fbound k, Proof T d φ ∧ dlen T d ≤ k`, for `k φ : V`. This is
-`LenProvable fbound k T φ` (`ArithS.Bew`) with the meta budget replaced by an object
+`LenBox T k φ := ∃ d < codeBound k, Proof T d φ ∧ proofLen T d ≤ k`, for `k φ : V`. This is
+`LenBoxNat codeBound k T φ` (`ArithS.Bew`) with the meta budget replaced by an object
 variable, which is what the evaluator's `search` clause needs (the budget is stored in the
-program code). Δ₁: the code bound `fbound k` makes the search bounded; properness
+program code). Δ₁: the code bound `codeBound k` makes the search bounded; properness
 (`ArithS.Proper`) is what makes the bound invisible.
 -/
 
@@ -19,23 +19,23 @@ variable {V : Type*} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
 variable {L : Language} [L.Encodable] [L.LORDefinable]
 variable (T : Theory L) [T.Δ₁]
 
-/-- Provability by a proof of length `≤ k` (code below `fbound k`), `k` an element of `V`. -/
-def LenProvableV (k φ : V) : Prop := ∃ d < fbound k, Proof T d φ ∧ dlen T d ≤ k
+/-- Provability by a proof of length `≤ k` (code below `codeBound k`), `k` an element of `V`. -/
+def LenBox (k φ : V) : Prop := ∃ d < codeBound k, Proof T d φ ∧ proofLen T d ≤ k
 
-noncomputable def lenProvableV : 𝚫₁.Semisentence 2 := .mkDelta
-  (.mkSigma “k φ. ∃ E, !fboundDef E k ∧ ∃ d < E, !(proof T).sigma d φ ∧ ∃ n, !(dlenDef T) n d ∧ n ≤ k”)
-  (.mkPi “k φ. ∀ E, !fboundDef E k → ∃ d < E, !(proof T).pi d φ ∧ ∀ n, !(dlenDef T) n d → n ≤ k”)
+noncomputable def lenBox : 𝚫₁.Semisentence 2 := .mkDelta
+  (.mkSigma “k φ. ∃ E, !codeBoundDef E k ∧ ∃ d < E, !(proof T).sigma d φ ∧ ∃ n, !(proofLenDef T) n d ∧ n ≤ k”)
+  (.mkPi “k φ. ∀ E, !codeBoundDef E k → ∃ d < E, !(proof T).pi d φ ∧ ∀ n, !(proofLenDef T) n d → n ≤ k”)
 
-instance LenProvableV.defined : 𝚫₁-Relation[V] (LenProvableV T) via lenProvableV T := .mk
+instance LenBox.defined : 𝚫₁-Relation[V] (LenBox T) via lenBox T := .mk
   ⟨by intro v
-      simp [lenProvableV, HierarchySymbol.Semiformula.val_sigma, fbound_defined.iff,
-        (Proof.defined (T := T)).proper.iff', dlen_defined.iff],
+      simp [lenBox, HierarchySymbol.Semiformula.val_sigma, codeBound_defined.iff,
+        (Proof.defined (T := T)).proper.iff', proofLen_defined.iff],
    by intro v
-      simp [lenProvableV, HierarchySymbol.Semiformula.val_sigma, fbound_defined.iff,
-        (Proof.defined (T := T)).df, dlen_defined.iff, LenProvableV]⟩
+      simp [lenBox, HierarchySymbol.Semiformula.val_sigma, codeBound_defined.iff,
+        (Proof.defined (T := T)).df, proofLen_defined.iff, LenBox]⟩
 
-/-- At a meta budget, `LenProvableV` is `LenProvable fbound`. -/
-lemma lenProvableV_numeral (k : ℕ) (φ : V) :
-    LenProvableV T (ORingStructure.numeral k) φ ↔ LenProvable (fbound : V → V) k T φ := Iff.rfl
+/-- At a meta budget, `LenBox` is `LenBoxNat codeBound`. -/
+lemma lenBox_numeral (k : ℕ) (φ : V) :
+    LenBox T (ORingStructure.numeral k) φ ↔ LenBoxNat (codeBound : V → V) k T φ := Iff.rfl
 
 end ArithS

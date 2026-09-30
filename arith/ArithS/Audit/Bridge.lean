@@ -26,7 +26,7 @@ namespace ArithS
 #print axioms playsProof_evalGraph
 #print axioms playsProof_evalGraph_searchFree
 #print axioms atomProvable_evalGraph
-#print axioms models_trAt_plays
+#print axioms models_sentenceAt_plays
 
 -- T2-AGENT converse: eval ↔ EvalGraph on modest programs under the two-sided oracle.
 #print axioms eval_of_evalGraph
@@ -41,10 +41,10 @@ namespace ArithS
 -- Instantiation `c_C ↦ 0, c_D ↦ 1`: PA proves the atom sentences of modest plays
 -- (Σ₁-completeness); the `atom`/`atomBoxImpl` leaves of T2-CORE discharged at `Aι`.
 #print axioms LAct.models_inst
-#print axioms hierarchy_lMap_inst_trAt_plays
-#print axioms pa_proves_trAt_inst
-#print axioms pa_proves_trAt_inst_of_atomProvable
-#print axioms pa_proves_trAt_inst_searchFree
+#print axioms hierarchy_lMap_inst_sentenceAt_plays
+#print axioms pa_proves_sentenceAt_inst
+#print axioms pa_proves_sentenceAt_inst_of_atomProvable
+#print axioms pa_proves_sentenceAt_inst_searchFree
 #print axioms leaf_atom_sound
 #print axioms leaf_atom_sound_searchFree
 #print axioms leaf_atomBoxImpl_sound

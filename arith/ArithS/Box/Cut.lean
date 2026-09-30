@@ -12,8 +12,8 @@ arithmetized system satisfies (roadmap M4, "D2 / cut").
 The construction is one `cut` on `φ 🡒 ψ` in Foundation's one-sided calculus `Derivation2`
 (`cutMP`): weaken the proof of `φ 🡒 ψ` to `{ψ, φ 🡒 ψ}`; on the other side, `∼(φ 🡒 ψ) = φ ⋏ ∼ψ`
 is introduced by `and` from a weakening of the proof of `φ` and the closed leaf `{ψ, ∼ψ}`.
-Every node charges its whole conclusion sequent (`mlen`), which gives the exact bound
-`mlen d₁ + mlen d₂ + 5|φ| + 10|ψ| + 9` (`mlen_cutMP`); the uniform constants are
+Every node charges its whole conclusion sequent (`proofLenMeta`), which gives the exact bound
+`proofLenMeta d₁ + proofLenMeta d₂ + 5|φ| + 10|ψ| + 9` (`proofLenMeta_cutMP`); the uniform constants are
 `c₁ = 10, c₀ = 9`.
 
 Note that the engine charges only `|ψ|` while PA-`S` also pays `|φ|`: the cut formula is
@@ -22,11 +22,11 @@ transfer must absorb (T2-NEG shows the atoms — evaluation steps and cheap cita
 real obstruction, not this).
 
 Code level: a length-bounded code is the code of a meta proof (`Proof.sound'`), the meta cut
-has the bounded `mlen`, quoting it back gives a code (`derivation_quote`) of that length
-(`dlen_quote`) and, by properness (`quote_derivation_le`), below `fbound` of the new budget —
-the pattern of `lenProvable_fbound_swap`. Also here: `fbound` is monotone, so
-`LenProvable fbound` is budget-monotone (`lenProvable_fbound_mono`), and the `verum` leaf
-(`lenProvable_verum`) as the sanity instance.
+has the bounded `proofLenMeta`, quoting it back gives a code (`derivation_quote`) of that length
+(`proofLen_quote`) and, by properness (`quote_derivation_le`), below `codeBound` of the new budget —
+the pattern of `lenBoxNat_codeBound_swap`. Also here: `codeBound` is monotone, so
+`LenBoxNat codeBound` is budget-monotone (`lenBoxNat_codeBound_mono`), and the `verum` leaf
+(`lenBoxNat_verum`) as the sanity instance.
 -/
 
 namespace ArithS
@@ -35,15 +35,15 @@ open FFL FFL.FirstOrder Arithmetic Bootstrapping
 open PeanoMinus
 open LAct
 
-/-! ### `flen` and `sqlen` on the shapes the cut produces -/
+/-! ### `formulaLenMeta` and `sequentLenMeta` on the shapes the cut produces -/
 
-section flen
+section formulaLenMeta
 
 variable {L : Language} [L.DecidableEq]
 
 omit [L.DecidableEq] in
 /-- The de Morgan dual has the same symbol count (`∼` swaps `rel/nrel`, `⋏/⋎`, `∀/∃`). -/
-lemma flen_neg {n : ℕ} (φ : Semiproposition L n) : flen (∼φ) = flen φ := by
+lemma formulaLenMeta_neg {n : ℕ} (φ : Semiproposition L n) : formulaLenMeta (∼φ) = formulaLenMeta φ := by
   induction φ with
   | rel R v => rfl
   | nrel R v => rfl
@@ -51,57 +51,57 @@ lemma flen_neg {n : ℕ} (φ : Semiproposition L n) : flen (∼φ) = flen φ := 
   | falsum => rfl
   | and φ ψ ihφ ihψ =>
     rw [Semiformula.neg_eq] at ihφ ihψ ⊢
-    simp only [Semiformula.neg, flen, ihφ, ihψ]
+    simp only [Semiformula.neg, formulaLenMeta, ihφ, ihψ]
   | or φ ψ ihφ ihψ =>
     rw [Semiformula.neg_eq] at ihφ ihψ ⊢
-    simp only [Semiformula.neg, flen, ihφ, ihψ]
+    simp only [Semiformula.neg, formulaLenMeta, ihφ, ihψ]
   | all φ ih =>
     rw [Semiformula.neg_eq] at ih ⊢
-    simp only [Semiformula.neg, flen, ih]
+    simp only [Semiformula.neg, formulaLenMeta, ih]
   | exs φ ih =>
     rw [Semiformula.neg_eq] at ih ⊢
-    simp only [Semiformula.neg, flen, ih]
+    simp only [Semiformula.neg, formulaLenMeta, ih]
 
 omit [L.DecidableEq] in
 /-- `φ 🡒 ψ` is `∼φ ⋎ ψ`: one symbol more than its parts. -/
-lemma flen_imply {n : ℕ} (φ ψ : Semiproposition L n) : flen (φ 🡒 ψ) = flen φ + flen ψ + 1 := by
-  rw [Semiformula.imp_eq, flen_or, flen_neg]
+lemma formulaLenMeta_imply {n : ℕ} (φ ψ : Semiproposition L n) : formulaLenMeta (φ 🡒 ψ) = formulaLenMeta φ + formulaLenMeta ψ + 1 := by
+  rw [Semiformula.imp_eq, formulaLenMeta_or, formulaLenMeta_neg]
 
 omit [L.DecidableEq] in
-lemma sqlen_singleton (φ : Proposition L) : sqlen ({φ} : Finset (Proposition L)) = flen φ :=
+lemma sequentLenMeta_singleton (φ : Proposition L) : sequentLenMeta ({φ} : Finset (Proposition L)) = formulaLenMeta φ :=
   Finset.sum_singleton _ _
 
 /-- Inserting a formula adds at most its symbol count (exactly, unless it was already there). -/
-lemma sqlen_insert_le (φ : Proposition L) (Γ : Finset (Proposition L)) :
-    sqlen (insert φ Γ) ≤ flen φ + sqlen Γ := by
+lemma sequentLenMeta_insert_le (φ : Proposition L) (Γ : Finset (Proposition L)) :
+    sequentLenMeta (insert φ Γ) ≤ formulaLenMeta φ + sequentLenMeta Γ := by
   by_cases h : φ ∈ Γ
   · rw [Finset.insert_eq_of_mem h]; exact Nat.le_add_left _ _
-  · rw [sqlen, Finset.sum_insert h]
+  · rw [sequentLenMeta, Finset.sum_insert h]
 
-end flen
+end formulaLenMeta
 
-/-! ### `mlen` of the basic constructions -/
+/-! ### `proofLenMeta` of the basic constructions -/
 
-section mlen
+section proofLenMeta
 
 variable {L : Language} [L.DecidableEq] {T : Theory L}
 
-lemma mlen_closed (Γ : Finset (Proposition L)) (φ : Proposition L) (h : φ ∈ Γ) (hn : ∼φ ∈ Γ) :
-    mlen (Derivation2.closed (T := T) Γ φ h hn) = sqlen Γ + 1 := by simp [mlen]
+lemma proofLenMeta_closed (Γ : Finset (Proposition L)) (φ : Proposition L) (h : φ ∈ Γ) (hn : ∼φ ∈ Γ) :
+    proofLenMeta (Derivation2.closed (T := T) Γ φ h hn) = sequentLenMeta Γ + 1 := by simp [proofLenMeta]
 
-lemma mlen_verum {Γ : Finset (Proposition L)} (h : ⊤ ∈ Γ) :
-    mlen (Derivation2.verum (T := T) h) = sqlen Γ + 1 := by simp [mlen]
+lemma proofLenMeta_verum {Γ : Finset (Proposition L)} (h : ⊤ ∈ Γ) :
+    proofLenMeta (Derivation2.verum (T := T) h) = sequentLenMeta Γ + 1 := by simp [proofLenMeta]
 
-lemma mlen_wk {Δ Γ : Finset (Proposition L)} (d : T ⟹₂ Δ) (ss : Δ ⊆ Γ) :
-    mlen (Derivation2.wk d ss) = sqlen Γ + mlen d + 1 := by simp [mlen]
+lemma proofLenMeta_wk {Δ Γ : Finset (Proposition L)} (d : T ⟹₂ Δ) (ss : Δ ⊆ Γ) :
+    proofLenMeta (Derivation2.wk d ss) = sequentLenMeta Γ + proofLenMeta d + 1 := by simp [proofLenMeta]
 
-lemma mlen_and {Γ : Finset (Proposition L)} {φ ψ : Proposition L} (h : φ ⋏ ψ ∈ Γ)
+lemma proofLenMeta_and {Γ : Finset (Proposition L)} {φ ψ : Proposition L} (h : φ ⋏ ψ ∈ Γ)
     (d₁ : T ⟹₂ insert φ Γ) (d₂ : T ⟹₂ insert ψ Γ) :
-    mlen (Derivation2.and h d₁ d₂) = sqlen Γ + mlen d₁ + mlen d₂ + 1 := by simp [mlen]
+    proofLenMeta (Derivation2.and h d₁ d₂) = sequentLenMeta Γ + proofLenMeta d₁ + proofLenMeta d₂ + 1 := by simp [proofLenMeta]
 
-lemma mlen_cut {Γ : Finset (Proposition L)} {φ : Proposition L}
+lemma proofLenMeta_cut {Γ : Finset (Proposition L)} {φ : Proposition L}
     (d₁ : T ⟹₂ insert φ Γ) (d₂ : T ⟹₂ insert (∼φ) Γ) :
-    mlen (Derivation2.cut d₁ d₂) = sqlen Γ + mlen d₁ + mlen d₂ + 1 := by simp [mlen]
+    proofLenMeta (Derivation2.cut d₁ d₂) = sequentLenMeta Γ + proofLenMeta d₁ + proofLenMeta d₂ + 1 := by simp [proofLenMeta]
 
 /-! ### The cut construction -/
 
@@ -117,26 +117,26 @@ noncomputable def cutMP {φ ψ : Proposition L} (d₁ : T ⟹₂ {φ 🡒 ψ}) (
       (Derivation2.closed _ ψ (by simp) (by simp)))
 
 /-- **Exact length accounting for the cut**: `5|φ| + 10|ψ| + 9` on top of the premises. -/
-theorem mlen_cutMP {φ ψ : Proposition L} (d₁ : T ⟹₂ {φ 🡒 ψ}) (d₂ : T ⟹₂ {φ}) :
-    mlen (cutMP d₁ d₂) ≤ mlen d₁ + mlen d₂ + 5 * flen φ + 10 * flen ψ + 9 := by
+theorem proofLenMeta_cutMP {φ ψ : Proposition L} (d₁ : T ⟹₂ {φ 🡒 ψ}) (d₂ : T ⟹₂ {φ}) :
+    proofLenMeta (cutMP d₁ d₂) ≤ proofLenMeta d₁ + proofLenMeta d₂ + 5 * formulaLenMeta φ + 10 * formulaLenMeta ψ + 9 := by
   unfold cutMP
-  rw [mlen_cut, mlen_wk, mlen_and, mlen_wk, mlen_closed]
-  have hψ : sqlen ({ψ} : Finset (Proposition L)) = flen ψ := sqlen_singleton ψ
-  have h₁ : sqlen (insert (φ 🡒 ψ) {ψ}) ≤ flen φ + flen ψ + 1 + flen ψ := by
-    have := sqlen_insert_le (φ 🡒 ψ) {ψ}
-    rwa [flen_imply, hψ] at this
-  have h₂ : sqlen (insert (∼(φ 🡒 ψ)) {ψ}) ≤ flen φ + flen ψ + 1 + flen ψ := by
-    have := sqlen_insert_le (∼(φ 🡒 ψ)) {ψ}
-    rwa [flen_neg, flen_imply, hψ] at this
-  have h₃ : sqlen (insert φ (insert (∼(φ 🡒 ψ)) {ψ})) ≤
-      flen φ + sqlen (insert (∼(φ 🡒 ψ)) {ψ}) := sqlen_insert_le _ _
-  have h₄ : sqlen (insert (∼ψ) (insert (∼(φ 🡒 ψ)) {ψ})) ≤
-      flen ψ + sqlen (insert (∼(φ 🡒 ψ)) {ψ}) := by
-    have := sqlen_insert_le (∼ψ) (insert (∼(φ 🡒 ψ)) {ψ})
-    rwa [flen_neg] at this
+  rw [proofLenMeta_cut, proofLenMeta_wk, proofLenMeta_and, proofLenMeta_wk, proofLenMeta_closed]
+  have hψ : sequentLenMeta ({ψ} : Finset (Proposition L)) = formulaLenMeta ψ := sequentLenMeta_singleton ψ
+  have h₁ : sequentLenMeta (insert (φ 🡒 ψ) {ψ}) ≤ formulaLenMeta φ + formulaLenMeta ψ + 1 + formulaLenMeta ψ := by
+    have := sequentLenMeta_insert_le (φ 🡒 ψ) {ψ}
+    rwa [formulaLenMeta_imply, hψ] at this
+  have h₂ : sequentLenMeta (insert (∼(φ 🡒 ψ)) {ψ}) ≤ formulaLenMeta φ + formulaLenMeta ψ + 1 + formulaLenMeta ψ := by
+    have := sequentLenMeta_insert_le (∼(φ 🡒 ψ)) {ψ}
+    rwa [formulaLenMeta_neg, formulaLenMeta_imply, hψ] at this
+  have h₃ : sequentLenMeta (insert φ (insert (∼(φ 🡒 ψ)) {ψ})) ≤
+      formulaLenMeta φ + sequentLenMeta (insert (∼(φ 🡒 ψ)) {ψ}) := sequentLenMeta_insert_le _ _
+  have h₄ : sequentLenMeta (insert (∼ψ) (insert (∼(φ 🡒 ψ)) {ψ})) ≤
+      formulaLenMeta ψ + sequentLenMeta (insert (∼(φ 🡒 ψ)) {ψ}) := by
+    have := sequentLenMeta_insert_le (∼ψ) (insert (∼(φ 🡒 ψ)) {ψ})
+    rwa [formulaLenMeta_neg] at this
   omega
 
-end mlen
+end proofLenMeta
 
 /-! ### Code level, at `ℕ` -/
 
@@ -146,71 +146,71 @@ variable {L : Language} [L.DecidableEq] [L.Encodable] [L.LORDefinable]
 variable {T : Theory L} [T.Δ₁]
 
 omit [L.DecidableEq] in
-/-- Budget monotonicity of `□_k` for the concrete bound: `fbound` (three exponentials of
+/-- Budget monotonicity of `□_k` for the concrete bound: `codeBound` (three exponentials of
 `12 k`, plus one) is monotone. -/
-theorem lenProvable_fbound_mono {k k' : ℕ} (h : k ≤ k') {φ : ℕ} :
-    LenProvable (fbound : ℕ → ℕ) k T φ → LenProvable (fbound : ℕ → ℕ) k' T φ :=
-  LenProvable.mono (fun a b hab ↦ by
+theorem lenBoxNat_codeBound_mono {k k' : ℕ} (h : k ≤ k') {φ : ℕ} :
+    LenBoxNat (codeBound : ℕ → ℕ) k T φ → LenBoxNat (codeBound : ℕ → ℕ) k' T φ :=
+  LenBoxNat.mono (fun a b hab ↦ by
     have hab' : a ≤ b := by
       rcases le_def.mp hab with h | h
       · exact Nat.le_of_eq h
       · exact Nat.le_of_lt h
-    rw [fbound_nat, fbound_nat]
+    rw [codeBound_nat, codeBound_nat]
     exact le_def.mpr (Nat.lt_or_eq_of_le
       (Nat.succ_le_succ (F_mono (Nat.mul_le_mul_left 12 hab')))).symm) h
 
-/-- A meta derivation of `{σ}` of length `≤ k` is a `LenProvable fbound k` witness (the
+/-- A meta derivation of `{σ}` of length `≤ k` is a `LenBoxNat codeBound k` witness (the
 quote-back step shared by every rule below). -/
-theorem lenProvable_of_derivation (hL : SmallCodes L) (hR : SmallRelCodes L)
-    {σ : Sentence L} {k : ℕ} (b : T ⟹₂ {(σ : Proposition L)}) (hb : mlen b ≤ k) :
-    LenProvable (fbound : ℕ → ℕ) k T (⌜σ⌝ : ℕ) := by
+theorem lenBoxNat_of_derivation (hL : SmallCodes L) (hR : SmallRelCodes L)
+    {σ : Sentence L} {k : ℕ} (b : T ⟹₂ {(σ : Proposition L)}) (hb : proofLenMeta b ≤ k) :
+    LenBoxNat (codeBound : ℕ → ℕ) k T (⌜σ⌝ : ℕ) := by
   have e : (ORingStructure.numeral k : ℕ) = k := by simp
   refine ⟨⌜b⌝, ?_, ⟨?_, derivation_quote b⟩, ?_⟩
-  · rw [e, fbound_nat]
+  · rw [e, codeBound_nat]
     exact Nat.lt_succ_of_le (le_trans (quote_derivation_le hL hR b)
       (F_mono (Nat.mul_le_mul_left 12 hb)))
   · rw [fstIdx_quote b, Sentence.quote_def]
     exact Derivation2.Sequent.quote_singleton _
-  · rw [dlen_quote, e]
+  · rw [proofLen_quote, e]
     exact le_def.mpr (Nat.lt_or_eq_of_le hb).symm
 
-/-- The converse direction: a `LenProvable fbound k` witness is the code of a meta derivation
-of length `≤ k` (`Proof.sound'` + `dlen_quote`). -/
-theorem derivation_of_lenProvable {σ : Sentence L} {k : ℕ}
-    (h : LenProvable (fbound : ℕ → ℕ) k T (⌜σ⌝ : ℕ)) :
-    ∃ b : T ⟹₂ {(σ : Proposition L)}, mlen b ≤ k := by
+/-- The converse direction: a `LenBoxNat codeBound k` witness is the code of a meta derivation
+of length `≤ k` (`Proof.sound'` + `proofLen_quote`). -/
+theorem derivation_of_lenBoxNat {σ : Sentence L} {k : ℕ}
+    (h : LenBoxNat (codeBound : ℕ → ℕ) k T (⌜σ⌝ : ℕ)) :
+    ∃ b : T ⟹₂ {(σ : Proposition L)}, proofLenMeta b ≤ k := by
   rcases h with ⟨d, _, hd, hk⟩
   have e : (ORingStructure.numeral k : ℕ) = k := by simp
   rw [Sentence.quote_def] at hd
   obtain ⟨b, rfl⟩ := Proof.sound' hd
-  rw [dlen_quote, e] at hk
+  rw [proofLen_quote, e] at hk
   refine ⟨b, ?_⟩
   rcases le_def.mp hk with h | h
   · exact Nat.le_of_eq h
   · exact Nat.le_of_lt h
 
 /-- **Bounded D2, rule form, sharp constants** (generic `L`, `T` with small symbol codes). -/
-theorem lenProvable_mp_sharp_of_small (hL : SmallCodes L) (hR : SmallRelCodes L)
+theorem lenBoxNat_mp_sharp_of_small (hL : SmallCodes L) (hR : SmallRelCodes L)
     {k₁ k₂ : ℕ} {φ ψ : Sentence L}
-    (h₁ : LenProvable (fbound : ℕ → ℕ) k₁ T (⌜φ 🡒 ψ⌝ : ℕ))
-    (h₂ : LenProvable (fbound : ℕ → ℕ) k₂ T (⌜φ⌝ : ℕ)) :
-    LenProvable (fbound : ℕ → ℕ)
-      (k₁ + k₂ + 5 * flen (φ : Proposition L) + 10 * flen (ψ : Proposition L) + 9)
+    (h₁ : LenBoxNat (codeBound : ℕ → ℕ) k₁ T (⌜φ 🡒 ψ⌝ : ℕ))
+    (h₂ : LenBoxNat (codeBound : ℕ → ℕ) k₂ T (⌜φ⌝ : ℕ)) :
+    LenBoxNat (codeBound : ℕ → ℕ)
+      (k₁ + k₂ + 5 * formulaLenMeta (φ : Proposition L) + 10 * formulaLenMeta (ψ : Proposition L) + 9)
       T (⌜ψ⌝ : ℕ) := by
-  obtain ⟨b₁, hb₁⟩ := derivation_of_lenProvable h₁
-  obtain ⟨b₂, hb₂⟩ := derivation_of_lenProvable h₂
-  obtain ⟨b₁', hb₁'⟩ : ∃ b : T ⟹₂ {(φ : Proposition L) 🡒 (ψ : Proposition L)}, mlen b ≤ k₁ :=
-    ⟨b₁.cast (by simp), by rw [mlen_cast]; exact hb₁⟩
-  refine lenProvable_of_derivation hL hR (cutMP b₁' b₂) ?_
-  have := mlen_cutMP b₁' b₂
+  obtain ⟨b₁, hb₁⟩ := derivation_of_lenBoxNat h₁
+  obtain ⟨b₂, hb₂⟩ := derivation_of_lenBoxNat h₂
+  obtain ⟨b₁', hb₁'⟩ : ∃ b : T ⟹₂ {(φ : Proposition L) 🡒 (ψ : Proposition L)}, proofLenMeta b ≤ k₁ :=
+    ⟨b₁.cast (by simp), by rw [proofLenMeta_cast]; exact hb₁⟩
+  refine lenBoxNat_of_derivation hL hR (cutMP b₁' b₂) ?_
+  have := proofLenMeta_cutMP b₁' b₂
   omega
 
 /-- The verum leaf: `⊤` has a proof of length `2 = |⊤| + 1`. -/
-theorem lenProvable_verum_of_small (hL : SmallCodes L) (hR : SmallRelCodes L) :
-    LenProvable (fbound : ℕ → ℕ) 2 T (⌜(⊤ : Sentence L)⌝ : ℕ) := by
-  refine lenProvable_of_derivation hL hR
+theorem lenBoxNat_verum_of_small (hL : SmallCodes L) (hR : SmallRelCodes L) :
+    LenBoxNat (codeBound : ℕ → ℕ) 2 T (⌜(⊤ : Sentence L)⌝ : ℕ) := by
+  refine lenBoxNat_of_derivation hL hR
     (Derivation2.verum (T := T) (Γ := {((⊤ : Sentence L) : Proposition L)}) (by simp)) ?_
-  simp [mlen]
+  simp [proofLenMeta]
 
 end code
 
@@ -218,29 +218,29 @@ end code
 
 /-- **Bounded D2 (rule form), sharp**: `PA-S` closes under modus ponens at cost
 `k₁ + k₂ + 5|φ| + 10|ψ| + 9`. -/
-theorem lenProvable_mp_sharp {k₁ k₂ : ℕ} {φ ψ : Sentence LAct}
-    (h₁ : LenProvable (fbound : ℕ → ℕ) k₁ TAct (⌜φ 🡒 ψ⌝ : ℕ))
-    (h₂ : LenProvable (fbound : ℕ → ℕ) k₂ TAct (⌜φ⌝ : ℕ)) :
-    LenProvable (fbound : ℕ → ℕ)
-      (k₁ + k₂ + 5 * flen (φ : Proposition LAct) + 10 * flen (ψ : Proposition LAct) + 9)
+theorem lenBoxNat_mp_sharp {k₁ k₂ : ℕ} {φ ψ : Sentence LAct}
+    (h₁ : LenBoxNat (codeBound : ℕ → ℕ) k₁ TAct (⌜φ 🡒 ψ⌝ : ℕ))
+    (h₂ : LenBoxNat (codeBound : ℕ → ℕ) k₂ TAct (⌜φ⌝ : ℕ)) :
+    LenBoxNat (codeBound : ℕ → ℕ)
+      (k₁ + k₂ + 5 * formulaLenMeta (φ : Proposition LAct) + 10 * formulaLenMeta (ψ : Proposition LAct) + 9)
       TAct (⌜ψ⌝ : ℕ) :=
-  lenProvable_mp_sharp_of_small smallCodes_LAct smallRelCodes_LAct h₁ h₂
+  lenBoxNat_mp_sharp_of_small smallCodes_LAct smallRelCodes_LAct h₁ h₂
 
 /-- **Bounded D2 (rule form)**: PA-`S` closes under modus ponens at additive cost
 `k₁ + k₂ + c₁·(|φ| + |ψ|) + c₀` with `c₁ = 10, c₀ = 9` — a character-count analogue of the
 engine's `mp` at cost `m₁ + m₂ + |ψ|`. The engine charges only `|ψ|`; PA-`S` also pays `|φ|`
 (the cut formula is copied into the side sequents): a constant-factor departure that any
 budget-keeping transfer must absorb (T2-NEG shows atoms are the real obstruction, not this). -/
-theorem lenProvable_mp {k₁ k₂ : ℕ} {φ ψ : Sentence LAct}
-    (h₁ : LenProvable (fbound : ℕ → ℕ) k₁ TAct (⌜φ 🡒 ψ⌝ : ℕ))
-    (h₂ : LenProvable (fbound : ℕ → ℕ) k₂ TAct (⌜φ⌝ : ℕ)) :
-    LenProvable (fbound : ℕ → ℕ)
-      (k₁ + k₂ + 10 * (flen (φ : Proposition LAct) + flen (ψ : Proposition LAct)) + 9)
+theorem lenBoxNat_mp {k₁ k₂ : ℕ} {φ ψ : Sentence LAct}
+    (h₁ : LenBoxNat (codeBound : ℕ → ℕ) k₁ TAct (⌜φ 🡒 ψ⌝ : ℕ))
+    (h₂ : LenBoxNat (codeBound : ℕ → ℕ) k₂ TAct (⌜φ⌝ : ℕ)) :
+    LenBoxNat (codeBound : ℕ → ℕ)
+      (k₁ + k₂ + 10 * (formulaLenMeta (φ : Proposition LAct) + formulaLenMeta (ψ : Proposition LAct)) + 9)
       TAct (⌜ψ⌝ : ℕ) :=
-  lenProvable_fbound_mono (by omega) (lenProvable_mp_sharp h₁ h₂)
+  lenBoxNat_codeBound_mono (by omega) (lenBoxNat_mp_sharp h₁ h₂)
 
 /-- The verum leaf at `TAct`: `⊤` has a proof of length `2 = |⊤| + 1`. -/
-theorem lenProvable_verum : LenProvable (fbound : ℕ → ℕ) 2 TAct (⌜(⊤ : Sentence LAct)⌝ : ℕ) :=
-  lenProvable_verum_of_small smallCodes_LAct smallRelCodes_LAct
+theorem lenBoxNat_verum : LenBoxNat (codeBound : ℕ → ℕ) 2 TAct (⌜(⊤ : Sentence LAct)⌝ : ℕ) :=
+  lenBoxNat_verum_of_small smallCodes_LAct smallRelCodes_LAct
 
 end ArithS

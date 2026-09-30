@@ -8,7 +8,7 @@ Roadmap §2.4: the two actions are FRESH CONSTANT SYMBOLS of the language, never
 `ℒₒᵣ` symbol keeps its `ℒₒᵣ` code (`encode (Sum.inl f) = encode f`): an `ℒₒᵣ`-formula has the
 SAME code in both languages, which is what lets PA's Δ₁ axiom class be reused for the
 theory `TAct` (`ArithS.TheoryAct`). `swap : LAct →ᵥ LAct` exchanges the two constants and is
-an involution; every symbol counts `1`, so `tlen`/`flen` are invariant under ANY language hom,
+an involution; every symbol counts `1`, so `termLenMeta`/`formulaLenMeta` are invariant under ANY language hom,
 in particular under `swap`.
 -/
 
@@ -177,41 +177,41 @@ section lengthInvariance
 
 variable {L₁ L₂ : Language} (Φ : L₁ →ᵥ L₂)
 
-lemma tlen_lMap {n : ℕ} (t : SyntacticSemiterm L₁ n) : tlen (Semiterm.lMap Φ t) = tlen t := by
+lemma termLenMeta_lMap {n : ℕ} (t : SyntacticSemiterm L₁ n) : termLenMeta (Semiterm.lMap Φ t) = termLenMeta t := by
   induction t with
-  | bvar x => simp [tlen]
-  | fvar x => simp [tlen]
-  | func f v ih => simp [tlen, Semiterm.lMap_func, ih]
+  | bvar x => simp [termLenMeta]
+  | fvar x => simp [termLenMeta]
+  | func f v ih => simp [termLenMeta, Semiterm.lMap_func, ih]
 
-lemma flen_lMap {n : ℕ} (φ : Semiproposition L₁ n) : flen (Semiformula.lMap Φ φ) = flen φ := by
+lemma formulaLenMeta_lMap {n : ℕ} (φ : Semiproposition L₁ n) : formulaLenMeta (Semiformula.lMap Φ φ) = formulaLenMeta φ := by
   induction φ with
-  | rel R v => simp [Semiformula.lMap_rel, flen, tlen_lMap]
-  | nrel R v => simp [Semiformula.lMap_nrel, flen, tlen_lMap]
+  | rel R v => simp [Semiformula.lMap_rel, formulaLenMeta, termLenMeta_lMap]
+  | nrel R v => simp [Semiformula.lMap_nrel, formulaLenMeta, termLenMeta_lMap]
   | verum =>
-    change flen (Semiformula.lMap Φ ⊤) = 1
+    change formulaLenMeta (Semiformula.lMap Φ ⊤) = 1
     rw [LogicalConnective.HomClass.map_top]; rfl
   | falsum =>
-    change flen (Semiformula.lMap Φ ⊥) = 1
+    change formulaLenMeta (Semiformula.lMap Φ ⊥) = 1
     rw [LogicalConnective.HomClass.map_bot]; rfl
   | and φ ψ ihφ ihψ =>
-    change flen (Semiformula.lMap Φ (φ ⋏ ψ)) = flen φ + flen ψ + 1
+    change formulaLenMeta (Semiformula.lMap Φ (φ ⋏ ψ)) = formulaLenMeta φ + formulaLenMeta ψ + 1
     rw [LogicalConnective.HomClass.map_and]
-    change flen (Semiformula.lMap Φ φ) + flen (Semiformula.lMap Φ ψ) + 1 = _
+    change formulaLenMeta (Semiformula.lMap Φ φ) + formulaLenMeta (Semiformula.lMap Φ ψ) + 1 = _
     rw [ihφ, ihψ]
   | or φ ψ ihφ ihψ =>
-    change flen (Semiformula.lMap Φ (φ ⋎ ψ)) = flen φ + flen ψ + 1
+    change formulaLenMeta (Semiformula.lMap Φ (φ ⋎ ψ)) = formulaLenMeta φ + formulaLenMeta ψ + 1
     rw [LogicalConnective.HomClass.map_or]
-    change flen (Semiformula.lMap Φ φ) + flen (Semiformula.lMap Φ ψ) + 1 = _
+    change formulaLenMeta (Semiformula.lMap Φ φ) + formulaLenMeta (Semiformula.lMap Φ ψ) + 1 = _
     rw [ihφ, ihψ]
   | all φ ih =>
-    change flen (Semiformula.lMap Φ (∀¹ φ)) = flen φ + 1
+    change formulaLenMeta (Semiformula.lMap Φ (∀¹ φ)) = formulaLenMeta φ + 1
     rw [Semiformula.lMap_all]
-    change flen (Semiformula.lMap Φ φ) + 1 = _
+    change formulaLenMeta (Semiformula.lMap Φ φ) + 1 = _
     rw [ih]
   | exs φ ih =>
-    change flen (Semiformula.lMap Φ (∃¹ φ)) = flen φ + 1
+    change formulaLenMeta (Semiformula.lMap Φ (∃¹ φ)) = formulaLenMeta φ + 1
     rw [Semiformula.lMap_exs]
-    change flen (Semiformula.lMap Φ φ) + 1 = _
+    change formulaLenMeta (Semiformula.lMap Φ φ) + 1 = _
     rw [ih]
 
 end lengthInvariance

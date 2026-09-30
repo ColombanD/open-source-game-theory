@@ -6,9 +6,9 @@ The chronological long form (addenda by date, commit hashes, superseded tallies)
 
 ## 1. The object
 
-PA on Foundation, with: a symbol-blind length `dlen` on proof codes; the box
-`□_k φ := ∃ d < fbound k, Proof TAct d φ ∧ dlen d ≤ k` (Δ₁, properness makes the code bound invisible);
-actions as constants, `TAct = PA + {c_C ≠ c_D, axAct}` closed under the swap τ, with
+PA on Foundation, with: a symbol-blind length `proofLen` on proof codes; the box
+`□_k φ := ∃ d < codeBound k, Proof TAct d φ ∧ proofLen d ≤ k` (Δ₁, properness makes the code bound invisible);
+actions as constants, `TAct = PA + {c_C ≠ c_D, actionAxiom}` closed under the swap τ, with
 `TAct ⊢_k φ ↔ TAct ⊢_k τφ` at EVERY length; programs as codes with binary-numeral descriptions (length
 `O(log)`); the evaluator `EvalGraph` whose `search` clause consults the box.
 
@@ -17,19 +17,19 @@ actions as constants, `TAct = PA + {c_C ≠ c_D, axAct}` closed under the swap �
 ```
 red_cell (k)                : Dupoc k defects against Cupod k, Cupod k cooperates — EVERY k
                               (τ-symmetry + soundness in ℕ + determinism; no Löb, no census, no threshold)
-snd_DupocBot_vs_CupodBot (k): the same on the engine's codes pcode (DupocBot k) / pcode (CupodBot k)
+snd_DupocBot_vs_CupodBot (k): the same on the engine's codes progCode (DupocBot k) / progCode (CupodBot k)
 boundedInnerNec_sixteen     : BoundedInnerNec 16 — Critch's assumption (d), a THEOREM: PA verifies a proof
                               of length ≤ ‖k‖³ within a polynomial (degree 16) budget, in every model
 closedInnerNec_sixteen      : the same for a closed sentence at an arbitrary budget
-pblt_unconditional          : the parametric bounded Löb theorem (Critch 2019's uniform proof), family-parametric
-dupoc_self_coop_unconditional : ∃ k₀, ∀ k > k₀, Dupoc k cooperates with itself ∧ Cupod k defects against itself
+pblt          : the parametric bounded Löb theorem (Critch 2019's uniform proof), family-parametric
+dupoc_self_coop : ∃ k₀, ∀ k > k₀, Dupoc k cooperates with itself ∧ Cupod k defects against itself
 dimcid_vs_closed (P)        : ∃ k₀, ∀ k > k₀, DIMCID k defects against the closed code P and FINDS its guard
 ```
 
 **Paper sentence.** *In Peano Arithmetic with a length-bounded provability predicate, Dupoc cooperates with
 itself at every sufficiently large budget, and the bounded inner necessitation principle this rests on is
 itself a theorem of the system, with polynomial expansion.* On the degree: 16 rather than the design's 3,
-every loss traceable to unary variable indices in `dlen`; the results are parametric in the degree.
+every loss traceable to unary variable indices in `proofLen`; the results are parametric in the degree.
 
 ## 3. The matrix in `S'` (the ledger, cell-exact)
 
@@ -48,7 +48,7 @@ every loss traceable to unary variable indices in `dlen`; the results are parame
 | EXCLUDED | 22 | boxes inside guards (`box_guard_never_fits`), WaryBot's floor cells |
 
 Thirteen stated cells are on the hand-template twins (`Dupoc`, `Cupod`, `Just`, `Just7`, `CupodTroll7`),
-not the engine's `pcode` — same guard meaning, different code (`arith/ArithS/README.md` §4).
+not the engine's `progCode` — same guard meaning, different code (`arith/ArithS/README.md` §4).
 
 ## 4. The finding: where `S'` contradicts `S`
 
@@ -89,7 +89,7 @@ bounded consistency `Con_TAct(k ± c)` — Pudlák's question (lower bound `k^ε
 
 ```
 dich_<L>_vs_<R> : ∃ k₀, ∀ k > k₀, (¬A_k → ⟨engine value⟩) ∧ (A_k → ⟨found-branch value⟩)
-A_k := LenProvableV TAct k (guardCodeB (tcode φ) (pcode me) (pcode opp) k)   -- written inline
+A_k := LenBox TAct k (guardCodeB (templateCode φ) (progCode me) (progCode opp) k)   -- written inline
 ```
 
 nested over two or three hinges for the bistable pairs (Wary × Dupoc/Just/Prudent, Cupod × Prudent both ways,
@@ -98,7 +98,7 @@ The reduction, for the simplest cell (`Cells/FloorDichotomy.lean`):
 
 ```
 hinge_reduces_to_bounded_consistency_DupocBot_vs_DBot : ∃ C₀ C₁, ∀ k,
-    A_k → LenProvableV TAct (k + C₀ + C₁ * size k) ⌜¬□_k σ_k ∨ ¬□_k τσ_k⌝
+    A_k → LenBox TAct (k + C₀ + C₁ * size k) ⌜¬□_k σ_k ∨ ¬□_k τσ_k⌝
 bounded_consistency_reduces_to_hinge_DupocBot_vs_DBot : the converse from the conjunction
 ```
 
