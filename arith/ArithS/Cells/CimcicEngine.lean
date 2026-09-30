@@ -337,7 +337,9 @@ theorem loeb_CIMCIC_vs_DupocBot_guards :
       LenBox TAct k (guardCode (templateCode phiC) (progCode (CIMCIC k)) (progCode (DupocBot k))) ∧
       LenBox TAct k (guardCode (templateCode phiDu) (progCode (DupocBot k)) (progCode (CIMCIC k))) := by
   obtain ⟨k₀, h⟩ := loeb_CIMCIC_vs_DupocBot_core_of_nec boundedInnerNec_sixteen
-  exact ⟨k₀, fun k hk ↦ by rw [progCode_CIMCIC, progCode_DupocBot_SV]; exact (h k hk).2⟩
+  exact ⟨k₀, fun k hk ↦ by
+    rw [progCode_CIMCIC, progCode_DupocBot_SV, templateCode_eq_quote_template phiC rfl, templateCode_eq_quote_template phiDu rfl]
+    exact (h k hk).2⟩
 
 end cell
 

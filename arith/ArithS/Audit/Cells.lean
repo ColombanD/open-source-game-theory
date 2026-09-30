@@ -5,6 +5,7 @@ import ArithS.Cells.PrudentLoose
 import ArithS.Cells.DupocEngine
 import ArithS.Cells.DimcidEngine
 import ArithS.Cells.CimcicEngine
+import ArithS.Cells.TauMember
 import PrisonersDilemma.Theorems.DupocBot.RedCellInstance
 
 /-!
@@ -1355,5 +1356,11 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms ebot_C_of_probes3
 #print axioms floor_PrudentBot_vs_EBot_right
 #print axioms dich_PrudentBot_vs_EBot_full
+
+-- Phase 2, the pronoun reading (2026-10-01): the truth equation of the closed member's guard at ℕ — the evaluator's
+-- guard at member `i` of `cfdSys k` is "`.bot (.sys (cfdSys k) (1 - i))` plays C against itself", and the search
+-- clause of the closed member reads exactly that sentence.
+#print axioms cfd_closed_guard_iff
+#print axioms evalGraph_cfdMember_closed_iff
 
 end ArithS

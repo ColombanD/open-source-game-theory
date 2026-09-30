@@ -270,9 +270,9 @@ theorem prudence_found_of_SV (g : Semisentence LAct 6) (a : ℕ) (ha : a = 0 ∨
   exact h k (by omega)
 
 /-- The prudence template is the code of `phiPi` (the engine's stored template). -/
-lemma templateCode_phiPi : templateCode phiPi = (⌜templateP2⌝ : ℕ) := rfl
+lemma templateCode_phiPi : templateCode phiPi = (⌜templateP2⌝ : ℕ) := templateCode_eq_quote_template phiPi rfl
 /-- The outer template is the code of `phiPo`. -/
-lemma templateCode_phiPo : templateCode phiPo = (⌜templateP1⌝ : ℕ) := rfl
+lemma templateCode_phiPo : templateCode phiPo = (⌜templateP1⌝ : ℕ) := templateCode_eq_quote_template phiPo rfl
 
 /-- **Prudent's prudence guard against `GuardianBot k` is FOUND for all large `k`**: Guardian's defection against
 `.bot DefectBot` is its then-branch on a true closed atom, in every model above a threshold. -/
@@ -334,7 +334,7 @@ theorem dich_GuardianBot_vs_PrudentBot_prudenceFound :
   obtain ⟨hG, hn⟩ := h₁ k (by omega)
   refine ⟨hG, fun h ↦ ?_⟩
   obtain ⟨hGC, hPD, hPC⟩ := hn h
-  exact ⟨hGC, fun hA ↦ hPD (Or.inl hA), fun hA ↦ hPC hA (by rw [hingeB]; exact hB k (by omega))⟩
+  exact ⟨hGC, fun hA ↦ hPD (Or.inl hA), fun hA ↦ hPC hA (by simp only [hingeB phiPi]; exact hB k (by omega))⟩
 
 /-- **Wary × Prudent** (engine `llm_outcome_WaryBot_vs_PrudentBot = (C, D)`, pad 3), the prudence hinge discharged:
 two hinges, NESTED — Prudent's outer guard `A` "Wary plays C against me" (outer split), then `W` = Wary's `.neg` guard
@@ -354,7 +354,7 @@ theorem dich_WaryBot_vs_PrudentBot_prudenceFound :
   obtain ⟨k₂, hB⟩ := prudence_found_vs_WaryBot
   refine ⟨k₁ + k₂, fun k hk ↦ ?_⟩
   obtain ⟨hAB, hn⟩ := h₁ k (by omega)
-  exact ⟨fun hA ↦ hAB hA (by rw [hingeB]; exact hB k (by omega)), fun hA ↦ hn (Or.inl hA)⟩
+  exact ⟨fun hA ↦ hAB hA (by simp only [hingeB phiPi]; exact hB k (by omega)), fun hA ↦ hn (Or.inl hA)⟩
 
 /-- **Cupod × Prudent** (engine `outcome_CupodBot_vs_PrudentBot = (C, D)`, pad 3), the prudence hinge discharged:
 two hinges, NESTED — `Cu` = Cupod's guard "Prudent plays D against me" (outer split), then Prudent's outer guard `A`
@@ -376,7 +376,7 @@ theorem dich_CupodBot_vs_PrudentBot_prudenceFound :
   obtain ⟨hCu, hn⟩ := h₁ k (by omega)
   refine ⟨hCu, fun h ↦ ?_⟩
   obtain ⟨hCC, hPD, hPC⟩ := hn h
-  exact ⟨hCC, fun hA ↦ hPD (Or.inl hA), fun hA ↦ hPC hA (by rw [hingeB]; exact hB k (by omega))⟩
+  exact ⟨hCC, fun hA ↦ hPD (Or.inl hA), fun hA ↦ hPC hA (by simp only [hingeB phiPi]; exact hB k (by omega))⟩
 
 /-- **Prudent × Cupod** (engine `outcome_PrudentBot_vs_CupodBot = (D, C)`, pad 3): the same pair, Prudent's side first,
 the prudence hinge discharged. -/

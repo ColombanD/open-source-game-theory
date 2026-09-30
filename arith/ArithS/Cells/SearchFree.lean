@@ -113,8 +113,8 @@ theorem evalGraph_of_eval_searchFree_core :
       have hN := ih _ _ _ a (Inv.sim hI) h
       have hmb := hI.2.2.2.2.1
       simp only [modestP, Bool.and_eq_true] at hmb
-      rw [progCode_subst hI.1 hI.2.1 p (fragP_of_modestP p hmb.1.2),
-        progCode_subst hI.1 hI.2.1 q (fragP_of_modestP q hmb.2)] at hN
+      rw [progCode_subst hI.1 hI.2.1 (noSelfIdxP_of_modestP hI.2.2.1) (noSelfIdxP_of_modestP hI.2.2.2.1) p (fragP_of_modestP p hmb.1.2),
+        progCode_subst hI.1 hI.2.1 (noSelfIdxP_of_modestP hI.2.2.1) (noSelfIdxP_of_modestP hI.2.2.2.1) q (fragP_of_modestP q hmb.2)] at hN
       rw [progCode_sim, EvalGraph.sim_iff]
       exact hN
     | ite b c p q =>

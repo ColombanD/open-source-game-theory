@@ -71,16 +71,17 @@ frame `(me, opp)`: the template code of `φ` filled with the players' descriptio
 noncomputable def guardOf (φ : PD.Formula) (me opp : PD.Prog) : ℕ :=
   guardCode (templateCode φ) (progCode me) (progCode opp)
 
-lemma guardOf_eq_quote_sentenceAt (φ : PD.Formula) (me opp : PD.Prog) :
+lemma guardOf_eq_quote_sentenceAt (φ : PD.Formula) (me opp : PD.Prog) (hφ : noSelfIdxF φ = true := by noSelfIdx_tac) :
     guardOf φ me opp = ⌜sentenceAt me opp φ⌝ :=
-  (quote_sentenceAt me opp φ).symm
+  (quote_sentenceAt me opp φ hφ).symm
 
 /-- On the fragment the consulted guard IS the template code of the CLOSED instantiation
 `φ.subst me opp` — the formula the engine's `search_t`/`search_f` premises are about. -/
 lemma guardOf_eq_templateCode_subst {me opp : PD.Prog} (hme : me ≠ .self ∧ me ≠ .opp)
-    (hopp : opp ≠ .self ∧ opp ≠ .opp) (φ : PD.Formula) (h : fragF φ = true) :
+    (hopp : opp ≠ .self ∧ opp ≠ .opp) (φ : PD.Formula) (h : fragF φ = true)
+    (hme' : noSelfIdxP me = true := by noSelfIdx_tac) (hopp' : noSelfIdxP opp = true := by noSelfIdx_tac) :
     guardOf φ me opp = templateCode (φ.subst me opp) := by
-  rw [templateCode_subst hme hopp φ h, substTemplate_of_template (isSemiformula_templateCode φ)]
+  rw [templateCode_subst hme hopp hme' hopp' φ h, substTemplate_of_template (isSemiformula_templateCode φ)]
   rfl
 
 /-! ### The oracle hypotheses -/
@@ -100,8 +101,9 @@ def GuardAgreeF : Prop :=
 /-- **Soundness of a found guard**: if the arithmetized evaluator finds the guard, its
 realization is TRUE in `ℕ` (`TAct` is sound: `models_TAct`). -/
 theorem models_sentenceAt_of_lenBox {φ : PD.Formula} {me opp : PD.Prog} {k : ℕ}
-    (h : LenBox TAct k (guardOf φ me opp)) : ℕ↓[LAct] ⊧ sentenceAt me opp φ := by
-  rw [guardOf_eq_quote_sentenceAt, lenBox_nat] at h
+    (h : LenBox TAct k (guardOf φ me opp)) (hφ : noSelfIdxF φ = true := by noSelfIdx_tac) :
+    ℕ↓[LAct] ⊧ sentenceAt me opp φ := by
+  rw [guardOf_eq_quote_sentenceAt φ me opp hφ, lenBox_nat] at h
   exact models_of_provable models_TAct (provable_iff_provable.mp h.provable)
 
 /-- What engine soundness gives on the OTHER side: a refuted closed guard is false in the
@@ -163,6 +165,15 @@ def ProperPlayer (p : PD.Prog) : Prop := p ≠ .self ∧ p ≠ .opp
 
 lemma properPlayer_of_closedP {p : PD.Prog} (h : closedP p = true) : ProperPlayer p :=
   ⟨closedP_ne_self h, closedP_ne_opp h⟩
+
+/-- A modest program has no dangling pronoun (`fragP` excludes the tau constructors). -/
+lemma noSelfIdxP_of_modestP {p : PD.Prog} (h : modestP p = true) : noSelfIdxP p = true :=
+  noSelfIdxP_of_fragP p (fragP_of_modestP p h)
+
+lemma fragF_of_modestP_search {k : ℕ} {φ : PD.Formula} {p q : PD.Prog} (h : modestP (.search k φ p q) = true) :
+    fragF φ = true := by
+  simp only [modestP, Bool.and_eq_true] at h
+  exact h.1.1
 
 /-- `subst` of an atomic program is `me`, `opp`, or the (closed) program itself. -/
 lemma subst_of_atomicP {p : PD.Prog} (hp : atomicP p = true) (me opp : PD.Prog) :
@@ -302,7 +313,8 @@ theorem playsProof_evalGraph_core (sf : Bool) (hag : sf = false → GuardAgreeT)
       have := hI.2.2.2.2.1
       simp only [modestP, Bool.and_eq_true] at this
       exact this.2)
-    rw [progCode_subst hI.1 hI.2.1 p hp, progCode_subst hI.1 hI.2.1 q hq] at hN
+    rw [progCode_subst hI.1 hI.2.1 (noSelfIdxP_of_modestP hI.2.2.1) (noSelfIdxP_of_modestP hI.2.2.2.1) p hp,
+      progCode_subst hI.1 hI.2.1 (noSelfIdxP_of_modestP hI.2.2.1) (noSelfIdxP_of_modestP hI.2.2.2.1) q hq] at hN
     refine ⟨N + 1, ?_⟩
     rw [progCode_sim, EvalGraph.sim_iff]
     exact hN
@@ -329,14 +341,16 @@ theorem playsProof_evalGraph_core (sf : Bool) (hag : sf = false → GuardAgreeT)
     obtain ⟨hsf, hIp, _⟩ := Inv.search hI
     obtain ⟨N, hN⟩ := ih hIp
     refine ⟨N + 1, ?_⟩
-    rw [progCode_search, EvalGraph.search_iff₆ (isSemiformula_templateCode φ)]
+    rw [progCode_search, EvalGraph.search_iff₆
+      (isSemiformula_templateCode φ (noSelfIdxF_of_fragF φ (fragF_of_modestP_search hI.2.2.2.2.1)))]
     exact Or.inl ⟨hag hsf φ me opp k hg, hN⟩
   · -- search_f
     intro m me opp q a n k φ p hg _ ih hI
     obtain ⟨hsf, _, hIq⟩ := Inv.search hI
     obtain ⟨N, hN⟩ := ih hIq
     refine ⟨N + 1, ?_⟩
-    rw [progCode_search, EvalGraph.search_iff₆ (isSemiformula_templateCode φ)]
+    rw [progCode_search, EvalGraph.search_iff₆
+      (isSemiformula_templateCode φ (noSelfIdxF_of_fragF φ (fragF_of_modestP_search hI.2.2.2.2.1)))]
     exact Or.inr ⟨hneg hsf φ me opp k m hg, hN⟩
   · -- voteZero_t
     intro me opp p q a n v _ _ hI

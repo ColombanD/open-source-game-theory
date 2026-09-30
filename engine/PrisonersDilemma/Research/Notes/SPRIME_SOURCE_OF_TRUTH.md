@@ -215,12 +215,51 @@ CodeTerm/Guard slots/SubstTemplate → Code → RedCellUnsound arms → full bui
    | maxconf | C | D | C | C | D‡ | D | D‡ | D‡ | D | D | C | D‡ | C | C |
    | minconf | C | D | C | C | D‡ | D | D‡ | D‡ | D | D | C | D‡ | C | C |
 
-   Row statement: `RowSpecA A order row := ∃ k₂, ∀ k > k₂, ∀ T ∈ order, plays (progCode (inst (tauZoo k) A T))
-   (pBot-framed as the engine's RowSpec) (row T)` for the non-floor bits, and a `FloorBitA` dichotomy for
-   the `‡` bits with the base cell's hinge. Method per bit = the base cell's method (SF transfer, SND,
-   POS, LOEB, FLIP-LOEB) applied to the compiled instance — for non-entangled pairs the instance is
-   `.bot`-wrapping plus the base source, so the base `Cells/` theorem transfers; entangled pairs
-   (`.sys`) are new mutual-Löb families on the member slots of §2.5.
+   **Phase 3 contract (2026-10-01).** In `arith/ArithS/Tau/` (new folder):
+   * `Spec.lean` — `paperOrder : List Tmpl` (the 14 templates above, engine order), and
+     ```lean
+     def instCode (k : ℕ) (A T : Tmpl) : ℕ := progCode (PD.Tau.inst (PD.Tau.tauZoo k) A T)
+     def RowSpecA (A : Tmpl) (order : List Tmpl) (row : Tmpl → PD.Action) : Prop :=
+       ∃ k₂, ∀ k, k₂ < k → ∀ T ∈ order, plays (pBot (instCode k A T)) (pBot (instCode k A T)) … -- the engine's
+       -- RowSpec frame: `eval N (.bot inst) (.bot inst) inst = some (row T)`, i.e.
+       -- `∃ N, EvalGraph N (pBot c) (pBot c) c (actCode (row T))` with `c = instCode k A T`
+     def FloorBitA (A T : Tmpl) (hinge : ℕ → Prop) (a : PD.Action) : Prop :=
+       ∃ k₂, ∀ k, k₂ < k → ¬ hinge k → ∃ N, EvalGraph N (pBot (instCode k A T)) (pBot (instCode k A T)) (instCode k A T) (actCode a)
+     ```
+     A template's row theorem `@[tau_rowA] theorem <t>RowSpecA : RowSpecA .<t> <order> <t>RowA` states
+     the NON-floor slots (`order` = `paperOrder` minus that template's `‡` slots, a literal list); each
+     `‡` slot is its own `@[tau_floor_bitA] theorem <t>RowSpecA_<T>_floor : FloorBitA .<t> .<T> (fun k ↦ …) a`
+     with the base cell's hinge (`Outcome/Floors.lean` names it). The natives' rows are Dupoc's row by
+     the `rfl` bridges (`Zoo.lean`), restated under their own names.
+   * `Lint.lean` — the engine's `Tau/Lint.lean` adapted: head `ArithS.RowSpecA` syntactically, template a
+     literal constructor, `order` a literal sublist of `paperOrder`, row evaluated by `whnf` at every slot,
+     name `<t>RowSpecA`; floor bits: head `ArithS.FloorBitA`, name suffix, hinge text as in `Outcome/Lint`;
+     `#check_tau_rowsA` census: every `(A, T) ∈ paperOrder²` is a row slot or a floor bit, never both, and
+     the floor bits are EXACTLY the `‡` cells of the table above (hard-coded expected list, so a floor
+     that becomes a theorem or a theorem that becomes a floor fails the build and forces the table update).
+   * `Export.lean` — `lake exe export_sprime_outcomes` ALSO writes `app/generated/sprime_tau_rows.json`:
+     the engine's `tau_rows.json` schema (`order` = `paperOrder`, `rows` with `bits`) plus
+     `"system": "sprime"` and `"floor_bits": [{template, slot, action, hinge, dichotomy}]`; digest over
+     rows ++ floor_bits.
+   * Methods per bit (the base cell's, on the compiled instance): non-entangled instances are the base
+     source under `.bot` with the hypothesis's instance in place of `.opp` — transfer from the base
+     `Cells/` theorem where the instance's guard is the base guard (`instGo` on a `.name` target is
+     `.bot (instAt T B)`; the truth equations of `Cells/Common/Templates.lean` are generic in the opp
+     triple); search-free templates by `evalGraph_of_eval_tauSearchFree` from the engine's own
+     `Tau/Theorems/<Bot>/Phase.lean` bits (SAME fuel); entangled pairs (`.sys`) are new families on the
+     member slots (Phase 2b) — `dupoc × {cupod, cimcic, dimcid, prudent, maxconf, minconf}` and the
+     other 36 ordered pairs among the 7 self-probers, plus τ(EBot)'s `.mirror` probe at self-probing
+     hypotheses. Order of attack: rows of `coop defect tftSim dbot obot ebot cupodTroll` (search-free or
+     SND/POS, 7 rows), then `dupoc cupod cimcic dimcid prudent` non-entangled slots, then the natives by
+     bridge, then the entangled slots.
+
+   **Phase 4 contract.** `tau/def4_theorems.py`: `TAU_EXPORTS = {engine: tau_rows.json, sprime:
+   sprime_tau_rows.json}`, `kernel_bits(source)`, a floor bit loads as the engine-side action with
+   `provenance = floor_dichotomy`; `tau/matrix.py::_kernel_rows_for(source="sprime")` verifies rows
+   against the `S'` cells (floor bits against floor cells) and sets `is_kernel_backed = True`;
+   `tau/compare.py` certifies Def 3 ≡ Def 4 on `sprime` (expected: 196/196 agree, 41 of them floor-bit
+   agreements); the `/tau/zoos` route reports `kernel_backed` per source.
+
 4. `sprime_tau_rows.json`; kernel rows verified against `S'` cells; every endpoint on `S'`.
 5. Re-run Moran / phase diagrams / confusion structure on the three zoos; `EGT_FINDINGS.md` versioned per
    source; the paper's Lean section.

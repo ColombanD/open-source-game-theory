@@ -90,16 +90,16 @@ section instances
 
 
 lemma progCode_DupocBot_SV (k : ℕ) : progCode (DupocBot k) = SV (V := ℕ) gDu 0 k := by
-  rw [progCode_DupocBot_search, SV_nat]; rfl
+  rw [progCode_DupocBot_search, SV_nat, templateCode_eq_quote_template phiDu rfl]; rfl
 lemma progCode_CupodBot_SV (k : ℕ) : progCode (CupodBot k) = SV (V := ℕ) gCu 1 k := by
-  rw [progCode_CupodBot, SV_nat]; rfl
+  rw [progCode_CupodBot, SV_nat, templateCode_eq_quote_template phiCu rfl]; rfl
 lemma progCode_WaryBot_SV (k : ℕ) : progCode (WaryBot k) = SV (V := ℕ) gW 1 k := by
-  rw [progCode_WaryBot, SV_nat]; rfl
+  rw [progCode_WaryBot, SV_nat, templateCode_eq_quote_template phiW rfl]; rfl
 
 
 /-- Just's consulted guard against `opp` is Dupoc's engine guard in the frame `(.bot (DupocBot k), opp)`
 (both are the template code of "`opp` plays C against `.bot (DupocBot k)`"). -/
-lemma guardCode_JustBot_eq (k : ℕ) {opp : PD.Prog} (hopp : ProperPlayer opp) :
+lemma guardCode_JustBot_eq (k : ℕ) {opp : PD.Prog} (hopp : ProperPlayer opp) (hopp' : noSelfIdxP opp = true := by noSelfIdx_tac) :
     guardCode (templateCode (phiJ k)) (progCode (JustBot k)) (progCode opp) =
       guardCode (templateCode phiDu) (pBot (progCode (DupocBot k))) (progCode opp) := by
   rw [← progCode_bot]
@@ -147,7 +147,7 @@ theorem pos_DupocBot_vs_CooperateBot :
       EvalGraph 2 (progCode CooperateBot) (progCode (DupocBot k)) (progCode CooperateBot) (actCode .C) := by
   obtain ⟨k₀, h⟩ := found_of_all tact_qDu0
     (fun k ↦ guardCode (templateCode phiDu) (progCode (DupocBot k)) (progCode CooperateBot))
-    (fun k ↦ by rw [progCode_CB, progCode_DupocBot_SV]; exact guardCode_Du0 (V := ℕ) k)
+    (fun k ↦ by rw [progCode_CB, progCode_DupocBot_SV, templateCode_eq_quote_template phiDu rfl]; exact guardCode_Du0 (V := ℕ) k)
   refine ⟨k₀, fun k hk ↦ ⟨?_, by rw [progCode_CB]; exact const_play 1 _ _ _⟩⟩
   have hg := h k hk
   rw [progCode_DupocBot_search] at hg ⊢
@@ -182,7 +182,7 @@ theorem pos_CupodBot_vs_DefectBot :
       EvalGraph 2 (progCode DefectBot) (progCode (CupodBot k)) (progCode DefectBot) (actCode .D) := by
   obtain ⟨k₀, h⟩ := found_of_all tact_qCu1
     (fun k ↦ guardCode (templateCode phiCu) (progCode (CupodBot k)) (progCode DefectBot))
-    (fun k ↦ by rw [progCode_DB, progCode_CupodBot_SV]; exact guardCode_Cu1 (V := ℕ) k)
+    (fun k ↦ by rw [progCode_DB, progCode_CupodBot_SV, templateCode_eq_quote_template phiCu rfl]; exact guardCode_Cu1 (V := ℕ) k)
   refine ⟨k₀, fun k hk ↦ ⟨?_, by rw [progCode_DB]; exact const_play 1 _ _ _⟩⟩
   have hg := h k hk
   rw [progCode_CupodBot] at hg ⊢
@@ -214,7 +214,7 @@ theorem pos_CupodBot_vs_botDB :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k → EvalGraph 2 (progCode (CupodBot k)) (pBot (pConst 1)) (progCode (CupodBot k)) 1 := by
   obtain ⟨k₀, h⟩ := found_of_all tact_qCuB1
     (fun k ↦ guardCode (templateCode phiCu) (progCode (CupodBot k)) (pBot (pConst 1)))
-    (fun k ↦ by rw [progCode_CupodBot_SV]; exact guardCode_CuB1 (V := ℕ) k)
+    (fun k ↦ by rw [progCode_CupodBot_SV, templateCode_eq_quote_template phiCu rfl]; exact guardCode_CuB1 (V := ℕ) k)
   refine ⟨k₀, fun k hk ↦ ?_⟩
   have hg := h k hk
   rw [progCode_CupodBot] at hg ⊢
@@ -332,7 +332,7 @@ theorem pos_JustBot_vs_CooperateBot :
   obtain ⟨k₀, h⟩ := found_of_all tact_qJ0
     (fun k ↦ guardCode (templateCode (phiJ k)) (progCode (JustBot k)) (progCode CooperateBot))
     (fun k ↦ by
-      rw [guardCode_JustBot_eq k sfp_CooperateBot.1, progCode_CB, progCode_DupocBot_SV]
+      rw [guardCode_JustBot_eq k sfp_CooperateBot.1, progCode_CB, progCode_DupocBot_SV, templateCode_eq_quote_template phiDu rfl]
       exact guardCode_J0 (V := ℕ) k)
   refine ⟨k₀, fun k hk ↦ ⟨?_, by rw [progCode_CB]; exact const_play 1 _ _ _⟩⟩
   have hg := h k hk
@@ -370,7 +370,7 @@ theorem pos_WaryBot_vs_DefectBot :
       EvalGraph 2 (progCode DefectBot) (progCode (WaryBot k)) (progCode DefectBot) (actCode .D) := by
   obtain ⟨k₀, h⟩ := found_of_all tact_qW1
     (fun k ↦ guardCode (templateCode phiW) (progCode (WaryBot k)) (progCode DefectBot))
-    (fun k ↦ by rw [progCode_DB, progCode_WaryBot_SV]; exact guardCode_W1 (V := ℕ) k)
+    (fun k ↦ by rw [progCode_DB, progCode_WaryBot_SV, templateCode_eq_quote_template phiW rfl]; exact guardCode_W1 (V := ℕ) k)
   refine ⟨k₀, fun k hk ↦ ⟨?_, by rw [progCode_DB]; exact const_play 1 _ _ _⟩⟩
   have hg := h k hk
   rw [progCode_WaryBot] at hg ⊢
@@ -401,7 +401,7 @@ theorem pos_WaryBot_vs_botDB :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k → EvalGraph 2 (progCode (WaryBot k)) (pBot (pConst 1)) (progCode (WaryBot k)) 1 := by
   obtain ⟨k₀, h⟩ := found_of_all tact_qWB1
     (fun k ↦ guardCode (templateCode phiW) (progCode (WaryBot k)) (pBot (pConst 1)))
-    (fun k ↦ by rw [progCode_WaryBot_SV]; exact guardCode_WB1 (V := ℕ) k)
+    (fun k ↦ by rw [progCode_WaryBot_SV, templateCode_eq_quote_template phiW rfl]; exact guardCode_WB1 (V := ℕ) k)
   refine ⟨k₀, fun k hk ↦ ?_⟩
   have hg := h k hk
   rw [progCode_WaryBot] at hg ⊢

@@ -52,6 +52,9 @@ namespace ArithS
 #print axioms EvalGraph.mono
 #print axioms evalGraph_cfdSys_unfold
 #print axioms sysCloseCode_cfdSys_member
+-- Phase 2, the pronoun reading (2026-10-01): the closed member's stored template is the template code of the
+-- engine's closed guard (`.bot (.sys (cfdSys k) (1 - i))` plays C against itself).
+#print axioms sysCloseTemplate_cfdGuard
 #print axioms progCode_cfdSys_ne_zero
 #print axioms evalGraph_of_eval_tauSearchFree
 #print axioms evalGraph_of_eval_sys_step

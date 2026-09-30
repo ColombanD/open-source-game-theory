@@ -842,4 +842,52 @@ theorem revalueTemplate_substTemplate (me opp g : V) :
         termRelabelVec_descriptionsSlot]
     · rw [substTemplate_of_not h7, substTemplate_of_not (fun h ↦ h7 (isSemiformula_revalueTemplate_swap_iff.mp h))]
 
+/-! ### The order of `ppair` in its second argument, and the `pBot` algebra
+
+Moved upstream on 2026-10-01 (from `Agents/Instance.lean` and `Cells/Common/Syntax.lean`, same names, same
+proofs): the pronoun reading of `.selfIdx` (`Agents/Code.lean`, `Agents/SysTemplate.lean`) needs
+`canonical_pBot`/`revalueU_pBot`/`revalueW_pBot` in the core tier. -/
+
+section ppairOrder
+
+lemma ppair_lt_ppair_right_iff (x : V) {y₁ y₂ : V} : ppair x y₁ < ppair x y₂ ↔ y₁ < y₂ := by
+  constructor
+  · intro h
+    rcases lt_trichotomy y₁ y₂ with h' | rfl | h'
+    · exact h'
+    · exact absurd h (_root_.lt_irrefl _)
+    · exact absurd (lt_trans h (ppair_lt_ppair_right x h')) (_root_.lt_irrefl _)
+  · exact ppair_lt_ppair_right x
+
+lemma ppair_le_ppair_right_iff (x : V) {y₁ y₂ : V} : ppair x y₁ ≤ ppair x y₂ ↔ y₁ ≤ y₂ := by
+  rw [← not_lt, ← not_lt, ppair_lt_ppair_right_iff]
+
+lemma pBot_le_pBot_iff {p q : V} : pBot p ≤ pBot q ↔ p ≤ q := by
+  unfold pBot
+  rw [add_le_add_iff_right, ppair_le_ppair_right_iff]
+
+lemma pBot_lt_pBot_iff {p q : V} : pBot p < pBot q ↔ p < q := by
+  rw [← not_le, ← not_le, pBot_le_pBot_iff]
+
+lemma transposeCode_pBot (p : V) : transposeCode (pBot p) = pBot (transposeCode p) := by
+  unfold transposeCode; simp
+
+/-- The canonical numeral commutes with bot-wrapping (`pBot` is strictly monotone). -/
+lemma canonical_pBot (p : V) : canonical (pBot p) = pBot (canonical p) := by
+  unfold canonical
+  rw [transposeCode_pBot]
+  simp only [pBot_le_pBot_iff, apply_ite pBot]
+
+lemma revalueU_pBot (p : V) : revalueU (pBot p) = revalueU p := by
+  unfold revalueU
+  rw [transposeCode_pBot]
+  simp only [pBot_lt_pBot_iff]
+
+lemma revalueW_pBot (p : V) : revalueW (pBot p) = revalueW p := by
+  unfold revalueW
+  rw [transposeCode_pBot]
+  simp only [pBot_lt_pBot_iff]
+
+end ppairOrder
+
 end ArithS

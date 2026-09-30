@@ -62,8 +62,9 @@ open PD.Bots
 /-- **SND**: a guard whose realization is FALSE in `ℕ` is never found, at ANY budget (`TAct` is
 sound in `ℕ`, `models_sentenceAt_of_lenBox`). -/
 theorem snd_else_of_false {φ : PD.Formula} {me opp : PD.Prog} {k : ℕ}
-    (h : ¬ ℕ↓[LAct] ⊧ sentenceAt me opp φ) : ¬ LenBox TAct k (guardOf φ me opp) :=
-  fun hl ↦ h (models_sentenceAt_of_lenBox hl)
+    (h : ¬ ℕ↓[LAct] ⊧ sentenceAt me opp φ) (hφ : noSelfIdxF φ = true := by noSelfIdx_tac) :
+    ¬ LenBox TAct k (guardOf φ me opp) :=
+  fun hl ↦ h (models_sentenceAt_of_lenBox hl hφ)
 
 /-- The realization of a fragment guard in a proper frame is the realization of its CLOSED
 instantiation in any frame (`template_subst` + the closed description terms are fixed by every
@@ -178,11 +179,12 @@ end shapes
 section found
 
 /-- A `TAct`-theorem is found at every budget above its proof length. -/
-theorem found_of_tact {φ : PD.Formula} {me opp : PD.Prog} (h : TAct ⊢ sentenceAt me opp φ) :
+theorem found_of_tact {φ : PD.Formula} {me opp : PD.Prog} (h : TAct ⊢ sentenceAt me opp φ)
+    (hφ : noSelfIdxF φ = true := by noSelfIdx_tac) :
     ∃ L : ℕ, ∀ k : ℕ, L ≤ k → LenBox TAct k (guardCode (templateCode φ) (progCode me) (progCode opp)) := by
   obtain ⟨N, hN⟩ := lenBoxNat_of_provable h
   refine ⟨N, fun k hk ↦ ?_⟩
-  rw [← guardOf, guardOf_eq_quote_sentenceAt, lenBox_nat]
+  rw [← guardOf, guardOf_eq_quote_sentenceAt φ me opp hφ, lenBox_nat]
   exact lenBoxNat_codeBound_mono hk hN
 
 /-- τ on the template of a play atom over FRAGMENT programs (atomicity is not needed: the `.plays`
@@ -318,19 +320,21 @@ section steps
 
 /-- The else branch of a search node on an engine template. -/
 theorem search_else {k n a x y : ℕ} (φ : PD.Formula) {p q : ℕ}
-    (hn : ¬ LenBox TAct k (guardCode (templateCode φ) x y)) (h : EvalGraph n x y q a) :
+    (hn : ¬ LenBox TAct k (guardCode (templateCode φ) x y)) (h : EvalGraph n x y q a)
+    (hφ : noSelfIdxF φ = true := by noSelfIdx_tac) :
     EvalGraph (n + 1) x y (pSearch k (templateCode φ) p q) a :=
   (EvalGraph.search_iff₆ (isSemiformula_templateCode φ)).mpr (Or.inr ⟨hn, h⟩)
 
 /-- The then branch of a search node on an engine template. -/
 theorem search_then {k n a x y : ℕ} (φ : PD.Formula) {p q : ℕ}
-    (hy : LenBox TAct k (guardCode (templateCode φ) x y)) (h : EvalGraph n x y p a) :
+    (hy : LenBox TAct k (guardCode (templateCode φ) x y)) (h : EvalGraph n x y p a)
+    (hφ : noSelfIdxF φ = true := by noSelfIdx_tac) :
     EvalGraph (n + 1) x y (pSearch k (templateCode φ) p q) a :=
   (EvalGraph.search_iff₆ (isSemiformula_templateCode φ)).mpr (Or.inl ⟨hy, h⟩)
 
 /-- A search node whose two branches AGREE plays that value whatever the verdict. -/
 theorem search_either {k n a x y : ℕ} (φ : PD.Formula) {p q : ℕ}
-    (hp : EvalGraph n x y p a) (hq : EvalGraph n x y q a) :
+    (hp : EvalGraph n x y p a) (hq : EvalGraph n x y q a) (hφ : noSelfIdxF φ = true := by noSelfIdx_tac) :
     EvalGraph (n + 1) x y (pSearch k (templateCode φ) p q) a := by
   by_cases hg : LenBox TAct k (guardCode (templateCode φ) x y)
   · exact search_then φ hg hp
@@ -493,8 +497,10 @@ lemma pIte_ne_pSearch (b a x y k g p q : ℕ) : pIte b a x y ≠ pSearch k g p q
   simp [pIte, pSearch]
 
 /-- Two templates with different formulas have different codes (quote injectivity at ℕ). -/
-lemma templateCode_ne_of_ne {φ ψ : PD.Formula} (h : template φ ≠ template ψ) : templateCode φ ≠ templateCode ψ := by
-  unfold templateCode
+lemma templateCode_ne_of_ne {φ ψ : PD.Formula} (h : template φ ≠ template ψ)
+    (hφ : noSelfIdxF φ = true := by noSelfIdx_tac) (hψ : noSelfIdxF ψ = true := by noSelfIdx_tac) :
+    templateCode φ ≠ templateCode ψ := by
+  rw [templateCode_eq_quote_template φ hφ, templateCode_eq_quote_template ψ hψ]
   intro e
   exact h ((Sentence.quote_inj_iff (V := ℕ)).mp e)
 
@@ -502,10 +508,13 @@ lemma templateCode_ne_of_ne {φ ψ : PD.Formula} (h : template φ ≠ template �
 frame have different template codes (equal codes give equal realized sentences, `quote_sentenceAt` +
 quote injectivity). -/
 lemma templateCode_ne_of_models {φ ψ : PD.Formula} (me opp : PD.Prog) (h1 : ℕ↓[LAct] ⊧ sentenceAt me opp φ)
-    (h2 : ¬ ℕ↓[LAct] ⊧ sentenceAt me opp ψ) : templateCode φ ≠ templateCode ψ := by
+    (h2 : ¬ ℕ↓[LAct] ⊧ sentenceAt me opp ψ)
+    (hφ : noSelfIdxF φ = true := by noSelfIdx_tac) (hψ : noSelfIdxF ψ = true := by noSelfIdx_tac) :
+    templateCode φ ≠ templateCode ψ := by
   intro e
   apply h2
-  have hq : (⌜sentenceAt me opp φ⌝ : ℕ) = ⌜sentenceAt me opp ψ⌝ := by rw [quote_sentenceAt, quote_sentenceAt, e]
+  have hq : (⌜sentenceAt me opp φ⌝ : ℕ) = ⌜sentenceAt me opp ψ⌝ := by
+    rw [quote_sentenceAt me opp φ hφ, quote_sentenceAt me opp ψ hψ, e]
   rw [← (Sentence.quote_inj_iff (V := ℕ)).mp hq]
   exact h1
 
@@ -1043,7 +1052,8 @@ theorem guardian_found {X : PD.Prog} (hX : ProperPlayer X)
   refine ⟨N, fun k hk ↦ ?_⟩
   have e : phiG.subst (GuardianBot k) X = .plays X (.bot CooperateBot) .D := by
     simp [phiG, PD.Formula.subst, PD.Prog.subst]
-  rw [← quote_sentenceAt, ← sentenceAt_subst X (.bot CooperateBot) (properPlayer_GuardianBot k) hX phiG rfl, e, lenBox_nat]
+  rw [← quote_sentenceAt (GuardianBot k) X phiG rfl, ← sentenceAt_subst X (.bot CooperateBot) (properPlayer_GuardianBot k) hX phiG rfl,
+    e, lenBox_nat]
   exact lenBoxNat_codeBound_mono hk hN
 
 /-- The transposed play of a closed search-free match, from the engine's evaluation by `decide`. -/

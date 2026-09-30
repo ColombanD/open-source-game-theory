@@ -144,7 +144,9 @@ lemma DimcidV_nat (k : ℕ) : DimcidV (V := ℕ) k = Dimcid k := rfl
 
 /-- **The bridge to the engine**: the code of the engine's `DIMCID k` is `Dimcid k`. -/
 theorem progCode_DIMCID (k : ℕ) : progCode (PD.Bots.DIMCID k) = Dimcid k := by
-  simp [PD.Bots.DIMCID, actCode]; rfl
+  simp [PD.Bots.DIMCID, actCode]
+  change pSearch k (templateCode phiD) _ _ = _
+  rw [templateCode_eq_quote_template phiD (noSelfIdxF_of_fragF _ fragF_phiD)]; rfl
 
 theorem transposeCode_DimcidV (k : V) : transposeCode (DimcidV k) = DimcidTV k := by
   unfold DimcidV DimcidTV transposeCode
@@ -868,7 +870,7 @@ theorem loeb_Dimcid_vs_Dimcid_guard :
 code of `Dimcid k` on `templateD`. -/
 lemma guardOf_DIMCID (k : ℕ) :
     guardOf phiD (PD.Bots.DIMCID k) (PD.Bots.DIMCID k) = guardCode (⌜templateD⌝ : ℕ) (Dimcid k) (Dimcid k) := by
-  unfold guardOf; rw [progCode_DIMCID]; rfl
+  unfold guardOf; rw [progCode_DIMCID, templateCode_eq_quote_template phiD (noSelfIdxF_of_fragF _ fragF_phiD)]; rfl
 
 /-- **The engine-facing form, unconditional**: for all large `k`, the guard the arithmetized evaluator
 consults for the engine's `DIMCID k` against itself has a `TAct`-proof within the budget `k`. -/

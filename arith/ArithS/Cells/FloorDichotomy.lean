@@ -69,13 +69,15 @@ section hinge
 
 /-- The evaluator's literal guard clause on a six-variable engine template is the pre-route-(c) guard code
 (`guardCodeB_of_template`): the hinge as written in every statement, unfolded in every proof. -/
-lemma hingeB (φ : PD.Formula) (x y k : ℕ) : guardCodeB (templateCode φ) x y k = guardCode (templateCode φ) x y :=
+lemma hingeB (φ : PD.Formula) (x y k : ℕ) (hφ : noSelfIdxF φ = true := by noSelfIdx_tac) :
+    guardCodeB (templateCode φ) x y k = guardCode (templateCode φ) x y :=
   guardCodeB_of_template (isSemiformula_templateCode φ) x y k
 
 /-- **A play through a search node whose else-branch is a constant it differs from is a FOUND guard**: the
 then-branch played it (determinism of the evaluator, `EvalGraph.search_iff₆` + `EvalGraph.const_iff`). -/
 theorem found_of_search_play {N k x y a b : ℕ} (φ : PD.Formula) {p : ℕ}
-    (h : EvalGraph N x y (pSearch k (templateCode φ) p (pConst b)) a) (hab : a ≠ b) :
+    (h : EvalGraph N x y (pSearch k (templateCode φ) p (pConst b)) a) (hab : a ≠ b)
+    (hφ : noSelfIdxF φ = true := by noSelfIdx_tac) :
     LenBox TAct k (guardCode (templateCode φ) x y) ∧ ∃ N', EvalGraph N' x y p a := by
   obtain ⟨N', rfl, _⟩ := EvalGraph.case_iff.mp h
   rcases (EvalGraph.search_iff₆ (isSemiformula_templateCode φ)).mp h with ⟨hf, hp⟩ | ⟨_, hq⟩
@@ -87,7 +89,8 @@ theorem found_of_search_play {N k x y a b : ℕ} (φ : PD.Formula) {p : ℕ}
 /-- The dual: a play through a search node whose THEN-branch is a constant it differs from is a guard NOT
 found; the else-branch played it. -/
 theorem not_found_of_search_play {N k x y a b : ℕ} (φ : PD.Formula) {q : ℕ}
-    (h : EvalGraph N x y (pSearch k (templateCode φ) (pConst b) q) a) (hab : a ≠ b) :
+    (h : EvalGraph N x y (pSearch k (templateCode φ) (pConst b) q) a) (hab : a ≠ b)
+    (hφ : noSelfIdxF φ = true := by noSelfIdx_tac) :
     ¬ LenBox TAct k (guardCode (templateCode φ) x y) ∧ ∃ N', EvalGraph N' x y q a := by
   obtain ⟨N', rfl, _⟩ := EvalGraph.case_iff.mp h
   rcases (EvalGraph.search_iff₆ (isSemiformula_templateCode φ)).mp h with ⟨_, hp⟩ | ⟨hn, hq⟩
@@ -228,7 +231,7 @@ theorem dich_DupocBot_vs_DBot :
         EvalGraph 4 (progCode (DupocBot k)) (progCode DBot) (progCode (DupocBot k)) (actCode .C) ∧
         EvalGraph 4 (progCode DBot) (progCode (DupocBot k)) (progCode DBot) (actCode .C)) := by
   refine ⟨0, fun k _ ↦ ?_⟩
-  simp only [hingeB]
+  simp only [hingeB phiDu]
   constructor
   · intro hn
     refine ⟨?_, floor_DupocBot_vs_DBot_right k⟩
@@ -250,7 +253,7 @@ theorem dich_DupocBot_vs_EBot :
         EvalGraph 5 (progCode EBot) (progCode (DupocBot k)) (progCode EBot) (actCode .C)) := by
   obtain ⟨k₀, hE⟩ := floor_DupocBot_vs_EBot_right
   refine ⟨k₀, fun k hk ↦ ?_⟩
-  simp only [hingeB]
+  simp only [hingeB phiDu]
   constructor
   · intro hn
     refine ⟨?_, hE k hk⟩
@@ -271,7 +274,7 @@ theorem dich_DupocBot_vs_CupodTrollBot :
         EvalGraph 2 (progCode (DupocBot k)) (progCode (CupodTrollBot k)) (progCode (DupocBot k)) (actCode .C) ∧
         EvalGraph 2 (progCode (CupodTrollBot k)) (progCode (DupocBot k)) (progCode (CupodTrollBot k)) (actCode .C)) := by
   refine ⟨0, fun k _ ↦ ?_⟩
-  simp only [hingeB]
+  simp only [hingeB phiDu]
   constructor
   · intro hn
     refine ⟨?_, floor_DupocBot_vs_CupodTrollBot_right k⟩
@@ -292,7 +295,7 @@ theorem dich_JustBot_vs_DBot :
         EvalGraph 4 (progCode (JustBot k)) (progCode DBot) (progCode (JustBot k)) (actCode .C) ∧
         EvalGraph 4 (progCode DBot) (progCode (JustBot k)) (progCode DBot) (actCode .C)) := by
   refine ⟨0, fun k _ ↦ ?_⟩
-  simp only [hingeB]
+  simp only [hingeB (phiJ k)]
   constructor
   · intro hn
     refine ⟨?_, floor_JustBot_vs_DBot_right k⟩
@@ -314,7 +317,7 @@ theorem dich_JustBot_vs_EBot :
         EvalGraph 5 (progCode EBot) (progCode (JustBot k)) (progCode EBot) (actCode .C)) := by
   obtain ⟨k₀, hE⟩ := floor_JustBot_vs_EBot_right
   refine ⟨k₀, fun k hk ↦ ?_⟩
-  simp only [hingeB]
+  simp only [hingeB (phiJ k)]
   constructor
   · intro hn
     refine ⟨?_, hE k hk⟩
@@ -335,7 +338,7 @@ theorem dich_JustBot_vs_CupodTrollBot :
         EvalGraph 2 (progCode (JustBot k)) (progCode (CupodTrollBot k)) (progCode (JustBot k)) (actCode .C) ∧
         EvalGraph 2 (progCode (CupodTrollBot k)) (progCode (JustBot k)) (progCode (CupodTrollBot k)) (actCode .C)) := by
   refine ⟨0, fun k _ ↦ ?_⟩
-  simp only [hingeB]
+  simp only [hingeB (phiJ k)]
   constructor
   · intro hn
     refine ⟨?_, floor_JustBot_vs_CupodTrollBot_right k⟩
@@ -357,7 +360,7 @@ theorem dich_CIMCIC_vs_CupodTrollBot :
         EvalGraph 2 (progCode (CIMCIC k)) (progCode (CupodTrollBot k)) (progCode (CIMCIC k)) (actCode .C) ∧
         EvalGraph 2 (progCode (CupodTrollBot k)) (progCode (CIMCIC k)) (progCode (CupodTrollBot k)) (actCode .C)) := by
   refine ⟨0, fun k _ ↦ ?_⟩
-  simp only [hingeB]
+  simp only [hingeB phiC]
   constructor
   · intro hn
     refine ⟨?_, floor_CIMCIC_vs_CupodTrollBot_right k⟩
@@ -378,7 +381,7 @@ theorem dich_CIMCIC_vs_DBot :
         EvalGraph 4 (progCode (CIMCIC k)) (progCode DBot) (progCode (CIMCIC k)) (actCode .C) ∧
         EvalGraph 4 (progCode DBot) (progCode (CIMCIC k)) (progCode DBot) (actCode .C)) := by
   refine ⟨0, fun k _ ↦ ?_⟩
-  simp only [hingeB]
+  simp only [hingeB phiC]
   constructor
   · intro hn
     refine ⟨?_, floor_CIMCIC_vs_DBot_right k⟩
@@ -400,7 +403,7 @@ theorem dich_CIMCIC_vs_EBot :
         EvalGraph 5 (progCode EBot) (progCode (CIMCIC k)) (progCode EBot) (actCode .C)) := by
   obtain ⟨k₀, hE⟩ := floor_CIMCIC_vs_EBot_right
   refine ⟨k₀, fun k hk ↦ ?_⟩
-  simp only [hingeB]
+  simp only [hingeB phiC]
   constructor
   · intro hn
     refine ⟨?_, hE k hk⟩
@@ -424,7 +427,7 @@ theorem dich_GuardianBot_vs_CIMCIC :
         EvalGraph 2 (progCode (CIMCIC k)) (progCode (GuardianBot k)) (progCode (CIMCIC k)) (actCode .C)) := by
   obtain ⟨k₀, hG⟩ := floor_GuardianBot_vs_CIMCIC_left
   refine ⟨k₀, fun k hk ↦ ?_⟩
-  simp only [hingeB]
+  simp only [hingeB phiC]
   constructor
   · intro hn
     refine ⟨hG k hk, ?_⟩
@@ -447,7 +450,7 @@ theorem dich_GuardianBot_vs_DupocBot :
         EvalGraph 2 (progCode (DupocBot k)) (progCode (GuardianBot k)) (progCode (DupocBot k)) (actCode .C)) := by
   obtain ⟨k₀, hG⟩ := floor_GuardianBot_vs_DupocBot_left
   refine ⟨k₀, fun k hk ↦ ?_⟩
-  simp only [hingeB]
+  simp only [hingeB phiDu]
   constructor
   · intro hn
     refine ⟨hG k hk, ?_⟩
@@ -470,7 +473,7 @@ theorem dich_GuardianBot_vs_JustBot :
         EvalGraph 2 (progCode (JustBot k)) (progCode (GuardianBot k)) (progCode (JustBot k)) (actCode .C)) := by
   obtain ⟨k₀, hG⟩ := floor_GuardianBot_vs_JustBot_left
   refine ⟨k₀, fun k hk ↦ ?_⟩
-  simp only [hingeB]
+  simp only [hingeB (phiJ k)]
   constructor
   · intro hn
     refine ⟨hG k hk, ?_⟩
@@ -493,7 +496,7 @@ theorem dich_CupodBot_vs_OBot :
         EvalGraph 5 (progCode OBot) (progCode (CupodBot k)) (progCode OBot) (actCode .D)) := by
   obtain ⟨k₀, hO⟩ := floor_CupodBot_vs_OBot_right
   refine ⟨k₀, fun k hk ↦ ?_⟩
-  simp only [hingeB]
+  simp only [hingeB phiCu]
   constructor
   · intro hn
     refine ⟨?_, hO k hk⟩
@@ -524,7 +527,7 @@ theorem dich_PrudentBot_vs_DupocBot :
         EvalGraph 3 (progCode (PrudentBot k)) (progCode (DupocBot k)) (progCode (PrudentBot k)) (actCode .C) ∧
         EvalGraph 3 (progCode (DupocBot k)) (progCode (PrudentBot k)) (progCode (DupocBot k)) (actCode .C)) := by
   refine ⟨0, fun k _ ↦ ?_⟩
-  simp only [hingeB]
+  simp only [hingeB phiPo]
   constructor
   · intro hn
     have hP : EvalGraph 2 (progCode (PrudentBot k)) (progCode (DupocBot k)) (progCode (PrudentBot k)) 1 := by
@@ -562,7 +565,7 @@ theorem dich_PrudentBot_vs_PrudentBot :
         EvalGraph 3 (progCode (PrudentBot k)) (progCode (PrudentBot k)) (progCode (PrudentBot k)) (actCode .C) ∧
         EvalGraph 3 (progCode (PrudentBot k)) (progCode (PrudentBot k)) (progCode (PrudentBot k)) (actCode .C)) := by
   refine ⟨0, fun k _ ↦ ?_⟩
-  simp only [hingeB]
+  simp only [hingeB phiPo]
   constructor
   · intro hn
     have hP : EvalGraph 3 (progCode (PrudentBot k)) (progCode (PrudentBot k)) (progCode (PrudentBot k)) 1 := by
@@ -612,7 +615,7 @@ theorem dich_JustBot_vs_PrudentBot :
           LenBox TAct k (guardCodeB (templateCode phiPi) (progCode (PrudentBot k)) (progCode (JustBot k)) k) →
           EvalGraph 3 (progCode (PrudentBot k)) (progCode (JustBot k)) (progCode (PrudentBot k)) (actCode .C))) := by
   refine ⟨0, fun k _ ↦ ?_⟩
-  simp only [hingeB]
+  simp only [hingeB (phiJ k), hingeB phiPo, hingeB phiPi]
   obtain ⟨hPC, hPo, hPi⟩ := prudent_of_verdicts k (progCode (JustBot k))
   constructor
   · intro hn
@@ -642,7 +645,7 @@ theorem dich_CIMCIC_vs_PrudentBot :
         (LenBox TAct k (guardCodeB (templateCode phiPi) (progCode (PrudentBot k)) (progCode (CIMCIC k)) k) →
           EvalGraph 3 (progCode (PrudentBot k)) (progCode (CIMCIC k)) (progCode (PrudentBot k)) (actCode .C))) := by
   refine ⟨0, fun k _ ↦ ?_⟩
-  simp only [hingeB]
+  simp only [hingeB phiPo, hingeB phiPi]
   obtain ⟨hPC, hPo, hPi⟩ := prudent_of_verdicts k (progCode (CIMCIC k))
   constructor
   · intro hn
@@ -677,7 +680,7 @@ theorem dich_GuardianBot_vs_PrudentBot :
           LenBox TAct k (guardCodeB (templateCode phiPi) (progCode (PrudentBot k)) (progCode (GuardianBot k)) k) →
           EvalGraph 3 (progCode (PrudentBot k)) (progCode (GuardianBot k)) (progCode (PrudentBot k)) (actCode .C))) := by
   refine ⟨0, fun k _ ↦ ?_⟩
-  simp only [hingeB]
+  simp only [hingeB phiG, hingeB phiPo, hingeB phiPi]
   obtain ⟨hPC, hPo, hPi⟩ := prudent_of_verdicts k (progCode (GuardianBot k))
   constructor
   · intro hG
@@ -707,7 +710,8 @@ theorem prudence_found_closed {X : PD.Prog} (hX : ProperPlayer X)
   refine ⟨N, fun k hk ↦ ?_⟩
   have e : phiPi.subst (PrudentBot k) X = .plays X (.bot DefectBot) .D := by
     simp [phiPi, PD.Formula.subst, PD.Prog.subst]
-  rw [← quote_sentenceAt, ← sentenceAt_subst X (.bot DefectBot) (properPlayer_PrudentBot k) hX phiPi rfl, e, lenBox_nat]
+  rw [← quote_sentenceAt (PrudentBot k) X phiPi rfl, ← sentenceAt_subst X (.bot DefectBot) (properPlayer_PrudentBot k) hX phiPi rfl,
+    e, lenBox_nat]
   exact lenBoxNat_codeBound_mono hk hN
 
 /-- Prudent's prudence guard against EBot is FOUND for all large `k`. -/
@@ -730,7 +734,7 @@ theorem dich_PrudentBot_vs_EBot :
         EvalGraph 7 (progCode EBot) (progCode (PrudentBot k)) (progCode EBot) (actCode .C)) := by
   obtain ⟨k₀, hB⟩ := prudence_found_vs_EBot
   refine ⟨k₀, fun k hk ↦ ?_⟩
-  simp only [hingeB]
+  simp only [hingeB phiPo]
   obtain ⟨hPC, hPo, _⟩ := prudent_of_verdicts k (progCode EBot)
   constructor
   · intro hn
@@ -766,7 +770,7 @@ theorem dich_WaryBot_vs_DupocBot :
         (LenBox TAct k (guardCodeB (templateCode phiDu) (progCode (DupocBot k)) (progCode (WaryBot k)) k) →
           EvalGraph 2 (progCode (DupocBot k)) (progCode (WaryBot k)) (progCode (DupocBot k)) (actCode .C))) := by
   refine ⟨0, fun k _ ↦ ?_⟩
-  simp only [hingeB]
+  simp only [hingeB phiW, hingeB phiDu]
   constructor
   · intro hW
     have hWD : EvalGraph 2 (progCode (WaryBot k)) (progCode (DupocBot k)) (progCode (WaryBot k)) 1 := by
@@ -798,7 +802,7 @@ theorem dich_WaryBot_vs_JustBot :
         (¬ LenBox TAct k (guardCodeB (templateCode phiW) (progCode (WaryBot k)) (progCode (JustBot k)) k) →
           EvalGraph 2 (progCode (WaryBot k)) (progCode (JustBot k)) (progCode (WaryBot k)) (actCode .C))) := by
   refine ⟨0, fun k _ ↦ ?_⟩
-  simp only [hingeB]
+  simp only [hingeB (phiJ k), hingeB phiW]
   constructor
   · intro hJ
     have hJC : EvalGraph 2 (progCode (JustBot k)) (progCode (WaryBot k)) (progCode (JustBot k)) 0 := by
@@ -833,7 +837,7 @@ theorem dich_WaryBot_vs_PrudentBot :
         (¬ LenBox TAct k (guardCodeB (templateCode phiW) (progCode (WaryBot k)) (progCode (PrudentBot k)) k) →
           EvalGraph 3 (progCode (WaryBot k)) (progCode (PrudentBot k)) (progCode (WaryBot k)) (actCode .C))) := by
   refine ⟨0, fun k _ ↦ ?_⟩
-  simp only [hingeB]
+  simp only [hingeB phiPo, hingeB phiPi, hingeB phiW]
   obtain ⟨hPC, hPo, hPi⟩ := prudent_of_verdicts k (progCode (WaryBot k))
   constructor
   · intro hA hB
@@ -891,7 +895,7 @@ theorem dich_CupodBot_vs_PrudentBot :
           LenBox TAct k (guardCodeB (templateCode phiPi) (progCode (PrudentBot k)) (progCode (CupodBot k)) k) →
           EvalGraph 3 (progCode (PrudentBot k)) (progCode (CupodBot k)) (progCode (PrudentBot k)) (actCode .C))) := by
   refine ⟨0, fun k _ ↦ ?_⟩
-  simp only [hingeB]
+  simp only [hingeB phiCu, hingeB phiPo, hingeB phiPi]
   exact dich_CupodBot_vs_PrudentBot_core k
 
 /-- **Prudent × Cupod** (engine `outcome_PrudentBot_vs_CupodBot = (D, C)`, pad 3): the same pair, Prudent's side
@@ -910,7 +914,7 @@ theorem dich_PrudentBot_vs_CupodBot :
           LenBox TAct k (guardCodeB (templateCode phiPi) (progCode (PrudentBot k)) (progCode (CupodBot k)) k) →
           EvalGraph 3 (progCode (PrudentBot k)) (progCode (CupodBot k)) (progCode (PrudentBot k)) (actCode .C))) := by
   refine ⟨0, fun k _ ↦ ?_⟩
-  simp only [hingeB]
+  simp only [hingeB phiCu, hingeB phiPo, hingeB phiPi]
   obtain ⟨h1, h2⟩ := dich_CupodBot_vs_PrudentBot_core k
   exact ⟨fun hCu ↦ ⟨(h1 hCu).2, (h1 hCu).1⟩, h2⟩
 
@@ -929,7 +933,7 @@ theorem dich_JustBot_vs_CupodBot :
         (¬ LenBox TAct k (guardCodeB (templateCode phiCu) (progCode (CupodBot k)) (progCode (JustBot k)) k) →
           EvalGraph 2 (progCode (CupodBot k)) (progCode (JustBot k)) (progCode (CupodBot k)) (actCode .C))) := by
   refine ⟨0, fun k _ ↦ ?_⟩
-  simp only [hingeB]
+  simp only [hingeB (phiJ k), hingeB phiCu]
   constructor
   · intro hJ
     have hJC : EvalGraph 2 (progCode (JustBot k)) (progCode (CupodBot k)) (progCode (JustBot k)) 0 := by
@@ -961,7 +965,7 @@ theorem dich_CIMCIC_vs_CupodBot :
         (¬ LenBox TAct k (guardCodeB (templateCode phiCu) (progCode (CupodBot k)) (progCode (CIMCIC k)) k) →
           EvalGraph 2 (progCode (CupodBot k)) (progCode (CIMCIC k)) (progCode (CupodBot k)) (actCode .C))) := by
   refine ⟨0, fun k _ ↦ ?_⟩
-  simp only [hingeB]
+  simp only [hingeB phiC, hingeB phiCu]
   constructor
   · intro hG
     have hCC : EvalGraph 2 (progCode (CIMCIC k)) (progCode (CupodBot k)) (progCode (CIMCIC k)) 0 := by
@@ -1234,7 +1238,7 @@ theorem tact_conjTwin_imp_rDB : TAct ⊢ ∀¹ (conjTwin 🡒 rDB) := by
 theorem hinge_DupocBot_vs_DBot_eq (k : ℕ) :
     guardCodeB (templateCode phiDu) (progCode (DupocBot k)) (progCode DBot) k =
       (⌜(rDB ⇜ ![Semiterm.lMap emb (binNumeralMeta k)] : Sentence LAct)⌝ : ℕ) := by
-  rw [hingeB, progCode_DupocBot_SV]
+  rw [hingeB phiDu, progCode_DupocBot_SV, templateCode_eq_quote_template phiDu rfl]
   have e := guardCode_rDB (V := ℕ) k
   rw [natCast_nat] at e
   have hq : instB (⌜rDB⌝ : ℕ) k = ⌜(rDB ⇜ ![Semiterm.lMap emb (binNumeralMeta k)] : Sentence LAct)⌝ := by
@@ -1345,7 +1349,7 @@ theorem negTwin_true_iff (k : ℕ) :
     have := val_binNumeralMeta_V (V := ℕ) k
     rwa [natCast_nat] at this
   rw [hv, eval_negTwin_iff stdReadingNat stdReadingNat_lMap_emb k, lenBoxUnbounded_iff_lenBox, lenBoxUnbounded_iff_lenBox,
-    progCode_DupocBot_SV]
+    progCode_DupocBot_SV, templateCode_eq_quote_template phiDu rfl]
   have e1 := guardCode_DuB1 (V := ℕ) k
   have e2 := guardCode_DuB1_swap (V := ℕ) k
   have hq1 : instB (⌜qDuB1⌝ : ℕ) k = ⌜(qDuB1 ⇜ ![Semiterm.lMap emb (binNumeralMeta k)] : Sentence LAct)⌝ := by

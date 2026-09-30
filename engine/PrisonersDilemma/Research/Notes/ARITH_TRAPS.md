@@ -105,10 +105,38 @@ an agent-hour or more. Add to it when you lose one. Grouped by where it bites.*
 * `lake env lean File.lean` compiles the file against the EXISTING oleans of its imports — it does not
   rebuild them. After editing `Agents/Prog.lean`, check a downstream file with the targeted
   `lake build --try-cache ArithS.<Module>` (one lake process at a time), not with `lake env lean`.
-* The pronoun reading of `.selfIdx j` (member slots `#7+3j..`) needs `template : PD.Formula → Semisentence
-  LAct 6` widened — every consumer of `sentenceAt`/`template_plays` (20+ files) is downstream. A search node
-  whose guard mentions `.selfIdx` is described literally and is OUTSIDE the lockstep fragment
-  (`tauSearchFreeP`); do not "fix" it by patching `progAux` at arity seven (there is no variable to use).
+* The pronoun reading of `.selfIdx j` (member slots `#7+3j..`) landed 2026-10-01 as a SECOND translation
+  `template13` (thirteen variables, stored by `pSearch`) beside the six-variable `template`, NOT by widening
+  `template` in place: twenty files state facts about `template`/`sentenceAt`, and a member's guard genuinely has
+  no six-variable reading. The price is the bridge `templateCode_eq_quote_template : noSelfIdxF φ → templateCode φ
+  = ⌜template φ⌝` — every lemma that used `templateCode φ = ⌜template φ⌝` by DEFEQ (`unfold templateCode`) now
+  needs it, and the universally stated `isSemiformula_templateCode`/`quote_sentenceAt` (and their generic
+  consumers: `hingeB`, `search_else/then`, `found_of_tact`, `models_sentenceAt_of_lenBox`, `snd_else_of_false`,
+  `templateCode_ne_of_*`, FitBox's `HasBox` chain) carry a trailing `(hφ : noSelfIdxF φ = true := by
+  noSelfIdx_tac)` — an autoParam, so concrete call sites are unchanged. What the autoParam does NOT survive: a
+  bare `rw [← quote_sentenceAt]` whose formula is fixed only by unification ("could not synthesize default value
+  … must not contain free variables") — pass `me opp φ rfl` explicitly. `progCode_subst`/`templateCode_subst`
+  need `noSelfIdxP me`/`noSelfIdxP opp` as PLAIN hypotheses (a player `.bot (.selfIdx j)` is read as a pronoun
+  after substitution, so the equation is false without them; `noSelfIdxP_of_modestP` at the `Inv` call sites).
+* `noSelfIdxF (.diag _ _) = true` (the body is frozen, `fragF` says the same), so "`noSelfIdx` is a syntactic
+  fixpoint of `sysClose`" is FALSE; the member equation needs only the CODE-level fixpoint
+  `progCode_sysClose_of_noSelfIdxP`/`template13_sysClose_of_noSelfIdxF` (a frozen `.diag` body is `⊥` either way).
+* `ext x` on a goal `ω₁ ▹ A = ω₂ ▹ A` after `congr 1` picks the hom extensionality on `Rewriting.app` — ONE goal
+  over formulas, not `Rew.ext`'s bvar/fvar pair — so `simp [Rew.comp_app]` "makes no progress". State the
+  rewriter equality as a `have hc : ω₁ = ω₂ := by ext x …` first (`comp_subst_eq`'s pattern) and `rw [hc]`.
+* `Fin.castLE (by norm_num) i` inside a bigger term leaves `?n ≤ ?m` for `norm_num` before unification: name the
+  proof (`have h613 : (6 : ℕ) ≤ 13 := by norm_num`) and pass it. `idVec6_semitermVec (n := 13) (hn : 6 ≤ n)` at
+  ℕ wants PeanoMinus's `≤`: `le_def.mpr (Or.inr hlt)` with `hlt : (6 : ℕ) < 13` typed BEFORE the call (§1).
+* `simp only [quote_emb_cl, ← Semiterm.empty_quote_def, quote_canonicalMeta]` in ONE call rewrites
+  `⌜Rew.emb (cl t)⌝` to `⌜cl t⌝` (a `ClosedSemiterm 13` quote) before `quote_emb_cl` can strip the cast — stage
+  the three rewrites in separate `simp only` calls.
+* `lMap emb`/`Rew.castLE` commute with `‘a + b’`, `‘a * b’`, `‘1’` only after unfolding to `func`
+  (`Semiterm.Operator.operator`, `Add.term_eq`, `Rew.func`, `Semiterm.lMap_func`; `‘1’` is `numeral L 1`, go through
+  `numeral_one` and `One.term_eq`; finish with `funext i; fin_cases i <;> simp`) — `lMap_emb_add/mul/one`,
+  `cl_add/mul/one` in `Agents/Code.lean`; `succTT_eq`/`ppairTermMeta_eq` are the closed twins by `rfl`.
+* A `match` on `PD.Prog` with nat-literal patterns (`.selfIdx 0`, `.bot (.selfIdx 1)`) reduces by `rfl` on
+  constructor-headed arguments and on `1 - 0`, but NOT on `1 - i` for a variable `i`: state member facts for
+  `i ≤ 1` and `rcases Nat.le_one_iff_eq_zero_or_eq_one.mp hi with rfl | rfl <;> rfl`.
 
 ## 5. Tooling
 

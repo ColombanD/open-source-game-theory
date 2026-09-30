@@ -21,8 +21,8 @@ module depends on a bot: it sits directly on `Assembly/Prep`, `InstanceV`, `SimT
 * Tower substitution: `termSubst_tower_of` (any vector whose head is `binNumeral k`), `termSubst_tower'`
   (the then-slot holds a term code whose own instance is a program).
 * Absoluteness of the canonical code: `cast_transposeCode`, `cast_canonical`; `quote_emb_numT`.
-* The `pBot` algebra (`pBot_le_pBot_iff`, `transposeCode_pBot`, `canonical/revalueU/revalueW_pBot`, `transposeCode_pBot_DupocV`)
-  and the `pConst` facts (`pConst_zero_lt_one`, `transposeCode/canonical/revalueU/revalueW_pConst_zero/one`).
+* `transposeCode_pBot_DupocV` (the `pBot` algebra itself — `pBot_le_pBot_iff`, `transposeCode_pBot`,
+  `canonical/revalueU/revalueW_pBot` — lives in `Agents/SubstTemplate.lean` since 2026-10-01) and the `pConst` facts (`pConst_zero_lt_one`, `transposeCode/canonical/revalueU/revalueW_pConst_zero/one`).
 -/
 
 namespace ArithS
@@ -259,35 +259,11 @@ lemma quote_emb_numT (a : ℕ) : (⌜(Rew.emb (numT a) : SyntacticSemiterm LAct 
 
 end casts
 
-/-! ### 5. The `pBot` algebra and the `pConst` facts -/
+/-! ### 5. `transposeCode_pBot_DupocV` and the `pConst` facts -/
 
 section codes
 
-lemma pBot_le_pBot_iff {p q : V} : pBot p ≤ pBot q ↔ p ≤ q := by
-  unfold pBot
-  rw [add_le_add_iff_right, ppair_le_ppair_right_iff]
-
-lemma pBot_lt_pBot_iff {p q : V} : pBot p < pBot q ↔ p < q := by
-  rw [← not_le, ← not_le, pBot_le_pBot_iff]
-
-lemma transposeCode_pBot (p : V) : transposeCode (pBot p) = pBot (transposeCode p) := by
-  unfold transposeCode; simp
-
-/-- The canonical numeral commutes with bot-wrapping (`pBot` is strictly monotone). -/
-lemma canonical_pBot (p : V) : canonical (pBot p) = pBot (canonical p) := by
-  unfold canonical
-  rw [transposeCode_pBot]
-  simp only [pBot_le_pBot_iff, apply_ite pBot]
-
-lemma revalueU_pBot (p : V) : revalueU (pBot p) = revalueU p := by
-  unfold revalueU
-  rw [transposeCode_pBot]
-  simp only [pBot_lt_pBot_iff]
-
-lemma revalueW_pBot (p : V) : revalueW (pBot p) = revalueW p := by
-  unfold revalueW
-  rw [transposeCode_pBot]
-  simp only [pBot_lt_pBot_iff]
+-- The `pBot` algebra (`pBot_le_pBot_iff` … `revalueW_pBot`) moved to `Agents/SubstTemplate.lean` (2026-10-01).
 
 lemma transposeCode_pBot_DupocV (k : V) : transposeCode (pBot (DupocV k)) = pBot (CupodV k) := by
   rw [transposeCode_pBot, transposeCode_DupocV]

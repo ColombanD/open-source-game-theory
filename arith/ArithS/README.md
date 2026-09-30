@@ -73,9 +73,15 @@ The other files in these five folders hold no definitions to accept, only theore
 6. **Descriptions** — a program named inside a sentence by binary numeral TERMS (`codeTerm`, `canonical`,
    `revalueU`, `revalueW`): [`Agents/CodeTerm.lean`](Agents/CodeTerm.lean), [`Agents/BinNumeral.lean`](Agents/BinNumeral.lean).
 7. **The guard template and the runtime guard** — `guardTemplate a` ("opp plays `a` against me", six
-   description slots) and the general translation `template : PD.Formula → Semisentence LAct 6` of the
-   engine's guard formulas; `guardCode g me opp` fills the slots at run time, `guardCodeB` adds the
-   seventh slot holding the node's own budget (route (c)): [`Agents/Template.lean`](Agents/Template.lean),
+   description slots) and the general translation of the engine's guard formulas: the THIRTEEN-variable
+   `template13 : PD.Formula → Semisentence LAct 13` that `pSearch` stores (`templateCode φ := ⌜template13 φ⌝`;
+   frame `#0..#5`, budget slot `#6`, the two member triples `#7..#12`), whose `progAux13` reads a system member's
+   pronoun `.selfIdx j` (`j ∈ {0, 1}`) from member `j`'s triple and `.bot (.selfIdx j)` as that triple with the
+   term `pBotTerm` on its code (`pBot` commutes with `revalue` and `canonical`), and the six-variable `template`
+   beside it, the reading every `Cells/` file uses — the two agree on every formula without a dangling pronoun
+   (`noSelfIdxF`; the bridge `templateCode_eq_quote_template : templateCode φ = ⌜template φ⌝`, since
+   2026-10-01); `guardCode g me opp` fills the slots at run time, `guardCodeB` adds the seventh slot holding the
+   node's own budget (route (c)): [`Agents/Template.lean`](Agents/Template.lean),
    [`Agents/Code.lean`](Agents/Code.lean), [`Agents/Guard.lean`](Agents/Guard.lean).
 8. **Substitution** — `substCode`, the engine's one-shot `Prog.subst` on codes (`.bot` frozen, guards read
    the outer players, vote entries frozen, a system a binder): [`Agents/Subst.lean`](Agents/Subst.lean) (the
@@ -85,7 +91,10 @@ The other files in these five folders hold no definitions to accept, only theore
    `Prog.sysClose` (`pSelfIdx j ↦ pSys d j`, transparent through `pBot`, an inner `pSys` a binder), and the
    member lookup `listGet` (`ProgList.get?`, `m + 1` for `some m`): [`Agents/SysClose.lean`](Agents/SysClose.lean);
    the stored template is closed by `sysCloseTemplate d` (`Agents/Guard.lean`: the member slots `#7..#12`), which
-   is the identity on every six/seven-variable template (`sysCloseTemplate_of_template₇`).
+   is the identity on every six/seven-variable template (`sysCloseTemplate_of_template₇`) and, on a compiled
+   member's guard, IS the engine's `Formula.sysClose` — `templateCode_sysClose : sysCloseTemplate (progListCode
+   defs) (templateCode φ) = templateCode (φ.sysClose defs)`, so `progCode (p.sysClose defs) = sysCloseCode …
+   (progCode p)` on every compiled member (`progCode_sysClose_member`): [`Agents/SysTemplate.lean`](Agents/SysTemplate.lean).
 9. **The evaluator** — `EvalGraph n me opp p a`, a Σ₁ fixpoint mirroring the engine's `eval` clause
    by clause (the `.tvote` peel, the `.sys` unfold and the search clause consulting the box included):
    [`Eval/Eval.lean`](Eval/Eval.lean) (the characterization `EvalGraph.case_iff` is the definition; the
@@ -274,12 +283,10 @@ pruning: `Research/Notes/ARITH_DEAD_CODE_AUDIT.md`, `scripts/DeadCode.lean`.
   the U10 kit for a body computed from the frame (`ROUTE_B_SCOPE.md` §9).
 * **The 26 genuine floors** take no side: each is a dichotomy on a hinge that is bounded consistency of
   `TAct` at `k` up to a constant — Pudlák's linear-regime question. Never admit the hinge as an axiom.
-* **The pronoun reading of `.selfIdx`** (the open item of Phase 2, `SPRIME_SOURCE_OF_TRUTH.md` §2.5). The
-  tau constructors themselves ARE here since 2026-09-30 (codes, τ, descriptions, substitution, the system
-  closer, the evaluator clauses, lockstep with the engine on the tau-search-free fragment — `Eval/TauCheck.lean`),
-  but `template : PD.Formula → Semisentence LAct 6` cannot describe a member pronoun through slots `#7+3j..`:
-  a member's guard `.plays (.bot (.selfIdx j)) …` is translated LITERALLY (the dangling code `pSelfIdx j`), and
-  `sysCloseTemplate` — which fills the member slots of a thirteen-variable template — is the identity on every
-  compiled template. So a system's searcher takes its else branch in `S'` (`sysCloseCode_cfdSys_member`); the
-  pronoun reading needs `template`, `progAux`, `closedDesc`, `sentenceAt` widened to thirteen variables (a
-  results-tier refactor: `sentenceAt` is used in twenty files).
+* **The outcomes of the entangled tau pairs** (Phase 3). The pronoun reading of `.selfIdx` — the last item of
+  Phase 2 — LANDED on 2026-10-01: a system member's guard is described through the member slots `#7..#12` of the
+  thirteen-variable `template13`, `sysCloseTemplate` on it is the engine's `Formula.sysClose`
+  (`templateCode_sysClose`), and the closed member of `cfdSys k` is the code of the engine's closed member, whose
+  search consults "`.bot (.sys (cfdSys k) (1 - i))` plays C against itself" (`Eval/TauCheck.lean`,
+  `Cells/TauMember.lean`). What is NOT here is the mutual-Löb family on the member slots that decides those
+  searches — the entangled `.sys` bits of the Phase 3 table.

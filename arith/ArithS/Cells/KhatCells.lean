@@ -249,7 +249,7 @@ theorem khat_DupocBot_vs_TitForTatBot :
   obtain ⟨kHat, hq⟩ := tact_qDT_above
   obtain ⟨k₀, h⟩ := found_of_all_above kHat hq
     (fun k ↦ guardCode (templateCode phiDu) (progCode (DupocBot k)) (progCode TitForTatBot))
-    (fun k ↦ by rw [← TftV_nat, progCode_DupocBot_SV]; exact guardCode_DT (V := ℕ) k)
+    (fun k ↦ by rw [← TftV_nat, progCode_DupocBot_SV, templateCode_eq_quote_template phiDu rfl]; exact guardCode_DT (V := ℕ) k)
   obtain ⟨k₁, h₁⟩ := dupoc_botCB_V
   refine ⟨k₀ + k₁, fun k hk ↦ ⟨?_, ?_⟩⟩
   · have hg := h k (by omega)
@@ -277,7 +277,8 @@ theorem pos_JustBot_vs_botCB :
   obtain ⟨k₀, h⟩ := found_of_all tact_qJB0
     (fun k ↦ guardCode (templateCode (phiJ k)) (progCode (JustBot k)) (pBot (pConst 0)))
     (fun k ↦ by
-      rw [← progCode_botCB, guardCode_JustBot_eq k properPlayer_botCB, progCode_botCB, progCode_DupocBot_SV]
+      rw [← progCode_botCB, guardCode_JustBot_eq k properPlayer_botCB, progCode_botCB, progCode_DupocBot_SV,
+        templateCode_eq_quote_template phiDu rfl]
       exact guardCode_JB0 (V := ℕ) k)
   refine ⟨k₀, fun k hk ↦ ?_⟩
   have hg := h k hk
@@ -310,7 +311,7 @@ theorem khat_JustBot_vs_TitForTatBot :
   obtain ⟨k₀, h⟩ := found_of_all_above kHat hq
     (fun k ↦ guardCode (templateCode (phiJ k)) (progCode (JustBot k)) (progCode TitForTatBot))
     (fun k ↦ by
-      rw [guardCode_JustBot_eq k sfp_TitForTatBot.1, ← TftV_nat, progCode_DupocBot_SV]
+      rw [guardCode_JustBot_eq k sfp_TitForTatBot.1, ← TftV_nat, progCode_DupocBot_SV, templateCode_eq_quote_template phiDu rfl]
       exact guardCode_JT (V := ℕ) k)
   obtain ⟨k₁, h₁⟩ := pos_JustBot_vs_botCB
   refine ⟨k₀ + k₁, fun k hk ↦ ⟨?_, ?_⟩⟩
@@ -456,9 +457,9 @@ theorem quote_subst_descriptionTerms (g : Semisentence LAct 6) (me opp : ℕ) :
 
 /-- **The guard-code bridge at ℕ**: `eqTmpl` in the frame `(progCode Q, opp)` has the SAME code as the engine's
 `.eq .opp Q` template in any frame `(me, opp)`. -/
-theorem guardCode_eqTmpl_eq_templateCode (Q : PD.Prog) (me opp : ℕ) :
+theorem guardCode_eqTmpl_eq_templateCode (Q : PD.Prog) (me opp : ℕ) (hQ : noSelfIdxP Q = true := by noSelfIdx_tac) :
     guardCode (⌜eqTmpl⌝ : ℕ) (progCode Q) opp = guardCode (templateCode (.eq .opp Q)) me opp := by
-  unfold templateCode
+  rw [templateCode_eq_quote_template _ (by simp only [noSelfIdxF, noSelfIdxP, Bool.true_and]; exact hQ)]
   rw [← quote_subst_descriptionTerms, ← quote_subst_descriptionTerms, ← quote_subst_cl, ← quote_subst_cl,
     eqTmpl_subst_eq_template_eq Q me opp]
 
@@ -956,7 +957,7 @@ theorem khat_CupodTrollBot_vs_CupodBot :
   obtain ⟨kHat, hq⟩ := tact_qCuT7_above
   obtain ⟨k₀, h⟩ := found_of_all_above kHat hq
     (fun k ↦ guardCode (templateCode phiCu) (progCode (CupodBot k)) (CupodTroll7 k))
-    (fun k ↦ by rw [progCode_CupodBot_SV]; exact guardCode_CuT7 (V := ℕ) k)
+    (fun k ↦ by rw [progCode_CupodBot_SV, templateCode_eq_quote_template phiCu rfl]; exact guardCode_CuT7 (V := ℕ) k)
   obtain ⟨k₁, h₁⟩ := troll7_vs_cupod_D_V
   refine ⟨k₀ + k₁, fun k hk ↦ ⟨?_, ?_⟩⟩
   · have := h₁ ℕ k (le_def.mpr (Or.inr (by rw [natCast_nat]; omega)))

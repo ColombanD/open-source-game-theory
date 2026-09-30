@@ -39,6 +39,7 @@ import ArithS.Audit.RedCellInstance
 import ArithS.Agents.Fit
 import ArithS.Audit.RedCellUnsound
 import ArithS.Agents.Code
+import ArithS.Agents.SysTemplate
 import ArithS.Eval.TauCheck
 import ArithS.Agents.Instance
 import ArithS.Agents.InstanceV
@@ -110,6 +111,7 @@ import ArithS.Cells.DIMCID
 import ArithS.Cells.PrudentMirror
 import ArithS.Cells.CIMCIC
 import ArithS.Cells.SearchFree
+import ArithS.Cells.TauMember
 import ArithS.Cells.JustSlot
 import ArithS.Cells.SimSlot
 import ArithS.Cells.SoundnessCells

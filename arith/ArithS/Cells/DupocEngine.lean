@@ -134,7 +134,8 @@ theorem loeb_DupocBot_self_core :
   obtain ⟨h1, h2⟩ := pQ_both_V (V := ℕ) qDuDu k a ha' hpc
   rw [← guardCode_DuDu] at h1
   rw [← guardCode_DuDuT] at h2
-  rw [progCode_DupocBot_SV, progCode_CupodBot_SV]
+  rw [progCode_DupocBot_SV, progCode_CupodBot_SV, templateCode_eq_quote_template phiDu rfl,
+    templateCode_eq_quote_template phiCu rfl]
   exact ⟨⟨SV_search_V (V := ℕ) gDu 0 k (SV gDu 0 k) h1, SV_search_V (V := ℕ) gCu 1 k (SV gCu 1 k) h2⟩, h1, h2⟩
 
 /-- **DupocBot × DupocBot is `(C, C)` in PA-`S'`**, for all large `k`, unconditional, on the engine's own
@@ -239,7 +240,8 @@ theorem loeb_DupocBot_mirror_core :
   obtain ⟨h1, h2⟩ := pQ_both_V (V := ℕ) qDuM k a ha' hpc
   rw [← guardCode_DuM] at h1
   rw [← guardCode_DuMT] at h2
-  rw [progCode_DupocBot_SV, progCode_CupodBot_SV, progCode_MirrorBot, ← MirrorV_nat]
+  rw [progCode_DupocBot_SV, progCode_CupodBot_SV, progCode_MirrorBot, ← MirrorV_nat,
+    templateCode_eq_quote_template phiDu rfl, templateCode_eq_quote_template phiCu rfl]
   exact ⟨⟨SV_search_V (V := ℕ) gDu 0 k MirrorV h1, SV_search_V (V := ℕ) gCu 1 k MirrorV h2⟩, h1, h2⟩
 
 /-- **DupocBot × MirrorBot is `(C, C)` in PA-`S'`**, for all large `k`, unconditional, on the engine's own

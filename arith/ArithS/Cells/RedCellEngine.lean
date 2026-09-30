@@ -28,7 +28,8 @@ iff Cupod's guard against Dupoc is. -/
 theorem guard_DupocBot_iff_guard_CupodBot (k : ℕ) :
     LenBox TAct k (guardCode (templateCode phiDu) (progCode (DupocBot k)) (progCode (CupodBot k))) ↔
     LenBox TAct k (guardCode (templateCode phiCu) (progCode (CupodBot k)) (progCode (DupocBot k))) := by
-  rw [← quote_sentenceAt, ← quote_sentenceAt, lenBox_nat, lenBox_nat, lenBoxNat_swap_iff]
+  rw [← quote_sentenceAt (DupocBot k) (CupodBot k) phiDu rfl, ← quote_sentenceAt (CupodBot k) (DupocBot k) phiCu rfl,
+    lenBox_nat, lenBox_nat, lenBoxNat_swap_iff]
   unfold phiDu phiCu
   rw [lMap_swap_sentenceAt_plays (fragP_DupocBot k) (fragP_CupodBot k) rfl rfl, transpose_DupocBot,
     transpose_CupodBot]

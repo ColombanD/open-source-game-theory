@@ -1,4 +1,4 @@
-import ArithS.Agents.Code
+import ArithS.Agents.SysTemplate
 import PrisonersDilemma.Tau.Zoo
 
 /-!
@@ -18,12 +18,13 @@ import PrisonersDilemma.Tau.Zoo
   clause by clause; the corollaries `evalGraph_of_eval_sys_step` / `evalGraph_of_eval_tvote_nil` /
   `evalGraph_of_eval_tvote_zero` state the one-step cases the phase note asks for.
 
-**What the gates do NOT say (the open item of §2.5).** `sysCloseCode` closes a member's stored template by
-`sysCloseTemplate`, which is the identity on every six-variable template (`sysCloseTemplate_of_template`):
-`sysCloseCode_cfdSys_member` shows the closed member of `cfdSys k` is the member itself, its guard still
-naming `pBot (pSelfIdx (1 - i))` LITERALLY. The pronoun reading — the member described through the slots
-`#7+3j..` — needs `template` at thirteen variables and is not implemented; a search node whose guard
-mentions `.selfIdx` is therefore outside the lockstep fragment.
+**(e) The pronoun reading (2026-10-01, the last item of §2.5).** `sysCloseCode` closes a member's stored
+template by `sysCloseTemplate`, which fills the member slots `#7..#12` of the thirteen-variable template
+(`Agents/SysTemplate.lean`): `sysCloseCode_cfdSys_member` shows the closed member of `cfdSys k` is the CODE OF
+THE ENGINE'S CLOSED MEMBER, whose guard names `.bot (.sys (cfdSys k) (1 - i))` (`cfdGuard_sysClose`,
+`sysCloseTemplate_cfdGuard`). The truth equation of that closed guard at ℕ — "the partner, bot-wrapped, plays C
+against itself" — is `Cells/TauMember.lean` (it needs the frozen bridge's `models_sentenceAt_plays`). Search
+nodes with pronoun guards stay outside the SEARCH-FREE lockstep fragment by definition (they search).
 -/
 
 set_option linter.constructorNameAsVariable false
@@ -93,13 +94,33 @@ theorem evalGraph_cfdSys_unfold (k n me opp a : ℕ) (i : ℕ) (hi : i ≤ 1) :
     exact h
   · intro h; exact ⟨_, rfl, h⟩
 
-/-- The closed member is the member itself: its stored template is six-variable, so `sysCloseTemplate` is
-the identity (`sysCloseTemplate_of_template`) — the guard still names the dangling `pBot (pSelfIdx (1 - i))`
-literally (the open pronoun item, see the module docstring). -/
-theorem sysCloseCode_cfdSys_member (k i : ℕ) :
-    sysCloseCode (progListCode (cfdSys k)) (progCode (cfdMember k i)) = progCode (cfdMember k i) := by
-  simp only [cfdMember, progCode_search, progCode_const, sysCloseCode_search, sysCloseCode_const]
-  rw [sysCloseTemplate_of_template (isSemiformula_templateCode _)]
+/-- The guard of member `i` of `cfdSys k`: "the partner, bot-wrapped, plays `C` against itself" through the
+pronoun `.selfIdx (1 - i)`. -/
+def cfdGuard (i : ℕ) : PD.Formula := .plays (.bot (.selfIdx (1 - i))) (.bot (.selfIdx (1 - i))) Action.C
+
+theorem cfdMember_eq (k i : ℕ) : cfdMember k i = .search k (cfdGuard i) (.const .C) (.const .D) := rfl
+
+/-- **The closed member is the engine's closed member** (the pronoun reading, `progCode_sysClose_member`):
+`sysCloseCode` on the code of member `i` is the code of `(cfdMember k i).sysClose (cfdSys k)`, whose guard names
+`.bot (.sys (cfdSys k) (1 - i))` — no dangling code survives. -/
+theorem sysCloseCode_cfdSys_member (k i : ℕ) (hi : i ≤ 1) :
+    sysCloseCode (progListCode (cfdSys k)) (progCode (cfdMember k i)) = progCode ((cfdMember k i).sysClose (cfdSys k)) := by
+  symm
+  apply progCode_sysClose_member
+  rcases Nat.le_one_iff_eq_zero_or_eq_one.mp hi with rfl | rfl <;> rfl
+
+/-- The closed member's guard, spelled out: the partner `.bot (.sys (cfdSys k) (1 - i))` plays `C` against itself. -/
+theorem cfdGuard_sysClose (k i : ℕ) :
+    (cfdGuard i).sysClose (cfdSys k) =
+      .plays (.bot (.sys (cfdSys k) (1 - i))) (.bot (.sys (cfdSys k) (1 - i))) Action.C := rfl
+
+/-- The closed member's stored template is the template code of the closed guard (`templateCode_sysClose`). -/
+theorem sysCloseTemplate_cfdGuard (k i : ℕ) (hi : i ≤ 1) :
+    sysCloseTemplate (progListCode (cfdSys k)) (templateCode (cfdGuard i)) =
+      templateCode (.plays (.bot (.sys (cfdSys k) (1 - i))) (.bot (.sys (cfdSys k) (1 - i))) Action.C) := by
+  rw [← cfdGuard_sysClose]
+  apply templateCode_sysClose
+  rcases Nat.le_one_iff_eq_zero_or_eq_one.mp hi with rfl | rfl <;> rfl
 
 /-! ### (c) Every compiled instance has a real code -/
 

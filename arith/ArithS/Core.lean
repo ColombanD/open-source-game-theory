@@ -20,6 +20,7 @@ import ArithS.Box.CutV
 import ArithS.Box.ProperBound
 import ArithS.Agents.BinNumeral
 import ArithS.Agents.Code
+import ArithS.Agents.SysTemplate
 import ArithS.Agents.CodeTerm
 import ArithS.Agents.Guard
 import ArithS.Agents.Prog

@@ -1,5 +1,6 @@
 import ArithS.Agents.SubstTemplate
 import ArithS.Agents.SysClose
+import ArithS.Agents.SysTemplate
 import ArithS.Agents.InstanceV
 import ArithS.Agents.FitBox
 
@@ -57,5 +58,20 @@ namespace ArithS
 #print axioms listGet_progListCode_some
 #print axioms progCode_subst_tauSearchFree
 #print axioms progCode_sysClose_tauSearchFree
+
+-- Phase 2, the pronoun reading (2026-10-01): the stored template is the THIRTEEN-variable `template13`
+-- (`templateCode φ := ⌜template13 φ⌝`), whose `progAux13` reads `.selfIdx j`/`.bot (.selfIdx j)` through the member
+-- slots; on the `noSelfIdx` fragment it is the six-variable `template` cast (`template13_eq_castLE`) and codes do
+-- not see the arity (`quote_castLE₆`), so `templateCode φ = ⌜template φ⌝` — the bridge every cell rests on.
+-- The member slots filled with the members' descriptions ARE the template of the engine's closed guard
+-- (`template13_sysClose`, literal; `pBotTerm_canonicalMeta` is the `pBot` step), on codes `templateCode_sysClose`,
+-- and `sysCloseCode` is the engine's `Prog.sysClose` on every compiled member (`progCode_sysClose_member`).
+#print axioms pBotTerm_canonicalMeta
+#print axioms template13_eq_castLE
+#print axioms quote_castLE₆
+#print axioms templateCode_eq_quote_template
+#print axioms template13_sysClose
+#print axioms templateCode_sysClose
+#print axioms progCode_sysClose_member
 
 end ArithS

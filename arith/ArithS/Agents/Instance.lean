@@ -41,17 +41,7 @@ section ppairOrder
 
 variable {V : Type*} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
 
-lemma ppair_lt_ppair_right_iff (x : V) {y₁ y₂ : V} : ppair x y₁ < ppair x y₂ ↔ y₁ < y₂ := by
-  constructor
-  · intro h
-    rcases lt_trichotomy y₁ y₂ with h' | rfl | h'
-    · exact h'
-    · exact absurd h (_root_.lt_irrefl _)
-    · exact absurd (lt_trans h (ppair_lt_ppair_right x h')) (_root_.lt_irrefl _)
-  · exact ppair_lt_ppair_right x
-
-lemma ppair_le_ppair_right_iff (x : V) {y₁ y₂ : V} : ppair x y₁ ≤ ppair x y₂ ↔ y₁ ≤ y₂ := by
-  rw [← not_lt, ← not_lt, ppair_lt_ppair_right_iff]
+-- `ppair_lt_ppair_right_iff`/`ppair_le_ppair_right_iff` moved to `Agents/SubstTemplate.lean` (2026-10-01).
 
 /-- Two searchers of the same budget compare as their budget-independent inner parts. -/
 lemma pSearchInner_le_iff (k a b : V) :

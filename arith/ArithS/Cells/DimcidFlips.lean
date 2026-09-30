@@ -84,6 +84,7 @@ theorem dimcid_vs_closed (P : ℕ) :
   obtain ⟨k₀, h⟩ := dimcid_vs_described (describes_closed P)
   refine ⟨k₀, fun k hk ↦ ?_⟩
   have := h k hk
+  rw [templateCode_eq_quote_template phiD rfl]
   rwa [descVal_closed, natCast_nat, ← progCode_DIMCID] at this
 
 end closed
@@ -200,6 +201,7 @@ theorem loeb_DIMCID_vs_DupocBot_core :
   obtain ⟨k₀, h⟩ := dimcid_vs_described (describes_SV gDu 0 (Or.inl rfl))
   refine ⟨k₀, fun k hk ↦ ?_⟩
   have := h k hk
+  rw [templateCode_eq_quote_template phiD rfl]
   rwa [descVal_SV gDu 0 (Or.inl rfl), ← progCode_DupocBot_SV, ← progCode_DIMCID] at this
 
 /-- **DIMCID defects against the hand-written `DupocV k` too** (the `TD` tower). -/
@@ -210,6 +212,7 @@ theorem loeb_DIMCID_vs_Dupoc :
   obtain ⟨k₀, h⟩ := dimcid_vs_described describes_dupocV
   refine ⟨k₀, fun k hk ↦ ?_⟩
   have := h k hk
+  rw [templateCode_eq_quote_template phiD rfl]
   rwa [descVal_dupocV, DupocV_nat, ← progCode_DIMCID] at this
 
 /-- **DIMCID defects against the frozen snapshot `.bot (DupocBot k)` and FINDS its guard, for all large
@@ -221,6 +224,7 @@ theorem loeb_DIMCID_vs_botDupocBot :
   obtain ⟨k₀, h⟩ := dimcid_vs_described (describes_botSV gDu 0 (Or.inl rfl))
   refine ⟨k₀, fun k hk ↦ ?_⟩
   have := h k hk
+  rw [templateCode_eq_quote_template phiD rfl]
   rwa [descVal_botSV gDu 0 (Or.inl rfl), ← progCode_DupocBot_SV, ← progCode_DIMCID] at this
 
 /-- **DIMCID defects against the hand-written snapshot `pBot (DupocV k)`** (the `TBD` tower, Just7's probe). -/
@@ -231,6 +235,7 @@ theorem loeb_DIMCID_vs_botDupoc :
   obtain ⟨k₀, h⟩ := dimcid_vs_described describes_botDupoc
   refine ⟨k₀, fun k hk ↦ ?_⟩
   have := h k hk
+  rw [templateCode_eq_quote_template phiD rfl]
   rwa [descVal_botDupoc, DupocV_nat, ← progCode_DIMCID] at this
 
 /-- **DIMCID defects against `Just7 k` and FINDS its guard, for all large `k`.** -/
@@ -241,6 +246,7 @@ theorem loeb_DIMCID_vs_Just7 :
   obtain ⟨k₀, h⟩ := dimcid_vs_described describes_just7
   refine ⟨k₀, fun k hk ↦ ?_⟩
   have := h k hk
+  rw [templateCode_eq_quote_template phiD rfl]
   rwa [descVal_just7, JustV7_nat, ← progCode_DIMCID] at this
 
 /-- **DIMCID defects against the engine's `PrudentBot k` and FINDS its guard, for all large `k`** (the
@@ -252,11 +258,12 @@ theorem loeb_DIMCID_vs_PrudentBot_core :
   obtain ⟨k₀, h⟩ := dimcid_vs_described_above describesAbove_prudent
   refine ⟨k₀ + KP, fun k hk ↦ ?_⟩
   have := h k (by omega)
+  rw [templateCode_eq_quote_template phiD rfl]
   rwa [descVal_prudent (k := k) (by rw [natCast_nat]; exact le_def.mpr (Nat.eq_or_lt_of_le (by omega))),
     PrudentV_nat, ← progCode_PrudentBot, ← progCode_DIMCID] at this
 
 lemma progCode_CIMCIC_SV (k : ℕ) : progCode (CIMCIC k) = SV (V := ℕ) templateC 0 k := by
-  rw [progCode_CIMCIC_search, SV_nat]; rfl
+  rw [progCode_CIMCIC_search, SV_nat, templateCode_eq_quote_template phiC rfl]; rfl
 
 /-- **DIMCID defects against the engine's `CIMCIC k` and FINDS its guard, for all large `k`** (the
 `SV`-described engine searcher). -/
@@ -267,6 +274,7 @@ theorem loeb_DIMCID_vs_CIMCIC_core :
   obtain ⟨k₀, h⟩ := dimcid_vs_described (describes_SV templateC 0 (Or.inl rfl))
   refine ⟨k₀, fun k hk ↦ ?_⟩
   have := h k hk
+  rw [templateCode_eq_quote_template phiD rfl]
   rwa [descVal_SV templateC 0 (Or.inl rfl), ← progCode_CIMCIC_SV, ← progCode_DIMCID] at this
 
 end defections

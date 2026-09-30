@@ -23,6 +23,7 @@ import ArithS.Cells.PrudentLoose
 import ArithS.Cells.PrudentMirror
 import ArithS.Cells.RedCellEngine
 import ArithS.Cells.SearchFree
+import ArithS.Cells.TauMember
 import ArithS.Cells.SimSlot
 import ArithS.Cells.SoundnessCells
 import ArithS.Outcome.Matrix.CIMCIC

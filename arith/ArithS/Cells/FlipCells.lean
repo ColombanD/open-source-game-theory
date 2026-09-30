@@ -108,6 +108,7 @@ theorem loeb_DIMCID_vs_botCB :
   obtain ⟨k₀, h⟩ := dimcid_vs_described describes_botCB
   refine ⟨k₀, fun k hk ↦ ?_⟩
   have := h k hk
+  rw [templateCode_eq_quote_template phiD rfl]
   rwa [descVal_botCB, ← progCode_DIMCID] at this
 
 /-- **DIMCID defects against TitForTatBot and FINDS its guard, for all large `k`.** -/
@@ -118,6 +119,7 @@ theorem loeb_DIMCID_vs_TitForTatBot_core :
   obtain ⟨k₀, h⟩ := dimcid_vs_described describes_TFT
   refine ⟨k₀, fun k hk ↦ ?_⟩
   have := h k hk
+  rw [templateCode_eq_quote_template phiD rfl]
   rwa [descVal_TFT, TFTV_nat, ← progCode_DIMCID] at this
 
 /-- **DIMCID × TitForTatBot is `(D, D)` in PA-`S'`**, for all large `k`, unconditional. The engine proves
@@ -163,7 +165,7 @@ noncomputable abbrev gGT : Semisentence LAct 6 := template (.plays .opp (.bot De
 lemma lMap_swap_gG : Semiformula.lMap swap gG = gGT := lMap_swap_template _ rfl
 
 lemma progCode_GuardianBot_SV (k : ℕ) : progCode (GuardianBot k) = SV (V := ℕ) gG 1 k := by
-  rw [progCode_GuardianBot, SV_nat]; rfl
+  rw [progCode_GuardianBot, SV_nat, templateCode_eq_quote_template phiG rfl]; rfl
 
 
 /-! #### Guardian's guard against DIMCID as a fixed formula, its instance and truth equations -/
@@ -219,7 +221,7 @@ theorem guardian_finds_DIMCID :
   found_of_box_conseq (pG (cl TB0) (cterm Act.C) (cterm Act.D)) boundedInnerNec_sixteen
     (loebSound_pG_of describes_botCB) qGD boxConseq_qGD
     (fun k ↦ guardCode (templateCode phiG) (progCode (GuardianBot k)) (progCode (DIMCID k)))
-    (fun k ↦ by rw [progCode_GuardianBot_SV, progCode_DIMCID]; exact guardCode_GD (V := ℕ) k)
+    (fun k ↦ by rw [progCode_GuardianBot_SV, progCode_DIMCID, templateCode_eq_quote_template phiG rfl]; exact guardCode_GD (V := ℕ) k)
 
 /-- **DIMCID defects against Guardian and FINDS its guard, for all large `k`** (the self-fulfilling refutation
 against the `SV`-described Guardian). -/
@@ -230,6 +232,7 @@ theorem loeb_DIMCID_vs_GuardianBot_core :
   obtain ⟨k₀, h⟩ := dimcid_vs_described (describes_SV gG 1 (Or.inr rfl))
   refine ⟨k₀, fun k hk ↦ ?_⟩
   have := h k hk
+  rw [templateCode_eq_quote_template phiD rfl]
   rwa [descVal_SV gG 1 (Or.inr rfl), ← progCode_GuardianBot_SV, ← progCode_DIMCID] at this
 
 /-- **GuardianBot × DIMCID is `(D, D)` in PA-`S'`**, for all large `k`, unconditional. The engine proves
@@ -387,7 +390,7 @@ theorem loeb_WaryBot_vs_MirrorBot_core :
   have ha' := le_def.mpr (pConj_slack_nat a _ _ _ k (formulaLen_instB_pQ (V := ℕ) qWM k) ha)
   have h1 := (pQ_both_V (V := ℕ) qWM k a ha' hpc).1
   rw [← guardCode_WM] at h1
-  rw [progCode_WaryBot_SV, progCode_MirrorBot, ← MirrorV_nat]
+  rw [progCode_WaryBot_SV, progCode_MirrorBot, ← MirrorV_nat, templateCode_eq_quote_template phiW rfl]
   exact ⟨SV_search_V (V := ℕ) gW 1 k MirrorV h1, h1⟩
 
 /-- **WaryBot × MirrorBot is `(D, D)` in PA-`S'`**, for all large `k`, unconditional. The engine proves `(C, C)`
@@ -419,7 +422,7 @@ theorem loeb_WaryBot_vs_WaryBot_core :
   have ha' := le_def.mpr (pConj_slack_nat a _ _ _ k (formulaLen_instB_pQ (V := ℕ) qWW k) ha)
   have h1 := (pQ_both_V (V := ℕ) qWW k a ha' hpc).1
   rw [← guardCode_WW] at h1
-  rw [progCode_WaryBot_SV]
+  rw [progCode_WaryBot_SV, templateCode_eq_quote_template phiW rfl]
   exact ⟨SV_search_V (V := ℕ) gW 1 k (SV gW 1 k) h1, h1⟩
 
 /-- **WaryBot × WaryBot is `(D, D)` in PA-`S'`**, for all large `k`, unconditional. The engine proves `(C, C)`
@@ -507,6 +510,7 @@ theorem loeb_DIMCID_vs_CupodTroll7 :
   obtain ⟨k₀, h⟩ := dimcid_vs_described describes_troll7
   refine ⟨k₀, fun k hk ↦ ?_⟩
   have := h k hk
+  rw [templateCode_eq_quote_template phiD rfl]
   rwa [descVal_troll7, CupodTrollV7_nat, ← progCode_DIMCID] at this
 
 /-- **DIMCID × CupodTrollBot is `(D, C)` in PA-`S'`**, for all large `k`, unconditional, on the budget-slot

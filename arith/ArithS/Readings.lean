@@ -98,9 +98,10 @@ theorem guard_nat (a me opp : ℕ) :
 /-! ### 8. Substitution agrees with the engine -/
 
 example {me opp : PD.Prog} (hme : me ≠ .self ∧ me ≠ .opp) (hopp : opp ≠ .self ∧ opp ≠ .opp)
+    (hme' : noSelfIdxP me = true) (hopp' : noSelfIdxP opp = true)
     (p : PD.Prog) (hp : fragP p = true) :
     progCode (p.subst me opp) = substCode (progCode me) (progCode opp) (progCode p) :=
-  progCode_subst hme hopp p hp
+  progCode_subst hme hopp hme' hopp' p hp
 
 /-! ### 9. The evaluator at ℕ is a deterministic, fuel-monotone partial function -/
 

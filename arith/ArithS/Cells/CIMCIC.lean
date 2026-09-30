@@ -111,7 +111,9 @@ lemma CimcicV_nat (k : ℕ) : CimcicV (V := ℕ) k = Cimcic k := rfl
 
 /-- **The bridge to the engine**: the code of the engine's `CIMCIC k` is `Cimcic k`. -/
 theorem progCode_CIMCIC (k : ℕ) : progCode (PD.Bots.CIMCIC k) = Cimcic k := by
-  simp [PD.Bots.CIMCIC, actCode]; rfl
+  simp [PD.Bots.CIMCIC, actCode]
+  change pSearch k (templateCode phiC) _ _ = _
+  rw [templateCode_eq_quote_template phiC (noSelfIdxF_of_fragF _ fragF_phiC)]; rfl
 
 theorem transposeCode_CimcicV (k : V) : transposeCode (CimcicV k) = CimcicTV k := by
   unfold CimcicV CimcicTV transposeCode
@@ -1140,7 +1142,7 @@ theorem pos_Cimcic_vs_Cimcic :
 code of `Cimcic k` on `templateC`. -/
 lemma guardOf_CIMCIC (k : ℕ) :
     guardOf phiC (PD.Bots.CIMCIC k) (PD.Bots.CIMCIC k) = guardCode (⌜templateC⌝ : ℕ) (Cimcic k) (Cimcic k) := by
-  unfold guardOf; rw [progCode_CIMCIC]; rfl
+  unfold guardOf; rw [progCode_CIMCIC, templateCode_eq_quote_template phiC (noSelfIdxF_of_fragF _ fragF_phiC)]; rfl
 
 /-- **The engine-facing form**: for all large `k`, the guard the arithmetized evaluator consults for
 the engine's `CIMCIC k` against itself has a `TAct`-proof within the budget `k`. -/
