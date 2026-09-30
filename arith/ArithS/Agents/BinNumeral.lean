@@ -23,6 +23,8 @@ descriptions of `ArithS.Guard`/`ArithS.Template`:
   `termLenMeta (binNumeralMeta n) ≤ 6 · size n + 1` (`Nat.size` = bit length).
 
 The length measure `termLenMeta`/`termLen` is untouched: a binary numeral simply IS a short term.
+
+**Reading guide.** Definition: the four clauses `BinNumeral.Phi` and §The equations, plus the meta twin `binNumeralMeta` with its code, truth and length equations (§The meta numerals). Foundation plumbing: the blueprint, the construction and the `defined` instances — skip on first reading.
 -/
 
 namespace ArithS
@@ -42,7 +44,7 @@ noncomputable def qqTwo : V := (𝟏 : V) ^+ (𝟏 : V)
 
 @[simp] lemma qqTwo_semiterm {k : V} : IsSemiterm ℒₒᵣ k (𝟐 : V) := by simp [qqTwo, qqAdd]
 
-/-! ### The graph, as a fixpoint on pairs `⟪n, t⟫` -/
+/-! ### The graph, as a fixpoint on pairs `⟪n, t⟫` — the clauses `Phi`, then Foundation plumbing -/
 
 namespace BinNumeral
 

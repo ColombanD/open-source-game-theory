@@ -8,6 +8,8 @@ import ArithS.Length.Proper
 variable, which is what the evaluator's `search` clause needs (the budget is stored in the
 program code). Δ₁: the code bound `codeBound k` makes the search bounded; properness
 (`ArithS.Proper`) is what makes the bound invisible.
+
+**Reading guide.** Definition: `LenBox` (the first declaration). Foundation plumbing: `lenBox` (the Δ₁ formula) and `LenBox.defined` — skip on first reading. Fact: `lenBox_numeral` (at a meta budget it is `LenBoxNat`).
 -/
 
 namespace ArithS
@@ -19,8 +21,12 @@ variable {V : Type*} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
 variable {L : Language} [L.Encodable] [L.LORDefinable]
 variable (T : Theory L) [T.Δ₁]
 
+/-! ### Definition -/
+
 /-- Provability by a proof of length `≤ k` (code below `codeBound k`), `k` an element of `V`. -/
 def LenBox (k φ : V) : Prop := ∃ d < codeBound k, Proof T d φ ∧ proofLen T d ≤ k
+
+/-! ### Foundation plumbing — the Δ₁ formula, skip on first reading -/
 
 noncomputable def lenBox : 𝚫₁.Semisentence 2 := .mkDelta
   (.mkSigma “k φ. ∃ E, !codeBoundDef E k ∧ ∃ d < E, !(proof T).sigma d φ ∧ ∃ n, !(proofLenDef T) n d ∧ n ≤ k”)
@@ -33,6 +39,8 @@ instance LenBox.defined : 𝚫₁-Relation[V] (LenBox T) via lenBox T := .mk
    by intro v
       simp [lenBox, HierarchySymbol.Semiformula.val_sigma, codeBound_defined.iff,
         (Proof.defined (T := T)).df, proofLen_defined.iff, LenBox]⟩
+
+/-! ### Facts -/
 
 /-- At a meta budget, `LenBox` is `LenBoxNat codeBound`. -/
 lemma lenBox_numeral (k : ℕ) (φ : V) :

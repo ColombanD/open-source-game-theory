@@ -27,6 +27,8 @@ no action slot.
   input/output — the fixpoint machinery keeps the Cantor pair — with a catch-all clause
   `y = x` on non-program codes so that it is total). It is the code-level τ of
   `Base/Transpose`: `transposeCode (transposeCode x) = x`.
+
+**Reading guide.** Definition: §Constructors (the seven tagged codes) and, for τ, `swapAction` and the clauses `Revalue.Phi` (one per constructor) with the equations after `revalue`. Foundation plumbing: the Σ₀ graphs `p…Graph`, the `Revalue` blueprint and construction — skip on first reading. §The polynomial pairing is the arithmetic of `ppair` (injectivity, monotonicity).
 -/
 
 namespace ArithS

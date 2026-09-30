@@ -132,3 +132,20 @@ version, where one survives, is `…Nat`.
 Unchanged on purpose: `LAct`, `TAct`, `swap`, `emb`, `ppair`, `pConst…pSearch`, `EvalGraph`, `guardCode`/
 `guardCodeB`, `guardTemplate`, `termLen`/`formulaLen`, `red_cell`, `boundedInnerNec_sixteen`, the cell heads,
 and every name internal to `Necessitation/` except where a renamed definition is used there.
+
+## New modules and splits (2026-09-30, the readability moves)
+
+No declaration name or statement changed; two files were split at a top-level boundary and two reordered.
+
+| module | what | where it came from |
+|---|---|---|
+| `ArithS.Notation` | the scoped notation `□[k] φ` (= `LenBox TAct k φ`) and the three-layer table | hoisted from `Outcome/Spec.lean`, which now imports it |
+| `ArithS.Tour` | the guided tour: the nine definitions at ℕ by `rfl`, the red cell step by step, the headline `#check`s, `#print axioms` | new; imported last in `ArithS.lean` |
+| `ArithS.Eval.Fixpoint` | `EvalFix.Phi`, blueprint, construction, finiteness | the first two thirds of `Eval/Eval.lean`; `Eval/Eval.lean` keeps `EvalGraph`, `evalGraphDef`, `EvalGraph.case_iff` |
+| `ArithS.Agents.SubstTemplate` | `substTemplate`, the gate lemma, the kept slot, the swap equation `revalueTemplate_substTemplate` | the first 764 lines of `Agents/Subst.lean`; `Agents/Subst.lean` keeps `SubstCode`, `substCode`, τ-equivariance |
+| `ArithS.Agents.Guard` (reordered) | the eleven definitions first, then one plumbing section with every Σ₁ graph and `defined` instance | same file |
+| `ArithS.Theory.LangAct` (reordered) | `emb` and `swap` moved above the Gödel encoding | same file |
+
+Every trusted-base file's module docstring ends with a **Reading guide** line (definition / plumbing to skip /
+facts), and plumbing section headers say so. The new modules are imported in `ArithS.lean` and in the
+audit file of their layer (`Audit/Box`, `Audit/Agents`, `Audit/Eval`).

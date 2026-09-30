@@ -22,8 +22,11 @@ import ArithS.Agents.Prog
 import ArithS.Agents.BinNumeral
 import ArithS.Agents.CodeTerm
 import ArithS.Box.BewV
+import ArithS.Notation
 import ArithS.Agents.Guard
+import ArithS.Agents.SubstTemplate
 import ArithS.Agents.Subst
+import ArithS.Eval.Fixpoint
 import ArithS.Eval.Eval
 import ArithS.Eval.EvalN
 import ArithS.Eval.SimTest
@@ -140,3 +143,4 @@ import ArithS.Outcome.Matrix.OBot
 import ArithS.Outcome.Matrix.PrudentBot
 import ArithS.Outcome.Matrix.TitForTatBot
 import ArithS.Outcome.Matrix.WaryBot
+import ArithS.Tour

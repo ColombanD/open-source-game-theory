@@ -14,6 +14,8 @@ finite operator; existence and uniqueness of `n` for every internal derivation b
 
 The graph is defined on ALL codes of the right shape (no derivation-validity check inside
 `Phi`) — validity is `Derivation T d`, and the two are combined only in `Bew`.
+
+**Reading guide.** Definition: the clauses `ProofLen.Phi` (the first declaration: one disjunct per derivation rule, each charging its sequent) and the inversion lemmas of §Case analysis, which restate them for `ProofLenGraph`. Foundation plumbing: the blueprint, the construction, `proofLenGraphDef` and the `defined`/`definable` instances — skip on first reading. `proofLen` itself is the value of the graph, which is total and single-valued on internal derivations (§Existence and uniqueness).
 -/
 
 namespace ArithS
@@ -248,7 +250,7 @@ instance proofLenGraph_definable' : Γ-[m + 1]-Relation[V] ProofLenGraph L := pr
 
 end
 
-/-! ### Case analysis and inversion -/
+/-! ### Case analysis and inversion — the clauses, restated for the graph -/
 
 lemma ProofLenGraph.case_iff {d n : V} :
     ProofLenGraph L d n ↔

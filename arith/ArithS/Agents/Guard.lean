@@ -4,29 +4,43 @@ import ArithS.Agents.BinNumeral
 import ArithS.Agents.CodeTerm
 
 /-!
-# ArithS.Guard — the runtime guard sentence, on codes
+# ArithS.Agents.Guard — the runtime guard sentence, on codes
 
-`search k g p q` evaluated at `(me, opp)` searches for a proof of the sentence obtained by
-filling the stored template `g` (a formula code with SIX free variables — the me-triple
-`x₁ u₁ w₁` in `#0 #1 #2`, the opp-triple `x₂ u₂ w₂` in `#3 #4 #5`; roadmap M3 step (a)) with
-the CANONICAL DESCRIPTIONS of `me` and `opp`:
+**Definition.** `search k g p q` evaluated at `(me, opp)` searches for a proof of the sentence obtained
+by filling the stored template `g` — a formula code with six free variables, the me-triple
+`x₁ u₁ w₁` in `#0 #1 #2` and the opp-triple `x₂ u₂ w₂` in `#3 #4 #5` — with the CANONICAL
+DESCRIPTIONS of `me` and `opp`:
 
-* a program `x` is described by the triple `(codeTerm (canonical x), revalueU x, revalueW x)`, meaning
-  `revalue (revalueU x) (revalueW x) (canonical x)`: `canonical x = min x (transposeCode x)` as the STRUCTURAL TERM of
-  its code over the polynomial pairing, with binary-numeral leaves (`ArithS.CodeTerm`, since
-  2026-09-11 — roadmap M4 item U0: a searcher's description is then the `k`-instance of a
-  fixed term, `ArithS.Instance`; before that the binary numeral `binNumeral (canonical x)` of the whole
-  code, `ArithS.BinNumeral`, length `O(log x)` — Critch's assumption (b); with unary numerals the
-  description of a searcher of budget `k` is longer than `k` and no search can ever succeed,
-  the retired `Vacuity.lean`, commit 470ee43), and the two term codes `revalueU x, revalueW x` are the
-  constant symbols `c_C, c_D` in the order that reconstructs `x`, or the numerals `0, 1` in
-  the tie case `x = transposeCode x`.
+    guardCode g me opp := subst (descriptions me opp) g
+    descriptions me opp := ?[codeTerm (canonical me), revalueU me, revalueW me,
+                            codeTerm (canonical opp), revalueU opp, revalueW opp]
 
-So the swap of the two constants turns the description of `x` into that of `transposeCode x`
-SYNTACTICALLY, in every case. `guardCode g me opp` is Σ₁-definable; the corresponding
-meta sentence and the code equation are in `ArithS.Template`. The action term
-`actTermCode a` (`c_a` for `a ∈ {0, 1}`) is kept for the closed template instances
-`guardTemplate a` of `ArithS.Template`; it no longer enters `descriptions`.
+A program `x` is described by the triple `(codeTerm (canonical x), revalueU x, revalueW x)`, read as
+`revalue (revalueU x) (revalueW x) (canonical x)`: `canonical x = min x (transposeCode x)` written as
+the STRUCTURAL TERM of its code over the polynomial pairing with binary-numeral leaves
+(`ArithS.Agents.CodeTerm`, length `O(log x)` — Critch's assumption (b); a searcher's description is
+then the `k`-instance of a fixed term, `ArithS.Agents.Instance`), and the two term codes
+`revalueU x, revalueW x` are the constant symbols `c_C, c_D` in the order that reconstructs `x`, or
+the numerals `0, 1` in the tie case `x = transposeCode x`. So the swap of the two constants turns the
+description of `x` into that of `transposeCode x` SYNTACTICALLY, in every case.
+
+**The budget slot.** A stored template may refer to the searching node's OWN budget through a
+SEVENTH free variable `#6` (`ROUTE_B_SCOPE.md` §8): the evaluator's `search` clause fills the template
+with `descriptionsB me opp k` — the six descriptions and the binary numeral of the node's budget in
+`#6` — so a frozen snapshot whose budget equals the searcher's is described by a TERM in the slot and
+the stored template is a CONSTANT (`Cells/JustSlot`). The slot is LAST so that every six-variable
+template is literally unchanged: it never reads `#6` (`guardCodeB_of_template`,
+`ArithS.Agents.SubstTemplate`, the gate lemma of the design). A seven-variable template stored
+inside a SIMULATED program is instantiated by the OUTER frame while its budget slot must stay the
+budget of the node that eventually runs it: `guardCodeSlot` fills `#0..#5` and keeps `#6` a variable
+(`guardCodeB_substTemplate₇`).
+
+The action term `actTermCode a` (`c_a` for `a ∈ {0, 1}`) serves the closed template instances
+`guardTemplate a` of `ArithS.Agents.Template`; it does not enter `descriptions`. The corresponding
+meta sentence and the code equation are in `ArithS.Agents.Template`.
+
+**Reading guide.** §Definitions holds everything to accept (eleven short `def`s). §Foundation plumbing
+is the Σ₁ graph of each and its `defined` instance — skip on first reading.
 -/
 
 namespace ArithS
@@ -38,17 +52,10 @@ open LAct
 
 variable {V : Type*} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
 
-/-! ### Term codes of the action constants -/
+/-! ### Definitions -/
 
 /-- The term code of the constant symbol with code `2 + u` (`c_C` for `u = 0`, `c_D` for `u = 1`). -/
 noncomputable def csym (u : V) : V := ^func 0 (2 + u) 0
-
-noncomputable def csymGraph : 𝚺₁.Semisentence 2 := .mkSigma “y u. !qqFuncDef y 0 (2 + u) 0”
-
-instance csym.defined : 𝚺₁-Function₁[V] csym via csymGraph := .mk fun v ↦ by
-  simp [csymGraph, csym]
-
-/-! ### Canonical descriptions -/
 
 /-- The canonical numeral of the τ-orbit of `x`. -/
 noncomputable def canonical (x : V) : V := if x ≤ transposeCode x then x else transposeCode x
@@ -64,6 +71,37 @@ noncomputable def revalueW (x : V) : V :=
 /-- The action term: `c_a` for `a ∈ {0, 1}`, the numeral otherwise. -/
 noncomputable def actTermCode (a : V) : V :=
   if a = 0 then csym 0 else if a = 1 then csym 1 else numeral a
+
+/-- The description vector `?[codeTerm (canonical me), revalueU me, revalueW me, codeTerm (canonical opp), revalueU opp, revalueW opp]`. -/
+noncomputable def descriptions (me opp : V) : V :=
+  codeTerm (canonical me) ∷ revalueU me ∷ revalueW me ∷ codeTerm (canonical opp) ∷ revalueU opp ∷ revalueW opp ∷ 0
+
+/-- Fill the six-variable template `g` with the descriptions of `me` and `opp`. -/
+noncomputable def guardCode (g me opp : V) : V := subst LAct (descriptions me opp) g
+
+/-- The description vector with the node budget: `descriptions me opp` extended by `binNumeral k` in the
+seventh slot. -/
+noncomputable def descriptionsB (me opp k : V) : V :=
+  codeTerm (canonical me) ∷ revalueU me ∷ revalueW me ∷ codeTerm (canonical opp) ∷ revalueU opp ∷ revalueW opp ∷ binNumeral k ∷ 0
+
+/-- Fill the template `g` with the descriptions of `me`, `opp` and the node budget `k`. -/
+noncomputable def guardCodeB (g me opp k : V) : V := subst LAct (descriptionsB me opp k) g
+
+/-- The description vector with the budget slot kept as the variable `#6`: `descriptions me opp` extended
+by `^#6` in the seventh slot. -/
+noncomputable def descriptionsSlot (me opp : V) : V :=
+  codeTerm (canonical me) ∷ revalueU me ∷ revalueW me ∷ codeTerm (canonical opp) ∷ revalueU opp ∷ revalueW opp ∷ ^#6 ∷ 0
+
+/-- Fill `#0..#5` of the seven-variable template `g` with the descriptions of `me` and `opp`, keeping
+the budget slot `#6` free. -/
+noncomputable def guardCodeSlot (g me opp : V) : V := subst LAct (descriptionsSlot me opp) g
+
+/-! ### Foundation plumbing — the Σ₁ graphs and the `defined` instances, skip on first reading -/
+
+noncomputable def csymGraph : 𝚺₁.Semisentence 2 := .mkSigma “y u. !qqFuncDef y 0 (2 + u) 0”
+
+instance csym.defined : 𝚺₁-Function₁[V] csym via csymGraph := .mk fun v ↦ by
+  simp [csymGraph, csym]
 
 section definability
 
@@ -128,17 +166,7 @@ instance actTermCode.defined : 𝚺₁-Function₁[V] actTermCode via actTermCod
   · by_cases h1 : v 1 = 1
     · simp [h0, h1]
     · simp [h0, h1]
-
 end definability
-
-/-! ### The guard code -/
-
-/-- The description vector `?[codeTerm (canonical me), revalueU me, revalueW me, codeTerm (canonical opp), revalueU opp, revalueW opp]`. -/
-noncomputable def descriptions (me opp : V) : V :=
-  codeTerm (canonical me) ∷ revalueU me ∷ revalueW me ∷ codeTerm (canonical opp) ∷ revalueU opp ∷ revalueW opp ∷ 0
-
-/-- Fill the six-variable template `g` with the descriptions of `me` and `opp`. -/
-noncomputable def guardCode (g me opp : V) : V := subst LAct (descriptions me opp) g
 
 noncomputable def descriptionsGraph : 𝚺₁.Semisentence 3 := .mkSigma
   “y me opp. ∃ n₁, !canonicalGraph n₁ me ∧ ∃ t₁, !codeTermGraph t₁ n₁ ∧ ∃ u₁, !revalueUGraph u₁ me ∧ ∃ w₁, !revalueWGraph w₁ me ∧
@@ -155,24 +183,6 @@ noncomputable def guardCodeGraph : 𝚺₁.Semisentence 4 := .mkSigma
 instance guardCode.defined : 𝚺₁-Function₃ (guardCode : V → V → V → V) via guardCodeGraph :=
   .mk fun v ↦ by simp [guardCodeGraph, guardCode]
 
-/-! ### The guard code with the node budget (route c, 2026-09-23)
-
-`ROUTE_B_SCOPE.md` §8: a stored template may refer to the searching node's OWN budget through a
-SEVENTH free variable `#6`. The evaluator's `search` clause (`ArithS.Eval`) fills the template with
-`descriptionsB me opp k` — the six descriptions of the frame in `#0..#5` and the binary numeral of the
-node's budget in `#6` — so a frozen snapshot whose budget equals the searcher's is described by a TERM
-in the slot and the stored template is a CONSTANT (`Cells/JustSlot`). The budget slot is LAST so that
-every six-variable template is literally unchanged: it never reads `#6`
-(`guardCodeB_of_template`, `ArithS.Subst`, the gate lemma of the design). -/
-
-/-- The description vector with the node budget: `descriptions me opp` extended by `binNumeral k` in the
-seventh slot. -/
-noncomputable def descriptionsB (me opp k : V) : V :=
-  codeTerm (canonical me) ∷ revalueU me ∷ revalueW me ∷ codeTerm (canonical opp) ∷ revalueU opp ∷ revalueW opp ∷ binNumeral k ∷ 0
-
-/-- Fill the template `g` with the descriptions of `me`, `opp` and the node budget `k`. -/
-noncomputable def guardCodeB (g me opp k : V) : V := subst LAct (descriptionsB me opp k) g
-
 noncomputable def descriptionsBGraph : 𝚺₁.Semisentence 4 := .mkSigma
   “y me opp k. ∃ n₁, !canonicalGraph n₁ me ∧ ∃ t₁, !codeTermGraph t₁ n₁ ∧ ∃ u₁, !revalueUGraph u₁ me ∧ ∃ w₁, !revalueWGraph w₁ me ∧
     ∃ n₂, !canonicalGraph n₂ opp ∧ ∃ t₂, !codeTermGraph t₂ n₂ ∧ ∃ u₂, !revalueUGraph u₂ opp ∧ ∃ w₂, !revalueWGraph w₂ opp ∧
@@ -188,25 +198,6 @@ noncomputable def guardCodeBGraph : 𝚺₁.Semisentence 5 := .mkSigma
 
 instance guardCodeB.defined : 𝚺₁-Function₄ (guardCodeB : V → V → V → V → V) via guardCodeBGraph :=
   .mk fun v ↦ by simp [guardCodeBGraph, guardCodeB]
-
-/-! ### The guard code with the budget slot KEPT (the `.sim` debt of route c, discharged 2026-09-24)
-
-A seven-variable template stored inside a SIMULATED program must be instantiated by the OUTER frame
-(the engine's `Prog.subst` descends into every guard) while its budget slot must stay the budget of
-the node that eventually runs it. `substTemplate` (`ArithS.Subst`) therefore fills `#0..#5` of a
-seven-variable template with the outer descriptions and KEEPS `#6` a variable: `guardCodeSlot g me opp
-:= subst (descriptionsSlot me opp) g` with `descriptionsSlot me opp = descriptions me opp` extended by `^#6`. The
-evaluator's `search` clause later fills that one variable with the node's budget
-(`guardCodeB_substTemplate₇`, `ArithS.Subst`: `guardCodeB (substTemplate me opp g) me' opp' k = guardCodeB g me opp k`). -/
-
-/-- The description vector with the budget slot kept as the variable `#6`: `descriptions me opp` extended
-by `^#6` in the seventh slot. -/
-noncomputable def descriptionsSlot (me opp : V) : V :=
-  codeTerm (canonical me) ∷ revalueU me ∷ revalueW me ∷ codeTerm (canonical opp) ∷ revalueU opp ∷ revalueW opp ∷ ^#6 ∷ 0
-
-/-- Fill `#0..#5` of the seven-variable template `g` with the descriptions of `me` and `opp`, keeping
-the budget slot `#6` free. -/
-noncomputable def guardCodeSlot (g me opp : V) : V := subst LAct (descriptionsSlot me opp) g
 
 noncomputable def descriptionsSlotGraph : 𝚺₁.Semisentence 3 := .mkSigma
   “y me opp. ∃ n₁, !canonicalGraph n₁ me ∧ ∃ t₁, !codeTermGraph t₁ n₁ ∧ ∃ u₁, !revalueUGraph u₁ me ∧ ∃ w₁, !revalueWGraph w₁ me ∧

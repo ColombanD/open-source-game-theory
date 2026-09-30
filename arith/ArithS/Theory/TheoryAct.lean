@@ -27,6 +27,8 @@ keeps the `ℒₒᵣ` codes, an `ℒₒᵣ`-formula has the same code in both la
 (`quote_lMap_emb`), so PA's own Δ₁ class, conjoined with "is an `ℒₒᵣ`-formula", defines the
 transported axioms; the four action sentences are `insert`ed (Foundation's `Theory.Δ₁.insert`,
 two short closed codes each). The standard model interprets `c_C ↦ 0`, `c_D ↦ 1`.
+
+**Reading guide.** Definition: §The standard structure on ℕ and §The theory (`actionAxiom`, `constNe`, `TAct`) — the first hundred lines. Foundation plumbing: §Codes agree along the embedding and §`TAct` is Δ₁-axiomatized — skip on first reading. Facts: §closed under the transposition, and §The standard readings (`stdReading`/`swappedReading`, `structure_eq_of_actionAxiom`) — the two readings the positive method completes over.
 -/
 
 namespace ArithS
@@ -119,7 +121,7 @@ theorem tact_proves_actionAxiom : TAct ⊢ actionAxiom := Entailment.by_axm acti
 
 theorem tact_proves_actionAxiom' : TAct ⊢ actionAxiom' := Entailment.by_axm actionAxiom'_mem_TAct
 
-/-! ### Codes agree along the embedding -/
+/-! ### Codes agree along the embedding — Foundation plumbing, skip on first reading -/
 
 section codes
 
@@ -184,7 +186,7 @@ theorem quote_sentence_lMap_emb (σ : Sentence ℒₒᵣ) :
 
 end codes
 
-/-! ### `TAct` is Δ₁-axiomatized -/
+/-! ### `TAct` is Δ₁-axiomatized — Foundation plumbing, skip on first reading -/
 
 section delta1
 

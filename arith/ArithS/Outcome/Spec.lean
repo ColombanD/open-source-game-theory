@@ -1,6 +1,7 @@
 import ArithS.Eval.EvalN
 import ArithS.Agents.Code
 import PrisonersDilemma.Outcome.Spec
+import ArithS.Notation
 
 /-!
 # ArithS.Outcome.Spec — the outcome statement of PA-`S'`, in the engine's vocabulary
@@ -21,7 +22,7 @@ system, so that a cell of `S'` reads the way a cell of `S` does:
   type IS the engine's `PD.BudgetRegime`. Fuel is existential here (`∃ n`), which by fuel
   monotonicity (`EvalGraph.mono_le`) is the same as the engine's cofinite pad.
 * `bot P` / `const P`: the engine's bots as budget-indexed codes, through `progCode`.
-* `□[k] φ`: the box, `LenBox TAct k φ` — the notation `□_k σ` of the notes.
+* `□[k] φ`: the box, `LenBox TAct k φ` — the notation `□_k σ` of the notes (`ArithS.Notation`).
 
 The per-left-bot files `Outcome/Matrix/<L>.lean` state every cell of the ledger
 (`Research/Notes/ROUTE_B_CENSUS.md`, "S' status per cell") in this form, each proved from the
@@ -34,11 +35,6 @@ namespace ArithS
 open FFL FFL.FirstOrder Arithmetic Bootstrapping
 open PeanoMinus
 open LAct
-
-/-! ### The box, as notation -/
-
-/-- `□[k] φ`: the code `φ` has a `TAct`-proof of length `≤ k` (`LenBox`). -/
-scoped notation:max "□[" k "] " φ:max => LenBox TAct k φ
 
 /-! ### Plays and outcomes on codes -/
 

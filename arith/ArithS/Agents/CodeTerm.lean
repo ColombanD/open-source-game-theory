@@ -23,6 +23,8 @@ leaves:
   where `ppair` being a term pays off), `lMap`-invariance, and the length bounds: the exact
   `termLenMeta (ppairTermMeta s t) = 2 · termLenMeta s + 3 · termLenMeta t + 4` per pairing (upper bounds for every shape
   in terms of the leaves) and the lower bound `size x ≤ termLenMeta (codeTermMeta x)`.
+
+**Reading guide.** Definition: the clauses `CodeTerm.Phi` and §The equations (`codeTerm_const`, …, `codeTerm_search`), plus the meta twin `codeTermMeta` with its code, truth and length equations (§The meta terms). Foundation plumbing: the blueprint, the construction and the `defined` instances — skip on first reading.
 -/
 
 namespace ArithS
@@ -62,7 +64,7 @@ lemma ppairTerm_semiterm {k s t : V} (hs : IsSemiterm ℒₒᵣ k s) (ht : IsSem
 lemma succ_semiterm {k t : V} (ht : IsSemiterm ℒₒᵣ k t) : IsSemiterm ℒₒᵣ k (t ^+ (𝟏 : V)) := by
   simp [qqAdd, ht]
 
-/-! ### The graph, as a fixpoint on pairs `⟪x, t⟫` -/
+/-! ### The graph, as a fixpoint on pairs `⟪x, t⟫` — the clauses `Phi`, then Foundation plumbing -/
 
 namespace CodeTerm
 

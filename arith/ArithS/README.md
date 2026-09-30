@@ -8,6 +8,19 @@ The design and its rationale are in `engine/PrisonersDilemma/Research/Notes/SPRI
 what is proved is in `ARITHMETIZED_S_RESULTS.md`; the cell ledger is `ROUTE_B_CENSUS.md`. This guide is
 the index of the code.
 
+## 0. Two files to open first
+
+* [`Tour.lean`](Tour.lean) — the nine trusted definitions restated at `V = ℕ` (kept in sync by `rfl`), the red
+  cell step by step, the headline theorems by `#check`, and the axiom census of what it cites. One file,
+  no proofs.
+* [`Notation.lean`](Notation.lean) — the paper's symbols in Lean: `□[k] φ` is `LenBox TAct k φ` (the paper's
+  `□_k φ`, and at a meta budget on a quoted sentence its `⊢_k φ`); the three-layer table is in its docstring.
+
+Every trusted-base file now opens with a **Reading guide** line naming its definition and marking the
+Foundation plumbing (Σ₁ mirrors, `defined` instances, fixpoint blueprints) to skip on first reading; the
+two files whose definition used to sit under two hundred lines of plumbing are split (`Eval/Fixpoint.lean`
+behind `Eval/Eval.lean`, `Agents/SubstTemplate.lean` before `Agents/Subst.lean`).
+
 ## 1. The four tiers
 
 | tier | folders | lines | what to do with it |
@@ -52,12 +65,16 @@ The other files in these five folders hold no definitions to accept, only theore
    engine's guard formulas; `guardCode g me opp` fills the slots at run time, `guardCodeB` adds the
    seventh slot holding the node's own budget (route (c)): [`Agents/Template.lean`](Agents/Template.lean),
    [`Agents/Code.lean`](Agents/Code.lean), [`Agents/Guard.lean`](Agents/Guard.lean).
-8. **Substitution** — `substCode`/`substTemplate`, the engine's one-shot `Prog.subst` on codes (`.bot` frozen,
-   guards read the outer players): [`Agents/Subst.lean`](Agents/Subst.lean); agreement with the engine
-   `progCode_subst` in `Agents/Code.lean`.
+8. **Substitution** — `substCode`, the engine's one-shot `Prog.subst` on codes (`.bot` frozen, guards read
+   the outer players): [`Agents/Subst.lean`](Agents/Subst.lean) (the equations `substCode_*` are the
+   definition), on top of `substTemplate`, the instantiation of a stored template by the outer frame:
+   [`Agents/SubstTemplate.lean`](Agents/SubstTemplate.lean); agreement with the engine `progCode_subst` in
+   `Agents/Code.lean`.
 9. **The evaluator** — `EvalGraph n me opp p a`, a Σ₁ fixpoint mirroring the engine's `eval` clause
-   by clause, whose `search` clause consults the box: [`Eval/Eval.lean`](Eval/Eval.lean); on ℕ it is
-   deterministic and fuel-monotone, [`Eval/EvalN.lean`](Eval/EvalN.lean).
+   by clause, whose `search` clause consults the box: [`Eval/Eval.lean`](Eval/Eval.lean) (the
+   characterization `EvalGraph.case_iff` is the definition; the fixpoint construction is
+   [`Eval/Fixpoint.lean`](Eval/Fixpoint.lean), skip); on ℕ it is deterministic and fuel-monotone,
+   [`Eval/EvalN.lean`](Eval/EvalN.lean).
 
 The bridge from the engine is `progCode : PD.Prog → ℕ` and `templateCode : PD.Formula → ℕ` in `Agents/Code.lean`.
 
@@ -107,6 +124,17 @@ Then, in order:
 | `outcome_<L>_vs_<R>` | `outcome_<L>_vs_<R>` in `Outcome/Matrix/` | proved from `snd_/pos_/loeb_/khat_/sf_<L>_vs_<R>` |
 | `DupocBot k` | `progCode (DupocBot k)`; the hand twin `Dupoc k` | see the twins below |
 
+**The paper's symbols** (`Notation.lean`; the engine column is the engine's own notation):
+
+| paper | engine | `ArithS` |
+|---|---|---|
+| `□_k φ` (a program mentions provability) | `Formula.box k φ` | the sentence `□[k] φ` = `LenBox TAct k φ`, Δ₁ |
+| `⊢_k φ` (`φ` is derivable at budget `k`) | `Pf k φ` | the same sentence read in ℕ: `□[k] ⌜φ⌝` |
+| `⊨ φ` (`φ` holds) | `φ.interp` | `ℕ ⊧ₘ φ` (Foundation) |
+| `|d|` (transcript length) | cumulative rule costs | `proofLen TAct d` (the symbol count of the code `d`) |
+| `⌜p⌝` (a program named in a sentence) | `Prog` is the syntax | `codeTerm (canonical p)`, a binary-numeral term |
+| `outcome (A, B) = (a, b)` | `OutcomeSpec regime pad A B (some (a, b))` | `OutcomeSpecA regime (bot A) (bot B) (some (a, b))` |
+
 **Theorem heads in `Cells/`** name the PROOF METHOD: `sf_` search-free transfer, `pa_` PA proves the
 atom, `snd_` soundness/else branch, `pos_` guard found without Löb, `loeb_` bounded Löb, `khat_` the
 `k̂`-chain, `floor_` a settled floor half, `dich_` a floor dichotomy. The cell name is the `outcome_` one.
@@ -138,11 +166,11 @@ modus ponens with exact length accounting · `ProperBound` properness inside eve
 
 **`Agents/`** — `Prog` codes · `CodeTerm` descriptions as terms · `BinNumeral` binary numerals · `RevalueTemplate`
 τ on template codes · `Template` the guard template · `Guard` the runtime guard, the budget slot ·
-`Subst` `substCode`/`substTemplate` · `Code` `progCode`/`templateCode`/`template`, the engine bridge · `Instance`/`InstanceV`
+`SubstTemplate` instantiating a stored template by the outer frame · `Subst` `substCode` · `Code` `progCode`/`templateCode`/`template`, the engine bridge · `Instance`/`InstanceV`
 Dupoc's guard as the `k`-instance of one formula (for Löb) · `Fit`/`FitBox` the guard fits its budget;
 `box_guard_never_fits` (why LegibleBot is out).
 
-**`Eval/`** — `Eval` `EvalGraph` · `EvalN` inversion, determinism, monotonicity at ℕ · `SimTest` smoke
+**`Eval/`** — `Fixpoint` the fixpoint construction (plumbing) · `Eval` `EvalGraph` · `EvalN` inversion, determinism, monotonicity at ℕ · `SimTest` smoke
 tests · `Transparency` Dupoc's truth equation in every model · `Det` PA-internal determinism (frozen T2).
 
 **`Loeb/`** — `Diag` the parametric diagonal lemma · `InstV` the instance operator and the parametric
@@ -162,6 +190,8 @@ shared bot codes, templates, probers, families, the `k̂`-chain; `Names` the dep
 
 **`Outcome/`** — `Spec` the vocabulary · `Matrix/<L>` the cells.
 
+**Top level** — `Notation` the paper's symbols · `Tour` the guided tour.
+
 **`Bridge/`** — the frozen T2 bridge `S → S'` (`Core/`, `Agent`, `AgentConverse`, `Inst`, `Neg`,
 `EngineBridge`): shown impossible at polynomial budgets (`MERGE_CROSSROAD.md`); route B re-proves
 cells directly instead.
@@ -173,6 +203,7 @@ cells directly instead.
 ```
 cd arith && lake build ArithS --try-cache      # ~3350 jobs; never compile Foundation or mathlib
 timeout 900 lake env lean ArithS/<file>.lean   # single-file check; CHECK THE EXIT CODE
+timeout 900 lake env lean ArithS/Tour.lean     # prints every headline statement and its axioms
 scripts/regen_all.sh                           # the generated tables are in sync
 ```
 

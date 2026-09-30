@@ -10,6 +10,8 @@ SAME code in both languages, which is what lets PA's Δ₁ axiom class be reused
 theory `TAct` (`ArithS.TheoryAct`). `swap : LAct →ᵥ LAct` exchanges the two constants and is
 an involution; every symbol counts `1`, so `termLenMeta`/`formulaLenMeta` are invariant under ANY language hom,
 in particular under `swap`.
+
+**Reading guide.** Definition: `Act`, `LAct`, `const`, `emb` and `swap` — the first sixty lines. Foundation plumbing: the Gödel encoding of the symbols and their Δ₀-definability — skip on first reading. Fact: symbol counts are invariant under every language hom, hence under `swap`.
 -/
 
 namespace ArithS
@@ -41,7 +43,40 @@ instance decEqRel (k : ℕ) : DecidableEq (LAct.Rel k) :=
 
 instance : LAct.DecidableEq := ⟨decEqFunc, decEqRel⟩
 
-/-! ### The encoding: `ℒₒᵣ` codes unchanged, `c_C ↦ 2`, `c_D ↦ 3` -/
+/-! ### Arithmetic symbols, the embedding, and the swap -/
+
+instance : Language.Eq LAct := ⟨Sum.inl Language.Eq.eq⟩
+instance : Language.LT LAct := ⟨Sum.inl Language.LT.lt⟩
+instance : Language.Zero LAct := ⟨Sum.inl Language.Zero.zero⟩
+instance : Language.One LAct := ⟨Sum.inl Language.One.one⟩
+instance : Language.Add LAct := ⟨Sum.inl Language.Add.add⟩
+instance : Language.Mul LAct := ⟨Sum.inl Language.Mul.mul⟩
+instance : Language.ORing LAct := Language.ORing.mk
+
+/-- The inclusion `ℒₒᵣ →ᵥ LAct`. -/
+abbrev emb : ℒₒᵣ →ᵥ LAct := Language.Hom.add₁ _ _
+
+/-- The transposition of the two action constants. -/
+def swap : LAct →ᵥ LAct where
+  func {k} f := match k, f with
+    | _, Sum.inl f => Sum.inl f
+    | 0, Sum.inr (Language.Constant.Func.const Act.C) => const Act.D
+    | 0, Sum.inr (Language.Constant.Func.const Act.D) => const Act.C
+  rel r := r
+
+@[simp] lemma swap_inl {k : ℕ} (f : Language.Func ℒₒᵣ k) : swap.func (Sum.inl f : LAct.Func k) = Sum.inl f := rfl
+@[simp] lemma swap_C : swap.func (const Act.C) = const Act.D := rfl
+@[simp] lemma swap_D : swap.func (const Act.D) = const Act.C := rfl
+@[simp] lemma swap_rel {k : ℕ} (r : LAct.Rel k) : swap.rel r = r := rfl
+
+lemma swap_swap_func {k : ℕ} (f : LAct.Func k) : swap.func (swap.func f) = f := by
+  rcases f with f | ⟨(_ | _)⟩ <;> rfl
+
+lemma swap_emb {k : ℕ} (f : Language.Func ℒₒᵣ k) : swap.func (emb.func f) = emb.func f := rfl
+
+/-! ### The Gödel encoding of the symbols — Foundation plumbing, skip on first reading
+
+`ℒₒᵣ` codes unchanged, `c_C ↦ 2`, `c_D ↦ 3`. -/
 
 /-- Codes of `ℒₒᵣ` function symbols are `0` or `1`. -/
 lemma ORing.encode_func_lt_two {k : ℕ} (f : Language.Func ℒₒᵣ k) : Encodable.encode f < 2 := by
@@ -93,7 +128,7 @@ instance : LAct.Encodable := Language.Encodable.mk instEncFunc instEncRel
 @[simp] lemma encode_const_C : Encodable.encode (α := LAct.Func 0) (const Act.C) = 2 := rfl
 @[simp] lemma encode_const_D : Encodable.encode (α := LAct.Func 0) (const Act.D) = 3 := rfl
 
-/-! ### Δ₀-definability of the symbol sets -/
+/-! ### Δ₀-definability of the symbol sets — Foundation plumbing, skip on first reading -/
 
 lemma mem_range_encode_func {k f : ℕ} :
     f ∈ Set.range (Encodable.encode : LAct.Func k → ℕ) ↔
@@ -137,37 +172,6 @@ instance : LAct.LORDefinable where
   rel  := .mkSigma “k r. (k = 2 ∧ r = 0) ∨ (k = 2 ∧ r = 1)”
   func_iff {k c} := by simpa [models_iff] using! mem_range_encode_func
   rel_iff {k c} := by simpa [models_iff] using! mem_range_encode_rel
-
-/-! ### Arithmetic symbols, the embedding, and the swap -/
-
-instance : Language.Eq LAct := ⟨Sum.inl Language.Eq.eq⟩
-instance : Language.LT LAct := ⟨Sum.inl Language.LT.lt⟩
-instance : Language.Zero LAct := ⟨Sum.inl Language.Zero.zero⟩
-instance : Language.One LAct := ⟨Sum.inl Language.One.one⟩
-instance : Language.Add LAct := ⟨Sum.inl Language.Add.add⟩
-instance : Language.Mul LAct := ⟨Sum.inl Language.Mul.mul⟩
-instance : Language.ORing LAct := Language.ORing.mk
-
-/-- The inclusion `ℒₒᵣ →ᵥ LAct`. -/
-abbrev emb : ℒₒᵣ →ᵥ LAct := Language.Hom.add₁ _ _
-
-/-- The transposition of the two action constants. -/
-def swap : LAct →ᵥ LAct where
-  func {k} f := match k, f with
-    | _, Sum.inl f => Sum.inl f
-    | 0, Sum.inr (Language.Constant.Func.const Act.C) => const Act.D
-    | 0, Sum.inr (Language.Constant.Func.const Act.D) => const Act.C
-  rel r := r
-
-@[simp] lemma swap_inl {k : ℕ} (f : Language.Func ℒₒᵣ k) : swap.func (Sum.inl f : LAct.Func k) = Sum.inl f := rfl
-@[simp] lemma swap_C : swap.func (const Act.C) = const Act.D := rfl
-@[simp] lemma swap_D : swap.func (const Act.D) = const Act.C := rfl
-@[simp] lemma swap_rel {k : ℕ} (r : LAct.Rel k) : swap.rel r = r := rfl
-
-lemma swap_swap_func {k : ℕ} (f : LAct.Func k) : swap.func (swap.func f) = f := by
-  rcases f with f | ⟨(_ | _)⟩ <;> rfl
-
-lemma swap_emb {k : ℕ} (f : Language.Func ℒₒᵣ k) : swap.func (emb.func f) = emb.func f := rfl
 
 end LAct
 

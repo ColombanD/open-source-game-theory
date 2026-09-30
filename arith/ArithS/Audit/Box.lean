@@ -1,3 +1,4 @@
+import ArithS.Notation
 import ArithS.Box.ProperBound
 import ArithS.Cells.RedCell
 

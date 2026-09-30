@@ -22,6 +22,8 @@ on the templates `lMap swap (guardTemplate a) = guardTemplate (swapAction a)`, h
 `revalueTemplate 1 0 ⌜guardTemplate a⌝ = ⌜guardTemplate (swapAction a)⌝` by the meta link of
 `ArithS.RevalueTemplate`), and which is true in `ℕ` iff `∃ n, EvalGraph n opp me opp a`
 (the truth equation).
+
+**Reading guide.** Definition: §The template (`guardTemplateRaw`, `guardTemplate7`, `guardTemplate a`) and §The description terms (`descriptionTerms`, `guardSentence`) — the first ninety lines. Facts: the swap equation, the code equation and the truth equation, one section each.
 -/
 
 namespace ArithS
