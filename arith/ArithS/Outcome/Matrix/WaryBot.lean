@@ -1,4 +1,5 @@
 import ArithS.Outcome.Spec
+import ArithS.Outcome.Attr
 import ArithS.Cells.RedCellEngine
 import ArithS.Cells.DimcidFlips
 import ArithS.Cells.FlipCells
@@ -32,21 +33,25 @@ open LAct
 open PD.Bots
 
 /-- `snd_WaryBot_vs_GuardianBot` -/
+@[outcomeA]
 theorem outcome_WaryBot_vs_GuardianBot :
     OutcomeSpecA .universal (bot WaryBot) (bot GuardianBot) (some (.C, .C)) :=
   OutcomeSpecA.universal_of fun k ↦ OutcomeAtA.of_evalGraph (snd_WaryBot_vs_GuardianBot k)
 
 /-- `snd_WaryBot_vs_CooperateBot` -/
+@[outcomeA]
 theorem outcome_WaryBot_vs_CooperateBot :
     OutcomeSpecA .universal (bot WaryBot) (const CooperateBot) (some (.C, .C)) :=
   OutcomeSpecA.universal_of fun k ↦ OutcomeAtA.of_evalGraph (snd_WaryBot_vs_CooperateBot k)
 
 /-- `snd_WaryBot_vs_CupodTrollBot` -/
+@[outcomeA]
 theorem outcome_WaryBot_vs_CupodTrollBot :
     OutcomeSpecA .universal (bot WaryBot) (bot CupodTrollBot) (some (.C, .C)) :=
   OutcomeSpecA.universal_of fun k ↦ OutcomeAtA.of_evalGraph (snd_WaryBot_vs_CupodTrollBot k)
 
 /-- `pos_WaryBot_vs_DBot` -/
+@[outcomeA]
 theorem outcome_WaryBot_vs_DBot :
     OutcomeSpecA .eventual (bot WaryBot) (const DBot) (some (.C, .C)) :=
   OutcomeSpecA.eventual_of (by
@@ -54,6 +59,7 @@ theorem outcome_WaryBot_vs_DBot :
     exact ⟨k₀, fun k hk ↦ OutcomeAtA.of_evalGraph (h k hk)⟩)
 
 /-- `pos_WaryBot_vs_DefectBot` -/
+@[outcomeA]
 theorem outcome_WaryBot_vs_DefectBot :
     OutcomeSpecA .eventual (bot WaryBot) (const DefectBot) (some (.D, .D)) :=
   OutcomeSpecA.eventual_of (by
@@ -61,6 +67,7 @@ theorem outcome_WaryBot_vs_DefectBot :
     exact ⟨k₀, fun k hk ↦ OutcomeAtA.of_evalGraph (h k hk)⟩)
 
 /-- `pos_WaryBot_vs_EBot` -/
+@[outcomeA]
 theorem outcome_WaryBot_vs_EBot :
     OutcomeSpecA .eventual (bot WaryBot) (const EBot) (some (.C, .C)) :=
   OutcomeSpecA.eventual_of (by
@@ -68,6 +75,7 @@ theorem outcome_WaryBot_vs_EBot :
     exact ⟨k₀, fun k hk ↦ OutcomeAtA.of_evalGraph (h k hk)⟩)
 
 /-- `loeb_WaryBot_vs_MirrorBot` -/
+@[outcomeA]
 theorem outcome_WaryBot_vs_MirrorBot :
     OutcomeSpecA .eventual (bot WaryBot) (const MirrorBot) (some (.D, .D)) :=
   OutcomeSpecA.eventual_of (by
@@ -75,11 +83,13 @@ theorem outcome_WaryBot_vs_MirrorBot :
     exact ⟨k₀, fun k hk ↦ OutcomeAtA.of_evalGraph (h k hk)⟩)
 
 /-- `snd_WaryBot_vs_TitForTatBot` -/
+@[outcomeA]
 theorem outcome_WaryBot_vs_TitForTatBot :
     OutcomeSpecA .universal (bot WaryBot) (const TitForTatBot) (some (.C, .C)) :=
   OutcomeSpecA.universal_of fun k ↦ OutcomeAtA.of_evalGraph (snd_WaryBot_vs_TitForTatBot k)
 
 /-- `loeb_WaryBot_vs_WaryBot` -/
+@[outcomeA]
 theorem outcome_WaryBot_vs_WaryBot :
     OutcomeSpecA .eventual (bot WaryBot) (bot WaryBot) (some (.D, .D)) :=
   OutcomeSpecA.eventual_of (by

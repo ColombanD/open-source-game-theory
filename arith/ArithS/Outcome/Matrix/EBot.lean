@@ -1,4 +1,5 @@
 import ArithS.Outcome.Spec
+import ArithS.Outcome.Attr
 import ArithS.Cells.RedCellEngine
 import ArithS.Cells.DimcidFlips
 import ArithS.Cells.FlipCells
@@ -32,36 +33,43 @@ open LAct
 open PD.Bots
 
 /-- `sf_EBot_vs_CooperateBot` -/
+@[outcomeA]
 theorem outcome_EBot_vs_CooperateBot :
     OutcomeSpecA .nobudget (const EBot) (const CooperateBot) (some (.D, .C)) :=
   OutcomeSpecA.nobudget_of (OutcomeAtA.of_evalGraph sf_EBot_vs_CooperateBot)
 
 /-- `sf_EBot_vs_DBot` -/
+@[outcomeA]
 theorem outcome_EBot_vs_DBot :
     OutcomeSpecA .nobudget (const EBot) (const DBot) (some (.D, .C)) :=
   OutcomeSpecA.nobudget_of (OutcomeAtA.of_evalGraph sf_EBot_vs_DBot)
 
 /-- `sf_EBot_vs_DefectBot` -/
+@[outcomeA]
 theorem outcome_EBot_vs_DefectBot :
     OutcomeSpecA .nobudget (const EBot) (const DefectBot) (some (.D, .D)) :=
   OutcomeSpecA.nobudget_of (OutcomeAtA.of_evalGraph sf_EBot_vs_DefectBot)
 
 /-- `sf_EBot_vs_EBot` -/
+@[outcomeA]
 theorem outcome_EBot_vs_EBot :
     OutcomeSpecA .nobudget (const EBot) (const EBot) (some (.C, .C)) :=
   OutcomeSpecA.nobudget_of (OutcomeAtA.of_evalGraph sf_EBot_vs_EBot)
 
 /-- `sf_EBot_vs_MirrorBot` -/
+@[outcomeA]
 theorem outcome_EBot_vs_MirrorBot :
     OutcomeSpecA .nobudget (const EBot) (const MirrorBot) (some (.C, .C)) :=
   OutcomeSpecA.nobudget_of (OutcomeAtA.of_evalGraph sf_EBot_vs_MirrorBot)
 
 /-- `sf_EBot_vs_OBot` -/
+@[outcomeA]
 theorem outcome_EBot_vs_OBot :
     OutcomeSpecA .nobudget (const EBot) (const OBot) (some (.C, .D)) :=
   OutcomeSpecA.nobudget_of (OutcomeAtA.of_evalGraph sf_EBot_vs_OBot)
 
 /-- `sf_EBot_vs_TitForTatBot` -/
+@[outcomeA]
 theorem outcome_EBot_vs_TitForTatBot :
     OutcomeSpecA .nobudget (const EBot) (const TitForTatBot) (some (.C, .D)) :=
   OutcomeSpecA.nobudget_of (OutcomeAtA.of_evalGraph sf_EBot_vs_TitForTatBot)

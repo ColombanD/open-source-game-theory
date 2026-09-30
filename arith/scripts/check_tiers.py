@@ -9,7 +9,7 @@ Tiers (by module name; the roots ArithS/{Core,Frozen,PBLT,Matrix}.lean must impo
            Assembly.*, Necessitation.*                                         may import: core, frozen
   results  Cells.* (but RedCell), Outcome.*                                    may import: core, frozen, loeb
            (of Necessitation only Package and ClosedNec)
-  top      Audit.*, Audit, Tour, the roots, ArithS                             may import: anything
+  top      Audit.*, Audit, Tour, Outcome.Check, Outcome.Export (lake roots), ArithS   may import: anything
 Lake cannot enforce this (libraries of one package see every module); this script does.
 """
 import pathlib, re, sys
@@ -21,7 +21,8 @@ def modname(p):
 FROZEN = {"ArithS.Agents.Fit", "ArithS.Agents.FitBox", "ArithS.Eval.Det"}
 LOEBX = {"ArithS.Agents.Instance", "ArithS.Agents.InstanceV", "ArithS.Eval.Transparency"}
 def tier(m):
-    if m in ("ArithS", "ArithS.Core", "ArithS.Frozen", "ArithS.PBLT", "ArithS.Matrix", "ArithS.Tour", "ArithS.Audit") or m.startswith("ArithS.Audit."): return "top"
+    if m in ("ArithS", "ArithS.Core", "ArithS.Frozen", "ArithS.PBLT", "ArithS.Matrix", "ArithS.Tour", "ArithS.Audit",
+             "ArithS.Outcome.Check", "ArithS.Outcome.Export") or m.startswith("ArithS.Audit."): return "top"
     if m == "ArithS.Cells.RedCell": return "core"
     if m in FROZEN or m.startswith("ArithS.Bridge"): return "frozen"
     if m in LOEBX or m.startswith(("ArithS.Loeb", "ArithS.Assembly", "ArithS.Necessitation")): return "loeb"

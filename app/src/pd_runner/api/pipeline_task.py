@@ -80,7 +80,7 @@ async def _record_proof_failure(job: Job, left: str, right: str, exc: ProofSearc
     from pd_runner.services.sheets import push_matrix, sheets_configured
     if sheets_configured():
         try:
-            await asyncio.get_event_loop().run_in_executor(None, push_matrix)
+            await asyncio.get_event_loop().run_in_executor(None, lambda: push_matrix(source="engine"))
         except Exception as sync_exc:
             _logging.getLogger(__name__).warning(
                 "Outcome-matrix sheet sync failed (non-fatal): %s", sync_exc)
@@ -289,7 +289,7 @@ async def run_pipeline(job: Job, req: PipelineRequest, store: JobStore) -> None:
         if sheets_configured():
             job.step = "Syncing outcome matrix to Google Sheet..."
             try:
-                await loop.run_in_executor(None, push_matrix)
+                await loop.run_in_executor(None, lambda: push_matrix(source="engine"))
             except Exception as exc:
                 _logging.getLogger(__name__).warning(
                     "Outcome-matrix sheet sync failed (non-fatal): %s", exc)

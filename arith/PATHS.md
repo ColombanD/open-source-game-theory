@@ -171,3 +171,17 @@ audit file of their layer (`Audit/Box`, `Audit/Agents`, `Audit/Eval`).
 
 The hand-twin `Cells` theorems are untouched (only the `outcome_` statements moved). Seven twin cells remain, all
 with `Just`/`Just7`/`CupodTroll7` as a player or opponent — not retirable (`README.md` §4).
+
+## The export discipline (2026-09-30, `SPRIME_SOURCE_OF_TRUTH.md` Phase 1.1)
+
+| module / file | what |
+|---|---|
+| `ArithS.Outcome.Attr` | `@[outcomeA]` (a cell) and `@[floorA]` (a floor's engine-side half), `taggedOutcomesA`/`taggedFloorsA` |
+| `ArithS.Outcome.Floor` | `FloorSpecA L R hinge r := ∃ k₀, ∀ k > k₀, ¬ hinge k → OutcomeAtA (L k) (R k) r`; `FloorSpecA.of_dich`, `.of` |
+| `ArithS.Outcome.Floors` | the 26 `outcome_<L>_vs_<R>_floor` theorems, one per `dich_<L>_vs_<R>` of `Cells/FloorDichotomy` |
+| `ArithS.Outcome.Lint` | `inspectCellA`, `inspectFloorA`, `hingeText`; `#check_outcomeA_theorems`, `#check_floorA_theorems`, `#check_sprime_coverage` |
+| `ArithS.Outcome.Check` | lake root `ArithSOutcomeCheck` (in `defaultTargets`): runs the three commands |
+| `ArithS.Outcome.Export` | `lake exe export_sprime_outcomes` → `app/generated/sprime_outcome_theorems.json` |
+| `Outcome/Matrix/<L>.lean` | every `theorem outcome_…` now carries `@[outcomeA]`; each file imports `ArithS.Outcome.Attr` |
+| `Audit/Outcome.lean` | prints the 26 floors' axioms |
+| `scripts/check_tiers.py` | `Outcome.Check`/`Outcome.Export` are roots (tier `top`); `Attr`/`Floor`/`Floors`/`Lint` are results, imported by `ArithS.Matrix` |

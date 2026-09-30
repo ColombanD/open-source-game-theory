@@ -44,11 +44,10 @@ from __future__ import annotations
 
 import html
 import json
-import math
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, Sequence
+from typing import Sequence
 from urllib.parse import quote
 
 # Okabe-Ito, the same order `tau/report.py` uses so a bot keeps its colour
@@ -123,6 +122,10 @@ class Cell:
     ok: bool
     stages: dict
     run_dir: Path
+    # The proof system the cells came from ("engine" for pre-2026-09-30 artefacts,
+    # which predate the source switch) and how many base cells were S' floors.
+    cell_source: str = "engine"
+    n_floor_cells: int = 0
 
     @property
     def n_pure_ess(self) -> int | None:
@@ -304,6 +307,8 @@ def load_sweep(out_root: Path) -> tuple[dict, list[Cell]]:
             ok=bool(d.get("ok", True)),
             stages=d.get("stages", {}),
             run_dir=run_dir,
+            cell_source=d.get("cell_source") or "engine",
+            n_floor_cells=int(d.get("n_floor_cells") or len(d.get("floor_cells") or ())),
         ))
 
     if not cells:
@@ -1207,6 +1212,7 @@ def _no_such_sweep(zoo: str | None, family: str | None,
 
 def _resolve_sweep(
     out_root: Path, zoo: str | None, family: str | None,
+    source: str | None = None,
 ) -> tuple[str, str, list[tuple[str, str]], list[Cell], dict]:
     """Pick ONE (zoo, σ-family) sweep out of a shared artefact directory.
 
@@ -1221,6 +1227,11 @@ def _resolve_sweep(
     cells, and its own summary stats — `{}` when no trustworthy summary file
     exists, because the top-level `sweep_summary*.json` files are per-family
     but CLOBBERED across zoos and must not describe another zoo's sweep.
+
+    `source` (a `CellSource`) picks WHICH PROOF SYSTEM's runs of the (zoo,
+    family) to show when both exist under one root: the configured default
+    when present among them, else the only one there. Runs of the two systems
+    are never mixed on one page.
     """
     top, all_cells = load_sweep(out_root)
     combos = sorted({(c.zoo, c.family) for c in all_cells})
@@ -1242,15 +1253,26 @@ def _resolve_sweep(
         raise ValueError(_no_such_sweep(zoo, family, combos, out_root))
 
     cells = [c for c in all_cells if c.zoo == zoo and c.family == family]
+    sources = sorted({c.cell_source for c in cells})
+    if source is None:
+        from pd_runner.settings import CELL_SOURCE
 
-    summary_name = ("sweep_summary.json" if family == "behavioral"
-                    else f"sweep_summary_{family}.json")
-    summary_path = Path(out_root) / summary_name
+        source = CELL_SOURCE if CELL_SOURCE in sources else sources[0]
+    elif source not in sources:
+        raise ValueError(
+            f"no {source!r} sweep for zoo={zoo!r}, family={family!r} under {out_root} — "
+            f"cell sources present: {sources}")
+    cells = [c for c in cells if c.cell_source == source]
+
+    from pd_runner.egt.pipeline import sweep_summary_name
+
+    summary_path = Path(out_root) / sweep_summary_name(family)
     sweep: dict = {}
     if summary_path.exists():
         candidate = json.loads(summary_path.read_text())
         if (candidate.get("zoo") == zoo
-                and (candidate.get("family") or "behavioral") == family):
+                and (candidate.get("family") or "behavioral") == family
+                and (candidate.get("cell_source") or "engine") == source):
             sweep = candidate
     return zoo, family, combos, cells, sweep
 
@@ -1287,9 +1309,11 @@ def _sweep_nav(zoo: str, family: str, combos: Sequence[tuple[str, str]],
 
 
 def build_report(out_root: Path, artefact_base: str = "runs",
-                 zoo: str | None = None, family: str | None = None) -> str:
-    """Render the page for ONE (zoo, σ-family) sweep under `out_root`."""
-    zoo, family, combos, cells, sweep = _resolve_sweep(out_root, zoo, family)
+                 zoo: str | None = None, family: str | None = None,
+                 source: str | None = None) -> str:
+    """Render the page for ONE (zoo, σ-family, cell source) sweep under `out_root`."""
+    zoo, family, combos, cells, sweep = _resolve_sweep(out_root, zoo, family, source)
+    cell_source = cells[0].cell_source
     index = _cell_index(cells)
 
     ts = sorted({t for (t, _) in (p for c in cells for p in
@@ -1385,6 +1409,22 @@ def build_report(out_root: Path, artefact_base: str = "runs",
             '<p class="banner ok">Every analysed matrix completed all its '
             "stages, and none rests on a stipulated cell.</p>"
         )
+    # The proof system, and how much rests on S' floors — a floor is a theorem (the
+    # engine-side half of a dichotomy) but its value hinges on bounded consistency of
+    # TAct at k, so a reader must see it.
+    with_floors = [c for c in cells if c.n_floor_cells]
+    system = "PA-S&prime; (arith/)" if cell_source == "sprime" else "the engine&rsquo;s S"
+    floor_note = (
+        f" <b>{max(c.n_floor_cells for c in with_floors)}</b> base cells of this zoo are "
+        "S&prime; FLOOR dichotomies carried at their engine-side value (hinge: bounded "
+        "consistency of TAct at k) — every matrix below reads them."
+        if with_floors else " No cell rests on a S&prime; floor."
+    )
+    banners.append(
+        f'<p class="banner {"ok" if cell_source == "engine" or not with_floors else "warn"}">'
+        f"Cells proved in <b>{system}</b> (cell source <code>{html.escape(cell_source)}</code>)."
+        f"{floor_note}</p>"
+    )
 
     rows = "".join(
         f"<tr><td>t={c.t:g}, α={c.alpha:g}</td>"
@@ -1427,12 +1467,13 @@ def build_report(out_root: Path, artefact_base: str = "runs",
     moran_section = _moran_section(ts, alphas, index)
     artefacts_section = _artefacts_section(cells, artefact_base)
 
-    return f"""<title>EGT — evolutionary analysis ({html.escape(zoo)} · {html.escape(family)})</title>
+    return f"""<title>EGT — evolutionary analysis ({html.escape(zoo)} · {html.escape(family)} · {html.escape(cell_source)})</title>
 <style>{_CSS}</style>
 <main>
 <h1>Evolutionary analysis over the (t, α) plane</h1>
 <p class="sub">Which bots survive in a <em>population</em> of bots ·
 zoo <b>{html.escape(zoo)}</b> · σ family <b>{html.escape(family)}</b> ·
+cells <b>{html.escape(cell_source)}</b> ·
 {cells[0].n_types} types ·
 {len(cells)} distinct matrices from {n_points} grid points</p>
 {sweep_nav}
@@ -1525,6 +1566,10 @@ def main() -> None:
     p.add_argument("--zoo", type=str, default=None,
                    help="zoo to render — a shared out-root holds every sweep "
                         "ever launched, and the page shows exactly one")
+    p.add_argument("--source", type=str, default=None,
+                   choices=("sprime", "engine"),
+                   help="proof system whose runs to render (default: the configured "
+                        "cell source when present, else whatever is there)")
     p.add_argument("--family", type=str, default=None,
                    help="σ family to render (default: behavioral if present)")
     p.add_argument("--output", type=Path, default=None,
@@ -1538,7 +1583,7 @@ def main() -> None:
     output = args.output or (args.out_root / f"report{tag}.html")
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(
-        build_report(args.out_root, zoo=args.zoo, family=args.family),
+        build_report(args.out_root, zoo=args.zoo, family=args.family, source=args.source),
         encoding="utf-8")
     print(f"wrote {output}")
     if args.open:

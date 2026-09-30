@@ -264,6 +264,20 @@ into `submit_verdict`.
 4. Human-in-the-loop v1: a human accepts each new bot and theorem before it lands.
 5. The engine's reflection axioms (Part I crux) are orthogonal to this pipeline and not a
    blocker for it.
+6. **`CellSource`/`FloorPolicy` (2026-09-30, `SPRIME_SOURCE_OF_TRUTH.md` §1.3).** PA-`S'`
+   (`app/generated/sprime_outcome_theorems.json`, `lake exe export_sprime_outcomes`) is the
+   app's SOURCE OF TRUTH; the engine's `S` export stays loadable as the COMPARISON.
+   `settings.CELL_SOURCE` (`PD_CELL_SOURCE`, default `sprime`) and `FLOOR_POLICY`
+   (`PD_FLOOR_POLICY`, default `engine_side`) are threaded through every loader
+   (`scan_outcome_theorems`/`build_outcome_matrix`, `load_tau_matrix`/`NamedZoo.load`, the EGT
+   `sweep`, `?source=` on the API, `push_matrix`). A `S'` GENUINE FLOOR is carried as a
+   labelled cell (`provenance="floor_dichotomy"`, `‡`, engine-side value) or as a hole
+   (`restrict_zoo`, totality fails naming the pairs); a `≠` cell FLIPS the engine (all nine
+   in-paper flips are DIMCID's). Kernel tau rows (`tau_rows.json`) are the ENGINE's and load
+   only on `source="engine"` until Phase 4 ships `sprime_tau_rows.json`; the Def 3 ≡ Def 4
+   certification refuses a `S'` matrix. EGT run directories hash the source (`sprime_` in
+   the name); the engine path is byte-identical to before (`tests/test_cell_source.py`).
+   Diff report: `python -m pd_runner.eval.source_diff` → `app/generated/source_diff.md`.
 
 ## Phase 2 milestones (proof-writing first) — COMPLETE ✅
 

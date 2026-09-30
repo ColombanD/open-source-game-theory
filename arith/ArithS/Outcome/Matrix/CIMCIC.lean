@@ -1,4 +1,5 @@
 import ArithS.Outcome.Spec
+import ArithS.Outcome.Attr
 import ArithS.Cells.RedCellEngine
 import ArithS.Cells.DimcidFlips
 import ArithS.Cells.FlipCells
@@ -33,6 +34,7 @@ open LAct
 open PD.Bots
 
 /-- `pos_Cimcic_vs_Cimcic` -/
+@[outcomeA]
 theorem outcome_CIMCIC_vs_CIMCIC :
     OutcomeSpecA .eventual (bot CIMCIC) (bot CIMCIC) (some (.C, .C)) :=
   OutcomeSpecA.eventual_of (by
@@ -40,6 +42,7 @@ theorem outcome_CIMCIC_vs_CIMCIC :
     exact ⟨k₀, fun k hk ↦ by dsimp only [bot, const]; rw [progCode_CIMCIC]; exact OutcomeAtA.of_evalGraph₂ (h k hk) (h k hk)⟩)
 
 /-- `loeb_CIMCIC_vs_DIMCID` -/
+@[outcomeA]
 theorem outcome_CIMCIC_vs_DIMCID :
     OutcomeSpecA .eventual (bot CIMCIC) (bot DIMCID) (some (.D, .D)) :=
   OutcomeSpecA.eventual_of (by
@@ -47,6 +50,7 @@ theorem outcome_CIMCIC_vs_DIMCID :
     exact ⟨k₀, fun k hk ↦ OutcomeAtA.of_evalGraph (h k hk)⟩)
 
 /-- `loeb_CIMCIC_vs_DupocBot` -/
+@[outcomeA]
 theorem outcome_CIMCIC_vs_DupocBot :
     OutcomeSpecA .eventual (bot CIMCIC) (bot DupocBot) (some (.C, .C)) :=
   OutcomeSpecA.eventual_of (by
@@ -54,6 +58,7 @@ theorem outcome_CIMCIC_vs_DupocBot :
     exact ⟨k₀, fun k hk ↦ OutcomeAtA.of_evalGraph (h k hk)⟩)
 
 /-- `loeb_Cimcic_vs_Mirror` -/
+@[outcomeA]
 theorem outcome_CIMCIC_vs_MirrorBot :
     OutcomeSpecA .eventual (bot CIMCIC) (const MirrorBot) (some (.C, .C)) :=
   OutcomeSpecA.eventual_of (by
@@ -61,6 +66,7 @@ theorem outcome_CIMCIC_vs_MirrorBot :
     exact ⟨k₀, fun k hk ↦ by dsimp only [bot, const]; rw [progCode_CIMCIC, progCode_MirrorBot]; exact OutcomeAtA.of_evalGraph (h k hk)⟩)
 
 /-- `khat_CIMCIC_vs_TitForTatBot` -/
+@[outcomeA]
 theorem outcome_CIMCIC_vs_TitForTatBot :
     OutcomeSpecA .eventual (bot CIMCIC) (const TitForTatBot) (some (.C, .C)) :=
   OutcomeSpecA.eventual_of (by
@@ -68,6 +74,7 @@ theorem outcome_CIMCIC_vs_TitForTatBot :
     exact ⟨k₀, fun k hk ↦ OutcomeAtA.of_evalGraph (h k hk)⟩)
 
 /-- `pos_CIMCIC_vs_CooperateBot` -/
+@[outcomeA]
 theorem outcome_CIMCIC_vs_CooperateBot :
     OutcomeSpecA .eventual (bot CIMCIC) (const CooperateBot) (some (.C, .C)) :=
   OutcomeSpecA.eventual_of (by
@@ -75,11 +82,13 @@ theorem outcome_CIMCIC_vs_CooperateBot :
     exact ⟨k₀, fun k hk ↦ OutcomeAtA.of_evalGraph (h k hk)⟩)
 
 /-- `snd_CIMCIC_vs_DefectBot` -/
+@[outcomeA]
 theorem outcome_CIMCIC_vs_DefectBot :
     OutcomeSpecA .universal (bot CIMCIC) (const DefectBot) (some (.D, .D)) :=
   OutcomeSpecA.universal_of fun k ↦ OutcomeAtA.of_evalGraph (snd_CIMCIC_vs_DefectBot k)
 
 /-- `snd_CIMCIC_vs_OBot` -/
+@[outcomeA]
 theorem outcome_CIMCIC_vs_OBot :
     OutcomeSpecA .eventual (bot CIMCIC) (const OBot) (some (.D, .D)) :=
   OutcomeSpecA.eventual_of (by
@@ -93,6 +102,7 @@ These cells are stated on arith codes that are NOT the engine's `progCode`:
 -/
 
 /-- `loeb_Cimcic_vs_Just7` -/
+@[outcomeA]
 theorem outcome_CIMCIC_vs_Just7 :
     OutcomeSpecA .eventual (bot CIMCIC) Just7 (some (.C, .C)) :=
   OutcomeSpecA.eventual_of (by

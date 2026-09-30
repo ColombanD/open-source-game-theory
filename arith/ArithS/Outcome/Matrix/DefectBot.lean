@@ -1,4 +1,5 @@
 import ArithS.Outcome.Spec
+import ArithS.Outcome.Attr
 import ArithS.Cells.RedCellEngine
 import ArithS.Cells.DimcidFlips
 import ArithS.Cells.FlipCells
@@ -32,6 +33,7 @@ open LAct
 open PD.Bots
 
 /-- `sf_DefectBot_vs_DefectBot` -/
+@[outcomeA]
 theorem outcome_DefectBot_vs_DefectBot :
     OutcomeSpecA .nobudget (const DefectBot) (const DefectBot) (some (.D, .D)) :=
   OutcomeSpecA.nobudget_of (OutcomeAtA.of_evalGraph sf_DefectBot_vs_DefectBot)

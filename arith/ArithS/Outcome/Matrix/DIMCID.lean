@@ -1,4 +1,5 @@
 import ArithS.Outcome.Spec
+import ArithS.Outcome.Attr
 import ArithS.Cells.RedCellEngine
 import ArithS.Cells.DimcidFlips
 import ArithS.Cells.DimcidEngine
@@ -33,6 +34,7 @@ open LAct
 open PD.Bots
 
 /-- `loeb_DIMCID_vs_DBot` -/
+@[outcomeA]
 theorem outcome_DIMCID_vs_DBot :
     OutcomeSpecA .eventual (bot DIMCID) (const DBot) (some (.D, .C)) :=
   OutcomeSpecA.eventual_of (by
@@ -40,6 +42,7 @@ theorem outcome_DIMCID_vs_DBot :
     exact ⟨k₀, fun k hk ↦ OutcomeAtA.of_evalGraph (h k hk)⟩)
 
 /-- `loeb_Dimcid_vs_Dimcid` -/
+@[outcomeA]
 theorem outcome_DIMCID_vs_DIMCID :
     OutcomeSpecA .eventual (bot DIMCID) (bot DIMCID) (some (.D, .D)) :=
   OutcomeSpecA.eventual_of (by
@@ -47,6 +50,7 @@ theorem outcome_DIMCID_vs_DIMCID :
     exact ⟨k₀, fun k hk ↦ by dsimp only [bot, const]; rw [progCode_DIMCID]; exact OutcomeAtA.of_evalGraph₂ (h k hk) (h k hk)⟩)
 
 /-- `loeb_DIMCID_vs_EBot` -/
+@[outcomeA]
 theorem outcome_DIMCID_vs_EBot :
     OutcomeSpecA .eventual (bot DIMCID) (const EBot) (some (.D, .D)) :=
   OutcomeSpecA.eventual_of (by
@@ -54,6 +58,7 @@ theorem outcome_DIMCID_vs_EBot :
     exact ⟨k₀, fun k hk ↦ OutcomeAtA.of_evalGraph (h k hk)⟩)
 
 /-- `loeb_Dimcid_vs_Mirror` -/
+@[outcomeA]
 theorem outcome_DIMCID_vs_MirrorBot :
     OutcomeSpecA .eventual (bot DIMCID) (const MirrorBot) (some (.D, .D)) :=
   OutcomeSpecA.eventual_of (by
@@ -61,6 +66,7 @@ theorem outcome_DIMCID_vs_MirrorBot :
     exact ⟨k₀, fun k hk ↦ by dsimp only [bot, const]; rw [progCode_DIMCID, progCode_MirrorBot]; exact OutcomeAtA.of_evalGraph (h k hk)⟩)
 
 /-- `loeb_DIMCID_vs_OBot` -/
+@[outcomeA]
 theorem outcome_DIMCID_vs_OBot :
     OutcomeSpecA .eventual (bot DIMCID) (const OBot) (some (.D, .D)) :=
   OutcomeSpecA.eventual_of (by
@@ -68,6 +74,7 @@ theorem outcome_DIMCID_vs_OBot :
     exact ⟨k₀, fun k hk ↦ OutcomeAtA.of_evalGraph (h k hk)⟩)
 
 /-- `loeb_DIMCID_vs_PrudentBot` -/
+@[outcomeA]
 theorem outcome_DIMCID_vs_PrudentBot :
     OutcomeSpecA .eventual (bot DIMCID) (bot PrudentBot) (some (.D, .D)) :=
   OutcomeSpecA.eventual_of (by
@@ -75,6 +82,7 @@ theorem outcome_DIMCID_vs_PrudentBot :
     exact ⟨k₀, fun k hk ↦ OutcomeAtA.of_evalGraph (h k hk)⟩)
 
 /-- `loeb_DIMCID_vs_TitForTatBot` -/
+@[outcomeA]
 theorem outcome_DIMCID_vs_TitForTatBot :
     OutcomeSpecA .eventual (bot DIMCID) (const TitForTatBot) (some (.D, .D)) :=
   OutcomeSpecA.eventual_of (by
@@ -82,6 +90,7 @@ theorem outcome_DIMCID_vs_TitForTatBot :
     exact ⟨k₀, fun k hk ↦ OutcomeAtA.of_evalGraph (h k hk)⟩)
 
 /-- `loeb_DIMCID_vs_CooperateBot` -/
+@[outcomeA]
 theorem outcome_DIMCID_vs_CooperateBot :
     OutcomeSpecA .eventual (bot DIMCID) (const CooperateBot) (some (.D, .C)) :=
   OutcomeSpecA.eventual_of (by
@@ -89,6 +98,7 @@ theorem outcome_DIMCID_vs_CooperateBot :
     exact ⟨k₀, fun k hk ↦ OutcomeAtA.of_evalGraph (h k hk)⟩)
 
 /-- `pos_DIMCID_vs_DefectBot` -/
+@[outcomeA]
 theorem outcome_DIMCID_vs_DefectBot :
     OutcomeSpecA .eventual (bot DIMCID) (const DefectBot) (some (.D, .D)) :=
   OutcomeSpecA.eventual_of (by
@@ -96,6 +106,7 @@ theorem outcome_DIMCID_vs_DefectBot :
     exact ⟨k₀, fun k hk ↦ OutcomeAtA.of_evalGraph (h k hk)⟩)
 
 /-- `loeb_DIMCID_vs_DupocBot` — a FLIP: the engine has the UNIVERSAL `(C, D)` -/
+@[outcomeA]
 theorem outcome_DIMCID_vs_DupocBot :
     OutcomeSpecA .eventual (bot DIMCID) (bot DupocBot) (some (.D, .D)) :=
   OutcomeSpecA.eventual_of (by
@@ -103,6 +114,7 @@ theorem outcome_DIMCID_vs_DupocBot :
     exact ⟨k₀, fun k hk ↦ OutcomeAtA.of_evalGraph (h k hk)⟩)
 
 /-- `loeb_DIMCID_vs_CupodBot` -/
+@[outcomeA]
 theorem outcome_DIMCID_vs_CupodBot :
     OutcomeSpecA .eventual (bot DIMCID) (bot CupodBot) (some (.D, .D)) :=
   OutcomeSpecA.eventual_of (by
@@ -117,6 +129,7 @@ These cells are stated on arith codes that are NOT the engine's `progCode`:
 -/
 
 /-- `loeb_DIMCID_vs_CupodTrollBot` (stated on the budget-slot twin `CupodTroll7 k`) -/
+@[outcomeA]
 theorem outcome_DIMCID_vs_CupodTroll7 :
     OutcomeSpecA .eventual (bot DIMCID) CupodTroll7 (some (.D, .C)) :=
   OutcomeSpecA.eventual_of (by
@@ -124,6 +137,7 @@ theorem outcome_DIMCID_vs_CupodTroll7 :
     exact ⟨k₀, fun k hk ↦ OutcomeAtA.of_evalGraph (h k hk)⟩)
 
 /-- `loeb_DIMCID_vs_JustBot` (stated on the budget-slot twin `Just7 k`) -/
+@[outcomeA]
 theorem outcome_DIMCID_vs_Just7 :
     OutcomeSpecA .eventual (bot DIMCID) Just7 (some (.D, .D)) :=
   OutcomeSpecA.eventual_of (by

@@ -1,4 +1,5 @@
 import ArithS.Outcome.Spec
+import ArithS.Outcome.Attr
 import ArithS.Cells.RedCellEngine
 import ArithS.Cells.DimcidFlips
 import ArithS.Cells.FlipCells
@@ -32,6 +33,7 @@ open LAct
 open PD.Bots
 
 /-- `snd_CupodTrollBot_vs_CooperateBot` -/
+@[outcomeA]
 theorem outcome_CupodTrollBot_vs_CooperateBot :
     OutcomeSpecA .universal (bot CupodTrollBot) (const CooperateBot) (some (.C, .C)) :=
   OutcomeSpecA.universal_of fun k ↦ OutcomeAtA.of_evalGraph (snd_CupodTrollBot_vs_CooperateBot k)
@@ -44,6 +46,7 @@ theorem outcome_CupodTrollBot_vs_CooperateBot :
 -/
 
 /-- `khat_CupodTrollBot_vs_CupodBot` (stated on the budget-slot twin `CupodTroll7 k`) -/
+@[outcomeA]
 theorem outcome_CupodTroll7_vs_CupodBot :
     OutcomeSpecA .eventual CupodTroll7 (bot CupodBot) (some (.D, .D)) :=
   OutcomeSpecA.eventual_of (by
@@ -51,36 +54,43 @@ theorem outcome_CupodTroll7_vs_CupodBot :
     exact ⟨k₀, fun k hk ↦ OutcomeAtA.of_evalGraph (h k hk)⟩)
 
 /-- `snd_CupodTrollBot_vs_CupodTrollBot` -/
+@[outcomeA]
 theorem outcome_CupodTrollBot_vs_CupodTrollBot :
     OutcomeSpecA .universal (bot CupodTrollBot) (bot CupodTrollBot) (some (.C, .C)) :=
   OutcomeSpecA.universal_of fun k ↦ OutcomeAtA.of_evalGraph (snd_CupodTrollBot_vs_CupodTrollBot k)
 
 /-- `snd_CupodTrollBot_vs_DBot` -/
+@[outcomeA]
 theorem outcome_CupodTrollBot_vs_DBot :
     OutcomeSpecA .universal (bot CupodTrollBot) (const DBot) (some (.C, .D)) :=
   OutcomeSpecA.universal_of fun k ↦ OutcomeAtA.of_evalGraph (snd_CupodTrollBot_vs_DBot k)
 
 /-- `snd_CupodTrollBot_vs_DefectBot` -/
+@[outcomeA]
 theorem outcome_CupodTrollBot_vs_DefectBot :
     OutcomeSpecA .universal (bot CupodTrollBot) (const DefectBot) (some (.C, .D)) :=
   OutcomeSpecA.universal_of fun k ↦ OutcomeAtA.of_evalGraph (snd_CupodTrollBot_vs_DefectBot k)
 
 /-- `snd_CupodTrollBot_vs_EBot` -/
+@[outcomeA]
 theorem outcome_CupodTrollBot_vs_EBot :
     OutcomeSpecA .universal (bot CupodTrollBot) (const EBot) (some (.C, .D)) :=
   OutcomeSpecA.universal_of fun k ↦ OutcomeAtA.of_evalGraph (snd_CupodTrollBot_vs_EBot k)
 
 /-- `snd_CupodTrollBot_vs_MirrorBot` -/
+@[outcomeA]
 theorem outcome_CupodTrollBot_vs_MirrorBot :
     OutcomeSpecA .universal (bot CupodTrollBot) (const MirrorBot) (some (.C, .C)) :=
   OutcomeSpecA.universal_of fun k ↦ OutcomeAtA.of_evalGraph (snd_CupodTrollBot_vs_MirrorBot k)
 
 /-- `snd_CupodTrollBot_vs_OBot` -/
+@[outcomeA]
 theorem outcome_CupodTrollBot_vs_OBot :
     OutcomeSpecA .universal (bot CupodTrollBot) (const OBot) (some (.C, .C)) :=
   OutcomeSpecA.universal_of fun k ↦ OutcomeAtA.of_evalGraph (snd_CupodTrollBot_vs_OBot k)
 
 /-- `snd_CupodTrollBot_vs_TitForTatBot` -/
+@[outcomeA]
 theorem outcome_CupodTrollBot_vs_TitForTatBot :
     OutcomeSpecA .universal (bot CupodTrollBot) (const TitForTatBot) (some (.C, .C)) :=
   OutcomeSpecA.universal_of fun k ↦ OutcomeAtA.of_evalGraph (snd_CupodTrollBot_vs_TitForTatBot k)

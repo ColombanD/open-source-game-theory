@@ -171,7 +171,9 @@ def write_proof_to_library(
     # EGT) sees the new cell. Best-effort: the theorem is already kernel-checked,
     # linted and landed; a failed export is a loud warning, not a rollback.
     try:
-        refresh_export(paths.lean_engine_dir)
+        # The accepted proof landed in the ENGINE library: refresh the engine export
+        # whatever the app's default cell source is.
+        refresh_export(paths.lean_engine_dir, source="engine")
     except RuntimeError as exc:
         logger.warning(
             "wrote %s but could not refresh the outcome export — the matrix will not "

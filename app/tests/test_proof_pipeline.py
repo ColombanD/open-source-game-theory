@@ -563,7 +563,8 @@ def test_write_proof_writes_and_builds_successfully(tmp_path: Path, monkeypatch)
 
     monkeypatch.setattr(library_writer, "build_lean_project", fake_build)
     refreshed: list = []
-    monkeypatch.setattr(library_writer, "refresh_export", lambda *_: refreshed.append(1) or "")
+    monkeypatch.setattr(library_writer, "refresh_export",
+                        lambda *_, **__: refreshed.append(1) or "")
 
     write_result = library_writer.write_proof_to_library(
         _cooperate_vs_defect_result(), human_accept=False

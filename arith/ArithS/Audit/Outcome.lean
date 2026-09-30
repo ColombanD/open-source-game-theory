@@ -16,11 +16,13 @@ import ArithS.Outcome.Matrix.OBot
 import ArithS.Outcome.Matrix.PrudentBot
 import ArithS.Outcome.Matrix.TitForTatBot
 import ArithS.Outcome.Matrix.WaryBot
+import ArithS.Outcome.Floors
 
 /-!
 # ArithS.Audit.Outcome — the census of the outcome layer
 
-Every cell of `Outcome/Matrix/*.lean` (the engine-shaped statements) and the engine-level red cell.
+Every cell of `Outcome/Matrix/*.lean` (the engine-shaped statements), the engine-level red cell, and the 26
+engine-side floor halves of `Outcome/Floors.lean` (`FloorSpecA`, one per `dich_<L>_vs_<R>`).
 -/
 
 namespace ArithS
@@ -134,5 +136,33 @@ namespace ArithS
 #print axioms outcome_WaryBot_vs_MirrorBot
 #print axioms outcome_WaryBot_vs_TitForTatBot
 #print axioms outcome_WaryBot_vs_WaryBot
+
+-- The floors (Outcome/Floors.lean): the engine-side half of each dichotomy, on the FloorSpecA template.
+#print axioms outcome_DupocBot_vs_DBot_floor
+#print axioms outcome_DupocBot_vs_EBot_floor
+#print axioms outcome_DupocBot_vs_CupodTrollBot_floor
+#print axioms outcome_JustBot_vs_DBot_floor
+#print axioms outcome_JustBot_vs_EBot_floor
+#print axioms outcome_JustBot_vs_CupodTrollBot_floor
+#print axioms outcome_CIMCIC_vs_CupodTrollBot_floor
+#print axioms outcome_CIMCIC_vs_DBot_floor
+#print axioms outcome_CIMCIC_vs_EBot_floor
+#print axioms outcome_GuardianBot_vs_CIMCIC_floor
+#print axioms outcome_GuardianBot_vs_DupocBot_floor
+#print axioms outcome_GuardianBot_vs_JustBot_floor
+#print axioms outcome_CupodBot_vs_OBot_floor
+#print axioms outcome_PrudentBot_vs_DupocBot_floor
+#print axioms outcome_PrudentBot_vs_PrudentBot_floor
+#print axioms outcome_JustBot_vs_PrudentBot_floor
+#print axioms outcome_CIMCIC_vs_PrudentBot_floor
+#print axioms outcome_PrudentBot_vs_EBot_floor
+#print axioms outcome_GuardianBot_vs_PrudentBot_floor
+#print axioms outcome_WaryBot_vs_DupocBot_floor
+#print axioms outcome_WaryBot_vs_JustBot_floor
+#print axioms outcome_WaryBot_vs_PrudentBot_floor
+#print axioms outcome_CupodBot_vs_PrudentBot_floor
+#print axioms outcome_PrudentBot_vs_CupodBot_floor
+#print axioms outcome_JustBot_vs_CupodBot_floor
+#print axioms outcome_CIMCIC_vs_CupodBot_floor
 
 end ArithS

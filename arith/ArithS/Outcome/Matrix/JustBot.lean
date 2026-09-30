@@ -1,4 +1,5 @@
 import ArithS.Outcome.Spec
+import ArithS.Outcome.Attr
 import ArithS.Cells.RedCellEngine
 import ArithS.Cells.DimcidFlips
 import ArithS.Cells.FlipCells
@@ -32,6 +33,7 @@ open LAct
 open PD.Bots
 
 /-- `pos_JustBot_vs_CooperateBot` -/
+@[outcomeA]
 theorem outcome_JustBot_vs_CooperateBot :
     OutcomeSpecA .eventual (bot JustBot) (const CooperateBot) (some (.C, .C)) :=
   OutcomeSpecA.eventual_of (by
@@ -39,16 +41,19 @@ theorem outcome_JustBot_vs_CooperateBot :
     exact ⟨k₀, fun k hk ↦ OutcomeAtA.of_evalGraph (h k hk)⟩)
 
 /-- `snd_JustBot_vs_DefectBot` -/
+@[outcomeA]
 theorem outcome_JustBot_vs_DefectBot :
     OutcomeSpecA .universal (bot JustBot) (const DefectBot) (some (.D, .D)) :=
   OutcomeSpecA.universal_of fun k ↦ OutcomeAtA.of_evalGraph (snd_JustBot_vs_DefectBot k)
 
 /-- `snd_JustBot_vs_OBot` -/
+@[outcomeA]
 theorem outcome_JustBot_vs_OBot :
     OutcomeSpecA .universal (bot JustBot) (const OBot) (some (.D, .D)) :=
   OutcomeSpecA.universal_of fun k ↦ OutcomeAtA.of_evalGraph (snd_JustBot_vs_OBot k)
 
 /-- `khat_JustBot_vs_TitForTatBot` -/
+@[outcomeA]
 theorem outcome_JustBot_vs_TitForTatBot :
     OutcomeSpecA .eventual (bot JustBot) (const TitForTatBot) (some (.C, .C)) :=
   OutcomeSpecA.eventual_of (by
@@ -64,6 +69,7 @@ These cells are stated on arith codes that are NOT the engine's `progCode`:
 -/
 
 /-- `loeb_Just_vs_Mirror` -/
+@[outcomeA]
 theorem outcome_Just_vs_MirrorBot :
     OutcomeSpecA .eventual Just (const MirrorBot) (some (.C, .C)) :=
   OutcomeSpecA.eventual_of (by
@@ -71,6 +77,7 @@ theorem outcome_Just_vs_MirrorBot :
     exact ⟨k₀, fun k hk ↦ by dsimp only [bot, const]; rw [progCode_MirrorBot]; exact OutcomeAtA.of_evalGraph (h k hk)⟩)
 
 /-- `loeb_Just7_vs_Dupoc` -/
+@[outcomeA]
 theorem outcome_Just7_vs_Dupoc :
     OutcomeSpecA .eventual Just7 Dupoc (some (.C, .C)) :=
   OutcomeSpecA.eventual_of (by
@@ -78,6 +85,7 @@ theorem outcome_Just7_vs_Dupoc :
     exact ⟨k₀, fun k hk ↦ OutcomeAtA.of_evalGraph (h k hk)⟩)
 
 /-- `loeb_Just7_vs_Just7` -/
+@[outcomeA]
 theorem outcome_Just7_vs_Just7 :
     OutcomeSpecA .eventual Just7 Just7 (some (.C, .C)) :=
   OutcomeSpecA.eventual_of (by

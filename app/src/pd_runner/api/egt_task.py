@@ -66,9 +66,15 @@ async def run_egt_sweep(job: Job, req: EgtSweepRequest) -> None:
         if not stages:
             raise ValueError("at least one stage must be selected")
 
+        from pd_runner.settings import resolve_floor_policy, resolve_source
+
+        source = resolve_source(req.source)
+        floor_policy = resolve_floor_policy(req.floor_policy)
+
         job.status = JobStatus.sweeping
-        job.step = f"Running the EGT sweep over the {zoo.label} zoo..."
-        emit(f"zoo: {zoo.label} ({len(zoo.bots)} bots)")
+        job.step = f"Running the EGT sweep over the {zoo.label} zoo ({source} cells)..."
+        emit(f"zoo: {zoo.label} ({len(zoo.bots)} bots) — cell source: {source}, "
+             f"floor policy: {floor_policy}")
         if zoo.stipulations:
             emit(
                 f"NOTE: {len(zoo.stipulations)} stipulated cell(s) — every result "
@@ -84,6 +90,8 @@ async def run_egt_sweep(job: Job, req: EgtSweepRequest) -> None:
             out_root=DEFAULT_OUT_ROOT,
             stages=stages,
             t_steps=req.t_steps,
+            source=source,
+            floor_policy=floor_policy,
             max_support_size=req.max_support_size,
             render=req.render,
             on_event=emit,

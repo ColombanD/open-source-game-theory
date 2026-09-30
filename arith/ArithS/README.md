@@ -209,7 +209,9 @@ description layer and family); the rule and the file list are in `Matrix.lean`'s
 `PrudentLoose`, `FlipCells`, `DimcidFlips`, `FloorVerdicts`, `FloorDichotomy`, `SimSlot`; `Common/` the
 shared bot codes, templates, probers, families, the `k̂`-chain; `Names` the deprecated old names.
 
-**`Outcome/`** — `Spec` the vocabulary · `Matrix/<L>` the cells.
+**`Outcome/`** — `Spec` the vocabulary · `Matrix/<L>` the cells (`@[outcomeA]`) · `Floor` the floor template
+`FloorSpecA` · `Floors` the 26 engine-side floor halves (`@[floorA]`) · `Attr` the two tag attributes · `Lint` the
+validator, the censuses and the coverage command · `Check` the lake root that runs them · `Export` the JSON exporter.
 
 **Top level** — `Notation` the paper's symbols · `Tour` the guided tour.
 
@@ -228,7 +230,32 @@ timeout 900 lake env lean ArithS/Tour.lean     # prints every headline statement
 lake build ArithSCore                          # one tier (also ArithSFrozen, ArithSLoeb, ArithSMatrix, ArithSAudit)
 python3 scripts/check_tiers.py                 # import direction between the tiers, roots complete
 scripts/regen_all.sh                           # the generated tables are in sync
+lake build ArithSOutcomeCheck --try-cache      # the S' matrix gate (also in the default build), see below
+lake exe export_sprime_outcomes                # writes ../app/generated/sprime_outcome_theorems.json
 ```
+
+**The export discipline** (`Outcome/{Attr,Floor,Floors,Lint,Check,Export}.lean`, the twin of the engine's
+`Outcome/{Attr,Lint,Check,Export}.lean`; design: `Research/Notes/SPRIME_SOURCE_OF_TRUTH.md` §1). Every cell of
+`Outcome/Matrix/<L>.lean` carries `@[outcomeA]`; every genuine floor has its engine-side half
+`@[floorA] theorem outcome_<L>_vs_<R>_floor : FloorSpecA (bot L) (bot R) (fun k ↦ <hinge>) (some (a, b))` in
+`Outcome/Floors.lean`, proved from `dich_<L>_vs_<R>` (`Cells/FloorDichotomy.lean`; where `Cells/PrudentLoose.lean`
+has the prudence hinge discharged or the partner's side built, that sharper dichotomy). The hinge is inline, in the
+`□[k] φ` notation, `¬ hinge k` being exactly the branch the dichotomy settles at the engine's value. `lake build`
+runs, through the root `Outcome/Check.lean`:
+
+* `#check_outcomeA_theorems "ArithS/Outcome/Matrix"` — every tagged cell is an `OutcomeSpecA` with a literal
+  regime and result whose bots agree with its name (the head is matched SYNTACTICALLY); every cell-shaped
+  `theorem outcome_<L>_vs_<R>` under the directory is tagged; one cell per ordered pair;
+* `#check_floorA_theorems "ArithS/Cells/FloorDichotomy.lean"` — every tagged floor is a `FloorSpecA` named
+  `…_floor` with an existing `dich_<L>_vs_<R>`; every `dich_<L>_vs_<R>` in the file has a floor; no floor shadows a cell;
+* `#check_sprime_coverage` — every unordered pair of the 12 paper base bots is a cell or a floor (the hand-template
+  twins `Just7`/`CupodTroll7`/… count for their base bot here and nowhere else).
+
+`lake exe export_sprime_outcomes [out.json]` writes the engine's JSON schema plus `"system": "sprime"`, a
+`provenance` per row (`sprime` / `floor_dichotomy`) and a `floors` array (`hinge`, `dichotomy`); `fuel_pad` is `0`
+everywhere (fuel is existential). `source_digest` is the engine's FNV-1a over the compressed rows of
+`theorems ++ companions ++ floors`, each sorted by name; recompute it in Python with
+`json.dumps(row, sort_keys=True, separators=(",", ":"), ensure_ascii=False)` — the hinge text is Unicode.
 
 The census is every `#print axioms` the build runs (`Audit/`): all `[propext, Classical.choice,
 Quot.sound]` but four pre-existing subsets. Traps: `Research/Notes/ARITH_TRAPS.md`. Dead-code audit and

@@ -104,6 +104,9 @@
     table.matrix td.mx-rework { background: #1d4ed8; color: #bfdbfe; }
     table.matrix td.mx-none  { background: #065f46; color: #6ee7b7; }
     table.matrix td.mx-sensitive { background: #3b2f5c; color: #d8b4fe; }
+    table.matrix td.mx-floor { background: #3f3a1f; color: #fde68a; }
+    table.matrix td.mx-flip  { background: #4c1d3f; color: #f9a8d4; }
+    .source-toggle label { margin-right: 0.7rem; cursor: pointer; }
 
     .section-label {
       font-size: 0.75rem; color: #94a3b8; font-weight: 600;
@@ -286,13 +289,21 @@
   <div class="card" id="matrix-card">
     <h2>Outcome matrix</h2>
     <p style="color:#9ca3af; font-size:0.85rem; margin-top:0;">
-      The bot-vs-bot outcome matrix, read from the <code>@[outcome]</code> cells the Lean
-      linter exported (<code>app/generated/outcome_theorems.json</code>). "Regenerate from
-      Lean" rebuilds the engine, runs the outcome census, and rewrites that export; it runs
+      The bot-vs-bot outcome matrix, read from the Lean export of the selected proof system:
+      <b>S'</b> (PA-S', <code>arith/</code>, <code>@[outcomeA]</code> cells and
+      <code>@[floorA]</code> floor dichotomies, <code>sprime_outcome_theorems.json</code> — the
+      source of truth) or the <b>engine</b>'s stipulated S (<code>@[outcome]</code>,
+      <code>outcome_theorems.json</code>, the comparison). "Regenerate from Lean" rebuilds the
+      selected system, runs its outcome census, and rewrites its export; the engine's runs
       automatically after each accepted proof. "Sync to Google Sheet" pushes the matrix to
-      its worksheet (e.g. after editing <code>app/outcome_status.toml</code>).
+      the system's worksheet (e.g. after editing <code>app/outcome_status.toml</code>).
     </p>
     <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+      <span class="source-toggle" style="color:#9ca3af; font-size:0.85rem;">
+        Cells from:
+        <label><input type="radio" name="matrix-source" value="sprime" onchange="loadMatrix()"> S' (PA-S')</label>
+        <label><input type="radio" name="matrix-source" value="engine" onchange="loadMatrix()"> engine (S)</label>
+      </span>
       <button class="btn" id="matrix-export-btn" onclick="exportMatrix()">Regenerate from Lean</button>
       <button class="btn btn-primary" id="matrix-sync-btn" onclick="syncMatrix()">Sync to Google Sheet</button>
       <span id="matrix-sync-status" style="color:#9ca3af; font-size:0.85rem;"></span>
@@ -1174,16 +1185,36 @@
       return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     }
 
+    // The proof system whose cells the matrix card shows: the radio when one is
+    // checked, else the server's configured default (settings.CELL_SOURCE).
+    function matrixSource() {
+      const checked = document.querySelector('input[name="matrix-source"]:checked');
+      return checked ? checked.value : null;
+    }
+    function matrixQuery() {
+      const src = matrixSource();
+      return src ? `?source=${encodeURIComponent(src)}` : '';
+    }
+
     async function loadMatrix() {
       const el = document.getElementById('matrix-table');
       let data;
       try {
-        const resp = await fetch('/matrix');
+        const resp = await fetch('/matrix' + matrixQuery());
         data = await resp.json();
+        if (!resp.ok) {
+          el.innerHTML = `<p style="color:#fca5a5; font-size:0.85rem;">Failed to load matrix: ${esc(data.detail || resp.statusText)}</p>`;
+          return;
+        }
       } catch (e) {
         el.innerHTML = `<p style="color:#fca5a5; font-size:0.85rem;">Failed to load matrix: ${esc(e)}</p>`;
         return;
       }
+      // Reflect the server's resolved source in the toggle (first load has no
+      // radio checked, so the default shows).
+      document.querySelectorAll('input[name="matrix-source"]').forEach(r => {
+        r.checked = (r.value === data.source);
+      });
       const staleEl = document.getElementById('matrix-stale');
       if (data.stale) {
         staleEl.textContent = `Export may be stale: ${data.stale}.`;
@@ -1196,7 +1227,12 @@
         `<dt style="color:#e5e7eb; font-family:monospace;">${esc(e.mark)}</dt><dd style="margin:0;">${esc(e.meaning)}</dd>`
       ).join('');
       const [header, ...rows] = data.rows;
-      let html = '<div class="matrix-wrap"><table class="matrix"><tr>'
+      let html = `<p style="color:#9ca3af; font-size:0.8rem; margin:0.4rem 0;">Cells: <b>${esc(data.source)}</b>`
+        + (data.source === 'sprime'
+           ? ` — floor policy <b>${esc(data.floor_policy)}</b>, ${data.floors} floor cell(s) ‡, ${data.flips} cell(s) flip the engine ≠`
+           : '')
+        + '</p>';
+      html += '<div class="matrix-wrap"><table class="matrix"><tr>'
         + header.map(h => `<th>${esc(h)}</th>`).join('') + '</tr>';
       const details = data.details || {};
       rows.forEach((row, i) => {
@@ -1210,6 +1246,8 @@
           else if (cell === 'Tried') cls = 'mx-tried';
           else if (cell === 'Need rework') cls = 'mx-rework';
           else if (cell === 'None') cls = 'mx-none';
+          else if (cell.includes('≠')) cls = 'mx-flip';
+          else if (cell.includes('‡')) cls = 'mx-floor';
           else if (cell.includes('⇄')) cls = 'mx-sensitive';
           return `<td class="${cls}"${title}>${esc(cell)}</td>`;
         }).join('') + '</tr>';
@@ -1221,9 +1259,11 @@
       const btn = document.getElementById('matrix-export-btn');
       const status = document.getElementById('matrix-sync-status');
       btn.disabled = true;
-      status.textContent = 'Building the engine and exporting @[outcome] cells… (can take a while)';
+      status.textContent = (matrixSource() === 'engine')
+        ? 'Building the engine and exporting @[outcome] cells… (can take a while)'
+        : 'Building ArithSOutcomeCheck and exporting the S\' cells… (can take a while)';
       try {
-        const resp = await fetch('/matrix/export', { method: 'POST' });
+        const resp = await fetch('/matrix/export' + matrixQuery(), { method: 'POST' });
         const body = await resp.json();
         if (!resp.ok) {
           status.textContent = `Export failed: ${body.detail || resp.statusText}`;
@@ -1244,7 +1284,7 @@
       btn.disabled = true;
       status.textContent = 'Syncing…';
       try {
-        const resp = await fetch('/matrix/sync', { method: 'POST' });
+        const resp = await fetch('/matrix/sync' + matrixQuery(), { method: 'POST' });
         const body = await resp.json();
         if (!resp.ok) {
           status.textContent = `Failed: ${body.detail || resp.statusText}`;

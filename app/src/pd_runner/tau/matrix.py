@@ -43,6 +43,18 @@ Conventions fixed 2026-08-03 (see the design note's "open design decisions"):
    dimension (`∃k` and large-`k` cells carry their action pair), so the tau
    layer reads the stable asymptotic outcome and `k` is not a dial in v1a.
    Cell `shape` and `staggered` are retained for sensitivity analysis.
+3. **The cell SOURCE (2026-09-30, `SPRIME_SOURCE_OF_TRUTH.md`).** `load_tau_matrix`
+   reads PA-`S'`'s cells by default (`settings.CELL_SOURCE`) and the engine's on
+   `source="engine"`; `TauMatrix.source` records which. Under `S'` a GENUINE FLOOR
+   is a cell of `provenance="floor_dichotomy"` (`Cell.hinge` names the hinge)
+   holding the engine-side value under `FloorPolicy.engine_side`, or a HOLE under
+   `restrict_zoo` (the load then fails totality, naming the pairs). A floor IS a
+   theorem (the `¬A_k` half of `dich_<L>_vs_<R>`), so `is_fully_proven` stays True;
+   `has_floors`/`floor_cells` are what a consumer must report. `flip_cells` lists the
+   ordered cells whose `S'` value contradicts the engine's. KERNEL TAU ROWS load only
+   on the engine source (`_kernel_rows_for`): `tau_rows.json` is the ENGINE's Def-4
+   substrate and disagrees with `S'` at the DIMCID cells; `sprime_tau_rows.json`
+   arrives in Phase 4, so `is_kernel_backed` is honestly False on `S'` until then.
 """
 
 from __future__ import annotations
@@ -53,8 +65,10 @@ from pathlib import Path
 from pd_runner.eval.outcome_matrix import (
     index_by_ordered_pair,
     library_bots,
+    oriented_pair,
     scan_outcome_theorems,
 )
+from pd_runner.settings import resolve_floor_policy, resolve_source
 
 # The maximum sub-zoo whose induced ORDERED submatrix is totally proven,
 # recomputed 2026-09-01: 15 bots, 225/225 cells, zero orientation conflicts,
@@ -311,11 +325,19 @@ class NamedZoo:
         """The members that are NATIVE players (`NATIVE_PLAYERS`), not lifts."""
         return tuple(b for b in self.bots if b in NATIVE_PLAYERS)
 
-    def load(self, theorems_dir: Path | None = None) -> TauMatrix:
+    def load(
+        self,
+        theorems_dir: Path | None = None,
+        *,
+        source: str | None = None,
+        floor_policy: str | None = None,
+    ) -> TauMatrix:
         matrix = load_tau_matrix(
             self.bots,
             theorems_dir=theorems_dir,
             hypothetical_cells=self.stipulations,
+            source=source,
+            floor_policy=floor_policy,
         )
         if self.contradictions:
             matrix = apply_contradictions(matrix, self.contradictions)
@@ -454,6 +476,18 @@ class Cell:
     # cell: the `(base_row, base_col)` it copies (`NativePlayer`). The proof is the
     # base cell's; the kernel certifies the clone through the tau roster.
     clone_of: tuple[str, str] | None = None
+    # Which system proved it: "engine" (`@[outcome]`, the stipulated S), "sprime"
+    # (`@[outcomeA]`, PA-S') or "floor_dichotomy" (the engine-side half of a S' floor
+    # dichotomy, a cell only under FloorPolicy.engine_side). A STIPULATED cell is
+    # "stipulated" and a replay-zoo override "contradicted": proven by no system.
+    provenance: str = "engine"
+    # Floors only: the hinge `A_k` (pretty text) this cell's value is the `¬A_k`
+    # branch of — bounded consistency of TAct at k.
+    hinge: str = ""
+
+    @property
+    def is_floor(self) -> bool:
+        return self.provenance == "floor_dichotomy"
 
 
 class TauMatrix:
@@ -465,9 +499,19 @@ class TauMatrix:
         cells: dict[tuple[str, str], Cell],
         natives: dict[str, NativePlayer] | None = None,
         kernel_rows: dict[str, dict[str, str]] | None = None,
+        source: str = "engine",
+        floor_policy: str = "engine_side",
+        flip_cells: tuple[tuple[str, str], ...] = (),
     ):
         self.bots = bots
         self._cells = cells
+        # The `CellSource` the cells were read from and the `FloorPolicy` they were
+        # read under (`settings`); every consumer's provenance block reports both.
+        self.source = source
+        self.floor_policy = floor_policy
+        # Ordered cells whose S' value CONTRADICTS the engine's theorem for the pair
+        # (empty on the engine source, and when the engine export is absent).
+        self.flip_cells: tuple[tuple[str, str], ...] = tuple(flip_cells)
         # The native players among `bots`, by name (empty for a pure base zoo).
         self.natives: dict[str, NativePlayer] = dict(natives or {})
         # The Def-4 substrate (2026-09-01): per-actor kernel test bits, from the
@@ -477,7 +521,8 @@ class TauMatrix:
         # verifies every kernel bit against the base cell at load time, so the two
         # sources can never silently disagree. A matrix built by
         # `apply_contradictions` carries NO kernel rows — a replay matrix is
-        # knowingly wrong and must play from its contradicted cells.
+        # knowingly wrong and must play from its contradicted cells. ENGINE ONLY
+        # until Phase 4 (`sprime_tau_rows.json`): see `_kernel_rows_for`.
         self.kernel_rows: dict[str, dict[str, str]] = dict(kernel_rows or {})
 
     def aggregator(self, actor: str) -> str:
@@ -563,16 +608,45 @@ class TauMatrix:
 
     @property
     def is_fully_proven(self) -> bool:
+        """True when no cell is a stipulation or a contradiction. A S' FLOOR counts as
+        proven — it is the theorem `dich_<L>_vs_<R>`'s engine-side half — but it is a
+        separate flag (`has_floors`) every consumer must report alongside."""
         return not self.hypothetical_cells
+
+    @property
+    def floor_cells(self) -> tuple[tuple[str, str], ...]:
+        """Ordered cells carried as S' floor dichotomies (`provenance="floor_dichotomy"`):
+        their value is the engine's stipulation, labelled. Empty on the engine source
+        and under `FloorPolicy.restrict_zoo` (where floors are holes)."""
+        return tuple(k for k, c in self._cells.items() if c.is_floor)
+
+    @property
+    def has_floors(self) -> bool:
+        return bool(self.floor_cells)
+
+    @property
+    def floor_pairs(self) -> tuple[tuple[str, str], ...]:
+        """`floor_cells` collapsed to sorted UNORDERED pairs."""
+        return tuple(sorted({tuple(sorted(k)) for k in self.floor_cells}))
 
 
 def _kernel_rows_for(
-    bots: tuple[str, ...], cells: dict[tuple[str, str], Cell]
+    bots: tuple[str, ...],
+    cells: dict[tuple[str, str], Cell],
+    source: str = "engine",
 ) -> dict[str, dict[str, str]]:
     """The Def-4 substrate for one roster: each member's kernel RowSpec bits,
     restricted to the roster and VERIFIED against the base cells (2026-09-01).
 
-    Three deliberate behaviors:
+    ENGINE ONLY. `tau_rows.json` holds the ENGINE's `@[tau_row]` RowSpec bits, which
+    DISAGREE with PA-S' at the DIMCID cells (S' has DIMCID defecting against every closed
+    program; the engine's rows have it cooperating) — verifying S' cells against them
+    would raise, and skipping the verification would silently play the wrong system.
+    So on `source != "engine"` this returns `{}`: `is_kernel_backed` is honestly False
+    until Phase 4 ships `sprime_tau_rows.json` (`SPRIME_SOURCE_OF_TRUTH.md`), and the
+    test bits fall back to the S' base cells (Def 3), which are what the S' matrix IS.
+
+    Three deliberate behaviors on the engine source:
 
     * A missing export file degrades to `{}` (Def-3 fallback) rather than failing
       the load — but a PRESENT export that disagrees with the theorems on any
@@ -585,6 +659,8 @@ def _kernel_rows_for(
     * A STIPULATED cell keeps its stipulation: the kernel bit is dropped for that
       pair, so what-if analyses answer the question they were asked.
     """
+    if source != "engine":
+        return {}
     from pd_runner.tau.def4_theorems import kernel_row_bits
 
     try:
@@ -624,6 +700,9 @@ def load_tau_matrix(
     bots: tuple[str, ...] = PAPER_BODY_SUB_ZOO,
     theorems_dir: Path | None = None,
     hypothetical_cells: dict[tuple[str, str], tuple[str, str]] | None = None,
+    *,
+    source: str | None = None,
+    floor_policy: str | None = None,
 ) -> TauMatrix:
     """Build the ordered outcome table, raising if any cell is unproven.
 
@@ -632,27 +711,54 @@ def load_tau_matrix(
     with an implicit convention nobody chose. The default roster is the paper
     body zoo, which is fully proven — no stipulations needed or applied.
 
+    `source` picks the system (`settings.CELL_SOURCE`, PA-S' by default; `"engine"`
+    for the comparison) and `floor_policy` what a S' floor is: an engine-side cell
+    (`engine_side`, default — `Cell.is_floor`, `TauMatrix.floor_cells`) or a hole
+    (`restrict_zoo` — the load then fails totality and names the floor pairs).
+
     `hypothetical_cells` maps an ordered pair to a STIPULATED `(row_action,
     col_action)`, filling holes for what-if analysis — e.g. "if CupodBot vs
     DupocBot were (C, D), how would the twin structure change?". Rules:
 
     - A stipulation may only fill a genuine hole; it never overrides a proven
       cell (that would silently contradict the kernel), and attempting to do so
-      raises.
+      raises. A floor under `engine_side` IS a proven cell for this purpose.
     - One entry suffices per unordered pair — the transpose is derived, so the
       two can never disagree.
     - Every resulting cell is flagged `hypothetical`, and `TauMatrix.
       is_fully_proven` goes False, so downstream results can be reported as
       conditional.
     """
+    resolved_source = resolve_source(source)
+    resolved_policy = resolve_floor_policy(floor_policy)
     kwargs = {"theorems_dir": theorems_dir} if theorems_dir is not None else {}
-    by_pair = index_by_ordered_pair(scan_outcome_theorems(**kwargs))
+    theorems = scan_outcome_theorems(
+        source=resolved_source, floor_policy=resolved_policy, **kwargs)
+    by_pair = index_by_ordered_pair(theorems)
     stipulated = dict(hypothetical_cells) if hypothetical_cells is not None else {}
+    # Under `restrict_zoo` the floors are holes: name them in the totality error so
+    # the reader learns WHY the zoo is not total, not just that it is not.
+    floor_holes: set[tuple[str, str]] = set()
+    if resolved_source == "sprime" and resolved_policy == "restrict_zoo":
+        floor_holes = {
+            tuple(sorted((t.left_bot, t.right_bot)))
+            for t in scan_outcome_theorems(source="sprime", floor_policy="engine_side", **kwargs)
+            if t.is_floor
+        }
+    # The engine's value for each S' pair, to mark the flips (advisory; empty when the
+    # engine export is absent or when this IS the engine).
+    engine_by_pair: dict[tuple[str, str], object] = {}
+    if resolved_source == "sprime":
+        try:
+            engine_by_pair = index_by_ordered_pair(scan_outcome_theorems(source="engine", **kwargs))
+        except FileNotFoundError:
+            engine_by_pair = {}
 
     cells: dict[tuple[str, str], Cell] = {}
     missing: list[tuple[str, str]] = []
     conflicts: list[tuple[str, str]] = []
     overridden: list[tuple[str, str]] = []
+    flips: list[tuple[str, str]] = []
 
     # NATIVE players (`NATIVE_PLAYERS`) have no theorems of their own: in the
     # hypothesis role each IS its base bot's instance, so its cells are CLONED from
@@ -704,6 +810,7 @@ def load_tau_matrix(
                     theorem=f"(stipulated {brow} vs {bcol})",
                     hypothetical=True,
                     clone_of=clone,
+                    provenance="stipulated",
                 )
                 continue
 
@@ -721,7 +828,14 @@ def load_tau_matrix(
                 swapped=swapped,
                 theorem=chosen.name,
                 clone_of=clone,
+                provenance=chosen.provenance,
+                hinge=chosen.hinge,
             )
+            if engine_by_pair:
+                e = engine_by_pair.get((brow, bcol)) or engine_by_pair.get((bcol, brow))
+                if e is not None and oriented_pair(e, brow) != (
+                        None if chosen.pair is None else (a, b)):
+                    flips.append((row, col))
 
     if overridden:
         raise ValueError(
@@ -734,11 +848,25 @@ def load_tau_matrix(
             f"disagreeing for: {conflicts}"
         )
     if missing:
+        floor_missing = sorted({
+            tuple(sorted((base_of[r], base_of[c]))) for r, c in missing
+            if tuple(sorted((base_of[r], base_of[c]))) in floor_holes
+        })
+        detail = ""
+        if floor_missing:
+            detail = (
+                f" {len(floor_missing)} of the unordered pairs are S' FLOOR dichotomies "
+                f"treated as holes under FloorPolicy.restrict_zoo: {floor_missing}. "
+                "Load with floor_policy='engine_side' to carry the engine-side value."
+            )
         raise ValueError(
-            f"tau matrix is not total: {len(missing)} unproven ordered cell(s), "
-            f"e.g. {missing[:5]}. Restrict the bot list or prove the cells."
+            f"tau matrix is not total ({resolved_source}): {len(missing)} unproven ordered "
+            f"cell(s), e.g. {missing[:5]}. Restrict the bot list or prove the cells." + detail
         )
-    return TauMatrix(bots, cells, natives, _kernel_rows_for(bots, cells))
+    return TauMatrix(
+        bots, cells, natives, _kernel_rows_for(bots, cells, resolved_source),
+        source=resolved_source, floor_policy=resolved_policy, flip_cells=tuple(flips),
+    )
 
 
 def apply_contradictions(
@@ -777,6 +905,7 @@ def apply_contradictions(
             swapped=False,
             theorem=f"(contradicts the library: {row} vs {col})",
             hypothetical=True,
+            provenance="contradicted",
         )
         if row != col and (col, row) in cells:
             cells[(col, row)] = Cell(
@@ -787,6 +916,7 @@ def apply_contradictions(
                 swapped=True,
                 theorem=f"(contradicts the library: {row} vs {col})",
                 hypothetical=True,
+                provenance="contradicted",
             )
 
     if unknown:
@@ -794,17 +924,26 @@ def apply_contradictions(
             "contradictions name cells outside this zoo: "
             f"{sorted(unknown)}. The bot list and the override set must agree."
         )
-    return TauMatrix(matrix.bots, cells, matrix.natives)
+    return TauMatrix(
+        matrix.bots, cells, matrix.natives,
+        source=matrix.source, floor_policy=matrix.floor_policy, flip_cells=matrix.flip_cells,
+    )
 
 
-def maximum_certified_sub_zoo(theorems_dir: Path | None = None) -> list[str]:
+def maximum_certified_sub_zoo(
+    theorems_dir: Path | None = None,
+    *,
+    source: str | None = None,
+) -> list[str]:
     """Recompute the largest totally-proven sub-zoo (exact max clique).
 
-    Used to refresh `FULL_CERTIFIED_SUB_ZOO` as new cells get proven. Excludes
-    bots whose self-play cell is unproven or proven `none`.
+    Used to refresh `FULL_CERTIFIED_SUB_ZOO` (an ENGINE constant — pass
+    `source="engine"` to check it) as new cells get proven. Excludes bots whose
+    self-play cell is unproven or proven `none`. On S' a floor under `engine_side`
+    counts as a cell.
     """
     kwargs = {"theorems_dir": theorems_dir} if theorems_dir is not None else {}
-    by_pair = index_by_ordered_pair(scan_outcome_theorems(**kwargs))
+    by_pair = index_by_ordered_pair(scan_outcome_theorems(source=source, **kwargs))
     all_bots = sorted(library_bots(**kwargs))
 
     def known(a: str, b: str) -> bool:
@@ -839,25 +978,33 @@ def maximum_certified_sub_zoo(theorems_dir: Path | None = None) -> list[str]:
 def main() -> None:
     import argparse
 
+    from pd_runner import settings
+
     parser = argparse.ArgumentParser(description="Inspect the tau outcome matrix.")
     parser.add_argument(
         "--recompute",
         action="store_true",
         help="recompute the maximum totally-proven sub-zoo",
     )
+    parser.add_argument("--source", choices=list(settings.CELL_SOURCES), default=None,
+                        help=f"cell source (default: {settings.CELL_SOURCE})")
+    parser.add_argument("--floor-policy", choices=list(settings.FLOOR_POLICIES), default=None,
+                        help=f"S' floor policy (default: {settings.FLOOR_POLICY})")
     args = parser.parse_args()
 
     if args.recompute:
-        best = maximum_certified_sub_zoo()
-        print(f"maximum certified sub-zoo: {len(best)} bots")
+        best = maximum_certified_sub_zoo(source=args.source)
+        print(f"maximum certified sub-zoo ({resolve_source(args.source)}): {len(best)} bots")
         for b in best:
             print(f"  {b}")
         if tuple(best) != tuple(sorted(FULL_CERTIFIED_SUB_ZOO)):
-            print("\nNOTE: differs from FULL_CERTIFIED_SUB_ZOO — update matrix.py")
+            print("\nNOTE: differs from FULL_CERTIFIED_SUB_ZOO (an engine constant) — "
+                  "update matrix.py if this was the engine source")
         return
 
-    m = load_tau_matrix()
-    print(f"tau matrix: {len(m)} bots, {len(m) ** 2} ordered cells, all proven")
+    m = load_tau_matrix(source=args.source, floor_policy=args.floor_policy)
+    print(f"tau matrix ({m.source}, floors: {m.floor_policy}): {len(m)} bots, "
+          f"{len(m) ** 2} ordered cells, all proven")
     width = max(len(b) for b in m.bots)
     print(" " * (width + 2) + " ".join(f"{b[:4]:>4}" for b in m.bots))
     for row in m.bots:
@@ -866,6 +1013,13 @@ def main() -> None:
     print(f"\ncells with side hypotheses (†): {len(m.dagger_cells)}")
     for a, b in sorted(m.dagger_cells):
         print(f"  {a} vs {b}")
+    print(f"floor dichotomies (‡, engine-side value): {len(m.floor_pairs)} unordered pair(s)")
+    for a, b in m.floor_pairs:
+        print(f"  {a} vs {b}")
+    print(f"cells flipping the engine (≠): {len(m.flip_cells)} ordered")
+    for a, b in sorted(m.flip_cells):
+        print(f"  {a} vs {b}")
+    print(f"kernel-backed (Def-4 rows): {m.is_kernel_backed}")
 
 
 if __name__ == "__main__":

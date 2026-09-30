@@ -72,54 +72,98 @@ async def list_bots() -> dict:
     return {"handwritten": handwritten, "llm": llm}
 
 
+def _resolve_source_param(source: str | None, floor_policy: str | None = None) -> tuple[str, str]:
+    """`?source=`/`?floor_policy=` validated (400 on an unknown value), defaults from
+    `settings` (PA-S', engine-side floors)."""
+    from pd_runner.settings import resolve_floor_policy, resolve_source
+
+    try:
+        return resolve_source(source), resolve_floor_policy(floor_policy)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
 @app.get("/matrix")
-async def get_matrix() -> dict:
-    """The current outcome matrix, read from the Lean `@[outcome]` export on each call.
+async def get_matrix(source: str | None = None, floor_policy: str | None = None) -> dict:
+    """The current outcome matrix, read from the Lean export of the selected proof
+    system on each call (`?source=sprime|engine`, default `settings.CELL_SOURCE`).
 
     `stale` is a human-readable reason the export may lag the Lean sources (or null);
-    `POST /matrix/export` regenerates it.
+    `POST /matrix/export` regenerates it. A missing `S'` export is a 503 naming the
+    exporter, never an empty matrix.
     """
     from pd_runner.eval.outcome_matrix import (
         MATRIX_LEGEND, build_outcome_details, build_outcome_matrix, export_staleness,
         matrix_rows,
     )
 
-    bots, cells = build_outcome_matrix()
-    details = build_outcome_details()
+    src, policy = _resolve_source_param(source, floor_policy)
+    try:
+        bots, cells = build_outcome_matrix(source=src, floor_policy=policy)
+        details = build_outcome_details(source=src, floor_policy=policy)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
     return {
+        "source": src,
+        "floor_policy": policy,
         "bots": bots,
         "rows": matrix_rows(bots, cells),
-        "stale": export_staleness(),
+        "stale": export_staleness(source=src),
         "legend": [{"mark": m, "meaning": d} for m, d in MATRIX_LEGEND],
-        # Per proven cell, keyed "Row|Col": theorem, flags, companions, and the note the
-        # UI shows as a tooltip.
+        # Per proven cell, keyed "Row|Col": theorem, flags, companions, provenance
+        # (floor/hinge/flip), and the note the UI shows as a tooltip.
         "details": {f"{r}|{c}": d for (r, c), d in details.items()},
+        "floors": sum(1 for d in details.values() if d.get("floor")),
+        "flips": sum(1 for d in details.values() if d.get("flips_engine")),
     }
 
 
 @app.post("/matrix/export")
-async def matrix_export() -> dict:
-    """Regenerate `outcome_theorems.json` from Lean (`lake build` + `lake exe export_outcomes`).
+async def matrix_export(source: str | None = None) -> dict:
+    """Regenerate the selected system's export from Lean: the engine's
+    `outcome_theorems.json` (`lake build` + `lake exe export_outcomes`) or PA-S'`s
+    `sprime_outcome_theorems.json` (`lake build --try-cache ArithSOutcomeCheck` +
+    `lake exe export_sprime_outcomes` in `arith/`).
 
     Runs the validator + census as a side effect, so an off-template or untagged
     outcome theorem surfaces here as a 500 with the Lean error, never as a missing cell.
     """
     from pd_runner.eval.outcome_matrix import export_staleness, refresh_export
 
+    src, _ = _resolve_source_param(source)
     loop = asyncio.get_running_loop()
     try:
-        output = await loop.run_in_executor(None, refresh_export)
+        output = await loop.run_in_executor(None, lambda: refresh_export(source=src))
     except RuntimeError as exc:
         raise HTTPException(status_code=500, detail=str(exc))
-    return {"output": output.strip(), "stale": export_staleness()}
+    return {"source": src, "output": output.strip(), "stale": export_staleness(source=src)}
 
 
 @app.get("/tau/zoos")
-async def tau_zoos() -> dict:
-    """The selectable tau sub-zoos — the UI dropdown's source of truth."""
+async def tau_zoos(source: str | None = None, floor_policy: str | None = None) -> dict:
+    """The selectable tau sub-zoos — the UI dropdown's source of truth. Per zoo, under
+    the selected source: whether it loads (total), and how many of its pairs are S'
+    floors / flip the engine."""
     from pd_runner.tau.matrix import DEFAULT_ZOO, ZOOS
 
+    src, policy = _resolve_source_param(source, floor_policy)
+
+    def provenance(z) -> dict:
+        try:
+            m = z.load(source=src, floor_policy=policy)
+        except (ValueError, FileNotFoundError) as exc:
+            return {"total": False, "error": str(exc)[:300], "floor_pairs": None,
+                    "flip_pairs": None, "kernel_backed": None}
+        return {
+            "total": True, "error": None,
+            "floor_pairs": len(m.floor_pairs),
+            "flip_pairs": len({tuple(sorted(p)) for p in m.flip_cells}),
+            "kernel_backed": m.is_kernel_backed,
+        }
+
     return {
+        "source": src,
+        "floor_policy": policy,
         "default": DEFAULT_ZOO,
         "zoos": [
             {
@@ -129,6 +173,7 @@ async def tau_zoos() -> dict:
                 "size": len(z.bots),
                 "bots": list(z.bots),
                 "stipulated_pairs": len(z.stipulations),
+                **provenance(z),
             }
             for z in ZOOS.values()
         ],
@@ -139,6 +184,8 @@ async def tau_zoos() -> dict:
 async def tau_report(
     alphas: str = "0.3,0.45,0.62,0.8",
     zoo: str = "body",
+    source: str | None = None,
+    floor_policy: str | None = None,
 ) -> HTMLResponse:
     """The TauBot graded-transparency analysis, rendered fresh on each request.
 
@@ -148,10 +195,13 @@ async def tau_report(
     thresholds, (t, α) phase diagram, and the underlying matrix.
 
     `alphas` is a comma-separated list of caution thresholds to sweep; `zoo`
-    names one of the sub-zoos listed by `/tau/zoos`.
+    names one of the sub-zoos listed by `/tau/zoos`; `source`/`floor_policy`
+    pick the proof system (`?source=sprime|engine`).
     """
     from pd_runner.tau.matrix import get_zoo
     from pd_runner.tau.report import build_report
+
+    src, policy = _resolve_source_param(source, floor_policy)
 
     try:
         parsed = tuple(float(a) for a in alphas.split(",") if a.strip())
@@ -168,9 +218,14 @@ async def tau_report(
 
     # The build is pure CPU (a few hundred tournaments); keep the event loop free.
     loop = asyncio.get_running_loop()
-    page = await loop.run_in_executor(
-        None, lambda: build_report(named.load(), parsed, zoo=named)
-    )
+    try:
+        page = await loop.run_in_executor(
+            None, lambda: build_report(
+                named.load(source=src, floor_policy=policy), parsed, zoo=named)
+        )
+    except (ValueError, FileNotFoundError) as exc:
+        # e.g. a zoo that is not total under restrict_zoo, or a missing S' export
+        raise HTTPException(status_code=409, detail=str(exc))
     return HTMLResponse(page)
 
 
@@ -204,7 +259,8 @@ async def egt_stages() -> dict:
 
 
 @app.get("/egt/report", response_class=HTMLResponse)
-async def egt_report(zoo: str | None = None, family: str | None = None) -> HTMLResponse:
+async def egt_report(zoo: str | None = None, family: str | None = None,
+                     source: str | None = None) -> HTMLResponse:
     """The HTML report over one sweep's artefacts.
 
     Unlike `/tau/report`, which recomputes on every request, this READS the
@@ -212,11 +268,14 @@ async def egt_report(zoo: str | None = None, family: str | None = None) -> HTMLR
     their artefacts are the record. The shared artefact directory holds every
     sweep ever launched, so `zoo`/`family` pick which one to render; left
     unset, the report resolves a deterministic default and the page links to
-    the other sweeps present.
+    the other sweeps present. `source` picks which proof system's runs of the
+    sweep to render (default: the configured cell source when present).
     """
     from pd_runner.egt.pipeline import DEFAULT_OUT_ROOT
     from pd_runner.egt.report import build_report
 
+    if source is not None:
+        _resolve_source_param(source)
     loop = asyncio.get_running_loop()
     try:
         # Absolute base: the page is served at /egt/report but the artefacts
@@ -224,7 +283,7 @@ async def egt_report(zoo: str | None = None, family: str | None = None) -> HTMLR
         page = await loop.run_in_executor(
             None, lambda: build_report(
                 DEFAULT_OUT_ROOT, artefact_base="/egt/runs",
-                zoo=zoo, family=family)
+                zoo=zoo, family=family, source=source)
         )
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
@@ -257,13 +316,16 @@ async def get_egt_sweep(job_id: str) -> JobResponse:
 
 
 @app.post("/matrix/sync")
-async def matrix_sync() -> dict:
-    """Rebuild the outcome matrix from the theorem library and push it to the Google Sheet."""
+async def matrix_sync(source: str | None = None, floor_policy: str | None = None) -> dict:
+    """Rebuild the outcome matrix of the selected proof system and push it to its Google
+    Sheet worksheet (`Auto Matrix (S')` for `sprime`, `Auto Matrix` for `engine`)."""
     from pd_runner.services.sheets import SheetsPushError, push_matrix
 
+    src, policy = _resolve_source_param(source, floor_policy)
     loop = asyncio.get_running_loop()
     try:
-        return await loop.run_in_executor(None, push_matrix)
+        return await loop.run_in_executor(
+            None, lambda: push_matrix(source=src, floor_policy=policy))
     except SheetsPushError as exc:
         raise HTTPException(status_code=503, detail=str(exc))
 
@@ -287,7 +349,9 @@ async def add_matrix_status(req: MatrixStatusRequest) -> dict:
     from pd_runner.services.sheets import push_matrix, sheets_configured
     if added and sheets_configured():
         try:
-            await asyncio.get_running_loop().run_in_executor(None, push_matrix)
+            # The status file curates the ENGINE library's open cells.
+            await asyncio.get_running_loop().run_in_executor(
+                None, lambda: push_matrix(source="engine"))
             synced = True
         except Exception:
             pass  # sheet sync is best-effort; the TOML entry is the record

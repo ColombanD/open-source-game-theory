@@ -42,6 +42,10 @@ import ArithS.Outcome.Matrix.PrudentBot
 import ArithS.Outcome.Matrix.TitForTatBot
 import ArithS.Outcome.Matrix.WaryBot
 import ArithS.Outcome.Spec
+import ArithS.Outcome.Attr
+import ArithS.Outcome.Floor
+import ArithS.Outcome.Floors
+import ArithS.Outcome.Lint
 
 /-!
 # ArithS.Matrix — the results: every cell of PA-`S'` (`lake build ArithSMatrix`)

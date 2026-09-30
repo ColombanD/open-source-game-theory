@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass, field
+from typing import Literal
 
 # ---------------------------------------------------------------------------
 # Model defaults
@@ -207,3 +208,60 @@ def cost_usd(model: str, *, input_tokens: int, output_tokens: int,
         + cache_creation_tokens * in_price * CACHE_WRITE_MULTIPLIER
         + output_tokens * out_price
     ) / 1_000_000
+
+
+# ---------------------------------------------------------------------------
+# Cell source — which proof system's matrix the app treats as ground truth
+# ---------------------------------------------------------------------------
+#
+# Since 2026-09-30 (`Research/Notes/SPRIME_SOURCE_OF_TRUTH.md` §0) the arithmetized
+# system PA-`S'` (`arith/`, export `app/generated/sprime_outcome_theorems.json`) is the
+# SOURCE OF TRUTH for the matrix, the tau layer and the EGT experiments; the engine's
+# stipulated `S` (`app/generated/outcome_theorems.json`) stays loadable as the
+# COMPARISON. Every loader takes `source=` / `floor_policy=` and defaults to these.
+#
+# `FloorPolicy` decides what a GENUINE FLOOR is in `S'`: a cell whose value hinges on
+# bounded consistency of `TAct` at `k` (a hypothesis-free `dich_<L>_vs_<R>` dichotomy,
+# never a theorem for one value). `engine_side` carries it as a labelled cell holding
+# the `¬A_k` branch — the engine's stipulation, now visible (provenance
+# `floor_dichotomy`); `restrict_zoo` treats floors as holes, so a zoo containing one
+# fails totality loudly.
+
+CellSource = Literal["sprime", "engine"]
+FloorPolicy = Literal["engine_side", "restrict_zoo"]
+
+CELL_SOURCES: tuple[str, ...] = ("sprime", "engine")
+FLOOR_POLICIES: tuple[str, ...] = ("engine_side", "restrict_zoo")
+
+
+def _env_choice(var: str, default: str, allowed: tuple[str, ...]) -> str:
+    value = os.getenv(var, default).strip() or default
+    if value not in allowed:
+        raise ValueError(
+            f"{var}={value!r} is not one of {list(allowed)} — unset it for the default "
+            f"({default!r}) or pick one of the allowed values"
+        )
+    return value
+
+
+CELL_SOURCE: CellSource = _env_choice("PD_CELL_SOURCE", "sprime", CELL_SOURCES)  # type: ignore[assignment]
+FLOOR_POLICY: FloorPolicy = _env_choice("PD_FLOOR_POLICY", "engine_side", FLOOR_POLICIES)  # type: ignore[assignment]
+
+
+def resolve_source(source: str | None) -> CellSource:
+    """`source` validated, or the configured default when None."""
+    if source is None:
+        return CELL_SOURCE
+    if source not in CELL_SOURCES:
+        raise ValueError(f"unknown cell source {source!r}; choose one of {list(CELL_SOURCES)}")
+    return source  # type: ignore[return-value]
+
+
+def resolve_floor_policy(policy: str | None) -> FloorPolicy:
+    """`policy` validated, or the configured default when None."""
+    if policy is None:
+        return FLOOR_POLICY
+    if policy not in FLOOR_POLICIES:
+        raise ValueError(
+            f"unknown floor policy {policy!r}; choose one of {list(FLOOR_POLICIES)}")
+    return policy  # type: ignore[return-value]

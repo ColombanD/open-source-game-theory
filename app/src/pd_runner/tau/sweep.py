@@ -56,6 +56,11 @@ class TournamentResult:
     unconditional_defectors: tuple[str, ...] = ()
     # Which σ channel family produced the signals (see `tau.channels`).
     family: str = "behavioral"
+    # The BASE matrix's provenance (`TauMatrix.source`, `.floor_cells`): every tau
+    # cell reads the base cells through the signal, so the proof system and the
+    # floors the base rests on are this tournament's too (`egt.ingest` reads them).
+    cell_source: str = "engine"
+    floor_cells: tuple[tuple[str, str], ...] = ()
 
     @property
     def is_degenerate(self) -> bool:
@@ -141,6 +146,8 @@ def run_tournament(
         unconditional_cooperators=tuple(always_c),
         unconditional_defectors=tuple(always_d),
         family=family_key,
+        cell_source=matrix.source,
+        floor_cells=matrix.floor_cells,
     )
 
 
@@ -185,18 +192,26 @@ def main() -> None:
                         help="linear steps on the transparency dial from 1.0 down to 0.0")
     parser.add_argument("--family", choices=["behavioral", "epsilon", "syntactic"],
                         default="behavioral", help="σ channel family (see tau.channels)")
+    from pd_runner import settings
+
+    parser.add_argument("--source", choices=list(settings.CELL_SOURCES), default=None,
+                        help=f"cell source (default: {settings.CELL_SOURCE})")
+    parser.add_argument("--floor-policy", choices=list(settings.FLOOR_POLICIES), default=None,
+                        help=f"S' floor policy (default: {settings.FLOOR_POLICY})")
     args = parser.parse_args()
 
     from pd_runner.tau.channels import all_families
 
-    matrix = load_tau_matrix()
+    matrix = load_tau_matrix(source=args.source, floor_policy=args.floor_policy)
     family = all_families(matrix)[args.family]
     alphas = [float(a) for a in args.alphas.split(",")]
     steps = max(args.t_steps, 2)
     ts = [round(1.0 - i / (steps - 1), 4) for i in range(steps)]
 
     print(f"tau sweep over {len(matrix)} bots ({len(matrix) ** 2} ordered cells)"
-          f" — σ family: {family.label}")
+          f" — σ family: {family.label} — cells: {matrix.source}"
+          + (f" ({len(matrix.floor_pairs)} floor pair(s) at the engine-side value)"
+             if matrix.has_floors else ""))
     anchored = run_tournament(matrix, 1.0, 0.5, family=family).cells == \
         base_tournament_cells(matrix)
     ceiling = family.ceiling()

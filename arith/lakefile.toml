@@ -1,6 +1,6 @@
 name = "ArithS"
 version = "0.1.0"
-defaultTargets = ["ArithS"]
+defaultTargets = ["ArithS", "ArithSOutcomeCheck"]
 
 # The arithmetized instance of S: PA (Foundation) + abstract action constants, a
 # structural proof-length measure `len`, and the length-bounded provability predicate
@@ -44,3 +44,15 @@ roots = ["ArithS.Matrix"]
 [[lean_lib]]
 name = "ArithSAudit"
 roots = ["ArithS.Audit"]
+
+# The S' outcome-theorem gate (the twin of the engine's `OutcomeCheck`): a separate root because it runs
+# commands (the validator, the cell and floor censuses, the paper-zoo coverage — `ArithS/Outcome/Lint.lean`);
+# in `defaultTargets` so every `lake build` runs them.
+[[lean_lib]]
+name = "ArithSOutcomeCheck"
+roots = ["ArithS.Outcome.Check"]
+
+# Serializes the @[outcomeA] cells and @[floorA] floors to app/generated/sprime_outcome_theorems.json.
+[[lean_exe]]
+name = "export_sprime_outcomes"
+root = "ArithS.Outcome.Export"

@@ -43,7 +43,7 @@ import json
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Callable, Iterable, Sequence
+from typing import Callable, Sequence
 
 from pd_runner.egt.ingest import (
     DEFAULT_B,
@@ -120,6 +120,11 @@ class RunPaths:
     # in the name so two families can never share (and silently clobber) a
     # run directory.
     family: str = "behavioral"
+    # The proof system the cells came from (`PayoffMatrix.cell_source`). "engine"
+    # keeps the historical naming; any other source carries its key in the name
+    # (and in the fingerprint, `nash.loader.hash_payoff_matrix`), so engine and S'
+    # runs of one zoo never share a directory (SPRIME_SOURCE_OF_TRUTH.md §1.3).
+    cell_source: str = "engine"
 
     @property
     def run_dir(self) -> Path:
@@ -128,7 +133,8 @@ class RunPaths:
     @property
     def name(self) -> str:
         fam = "" if self.family == "behavioral" else f"{self.family}_"
-        return f"{self.zoo}_{fam}t{_fmt_dial(self.t)}_a{_fmt_dial(self.alpha)}_{self.fingerprint}"
+        src = "" if self.cell_source == "engine" else f"{self.cell_source}_"
+        return f"{self.zoo}_{src}{fam}t{_fmt_dial(self.t)}_a{_fmt_dial(self.alpha)}_{self.fingerprint}"
 
     def stage_dir(self, stage: str) -> Path:
         return self.run_dir / stage
@@ -156,6 +162,7 @@ class RunPaths:
             alpha=payoff.alpha,
             fingerprint=cells_fingerprint(payoff),
             family=family,
+            cell_source=payoff.cell_source,
         )
 
 
@@ -204,6 +211,9 @@ class RunResult:
             "run": self.paths.name,
             "zoo": self.paths.zoo,
             "family": self.paths.family,
+            "cell_source": self.payoff.cell_source,
+            "floor_cells": [list(p) for p in self.payoff.floor_cells],
+            "n_floor_cells": len(self.payoff.floor_cells),
             "t": self.paths.t,
             "alpha": self.paths.alpha,
             "fingerprint": self.paths.fingerprint,
@@ -483,15 +493,16 @@ class SweepResult:
     seconds: float
     out_root: Path
     family: str = "behavioral"
+    cell_source: str = "engine"
 
     @property
     def summary_path(self) -> Path:
         """`sweep_summary.json` for the behavioral family (the historical name
         the report reads); `sweep_summary_<family>.json` otherwise, so two
-        families swept into one root never clobber each other."""
-        name = ("sweep_summary.json" if self.family == "behavioral"
-                else f"sweep_summary_{self.family}.json")
-        return Path(self.out_root) / name
+        families swept into one root never clobber each other. The file carries
+        `cell_source`; the report trusts it only for the system it renders
+        (`report._resolve_sweep`), exactly as it already refuses another zoo's."""
+        return Path(self.out_root) / sweep_summary_name(self.family)
 
     @property
     def n_distinct(self) -> int:
@@ -506,6 +517,7 @@ class SweepResult:
         return {
             "zoo": self.zoo,
             "family": self.family,
+            "cell_source": self.cell_source,
             "n_grid_points": self.n_grid_points,
             "n_distinct_matrices": self.n_distinct,
             "dedup_saved": self.n_grid_points - self.n_distinct,
@@ -513,6 +525,11 @@ class SweepResult:
             "ok": all(r.ok for r in self.runs),
             "runs": [r.summary() for r in self.runs],
         }
+
+
+def sweep_summary_name(family: str = "behavioral") -> str:
+    """The top-level summary file for one family's sweep — see `SweepResult.summary_path`."""
+    return "sweep_summary.json" if family == "behavioral" else f"sweep_summary_{family}.json"
 
 
 def sweep(
@@ -528,6 +545,8 @@ def sweep(
     non_termination_payoff: float | None = None,
     t_steps: int = 6,
     on_event: Callable[[str], None] | None = None,
+    source: str | None = None,
+    floor_policy: str | None = None,
     **stage_kwargs,
 ) -> SweepResult:
     """Analyse every DISTINCT payoff matrix arising on the `(t, α)` grid.
@@ -552,6 +571,11 @@ def sweep(
     `sweep_summary_<family>.json`, so families never clobber each other in one
     out_root. (The HTML report renders one (zoo, family) sweep at a time —
     `build_report(zoo=..., family=...)` / `/egt/report?zoo=&family=`.)
+
+    `source`/`floor_policy` pick the proof system the cells come from
+    (`settings.CELL_SOURCE`, PA-S' by default) and what a S' floor is; both are
+    recorded in every `summary.json`/`assumptions.json`, and the run directories of
+    a non-engine source carry the source in their names and fingerprints.
     """
     t0 = time.perf_counter()
 
@@ -560,7 +584,10 @@ def sweep(
             on_event(msg)
 
     named = get_zoo(zoo)
-    matrix = named.load()
+    matrix = named.load(source=source, floor_policy=floor_policy)
+    emit(f"cells: {matrix.source}"
+         + (f" — {len(matrix.floor_pairs)} floor pair(s) at the engine-side value"
+            if matrix.has_floors else ""))
     distances = behavioral_distance_matrix(matrix)
     if family == "behavioral":
         fam = None   # the legacy path — byte-identical artefacts and naming
@@ -603,6 +630,8 @@ def sweep(
                 non_termination_payoff=non_termination_payoff,
                 stipulated_cells=matrix.hypothetical_cells,
                 zoo=zoo,
+                cell_source=matrix.source,
+                floor_cells=matrix.floor_cells,
             )
             fp = cells_fingerprint(payoff)
             if fp in by_fingerprint:
@@ -628,6 +657,7 @@ def sweep(
         seconds=time.perf_counter() - t0,
         out_root=Path(out_root),
         family=family,
+        cell_source=matrix.source,
     )
 
     out_root = Path(out_root)
@@ -668,6 +698,12 @@ def main() -> None:
                          "cross-family comparable"))
     p.add_argument("--stages", type=str, default=",".join(STAGES),
                    help=f"comma-separated subset of {STAGES}")
+    from pd_runner import settings
+
+    p.add_argument("--source", choices=list(settings.CELL_SOURCES), default=None,
+                   help=f"proof system the cells come from (default: {settings.CELL_SOURCE})")
+    p.add_argument("--floor-policy", choices=list(settings.FLOOR_POLICIES), default=None,
+                   help=f"what a S' floor is (default: {settings.FLOOR_POLICY})")
     p.add_argument("--out-root", type=Path, default=DEFAULT_OUT_ROOT)
     p.add_argument("--max-support-size", type=int, default=None)
     p.add_argument("--no-render", action="store_true",
@@ -689,13 +725,15 @@ def main() -> None:
         family=args.family,
         stages=tuple(s.strip() for s in args.stages.split(",") if s.strip()),
         t_steps=args.t_steps,
+        source=args.source,
+        floor_policy=args.floor_policy,
         max_support_size=args.max_support_size,
         render=not args.no_render,
         on_event=print,
     )
 
     print()
-    print(f"zoo: {result.zoo}   family: {result.family}")
+    print(f"zoo: {result.zoo}   family: {result.family}   cells: {result.cell_source}")
     print(f"grid points     : {result.n_grid_points}")
     print(f"distinct matrices: {result.n_distinct} "
           f"(dedup saved {result.n_grid_points - result.n_distinct} analyses)")

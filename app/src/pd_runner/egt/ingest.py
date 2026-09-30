@@ -128,6 +128,18 @@ class PayoffMatrix:
     t: float | None = None
     alpha: float | None = None
     zoo: str | None = None
+    # WHICH PROOF SYSTEM proved the cells (`settings.CellSource`): "sprime" (PA-S',
+    # the default) or "engine". Two runs of one zoo under different systems are
+    # different experiments — the run-directory hash covers it (`nash.loader.
+    # hash_payoff_matrix`).
+    cell_source: str = "engine"
+    # The S' FLOOR cells among the BASE cells this matrix reads (ordered pairs whose
+    # value is the engine-side half of a dichotomy, `FloorPolicy.engine_side`). For a
+    # tournament matrix these are the base cells every tau cell reads through the
+    # signal — how much of the analysis rests on the floors' hinge. Like
+    # `stipulated_cells` it is reported, unlike them it does not make the matrix
+    # conditional: a floor is a theorem (the `¬A_k` branch), labelled.
+    floor_cells: tuple[ActionPair, ...] = ()
 
     def __len__(self) -> int:
         return len(self.bots)
@@ -137,10 +149,17 @@ class PayoffMatrix:
         """True when no cell rests on a stipulation."""
         return not self.stipulated_cells
 
+    @property
+    def has_floors(self) -> bool:
+        return bool(self.floor_cells)
+
     def assumptions(self) -> dict:
         """The provenance block every stage writes into `assumptions.json`."""
         return {
             "source": self.source,
+            "cell_source": self.cell_source,
+            "floor_cells": [list(p) for p in self.floor_cells],
+            "n_floor_cells": len(self.floor_cells),
             "zoo": self.zoo,
             "bots": list(self.bots),
             "n_types": len(self.bots),
@@ -195,6 +214,8 @@ def payoff_matrix_from_cells(
     t: float | None = None,
     alpha: float | None = None,
     zoo: str | None = None,
+    cell_source: str = "engine",
+    floor_cells: Sequence[ActionPair] = (),
 ) -> PayoffMatrix:
     """Action-pair cells -> `PayoffMatrix`. The primitive both loaders call.
 
@@ -260,6 +281,8 @@ def payoff_matrix_from_cells(
         t=t,
         alpha=alpha,
         zoo=zoo,
+        cell_source=cell_source,
+        floor_cells=tuple(p for p in floor_cells if p[0] in kept and p[1] in kept),
     )
 
 
@@ -298,6 +321,8 @@ def payoff_matrix_from_tau_matrix(
         t=1.0,
         alpha=None,
         zoo=zoo,
+        cell_source=matrix.source,
+        floor_cells=matrix.floor_cells,
     )
 
 
@@ -311,6 +336,8 @@ def payoff_matrix_from_tournament(
     non_termination_payoff: float | None = None,
     stipulated_cells: Sequence[ActionPair] = (),
     zoo: str | None = None,
+    cell_source: str | None = None,
+    floor_cells: Sequence[ActionPair] | None = None,
 ) -> PayoffMatrix:
     """A tau tournament at fixed `(t, α)` -> `A`. The `(t, α)` entry point.
 
@@ -318,7 +345,15 @@ def payoff_matrix_from_tournament(
     `(row, col) -> (row_action, col_action)`. `bots` fixes the row/column
     ORDER; when omitted it is recovered from the cell keys in first-seen
     order, which for a tournament built by `run_tournament` is `matrix.bots`.
+    `cell_source`/`floor_cells` default to the tournament's own record of its BASE
+    matrix (`TournamentResult.cell_source`/`.floor_cells`): every tau cell reads the
+    base cells through the signal, so the system and the floors the base rests on
+    are the tournament's provenance too.
     """
+    if cell_source is None:
+        cell_source = getattr(result, "cell_source", "engine")
+    if floor_cells is None:
+        floor_cells = getattr(result, "floor_cells", ())
     if bots is None:
         seen: list[str] = []
         for row, _ in result.cells:
@@ -338,4 +373,6 @@ def payoff_matrix_from_tournament(
         t=result.t,
         alpha=result.alpha,
         zoo=zoo,
+        cell_source=cell_source,
+        floor_cells=floor_cells,
     )

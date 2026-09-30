@@ -141,15 +141,25 @@ def main() -> int:
         if not fps:
             print(f"  {zoo}: no t=1 runs found")
             continue
+        # Runs record which proof system proved their cells (pre-switch artefacts
+        # carry none: the engine); the base matrix must be loaded from the SAME
+        # system, or the anchor check compares S' runs against engine cells.
+        run_sources = {r.get("cell_source") or "engine"
+                       for (z, _), rs in groups.items() if z == zoo for r in rs}
+        if len(run_sources) != 1:
+            print(f"  {zoo}: runs from several cell sources {sorted(run_sources)} — "
+                  "anchor check needs one system per root; skipping")
+            continue
+        (run_source,) = run_sources
         try:
             base_fp = cells_fingerprint(
-                payoff_matrix_from_tau_matrix(ZOOS[zoo].load(), zoo=zoo))
+                payoff_matrix_from_tau_matrix(ZOOS[zoo].load(source=run_source), zoo=zoo))
         except KeyError:
             base_fp = "?"  # zoo no longer registered
         agree = len(set(fps.values())) == 1 and (base_fp in ("?", *fps.values()))
         anchor_ok &= agree
         mark = "OK " if agree else "MISMATCH"
-        print(f"  {mark} {zoo}: base={base_fp}  " +
+        print(f"  {mark} {zoo} [{run_source}]: base={base_fp}  " +
               "  ".join(f"{fam}={fp}" for fam, fp in sorted(fps.items())))
 
     # ── Report ────────────────────────────────────────────────────────────

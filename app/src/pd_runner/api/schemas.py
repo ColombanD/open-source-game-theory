@@ -219,6 +219,11 @@ class EgtSweepRequest(BaseModel):
     max_support_size: Optional[int] = None
     # Invasion-graph figures; off makes a long sweep noticeably faster.
     render: bool = True
+    # The proof system the cells come from ("sprime" | "engine"; None = the
+    # configured default, settings.CELL_SOURCE) and what a S' floor is
+    # ("engine_side" | "restrict_zoo"; None = settings.FLOOR_POLICY).
+    source: Optional[str] = None
+    floor_policy: Optional[str] = None
 
 
 class MatrixStatusRequest(BaseModel):

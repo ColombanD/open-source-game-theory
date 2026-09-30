@@ -80,4 +80,10 @@ def hash_payoff_matrix(payoff: PayoffMatrix) -> str:
         for col in payoff.bots:
             pair = payoff.cells[(row, col)]
             h.update(f"{row}|{col}|{pair[0]}{pair[1]}\n".encode())
+    # The proof system is part of a run's identity (SPRIME_SOURCE_OF_TRUTH.md §1.3):
+    # engine and S' runs of one zoo must never share a directory even when their
+    # cells coincide. The engine keeps the historical hash (nothing appended), so
+    # every pre-switch artefact path stays valid.
+    if payoff.cell_source != "engine":
+        h.update(f"cell_source|{payoff.cell_source}\n".encode())
     return h.hexdigest()

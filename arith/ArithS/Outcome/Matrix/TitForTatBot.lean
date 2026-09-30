@@ -1,4 +1,5 @@
 import ArithS.Outcome.Spec
+import ArithS.Outcome.Attr
 import ArithS.Cells.RedCellEngine
 import ArithS.Cells.DimcidFlips
 import ArithS.Cells.FlipCells
@@ -32,21 +33,25 @@ open LAct
 open PD.Bots
 
 /-- `sf_TitForTatBot_vs_CooperateBot` -/
+@[outcomeA]
 theorem outcome_TitForTatBot_vs_CooperateBot :
     OutcomeSpecA .nobudget (const TitForTatBot) (const CooperateBot) (some (.C, .C)) :=
   OutcomeSpecA.nobudget_of (OutcomeAtA.of_evalGraph sf_TitForTatBot_vs_CooperateBot)
 
 /-- `sf_TitForTatBot_vs_DBot` -/
+@[outcomeA]
 theorem outcome_TitForTatBot_vs_DBot :
     OutcomeSpecA .nobudget (const TitForTatBot) (const DBot) (some (.D, .C)) :=
   OutcomeSpecA.nobudget_of (OutcomeAtA.of_evalGraph sf_TitForTatBot_vs_DBot)
 
 /-- `sf_TitForTatBot_vs_DefectBot` -/
+@[outcomeA]
 theorem outcome_TitForTatBot_vs_DefectBot :
     OutcomeSpecA .nobudget (const TitForTatBot) (const DefectBot) (some (.D, .D)) :=
   OutcomeSpecA.nobudget_of (OutcomeAtA.of_evalGraph sf_TitForTatBot_vs_DefectBot)
 
 /-- `sf_TitForTatBot_vs_TitForTatBot` -/
+@[outcomeA]
 theorem outcome_TitForTatBot_vs_TitForTatBot :
     OutcomeSpecA .nobudget (const TitForTatBot) (const TitForTatBot) (some (.C, .C)) :=
   OutcomeSpecA.nobudget_of (OutcomeAtA.of_evalGraph sf_TitForTatBot_vs_TitForTatBot)

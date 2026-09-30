@@ -1,4 +1,5 @@
 import ArithS.Outcome.Spec
+import ArithS.Outcome.Attr
 import ArithS.Cells.RedCellEngine
 import ArithS.Cells.DimcidFlips
 import ArithS.Cells.FlipCells
@@ -33,11 +34,13 @@ open LAct
 open PD.Bots
 
 /-- `snd_CupodBot_vs_CooperateBot` -/
+@[outcomeA]
 theorem outcome_CupodBot_vs_CooperateBot :
     OutcomeSpecA .universal (bot CupodBot) (const CooperateBot) (some (.C, .C)) :=
   OutcomeSpecA.universal_of fun k ↦ OutcomeAtA.of_evalGraph (snd_CupodBot_vs_CooperateBot k)
 
 /-- `pos_CupodBot_vs_DBot` -/
+@[outcomeA]
 theorem outcome_CupodBot_vs_DBot :
     OutcomeSpecA .eventual (bot CupodBot) (const DBot) (some (.C, .C)) :=
   OutcomeSpecA.eventual_of (by
@@ -45,6 +48,7 @@ theorem outcome_CupodBot_vs_DBot :
     exact ⟨k₀, fun k hk ↦ OutcomeAtA.of_evalGraph (h k hk)⟩)
 
 /-- `pos_CupodBot_vs_DefectBot` -/
+@[outcomeA]
 theorem outcome_CupodBot_vs_DefectBot :
     OutcomeSpecA .eventual (bot CupodBot) (const DefectBot) (some (.D, .D)) :=
   OutcomeSpecA.eventual_of (by
@@ -52,6 +56,7 @@ theorem outcome_CupodBot_vs_DefectBot :
     exact ⟨k₀, fun k hk ↦ OutcomeAtA.of_evalGraph (h k hk)⟩)
 
 /-- `pos_CupodBot_vs_EBot` -/
+@[outcomeA]
 theorem outcome_CupodBot_vs_EBot :
     OutcomeSpecA .eventual (bot CupodBot) (const EBot) (some (.C, .C)) :=
   OutcomeSpecA.eventual_of (by
@@ -59,11 +64,13 @@ theorem outcome_CupodBot_vs_EBot :
     exact ⟨k₀, fun k hk ↦ OutcomeAtA.of_evalGraph (h k hk)⟩)
 
 /-- `snd_CupodBot_vs_TitForTatBot` -/
+@[outcomeA]
 theorem outcome_CupodBot_vs_TitForTatBot :
     OutcomeSpecA .universal (bot CupodBot) (const TitForTatBot) (some (.C, .C)) :=
   OutcomeSpecA.universal_of fun k ↦ OutcomeAtA.of_evalGraph (snd_CupodBot_vs_TitForTatBot k)
 
 /-- `loeb_CupodBot_vs_MirrorBot` (`Cells/DupocEngine.lean`; the hand-template version is `loeb_Cupod_vs_Mirror`) -/
+@[outcomeA]
 theorem outcome_CupodBot_vs_MirrorBot :
     OutcomeSpecA .eventual (bot CupodBot) (const MirrorBot) (some (.D, .D)) :=
   OutcomeSpecA.eventual_of (by
@@ -71,6 +78,7 @@ theorem outcome_CupodBot_vs_MirrorBot :
     exact ⟨k₀, fun k hk ↦ OutcomeAtA.of_evalGraph (h k hk)⟩)
 
 /-- `loeb_CupodBot_vs_CupodBot` (`Cells/DupocEngine.lean`; the hand-template version is `dupoc_self_coop`, `Necessitation/Package.lean`) -/
+@[outcomeA]
 theorem outcome_CupodBot_vs_CupodBot :
     OutcomeSpecA .eventual (bot CupodBot) (bot CupodBot) (some (.D, .D)) :=
   OutcomeSpecA.eventual_of (by

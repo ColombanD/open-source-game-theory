@@ -1,4 +1,5 @@
 import ArithS.Outcome.Spec
+import ArithS.Outcome.Attr
 import ArithS.Cells.RedCellEngine
 import ArithS.Cells.DimcidFlips
 import ArithS.Cells.FlipCells
@@ -33,6 +34,7 @@ open LAct
 open PD.Bots
 
 /-- `pos_DupocBot_vs_CooperateBot` -/
+@[outcomeA]
 theorem outcome_DupocBot_vs_CooperateBot :
     OutcomeSpecA .eventual (bot DupocBot) (const CooperateBot) (some (.C, .C)) :=
   OutcomeSpecA.eventual_of (by
@@ -40,16 +42,19 @@ theorem outcome_DupocBot_vs_CooperateBot :
     exact ⟨k₀, fun k hk ↦ OutcomeAtA.of_evalGraph (h k hk)⟩)
 
 /-- `snd_DupocBot_vs_DefectBot` -/
+@[outcomeA]
 theorem outcome_DupocBot_vs_DefectBot :
     OutcomeSpecA .universal (bot DupocBot) (const DefectBot) (some (.D, .D)) :=
   OutcomeSpecA.universal_of fun k ↦ OutcomeAtA.of_evalGraph (snd_DupocBot_vs_DefectBot k)
 
 /-- `snd_DupocBot_vs_OBot` -/
+@[outcomeA]
 theorem outcome_DupocBot_vs_OBot :
     OutcomeSpecA .universal (bot DupocBot) (const OBot) (some (.D, .D)) :=
   OutcomeSpecA.universal_of fun k ↦ OutcomeAtA.of_evalGraph (snd_DupocBot_vs_OBot k)
 
 /-- `khat_DupocBot_vs_TitForTatBot` -/
+@[outcomeA]
 theorem outcome_DupocBot_vs_TitForTatBot :
     OutcomeSpecA .eventual (bot DupocBot) (const TitForTatBot) (some (.C, .C)) :=
   OutcomeSpecA.eventual_of (by
@@ -57,11 +62,13 @@ theorem outcome_DupocBot_vs_TitForTatBot :
     exact ⟨k₀, fun k hk ↦ OutcomeAtA.of_evalGraph (h k hk)⟩)
 
 /-- `snd_DupocBot_vs_CupodBot` (`Cells/RedCellEngine.lean`; the hand-template version is `red_cell`) -/
+@[outcomeA]
 theorem outcome_DupocBot_vs_CupodBot :
     OutcomeSpecA .universal (bot DupocBot) (bot CupodBot) (some (.D, .C)) :=
   OutcomeSpecA.universal_of fun k ↦ OutcomeAtA.of_evalGraph (snd_DupocBot_vs_CupodBot k)
 
 /-- `loeb_DupocBot_vs_MirrorBot` (`Cells/DupocEngine.lean`; the hand-template version is `loeb_Dupoc_vs_Mirror`) -/
+@[outcomeA]
 theorem outcome_DupocBot_vs_MirrorBot :
     OutcomeSpecA .eventual (bot DupocBot) (const MirrorBot) (some (.C, .C)) :=
   OutcomeSpecA.eventual_of (by
@@ -69,6 +76,7 @@ theorem outcome_DupocBot_vs_MirrorBot :
     exact ⟨k₀, fun k hk ↦ OutcomeAtA.of_evalGraph (h k hk)⟩)
 
 /-- `loeb_DupocBot_vs_DupocBot` (`Cells/DupocEngine.lean`; the hand-template version is `dupoc_self_coop`, `Necessitation/Package.lean`) -/
+@[outcomeA]
 theorem outcome_DupocBot_vs_DupocBot :
     OutcomeSpecA .eventual (bot DupocBot) (bot DupocBot) (some (.C, .C)) :=
   OutcomeSpecA.eventual_of (by

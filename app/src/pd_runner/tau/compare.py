@@ -110,6 +110,26 @@ class DirectCoincidence:
         return bool(self.cells) and not self.unexpected
 
 
+class SourceMismatchError(ValueError):
+    """The certification was asked to compare the ENGINE's tau rows against a matrix
+    read from another system."""
+
+
+def _require_engine(matrix: TauMatrix) -> None:
+    """The kernel rows (`tau_rows.json`) are the ENGINE's `@[tau_row]` theorems. Comparing
+    them against S' cells is not a certification of anything — the two systems
+    DISAGREE at the DIMCID cells by theorem — so a non-engine matrix is refused, never
+    silently compared. `sprime_tau_rows.json` (Phase 4 of SPRIME_SOURCE_OF_TRUTH.md) is
+    what a S' certification will read."""
+    if matrix.source != "engine":
+        raise SourceMismatchError(
+            f"Def 3 ≡ Def 4 certification needs an ENGINE matrix, got source={matrix.source!r}: "
+            "no S' tau rows exist yet (Phase 4, `sprime_tau_rows.json`), and the engine's "
+            "`tau_rows.json` disagrees with S' at the DIMCID cells. Load the matrix with "
+            "source=\"engine\" (CLI: --source engine)."
+        )
+
+
 def direct_kernel_vs_base(
     matrix: TauMatrix, templates: tuple[str, ...] = TEMPLATES
 ) -> DirectCoincidence:
@@ -117,8 +137,9 @@ def direct_kernel_vs_base(
 
     Restricted to the templates whose base bots are in `matrix`, so the caller's
     zoo choice decides coverage; rows Lean has not stated are reported rather
-    than guessed.
+    than guessed. ENGINE matrices only (`_require_engine`).
     """
+    _require_engine(matrix)
     tables = kernel_bits()
     template_of_slot = {v: k for k, v in LEAN_SLOT.items()}
 
@@ -226,15 +247,25 @@ def main() -> None:
 
     from pd_runner.tau.matrix import load_tau_matrix
 
+    from pd_runner import settings
+
     parser = argparse.ArgumentParser(
         description="Certify Def 3 ≡ Def 4 at large k, straight from the kernel."
     )
     parser.add_argument("--zoo", choices=("control", "separating"), default="separating")
+    parser.add_argument("--source", choices=list(settings.CELL_SOURCES), default=None,
+                        help=(f"cell source (default: {settings.CELL_SOURCE}); the "
+                              "certification only runs on `engine` — the kernel rows are "
+                              "the engine's, and there are no S' rows before Phase 4"))
     args = parser.parse_args()
 
     bots = CONTROL_BOTS if args.zoo == "control" else SEPARATING_BOTS
-    matrix = load_tau_matrix(bots)
-    cert = certify(matrix, args.zoo)
+    matrix = load_tau_matrix(bots, source=args.source)
+    try:
+        cert = certify(matrix, args.zoo)
+    except SourceMismatchError as exc:
+        print(f"REFUSED: {exc}")
+        sys.exit(2)
     print(render(cert))
     sys.exit(0 if cert.passed else 1)
 

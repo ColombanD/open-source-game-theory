@@ -3,9 +3,11 @@
 Auth is a Google Cloud service account: create one, download its JSON key to
 `app/.secrets/sheets-service-account.json` (or point `PD_SHEETS_CREDENTIALS`
 at it), and share the spreadsheet with the service account's email address
-(Editor). The matrix is written to its own worksheet (`PD_SHEETS_WORKSHEET`,
-default "Auto Matrix") so hand-written tabs are never touched; the target
-worksheet is cleared and rewritten on every push.
+(Editor). The matrix is written to its own worksheet so hand-written tabs are
+never touched; the target worksheet is cleared and rewritten on every push. One
+worksheet per proof system (`settings.CellSource`): the engine's `S` goes to
+`PD_SHEETS_WORKSHEET` (default "Auto Matrix"), PA-`S'` to
+`PD_SHEETS_WORKSHEET_SPRIME` (default "Auto Matrix (S')").
 """
 
 from __future__ import annotations
@@ -22,6 +24,14 @@ from pd_runner.eval.outcome_matrix import (
 
 DEFAULT_SPREADSHEET_ID = "10oNMb88iDmsWcR6SBecopLhrlgilRU-htBB0q07eET8"
 DEFAULT_WORKSHEET = "Auto Matrix"
+DEFAULT_WORKSHEET_SPRIME = "Auto Matrix (S')"
+
+
+def default_worksheet(source: str) -> str:
+    """The worksheet a `CellSource` is pushed to (env override per source)."""
+    if source == "sprime":
+        return os.environ.get("PD_SHEETS_WORKSHEET_SPRIME", DEFAULT_WORKSHEET_SPRIME)
+    return os.environ.get("PD_SHEETS_WORKSHEET", DEFAULT_WORKSHEET)
 
 
 class SheetsPushError(RuntimeError):
@@ -89,16 +99,14 @@ def _apply_formatting(sheet, worksheet, bots: list[str], cells: dict[tuple[str, 
     worksheet.batch_format(formats)
 
 
-def _apply_notes(worksheet, bots: list[str]) -> None:
-    """Attach each proven cell's explanation as a Sheet note (hover), so the `⇄` and
-    `†` marks are self-explaining in the sheet as in the web UI."""
+def _apply_notes(worksheet, bots: list[str], details: dict) -> None:
+    """Attach each proven cell's explanation as a Sheet note (hover), so the `⇄`, `†`,
+    `‡` and `≠` marks are self-explaining in the sheet as in the web UI."""
     from gspread.utils import rowcol_to_a1
-
-    from pd_runner.eval.outcome_matrix import build_outcome_details
 
     notes = {
         rowcol_to_a1(bots.index(row) + 2, bots.index(col) + 2): d["note"]
-        for (row, col), d in build_outcome_details().items()
+        for (row, col), d in details.items()
     }
     if not notes:
         return
@@ -114,20 +122,28 @@ def push_matrix(
     worksheet_name: str | None = None,
     annotate: bool = False,
     prune_stale: bool = True,
+    *,
+    source: str | None = None,
+    floor_policy: str | None = None,
 ) -> dict:
-    """Rebuild the matrix from the theorem library and write it to the Sheet.
+    """Rebuild the matrix of the selected proof system and write it to its worksheet.
 
-    By default first prunes outcome_status.toml entries whose pair has gained
-    an accepted theorem since they were recorded — every sync self-cleans, so
-    the post-proof-write sync removes the very entry that proof made stale.
-    Returns a summary dict (worksheet, spreadsheet_url, cell counts by kind,
-    pruned entries).
+    `source` (default `settings.CELL_SOURCE`) picks the export and the worksheet
+    (`default_worksheet`); an explicit `worksheet_name` wins. By default first prunes
+    outcome_status.toml entries whose pair has gained an accepted ENGINE theorem since
+    they were recorded — every sync self-cleans, so the post-proof-write sync removes
+    the very entry that proof made stale. Returns a summary dict (source, worksheet,
+    spreadsheet_url, cell counts by kind incl. floors/flips, pruned entries).
     """
     try:
         import gspread
     except ImportError as exc:  # pragma: no cover
         raise SheetsPushError("gspread is not installed — run `uv add gspread` in app/") from exc
 
+    from pd_runner.settings import resolve_floor_policy, resolve_source
+
+    src = resolve_source(source)
+    policy = resolve_floor_policy(floor_policy)
     pruned = prune_stale_statuses() if prune_stale else []
 
     creds = _credentials_path()
@@ -138,19 +154,24 @@ def push_matrix(
             "(or set PD_SHEETS_CREDENTIALS)"
         )
     spreadsheet_id = spreadsheet_id or os.environ.get("PD_SHEETS_SPREADSHEET_ID", DEFAULT_SPREADSHEET_ID)
-    worksheet_name = worksheet_name or os.environ.get("PD_SHEETS_WORKSHEET", DEFAULT_WORKSHEET)
+    worksheet_name = worksheet_name or default_worksheet(src)
 
-    bots, cells = build_outcome_matrix(annotate=annotate)
+    from pd_runner.eval.outcome_matrix import MATRIX_LEGEND, build_outcome_details
+
+    bots, cells = build_outcome_matrix(annotate=annotate, source=src, floor_policy=policy)
+    details = build_outcome_details(source=src, floor_policy=policy)
     rows = matrix_rows(bots, cells)
     stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-    from pd_runner.eval.outcome_matrix import MATRIX_LEGEND
+    system = "PA-S' (arith/, lake exe export_sprime_outcomes)" if src == "sprime" \
+        else "the engine's S (lake exe export_outcomes)"
 
     rows += [[], ["Legend"]]
     rows += [[mark, meaning] for mark, meaning in MATRIX_LEGEND]
     rows += [
         [],
-        [f"Auto-generated {stamp} by pd_runner.eval.outcome_matrix — do not edit; "
-         "curate Open Problem/Tried in app/outcome_status.toml"],
+        [f"Auto-generated {stamp} by pd_runner.eval.outcome_matrix — cells proved in "
+         f"{system}; floor policy {policy} — do not edit; "
+         "curate Open Problem/Tried in app/outcome_status.toml (engine matrix)"],
     ]
 
     try:
@@ -165,12 +186,16 @@ def push_matrix(
         worksheet.clear()
         worksheet.update(rows, "A1")
         _apply_formatting(sheet, worksheet, bots, cells)
-        _apply_notes(worksheet, bots)
+        _apply_notes(worksheet, bots, details)
     except gspread.exceptions.APIError as exc:
         raise SheetsPushError(f"Google Sheets API error: {exc}") from exc
 
     values = list(cells.values())
     return {
+        "source": src,
+        "floor_policy": policy,
+        "floors": sum(1 for d in details.values() if d.get("floor")),
+        "flips": sum(1 for d in details.values() if d.get("flips_engine")),
         "spreadsheet_url": sheet.url,
         "worksheet": worksheet_name,
         "bots": len(bots),

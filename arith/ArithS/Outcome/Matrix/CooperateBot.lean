@@ -1,4 +1,5 @@
 import ArithS.Outcome.Spec
+import ArithS.Outcome.Attr
 import ArithS.Cells.RedCellEngine
 import ArithS.Cells.DimcidFlips
 import ArithS.Cells.FlipCells
@@ -32,11 +33,13 @@ open LAct
 open PD.Bots
 
 /-- `sf_CooperateBot_vs_CooperateBot` -/
+@[outcomeA]
 theorem outcome_CooperateBot_vs_CooperateBot :
     OutcomeSpecA .nobudget (const CooperateBot) (const CooperateBot) (some (.C, .C)) :=
   OutcomeSpecA.nobudget_of (OutcomeAtA.of_evalGraph sf_CooperateBot_vs_CooperateBot)
 
 /-- `sf_CooperateBot_vs_DefectBot` -/
+@[outcomeA]
 theorem outcome_CooperateBot_vs_DefectBot :
     OutcomeSpecA .nobudget (const CooperateBot) (const DefectBot) (some (.C, .D)) :=
   OutcomeSpecA.nobudget_of (OutcomeAtA.of_evalGraph sf_CooperateBot_vs_DefectBot)

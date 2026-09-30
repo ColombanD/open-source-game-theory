@@ -1154,10 +1154,37 @@ def build_report(
     # A page that leaves the author's hands must carry its own caveat: the
     # one-line provenance note is too easy to skim past when a reader arrives
     # at a shared link with no briefing.
+    system = ("PA-S&prime; (<code>arith/</code>, the arithmetized system)"
+              if matrix.source == "sprime" else "the engine&rsquo;s stipulated S")
+    floor_line = ""
+    if matrix.has_floors:
+        floor_pairs = ", ".join(f"{a} vs {b}" for a, b in matrix.floor_pairs)
+        floor_line = (
+            f" <b>{len(matrix.floor_pairs)}</b> of its pairs are S&prime; FLOOR "
+            f"dichotomies carried at their engine-side value (<code>‡</code>: "
+            f"{html.escape(floor_pairs)}); each is the theorem "
+            "<code>dich_&lt;L&gt;_vs_&lt;R&gt;</code>&rsquo;s ¬A<sub>k</sub> branch, and its "
+            "value hinges on bounded consistency of TAct at k (open both ways)."
+        )
+    flip_line = ""
+    if matrix.flip_cells:
+        flip_pairs = ", ".join(
+            f"{a} vs {b}" for a, b in sorted({tuple(sorted(p)) for p in matrix.flip_cells}))
+        flip_line = (f" <b>{len({tuple(sorted(p)) for p in matrix.flip_cells})}</b> pairs "
+                     f"FLIP the engine&rsquo;s value (<code>≠</code>: {html.escape(flip_pairs)}).")
+    kernel_line = ("" if matrix.is_kernel_backed else
+                   " Test bits are read from the base cells (Def 3); the kernel tau rows "
+                   "(Def 4) are the engine&rsquo;s and are not consulted on S&prime; until "
+                   "Phase 4 ships <code>sprime_tau_rows.json</code>.")
+    source_banner = (
+        f'<p class="banner {"ok" if not matrix.has_floors else "warn"}">Cells proved in '
+        f"<b>{system}</b> (cell source <code>{html.escape(matrix.source)}</code>)."
+        f"{floor_line}{flip_line}{kernel_line}</p>"
+    )
     if matrix.is_fully_proven:
         provenance_banner = (
             '<p class="banner ok">Every cell in this matrix is a theorem '
-            "machine-checked by the Lean kernel.</p>"
+            "machine-checked by the Lean kernel.</p>" + source_banner
         )
     else:
         pairs = ", ".join(
@@ -1170,7 +1197,7 @@ def build_report(
             f"assumed, not proven — because their Lean proofs do not exist yet: "
             f"<code>{html.escape(pairs)}</code>. Everything else is "
             f"machine-checked. Any claim taken from this page should be "
-            f"reported as resting on those assumptions.</p>"
+            f"reported as resting on those assumptions.</p>" + source_banner
         )
 
     # A proven `= none` cell (MirrorBot self-play) is a fifth state, neither
@@ -1355,16 +1382,21 @@ def main() -> None:
         choices=sorted(ZOOS),
         help="which sub-zoo to analyse (see pd_runner.tau.matrix.ZOOS)",
     )
+    parser.add_argument("--source", choices=("sprime", "engine"), default=None,
+                        help="proof system the cells come from (default: settings.CELL_SOURCE)")
+    parser.add_argument("--floor-policy", choices=("engine_side", "restrict_zoo"), default=None,
+                        help="what a S' floor is (default: settings.FLOOR_POLICY)")
     parser.add_argument("--open", action="store_true", help="open in the browser")
     args = parser.parse_args()
 
     zoo = get_zoo(args.zoo)
     alphas = tuple(float(a) for a in args.alphas.split(","))
     args.output.parent.mkdir(parents=True, exist_ok=True)
+    matrix = zoo.load(source=args.source, floor_policy=args.floor_policy)
     args.output.write_text(
-        build_report(zoo.load(), alphas, zoo=zoo), encoding="utf-8"
+        build_report(matrix, alphas, zoo=zoo), encoding="utf-8"
     )
-    print(f"wrote {args.output}  (zoo: {zoo.label})")
+    print(f"wrote {args.output}  (zoo: {zoo.label}, cells: {matrix.source})")
     if args.open:
         subprocess.run(["open", str(args.output)], check=False)
 

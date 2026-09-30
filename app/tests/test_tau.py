@@ -46,7 +46,20 @@ from pd_runner.tau.sweep import (
 
 @pytest.fixture(scope="module")
 def matrix():
+    """The default-source matrix (PA-S' unless PD_CELL_SOURCE says otherwise):
+    the tau MECHANICS below (signals, distances, anchor, α-monotonicity) hold on
+    either system."""
     return load_tau_matrix()
+
+
+@pytest.fixture(scope="module")
+def engine_matrix():
+    """The ENGINE's body matrix. The tests that pin STRUCTURAL FACTS of the engine
+    zoo — twin-free body, the exact twin census, where the α dips and returning
+    rows sit — read this one: under S' DIMCID is DefectBot's behavioral twin
+    (`SPRIME_SOURCE_OF_TRUTH.md` §0.3), so those facts are system-specific.
+    `tests/test_cell_source.py` pins the S' counterparts."""
+    return load_tau_matrix(source="engine")
 
 
 # ---------------------------------------------------------------- matrix ----
@@ -67,7 +80,7 @@ def test_certified_sub_zoo_is_still_maximal() -> None:
     Not a correctness failure if it drifts — a prompt to re-run
     `python -m pd_runner.tau.matrix --recompute` and widen the zoo.
     """
-    assert set(maximum_certified_sub_zoo()) >= set(FULL_CERTIFIED_SUB_ZOO)
+    assert set(maximum_certified_sub_zoo(source="engine")) >= set(FULL_CERTIFIED_SUB_ZOO)
 
 
 def test_default_zoo_composition() -> None:
@@ -81,13 +94,13 @@ def test_default_zoo_composition() -> None:
     for twin in ("LegibleBot", "JustBot", "PrudentBot", "GuardianBot", "CIMCIC"):
         assert twin not in PAPER_BODY_SUB_ZOO, twin
     # The full zoo is still totally proven — the exclusions are about twins.
-    assert load_tau_matrix(bots=FULL_CERTIFIED_SUB_ZOO).is_fully_proven
+    assert load_tau_matrix(bots=FULL_CERTIFIED_SUB_ZOO, source="engine").is_fully_proven
 
 
 def test_default_zoo_is_fully_proven() -> None:
     """CupodBot used to enter via a STIPULATED cell; since 2026-08-25 every cell
     of the default zoo is a kernel theorem and no zoo carries stipulations."""
-    m = load_tau_matrix()
+    m = load_tau_matrix(source="engine")
     assert m.is_fully_proven
     assert len(m.hypothetical_cells) == 0
     # The red cell, proven 2026-08-20 (`outcome_DupocBot_vs_CupodBot`).
@@ -98,7 +111,7 @@ def test_default_zoo_is_fully_proven() -> None:
     # the value the stipulation had guessed, both orientations. PrudentBot left the
     # default zoo on 2026-08-27 (a behavioral twin of DefectBot at a shared budget),
     # so this is checked on the full certified zoo (which holds both bots).
-    full = load_tau_matrix(bots=FULL_CERTIFIED_SUB_ZOO)
+    full = load_tau_matrix(bots=FULL_CERTIFIED_SUB_ZOO, source="engine")
     assert not full.cell("PrudentBot", "CupodBot").hypothetical
     assert full.action("PrudentBot", "CupodBot") == "D"
     assert full.action("CupodBot", "PrudentBot") == "C"
@@ -225,7 +238,7 @@ def test_twins_zoo_twin_structure() -> None:
     groups the zoo exists to carry — {CIMCIC, DupocBot} (twins by theorem since
     2026-08-27, when the matrix cells became the SHARED-budget values) and
     {DefectBot, PrudentBot} (twins at a shared budget)."""
-    m = load_tau_matrix(PAPER_TWINS_SUB_ZOO, hypothetical_cells={})
+    m = load_tau_matrix(PAPER_TWINS_SUB_ZOO, hypothetical_cells={}, source="engine")
     assert sorted(behavioral_twins(m)) == [
         ("CIMCIC", "DupocBot"),
         ("DefectBot", "PrudentBot"),
@@ -260,7 +273,7 @@ def test_hypothetical_cannot_override_a_proven_cell() -> None:
 
 def test_full_zoo_has_no_hypothetical_cells() -> None:
     """The 15-bot maximal zoo is kernel-backed end to end."""
-    assert load_tau_matrix(bots=FULL_CERTIFIED_SUB_ZOO).is_fully_proven
+    assert load_tau_matrix(bots=FULL_CERTIFIED_SUB_ZOO, source="engine").is_fully_proven
 
 
 def test_cupodtrollbot_split_is_earned_not_stipulated() -> None:
@@ -284,7 +297,7 @@ def test_justbot_dupoc_twins_survive_cupod() -> None:
     every assignment of the one remaining hole (PrudentBot vs CupodBot); that
     cell is now a theorem, so the zoo loads with no hypotheticals at all.
     (CupodBot is a member of `FULL_CERTIFIED_SUB_ZOO` itself since 2026-09-01.)"""
-    m = load_tau_matrix(bots=FULL_CERTIFIED_SUB_ZOO, hypothetical_cells={})
+    m = load_tau_matrix(bots=FULL_CERTIFIED_SUB_ZOO, hypothetical_cells={}, source="engine")
     assert m.is_fully_proven
     groups = behavioral_twins(m)
     assert any({"DupocBot", "JustBot"} <= set(g) for g in groups)
@@ -356,12 +369,13 @@ def test_behavioral_twins_share_a_row(matrix) -> None:
             assert matrix.row(group[0]) == matrix.row(other)
 
 
-def test_default_zoo_is_twin_free(matrix) -> None:
+def test_default_zoo_is_twin_free(engine_matrix) -> None:
     """No twins ⇒ transparency reaches exactly 1.0: behavior identifies the bot.
 
     This is what admitting CupodBot buys. Without it the residual
     {CooperateBot, CupodTrollBot} pair caps the scale at ≈0.940.
     """
+    matrix = engine_matrix  # an engine-zoo structural fact
     assert behavioral_twins(matrix) == []
     assert transparency(matrix, 0.0) == pytest.approx(1.0)
 
@@ -373,7 +387,7 @@ def test_twins_cap_transparency_below_one() -> None:
     (Löbian) agent can exploit — the behavioral/prover split, visible in v1a.
     """
     for bots in (FULL_CERTIFIED_SUB_ZOO, PAPER_TWINS_SUB_ZOO):
-        m = load_tau_matrix(bots=bots)
+        m = load_tau_matrix(bots=bots, source="engine")
         assert behavioral_twins(m)
         assert transparency(m, 0.0) < 1.0
 
@@ -382,9 +396,9 @@ def test_removing_twins_raises_the_ceiling() -> None:
     """Each pruning step must buy transparency, or it costs bots for nothing:
     the 15-bot maximum (three twin groups) sits below the 12-bot body+twins
     zoo (two groups), and the twin-free body zoo reaches exactly 1.0."""
-    full = transparency(load_tau_matrix(bots=FULL_CERTIFIED_SUB_ZOO), 0.0)
-    twins = transparency(load_tau_matrix(bots=PAPER_TWINS_SUB_ZOO), 0.0)
-    body = transparency(load_tau_matrix(), 0.0)
+    full = transparency(load_tau_matrix(bots=FULL_CERTIFIED_SUB_ZOO, source="engine"), 0.0)
+    twins = transparency(load_tau_matrix(bots=PAPER_TWINS_SUB_ZOO, source="engine"), 0.0)
+    body = transparency(load_tau_matrix(source="engine"), 0.0)
     assert full < twins < body == pytest.approx(1.0)
 
 
@@ -765,7 +779,7 @@ def test_threshold_chart_axis_matches_its_marks(matrix) -> None:
         assert decode(float(tick.get("x1"))) == pytest.approx(printed, abs=5e-3)
 
 
-def test_deviation_is_not_monotone_in_transparency(matrix) -> None:
+def test_deviation_is_not_monotone_in_transparency(engine_matrix) -> None:
     """Deviation can DECREASE as the signal degrades — pinned as a real fact.
 
     A bot may depart from its base row and later return to it. As t → 0 every
@@ -780,6 +794,7 @@ def test_deviation_is_not_monotone_in_transparency(matrix) -> None:
     this test ever fails, the sweep changed; do not delete it to make the chart
     look monotone.
     """
+    matrix = engine_matrix  # an engine-zoo structural fact
     from pd_runner.tau.report import row_deviation
 
     grid = [round(1.0 - 0.025 * i, 3) for i in range(41)]
@@ -798,13 +813,14 @@ def test_deviation_is_not_monotone_in_transparency(matrix) -> None:
     assert all(t <= 0.5 for _, _, t, _, _ in dips)
 
 
-def test_returning_rows_are_marked_in_the_chart(matrix) -> None:
+def test_returning_rows_are_marked_in_the_chart(engine_matrix) -> None:
     """A non-permanent departure must be flagged, not silently ticked.
 
     The threshold is the FIRST departure. Where a bot returns to its base row
     at lower transparency, the tick alone reads as "needs this much
     transparency", which is false — so those rows carry a `°`.
     """
+    matrix = engine_matrix  # an engine-zoo structural fact
     import re
 
     from pd_runner.tau.report import (
@@ -1012,8 +1028,9 @@ def test_report_names_the_zoo(matrix) -> None:
         assert bot in page
 
 
-def test_report_sweep_hits_its_transparency_targets(matrix) -> None:
+def test_report_sweep_hits_its_transparency_targets(engine_matrix) -> None:
     """The x-axis is only meaningful if the bisection actually inverts."""
+    matrix = engine_matrix  # an engine-zoo structural fact
     from pd_runner.tau.report import sweep_by_transparency
 
     for point in sweep_by_transparency(matrix, 0.45, [1.0, 0.75, 0.5, 0.25]):
@@ -1206,7 +1223,7 @@ def test_families_calibrate_to_the_same_dial(matrix) -> None:
             assert family.transparency(t) == pytest.approx(t, abs=0.02), family.key
 
 
-def test_family_ceilings(matrix) -> None:
+def test_family_ceilings(engine_matrix) -> None:
     """A family's ceiling is 1.0 exactly when it has no twins to be blind to.
 
     All three reach 1.0 on this zoo: ε-uniform is identity-based, behavioral is
@@ -1214,6 +1231,7 @@ def test_family_ceilings(matrix) -> None:
     DBot/TitForTatBot pair that the v1 feature vector could not (that pair was
     the reason this used to assert `< 1.0`).
     """
+    matrix = engine_matrix  # an engine-zoo structural fact
     from pd_runner.tau.channels import all_families
     from pd_runner.tau.syntax import syntactic_twins
 
