@@ -371,6 +371,89 @@ lemma isSemiformula_of_le {n m p : V} (hp : IsSemiformula LAct n p) (h : n ≤ m
 lemma isSemiformula_seven_of_six {g : V} (hg : IsSemiformula LAct 6 g) : IsSemiformula LAct 7 g :=
   isSemiformula_of_le hg (by norm_num)
 
+/-! ### The member slots KEPT OUT of every existing template: the gate lemma of `sysCloseTemplate`
+
+`sysCloseTemplate d g` (`ArithS.Agents.Guard`) fills `#7..#12` of a thirteen-variable template with the closed
+descriptions of the two members of `d` and keeps `#0..#6` as variables. Its gate lemma
+`sysCloseTemplate_of_template₇`: a seven-variable template (so every six-variable one) never reads a member
+slot and is unchanged — the twin of `guardCodeB_of_template`, by `subst_eq_self_of_le` on the vector whose
+first seven entries are the variables themselves. -/
+
+lemma thirteen_eq : (13 : V) = 0 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 := by norm_num
+
+/-- The member-slot vector is a vector of thirteen terms of arity thirteen (seven variables, six closed). -/
+lemma descriptionsSys_semitermVec (d : V) : IsSemitermVec LAct 13 13 (descriptionsSys d) := by
+  have h0 : IsSemiterm LAct 13 (^#0 : V) := IsSemiterm.bvar.mpr (by norm_num)
+  have h1 : IsSemiterm LAct 13 (^#1 : V) := IsSemiterm.bvar.mpr (by norm_num)
+  have h2 : IsSemiterm LAct 13 (^#2 : V) := IsSemiterm.bvar.mpr (by norm_num)
+  have h3 : IsSemiterm LAct 13 (^#3 : V) := IsSemiterm.bvar.mpr (by norm_num)
+  have h4 : IsSemiterm LAct 13 (^#4 : V) := IsSemiterm.bvar.mpr (by norm_num)
+  have h5 : IsSemiterm LAct 13 (^#5 : V) := IsSemiterm.bvar.mpr (by norm_num)
+  have h6 : IsSemiterm LAct 13 (^#6 : V) := IsSemiterm.bvar.mpr (by norm_num)
+  unfold descriptionsSys
+  have := (((((((((((((IsSemitermVec.nil 13).adjoin (revalueW_semiterm 13 (pSys d 1))).adjoin
+    (revalueU_semiterm 13 (pSys d 1))).adjoin (codeTerm_semiterm_LAct 13 (canonical (pSys d 1)))).adjoin
+    (revalueW_semiterm 13 (pSys d 0))).adjoin (revalueU_semiterm 13 (pSys d 0))).adjoin
+    (codeTerm_semiterm_LAct 13 (canonical (pSys d 0)))).adjoin h6).adjoin h5).adjoin h4).adjoin h3).adjoin h2).adjoin
+    h1).adjoin h0
+  rwa [← thirteen_eq] at this
+
+lemma len_descriptionsSys (d : V) : len (descriptionsSys d) = 13 := (descriptionsSys_semitermVec d).lh
+
+lemma descriptionsSys_utermVec (d : V) : IsUTermVec LAct (len (descriptionsSys d)) (descriptionsSys d) := by
+  rw [len_descriptionsSys]; exact (descriptionsSys_semitermVec d).isUTerm
+
+/-- The first seven entries of the member-slot vector are the variables themselves. -/
+lemma nth_descriptionsSys (d : V) : ∀ i < (7 : V), (descriptionsSys d).[i] = ^#i := by
+  intro i hi
+  unfold descriptionsSys
+  rcases zero_or_succ i with rfl | ⟨i, rfl⟩
+  · simp
+  rw [nth_adjoin_succ]
+  rcases zero_or_succ i with rfl | ⟨i, rfl⟩
+  · simp
+  rw [nth_adjoin_succ]
+  rcases zero_or_succ i with rfl | ⟨i, rfl⟩
+  · simp; norm_num
+  rw [nth_adjoin_succ]
+  rcases zero_or_succ i with rfl | ⟨i, rfl⟩
+  · simp; norm_num
+  rw [nth_adjoin_succ]
+  rcases zero_or_succ i with rfl | ⟨i, rfl⟩
+  · simp; norm_num
+  rw [nth_adjoin_succ]
+  rcases zero_or_succ i with rfl | ⟨i, rfl⟩
+  · simp; norm_num
+  rw [nth_adjoin_succ]
+  rcases zero_or_succ i with rfl | ⟨i, rfl⟩
+  · simp; norm_num
+  exfalso
+  have e7 : i + 1 + 1 + 1 + 1 + 1 + 1 + 1 = i + 7 := by ring
+  rw [e7] at hi
+  exact absurd hi (not_lt.mpr le_add_self)
+
+lemma sysCloseTemplate_of_template₁₃ {g : V} (hg : IsSemiformula LAct 13 g) (d : V) :
+    sysCloseTemplate d g = subst LAct (descriptionsSys d) g := by
+  unfold sysCloseTemplate; rw [if_pos hg]; rfl
+
+lemma sysCloseTemplate_of_not {g : V} (hg : ¬IsSemiformula LAct 13 g) (d : V) : sysCloseTemplate d g = g := by
+  unfold sysCloseTemplate; rw [if_neg hg]
+
+/-- **The gate lemma of the member slots**: a seven-variable template never reads a member slot, so
+`sysCloseTemplate` is the identity on every template of the compiled zoo. -/
+theorem sysCloseTemplate_of_template₇ {g : V} (hg : IsSemiformula LAct 7 g) (d : V) : sysCloseTemplate d g = g := by
+  rw [sysCloseTemplate_of_template₁₃ (isSemiformula_of_le hg (by norm_num))]
+  exact subst_eq_self_of_le hg (descriptionsSys_utermVec d) (by rw [len_descriptionsSys]; norm_num)
+    (nth_descriptionsSys d)
+
+theorem sysCloseTemplate_of_template {g : V} (hg : IsSemiformula LAct 6 g) (d : V) : sysCloseTemplate d g = g :=
+  sysCloseTemplate_of_template₇ (isSemiformula_seven_of_six hg) d
+
+/-- Filling the member slots of a thirteen-variable template gives a thirteen-variable formula (`#0..#6` free). -/
+lemma isSemiformula_sysCloseTemplate {g : V} (hg : IsSemiformula LAct 13 g) (d : V) :
+    IsSemiformula LAct 13 (sysCloseTemplate d g) := by
+  rw [sysCloseTemplate_of_template₁₃ hg]; exact hg.subst (descriptionsSys_semitermVec d)
+
 /-! ### `substTemplate`: instantiate a template with the outer descriptions -/
 
 open scoped Classical in

@@ -18,6 +18,12 @@ should accept; the fixpoint construction behind it is `ArithS.Eval.Fixpoint`):
 * `pSim p q` substitutes the frame into `p` and `q` (`substCode`, `ArithS.Agents.Subst`:
   `pSelf ↦ me`, `pOpp ↦ opp`, `pBot` frozen, stored templates instantiated with the OUTER
   descriptions) and runs `p'` in the frame `(p', q')` — the engine's `.sim` clause;
+* the tau constructors (2026-09-30): `pTvote pNil θ p q` runs `p` iff `θ = 0`; `pTvote (pCons (ppair w I)
+  rest) θ p q` runs `p` if `θ = 0`, else runs the entry `I` in its own frame `(pBot I, pBot I)` and continues
+  with `pTvote rest (θ - w) p q` if it played `0` (`C`), with `pTvote rest θ p q` otherwise (the engine's
+  `.tvote` peel, truncated subtraction); `pSys d i` looks member `i` up (`listGet d i = m + 1`,
+  `ArithS.Agents.SysClose`) and runs `sysCloseCode d m` in the same frame (the engine's LAZY one-level
+  unfold); `pSelfIdx j` (a dangling reference) and a bare list cons play nothing;
 * fuel `0` plays nothing.
 
 **Facts.** The graph is Σ₁-definable (`evalGraphDef`); sub-calls decrease the fuel but may grow the
@@ -65,13 +71,23 @@ lemma EvalGraph.case_iff {n me opp p a : V} :
         ((r = a' ∧ EvalGraph n' me opp p' a) ∨ (r ≠ a' ∧ EvalGraph n' me opp q a))) ∨
       (∃ k g p' q, p = pSearch k g p' q ∧
         ((LenBox TAct k (guardCodeB g me opp k) ∧ EvalGraph n' me opp p' a) ∨
-         (¬LenBox TAct k (guardCodeB g me opp k) ∧ EvalGraph n' me opp q a))) ) := by
+         (¬LenBox TAct k (guardCodeB g me opp k) ∧ EvalGraph n' me opp q a))) ∨
+      (∃ θ p' q, p = pTvote pNil θ p' q ∧
+        ((θ = 0 ∧ EvalGraph n' me opp p' a) ∨ (θ ≠ 0 ∧ EvalGraph n' me opp q a))) ∨
+      (∃ w I rest θ p' q, p = pTvote (pCons (ppair w I) rest) θ p' q ∧
+        ((θ = 0 ∧ EvalGraph n' me opp p' a) ∨
+         (θ ≠ 0 ∧ ∃ r, EvalGraph n' (pBot I) (pBot I) I r ∧
+           ((r = 0 ∧ EvalGraph n' me opp (pTvote rest (θ - w) p' q) a) ∨
+            (r ≠ 0 ∧ EvalGraph n' me opp (pTvote rest θ p' q) a))))) ∨
+      (∃ d i m, p = pSys d i ∧ listGet d i = m + 1 ∧ EvalGraph n' me opp (sysCloseCode d m) a) ) := by
   rw [EvalGraph, EvalFix.construction.case]
   simp only [EvalFix.construction, EvalFix.Phi, Set.mem_setOf_eq, pair_ext_iff]
   constructor
   · rintro (⟨n₀, me₀, opp₀, a₀, h⟩ | ⟨n₀, me₀, opp₀, a₀, hc, h⟩ | ⟨n₀, me₀, opp₀, a₀, hc, h⟩ |
       ⟨n₀, me₀, opp₀, p₀, a₀, hc, h⟩ | ⟨n₀, me₀, opp₀, p', q, a₀, hc, h⟩ |
-      ⟨n₀, me₀, opp₀, b, a', p', q, a₀, r, hb, hpq, h⟩ | ⟨n₀, me₀, opp₀, k, g, p', q, a₀, hpq, h⟩) <;>
+      ⟨n₀, me₀, opp₀, b, a', p', q, a₀, r, hb, hpq, h⟩ | ⟨n₀, me₀, opp₀, k, g, p', q, a₀, hpq, h⟩ |
+      ⟨n₀, me₀, opp₀, θ, p', q, a₀, hpq, h⟩ | ⟨n₀, me₀, opp₀, w, I, rest, θ, p', q, a₀, hpq, h⟩ |
+      ⟨n₀, me₀, opp₀, d, i, m, a₀, hm, hc, h⟩) <;>
       obtain ⟨rfl, rfl, rfl, rfl, rfl⟩ := h
     · exact ⟨n₀, rfl, Or.inl rfl⟩
     · exact ⟨n₀, rfl, Or.inr (Or.inl ⟨rfl, hc⟩)⟩
@@ -79,15 +95,26 @@ lemma EvalGraph.case_iff {n me opp p a : V} :
     · exact ⟨n₀, rfl, Or.inr (Or.inr (Or.inr (Or.inl ⟨p₀, rfl, hc⟩)))⟩
     · exact ⟨n₀, rfl, Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨p', q, rfl, hc⟩))))⟩
     · exact ⟨n₀, rfl, Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨b, a', p', q, r, rfl, hb, hpq⟩)))))⟩
-    · exact ⟨n₀, rfl, Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨k, g, p', q, rfl, hpq⟩)))))⟩
+    · exact ⟨n₀, rfl, Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨k, g, p', q, rfl, hpq⟩))))))⟩
+    · exact ⟨n₀, rfl, Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨θ, p', q, rfl, hpq⟩)))))))⟩
+    · exact ⟨n₀, rfl, Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl
+        ⟨w, I, rest, θ, p', q, rfl, hpq⟩))))))))⟩
+    · exact ⟨n₀, rfl, Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr
+        ⟨d, i, m, rfl, hm, hc⟩))))))))⟩
   · rintro ⟨n', rfl, (rfl | ⟨rfl, hc⟩ | ⟨rfl, hc⟩ | ⟨p', rfl, hc⟩ | ⟨p', q, rfl, hc⟩ |
-      ⟨b, a', p', q, r, rfl, hb, hpq⟩ | ⟨k, g, p', q, rfl, hpq⟩)⟩
+      ⟨b, a', p', q, r, rfl, hb, hpq⟩ | ⟨k, g, p', q, rfl, hpq⟩ | ⟨θ, p', q, rfl, hpq⟩ |
+      ⟨w, I, rest, θ, p', q, rfl, hpq⟩ | ⟨d, i, m, rfl, hm, hc⟩)⟩
     · exact Or.inl ⟨n', me, opp, a, by simp⟩
     · exact Or.inr (Or.inl ⟨n', me, opp, a, hc, by simp⟩)
     · exact Or.inr (Or.inr (Or.inl ⟨n', me, opp, a, hc, by simp⟩))
     · exact Or.inr (Or.inr (Or.inr (Or.inl ⟨n', me, opp, p', a, hc, by simp⟩)))
     · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨n', me, opp, p', q, a, hc, by simp⟩))))
     · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨n', me, opp, b, a', p', q, a, r, hb, hpq, by simp⟩)))))
-    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨n', me, opp, k, g, p', q, a, hpq, by simp⟩)))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨n', me, opp, k, g, p', q, a, hpq, by simp⟩))))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨n', me, opp, θ, p', q, a, hpq, by simp⟩)))))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl
+        ⟨n', me, opp, w, I, rest, θ, p', q, a, hpq, by simp⟩))))))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr
+        ⟨n', me, opp, d, i, m, a, hm, hc, by simp⟩))))))))
 
 end ArithS

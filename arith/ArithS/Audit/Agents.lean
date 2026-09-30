@@ -1,4 +1,5 @@
 import ArithS.Agents.SubstTemplate
+import ArithS.Agents.SysClose
 import ArithS.Agents.InstanceV
 import ArithS.Agents.FitBox
 
@@ -37,5 +38,24 @@ namespace ArithS
 #print axioms exists_formulaLenMeta_template_const
 #print axioms box_guard_never_fits
 #print axioms legibleBot_guard_never_fits
+
+-- Phase 2 (2026-09-30) — the tau constructors in the trusted base, agents layer: the codes `pTvote`/`pSys`/
+-- `pSelfIdx`/`pCons` are shapes with τ, description terms and substitution (`revalue_sys`, `codeTerm_sys`,
+-- `substCode_sys`); member lookup and the system closer are total Σ₁ functions (`listGet`, `sysCloseCode`);
+-- the member slots `#7..#12` never touch a seven-variable template (`sysCloseTemplate_of_template₇`); every
+-- program code is a shape (`isShape_progCode`), so no compiled instance has the code `0`.
+#print axioms transposeCode_transposeCode
+#print axioms revalue_sys
+#print axioms codeTerm_sys
+#print axioms termLenMeta_emb_codeTermMeta_sys
+#print axioms listGet_cons_succ
+#print axioms sysCloseCode_selfIdx
+#print axioms sysCloseCode_search
+#print axioms sysCloseTemplate_of_template₇
+#print axioms isShape_progCode
+#print axioms progCode_ne_zero
+#print axioms listGet_progListCode_some
+#print axioms progCode_subst_tauSearchFree
+#print axioms progCode_sysClose_tauSearchFree
 
 end ArithS

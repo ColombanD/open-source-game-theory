@@ -25,12 +25,14 @@ import ArithS.Agents.Guard
 import ArithS.Agents.Prog
 import ArithS.Agents.RevalueTemplate
 import ArithS.Agents.Subst
+import ArithS.Agents.SysClose
 import ArithS.Agents.SubstTemplate
 import ArithS.Agents.Template
 import ArithS.Eval.Eval
 import ArithS.Eval.EvalN
 import ArithS.Eval.Fixpoint
 import ArithS.Eval.SimTest
+import ArithS.Eval.TauCheck
 
 /-!
 # ArithS.Core — the trusted base as ONE lake target (`lake build ArithSCore`)

@@ -50,7 +50,14 @@ lines of definitions), which is what makes an audit feasible.
   hypothesis-free dichotomy on the hinge `□_k (the outer guard)`; the hinge is bounded consistency of
   `TAct` at `k` up to a constant (Pudlák's linear regime, open both ways; the engine's `+k` stipulates the
   negative side). NEVER admit the hinge as an axiom.
-* **The tau constructors** map to code 0; `.diag ↦ ⊥`.
+* **The tau constructors** have real codes since 2026-09-30 (Phase 2 of `SPRIME_SOURCE_OF_TRUTH.md`): `.tvote`,
+  `.sys`, `.selfIdx` are the shapes `pTvote`/`pSys`/`pSelfIdx` (tags 7–9, plus the tagged list cons `pCons`,
+  tag 10), with τ, description terms, substitution, the system closer `sysCloseCode` (member lookup `listGet`)
+  and the evaluator's three clauses in lockstep with the engine's `eval` on the tau-search-free fragment
+  (`Eval/TauCheck.lean`). What is still missing is the PRONOUN reading of `.selfIdx j` inside a member's
+  guard: `template` has six variables, so the pronoun is described literally (the dangling code
+  `pSelfIdx j`) and the member slots `#7..#12` that `sysCloseTemplate` fills are read by no compiled
+  template — a system's searcher takes its else branch in `S'` until `template` is widened. `.diag ↦ ⊥`.
 * **Where `S'` disagrees with the engine** (13 cells): the engine's censuses rest on a player being
   UNREADABLE by `S`'s rules; PA reads every source. DIMCID's guard "my cooperating implies X" is
   self-fulfilling for any `X`, so DIMCID defects against every closed program (`dimcid_vs_closed`). Not a

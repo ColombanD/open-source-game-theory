@@ -1,6 +1,7 @@
 import ArithS.Readings
 import ArithS.Eval.Fixpoint
 import ArithS.Eval.Transparency
+import ArithS.Eval.TauCheck
 
 /-!
 # ArithS.Audit.Eval — the axiom census of the arithmetized layer: Eval
@@ -39,5 +40,22 @@ namespace ArithS
 #print axioms pa_proves_neg_sentenceAt_inst
 #print axioms leaf_atomNeg_sound
 #print axioms leaf_atomNeg_sound_searchFree
+
+-- Phase 2 (2026-09-30) — the tau constructors in the evaluator: the inversion lemmas of the three new
+-- clauses, determinism and monotonicity across them (`EvalGraph.unique`, `EvalGraph.mono`, at ℕ;
+-- `EvalGraph.unique_V'` in every model), the one-step unfolding of the engine's `cfdSys k` system, and the
+-- lockstep theorem with the engine's `eval` on the tau-search-free fragment (`Eval/TauCheck.lean`).
+#print axioms EvalGraph.tvote_cons_iff
+#print axioms EvalGraph.sys_iff
+#print axioms EvalGraph.selfIdx_iff
+#print axioms EvalGraph.unique
+#print axioms EvalGraph.mono
+#print axioms evalGraph_cfdSys_unfold
+#print axioms sysCloseCode_cfdSys_member
+#print axioms progCode_cfdSys_ne_zero
+#print axioms evalGraph_of_eval_tauSearchFree
+#print axioms evalGraph_of_eval_sys_step
+#print axioms evalGraph_of_eval_tvote_nil
+#print axioms evalGraph_of_eval_tvote_zero
 
 end ArithS

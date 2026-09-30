@@ -66,8 +66,10 @@ The other files in these five folders hold no definitions to accept, only theore
 4. **The box** — `□[k] φ := ∃ d < codeBound k, Proof TAct d φ ∧ proofLen d ≤ k` (`LenBox`, Δ₁; the code
    bound is a margin that properness makes harmless): [`Box/BewV.lean`](Box/BewV.lean); the Σ₁ form
    `LenBoxUnbounded` and their equality in every model, [`Box/CutV.lean`](Box/CutV.lean), [`Box/ProperBound.lean`](Box/ProperBound.lean).
-5. **Program codes** — `pConst/pSelf/pOpp/pBot/pSim/pIte/pSearch` on the polynomial pairing `ppair`:
-   [`Agents/Prog.lean`](Agents/Prog.lean). `transposeCode` is τ on codes.
+5. **Program codes** — `pConst/pSelf/pOpp/pBot/pSim/pIte/pSearch` and, since 2026-09-30 (Phase 2 of
+   `SPRIME_SOURCE_OF_TRUTH.md`), the tau constructors `pTvote/pSys/pSelfIdx` with the tagged list cons `pCons`
+   (`pNil = 0`), on the polynomial pairing `ppair`: [`Agents/Prog.lean`](Agents/Prog.lean). `transposeCode` is τ on
+   codes (vote entries frozen, system members re-valued, as in the engine's `Base/Transpose`).
 6. **Descriptions** — a program named inside a sentence by binary numeral TERMS (`codeTerm`, `canonical`,
    `revalueU`, `revalueW`): [`Agents/CodeTerm.lean`](Agents/CodeTerm.lean), [`Agents/BinNumeral.lean`](Agents/BinNumeral.lean).
 7. **The guard template and the runtime guard** — `guardTemplate a` ("opp plays `a` against me", six
@@ -76,15 +78,20 @@ The other files in these five folders hold no definitions to accept, only theore
    seventh slot holding the node's own budget (route (c)): [`Agents/Template.lean`](Agents/Template.lean),
    [`Agents/Code.lean`](Agents/Code.lean), [`Agents/Guard.lean`](Agents/Guard.lean).
 8. **Substitution** — `substCode`, the engine's one-shot `Prog.subst` on codes (`.bot` frozen, guards read
-   the outer players): [`Agents/Subst.lean`](Agents/Subst.lean) (the equations `substCode_*` are the
-   definition), on top of `substTemplate`, the instantiation of a stored template by the outer frame:
-   [`Agents/SubstTemplate.lean`](Agents/SubstTemplate.lean); agreement with the engine `progCode_subst` in
-   `Agents/Code.lean`.
+   the outer players, vote entries frozen, a system a binder): [`Agents/Subst.lean`](Agents/Subst.lean) (the
+   equations `substCode_*` are the definition), on top of `substTemplate`, the instantiation of a stored
+   template by the outer frame: [`Agents/SubstTemplate.lean`](Agents/SubstTemplate.lean); agreement with the
+   engine `progCode_subst` in `Agents/Code.lean`. **The system closer** — `sysCloseCode d`, the engine's
+   `Prog.sysClose` (`pSelfIdx j ↦ pSys d j`, transparent through `pBot`, an inner `pSys` a binder), and the
+   member lookup `listGet` (`ProgList.get?`, `m + 1` for `some m`): [`Agents/SysClose.lean`](Agents/SysClose.lean);
+   the stored template is closed by `sysCloseTemplate d` (`Agents/Guard.lean`: the member slots `#7..#12`), which
+   is the identity on every six/seven-variable template (`sysCloseTemplate_of_template₇`).
 9. **The evaluator** — `EvalGraph n me opp p a`, a Σ₁ fixpoint mirroring the engine's `eval` clause
-   by clause, whose `search` clause consults the box: [`Eval/Eval.lean`](Eval/Eval.lean) (the
-   characterization `EvalGraph.case_iff` is the definition; the fixpoint construction is
-   [`Eval/Fixpoint.lean`](Eval/Fixpoint.lean), skip); on ℕ it is deterministic and fuel-monotone,
-   [`Eval/EvalN.lean`](Eval/EvalN.lean).
+   by clause (the `.tvote` peel, the `.sys` unfold and the search clause consulting the box included):
+   [`Eval/Eval.lean`](Eval/Eval.lean) (the characterization `EvalGraph.case_iff` is the definition; the
+   fixpoint construction is [`Eval/Fixpoint.lean`](Eval/Fixpoint.lean), skip); on ℕ it is deterministic and
+   fuel-monotone, [`Eval/EvalN.lean`](Eval/EvalN.lean); it runs in lockstep with the engine's `eval` on the
+   tau-search-free fragment, [`Eval/TauCheck.lean`](Eval/TauCheck.lean) (the Phase-2 gates).
 
 The bridge from the engine is `progCode : PD.Prog → ℕ` and `templateCode : PD.Formula → ℕ` in `Agents/Code.lean`.
 
@@ -267,4 +274,12 @@ pruning: `Research/Notes/ARITH_DEAD_CODE_AUDIT.md`, `scripts/DeadCode.lean`.
   the U10 kit for a body computed from the frame (`ROUTE_B_SCOPE.md` §9).
 * **The 26 genuine floors** take no side: each is a dichotomy on a hinge that is bounded consistency of
   `TAct` at `k` up to a constant — Pudlák's linear-regime question. Never admit the hinge as an axiom.
-* **The tau constructors** (`.tvote`, `.sys`, `.selfIdx`).
+* **The pronoun reading of `.selfIdx`** (the open item of Phase 2, `SPRIME_SOURCE_OF_TRUTH.md` §2.5). The
+  tau constructors themselves ARE here since 2026-09-30 (codes, τ, descriptions, substitution, the system
+  closer, the evaluator clauses, lockstep with the engine on the tau-search-free fragment — `Eval/TauCheck.lean`),
+  but `template : PD.Formula → Semisentence LAct 6` cannot describe a member pronoun through slots `#7+3j..`:
+  a member's guard `.plays (.bot (.selfIdx j)) …` is translated LITERALLY (the dangling code `pSelfIdx j`), and
+  `sysCloseTemplate` — which fills the member slots of a thirteen-variable template — is the identity on every
+  compiled template. So a system's searcher takes its else branch in `S'` (`sysCloseCode_cfdSys_member`); the
+  pronoun reading needs `template`, `progAux`, `closedDesc`, `sentenceAt` widened to thirteen variables (a
+  results-tier refactor: `sentenceAt` is used in twenty files).

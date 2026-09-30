@@ -16,7 +16,7 @@ section inversion
 
 variable {V : Type*} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
 
-attribute [local simp] pConst pSelf pOpp pBot pSim pIte pSearch
+attribute [local simp] pConst pSelf pOpp pBot pSim pIte pSearch pTvote pSys pSelfIdx pCons
 
 lemma EvalGraph.zero_iff {me opp p a : V} : ¬EvalGraph 0 me opp p a := by
   rw [EvalGraph.case_iff]
@@ -56,6 +56,49 @@ lemma EvalGraph.search_iff {n me opp k g p q a : V} :
      (¬LenBox TAct k (guardCodeB g me opp k) ∧ EvalGraph n me opp q a)) := by
   rw [EvalGraph.case_iff]; simp
 
+/-! #### The tau clauses (2026-09-30) -/
+
+/-- An empty vote: `p` iff the threshold is met (`θ = 0`), else `q`. -/
+lemma EvalGraph.tvote_nil_iff {n me opp θ p q a : V} :
+    EvalGraph (n + 1) me opp (pTvote pNil θ p q) a ↔
+    ((θ = 0 ∧ EvalGraph n me opp p a) ∨ (θ ≠ 0 ∧ EvalGraph n me opp q a)) := by
+  rw [EvalGraph.case_iff]; simp
+
+/-- The vote peel: the entry `I` runs in its OWN frame; it fires (`0 = C`) and subtracts its weight from
+the residual threshold, or it does not and the threshold is unchanged. -/
+lemma EvalGraph.tvote_cons_iff {n me opp w I rest θ p q a : V} :
+    EvalGraph (n + 1) me opp (pTvote (pCons (ppair w I) rest) θ p q) a ↔
+    ((θ = 0 ∧ EvalGraph n me opp p a) ∨
+     (θ ≠ 0 ∧ ∃ r, EvalGraph n (pBot I) (pBot I) I r ∧
+       ((r = 0 ∧ EvalGraph n me opp (pTvote rest (θ - w) p q) a) ∨
+        (r ≠ 0 ∧ EvalGraph n me opp (pTvote rest θ p q) a)))) := by
+  rw [EvalGraph.case_iff]; simp
+
+/-- The vote clause on an arbitrary entry list: the list is empty, or a cons whose head is a weighted entry. -/
+lemma EvalGraph.tvote_iff {n me opp v θ p q a : V} :
+    EvalGraph (n + 1) me opp (pTvote v θ p q) a ↔
+    (v = pNil ∧ ((θ = 0 ∧ EvalGraph n me opp p a) ∨ (θ ≠ 0 ∧ EvalGraph n me opp q a))) ∨
+    (∃ w I rest, v = pCons (ppair w I) rest ∧
+      ((θ = 0 ∧ EvalGraph n me opp p a) ∨
+       (θ ≠ 0 ∧ ∃ r, EvalGraph n (pBot I) (pBot I) I r ∧
+         ((r = 0 ∧ EvalGraph n me opp (pTvote rest (θ - w) p q) a) ∨
+          (r ≠ 0 ∧ EvalGraph n me opp (pTvote rest θ p q) a))))) := by
+  rw [EvalGraph.case_iff]; simp
+
+/-- The system clause: member `i` is looked up and run after ONE level of closing (the engine's lazy unfold). -/
+lemma EvalGraph.sys_iff {n me opp d i a : V} :
+    EvalGraph (n + 1) me opp (pSys d i) a ↔
+    ∃ m, listGet d i = m + 1 ∧ EvalGraph n me opp (sysCloseCode d m) a := by
+  rw [EvalGraph.case_iff]; simp
+
+/-- A dangling reference plays nothing (the engine's `none`). -/
+lemma EvalGraph.selfIdx_iff {n me opp j a : V} : ¬EvalGraph n me opp (pSelfIdx j) a := by
+  rw [EvalGraph.case_iff]; simp
+
+/-- A bare list cons is not a program: it plays nothing. -/
+lemma EvalGraph.cons_iff {n me opp e r a : V} : ¬EvalGraph n me opp (pCons e r) a := by
+  rw [EvalGraph.case_iff]; simp
+
 /-- The code of a six-variable semisentence is a six-variable template. -/
 lemma isSemiformula_quote₆ (φ : Semisentence LAct 6) : IsSemiformula LAct 6 (⌜φ⌝ : V) := by
   simpa using Sentence.quote_isSemiformula (V := V) φ
@@ -82,7 +125,8 @@ theorem EvalGraph.unique (n : ℕ) : ∀ me opp p a₁ a₂ : ℕ,
   | succ n ih =>
     intro me opp p a₁ a₂ h₁ h₂
     by_cases hp : IsShape p
-    · rcases hp with ⟨a, rfl⟩ | rfl | rfl | ⟨p, rfl⟩ | ⟨p, q, rfl⟩ | ⟨b, a', p, q, rfl⟩ | ⟨k, g, p, q, rfl⟩
+    · rcases hp with ⟨a, rfl⟩ | rfl | rfl | ⟨p, rfl⟩ | ⟨p, q, rfl⟩ | ⟨b, a', p, q, rfl⟩ | ⟨k, g, p, q, rfl⟩ |
+        ⟨v, θ, p, q, rfl⟩ | ⟨d, i, rfl⟩ | ⟨j, rfl⟩ | ⟨e, r, rfl⟩
       · rw [EvalGraph.const_iff] at h₁ h₂; rw [h₁, h₂]
       · rw [EvalGraph.self_iff] at h₁ h₂; exact ih _ _ _ _ _ h₁ h₂
       · rw [EvalGraph.opp_iff] at h₁ h₂; exact ih _ _ _ _ _ h₁ h₂
@@ -103,16 +147,46 @@ theorem EvalGraph.unique (n : ℕ) : ∀ me opp p a₁ a₂ : ℕ,
         · exact absurd e₁ e₂
         · exact absurd e₂ e₁
         · exact ih _ _ _ _ _ h₁' h₂'
+      · rcases EvalGraph.tvote_iff.mp h₁ with ⟨rfl, hc₁⟩ | ⟨w, I, rest, rfl, hc₁⟩
+        · rcases EvalGraph.tvote_nil_iff.mp h₂ with ⟨e₂, h₂'⟩ | ⟨e₂, h₂'⟩ <;>
+            rcases hc₁ with ⟨e₁, h₁'⟩ | ⟨e₁, h₁'⟩
+          · exact ih _ _ _ _ _ h₁' h₂'
+          · exact absurd e₂ e₁
+          · exact absurd e₁ e₂
+          · exact ih _ _ _ _ _ h₁' h₂'
+        · rcases EvalGraph.tvote_cons_iff.mp h₂ with ⟨e₂, h₂'⟩ | ⟨e₂, r₂, hI₂, hc₂⟩ <;>
+            rcases hc₁ with ⟨e₁, h₁'⟩ | ⟨e₁, r₁, hI₁, hc₁⟩
+          · exact ih _ _ _ _ _ h₁' h₂'
+          · exact absurd e₂ e₁
+          · exact absurd e₁ e₂
+          · have hr : r₁ = r₂ := ih _ _ _ _ _ hI₁ hI₂
+            subst hr
+            rcases hc₁ with ⟨f₁, h₁'⟩ | ⟨f₁, h₁'⟩ <;> rcases hc₂ with ⟨f₂, h₂'⟩ | ⟨f₂, h₂'⟩
+            · exact ih _ _ _ _ _ h₁' h₂'
+            · exact absurd f₁ f₂
+            · exact absurd f₂ f₁
+            · exact ih _ _ _ _ _ h₁' h₂'
+      · rcases EvalGraph.sys_iff.mp h₁ with ⟨m₁, hm₁, h₁'⟩
+        rcases EvalGraph.sys_iff.mp h₂ with ⟨m₂, hm₂, h₂'⟩
+        have hm : m₁ = m₂ := by omega
+        subst hm
+        exact ih _ _ _ _ _ h₁' h₂'
+      · exact absurd h₁ EvalGraph.selfIdx_iff
+      · exact absurd h₁ EvalGraph.cons_iff
     · exfalso
       rcases EvalGraph.case_iff.mp h₁ with ⟨n', _, (h | ⟨h, _⟩ | ⟨h, _⟩ | ⟨p', h, _⟩ |
-        ⟨p', q, h, _⟩ | ⟨b, a', p', q, r, h, _⟩ | ⟨k, g, p', q, h, _⟩)⟩
-      · exact hp (Or.inl ⟨_, h⟩)
-      · exact hp (Or.inr (Or.inl h))
-      · exact hp (Or.inr (Or.inr (Or.inl h)))
-      · exact hp (Or.inr (Or.inr (Or.inr (Or.inl ⟨_, h⟩))))
-      · exact hp (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨_, _, h⟩)))))
-      · exact hp (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨_, _, _, _, h⟩))))))
-      · exact hp (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨_, _, _, _, h⟩))))))
+        ⟨p', q, h, _⟩ | ⟨b, a', p', q, r, h, _⟩ | ⟨k, g, p', q, h, _⟩ | ⟨θ, p', q, h, _⟩ |
+        ⟨w, I, rest, θ, p', q, h, _⟩ | ⟨d, i, m, h, _⟩)⟩
+      · exact hp (h ▸ IsShape.const _)
+      · exact hp (h ▸ IsShape.self)
+      · exact hp (h ▸ IsShape.opp)
+      · exact hp (h ▸ IsShape.bot _)
+      · exact hp (h ▸ IsShape.sim _ _)
+      · exact hp (h ▸ IsShape.ite _ _ _ _)
+      · exact hp (h ▸ IsShape.search _ _ _ _)
+      · exact hp (h ▸ IsShape.tvote _ _ _ _)
+      · exact hp (h ▸ IsShape.tvote _ _ _ _)
+      · exact hp (h ▸ IsShape.sys _ _)
 
 /-- More fuel never changes a result. -/
 theorem EvalGraph.mono (n : ℕ) : ∀ me opp p a : ℕ, EvalGraph n me opp p a → EvalGraph (n + 1) me opp p a := by
@@ -126,7 +200,8 @@ theorem EvalGraph.mono (n : ℕ) : ∀ me opp p a : ℕ, EvalGraph n me opp p a 
     rw [EvalGraph.case_iff]
     refine ⟨n + 1, rfl, ?_⟩
     rcases H with h | ⟨h, hc⟩ | ⟨h, hc⟩ | ⟨p', h, hc⟩ | ⟨p', q, h, hc⟩ |
-      ⟨b, a', p', q, r, h, hb, hpq⟩ | ⟨k, g, p', q, h, hpq⟩
+      ⟨b, a', p', q, r, h, hb, hpq⟩ | ⟨k, g, p', q, h, hpq⟩ | ⟨θ, p', q, h, hpq⟩ |
+      ⟨w, I, rest, θ, p', q, h, hpq⟩ | ⟨d, i, m, h, hm, hc⟩
     · exact Or.inl h
     · exact Or.inr (Or.inl ⟨h, ih _ _ _ _ hc⟩)
     · exact Or.inr (Or.inr (Or.inl ⟨h, ih _ _ _ _ hc⟩))
@@ -136,10 +211,22 @@ theorem EvalGraph.mono (n : ℕ) : ∀ me opp p a : ℕ, EvalGraph n me opp p a 
       rcases hpq with ⟨e, hc⟩ | ⟨e, hc⟩
       · exact Or.inl ⟨e, ih _ _ _ _ hc⟩
       · exact Or.inr ⟨e, ih _ _ _ _ hc⟩
-    · refine Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨k, g, p', q, h, ?_⟩)))))
+    · refine Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨k, g, p', q, h, ?_⟩))))))
       rcases hpq with ⟨e, hc⟩ | ⟨e, hc⟩
       · exact Or.inl ⟨e, ih _ _ _ _ hc⟩
       · exact Or.inr ⟨e, ih _ _ _ _ hc⟩
+    · refine Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨θ, p', q, h, ?_⟩)))))))
+      rcases hpq with ⟨e, hc⟩ | ⟨e, hc⟩
+      · exact Or.inl ⟨e, ih _ _ _ _ hc⟩
+      · exact Or.inr ⟨e, ih _ _ _ _ hc⟩
+    · refine Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl
+        ⟨w, I, rest, θ, p', q, h, ?_⟩))))))))
+      rcases hpq with ⟨e, hc⟩ | ⟨e, r, hI, ⟨f, hc⟩ | ⟨f, hc⟩⟩
+      · exact Or.inl ⟨e, ih _ _ _ _ hc⟩
+      · exact Or.inr ⟨e, r, ih _ _ _ _ hI, Or.inl ⟨f, ih _ _ _ _ hc⟩⟩
+      · exact Or.inr ⟨e, r, ih _ _ _ _ hI, Or.inr ⟨f, ih _ _ _ _ hc⟩⟩
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr
+        ⟨d, i, m, h, hm, ih _ _ _ _ hc⟩))))))))
 
 theorem EvalGraph.mono_le {n n' me opp p a : ℕ} (h : n ≤ n') (e : EvalGraph n me opp p a) :
     EvalGraph n' me opp p a := by

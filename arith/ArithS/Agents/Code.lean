@@ -26,8 +26,16 @@ stored by `pSearch`; the two are mutually recursive exactly as `Prog`/`Formula` 
   has a `TAct`-proof of length `≤ k`" (the constant `⌜template ψ⌝` is a binary numeral);
 * `.diag ↦ ⊥`: the engine's `.diag` is a meta-level fixpoint sentence with no bounded
   reading here (T2-CORE reads it as Foundation's `fixedpoint`, budget erased) — recorded by
-  the side condition `noDiag`; `.tvote`/`.sys`/`.selfIdx` (the tau constructors) map to the
-  non-shape code `0` — side condition `noTauP`, closed under `Prog.subst`.
+  the side condition `noDiag`; the tau constructors have REAL codes since 2026-09-30 (Phase 2 of
+  `SPRIME_SOURCE_OF_TRUTH.md`): `.tvote v θ p q ↦ pTvote (voteListCode v) θ …`, `.sys defs i ↦ pSys
+  (progListCode defs) i`, `.selfIdx j ↦ pSelfIdx j`, with the list codes `progListCode`/`voteListCode`
+  (`pNil`/`pCons`, an entry `(w, I)` being `ppair w (progCode I)`). The side condition `noTauP` and the
+  fragment `fragP` still EXCLUDE them: the substitution and τ equations below are proved on the
+  search-bot fragment only. **What is NOT here (the open item of §2.5 of the phase note):** `template`
+  keeps its six variables, so the pronoun `.selfIdx j` inside a member's guard is described LITERALLY —
+  `progAux (.selfIdx j) _ = closedDesc (pSelfIdx j)`, the dangling code — and not through member slots
+  `#7+3j..`; `sysCloseTemplate` (which fills those slots) is the identity on every compiled template. The
+  pronoun reading requires widening the arity of `template`, `progAux`, `closedDesc` and `sentenceAt`.
 
 ## The code equations (`progCode_subst`, `templateCode_subst`)
 
@@ -208,9 +216,17 @@ mutual
     | .sim p q => pSim (progCode p) (progCode q)
     | .ite b a p q => pIte (progCode b) (actCode a) (progCode p) (progCode q)
     | .search k φ p q => pSearch k (⌜template φ⌝ : ℕ) (progCode p) (progCode q)
-    | .tvote _ _ _ _ => 0
-    | .sys _ _ => 0
-    | .selfIdx _ => 0
+    | .tvote v θ p q => pTvote (voteListCode v) θ (progCode p) (progCode q)
+    | .sys defs i => pSys (progListCode defs) i
+    | .selfIdx j => pSelfIdx j
+  /-- The code of a member list: `pNil`/`pCons`. -/
+  noncomputable def progListCode : PD.ProgList → ℕ
+    | .nil => pNil
+    | .cons p rest => pCons (progCode p) (progListCode rest)
+  /-- The code of a vote list: an entry `(w, I)` is `ppair w (progCode I)`. -/
+  noncomputable def voteListCode : PD.VoteList → ℕ
+    | .nil => pNil
+    | .cons w I rest => pCons (ppair w (progCode I)) (voteListCode rest)
   /-- The six-variable template of a formula. -/
   noncomputable def template : PD.Formula → Semisentence LAct 6
     | .plays p q a =>
@@ -246,9 +262,53 @@ noncomputable def progGraph (p : PD.Prog) : Semisentence LAct 7 := progAux p (pr
   rw [progCode]
 @[simp] lemma progCode_search (k φ p q) : progCode (.search k φ p q) = pSearch k (templateCode φ) (progCode p) (progCode q) := by
   rw [progCode]; rfl
-@[simp] lemma progCode_tvote (v θ p q) : progCode (.tvote v θ p q) = 0 := by rw [progCode]
-@[simp] lemma progCode_sys (defs i) : progCode (.sys defs i) = 0 := by rw [progCode]
-@[simp] lemma progCode_selfIdx (j) : progCode (.selfIdx j) = 0 := by rw [progCode]
+@[simp] lemma progCode_tvote (v θ p q) :
+    progCode (.tvote v θ p q) = pTvote (voteListCode v) θ (progCode p) (progCode q) := by rw [progCode]
+@[simp] lemma progCode_sys (defs i) : progCode (.sys defs i) = pSys (progListCode defs) i := by rw [progCode]
+@[simp] lemma progCode_selfIdx (j) : progCode (.selfIdx j) = pSelfIdx j := by rw [progCode]
+@[simp] lemma progListCode_nil : progListCode .nil = pNil := by rw [progListCode]
+@[simp] lemma progListCode_cons (p rest) : progListCode (.cons p rest) = pCons (progCode p) (progListCode rest) := by
+  rw [progListCode]
+@[simp] lemma voteListCode_nil : voteListCode .nil = pNil := by rw [voteListCode]
+@[simp] lemma voteListCode_cons (w I rest) :
+    voteListCode (.cons w I rest) = pCons (ppair w (progCode I)) (voteListCode rest) := by rw [voteListCode]
+
+/-- Every program code is a shape (the tau constructors included, since 2026-09-30). -/
+theorem isShape_progCode : ∀ p : PD.Prog, IsShape (progCode p)
+  | .const a => by rw [progCode_const]; exact IsShape.const _
+  | .self => by rw [progCode_self]; exact IsShape.self
+  | .opp => by rw [progCode_opp]; exact IsShape.opp
+  | .bot p => by rw [progCode_bot]; exact IsShape.bot _
+  | .sim p q => by rw [progCode_sim]; exact IsShape.sim _ _
+  | .ite b a p q => by rw [progCode_ite]; exact IsShape.ite _ _ _ _
+  | .search k φ p q => by rw [progCode_search]; exact IsShape.search _ _ _ _
+  | .tvote v θ p q => by rw [progCode_tvote]; exact IsShape.tvote _ _ _ _
+  | .sys defs i => by rw [progCode_sys]; exact IsShape.sys _ _
+  | .selfIdx j => by rw [progCode_selfIdx]; exact IsShape.selfIdx _
+
+/-- No program has the code `0` (the former code of the tau constructors). -/
+theorem progCode_ne_zero (p : PD.Prog) : progCode p ≠ 0 := fun h ↦
+  not_isShape_zero (V := ℕ) (h ▸ isShape_progCode p)
+
+/-- Member lookup on codes is the engine's `ProgList.get?`: found members. -/
+theorem listGet_progListCode_some : ∀ (defs : PD.ProgList) (i : ℕ) (p : PD.Prog),
+    defs.get? i = some p → listGet (progListCode defs) i = progCode p + 1
+  | .nil, _, _, h => by simp [PD.ProgList.get?] at h
+  | .cons q _, 0, p, h => by
+    simp only [PD.ProgList.get?, Option.some.injEq] at h
+    rw [h, progListCode_cons, listGet_cons_zero]
+  | .cons _ rest, n + 1, p, h => by
+    simp only [PD.ProgList.get?] at h
+    rw [progListCode_cons, listGet_cons_succ, listGet_progListCode_some rest n p h]
+
+/-- Member lookup on codes is the engine's `ProgList.get?`: out-of-range indices. -/
+theorem listGet_progListCode_none : ∀ (defs : PD.ProgList) (i : ℕ),
+    defs.get? i = none → listGet (progListCode defs) i = 0
+  | .nil, _, _ => by rw [progListCode_nil, listGet_nil]
+  | .cons _ _, 0, h => by simp [PD.ProgList.get?] at h
+  | .cons _ rest, n + 1, h => by
+    simp only [PD.ProgList.get?] at h
+    rw [progListCode_cons, listGet_cons_succ, listGet_progListCode_none rest n h]
 
 lemma template_plays (p q a) : template (.plays p q a) =
     ∃¹ (∃¹ (∃¹ ((progGraph p ⇜ ![#2, #3, #4, #5, #6, #7, #8]) ⋏
@@ -427,6 +487,137 @@ mutual
     | .eq p q => atomicP p && fragP p && fragP q
     | .diag _ _ => true
 end
+
+/-! ### The tau-search-free fragment (Phase 2, 2026-09-30)
+
+Programs built from every constructor BUT `.search`, hereditarily through vote entries and system
+members. On it the code-level `substCode` and `sysCloseCode` are the engine's `subst` and `sysClose`
+with NO side condition on the players (no template is ever instantiated), and the evaluator runs in
+lockstep with the engine's `eval` at the same fuel (`ArithS.Eval.TauCheck`). -/
+
+mutual
+  /-- No `.search` node anywhere (entries and members included). -/
+  def tauSearchFreeP : PD.Prog → Bool
+    | .const _ => true
+    | .self => true
+    | .opp => true
+    | .bot p => tauSearchFreeP p
+    | .sim p q => tauSearchFreeP p && tauSearchFreeP q
+    | .ite b _ p q => tauSearchFreeP b && tauSearchFreeP p && tauSearchFreeP q
+    | .search _ _ _ _ => false
+    | .tvote v _ p q => tauSearchFreeV v && tauSearchFreeP p && tauSearchFreeP q
+    | .sys defs _ => tauSearchFreeL defs
+    | .selfIdx _ => true
+  def tauSearchFreeL : PD.ProgList → Bool
+    | .nil => true
+    | .cons p rest => tauSearchFreeP p && tauSearchFreeL rest
+  def tauSearchFreeV : PD.VoteList → Bool
+    | .nil => true
+    | .cons _ I rest => tauSearchFreeP I && tauSearchFreeV rest
+end
+
+theorem tauSearchFreeP_subst : ∀ (p me opp : PD.Prog), tauSearchFreeP p = true → tauSearchFreeP me = true →
+    tauSearchFreeP opp = true → tauSearchFreeP (p.subst me opp) = true
+  | .const _, _, _, _, _, _ => rfl
+  | .self, _, _, _, hme, _ => hme
+  | .opp, _, _, _, _, hopp => hopp
+  | .bot _, _, _, h, _, _ => h
+  | .sim p q, me, opp, h, hme, hopp => by
+    simp only [tauSearchFreeP, Bool.and_eq_true] at h
+    simp only [PD.Prog.subst, tauSearchFreeP, tauSearchFreeP_subst p me opp h.1 hme hopp,
+      tauSearchFreeP_subst q me opp h.2 hme hopp, Bool.and_self]
+  | .ite b _ p q, me, opp, h, hme, hopp => by
+    simp only [tauSearchFreeP, Bool.and_eq_true] at h
+    simp only [PD.Prog.subst, tauSearchFreeP, tauSearchFreeP_subst b me opp h.1.1 hme hopp,
+      tauSearchFreeP_subst p me opp h.1.2 hme hopp, tauSearchFreeP_subst q me opp h.2 hme hopp, Bool.and_self]
+  | .search _ _ _ _, _, _, h, _, _ => by simp [tauSearchFreeP] at h
+  | .tvote v _ p q, me, opp, h, hme, hopp => by
+    simp only [tauSearchFreeP, Bool.and_eq_true] at h
+    simp only [PD.Prog.subst, tauSearchFreeP, h.1.1, tauSearchFreeP_subst p me opp h.1.2 hme hopp,
+      tauSearchFreeP_subst q me opp h.2 hme hopp, Bool.and_self]
+  | .sys _ _, _, _, h, _, _ => h
+  | .selfIdx _, _, _, _, _, _ => rfl
+
+theorem tauSearchFreeP_sysClose : ∀ (p : PD.Prog) (defs : PD.ProgList), tauSearchFreeP p = true →
+    tauSearchFreeL defs = true → tauSearchFreeP (p.sysClose defs) = true
+  | .const _, _, _, _ => rfl
+  | .self, _, _, _ => rfl
+  | .opp, _, _, _ => rfl
+  | .bot p, defs, h, hd => tauSearchFreeP_sysClose p defs h hd
+  | .sim p q, defs, h, hd => by
+    simp only [tauSearchFreeP, Bool.and_eq_true] at h
+    simp only [PD.Prog.sysClose, tauSearchFreeP, tauSearchFreeP_sysClose p defs h.1 hd,
+      tauSearchFreeP_sysClose q defs h.2 hd, Bool.and_self]
+  | .ite b _ p q, defs, h, hd => by
+    simp only [tauSearchFreeP, Bool.and_eq_true] at h
+    simp only [PD.Prog.sysClose, tauSearchFreeP, tauSearchFreeP_sysClose b defs h.1.1 hd,
+      tauSearchFreeP_sysClose p defs h.1.2 hd, tauSearchFreeP_sysClose q defs h.2 hd, Bool.and_self]
+  | .search _ _ _ _, _, h, _ => by simp [tauSearchFreeP] at h
+  | .tvote v _ p q, defs, h, hd => by
+    simp only [tauSearchFreeP, Bool.and_eq_true] at h
+    simp only [PD.Prog.sysClose, tauSearchFreeP, h.1.1, tauSearchFreeP_sysClose p defs h.1.2 hd,
+      tauSearchFreeP_sysClose q defs h.2 hd, Bool.and_self]
+  | .sys _ _, _, h, _ => h
+  | .selfIdx _, _, _, hd => hd
+
+theorem tauSearchFreeP_of_get? : ∀ (defs : PD.ProgList) (i : ℕ) (p : PD.Prog), tauSearchFreeL defs = true →
+    defs.get? i = some p → tauSearchFreeP p = true
+  | .nil, _, _, _, h => by simp [PD.ProgList.get?] at h
+  | .cons q _, 0, p, hd, h => by
+    simp only [PD.ProgList.get?, Option.some.injEq] at h
+    simp only [tauSearchFreeL, Bool.and_eq_true] at hd
+    exact h ▸ hd.1
+  | .cons _ rest, n + 1, p, hd, h => by
+    simp only [PD.ProgList.get?] at h
+    simp only [tauSearchFreeL, Bool.and_eq_true] at hd
+    exact tauSearchFreeP_of_get? rest n p hd.2 h
+
+/-- **The substitution equation on the tau-search-free fragment**: no template is instantiated, so it
+holds with NO condition on the players (compare `progCode_subst`, which needs proper players for its
+templates). -/
+theorem progCode_subst_tauSearchFree (me opp : PD.Prog) :
+    ∀ p : PD.Prog, tauSearchFreeP p = true →
+      progCode (p.subst me opp) = substCode (progCode me) (progCode opp) (progCode p)
+  | .const _, _ => by simp [PD.Prog.subst]
+  | .self, _ => by simp [PD.Prog.subst]
+  | .opp, _ => by simp [PD.Prog.subst]
+  | .bot _, _ => by simp [PD.Prog.subst]
+  | .sim p q, h => by
+    simp only [tauSearchFreeP, Bool.and_eq_true] at h
+    simp [PD.Prog.subst, progCode_subst_tauSearchFree me opp p h.1, progCode_subst_tauSearchFree me opp q h.2]
+  | .ite b _ p q, h => by
+    simp only [tauSearchFreeP, Bool.and_eq_true] at h
+    simp [PD.Prog.subst, progCode_subst_tauSearchFree me opp b h.1.1, progCode_subst_tauSearchFree me opp p h.1.2,
+      progCode_subst_tauSearchFree me opp q h.2]
+  | .search _ _ _ _, h => by simp [tauSearchFreeP] at h
+  | .tvote v _ p q, h => by
+    simp only [tauSearchFreeP, Bool.and_eq_true] at h
+    simp [PD.Prog.subst, progCode_subst_tauSearchFree me opp p h.1.2, progCode_subst_tauSearchFree me opp q h.2]
+  | .sys _ _, _ => by simp [PD.Prog.subst]
+  | .selfIdx _, _ => by simp [PD.Prog.subst]
+
+/-- **The system-closer equation on the tau-search-free fragment**: `sysCloseCode` is the engine's
+`Prog.sysClose` on codes (no template to close). -/
+theorem progCode_sysClose_tauSearchFree (defs : PD.ProgList) :
+    ∀ p : PD.Prog, tauSearchFreeP p = true →
+      progCode (p.sysClose defs) = sysCloseCode (progListCode defs) (progCode p)
+  | .const _, _ => by simp [PD.Prog.sysClose]
+  | .self, _ => by simp [PD.Prog.sysClose]
+  | .opp, _ => by simp [PD.Prog.sysClose]
+  | .bot p, h => by simp [PD.Prog.sysClose, progCode_sysClose_tauSearchFree defs p h]
+  | .sim p q, h => by
+    simp only [tauSearchFreeP, Bool.and_eq_true] at h
+    simp [PD.Prog.sysClose, progCode_sysClose_tauSearchFree defs p h.1, progCode_sysClose_tauSearchFree defs q h.2]
+  | .ite b _ p q, h => by
+    simp only [tauSearchFreeP, Bool.and_eq_true] at h
+    simp [PD.Prog.sysClose, progCode_sysClose_tauSearchFree defs b h.1.1, progCode_sysClose_tauSearchFree defs p h.1.2,
+      progCode_sysClose_tauSearchFree defs q h.2]
+  | .search _ _ _ _, h => by simp [tauSearchFreeP] at h
+  | .tvote v _ p q, h => by
+    simp only [tauSearchFreeP, Bool.and_eq_true] at h
+    simp [PD.Prog.sysClose, progCode_sysClose_tauSearchFree defs p h.1.2, progCode_sysClose_tauSearchFree defs q h.2]
+  | .sys _ _, _ => by simp [PD.Prog.sysClose]
+  | .selfIdx _, _ => by simp [PD.Prog.sysClose]
 
 /-! ### The description lemma (Lemma A) -/
 

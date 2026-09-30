@@ -454,6 +454,19 @@ lemma EvalGraphBad.search_iff {n me opp k g p q a : V} :
      (¬LenBox TBad k (guardCode g me opp) ∧ EvalGraphBad n me opp q a)) := by
   rw [EvalGraphBad.case_iff]; simp
 
+/-! The mutated evaluator is the PRE-TAU copy: the tau constructors (`pTvote`/`pSys`/`pSelfIdx`, shapes since
+2026-09-30) and the list cons have no clause, so no run exists on them (the determinism proof below needs an
+arm per shape). -/
+
+lemma EvalGraphBad.tvote_iff {n me opp v θ p q a : V} : ¬EvalGraphBad n me opp (pTvote v θ p q) a := by
+  rw [EvalGraphBad.case_iff]; simp [pTvote]
+lemma EvalGraphBad.sys_iff {n me opp d i a : V} : ¬EvalGraphBad n me opp (pSys d i) a := by
+  rw [EvalGraphBad.case_iff]; simp [pSys]
+lemma EvalGraphBad.selfIdx_iff {n me opp j a : V} : ¬EvalGraphBad n me opp (pSelfIdx j) a := by
+  rw [EvalGraphBad.case_iff]; simp [pSelfIdx]
+lemma EvalGraphBad.cons_iff {n me opp e r a : V} : ¬EvalGraphBad n me opp (pCons e r) a := by
+  rw [EvalGraphBad.case_iff]; simp [pCons]
+
 end inversion
 
 /-! #### On `ℕ`: determinism and fuel monotonicity (`ArithS.EvalN`, theory swapped) -/
@@ -467,7 +480,8 @@ theorem EvalGraphBad.unique (n : ℕ) : ∀ me opp p a₁ a₂ : ℕ,
   | succ n ih =>
     intro me opp p a₁ a₂ h₁ h₂
     by_cases hp : IsShape p
-    · rcases hp with ⟨a, rfl⟩ | rfl | rfl | ⟨p, rfl⟩ | ⟨p, q, rfl⟩ | ⟨b, a', p, q, rfl⟩ | ⟨k, g, p, q, rfl⟩
+    · rcases hp with ⟨a, rfl⟩ | rfl | rfl | ⟨p, rfl⟩ | ⟨p, q, rfl⟩ | ⟨b, a', p, q, rfl⟩ | ⟨k, g, p, q, rfl⟩ |
+        ⟨v, θ, p, q, rfl⟩ | ⟨d, i, rfl⟩ | ⟨j, rfl⟩ | ⟨e, r, rfl⟩
       · rw [EvalGraphBad.const_iff] at h₁ h₂; rw [h₁, h₂]
       · rw [EvalGraphBad.self_iff] at h₁ h₂; exact ih _ _ _ _ _ h₁ h₂
       · rw [EvalGraphBad.opp_iff] at h₁ h₂; exact ih _ _ _ _ _ h₁ h₂
@@ -488,16 +502,22 @@ theorem EvalGraphBad.unique (n : ℕ) : ∀ me opp p a₁ a₂ : ℕ,
         · exact absurd e₁ e₂
         · exact absurd e₂ e₁
         · exact ih _ _ _ _ _ h₁' h₂'
+      -- The tau constructors and the list cons have no clause in the mutated evaluator (it is the
+      -- pre-tau copy): no run exists.
+      · exact absurd h₁ EvalGraphBad.tvote_iff
+      · exact absurd h₁ EvalGraphBad.sys_iff
+      · exact absurd h₁ EvalGraphBad.selfIdx_iff
+      · exact absurd h₁ EvalGraphBad.cons_iff
     · exfalso
       rcases EvalGraphBad.case_iff.mp h₁ with ⟨n', _, (h | ⟨h, _⟩ | ⟨h, _⟩ | ⟨p', h, _⟩ |
         ⟨p', q, h, _⟩ | ⟨b, a', p', q, r, h, _⟩ | ⟨k, g, p', q, h, _⟩)⟩
-      · exact hp (Or.inl ⟨_, h⟩)
-      · exact hp (Or.inr (Or.inl h))
-      · exact hp (Or.inr (Or.inr (Or.inl h)))
-      · exact hp (Or.inr (Or.inr (Or.inr (Or.inl ⟨_, h⟩))))
-      · exact hp (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨_, _, h⟩)))))
-      · exact hp (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨_, _, _, _, h⟩))))))
-      · exact hp (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨_, _, _, _, h⟩))))))
+      · exact hp (h ▸ IsShape.const _)
+      · exact hp (h ▸ IsShape.self)
+      · exact hp (h ▸ IsShape.opp)
+      · exact hp (h ▸ IsShape.bot _)
+      · exact hp (h ▸ IsShape.sim _ _)
+      · exact hp (h ▸ IsShape.ite _ _ _ _)
+      · exact hp (h ▸ IsShape.search _ _ _ _)
 
 theorem EvalGraphBad.mono (n : ℕ) : ∀ me opp p a : ℕ,
     EvalGraphBad n me opp p a → EvalGraphBad (n + 1) me opp p a := by

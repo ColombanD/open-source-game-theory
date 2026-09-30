@@ -64,7 +64,8 @@ theorem EvalGraph.unique_V' (n : V) : ∀ n' me opp p a₁ a₂ : V,
     obtain ⟨m', rfl, _⟩ := EvalGraph.case_iff.mp h₂
     have hm : m < m + 1 := lt_add_one m
     by_cases hp : IsShape p
-    · rcases hp with ⟨a, rfl⟩ | rfl | rfl | ⟨p, rfl⟩ | ⟨p, q, rfl⟩ | ⟨b, a', p, q, rfl⟩ | ⟨k, g, p, q, rfl⟩
+    · rcases hp with ⟨a, rfl⟩ | rfl | rfl | ⟨p, rfl⟩ | ⟨p, q, rfl⟩ | ⟨b, a', p, q, rfl⟩ | ⟨k, g, p, q, rfl⟩ |
+        ⟨v, θ, p, q, rfl⟩ | ⟨d, i, rfl⟩ | ⟨j, rfl⟩ | ⟨e, r, rfl⟩
       · rw [EvalGraph.const_iff] at h₁ h₂; rw [h₁, h₂]
       · rw [EvalGraph.self_iff] at h₁ h₂; exact ih m hm m' _ _ _ _ _ h₁ h₂
       · rw [EvalGraph.opp_iff] at h₁ h₂; exact ih m hm m' _ _ _ _ _ h₁ h₂
@@ -85,16 +86,46 @@ theorem EvalGraph.unique_V' (n : V) : ∀ n' me opp p a₁ a₂ : V,
         · exact absurd e₁ e₂
         · exact absurd e₂ e₁
         · exact ih m hm m' _ _ _ _ _ h₁' h₂'
+      · rcases EvalGraph.tvote_iff.mp h₁ with ⟨rfl, hc₁⟩ | ⟨w, I, rest, rfl, hc₁⟩
+        · rcases EvalGraph.tvote_nil_iff.mp h₂ with ⟨e₂, h₂'⟩ | ⟨e₂, h₂'⟩ <;>
+            rcases hc₁ with ⟨e₁, h₁'⟩ | ⟨e₁, h₁'⟩
+          · exact ih m hm m' _ _ _ _ _ h₁' h₂'
+          · exact absurd e₂ e₁
+          · exact absurd e₁ e₂
+          · exact ih m hm m' _ _ _ _ _ h₁' h₂'
+        · rcases EvalGraph.tvote_cons_iff.mp h₂ with ⟨e₂, h₂'⟩ | ⟨e₂, r₂, hI₂, hc₂⟩ <;>
+            rcases hc₁ with ⟨e₁, h₁'⟩ | ⟨e₁, r₁, hI₁, hc₁⟩
+          · exact ih m hm m' _ _ _ _ _ h₁' h₂'
+          · exact absurd e₂ e₁
+          · exact absurd e₁ e₂
+          · have hr : r₁ = r₂ := ih m hm m' _ _ _ _ _ hI₁ hI₂
+            subst hr
+            rcases hc₁ with ⟨f₁, h₁'⟩ | ⟨f₁, h₁'⟩ <;> rcases hc₂ with ⟨f₂, h₂'⟩ | ⟨f₂, h₂'⟩
+            · exact ih m hm m' _ _ _ _ _ h₁' h₂'
+            · exact absurd f₁ f₂
+            · exact absurd f₂ f₁
+            · exact ih m hm m' _ _ _ _ _ h₁' h₂'
+      · rcases EvalGraph.sys_iff.mp h₁ with ⟨m₁, hm₁, h₁'⟩
+        rcases EvalGraph.sys_iff.mp h₂ with ⟨m₂, hm₂, h₂'⟩
+        have hmm : m₁ = m₂ := add_right_cancel (hm₁.symm.trans hm₂)
+        subst hmm
+        exact ih m hm m' _ _ _ _ _ h₁' h₂'
+      · exact absurd h₁ EvalGraph.selfIdx_iff
+      · exact absurd h₁ EvalGraph.cons_iff
     · exfalso
       rcases EvalGraph.case_iff.mp h₁ with ⟨n', _, (h | ⟨h, _⟩ | ⟨h, _⟩ | ⟨p', h, _⟩ |
-        ⟨p', q, h, _⟩ | ⟨b, a', p', q, r, h, _⟩ | ⟨k, g, p', q, h, _⟩)⟩
-      · exact hp (Or.inl ⟨_, h⟩)
-      · exact hp (Or.inr (Or.inl h))
-      · exact hp (Or.inr (Or.inr (Or.inl h)))
-      · exact hp (Or.inr (Or.inr (Or.inr (Or.inl ⟨_, h⟩))))
-      · exact hp (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨_, _, h⟩)))))
-      · exact hp (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨_, _, _, _, h⟩))))))
-      · exact hp (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨_, _, _, _, h⟩))))))
+        ⟨p', q, h, _⟩ | ⟨b, a', p', q, r, h, _⟩ | ⟨k, g, p', q, h, _⟩ | ⟨θ, p', q, h, _⟩ |
+        ⟨w, I, rest, θ, p', q, h, _⟩ | ⟨d, i, m, h, _⟩)⟩
+      · exact hp (h ▸ IsShape.const _)
+      · exact hp (h ▸ IsShape.self)
+      · exact hp (h ▸ IsShape.opp)
+      · exact hp (h ▸ IsShape.bot _)
+      · exact hp (h ▸ IsShape.sim _ _)
+      · exact hp (h ▸ IsShape.ite _ _ _ _)
+      · exact hp (h ▸ IsShape.search _ _ _ _)
+      · exact hp (h ▸ IsShape.tvote _ _ _ _)
+      · exact hp (h ▸ IsShape.tvote _ _ _ _)
+      · exact hp (h ▸ IsShape.sys _ _)
 
 /-- **Internal determinism** at one fuel. -/
 theorem EvalGraph.unique_V {n me opp p a₁ a₂ : V}
@@ -198,7 +229,8 @@ theorem val_codeTermMeta_V (x : ℕ) : (codeTermMeta x).val (s := standardModel 
   induction x using Nat.strong_induction_on with
   | _ x ih =>
     by_cases hx : IsShape x
-    · rcases hx with ⟨a, rfl⟩ | rfl | rfl | ⟨p, rfl⟩ | ⟨p, q, rfl⟩ | ⟨b, a, p, q, rfl⟩ | ⟨k, g, p, q, rfl⟩
+    · rcases hx with ⟨a, rfl⟩ | rfl | rfl | ⟨p, rfl⟩ | ⟨p, q, rfl⟩ | ⟨b, a, p, q, rfl⟩ | ⟨k, g, p, q, rfl⟩ |
+        ⟨v, θ, p, q, rfl⟩ | ⟨d, i, rfl⟩ | ⟨j, rfl⟩ | ⟨e, r, rfl⟩
       · rw [codeTermMeta_const, val_succTT_V, val_ppairTermMeta_V, val_binNumeralMeta_V, val_binNumeralMeta_V, cast_pConst]
         unfold pConst; push_cast; rfl
       · rw [codeTermMeta_self, val_succTT_V, val_ppairTermMeta_V, val_binNumeralMeta_V, val_binNumeralMeta_V, cast_pSelf]
@@ -216,6 +248,17 @@ theorem val_codeTermMeta_V (x : ℕ) : (codeTermMeta x).val (s := standardModel 
       · rw [codeTermMeta_search, val_succTT_V, val_ppairTermMeta_V, val_ppairTermMeta_V, val_ppairTermMeta_V, val_ppairTermMeta_V,
           val_binNumeralMeta_V, val_binNumeralMeta_V, val_binNumeralMeta_V, ih p (by simp), ih q (by simp), cast_pSearch]
         unfold pSearch; push_cast; rfl
+      · rw [codeTermMeta_tvote, val_succTT_V, val_ppairTermMeta_V, val_ppairTermMeta_V, val_ppairTermMeta_V, val_ppairTermMeta_V,
+          val_binNumeralMeta_V, val_binNumeralMeta_V, ih v (by simp), ih p (by simp), ih q (by simp), cast_pTvote]
+        unfold pTvote; push_cast; rfl
+      · rw [codeTermMeta_sys, val_succTT_V, val_ppairTermMeta_V, val_ppairTermMeta_V, val_binNumeralMeta_V, val_binNumeralMeta_V,
+          ih d (by simp), cast_pSys]
+        unfold pSys; push_cast; rfl
+      · rw [codeTermMeta_selfIdx, val_succTT_V, val_ppairTermMeta_V, val_binNumeralMeta_V, val_binNumeralMeta_V, cast_pSelfIdx]
+        unfold pSelfIdx; push_cast; rfl
+      · rw [codeTermMeta_cons, val_succTT_V, val_ppairTermMeta_V, val_ppairTermMeta_V, val_binNumeralMeta_V, ih e (by simp),
+          ih r (by simp), cast_pCons]
+        unfold pCons; push_cast; rfl
     · rw [codeTermMeta_of_not_shape hx, val_binNumeralMeta_V]
 
 lemma val_canonicalMeta_V (x : ℕ) : (canonicalMeta x).val (s := stdReadingV V) ![] Empty.elim = ((canonical x : ℕ) : V) := by

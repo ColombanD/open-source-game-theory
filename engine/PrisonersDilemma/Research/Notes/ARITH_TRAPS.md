@@ -83,6 +83,33 @@ an agent-hour or more. Add to it when you lose one. Grouped by where it bites.*
 * `k̂`/`lit` are not identifiers; uniform existential constants are pure terms; pin `(k := 0)` on
   `qqTwo_semiterm.isUTerm`.
 
+## 4b. The tau constructors on codes (Phase 2, 2026-09-30)
+
+* An UNTAGGED list cons (`ppair x rest + 1`) collides with the program shapes — `pCons 3 p = pBot p`,
+  `[const D]` would be `pBot 0` — and every fixpoint that descends into a member list (`revalue`,
+  `codeTerm`) would have two clauses for one code. The cons is the tagged shape `pCons x rest = ppair 10
+  (ppair x rest) + 1`; `pNil = 0` is not a shape and falls to the catch-all clauses.
+* `IsShape` has eleven disjuncts: every `rcases hx with ⟨a, rfl⟩ | rfl | … ` over it needs eleven
+  alternatives (`⟨v, θ, p, q, rfl⟩ | ⟨d, i, rfl⟩ | ⟨j, rfl⟩ | ⟨e, r, rfl⟩` after `search`), and the `intro
+  h₀ _ … h` counts in the `_iff` inversion lemmas grow to twelve. Use the introductions `IsShape.const … cons`
+  rather than hand-built `Or.inr` chains.
+* `pair_ext_iff` on a NESTED pair (`⟪⟪d, i⟫, m⟫`) gives a nested conjunction: the `rintro` pattern is
+  `⟨⟨rfl, rfl⟩, rfl⟩`, not `⟨rfl, rfl, rfl⟩`. `zero_ne_add_one a : 0 ≠ a + 1` (not `a + 1 ≠ 0`).
+* A Π₂ predicate cannot drive `pi1_order_induction`: state the existence of a lookup with a BOUND
+  (`∀ i, ∃ m ≤ d, ListGetGraph d i m`), which is Π₁.
+* Two `Sub ℕ` instances: a V-generic lemma mentioning `θ - w` instantiated at ℕ carries PeanoMinus's
+  scoped instance, while `θ - w` written at ℕ elaborates to `instSubNat`; bridge with `pm_sub_eq_nat_sub`
+  (`Eval/TauCheck.lean`), stated with the explicit instance `⟨FFL.FirstOrder.Arithmetic.sub⟩`.
+* A ten-disjunct blueprint exceeds the default heartbeats in the `defined` proof of a `Fixpoint.Construction`
+  (`set_option maxHeartbeats 6400000 in` on `EvalFix.construction`; it then builds in ~10 s).
+* `lake env lean File.lean` compiles the file against the EXISTING oleans of its imports — it does not
+  rebuild them. After editing `Agents/Prog.lean`, check a downstream file with the targeted
+  `lake build --try-cache ArithS.<Module>` (one lake process at a time), not with `lake env lean`.
+* The pronoun reading of `.selfIdx j` (member slots `#7+3j..`) needs `template : PD.Formula → Semisentence
+  LAct 6` widened — every consumer of `sentenceAt`/`template_plays` (20+ files) is downstream. A search node
+  whose guard mentions `.selfIdx` is described literally and is OUTSIDE the lockstep fragment
+  (`tauSearchFreeP`); do not "fix" it by patching `progAux` at arity seven (there is no variable to use).
+
 ## 5. Tooling
 
 * Never compile Foundation/mathlib (`lake build --try-cache`; `arith/.lake` is a symlink outside

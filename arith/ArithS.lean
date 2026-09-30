@@ -27,6 +27,7 @@ import ArithS.Readings
 import ArithS.Agents.Guard
 import ArithS.Agents.SubstTemplate
 import ArithS.Agents.Subst
+import ArithS.Agents.SysClose
 import ArithS.Eval.Fixpoint
 import ArithS.Eval.Eval
 import ArithS.Eval.EvalN
@@ -38,6 +39,7 @@ import ArithS.Audit.RedCellInstance
 import ArithS.Agents.Fit
 import ArithS.Audit.RedCellUnsound
 import ArithS.Agents.Code
+import ArithS.Eval.TauCheck
 import ArithS.Agents.Instance
 import ArithS.Agents.InstanceV
 import ArithS.Eval.Transparency

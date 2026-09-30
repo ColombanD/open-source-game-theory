@@ -39,7 +39,12 @@ The action term `actTermCode a` (`c_a` for `a ∈ {0, 1}`) serves the closed tem
 `guardTemplate a` of `ArithS.Agents.Template`; it does not enter `descriptions`. The corresponding
 meta sentence and the code equation are in `ArithS.Agents.Template`.
 
-**Reading guide.** §Definitions holds everything to accept (eleven short `def`s). §Foundation plumbing
+**The member slots** (2026-09-30): a system's member `j` is a pronoun at `#7+3j #8+3j #9+3j`;
+`sysCloseTemplate d g` fills the member slots of a thirteen-variable template with the closed descriptions
+of the members of `d` and keeps `#0..#6` free — the engine's `Formula.sysClose` on template codes; a template
+that never reads a member slot is unchanged (`sysCloseTemplate_of_template₇`, `ArithS.Agents.SubstTemplate`).
+
+**Reading guide.** §Definitions holds everything to accept (fourteen short `def`s). §Foundation plumbing
 is the Σ₁ graph of each and its `defined` instance — skip on first reading. At ℕ: `guard_nat` (`ArithS.Readings`).
 -/
 
@@ -95,6 +100,35 @@ noncomputable def descriptionsSlot (me opp : V) : V :=
 /-- Fill `#0..#5` of the seven-variable template `g` with the descriptions of `me` and `opp`, keeping
 the budget slot `#6` free. -/
 noncomputable def guardCodeSlot (g me opp : V) : V := subst LAct (descriptionsSlot me opp) g
+
+/-! ### The member slots (Phase 2 of `SPRIME_SOURCE_OF_TRUTH.md`, 2026-09-30): `sysCloseTemplate`
+
+A system's member `j` is a PRONOUN inside the members' guards, with its own description triple at the
+slots `#7+3j #8+3j #9+3j` — after the frame's six slots and the budget slot, so that every existing
+template is literally unchanged. The compiled zoo's systems have TWO members (`Tau/Spec.lean`: `instAt`
+always emits a 2-member `.sys`), so the slots are `#7..#12` and a member-aware template has thirteen
+variables. `sysCloseTemplate d g` is the engine's `Formula.sysClose defs` (`.selfIdx j ↦ .sys defs j`)
+on template codes: it fills the member slots with the closed descriptions of `pSys d 0` and `pSys d 1`
+and keeps `#0..#6` as the variables `^#0..^#6`; a template that never reads a member slot is
+unchanged — the gate lemma `sysCloseTemplate_of_template₇` (`ArithS.Agents.SubstTemplate`), the twin of
+`guardCodeB_of_template`. (The general design, member `j` at `#7+3j` for a system of any size, needs a
+description vector of variable length; the two-member instance is what the roster needs.) -/
+
+/-- The member-slot vector: `^#0 … ^#6` kept, then the description triples of members `0` and `1`. -/
+noncomputable def descriptionsSys (d : V) : V :=
+  ^#0 ∷ ^#1 ∷ ^#2 ∷ ^#3 ∷ ^#4 ∷ ^#5 ∷ ^#6 ∷
+  codeTerm (canonical (pSys d 0)) ∷ revalueU (pSys d 0) ∷ revalueW (pSys d 0) ∷
+  codeTerm (canonical (pSys d 1)) ∷ revalueU (pSys d 1) ∷ revalueW (pSys d 1) ∷ 0
+
+/-- Fill the member slots `#7..#12` of `g` with the descriptions of the members of `d`. -/
+noncomputable def sysCloseFill (d g : V) : V := subst LAct (descriptionsSys d) g
+
+open scoped Classical in
+/-- The engine's `Formula.sysClose` on template codes: fill the member slots of a thirteen-variable
+template (`sysCloseFill`); every other code is fixed. On a six- or seven-variable template this is the
+identity (`sysCloseTemplate_of_template₇`). -/
+noncomputable def sysCloseTemplate (d g : V) : V :=
+  if IsSemiformula LAct 13 g then sysCloseFill d g else g
 
 /-! ### Foundation plumbing — the Σ₁ graphs and the `defined` instances, skip on first reading -/
 
@@ -214,5 +248,34 @@ noncomputable def guardCodeSlotGraph : 𝚺₁.Semisentence 4 := .mkSigma
 
 instance guardCodeSlot.defined : 𝚺₁-Function₃ (guardCodeSlot : V → V → V → V) via guardCodeSlotGraph :=
   .mk fun v ↦ by simp [guardCodeSlotGraph, guardCodeSlot]
+
+noncomputable def descriptionsSysGraph : 𝚺₁.Semisentence 2 := .mkSigma
+  “y d. ∃ s0, !pSysGraph s0 d 0 ∧ ∃ s1, !pSysGraph s1 d 1 ∧
+    ∃ n₀, !canonicalGraph n₀ s0 ∧ ∃ t₀, !codeTermGraph t₀ n₀ ∧ ∃ u₀, !revalueUGraph u₀ s0 ∧ ∃ w₀, !revalueWGraph w₀ s0 ∧
+    ∃ n₁, !canonicalGraph n₁ s1 ∧ ∃ t₁, !codeTermGraph t₁ n₁ ∧ ∃ u₁, !revalueUGraph u₁ s1 ∧ ∃ w₁, !revalueWGraph w₁ s1 ∧
+    ∃ b0, !qqBvarDef b0 0 ∧ ∃ b1, !qqBvarDef b1 1 ∧ ∃ b2, !qqBvarDef b2 2 ∧ ∃ b3, !qqBvarDef b3 3 ∧
+    ∃ b4, !qqBvarDef b4 4 ∧ ∃ b5, !qqBvarDef b5 5 ∧ ∃ b6, !qqBvarDef b6 6 ∧
+    ∃ v₁₂, !adjoinDef v₁₂ w₁ 0 ∧ ∃ v₁₁, !adjoinDef v₁₁ u₁ v₁₂ ∧ ∃ v₁₀, !adjoinDef v₁₀ t₁ v₁₁ ∧
+    ∃ v₉, !adjoinDef v₉ w₀ v₁₀ ∧ ∃ v₈, !adjoinDef v₈ u₀ v₉ ∧ ∃ v₇, !adjoinDef v₇ t₀ v₈ ∧
+    ∃ v₆, !adjoinDef v₆ b6 v₇ ∧ ∃ v₅, !adjoinDef v₅ b5 v₆ ∧ ∃ v₄, !adjoinDef v₄ b4 v₅ ∧
+    ∃ v₃, !adjoinDef v₃ b3 v₄ ∧ ∃ v₂, !adjoinDef v₂ b2 v₃ ∧ ∃ v₁, !adjoinDef v₁ b1 v₂ ∧ !adjoinDef y b0 v₁”
+
+instance descriptionsSys.defined : 𝚺₁-Function₁[V] descriptionsSys via descriptionsSysGraph := .mk fun v ↦ by
+  simp [descriptionsSysGraph, descriptionsSys, numeral_eq_natCast]
+
+noncomputable def sysCloseFillGraph : 𝚺₁.Semisentence 3 := .mkSigma
+  “y d g. ∃ w, !descriptionsSysGraph w d ∧ !(substsGraph LAct) y w g”
+
+instance sysCloseFill.defined : 𝚺₁-Function₂ (sysCloseFill : V → V → V) via sysCloseFillGraph :=
+  .mk fun v ↦ by simp [sysCloseFillGraph, sysCloseFill]
+
+noncomputable def sysCloseTemplateGraph : 𝚺₁.Semisentence 3 := .mkSigma
+  “y d g. (!(isSemiformula LAct).sigma 13 g ∧ !sysCloseFillGraph y d g) ∨ (¬!(isSemiformula LAct).pi 13 g ∧ y = g)”
+
+instance sysCloseTemplate.defined : 𝚺₁-Function₂ (sysCloseTemplate : V → V → V) via sysCloseTemplateGraph := .mk fun v ↦ by
+  simp [sysCloseTemplateGraph, HierarchySymbol.Semiformula.val_sigma,
+    (IsSemiformula.defined (L := LAct) (V := V)).proper.iff',
+    (IsSemiformula.defined (L := LAct) (V := V)).df, sysCloseFill.defined.df, numeral_eq_natCast]
+  by_cases h : IsSemiformula LAct 13 (v 2) <;> simp [h, sysCloseTemplate]
 
 end ArithS

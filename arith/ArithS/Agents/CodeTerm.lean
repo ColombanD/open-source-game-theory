@@ -15,8 +15,10 @@ leaves:
 * `codeTerm : V → V` (a Σ₁ function, the graph of a StrongFinite fixpoint on pairs `⟪x, t⟫`
   exactly like `revalue`): `codeTerm (pConst a) = ppairTerm (binNumeral 0) (binNumeral a) ^+ (𝟏 : V)`, …,
   `codeTerm (pSearch k g p q) = ppairTerm (binNumeral 6) (ppairTerm (binNumeral k) (ppairTerm (binNumeral g)
-  (ppairTerm (codeTerm p) (codeTerm q)))) ^+ (𝟏 : V)`, and `codeTerm x = binNumeral x` on non-shapes (total);
-  `codeTerm x` is a closed `ℒₒᵣ`-term code;
+  (ppairTerm (codeTerm p) (codeTerm q)))) ^+ (𝟏 : V)`, the tau shapes and the list cons likewise (`codeTerm_tvote`,
+  `codeTerm_sys` — a system's member list is described STRUCTURALLY, member by member, so a system's description
+  is a fixed term in the binary numerals of its leaves —, `codeTerm_selfIdx`, `codeTerm_cons`), and
+  `codeTerm x = binNumeral x` on non-shapes (total); `codeTerm x` is a closed `ℒₒᵣ`-term code;
 * the meta twin `codeTermMeta : ℕ → ClosedSemiterm ℒₒᵣ 0` (the same recursion on the syntax, via
   the inductive graph `CodeTermMetaGraph`), with the code equation `⌜codeTermMeta x⌝ = codeTerm x` in every
   model, the truth equation `val (codeTermMeta x) = x` in `ℕ` (the term DENOTES the code — this is
@@ -81,6 +83,12 @@ def Phi (C : Set V) (pr : V) : Prop :=
     pr = ⟪pIte b a p q, ppairTerm (binNumeral 5) (ppairTerm tb (ppairTerm (binNumeral a) (ppairTerm tp tq))) ^+ (𝟏 : V)⟫) ∨
   (∃ k g p q tp tq : V, ⟪p, tp⟫ ∈ C ∧ ⟪q, tq⟫ ∈ C ∧
     pr = ⟪pSearch k g p q, ppairTerm (binNumeral 6) (ppairTerm (binNumeral k) (ppairTerm (binNumeral g) (ppairTerm tp tq))) ^+ (𝟏 : V)⟫) ∨
+  (∃ v θ p q tv tp tq : V, ⟪v, tv⟫ ∈ C ∧ ⟪p, tp⟫ ∈ C ∧ ⟪q, tq⟫ ∈ C ∧
+    pr = ⟪pTvote v θ p q, ppairTerm (binNumeral 7) (ppairTerm tv (ppairTerm (binNumeral θ) (ppairTerm tp tq))) ^+ (𝟏 : V)⟫) ∨
+  (∃ d i td : V, ⟪d, td⟫ ∈ C ∧ pr = ⟪pSys d i, ppairTerm (binNumeral 8) (ppairTerm td (binNumeral i)) ^+ (𝟏 : V)⟫) ∨
+  (∃ j : V, pr = ⟪pSelfIdx j, ppairTerm (binNumeral 9) (binNumeral j) ^+ (𝟏 : V)⟫) ∨
+  (∃ e r te tr : V, ⟪e, te⟫ ∈ C ∧ ⟪r, tr⟫ ∈ C ∧
+    pr = ⟪pCons e r, ppairTerm (binNumeral 10) (ppairTerm te tr) ^+ (𝟏 : V)⟫) ∨
   (∃ x : V, ¬IsShape x ∧ pr = ⟪x, binNumeral x⟫)
 
 noncomputable def blueprint : Fixpoint.Blueprint 0 := ⟨.mkDelta
@@ -106,6 +114,20 @@ noncomputable def blueprint : Fixpoint.Blueprint 0 := ⟨.mkDelta
         ∃ b6, !binNumeralGraph b6 6 ∧ ∃ bk, !binNumeralGraph bk k ∧ ∃ bg, !binNumeralGraph bg g ∧
         ∃ r1, !ppairTermGraph r1 tp tq ∧ ∃ r2, !ppairTermGraph r2 bg r1 ∧ ∃ r3, !ppairTermGraph r3 bk r2 ∧
         ∃ r, !ppairTermGraph r b6 r3 ∧ !qqAddGraph t r ↑Arithmetic.one) ∨
+      (∃ v < x, ∃ th < x, ∃ p < x, ∃ q < x, !pTvoteGraph x v th p q ∧
+        ∃ tv < t, ∃ tp < t, ∃ tq < t, :⟪v, tv⟫:∈ C ∧ :⟪p, tp⟫:∈ C ∧ :⟪q, tq⟫:∈ C ∧
+        ∃ b7, !binNumeralGraph b7 7 ∧ ∃ bt, !binNumeralGraph bt th ∧ ∃ r1, !ppairTermGraph r1 tp tq ∧
+        ∃ r2, !ppairTermGraph r2 bt r1 ∧ ∃ r3, !ppairTermGraph r3 tv r2 ∧ ∃ r, !ppairTermGraph r b7 r3 ∧
+        !qqAddGraph t r ↑Arithmetic.one) ∨
+      (∃ d < x, ∃ i < x, !pSysGraph x d i ∧ ∃ td < t, :⟪d, td⟫:∈ C ∧
+        ∃ b8, !binNumeralGraph b8 8 ∧ ∃ bi, !binNumeralGraph bi i ∧ ∃ r1, !ppairTermGraph r1 td bi ∧
+        ∃ r, !ppairTermGraph r b8 r1 ∧ !qqAddGraph t r ↑Arithmetic.one) ∨
+      (∃ j < x, !pSelfIdxGraph x j ∧
+        ∃ b9, !binNumeralGraph b9 9 ∧ ∃ bj, !binNumeralGraph bj j ∧ ∃ r, !ppairTermGraph r b9 bj ∧
+        !qqAddGraph t r ↑Arithmetic.one) ∨
+      (∃ e < x, ∃ rr < x, !pConsGraph x e rr ∧ ∃ te < t, ∃ tr < t, :⟪e, te⟫:∈ C ∧ :⟪rr, tr⟫:∈ C ∧
+        ∃ b10, !binNumeralGraph b10 10 ∧ ∃ r1, !ppairTermGraph r1 te tr ∧ ∃ r, !ppairTermGraph r b10 r1 ∧
+        !qqAddGraph t r ↑Arithmetic.one) ∨
       (¬!isShape x ∧ !binNumeralGraph t x) )”)
   (.mkPi “pr C. ∃ x <⁺ pr, ∃ t <⁺ pr, !pairDef pr x t ∧
     ( (∃ a < x, !pConstGraph x a ∧
@@ -129,6 +151,20 @@ noncomputable def blueprint : Fixpoint.Blueprint 0 := ⟨.mkDelta
         ∀ b6, !binNumeralGraph b6 6 → ∀ bk, !binNumeralGraph bk k → ∀ bg, !binNumeralGraph bg g →
         ∀ r1, !ppairTermGraph r1 tp tq → ∀ r2, !ppairTermGraph r2 bg r1 → ∀ r3, !ppairTermGraph r3 bk r2 →
         ∀ r, !ppairTermGraph r b6 r3 → ∀ s, !qqAddGraph s r ↑Arithmetic.one → t = s) ∨
+      (∃ v < x, ∃ th < x, ∃ p < x, ∃ q < x, !pTvoteGraph x v th p q ∧
+        ∃ tv < t, ∃ tp < t, ∃ tq < t, :⟪v, tv⟫:∈ C ∧ :⟪p, tp⟫:∈ C ∧ :⟪q, tq⟫:∈ C ∧
+        ∀ b7, !binNumeralGraph b7 7 → ∀ bt, !binNumeralGraph bt th → ∀ r1, !ppairTermGraph r1 tp tq →
+        ∀ r2, !ppairTermGraph r2 bt r1 → ∀ r3, !ppairTermGraph r3 tv r2 → ∀ r, !ppairTermGraph r b7 r3 →
+        ∀ s, !qqAddGraph s r ↑Arithmetic.one → t = s) ∨
+      (∃ d < x, ∃ i < x, !pSysGraph x d i ∧ ∃ td < t, :⟪d, td⟫:∈ C ∧
+        ∀ b8, !binNumeralGraph b8 8 → ∀ bi, !binNumeralGraph bi i → ∀ r1, !ppairTermGraph r1 td bi →
+        ∀ r, !ppairTermGraph r b8 r1 → ∀ s, !qqAddGraph s r ↑Arithmetic.one → t = s) ∨
+      (∃ j < x, !pSelfIdxGraph x j ∧
+        ∀ b9, !binNumeralGraph b9 9 → ∀ bj, !binNumeralGraph bj j → ∀ r, !ppairTermGraph r b9 bj →
+        ∀ s, !qqAddGraph s r ↑Arithmetic.one → t = s) ∨
+      (∃ e < x, ∃ rr < x, !pConsGraph x e rr ∧ ∃ te < t, ∃ tr < t, :⟪e, te⟫:∈ C ∧ :⟪rr, tr⟫:∈ C ∧
+        ∀ b10, !binNumeralGraph b10 10 → ∀ r1, !ppairTermGraph r1 te tr → ∀ r, !ppairTermGraph r b10 r1 →
+        ∀ s, !qqAddGraph s r ↑Arithmetic.one → t = s) ∨
       (¬!isShape x ∧ ∀ s, !binNumeralGraph s x → t = s) )”)⟩
 
 /-- `Phi` with the bounds the blueprint carries. -/
@@ -147,10 +183,20 @@ private lemma phi_iff (C pr : V) :
       (∃ k < x, ∃ g < x, ∃ p < x, ∃ q < x, x = pSearch k g p q ∧
         ∃ tp < t, ∃ tq < t, ⟪p, tp⟫ ∈ C ∧ ⟪q, tq⟫ ∈ C ∧
         t = ppairTerm (binNumeral 6) (ppairTerm (binNumeral k) (ppairTerm (binNumeral g) (ppairTerm tp tq))) ^+ (𝟏 : V)) ∨
+      (∃ v < x, ∃ θ < x, ∃ p < x, ∃ q < x, x = pTvote v θ p q ∧
+        ∃ tv < t, ∃ tp < t, ∃ tq < t, ⟪v, tv⟫ ∈ C ∧ ⟪p, tp⟫ ∈ C ∧ ⟪q, tq⟫ ∈ C ∧
+        t = ppairTerm (binNumeral 7) (ppairTerm tv (ppairTerm (binNumeral θ) (ppairTerm tp tq))) ^+ (𝟏 : V)) ∨
+      (∃ d < x, ∃ i < x, x = pSys d i ∧ ∃ td < t, ⟪d, td⟫ ∈ C ∧
+        t = ppairTerm (binNumeral 8) (ppairTerm td (binNumeral i)) ^+ (𝟏 : V)) ∨
+      (∃ j < x, x = pSelfIdx j ∧ t = ppairTerm (binNumeral 9) (binNumeral j) ^+ (𝟏 : V)) ∨
+      (∃ e < x, ∃ r < x, x = pCons e r ∧ ∃ te < t, ∃ tr < t, ⟪e, te⟫ ∈ C ∧ ⟪r, tr⟫ ∈ C ∧
+        t = ppairTerm (binNumeral 10) (ppairTerm te tr) ^+ (𝟏 : V)) ∨
       (¬IsShape x ∧ t = binNumeral x) ) := by
   constructor
   · rintro (⟨a, rfl⟩ | rfl | rfl | ⟨p, tp, h, rfl⟩ | ⟨p, q, tp, tq, hp, hq, rfl⟩ |
-      ⟨b, a, p, q, tb, tp, tq, hb, hp, hq, rfl⟩ | ⟨k, g, p, q, tp, tq, hp, hq, rfl⟩ | ⟨x, hx, rfl⟩)
+      ⟨b, a, p, q, tb, tp, tq, hb, hp, hq, rfl⟩ | ⟨k, g, p, q, tp, tq, hp, hq, rfl⟩ |
+      ⟨v, θ, p, q, tv, tp, tq, hv, hp, hq, rfl⟩ | ⟨d, i, td, hd, rfl⟩ | ⟨j, rfl⟩ |
+      ⟨e, r, te, tr, he, hr, rfl⟩ | ⟨x, hx, rfl⟩)
     · exact ⟨_, by simp, _, by simp, rfl, Or.inl ⟨a, by simp, rfl, rfl⟩⟩
     · exact ⟨_, by simp, _, by simp, rfl, Or.inr (Or.inl ⟨rfl, rfl⟩)⟩
     · exact ⟨_, by simp, _, by simp, rfl, Or.inr (Or.inr (Or.inl ⟨rfl, rfl⟩))⟩
@@ -174,12 +220,31 @@ private lemma phi_iff (C pr : V) :
           tq, lt_trans (lt_ppairTerm_right _ _) (lt_trans (lt_ppairTerm_right _ _)
             (lt_trans (lt_ppairTerm_right _ _) (lt_ppairTerm_succ_right _ _))),
           hp, hq, rfl⟩))))))⟩
-    · exact ⟨_, by simp, _, by simp, rfl, Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr
-        ⟨hx, rfl⟩))))))⟩
+    · exact ⟨_, by simp, _, by simp, rfl, Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl
+        ⟨v, by simp, θ, by simp, p, by simp, q, by simp, rfl,
+          tv, lt_trans (lt_ppairTerm_left _ _) (lt_ppairTerm_succ_right _ _),
+          tp, lt_trans (lt_ppairTerm_left _ _) (lt_trans (lt_ppairTerm_right _ _)
+            (lt_trans (lt_ppairTerm_right _ _) (lt_ppairTerm_succ_right _ _))),
+          tq, lt_trans (lt_ppairTerm_right _ _) (lt_trans (lt_ppairTerm_right _ _)
+            (lt_trans (lt_ppairTerm_right _ _) (lt_ppairTerm_succ_right _ _))),
+          hv, hp, hq, rfl⟩)))))))⟩
+    · exact ⟨_, by simp, _, by simp, rfl, Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl
+        ⟨d, by simp, i, by simp, rfl, td, lt_trans (lt_ppairTerm_left _ _) (lt_ppairTerm_succ_right _ _),
+          hd, rfl⟩))))))))⟩
+    · exact ⟨_, by simp, _, by simp, rfl, Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl
+        ⟨j, by simp, rfl, rfl⟩)))))))))⟩
+    · exact ⟨_, by simp, _, by simp, rfl, Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl
+        ⟨e, by simp, r, by simp, rfl, te, lt_trans (lt_ppairTerm_left _ _) (lt_ppairTerm_succ_right _ _),
+          tr, lt_trans (lt_ppairTerm_right _ _) (lt_ppairTerm_succ_right _ _), he, hr, rfl⟩))))))))))⟩
+    · exact ⟨_, by simp, _, by simp, rfl, Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr
+        ⟨hx, rfl⟩))))))))))⟩
   · rintro ⟨x, _, t, _, rfl, (⟨a, _, rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ |
       ⟨p, _, rfl, tp, _, h, rfl⟩ | ⟨p, _, q, _, rfl, tp, _, tq, _, hp, hq, rfl⟩ |
       ⟨b, _, a, _, p, _, q, _, rfl, tb, _, tp, _, tq, _, hb, hp, hq, rfl⟩ |
-      ⟨k, _, g, _, p, _, q, _, rfl, tp, _, tq, _, hp, hq, rfl⟩ | ⟨hx, rfl⟩)⟩
+      ⟨k, _, g, _, p, _, q, _, rfl, tp, _, tq, _, hp, hq, rfl⟩ |
+      ⟨v, _, θ, _, p, _, q, _, rfl, tv, _, tp, _, tq, _, hv, hp, hq, rfl⟩ |
+      ⟨d, _, i, _, rfl, td, _, hd, rfl⟩ | ⟨j, _, rfl, rfl⟩ |
+      ⟨e, _, r, _, rfl, te, _, tr, _, he, hr, rfl⟩ | ⟨hx, rfl⟩)⟩
     · exact Or.inl ⟨a, rfl⟩
     · exact Or.inr (Or.inl rfl)
     · exact Or.inr (Or.inr (Or.inl rfl))
@@ -187,7 +252,13 @@ private lemma phi_iff (C pr : V) :
     · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨p, q, tp, tq, hp, hq, rfl⟩))))
     · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨b, a, p, q, tb, tp, tq, hb, hp, hq, rfl⟩)))))
     · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨k, g, p, q, tp, tq, hp, hq, rfl⟩))))))
-    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨x, hx, rfl⟩))))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨v, θ, p, q, tv, tp, tq, hv, hp, hq, rfl⟩)))))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨d, i, td, hd, rfl⟩))))))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨j, rfl⟩)))))))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl
+        ⟨e, r, te, tr, he, hr, rfl⟩))))))))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr
+        ⟨x, hx, rfl⟩))))))))))
 
 noncomputable def construction : Fixpoint.Construction V blueprint where
   Φ := fun _ ↦ Phi
@@ -203,7 +274,9 @@ noncomputable def construction : Fixpoint.Construction V blueprint where
         using phi_iff (v 1) (v 0)
   monotone := by
     rintro C C' hC _ pr (⟨a, rfl⟩ | rfl | rfl | ⟨p, tp, h, rfl⟩ | ⟨p, q, tp, tq, hp, hq, rfl⟩ |
-      ⟨b, a, p, q, tb, tp, tq, hb, hp, hq, rfl⟩ | ⟨k, g, p, q, tp, tq, hp, hq, rfl⟩ | ⟨x, hx, rfl⟩)
+      ⟨b, a, p, q, tb, tp, tq, hb, hp, hq, rfl⟩ | ⟨k, g, p, q, tp, tq, hp, hq, rfl⟩ |
+      ⟨v, θ, p, q, tv, tp, tq, hv, hp, hq, rfl⟩ | ⟨d, i, td, hd, rfl⟩ | ⟨j, rfl⟩ |
+      ⟨e, r, te, tr, he, hr, rfl⟩ | ⟨x, hx, rfl⟩)
     · exact Or.inl ⟨a, rfl⟩
     · exact Or.inr (Or.inl rfl)
     · exact Or.inr (Or.inr (Or.inl rfl))
@@ -213,12 +286,22 @@ noncomputable def construction : Fixpoint.Construction V blueprint where
         ⟨b, a, p, q, tb, tp, tq, hC hb, hC hp, hC hq, rfl⟩)))))
     · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl
         ⟨k, g, p, q, tp, tq, hC hp, hC hq, rfl⟩))))))
-    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨x, hx, rfl⟩))))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl
+        ⟨v, θ, p, q, tv, tp, tq, hC hv, hC hp, hC hq, rfl⟩)))))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl
+        ⟨d, i, td, hC hd, rfl⟩))))))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨j, rfl⟩)))))))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl
+        ⟨e, r, te, tr, hC he, hC hr, rfl⟩))))))))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr
+        ⟨x, hx, rfl⟩))))))))))
 
 instance : construction.StrongFinite V where
   strong_finite := by
     rintro C _ pr (⟨a, rfl⟩ | rfl | rfl | ⟨p, tp, h, rfl⟩ | ⟨p, q, tp, tq, hp, hq, rfl⟩ |
-      ⟨b, a, p, q, tb, tp, tq, hb, hp, hq, rfl⟩ | ⟨k, g, p, q, tp, tq, hp, hq, rfl⟩ | ⟨x, hx, rfl⟩)
+      ⟨b, a, p, q, tb, tp, tq, hb, hp, hq, rfl⟩ | ⟨k, g, p, q, tp, tq, hp, hq, rfl⟩ |
+      ⟨v, θ, p, q, tv, tp, tq, hv, hp, hq, rfl⟩ | ⟨d, i, td, hd, rfl⟩ | ⟨j, rfl⟩ |
+      ⟨e, r, te, tr, he, hr, rfl⟩ | ⟨x, hx, rfl⟩)
     · exact Or.inl ⟨a, rfl⟩
     · exact Or.inr (Or.inl rfl)
     · exact Or.inr (Or.inr (Or.inl rfl))
@@ -238,7 +321,20 @@ instance : construction.StrongFinite V where
             (lt_trans (lt_ppairTerm_right _ _) (lt_ppairTerm_succ_right _ _))))⟩,
         ⟨hq, pair_lt_pair (by simp) (lt_trans (lt_ppairTerm_right _ _) (lt_trans (lt_ppairTerm_right _ _)
             (lt_trans (lt_ppairTerm_right _ _) (lt_ppairTerm_succ_right _ _))))⟩, rfl⟩))))))
-    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨x, hx, rfl⟩))))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨v, θ, p, q, tv, tp, tq,
+        ⟨hv, pair_lt_pair (by simp) (lt_trans (lt_ppairTerm_left _ _) (lt_ppairTerm_succ_right _ _))⟩,
+        ⟨hp, pair_lt_pair (by simp) (lt_trans (lt_ppairTerm_left _ _) (lt_trans (lt_ppairTerm_right _ _)
+            (lt_trans (lt_ppairTerm_right _ _) (lt_ppairTerm_succ_right _ _))))⟩,
+        ⟨hq, pair_lt_pair (by simp) (lt_trans (lt_ppairTerm_right _ _) (lt_trans (lt_ppairTerm_right _ _)
+            (lt_trans (lt_ppairTerm_right _ _) (lt_ppairTerm_succ_right _ _))))⟩, rfl⟩)))))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨d, i, td,
+        ⟨hd, pair_lt_pair (by simp) (lt_trans (lt_ppairTerm_left _ _) (lt_ppairTerm_succ_right _ _))⟩, rfl⟩))))))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨j, rfl⟩)))))))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨e, r, te, tr,
+        ⟨he, pair_lt_pair (by simp) (lt_trans (lt_ppairTerm_left _ _) (lt_ppairTerm_succ_right _ _))⟩,
+        ⟨hr, pair_lt_pair (by simp) (lt_trans (lt_ppairTerm_right _ _) (lt_ppairTerm_succ_right _ _))⟩, rfl⟩))))))))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr
+        ⟨x, hx, rfl⟩))))))))))
 
 end CodeTerm
 
@@ -287,13 +383,19 @@ lemma CodeTermGraph.case_iff {x t : V} :
       t = ppairTerm (binNumeral 5) (ppairTerm tb (ppairTerm (binNumeral a) (ppairTerm tp tq))) ^+ (𝟏 : V)) ∨
     (∃ k g p q tp tq, CodeTermGraph p tp ∧ CodeTermGraph q tq ∧ x = pSearch k g p q ∧
       t = ppairTerm (binNumeral 6) (ppairTerm (binNumeral k) (ppairTerm (binNumeral g) (ppairTerm tp tq))) ^+ (𝟏 : V)) ∨
+    (∃ v θ p q tv tp tq, CodeTermGraph v tv ∧ CodeTermGraph p tp ∧ CodeTermGraph q tq ∧ x = pTvote v θ p q ∧
+      t = ppairTerm (binNumeral 7) (ppairTerm tv (ppairTerm (binNumeral θ) (ppairTerm tp tq))) ^+ (𝟏 : V)) ∨
+    (∃ d i td, CodeTermGraph d td ∧ x = pSys d i ∧ t = ppairTerm (binNumeral 8) (ppairTerm td (binNumeral i)) ^+ (𝟏 : V)) ∨
+    (∃ j, x = pSelfIdx j ∧ t = ppairTerm (binNumeral 9) (binNumeral j) ^+ (𝟏 : V)) ∨
+    (∃ e r te tr, CodeTermGraph e te ∧ CodeTermGraph r tr ∧ x = pCons e r ∧
+      t = ppairTerm (binNumeral 10) (ppairTerm te tr) ^+ (𝟏 : V)) ∨
     (¬IsShape x ∧ t = binNumeral x) :=
   Iff.trans CodeTerm.construction.case
     (by simp [show CodeTerm.construction.Φ = fun _ ↦ CodeTerm.Phi from rfl, CodeTerm.Phi, CodeTermGraph])
 
 section inversion
 
-attribute [local simp] pConst pSelf pOpp pBot pSim pIte pSearch IsShape
+attribute [local simp] pConst pSelf pOpp pBot pSim pIte pSearch pTvote pSys pSelfIdx pCons IsShape
 
 lemma CodeTermGraph.const_iff {a t : V} :
     CodeTermGraph (pConst a) t ↔ t = ppairTerm (binNumeral 0) (binNumeral a) ^+ (𝟏 : V) := by
@@ -319,21 +421,44 @@ lemma CodeTermGraph.search_iff {k g p q t : V} :
     ∃ tp tq, CodeTermGraph p tp ∧ CodeTermGraph q tq ∧
       t = ppairTerm (binNumeral 6) (ppairTerm (binNumeral k) (ppairTerm (binNumeral g) (ppairTerm tp tq))) ^+ (𝟏 : V) := by
   rw [CodeTermGraph.case_iff]; simp
+lemma CodeTermGraph.tvote_iff {v θ p q t : V} :
+    CodeTermGraph (pTvote v θ p q) t ↔
+    ∃ tv tp tq, CodeTermGraph v tv ∧ CodeTermGraph p tp ∧ CodeTermGraph q tq ∧
+      t = ppairTerm (binNumeral 7) (ppairTerm tv (ppairTerm (binNumeral θ) (ppairTerm tp tq))) ^+ (𝟏 : V) := by
+  rw [CodeTermGraph.case_iff]; simp
+lemma CodeTermGraph.sys_iff {d i t : V} :
+    CodeTermGraph (pSys d i) t ↔
+    ∃ td, CodeTermGraph d td ∧ t = ppairTerm (binNumeral 8) (ppairTerm td (binNumeral i)) ^+ (𝟏 : V) := by
+  rw [CodeTermGraph.case_iff]; simp
+lemma CodeTermGraph.selfIdx_iff {j t : V} :
+    CodeTermGraph (pSelfIdx j) t ↔ t = ppairTerm (binNumeral 9) (binNumeral j) ^+ (𝟏 : V) := by
+  rw [CodeTermGraph.case_iff]; simp
+lemma CodeTermGraph.cons_iff {e r t : V} :
+    CodeTermGraph (pCons e r) t ↔
+    ∃ te tr, CodeTermGraph e te ∧ CodeTermGraph r tr ∧ t = ppairTerm (binNumeral 10) (ppairTerm te tr) ^+ (𝟏 : V) := by
+  rw [CodeTermGraph.case_iff]; simp
 lemma CodeTermGraph.of_not_shape {x t : V} (hx : ¬IsShape x) : CodeTermGraph x t ↔ t = binNumeral x := by
   rw [CodeTermGraph.case_iff]
   constructor
   · rintro (⟨a, rfl, _⟩ | ⟨rfl, _⟩ | ⟨rfl, _⟩ | ⟨p, tp, _, rfl, _⟩ | ⟨p, q, tp, tq, _, _, rfl, _⟩ |
-      ⟨b, a, p, q, tb, tp, tq, _, _, _, rfl, _⟩ | ⟨k, g, p, q, tp, tq, _, _, rfl, _⟩ | ⟨_, h⟩)
-    · exact absurd (Or.inl ⟨a, rfl⟩) hx
-    · exact absurd (Or.inr (Or.inl rfl)) hx
-    · exact absurd (Or.inr (Or.inr (Or.inl rfl))) hx
-    · exact absurd (Or.inr (Or.inr (Or.inr (Or.inl ⟨p, rfl⟩)))) hx
-    · exact absurd (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨p, q, rfl⟩))))) hx
-    · exact absurd (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨b, a, p, q, rfl⟩)))))) hx
-    · exact absurd (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨k, g, p, q, rfl⟩)))))) hx
+      ⟨b, a, p, q, tb, tp, tq, _, _, _, rfl, _⟩ | ⟨k, g, p, q, tp, tq, _, _, rfl, _⟩ |
+      ⟨v, θ, p, q, tv, tp, tq, _, _, _, rfl, _⟩ | ⟨d, i, td, _, rfl, _⟩ | ⟨j, rfl, _⟩ |
+      ⟨e, r, te, tr, _, _, rfl, _⟩ | ⟨_, h⟩)
+    · exact absurd (IsShape.const a) hx
+    · exact absurd IsShape.self hx
+    · exact absurd IsShape.opp hx
+    · exact absurd (IsShape.bot p) hx
+    · exact absurd (IsShape.sim p q) hx
+    · exact absurd (IsShape.ite b a p q) hx
+    · exact absurd (IsShape.search k g p q) hx
+    · exact absurd (IsShape.tvote v θ p q) hx
+    · exact absurd (IsShape.sys d i) hx
+    · exact absurd (IsShape.selfIdx j) hx
+    · exact absurd (IsShape.cons e r) hx
     · exact h
   · rintro rfl
-    exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨hx, rfl⟩))))))
+    exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr
+      ⟨hx, rfl⟩))))))))))
 
 end inversion
 
@@ -344,7 +469,8 @@ lemma codeTermGraph_exists (x : V) : ∃ t, CodeTermGraph x t := by
   | hP => definability
   | ind x ih =>
     by_cases hx : IsShape x
-    · rcases hx with ⟨a, rfl⟩ | rfl | rfl | ⟨p, rfl⟩ | ⟨p, q, rfl⟩ | ⟨b, a, p, q, rfl⟩ | ⟨k, g, p, q, rfl⟩
+    · rcases hx with ⟨a, rfl⟩ | rfl | rfl | ⟨p, rfl⟩ | ⟨p, q, rfl⟩ | ⟨b, a, p, q, rfl⟩ | ⟨k, g, p, q, rfl⟩ |
+        ⟨v, θ, p, q, rfl⟩ | ⟨d, i, rfl⟩ | ⟨j, rfl⟩ | ⟨e, r, rfl⟩
       · exact ⟨_, CodeTermGraph.const_iff.mpr rfl⟩
       · exact ⟨_, CodeTermGraph.self_iff.mpr rfl⟩
       · exact ⟨_, CodeTermGraph.opp_iff.mpr rfl⟩
@@ -357,6 +483,14 @@ lemma codeTermGraph_exists (x : V) : ∃ t, CodeTermGraph x t := by
         exact ⟨_, CodeTermGraph.ite_iff.mpr ⟨tb, tp, tq, hb, hp, hq, rfl⟩⟩
       · obtain ⟨tp, hp⟩ := ih p (by simp); obtain ⟨tq, hq⟩ := ih q (by simp)
         exact ⟨_, CodeTermGraph.search_iff.mpr ⟨tp, tq, hp, hq, rfl⟩⟩
+      · obtain ⟨tv, hv⟩ := ih v (by simp); obtain ⟨tp, hp⟩ := ih p (by simp)
+        obtain ⟨tq, hq⟩ := ih q (by simp)
+        exact ⟨_, CodeTermGraph.tvote_iff.mpr ⟨tv, tp, tq, hv, hp, hq, rfl⟩⟩
+      · obtain ⟨td, hd⟩ := ih d (by simp)
+        exact ⟨_, CodeTermGraph.sys_iff.mpr ⟨td, hd, rfl⟩⟩
+      · exact ⟨_, CodeTermGraph.selfIdx_iff.mpr rfl⟩
+      · obtain ⟨te, he⟩ := ih e (by simp); obtain ⟨tr, hr⟩ := ih r (by simp)
+        exact ⟨_, CodeTermGraph.cons_iff.mpr ⟨te, tr, he, hr, rfl⟩⟩
     · exact ⟨_, (CodeTermGraph.of_not_shape hx).mpr rfl⟩
 
 lemma codeTermGraph_unique (x : V) : ∀ t₁ t₂, CodeTermGraph x t₁ → CodeTermGraph x t₂ → t₁ = t₂ := by
@@ -365,7 +499,8 @@ lemma codeTermGraph_unique (x : V) : ∀ t₁ t₂, CodeTermGraph x t₁ → Cod
   | ind x ih =>
     intro t₁ t₂ h₁ h₂
     by_cases hx : IsShape x
-    · rcases hx with ⟨a, rfl⟩ | rfl | rfl | ⟨p, rfl⟩ | ⟨p, q, rfl⟩ | ⟨b, a, p, q, rfl⟩ | ⟨k, g, p, q, rfl⟩
+    · rcases hx with ⟨a, rfl⟩ | rfl | rfl | ⟨p, rfl⟩ | ⟨p, q, rfl⟩ | ⟨b, a, p, q, rfl⟩ | ⟨k, g, p, q, rfl⟩ |
+        ⟨v, θ, p, q, rfl⟩ | ⟨d, i, rfl⟩ | ⟨j, rfl⟩ | ⟨e, r, rfl⟩
       · rw [CodeTermGraph.const_iff] at h₁ h₂; rw [h₁, h₂]
       · rw [CodeTermGraph.self_iff] at h₁ h₂; rw [h₁, h₂]
       · rw [CodeTermGraph.opp_iff] at h₁ h₂; rw [h₁, h₂]
@@ -381,6 +516,16 @@ lemma codeTermGraph_unique (x : V) : ∀ t₁ t₂, CodeTermGraph x t₁ → Cod
       · rcases CodeTermGraph.search_iff.mp h₁ with ⟨p₁, q₁, hp₁, hq₁, rfl⟩
         rcases CodeTermGraph.search_iff.mp h₂ with ⟨p₂, q₂, hp₂, hq₂, rfl⟩
         rw [ih p (by simp) _ _ hp₁ hp₂, ih q (by simp) _ _ hq₁ hq₂]
+      · rcases CodeTermGraph.tvote_iff.mp h₁ with ⟨v₁, p₁, q₁, hv₁, hp₁, hq₁, rfl⟩
+        rcases CodeTermGraph.tvote_iff.mp h₂ with ⟨v₂, p₂, q₂, hv₂, hp₂, hq₂, rfl⟩
+        rw [ih v (by simp) _ _ hv₁ hv₂, ih p (by simp) _ _ hp₁ hp₂, ih q (by simp) _ _ hq₁ hq₂]
+      · rcases CodeTermGraph.sys_iff.mp h₁ with ⟨d₁, hd₁, rfl⟩
+        rcases CodeTermGraph.sys_iff.mp h₂ with ⟨d₂, hd₂, rfl⟩
+        rw [ih d (by simp) _ _ hd₁ hd₂]
+      · rw [CodeTermGraph.selfIdx_iff] at h₁ h₂; rw [h₁, h₂]
+      · rcases CodeTermGraph.cons_iff.mp h₁ with ⟨e₁, r₁, he₁, hr₁, rfl⟩
+        rcases CodeTermGraph.cons_iff.mp h₂ with ⟨e₂, r₂, he₂, hr₂, rfl⟩
+        rw [ih e (by simp) _ _ he₁ he₂, ih r (by simp) _ _ hr₁ hr₂]
     · rw [CodeTermGraph.of_not_shape hx] at h₁ h₂; rw [h₁, h₂]
 
 lemma codeTermGraph_existsUnique (x : V) : ∃! t, CodeTermGraph x t := by
@@ -426,8 +571,23 @@ instance codeTerm.definable : 𝚺₁-Function₁[V] codeTerm := codeTerm.define
     codeTerm (pSearch k g p q) =
     ppairTerm (binNumeral 6) (ppairTerm (binNumeral k) (ppairTerm (binNumeral g) (ppairTerm (codeTerm p) (codeTerm q)))) ^+ (𝟏 : V) :=
   codeTerm_eq_of_graph (CodeTermGraph.search_iff.mpr ⟨_, _, codeTerm_graph p, codeTerm_graph q, rfl⟩)
+@[simp] lemma codeTerm_tvote (v θ p q : V) :
+    codeTerm (pTvote v θ p q) =
+    ppairTerm (binNumeral 7) (ppairTerm (codeTerm v) (ppairTerm (binNumeral θ) (ppairTerm (codeTerm p) (codeTerm q)))) ^+ (𝟏 : V) :=
+  codeTerm_eq_of_graph (CodeTermGraph.tvote_iff.mpr ⟨_, _, _, codeTerm_graph v, codeTerm_graph p, codeTerm_graph q, rfl⟩)
+/-- The description of a system: the member list structurally (through `codeTerm_cons`), the index a binary numeral. -/
+@[simp] lemma codeTerm_sys (d i : V) :
+    codeTerm (pSys d i) = ppairTerm (binNumeral 8) (ppairTerm (codeTerm d) (binNumeral i)) ^+ (𝟏 : V) :=
+  codeTerm_eq_of_graph (CodeTermGraph.sys_iff.mpr ⟨_, codeTerm_graph d, rfl⟩)
+@[simp] lemma codeTerm_selfIdx (j : V) :
+    codeTerm (pSelfIdx j) = ppairTerm (binNumeral 9) (binNumeral j) ^+ (𝟏 : V) :=
+  codeTerm_eq_of_graph (CodeTermGraph.selfIdx_iff.mpr rfl)
+@[simp] lemma codeTerm_cons (e r : V) :
+    codeTerm (pCons e r) = ppairTerm (binNumeral 10) (ppairTerm (codeTerm e) (codeTerm r)) ^+ (𝟏 : V) :=
+  codeTerm_eq_of_graph (CodeTermGraph.cons_iff.mpr ⟨_, _, codeTerm_graph e, codeTerm_graph r, rfl⟩)
 lemma codeTerm_of_not_shape {x : V} (hx : ¬IsShape x) : codeTerm x = binNumeral x :=
   codeTerm_eq_of_graph ((CodeTermGraph.of_not_shape hx).mpr rfl)
+@[simp] lemma codeTerm_nil : codeTerm (pNil : V) = binNumeral 0 := codeTerm_of_not_shape not_isShape_zero
 
 /-- `codeTerm x` is a closed `ℒₒᵣ`-term (at every bound-variable count). -/
 lemma codeTerm_semiterm (k x : V) : IsSemiterm ℒₒᵣ k (codeTerm x) := by
@@ -435,7 +595,8 @@ lemma codeTerm_semiterm (k x : V) : IsSemiterm ℒₒᵣ k (codeTerm x) := by
   | hP => definability
   | ind x ih =>
     by_cases hx : IsShape x
-    · rcases hx with ⟨a, rfl⟩ | rfl | rfl | ⟨p, rfl⟩ | ⟨p, q, rfl⟩ | ⟨b, a, p, q, rfl⟩ | ⟨k', g, p, q, rfl⟩
+    · rcases hx with ⟨a, rfl⟩ | rfl | rfl | ⟨p, rfl⟩ | ⟨p, q, rfl⟩ | ⟨b, a, p, q, rfl⟩ | ⟨k', g, p, q, rfl⟩ |
+        ⟨v, θ, p, q, rfl⟩ | ⟨d, i, rfl⟩ | ⟨j, rfl⟩ | ⟨e, r, rfl⟩
       · rw [codeTerm_const]; exact succ_semiterm (ppairTerm_semiterm (binNumeral_semiterm k _) (binNumeral_semiterm k _))
       · rw [codeTerm_self]; exact succ_semiterm (ppairTerm_semiterm (binNumeral_semiterm k _) (binNumeral_semiterm k _))
       · rw [codeTerm_opp]; exact succ_semiterm (ppairTerm_semiterm (binNumeral_semiterm k _) (binNumeral_semiterm k _))
@@ -449,6 +610,14 @@ lemma codeTerm_semiterm (k x : V) : IsSemiterm ℒₒᵣ k (codeTerm x) := by
       · rw [codeTerm_search]
         exact succ_semiterm (ppairTerm_semiterm (binNumeral_semiterm k _) (ppairTerm_semiterm (binNumeral_semiterm k _)
           (ppairTerm_semiterm (binNumeral_semiterm k _) (ppairTerm_semiterm (ih p (by simp)) (ih q (by simp))))))
+      · rw [codeTerm_tvote]
+        exact succ_semiterm (ppairTerm_semiterm (binNumeral_semiterm k _) (ppairTerm_semiterm (ih v (by simp))
+          (ppairTerm_semiterm (binNumeral_semiterm k _) (ppairTerm_semiterm (ih p (by simp)) (ih q (by simp))))))
+      · rw [codeTerm_sys]
+        exact succ_semiterm (ppairTerm_semiterm (binNumeral_semiterm k _) (ppairTerm_semiterm (ih d (by simp)) (binNumeral_semiterm k _)))
+      · rw [codeTerm_selfIdx]; exact succ_semiterm (ppairTerm_semiterm (binNumeral_semiterm k _) (binNumeral_semiterm k _))
+      · rw [codeTerm_cons]
+        exact succ_semiterm (ppairTerm_semiterm (binNumeral_semiterm k _) (ppairTerm_semiterm (ih e (by simp)) (ih r (by simp))))
     · rw [codeTerm_of_not_shape hx]; exact binNumeral_semiterm k x
 
 lemma codeTerm_uterm (x : V) : IsUTerm ℒₒᵣ (codeTerm x) := (codeTerm_semiterm 0 x).isUTerm
@@ -521,11 +690,22 @@ inductive CodeTermMetaGraph : ℕ → ClosedSemiterm ℒₒᵣ 0 → Prop
       (hp : CodeTermMetaGraph p tp) (hq : CodeTermMetaGraph q tq)
       (ht : t = succTT (ppairTermMeta (binNumeralMeta 6) (ppairTermMeta (binNumeralMeta k) (ppairTermMeta (binNumeralMeta g) (ppairTermMeta tp tq))))) :
       CodeTermMetaGraph x t
+  | tvote (x v θ p q : ℕ) (t tv tp tq : ClosedSemiterm ℒₒᵣ 0) (hx : x = pTvote v θ p q)
+      (hv : CodeTermMetaGraph v tv) (hp : CodeTermMetaGraph p tp) (hq : CodeTermMetaGraph q tq)
+      (ht : t = succTT (ppairTermMeta (binNumeralMeta 7) (ppairTermMeta tv (ppairTermMeta (binNumeralMeta θ) (ppairTermMeta tp tq))))) :
+      CodeTermMetaGraph x t
+  | sys (x d i : ℕ) (t td : ClosedSemiterm ℒₒᵣ 0) (hx : x = pSys d i) (hd : CodeTermMetaGraph d td)
+      (ht : t = succTT (ppairTermMeta (binNumeralMeta 8) (ppairTermMeta td (binNumeralMeta i)))) : CodeTermMetaGraph x t
+  | selfIdx (x j : ℕ) (t : ClosedSemiterm ℒₒᵣ 0) (hx : x = pSelfIdx j)
+      (ht : t = succTT (ppairTermMeta (binNumeralMeta 9) (binNumeralMeta j))) : CodeTermMetaGraph x t
+  | cons (x e r : ℕ) (t te tr : ClosedSemiterm ℒₒᵣ 0) (hx : x = pCons e r)
+      (he : CodeTermMetaGraph e te) (hr : CodeTermMetaGraph r tr)
+      (ht : t = succTT (ppairTermMeta (binNumeralMeta 10) (ppairTermMeta te tr))) : CodeTermMetaGraph x t
   | other (x : ℕ) (t : ClosedSemiterm ℒₒᵣ 0) (hx : ¬IsShape x) (ht : t = binNumeralMeta x) : CodeTermMetaGraph x t
 
 section inversion
 
-attribute [local simp] pConst pSelf pOpp pBot pSim pIte pSearch IsShape
+attribute [local simp] pConst pSelf pOpp pBot pSim pIte pSearch pTvote pSys pSelfIdx pCons IsShape
 
 lemma CodeTermMetaGraph.const_iff {a : ℕ} {t : ClosedSemiterm ℒₒᵣ 0} :
     CodeTermMetaGraph (pConst a) t ↔ t = succTT (ppairTermMeta (binNumeralMeta 0) (binNumeralMeta a)) := by
@@ -571,6 +751,33 @@ lemma CodeTermMetaGraph.search_iff {k g p q : ℕ} {t : ClosedSemiterm ℒₒᵣ
   · intro h; cases h <;> simp_all <;>
       first | exact ⟨_, ‹_›, rfl⟩ | exact ⟨_, ‹_›, _, ‹_›, rfl⟩ | exact ⟨_, ‹_›, _, ‹_›, _, ‹_›, rfl⟩
   · rintro ⟨tp, tq, hp, hq, rfl⟩; exact .search _ _ _ _ _ _ _ _ rfl hp hq rfl
+lemma CodeTermMetaGraph.tvote_iff {v θ p q : ℕ} {t : ClosedSemiterm ℒₒᵣ 0} :
+    CodeTermMetaGraph (pTvote v θ p q) t ↔
+    ∃ tv tp tq, CodeTermMetaGraph v tv ∧ CodeTermMetaGraph p tp ∧ CodeTermMetaGraph q tq ∧
+      t = succTT (ppairTermMeta (binNumeralMeta 7) (ppairTermMeta tv (ppairTermMeta (binNumeralMeta θ) (ppairTermMeta tp tq)))) := by
+  constructor
+  · intro h; cases h <;> simp_all <;>
+      first | exact ⟨_, ‹_›, rfl⟩ | exact ⟨_, ‹_›, _, ‹_›, rfl⟩ | exact ⟨_, ‹_›, _, ‹_›, _, ‹_›, rfl⟩
+  · rintro ⟨tv, tp, tq, hv, hp, hq, rfl⟩; exact .tvote _ _ _ _ _ _ _ _ _ rfl hv hp hq rfl
+lemma CodeTermMetaGraph.sys_iff {d i : ℕ} {t : ClosedSemiterm ℒₒᵣ 0} :
+    CodeTermMetaGraph (pSys d i) t ↔
+    ∃ td, CodeTermMetaGraph d td ∧ t = succTT (ppairTermMeta (binNumeralMeta 8) (ppairTermMeta td (binNumeralMeta i))) := by
+  constructor
+  · intro h; cases h <;> simp_all <;>
+      first | exact ⟨_, ‹_›, rfl⟩ | exact ⟨_, ‹_›, _, ‹_›, rfl⟩ | exact ⟨_, ‹_›, _, ‹_›, _, ‹_›, rfl⟩
+  · rintro ⟨td, hd, rfl⟩; exact .sys _ _ _ _ _ rfl hd rfl
+lemma CodeTermMetaGraph.selfIdx_iff {j : ℕ} {t : ClosedSemiterm ℒₒᵣ 0} :
+    CodeTermMetaGraph (pSelfIdx j) t ↔ t = succTT (ppairTermMeta (binNumeralMeta 9) (binNumeralMeta j)) := by
+  constructor
+  · intro h; cases h <;> simp_all
+  · rintro rfl; exact .selfIdx _ _ _ rfl rfl
+lemma CodeTermMetaGraph.cons_iff {e r : ℕ} {t : ClosedSemiterm ℒₒᵣ 0} :
+    CodeTermMetaGraph (pCons e r) t ↔
+    ∃ te tr, CodeTermMetaGraph e te ∧ CodeTermMetaGraph r tr ∧ t = succTT (ppairTermMeta (binNumeralMeta 10) (ppairTermMeta te tr)) := by
+  constructor
+  · intro h; cases h <;> simp_all <;>
+      first | exact ⟨_, ‹_›, rfl⟩ | exact ⟨_, ‹_›, _, ‹_›, rfl⟩ | exact ⟨_, ‹_›, _, ‹_›, _, ‹_›, rfl⟩
+  · rintro ⟨te, tr, he, hr, rfl⟩; exact .cons _ _ _ _ _ _ rfl he hr rfl
 lemma CodeTermMetaGraph.of_not_shape {x : ℕ} {t : ClosedSemiterm ℒₒᵣ 0} (hx : ¬IsShape x) :
     CodeTermMetaGraph x t ↔ t = binNumeralMeta x := by
   constructor
@@ -583,7 +790,8 @@ lemma codeTermMetaGraph_exists (x : ℕ) : ∃ t, CodeTermMetaGraph x t := by
   induction x using Nat.strong_induction_on with
   | _ x ih =>
     by_cases hx : IsShape x
-    · rcases hx with ⟨a, rfl⟩ | rfl | rfl | ⟨p, rfl⟩ | ⟨p, q, rfl⟩ | ⟨b, a, p, q, rfl⟩ | ⟨k, g, p, q, rfl⟩
+    · rcases hx with ⟨a, rfl⟩ | rfl | rfl | ⟨p, rfl⟩ | ⟨p, q, rfl⟩ | ⟨b, a, p, q, rfl⟩ | ⟨k, g, p, q, rfl⟩ |
+        ⟨v, θ, p, q, rfl⟩ | ⟨d, i, rfl⟩ | ⟨j, rfl⟩ | ⟨e, r, rfl⟩
       · exact ⟨_, CodeTermMetaGraph.const_iff.mpr rfl⟩
       · exact ⟨_, CodeTermMetaGraph.self_iff.mpr rfl⟩
       · exact ⟨_, CodeTermMetaGraph.opp_iff.mpr rfl⟩
@@ -596,6 +804,14 @@ lemma codeTermMetaGraph_exists (x : ℕ) : ∃ t, CodeTermMetaGraph x t := by
         exact ⟨_, CodeTermMetaGraph.ite_iff.mpr ⟨tb, tp, tq, hb, hp, hq, rfl⟩⟩
       · obtain ⟨tp, hp⟩ := ih p (by simp); obtain ⟨tq, hq⟩ := ih q (by simp)
         exact ⟨_, CodeTermMetaGraph.search_iff.mpr ⟨tp, tq, hp, hq, rfl⟩⟩
+      · obtain ⟨tv, hv⟩ := ih v (by simp); obtain ⟨tp, hp⟩ := ih p (by simp)
+        obtain ⟨tq, hq⟩ := ih q (by simp)
+        exact ⟨_, CodeTermMetaGraph.tvote_iff.mpr ⟨tv, tp, tq, hv, hp, hq, rfl⟩⟩
+      · obtain ⟨td, hd⟩ := ih d (by simp)
+        exact ⟨_, CodeTermMetaGraph.sys_iff.mpr ⟨td, hd, rfl⟩⟩
+      · exact ⟨_, CodeTermMetaGraph.selfIdx_iff.mpr rfl⟩
+      · obtain ⟨te, he⟩ := ih e (by simp); obtain ⟨tr, hr⟩ := ih r (by simp)
+        exact ⟨_, CodeTermMetaGraph.cons_iff.mpr ⟨te, tr, he, hr, rfl⟩⟩
     · exact ⟨_, (CodeTermMetaGraph.of_not_shape hx).mpr rfl⟩
 
 lemma codeTermMetaGraph_unique (x : ℕ) : ∀ t₁ t₂, CodeTermMetaGraph x t₁ → CodeTermMetaGraph x t₂ → t₁ = t₂ := by
@@ -603,7 +819,8 @@ lemma codeTermMetaGraph_unique (x : ℕ) : ∀ t₁ t₂, CodeTermMetaGraph x t�
   | _ x ih =>
     intro t₁ t₂ h₁ h₂
     by_cases hx : IsShape x
-    · rcases hx with ⟨a, rfl⟩ | rfl | rfl | ⟨p, rfl⟩ | ⟨p, q, rfl⟩ | ⟨b, a, p, q, rfl⟩ | ⟨k, g, p, q, rfl⟩
+    · rcases hx with ⟨a, rfl⟩ | rfl | rfl | ⟨p, rfl⟩ | ⟨p, q, rfl⟩ | ⟨b, a, p, q, rfl⟩ | ⟨k, g, p, q, rfl⟩ |
+        ⟨v, θ, p, q, rfl⟩ | ⟨d, i, rfl⟩ | ⟨j, rfl⟩ | ⟨e, r, rfl⟩
       · rw [CodeTermMetaGraph.const_iff] at h₁ h₂; rw [h₁, h₂]
       · rw [CodeTermMetaGraph.self_iff] at h₁ h₂; rw [h₁, h₂]
       · rw [CodeTermMetaGraph.opp_iff] at h₁ h₂; rw [h₁, h₂]
@@ -619,6 +836,16 @@ lemma codeTermMetaGraph_unique (x : ℕ) : ∀ t₁ t₂, CodeTermMetaGraph x t�
       · rcases CodeTermMetaGraph.search_iff.mp h₁ with ⟨p₁, q₁, hp₁, hq₁, rfl⟩
         rcases CodeTermMetaGraph.search_iff.mp h₂ with ⟨p₂, q₂, hp₂, hq₂, rfl⟩
         rw [ih p (by simp) _ _ hp₁ hp₂, ih q (by simp) _ _ hq₁ hq₂]
+      · rcases CodeTermMetaGraph.tvote_iff.mp h₁ with ⟨v₁, p₁, q₁, hv₁, hp₁, hq₁, rfl⟩
+        rcases CodeTermMetaGraph.tvote_iff.mp h₂ with ⟨v₂, p₂, q₂, hv₂, hp₂, hq₂, rfl⟩
+        rw [ih v (by simp) _ _ hv₁ hv₂, ih p (by simp) _ _ hp₁ hp₂, ih q (by simp) _ _ hq₁ hq₂]
+      · rcases CodeTermMetaGraph.sys_iff.mp h₁ with ⟨d₁, hd₁, rfl⟩
+        rcases CodeTermMetaGraph.sys_iff.mp h₂ with ⟨d₂, hd₂, rfl⟩
+        rw [ih d (by simp) _ _ hd₁ hd₂]
+      · rw [CodeTermMetaGraph.selfIdx_iff] at h₁ h₂; rw [h₁, h₂]
+      · rcases CodeTermMetaGraph.cons_iff.mp h₁ with ⟨e₁, r₁, he₁, hr₁, rfl⟩
+        rcases CodeTermMetaGraph.cons_iff.mp h₂ with ⟨e₂, r₂, he₂, hr₂, rfl⟩
+        rw [ih e (by simp) _ _ he₁ he₂, ih r (by simp) _ _ hr₁ hr₂]
     · rw [CodeTermMetaGraph.of_not_shape hx] at h₁ h₂; rw [h₁, h₂]
 
 lemma codeTermMetaGraph_existsUnique (x : ℕ) : ∃! t, CodeTermMetaGraph x t := by
@@ -653,6 +880,19 @@ lemma codeTermMeta_search (k g p q : ℕ) :
     codeTermMeta (pSearch k g p q) =
     succTT (ppairTermMeta (binNumeralMeta 6) (ppairTermMeta (binNumeralMeta k) (ppairTermMeta (binNumeralMeta g) (ppairTermMeta (codeTermMeta p) (codeTermMeta q))))) :=
   codeTermMeta_eq_of_graph (CodeTermMetaGraph.search_iff.mpr ⟨_, _, codeTermMeta_graph p, codeTermMeta_graph q, rfl⟩)
+lemma codeTermMeta_tvote (v θ p q : ℕ) :
+    codeTermMeta (pTvote v θ p q) =
+    succTT (ppairTermMeta (binNumeralMeta 7) (ppairTermMeta (codeTermMeta v) (ppairTermMeta (binNumeralMeta θ) (ppairTermMeta (codeTermMeta p) (codeTermMeta q))))) :=
+  codeTermMeta_eq_of_graph (CodeTermMetaGraph.tvote_iff.mpr ⟨_, _, _, codeTermMeta_graph v, codeTermMeta_graph p, codeTermMeta_graph q, rfl⟩)
+lemma codeTermMeta_sys (d i : ℕ) :
+    codeTermMeta (pSys d i) = succTT (ppairTermMeta (binNumeralMeta 8) (ppairTermMeta (codeTermMeta d) (binNumeralMeta i))) :=
+  codeTermMeta_eq_of_graph (CodeTermMetaGraph.sys_iff.mpr ⟨_, codeTermMeta_graph d, rfl⟩)
+lemma codeTermMeta_selfIdx (j : ℕ) :
+    codeTermMeta (pSelfIdx j) = succTT (ppairTermMeta (binNumeralMeta 9) (binNumeralMeta j)) :=
+  codeTermMeta_eq_of_graph (CodeTermMetaGraph.selfIdx_iff.mpr rfl)
+lemma codeTermMeta_cons (e r : ℕ) :
+    codeTermMeta (pCons e r) = succTT (ppairTermMeta (binNumeralMeta 10) (ppairTermMeta (codeTermMeta e) (codeTermMeta r))) :=
+  codeTermMeta_eq_of_graph (CodeTermMetaGraph.cons_iff.mpr ⟨_, _, codeTermMeta_graph e, codeTermMeta_graph r, rfl⟩)
 lemma codeTermMeta_of_not_shape {x : ℕ} (hx : ¬IsShape x) : codeTermMeta x = binNumeralMeta x :=
   codeTermMeta_eq_of_graph ((CodeTermMetaGraph.of_not_shape hx).mpr rfl)
 
@@ -683,6 +923,14 @@ lemma cast_pIte (b a p q : ℕ) : ((pIte b a p q : ℕ) : V) = pIte (b : V) (a :
   unfold pIte; push_cast [cast_ppair]; rfl
 lemma cast_pSearch (k g p q : ℕ) : ((pSearch k g p q : ℕ) : V) = pSearch (k : V) (g : V) (p : V) (q : V) := by
   unfold pSearch; push_cast [cast_ppair]; rfl
+lemma cast_pTvote (v θ p q : ℕ) : ((pTvote v θ p q : ℕ) : V) = pTvote (v : V) (θ : V) (p : V) (q : V) := by
+  unfold pTvote; push_cast [cast_ppair]; rfl
+lemma cast_pSys (d i : ℕ) : ((pSys d i : ℕ) : V) = pSys (d : V) (i : V) := by
+  unfold pSys; push_cast [cast_ppair]; rfl
+lemma cast_pSelfIdx (j : ℕ) : ((pSelfIdx j : ℕ) : V) = pSelfIdx (j : V) := by
+  unfold pSelfIdx; push_cast [cast_ppair]; rfl
+lemma cast_pCons (e r : ℕ) : ((pCons e r : ℕ) : V) = pCons (e : V) (r : V) := by
+  unfold pCons; push_cast [cast_ppair]; rfl
 
 end cast
 
@@ -691,7 +939,8 @@ theorem quote_codeTermMeta (x : ℕ) : (⌜codeTermMeta x⌝ : V) = codeTerm (x 
   induction x using Nat.strong_induction_on with
   | _ x ih =>
     by_cases hx : IsShape x
-    · rcases hx with ⟨a, rfl⟩ | rfl | rfl | ⟨p, rfl⟩ | ⟨p, q, rfl⟩ | ⟨b, a, p, q, rfl⟩ | ⟨k, g, p, q, rfl⟩
+    · rcases hx with ⟨a, rfl⟩ | rfl | rfl | ⟨p, rfl⟩ | ⟨p, q, rfl⟩ | ⟨b, a, p, q, rfl⟩ | ⟨k, g, p, q, rfl⟩ |
+        ⟨v, θ, p, q, rfl⟩ | ⟨d, i, rfl⟩ | ⟨j, rfl⟩ | ⟨e, r, rfl⟩
       · rw [codeTermMeta_const, quote_succTT, quote_ppairTermMeta, quote_binNumeralMeta, quote_binNumeralMeta, cast_pConst, codeTerm_const]
         push_cast; rfl
       · rw [codeTermMeta_self, quote_succTT, quote_ppairTermMeta, quote_binNumeralMeta, quote_binNumeralMeta, cast_pSelf, codeTerm_self]
@@ -709,6 +958,17 @@ theorem quote_codeTermMeta (x : ℕ) : (⌜codeTermMeta x⌝ : V) = codeTerm (x 
       · rw [codeTermMeta_search, quote_succTT, quote_ppairTermMeta, quote_ppairTermMeta, quote_ppairTermMeta, quote_ppairTermMeta,
           quote_binNumeralMeta, quote_binNumeralMeta, quote_binNumeralMeta, ih p (by simp), ih q (by simp), cast_pSearch, codeTerm_search]
         push_cast; rfl
+      · rw [codeTermMeta_tvote, quote_succTT, quote_ppairTermMeta, quote_ppairTermMeta, quote_ppairTermMeta, quote_ppairTermMeta,
+          quote_binNumeralMeta, quote_binNumeralMeta, ih v (by simp), ih p (by simp), ih q (by simp), cast_pTvote, codeTerm_tvote]
+        push_cast; rfl
+      · rw [codeTermMeta_sys, quote_succTT, quote_ppairTermMeta, quote_ppairTermMeta, quote_binNumeralMeta, quote_binNumeralMeta,
+          ih d (by simp), cast_pSys, codeTerm_sys]
+        push_cast; rfl
+      · rw [codeTermMeta_selfIdx, quote_succTT, quote_ppairTermMeta, quote_binNumeralMeta, quote_binNumeralMeta, cast_pSelfIdx, codeTerm_selfIdx]
+        push_cast; rfl
+      · rw [codeTermMeta_cons, quote_succTT, quote_ppairTermMeta, quote_ppairTermMeta, quote_binNumeralMeta, ih e (by simp),
+          ih r (by simp), cast_pCons, codeTerm_cons]
+        push_cast; rfl
     · have h1 : (⌜codeTermMeta x⌝ : V) = ((⌜codeTermMeta x⌝ : ℕ) : V) := by
         rw [Semiterm.empty_quote_def, Semiterm.empty_quote_def, Semiterm.coe_quote_eq_quote]
       rw [h1, codeTermMeta_of_not_shape hx, quote_binNumeralMeta_nat, ← codeTerm_of_not_shape hx, cast_codeTerm]
@@ -723,7 +983,8 @@ theorem val_codeTermMeta (x : ℕ) : (codeTermMeta x).val (s := standardModel �
   induction x using Nat.strong_induction_on with
   | _ x ih =>
     by_cases hx : IsShape x
-    · rcases hx with ⟨a, rfl⟩ | rfl | rfl | ⟨p, rfl⟩ | ⟨p, q, rfl⟩ | ⟨b, a, p, q, rfl⟩ | ⟨k, g, p, q, rfl⟩
+    · rcases hx with ⟨a, rfl⟩ | rfl | rfl | ⟨p, rfl⟩ | ⟨p, q, rfl⟩ | ⟨b, a, p, q, rfl⟩ | ⟨k, g, p, q, rfl⟩ |
+        ⟨v, θ, p, q, rfl⟩ | ⟨d, i, rfl⟩ | ⟨j, rfl⟩ | ⟨e, r, rfl⟩
       · rw [codeTermMeta_const, val_succTT, val_ppairTermMeta, val_binNumeralMeta, val_binNumeralMeta]; rfl
       · rw [codeTermMeta_self, val_succTT, val_ppairTermMeta, val_binNumeralMeta, val_binNumeralMeta]; rfl
       · rw [codeTermMeta_opp, val_succTT, val_ppairTermMeta, val_binNumeralMeta, val_binNumeralMeta]; rfl
@@ -733,6 +994,11 @@ theorem val_codeTermMeta (x : ℕ) : (codeTermMeta x).val (s := standardModel �
           ih b (by simp), ih p (by simp), ih q (by simp)]; rfl
       · rw [codeTermMeta_search, val_succTT, val_ppairTermMeta, val_ppairTermMeta, val_ppairTermMeta, val_ppairTermMeta, val_binNumeralMeta,
           val_binNumeralMeta, val_binNumeralMeta, ih p (by simp), ih q (by simp)]; rfl
+      · rw [codeTermMeta_tvote, val_succTT, val_ppairTermMeta, val_ppairTermMeta, val_ppairTermMeta, val_ppairTermMeta, val_binNumeralMeta,
+          val_binNumeralMeta, ih v (by simp), ih p (by simp), ih q (by simp)]; rfl
+      · rw [codeTermMeta_sys, val_succTT, val_ppairTermMeta, val_ppairTermMeta, val_binNumeralMeta, val_binNumeralMeta, ih d (by simp)]; rfl
+      · rw [codeTermMeta_selfIdx, val_succTT, val_ppairTermMeta, val_binNumeralMeta, val_binNumeralMeta]; rfl
+      · rw [codeTermMeta_cons, val_succTT, val_ppairTermMeta, val_ppairTermMeta, val_binNumeralMeta, ih e (by simp), ih r (by simp)]; rfl
     · rw [codeTermMeta_of_not_shape hx, val_binNumeralMeta]
 
 /-! #### The length bounds -/
@@ -806,6 +1072,34 @@ lemma termLenMeta_emb_codeTermMeta_search (k g p q : ℕ) :
       6 * termLenMeta (Rew.emb (binNumeralMeta k) : SyntacticSemiterm ℒₒᵣ 0) + 18 * termLenMeta (Rew.emb (binNumeralMeta g) : SyntacticSemiterm ℒₒᵣ 0) +
       54 * termLenMeta (Rew.emb (codeTermMeta p) : SyntacticSemiterm ℒₒᵣ 0) + 81 * termLenMeta (Rew.emb (codeTermMeta q) : SyntacticSemiterm ℒₒᵣ 0) + 162 := by
   rw [codeTermMeta_search, termLenMeta_emb_succTT, termLenMeta_emb_ppairTermMeta, termLenMeta_emb_ppairTermMeta, termLenMeta_emb_ppairTermMeta, termLenMeta_emb_ppairTermMeta]; ring
+
+/-- The vote's term: `2 · |7| + 6 · |v| + 18 · |θ| + 54 · |p| + 81 · |q| + 162` (the `pSearch` shape with the list in the budget's place). -/
+lemma termLenMeta_emb_codeTermMeta_tvote (v θ p q : ℕ) :
+    termLenMeta (Rew.emb (codeTermMeta (pTvote v θ p q)) : SyntacticSemiterm ℒₒᵣ 0) =
+    2 * termLenMeta (Rew.emb (binNumeralMeta 7) : SyntacticSemiterm ℒₒᵣ 0) +
+      6 * termLenMeta (Rew.emb (codeTermMeta v) : SyntacticSemiterm ℒₒᵣ 0) + 18 * termLenMeta (Rew.emb (binNumeralMeta θ) : SyntacticSemiterm ℒₒᵣ 0) +
+      54 * termLenMeta (Rew.emb (codeTermMeta p) : SyntacticSemiterm ℒₒᵣ 0) + 81 * termLenMeta (Rew.emb (codeTermMeta q) : SyntacticSemiterm ℒₒᵣ 0) + 162 := by
+  rw [codeTermMeta_tvote, termLenMeta_emb_succTT, termLenMeta_emb_ppairTermMeta, termLenMeta_emb_ppairTermMeta, termLenMeta_emb_ppairTermMeta, termLenMeta_emb_ppairTermMeta]; ring
+
+/-- The system's term: `2 · |8| + 6 · |d| + 9 · |i| + 18` (the `pSim` shape). -/
+lemma termLenMeta_emb_codeTermMeta_sys (d i : ℕ) :
+    termLenMeta (Rew.emb (codeTermMeta (pSys d i)) : SyntacticSemiterm ℒₒᵣ 0) =
+    2 * termLenMeta (Rew.emb (binNumeralMeta 8) : SyntacticSemiterm ℒₒᵣ 0) +
+      6 * termLenMeta (Rew.emb (codeTermMeta d) : SyntacticSemiterm ℒₒᵣ 0) + 9 * termLenMeta (Rew.emb (binNumeralMeta i) : SyntacticSemiterm ℒₒᵣ 0) + 18 := by
+  rw [codeTermMeta_sys, termLenMeta_emb_succTT, termLenMeta_emb_ppairTermMeta, termLenMeta_emb_ppairTermMeta]; ring
+
+/-- The pronoun's term: `2 · |9| + 3 · |j| + 6` (the `pConst` shape). -/
+lemma termLenMeta_emb_codeTermMeta_selfIdx (j : ℕ) :
+    termLenMeta (Rew.emb (codeTermMeta (pSelfIdx j)) : SyntacticSemiterm ℒₒᵣ 0) =
+    2 * termLenMeta (Rew.emb (binNumeralMeta 9) : SyntacticSemiterm ℒₒᵣ 0) + 3 * termLenMeta (Rew.emb (binNumeralMeta j) : SyntacticSemiterm ℒₒᵣ 0) + 6 := by
+  rw [codeTermMeta_selfIdx, termLenMeta_emb_succTT, termLenMeta_emb_ppairTermMeta]
+
+/-- The cons's term: `2 · |10| + 6 · |e| + 9 · |r| + 18` (the `pSim` shape). -/
+lemma termLenMeta_emb_codeTermMeta_cons (e r : ℕ) :
+    termLenMeta (Rew.emb (codeTermMeta (pCons e r)) : SyntacticSemiterm ℒₒᵣ 0) =
+    2 * termLenMeta (Rew.emb (binNumeralMeta 10) : SyntacticSemiterm ℒₒᵣ 0) +
+      6 * termLenMeta (Rew.emb (codeTermMeta e) : SyntacticSemiterm ℒₒᵣ 0) + 9 * termLenMeta (Rew.emb (codeTermMeta r) : SyntacticSemiterm ℒₒᵣ 0) + 18 := by
+  rw [codeTermMeta_cons, termLenMeta_emb_succTT, termLenMeta_emb_ppairTermMeta, termLenMeta_emb_ppairTermMeta]; ring
 
 end metaTerms
 
