@@ -4,7 +4,7 @@ import PrisonersDilemma.Bots.LlmGenerations.PrudentBot
 /-!
 # ArithS.Cells.PrudentMirror — PrudentBot × Mirror `(C, C)` in PA-`S'` (the nested-search family)
 
-`Research/Notes/ROUTE_B_SCOPE.md` §3 Phase 2 (2026-09-23): the arithmetized twin of the engine's
+`Research/Notes/ROUTE_B_SCOPE.md` §3 Phase 2: the arithmetized twin of the engine's
 `outcome_PrudentBot_vs_MirrorBot = (C, C)` (`Theorems/PrudentBot/vs_MirrorBot.lean`, `pblt_engine_id`
 on `prudent_mirror_loeb_premise`, whose leg 1 is `searchThenSearch_t` CITING the search-free prudence
 certificate `⊢_33 (Mirror plays D vs .bot DefectBot)`). V-generic unless a statement says `ℕ`.

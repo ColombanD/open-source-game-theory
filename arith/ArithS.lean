@@ -23,6 +23,7 @@ import ArithS.Agents.BinNumeral
 import ArithS.Agents.CodeTerm
 import ArithS.Box.BewV
 import ArithS.Notation
+import ArithS.Readings
 import ArithS.Agents.Guard
 import ArithS.Agents.SubstTemplate
 import ArithS.Agents.Subst
@@ -99,6 +100,9 @@ import ArithS.Cells.Common.Probers
 import ArithS.Cells.Common.Families
 import ArithS.Cells.Common.Khat
 import ArithS.Cells.DupocMirror
+import ArithS.Cells.DupocEngine
+import ArithS.Cells.DimcidEngine
+import ArithS.Cells.CimcicEngine
 import ArithS.Cells.JustBot
 import ArithS.Cells.DIMCID
 import ArithS.Cells.PrudentMirror
@@ -144,3 +148,7 @@ import ArithS.Outcome.Matrix.PrudentBot
 import ArithS.Outcome.Matrix.TitForTatBot
 import ArithS.Outcome.Matrix.WaryBot
 import ArithS.Tour
+import ArithS.Core
+import ArithS.Frozen
+import ArithS.PBLT
+import ArithS.Matrix

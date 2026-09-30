@@ -58,7 +58,7 @@ engine's `Prog.transpose`/`Formula.transpose` (`Base/Transpose`): `lMap swap (te
 template φ.transpose` (`lMap_swap_template`), then `revalueTemplate_quote_sentence`. The box is
 excluded here for the same reason (its code constant is not re-valued by `swap`).
 
-**Reading guide.** Definition: `actCode`, `progCode` and `template` (§The translation) — the bridge from the engine's `Prog`/`Formula` to codes and templates; `sentenceAt` is the closed guard sentence of a pair. Facts: the description lemma, the substitution equation (`progCode_subst`), τ, and the sanity checks on the engine's `DupocBot`. §The Σ₁ graphs over `LAct` and §The description shape are plumbing for the translation — skip on first reading.
+**Reading guide.** Definition: `actCode`, `progCode` and `template` (§The translation) — the bridge from the engine's `Prog`/`Formula` to codes and templates; `sentenceAt` is the closed guard sentence of a pair. Facts: the description lemma, the substitution equation (`progCode_subst`), τ, and the sanity checks on the engine's `DupocBot`. §The Σ₁ graphs over `LAct` and §The description shape are plumbing for the translation — skip on first reading. At ℕ: `progCode_subst` (`ArithS.Readings`).
 -/
 
 set_option linter.constructorNameAsVariable false

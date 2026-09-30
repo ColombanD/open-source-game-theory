@@ -24,7 +24,7 @@ descriptions of `ArithS.Guard`/`ArithS.Template`:
 
 The length measure `termLenMeta`/`termLen` is untouched: a binary numeral simply IS a short term.
 
-**Reading guide.** Definition: the four clauses `BinNumeral.Phi` and §The equations, plus the meta twin `binNumeralMeta` with its code, truth and length equations (§The meta numerals). Foundation plumbing: the blueprint, the construction and the `defined` instances — skip on first reading.
+**Reading guide.** Definition: the four clauses `BinNumeral.Phi` and §The equations, plus the meta twin `binNumeralMeta` with its code, truth and length equations (§The meta numerals). Foundation plumbing: the blueprint, the construction and the `defined` instances — skip on first reading. At ℕ: `binNumeral_nat` (`ArithS.Readings`).
 -/
 
 namespace ArithS

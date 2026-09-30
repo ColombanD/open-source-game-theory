@@ -9,13 +9,13 @@ family is the conjunction `pConj := qDupoc ⋏ qCupod`, the models are the two s
 `BoundedInnerNec d` (`Assembly/Prep.lean` §6, Critch's assumption (d): a per-`χ` constant `C_χ`
 and a polynomial expansion `C_χ · (g(k)^d + 1)`).
 
-**Since 2026-09-23 (`ROUTE_B_SCOPE.md` §3 Phase 1) this file is an INSTANTIATION of the
+**Since `ROUTE_B_SCOPE.md` §3 Phase 1 this file is an INSTANTIATION of the
 family-parametric assembly `Assembly/Family.lean` at `p := pConj` with slack `(S₀, S₁) = (7, 8)`**
 — the ∧-elimination of `pconj_both_V` costs `8(|qDupoc(k)| + |qCupod(k)|) + 7 ≤ 7 + 8·|pConj(k)|`
 (`formulaLen_instB_pConj`). `psi = psiF pConj`, `chi₁ = chiF pConj`, `NecAt = NecAtF pConj`,
 `chainBound = chainBoundF pConj 7 8` (all by `rfl`); the family's Löb premise is
 **`loebSound_pConj : LoebSound pConj 7 8`** (the search clauses + the truth equations in both
-readings), and every theorem below keeps its 2026-09-12 statement, now a corollary of the generic
+readings), and every theorem below keeps its original statement, now a corollary of the generic
 one. The generic material that used to open this file (`termLen_binNumeral_le_V`,
 `poly_size_le_eventually`, the two readings as models of `TAct`, the `PLE` calculus,
 `eval_leF_numeral_bvar`) lives in `Family.lean` under the same names.

@@ -6,7 +6,7 @@ import PrisonersDilemma.Bots.TitForTatBot
 /-!
 # ArithS.Cells.Common.Bots — the bot codes and description towers shared by the cell files
 
-Consolidation stage 2 (`Research/Notes/ROUTE_B_CELLS_MAP.md`, 2026-09-24). Everything here was MOVED
+Consolidation stage 2 (`Research/Notes/ROUTE_B_CELLS_MAP.md`). Everything here was MOVED
 unchanged (names, statements, definition bodies) out of `Cells/DupocMirror`, `Cells/KhatCells`,
 `Cells/PositiveCells` and `Cells/FlipCells`:
 

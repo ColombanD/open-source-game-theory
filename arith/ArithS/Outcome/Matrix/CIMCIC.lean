@@ -10,6 +10,7 @@ import ArithS.Cells.PositiveCells
 import ArithS.Cells.SoundnessCells
 import ArithS.Cells.SearchFree
 import ArithS.Cells.CIMCIC
+import ArithS.Cells.CimcicEngine
 import ArithS.Cells.DIMCID
 import ArithS.Cells.DupocMirror
 import ArithS.Cells.JustBot
@@ -43,6 +44,13 @@ theorem outcome_CIMCIC_vs_DIMCID :
     OutcomeSpecA .eventual (bot CIMCIC) (bot DIMCID) (some (.D, .D)) :=
   OutcomeSpecA.eventual_of (by
     obtain ⟨k₀, h⟩ := loeb_CIMCIC_vs_DIMCID
+    exact ⟨k₀, fun k hk ↦ OutcomeAtA.of_evalGraph (h k hk)⟩)
+
+/-- `loeb_CIMCIC_vs_DupocBot` -/
+theorem outcome_CIMCIC_vs_DupocBot :
+    OutcomeSpecA .eventual (bot CIMCIC) (bot DupocBot) (some (.C, .C)) :=
+  OutcomeSpecA.eventual_of (by
+    obtain ⟨k₀, h⟩ := loeb_CIMCIC_vs_DupocBot
     exact ⟨k₀, fun k hk ↦ OutcomeAtA.of_evalGraph (h k hk)⟩)
 
 /-- `loeb_Cimcic_vs_Mirror` -/
@@ -81,16 +89,8 @@ theorem outcome_CIMCIC_vs_OBot :
 /-! ### On the hand-template twins
 
 These cells are stated on arith codes that are NOT the engine's `progCode`:
-* `Dupoc k` (`Cells/RedCell.lean`): the searcher on the HAND template `guardTemplate 0`; the engine's `DupocBot k` carries the translated template `template (.plays .opp .self .C)` — a different code with a provably equivalent guard (`Agents/Code.lean`, "Sanity"), on which the Löb cells are not yet re-proved.
 * `Just7 k` (`Cells/JustSlot.lean`): JustBot with the CONSTANT budget-slot template (route (c)); plays as `Just k` at every fuel (`evalGraph_Just7_iff`).
 -/
-
-/-- `loeb_Cimcic_vs_Dupoc` -/
-theorem outcome_CIMCIC_vs_Dupoc :
-    OutcomeSpecA .eventual (bot CIMCIC) Dupoc (some (.C, .C)) :=
-  OutcomeSpecA.eventual_of (by
-    obtain ⟨k₀, h⟩ := loeb_Cimcic_vs_Dupoc
-    exact ⟨k₀, fun k hk ↦ by dsimp only [bot, const]; rw [progCode_CIMCIC]; exact OutcomeAtA.of_evalGraph (h k hk)⟩)
 
 /-- `loeb_Cimcic_vs_Just7` -/
 theorem outcome_CIMCIC_vs_Just7 :

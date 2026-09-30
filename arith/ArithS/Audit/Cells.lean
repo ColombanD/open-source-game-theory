@@ -2,6 +2,9 @@ import ArithS.Audit.RedCellInstance
 import ArithS.Audit.RedCellUnsound
 import ArithS.Cells.SimSlot
 import ArithS.Cells.PrudentLoose
+import ArithS.Cells.DupocEngine
+import ArithS.Cells.DimcidEngine
+import ArithS.Cells.CimcicEngine
 import PrisonersDilemma.Theorems.DupocBot.RedCellInstance
 
 /-!
@@ -281,6 +284,29 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms loeb_Cupod_vs_Mirror_guard_of_nec
 #print axioms loeb_Dupoc_vs_Mirror
 #print axioms loeb_Cupod_vs_Mirror
+
+-- Cells/DupocEngine — the same four Löb cells on the ENGINE's codes `progCode (DupocBot k)` /
+-- `progCode (CupodBot k)` (`SV gDu 0` / `SV gCu 1`), via the two-guard family `pQ` and `family_found`;
+-- retires the hand-twin `outcome_Dupoc_vs_Dupoc`/`_MirrorBot` and `outcome_Cupod_vs_*` statements.
+#print axioms loeb_DupocBot_vs_DupocBot
+#print axioms loeb_CupodBot_vs_CupodBot
+#print axioms loeb_DupocBot_vs_MirrorBot
+#print axioms loeb_CupodBot_vs_MirrorBot
+#print axioms loeb_DupocBot_vs_DupocBot_guard
+#print axioms loeb_CupodBot_vs_CupodBot_guard
+#print axioms loeb_DupocBot_vs_MirrorBot_guard
+#print axioms loeb_CupodBot_vs_MirrorBot_guard
+
+-- Cells/DimcidEngine — DIMCID × Cupod on the ENGINE's `progCode (CupodBot k)` (= `SV gCu 1`), the
+-- mutual family of `Cells/DIMCID.lean` §9 re-run on the generic searcher; retires `outcome_DIMCID_vs_Cupod`.
+#print axioms loeb_DIMCID_vs_CupodBot
+#print axioms loeb_DIMCID_vs_CupodBot_guards
+
+-- Cells/CimcicEngine — CIMCIC × Dupoc on the ENGINE's `progCode (DupocBot k)` (= `SV gDu 0`), the mutual
+-- family of `Cells/CIMCIC.lean` §7 re-run on the generic searcher; retires `outcome_CIMCIC_vs_Dupoc`.
+#print axioms loeb_CIMCIC_vs_DupocBot
+#print axioms loeb_CIMCIC_vs_DupocBot_guards
+#print axioms loebSound_pCiDb
 #print axioms loeb_Dupoc_vs_Mirror_guard
 #print axioms loeb_Cupod_vs_Mirror_guard
 

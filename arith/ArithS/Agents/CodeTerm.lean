@@ -24,7 +24,7 @@ leaves:
   `termLenMeta (ppairTermMeta s t) = 2 · termLenMeta s + 3 · termLenMeta t + 4` per pairing (upper bounds for every shape
   in terms of the leaves) and the lower bound `size x ≤ termLenMeta (codeTermMeta x)`.
 
-**Reading guide.** Definition: the clauses `CodeTerm.Phi` and §The equations (`codeTerm_const`, …, `codeTerm_search`), plus the meta twin `codeTermMeta` with its code, truth and length equations (§The meta terms). Foundation plumbing: the blueprint, the construction and the `defined` instances — skip on first reading.
+**Reading guide.** Definition: the clauses `CodeTerm.Phi` and §The equations (`codeTerm_const`, …, `codeTerm_search`), plus the meta twin `codeTermMeta` with its code, truth and length equations (§The meta terms). Foundation plumbing: the blueprint, the construction and the `defined` instances — skip on first reading. At ℕ: `description_nat` (`ArithS.Readings`).
 -/
 
 namespace ArithS

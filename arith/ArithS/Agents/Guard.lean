@@ -40,7 +40,7 @@ The action term `actTermCode a` (`c_a` for `a ∈ {0, 1}`) serves the closed tem
 meta sentence and the code equation are in `ArithS.Agents.Template`.
 
 **Reading guide.** §Definitions holds everything to accept (eleven short `def`s). §Foundation plumbing
-is the Σ₁ graph of each and its `defined` instance — skip on first reading.
+is the Σ₁ graph of each and its `defined` instance — skip on first reading. At ℕ: `guard_nat` (`ArithS.Readings`).
 -/
 
 namespace ArithS

@@ -19,7 +19,7 @@ accept; the blueprint and construction between `SubstCode.Phi` and them are Foun
 **Facts.** `substCode` is a Σ₁ function (`substCodeDef`); τ-equivariance `transposeCode_substCode`:
 transposing a substituted program is substituting the transposed frame into the transposed program,
 on every code. Agreement with the engine's `Prog.subst` on the box-free fragment is `progCode_subst`
-in `ArithS.Agents.Code`.
+in `ArithS.Agents.Code`. At ℕ: `progCode_subst` (`ArithS.Readings`).
 -/
 
 namespace ArithS

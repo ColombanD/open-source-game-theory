@@ -4,7 +4,7 @@ import PrisonersDilemma.Bots.LlmGenerations.CIMCIC
 /-!
 # ArithS.Cells.CIMCIC — CIMCIC × Dupoc, CIMCIC × Mirror and CIMCIC × CIMCIC, all `(C, C)`, in PA-`S'`
 
-`Research/Notes/ROUTE_B_SCOPE.md` §3 Phase 2 (2026-09-23): the CIMCIC family — the arithmetized
+`Research/Notes/ROUTE_B_SCOPE.md` §3 Phase 2: the CIMCIC family — the arithmetized
 twins of the engine's `llm_outcome_CIMCIC_vs_DupocBot = (C, C)` (`mutual_pblt_engine_id`),
 `llm_outcome_CIMCIC_vs_MirrorBot = (C, C)` (`Pf.simStep`) and `llm_outcome_CIMCIC_vs_CIMCIC = (C, C)`
 (`Pf.implRefl`). The engine's bot is

@@ -298,7 +298,7 @@ theorem guardCodeB_of_template {g : V} (hg : IsSemiformula LAct 6 g) (me opp k :
         substs_substs hg (descriptionsB_semitermVec me opp k) hid7
     _ = subst LAct (descriptions me opp) g := by rw [termSubstVec_descriptionsB_idVec6]
 
-/-! ### The budget slot KEPT: `guardCodeSlot` (the `.sim` debt of route c, discharged 2026-09-24)
+/-! ### The budget slot KEPT: `guardCodeSlot` (the `.sim` debt of route c, discharged)
 
 `guardCodeSlot g me opp := subst (descriptionsSlot me opp) g` (`ArithS.Guard`) fills `#0..#5` of a
 seven-variable template with the frame's descriptions and keeps `#6` a variable. The result is a

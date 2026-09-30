@@ -20,3 +20,27 @@ path = "../engine"
 
 [[lean_lib]]
 name = "ArithS"
+
+# The four tiers of `ArithS/README.md` §1 as lake targets, each rooted at a one-file umbrella
+# (`ArithS/Core.lean`, …). Lake does not enforce import direction between libraries of one package;
+# `scripts/check_tiers.py` does (run it before a commit that adds an import).
+
+[[lean_lib]]
+name = "ArithSCore"
+roots = ["ArithS.Core"]
+
+[[lean_lib]]
+name = "ArithSFrozen"
+roots = ["ArithS.Frozen"]
+
+[[lean_lib]]
+name = "ArithSLoeb"
+roots = ["ArithS.PBLT"]
+
+[[lean_lib]]
+name = "ArithSMatrix"
+roots = ["ArithS.Matrix"]
+
+[[lean_lib]]
+name = "ArithSAudit"
+roots = ["ArithS.Audit"]

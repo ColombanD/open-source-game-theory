@@ -1,6 +1,7 @@
 import ArithS.Outcome.Spec
 import ArithS.Cells.RedCellEngine
 import ArithS.Cells.DimcidFlips
+import ArithS.Cells.DimcidEngine
 import ArithS.Cells.FlipCells
 import ArithS.Cells.KhatCells
 import ArithS.Cells.JustSlot
@@ -101,20 +102,19 @@ theorem outcome_DIMCID_vs_DupocBot :
     obtain ⟨k₀, h⟩ := loeb_DIMCID_vs_DupocBot
     exact ⟨k₀, fun k hk ↦ OutcomeAtA.of_evalGraph (h k hk)⟩)
 
+/-- `loeb_DIMCID_vs_CupodBot` -/
+theorem outcome_DIMCID_vs_CupodBot :
+    OutcomeSpecA .eventual (bot DIMCID) (bot CupodBot) (some (.D, .D)) :=
+  OutcomeSpecA.eventual_of (by
+    obtain ⟨k₀, h⟩ := loeb_DIMCID_vs_CupodBot
+    exact ⟨k₀, fun k hk ↦ OutcomeAtA.of_evalGraph (h k hk)⟩)
+
 /-! ### On the hand-template twins
 
 These cells are stated on arith codes that are NOT the engine's `progCode`:
-* `Cupod k`: τ of `Dupoc k` (same remark).
 * `CupodTroll7 k` (`Cells/KhatCells.lean`): CupodTrollBot with the constant budget-slot template; plays as `progCode (CupodTrollBot k)` in the program slot (`evalGraph_CupodTroll7_iff`), but as an OPPONENT its code (hence the partner's guard sentence) differs.
 * `Just7 k` (`Cells/JustSlot.lean`): JustBot with the CONSTANT budget-slot template (route (c)); plays as `Just k` at every fuel (`evalGraph_Just7_iff`).
 -/
-
-/-- `loeb_Dimcid_vs_Cupod` -/
-theorem outcome_DIMCID_vs_Cupod :
-    OutcomeSpecA .eventual (bot DIMCID) Cupod (some (.D, .D)) :=
-  OutcomeSpecA.eventual_of (by
-    obtain ⟨k₀, h⟩ := loeb_Dimcid_vs_Cupod
-    exact ⟨k₀, fun k hk ↦ by dsimp only [bot, const]; rw [progCode_DIMCID]; exact OutcomeAtA.of_evalGraph (h k hk)⟩)
 
 /-- `loeb_DIMCID_vs_CupodTrollBot` (stated on the budget-slot twin `CupodTroll7 k`) -/
 theorem outcome_DIMCID_vs_CupodTroll7 :

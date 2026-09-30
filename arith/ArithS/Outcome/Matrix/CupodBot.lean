@@ -12,6 +12,7 @@ import ArithS.Cells.SearchFree
 import ArithS.Cells.CIMCIC
 import ArithS.Cells.DIMCID
 import ArithS.Cells.DupocMirror
+import ArithS.Cells.DupocEngine
 import ArithS.Cells.JustBot
 import ArithS.Necessitation.Package
 
@@ -62,24 +63,18 @@ theorem outcome_CupodBot_vs_TitForTatBot :
     OutcomeSpecA .universal (bot CupodBot) (const TitForTatBot) (some (.C, .C)) :=
   OutcomeSpecA.universal_of fun k ↦ OutcomeAtA.of_evalGraph (snd_CupodBot_vs_TitForTatBot k)
 
-/-! ### On the hand-template twins
-
-These cells are stated on arith codes that are NOT the engine's `progCode`:
-* `Cupod k`: τ of `Dupoc k` (same remark).
--/
-
-/-- `loeb_Cupod_vs_Mirror` -/
-theorem outcome_Cupod_vs_MirrorBot :
-    OutcomeSpecA .eventual Cupod (const MirrorBot) (some (.D, .D)) :=
+/-- `loeb_CupodBot_vs_MirrorBot` (`Cells/DupocEngine.lean`; the hand-template version is `loeb_Cupod_vs_Mirror`) -/
+theorem outcome_CupodBot_vs_MirrorBot :
+    OutcomeSpecA .eventual (bot CupodBot) (const MirrorBot) (some (.D, .D)) :=
   OutcomeSpecA.eventual_of (by
-    obtain ⟨k₀, h⟩ := loeb_Cupod_vs_Mirror
-    exact ⟨k₀, fun k hk ↦ by dsimp only [bot, const]; rw [progCode_MirrorBot]; exact OutcomeAtA.of_evalGraph (h k hk)⟩)
+    obtain ⟨k₀, h⟩ := loeb_CupodBot_vs_MirrorBot
+    exact ⟨k₀, fun k hk ↦ OutcomeAtA.of_evalGraph (h k hk)⟩)
 
-/-- `dupoc_self_coop` (`Necessitation/Package.lean`) -/
-theorem outcome_Cupod_vs_Cupod :
-    OutcomeSpecA .eventual Cupod Cupod (some (.D, .D)) :=
+/-- `loeb_CupodBot_vs_CupodBot` (`Cells/DupocEngine.lean`; the hand-template version is `dupoc_self_coop`, `Necessitation/Package.lean`) -/
+theorem outcome_CupodBot_vs_CupodBot :
+    OutcomeSpecA .eventual (bot CupodBot) (bot CupodBot) (some (.D, .D)) :=
   OutcomeSpecA.eventual_of (by
-    obtain ⟨k₀, h⟩ := dupoc_self_coop
-    exact ⟨k₀, fun k hk ↦ OutcomeAtA.of_evalGraph₂ (h k hk).2 (h k hk).2⟩)
+    obtain ⟨k₀, h⟩ := loeb_CupodBot_vs_CupodBot
+    exact ⟨k₀, fun k hk ↦ OutcomeAtA.of_evalGraph₂ (h k hk) (h k hk)⟩)
 
 end ArithS

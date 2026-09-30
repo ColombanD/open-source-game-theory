@@ -47,33 +47,6 @@ theorem transposeCode_Dupoc (k : ℕ) : transposeCode (Dupoc k) = Cupod k := by
 theorem transposeCode_Cupod (k : ℕ) : transposeCode (Cupod k) = Dupoc k := by
   rw [← transposeCode_Dupoc, transposeCode_transposeCode]
 
-/-! ### `ℕ` is a model of `TAct` -/
-
-lemma models_constNe : ℕ↓[LAct] ⊧ constNe := by
-  rw [models_iff]
-  unfold constNe Semiformula.Realize
-  simp [Semiformula.eval_nrel, cterm]
-  change ¬((0 : ℕ) = 1)
-  decide
-
-lemma models_constNe' : ℕ↓[LAct] ⊧ constNe' := by
-  rw [models_iff]
-  unfold constNe' Semiformula.Realize
-  simp [Semiformula.eval_nrel, cterm]
-  change ¬((1 : ℕ) = 0)
-  decide
-
-instance models_TAct : ℕ↓[LAct] ⊧* TAct := by
-  rw [models_theory_iff]
-  intro φ hφ
-  rcases hφ with rfl | rfl | rfl | rfl | ⟨σ, hσ, rfl⟩
-  · exact models_actionAxiom
-  · exact models_actionAxiom'
-  · exact models_constNe
-  · exact models_constNe'
-  · rw [models_lMap_emb]
-    exact Theory.models ℕ 𝗣𝗔 hσ
-
 /-! ### From the guard predicate to the evaluator -/
 
 /-- The internal guard predicate at a meta budget is `LenBoxNat codeBound`. -/

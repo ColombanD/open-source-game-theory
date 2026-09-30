@@ -88,7 +88,7 @@ The budget must not be written as a numeral term inside a stored template; two r
 Route 1 is the faithful one (Critch's search node is "a proof of `φ` at budget `k`", with `k`
 a parameter of the node, not a character of `φ`); route 2 is a coding trick.
 
-## Proof-craft note (2026-09-11) — three ways this file hung for hours
+## Proof-craft note — three ways this file hung for hours
 
 1. A `le_trans ?_ (…)` chain with placeholders against a goal of the form `⌜…⌝ ≤ ^∃ (^∃ (… ^⋏ …))`
    made unification unfold `qqAnd`/`qqExs` down to `pair` and its `if` while trying to match

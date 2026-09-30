@@ -47,8 +47,11 @@ every loss traceable to unary variable indices in `proofLen`; the results are pa
 | GENUINE-FLOOR | 26 | `dich_<L>_vs_<R>` (§5) |
 | EXCLUDED | 22 | boxes inside guards (`box_guard_never_fits`), WaryBot's floor cells |
 
-Thirteen stated cells are on the hand-template twins (`Dupoc`, `Cupod`, `Just`, `Just7`, `CupodTroll7`),
-not the engine's `progCode` — same guard meaning, different code (`arith/ArithS/README.md` §4).
+Seven stated cells are on the hand-template twins `Just`/`Just7`/`CupodTroll7` (a budget-carrying frozen
+snapshot inside the guard is describable only through the seven-variable slot templates, `ROUTE_B_SCOPE.md` §7),
+not the engine's `progCode`; the former Dupoc/Cupod twins are retired since 2026-09-30 — `Cells/{DupocEngine,
+CimcicEngine, DimcidEngine}.lean` prove Dupoc × Dupoc, Cupod × Cupod, Dupoc/Cupod × Mirror, CIMCIC × Dupoc and
+DIMCID × Cupod on `progCode (DupocBot k)`/`progCode (CupodBot k)` (`arith/ArithS/README.md` §4).
 
 ## 4. The finding: where `S'` contradicts `S`
 

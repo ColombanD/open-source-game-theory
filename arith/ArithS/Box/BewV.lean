@@ -9,7 +9,7 @@ variable, which is what the evaluator's `search` clause needs (the budget is sto
 program code). Δ₁: the code bound `codeBound k` makes the search bounded; properness
 (`ArithS.Proper`) is what makes the bound invisible.
 
-**Reading guide.** Definition: `LenBox` (the first declaration). Foundation plumbing: `lenBox` (the Δ₁ formula) and `LenBox.defined` — skip on first reading. Fact: `lenBox_numeral` (at a meta budget it is `LenBoxNat`).
+**Reading guide.** Definition: `LenBox` (the first declaration). Foundation plumbing: `lenBox` (the Δ₁ formula) and `LenBox.defined` — skip on first reading. Fact: `lenBox_numeral` (at a meta budget it is `LenBoxNat`). At ℕ: `box_nat` (`ArithS.Readings`).
 -/
 
 namespace ArithS

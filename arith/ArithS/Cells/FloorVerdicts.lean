@@ -4,7 +4,7 @@ import ArithS.Cells.DimcidFlips
 # ArithS.Cells.FloorVerdicts — the floor verdict pass: the settled halves and the true guards of the
 genuine floors
 
-`Research/Notes/ROUTE_B_CENSUS.md` "S' status per cell" (2026-09-27). The engine closes 32 cells by a
+`Research/Notes/ROUTE_B_CENSUS.md` "S' status per cell". The engine closes 32 cells by a
 floor CENSUS (a true guard that `S` cannot prove within the budget: `no_provable_tailToS_floor`,
 `searcherElse`, `probeFirst`, `nested`, `searcherPlay`, `botSearcherElse`) and one (Prudent × EBot) by a
 floor-paying Löb premise. `Cells/DimcidFlips` showed that seven of them are not floors in PA-`S'`

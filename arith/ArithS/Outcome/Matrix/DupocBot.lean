@@ -12,6 +12,7 @@ import ArithS.Cells.SearchFree
 import ArithS.Cells.CIMCIC
 import ArithS.Cells.DIMCID
 import ArithS.Cells.DupocMirror
+import ArithS.Cells.DupocEngine
 import ArithS.Cells.JustBot
 import ArithS.Necessitation.Package
 
@@ -60,24 +61,18 @@ theorem outcome_DupocBot_vs_CupodBot :
     OutcomeSpecA .universal (bot DupocBot) (bot CupodBot) (some (.D, .C)) :=
   OutcomeSpecA.universal_of fun k ↦ OutcomeAtA.of_evalGraph (snd_DupocBot_vs_CupodBot k)
 
-/-! ### On the hand-template twins
-
-These cells are stated on arith codes that are NOT the engine's `progCode`:
-* `Dupoc k` (`Cells/RedCell.lean`): the searcher on the HAND template `guardTemplate 0`; the engine's `DupocBot k` carries the translated template `template (.plays .opp .self .C)` — a different code with a provably equivalent guard (`Agents/Code.lean`, "Sanity"), on which the Löb cells are not yet re-proved.
--/
-
-/-- `loeb_Dupoc_vs_Mirror` -/
-theorem outcome_Dupoc_vs_MirrorBot :
-    OutcomeSpecA .eventual Dupoc (const MirrorBot) (some (.C, .C)) :=
+/-- `loeb_DupocBot_vs_MirrorBot` (`Cells/DupocEngine.lean`; the hand-template version is `loeb_Dupoc_vs_Mirror`) -/
+theorem outcome_DupocBot_vs_MirrorBot :
+    OutcomeSpecA .eventual (bot DupocBot) (const MirrorBot) (some (.C, .C)) :=
   OutcomeSpecA.eventual_of (by
-    obtain ⟨k₀, h⟩ := loeb_Dupoc_vs_Mirror
-    exact ⟨k₀, fun k hk ↦ by dsimp only [bot, const]; rw [progCode_MirrorBot]; exact OutcomeAtA.of_evalGraph (h k hk)⟩)
+    obtain ⟨k₀, h⟩ := loeb_DupocBot_vs_MirrorBot
+    exact ⟨k₀, fun k hk ↦ OutcomeAtA.of_evalGraph (h k hk)⟩)
 
-/-- `dupoc_self_coop` (`Necessitation/Package.lean`) -/
-theorem outcome_Dupoc_vs_Dupoc :
-    OutcomeSpecA .eventual Dupoc Dupoc (some (.C, .C)) :=
+/-- `loeb_DupocBot_vs_DupocBot` (`Cells/DupocEngine.lean`; the hand-template version is `dupoc_self_coop`, `Necessitation/Package.lean`) -/
+theorem outcome_DupocBot_vs_DupocBot :
+    OutcomeSpecA .eventual (bot DupocBot) (bot DupocBot) (some (.C, .C)) :=
   OutcomeSpecA.eventual_of (by
-    obtain ⟨k₀, h⟩ := dupoc_self_coop
-    exact ⟨k₀, fun k hk ↦ OutcomeAtA.of_evalGraph₂ (h k hk).1 (h k hk).1⟩)
+    obtain ⟨k₀, h⟩ := loeb_DupocBot_vs_DupocBot
+    exact ⟨k₀, fun k hk ↦ OutcomeAtA.of_evalGraph₂ (h k hk) (h k hk)⟩)
 
 end ArithS

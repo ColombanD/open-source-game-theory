@@ -4,7 +4,7 @@ import ArithS.Eval.EvalN
 /-!
 # ArithS.Cells.Common.Probers — search clauses and prober steps in every model
 
-Consolidation stage 4 (`Research/Notes/ROUTE_B_CELLS_MAP.md`, 2026-09-24). The `EvalGraph` lemmas that
+Consolidation stage 4 (`Research/Notes/ROUTE_B_CELLS_MAP.md`). The `EvalGraph` lemmas that
 every cell file re-proved for its own searcher or prober, MOVED here unchanged (names, statements,
 proofs) from `Cells/DupocMirror`, `Cells/DIMCID`, `Cells/PrudentMirror`, `Cells/KhatCells`,
 `Cells/FlipCells`, `Cells/JustBot` and `Cells/PositiveCells`, plus the two NEW roots

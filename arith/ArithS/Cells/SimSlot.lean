@@ -3,8 +3,7 @@ import ArithS.Cells.JustSlot
 /-!
 # ArithS.Cells.SimSlot — a seven-variable searcher under `.sim` reads the OUTER frame
 
-The faithfulness witness for the `.sim` debt of route (c) (`ROUTE_B_SCOPE.md` §6, discharged
-2026-09-24). `JustV7 k := pSearch k ⌜guardTemplateJust7⌝ (pConst 0) (pConst 1)` (`Cells/JustSlot`) stores the
+The faithfulness witness for the `.sim` debt of route (c) (`ROUTE_B_SCOPE.md` §6, discharged). `JustV7 k := pSearch k ⌜guardTemplateJust7⌝ (pConst 0) (pConst 1)` (`Cells/JustSlot`) stores the
 constant SEVEN-variable template `guardTemplateJust7`, whose budget slot `#6` names the snapshot `pBot (Dupoc k)`
 inside the guard. Before the middle case of `substTemplate`, `substCode me opp (JustV7 k)` left the template
 untouched, so `pSim (JustV7 k) q` would have run Just's guard against the INNER frame

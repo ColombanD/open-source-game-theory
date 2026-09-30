@@ -16,7 +16,7 @@ long as its conclusion; hence `search_never_found`: the guard is never found at 
 red cell held for a reason unrelated to symmetry.
 
 Since the descriptions are STRUCTURAL TERMS of the codes with binary-numeral leaves
-(`ArithS.CodeTerm`, `ArithS.Guard`; before 2026-09-11 the binary numeral of the whole code,
+(`ArithS.CodeTerm`, `ArithS.Guard`; earlier the binary numeral of the whole code,
 `ArithS.BinNumeral`), this file proves the POSITIVE result that (b) demands, with explicit (ugly,
 but explicit) constants:
 
@@ -34,7 +34,7 @@ but explicit) constants:
   (`termLenMeta_emb_codeTermMeta_search`, `termLenMeta_binNumeralMeta`); the constant carries `|binNumeralMeta ⌜guardTemplate a⌝|` and is
   never written into a closed arithmetic expression;
 * `size_canonical_Dupoc_le`: `size (canonical (Dupoc k)) ≤ 4 · size k + (4 · size cP + 26)`, by the
-  polynomial-pairing bound `ppair a b ≤ (a + b + 1)²` (`ArithS.Prog`, 2026-09-11; `cP =
+  polynomial-pairing bound `ppair a b ≤ (a + b + 1)²` (`ArithS.Prog`; `cP =
   ppair ⌜guardTemplate 0⌝ (ppair (pConst 0) (pConst 1))` is the constant part of the searcher's code)
   — the bit length of the CODE, kept for reference;
 * **`guard_fits`**: `∃ K, ∀ k ≥ K, ∀ a ≤ 1, formulaLenMeta (guardSentence a (Dupoc k) (Cupod k)) ≤ k`
@@ -44,7 +44,7 @@ but explicit) constants:
 -/
 
 /-!
-## Proof-craft note (2026-09-10)
+## Proof-craft note
 The first version of this file hung for hours: a theorem stated with closed constants
 (`10 * cG₀`, `Nat.size cP`) forced Lean's `Nat` defeq machinery to try to EVALUATE
 `cG₀ = formulaLenMeta guardTemplate7` and `cP = ppair ⌜guardTemplate7⌝ …` on the giant template term. The cure is

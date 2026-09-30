@@ -3,7 +3,7 @@ import ArithS.Cells.DupocMirror
 /-!
 # ArithS.Cells.JustBot — the frozen-`.bot` Löb families in PA-`S'`
 
-`Research/Notes/ROUTE_B_SCOPE.md` §3 Phase 2 (2026-09-23), the JustBot family. The engine's
+`Research/Notes/ROUTE_B_SCOPE.md` §3 Phase 2, the JustBot family. The engine's
 `JustBot k := .search k (.plays .opp (.bot (DupocBot k)) C) (.const C) (.const D)` — "cooperate
 iff I can prove the opponent cooperates with a FROZEN snapshot of Dupoc k". Every JustBot cell
 rests on the bot-wrapped Dupoc self-cooperation (`Theorems/JustBot/Helpers.loeb_botDupoc_vs_botDupoc_of_nec`).

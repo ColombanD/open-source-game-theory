@@ -5,7 +5,7 @@ import ArithS.Cells.KhatCells
 /-!
 # ArithS.Cells.FlipCells — the FLIP cells: where PA-`S'` disagrees with the engine's `S`
 
-`Research/Notes/ARITHMETIZED_S_RESULTS.md` "THE FINDING" and `ROUTE_B_SCOPE.md` §2 (2026-09-23): the engine
+`Research/Notes/ARITHMETIZED_S_RESULTS.md` "THE FINDING" and `ROUTE_B_SCOPE.md` §2: the engine
 closes ten cells by censuses that rest on a player being UNREADABLE by `S`'s rules
 (`no_provable_tailTo_unreadable`, the WV valuation censuses). In PA every source is readable
 (Σ₁-completeness), and the value of six of them FLIPS. `Cells/PositiveCells.lean` §7 proved the first

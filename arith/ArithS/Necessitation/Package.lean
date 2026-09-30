@@ -10,8 +10,7 @@ import ArithS.Assembly.Uniform
 
 **Every headline theorem here is UNCONDITIONAL** (three standard axioms, `Audit.lean`): §2.5 proves
 the carrying size statement outright — `sizeThmAll_holds : SizeThmAll`, from `Verify5.armHypsAll_of_arms`
-and `verifyGraph''_size4_of_arms` (the ten-arm length/size glue of the verification list, landed
-2026-09-16, U10) — and §4 draws `boundedInnerNec_sixteen : BoundedInnerNec 16`,
+and `verifyGraph''_size4_of_arms` (the ten-arm length/size glue of the verification list, landed, U10) — and §4 draws `boundedInnerNec_sixteen : BoundedInnerNec 16`,
 `dupoc_self_coop` (Critch's Theorem 3.7 in `PA`-`S`) and `pblt` (the
 uniform parametric bounded Löb theorem) with no hypothesis. The `_of_sizeThm` forms of §3 are the
 same theorems with `SizeThmAll` still a binder; they are kept because they document WHAT the size
@@ -27,8 +26,8 @@ theorem at the canonical numeral table `tblN`, where `NumTableOK tblN N' B'` is 
 (`sizeThmAll_holds`); §3 draws the headline theorems with `SizeThmAll` still a binder; §4 instantiates.
 
 History (one sentence): an earlier closing of `Assemble.lean` §8 took the size half as a hypothesis `SizeOracle` that
-bound the numeral table with NO `NumTableOK`, which is UNPROVABLE as stated (machine-checked 2026-09-15, the diagnosis
-in `Verify5.lean`'s header); this file's `SizeThm` replaced it, and the dead `SizeOracle` path was deleted 2026-09-27.
+bound the numeral table with NO `NumTableOK`, which is UNPROVABLE as stated (machine-checked, the diagnosis
+in `Verify5.lean`'s header); this file's `SizeThm` replaced it, and the dead `SizeOracle` path was deleted.
 -/
 
 namespace ArithS

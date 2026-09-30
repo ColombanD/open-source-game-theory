@@ -6,7 +6,7 @@ import ArithS.Cells.PrudentMirror
 /-!
 # ArithS.Cells.PositiveCells — the POS class of the census in PA-`S'`, and the unreadability cells re-evaluated
 
-`Research/Notes/ROUTE_B_SCOPE.md` §3 Phase 4, class **POS** of `ROUTE_B_CENSUS.md` (2026-09-23): cells whose
+`Research/Notes/ROUTE_B_SCOPE.md` §3 Phase 4, class **POS** of `ROUTE_B_CENSUS.md`: cells whose
 searcher FINDS its guard without Löb (the engine's `search_t` on a search-free atom, `weakenImpl`, `atomNeg`),
 unconditional in `S'` (no `BoundedInnerNec`), for all large `k`. The mechanism is `pos_Cimcic_vs_Cimcic`'s, made
 generic: the guard is the `binNumeral k`-instance of a FIXED one-variable formula `q` (`guardCode_qT_eq_instB` with

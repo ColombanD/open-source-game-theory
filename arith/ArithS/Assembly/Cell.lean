@@ -7,13 +7,13 @@ against itself, in PA-`S`, for all large `k`, conditional on bounded inner neces
 `Research/Notes/M4_BOUNDED_HBL/BRIEF.md` §6 (U9, steps 1–4). Everything is a theorem GIVEN
 `BoundedInnerNec d` (Critch's assumption (d), `Assembly/Prep.lean` §6).
 
-**Since 2026-09-23 (`ROUTE_B_SCOPE.md` §3 Phase 1) this file is an INSTANTIATION of
+**Since `ROUTE_B_SCOPE.md` §3 Phase 1 this file is an INSTANTIATION of
 `Assembly/Family.lean`'s cell half at `p := pConj`, slack `(7, 8)`, Löb premise
 `loebSound_pConj`.** The generic steps live there under the names `size_eq_length`,
 `quadratic_le_cube`, `formulaLenMeta_subst_binNumeralMeta_le`, `exists_psiF_instance_length` and **`family_found`**
 (the arithmetized `pblt_engine`: the family's box found within its budget with the slack to
 spare, for all large `k : ℕ`); this file draws the cell from `family_found pConj` by the
-∧-elimination (`pconj_both_V`, `pconj_guards_V`). Every theorem keeps its 2026-09-12 statement.
+∧-elimination (`pconj_both_V`, `pconj_guards_V`). Every theorem keeps its original statement.
 
 1. **The meta closure** (`exists_psi_instance_length`): from `pblt_uniform` —
    `TAct ⊢ ∀¹ (leF ↑k̂ #0 🡒 psi)` — a proof code at ℕ of some length `N₃`

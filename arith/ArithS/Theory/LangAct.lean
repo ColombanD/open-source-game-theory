@@ -11,7 +11,7 @@ theory `TAct` (`ArithS.TheoryAct`). `swap : LAct →ᵥ LAct` exchanges the two 
 an involution; every symbol counts `1`, so `termLenMeta`/`formulaLenMeta` are invariant under ANY language hom,
 in particular under `swap`.
 
-**Reading guide.** Definition: `Act`, `LAct`, `const`, `emb` and `swap` — the first sixty lines. Foundation plumbing: the Gödel encoding of the symbols and their Δ₀-definability — skip on first reading. Fact: symbol counts are invariant under every language hom, hence under `swap`.
+**Reading guide.** Definition: `Act`, `LAct`, `const`, `emb` and `swap` — the first sixty lines. Foundation plumbing: the Gödel encoding of the symbols and their Δ₀-definability — skip on first reading. Fact: symbol counts are invariant under every language hom, hence under `swap`. At ℕ: `swap_involutive` (`ArithS.Readings`).
 -/
 
 namespace ArithS

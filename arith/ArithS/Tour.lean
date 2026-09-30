@@ -3,12 +3,13 @@ import ArithS.Outcome.Matrix.DIMCID
 import ArithS.Audit.RedCellAudit
 import ArithS.Audit.RedCellUnsound
 import ArithS.Necessitation.ClosedNec
+import ArithS.Readings
 
 /-!
 # ArithS.Tour — a guided tour of PA-`S'`, in one file
 
 Open this file first. It restates the nine trusted definitions of `ArithS/README.md` §2 at `V = ℕ`
-(each `example … := rfl` is kept in sync with the real definition by the compiler), walks through the
+(each `example … := rfl` is kept in sync with the real definition by the compiler; the reading of each at ℕ is a named theorem of `ArithS.Readings`, cited here), walks through the
 red cell — the one cell to understand fully — names the headline theorems, and ends with the axiom
 census of the results it cites. Every `#check` prints the statement the paper quotes; nothing here
 proves anything new.
@@ -30,22 +31,26 @@ open PD.Bots
 example : LAct = ℒₒᵣ + Language.constant Act := rfl
 example : swap.func (LAct.const Act.C) = LAct.const Act.D := rfl
 example : swap.func (LAct.const Act.D) = LAct.const Act.C := rfl
+#check @swap_involutive
 
 /-! ### 2. The theory: PA plus "the constants are the two action values, in one of the two orders" -/
 
 #check (TAct : Theory LAct)
 #check actionAxiom            -- (c_C = 0 ∧ c_D = 1) ∨ (c_C = 1 ∧ c_D = 0)
 #check TAct_complete_of_readings   -- true in both readings of every model of PA ⇒ a `TAct`-theorem
+#check TAct_sound_nat              -- ℕ is a model: a found guard is a true play
 
 /-! ### 3. The length: the symbol count of a derivation code (symbol-blind, so τ preserves it) -/
 
 #check (proofLen TAct : ℕ → ℕ)
 #check (proofLenMeta : (TAct ⟹₂ _) → ℕ)
+#check @proofLen_nat               -- on a quoted derivation, the meta symbol count
 
 /-! ### 4. The box: "a proof of length ≤ k exists" — Δ₁, because the code is bounded too -/
 
 example (k φ : ℕ) : □[k] φ = LenBox TAct k φ := rfl
 #print LenBox                      -- ∃ d < codeBound k, Proof T d φ ∧ proofLen T d ≤ k
+#check box_nat                     -- at ℕ: some meta derivation of σ has symbol count ≤ k
 #check (LenBox.defined TAct)       -- the Δ₁ formula that says the same inside PA
 #check @lenBoxUnbounded_iff_lenBox -- the code bound is invisible: same as the Σ₁ box in every model
 
@@ -60,6 +65,7 @@ example (k : ℕ) : bot DupocBot k = progCode (DupocBot k) := rfl
 #check @codeTerm
 #check @binNumeral
 #check @descriptions
+#check description_nat             -- the term's code is `codeTerm`, and the term denotes the code
 
 /-! ### 7. The guard template and the runtime guard -/
 
@@ -67,6 +73,7 @@ example (k : ℕ) : bot DupocBot k = progCode (DupocBot k) := rfl
 #check @template                   -- the general translation of an engine guard formula
 #check @guardCode                  -- fill the slots with the descriptions of the frame
 #check @guardCodeB                 -- ... and the node's own budget in the seventh slot
+#check guard_nat                   -- the guard code is the code of a sentence, true iff opp plays a against me
 
 /-! ### 8. Substitution: the engine's one-shot `Prog.subst`, on codes -/
 
@@ -80,6 +87,7 @@ example (k : ℕ) : bot DupocBot k = progCode (DupocBot k) := rfl
 #check @EvalGraph.case_iff
 #check @EvalGraph.unique'          -- deterministic at ℕ
 #check @EvalGraph.mono_le          -- fuel-monotone at ℕ
+#check @eval_deterministic_nat
 
 /-! ## 2. Outcomes, in the engine's vocabulary -/
 
@@ -121,8 +129,8 @@ Cupod cooperates. Four ingredients, no Löb, no census:
 #check boundedInnerNec_sixteen     -- Critch's assumption (d), a theorem: PA verifies its own short proofs, polynomially
 #check closedInnerNec_sixteen
 #check pblt
-#check dupoc_self_coop             -- Dupoc cooperates with itself for all large k
-#check outcome_Dupoc_vs_Dupoc
+#check dupoc_self_coop             -- Dupoc cooperates with itself for all large k (the hand-written twin)
+#check outcome_DupocBot_vs_DupocBot -- the same cell on the engine's `progCode (DupocBot k)`
 
 /-! ## 5. Where `S'` contradicts the rule-based `S` -/
 

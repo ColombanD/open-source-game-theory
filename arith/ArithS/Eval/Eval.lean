@@ -24,7 +24,7 @@ should accept; the fixpoint construction behind it is `ArithS.Eval.Fixpoint`):
 other components, so the fixpoint is `Finite`, not `StrongFinite`, and functionality and fuel
 monotonicity are proved at `V = ℕ` by ordinary induction (`ArithS.Eval.EvalN`: `EvalGraph.unique'`,
 `EvalGraph.mono_le`). On search-free programs it runs in lockstep with the engine's `eval` at the
-same fuel (`Cells/SearchFree.lean`).
+same fuel (`Cells/SearchFree.lean`). At ℕ: `eval_deterministic_nat` (`ArithS.Readings`).
 -/
 
 namespace ArithS

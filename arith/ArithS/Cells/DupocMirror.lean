@@ -9,7 +9,7 @@ import ArithS.Necessitation.Package
 /-!
 # ArithS.Cells.DupocMirror — Dupoc × Mirror `(C, C)` and Cupod × Mirror `(D, D)` in PA-`S'`
 
-`Research/Notes/ROUTE_B_SCOPE.md` §3 Phase 2 (2026-09-23): the first Löb family after the
+`Research/Notes/ROUTE_B_SCOPE.md` §3 Phase 2: the first Löb family after the
 self-play one — the arithmetized twins of the engine's `outcome_DupocBot_vs_MirrorBot = (C, C)`
 and `outcome_CupodBot_vs_MirrorBot = (D, D)` (both `eventual`, both `pblt_engine_id` in the
 engine). The pattern is `Assembly/Prep.lean` §1–§3 + `Assembly/Family.lean` + `Assembly/Cell.lean`

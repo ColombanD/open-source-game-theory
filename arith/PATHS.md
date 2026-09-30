@@ -149,3 +149,25 @@ No declaration name or statement changed; two files were split at a top-level bo
 Every trusted-base file's module docstring ends with a **Reading guide** line (definition / plumbing to skip /
 facts), and plumbing section headers say so. The new modules are imported in `ArithS.lean` and in the
 audit file of their layer (`Audit/Box`, `Audit/Agents`, `Audit/Eval`).
+
+## Tiers as lake targets, the ℕ readings, the header rule (2026-09-30, second batch)
+
+| module / file | what |
+|---|---|
+| `ArithS.Readings` | the nine definitions read at ℕ, one named theorem each (`swap_involutive`, `TAct_sound_nat`, `proofLen_nat`, `box_nat`, `description_nat`, `binNumeral_nat`, `guard_nat`, `eval_deterministic_nat`, `eval_monotone_nat`); every trusted-base reading guide points here |
+| `ArithS.Core`, `ArithS.Frozen`, `ArithS.PBLT`, `ArithS.Matrix` | one-file roots of the lake libraries `ArithSCore`, `ArithSFrozen`, `ArithSLoeb`, `ArithSMatrix` (`ArithSAudit` is rooted at the existing `ArithS.Audit`); `lakefile.toml` |
+| `scripts/check_tiers.py` | import direction core < frozen < Löb < results < top, results reach `Necessitation/` only through `Package`/`ClosedNec`, each root imports exactly its tier |
+| `models_constNe`, `models_constNe'`, `models_TAct` | MOVED from `Cells/RedCell.lean` to `Theory/TheoryAct.lean` (soundness in ℕ belongs to the theory file) — same names |
+| `Matrix.lean` docstring | the `Cells/` header rule: uniform methods by method, Löb cells by bot |
+| date stamps | removed from module docstrings and section headers across `Cells/`, `Agents/`, `Theory/`, `Eval/`, `Assembly/`, `Necessitation/Package` (30 files; `Cells/Names.lean`'s `since :=` attributes and two historical "since 2026-09-11" sentences kept) |
+
+## Twin retirement (2026-09-30, third batch)
+
+| new module | cells now on the engine's codes (`Outcome/Matrix/`) | replaces |
+|---|---|---|
+| `ArithS.Cells.DupocEngine` | `outcome_DupocBot_vs_DupocBot`, `outcome_CupodBot_vs_CupodBot`, `outcome_DupocBot_vs_MirrorBot`, `outcome_CupodBot_vs_MirrorBot` (`loeb_<L>_vs_<R>` + `_guard`) | `outcome_Dupoc_vs_Dupoc`, `outcome_Cupod_vs_Cupod`, `outcome_Dupoc_vs_MirrorBot`, `outcome_Cupod_vs_MirrorBot` |
+| `ArithS.Cells.CimcicEngine` | `outcome_CIMCIC_vs_DupocBot` (`loeb_CIMCIC_vs_DupocBot`, `_guards`, `loebSound_pCiDb`) | `outcome_CIMCIC_vs_Dupoc` |
+| `ArithS.Cells.DimcidEngine` | `outcome_DIMCID_vs_CupodBot` (`loeb_DIMCID_vs_CupodBot`, `_guards`) | `outcome_DIMCID_vs_Cupod` |
+
+The hand-twin `Cells` theorems are untouched (only the `outcome_` statements moved). Seven twin cells remain, all
+with `Just`/`Just7`/`CupodTroll7` as a player or opponent — not retirable (`README.md` §4).

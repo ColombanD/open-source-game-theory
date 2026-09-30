@@ -5,7 +5,7 @@ import ArithS.Cells.CIMCIC
 # ArithS.Cells.JustSlot — JustBot on a CONSTANT template with a budget slot (route c): Just × Just,
 Just × Dupoc and CIMCIC × Just, all `(C, C)`, in PA-`S'`
 
-`Research/Notes/ROUTE_B_SCOPE.md` §7–§8 (2026-09-23). `Cells/JustBot.lean` arithmetized
+`Research/Notes/ROUTE_B_SCOPE.md` §7–§8. `Cells/JustBot.lean` arithmetized
 `JustBot k := .search k (.plays .opp (.bot (DupocBot k)) C) (.const C) (.const D)` as `JustV k :=
 pSearch k (gJ k) …` with a `k`-DEPENDENT stored template `gJ k` (the description of the frozen snapshot
 `pBot (Dupoc k)` pre-filled into the me-slots), so `JustV k` was not the `binNumeral k`-instance of any fixed

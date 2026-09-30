@@ -7,7 +7,7 @@ import Mathlib.Tactic.FinCases
 
 Roadmap §2.4. `PA` is transported along the inclusion `emb : ℒₒᵣ →ᵥ LAct`. The action axioms:
 
-* **`actionAxiom : (c_C = 0 ∧ c_D = 1) ∨ (c_C = 1 ∧ c_D = 0)`** (U0b, 2026-09-12) — the action
+* **`actionAxiom : (c_C = 0 ∧ c_D = 1) ∨ (c_C = 1 ∧ c_D = 0)`** (U0b) — the action
   constants ARE the two action values, in one of the two orders. Without it (with only
   `c_C ≠ c_D`, the theory before U0b) a model of `TAct` may read `c_C ↦ 5, c_D ↦ 7`; the guard
   sentences of the search bots feed the constants as action VALUES into `revalue` (only
@@ -28,7 +28,7 @@ keeps the `ℒₒᵣ` codes, an `ℒₒᵣ`-formula has the same code in both la
 transported axioms; the four action sentences are `insert`ed (Foundation's `Theory.Δ₁.insert`,
 two short closed codes each). The standard model interprets `c_C ↦ 0`, `c_D ↦ 1`.
 
-**Reading guide.** Definition: §The standard structure on ℕ and §The theory (`actionAxiom`, `constNe`, `TAct`) — the first hundred lines. Foundation plumbing: §Codes agree along the embedding and §`TAct` is Δ₁-axiomatized — skip on first reading. Facts: §closed under the transposition, and §The standard readings (`stdReading`/`swappedReading`, `structure_eq_of_actionAxiom`) — the two readings the positive method completes over.
+**Reading guide.** Definition: §The standard structure on ℕ and §The theory (`actionAxiom`, `constNe`, `TAct`) — the first hundred lines. Foundation plumbing: §Codes agree along the embedding and §`TAct` is Δ₁-axiomatized — skip on first reading. Facts: §closed under the transposition, and §The standard readings (`stdReading`/`swappedReading`, `structure_eq_of_actionAxiom`) — the two readings the positive method completes over. At ℕ: `TAct_sound_nat` (`ArithS.Readings`).
 -/
 
 namespace ArithS
@@ -493,6 +493,33 @@ lemma models_actionAxiom : ℕ↓[LAct] ⊧ actionAxiom := by
 lemma models_actionAxiom' : ℕ↓[LAct] ⊧ actionAxiom' := by
   rw [models_iff]
   exact (eval_actionAxiom'_iff stdReadingNat stdReadingNat_lMap_emb).mpr (Or.inr ⟨rfl, rfl⟩)
+
+/-! ### `ℕ` is a model of `TAct` — soundness, the whole negative method of the cells -/
+
+lemma models_constNe : ℕ↓[LAct] ⊧ constNe := by
+  rw [models_iff]
+  unfold constNe Semiformula.Realize
+  simp [Semiformula.eval_nrel, cterm]
+  change ¬((0 : ℕ) = 1)
+  decide
+
+lemma models_constNe' : ℕ↓[LAct] ⊧ constNe' := by
+  rw [models_iff]
+  unfold constNe' Semiformula.Realize
+  simp [Semiformula.eval_nrel, cterm]
+  change ¬((1 : ℕ) = 0)
+  decide
+
+instance models_TAct : ℕ↓[LAct] ⊧* TAct := by
+  rw [models_theory_iff]
+  intro φ hφ
+  rcases hφ with rfl | rfl | rfl | rfl | ⟨σ, hσ, rfl⟩
+  · exact models_actionAxiom
+  · exact models_actionAxiom'
+  · exact models_constNe
+  · exact models_constNe'
+  · rw [models_lMap_emb]
+    exact Theory.models ℕ 𝗣𝗔 hσ
 
 end models
 

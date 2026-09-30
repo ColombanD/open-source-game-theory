@@ -13,6 +13,9 @@ the index of the code.
 * [`Tour.lean`](Tour.lean) — the nine trusted definitions restated at `V = ℕ` (kept in sync by `rfl`), the red
   cell step by step, the headline theorems by `#check`, and the axiom census of what it cites. One file,
   no proofs.
+* [`Readings.lean`](Readings.lean) — the nine definitions read at `V = ℕ`, one named theorem each (`box_nat`: `□[k] ⌜σ⌝`
+  holds iff some meta derivation of `σ` has symbol count `≤ k`; `guard_nat`; `TAct_sound_nat`; …), each proved from
+  the lemma that already carries the fact, so the reading cannot drift from the definition.
 * [`Notation.lean`](Notation.lean) — the paper's symbols in Lean: `□[k] φ` is `LenBox TAct k φ` (the paper's
   `□_k φ`, and at a meta budget on a quoted sentence its `⊢_k φ`); the three-layer table is in its docstring.
 
@@ -23,12 +26,19 @@ behind `Eval/Eval.lean`, `Agents/SubstTemplate.lean` before `Agents/Subst.lean`)
 
 ## 1. The four tiers
 
-| tier | folders | lines | what to do with it |
-|---|---|---:|---|
-| **Trusted base** — the definitions a reader accepts by eye | `Theory/`, `Length/`, `Box/`, `Agents/`, `Eval/` | ~13k, of which the definitions themselves are a few hundred | read §2 in order; skim the lemmas around them |
-| **Results** — the theorems | `Outcome/` (the matrix in the engine's vocabulary), `Cells/` (the proofs), `Assembly/` + `Loeb/` (PBLT), `Necessitation/Package.lean` (bounded inner necessitation, statements only) | ~19k | read `Outcome/`, then §3's reading order |
-| **Construction of U10** — the proof that PA verifies its own proofs within a polynomial budget | everything in `Necessitation/` except `Package.lean` | ~96k (72 %) | do not open; the design notes are `Research/Notes/M4_BOUNDED_HBL/` |
-| **Frozen, estimates, census** | `Bridge/` (the T2 bridge, frozen by decision), `Length/Proper`, `Box/ProperBound`, `Agents/Fit*` (numeric estimates), `Audit/` (every `#print axioms` the build runs) | ~6k | skip; `Audit/` is what `lake build` checks, not what you read |
+| tier | folders | lines | what to do with it | lake target |
+|---|---|---:|---|---|
+| **Trusted base** — the definitions a reader accepts by eye | `Theory/`, `Length/`, `Box/`, `Agents/`, `Eval/` | ~13k, of which the definitions themselves are a few hundred | read §2 in order; skim the lemmas around them | `ArithSCore` (root `Core.lean`) |
+| **Results** — the theorems | `Outcome/` (the matrix in the engine's vocabulary), `Cells/` (the proofs), `Assembly/` + `Loeb/` (PBLT), `Necessitation/Package.lean` (bounded inner necessitation, statements only) | ~19k | read `Outcome/`, then §3's reading order | `ArithSMatrix` (`Matrix.lean`); PBLT: `ArithSLoeb` (`PBLT.lean`) |
+| **Construction of U10** — the proof that PA verifies its own proofs within a polynomial budget | everything in `Necessitation/` except `Package.lean` | ~96k (72 %) | do not open; the design notes are `Research/Notes/M4_BOUNDED_HBL/` | pulled in by `ArithSLoeb` |
+| **Frozen, estimates, census** | `Bridge/` (the T2 bridge, frozen by decision), `Length/Proper`, `Box/ProperBound`, `Agents/Fit*` (numeric estimates), `Audit/` (every `#print axioms` the build runs) | ~6k | skip; `Audit/` is what `lake build` checks, not what you read | `ArithSFrozen` (`Frozen.lean`), `ArithSAudit` |
+
+Import direction between the tiers (core < frozen < Löb < results < audit; the results tier reaches the U10
+construction only through `Necessitation/Package` and `ClosedNec`) is checked by `scripts/check_tiers.py`, which
+also verifies that each root imports exactly its tier — Lake cannot enforce this between libraries of one
+package. `Agents/Instance*` and `Eval/Transparency` belong to the Löb tier (they describe Dupoc's guard as a
+`k`-instance for the family assembly), `Agents/Fit*` and `Eval/Det` to the frozen/estimates tier, and
+`Cells/RedCell` to the core (its proof needs nothing else).
 
 Generated files (`Necessitation/*Rows.lean`, `RowInst*.lean`, `Lib/Frag.lean`) carry a `GENERATED` marker;
 never edit them (`scripts/README.md`).
@@ -48,7 +58,7 @@ The other files in these five folders hold no definitions to accept, only theore
    not numerals, so that τ is a symmetry of the syntax.
 2. **The theory** — `TAct := PA ∪ {c_C ≠ c_D, c_D ≠ c_C, actionAxiom, actionAxiom'}`, the action axiom in BOTH
    orders so the theory is literally closed under `swap`: [`Theory/TheoryAct.lean`](Theory/TheoryAct.lean).
-   Its two standard readings `stdReading`/`swappedReading`; ℕ is a model (`models_TAct`).
+   Its two standard readings `stdReading`/`swappedReading`; ℕ is a model (`models_TAct`, the soundness every negative cell rests on).
 3. **The length** — `proofLen`, the structural symbol count of a derivation code (symbol-blind, so τ
    preserves it exactly; weakening and ∃-witnesses charged): [`Length/DerivationLength.lean`](Length/DerivationLength.lean),
    with `proofLen ⌜d⌝ = proofLenMeta d` in [`Length/MetaLength.lean`](Length/MetaLength.lean). The cost is a tree
@@ -94,14 +104,14 @@ theorem outcome_DupocBot_vs_CupodBot :
 Then, in order:
 
 1. **The red cell** — [`Cells/RedCellEngine.lean`](Cells/RedCellEngine.lean) (the engine's bots, 60
-   lines) or [`Cells/RedCell.lean`](Cells/RedCell.lean) (the hand-written twins, self-contained): τ-symmetry
+   lines) or [`Cells/RedCell.lean`](Cells/RedCell.lean) (the hand-written `Dupoc k`/`Cupod k`, self-contained): τ-symmetry
    of the two guards + soundness in ℕ + determinism, no Löb, every `k`. The one cell to understand fully.
 2. **A soundness cell** — `Cells/SoundnessCells.lean`, `snd_else_of_false` and one `snd_*` cell: a
    guard false in ℕ is never found, so the searcher takes its else branch.
 3. **PBLT** — `Assembly/Family.lean` (`LoebSound`, `family_found`, the family-parametric bounded Löb
    theorem) and `Necessitation/Package.lean` (`boundedInnerNec_sixteen`, `pblt`,
    `dupoc_self_coop`): read the STATEMENTS.
-4. **One Löb cell** — `Cells/CIMCIC.lean` or `Cells/DupocMirror.lean`.
+4. **One Löb cell** — `Cells/DupocEngine.lean` (Dupoc × Dupoc on the engine's code, the two-guard family `pQ`; 300 lines) or `Cells/CIMCIC.lean`.
 5. **The flips** — `Cells/FlipCells.lean`, `Cells/DimcidFlips.lean`: where PA-`S'` contradicts the
    engine, and why (`dimcid_vs_closed`: DIMCID defects against every closed program).
 6. **The floors** — `Cells/FloorDichotomy.lean`: the 26 genuine floors as hypothesis-free dichotomies
@@ -139,15 +149,25 @@ Then, in order:
 atom, `snd_` soundness/else branch, `pos_` guard found without Löb, `loeb_` bounded Löb, `khat_` the
 `k̂`-chain, `floor_` a settled floor half, `dich_` a floor dichotomy. The cell name is the `outcome_` one.
 
-**The hand-template twins.** Thirteen cells are stated on codes that are NOT the engine's `progCode`:
-`Dupoc k`/`Cupod k` (`Cells/RedCell.lean`, template `guardTemplate`), `Just k`/`Just7 k`
-(`Cells/JustBot.lean`, `Cells/JustSlot.lean`), `CupodTroll7 k` (`Cells/KhatCells.lean`; it plays as `progCode (CupodTrollBot k)` in the program slot, but as an opponent its code differs).
-The engine's `DupocBot k` carries the translated template `template (.plays .opp .self .C)`, a different
-code with a provably equivalent guard (`Agents/Code.lean`, "Sanity"); the Löb cells were built on the
-hand template first and are not yet re-proved on `templateCode`. Their `outcome_` theorems keep the twin's
-name (`outcome_Dupoc_vs_Dupoc`) so that a name never claims more than its statement. `Cimcic`, `Dimcid`,
-`Prudent`, `Mirror` ARE the engine's codes (`progCode_CIMCIC`, `progCode_DIMCID`, `progCode_PrudentBot`,
-`progCode_MirrorBot`) and their cells carry engine names.
+**The hand-template twins.** Seven cells are stated on codes that are NOT the engine's `progCode`:
+`Just k`/`Just7 k` (`Cells/JustBot.lean`, `Cells/JustSlot.lean`) and `CupodTroll7 k` (`Cells/KhatCells.lean`),
+in `outcome_Just_vs_MirrorBot`, `outcome_Just7_vs_Dupoc`, `outcome_Just7_vs_Just7`, `outcome_DIMCID_vs_Just7`,
+`outcome_DIMCID_vs_CupodTroll7`, `outcome_CIMCIC_vs_Just7`, `outcome_CupodTroll7_vs_CupodBot`. These are NOT
+retirable by re-proving: the engine's `JustBot k`/`CupodTrollBot k` freeze a BUDGET-CARRYING snapshot in their
+guard, so `progCode (JustBot k)` is the `binNumeral k`-instance of no fixed term and the family assembly cannot
+DESCRIBE it as an opponent (`ROUTE_B_SCOPE.md` §7); the seven-variable twins with a budget slot are the only
+describable form, and they play like the hand-written snapshot (`evalGraph_JustV7_iff`), which is itself
+`pBot (DupocV k)`, not `.bot (DupocBot k)`. Their `outcome_` theorems keep the twin's name so that a name never
+claims more than its statement. The former Dupoc/Cupod twins are RETIRED: `Cells/DupocEngine.lean`,
+`Cells/CimcicEngine.lean`, `Cells/DimcidEngine.lean` re-prove Dupoc × Dupoc, Cupod × Cupod, Dupoc/Cupod × Mirror,
+CIMCIC × Dupoc and DIMCID × Cupod on `progCode (DupocBot k)`/`progCode (CupodBot k)` (= the generic searcher
+`SV gDu 0`/`SV gCu 1` of `Cells/Common/Bots.lean` §4, the guard `qT gDu …`, the family `pQ`), and the cells are
+`outcome_DupocBot_vs_DupocBot`, `outcome_CupodBot_vs_CupodBot`, `outcome_DupocBot_vs_MirrorBot`,
+`outcome_CupodBot_vs_MirrorBot`, `outcome_CIMCIC_vs_DupocBot`, `outcome_DIMCID_vs_CupodBot`. The hand-written
+`Dupoc k`/`Cupod k` stay as the self-contained red cell (`Cells/RedCell.lean`) and the hand-twin Löb theorems
+stay beside the engine ones (`Cells/DupocMirror.lean`, `dupoc_self_coop`). `Cimcic`, `Dimcid`, `Prudent`,
+`Mirror` ARE the engine's codes (`progCode_CIMCIC`, `progCode_DIMCID`, `progCode_PrudentBot`,
+`progCode_MirrorBot`).
 
 ## 5. Folder map
 
@@ -183,7 +203,8 @@ Löbian cell at ℕ · `Uniform` the earlier uniform chain.
 `Chain`/`Steps`/`Describe`/`Layout`/`Prologue`/`Cert`/`Verify*`/`Top`/`Assemble`/`Pin`/`ClosedNec` and the
 row tables · `Lib/` the library of PA-provable schemas the steps cite.
 
-**`Cells/`** — the proofs, by method: `RedCell`, `RedCellEngine`, `SearchFree`, `SoundnessCells`,
+**`Cells/`** — the proofs. The header rule: UNIFORM methods are filed by method, LÖB cells by bot (each needs its own
+description layer and family); the rule and the file list are in `Matrix.lean`'s docstring. By method: `RedCell`, `RedCellEngine`, `SearchFree`, `SoundnessCells`,
 `PositiveCells`, `KhatCells`, `DupocMirror`, `CIMCIC`, `DIMCID`, `JustBot`, `JustSlot`, `PrudentMirror`,
 `PrudentLoose`, `FlipCells`, `DimcidFlips`, `FloorVerdicts`, `FloorDichotomy`, `SimSlot`; `Common/` the
 shared bot codes, templates, probers, families, the `k̂`-chain; `Names` the deprecated old names.
@@ -204,6 +225,8 @@ cells directly instead.
 cd arith && lake build ArithS --try-cache      # ~3350 jobs; never compile Foundation or mathlib
 timeout 900 lake env lean ArithS/<file>.lean   # single-file check; CHECK THE EXIT CODE
 timeout 900 lake env lean ArithS/Tour.lean     # prints every headline statement and its axioms
+lake build ArithSCore                          # one tier (also ArithSFrozen, ArithSLoeb, ArithSMatrix, ArithSAudit)
+python3 scripts/check_tiers.py                 # import direction between the tiers, roots complete
 scripts/regen_all.sh                           # the generated tables are in sync
 ```
 

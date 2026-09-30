@@ -4,7 +4,7 @@ import ArithS.Assembly.Uniform
 /-!
 # ArithS.Cells.Common.Families — the two-guard family `pQ`, its Löb premise, the ∧-elimination slack
 
-Consolidation stage 5 (`Research/Notes/ROUTE_B_CELLS_MAP.md`, 2026-09-24).
+Consolidation stage 5 (`Research/Notes/ROUTE_B_CELLS_MAP.md`).
 
 1. **The family `pQ q := q ⋏ τq`** and its lemmas (`instB_quote_pQ`, `formulaLen_instB_pQ`, `pQ_both_V`,
    `eval_pQ_std`, `eval_pQ_swap`), MOVED unchanged from `Cells/FlipCells`. Every per-cell family

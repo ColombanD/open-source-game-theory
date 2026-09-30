@@ -7,7 +7,7 @@ import ArithS.Eval.EvalN
 /-!
 # ArithS.Cells.Common.Syntax — the arity-generic syntax lemmas shared by every `Cells/*` file
 
-Consolidation stage 1 (`Research/Notes/ROUTE_B_CELLS_MAP.md`, 2026-09-24): the declarations below were
+Consolidation stage 1 (`Research/Notes/ROUTE_B_CELLS_MAP.md`): the declarations below were
 written once per cell file (JustSlot, DIMCID, JustBot, PrudentMirror, DimcidFlips, DupocMirror,
 PositiveCells) and MOVED here unchanged — same names, same statements, same proofs. Nothing in this
 module depends on a bot: it sits directly on `Assembly/Prep`, `InstanceV`, `SimTest`, `Template` and

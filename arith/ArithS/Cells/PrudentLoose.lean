@@ -3,7 +3,7 @@ import ArithS.Cells.FloorDichotomy
 /-!
 # ArithS.Cells.PrudentLoose — the two Prudent loose ends: the prudence `k̂`-chain and Prudent × `.bot MirrorBot`
 
-`Research/Notes/ROUTE_B_SCOPE.md` §6 (2026-09-27, "Prudent loose ends") and `ARITHMETIZED_S_RESULTS.md` "The floors
+`Research/Notes/ROUTE_B_SCOPE.md` §6 ("Prudent loose ends") and `ARITHMETIZED_S_RESULTS.md` "The floors
 as dichotomies". `Cells/FloorDichotomy` left Prudent's PRUDENCE guard `B_k` — "the opponent defects against
 `.bot DefectBot`" (`phiPi`) — as a hinge of its own in five nested dichotomies, and stated Prudent × EBot's `¬A` world
 on Prudent's side only. This module settles what can be settled.

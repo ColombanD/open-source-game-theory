@@ -8,7 +8,7 @@ Programs are tagged codes built with the POLYNOMIAL pairing `ppair x y = (x + y)
 (since 2026-09-11; before that Foundation's Cantor pair `⟪x, y⟫`, an `if` no ℒₒᵣ-term
 denotes — the parametric bounded Löb milestone needs a program to be describable by a TERM
 built from the binary numeral of its budget). They mirror the engine's `Prog`
-(`Program.lean`); since roadmap M3 step (a) (2026-09-10) a search node carries a budget `k`
+(`Program.lean`); since roadmap M3 step (a) a search node carries a budget `k`
 and a SIX-VARIABLE guard template `g` (a formula code over `LAct` in the description triples
 `x₁ u₁ w₁` of `me` and `x₂ u₂ w₂` of `opp`, see `ArithS.Guard`/`ArithS.Template`); there is
 no action slot.
@@ -28,7 +28,7 @@ no action slot.
   `y = x` on non-program codes so that it is total). It is the code-level τ of
   `Base/Transpose`: `transposeCode (transposeCode x) = x`.
 
-**Reading guide.** Definition: §Constructors (the seven tagged codes) and, for τ, `swapAction` and the clauses `Revalue.Phi` (one per constructor) with the equations after `revalue`. Foundation plumbing: the Σ₀ graphs `p…Graph`, the `Revalue` blueprint and construction — skip on first reading. §The polynomial pairing is the arithmetic of `ppair` (injectivity, monotonicity).
+**Reading guide.** Definition: §Constructors (the seven tagged codes) and, for τ, `swapAction` and the clauses `Revalue.Phi` (one per constructor) with the equations after `revalue`. Foundation plumbing: the Σ₀ graphs `p…Graph`, the `Revalue` blueprint and construction — skip on first reading. §The polynomial pairing is the arithmetic of `ppair` (injectivity, monotonicity). At ℕ: the `progCode_*` equations (`ArithS.Readings`).
 -/
 
 namespace ArithS
