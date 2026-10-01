@@ -276,26 +276,31 @@ def phiPi : PD.Formula := .plays .opp (.bot DefectBot) .D
 
 lemma progCode_GuardianBot (k : ℕ) :
     progCode (GuardianBot k) = pSearch k (templateCode phiG) (pConst 1) (pConst 0) := by
-  simp [GuardianBot, phiG, actCode]
+  rw [GuardianBot, progCode_search_noSnap _ _ _ _ rfl]; simp [phiG, actCode]
 lemma progCode_CupodBot (k : ℕ) :
     progCode (CupodBot k) = pSearch k (templateCode phiCu) (pConst 1) (pConst 0) := by
-  simp [CupodBot, phiCu, actCode]
+  rw [CupodBot, progCode_search_noSnap _ _ _ _ rfl]; simp [phiCu, actCode]
 lemma progCode_DupocBot_search (k : ℕ) :
     progCode (DupocBot k) = pSearch k (templateCode phiDu) (pConst 0) (pConst 1) := by
-  simp [DupocBot, phiDu, actCode]
+  rw [DupocBot, progCode_search_noSnap _ _ _ _ rfl]; simp [phiDu, actCode]
+/-- CupodTroll's stored template is ABSTRACTED (its guard freezes the budget-carrying `CupodBot k`): the code
+stores `templateCodeAt (phiT k) k`, a constant (route (c) made generic, 2026-10-01). -/
 lemma progCode_CupodTrollBot (k : ℕ) :
-    progCode (CupodTrollBot k) = pSearch k (templateCode (phiT k)) (pConst 1) (pConst 0) := by
+    progCode (CupodTrollBot k) = pSearch k (templateCodeAt (phiT k) k) (pConst 1) (pConst 0) := by
   simp [CupodTrollBot, phiT, actCode]
 lemma progCode_WaryBot (k : ℕ) :
     progCode (WaryBot k) = pSearch k (templateCode phiW) (pConst 1) (pConst 0) := by
-  simp [WaryBot, phiW, actCode]
+  rw [WaryBot, progCode_search_noSnap _ _ _ _ rfl]; simp [phiW, actCode]
+/-- Just's stored template is ABSTRACTED (its guard freezes the budget-carrying `DupocBot k`): the code stores
+`templateCodeAt (phiJ k) k`, a constant (route (c) made generic, 2026-10-01); the sentence consulted is still
+`guardCode (templateCode (phiJ k)) me opp` (`guardCodeB_templateCodeAt`, `search_then_at`). -/
 lemma progCode_JustBot (k : ℕ) :
-    progCode (JustBot k) = pSearch k (templateCode (phiJ k)) (pConst 0) (pConst 1) := by
+    progCode (JustBot k) = pSearch k (templateCodeAt (phiJ k) k) (pConst 0) (pConst 1) := by
   simp [JustBot, phiJ, actCode]
 lemma progCode_PrudentBot_search (k : ℕ) :
     progCode (PrudentBot k) =
       pSearch k (templateCode phiPo) (pSearch k (templateCode phiPi) (pConst 0) (pConst 1)) (pConst 1) := by
-  simp [PrudentBot, phiPo, phiPi, actCode]
+  rw [PrudentBot, progCode_search_noSnap _ _ _ _ rfl, progCode_search_noSnap _ _ _ _ rfl]; simp [phiPo, phiPi, actCode]
 
 lemma progCode_botCB : progCode (PD.Prog.bot CooperateBot) = pBot (pConst 0) := by simp [CooperateBot, actCode]
 lemma progCode_botDB : progCode (PD.Prog.bot DefectBot) = pBot (pConst 1) := by simp [DefectBot, actCode]
@@ -332,6 +337,20 @@ theorem search_then {k n a x y : ℕ} (φ : PD.Formula) {p q : ℕ}
     EvalGraph (n + 1) x y (pSearch k (templateCode φ) p q) a :=
   (EvalGraph.search_iff₆ (isSemiformula_templateCode φ)).mpr (Or.inl ⟨hy, h⟩)
 
+/-- The search clauses on a STORED (budget-abstracted) template `templateCodeAt φ k`: the consulted sentence is
+the unabstracted guard (`guardCodeB_templateCodeAt`), so the hypotheses are those of `search_then`/`search_else`. -/
+theorem search_else_at {k n a x y : ℕ} (φ : PD.Formula) {p q : ℕ}
+    (hn : ¬ LenBox TAct k (guardCode (templateCode φ) x y)) (h : EvalGraph n x y q a)
+    (hφ : noSelfIdxF φ = true := by noSelfIdx_tac) :
+    EvalGraph (n + 1) x y (pSearch k (templateCodeAt φ k) p q) a :=
+  (EvalGraph.search_iff_at φ hφ).mpr (Or.inr ⟨hn, h⟩)
+
+theorem search_then_at {k n a x y : ℕ} (φ : PD.Formula) {p q : ℕ}
+    (hy : LenBox TAct k (guardCode (templateCode φ) x y)) (h : EvalGraph n x y p a)
+    (hφ : noSelfIdxF φ = true := by noSelfIdx_tac) :
+    EvalGraph (n + 1) x y (pSearch k (templateCodeAt φ k) p q) a :=
+  (EvalGraph.search_iff_at φ hφ).mpr (Or.inl ⟨hy, h⟩)
+
 /-- A search node whose two branches AGREE plays that value whatever the verdict. -/
 theorem search_either {k n a x y : ℕ} (φ : PD.Formula) {p q : ℕ}
     (hp : EvalGraph n x y p a) (hq : EvalGraph n x y q a) (hφ : noSelfIdxF φ = true := by noSelfIdx_tac) :
@@ -339,6 +358,13 @@ theorem search_either {k n a x y : ℕ} (φ : PD.Formula) {p q : ℕ}
   by_cases hg : LenBox TAct k (guardCode (templateCode φ) x y)
   · exact search_then φ hg hp
   · exact search_else φ hg hq
+
+theorem search_either_at {k n a x y : ℕ} (φ : PD.Formula) {p q : ℕ}
+    (hp : EvalGraph n x y p a) (hq : EvalGraph n x y q a) (hφ : noSelfIdxF φ = true := by noSelfIdx_tac) :
+    EvalGraph (n + 1) x y (pSearch k (templateCodeAt φ k) p q) a := by
+  by_cases hg : LenBox TAct k (guardCode (templateCode φ) x y)
+  · exact search_then_at φ hg hp
+  · exact search_else_at φ hg hq
 
 lemma bot_const_play (n me opp a : ℕ) : EvalGraph (n + 1 + 1) me opp (pBot (pConst a)) a :=
   EvalGraph.bot_iff.mpr (EvalGraph.const_iff.mpr rfl)
@@ -518,6 +544,22 @@ lemma templateCode_ne_of_models {φ ψ : PD.Formula} (me opp : PD.Prog) (h1 : �
   rw [← (Sentence.quote_inj_iff (V := ℕ)).mp hq]
   exact h1
 
+/-- The same separation with the first template STORED (budget-abstracted, `templateCodeAt φ k`): equal stored
+codes would give equal consulted sentences (`guardCodeB_templateCodeAt`), hence equal truth values. -/
+lemma templateCodeAt_ne_templateCode_of_models {φ ψ : PD.Formula} (k : ℕ) (me opp : PD.Prog)
+    (h1 : ℕ↓[LAct] ⊧ sentenceAt me opp φ) (h2 : ¬ ℕ↓[LAct] ⊧ sentenceAt me opp ψ)
+    (hφ : noSelfIdxF φ = true := by noSelfIdx_tac) (hψ : noSelfIdxF ψ = true := by noSelfIdx_tac) :
+    templateCodeAt φ k ≠ templateCode ψ := by
+  intro e
+  apply h2
+  have hg : guardCode (templateCode φ) (progCode me) (progCode opp) = guardCode (templateCode ψ) (progCode me) (progCode opp) := by
+    rw [← guardCodeB_templateCodeAt φ (progCode me) (progCode opp) k hφ, e,
+      guardCodeB_of_template (isSemiformula_templateCode ψ hψ)]
+  have hq : (⌜sentenceAt me opp φ⌝ : ℕ) = ⌜sentenceAt me opp ψ⌝ := by
+    rw [quote_sentenceAt me opp φ hφ, quote_sentenceAt me opp ψ hψ, hg]
+  rw [← (Sentence.quote_inj_iff (V := ℕ)).mp hq]
+  exact h1
+
 end disjoint
 
 /-! ### 7. The searchers' plays from a verdict on their guard -/
@@ -605,7 +647,7 @@ theorem ctb_C_of_ne (k : ℕ) {opp : PD.Prog} (hopp : ProperPlayer opp)
     EvalGraph 2 (progCode (CupodTrollBot k)) (progCode opp) (progCode (CupodTrollBot k)) 0 := by
   have hn := not_found_eq_opp (properPlayer_CupodTrollBot k) hopp (Q := CupodBot k) rfl hne k
   rw [progCode_CupodTrollBot] at hn ⊢
-  exact search_else (phiT k) hn (const_play _ _ _ _)
+  exact search_else_at (phiT k) hn (const_play _ _ _ _)
 
 /-- CupodTroll cooperates with `.bot CooperateBot`. -/
 theorem snd_CupodTrollBot_vs_botCB (k : ℕ) :
@@ -642,7 +684,7 @@ theorem just_D_of_probe (k : ℕ) {opp : PD.Prog} (hopp : ProperPlayer opp) {N :
     EvalGraph 2 (progCode (JustBot k)) (progCode opp) (progCode (JustBot k)) 1 := by
   have hn := not_found_opp_bot (properPlayer_JustBot k) hopp (P := DupocBot k) rfl .C (b := .D) (by decide) h k
   rw [progCode_JustBot] at hn ⊢
-  exact search_else (phiJ k) hn (const_play _ _ _ _)
+  exact search_else_at (phiJ k) hn (const_play _ _ _ _)
 
 /-- Prudent defects against an opponent that defects against it (the outer guard fails). -/
 theorem prudent_D_of_probe (k : ℕ) {opp : PD.Prog} (hopp : ProperPlayer opp) {N : ℕ}
@@ -699,16 +741,25 @@ lemma templateCode_phiG_ne_phiCu : templateCode phiG ≠ templateCode phiCu := b
 
 /-- CupodTroll's and Cupod's templates differ: at the frame `(CooperateBot, CupodBot k)`,
 "the opponent IS `CupodBot k`" is true while "the opponent defects against CooperateBot" is false. -/
-lemma templateCode_phiT_ne_phiCu (k : ℕ) : templateCode (phiT k) ≠ templateCode phiCu := by
-  refine templateCode_ne_of_models CooperateBot (CupodBot k) ?_ ?_
-  · rw [← sentenceAt_subst CooperateBot (CupodBot k) sfp_CooperateBot.1 (properPlayer_CupodBot k) _ rfl]
-    show ℕ↓[LAct] ⊧ sentenceAt CooperateBot (CupodBot k) (.eq (CupodBot k) (CupodBot k))
-    rw [models_sentenceAt_eq _ _ _ _ (properPlayer_CupodBot k)]
-  · rw [← sentenceAt_subst CooperateBot (CupodBot k) sfp_CooperateBot.1 (properPlayer_CupodBot k) _ rfl]
-    show ¬ ℕ↓[LAct] ⊧ sentenceAt CooperateBot (CupodBot k) (.plays (CupodBot k) CooperateBot .D)
-    rw [models_sentenceAt_plays _ _ _ _ _ (properPlayer_CupodBot k) sfp_CooperateBot.1]
-    rintro ⟨N, hN⟩
-    exact absurd (EvalGraph.unique' hN (snd_CupodBot_vs_CooperateBot_aux k)) (by decide)
+lemma models_phiT_at_CB_Cupod (k : ℕ) : ℕ↓[LAct] ⊧ sentenceAt CooperateBot (CupodBot k) (phiT k) := by
+  rw [← sentenceAt_subst CooperateBot (CupodBot k) sfp_CooperateBot.1 (properPlayer_CupodBot k) _ rfl]
+  show ℕ↓[LAct] ⊧ sentenceAt CooperateBot (CupodBot k) (.eq (CupodBot k) (CupodBot k))
+  rw [models_sentenceAt_eq _ _ _ _ (properPlayer_CupodBot k)]
+
+lemma not_models_phiCu_at_CB_Cupod (k : ℕ) : ¬ ℕ↓[LAct] ⊧ sentenceAt CooperateBot (CupodBot k) phiCu := by
+  rw [← sentenceAt_subst CooperateBot (CupodBot k) sfp_CooperateBot.1 (properPlayer_CupodBot k) _ rfl]
+  show ¬ ℕ↓[LAct] ⊧ sentenceAt CooperateBot (CupodBot k) (.plays (CupodBot k) CooperateBot .D)
+  rw [models_sentenceAt_plays _ _ _ _ _ (properPlayer_CupodBot k) sfp_CooperateBot.1]
+  rintro ⟨N, hN⟩
+  exact absurd (EvalGraph.unique' hN (snd_CupodBot_vs_CooperateBot_aux k)) (by decide)
+
+lemma templateCode_phiT_ne_phiCu (k : ℕ) : templateCode (phiT k) ≠ templateCode phiCu :=
+  templateCode_ne_of_models CooperateBot (CupodBot k) (models_phiT_at_CB_Cupod k) (not_models_phiCu_at_CB_Cupod k)
+
+/-- CupodTroll's STORED template (abstracted) differs from Cupod's. -/
+lemma templateCodeAt_phiT_ne_phiCu (k : ℕ) : templateCodeAt (phiT k) k ≠ templateCode phiCu :=
+  templateCodeAt_ne_templateCode_of_models k CooperateBot (CupodBot k) (models_phiT_at_CB_Cupod k)
+    (not_models_phiCu_at_CB_Cupod k)
 
 /-- Wary's and Cupod's templates differ: at the frame `(MirrorBot, MirrorBot)` (a non-terminating
 match), "the opponent does NOT cooperate" is true while "the opponent defects" is false. -/
@@ -733,7 +784,7 @@ lemma progCode_GuardianBot_ne_CupodBot (k : ℕ) : progCode (GuardianBot k) ≠ 
 lemma progCode_CupodTrollBot_ne_CupodBot (k : ℕ) : progCode (CupodTrollBot k) ≠ progCode (CupodBot k) := by
   rw [progCode_CupodTrollBot, progCode_CupodBot]
   intro e
-  exact templateCode_phiT_ne_phiCu k (pSearch_inj e).2.1
+  exact templateCodeAt_phiT_ne_phiCu k (pSearch_inj e).2.1
 
 lemma progCode_WaryBot_ne_CupodBot (k : ℕ) : progCode (WaryBot k) ≠ progCode (CupodBot k) := by
   rw [progCode_WaryBot, progCode_CupodBot]
@@ -1026,10 +1077,10 @@ theorem snd_JustBot_vs_OBot (k : ℕ) :
     rwa [progCode_botDB] at this
   have h1 : ∃ r, EvalGraph 2 (progCode (JustBot k)) (pBot (pConst 0)) (progCode (JustBot k)) r := by
     rw [progCode_JustBot]
-    by_cases hg : LenBox TAct k (guardCode (templateCode (phiJ k)) (pSearch k (templateCode (phiJ k)) (pConst 0) (pConst 1))
+    by_cases hg : LenBox TAct k (guardCode (templateCode (phiJ k)) (pSearch k (templateCodeAt (phiJ k) k) (pConst 0) (pConst 1))
       (pBot (pConst 0)))
-    · exact ⟨0, search_then (phiJ k) hg (const_play _ _ _ _)⟩
-    · exact ⟨1, search_else (phiJ k) hg (const_play _ _ _ _)⟩
+    · exact ⟨0, search_then_at (phiJ k) hg (const_play _ _ _ _)⟩
+    · exact ⟨1, search_else_at (phiJ k) hg (const_play _ _ _ _)⟩
   obtain ⟨r', hr'⟩ := h1
   exact EvalGraph.mono_le (by omega) (obot_D_of_any hr' h2)
 

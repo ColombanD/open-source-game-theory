@@ -150,8 +150,8 @@ theorem evalGraph_of_eval_core (hga : GuardAgree) :
       obtain ⟨N, hN⟩ := ih _ _ _ a (Inv.sim hI) h
       have hmb := hI.2.2.2.2.1
       simp only [modestP, Bool.and_eq_true] at hmb
-      rw [progCode_subst hI.1 hI.2.1 (noSelfIdxP_of_modestP hI.2.2.1) (noSelfIdxP_of_modestP hI.2.2.2.1) p (fragP_of_modestP p hmb.1.2),
-        progCode_subst hI.1 hI.2.1 (noSelfIdxP_of_modestP hI.2.2.1) (noSelfIdxP_of_modestP hI.2.2.2.1) q (fragP_of_modestP q hmb.2)] at hN
+      rw [progCode_subst_atomic hI.1 hI.2.1 (noSelfIdxP_of_modestP hI.2.2.1) (noSelfIdxP_of_modestP hI.2.2.2.1) p (fragP_of_modestP p hmb.1.2) hmb.1.1.1,
+        progCode_subst_atomic hI.1 hI.2.1 (noSelfIdxP_of_modestP hI.2.2.1) (noSelfIdxP_of_modestP hI.2.2.2.1) q (fragP_of_modestP q hmb.2) hmb.1.1.2] at hN
       exact ⟨N + 1, by rw [progCode_sim, EvalGraph.sim_iff]; exact hN⟩
     | ite b c p q =>
       obtain ⟨hIb, hIp, hIq⟩ := Inv.ite hI
@@ -183,12 +183,12 @@ theorem evalGraph_of_eval_core (hga : GuardAgree) :
       · rw [if_pos hg] at h
         obtain ⟨N, hN⟩ := ih me opp p a hIp h
         refine ⟨N + 1, ?_⟩
-        rw [progCode_search, EvalGraph.search_iff₆ (isSemiformula_templateCode φ (noSelfIdxF_of_fragF φ (Inv.fragF_of_search hI))), guardCode_templateCode_progCode]
+        rw [progCode_search, EvalGraph.search_iff_at φ (noSelfIdxF_of_fragF φ (Inv.fragF_of_search hI)), guardCode_templateCode_progCode]
         exact Or.inl ⟨(hga.at_node hI).mp ((PD.BaseTheorems.proofSearch_spec k _).mp hg), hN⟩
       · rw [if_neg hg] at h
         obtain ⟨N, hN⟩ := ih me opp q a hIq h
         refine ⟨N + 1, ?_⟩
-        rw [progCode_search, EvalGraph.search_iff₆ (isSemiformula_templateCode φ (noSelfIdxF_of_fragF φ (Inv.fragF_of_search hI))), guardCode_templateCode_progCode]
+        rw [progCode_search, EvalGraph.search_iff_at φ (noSelfIdxF_of_fragF φ (Inv.fragF_of_search hI)), guardCode_templateCode_progCode]
         exact Or.inr ⟨fun hl ↦ hg ((PD.BaseTheorems.proofSearch_spec k _).mpr
           ((hga.at_node hI).mpr hl)), hN⟩
     | tvote v θ p q => exact (Inv.tvote hI).elim
@@ -238,8 +238,8 @@ theorem eval_of_evalGraph_core (hga : GuardAgree) :
       have hmb := hI.2.2.2.2.1
       simp only [modestP, Bool.and_eq_true] at hmb
       rw [progCode_sim, EvalGraph.sim_iff,
-        ← progCode_subst hI.1 hI.2.1 (noSelfIdxP_of_modestP hI.2.2.1) (noSelfIdxP_of_modestP hI.2.2.2.1) p (fragP_of_modestP p hmb.1.2),
-        ← progCode_subst hI.1 hI.2.1 (noSelfIdxP_of_modestP hI.2.2.1) (noSelfIdxP_of_modestP hI.2.2.2.1) q (fragP_of_modestP q hmb.2)] at h
+        ← progCode_subst_atomic hI.1 hI.2.1 (noSelfIdxP_of_modestP hI.2.2.1) (noSelfIdxP_of_modestP hI.2.2.2.1) p (fragP_of_modestP p hmb.1.2) hmb.1.1.1,
+        ← progCode_subst_atomic hI.1 hI.2.1 (noSelfIdxP_of_modestP hI.2.2.1) (noSelfIdxP_of_modestP hI.2.2.2.1) q (fragP_of_modestP q hmb.2) hmb.1.1.2] at h
       obtain ⟨a, rfl, n, hn⟩ := ih _ _ _ r (Inv.sim hI) h
       exact ⟨a, rfl, n + 1, by rw [PD.eval]; exact hn⟩
     | ite b c p q =>
@@ -262,7 +262,7 @@ theorem eval_of_evalGraph_core (hga : GuardAgree) :
         exact PD.BaseTheorems.eval_mono_le h₂ _ (le_max_right _ _)
     | search k φ p q =>
       obtain ⟨_, hIp, hIq⟩ := Inv.search hI
-      rw [progCode_search, EvalGraph.search_iff₆ (isSemiformula_templateCode φ (noSelfIdxF_of_fragF φ (Inv.fragF_of_search hI))), guardCode_templateCode_progCode] at h
+      rw [progCode_search, EvalGraph.search_iff_at φ (noSelfIdxF_of_fragF φ (Inv.fragF_of_search hI)), guardCode_templateCode_progCode] at h
       rcases h with ⟨hl, hp⟩ | ⟨hl, hq⟩
       · obtain ⟨a, rfl, n, hn⟩ := ih me opp p r hIp hp
         have hg : PD.proofSearch k (φ.subst me opp) = true :=

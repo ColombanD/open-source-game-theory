@@ -300,11 +300,11 @@ theorem dich_JustBot_vs_DBot :
   · intro hn
     refine ⟨?_, floor_JustBot_vs_DBot_right k⟩
     rw [progCode_JustBot] at hn ⊢
-    exact EvalGraph.mono_le (by omega) (search_else (phiJ k) hn (const_play 0 _ _ _))
+    exact EvalGraph.mono_le (by omega) (search_else_at (phiJ k) hn (const_play 0 _ _ _))
   · intro hf
     refine ⟨?_, floor_JustBot_vs_DBot_right k⟩
     rw [progCode_JustBot] at hf ⊢
-    exact EvalGraph.mono_le (by omega) (search_then (phiJ k) hf (const_play 0 _ _ _))
+    exact EvalGraph.mono_le (by omega) (search_then_at (phiJ k) hf (const_play 0 _ _ _))
 
 /-- **Just × EBot** (engine `(D, C)`, pad 5). Hinge: Just's guard "EBot plays C against `.bot (DupocBot k)`". -/
 theorem dich_JustBot_vs_EBot :
@@ -322,11 +322,11 @@ theorem dich_JustBot_vs_EBot :
   · intro hn
     refine ⟨?_, hE k hk⟩
     rw [progCode_JustBot] at hn ⊢
-    exact EvalGraph.mono_le (by omega) (search_else (phiJ k) hn (const_play 0 _ _ _))
+    exact EvalGraph.mono_le (by omega) (search_else_at (phiJ k) hn (const_play 0 _ _ _))
   · intro hf
     refine ⟨?_, hE k hk⟩
     rw [progCode_JustBot] at hf ⊢
-    exact EvalGraph.mono_le (by omega) (search_then (phiJ k) hf (const_play 0 _ _ _))
+    exact EvalGraph.mono_le (by omega) (search_then_at (phiJ k) hf (const_play 0 _ _ _))
 
 /-- **Just × CupodTroll** (engine `(D, C)`, pad 2). Hinge: Just's guard "CupodTroll plays C against the snapshot". -/
 theorem dich_JustBot_vs_CupodTrollBot :
@@ -343,11 +343,11 @@ theorem dich_JustBot_vs_CupodTrollBot :
   · intro hn
     refine ⟨?_, floor_JustBot_vs_CupodTrollBot_right k⟩
     rw [progCode_JustBot] at hn ⊢
-    exact search_else (phiJ k) hn (const_play 0 _ _ _)
+    exact search_else_at (phiJ k) hn (const_play 0 _ _ _)
   · intro hf
     refine ⟨?_, floor_JustBot_vs_CupodTrollBot_right k⟩
     rw [progCode_JustBot] at hf ⊢
-    exact search_then (phiJ k) hf (const_play 0 _ _ _)
+    exact search_then_at (phiJ k) hf (const_play 0 _ _ _)
 
 /-- **CIMCIC × CupodTroll** (engine `(D, C)`, pad 2). Hinge: CIMCIC's guard "I cooperate with CupodTroll ⇒ it
 cooperates with me" (TRUE: its consequent is CupodTroll's else-play). -/
@@ -478,11 +478,11 @@ theorem dich_GuardianBot_vs_JustBot :
   · intro hn
     refine ⟨hG k hk, ?_⟩
     rw [progCode_JustBot] at hn ⊢
-    exact search_else (phiJ k) hn (const_play 0 _ _ _)
+    exact search_else_at (phiJ k) hn (const_play 0 _ _ _)
   · intro hf
     refine ⟨hG k hk, ?_⟩
     rw [progCode_JustBot] at hf ⊢
-    exact search_then (phiJ k) hf (const_play 0 _ _ _)
+    exact search_then_at (phiJ k) hf (const_play 0 _ _ _)
 
 /-- **Cupod × OBot** (engine `(C, D)`, pad 5). OBot's D is settled (`floor_CupodBot_vs_OBot_right`); hinge: Cupod's
 guard "OBot plays D against me" (TRUE). Not found ⇒ Cupod's else-branch C, `(C, D)`; found ⇒ `(D, D)`. -/
@@ -621,13 +621,13 @@ theorem dich_JustBot_vs_PrudentBot :
   · intro hn
     have hJ : EvalGraph 2 (progCode (JustBot k)) (progCode (PrudentBot k)) (progCode (JustBot k)) 1 := by
       rw [progCode_JustBot] at hn ⊢
-      exact search_else (phiJ k) hn (const_play 0 _ _ _)
+      exact search_else_at (phiJ k) hn (const_play 0 _ _ _)
     exact ⟨EvalGraph.mono_le (by omega) hJ,
       EvalGraph.mono_le (by omega) (prudent_D_of_probe k (properPlayer_JustBot k) hJ)⟩
   · intro hf
     refine ⟨?_, fun h ↦ h.elim hPo hPi, hPC⟩
     rw [progCode_JustBot] at hf ⊢
-    exact EvalGraph.mono_le (by omega) (search_then (phiJ k) hf (const_play 0 _ _ _))
+    exact EvalGraph.mono_le (by omega) (search_then_at (phiJ k) hf (const_play 0 _ _ _))
 
 /-- **CIMCIC × Prudent** (engine `llm_outcome_CIMCIC_vs_PrudentBot = (D, D)`, pad 3). Hinges: Prudent's outer guard
 `A` "CIMCIC plays C against me" (outer split) and its prudence guard `B` "CIMCIC plays D against `.bot DefectBot`"
@@ -807,12 +807,12 @@ theorem dich_WaryBot_vs_JustBot :
   · intro hJ
     have hJC : EvalGraph 2 (progCode (JustBot k)) (progCode (WaryBot k)) (progCode (JustBot k)) 0 := by
       rw [progCode_JustBot] at hJ ⊢
-      exact search_then (phiJ k) hJ (const_play 0 _ _ _)
+      exact search_then_at (phiJ k) hJ (const_play 0 _ _ _)
     exact ⟨wary_C_of_probe k (properPlayer_JustBot k) hJC, hJC⟩
   · intro hn
     refine ⟨?_, fun hW ↦ ?_, fun hW ↦ ?_⟩
     · rw [progCode_JustBot] at hn ⊢
-      exact search_else (phiJ k) hn (const_play 0 _ _ _)
+      exact search_else_at (phiJ k) hn (const_play 0 _ _ _)
     · rw [progCode_WaryBot] at hW ⊢
       exact search_then phiW hW (const_play 0 _ _ _)
     · rw [progCode_WaryBot] at hW ⊢
@@ -938,12 +938,12 @@ theorem dich_JustBot_vs_CupodBot :
   · intro hJ
     have hJC : EvalGraph 2 (progCode (JustBot k)) (progCode (CupodBot k)) (progCode (JustBot k)) 0 := by
       rw [progCode_JustBot] at hJ ⊢
-      exact search_then (phiJ k) hJ (const_play 0 _ _ _)
+      exact search_then_at (phiJ k) hJ (const_play 0 _ _ _)
     exact ⟨hJC, cupod_C_of_probe k (properPlayer_JustBot k) hJC⟩
   · intro hn
     refine ⟨?_, fun hCu ↦ ?_, fun hCu ↦ ?_⟩
     · rw [progCode_JustBot] at hn ⊢
-      exact search_else (phiJ k) hn (const_play 0 _ _ _)
+      exact search_else_at (phiJ k) hn (const_play 0 _ _ _)
     · rw [progCode_CupodBot] at hCu ⊢
       exact search_then phiCu hCu (const_play 0 _ _ _)
     · rw [progCode_CupodBot] at hCu ⊢

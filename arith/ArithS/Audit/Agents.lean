@@ -3,6 +3,7 @@ import ArithS.Agents.SysClose
 import ArithS.Agents.SysTemplate
 import ArithS.Agents.InstanceV
 import ArithS.Agents.FitBox
+import ArithS.Agents.CodeTermAbs
 
 /-!
 # ArithS.Audit.Agents — the axiom census of the arithmetized layer: Agents
@@ -73,5 +74,26 @@ namespace ArithS
 #print axioms template13_sysClose
 #print axioms templateCode_sysClose
 #print axioms progCode_sysClose_member
+
+-- Phase 2c (2026-10-01), route (c) made generic — budget abstraction in the stored templates
+-- (`Agents/CodeTermAbs.lean`, `Agents/Code.lean`): a closed program named inside a template is described by
+-- `codeTermMetaAbs k₀`, its `pSearch k₀` budgets written as the slot `#6`; filling the slot with the node's budget
+-- recovers the verbatim term (`subst_codeTermMetaAbs`), so the consulted sentence is the pre-abstraction guard
+-- (`guardCodeB_templateCodeAt`, `EvalGraph.search_iff_at`); on a snapshot-free guard the stored code is today's
+-- `templateCode φ` (`templateCodeAt_eq_templateCode`); the abstracted term is never longer than the verbatim one.
+#print axioms subst_codeTermMetaAbs
+#print axioms codeTermMetaAbs_of_noSearchAt
+#print axioms termLenMeta_emb_codeTermMetaAbs_le
+#print axioms templateAt_some_eq_none
+#print axioms templateCodeAt_eq_templateCode
+#print axioms templateAt_eq_castLE₇
+#print axioms quote_castLE₇
+#print axioms guardCodeB_templateCodeAt
+#print axioms EvalGraph.search_iff_at
+#print axioms templateCodeAt_subst
+#print axioms progCode_subst_closed
+#print axioms templateAt_sysClose
+#print axioms templateCodeAt_sysClose
+#print axioms revalueTemplate_templateCodeAt
 
 end ArithS

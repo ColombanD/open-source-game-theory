@@ -379,22 +379,25 @@ theorem found_Di (S : Sys2c) (hg : S.m₀.g = template13 (entDimG 1)) (ha : S.m�
 
 /-! ### 5. The bridge to the engine's codes at ℕ -/
 
-theorem D_nat (φ₀ : PD.Formula) (a₀ : PD.Action) (m₁ : Prog) (hP : transposeCode (progCode m₁) = progCode m₁) (k : ℕ) :
+theorem D_nat (φ₀ : PD.Formula) (a₀ : PD.Action) (m₁ : Prog) (hP : transposeCode (progCode m₁) = progCode m₁) (k : ℕ)
+    (h₀ : noBudgetSnapshotF φ₀ = true := by noSnap_tac) :
     (Sys2c.mk (SM.ofSearch φ₀ a₀) (progCode m₁) hP).D k =
       progListCode (sys2 (.search k φ₀ (.const a₀) (.const a₀.swap)) m₁) := by
-  unfold D; rw [SM.code_nat, natCast_nat]; rfl
+  unfold D; rw [SM.code_nat _ _ _ h₀, natCast_nat]; rfl
 
-theorem code_nat (φ₀ : PD.Formula) (a₀ : PD.Action) (m₁ : Prog) (hP : transposeCode (progCode m₁) = progCode m₁) (j k : ℕ) :
+theorem code_nat (φ₀ : PD.Formula) (a₀ : PD.Action) (m₁ : Prog) (hP : transposeCode (progCode m₁) = progCode m₁) (j k : ℕ)
+    (h₀ : noBudgetSnapshotF φ₀ = true := by noSnap_tac) :
     (Sys2c.mk (SM.ofSearch φ₀ a₀) (progCode m₁) hP).code j k =
       progCode (.sys (sys2 (.search k φ₀ (.const a₀) (.const a₀.swap)) m₁) j) := by
-  unfold code; rw [D_nat, progCode_sys, natCast_nat]
+  unfold code; rw [D_nat _ _ _ _ _ h₀, progCode_sys, natCast_nat]
 
 theorem guardCodeB_sysClose_nat (φ₀ : PD.Formula) (a₀ : PD.Action) (m₁ : Prog) (hP : transposeCode (progCode m₁) = progCode m₁)
     (k : ℕ) (φ : PD.Formula) (hφ : memberGuardF φ = true)
-    (hns : noSelfIdxF (φ.sysClose (sys2 (.search k φ₀ (.const a₀) (.const a₀.swap)) m₁)) = true) (x y : ℕ) :
+    (hns : noSelfIdxF (φ.sysClose (sys2 (.search k φ₀ (.const a₀) (.const a₀.swap)) m₁)) = true) (x y : ℕ)
+    (h₀ : noBudgetSnapshotF φ₀ = true := by noSnap_tac) :
     guardCodeB (sysCloseTemplate ((Sys2c.mk (SM.ofSearch φ₀ a₀) (progCode m₁) hP).D k) ((⌜template13 φ⌝ : ℕ) : ℕ)) x y k =
       guardCode (templateCode (φ.sysClose (sys2 (.search k φ₀ (.const a₀) (.const a₀.swap)) m₁))) x y := by
-  rw [D_nat]
+  rw [D_nat _ _ _ _ _ h₀]
   show guardCodeB (sysCloseTemplate _ (templateCode φ)) x y k = _
   rw [templateCode_sysClose _ φ hφ, guardCodeB_of_template (isSemiformula_templateCode _ hns)]
 
@@ -420,7 +423,7 @@ theorem found_DiM_engine : ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
   have := h k hk
   rw [← e, show (⌜SDiM.m₀.g⌝ : ℕ) = ⌜template13 (entDimG 1)⌝ from rfl,
     show SDiM = Sys2c.mk (SM.ofSearch (entDimG 1) .D) (progCode (mm 0)) transposeCode_mm0 from rfl,
-    Sys2c.guardCodeB_sysClose_nat (entDimG 1) .D (mm 0) transposeCode_mm0 k (entDimG 1) rfl rfl, Sys2c.code_nat] at this
+    Sys2c.guardCodeB_sysClose_nat (entDimG 1) .D (mm 0) transposeCode_mm0 k (entDimG 1) rfl rfl, Sys2c.code_nat (entDimG 1) .D (mm 0) transposeCode_mm0] at this
   exact this
 
 /-- **τ(DIMCID) at the mirror defects against itself** (the `mirror` column at DIMCID). -/

@@ -69,8 +69,12 @@ example (a : PD.Action) : progCode (.const a) = pConst (actCode a) := progCode_c
 example (p : PD.Prog) : progCode (.bot p) = pBot (progCode p) := progCode_bot p
 example (p q : PD.Prog) : progCode (.sim p q) = pSim (progCode p) (progCode q) := progCode_sim p q
 example (k : ℕ) (φ : PD.Formula) (p q : PD.Prog) :
-    progCode (.search k φ p q) = pSearch k (templateCode φ) (progCode p) (progCode q) :=
+    progCode (.search k φ p q) = pSearch k (templateCodeAt φ k) (progCode p) (progCode q) :=
   progCode_search k φ p q
+/-- On a guard without a budget snapshot the stored template is the unabstracted `templateCode φ`. -/
+example (k : ℕ) (φ : PD.Formula) (p q : PD.Prog) (h : noBudgetSnapshotF φ = true) :
+    progCode (.search k φ p q) = pSearch k (templateCode φ) (progCode p) (progCode q) :=
+  progCode_search_noSnap k φ p q h
 
 /-! ### 6. Descriptions: the term of a code, and what it denotes -/
 
@@ -99,9 +103,10 @@ theorem guard_nat (a me opp : ℕ) :
 
 example {me opp : PD.Prog} (hme : me ≠ .self ∧ me ≠ .opp) (hopp : opp ≠ .self ∧ opp ≠ .opp)
     (hme' : noSelfIdxP me = true) (hopp' : noSelfIdxP opp = true)
+    (hsm : searchFreeP me = true) (hso : searchFreeP opp = true)
     (p : PD.Prog) (hp : fragP p = true) :
     progCode (p.subst me opp) = substCode (progCode me) (progCode opp) (progCode p) :=
-  progCode_subst hme hopp hme' hopp' p hp
+  progCode_subst hme hopp hme' hopp' hsm hso p hp
 
 /-! ### 9. The evaluator at ℕ is a deterministic, fuel-monotone partial function -/
 

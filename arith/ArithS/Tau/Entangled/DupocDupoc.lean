@@ -61,7 +61,7 @@ theorem found_DD_engine : ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
   refine ⟨k₀, fun k hk ↦ ?_⟩
   have := h k hk
   rw [show SDD = Sys2.mk (SM.ofSearch (entDmG 1) .C) (SM.ofSearch (entDmG 0) .C) from rfl] at this
-  rw [Sys2.guardCodeB_sysClose_nat (entDmG 1) (entDmG 0) .C .C k (entDmG 1) rfl rfl, Sys2.code_nat] at this
+  rw [Sys2.guardCodeB_sysClose_nat (entDmG 1) (entDmG 0) .C .C k (entDmG 1) rfl rfl, Sys2.code_nat (entDmG 1) (entDmG 0) .C .C] at this
   exact this
 
 /-- `dupoc × maxconfidence`: C. -/

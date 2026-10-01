@@ -137,6 +137,30 @@ an agent-hour or more. Add to it when you lose one. Grouped by where it bites.*
 * A `match` on `PD.Prog` with nat-literal patterns (`.selfIdx 0`, `.bot (.selfIdx 1)`) reduces by `rfl` on
   constructor-headed arguments and on `1 - 0`, but NOT on `1 - i` for a variable `i`: state member facts for
   `i ≤ 1` and `rcases Nat.le_one_iff_eq_zero_or_eq_one.mp hi with rfl | rfl <;> rfl`.
+* **Budget abstraction (Phase 2c, 2026-10-01)** — `progCode (.search k φ p q)` stores `templateCodeAt φ k`, NOT
+  `templateCode φ`. Every `simp [Bot, actCode]` bridge that states `pSearch k (templateCode φ) …` now yields
+  `templateCodeAt`; `rw [Bot, progCode_search_noSnap _ _ _ _ rfl]` first (the `rfl` is postponed until `rw`
+  fixes `φ`, so `rfl` on `noBudgetSnapshotF φ = true` works for a concrete snapshot-free guard and FAILS exactly
+  when the guard freezes a budget-carrying program — the failure IS the classification). An `exact search_then φ
+  …` against a code storing `templateCodeAt` does not fail, it TIMES OUT (`whnf` tries to unify the two
+  template codes through the giant quotes): use `search_then_at`/`search_else_at`/`search_either_at`
+  (`Cells/SoundnessCells`), `EvalGraph.search_iff_at`, `bit_search_(not_)found_at`, the `_at` kit of
+  `Tau/Quine.lean`. Two template codes with one side stored: `templateCodeAt_ne_templateCode_of_models`.
+* `progCode_subst` is NOT an equation on arbitrary players any more: a budget-`k₀` searcher substituted for
+  `.self`/`.opp` into a node of budget `k₀` is described abstractly by the engine's `subst` and verbatim by
+  `substCode` — two codes for one consulted sentence. It holds for search-free players (`searchFreeP`) or a
+  closed body (`progCode_subst_closed`); the Bridge's `.sim` step needs only `progCode_subst_atomic`.
+* The member-slot equation forces the design: `templateAt_sysClose` is literal only if the closed guard describes
+  `.bot (.sys defs j)` exactly as the closer fills the pronoun slot (verbatim `descriptionsSys`), so
+  `codeTermMetaAbs` does NOT descend into `pSys` (`codeTermMetaAbs_sys`). Abstracting inside systems needs a
+  code-level Δ₁ `codeTermAbs` in `Guard`/`SysClose` (the (α) upgrade, not done).
+* A theorem stated for a generic `φ` with a `noBudgetSnapshotF`/`noSelfIdxF` autoParam cannot be `rw`-applied
+  bare (`rw [Sys2.code_nat]`): the autoParam runs before unification. Name the formulas at the call site
+  (`Sys2.code_nat (entDimG 1) (entCmG 0) .D .D`) or pass `_ … rfl`.
+* Inside `theorem NoSearchAt.transposeCode … := by … rw [transposeCode]`, the bare name resolves to the theorem
+  itself (recursive reference) — write `ArithS.transposeCode`, or name the theorem `.transpose`.
+* `rfl` does not see through `Rew.bShift (func f v)` two levels deep: `rw [Rew.func]; congr 1; funext i;
+  fin_cases i` and repeat per level (`bShift_ppairTermMeta`).
 
 ## 5. Tooling
 

@@ -81,77 +81,84 @@ mutual
       simp only [noSelfIdxP, Bool.and_eq_true] at h
       simp only [PD.Prog.sysClose, progCode_ite, progCode_sysClose_of_noSelfIdxP b defs h.1.1,
         progCode_sysClose_of_noSelfIdxP p defs h.1.2, progCode_sysClose_of_noSelfIdxP q defs h.2]
-    | .search _ φ p q, defs, h => by
+    | .search k φ p q, defs, h => by
       simp only [noSelfIdxP, Bool.and_eq_true] at h
       simp only [PD.Prog.sysClose, progCode_search, progCode_sysClose_of_noSelfIdxP p defs h.1.2,
         progCode_sysClose_of_noSelfIdxP q defs h.2]
-      unfold templateCode
-      rw [template13_sysClose_of_noSelfIdxF φ defs h.1.1]
+      unfold templateCodeAt
+      rw [templateAt_sysClose_of_noSelfIdxF (some k) φ defs h.1.1]
     | .tvote _ _ p q, defs, h => by
       simp only [noSelfIdxP, Bool.and_eq_true] at h
       simp only [PD.Prog.sysClose, progCode_tvote, progCode_sysClose_of_noSelfIdxP p defs h.1,
         progCode_sysClose_of_noSelfIdxP q defs h.2]
     | .sys _ _, _, _ => rfl
     | .selfIdx _, _, h => by simp [noSelfIdxP] at h
-  /-- A pronoun-free formula's thirteen-variable template is fixed by the closer. -/
-  theorem template13_sysClose_of_noSelfIdxF : ∀ (φ : PD.Formula) (defs : PD.ProgList), noSelfIdxF φ = true →
-      template13 (φ.sysClose defs) = template13 φ
-    | .plays p q a, defs, h => by
+  /-- A pronoun-free formula's thirteen-variable template (at any node budget) is fixed by the closer. -/
+  theorem templateAt_sysClose_of_noSelfIdxF : ∀ (k₀ : Option ℕ) (φ : PD.Formula) (defs : PD.ProgList), noSelfIdxF φ = true →
+      templateAt (φ.sysClose defs) k₀ = templateAt φ k₀
+    | k₀, .plays p q a, defs, h => by
       simp only [noSelfIdxF, Bool.and_eq_true] at h
-      rw [PD.Formula.sysClose, template13_plays, template13_plays, progGraph13_sysClose_of_noSelfIdxP p defs h.1,
-        progGraph13_sysClose_of_noSelfIdxP q defs h.2]
-    | .impl φ ψ, defs, h => by
+      rw [PD.Formula.sysClose, templateAt_plays, templateAt_plays, progGraphAt_sysClose_of_noSelfIdxP k₀ p defs h.1,
+        progGraphAt_sysClose_of_noSelfIdxP k₀ q defs h.2]
+    | k₀, .impl φ ψ, defs, h => by
       simp only [noSelfIdxF, Bool.and_eq_true] at h
-      rw [PD.Formula.sysClose, template13_impl, template13_impl, template13_sysClose_of_noSelfIdxF φ defs h.1,
-        template13_sysClose_of_noSelfIdxF ψ defs h.2]
-    | .neg φ, defs, h => by
+      rw [PD.Formula.sysClose, templateAt_impl, templateAt_impl, templateAt_sysClose_of_noSelfIdxF k₀ φ defs h.1,
+        templateAt_sysClose_of_noSelfIdxF k₀ ψ defs h.2]
+    | k₀, .neg φ, defs, h => by
       simp only [noSelfIdxF] at h
-      rw [PD.Formula.sysClose, template13_neg, template13_neg, template13_sysClose_of_noSelfIdxF φ defs h]
-    | .box k ψ, defs, h => by
+      rw [PD.Formula.sysClose, templateAt_neg, templateAt_neg, templateAt_sysClose_of_noSelfIdxF k₀ φ defs h]
+    | k₀, .box k ψ, defs, h => by
       simp only [noSelfIdxF] at h
-      rw [PD.Formula.sysClose, template13_box, template13_box]
-      unfold templateCode
-      rw [template13_sysClose_of_noSelfIdxF ψ defs h]
-    | .eq p q, defs, h => by
+      rw [PD.Formula.sysClose, templateAt_box, templateAt_box]
+      unfold templateCode template13
+      rw [templateAt_sysClose_of_noSelfIdxF none ψ defs h]
+    | k₀, .eq p q, defs, h => by
       simp only [noSelfIdxF, Bool.and_eq_true] at h
-      rw [PD.Formula.sysClose, template13_eq, template13_eq, progGraph13_sysClose_of_noSelfIdxP p defs h.1,
+      rw [PD.Formula.sysClose, templateAt_eq, templateAt_eq, progGraphAt_sysClose_of_noSelfIdxP k₀ p defs h.1,
         progCode_sysClose_of_noSelfIdxP q defs h.2]
-    | .diag _ _, _, _ => by rw [PD.Formula.sysClose, template13_diag, template13_diag]
+    | k₀, .diag _ _, _, _ => by rw [PD.Formula.sysClose, templateAt_diag, templateAt_diag]
   /-- The frame description of a pronoun-free program is fixed by the closer. -/
-  theorem progGraph13_sysClose_of_noSelfIdxP : ∀ (p : PD.Prog) (defs : PD.ProgList), noSelfIdxP p = true →
-      progGraph13 (p.sysClose defs) = progGraph13 p
-    | .self, _, _ => rfl
-    | .opp, _, _ => rfl
-    | .const a, defs, h => by
-      unfold progGraph13
-      rw [progAux13_of_ne (sysClose_ne_self (by simp) defs) (sysClose_ne_opp (by simp) defs) (pronounP_sysClose h defs),
-        progAux13_of_ne (by simp) (by simp) rfl, progCode_sysClose_of_noSelfIdxP (.const a) defs h]
-    | .bot p, defs, h => by
-      unfold progGraph13
-      rw [progAux13_of_ne (sysClose_ne_self (by simp) defs) (sysClose_ne_opp (by simp) defs) (pronounP_sysClose h defs),
-        progAux13_of_ne (by simp) (by simp) (pronounP_eq_false_of_noSelfIdxP h), progCode_sysClose_of_noSelfIdxP (.bot p) defs h]
-    | .sim p q, defs, h => by
-      unfold progGraph13
-      rw [progAux13_of_ne (sysClose_ne_self (by simp) defs) (sysClose_ne_opp (by simp) defs) (pronounP_sysClose h defs),
-        progAux13_of_ne (by simp) (by simp) rfl, progCode_sysClose_of_noSelfIdxP (.sim p q) defs h]
-    | .ite b a p q, defs, h => by
-      unfold progGraph13
-      rw [progAux13_of_ne (sysClose_ne_self (by simp) defs) (sysClose_ne_opp (by simp) defs) (pronounP_sysClose h defs),
-        progAux13_of_ne (by simp) (by simp) rfl, progCode_sysClose_of_noSelfIdxP (.ite b a p q) defs h]
-    | .search k φ p q, defs, h => by
-      unfold progGraph13
-      rw [progAux13_of_ne (sysClose_ne_self (by simp) defs) (sysClose_ne_opp (by simp) defs) (pronounP_sysClose h defs),
-        progAux13_of_ne (by simp) (by simp) rfl, progCode_sysClose_of_noSelfIdxP (.search k φ p q) defs h]
-    | .tvote v θ p q, defs, h => by
-      unfold progGraph13
-      rw [progAux13_of_ne (sysClose_ne_self (by simp) defs) (sysClose_ne_opp (by simp) defs) (pronounP_sysClose h defs),
-        progAux13_of_ne (by simp) (by simp) rfl, progCode_sysClose_of_noSelfIdxP (.tvote v θ p q) defs h]
-    | .sys d i, defs, h => by
-      unfold progGraph13
-      rw [progAux13_of_ne (sysClose_ne_self (by simp) defs) (sysClose_ne_opp (by simp) defs) (pronounP_sysClose h defs),
-        progAux13_of_ne (by simp) (by simp) rfl, progCode_sysClose_of_noSelfIdxP (.sys d i) defs h]
-    | .selfIdx _, _, h => by simp [noSelfIdxP] at h
+  theorem progGraphAt_sysClose_of_noSelfIdxP : ∀ (k₀ : Option ℕ) (p : PD.Prog) (defs : PD.ProgList), noSelfIdxP p = true →
+      progGraphAt k₀ (p.sysClose defs) = progGraphAt k₀ p
+    | _, .self, _, _ => rfl
+    | _, .opp, _, _ => rfl
+    | k₀, .const a, defs, h => by
+      unfold progGraphAt
+      rw [progAuxAt_of_ne _ (sysClose_ne_self (by simp) defs) (sysClose_ne_opp (by simp) defs) (pronounP_sysClose h defs),
+        progAuxAt_of_ne _ (by simp) (by simp) rfl, progCode_sysClose_of_noSelfIdxP (.const a) defs h]
+    | k₀, .bot p, defs, h => by
+      unfold progGraphAt
+      rw [progAuxAt_of_ne _ (sysClose_ne_self (by simp) defs) (sysClose_ne_opp (by simp) defs) (pronounP_sysClose h defs),
+        progAuxAt_of_ne _ (by simp) (by simp) (pronounP_eq_false_of_noSelfIdxP h), progCode_sysClose_of_noSelfIdxP (.bot p) defs h]
+    | k₀, .sim p q, defs, h => by
+      unfold progGraphAt
+      rw [progAuxAt_of_ne _ (sysClose_ne_self (by simp) defs) (sysClose_ne_opp (by simp) defs) (pronounP_sysClose h defs),
+        progAuxAt_of_ne _ (by simp) (by simp) rfl, progCode_sysClose_of_noSelfIdxP (.sim p q) defs h]
+    | k₀, .ite b a p q, defs, h => by
+      unfold progGraphAt
+      rw [progAuxAt_of_ne _ (sysClose_ne_self (by simp) defs) (sysClose_ne_opp (by simp) defs) (pronounP_sysClose h defs),
+        progAuxAt_of_ne _ (by simp) (by simp) rfl, progCode_sysClose_of_noSelfIdxP (.ite b a p q) defs h]
+    | k₀, .search k φ p q, defs, h => by
+      unfold progGraphAt
+      rw [progAuxAt_of_ne _ (sysClose_ne_self (by simp) defs) (sysClose_ne_opp (by simp) defs) (pronounP_sysClose h defs),
+        progAuxAt_of_ne _ (by simp) (by simp) rfl, progCode_sysClose_of_noSelfIdxP (.search k φ p q) defs h]
+    | k₀, .tvote v θ p q, defs, h => by
+      unfold progGraphAt
+      rw [progAuxAt_of_ne _ (sysClose_ne_self (by simp) defs) (sysClose_ne_opp (by simp) defs) (pronounP_sysClose h defs),
+        progAuxAt_of_ne _ (by simp) (by simp) rfl, progCode_sysClose_of_noSelfIdxP (.tvote v θ p q) defs h]
+    | k₀, .sys d i, defs, h => by
+      unfold progGraphAt
+      rw [progAuxAt_of_ne _ (sysClose_ne_self (by simp) defs) (sysClose_ne_opp (by simp) defs) (pronounP_sysClose h defs),
+        progAuxAt_of_ne _ (by simp) (by simp) rfl, progCode_sysClose_of_noSelfIdxP (.sys d i) defs h]
+    | _, .selfIdx _, _, h => by simp [noSelfIdxP] at h
 end
+
+/-- The unabstracted instance (today's name). -/
+theorem template13_sysClose_of_noSelfIdxF (φ : PD.Formula) (defs : PD.ProgList) (h : noSelfIdxF φ = true) :
+    template13 (φ.sysClose defs) = template13 φ := templateAt_sysClose_of_noSelfIdxF none φ defs h
+
+theorem progGraph13_sysClose_of_noSelfIdxP (p : PD.Prog) (defs : PD.ProgList) (h : noSelfIdxP p = true) :
+    progGraph13 (p.sysClose defs) = progGraph13 p := progGraphAt_sysClose_of_noSelfIdxP none p defs h
 
 /-! ### Member guards -/
 
@@ -182,24 +189,6 @@ def memberP : PD.Prog → Bool
   | .sys _ _ => true
   | .selfIdx _ => true
 
-lemma pronounP_cases {p : PD.Prog} (h : pronounP p = true) :
-    p = .selfIdx 0 ∨ p = .selfIdx 1 ∨ p = .bot (.selfIdx 0) ∨ p = .bot (.selfIdx 1) := by
-  cases p
-  case selfIdx j =>
-    rcases j with _ | _ | j
-    · exact Or.inl rfl
-    · exact Or.inr (Or.inl rfl)
-    · simp [pronounP] at h
-  case bot q =>
-    cases q
-    case selfIdx j =>
-      rcases j with _ | _ | j
-      · exact Or.inr (Or.inr (Or.inl rfl))
-      · exact Or.inr (Or.inr (Or.inr rfl))
-      · simp [pronounP] at h
-    all_goals simp [pronounP] at h
-  all_goals simp [pronounP] at h
-
 /-! ### Lemma A′: the member slots filled, atom by atom -/
 
 /-- The member-slot substitution, as meta terms: `#0..#6` kept, the closed description triples of the two
@@ -209,10 +198,17 @@ noncomputable def vSys13 (D : ℕ) : Fin 13 → Semiterm LAct Empty 13 :=
     cl (canonicalMeta (pSys D 0)), cl (revalueUMeta (pSys D 0)), cl (revalueWMeta (pSys D 0)),
     cl (canonicalMeta (pSys D 1)), cl (revalueUMeta (pSys D 1)), cl (revalueWMeta (pSys D 1))]
 
+/-- The closed description of a bot-wrapped system is the same at every node budget (a system is opaque to the
+abstraction, `codeTermMetaAbs_sys`). -/
+lemma closedDescAt_bot_sys (k₀ : Option ℕ) (D j : ℕ) : closedDescAt k₀ (pBot (pSys D j)) = closedDesc13 (pBot (pSys D j)) := by
+  cases k₀ with
+  | none => rfl
+  | some k => exact closedDescAt_of_noSearchAt ((NoSearchAt.bot _ (NoSearchAt.sys k D j)).canonical)
+
 /-- **Lemma A′**: substituting the member descriptions into the description of a member-atom program gives
 the description of the closed program. `w` reads the member slots as the closed descriptions of
 `pSys D 0`/`pSys D 1` and agrees with `w'` on the program variable and the frame. -/
-lemma progAux13_sysClose {m : ℕ} (defs : PD.ProgList) {p : PD.Prog} (hp : memberAtomP p = true)
+lemma progAuxAt_sysClose {m : ℕ} (k₀ : Option ℕ) (defs : PD.ProgList) {p : PD.Prog} (hp : memberAtomP p = true)
     (w w' : Fin 14 → Semiterm LAct Empty m) (hf : ∀ i : Fin 14, i.val ≤ 7 → w i = w' i)
     (h8 : w 8 = cl (canonicalMeta (pSys (progListCode defs) 0)))
     (h9 : w 9 = cl (revalueUMeta (pSys (progListCode defs) 0)))
@@ -220,30 +216,32 @@ lemma progAux13_sysClose {m : ℕ} (defs : PD.ProgList) {p : PD.Prog} (hp : memb
     (h11 : w 11 = cl (canonicalMeta (pSys (progListCode defs) 1)))
     (h12 : w 12 = cl (revalueUMeta (pSys (progListCode defs) 1)))
     (h13 : w 13 = cl (revalueWMeta (pSys (progListCode defs) 1))) :
-    progAux13 p (progCode p) ⇜ w = progAux13 (p.sysClose defs) (progCode (p.sysClose defs)) ⇜ w' := by
+    progAuxAt k₀ p (progCode p) ⇜ w = progAuxAt k₀ (p.sysClose defs) (progCode (p.sysClose defs)) ⇜ w' := by
   have h0 := hf 0 (by decide)
   by_cases hpr : pronounP p = true
   · rcases pronounP_cases hpr with rfl | rfl | rfl | rfl
     · -- `.selfIdx 0 ↦ .sys defs 0`
-      rw [progAux13_selfIdx0, PD.Prog.sysClose, progAux13_of_ne (by simp) (by simp) rfl, progCode_sys, closedDesc13_subst]
+      rw [progAuxAt_selfIdx0, PD.Prog.sysClose, progAuxAt_of_ne _ (by simp) (by simp) rfl, progCode_sys, closedDescAt_subst,
+        canonicalSlot_of_sys]
       unfold Rewriting.subst
       rw [rew_descF]
       show descF (Rew.bShift (w 0)) (Rew.bShift (w 8)) (Rew.bShift (w 9)) (Rew.bShift (w 10)) = _
       rw [h0, h8, h9, h10, rew_cl, rew_cl, rew_cl]
-    · rw [progAux13_selfIdx1, PD.Prog.sysClose, progAux13_of_ne (by simp) (by simp) rfl, progCode_sys, closedDesc13_subst]
+    · rw [progAuxAt_selfIdx1, PD.Prog.sysClose, progAuxAt_of_ne _ (by simp) (by simp) rfl, progCode_sys, closedDescAt_subst,
+        canonicalSlot_of_sys]
       unfold Rewriting.subst
       rw [rew_descF]
       show descF (Rew.bShift (w 0)) (Rew.bShift (w 11)) (Rew.bShift (w 12)) (Rew.bShift (w 13)) = _
       rw [h0, h11, h12, h13, rew_cl, rew_cl, rew_cl]
     · -- `.bot (.selfIdx 0) ↦ .bot (.sys defs 0)`: the pronoun clause meets the closed description of `pBot (pSys d 0)`
-      rw [progAux13_botSelfIdx0, PD.Prog.sysClose, PD.Prog.sysClose, progAux13_of_ne (by simp) (by simp) rfl,
-        progCode_bot, progCode_sys, closedDesc13_subst, revalueUMeta_pBot, revalueWMeta_pBot]
+      rw [progAuxAt_botSelfIdx0, PD.Prog.sysClose, PD.Prog.sysClose, progAuxAt_of_ne _ (by simp) (by simp) rfl,
+        progCode_bot, progCode_sys, closedDescAt_bot_sys, closedDesc13_subst, revalueUMeta_pBot, revalueWMeta_pBot]
       unfold Rewriting.subst
       rw [rew_descF, rew_pBotTerm]
       show descF (Rew.bShift (w 0)) (pBotTerm (Rew.bShift (w 8))) (Rew.bShift (w 9)) (Rew.bShift (w 10)) = _
       rw [h0, h8, h9, h10, rew_cl, rew_cl, rew_cl, pBotTerm_canonicalMeta]
-    · rw [progAux13_botSelfIdx1, PD.Prog.sysClose, PD.Prog.sysClose, progAux13_of_ne (by simp) (by simp) rfl,
-        progCode_bot, progCode_sys, closedDesc13_subst, revalueUMeta_pBot, revalueWMeta_pBot]
+    · rw [progAuxAt_botSelfIdx1, PD.Prog.sysClose, PD.Prog.sysClose, progAuxAt_of_ne _ (by simp) (by simp) rfl,
+        progCode_bot, progCode_sys, closedDescAt_bot_sys, closedDesc13_subst, revalueUMeta_pBot, revalueWMeta_pBot]
       unfold Rewriting.subst
       rw [rew_descF, rew_pBotTerm]
       show descF (Rew.bShift (w 0)) (pBotTerm (Rew.bShift (w 11))) (Rew.bShift (w 12)) (Rew.bShift (w 13)) = _
@@ -253,7 +251,7 @@ lemma progAux13_sysClose {m : ℕ} (defs : PD.ProgList) {p : PD.Prog} (hp : memb
       exact hp.resolve_left hpr
     by_cases h1 : p = .self
     · subst h1
-      rw [PD.Prog.sysClose, progAux13_self]
+      rw [PD.Prog.sysClose, progAuxAt_self]
       unfold Rewriting.subst
       rw [rew_descF, rew_descF]
       show descF (Rew.bShift (w 0)) (Rew.bShift (w 1)) (Rew.bShift (w 2)) (Rew.bShift (w 3)) =
@@ -261,34 +259,34 @@ lemma progAux13_sysClose {m : ℕ} (defs : PD.ProgList) {p : PD.Prog} (hp : memb
       rw [h0, hf 1 (by decide), hf 2 (by decide), hf 3 (by decide)]
     by_cases h2 : p = .opp
     · subst h2
-      rw [PD.Prog.sysClose, progAux13_opp]
+      rw [PD.Prog.sysClose, progAuxAt_opp]
       unfold Rewriting.subst
       rw [rew_descF, rew_descF]
       show descF (Rew.bShift (w 0)) (Rew.bShift (w 4)) (Rew.bShift (w 5)) (Rew.bShift (w 6)) =
         descF (Rew.bShift (w' 0)) (Rew.bShift (w' 4)) (Rew.bShift (w' 5)) (Rew.bShift (w' 6))
       rw [h0, hf 4 (by decide), hf 5 (by decide), hf 6 (by decide)]
-    rw [progAux13_of_ne h1 h2 (pronounP_eq_false_of_noSelfIdxP hns),
-      progAux13_of_ne (sysClose_ne_self h1 defs) (sysClose_ne_opp h2 defs) (pronounP_sysClose hns defs),
-      progCode_sysClose_of_noSelfIdxP p defs hns, closedDesc13_subst, closedDesc13_subst, h0]
+    rw [progAuxAt_of_ne _ h1 h2 (pronounP_eq_false_of_noSelfIdxP hns),
+      progAuxAt_of_ne _ (sysClose_ne_self h1 defs) (sysClose_ne_opp h2 defs) (pronounP_sysClose hns defs),
+      progCode_sysClose_of_noSelfIdxP p defs hns, closedDescAt_subst, closedDescAt_subst, h0, hf 7 (by decide)]
 
 /-! ### The semantic equation -/
 
 /-- **The member-slot equation, meta level**: on a member guard, filling the member slots with the members'
 descriptions IS the thirteen-variable template of the closed guard — literally. -/
-theorem template13_sysClose (defs : PD.ProgList) :
+theorem templateAt_sysClose (defs : PD.ProgList) (k₀ : Option ℕ) :
     ∀ φ : PD.Formula, memberGuardF φ = true →
-      template13 φ ⇜ vSys13 (progListCode defs) = template13 (φ.sysClose defs)
+      templateAt φ k₀ ⇜ vSys13 (progListCode defs) = templateAt (φ.sysClose defs) k₀
   | .plays p q a, h => by
     simp only [memberGuardF, Bool.and_eq_true] at h
-    rw [PD.Formula.sysClose, template13_plays, template13_plays]
-    unfold progGraph13
+    rw [PD.Formula.sysClose, templateAt_plays, templateAt_plays]
+    unfold progGraphAt
     simp only [Rewriting.app_exs, Rew.q_subst, LogicalConnective.HomClass.map_and, rew_subst_eq]
     congr 4
-    · refine progAux13_sysClose defs h.1 _ _ ?_ ?_ ?_ ?_ ?_ ?_ ?_
+    · refine progAuxAt_sysClose k₀ defs h.1 _ _ ?_ ?_ ?_ ?_ ?_ ?_ ?_
       · intro i hi; fin_cases i <;> first | rfl | exact absurd hi (by decide)
       all_goals (show Rew.bShift (Rew.bShift (Rew.bShift (cl _))) = _; rw [rew_cl, rew_cl, rew_cl])
     · congr 1
-      · refine progAux13_sysClose defs h.2 _ _ ?_ ?_ ?_ ?_ ?_ ?_ ?_
+      · refine progAuxAt_sysClose k₀ defs h.2 _ _ ?_ ?_ ?_ ?_ ?_ ?_ ?_
         · intro i hi; fin_cases i <;> first | rfl | exact absurd hi (by decide)
         all_goals (show Rew.bShift (Rew.bShift (Rew.bShift (cl _))) = _; rw [rew_cl, rew_cl, rew_cl])
       · congr 1
@@ -301,35 +299,39 @@ theorem template13_sysClose (defs : PD.ProgList) :
         · exact rew_cl _ _
   | .impl φ ψ, h => by
     simp only [memberGuardF, Bool.and_eq_true] at h
-    rw [PD.Formula.sysClose, template13_impl, template13_impl, ← template13_sysClose defs φ h.1,
-      ← template13_sysClose defs ψ h.2]
+    rw [PD.Formula.sysClose, templateAt_impl, templateAt_impl, ← templateAt_sysClose defs k₀ φ h.1,
+      ← templateAt_sysClose defs k₀ ψ h.2]
     unfold Rewriting.subst
     rw [LogicalConnective.HomClass.map_imply]
   | .neg φ, h => by
     simp only [memberGuardF] at h
-    rw [PD.Formula.sysClose, template13_neg, template13_neg, ← template13_sysClose defs φ h]
+    rw [PD.Formula.sysClose, templateAt_neg, templateAt_neg, ← templateAt_sysClose defs k₀ φ h]
     unfold Rewriting.subst
     rw [LogicalConnective.HomClass.map_neg]
   | .box _ _, h => by simp [memberGuardF] at h
   | .eq p q, h => by
     simp only [memberGuardF, Bool.and_eq_true] at h
-    rw [PD.Formula.sysClose, template13_eq, template13_eq]
-    unfold progGraph13
+    rw [PD.Formula.sysClose, templateAt_eq, templateAt_eq]
+    unfold progGraphAt
     simp only [Rewriting.app_exs, Rew.q_subst, LogicalConnective.HomClass.map_and, rew_subst_eq]
     congr 3
-    · refine progAux13_sysClose defs h.1 _ _ ?_ ?_ ?_ ?_ ?_ ?_ ?_
+    · refine progAuxAt_sysClose k₀ defs h.1 _ _ ?_ ?_ ?_ ?_ ?_ ?_ ?_
       · intro i hi; fin_cases i <;> first | rfl | exact absurd hi (by decide)
       all_goals (show Rew.bShift (Rew.bShift (cl _)) = _; rw [rew_cl, rew_cl])
     · congr 1
-      · rw [closedDesc13_subst, closedDesc13_subst, progCode_sysClose_of_noSelfIdxP q defs h.2]; rfl
+      · rw [closedDescAt_subst, closedDescAt_subst, progCode_sysClose_of_noSelfIdxP q defs h.2]; rfl
       · rw [Semiformula.rew_rel]
         congr 1
         funext i
         fin_cases i <;> rfl
   | .diag _ _, _ => by
-    rw [PD.Formula.sysClose, template13_diag, template13_diag]
+    rw [PD.Formula.sysClose, templateAt_diag, templateAt_diag]
     unfold Rewriting.subst
     rw [LogicalConnective.HomClass.map_bot]
+
+/-- The unabstracted instance (today's name). -/
+theorem template13_sysClose (defs : PD.ProgList) (φ : PD.Formula) (h : memberGuardF φ = true) :
+    template13 φ ⇜ vSys13 (progListCode defs) = template13 (φ.sysClose defs) := templateAt_sysClose defs none φ h
 
 /-! ### The code equation -/
 
@@ -365,6 +367,14 @@ theorem templateCode_sysClose (defs : PD.ProgList) (φ : PD.Formula) (h : member
   unfold templateCode
   rw [← template13_sysClose defs φ h, quote_subst_gen, semitermVec_val_vSys13]
 
+/-- **The member-slot equation on the STORED template codes**: the closer's action on a member's stored template
+at budget `k` is the stored template of the closed guard at `k`. -/
+theorem templateCodeAt_sysClose (defs : PD.ProgList) (φ : PD.Formula) (k : ℕ) (h : memberGuardF φ = true) :
+    sysCloseTemplate (progListCode defs) (templateCodeAt φ k) = templateCodeAt (φ.sysClose defs) k := by
+  rw [sysCloseTemplate_of_template₁₃ (isSemiformula_templateCodeAt13 φ k)]
+  unfold templateCodeAt
+  rw [← templateAt_sysClose defs (some k) φ h, quote_subst_gen, semitermVec_val_vSys13]
+
 /-- **The closer equation on compiled members**: `sysCloseCode` is the engine's `Prog.sysClose` on the code of
 every program whose search guards are member guards. -/
 theorem progCode_sysClose_member (defs : PD.ProgList) :
@@ -383,7 +393,7 @@ theorem progCode_sysClose_member (defs : PD.ProgList) :
       progCode_sysClose_member defs q h.2]
   | .search k φ p q, h => by
     simp only [memberP, Bool.and_eq_true] at h
-    simp only [PD.Prog.sysClose, progCode_search, sysCloseCode_search, templateCode_sysClose defs φ h.1.1,
+    simp only [PD.Prog.sysClose, progCode_search, sysCloseCode_search, templateCodeAt_sysClose defs φ k h.1.1,
       progCode_sysClose_member defs p h.1.2, progCode_sysClose_member defs q h.2]
   | .tvote v _ p q, h => by
     simp only [memberP, Bool.and_eq_true] at h

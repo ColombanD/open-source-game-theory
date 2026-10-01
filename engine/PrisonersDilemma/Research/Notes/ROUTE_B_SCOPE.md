@@ -210,6 +210,11 @@ Three routes (USER DECISION):
      trusted base (`SPRIME_DESIGN_RATIONALE.md`), every code equation re-proved.
 Recommendation: (b) now for the Just cells (one agent-day), (a) or (c) as the general fix decided
 together with the LegibleBot node-data question (Phase 5) — they are the same design decision.
+*2026-10-01: (c) made GENERIC landed (Phase 2c of `SPRIME_SOURCE_OF_TRUTH.md`): the translation itself writes the
+slot — `progCode (.search k φ p q)` stores `templateCodeAt φ k`, every closed program inside described with its
+`pSearch k` budgets as `#6` (`Agents/CodeTermAbs.lean`); `progCode (JustBot k)`/`progCode (CupodTrollBot k)` are
+constant-template searchers without a hand twin; the Just/CupodTroll cells themselves still sit on the hand
+twins until their Löb families are re-run on the general templates.*
 
 * 2026-09-23 (later): **Phase 2 JustBot family**: cells (1) bot-wrapped Dupoc self-coop and (3)
   Just × Mirror DONE unconditional (`8df39b4`, `b9d0dcf`); Just × Just / Just × Dupoc blocked by §7.

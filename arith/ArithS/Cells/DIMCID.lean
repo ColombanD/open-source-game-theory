@@ -144,7 +144,7 @@ lemma DimcidV_nat (k : ℕ) : DimcidV (V := ℕ) k = Dimcid k := rfl
 
 /-- **The bridge to the engine**: the code of the engine's `DIMCID k` is `Dimcid k`. -/
 theorem progCode_DIMCID (k : ℕ) : progCode (PD.Bots.DIMCID k) = Dimcid k := by
-  simp [PD.Bots.DIMCID, actCode]
+  rw [PD.Bots.DIMCID, progCode_search_noSnap _ _ _ _ rfl]; simp only [progCode_const, actCode]
   change pSearch k (templateCode phiD) _ _ = _
   rw [templateCode_eq_quote_template phiD (noSelfIdxF_of_fragF _ fragF_phiD)]; rfl
 

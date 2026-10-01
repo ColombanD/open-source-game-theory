@@ -41,6 +41,16 @@ opponents (`TitForTatBot`, `EBot`, …) are budget-free while the tau hypotheses
   (`Bridge/Neg.size_canonical_le_formulaLenMeta_sentenceAt`'s me-side twin, four `bShift`s);
 * §6 `selfBot_guard_never_fits` / `selfBot_guard_not_found` — the obstruction; `cimcic_selfBot_D`,
   `dimcid_selfBot_C` — the tau slots.
+
+**Status after route (c) made generic (Phase 2c, 2026-10-01).** The obstruction is a property of a searcher that
+stores the UNABSTRACTED template `templateCode φ` with the frozen instance's budget numeral inside it. Since
+2026-10-01 `progCode (.search k φ p q)` stores `templateCodeAt φ k` — the closed program's budget written as the
+slot `#6`, a CONSTANT code (`Agents/CodeTermAbs.lean`, `Agents/Code.lean`) — so the engine's compiled
+instances no longer have this shape and the obstruction does not apply to them. The statements below are kept as
+theorems about the explicit code `pBot (pSearch k' (templateCode φ) p q)` (the pre-2026-10-01 searcher) on the
+code-level sentence `sentenceAtC`; the two tau-slot corollaries carry the hypothesis `instCode k A T = pSearch k
+(templateCode …) …`, which no compiled instance satisfies any more (the slots they decided — `cimcic × tftSim`,
+`dimcid × {tftSim, ebot, obot, dbot, cupodTroll}` — are re-proved with the table's values in Phase 3e).
 -/
 
 set_option linter.constructorNameAsVariable false
@@ -382,13 +392,40 @@ lemma termLenMeta_emb_bShift4_canonicalMeta (x : ℕ) :
     termLenMeta_bShift_of_bvFree (bvFree_emb _).bShift.bShift, termLenMeta_bShift_of_bvFree (bvFree_emb _).bShift,
     termLenMeta_bShift_of_bvFree (bvFree_emb _)]
 
-/-- **A `.self` atom writes the description of `me`**: `sentenceAt me opp (.plays .self q a)` is longer than the
-bit length of the canonical numeral of `progCode me` (`Bridge/Neg.size_canonical_le_formulaLenMeta_sentenceAt`
+/-- `sentenceAt` on CODES: the six-variable template filled with the descriptions of two codes (so that a statement
+can name a searcher by its code rather than by an engine program). -/
+noncomputable def sentenceAtC (me opp : ℕ) (φ : PD.Formula) : Sentence LAct :=
+  template φ ⇜ descriptionTerms me opp
+
+lemma sentenceAtC_progCode (me opp : PD.Prog) (φ : PD.Formula) :
+    sentenceAtC (progCode me) (progCode opp) φ = sentenceAt me opp φ := rfl
+
+/-- The code of `sentenceAtC` is the guard code (`quote_sentenceAt` on codes). -/
+theorem quote_sentenceAtC (me opp : ℕ) (φ : PD.Formula) (h : noSelfIdxF φ = true := by noSelfIdx_tac) :
+    (⌜sentenceAtC me opp φ⌝ : ℕ) = guardCode (templateCode φ) me opp := by
+  rw [templateCode_eq_quote_template φ h]
+  unfold sentenceAtC guardCode
+  rw [Sentence.quote_def, Semiformula.coe_subst_eq_subst_coe, Semiformula.quote_def,
+    Semiformula.typed_quote_substs, Bootstrapping.Semiformula.val_substs, ← Semiformula.quote_def,
+    ← Sentence.quote_def]
+  congr 1
+  exact semitermVec_val_descriptionTerms _ _
+
+lemma formulaLenMeta_emb_sentenceAtC_impl (me opp : ℕ) (φ ψ : PD.Formula) :
+    formulaLenMeta (Rewriting.emb (sentenceAtC me opp (.impl φ ψ)) : Proposition LAct) =
+    formulaLenMeta (Rewriting.emb (sentenceAtC me opp φ) : Proposition LAct) +
+      formulaLenMeta (Rewriting.emb (sentenceAtC me opp ψ) : Proposition LAct) + 1 := by
+  unfold sentenceAtC
+  rw [template_impl]
+  simp only [Rewriting.subst, Rewriting.emb, LogicalConnective.HomClass.map_imply, formulaLenMeta_imply]
+
+/-- **A `.self` atom writes the description of `me`**: `sentenceAtC me opp (.plays .self q a)` is longer than the
+bit length of the canonical numeral of the code `me` (`Bridge/Neg.size_canonical_le_formulaLenMeta_sentenceAt`
 for the me-slots: four `bShift`s, three binders plus the description's own). -/
-theorem size_canonical_le_formulaLenMeta_sentenceAt_self (me opp q : PD.Prog) (a : PD.Action) :
-    Nat.size (canonical (progCode me)) + 1 ≤
-      formulaLenMeta (Rewriting.emb (sentenceAt me opp (.plays .self q a)) : Proposition LAct) := by
-  unfold sentenceAt
+theorem size_canonical_le_formulaLenMeta_sentenceAtC_self (me opp : ℕ) (q : PD.Prog) (a : PD.Action) :
+    Nat.size (canonical me) + 1 ≤
+      formulaLenMeta (Rewriting.emb (sentenceAtC me opp (.plays .self q a)) : Proposition LAct) := by
+  unfold sentenceAtC
   rw [template_plays]
   unfold progGraph
   rw [progAux_self]
@@ -397,13 +434,18 @@ theorem size_canonical_le_formulaLenMeta_sentenceAt_self (me opp q : PD.Prog) (a
   refine le_trans ?_ (le_trans (Nat.le_add_right _ _) (le_trans (Nat.le_add_right _ 1)
     (le_trans (Nat.le_add_right _ 1) (le_trans (Nat.le_add_right _ 1) (Nat.le_add_right _ 1)))))
   refine le_trans ?_ (formulaLenMeta_emb_descF_ge _ _ _ _)
-  show Nat.size (canonical (progCode me)) + 1 ≤
-    termLenMeta (Rew.emb (Rew.bShift (Rew.bShift (Rew.bShift (Rew.bShift (canonicalMeta (progCode me)))))) :
+  show Nat.size (canonical me) + 1 ≤
+    termLenMeta (Rew.emb (Rew.bShift (Rew.bShift (Rew.bShift (Rew.bShift (canonicalMeta me))))) :
       SyntacticSemiterm LAct 4) + 1
   rw [termLenMeta_emb_bShift4_canonicalMeta]
   unfold canonicalMeta
   rw [termLenMeta_emb_lMap_emb]
   exact Nat.succ_le_succ (size_le_termLenMeta_codeTermMeta _)
+
+theorem size_canonical_le_formulaLenMeta_sentenceAt_self (me opp q : PD.Prog) (a : PD.Action) :
+    Nat.size (canonical (progCode me)) + 1 ≤
+      formulaLenMeta (Rewriting.emb (sentenceAt me opp (.plays .self q a)) : Proposition LAct) :=
+  size_canonical_le_formulaLenMeta_sentenceAtC_self (progCode me) (progCode opp) q a
 
 end selfLength
 
@@ -412,17 +454,18 @@ end selfLength
 section obstruction
 
 /-- **The guard sentence of a `.self`-guard over a budget-carrying frozen `X`, consulted by the bot-wrapped
-searcher at ANY search budget, against ANY opponent, is longer than `k`.** -/
+searcher that stores the UNABSTRACTED template, at ANY search budget, against ANY opponent code, is longer
+than `k`.** -/
 theorem selfBot_guard_never_fits {k : ℕ} {X : PD.Prog} (h : HasSearchP k X) (a : PD.Action) {ψ : PD.Formula}
-    (hns : noSelfIdxF (.impl (.plays .self (.bot X) a) ψ) = true) (k' : ℕ) (p q opp : PD.Prog) :
-    k < formulaLenMeta (Rewriting.emb (sentenceAt (.bot (.search k' (.impl (.plays .self (.bot X) a) ψ) p q)) opp
+    (hns : noSelfIdxF (.impl (.plays .self (.bot X) a) ψ) = true) (k' : ℕ) (p q opp : ℕ) :
+    k < formulaLenMeta (Rewriting.emb (sentenceAtC (pBot (pSearch k' (templateCode (.impl (.plays .self (.bot X) a) ψ)) p q)) opp
       (.impl (.plays .self (.bot X) a) ψ)) : Proposition LAct) := by
   obtain ⟨h1, h2⟩ := binNumeral_le_templateCode_selfBot h a hns
-  rw [formulaLenMeta_emb_sentenceAt_impl]
-  have hA := size_canonical_le_formulaLenMeta_sentenceAt_self
-    (.bot (.search k' (.impl (.plays .self (.bot X) a) ψ) p q)) opp (.bot X) a
-  have hS : k + 2 ≤ Nat.size (canonical (progCode (PD.Prog.bot (.search k' (.impl (.plays .self (.bot X) a) ψ) p q)))) := by
-    rw [progCode_bot, canonical_pBot, progCode_search]
+  rw [formulaLenMeta_emb_sentenceAtC_impl]
+  have hA := size_canonical_le_formulaLenMeta_sentenceAtC_self
+    (pBot (pSearch k' (templateCode (.impl (.plays .self (.bot X) a) ψ)) p q)) opp (.bot X) a
+  have hS : k + 2 ≤ Nat.size (canonical (pBot (pSearch k' (templateCode (.impl (.plays .self (.bot X) a) ψ)) p q))) := by
+    rw [canonical_pBot]
     refine le_trans (size_binNumeral_ge k) (Nat.size_le_size ?_)
     refine le_trans ?_ (by unfold pBot; exact le_trans (nppair_le_right _ _) (Nat.le_succ _))
     unfold canonical
@@ -433,46 +476,39 @@ theorem selfBot_guard_never_fits {k : ℕ} {X : PD.Prog} (h : HasSearchP k X) (a
 
 /-- **Hence it is never found within `k`** (a `TAct`-proof is at least as long as its conclusion). -/
 theorem selfBot_guard_not_found {k : ℕ} {X : PD.Prog} (h : HasSearchP k X) (a : PD.Action) {ψ : PD.Formula}
-    (hns : noSelfIdxF (.impl (.plays .self (.bot X) a) ψ) = true) (k' : ℕ) (p q opp : PD.Prog) :
-    ¬ LenBox TAct k (guardOf (.impl (.plays .self (.bot X) a) ψ)
-      (.bot (.search k' (.impl (.plays .self (.bot X) a) ψ) p q)) opp) := by
+    (hns : noSelfIdxF (.impl (.plays .self (.bot X) a) ψ) = true) (k' : ℕ) (p q opp : ℕ) :
+    ¬ LenBox TAct k (guardCode (templateCode (.impl (.plays .self (.bot X) a) ψ))
+      (pBot (pSearch k' (templateCode (.impl (.plays .self (.bot X) a) ψ)) p q)) opp) := by
   intro hl
-  rw [guardOf_eq_quote_sentenceAt _ _ _ hns, lenBox_nat] at hl
+  rw [← quote_sentenceAtC _ _ _ hns, lenBox_nat] at hl
   have hle := formulaLenMeta_le_of_lenBoxNat hl
   have hlt := selfBot_guard_never_fits h a hns k' p q opp
   exact absurd (lt_of_lt_of_le hlt hle) (_root_.lt_irrefl _)
 
-/-- **τ(CIMCIC) at a hypothesis whose instance seeing it carries the budget: D** (the guard never fits). -/
+/-- **τ(CIMCIC) at a hypothesis whose instance seeing it carries the budget: D** — IF the instance stored the
+unabstracted template (`hc`; no compiled instance does since 2026-10-01). -/
 theorem cimcic_selfBot_D {k : ℕ} {T : Tmpl}
     (hc : instCode k .cimcic T = pSearch k (templateCode (.impl (.plays .self (.bot (inst (tauZoo k) T .cimcic)) .C)
       (.plays (.bot (inst (tauZoo k) T .cimcic)) .self .C))) (pConst 0) (pConst 1))
-    (hI : inst (tauZoo k) .cimcic T = .search k (.impl (.plays .self (.bot (inst (tauZoo k) T .cimcic)) .C)
-      (.plays (.bot (inst (tauZoo k) T .cimcic)) .self .C)) (.const .C) (.const .D))
     (h : HasSearchP k (inst (tauZoo k) T .cimcic))
     (hns : noSelfIdxF (.impl (.plays .self (.bot (inst (tauZoo k) T .cimcic)) .C)
       (.plays (.bot (inst (tauZoo k) T .cimcic)) .self .C)) = true) :
     bitPlays k .cimcic T .D := by
-  have hn := selfBot_guard_not_found h .C hns k (.const .C) (.const .D) (.bot (inst (tauZoo k) .cimcic T))
-  rw [← hI] at hn
-  unfold guardOf at hn
-  rw [progCode_bot_inst, hc] at hn
+  have hn := selfBot_guard_not_found h .C hns k (pConst 0) (pConst 1) (pBot (instCode k .cimcic T))
+  rw [hc] at hn
   exact bitPlays_of_eq hc ⟨_, search_else _ hn (const_play 0 _ _ _) hns⟩
 
-/-- **τ(DIMCID) at a hypothesis whose instance seeing it carries the budget: C** — the engine's value; the base
-flip does not transfer. -/
+/-- **τ(DIMCID) at a hypothesis whose instance seeing it carries the budget: C** — IF the instance stored the
+unabstracted template (`hc`; no compiled instance does since 2026-10-01). -/
 theorem dimcid_selfBot_C {k : ℕ} {T : Tmpl}
     (hc : instCode k .dimcid T = pSearch k (templateCode (.impl (.plays .self (.bot (inst (tauZoo k) T .dimcid)) .C)
       (.plays (.bot (inst (tauZoo k) T .dimcid)) .self .D))) (pConst 1) (pConst 0))
-    (hI : inst (tauZoo k) .dimcid T = .search k (.impl (.plays .self (.bot (inst (tauZoo k) T .dimcid)) .C)
-      (.plays (.bot (inst (tauZoo k) T .dimcid)) .self .D)) (.const .D) (.const .C))
     (h : HasSearchP k (inst (tauZoo k) T .dimcid))
     (hns : noSelfIdxF (.impl (.plays .self (.bot (inst (tauZoo k) T .dimcid)) .C)
       (.plays (.bot (inst (tauZoo k) T .dimcid)) .self .D)) = true) :
     bitPlays k .dimcid T .C := by
-  have hn := selfBot_guard_not_found h .C hns k (.const .D) (.const .C) (.bot (inst (tauZoo k) .dimcid T))
-  rw [← hI] at hn
-  unfold guardOf at hn
-  rw [progCode_bot_inst, hc] at hn
+  have hn := selfBot_guard_not_found h .C hns k (pConst 1) (pConst 0) (pBot (instCode k .dimcid T))
+  rw [hc] at hn
   exact bitPlays_of_eq hc ⟨_, search_else _ hn (const_play 0 _ _ _) hns⟩
 
 end obstruction

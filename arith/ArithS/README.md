@@ -72,16 +72,34 @@ The other files in these five folders hold no definitions to accept, only theore
    codes (vote entries frozen, system members re-valued, as in the engine's `Base/Transpose`).
 6. **Descriptions** — a program named inside a sentence by binary numeral TERMS (`codeTerm`, `canonical`,
    `revalueU`, `revalueW`): [`Agents/CodeTerm.lean`](Agents/CodeTerm.lean), [`Agents/BinNumeral.lean`](Agents/BinNumeral.lean).
+   **Budget abstraction (2026-10-01, route (c) made generic):** a closed program named INSIDE a stored template is
+   described by `codeTermMetaAbs k₀` — the same structural term with every `pSearch k₀` budget written as the
+   budget slot `#6` of the frame ([`Agents/CodeTermAbs.lean`](Agents/CodeTermAbs.lean); `canonicalSlot`,
+   `closedDescAt` in `Agents/Code.lean`). Filling the slot with the node's budget recovers the verbatim term
+   (`subst_codeTermMetaAbs`), so the sentence the evaluator consults is unchanged (`guardCodeB_templateCodeAt`),
+   while the stored template of `JustBot k` (snapshot `DupocBot k`), `CupodTrollBot k` (snapshot `CupodBot k`)
+   and of every tau instance naming a budget-carrying hypothesis instance is a CONSTANT code — Critch's (b) for
+   them. A system `pSys d i` is described verbatim (the closer fills a member's pronoun slots with verbatim
+   member descriptions, and the member equation `templateAt_sysClose` is literal only then); no paper-zoo guard
+   names a closed system. The abstracted term is never longer than the verbatim one
+   (`termLenMeta_emb_codeTermMetaAbs_le`).
 7. **The guard template and the runtime guard** — `guardTemplate a` ("opp plays `a` against me", six
    description slots) and the general translation of the engine's guard formulas: the THIRTEEN-variable
-   `template13 : PD.Formula → Semisentence LAct 13` that `pSearch` stores (`templateCode φ := ⌜template13 φ⌝`;
-   frame `#0..#5`, budget slot `#6`, the two member triples `#7..#12`), whose `progAux13` reads a system member's
+   `templateAt : PD.Formula → Option ℕ → Semisentence LAct 13` — `templateAt φ (some k)` at the node budget `k`
+   (closed programs abstracted, item 6), `template13 φ := templateAt φ none` the unabstracted template (today's
+   name and value) — of which `pSearch` stores `templateCodeAt φ k := ⌜templateAt φ (some k)⌝`; `templateCode φ
+   := ⌜template13 φ⌝` is what every base statement names, equal to the stored code on every guard without a
+   budget snapshot (`templateCodeAt_eq_templateCode`, side condition `noBudgetSnapshotF`: the whole base zoo but
+   JustBot/CupodTrollBot). Frame `#0..#5`, budget slot `#6`, the two member triples `#7..#12`; on the
+   pronoun-free fragment the stored template is a SEVEN-variable formula cast (`template7At`,
+   `templateAt_eq_castLE₇`), instantiated inside a simulated program by `guardCodeSlot`. `progAuxAt` reads a system member's
    pronoun `.selfIdx j` (`j ∈ {0, 1}`) from member `j`'s triple and `.bot (.selfIdx j)` as that triple with the
    term `pBotTerm` on its code (`pBot` commutes with `revalue` and `canonical`), and the six-variable `template`
    beside it, the reading every `Cells/` file uses — the two agree on every formula without a dangling pronoun
    (`noSelfIdxF`; the bridge `templateCode_eq_quote_template : templateCode φ = ⌜template φ⌝`, since
    2026-10-01); `guardCode g me opp` fills the slots at run time, `guardCodeB` adds the seventh slot holding the
-   node's own budget (route (c)): [`Agents/Template.lean`](Agents/Template.lean),
+   node's own budget (route (c); `EvalGraph.search_iff_at` is the search clause on a stored template, read as
+   the unabstracted guard): [`Agents/Template.lean`](Agents/Template.lean),
    [`Agents/Code.lean`](Agents/Code.lean), [`Agents/Guard.lean`](Agents/Guard.lean).
 8. **Substitution** — `substCode`, the engine's one-shot `Prog.subst` on codes (`.bot` frozen, guards read
    the outer players, vote entries frozen, a system a binder): [`Agents/Subst.lean`](Agents/Subst.lean) (the
@@ -283,6 +301,14 @@ pruning: `Research/Notes/ARITH_DEAD_CODE_AUDIT.md`, `scripts/DeadCode.lean`.
   the U10 kit for a body computed from the frame (`ROUTE_B_SCOPE.md` §9).
 * **The 26 genuine floors** take no side: each is a dichotomy on a hinge that is bounded consistency of
   `TAct` at `k` up to a constant — Pudlák's linear-regime question. Never admit the hinge as an axiom.
+* **The engine-named versions of the seven twin cells** (`outcome_Just_vs_MirrorBot`, `outcome_Just7_vs_Dupoc`,
+  `outcome_Just7_vs_Just7`, `outcome_CupodTroll7_vs_CupodBot`, `outcome_CIMCIC_vs_Just7`, `outcome_DIMCID_vs_CupodTroll7`,
+  `outcome_DIMCID_vs_Just7`). Since 2026-10-01 the engine's `JustBot k`/`CupodTrollBot k` themselves store
+  constant templates (`progCode_JustBot`, `progCode_CupodTrollBot`: `templateCodeAt (phiJ k) k`), so the hand
+  twins `Just7`/`CupodTroll7` are no longer needed for CONSTANCY — but a twin's template is the hand
+  `guardTemplate 0`/`eqTmpl` shape while the engine's is the general `template` shape, two different sentences
+  whose bounded provability is not interchangeable; the Löb families must be re-run on the engine's templates
+  (as `Cells/DupocEngine.lean` did for Dupoc) before those cells can carry the engine names. `twinBase` stays.
 * **The outcomes of the entangled tau pairs** (Phase 3). The pronoun reading of `.selfIdx` — the last item of
   Phase 2 — LANDED on 2026-10-01: a system member's guard is described through the member slots `#7..#12` of the
   thirteen-variable `template13`, `sysCloseTemplate` on it is the engine's `Formula.sysClose`

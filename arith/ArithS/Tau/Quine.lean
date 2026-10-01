@@ -334,6 +334,76 @@ theorem cupod_floor_C {k : ℕ} {T : Tmpl}
   rw [hingeB _ _ _ _ hns, hc] at hn
   exact bitPlays_of_eq hc ⟨_, search_else _ hn (const_play 0 _ _ _) hns⟩
 
+/-! The same kit on STORED (budget-abstracted) templates `templateCodeAt … k` — the instances whose probed hypothesis
+instance carries the budget (route (c) made generic, 2026-10-01). -/
+
+theorem dupocLike_D_of_probe_false_at {k : ℕ} {A T : Tmpl}
+    (hc : instCode k A T = pSearch k (templateCodeAt (probe (inst (tauZoo k) T A)) k) (pConst 0) (pConst 1))
+    (hns : noSelfIdxF (probe (inst (tauZoo k) T A)) = true) (h : bitPlays k T A .D) : bitPlays k A T .D :=
+  bit_search_not_found_at k hc (fun me opp ↦ probe_not_found_of_bit (by decide) h hns me opp k)
+    (fun _ _ ↦ const_play 0 _ _ _) hns
+
+theorem dupocLike_floor_D_at {k : ℕ} {A T : Tmpl}
+    (hc : instCode k A T = pSearch k (templateCodeAt (probe (inst (tauZoo k) T A)) k) (pConst 0) (pConst 1))
+    (hns : noSelfIdxF (probe (inst (tauZoo k) T A)) = true)
+    (hn : ¬ LenBox TAct k (guardCodeB (templateCode (probe (inst (tauZoo k) T A)))
+      (pBot (instCode k A T)) (pBot (instCode k A T)) k)) : bitPlays k A T .D := by
+  rw [hingeB _ _ _ _ hns, hc] at hn
+  exact bitPlays_of_eq hc ⟨_, search_else_at _ hn (const_play 0 _ _ _) hns⟩
+
+theorem cupod_C_of_probeD_false_at {k : ℕ} {T : Tmpl}
+    (hc : instCode k .cupod T = pSearch k (templateCodeAt (probeD (inst (tauZoo k) T .cupod)) k) (pConst 1) (pConst 0))
+    (hns : noSelfIdxF (probeD (inst (tauZoo k) T .cupod)) = true) (h : bitPlays k T .cupod .C) :
+    bitPlays k .cupod T .C :=
+  bit_search_not_found_at k hc (fun me opp ↦ probe_not_found_of_bit (by decide) h hns me opp k)
+    (fun _ _ ↦ const_play 0 _ _ _) hns
+
+theorem cupod_floor_C_at {k : ℕ} {T : Tmpl}
+    (hc : instCode k .cupod T = pSearch k (templateCodeAt (probeD (inst (tauZoo k) T .cupod)) k) (pConst 1) (pConst 0))
+    (hns : noSelfIdxF (probeD (inst (tauZoo k) T .cupod)) = true)
+    (hn : ¬ LenBox TAct k (guardCodeB (templateCode (probeD (inst (tauZoo k) T .cupod)))
+      (pBot (instCode k .cupod T)) (pBot (instCode k .cupod T)) k)) : bitPlays k .cupod T .C := by
+  rw [hingeB _ _ _ _ hns, hc] at hn
+  exact bitPlays_of_eq hc ⟨_, search_else_at _ hn (const_play 0 _ _ _) hns⟩
+
+theorem prudent_D_of_outer_false_at {k : ℕ} {T : Tmpl} {inner : ℕ}
+    (hc : instCode k .prudent T = pSearch k (templateCodeAt (probe (inst (tauZoo k) T .prudent)) k) inner (pConst 1))
+    (hns : noSelfIdxF (probe (inst (tauZoo k) T .prudent)) = true) (h : bitPlays k T .prudent .D) :
+    bitPlays k .prudent T .D :=
+  bit_search_not_found_at k hc (fun me opp ↦ probe_not_found_of_bit (by decide) h hns me opp k)
+    (fun _ _ ↦ const_play 0 _ _ _) hns
+
+/-- Prudent's inner-false slot with the OUTER template stored abstracted and the inner one unabstracted. -/
+theorem prudent_D_of_inner_false_at {k : ℕ} {T : Tmpl} {g : PD.Formula}
+    (hc : instCode k .prudent T = pSearch k (templateCodeAt g k)
+      (pSearch k (templateCode (probeD (inst (tauZoo k) T .defect))) (pConst 0) (pConst 1)) (pConst 1))
+    (hg : noSelfIdxF g = true) (hns : noSelfIdxF (probeD (inst (tauZoo k) T .defect)) = true)
+    (h : bitPlays k T .defect .C) : bitPlays k .prudent T .D := by
+  apply bitPlays_of_eq hc
+  have hn := probe_not_found_of_bit (by decide) h hns (.bot (inst (tauZoo k) .prudent T))
+    (.bot (inst (tauZoo k) .prudent T)) k
+  rw [progCode_bot_inst, hc] at hn
+  exact ⟨_, search_either_at g (search_else _ hn (const_play 0 _ _ _) hns) (const_play 1 _ _ _) hg⟩
+
+/-- Prudent's inner-false slot with BOTH templates stored abstracted. -/
+theorem prudent_D_of_inner_false_at₂ {k : ℕ} {T : Tmpl} {g : PD.Formula}
+    (hc : instCode k .prudent T = pSearch k (templateCodeAt g k)
+      (pSearch k (templateCodeAt (probeD (inst (tauZoo k) T .defect)) k) (pConst 0) (pConst 1)) (pConst 1))
+    (hg : noSelfIdxF g = true) (hns : noSelfIdxF (probeD (inst (tauZoo k) T .defect)) = true)
+    (h : bitPlays k T .defect .C) : bitPlays k .prudent T .D := by
+  apply bitPlays_of_eq hc
+  have hn := probe_not_found_of_bit (by decide) h hns (.bot (inst (tauZoo k) .prudent T))
+    (.bot (inst (tauZoo k) .prudent T)) k
+  rw [progCode_bot_inst, hc] at hn
+  exact ⟨_, search_either_at g (search_else_at _ hn (const_play 0 _ _ _) hns) (const_play 1 _ _ _) hg⟩
+
+theorem prudent_floor_D_at {k : ℕ} {T : Tmpl} {g : PD.Formula} {inner : ℕ}
+    (hc : instCode k .prudent T = pSearch k (templateCodeAt g k) inner (pConst 1)) (hg : noSelfIdxF g = true)
+    (hn : ¬ LenBox TAct k (guardCodeB (templateCode g) (pBot (instCode k .prudent T)) (pBot (instCode k .prudent T)) k)) :
+    bitPlays k .prudent T .D := by
+  rw [hingeB _ _ _ _ hg, hc] at hn
+  exact bitPlays_of_eq hc ⟨_, search_else_at _ hn (const_play 0 _ _ _) hg⟩
+
 /-- **Prudent's slots where the OUTER probe is false**: `T`'s instance at Prudent defects — D. -/
 theorem prudent_D_of_outer_false {k : ℕ} {T : Tmpl} {inner : ℕ}
     (hc : instCode k .prudent T = pSearch k (templateCode (probe (inst (tauZoo k) T .prudent))) inner (pConst 1))

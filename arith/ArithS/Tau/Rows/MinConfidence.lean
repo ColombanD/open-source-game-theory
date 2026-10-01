@@ -32,28 +32,28 @@ def minconfidenceRowA : Tmpl → Action := dupocRowA
 /-! ### The compiled instances (Dupoc's shape, at the `.minconfidence` slot) -/
 
 theorem instCode_minconfidence_ebot (k : ℕ) : instCode k .minconfidence .ebot =
-    pSearch k (templateCode (probe (inst (tauZoo k) .ebot .minconfidence))) (pConst 0) (pConst 1) := by
+    pSearch k (templateCodeAt (probe (inst (tauZoo k) .ebot .minconfidence)) k) (pConst 0) (pConst 1) := by
   unfold instCode
   rw [show inst (tauZoo k) .minconfidence .ebot = .search k (probe (inst (tauZoo k) .ebot .minconfidence)) (.const .C) (.const .D)
     from rfl]
   simp [actCode]
 
 theorem instCode_minconfidence_obot (k : ℕ) : instCode k .minconfidence .obot =
-    pSearch k (templateCode (probe (inst (tauZoo k) .obot .minconfidence))) (pConst 0) (pConst 1) := by
+    pSearch k (templateCodeAt (probe (inst (tauZoo k) .obot .minconfidence)) k) (pConst 0) (pConst 1) := by
   unfold instCode
   rw [show inst (tauZoo k) .minconfidence .obot = .search k (probe (inst (tauZoo k) .obot .minconfidence)) (.const .C) (.const .D)
     from rfl]
   simp [actCode]
 
 theorem instCode_minconfidence_dbot (k : ℕ) : instCode k .minconfidence .dbot =
-    pSearch k (templateCode (probe (inst (tauZoo k) .dbot .minconfidence))) (pConst 0) (pConst 1) := by
+    pSearch k (templateCodeAt (probe (inst (tauZoo k) .dbot .minconfidence)) k) (pConst 0) (pConst 1) := by
   unfold instCode
   rw [show inst (tauZoo k) .minconfidence .dbot = .search k (probe (inst (tauZoo k) .dbot .minconfidence)) (.const .C) (.const .D)
     from rfl]
   simp [actCode]
 
 theorem instCode_minconfidence_cupodTroll (k : ℕ) : instCode k .minconfidence .cupodTroll =
-    pSearch k (templateCode (probe (inst (tauZoo k) .cupodTroll .minconfidence))) (pConst 0) (pConst 1) := by
+    pSearch k (templateCodeAt (probe (inst (tauZoo k) .cupodTroll .minconfidence)) k) (pConst 0) (pConst 1) := by
   unfold instCode
   rw [show inst (tauZoo k) .minconfidence .cupodTroll =
     .search k (probe (inst (tauZoo k) .cupodTroll .minconfidence)) (.const .C) (.const .D) from rfl]
@@ -71,7 +71,7 @@ theorem minconfidence_quine_C : bitEventually .minconfidence .minconfidence .C :
 theorem col_obot_minconfidence : bitEventually .obot .minconfidence .D := obotRowSpecA.slot (by simp)
 
 theorem minconfidence_obot_D : bitEventually .minconfidence .obot .D :=
-  bitEventually.mono (fun k h ↦ dupocLike_D_of_probe_false (instCode_minconfidence_obot k) rfl h) col_obot_minconfidence
+  bitEventually.mono (fun k h ↦ dupocLike_D_of_probe_false_at (instCode_minconfidence_obot k) rfl h) col_obot_minconfidence
 
 /-- **MinConfidenceBot's row in `S'`** — the eight theorem slots (Dupoc's: four non-entangled, four entangled). -/
 @[tau_rowA]
@@ -94,21 +94,21 @@ theorem minconfidenceRowSpecA : RowSpecA .minconfidence
 theorem minconfidenceRowSpecA_ebot_floor : FloorBitA .minconfidence .ebot
     (fun k ↦ □[k] (guardCodeB (templateCode (probe (inst (tauZoo k) .ebot .minconfidence)))
       (pBot (instCode k .minconfidence .ebot)) (pBot (instCode k .minconfidence .ebot)) k)) .D :=
-  FloorBitA.of_not_hinge ⟨0, fun k _ hn ↦ dupocLike_floor_D (instCode_minconfidence_ebot k) rfl hn⟩
+  FloorBitA.of_not_hinge ⟨0, fun k _ hn ↦ dupocLike_floor_D_at (instCode_minconfidence_ebot k) rfl hn⟩
 
 /-- `minconfidence × dbot` ‡ (base `dich_DupocBot_vs_DBot`). -/
 @[tau_floor_bitA]
 theorem minconfidenceRowSpecA_dbot_floor : FloorBitA .minconfidence .dbot
     (fun k ↦ □[k] (guardCodeB (templateCode (probe (inst (tauZoo k) .dbot .minconfidence)))
       (pBot (instCode k .minconfidence .dbot)) (pBot (instCode k .minconfidence .dbot)) k)) .D :=
-  FloorBitA.of_not_hinge ⟨0, fun k _ hn ↦ dupocLike_floor_D (instCode_minconfidence_dbot k) rfl hn⟩
+  FloorBitA.of_not_hinge ⟨0, fun k _ hn ↦ dupocLike_floor_D_at (instCode_minconfidence_dbot k) rfl hn⟩
 
 /-- `minconfidence × cupodTroll` ‡ (base `dich_DupocBot_vs_CupodTrollBot`). -/
 @[tau_floor_bitA]
 theorem minconfidenceRowSpecA_cupodTroll_floor : FloorBitA .minconfidence .cupodTroll
     (fun k ↦ □[k] (guardCodeB (templateCode (probe (inst (tauZoo k) .cupodTroll .minconfidence)))
       (pBot (instCode k .minconfidence .cupodTroll)) (pBot (instCode k .minconfidence .cupodTroll)) k)) .D :=
-  FloorBitA.of_not_hinge ⟨0, fun k _ hn ↦ dupocLike_floor_D (instCode_minconfidence_cupodTroll k) rfl hn⟩
+  FloorBitA.of_not_hinge ⟨0, fun k _ hn ↦ dupocLike_floor_D_at (instCode_minconfidence_cupodTroll k) rfl hn⟩
 
 /-! ### The system floor bits — the Dupoc member's own probe is the hinge (`Tau/Entangled/`) -/
 

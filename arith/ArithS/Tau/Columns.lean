@@ -234,56 +234,56 @@ lemma properPlayer_botInst (k : ℕ) (A T : Tmpl) : ProperPlayer (.bot (inst (ta
 theorem instCode_dupoc_coop (k : ℕ) : instCode k .dupoc .coop = pSearch k (templateCode (prC .C .C)) (pConst 0) (pConst 1) := by
   unfold instCode
   rw [show inst (tauZoo k) .dupoc .coop = .search k (prC .C .C) (.const .C) (.const .D) from rfl]
-  simp [actCode]
+  rw [progCode_search_noSnap _ _ _ _ rfl]; simp [actCode]
 
 theorem instCode_dupoc_defect (k : ℕ) : instCode k .dupoc .defect = pSearch k (templateCode (prC .D .C)) (pConst 0) (pConst 1) := by
   unfold instCode
   rw [show inst (tauZoo k) .dupoc .defect = .search k (prC .D .C) (.const .C) (.const .D) from rfl]
-  simp [actCode]
+  rw [progCode_search_noSnap _ _ _ _ rfl]; simp [actCode]
 
 theorem instCode_cupod_coop (k : ℕ) : instCode k .cupod .coop = pSearch k (templateCode (prC .C .D)) (pConst 1) (pConst 0) := by
   unfold instCode
   rw [show inst (tauZoo k) .cupod .coop = .search k (prC .C .D) (.const .D) (.const .C) from rfl]
-  simp [actCode]
+  rw [progCode_search_noSnap _ _ _ _ rfl]; simp [actCode]
 
 theorem instCode_cupod_defect (k : ℕ) : instCode k .cupod .defect = pSearch k (templateCode (prC .D .D)) (pConst 1) (pConst 0) := by
   unfold instCode
   rw [show inst (tauZoo k) .cupod .defect = .search k (prC .D .D) (.const .D) (.const .C) from rfl]
-  simp [actCode]
+  rw [progCode_search_noSnap _ _ _ _ rfl]; simp [actCode]
 
 theorem instCode_prudent_coop (k : ℕ) : instCode k .prudent .coop =
     pSearch k (templateCode (prC .C .C)) (pSearch k (templateCode (prC .C .D)) (pConst 0) (pConst 1)) (pConst 1) := by
   unfold instCode
   rw [show inst (tauZoo k) .prudent .coop =
     .search k (prC .C .C) (.search k (prC .C .D) (.const .C) (.const .D)) (.const .D) from rfl]
-  simp [actCode]
+  rw [progCode_search_noSnap _ _ _ _ rfl, progCode_search_noSnap _ _ _ _ rfl]; simp [actCode]
 
 theorem instCode_prudent_defect (k : ℕ) : instCode k .prudent .defect =
     pSearch k (templateCode (prC .D .C)) (pSearch k (templateCode (prC .D .D)) (pConst 0) (pConst 1)) (pConst 1) := by
   unfold instCode
   rw [show inst (tauZoo k) .prudent .defect =
     .search k (prC .D .C) (.search k (prC .D .D) (.const .C) (.const .D)) (.const .D) from rfl]
-  simp [actCode]
+  rw [progCode_search_noSnap _ _ _ _ rfl, progCode_search_noSnap _ _ _ _ rfl]; simp [actCode]
 
 theorem instCode_cimcic_coop (k : ℕ) : instCode k .cimcic .coop = pSearch k (templateCode (implC .C .C .C)) (pConst 0) (pConst 1) := by
   unfold instCode
   rw [show inst (tauZoo k) .cimcic .coop = .search k (implC .C .C .C) (.const .C) (.const .D) from rfl]
-  simp [actCode]
+  rw [progCode_search_noSnap _ _ _ _ rfl]; simp [actCode]
 
 theorem instCode_cimcic_defect (k : ℕ) : instCode k .cimcic .defect = pSearch k (templateCode (implC .D .C .C)) (pConst 0) (pConst 1) := by
   unfold instCode
   rw [show inst (tauZoo k) .cimcic .defect = .search k (implC .D .C .C) (.const .C) (.const .D) from rfl]
-  simp [actCode]
+  rw [progCode_search_noSnap _ _ _ _ rfl]; simp [actCode]
 
 theorem instCode_dimcid_coop (k : ℕ) : instCode k .dimcid .coop = pSearch k (templateCode (implC .C .C .D)) (pConst 1) (pConst 0) := by
   unfold instCode
   rw [show inst (tauZoo k) .dimcid .coop = .search k (implC .C .C .D) (.const .D) (.const .C) from rfl]
-  simp [actCode]
+  rw [progCode_search_noSnap _ _ _ _ rfl]; simp [actCode]
 
 theorem instCode_dimcid_defect (k : ℕ) : instCode k .dimcid .defect = pSearch k (templateCode (implC .D .C .D)) (pConst 1) (pConst 0) := by
   unfold instCode
   rw [show inst (tauZoo k) .dimcid .defect = .search k (implC .D .C .D) (.const .D) (.const .C) from rfl]
-  simp [actCode]
+  rw [progCode_search_noSnap _ _ _ _ rfl]; simp [actCode]
 
 /-- τ(Mirror)'s instance at a constant: the bare forwarder of the frozen constant. -/
 theorem instCode_mirror_coop (k : ℕ) : instCode k .mirror .coop = pSim (pBot (pConst 0)) (pBot (pConst 0)) := by
@@ -336,6 +336,30 @@ theorem bit_search_not_found {A T : Tmpl} {φ : PD.Formula} {p q : ℕ} {a : PD.
   have h := hn (.bot (inst (tauZoo k) A T)) (.bot (inst (tauZoo k) A T))
   rw [progCode_bot_inst, hc] at h
   exact ⟨_, search_else φ h (hq _ _) hφ⟩
+
+/-- `bit_search_found` on a STORED (budget-abstracted) template `templateCodeAt φ k`. -/
+theorem bit_search_found_at {A T : Tmpl} {φ : PD.Formula} {p q : ℕ} {a : PD.Action}
+    (hc : ∀ k, instCode k A T = pSearch k (templateCodeAt φ k) p q)
+    (hf : ∃ L : ℕ, ∀ k : ℕ, L ≤ k → ∀ me opp : PD.Prog,
+      LenBox TAct k (guardCode (templateCode φ) (progCode me) (progCode opp)))
+    (hp : ∀ x y : ℕ, EvalGraph 1 x y p (actCode a)) (hφ : noSelfIdxF φ = true := by noSelfIdx_tac) :
+    bitEventually A T a := by
+  obtain ⟨L, hL⟩ := hf
+  refine ⟨L, fun k hk ↦ bitPlays_of_eq (hc k) ?_⟩
+  have h := hL k (le_of_lt hk) (.bot (inst (tauZoo k) A T)) (.bot (inst (tauZoo k) A T))
+  rw [progCode_bot_inst, hc k] at h
+  exact ⟨_, search_then_at φ h (hp _ _) hφ⟩
+
+/-- `bit_search_not_found` on a STORED (budget-abstracted) template `templateCodeAt φ k`. -/
+theorem bit_search_not_found_at {A T : Tmpl} {φ : PD.Formula} {p q : ℕ} {a : PD.Action} (k : ℕ)
+    (hc : instCode k A T = pSearch k (templateCodeAt φ k) p q)
+    (hn : ∀ me opp : PD.Prog, ¬ LenBox TAct k (guardCode (templateCode φ) (progCode me) (progCode opp)))
+    (hq : ∀ x y, EvalGraph 1 x y q (actCode a)) (hφ : noSelfIdxF φ = true := by noSelfIdx_tac) :
+    bitPlays k A T a := by
+  refine bitPlays_of_eq hc ?_
+  have h := hn (.bot (inst (tauZoo k) A T)) (.bot (inst (tauZoo k) A T))
+  rw [progCode_bot_inst, hc] at h
+  exact ⟨_, search_else_at φ h (hq _ _) hφ⟩
 
 theorem col_coop_coop (k : ℕ) : bitPlays k .coop .coop .C :=
   bitPlays_of_eq (instCode_coop k _) ⟨_, const_play 0 _ _ _⟩

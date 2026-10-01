@@ -313,8 +313,16 @@ theorem playsProof_evalGraph_core (sf : Bool) (hag : sf = false → GuardAgreeT)
       have := hI.2.2.2.2.1
       simp only [modestP, Bool.and_eq_true] at this
       exact this.2)
-    rw [progCode_subst hI.1 hI.2.1 (noSelfIdxP_of_modestP hI.2.2.1) (noSelfIdxP_of_modestP hI.2.2.2.1) p hp,
-      progCode_subst hI.1 hI.2.1 (noSelfIdxP_of_modestP hI.2.2.1) (noSelfIdxP_of_modestP hI.2.2.2.1) q hq] at hN
+    have hap : atomicP p = true := by
+      have := hI.2.2.2.2.1
+      simp only [modestP, Bool.and_eq_true] at this
+      exact this.1.1.1
+    have haq : atomicP q = true := by
+      have := hI.2.2.2.2.1
+      simp only [modestP, Bool.and_eq_true] at this
+      exact this.1.1.2
+    rw [progCode_subst_atomic hI.1 hI.2.1 (noSelfIdxP_of_modestP hI.2.2.1) (noSelfIdxP_of_modestP hI.2.2.2.1) p hp hap,
+      progCode_subst_atomic hI.1 hI.2.1 (noSelfIdxP_of_modestP hI.2.2.1) (noSelfIdxP_of_modestP hI.2.2.2.1) q hq haq] at hN
     refine ⟨N + 1, ?_⟩
     rw [progCode_sim, EvalGraph.sim_iff]
     exact hN
@@ -341,16 +349,14 @@ theorem playsProof_evalGraph_core (sf : Bool) (hag : sf = false → GuardAgreeT)
     obtain ⟨hsf, hIp, _⟩ := Inv.search hI
     obtain ⟨N, hN⟩ := ih hIp
     refine ⟨N + 1, ?_⟩
-    rw [progCode_search, EvalGraph.search_iff₆
-      (isSemiformula_templateCode φ (noSelfIdxF_of_fragF φ (fragF_of_modestP_search hI.2.2.2.2.1)))]
+    rw [progCode_search, EvalGraph.search_iff_at φ (noSelfIdxF_of_fragF φ (fragF_of_modestP_search hI.2.2.2.2.1))]
     exact Or.inl ⟨hag hsf φ me opp k hg, hN⟩
   · -- search_f
     intro m me opp q a n k φ p hg _ ih hI
     obtain ⟨hsf, _, hIq⟩ := Inv.search hI
     obtain ⟨N, hN⟩ := ih hIq
     refine ⟨N + 1, ?_⟩
-    rw [progCode_search, EvalGraph.search_iff₆
-      (isSemiformula_templateCode φ (noSelfIdxF_of_fragF φ (fragF_of_modestP_search hI.2.2.2.2.1)))]
+    rw [progCode_search, EvalGraph.search_iff_at φ (noSelfIdxF_of_fragF φ (fragF_of_modestP_search hI.2.2.2.2.1))]
     exact Or.inr ⟨hneg hsf φ me opp k m hg, hN⟩
   · -- voteZero_t
     intro me opp p q a n v _ _ hI

@@ -178,11 +178,11 @@ theorem instCode_ebot (k : ℕ) (T : Tmpl) : instCode k .ebot T =
 /-- τ(CupodTroll) at the one hypothesis it recognises: the decidably TRUE identity, then-branch `D`. -/
 theorem instCode_cupodTroll_cupod (k : ℕ) : instCode k .cupodTroll .cupod =
     pSearch k (templateCode (.eq (.const .C) (.const .C))) (pConst 1) (pConst 0) := by
-  unfold instCode; rw [inst_cupodTroll_peel_cupod]; simp [actCode]
+  unfold instCode; rw [inst_cupodTroll_peel_cupod]; rw [progCode_search_noSnap _ _ _ _ rfl]; simp [actCode]
 
 /-- …and at every other hypothesis: the decidably FALSE identity, else-branch `C`. -/
 theorem instCode_cupodTroll (k : ℕ) (T : Tmpl) (h : T ≠ .cupod) : instCode k .cupodTroll T =
     pSearch k (templateCode (.eq (.const .C) (.const .D))) (pConst 1) (pConst 0) := by
-  unfold instCode; rw [inst_cupodTroll_peel k T h]; simp [actCode]
+  unfold instCode; rw [inst_cupodTroll_peel k T h]; rw [progCode_search_noSnap _ _ _ _ rfl]; simp [actCode]
 
 end ArithS.Tau

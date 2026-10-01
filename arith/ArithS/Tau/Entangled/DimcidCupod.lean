@@ -29,7 +29,7 @@ theorem found_DiC_engine : ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
   obtain ⟨hK, b₁, -⟩ := h k hk
   have := Sys2.box_guard_nat hK 0 0 0 rfl b₁
   rw [show SDiC = Sys2.mk (SM.ofSearch (entDimG 1) .D) (SM.ofSearch (entCmG 0) .D) from rfl] at this
-  rw [Sys2.guardCodeB_sysClose_nat (entDimG 1) (entCmG 0) .D .D k (entDimG 1) rfl rfl, Sys2.code_nat] at this
+  rw [Sys2.guardCodeB_sysClose_nat (entDimG 1) (entCmG 0) .D .D k (entDimG 1) rfl rfl, Sys2.code_nat (entDimG 1) (entCmG 0) .D .D] at this
   exact this
 
 /-- `dimcid × cupod`: D. -/
@@ -64,7 +64,7 @@ theorem found_CDi_engine : ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
   refine ⟨k₀ + SCDi.K, fun k hk ↦ ?_⟩
   have := Sys2.box_guard_nat (S := SCDi) (by omega) 0 0 0 rfl (h k (by omega))
   rw [show SCDi = Sys2.mk (SM.ofSearch (entCmG 1) .D) (SM.ofSearch (entDimG 0) .D) from rfl] at this
-  rw [Sys2.guardCodeB_sysClose_nat (entCmG 1) (entDimG 0) .D .D k (entCmG 1) rfl rfl, Sys2.code_nat] at this
+  rw [Sys2.guardCodeB_sysClose_nat (entCmG 1) (entDimG 0) .D .D k (entCmG 1) rfl rfl, Sys2.code_nat (entCmG 1) (entDimG 0) .D .D] at this
   exact this
 
 /-- `cupod × dimcid`: D. -/

@@ -48,35 +48,35 @@ def prudentRowA : Tmpl → Action
 /-! ### The compiled instances -/
 
 theorem instCode_prudent_tftSim (k : ℕ) : instCode k .prudent .tftSim =
-    pSearch k (templateCode (probe (inst (tauZoo k) .tftSim .prudent)))
+    pSearch k (templateCodeAt (probe (inst (tauZoo k) .tftSim .prudent)) k)
       (pSearch k (templateCode (probeD (inst (tauZoo k) .tftSim .defect))) (pConst 0) (pConst 1)) (pConst 1) := by
-  unfold instCode; rw [inst_prudent_peel_tftSim]; simp [actCode]
+  unfold instCode; rw [inst_prudent_peel_tftSim]; rw [progCode_search, progCode_search_noSnap k (probeD (inst (tauZoo k) .tftSim .defect)) _ _ rfl]; simp [actCode]
 
 theorem instCode_prudent_ebot (k : ℕ) : instCode k .prudent .ebot =
-    pSearch k (templateCode (probe (inst (tauZoo k) .ebot .prudent)))
+    pSearch k (templateCodeAt (probe (inst (tauZoo k) .ebot .prudent)) k)
       (pSearch k (templateCode (probeD (inst (tauZoo k) .ebot .defect))) (pConst 0) (pConst 1)) (pConst 1) := by
-  unfold instCode; rw [inst_prudent_peel_ebot]; simp [actCode]
+  unfold instCode; rw [inst_prudent_peel_ebot]; rw [progCode_search, progCode_search_noSnap k (probeD (inst (tauZoo k) .ebot .defect)) _ _ rfl]; simp [actCode]
 
 theorem instCode_prudent_obot (k : ℕ) : instCode k .prudent .obot =
-    pSearch k (templateCode (probe (inst (tauZoo k) .obot .prudent)))
+    pSearch k (templateCodeAt (probe (inst (tauZoo k) .obot .prudent)) k)
       (pSearch k (templateCode (probeD (inst (tauZoo k) .obot .defect))) (pConst 0) (pConst 1)) (pConst 1) := by
-  unfold instCode; rw [inst_prudent_peel_obot]; simp [actCode]
+  unfold instCode; rw [inst_prudent_peel_obot]; rw [progCode_search, progCode_search_noSnap k (probeD (inst (tauZoo k) .obot .defect)) _ _ rfl]; simp [actCode]
 
 theorem instCode_prudent_dbot (k : ℕ) : instCode k .prudent .dbot =
-    pSearch k (templateCode (probe (inst (tauZoo k) .dbot .prudent)))
+    pSearch k (templateCodeAt (probe (inst (tauZoo k) .dbot .prudent)) k)
       (pSearch k (templateCode (probeD (inst (tauZoo k) .dbot .defect))) (pConst 0) (pConst 1)) (pConst 1) := by
-  unfold instCode; rw [inst_prudent_peel_dbot]; simp [actCode]
+  unfold instCode; rw [inst_prudent_peel_dbot]; rw [progCode_search, progCode_search_noSnap k (probeD (inst (tauZoo k) .dbot .defect)) _ _ rfl]; simp [actCode]
 
 theorem instCode_prudent_cupodTroll (k : ℕ) : instCode k .prudent .cupodTroll =
-    pSearch k (templateCode (probe (inst (tauZoo k) .cupodTroll .prudent)))
-      (pSearch k (templateCode (probeD (inst (tauZoo k) .cupodTroll .defect))) (pConst 0) (pConst 1)) (pConst 1) := by
+    pSearch k (templateCodeAt (probe (inst (tauZoo k) .cupodTroll .prudent)) k)
+      (pSearch k (templateCodeAt (probeD (inst (tauZoo k) .cupodTroll .defect)) k) (pConst 0) (pConst 1)) (pConst 1) := by
   unfold instCode; rw [inst_prudent_peel_cupodTroll]; simp [actCode]
 
 /-- The diagonal: the outer quine, the inner check on its own `defect` cell. -/
 theorem instCode_prudent_prudent (k : ℕ) : instCode k .prudent .prudent =
     pSearch k (templateCode (quineF .C))
-      (pSearch k (templateCode (probeD (inst (tauZoo k) .prudent .defect))) (pConst 0) (pConst 1)) (pConst 1) := by
-  unfold instCode; rw [inst_prudent_quine]; simp [actCode]
+      (pSearch k (templateCodeAt (probeD (inst (tauZoo k) .prudent .defect)) k) (pConst 0) (pConst 1)) (pConst 1) := by
+  unfold instCode; rw [inst_prudent_quine]; rw [progCode_search_noSnap k (quineF .C) _ _ rfl]; simp [actCode]
 
 /-! ### The slots -/
 
@@ -85,13 +85,13 @@ theorem col_tftSim_prudent : bitEventually .tftSim .prudent .D := tftSimRowSpecA
 theorem col_obot_prudent : bitEventually .obot .prudent .D := obotRowSpecA.slot (by simp)
 
 theorem prudent_tftSim_D : bitEventually .prudent .tftSim .D :=
-  bitEventually.mono (fun k h ↦ prudent_D_of_outer_false (instCode_prudent_tftSim k) rfl h) col_tftSim_prudent
+  bitEventually.mono (fun k h ↦ prudent_D_of_outer_false_at (instCode_prudent_tftSim k) rfl h) col_tftSim_prudent
 theorem prudent_obot_D : bitEventually .prudent .obot .D :=
-  bitEventually.mono (fun k h ↦ prudent_D_of_outer_false (instCode_prudent_obot k) rfl h) col_obot_prudent
+  bitEventually.mono (fun k h ↦ prudent_D_of_outer_false_at (instCode_prudent_obot k) rfl h) col_obot_prudent
 theorem prudent_dbot_D (k : ℕ) : bitPlays k .prudent .dbot .D :=
-  prudent_D_of_inner_false (instCode_prudent_dbot k) rfl rfl (col_dbot_defect k)
+  prudent_D_of_inner_false_at (instCode_prudent_dbot k) rfl rfl (col_dbot_defect k)
 theorem prudent_cupodTroll_D (k : ℕ) : bitPlays k .prudent .cupodTroll .D :=
-  prudent_D_of_inner_false (instCode_prudent_cupodTroll k) rfl rfl (col_cupodTroll_defect k)
+  prudent_D_of_inner_false_at₂ (instCode_prudent_cupodTroll k) rfl rfl (col_cupodTroll_defect k)
 
 /-- **τ(Prudent)'s row in `S'`** — the six non-entangled theorem slots. -/
 @[tau_rowA]
@@ -112,7 +112,7 @@ Prudent, in the bit's frame; not found ⇒ D. -/
 theorem prudentRowSpecA_ebot_floor : FloorBitA .prudent .ebot
     (fun k ↦ □[k] (guardCodeB (templateCode (probe (inst (tauZoo k) .ebot .prudent)))
       (pBot (instCode k .prudent .ebot)) (pBot (instCode k .prudent .ebot)) k)) .D :=
-  FloorBitA.of_not_hinge ⟨0, fun k _ hn ↦ prudent_floor_D (instCode_prudent_ebot k) rfl hn⟩
+  FloorBitA.of_not_hinge ⟨0, fun k _ hn ↦ prudent_floor_D_at (instCode_prudent_ebot k) rfl hn⟩
 
 /-- `prudent × prudent` ‡ (base `dich_PrudentBot_vs_PrudentBot`): hinge = the outer quine "I cooperate with
 myself", in the bit's frame; not found ⇒ D. -/

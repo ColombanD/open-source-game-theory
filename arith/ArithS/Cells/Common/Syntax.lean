@@ -68,8 +68,7 @@ lemma semiterm_quote_emb₇ (t : Semiterm LAct Empty 7) :
 lemma isSemiformula_quote₄ (φ : Semisentence LAct 4) : IsSemiformula LAct 4 (⌜φ⌝ : V) := by
   simpa using Sentence.quote_isSemiformula (V := V) φ
 
-lemma isSemiformula_quote₇ (φ : Semisentence LAct 7) : IsSemiformula LAct 7 (⌜φ⌝ : V) := by
-  simpa using Sentence.quote_isSemiformula (V := V) φ
+-- `isSemiformula_quote₇` moved to `Agents/Code.lean` (2026-10-01).
 
 lemma four_eq : (4 : V) = 0 + 1 + 1 + 1 + 1 := by norm_num
 

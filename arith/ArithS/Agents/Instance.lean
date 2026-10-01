@@ -129,65 +129,6 @@ end canonical
 
 section oneVariable
 
-/-- The one-variable pairing term (bound variables allowed). -/
-noncomputable def ppairT1 (s t : Semiterm ℒₒᵣ Empty 1) : Semiterm ℒₒᵣ Empty 1 :=
-  Semiterm.func Language.ORing.Func.add
-    ![Semiterm.func Language.ORing.Func.mul
-      ![Semiterm.func Language.ORing.Func.add ![s, t], Semiterm.func Language.ORing.Func.add ![s, t]], t]
-
-/-- The meta numeral `1` as a closed term. -/
-noncomputable def oneTT : ClosedSemiterm ℒₒᵣ 0 := ‘1’
-
-/-- The one-variable successor term. -/
-noncomputable def succT1 (t : Semiterm ℒₒᵣ Empty 1) : Semiterm ℒₒᵣ Empty 1 :=
-  Semiterm.func Language.ORing.Func.add ![t, Rew.bShift oneTT]
-
-lemma ppairTermMeta_func (s t : ClosedSemiterm ℒₒᵣ 0) :
-    ppairTermMeta s t = Semiterm.func Language.ORing.Func.add
-      ![Semiterm.func Language.ORing.Func.mul
-        ![Semiterm.func Language.ORing.Func.add ![s, t], Semiterm.func Language.ORing.Func.add ![s, t]], t] := rfl
-
-lemma succTT_func (t : ClosedSemiterm ℒₒᵣ 0) :
-    succTT t = Semiterm.func Language.ORing.Func.add ![t, oneTT] := rfl
-
-lemma subst_func₂ (v : Fin 1 → ClosedSemiterm ℒₒᵣ 0) (f : (ℒₒᵣ).Func 2) (s t : Semiterm ℒₒᵣ Empty 1) :
-    Rew.subst v (Semiterm.func f ![s, t]) = Semiterm.func f ![Rew.subst v s, Rew.subst v t] := by
-  rw [Rew.func]; congr 1; funext i; fin_cases i <;> rfl
-
-lemma subst_bShift₁ (u : ClosedSemiterm ℒₒᵣ 0) (t : ClosedSemiterm ℒₒᵣ 0) :
-    Rew.subst ![u] (Rew.bShift t) = t := by
-  rw [← Rew.comp_app, Rew.subst_comp_bShift_eq_id]; rfl
-
-lemma subst_ppairT1 (u : ClosedSemiterm ℒₒᵣ 0) (s t : Semiterm ℒₒᵣ Empty 1) :
-    Rew.subst ![u] (ppairT1 s t) = ppairTermMeta (Rew.subst ![u] s) (Rew.subst ![u] t) := by
-  rw [ppairT1, ppairTermMeta_func, subst_func₂, subst_func₂, subst_func₂]
-
-lemma subst_succT1 (u : ClosedSemiterm ℒₒᵣ 0) (t : Semiterm ℒₒᵣ Empty 1) :
-    Rew.subst ![u] (succT1 t) = succTT (Rew.subst ![u] t) := by
-  rw [succT1, succTT_func, subst_func₂, subst_bShift₁]
-
-/-- The one-variable structural term of the searcher `pSearch · g p q`. -/
-noncomputable def searchT1 (g p q : ℕ) : Semiterm ℒₒᵣ Empty 1 :=
-  succT1 (ppairT1 (Rew.bShift (binNumeralMeta 6)) (ppairT1 #0
-    (Rew.bShift (ppairTermMeta (binNumeralMeta g) (ppairTermMeta (codeTermMeta p) (codeTermMeta q))))))
-
-/-- **The structural term of a searcher is the `k`-instance of `searchT1`.** -/
-theorem codeTermMeta_search_eq_subst (k g p q : ℕ) :
-    codeTermMeta (pSearch k g p q) = Rew.subst ![binNumeralMeta k] (searchT1 g p q) := by
-  rw [codeTermMeta_search, searchT1, subst_succT1, subst_ppairT1, subst_ppairT1, subst_bShift₁, subst_bShift₁,
-    Rew.subst_bvar]
-  rfl
-
-/-- `lMap` commutes with a one-variable substitution. -/
-lemma term_lMap_subst₁ (b : ClosedSemiterm ℒₒᵣ 0) (T : Semiterm ℒₒᵣ Empty 1) :
-    Semiterm.lMap emb (Rew.subst ![b] T) = Rew.subst ![Semiterm.lMap emb b] (Semiterm.lMap emb T) := by
-  unfold Rew.subst
-  rw [Semiterm.lMap_bind]
-  have e1 : Semiterm.lMap emb ∘ ![b] = ![Semiterm.lMap emb b] := by funext i; fin_cases i; rfl
-  have e2 : Semiterm.lMap emb ∘ (Semiterm.fvar : Empty → Semiterm ℒₒᵣ Empty 0) = Semiterm.fvar := by
-    funext x; exact x.elim
-  rw [e1, e2]
-
 /-- The one-variable description term of `Dupoc`, over `LAct`. -/
 noncomputable def TD : Semiterm LAct Empty 1 := Semiterm.lMap emb (searchT1 gD pD qD)
 
@@ -201,17 +142,6 @@ end oneVariable
 /-! ### 4. The instance equation -/
 
 section instance_eq
-
-/-- A closed term cast to zero bound variables is itself. -/
-lemma cl_zero : ∀ t : ClosedSemiterm LAct 0, (cl t : Semiterm LAct Empty 0) = t
-  | #x => x.elim0
-  | &x => x.elim
-  | .func f v => by
-    show Rew.castLE _ (Semiterm.func f v) = Semiterm.func f v
-    rw [Rew.func]
-    congr 1
-    funext i
-    exact cl_zero (v i)
 
 /-- **The fixed formula**: the template instance `guardTemplate 0` filled with the one-variable
 description of Dupoc (twice: `me = opp = Dupoc k`) and its `k`-independent re-valuation terms. -/
@@ -236,10 +166,6 @@ theorem exists_dupoc_instance :
   ⟨qDupoc, guardSentence_Dupoc_eq⟩
 
 /-! #### The code form -/
-
-lemma quote_lMap_emb_binNumeralMeta (k : ℕ) : (⌜Semiterm.lMap emb (binNumeralMeta k)⌝ : ℕ) = binNumeral k := by
-  rw [Semiterm.empty_quote_def, term_emb_lMap_emb, quote_term_lMap_emb, ← Semiterm.empty_quote_def,
-    quote_binNumeralMeta_nat]
 
 lemma semitermVec_val_single (k : ℕ) :
     SemitermVec.val (fun i ↦ (⌜(Rew.emb ((![Semiterm.lMap emb (binNumeralMeta k)] : Fin 1 → ClosedSemiterm LAct 0) i) :

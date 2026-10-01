@@ -194,13 +194,13 @@ theorem member_then {k n a x y : ℕ} (φ : Formula) {p q : Prog}
     (hf : LenBox TAct k (guardCode (templateCode φ) x y)) (h : EvalGraph n x y (progCode p) a)
     (hφ : noSelfIdxF φ = true := by noSelfIdx_tac) :
     EvalGraph (n + 1) x y (progCode (.search k φ p q)) a := by
-  rw [progCode_search]; exact search_then φ hf h
+  rw [progCode_search]; exact search_then_at φ hf h
 
 theorem member_else {k n a x y : ℕ} (φ : Formula) {p q : Prog}
     (hn : ¬ LenBox TAct k (guardCode (templateCode φ) x y)) (h : EvalGraph n x y (progCode q) a)
     (hφ : noSelfIdxF φ = true := by noSelfIdx_tac) :
     EvalGraph (n + 1) x y (progCode (.search k φ p q)) a := by
-  rw [progCode_search]; exact search_else φ hn h
+  rw [progCode_search]; exact search_else_at φ hn h
 
 /-! ### 5. The truth equations at ℕ of the closed-member atoms -/
 

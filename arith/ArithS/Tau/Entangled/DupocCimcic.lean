@@ -79,7 +79,7 @@ theorem found_DCi_engine : ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
   obtain ⟨hK, b₁, -⟩ := h k hk
   have := Sys2.box_guard_nat hK 0 0 0 rfl b₁
   rw [show SDCi = Sys2.mk (SM.ofSearch (entDmG 1) .C) (SM.ofSearch (entCimG 0) .C) from rfl] at this
-  rw [Sys2.guardCodeB_sysClose_nat (entDmG 1) (entCimG 0) .C .C k (entDmG 1) rfl rfl, Sys2.code_nat] at this
+  rw [Sys2.guardCodeB_sysClose_nat (entDmG 1) (entCimG 0) .C .C k (entDmG 1) rfl rfl, Sys2.code_nat (entDmG 1) (entCimG 0) .C .C] at this
   exact this
 
 /-- `dupoc × cimcic`: C. -/
@@ -108,7 +108,7 @@ theorem found_CiD_engine : ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
   obtain ⟨hK, -, b₂⟩ := h k hk
   have := Sys2.box_guard_nat hK 0 0 0 rfl b₂
   rw [show SCiD = Sys2.mk (SM.ofSearch (entCimG 1) .C) (SM.ofSearch (entDmG 0) .C) from rfl] at this
-  rw [Sys2.guardCodeB_sysClose_nat (entCimG 1) (entDmG 0) .C .C k (entCimG 1) rfl rfl, Sys2.code_nat] at this
+  rw [Sys2.guardCodeB_sysClose_nat (entCimG 1) (entDmG 0) .C .C k (entCimG 1) rfl rfl, Sys2.code_nat (entCimG 1) (entDmG 0) .C .C] at this
   exact this
 
 /-- `cimcic × dupoc`: C. -/

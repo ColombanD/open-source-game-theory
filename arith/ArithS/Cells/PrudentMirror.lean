@@ -111,7 +111,8 @@ lemma PrudentTV_nat (k : ℕ) : PrudentTV (V := ℕ) k = PrudentT k := rfl
 
 /-- **The bridge to the engine**: the code of the engine's `PrudentBot k` is `Prudent k`. -/
 theorem progCode_PrudentBot (k : ℕ) : progCode (PD.Bots.PrudentBot k) = Prudent k := by
-  simp only [PD.Bots.PrudentBot, progCode_search, progCode_const, actCode]
+  rw [PD.Bots.PrudentBot, progCode_search_noSnap _ _ _ _ rfl, progCode_search_noSnap _ _ _ _ rfl]
+  simp only [progCode_const, actCode]
   change pSearch k (templateCode phiP1) (pSearch k (templateCode phiP2) _ _) _ = _
   rw [templateCode_eq_quote_template phiP1 (noSelfIdxF_of_fragF _ fragF_phiP1),
     templateCode_eq_quote_template phiP2 (noSelfIdxF_of_fragF _ fragF_phiP2)]; rfl

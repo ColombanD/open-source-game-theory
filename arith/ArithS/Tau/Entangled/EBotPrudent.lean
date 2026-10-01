@@ -59,10 +59,7 @@ theorem eval_template13_closed (P : PD.Prog) (hP : ProperPlayer P) (hns : noSelf
   · rintro ⟨N, h⟩
     exact ⟨_, _, N, rfl, rfl, h⟩
 
-lemma lMap_swap_closedDesc13 (c : ℕ) : Semiformula.lMap swap (closedDesc13 c) = closedDesc13 (transposeCode c) := by
-  unfold closedDesc13
-  rw [lMap_swap_descF, lMap_swap_cl, lMap_swap_cl, lMap_swap_cl, lMap_swap_canonicalMeta, lMap_swap_revalueUMeta, lMap_swap_revalueWMeta]
-  rfl
+-- `lMap_swap_closedDesc13` now lives in `Agents/Code.lean` (2026-10-01).
 
 /-- τ on the template of a closed probe over a fragment program. -/
 theorem lMap_swap_template13_closed (P : PD.Prog) (hP : ProperPlayer P) (hns : noSelfIdxP P = true) (hf : fragP P = true)
@@ -586,6 +583,15 @@ theorem found_PMi : ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k → SPM.K ≤ k ∧
 lemma SPM_D_nat (k : ℕ) : SPM.D k = progListCode (sys2 (pm 1 k .mirror) (mm 0)) := by
   unfold Sys2n.D NM.code SM.code
   simp only [SPM, PMm, NM.inn, natCast_nat]
+  -- the Prudent member stores budget-abstracted templates; both its guards are snapshot-free (the inner probe is
+  -- the `k`-free `mirrorDef`), so the stored codes are the unabstracted `templateCode`s
+  have e : progCode (pm 1 k .mirror) =
+      pSearch k (templateCode (entDmG 1)) (pSearch k (templateCode prudG) (pConst 0) (pConst 1)) (pConst 1) := by
+    rw [show pm 1 k .mirror = .search k (entDmG 1) (.search k prudG (.const .C) (.const .D)) (.const .D) from rfl,
+      progCode_search_noSnap _ _ _ _ rfl, progCode_search_noSnap _ _ _ _ rfl]
+    simp [actCode]
+  rw [show progListCode (sys2 (pm 1 k .mirror) (mm 0)) = pCons (progCode (pm 1 k .mirror)) (pCons (progCode (mm 0)) pNil)
+    from rfl, e]
   rfl
 
 lemma SPM_code_nat (j k : ℕ) : SPM.code j k = progCode (.sys (sys2 (pm 1 k .mirror) (mm 0)) j) := by

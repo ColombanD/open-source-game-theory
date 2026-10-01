@@ -52,29 +52,29 @@ def dupocRowA : Tmpl → Action
 /-! ### The compiled instances -/
 
 theorem instCode_dupoc_tftSim (k : ℕ) : instCode k .dupoc .tftSim =
-    pSearch k (templateCode (probe (inst (tauZoo k) .tftSim .dupoc))) (pConst 0) (pConst 1) := by
+    pSearch k (templateCodeAt (probe (inst (tauZoo k) .tftSim .dupoc)) k) (pConst 0) (pConst 1) := by
   unfold instCode; rw [inst_dupoc_peel_tftSim]; simp [actCode]
 
 theorem instCode_dupoc_ebot (k : ℕ) : instCode k .dupoc .ebot =
-    pSearch k (templateCode (probe (inst (tauZoo k) .ebot .dupoc))) (pConst 0) (pConst 1) := by
+    pSearch k (templateCodeAt (probe (inst (tauZoo k) .ebot .dupoc)) k) (pConst 0) (pConst 1) := by
   unfold instCode; rw [inst_dupoc_peel_ebot]; simp [actCode]
 
 theorem instCode_dupoc_obot (k : ℕ) : instCode k .dupoc .obot =
-    pSearch k (templateCode (probe (inst (tauZoo k) .obot .dupoc))) (pConst 0) (pConst 1) := by
+    pSearch k (templateCodeAt (probe (inst (tauZoo k) .obot .dupoc)) k) (pConst 0) (pConst 1) := by
   unfold instCode
   rw [show inst (tauZoo k) .dupoc .obot = .search k (probe (inst (tauZoo k) .obot .dupoc)) (.const .C) (.const .D)
     from rfl]
   simp [actCode]
 
 theorem instCode_dupoc_dbot (k : ℕ) : instCode k .dupoc .dbot =
-    pSearch k (templateCode (probe (inst (tauZoo k) .dbot .dupoc))) (pConst 0) (pConst 1) := by
+    pSearch k (templateCodeAt (probe (inst (tauZoo k) .dbot .dupoc)) k) (pConst 0) (pConst 1) := by
   unfold instCode
   rw [show inst (tauZoo k) .dupoc .dbot = .search k (probe (inst (tauZoo k) .dbot .dupoc)) (.const .C) (.const .D)
     from rfl]
   simp [actCode]
 
 theorem instCode_dupoc_cupodTroll (k : ℕ) : instCode k .dupoc .cupodTroll =
-    pSearch k (templateCode (probe (inst (tauZoo k) .cupodTroll .dupoc))) (pConst 0) (pConst 1) := by
+    pSearch k (templateCodeAt (probe (inst (tauZoo k) .cupodTroll .dupoc)) k) (pConst 0) (pConst 1) := by
   unfold instCode
   rw [show inst (tauZoo k) .dupoc .cupodTroll =
     .search k (probe (inst (tauZoo k) .cupodTroll .dupoc)) (.const .C) (.const .D) from rfl]
@@ -83,7 +83,7 @@ theorem instCode_dupoc_cupodTroll (k : ℕ) : instCode k .dupoc .cupodTroll =
 /-- The diagonal: the quine. -/
 theorem instCode_dupoc_dupoc (k : ℕ) : instCode k .dupoc .dupoc =
     pSearch k (templateCode (quineF .C)) (pConst 0) (pConst 1) := by
-  unfold instCode; rw [inst_dupoc_quine]; simp [actCode]
+  unfold instCode; rw [inst_dupoc_quine]; rw [progCode_search_noSnap _ _ _ _ rfl]; simp [actCode]
 
 /-! ### The slots -/
 
@@ -98,7 +98,7 @@ theorem col_obot_dupoc : bitEventually .obot .dupoc .D := obotRowSpecA.slot (by 
 
 /-- `dupoc × obot`: the probe of a defecting instance is false — SND, D. -/
 theorem dupoc_obot_D : bitEventually .dupoc .obot .D :=
-  bitEventually.mono (fun k h ↦ dupocLike_D_of_probe_false (instCode_dupoc_obot k) rfl h) col_obot_dupoc
+  bitEventually.mono (fun k h ↦ dupocLike_D_of_probe_false_at (instCode_dupoc_obot k) rfl h) col_obot_dupoc
 
 /-- **τ(Dupoc)'s row in `S'`** — the eight theorem slots (four non-entangled, four entangled). -/
 @[tau_rowA]
@@ -122,21 +122,21 @@ in the bit's frame; not found ⇒ D. -/
 theorem dupocRowSpecA_ebot_floor : FloorBitA .dupoc .ebot
     (fun k ↦ □[k] (guardCodeB (templateCode (probe (inst (tauZoo k) .ebot .dupoc)))
       (pBot (instCode k .dupoc .ebot)) (pBot (instCode k .dupoc .ebot)) k)) .D :=
-  FloorBitA.of_not_hinge ⟨0, fun k _ hn ↦ dupocLike_floor_D (instCode_dupoc_ebot k) rfl hn⟩
+  FloorBitA.of_not_hinge ⟨0, fun k _ hn ↦ dupocLike_floor_D_at (instCode_dupoc_ebot k) rfl hn⟩
 
 /-- `dupoc × dbot` ‡ (base `dich_DupocBot_vs_DBot`). -/
 @[tau_floor_bitA]
 theorem dupocRowSpecA_dbot_floor : FloorBitA .dupoc .dbot
     (fun k ↦ □[k] (guardCodeB (templateCode (probe (inst (tauZoo k) .dbot .dupoc)))
       (pBot (instCode k .dupoc .dbot)) (pBot (instCode k .dupoc .dbot)) k)) .D :=
-  FloorBitA.of_not_hinge ⟨0, fun k _ hn ↦ dupocLike_floor_D (instCode_dupoc_dbot k) rfl hn⟩
+  FloorBitA.of_not_hinge ⟨0, fun k _ hn ↦ dupocLike_floor_D_at (instCode_dupoc_dbot k) rfl hn⟩
 
 /-- `dupoc × cupodTroll` ‡ (base `dich_DupocBot_vs_CupodTrollBot`). -/
 @[tau_floor_bitA]
 theorem dupocRowSpecA_cupodTroll_floor : FloorBitA .dupoc .cupodTroll
     (fun k ↦ □[k] (guardCodeB (templateCode (probe (inst (tauZoo k) .cupodTroll .dupoc)))
       (pBot (instCode k .dupoc .cupodTroll)) (pBot (instCode k .dupoc .cupodTroll)) k)) .D :=
-  FloorBitA.of_not_hinge ⟨0, fun k _ hn ↦ dupocLike_floor_D (instCode_dupoc_cupodTroll k) rfl hn⟩
+  FloorBitA.of_not_hinge ⟨0, fun k _ hn ↦ dupocLike_floor_D_at (instCode_dupoc_cupodTroll k) rfl hn⟩
 
 /-! ### The system floor bits — the Dupoc member's own probe is the hinge (`Tau/Entangled/`) -/
 

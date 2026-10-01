@@ -21,6 +21,7 @@ import ArithS.Agents.RevalueTemplate
 import ArithS.Agents.Prog
 import ArithS.Agents.BinNumeral
 import ArithS.Agents.CodeTerm
+import ArithS.Agents.CodeTermAbs
 import ArithS.Box.BewV
 import ArithS.Notation
 import ArithS.Readings

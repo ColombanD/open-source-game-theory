@@ -283,7 +283,7 @@ theorem pos_JustBot_vs_botCB :
   refine ⟨k₀, fun k hk ↦ ?_⟩
   have hg := h k hk
   rw [progCode_JustBot] at hg ⊢
-  exact search_then (phiJ k) hg (const_play _ _ _ _)
+  exact search_then_at (phiJ k) hg (const_play _ _ _ _)
 
 theorem tact_qJT_above : ∃ kHat : ℕ, TAct ⊢ ∀¹ ((leF (↑kHat) #0 : Semisentence LAct 1) 🡒 qJT) := by
   obtain ⟨k₁, h₁⟩ := botDupoc_botCB_V
@@ -318,7 +318,7 @@ theorem khat_JustBot_vs_TitForTatBot :
   · have hg := h k (by omega)
     rw [progCode_JustBot] at hg ⊢
     refine EvalGraph.mono_le (n := 0 + 1 + 1) (by omega) ?_
-    exact search_then (phiJ k) hg (const_play _ _ _ _)
+    exact search_then_at (phiJ k) hg (const_play _ _ _ _)
   · exact EvalGraph.mono_le (n := 2 + 1 + 1) (by omega) (tft_C_of_probe_C (h₁ k (by omega)))
 
 /-! #### CIMCIC × TitForTatBot `(C, C)` -/
@@ -688,7 +688,7 @@ theorem evalGraph_CupodTroll7_iff (n me opp a k : ℕ) :
   | succ n =>
     rw [progCode_CupodTrollBot]
     show EvalGraph (n + 1) me opp (pSearch k (⌜guardTemplateTroll7⌝ : ℕ) (pConst 1) (pConst 0)) a ↔ _
-    rw [EvalGraph.search_iff, guardCodeB_guardTemplateTroll7_nat, EvalGraph.search_iff₆ (isSemiformula_templateCode _)]
+    rw [EvalGraph.search_iff, guardCodeB_guardTemplateTroll7_nat, EvalGraph.search_iff_at (phiT k)]
 
 end troll7
 
@@ -975,7 +975,7 @@ theorem khat_CupodTrollBot_vs_CupodBot_engine :
   refine ⟨k₀, fun k hk ↦ ?_⟩
   have hg := h k hk
   rw [progCode_CupodTrollBot] at hg ⊢
-  exact search_then (phiT k) hg (const_play _ _ _ _)
+  exact search_then_at (phiT k) hg (const_play _ _ _ _)
 
 end trollCupod
 

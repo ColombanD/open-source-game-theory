@@ -386,10 +386,10 @@ lemma ofSearch_g (φ : PD.Formula) (a : PD.Action) : (ofSearch φ a).g = templat
 lemma ofSearch_a (φ : PD.Formula) (a : PD.Action) : (ofSearch φ a).a = actCode a := rfl
 
 /-- At ℕ, the member's code is the engine's code of the searcher. -/
-theorem code_nat (φ : PD.Formula) (a : PD.Action) (k : ℕ) :
+theorem code_nat (φ : PD.Formula) (a : PD.Action) (k : ℕ) (hφ : noBudgetSnapshotF φ = true := by noSnap_tac) :
     (ofSearch φ a).code k = progCode (.search k φ (.const a) (.const a.swap)) := by
   unfold code
-  rw [progCode_search, progCode_const, progCode_const]
+  rw [progCode_search, templateCodeAt_eq_templateCode φ k hφ, progCode_const, progCode_const]
   simp only [natCast_nat, ofSearch_g, ofSearch_a]
   cases a <;> rfl
 
@@ -398,24 +398,27 @@ end SM
 namespace Sys2
 
 /-- At ℕ, the list code of a system of two compiled searchers is the engine's list code. -/
-theorem D_nat (φ₀ φ₁ : PD.Formula) (a₀ a₁ : PD.Action) (k : ℕ) :
+theorem D_nat (φ₀ φ₁ : PD.Formula) (a₀ a₁ : PD.Action) (k : ℕ)
+    (h₀ : noBudgetSnapshotF φ₀ = true := by noSnap_tac) (h₁ : noBudgetSnapshotF φ₁ = true := by noSnap_tac) :
     (Sys2.mk (SM.ofSearch φ₀ a₀) (SM.ofSearch φ₁ a₁)).D k =
       progListCode (sys2 (.search k φ₀ (.const a₀) (.const a₀.swap)) (.search k φ₁ (.const a₁) (.const a₁.swap))) := by
-  unfold D; rw [SM.code_nat, SM.code_nat]; rfl
+  unfold D; rw [SM.code_nat _ _ _ h₀, SM.code_nat _ _ _ h₁]; rfl
 
-theorem code_nat (φ₀ φ₁ : PD.Formula) (a₀ a₁ : PD.Action) (j k : ℕ) :
+theorem code_nat (φ₀ φ₁ : PD.Formula) (a₀ a₁ : PD.Action) (j k : ℕ)
+    (h₀ : noBudgetSnapshotF φ₀ = true := by noSnap_tac) (h₁ : noBudgetSnapshotF φ₁ = true := by noSnap_tac) :
     (Sys2.mk (SM.ofSearch φ₀ a₀) (SM.ofSearch φ₁ a₁)).code j k =
       progCode (.sys (sys2 (.search k φ₀ (.const a₀) (.const a₀.swap)) (.search k φ₁ (.const a₁) (.const a₁.swap))) j) := by
-  unfold code; rw [D_nat, progCode_sys, natCast_nat]
+  unfold code; rw [D_nat _ _ _ _ _ h₀ h₁, progCode_sys, natCast_nat]
 
 /-- **The consulted code at ℕ is the engine's guard code of the CLOSED guard** (`templateCode_sysClose`), in the
 engine's frame: the bridge from a family's box to `Base.lean`'s `bit_*_then` lemmas. -/
 theorem guardCodeB_sysClose_nat (φ₀ φ₁ : PD.Formula) (a₀ a₁ : PD.Action) (k : ℕ) (φ : PD.Formula) (hφ : memberGuardF φ = true)
     (hns : noSelfIdxF (φ.sysClose (sys2 (.search k φ₀ (.const a₀) (.const a₀.swap)) (.search k φ₁ (.const a₁) (.const a₁.swap)))) = true)
-    (x y : ℕ) :
+    (x y : ℕ)
+    (h₀ : noBudgetSnapshotF φ₀ = true := by noSnap_tac) (h₁ : noBudgetSnapshotF φ₁ = true := by noSnap_tac) :
     guardCodeB (sysCloseTemplate ((Sys2.mk (SM.ofSearch φ₀ a₀) (SM.ofSearch φ₁ a₁)).D k) ((⌜template13 φ⌝ : ℕ) : ℕ)) x y k =
       guardCode (templateCode (φ.sysClose (sys2 (.search k φ₀ (.const a₀) (.const a₀.swap)) (.search k φ₁ (.const a₁) (.const a₁.swap))))) x y := by
-  rw [D_nat]
+  rw [D_nat _ _ _ _ _ h₀ h₁]
   show guardCodeB (sysCloseTemplate _ (templateCode φ)) x y k = _
   rw [templateCode_sysClose _ φ hφ, guardCodeB_of_template (isSemiformula_templateCode _ hns)]
 

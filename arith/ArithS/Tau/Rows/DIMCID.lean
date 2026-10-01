@@ -1,5 +1,4 @@
 import ArithS.Tau.Quine
-import ArithS.Tau.NeverFits
 import ArithS.Tau.Entangled.DimcidDupoc
 import ArithS.Tau.Entangled.DimcidCupod
 import ArithS.Tau.Entangled.DimcidCimcic
@@ -42,11 +41,11 @@ namespace ArithS.Tau
 
 open PD PD.Tau
 
-/-- τ(DIMCID)'s bit row in `S'`: D at the budget-free hypotheses and the diagonal, C at the five budget-carrying
-hypotheses (the engine's values — see the module docstring); the entangled slots keep the table's D. -/
+/-- τ(DIMCID)'s bit row in `S'`: the table's D everywhere (the five C's of the never-fits reading were an artefact
+of the pre-2026-10-01 coding; those slots are UNSTATED until Phase 3e re-proves them). -/
 def dimcidRowA : Tmpl → Action
-  | .coop => .D | .defect => .D | .tftSim => .C | .dupoc => .D | .ebot => .C | .obot => .C | .dbot => .C
-  | .cupodTroll => .C | .cupod => .D | .dimcid => .D | .cimcic => .D | .prudent => .D
+  | .coop => .D | .defect => .D | .tftSim => .D | .dupoc => .D | .ebot => .D | .obot => .D | .dbot => .D
+  | .cupodTroll => .D | .cupod => .D | .dimcid => .D | .cimcic => .D | .prudent => .D
   | .maxconfidence => .D | .minconfidence => .D
   | _ => .D
 
@@ -55,30 +54,13 @@ abbrev dimG (X : PD.Prog) : PD.Formula := .impl (.plays .self (.bot X) .C) (.pla
 
 /-! ### The compiled instances -/
 
-theorem instCode_dimcid_tftSim (k : ℕ) : instCode k .dimcid .tftSim =
-    pSearch k (templateCode (dimG (inst (tauZoo k) .tftSim .dimcid))) (pConst 1) (pConst 0) := by
-  unfold instCode; rw [inst_dimcid_peel_tftSim]; simp [actCode]
-
-theorem instCode_dimcid_ebot (k : ℕ) : instCode k .dimcid .ebot =
-    pSearch k (templateCode (dimG (inst (tauZoo k) .ebot .dimcid))) (pConst 1) (pConst 0) := by
-  unfold instCode; rw [inst_dimcid_peel_ebot]; simp [actCode]
-
-theorem instCode_dimcid_obot (k : ℕ) : instCode k .dimcid .obot =
-    pSearch k (templateCode (dimG (inst (tauZoo k) .obot .dimcid))) (pConst 1) (pConst 0) := by
-  unfold instCode; rw [inst_dimcid_peel_obot]; simp [actCode]
-
-theorem instCode_dimcid_dbot (k : ℕ) : instCode k .dimcid .dbot =
-    pSearch k (templateCode (dimG (inst (tauZoo k) .dbot .dimcid))) (pConst 1) (pConst 0) := by
-  unfold instCode; rw [inst_dimcid_peel_dbot]; simp [actCode]
-
-theorem instCode_dimcid_cupodTroll (k : ℕ) : instCode k .dimcid .cupodTroll =
-    pSearch k (templateCode (dimG (inst (tauZoo k) .cupodTroll .dimcid))) (pConst 1) (pConst 0) := by
-  unfold instCode; rw [inst_dimcid_peel_cupodTroll]; simp [actCode]
+-- Phase 3e: the instance equations of the five budget-carrying hypotheses (`tftSim ebot obot dbot cupodTroll`) now
+-- store the ABSTRACTED template `templateCodeAt (dimG (inst T .dimcid)) k`; restated with the slots in Phase 3e.
 
 /-- The diagonal: the Löb fixpoint on defection. -/
 theorem instCode_dimcid_dimcid (k : ℕ) : instCode k .dimcid .dimcid =
     pSearch k (templateCode dimQ) (pConst 1) (pConst 0) := by
-  unfold instCode; rw [inst_dimcid_quine]; simp [actCode]
+  unfold instCode; rw [inst_dimcid_quine]; rw [progCode_search_noSnap _ _ _ _ rfl]; simp [actCode]
 
 /-! ### The slots -/
 
@@ -88,52 +70,18 @@ theorem dimcid_quine_D : bitEventually .dimcid .dimcid .D := by
   refine ⟨k₀, fun k hk ↦ bitPlays_of_eq (instCode_dimcid_dimcid k) ?_⟩
   exact ⟨_, search_then dimQ (h k hk) (const_play 0 _ _ _)⟩
 
-/-! ### The five budget-carrying hypotheses: the guard never fits — C -/
+-- Phase 3e: slots `.tftSim .ebot .obot .dbot .cupodTroll` UNSTATED. Their previous proofs (`dimcid_selfBot_C`, the
+-- never-fits obstruction of `Tau/NeverFits.lean`) were an artefact of the pre-2026-10-01 coding; under budget
+-- abstraction the stored templates are constants and the table's D (the base flip `dimcid_vs_closed`) is expected.
 
-theorem hasSearch_tftSim_dimcid (k : ℕ) : HasSearchP k (inst (tauZoo k) .tftSim .dimcid) := by
-  rw [inst_tftSim_peel, inst_dimcid_peel_coop]
-  exact .iteB _ _ _ (.simL _ (.bot (.search _ _ _)))
-
-theorem hasSearch_ebot_dimcid (k : ℕ) : HasSearchP k (inst (tauZoo k) .ebot .dimcid) := by
-  rw [inst_ebot_peel, inst_dimcid_peel_defect]
-  exact .iteB _ _ _ (.simL _ (.bot (.search _ _ _)))
-
-theorem hasSearch_obot_dimcid (k : ℕ) : HasSearchP k (inst (tauZoo k) .obot .dimcid) := by
-  rw [inst_obot_peel, inst_dimcid_peel_coop]
-  exact .iteB _ _ _ (.simL _ (.bot (.search _ _ _)))
-
-theorem hasSearch_dbot_dimcid (k : ℕ) : HasSearchP k (inst (tauZoo k) .dbot .dimcid) := by
-  rw [inst_dbot_peel, inst_dimcid_peel_defect]
-  exact .iteB _ _ _ (.simL _ (.bot (.search _ _ _)))
-
-theorem hasSearch_cupodTroll_dimcid (k : ℕ) : HasSearchP k (inst (tauZoo k) .cupodTroll .dimcid) := by
-  rw [inst_cupodTroll_peel k .dimcid (by decide)]
-  exact .search _ _ _
-
-theorem dimcid_tftSim_C (k : ℕ) : bitPlays k .dimcid .tftSim .C :=
-  dimcid_selfBot_C (instCode_dimcid_tftSim k) (inst_dimcid_peel_tftSim k) (hasSearch_tftSim_dimcid k) rfl
-theorem dimcid_ebot_C (k : ℕ) : bitPlays k .dimcid .ebot .C :=
-  dimcid_selfBot_C (instCode_dimcid_ebot k) (inst_dimcid_peel_ebot k) (hasSearch_ebot_dimcid k) rfl
-theorem dimcid_obot_C (k : ℕ) : bitPlays k .dimcid .obot .C :=
-  dimcid_selfBot_C (instCode_dimcid_obot k) (inst_dimcid_peel_obot k) (hasSearch_obot_dimcid k) rfl
-theorem dimcid_dbot_C (k : ℕ) : bitPlays k .dimcid .dbot .C :=
-  dimcid_selfBot_C (instCode_dimcid_dbot k) (inst_dimcid_peel_dbot k) (hasSearch_dbot_dimcid k) rfl
-theorem dimcid_cupodTroll_C (k : ℕ) : bitPlays k .dimcid .cupodTroll .C :=
-  dimcid_selfBot_C (instCode_dimcid_cupodTroll k) (inst_dimcid_peel_cupodTroll k) (hasSearch_cupodTroll_dimcid k) rfl
-
-/-- **τ(DIMCID)'s row in `S'`** — thirteen theorem slots (eight non-entangled, five entangled; `prudent` unstated). -/
+/-- **τ(DIMCID)'s row in `S'`** — eight theorem slots (three non-entangled, five entangled; `tftSim ebot obot dbot
+cupodTroll prudent` unstated pending Phase 3e). -/
 @[tau_rowA]
 theorem dimcidRowSpecA : RowSpecA .dimcid
-    [.coop, .defect, .tftSim, .dupoc, .ebot, .obot, .dbot, .cupodTroll, .cupod, .dimcid, .cimcic,
-     .maxconfidence, .minconfidence] dimcidRowA :=
+    [.coop, .defect, .dupoc, .cupod, .dimcid, .cimcic, .maxconfidence, .minconfidence] dimcidRowA :=
   RowSpecA.cons col_dimcid_coop <|
   RowSpecA.cons col_dimcid_defect <|
-  RowSpecA.cons (bitEventually.of_forall dimcid_tftSim_C) <|
   RowSpecA.cons ent_dimcid_dupoc <|
-  RowSpecA.cons (bitEventually.of_forall dimcid_ebot_C) <|
-  RowSpecA.cons (bitEventually.of_forall dimcid_obot_C) <|
-  RowSpecA.cons (bitEventually.of_forall dimcid_dbot_C) <|
-  RowSpecA.cons (bitEventually.of_forall dimcid_cupodTroll_C) <|
   RowSpecA.cons ent_dimcid_cupod <|
   RowSpecA.cons dimcid_quine_D <|
   RowSpecA.cons ent_dimcid_cimcic <|

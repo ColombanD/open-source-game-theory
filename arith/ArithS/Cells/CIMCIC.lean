@@ -111,7 +111,7 @@ lemma CimcicV_nat (k : ℕ) : CimcicV (V := ℕ) k = Cimcic k := rfl
 
 /-- **The bridge to the engine**: the code of the engine's `CIMCIC k` is `Cimcic k`. -/
 theorem progCode_CIMCIC (k : ℕ) : progCode (PD.Bots.CIMCIC k) = Cimcic k := by
-  simp [PD.Bots.CIMCIC, actCode]
+  rw [PD.Bots.CIMCIC, progCode_search_noSnap _ _ _ _ rfl]; simp only [progCode_const, actCode]
   change pSearch k (templateCode phiC) _ _ = _
   rw [templateCode_eq_quote_template phiC (noSelfIdxF_of_fragF _ fragF_phiC)]; rfl
 

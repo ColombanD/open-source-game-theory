@@ -467,12 +467,7 @@ lemma fOcc_lenBox : FOcc (0 : Fin 2) ((lenBox TAct).sigma.val) := by
 
 lemma fOcc_lenProvG : FOcc (0 : Fin 2) lenProvG := FOcc_lMap emb _ _ fOcc_lenBox
 
-/-- The code of the binary numeral term of `c` is `binNumeral c`. -/
-lemma quote_numTB (c : ℕ) : (⌜numTB c⌝ : ℕ) = binNumeral c := by
-  unfold numTB
-  rw [Semiterm.empty_quote_def, term_emb_lMap_emb, quote_term_lMap_emb, ← Semiterm.empty_quote_def,
-    quote_binNumeralMeta]
-  simp
+-- `quote_numTB` lives in `Agents/Code.lean` since 2026-10-01.
 
 /-- The budget-carrying conjunct of a box template carries the code `binNumeral k`, for any
 substitution vector whose first entry is the numeral. NOTE: this lemma is never applied
@@ -678,32 +673,33 @@ lemma le_pSearch (k g p q : ℕ) : g ≤ pSearch k g p q := by
 
 /-- A searcher on a box-carrying guard has code `≥ binNumeral k`. -/
 theorem binNumeral_le_progCode_search {k : ℕ} {φ : PD.Formula} (h : HasBox k φ) (k' : ℕ) (p q : PD.Prog)
-    (hφ : noSelfIdxF φ = true := by noSelfIdx_tac) :
+    (hφ : noSelfIdxF φ = true := by noSelfIdx_tac) (hφ' : noBudgetSnapshotF φ = true := by noSnap_tac) :
     binNumeral k ≤ progCode (.search k' φ p q) := by
-  rw [progCode_search]
+  rw [progCode_search_noSnap _ _ _ _ hφ']
   exact le_trans (binNumeral_le_templateCode h) (le_pSearch _ _ _ _)
 
 theorem binNumeral_le_transposeCode_progCode_search {k : ℕ} {φ : PD.Formula} (h : HasBox k φ) (k' : ℕ) (p q : PD.Prog)
-    (hφ : noSelfIdxF φ = true := by noSelfIdx_tac) :
+    (hφ : noSelfIdxF φ = true := by noSelfIdx_tac) (hφ' : noBudgetSnapshotF φ = true := by noSnap_tac) :
     binNumeral k ≤ transposeCode (progCode (.search k' φ p q)) := by
-  rw [progCode_search, transposeCode, revalue_search]
+  rw [progCode_search_noSnap _ _ _ _ hφ', transposeCode, revalue_search]
   exact le_trans (binNumeral_le_revalueTemplate_templateCode h) (le_pSearch _ _ _ _)
 
 /-- The canonical numeral (`min` of the code and its transposition) is still `≥ binNumeral k`. -/
 theorem binNumeral_le_canonical_progCode_search {k : ℕ} {φ : PD.Formula} (h : HasBox k φ) (k' : ℕ) (p q : PD.Prog)
-    (hφ : noSelfIdxF φ = true := by noSelfIdx_tac) :
+    (hφ : noSelfIdxF φ = true := by noSelfIdx_tac) (hφ' : noBudgetSnapshotF φ = true := by noSnap_tac) :
     binNumeral k ≤ canonical (progCode (.search k' φ p q)) := by
   unfold canonical
   split_ifs
-  · exact binNumeral_le_progCode_search h k' p q
-  · exact binNumeral_le_transposeCode_progCode_search h k' p q
+  · exact binNumeral_le_progCode_search h k' p q hφ hφ'
+  · exact binNumeral_le_transposeCode_progCode_search h k' p q hφ hφ'
 
 /-- **The description of a box-carrying searcher has bit length `> k`** — Critch's (b) fails
-for it regardless of how the numeral is written. -/
+for it regardless of how the numeral is written. (A box body is stored unabstracted, so the guard's own
+`noBudgetSnapshotF` is what the searcher's code needs: it holds for every `.box`-headed guard.) -/
 theorem size_canonical_progCode_search_ge {k : ℕ} {φ : PD.Formula} (h : HasBox k φ) (k' : ℕ) (p q : PD.Prog)
-    (hφ : noSelfIdxF φ = true := by noSelfIdx_tac) :
+    (hφ : noSelfIdxF φ = true := by noSelfIdx_tac) (hφ' : noBudgetSnapshotF φ = true := by noSnap_tac) :
     k + 2 ≤ Nat.size (canonical (progCode (.search k' φ p q))) :=
-  le_trans (size_binNumeral_ge k) (Nat.size_le_size (binNumeral_le_canonical_progCode_search h k' p q))
+  le_trans (size_binNumeral_ge k) (Nat.size_le_size (binNumeral_le_canonical_progCode_search h k' p q hφ hφ'))
 
 end hasBox
 
@@ -789,18 +785,18 @@ canonical numeral of `progCode me`, `progCode me` stores `templateCode φ = ⌜t
 the budget as the binary numeral term `numTB k` whose CODE `binNumeral k` is `≥ 2^(k+1)`, and a
 binary numeral of a number is at least as long as that number's bit length. -/
 theorem box_guard_never_fits {k : ℕ} {φ : PD.Formula} (h : HasBox k φ) (k' : ℕ) (p q opp : PD.Prog)
-    (hφ : noSelfIdxF φ = true := by noSelfIdx_tac) :
+    (hφ : noSelfIdxF φ = true := by noSelfIdx_tac) (hφ' : noBudgetSnapshotF φ = true := by noSnap_tac) :
     k < formulaLenMeta (Rewriting.emb (sentenceAt (.search k' φ p q) opp φ) : Proposition LAct) := by
   have h1 := size_canonical_le_formulaLenMeta_sentenceAt_hasBox (.search k' φ p q) opp h
-  have h2 := size_canonical_progCode_search_ge h k' p q
+  have h2 := size_canonical_progCode_search_ge h k' p q hφ hφ'
   omega
 
 /-- In particular the guard of the SAME-budget searcher never fits, at any budget — the
 negation of the `guard_fits` statement of `ArithS.Fit` for this searcher. -/
 theorem not_box_guard_fits {k : ℕ} {φ : PD.Formula} (h : HasBox k φ) (k' : ℕ) (p q opp : PD.Prog)
-    (hφ : noSelfIdxF φ = true := by noSelfIdx_tac) :
+    (hφ : noSelfIdxF φ = true := by noSelfIdx_tac) (hφ' : noBudgetSnapshotF φ = true := by noSnap_tac) :
     ¬ formulaLenMeta (Rewriting.emb (sentenceAt (.search k' φ p q) opp φ) : Proposition LAct) ≤ k :=
-  Nat.not_le.mpr (box_guard_never_fits h k' p q opp)
+  Nat.not_le.mpr (box_guard_never_fits h k' p q opp hφ hφ')
 
 /-- The zoo instance: `LegibleBot k k = .search k (□_k (I play C)) C D`. Its guard sentence
 against any opponent has more than `k` symbols, so its search can never succeed. -/

@@ -45,29 +45,29 @@ def cupodRowA : Tmpl → Action
 /-! ### The compiled instances -/
 
 theorem instCode_cupod_tftSim (k : ℕ) : instCode k .cupod .tftSim =
-    pSearch k (templateCode (probeD (inst (tauZoo k) .tftSim .cupod))) (pConst 1) (pConst 0) := by
+    pSearch k (templateCodeAt (probeD (inst (tauZoo k) .tftSim .cupod)) k) (pConst 1) (pConst 0) := by
   unfold instCode; rw [inst_cupod_peel_tftSim]; simp [actCode]
 
 theorem instCode_cupod_ebot (k : ℕ) : instCode k .cupod .ebot =
-    pSearch k (templateCode (probeD (inst (tauZoo k) .ebot .cupod))) (pConst 1) (pConst 0) := by
+    pSearch k (templateCodeAt (probeD (inst (tauZoo k) .ebot .cupod)) k) (pConst 1) (pConst 0) := by
   unfold instCode; rw [inst_cupod_peel_ebot]; simp [actCode]
 
 theorem instCode_cupod_obot (k : ℕ) : instCode k .cupod .obot =
-    pSearch k (templateCode (probeD (inst (tauZoo k) .obot .cupod))) (pConst 1) (pConst 0) := by
+    pSearch k (templateCodeAt (probeD (inst (tauZoo k) .obot .cupod)) k) (pConst 1) (pConst 0) := by
   unfold instCode; rw [inst_cupod_peel_obot]; simp [actCode]
 
 theorem instCode_cupod_dbot (k : ℕ) : instCode k .cupod .dbot =
-    pSearch k (templateCode (probeD (inst (tauZoo k) .dbot .cupod))) (pConst 1) (pConst 0) := by
+    pSearch k (templateCodeAt (probeD (inst (tauZoo k) .dbot .cupod)) k) (pConst 1) (pConst 0) := by
   unfold instCode; rw [inst_cupod_peel_dbot]; simp [actCode]
 
 theorem instCode_cupod_cupodTroll (k : ℕ) : instCode k .cupod .cupodTroll =
-    pSearch k (templateCode (probeD (inst (tauZoo k) .cupodTroll .cupod))) (pConst 1) (pConst 0) := by
+    pSearch k (templateCodeAt (probeD (inst (tauZoo k) .cupodTroll .cupod)) k) (pConst 1) (pConst 0) := by
   unfold instCode; rw [inst_cupod_peel_cupodTroll]; simp [actCode]
 
 /-- The diagonal: the quine, fire D. -/
 theorem instCode_cupod_cupod (k : ℕ) : instCode k .cupod .cupod =
     pSearch k (templateCode (quineF .D)) (pConst 1) (pConst 0) := by
-  unfold instCode; rw [inst_cupod_quine]; simp [actCode]
+  unfold instCode; rw [inst_cupod_quine]; rw [progCode_search_noSnap _ _ _ _ rfl]; simp [actCode]
 
 /-! ### The slots -/
 
@@ -83,11 +83,11 @@ theorem col_ebot_cupod : bitEventually .ebot .cupod .C := ebotRowSpecA.slot (by 
 theorem col_dbot_cupod : bitEventually .dbot .cupod .C := dbotRowSpecA.slot (by simp)
 
 theorem cupod_tftSim_C : bitEventually .cupod .tftSim .C :=
-  bitEventually.mono (fun k h ↦ cupod_C_of_probeD_false (instCode_cupod_tftSim k) rfl h) col_tftSim_cupod
+  bitEventually.mono (fun k h ↦ cupod_C_of_probeD_false_at (instCode_cupod_tftSim k) rfl h) col_tftSim_cupod
 theorem cupod_ebot_C : bitEventually .cupod .ebot .C :=
-  bitEventually.mono (fun k h ↦ cupod_C_of_probeD_false (instCode_cupod_ebot k) rfl h) col_ebot_cupod
+  bitEventually.mono (fun k h ↦ cupod_C_of_probeD_false_at (instCode_cupod_ebot k) rfl h) col_ebot_cupod
 theorem cupod_dbot_C : bitEventually .cupod .dbot .C :=
-  bitEventually.mono (fun k h ↦ cupod_C_of_probeD_false (instCode_cupod_dbot k) rfl h) col_dbot_cupod
+  bitEventually.mono (fun k h ↦ cupod_C_of_probeD_false_at (instCode_cupod_dbot k) rfl h) col_dbot_cupod
 
 /-- `cupod × cupodTroll`: the defection probe of the `.eq`-searcher is found — D (`cupod_cupodTroll_found`). -/
 theorem cupod_cupodTroll_D : bitEventually .cupod .cupodTroll .D := by
@@ -95,7 +95,7 @@ theorem cupod_cupodTroll_D : bitEventually .cupod .cupodTroll .D := by
   refine ⟨k₀, fun k hk ↦ bitPlays_of_eq (instCode_cupod_cupodTroll k) ?_⟩
   have hf := h k hk
   rw [instCode_cupod_cupodTroll] at hf
-  exact ⟨_, search_then _ hf (const_play 0 _ _ _) rfl⟩
+  exact ⟨_, search_then_at _ hf (const_play 0 _ _ _) rfl⟩
 
 /-- **τ(Cupod)'s row in `S'`** — the eight theorem slots (seven non-entangled, `dimcid` entangled). -/
 @[tau_rowA]
@@ -118,7 +118,7 @@ Cupod, in the bit's frame; not found ⇒ C. -/
 theorem cupodRowSpecA_obot_floor : FloorBitA .cupod .obot
     (fun k ↦ □[k] (guardCodeB (templateCode (probeD (inst (tauZoo k) .obot .cupod)))
       (pBot (instCode k .cupod .obot)) (pBot (instCode k .cupod .obot)) k)) .C :=
-  FloorBitA.of_not_hinge ⟨0, fun k _ hn ↦ cupod_floor_C (instCode_cupod_obot k) rfl hn⟩
+  FloorBitA.of_not_hinge ⟨0, fun k _ hn ↦ cupod_floor_C_at (instCode_cupod_obot k) rfl hn⟩
 
 /-! ### The system floor bits — the Cupod member's own punish-probe is the hinge (`Tau/Entangled/`) -/
 

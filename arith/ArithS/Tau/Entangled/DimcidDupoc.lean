@@ -32,7 +32,7 @@ theorem found_DiD_engine : ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
   obtain ⟨hK, b₁, -⟩ := h k hk
   have := Sys2.box_guard_nat hK 0 0 0 rfl b₁
   rw [show SDiD = Sys2.mk (SM.ofSearch (entDimG 1) .D) (SM.ofSearch (entDmG 0) .C) from rfl] at this
-  rw [Sys2.guardCodeB_sysClose_nat (entDimG 1) (entDmG 0) .D .C k (entDimG 1) rfl rfl, Sys2.code_nat] at this
+  rw [Sys2.guardCodeB_sysClose_nat (entDimG 1) (entDmG 0) .D .C k (entDimG 1) rfl rfl, Sys2.code_nat (entDimG 1) (entDmG 0) .D .C] at this
   exact this
 
 /-- `dimcid × dupoc`: D — the FLIP (the engine reads this bit `C`). -/
@@ -62,7 +62,7 @@ theorem dupoc_probe_dimcid_not_found : ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
   refine ⟨k₀, fun k hk ↦ ?_⟩
   obtain ⟨hK, b₁, -⟩ := h k hk
   have hD := Sys2.plays_of_box_nat hK 1 (by decide) 1 1 b₁
-  rw [show SDDi = Sys2.mk (SM.ofSearch (entDmG 1) .C) (SM.ofSearch (entDimG 0) .D) from rfl, Sys2.code_nat] at hD
+  rw [show SDDi = Sys2.mk (SM.ofSearch (entDmG 1) .C) (SM.ofSearch (entDimG 0) .D) from rfl, Sys2.code_nat (entDmG 1) (entDimG 0) .C .D] at hD
   refine closed_not_found rfl ?_ k
   rw [models_partner_probe]
   exact not_exists_evalGraph_of_ne (a := .C) (b := .D) (by decide) hD

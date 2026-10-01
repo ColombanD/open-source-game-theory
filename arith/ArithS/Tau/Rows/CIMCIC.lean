@@ -1,5 +1,4 @@
 import ArithS.Tau.Quine
-import ArithS.Tau.NeverFits
 import ArithS.Tau.Entangled.DupocCimcic
 import ArithS.Tau.Entangled.DimcidCimcic
 import ArithS.Tau.Entangled.CupodCimcic
@@ -42,9 +41,10 @@ namespace ArithS.Tau
 
 open PD PD.Tau
 
-/-- τ(CIMCIC)'s bit row — the table's values except `tftSim`, which is D in `S'` (see the module docstring). -/
+/-- τ(CIMCIC)'s bit row — the table's values (`tftSim` C: the never-fits reading of 2026-10-01 morning was an
+artefact of the pre-abstraction coding; the slot is UNSTATED until Phase 3e re-proves it). -/
 def cimcicRowA : Tmpl → Action
-  | .coop => .C | .defect => .D | .tftSim => .D | .dupoc => .C | .ebot => .D | .obot => .D | .dbot => .D
+  | .coop => .C | .defect => .D | .tftSim => .C | .dupoc => .C | .ebot => .D | .obot => .D | .dbot => .D
   | .cupodTroll => .D | .cupod => .D | .dimcid => .D | .cimcic => .C | .prudent => .D
   | .maxconfidence => .C | .minconfidence => .C
   | _ => .D
@@ -55,29 +55,29 @@ abbrev cimG (X : PD.Prog) : PD.Formula := .impl (.plays .self (.bot X) .C) (.pla
 /-! ### The compiled instances -/
 
 theorem instCode_cimcic_tftSim (k : ℕ) : instCode k .cimcic .tftSim =
-    pSearch k (templateCode (cimG (inst (tauZoo k) .tftSim .cimcic))) (pConst 0) (pConst 1) := by
+    pSearch k (templateCodeAt (cimG (inst (tauZoo k) .tftSim .cimcic)) k) (pConst 0) (pConst 1) := by
   unfold instCode; rw [inst_cimcic_peel_tftSim]; simp [actCode]
 
 theorem instCode_cimcic_ebot (k : ℕ) : instCode k .cimcic .ebot =
-    pSearch k (templateCode (cimG (inst (tauZoo k) .ebot .cimcic))) (pConst 0) (pConst 1) := by
+    pSearch k (templateCodeAt (cimG (inst (tauZoo k) .ebot .cimcic)) k) (pConst 0) (pConst 1) := by
   unfold instCode; rw [inst_cimcic_peel_ebot]; simp [actCode]
 
 theorem instCode_cimcic_obot (k : ℕ) : instCode k .cimcic .obot =
-    pSearch k (templateCode (cimG (inst (tauZoo k) .obot .cimcic))) (pConst 0) (pConst 1) := by
+    pSearch k (templateCodeAt (cimG (inst (tauZoo k) .obot .cimcic)) k) (pConst 0) (pConst 1) := by
   unfold instCode; rw [inst_cimcic_peel_obot]; simp [actCode]
 
 theorem instCode_cimcic_dbot (k : ℕ) : instCode k .cimcic .dbot =
-    pSearch k (templateCode (cimG (inst (tauZoo k) .dbot .cimcic))) (pConst 0) (pConst 1) := by
+    pSearch k (templateCodeAt (cimG (inst (tauZoo k) .dbot .cimcic)) k) (pConst 0) (pConst 1) := by
   unfold instCode; rw [inst_cimcic_peel_dbot]; simp [actCode]
 
 theorem instCode_cimcic_cupodTroll (k : ℕ) : instCode k .cimcic .cupodTroll =
-    pSearch k (templateCode (cimG (inst (tauZoo k) .cupodTroll .cimcic))) (pConst 0) (pConst 1) := by
+    pSearch k (templateCodeAt (cimG (inst (tauZoo k) .cupodTroll .cimcic)) k) (pConst 0) (pConst 1) := by
   unfold instCode; rw [inst_cimcic_peel_cupodTroll]; simp [actCode]
 
 /-- The diagonal: the tautology. -/
 theorem instCode_cimcic_cimcic (k : ℕ) : instCode k .cimcic .cimcic =
     pSearch k (templateCode cimQ) (pConst 0) (pConst 1) := by
-  unfold instCode; rw [inst_cimcic_quine]; simp [actCode]
+  unfold instCode; rw [inst_cimcic_quine]; rw [progCode_search_noSnap _ _ _ _ rfl]; simp [actCode]
 
 /-! ### The slots -/
 
@@ -124,7 +124,7 @@ theorem cimcic_obot_not_found {k : ℕ} (hco : bitPlays k .cimcic .coop .C) :
     rw [progCode_bot_inst, progCode_bot_inst, instCode_cimcic_obot] at hf' ⊢
     show EvalGraph (2 + 1) _ _ _ _
     rw [EvalGraph.bot_iff]
-    exact search_then _ hf' (const_play 0 _ _ _) hns
+    exact search_then_at _ hf' (const_play 0 _ _ _) hns
   -- by soundness the guard is true in ℕ: `.bot X` cooperates with the instance — against the fact
   have hT := models_sentenceAt_of_lenBox hf hns
   rw [← sentenceAt_subst (.bot (inst (tauZoo k) .cimcic .obot)) (.bot (inst (tauZoo k) .cimcic .obot)) hme hme _ hfr] at hT
@@ -139,14 +139,9 @@ theorem cimcic_obot_not_found {k : ℕ} (hco : bitPlays k .cimcic .coop .C) :
   obtain ⟨n, hn⟩ := obot_cimcic_D_frame hco
   exact absurd (EvalGraph.unique' hN' (hn _ _)) (by decide)
 
-/-- τ(TFTSim)'s instance at CIMCIC carries the budget: its watch is `inst cimcic coop = .search k …`. -/
-theorem hasSearch_tftSim_cimcic (k : ℕ) : HasSearchP k (inst (tauZoo k) .tftSim .cimcic) := by
-  rw [inst_tftSim_peel, inst_cimcic_peel_coop]
-  exact .iteB _ _ _ (.simL _ (.bot (.search _ _ _)))
-
-/-- **`cimcic × tftSim`: D — the guard never fits** (`Tau/NeverFits.lean`). -/
-theorem cimcic_tftSim_D (k : ℕ) : bitPlays k .cimcic .tftSim .D :=
-  cimcic_selfBot_D (instCode_cimcic_tftSim k) (inst_cimcic_peel_tftSim k) (hasSearch_tftSim_cimcic k) rfl
+-- Phase 3e: slot `.tftSim` UNSTATED. Its previous proof (`cimcic_selfBot_D`, the never-fits obstruction of
+-- `Tau/NeverFits.lean`) was an artefact of the pre-2026-10-01 coding; under budget abstraction the stored template of
+-- `inst cimcic tftSim` is a constant and the table's value C is expected — to be re-proved in Phase 3e.
 
 /-- `cimcic × obot`: D (else-branch). -/
 theorem cimcic_obot_D : bitEventually .cimcic .obot .D := by
@@ -154,15 +149,15 @@ theorem cimcic_obot_D : bitEventually .cimcic .obot .D := by
   have hn := cimcic_obot_not_found hco
   unfold guardOf at hn
   rw [progCode_bot_inst, instCode_cimcic_obot] at hn
-  exact ⟨_, search_else _ hn (const_play 0 _ _ _) rfl⟩
+  exact ⟨_, search_else_at _ hn (const_play 0 _ _ _) rfl⟩
 
-/-- **τ(CIMCIC)'s row in `S'`** — the nine theorem slots (five non-entangled, four entangled). -/
+/-- **τ(CIMCIC)'s row in `S'`** — eight theorem slots (four non-entangled, four entangled); `tftSim` is
+UNSTATED pending Phase 3e. -/
 @[tau_rowA]
 theorem cimcicRowSpecA : RowSpecA .cimcic
-    [.coop, .defect, .tftSim, .dupoc, .obot, .dimcid, .cimcic, .maxconfidence, .minconfidence] cimcicRowA :=
+    [.coop, .defect, .dupoc, .obot, .dimcid, .cimcic, .maxconfidence, .minconfidence] cimcicRowA :=
   RowSpecA.cons col_cimcic_coop <|
   RowSpecA.cons (bitEventually.of_forall col_cimcic_defect) <|
-  RowSpecA.cons (bitEventually.of_forall cimcic_tftSim_D) <|
   RowSpecA.cons ent_cimcic_dupoc <|
   RowSpecA.cons cimcic_obot_D <|
   RowSpecA.cons ent_cimcic_dimcid <|
@@ -175,34 +170,16 @@ theorem cimcicRowSpecA : RowSpecA .cimcic
 
 /-- CIMCIC's floor-side slot: its own guard not found — else-branch D. -/
 theorem cimcic_floor_D {k : ℕ} {T : Tmpl}
-    (hc : instCode k .cimcic T = pSearch k (templateCode (cimG (inst (tauZoo k) T .cimcic))) (pConst 0) (pConst 1))
+    (hc : instCode k .cimcic T = pSearch k (templateCodeAt (cimG (inst (tauZoo k) T .cimcic)) k) (pConst 0) (pConst 1))
     (hns : noSelfIdxF (cimG (inst (tauZoo k) T .cimcic)) = true)
     (hn : ¬ LenBox TAct k (guardCodeB (templateCode (cimG (inst (tauZoo k) T .cimcic)))
       (pBot (instCode k .cimcic T)) (pBot (instCode k .cimcic T)) k)) : bitPlays k .cimcic T .D := by
   rw [hingeB _ _ _ _ hns, hc] at hn
-  exact bitPlays_of_eq hc ⟨_, search_else _ hn (const_play 0 _ _ _) hns⟩
+  exact bitPlays_of_eq hc ⟨_, search_else_at _ hn (const_play 0 _ _ _) hns⟩
 
-/-! The three `‡` slots are in fact THEOREMS in `S'` (the hinge is false at every `k`: the probed instances carry the
-budget — τ(EBot)'s first watch `inst cimcic defect`, τ(DBot)'s watch `inst cimcic defect`, τ(CupodTroll)'s own
-`.search k (.eq C D) …`); recorded here untagged, since the census keeps them as floor bits until the table moves. -/
-
-theorem hasSearch_ebot_cimcic (k : ℕ) : HasSearchP k (inst (tauZoo k) .ebot .cimcic) := by
-  rw [inst_ebot_peel, inst_cimcic_peel_defect]
-  exact .iteB _ _ _ (.simL _ (.bot (.search _ _ _)))
-theorem hasSearch_dbot_cimcic (k : ℕ) : HasSearchP k (inst (tauZoo k) .dbot .cimcic) := by
-  rw [inst_dbot_peel, inst_cimcic_peel_defect]
-  exact .iteB _ _ _ (.simL _ (.bot (.search _ _ _)))
-theorem hasSearch_cupodTroll_cimcic (k : ℕ) : HasSearchP k (inst (tauZoo k) .cupodTroll .cimcic) := by
-  rw [inst_cupodTroll_peel k .cimcic (by decide)]
-  exact .search _ _ _
-
-/-- `cimcic × ebot` is a theorem in `S'` (D, unconditional): the `‡` hinge below is never satisfied. -/
-theorem cimcic_ebot_D (k : ℕ) : bitPlays k .cimcic .ebot .D :=
-  cimcic_selfBot_D (instCode_cimcic_ebot k) (inst_cimcic_peel_ebot k) (hasSearch_ebot_cimcic k) rfl
-theorem cimcic_dbot_D (k : ℕ) : bitPlays k .cimcic .dbot .D :=
-  cimcic_selfBot_D (instCode_cimcic_dbot k) (inst_cimcic_peel_dbot k) (hasSearch_dbot_cimcic k) rfl
-theorem cimcic_cupodTroll_D (k : ℕ) : bitPlays k .cimcic .cupodTroll .D :=
-  cimcic_selfBot_D (instCode_cimcic_cupodTroll k) (inst_cimcic_peel_cupodTroll k) (hasSearch_cupodTroll_cimcic k) rfl
+/-! The three `‡` slots below were, under the pre-2026-10-01 coding, theorems (hinge false at every `k`, the
+never-fits obstruction); under budget abstraction they are honest floor bits again (Phase 3e re-derives
+`expectedFloorBits`). -/
 
 /-- `cimcic × ebot` ‡ (base `dich_CIMCIC_vs_EBot`): hinge = CIMCIC's implication guard about τ(EBot)'s instance
 seeing CIMCIC, in the bit's frame; not found ⇒ D (and in `S'` it is never found: `cimcic_ebot_D`). -/

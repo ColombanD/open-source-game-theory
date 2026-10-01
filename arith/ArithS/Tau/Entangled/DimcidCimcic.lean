@@ -31,7 +31,7 @@ theorem found_DiCi_engine : ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
   obtain ⟨hK, b₁, -⟩ := h k hk
   have := Sys2.box_guard_nat hK 0 0 0 rfl b₁
   rw [show SDiCi = Sys2.mk (SM.ofSearch (entDimG 1) .D) (SM.ofSearch (entCimG 0) .C) from rfl] at this
-  rw [Sys2.guardCodeB_sysClose_nat (entDimG 1) (entCimG 0) .D .C k (entDimG 1) rfl rfl, Sys2.code_nat] at this
+  rw [Sys2.guardCodeB_sysClose_nat (entDimG 1) (entCimG 0) .D .C k (entDimG 1) rfl rfl, Sys2.code_nat (entDimG 1) (entCimG 0) .D .C] at this
   exact this
 
 /-- `dimcid × cimcic`: D — the FLIP (the engine reads this bit `C`). -/
@@ -45,10 +45,10 @@ noncomputable def SCiDi : Sys2 := ⟨SM.ofSearch (entCimG 1) .C, SM.ofSearch (en
 
 /-- The engine frame of the bit, on the system's codes. -/
 lemma SCiDi_frame (k : ℕ) : progCode (sysFrame (cim 1 k) (dim 0 k)) = pBot (SCiDi.code 0 k) := by
-  rw [show SCiDi = Sys2.mk (SM.ofSearch (entCimG 1) .C) (SM.ofSearch (entDimG 0) .D) from rfl, Sys2.code_nat]; rfl
+  rw [show SCiDi = Sys2.mk (SM.ofSearch (entCimG 1) .C) (SM.ofSearch (entDimG 0) .D) from rfl, Sys2.code_nat (entCimG 1) (entDimG 0) .C .D]; rfl
 
 lemma SCiDi_partner (k : ℕ) : progCode (.bot (.sys (sys2 (cim 1 k) (dim 0 k)) 1)) = pBot (SCiDi.code 1 k) := by
-  rw [show SCiDi = Sys2.mk (SM.ofSearch (entCimG 1) .C) (SM.ofSearch (entDimG 0) .D) from rfl, Sys2.code_nat]; rfl
+  rw [show SCiDi = Sys2.mk (SM.ofSearch (entCimG 1) .C) (SM.ofSearch (entDimG 0) .D) from rfl, Sys2.code_nat (entCimG 1) (entDimG 0) .C .D]; rfl
 
 /-- **The CIMCIC member's guard about the DIMCID member is never found** (for all large `k`). -/
 theorem cimcic_guard_dimcid_not_found : ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
@@ -64,7 +64,7 @@ theorem cimcic_guard_dimcid_not_found : ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k �
   have hf' : LenBox TAct k (instB (⌜SCiDi.q 0 0 0⌝ : ℕ) k) := by
     refine Sys2.box_instB_of_guard_nat hK 0 0 0 rfl ?_
     rw [show SCiDi = Sys2.mk (SM.ofSearch (entCimG 1) .C) (SM.ofSearch (entDimG 0) .D) from rfl,
-      Sys2.guardCodeB_sysClose_nat (entCimG 1) (entDimG 0) .C .D k (entCimG 1) rfl rfl, Sys2.code_nat]
+      Sys2.guardCodeB_sysClose_nat (entCimG 1) (entDimG 0) .C .D k (entCimG 1) rfl rfl, Sys2.code_nat (entCimG 1) (entDimG 0) .C .D]
     exact hf
   rw [Sys2.q_congr_opp_impl SCiDi (pa := .self) (pb := .bot (.selfIdx 1)) (pa' := .bot (.selfIdx 1)) (pb' := .self)
     (by simp) (by simp) (by simp) (by simp) rfl 0 0 1] at hf'

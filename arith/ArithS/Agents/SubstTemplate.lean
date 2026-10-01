@@ -890,4 +890,98 @@ lemma revalueW_pBot (p : V) : revalueW (pBot p) = revalueW p := by
 
 end ppairOrder
 
+/-! ### The seven-variable identity vector, and `guardCodeSlot` on a six-variable template (2026-10-01)
+
+Route (c) made generic (`Agents/Code.lean`): the stored template of a search node may use the budget slot `#6`,
+so `substCode` instantiates it through `substTemplate`'s middle case `guardCodeSlot`. On a six-variable
+template `guardCodeSlot` is `guardCode` (the slot is never read), so `substTemplate` is `guardCodeSlot` on
+EVERY seven-variable template (`substTemplate_eq_guardCodeSlot`) — the one case split the code equation
+`templateCodeAt_subst` needs. `idVec7` serves `quote_castLE₇` (codes do not see the arity, seven to thirteen). -/
+
+noncomputable def idVec7 : V := ^#0 ∷ ^#1 ∷ ^#2 ∷ ^#3 ∷ ^#4 ∷ ^#5 ∷ ^#6 ∷ 0
+
+lemma idVec7_semitermVec {n : V} (hn : 7 ≤ n) : IsSemitermVec LAct 7 n (idVec7 : V) := by
+  have h0 : IsSemiterm LAct n (^#0 : V) := IsSemiterm.bvar.mpr (lt_of_lt_of_le (by norm_num) hn)
+  have h1 : IsSemiterm LAct n (^#1 : V) := IsSemiterm.bvar.mpr (lt_of_lt_of_le (by norm_num) hn)
+  have h2 : IsSemiterm LAct n (^#2 : V) := IsSemiterm.bvar.mpr (lt_of_lt_of_le (by norm_num) hn)
+  have h3 : IsSemiterm LAct n (^#3 : V) := IsSemiterm.bvar.mpr (lt_of_lt_of_le (by norm_num) hn)
+  have h4 : IsSemiterm LAct n (^#4 : V) := IsSemiterm.bvar.mpr (lt_of_lt_of_le (by norm_num) hn)
+  have h5 : IsSemiterm LAct n (^#5 : V) := IsSemiterm.bvar.mpr (lt_of_lt_of_le (by norm_num) hn)
+  have h6 : IsSemiterm LAct n (^#6 : V) := IsSemiterm.bvar.mpr (lt_of_lt_of_le (by norm_num) hn)
+  have := (((((((IsSemitermVec.nil n).adjoin h6).adjoin h5).adjoin h4).adjoin h3).adjoin h2).adjoin h1).adjoin h0
+  rwa [← seven_eq] at this
+
+lemma nth_idVec7 : ∀ i < (7 : V), (idVec7 : V).[i] = ^#i := by
+  intro i hi
+  unfold idVec7
+  rcases zero_or_succ i with rfl | ⟨i, rfl⟩
+  · simp
+  rw [nth_adjoin_succ]
+  rcases zero_or_succ i with rfl | ⟨i, rfl⟩
+  · simp
+  rw [nth_adjoin_succ]
+  rcases zero_or_succ i with rfl | ⟨i, rfl⟩
+  · simp; norm_num
+  rw [nth_adjoin_succ]
+  rcases zero_or_succ i with rfl | ⟨i, rfl⟩
+  · simp; norm_num
+  rw [nth_adjoin_succ]
+  rcases zero_or_succ i with rfl | ⟨i, rfl⟩
+  · simp; norm_num
+  rw [nth_adjoin_succ]
+  rcases zero_or_succ i with rfl | ⟨i, rfl⟩
+  · simp; norm_num
+  rw [nth_adjoin_succ]
+  rcases zero_or_succ i with rfl | ⟨i, rfl⟩
+  · simp; norm_num
+  exfalso
+  have e7 : i + 1 + 1 + 1 + 1 + 1 + 1 + 1 = i + 7 := by ring
+  rw [e7] at hi
+  exact absurd hi (not_lt.mpr le_add_self)
+
+/-- The kept-slot vector restricted to the six frame variables is the description vector. -/
+lemma termSubstVec_descriptionsSlot_idVec6 (me opp : V) :
+    termSubstVec LAct 6 (descriptionsSlot me opp) (idVec6 : V) = descriptions me opp := by
+  have h0 : IsUTerm LAct (^#0 : V) := (IsSemiterm.bvar.mpr (by norm_num : (0 : V) < 6)).isUTerm
+  have h1 : IsUTerm LAct (^#1 : V) := (IsSemiterm.bvar.mpr (by norm_num : (1 : V) < 6)).isUTerm
+  have h2 : IsUTerm LAct (^#2 : V) := (IsSemiterm.bvar.mpr (by norm_num : (2 : V) < 6)).isUTerm
+  have h3 : IsUTerm LAct (^#3 : V) := (IsSemiterm.bvar.mpr (by norm_num : (3 : V) < 6)).isUTerm
+  have h4 : IsUTerm LAct (^#4 : V) := (IsSemiterm.bvar.mpr (by norm_num : (4 : V) < 6)).isUTerm
+  have h5 : IsUTerm LAct (^#5 : V) := (IsSemiterm.bvar.mpr (by norm_num : (5 : V) < 6)).isUTerm
+  have e0 : IsUTermVec LAct 0 (0 : V) := IsUTermVec.empty
+  have e1 := e0.adjoin h5
+  have e2 := e1.adjoin h4
+  have e3 := e2.adjoin h3
+  have e4 := e3.adjoin h2
+  have e5 := e4.adjoin h1
+  unfold idVec6 descriptionsSlot descriptions
+  rw [six_eq, termSubstVec_cons h0 e5, termSubstVec_cons h1 e4, termSubstVec_cons h2 e3,
+    termSubstVec_cons h3 e2, termSubstVec_cons h4 e1, termSubstVec_cons h5 e0, termSubstVec_nil,
+    termSubst_bvar, termSubst_bvar, termSubst_bvar, termSubst_bvar, termSubst_bvar, termSubst_bvar]
+  simp only [nth_adjoin_zero, nth_adjoin_one, nth_adjoin_two]
+  rw [show (3 : V) = 2 + 1 by norm_num, nth_adjoin_succ, nth_adjoin_two,
+    show (4 : V) = 2 + 1 + 1 by norm_num, nth_adjoin_succ, nth_adjoin_succ, nth_adjoin_two,
+    show (5 : V) = 2 + 1 + 1 + 1 by norm_num, nth_adjoin_succ, nth_adjoin_succ, nth_adjoin_succ, nth_adjoin_two]
+  simp only [nth_adjoin_zero, nth_adjoin_one]
+
+/-- A six-variable template never reads the kept slot: `guardCodeSlot` is `guardCode` on it. -/
+theorem guardCodeSlot_of_template {g : V} (hg : IsSemiformula LAct 6 g) (me opp : V) :
+    guardCodeSlot g me opp = guardCode g me opp := by
+  have hid6 : IsSemitermVec LAct 6 6 (idVec6 : V) := idVec6_semitermVec (le_refl _)
+  have hid7 : IsSemitermVec LAct 6 7 (idVec6 : V) := idVec6_semitermVec (by norm_num)
+  have e : subst LAct (idVec6 : V) g = g := subst_eq_self hg hid6 nth_idVec6
+  unfold guardCodeSlot guardCode
+  calc subst LAct (descriptionsSlot me opp) g
+      = subst LAct (descriptionsSlot me opp) (subst LAct (idVec6 : V) g) := by rw [e]
+    _ = subst LAct (termSubstVec LAct 6 (descriptionsSlot me opp) (idVec6 : V)) g :=
+        substs_substs hg (descriptionsSlot_semitermVec me opp) hid7
+    _ = subst LAct (descriptions me opp) g := by rw [termSubstVec_descriptionsSlot_idVec6]
+
+/-- On every seven-variable template `substTemplate` is `guardCodeSlot`. -/
+theorem substTemplate_eq_guardCodeSlot {g : V} (hg : IsSemiformula LAct 7 g) (me opp : V) :
+    substTemplate me opp g = guardCodeSlot g me opp := by
+  by_cases h6 : IsSemiformula LAct 6 g
+  · rw [substTemplate_of_template h6, guardCodeSlot_of_template h6]
+  · exact substTemplate_of_template₇ h6 hg me opp
+
 end ArithS

@@ -110,15 +110,14 @@ namespace ArithS.Tau
 -- instance is longer than its budget; the six slots it decides.
 #print axioms le_quote_sentence_of_FOccC
 #print axioms binNumeral_le_templateCode_selfBot
+-- Phase 2c (2026-10-01): the obstruction is stated on the explicit pre-abstraction code `pBot (pSearch k' (templateCode φ) p q)`;
+-- the tau slots it decided (`cimcic_tftSim_D`, `cimcic_ebot_D`, `dimcid_tftSim_C`, `dimcid_ebot_C`) are UNSTATED until
+-- Phase 3e re-proves them with the table's values on the budget-abstracted stored templates.
+#print axioms selfBot_guard_not_found
 #print axioms size_canonical_le_formulaLenMeta_sentenceAt_self
 #print axioms selfBot_guard_never_fits
-#print axioms selfBot_guard_not_found
 #print axioms cimcic_selfBot_D
 #print axioms dimcid_selfBot_C
-#print axioms cimcic_tftSim_D
-#print axioms cimcic_ebot_D
-#print axioms dimcid_tftSim_C
-#print axioms dimcid_ebot_C
 
 -- The seven self-probers' rows (non-entangled slots).
 #print axioms dupocRowSpecA

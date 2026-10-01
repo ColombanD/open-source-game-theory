@@ -337,7 +337,7 @@ theorem pos_JustBot_vs_CooperateBot :
   refine ⟨k₀, fun k hk ↦ ⟨?_, by rw [progCode_CB]; exact const_play 1 _ _ _⟩⟩
   have hg := h k hk
   rw [progCode_JustBot] at hg ⊢
-  exact search_then (phiJ k) hg (const_play _ _ _ _)
+  exact search_then_at (phiJ k) hg (const_play _ _ _ _)
 
 /-! #### WaryBot × DefectBot `(D, D)`, and Wary's positive `.neg` guard against `.bot DefectBot` -/
 
@@ -434,7 +434,7 @@ end cells
 section unreadability
 
 lemma progCode_CIMCIC_search (k : ℕ) : progCode (CIMCIC k) = pSearch k (templateCode phiC) (pConst 0) (pConst 1) := by
-  simp [CIMCIC, phiC, actCode]
+  rw [CIMCIC, progCode_search_noSnap _ _ _ _ rfl]; simp [phiC, actCode]
 lemma properPlayer_CIMCIC (k : ℕ) : ProperPlayer (CIMCIC k) := ⟨by simp [CIMCIC], by simp [CIMCIC]⟩
 
 /-- **CIMCIC's guard against an opponent that defects against it is SELF-REFUTING**: a proof of
@@ -520,7 +520,7 @@ theorem snd_CIMCIC_vs_OBot :
 /-! #### DIMCID × CooperateBot: the value FLIPS in `S'` — a self-fulfilling refutation is Löb-provable -/
 
 lemma progCode_DIMCID_search (k : ℕ) : progCode (DIMCID k) = pSearch k (templateCode phiD) (pConst 1) (pConst 0) := by
-  simp [DIMCID, phiD, actCode]
+  rw [DIMCID, progCode_search_noSnap _ _ _ _ rfl]; simp [phiD, actCode]
 
 /-- **The bounded Löb premise of DIMCID against CooperateBot, slack `(7, 8)`**: a box of the family makes
 DIMCID defect against CooperateBot and the transposed searcher cooperate with DefectBot, so the

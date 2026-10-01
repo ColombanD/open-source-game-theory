@@ -1,4 +1,5 @@
 import ArithS.Agents.Template
+import ArithS.Agents.CodeTermAbs
 import ArithS.Agents.SubstTemplate
 import ArithS.Eval.SimTest
 import PrisonersDilemma.Base.Transpose
@@ -296,7 +297,116 @@ lemma revalueWMeta_pBot (c : ℕ) : revalueWMeta (pBot c) = revalueWMeta c := by
 noncomputable def closedDesc13 (c : ℕ) : Semisentence LAct 14 :=
   descF #1 (cl (canonicalMeta c)) (cl (revalueUMeta c)) (cl (revalueWMeta c))
 
-/-- The four pronoun shapes `progAux13` reads through the member slots. -/
+/-! ### Budget abstraction: the description of a closed program at the node's budget (2026-10-01)
+
+Route (c) made generic (decision (A) of `SPRIME_SOURCE_OF_TRUTH.md` §3). A closed program named inside a
+template is described by the abstracted term `codeTermMetaAbs k₀` (`ArithS.Agents.CodeTermAbs`): every
+`pSearch k₀ …` budget leaf is the budget slot `#6` of the frame (`#8` in the context of `descF`, where `#0` is
+the description's witness and `#1` the program variable). The evaluator fills `#6` with the node's budget
+(`guardCodeB`), and the instantiation identity `canonicalSlot_numTB` says the sentence consulted is the one the
+unabstracted template consulted — so the stored template of `JustBot k` (frozen snapshot `DupocBot k`) and of
+every tau instance naming a budget-carrying hypothesis instance is a CONSTANT, its code a short numeral, and
+`Critch's (b)` holds for it (the obstruction of `Tau/NeverFits.lean` dissolves). `canonicalSlot none` is the
+verbatim description (today's coding), `canonicalSlot (some k₀)` the abstracted one; on a code without a
+`pSearch k₀` node outside a system the two coincide (`canonicalSlot_of_noSearchAt`). -/
+
+/-- The abstracted description term of the code `c` at the node budget `k₀`, with the budget variable `b`. -/
+noncomputable def canonicalAbs {n : ℕ} (k₀ c : ℕ) (b : Semiterm LAct Empty n) : Semiterm LAct Empty n :=
+  Rew.subst ![b] (Semiterm.lMap emb (codeTermMetaAbs k₀ (canonical c)))
+
+/-- The description term of a closed program: verbatim (`none`) or abstracted at the node budget (`some k₀`),
+the budget written as the term `b`. -/
+noncomputable def canonicalSlot {n : ℕ} : Option ℕ → ℕ → Semiterm LAct Empty n → Semiterm LAct Empty n
+  | none, c, _ => cl (canonicalMeta c)
+  | some k₀, c, b => canonicalAbs k₀ c b
+
+lemma canonicalSlot_none {n : ℕ} (c : ℕ) (b : Semiterm LAct Empty n) : canonicalSlot none c b = cl (canonicalMeta c) := rfl
+lemma canonicalSlot_some {n : ℕ} (k₀ c : ℕ) (b : Semiterm LAct Empty n) : canonicalSlot (some k₀) c b = canonicalAbs k₀ c b := rfl
+
+lemma rew_canonicalAbs {n m : ℕ} (ω : Rew LAct Empty n Empty m) (k₀ c : ℕ) (b : Semiterm LAct Empty n) :
+    ω (canonicalAbs k₀ c b) = canonicalAbs k₀ c (ω b) := by
+  unfold canonicalAbs
+  have e : (fun i ↦ ω (![b] i)) = ![ω b] := by funext i; fin_cases i; rfl
+  rw [← Rew.comp_app, comp_subst_eq, e]
+
+lemma rew_canonicalSlot {n m : ℕ} (ω : Rew LAct Empty n Empty m) (k₀ : Option ℕ) (c : ℕ) (b : Semiterm LAct Empty n) :
+    ω (canonicalSlot k₀ c b) = canonicalSlot k₀ c (ω b) := by
+  cases k₀ with
+  | none => exact rew_cl ω _
+  | some k => exact rew_canonicalAbs ω k c b
+
+lemma lMap_swap_canonicalAbs {n : ℕ} (k₀ c : ℕ) (b : Semiterm LAct Empty n) :
+    Semiterm.lMap swap (canonicalAbs k₀ c b) = canonicalAbs k₀ (transposeCode c) (Semiterm.lMap swap b) := by
+  unfold canonicalAbs Rew.subst
+  rw [Semiterm.lMap_bind, term_lMap_swap_emb, canonical_transposeCode]
+  have e1 : Semiterm.lMap swap ∘ ![b] = ![Semiterm.lMap swap b] := by funext i; fin_cases i; rfl
+  have e2 : Semiterm.lMap swap ∘ (Semiterm.fvar : Empty → Semiterm LAct Empty n) = Semiterm.fvar := by
+    funext x; exact x.elim
+  rw [e1, e2]
+
+lemma lMap_swap_canonicalSlot {n : ℕ} (k₀ : Option ℕ) (c : ℕ) (b : Semiterm LAct Empty n) :
+    Semiterm.lMap swap (canonicalSlot k₀ c b) = canonicalSlot k₀ (transposeCode c) (Semiterm.lMap swap b) := by
+  cases k₀ with
+  | none => rw [canonicalSlot_none, canonicalSlot_none, lMap_swap_cl, lMap_swap_canonicalMeta]
+  | some k => exact lMap_swap_canonicalAbs k c b
+
+/-- A closed term's shift, with anything substituted for its one variable: the closed term, cast. -/
+lemma subst_bShift_cl {n : ℕ} (b : Semiterm LAct Empty n) :
+    ∀ t : ClosedSemiterm LAct 0, Rew.subst ![b] (Rew.bShift t) = cl t
+  | #x => x.elim0
+  | &x => x.elim
+  | .func f v => by
+    show Rew.subst ![b] (Rew.bShift (Semiterm.func f v)) = Rew.castLE _ (Semiterm.func f v)
+    rw [Rew.func, Rew.func, Rew.func]
+    congr 1; funext i; exact subst_bShift_cl b (v i)
+
+/-- A one-variable substitution by a cast closed term is the cast of the substitution. -/
+lemma subst_cl_eq {n : ℕ} (u : ClosedSemiterm LAct 0) (X : Semiterm LAct Empty 1) :
+    (cl (Rew.subst ![u] X) : Semiterm LAct Empty n) = Rew.subst ![cl u] X := by
+  unfold cl
+  have e : (fun i ↦ (Rew.castLE (Nat.zero_le n) : Rew LAct Empty 0 Empty n) (![u] i)) =
+      ![(Rew.castLE (Nat.zero_le n) : Rew LAct Empty 0 Empty n) u] := by funext i; fin_cases i; rfl
+  rw [← Rew.comp_app, comp_subst_eq, e]
+
+/-- **The instantiation identity**: the abstracted description with the node's own budget in the slot IS the
+verbatim description. -/
+lemma canonicalAbs_numTB {n : ℕ} (k c : ℕ) :
+    (canonicalAbs k c (cl (numTB k)) : Semiterm LAct Empty n) = cl (canonicalMeta c) := by
+  unfold canonicalAbs
+  have h' : Rew.subst ![numTB k] (Semiterm.lMap emb (codeTermMetaAbs k (canonical c))) = canonicalMeta c := by
+    rw [show numTB k = Semiterm.lMap emb (binNumeralMeta k) from rfl, ← term_lMap_subst₁, subst_codeTermMetaAbs]; rfl
+  rw [← h']
+  exact (subst_cl_eq _ _).symm
+
+lemma canonicalSlot_numTB {n : ℕ} (k c : ℕ) :
+    (canonicalSlot (some k) c (cl (numTB k)) : Semiterm LAct Empty n) = cl (canonicalMeta c) := canonicalAbs_numTB k c
+
+/-- On a code without a `pSearch k₀` node the abstraction is the verbatim description. -/
+lemma canonicalAbs_of_noSearchAt {n : ℕ} {k₀ c : ℕ} (h : NoSearchAt k₀ (canonical c)) (b : Semiterm LAct Empty n) :
+    canonicalAbs k₀ c b = cl (canonicalMeta c) := by
+  unfold canonicalAbs
+  rw [codeTermMetaAbs_of_noSearchAt h, Semiterm.lMap_bShift, subst_bShift_cl]; rfl
+
+lemma canonicalSlot_of_noSearchAt {n : ℕ} {k₀ c : ℕ} (h : NoSearchAt k₀ (canonical c)) (b : Semiterm LAct Empty n) :
+    canonicalSlot (some k₀) c b = cl (canonicalMeta c) := canonicalAbs_of_noSearchAt h b
+
+/-- A system is described verbatim at every node budget (`codeTermMetaAbs_sys`). -/
+lemma canonicalSlot_of_sys {n : ℕ} (k₀ : Option ℕ) (D j : ℕ) (b : Semiterm LAct Empty n) :
+    canonicalSlot k₀ (pSys D j) b = cl (canonicalMeta (pSys D j)) := by
+  cases k₀ with
+  | none => rfl
+  | some k => exact canonicalSlot_of_noSearchAt (NoSearchAt.sys k D j).canonical b
+
+/-- The description of the program with code `c` in the thirteen-variable frame, the budget slot `#6` (here
+`#8`) standing for the node budget `k₀` inside the description when `k₀ = some _`. -/
+noncomputable def closedDescAt (k₀ : Option ℕ) (c : ℕ) : Semisentence LAct 14 :=
+  descF #1 (canonicalSlot k₀ c #8) (cl (revalueUMeta c)) (cl (revalueWMeta c))
+
+lemma closedDescAt_none (c : ℕ) : closedDescAt none c = closedDesc13 c := rfl
+lemma closedDescAt_of_noSearchAt {k₀ c : ℕ} (h : NoSearchAt k₀ (canonical c)) : closedDescAt (some k₀) c = closedDesc13 c := by
+  unfold closedDescAt closedDesc13; rw [canonicalSlot_of_noSearchAt h]
+
+/-- The four pronoun shapes `progAuxAt` reads through the member slots. -/
 def pronounP : PD.Prog → Bool
   | .selfIdx 0 => true
   | .selfIdx 1 => true
@@ -304,13 +414,13 @@ def pronounP : PD.Prog → Bool
   | .bot (.selfIdx 1) => true
   | _ => false
 
-/-- The description of `p` (code `c`) in the thirteen-variable frame: the me-triple for `.self`
-(`#2 #3 #4`), the opp-triple for `.opp` (`#5 #6 #7`), member `j`'s triple for the pronoun `.selfIdx j`
+/-- The description of `p` (code `c`) in the thirteen-variable frame at the node budget `k₀`: the me-triple for
+`.self` (`#2 #3 #4`), the opp-triple for `.opp` (`#5 #6 #7`), member `j`'s triple for the pronoun `.selfIdx j`
 (`#(9+3j) #(10+3j) #(11+3j)`, the frame slots `#7+3j..` shifted by the program variable `#1`), the same
-triple with `pBotTerm` on its code term for `.bot (.selfIdx j)`, and the canonical description of `c`
+triple with `pBotTerm` on its code term for `.bot (.selfIdx j)`, and the closed description of `c` at `k₀`
 otherwise. A pronoun nested deeper (never emitted by `Tau/Spec.lean`) and a member index `≥ 2` (the
 roster's systems have two members) fall to the closed description of the dangling code. -/
-noncomputable def progAux13 (p : PD.Prog) (c : ℕ) : Semisentence LAct 14 :=
+noncomputable def progAuxAt (k₀ : Option ℕ) (p : PD.Prog) (c : ℕ) : Semisentence LAct 14 :=
   match p with
   | .self => descF #1 #2 #3 #4
   | .opp => descF #1 #5 #6 #7
@@ -318,7 +428,19 @@ noncomputable def progAux13 (p : PD.Prog) (c : ℕ) : Semisentence LAct 14 :=
   | .selfIdx 1 => descF #1 #12 #13 #14
   | .bot (.selfIdx 0) => descF #1 (pBotTerm #9) #10 #11
   | .bot (.selfIdx 1) => descF #1 (pBotTerm #12) #13 #14
-  | _ => closedDesc13 c
+  | _ => closedDescAt k₀ c
+
+/-- The unabstracted description (today's coding): `progAuxAt none`. -/
+noncomputable def progAux13 (p : PD.Prog) (c : ℕ) : Semisentence LAct 14 := progAuxAt none p c
+
+lemma progAux13_def (p : PD.Prog) (c : ℕ) : progAux13 p c = progAuxAt none p c := rfl
+
+lemma progAuxAt_self (k₀ : Option ℕ) (c : ℕ) : progAuxAt k₀ .self c = descF #1 #2 #3 #4 := rfl
+lemma progAuxAt_opp (k₀ : Option ℕ) (c : ℕ) : progAuxAt k₀ .opp c = descF #1 #5 #6 #7 := rfl
+lemma progAuxAt_selfIdx0 (k₀ : Option ℕ) (c : ℕ) : progAuxAt k₀ (.selfIdx 0) c = descF #1 #9 #10 #11 := rfl
+lemma progAuxAt_selfIdx1 (k₀ : Option ℕ) (c : ℕ) : progAuxAt k₀ (.selfIdx 1) c = descF #1 #12 #13 #14 := rfl
+lemma progAuxAt_botSelfIdx0 (k₀ : Option ℕ) (c : ℕ) : progAuxAt k₀ (.bot (.selfIdx 0)) c = descF #1 (pBotTerm #9) #10 #11 := rfl
+lemma progAuxAt_botSelfIdx1 (k₀ : Option ℕ) (c : ℕ) : progAuxAt k₀ (.bot (.selfIdx 1)) c = descF #1 (pBotTerm #12) #13 #14 := rfl
 
 lemma progAux13_self (c : ℕ) : progAux13 .self c = descF #1 #2 #3 #4 := rfl
 lemma progAux13_opp (c : ℕ) : progAux13 .opp c = descF #1 #5 #6 #7 := rfl
@@ -327,8 +449,8 @@ lemma progAux13_selfIdx1 (c : ℕ) : progAux13 (.selfIdx 1) c = descF #1 #12 #13
 lemma progAux13_botSelfIdx0 (c : ℕ) : progAux13 (.bot (.selfIdx 0)) c = descF #1 (pBotTerm #9) #10 #11 := rfl
 lemma progAux13_botSelfIdx1 (c : ℕ) : progAux13 (.bot (.selfIdx 1)) c = descF #1 (pBotTerm #12) #13 #14 := rfl
 
-lemma progAux13_of_ne {p : PD.Prog} (h1 : p ≠ .self) (h2 : p ≠ .opp) (h3 : pronounP p = false) (c : ℕ) :
-    progAux13 p c = closedDesc13 c := by
+lemma progAuxAt_of_ne (k₀ : Option ℕ) {p : PD.Prog} (h1 : p ≠ .self) (h2 : p ≠ .opp) (h3 : pronounP p = false) (c : ℕ) :
+    progAuxAt k₀ p c = closedDescAt k₀ c := by
   cases p
   case self => exact absurd rfl h1
   case opp => exact absurd rfl h2
@@ -347,6 +469,27 @@ lemma progAux13_of_ne {p : PD.Prog} (h1 : p ≠ .self) (h2 : p ≠ .opp) (h3 : p
     all_goals rfl
   all_goals rfl
 
+lemma progAux13_of_ne {p : PD.Prog} (h1 : p ≠ .self) (h2 : p ≠ .opp) (h3 : pronounP p = false) (c : ℕ) :
+    progAux13 p c = closedDesc13 c := progAuxAt_of_ne none h1 h2 h3 c
+
+lemma pronounP_cases {p : PD.Prog} (h : pronounP p = true) :
+    p = .selfIdx 0 ∨ p = .selfIdx 1 ∨ p = .bot (.selfIdx 0) ∨ p = .bot (.selfIdx 1) := by
+  cases p
+  case selfIdx j =>
+    rcases j with _ | _ | j
+    · exact Or.inl rfl
+    · exact Or.inr (Or.inl rfl)
+    · simp [pronounP] at h
+  case bot q =>
+    cases q
+    case selfIdx j =>
+      rcases j with _ | _ | j
+      · exact Or.inr (Or.inr (Or.inl rfl))
+      · exact Or.inr (Or.inr (Or.inr rfl))
+      · simp [pronounP] at h
+    all_goals simp [pronounP] at h
+  all_goals simp [pronounP] at h
+
 /-! ### The translation -/
 
 mutual
@@ -358,7 +501,7 @@ mutual
     | .bot p => pBot (progCode p)
     | .sim p q => pSim (progCode p) (progCode q)
     | .ite b a p q => pIte (progCode b) (actCode a) (progCode p) (progCode q)
-    | .search k φ p q => pSearch k (⌜template13 φ⌝ : ℕ) (progCode p) (progCode q)
+    | .search k φ p q => pSearch k (⌜templateAt φ (some k)⌝ : ℕ) (progCode p) (progCode q)
     | .tvote v θ p q => pTvote (voteListCode v) θ (progCode p) (progCode q)
     | .sys defs i => pSys (progListCode defs) i
     | .selfIdx j => pSelfIdx j
@@ -370,31 +513,45 @@ mutual
   noncomputable def voteListCode : PD.VoteList → ℕ
     | .nil => pNil
     | .cons w I rest => pCons (ppair w (progCode I)) (voteListCode rest)
-  /-- The thirteen-variable template of a formula: the six-variable template's clauses index for index,
-  in the frame `#0..#12` (me-triple, opp-triple, budget slot, the two member triples), with the pronoun
-  reading of `progAux13`. -/
-  noncomputable def template13 : PD.Formula → Semisentence LAct 13
-    | .plays p q a =>
-        ∃¹ (∃¹ (∃¹ ((progAux13 p (progCode p) ⇜ ![#2, #3, #4, #5, #6, #7, #8, #9, #10, #11, #12, #13, #14, #15]) ⋏
-          ((progAux13 q (progCode q) ⇜ ![#1, #3, #4, #5, #6, #7, #8, #9, #10, #11, #12, #13, #14, #15]) ⋏
+  /-- The thirteen-variable template of a formula AT THE NODE BUDGET `k₀`: the six-variable template's
+  clauses index for index, in the frame `#0..#12` (me-triple, opp-triple, budget slot, the two member
+  triples), with the pronoun reading of `progAuxAt` and every closed program described with the budget `k₀`
+  abstracted into the slot `#6` (`closedDescAt`). `none` abstracts nothing (`template13`, today's coding).
+  The code constant a `.box` carries is the UNABSTRACTED template code of its body (box guards are outside
+  the zoo's fragment: LegibleBot/OptimBot, `Agents/FitBox.lean`). -/
+  noncomputable def templateAt : PD.Formula → Option ℕ → Semisentence LAct 13
+    | .plays p q a, k₀ =>
+        ∃¹ (∃¹ (∃¹ ((progAuxAt k₀ p (progCode p) ⇜ ![#2, #3, #4, #5, #6, #7, #8, #9, #10, #11, #12, #13, #14, #15]) ⋏
+          ((progAuxAt k₀ q (progCode q) ⇜ ![#1, #3, #4, #5, #6, #7, #8, #9, #10, #11, #12, #13, #14, #15]) ⋏
             (evalG ⇜ ![#0, #2, #1, #2, cl (actT (actCode a))])))))
-    | .impl φ ψ => template13 φ 🡒 template13 ψ
-    | .neg φ => ∼ template13 φ
-    | .box k ψ =>
-        ∃¹ (∃¹ ((progAux13 .self 0 ⇜ ![#1, #2, #3, #4, #5, #6, #7, #8, #9, #10, #11, #12, #13, #14]) ⋏
-          ((progAux13 .opp 0 ⇜ ![#0, #2, #3, #4, #5, #6, #7, #8, #9, #10, #11, #12, #13, #14]) ⋏
-            (∃¹ ((guardCodeG ⇜ ![#0, cl (numTB (⌜template13 ψ⌝ : ℕ)), #2, #1]) ⋏
+    | .impl φ ψ, k₀ => templateAt φ k₀ 🡒 templateAt ψ k₀
+    | .neg φ, k₀ => ∼ templateAt φ k₀
+    | .box k ψ, k₀ =>
+        ∃¹ (∃¹ ((progAuxAt k₀ .self 0 ⇜ ![#1, #2, #3, #4, #5, #6, #7, #8, #9, #10, #11, #12, #13, #14]) ⋏
+          ((progAuxAt k₀ .opp 0 ⇜ ![#0, #2, #3, #4, #5, #6, #7, #8, #9, #10, #11, #12, #13, #14]) ⋏
+            (∃¹ ((guardCodeG ⇜ ![#0, cl (numTB (⌜templateAt ψ none⌝ : ℕ)), #2, #1]) ⋏
               (lenProvG ⇜ ![cl (numTB k), #0]))))))
-    | .eq p q =>
-        ∃¹ (∃¹ ((progAux13 p (progCode p) ⇜ ![#1, #2, #3, #4, #5, #6, #7, #8, #9, #10, #11, #12, #13, #14]) ⋏
-          ((closedDesc13 (progCode q) ⇜ ![#0, #2, #3, #4, #5, #6, #7, #8, #9, #10, #11, #12, #13, #14]) ⋏
+    | .eq p q, k₀ =>
+        ∃¹ (∃¹ ((progAuxAt k₀ p (progCode p) ⇜ ![#1, #2, #3, #4, #5, #6, #7, #8, #9, #10, #11, #12, #13, #14]) ⋏
+          ((closedDescAt k₀ (progCode q) ⇜ ![#0, #2, #3, #4, #5, #6, #7, #8, #9, #10, #11, #12, #13, #14]) ⋏
             Semiformula.rel (Language.Eq.eq : LAct.Rel 2) ![#1, #0])))
-    | .diag _ _ => ⊥
+    | .diag _ _, _ => ⊥
 end
 
-/-- The template code: the code of the thirteen-variable template (what `pSearch` stores). On the
-`noSelfIdx` fragment it is the code of the six-variable `template` (`templateCode_eq_quote_template`). -/
+/-- The UNABSTRACTED thirteen-variable template: `templateAt φ none` — today's coding, kept by name and by value
+(the reading every statement about `templateCode` rests on). -/
+noncomputable def template13 (φ : PD.Formula) : Semisentence LAct 13 := templateAt φ none
+
+lemma template13_def (φ : PD.Formula) : template13 φ = templateAt φ none := rfl
+
+/-- The unabstracted template code: `⌜template13 φ⌝`. On the `noSelfIdx` fragment it is the code of the
+six-variable `template` (`templateCode_eq_quote_template`); on a formula without a budget snapshot it is what
+`pSearch` stores (`templateCodeAt_eq_templateCode`). -/
 noncomputable def templateCode (φ : PD.Formula) : ℕ := ⌜template13 φ⌝
+
+/-- **The stored template code**: the template of `φ` at the node budget `k`, every closed program inside it
+described with the budget `k` abstracted into the slot `#6`. `progCode (.search k φ p q)` stores it. -/
+noncomputable def templateCodeAt (φ : PD.Formula) (k : ℕ) : ℕ := ⌜templateAt φ (some k)⌝
 
 /-- The six-variable template of a formula (the original translation, kept as the reading every
 `Cells/` file works with). Its body is the pre-pronoun one, except that the code constant a `.box`
@@ -421,8 +578,13 @@ noncomputable def template : PD.Formula → Semisentence LAct 6
 /-- The description of `p` in the frame. -/
 noncomputable def progGraph (p : PD.Prog) : Semisentence LAct 7 := progAux p (progCode p)
 
-/-- The description of `p` in the thirteen-variable frame. -/
+/-- The description of `p` in the thirteen-variable frame (unabstracted). -/
 noncomputable def progGraph13 (p : PD.Prog) : Semisentence LAct 14 := progAux13 p (progCode p)
+
+/-- The description of `p` in the thirteen-variable frame at the node budget `k₀`. -/
+noncomputable def progGraphAt (k₀ : Option ℕ) (p : PD.Prog) : Semisentence LAct 14 := progAuxAt k₀ p (progCode p)
+
+lemma progGraph13_def (p : PD.Prog) : progGraph13 p = progGraphAt none p := rfl
 
 @[simp] lemma progCode_const (a) : progCode (.const a) = pConst (actCode a) := by rw [progCode]
 @[simp] lemma progCode_self : progCode .self = pSelf := by rw [progCode]
@@ -431,7 +593,7 @@ noncomputable def progGraph13 (p : PD.Prog) : Semisentence LAct 14 := progAux13 
 @[simp] lemma progCode_sim (p q) : progCode (.sim p q) = pSim (progCode p) (progCode q) := by rw [progCode]
 @[simp] lemma progCode_ite (b a p q) : progCode (.ite b a p q) = pIte (progCode b) (actCode a) (progCode p) (progCode q) := by
   rw [progCode]
-@[simp] lemma progCode_search (k φ p q) : progCode (.search k φ p q) = pSearch k (templateCode φ) (progCode p) (progCode q) := by
+@[simp] lemma progCode_search (k φ p q) : progCode (.search k φ p q) = pSearch k (templateCodeAt φ k) (progCode p) (progCode q) := by
   rw [progCode]; rfl
 @[simp] lemma progCode_tvote (v θ p q) :
     progCode (.tvote v θ p q) = pTvote (voteListCode v) θ (progCode p) (progCode q) := by rw [progCode]
@@ -481,25 +643,42 @@ theorem listGet_progListCode_none : ∀ (defs : PD.ProgList) (i : ℕ),
     simp only [PD.ProgList.get?] at h
     rw [progListCode_cons, listGet_cons_succ, listGet_progListCode_none rest n h]
 
+lemma templateAt_plays (k₀ p q a) : templateAt (.plays p q a) k₀ =
+    ∃¹ (∃¹ (∃¹ ((progGraphAt k₀ p ⇜ ![#2, #3, #4, #5, #6, #7, #8, #9, #10, #11, #12, #13, #14, #15]) ⋏
+      ((progGraphAt k₀ q ⇜ ![#1, #3, #4, #5, #6, #7, #8, #9, #10, #11, #12, #13, #14, #15]) ⋏
+        (evalG ⇜ ![#0, #2, #1, #2, cl (actT (actCode a))]))))) := by
+  rw [templateAt]; rfl
+lemma templateAt_impl (k₀ φ ψ) : templateAt (.impl φ ψ) k₀ = templateAt φ k₀ 🡒 templateAt ψ k₀ := by rw [templateAt]
+lemma templateAt_neg (k₀ φ) : templateAt (.neg φ) k₀ = ∼ templateAt φ k₀ := by rw [templateAt]
+lemma templateAt_box (k₀ k ψ) : templateAt (.box k ψ) k₀ =
+    ∃¹ (∃¹ ((progAuxAt k₀ .self 0 ⇜ ![#1, #2, #3, #4, #5, #6, #7, #8, #9, #10, #11, #12, #13, #14]) ⋏
+      ((progAuxAt k₀ .opp 0 ⇜ ![#0, #2, #3, #4, #5, #6, #7, #8, #9, #10, #11, #12, #13, #14]) ⋏
+        (∃¹ ((guardCodeG ⇜ ![#0, cl (numTB (templateCode ψ)), #2, #1]) ⋏
+          (lenProvG ⇜ ![cl (numTB k), #0])))))) := by
+  rw [templateAt]; rfl
+lemma templateAt_eq (k₀ p q) : templateAt (.eq p q) k₀ =
+    ∃¹ (∃¹ ((progGraphAt k₀ p ⇜ ![#1, #2, #3, #4, #5, #6, #7, #8, #9, #10, #11, #12, #13, #14]) ⋏
+      ((closedDescAt k₀ (progCode q) ⇜ ![#0, #2, #3, #4, #5, #6, #7, #8, #9, #10, #11, #12, #13, #14]) ⋏
+        Semiformula.rel (Language.Eq.eq : LAct.Rel 2) ![#1, #0]))) := by
+  rw [templateAt]; rfl
+lemma templateAt_diag (k₀ g φ) : templateAt (.diag g φ) k₀ = ⊥ := by rw [templateAt]
+
 lemma template13_plays (p q a) : template13 (.plays p q a) =
     ∃¹ (∃¹ (∃¹ ((progGraph13 p ⇜ ![#2, #3, #4, #5, #6, #7, #8, #9, #10, #11, #12, #13, #14, #15]) ⋏
       ((progGraph13 q ⇜ ![#1, #3, #4, #5, #6, #7, #8, #9, #10, #11, #12, #13, #14, #15]) ⋏
-        (evalG ⇜ ![#0, #2, #1, #2, cl (actT (actCode a))]))))) := by
-  rw [template13]; rfl
-lemma template13_impl (φ ψ) : template13 (.impl φ ψ) = template13 φ 🡒 template13 ψ := by rw [template13]
-lemma template13_neg (φ) : template13 (.neg φ) = ∼ template13 φ := by rw [template13]
+        (evalG ⇜ ![#0, #2, #1, #2, cl (actT (actCode a))]))))) := templateAt_plays none p q a
+lemma template13_impl (φ ψ) : template13 (.impl φ ψ) = template13 φ 🡒 template13 ψ := templateAt_impl none φ ψ
+lemma template13_neg (φ) : template13 (.neg φ) = ∼ template13 φ := templateAt_neg none φ
 lemma template13_box (k ψ) : template13 (.box k ψ) =
     ∃¹ (∃¹ ((progAux13 .self 0 ⇜ ![#1, #2, #3, #4, #5, #6, #7, #8, #9, #10, #11, #12, #13, #14]) ⋏
       ((progAux13 .opp 0 ⇜ ![#0, #2, #3, #4, #5, #6, #7, #8, #9, #10, #11, #12, #13, #14]) ⋏
         (∃¹ ((guardCodeG ⇜ ![#0, cl (numTB (templateCode ψ)), #2, #1]) ⋏
-          (lenProvG ⇜ ![cl (numTB k), #0])))))) := by
-  rw [template13]; rfl
+          (lenProvG ⇜ ![cl (numTB k), #0])))))) := templateAt_box none k ψ
 lemma template13_eq (p q) : template13 (.eq p q) =
     ∃¹ (∃¹ ((progGraph13 p ⇜ ![#1, #2, #3, #4, #5, #6, #7, #8, #9, #10, #11, #12, #13, #14]) ⋏
       ((closedDesc13 (progCode q) ⇜ ![#0, #2, #3, #4, #5, #6, #7, #8, #9, #10, #11, #12, #13, #14]) ⋏
-        Semiformula.rel (Language.Eq.eq : LAct.Rel 2) ![#1, #0]))) := by
-  rw [template13]; rfl
-lemma template13_diag (g φ) : template13 (.diag g φ) = ⊥ := by rw [template13]
+        Semiformula.rel (Language.Eq.eq : LAct.Rel 2) ![#1, #0]))) := templateAt_eq none p q
+lemma template13_diag (g φ) : template13 (.diag g φ) = ⊥ := templateAt_diag none g φ
 
 lemma template_plays (p q a) : template (.plays p q a) =
     ∃¹ (∃¹ (∃¹ ((progGraph p ⇜ ![#2, #3, #4, #5, #6, #7, #8]) ⋏
@@ -524,6 +703,12 @@ lemma template_diag (g φ) : template (.diag g φ) = ⊥ := by rw [template]
 /-- The template code is a thirteen-variable formula code (every formula). -/
 lemma isSemiformula_templateCode13 (φ : PD.Formula) : IsSemiformula LAct 13 (templateCode φ) := by
   have := Semiformula.quote_isSemiformula (V := ℕ) (Rewriting.emb (template13 φ) : Semiproposition LAct 13)
+  rw [natCast_nat] at this
+  exact this
+
+/-- The stored template code is a thirteen-variable formula code (every formula, every budget). -/
+lemma isSemiformula_templateCodeAt13 (φ : PD.Formula) (k : ℕ) : IsSemiformula LAct 13 (templateCodeAt φ k) := by
+  have := Semiformula.quote_isSemiformula (V := ℕ) (Rewriting.emb (templateAt φ (some k)) : Semiproposition LAct 13)
   rw [natCast_nat] at this
   exact this
 
@@ -944,6 +1129,140 @@ lemma pronounP_eq_false_of_noSelfIdxP {p : PD.Prog} (h : noSelfIdxP p = true) : 
     all_goals rfl
   all_goals rfl
 
+/-! ### The budget-snapshot predicates and the bridge `templateCodeAt φ k = templateCode φ`
+
+`searchFreeP p`: no `.search` node at a described position of `p` (a `.sys` is a leaf, a `.tvote` is excluded —
+a vote never sits inside a template). On such a program the abstracted description is the verbatim one
+(`noSearchAt_progCode`, `closedDescAt_progCode_eq`). `noBudgetSnapshotF φ`: every closed program an atom of `φ`
+describes is `searchFreeP` — then `templateAt φ (some k) = templateAt φ none` for every `k`
+(`templateAt_some_eq_none`), i.e. the stored template is today's `templateCode φ`
+(`templateCodeAt_eq_templateCode`): true of every base guard but JustBot's (`.bot (DupocBot k)`) and
+CupodTrollBot's (`.eq .opp (CupodBot k)`), and of every tau guard naming a budget-free hypothesis instance. -/
+
+/-- No `.search` node at a described position (`.sys` a leaf; `.tvote` excluded). -/
+def searchFreeP : PD.Prog → Bool
+  | .const _ => true
+  | .self => true
+  | .opp => true
+  | .bot p => searchFreeP p
+  | .sim p q => searchFreeP p && searchFreeP q
+  | .ite b _ p q => searchFreeP b && searchFreeP p && searchFreeP q
+  | .search _ _ _ _ => false
+  | .tvote _ _ _ _ => false
+  | .sys _ _ => true
+  | .selfIdx _ => true
+
+/-- No closed sub-program at a described position of `φ` contains a `.search` (a `.box` body is stored
+unabstracted, so it never matters here). -/
+def noBudgetSnapshotF : PD.Formula → Bool
+  | .plays p q _ => searchFreeP p && searchFreeP q
+  | .impl φ ψ => noBudgetSnapshotF φ && noBudgetSnapshotF ψ
+  | .neg φ => noBudgetSnapshotF φ
+  | .box _ _ => true
+  | .eq p q => searchFreeP p && searchFreeP q
+  | .diag _ _ => true
+
+mutual
+  /-- Every stored template of `p` is unabstracted (`noBudgetSnapshotF` on every search guard). -/
+  def noBudgetSnapshotP : PD.Prog → Bool
+    | .const _ => true
+    | .self => true
+    | .opp => true
+    | .bot p => noBudgetSnapshotP p
+    | .sim p q => noBudgetSnapshotP p && noBudgetSnapshotP q
+    | .ite b _ p q => noBudgetSnapshotP b && noBudgetSnapshotP p && noBudgetSnapshotP q
+    | .search _ φ p q => noBudgetSnapshotF φ && noBudgetSnapshotP p && noBudgetSnapshotP q
+    | .tvote v _ p q => noBudgetSnapshotV v && noBudgetSnapshotP p && noBudgetSnapshotP q
+    | .sys defs _ => noBudgetSnapshotL defs
+    | .selfIdx _ => true
+  def noBudgetSnapshotL : PD.ProgList → Bool
+    | .nil => true
+    | .cons p rest => noBudgetSnapshotP p && noBudgetSnapshotL rest
+  def noBudgetSnapshotV : PD.VoteList → Bool
+    | .nil => true
+    | .cons _ I rest => noBudgetSnapshotP I && noBudgetSnapshotV rest
+end
+
+/-- A `searchFreeP` program's code has no `pSearch` node at a descent position. -/
+theorem noSearchAt_progCode : ∀ p : PD.Prog, searchFreeP p = true → ∀ k₀ : ℕ, NoSearchAt k₀ (progCode p)
+  | .const a, _, k₀ => by rw [progCode_const]; exact .const _ _
+  | .self, _, k₀ => by rw [progCode_self]; exact .self _
+  | .opp, _, k₀ => by rw [progCode_opp]; exact .opp _
+  | .bot p, h, k₀ => by rw [progCode_bot]; exact .bot _ (noSearchAt_progCode p h k₀)
+  | .sim p q, h, k₀ => by
+    simp only [searchFreeP, Bool.and_eq_true] at h
+    rw [progCode_sim]; exact .sim _ _ (noSearchAt_progCode p h.1 k₀) (noSearchAt_progCode q h.2 k₀)
+  | .ite b _ p q, h, k₀ => by
+    simp only [searchFreeP, Bool.and_eq_true] at h
+    rw [progCode_ite]
+    exact .ite _ _ _ _ (noSearchAt_progCode b h.1.1 k₀) (noSearchAt_progCode p h.1.2 k₀) (noSearchAt_progCode q h.2 k₀)
+  | .search _ _ _ _, h, _ => by simp [searchFreeP] at h
+  | .tvote _ _ _ _, h, _ => by simp [searchFreeP] at h
+  | .sys _ _, _, k₀ => by rw [progCode_sys]; exact .sys _ _ _
+  | .selfIdx _, _, k₀ => by rw [progCode_selfIdx]; exact .selfIdx _ _
+
+lemma canonicalSlot_progCode_eq {n : ℕ} {p : PD.Prog} (hp : searchFreeP p = true) (k₀ : Option ℕ) (b : Semiterm LAct Empty n) :
+    canonicalSlot k₀ (progCode p) b = cl (canonicalMeta (progCode p)) := by
+  cases k₀ with
+  | none => rfl
+  | some k => exact canonicalSlot_of_noSearchAt (noSearchAt_progCode p hp k).canonical b
+
+lemma closedDescAt_progCode_eq {p : PD.Prog} (hp : searchFreeP p = true) (k₀ : Option ℕ) :
+    closedDescAt k₀ (progCode p) = closedDesc13 (progCode p) := by
+  unfold closedDescAt closedDesc13; rw [canonicalSlot_progCode_eq hp]
+
+lemma progGraphAt_some_eq_none {p : PD.Prog} (hp : searchFreeP p = true) (k : ℕ) :
+    progGraphAt (some k) p = progGraphAt none p := by
+  unfold progGraphAt
+  by_cases h1 : p = .self
+  · subst h1; rfl
+  by_cases h2 : p = .opp
+  · subst h2; rfl
+  by_cases h3 : pronounP p = true
+  · rcases pronounP_cases h3 with rfl | rfl | rfl | rfl <;> rfl
+  · rw [progAuxAt_of_ne _ h1 h2 (Bool.eq_false_iff.mpr h3), progAuxAt_of_ne _ h1 h2 (Bool.eq_false_iff.mpr h3),
+      closedDescAt_progCode_eq hp, closedDescAt_progCode_eq hp]
+
+/-- **The bridge, meta level**: a template without a budget snapshot is the same at every node budget. -/
+theorem templateAt_some_eq_none : ∀ φ : PD.Formula, noBudgetSnapshotF φ = true → ∀ k : ℕ,
+    templateAt φ (some k) = templateAt φ none
+  | .plays p q a, h, k => by
+    simp only [noBudgetSnapshotF, Bool.and_eq_true] at h
+    rw [templateAt_plays, templateAt_plays, progGraphAt_some_eq_none h.1, progGraphAt_some_eq_none h.2]
+  | .impl φ ψ, h, k => by
+    simp only [noBudgetSnapshotF, Bool.and_eq_true] at h
+    rw [templateAt_impl, templateAt_impl, templateAt_some_eq_none φ h.1 k, templateAt_some_eq_none ψ h.2 k]
+  | .neg φ, h, k => by
+    simp only [noBudgetSnapshotF] at h
+    rw [templateAt_neg, templateAt_neg, templateAt_some_eq_none φ h k]
+  | .box _ _, _, k => by simp only [templateAt_box, progAuxAt_self, progAuxAt_opp]
+  | .eq p q, h, k => by
+    simp only [noBudgetSnapshotF, Bool.and_eq_true] at h
+    rw [templateAt_eq, templateAt_eq, progGraphAt_some_eq_none h.1, closedDescAt_progCode_eq h.2,
+      closedDescAt_progCode_eq h.2]
+  | .diag _ _, _, k => by rw [templateAt_diag, templateAt_diag]
+
+/-- Discharges `noBudgetSnapshotF φ = true` on a concrete formula (by computation) or by assumption. -/
+macro "noSnap_tac" : tactic =>
+  `(tactic| first
+      | assumption
+      | rfl
+      | decide
+      | (simp only [noBudgetSnapshotF, searchFreeP, Bool.and_true, Bool.true_and, Bool.and_self]
+         first | rfl | decide | assumption))
+
+/-- **The bridge**: on a formula without a budget snapshot the stored template code is today's `templateCode φ`.
+Every statement about the base zoo's templates reads through this equation. -/
+theorem templateCodeAt_eq_templateCode (φ : PD.Formula) (k : ℕ) (h : noBudgetSnapshotF φ = true := by noSnap_tac) :
+    templateCodeAt φ k = templateCode φ := by
+  unfold templateCodeAt templateCode template13
+  rw [templateAt_some_eq_none φ h k]
+
+/-- `progCode_search` on a snapshot-free guard: the stored template is `templateCode φ`. -/
+lemma progCode_search_noSnap (k : ℕ) (φ : PD.Formula) (p q : PD.Prog) (h : noBudgetSnapshotF φ = true := by noSnap_tac) :
+    progCode (.search k φ p q) = pSearch k (templateCode φ) (progCode p) (progCode q) := by
+  rw [progCode_search, templateCodeAt_eq_templateCode φ k h]
+
 /-! ### The description lemma (Lemma A) -/
 
 lemma progAux_self (c : ℕ) : progAux .self c = descF #1 #2 #3 #4 := by simp [progAux]
@@ -1068,12 +1387,17 @@ lemma quote_subst_cl (σ : Semisentence LAct 6) (w : Fin 6 → ClosedSemiterm LA
 
 /-! #### The bridge: on the `noSelfIdx` fragment the thirteen-variable template is the six-variable one, cast -/
 
-lemma closedDesc13_subst {m : ℕ} (c : ℕ) (w : Fin 14 → Semiterm LAct Empty m) :
-    closedDesc13 c ⇜ w = descF (Rew.bShift (w 0)) (cl (canonicalMeta c)) (cl (revalueUMeta c)) (cl (revalueWMeta c)) := by
-  unfold closedDesc13 Rewriting.subst
-  rw [rew_descF]
+lemma closedDescAt_subst {m : ℕ} (k₀ : Option ℕ) (c : ℕ) (w : Fin 14 → Semiterm LAct Empty m) :
+    closedDescAt k₀ c ⇜ w =
+      descF (Rew.bShift (w 0)) (canonicalSlot k₀ c (Rew.bShift (w 7))) (cl (revalueUMeta c)) (cl (revalueWMeta c)) := by
+  unfold closedDescAt Rewriting.subst
+  rw [rew_descF, rew_canonicalSlot]
   simp only [rew_cl]
   rfl
+
+lemma closedDesc13_subst {m : ℕ} (c : ℕ) (w : Fin 14 → Semiterm LAct Empty m) :
+    closedDesc13 c ⇜ w = descF (Rew.bShift (w 0)) (cl (canonicalMeta c)) (cl (revalueUMeta c)) (cl (revalueWMeta c)) :=
+  closedDescAt_subst none c w
 
 /-- Substituting into a cast formula reads the substitution through the cast. -/
 lemma subst_castLE {n m k : ℕ} (h : n ≤ m) (A : Semisentence LAct n) (w : Fin m → Semiterm LAct Empty k) :
@@ -1262,6 +1586,489 @@ theorem quote_sentenceAt (me opp : PD.Prog) (φ : PD.Formula) (h : noSelfIdxF φ
   congr 1
   exact semitermVec_val_descriptionTerms _ _
 
+/-! ### The seven-variable reading of a pronoun-free template, and the instantiation lemma
+
+On the `noSelfIdx` fragment `templateAt φ k₀` never reads the member slots, so it is the cast of a SEVEN-variable
+formula `template7At φ k₀` (frame `#0..#5`, budget `#6`) — `templateAt_eq_castLE₇`, `quote_castLE₇` — and the
+stored code is a seven-variable template (`isSemiformula_templateCodeAt₇`): `substTemplate`'s middle case
+(`guardCodeSlot`) is what instantiates it inside a simulated program. The instantiation lemma
+`template7At_budget` — with the node's own budget in slot `#6`, the abstracted template IS the unabstracted one
+(`canonicalSlot_numTB`) — gives **`guardCodeB_templateCodeAt`**: the sentence the evaluator consults on the
+stored template is `guardCode (templateCode φ) me opp`, the pre-abstraction guard, in every frame
+(`EvalGraph.search_iff_at`). The evaluator's behaviour is unchanged by the abstraction; only the stored numerals
+shrink. -/
+
+/-- The closed description in the seven-variable frame (`#1..#7`, budget `#8` inside `descF`). -/
+noncomputable def closedDesc7At (k₀ : Option ℕ) (c : ℕ) : Semisentence LAct 8 :=
+  descF #1 (canonicalSlot k₀ c #8) (cl (revalueUMeta c)) (cl (revalueWMeta c))
+
+/-- The description of `p` in the seven-variable frame: the me-triple, the opp-triple, or the closed description. -/
+noncomputable def progAux7At (k₀ : Option ℕ) (p : PD.Prog) (c : ℕ) : Semisentence LAct 8 :=
+  if p = .self then descF #1 #2 #3 #4 else if p = .opp then descF #1 #5 #6 #7 else closedDesc7At k₀ c
+
+lemma progAux7At_self (k₀ : Option ℕ) (c : ℕ) : progAux7At k₀ .self c = descF #1 #2 #3 #4 := by simp [progAux7At]
+lemma progAux7At_opp (k₀ : Option ℕ) (c : ℕ) : progAux7At k₀ .opp c = descF #1 #5 #6 #7 := by simp [progAux7At]
+lemma progAux7At_of_ne (k₀ : Option ℕ) {p : PD.Prog} (h1 : p ≠ .self) (h2 : p ≠ .opp) (c : ℕ) :
+    progAux7At k₀ p c = closedDesc7At k₀ c := by simp [progAux7At, h1, h2]
+
+/-- The seven-variable template at the node budget `k₀`. -/
+noncomputable def template7At : PD.Formula → Option ℕ → Semisentence LAct 7
+  | .plays p q a, k₀ =>
+      ∃¹ (∃¹ (∃¹ ((progAux7At k₀ p (progCode p) ⇜ ![#2, #3, #4, #5, #6, #7, #8, #9]) ⋏
+        ((progAux7At k₀ q (progCode q) ⇜ ![#1, #3, #4, #5, #6, #7, #8, #9]) ⋏
+          (evalG ⇜ ![#0, #2, #1, #2, cl (actT (actCode a))])))))
+  | .impl φ ψ, k₀ => template7At φ k₀ 🡒 template7At ψ k₀
+  | .neg φ, k₀ => ∼ template7At φ k₀
+  | .box k ψ, k₀ =>
+      ∃¹ (∃¹ ((progAux7At k₀ .self 0 ⇜ ![#1, #2, #3, #4, #5, #6, #7, #8]) ⋏
+        ((progAux7At k₀ .opp 0 ⇜ ![#0, #2, #3, #4, #5, #6, #7, #8]) ⋏
+          (∃¹ ((guardCodeG ⇜ ![#0, cl (numTB (templateCode ψ)), #2, #1]) ⋏
+            (lenProvG ⇜ ![cl (numTB k), #0]))))))
+  | .eq p q, k₀ =>
+      ∃¹ (∃¹ ((progAux7At k₀ p (progCode p) ⇜ ![#1, #2, #3, #4, #5, #6, #7, #8]) ⋏
+        ((closedDesc7At k₀ (progCode q) ⇜ ![#0, #2, #3, #4, #5, #6, #7, #8]) ⋏
+          Semiformula.rel (Language.Eq.eq : LAct.Rel 2) ![#1, #0])))
+  | .diag _ _, _ => ⊥
+
+lemma template7At_plays (k₀ p q a) : template7At (.plays p q a) k₀ =
+    ∃¹ (∃¹ (∃¹ ((progAux7At k₀ p (progCode p) ⇜ ![#2, #3, #4, #5, #6, #7, #8, #9]) ⋏
+      ((progAux7At k₀ q (progCode q) ⇜ ![#1, #3, #4, #5, #6, #7, #8, #9]) ⋏
+        (evalG ⇜ ![#0, #2, #1, #2, cl (actT (actCode a))]))))) := by rw [template7At]
+lemma template7At_impl (k₀ φ ψ) : template7At (.impl φ ψ) k₀ = template7At φ k₀ 🡒 template7At ψ k₀ := by rw [template7At]
+lemma template7At_neg (k₀ φ) : template7At (.neg φ) k₀ = ∼ template7At φ k₀ := by rw [template7At]
+lemma template7At_box (k₀ k ψ) : template7At (.box k ψ) k₀ =
+    ∃¹ (∃¹ ((progAux7At k₀ .self 0 ⇜ ![#1, #2, #3, #4, #5, #6, #7, #8]) ⋏
+      ((progAux7At k₀ .opp 0 ⇜ ![#0, #2, #3, #4, #5, #6, #7, #8]) ⋏
+        (∃¹ ((guardCodeG ⇜ ![#0, cl (numTB (templateCode ψ)), #2, #1]) ⋏
+          (lenProvG ⇜ ![cl (numTB k), #0])))))) := by rw [template7At]
+lemma template7At_eq (k₀ p q) : template7At (.eq p q) k₀ =
+    ∃¹ (∃¹ ((progAux7At k₀ p (progCode p) ⇜ ![#1, #2, #3, #4, #5, #6, #7, #8]) ⋏
+      ((closedDesc7At k₀ (progCode q) ⇜ ![#0, #2, #3, #4, #5, #6, #7, #8]) ⋏
+        Semiformula.rel (Language.Eq.eq : LAct.Rel 2) ![#1, #0]))) := by rw [template7At]
+lemma template7At_diag (k₀ g φ) : template7At (.diag g φ) k₀ = ⊥ := by rw [template7At]
+
+lemma closedDesc7At_subst {m : ℕ} (k₀ : Option ℕ) (c : ℕ) (w : Fin 8 → Semiterm LAct Empty m) :
+    closedDesc7At k₀ c ⇜ w =
+      descF (Rew.bShift (w 0)) (canonicalSlot k₀ c (Rew.bShift (w 7))) (cl (revalueUMeta c)) (cl (revalueWMeta c)) := by
+  unfold closedDesc7At Rewriting.subst
+  rw [rew_descF, rew_canonicalSlot]
+  simp only [rew_cl]
+  rfl
+
+lemma progAuxAt_eq_castLE₇ (k₀ : Option ℕ) {p : PD.Prog} (hp : noSelfIdxP p = true) (c : ℕ) :
+    progAuxAt k₀ p c = Rew.castLE (by norm_num : 8 ≤ 14) ▹ progAux7At k₀ p c := by
+  by_cases h1 : p = .self
+  · subst h1
+    rw [progAuxAt_self, progAux7At_self, rew_descF]
+    simp only [Rew.q_castLE, Rew.castLe_bvar]
+    rfl
+  by_cases h2 : p = .opp
+  · subst h2
+    rw [progAuxAt_opp, progAux7At_opp, rew_descF]
+    simp only [Rew.q_castLE, Rew.castLe_bvar]
+    rfl
+  rw [progAuxAt_of_ne _ h1 h2 (pronounP_eq_false_of_noSelfIdxP hp), progAux7At_of_ne _ h1 h2]
+  unfold closedDescAt closedDesc7At
+  rw [rew_descF, rew_canonicalSlot]
+  simp only [Rew.q_castLE, Rew.castLe_bvar, rew_cl]
+  rfl
+
+/-- **The seven-variable reading**: on the `noSelfIdx` fragment `templateAt φ k₀` is `template7At φ k₀` cast. -/
+theorem templateAt_eq_castLE₇ : ∀ (k₀ : Option ℕ) (φ : PD.Formula), noSelfIdxF φ = true →
+    templateAt φ k₀ = Rew.castLE (by norm_num : 7 ≤ 13) ▹ template7At φ k₀
+  | k₀, .plays p q a, h => by
+    simp only [noSelfIdxF, Bool.and_eq_true] at h
+    rw [templateAt_plays, template7At_plays]
+    unfold progGraphAt
+    simp only [Rewriting.app_exs, Rew.q_castLE, LogicalConnective.HomClass.map_and, rew_subst_eq]
+    rw [progAuxAt_eq_castLE₇ _ h.1, progAuxAt_eq_castLE₇ _ h.2, subst_castLE, subst_castLE]
+    congr 4
+    · congr 1; funext i; fin_cases i <;> rfl
+    · congr 1
+      · congr 1; funext i; fin_cases i <;> rfl
+      · congr 1
+        funext i
+        fin_cases i
+        · rfl
+        · rfl
+        · rfl
+        · rfl
+        · exact (rew_cl _ _).symm
+  | k₀, .impl φ ψ, h => by
+    simp only [noSelfIdxF, Bool.and_eq_true] at h
+    rw [templateAt_impl, template7At_impl, LogicalConnective.HomClass.map_imply, templateAt_eq_castLE₇ k₀ φ h.1,
+      templateAt_eq_castLE₇ k₀ ψ h.2]
+  | k₀, .neg φ, h => by
+    simp only [noSelfIdxF] at h
+    rw [templateAt_neg, template7At_neg, LogicalConnective.HomClass.map_neg, templateAt_eq_castLE₇ k₀ φ h]
+  | k₀, .box k ψ, _ => by
+    rw [templateAt_box, template7At_box]
+    simp only [Rewriting.app_exs, Rew.q_castLE, LogicalConnective.HomClass.map_and, rew_subst_eq]
+    rw [progAuxAt_eq_castLE₇ _ (p := .self) rfl, progAuxAt_eq_castLE₇ _ (p := .opp) rfl, subst_castLE, subst_castLE]
+    congr 3
+    · congr 1; funext i; fin_cases i <;> rfl
+    · congr 1
+      · congr 1; funext i; fin_cases i <;> rfl
+      · congr 2
+        · congr 1
+          funext i
+          fin_cases i
+          · rfl
+          · exact (rew_cl _ _).symm
+          · rfl
+          · rfl
+        · congr 1
+          funext i
+          fin_cases i
+          · exact (rew_cl _ _).symm
+          · rfl
+  | k₀, .eq p q, h => by
+    simp only [noSelfIdxF, Bool.and_eq_true] at h
+    rw [templateAt_eq, template7At_eq]
+    unfold progGraphAt
+    simp only [Rewriting.app_exs, Rew.q_castLE, LogicalConnective.HomClass.map_and, rew_subst_eq]
+    rw [progAuxAt_eq_castLE₇ _ h.1, subst_castLE]
+    congr 3
+    · congr 1; funext i; fin_cases i <;> rfl
+    · congr 1
+      · rw [closedDescAt_subst, closedDesc7At_subst]; rfl
+      · rw [Semiformula.rew_rel]
+        congr 1
+        funext i
+        fin_cases i <;> rfl
+  | k₀, .diag _ _, _ => by
+    rw [templateAt_diag, template7At_diag, LogicalConnective.HomClass.map_bot]
+
+/-- The code of a closed seven-variable semisentence is a seven-variable template. -/
+lemma isSemiformula_quote₇ {V : Type*} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] (φ : Semisentence LAct 7) :
+    IsSemiformula LAct 7 (⌜φ⌝ : V) := by
+  simpa using Sentence.quote_isSemiformula (V := V) φ
+
+/-- **Codes do not see the arity, seven to thirteen.** -/
+theorem quote_castLE₇ (σ : Semisentence LAct 7) :
+    (⌜(Rew.castLE (by norm_num : 7 ≤ 13) ▹ σ : Semisentence LAct 13)⌝ : ℕ) = ⌜σ⌝ := by
+  have h713 : (7 : ℕ) ≤ 13 := by norm_num
+  have hc : (Rew.castLE h713 : Rew LAct Empty 7 Empty 13) =
+      Rew.subst (fun i ↦ (#(Fin.castLE h713 i) : Semiterm LAct Empty 13)) := by
+    ext x <;> first | exact x.elim | rfl | simp
+  rw [hc]
+  change (⌜(σ ⇜ (fun i ↦ (#(Fin.castLE h713 i) : Semiterm LAct Empty 13)) : Semisentence LAct 13)⌝ : ℕ) = _
+  rw [quote_subst_gen]
+  have hv : (fun i : Fin 7 ↦ (⌜(Rew.emb (#(Fin.castLE h713 i) : Semiterm LAct Empty 13) : SyntacticSemiterm LAct 13)⌝ :
+      Bootstrapping.Semiterm ℕ LAct 13)) =
+      ![⌜(#0 : SyntacticSemiterm LAct 13)⌝, ⌜(#1 : SyntacticSemiterm LAct 13)⌝, ⌜(#2 : SyntacticSemiterm LAct 13)⌝,
+        ⌜(#3 : SyntacticSemiterm LAct 13)⌝, ⌜(#4 : SyntacticSemiterm LAct 13)⌝, ⌜(#5 : SyntacticSemiterm LAct 13)⌝,
+        ⌜(#6 : SyntacticSemiterm LAct 13)⌝] := by
+    funext i; fin_cases i <;> rfl
+  rw [hv]
+  simp only [SemitermVec.val_cons, SemitermVec.val_nil]
+  have hid : ((⌜(#0 : SyntacticSemiterm LAct 13)⌝ : Bootstrapping.Semiterm ℕ LAct 13).val ∷
+      (⌜(#1 : SyntacticSemiterm LAct 13)⌝ : Bootstrapping.Semiterm ℕ LAct 13).val ∷
+      (⌜(#2 : SyntacticSemiterm LAct 13)⌝ : Bootstrapping.Semiterm ℕ LAct 13).val ∷
+      (⌜(#3 : SyntacticSemiterm LAct 13)⌝ : Bootstrapping.Semiterm ℕ LAct 13).val ∷
+      (⌜(#4 : SyntacticSemiterm LAct 13)⌝ : Bootstrapping.Semiterm ℕ LAct 13).val ∷
+      (⌜(#5 : SyntacticSemiterm LAct 13)⌝ : Bootstrapping.Semiterm ℕ LAct 13).val ∷
+      (⌜(#6 : SyntacticSemiterm LAct 13)⌝ : Bootstrapping.Semiterm ℕ LAct 13).val ∷ (0 : ℕ)) = idVec7 := rfl
+  rw [hid]
+  have hlt : (7 : ℕ) < 13 := by norm_num
+  have hvec := idVec7_semitermVec (V := ℕ) (n := 13) (le_def.mpr (Or.inr hlt))
+  exact subst_eq_self_of_le (isSemiformula_quote₇ σ) (by rw [hvec.lh]; exact hvec.isUTerm)
+    (le_def.mpr (Or.inl hvec.lh.symm)) nth_idVec7
+
+/-- The stored template code is the code of the seven-variable template (`noSelfIdx` fragment). -/
+theorem templateCodeAt_eq_quote_template7 (φ : PD.Formula) (k : ℕ) (h : noSelfIdxF φ = true := by noSelfIdx_tac) :
+    templateCodeAt φ k = ⌜template7At φ (some k)⌝ := by
+  unfold templateCodeAt
+  rw [templateAt_eq_castLE₇ _ φ h]
+  exact quote_castLE₇ _
+
+theorem templateCode_eq_quote_template7 (φ : PD.Formula) (h : noSelfIdxF φ = true := by noSelfIdx_tac) :
+    templateCode φ = ⌜template7At φ none⌝ := by
+  unfold templateCode template13
+  rw [templateAt_eq_castLE₇ _ φ h]
+  exact quote_castLE₇ _
+
+/-- The stored template code is a seven-variable template (`noSelfIdx` fragment). -/
+lemma isSemiformula_templateCodeAt₇ (φ : PD.Formula) (k : ℕ) (h : noSelfIdxF φ = true := by noSelfIdx_tac) :
+    IsSemiformula LAct 7 (templateCodeAt φ k) := by
+  rw [templateCodeAt_eq_quote_template7 φ k h]
+  exact isSemiformula_quote₇ _
+
+/-! #### The instantiation lemma -/
+
+lemma progAux7At_budget {m : ℕ} (k : ℕ) (p : PD.Prog) (c : ℕ) (w : Fin 8 → Semiterm LAct Empty m)
+    (hw : w 7 = cl (numTB k)) :
+    progAux7At (some k) p c ⇜ w = progAux7At none p c ⇜ w := by
+  by_cases h1 : p = .self
+  · subst h1; rw [progAux7At_self, progAux7At_self]
+  by_cases h2 : p = .opp
+  · subst h2; rw [progAux7At_opp, progAux7At_opp]
+  rw [progAux7At_of_ne _ h1 h2, progAux7At_of_ne _ h1 h2, closedDesc7At_subst, closedDesc7At_subst, hw, rew_cl,
+    canonicalSlot_numTB, canonicalSlot_none]
+
+/-- **The instantiation lemma**: with the node's own budget in slot `#6`, the abstracted template is the
+unabstracted one. -/
+theorem template7At_budget (k : ℕ) : ∀ (φ : PD.Formula) {m : ℕ} (v : Fin 7 → Semiterm LAct Empty m),
+    v 6 = cl (numTB k) → template7At φ (some k) ⇜ v = template7At φ none ⇜ v
+  | .plays p q a, m, v, hv => by
+    rw [template7At_plays, template7At_plays]
+    simp only [Rewriting.app_exs, Rew.q_subst, LogicalConnective.HomClass.map_and, rew_subst_eq]
+    congr 4
+    · exact progAux7At_budget k p _ _
+        (by show Rew.bShift (Rew.bShift (Rew.bShift (v 6))) = _; rw [hv, rew_cl, rew_cl, rew_cl])
+    · congr 1
+      exact progAux7At_budget k q _ _
+        (by show Rew.bShift (Rew.bShift (Rew.bShift (v 6))) = _; rw [hv, rew_cl, rew_cl, rew_cl])
+  | .impl φ ψ, m, v, hv => by
+    rw [template7At_impl, template7At_impl]
+    have h1 := template7At_budget k φ v hv
+    have h2 := template7At_budget k ψ v hv
+    unfold Rewriting.subst at h1 h2 ⊢
+    rw [LogicalConnective.HomClass.map_imply, LogicalConnective.HomClass.map_imply, h1, h2]
+  | .neg φ, m, v, hv => by
+    rw [template7At_neg, template7At_neg]
+    have h1 := template7At_budget k φ v hv
+    unfold Rewriting.subst at h1 ⊢
+    rw [LogicalConnective.HomClass.map_neg, LogicalConnective.HomClass.map_neg, h1]
+  | .box _ _, m, v, _ => by simp only [template7At_box, progAux7At_self, progAux7At_opp]
+  | .eq p q, m, v, hv => by
+    rw [template7At_eq, template7At_eq]
+    simp only [Rewriting.app_exs, Rew.q_subst, LogicalConnective.HomClass.map_and, rew_subst_eq]
+    congr 3
+    · exact progAux7At_budget k p _ _
+        (by show Rew.bShift (Rew.bShift (v 6)) = _; rw [hv, rew_cl, rew_cl])
+    · congr 1
+      rw [closedDesc7At_subst, closedDesc7At_subst]
+      show descF _ (canonicalSlot (some k) _ (Rew.bShift (Rew.bShift (Rew.bShift (v 6))))) _ _ =
+        descF _ (canonicalSlot none _ (Rew.bShift (Rew.bShift (Rew.bShift (v 6))))) _ _
+      rw [hv, rew_cl, rew_cl, rew_cl, canonicalSlot_numTB, canonicalSlot_none]
+  | .diag _ _, m, v, _ => by rw [template7At_diag, template7At_diag]
+
+/-- A closed term cast to zero bound variables is itself. -/
+lemma cl_zero : ∀ t : ClosedSemiterm LAct 0, (cl t : Semiterm LAct Empty 0) = t
+  | #x => x.elim0
+  | &x => x.elim
+  | .func f v => by
+    show Rew.castLE _ (Semiterm.func f v) = Semiterm.func f v
+    rw [Rew.func]
+    congr 1
+    funext i
+    exact cl_zero (v i)
+
+lemma quote_lMap_emb_binNumeralMeta (k : ℕ) : (⌜Semiterm.lMap emb (binNumeralMeta k)⌝ : ℕ) = binNumeral k := by
+  rw [Semiterm.empty_quote_def, term_emb_lMap_emb, quote_term_lMap_emb, ← Semiterm.empty_quote_def,
+    quote_binNumeralMeta_nat]
+
+lemma quote_numTB (k : ℕ) : (⌜numTB k⌝ : ℕ) = binNumeral k := quote_lMap_emb_binNumeralMeta k
+
+/-- The seven closed terms the evaluator substitutes: the descriptions of the players and the node budget. -/
+noncomputable def descriptionTermsB (me opp k : ℕ) : Fin 7 → ClosedSemiterm LAct 0 :=
+  ![canonicalMeta me, revalueUMeta me, revalueWMeta me, canonicalMeta opp, revalueUMeta opp, revalueWMeta opp, numTB k]
+
+lemma semitermVec_val_descriptionTermsB (me opp k : ℕ) :
+    SemitermVec.val (fun i ↦ (⌜(Rew.emb (descriptionTermsB me opp k i) : SyntacticSemiterm LAct 0)⌝ :
+      Bootstrapping.Semiterm ℕ LAct 0)) = descriptionsB me opp k := by
+  have hv : (fun i ↦ (⌜(Rew.emb (descriptionTermsB me opp k i) : SyntacticSemiterm LAct 0)⌝ :
+      Bootstrapping.Semiterm ℕ LAct 0)) =
+      ![⌜(Rew.emb (canonicalMeta me) : SyntacticSemiterm LAct 0)⌝, ⌜(Rew.emb (revalueUMeta me) : SyntacticSemiterm LAct 0)⌝,
+        ⌜(Rew.emb (revalueWMeta me) : SyntacticSemiterm LAct 0)⌝, ⌜(Rew.emb (canonicalMeta opp) : SyntacticSemiterm LAct 0)⌝,
+        ⌜(Rew.emb (revalueUMeta opp) : SyntacticSemiterm LAct 0)⌝, ⌜(Rew.emb (revalueWMeta opp) : SyntacticSemiterm LAct 0)⌝,
+        ⌜(Rew.emb (numTB k) : SyntacticSemiterm LAct 0)⌝] := by
+    funext i; fin_cases i <;> rfl
+  rw [hv]
+  simp only [SemitermVec.val_cons, SemitermVec.val_nil, typed_val_emb, quote_canonicalMeta, quote_revalueUMeta,
+    quote_revalueWMeta, quote_numTB]
+  rfl
+
+/-- `guardCodeB` on the code of a seven-variable sentence is the code of its instance. -/
+theorem guardCodeB_quote₇ (σ : Semisentence LAct 7) (me opp k : ℕ) :
+    guardCodeB (⌜σ⌝ : ℕ) me opp k = ⌜σ ⇜ descriptionTermsB me opp k⌝ := by
+  unfold guardCodeB
+  rw [quote_subst_gen, semitermVec_val_descriptionTermsB]
+
+/-- **The evaluator's behaviour is unchanged by the abstraction**: the sentence consulted on the stored
+template at the node's budget is the guard of the unabstracted template. -/
+theorem guardCodeB_templateCodeAt (φ : PD.Formula) (me opp k : ℕ) (h : noSelfIdxF φ = true := by noSelfIdx_tac) :
+    guardCodeB (templateCodeAt φ k) me opp k = guardCode (templateCode φ) me opp := by
+  rw [templateCodeAt_eq_quote_template7 φ k h, guardCodeB_quote₇,
+    template7At_budget k φ (descriptionTermsB me opp k) (cl_zero _).symm, ← guardCodeB_quote₇,
+    ← templateCode_eq_quote_template7 φ h, guardCodeB_of_template (isSemiformula_templateCode φ h)]
+
+/-- **The search clause on a stored template**: the pre-abstraction reading, in every frame. -/
+theorem EvalGraph.search_iff_at {n me opp k p q a : ℕ} (φ : PD.Formula) (h : noSelfIdxF φ = true := by noSelfIdx_tac) :
+    EvalGraph (n + 1) me opp (pSearch k (templateCodeAt φ k) p q) a ↔
+    ((LenBox TAct k (guardCode (templateCode φ) me opp) ∧ EvalGraph n me opp p a) ∨
+     (¬LenBox TAct k (guardCode (templateCode φ) me opp) ∧ EvalGraph n me opp q a)) := by
+  rw [EvalGraph.search_iff, guardCodeB_templateCodeAt φ me opp k h]
+
+/-! #### Substitution on the seven-variable reading -/
+
+/-- The seven substitution terms of a simulated program's frame: the players' closed descriptions in
+`#0..#5`, the budget slot kept. -/
+noncomputable def descTerms7 (me opp : PD.Prog) : Fin 7 → Semiterm LAct Empty 7 :=
+  ![cl (canonicalMeta (progCode me)), cl (revalueUMeta (progCode me)), cl (revalueWMeta (progCode me)),
+    cl (canonicalMeta (progCode opp)), cl (revalueUMeta (progCode opp)), cl (revalueWMeta (progCode opp)), #6]
+
+/-- **Lemma A, seven variables**: substituting the frame descriptions into the description of an atomic program
+gives the description of the substituted program — the player's description being abstracted on the right,
+the equation needs a search-free player (`searchFreeP`) wherever the atom is that player. -/
+lemma progAux7At_subst {m : ℕ} (k₀ : Option ℕ) {me opp : PD.Prog} (hme : me ≠ .self ∧ me ≠ .opp)
+    (hopp : opp ≠ .self ∧ opp ≠ .opp) {p : PD.Prog} (hp : atomicP p = true)
+    (hme' : p = .self → searchFreeP me = true) (hopp' : p = .opp → searchFreeP opp = true)
+    (w w' : Fin 8 → Semiterm LAct Empty m)
+    (h0 : w 0 = w' 0)
+    (h1 : w 1 = cl (canonicalMeta (progCode me))) (h2 : w 2 = cl (revalueUMeta (progCode me))) (h3 : w 3 = cl (revalueWMeta (progCode me)))
+    (h4 : w 4 = cl (canonicalMeta (progCode opp))) (h5 : w 5 = cl (revalueUMeta (progCode opp))) (h6 : w 6 = cl (revalueWMeta (progCode opp)))
+    (h7 : w 7 = w' 7) :
+    progAux7At k₀ p (progCode p) ⇜ w = progAux7At k₀ (p.subst me opp) (progCode (p.subst me opp)) ⇜ w' := by
+  simp only [atomicP, Bool.or_eq_true, beq_iff_eq] at hp
+  rcases hp with (rfl | rfl) | hc
+  · rw [progAux7At_self, PD.Prog.subst, progAux7At_of_ne _ hme.1 hme.2, closedDesc7At_subst,
+      canonicalSlot_progCode_eq (hme' rfl)]
+    unfold Rewriting.subst
+    rw [rew_descF]
+    show descF (Rew.bShift (w 0)) (Rew.bShift (w 1)) (Rew.bShift (w 2)) (Rew.bShift (w 3)) = _
+    rw [h0, h1, h2, h3, rew_cl, rew_cl, rew_cl]
+  · rw [progAux7At_opp, PD.Prog.subst, progAux7At_of_ne _ hopp.1 hopp.2, closedDesc7At_subst,
+      canonicalSlot_progCode_eq (hopp' rfl)]
+    unfold Rewriting.subst
+    rw [rew_descF]
+    show descF (Rew.bShift (w 0)) (Rew.bShift (w 4)) (Rew.bShift (w 5)) (Rew.bShift (w 6)) = _
+    rw [h0, h4, h5, h6, rew_cl, rew_cl, rew_cl]
+  · rw [subst_of_closedP p me opp hc, progAux7At_of_ne _ (closedP_ne_self hc) (closedP_ne_opp hc),
+      closedDesc7At_subst, closedDesc7At_subst, h0, h7]
+
+lemma closedF_or_left {φ ψ : PD.Formula} {R : Prop} (h : closedF (.impl φ ψ) = true ∨ R) : closedF φ = true ∨ R :=
+  h.imp_left (fun h' ↦ by simp only [closedF, Bool.and_eq_true] at h'; exact h'.1)
+lemma closedF_or_right {φ ψ : PD.Formula} {R : Prop} (h : closedF (.impl φ ψ) = true ∨ R) : closedF ψ = true ∨ R :=
+  h.imp_left (fun h' ↦ by simp only [closedF, Bool.and_eq_true] at h'; exact h'.2)
+lemma closedF_or_neg {φ : PD.Formula} {R : Prop} (h : closedF (.neg φ) = true ∨ R) : closedF φ = true ∨ R :=
+  h.imp_left (fun h' ↦ by simpa only [closedF] using h')
+lemma closedF_plays_self {q : PD.Prog} {a : PD.Action} {R : Prop} (h : closedF (.plays .self q a) = true ∨ R) : R :=
+  h.resolve_left (by simp [closedF, closedP])
+lemma closedF_plays_opp {q : PD.Prog} {a : PD.Action} {R : Prop} (h : closedF (.plays .opp q a) = true ∨ R) : R :=
+  h.resolve_left (by simp [closedF, closedP])
+lemma closedF_plays_self' {p : PD.Prog} {a : PD.Action} {R : Prop} (h : closedF (.plays p .self a) = true ∨ R) : R :=
+  h.resolve_left (by simp [closedF, closedP])
+lemma closedF_plays_opp' {p : PD.Prog} {a : PD.Action} {R : Prop} (h : closedF (.plays p .opp a) = true ∨ R) : R :=
+  h.resolve_left (by simp [closedF, closedP])
+lemma closedF_eq_self {q : PD.Prog} {R : Prop} (h : closedF (.eq .self q) = true ∨ R) : R :=
+  h.resolve_left (by simp [closedF, closedP])
+lemma closedF_eq_opp {q : PD.Prog} {R : Prop} (h : closedF (.eq .opp q) = true ∨ R) : R :=
+  h.resolve_left (by simp [closedF, closedP])
+
+/-- **The meta substitution equation on the seven-variable reading**: on the fragment, with players whose
+descriptions the abstraction does not touch (search-free) — or on a CLOSED formula, for any players. -/
+theorem template7At_subst {me opp : PD.Prog} (hme : me ≠ .self ∧ me ≠ .opp) (hopp : opp ≠ .self ∧ opp ≠ .opp)
+    (k₀ : Option ℕ) :
+    ∀ ψ : PD.Formula, fragF ψ = true → (closedF ψ = true ∨ searchFreeP me = true) →
+      (closedF ψ = true ∨ searchFreeP opp = true) →
+      template7At (ψ.subst me opp) k₀ = template7At ψ k₀ ⇜ descTerms7 me opp
+  | .plays p q a, h, hm, ho => by
+    simp only [fragF, Bool.and_eq_true] at h
+    rw [PD.Formula.subst, template7At_plays, template7At_plays]
+    simp only [Rewriting.app_exs, Rew.q_subst, LogicalConnective.HomClass.map_and, rew_subst_eq]
+    congr 4
+    · refine (progAux7At_subst k₀ hme hopp h.1.1.1 (fun hs ↦ ?_) (fun hs ↦ ?_) _ _ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_).symm
+      · subst hs; exact closedF_plays_self hm
+      · subst hs; exact closedF_plays_opp ho
+      · rfl
+      all_goals (first
+        | (show Rew.bShift (Rew.bShift (Rew.bShift (cl _))) = _; rw [rew_cl, rew_cl, rew_cl]; try rfl)
+        | rfl)
+    · congr 1
+      · refine (progAux7At_subst k₀ hme hopp h.1.2 (fun hs ↦ ?_) (fun hs ↦ ?_) _ _ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_).symm
+        · subst hs; exact closedF_plays_self' hm
+        · subst hs; exact closedF_plays_opp' ho
+        · rfl
+        all_goals (first
+          | (show Rew.bShift (Rew.bShift (Rew.bShift (cl _))) = _; rw [rew_cl, rew_cl, rew_cl]; try rfl)
+          | rfl)
+      · congr 1
+        funext i
+        fin_cases i
+        · rfl
+        · rfl
+        · rfl
+        · rfl
+        · exact (rew_cl _ _).symm
+  | .impl φ ψ, h, hm, ho => by
+    simp only [fragF, Bool.and_eq_true] at h
+    rw [PD.Formula.subst, template7At_impl, template7At_impl,
+      template7At_subst hme hopp k₀ φ h.1 (closedF_or_left hm) (closedF_or_left ho),
+      template7At_subst hme hopp k₀ ψ h.2 (closedF_or_right hm) (closedF_or_right ho)]
+    unfold Rewriting.subst
+    rw [LogicalConnective.HomClass.map_imply]
+  | .neg φ, h, hm, ho => by
+    simp only [fragF] at h
+    rw [PD.Formula.subst, template7At_neg, template7At_neg,
+      template7At_subst hme hopp k₀ φ h (closedF_or_neg hm) (closedF_or_neg ho)]
+    unfold Rewriting.subst
+    rw [LogicalConnective.HomClass.map_neg]
+  | .box _ _, h, _, _ => by simp [fragF] at h
+  | .eq p q, h, hm, ho => by
+    simp only [fragF, Bool.and_eq_true] at h
+    rw [PD.Formula.subst, template7At_eq, template7At_eq]
+    simp only [Rewriting.app_exs, Rew.q_subst, LogicalConnective.HomClass.map_and, rew_subst_eq]
+    congr 3
+    · refine (progAux7At_subst k₀ hme hopp h.1.1 (fun hs ↦ ?_) (fun hs ↦ ?_) _ _ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_).symm
+      · subst hs; exact closedF_eq_self hm
+      · subst hs; exact closedF_eq_opp ho
+      · rfl
+      all_goals (first
+        | (show Rew.bShift (Rew.bShift (cl _)) = _; rw [rew_cl, rew_cl]; try rfl)
+        | rfl)
+    · congr 1
+      · rw [closedDesc7At_subst, closedDesc7At_subst]; rfl
+      · rw [Semiformula.rew_rel]
+        congr 1
+        funext i
+        fin_cases i <;> rfl
+  | .diag _ _, _, _, _ => by
+    simp only [PD.Formula.subst, template7At_diag]
+    unfold Rewriting.subst
+    rw [LogicalConnective.HomClass.map_bot]
+
+lemma quote_emb_bvar7_six : (⌜(Rew.emb (#6 : Semiterm LAct Empty 7) : SyntacticSemiterm LAct 7)⌝ : ℕ) = ^#6 := by
+  simp [Rew.emb]
+
+/-- The codes of `descTerms7` form the kept-slot vector `descriptionsSlot`. -/
+lemma semitermVec_val_descTerms7 (me opp : PD.Prog) :
+    SemitermVec.val (fun i ↦ (⌜(Rew.emb (descTerms7 me opp i) : SyntacticSemiterm LAct 7)⌝ : Bootstrapping.Semiterm ℕ LAct 7)) =
+      descriptionsSlot (progCode me) (progCode opp) := by
+  have e : ∀ t : Semiterm LAct Empty 7,
+      ((⌜(Rew.emb t : SyntacticSemiterm LAct 7)⌝ : Bootstrapping.Semiterm ℕ LAct 7)).val =
+        (⌜(Rew.emb t : SyntacticSemiterm LAct 7)⌝ : ℕ) := fun _ ↦ rfl
+  have hv : (fun i ↦ (⌜(Rew.emb (descTerms7 me opp i) : SyntacticSemiterm LAct 7)⌝ : Bootstrapping.Semiterm ℕ LAct 7)) =
+      ![⌜(Rew.emb (cl (canonicalMeta (progCode me))) : SyntacticSemiterm LAct 7)⌝,
+        ⌜(Rew.emb (cl (revalueUMeta (progCode me))) : SyntacticSemiterm LAct 7)⌝,
+        ⌜(Rew.emb (cl (revalueWMeta (progCode me))) : SyntacticSemiterm LAct 7)⌝,
+        ⌜(Rew.emb (cl (canonicalMeta (progCode opp))) : SyntacticSemiterm LAct 7)⌝,
+        ⌜(Rew.emb (cl (revalueUMeta (progCode opp))) : SyntacticSemiterm LAct 7)⌝,
+        ⌜(Rew.emb (cl (revalueWMeta (progCode opp))) : SyntacticSemiterm LAct 7)⌝,
+        ⌜(Rew.emb (#6 : Semiterm LAct Empty 7) : SyntacticSemiterm LAct 7)⌝] := by
+    funext i; fin_cases i <;> rfl
+  rw [hv]
+  simp only [SemitermVec.val_cons, SemitermVec.val_nil, e]
+  simp only [quote_emb_cl, quote_emb_bvar7_six]
+  simp only [← Semiterm.empty_quote_def, quote_canonicalMeta, quote_revalueUMeta, quote_revalueWMeta]
+  rfl
+
+/-- **The stored template code equation**: on the fragment, the stored template of a substituted formula is the
+stored template of the formula instantiated by `substTemplate` (= `guardCodeSlot`: the players' descriptions
+in `#0..#5`, the budget slot kept for the running node) — for search-free players, or for a closed formula. -/
+theorem templateCodeAt_subst {me opp : PD.Prog} (hme : me ≠ .self ∧ me ≠ .opp) (hopp : opp ≠ .self ∧ opp ≠ .opp)
+    (hme' : noSelfIdxP me = true) (hopp' : noSelfIdxP opp = true)
+    (ψ : PD.Formula) (h : fragF ψ = true) (hm : closedF ψ = true ∨ searchFreeP me = true)
+    (ho : closedF ψ = true ∨ searchFreeP opp = true) (k : ℕ) :
+    templateCodeAt (ψ.subst me opp) k = substTemplate (progCode me) (progCode opp) (templateCodeAt ψ k) := by
+  have hψ := noSelfIdxF_of_fragF ψ h
+  rw [substTemplate_eq_guardCodeSlot (isSemiformula_templateCodeAt₇ ψ k hψ),
+    templateCodeAt_eq_quote_template7 _ k (noSelfIdxF_subst ψ me opp hψ hme' hopp'),
+    template7At_subst hme hopp (some k) ψ h hm ho, quote_subst_gen, semitermVec_val_descTerms7,
+    templateCodeAt_eq_quote_template7 ψ k hψ]
+  rfl
+
 /-- **The template code equation**: on the fragment, the template code of a substituted
 formula is the stored template instantiated by `substTemplate` (= `guardCode`) with the players'
 codes — exactly what `substCode` does at a search node. -/
@@ -1277,9 +2084,12 @@ theorem templateCode_subst {me opp : PD.Prog} (hme : me ≠ .self ∧ me ≠ .op
   exact quote_subst_cl _ _
 
 /-- **The program code equation**: on the fragment, the code of a substituted program is the
-code-level substitution of the players' codes. -/
+code-level substitution of the players' codes — for SEARCH-FREE players (`searchFreeP`): a budget-carrying
+player substituted into a stored template is described abstractly by the engine's `subst` and verbatim by
+`substCode`, two codes for one sentence (`progCode_subst_closed` covers closed bodies for any players). -/
 theorem progCode_subst {me opp : PD.Prog} (hme : me ≠ .self ∧ me ≠ .opp) (hopp : opp ≠ .self ∧ opp ≠ .opp)
-    (hme' : noSelfIdxP me = true) (hopp' : noSelfIdxP opp = true) :
+    (hme' : noSelfIdxP me = true) (hopp' : noSelfIdxP opp = true)
+    (hsm : searchFreeP me = true) (hso : searchFreeP opp = true) :
     ∀ p : PD.Prog, fragP p = true → progCode (p.subst me opp) = substCode (progCode me) (progCode opp) (progCode p)
   | .const _, _ => by simp [PD.Prog.subst]
   | .self, _ => by simp [PD.Prog.subst]
@@ -1287,18 +2097,57 @@ theorem progCode_subst {me opp : PD.Prog} (hme : me ≠ .self ∧ me ≠ .opp) (
   | .bot _, _ => by simp [PD.Prog.subst]
   | .sim p q, h => by
     simp only [fragP, Bool.and_eq_true] at h
-    simp [PD.Prog.subst, progCode_subst hme hopp hme' hopp' p h.1, progCode_subst hme hopp hme' hopp' q h.2]
+    simp [PD.Prog.subst, progCode_subst hme hopp hme' hopp' hsm hso p h.1, progCode_subst hme hopp hme' hopp' hsm hso q h.2]
   | .ite b _ p q, h => by
     simp only [fragP, Bool.and_eq_true] at h
-    simp [PD.Prog.subst, progCode_subst hme hopp hme' hopp' b h.1.1, progCode_subst hme hopp hme' hopp' p h.1.2,
-      progCode_subst hme hopp hme' hopp' q h.2]
-  | .search _ φ p q, h => by
+    simp [PD.Prog.subst, progCode_subst hme hopp hme' hopp' hsm hso b h.1.1, progCode_subst hme hopp hme' hopp' hsm hso p h.1.2,
+      progCode_subst hme hopp hme' hopp' hsm hso q h.2]
+  | .search k φ p q, h => by
     simp only [fragP, Bool.and_eq_true] at h
-    simp [PD.Prog.subst, progCode_subst hme hopp hme' hopp' p h.1.2, progCode_subst hme hopp hme' hopp' q h.2,
-      templateCode_subst hme hopp hme' hopp' φ h.1.1]
+    simp [PD.Prog.subst, progCode_subst hme hopp hme' hopp' hsm hso p h.1.2, progCode_subst hme hopp hme' hopp' hsm hso q h.2,
+      templateCodeAt_subst hme hopp hme' hopp' φ h.1.1 (Or.inr hsm) (Or.inr hso) k]
   | .tvote _ _ _ _, h => by simp [fragP] at h
   | .sys _ _, h => by simp [fragP] at h
   | .selfIdx _, h => by simp [fragP] at h
+
+/-- The program code equation on a CLOSED body (any proper players): `substCode` fixes it, as `subst` does. -/
+theorem progCode_subst_closed {me opp : PD.Prog} (hme : me ≠ .self ∧ me ≠ .opp) (hopp : opp ≠ .self ∧ opp ≠ .opp)
+    (hme' : noSelfIdxP me = true) (hopp' : noSelfIdxP opp = true) :
+    ∀ p : PD.Prog, fragP p = true → closedP p = true →
+      progCode (p.subst me opp) = substCode (progCode me) (progCode opp) (progCode p)
+  | .const _, _, _ => by simp [PD.Prog.subst]
+  | .self, _, hc => by simp [closedP] at hc
+  | .opp, _, hc => by simp [closedP] at hc
+  | .bot _, _, _ => by simp [PD.Prog.subst]
+  | .sim p q, h, hc => by
+    simp only [fragP, Bool.and_eq_true] at h
+    simp only [closedP, Bool.and_eq_true] at hc
+    simp [PD.Prog.subst, progCode_subst_closed hme hopp hme' hopp' p h.1 hc.1, progCode_subst_closed hme hopp hme' hopp' q h.2 hc.2]
+  | .ite b _ p q, h, hc => by
+    simp only [fragP, Bool.and_eq_true] at h
+    simp only [closedP, Bool.and_eq_true] at hc
+    simp [PD.Prog.subst, progCode_subst_closed hme hopp hme' hopp' b h.1.1 hc.1.1,
+      progCode_subst_closed hme hopp hme' hopp' p h.1.2 hc.1.2, progCode_subst_closed hme hopp hme' hopp' q h.2 hc.2]
+  | .search k φ p q, h, hc => by
+    simp only [fragP, Bool.and_eq_true] at h
+    simp only [closedP, Bool.and_eq_true] at hc
+    simp [PD.Prog.subst, progCode_subst_closed hme hopp hme' hopp' p h.1.2 hc.1.2,
+      progCode_subst_closed hme hopp hme' hopp' q h.2 hc.2,
+      templateCodeAt_subst hme hopp hme' hopp' φ h.1.1 (Or.inl hc.1.1) (Or.inl hc.1.1) k]
+  | .tvote _ _ _ _, h, _ => by simp [fragP] at h
+  | .sys _ _, h, _ => by simp [fragP] at h
+  | .selfIdx _, h, _ => by simp [fragP] at h
+
+/-- The program code equation on an ATOMIC body — a placeholder or a closed program, the arguments of a `.sim`
+in a modest program — for any proper players. -/
+theorem progCode_subst_atomic {me opp : PD.Prog} (hme : me ≠ .self ∧ me ≠ .opp) (hopp : opp ≠ .self ∧ opp ≠ .opp)
+    (hme' : noSelfIdxP me = true) (hopp' : noSelfIdxP opp = true) (p : PD.Prog) (hp : fragP p = true)
+    (ha : atomicP p = true) : progCode (p.subst me opp) = substCode (progCode me) (progCode opp) (progCode p) := by
+  simp only [atomicP, Bool.or_eq_true, beq_iff_eq] at ha
+  rcases ha with (rfl | rfl) | hc
+  · simp [PD.Prog.subst]
+  · simp [PD.Prog.subst]
+  · exact progCode_subst_closed hme hopp hme' hopp' p hp hc
 
 /-! ### τ -/
 
@@ -1311,6 +2160,15 @@ lemma lMap_swap_closedDesc (c : ℕ) : Semiformula.lMap swap (closedDesc c) = cl
   unfold closedDesc
   rw [lMap_swap_descF, lMap_swap_cl, lMap_swap_cl, lMap_swap_cl, lMap_swap_canonicalMeta, lMap_swap_revalueUMeta, lMap_swap_revalueWMeta]
   rfl
+
+lemma lMap_swap_closedDescAt (k₀ : Option ℕ) (c : ℕ) :
+    Semiformula.lMap swap (closedDescAt k₀ c) = closedDescAt k₀ (transposeCode c) := by
+  unfold closedDescAt
+  rw [lMap_swap_descF, lMap_swap_canonicalSlot, lMap_swap_cl, lMap_swap_cl, lMap_swap_revalueUMeta, lMap_swap_revalueWMeta]
+  rfl
+
+lemma lMap_swap_closedDesc13 (c : ℕ) : Semiformula.lMap swap (closedDesc13 c) = closedDesc13 (transposeCode c) :=
+  lMap_swap_closedDescAt none c
 
 lemma lMap_swap_progAux {p : PD.Prog} (h : transposeCode (progCode p) = progCode p.transpose) :
     Semiformula.lMap swap (progAux p (progCode p)) = progAux p.transpose (progCode p.transpose) := by
@@ -1326,17 +2184,40 @@ lemma lMap_swap_progAux {p : PD.Prog} (h : transposeCode (progCode p) = progCode
     rw [lMap_swap_descF]; rfl
   rw [progAux_of_ne h1 h2, progAux_of_ne (transpose_ne_self h1) (transpose_ne_opp h2), lMap_swap_closedDesc, h]
 
+lemma pronounP_transpose (p : PD.Prog) : pronounP p.transpose = pronounP p := by
+  cases p
+  case selfIdx j => rfl
+  case bot q => cases q <;> rfl
+  all_goals rfl
+
+/-- τ on the thirteen-variable description of a pronoun-free program (its code transposes). -/
+lemma lMap_swap_progAuxAt (k₀ : Option ℕ) {p : PD.Prog} (hp : noSelfIdxP p = true)
+    (h : transposeCode (progCode p) = progCode p.transpose) :
+    Semiformula.lMap swap (progAuxAt k₀ p (progCode p)) = progAuxAt k₀ p.transpose (progCode p.transpose) := by
+  by_cases h1 : p = .self
+  · subst h1
+    rw [show PD.Prog.transpose .self = .self from rfl, progAuxAt_self, lMap_swap_descF]; rfl
+  by_cases h2 : p = .opp
+  · subst h2
+    rw [show PD.Prog.transpose .opp = .opp from rfl, progAuxAt_opp, lMap_swap_descF]; rfl
+  rw [progAuxAt_of_ne _ h1 h2 (pronounP_eq_false_of_noSelfIdxP hp),
+    progAuxAt_of_ne _ (transpose_ne_self h1) (transpose_ne_opp h2)
+      (by rw [pronounP_transpose]; exact pronounP_eq_false_of_noSelfIdxP hp),
+    lMap_swap_closedDescAt, h]
+
 mutual
-  /-- **τ on templates**: the transposition of the template is the template of the transposed
-  formula (fragment). -/
-  theorem lMap_swap_template : ∀ φ : PD.Formula, fragF φ = true →
-      Semiformula.lMap swap (template φ) = template φ.transpose
-    | .plays p q a, h => by
+  /-- **τ on the stored templates**: the transposition of the template at the node budget is the template of the
+  transposed formula at the same budget (fragment; the abstraction commutes with τ since `canonical` is
+  τ-invariant). -/
+  theorem lMap_swap_templateAt : ∀ (k₀ : Option ℕ) (φ : PD.Formula), fragF φ = true →
+      Semiformula.lMap swap (templateAt φ k₀) = templateAt φ.transpose k₀
+    | k₀, .plays p q a, h => by
       simp only [fragF, Bool.and_eq_true] at h
-      rw [PD.Formula.transpose, template_plays, template_plays]
-      unfold progGraph
+      rw [PD.Formula.transpose, templateAt_plays, templateAt_plays]
+      unfold progGraphAt
       simp only [Semiformula.lMap_exs, LogicalConnective.HomClass.map_and, Semiformula.lMap_subst,
-        lMap_swap_evalG, lMap_swap_progAux (transposeCode_progCode p h.1.1.2), lMap_swap_progAux (transposeCode_progCode q h.2)]
+        lMap_swap_evalG, lMap_swap_progAuxAt k₀ (noSelfIdxP_of_fragP p h.1.1.2) (transposeCode_progCode p h.1.1.2),
+        lMap_swap_progAuxAt k₀ (noSelfIdxP_of_fragP q h.2) (transposeCode_progCode q h.2)]
       congr 4
       · congr 1; funext i; fin_cases i <;> rfl
       · congr 1
@@ -1350,29 +2231,30 @@ mutual
           · rfl
           · show Semiterm.lMap swap (cl (actT (actCode a))) = cl (actT (actCode a.swap))
             rw [lMap_swap_cl, lMap_swap_actT, actCode_swap]
-    | .impl φ ψ, h => by
+    | k₀, .impl φ ψ, h => by
       simp only [fragF, Bool.and_eq_true] at h
-      rw [PD.Formula.transpose, template_impl, template_impl, LogicalConnective.HomClass.map_imply,
-        lMap_swap_template φ h.1, lMap_swap_template ψ h.2]
-    | .neg φ, h => by
+      rw [PD.Formula.transpose, templateAt_impl, templateAt_impl, LogicalConnective.HomClass.map_imply,
+        lMap_swap_templateAt k₀ φ h.1, lMap_swap_templateAt k₀ ψ h.2]
+    | k₀, .neg φ, h => by
       simp only [fragF] at h
-      rw [PD.Formula.transpose, template_neg, template_neg, LogicalConnective.HomClass.map_neg, lMap_swap_template φ h]
-    | .box _ _, h => by simp [fragF] at h
-    | .eq p q, h => by
+      rw [PD.Formula.transpose, templateAt_neg, templateAt_neg, LogicalConnective.HomClass.map_neg,
+        lMap_swap_templateAt k₀ φ h]
+    | _, .box _ _, h => by simp [fragF] at h
+    | k₀, .eq p q, h => by
       simp only [fragF, Bool.and_eq_true] at h
-      rw [PD.Formula.transpose, template_eq, template_eq]
-      unfold progGraph
+      rw [PD.Formula.transpose, templateAt_eq, templateAt_eq]
+      unfold progGraphAt
       simp only [Semiformula.lMap_exs, LogicalConnective.HomClass.map_and, Semiformula.lMap_subst,
-        lMap_swap_progAux (transposeCode_progCode p h.1.2), lMap_swap_closedDesc, transposeCode_progCode q h.2,
-        Semiformula.lMap_rel]
+        lMap_swap_progAuxAt k₀ (noSelfIdxP_of_fragP p h.1.2) (transposeCode_progCode p h.1.2), lMap_swap_closedDescAt,
+        transposeCode_progCode q h.2, Semiformula.lMap_rel]
       congr 3
       · congr 1; funext i; fin_cases i <;> rfl
       · congr 1
         · congr 1; funext i; fin_cases i <;> rfl
         · show FirstOrder.Semiformula.rel _ (Semiterm.lMap swap ∘ ![#1, #0]) = _
           congr 1; funext i; fin_cases i <;> rfl
-    | .diag _ _, _ => by
-      rw [PD.Formula.transpose, template_diag, template_diag, LogicalConnective.HomClass.map_bot]
+    | k₀, .diag _ _, _ => by
+      rw [PD.Formula.transpose, templateAt_diag, templateAt_diag, LogicalConnective.HomClass.map_bot]
   /-- **τ on program codes**: the code-level transposition of a program's code is the code of
   the engine's transposed program (fragment). -/
   theorem transposeCode_progCode : ∀ p : PD.Prog, fragP p = true → transposeCode (progCode p) = progCode p.transpose
@@ -1393,20 +2275,71 @@ mutual
       simp only [fragP, Bool.and_eq_true] at h
       simp only [PD.Prog.transpose, progCode_search, transposeCode, revalue_search, transposeCode_progCode p h.1.2,
         transposeCode_progCode q h.2]
-      rw [templateCode_eq_quote_template φ (noSelfIdxF_of_fragF φ h.1.1),
-        templateCode_eq_quote_template φ.transpose (by rw [noSelfIdxF_transpose]; exact noSelfIdxF_of_fragF φ h.1.1),
-        revalueTemplate_quote_sentence, lMap_swap_template φ h.1.1]
+      unfold templateCodeAt
+      rw [revalueTemplate_quote_sentence, lMap_swap_templateAt (some k) φ h.1.1]
     | .tvote _ _ _ _, h => by simp [fragP] at h
     | .sys _ _, h => by simp [fragP] at h
     | .selfIdx _, h => by simp [fragP] at h
 end
 
+/-- **τ on the six-variable templates**: the transposition of the template is the template of the transposed
+formula (fragment). -/
+theorem lMap_swap_template : ∀ φ : PD.Formula, fragF φ = true →
+    Semiformula.lMap swap (template φ) = template φ.transpose
+  | .plays p q a, h => by
+    simp only [fragF, Bool.and_eq_true] at h
+    rw [PD.Formula.transpose, template_plays, template_plays]
+    unfold progGraph
+    simp only [Semiformula.lMap_exs, LogicalConnective.HomClass.map_and, Semiformula.lMap_subst,
+      lMap_swap_evalG, lMap_swap_progAux (transposeCode_progCode p h.1.1.2), lMap_swap_progAux (transposeCode_progCode q h.2)]
+    congr 4
+    · congr 1; funext i; fin_cases i <;> rfl
+    · congr 1
+      · congr 1; funext i; fin_cases i <;> rfl
+      · congr 1
+        funext i
+        fin_cases i
+        · rfl
+        · rfl
+        · rfl
+        · rfl
+        · show Semiterm.lMap swap (cl (actT (actCode a))) = cl (actT (actCode a.swap))
+          rw [lMap_swap_cl, lMap_swap_actT, actCode_swap]
+  | .impl φ ψ, h => by
+    simp only [fragF, Bool.and_eq_true] at h
+    rw [PD.Formula.transpose, template_impl, template_impl, LogicalConnective.HomClass.map_imply,
+      lMap_swap_template φ h.1, lMap_swap_template ψ h.2]
+  | .neg φ, h => by
+    simp only [fragF] at h
+    rw [PD.Formula.transpose, template_neg, template_neg, LogicalConnective.HomClass.map_neg, lMap_swap_template φ h]
+  | .box _ _, h => by simp [fragF] at h
+  | .eq p q, h => by
+    simp only [fragF, Bool.and_eq_true] at h
+    rw [PD.Formula.transpose, template_eq, template_eq]
+    unfold progGraph
+    simp only [Semiformula.lMap_exs, LogicalConnective.HomClass.map_and, Semiformula.lMap_subst,
+      lMap_swap_progAux (transposeCode_progCode p h.1.2), lMap_swap_closedDesc, transposeCode_progCode q h.2,
+      Semiformula.lMap_rel]
+    congr 3
+    · congr 1; funext i; fin_cases i <;> rfl
+    · congr 1
+      · congr 1; funext i; fin_cases i <;> rfl
+      · show FirstOrder.Semiformula.rel _ (Semiterm.lMap swap ∘ ![#1, #0]) = _
+        congr 1; funext i; fin_cases i <;> rfl
+  | .diag _ _, _ => by
+    rw [PD.Formula.transpose, template_diag, template_diag, LogicalConnective.HomClass.map_bot]
+
 /-- **τ on template codes** (fragment). -/
 theorem revalueTemplate_templateCode (φ : PD.Formula) (h : fragF φ = true) :
     revalueTemplate 1 0 (templateCode φ) = templateCode φ.transpose := by
-  rw [templateCode_eq_quote_template φ (noSelfIdxF_of_fragF φ h),
-    templateCode_eq_quote_template φ.transpose (by rw [noSelfIdxF_transpose]; exact noSelfIdxF_of_fragF φ h),
-    revalueTemplate_quote_sentence, lMap_swap_template φ h]
+  unfold templateCode template13
+  rw [revalueTemplate_quote_sentence, lMap_swap_templateAt none φ h]
+
+/-- **τ on the stored template codes** (fragment). -/
+theorem revalueTemplate_templateCodeAt (φ : PD.Formula) (k : ℕ) (h : fragF φ = true) :
+    revalueTemplate 1 0 (templateCodeAt φ k) = templateCodeAt φ.transpose k := by
+  unfold templateCodeAt
+  rw [revalueTemplate_quote_sentence, lMap_swap_templateAt (some k) φ h]
 
 /-! ### Sanity: the engine's `DupocBot`
 
@@ -1420,7 +2353,9 @@ and `progCode (DupocBot k)` are two different searchers with provably equivalent
 code. -/
 theorem progCode_DupocBot (k : ℕ) :
     progCode (PD.Bots.DupocBot k) = pSearch k (templateCode (.plays .opp .self .C)) (pConst 0) (pConst 1) := by
-  simp [PD.Bots.DupocBot, actCode]
+  rw [PD.Bots.DupocBot, progCode_search_noSnap _ _ _ _ rfl]; simp [actCode]
+
+theorem noBudgetSnapshotP_DupocBot (k : ℕ) : noBudgetSnapshotP (PD.Bots.DupocBot k) = true := rfl
 
 theorem fragP_DupocBot (k : ℕ) : fragP (PD.Bots.DupocBot k) = true := rfl
 theorem noSelfIdxP_DupocBot (k : ℕ) : noSelfIdxP (PD.Bots.DupocBot k) = true := rfl
