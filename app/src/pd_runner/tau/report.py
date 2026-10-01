@@ -1179,7 +1179,10 @@ def build_report(
             f" Test bits are kernel-backed (Def 4, <code>{rows_file}</code>): "
             f"<b>{counts['theorem']}</b> theorem bits"
             + (f" and <b>{counts['floor_dichotomy']}</b> floor-dichotomy bits"
-               if counts["floor_dichotomy"] else "") + ".")
+               if counts["floor_dichotomy"] else "")
+            + (f"; <b>{len(matrix.kernel_divergences)}</b> further bits are stated by the "
+               "kernel but RECORDED as diverging from the base cell (the base cell is "
+               "played there)" if matrix.kernel_divergences else "") + ".")
     elif matrix.kernel_coverage > 0:
         kernel_line = (
             f" Kernel tau rows (Def 4, <code>{rows_file}</code>) cover "

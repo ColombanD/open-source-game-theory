@@ -602,8 +602,19 @@ class TauMatrix:
         return tuple(
             b for b in self.bots
             if b in self.kernel_rows
-            and all(h in self.kernel_rows[b] for h in self.bots)
+            and all(self._kernel_stated(b, h) for h in self.bots)
         )
+
+    def _kernel_stated(self, bot: str, hypothesis: str) -> bool:
+        """Is the (bot, hypothesis) test bit STATED by the kernel export? Either it is
+        consulted (`kernel_rows`), or it is a RECORDED divergence: the kernel states it,
+        and the matrix deliberately plays the base cell there (`kernel_divergences`).
+        A recorded bit is stated, not missing — so a COMPLETE export with recorded
+        divergences is kernel-backed, and only a genuinely absent row or slot is not."""
+        if hypothesis in self.kernel_rows.get(bot, {}):
+            return True
+        return any(d.bot == bot and d.hypothesis == hypothesis
+                   for d in self.kernel_divergences)
 
     @property
     def is_kernel_backed(self) -> bool:
@@ -611,7 +622,9 @@ class TauMatrix:
         three paper zoos on the engine, and on `S'` once `sprime_tau_rows.json` covers
         the 14 paper templates. False for ad-hoc rosters holding a template-less bot,
         for a PARTIAL `S'` export (`kernel_coverage` < 1), when the row file is absent,
-        and for replay matrices (`apply_contradictions` drops the rows)."""
+        and for replay matrices (`apply_contradictions` drops the rows). A RECORDED
+        divergence (`kernel_divergences`) counts as stated: the kernel has the bit, the
+        matrix plays the base cell there on purpose."""
         return len(self.kernel_backed_bots) == len(self.bots)
 
     @property
@@ -624,7 +637,7 @@ class TauMatrix:
             return 1.0
         covered = sum(
             1 for b in self.bots for h in self.bots
-            if h in self.kernel_rows.get(b, {}))
+            if self._kernel_stated(b, h))
         return covered / total
 
     @property

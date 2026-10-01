@@ -283,8 +283,12 @@ into `submit_verdict`.
    the report banner, `python -m pd_runner.tau.matrix`), `is_kernel_backed` is True only at full
    coverage, and uncovered bits fall back to the `S'` cells. `python -m pd_runner.tau.compare
    --zoo paper --source sprime` certifies Def 3 ≡ Def 4 on `S'` (agree / floor-agree / mismatch /
-   uncovered; 155/41/0/0 at full coverage); it REFUSES a `S'` matrix only while the row file is
-   absent. Test stand-ins: `tests/fixtures/sprime_tau_rows{,.partial}.sample.json`
+   uncovered). **COMPLETE since 2026-10-02: 149 / 41 / 0 / 0, covered 196/196**, plus 6 RECORDED
+   provenance divergences (`def4_theorems.SPRIME_RECORDED_DIVERGENCES`: the red-cell cross bits
+   `dupoc/natives × cupod` are FLOOR bits in `S'` although the base cell is a theorem — no τ-symmetry
+   inside one `.sys`; stated by the kernel, counted in `kernel_coverage`, the base cell is played; a
+   recorded divergence that no longer fires raises `StaleDivergenceWarning`). It REFUSES a `S'` matrix
+   only while the row file is absent. Test stand-ins: `tests/fixtures/sprime_tau_rows{,.partial}.sample.json`
    (`make_sprime_tau_fixture.py`, derived from the `S'` base cells), used by `conftest.py` only
    while the real file is absent. EGT run directories hash the source (`sprime_` in
    the name); the engine path is byte-identical to before (`tests/test_cell_source.py`).
@@ -781,7 +785,7 @@ the engine's `+k` stipulates the negative side. The 26 cells stay the engine's r
 budget `gBudget #6`, but the cells need bounded inner necessitation for a box whose body is COMPUTED FROM
 THE FRAME — a third instance of the U10 kit, `ROUTE_B_SCOPE.md` §9; a body slot alone does NOT help); OptimBot
 (the same decision);
-WaryBot's floor cells; the tau constructors. **T2 (`Bridge/Core/`, `Bridge/Agent`, `Bridge/AgentConverse`, `Bridge/Inst`, `Eval/Det`) is
+WaryBot's floor cells. **The tau layer is INSIDE `S'` since 2026-10-02** (`SPRIME_SOURCE_OF_TRUTH.md`): codes for `.tvote`/`.sys`/`.selfIdx` (`Agents/{SysClose,SysTemplate}`), the thirteen-variable `templateAt` with member pronoun slots, **route (c) made GENERIC** — a closed program inside a guard is described with the node's budget abstracted to the slot `#6`, through systems too (`Agents/{CodeTermAbs,CodeTermSlot}`; the consulted sentence is provably unchanged: `guardCodeB_templateCodeAt`, `guardCodeB_sysCloseTemplateAt`), so a new bot with a budget-carrying snapshot needs no hand twin — and the 14 paper rows `Tau/Rows/*` on `RowSpecA`/`FloorBitA` (`#check_tau_rowsA strict`: 149 row slots + 47 floor bits = 196/196; 13 flips, all DIMCID's; `lake exe export_sprime_outcomes` also writes `sprime_tau_rows.json`). **T2 (`Bridge/Core/`, `Bridge/Agent`, `Bridge/AgentConverse`, `Bridge/Inst`, `Eval/Det`) is
 frozen** — the rule bridge `S → S'` was shown IMPOSSIBLE at polynomial budgets (`MERGE_CROSSROAD.md`:
 citation composes doubly-exponentially through nested boxes; `search_t` cites at `log k`); route B
 re-proves cells directly instead.

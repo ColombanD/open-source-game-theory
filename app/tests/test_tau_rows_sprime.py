@@ -492,14 +492,18 @@ def test_tau_zoos_endpoint_reports_coverage(sprime_rows) -> None:
     assert body["total"] and 0 < body["kernel_coverage"] <= 1
     assert body["kernel_backed"] is (body["kernel_coverage"] == 1.0)
     bits = body["kernel_bits"]
-    assert bits["theorem"] + bits["floor_dichotomy"] == round(body["kernel_coverage"] * 196)
+    # coverage counts STATED bits: the consulted ones plus the recorded divergences
+    assert (bits["theorem"] + bits["floor_dichotomy"] + body["kernel_recorded"]
+            == round(body["kernel_coverage"] * 196))
     if _is_full(sprime_rows):
-        # a recorded divergence that fires DROPS its kernel bit (`_kernel_rows_for`): the
-        # sample has none (kernel-backed, 155 + 41); the real export has the six red-cell
-        # provenance bits (190/196: 149 theorem + 41 floor-dichotomy, not kernel-backed)
+        # a recorded divergence that fires is not CONSULTED (`_kernel_rows_for` plays the
+        # base cell) but it is STATED, so a full export is kernel-backed either way: the
+        # sample has none (155 + 41 consulted); the real export has the six red-cell
+        # provenance bits (149 theorem + 41 floor-dichotomy consulted, 6 recorded).
         dropped = 196 - bits["theorem"] - bits["floor_dichotomy"]
         assert dropped in (0, len(SPRIME_RECORDED_DIVERGENCES))
-        assert body["kernel_backed"] is (dropped == 0)
+        assert body["kernel_recorded"] == dropped
+        assert body["kernel_backed"] is True and body["kernel_coverage"] == 1.0
         assert bits == {"theorem": 155 - dropped, "floor_dichotomy": 41}
 
 

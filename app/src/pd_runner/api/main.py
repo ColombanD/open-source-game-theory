@@ -164,6 +164,9 @@ async def tau_zoos(source: str | None = None, floor_policy: str | None = None) -
             "kernel_backed": m.is_kernel_backed,
             "kernel_coverage": m.kernel_coverage,
             "kernel_bits": m.kernel_bit_counts,
+            # Stated by the kernel but RECORDED as diverging from the base cell (the base
+            # cell is played there); they count toward `kernel_coverage`.
+            "kernel_recorded": len(m.kernel_divergences),
         }
 
     return {
