@@ -253,6 +253,31 @@ CodeTerm/Guard slots/SubstTemplate → Code → RedCellUnsound arms → full bui
      SND/POS, 7 rows), then `dupoc cupod cimcic dimcid prudent` non-entangled slots, then the natives by
      bridge, then the entangled slots.
 
+   **FINDING 2026-10-01 (Phase 3b, `Tau/NeverFits.lean`) — the budget-snapshot obstruction, and a fork.**
+   The table above assumed Def 3 ≡ Def 4 transfers to `S'`. It does not at every bit: when a guard names a
+   hypothesis INSTANCE that carries the budget (`inst tftSim cimcic` contains `inst cimcic coop = .search k …`;
+   τ(CupodTroll)'s instance IS a `.search k`), the stored template describes that closed program with
+   `binNumeral k` written INSIDE it, so (i) the template code is `k`-dependent (not the `k̂`-instance of a fixed
+   formula — `ROUTE_B_SCOPE.md` §7 one level down) and (ii) the frame's description then carries the numeral
+   of that template code, of length `≥ k` — the guard sentence never fits its budget and is never found.
+   Machine-checked consequences under the PRESENT coding: `cimcic × tftSim = D` (a flip the table lacks);
+   `dimcid × {tftSim, ebot, obot, dbot, cupodTroll} = C` (the ENGINE's values, by never-found rather than by
+   reading); `cimcic × {ebot, dbot, cupodTroll}` are theorems (hinge false at every `k`), stated as floor bits
+   only because the linter's expected list says `‡`; open: `dupoc/maxconf/minconf × tftSim` (C needs a FOUND
+   probe over a budget-carrying watch). The base matrix is untouched (base opponents carry no second budget;
+   JustBot/CupodTroll were already handled by hand with route (c): the `Just7`/`CupodTroll7` twins).
+   This is a violation of Critch's assumption (b) by the coding, not a property of PA: the principled fix is
+   **route (c) made generic** — `template13 φ k` describes a closed sub-program by its `codeTerm` tower with
+   every `.search` budget EQUAL to the node's own budget written as the slot variable `#6` (budget abstraction);
+   then every tau template is a constant, every guard a `k̂`-instance, lengths `O(log k)`, the `Just7`/
+   `CupodTroll7` twins become the engine's own bots, and the table's values are recovered (Def 3 ≡ Def 4 again,
+   now as a theorem of the coding). Cost: a trusted-base change to `closedDesc`/`template13`/`progCode` plus
+   the downstream repair of every `Cells/` proof that unfolds a `k`-dependent template (`JustBot`, `JustSlot`,
+   `DimcidFlips` on `CupodTroll7`) — days, not hours. DECISION PENDING (user): (A) generic route (c) now, or
+   (B) ship Phase 3 under the present coding with the corrected table and record the deviation as a result.
+   Until decided, Phase 3 proceeds under (B): the linter's expected floor list and the table are the oracle;
+   bits proved with a value different from the table are reported, never forced.
+
    **Phase 4 contract.** `tau/def4_theorems.py`: `TAU_EXPORTS = {engine: tau_rows.json, sprime:
    sprime_tau_rows.json}`, `kernel_bits(source)`, a floor bit loads as the engine-side action with
    `provenance = floor_dichotomy`; `tau/matrix.py::_kernel_rows_for(source="sprime")` verifies rows
