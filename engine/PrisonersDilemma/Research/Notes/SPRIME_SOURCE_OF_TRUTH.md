@@ -290,8 +290,32 @@ CodeTerm/Guard slots/SubstTemplate → Code → RedCellUnsound arms → full bui
    the downstream repair of every `Cells/` proof that unfolds a `k`-dependent template (`JustBot`, `JustSlot`,
    `DimcidFlips` on `CupodTroll7`) — days, not hours. DECISION PENDING (user): (A) generic route (c) now, or
    (B) ship Phase 3 under the present coding with the corrected table and record the deviation as a result.
-   Until decided, Phase 3 proceeds under (B): the linter's expected floor list and the table are the oracle;
-   bits proved with a value different from the table are reported, never forced.
+   **DECIDED 2026-10-01: (A).** Specification (Phase 2c, trusted base):
+   * `template13 : PD.Formula → ℕ → Semisentence LAct 13` takes the NODE BUDGET `k₀`; `progCode (.search k φ p q)
+     = pSearch k ⌜template13 φ k⌝ …`; `templateCodeAt φ k := ⌜template13 φ k⌝`. The old one-argument
+     `templateCode φ` stays as the UNABSTRACTED template (`template13 φ` with no budget to abstract, i.e. the
+     present definition), and the bridge `templateCodeAt_eq_templateCode : noBudgetSnapshotF φ = true →
+     templateCodeAt φ k = templateCode φ` (new syntactic predicate: no closed sub-program of `φ` contains a
+     `.search`) keeps every base statement literally true (Dupoc, Cupod, CIMCIC, DIMCID, Prudent, Mirror,
+     Wary, …: their guards name only pronouns and search-free constants). The bots that CHANGE code are exactly
+     the ones route (c) handled by hand — `JustBot k` (snapshot `DupocBot k`), `CupodTrollBot k` (snapshot
+     `CupodBot k`), LegibleBot/OptimBot (out of scope) — and the tau instances.
+   * Budget abstraction in closed descriptions: `codeTermMetaAbs k₀ c` is `codeTermMeta c` except that a
+     `pSearch k g p q` leaf with `k = k₀` writes the slot variable `#6` for its budget (the template code `g`
+     stays a binary-numeral leaf — under (A) it is a constant); `closedDesc13` uses it; the truth equation
+     `val (codeTermMetaAbs k₀ c)[#6 ↦ k₀] = c` and the length bound `O(log)` in the leaves; `revalueU/W` of the
+     closed program stay the closed constants they are (`k`-independent, as `Instance.lean` shows for Dupoc).
+     The evaluator is UNCHANGED: `guardCodeB` already fills `#6` with the node's budget.
+   * Consequences to prove: `progCode (JustBot k) = Just7 k` (and CupodTroll7) — the hand twins become
+     theorems about the engine's bots; restate the twelve twin cells of `Outcome/Matrix` on the engine bots
+     (names `outcome_<L>_vs_<R>` with the real bot names; the app's twin aliasing becomes dead code, keep it
+     harmless); `Cells/JustBot`, `JustSlot`, `DimcidFlips` (CupodTroll7) repaired or re-targeted; `guard_fits`
+     untouched.
+   * Then Phase 3e: the 12 recorded divergences re-proved with the table's values (the six red-cell floors
+     STAY floors — that finding is independent of the coding), the 5 unstated bits stated, `expectedFloorBits`
+     re-derived (expected: 41 + 6 = 47 unless (A) reveals otherwise — the build decides),
+     `SPRIME_RECORDED_DIVERGENCES` emptied, certification 196/196, `#check_tau_rowsA strict` in the build.
+
 
    **Phase 4 contract.** `tau/def4_theorems.py`: `TAU_EXPORTS = {engine: tau_rows.json, sprime:
    sprime_tau_rows.json}`, `kernel_bits(source)`, a floor bit loads as the engine-side action with
