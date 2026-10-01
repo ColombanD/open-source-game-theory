@@ -79,10 +79,16 @@ The other files in these five folders hold no definitions to accept, only theore
    (`subst_codeTermMetaAbs`), so the sentence the evaluator consults is unchanged (`guardCodeB_templateCodeAt`),
    while the stored template of `JustBot k` (snapshot `DupocBot k`), `CupodTrollBot k` (snapshot `CupodBot k`)
    and of every tau instance naming a budget-carrying hypothesis instance is a CONSTANT code — Critch's (b) for
-   them. A system `pSys d i` is described verbatim (the closer fills a member's pronoun slots with verbatim
-   member descriptions, and the member equation `templateAt_sysClose` is literal only then); no paper-zoo guard
-   names a closed system. The abstracted term is never longer than the verbatim one
-   (`termLenMeta_emb_codeTermMetaAbs_le`).
+   them. **Through systems (2026-10-02, Phase 2d, decision (α)):** the abstraction DESCENDS into a system
+   `pSys d i` — the member list abstracted member by member, the index a numeral (`codeTermMetaAbs_sys`). (Phase 2c
+   kept systems verbatim; one paper-zoo guard does name a closed system with a `.search k` member — `inst dimcid
+   ebot`, τ(EBot)'s third watch on `inst dimcid mirror` — and its stored template then carried `binNumeral k`:
+   the last open tau bit.) The CODE-LEVEL twin, needed because the member list of a system is a variable of the
+   evaluator, is `codeTermAbs k₀ s x` — `codeTerm x` with the budget leaf `pSearch k₀` written as the term code
+   `s` ([`Agents/CodeTermSlot.lean`](Agents/CodeTermSlot.lean), a Δ₁ fixpoint: `CodeTerm.Phi` with ONE leaf
+   changed, `budgetLeaf`); `codeTermAbs k₀ (binNumeral k₀) = codeTerm` (`codeTermAbs_binNumeral`) and
+   `⌜codeTermMetaAbs k₀ x⌝ = codeTermAbs k₀ ^#0 x` in every model (`quote_emb_codeTermMetaAbs`). The abstracted
+   term is never longer than the verbatim one (`termLenMeta_emb_codeTermMetaAbs_le`).
 7. **The guard template and the runtime guard** — `guardTemplate a` ("opp plays `a` against me", six
    description slots) and the general translation of the engine's guard formulas: the THIRTEEN-variable
    `templateAt : PD.Formula → Option ℕ → Semisentence LAct 13` — `templateAt φ (some k)` at the node budget `k`
@@ -108,11 +114,19 @@ The other files in these five folders hold no definitions to accept, only theore
    engine `progCode_subst` in `Agents/Code.lean`. **The system closer** — `sysCloseCode d`, the engine's
    `Prog.sysClose` (`pSelfIdx j ↦ pSys d j`, transparent through `pBot`, an inner `pSys` a binder), and the
    member lookup `listGet` (`ProgList.get?`, `m + 1` for `some m`): [`Agents/SysClose.lean`](Agents/SysClose.lean);
-   the stored template is closed by `sysCloseTemplate d` (`Agents/Guard.lean`: the member slots `#7..#12`), which
-   is the identity on every six/seven-variable template (`sysCloseTemplate_of_template₇`) and, on a compiled
-   member's guard, IS the engine's `Formula.sysClose` — `templateCode_sysClose : sysCloseTemplate (progListCode
-   defs) (templateCode φ) = templateCode (φ.sysClose defs)`, so `progCode (p.sysClose defs) = sysCloseCode …
+   the stored template of a search node of budget `k` is closed by `sysCloseTemplateAt d k` (`Agents/Guard.lean`:
+   the member slots `#7..#12` filled with the members' description triples, the code term `codeTermAbs k ^#6
+   (canonical (pSys d j))` — the node's budget abstracted into the slot `#6`, which stays free with `#0..#5`;
+   since Phase 2d), which is the identity on every six/seven-variable template
+   (`sysCloseTemplateAt_of_template₇`) and, on a compiled member's guard, IS the engine's `Formula.sysClose` on
+   the STORED codes — `templateCodeAt_sysClose : sysCloseTemplateAt (progListCode defs) k (templateCodeAt φ k) =
+   templateCodeAt (φ.sysClose defs) k` (both sides abstract), so `progCode (p.sysClose defs) = sysCloseCode …
    (progCode p)` on every compiled member (`progCode_sysClose_member`): [`Agents/SysTemplate.lean`](Agents/SysTemplate.lean).
+   The verbatim closer `sysCloseTemplate d` (the pre-2d reading, `templateCode_sysClose`) is kept: **the sentence a
+   closed member consults is the verbatim closer's** — `guardCodeB_sysCloseTemplateAt : guardCodeB
+   (sysCloseTemplateAt d k g) me opp k = guardCodeB (sysCloseTemplate d g) me opp k` (`Agents/SubstTemplate.lean`,
+   unconditional) — so the evaluator's behaviour is unchanged and only the stored numerals shrink (the system
+   twin of `guardCodeB_templateCodeAt`).
 9. **The evaluator** — `EvalGraph n me opp p a`, a Σ₁ fixpoint mirroring the engine's `eval` clause
    by clause (the `.tvote` peel, the `.sys` unfold and the search clause consulting the box included):
    [`Eval/Eval.lean`](Eval/Eval.lean) (the characterization `EvalGraph.case_iff` is the definition; the
@@ -220,7 +234,10 @@ modus ponens with exact length accounting · `ProperBound` properness inside eve
 
 **`Agents/`** — `Prog` codes · `CodeTerm` descriptions as terms · `BinNumeral` binary numerals · `RevalueTemplate`
 τ on template codes · `Template` the guard template · `Guard` the runtime guard, the budget slot ·
-`SubstTemplate` instantiating a stored template by the outer frame · `Subst` `substCode` · `Code` `progCode`/`templateCode`/`template`, the engine bridge · `Instance`/`InstanceV`
+`CodeTermSlot` `codeTermAbs`, the description with the node's budget in a slot, on codes · `CodeTermAbs` its meta twin
+`codeTermMetaAbs` and the code equation · `SubstTemplate` instantiating a stored template by the outer frame, the
+bridge `guardCodeB_sysCloseTemplateAt` · `Subst` `substCode` · `SysClose` `listGet`, `sysCloseCode` · `SysTemplate`
+the member-slot equations · `Code` `progCode`/`templateCode`/`template`, the engine bridge · `Instance`/`InstanceV`
 Dupoc's guard as the `k`-instance of one formula (for Löb) · `Fit`/`FitBox` the guard fits its budget;
 `box_guard_never_fits` (why LegibleBot is out).
 
@@ -265,7 +282,8 @@ lake build ArithSCore                          # one tier (also ArithSFrozen, Ar
 python3 scripts/check_tiers.py                 # import direction between the tiers, roots complete
 scripts/regen_all.sh                           # the generated tables are in sync
 lake build ArithSOutcomeCheck --try-cache      # the S' matrix gate (also in the default build), see below
-lake exe export_sprime_outcomes                # writes ../app/generated/sprime_outcome_theorems.json
+lake build ArithSTauCheck --try-cache          # the S' tau-row gate: #check_tau_rowsA strict (196/196)
+lake exe export_sprime_outcomes                # writes ../app/generated/sprime_outcome_theorems.json + sprime_tau_rows.json
 ```
 
 **The export discipline** (`Outcome/{Attr,Floor,Floors,Lint,Check,Export}.lean`, the twin of the engine's
@@ -314,5 +332,11 @@ pruning: `Research/Notes/ARITH_DEAD_CODE_AUDIT.md`, `scripts/DeadCode.lean`.
   thirteen-variable `template13`, `sysCloseTemplate` on it is the engine's `Formula.sysClose`
   (`templateCode_sysClose`), and the closed member of `cfdSys k` is the code of the engine's closed member, whose
   search consults "`.bot (.sys (cfdSys k) (1 - i))` plays C against itself" (`Eval/TauCheck.lean`,
-  `Cells/TauMember.lean`). What is NOT here is the mutual-Löb family on the member slots that decides those
-  searches — the entangled `.sys` bits of the Phase 3 table.
+  `Cells/TauMember.lean`). The outcomes themselves are in `Tau/` (Phase 3): the mutual-Löb families on the
+  member slots (`Tau/Entangled/`), the watches over budget-carrying instances (`Tau/{Watch,Watch2,Watch3}`) and the
+  fourteen rows (`Tau/Rows/`, `@[tau_rowA]`/`@[tau_floor_bitA]`, census `Tau/Check.lean`: `#check_tau_rowsA strict`,
+  14 rows, 149 row slots, 47 floor bits, 196/196 since 2026-10-02 — the last bit, `dimcid × ebot`, needed the budget
+  abstraction to descend into systems, §2 items 6 and 8). What is NOT here: a side on the 47 floor bits (41 are the
+  base floors' dichotomies; six are the tau images of the red cell, floors on the compiled systems), the
+  `.tvote` players and the phase theorems (Phase 5), and — in the app — a "kernel-backed" banner for `S'`: the
+  loader drops the six recorded red-cell bits, so its coverage gauge reads 190/196 on the full export.

@@ -21,6 +21,7 @@ import ArithS.Agents.RevalueTemplate
 import ArithS.Agents.Prog
 import ArithS.Agents.BinNumeral
 import ArithS.Agents.CodeTerm
+import ArithS.Agents.CodeTermSlot
 import ArithS.Agents.CodeTermAbs
 import ArithS.Box.BewV
 import ArithS.Notation
@@ -167,6 +168,8 @@ import ArithS.Tau.Stored
 import ArithS.Tau.ClosedWatch
 import ArithS.Tau.Watch2
 import ArithS.Tau.ClosedWatch2
+import ArithS.Tau.Watch3
+import ArithS.Tau.ClosedWatch3
 import ArithS.Tau.NeverFitsSys
 import ArithS.Tau.NeverFits
 import ArithS.Tau.Lint

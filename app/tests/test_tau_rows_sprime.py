@@ -4,6 +4,12 @@ rollout behaviour, and the Def 3 ≡ Def 4 certification on `source="sprime"`.
 Runs against the committed cell-derived SAMPLE (`tests/fixtures/sprime_tau_rows.sample.json`,
 full coverage: 196 bits = 155 row slots + 41 floor bits) and, when it exists, the REAL
 export `app/generated/sprime_tau_rows.json` (parametrized `sprime_rows`; skipped if absent).
+The REAL export is FULL since Phase 3f (2026-10-02): 196 bits = 149 row slots + 47 floor
+bits — six more floor bits than the cell-derived sample, the RECORDED red-cell provenance
+divergences (`SPRIME_RECORDED_DIVERGENCES`: a floor bit on a base THEOREM cell). The loader
+DROPS those six kernel bits (the base cell is played), so on the real export the kernel
+coverage is 190/196 and the matrix is not `is_kernel_backed`; the full-coverage assertions
+below count the recorded divergences instead of assuming there are none.
 The real export may be PARTIAL during the Phase-3 rollout, so every full-coverage
 assertion is guarded by `_is_full` and the coverage is reported in the skip reason instead.
 The two-row PARTIAL sample (`sprime_tau_rows.partial.sample.json`) exercises the rollout
@@ -256,7 +262,15 @@ def test_kernel_bits_equal_the_sprime_cells(sprime_rows) -> None:
     expected_floor = sum(
         1 for A in PAPER_TEMPLATES for T in PAPER_TEMPLATES
         if m.cell(BASE_OF[A], BASE_OF[T]).is_floor)
-    assert n_floor == expected_floor
+    # the row file's floor bits: the floor CELLS, plus the recorded provenance divergences
+    # (a floor bit on a base theorem cell — the six tau images of the red cell on the real
+    # export; none on the cell-derived sample)
+    n_recorded_floor = sum(
+        1 for (a, t), d in SPRIME_RECORDED_DIVERGENCES.items()
+        if d.kind == "provenance" and prov.get(a, {}).get(t) == "floor_dichotomy"
+        and not m.cell(BASE_OF[next(A for A in PAPER_TEMPLATES if LEAN_SLOT[A] == a)],
+                       BASE_OF[next(T for T in PAPER_TEMPLATES if LEAN_SLOT[T] == t)]).is_floor)
+    assert n_floor == expected_floor + n_recorded_floor
     # the §3 table: 13 flips of the engine among the 196, all DIMCID's
     engine = load_tau_matrix(PAPER_TWINS_SUB_ZOO, source="engine")
     flips = [(A, T) for A in PAPER_TEMPLATES for T in PAPER_TEMPLATES
@@ -381,7 +395,10 @@ def test_certification_on_sprime(sprime_rows) -> None:
     # the 14×14 table's floor cells: the natives' rows and columns are Dupoc's
     table = ZOOS["body+twins+natives"].load(source="sprime")
     assert d.floor_agreements == len(table.floor_cells) == 41
-    assert d.theorem_agreements == 196 - d.floor_agreements == 155
+    # theorem agreements: everything but the floor cells and the recorded divergences
+    # (155 on the cell-derived sample, 149 on the real export — six recorded red-cell bits)
+    assert d.theorem_agreements == 196 - d.floor_agreements - len(d.whitelisted_divergences)
+    assert len(d.whitelisted_divergences) in (0, len(SPRIME_RECORDED_DIVERGENCES))
 
 
 def test_certification_on_the_partial_export(partial_rows) -> None:
@@ -477,19 +494,31 @@ def test_tau_zoos_endpoint_reports_coverage(sprime_rows) -> None:
     bits = body["kernel_bits"]
     assert bits["theorem"] + bits["floor_dichotomy"] == round(body["kernel_coverage"] * 196)
     if _is_full(sprime_rows):
-        assert body["kernel_backed"] and bits == {"theorem": 155, "floor_dichotomy": 41}
+        # a recorded divergence that fires DROPS its kernel bit (`_kernel_rows_for`): the
+        # sample has none (kernel-backed, 155 + 41); the real export has the six red-cell
+        # provenance bits (190/196: 149 theorem + 41 floor-dichotomy, not kernel-backed)
+        dropped = 196 - bits["theorem"] - bits["floor_dichotomy"]
+        assert dropped in (0, len(SPRIME_RECORDED_DIVERGENCES))
+        assert body["kernel_backed"] is (dropped == 0)
+        assert bits == {"theorem": 155 - dropped, "floor_dichotomy": 41}
 
 
 def test_report_banner_names_the_backing(sprime_rows) -> None:
     from pd_runner.tau.report import build_report
 
     named = ZOOS["body"]
-    page = build_report(named.load(source="sprime"), (0.5,), zoo=named)
+    matrix = named.load(source="sprime")
+    page = build_report(matrix, (0.5,), zoo=named)
     assert "sprime_tau_rows.json" in page
-    if _is_full(sprime_rows):
+    if matrix.is_kernel_backed:
+        assert _is_full(sprime_rows)
         assert "kernel-backed (Def 4" in page and "floor-dichotomy bits" in page
     else:
+        # a partial export, OR the full real export with its recorded red-cell bits dropped
+        # (`body` holds Dupoc and Cupod: 98/100) — the banner's second branch either way
         assert "PARTIAL export" in page
+        if _is_full(sprime_rows):
+            assert matrix.kernel_divergences and matrix.kernel_coverage == pytest.approx(0.98)
 
 
 # ── recorded divergences must fire, or be removed (Phase 3e) ───────────────────

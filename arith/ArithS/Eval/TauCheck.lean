@@ -19,8 +19,9 @@ import PrisonersDilemma.Tau.Zoo
   `evalGraph_of_eval_tvote_zero` state the one-step cases the phase note asks for.
 
 **(e) The pronoun reading (2026-10-01, the last item of §2.5).** `sysCloseCode` closes a member's stored
-template by `sysCloseTemplate`, which fills the member slots `#7..#12` of the thirteen-variable template
-(`Agents/SysTemplate.lean`): `sysCloseCode_cfdSys_member` shows the closed member of `cfdSys k` is the CODE OF
+template by `sysCloseTemplateAt` at the node's budget (since Phase 2d; the verbatim `sysCloseTemplate` is the
+same consulted sentence, `guardCodeB_sysCloseTemplateAt`), which fills the member slots `#7..#12` of the
+thirteen-variable template (`Agents/SysTemplate.lean`): `sysCloseCode_cfdSys_member` shows the closed member of `cfdSys k` is the CODE OF
 THE ENGINE'S CLOSED MEMBER, whose guard names `.bot (.sys (cfdSys k) (1 - i))` (`cfdGuard_sysClose`,
 `sysCloseTemplate_cfdGuard`). The truth equation of that closed guard at ℕ — "the partner, bot-wrapped, plays C
 against itself" — is `Cells/TauMember.lean` (it needs the frozen bridge's `models_sentenceAt_plays`). Search

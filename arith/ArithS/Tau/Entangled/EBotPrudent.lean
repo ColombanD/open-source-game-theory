@@ -355,8 +355,8 @@ lemma listGet_D_one (S : Sys2n) (k : V) : listGet (S.D k) 1 = (S.P : V) + 1 := b
 
 lemma sysCloseCode_m₀ (S : Sys2n) (k : V) :
     sysCloseCode (S.D k) (S.m₀.code k) =
-      pSearch k (sysCloseTemplate (S.D k) ((⌜S.m₀.g⌝ : ℕ) : V))
-        (pSearch k (sysCloseTemplate (S.D k) ((⌜S.m₀.g'⌝ : ℕ) : V)) (pConst (S.m₀.a : V)) (pConst ((1 - S.m₀.a : ℕ) : V)))
+      pSearch k (sysCloseTemplateAt (S.D k) k ((⌜S.m₀.g⌝ : ℕ) : V))
+        (pSearch k (sysCloseTemplateAt (S.D k) k ((⌜S.m₀.g'⌝ : ℕ) : V)) (pConst (S.m₀.a : V)) (pConst ((1 - S.m₀.a : ℕ) : V)))
         (pConst ((1 - S.m₀.a : ℕ) : V)) := by
   unfold NM.code SM.code
   rw [sysCloseCode_search, sysCloseCode_search, sysCloseCode_const, sysCloseCode_const, sysCloseCode_const]; rfl
@@ -370,9 +370,10 @@ theorem member_then2_V (S : Sys2n) (k me opp : V)
   rw [show (5 : V) = 4 + 1 by norm_num, EvalGraph.bot_iff,
     show (4 : V) = 3 + 1 from three_add_one_eq_four.symm, code_zero, EvalGraph.sys_iff]
   refine ⟨_, listGet_D_zero S k, ?_⟩
-  rw [sysCloseCode_m₀, show (3 : V) = 2 + 1 from two_add_one_eq_three.symm, EvalGraph.search_iff]
+  rw [sysCloseCode_m₀, show (3 : V) = 2 + 1 from two_add_one_eq_three.symm, EvalGraph.search_iff,
+    guardCodeB_sysCloseTemplateAt]
   refine Or.inl ⟨ho, ?_⟩
-  rw [show (2 : V) = 1 + 1 from one_add_one_eq_two.symm, EvalGraph.search_iff]
+  rw [show (2 : V) = 1 + 1 from one_add_one_eq_two.symm, EvalGraph.search_iff, guardCodeB_sysCloseTemplateAt]
   exact Or.inl ⟨hi, by rw [show (1 : V) = 0 + 1 by simp, EvalGraph.const_iff]⟩
 
 theorem plays_of_boxes {S : Sys2n} {k : V} (hk : (S.K : V) ≤ k) (i i' : ℕ)

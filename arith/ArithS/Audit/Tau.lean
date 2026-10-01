@@ -34,6 +34,8 @@ import ArithS.Tau.Stored
 import ArithS.Tau.ClosedWatch
 import ArithS.Tau.Watch2
 import ArithS.Tau.ClosedWatch2
+import ArithS.Tau.Watch3
+import ArithS.Tau.ClosedWatch3
 import ArithS.Tau.NeverFits
 import ArithS.Tau.NeverFitsSys
 import ArithS.Tau.Rows.Dupoc
@@ -52,8 +54,10 @@ templates, with the column kit they rest on (`Tau/Columns.lean`), (Phase 3b) the
 seven self-probers' rows with the diagonal kit they rest on (`Tau/Quine.lean`: the Löb quines, DIMCID's fixpoint
 on defection, CIMCIC's tautology), (Phase 3c/3d) the entangled `.sys` bits folded into those rows, and (Phase 3e)
 the ten bits route (c) made generic recovers — the guards over a closed budget-carrying watch and the
-`dimcid × prudent` systems: 14 rows, 149 − 1 row slots, 47 floor bits, 195/196 paper bits (`dimcid × ebot` is
-UNSTATED: `Tau/NeverFitsSys.lean`). Each line must read `[propext, Classical.choice, Quot.sound]`.
+`dimcid × prudent` systems, and (Phase 3f, decision (α)) the last bit `dimcid × ebot` — τ(EBot)'s three-stage watch
+over the system `inst dimcid mirror`, described with its member's budget in the slot since the abstraction descends
+into systems (`Tau/Watch3.lean`, `Tau/ClosedWatch3.lean`): 14 rows, 149 row slots, 47 floor bits, 196/196 paper
+bits. Each line must read `[propext, Classical.choice, Quot.sound]`.
 -/
 
 namespace ArithS.Tau
@@ -122,7 +126,7 @@ namespace ArithS.Tau
 #print axioms binNumeral_le_templateCode_selfBot
 -- Phase 2c (2026-10-01): the obstruction is stated on the explicit pre-abstraction code `pBot (pSearch k' (templateCode φ) p q)`;
 -- the tau slots it decided are re-proved with the table's values on the budget-abstracted stored templates (Phase 3e,
--- below), except `dimcid × ebot` (`Tau/NeverFitsSys.lean`).
+-- below; `dimcid × ebot` in Phase 3f, `Tau/ClosedWatch3.lean`).
 #print axioms selfBot_guard_not_found
 #print axioms size_canonical_le_formulaLenMeta_sentenceAt_self
 #print axioms selfBot_guard_never_fits
@@ -326,13 +330,29 @@ namespace ArithS.Tau
 #print axioms prudent_probe_dimcid_not_found
 #print axioms ent_prudent_dimcid
 
--- Phase 3e — the one bit budget abstraction does NOT recover (`Tau/NeverFitsSys.lean`): a `.self`-guard over a watch
--- that freezes a budget-carrying SYSTEM is still longer than its budget; `dimcid × ebot` is C at every budget under
--- the present coding (the table says D — the slot is UNSTATED in `Rows/DIMCID.lean`).
-#print axioms TOccC_of_OccB
-#print axioms occB_of_hasSysC
-#print axioms binNumeral_le_templateCodeAt_selfBot
+-- Phase 3f (decision (α), 2026-10-02) — the last bit, `dimcid × ebot = D`. The abstraction descends into systems
+-- (`Agents/CodeTermAbs.codeTermMetaAbs_sys`), so the mirror system's tower is its abstracted description
+-- (`codeTermMetaAbs_Sys2c`); the three-stage watch `W3` is a `k̂`-tower (`cascade_gain`: one more run-stage keeps
+-- a gain), its stored description constant; DIMCID's guard does not read the opponent slots (`gDi_subst_congr`),
+-- which replaces the `fragF` step of `dimcid_D_of_towers` (the watch contains a `.sys`).
+#print axioms cascade_gain
+#print axioms codeTermMetaAbs_Sys2c
+#print axioms W3.code_lt_tr
+#print axioms W3.describesBot
+#print axioms W3.closedDescAt_code
+#print axioms W3.absVal_code
+#print axioms W3.absVal_tr_code
+#print axioms gDi_subst_congr
+#print axioms qPlain_gDi_opp
+#print axioms dimcid_D_of_towers'
+#print axioms dimcid_ebot_D
+
+-- `Tau/NeverFitsSys.lean`, restated on the UNABSTRACTED template (as `Tau/NeverFits.lean` was in Phase 2c): a
+-- `.self`-guard over a watch that freezes a budget-carrying SYSTEM, stored VERBATIM, never fits. No compiled instance
+-- stores that template; `dimcid_ebot_C` (true under Phase 2c's coding, FALSE since Phase 2d) is gone.
+#print axioms binNumeral_le_codeTerm_of_hasSysC
+#print axioms binNumeral_le_templateCode_selfBot_sys
 #print axioms selfBot_sys_guard_not_found
-#print axioms dimcid_ebot_C
+#print axioms dimcid_selfBot_sys_C
 
 end ArithS.Tau

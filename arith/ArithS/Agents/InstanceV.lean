@@ -130,53 +130,6 @@ theorem revalueW_DupocV (k : V) : revalueW (DupocV k) = (⌜wD⌝ : V) := by
 
 section termCodes
 
-/-- The code of `#0` (one bound variable). -/
-lemma quote_emb_bvar_zero : (⌜(Rew.emb (#0 : Semiterm ℒₒᵣ Empty 1) : SyntacticSemiterm ℒₒᵣ 1)⌝ : V) = ^#0 := by
-  simp [Rew.emb]
-
-/-- The code of a shifted closed term is the code of the term. -/
-lemma quote_emb_bShift {L : Language} [L.Encodable] [L.LORDefinable] :
-    ∀ t : ClosedSemiterm L 0,
-      (⌜(Rew.emb (Rew.bShift t) : SyntacticSemiterm L 1)⌝ : V) = ⌜(Rew.emb t : SyntacticSemiterm L 0)⌝
-  | #x => x.elim0
-  | &x => x.elim
-  | .func f v => by
-    rw [Rew.func, Rew.func, Rew.func, Semiterm.quote_func, Semiterm.quote_func]
-    congr 1
-    unfold SemitermVec.val
-    exact matrixToVec_congr (fun i ↦ quote_emb_bShift (v i))
-
-lemma quote_emb_add (s t : Semiterm ℒₒᵣ Empty 1) :
-    (⌜(Rew.emb (Semiterm.func Language.ORing.Func.add ![s, t]) : SyntacticSemiterm ℒₒᵣ 1)⌝ : V) =
-    (⌜(Rew.emb s : SyntacticSemiterm ℒₒᵣ 1)⌝ : V) ^+ ⌜(Rew.emb t : SyntacticSemiterm ℒₒᵣ 1)⌝ := by
-  rw [Rew.func]
-  have e : (Semiterm.func Language.ORing.Func.add (⇑Rew.emb ∘ ![s, t]) : SyntacticSemiterm ℒₒᵣ 1) =
-      ‘!!(Rew.emb s : SyntacticSemiterm ℒₒᵣ 1) + !!(Rew.emb t : SyntacticSemiterm ℒₒᵣ 1)’ := by
-    congr 1; funext i; fin_cases i <;> rfl
-  rw [e, Semiterm.quote_def, Semiterm.typed_quote_add]; rfl
-
-lemma quote_emb_mul (s t : Semiterm ℒₒᵣ Empty 1) :
-    (⌜(Rew.emb (Semiterm.func Language.ORing.Func.mul ![s, t]) : SyntacticSemiterm ℒₒᵣ 1)⌝ : V) =
-    (⌜(Rew.emb s : SyntacticSemiterm ℒₒᵣ 1)⌝ : V) ^* ⌜(Rew.emb t : SyntacticSemiterm ℒₒᵣ 1)⌝ := by
-  rw [Rew.func]
-  have e : (Semiterm.func Language.ORing.Func.mul (⇑Rew.emb ∘ ![s, t]) : SyntacticSemiterm ℒₒᵣ 1) =
-      ‘!!(Rew.emb s : SyntacticSemiterm ℒₒᵣ 1) * !!(Rew.emb t : SyntacticSemiterm ℒₒᵣ 1)’ := by
-    congr 1; funext i; fin_cases i <;> rfl
-  rw [e, Semiterm.quote_def, Semiterm.typed_quote_mul]; rfl
-
-lemma quote_emb_ppairT1 (s t : Semiterm ℒₒᵣ Empty 1) :
-    (⌜(Rew.emb (ppairT1 s t) : SyntacticSemiterm ℒₒᵣ 1)⌝ : V) =
-    ppairTerm (⌜(Rew.emb s : SyntacticSemiterm ℒₒᵣ 1)⌝ : V) ⌜(Rew.emb t : SyntacticSemiterm ℒₒᵣ 1)⌝ := by
-  rw [ppairT1, quote_emb_add, quote_emb_mul, quote_emb_add]; rfl
-
-lemma quote_emb_oneTT : (⌜(Rew.emb oneTT : SyntacticSemiterm ℒₒᵣ 0)⌝ : V) = 𝟏 := by
-  rw [← Semiterm.empty_quote_def]; exact quote_closed_one
-
-lemma quote_emb_succT1 (t : Semiterm ℒₒᵣ Empty 1) :
-    (⌜(Rew.emb (succT1 t) : SyntacticSemiterm ℒₒᵣ 1)⌝ : V) =
-    (⌜(Rew.emb t : SyntacticSemiterm ℒₒᵣ 1)⌝ : V) ^+ 𝟏 := by
-  rw [succT1, quote_emb_add, quote_emb_bShift, quote_emb_oneTT]
-
 /-- The code of the one-variable searcher term: the `ppairTerm`-tower with `^#0` in the budget slot. -/
 theorem quote_emb_searchT1 (g p q : ℕ) :
     (⌜(Rew.emb (searchT1 g p q) : SyntacticSemiterm ℒₒᵣ 1)⌝ : V) =
@@ -203,36 +156,6 @@ theorem quote_emb_TD :
   rw [term_emb_lMap_emb_n, quote_term_lMap_emb, quote_emb_searchT1]
 
 /-! #### Internal substitution on the tower -/
-
-lemma isFunc_LAct_add : LAct.IsFunc 2 (addIndex : V) := isFunc_LAct_of_LOR LOR_func_addIndex
-lemma isFunc_LAct_mul : LAct.IsFunc 2 (mulIndex : V) := isFunc_LAct_of_LOR LOR_func_mulIndex
-
-lemma qqAdd_uterm_LAct {s t : V} (hs : IsUTerm LAct s) (ht : IsUTerm LAct t) : IsUTerm LAct (s ^+ t) := by
-  unfold qqAdd; exact IsUTerm.func isFunc_LAct_add (by simp [hs, ht])
-lemma qqMul_uterm_LAct {s t : V} (hs : IsUTerm LAct s) (ht : IsUTerm LAct t) : IsUTerm LAct (s ^* t) := by
-  unfold qqMul; exact IsUTerm.func isFunc_LAct_mul (by simp [hs, ht])
-lemma ppairTerm_uterm_LAct {s t : V} (hs : IsUTerm LAct s) (ht : IsUTerm LAct t) : IsUTerm LAct (ppairTerm s t) :=
-  qqAdd_uterm_LAct (qqMul_uterm_LAct (qqAdd_uterm_LAct hs ht) (qqAdd_uterm_LAct hs ht)) ht
-
-lemma termSubst_qqAdd (w : V) {s t : V} (hs : IsUTerm LAct s) (ht : IsUTerm LAct t) :
-    termSubst LAct w (s ^+ t) = termSubst LAct w s ^+ termSubst LAct w t := by
-  unfold qqAdd
-  rw [termSubst_func isFunc_LAct_add (by simp [hs, ht]), termSubstVec_cons₂ hs ht]
-
-lemma termSubst_qqMul (w : V) {s t : V} (hs : IsUTerm LAct s) (ht : IsUTerm LAct t) :
-    termSubst LAct w (s ^* t) = termSubst LAct w s ^* termSubst LAct w t := by
-  unfold qqMul
-  rw [termSubst_func isFunc_LAct_mul (by simp [hs, ht]), termSubstVec_cons₂ hs ht]
-
-lemma termSubst_ppairTerm (w : V) {s t : V} (hs : IsUTerm LAct s) (ht : IsUTerm LAct t) :
-    termSubst LAct w (ppairTerm s t) = ppairTerm (termSubst LAct w s) (termSubst LAct w t) := by
-  unfold ppairTerm
-  rw [termSubst_qqAdd w (qqMul_uterm_LAct (qqAdd_uterm_LAct hs ht) (qqAdd_uterm_LAct hs ht)) ht,
-    termSubst_qqMul w (qqAdd_uterm_LAct hs ht) (qqAdd_uterm_LAct hs ht), termSubst_qqAdd w hs ht]
-
-/-- A closed term code is fixed by every substitution. -/
-lemma termSubst_closed (w : V) {t : V} (ht : IsSemiterm LAct 0 t) : termSubst LAct w t = t :=
-  termSubst_eq_self ht (fun i hi ↦ absurd hi (by simp))
 
 lemma bvar_zero_uterm : IsUTerm LAct (^#0 : V) := (IsSemiterm.bvar.mpr (by simp : (0 : V) < 1)).isUTerm
 

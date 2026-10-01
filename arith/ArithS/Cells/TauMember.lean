@@ -56,8 +56,10 @@ theorem evalGraph_cfdMember_closed_iff (k i : ℕ) (hi : i ≤ 1) (me opp : PD.P
   rw [sysCloseCode_cfdSys_member k i hi, cfdMember_eq]
   show EvalGraph (n + 1) (progCode me) (progCode opp)
     (progCode (.search k ((cfdGuard i).sysClose (cfdSys k)) (.const .C) (.const .D))) a ↔ _
-  rw [cfdClosedGuard_eq, progCode_search, templateCodeAt_eq_templateCode _ _ rfl, progCode_const, progCode_const,
-    EvalGraph.search_iff, (cfd_closed_guard_iff k i me opp k).1]
+  -- the stored template is the ABSTRACTED one (the closed guard names a system with `.search k` members, Phase 2d);
+  -- the consulted sentence is the pre-abstraction guard (`EvalGraph.search_iff_at`)
+  rw [cfdClosedGuard_eq, progCode_search, progCode_const, progCode_const,
+    EvalGraph.search_iff_at (cfdClosedGuard k i) rfl, ← quote_sentenceAt me opp (cfdClosedGuard k i) rfl]
   rfl
 
 end ArithS

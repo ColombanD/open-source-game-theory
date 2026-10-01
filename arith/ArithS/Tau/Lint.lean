@@ -23,9 +23,8 @@ The engine's `Tau/Lint.lean` adapted to `RowSpecA`/`FloorBitA` (`Tau/Spec.lean`)
   table"), a floor bit off the `‡` list is an error ("a theorem became a floor"); a template has at most one row.
   **Partial roster during Phase 3**: the plain command logs the UNCOVERED bits and the missing templates as
   `info` and succeeds (the build stays green while the rows land one by one); `#check_tau_rowsA strict` makes
-  every gap an error — the form to switch to when the 14 rows and 47 floor bits are all in (after Phase 3e ONE bit
-  stays UNSTATED, `dimcid × ebot` — `Tau/NeverFitsSys.lean`: budget abstraction does not descend into a closed
-  system — so the plain form stays until that is decided).
+  every gap an error — the form `Tau/Check.lean` runs since Phase 3f (2026-10-02: 14 rows, 149 row slots, 47 floor
+  bits, 196/196; the last bit `dimcid × ebot` landed with decision (α), the abstraction descending into systems).
 -/
 
 open Lean Elab Command Meta

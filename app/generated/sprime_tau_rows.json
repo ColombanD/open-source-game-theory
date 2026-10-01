@@ -1,5 +1,5 @@
 {"system": "sprime",
- "source_digest": "12034469943109074244",
+ "source_digest": "8252389556000276994",
  "schema_version": 1,
  "rows":
  [{"template": "cimcic",
@@ -104,7 +104,7 @@
     "cimcic": "D"}},
   {"template": "dimcid",
    "order":
-   "[coop, defect, tftSim, dupoc, obot, dbot, cupodTroll, cupod, dimcid, cimcic, prudent, maxconfidence, minconfidence]",
+   "[coop, defect, tftSim, dupoc, ebot, obot, dbot, cupodTroll, cupod, dimcid, cimcic, prudent, maxconfidence, minconfidence]",
    "name": "dimcidRowSpecA",
    "module": "ArithS.Tau.Rows.DIMCID",
    "bits":
@@ -113,6 +113,7 @@
     "obot": "D",
     "minconfidence": "D",
     "maxconfidence": "D",
+    "ebot": "D",
     "dupoc": "D",
     "dimcid": "D",
     "defect": "D",

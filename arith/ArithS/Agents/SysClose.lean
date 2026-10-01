@@ -12,9 +12,11 @@ needs, both the engine's (`Program.lean`) on codes.
   `listGet_cons_succ`, `listGet_of_not_cons` are the definition.
 * **`sysCloseCode d p`** — the engine's `Prog.sysClose defs`: `pSelfIdx j ↦ pSys d j`, transparent through
   `pBot`, `pSim`, `pIte`, the branches of `pSearch` and `pTvote` (entries frozen, as in the engine); an inner
-  `pSys` is a BINDER (fixed); on `pSearch k g p q` the stored template is closed by `sysCloseTemplate d g`
-  (`ArithS.Agents.Guard`: the member slots `#7..#12` filled with the members' descriptions, `#0..#6` kept —
-  the engine's `Formula.sysClose`); a list cons and every non-shape are fixed. A Δ₁ fixpoint on pairs
+  `pSys` is a BINDER (fixed); on `pSearch k g p q` the stored template is closed by `sysCloseTemplateAt d k g`
+  (`ArithS.Agents.Guard`: the member slots `#7..#12` filled with the members' descriptions AT THE NODE'S BUDGET
+  `k` — every `pSearch k` budget inside the system written as the slot `#6` —, `#0..#6` kept — the engine's
+  `Formula.sysClose`; Phase 2d, 2026-10-02: the consulted sentence is the verbatim closer's,
+  `guardCodeB_sysCloseTemplateAt`); a list cons and every non-shape are fixed. A Δ₁ fixpoint on pairs
   `⟪x, y⟫` with the parameter `d` (`SysClose.Phi`), exactly like `substCode`; the equations
   `sysCloseCode_*` are the definition.
 
@@ -278,7 +280,7 @@ def Phi (param : Fin 1 → V) (C : Set V) (pr : V) : Prop :=
   (∃ b a p q b' p' q', ⟪b, b'⟫ ∈ C ∧ ⟪p, p'⟫ ∈ C ∧ ⟪q, q'⟫ ∈ C ∧
     pr = ⟪pIte b a p q, pIte b' a p' q'⟫) ∨
   (∃ k g p q p' q', ⟪p, p'⟫ ∈ C ∧ ⟪q, q'⟫ ∈ C ∧
-    pr = ⟪pSearch k g p q, pSearch k (sysCloseTemplate (param 0) g) p' q'⟫) ∨
+    pr = ⟪pSearch k g p q, pSearch k (sysCloseTemplateAt (param 0) k g) p' q'⟫) ∨
   (∃ v θ p q p' q', ⟪p, p'⟫ ∈ C ∧ ⟪q, q'⟫ ∈ C ∧ pr = ⟪pTvote v θ p q, pTvote v θ p' q'⟫) ∨
   (∃ d' i, pr = ⟪pSys d' i, pSys d' i⟫) ∨
   (∃ j, pr = ⟪pSelfIdx j, pSys (param 0) j⟫) ∨
@@ -297,7 +299,7 @@ noncomputable def blueprint : Fixpoint.Blueprint 1 := ⟨.mkDelta
         ∃ b' < y, ∃ p' < y, ∃ q' < y,
           :⟪b, b'⟫:∈ C ∧ :⟪p, p'⟫:∈ C ∧ :⟪q, q'⟫:∈ C ∧ !pIteGraph y b' a p' q') ∨
       (∃ k < x, ∃ g < x, ∃ p < x, ∃ q < x, !pSearchGraph x k g p q ∧
-        ∃ g', !sysCloseTemplateGraph g' d g ∧ ∃ p' < y, ∃ q' < y,
+        ∃ g', !sysCloseTemplateAtGraph g' d k g ∧ ∃ p' < y, ∃ q' < y,
           :⟪p, p'⟫:∈ C ∧ :⟪q, q'⟫:∈ C ∧ !pSearchGraph y k g' p' q') ∨
       (∃ v < x, ∃ th < x, ∃ p < x, ∃ q < x, !pTvoteGraph x v th p q ∧
         ∃ p' < y, ∃ q' < y, :⟪p, p'⟫:∈ C ∧ :⟪q, q'⟫:∈ C ∧ !pTvoteGraph y v th p' q') ∨
@@ -316,7 +318,7 @@ noncomputable def blueprint : Fixpoint.Blueprint 1 := ⟨.mkDelta
         ∃ b' < y, ∃ p' < y, ∃ q' < y,
           :⟪b, b'⟫:∈ C ∧ :⟪p, p'⟫:∈ C ∧ :⟪q, q'⟫:∈ C ∧ !pIteGraph y b' a p' q') ∨
       (∃ k < x, ∃ g < x, ∃ p < x, ∃ q < x, !pSearchGraph x k g p q ∧
-        ∀ g', !sysCloseTemplateGraph g' d g → ∃ p' < y, ∃ q' < y,
+        ∀ g', !sysCloseTemplateAtGraph g' d k g → ∃ p' < y, ∃ q' < y,
           :⟪p, p'⟫:∈ C ∧ :⟪q, q'⟫:∈ C ∧ !pSearchGraph y k g' p' q') ∨
       (∃ v < x, ∃ th < x, ∃ p < x, ∃ q < x, !pTvoteGraph x v th p q ∧
         ∃ p' < y, ∃ q' < y, :⟪p, p'⟫:∈ C ∧ :⟪q, q'⟫:∈ C ∧ !pTvoteGraph y v th p' q') ∨
@@ -339,7 +341,7 @@ private lemma phi_iff (param : Fin 1 → V) (C pr : V) :
           ⟪b, b'⟫ ∈ C ∧ ⟪p, p'⟫ ∈ C ∧ ⟪q, q'⟫ ∈ C ∧ y = pIte b' a p' q') ∨
       (∃ k < x, ∃ g < x, ∃ p < x, ∃ q < x, x = pSearch k g p q ∧
         ∃ p' < y, ∃ q' < y,
-          ⟪p, p'⟫ ∈ C ∧ ⟪q, q'⟫ ∈ C ∧ y = pSearch k (sysCloseTemplate (param 0) g) p' q') ∨
+          ⟪p, p'⟫ ∈ C ∧ ⟪q, q'⟫ ∈ C ∧ y = pSearch k (sysCloseTemplateAt (param 0) k g) p' q') ∨
       (∃ v < x, ∃ θ < x, ∃ p < x, ∃ q < x, x = pTvote v θ p q ∧
         ∃ p' < y, ∃ q' < y, ⟪p, p'⟫ ∈ C ∧ ⟪q, q'⟫ ∈ C ∧ y = pTvote v θ p' q') ∨
       (∃ d' < x, ∃ i < x, x = pSys d' i ∧ y = x) ∨
@@ -399,10 +401,10 @@ noncomputable def construction : Fixpoint.Construction V blueprint where
   defined := .mk <| by
     constructor
     · intro v
-      simp [blueprint, HierarchySymbol.Semiformula.val_sigma, sysCloseTemplate.defined.df]
+      simp [blueprint, HierarchySymbol.Semiformula.val_sigma, sysCloseTemplateAt.defined.df]
     · intro v
       symm
-      simpa [blueprint, HierarchySymbol.Semiformula.val_sigma, sysCloseTemplate.defined.df,
+      simpa [blueprint, HierarchySymbol.Semiformula.val_sigma, sysCloseTemplateAt.defined.df,
         pSelfGraph, pOppGraph, pSelf, pOpp, lt_and_eq_succ_iff]
         using phi_iff (fun i ↦ v i.succ.succ) (v 1) (v 0)
   monotone := by
@@ -488,7 +490,7 @@ lemma SysCloseGraph.case_iff {d x y : V} :
     (∃ b a p q b' p' q', SysCloseGraph d b b' ∧ SysCloseGraph d p p' ∧ SysCloseGraph d q q' ∧
       x = pIte b a p q ∧ y = pIte b' a p' q') ∨
     (∃ k g p q p' q', SysCloseGraph d p p' ∧ SysCloseGraph d q q' ∧
-      x = pSearch k g p q ∧ y = pSearch k (sysCloseTemplate d g) p' q') ∨
+      x = pSearch k g p q ∧ y = pSearch k (sysCloseTemplateAt d k g) p' q') ∨
     (∃ v θ p q p' q', SysCloseGraph d p p' ∧ SysCloseGraph d q q' ∧
       x = pTvote v θ p q ∧ y = pTvote v θ p' q') ∨
     (∃ d' i, x = pSys d' i ∧ y = pSys d' i) ∨
@@ -525,7 +527,7 @@ lemma SysCloseGraph.ite_iff {d b a p q y : V} :
   intro _ _ _ _ _ h₅ _ _ _ _ _ h; exact absurd h.symm (h₅ b a p q)
 lemma SysCloseGraph.search_iff {d k g p q y : V} :
     SysCloseGraph d (pSearch k g p q) y ↔
-    ∃ p' q', SysCloseGraph d p p' ∧ SysCloseGraph d q q' ∧ y = pSearch k (sysCloseTemplate d g) p' q' := by
+    ∃ p' q', SysCloseGraph d p p' ∧ SysCloseGraph d q q' ∧ y = pSearch k (sysCloseTemplateAt d k g) p' q' := by
   rw [SysCloseGraph.case_iff]; simp
   intro _ _ _ _ _ _ h₆ _ _ _ _ h; exact absurd h.symm (h₆ k g p q)
 lemma SysCloseGraph.tvote_iff {d v θ p q y : V} :
@@ -668,10 +670,12 @@ instance sysCloseCode_definable' : Γ-[m + 1]-Function₂ (sysCloseCode : V → 
     sysCloseCode d (pIte b a p q) = pIte (sysCloseCode d b) a (sysCloseCode d p) (sysCloseCode d q) :=
   sysCloseCode_eq_of_graph (SysCloseGraph.ite_iff.mpr
     ⟨_, _, _, sysCloseCode_graph d b, sysCloseCode_graph d p, sysCloseCode_graph d q, rfl⟩)
-/-- The stored template is closed by `sysCloseTemplate` (the member slots filled; the identity on every
-seven-variable template, `sysCloseTemplate_of_template₇`). -/
+/-- The stored template is closed by `sysCloseTemplateAt` AT THE NODE'S OWN BUDGET `k` (the member slots filled
+with the members' descriptions, the budget `k` abstracted into the slot `#6`; the identity on every
+seven-variable template, `sysCloseTemplateAt_of_template₇`). The sentence the closed node consults is the one
+the verbatim closer `sysCloseTemplate` gives (`guardCodeB_sysCloseTemplateAt`). -/
 @[simp] lemma sysCloseCode_search (d k g p q : V) :
-    sysCloseCode d (pSearch k g p q) = pSearch k (sysCloseTemplate d g) (sysCloseCode d p) (sysCloseCode d q) :=
+    sysCloseCode d (pSearch k g p q) = pSearch k (sysCloseTemplateAt d k g) (sysCloseCode d p) (sysCloseCode d q) :=
   sysCloseCode_eq_of_graph (SysCloseGraph.search_iff.mpr ⟨_, _, sysCloseCode_graph d p, sysCloseCode_graph d q, rfl⟩)
 /-- The vote's entries are frozen (the engine's `sysClose` on `.tvote`). -/
 @[simp] lemma sysCloseCode_tvote (d v θ p q : V) :

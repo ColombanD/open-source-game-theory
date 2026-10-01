@@ -16,21 +16,26 @@ run time is unchanged — the syntactic instantiation identity `subst_codeTermMe
 
   `Rew.subst ![binNumeralMeta k₀] (codeTermMetaAbs k₀ x) = codeTermMeta x`.
 
-The recursion descends through `pBot`, `pSim`, `pIte`, `pSearch` (branches and the budget), `pTvote` and the
-list `pCons`; every other code — the leaves `pConst`/`pSelf`/`pOpp`/`pSelfIdx`, a SYSTEM `pSys d i`, and a
-non-program — is described verbatim (`Rew.bShift (codeTermMeta x)`). A system is opaque to the abstraction
-BY DESIGN: the closer `sysCloseTemplate` fills a member's pronoun slots with the verbatim descriptions of the
-members (`descriptionsSys`, `ArithS.Agents.Guard`), and the member-slot equation `template13_sysClose`
-(`Agents/SysTemplate.lean`) is literal only if the closed guard describes `.bot (.sys defs j)` the same way;
-no paper-zoo guard names a closed system (`instGo`/`sysGo` emit `.bot (instAt T B)` only for targets that are
-never entangled with the hypothesis), so every stored template of the roster is a constant all the same.
+The recursion descends through `pBot`, `pSim`, `pIte`, `pSearch` (branches and the budget), `pTvote`, the
+list `pCons` and — since Phase 2d (decision (α), 2026-10-02) — a SYSTEM `pSys d i` (the member list abstracted
+member by member through the `pCons` clause, the index a numeral leaf); every other code — the leaves
+`pConst`/`pSelf`/`pOpp`/`pSelfIdx` and a non-program — is described verbatim (`Rew.bShift (codeTermMeta x)`).
+Phase 2c kept a system opaque so that the member-slot equation `templateAt_sysClose`
+(`Agents/SysTemplate.lean`) stayed literal against the VERBATIM closer `sysCloseTemplate`; but a paper-zoo guard
+DOES name a closed system with a `.search k` member (`inst dimcid ebot`: τ(EBot)'s third watch at DIMCID names
+`inst dimcid mirror = .sys [dim 1, mm 0] 0`), and a verbatim system puts `binNumeral k` back inside that stored
+template (`Tau/NeverFitsSys.lean`). The closer now takes the node's budget and fills the member slots with the
+code-level twin of this abstraction (`codeTermAbs`, `sysCloseTemplateAt`, `ArithS.Agents.CodeTermSlot`/`Guard`),
+so both sides of the member equation are abstract.
 
-* `Desc x` — the six descent shapes; `budgetT1 k₀ k` — the budget leaf (`#0` at `k = k₀`, the numeral else);
+* `Desc x` — the seven descent shapes; `budgetT1 k₀ k` — the budget leaf (`#0` at `k = k₀`, the numeral else);
 * `CodeTermMetaAbsGraph k₀` (inductive, with inversion lemmas) and the function `codeTermMetaAbs k₀`;
 * the equations `codeTermMetaAbs_bot … _cons`, `_leaf`, `_const`, `_self`, `_opp`, `_sys`, `_selfIdx`,
   `_of_not_shape`;
 * **`subst_codeTermMetaAbs`** (the instantiation identity) and its V-valued corollary in `Eval/Det.lean`;
-* **`NoSearchAt k₀ x`** ("no `pSearch k₀` node outside a system") with `codeTermMetaAbs_of_noSearchAt :
+* §8 **`quote_emb_codeTermMetaAbs`** (the code equation, every model): the code of the abstracted term is the
+  internal `codeTermAbs k₀ ^#0 x` (`ArithS.Agents.CodeTermSlot`);
+* **`NoSearchAt k₀ x`** ("no `pSearch k₀` node at a descent position", systems included) with `codeTermMetaAbs_of_noSearchAt :
   codeTermMetaAbs k₀ x = Rew.bShift (codeTermMeta x)` — the bridge to the unabstracted description — closed
   under `transposeCode` and `canonical`;
 * the length bound `termLenMeta_emb_codeTermMetaAbs_le`: the abstracted term is never longer than the verbatim
@@ -133,21 +138,24 @@ end oneVariable
 
 /-! ### 2. The descent shapes and the budget leaf -/
 
-/-- The six shapes the abstraction descends into: `pBot`, `pSim`, `pIte`, `pSearch`, `pTvote`, `pCons`. Every
-other code (the leaves `pConst`/`pSelf`/`pOpp`/`pSelfIdx`, a system `pSys d i`, a non-program) is described
-verbatim. -/
+/-- The seven shapes the abstraction descends into: `pBot`, `pSim`, `pIte`, `pSearch`, `pTvote`, `pCons`, and
+(since Phase 2d) a system `pSys d i`. Every other code (the leaves `pConst`/`pSelf`/`pOpp`/`pSelfIdx`, a
+non-program) is described verbatim. -/
 def Desc (x : ℕ) : Prop :=
   (∃ p, x = pBot p) ∨ (∃ p q, x = pSim p q) ∨ (∃ b a p q, x = pIte b a p q) ∨
-  (∃ k g p q, x = pSearch k g p q) ∨ (∃ v θ p q, x = pTvote v θ p q) ∨ (∃ e r, x = pCons e r)
+  (∃ k g p q, x = pSearch k g p q) ∨ (∃ v θ p q, x = pTvote v θ p q) ∨ (∃ e r, x = pCons e r) ∨
+  (∃ d i, x = pSys d i)
 
 lemma Desc.isShape {x : ℕ} (h : Desc x) : IsShape x := by
-  rcases h with ⟨p, rfl⟩ | ⟨p, q, rfl⟩ | ⟨b, a, p, q, rfl⟩ | ⟨k, g, p, q, rfl⟩ | ⟨v, θ, p, q, rfl⟩ | ⟨e, r, rfl⟩
+  rcases h with ⟨p, rfl⟩ | ⟨p, q, rfl⟩ | ⟨b, a, p, q, rfl⟩ | ⟨k, g, p, q, rfl⟩ | ⟨v, θ, p, q, rfl⟩ | ⟨e, r, rfl⟩ |
+    ⟨d, i, rfl⟩
   · exact IsShape.bot _
   · exact IsShape.sim _ _
   · exact IsShape.ite _ _ _ _
   · exact IsShape.search _ _ _ _
   · exact IsShape.tvote _ _ _ _
   · exact IsShape.cons _ _
+  · exact IsShape.sys _ _
 
 lemma not_desc_of_not_shape {x : ℕ} (h : ¬IsShape x) : ¬Desc x := fun hd ↦ h hd.isShape
 
@@ -158,7 +166,6 @@ attribute [local simp] pConst pSelf pOpp pBot pSim pIte pSearch pTvote pSys pSel
 lemma not_desc_const (a : ℕ) : ¬Desc (pConst a) := by simp
 lemma not_desc_self : ¬Desc pSelf := by simp
 lemma not_desc_opp : ¬Desc pOpp := by simp
-lemma not_desc_sys (d i : ℕ) : ¬Desc (pSys d i) := by simp
 lemma not_desc_selfIdx (j : ℕ) : ¬Desc (pSelfIdx j) := by simp
 
 end descLeaves
@@ -205,6 +212,9 @@ inductive CodeTermMetaAbsGraph (k₀ : ℕ) : ℕ → Semiterm ℒₒᵣ Empty 1
   | cons (x e r : ℕ) (t te tr : Semiterm ℒₒᵣ Empty 1) (hx : x = pCons e r)
       (he : CodeTermMetaAbsGraph k₀ e te) (hr : CodeTermMetaAbsGraph k₀ r tr)
       (ht : t = succT1 (ppairT1 (Rew.bShift (binNumeralMeta 10)) (ppairT1 te tr))) : CodeTermMetaAbsGraph k₀ x t
+  | sys (x d i : ℕ) (t td : Semiterm ℒₒᵣ Empty 1) (hx : x = pSys d i) (hd : CodeTermMetaAbsGraph k₀ d td)
+      (ht : t = succT1 (ppairT1 (Rew.bShift (binNumeralMeta 8)) (ppairT1 td (Rew.bShift (binNumeralMeta i))))) :
+      CodeTermMetaAbsGraph k₀ x t
   | leaf (x : ℕ) (t : Semiterm ℒₒᵣ Empty 1) (hx : ¬Desc x) (ht : t = Rew.bShift (codeTermMeta x)) :
       CodeTermMetaAbsGraph k₀ x t
 
@@ -270,6 +280,15 @@ lemma CodeTermMetaAbsGraph.cons_iff {e r : ℕ} {t : Semiterm ℒₒᵣ Empty 1}
       first | exact ⟨_, ‹_›, rfl⟩ | exact ⟨_, ‹_›, _, ‹_›, rfl⟩ | exact ⟨_, ‹_›, _, ‹_›, _, ‹_›, rfl⟩
   · rintro ⟨te, tr, he, hr, rfl⟩; exact .cons _ _ _ _ _ _ rfl he hr rfl
 
+lemma CodeTermMetaAbsGraph.sys_iff {d i : ℕ} {t : Semiterm ℒₒᵣ Empty 1} :
+    CodeTermMetaAbsGraph k₀ (pSys d i) t ↔
+    ∃ td, CodeTermMetaAbsGraph k₀ d td ∧
+      t = succT1 (ppairT1 (Rew.bShift (binNumeralMeta 8)) (ppairT1 td (Rew.bShift (binNumeralMeta i)))) := by
+  constructor
+  · intro h; cases h <;> simp_all <;>
+      first | exact ⟨_, ‹_›, rfl⟩ | exact ⟨_, ‹_›, _, ‹_›, rfl⟩ | exact ⟨_, ‹_›, _, ‹_›, _, ‹_›, rfl⟩
+  · rintro ⟨td, hd, rfl⟩; exact .sys _ _ _ _ _ rfl hd rfl
+
 lemma CodeTermMetaAbsGraph.leaf_iff {x : ℕ} {t : Semiterm ℒₒᵣ Empty 1} (hx : ¬Desc x) :
     CodeTermMetaAbsGraph k₀ x t ↔ t = Rew.bShift (codeTermMeta x) := by
   constructor
@@ -282,7 +301,8 @@ lemma codeTermMetaAbsGraph_exists (k₀ x : ℕ) : ∃ t, CodeTermMetaAbsGraph k
   induction x using Nat.strong_induction_on with
   | _ x ih =>
     by_cases hx : Desc x
-    · rcases hx with ⟨p, rfl⟩ | ⟨p, q, rfl⟩ | ⟨b, a, p, q, rfl⟩ | ⟨k, g, p, q, rfl⟩ | ⟨v, θ, p, q, rfl⟩ | ⟨e, r, rfl⟩
+    · rcases hx with ⟨p, rfl⟩ | ⟨p, q, rfl⟩ | ⟨b, a, p, q, rfl⟩ | ⟨k, g, p, q, rfl⟩ | ⟨v, θ, p, q, rfl⟩ | ⟨e, r, rfl⟩ |
+        ⟨d, i, rfl⟩
       · obtain ⟨tp, hp⟩ := ih p (by simp)
         exact ⟨_, CodeTermMetaAbsGraph.bot_iff.mpr ⟨tp, hp, rfl⟩⟩
       · obtain ⟨tp, hp⟩ := ih p (by simp); obtain ⟨tq, hq⟩ := ih q (by simp)
@@ -297,6 +317,8 @@ lemma codeTermMetaAbsGraph_exists (k₀ x : ℕ) : ∃ t, CodeTermMetaAbsGraph k
         exact ⟨_, CodeTermMetaAbsGraph.tvote_iff.mpr ⟨tv, tp, tq, hv, hp, hq, rfl⟩⟩
       · obtain ⟨te, he⟩ := ih e (by simp); obtain ⟨tr, hr⟩ := ih r (by simp)
         exact ⟨_, CodeTermMetaAbsGraph.cons_iff.mpr ⟨te, tr, he, hr, rfl⟩⟩
+      · obtain ⟨td, hd⟩ := ih d (by simp)
+        exact ⟨_, CodeTermMetaAbsGraph.sys_iff.mpr ⟨td, hd, rfl⟩⟩
     · exact ⟨_, (CodeTermMetaAbsGraph.leaf_iff hx).mpr rfl⟩
 
 lemma codeTermMetaAbsGraph_unique (k₀ x : ℕ) :
@@ -305,7 +327,8 @@ lemma codeTermMetaAbsGraph_unique (k₀ x : ℕ) :
   | _ x ih =>
     intro t₁ t₂ h₁ h₂
     by_cases hx : Desc x
-    · rcases hx with ⟨p, rfl⟩ | ⟨p, q, rfl⟩ | ⟨b, a, p, q, rfl⟩ | ⟨k, g, p, q, rfl⟩ | ⟨v, θ, p, q, rfl⟩ | ⟨e, r, rfl⟩
+    · rcases hx with ⟨p, rfl⟩ | ⟨p, q, rfl⟩ | ⟨b, a, p, q, rfl⟩ | ⟨k, g, p, q, rfl⟩ | ⟨v, θ, p, q, rfl⟩ | ⟨e, r, rfl⟩ |
+        ⟨d, i, rfl⟩
       · rcases CodeTermMetaAbsGraph.bot_iff.mp h₁ with ⟨p₁, hp₁, rfl⟩
         rcases CodeTermMetaAbsGraph.bot_iff.mp h₂ with ⟨p₂, hp₂, rfl⟩
         rw [ih p (by simp) _ _ hp₁ hp₂]
@@ -324,6 +347,9 @@ lemma codeTermMetaAbsGraph_unique (k₀ x : ℕ) :
       · rcases CodeTermMetaAbsGraph.cons_iff.mp h₁ with ⟨e₁, r₁, he₁, hr₁, rfl⟩
         rcases CodeTermMetaAbsGraph.cons_iff.mp h₂ with ⟨e₂, r₂, he₂, hr₂, rfl⟩
         rw [ih e (by simp) _ _ he₁ he₂, ih r (by simp) _ _ hr₁ hr₂]
+      · rcases CodeTermMetaAbsGraph.sys_iff.mp h₁ with ⟨d₁, hd₁, rfl⟩
+        rcases CodeTermMetaAbsGraph.sys_iff.mp h₂ with ⟨d₂, hd₂, rfl⟩
+        rw [ih d (by simp) _ _ hd₁ hd₂]
     · rw [CodeTermMetaAbsGraph.leaf_iff hx] at h₁ h₂; rw [h₁, h₂]
 
 lemma codeTermMetaAbsGraph_existsUnique (k₀ x : ℕ) : ∃! t, CodeTermMetaAbsGraph k₀ x t := by
@@ -384,9 +410,14 @@ lemma codeTermMetaAbs_self (k₀ : ℕ) : codeTermMetaAbs k₀ pSelf = Rew.bShif
   codeTermMetaAbs_leaf not_desc_self k₀
 lemma codeTermMetaAbs_opp (k₀ : ℕ) : codeTermMetaAbs k₀ pOpp = Rew.bShift (codeTermMeta pOpp) :=
   codeTermMetaAbs_leaf not_desc_opp k₀
-/-- **A system is described verbatim** (see the module docstring). -/
-lemma codeTermMetaAbs_sys (k₀ d i : ℕ) : codeTermMetaAbs k₀ (pSys d i) = Rew.bShift (codeTermMeta (pSys d i)) :=
-  codeTermMetaAbs_leaf (not_desc_sys d i) k₀
+/-- **The abstraction descends into a system** (Phase 2d): the member list is abstracted member by member
+(through `codeTermMetaAbs_cons`), the index is a numeral leaf. -/
+lemma codeTermMetaAbs_sys (k₀ d i : ℕ) :
+    codeTermMetaAbs k₀ (pSys d i) =
+      succT1 (ppairT1 (Rew.bShift (binNumeralMeta 8)) (ppairT1 (codeTermMetaAbs k₀ d) (Rew.bShift (binNumeralMeta i)))) :=
+  codeTermMetaAbs_eq_of_graph (CodeTermMetaAbsGraph.sys_iff.mpr ⟨_, codeTermMetaAbs_graph k₀ d, rfl⟩)
+lemma codeTermMetaAbs_nil (k₀ : ℕ) : codeTermMetaAbs k₀ pNil = Rew.bShift (binNumeralMeta 0) := by
+  rw [codeTermMetaAbs_leaf (not_desc_of_not_shape not_isShape_zero), codeTermMeta_of_not_shape not_isShape_zero]
 lemma codeTermMetaAbs_selfIdx (k₀ j : ℕ) : codeTermMetaAbs k₀ (pSelfIdx j) = Rew.bShift (codeTermMeta (pSelfIdx j)) :=
   codeTermMetaAbs_leaf (not_desc_selfIdx j) k₀
 lemma codeTermMetaAbs_of_not_shape {x : ℕ} (hx : ¬IsShape x) (k₀ : ℕ) :
@@ -403,7 +434,8 @@ theorem subst_codeTermMetaAbs (k₀ x : ℕ) :
   induction x using Nat.strong_induction_on with
   | _ x ih =>
     by_cases hx : Desc x
-    · rcases hx with ⟨p, rfl⟩ | ⟨p, q, rfl⟩ | ⟨b, a, p, q, rfl⟩ | ⟨k, g, p, q, rfl⟩ | ⟨v, θ, p, q, rfl⟩ | ⟨e, r, rfl⟩
+    · rcases hx with ⟨p, rfl⟩ | ⟨p, q, rfl⟩ | ⟨b, a, p, q, rfl⟩ | ⟨k, g, p, q, rfl⟩ | ⟨v, θ, p, q, rfl⟩ | ⟨e, r, rfl⟩ |
+        ⟨d, i, rfl⟩
       · rw [codeTermMetaAbs_bot, subst_succT1, subst_ppairT1, subst_bShift₁, ih p (by simp), codeTermMeta_bot]
       · rw [codeTermMetaAbs_sim, subst_succT1, subst_ppairT1, subst_ppairT1, subst_bShift₁, ih p (by simp),
           ih q (by simp), codeTermMeta_sim]
@@ -415,11 +447,14 @@ theorem subst_codeTermMetaAbs (k₀ x : ℕ) :
           subst_bShift₁, subst_bShift₁, ih v (by simp), ih p (by simp), ih q (by simp), codeTermMeta_tvote]
       · rw [codeTermMetaAbs_cons, subst_succT1, subst_ppairT1, subst_ppairT1, subst_bShift₁, ih e (by simp),
           ih r (by simp), codeTermMeta_cons]
+      · rw [codeTermMetaAbs_sys, subst_succT1, subst_ppairT1, subst_ppairT1, subst_bShift₁, subst_bShift₁,
+          ih d (by simp), codeTermMeta_sys]
     · rw [codeTermMetaAbs_leaf hx, subst_bShift₁]
 
 /-! ### 6. Codes without a `pSearch k₀` node: the abstraction is the verbatim term, shifted -/
 
-/-- `NoSearchAt k₀ x`: no `pSearch k₀ …` node at a descent position of `x` (a system is a leaf). -/
+/-- `NoSearchAt k₀ x`: no `pSearch k₀ …` node at a descent position of `x` (a system's member list is a descent
+position since Phase 2d: a system with a `.search k₀` member is NOT `NoSearchAt k₀`). -/
 inductive NoSearchAt (k₀ : ℕ) : ℕ → Prop
   | bot (p : ℕ) : NoSearchAt k₀ p → NoSearchAt k₀ (pBot p)
   | sim (p q : ℕ) : NoSearchAt k₀ p → NoSearchAt k₀ q → NoSearchAt k₀ (pSim p q)
@@ -427,12 +462,13 @@ inductive NoSearchAt (k₀ : ℕ) : ℕ → Prop
   | search (k g p q : ℕ) (hk : k ≠ k₀) : NoSearchAt k₀ p → NoSearchAt k₀ q → NoSearchAt k₀ (pSearch k g p q)
   | tvote (v θ p q : ℕ) : NoSearchAt k₀ v → NoSearchAt k₀ p → NoSearchAt k₀ q → NoSearchAt k₀ (pTvote v θ p q)
   | cons (e r : ℕ) : NoSearchAt k₀ e → NoSearchAt k₀ r → NoSearchAt k₀ (pCons e r)
+  | sys (d i : ℕ) : NoSearchAt k₀ d → NoSearchAt k₀ (pSys d i)
   | leaf (x : ℕ) (hx : ¬Desc x) : NoSearchAt k₀ x
 
 lemma NoSearchAt.const (k₀ a : ℕ) : NoSearchAt k₀ (pConst a) := .leaf _ (not_desc_const a)
 lemma NoSearchAt.self (k₀ : ℕ) : NoSearchAt k₀ pSelf := .leaf _ not_desc_self
 lemma NoSearchAt.opp (k₀ : ℕ) : NoSearchAt k₀ pOpp := .leaf _ not_desc_opp
-lemma NoSearchAt.sys (k₀ d i : ℕ) : NoSearchAt k₀ (pSys d i) := .leaf _ (not_desc_sys d i)
+lemma NoSearchAt.nil (k₀ : ℕ) : NoSearchAt k₀ pNil := .leaf _ (not_desc_of_not_shape not_isShape_zero)
 lemma NoSearchAt.selfIdx (k₀ j : ℕ) : NoSearchAt k₀ (pSelfIdx j) := .leaf _ (not_desc_selfIdx j)
 lemma NoSearchAt.of_not_shape {x : ℕ} (hx : ¬IsShape x) (k₀ : ℕ) : NoSearchAt k₀ x :=
   .leaf _ (not_desc_of_not_shape hx)
@@ -456,6 +492,8 @@ theorem codeTermMetaAbs_of_noSearchAt {k₀ x : ℕ} (h : NoSearchAt k₀ x) :
       bShift_ppairTermMeta, bShift_ppairTermMeta, bShift_ppairTermMeta]
   | cons e r _ _ ihe ihr =>
     rw [codeTermMetaAbs_cons, ihe, ihr, codeTermMeta_cons, bShift_succTT, bShift_ppairTermMeta, bShift_ppairTermMeta]
+  | sys d i _ ihd =>
+    rw [codeTermMetaAbs_sys, ihd, codeTermMeta_sys, bShift_succTT, bShift_ppairTermMeta, bShift_ppairTermMeta]
   | leaf x hx => exact codeTermMetaAbs_leaf hx k₀
 
 section transpose
@@ -475,9 +513,9 @@ lemma not_desc_transposeCode {x : ℕ} (hx : ¬Desc x) : ¬Desc (transposeCode x
     · exact absurd (Or.inr (Or.inr (Or.inl ⟨b, a, p, q, rfl⟩))) hx
     · exact absurd (Or.inr (Or.inr (Or.inr (Or.inl ⟨k, g, p, q, rfl⟩)))) hx
     · exact absurd (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨v, θ, p, q, rfl⟩))))) hx
-    · rw [transposeCode, revalue_sys]; exact not_desc_sys _ _
+    · exact absurd (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨d, i, rfl⟩)))))) hx
     · rw [transposeCode, revalue_selfIdx]; exact not_desc_selfIdx _
-    · exact absurd (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨e, r, rfl⟩))))) hx
+    · exact absurd (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl ⟨e, r, rfl⟩)))))) hx
   · rw [transposeCode, revalue_of_not_shape hs]; exact hx
 
 end transpose
@@ -492,6 +530,7 @@ theorem NoSearchAt.transpose {k₀ x : ℕ} (h : NoSearchAt k₀ x) : NoSearchAt
   | tvote v θ p q _ _ _ ihv ihp ihq =>
     rw [transposeCode, revalue_tvote]; exact .tvote _ _ _ _ (by rwa [transposeCode] at ihv) ihp ihq
   | cons e r _ _ ihe ihr => rw [transposeCode, revalue_cons]; exact .cons _ _ ihe ihr
+  | sys d i _ ihd => rw [transposeCode, revalue_sys]; exact .sys _ _ ihd
   | leaf x hx => exact .leaf _ (not_desc_transposeCode hx)
 
 /-- `NoSearchAt` is closed under `canonical` (the orbit's minimum is `x` or its transposition). -/
@@ -578,7 +617,8 @@ theorem termLenMeta_emb_codeTermMetaAbs_le (k₀ x : ℕ) :
   induction x using Nat.strong_induction_on with
   | _ x ih =>
     by_cases hx : Desc x
-    · rcases hx with ⟨p, rfl⟩ | ⟨p, q, rfl⟩ | ⟨b, a, p, q, rfl⟩ | ⟨k, g, p, q, rfl⟩ | ⟨v, θ, p, q, rfl⟩ | ⟨e, r, rfl⟩
+    · rcases hx with ⟨p, rfl⟩ | ⟨p, q, rfl⟩ | ⟨b, a, p, q, rfl⟩ | ⟨k, g, p, q, rfl⟩ | ⟨v, θ, p, q, rfl⟩ | ⟨e, r, rfl⟩ |
+        ⟨d, i, rfl⟩
       · have := ih p (by simp)
         rw [codeTermMetaAbs_bot, termLenMeta_emb_succT1, termLenMeta_emb_ppairT1, termLenMeta_emb_bShift₀,
           termLenMeta_emb_codeTermMeta_bot]
@@ -605,8 +645,131 @@ theorem termLenMeta_emb_codeTermMetaAbs_le (k₀ x : ℕ) :
         rw [codeTermMetaAbs_cons, termLenMeta_emb_succT1, termLenMeta_emb_ppairT1, termLenMeta_emb_ppairT1,
           termLenMeta_emb_bShift₀, termLenMeta_emb_codeTermMeta_cons]
         omega
+      · have hd := ih d (by simp)
+        rw [codeTermMetaAbs_sys, termLenMeta_emb_succT1, termLenMeta_emb_ppairT1, termLenMeta_emb_ppairT1,
+          termLenMeta_emb_bShift₀, termLenMeta_emb_bShift₀, termLenMeta_emb_codeTermMeta_sys]
+        omega
     · rw [codeTermMetaAbs_leaf hx, termLenMeta_emb_bShift₀]
 
 end length
+
+/-! ### 8. The code equation: the code of the abstracted term is the internal `codeTermAbs` (Phase 2d)
+
+The code-level twin `codeTermAbs k₀ s x` (`ArithS.Agents.CodeTermSlot`) is `codeTerm x` with the budget leaf
+`pSearch k₀` written as the term code `s`. With the slot `^#0` it is the code of `codeTermMetaAbs k₀ x`, in
+every model — the equation the member-slot identity `templateCodeAt_sysClose` (`Agents/SysTemplate.lean`) rests
+on. (The quote lemmas for the one-variable combinators moved here from `Agents/InstanceV.lean`, same names.) -/
+
+section codeEquation
+
+variable {V : Type*} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
+
+/-- The code of `#0` (one bound variable). -/
+lemma quote_emb_bvar_zero : (⌜(Rew.emb (#0 : Semiterm ℒₒᵣ Empty 1) : SyntacticSemiterm ℒₒᵣ 1)⌝ : V) = ^#0 := by
+  simp [Rew.emb]
+
+/-- The code of a shifted closed term is the code of the term. -/
+lemma quote_emb_bShift {L : Language} [L.Encodable] [L.LORDefinable] :
+    ∀ t : ClosedSemiterm L 0,
+      (⌜(Rew.emb (Rew.bShift t) : SyntacticSemiterm L 1)⌝ : V) = ⌜(Rew.emb t : SyntacticSemiterm L 0)⌝
+  | #x => x.elim0
+  | &x => x.elim
+  | .func f v => by
+    rw [Rew.func, Rew.func, Rew.func, Semiterm.quote_func, Semiterm.quote_func]
+    congr 1
+    unfold SemitermVec.val
+    exact matrixToVec_congr (fun i ↦ quote_emb_bShift (v i))
+
+lemma quote_emb_add (s t : Semiterm ℒₒᵣ Empty 1) :
+    (⌜(Rew.emb (Semiterm.func Language.ORing.Func.add ![s, t]) : SyntacticSemiterm ℒₒᵣ 1)⌝ : V) =
+    (⌜(Rew.emb s : SyntacticSemiterm ℒₒᵣ 1)⌝ : V) ^+ ⌜(Rew.emb t : SyntacticSemiterm ℒₒᵣ 1)⌝ := by
+  rw [Rew.func]
+  have e : (Semiterm.func Language.ORing.Func.add (⇑Rew.emb ∘ ![s, t]) : SyntacticSemiterm ℒₒᵣ 1) =
+      ‘!!(Rew.emb s : SyntacticSemiterm ℒₒᵣ 1) + !!(Rew.emb t : SyntacticSemiterm ℒₒᵣ 1)’ := by
+    congr 1; funext i; fin_cases i <;> rfl
+  rw [e, Semiterm.quote_def, Semiterm.typed_quote_add]; rfl
+
+lemma quote_emb_mul (s t : Semiterm ℒₒᵣ Empty 1) :
+    (⌜(Rew.emb (Semiterm.func Language.ORing.Func.mul ![s, t]) : SyntacticSemiterm ℒₒᵣ 1)⌝ : V) =
+    (⌜(Rew.emb s : SyntacticSemiterm ℒₒᵣ 1)⌝ : V) ^* ⌜(Rew.emb t : SyntacticSemiterm ℒₒᵣ 1)⌝ := by
+  rw [Rew.func]
+  have e : (Semiterm.func Language.ORing.Func.mul (⇑Rew.emb ∘ ![s, t]) : SyntacticSemiterm ℒₒᵣ 1) =
+      ‘!!(Rew.emb s : SyntacticSemiterm ℒₒᵣ 1) * !!(Rew.emb t : SyntacticSemiterm ℒₒᵣ 1)’ := by
+    congr 1; funext i; fin_cases i <;> rfl
+  rw [e, Semiterm.quote_def, Semiterm.typed_quote_mul]; rfl
+
+lemma quote_emb_ppairT1 (s t : Semiterm ℒₒᵣ Empty 1) :
+    (⌜(Rew.emb (ppairT1 s t) : SyntacticSemiterm ℒₒᵣ 1)⌝ : V) =
+    ppairTerm (⌜(Rew.emb s : SyntacticSemiterm ℒₒᵣ 1)⌝ : V) ⌜(Rew.emb t : SyntacticSemiterm ℒₒᵣ 1)⌝ := by
+  rw [ppairT1, quote_emb_add, quote_emb_mul, quote_emb_add]; rfl
+
+lemma quote_emb_oneTT : (⌜(Rew.emb oneTT : SyntacticSemiterm ℒₒᵣ 0)⌝ : V) = 𝟏 := by
+  rw [← Semiterm.empty_quote_def]; exact quote_closed_one
+
+lemma quote_emb_succT1 (t : Semiterm ℒₒᵣ Empty 1) :
+    (⌜(Rew.emb (succT1 t) : SyntacticSemiterm ℒₒᵣ 1)⌝ : V) =
+    (⌜(Rew.emb t : SyntacticSemiterm ℒₒᵣ 1)⌝ : V) ^+ 𝟏 := by
+  rw [succT1, quote_emb_add, quote_emb_bShift, quote_emb_oneTT]
+
+/-- A non-shape stays a non-shape in every model (`IsShape` is Σ₀). -/
+lemma not_isShape_cast {x : ℕ} (hx : ¬IsShape x) : ¬IsShape (x : V) := by
+  have h := Defined.shigmaZero_absolute V (IsShape.defined (V := ℕ)) (IsShape.defined (V := V)) ![x]
+  intro h'
+  exact hx (h.mpr (by simpa using h'))
+
+/-- The code of the budget leaf: the slot `^#0` at the abstracted budget, the numeral otherwise. -/
+lemma quote_emb_budgetT1 (k₀ k : ℕ) :
+    (⌜(Rew.emb (budgetT1 k₀ k) : SyntacticSemiterm ℒₒᵣ 1)⌝ : V) = budgetLeaf (k₀ : V) (^#0) (k : V) := by
+  by_cases h : k = k₀
+  · subst h; rw [budgetT1_self, budgetLeaf_self, quote_emb_bvar_zero]
+  · rw [budgetT1_of_ne h, budgetLeaf_of_ne (fun h' ↦ h (Nat.cast_injective h')), quote_emb_bShift,
+      ← Semiterm.empty_quote_def, quote_binNumeralMeta]
+
+/-- **The code equation** (Phase 2d): the code of the abstracted structural term is the internal `codeTermAbs`
+with the slot `^#0`, in every model. -/
+theorem quote_emb_codeTermMetaAbs (k₀ x : ℕ) :
+    (⌜(Rew.emb (codeTermMetaAbs k₀ x) : SyntacticSemiterm ℒₒᵣ 1)⌝ : V) = codeTermAbs (k₀ : V) (^#0) (x : V) := by
+  induction x using Nat.strong_induction_on with
+  | _ x ih =>
+    have hbn : ∀ n : ℕ, (⌜(Rew.emb (Rew.bShift (binNumeralMeta n)) : SyntacticSemiterm ℒₒᵣ 1)⌝ : V) = binNumeral (n : V) := by
+      intro n; rw [quote_emb_bShift, ← Semiterm.empty_quote_def, quote_binNumeralMeta]
+    have hleaf : ∀ y : ℕ, (⌜(Rew.emb (Rew.bShift (codeTermMeta y)) : SyntacticSemiterm ℒₒᵣ 1)⌝ : V) = codeTerm (y : V) := by
+      intro y; rw [quote_emb_bShift, ← Semiterm.empty_quote_def, quote_codeTermMeta]
+    by_cases hx : IsShape x
+    · rcases hx with ⟨a, rfl⟩ | rfl | rfl | ⟨p, rfl⟩ | ⟨p, q, rfl⟩ | ⟨b, a, p, q, rfl⟩ | ⟨k, g, p, q, rfl⟩ |
+        ⟨v, θ, p, q, rfl⟩ | ⟨d, i, rfl⟩ | ⟨j, rfl⟩ | ⟨e, r, rfl⟩
+      · rw [codeTermMetaAbs_const, hleaf, cast_pConst, codeTerm_const, codeTermAbs_const]
+      · rw [codeTermMetaAbs_self, hleaf, cast_pSelf, codeTerm_self, codeTermAbs_self]
+      · rw [codeTermMetaAbs_opp, hleaf, cast_pOpp, codeTerm_opp, codeTermAbs_opp]
+      · rw [codeTermMetaAbs_bot, quote_emb_succT1, quote_emb_ppairT1, hbn, ih p (by simp), cast_pBot, codeTermAbs_bot]
+        push_cast; rfl
+      · rw [codeTermMetaAbs_sim, quote_emb_succT1, quote_emb_ppairT1, quote_emb_ppairT1, hbn, ih p (by simp),
+          ih q (by simp), cast_pSim, codeTermAbs_sim]
+        push_cast; rfl
+      · rw [codeTermMetaAbs_ite, quote_emb_succT1, quote_emb_ppairT1, quote_emb_ppairT1, quote_emb_ppairT1,
+          quote_emb_ppairT1, hbn, hbn, ih b (by simp), ih p (by simp), ih q (by simp), cast_pIte, codeTermAbs_ite]
+        push_cast; rfl
+      · rw [codeTermMetaAbs_search, quote_emb_succT1, quote_emb_ppairT1, quote_emb_ppairT1, quote_emb_ppairT1,
+          quote_emb_ppairT1, hbn, hbn, quote_emb_budgetT1, ih p (by simp), ih q (by simp), cast_pSearch,
+          codeTermAbs_search]
+        push_cast; rfl
+      · rw [codeTermMetaAbs_tvote, quote_emb_succT1, quote_emb_ppairT1, quote_emb_ppairT1, quote_emb_ppairT1,
+          quote_emb_ppairT1, hbn, hbn, ih v (by simp), ih p (by simp), ih q (by simp), cast_pTvote, codeTermAbs_tvote]
+        push_cast; rfl
+      · rw [codeTermMetaAbs_sys, quote_emb_succT1, quote_emb_ppairT1, quote_emb_ppairT1, hbn, hbn, ih d (by simp),
+          cast_pSys, codeTermAbs_sys]
+        push_cast; rfl
+      · rw [codeTermMetaAbs_selfIdx, hleaf, cast_pSelfIdx, codeTerm_selfIdx, codeTermAbs_selfIdx]
+      · rw [codeTermMetaAbs_cons, quote_emb_succT1, quote_emb_ppairT1, quote_emb_ppairT1, hbn, ih e (by simp),
+          ih r (by simp), cast_pCons, codeTermAbs_cons]
+        push_cast; rfl
+    · rw [codeTermMetaAbs_of_not_shape hx, hbn, codeTermAbs_of_not_shape (not_isShape_cast hx)]
+
+/-- The code equation in `ℕ`. -/
+theorem quote_emb_codeTermMetaAbs_nat (k₀ x : ℕ) :
+    (⌜(Rew.emb (codeTermMetaAbs k₀ x) : SyntacticSemiterm ℒₒᵣ 1)⌝ : ℕ) = codeTermAbs k₀ (^#0) x := by
+  rw [quote_emb_codeTermMetaAbs]; simp
+
+end codeEquation
 
 end ArithS

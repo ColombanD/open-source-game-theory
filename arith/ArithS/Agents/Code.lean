@@ -308,7 +308,10 @@ unabstracted template consulted — so the stored template of `JustBot k` (froze
 every tau instance naming a budget-carrying hypothesis instance is a CONSTANT, its code a short numeral, and
 `Critch's (b)` holds for it (the obstruction of `Tau/NeverFits.lean` dissolves). `canonicalSlot none` is the
 verbatim description (today's coding), `canonicalSlot (some k₀)` the abstracted one; on a code without a
-`pSearch k₀` node outside a system the two coincide (`canonicalSlot_of_noSearchAt`). -/
+`pSearch k₀` node the two coincide (`canonicalSlot_of_noSearchAt`). Since Phase 2d (decision (α), 2026-10-02)
+the abstraction DESCENDS INTO SYSTEMS (`codeTermMetaAbs_sys`): a closed system with a `.search k₀` member is
+described with that member's budget in the slot too, and the closer `sysCloseTemplateAt` fills the member
+slots with the same abstracted descriptions (`Agents/SysTemplate.lean`). -/
 
 /-- The abstracted description term of the code `c` at the node budget `k₀`, with the budget variable `b`. -/
 noncomputable def canonicalAbs {n : ℕ} (k₀ c : ℕ) (b : Semiterm LAct Empty n) : Semiterm LAct Empty n :=
@@ -389,13 +392,6 @@ lemma canonicalAbs_of_noSearchAt {n : ℕ} {k₀ c : ℕ} (h : NoSearchAt k₀ (
 
 lemma canonicalSlot_of_noSearchAt {n : ℕ} {k₀ c : ℕ} (h : NoSearchAt k₀ (canonical c)) (b : Semiterm LAct Empty n) :
     canonicalSlot (some k₀) c b = cl (canonicalMeta c) := canonicalAbs_of_noSearchAt h b
-
-/-- A system is described verbatim at every node budget (`codeTermMetaAbs_sys`). -/
-lemma canonicalSlot_of_sys {n : ℕ} (k₀ : Option ℕ) (D j : ℕ) (b : Semiterm LAct Empty n) :
-    canonicalSlot k₀ (pSys D j) b = cl (canonicalMeta (pSys D j)) := by
-  cases k₀ with
-  | none => rfl
-  | some k => exact canonicalSlot_of_noSearchAt (NoSearchAt.sys k D j).canonical b
 
 /-- The description of the program with code `c` in the thirteen-variable frame, the budget slot `#6` (here
 `#8`) standing for the node budget `k₀` inside the description when `k₀ = some _`. -/
@@ -1131,26 +1127,33 @@ lemma pronounP_eq_false_of_noSelfIdxP {p : PD.Prog} (h : noSelfIdxP p = true) : 
 
 /-! ### The budget-snapshot predicates and the bridge `templateCodeAt φ k = templateCode φ`
 
-`searchFreeP p`: no `.search` node at a described position of `p` (a `.sys` is a leaf, a `.tvote` is excluded —
-a vote never sits inside a template). On such a program the abstracted description is the verbatim one
+`searchFreeP p`: no `.search` node at a described position of `p` (a `.sys` is search-free iff every member is,
+`searchFreeL` — the abstraction descends into systems since Phase 2d; a `.tvote` is excluded — a vote never sits
+inside a template). On such a program the abstracted description is the verbatim one
 (`noSearchAt_progCode`, `closedDescAt_progCode_eq`). `noBudgetSnapshotF φ`: every closed program an atom of `φ`
 describes is `searchFreeP` — then `templateAt φ (some k) = templateAt φ none` for every `k`
 (`templateAt_some_eq_none`), i.e. the stored template is today's `templateCode φ`
 (`templateCodeAt_eq_templateCode`): true of every base guard but JustBot's (`.bot (DupocBot k)`) and
 CupodTrollBot's (`.eq .opp (CupodBot k)`), and of every tau guard naming a budget-free hypothesis instance. -/
 
-/-- No `.search` node at a described position (`.sys` a leaf; `.tvote` excluded). -/
-def searchFreeP : PD.Prog → Bool
-  | .const _ => true
-  | .self => true
-  | .opp => true
-  | .bot p => searchFreeP p
-  | .sim p q => searchFreeP p && searchFreeP q
-  | .ite b _ p q => searchFreeP b && searchFreeP p && searchFreeP q
-  | .search _ _ _ _ => false
-  | .tvote _ _ _ _ => false
-  | .sys _ _ => true
-  | .selfIdx _ => true
+mutual
+  /-- No `.search` node at a described position (a `.sys` through its members; `.tvote` excluded). -/
+  def searchFreeP : PD.Prog → Bool
+    | .const _ => true
+    | .self => true
+    | .opp => true
+    | .bot p => searchFreeP p
+    | .sim p q => searchFreeP p && searchFreeP q
+    | .ite b _ p q => searchFreeP b && searchFreeP p && searchFreeP q
+    | .search _ _ _ _ => false
+    | .tvote _ _ _ _ => false
+    | .sys defs _ => searchFreeL defs
+    | .selfIdx _ => true
+  /-- Every member of the list is `searchFreeP`. -/
+  def searchFreeL : PD.ProgList → Bool
+    | .nil => true
+    | .cons p rest => searchFreeP p && searchFreeL rest
+end
 
 /-- No closed sub-program at a described position of `φ` contains a `.search` (a `.box` body is stored
 unabstracted, so it never matters here). -/
@@ -1183,23 +1186,37 @@ mutual
     | .cons _ I rest => noBudgetSnapshotP I && noBudgetSnapshotV rest
 end
 
-/-- A `searchFreeP` program's code has no `pSearch` node at a descent position. -/
-theorem noSearchAt_progCode : ∀ p : PD.Prog, searchFreeP p = true → ∀ k₀ : ℕ, NoSearchAt k₀ (progCode p)
-  | .const a, _, k₀ => by rw [progCode_const]; exact .const _ _
-  | .self, _, k₀ => by rw [progCode_self]; exact .self _
-  | .opp, _, k₀ => by rw [progCode_opp]; exact .opp _
-  | .bot p, h, k₀ => by rw [progCode_bot]; exact .bot _ (noSearchAt_progCode p h k₀)
-  | .sim p q, h, k₀ => by
-    simp only [searchFreeP, Bool.and_eq_true] at h
-    rw [progCode_sim]; exact .sim _ _ (noSearchAt_progCode p h.1 k₀) (noSearchAt_progCode q h.2 k₀)
-  | .ite b _ p q, h, k₀ => by
-    simp only [searchFreeP, Bool.and_eq_true] at h
-    rw [progCode_ite]
-    exact .ite _ _ _ _ (noSearchAt_progCode b h.1.1 k₀) (noSearchAt_progCode p h.1.2 k₀) (noSearchAt_progCode q h.2 k₀)
-  | .search _ _ _ _, h, _ => by simp [searchFreeP] at h
-  | .tvote _ _ _ _, h, _ => by simp [searchFreeP] at h
-  | .sys _ _, _, k₀ => by rw [progCode_sys]; exact .sys _ _ _
-  | .selfIdx _, _, k₀ => by rw [progCode_selfIdx]; exact .selfIdx _ _
+mutual
+  /-- A `searchFreeP` program's code has no `pSearch` node at a descent position. -/
+  theorem noSearchAt_progCode : ∀ p : PD.Prog, searchFreeP p = true → ∀ k₀ : ℕ, NoSearchAt k₀ (progCode p)
+    | .const a, _, k₀ => by rw [progCode_const]; exact .const _ _
+    | .self, _, k₀ => by rw [progCode_self]; exact .self _
+    | .opp, _, k₀ => by rw [progCode_opp]; exact .opp _
+    | .bot p, h, k₀ => by
+      simp only [searchFreeP] at h
+      rw [progCode_bot]; exact .bot _ (noSearchAt_progCode p h k₀)
+    | .sim p q, h, k₀ => by
+      simp only [searchFreeP, Bool.and_eq_true] at h
+      rw [progCode_sim]; exact .sim _ _ (noSearchAt_progCode p h.1 k₀) (noSearchAt_progCode q h.2 k₀)
+    | .ite b _ p q, h, k₀ => by
+      simp only [searchFreeP, Bool.and_eq_true] at h
+      rw [progCode_ite]
+      exact .ite _ _ _ _ (noSearchAt_progCode b h.1.1 k₀) (noSearchAt_progCode p h.1.2 k₀) (noSearchAt_progCode q h.2 k₀)
+    | .search _ _ _ _, h, _ => by simp [searchFreeP] at h
+    | .tvote _ _ _ _, h, _ => by simp [searchFreeP] at h
+    | .sys defs i, h, k₀ => by
+      simp only [searchFreeP] at h
+      rw [progCode_sys]; exact .sys _ _ (noSearchAt_progListCode defs h k₀)
+    | .selfIdx _, _, k₀ => by rw [progCode_selfIdx]; exact .selfIdx _ _
+  /-- A search-free member list's code has no `pSearch` node at a descent position. -/
+  theorem noSearchAt_progListCode : ∀ defs : PD.ProgList, searchFreeL defs = true → ∀ k₀ : ℕ,
+      NoSearchAt k₀ (progListCode defs)
+    | .nil, _, k₀ => by rw [progListCode_nil]; exact .nil _
+    | .cons p rest, h, k₀ => by
+      simp only [searchFreeL, Bool.and_eq_true] at h
+      rw [progListCode_cons]
+      exact .cons _ _ (noSearchAt_progCode p h.1 k₀) (noSearchAt_progListCode rest h.2 k₀)
+end
 
 lemma canonicalSlot_progCode_eq {n : ℕ} {p : PD.Prog} (hp : searchFreeP p = true) (k₀ : Option ℕ) (b : Semiterm LAct Empty n) :
     canonicalSlot k₀ (progCode p) b = cl (canonicalMeta (progCode p)) := by
@@ -1248,7 +1265,7 @@ macro "noSnap_tac" : tactic =>
       | assumption
       | rfl
       | decide
-      | (simp only [noBudgetSnapshotF, searchFreeP, Bool.and_true, Bool.true_and, Bool.and_self]
+      | (simp only [noBudgetSnapshotF, searchFreeP, searchFreeL, Bool.and_true, Bool.true_and, Bool.and_self]
          first | rfl | decide | assumption))
 
 /-- **The bridge**: on a formula without a budget snapshot the stored template code is today's `templateCode φ`.

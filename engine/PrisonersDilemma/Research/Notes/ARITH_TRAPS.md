@@ -151,9 +151,34 @@ an agent-hour or more. Add to it when you lose one. Grouped by where it bites.*
   `substCode` — two codes for one consulted sentence. It holds for search-free players (`searchFreeP`) or a
   closed body (`progCode_subst_closed`); the Bridge's `.sim` step needs only `progCode_subst_atomic`.
 * The member-slot equation forces the design: `templateAt_sysClose` is literal only if the closed guard describes
-  `.bot (.sys defs j)` exactly as the closer fills the pronoun slot (verbatim `descriptionsSys`), so
-  `codeTermMetaAbs` does NOT descend into `pSys` (`codeTermMetaAbs_sys`). Abstracting inside systems needs a
-  code-level Δ₁ `codeTermAbs` in `Guard`/`SysClose` (the (α) upgrade, not done).
+  `.bot (.sys defs j)` exactly as the closer fills the pronoun slot. Phase 2c: both verbatim (`descriptionsSys`,
+  `codeTermMetaAbs` a leaf on `pSys`). **Phase 2d (2026-10-02, the (α) upgrade, DONE): both abstract** —
+  `codeTermMetaAbs` descends into `pSys`, the closer is `sysCloseTemplateAt d k` with the code-level Δ₁
+  `codeTermAbs k ^#6` (`Agents/CodeTermSlot.lean`), `vSysAt k₀` on the meta side. What it cost, for the next one:
+  - **The verbatim closer stays, as the READING.** Every Entangled statement is about `guardCodeB (sysCloseTemplate d
+    ⌜g⌝) me opp k` (the consulted sentence); only the three `sysCloseCode_m*` code lemmas spell the stored template
+    (`sysCloseTemplateAt … k …`), and each search clause adds ONE rewrite, `guardCodeB_sysCloseTemplateAt` (after
+    `EvalGraph.search_iff`). Nothing else in `Tau/Entangled` moved. Design a trusted-base change with such a bridge
+    BEFORE touching the consumers.
+  - `searchFreeP (.sys defs _)` is `searchFreeL defs` now (mutual; `rfl`/`decide` still reduce it). A closed guard
+    naming a system with a `.search` member is no longer `noBudgetSnapshotF`: `templateCodeAt_eq_templateCode … rfl`
+    fails there (`Cells/TauMember`) — use `EvalGraph.search_iff_at` + `quote_sentenceAt` (the consulted sentence
+    is the verbatim guard either way).
+  - `fragP (.sys _ _) = false`: anything that moves a guard between frames through `templateCode_subst`
+    (`dimcid_D_of_towers`' `hmove`) does not apply to a watch containing a system. Move it on the TEMPLATE: the
+    guard does not read the opponent slots (`gDi_subst_congr`), so the two instance formulas coincide
+    (`qPlain_gDi_opp`) and `guardCodeB_plain_eq_instB` in each frame does the rest; get the transposed
+    seven-variable hypothesis from `isSemiformula_revalueTemplate_swap_iff`, not from `transposeCode_progCode`.
+  - A parametrized fixpoint with TWO parameters (`Fixpoint.Blueprint 2`): copy `Prog.lean`'s `Revalue` plumbing
+    (`phi_iff (fun i ↦ v i.succ.succ) (v 1) (v 0)`, `![k₀, s]`, the `Fin 3` `param_eq` lemma); do not name a
+    blueprint variable `s` when the Π-half binds `∀ s, !qqAddGraph s …` (shadowing — `sl`).
+  - A structure field `codeTermAbs_semiterm_LAct hs x` with the budget IMPLICIT leaves a metavariable inside a
+    13-fold `IsSemitermVec.adjoin` chain ("don't know how to synthesize implicit argument `w`", thirteen times):
+    pass `(k₀ := k)`.
+  - The τ-order of a cascade of ANY depth: `cascade_gain` (`Tau/Watch3.lean`) — a `Gain` in the else-branch plus
+    `B ≤ Y` gives a `Gain` for the stage, so it iterates; `Gain.ppair_right_dom` is the step `W2.code_lt_tr`
+    hid inside a `calc`. A `hkV : ((K : ℕ) : ℕ) ≤ k` stated separately hits the two-`Nat.cast` trap of §1 again:
+    inline `le_def.mpr (Nat.eq_or_lt_of_le (by rw [natCast_nat]; exact hK))` at each use.
 * A theorem stated for a generic `φ` with a `noBudgetSnapshotF`/`noSelfIdxF` autoParam cannot be `rw`-applied
   bare (`rw [Sys2.code_nat]`): the autoParam runs before unification. Name the formulas at the call site
   (`Sys2.code_nat (entDimG 1) (entCmG 0) .D .D`) or pass `_ … rfl`.

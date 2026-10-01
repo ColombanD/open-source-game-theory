@@ -6,9 +6,11 @@ import ArithS.Agents.Code
 The last item of Phase 2 of `SPRIME_SOURCE_OF_TRUTH.md` (§2.5, 2026-10-01). A system member's guard names its
 partner through the pronoun `.bot (.selfIdx j)`; the engine's `.sys` clause closes the member with
 `Prog.sysClose defs` (`.selfIdx j ↦ .sys defs j`) before it runs, and the arithmetized evaluator does the same
-on codes (`sysCloseCode`, whose `pSearch` clause closes the stored template by `sysCloseTemplate d`: the member
-slots `#7..#12` filled with the closed descriptions of `pSys d 0`, `pSys d 1`). This file proves that the two
-closers agree on the compiled members:
+on codes (`sysCloseCode`, whose `pSearch` clause closes the stored template by `sysCloseTemplateAt d k` at the
+node's own budget `k`: the member slots `#7..#12` filled with the descriptions of `pSys d 0`, `pSys d 1`, the
+budget `k` abstracted into the slot `#6` — Phase 2d, decision (α), 2026-10-02; before, the verbatim
+`sysCloseTemplate d`). This file proves that the two closers agree on the compiled members — both sides
+describe `.bot (.sys defs j)` abstractly now, so the equation is literal again:
 
 * **`template13_sysClose`** (meta): filling the member slots of `template13 φ` with the description triples of
   the members IS `template13 (φ.sysClose defs)` — LITERALLY, the way `template_subst` is literal — for every
@@ -16,8 +18,10 @@ closers agree on the compiled members:
   closed pronoun-free programs; no `.box`; no pronoun on the frozen right-hand side of an `.eq`). The pronoun
   clause of `progAux13` matches the closed description of `.bot (.sys defs j)` because `pBot` commutes with
   `canonical` and fixes the re-valuation terms (`pBotTerm_canonicalMeta`, `revalueUMeta_pBot`, `revalueWMeta_pBot`).
-* **`templateCode_sysClose`** (codes): `sysCloseTemplate (progListCode defs) (templateCode φ) = templateCode
-  (φ.sysClose defs)`.
+* **`templateCode_sysClose`** (codes, unabstracted): `sysCloseTemplate (progListCode defs) (templateCode φ) =
+  templateCode (φ.sysClose defs)`; **`templateCodeAt_sysClose`** (the stored codes): `sysCloseTemplateAt
+  (progListCode defs) k (templateCodeAt φ k) = templateCodeAt (φ.sysClose defs) k`, through the code equation
+  `quote_emb_canonicalAbs` (`quote_emb_codeTermMetaAbs` + `termSubst_codeTermAbs`).
 * **`progCode_sysClose_member`**: `progCode (p.sysClose defs) = sysCloseCode (progListCode defs) (progCode p)` for
   every program whose search guards are member guards (`memberP`) — the compiled members of `Tau/Spec.lean`.
 
@@ -191,29 +195,56 @@ def memberP : PD.Prog → Bool
 
 /-! ### Lemma A′: the member slots filled, atom by atom -/
 
-/-- The member-slot substitution, as meta terms: `#0..#6` kept, the closed description triples of the two
-members of `defs` in `#7..#12` (`descriptionsSys (progListCode defs)` on codes, `semitermVec_val_vSys13`). -/
+/-- The member-slot substitution at the node budget `k₀`, as meta terms: `#0..#6` kept, the description triples
+of the two members of `defs` in `#7..#12`, the code term verbatim (`none`) or with the budget abstracted into
+the slot `#6` (`some k`): `descriptionsSys (progListCode defs)` resp. `descriptionsSysAt (progListCode defs) k`
+on codes (`semitermVec_val_vSys13`, `semitermVec_val_vSysAt`). -/
+noncomputable def vSysAt (k₀ : Option ℕ) (D : ℕ) : Fin 13 → Semiterm LAct Empty 13 :=
+  ![#0, #1, #2, #3, #4, #5, #6,
+    canonicalSlot k₀ (pSys D 0) #6, cl (revalueUMeta (pSys D 0)), cl (revalueWMeta (pSys D 0)),
+    canonicalSlot k₀ (pSys D 1) #6, cl (revalueUMeta (pSys D 1)), cl (revalueWMeta (pSys D 1))]
+
+/-- The verbatim member-slot substitution (`vSysAt none`): the closed description triples of the two members. -/
 noncomputable def vSys13 (D : ℕ) : Fin 13 → Semiterm LAct Empty 13 :=
   ![#0, #1, #2, #3, #4, #5, #6,
     cl (canonicalMeta (pSys D 0)), cl (revalueUMeta (pSys D 0)), cl (revalueWMeta (pSys D 0)),
     cl (canonicalMeta (pSys D 1)), cl (revalueUMeta (pSys D 1)), cl (revalueWMeta (pSys D 1))]
 
-/-- The closed description of a bot-wrapped system is the same at every node budget (a system is opaque to the
-abstraction, `codeTermMetaAbs_sys`). -/
-lemma closedDescAt_bot_sys (k₀ : Option ℕ) (D j : ℕ) : closedDescAt k₀ (pBot (pSys D j)) = closedDesc13 (pBot (pSys D j)) := by
+lemma vSysAt_none (D : ℕ) : vSysAt none D = vSys13 D := rfl
+
+/-- A one-variable substitution through `lMap emb` of a binary function symbol. -/
+lemma subst_lMap_func₂ {n : ℕ} (b : Semiterm LAct Empty n) (f : (ℒₒᵣ).Func 2) (s t : Semiterm ℒₒᵣ Empty 1) :
+    Rew.subst ![b] (Semiterm.lMap emb (Semiterm.func f ![s, t])) =
+      Semiterm.func (emb.func f) ![Rew.subst ![b] (Semiterm.lMap emb s), Rew.subst ![b] (Semiterm.lMap emb t)] := by
+  rw [Semiterm.lMap_func, Rew.func]; congr 1; funext i; fin_cases i <;> rfl
+
+/-- **The abstracted description of `pBot c` is `pBotTerm` of the abstracted description of `c`** (the pronoun
+clause of `progAuxAt` meets the closed description of `.bot (.sys defs j)` at the node budget). -/
+lemma pBotTerm_canonicalAbs {n : ℕ} (k₀ c : ℕ) (b : Semiterm LAct Empty n) :
+    pBotTerm (canonicalAbs k₀ c b) = canonicalAbs k₀ (pBot c) b := by
+  unfold canonicalAbs
+  rw [canonical_pBot, codeTermMetaAbs_bot, succT1, ppairT1]
+  simp only [subst_lMap_func₂, Semiterm.lMap_bShift, subst_bShift_cl]
+  have h1 : (cl (Semiterm.lMap emb oneTT) : Semiterm LAct Empty n) = ‘1’ := by rw [oneTT, lMap_emb_one, cl_one]
+  rw [h1]
+  rfl
+
+lemma pBotTerm_canonicalSlot {n : ℕ} (k₀ : Option ℕ) (c : ℕ) (b : Semiterm LAct Empty n) :
+    pBotTerm (canonicalSlot k₀ c b) = canonicalSlot k₀ (pBot c) b := by
   cases k₀ with
-  | none => rfl
-  | some k => exact closedDescAt_of_noSearchAt ((NoSearchAt.bot _ (NoSearchAt.sys k D j)).canonical)
+  | none => exact pBotTerm_canonicalMeta c
+  | some k => exact pBotTerm_canonicalAbs k c b
 
 /-- **Lemma A′**: substituting the member descriptions into the description of a member-atom program gives
-the description of the closed program. `w` reads the member slots as the closed descriptions of
-`pSys D 0`/`pSys D 1` and agrees with `w'` on the program variable and the frame. -/
+the description of the closed program. `w` reads the member slots as the descriptions of `pSys D 0`/`pSys D 1`
+at the node budget `k₀` (the code term with the budget written as `w' 7`, the image of the budget slot) and
+agrees with `w'` on the program variable and the frame. -/
 lemma progAuxAt_sysClose {m : ℕ} (k₀ : Option ℕ) (defs : PD.ProgList) {p : PD.Prog} (hp : memberAtomP p = true)
     (w w' : Fin 14 → Semiterm LAct Empty m) (hf : ∀ i : Fin 14, i.val ≤ 7 → w i = w' i)
-    (h8 : w 8 = cl (canonicalMeta (pSys (progListCode defs) 0)))
+    (h8 : w 8 = canonicalSlot k₀ (pSys (progListCode defs) 0) (w' 7))
     (h9 : w 9 = cl (revalueUMeta (pSys (progListCode defs) 0)))
     (h10 : w 10 = cl (revalueWMeta (pSys (progListCode defs) 0)))
-    (h11 : w 11 = cl (canonicalMeta (pSys (progListCode defs) 1)))
+    (h11 : w 11 = canonicalSlot k₀ (pSys (progListCode defs) 1) (w' 7))
     (h12 : w 12 = cl (revalueUMeta (pSys (progListCode defs) 1)))
     (h13 : w 13 = cl (revalueWMeta (pSys (progListCode defs) 1))) :
     progAuxAt k₀ p (progCode p) ⇜ w = progAuxAt k₀ (p.sysClose defs) (progCode (p.sysClose defs)) ⇜ w' := by
@@ -221,31 +252,29 @@ lemma progAuxAt_sysClose {m : ℕ} (k₀ : Option ℕ) (defs : PD.ProgList) {p :
   by_cases hpr : pronounP p = true
   · rcases pronounP_cases hpr with rfl | rfl | rfl | rfl
     · -- `.selfIdx 0 ↦ .sys defs 0`
-      rw [progAuxAt_selfIdx0, PD.Prog.sysClose, progAuxAt_of_ne _ (by simp) (by simp) rfl, progCode_sys, closedDescAt_subst,
-        canonicalSlot_of_sys]
+      rw [progAuxAt_selfIdx0, PD.Prog.sysClose, progAuxAt_of_ne _ (by simp) (by simp) rfl, progCode_sys, closedDescAt_subst]
       unfold Rewriting.subst
       rw [rew_descF]
       show descF (Rew.bShift (w 0)) (Rew.bShift (w 8)) (Rew.bShift (w 9)) (Rew.bShift (w 10)) = _
-      rw [h0, h8, h9, h10, rew_cl, rew_cl, rew_cl]
-    · rw [progAuxAt_selfIdx1, PD.Prog.sysClose, progAuxAt_of_ne _ (by simp) (by simp) rfl, progCode_sys, closedDescAt_subst,
-        canonicalSlot_of_sys]
+      rw [h0, h8, h9, h10, rew_cl, rew_cl, rew_canonicalSlot]
+    · rw [progAuxAt_selfIdx1, PD.Prog.sysClose, progAuxAt_of_ne _ (by simp) (by simp) rfl, progCode_sys, closedDescAt_subst]
       unfold Rewriting.subst
       rw [rew_descF]
       show descF (Rew.bShift (w 0)) (Rew.bShift (w 11)) (Rew.bShift (w 12)) (Rew.bShift (w 13)) = _
-      rw [h0, h11, h12, h13, rew_cl, rew_cl, rew_cl]
+      rw [h0, h11, h12, h13, rew_cl, rew_cl, rew_canonicalSlot]
     · -- `.bot (.selfIdx 0) ↦ .bot (.sys defs 0)`: the pronoun clause meets the closed description of `pBot (pSys d 0)`
       rw [progAuxAt_botSelfIdx0, PD.Prog.sysClose, PD.Prog.sysClose, progAuxAt_of_ne _ (by simp) (by simp) rfl,
-        progCode_bot, progCode_sys, closedDescAt_bot_sys, closedDesc13_subst, revalueUMeta_pBot, revalueWMeta_pBot]
+        progCode_bot, progCode_sys, closedDescAt_subst, revalueUMeta_pBot, revalueWMeta_pBot]
       unfold Rewriting.subst
       rw [rew_descF, rew_pBotTerm]
       show descF (Rew.bShift (w 0)) (pBotTerm (Rew.bShift (w 8))) (Rew.bShift (w 9)) (Rew.bShift (w 10)) = _
-      rw [h0, h8, h9, h10, rew_cl, rew_cl, rew_cl, pBotTerm_canonicalMeta]
+      rw [h0, h8, h9, h10, rew_cl, rew_cl, rew_canonicalSlot, pBotTerm_canonicalSlot]
     · rw [progAuxAt_botSelfIdx1, PD.Prog.sysClose, PD.Prog.sysClose, progAuxAt_of_ne _ (by simp) (by simp) rfl,
-        progCode_bot, progCode_sys, closedDescAt_bot_sys, closedDesc13_subst, revalueUMeta_pBot, revalueWMeta_pBot]
+        progCode_bot, progCode_sys, closedDescAt_subst, revalueUMeta_pBot, revalueWMeta_pBot]
       unfold Rewriting.subst
       rw [rew_descF, rew_pBotTerm]
       show descF (Rew.bShift (w 0)) (pBotTerm (Rew.bShift (w 11))) (Rew.bShift (w 12)) (Rew.bShift (w 13)) = _
-      rw [h0, h11, h12, h13, rew_cl, rew_cl, rew_cl, pBotTerm_canonicalMeta]
+      rw [h0, h11, h12, h13, rew_cl, rew_cl, rew_canonicalSlot, pBotTerm_canonicalSlot]
   · have hns : noSelfIdxP p = true := by
       simp only [memberAtomP, Bool.or_eq_true] at hp
       exact hp.resolve_left hpr
@@ -272,10 +301,11 @@ lemma progAuxAt_sysClose {m : ℕ} (k₀ : Option ℕ) (defs : PD.ProgList) {p :
 /-! ### The semantic equation -/
 
 /-- **The member-slot equation, meta level**: on a member guard, filling the member slots with the members'
-descriptions IS the thirteen-variable template of the closed guard — literally. -/
+descriptions AT THE SAME NODE BUDGET IS the thirteen-variable template of the closed guard — literally (both
+sides describe `.bot (.sys defs j)` with the budget `k₀` abstracted into the slot `#6`, or both verbatim). -/
 theorem templateAt_sysClose (defs : PD.ProgList) (k₀ : Option ℕ) :
     ∀ φ : PD.Formula, memberGuardF φ = true →
-      templateAt φ k₀ ⇜ vSys13 (progListCode defs) = templateAt (φ.sysClose defs) k₀
+      templateAt φ k₀ ⇜ vSysAt k₀ (progListCode defs) = templateAt (φ.sysClose defs) k₀
   | .plays p q a, h => by
     simp only [memberGuardF, Bool.and_eq_true] at h
     rw [PD.Formula.sysClose, templateAt_plays, templateAt_plays]
@@ -284,11 +314,17 @@ theorem templateAt_sysClose (defs : PD.ProgList) (k₀ : Option ℕ) :
     congr 4
     · refine progAuxAt_sysClose k₀ defs h.1 _ _ ?_ ?_ ?_ ?_ ?_ ?_ ?_
       · intro i hi; fin_cases i <;> first | rfl | exact absurd hi (by decide)
-      all_goals (show Rew.bShift (Rew.bShift (Rew.bShift (cl _))) = _; rw [rew_cl, rew_cl, rew_cl])
+      all_goals first
+        | (show Rew.bShift (Rew.bShift (Rew.bShift (cl _))) = _; rw [rew_cl, rew_cl, rew_cl])
+        | (show Rew.bShift (Rew.bShift (Rew.bShift (canonicalSlot _ _ _))) = _
+           rw [rew_canonicalSlot, rew_canonicalSlot, rew_canonicalSlot]; rfl)
     · congr 1
       · refine progAuxAt_sysClose k₀ defs h.2 _ _ ?_ ?_ ?_ ?_ ?_ ?_ ?_
         · intro i hi; fin_cases i <;> first | rfl | exact absurd hi (by decide)
-        all_goals (show Rew.bShift (Rew.bShift (Rew.bShift (cl _))) = _; rw [rew_cl, rew_cl, rew_cl])
+        all_goals first
+          | (show Rew.bShift (Rew.bShift (Rew.bShift (cl _))) = _; rw [rew_cl, rew_cl, rew_cl])
+          | (show Rew.bShift (Rew.bShift (Rew.bShift (canonicalSlot _ _ _))) = _
+             rw [rew_canonicalSlot, rew_canonicalSlot, rew_canonicalSlot]; rfl)
       · congr 1
         funext i
         fin_cases i
@@ -317,7 +353,10 @@ theorem templateAt_sysClose (defs : PD.ProgList) (k₀ : Option ℕ) :
     congr 3
     · refine progAuxAt_sysClose k₀ defs h.1 _ _ ?_ ?_ ?_ ?_ ?_ ?_ ?_
       · intro i hi; fin_cases i <;> first | rfl | exact absurd hi (by decide)
-      all_goals (show Rew.bShift (Rew.bShift (cl _)) = _; rw [rew_cl, rew_cl])
+      all_goals first
+        | (show Rew.bShift (Rew.bShift (cl _)) = _; rw [rew_cl, rew_cl])
+        | (show Rew.bShift (Rew.bShift (canonicalSlot _ _ _)) = _
+           rw [rew_canonicalSlot, rew_canonicalSlot]; rfl)
     · congr 1
       · rw [closedDescAt_subst, closedDescAt_subst, progCode_sysClose_of_noSelfIdxP q defs h.2]; rfl
       · rw [Semiformula.rew_rel]
@@ -359,6 +398,68 @@ lemma semitermVec_val_vSys13 (D : ℕ) :
   simp only [← Semiterm.empty_quote_def, quote_canonicalMeta, quote_revalueUMeta, quote_revalueWMeta]
   rfl
 
+/-- `Rew.emb` commutes with `lMap emb` on one-variable terms. -/
+lemma term_emb_lMap_emb₁ (t : Semiterm ℒₒᵣ Empty 1) :
+    (Rew.emb (Semiterm.lMap emb t) : SyntacticSemiterm LAct 1) = Semiterm.lMap emb (Rew.emb t) := by
+  induction t with
+  | bvar x => rfl
+  | fvar x => exact x.elim
+  | func f v ih => simp [Rew.func, Semiterm.lMap_func, Function.comp_def, ih]
+
+/-- `Rew.emb` commutes with a one-variable substitution. -/
+lemma emb_subst₁ {n : ℕ} (b : Semiterm LAct Empty n) (T : Semiterm LAct Empty 1) :
+    (Rew.emb (Rew.subst ![b] T) : SyntacticSemiterm LAct n) = Rew.subst ![Rew.emb b] (Rew.emb T) := by
+  have hc : (Rew.emb : Rew LAct Empty n ℕ n).comp (Rew.subst ![b]) =
+      (Rew.subst ![(Rew.emb b : SyntacticSemiterm LAct n)]).comp (Rew.emb : Rew LAct Empty 1 ℕ 1) := by
+    ext x
+    · fin_cases x; simp [Rew.comp_app]
+    · exact x.elim
+  rw [← Rew.comp_app, hc, Rew.comp_app]
+
+/-- **The code of the abstracted description term**: the internal `codeTermAbs` with the code of the budget
+term in the slot (`quote_emb_codeTermMetaAbs`, then `termSubst_codeTermAbs`). -/
+theorem quote_emb_canonicalAbs {n : ℕ} (k c : ℕ) (b : Semiterm LAct Empty n) :
+    (⌜(Rew.emb (canonicalAbs k c b) : SyntacticSemiterm LAct n)⌝ : ℕ) =
+      codeTermAbs k (⌜(Rew.emb b : SyntacticSemiterm LAct n)⌝ : ℕ) (canonical c) := by
+  unfold canonicalAbs
+  have hT : (⌜(Rew.emb (Semiterm.lMap emb (codeTermMetaAbs k (canonical c))) : SyntacticSemiterm LAct 1)⌝ : ℕ) =
+      codeTermAbs k (^#0) (canonical c) := by
+    rw [term_emb_lMap_emb₁, quote_term_lMap_emb, quote_emb_codeTermMetaAbs_nat]
+  have h0 : IsSemiterm ℒₒᵣ (1 : ℕ) (^#0 : ℕ) := IsSemiterm.bvar.mpr (by simp)
+  rw [emb_subst₁, Semiterm.quote_def, Semiterm.typed_quote_substs, Bootstrapping.Semiterm.val_substs,
+    ← Semiterm.quote_def, hT, termSubst_codeTermAbs _ h0, termSubst_bvar]
+  congr 1
+  have hv : (fun i ↦ (⌜(![(Rew.emb b : SyntacticSemiterm LAct n)] i)⌝ : Bootstrapping.Semiterm ℕ LAct n)) =
+      ![⌜(Rew.emb b : SyntacticSemiterm LAct n)⌝] := by funext i; fin_cases i; rfl
+  rw [hv]
+  simp only [SemitermVec.val_cons, SemitermVec.val_nil, nth_adjoin_zero]
+  rfl
+
+/-- The codes of the member-slot terms at the node budget form the member-slot vector `descriptionsSysAt`. -/
+lemma semitermVec_val_vSysAt (D k : ℕ) :
+    SemitermVec.val (fun i ↦ (⌜(Rew.emb (vSysAt (some k) D i) : SyntacticSemiterm LAct 13)⌝ : Bootstrapping.Semiterm ℕ LAct 13)) =
+      descriptionsSysAt D k := by
+  have e : ∀ t : Semiterm LAct Empty 13,
+      ((⌜(Rew.emb t : SyntacticSemiterm LAct 13)⌝ : Bootstrapping.Semiterm ℕ LAct 13)).val =
+        (⌜(Rew.emb t : SyntacticSemiterm LAct 13)⌝ : ℕ) := fun _ ↦ rfl
+  have hv : (fun i ↦ (⌜(Rew.emb (vSysAt (some k) D i) : SyntacticSemiterm LAct 13)⌝ : Bootstrapping.Semiterm ℕ LAct 13)) =
+      ![⌜(#0 : SyntacticSemiterm LAct 13)⌝, ⌜(#1 : SyntacticSemiterm LAct 13)⌝, ⌜(#2 : SyntacticSemiterm LAct 13)⌝,
+        ⌜(#3 : SyntacticSemiterm LAct 13)⌝, ⌜(#4 : SyntacticSemiterm LAct 13)⌝, ⌜(#5 : SyntacticSemiterm LAct 13)⌝,
+        ⌜(#6 : SyntacticSemiterm LAct 13)⌝,
+        ⌜(Rew.emb (canonicalAbs k (pSys D 0) (#6 : Semiterm LAct Empty 13)) : SyntacticSemiterm LAct 13)⌝,
+        ⌜(Rew.emb (cl (revalueUMeta (pSys D 0))) : SyntacticSemiterm LAct 13)⌝,
+        ⌜(Rew.emb (cl (revalueWMeta (pSys D 0))) : SyntacticSemiterm LAct 13)⌝,
+        ⌜(Rew.emb (canonicalAbs k (pSys D 1) (#6 : Semiterm LAct Empty 13)) : SyntacticSemiterm LAct 13)⌝,
+        ⌜(Rew.emb (cl (revalueUMeta (pSys D 1))) : SyntacticSemiterm LAct 13)⌝,
+        ⌜(Rew.emb (cl (revalueWMeta (pSys D 1))) : SyntacticSemiterm LAct 13)⌝] := by
+    funext i; fin_cases i <;> rfl
+  have h6 : (⌜(Rew.emb (#6 : Semiterm LAct Empty 13) : SyntacticSemiterm LAct 13)⌝ : ℕ) = ^#6 := by simp [Rew.emb]
+  rw [hv]
+  simp only [SemitermVec.val_cons, SemitermVec.val_nil, e]
+  simp only [quote_emb_cl, quote_emb_canonicalAbs, h6]
+  simp only [← Semiterm.empty_quote_def, quote_revalueUMeta, quote_revalueWMeta]
+  rfl
+
 /-- **The member-slot equation, codes**: the closer's action on a member's stored template is the template
 code of the closed guard. -/
 theorem templateCode_sysClose (defs : PD.ProgList) (φ : PD.Formula) (h : memberGuardF φ = true) :
@@ -367,13 +468,13 @@ theorem templateCode_sysClose (defs : PD.ProgList) (φ : PD.Formula) (h : member
   unfold templateCode
   rw [← template13_sysClose defs φ h, quote_subst_gen, semitermVec_val_vSys13]
 
-/-- **The member-slot equation on the STORED template codes**: the closer's action on a member's stored template
-at budget `k` is the stored template of the closed guard at `k`. -/
+/-- **The member-slot equation on the STORED template codes**: the closer's action AT THE NODE BUDGET `k` on a
+member's stored template is the stored template of the closed guard at `k` (both abstract; Phase 2d). -/
 theorem templateCodeAt_sysClose (defs : PD.ProgList) (φ : PD.Formula) (k : ℕ) (h : memberGuardF φ = true) :
-    sysCloseTemplate (progListCode defs) (templateCodeAt φ k) = templateCodeAt (φ.sysClose defs) k := by
-  rw [sysCloseTemplate_of_template₁₃ (isSemiformula_templateCodeAt13 φ k)]
+    sysCloseTemplateAt (progListCode defs) k (templateCodeAt φ k) = templateCodeAt (φ.sysClose defs) k := by
+  rw [sysCloseTemplateAt_of_template₁₃ (isSemiformula_templateCodeAt13 φ k)]
   unfold templateCodeAt
-  rw [← templateAt_sysClose defs (some k) φ h, quote_subst_gen, semitermVec_val_vSys13]
+  rw [← templateAt_sysClose defs (some k) φ h, quote_subst_gen, semitermVec_val_vSysAt]
 
 /-- **The closer equation on compiled members**: `sysCloseCode` is the engine's `Prog.sysClose` on the code of
 every program whose search guards are member guards. -/

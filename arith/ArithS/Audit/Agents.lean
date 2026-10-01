@@ -3,6 +3,7 @@ import ArithS.Agents.SysClose
 import ArithS.Agents.SysTemplate
 import ArithS.Agents.InstanceV
 import ArithS.Agents.FitBox
+import ArithS.Agents.CodeTermSlot
 import ArithS.Agents.CodeTermAbs
 
 /-!
@@ -95,5 +96,24 @@ namespace ArithS
 #print axioms templateAt_sysClose
 #print axioms templateCodeAt_sysClose
 #print axioms revalueTemplate_templateCodeAt
+
+-- Phase 2d (2026-10-02), decision (α) — the budget abstraction descends into SYSTEMS (`Agents/CodeTermAbs.lean`:
+-- `codeTermMetaAbs_sys`), and the closer takes the node's budget: the code-level description with the budget in a
+-- slot `codeTermAbs k₀ s x` (`Agents/CodeTermSlot.lean`, a Δ₁ fixpoint = `codeTerm`'s with one leaf changed;
+-- `codeTermAbs_binNumeral`: the slot filled with the budget numeral IS `codeTerm`), its code equation
+-- (`quote_emb_codeTermMetaAbs`, every model; `quote_emb_canonicalAbs` on the template's description term), the
+-- closer `sysCloseTemplateAt d k g` (`Agents/Guard.lean`) with its gate lemma, the search clause of `sysCloseCode`,
+-- and THE BRIDGE `guardCodeB_sysCloseTemplateAt`: the sentence a closed member consults is the verbatim closer's —
+-- only the stored numerals shrink. The member equation is literal again, both sides abstract
+-- (`templateAt_sysClose` over `vSysAt k₀`, `templateCodeAt_sysClose`, `progCode_sysClose_member` above).
+#print axioms codeTermAbs_binNumeral
+#print axioms codeTermAbs_semiterm
+#print axioms termSubst_codeTermAbs
+#print axioms quote_emb_codeTermMetaAbs
+#print axioms quote_emb_canonicalAbs
+#print axioms sysCloseTemplateAt_of_template₇
+#print axioms guardCodeB_sysCloseTemplateAt
+#print axioms pBotTerm_canonicalSlot
+#print axioms noSearchAt_progCode
 
 end ArithS

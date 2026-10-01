@@ -20,12 +20,11 @@ import ArithS.Tau.Lint
 Its own lake library root (in `defaultTargets`), like `Outcome/Check.lean`: a command cannot sit in the root
 index. Imports every `Tau/Rows/<Tmpl>.lean` and runs `#check_tau_rowsA` (`Tau/Lint.lean`): every tagged row and
 floor bit is on its template with a name that agrees with its statement, no bit is stated twice, the floor bits
-are exactly `‡` cells of the table. The PLAIN form logs the remaining gaps as info (Phase 3 lands the rows one
-by one); switch to `#check_tau_rowsA strict` once the 14 rows and 47 floor bits are all in (2026-10-01, Phase 3e:
-14 rows, 47 floor bits, 195/196 — ONE bit UNSTATED, `dimcid × ebot`: budget abstraction does not descend into the
-closed system τ(EBot)'s third watch freezes, `Tau/NeverFitsSys.lean`, so the plain form stays). The exporter
+are exactly `‡` cells of the table. STRICT since Phase 3f (2026-10-02): 14 rows, 149 row slots, 47 floor bits,
+196/196 — every coverage gap is a build error (the last bit, `dimcid × ebot`, landed when the budget abstraction
+descended into systems: `Tau/ClosedWatch3.dimcid_ebot_D`). The exporter
 (`Outcome/Export.lean`) imports THIS module, so what it writes to `app/generated/sprime_tau_rows.json` has passed
 the gate.
 -/
 
-#check_tau_rowsA
+#check_tau_rowsA strict

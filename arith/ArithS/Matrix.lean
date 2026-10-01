@@ -58,6 +58,8 @@ import ArithS.Tau.Stored
 import ArithS.Tau.ClosedWatch
 import ArithS.Tau.Watch2
 import ArithS.Tau.ClosedWatch2
+import ArithS.Tau.Watch3
+import ArithS.Tau.ClosedWatch3
 import ArithS.Tau.NeverFitsSys
 import ArithS.Tau.NeverFits
 import ArithS.Tau.Lint

@@ -161,24 +161,6 @@ theorem termSubstVec_gVec13 (k : V) (X : Semiterm LAct Empty 1) (U W : ClosedSem
 
 /-! ### 2. The consulted code of a closed member -/
 
-/-- The member-slot vector is also a vector of thirteen terms of arity SEVEN (the variables `#0..#6`, six closed
-terms) — what `substs_substs` needs to compose it with the frame substitution. -/
-lemma descriptionsSys_semitermVec₇ (d : V) : IsSemitermVec LAct 13 7 (descriptionsSys d) := by
-  have h0 : IsSemiterm LAct 7 (^#0 : V) := IsSemiterm.bvar.mpr (by norm_num)
-  have h1 : IsSemiterm LAct 7 (^#1 : V) := IsSemiterm.bvar.mpr (by norm_num)
-  have h2 : IsSemiterm LAct 7 (^#2 : V) := IsSemiterm.bvar.mpr (by norm_num)
-  have h3 : IsSemiterm LAct 7 (^#3 : V) := IsSemiterm.bvar.mpr (by norm_num)
-  have h4 : IsSemiterm LAct 7 (^#4 : V) := IsSemiterm.bvar.mpr (by norm_num)
-  have h5 : IsSemiterm LAct 7 (^#5 : V) := IsSemiterm.bvar.mpr (by norm_num)
-  have h6 : IsSemiterm LAct 7 (^#6 : V) := IsSemiterm.bvar.mpr (by norm_num)
-  unfold descriptionsSys
-  have := (((((((((((((IsSemitermVec.nil 7).adjoin (revalueW_semiterm 7 (pSys d 1))).adjoin
-    (revalueU_semiterm 7 (pSys d 1))).adjoin (codeTerm_semiterm_LAct 7 (canonical (pSys d 1)))).adjoin
-    (revalueW_semiterm 7 (pSys d 0))).adjoin (revalueU_semiterm 7 (pSys d 0))).adjoin
-    (codeTerm_semiterm_LAct 7 (canonical (pSys d 0)))).adjoin h6).adjoin h5).adjoin h4).adjoin h3).adjoin h2).adjoin
-    h1).adjoin h0
-  rwa [← thirteen_eq] at this
-
 /-- **Substituting the frame descriptions into the member-slot vector gives the full description vector.** -/
 theorem termSubstVec_descriptionsSys (me opp k d : V) :
     termSubstVec LAct 13 (descriptionsB me opp k) (descriptionsSys d) = fullVec me opp k (pSys d 0) (pSys d 1) := by
@@ -499,10 +481,13 @@ lemma listGet_D (S : Sys2) (j : ℕ) (hj : j ≤ 1) (k : V) : listGet (S.D k) (j
     conv_lhs => rw [show (1 : V) = 0 + 1 by simp]
     rw [listGet_cons_succ, listGet_cons_zero]; rfl
 
-/-- The closed member `j`: its stored template closed by the member slots, its branches the constants. -/
+/-- The closed member `j`: its stored template closed by the member slots AT ITS OWN BUDGET (`sysCloseTemplateAt`,
+Phase 2d — the members described with the budget in the slot `#6`), its branches the constants. The sentence it
+consults is the verbatim closer's (`guardCodeB_sysCloseTemplateAt`), which is what `member_then_V`/`member_else_V`
+and every instance equation of this folder are stated on. -/
 lemma sysCloseCode_mem (S : Sys2) (j : ℕ) (k : V) :
     sysCloseCode (S.D k) ((S.mem j).code k) =
-      pSearch k (sysCloseTemplate (S.D k) ((⌜(S.mem j).g⌝ : ℕ) : V)) (pConst ((S.mem j).a : V)) (pConst ((1 - (S.mem j).a : ℕ) : V)) := by
+      pSearch k (sysCloseTemplateAt (S.D k) k ((⌜(S.mem j).g⌝ : ℕ) : V)) (pConst ((S.mem j).a : V)) (pConst ((1 - (S.mem j).a : ℕ) : V)) := by
   unfold SM.code
   rw [sysCloseCode_search, sysCloseCode_const, sysCloseCode_const]
 
@@ -516,7 +501,8 @@ theorem member_then_V (S : Sys2) (j : ℕ) (hj : j ≤ 1) (k me opp : V)
   unfold code
   rw [EvalGraph.sys_iff]
   refine ⟨_, listGet_D S j hj k, ?_⟩
-  rw [sysCloseCode_mem, show (2 : V) = 1 + 1 from one_add_one_eq_two.symm, EvalGraph.search_iff]
+  rw [sysCloseCode_mem, show (2 : V) = 1 + 1 from one_add_one_eq_two.symm, EvalGraph.search_iff,
+    guardCodeB_sysCloseTemplateAt]
   exact Or.inl ⟨h, by rw [show (1 : V) = 0 + 1 by simp, EvalGraph.const_iff]⟩
 
 /-- **The else-clause**: no box, the else-action. -/
@@ -528,7 +514,8 @@ theorem member_else_V (S : Sys2) (j : ℕ) (hj : j ≤ 1) (k me opp : V)
   unfold code
   rw [EvalGraph.sys_iff]
   refine ⟨_, listGet_D S j hj k, ?_⟩
-  rw [sysCloseCode_mem, show (2 : V) = 1 + 1 from one_add_one_eq_two.symm, EvalGraph.search_iff]
+  rw [sysCloseCode_mem, show (2 : V) = 1 + 1 from one_add_one_eq_two.symm, EvalGraph.search_iff,
+    guardCodeB_sysCloseTemplateAt]
   exact Or.inr ⟨h, by rw [show (1 : V) = 0 + 1 by simp, EvalGraph.const_iff]⟩
 
 end Sys2

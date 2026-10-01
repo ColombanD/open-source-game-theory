@@ -432,7 +432,7 @@ theorem simple_member_then_V (s : SM) (d j k me opp : V) (hget : listGet d j = s
   refine ⟨_, hget, ?_⟩
   unfold SM.code
   rw [sysCloseCode_search, sysCloseCode_const, sysCloseCode_const, show (2 : V) = 1 + 1 from one_add_one_eq_two.symm,
-    EvalGraph.search_iff]
+    EvalGraph.search_iff, guardCodeB_sysCloseTemplateAt]
   exact Or.inl ⟨h, by rw [show (1 : V) = 0 + 1 by simp, EvalGraph.const_iff]⟩
 
 namespace Sys2m

@@ -2,6 +2,7 @@ import ArithS.Agents.Prog
 import ArithS.Box.BewV
 import ArithS.Agents.BinNumeral
 import ArithS.Agents.CodeTerm
+import ArithS.Agents.CodeTermSlot
 
 /-!
 # ArithS.Agents.Guard — the runtime guard sentence, on codes
@@ -44,7 +45,15 @@ meta sentence and the code equation are in `ArithS.Agents.Template`.
 of the members of `d` and keeps `#0..#6` free — the engine's `Formula.sysClose` on template codes; a template
 that never reads a member slot is unchanged (`sysCloseTemplate_of_template₇`, `ArithS.Agents.SubstTemplate`).
 
-**Reading guide.** §Definitions holds everything to accept (fourteen short `def`s). §Foundation plumbing
+**The member slots at the node's budget** (Phase 2d, decision (α), 2026-10-02): the closer the evaluator uses
+is `sysCloseTemplateAt d k g`, where `k` is the budget of the search node whose template is being closed: the
+members are described by `codeTermAbs k ^#6` (`ArithS.Agents.CodeTermSlot`) — every `pSearch k …` budget inside
+the system written as the budget slot `#6`, which `guardCodeB` then fills with `binNumeral k`. The CONSULTED
+sentence is the one the verbatim closer gives (`guardCodeB_sysCloseTemplateAt`, `ArithS.Agents.SubstTemplate`);
+only the stored numerals shrink, so a closed member's stored template is a constant in `k` (Critch's (b)).
+`descriptionsSys`/`sysCloseTemplate` (verbatim) stay as the reading the bridge refers to.
+
+**Reading guide.** §Definitions holds everything to accept (seventeen short `def`s). §Foundation plumbing
 is the Σ₁ graph of each and its `defined` instance — skip on first reading. At ℕ: `guard_nat` (`ArithS.Readings`).
 -/
 
@@ -129,6 +138,32 @@ template (`sysCloseFill`); every other code is fixed. On a six- or seven-variabl
 identity (`sysCloseTemplate_of_template₇`). -/
 noncomputable def sysCloseTemplate (d g : V) : V :=
   if IsSemiformula LAct 13 g then sysCloseFill d g else g
+
+/-! ### The member slots at the node's budget (Phase 2d, 2026-10-02): `sysCloseTemplateAt`
+
+The closer the evaluator's `pSys` clause uses (`sysCloseCode`, `ArithS.Agents.SysClose`): the member triples are
+built from the ABSTRACTED description `codeTermAbs k ^#6 (canonical (pSys d j))` — the budget `k` of the node
+whose stored template is being closed is written as the budget slot `#6`, kept free with `#0..#5`; the
+re-valuation constants are unchanged. Filling `#6` with `binNumeral k` recovers `descriptionsSys d`
+(`codeTermAbs_binNumeral`), hence the bridge `guardCodeB_sysCloseTemplateAt`. -/
+
+/-- The member-slot vector at the node budget `k`: `^#0 … ^#6` kept, then the description triples of members
+`0` and `1` with the budget `k` abstracted into the slot `^#6`. -/
+noncomputable def descriptionsSysAt (d k : V) : V :=
+  ^#0 ∷ ^#1 ∷ ^#2 ∷ ^#3 ∷ ^#4 ∷ ^#5 ∷ ^#6 ∷
+  codeTermAbs k (^#6) (canonical (pSys d 0)) ∷ revalueU (pSys d 0) ∷ revalueW (pSys d 0) ∷
+  codeTermAbs k (^#6) (canonical (pSys d 1)) ∷ revalueU (pSys d 1) ∷ revalueW (pSys d 1) ∷ 0
+
+/-- Fill the member slots `#7..#12` of `g` with the descriptions of the members of `d` at the node budget `k`. -/
+noncomputable def sysCloseFillAt (d k g : V) : V := subst LAct (descriptionsSysAt d k) g
+
+open scoped Classical in
+/-- **The closer of a stored template, at the node budget `k`**: fill the member slots of a thirteen-variable
+template with the members' descriptions, the budget `k` abstracted into the slot `#6` (`sysCloseFillAt`); every
+other code is fixed. On a six- or seven-variable template this is the identity
+(`sysCloseTemplateAt_of_template₇`). -/
+noncomputable def sysCloseTemplateAt (d k g : V) : V :=
+  if IsSemiformula LAct 13 g then sysCloseFillAt d k g else g
 
 /-! ### Foundation plumbing — the Σ₁ graphs and the `defined` instances, skip on first reading -/
 
@@ -277,5 +312,34 @@ instance sysCloseTemplate.defined : 𝚺₁-Function₂ (sysCloseTemplate : V �
     (IsSemiformula.defined (L := LAct) (V := V)).proper.iff',
     (IsSemiformula.defined (L := LAct) (V := V)).df, sysCloseFill.defined.df, numeral_eq_natCast]
   by_cases h : IsSemiformula LAct 13 (v 2) <;> simp [h, sysCloseTemplate]
+
+noncomputable def descriptionsSysAtGraph : 𝚺₁.Semisentence 3 := .mkSigma
+  “y d k. ∃ s0, !pSysGraph s0 d 0 ∧ ∃ s1, !pSysGraph s1 d 1 ∧
+    ∃ b0, !qqBvarDef b0 0 ∧ ∃ b1, !qqBvarDef b1 1 ∧ ∃ b2, !qqBvarDef b2 2 ∧ ∃ b3, !qqBvarDef b3 3 ∧
+    ∃ b4, !qqBvarDef b4 4 ∧ ∃ b5, !qqBvarDef b5 5 ∧ ∃ b6, !qqBvarDef b6 6 ∧
+    ∃ n₀, !canonicalGraph n₀ s0 ∧ ∃ t₀, !codeTermAbsDef t₀ k b6 n₀ ∧ ∃ u₀, !revalueUGraph u₀ s0 ∧ ∃ w₀, !revalueWGraph w₀ s0 ∧
+    ∃ n₁, !canonicalGraph n₁ s1 ∧ ∃ t₁, !codeTermAbsDef t₁ k b6 n₁ ∧ ∃ u₁, !revalueUGraph u₁ s1 ∧ ∃ w₁, !revalueWGraph w₁ s1 ∧
+    ∃ v₁₂, !adjoinDef v₁₂ w₁ 0 ∧ ∃ v₁₁, !adjoinDef v₁₁ u₁ v₁₂ ∧ ∃ v₁₀, !adjoinDef v₁₀ t₁ v₁₁ ∧
+    ∃ v₉, !adjoinDef v₉ w₀ v₁₀ ∧ ∃ v₈, !adjoinDef v₈ u₀ v₉ ∧ ∃ v₇, !adjoinDef v₇ t₀ v₈ ∧
+    ∃ v₆, !adjoinDef v₆ b6 v₇ ∧ ∃ v₅, !adjoinDef v₅ b5 v₆ ∧ ∃ v₄, !adjoinDef v₄ b4 v₅ ∧
+    ∃ v₃, !adjoinDef v₃ b3 v₄ ∧ ∃ v₂, !adjoinDef v₂ b2 v₃ ∧ ∃ v₁, !adjoinDef v₁ b1 v₂ ∧ !adjoinDef y b0 v₁”
+
+instance descriptionsSysAt.defined : 𝚺₁-Function₂ (descriptionsSysAt : V → V → V) via descriptionsSysAtGraph := .mk fun v ↦ by
+  simp [descriptionsSysAtGraph, descriptionsSysAt, codeTermAbs_defined.df, numeral_eq_natCast]
+
+noncomputable def sysCloseFillAtGraph : 𝚺₁.Semisentence 4 := .mkSigma
+  “y d k g. ∃ w, !descriptionsSysAtGraph w d k ∧ !(substsGraph LAct) y w g”
+
+instance sysCloseFillAt.defined : 𝚺₁-Function₃ (sysCloseFillAt : V → V → V → V) via sysCloseFillAtGraph :=
+  .mk fun v ↦ by simp [sysCloseFillAtGraph, sysCloseFillAt, descriptionsSysAt.defined.df]
+
+noncomputable def sysCloseTemplateAtGraph : 𝚺₁.Semisentence 4 := .mkSigma
+  “y d k g. (!(isSemiformula LAct).sigma 13 g ∧ !sysCloseFillAtGraph y d k g) ∨ (¬!(isSemiformula LAct).pi 13 g ∧ y = g)”
+
+instance sysCloseTemplateAt.defined : 𝚺₁-Function₃ (sysCloseTemplateAt : V → V → V → V) via sysCloseTemplateAtGraph := .mk fun v ↦ by
+  simp [sysCloseTemplateAtGraph, HierarchySymbol.Semiformula.val_sigma,
+    (IsSemiformula.defined (L := LAct) (V := V)).proper.iff',
+    (IsSemiformula.defined (L := LAct) (V := V)).df, sysCloseFillAt.defined.df, numeral_eq_natCast]
+  by_cases h : IsSemiformula LAct 13 (v 3) <;> simp [h, sysCloseTemplateAt]
 
 end ArithS

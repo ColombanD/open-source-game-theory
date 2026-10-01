@@ -14,10 +14,11 @@ so DIMCID's self-fulfilling family (`Tau/ClosedWatch.dimcid_closed_found`) appli
   the values of its abstracted description (`absVal`) and of its tower at ℕ;
 * `dimcid_obot_D` — the bit (D, the `S'` flip of the engine's C).
 
-`dimcid × ebot` is NOT of this class: τ(EBot)'s instance seeing DIMCID has a third watch over DIMCID's instance
-at the MIRROR, the closed system `.sys [dim 1, mm 0] 0`, and `codeTermMetaAbs` does not descend into a system
-(`Agents/CodeTermAbs.codeTermMetaAbs_sys`, by design — the member-slot equation); the stored template of DIMCID's
-instance at τ(EBot) therefore still writes `binNumeral k` and is not a constant. See `Rows/DIMCID.lean`.
+`dimcid × ebot` is the same argument one stage deeper, in `Tau/ClosedWatch3.lean`: τ(EBot)'s instance seeing
+DIMCID has a third watch over DIMCID's instance at the MIRROR, the closed system `.sys [dim 1, mm 0] 0`. Until
+Phase 2d `codeTermMetaAbs` did not descend into a system and the stored template of DIMCID's instance at τ(EBot)
+still wrote `binNumeral k`; it does now (`Agents/CodeTermAbs.codeTermMetaAbs_sys`), and the watch contains a
+`.sys`, outside `fragP` — hence the fragment-free `dimcid_D_of_towers'` there.
 -/
 
 set_option linter.constructorNameAsVariable false

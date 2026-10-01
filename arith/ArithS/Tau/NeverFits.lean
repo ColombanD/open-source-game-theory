@@ -51,8 +51,9 @@ theorems about the explicit code `pBot (pSearch k' (templateCode φ) p q)` (the 
 code-level sentence `sentenceAtC`; the two tau-slot corollaries carry the hypothesis `instCode k A T = pSearch k
 (templateCode …) …`, which no compiled instance satisfies any more (the slots they decided — `cimcic × tftSim`,
 `dimcid × {tftSim, obot, dbot, cupodTroll}` — are re-proved with the table's values in Phase 3e,
-`Tau/ClosedWatch.lean`/`Tau/ClosedWatch2.lean`; `dimcid × ebot` is NOT: τ(EBot)'s instance freezes a closed SYSTEM,
-which budget abstraction does not enter, and the obstruction survives one level down — `Tau/NeverFitsSys.lean`).
+`Tau/ClosedWatch.lean`/`Tau/ClosedWatch2.lean`; `dimcid × ebot` — τ(EBot)'s instance freezes a closed SYSTEM,
+which Phase 2c's abstraction did not enter — in Phase 3f, `Tau/ClosedWatch3.lean`, once the abstraction descended
+into systems; `Tau/NeverFitsSys.lean` keeps the system case of this obstruction on the unabstracted template).
 -/
 
 set_option linter.constructorNameAsVariable false

@@ -454,6 +454,283 @@ lemma isSemiformula_sysCloseTemplate {g : V} (hg : IsSemiformula LAct 13 g) (d :
     IsSemiformula LAct 13 (sysCloseTemplate d g) := by
   rw [sysCloseTemplate_of_template₁₃ hg]; exact hg.subst (descriptionsSys_semitermVec d)
 
+/-! ### The member slots at the node's budget (Phase 2d): gate lemmas and THE BRIDGE
+
+`sysCloseTemplateAt d k g` (`ArithS.Agents.Guard`) fills the member slots with the descriptions of the members
+of `d`, the node budget `k` abstracted into the slot `#6` (`codeTermAbs k ^#6`). Its gate lemmas are those of
+`sysCloseTemplate`; the bridge `guardCodeB_sysCloseTemplateAt` says the sentence the evaluator CONSULTS for a
+closed member is the one the verbatim closer gives — the system twin of `guardCodeB_templateCodeAt`
+(`ArithS.Agents.Code`): `guardCodeB` fills `#6` with `binNumeral k`, and `codeTermAbs k (binNumeral k) = codeTerm`. -/
+
+section slot
+
+lemma isFunc_LAct_add : LAct.IsFunc 2 (addIndex : V) := isFunc_LAct_of_LOR LOR_func_addIndex
+lemma isFunc_LAct_mul : LAct.IsFunc 2 (mulIndex : V) := isFunc_LAct_of_LOR LOR_func_mulIndex
+
+lemma qqAdd_uterm_LAct {s t : V} (hs : IsUTerm LAct s) (ht : IsUTerm LAct t) : IsUTerm LAct (s ^+ t) := by
+  unfold qqAdd; exact IsUTerm.func isFunc_LAct_add (by simp [hs, ht])
+lemma qqMul_uterm_LAct {s t : V} (hs : IsUTerm LAct s) (ht : IsUTerm LAct t) : IsUTerm LAct (s ^* t) := by
+  unfold qqMul; exact IsUTerm.func isFunc_LAct_mul (by simp [hs, ht])
+lemma ppairTerm_uterm_LAct {s t : V} (hs : IsUTerm LAct s) (ht : IsUTerm LAct t) : IsUTerm LAct (ppairTerm s t) :=
+  qqAdd_uterm_LAct (qqMul_uterm_LAct (qqAdd_uterm_LAct hs ht) (qqAdd_uterm_LAct hs ht)) ht
+
+lemma termSubst_qqAdd (w : V) {s t : V} (hs : IsUTerm LAct s) (ht : IsUTerm LAct t) :
+    termSubst LAct w (s ^+ t) = termSubst LAct w s ^+ termSubst LAct w t := by
+  unfold qqAdd
+  rw [termSubst_func isFunc_LAct_add (by simp [hs, ht]), termSubstVec_cons₂ hs ht]
+
+lemma termSubst_qqMul (w : V) {s t : V} (hs : IsUTerm LAct s) (ht : IsUTerm LAct t) :
+    termSubst LAct w (s ^* t) = termSubst LAct w s ^* termSubst LAct w t := by
+  unfold qqMul
+  rw [termSubst_func isFunc_LAct_mul (by simp [hs, ht]), termSubstVec_cons₂ hs ht]
+
+lemma termSubst_ppairTerm (w : V) {s t : V} (hs : IsUTerm LAct s) (ht : IsUTerm LAct t) :
+    termSubst LAct w (ppairTerm s t) = ppairTerm (termSubst LAct w s) (termSubst LAct w t) := by
+  unfold ppairTerm
+  rw [termSubst_qqAdd w (qqMul_uterm_LAct (qqAdd_uterm_LAct hs ht) (qqAdd_uterm_LAct hs ht)) ht,
+    termSubst_qqMul w (qqAdd_uterm_LAct hs ht) (qqAdd_uterm_LAct hs ht), termSubst_qqAdd w hs ht]
+
+/-- A closed term code is fixed by every substitution. -/
+lemma termSubst_closed (w : V) {t : V} (ht : IsSemiterm LAct 0 t) : termSubst LAct w t = t :=
+  termSubst_eq_self ht (fun i hi ↦ absurd hi (by simp))
+
+lemma one_uterm_LAct : IsUTerm LAct (𝟏 : V) := (IsSemiterm.LAct_of_LOR (one_semiterm (n := 0))).isUTerm
+
+/-- Substitution through the shape `ppairTerm a b ^+ 𝟏` every description clause has. -/
+lemma termSubst_succ_ppairTerm (w : V) {a b : V} (ha : IsUTerm LAct a) (hb : IsUTerm LAct b) :
+    termSubst LAct w (ppairTerm a b ^+ (𝟏 : V)) = ppairTerm (termSubst LAct w a) (termSubst LAct w b) ^+ (𝟏 : V) := by
+  rw [termSubst_qqAdd w (ppairTerm_uterm_LAct ha hb) one_uterm_LAct, termSubst_ppairTerm w ha hb,
+    termSubst_closed w (IsSemiterm.LAct_of_LOR one_semiterm)]
+
+lemma codeTermAbs_semiterm_LAct {n k₀ s : V} (hs : IsSemiterm ℒₒᵣ n s) (x : V) :
+    IsSemiterm LAct n (codeTermAbs k₀ s x) :=
+  IsSemiterm.LAct_of_LOR (codeTermAbs_semiterm hs x)
+
+lemma termSubst_budgetLeaf (w k₀ s k : V) :
+    termSubst LAct w (budgetLeaf k₀ s k) = budgetLeaf k₀ (termSubst LAct w s) k := by
+  unfold budgetLeaf
+  split_ifs
+  · rfl
+  · exact termSubst_closed w (binNumeral_semiterm_LAct 0 k)
+
+/-- **Substitution commutes with the abstracted description**: everything but the slot is closed, so a
+substitution acts on the slot term only. -/
+theorem termSubst_codeTermAbs (w : V) {n s : V} (hs : IsSemiterm ℒₒᵣ n s) (k₀ x : V) :
+    termSubst LAct w (codeTermAbs k₀ s x) = codeTermAbs k₀ (termSubst LAct w s) x := by
+  induction x using ISigma1.pi1_order_induction with
+  | hP => definability
+  | ind x ih =>
+    have hb : ∀ a : V, IsUTerm LAct (binNumeral a) := fun a ↦ (binNumeral_semiterm_LAct 0 a).isUTerm
+    have hbc : ∀ a : V, termSubst LAct w (binNumeral a) = binNumeral a :=
+      fun a ↦ termSubst_closed w (binNumeral_semiterm_LAct 0 a)
+    have hc : ∀ y : V, IsUTerm LAct (codeTermAbs k₀ s y) := fun y ↦ (codeTermAbs_semiterm_LAct hs y).isUTerm
+    have hpp : ∀ {a c : V}, IsUTerm LAct a → IsUTerm LAct c → IsUTerm LAct (ppairTerm a c) :=
+      fun ha hc ↦ ppairTerm_uterm_LAct ha hc
+    by_cases hx : IsShape x
+    · rcases hx with ⟨a, rfl⟩ | rfl | rfl | ⟨p, rfl⟩ | ⟨p, q, rfl⟩ | ⟨b, a, p, q, rfl⟩ | ⟨k', g, p, q, rfl⟩ |
+        ⟨v, θ, p, q, rfl⟩ | ⟨d, i, rfl⟩ | ⟨j, rfl⟩ | ⟨e, r, rfl⟩
+      · rw [codeTermAbs_const, codeTermAbs_const, termSubst_succ_ppairTerm w (hb _) (hb _), hbc, hbc]
+      · rw [codeTermAbs_self, codeTermAbs_self, termSubst_succ_ppairTerm w (hb _) (hb _), hbc, hbc]
+      · rw [codeTermAbs_opp, codeTermAbs_opp, termSubst_succ_ppairTerm w (hb _) (hb _), hbc, hbc]
+      · rw [codeTermAbs_bot, codeTermAbs_bot, termSubst_succ_ppairTerm w (hb _) (hc _), hbc, ih p (by simp)]
+      · rw [codeTermAbs_sim, codeTermAbs_sim, termSubst_succ_ppairTerm w (hb _) (hpp (hc _) (hc _)),
+          termSubst_ppairTerm w (hc _) (hc _), hbc, ih p (by simp), ih q (by simp)]
+      · rw [codeTermAbs_ite, codeTermAbs_ite,
+          termSubst_succ_ppairTerm w (hb _) (hpp (hc _) (hpp (hb _) (hpp (hc _) (hc _)))),
+          termSubst_ppairTerm w (hc _) (hpp (hb _) (hpp (hc _) (hc _))),
+          termSubst_ppairTerm w (hb _) (hpp (hc _) (hc _)), termSubst_ppairTerm w (hc _) (hc _), hbc, hbc,
+          ih b (by simp), ih p (by simp), ih q (by simp)]
+      · have hl : IsUTerm LAct (budgetLeaf k₀ s k') := by
+          unfold budgetLeaf; split_ifs
+          · exact (IsSemiterm.LAct_of_LOR hs).isUTerm
+          · exact hb _
+        rw [codeTermAbs_search, codeTermAbs_search,
+          termSubst_succ_ppairTerm w (hb _) (hpp hl (hpp (hb _) (hpp (hc _) (hc _)))),
+          termSubst_ppairTerm w hl (hpp (hb _) (hpp (hc _) (hc _))),
+          termSubst_ppairTerm w (hb _) (hpp (hc _) (hc _)), termSubst_ppairTerm w (hc _) (hc _), hbc, hbc,
+          termSubst_budgetLeaf, ih p (by simp), ih q (by simp)]
+      · rw [codeTermAbs_tvote, codeTermAbs_tvote,
+          termSubst_succ_ppairTerm w (hb _) (hpp (hc _) (hpp (hb _) (hpp (hc _) (hc _)))),
+          termSubst_ppairTerm w (hc _) (hpp (hb _) (hpp (hc _) (hc _))),
+          termSubst_ppairTerm w (hb _) (hpp (hc _) (hc _)), termSubst_ppairTerm w (hc _) (hc _), hbc, hbc,
+          ih v (by simp), ih p (by simp), ih q (by simp)]
+      · rw [codeTermAbs_sys, codeTermAbs_sys, termSubst_succ_ppairTerm w (hb _) (hpp (hc _) (hb _)),
+          termSubst_ppairTerm w (hc _) (hb _), hbc, hbc, ih d (by simp)]
+      · rw [codeTermAbs_selfIdx, codeTermAbs_selfIdx, termSubst_succ_ppairTerm w (hb _) (hb _), hbc, hbc]
+      · rw [codeTermAbs_cons, codeTermAbs_cons, termSubst_succ_ppairTerm w (hb _) (hpp (hc _) (hc _)),
+          termSubst_ppairTerm w (hc _) (hc _), hbc, ih e (by simp), ih r (by simp)]
+    · rw [codeTermAbs_of_not_shape hx, codeTermAbs_of_not_shape hx, hbc]
+
+lemma bvar_six_semiterm_LOR {n : V} (hn : 7 ≤ n) : IsSemiterm ℒₒᵣ n (^#6 : V) :=
+  IsSemiterm.bvar.mpr (lt_of_lt_of_le (by norm_num) hn)
+
+/-- **Filling the budget slot of an abstracted member description recovers the verbatim description.** -/
+theorem termSubst_descriptionsB_codeTermAbs (me opp k c : V) :
+    termSubst LAct (descriptionsB me opp k) (codeTermAbs k (^#6) c) = codeTerm c := by
+  rw [termSubst_codeTermAbs _ (bvar_six_semiterm_LOR (le_refl 7)), termSubst_bvar, nth_descriptionsB_budget,
+    codeTermAbs_binNumeral]
+
+/-- The member-slot vector at the node budget is a vector of thirteen terms of arity `n ≥ 7` (the variables
+`#0..#6`, four closed terms, two terms in `#6`). -/
+lemma descriptionsSysAt_semitermVec {n : V} (hn : 7 ≤ n) (d k : V) : IsSemitermVec LAct 13 n (descriptionsSysAt d k) := by
+  have h0 : IsSemiterm LAct n (^#0 : V) := IsSemiterm.bvar.mpr (lt_of_lt_of_le (by norm_num) hn)
+  have h1 : IsSemiterm LAct n (^#1 : V) := IsSemiterm.bvar.mpr (lt_of_lt_of_le (by norm_num) hn)
+  have h2 : IsSemiterm LAct n (^#2 : V) := IsSemiterm.bvar.mpr (lt_of_lt_of_le (by norm_num) hn)
+  have h3 : IsSemiterm LAct n (^#3 : V) := IsSemiterm.bvar.mpr (lt_of_lt_of_le (by norm_num) hn)
+  have h4 : IsSemiterm LAct n (^#4 : V) := IsSemiterm.bvar.mpr (lt_of_lt_of_le (by norm_num) hn)
+  have h5 : IsSemiterm LAct n (^#5 : V) := IsSemiterm.bvar.mpr (lt_of_lt_of_le (by norm_num) hn)
+  have h6 : IsSemiterm LAct n (^#6 : V) := IsSemiterm.bvar.mpr (lt_of_lt_of_le (by norm_num) hn)
+  have hs := bvar_six_semiterm_LOR (V := V) hn
+  unfold descriptionsSysAt
+  have := (((((((((((((IsSemitermVec.nil n).adjoin (revalueW_semiterm n (pSys d 1))).adjoin
+    (revalueU_semiterm n (pSys d 1))).adjoin (codeTermAbs_semiterm_LAct (k₀ := k) hs (canonical (pSys d 1)))).adjoin
+    (revalueW_semiterm n (pSys d 0))).adjoin (revalueU_semiterm n (pSys d 0))).adjoin
+    (codeTermAbs_semiterm_LAct (k₀ := k) hs (canonical (pSys d 0)))).adjoin h6).adjoin h5).adjoin h4).adjoin h3).adjoin h2).adjoin
+    h1).adjoin h0
+  rwa [← thirteen_eq] at this
+
+lemma len_descriptionsSysAt (d k : V) : len (descriptionsSysAt d k) = 13 :=
+  (descriptionsSysAt_semitermVec (le_refl 7) d k).lh
+
+lemma descriptionsSysAt_utermVec (d k : V) : IsUTermVec LAct (len (descriptionsSysAt d k)) (descriptionsSysAt d k) := by
+  rw [len_descriptionsSysAt]; exact (descriptionsSysAt_semitermVec (le_refl 7) d k).isUTerm
+
+/-- The first seven entries of the member-slot vector at the node budget are the variables themselves. -/
+lemma nth_descriptionsSysAt (d k : V) : ∀ i < (7 : V), (descriptionsSysAt d k).[i] = ^#i := by
+  intro i hi
+  unfold descriptionsSysAt
+  rcases zero_or_succ i with rfl | ⟨i, rfl⟩
+  · simp
+  rw [nth_adjoin_succ]
+  rcases zero_or_succ i with rfl | ⟨i, rfl⟩
+  · simp
+  rw [nth_adjoin_succ]
+  rcases zero_or_succ i with rfl | ⟨i, rfl⟩
+  · simp; norm_num
+  rw [nth_adjoin_succ]
+  rcases zero_or_succ i with rfl | ⟨i, rfl⟩
+  · simp; norm_num
+  rw [nth_adjoin_succ]
+  rcases zero_or_succ i with rfl | ⟨i, rfl⟩
+  · simp; norm_num
+  rw [nth_adjoin_succ]
+  rcases zero_or_succ i with rfl | ⟨i, rfl⟩
+  · simp; norm_num
+  rw [nth_adjoin_succ]
+  rcases zero_or_succ i with rfl | ⟨i, rfl⟩
+  · simp; norm_num
+  exfalso
+  have e7 : i + 1 + 1 + 1 + 1 + 1 + 1 + 1 = i + 7 := by ring
+  rw [e7] at hi
+  exact absurd hi (not_lt.mpr le_add_self)
+
+lemma sysCloseTemplateAt_of_template₁₃ {g : V} (hg : IsSemiformula LAct 13 g) (d k : V) :
+    sysCloseTemplateAt d k g = subst LAct (descriptionsSysAt d k) g := by
+  unfold sysCloseTemplateAt; rw [if_pos hg]; rfl
+
+lemma sysCloseTemplateAt_of_not {g : V} (hg : ¬IsSemiformula LAct 13 g) (d k : V) : sysCloseTemplateAt d k g = g := by
+  unfold sysCloseTemplateAt; rw [if_neg hg]
+
+/-- **The gate lemma of the member slots, at the node budget**: a seven-variable template never reads a member
+slot, so `sysCloseTemplateAt` is the identity on every template of the compiled zoo that names no pronoun. -/
+theorem sysCloseTemplateAt_of_template₇ {g : V} (hg : IsSemiformula LAct 7 g) (d k : V) : sysCloseTemplateAt d k g = g := by
+  rw [sysCloseTemplateAt_of_template₁₃ (isSemiformula_of_le hg (by norm_num))]
+  exact subst_eq_self_of_le hg (descriptionsSysAt_utermVec d k) (by rw [len_descriptionsSysAt]; norm_num)
+    (nth_descriptionsSysAt d k)
+
+theorem sysCloseTemplateAt_of_template {g : V} (hg : IsSemiformula LAct 6 g) (d k : V) : sysCloseTemplateAt d k g = g :=
+  sysCloseTemplateAt_of_template₇ (isSemiformula_seven_of_six hg) d k
+
+/-- Filling the member slots at the node budget gives a SEVEN-variable formula (`#0..#6` free). -/
+lemma isSemiformula_sysCloseTemplateAt₇ {g : V} (hg : IsSemiformula LAct 13 g) (d k : V) :
+    IsSemiformula LAct 7 (sysCloseTemplateAt d k g) := by
+  rw [sysCloseTemplateAt_of_template₁₃ hg]; exact hg.subst (descriptionsSysAt_semitermVec (le_refl 7) d k)
+
+lemma isSemiformula_sysCloseTemplateAt {g : V} (hg : IsSemiformula LAct 13 g) (d k : V) :
+    IsSemiformula LAct 13 (sysCloseTemplateAt d k g) :=
+  isSemiformula_of_le (isSemiformula_sysCloseTemplateAt₇ hg d k) (by norm_num)
+
+/-- The verbatim member-slot vector is also a vector of thirteen terms of arity SEVEN (the variables `#0..#6`,
+six closed terms) — what `substs_substs` needs to compose it with the frame substitution. -/
+lemma descriptionsSys_semitermVec₇ (d : V) : IsSemitermVec LAct 13 7 (descriptionsSys d) := by
+  have h0 : IsSemiterm LAct 7 (^#0 : V) := IsSemiterm.bvar.mpr (by norm_num)
+  have h1 : IsSemiterm LAct 7 (^#1 : V) := IsSemiterm.bvar.mpr (by norm_num)
+  have h2 : IsSemiterm LAct 7 (^#2 : V) := IsSemiterm.bvar.mpr (by norm_num)
+  have h3 : IsSemiterm LAct 7 (^#3 : V) := IsSemiterm.bvar.mpr (by norm_num)
+  have h4 : IsSemiterm LAct 7 (^#4 : V) := IsSemiterm.bvar.mpr (by norm_num)
+  have h5 : IsSemiterm LAct 7 (^#5 : V) := IsSemiterm.bvar.mpr (by norm_num)
+  have h6 : IsSemiterm LAct 7 (^#6 : V) := IsSemiterm.bvar.mpr (by norm_num)
+  unfold descriptionsSys
+  have := (((((((((((((IsSemitermVec.nil 7).adjoin (revalueW_semiterm 7 (pSys d 1))).adjoin
+    (revalueU_semiterm 7 (pSys d 1))).adjoin (codeTerm_semiterm_LAct 7 (canonical (pSys d 1)))).adjoin
+    (revalueW_semiterm 7 (pSys d 0))).adjoin (revalueU_semiterm 7 (pSys d 0))).adjoin
+    (codeTerm_semiterm_LAct 7 (canonical (pSys d 0)))).adjoin h6).adjoin h5).adjoin h4).adjoin h3).adjoin h2).adjoin
+    h1).adjoin h0
+  rwa [← thirteen_eq] at this
+
+/-- **The two member-slot vectors agree once the frame fills the budget slot**: composing `descriptionsB me opp k`
+with the abstracted vector at `k` is composing it with the verbatim vector. -/
+theorem termSubstVec_descriptionsB_descriptionsSysAt (me opp k d : V) :
+    termSubstVec LAct 13 (descriptionsB me opp k) (descriptionsSysAt d k) =
+      termSubstVec LAct 13 (descriptionsB me opp k) (descriptionsSys d) := by
+  have b : ∀ i : V, IsUTerm LAct (^#i : V) := fun i ↦ (IsSemiterm.bvar.mpr (lt_add_one i) : IsSemiterm LAct (i + 1) (^#i)).isUTerm
+  have c : ∀ x : V, IsUTerm LAct (codeTerm x) := fun x ↦ (codeTerm_semiterm_LAct 0 x).isUTerm
+  have ca : ∀ x : V, IsUTerm LAct (codeTermAbs k (^#6) x) :=
+    fun x ↦ (codeTermAbs_semiterm_LAct (bvar_six_semiterm_LOR (le_refl 7)) x).isUTerm
+  have ru : ∀ x : V, IsUTerm LAct (revalueU x) := fun x ↦ (revalueU_semiterm 0 x).isUTerm
+  have rw' : ∀ x : V, IsUTerm LAct (revalueW x) := fun x ↦ (revalueW_semiterm 0 x).isUTerm
+  have e0 : IsUTermVec LAct 0 (0 : V) := IsUTermVec.empty
+  have e1 := e0.adjoin (rw' (pSys d 1))
+  have e2 := e1.adjoin (ru (pSys d 1))
+  have e3 := e2.adjoin (c (canonical (pSys d 1)))
+  have e4 := e3.adjoin (rw' (pSys d 0))
+  have e5 := e4.adjoin (ru (pSys d 0))
+  have e6 := e5.adjoin (c (canonical (pSys d 0)))
+  have e7 := e6.adjoin (b 6)
+  have e8 := e7.adjoin (b 5)
+  have e9 := e8.adjoin (b 4)
+  have e10 := e9.adjoin (b 3)
+  have e11 := e10.adjoin (b 2)
+  have e12 := e11.adjoin (b 1)
+  have a3 := e2.adjoin (ca (canonical (pSys d 1)))
+  have a4 := a3.adjoin (rw' (pSys d 0))
+  have a5 := a4.adjoin (ru (pSys d 0))
+  have a6 := a5.adjoin (ca (canonical (pSys d 0)))
+  have a7 := a6.adjoin (b 6)
+  have a8 := a7.adjoin (b 5)
+  have a9 := a8.adjoin (b 4)
+  have a10 := a9.adjoin (b 3)
+  have a11 := a10.adjoin (b 2)
+  have a12 := a11.adjoin (b 1)
+  unfold descriptionsSysAt descriptionsSys
+  rw [thirteen_eq, termSubstVec_cons (b 0) a12, termSubstVec_cons (b 1) a11, termSubstVec_cons (b 2) a10,
+    termSubstVec_cons (b 3) a9, termSubstVec_cons (b 4) a8, termSubstVec_cons (b 5) a7, termSubstVec_cons (b 6) a6,
+    termSubstVec_cons (ca _) a5, termSubstVec_cons (ru _) a4, termSubstVec_cons (rw' _) a3,
+    termSubstVec_cons (ca _) e2,
+    termSubstVec_cons (b 0) e12, termSubstVec_cons (b 1) e11, termSubstVec_cons (b 2) e10,
+    termSubstVec_cons (b 3) e9, termSubstVec_cons (b 4) e8, termSubstVec_cons (b 5) e7, termSubstVec_cons (b 6) e6,
+    termSubstVec_cons (c _) e5, termSubstVec_cons (ru _) e4, termSubstVec_cons (rw' _) e3,
+    termSubstVec_cons (c _) e2,
+    termSubst_descriptionsB_codeTermAbs, termSubst_descriptionsB_codeTermAbs,
+    termSubst_closed _ (codeTerm_semiterm_LAct 0 (canonical (pSys d 0))),
+    termSubst_closed _ (codeTerm_semiterm_LAct 0 (canonical (pSys d 1)))]
+
+/-- **THE BRIDGE (Phase 2d)**: the sentence the evaluator consults for a closed member — its stored template
+closed at the node budget, then filled by the frame — is the one the verbatim closer gives. Only the stored
+numerals shrink. The system twin of `guardCodeB_templateCodeAt`; unconditional (on a code that is not a
+thirteen-variable template both closers are the identity). -/
+theorem guardCodeB_sysCloseTemplateAt (d k g me opp : V) :
+    guardCodeB (sysCloseTemplateAt d k g) me opp k = guardCodeB (sysCloseTemplate d g) me opp k := by
+  by_cases hg : IsSemiformula LAct 13 g
+  · rw [sysCloseTemplateAt_of_template₁₃ hg, sysCloseTemplate_of_template₁₃ hg]
+    unfold guardCodeB
+    rw [substs_substs hg (descriptionsB_semitermVec me opp k) (descriptionsSysAt_semitermVec (le_refl 7) d k),
+      substs_substs hg (descriptionsB_semitermVec me opp k) (descriptionsSys_semitermVec₇ d),
+      termSubstVec_descriptionsB_descriptionsSysAt]
+  · rw [sysCloseTemplateAt_of_not hg, sysCloseTemplate_of_not hg]
+
+end slot
+
 /-! ### `substTemplate`: instantiate a template with the outer descriptions -/
 
 open scoped Classical in

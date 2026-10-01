@@ -199,7 +199,10 @@ CodeTerm/Guard slots/SubstTemplate → Code → RedCellUnsound arms → full bui
    the six tau images of the red cell, floors in `S'` on a base THEOREM, see the 2026-10-01 line below),
    0 missing. Natives are Dupoc's row (clones) and Dupoc-twins as hypotheses. (The 2026-09-30 derivation
    read 142 / 13 / 41; Phases 3b–3d moved `cimcic × tftSim` to the flips and the six red-cell images to the
-   floors — the table below is the CURRENT oracle, as of the Phase-3d merge.)
+   floors — the table below is the CURRENT oracle, as of the Phase-3d merge. *2026-10-02, Phase 3f:* FINAL —
+   196 = **136 agree + 13 FLIP + 47 floor bits**, every bit a theorem or a dichotomy bit of the kernel; the 13 flips
+   are all DIMCID's (its row but `defect cupod dimcid`, and `tftSim × dimcid`, `ebot × dimcid`); `cimcic × tftSim` is
+   `C` again since Phase 3e (the `D≠C` the 3d table showed was the pre-abstraction coding's artefact).)
 
    | A \ T | coop | defect | tftSim | dupoc | ebot | obot | dbot | cupodTroll | cupod | dimcid | cimcic | prudent | maxconf | minconf |
    |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -213,7 +216,7 @@ CodeTerm/Guard slots/SubstTemplate → Code → RedCellUnsound arms → full bui
    | cupodTroll | C | C | C | C‡ | C | C | C | C | D | C | C‡ | C | C‡ | C‡ |
    | cupod | C | D | C | C‡ | C | C‡ | C | D | D | D | C‡ | C‡ | C‡ | C‡ |
    | dimcid | D≠C | D | D≠C | D≠C | D≠C | D≠C | D≠C | D≠C | D | D | D≠C | D≠C | D≠C | D≠C |
-   | cimcic | C | D | D≠C | C | D‡ | D | D‡ | D‡ | D‡ | D | C | D‡ | C | C |
+   | cimcic | C | D | C | C | D‡ | D | D‡ | D‡ | D‡ | D | C | D‡ | C | C |
    | prudent | D | D | D | D‡ | D‡ | D | D | D | D‡ | D | D‡ | D‡ | D‡ | D‡ |
    | maxconf | C | D | C | C | D‡ | D | D‡ | D‡ | D‡ | D | C | D‡ | C | C |
    | minconf | C | D | C | C | D‡ | D | D‡ | D‡ | D‡ | D | C | D‡ | C | C |
@@ -324,14 +327,44 @@ CodeTerm/Guard slots/SubstTemplate → Code → RedCellUnsound arms → full bui
    The six red-cell cross bits stay FLOORS (independent of the coding). App: the six VALUE divergences are
    gone, the six `provenance` ones (red cell) remain; `tau.compare --zoo paper --source sprime`: 148 agree,
    41 floor-agree, 6 recorded, 0 unexpected, 1 uncovered.
-   **ONE BIT OPEN — `dimcid × ebot` (table `D≠`).** `Tau/NeverFitsSys.lean` proves it is C at every budget
-   under the present coding (`dimcid_ebot_C`): τ(EBot)'s instance at DIMCID has a third watch on
-   `inst dimcid mirror`, a closed SYSTEM with a `.search k` member, and `codeTermMetaAbs` describes systems
-   verbatim (Phase 2c's design limit, needed for the literal member-slot equation). So the numeral `k` is back
-   inside that one stored template and the guard never fits. It is left UNSTATED; `#check_tau_rowsA` stays
-   plain. Decision pending: (α) let the abstraction descend into systems (a code-level `codeTermAbs`,
-   `descriptionsSys d k`, `sysCloseTemplate d k`, `Tau/Entangled` re-done — days) or state the bit as C and
-   record ONE value divergence (then 196/196 and `strict`).
+   **ONE BIT WAS OPEN — `dimcid × ebot` (table `D≠`) — CLOSED by (α), see below.** Under Phase 2c's coding it was C
+   at every budget (the then-theorem `dimcid_ebot_C`): τ(EBot)'s instance at DIMCID has a third watch on
+   `inst dimcid mirror`, a closed SYSTEM with a `.search k` member, and `codeTermMetaAbs` described systems
+   verbatim (Phase 2c's design limit, needed for the literal member-slot equation against the verbatim closer),
+   so the numeral `k` was back inside that one stored template and the guard never fitted. The alternatives were
+   (α) let the abstraction descend into systems, or state the bit as C and record ONE value divergence.
+   **STATE 2026-10-02 (Phases 2d + 3f landed, FINAL): 196/196 paper bits — 149 row slots + 47 floor bits;
+   `#check_tau_rowsA strict` in the build.** `dimcid × ebot = D` (`Tau/ClosedWatch3.dimcid_ebot_D`). What landed:
+   * *Trusted base (Phase 2d).* `codeTermMetaAbs k₀` descends into `pSys d i` (`Agents/CodeTermAbs.lean`); the
+     code-level twin `codeTermAbs (k₀ s x : V) : V` — `codeTerm` with the budget leaf `pSearch k₀` written as the
+     term code `s` (`Agents/CodeTermSlot.lean`, a two-parameter Δ₁ fixpoint; `codeTermAbs_binNumeral`,
+     `quote_emb_codeTermMetaAbs`); `descriptionsSysAt d k`, `sysCloseTemplateAt d k g` (`Agents/Guard.lean`);
+     `sysCloseCode d (pSearch k g p q) = pSearch k (sysCloseTemplateAt d k g) …` (`Agents/SysClose.lean`); the literal
+     member equation on the stored codes, `templateCodeAt_sysClose` over `vSysAt k₀` (`Agents/SysTemplate.lean`);
+     `searchFreeP` reads a system through its members. The verbatim `descriptionsSys`/`sysCloseTemplate` stay as
+     the READING: **`guardCodeB_sysCloseTemplateAt : guardCodeB (sysCloseTemplateAt d k g) me opp k = guardCodeB
+     (sysCloseTemplate d g) me opp k`** (`Agents/SubstTemplate.lean`, unconditional) — the evaluator consults the
+     same sentences as before; the 107 base cells export byte-identical.
+   * *`Tau/Entangled` bridged, not redone.* Every statement about a consulted code (`guardCodeB_sysClose_eq_instB`,
+     the `guard_eq_instB` equations, the Löb families, `Sys2*.guardCodeB_sysClose_nat`) is untouched; the three
+     code lemmas of a closed member (`Sys2.sysCloseCode_mem`, `Sys2c`/`Sys2n.sysCloseCode_m₀`) spell
+     `sysCloseTemplateAt … k …`, and each search clause (`member_then_V`, `member_else_V`, `member_then2_V`,
+     `simple_member_then_V`) adds one rewrite by the bridge. `Cells/TauMember` reads the closed cfd member through
+     `EvalGraph.search_iff_at` (its closed guard is no longer snapshot-free); statement unchanged.
+   * *The bit (Phase 3f).* τ(EBot)'s instance at DIMCID is the three-stage watch `W3` (`Tau/Watch3.lean`): two
+     stages over simple searchers, one over member `0` of the mirror system `inst dimcid mirror` (`Sys2c`), whose
+     abstracted description IS its tower (`codeTermMetaAbs_Sys2c`); the τ-order of a cascade of any depth follows
+     its innermost member above a standard threshold (`cascade_gain`). `dimcid_D_of_towers'`
+     (`Tau/ClosedWatch3.lean`) is `dimcid_D_of_towers` without `fragF` — the watch contains a `.sys` — the probe
+     → bit frame move made on the template (`gDi_subst_congr`: DIMCID's guard does not read the opponent slots).
+     `Tau/NeverFitsSys.lean` is restated on the UNABSTRACTED template (true, vacuous on compiled instances);
+     `dimcid_ebot_C` is gone (false under the new coding).
+   * *Gates.* `lake build ArithS ArithSOutcomeCheck ArithSTauCheck ArithSAudit` green; census `14/14 rows, 149 row
+     slots, 47/47 floor bits — 196/196 bits covered` (strict); coverage 78/78; `tau.compare --zoo paper --source
+     sprime`: 149 agree, 41 floor-agree, 0 mismatch, 0 uncovered, 6 recorded (the red-cell `provenance` entries).
+     App note: the loader DROPS the six recorded bits, so on the real export `kernel_coverage = 190/196` and
+     `is_kernel_backed` is False (banner "PARTIAL export") although the file is full — a wording/semantics choice
+     in `tau/matrix.py`/`tau/report.py` left as is (values unchanged; the bits fall back to the `S'` cells).
    **DECIDED 2026-10-02: (α).** Specification (Phase 2d + 3f):
    * `codeTermMetaAbs k₀` DESCENDS into `pSys d i` (member list abstracted member by member; the index a
      numeral); `NoSearchAt`/length/instantiation lemmas extended (`subst_codeTermMetaAbs` stays the identity

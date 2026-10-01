@@ -2,34 +2,31 @@ import ArithS.Tau.NeverFits
 import ArithS.Tau.ClosedWatch
 
 /-!
-# ArithS.Tau.NeverFitsSys — a `.self`-guard over a watch that freezes a budget-carrying SYSTEM never fits (Phase 3e)
+# ArithS.Tau.NeverFitsSys — a `.self`-guard over a watch that freezes a budget-carrying SYSTEM, stored VERBATIM, never fits
 
-**The finding (2026-10-01, Phase 3e).** Route (c) made generic (`Agents/CodeTermAbs.lean`) abstracts the node's
-budget in the description of a closed program by descending through `bot`/`sim`/`ite`/`search` nodes — and NOT into
-a SYSTEM (`codeTermMetaAbs_sys`: a `pSys d i` is described verbatim, by design, for the member-slot equation of
-`Agents/SysTemplate.lean`). The claim "no paper-zoo guard names a closed system" in that module's docstring is false
-for ONE theorem bit of the Phase-3 table: `dimcid × ebot`. τ(EBot)'s instance seeing DIMCID has a THIRD watch, on
-DIMCID's instance at the MIRROR, which is the closed system `.sys [dim 1, mm 0] 0` (`Entangled/Base.inst_dimcid_mirror`)
-with the `.search k` member `dim 1 k`. So the stored template of DIMCID's instance at τ(EBot),
-`templateCodeAt (dimG (inst ebot dimcid)) k`, still writes `binNumeral k` (inside the verbatim system), its code is
-`≥ binNumeral k` (`binNumeral_le_templateCodeAt_selfBot`), DIMCID's own description — written by the `.self`
-antecedent — has a numeral of more than `k` bits, and the guard sentence is LONGER than `k`: never found, at every
-budget (`selfBot_sys_guard_not_found`, `Tau/NeverFits.lean`'s argument one level down, on the abstracted template).
+**History.** Phase 3e (2026-10-01) found ONE bit of the paper table that route (c) made generic (Phase 2c) did not
+recover: `dimcid × ebot`. τ(EBot)'s instance seeing DIMCID has a THIRD watch, on DIMCID's instance at the MIRROR,
+the closed system `.sys [dim 1, mm 0] 0` (`Entangled/Base.inst_dimcid_mirror`) with the `.search k` member
+`dim 1 k`; Phase 2c's abstraction did not descend into a system, so the stored template of `inst dimcid ebot`
+still wrote `binNumeral k`, DIMCID's own description had a numeral of more than `k` bits, and the guard was
+never found — the bit was C at every budget, the ENGINE's value, against the table's `D≠`.
 
-Consequence: under the PRESENT coding `dimcid × ebot` is **C at every budget** (`dimcid_ebot_C`) — the ENGINE's
-value, not the `D≠` of the table in `SPRIME_SOURCE_OF_TRUTH.md` §3. The table's value needs the abstraction to
-descend into systems (the "(α) upgrade" of `ARITH_TRAPS.md` §4b: a code-level `codeTermAbs` in `Guard`/`SysClose`).
-The bit is therefore NOT stated in `Rows/DIMCID.lean` (neither side is forced); this module records what the
-kernel proves about it today. Floor bits are unaffected (`cimcic/dupoc/prudent/maxconfidence/minconfidence × ebot`
-are `‡` cells: their hinges fail for the same reason, which is the engine-side value).
+**Status after Phase 2d (decision (α), 2026-10-02).** The abstraction DESCENDS into systems
+(`Agents/CodeTermAbs.codeTermMetaAbs_sys`; the closer takes the node's budget, `sysCloseTemplateAt`), the stored
+template of `inst dimcid ebot` is a constant, and the bit is **D** (`Tau/ClosedWatch3.dimcid_ebot_D`), a row slot.
+The obstruction is a property of a searcher that stores the system's description VERBATIM. The statements below
+are kept as theorems about the explicit code `pBot (pSearch k' (templateCode φ) p q)` — the searcher storing the
+UNABSTRACTED template — exactly as `Tau/NeverFits.lean` was restated in Phase 2c; they cover the case that file's
+`HasSearchP` does not: the only budget-carrying part of the frozen program may sit INSIDE a system (`HasSysC`).
+The tau corollary carries the hypothesis `instCode k .dimcid T = pSearch k (templateCode …) …`, which no compiled
+instance satisfies (they store `templateCodeAt … k`); `hasSysC_ebot_dimcid` records that τ(EBot)'s instance at
+DIMCID does have the system shape — only the storage hypothesis fails.
 
-* §1 `OccB` — a closed ℒₒᵣ-term occurs (shifted) in a one-variable term; `TOccC_of_OccB` — it then occurs, as a
-  closed `LAct`-term, in the abstracted description after the budget slot is filled;
-* §2 `HasSysC k` — a code reaches a system with a `pSearch k` member through `bot`/`sim`/`ite` nodes (closed under
-  the code-level τ); `occB_of_hasSysC` — the abstracted description of such a code writes a closed term of code
-  `≥ binNumeral k`, at ANY node budget;
-* §3 the stored template of a `.self`-guard over such a program, and its transposition, have codes `≥ binNumeral k`;
-* §4 the obstruction, and `dimcid × ebot`.
+* §1 `HasSysC k` — a code reaches a system with a `pSearch k` member through `bot`/`sim`/`ite` nodes (closed under
+  the code-level τ); `binNumeral_le_codeTerm_of_hasSysC` — its VERBATIM structural term is `≥ binNumeral k`;
+* §2 the unabstracted template of a `.self`-guard over such a program, and its transposition, have codes
+  `≥ binNumeral k`;
+* §3 the obstruction, and the (vacuous on compiled instances) tau corollary.
 -/
 
 set_option linter.constructorNameAsVariable false
@@ -42,39 +39,7 @@ open FFL.FirstOrder.Arithmetic.Bootstrapping.Arithmetic
 open LAct
 open PD PD.Tau
 
-/-! ### 1. A closed term inside a one-variable description -/
-
-/-- The closed term `u` occurs, shifted, in the one-variable term. -/
-inductive OccB (u : ClosedSemiterm ℒₒᵣ 0) : Semiterm ℒₒᵣ Empty 1 → Prop
-  | here : OccB u (Rew.bShift u)
-  | func {k : ℕ} (f : (ℒₒᵣ).Func k) (v : Fin k → Semiterm ℒₒᵣ Empty 1) (j : Fin k) :
-      OccB u (v j) → OccB u (Semiterm.func f v)
-
-lemma OccB.succT1 {u : ClosedSemiterm ℒₒᵣ 0} {t : Semiterm ℒₒᵣ Empty 1} (h : OccB u t) : OccB u (succT1 t) :=
-  .func _ _ 0 h
-
-lemma OccB.ppairL {u : ClosedSemiterm ℒₒᵣ 0} {s : Semiterm ℒₒᵣ Empty 1} (t : Semiterm ℒₒᵣ Empty 1) (h : OccB u s) :
-    OccB u (ppairT1 s t) :=
-  .func _ _ 0 (.func _ _ 0 (.func _ _ 0 h))
-
-lemma OccB.ppairR {u : ClosedSemiterm ℒₒᵣ 0} (s : Semiterm ℒₒᵣ Empty 1) {t : Semiterm ℒₒᵣ Empty 1} (h : OccB u t) :
-    OccB u (ppairT1 s t) :=
-  .func _ _ 1 h
-
-/-- An occurrence in the one-variable ℒₒᵣ-term is an occurrence of the closed `LAct`-term in the description with
-the budget slot filled by any term. -/
-theorem TOccC_of_OccB {u : ClosedSemiterm ℒₒᵣ 0} {t : Semiterm ℒₒᵣ Empty 1} (h : OccB u t) {n : ℕ}
-    (b : Semiterm LAct Empty n) :
-    TOccC (Semiterm.lMap emb u) (Rew.subst ![b] (Semiterm.lMap emb t)) := by
-  induction h with
-  | here => rw [Semiterm.lMap_bShift, subst_bShift_cl]; exact .here
-  | func f v j _ ih => rw [Semiterm.lMap_func, Rew.func]; exact .func _ _ j ih
-
-lemma quote_emb_lMap_emb_closed (u : ClosedSemiterm ℒₒᵣ 0) :
-    (⌜(Rew.emb (Semiterm.lMap emb u) : SyntacticSemiterm LAct 0)⌝ : ℕ) = ⌜u⌝ := by
-  rw [term_emb_lMap_emb, quote_term_lMap_emb, ← Semiterm.empty_quote_def]
-
-/-! ### 2. A system with a budget-carrying member, inside a watch -/
+/-! ### 1. A system with a budget-carrying member, inside a watch -/
 
 /-- The member list carries a member with a `pSearch k` leaf. -/
 inductive ListHasSearch (k : ℕ) : ℕ → Prop
@@ -125,98 +90,81 @@ theorem binNumeral_le_codeTerm_of_listHas {k : ℕ} {d : ℕ} (h : ListHasSearch
     rw [codeTerm_cons]
     exact le_trans ih (le_trans (le_ppairTerm_right _ _) (le_trans (le_ppairTerm_right _ _) (le_qqAdd_left _ _)))
 
-/-- **The abstracted description of a code with a budget-carrying system writes a closed term of code
-`≥ binNumeral k`, at any node budget**: the abstraction does not descend into the system. -/
-theorem occB_of_hasSysC {k : ℕ} {y : ℕ} (h : HasSysC k y) (K : ℕ) :
-    ∃ u : ClosedSemiterm ℒₒᵣ 0, OccB u (codeTermMetaAbs K y) ∧ binNumeral k ≤ (⌜u⌝ : ℕ) := by
+/-- **The VERBATIM structural term of a code with a budget-carrying system is `≥ binNumeral k`.** -/
+theorem binNumeral_le_codeTerm_of_hasSysC {k : ℕ} {y : ℕ} (h : HasSysC k y) : binNumeral k ≤ codeTerm y := by
   induction h with
   | @sys d i h =>
-    refine ⟨codeTermMeta (pSys d i), by rw [codeTermMetaAbs_sys]; exact .here, ?_⟩
-    rw [quote_codeTermMeta_nat, codeTerm_sys]
+    rw [codeTerm_sys]
     exact le_trans (binNumeral_le_codeTerm_of_listHas h)
       (le_trans (le_ppairTerm_left _ _) (le_trans (le_ppairTerm_right _ _) (le_qqAdd_left _ _)))
   | bot _ ih =>
-    obtain ⟨u, hu, hb⟩ := ih
-    exact ⟨u, by rw [codeTermMetaAbs_bot]; exact (hu.ppairR _).succT1, hb⟩
+    rw [codeTerm_bot]
+    exact le_trans ih (le_trans (le_ppairTerm_right _ _) (le_qqAdd_left _ _))
   | simL q _ ih =>
-    obtain ⟨u, hu, hb⟩ := ih
-    exact ⟨u, by rw [codeTermMetaAbs_sim]; exact ((hu.ppairL _).ppairR _).succT1, hb⟩
+    rw [codeTerm_sim]
+    exact le_trans ih (le_trans (le_ppairTerm_left _ _) (le_trans (le_ppairTerm_right _ _) (le_qqAdd_left _ _)))
   | simR p _ ih =>
-    obtain ⟨u, hu, hb⟩ := ih
-    exact ⟨u, by rw [codeTermMetaAbs_sim]; exact ((hu.ppairR _).ppairR _).succT1, hb⟩
+    rw [codeTerm_sim]
+    exact le_trans ih (le_trans (le_ppairTerm_right _ _) (le_trans (le_ppairTerm_right _ _) (le_qqAdd_left _ _)))
   | iteB a p q _ ih =>
-    obtain ⟨u, hu, hb⟩ := ih
-    exact ⟨u, by rw [codeTermMetaAbs_ite]; exact ((hu.ppairL _).ppairR _).succT1, hb⟩
+    rw [codeTerm_ite]
+    exact le_trans ih (le_trans (le_ppairTerm_left _ _) (le_trans (le_ppairTerm_right _ _) (le_qqAdd_left _ _)))
   | iteP b a q _ ih =>
-    obtain ⟨u, hu, hb⟩ := ih
-    exact ⟨u, by rw [codeTermMetaAbs_ite]; exact ((((hu.ppairL _).ppairR _).ppairR _).ppairR _).succT1, hb⟩
+    rw [codeTerm_ite]
+    exact le_trans ih (le_trans (le_ppairTerm_left _ _) (le_trans (le_ppairTerm_right _ _)
+      (le_trans (le_ppairTerm_right _ _) (le_trans (le_ppairTerm_right _ _) (le_qqAdd_left _ _)))))
   | iteQ b a p _ ih =>
-    obtain ⟨u, hu, hb⟩ := ih
-    exact ⟨u, by rw [codeTermMetaAbs_ite]; exact ((((hu.ppairR _).ppairR _).ppairR _).ppairR _).succT1, hb⟩
+    rw [codeTerm_ite]
+    exact le_trans ih (le_trans (le_ppairTerm_right _ _) (le_trans (le_ppairTerm_right _ _)
+      (le_trans (le_ppairTerm_right _ _) (le_trans (le_ppairTerm_right _ _) (le_qqAdd_left _ _)))))
 
-/-! ### 3. The stored template -/
+/-- The code of the canonical numeral term, as a syntactic term, is `≥ binNumeral k`. -/
+theorem binNumeral_le_quote_emb_canonicalMeta_of_hasSysC {k c : ℕ} (h : HasSysC k (canonical c)) :
+    binNumeral k ≤ (⌜(Rew.emb (canonicalMeta c) : SyntacticSemiterm LAct 0)⌝ : ℕ) := by
+  unfold canonicalMeta
+  rw [term_emb_lMap_emb, quote_term_lMap_emb, ← Semiterm.empty_quote_def, quote_codeTermMeta_nat]
+  exact binNumeral_le_codeTerm_of_hasSysC h
 
-/-- `descF X T U W` writes whatever its canonical-numeral slot `T` writes. -/
-lemma FOccC_descF_of_T {n : ℕ} (X T U W : Semiterm LAct Empty (n + 1)) {u : ClosedSemiterm LAct 0} (h : TOccC u T) :
-    FOccC u (descF X T U W) := by
-  unfold descF
-  exact .exs (.andL _ (.rel _ _ 1 h))
+/-! ### 2. The unabstracted template -/
 
-/-- The stored (abstracted) description of a code whose canonical form has a budget-carrying system writes a
-`swap`-fixed closed term of code `≥ binNumeral k`. -/
-theorem FOccC_closedDescAt_of_hasSysC {k K c : ℕ} (h : HasSysC k (canonical c)) :
-    ∃ u : ClosedSemiterm LAct 0, FOccC u (closedDescAt (some K) c) ∧
-      binNumeral k ≤ (⌜(Rew.emb u : SyntacticSemiterm LAct 0)⌝ : ℕ) ∧ Semiterm.lMap swap u = u := by
-  obtain ⟨u₀, ho, hb⟩ := occB_of_hasSysC h K
-  refine ⟨Semiterm.lMap emb u₀, ?_, by rw [quote_emb_lMap_emb_closed]; exact hb, term_lMap_swap_emb _⟩
-  unfold closedDescAt
-  rw [canonicalSlot_some]
-  unfold canonicalAbs
-  exact FOccC_descF_of_T _ _ _ _ (TOccC_of_OccB ho _)
-
-/-- The `.plays` shape writes what its second description writes. -/
-lemma FOccC_plAt_right (D₁ : Semisentence LAct 14) {D₂ : Semisentence LAct 14} (a : ℕ) {u : ClosedSemiterm LAct 0}
-    (h : FOccC u D₂) : FOccC u (plAt D₁ D₂ a) := by
-  unfold plAt Rewriting.subst
-  exact .exs (.exs (.exs (.andR _ (.andL _ (FOccC_rew h _)))))
-
-/-- **The stored template of a `.self`-guard over a program that freezes a budget-carrying system has code
-`≥ binNumeral k`, and so does its code-level transposition** — budget abstraction notwithstanding. -/
-theorem binNumeral_le_templateCodeAt_selfBot {k : ℕ} {X : PD.Prog} (hX : HasSysC k (canonical (progCode (.bot X))))
-    (hns : noSelfIdxP (.bot X) = true) (a : PD.Action) (ψ : PD.Formula) :
-    binNumeral k ≤ templateCodeAt (.impl (.plays .self (.bot X) a) ψ) k ∧
-    binNumeral k ≤ revalueTemplate 1 0 (templateCodeAt (.impl (.plays .self (.bot X) a) ψ) k) := by
-  obtain ⟨u, hO, hb, hsw⟩ := FOccC_closedDescAt_of_hasSysC (K := k) hX
-  have hA : FOccC u (templateAt (.plays .self (.bot X) a) (some k)) := by
-    rw [templateAt_plays_eq, progGraphAt_self, progGraphAt_closed _ (by simp) (by simp) (pronounP_eq_false_of_noSelfIdxP hns)]
-    exact FOccC_plAt_right _ _ hO
-  have hA' := FOccC_lMap_swap hA
-  rw [hsw] at hA'
+/-- **The UNABSTRACTED template of a `.self`-guard over a program that freezes a budget-carrying system has code
+`≥ binNumeral k`, and so does its code-level transposition** (`Tau/NeverFits.binNumeral_le_templateCode_selfBot`
+with the budget inside a system). -/
+theorem binNumeral_le_templateCode_selfBot_sys {k : ℕ} {X : PD.Prog} (hX : HasSysC k (canonical (progCode (.bot X))))
+    (a : PD.Action) {ψ : PD.Formula} (hns : noSelfIdxF (.impl (.plays .self (.bot X) a) ψ) = true) :
+    binNumeral k ≤ templateCode (.impl (.plays .self (.bot X) a) ψ) ∧
+    binNumeral k ≤ revalueTemplate 1 0 (templateCode (.impl (.plays .self (.bot X) a) ψ)) := by
+  have hb := binNumeral_le_quote_emb_canonicalMeta_of_hasSysC hX
+  have hO := FOccC_template_plays_bot .self X a
+  have hO' := FOccC_lMap_swap hO
+  rw [lMap_swap_canonicalMeta'] at hO'
   constructor
-  · unfold templateCodeAt
-    rw [templateAt_impl, Semiformula.imp_eq]
-    exact le_trans hb (le_quote_sentence_of_FOccC (.orL _ (FOccC_neg hA)))
-  · unfold templateCodeAt
-    rw [revalueTemplate_quote_sentence, templateAt_impl, LogicalConnective.HomClass.map_imply, Semiformula.imp_eq]
-    exact le_trans hb (le_quote_sentence_of_FOccC (.orL _ (FOccC_neg hA')))
+  · rw [templateCode_eq_quote_template _ hns, template_impl]
+    exact ((goodCode_template_selfBot X a hb).impl_left (template ψ)).1
+  · rw [templateCode_eq_quote_template _ hns, revalueTemplate_quote_sentence, template_impl,
+      LogicalConnective.HomClass.map_imply]
+    have hG : GoodCode (binNumeral k) (Semiformula.lMap swap (template (.plays .self (.bot X) a))) :=
+      ⟨le_trans hb (le_quote_sentence_of_FOccC hO'), le_trans hb (le_quote_sentence_of_FOccC (FOccC_neg hO'))⟩
+    exact (hG.impl_left _).1
 
-/-! ### 4. The obstruction, and `dimcid × ebot` -/
+/-! ### 3. The obstruction, and the tau corollary -/
 
 /-- **The guard of a `.self`-guard over a program that freezes a budget-carrying system, consulted by the bot-wrapped
-searcher that stores the ABSTRACTED template, is never found within `k`** — against any opponent code. -/
+searcher that stores the UNABSTRACTED template, at ANY search budget, is never found within `k`** — against any
+opponent code. -/
 theorem selfBot_sys_guard_not_found {k : ℕ} {X : PD.Prog} (hX : HasSysC k (canonical (progCode (.bot X))))
-    (hnsX : noSelfIdxP (.bot X) = true) (a : PD.Action) {ψ : PD.Formula}
-    (hns : noSelfIdxF (.impl (.plays .self (.bot X) a) ψ) = true) (p q opp : ℕ) :
+    (a : PD.Action) {ψ : PD.Formula}
+    (hns : noSelfIdxF (.impl (.plays .self (.bot X) a) ψ) = true) (k' : ℕ) (p q opp : ℕ) :
     ¬ LenBox TAct k (guardCode (templateCode (.impl (.plays .self (.bot X) a) ψ))
-      (pBot (pSearch k (templateCodeAt (.impl (.plays .self (.bot X) a) ψ) k) p q)) opp) := by
+      (pBot (pSearch k' (templateCode (.impl (.plays .self (.bot X) a) ψ)) p q)) opp) := by
   intro hl
-  obtain ⟨h1, h2⟩ := binNumeral_le_templateCodeAt_selfBot hX hnsX a ψ
+  obtain ⟨h1, h2⟩ := binNumeral_le_templateCode_selfBot_sys hX a hns
   rw [← quote_sentenceAtC _ _ _ hns, lenBox_nat] at hl
   have hle := formulaLenMeta_le_of_lenBoxNat hl
   rw [formulaLenMeta_emb_sentenceAtC_impl] at hle
   have hA := size_canonical_le_formulaLenMeta_sentenceAtC_self
-    (pBot (pSearch k (templateCodeAt (.impl (.plays .self (.bot X) a) ψ) k) p q)) opp (.bot X) a
-  have hS : k + 2 ≤ Nat.size (canonical (pBot (pSearch k (templateCodeAt (.impl (.plays .self (.bot X) a) ψ) k) p q))) := by
+    (pBot (pSearch k' (templateCode (.impl (.plays .self (.bot X) a) ψ)) p q)) opp (.bot X) a
+  have hS : k + 2 ≤ Nat.size (canonical (pBot (pSearch k' (templateCode (.impl (.plays .self (.bot X) a) ψ)) p q))) := by
     rw [canonical_pBot]
     refine le_trans (size_binNumeral_ge k) (Nat.size_le_size ?_)
     refine le_trans ?_ (by unfold pBot; exact le_trans (nppair_le_right _ _) (Nat.le_succ _))
@@ -239,20 +187,24 @@ lemma hasSysC_ebot_dimcid (k : ℕ) : HasSysC k (instCode k .ebot .dimcid) := by
   rw [instCode_ebot]
   exact .iteQ _ _ _ (.iteQ _ _ _ (.iteB _ _ _ (.simL _ (.bot (hasSysC_dimcid_mirror k)))))
 
-theorem instCode_dimcid_ebot' (k : ℕ) : instCode k .dimcid .ebot =
-    pSearch k (templateCodeAt (dimGf (inst (tauZoo k) .ebot .dimcid)) k) (pConst 1) (pConst 0) := by
-  unfold instCode; rw [inst_dimcid_peel_ebot]; simp [actCode]
+/-- τ(EBot)'s instance seeing DIMCID has the system shape, in canonical form (the hypothesis `hX` of the obstruction). -/
+lemma hasSysC_canonical_bot_ebot_dimcid (k : ℕ) :
+    HasSysC k (canonical (progCode (.bot (inst (tauZoo k) .ebot .dimcid)))) := by
+  rw [progCode_bot_inst]; exact (hasSysC_ebot_dimcid k).canonical_bot
 
-/-- **`dimcid × ebot` is C at EVERY budget under the present coding** — the ENGINE's value, NOT the `D≠` of the
-Phase-3 table: DIMCID's guard over τ(EBot)'s instance is longer than its budget (the instance freezes the system
-`inst dimcid mirror`, which budget abstraction does not enter), so it is never found and the else-branch plays C.
-Not a row slot (`Rows/DIMCID.lean`): the table's value needs the abstraction to descend into systems. -/
-theorem dimcid_ebot_C (k : ℕ) : bitPlays k .dimcid .ebot .C := by
-  have hX : HasSysC k (canonical (progCode (.bot (inst (tauZoo k) .ebot .dimcid)))) := by
-    rw [progCode_bot_inst]; exact (hasSysC_ebot_dimcid k).canonical_bot
-  have hn := selfBot_sys_guard_not_found hX rfl .C (ψ := .plays (.bot (inst (tauZoo k) .ebot .dimcid)) .self .D) rfl
-    (pConst 1) (pConst 0)
-    (pBot (pSearch k (templateCodeAt (dimGf (inst (tauZoo k) .ebot .dimcid)) k) (pConst 1) (pConst 0)))
-  exact bitPlays_of_eq (instCode_dimcid_ebot' k) ⟨_, search_else_at _ hn (const_play 0 _ _ _) rfl⟩
+/-- **τ(DIMCID) at a hypothesis whose instance seeing it freezes a budget-carrying system: C** — IF the instance
+stored the UNABSTRACTED template (`hc`). No compiled instance does: since Phase 2c `progCode` stores
+`templateCodeAt … k`, and since Phase 2d that template is a constant even when the frozen program contains a
+system — `dimcid × ebot` is D (`Tau/ClosedWatch3.dimcid_ebot_D`). -/
+theorem dimcid_selfBot_sys_C {k : ℕ} {T : Tmpl}
+    (hc : instCode k .dimcid T = pSearch k (templateCode (.impl (.plays .self (.bot (inst (tauZoo k) T .dimcid)) .C)
+      (.plays (.bot (inst (tauZoo k) T .dimcid)) .self .D))) (pConst 1) (pConst 0))
+    (hX : HasSysC k (canonical (progCode (.bot (inst (tauZoo k) T .dimcid)))))
+    (hns : noSelfIdxF (.impl (.plays .self (.bot (inst (tauZoo k) T .dimcid)) .C)
+      (.plays (.bot (inst (tauZoo k) T .dimcid)) .self .D)) = true) :
+    bitPlays k .dimcid T .C := by
+  have hn := selfBot_sys_guard_not_found hX .C hns k (pConst 1) (pConst 0) (pBot (instCode k .dimcid T))
+  rw [hc] at hn
+  exact bitPlays_of_eq hc ⟨_, search_else _ hn (const_play 0 _ _ _) hns⟩
 
 end ArithS.Tau

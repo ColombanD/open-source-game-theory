@@ -207,7 +207,7 @@ lemma listGet_D_zero (S : Sys2c) (k : V) : listGet (S.D k) 0 = S.m₀.code k + 1
 
 lemma sysCloseCode_m₀ (S : Sys2c) (k : V) :
     sysCloseCode (S.D k) (S.m₀.code k) =
-      pSearch k (sysCloseTemplate (S.D k) ((⌜S.m₀.g⌝ : ℕ) : V)) (pConst (S.m₀.a : V)) (pConst ((1 - S.m₀.a : ℕ) : V)) := by
+      pSearch k (sysCloseTemplateAt (S.D k) k ((⌜S.m₀.g⌝ : ℕ) : V)) (pConst (S.m₀.a : V)) (pConst ((1 - S.m₀.a : ℕ) : V)) := by
   unfold SM.code; rw [sysCloseCode_search, sysCloseCode_const, sysCloseCode_const]
 
 theorem member_then_V (S : Sys2c) (k me opp : V)
@@ -216,7 +216,8 @@ theorem member_then_V (S : Sys2c) (k me opp : V)
   rw [show (4 : V) = 3 + 1 from three_add_one_eq_four.symm, EvalGraph.bot_iff,
     show (3 : V) = 2 + 1 from two_add_one_eq_three.symm, code_zero, EvalGraph.sys_iff]
   refine ⟨_, listGet_D_zero S k, ?_⟩
-  rw [sysCloseCode_m₀, show (2 : V) = 1 + 1 from one_add_one_eq_two.symm, EvalGraph.search_iff]
+  rw [sysCloseCode_m₀, show (2 : V) = 1 + 1 from one_add_one_eq_two.symm, EvalGraph.search_iff,
+    guardCodeB_sysCloseTemplateAt]
   exact Or.inl ⟨h, by rw [show (1 : V) = 0 + 1 by simp, EvalGraph.const_iff]⟩
 
 theorem plays_of_box (S : Sys2c) (k : V) (i i' : ℕ) (h : LenBox TAct k (instB (⌜S.q i i'⌝ : V) k)) :
