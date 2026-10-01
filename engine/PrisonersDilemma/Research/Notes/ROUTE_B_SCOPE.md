@@ -411,7 +411,7 @@ alongside (c)); SND/POS wait for (c) to settle.
   (engine codes; Dupoc's guard false ⇒ SND, `dupoc_guard_vs_DIMCID_not_found`) — the two systems CONTRADICT each
   other on a universal cell, `loeb_DIMCID_vs_JustBot` `(C, D)` → `(D, D)` (on the budget-slot `Just7 k`:
   `just7_else_V` + `evalGraph_of_guard`; Just's half ALSO on the engine code, `just_engine_vs_DIMCID_defects`,
-  through `.bot (DupocBot k) = pBot (SV gDu 0 k)`; no `Describes` for `progCode (JustBot k)`, §7),
+  through `.bot (DupocBot k) = pBot (SV gDu 0 k)`; no `Describes` for `progCode (JustBot k)`, §7 — *superseded 2026-10-02: with route (c) generic the engine's JustBot is a simple member with its own tower, `Cells/JustEngine.lean`, and the cell is `loeb_DIMCID_vs_JustBot_engine`*),
   `loeb_DIMCID_vs_PrudentBot` `(C, D)` → `(D, D)` (engine codes, above `KP`), `loeb_CIMCIC_vs_DIMCID` `(D, C)` →
   `(D, D)` (engine codes, CIMCIC's guard self-refuting). Machinery: **`describes_closed P` — EVERY closed code
   `P : ℕ` is described** by the generic triple `(cl (canonicalMeta P), revalueUMeta P, revalueWMeta P)` of `Template.lean` in every model

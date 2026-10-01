@@ -14,6 +14,7 @@ import ArithS.Cells.CIMCIC
 import ArithS.Cells.DIMCID
 import ArithS.Cells.DupocMirror
 import ArithS.Cells.JustBot
+import ArithS.Cells.CupodTrollEngine
 import ArithS.Necessitation.Package
 
 /-!
@@ -38,20 +39,17 @@ theorem outcome_CupodTrollBot_vs_CooperateBot :
     OutcomeSpecA .universal (bot CupodTrollBot) (const CooperateBot) (some (.C, .C)) :=
   OutcomeSpecA.universal_of fun k ↦ OutcomeAtA.of_evalGraph (snd_CupodTrollBot_vs_CooperateBot k)
 
-/-! ### On the hand-template twins
-
-* `CupodTroll7 k` (`Cells/KhatCells.lean`): CupodTrollBot with the constant budget-slot template; plays as
-  `progCode (CupodTrollBot k)` in the program slot (`evalGraph_CupodTroll7_iff`), but as an OPPONENT its code
-  (hence the partner's guard sentence) differs, so the cell stays on the twin.
--/
-
-/-- `khat_CupodTrollBot_vs_CupodBot` (stated on the budget-slot twin `CupodTroll7 k`) -/
+/-- `khat_CupodBot_vs_CupodTrollBot` (the pair in the other orientation, on the engine's own codes —
+`Cells/CupodTrollEngine.lean`, 2026-10-02: the engine's `progCode (CupodTrollBot k)` stores a constant template
+since route (c) was made generic, `templateAt_phiT`, so Cupod's guard describes it and the hand-template twin
+`CupodTroll7 k` of `Cells/KhatCells.lean` is RETIRED from the matrix; CupodTroll's half is
+`khat_CupodTrollBot_vs_CupodBot_engine`) -/
 @[outcomeA]
-theorem outcome_CupodTroll7_vs_CupodBot :
-    OutcomeSpecA .eventual CupodTroll7 (bot CupodBot) (some (.D, .D)) :=
+theorem outcome_CupodTrollBot_vs_CupodBot :
+    OutcomeSpecA .eventual (bot CupodTrollBot) (bot CupodBot) (some (.D, .D)) :=
   OutcomeSpecA.eventual_of (by
-    obtain ⟨k₀, h⟩ := khat_CupodTrollBot_vs_CupodBot
-    exact ⟨k₀, fun k hk ↦ OutcomeAtA.of_evalGraph (h k hk)⟩)
+    obtain ⟨k₀, h⟩ := khat_CupodBot_vs_CupodTrollBot
+    exact ⟨k₀, fun k hk ↦ OutcomeAtA.of_evalGraph₂ (h k hk).2 (h k hk).1⟩)
 
 /-- `snd_CupodTrollBot_vs_CupodTrollBot` -/
 @[outcomeA]

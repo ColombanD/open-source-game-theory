@@ -15,6 +15,7 @@ import ArithS.Cells.CimcicEngine
 import ArithS.Cells.DIMCID
 import ArithS.Cells.DupocMirror
 import ArithS.Cells.JustBot
+import ArithS.Cells.JustEngine
 import ArithS.Necessitation.Package
 
 /-!
@@ -95,18 +96,13 @@ theorem outcome_CIMCIC_vs_OBot :
     obtain ⟨k₀, h⟩ := snd_CIMCIC_vs_OBot
     exact ⟨k₀, fun k hk ↦ OutcomeAtA.of_evalGraph (h k hk)⟩)
 
-/-! ### On the hand-template twins
-
-These cells are stated on arith codes that are NOT the engine's `progCode`:
-* `Just7 k` (`Cells/JustSlot.lean`): JustBot with the CONSTANT budget-slot template (route (c)); plays as `Just k` at every fuel (`evalGraph_Just7_iff`).
--/
-
-/-- `loeb_Cimcic_vs_Just7` -/
+/-- `loeb_CIMCIC_vs_JustBot` (on the engine's own `JustBot`, `Cells/JustEngine.lean`, 2026-10-02; the hand-template
+twin `Just7 k` is retired from the matrix) -/
 @[outcomeA]
-theorem outcome_CIMCIC_vs_Just7 :
-    OutcomeSpecA .eventual (bot CIMCIC) Just7 (some (.C, .C)) :=
+theorem outcome_CIMCIC_vs_JustBot :
+    OutcomeSpecA .eventual (bot CIMCIC) (bot JustBot) (some (.C, .C)) :=
   OutcomeSpecA.eventual_of (by
-    obtain ⟨k₀, h⟩ := loeb_Cimcic_vs_Just7
-    exact ⟨k₀, fun k hk ↦ by dsimp only [bot, const]; rw [progCode_CIMCIC]; exact OutcomeAtA.of_evalGraph (h k hk)⟩)
+    obtain ⟨k₀, h⟩ := loeb_CIMCIC_vs_JustBot
+    exact ⟨k₀, fun k hk ↦ OutcomeAtA.of_evalGraph (h k hk)⟩)
 
 end ArithS

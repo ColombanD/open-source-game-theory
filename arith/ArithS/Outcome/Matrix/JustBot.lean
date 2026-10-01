@@ -14,6 +14,7 @@ import ArithS.Cells.CIMCIC
 import ArithS.Cells.DIMCID
 import ArithS.Cells.DupocMirror
 import ArithS.Cells.JustBot
+import ArithS.Cells.JustEngine
 import ArithS.Necessitation.Package
 
 /-!
@@ -60,36 +61,35 @@ theorem outcome_JustBot_vs_TitForTatBot :
     obtain ⟨k₀, h⟩ := khat_JustBot_vs_TitForTatBot
     exact ⟨k₀, fun k hk ↦ OutcomeAtA.of_evalGraph (h k hk)⟩)
 
-/-! ### On the hand-template twins
+/-! ### The Löb cells, on the engine's own `JustBot`
 
-These cells are stated on arith codes that are NOT the engine's `progCode`:
-* `Just k` (`Cells/JustBot.lean`): JustBot on the hand template `guardTemplateJust k`.
-* `Dupoc k` (`Cells/RedCell.lean`): the searcher on the HAND template `guardTemplate 0`; the engine's `DupocBot k` carries the translated template `template (.plays .opp .self .C)` — a different code with a provably equivalent guard (`Agents/Code.lean`, "Sanity"), on which the Löb cells are not yet re-proved.
-* `Just7 k` (`Cells/JustSlot.lean`): JustBot with the CONSTANT budget-slot template (route (c)); plays as `Just k` at every fuel (`evalGraph_Just7_iff`).
--/
+`Cells/JustEngine.lean` (2026-10-02): the engine's `progCode (JustBot k)` stores a CONSTANT template since route
+(c) was made generic (`templateAt_phiJ`), so its Löb cells are re-run on it and the hand-template twins `Just k`
+(`Cells/JustBot.lean`) and `Just7 k` (`Cells/JustSlot.lean`) are RETIRED from the matrix (their theorems stay in
+`Cells/`, untagged). -/
 
-/-- `loeb_Just_vs_Mirror` -/
+/-- `loeb_JustBot_vs_MirrorBot` -/
 @[outcomeA]
-theorem outcome_Just_vs_MirrorBot :
-    OutcomeSpecA .eventual Just (const MirrorBot) (some (.C, .C)) :=
+theorem outcome_JustBot_vs_MirrorBot :
+    OutcomeSpecA .eventual (bot JustBot) (const MirrorBot) (some (.C, .C)) :=
   OutcomeSpecA.eventual_of (by
-    obtain ⟨k₀, h⟩ := loeb_Just_vs_Mirror
-    exact ⟨k₀, fun k hk ↦ by dsimp only [bot, const]; rw [progCode_MirrorBot]; exact OutcomeAtA.of_evalGraph (h k hk)⟩)
-
-/-- `loeb_Just7_vs_Dupoc` -/
-@[outcomeA]
-theorem outcome_Just7_vs_Dupoc :
-    OutcomeSpecA .eventual Just7 Dupoc (some (.C, .C)) :=
-  OutcomeSpecA.eventual_of (by
-    obtain ⟨k₀, h⟩ := loeb_Just7_vs_Dupoc
+    obtain ⟨k₀, h⟩ := loeb_JustBot_vs_MirrorBot
     exact ⟨k₀, fun k hk ↦ OutcomeAtA.of_evalGraph (h k hk)⟩)
 
-/-- `loeb_Just7_vs_Just7` -/
+/-- `loeb_JustBot_vs_DupocBot` -/
 @[outcomeA]
-theorem outcome_Just7_vs_Just7 :
-    OutcomeSpecA .eventual Just7 Just7 (some (.C, .C)) :=
+theorem outcome_JustBot_vs_DupocBot :
+    OutcomeSpecA .eventual (bot JustBot) (bot DupocBot) (some (.C, .C)) :=
   OutcomeSpecA.eventual_of (by
-    obtain ⟨k₀, h⟩ := loeb_Just7_vs_Just7
+    obtain ⟨k₀, h⟩ := loeb_JustBot_vs_DupocBot
+    exact ⟨k₀, fun k hk ↦ OutcomeAtA.of_evalGraph (h k hk)⟩)
+
+/-- `loeb_JustBot_vs_JustBot` -/
+@[outcomeA]
+theorem outcome_JustBot_vs_JustBot :
+    OutcomeSpecA .eventual (bot JustBot) (bot JustBot) (some (.C, .C)) :=
+  OutcomeSpecA.eventual_of (by
+    obtain ⟨k₀, h⟩ := loeb_JustBot_vs_JustBot
     exact ⟨k₀, fun k hk ↦ OutcomeAtA.of_evalGraph₂ (h k hk) (h k hk)⟩)
 
 end ArithS

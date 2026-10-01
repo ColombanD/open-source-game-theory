@@ -108,6 +108,8 @@ import ArithS.Cells.DupocMirror
 import ArithS.Cells.DupocEngine
 import ArithS.Cells.DimcidEngine
 import ArithS.Cells.CimcicEngine
+import ArithS.Cells.JustEngine
+import ArithS.Cells.CupodTrollEngine
 import ArithS.Cells.JustBot
 import ArithS.Cells.DIMCID
 import ArithS.Cells.PrudentMirror

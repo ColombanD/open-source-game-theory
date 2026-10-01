@@ -56,7 +56,7 @@ structure CellInfo where
   dichotomy : Name
   deriving Repr
 
-/-- The bare name, e.g. `PD.Bots.CupodBot` ↦ `CupodBot`, `ArithS.Just7` ↦ `Just7`. -/
+/-- The bare name, e.g. `PD.Bots.CupodBot` ↦ `CupodBot`. -/
 def shortName : Name → Name
   | .str _ s => Name.mkSimple s
   | n        => n
@@ -88,7 +88,9 @@ private def progFamilyOf (e : Expr) : Option Name × Bool :=
     Accepted shapes: `bot P` (`P` a bare `ℕ → PD.Prog` constant, or `fun k ↦ X k` — pass-throughs; anything else
     is staggered), `const P` (`P` a bare closed `PD.Prog` constant; `const (X 5)` is a hidden budget, staggered),
     a lambda `fun k ↦ progCode (X k)` / `fun _ ↦ progCode X` (the head of `progCode`'s argument), and a bare
-    `ℕ → ℕ` constant such as the hand-template twin `Just7` (its own name; not staggered). -/
+    `ℕ → ℕ` constant (its own name; not staggered — the shape the hand-template twins `Just7`/`CupodTroll7` had
+    until they were retired from the matrix on 2026-10-02; no cell uses it any more, and the coverage census
+    below no longer maps such a name to an engine bot, so a cell stated on one would not count for a pair). -/
 private def botOf (e : Expr) : Option Name × Bool :=
   match e.getAppFnArgs with
   | (``ArithS.bot, #[P]) => progFamilyOf P
@@ -130,7 +132,7 @@ private def progText (binder : Name) (body : Expr) : MetaM String := do
   return out
 
 /-- Print a bot argument as a reader would write it: `bot DupocBot` ↦ `DupocBot k`; `const DBot` ↦ `DBot`;
-    `bot (fun k ↦ PrudentBot (2*k+64))` ↦ `PrudentBot (2 * k + 64)`; the twin `Just7` ↦ `Just7 k`. -/
+    `bot (fun k ↦ PrudentBot (2*k+64))` ↦ `PrudentBot (2 * k + 64)`; a bare `ℕ → ℕ` constant `X` ↦ `X k`. -/
 private def botArgText (e : Expr) : MetaM String := do
   let family (P : Expr) : MetaM String := do
     match P with
@@ -331,14 +333,6 @@ def paperBots : Array String :=
   #["CIMCIC", "CooperateBot", "CupodBot", "CupodTrollBot", "DBot", "DIMCID", "DefectBot", "DupocBot", "EBot",
     "OBot", "PrudentBot", "TitForTatBot"]
 
-/-- The hand-template twins (`ArithS/README.md` §4) read as their base bot for COVERAGE only: the ledger's cell
-    for `CupodTrollBot × CupodBot` is `outcome_CupodTroll7_vs_CupodBot`, stated on the seven-variable twin
-    because the engine's `CupodTrollBot k` freezes a budget-carrying snapshot no fixed template describes. The
-    export keeps the twin's name (`left_bot = "CupodTroll7"`), so a name never claims more than its statement. -/
-def twinBase : String → String
-  | "Just7" => "JustBot" | "Just" => "JustBot" | "Dupoc" => "DupocBot" | "Cupod" => "CupodBot"
-  | "CupodTroll7" => "CupodTrollBot" | s => s
-
 end ArithS.Outcome
 
 namespace ArithS.Outcome
@@ -389,21 +383,17 @@ elab "#check_floorA_theorems " file:str : command => do
   logInfo s!"S' floor census OK — {tagged.size} tagged floors, {dichs.size} dichotomies in {file.getString}"
 
 /-- **Coverage of the paper zoos.** `#check_sprime_coverage`: every unordered pair of the 12 paper base bots
-    (diagonals included) is an `@[outcomeA]` cell or an `@[floorA]` floor in either orientation; the
-    hand-template twins count for their base bot (`twinBase`). -/
+    (diagonals included) is an `@[outcomeA]` cell or an `@[floorA]` floor in either orientation, stated on the
+    ENGINE's own bots (`bot P`/`const P`). There is no twin clause since 2026-10-02: the last hand-template twins
+    (`Just7`, `CupodTroll7`) were retired by `Cells/JustEngine.lean`/`Cells/CupodTrollEngine.lean`. -/
 elab "#check_sprime_coverage" : command => do
   let env ← getEnv
   let cells ← liftTermElabM <| (taggedOutcomesA env).mapM fun nm => inspectCellA env nm
   let floors ← liftTermElabM <| (taggedFloorsA env).mapM fun nm => inspectFloorA env nm
   let key (a b : String) : String × String := if a ≤ b then (a, b) else (b, a)
   let mut covered : Std.HashSet (String × String) := {}
-  let mut viaTwin : Array String := #[]
   for c in cells ++ floors do
-    let l := c.leftBot.toString; let r := c.rightBot.toString
-    let (l', r') := (twinBase l, twinBase r)
-    if (l' != l || r' != r) && paperBots.contains l' && paperBots.contains r' then
-      viaTwin := viaTwin.push s!"{l'} × {r'} (via {c.name})"
-    covered := covered.insert (key l' r')
+    covered := covered.insert (key c.leftBot.toString c.rightBot.toString)
   let mut missing : Array String := #[]
   let mut total := 0
   for i in List.range paperBots.size do
@@ -416,7 +406,6 @@ elab "#check_sprime_coverage" : command => do
   unless missing.isEmpty do
     throwError "S' COVERAGE: {missing.size} of the {total} unordered pairs of the 12 paper base bots have neither \
       an `@[outcomeA]` cell nor an `@[floorA]` floor:\n  {missing.toList}"
-  logInfo s!"S' coverage OK — {cells.size} cells, {floors.size} floors, {total}/{total} paper-zoo pairs covered\
-    {if viaTwin.isEmpty then "" else s!" ({viaTwin.size} through a hand-template twin: {viaTwin.toList})"}"
+  logInfo s!"S' coverage OK — {cells.size} cells, {floors.size} floors, {total}/{total} paper-zoo pairs covered"
 
 end ArithS.Outcome

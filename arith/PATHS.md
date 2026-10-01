@@ -169,8 +169,27 @@ audit file of their layer (`Audit/Box`, `Audit/Agents`, `Audit/Eval`).
 | `ArithS.Cells.CimcicEngine` | `outcome_CIMCIC_vs_DupocBot` (`loeb_CIMCIC_vs_DupocBot`, `_guards`, `loebSound_pCiDb`) | `outcome_CIMCIC_vs_Dupoc` |
 | `ArithS.Cells.DimcidEngine` | `outcome_DIMCID_vs_CupodBot` (`loeb_DIMCID_vs_CupodBot`, `_guards`) | `outcome_DIMCID_vs_Cupod` |
 
-The hand-twin `Cells` theorems are untouched (only the `outcome_` statements moved). Seven twin cells remain, all
-with `Just`/`Just7`/`CupodTroll7` as a player or opponent — not retirable (`README.md` §4).
+The hand-twin `Cells` theorems are untouched (only the `outcome_` statements moved). Seven twin cells remained, all
+with `Just`/`Just7`/`CupodTroll7` as a player or opponent; they were retired on 2026-10-02 (next section).
+
+## Twin retirement, completed (2026-10-02)
+
+Route (c) made generic (Phase 2c) gave the engine's `JustBot k`/`CupodTrollBot k` CONSTANT stored templates, so
+their cells could be re-run on `progCode` itself. No cell, no export row and no census clause is on a twin any more
+(`twinBase` is gone from `Outcome/Lint.lean`; `#check_sprime_coverage`: 78/78).
+
+| new module | cells now on the engine's codes (`Outcome/Matrix/`) | replaces |
+|---|---|---|
+| `ArithS.Cells.JustEngine` | `outcome_JustBot_vs_MirrorBot`, `outcome_JustBot_vs_DupocBot`, `outcome_JustBot_vs_JustBot`, `outcome_CIMCIC_vs_JustBot`, `outcome_DIMCID_vs_JustBot` (`loeb_JustBot_vs_MirrorBot`, `loeb_JustBot_vs_DupocBot`, `loeb_JustBot_vs_JustBot`, `loeb_CIMCIC_vs_JustBot`, `loeb_DIMCID_vs_JustBot_engine`; box forms `_guard`/`_guards`/`_engine_guard`) | `outcome_Just_vs_MirrorBot`, `outcome_Just7_vs_Dupoc`, `outcome_Just7_vs_Just7`, `outcome_CIMCIC_vs_Just7`, `outcome_DIMCID_vs_Just7` |
+| `ArithS.Cells.CupodTrollEngine` | `outcome_CupodTrollBot_vs_CupodBot`, `outcome_DIMCID_vs_CupodTrollBot` (`khat_CupodBot_vs_CupodTrollBot` + `_guard`, `loeb_DIMCID_vs_CupodTrollBot_engine` + `_core`, `_engine_guard`) | `outcome_CupodTroll7_vs_CupodBot`, `outcome_DIMCID_vs_CupodTroll7` |
+
+The generic kit lives in `Cells/JustEngine.lean` §0–§4 (`CupodTrollEngine` imports it): `conjL`/`loebSound_pL_above`/
+`boxes_pL_nat` (a conjunction family over a LIST of guards, slack `(7 n, 8 n)`), `SM.TU`/`SM.describes`/`SM.then_V`
+(an unwrapped simple member), `gSnap`/`eval_gSnap`/`lMap_swap_gSnap` (the stored snapshot template), `DP` (a described
+player with both orientations), `qF`/`qF13`/`guardCode_qF`/`guardCodeB_qF13` (a guard in a described frame), `World`/
+`worldC`/`worldD`/`loebSound_world`/`found_world` (a cell's core proved once for an arbitrary world). Names: the
+suffix `_engine` marks an engine-code theorem whose bare name is the twin theorem's (`loeb_DIMCID_vs_JustBot`,
+`loeb_DIMCID_vs_CupodTrollBot`, `khat_CupodTrollBot_vs_CupodBot` are stated on `Just7`/`CupodTroll7` and stay).
 
 ## The export discipline (2026-09-30, `SPRIME_SOURCE_OF_TRUTH.md` Phase 1.1)
 

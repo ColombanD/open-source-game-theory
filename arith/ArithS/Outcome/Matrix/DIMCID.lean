@@ -15,6 +15,7 @@ import ArithS.Cells.CIMCIC
 import ArithS.Cells.DIMCID
 import ArithS.Cells.DupocMirror
 import ArithS.Cells.JustBot
+import ArithS.Cells.CupodTrollEngine
 import ArithS.Necessitation.Package
 
 /-!
@@ -121,27 +122,27 @@ theorem outcome_DIMCID_vs_CupodBot :
     obtain ⟨k₀, h⟩ := loeb_DIMCID_vs_CupodBot
     exact ⟨k₀, fun k hk ↦ OutcomeAtA.of_evalGraph (h k hk)⟩)
 
-/-! ### On the hand-template twins
+/-! ### The two cells against the budget-snapshot bots, on the engine's own codes
 
-These cells are stated on arith codes that are NOT the engine's `progCode`:
-* `CupodTroll7 k` (`Cells/KhatCells.lean`): CupodTrollBot with the constant budget-slot template; plays as `progCode (CupodTrollBot k)` in the program slot (`evalGraph_CupodTroll7_iff`), but as an OPPONENT its code (hence the partner's guard sentence) differs.
-* `Just7 k` (`Cells/JustSlot.lean`): JustBot with the CONSTANT budget-slot template (route (c)); plays as `Just k` at every fuel (`evalGraph_Just7_iff`).
--/
+`Cells/JustEngine.lean`, `Cells/CupodTrollEngine.lean` (2026-10-02): the engine's `JustBot k` and `CupodTrollBot k`
+store constant templates since route (c) was made generic, so they are DESCRIBED opponents and
+`dimcid_vs_described` applies to them directly; the hand-template twins `Just7 k`/`CupodTroll7 k` are retired
+from the matrix. -/
 
-/-- `loeb_DIMCID_vs_CupodTrollBot` (stated on the budget-slot twin `CupodTroll7 k`) -/
+/-- `loeb_DIMCID_vs_CupodTrollBot_engine` — FLIP: the engine has `(C, C)` -/
 @[outcomeA]
-theorem outcome_DIMCID_vs_CupodTroll7 :
-    OutcomeSpecA .eventual (bot DIMCID) CupodTroll7 (some (.D, .C)) :=
+theorem outcome_DIMCID_vs_CupodTrollBot :
+    OutcomeSpecA .eventual (bot DIMCID) (bot CupodTrollBot) (some (.D, .C)) :=
   OutcomeSpecA.eventual_of (by
-    obtain ⟨k₀, h⟩ := loeb_DIMCID_vs_CupodTrollBot
+    obtain ⟨k₀, h⟩ := loeb_DIMCID_vs_CupodTrollBot_engine
     exact ⟨k₀, fun k hk ↦ OutcomeAtA.of_evalGraph (h k hk)⟩)
 
-/-- `loeb_DIMCID_vs_JustBot` (stated on the budget-slot twin `Just7 k`) -/
+/-- `loeb_DIMCID_vs_JustBot_engine` — FLIP: the engine has `(C, D)` -/
 @[outcomeA]
-theorem outcome_DIMCID_vs_Just7 :
-    OutcomeSpecA .eventual (bot DIMCID) Just7 (some (.D, .D)) :=
+theorem outcome_DIMCID_vs_JustBot :
+    OutcomeSpecA .eventual (bot DIMCID) (bot JustBot) (some (.D, .D)) :=
   OutcomeSpecA.eventual_of (by
-    obtain ⟨k₀, h⟩ := loeb_DIMCID_vs_JustBot
+    obtain ⟨k₀, h⟩ := loeb_DIMCID_vs_JustBot_engine
     exact ⟨k₀, fun k hk ↦ OutcomeAtA.of_evalGraph (h k hk)⟩)
 
 end ArithS

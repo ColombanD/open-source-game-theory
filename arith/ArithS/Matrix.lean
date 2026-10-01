@@ -11,6 +11,8 @@ import ArithS.Cells.DupocMirror
 import ArithS.Cells.DupocEngine
 import ArithS.Cells.DimcidEngine
 import ArithS.Cells.CimcicEngine
+import ArithS.Cells.JustEngine
+import ArithS.Cells.CupodTrollEngine
 import ArithS.Cells.FlipCells
 import ArithS.Cells.FloorDichotomy
 import ArithS.Cells.FloorVerdicts
@@ -109,7 +111,9 @@ import ArithS.Tau.Entangled.DimcidPrudent
 `KhatCells` (a `TAct`-theorem's instance fits the budget), `FlipCells` (where `S'` contradicts the engine),
 `FloorVerdicts`/`FloorDichotomy` (the floors). LÖB cells are filed BY BOT — `DupocMirror`, `JustBot`,
 `JustSlot`, `CIMCIC`, `DIMCID`, `DimcidFlips`, `PrudentMirror`, `PrudentLoose` — because each needs its own
-description layer and conjunction family. `Common/` holds what several files share (bot codes, templates,
+description layer and conjunction family; the re-runs of the hand-twin cells on the engine's own codes are
+`DupocEngine`, `CimcicEngine`, `DimcidEngine`, `JustEngine`, `CupodTrollEngine` (every matrix cell is on
+`progCode` since 2026-10-02). `Common/` holds what several files share (bot codes, templates,
 probers, families, the `k̂`-chain); `Names` the deprecated aliases. Theorem heads name the method
 (`sf_`, `snd_`, `pos_`, `khat_`, `loeb_`, `floor_`, `dich_`); the cell name is the `outcome_` one.
 

@@ -354,6 +354,14 @@ def _theorems_from_export(
 # the budget in template slot #6), and the Löb families are stated on the short names
 # `Dupoc`/`Cupod`/`Just`. The exporter keeps the twin's name in `left_bot`/`right_bot`;
 # the app reads the cell for the ENGINE bot. Never applied to the engine source.
+#
+# DORMANT since 2026-10-02: the last twin-named cells were re-proved on the engine's own
+# `JustBot`/`CupodTrollBot` (`arith/ArithS/Cells/JustEngine.lean`, `CupodTrollEngine.lean`;
+# the Dupoc/Cupod twins went on 2026-09-30), so `lake exe export_sprime_outcomes` writes no
+# twin name and the aliasing never fires on the real export (`twin_of` is `""` on every
+# row; `tests/test_cell_source.py` asserts it). The mechanism is kept so that an export
+# from an older checkout still loads, and so that a twin sneaking back is aliased and
+# collision-checked rather than surfacing as a sixteenth-plus bot.
 SPRIME_TWIN_BASE: dict[str, str] = {
     "Just7": "JustBot",
     "Just": "JustBot",

@@ -160,6 +160,9 @@ Then, in order:
    theorem) and `Necessitation/Package.lean` (`boundedInnerNec_sixteen`, `pblt`,
    `dupoc_self_coop`): read the STATEMENTS.
 4. **One Löb cell** — `Cells/DupocEngine.lean` (Dupoc × Dupoc on the engine's code, the two-guard family `pQ`; 300 lines) or `Cells/CIMCIC.lean`.
+   For a cell whose family has more than two guards, `Cells/JustEngine.lean`: the guards as a list (`conjL`,
+   `loebSound_pL_above`) and the semantic core proved once for an arbitrary WORLD (`worldC`, the engine's bots;
+   `worldD`, their transposition).
 5. **The flips** — `Cells/FlipCells.lean`, `Cells/DimcidFlips.lean`: where PA-`S'` contradicts the
    engine, and why (`dimcid_vs_closed`: DIMCID defects against every closed program).
 6. **The floors** — `Cells/FloorDichotomy.lean`: the 26 genuine floors as hypothesis-free dichotomies
@@ -180,7 +183,7 @@ Then, in order:
 | `sound_upto` | `models_TAct` + the truth equations | soundness in ℕ |
 | `bloeb_engine`/`pblt_engine` | `family_found`/`pblt` | Löb needs U10 |
 | `outcome_<L>_vs_<R>` | `outcome_<L>_vs_<R>` in `Outcome/Matrix/` | proved from `snd_/pos_/loeb_/khat_/sf_<L>_vs_<R>` |
-| `DupocBot k` | `progCode (DupocBot k)`; the hand twin `Dupoc k` | see the twins below |
+| `DupocBot k` | `progCode (DupocBot k)` | every cell is on the engine's `progCode`; the hand twins are below |
 
 **The paper's symbols** (`Notation.lean`; the engine column is the engine's own notation):
 
@@ -197,25 +200,35 @@ Then, in order:
 atom, `snd_` soundness/else branch, `pos_` guard found without Löb, `loeb_` bounded Löb, `khat_` the
 `k̂`-chain, `floor_` a settled floor half, `dich_` a floor dichotomy. The cell name is the `outcome_` one.
 
-**The hand-template twins.** Seven cells are stated on codes that are NOT the engine's `progCode`:
-`Just k`/`Just7 k` (`Cells/JustBot.lean`, `Cells/JustSlot.lean`) and `CupodTroll7 k` (`Cells/KhatCells.lean`),
-in `outcome_Just_vs_MirrorBot`, `outcome_Just7_vs_Dupoc`, `outcome_Just7_vs_Just7`, `outcome_DIMCID_vs_Just7`,
-`outcome_DIMCID_vs_CupodTroll7`, `outcome_CIMCIC_vs_Just7`, `outcome_CupodTroll7_vs_CupodBot`. These are NOT
-retirable by re-proving: the engine's `JustBot k`/`CupodTrollBot k` freeze a BUDGET-CARRYING snapshot in their
-guard, so `progCode (JustBot k)` is the `binNumeral k`-instance of no fixed term and the family assembly cannot
-DESCRIBE it as an opponent (`ROUTE_B_SCOPE.md` §7); the seven-variable twins with a budget slot are the only
-describable form, and they play like the hand-written snapshot (`evalGraph_JustV7_iff`), which is itself
-`pBot (DupocV k)`, not `.bot (DupocBot k)`. Their `outcome_` theorems keep the twin's name so that a name never
-claims more than its statement. The former Dupoc/Cupod twins are RETIRED: `Cells/DupocEngine.lean`,
-`Cells/CimcicEngine.lean`, `Cells/DimcidEngine.lean` re-prove Dupoc × Dupoc, Cupod × Cupod, Dupoc/Cupod × Mirror,
-CIMCIC × Dupoc and DIMCID × Cupod on `progCode (DupocBot k)`/`progCode (CupodBot k)` (= the generic searcher
-`SV gDu 0`/`SV gCu 1` of `Cells/Common/Bots.lean` §4, the guard `qT gDu …`, the family `pQ`), and the cells are
-`outcome_DupocBot_vs_DupocBot`, `outcome_CupodBot_vs_CupodBot`, `outcome_DupocBot_vs_MirrorBot`,
-`outcome_CupodBot_vs_MirrorBot`, `outcome_CIMCIC_vs_DupocBot`, `outcome_DIMCID_vs_CupodBot`. The hand-written
-`Dupoc k`/`Cupod k` stay as the self-contained red cell (`Cells/RedCell.lean`) and the hand-twin Löb theorems
-stay beside the engine ones (`Cells/DupocMirror.lean`, `dupoc_self_coop`). `Cimcic`, `Dimcid`, `Prudent`,
-`Mirror` ARE the engine's codes (`progCode_CIMCIC`, `progCode_DIMCID`, `progCode_PrudentBot`,
-`progCode_MirrorBot`).
+**The hand-template twins — retired from the matrix.** Every one of the 107 cells of `Outcome/Matrix/` is stated
+on the engine's own `progCode` since 2026-10-02. The twins were hand-written codes with a hand-written template,
+kept because a different template is a different SENTENCE (length-bounded provability does not transfer across
+provably equivalent sentences) and each cell's argument had to be re-run on the engine's code:
+
+* `Dupoc k`/`Cupod k` (the searcher on `guardTemplate`) — retired 2026-09-30 by `Cells/DupocEngine.lean`,
+  `Cells/CimcicEngine.lean`, `Cells/DimcidEngine.lean`: Dupoc × Dupoc, Cupod × Cupod, Dupoc/Cupod × Mirror,
+  CIMCIC × Dupoc, DIMCID × Cupod on `progCode (DupocBot k)`/`progCode (CupodBot k)` (= the generic searcher
+  `SV gDu 0`/`SV gCu 1` of `Cells/Common/Bots.lean` §4, the guard `qT gDu …`, the family `pQ`).
+* `Just k`/`Just7 k` (`Cells/JustBot.lean`, `Cells/JustSlot.lean`) and `CupodTroll7 k` (`Cells/KhatCells.lean`) —
+  retired 2026-10-02 by `Cells/JustEngine.lean` and `Cells/CupodTrollEngine.lean`. They existed because the
+  engine's `JustBot k`/`CupodTrollBot k` freeze a BUDGET-CARRYING snapshot in their guard, so their stored template
+  used to depend on `k` and no fixed tower described them. Route (c) made generic (Phase 2c, §2 item 6) abstracts
+  that budget into the slot `#6`: `templateAt (phiJ k) (some k) = gSnap gDu 0` and `templateAt (phiT k) (some k) =
+  gEq gCu 1` for every `k` (`templateAt_phiJ`, `templateAt_phiT`), so the engine's codes are simple members
+  (`progCode_JustBot_sJ`, `progCode_CupodTrollBot_sT`), described in every model by their own towers
+  (`SM.describes`). The seven cells — `outcome_JustBot_vs_MirrorBot`, `outcome_JustBot_vs_DupocBot`,
+  `outcome_JustBot_vs_JustBot`, `outcome_CIMCIC_vs_JustBot`, `outcome_DIMCID_vs_JustBot`,
+  `outcome_CupodTrollBot_vs_CupodBot`, `outcome_DIMCID_vs_CupodTrollBot` — are proved from
+  `loeb_JustBot_vs_MirrorBot`, `loeb_JustBot_vs_DupocBot`, `loeb_JustBot_vs_JustBot`, `loeb_CIMCIC_vs_JustBot`,
+  `loeb_DIMCID_vs_JustBot_engine`, `khat_CupodBot_vs_CupodTrollBot`, `loeb_DIMCID_vs_CupodTrollBot_engine` (the
+  suffix `_engine` where the bare name is the twin theorem's). One difference from the twins: the hand template
+  made Just's guard against `opp` literally Dupoc's guard in the snapshot's frame; on the engine's templates those
+  are two codes, so each family carries the snapshot's own guard as a separate conjunct.
+
+The twin THEOREMS stay in `Cells/` (untagged, still true, the self-contained red cell `Cells/RedCell.lean` and
+the headline `dupoc_self_coop` among them); no `outcome_` statement and no row of the export is on a twin, and the
+coverage census has no twin clause. `Cimcic`, `Dimcid`, `Prudent`, `Mirror` ARE the engine's codes
+(`progCode_CIMCIC`, `progCode_DIMCID`, `progCode_PrudentBot`, `progCode_MirrorBot`).
 
 ## 5. Folder map
 
@@ -257,7 +270,8 @@ row tables · `Lib/` the library of PA-provable schemas the steps cite.
 **`Cells/`** — the proofs. The header rule: UNIFORM methods are filed by method, LÖB cells by bot (each needs its own
 description layer and family); the rule and the file list are in `Matrix.lean`'s docstring. By method: `RedCell`, `RedCellEngine`, `SearchFree`, `SoundnessCells`,
 `PositiveCells`, `KhatCells`, `DupocMirror`, `CIMCIC`, `DIMCID`, `JustBot`, `JustSlot`, `PrudentMirror`,
-`PrudentLoose`, `FlipCells`, `DimcidFlips`, `FloorVerdicts`, `FloorDichotomy`, `SimSlot`; `Common/` the
+`PrudentLoose`, `FlipCells`, `DimcidFlips`, `FloorVerdicts`, `FloorDichotomy`, `SimSlot`; the re-runs on the
+engine's codes `DupocEngine`, `CimcicEngine`, `DimcidEngine`, `JustEngine`, `CupodTrollEngine`; `Common/` the
 shared bot codes, templates, probers, families, the `k̂`-chain; `Names` the deprecated old names.
 
 **`Outcome/`** — `Spec` the vocabulary · `Matrix/<L>` the cells (`@[outcomeA]`) · `Floor` the floor template
@@ -300,8 +314,8 @@ runs, through the root `Outcome/Check.lean`:
   `theorem outcome_<L>_vs_<R>` under the directory is tagged; one cell per ordered pair;
 * `#check_floorA_theorems "ArithS/Cells/FloorDichotomy.lean"` — every tagged floor is a `FloorSpecA` named
   `…_floor` with an existing `dich_<L>_vs_<R>`; every `dich_<L>_vs_<R>` in the file has a floor; no floor shadows a cell;
-* `#check_sprime_coverage` — every unordered pair of the 12 paper base bots is a cell or a floor (the hand-template
-  twins `Just7`/`CupodTroll7`/… count for their base bot here and nowhere else).
+* `#check_sprime_coverage` — every unordered pair of the 12 paper base bots is a cell or a floor, on the engine's
+  own bots (78/78; no twin clause since 2026-10-02).
 
 `lake exe export_sprime_outcomes [out.json]` writes the engine's JSON schema plus `"system": "sprime"`, a
 `provenance` per row (`sprime` / `floor_dichotomy`) and a `floors` array (`hinge`, `dichotomy`); `fuel_pad` is `0`
@@ -319,14 +333,6 @@ pruning: `Research/Notes/ARITH_DEAD_CODE_AUDIT.md`, `scripts/DeadCode.lean`.
   the U10 kit for a body computed from the frame (`ROUTE_B_SCOPE.md` §9).
 * **The 26 genuine floors** take no side: each is a dichotomy on a hinge that is bounded consistency of
   `TAct` at `k` up to a constant — Pudlák's linear-regime question. Never admit the hinge as an axiom.
-* **The engine-named versions of the seven twin cells** (`outcome_Just_vs_MirrorBot`, `outcome_Just7_vs_Dupoc`,
-  `outcome_Just7_vs_Just7`, `outcome_CupodTroll7_vs_CupodBot`, `outcome_CIMCIC_vs_Just7`, `outcome_DIMCID_vs_CupodTroll7`,
-  `outcome_DIMCID_vs_Just7`). Since 2026-10-01 the engine's `JustBot k`/`CupodTrollBot k` themselves store
-  constant templates (`progCode_JustBot`, `progCode_CupodTrollBot`: `templateCodeAt (phiJ k) k`), so the hand
-  twins `Just7`/`CupodTroll7` are no longer needed for CONSTANCY — but a twin's template is the hand
-  `guardTemplate 0`/`eqTmpl` shape while the engine's is the general `template` shape, two different sentences
-  whose bounded provability is not interchangeable; the Löb families must be re-run on the engine's templates
-  (as `Cells/DupocEngine.lean` did for Dupoc) before those cells can carry the engine names. `twinBase` stays.
 * **The outcomes of the entangled tau pairs** (Phase 3). The pronoun reading of `.selfIdx` — the last item of
   Phase 2 — LANDED on 2026-10-01: a system member's guard is described through the member slots `#7..#12` of the
   thirteen-variable `template13`, `sysCloseTemplate` on it is the engine's `Formula.sysClose`

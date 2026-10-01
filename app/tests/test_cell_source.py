@@ -195,12 +195,19 @@ def test_sprime_twin_rows_are_aliased_to_engine_bots(sprime_export) -> None:
     doc = json.loads(sprime_export.read_text(encoding="utf-8"))
     twin_rows = [r for r in doc["theorems"]
                  if r["left_bot"] in SPRIME_TWIN_BASE or r["right_bot"] in SPRIME_TWIN_BASE]
-    if twin_rows:  # the real export
+    if twin_rows:  # an export from before the twins were retired (2026-10-02)
         assert {t.name for t in aliased} <= {r["name"] for r in twin_rows}
         by_pair = om.index_by_ordered_pair(cells)
         # The two paper-zoo pairs that exist ONLY under twin names reach the matrix.
         assert by_pair.get(("CupodTrollBot", "CupodBot")).twin_of == "CupodTroll7"
         assert by_pair.get(("DIMCID", "CupodTrollBot")).twin_of == "CupodTroll7"
+    elif sprime_export == SPRIME_REAL_EXPORT:
+        # Since 2026-10-02 the real export names engine bots only (the last twins were
+        # re-proved on `JustBot`/`CupodTrollBot`): the aliasing is dormant.
+        assert not aliased
+        by_pair = om.index_by_ordered_pair(cells)
+        assert by_pair.get(("CupodTrollBot", "CupodBot")).twin_of == ""
+        assert by_pair.get(("DIMCID", "CupodTrollBot")).twin_of == ""
 
 
 def test_twin_alias_collision_with_a_different_value_raises(tmp_path) -> None:

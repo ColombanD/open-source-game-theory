@@ -5,6 +5,8 @@ import ArithS.Cells.PrudentLoose
 import ArithS.Cells.DupocEngine
 import ArithS.Cells.DimcidEngine
 import ArithS.Cells.CimcicEngine
+import ArithS.Cells.JustEngine
+import ArithS.Cells.CupodTrollEngine
 import ArithS.Cells.TauMember
 import PrisonersDilemma.Theorems.DupocBot.RedCellInstance
 
@@ -308,6 +310,91 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms loeb_CIMCIC_vs_DupocBot
 #print axioms loeb_CIMCIC_vs_DupocBot_guards
 #print axioms loebSound_pCiDb
+
+-- Cells/JustEngine (2026-10-02) — JustBot's five twin cells on the ENGINE's `progCode (JustBot k)`, whose stored
+-- template is a constant since route (c) was made generic (`templateAt_phiJ`: `templateAt (phiJ k) (some k) =
+-- gSnap gDu 0`; `progCode_JustBot_sJ`: the code is the simple member `sJc .C`). The kit: a conjunction family over a
+-- LIST of guards (`conjL`, `loebSound_pL_above`, `boxes_pL_nat`), the description of an unwrapped simple member
+-- (`SM.describes`/`describesT`, `SM.then_V`), the snapshot template and its truth in every model (`eval_gSnap`,
+-- `lMap_swap_gSnap`), described players and frame guards (`DP`, `guardCode_qF`, `guardCodeB_qF13`), the two WORLDS
+-- (`worldC` = the engine's bots, `worldD` = their transposition) and `loebSound_world`/`found_world`: a cell's
+-- semantic core is proved once for an arbitrary world. Retires `outcome_Just_vs_MirrorBot`, `outcome_Just7_vs_Dupoc`,
+-- `outcome_Just7_vs_Just7`, `outcome_CIMCIC_vs_Just7`, `outcome_DIMCID_vs_Just7`.
+#print axioms eval_conjL
+#print axioms boxes_conjL
+#print axioms boxes_pL
+#print axioms loebSound_pL_above
+#print axioms boxes_pL_nat
+#print axioms Tau.SM.describes
+#print axioms Tau.SM.describesT
+#print axioms Tau.SM.then_V
+#print axioms Tau.SM.else_V
+#print axioms eval_plAt_opp_closed
+#print axioms eval_gSnap
+#print axioms lMap_swap_gSnap
+#print axioms describes_SVT
+#print axioms guardCode_qF
+#print axioms guardCodeB_qF13
+#print axioms eval_qF_plays
+#print axioms eval_qF_impl
+#print axioms eval_qF13_snap
+#print axioms templateAt_phiJ
+#print axioms templateAt_phiJT
+#print axioms progCode_JustBot_sJ
+#print axioms worldC
+#print axioms worldD
+#print axioms swap_qJ
+#print axioms swap_qP
+#print axioms swap_qI
+#print axioms loebSound_world
+#print axioms found_world
+#print axioms worldC_qJ_guard
+#print axioms jm_core
+#print axioms jm_found
+#print axioms loeb_JustBot_vs_MirrorBot
+#print axioms loeb_JustBot_vs_MirrorBot_guard
+#print axioms jj_core
+#print axioms jj_found
+#print axioms loeb_JustBot_vs_JustBot
+#print axioms loeb_JustBot_vs_JustBot_guard
+#print axioms jd_core
+#print axioms jd_found
+#print axioms loeb_JustBot_vs_DupocBot
+#print axioms loeb_JustBot_vs_DupocBot_guards
+#print axioms cj_core
+#print axioms cj_found
+#print axioms loeb_CIMCIC_vs_JustBot
+#print axioms loeb_CIMCIC_vs_JustBot_guards
+#print axioms loeb_DIMCID_vs_JustBot_core
+#print axioms loeb_DIMCID_vs_JustBot_engine
+#print axioms loeb_DIMCID_vs_JustBot_engine_guard
+
+-- Cells/CupodTrollEngine (2026-10-02) — CupodTrollBot's two twin cells on the ENGINE's `progCode (CupodTrollBot k)`
+-- (`templateAt_phiT`: its stored `.eq` template is the constant `gEq gCu 1`; `progCode_CupodTrollBot_sT`): the
+-- `.eq` template's truth in every model (`eval_gEq`), CupodTroll's guard against Cupod a `TAct`-theorem
+-- (`tact_qTCu`), found in every model above a threshold (`troll_vs_cupod_V`), Cupod's guard against the engine
+-- CupodTroll by the `k̂`-chain (`khat_CupodBot_vs_CupodTrollBot`), and DIMCID's self-fulfilling refutation against
+-- the described engine CupodTroll (`loeb_DIMCID_vs_CupodTrollBot_engine`). Retires `outcome_CupodTroll7_vs_CupodBot`,
+-- `outcome_DIMCID_vs_CupodTroll7`.
+#print axioms lMap_swap_eqAt
+#print axioms eval_eqAt_opp_closed
+#print axioms closedDescAt_SV
+#print axioms absVal_SV
+#print axioms eval_gEq
+#print axioms lMap_swap_gEq
+#print axioms templateAt_phiT
+#print axioms templateAt_phiTT
+#print axioms progCode_CupodTrollBot_sT
+#print axioms tact_qTCu
+#print axioms tact_qTCu_swap
+#print axioms troll_vs_cupod_V
+#print axioms trollT_vs_dupoc_V
+#print axioms tact_qCuT_above
+#print axioms khat_CupodBot_vs_CupodTrollBot_guard
+#print axioms khat_CupodBot_vs_CupodTrollBot
+#print axioms loeb_DIMCID_vs_CupodTrollBot_core
+#print axioms loeb_DIMCID_vs_CupodTrollBot_engine
+#print axioms loeb_DIMCID_vs_CupodTrollBot_engine_guard
 #print axioms loeb_Dupoc_vs_Mirror_guard
 #print axioms loeb_Cupod_vs_Mirror_guard
 
@@ -1131,8 +1218,8 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 -- for all large `k` — the two proof systems contradict each other on this cell (Dupoc's guard "DIMCID cooperates
 -- with me" is false ⇒ SND ⇒ D, `snd_DupocBot_vs_DIMCID_notFound`); DIMCID × JustBot `(C, D)` → `(D, D)`
 -- (`llm_outcome_DIMCID_vs_JustBot`, floor; on the budget-slot `Just7 k`, DIMCID's half against the described
--- `Just7 k`, Just's half on `Just7 k` AND on the engine's code `snd_JustBot_vs_DIMCID_engine` — no `Describes`
--- for `progCode (JustBot k)`, ROUTE_B_SCOPE §7); DIMCID × PrudentBot `(C, D)` → `(D, D)` (`llm_outcome_DIMCID_vs_PrudentBot`,
+-- `Just7 k`, Just's half on `Just7 k` AND on the engine's code `snd_JustBot_vs_DIMCID_engine`; the cell on the
+-- engine's own `progCode (JustBot k)` is `loeb_DIMCID_vs_JustBot_engine`, `Cells/JustEngine`); DIMCID × PrudentBot `(C, D)` → `(D, D)` (`llm_outcome_DIMCID_vs_PrudentBot`,
 -- floor; Prudent's outer guard false ⇒ D); CIMCIC × DIMCID `(D, C)` → `(D, D)` (`llm_outcome_CIMCIC_vs_DIMCID`,
 -- floor; CIMCIC's guard self-refuting ⇒ D, `snd_CIMCIC_vs_DIMCID_notFound`). The row: `dimcid_flips_census`.
 #print axioms loeb_DIMCID_vs_DBot

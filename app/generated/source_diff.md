@@ -19,7 +19,7 @@ Bots: CooperateBot, CupodBot, CupodTrollBot, DBot, DIMCID, DefectBot, DupocBot, 
 | pair | engine | S' | theorems |
 |---|---|---|---|
 | CooperateBot vs DIMCID | (C, C) | (C, D) | `outcome_DIMCID_vs_CooperateBot` / `outcome_DIMCID_vs_CooperateBot` |
-| CupodTrollBot vs DIMCID | (C, C) | (C, D) | `llm_outcome_DIMCID_vs_CupodTrollBot` / `outcome_DIMCID_vs_CupodTroll7` |
+| CupodTrollBot vs DIMCID | (C, C) | (C, D) | `llm_outcome_DIMCID_vs_CupodTrollBot` / `outcome_DIMCID_vs_CupodTrollBot` |
 | DBot vs DIMCID | (C, C) | (C, D) | `llm_outcome_DIMCID_vs_DBot` / `outcome_DIMCID_vs_DBot` |
 | DIMCID vs DupocBot | (C, D) | (D, D) | `outcome_DIMCID_vs_DupocBot` / `outcome_DIMCID_vs_DupocBot` |
 | DIMCID vs EBot | (C, C) | (D, D) | `llm_outcome_DIMCID_vs_EBot` / `outcome_DIMCID_vs_EBot` |
@@ -47,7 +47,7 @@ Bots: CIMCIC, CooperateBot, CupodBot, CupodTrollBot, DBot, DIMCID, DefectBot, Du
 |---|---|---|---|
 | CIMCIC vs DIMCID | (D, C) | (D, D) | `llm_outcome_CIMCIC_vs_DIMCID` / `outcome_CIMCIC_vs_DIMCID` |
 | CooperateBot vs DIMCID | (C, C) | (C, D) | `outcome_DIMCID_vs_CooperateBot` / `outcome_DIMCID_vs_CooperateBot` |
-| CupodTrollBot vs DIMCID | (C, C) | (C, D) | `llm_outcome_DIMCID_vs_CupodTrollBot` / `outcome_DIMCID_vs_CupodTroll7` |
+| CupodTrollBot vs DIMCID | (C, C) | (C, D) | `llm_outcome_DIMCID_vs_CupodTrollBot` / `outcome_DIMCID_vs_CupodTrollBot` |
 | DBot vs DIMCID | (C, C) | (C, D) | `llm_outcome_DIMCID_vs_DBot` / `outcome_DIMCID_vs_DBot` |
 | DIMCID vs DupocBot | (C, D) | (D, D) | `outcome_DIMCID_vs_DupocBot` / `outcome_DIMCID_vs_DupocBot` |
 | DIMCID vs EBot | (C, C) | (D, D) | `llm_outcome_DIMCID_vs_EBot` / `outcome_DIMCID_vs_EBot` |
@@ -85,7 +85,7 @@ Bots: CIMCIC, CooperateBot, CupodBot, CupodTrollBot, DBot, DIMCID, DefectBot, Du
 |---|---|---|---|
 | CIMCIC vs DIMCID | (D, C) | (D, D) | `llm_outcome_CIMCIC_vs_DIMCID` / `outcome_CIMCIC_vs_DIMCID` |
 | CooperateBot vs DIMCID | (C, C) | (C, D) | `outcome_DIMCID_vs_CooperateBot` / `outcome_DIMCID_vs_CooperateBot` |
-| CupodTrollBot vs DIMCID | (C, C) | (C, D) | `llm_outcome_DIMCID_vs_CupodTrollBot` / `outcome_DIMCID_vs_CupodTroll7` |
+| CupodTrollBot vs DIMCID | (C, C) | (C, D) | `llm_outcome_DIMCID_vs_CupodTrollBot` / `outcome_DIMCID_vs_CupodTrollBot` |
 | DBot vs DIMCID | (C, C) | (C, D) | `llm_outcome_DIMCID_vs_DBot` / `outcome_DIMCID_vs_DBot` |
 | DIMCID vs DupocBot | (C, D) | (D, D) | `outcome_DIMCID_vs_DupocBot` / `outcome_DIMCID_vs_DupocBot` |
 | DIMCID vs EBot | (C, C) | (D, D) | `llm_outcome_DIMCID_vs_EBot` / `outcome_DIMCID_vs_EBot` |
@@ -137,7 +137,7 @@ Bots: CIMCIC, CooperateBot, CupodBot, CupodTrollBot, DBot, DIMCID, DefectBot, Du
 |---|---|---|---|
 | CIMCIC vs DIMCID | (D, C) | (D, D) | `llm_outcome_CIMCIC_vs_DIMCID` / `outcome_CIMCIC_vs_DIMCID` |
 | CooperateBot vs DIMCID | (C, C) | (C, D) | `outcome_DIMCID_vs_CooperateBot` / `outcome_DIMCID_vs_CooperateBot` |
-| CupodTrollBot vs DIMCID | (C, C) | (C, D) | `llm_outcome_DIMCID_vs_CupodTrollBot` / `outcome_DIMCID_vs_CupodTroll7` |
+| CupodTrollBot vs DIMCID | (C, C) | (C, D) | `llm_outcome_DIMCID_vs_CupodTrollBot` / `outcome_DIMCID_vs_CupodTrollBot` |
 | DBot vs DIMCID | (C, C) | (C, D) | `llm_outcome_DIMCID_vs_DBot` / `outcome_DIMCID_vs_DBot` |
 | DIMCID vs DupocBot | (C, D) | (D, D) | `outcome_DIMCID_vs_DupocBot` / `outcome_DIMCID_vs_DupocBot` |
 | DIMCID vs EBot | (C, C) | (D, D) | `llm_outcome_DIMCID_vs_EBot` / `outcome_DIMCID_vs_EBot` |

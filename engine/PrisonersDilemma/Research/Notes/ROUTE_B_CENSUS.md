@@ -2,7 +2,9 @@
 
 *One row per engine cell: the engine's value, the `S'` value (`—` = no `S'` statement), the `S'` class and the
 theorem that states it (`arith/ArithS/Cells/`; the engine-vocabulary form is `outcome_<L>_vs_<R>` in
-`arith/ArithS/Outcome/Matrix/<L>.lean`). Script-exact over the 155 cells of
+`arith/ArithS/Outcome/Matrix/<L>.lean`; since 2026-10-02 every one of the 107 is stated on the engine's own
+`progCode` — the last seven hand-template twin cells were re-proved in `Cells/JustEngine.lean` and
+`Cells/CupodTrollEngine.lean`). Script-exact over the 155 cells of
 `app/generated/outcome_theorems.json`. The engine-mechanism classification of every cell (how the ENGINE proves
 it: Löb engine, floor lemma, census) and the classification method are in git before `c0aa163`.*
 
@@ -30,18 +32,18 @@ it: Löb engine, floor lemma, census) and the classification method are in git b
 | llm_outcome_CIMCIC_vs_CupodTrollBot | (D, C) | — | GENUINE-FLOOR | CIMCIC's guard TRUE (consequent = CupodTroll's else-play). Settled: `floor_CIMCIC_vs_CupodTrollBot_right`, `_true` — dichotomy: `dich_CIMCIC_vs_CupodTrollBot` |
 | llm_outcome_CIMCIC_vs_DBot | (D, C) | — | GENUINE-FLOOR | cenU; CIMCIC's guard TRUE (DBot cooperates: CIMCIC's self-refuting else-play vs `.bot DefectBot`). Settled: `floor_CIMCIC_vs_DBot_right`, `_true` — dichotomy: `dich_CIMCIC_vs_DBot` |
 | llm_outcome_CIMCIC_vs_DIMCID | (D, C) | (D, D) | FLIP | loeb_CIMCIC_vs_DIMCID |
-| llm_outcome_CIMCIC_vs_DupocBot | (C, C) | (C, C) | LOEB | loeb_Cimcic_vs_Dupoc |
+| llm_outcome_CIMCIC_vs_DupocBot | (C, C) | (C, C) | LOEB | loeb_CIMCIC_vs_DupocBot (`Cells/CimcicEngine`; the hand-twin form is `loeb_Cimcic_vs_Dupoc`) |
 | llm_outcome_CIMCIC_vs_EBot | (D, C) | — | GENUINE-FLOOR | cenU; CIMCIC's guard TRUE (EBot's rung 1 = CIMCIC's else-play vs `.bot DefectBot`). Settled: `floor_CIMCIC_vs_EBot_right`, `_true` — dichotomy: `dich_CIMCIC_vs_EBot` |
-| llm_outcome_CIMCIC_vs_JustBot | (C, C) | (C, C) | LOEB | loeb_Cimcic_vs_Just7 (on `Just7 k`) |
+| llm_outcome_CIMCIC_vs_JustBot | (C, C) | (C, C) | LOEB | loeb_CIMCIC_vs_JustBot (`Cells/JustEngine`; the hand-twin form is `loeb_Cimcic_vs_Just7`) |
 | llm_outcome_CIMCIC_vs_MirrorBot | (C, C) | (C, C) | LOEB | loeb_Cimcic_vs_Mirror |
 | llm_outcome_CIMCIC_vs_OptimBot | (D, C) | — | EXCLUDED | OptimBot/LegibleBot out of coverage |
 | llm_outcome_CIMCIC_vs_PrudentBot | (D, D) | — | GENUINE-FLOOR | prudence guard TRUE via CIMCIC's self-refuting else-play — `floor_CIMCIC_vs_PrudentBot_true`; if not found CIMCIC's guard is self-refuting ⇒ `(D, D)` — dichotomy: `dich_CIMCIC_vs_PrudentBot` (prudence hinge `B` NOT dischargeable: an else-branch defection, `B_k` is itself a bounded-consistency-type sentence — `Cells/PrudentLoose`) |
 | llm_outcome_CIMCIC_vs_TitForTatBot | (C, C) | (C, C) | POS | khat_CIMCIC_vs_TitForTatBot |
-| llm_outcome_DIMCID_vs_CupodTrollBot | (C, C) | (D, C) | FLIP | loeb_DIMCID_vs_CupodTrollBot (on `CupodTroll7 k`) |
+| llm_outcome_DIMCID_vs_CupodTrollBot | (C, C) | (D, C) | FLIP | loeb_DIMCID_vs_CupodTrollBot_engine (`Cells/CupodTrollEngine`; the hand-twin form, on `CupodTroll7 k`, is `loeb_DIMCID_vs_CupodTrollBot`) |
 | llm_outcome_DIMCID_vs_DBot | (C, C) | (D, C) | FLIP | loeb_DIMCID_vs_DBot |
 | llm_outcome_DIMCID_vs_DIMCID | (D, D) | (D, D) | LOEB | loeb_Dimcid_vs_Dimcid |
 | llm_outcome_DIMCID_vs_EBot | (C, C) | (D, D) | FLIP | loeb_DIMCID_vs_EBot |
-| llm_outcome_DIMCID_vs_JustBot | (C, D) | (D, D) | FLIP | loeb_DIMCID_vs_JustBot (on `Just7 k`; Just half also `snd_JustBot_vs_DIMCID_engine`) |
+| llm_outcome_DIMCID_vs_JustBot | (C, D) | (D, D) | FLIP | loeb_DIMCID_vs_JustBot_engine (`Cells/JustEngine`; the hand-twin form, on `Just7 k`, is `loeb_DIMCID_vs_JustBot`) |
 | llm_outcome_DIMCID_vs_MirrorBot | (D, D) | (D, D) | LOEB | loeb_Dimcid_vs_Mirror |
 | llm_outcome_DIMCID_vs_OBot | (C, D) | (D, D) | FLIP | loeb_DIMCID_vs_OBot |
 | llm_outcome_DIMCID_vs_PrudentBot | (C, D) | (D, D) | FLIP | loeb_DIMCID_vs_PrudentBot |
@@ -58,7 +60,7 @@ it: Löb engine, floor lemma, census) and the classification method are in git b
 | llm_outcome_GuardianBot_vs_OBot | (C, D) | (C, D) | SND | pos_GuardianBot_vs_OBot |
 | llm_outcome_GuardianBot_vs_PrudentBot | (C, D) | — | GENUINE-FLOOR | Guardian side (G): guard TRUE (Prudent's else-play vs `.bot CooperateBot`) — `floor_GuardianBot_vs_PrudentBot_true`; Prudent outer (G) via Guardian's else-play, prudence (P) FOUND (`prudence_found_vs_GuardianBot`) — dichotomy: `dich_GuardianBot_vs_PrudentBot_prudenceFound` (two hinges `G`, `A`; the three-hinge original `dich_GuardianBot_vs_PrudentBot` stands) |
 | llm_outcome_GuardianBot_vs_TitForTatBot | (C, C) | (C, C) | SND | snd_GuardianBot_vs_TitForTatBot |
-| llm_outcome_JustBot_vs_MirrorBot | (C, C) | (C, C) | LOEB | loeb_Just_vs_Mirror |
+| llm_outcome_JustBot_vs_MirrorBot | (C, C) | (C, C) | LOEB | loeb_JustBot_vs_MirrorBot (`Cells/JustEngine`; the hand-twin forms are `loeb_Just_vs_Mirror`, `loeb_Just7_vs_Mirror`) |
 | llm_outcome_LegibleBot_vs_CupodBot | (C, C) | — | EXCLUDED | OptimBot/LegibleBot out of coverage |
 | llm_outcome_LegibleBot_vs_DupocBot | (C, C) | — | EXCLUDED | OptimBot/LegibleBot out of coverage |
 | llm_outcome_LegibleBot_vs_GuardianBot | (C, C) | — | EXCLUDED | OptimBot/LegibleBot out of coverage |
@@ -80,16 +82,16 @@ it: Löb engine, floor lemma, census) and the classification method are in git b
 | outcome_CooperateBot_vs_CooperateBot | (C, C) | (C, C) | SF | sf_CooperateBot_vs_CooperateBot |
 | outcome_CooperateBot_vs_DefectBot | (C, D) | (C, D) | SF | sf_CooperateBot_vs_DefectBot |
 | outcome_CupodBot_vs_CooperateBot | (C, C) | (C, C) | SND | snd_CupodBot_vs_CooperateBot |
-| outcome_CupodBot_vs_CupodBot | (D, D) | (D, D) | LOEB | dupoc_self_coop |
+| outcome_CupodBot_vs_CupodBot | (D, D) | (D, D) | LOEB | loeb_CupodBot_vs_CupodBot (`Cells/DupocEngine`; the hand-twin form is `dupoc_self_coop`) |
 | outcome_CupodBot_vs_DBot | (C, C) | (C, C) | SND | pos_CupodBot_vs_DBot |
 | outcome_CupodBot_vs_DefectBot | (D, D) | (D, D) | POS | pos_CupodBot_vs_DefectBot |
 | outcome_CupodBot_vs_EBot | (C, C) | (C, C) | SND | pos_CupodBot_vs_EBot |
-| outcome_CupodBot_vs_MirrorBot | (D, D) | (D, D) | LOEB | loeb_Cupod_vs_Mirror |
+| outcome_CupodBot_vs_MirrorBot | (D, D) | (D, D) | LOEB | loeb_CupodBot_vs_MirrorBot (`Cells/DupocEngine`; the hand-twin form is `loeb_Cupod_vs_Mirror`) |
 | outcome_CupodBot_vs_OBot | (C, D) | — | GENUINE-FLOOR | Cupod's guard TRUE (OBot's D needs Cupod's else-play vs `.bot CooperateBot`). Settled: `floor_CupodBot_vs_OBot_right`, `_true` — dichotomy: `dich_CupodBot_vs_OBot` |
 | outcome_CupodBot_vs_PrudentBot | (C, D) | — | GENUINE-FLOOR | prudence (P) FOUND (`prudence_found_vs_CupodBot`); Cupod's guard / Prudent's outer bistable modulo reflection; no side settled — dichotomy: `dich_CupodBot_vs_PrudentBot_prudenceFound` (two hinges `Cu`, `A`; the original `dich_CupodBot_vs_PrudentBot` stands) |
 | outcome_CupodBot_vs_TitForTatBot | (C, C) | (C, C) | SND | snd_CupodBot_vs_TitForTatBot |
 | outcome_CupodTrollBot_vs_CooperateBot | (C, C) | (C, C) | SND | snd_CupodTrollBot_vs_CooperateBot |
-| outcome_CupodTrollBot_vs_CupodBot | (D, D) | (D, D) | POS | khat_CupodTrollBot_vs_CupodBot |
+| outcome_CupodTrollBot_vs_CupodBot | (D, D) | (D, D) | POS | khat_CupodBot_vs_CupodTrollBot (`Cells/CupodTrollEngine`, the pair in the other orientation; CupodTroll's half `khat_CupodTrollBot_vs_CupodBot_engine`; the hand-twin form, on `CupodTroll7 k`, is `khat_CupodTrollBot_vs_CupodBot`) |
 | outcome_CupodTrollBot_vs_CupodTrollBot | (C, C) | (C, C) | SND | snd_CupodTrollBot_vs_CupodTrollBot |
 | outcome_CupodTrollBot_vs_DBot | (C, D) | (C, D) | SND | snd_CupodTrollBot_vs_DBot |
 | outcome_CupodTrollBot_vs_DefectBot | (C, D) | (C, D) | SND | snd_CupodTrollBot_vs_DefectBot |
@@ -101,18 +103,18 @@ it: Löb engine, floor lemma, census) and the classification method are in git b
 | outcome_DBot_vs_DBot | (D, D) | (D, D) | SF | sf_DBot_vs_DBot |
 | outcome_DBot_vs_DefectBot | (C, D) | (C, D) | SF | sf_DBot_vs_DefectBot |
 | outcome_DIMCID_vs_CooperateBot | (C, C) | (D, C) | FLIP | loeb_DIMCID_vs_CooperateBot |
-| outcome_DIMCID_vs_CupodBot | (D, D) | (D, D) | LOEB | loeb_Dimcid_vs_Cupod |
+| outcome_DIMCID_vs_CupodBot | (D, D) | (D, D) | LOEB | loeb_DIMCID_vs_CupodBot (`Cells/DimcidEngine`; the hand-twin form is `loeb_Dimcid_vs_Cupod`) |
 | outcome_DIMCID_vs_DefectBot | (D, D) | (D, D) | POS | pos_DIMCID_vs_DefectBot |
 | outcome_DIMCID_vs_DupocBot | (C, D) | (D, D) | FLIP | loeb_DIMCID_vs_DupocBot (engine UNIVERSAL `(C, D)`) |
 | outcome_DefectBot_vs_DefectBot | (D, D) | (D, D) | SF | sf_DefectBot_vs_DefectBot |
 | outcome_DupocBot_vs_CooperateBot | (C, C) | (C, C) | POS | pos_DupocBot_vs_CooperateBot |
-| outcome_DupocBot_vs_CupodBot | (D, C) | (D, C) | SND (τ-symmetry + soundness) | red_cell |
+| outcome_DupocBot_vs_CupodBot | (D, C) | (D, C) | SND (τ-symmetry + soundness) | snd_DupocBot_vs_CupodBot (`Cells/RedCellEngine`; the hand-twin form is `red_cell`) |
 | outcome_DupocBot_vs_CupodTrollBot | (D, C) | — | GENUINE-FLOOR | Dupoc's guard TRUE (CupodTroll's else-play: a false `.eq`). Settled: `floor_DupocBot_vs_CupodTrollBot_right`, `_true` — dichotomy: `dich_DupocBot_vs_CupodTrollBot` |
 | outcome_DupocBot_vs_DBot | (D, C) | — | GENUINE-FLOOR | Dupoc's guard TRUE (DBot cooperates: Dupoc's else-play vs `.bot DefectBot`); residue `Con_TAct(k+c)`. Settled: `floor_DupocBot_vs_DBot_right`, `_true` — dichotomy: `dich_DupocBot_vs_DBot` |
 | outcome_DupocBot_vs_DefectBot | (D, D) | (D, D) | SND | snd_DupocBot_vs_DefectBot |
-| outcome_DupocBot_vs_DupocBot | (C, C) | (C, C) | LOEB | dupoc_self_coop |
+| outcome_DupocBot_vs_DupocBot | (C, C) | (C, C) | LOEB | loeb_DupocBot_vs_DupocBot (`Cells/DupocEngine`; the hand-twin form is `dupoc_self_coop`) |
 | outcome_DupocBot_vs_EBot | (D, C) | — | GENUINE-FLOOR | Dupoc's guard TRUE (EBot's rung 1 = Dupoc's else-play vs `.bot DefectBot`). Settled: `floor_DupocBot_vs_EBot_right`, `_true` — dichotomy: `dich_DupocBot_vs_EBot` |
-| outcome_DupocBot_vs_MirrorBot | (C, C) | (C, C) | LOEB | loeb_Dupoc_vs_Mirror |
+| outcome_DupocBot_vs_MirrorBot | (C, C) | (C, C) | LOEB | loeb_DupocBot_vs_MirrorBot (`Cells/DupocEngine`; the hand-twin form is `loeb_Dupoc_vs_Mirror`) |
 | outcome_DupocBot_vs_OBot | (D, D) | (D, D) | SND | snd_DupocBot_vs_OBot |
 | outcome_DupocBot_vs_TitForTatBot | (C, C) | (C, C) | POS | khat_DupocBot_vs_TitForTatBot |
 | outcome_EBot_vs_CooperateBot | (D, C) | (D, C) | SF | sf_EBot_vs_CooperateBot |
@@ -130,9 +132,9 @@ it: Löb engine, floor lemma, census) and the classification method are in git b
 | outcome_JustBot_vs_CupodTrollBot | (D, C) | — | GENUINE-FLOOR | Just's guard TRUE (CupodTroll's else-play vs the snapshot). Settled: `floor_JustBot_vs_CupodTrollBot_right`, `_true` — dichotomy: `dich_JustBot_vs_CupodTrollBot` |
 | outcome_JustBot_vs_DBot | (D, C) | — | GENUINE-FLOOR | Just's guard TRUE (DBot cooperates with the snapshot: its else-play vs `.bot DefectBot`). Settled: `floor_JustBot_vs_DBot_right`, `_true` — dichotomy: `dich_JustBot_vs_DBot` |
 | outcome_JustBot_vs_DefectBot | (D, D) | (D, D) | SND | snd_JustBot_vs_DefectBot |
-| outcome_JustBot_vs_DupocBot | (C, C) | (C, C) | LOEB | loeb_Just7_vs_Dupoc (on `Just7 k`) |
+| outcome_JustBot_vs_DupocBot | (C, C) | (C, C) | LOEB | loeb_JustBot_vs_DupocBot (`Cells/JustEngine`; the hand-twin form is `loeb_Just7_vs_Dupoc`) |
 | outcome_JustBot_vs_EBot | (D, C) | — | GENUINE-FLOOR | Just's guard TRUE (EBot's rung 1 on the snapshot = an else-play). Settled: `floor_JustBot_vs_EBot_right`, `_true` — dichotomy: `dich_JustBot_vs_EBot` |
-| outcome_JustBot_vs_JustBot | (C, C) | (C, C) | LOEB | loeb_Just7_vs_Just7 (on `Just7 k`) |
+| outcome_JustBot_vs_JustBot | (C, C) | (C, C) | LOEB | loeb_JustBot_vs_JustBot (`Cells/JustEngine`; the hand-twin form is `loeb_Just7_vs_Just7`) |
 | outcome_JustBot_vs_OBot | (D, D) | (D, D) | SND | snd_JustBot_vs_OBot |
 | outcome_JustBot_vs_PrudentBot | (D, D) | — | GENUINE-FLOOR | prudence guard TRUE via Just's else-play vs `.bot DefectBot` — `floor_JustBot_vs_PrudentBot_true`; if not found `(D, D)` follows — dichotomy: `dich_JustBot_vs_PrudentBot` (prudence hinge `B` NOT dischargeable: an else-branch defection, plus §7 on `progCode (JustBot k)` — `Cells/PrudentLoose`) |
 | outcome_JustBot_vs_TitForTatBot | (C, C) | (C, C) | POS | khat_JustBot_vs_TitForTatBot |

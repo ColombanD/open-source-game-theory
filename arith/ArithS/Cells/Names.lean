@@ -45,6 +45,13 @@ aliases of the scheme names. (`TFTV`/`TTFT` are handled by the `rfl` bridges of 
 flipped: `dupoc_self_coop` (`Necessitation/Package`, the headline theorem — a Necessitation statement,
 left as is; `loeb_Dupoc_vs_Dupoc` stays a plain alias of it). No `#print axioms` here (an alias adds no axioms);
 `Audit.lean` prints the new names.
+
+Since 2026-10-02 no MATRIX cell is on an arith twin code (`Cells/JustEngine.lean`, `Cells/CupodTrollEngine.lean`
+re-ran the last seven on `progCode`). Three theorems named after the engine bots are still STATED on a twin —
+`loeb_DIMCID_vs_JustBot` (`Just7`), `loeb_DIMCID_vs_CupodTrollBot` and `khat_CupodTrollBot_vs_CupodBot`
+(`CupodTroll7`) — and keep their names; their engine-code counterparts are `loeb_DIMCID_vs_JustBot_engine`,
+`loeb_DIMCID_vs_CupodTrollBot_engine` and `khat_CupodBot_vs_CupodTrollBot` (the pair in the other orientation,
+with CupodTroll's half `khat_CupodTrollBot_vs_CupodBot_engine`).
 -/
 
 namespace ArithS

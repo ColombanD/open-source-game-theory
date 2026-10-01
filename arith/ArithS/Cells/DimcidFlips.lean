@@ -38,8 +38,10 @@ standard axioms), with the box form, and the row summary.
      found and Dupoc defects. THE CONTRADICTION IS EXPLICIT: the engine proves `(C, D)` at every budget,
      `S'` proves `(D, D)` for all large budgets — the two proof systems disagree on this cell.
    * `loeb_DIMCID_vs_JustBot`: `(C, D)` → **`(D, D)`** — on the budget-slot `Just7 k` (the same play as the
-     engine's `JustBot k` in every frame, `evalGraph_Just7_iff`; `Describes` cannot be built for the engine
-     code `progCode (JustBot k)`, `ROUTE_B_SCOPE.md` §7: its stored template carries `k`); Just's guard "DIMCID
+     engine's `JustBot k` in every frame, `evalGraph_Just7_iff`; written when the engine code
+     `progCode (JustBot k)` stored a `k`-dependent template and had no `Describes` instance, `ROUTE_B_SCOPE.md`
+     §7 — since route (c) was made generic it has one, and the cell on the engine's own code is
+     `loeb_DIMCID_vs_JustBot_engine`, `Cells/JustEngine.lean`); Just's guard "DIMCID
      cooperates with `.bot (Dupoc k)`" is FALSE (DIMCID defects against the described `pBot (DupocV k)`),
      never found, so Just defects (`just7_else_V` + `evalGraph_of_guard`). Just's half is ALSO stated on the
      engine's own code (`snd_JustBot_vs_DIMCID_engine`, via `.bot (DupocBot k) = pBot (SV gDu 0 k)`).
@@ -386,10 +388,10 @@ theorem snd_JustBot_vs_DIMCID_engine :
   exact ⟨k₀, fun k hk ↦ just_D_of_probe k (properPlayer_DIMCID k) (h k hk).1⟩
 
 /-- **DIMCID × JustBot is `(D, D)` in PA-`S'`**, for all large `k`, unconditional, on the budget-slot `Just7 k`
-(the same play as the engine's `JustBot k` in every frame, `evalGraph_Just7_iff`; a `Describes` instance for
-the engine code `progCode (JustBot k)` cannot be built — its stored template carries `k`, `ROUTE_B_SCOPE.md` §7 —
-so DIMCID's half is stated against `Just7 k`, and Just's half both on `Just7 k` and on the engine code,
-`snd_JustBot_vs_DIMCID_engine`). The engine proves `(C, D)` by a floor census (`llm_outcome_DIMCID_vs_JustBot`);
+(the same play as the engine's `JustBot k` in every frame, `evalGraph_Just7_iff`; DIMCID's half is stated
+against `Just7 k`, Just's half both on `Just7 k` and on the engine code, `snd_JustBot_vs_DIMCID_engine`. The
+SAME cell on the engine's own `progCode (JustBot k)` — described since route (c) was made generic — is
+`loeb_DIMCID_vs_JustBot_engine`, `Cells/JustEngine.lean`, which the matrix cites). The engine proves `(C, D)` by a floor census (`llm_outcome_DIMCID_vs_JustBot`);
 in `S'` DIMCID's guard against the described Just is self-fulfilling and found, so DIMCID defects; Just's guard
 "DIMCID plays C against `pBot (Dupoc k)`" is FALSE (DIMCID defects against the described snapshot,
 `loeb_DIMCID_vs_botDupoc`), never found by soundness, so Just defects. -/

@@ -37,7 +37,7 @@ namespace ArithS
 #print axioms outcome_CIMCIC_vs_DefectBot
 #print axioms outcome_CIMCIC_vs_OBot
 #print axioms outcome_CIMCIC_vs_DupocBot
-#print axioms outcome_CIMCIC_vs_Just7
+#print axioms outcome_CIMCIC_vs_JustBot
 #print axioms outcome_CooperateBot_vs_CooperateBot
 #print axioms outcome_CooperateBot_vs_DefectBot
 #print axioms outcome_CupodBot_vs_CooperateBot
@@ -48,7 +48,7 @@ namespace ArithS
 #print axioms outcome_CupodBot_vs_MirrorBot
 #print axioms outcome_CupodBot_vs_CupodBot
 #print axioms outcome_CupodTrollBot_vs_CooperateBot
-#print axioms outcome_CupodTroll7_vs_CupodBot
+#print axioms outcome_CupodTrollBot_vs_CupodBot
 #print axioms outcome_CupodTrollBot_vs_CupodTrollBot
 #print axioms outcome_CupodTrollBot_vs_DBot
 #print axioms outcome_CupodTrollBot_vs_DefectBot
@@ -70,8 +70,8 @@ namespace ArithS
 #print axioms outcome_DIMCID_vs_DefectBot
 #print axioms outcome_DIMCID_vs_DupocBot
 #print axioms outcome_DIMCID_vs_CupodBot
-#print axioms outcome_DIMCID_vs_CupodTroll7
-#print axioms outcome_DIMCID_vs_Just7
+#print axioms outcome_DIMCID_vs_CupodTrollBot
+#print axioms outcome_DIMCID_vs_JustBot
 #print axioms outcome_DefectBot_vs_DefectBot
 #print axioms outcome_DupocBot_vs_CooperateBot
 #print axioms outcome_DupocBot_vs_DefectBot
@@ -102,9 +102,9 @@ namespace ArithS
 #print axioms outcome_JustBot_vs_DefectBot
 #print axioms outcome_JustBot_vs_OBot
 #print axioms outcome_JustBot_vs_TitForTatBot
-#print axioms outcome_Just_vs_MirrorBot
-#print axioms outcome_Just7_vs_Dupoc
-#print axioms outcome_Just7_vs_Just7
+#print axioms outcome_JustBot_vs_MirrorBot
+#print axioms outcome_JustBot_vs_DupocBot
+#print axioms outcome_JustBot_vs_JustBot
 #print axioms outcome_MirrorBot_vs_CooperateBot
 #print axioms outcome_MirrorBot_vs_DBot
 #print axioms outcome_MirrorBot_vs_DefectBot

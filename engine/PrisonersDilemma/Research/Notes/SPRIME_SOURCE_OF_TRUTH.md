@@ -314,6 +314,12 @@ CodeTerm/Guard slots/SubstTemplate → Code → RedCellUnsound arms → full bui
      (names `outcome_<L>_vs_<R>` with the real bot names; the app's twin aliasing becomes dead code, keep it
      harmless); `Cells/JustBot`, `JustSlot`, `DimcidFlips` (CupodTroll7) repaired or re-targeted; `guard_fits`
      untouched.
+     **DONE 2026-10-02, differently:** the equation `progCode (JustBot k) = Just7 k` is FALSE (the hand template is
+     another sentence), so the seven twin cells were RE-RUN on the engine codes (`Cells/{JustEngine,CupodTrollEngine}`:
+     conjunction families over 2/3/4 guards, each carrying the snapshot's own guard as a separate conjunct) and
+     restated as `outcome_JustBot_vs_{MirrorBot,JustBot,DupocBot}`, `outcome_CIMCIC_vs_JustBot`,
+     `outcome_DIMCID_vs_JustBot`, `outcome_CupodTrollBot_vs_CupodBot`, `outcome_DIMCID_vs_CupodTrollBot`; `twinBase`
+     removed, coverage 78/78 with no twin clause, the export carries no twin name.
    * Then Phase 3e: the 12 recorded divergences re-proved with the table's values (the six red-cell floors
      STAY floors — that finding is independent of the coding), the 5 unstated bits stated, `expectedFloorBits`
      re-derived (expected: 41 + 6 = 47 unless (A) reveals otherwise — the build decides),
