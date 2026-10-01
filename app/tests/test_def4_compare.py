@@ -56,7 +56,7 @@ def test_kernel_scanner_finds_all_rows() -> None:
     over `tauOrderInit` (its diagonal diverges; the scanner records that slot as
     "N"). τ(DIMCID)'s — the last to land — needed the provability-tracking tower
     census (`Base/TowerCensus.lean`) for its two then-D searcher partners."""
-    tables = kernel_bits()
+    tables = kernel_bits(source="engine")
     assert set(tables) == set(TAU_ORDER)
     assert tables["mirror"]["mirror"] == "N"
 
@@ -64,7 +64,7 @@ def test_kernel_scanner_finds_all_rows() -> None:
 def test_every_stated_row_is_complete() -> None:
     """A stated row carries a bit for every slot in `tauOrder` — the scanner
     raises on a short row, so this pins that it stays that way."""
-    for tmpl, row in kernel_bits().items():
+    for tmpl, row in kernel_bits(source="engine").items():
         assert set(row) == set(TAU_ORDER), tmpl
 
 
@@ -142,9 +142,9 @@ def test_missing_rows_are_reported_not_guessed(monkeypatch) -> None:
     with nothing to check it against. Every row is stated now, so the property is
     exercised on a kernel table with DIMCID's row withheld."""
     from pd_runner.tau import compare as compare_mod
-    full = kernel_bits()
+    full = kernel_bits(source="engine")
     withheld = {k: v for k, v in full.items() if k != "dimcid"}
-    monkeypatch.setattr(compare_mod, "kernel_bits", lambda: withheld)
+    monkeypatch.setattr(compare_mod, "kernel_bits", lambda *a, **k: withheld)
     d = direct_kernel_vs_base(load_tau_matrix(FULL_BOTS, source="engine"))
     assert "TauDIMCID" in d.missing_rows
     assert all(c.template != "TauDIMCID" for c in d.cells)
@@ -232,7 +232,7 @@ def test_tft_variants_split_exactly_on_the_floor_bots() -> None:
     floor-priced — true but uncitable — and agree everywhere else.
 
     Now read off the KERNEL rows instead of the deleted model's decision table."""
-    tables = kernel_bits()
+    tables = kernel_bits(source="engine")
     sim_row, pf_row = _row(tables, "TauTFTSim"), _row(tables, "TauTFTPf")
     # TauDIMCID joined the floor bots 2026-08-21: like Guardian's and Cupod's,
     # its cooperation is the ELSE-play of a failed search, so it is TRUE but
@@ -251,7 +251,7 @@ def test_obot_cooperates_exactly_with_the_non_bullies() -> None:
     identity check never fires, so it cooperates with everyone including the
     defector. The invariant is 'cooperates with whoever never defects on the
     canonical pair', not 'only with TauCooperate'."""
-    row = _row(kernel_bits(), "TauOBot")
+    row = _row(kernel_bits(source="engine"), "TauOBot")
     want_C = {"TauCooperate", "TauCupodTroll"}
     for T in TEMPLATES:
         assert row[T] == ("C" if T in want_C else "D"), T
@@ -259,7 +259,7 @@ def test_obot_cooperates_exactly_with_the_non_bullies() -> None:
 
 def test_constant_rows_are_constant() -> None:
     """The two `.const` templates play their action against every hypothesis."""
-    tables = kernel_bits()
+    tables = kernel_bits(source="engine")
     assert set(_row(tables, "TauCooperate").values()) == {"C"}
     assert set(_row(tables, "TauDefect").values()) == {"D"}
 

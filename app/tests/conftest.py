@@ -12,6 +12,12 @@ select. When the real export IS present it is used untouched, and
 
 `SPRIME_REAL_EXPORT` / `SPRIME_SAMPLE_EXPORT` are exported for the tests that
 parametrize over the two.
+
+The same pattern for the `S'` TAU ROWS (Phase 4): `app/generated/sprime_tau_rows.json`
+(written by the same exporter) is pointed at the committed cell-derived sample
+`tests/fixtures/sprime_tau_rows.sample.json` (`make_sprime_tau_fixture.py`) only while
+the real file is absent; `tests/test_tau_rows_sprime.py` runs against both when both
+exist, and `SPRIME_TAU_PARTIAL_EXPORT` is the two-row rollout sample.
 """
 
 from __future__ import annotations
@@ -19,9 +25,19 @@ from __future__ import annotations
 from pathlib import Path
 
 from pd_runner.eval import outcome_matrix as _om
+from pd_runner.tau import def4_theorems as _d4
 
-SPRIME_SAMPLE_EXPORT = Path(__file__).resolve().parent / "fixtures" / "sprime_outcome_theorems.sample.json"
-SPRIME_REAL_EXPORT = Path(__file__).resolve().parents[1] / "generated" / "sprime_outcome_theorems.json"
+_FIXTURES = Path(__file__).resolve().parent / "fixtures"
+_GENERATED = Path(__file__).resolve().parents[1] / "generated"
+
+SPRIME_SAMPLE_EXPORT = _FIXTURES / "sprime_outcome_theorems.sample.json"
+SPRIME_REAL_EXPORT = _GENERATED / "sprime_outcome_theorems.json"
+
+SPRIME_TAU_SAMPLE_EXPORT = _FIXTURES / "sprime_tau_rows.sample.json"
+SPRIME_TAU_PARTIAL_EXPORT = _FIXTURES / "sprime_tau_rows.partial.sample.json"
+SPRIME_TAU_REAL_EXPORT = _GENERATED / "sprime_tau_rows.json"
 
 if not _om._EXPORT_FILES["sprime"].exists():
     _om._EXPORT_FILES["sprime"] = SPRIME_SAMPLE_EXPORT
+if not _d4._TAU_EXPORT_FILES["sprime"].exists():
+    _d4._TAU_EXPORT_FILES["sprime"] = SPRIME_TAU_SAMPLE_EXPORT

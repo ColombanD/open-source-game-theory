@@ -219,7 +219,7 @@ def test_tau_export_has_one_row_per_template() -> None:
     # reader fills its diagonal with "N".
     prefix = [r["template"] for r in data["rows"] if r["order"] == "tauOrderInit"]
     assert prefix == ["mirror"]
-    assert kernel_bits()["mirror"]["mirror"] == "N"
+    assert kernel_bits(source="engine")["mirror"]["mirror"] == "N"
 
 
 @pytest.mark.skipif(not _TAU_EXPORT.exists(), reason="tau_rows.json not generated yet")

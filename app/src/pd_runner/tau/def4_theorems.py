@@ -22,12 +22,35 @@ discharged only in the phase theorem. The exported rows are unconditional at lar
 **Scope.** A template with no tagged row has no certified bits and `kernel_bits` omits
 it — absence is the honest signal that a row is predicted rather than proven (the Lean
 census makes that a build failure, so in practice every `Tmpl` has a row).
+
+**Two sources (2026-10-01, Phase 4 of `SPRIME_SOURCE_OF_TRUTH.md`).** Every reader takes
+`source` (`settings.CELL_SOURCE` by default, i.e. PA-`S'`): `TAU_EXPORTS` names one row
+file per `CellSource`. The `S'` file (`sprime_tau_rows.json`, written by
+`lake exe export_sprime_outcomes` from the `@[tau_rowA]`/`@[tau_floor_bitA]` theorems in
+`arith/ArithS/Tau/`) is the engine's schema over the 14-template `PAPER_ORDER` plus
+`"system": "sprime"` and a `floor_bits` array. It differs from the engine's file in
+two ways the readers encode rather than paper over:
+
+* a FLOOR BIT (`FloorBitA`, the engine-side half of the base cell's dichotomy) loads as
+  its engine-side action in `kernel_bits`, and `kernel_bit_provenance` says
+  `"floor_dichotomy"` for it (`"theorem"` for a `RowSpecA` slot); `kernel_floor_bits`
+  carries the hinge text and the `dich_` name;
+* a slot in neither a row's `bits` nor `floor_bits` is ABSENT from the table — NOT
+  `"N"`. The engine's `_DIVERGENT` fill applies to ONE known slot (τ(Mirror)'s
+  diagonal, a proven non-terminating cell); on `S'` an absent slot means "not yet
+  stated" (the export is PARTIAL during the Phase-3 rollout: a row lists only its proved
+  non-floor slots, and whole templates may be missing), and `tau/matrix.py` reports the
+  coverage (`TauMatrix.kernel_coverage`) rather than inventing a value.
 """
 
 from __future__ import annotations
 
 import json
+import os
+from dataclasses import dataclass
 from pathlib import Path
+
+from pd_runner.settings import resolve_source
 
 
 def _workspace_root() -> Path:
@@ -42,7 +65,45 @@ def _workspace_root() -> Path:
     )
 
 
-TAU_EXPORT = "app/generated/tau_rows.json"
+TAU_EXPORTS: dict[str, str] = {
+    "engine": "app/generated/tau_rows.json",
+    "sprime": "app/generated/sprime_tau_rows.json",
+}
+"""One kernel row file per `CellSource` (workspace-relative). The engine's is written by
+`lake exe export_outcomes`, the `S'` one by `lake exe export_sprime_outcomes`."""
+
+TAU_EXPORT = TAU_EXPORTS["engine"]
+"""The engine's row file (historical name)."""
+
+
+def _default_tau_export_files() -> dict[str, Path]:
+    try:
+        root = _workspace_root()
+    except FileNotFoundError:
+        return {}
+    files = {s: root / rel for s, rel in TAU_EXPORTS.items()}
+    # `PD_SPRIME_TAU_EXPORT` points the `S'` reader at an alternative document (the
+    # test-suite's ledger-derived sample while the real export does not exist yet);
+    # it never applies to the engine file — same contract as `PD_SPRIME_EXPORT`.
+    override = os.getenv("PD_SPRIME_TAU_EXPORT")
+    if override:
+        files["sprime"] = Path(override)
+    return files
+
+
+_TAU_EXPORT_FILES: dict[str, Path] = _default_tau_export_files()
+"""The resolved row file per source, consulted at CALL time (never captured as a default
+argument), so pointing a source elsewhere is one dict assignment (`tests/conftest.py`)."""
+
+
+def tau_export_file(source: str | None = None) -> Path:
+    """The row file a `CellSource` reads (default: `settings.CELL_SOURCE`)."""
+    resolved = resolve_source(source)
+    try:
+        return _TAU_EXPORT_FILES[resolved]
+    except KeyError:
+        return _workspace_root() / TAU_EXPORTS[resolved]
+
 
 TAU_ORDER: tuple[str, ...] = (
     "coop", "defect", "tftSim", "tftPf", "dupoc", "ebot", "just", "obot", "guardian",
@@ -51,55 +112,226 @@ TAU_ORDER: tuple[str, ...] = (
 """The Lean `tauOrder` slot order. The export carries the kernel's own copy and
 `kernel_bits` refuses to run if the two disagree."""
 
+PAPER_ORDER: tuple[str, ...] = (
+    "coop", "defect", "tftSim", "dupoc", "ebot", "obot", "dbot", "cupodTroll", "cupod",
+    "dimcid", "cimcic", "prudent", "maxconfidence", "minconfidence")
+"""`ArithS.Tau.paperOrder` (`arith/ArithS/Tau/Spec.lean`): the 14 paper templates — the
+columns of the §3 table of `SPRIME_SOURCE_OF_TRUTH.md`. A SUBSET of `TAU_ORDER` (the four
+engine-only templates `tftPf just guardian mirror` dropped) but NOT a sub-order of it: the
+paper order lists `dimcid` before `cimcic`, the engine's `tauOrder` the other way round.
+The `S'` row file's `order` must equal it."""
+
+assert set(PAPER_ORDER) < set(TAU_ORDER), "PAPER_ORDER must be a proper subset of TAU_ORDER"
+
 # A slot the row's order does not cover (τ(Mirror)'s divergent diagonal, stated over
 # `tauOrderInit`) is recorded as "N" — the same fifth state the base matrix uses for a
 # proven-`none` outcome, so the comparison can say "agrees" there rather than inventing a D.
+# ENGINE ONLY: on `S'` an absent slot stays absent (see the module docstring).
 _DIVERGENT = "N"
 
+PROVENANCE_THEOREM = "theorem"
+PROVENANCE_FLOOR = "floor_dichotomy"
+PROVENANCE_DIVERGENT = "divergent"
+"""`kernel_bit_provenance` values: a `RowSpec`/`RowSpecA` slot, a `FloorBitA` slot (`S'`
+only), or the engine's `_DIVERGENT` fill (τ(Mirror)'s diagonal, engine only)."""
 
-def _load_export(path: Path | None = None) -> dict:
-    export = path if path is not None else _workspace_root() / TAU_EXPORT
-    if not export.exists():
-        raise FileNotFoundError(
-            f"{export} not found — run `lake exe export_outcomes` (or "
-            "`uv run python -m pd_runner.eval.outcome_matrix --refresh`)"
+
+@dataclass(frozen=True)
+class FloorBit:
+    """One `@[tau_floor_bitA]` theorem: the engine-side action of a floor slot, with the
+    hinge `A_k` (pretty text) under whose FAILURE it is forced, and the base cell's
+    dichotomy name."""
+
+    template: str
+    slot: str
+    action: str
+    hinge: str
+    dichotomy: str
+
+
+def _verify_tau_digest(data: dict, export: Path) -> None:
+    """Reject a hand-edited row file. The engine hashes `rows`; a `S'` document hashes
+    `rows ++ floor_bits` (`ArithS/Tau/Export.lean`), each row dumped compactly with sorted
+    keys, FNV-1a over the concatenation — the `Outcome/Export.lean` algorithm."""
+    from pd_runner.eval.outcome_matrix import _fnv1a64
+
+    claimed = data.get("source_digest")
+    if claimed is None:
+        raise ValueError(f"{export}: missing `source_digest`")
+    hashed = list(data["rows"])
+    if data.get("system") == "sprime":
+        hashed += list(data.get("floor_bits", []))
+    rows = [json.dumps(t, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+            for t in hashed]
+    actual = str(_fnv1a64("".join(rows)))
+    if actual != claimed:
+        exporter = ("lake exe export_sprime_outcomes" if data.get("system") == "sprime"
+                    else "lake exe export_outcomes")
+        raise ValueError(
+            f"{export}: source_digest mismatch — the file was edited by hand or is stale "
+            f"(claimed {claimed}, recomputed {actual}). Regenerate it with `{exporter}`; "
+            "never hand-edit proven rows."
         )
-    data = json.loads(export.read_text(encoding="utf-8"))
+
+
+def _load_export(path: Path | None = None, *, source: str | None = None) -> dict:
+    """Read and validate one row file.
+
+    `source` picks the document (`settings.CELL_SOURCE` by default). An explicit `path`
+    wins; with no `source` its document's own `system` field decides how it is read (as
+    `scan_outcome_theorems` does for `export_file`), and with one the document must BE
+    that system. The engine schema: the whole `TAU_ORDER`, no `system`. The `S'` schema:
+    `"system": "sprime"`, `PAPER_ORDER`, every row slot / floor bit a paper slot, never
+    both, templates and slots possibly absent (a partial export).
+    """
+    if path is not None and source is None:
+        export = path
+        if not export.exists():
+            raise FileNotFoundError(f"{export} not found")
+        data = json.loads(export.read_text(encoding="utf-8"))
+        resolved = data.get("system", "engine")
+        if resolved not in TAU_EXPORTS:
+            raise ValueError(f"{export}: unknown system {resolved!r}")
+    else:
+        resolved = resolve_source(source)
+        export = path if path is not None else tau_export_file(resolved)
+        if not export.exists():
+            exporter = ("`lake exe export_sprime_outcomes` in arith/" if resolved == "sprime"
+                        else "`lake exe export_outcomes` (or `uv run python -m "
+                             "pd_runner.eval.outcome_matrix --refresh`)")
+            raise FileNotFoundError(f"{export} not found — run {exporter}")
+        data = json.loads(export.read_text(encoding="utf-8"))
     if data.get("schema_version") != 1:
         raise ValueError(f"{export}: unsupported schema_version {data.get('schema_version')!r}")
-    from pd_runner.eval.outcome_matrix import _verify_digest
-
-    _verify_digest(data, export, key="rows")
-    order = tuple(data["order"])
-    if order != TAU_ORDER:
+    system = data.get("system", "engine")
+    if system != resolved:
         raise ValueError(
-            f"{export}: the kernel's tauOrder {order} differs from TAU_ORDER — update the "
-            "constant"
+            f"{export}: a {system!r} row file read as the {resolved!r} source — the two "
+            "systems' rows disagree by theorem (the DIMCID cells); point the source at "
+            "its own export"
         )
+    _verify_tau_digest(data, export)
+    order = tuple(data["order"])
+    if resolved == "engine":
+        if order != TAU_ORDER:
+            raise ValueError(
+                f"{export}: the kernel's tauOrder {order} differs from TAU_ORDER — update the "
+                "constant"
+            )
+        return data
+    if order != PAPER_ORDER:
+        raise ValueError(
+            f"{export}: the kernel's paperOrder {order} differs from PAPER_ORDER — update "
+            "the constant"
+        )
+    paper = set(PAPER_ORDER)
+    seen: dict[str, set[str]] = {}
+    for row in data["rows"]:
+        tmpl = row["template"]
+        if tmpl not in paper:
+            raise ValueError(f"{export}: row {tmpl!r} is not a paper template")
+        unknown = set(row["bits"]) - paper
+        if unknown:
+            raise ValueError(f"{export}: row {tmpl}: unknown slots {sorted(unknown)}")
+        row_order = row.get("order")
+        if isinstance(row_order, list) and set(row_order) - paper:
+            raise ValueError(
+                f"{export}: row {tmpl}: order names non-paper slots "
+                f"{sorted(set(row_order) - paper)}")
+        bad = {s: a for s, a in row["bits"].items() if a not in ("C", "D")}
+        if bad:
+            raise ValueError(f"{export}: row {tmpl}: non-action bits {bad}")
+        if tmpl in seen:
+            raise ValueError(f"{export}: template {tmpl!r} has two rows")
+        seen[tmpl] = set(row["bits"])
+    for fb in data.get("floor_bits", []):
+        tmpl, slot = fb["template"], fb["slot"]
+        if tmpl not in paper or slot not in paper:
+            raise ValueError(f"{export}: floor bit ({tmpl}, {slot}) is not a paper cell")
+        if fb["action"] not in ("C", "D"):
+            raise ValueError(f"{export}: floor bit ({tmpl}, {slot}): action {fb['action']!r}")
+        if slot in seen.get(tmpl, set()):
+            raise ValueError(
+                f"{export}: ({tmpl}, {slot}) is both a row slot and a floor bit — the Lean "
+                "census forbids it; the export is inconsistent"
+            )
+        seen.setdefault(tmpl, set())
+        if slot in seen[tmpl]:
+            raise ValueError(f"{export}: floor bit ({tmpl}, {slot}) stated twice")
+        seen[tmpl].add(slot)
     return data
 
 
-def scan_bit_theorems(path: Path | None = None) -> dict[str, dict[str, str]]:
+def _tables(data: dict, source: str) -> tuple[
+        dict[str, dict[str, str]], dict[str, dict[str, str]], dict[str, dict[str, FloorBit]]]:
+    """(bits, provenance, floor bits) from a validated document."""
+    bits: dict[str, dict[str, str]] = {}
+    prov: dict[str, dict[str, str]] = {}
+    floors: dict[str, dict[str, FloorBit]] = {}
+    if source == "engine":
+        for row in data["rows"]:
+            stated = dict(row["bits"])
+            unknown = set(stated) - set(TAU_ORDER)
+            if unknown:
+                raise ValueError(f"row {row['template']}: unknown slots {sorted(unknown)}")
+            bits[row["template"]] = {s: stated.get(s, _DIVERGENT) for s in TAU_ORDER}
+            prov[row["template"]] = {
+                s: (PROVENANCE_THEOREM if s in stated else PROVENANCE_DIVERGENT)
+                for s in TAU_ORDER}
+        if not bits:
+            raise ValueError("tau_rows.json holds no rows — the export is empty")
+        return bits, prov, floors
+    for row in data["rows"]:
+        tmpl = row["template"]
+        bits[tmpl] = {s: row["bits"][s] for s in PAPER_ORDER if s in row["bits"]}
+        prov[tmpl] = {s: PROVENANCE_THEOREM for s in bits[tmpl]}
+    for fb in data.get("floor_bits", []):
+        tmpl, slot = fb["template"], fb["slot"]
+        bits.setdefault(tmpl, {})[slot] = fb["action"]
+        prov.setdefault(tmpl, {})[slot] = PROVENANCE_FLOOR
+        floors.setdefault(tmpl, {})[slot] = FloorBit(
+            template=tmpl, slot=slot, action=fb["action"],
+            hinge=fb.get("hinge", ""), dichotomy=fb.get("dichotomy", ""))
+    # keep paper order inside every row
+    bits = {t: {s: r[s] for s in PAPER_ORDER if s in r} for t, r in bits.items()}
+    prov = {t: {s: r[s] for s in PAPER_ORDER if s in r} for t, r in prov.items()}
+    return bits, prov, floors
+
+
+def scan_bit_theorems(path: Path | None = None, *, source: str | None = None
+                      ) -> dict[str, dict[str, str]]:
     """The kernel rows → `{lean_tmpl: {slot_tmpl: "C"|"D"|"N"}}`.
 
-    Kept under its historical name; it reads the export, not the sources.
+    Kept under its historical name; it reads the export, not the sources. On the engine
+    every stated row is complete over `TAU_ORDER` (`"N"` at the divergent slot); on `S'`
+    a row holds exactly the stated slots — theorem bits AND floor bits (at their
+    engine-side action) — and a template with nothing stated is absent.
     """
-    data = _load_export(path)
-    tables: dict[str, dict[str, str]] = {}
-    for row in data["rows"]:
-        bits = dict(row["bits"])
-        unknown = set(bits) - set(TAU_ORDER)
-        if unknown:
-            raise ValueError(f"row {row['template']}: unknown slots {sorted(unknown)}")
-        tables[row["template"]] = {s: bits.get(s, _DIVERGENT) for s in TAU_ORDER}
-    if not tables:
-        raise ValueError("tau_rows.json holds no rows — the export is empty")
-    return tables
+    data = _load_export(path, source=source)
+    return _tables(data, data.get("system", "engine"))[0]
 
 
-def kernel_bits(path: Path | None = None) -> dict[str, dict[str, str]]:
+def kernel_bits(path: Path | None = None, *, source: str | None = None
+                ) -> dict[str, dict[str, str]]:
     """The kernel-certified bit tables, keyed by Lean `Tmpl` constructor names."""
-    return scan_bit_theorems(path)
+    return scan_bit_theorems(path, source=source)
+
+
+def kernel_bit_provenance(path: Path | None = None, *, source: str | None = None
+                          ) -> dict[str, dict[str, str]]:
+    """Parallel to `kernel_bits`: per slot, `"theorem"` (a `RowSpec`/`RowSpecA` slot),
+    `"floor_dichotomy"` (a `S'` `FloorBitA` — the value is the engine-side half of a
+    dichotomy, not a theorem about the cell) or `"divergent"` (the engine's `"N"` fill)."""
+    data = _load_export(path, source=source)
+    return _tables(data, data.get("system", "engine"))[1]
+
+
+def kernel_floor_bits(path: Path | None = None, *, source: str | None = None
+                      ) -> dict[str, dict[str, FloorBit]]:
+    """The `S'` floor bits with their hinge text, `{tmpl: {slot: FloorBit}}`; `{}` on the
+    engine source (its rows have no floors)."""
+    data = _load_export(path, source=source)
+    return _tables(data, data.get("system", "engine"))[2]
 
 
 # ── The template name tables ───────────────────────────────────────────────────
@@ -219,18 +451,13 @@ maps their templates to `DupocBot` because that is what the certification compar
 them against. `TauTFTPf` appears in neither: it is the prover reading of TFT's
 question, no bot's own row."""
 
+PAPER_TEMPLATES: tuple[str, ...] = tuple(
+    next(t for t, s in LEAN_SLOT.items() if s == slot) for slot in PAPER_ORDER)
+"""The 14 paper templates (`PAPER_ORDER`) by template name, in paper order — the scope
+of the `S'` certification (`compare.direct_kernel_vs_base` on `source="sprime"`)."""
 
-def kernel_row_bits(path: Path | None = None) -> dict[str, dict[str, str]]:
-    """Per-BOT kernel test bits: actor bot → hypothesis bot → `"C"`/`"D"`/`"N"`.
 
-    The Def-4 substrate the tau matrix plays from (2026-09-01): each covered bot's
-    per-hypothesis test bits come from its own kernel-proven `RowSpec` row
-    (`tau_rows.json`), keyed by bot names on both axes via `TEMPLATE_OF_BOT` +
-    `LEAN_SLOT`. A bot with no template (WaryBot, LegibleBot, …) simply has no
-    entry — `load_tau_matrix` falls back to the base cells for it and records the
-    matrix as not fully kernel-backed.
-    """
-    tables = kernel_bits(path)
+def _per_bot(tables: dict[str, dict[str, str]]) -> dict[str, dict[str, str]]:
     slot_of_bot = {b: LEAN_SLOT[t] for b, t in TEMPLATE_OF_BOT.items()}
     out: dict[str, dict[str, str]] = {}
     for bot, tmpl in TEMPLATE_OF_BOT.items():
@@ -239,6 +466,29 @@ def kernel_row_bits(path: Path | None = None) -> dict[str, dict[str, str]]:
             continue
         out[bot] = {hb: row[slot] for hb, slot in slot_of_bot.items() if slot in row}
     return out
+
+
+def kernel_row_bits(path: Path | None = None, *, source: str | None = None
+                    ) -> dict[str, dict[str, str]]:
+    """Per-BOT kernel test bits: actor bot → hypothesis bot → `"C"`/`"D"`/`"N"`.
+
+    The Def-4 substrate the tau matrix plays from (2026-09-01): each covered bot's
+    per-hypothesis test bits come from its own kernel-proven `RowSpec` row
+    (`tau_rows.json`, or `sprime_tau_rows.json` on `source="sprime"`), keyed by bot
+    names on both axes via `TEMPLATE_OF_BOT` + `LEAN_SLOT`. A bot with no template
+    (WaryBot, LegibleBot, …) — or, on `S'`, no row stated yet — simply has no entry,
+    and a `S'` row may be PARTIAL (only its stated slots); `load_tau_matrix` falls back
+    to the base cells there and records the matrix's kernel coverage. A native player
+    (`MaxConfidenceBot`, `MinConfidenceBot`) reads ITS OWN template's row.
+    """
+    return _per_bot(kernel_bits(path, source=source))
+
+
+def kernel_row_provenance(path: Path | None = None, *, source: str | None = None
+                          ) -> dict[str, dict[str, str]]:
+    """`kernel_row_bits`' provenance twin: actor bot → hypothesis bot →
+    `"theorem"` | `"floor_dichotomy"` | `"divergent"` (`kernel_bit_provenance`)."""
+    return _per_bot(kernel_bit_provenance(path, source=source))
 
 
 # ── The comparison zoos (base-bot keyed, as the σ channels are) ────────────────
@@ -267,14 +517,33 @@ SEPARATING_BOTS: tuple[str, ...] = CONTROL_BOTS + ("EBot",)
 
 
 def main() -> None:
-    tables = kernel_bits()
-    print("kernel bit tables (app/generated/tau_rows.json, slot order = tauOrder):")
-    for tmpl in TAU_ORDER:
+    import argparse
+
+    from pd_runner import settings
+
+    parser = argparse.ArgumentParser(description="Print the kernel tau bit tables.")
+    parser.add_argument("--source", choices=list(settings.CELL_SOURCES), default=None,
+                        help=f"row file (default: {settings.CELL_SOURCE})")
+    args = parser.parse_args()
+    source = resolve_source(args.source)
+    tables = kernel_bits(source=source)
+    prov = kernel_bit_provenance(source=source)
+    order = TAU_ORDER if source == "engine" else PAPER_ORDER
+    print(f"kernel bit tables ({tau_export_file(source)}, slot order = "
+          f"{'tauOrder' if source == 'engine' else 'paperOrder'}; ‡ = floor bit, "
+          "· = not stated):")
+    for tmpl in order:
         row = tables.get(tmpl)
         if row is None:
-            print(f"  {tmpl:8s}  (no certified row)")
-        else:
-            print(f"  {tmpl:8s}  " + " ".join(row[s] for s in TAU_ORDER))
+            print(f"  {tmpl:14s}  (no certified row)")
+            continue
+        cells = []
+        for s in order:
+            if s not in row:
+                cells.append(" ·")
+            else:
+                cells.append(row[s] + ("‡" if prov[tmpl][s] == PROVENANCE_FLOOR else " "))
+        print(f"  {tmpl:14s}  " + " ".join(cells))
 
 
 if __name__ == "__main__":

@@ -1172,10 +1172,25 @@ def build_report(
             f"{a} vs {b}" for a, b in sorted({tuple(sorted(p)) for p in matrix.flip_cells}))
         flip_line = (f" <b>{len({tuple(sorted(p)) for p in matrix.flip_cells})}</b> pairs "
                      f"FLIP the engine&rsquo;s value (<code>≠</code>: {html.escape(flip_pairs)}).")
-    kernel_line = ("" if matrix.is_kernel_backed else
-                   " Test bits are read from the base cells (Def 3); the kernel tau rows "
-                   "(Def 4) are the engine&rsquo;s and are not consulted on S&prime; until "
-                   "Phase 4 ships <code>sprime_tau_rows.json</code>.")
+    counts = matrix.kernel_bit_counts
+    rows_file = "sprime_tau_rows.json" if matrix.source == "sprime" else "tau_rows.json"
+    if matrix.is_kernel_backed:
+        kernel_line = (
+            f" Test bits are kernel-backed (Def 4, <code>{rows_file}</code>): "
+            f"<b>{counts['theorem']}</b> theorem bits"
+            + (f" and <b>{counts['floor_dichotomy']}</b> floor-dichotomy bits"
+               if counts["floor_dichotomy"] else "") + ".")
+    elif matrix.kernel_coverage > 0:
+        kernel_line = (
+            f" Kernel tau rows (Def 4, <code>{rows_file}</code>) cover "
+            f"<b>{matrix.kernel_coverage:.0%}</b> of the test bits "
+            f"({counts['theorem']} theorem, {counts['floor_dichotomy']} floor-dichotomy; "
+            f"{len(matrix.kernel_backed_bots)}/{len(matrix.bots)} bots fully backed) &mdash; "
+            "a PARTIAL export; the remaining bits are read from the base cells (Def 3).")
+    else:
+        kernel_line = (
+            " Test bits are read from the base cells (Def 3); no kernel tau rows "
+            f"(Def 4, <code>{rows_file}</code>) were consulted for this matrix.")
     source_banner = (
         f'<p class="banner {"ok" if not matrix.has_floors else "warn"}">Cells proved in '
         f"<b>{system}</b> (cell source <code>{html.escape(matrix.source)}</code>)."

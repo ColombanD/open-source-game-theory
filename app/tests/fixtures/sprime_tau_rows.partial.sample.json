@@ -1,0 +1,141 @@
+{
+ "schema_version": 1,
+ "system": "sprime",
+ "source_digest": "15369158871352395625",
+ "order": [
+  "coop",
+  "defect",
+  "tftSim",
+  "dupoc",
+  "ebot",
+  "obot",
+  "dbot",
+  "cupodTroll",
+  "cupod",
+  "dimcid",
+  "cimcic",
+  "prudent",
+  "maxconfidence",
+  "minconfidence"
+ ],
+ "rows": [
+  {
+   "template": "dupoc",
+   "order": "[coop, defect, tftSim, dupoc, obot, cupod, dimcid, cimcic, maxconfidence, minconfidence]",
+   "name": "dupocRowSpecA",
+   "module": "ArithS.Tau.Rows.Dupoc",
+   "bits": {
+    "coop": "C",
+    "defect": "D",
+    "tftSim": "C",
+    "dupoc": "C",
+    "obot": "D",
+    "cupod": "D",
+    "dimcid": "D",
+    "cimcic": "C",
+    "maxconfidence": "C",
+    "minconfidence": "C"
+   }
+  },
+  {
+   "template": "ebot",
+   "order": "[coop, defect, tftSim, ebot, obot, dbot, cupodTroll, cupod, dimcid]",
+   "name": "ebotRowSpecA",
+   "module": "ArithS.Tau.Rows.EBot",
+   "bits": {
+    "coop": "D",
+    "defect": "D",
+    "tftSim": "C",
+    "ebot": "C",
+    "obot": "C",
+    "dbot": "D",
+    "cupodTroll": "D",
+    "cupod": "C",
+    "dimcid": "D"
+   }
+  }
+ ],
+ "floor_bits": [
+  {
+   "template": "dupoc",
+   "slot": "ebot",
+   "name": "dupocRowSpecA_ebot_floor",
+   "module": "ArithS.Tau.Rows.Dupoc",
+   "hinge": "□[k] (guardCodeB (templateCode phiDu) (progCode (DupocBot k)) (progCode EBot) k)",
+   "dichotomy": "dich_DupocBot_vs_EBot",
+   "action": "D"
+  },
+  {
+   "template": "dupoc",
+   "slot": "dbot",
+   "name": "dupocRowSpecA_dbot_floor",
+   "module": "ArithS.Tau.Rows.Dupoc",
+   "hinge": "□[k] (guardCodeB (templateCode phiDu) (progCode (DupocBot k)) (progCode DBot) k)",
+   "dichotomy": "dich_DupocBot_vs_DBot",
+   "action": "D"
+  },
+  {
+   "template": "dupoc",
+   "slot": "cupodTroll",
+   "name": "dupocRowSpecA_cupodTroll_floor",
+   "module": "ArithS.Tau.Rows.Dupoc",
+   "hinge": "□[k] (guardCodeB (templateCode phiDu) (progCode (DupocBot k)) (progCode (CupodTrollBot k)) k)",
+   "dichotomy": "dich_DupocBot_vs_CupodTrollBot",
+   "action": "D"
+  },
+  {
+   "template": "dupoc",
+   "slot": "prudent",
+   "name": "dupocRowSpecA_prudent_floor",
+   "module": "ArithS.Tau.Rows.Dupoc",
+   "hinge": "□[k] (guardCodeB (templateCode phiPo) (progCode (PrudentBot k)) (progCode (DupocBot k)) k)",
+   "dichotomy": "dich_PrudentBot_vs_DupocBot",
+   "action": "D"
+  },
+  {
+   "template": "ebot",
+   "slot": "dupoc",
+   "name": "ebotRowSpecA_dupoc_floor",
+   "module": "ArithS.Tau.Rows.EBot",
+   "hinge": "□[k] (guardCodeB (templateCode phiDu) (progCode (DupocBot k)) (progCode EBot) k)",
+   "dichotomy": "dich_DupocBot_vs_EBot",
+   "action": "C"
+  },
+  {
+   "template": "ebot",
+   "slot": "cimcic",
+   "name": "ebotRowSpecA_cimcic_floor",
+   "module": "ArithS.Tau.Rows.EBot",
+   "hinge": "□[k] (guardCodeB (templateCode phiC) (progCode (CIMCIC k)) (progCode EBot) k)",
+   "dichotomy": "dich_CIMCIC_vs_EBot",
+   "action": "C"
+  },
+  {
+   "template": "ebot",
+   "slot": "prudent",
+   "name": "ebotRowSpecA_prudent_floor",
+   "module": "ArithS.Tau.Rows.EBot",
+   "hinge": "□[k] (guardCodeB (templateCode phiPo) (progCode (PrudentBot k)) (progCode EBot) k)",
+   "dichotomy": "dich_PrudentBot_vs_EBot",
+   "action": "C"
+  },
+  {
+   "template": "ebot",
+   "slot": "maxconfidence",
+   "name": "ebotRowSpecA_maxconfidence_floor",
+   "module": "ArithS.Tau.Rows.EBot",
+   "hinge": "□[k] (guardCodeB (templateCode phiDu) (progCode (DupocBot k)) (progCode EBot) k)",
+   "dichotomy": "dich_DupocBot_vs_EBot",
+   "action": "C"
+  },
+  {
+   "template": "ebot",
+   "slot": "minconfidence",
+   "name": "ebotRowSpecA_minconfidence_floor",
+   "module": "ArithS.Tau.Rows.EBot",
+   "hinge": "□[k] (guardCodeB (templateCode phiDu) (progCode (DupocBot k)) (progCode EBot) k)",
+   "dichotomy": "dich_DupocBot_vs_EBot",
+   "action": "C"
+  }
+ ]
+}

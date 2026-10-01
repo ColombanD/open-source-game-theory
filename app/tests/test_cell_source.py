@@ -331,18 +331,33 @@ def test_stipulation_cannot_shadow_a_floor(sprime_export) -> None:
 # ── (f) kernel rows ────────────────────────────────────────────────────────────
 
 
-def test_kernel_backing_is_engine_only(sprime_export) -> None:
+def test_kernel_backing_is_per_source(sprime_export, tmp_path, monkeypatch) -> None:
+    """Phase 4: each source loads ITS OWN row file. The engine's rows never serve a S'
+    matrix — with the S' row file absent the S' matrix carries no kernel rows and its
+    test bits fall back to the S' cells (DIMCID defects), never to the engine's rows
+    (where DIMCID cooperates with DupocBot)."""
+    from pd_runner.tau import def4_theorems as d4
+
     assert ZOOS["body"].load(source="engine").is_kernel_backed
+    rows_file = d4._TAU_EXPORT_FILES["sprime"]
+    monkeypatch.setitem(d4._TAU_EXPORT_FILES, "sprime", tmp_path / "absent.json")
     m = ZOOS["body"].load(source="sprime")
-    assert not m.is_kernel_backed and m.kernel_rows == {}
-    # ...and the test bits fall back to the S' cells, never to the engine's rows.
+    assert not m.is_kernel_backed and m.kernel_rows == {} and m.kernel_coverage == 0.0
     assert m.test_bit("DIMCID", "DupocBot") == "D"
+    # with the S' rows present (conftest: the sample, or the real file) they are consulted
+    monkeypatch.setitem(d4._TAU_EXPORT_FILES, "sprime", rows_file)
+    m = ZOOS["body"].load(source="sprime")
+    assert m.kernel_coverage > 0 and m.test_bit("DIMCID", "DupocBot") == "D"
+    assert ZOOS["body"].load(source="engine").test_bit("DIMCID", "DupocBot") == "C"
 
 
-def test_def4_certification_refuses_a_sprime_matrix(sprime_export) -> None:
+def test_def4_certification_refuses_a_sprime_matrix_without_sprime_rows(
+        sprime_export, tmp_path, monkeypatch) -> None:
+    from pd_runner.tau import def4_theorems as d4
     from pd_runner.tau.compare import SourceMismatchError, certify
     from pd_runner.tau.def4_theorems import CONTROL_BOTS
 
+    monkeypatch.setitem(d4._TAU_EXPORT_FILES, "sprime", tmp_path / "absent.json")
     with pytest.raises(SourceMismatchError, match="no S' tau rows exist yet"):
         certify(load_tau_matrix(CONTROL_BOTS, source="sprime"), "control")
     assert certify(load_tau_matrix(CONTROL_BOTS, source="engine"), "control").passed
@@ -477,8 +492,15 @@ def test_matrix_endpoint_default_and_validation(client) -> None:
     r = client.get("/tau/zoos?source=sprime")
     assert r.status_code == 200
     zoos = {z["key"]: z for z in r.json()["zoos"]}
-    assert zoos["body"]["floor_pairs"] == 4 and zoos["body"]["kernel_backed"] is False
-    assert client.get("/tau/zoos?source=engine").json()["zoos"][0]["kernel_backed"] is True
+    body = zoos["body"]
+    assert body["floor_pairs"] == 4
+    # Phase 4: kernel backing comes from the S' row file (full ⇒ backed; partial ⇒ a
+    # coverage below 1 with the theorem / floor-dichotomy bit counts)
+    assert body["kernel_backed"] is (body["kernel_coverage"] == 1.0)
+    assert set(body["kernel_bits"]) == {"theorem", "floor_dichotomy"}
+    engine_body = client.get("/tau/zoos?source=engine").json()["zoos"][0]
+    assert engine_body["kernel_backed"] is True and engine_body["kernel_coverage"] == 1.0
+    assert engine_body["kernel_bits"]["floor_dichotomy"] == 0
     r = client.get("/tau/report?zoo=body&alphas=0.5&source=sprime&floor_policy=restrict_zoo")
     assert r.status_code == 409 and "FLOOR" in r.json()["detail"]
 

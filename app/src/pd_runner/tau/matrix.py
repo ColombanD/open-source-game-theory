@@ -51,10 +51,19 @@ Conventions fixed 2026-08-03 (see the design note's "open design decisions"):
    `restrict_zoo` (the load then fails totality, naming the pairs). A floor IS a
    theorem (the `¬A_k` half of `dich_<L>_vs_<R>`), so `is_fully_proven` stays True;
    `has_floors`/`floor_cells` are what a consumer must report. `flip_cells` lists the
-   ordered cells whose `S'` value contradicts the engine's. KERNEL TAU ROWS load only
-   on the engine source (`_kernel_rows_for`): `tau_rows.json` is the ENGINE's Def-4
-   substrate and disagrees with `S'` at the DIMCID cells; `sprime_tau_rows.json`
-   arrives in Phase 4, so `is_kernel_backed` is honestly False on `S'` until then.
+   ordered cells whose `S'` value contradicts the engine's. KERNEL TAU ROWS are loaded
+   PER SOURCE (`_kernel_rows_for`, Phase 4, 2026-10-01): the engine's `tau_rows.json`
+   on `source="engine"`, the `S'` `sprime_tau_rows.json` on `source="sprime"` — never
+   crossed, the two disagree at the DIMCID cells by theorem. Each row file is VERIFIED
+   against its own cells at load: a theorem bit must equal the base cell, a `S'` FLOOR
+   BIT (`FloorBitA`) must sit on a floor cell with the same engine-side value, and a
+   floor bit on a non-floor cell or a theorem bit on a floor cell RAISES (the two
+   exports disagree). The `S'` file may be PARTIAL during the Phase-3 rollout: a bot
+   whose template has no row (or a row missing slots) plays those bits from the base
+   cells, `kernel_backed_bots`/`kernel_coverage` show how far the rollout is, and
+   `is_kernel_backed` is True only once every (bot, hypothesis) bit is kernel-stated.
+   `kernel_provenance` keeps, per bit, whether it is a `theorem` or a `floor_dichotomy`
+   (`kernel_bit_counts`). An ABSENT row file degrades to the base cells (coverage 0).
 """
 
 from __future__ import annotations
@@ -502,6 +511,7 @@ class TauMatrix:
         source: str = "engine",
         floor_policy: str = "engine_side",
         flip_cells: tuple[tuple[str, str], ...] = (),
+        kernel_provenance: dict[str, dict[str, str]] | None = None,
     ):
         self.bots = bots
         self._cells = cells
@@ -521,9 +531,15 @@ class TauMatrix:
         # verifies every kernel bit against the base cell at load time, so the two
         # sources can never silently disagree. A matrix built by
         # `apply_contradictions` carries NO kernel rows — a replay matrix is
-        # knowingly wrong and must play from its contradicted cells. ENGINE ONLY
-        # until Phase 4 (`sprime_tau_rows.json`): see `_kernel_rows_for`.
+        # knowingly wrong and must play from its contradicted cells. Per SOURCE since
+        # Phase 4 (`sprime_tau_rows.json`), possibly PARTIAL: see `_kernel_rows_for`.
         self.kernel_rows: dict[str, dict[str, str]] = dict(kernel_rows or {})
+        # Parallel to `kernel_rows`: per bit, "theorem" (a RowSpec/RowSpecA slot) or
+        # "floor_dichotomy" (a S' FloorBitA — the engine-side half of the cell's
+        # dichotomy, verified to sit on a floor cell). Engine rows are all "theorem"
+        # (the "N" fill of τ(Mirror)'s diagonal is "divergent").
+        self.kernel_provenance: dict[str, dict[str, str]] = {
+            b: dict(r) for b, r in (kernel_provenance or {}).items()}
 
     def aggregator(self, actor: str) -> str:
         """How `actor` thresholds its signal: `"sum"` (a lift — the C-mass) or a
@@ -576,7 +592,9 @@ class TauMatrix:
 
     @property
     def kernel_backed_bots(self) -> tuple[str, ...]:
-        """The members whose whole test row comes from the kernel export."""
+        """The members whose WHOLE test row (every hypothesis in this roster) comes
+        from the kernel export. During a partial `S'` rollout a bot with a row that
+        misses a slot, or no row yet, is not listed."""
         return tuple(
             b for b in self.bots
             if b in self.kernel_rows
@@ -586,9 +604,38 @@ class TauMatrix:
     @property
     def is_kernel_backed(self) -> bool:
         """True when EVERY member's test row is kernel-backed — the state of all
-        three paper zoos. False for ad-hoc rosters holding a template-less bot
+        three paper zoos on the engine, and on `S'` once `sprime_tau_rows.json` covers
+        the 14 paper templates. False for ad-hoc rosters holding a template-less bot,
+        for a PARTIAL `S'` export (`kernel_coverage` < 1), when the row file is absent,
         and for replay matrices (`apply_contradictions` drops the rows)."""
         return len(self.kernel_backed_bots) == len(self.bots)
+
+    @property
+    def kernel_coverage(self) -> float:
+        """The fraction of the roster's (bot, hypothesis) cells whose test bit is
+        kernel-stated — 1.0 iff `is_kernel_backed`; the rollout gauge for a partial
+        `S'` export (0.0 when no row file is consulted)."""
+        total = len(self.bots) ** 2
+        if total == 0:
+            return 1.0
+        covered = sum(
+            1 for b in self.bots for h in self.bots
+            if h in self.kernel_rows.get(b, {}))
+        return covered / total
+
+    @property
+    def kernel_bit_counts(self) -> dict[str, int]:
+        """How many of the roster's kernel bits are `theorem` bits and how many are
+        `S'` `floor_dichotomy` bits (engine-side halves of dichotomies)."""
+        counts = {"theorem": 0, "floor_dichotomy": 0}
+        for b in self.bots:
+            prov = self.kernel_provenance.get(b, {})
+            for h in self.bots:
+                if h not in self.kernel_rows.get(b, {}):
+                    continue
+                key = prov.get(h, "theorem")
+                counts[key] = counts.get(key, 0) + 1
+        return counts
 
     def row(self, actor: str) -> tuple[str, ...]:
         """`actor`'s own actions across the whole sub-zoo, in `bots` order.
@@ -630,70 +677,106 @@ class TauMatrix:
         return tuple(sorted({tuple(sorted(k)) for k in self.floor_cells}))
 
 
+@dataclass(frozen=True)
+class KernelRows:
+    """`_kernel_rows_for`'s result: the roster's kernel test bits and, per bit, its
+    provenance (`theorem` | `floor_dichotomy` | `divergent`)."""
+
+    bits: dict[str, dict[str, str]] = field(default_factory=dict)
+    provenance: dict[str, dict[str, str]] = field(default_factory=dict)
+
+
 def _kernel_rows_for(
     bots: tuple[str, ...],
     cells: dict[tuple[str, str], Cell],
+    *,
     source: str = "engine",
-) -> dict[str, dict[str, str]]:
+) -> KernelRows:
     """The Def-4 substrate for one roster: each member's kernel RowSpec bits,
     restricted to the roster and VERIFIED against the base cells (2026-09-01).
 
-    ENGINE ONLY. `tau_rows.json` holds the ENGINE's `@[tau_row]` RowSpec bits, which
-    DISAGREE with PA-S' at the DIMCID cells (S' has DIMCID defecting against every closed
-    program; the engine's rows have it cooperating) — verifying S' cells against them
-    would raise, and skipping the verification would silently play the wrong system.
-    So on `source != "engine"` this returns `{}`: `is_kernel_backed` is honestly False
-    until Phase 4 ships `sprime_tau_rows.json` (`SPRIME_SOURCE_OF_TRUTH.md`), and the
-    test bits fall back to the S' base cells (Def 3), which are what the S' matrix IS.
+    PER SOURCE (Phase 4, 2026-10-01): the engine's `tau_rows.json` on `"engine"`, the
+    `S'` `sprime_tau_rows.json` on `"sprime"` (`def4_theorems.TAU_EXPORTS`). The two
+    are never crossed — the engine's rows DISAGREE with PA-`S'` at the DIMCID cells by
+    theorem — so each file is checked against ITS system's cells:
 
-    Three deliberate behaviors on the engine source:
+    * a THEOREM bit must equal the base cell's row action;
+    * a `S'` FLOOR BIT (`FloorBitA`, the engine-side half of the cell's dichotomy) must
+      sit on a FLOOR cell (`Cell.is_floor`) and equal its engine-side value;
+    * a floor bit on a non-floor cell, or a theorem bit on a floor cell, RAISES even when
+      the values agree: that can only mean the two `S'` exports disagree on which pairs
+      are floors (regenerate both with `lake exe export_sprime_outcomes`).
 
-    * A missing export file degrades to `{}` (Def-3 fallback) rather than failing
-      the load — but a PRESENT export that disagrees with the theorems on any
-      proven cell raises, because that can only mean a stale `tau_rows.json`
-      (run `lake exe export_outcomes`) or a genuine Def 3 ≢ Def 4 break, and
-      either must be loud. (An out-of-order export already raises inside
-      `kernel_bits`.)
-    * A bot with no template gets no row — `is_kernel_backed` goes False, the
-      bits fall back to base cells, numbers unchanged.
-    * A STIPULATED cell keeps its stipulation: the kernel bit is dropped for that
-      pair, so what-if analyses answer the question they were asked.
+    Deliberate behaviors, both sources:
+
+    * A missing row file degrades to no rows (Def-3 fallback, coverage 0) rather than
+      failing the load — but a PRESENT export that disagrees with the theorems on any
+      proven cell raises, because that can only mean a stale export or a genuine
+      Def 3 ≢ Def 4 break, and either must be loud. (An out-of-order or malformed export
+      already raises inside `kernel_bits`.)
+    * A bot with no template — or, on `S'`, no row stated yet (PARTIAL export during the
+      Phase-3 rollout) — gets no row; a partial row keeps only its stated slots. The
+      bits fall back to base cells, numbers unchanged, `is_kernel_backed` goes False and
+      `kernel_coverage` says how far the rollout is.
+    * A STIPULATED cell keeps its stipulation: the kernel bit is dropped for that pair,
+      so what-if analyses answer the question they were asked.
+    * NATIVE players (`NATIVE_PLAYERS`) keep their clone cells and read THEIR OWN
+      template's row (`TEMPLATE_OF_BOT`), as on the engine; a floor bit of theirs sits on
+      a cloned floor cell.
     """
-    if source != "engine":
-        return {}
-    from pd_runner.tau.def4_theorems import kernel_row_bits
+    from pd_runner.tau.def4_theorems import kernel_row_bits, kernel_row_provenance
 
     try:
-        all_rows = kernel_row_bits()
+        all_rows = kernel_row_bits(source=source)
+        all_prov = kernel_row_provenance(source=source)
     except FileNotFoundError:
-        return {}
+        return KernelRows()
     rows: dict[str, dict[str, str]] = {}
+    prov: dict[str, dict[str, str]] = {}
     mismatches: list[str] = []
     for b in bots:
         full = all_rows.get(b)
         if full is None:
             continue
         row: dict[str, str] = {}
+        row_prov: dict[str, str] = {}
         for h in bots:
             if h not in full:
                 continue
             cell = cells.get((b, h))
             if cell is None or cell.hypothetical:
                 continue
-            if full[h] != cell.row_action:
+            bit = full[h]
+            bit_prov = all_prov.get(b, {}).get(h, "theorem")
+            if bit != cell.row_action:
                 mismatches.append(
-                    f"{b} vs {h}: kernel row says {full[h]!r}, "
-                    f"base cell ({cell.theorem}) says {cell.row_action!r}"
+                    f"{b} vs {h}: kernel row says {bit!r}"
+                    + (" (floor bit)" if bit_prov == "floor_dichotomy" else "")
+                    + f", base cell ({cell.theorem}) says {cell.row_action!r}"
                 )
-            row[h] = full[h]
+            elif bit_prov == "floor_dichotomy" and not cell.is_floor:
+                mismatches.append(
+                    f"{b} vs {h}: the kernel row states a FLOOR bit but the base cell "
+                    f"({cell.theorem}, provenance {cell.provenance!r}) is not a floor"
+                )
+            elif bit_prov == "theorem" and cell.is_floor:
+                mismatches.append(
+                    f"{b} vs {h}: the kernel row states a THEOREM bit but the base cell "
+                    f"({cell.theorem}) is a floor dichotomy"
+                )
+            row[h] = bit
+            row_prov[h] = bit_prov
         rows[b] = row
+        prov[b] = row_prov
     if mismatches:
+        exporter = ("lake exe export_sprime_outcomes" if source == "sprime"
+                    else "lake exe export_outcomes")
         raise ValueError(
-            "kernel tau rows disagree with the proven base cells — stale "
-            "tau_rows.json (run `lake exe export_outcomes`) or a real "
-            "Def 3 ≢ Def 4 break:\n  " + "\n  ".join(mismatches)
+            f"kernel tau rows ({source}) disagree with the proven base cells — stale "
+            f"row file (run `{exporter}`) or a real Def 3 ≢ Def 4 break:\n  "
+            + "\n  ".join(mismatches)
         )
-    return rows
+    return KernelRows(rows, prov)
 
 
 def load_tau_matrix(
@@ -863,9 +946,11 @@ def load_tau_matrix(
             f"tau matrix is not total ({resolved_source}): {len(missing)} unproven ordered "
             f"cell(s), e.g. {missing[:5]}. Restrict the bot list or prove the cells." + detail
         )
+    kernel = _kernel_rows_for(bots, cells, source=resolved_source)
     return TauMatrix(
-        bots, cells, natives, _kernel_rows_for(bots, cells, resolved_source),
+        bots, cells, natives, kernel.bits,
         source=resolved_source, floor_policy=resolved_policy, flip_cells=tuple(flips),
+        kernel_provenance=kernel.provenance,
     )
 
 
@@ -1019,7 +1104,17 @@ def main() -> None:
     print(f"cells flipping the engine (≠): {len(m.flip_cells)} ordered")
     for a, b in sorted(m.flip_cells):
         print(f"  {a} vs {b}")
-    print(f"kernel-backed (Def-4 rows): {m.is_kernel_backed}")
+    counts = m.kernel_bit_counts
+    print(f"kernel-backed (Def-4 rows, {m.source}): {m.is_kernel_backed} — coverage "
+          f"{m.kernel_coverage:.1%} of {len(m) ** 2} bits ({counts['theorem']} theorem, "
+          f"{counts['floor_dichotomy']} floor-dichotomy); backed bots: "
+          f"{len(m.kernel_backed_bots)}/{len(m)}")
+    if not m.is_kernel_backed:
+        for b in m.bots:
+            if b in m.kernel_backed_bots:
+                continue
+            have = sorted(h for h in m.bots if h in m.kernel_rows.get(b, {}))
+            print(f"  {b}: {len(have)}/{len(m)} bits stated")
 
 
 if __name__ == "__main__":

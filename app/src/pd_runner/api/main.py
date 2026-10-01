@@ -142,8 +142,10 @@ async def matrix_export(source: str | None = None) -> dict:
 @app.get("/tau/zoos")
 async def tau_zoos(source: str | None = None, floor_policy: str | None = None) -> dict:
     """The selectable tau sub-zoos — the UI dropdown's source of truth. Per zoo, under
-    the selected source: whether it loads (total), and how many of its pairs are S'
-    floors / flip the engine."""
+    the selected source: whether it loads (total), how many of its pairs are S'
+    floors / flip the engine, and the Def-4 kernel backing from the source's OWN row
+    file (`kernel_backed`, `kernel_coverage` — the rollout gauge for a partial S'
+    export — and `kernel_bits`, the theorem / floor-dichotomy bit counts)."""
     from pd_runner.tau.matrix import DEFAULT_ZOO, ZOOS
 
     src, policy = _resolve_source_param(source, floor_policy)
@@ -153,12 +155,15 @@ async def tau_zoos(source: str | None = None, floor_policy: str | None = None) -
             m = z.load(source=src, floor_policy=policy)
         except (ValueError, FileNotFoundError) as exc:
             return {"total": False, "error": str(exc)[:300], "floor_pairs": None,
-                    "flip_pairs": None, "kernel_backed": None}
+                    "flip_pairs": None, "kernel_backed": None, "kernel_coverage": None,
+                    "kernel_bits": None}
         return {
             "total": True, "error": None,
             "floor_pairs": len(m.floor_pairs),
             "flip_pairs": len({tuple(sorted(p)) for p in m.flip_cells}),
             "kernel_backed": m.is_kernel_backed,
+            "kernel_coverage": m.kernel_coverage,
+            "kernel_bits": m.kernel_bit_counts,
         }
 
     return {

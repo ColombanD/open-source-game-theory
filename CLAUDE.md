@@ -273,9 +273,20 @@ into `submit_verdict`.
    `sweep`, `?source=` on the API, `push_matrix`). A `S'` GENUINE FLOOR is carried as a
    labelled cell (`provenance="floor_dichotomy"`, `‡`, engine-side value) or as a hole
    (`restrict_zoo`, totality fails naming the pairs); a `≠` cell FLIPS the engine (all nine
-   in-paper flips are DIMCID's). Kernel tau rows (`tau_rows.json`) are the ENGINE's and load
-   only on `source="engine"` until Phase 4 ships `sprime_tau_rows.json`; the Def 3 ≡ Def 4
-   certification refuses a `S'` matrix. EGT run directories hash the source (`sprime_` in
+   in-paper flips are DIMCID's). Kernel tau rows load PER SOURCE (Phase 4, 2026-10-01):
+   `tau_rows.json` on `engine`, `sprime_tau_rows.json` on `sprime` (`def4_theorems.TAU_EXPORTS`;
+   the `S'` file = engine schema over the 14-template `PAPER_ORDER` + `floor_bits`, digest over
+   rows ++ floor_bits), each VERIFIED against its own cells at load — a floor bit must sit on a
+   floor cell with the same engine-side value, a provenance swap raises — and never crossed (they
+   disagree at DIMCID by theorem). The `S'` file may be PARTIAL during the Phase-3 rollout:
+   `TauMatrix.kernel_coverage` / `kernel_backed_bots` / `kernel_bit_counts` gauge it (`/tau/zoos`,
+   the report banner, `python -m pd_runner.tau.matrix`), `is_kernel_backed` is True only at full
+   coverage, and uncovered bits fall back to the `S'` cells. `python -m pd_runner.tau.compare
+   --zoo paper --source sprime` certifies Def 3 ≡ Def 4 on `S'` (agree / floor-agree / mismatch /
+   uncovered; 155/41/0/0 at full coverage); it REFUSES a `S'` matrix only while the row file is
+   absent. Test stand-ins: `tests/fixtures/sprime_tau_rows{,.partial}.sample.json`
+   (`make_sprime_tau_fixture.py`, derived from the `S'` base cells), used by `conftest.py` only
+   while the real file is absent. EGT run directories hash the source (`sprime_` in
    the name); the engine path is byte-identical to before (`tests/test_cell_source.py`).
    Diff report: `python -m pd_runner.eval.source_diff` → `app/generated/source_diff.md`.
 
