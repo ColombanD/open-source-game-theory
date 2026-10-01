@@ -332,6 +332,23 @@ CodeTerm/Guard slots/SubstTemplate → Code → RedCellUnsound arms → full bui
    plain. Decision pending: (α) let the abstraction descend into systems (a code-level `codeTermAbs`,
    `descriptionsSys d k`, `sysCloseTemplate d k`, `Tau/Entangled` re-done — days) or state the bit as C and
    record ONE value divergence (then 196/196 and `strict`).
+   **DECIDED 2026-10-02: (α).** Specification (Phase 2d + 3f):
+   * `codeTermMetaAbs k₀` DESCENDS into `pSys d i` (member list abstracted member by member; the index a
+     numeral); `NoSearchAt`/length/instantiation lemmas extended (`subst_codeTermMetaAbs` stays the identity
+     that filling `#6` with `k₀` recovers the verbatim term).
+   * The closer takes the node's budget: a code-level Δ₁ `codeTermAbs k₀ : V → V` (the code of the abstracted
+     term, `#6` kept as a bound variable), `descriptionsSysAt d k` (member triples from it),
+     `sysCloseTemplateAt d k g`, and `sysCloseCode d`'s search clause `pSearch k g p q ↦ pSearch k
+     (sysCloseTemplateAt d k g) …`. The literal member equation `templateAt_sysClose` /
+     `progCode_sysClose_member` re-proved on the abstracted descriptions (both sides now abstract).
+   * THE BRIDGE that keeps `Tau/Entangled` alive: `guardCodeB (sysCloseTemplateAt d k g) me opp k =
+     guardCodeB (sysCloseTemplate d g) me opp k` — the CONSULTED sentence of a closed member is unchanged,
+     only its stored numerals shrink (the system twin of `guardCodeB_templateCodeAt`). Every Entangled lemma
+     about consulted codes (`guardCodeB_sysClose_eq_instB`, the families) is to be bridged, not redone.
+   * Then `dimcid × ebot = D` (`dimcid_D_of_towers` on EBot's three-stage watch, whose third stage names the
+     system `inst dimcid mirror`: tower from `Entangled/Tower.sysT1`), `NeverFitsSys` restated on the explicit
+     pre-abstraction code (vacuous for compiled instances), `#check_tau_rowsA strict`, export, compare
+     196/196 with only the six red-cell provenance entries recorded.
 
    **Phase 4 contract.** `tau/def4_theorems.py`: `TAU_EXPORTS = {engine: tau_rows.json, sprime:
    sprime_tau_rows.json}`, `kernel_bits(source)`, a floor bit loads as the engine-side action with
