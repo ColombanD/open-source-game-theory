@@ -32,6 +32,7 @@ from pd_runner.tau.def4_theorems import (
     LEAN_SLOT,
     PAPER_ORDER,
     PAPER_TEMPLATES,
+    SPRIME_RECORDED_DIVERGENCES,
     TAU_ORDER,
     _load_export,
     kernel_bit_provenance,
@@ -130,7 +131,9 @@ def test_document_shape(sprime_rows) -> None:
     for fb in doc["floor_bits"]:
         assert {"template", "slot", "action", "hinge", "dichotomy"} <= set(fb)
         assert fb["template"] in PAPER_ORDER and fb["slot"] in PAPER_ORDER
-        assert fb["action"] in {"C", "D"} and fb["dichotomy"].startswith("dich_")
+        # the six tau images of the red cell name the base THEOREM they depart from
+        # (`outcome_DupocBot_vs_CupodBot`): no `dich_` exists for a floor on a theorem
+        assert fb["action"] in {"C", "D"} and fb["dichotomy"].startswith(("dich_", "outcome_"))
     data = _load_export(source="sprime")
     assert data is not None
 
@@ -224,6 +227,10 @@ def test_kernel_bits_equal_the_sprime_cells(sprime_rows) -> None:
                 continue
             stated += 1
             cell = m.cell(BASE_OF[A], BASE_OF[T])
+            if (LEAN_SLOT[A], LEAN_SLOT[T]) in SPRIME_RECORDED_DIVERGENCES:
+                # Def 3 ≢ Def 4 by theorem under the present coding (§3 FINDING): the
+                # loader drops the bit, the certification reports it; not asserted equal
+                continue
             assert bit == cell.row_action, (A, T)
             p = prov[LEAN_SLOT[A]][LEAN_SLOT[T]]
             assert (p == "floor_dichotomy") is cell.is_floor, (A, T, p)
@@ -355,7 +362,10 @@ def test_certification_on_sprime(sprime_rows) -> None:
     expected_floor = sum(
         1 for c in d.cells if m.cell(BASE_OF[c.template], BASE_OF[c.hypothesis]).is_floor)
     assert d.floor_agreements == expected_floor
-    assert d.theorem_agreements + d.floor_agreements == d.agreements == d.covered
+    # the covered cells are the agreements plus the RECORDED divergences (whitelisted)
+    assert d.theorem_agreements + d.floor_agreements == d.agreements
+    assert d.agreements + len(d.whitelisted_divergences) == d.covered
+    assert all(c.whitelisted.startswith("recorded ") for c in d.whitelisted_divergences)
     assert d.total == 196 and d.covered + len(d.uncovered) == 196
     assert set(d.coverage_by_template) <= set(PAPER_TEMPLATES)
     _require_full(sprime_rows)

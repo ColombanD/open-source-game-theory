@@ -457,6 +457,59 @@ PAPER_TEMPLATES: tuple[str, ...] = tuple(
 of the `S'` certification (`compare.direct_kernel_vs_base` on `source="sprime"`)."""
 
 
+@dataclass(frozen=True)
+class RecordedDivergence:
+    """One bit at which the `S'` kernel row and the `S'` base cell DISAGREE by theorem
+    (`SPRIME_SOURCE_OF_TRUTH.md` §3, the 2026-10-01 FINDING): `kind` is `"value"` (the
+    stated bit differs from the base cell's action) or `"provenance"` (same value, but a
+    `FloorBitA` on a base cell that is a theorem)."""
+
+    kind: str
+    reason: str
+
+
+_SNAPSHOT = ("budget-snapshot obstruction (Tau/NeverFits.lean): the guard names a frozen "
+             "instance carrying k, so the guard sentence never fits its budget — the "
+             "compiled instance plays its ELSE branch, not the base cell's value")
+_RED_CELL = ("the tau image of the red cell: outcome_DupocBot_vs_CupodBot is a theorem in "
+             "the base by τ-symmetry, but inside one compiled .sys system the two members' "
+             "guards are not τ-images, so the bit is a FLOOR in S' (Tau/Entangled/DupocCupod.lean)")
+
+SPRIME_RECORDED_DIVERGENCES: dict[tuple[str, str], RecordedDivergence] = {
+    ("cimcic", "tftSim"): RecordedDivergence("value", _SNAPSHOT),
+    ("dimcid", "tftSim"): RecordedDivergence("value", _SNAPSHOT),
+    ("dimcid", "ebot"): RecordedDivergence("value", _SNAPSHOT),
+    ("dimcid", "obot"): RecordedDivergence("value", _SNAPSHOT),
+    ("dimcid", "dbot"): RecordedDivergence("value", _SNAPSHOT),
+    ("dimcid", "cupodTroll"): RecordedDivergence("value", _SNAPSHOT),
+    ("dupoc", "cupod"): RecordedDivergence("provenance", _RED_CELL),
+    ("maxconfidence", "cupod"): RecordedDivergence("provenance", _RED_CELL),
+    ("minconfidence", "cupod"): RecordedDivergence("provenance", _RED_CELL),
+    ("cupod", "dupoc"): RecordedDivergence("provenance", _RED_CELL),
+    ("cupod", "maxconfidence"): RecordedDivergence("provenance", _RED_CELL),
+    ("cupod", "minconfidence"): RecordedDivergence("provenance", _RED_CELL),
+}
+"""The twelve `S'` bits at which Def 3 ≢ Def 4 under the PRESENT coding — keyed by Lean
+`Tmpl` slot names `(template, hypothesis)`, machine-checked in `arith/ArithS/Tau/Rows/*`
+(2026-10-01, Phases 3b–3d; the design note's FINDING records them, decision pending
+between the generic route (c) and shipping under coding (B)). Six VALUE divergences
+(`cimcic × tftSim` is D, `dimcid × {tftSim, ebot, obot, dbot, cupodTroll}` are C — the
+ENGINE's values — where the `S'` base cells say the opposite) and six PROVENANCE
+divergences (floor bits on the red cell, a base theorem). The matrix loader
+(`matrix._kernel_rows_for`) does not raise on these and does NOT consult them (the base
+cell — the table's value — is played, so every downstream number is unchanged); the
+certification (`compare.direct_kernel_vs_base`) reports them as whitelisted divergences.
+Anything else that disagrees is still a bug by definition. Engine source: never consulted."""
+
+
+def recorded_divergence(source: str, template_slot: str | None, hypothesis_slot: str | None
+                        ) -> RecordedDivergence | None:
+    """The recorded divergence at a Lean-slot-keyed bit on `source`, else `None`."""
+    if source != "sprime" or template_slot is None or hypothesis_slot is None:
+        return None
+    return SPRIME_RECORDED_DIVERGENCES.get((template_slot, hypothesis_slot))
+
+
 def _per_bot(tables: dict[str, dict[str, str]]) -> dict[str, dict[str, str]]:
     slot_of_bot = {b: LEAN_SLOT[t] for b, t in TEMPLATE_OF_BOT.items()}
     out: dict[str, dict[str, str]] = {}

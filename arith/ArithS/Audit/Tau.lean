@@ -40,9 +40,10 @@ import ArithS.Tau.Rows.MinConfidence
 # ArithS.Audit.Tau — the census of the tau layer (Phase 3 of `SPRIME_SOURCE_OF_TRUTH.md`)
 
 The `S'` tau rows (`RowSpecA`, `Tau/Spec.lean`) and floor bits (`FloorBitA`) of the seven search-free / SND / POS
-templates, with the column kit they rest on (`Tau/Columns.lean`), and (Phase 3b) the NON-entangled slots of the
+templates, with the column kit they rest on (`Tau/Columns.lean`), (Phase 3b) the NON-entangled slots of the
 seven self-probers' rows with the diagonal kit they rest on (`Tau/Quine.lean`: the Löb quines, DIMCID's fixpoint
-on defection, CIMCIC's tautology). Each line must read `[propext, Classical.choice, Quot.sound]`.
+on defection, CIMCIC's tautology), and (Phase 3c/3d) the entangled `.sys` bits folded into those rows: 14 rows,
+47 floor bits, 191/196 paper bits. Each line must read `[propext, Classical.choice, Quot.sound]`.
 -/
 
 namespace ArithS.Tau
@@ -145,7 +146,29 @@ namespace ArithS.Tau
 #print axioms minconfidenceRowSpecA_dbot_floor
 #print axioms minconfidenceRowSpecA_cupodTroll_floor
 
--- The entangled bits (`Tau/Entangled/*`): the system kit, the Löb families, the 22 theorem bits and the 18 floor bits.
+-- The system floor bits folded into the rows (Phase 3d; the proof terms are the `entFloor_*` lemmas below).
+#print axioms dupocRowSpecA_cupod_floor
+#print axioms dupocRowSpecA_prudent_floor
+#print axioms maxconfidenceRowSpecA_cupod_floor
+#print axioms maxconfidenceRowSpecA_prudent_floor
+#print axioms minconfidenceRowSpecA_cupod_floor
+#print axioms minconfidenceRowSpecA_prudent_floor
+#print axioms cupodRowSpecA_dupoc_floor
+#print axioms cupodRowSpecA_maxconfidence_floor
+#print axioms cupodRowSpecA_minconfidence_floor
+#print axioms cupodRowSpecA_cimcic_floor
+#print axioms cupodRowSpecA_prudent_floor
+#print axioms cimcicRowSpecA_cupod_floor
+#print axioms cimcicRowSpecA_prudent_floor
+#print axioms prudentRowSpecA_dupoc_floor
+#print axioms prudentRowSpecA_maxconfidence_floor
+#print axioms prudentRowSpecA_minconfidence_floor
+#print axioms prudentRowSpecA_cupod_floor
+#print axioms prudentRowSpecA_cimcic_floor
+#print axioms ebotRowSpecA_prudent_floor
+
+-- The entangled bits (`Tau/Entangled/*`): the system kit, the Löb families, the 23 theorem bits and the 19 floor bits
+-- (all folded into the rows above since Phase 3d).
 #print axioms Sys2.canonical_code
 #print axioms Sys2.describesBot
 #print axioms Sys2.describesMem

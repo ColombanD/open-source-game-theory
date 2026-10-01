@@ -1,9 +1,12 @@
 import ArithS.Tau.Quine
 import ArithS.Tau.NeverFits
+import ArithS.Tau.Entangled.DimcidDupoc
+import ArithS.Tau.Entangled.DimcidCupod
+import ArithS.Tau.Entangled.DimcidCimcic
 import ArithS.Tau.Attr
 
 /-!
-# ArithS.Tau.Rows.DIMCID — τ(DIMCID)'s row in PA-`S'` (the NON-entangled slots)
+# ArithS.Tau.Rows.DIMCID — τ(DIMCID)'s row in PA-`S'`
 
 τ(DIMCID)'s instance at a hypothesis `T` that does not self-probe is one `proveImplD` stage: the guard
 `dimG X := .impl (.plays .self (.bot X) C) (.plays (.bot X) .self D)` — "if I cooperate with `T`'s instance seeing
@@ -13,10 +16,13 @@ DEFECTION (`inst_dimcid_quine`), closed by bounded Löb on the bot-wrapped insta
 a box of the guard makes the instance defect, refuting the antecedent). Engine twin:
 `Tau/Theorems/TauDIMCID/Phase.lean`.
 
-Slots stated here (`[coop, defect, tftSim, ebot, obot, dbot, cupodTroll, dimcid]`): `coop` D — **the `S'` FLIP** of
+Slots stated here (`[coop, defect, tftSim, dupoc, ebot, obot, dbot, cupodTroll, cupod, dimcid, cimcic, maxconfidence,
+minconfidence]`): `coop` D — **the `S'` FLIP** of
 the engine's C (`Tau/Described.col_dimcid_coop`: the self-fulfilling refutation `dimcid_vs_closed`, on the instance),
 `defect` D (POS, `col_dimcid_defect`), the diagonal D (Löb) — and **`tftSim ebot obot dbot cupodTroll`: C, the
-ENGINE's values; the table's five remaining flips (`D≠`) do NOT transfer to the tau layer.** The base flips rest on
+ENGINE's values; the table's five remaining flips (`D≠`) do NOT transfer to the tau layer** — and the five ENTANGLED slots `dupoc cupod cimcic maxconfidence
+minconfidence`, all D (the DIMCID member finds its self-fulfilling guard in every `.sys` system, `Tau/Entangled/
+DimcidDupoc.lean`, `DimcidCupod.lean`, `DimcidCimcic.lean`; the FLIPS of the table). The base flips rest on
 `dimcid_vs_closed`: DIMCID's guard is found by Löb against any closed opponent because the family is the
 `binNumeral k`-instance of a fixed formula. On the tau instance the probed program is the HYPOTHESIS'S INSTANCE
 SEEING DIMCID, which carries the budget `k` (`inst dimcid coop = .search k …` sits inside it, or the instance IS
@@ -27,7 +33,9 @@ ELSE branch, C. (`coop`/`defect` flip/agree as the table says because `inst coop
 budget-free constants.) The table and `expectedFloorBits` need no change (none of the five is a `‡` cell); §3's
 "13 FLIP" count is 8 for the tau layer (+1 at `cimcic × tftSim`, see `Rows/CIMCIC.lean`).
 
--- Phase 3c: entangled — `dupoc cupod cimcic prudent maxconfidence minconfidence`.
+-- UNSTATED (decision pending — `SPRIME_SOURCE_OF_TRUTH.md` §3, the budget-snapshot obstruction): slot `.prudent`
+--   (`inst dimcid prudent = .sys [dim 1, pm 0 dimcid] 0`; the Prudent member's inner guard freezes
+--   `inst dimcid .defect`, `k` inside — no family can be stated for either member).
 -/
 
 namespace ArithS.Tau
@@ -113,17 +121,24 @@ theorem dimcid_dbot_C (k : ℕ) : bitPlays k .dimcid .dbot .C :=
 theorem dimcid_cupodTroll_C (k : ℕ) : bitPlays k .dimcid .cupodTroll .C :=
   dimcid_selfBot_C (instCode_dimcid_cupodTroll k) (inst_dimcid_peel_cupodTroll k) (hasSearch_cupodTroll_dimcid k) rfl
 
-/-- **τ(DIMCID)'s row in `S'`** — the eight non-entangled theorem slots. -/
+/-- **τ(DIMCID)'s row in `S'`** — thirteen theorem slots (eight non-entangled, five entangled; `prudent` unstated). -/
 @[tau_rowA]
-theorem dimcidRowSpecA : RowSpecA .dimcid [.coop, .defect, .tftSim, .ebot, .obot, .dbot, .cupodTroll, .dimcid] dimcidRowA :=
+theorem dimcidRowSpecA : RowSpecA .dimcid
+    [.coop, .defect, .tftSim, .dupoc, .ebot, .obot, .dbot, .cupodTroll, .cupod, .dimcid, .cimcic,
+     .maxconfidence, .minconfidence] dimcidRowA :=
   RowSpecA.cons col_dimcid_coop <|
   RowSpecA.cons col_dimcid_defect <|
   RowSpecA.cons (bitEventually.of_forall dimcid_tftSim_C) <|
+  RowSpecA.cons ent_dimcid_dupoc <|
   RowSpecA.cons (bitEventually.of_forall dimcid_ebot_C) <|
   RowSpecA.cons (bitEventually.of_forall dimcid_obot_C) <|
   RowSpecA.cons (bitEventually.of_forall dimcid_dbot_C) <|
   RowSpecA.cons (bitEventually.of_forall dimcid_cupodTroll_C) <|
+  RowSpecA.cons ent_dimcid_cupod <|
   RowSpecA.cons dimcid_quine_D <|
+  RowSpecA.cons ent_dimcid_cimcic <|
+  RowSpecA.cons ent_dimcid_maxconfidence <|
+  RowSpecA.cons ent_dimcid_minconfidence <|
   RowSpecA.nil _ _
 
 end ArithS.Tau

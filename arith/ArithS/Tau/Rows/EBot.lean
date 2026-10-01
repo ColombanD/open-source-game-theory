@@ -1,5 +1,7 @@
 import ArithS.Tau.Columns
 import ArithS.Tau.Described
+import ArithS.Tau.Entangled.Mirror
+import ArithS.Tau.Entangled.EBotPrudent
 import ArithS.Tau.Attr
 
 /-!
@@ -12,14 +14,14 @@ mirror (⇒ C, else D) — `instCode_ebot`. Engine twin: `Tau/Theorems/TauEBot/P
 **Floor bits** (`‡`, five): `dupoc`, `cimcic`, `prudent`, `maxconfidence`, `minconfidence`. `dupoc`, `cimcic` and
 the natives are settled on this side (the searcher's instance at the defector is SND, at the cooperator POS: the
 reciprocity watch fires, C); the hinge is the partner's guard about EBot's instance (base `dich_DupocBot_vs_EBot`,
-`dich_CIMCIC_vs_EBot`).
+`dich_CIMCIC_vs_EBot`); `prudent` (base `dich_PrudentBot_vs_EBot`) is settled C too: the cascade reaches Prudent's
+instance at the MIRROR, the system `.sys [pm 1 mirror, mm 0] 0`, whose Prudent member cooperates by the Löb family
+on a closed, `k`-free third party (`Tau/Entangled/EBotPrudent.ent_ebot_prudent`, the engine's
+`prudent_mirror_plays_C` transferred).
 
--- TODO Phase 3b (dropped, never weakened):
---   slot .dimcid (D, FLIP): `col_dimcid_defect` (D) and `col_dimcid_coop` (D, the flip) are in
---                `Tau/Described.lean`; the cascade then reaches DIMCID's instance at the MIRROR — an entangled
---                `.sys` (both self-probe): the member-slot families of Phase 2b;
---   floor bit .prudent (C): needs Prudent's instance at the mirror to cooperate — the entangled `.sys`
---                (prudent, mirror), mutual Löb on the member slots (the engine: `prudent_mirror_plays_C`).
+The `dimcid` slot (D, the FLIP of the engine's C) needs the cascade's third stage: DIMCID's instance at the mirror is
+the system `.sys [dim 1, mm 0] 0`, whose DIMCID member defects by its self-fulfilling family, so the mirror watch
+falls (`Tau/Entangled/Mirror.ent_ebot_dimcid`). All 14 paper slots are stated (9 theorem slots, 5 floor bits).
 -/
 
 namespace ArithS.Tau
@@ -66,10 +68,10 @@ theorem ebot_D_of_all {k : ℕ} {T : Tmpl} (h₁ : bitPlays k T .defect .D) (h�
   obtain ⟨n₃, h₃⟩ := h₃
   exact ⟨_, watch_falls' h₁ (by decide) (watch_falls' h₂ (by decide) (watch_falls' h₃ (by decide) (const_play 0 _ _ _)))⟩
 
-/-- **τ(EBot)'s row in `S'`** — 8 of the 14 paper slots (floor bits below; `.dimcid`: Phase 3b). -/
+/-- **τ(EBot)'s row in `S'`** — the 9 theorem slots (the 5 floor bits are below). -/
 @[tau_rowA]
 theorem ebotRowSpecA : RowSpecA .ebot
-    [.coop, .defect, .tftSim, .ebot, .obot, .dbot, .cupodTroll, .cupod] ebotRowA :=
+    [.coop, .defect, .tftSim, .ebot, .obot, .dbot, .cupodTroll, .cupod, .dimcid] ebotRowA :=
   RowSpecA.cons (bitEventually.of_forall fun k ↦ ebot_D_of_defect (col_coop_defect k)) <|
   RowSpecA.cons (bitEventually.of_forall fun k ↦
     ebot_D_of_all (col_defect_defect k) (col_defect_coop k) (col_defect_mirror k)) <|
@@ -80,6 +82,7 @@ theorem ebotRowSpecA : RowSpecA .ebot
   RowSpecA.cons (bitEventually.of_forall fun k ↦ ebot_D_of_defect (col_dbot_defect k)) <|
   RowSpecA.cons (bitEventually.of_forall fun k ↦ ebot_D_of_defect (col_cupodTroll_defect k)) <|
   RowSpecA.cons (bitEventually.mono (fun k h₁ ↦ ebot_C_of h₁ (col_cupod_coop k)) col_cupod_defect) <|
+  RowSpecA.cons ent_ebot_dimcid <|
   RowSpecA.nil _ _
 
 /-! ### The floor bits — settled on this side, the partner's hinge -/
@@ -116,5 +119,15 @@ theorem ebotRowSpecA_minconfidence_floor : FloorBitA .ebot .minconfidence
     (fun k ↦ □[k] (guardCodeB (templateCode (probe (inst (tauZoo k) .ebot .minconfidence)))
       (pBot (instCode k .minconfidence .ebot)) (pBot (instCode k .minconfidence .ebot)) k)) .C :=
   FloorBitA.of _ (bitEventually.mono (fun k h₂ ↦ ebot_C_of (col_minconfidence_defect k) h₂) col_minconfidence_coop)
+
+/-- `ebot × prudent` ‡ (base `dich_PrudentBot_vs_EBot`): settled C on this side — the exploit and reciprocity watches
+fall on Prudent's instances at the defector and the cooperator (both D) and the mirror watch fires on the system
+`.sys [pm 1 mirror, mm 0] 0` (`Tau/Entangled/EBotPrudent.lean`). Hinge: Prudent's outer probe of EBot's instance, in
+Prudent's own frame. -/
+@[tau_floor_bitA]
+theorem ebotRowSpecA_prudent_floor : FloorBitA .ebot .prudent
+    (fun k ↦ □[k] (guardCodeB (templateCode (probe (inst (tauZoo k) .ebot .prudent)))
+      (pBot (instCode k .prudent .ebot)) (pBot (instCode k .prudent .ebot)) k)) .C :=
+  entFloor_ebot_prudent
 
 end ArithS.Tau

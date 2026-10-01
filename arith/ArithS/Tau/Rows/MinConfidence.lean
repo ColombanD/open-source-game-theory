@@ -1,7 +1,7 @@
 import ArithS.Tau.Rows.Dupoc
 
 /-!
-# ArithS.Tau.Rows.MinConfidence — the native MinConfidenceBot's row in PA-`S'` (the NON-entangled slots)
+# ArithS.Tau.Rows.MinConfidence — the native MinConfidenceBot's row in PA-`S'`
 
 MinConfidenceBot is a NATIVE tau player — Dupoc's per-hypothesis TEST under the `min / worst-case` aggregator (`Tau/Zoo.lean`,
 `MaxConfidenceBotZ`/`MinConfidenceBotZ`) — whose spec IS Dupoc's spec, so its compiled instances are Dupoc's
@@ -10,13 +10,16 @@ the SAME quine term as Dupoc's (`inst_minconfidence_quine`). Its row is therefor
 (the census requires one row per template); every proof is the Dupoc proof on the instance unfolded at the
 `.minconfidence` slot. Engine twin: `Tau/Theorems/TauMinConfidence/Phase.lean`.
 
-Slots stated here (`[coop, defect, obot, minconfidence]`): `coop` C, `defect` D (`Tau/Columns.col_minconfidence_*`, by the bridge),
-`obot` D (SND), the diagonal C (Löb, the quine). **Floor bits** (`‡`, three, floor SIDE): `ebot`, `dbot`,
-`cupodTroll` — the hinge is the native's own probe of the hypothesis's instance seeing it, not found ⇒ D.
+Slots stated here (`[coop, defect, dupoc, obot, dimcid, cimcic, maxconfidence, minconfidence]`): `coop` C, `defect` D
+(`Tau/Columns.col_minconfidence_*`, by the bridge), `obot` D (SND), the diagonal C (Löb, the quine), and the ENTANGLED slots
+(`Tau/Entangled/`, Dupoc's systems on the native's slot): `dupoc`/`maxconfidence` C (the symmetric system of two
+Dupoc-spec self-probers, `ent_minconfidence_dupoc`/`ent_minconfidence_maxconfidence`), `dimcid` D (`ent_minconfidence_dimcid`),
+`cimcic` C (`ent_minconfidence_cimcic`). **Floor bits** (`‡`, five, floor SIDE): `ebot`, `dbot`, `cupodTroll` — the hinge
+is the native's own probe of the hypothesis's instance seeing it, not found ⇒ D — and the system floors `cupod` (the
+red cell's tau image, a floor in `S'`: `Tau/Entangled/DupocCupod.lean`) and `prudent` (base `dich_PrudentBot_vs_DupocBot`).
 
--- Phase 3c: entangled — `dupoc cupod dimcid cimcic prudent maxconfidence` (the symmetric system `cfdSys` with the
---   other two Dupoc-spec self-probers, and the four `.sys` pairs).
--- TODO Phase 3d: slot `.tftSim` (C) — as `Rows/Dupoc.lean`'s (the same probed instance shape).
+-- UNSTATED (decision pending — `SPRIME_SOURCE_OF_TRUTH.md` §3): slot `.tftSim` (C) — as `Rows/Dupoc.lean`'s (the same
+--   probed instance shape, the budget-snapshot obstruction).
 -/
 
 namespace ArithS.Tau
@@ -70,12 +73,17 @@ theorem col_obot_minconfidence : bitEventually .obot .minconfidence .D := obotRo
 theorem minconfidence_obot_D : bitEventually .minconfidence .obot .D :=
   bitEventually.mono (fun k h ↦ dupocLike_D_of_probe_false (instCode_minconfidence_obot k) rfl h) col_obot_minconfidence
 
-/-- **MinConfidenceBot's row in `S'`** — the four non-entangled theorem slots (Dupoc's). -/
+/-- **MinConfidenceBot's row in `S'`** — the eight theorem slots (Dupoc's: four non-entangled, four entangled). -/
 @[tau_rowA]
-theorem minconfidenceRowSpecA : RowSpecA .minconfidence [.coop, .defect, .obot, .minconfidence] minconfidenceRowA :=
+theorem minconfidenceRowSpecA : RowSpecA .minconfidence
+    [.coop, .defect, .dupoc, .obot, .dimcid, .cimcic, .maxconfidence, .minconfidence] minconfidenceRowA :=
   RowSpecA.cons col_minconfidence_coop <|
   RowSpecA.cons (bitEventually.of_forall col_minconfidence_defect) <|
+  RowSpecA.cons ent_minconfidence_dupoc <|
   RowSpecA.cons minconfidence_obot_D <|
+  RowSpecA.cons ent_minconfidence_dimcid <|
+  RowSpecA.cons ent_minconfidence_cimcic <|
+  RowSpecA.cons ent_minconfidence_maxconfidence <|
   RowSpecA.cons minconfidence_quine_C <|
   RowSpecA.nil _ _
 
@@ -101,5 +109,25 @@ theorem minconfidenceRowSpecA_cupodTroll_floor : FloorBitA .minconfidence .cupod
     (fun k ↦ □[k] (guardCodeB (templateCode (probe (inst (tauZoo k) .cupodTroll .minconfidence)))
       (pBot (instCode k .minconfidence .cupodTroll)) (pBot (instCode k .minconfidence .cupodTroll)) k)) .D :=
   FloorBitA.of_not_hinge ⟨0, fun k _ hn ↦ dupocLike_floor_D (instCode_minconfidence_cupodTroll k) rfl hn⟩
+
+/-! ### The system floor bits — the Dupoc member's own probe is the hinge (`Tau/Entangled/`) -/
+
+/-- `minconfidence × cupod` ‡ — the red cell's tau image on the native (the same system as Dupoc's), a FLOOR in `S'`
+(`Tau/Entangled/DupocCupod.lean`): D when the Dupoc member's probe of the Cupod member is not found. -/
+@[tau_floor_bitA]
+theorem minconfidenceRowSpecA_cupod_floor : FloorBitA .minconfidence .cupod
+    (fun k ↦ □[k] (guardCodeB (templateCode (.plays (.bot (.sys (sys2 (dm 1 k) (cm 0 k)) 1))
+      (.bot (.sys (sys2 (dm 1 k) (cm 0 k)) 1)) .C))
+      (pBot (instCode k .minconfidence .cupod)) (pBot (instCode k .minconfidence .cupod)) k)) .D :=
+  entFloor_minconfidence_cupod
+
+/-- `minconfidence × prudent` ‡ (base `dich_PrudentBot_vs_DupocBot`): D when the Dupoc member's probe of the Prudent member is
+not found (`Tau/Entangled/DupocPrudent.lean`). -/
+@[tau_floor_bitA]
+theorem minconfidenceRowSpecA_prudent_floor : FloorBitA .minconfidence .prudent
+    (fun k ↦ □[k] (guardCodeB (templateCode (.plays (.bot (.sys (sys2 (dm 1 k) (pm 0 k .minconfidence)) 1))
+      (.bot (.sys (sys2 (dm 1 k) (pm 0 k .minconfidence)) 1)) .C))
+      (pBot (instCode k .minconfidence .prudent)) (pBot (instCode k .minconfidence .prudent)) k)) .D :=
+  entFloor_minconfidence_prudent
 
 end ArithS.Tau

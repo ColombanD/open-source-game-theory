@@ -1,9 +1,13 @@
 import ArithS.Tau.Quine
 import ArithS.Tau.NeverFits
+import ArithS.Tau.Entangled.DupocCimcic
+import ArithS.Tau.Entangled.DimcidCimcic
+import ArithS.Tau.Entangled.CupodCimcic
+import ArithS.Tau.Entangled.CimcicPrudent
 import ArithS.Tau.Attr
 
 /-!
-# ArithS.Tau.Rows.CIMCIC — τ(CIMCIC)'s row in PA-`S'` (the NON-entangled slots)
+# ArithS.Tau.Rows.CIMCIC — τ(CIMCIC)'s row in PA-`S'`
 
 τ(CIMCIC)'s instance at a hypothesis `T` that does not self-probe is one `proveImpl` stage: the guard
 `cimG X := .impl (.plays .self (.bot X) C) (.plays (.bot X) .self C)` — "if I cooperate with `T`'s instance seeing
@@ -11,7 +15,7 @@ CIMCIC, it cooperates with me" — with the antecedent's subject the `.self` PRO
 its diagonal is `.impl (self plays self C) (self plays self C)`, a tautology (`inst_cimcic_quine`), found Löb-free
 (`Tau/Quine.cimcic_quine_found`, the `S'` twin of `Pf.implRefl`). Engine twin: `Tau/Theorems/TauCIMCIC/Phase.lean`.
 
-Slots stated here (`[coop, defect, tftSim, obot, cimcic]`): `coop` C (POS on the instance's own description,
+Slots stated here (`[coop, defect, tftSim, dupoc, obot, dimcid, cimcic, maxconfidence, minconfidence]`): `coop` C (POS on the instance's own description,
 `Tau/Described.col_cimcic_coop`), `defect` D (self-refuting, `col_cimcic_defect`), `tftSim` **D — an `S'` FLIP of
 the engine's C that the Phase-3 table does NOT record**: τ(TFTSim)'s instance at CIMCIC carries the budget (through
 `inst cimcic coop = .search k …`), the guard names the instance itself (`.self`), so the guard sentence writes the
@@ -20,16 +24,18 @@ NEVER found (`Tau/NeverFits.cimcic_selfBot_D`); `obot` D — self-refuting on th
 CIMCIC defects (its second watch sees CIMCIC's instance defect against the defector), so a proof of the guard would
 make the instance cooperate with it (antecedent true) while the consequent is false — the guard would be false,
 against soundness (`cimcic_obot_not_found`, `cimcic_defect_not_found`'s argument with a frame-generic play of the
-probed instance in place of the constant's); the diagonal C.
+probed instance in place of the constant's); the diagonal C; and the ENTANGLED slots (`Tau/Entangled/`, Phase 3c):
+`dupoc`/`maxconfidence`/`minconfidence` C (mutual Löb on the member slots with the Dupoc-spec self-probers,
+`ent_cimcic_dupoc` …), `dimcid` D (the guard about the DIMCID member is self-refuting, `ent_cimcic_dimcid`).
 
-**Floor bits** (`‡`, three, floor SIDE): `ebot`, `dbot`, `cupodTroll` — hinge = CIMCIC's own implication guard
+**Floor bits** (`‡`, five, floor SIDE): `ebot`, `dbot`, `cupodTroll` — hinge = CIMCIC's own implication guard
 about the hypothesis's instance seeing CIMCIC (base `dich_CIMCIC_vs_EBot/DBot/CupodTrollBot`); not found ⇒ D.
 In `S'` these three hinges are in fact FALSE at every `k` (the same obstruction — the probed instances carry the
 budget), so the bits are theorems (D) rather than floors; they are stated as floor bits because the table (and
 `expectedFloorBits`) keeps them `‡` for parity with the base cells, whose partners (`DBot`, `EBot`,
-`CupodTrollBot k`) carry no second budget. Updating the table moves them to row slots with the same value.
-
--- Phase 3c: entangled — `dupoc cupod dimcid prudent maxconfidence minconfidence`.
+`CupodTrollBot k`) carry no second budget. Updating the table moves them to row slots with the same value. The two system floors `cupod` (base
+`dich_CIMCIC_vs_CupodBot`) and `prudent` (base `dich_CIMCIC_vs_PrudentBot`) have the CIMCIC member's own guard as
+hinge (`Tau/Entangled/CupodCimcic.lean`, `CimcicPrudent.lean`).
 -/
 
 namespace ArithS.Tau
@@ -150,14 +156,19 @@ theorem cimcic_obot_D : bitEventually .cimcic .obot .D := by
   rw [progCode_bot_inst, instCode_cimcic_obot] at hn
   exact ⟨_, search_else _ hn (const_play 0 _ _ _) rfl⟩
 
-/-- **τ(CIMCIC)'s row in `S'`** — the five non-entangled theorem slots. -/
+/-- **τ(CIMCIC)'s row in `S'`** — the nine theorem slots (five non-entangled, four entangled). -/
 @[tau_rowA]
-theorem cimcicRowSpecA : RowSpecA .cimcic [.coop, .defect, .tftSim, .obot, .cimcic] cimcicRowA :=
+theorem cimcicRowSpecA : RowSpecA .cimcic
+    [.coop, .defect, .tftSim, .dupoc, .obot, .dimcid, .cimcic, .maxconfidence, .minconfidence] cimcicRowA :=
   RowSpecA.cons col_cimcic_coop <|
   RowSpecA.cons (bitEventually.of_forall col_cimcic_defect) <|
   RowSpecA.cons (bitEventually.of_forall cimcic_tftSim_D) <|
+  RowSpecA.cons ent_cimcic_dupoc <|
   RowSpecA.cons cimcic_obot_D <|
+  RowSpecA.cons ent_cimcic_dimcid <|
   RowSpecA.cons cimcic_quine_C <|
+  RowSpecA.cons ent_cimcic_maxconfidence <|
+  RowSpecA.cons ent_cimcic_minconfidence <|
   RowSpecA.nil _ _
 
 /-! ### The floor bits — CIMCIC's own guard is the hinge (floor SIDE) -/
@@ -217,5 +228,25 @@ theorem cimcicRowSpecA_cupodTroll_floor : FloorBitA .cimcic .cupodTroll
       (.plays (.bot (inst (tauZoo k) .cupodTroll .cimcic)) .self .C)))
       (pBot (instCode k .cimcic .cupodTroll)) (pBot (instCode k .cimcic .cupodTroll)) k)) .D :=
   FloorBitA.of_not_hinge ⟨0, fun k _ hn ↦ cimcic_floor_D (instCode_cimcic_cupodTroll k) rfl hn⟩
+
+/-! ### The system floor bits — the CIMCIC member's own guard is the hinge (`Tau/Entangled/`) -/
+
+/-- `cimcic × cupod` ‡ (base `dich_CIMCIC_vs_CupodBot`): D when the CIMCIC member's guard about the Cupod member is
+not found (`Tau/Entangled/CupodCimcic.lean`). -/
+@[tau_floor_bitA]
+theorem cimcicRowSpecA_cupod_floor : FloorBitA .cimcic .cupod
+    (fun k ↦ □[k] (guardCodeB (templateCode (.impl (.plays .self (.bot (.sys (sys2 (cim 1 k) (cm 0 k)) 1)) .C)
+      (.plays (.bot (.sys (sys2 (cim 1 k) (cm 0 k)) 1)) .self .C)))
+      (pBot (instCode k .cimcic .cupod)) (pBot (instCode k .cimcic .cupod)) k)) .D :=
+  entFloor_cimcic_cupod
+
+/-- `cimcic × prudent` ‡ (base `dich_CIMCIC_vs_PrudentBot`): D when the CIMCIC member's guard about the Prudent
+member is not found (`Tau/Entangled/CimcicPrudent.lean`). -/
+@[tau_floor_bitA]
+theorem cimcicRowSpecA_prudent_floor : FloorBitA .cimcic .prudent
+    (fun k ↦ □[k] (guardCodeB (templateCode (.impl (.plays .self (.bot (.sys (sys2 (cim 1 k) (pm 0 k .cimcic)) 1)) .C)
+      (.plays (.bot (.sys (sys2 (cim 1 k) (pm 0 k .cimcic)) 1)) .self .C)))
+      (pBot (instCode k .cimcic .prudent)) (pBot (instCode k .cimcic .prudent)) k)) .D :=
+  entFloor_cimcic_prudent
 
 end ArithS.Tau

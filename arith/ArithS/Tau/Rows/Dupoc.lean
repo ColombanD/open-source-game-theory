@@ -1,32 +1,41 @@
 import ArithS.Tau.Quine
+import ArithS.Tau.Entangled.DupocDupoc
+import ArithS.Tau.Entangled.DimcidDupoc
+import ArithS.Tau.Entangled.DupocCimcic
+import ArithS.Tau.Entangled.DupocCupod
+import ArithS.Tau.Entangled.DupocPrudent
 import ArithS.Tau.Attr
 
 /-!
-# ArithS.Tau.Rows.Dupoc — τ(DupocBot)'s row in PA-`S'` (the NON-entangled slots)
+# ArithS.Tau.Rows.Dupoc — τ(DupocBot)'s row in PA-`S'`
 
 τ(Dupoc)'s instance at a hypothesis `T` that does not self-probe is one prove-stage on `T`'s instance seeing
 Dupoc: `.search k (probe (inst T .dupoc)) C D` (`Tau/Zoo.inst_dupoc_peel_*`). Its DIAGONAL is the quine
 `.search k (.plays .self .self C) C D` (`inst_dupoc_quine`), closed by bounded Löb on the bot-wrapped instance
 (`Tau/Quine.quine_found`). Engine twin: `Tau/Theorems/TauDupoc/Phase.lean` (`dupocRowSpec`).
 
-Slots stated here (`[coop, defect, dupoc, obot]`): `coop` C (POS on the frozen cooperator, `col_dupoc_coop`),
-`defect` D (SND, `col_dupoc_defect`), the diagonal C (Löb), `obot` D (SND: τ(OBot)'s instance at Dupoc defects —
-its second defection watch sees Dupoc's instance defect against the defector — so the probe is false).
+Slots stated here (`[coop, defect, dupoc, obot, dimcid, cimcic, maxconfidence, minconfidence]`): `coop` C (POS on
+the frozen cooperator, `col_dupoc_coop`), `defect` D (SND, `col_dupoc_defect`), the diagonal C (Löb), `obot` D (SND:
+τ(OBot)'s instance at Dupoc defects — its second defection watch sees Dupoc's instance defect against the defector —
+so the probe is false); and the ENTANGLED slots (`.sys` systems on the member slots, `Tau/Entangled/`, Phase 3c):
+`dimcid` D (the DIMCID member defects by its self-fulfilling family, so Dupoc's probe is false — `ent_dupoc_dimcid`),
+`cimcic` C (mutual Löb on the member slots, `ent_dupoc_cimcic`), `maxconfidence`/`minconfidence` C (the symmetric
+system of two Dupoc-spec self-probers, `ent_dupoc_maxconfidence`/`ent_dupoc_minconfidence`).
 
-**Floor bits** (`‡`, three, all on THIS side — the first floor-SIDE bits of the tau layer): `ebot`, `dbot`,
-`cupodTroll`. The hinge is Dupoc's OWN probe of the hypothesis's instance (true in ℕ: the partner's C runs
-through Dupoc's else-play; base `dich_DupocBot_vs_EBot/DBot/CupodTrollBot`); when it is not found, the
-else-branch D (`FloorBitA.of_not_hinge` + `search_else`).
+**Floor bits** (`‡`, five, all on THIS side): `ebot`, `dbot`, `cupodTroll` — the hinge is Dupoc's OWN probe of the
+hypothesis's instance (true in ℕ: the partner's C runs through Dupoc's else-play; base
+`dich_DupocBot_vs_EBot/DBot/CupodTrollBot`); when it is not found, the else-branch D (`FloorBitA.of_not_hinge` +
+`search_else`) — and the two system floors `cupod` (the tau image of the RED CELL, a floor in `S'` although the base
+cell is a theorem: `Tau/Entangled/DupocCupod.lean`) and `prudent` (base `dich_PrudentBot_vs_DupocBot`), whose hinge
+is the Dupoc member's own probe in the bit's frame.
 
--- Phase 3c: entangled — `cupod dimcid cimcic prudent maxconfidence minconfidence` (`.sys` systems, the
---   member-slot families; `Tau/Entangled/`).
--- TODO Phase 3d: slot `.tftSim` (C): τ(TFTSim)'s instance at Dupoc is `ite (sim (bot (inst dupoc coop)) …)`,
---   which cooperates (POS), so the probe is TRUE and must be FOUND; the probed program carries the budget
---   `k` (the `.search k` leaf of `inst dupoc coop`), so the box needs a `binNumeral k`-tower for the ite/sim
---   watch over `pBot (SV g 0 k)` (the `botT1`/`searchT1` builders plus NEW `iteT1`/`simT1`, with the
---   canonical-code comparison of the watch against its transposition above a threshold, the
---   `nested_search_lt` pattern of `Cells/PrudentMirror.lean`) and the `k̂`-chain `found_of_all_above`
---   (truth needs the inner guard found, i.e. `k ≥ L`). Not built in this phase.
+-- UNSTATED (decision pending — `SPRIME_SOURCE_OF_TRUTH.md` §3, the budget-snapshot obstruction): slot `.tftSim`
+--   (C): τ(TFTSim)'s instance at Dupoc is `ite (sim (bot (inst dupoc coop)) …)`, which cooperates (POS), so the
+--   probe is TRUE and must be FOUND; the probed program carries the budget `k` (the `.search k` leaf of
+--   `inst dupoc coop`), so the box needs a `binNumeral k`-tower for the ite/sim watch over `pBot (SV g 0 k)` (the
+--   `botT1`/`searchT1` builders plus NEW `iteT1`/`simT1`, with the canonical-code comparison of the watch against
+--   its transposition above a threshold, the `nested_search_lt` pattern of `Cells/PrudentMirror.lean`) and the
+--   `k̂`-chain `found_of_all_above` (truth needs the inner guard found, i.e. `k ≥ L`). Not built.
 -/
 
 namespace ArithS.Tau
@@ -91,13 +100,18 @@ theorem col_obot_dupoc : bitEventually .obot .dupoc .D := obotRowSpecA.slot (by 
 theorem dupoc_obot_D : bitEventually .dupoc .obot .D :=
   bitEventually.mono (fun k h ↦ dupocLike_D_of_probe_false (instCode_dupoc_obot k) rfl h) col_obot_dupoc
 
-/-- **τ(Dupoc)'s row in `S'`** — the four non-entangled theorem slots. -/
+/-- **τ(Dupoc)'s row in `S'`** — the eight theorem slots (four non-entangled, four entangled). -/
 @[tau_rowA]
-theorem dupocRowSpecA : RowSpecA .dupoc [.coop, .defect, .dupoc, .obot] dupocRowA :=
+theorem dupocRowSpecA : RowSpecA .dupoc
+    [.coop, .defect, .dupoc, .obot, .dimcid, .cimcic, .maxconfidence, .minconfidence] dupocRowA :=
   RowSpecA.cons col_dupoc_coop <|
   RowSpecA.cons (bitEventually.of_forall col_dupoc_defect) <|
   RowSpecA.cons dupoc_quine_C <|
   RowSpecA.cons dupoc_obot_D <|
+  RowSpecA.cons ent_dupoc_dimcid <|
+  RowSpecA.cons ent_dupoc_cimcic <|
+  RowSpecA.cons ent_dupoc_maxconfidence <|
+  RowSpecA.cons ent_dupoc_minconfidence <|
   RowSpecA.nil _ _
 
 /-! ### The floor bits — Dupoc's own probe is the hinge (floor SIDE) -/
@@ -123,5 +137,26 @@ theorem dupocRowSpecA_cupodTroll_floor : FloorBitA .dupoc .cupodTroll
     (fun k ↦ □[k] (guardCodeB (templateCode (probe (inst (tauZoo k) .cupodTroll .dupoc)))
       (pBot (instCode k .dupoc .cupodTroll)) (pBot (instCode k .dupoc .cupodTroll)) k)) .D :=
   FloorBitA.of_not_hinge ⟨0, fun k _ hn ↦ dupocLike_floor_D (instCode_dupoc_cupodTroll k) rfl hn⟩
+
+/-! ### The system floor bits — the Dupoc member's own probe is the hinge (`Tau/Entangled/`) -/
+
+/-- `dupoc × cupod` ‡ — the tau image of the red cell `outcome_DupocBot_vs_CupodBot = (D, C)`, a FLOOR in `S'`
+(no τ-symmetry inside one system; `Tau/Entangled/DupocCupod.lean`): D when the Dupoc member's probe of the Cupod
+member is not found. -/
+@[tau_floor_bitA]
+theorem dupocRowSpecA_cupod_floor : FloorBitA .dupoc .cupod
+    (fun k ↦ □[k] (guardCodeB (templateCode (.plays (.bot (.sys (sys2 (dm 1 k) (cm 0 k)) 1))
+      (.bot (.sys (sys2 (dm 1 k) (cm 0 k)) 1)) .C))
+      (pBot (instCode k .dupoc .cupod)) (pBot (instCode k .dupoc .cupod)) k)) .D :=
+  entFloor_dupoc_cupod
+
+/-- `dupoc × prudent` ‡ (base `dich_PrudentBot_vs_DupocBot`): D when the Dupoc member's probe of the Prudent member
+is not found (`Tau/Entangled/DupocPrudent.lean`). -/
+@[tau_floor_bitA]
+theorem dupocRowSpecA_prudent_floor : FloorBitA .dupoc .prudent
+    (fun k ↦ □[k] (guardCodeB (templateCode (.plays (.bot (.sys (sys2 (dm 1 k) (pm 0 k .dupoc)) 1))
+      (.bot (.sys (sys2 (dm 1 k) (pm 0 k .dupoc)) 1)) .C))
+      (pBot (instCode k .dupoc .prudent)) (pBot (instCode k .dupoc .prudent)) k)) .D :=
+  entFloor_dupoc_prudent
 
 end ArithS.Tau

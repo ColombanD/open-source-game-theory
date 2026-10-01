@@ -45,8 +45,12 @@ equals the base cell (agree), a FLOOR BIT that sits on a floor cell with the sam
 engine-side value (floor-agree — a dichotomy's `¬A_k` half on both sides, not a theorem
 about the cell), a MISMATCH (different value, or a floor/theorem provenance swap between
 the two exports), or UNCOVERED (the export is PARTIAL during the Phase-3 rollout: no bit
-stated yet). Expected at full coverage: 196 covered = 155 agree + 41 floor-agree, 0
-mismatch, 0 uncovered.
+stated yet). On `S'` the twelve RECORDED divergences
+(`def4_theorems.SPRIME_RECORDED_DIVERGENCES`, 2026-10-01: Def 3 ≢ Def 4 by theorem under
+the present coding) are counted as whitelisted, like the engine's `WHITELIST`, and printed
+as `~` lines; the certification passes "modulo recorded artifacts" and `mismatch` counts
+only the unexpected. As of the Phase-3d merge: 191 covered = 138 agree + 41 floor-agree +
+12 recorded, 0 mismatch, 5 uncovered (the budget-snapshot bits the note leaves unstated).
 """
 
 from __future__ import annotations
@@ -64,6 +68,7 @@ from pd_runner.tau.def4_theorems import (
     TEMPLATES,
     kernel_bit_provenance,
     kernel_bits,
+    recorded_divergence,
     tau_export_file,
 )
 from pd_runner.tau.matrix import TauMatrix
@@ -267,13 +272,16 @@ def direct_kernel_vs_base(
             # reports a divergent tau diagonal the same way — so the two can
             # AGREE there, rather than the comparison inventing a D on one side.
             base_cell = matrix.cell(base_a, base_t)
+            # the engine's WHITELIST (empty), or on S' a RECORDED Def 3 ≢ Def 4 bit
+            rec = recorded_divergence(matrix.source, LEAN_SLOT[A], LEAN_SLOT[T])
             cells.append(
                 DirectCell(
                     template=A,
                     hypothesis=T,
                     lean=lean_bit,
                     base=matrix.action(base_a, base_t),
-                    whitelisted=WHITELIST.get((A, T)),
+                    whitelisted=WHITELIST.get((A, T)) or (
+                        f"recorded {rec.kind} divergence: {rec.reason}" if rec else None),
                     lean_provenance=provenance.get(LEAN_SLOT[A], {}).get(LEAN_SLOT[T], "theorem"),
                     base_floor=base_cell.is_floor,
                 )

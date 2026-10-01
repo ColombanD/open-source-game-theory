@@ -1,8 +1,11 @@
 import ArithS.Tau.Quine
+import ArithS.Tau.Entangled.DupocPrudent
+import ArithS.Tau.Entangled.CupodPrudent
+import ArithS.Tau.Entangled.CimcicPrudent
 import ArithS.Tau.Attr
 
 /-!
-# ArithS.Tau.Rows.Prudent — τ(PrudentBot)'s row in PA-`S'` (the NON-entangled slots)
+# ArithS.Tau.Rows.Prudent — τ(PrudentBot)'s row in PA-`S'`
 
 τ(Prudent)'s instance at a hypothesis `T` that does not self-probe is the nested shape of the base source:
 the OUTER probe of `T`'s instance seeing Prudent, and in its then-branch the INNER prudence check "`T`'s instance at
@@ -18,15 +21,20 @@ Slots stated here (`[coop, defect, tftSim, obot, dbot, cupodTroll]`), all D:
   cooperates (its identity is false) — so the then-branch plays D too: D whatever the outer verdict
   (`search_either`).
 
-**Floor bits** (`‡`, two, floor SIDE): `ebot` — hinge = Prudent's OUTER probe of τ(EBot)'s instance seeing
+**Floor bits** (`‡`, seven, floor SIDE): `ebot` — hinge = Prudent's OUTER probe of τ(EBot)'s instance seeing
 Prudent (base `dich_PrudentBot_vs_EBot`; the inner check against EBot is found there) — and the DIAGONAL
 `prudent` — hinge = the outer quine `.plays .self .self C` in the bit's frame (base
 `dich_PrudentBot_vs_PrudentBot`: single-tier prudence is self-defeating; the found world needs the inner probe
 of its own `defect` cell, a budget-carrying closed probe — the `tftSim`-class box of `Rows/Dupoc.lean`'s TODO).
-Not found ⇒ D.
+Not found ⇒ D. And the five SYSTEM floors `dupoc`, `maxconfidence`, `minconfidence` (base
+`dich_PrudentBot_vs_DupocBot`), `cupod` (base `dich_PrudentBot_vs_CupodBot`), `cimcic` (base
+`dich_CIMCIC_vs_PrudentBot`) — hinge = the Prudent member's OUTER probe of the partner member, in the bit's frame
+(`Tau/Entangled/DupocPrudent.lean`, `CupodPrudent.lean`, `CimcicPrudent.lean`: the Prudent member's inner guard
+freezes a budget-carrying third party, so no Löb family can be stated — the §7 obstacle; the dichotomy halves are
+what `S'` settles).
 
--- Phase 3c: entangled — `dupoc cupod dimcid cimcic maxconfidence minconfidence` (`‡` at dupoc/cupod/cimcic/
---   maxconfidence/minconfidence in the table, all `.sys` systems).
+-- UNSTATED (decision pending — `SPRIME_SOURCE_OF_TRUTH.md` §3, the budget-snapshot obstruction): slot `.dimcid`
+--   (`inst prudent dimcid = .sys [pm 1 dimcid, dim 0] 0`, the same obstacle on the Prudent member).
 -/
 
 namespace ArithS.Tau
@@ -113,5 +121,50 @@ theorem prudentRowSpecA_prudent_floor : FloorBitA .prudent .prudent
     (fun k ↦ □[k] (guardCodeB (templateCode (.plays .self .self .C))
       (pBot (instCode k .prudent .prudent)) (pBot (instCode k .prudent .prudent)) k)) .D :=
   FloorBitA.of_not_hinge ⟨0, fun k _ hn ↦ prudent_floor_D (instCode_prudent_prudent k) rfl hn⟩
+
+/-! ### The system floor bits — the Prudent member's OUTER probe is the hinge (`Tau/Entangled/`) -/
+
+/-- `prudent × dupoc` ‡ (base `dich_PrudentBot_vs_DupocBot`): D when the Prudent member's outer probe of the Dupoc
+member is not found (`Tau/Entangled/DupocPrudent.lean`). -/
+@[tau_floor_bitA]
+theorem prudentRowSpecA_dupoc_floor : FloorBitA .prudent .dupoc
+    (fun k ↦ □[k] (guardCodeB (templateCode (.plays (.bot (.sys (sys2 (pm 1 k .dupoc) (dm 0 k)) 1))
+      (.bot (.sys (sys2 (pm 1 k .dupoc) (dm 0 k)) 1)) .C))
+      (pBot (instCode k .prudent .dupoc)) (pBot (instCode k .prudent .dupoc)) k)) .D :=
+  entFloor_prudent_dupoc
+
+/-- `prudent × maxconfidence` ‡ (Dupoc's spec on the native; base `dich_PrudentBot_vs_DupocBot`). -/
+@[tau_floor_bitA]
+theorem prudentRowSpecA_maxconfidence_floor : FloorBitA .prudent .maxconfidence
+    (fun k ↦ □[k] (guardCodeB (templateCode (.plays (.bot (.sys (sys2 (pm 1 k .maxconfidence) (dm 0 k)) 1))
+      (.bot (.sys (sys2 (pm 1 k .maxconfidence) (dm 0 k)) 1)) .C))
+      (pBot (instCode k .prudent .maxconfidence)) (pBot (instCode k .prudent .maxconfidence)) k)) .D :=
+  entFloor_prudent_maxconfidence
+
+/-- `prudent × minconfidence` ‡ (Dupoc's spec on the native; base `dich_PrudentBot_vs_DupocBot`). -/
+@[tau_floor_bitA]
+theorem prudentRowSpecA_minconfidence_floor : FloorBitA .prudent .minconfidence
+    (fun k ↦ □[k] (guardCodeB (templateCode (.plays (.bot (.sys (sys2 (pm 1 k .minconfidence) (dm 0 k)) 1))
+      (.bot (.sys (sys2 (pm 1 k .minconfidence) (dm 0 k)) 1)) .C))
+      (pBot (instCode k .prudent .minconfidence)) (pBot (instCode k .prudent .minconfidence)) k)) .D :=
+  entFloor_prudent_minconfidence
+
+/-- `prudent × cupod` ‡ (base `dich_PrudentBot_vs_CupodBot`): D when the Prudent member's outer probe of the Cupod
+member is not found (`Tau/Entangled/CupodPrudent.lean`). -/
+@[tau_floor_bitA]
+theorem prudentRowSpecA_cupod_floor : FloorBitA .prudent .cupod
+    (fun k ↦ □[k] (guardCodeB (templateCode (.plays (.bot (.sys (sys2 (pm 1 k .cupod) (cm 0 k)) 1))
+      (.bot (.sys (sys2 (pm 1 k .cupod) (cm 0 k)) 1)) .C))
+      (pBot (instCode k .prudent .cupod)) (pBot (instCode k .prudent .cupod)) k)) .D :=
+  entFloor_prudent_cupod
+
+/-- `prudent × cimcic` ‡ (base `dich_CIMCIC_vs_PrudentBot`): D when the Prudent member's outer probe of the CIMCIC
+member is not found (`Tau/Entangled/CimcicPrudent.lean`). -/
+@[tau_floor_bitA]
+theorem prudentRowSpecA_cimcic_floor : FloorBitA .prudent .cimcic
+    (fun k ↦ □[k] (guardCodeB (templateCode (.plays (.bot (.sys (sys2 (pm 1 k .cimcic) (cim 0 k)) 1))
+      (.bot (.sys (sys2 (pm 1 k .cimcic) (cim 0 k)) 1)) .C))
+      (pBot (instCode k .prudent .cimcic)) (pBot (instCode k .prudent .cimcic)) k)) .D :=
+  entFloor_prudent_cimcic
 
 end ArithS.Tau

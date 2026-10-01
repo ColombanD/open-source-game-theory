@@ -19,8 +19,10 @@ through a bounded-consistency question: Dupoc's guard "the Cupod member cooperat
 equivalent to "the Cupod member does not find its own guard", a `¬□_k` statement (the engine's own proof of
 these bits, `Tau/Theorems/TauCupod/Helpers.lean`, is explicit that "the 2-cycle bounded Löb cannot close …
 the floor DECIDES"). In `S'` the six bits are therefore floor bits with the hinge the member's own search
-consults — stated here as `FloorBitA` (untagged), the engine-side value under `¬ hinge`; they are NOT
-theorem bits, and the table should be updated (a theorem that became a floor).
+consults — stated here as `FloorBitA` (untagged, the proof terms), the engine-side value under `¬ hinge`, and
+TAGGED in the rows as `<t>RowSpecA_<T>_floor` (`Rows/Dupoc`, `Rows/Cupod`, the natives; Phase 3d). They are NOT
+theorem bits: the table and `Lint.expectedFloorBits` record them as `‡` since 2026-10-01 (a theorem that became a
+floor), with `outcome_DupocBot_vs_CupodBot` — the base THEOREM they depart from — in the dichotomy field.
 -/
 
 namespace ArithS.Tau

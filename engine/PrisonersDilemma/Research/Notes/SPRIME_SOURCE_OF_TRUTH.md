@@ -194,26 +194,41 @@ CodeTerm/Guard slots/SubstTemplate → Code → RedCellUnsound arms → full bui
    player-level phase theorems only after the rows. **The target (derived 2026-09-30 from the `S'`
    export, since a tau bit at point mass IS the base cell — Def 3 ≡ Def 4; the engine's kernel rows
    agree with the engine's cells on every one of these 196 bits, so the derivation is sound):**
-   196 ordered bits = 142 agree with the engine's rows, 13 FLIP (`≠`, the engine's value after it),
-   41 are floor bits (`‡`, the engine-side value; each is a `dich_` hinge, stated as a dichotomy bit),
-   0 missing. Natives are Dupoc's row (clones) and Dupoc-twins as hypotheses.
+   196 ordered bits = 135 agree with the engine's rows, 14 FLIP (`≠`, the engine's value after it),
+   47 are floor bits (`‡`, the engine-side value; each is a `dich_` hinge, stated as a dichotomy bit — except
+   the six tau images of the red cell, floors in `S'` on a base THEOREM, see the 2026-10-01 line below),
+   0 missing. Natives are Dupoc's row (clones) and Dupoc-twins as hypotheses. (The 2026-09-30 derivation
+   read 142 / 13 / 41; Phases 3b–3d moved `cimcic × tftSim` to the flips and the six red-cell images to the
+   floors — the table below is the CURRENT oracle, as of the Phase-3d merge.)
 
    | A \ T | coop | defect | tftSim | dupoc | ebot | obot | dbot | cupodTroll | cupod | dimcid | cimcic | prudent | maxconf | minconf |
    |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
    | coop | C | C | C | C | C | C | C | C | C | C | C | C | C | C |
    | defect | D | D | D | D | D | D | D | D | D | D | D | D | D | D |
    | tftSim | C | D | C | C | D | C | D | C | C | D≠C | C | D | C | C |
-   | dupoc | C | D | C | C | D‡ | D | D‡ | D‡ | D | D | C | D‡ | C | C |
+   | dupoc | C | D | C | C | D‡ | D | D‡ | D‡ | D‡ | D | C | D‡ | C | C |
    | ebot | D | D | C | C‡ | C | C | D | D | C | D≠C | C‡ | C‡ | C‡ | C‡ |
    | obot | C | D | D | D | D | D | D | C | D‡ | D | D | D | D | D |
    | dbot | D | C | C | C‡ | C | C | D | D | C | C | C‡ | C | C‡ | C‡ |
    | cupodTroll | C | C | C | C‡ | C | C | C | C | D | C | C‡ | C | C‡ | C‡ |
-   | cupod | C | D | C | C | C | C‡ | C | D | D | D | C‡ | C‡ | C | C |
+   | cupod | C | D | C | C‡ | C | C‡ | C | D | D | D | C‡ | C‡ | C‡ | C‡ |
    | dimcid | D≠C | D | D≠C | D≠C | D≠C | D≠C | D≠C | D≠C | D | D | D≠C | D≠C | D≠C | D≠C |
-   | cimcic | C | D | C | C | D‡ | D | D‡ | D‡ | D‡ | D | C | D‡ | C | C |
+   | cimcic | C | D | D≠C | C | D‡ | D | D‡ | D‡ | D‡ | D | C | D‡ | C | C |
    | prudent | D | D | D | D‡ | D‡ | D | D | D | D‡ | D | D‡ | D‡ | D‡ | D‡ |
-   | maxconf | C | D | C | C | D‡ | D | D‡ | D‡ | D | D | C | D‡ | C | C |
-   | minconf | C | D | C | C | D‡ | D | D‡ | D‡ | D | D | C | D‡ | C | C |
+   | maxconf | C | D | C | C | D‡ | D | D‡ | D‡ | D‡ | D | C | D‡ | C | C |
+   | minconf | C | D | C | C | D‡ | D | D‡ | D‡ | D‡ | D | C | D‡ | C | C |
+
+   *2026-10-01 (Phase 3d merge).* Six more `‡` than the 2026-09-30 derivation: `dupoc/maxconf/minconf × cupod` (D)
+   and `cupod × dupoc/maxconf/minconf` (C) — the tau images of the RED CELL, a THEOREM in the base
+   (`outcome_DupocBot_vs_CupodBot`, by τ-symmetry) but FLOORS on the compiled `.sys` systems (τ maps one
+   orientation's system to the other's, so the two members' guards are not τ-images inside one system;
+   `Tau/Entangled/DupocCupod.lean`; the dichotomy field of these six names the base theorem, no `dich_` exists).
+   `cimcic × tftSim` is `D≠C` (the FINDING below). **Five bits remain UNSTATED under the present coding**
+   (14/14 rows, 47/47 floor bits, 191/196): `dupoc × tftSim`, `maxconf × tftSim`, `minconf × tftSim`,
+   `prudent × dimcid`, `dimcid × prudent` — the budget-snapshot obstruction (a FOUND probe over a
+   budget-carrying frozen instance, or a Prudent member whose inner guard freezes one); decision pending
+   (route (c) made generic vs. ship under (B)). `dimcid × {tftSim, ebot, obot, dbot, cupodTroll}` are stated with
+   the ENGINE's value C (the FINDING below), not the `D≠C` the table shows; `Tau/Rows/DIMCID.lean`.
 
    **Phase 3 contract (2026-10-01).** In `arith/ArithS/Tau/` (new folder):
    * `Spec.lean` — `paperOrder : List Tmpl` (the 14 templates above, engine order), and

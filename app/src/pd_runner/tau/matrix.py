@@ -512,6 +512,7 @@ class TauMatrix:
         floor_policy: str = "engine_side",
         flip_cells: tuple[tuple[str, str], ...] = (),
         kernel_provenance: dict[str, dict[str, str]] | None = None,
+        kernel_divergences: tuple[KernelDivergence, ...] = (),
     ):
         self.bots = bots
         self._cells = cells
@@ -540,6 +541,9 @@ class TauMatrix:
         # (the "N" fill of τ(Mirror)'s diagonal is "divergent").
         self.kernel_provenance: dict[str, dict[str, str]] = {
             b: dict(r) for b, r in (kernel_provenance or {}).items()}
+        # The RECORDED Def 3 ≢ Def 4 bits met at load (`S'`, 2026-10-01): kernel bits
+        # the loader dropped instead of consulting — reported, never played.
+        self.kernel_divergences: tuple[KernelDivergence, ...] = tuple(kernel_divergences)
 
     def aggregator(self, actor: str) -> str:
         """How `actor` thresholds its signal: `"sum"` (a lift — the C-mass) or a
@@ -678,12 +682,30 @@ class TauMatrix:
 
 
 @dataclass(frozen=True)
+class KernelDivergence:
+    """A RECORDED Def 3 ≢ Def 4 bit (`def4_theorems.SPRIME_RECORDED_DIVERGENCES`) met at
+    load: the kernel bit and its provenance, the base cell's action and floor status, and
+    the recorded reason. The bit is NOT consulted by the matrix (the base cell is played)."""
+
+    bot: str
+    hypothesis: str
+    kernel_bit: str
+    kernel_provenance: str
+    base_action: str
+    base_floor: bool
+    kind: str
+    reason: str
+
+
+@dataclass(frozen=True)
 class KernelRows:
     """`_kernel_rows_for`'s result: the roster's kernel test bits and, per bit, its
-    provenance (`theorem` | `floor_dichotomy` | `divergent`)."""
+    provenance (`theorem` | `floor_dichotomy` | `divergent`), plus the recorded
+    divergences it dropped (`S'` only)."""
 
     bits: dict[str, dict[str, str]] = field(default_factory=dict)
     provenance: dict[str, dict[str, str]] = field(default_factory=dict)
+    divergences: tuple[KernelDivergence, ...] = ()
 
 
 def _kernel_rows_for(
@@ -705,7 +727,13 @@ def _kernel_rows_for(
       sit on a FLOOR cell (`Cell.is_floor`) and equal its engine-side value;
     * a floor bit on a non-floor cell, or a theorem bit on a floor cell, RAISES even when
       the values agree: that can only mean the two `S'` exports disagree on which pairs
-      are floors (regenerate both with `lake exe export_sprime_outcomes`).
+      are floors (regenerate both with `lake exe export_sprime_outcomes`);
+    * EXCEPT at the twelve RECORDED divergences (`def4_theorems.SPRIME_RECORDED_DIVERGENCES`,
+      2026-10-01: Def 3 ≢ Def 4 by theorem under the present coding — six values, six
+      floor bits on the red cell). A disagreement of exactly the recorded KIND at a
+      recorded pair does not raise; the kernel bit is DROPPED (the base cell — the table's
+      value — is played, so no number changes) and listed in `KernelRows.divergences` /
+      `TauMatrix.kernel_divergences`. Any other disagreement at those pairs still raises.
 
     Deliberate behaviors, both sources:
 
@@ -724,16 +752,24 @@ def _kernel_rows_for(
       template's row (`TEMPLATE_OF_BOT`), as on the engine; a floor bit of theirs sits on
       a cloned floor cell.
     """
-    from pd_runner.tau.def4_theorems import kernel_row_bits, kernel_row_provenance
+    from pd_runner.tau.def4_theorems import (
+        LEAN_SLOT,
+        TEMPLATE_OF_BOT,
+        kernel_row_bits,
+        kernel_row_provenance,
+        recorded_divergence,
+    )
 
     try:
         all_rows = kernel_row_bits(source=source)
         all_prov = kernel_row_provenance(source=source)
     except FileNotFoundError:
         return KernelRows()
+    slot_of_bot = {b: LEAN_SLOT[t] for b, t in TEMPLATE_OF_BOT.items()}
     rows: dict[str, dict[str, str]] = {}
     prov: dict[str, dict[str, str]] = {}
     mismatches: list[str] = []
+    divergences: list[KernelDivergence] = []
     for b in bots:
         full = all_rows.get(b)
         if full is None:
@@ -748,13 +784,27 @@ def _kernel_rows_for(
                 continue
             bit = full[h]
             bit_prov = all_prov.get(b, {}).get(h, "theorem")
+            rec = recorded_divergence(source, slot_of_bot.get(b), slot_of_bot.get(h))
+
+            def _record(kind: str) -> None:
+                divergences.append(KernelDivergence(
+                    bot=b, hypothesis=h, kernel_bit=bit, kernel_provenance=bit_prov,
+                    base_action=cell.row_action, base_floor=cell.is_floor,
+                    kind=kind, reason=rec.reason))
+
             if bit != cell.row_action:
+                if rec is not None and rec.kind == "value":
+                    _record("value")
+                    continue
                 mismatches.append(
                     f"{b} vs {h}: kernel row says {bit!r}"
                     + (" (floor bit)" if bit_prov == "floor_dichotomy" else "")
                     + f", base cell ({cell.theorem}) says {cell.row_action!r}"
                 )
             elif bit_prov == "floor_dichotomy" and not cell.is_floor:
+                if rec is not None and rec.kind == "provenance":
+                    _record("provenance")
+                    continue
                 mismatches.append(
                     f"{b} vs {h}: the kernel row states a FLOOR bit but the base cell "
                     f"({cell.theorem}, provenance {cell.provenance!r}) is not a floor"
@@ -776,7 +826,7 @@ def _kernel_rows_for(
             f"row file (run `{exporter}`) or a real Def 3 ≢ Def 4 break:\n  "
             + "\n  ".join(mismatches)
         )
-    return KernelRows(rows, prov)
+    return KernelRows(rows, prov, tuple(divergences))
 
 
 def load_tau_matrix(
@@ -950,7 +1000,7 @@ def load_tau_matrix(
     return TauMatrix(
         bots, cells, natives, kernel.bits,
         source=resolved_source, floor_policy=resolved_policy, flip_cells=tuple(flips),
-        kernel_provenance=kernel.provenance,
+        kernel_provenance=kernel.provenance, kernel_divergences=kernel.divergences,
     )
 
 
