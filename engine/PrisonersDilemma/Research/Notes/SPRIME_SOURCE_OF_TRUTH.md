@@ -362,9 +362,12 @@ CodeTerm/Guard slots/SubstTemplate → Code → RedCellUnsound arms → full bui
    * *Gates.* `lake build ArithS ArithSOutcomeCheck ArithSTauCheck ArithSAudit` green; census `14/14 rows, 149 row
      slots, 47/47 floor bits — 196/196 bits covered` (strict); coverage 78/78; `tau.compare --zoo paper --source
      sprime`: 149 agree, 41 floor-agree, 0 mismatch, 0 uncovered, 6 recorded (the red-cell `provenance` entries).
-     App note: the loader DROPS the six recorded bits, so on the real export `kernel_coverage = 190/196` and
-     `is_kernel_backed` is False (banner "PARTIAL export") although the file is full — a wording/semantics choice
-     in `tau/matrix.py`/`tau/report.py` left as is (values unchanged; the bits fall back to the `S'` cells).
+     App note (fixed in 93d8479): a recorded divergence is a STATED bit — the loader plays the base cell there
+     but counts the bit, so on the real export `kernel_coverage = 196/196`, `is_kernel_backed` is True, and the
+     banner and `/tau/zoos` (`kernel_recorded = 6`) name the six separately.
+     Flip counts, to keep apart: the BASE ledger has 13 flips over 155 rows (11 involve DIMCID, 2 are WaryBot's —
+     Wary × Mirror, Wary × Wary); inside the paper zoos there are 9, all DIMCID's; at the TAU level there are 13
+     flipped bits, all involving DIMCID.
    **DECIDED 2026-10-02: (α).** Specification (Phase 2d + 3f):
    * `codeTermMetaAbs k₀` DESCENDS into `pSys d i` (member list abstracted member by member; the index a
      numeral); `NoSearchAt`/length/instantiation lemmas extended (`subst_codeTermMetaAbs` stays the identity

@@ -644,6 +644,14 @@ at α = 0.45, {DefectBot, DupocBot, EBot, OBot} at α = 0.62 (was a four-way tie
 including DefectBot). Cooperation under transparency is not merely an available
 equilibrium; it is where the population spends its time. Sweep: 36 grid points →
 15 distinct matrices, 112 s.
+**`S'` re-run (2026-09-30/10-01, `--source sprime`, 95 runs over the six paper sweeps;
+record: `engine/PrisonersDilemma/Research/Notes/EGT_FINDINGS_SPRIME.md`):** on the 10-bot
+`body` zoo `DupocBot` is still uniquely stochastically stable at full transparency
+(M=100, β=1; SS set {Dup} at 6/9 (M, β) points) and the ladder diagonal reads
+24% → 55% → 80% → 87% (headline 87.1%); at `t = 0` the ties are
+{DIMCID, DefectBot, DupocBot, OBot} at α = 0.45 (25% each) and NO stochastically stable
+set at α = 0.62 (seven types at 14.3% each) — DIMCID is DefectBot's payoff-exact twin
+under `S'`, so the body zoo is no longer twin-free.
 
 **`ingest.py` is the seam** — it REPLACED the old `src/ingest/` package wholesale.
 The original parsed a hand-transcribed CSV and imputed two special cells from a

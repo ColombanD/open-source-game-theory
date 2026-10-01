@@ -112,10 +112,14 @@ FULL_CERTIFIED_SUB_ZOO: tuple[str, ...] = (
 # experiments run on, enumerated explicitly so the frozen roster is the
 # literal text of this file, not the output of a derivation. Design record:
 #
-# * BODY (10) — twin-free, fully proven, zero daggers, zero stipulations
-#   (checked 2026-09-01: 100/100 ordered cells). Twin-free ⇒ the behavioral
-#   transparency scale spans [0, 1], which the headline dial, the anchor and
-#   the degradation curves all require. Membership notes:
+# * BODY (10) — twin-free ON THE ENGINE SOURCE, fully proven, zero daggers, zero
+#   stipulations (checked 2026-09-01: 100/100 ordered cells). Twin-free ⇒ the
+#   behavioral transparency scale spans [0, 1], which the headline dial, the
+#   anchor and the degradation curves all require. **On the `sprime` source
+#   (the default since 2026-09-30) this no longer holds: DIMCID defects against
+#   every closed program in PA-S', so it is a payoff-exact twin of DefectBot and
+#   the behavioral scale has a ceiling below one** (`EGT_FINDINGS_SPRIME.md` §2;
+#   decided 2026-09-30: DIMCID stays, the paper sentence changes). Membership notes:
 #   - DIMCID is in: the one hard-fragment (search×search) bot that is both
 #     fully proven and twin-free (nearest neighbour CupodBot at behavioral
 #     distance 1 — the CupodTrollBot column separates them).
@@ -363,10 +367,12 @@ ZOOS: dict[str, NamedZoo] = {
         key="body",
         label="body (10 bots, the paper zoo)",
         description=(
-            "The paper's body zoo. Twin-free (behavioral transparency scale "
-            "spans [0, 1]), fully proven, zero daggers — and DIMCID brings "
+            "The paper's body zoo. Fully proven, zero daggers; DIMCID brings "
             "one hard-fragment search×search bot in against the easier-half "
-            "bias. All headline experiments run here."
+            "bias. Twin-free on the engine source (behavioral transparency "
+            "scale spans [0, 1]); on PA-S' DIMCID is a payoff twin of "
+            "DefectBot, so the behavioral scale has a ceiling below one. All "
+            "headline experiments run here."
         ),
         bots=PAPER_BODY_SUB_ZOO,
         stipulations={},
