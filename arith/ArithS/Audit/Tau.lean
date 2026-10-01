@@ -6,6 +6,25 @@ import ArithS.Tau.Rows.OBot
 import ArithS.Tau.Rows.CupodTroll
 import ArithS.Tau.Rows.EBot
 import ArithS.Tau.Described
+import ArithS.Tau.Entangled.Base
+import ArithS.Tau.Entangled.Order
+import ArithS.Tau.Entangled.Tower
+import ArithS.Tau.Entangled.Family
+import ArithS.Tau.Entangled.Loeb
+import ArithS.Tau.Entangled.Congr
+import ArithS.Tau.Entangled.Dimcid
+import ArithS.Tau.Entangled.DupocDupoc
+import ArithS.Tau.Entangled.DimcidDupoc
+import ArithS.Tau.Entangled.DimcidCupod
+import ArithS.Tau.Entangled.DimcidCimcic
+import ArithS.Tau.Entangled.DupocCimcic
+import ArithS.Tau.Entangled.DupocPrudent
+import ArithS.Tau.Entangled.CupodPrudent
+import ArithS.Tau.Entangled.CimcicPrudent
+import ArithS.Tau.Entangled.CupodCimcic
+import ArithS.Tau.Entangled.DupocCupod
+import ArithS.Tau.Entangled.Mirror
+import ArithS.Tau.Entangled.EBotPrudent
 import ArithS.Tau.Quine
 import ArithS.Tau.ClosedProbe
 import ArithS.Tau.NeverFits
@@ -125,5 +144,71 @@ namespace ArithS.Tau
 #print axioms minconfidenceRowSpecA_ebot_floor
 #print axioms minconfidenceRowSpecA_dbot_floor
 #print axioms minconfidenceRowSpecA_cupodTroll_floor
+
+-- The entangled bits (`Tau/Entangled/*`): the system kit, the Löb families, the 22 theorem bits and the 18 floor bits.
+#print axioms Sys2.canonical_code
+#print axioms Sys2.describesBot
+#print axioms Sys2.describesMem
+#print axioms guardCodeB_sysClose_eq_instB
+#print axioms Sys2.guard_eq_instB
+#print axioms Sys2.q_congr_opp_impl
+#print axioms loebSound_pQ₂_above
+#print axioms boxes_pQ₂_nat
+#print axioms loebSound_DD
+#print axioms found_DD
+#print axioms ent_dupoc_maxconfidence
+#print axioms ent_maxconfidence_dupoc
+#print axioms ent_dupoc_minconfidence
+#print axioms ent_minconfidence_dupoc
+#print axioms ent_maxconfidence_minconfidence
+#print axioms ent_minconfidence_maxconfidence
+#print axioms Sys2.loebSound_Di
+#print axioms Sys2.found_Di
+#print axioms ent_dimcid_dupoc
+#print axioms ent_dimcid_maxconfidence
+#print axioms ent_dimcid_minconfidence
+#print axioms ent_dupoc_dimcid
+#print axioms ent_maxconfidence_dimcid
+#print axioms ent_minconfidence_dimcid
+#print axioms ent_dimcid_cupod
+#print axioms boxConseq_CDi
+#print axioms ent_cupod_dimcid
+#print axioms ent_dimcid_cimcic
+#print axioms ent_cimcic_dimcid
+#print axioms Sys2.loebSound_DCi
+#print axioms ent_dupoc_cimcic
+#print axioms ent_maxconfidence_cimcic
+#print axioms ent_minconfidence_cimcic
+#print axioms ent_cimcic_dupoc
+#print axioms ent_cimcic_maxconfidence
+#print axioms ent_cimcic_minconfidence
+#print axioms entFloor_dupoc_prudent
+#print axioms entFloor_maxconfidence_prudent
+#print axioms entFloor_minconfidence_prudent
+#print axioms entFloor_prudent_dupoc
+#print axioms entFloor_prudent_maxconfidence
+#print axioms entFloor_prudent_minconfidence
+#print axioms entFloor_cupod_prudent
+#print axioms entFloor_prudent_cupod
+#print axioms entFloor_cimcic_prudent
+#print axioms entFloor_prudent_cimcic
+#print axioms entFloor_cupod_cimcic
+#print axioms entFloor_cimcic_cupod
+#print axioms entFloor_dupoc_cupod
+#print axioms entFloor_maxconfidence_cupod
+#print axioms entFloor_minconfidence_cupod
+#print axioms entFloor_cupod_dupoc
+#print axioms entFloor_cupod_maxconfidence
+#print axioms entFloor_cupod_minconfidence
+#print axioms Sys2c.loebSound_Di
+#print axioms Sys2c.found_Di
+#print axioms col_dimcid_mirror_D
+#print axioms ent_ebot_dimcid
+#print axioms Sys2n.member_then2_V
+#print axioms loebSound_PMi
+#print axioms found_PMi
+#print axioms col_prudent_mirror_C
+#print axioms ent_ebot_prudent
+#print axioms entFloor_ebot_prudent
 
 end ArithS.Tau

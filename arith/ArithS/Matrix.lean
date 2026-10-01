@@ -69,6 +69,25 @@ import ArithS.Tau.Rows.DIMCID
 import ArithS.Tau.Rows.Prudent
 import ArithS.Tau.Rows.MaxConfidence
 import ArithS.Tau.Rows.MinConfidence
+import ArithS.Tau.Entangled.Base
+import ArithS.Tau.Entangled.Order
+import ArithS.Tau.Entangled.Tower
+import ArithS.Tau.Entangled.Family
+import ArithS.Tau.Entangled.Loeb
+import ArithS.Tau.Entangled.Congr
+import ArithS.Tau.Entangled.Dimcid
+import ArithS.Tau.Entangled.DupocDupoc
+import ArithS.Tau.Entangled.DimcidDupoc
+import ArithS.Tau.Entangled.DimcidCupod
+import ArithS.Tau.Entangled.DimcidCimcic
+import ArithS.Tau.Entangled.DupocCimcic
+import ArithS.Tau.Entangled.DupocPrudent
+import ArithS.Tau.Entangled.CupodPrudent
+import ArithS.Tau.Entangled.CimcicPrudent
+import ArithS.Tau.Entangled.CupodCimcic
+import ArithS.Tau.Entangled.DupocCupod
+import ArithS.Tau.Entangled.Mirror
+import ArithS.Tau.Entangled.EBotPrudent
 
 /-!
 # ArithS.Matrix — the results: every cell of PA-`S'` (`lake build ArithSMatrix`)
