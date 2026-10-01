@@ -1,5 +1,7 @@
 # EGT findings on the frozen paper sweeps — the results-section companion
 
+*Engine (`S`) cells. The PA-`S'` re-run (2026-10-01, the app's default source since Phase 1) is `EGT_FINDINGS_SPRIME.md`.*
+
 *2026-09-02. The record of the first full analysis pass over the frozen paper
 sweeps: what was run, the toolchain that reads it, every finding with its
 evidence pointer, and the caveats that must ride along into §5. Written to be
