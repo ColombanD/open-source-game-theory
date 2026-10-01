@@ -1,0 +1,105 @@
+import ArithS.Tau.Rows.Dupoc
+
+/-!
+# ArithS.Tau.Rows.MaxConfidence — the native MaxConfidenceBot's row in PA-`S'` (the NON-entangled slots)
+
+MaxConfidenceBot is a NATIVE tau player — Dupoc's per-hypothesis TEST under the `max ≥ θ` aggregator (`Tau/Zoo.lean`,
+`MaxConfidenceBotZ`/`MinConfidenceBotZ`) — whose spec IS Dupoc's spec, so its compiled instances are Dupoc's
+by `rfl` off the two system slots, the diagonal and the `.just` slot (`inst_maxconfidence_eq_dupoc`), and its diagonal is
+the SAME quine term as Dupoc's (`inst_maxconfidence_quine`). Its row is therefore Dupoc's row, restated under its own name
+(the census requires one row per template); every proof is the Dupoc proof on the instance unfolded at the
+`.maxconfidence` slot. Engine twin: `Tau/Theorems/TauMaxConfidence/Phase.lean`.
+
+Slots stated here (`[coop, defect, obot, maxconfidence]`): `coop` C, `defect` D (`Tau/Columns.col_maxconfidence_*`, by the bridge),
+`obot` D (SND), the diagonal C (Löb, the quine). **Floor bits** (`‡`, three, floor SIDE): `ebot`, `dbot`,
+`cupodTroll` — the hinge is the native's own probe of the hypothesis's instance seeing it, not found ⇒ D.
+
+-- Phase 3c: entangled — `dupoc cupod dimcid cimcic prudent minconfidence` (the symmetric system `cfdSys` with the
+--   other two Dupoc-spec self-probers, and the four `.sys` pairs).
+-- TODO Phase 3d: slot `.tftSim` (C) — as `Rows/Dupoc.lean`'s (the same probed instance shape).
+-/
+
+namespace ArithS.Tau
+
+open PD PD.Tau
+
+/-- MaxConfidenceBot's bit row: Dupoc's. -/
+def maxconfidenceRowA : Tmpl → Action := dupocRowA
+
+/-! ### The compiled instances (Dupoc's shape, at the `.maxconfidence` slot) -/
+
+theorem instCode_maxconfidence_ebot (k : ℕ) : instCode k .maxconfidence .ebot =
+    pSearch k (templateCode (probe (inst (tauZoo k) .ebot .maxconfidence))) (pConst 0) (pConst 1) := by
+  unfold instCode
+  rw [show inst (tauZoo k) .maxconfidence .ebot = .search k (probe (inst (tauZoo k) .ebot .maxconfidence)) (.const .C) (.const .D)
+    from rfl]
+  simp [actCode]
+
+theorem instCode_maxconfidence_obot (k : ℕ) : instCode k .maxconfidence .obot =
+    pSearch k (templateCode (probe (inst (tauZoo k) .obot .maxconfidence))) (pConst 0) (pConst 1) := by
+  unfold instCode
+  rw [show inst (tauZoo k) .maxconfidence .obot = .search k (probe (inst (tauZoo k) .obot .maxconfidence)) (.const .C) (.const .D)
+    from rfl]
+  simp [actCode]
+
+theorem instCode_maxconfidence_dbot (k : ℕ) : instCode k .maxconfidence .dbot =
+    pSearch k (templateCode (probe (inst (tauZoo k) .dbot .maxconfidence))) (pConst 0) (pConst 1) := by
+  unfold instCode
+  rw [show inst (tauZoo k) .maxconfidence .dbot = .search k (probe (inst (tauZoo k) .dbot .maxconfidence)) (.const .C) (.const .D)
+    from rfl]
+  simp [actCode]
+
+theorem instCode_maxconfidence_cupodTroll (k : ℕ) : instCode k .maxconfidence .cupodTroll =
+    pSearch k (templateCode (probe (inst (tauZoo k) .cupodTroll .maxconfidence))) (pConst 0) (pConst 1) := by
+  unfold instCode
+  rw [show inst (tauZoo k) .maxconfidence .cupodTroll =
+    .search k (probe (inst (tauZoo k) .cupodTroll .maxconfidence)) (.const .C) (.const .D) from rfl]
+  simp [actCode]
+
+/-- The diagonal is Dupoc's quine term. -/
+theorem instCode_maxconfidence_maxconfidence (k : ℕ) : instCode k .maxconfidence .maxconfidence = instCode k .dupoc .dupoc := by
+  unfold instCode; rw [inst_maxconfidence_quine]
+
+/-! ### The slots -/
+
+theorem maxconfidence_quine_C : bitEventually .maxconfidence .maxconfidence .C :=
+  bitEventually.mono (fun k h ↦ (bitPlays_congr (instCode_maxconfidence_maxconfidence k) _).mpr h) dupoc_quine_C
+
+theorem col_obot_maxconfidence : bitEventually .obot .maxconfidence .D := obotRowSpecA.slot (by simp)
+
+theorem maxconfidence_obot_D : bitEventually .maxconfidence .obot .D :=
+  bitEventually.mono (fun k h ↦ dupocLike_D_of_probe_false (instCode_maxconfidence_obot k) rfl h) col_obot_maxconfidence
+
+/-- **MaxConfidenceBot's row in `S'`** — the four non-entangled theorem slots (Dupoc's). -/
+@[tau_rowA]
+theorem maxconfidenceRowSpecA : RowSpecA .maxconfidence [.coop, .defect, .obot, .maxconfidence] maxconfidenceRowA :=
+  RowSpecA.cons col_maxconfidence_coop <|
+  RowSpecA.cons (bitEventually.of_forall col_maxconfidence_defect) <|
+  RowSpecA.cons maxconfidence_obot_D <|
+  RowSpecA.cons maxconfidence_quine_C <|
+  RowSpecA.nil _ _
+
+/-! ### The floor bits — the native's own probe is the hinge (floor SIDE) -/
+
+/-- `maxconfidence × ebot` ‡ (Dupoc's row by the bridge; base `dich_DupocBot_vs_EBot`). -/
+@[tau_floor_bitA]
+theorem maxconfidenceRowSpecA_ebot_floor : FloorBitA .maxconfidence .ebot
+    (fun k ↦ □[k] (guardCodeB (templateCode (probe (inst (tauZoo k) .ebot .maxconfidence)))
+      (pBot (instCode k .maxconfidence .ebot)) (pBot (instCode k .maxconfidence .ebot)) k)) .D :=
+  FloorBitA.of_not_hinge ⟨0, fun k _ hn ↦ dupocLike_floor_D (instCode_maxconfidence_ebot k) rfl hn⟩
+
+/-- `maxconfidence × dbot` ‡ (base `dich_DupocBot_vs_DBot`). -/
+@[tau_floor_bitA]
+theorem maxconfidenceRowSpecA_dbot_floor : FloorBitA .maxconfidence .dbot
+    (fun k ↦ □[k] (guardCodeB (templateCode (probe (inst (tauZoo k) .dbot .maxconfidence)))
+      (pBot (instCode k .maxconfidence .dbot)) (pBot (instCode k .maxconfidence .dbot)) k)) .D :=
+  FloorBitA.of_not_hinge ⟨0, fun k _ hn ↦ dupocLike_floor_D (instCode_maxconfidence_dbot k) rfl hn⟩
+
+/-- `maxconfidence × cupodTroll` ‡ (base `dich_DupocBot_vs_CupodTrollBot`). -/
+@[tau_floor_bitA]
+theorem maxconfidenceRowSpecA_cupodTroll_floor : FloorBitA .maxconfidence .cupodTroll
+    (fun k ↦ □[k] (guardCodeB (templateCode (probe (inst (tauZoo k) .cupodTroll .maxconfidence)))
+      (pBot (instCode k .maxconfidence .cupodTroll)) (pBot (instCode k .maxconfidence .cupodTroll)) k)) .D :=
+  FloorBitA.of_not_hinge ⟨0, fun k _ hn ↦ dupocLike_floor_D (instCode_maxconfidence_cupodTroll k) rfl hn⟩
+
+end ArithS.Tau

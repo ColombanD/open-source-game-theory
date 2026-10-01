@@ -51,6 +51,9 @@ import ArithS.Tau.Spec
 import ArithS.Tau.Attr
 import ArithS.Tau.Columns
 import ArithS.Tau.Described
+import ArithS.Tau.Quine
+import ArithS.Tau.ClosedProbe
+import ArithS.Tau.NeverFits
 import ArithS.Tau.Lint
 import ArithS.Tau.Rows.Coop
 import ArithS.Tau.Rows.Defect
@@ -59,6 +62,13 @@ import ArithS.Tau.Rows.DBot
 import ArithS.Tau.Rows.OBot
 import ArithS.Tau.Rows.CupodTroll
 import ArithS.Tau.Rows.EBot
+import ArithS.Tau.Rows.Dupoc
+import ArithS.Tau.Rows.Cupod
+import ArithS.Tau.Rows.CIMCIC
+import ArithS.Tau.Rows.DIMCID
+import ArithS.Tau.Rows.Prudent
+import ArithS.Tau.Rows.MaxConfidence
+import ArithS.Tau.Rows.MinConfidence
 
 /-!
 # ArithS.Matrix — the results: every cell of PA-`S'` (`lake build ArithSMatrix`)

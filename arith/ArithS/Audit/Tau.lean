@@ -6,13 +6,24 @@ import ArithS.Tau.Rows.OBot
 import ArithS.Tau.Rows.CupodTroll
 import ArithS.Tau.Rows.EBot
 import ArithS.Tau.Described
+import ArithS.Tau.Quine
+import ArithS.Tau.ClosedProbe
+import ArithS.Tau.NeverFits
+import ArithS.Tau.Rows.Dupoc
+import ArithS.Tau.Rows.Cupod
+import ArithS.Tau.Rows.CIMCIC
+import ArithS.Tau.Rows.DIMCID
+import ArithS.Tau.Rows.Prudent
+import ArithS.Tau.Rows.MaxConfidence
+import ArithS.Tau.Rows.MinConfidence
 
 /-!
 # ArithS.Audit.Tau — the census of the tau layer (Phase 3 of `SPRIME_SOURCE_OF_TRUTH.md`)
 
 The `S'` tau rows (`RowSpecA`, `Tau/Spec.lean`) and floor bits (`FloorBitA`) of the seven search-free / SND / POS
-templates, with the column kit they rest on (`Tau/Columns.lean`). Each line must read
-`[propext, Classical.choice, Quot.sound]`.
+templates, with the column kit they rest on (`Tau/Columns.lean`), and (Phase 3b) the NON-entangled slots of the
+seven self-probers' rows with the diagonal kit they rest on (`Tau/Quine.lean`: the Löb quines, DIMCID's fixpoint
+on defection, CIMCIC's tautology). Each line must read `[propext, Classical.choice, Quot.sound]`.
 -/
 
 namespace ArithS.Tau
@@ -58,5 +69,61 @@ namespace ArithS.Tau
 #print axioms ebotRowSpecA_cimcic_floor
 #print axioms ebotRowSpecA_maxconfidence_floor
 #print axioms ebotRowSpecA_minconfidence_floor
+
+-- Phase 3b — the diagonal kit (`Tau/Quine.lean`).
+#print axioms guardCode_botSV_self_eq_instB_V
+#print axioms guardCode_botSV_self_swap_eq_instB_V
+#print axioms loebSound_quine
+#print axioms quine_found
+#print axioms loebSound_dimQ
+#print axioms dimcid_quine_found
+#print axioms tact_qInst_cimQ
+#print axioms cimcic_quine_found
+#print axioms probe_not_found_of_bit
+#print axioms cimcic_obot_not_found
+#print axioms tact_qInst_eq_const
+#print axioms botSV_found_V
+#print axioms tact_qCT_above
+#print axioms cupod_cupodTroll_found
+
+-- Phase 3b — the length obstruction (`Tau/NeverFits.lean`): a `.self`-guard over a budget-carrying frozen
+-- instance is longer than its budget; the six slots it decides.
+#print axioms le_quote_sentence_of_FOccC
+#print axioms binNumeral_le_templateCode_selfBot
+#print axioms size_canonical_le_formulaLenMeta_sentenceAt_self
+#print axioms selfBot_guard_never_fits
+#print axioms selfBot_guard_not_found
+#print axioms cimcic_selfBot_D
+#print axioms dimcid_selfBot_C
+#print axioms cimcic_tftSim_D
+#print axioms cimcic_ebot_D
+#print axioms dimcid_tftSim_C
+#print axioms dimcid_ebot_C
+
+-- The seven self-probers' rows (non-entangled slots).
+#print axioms dupocRowSpecA
+#print axioms cupodRowSpecA
+#print axioms cimcicRowSpecA
+#print axioms dimcidRowSpecA
+#print axioms prudentRowSpecA
+#print axioms maxconfidenceRowSpecA
+#print axioms minconfidenceRowSpecA
+
+-- The floor-SIDE floor bits (the hinge is the row bot's own guard).
+#print axioms dupocRowSpecA_ebot_floor
+#print axioms dupocRowSpecA_dbot_floor
+#print axioms dupocRowSpecA_cupodTroll_floor
+#print axioms cupodRowSpecA_obot_floor
+#print axioms cimcicRowSpecA_ebot_floor
+#print axioms cimcicRowSpecA_dbot_floor
+#print axioms cimcicRowSpecA_cupodTroll_floor
+#print axioms prudentRowSpecA_ebot_floor
+#print axioms prudentRowSpecA_prudent_floor
+#print axioms maxconfidenceRowSpecA_ebot_floor
+#print axioms maxconfidenceRowSpecA_dbot_floor
+#print axioms maxconfidenceRowSpecA_cupodTroll_floor
+#print axioms minconfidenceRowSpecA_ebot_floor
+#print axioms minconfidenceRowSpecA_dbot_floor
+#print axioms minconfidenceRowSpecA_cupodTroll_floor
 
 end ArithS.Tau

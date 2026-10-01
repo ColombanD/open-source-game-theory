@@ -5,6 +5,13 @@ import ArithS.Tau.Rows.DBot
 import ArithS.Tau.Rows.OBot
 import ArithS.Tau.Rows.CupodTroll
 import ArithS.Tau.Rows.EBot
+import ArithS.Tau.Rows.Dupoc
+import ArithS.Tau.Rows.Cupod
+import ArithS.Tau.Rows.CIMCIC
+import ArithS.Tau.Rows.DIMCID
+import ArithS.Tau.Rows.Prudent
+import ArithS.Tau.Rows.MaxConfidence
+import ArithS.Tau.Rows.MinConfidence
 import ArithS.Tau.Lint
 
 /-!
