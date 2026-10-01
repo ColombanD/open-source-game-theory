@@ -47,6 +47,18 @@ import ArithS.Outcome.Attr
 import ArithS.Outcome.Floor
 import ArithS.Outcome.Floors
 import ArithS.Outcome.Lint
+import ArithS.Tau.Spec
+import ArithS.Tau.Attr
+import ArithS.Tau.Columns
+import ArithS.Tau.Described
+import ArithS.Tau.Lint
+import ArithS.Tau.Rows.Coop
+import ArithS.Tau.Rows.Defect
+import ArithS.Tau.Rows.TftSim
+import ArithS.Tau.Rows.DBot
+import ArithS.Tau.Rows.OBot
+import ArithS.Tau.Rows.CupodTroll
+import ArithS.Tau.Rows.EBot
 
 /-!
 # ArithS.Matrix — the results: every cell of PA-`S'` (`lake build ArithSMatrix`)

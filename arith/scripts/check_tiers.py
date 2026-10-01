@@ -7,9 +7,9 @@ Tiers (by module name; the roots ArithS/{Core,Frozen,PBLT,Matrix}.lean must impo
   frozen   Agents.Fit, Agents.FitBox, Eval.Det, Bridge.*                       may import: core
   loeb     Loeb.*, Agents.Instance, Agents.InstanceV, Eval.Transparency,
            Assembly.*, Necessitation.*                                         may import: core, frozen
-  results  Cells.* (but RedCell), Outcome.*                                    may import: core, frozen, loeb
+  results  Cells.* (but RedCell), Outcome.*, Tau.* (but Tau.Check)             may import: core, frozen, loeb
            (of Necessitation only Package and ClosedNec)
-  top      Audit.*, Audit, Tour, Outcome.Check, Outcome.Export (lake roots), ArithS   may import: anything
+  top      Audit.*, Audit, Tour, Outcome.Check, Outcome.Export, Tau.Check (lake roots), ArithS   may import: anything
 Lake cannot enforce this (libraries of one package see every module); this script does.
 """
 import pathlib, re, sys
@@ -22,11 +22,11 @@ FROZEN = {"ArithS.Agents.Fit", "ArithS.Agents.FitBox", "ArithS.Eval.Det"}
 LOEBX = {"ArithS.Agents.Instance", "ArithS.Agents.InstanceV", "ArithS.Eval.Transparency"}
 def tier(m):
     if m in ("ArithS", "ArithS.Core", "ArithS.Frozen", "ArithS.PBLT", "ArithS.Matrix", "ArithS.Tour", "ArithS.Audit",
-             "ArithS.Outcome.Check", "ArithS.Outcome.Export") or m.startswith("ArithS.Audit."): return "top"
+             "ArithS.Outcome.Check", "ArithS.Outcome.Export", "ArithS.Tau.Check") or m.startswith("ArithS.Audit."): return "top"
     if m == "ArithS.Cells.RedCell": return "core"
     if m in FROZEN or m.startswith("ArithS.Bridge"): return "frozen"
     if m in LOEBX or m.startswith(("ArithS.Loeb", "ArithS.Assembly", "ArithS.Necessitation")): return "loeb"
-    if m.startswith(("ArithS.Cells", "ArithS.Outcome")): return "results"
+    if m.startswith(("ArithS.Cells", "ArithS.Outcome", "ArithS.Tau")): return "results"
     if m in ("ArithS.Basic", "ArithS.Notation", "ArithS.Readings") or m.startswith(("ArithS.Theory", "ArithS.Length", "ArithS.Box", "ArithS.Agents", "ArithS.Eval")): return "core"
     return None
 RANK = {"core": 0, "frozen": 1, "loeb": 2, "results": 3, "top": 4}

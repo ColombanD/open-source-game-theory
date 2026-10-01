@@ -1,12 +1,14 @@
 import ArithS.Outcome.Check
+import ArithS.Tau.Check
 import Lean
 
 /-!
 # ArithS.Outcome.Export — JSON export of the PA-`S'` matrix
 
-`lake exe export_sprime_outcomes [out.json]` writes the `@[outcomeA]` cells and the `@[floorA]` floors to
+`lake exe export_sprime_outcomes [out.json] [tau_out.json]` writes the `@[outcomeA]` cells and the `@[floorA]` floors to
 `app/generated/sprime_outcome_theorems.json` (default path `../app/generated/sprime_outcome_theorems.json`,
-relative to `arith/`). The schema is the engine's (`PrisonersDilemma/Outcome/Export.lean`), so the Python loader
+relative to `arith/`), and the `@[tau_rowA]` rows and `@[tau_floor_bitA]` floor bits (`Tau/Spec.lean`, Phase 3) to
+`app/generated/sprime_tau_rows.json` (second argument; see `buildTauJsonA` for the schema). The schema is the engine's (`PrisonersDilemma/Outcome/Export.lean`), so the Python loader
 is shared, plus `system`, a `provenance` per row and the `floors` array
 (`Research/Notes/SPRIME_SOURCE_OF_TRUTH.md` §1.2):
 
@@ -23,7 +25,21 @@ Python side recomputes it as `json.dumps(row, sort_keys=True, separators=(",", "
 (the hinge text is not ASCII). `fuel_pad` is `0` on every `S'` row (fuel is existential in `OutcomeSpecA`);
 floors are always `eventual`.
 
-The exporter imports `ArithS.Outcome.Check` (not the whole `ArithS`), so what it writes has passed the census.
+The exporter imports `ArithS.Outcome.Check` and `ArithS.Tau.Check` (not the whole `ArithS`), so what it writes has
+passed both censuses.
+
+**The tau file** (`app/generated/sprime_tau_rows.json`) is the engine's `tau_rows.json` schema plus the floor bits:
+
+    { "schema_version": 1, "system": "sprime", "source_digest": "<fnv1a64 over rows ++ floor_bits>",
+      "order": [ the 14 names of `paperOrder` ],
+      "rows":  [ { name, module, template, order: "[coop, defect, …]" (the row's OWN literal order, a string),
+                   bits: { slot: "C" | "D" } } ],
+      "floor_bits": [ { name, module, template, slot, action, hinge, dichotomy } ] }
+
+`order` on a row is the row's literal slot list (the engine prints the NAME `tauOrder`; an `S'` row states only its
+theorem slots, its floor slots being separate theorems), and `dichotomy` is the base `dich_<L>_vs_<R>` the floor bit
+is one bit of (`Tau/Lint.expectedFloorBits`). The digest is the same recipe, over the row objects then the floor-bit
+objects, each array sorted by name.
 -/
 
 open Lean
@@ -80,6 +96,43 @@ def buildJson (cells floors : Array CellInfo) : Json :=
     ("floors",         Json.arr frows)
   ]
 
+/-! ### The tau rows -/
+
+/-- One tau row: the template, its own literal order, and its bits keyed by slot. -/
+def rowJsonA (r : ArithS.Tau.RowInfoA) : Json :=
+  Json.mkObj [
+    ("name",     Json.str (shortName r.name).toString),
+    ("module",   Json.str r.module.toString),
+    ("template", Json.str r.template.toString),
+    ("order",    Json.str r.order),
+    ("bits",     Json.mkObj (r.bits.toList.map fun (s, a) => (s.toString, Json.str a.toString)))
+  ]
+
+/-- One floor bit: the cell, its engine-side action, the hinge text and the base dichotomy. -/
+def floorBitJson (f : ArithS.Tau.FloorBitInfoA) : Json :=
+  Json.mkObj [
+    ("name",      Json.str (shortName f.name).toString),
+    ("module",    Json.str f.module.toString),
+    ("template",  Json.str f.template.toString),
+    ("slot",      Json.str f.slot.toString),
+    ("action",    Json.str f.action.toString),
+    ("hinge",     Json.str f.hinge),
+    ("dichotomy", Json.str f.dichotomy)
+  ]
+
+/-- The tau document; the digest covers the rows then the floor bits, both sorted by name. -/
+def buildTauJsonA (rows : Array ArithS.Tau.RowInfoA) (floors : Array ArithS.Tau.FloorBitInfoA) (order : Array Name) : Json :=
+  let rs := (rows.qsort fun a b => (shortName a.name).toString < (shortName b.name).toString).map rowJsonA
+  let fs := (floors.qsort fun a b => (shortName a.name).toString < (shortName b.name).toString).map floorBitJson
+  Json.mkObj [
+    ("schema_version", Json.num 1),
+    ("system",         Json.str "sprime"),
+    ("source_digest",  Json.str (toString (digestOf ((rs ++ fs).map fun r => r.compress)))),
+    ("order",          Json.arr (order.map fun n => Json.str n.toString)),
+    ("rows",           Json.arr rs),
+    ("floor_bits",     Json.arr fs)
+  ]
+
 end ArithS.Outcome
 
 open Lean ArithS.Outcome in
@@ -88,8 +141,11 @@ open Lean ArithS.Outcome in
 def main (args : List String) : IO UInt32 := do
   let out : System.FilePath :=
     args.head?.getD "../app/generated/sprime_outcome_theorems.json"
+  let tauOut : System.FilePath := match args with
+    | _ :: t :: _ => t
+    | _           => "../app/generated/sprime_tau_rows.json"
   initSearchPath (← findSysroot)
-  let env ← importModules #[{ module := `ArithS.Outcome.Check }] {}
+  let env ← importModules #[{ module := `ArithS.Outcome.Check }, { module := `ArithS.Tau.Check }] {}
   let act : MetaM (Array CellInfo × Array CellInfo) := do
     let mut cells : Array CellInfo := #[]
     for n in taggedOutcomesA env do
@@ -103,4 +159,13 @@ def main (args : List String) : IO UInt32 := do
   let doc := buildJson cells floors
   IO.FS.writeFile out (doc.pretty ++ "\n")
   IO.println s!"wrote {cells.size} S' outcome cells and {floors.size} floors to {out}"
+  let tauAct : MetaM (Array ArithS.Tau.RowInfoA × Array ArithS.Tau.FloorBitInfoA × Array Name) := do
+    let rows ← ArithS.Tau.inspectAllRowsA env
+    let fbs ← ArithS.Tau.inspectAllFloorBitsA env
+    let order ← ArithS.Tau.paperOrderNames
+    return (rows, fbs, order)
+  let ((rows, fbs, order), _) ← (tauAct.run').toIO
+    { fileName := "<export>", fileMap := default } { env }
+  IO.FS.writeFile tauOut ((buildTauJsonA rows fbs order).pretty ++ "\n")
+  IO.println s!"wrote {rows.size} S' tau rows and {fbs.size} floor bits to {tauOut}"
   return 0

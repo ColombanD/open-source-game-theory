@@ -8,6 +8,7 @@ import ArithS.Audit.Necessitation
 import ArithS.Audit.Bridge
 import ArithS.Audit.Cells
 import ArithS.Audit.Outcome
+import ArithS.Audit.Tau
 
 /-!
 # ArithS.Audit — the axiom census of the arithmetized layer
@@ -19,7 +20,7 @@ The `example`s FAIL TO COMPILE if any of these theorems disappears or changes it
 so the census is also a freshness check for the paper's claims.
 
 Since 2026-09-28 the prints live in nine per-layer files, `ArithS/Audit/{Theory, Length, Box,
-Agents, Eval, Loeb, Necessitation, Bridge, Cells}.lean` (each with its own minimal import list; the
+Agents, Eval, Loeb, Necessitation, Bridge, Cells, Outcome, Tau}.lean` (each with its own minimal import list; the
 comment blocks moved verbatim with their prints), and this module only imports them. The three
 audit-file modules `Audit/RedCellAudit`, `Audit/RedCellUnsound`, `Audit/RedCellInstance` keep their
 own prints, as do `Eval/Det` and `Agents/FitBox`; the census is every `#print axioms` the build runs.

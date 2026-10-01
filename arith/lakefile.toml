@@ -1,6 +1,6 @@
 name = "ArithS"
 version = "0.1.0"
-defaultTargets = ["ArithS", "ArithSOutcomeCheck"]
+defaultTargets = ["ArithS", "ArithSOutcomeCheck", "ArithSTauCheck"]
 
 # The arithmetized instance of S: PA (Foundation) + abstract action constants, a
 # structural proof-length measure `len`, and the length-bounded provability predicate
@@ -52,7 +52,14 @@ roots = ["ArithS.Audit"]
 name = "ArithSOutcomeCheck"
 roots = ["ArithS.Outcome.Check"]
 
-# Serializes the @[outcomeA] cells and @[floorA] floors to app/generated/sprime_outcome_theorems.json.
+# The S' tau-row gate (Phase 3 of SPRIME_SOURCE_OF_TRUTH.md): the row/floor-bit validator and the census over
+# the 14 paper templates (`ArithS/Tau/Lint.lean`); a separate root for the same reason as ArithSOutcomeCheck.
+[[lean_lib]]
+name = "ArithSTauCheck"
+roots = ["ArithS.Tau.Check"]
+
+# Serializes the @[outcomeA] cells and @[floorA] floors to app/generated/sprime_outcome_theorems.json, and the
+# @[tau_rowA] rows and @[tau_floor_bitA] floor bits to app/generated/sprime_tau_rows.json.
 [[lean_exe]]
 name = "export_sprime_outcomes"
 root = "ArithS.Outcome.Export"
