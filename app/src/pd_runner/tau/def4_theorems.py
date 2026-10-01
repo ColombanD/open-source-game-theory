@@ -468,20 +468,11 @@ class RecordedDivergence:
     reason: str
 
 
-_SNAPSHOT = ("budget-snapshot obstruction (Tau/NeverFits.lean): the guard names a frozen "
-             "instance carrying k, so the guard sentence never fits its budget — the "
-             "compiled instance plays its ELSE branch, not the base cell's value")
 _RED_CELL = ("the tau image of the red cell: outcome_DupocBot_vs_CupodBot is a theorem in "
              "the base by τ-symmetry, but inside one compiled .sys system the two members' "
              "guards are not τ-images, so the bit is a FLOOR in S' (Tau/Entangled/DupocCupod.lean)")
 
 SPRIME_RECORDED_DIVERGENCES: dict[tuple[str, str], RecordedDivergence] = {
-    ("cimcic", "tftSim"): RecordedDivergence("value", _SNAPSHOT),
-    ("dimcid", "tftSim"): RecordedDivergence("value", _SNAPSHOT),
-    ("dimcid", "ebot"): RecordedDivergence("value", _SNAPSHOT),
-    ("dimcid", "obot"): RecordedDivergence("value", _SNAPSHOT),
-    ("dimcid", "dbot"): RecordedDivergence("value", _SNAPSHOT),
-    ("dimcid", "cupodTroll"): RecordedDivergence("value", _SNAPSHOT),
     ("dupoc", "cupod"): RecordedDivergence("provenance", _RED_CELL),
     ("maxconfidence", "cupod"): RecordedDivergence("provenance", _RED_CELL),
     ("minconfidence", "cupod"): RecordedDivergence("provenance", _RED_CELL),
@@ -489,17 +480,36 @@ SPRIME_RECORDED_DIVERGENCES: dict[tuple[str, str], RecordedDivergence] = {
     ("cupod", "maxconfidence"): RecordedDivergence("provenance", _RED_CELL),
     ("cupod", "minconfidence"): RecordedDivergence("provenance", _RED_CELL),
 }
-"""The twelve `S'` bits at which Def 3 ≢ Def 4 under the PRESENT coding — keyed by Lean
-`Tmpl` slot names `(template, hypothesis)`, machine-checked in `arith/ArithS/Tau/Rows/*`
-(2026-10-01, Phases 3b–3d; the design note's FINDING records them, decision pending
-between the generic route (c) and shipping under coding (B)). Six VALUE divergences
-(`cimcic × tftSim` is D, `dimcid × {tftSim, ebot, obot, dbot, cupodTroll}` are C — the
-ENGINE's values — where the `S'` base cells say the opposite) and six PROVENANCE
-divergences (floor bits on the red cell, a base theorem). The matrix loader
+"""The six `S'` bits at which the kernel row and the base cell differ BY THEOREM — keyed by
+Lean `Tmpl` slot names `(template, hypothesis)`, machine-checked in
+`arith/ArithS/Tau/Rows/*`: the six PROVENANCE divergences (floor bits on the tau images of
+the red cell, a base theorem; independent of the coding). The matrix loader
 (`matrix._kernel_rows_for`) does not raise on these and does NOT consult them (the base
-cell — the table's value — is played, so every downstream number is unchanged); the
-certification (`compare.direct_kernel_vs_base`) reports them as whitelisted divergences.
-Anything else that disagrees is still a bug by definition. Engine source: never consulted."""
+cell is played, so every downstream number is unchanged); the certification
+(`compare.direct_kernel_vs_base`) reports them as whitelisted divergences. Anything else
+that disagrees is still a bug by definition. Engine source: never consulted.
+
+History (2026-10-01). Phases 3b–3d recorded twelve: these six and six VALUE divergences
+(`cimcic × tftSim`, `dimcid × {tftSim, ebot, obot, dbot, cupodTroll}`), artefacts of the
+pre-abstraction coding (the budget-snapshot obstruction, `Tau/NeverFits.lean`). Route (c)
+made generic (Phase 2c) dissolved them and Phase 3e re-proved five with the table's
+values; the six VALUE entries are REMOVED. The sixth, `dimcid × ebot`, is not a recorded
+divergence either: its row slot is UNSTATED in Lean (`Tau/NeverFitsSys.dimcid_ebot_C` —
+budget abstraction does not descend into the closed system τ(EBot)'s third watch freezes,
+so under the present coding the compiled bit is C, the engine's value, against the base
+cell's D), hence UNCOVERED here and played from the `S'` base cell like any unstated bit.
+
+An entry is a claim that the Lean export DISAGREES with the base cell in exactly the
+recorded way. An entry that no longer fires — the bit is stated, the cell is proven, and
+they AGREE in value and provenance — is STALE (Lean moved; delete the entry): the loader
+issues a `StaleDivergenceWarning` naming it, rather than carrying a dead whitelist line."""
+
+
+class StaleDivergenceWarning(UserWarning):
+    """A recorded `S'` divergence (`SPRIME_RECORDED_DIVERGENCES`) did not fire at load: the
+    kernel row states the bit and it AGREES with the proven base cell (value and
+    provenance). Either the entry is stale (remove it) or the row file is not the real
+    export (the cell-derived test sample states no divergence by construction)."""
 
 
 def recorded_divergence(source: str, template_slot: str | None, hypothesis_slot: str | None

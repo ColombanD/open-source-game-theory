@@ -2,6 +2,7 @@ import ArithS.Tau.Quine
 import ArithS.Tau.Entangled.DupocPrudent
 import ArithS.Tau.Entangled.CupodPrudent
 import ArithS.Tau.Entangled.CimcicPrudent
+import ArithS.Tau.Entangled.DimcidPrudent
 import ArithS.Tau.Attr
 
 /-!
@@ -13,7 +14,7 @@ the defector defects against itself"; D on either failure (`Tau/Zoo.inst_prudent
 outer quine `.plays .self .self C` with the inner check on its own `defect` cell (`inst_prudent_quine`). Engine
 twin: `Tau/Theorems/TauPrudent/Phase.lean` (`prudentRowSpec`, D everywhere but the mirror).
 
-Slots stated here (`[coop, defect, tftSim, obot, dbot, cupodTroll]`), all D:
+Slots stated here (`[coop, defect, tftSim, obot, dbot, cupodTroll, dimcid]`), all D:
 * `coop`, `defect` (`col_prudent_coop/defect`: the inner check fails at the cooperator, the outer at the defector);
 * `tftSim`, `obot`: the OUTER probe is false — τ(TFTSim)'s and τ(OBot)'s instances at Prudent defect (they copy /
   watch Prudent's D at the cooperator) — SND, D;
@@ -33,8 +34,10 @@ Not found ⇒ D. And the five SYSTEM floors `dupoc`, `maxconfidence`, `minconfid
 freezes a budget-carrying third party, so no Löb family can be stated — the §7 obstacle; the dichotomy halves are
 what `S'` settles).
 
--- UNSTATED (decision pending — `SPRIME_SOURCE_OF_TRUTH.md` §3, the budget-snapshot obstruction): slot `.dimcid`
---   (`inst prudent dimcid = .sys [pm 1 dimcid, dim 0] 0`, the same obstacle on the Prudent member).
+The entangled `dimcid` slot (Phase 3e, `Tau/Entangled/DimcidPrudent.lean`): D — `inst prudent dimcid =
+.sys [pm 1 dimcid, dim 0] 0`; under route (c) made generic the Prudent member's inner template is a constant, the
+system is a `k̂`-tower, the DIMCID member defects against itself by its self-fulfilling family, so Prudent's OUTER
+probe is false and never found (`ent_prudent_dimcid`).
 -/
 
 namespace ArithS.Tau
@@ -93,15 +96,16 @@ theorem prudent_dbot_D (k : ℕ) : bitPlays k .prudent .dbot .D :=
 theorem prudent_cupodTroll_D (k : ℕ) : bitPlays k .prudent .cupodTroll .D :=
   prudent_D_of_inner_false_at₂ (instCode_prudent_cupodTroll k) rfl rfl (col_cupodTroll_defect k)
 
-/-- **τ(Prudent)'s row in `S'`** — the six non-entangled theorem slots. -/
+/-- **τ(Prudent)'s row in `S'`** — the six non-entangled theorem slots and the entangled `dimcid` slot (Phase 3e). -/
 @[tau_rowA]
-theorem prudentRowSpecA : RowSpecA .prudent [.coop, .defect, .tftSim, .obot, .dbot, .cupodTroll] prudentRowA :=
+theorem prudentRowSpecA : RowSpecA .prudent [.coop, .defect, .tftSim, .obot, .dbot, .cupodTroll, .dimcid] prudentRowA :=
   RowSpecA.cons (bitEventually.of_forall col_prudent_coop) <|
   RowSpecA.cons (bitEventually.of_forall col_prudent_defect) <|
   RowSpecA.cons prudent_tftSim_D <|
   RowSpecA.cons prudent_obot_D <|
   RowSpecA.cons (bitEventually.of_forall prudent_dbot_D) <|
   RowSpecA.cons (bitEventually.of_forall prudent_cupodTroll_D) <|
+  RowSpecA.cons ent_prudent_dimcid <|
   RowSpecA.nil _ _
 
 /-! ### The floor bits — Prudent's own OUTER probe is the hinge (floor SIDE) -/

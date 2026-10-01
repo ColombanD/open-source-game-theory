@@ -25,9 +25,17 @@ import ArithS.Tau.Entangled.CupodCimcic
 import ArithS.Tau.Entangled.DupocCupod
 import ArithS.Tau.Entangled.Mirror
 import ArithS.Tau.Entangled.EBotPrudent
+import ArithS.Tau.Entangled.Generic
+import ArithS.Tau.Entangled.DimcidPrudent
 import ArithS.Tau.Quine
 import ArithS.Tau.ClosedProbe
+import ArithS.Tau.Watch
+import ArithS.Tau.Stored
+import ArithS.Tau.ClosedWatch
+import ArithS.Tau.Watch2
+import ArithS.Tau.ClosedWatch2
 import ArithS.Tau.NeverFits
+import ArithS.Tau.NeverFitsSys
 import ArithS.Tau.Rows.Dupoc
 import ArithS.Tau.Rows.Cupod
 import ArithS.Tau.Rows.CIMCIC
@@ -42,8 +50,10 @@ import ArithS.Tau.Rows.MinConfidence
 The `S'` tau rows (`RowSpecA`, `Tau/Spec.lean`) and floor bits (`FloorBitA`) of the seven search-free / SND / POS
 templates, with the column kit they rest on (`Tau/Columns.lean`), (Phase 3b) the NON-entangled slots of the
 seven self-probers' rows with the diagonal kit they rest on (`Tau/Quine.lean`: the Löb quines, DIMCID's fixpoint
-on defection, CIMCIC's tautology), and (Phase 3c/3d) the entangled `.sys` bits folded into those rows: 14 rows,
-47 floor bits, 191/196 paper bits. Each line must read `[propext, Classical.choice, Quot.sound]`.
+on defection, CIMCIC's tautology), (Phase 3c/3d) the entangled `.sys` bits folded into those rows, and (Phase 3e)
+the ten bits route (c) made generic recovers — the guards over a closed budget-carrying watch and the
+`dimcid × prudent` systems: 14 rows, 149 − 1 row slots, 47 floor bits, 195/196 paper bits (`dimcid × ebot` is
+UNSTATED: `Tau/NeverFitsSys.lean`). Each line must read `[propext, Classical.choice, Quot.sound]`.
 -/
 
 namespace ArithS.Tau
@@ -111,8 +121,8 @@ namespace ArithS.Tau
 #print axioms le_quote_sentence_of_FOccC
 #print axioms binNumeral_le_templateCode_selfBot
 -- Phase 2c (2026-10-01): the obstruction is stated on the explicit pre-abstraction code `pBot (pSearch k' (templateCode φ) p q)`;
--- the tau slots it decided (`cimcic_tftSim_D`, `cimcic_ebot_D`, `dimcid_tftSim_C`, `dimcid_ebot_C`) are UNSTATED until
--- Phase 3e re-proves them with the table's values on the budget-abstracted stored templates.
+-- the tau slots it decided are re-proved with the table's values on the budget-abstracted stored templates (Phase 3e,
+-- below), except `dimcid × ebot` (`Tau/NeverFitsSys.lean`).
 #print axioms selfBot_guard_not_found
 #print axioms size_canonical_le_formulaLenMeta_sentenceAt_self
 #print axioms selfBot_guard_never_fits
@@ -232,5 +242,97 @@ namespace ArithS.Tau
 #print axioms col_prudent_mirror_C
 #print axioms ent_ebot_prudent
 #print axioms entFloor_ebot_prudent
+
+-- Phase 3e — a bot-wrapped simple searcher and a run-stage watch over it as `k̂`-towers (`Tau/Watch.lean`), the
+-- stored (budget-abstracted) template of a guard over a closed watch (`Tau/Stored.lean`).
+#print axioms SM.describesBot
+#print axioms W1.sim_gain
+#print axioms W1.code_lt_tr
+#print axioms W1.describesBot
+#print axioms codeTermMetaAbs_botW1
+#print axioms eval_closedDescAt_some_V
+#print axioms eval_plAt_self_closed
+#print axioms eval_plAt_closed_self
+#print axioms eval_plAt_closed_closed
+#print axioms guardCodeB_plain_eq_instB
+#print axioms W1.closedDescAt_code
+#print axioms W1.absVal_code
+#print axioms W1.absVal_tr_code
+#print axioms closedDescAt_botSV
+#print axioms absVal_botSV
+#print axioms absVal_tr_botSV
+
+-- Phase 3e — guards over a closed budget-carrying watch, FOUND (`Tau/ClosedWatch.lean`): DIMCID's self-fulfilling
+-- family on the watch, the POS-above chain, the seven bits.
+#print axioms isSemiformula7_cast_templateAt
+#print axioms W1.describesBotT
+#print axioms describes_botSVT
+#print axioms dimcid_closed_found
+#print axioms plain_found_above
+#print axioms tact_qCi_above
+#print axioms tact_qPr_above
+#print axioms ofSearch_self_plays
+#print axioms ofSearch_tr_self_plays
+#print axioms tact_qInst_prC
+#print axioms dimcid_D_of_W1
+#print axioms dimcid_D_of_SV
+#print axioms dimcid_tftSim_D
+#print axioms dimcid_dbot_D
+#print axioms dimcid_cupodTroll_D
+#print axioms cimcic_C_of_W1
+#print axioms dupoc_C_of_W1
+#print axioms cimcic_tftSim_C
+#print axioms dupoc_tftSim_C
+#print axioms maxconfidence_tftSim_C
+#print axioms minconfidence_tftSim_C
+
+-- Phase 3e — the two-stage watch (τ(OBot)'s instance at a self-prober): the gain calculus, the τ-order of the
+-- cascade, its tower and stored description (`Tau/Watch2.lean`), and the bit (`Tau/ClosedWatch2.lean`).
+#print axioms Gain.ppair_right
+#print axioms Gain.ppair_left
+#print axioms Gain.bot
+#print axioms W1.gain
+#print axioms W1.sim_le_code
+#print axioms W2.code_lt_tr
+#print axioms W2.describesBot
+#print axioms W2.describesBotT
+#print axioms W2.closedDescAt_code
+#print axioms W2.absVal_code
+#print axioms W2.absVal_tr_code
+#print axioms dimcid_D_of_towers
+#print axioms dimcid_obot_D
+
+-- Phase 3e — two-member systems given by member towers (`Tau/Entangled/Generic.lean`) and the `dimcid × prudent`
+-- systems (`Tau/Entangled/DimcidPrudent.lean`): the τ-order of the mixed lists, Prudent's member at DIMCID on a
+-- constant inner template, the two bits.
+#print axioms MT.ofSM_ok
+#print axioms Sys2m.canonical_code
+#print axioms Sys2m.guard_eq_instB_of
+#print axioms Sys2m.tr_guard_eq_instB_of
+#print axioms Sys2m.eval_q_impl
+#print axioms Sys2m.eval_q_impl_swap
+#print axioms simple_member_then_V
+#print axioms Sys2m.loebSound_Di
+#print axioms Sys2m.found_Di
+#print axioms nested_gain
+#print axioms nested_dominates
+#print axioms MT.ofNM_ok
+#print axioms Sys2m.ofSN_ok
+#print axioms Sys2m.ofNS_ok
+#print axioms templateAt_probeD_dimcid_defect
+#print axioms PMd_code_nat
+#print axioms found_DiP_engine
+#print axioms ent_dimcid_prudent
+#print axioms prudent_probe_dimcid_not_found
+#print axioms ent_prudent_dimcid
+
+-- Phase 3e — the one bit budget abstraction does NOT recover (`Tau/NeverFitsSys.lean`): a `.self`-guard over a watch
+-- that freezes a budget-carrying SYSTEM is still longer than its budget; `dimcid × ebot` is C at every budget under
+-- the present coding (the table says D — the slot is UNSTATED in `Rows/DIMCID.lean`).
+#print axioms TOccC_of_OccB
+#print axioms occB_of_hasSysC
+#print axioms binNumeral_le_templateCodeAt_selfBot
+#print axioms selfBot_sys_guard_not_found
+#print axioms dimcid_ebot_C
 
 end ArithS.Tau

@@ -16,6 +16,7 @@ from __future__ import annotations
 import dataclasses
 import importlib.util
 import json
+import warnings
 from pathlib import Path
 
 import pytest
@@ -34,6 +35,8 @@ from pd_runner.tau.def4_theorems import (
     PAPER_TEMPLATES,
     SPRIME_RECORDED_DIVERGENCES,
     TAU_ORDER,
+    RecordedDivergence,
+    StaleDivergenceWarning,
     _load_export,
     kernel_bit_provenance,
     kernel_bits,
@@ -68,12 +71,17 @@ _ROWS = [
 def sprime_rows(request, monkeypatch) -> Path:
     """Point the `sprime` row reader at one of the two documents."""
     monkeypatch.setitem(d4._TAU_EXPORT_FILES, "sprime", request.param)
+    if request.param == SPRIME_TAU_SAMPLE_EXPORT:
+        # the cell-derived sample states no divergence by construction, so the recorded
+        # red-cell entries cannot fire on it (`test_recorded_divergences_do_not_fire_on_the_sample`)
+        warnings.simplefilter("ignore", StaleDivergenceWarning)
     return request.param
 
 
 @pytest.fixture
 def partial_rows(monkeypatch) -> Path:
     monkeypatch.setitem(d4._TAU_EXPORT_FILES, "sprime", SPRIME_TAU_PARTIAL_EXPORT)
+    warnings.simplefilter("ignore", StaleDivergenceWarning)  # cell-derived, as the full sample
     return SPRIME_TAU_PARTIAL_EXPORT
 
 
@@ -482,3 +490,45 @@ def test_report_banner_names_the_backing(sprime_rows) -> None:
         assert "kernel-backed (Def 4" in page and "floor-dichotomy bits" in page
     else:
         assert "PARTIAL export" in page
+
+
+# ── recorded divergences must fire, or be removed (Phase 3e) ───────────────────
+
+
+def test_the_value_divergences_are_gone() -> None:
+    """Route (c) made generic dissolved the six VALUE divergences of Phases 3b–3d; only the
+    six red-cell PROVENANCE divergences remain recorded."""
+    assert len(SPRIME_RECORDED_DIVERGENCES) == 6
+    assert {d.kind for d in SPRIME_RECORDED_DIVERGENCES.values()} == {"provenance"}
+    assert all("cupod" in pair for pair in SPRIME_RECORDED_DIVERGENCES)
+
+
+@pytest.mark.skipif(not SPRIME_TAU_REAL_EXPORT.exists(),
+                    reason="sprime_tau_rows.json not generated yet")
+def test_every_recorded_divergence_fires_on_the_real_export(monkeypatch) -> None:
+    """On the real export no recorded entry is stale, on any paper zoo."""
+    monkeypatch.setitem(d4._TAU_EXPORT_FILES, "sprime", SPRIME_TAU_REAL_EXPORT)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", StaleDivergenceWarning)
+        for zoo in (PAPER_BODY_SUB_ZOO, PAPER_TWINS_SUB_ZOO, PAPER_NATIVES_SUB_ZOO):
+            load_tau_matrix(zoo, source="sprime")
+
+
+@pytest.mark.skipif(not SPRIME_TAU_REAL_EXPORT.exists(),
+                    reason="sprime_tau_rows.json not generated yet")
+def test_a_stale_recorded_divergence_is_loud(monkeypatch) -> None:
+    """An entry at a bit the row states in AGREEMENT with its proven cell is reported."""
+    monkeypatch.setitem(d4._TAU_EXPORT_FILES, "sprime", SPRIME_TAU_REAL_EXPORT)
+    monkeypatch.setitem(SPRIME_RECORDED_DIVERGENCES, ("coop", "defect"),
+                        RecordedDivergence("value", "a stale entry, for the test"))
+    with pytest.warns(StaleDivergenceWarning, match="CooperateBot vs DefectBot"):
+        load_tau_matrix(PAPER_BODY_SUB_ZOO, source="sprime")
+
+
+def test_recorded_divergences_do_not_fire_on_the_sample(monkeypatch) -> None:
+    """The cell-derived sample states the red-cell bits as theorem bits equal to the base
+    cells, so the recorded provenance divergences are reported as not firing there — the
+    reason the sample fixtures silence the warning."""
+    monkeypatch.setitem(d4._TAU_EXPORT_FILES, "sprime", SPRIME_TAU_SAMPLE_EXPORT)
+    with pytest.warns(StaleDivergenceWarning, match="DupocBot vs CupodBot"):
+        load_tau_matrix(PAPER_BODY_SUB_ZOO, source="sprime")

@@ -45,12 +45,15 @@ equals the base cell (agree), a FLOOR BIT that sits on a floor cell with the sam
 engine-side value (floor-agree — a dichotomy's `¬A_k` half on both sides, not a theorem
 about the cell), a MISMATCH (different value, or a floor/theorem provenance swap between
 the two exports), or UNCOVERED (the export is PARTIAL during the Phase-3 rollout: no bit
-stated yet). On `S'` the twelve RECORDED divergences
-(`def4_theorems.SPRIME_RECORDED_DIVERGENCES`, 2026-10-01: Def 3 ≢ Def 4 by theorem under
-the present coding) are counted as whitelisted, like the engine's `WHITELIST`, and printed
-as `~` lines; the certification passes "modulo recorded artifacts" and `mismatch` counts
-only the unexpected. As of the Phase-3d merge: 191 covered = 138 agree + 41 floor-agree +
-12 recorded, 0 mismatch, 5 uncovered (the budget-snapshot bits the note leaves unstated).
+stated yet). On `S'` the RECORDED divergences
+(`def4_theorems.SPRIME_RECORDED_DIVERGENCES`: the six floor bits on the tau images of the
+red cell, a base theorem) are counted as whitelisted, like the engine's `WHITELIST`, and
+printed as `~` lines; the certification passes "modulo recorded artifacts" and `mismatch`
+counts only the unexpected. As of Phase 3e (2026-10-01): 195 covered = 148 agree +
+41 floor-agree + 6 recorded, 0 mismatch, 1 uncovered (`dimcid × ebot`, UNSTATED in Lean:
+`Tau/NeverFitsSys.lean`). The six VALUE divergences of Phases 3b–3d are gone (route (c)
+made generic); a recorded entry that stops firing is reported by the loader
+(`StaleDivergenceWarning`).
 """
 
 from __future__ import annotations

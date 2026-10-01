@@ -1,7 +1,10 @@
 import ArithS.Tau.Quine
+import ArithS.Tau.ClosedWatch
+import ArithS.Tau.ClosedWatch2
 import ArithS.Tau.Entangled.DimcidDupoc
 import ArithS.Tau.Entangled.DimcidCupod
 import ArithS.Tau.Entangled.DimcidCimcic
+import ArithS.Tau.Entangled.DimcidPrudent
 import ArithS.Tau.Attr
 
 /-!
@@ -15,34 +18,38 @@ DEFECTION (`inst_dimcid_quine`), closed by bounded Löb on the bot-wrapped insta
 a box of the guard makes the instance defect, refuting the antecedent). Engine twin:
 `Tau/Theorems/TauDIMCID/Phase.lean`.
 
-Slots stated here (`[coop, defect, tftSim, dupoc, ebot, obot, dbot, cupodTroll, cupod, dimcid, cimcic, maxconfidence,
-minconfidence]`): `coop` D — **the `S'` FLIP** of
-the engine's C (`Tau/Described.col_dimcid_coop`: the self-fulfilling refutation `dimcid_vs_closed`, on the instance),
-`defect` D (POS, `col_dimcid_defect`), the diagonal D (Löb) — and **`tftSim ebot obot dbot cupodTroll`: C, the
-ENGINE's values; the table's five remaining flips (`D≠`) do NOT transfer to the tau layer** — and the five ENTANGLED slots `dupoc cupod cimcic maxconfidence
-minconfidence`, all D (the DIMCID member finds its self-fulfilling guard in every `.sys` system, `Tau/Entangled/
-DimcidDupoc.lean`, `DimcidCupod.lean`, `DimcidCimcic.lean`; the FLIPS of the table). The base flips rest on
-`dimcid_vs_closed`: DIMCID's guard is found by Löb against any closed opponent because the family is the
-`binNumeral k`-instance of a fixed formula. On the tau instance the probed program is the HYPOTHESIS'S INSTANCE
-SEEING DIMCID, which carries the budget `k` (`inst dimcid coop = .search k …` sits inside it, or the instance IS
-`.search k (.eq C D) …`), so the instance's STORED TEMPLATE depends on `k`, the instance's own description — written
-into the guard sentence by the `.self` antecedent — has a numeral of more than `k` bits, and the guard sentence is
-LONGER than `k`: it is never found, at every budget (`Tau/NeverFits.dimcid_selfBot_C`), and the instance plays its
-ELSE branch, C. (`coop`/`defect` flip/agree as the table says because `inst coop dimcid`/`inst defect dimcid` are the
-budget-free constants.) The table and `expectedFloorBits` need no change (none of the five is a `‡` cell); §3's
-"13 FLIP" count is 8 for the tau layer (+1 at `cimcic × tftSim`, see `Rows/CIMCIC.lean`).
+Slots stated here (`[coop, defect, tftSim, dupoc, obot, dbot, cupodTroll, cupod, dimcid, cimcic, prudent, maxconfidence,
+minconfidence]`, thirteen of the fourteen), ALL D:
+* `coop` — **the `S'` FLIP** of the engine's C (`Tau/Described.col_dimcid_coop`: the self-fulfilling refutation
+  `dimcid_vs_closed`, on the instance); `defect` (POS, `col_dimcid_defect`); the diagonal (Löb);
+* `tftSim`, `dbot`, `cupodTroll`, `obot` (Phase 3e, FLIPS): the probed program is the hypothesis's instance seeing
+  DIMCID, which carries the budget `k` — a run-stage watch over `inst dimcid coop/defect` (`W1`, `Tau/Watch.lean`;
+  τ(OBot)'s two-stage cascade `W2`, `Tau/Watch2.lean`) or the `.eq`-searcher itself. Under route (c) made generic
+  (Phase 2c) its stored description is a CONSTANT and the watch is a `k̂`-tower, so the base argument transfers:
+  DIMCID's self-fulfilling family on the watch (`Tau/ClosedWatch.dimcid_closed_found`, `dimcid_tftSim_D`,
+  `dimcid_dbot_D`, `dimcid_cupodTroll_D`; `Tau/ClosedWatch2.dimcid_obot_D`). The C's of the pre-abstraction coding
+  (`Tau/NeverFits.dimcid_selfBot_C`) were an artefact of the stored template carrying the budget numeral;
+* the ENTANGLED slots `dupoc cupod cimcic maxconfidence minconfidence` (the DIMCID member finds its self-fulfilling
+  guard in every `.sys` system, `Tau/Entangled/DimcidDupoc.lean`, `DimcidCupod.lean`, `DimcidCimcic.lean`) and
+  `prudent` (Phase 3e, `Tau/Entangled/DimcidPrudent.lean`: the system `[dim 1, pm 0 dimcid]` with Prudent's NESTED
+  member, a `k̂`-tower now that the member's inner template is a constant) — the FLIPS of the table.
 
--- UNSTATED (decision pending — `SPRIME_SOURCE_OF_TRUTH.md` §3, the budget-snapshot obstruction): slot `.prudent`
---   (`inst dimcid prudent = .sys [dim 1, pm 0 dimcid] 0`; the Prudent member's inner guard freezes
---   `inst dimcid .defect`, `k` inside — no family can be stated for either member).
+-- UNSTATED: slot `.ebot` (table: `D≠`). τ(EBot)'s instance seeing DIMCID has a third watch on DIMCID's instance at
+--   the MIRROR, the closed SYSTEM `.sys [dim 1, mm 0] 0` with a `.search k` member, and budget abstraction does NOT
+--   descend into a system (`Agents/CodeTermAbs.codeTermMetaAbs_sys`, by design: the member-slot equation). The stored
+--   template of `inst dimcid ebot` therefore still writes `binNumeral k`, the guard sentence is longer than `k` and
+--   is never found: under the PRESENT coding the bit is **C at every budget** — `Tau/NeverFitsSys.dimcid_ebot_C`, a
+--   theorem — the ENGINE's value, contradicting the table's `D`. Neither side is forced: the slot stays out of the
+--   row until the abstraction descends into systems (the "(α) upgrade", `ARITH_TRAPS.md` §4b) or the table is
+--   amended. This is the one bit of `paperOrder²` the census reports uncovered (195/196).
 -/
 
 namespace ArithS.Tau
 
 open PD PD.Tau
 
-/-- τ(DIMCID)'s bit row in `S'`: the table's D everywhere (the five C's of the never-fits reading were an artefact
-of the pre-2026-10-01 coding; those slots are UNSTATED until Phase 3e re-proves them). -/
+/-- τ(DIMCID)'s bit row in `S'`: the table's D everywhere (the `ebot` slot is NOT in the row's order — see the module
+docstring; the value written here for it is the table's and is not claimed). -/
 def dimcidRowA : Tmpl → Action
   | .coop => .D | .defect => .D | .tftSim => .D | .dupoc => .D | .ebot => .D | .obot => .D | .dbot => .D
   | .cupodTroll => .D | .cupod => .D | .dimcid => .D | .cimcic => .D | .prudent => .D
@@ -54,8 +61,9 @@ abbrev dimG (X : PD.Prog) : PD.Formula := .impl (.plays .self (.bot X) .C) (.pla
 
 /-! ### The compiled instances -/
 
--- Phase 3e: the instance equations of the five budget-carrying hypotheses (`tftSim ebot obot dbot cupodTroll`) now
--- store the ABSTRACTED template `templateCodeAt (dimG (inst T .dimcid)) k`; restated with the slots in Phase 3e.
+-- The instance equations of the budget-carrying hypotheses (`tftSim dbot cupodTroll obot`, the ABSTRACTED template
+-- `templateCodeAt (dimG (inst T .dimcid)) k`) are `Tau/ClosedWatch.instCode_dimcid_*'` and
+-- `Tau/ClosedWatch2.instCode_dimcid_obot'` (`ebot`'s: `Tau/NeverFitsSys.instCode_dimcid_ebot'`).
 
 /-- The diagonal: the Löb fixpoint on defection. -/
 theorem instCode_dimcid_dimcid (k : ℕ) : instCode k .dimcid .dimcid =
@@ -70,21 +78,23 @@ theorem dimcid_quine_D : bitEventually .dimcid .dimcid .D := by
   refine ⟨k₀, fun k hk ↦ bitPlays_of_eq (instCode_dimcid_dimcid k) ?_⟩
   exact ⟨_, search_then dimQ (h k hk) (const_play 0 _ _ _)⟩
 
--- Phase 3e: slots `.tftSim .ebot .obot .dbot .cupodTroll` UNSTATED. Their previous proofs (`dimcid_selfBot_C`, the
--- never-fits obstruction of `Tau/NeverFits.lean`) were an artefact of the pre-2026-10-01 coding; under budget
--- abstraction the stored templates are constants and the table's D (the base flip `dimcid_vs_closed`) is expected.
-
-/-- **τ(DIMCID)'s row in `S'`** — eight theorem slots (three non-entangled, five entangled; `tftSim ebot obot dbot
-cupodTroll prudent` unstated pending Phase 3e). -/
+/-- **τ(DIMCID)'s row in `S'`** — thirteen theorem slots (seven non-entangled, six entangled); `ebot` is UNSTATED
+(see the module docstring). -/
 @[tau_rowA]
 theorem dimcidRowSpecA : RowSpecA .dimcid
-    [.coop, .defect, .dupoc, .cupod, .dimcid, .cimcic, .maxconfidence, .minconfidence] dimcidRowA :=
+    [.coop, .defect, .tftSim, .dupoc, .obot, .dbot, .cupodTroll, .cupod, .dimcid, .cimcic, .prudent, .maxconfidence,
+      .minconfidence] dimcidRowA :=
   RowSpecA.cons col_dimcid_coop <|
   RowSpecA.cons col_dimcid_defect <|
+  RowSpecA.cons dimcid_tftSim_D <|
   RowSpecA.cons ent_dimcid_dupoc <|
+  RowSpecA.cons dimcid_obot_D <|
+  RowSpecA.cons dimcid_dbot_D <|
+  RowSpecA.cons dimcid_cupodTroll_D <|
   RowSpecA.cons ent_dimcid_cupod <|
   RowSpecA.cons dimcid_quine_D <|
   RowSpecA.cons ent_dimcid_cimcic <|
+  RowSpecA.cons ent_dimcid_prudent <|
   RowSpecA.cons ent_dimcid_maxconfidence <|
   RowSpecA.cons ent_dimcid_minconfidence <|
   RowSpecA.nil _ _

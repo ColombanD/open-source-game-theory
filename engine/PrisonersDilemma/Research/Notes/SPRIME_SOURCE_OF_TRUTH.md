@@ -317,6 +317,22 @@ CodeTerm/Guard slots/SubstTemplate → Code → RedCellUnsound arms → full bui
      `SPRIME_RECORDED_DIVERGENCES` emptied, certification 196/196, `#check_tau_rowsA strict` in the build.
 
 
+   **STATE 2026-10-02 (Phases 2c + 3e landed): 195/196 paper bits stated — 148 row slots + 47 floor bits.**
+   Under (A) the table's values are recovered: `cimcic × tftSim = C`, `dimcid × {tftSim, obot, dbot,
+   cupodTroll, prudent} = D≠`, `prudent × dimcid = D`, `dupoc/maxconf/minconf × tftSim = C`
+   (`Tau/{Watch,Stored,ClosedWatch,Watch2,ClosedWatch2}.lean`, `Tau/Entangled/{Generic,DimcidPrudent}.lean`).
+   The six red-cell cross bits stay FLOORS (independent of the coding). App: the six VALUE divergences are
+   gone, the six `provenance` ones (red cell) remain; `tau.compare --zoo paper --source sprime`: 148 agree,
+   41 floor-agree, 6 recorded, 0 unexpected, 1 uncovered.
+   **ONE BIT OPEN — `dimcid × ebot` (table `D≠`).** `Tau/NeverFitsSys.lean` proves it is C at every budget
+   under the present coding (`dimcid_ebot_C`): τ(EBot)'s instance at DIMCID has a third watch on
+   `inst dimcid mirror`, a closed SYSTEM with a `.search k` member, and `codeTermMetaAbs` describes systems
+   verbatim (Phase 2c's design limit, needed for the literal member-slot equation). So the numeral `k` is back
+   inside that one stored template and the guard never fits. It is left UNSTATED; `#check_tau_rowsA` stays
+   plain. Decision pending: (α) let the abstraction descend into systems (a code-level `codeTermAbs`,
+   `descriptionsSys d k`, `sysCloseTemplate d k`, `Tau/Entangled` re-done — days) or state the bit as C and
+   record ONE value divergence (then 196/196 and `strict`).
+
    **Phase 4 contract.** `tau/def4_theorems.py`: `TAU_EXPORTS = {engine: tau_rows.json, sprime:
    sprime_tau_rows.json}`, `kernel_bits(source)`, a floor bit loads as the engine-side action with
    `provenance = floor_dichotomy`; `tau/matrix.py::_kernel_rows_for(source="sprime")` verifies rows

@@ -162,6 +162,12 @@ import ArithS.Tau.Columns
 import ArithS.Tau.Described
 import ArithS.Tau.Quine
 import ArithS.Tau.ClosedProbe
+import ArithS.Tau.Watch
+import ArithS.Tau.Stored
+import ArithS.Tau.ClosedWatch
+import ArithS.Tau.Watch2
+import ArithS.Tau.ClosedWatch2
+import ArithS.Tau.NeverFitsSys
 import ArithS.Tau.NeverFits
 import ArithS.Tau.Lint
 import ArithS.Tau.Rows.Coop
@@ -197,6 +203,8 @@ import ArithS.Tau.Entangled.CupodCimcic
 import ArithS.Tau.Entangled.DupocCupod
 import ArithS.Tau.Entangled.Mirror
 import ArithS.Tau.Entangled.EBotPrudent
+import ArithS.Tau.Entangled.Generic
+import ArithS.Tau.Entangled.DimcidPrudent
 import ArithS.Tour
 import ArithS.Core
 import ArithS.Frozen

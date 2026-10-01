@@ -1,4 +1,5 @@
 import ArithS.Tau.Quine
+import ArithS.Tau.ClosedWatch
 import ArithS.Tau.Entangled.DupocDupoc
 import ArithS.Tau.Entangled.DimcidDupoc
 import ArithS.Tau.Entangled.DupocCimcic
@@ -14,8 +15,11 @@ Dupoc: `.search k (probe (inst T .dupoc)) C D` (`Tau/Zoo.inst_dupoc_peel_*`). It
 `.search k (.plays .self .self C) C D` (`inst_dupoc_quine`), closed by bounded Löb on the bot-wrapped instance
 (`Tau/Quine.quine_found`). Engine twin: `Tau/Theorems/TauDupoc/Phase.lean` (`dupocRowSpec`).
 
-Slots stated here (`[coop, defect, dupoc, obot, dimcid, cimcic, maxconfidence, minconfidence]`): `coop` C (POS on
-the frozen cooperator, `col_dupoc_coop`), `defect` D (SND, `col_dupoc_defect`), the diagonal C (Löb), `obot` D (SND:
+Slots stated here (`[coop, defect, tftSim, dupoc, obot, dimcid, cimcic, maxconfidence, minconfidence]`): `coop` C (POS on
+the frozen cooperator, `col_dupoc_coop`), `defect` D (SND, `col_dupoc_defect`), `tftSim` C (Phase 3e: Dupoc's probe of
+τ(TFTSim)'s instance — a run-stage watch over Dupoc's own instance at the cooperator — is a TRUE closed probe of a
+budget-carrying watch; under budget abstraction the stored template is a constant and the watch is a `k̂`-tower, so
+the probe is a conditional `TAct`-theorem found by the `k̂`-chain, `Tau/ClosedWatch.dupoc_tftSim_C`), the diagonal C (Löb), `obot` D (SND:
 τ(OBot)'s instance at Dupoc defects — its second defection watch sees Dupoc's instance defect against the defector —
 so the probe is false); and the ENTANGLED slots (`.sys` systems on the member slots, `Tau/Entangled/`, Phase 3c):
 `dimcid` D (the DIMCID member defects by its self-fulfilling family, so Dupoc's probe is false — `ent_dupoc_dimcid`),
@@ -29,13 +33,6 @@ hypothesis's instance (true in ℕ: the partner's C runs through Dupoc's else-pl
 cell is a theorem: `Tau/Entangled/DupocCupod.lean`) and `prudent` (base `dich_PrudentBot_vs_DupocBot`), whose hinge
 is the Dupoc member's own probe in the bit's frame.
 
--- UNSTATED (decision pending — `SPRIME_SOURCE_OF_TRUTH.md` §3, the budget-snapshot obstruction): slot `.tftSim`
---   (C): τ(TFTSim)'s instance at Dupoc is `ite (sim (bot (inst dupoc coop)) …)`, which cooperates (POS), so the
---   probe is TRUE and must be FOUND; the probed program carries the budget `k` (the `.search k` leaf of
---   `inst dupoc coop`), so the box needs a `binNumeral k`-tower for the ite/sim watch over `pBot (SV g 0 k)` (the
---   `botT1`/`searchT1` builders plus NEW `iteT1`/`simT1`, with the canonical-code comparison of the watch against
---   its transposition above a threshold, the `nested_search_lt` pattern of `Cells/PrudentMirror.lean`) and the
---   `k̂`-chain `found_of_all_above` (truth needs the inner guard found, i.e. `k ≥ L`). Not built.
 -/
 
 namespace ArithS.Tau
@@ -100,12 +97,13 @@ theorem col_obot_dupoc : bitEventually .obot .dupoc .D := obotRowSpecA.slot (by 
 theorem dupoc_obot_D : bitEventually .dupoc .obot .D :=
   bitEventually.mono (fun k h ↦ dupocLike_D_of_probe_false_at (instCode_dupoc_obot k) rfl h) col_obot_dupoc
 
-/-- **τ(Dupoc)'s row in `S'`** — the eight theorem slots (four non-entangled, four entangled). -/
+/-- **τ(Dupoc)'s row in `S'`** — the nine theorem slots (five non-entangled, four entangled). -/
 @[tau_rowA]
 theorem dupocRowSpecA : RowSpecA .dupoc
-    [.coop, .defect, .dupoc, .obot, .dimcid, .cimcic, .maxconfidence, .minconfidence] dupocRowA :=
+    [.coop, .defect, .tftSim, .dupoc, .obot, .dimcid, .cimcic, .maxconfidence, .minconfidence] dupocRowA :=
   RowSpecA.cons col_dupoc_coop <|
   RowSpecA.cons (bitEventually.of_forall col_dupoc_defect) <|
+  RowSpecA.cons dupoc_tftSim_C <|
   RowSpecA.cons dupoc_quine_C <|
   RowSpecA.cons dupoc_obot_D <|
   RowSpecA.cons ent_dupoc_dimcid <|

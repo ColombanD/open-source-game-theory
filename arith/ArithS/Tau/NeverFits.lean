@@ -50,7 +50,9 @@ instances no longer have this shape and the obstruction does not apply to them. 
 theorems about the explicit code `pBot (pSearch k' (templateCode φ) p q)` (the pre-2026-10-01 searcher) on the
 code-level sentence `sentenceAtC`; the two tau-slot corollaries carry the hypothesis `instCode k A T = pSearch k
 (templateCode …) …`, which no compiled instance satisfies any more (the slots they decided — `cimcic × tftSim`,
-`dimcid × {tftSim, ebot, obot, dbot, cupodTroll}` — are re-proved with the table's values in Phase 3e).
+`dimcid × {tftSim, obot, dbot, cupodTroll}` — are re-proved with the table's values in Phase 3e,
+`Tau/ClosedWatch.lean`/`Tau/ClosedWatch2.lean`; `dimcid × ebot` is NOT: τ(EBot)'s instance freezes a closed SYSTEM,
+which budget abstraction does not enter, and the obstruction survives one level down — `Tau/NeverFitsSys.lean`).
 -/
 
 set_option linter.constructorNameAsVariable false

@@ -18,8 +18,7 @@ Dupoc-spec self-probers, `ent_maxconfidence_dupoc`/`ent_maxconfidence_minconfide
 is the native's own probe of the hypothesis's instance seeing it, not found ⇒ D — and the system floors `cupod` (the
 red cell's tau image, a floor in `S'`: `Tau/Entangled/DupocCupod.lean`) and `prudent` (base `dich_PrudentBot_vs_DupocBot`).
 
--- UNSTATED (decision pending — `SPRIME_SOURCE_OF_TRUTH.md` §3): slot `.tftSim` (C) — as `Rows/Dupoc.lean`'s (the same
---   probed instance shape, the budget-snapshot obstruction).
+`tftSim` C is Dupoc's `dupoc_tftSim_C` through the bridge (`Tau/ClosedWatch.maxconfidence_tftSim_C`, Phase 3e).
 -/
 
 namespace ArithS.Tau
@@ -73,12 +72,13 @@ theorem col_obot_maxconfidence : bitEventually .obot .maxconfidence .D := obotRo
 theorem maxconfidence_obot_D : bitEventually .maxconfidence .obot .D :=
   bitEventually.mono (fun k h ↦ dupocLike_D_of_probe_false_at (instCode_maxconfidence_obot k) rfl h) col_obot_maxconfidence
 
-/-- **MaxConfidenceBot's row in `S'`** — the eight theorem slots (Dupoc's: four non-entangled, four entangled). -/
+/-- **MaxConfidenceBot's row in `S'`** — the nine theorem slots (Dupoc's: five non-entangled, four entangled). -/
 @[tau_rowA]
 theorem maxconfidenceRowSpecA : RowSpecA .maxconfidence
-    [.coop, .defect, .dupoc, .obot, .dimcid, .cimcic, .maxconfidence, .minconfidence] maxconfidenceRowA :=
+    [.coop, .defect, .tftSim, .dupoc, .obot, .dimcid, .cimcic, .maxconfidence, .minconfidence] maxconfidenceRowA :=
   RowSpecA.cons col_maxconfidence_coop <|
   RowSpecA.cons (bitEventually.of_forall col_maxconfidence_defect) <|
+  RowSpecA.cons maxconfidence_tftSim_C <|
   RowSpecA.cons ent_maxconfidence_dupoc <|
   RowSpecA.cons maxconfidence_obot_D <|
   RowSpecA.cons ent_maxconfidence_dimcid <|

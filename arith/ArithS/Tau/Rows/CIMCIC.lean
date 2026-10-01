@@ -1,4 +1,5 @@
 import ArithS.Tau.Quine
+import ArithS.Tau.ClosedWatch
 import ArithS.Tau.Entangled.DupocCimcic
 import ArithS.Tau.Entangled.DimcidCimcic
 import ArithS.Tau.Entangled.CupodCimcic
@@ -15,11 +16,11 @@ its diagonal is `.impl (self plays self C) (self plays self C)`, a tautology (`i
 (`Tau/Quine.cimcic_quine_found`, the `S'` twin of `Pf.implRefl`). Engine twin: `Tau/Theorems/TauCIMCIC/Phase.lean`.
 
 Slots stated here (`[coop, defect, tftSim, dupoc, obot, dimcid, cimcic, maxconfidence, minconfidence]`): `coop` C (POS on the instance's own description,
-`Tau/Described.col_cimcic_coop`), `defect` D (self-refuting, `col_cimcic_defect`), `tftSim` **D — an `S'` FLIP of
-the engine's C that the Phase-3 table does NOT record**: τ(TFTSim)'s instance at CIMCIC carries the budget (through
-`inst cimcic coop = .search k …`), the guard names the instance itself (`.self`), so the guard sentence writes the
-instance's own description, whose stored-template numeral has more than `k` bits — the guard is longer than `k` and
-NEVER found (`Tau/NeverFits.cimcic_selfBot_D`); `obot` D — self-refuting on the instance: τ(OBot)'s instance at
+`Tau/Described.col_cimcic_coop`), `defect` D (self-refuting, `col_cimcic_defect`), `tftSim` C (Phase 3e,
+`Tau/ClosedWatch.cimcic_tftSim_C`: under budget abstraction the stored template is a constant, τ(TFTSim)'s instance
+at CIMCIC is a `k̂`-tower that copies CIMCIC's C at the cooperator, and the guard is a conditional `TAct`-theorem
+found by the `k̂`-chain; the D of the pre-abstraction coding, `Tau/NeverFits.cimcic_selfBot_D`, was an artefact of the
+stored template carrying the hypothesis's budget numeral); `obot` D — self-refuting on the instance: τ(OBot)'s instance at
 CIMCIC defects (its second watch sees CIMCIC's instance defect against the defector), so a proof of the guard would
 make the instance cooperate with it (antecedent true) while the consequent is false — the guard would be false,
 against soundness (`cimcic_obot_not_found`, `cimcic_defect_not_found`'s argument with a frame-generic play of the
@@ -42,7 +43,7 @@ namespace ArithS.Tau
 open PD PD.Tau
 
 /-- τ(CIMCIC)'s bit row — the table's values (`tftSim` C: the never-fits reading of 2026-10-01 morning was an
-artefact of the pre-abstraction coding; the slot is UNSTATED until Phase 3e re-proves it). -/
+artefact of the pre-abstraction coding; re-proved as C in Phase 3e, `Tau/ClosedWatch.lean`). -/
 def cimcicRowA : Tmpl → Action
   | .coop => .C | .defect => .D | .tftSim => .C | .dupoc => .C | .ebot => .D | .obot => .D | .dbot => .D
   | .cupodTroll => .D | .cupod => .D | .dimcid => .D | .cimcic => .C | .prudent => .D
@@ -139,9 +140,11 @@ theorem cimcic_obot_not_found {k : ℕ} (hco : bitPlays k .cimcic .coop .C) :
   obtain ⟨n, hn⟩ := obot_cimcic_D_frame hco
   exact absurd (EvalGraph.unique' hN' (hn _ _)) (by decide)
 
--- Phase 3e: slot `.tftSim` UNSTATED. Its previous proof (`cimcic_selfBot_D`, the never-fits obstruction of
--- `Tau/NeverFits.lean`) was an artefact of the pre-2026-10-01 coding; under budget abstraction the stored template of
--- `inst cimcic tftSim` is a constant and the table's value C is expected — to be re-proved in Phase 3e.
+/-- `cimcic × tftSim`: C (Phase 3e, `Tau/ClosedWatch.cimcic_tftSim_C`) — the consequent "τ(TFTSim)'s instance cooperates
+with me" holds in both readings (the watch copies CIMCIC's C at the cooperator), so the guard is a conditional
+`TAct`-theorem over the watch's `k̂`-tower, found by the `k̂`-chain. The D of the pre-abstraction coding
+(`Tau/NeverFits.cimcic_selfBot_D`) was an artefact of the stored template carrying the hypothesis's budget numeral. -/
+theorem cimcic_tftSim_C' : bitEventually .cimcic .tftSim .C := cimcic_tftSim_C
 
 /-- `cimcic × obot`: D (else-branch). -/
 theorem cimcic_obot_D : bitEventually .cimcic .obot .D := by
@@ -151,13 +154,13 @@ theorem cimcic_obot_D : bitEventually .cimcic .obot .D := by
   rw [progCode_bot_inst, instCode_cimcic_obot] at hn
   exact ⟨_, search_else_at _ hn (const_play 0 _ _ _) rfl⟩
 
-/-- **τ(CIMCIC)'s row in `S'`** — eight theorem slots (four non-entangled, four entangled); `tftSim` is
-UNSTATED pending Phase 3e. -/
+/-- **τ(CIMCIC)'s row in `S'`** — nine theorem slots (five non-entangled, four entangled). -/
 @[tau_rowA]
 theorem cimcicRowSpecA : RowSpecA .cimcic
-    [.coop, .defect, .dupoc, .obot, .dimcid, .cimcic, .maxconfidence, .minconfidence] cimcicRowA :=
+    [.coop, .defect, .tftSim, .dupoc, .obot, .dimcid, .cimcic, .maxconfidence, .minconfidence] cimcicRowA :=
   RowSpecA.cons col_cimcic_coop <|
   RowSpecA.cons (bitEventually.of_forall col_cimcic_defect) <|
+  RowSpecA.cons cimcic_tftSim_C <|
   RowSpecA.cons ent_cimcic_dupoc <|
   RowSpecA.cons cimcic_obot_D <|
   RowSpecA.cons ent_cimcic_dimcid <|

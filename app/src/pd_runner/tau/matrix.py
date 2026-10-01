@@ -728,12 +728,16 @@ def _kernel_rows_for(
     * a floor bit on a non-floor cell, or a theorem bit on a floor cell, RAISES even when
       the values agree: that can only mean the two `S'` exports disagree on which pairs
       are floors (regenerate both with `lake exe export_sprime_outcomes`);
-    * EXCEPT at the twelve RECORDED divergences (`def4_theorems.SPRIME_RECORDED_DIVERGENCES`,
-      2026-10-01: Def 3 ≢ Def 4 by theorem under the present coding — six values, six
-      floor bits on the red cell). A disagreement of exactly the recorded KIND at a
-      recorded pair does not raise; the kernel bit is DROPPED (the base cell — the table's
-      value — is played, so no number changes) and listed in `KernelRows.divergences` /
-      `TauMatrix.kernel_divergences`. Any other disagreement at those pairs still raises.
+    * EXCEPT at the RECORDED divergences (`def4_theorems.SPRIME_RECORDED_DIVERGENCES`,
+      2026-10-01: the six floor bits on the tau images of the red cell, a base theorem).
+      A disagreement of exactly the recorded KIND at a recorded pair does not raise; the
+      kernel bit is DROPPED (the base cell — the table's value — is played, so no number
+      changes) and listed in `KernelRows.divergences` / `TauMatrix.kernel_divergences`.
+      Any other disagreement at those pairs still raises.
+    * A recorded divergence that does NOT fire — the bit is stated and AGREES with the
+      proven cell in value and provenance — is STALE: a `StaleDivergenceWarning` names
+      every such pair (one warning per load), so the whitelist cannot outlive the Lean
+      fact it records (Phase 3e removed six entries this way).
 
     Deliberate behaviors, both sources:
 
@@ -756,6 +760,7 @@ def _kernel_rows_for(
         LEAN_SLOT,
         TEMPLATE_OF_BOT,
         kernel_row_bits,
+        StaleDivergenceWarning,
         kernel_row_provenance,
         recorded_divergence,
     )
@@ -770,6 +775,7 @@ def _kernel_rows_for(
     prov: dict[str, dict[str, str]] = {}
     mismatches: list[str] = []
     divergences: list[KernelDivergence] = []
+    stale: list[str] = []
     for b in bots:
         full = all_rows.get(b)
         if full is None:
@@ -814,6 +820,9 @@ def _kernel_rows_for(
                     f"{b} vs {h}: the kernel row states a THEOREM bit but the base cell "
                     f"({cell.theorem}) is a floor dichotomy"
                 )
+            elif rec is not None:
+                # stated, proven, and in agreement: the recorded divergence did not fire
+                stale.append(f"{b} vs {h} (recorded as a {rec.kind} divergence)")
             row[h] = bit
             row_prov[h] = bit_prov
         rows[b] = row
@@ -825,6 +834,18 @@ def _kernel_rows_for(
             f"kernel tau rows ({source}) disagree with the proven base cells — stale "
             f"row file (run `{exporter}`) or a real Def 3 ≢ Def 4 break:\n  "
             + "\n  ".join(mismatches)
+        )
+    if stale:
+        import warnings
+
+        warnings.warn(
+            f"recorded S' divergence(s) did not fire — the kernel row AGREES with the proven "
+            f"base cell at: {'; '.join(stale)}. Remove the stale entr"
+            f"{'y' if len(stale) == 1 else 'ies'} from "
+            f"`def4_theorems.SPRIME_RECORDED_DIVERGENCES` (or load the real "
+            f"`lake exe export_sprime_outcomes` row file, not a cell-derived sample).",
+            StaleDivergenceWarning,
+            stacklevel=2,
         )
     return KernelRows(rows, prov, tuple(divergences))
 
