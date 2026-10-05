@@ -2012,3 +2012,12 @@ loeb_DIMCID_vs_CupodBot
 loeb_DIMCID_vs_CupodBot_guards
 loeb_CIMCIC_vs_DupocBot
 loeb_CIMCIC_vs_DupocBot_guards
+lenBox_revalueTemplate_iff
+evalGraph_transposeCode_iff
+plays_transpose
+diverges_transpose
+outcomeAtA_transpose
+outcomeSpecA_transpose
+transposable_progCode
+plays_transpose_self
+opposite_of_plays_transpose

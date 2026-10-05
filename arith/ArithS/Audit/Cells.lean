@@ -3,6 +3,7 @@ import ArithS.Audit.RedCellUnsound
 import ArithS.Cells.SimSlot
 import ArithS.Cells.PrudentLoose
 import ArithS.Cells.DupocEngine
+import ArithS.Cells.Transposition
 import ArithS.Cells.DimcidEngine
 import ArithS.Cells.CimcicEngine
 import ArithS.Cells.JustEngine
@@ -1449,5 +1450,27 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 -- clause of the closed member reads exactly that sentence.
 #print axioms cfd_closed_guard_iff
 #print axioms evalGraph_cfdMember_closed_iff
+
+-- Cells/Transposition — the GENERAL transposition theorem: on every `Transposable` code (search nodes store
+-- seven-variable templates; vote nodes allowed, systems excluded) the evaluator commutes with τ at the same
+-- fuel, the box is τ-symmetric on EVERY code, and for fragment programs plays, divergence, `OutcomeAtA` and
+-- `OutcomeSpecA` at every regime transpose. The red-cell symmetry and Cupod × Cupod from Dupoc × Dupoc are
+-- one-line corollaries (the two `example`s closing the file).
+#print axioms lenBox_revalueTemplate_iff
+#print axioms lenBox_guardCodeB_transposeCode
+#print axioms Transposable.transpose
+#print axioms Transposable.subst
+#print axioms evalGraph_transposeCode
+#print axioms evalGraph_transposeCode_iff
+#print axioms plays_transposeCode_iff
+#print axioms diverges_transposeCode_iff
+#print axioms outcomeAtA_transposeCode_iff
+#print axioms transposable_progCode
+#print axioms plays_transpose
+#print axioms diverges_transpose
+#print axioms outcomeAtA_transpose
+#print axioms outcomeSpecA_transpose
+#print axioms plays_transpose_self
+#print axioms opposite_of_plays_transpose
 
 end ArithS

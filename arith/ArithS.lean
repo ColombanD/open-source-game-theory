@@ -106,6 +106,7 @@ import ArithS.Cells.Common.Families
 import ArithS.Cells.Common.Khat
 import ArithS.Cells.DupocMirror
 import ArithS.Cells.DupocEngine
+import ArithS.Cells.Transposition
 import ArithS.Cells.DimcidEngine
 import ArithS.Cells.CimcicEngine
 import ArithS.Cells.JustEngine

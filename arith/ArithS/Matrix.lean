@@ -9,6 +9,7 @@ import ArithS.Cells.DIMCID
 import ArithS.Cells.DimcidFlips
 import ArithS.Cells.DupocMirror
 import ArithS.Cells.DupocEngine
+import ArithS.Cells.Transposition
 import ArithS.Cells.DimcidEngine
 import ArithS.Cells.CimcicEngine
 import ArithS.Cells.JustEngine
