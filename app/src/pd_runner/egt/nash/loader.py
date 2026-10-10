@@ -86,4 +86,8 @@ def hash_payoff_matrix(payoff: PayoffMatrix) -> str:
     # every pre-switch artefact path stays valid.
     if payoff.cell_source != "engine":
         h.update(f"cell_source|{payoff.cell_source}\n".encode())
+    # Likewise the floor policy: the hinge-side branch of the floors is a different
+    # experiment even where the cells happen to coincide (2026-10-09).
+    if payoff.floor_policy != "engine_side":
+        h.update(f"floor_policy|{payoff.floor_policy}\n".encode())
     return h.hexdigest()

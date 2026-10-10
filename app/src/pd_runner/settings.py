@@ -225,13 +225,18 @@ def cost_usd(model: str, *, input_tokens: int, output_tokens: int,
 # never a theorem for one value). `engine_side` carries it as a labelled cell holding
 # the `¬A_k` branch — the engine's stipulation, now visible (provenance
 # `floor_dichotomy`); `restrict_zoo` treats floors as holes, so a zoo containing one
-# fails totality loudly.
+# fails totality loudly; `hinge_side` (2026-10-09, the ROBUSTNESS CHECK) carries the
+# OTHER branch — every box hypothesis of the dichotomy TRUE (`eval/sprime_floors.
+# HINGE_SIDE_PAIRS`, derived from the `dich_` statements), the mirror image of the
+# engine's stipulation — so an experiment run under both policies brackets what the
+# open consistency question can change. No kernel tau bit exists for that branch:
+# under `hinge_side` the `S'` floor bits are left unstated (base-cell fallback).
 
 CellSource = Literal["sprime", "engine"]
-FloorPolicy = Literal["engine_side", "restrict_zoo"]
+FloorPolicy = Literal["engine_side", "restrict_zoo", "hinge_side"]
 
 CELL_SOURCES: tuple[str, ...] = ("sprime", "engine")
-FLOOR_POLICIES: tuple[str, ...] = ("engine_side", "restrict_zoo")
+FLOOR_POLICIES: tuple[str, ...] = ("engine_side", "restrict_zoo", "hinge_side")
 
 
 def _env_choice(var: str, default: str, allowed: tuple[str, ...]) -> str:

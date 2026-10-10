@@ -169,6 +169,10 @@ class OutcomeTheorem:
     hinge: str = ""
     # Floors only: the hypothesis-free dichotomy theorem, `dich_<L>_vs_<R>`.
     dichotomy: str = ""
+    # Floors only: WHICH branch of the dichotomy `pair` is — `"engine_side"` (`¬A_k`, the
+    # exported value) or `"hinge_side"` (`A_k`, `sprime_floors.HINGE_SIDE_PAIRS`), i.e.
+    # the `FloorPolicy` the cell was read under. Empty for a theorem.
+    floor_branch: str = ""
     # `S'` only: the hand-template TWIN name(s) the exported statement was on before
     # `SPRIME_TWIN_BASE` aliased `left_bot`/`right_bot` to the engine bot (`"Just7"`,
     # or `"Just7, Dupoc"` when both sides were twins); `name` stays as exported.
@@ -291,8 +295,9 @@ def _theorems_from_export(
     theorems` turns an absent `S'` export into an error). A document with
     `"system": "sprime"` also carries `floors`: under `FloorPolicy.engine_side` they join
     the list as `provenance="floor_dichotomy"` cells holding the engine-side value; under
-    `restrict_zoo` they are dropped (holes). `floor_policy` is ignored for an engine
-    document, which has no floors.
+    `hinge_side` they join holding the OTHER branch (`sprime_floors.HINGE_SIDE_PAIRS`,
+    `floor_branch="hinge_side"`); under `restrict_zoo` they are dropped (holes).
+    `floor_policy` is ignored for an engine document, which has no floors.
     """
     if not export_file.exists():
         return []
@@ -314,7 +319,7 @@ def _theorems_from_export(
             budget_regime=c["budget_regime"], fuel_pad=c["fuel_pad"],
         )
         companions.setdefault(frozenset((c["left_bot"], c["right_bot"])), []).append(comp)
-    def row(t: dict, provenance: str) -> OutcomeTheorem:
+    def row(t: dict, provenance: str, floor_branch: str = "") -> OutcomeTheorem:
         pair = tuple(t["pair"]) if t["pair"] else None
         shape = "no_outcome" if pair is None else _SHAPE_MAP[t["budget_regime"]]
         return OutcomeTheorem(
@@ -334,15 +339,21 @@ def _theorems_from_export(
             provenance=provenance,
             hinge=t.get("hinge", ""),
             dichotomy=t.get("dichotomy", ""),
+            floor_branch=floor_branch,
         )
 
     out = [row(t, t.get("provenance") or default_provenance) for t in data["theorems"]]
-    if system == "sprime" and resolve_floor_policy(floor_policy) == "engine_side":
+    policy = resolve_floor_policy(floor_policy)
+    if system == "sprime" and policy in ("engine_side", "hinge_side"):
         for f in data.get("floors", []):
             if f["pair"] is None:
                 raise ValueError(
                     f"{export_file}: floor {f['name']} has no engine-side value")
-            out.append(row(f, "floor_dichotomy"))
+            if policy == "hinge_side":
+                from pd_runner.eval.sprime_floors import hinge_side_pair
+
+                f = {**f, "pair": list(hinge_side_pair(f.get("dichotomy", ""), f["name"]))}
+            out.append(row(f, "floor_dichotomy", floor_branch=policy))
     if system == "sprime":
         out = _alias_sprime_twins(out, export_file)
     return out
@@ -796,6 +807,10 @@ def engine_flips(
     engine = index_by_ordered_pair(_theorems_from_export(engine_file))
     flips: dict[tuple[str, str], OutcomeTheorem] = {}
     for t in theorems:
+        if t.is_floor:
+            # A floor is never a flip: engine-side it IS the engine's value, and
+            # hinge-side it differs by construction (the `‡` mark says which).
+            continue
         e = engine.get((t.left_bot, t.right_bot)) or engine.get((t.right_bot, t.left_bot))
         if e is None:
             continue
@@ -904,7 +919,7 @@ MATRIX_LEGEND: tuple[tuple[str, str], ...] = (
 _PROVENANCE_LABEL = {
     "engine": "engine S (`@[outcome]`)",
     "sprime": "PA-S' (`@[outcomeA]`)",
-    "floor_dichotomy": "PA-S' floor dichotomy (`@[floorA]`, engine-side value)",
+    "floor_dichotomy": "PA-S' floor dichotomy (`@[floorA]`)",
 }
 
 
@@ -947,9 +962,13 @@ def cell_note(t: OutcomeTheorem, row_bot: str, engine_flip: OutcomeTheorem | Non
         lines.append(f"Provenance: {_PROVENANCE_LABEL.get(t.provenance, t.provenance)}.")
     if t.is_floor:
         hinge = t.hinge if len(t.hinge) <= 120 else t.hinge[:117] + "…"
+        branch = ("this is the A_k branch (every floor guard provable within budget — "
+                  "FloorPolicy.hinge_side, the robustness check); ¬A_k → the engine's value"
+                  if t.floor_branch == "hinge_side" else
+                  "this is the ¬A_k branch (the engine's value); A_k → the other value")
         lines.append(
-            f"‡ floor dichotomy {t.dichotomy or '(unnamed)'}: this is the ¬A_k branch (the "
-            f"engine's value); A_k → the other value. Hinge A_k = {hinge or '(not exported)'} "
+            f"‡ floor dichotomy {t.dichotomy or '(unnamed)'}: {branch}. "
+            f"Hinge A_k = {hinge or '(not exported)'} "
             "— bounded consistency of TAct at k, open both ways (Pudlák)."
         )
     if engine_flip is not None:

@@ -17,3 +17,4 @@ report.html
 # pre-freeze EGT observations (retired zoos, pre-rename bot names).
 archive/
 analysis/
+analysis_*/

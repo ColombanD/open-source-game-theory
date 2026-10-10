@@ -125,6 +125,9 @@ class Cell:
     # The proof system the cells came from ("engine" for pre-2026-09-30 artefacts,
     # which predate the source switch) and how many base cells were S' floors.
     cell_source: str = "engine"
+    # The `S'` floor policy the run was made under (`PayoffMatrix.floor_policy`);
+    # pre-2026-10-09 artefacts carry none and are all engine-side.
+    floor_policy: str = "engine_side"
     n_floor_cells: int = 0
 
     @property
@@ -308,6 +311,7 @@ def load_sweep(out_root: Path) -> tuple[dict, list[Cell]]:
             stages=d.get("stages", {}),
             run_dir=run_dir,
             cell_source=d.get("cell_source") or "engine",
+            floor_policy=d.get("floor_policy") or "engine_side",
             n_floor_cells=int(d.get("n_floor_cells") or len(d.get("floor_cells") or ())),
         ))
 
@@ -1213,6 +1217,7 @@ def _no_such_sweep(zoo: str | None, family: str | None,
 def _resolve_sweep(
     out_root: Path, zoo: str | None, family: str | None,
     source: str | None = None,
+    floor_policy: str = "engine_side",
 ) -> tuple[str, str, list[tuple[str, str]], list[Cell], dict]:
     """Pick ONE (zoo, σ-family) sweep out of a shared artefact directory.
 
@@ -1263,16 +1268,25 @@ def _resolve_sweep(
             f"no {source!r} sweep for zoo={zoo!r}, family={family!r} under {out_root} — "
             f"cell sources present: {sources}")
     cells = [c for c in cells if c.cell_source == source]
+    # One floor policy per page: the hinge-side robustness runs (2026-10-09) share
+    # zoo/family/source with the headline runs and are rendered only on request.
+    policies = sorted({c.floor_policy for c in cells})
+    if floor_policy not in policies:
+        raise ValueError(
+            f"no {floor_policy!r} sweep for zoo={zoo!r}, family={family!r}, source={source!r} "
+            f"under {out_root} — floor policies present: {policies}")
+    cells = [c for c in cells if c.floor_policy == floor_policy]
 
     from pd_runner.egt.pipeline import sweep_summary_name
 
-    summary_path = Path(out_root) / sweep_summary_name(family)
+    summary_path = Path(out_root) / sweep_summary_name(family, floor_policy)
     sweep: dict = {}
     if summary_path.exists():
         candidate = json.loads(summary_path.read_text())
         if (candidate.get("zoo") == zoo
                 and (candidate.get("family") or "behavioral") == family
-                and (candidate.get("cell_source") or "engine") == source):
+                and (candidate.get("cell_source") or "engine") == source
+                and (candidate.get("floor_policy") or "engine_side") == floor_policy):
             sweep = candidate
     return zoo, family, combos, cells, sweep
 

@@ -271,9 +271,17 @@ into `submit_verdict`.
    (`PD_FLOOR_POLICY`, default `engine_side`) are threaded through every loader
    (`scan_outcome_theorems`/`build_outcome_matrix`, `load_tau_matrix`/`NamedZoo.load`, the EGT
    `sweep`, `?source=` on the API, `push_matrix`). A `S'` GENUINE FLOOR is carried as a
-   labelled cell (`provenance="floor_dichotomy"`, `‡`, engine-side value) or as a hole
-   (`restrict_zoo`, totality fails naming the pairs); a `≠` cell FLIPS the engine (all nine
-   in-paper flips are DIMCID's). Kernel tau rows load PER SOURCE (Phase 4, 2026-10-01):
+   labelled cell (`provenance="floor_dichotomy"`, `‡`, engine-side value), as a hole
+   (`restrict_zoo`, totality fails naming the pairs), or — **the ROBUSTNESS CHECK, `hinge_side`
+   (2026-10-09)** — as the OTHER branch of its dichotomy (every box hypothesis TRUE, the mirror of
+   the engine's stipulation; `eval/sprime_floors.HINGE_SIDE_PAIRS`, re-derived from the `dich_`
+   statements by `tests/test_floor_hinge_side.py`; `Cell.floor_branch`; floors are never `≠`
+   flips; the `S'` kernel floor bits are UNSTATED under it, so `is_kernel_backed` is False; run
+   dirs carry `_hinge_side_`, summaries `sweep_summary*_hinge_side.json`). Base-case verdict
+   (`EGT_FINDINGS_SPRIME.md` §7): on body at t=1 DupocBot stays uniquely stochastically stable at
+   strong selection (M≥50, β=1) but its share falls 87% → 65% at (100, 1) and TFT ties it
+   elsewhere; the dominant replicator support gains CupodTrollBot (basin 94% → 68%). All six paper tau sweeps re-run under `hinge_side` (2026-10-10, §9): the body F2′ picture is INTACT (lower shares, collapse one step earlier at α=0.3), twins/natives claims about PrudentBot FLIP; the natives hinge sweeps are Nash-free (`--stages ess,invasion,faces,replicator,moran`; hundreds of extreme NE per hinge-side 14-bot matrix); `pipeline.py --resume` reuses complete run dirs by fingerprint; `analysis.py [out_root] [floor_policy]` writes `analysis_hinge_side/`. A `≠` cell
+   FLIPS the engine (all nine in-paper flips are DIMCID's). Kernel tau rows load PER SOURCE (Phase 4, 2026-10-01):
    `tau_rows.json` on `engine`, `sprime_tau_rows.json` on `sprime` (`def4_theorems.TAU_EXPORTS`;
    the `S'` file = engine schema over the 14-template `PAPER_ORDER` + `floor_bits`, digest over
    rows ++ floor_bits), each VERIFIED against its own cells at load — a floor bit must sit on a
@@ -670,7 +678,12 @@ share one run directory (`generated/egt/runs/<zoo>_t<NNN>_a<NNN>_<hash>/`) and
 N=11 while a tournament costs milliseconds.
 
 **Zoos.** `--zoo` reuses the `tau.matrix` `ZOOS` registry, so a zoo added there
-appears in the tau card, the EGT card and every stage CLI at once. `critch8`
+appears in the tau card, the EGT card and every stage CLI at once. Two FLOOR-ROBUSTNESS
+control zoos since 2026-10-09 (`EGT_FINDINGS_SPRIME.md` §8.1): `body-dimcid` (9 — zero
+`S'`≠engine flips, so the floor policy is the ONLY difference between the systems; twin-free
+under both branches) and `nonprovers+dupoc` (7 — the six search-free bots + DupocBot, the
+minimal headline zoo; 2 floor pairs). WaryBot can be in no total `S'` roster (unproven
+cells) and no floor-free roster contains DupocBot. `critch8`
 (added 2026-08-10) is the standalone repo's original eight types, for
 reproducing its published analysis — but note it does NOT reproduce its
 numbers: that repo's hand-transcribed CSV disagrees with the Lean library on

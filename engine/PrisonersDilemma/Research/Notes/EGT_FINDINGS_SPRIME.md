@@ -227,3 +227,173 @@ the α = 1 knife edge; every §2 convention; the Limitations sentence on the Nas
 items of the engine's §7 remain open (`critch8` unswept under either source; tau-layer figures not
 regenerated under `S'`; finer-t robustness of the F3 coincidence — now more pressing, since the two
 markers already separate at grid resolution).
+
+## 8. Floor robustness — the HINGE side of the 26 dichotomies (base case, 2026-10-09)
+
+Every number above is conditional on `FloorPolicy.engine_side`: each `S'` floor cell holds the `¬A_k`
+branch of its dichotomy (the floor guard NOT provable within budget — the engine's `+k` stipulation).
+`A_k` is bounded consistency of `TAct` at `k ± c`, open both ways, so the other answer was never run.
+`FloorPolicy.hinge_side` (`settings.FLOOR_POLICIES`, `eval/sprime_floors.HINGE_SIDE_PAIRS`) carries the
+`A_k` branch — EVERY box hypothesis of the `dich_` statement true, the exact mirror of the engine side,
+so the two policies bracket every mixed world. The 26 values are re-derived from the Lean statements by
+`tests/test_floor_hinge_side.py`. Runs: `--ts 1.0 --source sprime --floor-policy hinge_side` on `body`
+(28 s) and `body+twins` (292 s); artefacts `runs/<zoo>_sprime_hinge_side_t100_a{000,030}_*`,
+summaries `sweep_summary_hinge_side.json`. Base case only (t = 1); the tau sweeps are NOT re-run (the
+`S'` kernel floor bits state only the engine-side half, so under `hinge_side` they are unstated and
+`is_kernel_backed` is False — a hinge-side sweep would play from cells, honestly labelled).
+
+**What flips on the body zoo (4 pairs, 8 ordered cells).** DupocBot × {DBot, EBot, CupodTrollBot}:
+(D, C) → (C, C) — the Löbian cooperator stops EXPLOITING the three else-players (payoff 3 → 2 for Dupoc,
+−1 → 2 for them); CupodBot × OBot: (C, D) → (D, D) — the defection detector fires. DupocBot's row loses
+three units of T; nothing else moves (the payoff matrices are in `ess/payoff_matrix_numeric.csv`).
+
+**Body, t = 1, α = 0.3 (engine side | hinge side).**
+
+| statistic | engine side | hinge side |
+|---|---|---|
+| pure ESS | 0 | 0 |
+| strict / weak invasion edges | 28 / 61 | 25 / 65 |
+| SCCs (terminal) | 4 (the same 7-member terminal SCC) | 4 (same) |
+| simple cycles | 24 | 22 |
+| stable faces / supports | 5 / 1013 (same five support ids) | 5 / 1013 |
+| extreme NE / components | 33 / 3 | 56 / 5 |
+| replicator dominant support (basin) | {Dup, Coop, TFT} (94%) | {Dup, TFT, Coop, CupodTroll} (68%); {Dup} 9.5%; {Dup, TFT} 7.5%; **{DIMCID, Def, OBot} 5%** |
+| Moran, DupocBot share, SS set, (M, β) = (10, 1) | 58.5%, {Dup} | 32.5%, {Dup, TFT} |
+| (50, 1) | 80.5%, {Dup} | 54.0%, {Dup} |
+| (100, 0.1) | 65.0%, {Dup} | 36.1%, {Dup, TFT} |
+| (100, 1) | **87.1%, {Dup}** | **64.7%, {Dup}** |
+| SS set = {Dup} alone | 6 / 9 points | 2 / 9 points ((50, 1), (100, 1)); {Dup, TFT} at 5; none at (M, 0.01) |
+
+**Verdict (body).** The headline SURVIVES in its strong-selection form and WEAKENS everywhere else:
+DupocBot is still the unique stochastically stable type at (50, 1) and (100, 1) and its share still
+rises with selection (10.6% → 64.7% along the diagonal, was 11.2% → 87.1%), but TitForTatBot ties it
+at every weaker-selection point where it used to stand alone, the dominant replicator basin drops from
+94% to 68% and admits CupodTrollBot, and a small defector basin appears. The mechanism is exactly the
+flipped cells: at the hinge side DupocBot forgoes the exploitation payoff against the three
+else-players, and TFT — which already played (C, C) with them — closes the gap. The component count
+(3 → 5) and vertex count (33 → 56) move; the stable-face count and the terminal SCC do not. At α = 0
+(degenerate) the two branches are byte-identical.
+
+**Body+twins, t = 1, α = 0.3 (13 floor pairs, 25 ordered cells flip; PrudentBot's floors all
+become (C, C) except Cupod × Prudent → (D, D)).** The picture CHANGES: PrudentBot — a DefectBot
+payoff twin on the engine side — becomes a Löbian cooperator that additionally defects on CooperateBot,
+and it enters EVERY stochastically stable set at β ≥ 0.1 ({Prud} alone at (10, 0.1) and (100, 0.01);
+{Prud, Dup, CIMCIC} at the five β ≥ 0.1 points with M ≥ 10, β ≥ 1 or M ≥ 50). DupocBot's share at
+(100, 1) falls 45.6% → 20.5%; the dominant replicator support becomes {Prud, Dup, CIMCIC, EBot} (44%)
+with {Dup, CIMCIC, TFT, Coop, CupodTroll} second (35%), against a 98% {CIMCIC, Dup, TFT, Coop} basin on
+the engine side. The twin structure dissolves: {CIMCIC, Dup} and {DIMCID, Def, Prud} on the engine side
+become just {DIMCID, Def} on the hinge side (`behavioral_twins`). Extreme NE 100 → 116 (2 components
+either way), stable faces 5 → 5 (same supports), strict edges 37 → 30.
+
+**What this means for the paper.** (i) The body-zoo headline ("DupocBot uniquely stochastically stable
+at full transparency, share rising with selection") holds under BOTH answers to the consistency question
+at strong selection, so it can be stated unconditionally at (M ≥ 50, β = 1) — but the 87% figure and the
+6/9 robustness count are engine-side numbers and must be labelled as such; the hinge-side bracket is
+65% and 2/9. (ii) Any claim involving PrudentBot (the twins zoo) is NOT robust: whether PrudentBot is
+DefectBot's twin or the dominant Löbian cooperator is exactly the floor question. (iii) The floors are
+not a nuisance parameter: on the hinge side the Löbian searchers are MORE cooperative (they stop
+exploiting else-players) and LESS fit. Open: the tau sweeps under `hinge_side`; `critch8` (3 floors —
+note that on the hinge side CupodBot and DupocBot become behavioral twins there).
+
+### 8.1 Two control zoos at t = 1 (2026-10-09, `ZOOS["body-dimcid"]`, `ZOOS["nonprovers+dupoc"]`)
+
+Zoo facts that fixed the choice (`tau/matrix.py`, the registry comments): WaryBot has unproven `S'`
+cells, so no roster containing it is total; MirrorBot's self-play is "N"; and the largest floor-free
+rosters (10 bots) never contain DupocBot — a floor-free headline zoo does not exist. The next best thing
+isolates the floor question:
+
+* **body−DIMCID (9)** — the body zoo without the one bot that carries every `S'` ≠ engine flip. Zero
+  flips, so PA-`S'` and the engine AGREE on every non-floor cell and the floor policy is the ONLY
+  difference between the two systems on this roster. Twin-free under both policies. Four floor pairs.
+* **nonprovers+dupoc (7)** — the six search-free bots plus DupocBot: the minimal zoo in which the
+  headline can be stated. Two floor pairs (DBot×Dupoc, Dupoc×EBot), zero flips, no twins.
+
+Both run at t = 1 under both policies (`runs/{body-dimcid,nonprovers+dupoc}_sprime[_hinge_side]_t100_*`):
+
+| zoo, t = 1, α = 0.3 | engine side | hinge side |
+|---|---|---|
+| body−DIMCID: DupocBot share at (100, 1), SS set | 88.4%, {Dup} | 64.3%, {Dup} |
+| body−DIMCID: points with {Dup} alone | 8 / 9 | 3 / 9 ({Dup, TFT} at 4, none at (M, 0.01)) |
+| body−DIMCID: dominant basin | {Dup, Coop, TFT} 95% | {Dup, TFT, Coop, CupodTroll} 67%; {Def, OBot} 8.5% |
+| body−DIMCID: extreme NE / components, stable faces, SCCs | 21 / 3, 5, 3 | 32 / 5, 5, 3 |
+| nonprovers+dupoc: DupocBot share at (100, 1), SS set | 85.8%, {Dup} | 70.9%, {Dup} |
+| nonprovers+dupoc: points with {Dup} alone | 8 / 9 | 5 / 9 (**{TFT} at (100, 0.01)**, none at 3) |
+| nonprovers+dupoc: dominant basin | {Dup, Coop, TFT} 82% | {Dup, TFT, Coop} 65%; {Def, OBot} 9.5% |
+| nonprovers+dupoc: extreme NE / components, stable faces, SCCs | 21 / 3, 2, 3 | 16 / 5, 2, 3 |
+
+**Reading.** (i) Removing DIMCID changes nothing qualitative on either branch (88.4% vs body's 87.1%;
+64.3% vs 64.7%): DIMCID is DefectBot's payoff twin and the flips it carries are inert for the
+headline, so the body-zoo numbers are not a DIMCID artefact. (ii) On the minimal zoo the headline is at
+its MOST robust — DupocBot alone is stochastically stable at 5 of 9 points on the hinge side and keeps
+71% at strong selection — but even here one point ((100, 0.01), weak selection) hands the sole stable
+slot to TitForTat. (iii) Across all four zoos the hinge-side pattern is the same: the three else-players
+DupocBot stops exploiting pull a {DefectBot, OBot} (or {DIMCID, DefectBot, OBot}) basin of 5–10% into
+existence, the dominant cooperative basin loses 15–30 points, and TitForTat — which already cooperated
+with those else-players — ties the Löbian cooperator at weak selection. The strong-selection claim
+(M ≥ 50, β = 1: DupocBot uniquely stochastically stable) holds on every zoo under BOTH branches.
+
+## 9. The six paper sweeps under the HINGE side (2026-10-09/10)
+
+The same six `(t, α)` sweeps as §1 (6×6 grid, default α list) re-run with `--floor-policy
+hinge_side --source sprime`: body × {behavioral, syntactic}, body+twins × {behavioral, syntactic},
+body+twins+natives × {behavioral, epsilon}. Artefacts: `runs/<zoo>_sprime_hinge_side_[<family>_]t…`,
+`sweep_summary[_<family>]_hinge_side.json`, and the tidy table / phase maps / family diffs under
+`analysis_hinge_side/` (`python -m pd_runner.egt.analysis generated/egt hinge_side`; the headline tables
+under `analysis/` are engine-side only — `load_run_summaries` filters by policy). Under `hinge_side` the
+tau players read the `S'` kernel row bits for theorem slots and fall back to the (hinge-side) base cells
+for floor slots, whose kernel bits are unstated (§8). **The two natives sweeps were run WITHOUT the Nash
+stage** (`--stages ess,invasion,faces,replicator,moran`, `--resume`): hinge-side 14-bot matrices carry
+hundreds of extreme NE (356 at t = 1 against the engine side's dozens) and the exact enumeration took
+20–30 min per matrix — ~14 h for the pair — while the natives zoo exists for the Moran-based aggregator
+ablation (F5–F7), which does not read Nash counts. Their `n_extreme_ne`/`n_ne_components` are therefore
+empty in `analysis_hinge_side/tidy.csv`. Wall-clock: body 347 s / 198 s, twins 2110 s / 2507 s, natives
+1068 s / 30 s (Nash-free). `pipeline.py --resume` (new) reuses a complete run directory of the same
+fingerprint, so an interrupted sweep restarts where it stopped.
+
+**Grid points where the stochastically stable set (M = 100, β = 1) changes** (of 36; the dominant
+replicator support changes at ≥ 23/36 everywhere, mostly by CupodTrollBot or EBot joining it):
+
+| zoo / family | SS set differs | DupocBot in the SS set down to t (engine → hinge), per α 0.3 / 0.45 / 0.62 / 0.8 |
+|---|---|---|
+| body / behavioral | 6 / 36 | 0.0 / 0.2 / 0.2 / 0.8 → 0.2 / 0.2 / 0.2 / 0.8 (at t ≤ 0.4, α = 0.3 CupodBot joins: Cup+Dup) |
+| body / syntactic | 8 / 36 | 0.2 / 0.0 / 0.2 / 0.8 → 0.6 / 0.4 / 0.2 / 0.6 |
+| body+twins / behavioral | 24 / 36 | 0.2 / 0.0 / 0.4 / 0.2 → 0.2 / 0.2 / 0.4 / 0.6 — PrudentBot in EVERY set with DupocBot |
+| body+twins / syntactic | 22 / 36 | 0.2 / 0.0 / 0.4 / 0.8 → 0.6 / 0.4 / 0.4 / 0.8 — same |
+| natives / behavioral | 22 / 36 | 0.8 everywhere → 0.8 / 1.0 / 1.0 / 1.0 — PrudentBot alone owns much of t ∈ [0.4, 0.8] |
+| natives / epsilon | 21 / 36 | 0.2 / 0.4 / 0.4 / 0.8 → 0.4 / 0.4 / 0.4 / 0.8 — the Löbian tie gains PrudentBot, the Max cells stand |
+
+**Reading, zoo by zoo.**
+
+* **Body (both families).** The F2′ picture is INTACT: DupocBot is the unique stochastically stable type
+  on all of t ∈ [0.6, 1] × α ∈ {0.3, 0.45, 0.62}, the α = 0.8 column is TitForTat's at t ∈ {0.6, 0.4}
+  (behavioral) exactly as on the engine side, and α = 1 dies below t = 1. Its share is lower everywhere
+  on the cooperative plateau (0.647 vs 0.871 at every point where it stands alone), and the collapse
+  moves UP one or two grid steps at low caution: on behavioral, α = 0.3 ends at t = 0 in DIM+Def+OB
+  instead of Dup; on syntactic, α = 0.3 hands over to DIM+Def at t = 0.4 (engine: Dup through t = 0.2)
+  and α = 0.8 keeps Dup at t = 0.6 (engine: DIM+Def). The t = 0 ties LOSE DupocBot: {DIM, Def, OB} at
+  α ∈ {0.3, 0.45} (engine: Dup at (0, 0.3), DIM+Def+Dup+OB at (0, 0.45)). Net: the hinge side makes the
+  Löbian cooperator less fit at every transparency, but the critical-transparency statement — Löbian
+  cooperation needs t ≳ 0.4–0.6 and collapses into defector ties at t = 0 — is the same under both
+  answers to the consistency question. F3′'s saturation statement should be re-read with
+  `realized_coop` (not recomputed here).
+* **Body+twins (both families).** NOT robust, as at t = 1 (§8): PrudentBot sits in every stable set that
+  contains DupocBot and takes the slot alone at (0.6, 0.8) syntactic, (0.4, 0.8)/(0.6, 0.8) behavioral;
+  CupodBot joins at low caution and low t. The twins zoo's cross-family confusion-structure comparison
+  (F4′) still runs — the behavioral vs syntactic disagreement count on the hinge side is in
+  `analysis_hinge_side/family_diffs.md` — but any sentence naming PrudentBot is floor-conditional.
+* **Natives.** On the engine side the four-way Löbian tie {CIM, Dup, Max, Min} holds at t ∈ {1, 0.8} on
+  behavioral and down to t = 0.6/0.4 on epsilon; on the hinge side it is a FIVE-way tie with PrudentBot at
+  t = 1 (0.8 and 0.6 too on epsilon), and on behavioral PrudentBot ALONE is stochastically stable over
+  most of t ∈ [0.4, 0.8] — the aggregator ablation's Max cells ((0.4, 0.62), (0.4, 0.8), (0.2, 0.45),
+  (0.2, 0.62) behavioral; (0.6, 0.8), (0.2, 0.45), (0.2, 0.62) epsilon) SURVIVE, so F7′'s "ambiguity
+  aversion keeps a Löbian identity alive one step past the sum" stands under both branches, while F5′'s
+  Max band and F6′'s class-level robustness counts are engine-side numbers (the Nash-free run cannot
+  refresh the vertex counts).
+
+**One-sentence verdict for the paper.** Everything claimed about DupocBot on the body zoo — unique
+stochastic stability at full and high transparency, rising with selection, collapsing to defector ties
+at t = 0 — holds under both answers to the bounded-consistency question, with lower shares (≈ 0.65 vs
+0.87 on the plateau) and a collapse one grid step earlier at low caution on the hinge side; everything
+claimed about PrudentBot (twins and natives zoos) is a statement about the engine's `+k` stipulation and
+flips on the other branch. Open: the `realized_coop`/static-ceiling re-read (F3′) on the hinge side;
+Nash counts for the hinge-side natives matrices; `critch8` under either branch.

@@ -17,7 +17,16 @@ ledgers: `ROUTE_B_CENSUS.md` (which cell is what in `S'`), `TAUBOTS.md` (the tau
    (Pudlák's linear-regime question, open both ways). Nothing will "prove" a floor; the app carries it as a
    cell with **provenance `floor_dichotomy`** and an explicit **`FloorPolicy`**:
    * `engine_side` (default): the cell takes the `¬A_k` value — the engine's stipulation, now labelled;
-   * `restrict_zoo`: floors are holes; a zoo containing one fails totality loudly.
+   * `restrict_zoo`: floors are holes; a zoo containing one fails totality loudly;
+   * `hinge_side` (2026-10-09, the ROBUSTNESS CHECK): the cell takes the `A_k` branch — every box
+     hypothesis of the `dich_` statement TRUE (the outer hinge and, in the nested cells, the partner's
+     guard too), the exact mirror of the engine side, so the two policies bracket every mixed world.
+     The 26 values live in `eval/sprime_floors.HINGE_SIDE_PAIRS` and `tests/test_floor_hinge_side.py`
+     re-derives them from the Lean statements `Outcome/Floors.lean` cites (and checks the all-false
+     branch IS the exported engine pair). No kernel tau bit exists for that branch (the row file states
+     only the engine-side half of a floor slot), so under `hinge_side` floor bits are UNSTATED, coverage
+     drops and `is_kernel_backed` is False — honest provenance, not a defect. A floor is never counted
+     as a `≠` flip under either policy. Results: `EGT_FINDINGS_SPRIME.md` §7.
    Never a stipulation that shadows a theorem (the existing loader guard stays).
 3. **DIMCID stays in the body zoo** with its `S'` row. Consequence to own in the paper: it is now a behavioral
    twin of DefectBot, so the body zoo's "twin-free, behavioral σ-scale spans [0, 1]" property is gone; the
@@ -73,10 +82,12 @@ The engine's schema, so the Python loader is shared, plus `system`, `provenance`
 ### 1.3 Python (`app/src/pd_runner/`)
 
 * `settings.py`: `CELL_SOURCE = PD_CELL_SOURCE ∈ {sprime, engine}` (default `sprime`);
-  `FLOOR_POLICY = PD_FLOOR_POLICY ∈ {engine_side, restrict_zoo}` (default `engine_side`).
+  `FLOOR_POLICY = PD_FLOOR_POLICY ∈ {engine_side, restrict_zoo, hinge_side}` (default `engine_side`).
 * `eval/outcome_matrix.py`: `CellSource`; one export file per source; `OutcomeTheorem.provenance ∈
   {engine, sprime, floor_dichotomy}` + `hinge`; `scan_outcome_theorems(source=None, floor_policy=None)`
-  (floors join the cell list under `engine_side`, are dropped under `restrict_zoo`);
+  (floors join the cell list under `engine_side`, join it with the OTHER branch and
+  `floor_branch="hinge_side"` under `hinge_side` — `eval/sprime_floors.py` — and are dropped under
+  `restrict_zoo`);
   `build_outcome_matrix(source=…)` with two new legend marks — floor, and "flips the engine";
   `export_staleness`/`refresh_export` per source (`arith/` + `lake exe export_sprime_outcomes`);
   `diff_sources()` → the engine-vs-`S'` report (`python -m pd_runner.eval.source_diff`, writes
@@ -85,8 +96,10 @@ The engine's schema, so the Python loader is shared, plus `system`, `provenance`
   `TauMatrix.source`, `.floor_cells`; kernel tau rows are loaded ONLY for `source == engine` until Phase 4
   ships `sprime_tau_rows.json` (`is_kernel_backed` is False on `sprime`, documented, never silently wrong:
   the engine's rows DISAGREE with `S'` at the DIMCID cells and the verifier would raise); `NamedZoo.load(source)`.
-* `egt/ingest.py` / `pipeline.py`: `cell_source` + `floor_cells` in every `PayoffMatrix`/`assumptions.json`;
-  the run-directory hash covers the source so engine and `S'` runs never share a directory.
+* `egt/ingest.py` / `pipeline.py`: `cell_source` + `floor_cells` + `floor_policy` in every
+  `PayoffMatrix`/`assumptions.json`/`summary.json`; the run-directory hash covers the source AND the floor
+  policy so engine, `S'` and hinge-side runs never share a directory (`<zoo>_sprime_hinge_side_t…`,
+  `sweep_summary[_<family>]_hinge_side.json`).
 * `tau/sweep.py`, `tau/compare.py`, `api/main.py` (`?source=`), `services/sheets.py` (worksheet
   `Auto Matrix (S')` for `sprime`, the old tab for `engine`), the matrix card in `api/static/index.html`.
 * Tests (`tests/test_cell_source.py`): engine parity (matrix rows byte-identical to the pre-switch output);

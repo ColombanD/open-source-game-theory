@@ -140,6 +140,10 @@ class PayoffMatrix:
     # `stipulated_cells` it is reported, unlike them it does not make the matrix
     # conditional: a floor is a theorem (the `¬A_k` branch), labelled.
     floor_cells: tuple[ActionPair, ...] = ()
+    # WHICH branch the floor cells hold (`settings.FloorPolicy`): "engine_side" (`¬A_k`,
+    # the default) or "hinge_side" (`A_k`, the robustness check). Part of the run's
+    # identity (`nash.loader.hash_payoff_matrix`) and of every provenance block.
+    floor_policy: str = "engine_side"
 
     def __len__(self) -> int:
         return len(self.bots)
@@ -160,6 +164,7 @@ class PayoffMatrix:
             "cell_source": self.cell_source,
             "floor_cells": [list(p) for p in self.floor_cells],
             "n_floor_cells": len(self.floor_cells),
+            "floor_policy": self.floor_policy,
             "zoo": self.zoo,
             "bots": list(self.bots),
             "n_types": len(self.bots),
@@ -216,6 +221,7 @@ def payoff_matrix_from_cells(
     zoo: str | None = None,
     cell_source: str = "engine",
     floor_cells: Sequence[ActionPair] = (),
+    floor_policy: str = "engine_side",
 ) -> PayoffMatrix:
     """Action-pair cells -> `PayoffMatrix`. The primitive both loaders call.
 
@@ -283,6 +289,7 @@ def payoff_matrix_from_cells(
         zoo=zoo,
         cell_source=cell_source,
         floor_cells=tuple(p for p in floor_cells if p[0] in kept and p[1] in kept),
+        floor_policy=floor_policy,
     )
 
 
@@ -323,6 +330,7 @@ def payoff_matrix_from_tau_matrix(
         zoo=zoo,
         cell_source=matrix.source,
         floor_cells=matrix.floor_cells,
+        floor_policy=matrix.floor_policy,
     )
 
 
@@ -338,6 +346,7 @@ def payoff_matrix_from_tournament(
     zoo: str | None = None,
     cell_source: str | None = None,
     floor_cells: Sequence[ActionPair] | None = None,
+    floor_policy: str | None = None,
 ) -> PayoffMatrix:
     """A tau tournament at fixed `(t, α)` -> `A`. The `(t, α)` entry point.
 
@@ -354,6 +363,8 @@ def payoff_matrix_from_tournament(
         cell_source = getattr(result, "cell_source", "engine")
     if floor_cells is None:
         floor_cells = getattr(result, "floor_cells", ())
+    if floor_policy is None:
+        floor_policy = getattr(result, "floor_policy", "engine_side")
     if bots is None:
         seen: list[str] = []
         for row, _ in result.cells:
@@ -375,4 +386,5 @@ def payoff_matrix_from_tournament(
         zoo=zoo,
         cell_source=cell_source,
         floor_cells=floor_cells,
+        floor_policy=floor_policy,
     )

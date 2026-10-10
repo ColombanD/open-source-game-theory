@@ -53,16 +53,21 @@ def _short(bots: list[str]) -> str:
     return "+".join(ABBREV.get(b, b) for b in sorted(bots)) if bots else "—"
 
 
-def load_tidy(out_root: Path = DEFAULT_OUT_ROOT) -> pd.DataFrame:
-    """One row per (zoo, family, t, α) grid point, headline metrics flattened."""
+def load_tidy(out_root: Path = DEFAULT_OUT_ROOT,
+              floor_policy: str = "engine_side") -> pd.DataFrame:
+    """One row per (zoo, family, t, α) grid point, headline metrics flattened.
+
+    `floor_policy` selects the runs of one `S'` floor policy (`integrity.
+    load_run_summaries`); the hinge-side robustness runs are a separate table."""
     rows: list[dict] = []
-    for r in load_run_summaries(out_root):
+    for r in load_run_summaries(out_root, floor_policy=floor_policy):
         st = r.get("stages") or {}
         faces_by_class = (st.get("faces") or {}).get("by_class") or {}
         moran_head = (st.get("moran") or {}).get("headline") or {}
         base = {
             "zoo": r["zoo"],
             "family": r["family"],
+            "floor_policy": r["floor_policy"],
             "fingerprint": r["fingerprint"],
             "run": r["run"],
             "n_types": r.get("n_types"),
@@ -138,9 +143,12 @@ def family_diffs(df: pd.DataFrame) -> str:
 
 
 def main() -> int:
+    # `python -m pd_runner.egt.analysis [out_root] [floor_policy]` — the second
+    # argument selects the hinge-side runs (`analysis_hinge_side/`), 2026-10-09.
     out_root = Path(sys.argv[1]) if len(sys.argv) > 1 else DEFAULT_OUT_ROOT
-    df = load_tidy(out_root)
-    dest = out_root / "analysis"
+    floor_policy = sys.argv[2] if len(sys.argv) > 2 else "engine_side"
+    df = load_tidy(out_root, floor_policy=floor_policy)
+    dest = out_root / ("analysis" if floor_policy == "engine_side" else f"analysis_{floor_policy}")
     dest.mkdir(parents=True, exist_ok=True)
 
     df.to_csv(dest / "tidy.csv", index=False)

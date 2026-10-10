@@ -201,6 +201,32 @@ PAPER_NATIVES_SUB_ZOO: tuple[str, ...] = (
 # since 2026-08-20 (`outcome_DupocBot_vs_CupodBot`, the τ-transposition
 # route), with the value the standalone repo had imputed; this zoo is now
 # fully proven with no stipulations.
+# ---------------------------------------------------------------------------
+# Two FLOOR-ROBUSTNESS zoos (2026-10-09, `FloorPolicy.hinge_side`,
+# `EGT_FINDINGS_SPRIME.md` §8–9). Facts that fixed them: WaryBot has unproven
+# `S'` cells (no roster with it is total), MirrorBot's self-play is "N", and no
+# floor-free roster contains DupocBot — so a floor-free HEADLINE zoo does not
+# exist, and the next best thing is to isolate the floor effect.
+#
+# * BODY−DIMCID (9): the body zoo without DIMCID, the bot that carries EVERY
+#   `S'` ≠ engine flip. Zero flips ⇒ PA-S' and the engine agree on every
+#   non-floor cell, so the two floor policies are the ONLY difference between
+#   the engine's experiment and this one. Twin-free under both policies.
+# * NONPROVERS+DUPOC (7): the six search-free bots plus the one Löbian
+#   cooperator — the minimal zoo in which the headline can be stated and
+#   bracketed. Two floor pairs (DBot×Dupoc, Dupoc×EBot), zero flips, twin-free.
+PAPER_BODY_NO_DIMCID_SUB_ZOO: tuple[str, ...] = tuple(
+    b for b in PAPER_BODY_SUB_ZOO if b != "DIMCID")
+NONPROVERS_DUPOC_SUB_ZOO: tuple[str, ...] = (
+    "CooperateBot",
+    "DBot",
+    "DefectBot",
+    "DupocBot",
+    "EBot",
+    "OBot",
+    "TitForTatBot",
+)
+
 CRITCH8_SUB_ZOO: tuple[str, ...] = (
     "CooperateBot",
     "CupodBot",
@@ -404,6 +430,31 @@ ZOOS: dict[str, NamedZoo] = {
         bots=PAPER_NATIVES_SUB_ZOO,
         stipulations={},
     ),
+    "body-dimcid": NamedZoo(
+        key="body-dimcid",
+        label="body − DIMCID (9 bots, floor-robustness control)",
+        description=(
+            "The body zoo without DIMCID, the bot carrying every S'-vs-engine "
+            "flip. With zero flips, the floor policy is the ONLY difference "
+            "between the engine's cells and PA-S''s on this roster, so the "
+            "engine_side/hinge_side pair isolates what the open consistency "
+            "question can change. Twin-free under both policies."
+        ),
+        bots=PAPER_BODY_NO_DIMCID_SUB_ZOO,
+        stipulations={},
+    ),
+    "nonprovers+dupoc": NamedZoo(
+        key="nonprovers+dupoc",
+        label="non-provers + DupocBot (7 bots, minimal headline zoo)",
+        description=(
+            "The six search-free bots (CooperateBot, DefectBot, TitForTatBot, "
+            "DBot, EBot, OBot) plus DupocBot: the smallest zoo in which the "
+            "Löbian-cooperator headline can be stated. Two floor pairs "
+            "(DBot×Dupoc, Dupoc×EBot), zero flips, no twins."
+        ),
+        bots=NONPROVERS_DUPOC_SUB_ZOO,
+        stipulations={},
+    ),
     "critch8": NamedZoo(
         key="critch8",
         label="critch8 (8 bots, the standalone-repo zoo)",
@@ -496,9 +547,12 @@ class Cell:
     # dichotomy, a cell only under FloorPolicy.engine_side). A STIPULATED cell is
     # "stipulated" and a replay-zoo override "contradicted": proven by no system.
     provenance: str = "engine"
-    # Floors only: the hinge `A_k` (pretty text) this cell's value is the `¬A_k`
-    # branch of — bounded consistency of TAct at k.
+    # Floors only: the hinge `A_k` (pretty text) this cell's value is a branch of —
+    # bounded consistency of TAct at k.
     hinge: str = ""
+    # Floors only: which branch — "engine_side" (`¬A_k`) or "hinge_side" (`A_k`, the
+    # robustness check) — i.e. the `FloorPolicy` the matrix was loaded under.
+    floor_branch: str = ""
 
     @property
     def is_floor(self) -> bool:
@@ -732,6 +786,7 @@ def _kernel_rows_for(
     cells: dict[tuple[str, str], Cell],
     *,
     source: str = "engine",
+    floor_policy: str = "engine_side",
 ) -> KernelRows:
     """The Def-4 substrate for one roster: each member's kernel RowSpec bits,
     restricted to the roster and VERIFIED against the base cells (2026-09-01).
@@ -774,6 +829,11 @@ def _kernel_rows_for(
     * NATIVE players (`NATIVE_PLAYERS`) keep their clone cells and read THEIR OWN
       template's row (`TEMPLATE_OF_BOT`), as on the engine; a floor bit of theirs sits on
       a cloned floor cell.
+    * Under `FloorPolicy.hinge_side` every `S'` FLOOR BIT is left UNSTATED: the row file
+      carries only the engine-side half of a floor slot and no theorem states the other,
+      so the bit falls back to the (hinge-side) base cell, `kernel_coverage` drops and
+      `is_kernel_backed` goes False — the honest provenance of the robustness check.
+      Theorem bits sit on theorem cells, which the policy leaves untouched.
     """
     from pd_runner.tau.def4_theorems import (
         LEAN_SLOT,
@@ -809,6 +869,8 @@ def _kernel_rows_for(
                 continue
             bit = full[h]
             bit_prov = all_prov.get(b, {}).get(h, "theorem")
+            if floor_policy == "hinge_side" and bit_prov == "floor_dichotomy":
+                continue
             rec = recorded_divergence(source, slot_of_bot.get(b), slot_of_bot.get(h))
 
             def _record(kind: str) -> None:
@@ -886,8 +948,10 @@ def load_tau_matrix(
 
     `source` picks the system (`settings.CELL_SOURCE`, PA-S' by default; `"engine"`
     for the comparison) and `floor_policy` what a S' floor is: an engine-side cell
-    (`engine_side`, default — `Cell.is_floor`, `TauMatrix.floor_cells`) or a hole
-    (`restrict_zoo` — the load then fails totality and names the floor pairs).
+    (`engine_side`, default — `Cell.is_floor`, `TauMatrix.floor_cells`), the OTHER
+    branch of its dichotomy (`hinge_side` — the robustness check, `Cell.floor_branch`;
+    floors are never counted as `flip_cells`, and the kernel floor bits are unstated),
+    or a hole (`restrict_zoo` — the load then fails totality and names the floor pairs).
 
     `hypothetical_cells` maps an ordered pair to a STIPULATED `(row_action,
     col_action)`, filling holes for what-if analysis — e.g. "if CupodBot vs
@@ -1003,8 +1067,11 @@ def load_tau_matrix(
                 clone_of=clone,
                 provenance=chosen.provenance,
                 hinge=chosen.hinge,
+                floor_branch=chosen.floor_branch,
             )
-            if engine_by_pair:
+            # A floor is never a flip: engine-side it IS the engine's value, hinge-side
+            # it differs by construction (`floor_cells` reports it, not `flip_cells`).
+            if engine_by_pair and not chosen.is_floor:
                 e = engine_by_pair.get((brow, bcol)) or engine_by_pair.get((bcol, brow))
                 if e is not None and oriented_pair(e, brow) != (
                         None if chosen.pair is None else (a, b)):
@@ -1036,7 +1103,7 @@ def load_tau_matrix(
             f"tau matrix is not total ({resolved_source}): {len(missing)} unproven ordered "
             f"cell(s), e.g. {missing[:5]}. Restrict the bot list or prove the cells." + detail
         )
-    kernel = _kernel_rows_for(bots, cells, source=resolved_source)
+    kernel = _kernel_rows_for(bots, cells, source=resolved_source, floor_policy=resolved_policy)
     return TauMatrix(
         bots, cells, natives, kernel.bits,
         source=resolved_source, floor_policy=resolved_policy, flip_cells=tuple(flips),
@@ -1188,7 +1255,8 @@ def main() -> None:
     print(f"\ncells with side hypotheses (†): {len(m.dagger_cells)}")
     for a, b in sorted(m.dagger_cells):
         print(f"  {a} vs {b}")
-    print(f"floor dichotomies (‡, engine-side value): {len(m.floor_pairs)} unordered pair(s)")
+    print(f"floor dichotomies (‡, {m.floor_policy.replace('_', '-')} value): "
+          f"{len(m.floor_pairs)} unordered pair(s)")
     for a, b in m.floor_pairs:
         print(f"  {a} vs {b}")
     print(f"cells flipping the engine (≠): {len(m.flip_cells)} ordered")

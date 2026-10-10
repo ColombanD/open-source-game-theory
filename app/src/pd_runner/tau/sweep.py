@@ -61,6 +61,7 @@ class TournamentResult:
     # floors the base rests on are this tournament's too (`egt.ingest` reads them).
     cell_source: str = "engine"
     floor_cells: tuple[tuple[str, str], ...] = ()
+    floor_policy: str = "engine_side"
 
     @property
     def is_degenerate(self) -> bool:
@@ -148,6 +149,7 @@ def run_tournament(
         family=family_key,
         cell_source=matrix.source,
         floor_cells=matrix.floor_cells,
+        floor_policy=matrix.floor_policy,
     )
 
 
@@ -210,7 +212,8 @@ def main() -> None:
 
     print(f"tau sweep over {len(matrix)} bots ({len(matrix) ** 2} ordered cells)"
           f" — σ family: {family.label} — cells: {matrix.source}"
-          + (f" ({len(matrix.floor_pairs)} floor pair(s) at the engine-side value)"
+          + (f" ({len(matrix.floor_pairs)} floor pair(s) at the "
+             f"{matrix.floor_policy.replace('_', '-')} value)"
              if matrix.has_floors else ""))
     anchored = run_tournament(matrix, 1.0, 0.5, family=family).cells == \
         base_tournament_cells(matrix)

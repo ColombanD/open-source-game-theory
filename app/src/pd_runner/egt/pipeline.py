@@ -125,6 +125,10 @@ class RunPaths:
     # (and in the fingerprint, `nash.loader.hash_payoff_matrix`), so engine and S'
     # runs of one zoo never share a directory (SPRIME_SOURCE_OF_TRUTH.md §1.3).
     cell_source: str = "engine"
+    # The S' floor policy (`PayoffMatrix.floor_policy`). "engine_side" keeps the
+    # historical naming; "hinge_side" (the robustness check, 2026-10-09) carries its
+    # key in the name and in the fingerprint, so the two branches never share a directory.
+    floor_policy: str = "engine_side"
 
     @property
     def run_dir(self) -> Path:
@@ -134,7 +138,9 @@ class RunPaths:
     def name(self) -> str:
         fam = "" if self.family == "behavioral" else f"{self.family}_"
         src = "" if self.cell_source == "engine" else f"{self.cell_source}_"
-        return f"{self.zoo}_{src}{fam}t{_fmt_dial(self.t)}_a{_fmt_dial(self.alpha)}_{self.fingerprint}"
+        pol = "" if self.floor_policy == "engine_side" else f"{self.floor_policy}_"
+        return (f"{self.zoo}_{src}{pol}{fam}t{_fmt_dial(self.t)}_a{_fmt_dial(self.alpha)}"
+                f"_{self.fingerprint}")
 
     def stage_dir(self, stage: str) -> Path:
         return self.run_dir / stage
@@ -163,6 +169,7 @@ class RunPaths:
             fingerprint=cells_fingerprint(payoff),
             family=family,
             cell_source=payoff.cell_source,
+            floor_policy=payoff.floor_policy,
         )
 
 
@@ -214,6 +221,7 @@ class RunResult:
             "cell_source": self.payoff.cell_source,
             "floor_cells": [list(p) for p in self.payoff.floor_cells],
             "n_floor_cells": len(self.payoff.floor_cells),
+            "floor_policy": self.payoff.floor_policy,
             "t": self.paths.t,
             "alpha": self.paths.alpha,
             "fingerprint": self.paths.fingerprint,
@@ -401,6 +409,37 @@ def run_stages(
     return outcomes
 
 
+def _reuse_run(
+    payoff: PayoffMatrix, out_root: Path, family: str,
+    stages: Sequence[str], point: tuple[float, float],
+) -> RunResult | None:
+    """A `RunResult` rebuilt from an existing, complete, successful `summary.json`
+    of this matrix (same fingerprint — cells, source and floor policy), or None."""
+    paths = RunPaths.for_matrix(payoff, out_root, family=family)
+    summary_path = paths.run_dir / "summary.json"
+    if not summary_path.exists():
+        return None
+    try:
+        d = json.loads(summary_path.read_text())
+    except (OSError, json.JSONDecodeError):
+        return None
+    recorded = d.get("stages") or {}
+    if (d.get("fingerprint") != paths.fingerprint or not d.get("ok")
+            or any(st not in recorded or not recorded[st].get("ok") for st in stages)):
+        return None
+    outcomes = [
+        StageOutcome(
+            stage=st, ok=bool(v.get("ok")), seconds=float(v.get("seconds") or 0.0),
+            error=v.get("error"),
+            summary={k: x for k, x in v.items() if k not in ("ok", "seconds", "error")},
+        )
+        for st, v in recorded.items()
+    ]
+    run = RunResult(paths=paths, payoff=payoff, stages=outcomes, grid_points=[point])
+    run.write_summary()
+    return run
+
+
 def analyse_matrix(
     payoff: PayoffMatrix,
     out_root: Path = DEFAULT_OUT_ROOT,
@@ -494,15 +533,18 @@ class SweepResult:
     out_root: Path
     family: str = "behavioral"
     cell_source: str = "engine"
+    floor_policy: str = "engine_side"
 
     @property
     def summary_path(self) -> Path:
         """`sweep_summary.json` for the behavioral family (the historical name
         the report reads); `sweep_summary_<family>.json` otherwise, so two
-        families swept into one root never clobber each other. The file carries
-        `cell_source`; the report trusts it only for the system it renders
+        families swept into one root never clobber each other; a non-default
+        floor policy appends its key too (`sweep_summary_hinge_side.json`), so the
+        robustness check never overwrites the headline sweep's summary. The file
+        carries `cell_source`; the report trusts it only for the system it renders
         (`report._resolve_sweep`), exactly as it already refuses another zoo's."""
-        return Path(self.out_root) / sweep_summary_name(self.family)
+        return Path(self.out_root) / sweep_summary_name(self.family, self.floor_policy)
 
     @property
     def n_distinct(self) -> int:
@@ -518,6 +560,7 @@ class SweepResult:
             "zoo": self.zoo,
             "family": self.family,
             "cell_source": self.cell_source,
+            "floor_policy": self.floor_policy,
             "n_grid_points": self.n_grid_points,
             "n_distinct_matrices": self.n_distinct,
             "dedup_saved": self.n_grid_points - self.n_distinct,
@@ -527,9 +570,12 @@ class SweepResult:
         }
 
 
-def sweep_summary_name(family: str = "behavioral") -> str:
+def sweep_summary_name(family: str = "behavioral", floor_policy: str = "engine_side") -> str:
     """The top-level summary file for one family's sweep — see `SweepResult.summary_path`."""
-    return "sweep_summary.json" if family == "behavioral" else f"sweep_summary_{family}.json"
+    stem = "sweep_summary" if family == "behavioral" else f"sweep_summary_{family}"
+    if floor_policy != "engine_side":
+        stem += f"_{floor_policy}"
+    return f"{stem}.json"
 
 
 def sweep(
@@ -547,9 +593,18 @@ def sweep(
     on_event: Callable[[str], None] | None = None,
     source: str | None = None,
     floor_policy: str | None = None,
+    resume: bool = False,
     **stage_kwargs,
 ) -> SweepResult:
     """Analyse every DISTINCT payoff matrix arising on the `(t, α)` grid.
+
+    `resume=True` REUSES a matrix's run directory when it already holds a
+    complete, successful `summary.json` for the SAME fingerprint and every
+    requested stage (the artefacts are a deterministic function of the cells, the
+    source and the floor policy, which the fingerprint covers), so a sweep
+    interrupted mid-way restarts where it stopped instead of redoing hours of
+    exact Nash enumeration. The reused run's `grid_points` are rewritten by this
+    sweep. A run directory without a summary, or with a failed stage, is redone.
 
     Grid points that yield identical action-pair cells share a single
     analysis; `RunResult.grid_points` records which points mapped to each
@@ -586,7 +641,8 @@ def sweep(
     named = get_zoo(zoo)
     matrix = named.load(source=source, floor_policy=floor_policy)
     emit(f"cells: {matrix.source}"
-         + (f" — {len(matrix.floor_pairs)} floor pair(s) at the engine-side value"
+         + (f" — {len(matrix.floor_pairs)} floor pair(s) at the "
+            f"{matrix.floor_policy.replace('_', '-')} value"
             if matrix.has_floors else ""))
     distances = behavioral_distance_matrix(matrix)
     if family == "behavioral":
@@ -632,6 +688,7 @@ def sweep(
                 zoo=zoo,
                 cell_source=matrix.source,
                 floor_cells=matrix.floor_cells,
+                floor_policy=matrix.floor_policy,
             )
             fp = cells_fingerprint(payoff)
             if fp in by_fingerprint:
@@ -642,11 +699,15 @@ def sweep(
                 emit(f"(t={t}, α={alpha}) -> matrix {fp} (already analysed)")
                 continue
 
-            emit(f"(t={t}, α={alpha}) -> matrix {fp} — analysing")
-            run = analyse_matrix(
-                payoff, out_root, grid_points=[(t, alpha)],
-                family=family, stages=stages, on_event=on_event, **stage_kwargs,
-            )
+            run = _reuse_run(payoff, out_root, family, stages, (t, alpha)) if resume else None
+            if run is not None:
+                emit(f"(t={t}, α={alpha}) -> matrix {fp} (reused from disk)")
+            else:
+                emit(f"(t={t}, α={alpha}) -> matrix {fp} — analysing")
+                run = analyse_matrix(
+                    payoff, out_root, grid_points=[(t, alpha)],
+                    family=family, stages=stages, on_event=on_event, **stage_kwargs,
+                )
             by_fingerprint[fp] = run
             order.append(fp)
 
@@ -658,6 +719,7 @@ def sweep(
         out_root=Path(out_root),
         family=family,
         cell_source=matrix.source,
+        floor_policy=matrix.floor_policy,
     )
 
     out_root = Path(out_root)
@@ -708,6 +770,9 @@ def main() -> None:
     p.add_argument("--max-support-size", type=int, default=None)
     p.add_argument("--no-render", action="store_true",
                    help="skip invasion-graph figures (faster in a sweep)")
+    p.add_argument("--resume", action="store_true",
+                   help="reuse complete, successful run directories of the same "
+                        "matrix fingerprint instead of re-analysing them")
     args = p.parse_args()
 
     if args.alphas is None:
@@ -727,13 +792,15 @@ def main() -> None:
         t_steps=args.t_steps,
         source=args.source,
         floor_policy=args.floor_policy,
+        resume=args.resume,
         max_support_size=args.max_support_size,
         render=not args.no_render,
         on_event=print,
     )
 
     print()
-    print(f"zoo: {result.zoo}   family: {result.family}   cells: {result.cell_source}")
+    print(f"zoo: {result.zoo}   family: {result.family}   cells: {result.cell_source}"
+          f"   floors: {result.floor_policy}")
     print(f"grid points     : {result.n_grid_points}")
     print(f"distinct matrices: {result.n_distinct} "
           f"(dedup saved {result.n_grid_points - result.n_distinct} analyses)")

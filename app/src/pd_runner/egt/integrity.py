@@ -33,12 +33,23 @@ from pd_runner.egt.pipeline import DEFAULT_OUT_ROOT, cells_fingerprint
 from pd_runner.tau.matrix import ZOOS
 
 
-def load_run_summaries(out_root: Path) -> list[dict]:
+def load_run_summaries(out_root: Path, floor_policy: str | None = "engine_side") -> list[dict]:
+    """Every run's `summary.json` under `out_root/runs`, with `family` and
+    `floor_policy` defaulted for pre-extension artefacts.
+
+    `floor_policy` keeps only the runs of ONE `S'` floor policy (default the
+    engine-side branch, which every pre-2026-10-09 run is); `None` keeps all.
+    Hinge-side runs (`FloorPolicy.hinge_side`, the robustness check) share a
+    zoo and family with the headline runs and would otherwise be flattened into
+    the same (zoo, family, t, α) rows."""
     runs = []
     for f in sorted((out_root / "runs").glob("*/summary.json")):
         with f.open() as fh:
             s = json.load(fh)
         s.setdefault("family", "behavioral")  # pre-extension summaries
+        s.setdefault("floor_policy", "engine_side")  # pre-2026-10-09 summaries
+        if floor_policy is not None and s["floor_policy"] != floor_policy:
+            continue
         s["_dir"] = f.parent
         runs.append(s)
     return runs
@@ -63,8 +74,11 @@ def scan_assumptions(run_dir: Path) -> list[str]:
 
 
 def main() -> int:
+    # `python -m pd_runner.egt.integrity [out_root] [floor_policy]` — one S' floor
+    # policy per pass (default engine-side; `hinge_side` audits the robustness runs).
     out_root = Path(sys.argv[1]) if len(sys.argv) > 1 else DEFAULT_OUT_ROOT
-    runs = load_run_summaries(out_root)
+    floor_policy = sys.argv[2] if len(sys.argv) > 2 else "engine_side"
+    runs = load_run_summaries(out_root, floor_policy=floor_policy)
     if not runs:
         print(f"no runs under {out_root / 'runs'}")
         return 1
@@ -152,8 +166,8 @@ def main() -> int:
             continue
         (run_source,) = run_sources
         try:
-            base_fp = cells_fingerprint(
-                payoff_matrix_from_tau_matrix(ZOOS[zoo].load(source=run_source), zoo=zoo))
+            base_fp = cells_fingerprint(payoff_matrix_from_tau_matrix(
+                ZOOS[zoo].load(source=run_source, floor_policy=floor_policy), zoo=zoo))
         except KeyError:
             base_fp = "?"  # zoo no longer registered
         agree = len(set(fps.values())) == 1 and (base_fp in ("?", *fps.values()))
