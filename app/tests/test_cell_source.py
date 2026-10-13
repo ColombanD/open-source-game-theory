@@ -487,7 +487,7 @@ def test_matrix_endpoint_takes_a_source(client, source) -> None:
     marks = {e["mark"] for e in body["legend"]}
     assert {"‡", "≠"} <= marks
     if source == "sprime":
-        assert body["floors"] == 26 and body["flips"] == 13
+        assert body["floors"] == 29 and body["flips"] == 13   # 30 floor rows, Cupod×Prudent both ways
         d = body["details"]["DBot|DupocBot"]
         assert d["floor"] and d["provenance"] == "floor_dichotomy"
     else:

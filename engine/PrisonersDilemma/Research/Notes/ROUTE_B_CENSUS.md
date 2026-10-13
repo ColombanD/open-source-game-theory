@@ -214,6 +214,39 @@ and, for the floor, the ENGINE-SIDE value the `+k` stipulation gives.
 Counts with this bot: **stated 118 = 107 + 11; floors 27 = 26 + 1.** CIMCIC and DupocBot, behavioral twins on the
 engine's matrix, are separated by it: `(C, C)`-free `(D, D)` against DupocBot, a floor against CIMCIC.
 
+**DIMDID (2026-10-13).** `DIMDID k := .search k (.impl (.plays .self .opp .D) (.plays .opp .self .D)) D C` —
+"Defect If My Defection Implies Defection": defect only when defection is provably reciprocated. It is the C/D
+TRANSPOSITION of CIMCIC (`(CIMCIC k).transpose = DIMDID k` by `rfl`, `DIMDID_eq_transpose`), so on codes it is the
+generic searcher `SV (gI .D) 1 k`; the engine has its DEFINITION (`Bots/DIMDID.lean`) and no theorem, so the thirteen
+cells below are outside the 155-row ledger. Theorems in `arith/ArithS/Cells/Dimdid.lean`, statements in
+`Outcome/Matrix/DIMDID.lean`, the three floors in `Outcome/Floors.lean` (their `dich_` beside the cells;
+`#check_floorA_theorems` runs on that file). Roster: the ten `body` bots, CIMCIC, PrudentBot, itself. Three cells are
+CIMCIC's through the general transposition theorem (`outcomeSpecA_transpose`, class TAU): the partner's transposition is
+in the zoo. The one new argument is the SELF-DEFEATING guard (`dimdid_selfref_not_found`, the dual of CIMCIC's
+self-refuting one): a proof of "I defect ⇒ you defect" makes DIMDID defect, so by soundness the opponent defects —
+against the fact when it cooperates; so DIMDID cooperates with everyone who cooperates with it, and the only hinges
+are the three partners whose cooperation is itself an else-play (Dupoc, CIMCIC, Prudent).
+
+| cell | engine | `S'` | class | theorem or reason |
+|---|---|---|---|---|
+| outcome_DIMDID_vs_CooperateBot | — | (C, C) | SND | snd_DIMDID_vs_CooperateBot (self-defeating guard; every `k`) |
+| outcome_DIMDID_vs_DefectBot | — | (D, D) | TAU | τ of `outcome_CIMCIC_vs_CooperateBot` (POS: "I defect ⇒ DefectBot defects" is a `TAct`-theorem instance) |
+| outcome_DIMDID_vs_TitForTatBot | — | (C, C) | SND | snd_DIMDID_vs_TitForTatBot (TFT sees DIMDID cooperate with `.bot CooperateBot`; every `k`) |
+| outcome_DIMDID_vs_DBot | — | (C, C) | POS | pos_DIMDID_vs_DBot (DBot sees DIMDID's FOUND defection against `.bot DefectBot`, `pos_DIMDID_vs_botDB`, and cooperates) |
+| outcome_DIMDID_vs_EBot | — | (C, C) | POS | pos_DIMDID_vs_EBot |
+| outcome_DIMDID_vs_CupodTrollBot | — | (C, C) | SND | snd_DIMDID_vs_CupodTrollBot (the `.eq` guard false: `templateCode_phiDd_ne_phiCu` at the frame `(CooperateBot, CooperateBot)`; every `k`) |
+| outcome_DIMDID_vs_OBot | — | (D, D) | LOEB | loeb_DIMDID_vs_OBot (family: DIMDID's guard vs OBot + vs `.bot DefectBot`; OBot defects against anyone who defects against `.bot DefectBot`, whatever its first probe — `obot_D_of_any_V`) |
+| outcome_DIMDID_vs_CupodBot | — | (D, D) | TAU | τ of `outcome_CIMCIC_vs_DupocBot` (the mutual Löb cell) |
+| outcome_DIMDID_vs_DIMCID | — | (D, D) | LOEB | loeb_DIMDID_vs_DIMCID (mutual family: "I defect ⇒ you defect" and "I cooperate ⇒ you defect", each consequent the other's found defection) |
+| outcome_DIMDID_vs_DIMDID | — | (D, D) | TAU | τ of `outcome_CIMCIC_vs_CIMCIC` (the guard against itself is a tautology) |
+| outcome_DIMDID_vs_DupocBot | (C, D) | — | GENUINE-FLOOR | two hinges, NESTED: `A` = DIMDID's guard (outer), `B` = Dupoc's "DIMDID cooperates with me"; `A ⇒ (D, D)`, `¬A ∧ ¬B ⇒ (C, D)` (DIMDID exploited — the engine's `+k` world), `¬A ∧ B ⇒ (C, C)` — dichotomy `dich_DIMDID_vs_DupocBot` (hinge side `(D, D)`) |
+| outcome_DIMDID_vs_CIMCIC | (C, D) | — | GENUINE-FLOOR | the self-dual pair; `A` = DIMDID's guard, `B` = CIMCIC's; `A ⇒ (D, D)` (CIMCIC's guard self-refuting), `¬A ∧ ¬B ⇒ (C, D)`, `¬A ∧ B ⇒ (C, C)` — dichotomy `dich_DIMDID_vs_CIMCIC` (hinge side `(D, D)`) |
+| outcome_DIMDID_vs_PrudentBot | (C, D) | — | GENUINE-FLOOR | `A` = DIMDID's guard, `B` = Prudent's outer guard, the prudence guard DISCHARGED (`prudence_found_vs_DIMDID`: DIMDID's defection against `.bot DefectBot` is its then-branch, the `k̂`-chain); `A ⇒ (D, D)`, `¬A ∧ ¬B ⇒ (C, D)`, `¬A ∧ B ⇒ (C, C)` — dichotomy `dich_DIMDID_vs_PrudentBot` (hinge side `(D, D)`) |
+
+Counts with both `S'`-only bots: **stated 128 = 107 + 11 + 10; floors 30 = 26 + 1 + 3.** DIMDID's row differs from
+every body member's: it is CupodBot's at DefectBot/OBot/CupodBot/DIMCID/itself but cooperates with CupodTrollBot and
+TitForTatBot, and it is exploited (engine side) by DupocBot, the partner whose cooperation it cannot see.
+
 ## The floor verdicts, per side
 
 (F) the guard is false, the side settled by soundness; (P) found, via the partner's box (verdict only);

@@ -1,7 +1,7 @@
 {
  "schema_version": 1,
  "system": "sprime",
- "source_digest": "530177699415872508",
+ "source_digest": "8827458606538783872",
  "theorems": [
   {
    "name": "outcome_CIMCIC_vs_CIMCIC",
@@ -731,6 +731,176 @@
    "pair": [
     "D",
     "D"
+   ],
+   "provenance": "sprime"
+  },
+  {
+   "name": "outcome_DIMDID_vs_CooperateBot",
+   "module": "ArithS.Outcome.Matrix.DIMDID",
+   "file": "DIMDID.lean",
+   "left_bot": "DIMDID",
+   "right_bot": "CooperateBot",
+   "budget_regime": "eventual",
+   "fuel_pad": 0,
+   "staggered": false,
+   "left": "DIMDID k",
+   "right": "CooperateBot",
+   "pair": [
+    "C",
+    "C"
+   ],
+   "provenance": "sprime"
+  },
+  {
+   "name": "outcome_DIMDID_vs_CupodBot",
+   "module": "ArithS.Outcome.Matrix.DIMDID",
+   "file": "DIMDID.lean",
+   "left_bot": "DIMDID",
+   "right_bot": "CupodBot",
+   "budget_regime": "eventual",
+   "fuel_pad": 0,
+   "staggered": false,
+   "left": "DIMDID k",
+   "right": "CupodBot k",
+   "pair": [
+    "D",
+    "D"
+   ],
+   "provenance": "sprime"
+  },
+  {
+   "name": "outcome_DIMDID_vs_CupodTrollBot",
+   "module": "ArithS.Outcome.Matrix.DIMDID",
+   "file": "DIMDID.lean",
+   "left_bot": "DIMDID",
+   "right_bot": "CupodTrollBot",
+   "budget_regime": "eventual",
+   "fuel_pad": 0,
+   "staggered": false,
+   "left": "DIMDID k",
+   "right": "CupodTrollBot k",
+   "pair": [
+    "C",
+    "C"
+   ],
+   "provenance": "sprime"
+  },
+  {
+   "name": "outcome_DIMDID_vs_DBot",
+   "module": "ArithS.Outcome.Matrix.DIMDID",
+   "file": "DIMDID.lean",
+   "left_bot": "DIMDID",
+   "right_bot": "DBot",
+   "budget_regime": "eventual",
+   "fuel_pad": 0,
+   "staggered": false,
+   "left": "DIMDID k",
+   "right": "DBot",
+   "pair": [
+    "C",
+    "C"
+   ],
+   "provenance": "sprime"
+  },
+  {
+   "name": "outcome_DIMDID_vs_DIMCID",
+   "module": "ArithS.Outcome.Matrix.DIMDID",
+   "file": "DIMDID.lean",
+   "left_bot": "DIMDID",
+   "right_bot": "DIMCID",
+   "budget_regime": "eventual",
+   "fuel_pad": 0,
+   "staggered": false,
+   "left": "DIMDID k",
+   "right": "DIMCID k",
+   "pair": [
+    "D",
+    "D"
+   ],
+   "provenance": "sprime"
+  },
+  {
+   "name": "outcome_DIMDID_vs_DIMDID",
+   "module": "ArithS.Outcome.Matrix.DIMDID",
+   "file": "DIMDID.lean",
+   "left_bot": "DIMDID",
+   "right_bot": "DIMDID",
+   "budget_regime": "eventual",
+   "fuel_pad": 0,
+   "staggered": false,
+   "left": "DIMDID k",
+   "right": "DIMDID k",
+   "pair": [
+    "D",
+    "D"
+   ],
+   "provenance": "sprime"
+  },
+  {
+   "name": "outcome_DIMDID_vs_DefectBot",
+   "module": "ArithS.Outcome.Matrix.DIMDID",
+   "file": "DIMDID.lean",
+   "left_bot": "DIMDID",
+   "right_bot": "DefectBot",
+   "budget_regime": "eventual",
+   "fuel_pad": 0,
+   "staggered": false,
+   "left": "DIMDID k",
+   "right": "DefectBot",
+   "pair": [
+    "D",
+    "D"
+   ],
+   "provenance": "sprime"
+  },
+  {
+   "name": "outcome_DIMDID_vs_EBot",
+   "module": "ArithS.Outcome.Matrix.DIMDID",
+   "file": "DIMDID.lean",
+   "left_bot": "DIMDID",
+   "right_bot": "EBot",
+   "budget_regime": "eventual",
+   "fuel_pad": 0,
+   "staggered": false,
+   "left": "DIMDID k",
+   "right": "EBot",
+   "pair": [
+    "C",
+    "C"
+   ],
+   "provenance": "sprime"
+  },
+  {
+   "name": "outcome_DIMDID_vs_OBot",
+   "module": "ArithS.Outcome.Matrix.DIMDID",
+   "file": "DIMDID.lean",
+   "left_bot": "DIMDID",
+   "right_bot": "OBot",
+   "budget_regime": "eventual",
+   "fuel_pad": 0,
+   "staggered": false,
+   "left": "DIMDID k",
+   "right": "OBot",
+   "pair": [
+    "D",
+    "D"
+   ],
+   "provenance": "sprime"
+  },
+  {
+   "name": "outcome_DIMDID_vs_TitForTatBot",
+   "module": "ArithS.Outcome.Matrix.DIMDID",
+   "file": "DIMDID.lean",
+   "left_bot": "DIMDID",
+   "right_bot": "TitForTatBot",
+   "budget_regime": "eventual",
+   "fuel_pad": 0,
+   "staggered": false,
+   "left": "DIMDID k",
+   "right": "TitForTatBot",
+   "pair": [
+    "C",
+    "C"
    ],
    "provenance": "sprime"
   },
@@ -2141,6 +2311,63 @@
    "provenance": "floor_dichotomy",
    "hinge": "LenBox TAct k (guard of CupodBot)",
    "dichotomy": "dich_CupodBot_vs_PrudentBot"
+  },
+  {
+   "name": "outcome_DIMDID_vs_CIMCIC_floor",
+   "module": "ArithS.Outcome.Floors",
+   "file": "Floors.lean",
+   "left_bot": "DIMDID",
+   "right_bot": "CIMCIC",
+   "budget_regime": "eventual",
+   "fuel_pad": 0,
+   "staggered": false,
+   "left": "DIMDID k",
+   "right": "CIMCIC k",
+   "pair": [
+    "C",
+    "D"
+   ],
+   "provenance": "floor_dichotomy",
+   "hinge": "LenBox TAct k (guard of DIMDID)",
+   "dichotomy": "dich_DIMDID_vs_CIMCIC"
+  },
+  {
+   "name": "outcome_DIMDID_vs_DupocBot_floor",
+   "module": "ArithS.Outcome.Floors",
+   "file": "Floors.lean",
+   "left_bot": "DIMDID",
+   "right_bot": "DupocBot",
+   "budget_regime": "eventual",
+   "fuel_pad": 0,
+   "staggered": false,
+   "left": "DIMDID k",
+   "right": "DupocBot k",
+   "pair": [
+    "C",
+    "D"
+   ],
+   "provenance": "floor_dichotomy",
+   "hinge": "LenBox TAct k (guard of DIMDID)",
+   "dichotomy": "dich_DIMDID_vs_DupocBot"
+  },
+  {
+   "name": "outcome_DIMDID_vs_PrudentBot_floor",
+   "module": "ArithS.Outcome.Floors",
+   "file": "Floors.lean",
+   "left_bot": "DIMDID",
+   "right_bot": "PrudentBot",
+   "budget_regime": "eventual",
+   "fuel_pad": 0,
+   "staggered": false,
+   "left": "DIMDID k",
+   "right": "PrudentBot k",
+   "pair": [
+    "C",
+    "D"
+   ],
+   "provenance": "floor_dichotomy",
+   "hinge": "LenBox TAct k (guard of DIMDID)",
+   "dichotomy": "dich_DIMDID_vs_PrudentBot"
   },
   {
    "name": "outcome_DupocBot_vs_CupodTrollBot_floor",

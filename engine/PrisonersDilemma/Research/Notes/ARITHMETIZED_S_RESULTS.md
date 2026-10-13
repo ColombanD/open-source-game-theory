@@ -42,6 +42,14 @@ Beyond the engine's ledger, **12 `S'`-only cells** (2026-10-13): `DupocTrollBot 
 9 SND, 1 POS (× DupocBot `(D, D)`), 1 LOEB (× DIMCID `(C, D)`), 1 genuine floor (× CIMCIC, engine side `(C, D)`).
 `Cells/DupocTrollBot.lean`; ledger section "`S'`-only cells" of `ROUTE_B_CENSUS.md`. Export totals: 118 cells, 27 floors.
 
+And **13 more `S'`-only cells** (2026-10-13): `DIMDID k` ("defect iff my defection provably implies yours",
+`Bots/DIMDID.lean`, the C/D TRANSPOSITION of CIMCIC — `(CIMCIC k).transpose = DIMDID k` by `rfl`) against the ten
+`body` bots, CIMCIC, PrudentBot and itself — 3 SND, 2 POS, 2 LOEB (× OBot, × DIMCID, both `(D, D)`), 3 by the
+general transposition theorem from CIMCIC's cells (× DefectBot, × CupodBot, × itself), 3 genuine two-hinge floors
+(× DupocBot, × CIMCIC, × PrudentBot; engine side `(C, D)`, hinge side `(D, D)`). The new argument is the
+SELF-DEFEATING guard (soundness pointing the other way: a found "I defect ⇒ you defect" forces the opponent's
+defection, so against a cooperator it is never found). `Cells/Dimdid.lean`. Export totals: 128 cells, 30 floors.
+
 | class | cells | how |
 |---|---|---|
 | SF | 28 | search-free: transfer at the engine's fuel (`eval`/`EvalGraph` in lockstep) |
