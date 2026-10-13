@@ -397,3 +397,115 @@ at t = 0 — holds under both answers to the bounded-consistency question, with 
 claimed about PrudentBot (twins and natives zoos) is a statement about the engine's `+k` stipulation and
 flips on the other branch. Open: the `realized_coop`/static-ceiling re-read (F3′) on the hinge side;
 Nash counts for the hinge-side natives matrices; `critch8` under either branch.
+
+### 8.2 The paper's base zoo: `body-cimcic` = body − DIMCID + CIMCIC (2026-10-12)
+
+Decision (paper_status.tex): DIMCID leaves the EGT zoo — in `S'` it is DefectBot's payoff twin by theorem
+(`dimcid_vs_closed`; the GL fixed point of `p ↔ □(p ∨ q)` is ⊤), and no behavior-reading bot can separate
+the two — and CIMCIC, the other search-on-search prover, comes in. Registry key `body-cimcic` (10 bots, 8
+hinge pairs: DupocBot × {DBot, EBot, CupodTroll}, CIMCIC × {Cupod, CupodTroll, DBot, EBot}, Cupod × OBot;
+zero `S'`≠engine flips). CIMCIC's row equals DupocBot's on the ENGINE side only (they differ at CupodBot on
+the hinge side: CIMCIC (C,C), Dupoc (D,C)). Runs `runs/body-cimcic_sprime[_hinge_side]_t100_*`.
+
+| `body-cimcic`, t = 1, α = 0.3 | engine side | hinge side |
+|---|---|---|
+| cells (C,C) / (D,D) / exploitation; row C | 34 / 22 / 44; 56 | 48 / 24 / 28; 62 |
+| pure ESS | none | none |
+| extreme NE / components | 69 / 3 ({CIM,Coop,Dup,TFT}, {Coop,EB,OB}, {Def,OB}) | 104 / 5 |
+| stable faces / supports; strict edges; SCCs | 5 / 1013; 29; 4 | 5 / 1013; 24; 4 |
+| dominant basin | {Dup,CIM,Coop,TFT} 99% | {Dup,TFT,CIM,Coop,CupT} 80%; {Def,OB} 4.5% |
+| Dup + CIMCIC share at (100,1) | 46.4% + 46.4% | 38.4% + 38.3% |
+| DefectBot share at (100,1) | 2.1% | 6.6% |
+| SS set {CIM,Dup} at | 8/9 points | 3/9 ((M,1)); {CIM,Dup,TFT} at (50,0.1),(100,0.1); {Dup,TFT} at (100,0.01); none at 3 |
+| realized cooperation (100,1) | 0.968 | 0.897 |
+
+Reading: the headline is now the PAIR of Löbian cooperators (exact 50/50 split on the engine side because the
+rows are identical; near-equal on the hinge side although the rows differ — CIMCIC's extra (C,C) against
+CupodBot earns nothing because CupodBot holds no mass). Adding CIMCIC to the nine-bot zoo raises the Löbian
+mass 88.4 → 92.8 (engine) and 64.3 → 76.7 (hinge) without changing the selected set. The twins test now adds
+DIMCID + PrudentBot (= the existing 12-bot `body+twins`). The partial-transparency sweeps for `body-cimcic`
+are NOT run yet (body's are; §9).
+
+### 8.3 Final paper zoo: `body-dimcid` (9 bots) — CIMCIC out as well (2026-10-12)
+
+User decision after seeing §8.2: the paper's `body` is body WITHOUT DIMCID and WITHOUT CIMCIC = registry
+`body-dimcid` (9 bots, 4 hinge pairs, 0 flips, twin-free under both branches). Its numbers are the §8.1 row
+(engine | hinge): cells 27/18/36 of 81, row C 45 | 33/20/28, 47; 21 NE / 3 comps | 32 / 5; faces 5/502;
+basin {Dup,Coop,TFT} 95% | {Dup,TFT,Coop,CupT} 67% + {Def,OB} 8.5%; Dup 88.4% | 64.3% at (100,1); {Dup}
+alone 8/9 | 3/9 ({Dup,TFT} at 4, none at 2); Def 4.0% | 12.1%; realized 0.942 | 0.822; ladder 12.5% → 88.4%.
+The sensitivity test is the NEW 11-bot zoo `body-dimcid+twins` (= body-dimcid + CIMCIC + PrudentBot; 13
+hinge pairs): engine side CIM = Dup 45.7% each, Pru 2.5%, SS {CIM,Dup} 8/9, basin 97%, realized 0.949; hinge
+side Pru 52.5%, Dup = CIM 19.7%, SS {Pru,Dup,CIM} at 6 points and {Pru} alone at (10,0.1),(100,0.01), basin
+{Pru,Dup,CIM,EB} 51.7%, realized 0.969. `body-cimcic` (§8.2) stays registered as the ladder's 10-bot row.
+Partial-transparency sweeps for `body-dimcid` NOT run (only t=1).
+
+### 8.4 FINAL paper zoo: `body8` = eight bots, no DIMCID / CIMCIC / CupodTrollBot (2026-10-13)
+
+User decision: the paper's `body` is {CooperateBot, CupodBot, DBot, DefectBot, DupocBot, EBot, OBot,
+TitForTatBot} (registry `body8`; CupodTrollBot out as the one name-reading `.eq` bot, kept as a ladder
+rung). 3 hinge pairs (Dupoc×DBot, Dupoc×EBot, Cupod×OBot), 58 theorem cells, 0 flips, twin-free on the
+engine side; on the HINGE side CupodBot's and DupocBot's action ROWS coincide (columns do not — Dupoc
+exploits Cupod), so `behavioral_twins` reports them as a twin pair there.
+
+| `body8`, t = 1, α = 0.3 | engine side | hinge side |
+|---|---|---|
+| cells (C,C)/(D,D)/exploit of 64; row C | 20/16/28; 34 | 24/18/22; 35 |
+| ESS ties | Dup: Coop, TFT; Def: five | Dup: Coop, EBot, TFT |
+| extreme NE / components; stable faces | 21 / 3; 3 of 247 | 16 / 5 (two extra mixed, carried by EBot) |
+| dominant basin | {Dup,Coop,TFT} 87.6%, all starts on a Dup support | {Dup,TFT,Coop} 81.1%; {Def,OB} 4.5% |
+| Dup share at (100,1); {Dup} alone | 85.9%; 8/9 (all but (10,0.01)) | 71.2%; 5/9 ({Dup,TFT} at (50,0.1),(100,0.01); none at 2) |
+| DefectBot / TFT share at (100,1) | 4.5% / 3.3% | 8.3% / 6.4% |
+| self-cooperating share of the long run (100,1) | 0.921 | 0.843 |
+| ladder of Dup's share | 14.0% → 85.9% | 13.3% → 71.2% |
+
+Ladder (engine side, selected set + share at (100,1), basin): 7 nonprovers+dupoc {Dup} 85.8% / 82%;
+8 body {Dup} 85.9% / 88%; 9 +CupodTroll {Dup} 88.4% / 95%; 10 `body8+twins` (+CIMCIC+PrudentBot)
+{CIM,Dup} 45.2%+45.2% / 95%. Twins test hinge side (`body8+twins`): Pru 46.8%, Dup = CIM 22.8%, SS
+{Pru,Dup,CIM} at 6 points + {Pru} alone at (10,0.1),(100,0.01); basins {Dup,CIM,TFT,Coop} 47.8% and
+{Pru,Dup,CIM,EBot} 38.3%; self-coop 0.939 | 0.968. PLANNED rungs (bots under construction in another
+session, no S' cells yet): body + CupodTrollBot + DupocTrollBot; + CIMCIC + DIMDID (DIMDID screened
+analytically 2026-10-13: a new row, ≈ a weaker CupodBot, exploited by Dupoc on the engine side; CIMDIC
+collapses to CooperateBot by the DIMCID fixed point). Sweeps for `body8` and `body-dimcid` under both
+policies: see §9.1 (below, once written). Tables regenerated for `body8`: outcome_matrix_base, statics_body,
+moran_body (now with a self-coop column, "others" = Cupod+DBot+EBot+OBot+CupodTroll grouping), zoo_ladder,
+egt_stages; `latex/paper_status.tex` rewritten accordingly.
+
+### 9.1 Sweeps of the paper zoos `body8` (8) and `body-dimcid` (9) under both policies (2026-10-13)
+
+Eight sweeps (6×6 grid, behavioral + syntactic, engine_side + hinge_side), 20 s to 3 min each; comparison
+tool `app/scripts/compare_floor_policies.py <zoo>`. Headline grids (SS set at M=100, β=1):
+
+* **`body8` / behavioral — NOT robust below t = 1.** Engine side: Dup alone on all of t ∈ [0.4, 1] ×
+  α ≤ 0.8 (Dup+TFT at (0.6, 0.8)), Def+OB ties at t = 0. Hinge side: at every t < 1 the SS set is
+  **Cup+Dup** (40.8% each) for α ∈ {0.3, 0.45} and **Def+OB** (or OB alone) for α ≥ 0.62 — Dup's share
+  collapses from 0.71 to 0.41 at t = 0.8 and to ≈ 0 at α ≥ 0.62. 18/36 SS sets differ. CAUSE: on the hinge
+  side CupodBot's and DupocBot's ACTION ROWS coincide in this zoo (CupodTrollBot was the column that
+  separated them), so the behavioral σ channel cannot distinguish them at any t < 1: every Löbian signal is
+  blurred over the pair, the twin ceiling of the behavioral scale bites, and the cautious lifts (α ≥ 0.62)
+  stop cooperating one grid step below full transparency.
+* **`body8` / syntactic — robust.** Hinge side equals the engine side on t ∈ [0.6, 1] at every α; 7/36 SS
+  sets differ, all at t ≤ 0.4 (collapse one or two steps earlier at α ≤ 0.45; at (0.2, 0.62) the hinge side
+  keeps Dup where the engine side has OB alone). The syntactic channel reads the two sources apart.
+* **`body-dimcid` (9, with CupodTrollBot) / behavioral — robust** (same shape as the 10-bot body in §9):
+  Dup alone on t ∈ [0.6, 1] × α ≤ 0.62 on both sides; 8/36 SS sets differ, at t ≤ 0.6 only (Cup+Dup at
+  (0.4, 0.3)/(0.2, 0.45); α = 0.8 column goes Def+TFT / OB / Def+EB+OB from t = 0.6).
+* **`body-dimcid` / syntactic — robust** on t ∈ [0.6, 1]; 7/36 differ at t ≤ 0.4.
+
+Reading for the zoo decision: dropping CupodTrollBot makes the eight-bot zoo twin-free on the engine
+side but creates a hinge-side ROW twin (Cupod ≡ Dupoc in actions), and the behavioral channel's results
+below full transparency then depend on the hinge. With CupodTrollBot in (nine bots) the behavioral
+sweep is robust. The syntactic channel is robust either way. Options: (a) keep body8 and state that the
+behavioral-channel transparency results are engine-side-only (the hinge-side behavioral scale has a
+ceiling < 1 by the Cupod/Dupoc row twin); (b) keep CupodTrollBot in the body; (c) wait for DupocTrollBot /
+DIMDID, whose columns separate Cupod from Dupoc on the hinge side as well.
+
+### 8.5 Clean-up (2026-10-13): only `body8` and `nonprovers+dupoc` runs remain
+
+User decision: the run directories of the seven other zoos (`body` 10, `body+twins`, `body+twins+natives`,
+`body-dimcid`, `body-cimcic`, `body-dimcid+twins`, `body8+twins` — 264 directories) were DELETED, the derived
+`analysis*/` tables regenerated from the 51 remaining runs, and the four ad-hoc registry keys (`body-dimcid`,
+`body-cimcic`, `body-dimcid+twins`, `body8+twins`) removed; `body`, `body+twins`, `body+twins+natives` stay
+registered (frozen paper zoos the tau layer and tests reference) but have no runs. Everything the deleted runs
+showed is recorded above (§5–9.1); reproducing any of them is one `pipeline.py` command. The ladder and the
+twins test in `latex/paper_status.tex` are reduced to the two existing rungs with PENDING markers until the
+new bots (CupodTrollBot + DupocTrollBot; CIMCIC + DIMDID) have `S'` cells.

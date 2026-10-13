@@ -1,0 +1,18 @@
+% figures and tables/zoo_ladder.tex — the ladder of nested zoos at t = 1, PA-S', hinge cells at the engine side (the floor value).
+% Sources: app/generated/egt/runs/{nonprovers+dupoc,body8}_sprime_t100_a030_*/{moran/stationary.json,replicator/basins.json}.
+% PENDING rungs (bots under construction, no S' cells yet): body + CupodTrollBot + DupocTrollBot; + CIMCIC + DIMDID.
+\begin{table}[t]
+\centering
+\begin{tabular}{@{}lccc@{}}
+\toprule
+zoo ($t = 1$) & $N$ & selected set at $(100,1)$ and its share & cooperative basin \\
+\midrule
+non-provers + \texttt{DupocBot} & 7 & \{\texttt{Dup}\} 85.8\% & 82\% \\
+\texttt{body} & 8 & \{\texttt{Dup}\} 85.9\% & 88\% \\
+% \texttt{body} + \texttt{CupodTrollBot} + \texttt{DupocTrollBot} & 10 & pending & pending \\
+% \texttt{body} + \texttt{CupodTrollBot} + \texttt{DupocTrollBot} + \texttt{CIMCIC} + \texttt{DIMDID} & 12 & pending & pending \\
+\bottomrule
+\end{tabular}
+\caption{Nested zoos at full transparency, hinge cells at the engine side. The share is the stationary mass of the stochastically stable set at $(M,\beta) = (100,1)$; on both rows that set is selected at eight of the nine $(M,\beta)$ points, all but $(10, 0.01)$. \enquote{Cooperative basin} is the replicator basin of the dominant support \{\texttt{Dup}, \texttt{Coop}, \texttt{TFT}\}.}
+\label{tab:zoo-ladder}
+\end{table}

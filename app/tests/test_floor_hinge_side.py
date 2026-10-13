@@ -24,7 +24,7 @@ import pytest
 from pd_runner.eval import outcome_matrix as om
 from pd_runner.eval.outcome_matrix import scan_outcome_theorems
 from pd_runner.eval.sprime_floors import HINGE_SIDE_PAIRS, hinge_side_pair
-from pd_runner.tau.matrix import PAPER_BODY_SUB_ZOO, PAPER_TWINS_SUB_ZOO, load_tau_matrix
+from pd_runner.tau.matrix import PAPER_BODY8_SUB_ZOO, PAPER_BODY_SUB_ZOO, PAPER_TWINS_SUB_ZOO, load_tau_matrix
 
 ARITH = Path(__file__).resolve().parents[2] / "arith" / "ArithS"
 DICH_SOURCES = (ARITH / "Cells" / "FloorDichotomy.lean", ARITH / "Cells" / "PrudentLoose.lean",
@@ -336,7 +336,7 @@ def test_egt_identity_separates_the_two_branches() -> None:
 
 
 @needs_real_export
-@pytest.mark.parametrize("zoo,size,n_floor_pairs", [("body-dimcid", 9, 4), ("nonprovers+dupoc", 7, 2)])
+@pytest.mark.parametrize("zoo,size,n_floor_pairs", [("body8", 8, 3), ("nonprovers+dupoc", 7, 2)])
 def test_floor_robustness_zoos_are_total_flip_free_and_twin_free(zoo, size, n_floor_pairs) -> None:
     from pd_runner.tau.matrix import ZOOS
     from pd_runner.tau.signal import behavioral_twins
@@ -348,5 +348,9 @@ def test_floor_robustness_zoos_are_total_flip_free_and_twin_free(zoo, size, n_fl
         # Zero flips: on these rosters PA-S' and the engine agree on every non-floor
         # cell, so the floor policy is the ONLY difference between the two systems.
         assert m.flip_cells == ()
-        assert [g for g in behavioral_twins(m) if len(g) > 1] == []
+        # Twin-free on the engine side; on the hinge side body8's CupodBot and DupocBot
+        # share an action ROW (EGT_FINDINGS_SPRIME.md §9.1), which the test records.
+        twins = [g for g in behavioral_twins(m) if len(g) > 1]
+        assert twins == ([("CupodBot", "DupocBot")] if (zoo, policy) == ("body8", "hinge_side") else [])
         assert "DIMCID" not in m.bots and "WaryBot" not in m.bots and "MirrorBot" not in m.bots
+        assert "CupodTrollBot" not in m.bots and "CIMCIC" not in m.bots

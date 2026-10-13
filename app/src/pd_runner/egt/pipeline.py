@@ -435,7 +435,13 @@ def _reuse_run(
         )
         for st, v in recorded.items()
     ]
-    run = RunResult(paths=paths, payoff=payoff, stages=outcomes, grid_points=[point])
+    # Keep every grid point already recorded for this matrix (a t = 1-only run and a
+    # full sweep share a directory when their cells coincide) and add the new one: a
+    # point that mapped onto this matrix in an earlier sweep still does.
+    points = [tuple(map(float, q)) for q in d.get("grid_points", [])]
+    if tuple(map(float, point)) not in points:
+        points.append(tuple(map(float, point)))
+    run = RunResult(paths=paths, payoff=payoff, stages=outcomes, grid_points=points)
     run.write_summary()
     return run
 

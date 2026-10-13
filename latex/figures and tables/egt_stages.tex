@@ -1,0 +1,18 @@
+% figures and tables/egt_stages.tex — the evolutionary stages run on every payoff matrix.
+% Requires: booktabs, array (p columns). Written 2026-10-12 from the prose of paper_status.tex.
+\begin{table}[t]
+\centering\small
+\begin{tabular}{@{}p{3.6cm}p{2.9cm}p{5.2cm}p{3.3cm}@{}}
+\toprule
+Question & Analysis & What is computed & Answer \\
+\midrule
+Can a strategy be invaded? & Evolutionarily stable strategies & Maynard Smith's two clauses, checked on every pure strategy against every invader, with exact ties recorded & The pure ESS set (empty on every zoo we run) \\
+What does rational play allow, and how cooperative can it be? & Nash equilibria, enumerated exactly & Every extreme equilibrium of the symmetric game by best-response polytopes in exact rational arithmetic, grouped into connected components, each with its cooperation rate & The components and the static ceiling on cooperation \\
+Where does a population go from a random start? & Replicator dynamics & 201 interior starting points integrated to convergence, endpoints grouped by support; non-convergence counted, never assigned & Basins of attraction, with the dominant support and its share of starts \\
+Where does it spend the long run, regardless of the start? & Moran process & The stationary distribution of a finite population of size $M \in \{10, 50, 100\}$ under selection intensity $\beta \in \{0.01, 0.1, 1\}$, nine $(M,\beta)$ points & The stationary share of every strategy at each $(M,\beta)$ \\
+Which strategies does selection keep? & Stochastic stability & From the Moran stationary distribution: a strategy is \emph{stochastically stable} at $(M,\beta)$ if it holds at least $1.5/N$ of the long run, for $N$ strategies & The stochastically stable set, reported at $(100, 1)$ unless stated; the selection answer this section is after \\
+\bottomrule
+\end{tabular}
+\caption{The evolutionary analyses run on each certified payoff matrix, from static to dynamic, and the selection criterion read off the last of them. Definitions, references and parameters are in \cref{apx-section:Experiments-EGTMetrics}.}
+\label{tab:egt-stages}
+\end{table}

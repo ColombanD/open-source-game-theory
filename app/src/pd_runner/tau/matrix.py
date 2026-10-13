@@ -209,15 +209,28 @@ PAPER_NATIVES_SUB_ZOO: tuple[str, ...] = (
 # floor-free roster contains DupocBot — so a floor-free HEADLINE zoo does not
 # exist, and the next best thing is to isolate the floor effect.
 #
-# * BODY−DIMCID (9): the body zoo without DIMCID, the bot that carries EVERY
-#   `S'` ≠ engine flip. Zero flips ⇒ PA-S' and the engine agree on every
-#   non-floor cell, so the two floor policies are the ONLY difference between
-#   the engine's experiment and this one. Twin-free under both policies.
-# * NONPROVERS+DUPOC (7): the six search-free bots plus the one Löbian
-#   cooperator — the minimal zoo in which the headline can be stated and
-#   bracketed. Two floor pairs (DBot×Dupoc, Dupoc×EBot), zero flips, twin-free.
-PAPER_BODY_NO_DIMCID_SUB_ZOO: tuple[str, ...] = tuple(
-    b for b in PAPER_BODY_SUB_ZOO if b != "DIMCID")
+# * BODY8 (8, 2026-10-13): THE PAPER'S BASE ZOO — body without DIMCID (DefectBot's
+#   payoff twin by theorem in S', `dimcid_vs_closed`) and without CupodTrollBot (the
+#   one `.eq`-guard bot, which reads the opponent's source by NAME; a ladder rung,
+#   not a strategy). Three hinge pairs (Dupoc × {DBot, EBot}, Cupod × OBot), zero
+#   S'≠engine flips, twin-free on the engine side. On the hinge side CupodBot's and
+#   DupocBot's action ROWS coincide (their columns do not), so the behavioral σ
+#   channel cannot separate them there (EGT_FINDINGS_SPRIME.md §9.1).
+# * NONPROVERS+DUPOC (7): the six search-free bots plus the one Löbian cooperator —
+#   the minimal zoo in which the headline can be stated (2 hinge pairs, 0 flips).
+# * BODY8+TROLLS (10, 2026-10-13): the first ladder rung — body8 plus the two `.eq`-guard
+#   trolls, CupodTrollBot (targets CupodBot) and DupocTrollBot (targets DupocBot, the
+#   headline type; an S'-ONLY bot: no engine theorem, its twelve cells are in
+#   arith/ArithS/Cells/DupocTrollBot.lean, one new floor × CIMCIC). S' source only — on
+#   `engine` the roster is not total. DupocTrollBot has no Def-4 template, so its bits
+#   play from the S' base cells (Def 3) and the matrix is NOT kernel-backed, by design.
+# The next rung (+ CIMCIC + DIMDID) is added once DIMDID's S' cells are exported; the
+# intermediate rosters tried on 2026-10-09..13 (body-dimcid, body-cimcic,
+# body-dimcid+twins, body8+twins) were retired with their runs.
+PAPER_BODY8_SUB_ZOO: tuple[str, ...] = tuple(
+    b for b in PAPER_BODY_SUB_ZOO if b not in ("DIMCID", "CupodTrollBot"))
+PAPER_BODY8_TROLLS_SUB_ZOO: tuple[str, ...] = tuple(
+    sorted(PAPER_BODY8_SUB_ZOO + ("CupodTrollBot", "DupocTrollBot")))
 NONPROVERS_DUPOC_SUB_ZOO: tuple[str, ...] = (
     "CooperateBot",
     "DBot",
@@ -431,17 +444,30 @@ ZOOS: dict[str, NamedZoo] = {
         bots=PAPER_NATIVES_SUB_ZOO,
         stipulations={},
     ),
-    "body-dimcid": NamedZoo(
-        key="body-dimcid",
-        label="body − DIMCID (9 bots, floor-robustness control)",
+    "body8": NamedZoo(
+        key="body8",
+        label="body8 (8 bots, the paper's base zoo)",
         description=(
-            "The body zoo without DIMCID, the bot carrying every S'-vs-engine "
-            "flip. With zero flips, the floor policy is the ONLY difference "
-            "between the engine's cells and PA-S''s on this roster, so the "
-            "engine_side/hinge_side pair isolates what the open consistency "
-            "question can change. Twin-free under both policies."
+            "The paper's base zoo: the body zoo without DIMCID (DefectBot's twin by "
+            "theorem in PA-S') and without CupodTrollBot (reads the opponent's source "
+            "by name). Three hinge pairs, zero flips, twin-free on the engine side."
         ),
-        bots=PAPER_BODY_NO_DIMCID_SUB_ZOO,
+        bots=PAPER_BODY8_SUB_ZOO,
+        stipulations={},
+    ),
+    "body8+trolls": NamedZoo(
+        key="body8+trolls",
+        label="body8 + CupodTrollBot + DupocTrollBot (10 bots, S' only)",
+        description=(
+            "The first ladder rung above the paper's base zoo: body8 plus the two "
+            "`.eq`-guard trolls. CupodTrollBot targets CupodBot; DupocTrollBot "
+            "('defect iff the opponent IS DupocBot k', 2026-10-13) targets the headline "
+            "Löbian cooperator and is S'-only — the engine has no theorem about it. "
+            "S' source only; not kernel-backed (DupocTrollBot has no Def-4 template, its "
+            "bits play from the S' base cells). Four floor pairs: body8's three plus "
+            "Dupoc × CupodTroll; none at DupocTrollBot, since CIMCIC is not in the roster."
+        ),
+        bots=PAPER_BODY8_TROLLS_SUB_ZOO,
         stipulations={},
     ),
     "nonprovers+dupoc": NamedZoo(

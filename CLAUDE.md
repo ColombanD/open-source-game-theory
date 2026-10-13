@@ -278,9 +278,9 @@ into `submit_verdict`.
    statements by `tests/test_floor_hinge_side.py`; `Cell.floor_branch`; floors are never `≠`
    flips; the `S'` kernel floor bits are UNSTATED under it, so `is_kernel_backed` is False; run
    dirs carry `_hinge_side_`, summaries `sweep_summary*_hinge_side.json`). Base-case verdict
-   (`EGT_FINDINGS_SPRIME.md` §7): on body at t=1 DupocBot stays uniquely stochastically stable at
-   strong selection (M≥50, β=1) but its share falls 87% → 65% at (100, 1) and TFT ties it
-   elsewhere; the dominant replicator support gains CupodTrollBot (basin 94% → 68%). All six paper tau sweeps re-run under `hinge_side` (2026-10-10, §9): the body F2′ picture is INTACT (lower shares, collapse one step earlier at α=0.3), twins/natives claims about PrudentBot FLIP; the natives hinge sweeps are Nash-free (`--stages ess,invasion,faces,replicator,moran`; hundreds of extreme NE per hinge-side 14-bot matrix); `pipeline.py --resume` reuses complete run dirs by fingerprint; `analysis.py [out_root] [floor_policy]` writes `analysis_hinge_side/`. A `≠` cell
+   (`EGT_FINDINGS_SPRIME.md` §8, on the paper's `body8`): DupocBot stays uniquely stochastically stable
+   at strong selection on both branches, share 85.9% → 71.2% at (100, 1), alone at 8/9 → 5/9 points,
+   basin 88% → 81%. All six paper tau sweeps re-run under `hinge_side` (2026-10-10, §9): the body F2′ picture is INTACT (lower shares, collapse one step earlier at α=0.3), twins/natives claims about PrudentBot FLIP; the natives hinge sweeps are Nash-free (`--stages ess,invasion,faces,replicator,moran`; hundreds of extreme NE per hinge-side 14-bot matrix); `pipeline.py --resume` reuses complete run dirs by fingerprint; `analysis.py [out_root] [floor_policy]` writes `analysis_hinge_side/`. A `≠` cell
    FLIPS the engine (all nine in-paper flips are DIMCID's). Kernel tau rows load PER SOURCE (Phase 4, 2026-10-01):
    `tau_rows.json` on `engine`, `sprime_tau_rows.json` on `sprime` (`def4_theorems.TAU_EXPORTS`;
    the `S'` file = engine schema over the 14-template `PAPER_ORDER` + `floor_bits`, digest over
@@ -678,12 +678,15 @@ share one run directory (`generated/egt/runs/<zoo>_t<NNN>_a<NNN>_<hash>/`) and
 N=11 while a tournament costs milliseconds.
 
 **Zoos.** `--zoo` reuses the `tau.matrix` `ZOOS` registry, so a zoo added there
-appears in the tau card, the EGT card and every stage CLI at once. Two FLOOR-ROBUSTNESS
-control zoos since 2026-10-09 (`EGT_FINDINGS_SPRIME.md` §8.1): `body-dimcid` (9 — zero
-`S'`≠engine flips, so the floor policy is the ONLY difference between the systems; twin-free
-under both branches) and `nonprovers+dupoc` (7 — the six search-free bots + DupocBot, the
-minimal headline zoo; 2 floor pairs). WaryBot can be in no total `S'` roster (unproven
-cells) and no floor-free roster contains DupocBot. `critch8`
+appears in the tau card, the EGT card and every stage CLI at once. **THE PAPER'S BASE ZOO is `body8`** (2026-10-13; `PAPER_BODY8_SUB_ZOO`): CooperateBot, CupodBot, DBot,
+DefectBot, DupocBot, EBot, OBot, TitForTatBot — body without DIMCID (DefectBot's twin by theorem in
+`S'`, `dimcid_vs_closed`) and without CupodTrollBot (the name-reading `.eq` bot, a ladder rung); 3 hinge
+pairs, 0 flips, twin-free on the engine side (on the hinge side Cupod's and Dupoc's action rows coincide).
+Ladder rung `nonprovers+dupoc` (7). ONLY these two zoos have runs on disk since the 2026-10-13 clean-up
+(the thesis-era `body`/`body+twins`/`body+twins+natives` keys stay registered, runless; their numbers are in
+`EGT_FINDINGS_SPRIME.md` §5–9.1). Pending rungs once the new bots have `S'` cells: + CupodTrollBot +
+DupocTrollBot; + CIMCIC + DIMDID. WaryBot can be in no total `S'` roster (unproven cells) and no floor-free
+roster contains DupocBot. `critch8`
 (added 2026-08-10) is the standalone repo's original eight types, for
 reproducing its published analysis — but note it does NOT reproduce its
 numbers: that repo's hand-transcribed CSV disagrees with the Lean library on
@@ -784,7 +787,14 @@ opponent IS `DupocBot k`", `Bots/DupocTrollBot.lean` — an engine DEFINITION wi
 the bots an `S'` cell names to the roster, so no `Theorems/` dir — the engine path stays byte-identical): `Cells/DupocTrollBot.lean` + `Outcome/Matrix/DupocTrollBot.lean`,
 against `body` + CIMCIC + itself — 9 SND, POS × DupocBot `(D, D)`, LOEB × DIMCID `(C, D)`, a 27th floor × CIMCIC whose
 `dich_` lives beside its cells (`#check_floorA_theorems` runs on that file too; `HINGE_SIDE_PAIRS` and the test's
-`DICH_SOURCES` list it). Export: 118 cells, 27 floors. It separates the engine-side twins CIMCIC/DupocBot. The disagreements are theorems, not gaps: the engine closes them by censuses that rest on a
+`DICH_SOURCES` list it). Export: 118 cells, 27 floors. It separates the engine-side twins CIMCIC/DupocBot. Plus (same day) **13 `S'`-ONLY cells for `DIMDID k`** ("defect iff my defection provably
+implies yours", `Bots/DIMDID.lean` — the C/D TRANSPOSITION of CIMCIC, `(CIMCIC k).transpose = DIMDID k` by `rfl`, so on codes
+`SV (gI .D) 1 k`): `Cells/Dimdid.lean` + `Outcome/Matrix/DIMDID.lean`, against `body` + CIMCIC + PrudentBot + itself — 3 SND, 2 POS,
+LOEB × OBot and × DIMCID (both `(D, D)`, conjunction families over described players, `found_pL`/`DP.ofClosed`), 3 cells by
+`outcomeSpecA_transpose` from CIMCIC's (× DefectBot, × CupodBot, × itself), 3 GENUINE two-hinge floors (× DupocBot, × CIMCIC,
+× PrudentBot: DIMDID's own guard the outer hinge, engine side `(C, D)`, hinge side `(D, D)`; `prudence_found_vs_DIMDID` discharges
+the prudence guard). The new argument is the SELF-DEFEATING guard (`dimdid_selfref_not_found`, dual of CIMCIC's self-refuting one):
+against anyone who cooperates with it the guard is true but never found, so DIMDID cooperates. Export: 128 cells, 30 floors. The disagreements are theorems, not gaps: the engine closes them by censuses that rest on a
 player being UNREADABLE by `S`'s rules (`no_provable_tailTo_unreadable`, the WV valuation censuses),
 and PA reads every source. `dimcid_vs_closed`: **in `S'`, DIMCID defects against every closed
 program** — its guard "my cooperating implies X" is self-fulfilling for any `X` — while the engine has
