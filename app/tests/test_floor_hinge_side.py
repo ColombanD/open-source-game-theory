@@ -27,7 +27,9 @@ from pd_runner.eval.sprime_floors import HINGE_SIDE_PAIRS, hinge_side_pair
 from pd_runner.tau.matrix import PAPER_BODY_SUB_ZOO, PAPER_TWINS_SUB_ZOO, load_tau_matrix
 
 ARITH = Path(__file__).resolve().parents[2] / "arith" / "ArithS"
-DICH_SOURCES = (ARITH / "Cells" / "FloorDichotomy.lean", ARITH / "Cells" / "PrudentLoose.lean")
+DICH_SOURCES = (ARITH / "Cells" / "FloorDichotomy.lean", ARITH / "Cells" / "PrudentLoose.lean",
+                ARITH / "Cells" / "DupocTrollBot.lean",  # the S'-only floor of DupocTrollBot (2026-10-13)
+                ARITH / "Cells" / "Dimdid.lean")  # the three S'-only floors of DIMDID (2026-10-13)
 FLOORS_LEAN = ARITH / "Outcome" / "Floors.lean"
 
 needs_real_export = pytest.mark.skipif(
@@ -249,7 +251,7 @@ def test_unknown_dichotomy_is_an_error_not_a_default() -> None:
 def test_scan_under_hinge_side_carries_the_other_branch() -> None:
     engine_side = {t.name: t for t in scan_outcome_theorems(source="sprime", floor_policy="engine_side")}
     hinge_side = {t.name: t for t in scan_outcome_theorems(source="sprime", floor_policy="hinge_side")}
-    assert set(engine_side) == set(hinge_side) and len(hinge_side) == 133
+    assert set(engine_side) == set(hinge_side) and len(hinge_side) == 158  # 128 cells + 30 floors
     for name, t in hinge_side.items():
         e = engine_side[name]
         if t.is_floor:

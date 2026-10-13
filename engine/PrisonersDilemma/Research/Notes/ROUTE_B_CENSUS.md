@@ -184,6 +184,36 @@ it: Löb engine, floor lemma, census) and the classification method are in git b
 | outcome_WaryBot_vs_TitForTatBot | (C, C) | (C, C) | SND | snd_WaryBot_vs_TitForTatBot |
 | outcome_WaryBot_vs_WaryBot | (C, C) | (D, D) | FLIP | loeb_WaryBot_vs_WaryBot |
 
+## `S'`-only cells (no engine counterpart)
+
+**DupocTrollBot (2026-10-13).** `DupocTrollBot k := .search k (.eq .opp (DupocBot k)) D C` — "defect iff the
+opponent IS `DupocBot k`", the mirror image of CupodTrollBot — was added as an `S'` bot: the engine has its
+DEFINITION (`Bots/DupocTrollBot.lean`) and no theorem, so the twelve cells below are outside the 155-row ledger
+above and are counted separately. Theorems in `arith/ArithS/Cells/DupocTrollBot.lean`, statements in
+`Outcome/Matrix/DupocTrollBot.lean`, the floor in `Outcome/Floors.lean`. "Engine side" of the floor = what the
+engine's `+k` floor stipulation (`search_f`) would give. Roster: the ten `body` bots, CIMCIC, itself.
+
+Same row shape as the ledger above (the sample-fixture generator reads it): the `engine` column is `—` for a cell
+and, for the floor, the ENGINE-SIDE value the `+k` stipulation gives.
+
+| cell | engine | `S'` | class | theorem or reason |
+|---|---|---|---|---|
+| outcome_DupocTrollBot_vs_CooperateBot | — | (C, C) | SND | snd_DupocTrollBot_vs_CooperateBot (`.eq` guard false ⇒ C; every `k`) |
+| outcome_DupocTrollBot_vs_CupodBot | — | (C, C) | SND | snd_DupocTrollBot_vs_CupodBot (Cupod's "the opponent defects against me" false too) |
+| outcome_DupocTrollBot_vs_CupodTrollBot | — | (C, C) | SND | snd_DupocTrollBot_vs_CupodTrollBot (two false `.eq` guards; `progCode_DupocTrollBot_ne_CupodBot` separates the stored templates at `(CooperateBot, DefectBot)`) |
+| outcome_DupocTrollBot_vs_DBot | — | (C, D) | SND | snd_DupocTrollBot_vs_DBot |
+| outcome_DupocTrollBot_vs_DIMCID | — | (C, D) | LOEB | loeb_DupocTrollBot_vs_DIMCID (`dimcid_vs_described` on the troll's own tower; DIMCID defects against every closed program) |
+| outcome_DupocTrollBot_vs_DefectBot | — | (C, D) | SND | snd_DupocTrollBot_vs_DefectBot |
+| outcome_DupocTrollBot_vs_DupocBot | — | (D, D) | POS | pos_DupocTrollBot_vs_DupocBot (the reflexive equation "`DupocBot k` IS `DupocBot k`" is a `TAct`-theorem in both readings, found ⇒ D; Dupoc's guard then false ⇒ D) |
+| outcome_DupocTrollBot_vs_DupocTrollBot | — | (C, C) | SND | snd_DupocTrollBot_vs_DupocTrollBot |
+| outcome_DupocTrollBot_vs_EBot | — | (C, D) | SND | snd_DupocTrollBot_vs_EBot |
+| outcome_DupocTrollBot_vs_OBot | — | (C, C) | SND | snd_DupocTrollBot_vs_OBot |
+| outcome_DupocTrollBot_vs_TitForTatBot | — | (C, C) | SND | snd_DupocTrollBot_vs_TitForTatBot |
+| outcome_DupocTrollBot_vs_CIMCIC | (C, D) | — | GENUINE-FLOOR | CIMCIC's guard TRUE (consequent = the troll's else-play on a false `.eq`). Settled: `floor_DupocTrollBot_vs_CIMCIC_right`, `_true` — dichotomy `dich_DupocTrollBot_vs_CIMCIC` (hinge side `(C, C)`) |
+
+Counts with this bot: **stated 118 = 107 + 11; floors 27 = 26 + 1.** CIMCIC and DupocBot, behavioral twins on the
+engine's matrix, are separated by it: `(C, C)`-free `(D, D)` against DupocBot, a floor against CIMCIC.
+
 ## The floor verdicts, per side
 
 (F) the guard is false, the side settled by soundness; (P) found, via the partner's box (verdict only);

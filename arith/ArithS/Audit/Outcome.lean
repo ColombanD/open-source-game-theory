@@ -6,8 +6,10 @@ import ArithS.Outcome.Matrix.CupodBot
 import ArithS.Outcome.Matrix.CupodTrollBot
 import ArithS.Outcome.Matrix.DBot
 import ArithS.Outcome.Matrix.DIMCID
+import ArithS.Outcome.Matrix.DIMDID
 import ArithS.Outcome.Matrix.DefectBot
 import ArithS.Outcome.Matrix.DupocBot
+import ArithS.Outcome.Matrix.DupocTrollBot
 import ArithS.Outcome.Matrix.EBot
 import ArithS.Outcome.Matrix.GuardianBot
 import ArithS.Outcome.Matrix.JustBot
@@ -164,5 +166,35 @@ namespace ArithS
 #print axioms outcome_PrudentBot_vs_CupodBot_floor
 #print axioms outcome_JustBot_vs_CupodBot_floor
 #print axioms outcome_CIMCIC_vs_CupodBot_floor
+
+-- DupocTrollBot (2026-10-13): the eleven `S'`-only cells and the one `S'`-only floor (no engine counterpart).
+#print axioms outcome_DupocTrollBot_vs_CooperateBot
+#print axioms outcome_DupocTrollBot_vs_CupodBot
+#print axioms outcome_DupocTrollBot_vs_CupodTrollBot
+#print axioms outcome_DupocTrollBot_vs_DBot
+#print axioms outcome_DupocTrollBot_vs_DIMCID
+#print axioms outcome_DupocTrollBot_vs_DefectBot
+#print axioms outcome_DupocTrollBot_vs_DupocBot
+#print axioms outcome_DupocTrollBot_vs_DupocTrollBot
+#print axioms outcome_DupocTrollBot_vs_EBot
+#print axioms outcome_DupocTrollBot_vs_OBot
+#print axioms outcome_DupocTrollBot_vs_TitForTatBot
+#print axioms outcome_DupocTrollBot_vs_CIMCIC_floor
+
+-- DIMDID (2026-10-13, `Cells/Dimdid.lean`): the ten `S'`-only cells (three by the transposition theorem from CIMCIC's)
+-- and the three `S'`-only two-hinge floors (no engine counterpart).
+#print axioms outcome_DIMDID_vs_CooperateBot
+#print axioms outcome_DIMDID_vs_DefectBot
+#print axioms outcome_DIMDID_vs_TitForTatBot
+#print axioms outcome_DIMDID_vs_DBot
+#print axioms outcome_DIMDID_vs_EBot
+#print axioms outcome_DIMDID_vs_CupodTrollBot
+#print axioms outcome_DIMDID_vs_OBot
+#print axioms outcome_DIMDID_vs_CupodBot
+#print axioms outcome_DIMDID_vs_DIMCID
+#print axioms outcome_DIMDID_vs_DIMDID
+#print axioms outcome_DIMDID_vs_DupocBot_floor
+#print axioms outcome_DIMDID_vs_CIMCIC_floor
+#print axioms outcome_DIMDID_vs_PrudentBot_floor
 
 end ArithS

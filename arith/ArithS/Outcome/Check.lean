@@ -4,8 +4,10 @@ import ArithS.Outcome.Matrix.CupodBot
 import ArithS.Outcome.Matrix.CupodTrollBot
 import ArithS.Outcome.Matrix.DBot
 import ArithS.Outcome.Matrix.DIMCID
+import ArithS.Outcome.Matrix.DIMDID
 import ArithS.Outcome.Matrix.DefectBot
 import ArithS.Outcome.Matrix.DupocBot
+import ArithS.Outcome.Matrix.DupocTrollBot
 import ArithS.Outcome.Matrix.EBot
 import ArithS.Outcome.Matrix.GuardianBot
 import ArithS.Outcome.Matrix.JustBot
@@ -34,6 +36,10 @@ has passed these gates. Design note: `Research/Notes/SPRIME_SOURCE_OF_TRUTH.md` 
 -- Every `dich_<L>_vs_<R>` of `Cells/FloorDichotomy.lean` has its engine-side half `outcome_<L>_vs_<R>_floor`
 -- (`Outcome/Floors.lean`), `@[floorA]`-tagged and on the `FloorSpecA` template.
 #check_floorA_theorems "ArithS/Cells/FloorDichotomy.lean"
+-- The `S'`-only floor of DupocTrollBot (2026-10-13) lives beside its cells, not in `FloorDichotomy.lean`.
+#check_floorA_theorems "ArithS/Cells/DupocTrollBot.lean"
+-- The three `S'`-only floors of DIMDID (2026-10-13) live beside its cells too.
+#check_floorA_theorems "ArithS/Cells/Dimdid.lean"
 
 -- Every unordered pair of the 12 paper base bots is a cell or a floor (§0.4 of the design note).
 #check_sprime_coverage

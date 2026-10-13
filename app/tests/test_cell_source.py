@@ -166,12 +166,14 @@ def test_sprime_cells_have_their_provenance(sprime_export) -> None:
     for t in cells:
         by_prov.setdefault(t.provenance, []).append(t)
     assert set(by_prov) == {"sprime", "floor_dichotomy"}
-    assert len(by_prov["sprime"]) == 107 and len(by_prov["floor_dichotomy"]) == 26
+    # 107 engine-cell statements + the 11 S'-only DupocTrollBot cells + the 10 S'-only DIMDID cells (2026-10-13);
+    # 26 floors + DupocTrollBot's CIMCIC floor + DIMDID's three.
+    assert len(by_prov["sprime"]) == 128 and len(by_prov["floor_dichotomy"]) == 30
     for f in by_prov["floor_dichotomy"]:
         assert f.is_floor and f.hinge and f.dichotomy == f"dich_{f.left_bot}_vs_{f.right_bot}"
         assert f.shape == "threshold" and f.budget_regime == "eventual"
     # `restrict_zoo` drops the floors and nothing else.
-    assert len(scan_outcome_theorems(source="sprime", floor_policy="restrict_zoo")) == 107
+    assert len(scan_outcome_theorems(source="sprime", floor_policy="restrict_zoo")) == 128
 
 
 def test_sprime_digest_covers_the_floors(sprime_export, tmp_path) -> None:
@@ -243,7 +245,7 @@ def test_sprime_matrix_marks_floors_and_flips(sprime_export) -> None:
     assert cells[("CupodBot", "DupocBot")] == "(C, D)"        # the red cell agrees
     assert cells[("MirrorBot", "MirrorBot")] == "None"
     assert cells[("CupodBot", "OptimBot")] == ""              # excluded: no S' statement, no status
-    assert sum("‡" in v for v in cells.values()) == 25       # 26 floor rows, Cupod×Prudent both ways
+    assert sum("‡" in v for v in cells.values()) == 29       # 30 floor rows, Cupod×Prudent both ways
     assert sum("≠" in v for v in cells.values()) == 13
     # Engine statuses are the engine's curation — not rendered for S'.
     assert cells[("OBot", "WaryBot")] == ""
@@ -485,7 +487,7 @@ def test_matrix_endpoint_takes_a_source(client, source) -> None:
     marks = {e["mark"] for e in body["legend"]}
     assert {"‡", "≠"} <= marks
     if source == "sprime":
-        assert body["floors"] == 25 and body["flips"] == 13
+        assert body["floors"] == 26 and body["flips"] == 13
         d = body["details"]["DBot|DupocBot"]
         assert d["floor"] and d["provenance"] == "floor_dichotomy"
     else:

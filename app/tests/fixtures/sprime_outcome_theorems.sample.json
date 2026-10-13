@@ -1,7 +1,7 @@
 {
  "schema_version": 1,
  "system": "sprime",
- "source_digest": "16263280139557516421",
+ "source_digest": "530177699415872508",
  "theorems": [
   {
    "name": "outcome_CIMCIC_vs_CIMCIC",
@@ -863,6 +863,193 @@
    "fuel_pad": 0,
    "staggered": false,
    "left": "DupocBot k",
+   "right": "TitForTatBot",
+   "pair": [
+    "C",
+    "C"
+   ],
+   "provenance": "sprime"
+  },
+  {
+   "name": "outcome_DupocTrollBot_vs_CooperateBot",
+   "module": "ArithS.Outcome.Matrix.DupocTrollBot",
+   "file": "DupocTrollBot.lean",
+   "left_bot": "DupocTrollBot",
+   "right_bot": "CooperateBot",
+   "budget_regime": "eventual",
+   "fuel_pad": 0,
+   "staggered": false,
+   "left": "DupocTrollBot k",
+   "right": "CooperateBot",
+   "pair": [
+    "C",
+    "C"
+   ],
+   "provenance": "sprime"
+  },
+  {
+   "name": "outcome_DupocTrollBot_vs_CupodBot",
+   "module": "ArithS.Outcome.Matrix.DupocTrollBot",
+   "file": "DupocTrollBot.lean",
+   "left_bot": "DupocTrollBot",
+   "right_bot": "CupodBot",
+   "budget_regime": "eventual",
+   "fuel_pad": 0,
+   "staggered": false,
+   "left": "DupocTrollBot k",
+   "right": "CupodBot k",
+   "pair": [
+    "C",
+    "C"
+   ],
+   "provenance": "sprime"
+  },
+  {
+   "name": "outcome_DupocTrollBot_vs_CupodTrollBot",
+   "module": "ArithS.Outcome.Matrix.DupocTrollBot",
+   "file": "DupocTrollBot.lean",
+   "left_bot": "DupocTrollBot",
+   "right_bot": "CupodTrollBot",
+   "budget_regime": "eventual",
+   "fuel_pad": 0,
+   "staggered": false,
+   "left": "DupocTrollBot k",
+   "right": "CupodTrollBot k",
+   "pair": [
+    "C",
+    "C"
+   ],
+   "provenance": "sprime"
+  },
+  {
+   "name": "outcome_DupocTrollBot_vs_DBot",
+   "module": "ArithS.Outcome.Matrix.DupocTrollBot",
+   "file": "DupocTrollBot.lean",
+   "left_bot": "DupocTrollBot",
+   "right_bot": "DBot",
+   "budget_regime": "eventual",
+   "fuel_pad": 0,
+   "staggered": false,
+   "left": "DupocTrollBot k",
+   "right": "DBot",
+   "pair": [
+    "C",
+    "D"
+   ],
+   "provenance": "sprime"
+  },
+  {
+   "name": "outcome_DupocTrollBot_vs_DIMCID",
+   "module": "ArithS.Outcome.Matrix.DupocTrollBot",
+   "file": "DupocTrollBot.lean",
+   "left_bot": "DupocTrollBot",
+   "right_bot": "DIMCID",
+   "budget_regime": "eventual",
+   "fuel_pad": 0,
+   "staggered": false,
+   "left": "DupocTrollBot k",
+   "right": "DIMCID k",
+   "pair": [
+    "C",
+    "D"
+   ],
+   "provenance": "sprime"
+  },
+  {
+   "name": "outcome_DupocTrollBot_vs_DefectBot",
+   "module": "ArithS.Outcome.Matrix.DupocTrollBot",
+   "file": "DupocTrollBot.lean",
+   "left_bot": "DupocTrollBot",
+   "right_bot": "DefectBot",
+   "budget_regime": "eventual",
+   "fuel_pad": 0,
+   "staggered": false,
+   "left": "DupocTrollBot k",
+   "right": "DefectBot",
+   "pair": [
+    "C",
+    "D"
+   ],
+   "provenance": "sprime"
+  },
+  {
+   "name": "outcome_DupocTrollBot_vs_DupocBot",
+   "module": "ArithS.Outcome.Matrix.DupocTrollBot",
+   "file": "DupocTrollBot.lean",
+   "left_bot": "DupocTrollBot",
+   "right_bot": "DupocBot",
+   "budget_regime": "eventual",
+   "fuel_pad": 0,
+   "staggered": false,
+   "left": "DupocTrollBot k",
+   "right": "DupocBot k",
+   "pair": [
+    "D",
+    "D"
+   ],
+   "provenance": "sprime"
+  },
+  {
+   "name": "outcome_DupocTrollBot_vs_DupocTrollBot",
+   "module": "ArithS.Outcome.Matrix.DupocTrollBot",
+   "file": "DupocTrollBot.lean",
+   "left_bot": "DupocTrollBot",
+   "right_bot": "DupocTrollBot",
+   "budget_regime": "eventual",
+   "fuel_pad": 0,
+   "staggered": false,
+   "left": "DupocTrollBot k",
+   "right": "DupocTrollBot k",
+   "pair": [
+    "C",
+    "C"
+   ],
+   "provenance": "sprime"
+  },
+  {
+   "name": "outcome_DupocTrollBot_vs_EBot",
+   "module": "ArithS.Outcome.Matrix.DupocTrollBot",
+   "file": "DupocTrollBot.lean",
+   "left_bot": "DupocTrollBot",
+   "right_bot": "EBot",
+   "budget_regime": "eventual",
+   "fuel_pad": 0,
+   "staggered": false,
+   "left": "DupocTrollBot k",
+   "right": "EBot",
+   "pair": [
+    "C",
+    "D"
+   ],
+   "provenance": "sprime"
+  },
+  {
+   "name": "outcome_DupocTrollBot_vs_OBot",
+   "module": "ArithS.Outcome.Matrix.DupocTrollBot",
+   "file": "DupocTrollBot.lean",
+   "left_bot": "DupocTrollBot",
+   "right_bot": "OBot",
+   "budget_regime": "eventual",
+   "fuel_pad": 0,
+   "staggered": false,
+   "left": "DupocTrollBot k",
+   "right": "OBot",
+   "pair": [
+    "C",
+    "C"
+   ],
+   "provenance": "sprime"
+  },
+  {
+   "name": "outcome_DupocTrollBot_vs_TitForTatBot",
+   "module": "ArithS.Outcome.Matrix.DupocTrollBot",
+   "file": "DupocTrollBot.lean",
+   "left_bot": "DupocTrollBot",
+   "right_bot": "TitForTatBot",
+   "budget_regime": "eventual",
+   "fuel_pad": 0,
+   "staggered": false,
+   "left": "DupocTrollBot k",
    "right": "TitForTatBot",
    "pair": [
     "C",
@@ -2011,6 +2198,25 @@
    "provenance": "floor_dichotomy",
    "hinge": "LenBox TAct k (guard of DupocBot)",
    "dichotomy": "dich_DupocBot_vs_EBot"
+  },
+  {
+   "name": "outcome_DupocTrollBot_vs_CIMCIC_floor",
+   "module": "ArithS.Outcome.Floors",
+   "file": "Floors.lean",
+   "left_bot": "DupocTrollBot",
+   "right_bot": "CIMCIC",
+   "budget_regime": "eventual",
+   "fuel_pad": 0,
+   "staggered": false,
+   "left": "DupocTrollBot k",
+   "right": "CIMCIC k",
+   "pair": [
+    "C",
+    "D"
+   ],
+   "provenance": "floor_dichotomy",
+   "hinge": "LenBox TAct k (guard of DupocTrollBot)",
+   "dichotomy": "dich_DupocTrollBot_vs_CIMCIC"
   },
   {
    "name": "outcome_GuardianBot_vs_CIMCIC_floor",

@@ -1,4 +1,4 @@
-"""The HINGE SIDE of the 26 PA-`S'` floor dichotomies (`FloorPolicy.hinge_side`, 2026-10-09).
+"""The HINGE SIDE of the 30 PA-`S'` floor dichotomies (26 engine-cell floors + DupocTrollBot × CIMCIC + DIMDID's three) (`FloorPolicy.hinge_side`, 2026-10-09).
 
 A `S'` floor cell is a hypothesis-free dichotomy `dich_<L>_vs_<R>` (`arith/ArithS/Cells/
 FloorDichotomy.lean`, sharpened in `Cells/PrudentLoose.lean` where `Outcome/Floors.lean` says
@@ -56,6 +56,15 @@ HINGE_SIDE_PAIRS: dict[str, tuple[str, str]] = {
     "dich_PrudentBot_vs_CupodBot": ("D", "D"),      # engine (D, C), via …_prudenceFound
     "dich_JustBot_vs_CupodBot": ("C", "C"),         # engine (D, C)
     "dich_CIMCIC_vs_CupodBot": ("C", "C"),          # engine (D, C)
+    # ── S'-only (2026-10-13): DupocTrollBot has no engine cell; the "engine side" is what the
+    #    engine's +k floor stipulation would give. Hinge = CIMCIC's guard against the troll.
+    "dich_DupocTrollBot_vs_CIMCIC": ("C", "C"),     # engine side (C, D); Cells/DupocTrollBot.lean
+    # ── S'-only (2026-10-13): DIMDID ("defect iff my defection provably implies yours", the
+    #    transposition of CIMCIC) has no engine cell. Two hinges each, NESTED: DIMDID's own guard
+    #    (outer) and the partner's guard; all boxes true = DIMDID's guard found ⇒ (D, D).
+    "dich_DIMDID_vs_DupocBot": ("D", "D"),          # engine side (C, D); Cells/Dimdid.lean
+    "dich_DIMDID_vs_CIMCIC": ("D", "D"),            # engine side (C, D)
+    "dich_DIMDID_vs_PrudentBot": ("D", "D"),        # engine side (C, D)
 }
 
 

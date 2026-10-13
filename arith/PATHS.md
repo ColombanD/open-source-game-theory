@@ -96,7 +96,7 @@ Every new module is still imported in BOTH `ArithS.lean` and the census (now the
 | `GtmplA a` | `guardTemplate a` | `Agents/Template.lean` and every user (a word-boundary rename; notes updated) |
 | — | `□[k] φ` | scoped notation for `LenBox TAct k φ`, `Outcome/Spec.lean` |
 | — | `plays`, `OutcomeAtA`, `OutcomeSpecA`, `bot`, `const` | the engine's outcome vocabulary on codes, `Outcome/Spec.lean` |
-| — | `outcome_<L>_vs_<R>` | one theorem per ledger cell, `Outcome/Matrix/<L>.lean` (107), proved from the `Cells/` theorems |
+| — | `outcome_<L>_vs_<R>` | one theorem per ledger cell, `Outcome/Matrix/<L>.lean` (107, + 11 `S'`-only DupocTrollBot cells since 2026-10-13), proved from the `Cells/` theorems |
 | — | `snd_DupocBot_vs_CupodBot` | the red cell on the engine's `progCode`, `Cells/RedCellEngine.lean` |
 
 `guardCode`/`guardCodeB` and `descriptions`/`descriptionsB` were considered and kept: `guard` collides with the

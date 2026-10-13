@@ -779,7 +779,12 @@ there are MANY, and they are the reason single-file checks and existential thres
 
 **The ledger (2026-09-27, script-exact over the 155 census rows): 107 cells have an `S'` statement —
 94 agree with the engine, 13 FLIP; 26 are GENUINE floors (no statement, by decision); 22 are excluded
-(Legible/Optim/Wary-floor).** The disagreements are theorems, not gaps: the engine closes them by censuses that rest on a
+(Legible/Optim/Wary-floor).** Plus, since 2026-10-13, **12 `S'`-ONLY cells** for `DupocTrollBot k` ("defect iff the
+opponent IS `DupocBot k`", `Bots/DupocTrollBot.lean` — an engine DEFINITION with no engine theorem; `outcome_matrix.roster_bots` adds
+the bots an `S'` cell names to the roster, so no `Theorems/` dir — the engine path stays byte-identical): `Cells/DupocTrollBot.lean` + `Outcome/Matrix/DupocTrollBot.lean`,
+against `body` + CIMCIC + itself — 9 SND, POS × DupocBot `(D, D)`, LOEB × DIMCID `(C, D)`, a 27th floor × CIMCIC whose
+`dich_` lives beside its cells (`#check_floorA_theorems` runs on that file too; `HINGE_SIDE_PAIRS` and the test's
+`DICH_SOURCES` list it). Export: 118 cells, 27 floors. It separates the engine-side twins CIMCIC/DupocBot. The disagreements are theorems, not gaps: the engine closes them by censuses that rest on a
 player being UNREADABLE by `S`'s rules (`no_provable_tailTo_unreadable`, the WV valuation censuses),
 and PA reads every source. `dimcid_vs_closed`: **in `S'`, DIMCID defects against every closed
 program** — its guard "my cooperating implies X" is self-fulfilling for any `X` — while the engine has

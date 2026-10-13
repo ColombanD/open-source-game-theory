@@ -111,6 +111,8 @@ import ArithS.Cells.DimcidEngine
 import ArithS.Cells.CimcicEngine
 import ArithS.Cells.JustEngine
 import ArithS.Cells.CupodTrollEngine
+import ArithS.Cells.DupocTrollBot
+import ArithS.Cells.Dimdid
 import ArithS.Cells.JustBot
 import ArithS.Cells.DIMCID
 import ArithS.Cells.PrudentMirror
@@ -150,8 +152,10 @@ import ArithS.Outcome.Matrix.CupodBot
 import ArithS.Outcome.Matrix.CupodTrollBot
 import ArithS.Outcome.Matrix.DBot
 import ArithS.Outcome.Matrix.DIMCID
+import ArithS.Outcome.Matrix.DIMDID
 import ArithS.Outcome.Matrix.DefectBot
 import ArithS.Outcome.Matrix.DupocBot
+import ArithS.Outcome.Matrix.DupocTrollBot
 import ArithS.Outcome.Matrix.EBot
 import ArithS.Outcome.Matrix.GuardianBot
 import ArithS.Outcome.Matrix.JustBot

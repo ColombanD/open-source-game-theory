@@ -75,6 +75,7 @@ from pd_runner.eval.outcome_matrix import (
     index_by_ordered_pair,
     library_bots,
     oriented_pair,
+    roster_bots,
     scan_outcome_theorems,
 )
 from pd_runner.settings import resolve_floor_policy, resolve_source
@@ -1185,8 +1186,9 @@ def maximum_certified_sub_zoo(
     counts as a cell.
     """
     kwargs = {"theorems_dir": theorems_dir} if theorems_dir is not None else {}
-    by_pair = index_by_ordered_pair(scan_outcome_theorems(source=source, **kwargs))
-    all_bots = sorted(library_bots(**kwargs))
+    theorems = scan_outcome_theorems(source=source, **kwargs)
+    by_pair = index_by_ordered_pair(theorems)
+    all_bots = sorted(roster_bots(theorems, resolve_source(source), **kwargs))
 
     def known(a: str, b: str) -> bool:
         for key in ((a, b), (b, a)):

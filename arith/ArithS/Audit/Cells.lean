@@ -8,6 +8,8 @@ import ArithS.Cells.DimcidEngine
 import ArithS.Cells.CimcicEngine
 import ArithS.Cells.JustEngine
 import ArithS.Cells.CupodTrollEngine
+import ArithS.Cells.DupocTrollBot
+import ArithS.Cells.Dimdid
 import ArithS.Cells.TauMember
 import PrisonersDilemma.Theorems.DupocBot.RedCellInstance
 
@@ -396,6 +398,73 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms loeb_DIMCID_vs_CupodTrollBot_core
 #print axioms loeb_DIMCID_vs_CupodTrollBot_engine
 #print axioms loeb_DIMCID_vs_CupodTrollBot_engine_guard
+
+-- Cells/DupocTrollBot (2026-10-13) — the twelve `S'`-ONLY cells of `DupocTrollBot k` ("defect iff the opponent IS
+-- `DupocBot k`", no engine cell): the simple-member form of the engine's code (`progCode_DupocTrollBot_sT`), the
+-- false-`.eq` else-play against the zoo (`dtb_C_of_ne`; code disjointness by branch constants, by the semantic
+-- template separation `templateCode_phiC_ne_phiDu`, and by the primed stored-template separation
+-- `templateCodeAt_phiTT_ne_phiCu`), nine SND cells, the POS cell against Dupoc (the reflexive equation found,
+-- `tact_qTD`/`trollD_vs_dupoc_V`), the Löb cell against DIMCID (`dimcid_vs_described` on the troll's tower) and
+-- the genuine floor against CIMCIC (`dich_DupocTrollBot_vs_CIMCIC`, hinge = CIMCIC's guard).
+#print axioms progCode_DupocTrollBot_sT
+#print axioms dtb_C_of_ne
+#print axioms templateCode_phiC_ne_phiDu
+#print axioms templateCodeAt_ne_templateCode_of_models'
+#print axioms progCode_DupocTrollBot_ne_CupodBot
+#print axioms snd_DupocTrollBot_vs_CooperateBot
+#print axioms snd_DupocTrollBot_vs_DefectBot
+#print axioms snd_DupocTrollBot_vs_DBot
+#print axioms snd_DupocTrollBot_vs_EBot
+#print axioms snd_DupocTrollBot_vs_OBot
+#print axioms snd_DupocTrollBot_vs_TitForTatBot
+#print axioms snd_DupocTrollBot_vs_CupodBot
+#print axioms snd_DupocTrollBot_vs_CupodTrollBot
+#print axioms snd_DupocTrollBot_vs_DupocTrollBot
+#print axioms tact_qTD
+#print axioms trollD_vs_dupoc_V
+#print axioms pos_DupocTrollBot_vs_DupocBot
+#print axioms loeb_DupocTrollBot_vs_DIMCID
+#print axioms floor_DupocTrollBot_vs_CIMCIC_right
+#print axioms floor_DupocTrollBot_vs_CIMCIC_true
+#print axioms dich_DupocTrollBot_vs_CIMCIC
+
+-- Cells/Dimdid (2026-10-13) — the thirteen `S'`-ONLY cells of `DIMDID k` ("defect iff my defection provably implies
+-- yours"; `(CIMCIC k).transpose = DIMDID k` by `rfl`, so on codes it is `SV (gI .D) 1`): the self-defeating guard
+-- (`dimdid_selfref_not_found`, the dual of `cimcic_selfref_not_found`), the found probe against `.bot DefectBot`
+-- (`tact_qDdB1`, `dimdid_botDB_V`, its τ-twin `cimcicS_botCB_V`, the prudence `k̂`-chain `prudence_found_vs_DIMDID`),
+-- five SND/POS cells, two conjunction-family Löb cells over described players (`found_pL`, `DP.ofClosed`, OBot in every
+-- model `obot_D_of_any_V`/`obotT_C_of_any_V`) and three two-hinge dichotomies (DIMDID's own guard the outer hinge).
+-- The three transposition cells (× DefectBot, × CupodBot, × DIMDID) are CIMCIC's cells through `outcomeSpecA_transpose`
+-- and are printed in `Audit/Outcome.lean`.
+#print axioms DIMDID_eq_transpose
+#print axioms progCode_DIMDID_SV
+#print axioms dimdid_selfref_not_found
+#print axioms eval_qT_impl
+#print axioms tact_qDdB1
+#print axioms dimdid_botDB_V
+#print axioms cimcicS_botCB_V
+#print axioms pos_DIMDID_vs_botDB
+#print axioms prudence_found_vs_DIMDID
+#print axioms snd_DIMDID_vs_CooperateBot
+#print axioms snd_DIMDID_vs_TitForTatBot
+#print axioms templateCode_phiDd_ne_phiCu
+#print axioms snd_DIMDID_vs_CupodTrollBot
+#print axioms pos_DIMDID_vs_DBot
+#print axioms pos_DIMDID_vs_EBot
+#print axioms found_pL
+#print axioms DP.ofClosed
+#print axioms transposeCode_OBotV
+#print axioms obot_D_of_any_V
+#print axioms obotT_C_of_any_V
+#print axioms ob_core
+#print axioms loeb_DIMDID_vs_OBot
+#print axioms loeb_DIMDID_vs_OBot_guard
+#print axioms di_core
+#print axioms loeb_DIMDID_vs_DIMCID
+#print axioms loeb_DIMDID_vs_DIMCID_guards
+#print axioms dich_DIMDID_vs_DupocBot
+#print axioms dich_DIMDID_vs_CIMCIC
+#print axioms dich_DIMDID_vs_PrudentBot
 #print axioms loeb_Dupoc_vs_Mirror_guard
 #print axioms loeb_Cupod_vs_Mirror_guard
 

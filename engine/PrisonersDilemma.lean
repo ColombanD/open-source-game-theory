@@ -3,6 +3,9 @@
 -- The decidability metatheory (T31…T54) is a separate lake target,
 -- `Metatheory`, rooted at `PrisonersDilemma.Decidability`.
 
+-- Bots with no engine outcome theorem yet (their PA-S' row lives in `arith/`):
+import PrisonersDilemma.Bots.DIMDID
+
 import PrisonersDilemma.Theorems.CooperateBot.Helpers
 import PrisonersDilemma.Theorems.CooperateBot.vs_DefectBot
 import PrisonersDilemma.Theorems.CooperateBot.vs_CooperateBot
@@ -24,6 +27,8 @@ import PrisonersDilemma.Theorems.CupodTrollBot.vs_CupodTrollBot
 import PrisonersDilemma.Theorems.CupodTrollBot.vs_CooperateBot
 import PrisonersDilemma.Theorems.CupodTrollBot.vs_DefectBot
 import PrisonersDilemma.Theorems.CupodTrollBot.vs_TitForTatBot
+-- DupocTrollBot (2026-10-13): definition only — its cells are proved in PA-S' (arith/), not here.
+import PrisonersDilemma.Bots.DupocTrollBot
 import PrisonersDilemma.Theorems.CupodTrollBot.vs_DBot
 import PrisonersDilemma.Theorems.CupodTrollBot.vs_OBot
 import PrisonersDilemma.Theorems.CupodTrollBot.vs_MirrorBot

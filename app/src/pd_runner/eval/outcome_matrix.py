@@ -202,6 +202,19 @@ def library_bots(theorems_dir: Path = _THEOREMS_DIR) -> set[str]:
     }
 
 
+def roster_bots(theorems: list["OutcomeTheorem"], resolved_source: str,
+                theorems_dir: Path = _THEOREMS_DIR) -> set[str]:
+    """The matrix roster for a source: the per-bot theorem directories, plus — for a
+    non-engine source only — every bot the loaded cells name. An `S'`-only bot
+    (`DupocTrollBot`, 2026-10-13: an engine DEFINITION with no engine theorem, all
+    its cells in `arith/`) has no directory under `Theorems/`, so it would otherwise be
+    invisible to the `S'` matrix; the engine path stays byte-identical (the golden test)."""
+    bots = library_bots(theorems_dir)
+    if resolved_source != "engine":
+        bots |= {t.left_bot for t in theorems} | {t.right_bot for t in theorems}
+    return bots
+
+
 # The Lean-side export (`lake exe export_outcomes`) — structured data recovered from
 # ELABORATED TYPES, so the regime and the side conditions are read rather than guessed.
 # Committed so the Python side works without a Lean toolchain; `source_digest` lets the
@@ -842,7 +855,7 @@ def build_outcome_matrix(
     """
     resolved = resolve_source(source)
     theorems = scan_outcome_theorems(theorems_dir, source=resolved, floor_policy=floor_policy)
-    bots = library_bots(theorems_dir)
+    bots = roster_bots(theorems, resolved, theorems_dir)
     statuses = (load_status(status_file, bots)
                 if status_file is not None and resolved == "engine" else {})
     flips = engine_flips(theorems, resolved)
@@ -1005,7 +1018,7 @@ def build_outcome_details(
     row-side value for a `≠` cell) and the note."""
     resolved = resolve_source(source)
     theorems = scan_outcome_theorems(theorems_dir, source=resolved, floor_policy=floor_policy)
-    bots = library_bots(theorems_dir)
+    bots = roster_bots(theorems, resolved, theorems_dir)
     by_pair = index_by_ordered_pair(theorems)
     flips = engine_flips(theorems, resolved)
     order = _bot_order(bots)

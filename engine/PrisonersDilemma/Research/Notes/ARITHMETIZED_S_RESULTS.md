@@ -37,6 +37,11 @@ every loss traceable to unary variable indices in `proofLen`; the results are pa
 **94 agree with the engine and 13 disagree**; **26 genuine floors** (dichotomies, no side taken);
 **22 excluded** (LegibleBot 16, OptimBot 4, WaryBot's two floor cells).
 
+Beyond the engine's ledger, **12 `S'`-only cells** (2026-10-13): `DupocTrollBot k` ("defect iff the opponent IS
+`DupocBot k`", an engine definition with no engine theorem) against the ten `body` bots, CIMCIC and itself —
+9 SND, 1 POS (× DupocBot `(D, D)`), 1 LOEB (× DIMCID `(C, D)`), 1 genuine floor (× CIMCIC, engine side `(C, D)`).
+`Cells/DupocTrollBot.lean`; ledger section "`S'`-only cells" of `ROUTE_B_CENSUS.md`. Export totals: 118 cells, 27 floors.
+
 | class | cells | how |
 |---|---|---|
 | SF | 28 | search-free: transfer at the engine's fuel (`eval`/`EvalGraph` in lockstep) |

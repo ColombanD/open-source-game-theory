@@ -167,6 +167,10 @@ Then, in order:
    engine, and why (`dimcid_vs_closed`: DIMCID defects against every closed program).
 6. **The floors** — `Cells/FloorDichotomy.lean`: the 26 genuine floors as hypothesis-free dichotomies
    on the hinge `□[k] (the outer guard)`; `hinge_reduces_to_bounded_consistency_DupocBot_vs_DBot`.
+7. **An `S'`-only bot** — `Cells/DupocTrollBot.lean` (2026-10-13): `DupocTrollBot k` ("defect iff the opponent
+   IS `DupocBot k`", no engine theorem), twelve cells against `body` + CIMCIC + itself: nine SND, the POS cell
+   × DupocBot `(D, D)`, the Löb cell × DIMCID `(C, D)`, and a 27th genuine floor × CIMCIC (its `dich_` lives in
+   this file; `Outcome/Check.lean` runs `#check_floorA_theorems` on it too).
 
 ## 4. Dictionary: engine ↔ `ArithS`
 
@@ -200,7 +204,8 @@ Then, in order:
 atom, `snd_` soundness/else branch, `pos_` guard found without Löb, `loeb_` bounded Löb, `khat_` the
 `k̂`-chain, `floor_` a settled floor half, `dich_` a floor dichotomy. The cell name is the `outcome_` one.
 
-**The hand-template twins — retired from the matrix.** Every one of the 107 cells of `Outcome/Matrix/` is stated
+**The hand-template twins — retired from the matrix.** Every one of the 107 engine-ledger cells of `Outcome/Matrix/`
+(118 with the eleven `S'`-only DupocTrollBot cells) is stated
 on the engine's own `progCode` since 2026-10-02. The twins were hand-written codes with a hand-written template,
 kept because a different template is a different SENTENCE (length-bounded provability does not transfer across
 provably equivalent sentences) and each cell's argument had to be re-run on the engine's code:
