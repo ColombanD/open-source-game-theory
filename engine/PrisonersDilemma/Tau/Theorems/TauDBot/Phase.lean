@@ -29,6 +29,8 @@ def dbotRow : Tmpl → Action
   | .dbot => .D
   | .cupod      => .C
   | .cupodTroll => .D
+  | .dupocTroll => .D
+  | .dimdid     => .C
   | _     => .C
 
 /-- The row's witness: one run-stage watching the δ_D behavioral column — every
@@ -56,6 +58,8 @@ theorem dbotRow_plays {k : Nat} (hk : 7 ≤ k)
   | .cupodTroll => -- CupodTroll TRUSTS the defector (its identity check fails), and
                    -- trust-toward-a-defector is the punisher's fire condition
                    dbot_watch_fires_of_trust .cupodTroll (pD .cupodTroll)
+  | .dupocTroll => dbot_watch_fires_of_trust .dupocTroll (pD .dupocTroll)
+  | .dimdid     => dbot_plays_C_of_defect .dimdid (pD .dimdid)
   | .cimcic     => dbot_plays_C_of_defect .cimcic (pD .cimcic)
   | .dimcid     => dbot_plays_C_of_defect .dimcid (pD .dimcid)
   | .prudent    => dbot_plays_C_of_defect .prudent (pD .prudent)

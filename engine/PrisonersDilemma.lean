@@ -225,6 +225,13 @@ import PrisonersDilemma.Tau.Theorems.TauDBot.Helpers
 import PrisonersDilemma.Tau.Theorems.TauDBot.Phase
 import PrisonersDilemma.Tau.Theorems.TauCupodTroll.Helpers
 import PrisonersDilemma.Tau.Theorems.TauCupodTroll.Phase
+import PrisonersDilemma.Tau.Theorems.TauDupocTroll.Helpers
+import PrisonersDilemma.Tau.Theorems.TauDupocTroll.Phase
+import PrisonersDilemma.Base.EvalTranspose
+import PrisonersDilemma.Tau.Theorems.TauDIMDID.Helpers
+import PrisonersDilemma.Tau.Theorems.TauDIMDID.Loeb
+import PrisonersDilemma.Tau.Theorems.TauDIMDID.Tower
+import PrisonersDilemma.Tau.Theorems.TauDIMDID.Phase
 import PrisonersDilemma.Tau.Theorems.TauCupod.Helpers
 import PrisonersDilemma.Tau.Theorems.TauCupod.Phase
 import PrisonersDilemma.Tau.Theorems.TauCIMCIC.Helpers

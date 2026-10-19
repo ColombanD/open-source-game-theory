@@ -31,6 +31,8 @@ def justRow : Tmpl → Action
   | .dbot     => .D
   | .cupod      => .D
   | .cupodTroll => .D
+  | .dupocTroll => .D
+  | .dimdid     => .D
   | .cimcic     => .C
   | .dimcid     => .D
   | .prudent    => .D
@@ -66,6 +68,8 @@ theorem justRow_plays {k : Nat} (hk : 7 ≤ k) (hkk : 3 * c_guard k + 22 ≤ k)
   | .dbot     => searchProbe_plays_D _ _ (bL .dbot)
   | .cupod      => searchProbe_plays_D _ _ (bL .cupod)
   | .cupodTroll => searchProbe_plays_D _ _ (bL .cupodTroll)
+  | .dupocTroll => searchProbe_plays_D _ _ (bL .dupocTroll)
+  | .dimdid     => searchProbe_plays_D _ _ (bL .dimdid)
   | .cimcic     => searchProbe_plays_C _ _ (bL .cimcic)
   | .dimcid     => searchProbe_plays_D _ _ (bL .dimcid)
   | .prudent    => searchProbe_plays_D _ _ (bL .prudent)

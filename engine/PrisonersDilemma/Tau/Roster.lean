@@ -79,23 +79,39 @@ namespace PD.Tau
     `maxconfidence`) all compile to the SAME symmetric `.sys` term `cfdSys` —
     `sysGo` never consults the template name for this spec — so every mutual-Löb
     lemma of `TauMaxConfidence/Helpers.lean` covers them by `rfl` and no new Löb work
-    exists. Its row is Dupoc's row; only the aggregator differs. -/
+    exists. Its row is Dupoc's row; only the aggregator differs.
+
+    **`dupocTroll` (DupocTrollBot) ADDED 2026-10-19 — CupodTroll's twin aimed at the
+    Löbian cooperator** (`Bots/DupocTrollBot.lean`, an `S'`-only base bot: no engine outcome
+    theorem). One index-decided `proveEq` stage on the named target `.dupoc`: D at Dupoc,
+    C everywhere else. Placed after `minconfidence` and BEFORE `mirror` in the order, so
+    τ(Mirror)'s diverging diagonal stays the last entry. Its purpose is the ladder zoo
+    `body8+trolls` of the paper: with the slot, PA-`S'` states its row (`arith/ArithS/Tau/
+    Rows/DupocTroll.lean`) and the zoo is kernel-backed.
+
+    **`dimdid` (DIMDID) ADDED 2026-10-19 — τ(CIMCIC)'s C/D transposition, the FIFTH
+    self-prober** (`Bots/DIMDID.lean`, `S'`-only in the base). Its guard is CIMCIC's with the
+    actions swapped ("I defect ⇒ you defect"), so it entangles with `dupoc`, `cupod`, `cimcic`,
+    `dimcid`, `prudent`, `mirror` and the two natives. Against the τ̂-closed part of the roster its
+    bits are CIMCIC's transposed (`Base/EvalTranspose.lean`, `Pf.transpose_iff`); the rest are
+    DIMCID-style censuses at the other polarity (`Tau/Theorems/TauDIMDID/Helpers.lean`). Placed
+    after `dupocTroll`, before `mirror`. -/
 inductive Tmpl
   | coop | defect | tftSim | tftPf | dupoc | ebot | just | obot | guardian | dbot
-  | cupodTroll | cupod | cimcic | dimcid | prudent | maxconfidence | minconfidence | mirror
+  | cupodTroll | cupod | cimcic | dimcid | prudent | maxconfidence | minconfidence | dupocTroll | dimdid | mirror
 deriving DecidableEq, Repr
 
 /-- The canonical hypothesis order — the entry order of every decision vector. -/
 def tauOrder : List Tmpl :=
   [.coop, .defect, .tftSim, .tftPf, .dupoc, .ebot, .just, .obot, .guardian, .dbot,
-   .cupodTroll, .cupod, .cimcic, .dimcid, .prudent, .maxconfidence, .minconfidence, .mirror]
+   .cupodTroll, .cupod, .cimcic, .dimcid, .prudent, .maxconfidence, .minconfidence, .dupocTroll, .dimdid, .mirror]
 
 /-- `tauOrder` without its last slot — the PREFIX row order for a template whose own
     diagonal diverges (τ(Mirror)): the vote never reaches the last entry in the C-regime,
     so its row is stated over the prefix and the app records the missing slot as `N`. -/
 def tauOrderInit : List Tmpl :=
   [.coop, .defect, .tftSim, .tftPf, .dupoc, .ebot, .just, .obot, .guardian, .dbot,
-   .cupodTroll, .cupod, .cimcic, .dimcid, .prudent, .maxconfidence, .minconfidence]
+   .cupodTroll, .cupod, .cimcic, .dimcid, .prudent, .maxconfidence, .minconfidence, .dupocTroll, .dimdid]
 
 theorem tauOrder_eq : tauOrder = tauOrderInit ++ [.mirror] := rfl
 

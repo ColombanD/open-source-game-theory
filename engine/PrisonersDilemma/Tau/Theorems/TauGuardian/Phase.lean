@@ -31,6 +31,8 @@ def guardianRow : Tmpl → Action
   | .dbot     => .D
   | .cupod      => .C
   | .cupodTroll => .C
+  | .dupocTroll => .C
+  | .dimdid     => .C
   | .cimcic     => .C
   | .dimcid     => .C
   | .prudent    => .C
@@ -59,6 +61,8 @@ theorem guardianRow_plays {k : Nat} (hk : 7 ≤ k) (hkk : 3 * c_guard k + 22 ≤
   | .dbot     => searchProbeD_plays_D _ _ (gB .dbot)
   | .cupod      => searchProbeD_plays_C _ _ (gB .cupod)
   | .cupodTroll => searchProbeD_plays_C _ _ (gB .cupodTroll)
+  | .dupocTroll => searchProbeD_plays_C _ _ (gB .dupocTroll)
+  | .dimdid     => searchProbeD_plays_C _ _ (gB .dimdid)
   | .cimcic     => searchProbeD_plays_C _ _ (gB .cimcic)
   | .dimcid     => searchProbeD_plays_C _ _ (gB .dimcid)
   | .prudent    => searchProbeD_plays_C _ _ (gB .prudent)

@@ -34,6 +34,8 @@ def eRow : Tmpl → Action
   | .dbot     => .D
   | .cupod      => .C
   | .cupodTroll => .D
+  | .dupocTroll => .D
+  | .dimdid     => .C
   | .cimcic     => .C
   | .dimcid     => .C
   | .prudent    => .C
@@ -73,6 +75,8 @@ theorem eRow_plays {k : Nat} (hk : 7 ≤ k) (hkk : 3 * c_guard k + 22 ≤ k) (h6
   | .dbot     => simWatchC_fires _ _ (pD .dbot)
   | .cupod      => simWatchC_falls _ _ (pD .cupod) (simWatchC_fires _ _ (pC .cupod))
   | .cupodTroll => simWatchC_fires _ _ (pD .cupodTroll)
+  | .dupocTroll => simWatchC_fires _ _ (pD .dupocTroll)
+  | .dimdid     => simWatchC_falls _ _ (pD .dimdid) (simWatchC_fires _ _ (pC .dimdid))
   | .cimcic     => simWatchC_falls _ _ (pD .cimcic) (simWatchC_fires _ _ (pC .cimcic))
   | .dimcid     => simWatchC_falls _ _ (pD .dimcid) (simWatchC_fires _ _ (pC .dimcid))
   | .prudent    => -- w1, w2 fall (Prudent defects on both constants); w3 FIRES: it
@@ -108,6 +112,6 @@ theorem tauEBot_phase {k : Nat} (hk : 7 ≤ k) (hkk : 3 * c_guard k + 22 ≤ k) 
     (fun T _ => eRow_plays hk hkk h6 h10 hL hcg hpm T)
   simp only [bitMass, tauOrder, List.map, eRow, massOf, massOf_ifC, massOf_ifD,
     TauBotZ] at h ⊢
-  simpa [eMass] using h
+  simpa [eMass, -forall_const] using h
 
 end PD.Tau

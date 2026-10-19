@@ -42,6 +42,8 @@ def minconfidenceRow : Tmpl → Action
   | .dbot       => .D
   | .cupod      => .D
   | .cupodTroll => .D
+  | .dupocTroll => .D
+  | .dimdid     => .D
   | .cimcic     => .C
   | .dimcid     => .D
   | .prudent    => .D
@@ -96,6 +98,8 @@ theorem minconfidenceRow_plays {k : Nat} (hk : 7 ≤ k) (hkk : 3 * c_guard k + 2
   | dbot => rw [inst_minconfidence_eq_dupoc k .dbot (by decide) (by decide) (by decide) (by decide)]; exact hD .dbot
   | cupod => rw [inst_minconfidence_eq_dupoc k .cupod (by decide) (by decide) (by decide) (by decide)]; exact hD .cupod
   | cupodTroll => rw [inst_minconfidence_eq_dupoc k .cupodTroll (by decide) (by decide) (by decide) (by decide)]; exact hD .cupodTroll
+  | dupocTroll => rw [inst_minconfidence_eq_dupoc k .dupocTroll (by decide) (by decide) (by decide) (by decide)]; exact hD .dupocTroll
+  | dimdid => rw [inst_minconfidence_eq_dupoc k .dimdid (by decide) (by decide) (by decide) (by decide)]; exact hD .dimdid
   | cimcic => rw [inst_minconfidence_eq_dupoc k .cimcic (by decide) (by decide) (by decide) (by decide)]; exact hD .cimcic
   | dimcid => rw [inst_minconfidence_eq_dupoc k .dimcid (by decide) (by decide) (by decide) (by decide)]; exact hD .dimcid
   | prudent => rw [inst_minconfidence_eq_dupoc k .prudent (by decide) (by decide) (by decide) (by decide)]; exact hD .prudent

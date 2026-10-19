@@ -454,7 +454,7 @@ theorem pf_neg_probeD_constC {K : Nat} (hK : 13 ≤ K) :
 abbrev simMass (w : Tmpl → Nat) : Nat :=
   w .coop + (w .tftSim + (w .tftPf + (w .dupoc + (w .just + (w .obot +
     (w .guardian + (w .cupodTroll + (w .cupod + (w .cimcic +
-      (w .dimcid + (w .maxconfidence + (w .minconfidence + w .mirror))))))))))))
+      (w .dimcid + (w .maxconfidence + (w .minconfidence + (w .dupocTroll + (w .dimdid + w .mirror))))))))))))))
 abbrev pfMass (w : Tmpl → Nat) : Nat :=
   w .coop + (w .tftSim + (w .tftPf + (w .dupoc + (w .just + (w .obot + (w .cimcic + (w .maxconfidence + (w .minconfidence + w .mirror))))))))
 abbrev dupMass (w : Tmpl → Nat) : Nat :=
@@ -466,7 +466,7 @@ abbrev dupMass (w : Tmpl → Nat) : Nat :=
     wrong. -/
 abbrev eMass (w : Tmpl → Nat) : Nat :=
   w .tftSim + (w .tftPf + (w .dupoc + (w .ebot + (w .just + (w .obot +
-    (w .guardian + (w .cupod + (w .cimcic + (w .dimcid + (w .prudent + (w .maxconfidence + (w .minconfidence + w .mirror)))))))))))) 
+    (w .guardian + (w .cupod + (w .cimcic + (w .dimcid + (w .prudent + (w .maxconfidence + (w .minconfidence + (w .dimdid + w .mirror))))))))))))) 
 /-- τ(Guardian)'s mass — `simMass` PLUS the prudent slot (2026-08-25): Guardian
     trusts τ(Prudent) (it cannot convict it of bullying the cooperator — its
     exploitation there is a floor-priced else-play), while TFTSim SEES Prudent
@@ -474,20 +474,20 @@ abbrev eMass (w : Tmpl → Nat) : Nat :=
 abbrev guardMass (w : Tmpl → Nat) : Nat :=
   w .coop + (w .tftSim + (w .tftPf + (w .dupoc + (w .just + (w .obot +
     (w .guardian + (w .cupodTroll + (w .cupod + (w .cimcic +
-      (w .dimcid + (w .prudent + (w .maxconfidence + (w .minconfidence + w .mirror)))))))))))))
-abbrev obotMass (w : Tmpl → Nat) : Nat := w .coop + w .cupodTroll
+      (w .dimcid + (w .prudent + (w .maxconfidence + (w .minconfidence + (w .dupocTroll + (w .dimdid + w .mirror)))))))))))))))
+abbrev obotMass (w : Tmpl → Nat) : Nat := w .coop + (w .cupodTroll + w .dupocTroll)
 /-- τ(Cupod)'s mass: everything but the provable bullies — the defector, ITSELF
     (the Löbian self-defection), and — since the 2026-08-24 `proveEq` restatement
     — τ(CupodTroll), which now recognises Cupod and defects on it. -/
 abbrev cupodMass (w : Tmpl → Nat) : Nat :=
   w .coop + (w .tftSim + (w .tftPf + (w .dupoc + (w .ebot + (w .just +
-    (w .obot + (w .guardian + (w .dbot + (w .cimcic + (w .prudent + (w .maxconfidence + w .minconfidence)))))))))))
+    (w .obot + (w .guardian + (w .dbot + (w .cimcic + (w .prudent + (w .maxconfidence + (w .minconfidence + w .dupocTroll))))))))))))
 /-- τ(DBot)'s mass: everything but the exploitable constant cooperator AND ITSELF
     (the punisher fires on its own trust — see `Theorems/TauDBot/Phase.lean`). -/
 abbrev dbotMass (w : Tmpl → Nat) : Nat :=
   w .defect + (w .tftSim + (w .tftPf + (w .dupoc + (w .ebot + (w .just +
     (w .obot + (w .guardian + (w .cupod + (w .cimcic +
-      (w .dimcid + (w .prudent + (w .maxconfidence + (w .minconfidence + w .mirror)))))))))))))
+      (w .dimcid + (w .prudent + (w .maxconfidence + (w .minconfidence + (w .dimdid + w .mirror))))))))))))))
 /-- τ(CIMCIC)'s mass: the hypotheses whose consequent it can certify — the
     cooperator, both TFTs, the mutual-Löb Dupoc, Just (through the same Löb bit)
     and ITSELF (the `implRefl` diagonal). -/

@@ -3,6 +3,8 @@ import PrisonersDilemma.Tau.Theorems.TauEBot.Helpers
 import PrisonersDilemma.Tau.Theorems.TauGuardian.Helpers
 import PrisonersDilemma.Tau.Theorems.TauDBot.Helpers
 import PrisonersDilemma.Tau.Theorems.TauCupodTroll.Helpers
+import PrisonersDilemma.Tau.Theorems.TauDupocTroll.Helpers
+import PrisonersDilemma.Tau.Theorems.TauDIMDID.Helpers
 import PrisonersDilemma.Tau.Theorems.TauCupod.Helpers
 import PrisonersDilemma.Tau.Theorems.TauCIMCIC.Helpers
 import PrisonersDilemma.Tau.Theorems.TauDIMCID.Helpers
@@ -168,6 +170,8 @@ def coopColBit : Tmpl → Bool
   | .dimcid     => false
   | .cupod      => false
   | .cupodTroll => false
+  | .dupocTroll => false
+  | .dimdid     => false   -- its C vs the cooperator is the else-play of a failed `.impl` search (τ of CIMCIC vs defect)
   | .defect   => false
   | .ebot     => false
   | .guardian => false
@@ -190,6 +194,8 @@ theorem ps_probe_inst_coop {k : Nat} (hk : 7 ≤ k) (hkk : 3 * c_guard k + 22 �
   | .dbot     => ps_probe_false_of_plays_D k dbot_coop_plays_D
   | .cupod      => ps_probe_inst_cupod_coop_false (le_refl k)
   | .cupodTroll => ps_probe_inst_cupodTroll_false (le_refl k) _ (by decide)
+  | .dupocTroll => ps_probe_inst_dupocTroll_false (le_refl k) _ (by decide)
+  | .dimdid     => ps_probe_inst_dimdid_coop_false (le_refl k)
   | .cimcic     => ps_probe_cimcic_coop hL hcg
   | .dimcid     => ps_probe_inst_dimcid_coop_false (le_refl k)
   | .prudent    => ps_probe_false_of_plays_D k prudent_coop_plays_D
@@ -206,6 +212,8 @@ def defectColBit : Tmpl → Bool
   | .dimcid     => false
   | .cupod      => false
   | .cupodTroll => false
+  | .dupocTroll => false
+  | .dimdid     => false
   | .coop => true
   | .dbot => true
   | _     => false
@@ -228,6 +236,8 @@ theorem ps_probe_inst_defect {k : Nat} (hk : 7 ≤ k) (hk6 : 25 ≤ k)
   | .dbot     => (proofSearch_spec _ _).2 (pf_probe_dbotConstD hk6)
   | .cupod      => ps_probe_false_of_plays_D k (cupod_defect_plays_D hk)
   | .cupodTroll => ps_probe_inst_cupodTroll_false (le_refl k) _ (by decide)
+  | .dupocTroll => ps_probe_inst_dupocTroll_false (le_refl k) _ (by decide)
+  | .dimdid     => ps_probe_inst_dimdid_defect_false hL
   | .cimcic     => ps_probe_false_of_plays_D k cimcic_defect_plays_D
   | .dimcid     => ps_probe_inst_dimcid_defect_false hL
   | .prudent    => ps_probe_false_of_plays_D k prudent_defect_plays_D
@@ -249,6 +259,8 @@ def dupocColBit : Tmpl → Bool
   | .dimcid     => false
   | .cupod      => false
   | .cupodTroll => false
+  | .dupocTroll => false   -- the troll DEFECTS on Dupoc: its probe is false, not floor-priced
+  | .dimdid     => false   -- the anti-aligned system (τ of cimcic × cupod): DIMDID's C is floor-priced
   | .defect   => false
   | .ebot     => false
   | .obot     => false
@@ -286,6 +298,8 @@ theorem ps_probe_inst_dupoc {k : Nat} (hk : 7 ≤ k) (hkk : 3 * c_guard k + 22 �
   | .dbot     => ps_probe_inst_dbot_dupoc_false (le_refl k)
   | .cupod      => ps_probe_inst_cupod_dupoc_false (le_refl k)
   | .cupodTroll => ps_probe_inst_cupodTroll_false (le_refl k) _ (by decide)
+  | .dupocTroll => ps_probe_inst_dupocTroll_dupoc_false (by omega) k
+  | .dimdid     => ps_probe_inst_dimdid_dupoc_false (le_refl k)
   | .cimcic     => hcim
   | .dimcid     => ps_probe_inst_dimcid_dupoc_false (le_refl k)
   | .prudent    => ps_probe_inst_prudent_dupoc_false
@@ -304,6 +318,8 @@ def guardColBit : Tmpl → Bool
   | .dimcid     => false
   | .cupod      => false
   | .cupodTroll => false
+  | .dupocTroll => false
+  | .dimdid     => false
   | .defect => true
   | .ebot   => true
   | .dbot   => true
@@ -335,6 +351,8 @@ theorem ps_probeD_inst_coop {k : Nat} (hk : 7 ≤ k) (hkk : 3 * c_guard k + 22 �
   | .dbot     => ps_probeD_dbotConstC h6
   | .cupod      => ps_probeD_false_of_plays_C k cupod_coop_plays_C
   | .cupodTroll => ps_probeD_inst_cupodTroll_false k _ (by decide)
+  | .dupocTroll => ps_probeD_inst_dupocTroll_false k _ (by decide)
+  | .dimdid     => ps_probeD_inst_dimdid_coop_false
   | .cimcic     => ps_probeD_false_of_plays_C k (cimcic_coop_plays_C hL)
   | .dimcid     => ps_probeD_inst_dimcid_coop_false
   | .prudent    => ps_probeD_inst_prudent_coop_false (le_refl k)
@@ -375,6 +393,12 @@ def cupodColBit : Tmpl → Bool
   -- recognises Cupod and defects on it — base CupodTrollBot's whole point, which
   -- the old `.opp`-pronoun guard could never express.
   | .cupodTroll => true
+  -- DupocTroll recognises Dupoc, not Cupod: at `.cupod` it cooperates, so its
+  -- defection probe is false
+  | .dupocTroll => false
+  -- DIMDID × Cupod is ALIGNED ON DEFECTION like DIMCID × Cupod — the τ-image of the
+  -- cimcic × dupoc mutual Löb (2026-10-19); Löb-gated, hypothesis `hdd` below
+  | .dimdid => true
   -- the mirror×cupod ENTANGLED cell: the D-cycle is the self-supporting one
   -- (Cupod punishes, Mirror copies the punishment), so bounded Löb closes it on
   -- MUTUAL DEFECTION — the tau image of base
@@ -389,6 +413,9 @@ theorem ps_probeD_inst_cupod {k : Nat} (hk : 7 ≤ k) (hkk : 3 * c_guard k + 22 
     -- other Löb bit (see `TauDIMCID/Helpers`, "The ENTANGLED cells")
     (hdc : proofSearch k (probeD (inst (tauZoo k) .dimcid .cupod))
       = cupodColBit .dimcid)
+    -- the dimdid×cupod pair: the τ-image of `ps_probe_inst_cimcic_dupoc` (Löb-gated)
+    (hdd : proofSearch k (probeD (inst (tauZoo k) .dimdid .cupod))
+      = cupodColBit .dimdid)
     -- the mirror×cupod entangled bit, Löb-gated
     (hmirCu : proofSearch k (probeD (inst (tauZoo k) .mirror .cupod))
       = cupodColBit .mirror) :
@@ -417,6 +444,8 @@ theorem ps_probeD_inst_cupod {k : Nat} (hk : 7 ≤ k) (hkk : 3 * c_guard k + 22 
   -- RESTATED 2026-08-24: the identity guard now fires at `.cupod`, so the
   -- troll DEFECTS here and its defection has a cheap positive transcript
   | .cupodTroll => ps_probeD_inst_cupodTroll_cupod (by omega) hkk
+  | .dupocTroll => ps_probeD_inst_dupocTroll_false k _ (by decide)
+  | .dimdid     => hdd
   | .cupod      => hquine
   | .cimcic     => ps_probeD_inst_cimcic_cupod_false (le_refl k)
   | .dimcid     => hdc
@@ -436,6 +465,8 @@ def coopColPlay : Tmpl → Action
   | .dimcid     => .C
   | .cupod      => .C
   | .cupodTroll => .C
+  | .dupocTroll => .C
+  | .dimdid     => .C
   | .defect => .D
   | .ebot   => .D
   | .dbot   => .D
@@ -457,6 +488,8 @@ theorem inst_coop_plays {k : Nat} (hk : 7 ≤ k) (hkk : 3 * c_guard k + 22 ≤ k
   | .dbot     => dbot_coop_plays_D
   | .cupod      => cupod_coop_plays_C
   | .cupodTroll => cupodTroll_plays_C _ (by decide)
+  | .dupocTroll => dupocTroll_plays_C _ (by decide)
+  | .dimdid     => dimdid_coop_plays_C
   | .cimcic     => cimcic_coop_plays_C hL
   | .dimcid     => dimcid_coop_plays_C
   | .prudent    => prudent_coop_plays_D
@@ -473,6 +506,8 @@ def defectColPlay : Tmpl → Action
   | .dimcid     => .D
   | .cupod      => .D
   | .cupodTroll => .C
+  | .dupocTroll => .C
+  | .dimdid     => .D
   | .coop => .C
   | .dbot => .C
   | _     => .D
@@ -494,6 +529,8 @@ theorem inst_defect_plays {k : Nat} (hk : 7 ≤ k)
   | .dbot     => dbot_plays_C_of_defect .defect ⟨1, rfl⟩
   | .cupod      => cupod_defect_plays_D hk
   | .cupodTroll => cupodTroll_plays_C _ (by decide)
+  | .dupocTroll => dupocTroll_plays_C _ (by decide)
+  | .dimdid     => dimdid_defect_plays_D hL
   | .cimcic     => cimcic_defect_plays_D
   | .dimcid     => dimcid_defect_plays_D hL
   | .prudent    => prudent_defect_plays_D

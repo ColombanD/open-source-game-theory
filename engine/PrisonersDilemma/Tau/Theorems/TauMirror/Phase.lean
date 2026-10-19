@@ -8,6 +8,7 @@ import PrisonersDilemma.Tau.Theorems.TauOBot.Phase
 import PrisonersDilemma.Tau.Theorems.TauGuardian.Phase
 import PrisonersDilemma.Tau.Theorems.TauDBot.Phase
 import PrisonersDilemma.Tau.Theorems.TauCupodTroll.Phase
+import PrisonersDilemma.Tau.Theorems.TauDupocTroll.Phase
 import PrisonersDilemma.Tau.RowSpec
 import PrisonersDilemma.Outcome.Attr
 
@@ -52,6 +53,8 @@ def mirrorRow : Tmpl → Action
   | .guardian   => .C
   | .dbot       => .C
   | .cupodTroll => .C
+  | .dupocTroll => .C
+  | .dimdid     => .D
   | .cupod      => .D
   | .cimcic     => .C
   | .dimcid     => .D
@@ -64,6 +67,7 @@ def mirrorRow : Tmpl → Action
 def mirrorMass (w : Tmpl → Nat) : Nat :=
   w .coop + w .tftSim + w .tftPf + w .dupoc + w .ebot + w .just + w .guardian + w .dbot
     + w .cupodTroll + w .cimcic + w .prudent + w .maxconfidence + w .minconfidence
+    + w .dupocTroll
 
 /-- Every prefix slot's witness, past one threshold. -/
 theorem mirrorRow_plays :
@@ -81,9 +85,10 @@ theorem mirrorRow_plays :
   obtain ⟨k5, h5⟩ := mirror_prudent_plays_C
   obtain ⟨kP, hP⟩ := prudent_mirror_plays_C
   obtain ⟨kC, hkC⟩ := ps_probe_inst_maxconfidence_dupoc
+  obtain ⟨kDd, hDd⟩ := mirror_dimdid_plays_D
   -- a SUM, not a max tower: `omega` case-splits every `max`, and eleven of them
   -- (2026-08-27, the `.maxconfidence` slot) blew the heartbeat budget
-  refine ⟨kA + kQ + kM + kX + k1 + k2 + k3 + k4 + k5 + kP + kC, fun k hk T hT => ?_⟩
+  refine ⟨kA + kQ + kM + kX + k1 + k2 + k3 + k4 + k5 + kP + kC + kDd, fun k hk T hT => ?_⟩
   have hL : 100 * Nat.log2 k + 1000 ≤ k := hkA k (by omega)
   have hlog := Nat.log2_le_self k
   have hk2 : 7 ≤ k := by omega
@@ -99,7 +104,7 @@ theorem mirrorRow_plays :
   have hpm := hP k (by omega)
   have hconf := hkC k (by omega)
   simp only [tauOrderInit, List.mem_cons, List.mem_nil_iff, or_false] at hT
-  rcases hT with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  rcases hT with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · exact mirror_coop_plays_C
   · exact mirror_defect_plays_D
   · exact mirror_copies (T := .tftSim) rfl (tftSimRow_plays hk2 hkk h6 h10 hL hcg .mirror)
@@ -120,6 +125,8 @@ theorem mirrorRow_plays :
     exact h1 k (by omega)
   · rw [inst_at_minconfidence_eq_dupoc k .mirror (by decide) (by decide) (by decide)]
     exact h1 k (by omega)
+  · exact mirror_copies (T := .dupocTroll) rfl (dupocTrollRow_plays hk3 .mirror)
+  · exact hDd k (by omega)
 
 /-- **τ(Mirror)'s row** — the matrix-facing statement (`@[tau_row]`: validated by
     `Tau/Lint.lean`, exported to the app): unconditional at large `k`, the floors and
@@ -127,6 +134,7 @@ theorem mirrorRow_plays :
 @[tau_row]
 theorem mirrorRowSpec : RowSpec .mirror tauOrderInit mirrorRow := mirrorRow_plays
 
+set_option maxHeartbeats 1600000 in
 /-- **τ(Mirror)'s phase.** Boundary `θ ≤ mirrorMass`; above it the play is `none`. -/
 theorem tauMirror_phase :
     ∃ k₂, ∀ k, k₂ < k →

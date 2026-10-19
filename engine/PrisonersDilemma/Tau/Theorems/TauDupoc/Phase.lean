@@ -30,6 +30,8 @@ def dupocRow : Tmpl → Action
   | .dbot     => .D
   | .cupod      => .D
   | .cupodTroll => .D
+  | .dupocTroll => .D
+  | .dimdid     => .D
   | .cimcic     => .C
   | .dimcid     => .D
   | .prudent    => .D
@@ -72,6 +74,8 @@ theorem dupocRow_plays {k : Nat} (hk : 7 ≤ k) (hkk : 3 * c_guard k + 22 ≤ k)
   | .cupod      => -- the entangled cell, CLOSED BY THE FLOOR (TauCupod/Helpers)
       dupoc_cupod_plays_D
   | .cupodTroll => searchProbe_plays_D _ _ (bL .cupodTroll)
+  | .dupocTroll => searchProbe_plays_D _ _ (bL .dupocTroll)   -- the troll defects on Dupoc: false probe, D by soundness
+  | .dimdid     => dupoc_dimdid_plays_D   -- the anti-aligned system, closed by the floor (τ of cupod × cimcic)
   | .cimcic     => hdmP   -- the mutual-Löb cell (∃k₂-gated, TauCIMCIC/Helpers)
   | .prudent    => dupoc_prudent_plays_D   -- its probe of Prudent's member fails (D by soundness)
   | .mirror     => hmirP   -- the mirror×dupoc entangled cell (gated)

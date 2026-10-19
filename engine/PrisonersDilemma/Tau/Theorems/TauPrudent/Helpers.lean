@@ -4,6 +4,7 @@ import PrisonersDilemma.Tau.Theorems.TauMirror.Helpers
 import PrisonersDilemma.Tau.Theorems.TauDIMCID.Helpers
 import PrisonersDilemma.Tau.Theorems.TauCupod.Helpers
 import PrisonersDilemma.Tau.Theorems.TauCupodTroll.Helpers
+import PrisonersDilemma.Tau.Theorems.TauDupocTroll.Helpers
 
 /-!
 # Tau/Theorems/TauPrudent — Critch's canonical bot at one budget (2026-08-25)
@@ -115,6 +116,10 @@ theorem ps_probeD_inst_cupodTroll_defect_false {k : Nat} (hk : 3 ≤ k) :
     proofSearch k (probeD (inst (tauZoo k) .cupodTroll .defect)) = false :=
   ps_probeD_false_of_plays_C k (cupodTroll_plays_C _ (by decide))
 
+theorem ps_probeD_inst_dupocTroll_defect_false {k : Nat} (hk : 3 ≤ k) :
+    proofSearch k (probeD (inst (tauZoo k) .dupocTroll .defect)) = false :=
+  ps_probeD_false_of_plays_C k (dupocTroll_plays_C _ (by decide))
+
 /-- CIMCIC's defection on the defector is an else-play behind an IMPL guard:
     no refutation, no certificate — floor. -/
 theorem ps_probeD_inst_cimcic_defect_false {k K : Nat} (hK : K ≤ k) :
@@ -206,6 +211,14 @@ theorem prudent_cupodTroll_plays_D {k : Nat} (hk : 3 ≤ k) :
   rw [inst_prudent_peel_cupodTroll k]
   exact nested_plays_D_of_inner _ _
     (by rw [probeD_subst]; exact ps_probeD_inst_cupodTroll_defect_false hk)
+
+theorem prudent_dupocTroll_plays_D {k : Nat} (hk : 3 ≤ k) :
+    ∃ N, eval N (.bot (inst (tauZoo k) .prudent .dupocTroll))
+      (.bot (inst (tauZoo k) .prudent .dupocTroll)) (inst (tauZoo k) .prudent .dupocTroll)
+      = some Action.D := by
+  rw [inst_prudent_peel_dupocTroll k]
+  exact nested_plays_D_of_inner _ _
+    (by rw [probeD_subst]; exact ps_probeD_inst_dupocTroll_defect_false hk)
 
 /-! ### guardian and ebot — outer probes of floor-priced cooperation -/
 

@@ -410,6 +410,40 @@ theorem cimcic_cupodTroll_plays_D {k : Nat} :
   rw [inst_cimcic_peel_cupodTroll k]
   exact searchGuard_plays_D _ _ (ps_cimGuard_cupodTroll_false (le_refl k))
 
+/-- The dupocTroll-cell guard: the same floor (DupocTroll's C at `.cimcic` is the
+    else-play of its failed `.eq` search). -/
+theorem ps_cimGuard_dupocTroll_false {k K : Nat} (hK : K ≤ k) :
+    proofSearch K
+      ((Formula.impl (.plays .self (.bot (inst (tauZoo k) .dupocTroll .cimcic)) Action.C)
+                     (.plays (.bot (inst (tauZoo k) .dupocTroll .cimcic)) .self Action.C)).subst
+        (.bot (inst (tauZoo k) .cimcic .dupocTroll))
+        (.bot (inst (tauZoo k) .cimcic .dupocTroll)))
+      = false := by
+  rw [cimG_subst]
+  cases h : proofSearch K (cimG (.bot (inst (tauZoo k) .cimcic .dupocTroll))
+      (inst (tauZoo k) .dupocTroll .cimcic)) with
+  | false => rfl
+  | true =>
+      exfalso
+      have hp := (proofSearch_spec _ _).1 h
+      rw [show inst (tauZoo k) .dupocTroll .cimcic
+          = .search k (.eq (.const Action.C) (.const Action.D))
+              (.const .D) (.const .C)
+          from inst_dupocTroll_peel k .cimcic (by decide)] at hp
+      refine no_provable_botSearcherElse_tail k k _ .D .C _ (by decide) (Nat.le_refl k) _
+        K _ hp hK ⟨rfl, ?_⟩
+      intro hA
+      simp only [TailTo] at hA
+      exact absurd hA (by rw [inst_cimcic_peel_dupocTroll k]; simp)
+
+/-- τ(CIMCIC) DEFECTS against DupocTroll too. -/
+theorem cimcic_dupocTroll_plays_D {k : Nat} :
+    ∃ N, eval N (.bot (inst (tauZoo k) .cimcic .dupocTroll))
+      (.bot (inst (tauZoo k) .cimcic .dupocTroll)) (inst (tauZoo k) .cimcic .dupocTroll)
+      = some Action.D := by
+  rw [inst_cimcic_peel_dupocTroll k]
+  exact searchGuard_plays_D _ _ (ps_cimGuard_dupocTroll_false (le_refl k))
+
 /-! ## OBot's cell — the one NEW census, and it is budget-free
 
 τ(OBot) at CIMCIC truly DEFECTS (watch 2 catches CIMCIC defecting against the

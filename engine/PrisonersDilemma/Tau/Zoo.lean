@@ -9,6 +9,8 @@ import PrisonersDilemma.Tau.Bots.TauOBot
 import PrisonersDilemma.Tau.Bots.TauGuardian
 import PrisonersDilemma.Tau.Bots.TauDBot
 import PrisonersDilemma.Tau.Bots.TauCupodTroll
+import PrisonersDilemma.Tau.Bots.TauDupocTroll
+import PrisonersDilemma.Tau.Bots.TauDIMDID
 import PrisonersDilemma.Tau.Bots.TauCupod
 import PrisonersDilemma.Tau.Bots.TauCIMCIC
 import PrisonersDilemma.Tau.Bots.TauDIMCID
@@ -45,6 +47,8 @@ def tmplSpec : Tmpl → Spec Tmpl
   | .guardian => tauGuardianSpec
   | .dbot     => tauDBotSpec
   | .cupodTroll => tauCupodTrollSpec
+  | .dupocTroll => tauDupocTrollSpec
+  | .dimdid => tauDIMDIDSpec
   | .cupod    => tauCupodSpec
   | .cimcic   => tauCIMCICSpec
   | .dimcid   => tauDIMCIDSpec
@@ -141,6 +145,32 @@ theorem inst_cupodTroll_peel (k : Nat) : ∀ T, T ≠ .cupod →
   intro T h
   cases T <;> first | rfl | exact absurd rfl h
 
+/-! τ(DupocTroll)'s row (2026-10-19): CupodTroll's twin, recognising Dupoc's SOURCE — `.dupoc`
+itself and the two natives, whose spec is `tauDupocSpec` (so the natives stay Dupoc's twins as
+hypotheses at this slot too, and the `inst_*confidence_eq_dupoc` bridges hold by `rfl`). -/
+
+/-- τ(DupocTroll) at a hypothesis whose source is Dupoc's: the identity holds, the guard
+    fires, it DEFECTS. -/
+theorem inst_dupocTroll_peel_rec (k : Nat) : ∀ T, tmplSpec T = tauDupocSpec →
+    inst (tauZoo k) .dupocTroll T
+      = .search k (.eq (.const Action.C) (.const Action.C))
+          (.const .D) (.const .C) := by
+  intro T h
+  cases T <;> first | rfl | exact absurd h (by decide)
+
+theorem inst_dupocTroll_peel_dupoc (k : Nat) : inst (tauZoo k) .dupocTroll .dupoc
+    = .search k (.eq (.const Action.C) (.const Action.C))
+        (.const .D) (.const .C) := rfl
+
+/-- …and at every hypothesis whose source is NOT Dupoc's the identity is decidably FALSE:
+    it cooperates. -/
+theorem inst_dupocTroll_peel (k : Nat) : ∀ T, tmplSpec T ≠ tauDupocSpec →
+    inst (tauZoo k) .dupocTroll T
+      = .search k (.eq (.const Action.C) (.const Action.D))
+          (.const .D) (.const .C) := by
+  intro T h
+  cases T <;> first | rfl | exact absurd rfl h
+
 /-! ### τ(Cupod)'s row — the FIRST `.sys` row (2026-08-20)
 
 Three shapes, because Cupod is a self-prober meeting another self-prober:
@@ -170,6 +200,8 @@ theorem inst_cupod_peel_dbot (k : Nat) : inst (tauZoo k) .cupod .dbot
     = .search k (probeD (inst (tauZoo k) .dbot .cupod)) (.const .D) (.const .C) := rfl
 theorem inst_cupod_peel_cupodTroll (k : Nat) : inst (tauZoo k) .cupod .cupodTroll
     = .search k (probeD (inst (tauZoo k) .cupodTroll .cupod)) (.const .D) (.const .C) := rfl
+theorem inst_cupod_peel_dupocTroll (k : Nat) : inst (tauZoo k) .cupod .dupocTroll
+    = .search k (probeD (inst (tauZoo k) .dupocTroll .cupod)) (.const .D) (.const .C) := rfl
 
 /-- τ(Cupod)'s DIAGONAL — the quine, mirroring Dupoc's with inverted polarity. -/
 theorem inst_cupod_quine (k : Nat) : inst (tauZoo k) .cupod .cupod
@@ -243,6 +275,10 @@ theorem inst_cimcic_peel_dbot (k : Nat) : inst (tauZoo k) .cimcic .dbot
 theorem inst_cimcic_peel_cupodTroll (k : Nat) : inst (tauZoo k) .cimcic .cupodTroll
     = .search k (.impl (.plays .self (.bot (inst (tauZoo k) .cupodTroll .cimcic)) Action.C)
                        (.plays (.bot (inst (tauZoo k) .cupodTroll .cimcic)) .self Action.C))
+        (.const .C) (.const .D) := rfl
+theorem inst_cimcic_peel_dupocTroll (k : Nat) : inst (tauZoo k) .cimcic .dupocTroll
+    = .search k (.impl (.plays .self (.bot (inst (tauZoo k) .dupocTroll .cimcic)) Action.C)
+                       (.plays (.bot (inst (tauZoo k) .dupocTroll .cimcic)) .self Action.C))
         (.const .C) (.const .D) := rfl
 
 /-- τ(CIMCIC)'s DIAGONAL: after subst the guard is `φ → φ` — `implRefl` territory. -/
@@ -332,6 +368,10 @@ theorem inst_dimcid_peel_cupodTroll (k : Nat) : inst (tauZoo k) .dimcid .cupodTr
     = .search k (.impl (.plays .self (.bot (inst (tauZoo k) .cupodTroll .dimcid)) Action.C)
                        (.plays (.bot (inst (tauZoo k) .cupodTroll .dimcid)) .self Action.D))
         (.const .D) (.const .C) := rfl
+theorem inst_dimcid_peel_dupocTroll (k : Nat) : inst (tauZoo k) .dimcid .dupocTroll
+    = .search k (.impl (.plays .self (.bot (inst (tauZoo k) .dupocTroll .dimcid)) Action.C)
+                       (.plays (.bot (inst (tauZoo k) .dupocTroll .dimcid)) .self Action.D))
+        (.const .D) (.const .C) := rfl
 
 /-- τ(DIMCID)'s DIAGONAL: same player, opposite actions — the Löb fixpoint on
     defection, NOT an `implRefl` instance. -/
@@ -385,6 +425,117 @@ theorem inst_cimcic_sys_dimcid (k : Nat) : inst (tauZoo k) .cimcic .dimcid
                                     (.plays (.bot (.selfIdx 1)) .self Action.C))
                      (.const .C) (.const .D))
            (.cons (.search k (.impl (.plays .self (.bot (.selfIdx 0)) Action.C)
+                                    (.plays (.bot (.selfIdx 0)) .self Action.D))
+                     (.const .D) (.const .C)) .nil)) 0 := rfl
+
+/-! τ(DIMDID)'s row (2026-10-19): τ(CIMCIC)'s C/D transposition, template by template — the
+same three shape classes as DIMCID's with the guard `(I defect vs I_T) → (I_T defects vs me)`,
+fire `D`, default `C`. Off-cycle peels, the diagonal (a tautology, `implRefl` territory in the D
+polarity), and four entangled systems. -/
+
+theorem inst_dimdid_peel_coop (k : Nat) : inst (tauZoo k) .dimdid .coop
+    = .search k (.impl (.plays .self (.bot (inst (tauZoo k) .coop .dimdid)) Action.D)
+                       (.plays (.bot (inst (tauZoo k) .coop .dimdid)) .self Action.D))
+        (.const .D) (.const .C) := rfl
+theorem inst_dimdid_peel_defect (k : Nat) : inst (tauZoo k) .dimdid .defect
+    = .search k (.impl (.plays .self (.bot (inst (tauZoo k) .defect .dimdid)) Action.D)
+                       (.plays (.bot (inst (tauZoo k) .defect .dimdid)) .self Action.D))
+        (.const .D) (.const .C) := rfl
+theorem inst_dimdid_peel_tftSim (k : Nat) : inst (tauZoo k) .dimdid .tftSim
+    = .search k (.impl (.plays .self (.bot (inst (tauZoo k) .tftSim .dimdid)) Action.D)
+                       (.plays (.bot (inst (tauZoo k) .tftSim .dimdid)) .self Action.D))
+        (.const .D) (.const .C) := rfl
+theorem inst_dimdid_peel_tftPf (k : Nat) : inst (tauZoo k) .dimdid .tftPf
+    = .search k (.impl (.plays .self (.bot (inst (tauZoo k) .tftPf .dimdid)) Action.D)
+                       (.plays (.bot (inst (tauZoo k) .tftPf .dimdid)) .self Action.D))
+        (.const .D) (.const .C) := rfl
+theorem inst_dimdid_peel_ebot (k : Nat) : inst (tauZoo k) .dimdid .ebot
+    = .search k (.impl (.plays .self (.bot (inst (tauZoo k) .ebot .dimdid)) Action.D)
+                       (.plays (.bot (inst (tauZoo k) .ebot .dimdid)) .self Action.D))
+        (.const .D) (.const .C) := rfl
+theorem inst_dimdid_peel_just (k : Nat) : inst (tauZoo k) .dimdid .just
+    = .search k (.impl (.plays .self (.bot (inst (tauZoo k) .just .dimdid)) Action.D)
+                       (.plays (.bot (inst (tauZoo k) .just .dimdid)) .self Action.D))
+        (.const .D) (.const .C) := rfl
+theorem inst_dimdid_peel_obot (k : Nat) : inst (tauZoo k) .dimdid .obot
+    = .search k (.impl (.plays .self (.bot (inst (tauZoo k) .obot .dimdid)) Action.D)
+                       (.plays (.bot (inst (tauZoo k) .obot .dimdid)) .self Action.D))
+        (.const .D) (.const .C) := rfl
+theorem inst_dimdid_peel_guardian (k : Nat) : inst (tauZoo k) .dimdid .guardian
+    = .search k (.impl (.plays .self (.bot (inst (tauZoo k) .guardian .dimdid)) Action.D)
+                       (.plays (.bot (inst (tauZoo k) .guardian .dimdid)) .self Action.D))
+        (.const .D) (.const .C) := rfl
+theorem inst_dimdid_peel_dbot (k : Nat) : inst (tauZoo k) .dimdid .dbot
+    = .search k (.impl (.plays .self (.bot (inst (tauZoo k) .dbot .dimdid)) Action.D)
+                       (.plays (.bot (inst (tauZoo k) .dbot .dimdid)) .self Action.D))
+        (.const .D) (.const .C) := rfl
+theorem inst_dimdid_peel_cupodTroll (k : Nat) : inst (tauZoo k) .dimdid .cupodTroll
+    = .search k (.impl (.plays .self (.bot (inst (tauZoo k) .cupodTroll .dimdid)) Action.D)
+                       (.plays (.bot (inst (tauZoo k) .cupodTroll .dimdid)) .self Action.D))
+        (.const .D) (.const .C) := rfl
+theorem inst_dimdid_peel_dupocTroll (k : Nat) : inst (tauZoo k) .dimdid .dupocTroll
+    = .search k (.impl (.plays .self (.bot (inst (tauZoo k) .dupocTroll .dimdid)) Action.D)
+                       (.plays (.bot (inst (tauZoo k) .dupocTroll .dimdid)) .self Action.D))
+        (.const .D) (.const .C) := rfl
+
+/-- τ(DIMDID)'s DIAGONAL: `φ → φ` at the D polarity — `implRefl`, like CIMCIC's. -/
+theorem inst_dimdid_quine (k : Nat) : inst (tauZoo k) .dimdid .dimdid
+    = .search k (.impl (.plays .self .self Action.D) (.plays .self .self Action.D))
+        (.const .D) (.const .C) := rfl
+
+/-- The DIMDID↔Dupoc, ↔Cupod, ↔CIMCIC, ↔DIMCID entangled systems, DIMDID at the head… -/
+theorem inst_dimdid_sys_dupoc (k : Nat) : inst (tauZoo k) .dimdid .dupoc
+    = .sys (.cons (.search k (.impl (.plays .self (.bot (.selfIdx 1)) Action.D)
+                                    (.plays (.bot (.selfIdx 1)) .self Action.D))
+                     (.const .D) (.const .C))
+           (.cons (.search k (.plays (.bot (.selfIdx 0)) (.bot (.selfIdx 0)) Action.C)
+                     (.const .C) (.const .D)) .nil)) 0 := rfl
+theorem inst_dimdid_sys_cupod (k : Nat) : inst (tauZoo k) .dimdid .cupod
+    = .sys (.cons (.search k (.impl (.plays .self (.bot (.selfIdx 1)) Action.D)
+                                    (.plays (.bot (.selfIdx 1)) .self Action.D))
+                     (.const .D) (.const .C))
+           (.cons (.search k (.plays (.bot (.selfIdx 0)) (.bot (.selfIdx 0)) Action.D)
+                     (.const .D) (.const .C)) .nil)) 0 := rfl
+theorem inst_dimdid_sys_cimcic (k : Nat) : inst (tauZoo k) .dimdid .cimcic
+    = .sys (.cons (.search k (.impl (.plays .self (.bot (.selfIdx 1)) Action.D)
+                                    (.plays (.bot (.selfIdx 1)) .self Action.D))
+                     (.const .D) (.const .C))
+           (.cons (.search k (.impl (.plays .self (.bot (.selfIdx 0)) Action.C)
+                                    (.plays (.bot (.selfIdx 0)) .self Action.C))
+                     (.const .C) (.const .D)) .nil)) 0 := rfl
+theorem inst_dimdid_sys_dimcid (k : Nat) : inst (tauZoo k) .dimdid .dimcid
+    = .sys (.cons (.search k (.impl (.plays .self (.bot (.selfIdx 1)) Action.D)
+                                    (.plays (.bot (.selfIdx 1)) .self Action.D))
+                     (.const .D) (.const .C))
+           (.cons (.search k (.impl (.plays .self (.bot (.selfIdx 0)) Action.C)
+                                    (.plays (.bot (.selfIdx 0)) .self Action.D))
+                     (.const .D) (.const .C)) .nil)) 0 := rfl
+
+/-- …and seen from the partners' sides. -/
+theorem inst_dupoc_sys_dimdid (k : Nat) : inst (tauZoo k) .dupoc .dimdid
+    = .sys (.cons (.search k (.plays (.bot (.selfIdx 1)) (.bot (.selfIdx 1)) Action.C)
+                     (.const .C) (.const .D))
+           (.cons (.search k (.impl (.plays .self (.bot (.selfIdx 0)) Action.D)
+                                    (.plays (.bot (.selfIdx 0)) .self Action.D))
+                     (.const .D) (.const .C)) .nil)) 0 := rfl
+theorem inst_cupod_sys_dimdid (k : Nat) : inst (tauZoo k) .cupod .dimdid
+    = .sys (.cons (.search k (.plays (.bot (.selfIdx 1)) (.bot (.selfIdx 1)) Action.D)
+                     (.const .D) (.const .C))
+           (.cons (.search k (.impl (.plays .self (.bot (.selfIdx 0)) Action.D)
+                                    (.plays (.bot (.selfIdx 0)) .self Action.D))
+                     (.const .D) (.const .C)) .nil)) 0 := rfl
+theorem inst_cimcic_sys_dimdid (k : Nat) : inst (tauZoo k) .cimcic .dimdid
+    = .sys (.cons (.search k (.impl (.plays .self (.bot (.selfIdx 1)) Action.C)
+                                    (.plays (.bot (.selfIdx 1)) .self Action.C))
+                     (.const .C) (.const .D))
+           (.cons (.search k (.impl (.plays .self (.bot (.selfIdx 0)) Action.D)
+                                    (.plays (.bot (.selfIdx 0)) .self Action.D))
+                     (.const .D) (.const .C)) .nil)) 0 := rfl
+theorem inst_dimcid_sys_dimdid (k : Nat) : inst (tauZoo k) .dimcid .dimdid
+    = .sys (.cons (.search k (.impl (.plays .self (.bot (.selfIdx 1)) Action.C)
+                                    (.plays (.bot (.selfIdx 1)) .self Action.D))
+                     (.const .D) (.const .C))
+           (.cons (.search k (.impl (.plays .self (.bot (.selfIdx 0)) Action.D)
                                     (.plays (.bot (.selfIdx 0)) .self Action.D))
                      (.const .D) (.const .C)) .nil)) 0 := rfl
 
@@ -472,6 +623,10 @@ theorem inst_prudent_peel_dbot (k : Nat) : inst (tauZoo k) .prudent .dbot
 theorem inst_prudent_peel_cupodTroll (k : Nat) : inst (tauZoo k) .prudent .cupodTroll
     = .search k (probe (inst (tauZoo k) .cupodTroll .prudent))
         (.search k (probeD (inst (tauZoo k) .cupodTroll .defect)) (.const .C) (.const .D))
+        (.const .D) := rfl
+theorem inst_prudent_peel_dupocTroll (k : Nat) : inst (tauZoo k) .prudent .dupocTroll
+    = .search k (probe (inst (tauZoo k) .dupocTroll .prudent))
+        (.search k (probeD (inst (tauZoo k) .dupocTroll .defect)) (.const .C) (.const .D))
         (.const .D) := rfl
 /-- τ(Prudent)'s DIAGONAL: the outer quine, the inner check on its own δ_D cell. -/
 theorem inst_prudent_quine (k : Nat) : inst (tauZoo k) .prudent .prudent

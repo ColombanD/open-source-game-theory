@@ -37,6 +37,8 @@ def cupodRow : Tmpl → Action
   | .mirror     => .D
   -- the ALIGNED entangled pair: mutual Löb on DEFECTION (see `TauDIMCID`)
   | .dimcid     => .D
+  -- …and its τ-twin: τ(DIMDID) × Cupod is the τ-image of CIMCIC × Dupoc (2026-10-19)
+  | .dimdid     => .D
   | _           => .C
 
 /-- The row's witness: one punish-probe per hypothesis, fed the δ_Cu guard column;
@@ -55,10 +57,14 @@ theorem cupodRow_plays {k : Nat} (hk : 7 ≤ k) (hkk : 3 * c_guard k + 22 ≤ k)
       = cupodColBit .dimcid)
     (hdcP : ∃ N, eval N (.bot (inst (tauZoo k) .cupod .dimcid))
       (.bot (inst (tauZoo k) .cupod .dimcid)) (inst (tauZoo k) .cupod .dimcid)
+      = some Action.D)
+    (hdd : proofSearch k (probeD (inst (tauZoo k) .dimdid .cupod)) = cupodColBit .dimdid)
+    (hddP : ∃ N, eval N (.bot (inst (tauZoo k) .cupod .dimdid))
+      (.bot (inst (tauZoo k) .cupod .dimdid)) (inst (tauZoo k) .cupod .dimdid)
       = some Action.D) :
     ∀ T, ∃ N, eval N (.bot (inst (tauZoo k) .cupod T)) (.bot (inst (tauZoo k) .cupod T))
               (inst (tauZoo k) .cupod T) = some (cupodRow T) :=
-  let bCu := ps_probeD_inst_cupod hk hkk hquine hdc hmirCu
+  let bCu := ps_probeD_inst_cupod hk hkk hquine hdc hdd hmirCu
   fun T => match T with
   | .coop       => searchProbeD_plays_C _ _ (bCu .coop)
   | .defect     => searchProbeD_plays_D _ _ (bCu .defect)
@@ -71,11 +77,13 @@ theorem cupodRow_plays {k : Nat} (hk : 7 ≤ k) (hkk : 3 * c_guard k + 22 ≤ k)
   | .guardian   => searchProbeD_plays_C _ _ (bCu .guardian)
   | .dbot       => searchProbeD_plays_C _ _ (bCu .dbot)
   | .cupodTroll => searchProbeD_plays_D _ _ (bCu .cupodTroll)
+  | .dupocTroll => searchProbeD_plays_C _ _ (bCu .dupocTroll)   -- it hunts Dupoc, not Cupod
   | .cupod      => inst_cupod_quine_plays_D hquine
   | .cimcic     => cupod_cimcic_plays_C
   | .prudent    => cupod_prudent_plays_C   -- it cannot convict Prudent: the D is an else-play
   | .mirror     => hmirP
   | .dimcid     => hdcP
+  | .dimdid     => hddP
   | .maxconfidence => by
       rw [inst_at_maxconfidence_eq_dupoc k .cupod (by decide) (by decide) (by decide)]
       exact cupod_dupoc_plays_C
@@ -94,18 +102,22 @@ theorem cupodRowSpec : RowSpec .cupod tauOrder cupodRow := by
   obtain ⟨kY, hkY⟩ := cupod_mirror_plays_D
   obtain ⟨kD, hkD⟩ := ps_probeD_inst_dimcid_cupod
   obtain ⟨kE, hkE⟩ := cupod_dimcid_plays_D
-  refine ⟨max (max kL kA) (max (max kX kY) (max kD kE)), fun k hk T _ => ?_⟩
+  obtain ⟨kF, hkF⟩ := ps_probeD_inst_dimdid_cupod
+  obtain ⟨kG, hkG⟩ := cupod_dimdid_plays_D
+  refine ⟨max (max kL kA) (max (max kX kY) (max (max kD kE) (max kF kG))), fun k hk T _ => ?_⟩
   have hdc := hkD k (by omega)
   have hdcP := hkE k (by omega)
   have hquine := hkL k (by omega)
   have hkA' : 12 * Nat.log2 k + 140 ≤ k := hkA k (by omega)
   have hmirCu := hkX k (by omega)
   have hmirP := hkY k (by omega)
+  have hdd := hkF k (by omega)
+  have hddP := hkG k (by omega)
   have hk2 : 7 ≤ k := by omega
   have hkk : 3 * c_guard k + 22 ≤ k := by simp only [c_guard, numCost]; omega
   have h6 : 25 ≤ k := by omega
   have h10 : 43 ≤ k := by omega
-  exact cupodRow_plays hk2 hkk h6 h10 hquine hmirCu hmirP hdc hdcP T
+  exact cupodRow_plays hk2 hkk h6 h10 hquine hmirCu hmirP hdc hdcP hdd hddP T
 
 /-- **τ(CupodBot)** — boundary `θ ≤ cupodMass`. UNCONDITIONAL since 2026-08-24:
     its diagonal is the punish-polarity quine, its mirror slot a Löb fixpoint on
@@ -122,19 +134,23 @@ theorem tauCupod_phase :
   obtain ⟨kY, hkY⟩ := cupod_mirror_plays_D
   obtain ⟨kD, hkD⟩ := ps_probeD_inst_dimcid_cupod
   obtain ⟨kE, hkE⟩ := cupod_dimcid_plays_D
-  refine ⟨max (max kL kA) (max (max kX kY) (max kD kE)), fun k hk θ w opponent => ?_⟩
+  obtain ⟨kF, hkF⟩ := ps_probeD_inst_dimdid_cupod
+  obtain ⟨kG, hkG⟩ := cupod_dimdid_plays_D
+  refine ⟨max (max kL kA) (max (max kX kY) (max (max kD kE) (max kF kG))), fun k hk θ w opponent => ?_⟩
   have hdc := hkD k (by omega)
   have hdcP := hkE k (by omega)
   have hquine := hkL k (by omega)
   have hkA' : 12 * Nat.log2 k + 140 ≤ k := hkA k (by omega)
   have hmirCu := hkX k (by omega)
   have hmirP := hkY k (by omega)
+  have hdd := hkF k (by omega)
+  have hddP := hkG k (by omega)
   have hk2 : 7 ≤ k := by omega
   have hkk : 3 * c_guard k + 22 ≤ k := by simp only [c_guard, numCost]; omega
   have h6 : 25 ≤ k := by omega
   have h10 : 43 ≤ k := by omega
   have h := phase_of_bits (tauZoo k) .cupod w cupodRow tauOrder θ opponent
-    (fun T _ => cupodRow_plays hk2 hkk h6 h10 hquine hmirCu hmirP hdc hdcP T)
+    (fun T _ => cupodRow_plays hk2 hkk h6 h10 hquine hmirCu hmirP hdc hdcP hdd hddP T)
   simp only [bitMass, tauOrder, List.map, cupodRow, massOf, massOf_ifC, massOf_ifD,
     TauBotZ] at h ⊢
   simpa [cupodMass] using h

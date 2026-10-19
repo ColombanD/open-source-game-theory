@@ -1,6 +1,8 @@
 import PrisonersDilemma.Tau.Theorems.TauDIMCID.Helpers
 import PrisonersDilemma.Tau.Theorems.TauPrudent.Helpers
 import PrisonersDilemma.Tau.Theorems.TauMirror.Helpers
+import PrisonersDilemma.Tau.Theorems.TauDIMDID.Helpers
+import PrisonersDilemma.Tau.Theorems.TauDIMDID.Loeb
 import PrisonersDilemma.Tau.RowSpec
 import PrisonersDilemma.Outcome.Attr
 
@@ -31,6 +33,8 @@ def dimcidRow : Tmpl → Action
   | .guardian   => .C
   | .dbot       => .C
   | .cupodTroll => .C
+  | .dupocTroll => .C
+  | .dimdid     => .D
   | .cupod      => .D
   | .cimcic     => .C
   | .dimcid     => .D
@@ -43,6 +47,7 @@ def dimcidRow : Tmpl → Action
 def dimcidMass (w : Tmpl → Nat) : Nat :=
   w .coop + w .tftSim + w .tftPf + w .dupoc + w .ebot + w .just + w .obot + w .guardian
     + w .dbot + w .cupodTroll + w .cimcic + w .prudent + w .maxconfidence + w .minconfidence
+    + w .dupocTroll
 
 theorem dimcidRow_plays :
     ∃ k₂, ∀ k, k₂ < k → ∀ T,
@@ -52,7 +57,8 @@ theorem dimcidRow_plays :
   obtain ⟨k1, h1⟩ := dimcid_cupod_plays_D
   obtain ⟨k2, h2⟩ := dimcid_mirror_plays_D
   obtain ⟨k3, h3⟩ := dimcid_dimcid_plays_D
-  refine ⟨max kA (max k1 (max k2 k3)), fun k hk T => ?_⟩
+  obtain ⟨k4, h4⟩ := dimcid_dimdid_plays_D
+  refine ⟨max kA (max k1 (max k2 (max k3 k4))), fun k hk T => ?_⟩
   have hL : 100 * Nat.log2 k + 1000 ≤ k := hkA k (by omega)
   cases T with
   | coop => exact dimcid_coop_plays_C
@@ -66,6 +72,8 @@ theorem dimcidRow_plays :
   | guardian => exact dimcid_guardian_plays_C
   | dbot => exact dimcid_dbot_plays_C hL
   | cupodTroll => exact dimcid_cupodTroll_plays_C
+  | dupocTroll => exact dimcid_dupocTroll_plays_C
+  | dimdid => exact h4 k (by omega)
   | cupod => exact h1 k (by omega)
   | cimcic => exact dimcid_cimcic_plays_C
   | dimcid => exact h3 k (by omega)
@@ -86,6 +94,7 @@ theorem dimcidRowSpec : RowSpec .dimcid tauOrder dimcidRow := by
   obtain ⟨k₂, h⟩ := dimcidRow_plays
   exact ⟨k₂, fun k hk T _ => h k hk T⟩
 
+set_option maxHeartbeats 1600000 in
 /-- **τ(DIMCID)'s phase** — boundary `θ ≤ dimcidMass`. Unconditional. -/
 theorem tauDIMCID_phase :
     ∃ k₂, ∀ k, k₂ < k →

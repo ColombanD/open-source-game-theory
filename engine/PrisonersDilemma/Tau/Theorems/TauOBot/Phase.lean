@@ -31,6 +31,8 @@ def obotRow : Tmpl → Action
   | .dbot     => .D
   | .cupod      => .D
   | .cupodTroll => .C
+  | .dupocTroll => .C
+  | .dimdid     => .D
   | .cimcic     => .D
   | .dimcid     => .D
   | .prudent    => .D
@@ -60,6 +62,9 @@ theorem obotRow_plays {k : Nat} (hk : 7 ≤ k) (hkk : 3 * c_guard k + 22 ≤ k) 
   | .cupod      => simTestD_falls _ _ (pC .cupod) (simTestD_fires _ _ (pD .cupod))
   | .cupodTroll => simTestD_falls _ _ (pC .cupodTroll)
       (simTestD_falls _ _ (pD .cupodTroll) ⟨1, rfl⟩)
+  | .dupocTroll => simTestD_falls _ _ (pC .dupocTroll)
+      (simTestD_falls _ _ (pD .dupocTroll) ⟨1, rfl⟩)
+  | .dimdid     => simTestD_falls _ _ (pC .dimdid) (simTestD_fires _ _ (pD .dimdid))
   | .cimcic     => simTestD_falls _ _ (pC .cimcic) (simTestD_fires _ _ (pD .cimcic))
   | .dimcid     => simTestD_falls _ _ (pC .dimcid) (simTestD_fires _ _ (pD .dimcid))
   | .prudent    => simTestD_fires _ _ (pC .prudent)

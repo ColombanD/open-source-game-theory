@@ -1391,4 +1391,91 @@ theorem dimcid_cupodTroll_plays_C {k : Nat} :
   rw [inst_dimcid_peel_cupodTroll k]
   exact searchGuardD_plays_C _ _ hg
 
+/-! ### dupocTroll — the same two levels (2026-10-19), the recognised slot being `.dupoc` -/
+
+private abbrev Td₁ (k : Nat) : Formula :=
+  .plays (.bot (inst (tauZoo k) .dupocTroll .dimcid)) (.bot (inst (tauZoo k) .dimcid .dupocTroll))
+    Action.D
+
+private theorem dupocTroll_plays_C_vs_dimcid (k : Nat) :
+    ∃ N, eval N (.bot (inst (tauZoo k) .dupocTroll .dimcid))
+      (.bot (inst (tauZoo k) .dimcid .dupocTroll)) (.bot (inst (tauZoo k) .dupocTroll .dimcid))
+      = some Action.C := by
+  have hY : proofSearch k
+      ((Formula.eq (.const Action.C) (.const Action.D)).subst
+        (.bot (inst (tauZoo k) .dupocTroll .dimcid)) (.bot (inst (tauZoo k) .dimcid .dupocTroll)))
+      = false := by
+    simp only [Formula.subst, Prog.subst]
+    cases hps : proofSearch k (Formula.eq (.const Action.C) (.const Action.D)) with
+    | false => rfl
+    | true =>
+        have := Pf_sound _ _ ((proofSearch_spec _ _).1 hps)
+        simp [Formula.interp] at this
+  obtain ⟨N, hN⟩ := searchGuardD_plays_C (k := k)
+    (.bot (inst (tauZoo k) .dupocTroll .dimcid)) (.bot (inst (tauZoo k) .dimcid .dupocTroll)) hY
+  refine ⟨N + 1, ?_⟩
+  rw [eval, inst_dupocTroll_peel k .dimcid (by decide)]
+  exact hN
+
+private theorem leveld1 (k : Nat) :
+    ∀ K n φ, Pf K φ → TowerAt (Td₁ k) (DeadAll [Zc₂]) n φ → False := by
+  refine tower_census (Td₁ k) [Zc₂]
+    ⟨Or.inl ⟨_, _, _, rfl⟩, fun Z' h => by simp only [List.mem_singleton] at h; subst h; simp,
+     Or.inr ⟨_, _, by simp, rfl⟩, fun Z' h => by simp at h, trivial⟩
+    (DeadAll_cons_kill levelc2 DeadAll_nil_kill) ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
+  · intro K h
+    obtain ⟨m, hm⟩ := Pf_sound K _ (Pf.atom h)
+    obtain ⟨N, hN⟩ := dupocTroll_plays_C_vs_dimcid k
+    rw [play] at hm
+    exact absurd (eval_det hm hN) (by decide)
+  · intro g ψ b c opp h; simp [inst_dupocTroll_peel k .dimcid (by decide)] at h
+  · intro p q opp a h; simp [inst_dupocTroll_peel k .dimcid (by decide)] at h
+  · intro p q opp a h; simp [inst_dupocTroll_peel k .dimcid (by decide)] at h
+  · intro g ψ b c opp h
+    simp only [Td₁] at h
+    rw [inst_dupocTroll_peel k .dimcid (by decide)] at h
+    simp only [Formula.plays.injEq, Prog.bot.injEq, Prog.search.injEq, Prog.const.injEq] at h
+    obtain ⟨⟨rfl, rfl, rfl, rfl⟩, rfl, -⟩ := h
+    refine Or.inl ⟨1, le_rfl, (TowerAt_succ_box _ _ _ _ _).2 ?_⟩
+    simp only [Formula.subst, Prog.subst]
+    exact (TowerAt_zero_eq _ _ _ _).2 rfl
+  · intro defs i opp a h; simp [inst_dupocTroll_peel k .dimcid (by decide)] at h
+  · intro z a' g ψ c0 c1 q opp h; simp [inst_dupocTroll_peel k .dimcid (by decide)] at h
+  · intro k₁ ψ₁ k₂ ψ₂ c0 c1 q opp h; simp [inst_dupocTroll_peel k .dimcid (by decide)] at h
+  · intro g₁ ψ₁ e₁ L a opp h; simp [inst_dupocTroll_peel k .dimcid (by decide)] at h
+  · intro hd L a opp h; cases hd <;> simp [ctxPlug, inst_dupocTroll_peel k .dimcid (by decide)] at h
+  · intro hd L a opp h; cases hd <;> simp [plug2, inst_dupocTroll_peel k .dimcid (by decide)] at h
+
+/-- **τ(DIMCID) at DupocTroll COOPERATES**: its guard is unprovable at every budget. -/
+theorem dimcid_dupocTroll_plays_C {k : Nat} :
+    ∃ N, eval N (.bot (inst (tauZoo k) .dimcid .dupocTroll))
+      (.bot (inst (tauZoo k) .dimcid .dupocTroll)) (inst (tauZoo k) .dimcid .dupocTroll)
+      = some Action.C := by
+  have hg : proofSearch k
+      ((Formula.impl (.plays .self (.bot (inst (tauZoo k) .dupocTroll .dimcid)) Action.C)
+                     (.plays (.bot (inst (tauZoo k) .dupocTroll .dimcid)) .self Action.D)).subst
+        (.bot (inst (tauZoo k) .dimcid .dupocTroll)) (.bot (inst (tauZoo k) .dimcid .dupocTroll)))
+      = false := by
+    rw [dimG_subst]
+    cases h : proofSearch k (dimG (.bot (inst (tauZoo k) .dimcid .dupocTroll))
+        (inst (tauZoo k) .dupocTroll .dimcid)) with
+    | false => rfl
+    | true =>
+        exfalso
+        refine leveld1 k k 0 _ ((proofSearch_spec _ _).1 h)
+          ((TowerAt_impl _ _ _ _ _).2 ⟨(TowerAt_zero_plays _ _ _ _ _).2 rfl, ?_, ?_⟩)
+        · intro m hm hT
+          have hm0 : m = 0 := by omega
+          subst hm0
+          have := (TowerAt_zero_plays _ _ _ _ _).1 hT
+          simp at this
+        · rintro (⟨m, -, hT⟩ | h)
+          · cases m with
+            | zero => have := (TowerAt_zero_plays _ _ _ _ _).1 hT; simp at this
+            | succ _ => exact TowerAt_succ_plays _ _ _ _ _ _ hT
+          · exact h
+  generalize hMe : (Prog.bot (inst (tauZoo k) .dimcid .dupocTroll)) = Me at hg ⊢
+  rw [inst_dimcid_peel_dupocTroll k]
+  exact searchGuardD_plays_C _ _ hg
+
 end PD.Tau

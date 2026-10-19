@@ -1,4 +1,5 @@
 import PrisonersDilemma.Tau.Theorems.TauPrudent.Helpers
+import PrisonersDilemma.Tau.Theorems.TauDIMDID.Helpers
 import PrisonersDilemma.Tau.RowSpec
 import PrisonersDilemma.Outcome.Attr
 
@@ -47,6 +48,8 @@ theorem prudentRow_plays :
   | guardian => exact prudent_guardian_plays_D
   | dbot => exact prudent_dbot_plays_D hk2 hL
   | cupodTroll => exact prudent_cupodTroll_plays_D hk3
+  | dupocTroll => exact prudent_dupocTroll_plays_D hk3
+  | dimdid => exact prudent_dimdid_plays_D
   | cupod => exact prudent_cupod_plays_D
   | cimcic => exact prudent_cimcic_plays_D
   | dimcid => exact prudent_dimcid_plays_D

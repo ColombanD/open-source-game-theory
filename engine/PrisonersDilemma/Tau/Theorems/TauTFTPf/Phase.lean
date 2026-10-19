@@ -29,6 +29,8 @@ def tftPfRow : Tmpl → Action
   | .dbot     => .D
   | .cupod      => .D
   | .cupodTroll => .D
+  | .dupocTroll => .D
+  | .dimdid     => .D
   | .cimcic     => .C
   | .dimcid     => .D
   | .prudent    => .D
@@ -55,6 +57,8 @@ theorem tftPfRow_plays {k : Nat} (hk : 7 ≤ k) (hkk : 3 * c_guard k + 22 ≤ k)
   | .dbot     => searchProbe_plays_D _ _ (bC .dbot)
   | .cupod      => searchProbe_plays_D _ _ (bC .cupod)
   | .cupodTroll => searchProbe_plays_D _ _ (bC .cupodTroll)
+  | .dupocTroll => searchProbe_plays_D _ _ (bC .dupocTroll)
+  | .dimdid     => searchProbe_plays_D _ _ (bC .dimdid)
   | .cimcic     => searchProbe_plays_C _ _ (bC .cimcic)
   | .dimcid     => searchProbe_plays_D _ _ (bC .dimcid)
   | .prudent    => searchProbe_plays_D _ _ (bC .prudent)

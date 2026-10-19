@@ -87,7 +87,10 @@ def otherAction : Action → Action
     2026-08-24: the original asked about `.opp`, a free pronoun, against a
     counterfactual probe, and was unsatisfiable at every cell). For a NAMED target
     the question is about WHICH hypothesis is in the slot, so the compiler decides
-    it from the INDEX and emits a closed, decidably-true-or-false `.eq` — never by
+    it from the index — by SOURCE since 2026-10-19: `Z.spec T = Z.spec B`, so a
+    hypothesis whose spec is B's (the natives, whose spec is Dupoc's) is recognised
+    as B, exactly as the base `.eq` compares the opponent's SOURCE — and emits a
+    closed, decidably-true-or-false `.eq` — never by
     compiling B's behaviour, which re-enters the mutual-quine wall whenever B
     probes back (Cupod↔CupodTroll). Both directions stay decidable in `S`, so a
     `proveEq` bit is never floor-priced. -/
@@ -168,7 +171,8 @@ def guardOf (m : Mode) (test : Action) (obj : Prog) : Formula :=
   | .proveEq    => .eq obj obj
 
 /-- The index-decided `proveEq` guard for a NAMED target: the guard carries NO
-    compiled instance (see `Mode`); the compiler branches on `T = B` exactly as the
+    compiled instance (see `Mode`); the compiler branches on `Z.spec T = Z.spec B`
+    (source identity, 2026-10-19; before: the index `T = B`) exactly as the
     `.self` arms branch on the diagonal, and the `.eq` is the bit's object-language
     witness. -/
 def eqGuardOf {ι : Type} [DecidableEq ι] (T B : ι) (test : Action) : Formula :=
@@ -226,7 +230,7 @@ def instGo (Z : Zoo ι) [DecidableEq ι] : Nat → ι → ι → Spec ι → Pro
           let pC := instGo Z fuel A T p
           let qC := instGo Z fuel A T q
           match m, t with
-          | .proveEq, .name B => .search Z.budget (eqGuardOf T B test) pC qC
+          | .proveEq, .name B => .search Z.budget (eqGuardOf (Z.spec T) (Z.spec B) test) pC qC
           | m, .name B => .search Z.budget (guardOf m test (.bot (instAt Z fuel T B))) pC qC
           | m, .self =>
               let obj : Prog := if T = A then .self else .bot (instAt Z fuel T A)
@@ -256,7 +260,7 @@ def sysGo (Z : Zoo ι) [DecidableEq ι] (partnerIdx : Nat) : Nat → ι → ι �
           let pC := sysGo Z partnerIdx fuel A T p
           let qC := sysGo Z partnerIdx fuel A T q
           match m, t with
-          | .proveEq, .name B => .search Z.budget (eqGuardOf T B test) pC qC
+          | .proveEq, .name B => .search Z.budget (eqGuardOf (Z.spec T) (Z.spec B) test) pC qC
           | m, .name B => .search Z.budget (guardOf m test (.bot (instAt Z fuel T B))) pC qC
           | m, .self => .search Z.budget (guardOf m test (.bot (.selfIdx partnerIdx))) pC qC
   termination_by structural fuel _ _ _ => fuel

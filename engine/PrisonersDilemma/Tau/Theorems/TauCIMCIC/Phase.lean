@@ -65,6 +65,8 @@ theorem cimcicRow_plays {k : Nat} (hL : 100 * Nat.log2 k + 1000 ≤ k)
   | .guardian   => cimcic_guardian_plays_D
   | .dbot       => cimcic_dbot_plays_D
   | .cupodTroll => cimcic_cupodTroll_plays_D
+  | .dupocTroll => cimcic_dupocTroll_plays_D
+  | .dimdid     => cimcic_dimdid_plays_D
   | .cupod      => cimcic_cupod_plays_D
   | .cimcic     => cimcic_quine_plays_C hL
   | .dimcid     => cimcic_dimcid_plays_D

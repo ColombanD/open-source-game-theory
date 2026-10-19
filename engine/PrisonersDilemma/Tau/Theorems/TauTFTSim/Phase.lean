@@ -30,6 +30,8 @@ def tftSimRow : Tmpl → Action
   | .dbot     => .D
   | .cupod      => .C
   | .cupodTroll => .C
+  | .dupocTroll => .C
+  | .dimdid     => .C
   | .cimcic     => .C
   | .dimcid     => .C
   | .prudent    => .D
@@ -57,6 +59,8 @@ theorem tftSimRow_plays {k : Nat} (hk : 7 ≤ k) (hkk : 3 * c_guard k + 22 ≤ k
   | .dbot     => simCopy_plays _ _ (pC .dbot)
   | .cupod      => simCopy_plays _ _ (pC .cupod)
   | .cupodTroll => simCopy_plays _ _ (pC .cupodTroll)
+  | .dupocTroll => simCopy_plays _ _ (pC .dupocTroll)
+  | .dimdid     => simCopy_plays _ _ (pC .dimdid)
   | .cimcic     => simCopy_plays _ _ (pC .cimcic)
   | .dimcid     => simCopy_plays _ _ (pC .dimcid)
   | .prudent    => simCopy_plays _ _ (pC .prudent)
@@ -85,6 +89,6 @@ theorem tauTFTSim_phase {k : Nat} (hk : 7 ≤ k) (hkk : 3 * c_guard k + 22 ≤ k
     (fun T _ => tftSimRow_plays hk hkk h6 h10 hL hcg T)
   simp only [bitMass, tauOrder, List.map, tftSimRow, massOf, massOf_ifC, massOf_ifD,
     TauBotZ] at h ⊢
-  simpa [simMass] using h
+  simpa [simMass, -forall_const] using h
 
 end PD.Tau
