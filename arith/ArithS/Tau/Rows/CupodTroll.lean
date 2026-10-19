@@ -35,10 +35,11 @@ theorem cupodTroll_C (k : ℕ) (T : Tmpl) (h : T ≠ .cupod) : bitPlays k .cupod
 theorem cupodTroll_cupod_D : bitEventually .cupodTroll .cupod .D :=
   bit_search_found instCode_cupodTroll_cupod (eq_const_found .C) (fun _ _ ↦ const_play 0 _ _ _)
 
-/-- **τ(CupodTroll)'s row in `S'`** — 10 of the 14 paper slots (4 floor bits below). -/
+/-- **τ(CupodTroll)'s row in `S'`** — 12 of the 16 paper slots (4 floor bits below). -/
 @[tau_rowA]
 theorem cupodTrollRowSpecA : RowSpecA .cupodTroll
-    [.coop, .defect, .tftSim, .ebot, .obot, .dbot, .cupodTroll, .cupod, .dimcid, .prudent] cupodTrollRowA :=
+    [.coop, .defect, .tftSim, .ebot, .obot, .dbot, .cupodTroll, .dupocTroll, .cupod, .dimcid, .dimdid, .prudent] cupodTrollRowA :=
+  RowSpecA.cons (bitEventually.of_forall fun k ↦ cupodTroll_C k _ (by decide)) <|
   RowSpecA.cons (bitEventually.of_forall fun k ↦ cupodTroll_C k _ (by decide)) <|
   RowSpecA.cons (bitEventually.of_forall fun k ↦ cupodTroll_C k _ (by decide)) <|
   RowSpecA.cons (bitEventually.of_forall fun k ↦ cupodTroll_C k _ (by decide)) <|
@@ -47,6 +48,7 @@ theorem cupodTrollRowSpecA : RowSpecA .cupodTroll
   RowSpecA.cons (bitEventually.of_forall fun k ↦ cupodTroll_C k _ (by decide)) <|
   RowSpecA.cons (bitEventually.of_forall fun k ↦ cupodTroll_C k _ (by decide)) <|
   RowSpecA.cons cupodTroll_cupod_D <|
+  RowSpecA.cons (bitEventually.of_forall fun k ↦ cupodTroll_C k _ (by decide)) <|
   RowSpecA.cons (bitEventually.of_forall fun k ↦ cupodTroll_C k _ (by decide)) <|
   RowSpecA.cons (bitEventually.of_forall fun k ↦ cupodTroll_C k _ (by decide)) <|
   RowSpecA.nil _ _

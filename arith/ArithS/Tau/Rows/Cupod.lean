@@ -4,6 +4,7 @@ import ArithS.Tau.Entangled.DimcidCupod
 import ArithS.Tau.Entangled.DupocCupod
 import ArithS.Tau.Entangled.CupodCimcic
 import ArithS.Tau.Entangled.CupodPrudent
+import ArithS.Tau.Entangled.DimdidSys
 import ArithS.Tau.Attr
 
 /-!
@@ -38,7 +39,7 @@ open PD PD.Tau
 /-- τ(Cupod)'s bit row (floor bit at its engine-side value). -/
 def cupodRowA : Tmpl → Action
   | .coop => .C | .defect => .D | .tftSim => .C | .dupoc => .C | .ebot => .C | .obot => .C | .dbot => .C
-  | .cupodTroll => .D | .cupod => .D | .dimcid => .D | .cimcic => .C | .prudent => .C
+  | .cupodTroll => .D | .cupod => .D | .dimcid => .D | .cimcic => .C | .dimdid => .D | .prudent => .C
   | .maxconfidence => .C | .minconfidence => .C
   | _ => .C
 
@@ -63,6 +64,9 @@ theorem instCode_cupod_dbot (k : ℕ) : instCode k .cupod .dbot =
 theorem instCode_cupod_cupodTroll (k : ℕ) : instCode k .cupod .cupodTroll =
     pSearch k (templateCodeAt (probeD (inst (tauZoo k) .cupodTroll .cupod)) k) (pConst 1) (pConst 0) := by
   unfold instCode; rw [inst_cupod_peel_cupodTroll]; simp [actCode]
+theorem instCode_cupod_dupocTroll (k : ℕ) : instCode k .cupod .dupocTroll =
+    pSearch k (templateCodeAt (probeD (inst (tauZoo k) .dupocTroll .cupod)) k) (pConst 1) (pConst 0) := by
+  unfold instCode; rw [inst_cupod_peel_dupocTroll]; simp [actCode]
 
 /-- The diagonal: the quine, fire D. -/
 theorem instCode_cupod_cupod (k : ℕ) : instCode k .cupod .cupod =
@@ -97,17 +101,25 @@ theorem cupod_cupodTroll_D : bitEventually .cupod .cupodTroll .D := by
   rw [instCode_cupod_cupodTroll] at hf
   exact ⟨_, search_then_at _ hf (const_play 0 _ _ _) rfl⟩
 
-/-- **τ(Cupod)'s row in `S'`** — the eight theorem slots (seven non-entangled, `dimcid` entangled). -/
+/-- `cupod × dupocTroll` (2026-10-19): the troll hunts Dupoc, not Cupod — its instance at Cupod cooperates, so the
+defection probe is false (SND, C). -/
+theorem cupod_dupocTroll_C : bitEventually .cupod .dupocTroll .C :=
+  bitEventually.of_forall fun k ↦ cupod_C_of_probeD_false_at (instCode_cupod_dupocTroll k) rfl (dupocTroll_C k _ (by decide))
+
+/-- **τ(Cupod)'s row in `S'`** — the nine theorem slots (eight non-entangled, `dimcid` entangled). -/
 @[tau_rowA]
-theorem cupodRowSpecA : RowSpecA .cupod [.coop, .defect, .tftSim, .ebot, .dbot, .cupodTroll, .cupod, .dimcid] cupodRowA :=
+theorem cupodRowSpecA : RowSpecA .cupod
+    [.coop, .defect, .tftSim, .ebot, .dbot, .cupodTroll, .dupocTroll, .cupod, .dimcid, .dimdid] cupodRowA :=
   RowSpecA.cons (bitEventually.of_forall col_cupod_coop) <|
   RowSpecA.cons col_cupod_defect <|
   RowSpecA.cons cupod_tftSim_C <|
   RowSpecA.cons cupod_ebot_C <|
   RowSpecA.cons cupod_dbot_C <|
   RowSpecA.cons cupod_cupodTroll_D <|
+  RowSpecA.cons cupod_dupocTroll_C <|
   RowSpecA.cons cupod_quine_D <|
   RowSpecA.cons ent_cupod_dimcid <|
+  RowSpecA.cons ent_cupod_dimdid <|
   RowSpecA.nil _ _
 
 /-! ### The floor bit — Cupod's own defection probe is the hinge (floor SIDE) -/

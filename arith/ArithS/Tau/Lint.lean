@@ -15,16 +15,17 @@ The engine's `Tau/Lint.lean` adapted to `RowSpecA`/`FloorBitA` (`Tau/Spec.lean`)
   `C`/`D` at every slot, the name `<t>RowSpecA`.
 * `inspectFloorBitA` — a `@[tau_floor_bitA]` theorem is `ArithS.Tau.FloorBitA .<t> .<T> (fun k ↦ …) a`, both
   templates literal members of `paperOrder`, the hinge an inline lambda (printed by `hingeText`), the action a
-  literal, the name `<t>RowSpecA_<T>_floor`; its `(template, slot)` must be one of the 47 `‡` cells of the table
+  literal, the name `<t>RowSpecA_<T>_floor`; its `(template, slot)` must be one of the 49 `‡` cells of the table
   in `SPRIME_SOURCE_OF_TRUTH.md` §3 (`expectedFloorBits`, hard-coded with the engine-side action and the base
   dichotomy), with that action.
-* `#check_tau_rowsA` — the census over `paperOrder²` (196 bits): every bit is covered by at most one row slot and
+* `#check_tau_rowsA` — the census over `paperOrder²` (225 bits): every bit is covered by at most one row slot and
   at most one floor bit, never both; a row slot on a `‡` cell is an error ("a floor became a theorem — update the
   table"), a floor bit off the `‡` list is an error ("a theorem became a floor"); a template has at most one row.
   **Partial roster during Phase 3**: the plain command logs the UNCOVERED bits and the missing templates as
   `info` and succeeds (the build stays green while the rows land one by one); `#check_tau_rowsA strict` makes
   every gap an error — the form `Tau/Check.lean` runs since Phase 3f (2026-10-02: 14 rows, 149 row slots, 47 floor
-  bits, 196/196; the last bit `dimcid × ebot` landed with decision (α), the abstraction descending into systems).
+  bits, 196/196; 2026-10-19, `dupocTroll` joined: 15 rows, 176 row slots, 49 floor bits, 225/225, then `dimdid`: 16 rows, 197 row
+  slots, 59 floor bits, 256/256; the last bit `dimcid × ebot` landed with decision (α), the abstraction descending into systems).
 -/
 
 open Lean Elab Command Meta
@@ -72,7 +73,7 @@ structure ExpectedFloor where
 private def ef (t s a : String) (d : String) : ExpectedFloor :=
   ⟨Name.mkSimple t, Name.mkSimple s, Name.mkSimple a, d⟩
 
-/-- **The 47 `‡` cells** of the Phase-3 table, row by row (engine-side action; base dichotomy). A floor that
+/-- **The 49 `‡` cells** of the Phase-3 table (47 until 2026-10-19), row by row (engine-side action; base dichotomy). A floor that
 becomes a theorem, or a theorem that becomes a floor, fails the census and forces the table — and this list —
 to be updated together. 2026-10-01 (Phase 3c/3d): the six tau images of the red cell joined the list — theorems
 in the base (`outcome_DupocBot_vs_CupodBot`, by τ-symmetry), FLOORS on the compiled `.sys` systems (no τ-symmetry
@@ -84,6 +85,7 @@ def expectedFloorBits : Array ExpectedFloor := #[
   ef "dupoc" "cupodTroll" "D" "dich_DupocBot_vs_CupodTrollBot",
   ef "dupoc" "cupod" "D" "outcome_DupocBot_vs_CupodBot",
   ef "dupoc" "prudent" "D" "dich_PrudentBot_vs_DupocBot",
+  ef "dupoc" "dimdid" "D" "dich_DIMDID_vs_DupocBot",
   -- ebot: dupoc C‡, cimcic C‡, prudent C‡, maxconf C‡, minconf C‡
   ef "ebot" "dupoc" "C" "dich_DupocBot_vs_EBot",
   ef "ebot" "cimcic" "C" "dich_CIMCIC_vs_EBot",
@@ -102,6 +104,15 @@ def expectedFloorBits : Array ExpectedFloor := #[
   ef "cupodTroll" "cimcic" "C" "dich_CIMCIC_vs_CupodTrollBot",
   ef "cupodTroll" "maxconfidence" "C" "dich_DupocBot_vs_CupodTrollBot",
   ef "cupodTroll" "minconfidence" "C" "dich_DupocBot_vs_CupodTrollBot",
+  -- dupocTroll (2026-10-19): cimcic C‡ — its one floor; Dupoc and the natives convict it (theorem bits)
+  ef "dupocTroll" "cimcic" "C" "dich_DupocTrollBot_vs_CIMCIC",
+  -- dimdid (2026-10-19, τ(CIMCIC) transposed): dupoc C‡, cimcic C‡, prudent C‡, maxconf C‡, minconf C‡ — DIMDID's own
+  -- guard is the hinge (base `dich_DIMDID_vs_DupocBot / CIMCIC / PrudentBot`, two-hinge floors, engine side `(C, D)`)
+  ef "dimdid" "dupoc" "C" "dich_DIMDID_vs_DupocBot",
+  ef "dimdid" "cimcic" "C" "dich_DIMDID_vs_CIMCIC",
+  ef "dimdid" "prudent" "C" "dich_DIMDID_vs_PrudentBot",
+  ef "dimdid" "maxconfidence" "C" "dich_DIMDID_vs_DupocBot",
+  ef "dimdid" "minconfidence" "C" "dich_DIMDID_vs_DupocBot",
   -- cupod: dupoc C‡ (red cell), obot C‡, cimcic C‡, prudent C‡, maxconf C‡ (red cell), minconf C‡ (red cell)
   ef "cupod" "dupoc" "C" "outcome_DupocBot_vs_CupodBot",
   ef "cupod" "obot" "C" "dich_CupodBot_vs_OBot",
@@ -109,12 +120,14 @@ def expectedFloorBits : Array ExpectedFloor := #[
   ef "cupod" "prudent" "C" "dich_CupodBot_vs_PrudentBot",
   ef "cupod" "maxconfidence" "C" "outcome_DupocBot_vs_CupodBot",
   ef "cupod" "minconfidence" "C" "outcome_DupocBot_vs_CupodBot",
-  -- cimcic: ebot D‡, dbot D‡, cupodTroll D‡, cupod D‡, prudent D‡
+  -- cimcic: ebot D‡, dbot D‡, cupodTroll D‡, dupocTroll D‡, cupod D‡, prudent D‡
   ef "cimcic" "ebot" "D" "dich_CIMCIC_vs_EBot",
   ef "cimcic" "dbot" "D" "dich_CIMCIC_vs_DBot",
   ef "cimcic" "cupodTroll" "D" "dich_CIMCIC_vs_CupodTrollBot",
+  ef "cimcic" "dupocTroll" "D" "dich_DupocTrollBot_vs_CIMCIC",
   ef "cimcic" "cupod" "D" "dich_CIMCIC_vs_CupodBot",
   ef "cimcic" "prudent" "D" "dich_CIMCIC_vs_PrudentBot",
+  ef "cimcic" "dimdid" "D" "dich_DIMDID_vs_CIMCIC",
   -- prudent: dupoc D‡, ebot D‡, cupod D‡, cimcic D‡, prudent D‡, maxconf D‡, minconf D‡
   ef "prudent" "dupoc" "D" "dich_PrudentBot_vs_DupocBot",
   ef "prudent" "ebot" "D" "dich_PrudentBot_vs_EBot",
@@ -123,18 +136,21 @@ def expectedFloorBits : Array ExpectedFloor := #[
   ef "prudent" "prudent" "D" "dich_PrudentBot_vs_PrudentBot",
   ef "prudent" "maxconfidence" "D" "dich_PrudentBot_vs_DupocBot",
   ef "prudent" "minconfidence" "D" "dich_PrudentBot_vs_DupocBot",
+  ef "prudent" "dimdid" "D" "dich_DIMDID_vs_PrudentBot",
   -- maxconf: ebot D‡, dbot D‡, cupodTroll D‡, cupod D‡ (red cell), prudent D‡
   ef "maxconfidence" "ebot" "D" "dich_DupocBot_vs_EBot",
   ef "maxconfidence" "dbot" "D" "dich_DupocBot_vs_DBot",
   ef "maxconfidence" "cupodTroll" "D" "dich_DupocBot_vs_CupodTrollBot",
   ef "maxconfidence" "cupod" "D" "outcome_DupocBot_vs_CupodBot",
   ef "maxconfidence" "prudent" "D" "dich_PrudentBot_vs_DupocBot",
+  ef "maxconfidence" "dimdid" "D" "dich_DIMDID_vs_DupocBot",
   -- minconf: ebot D‡, dbot D‡, cupodTroll D‡, cupod D‡ (red cell), prudent D‡
   ef "minconfidence" "ebot" "D" "dich_DupocBot_vs_EBot",
   ef "minconfidence" "dbot" "D" "dich_DupocBot_vs_DBot",
   ef "minconfidence" "cupodTroll" "D" "dich_DupocBot_vs_CupodTrollBot",
   ef "minconfidence" "cupod" "D" "outcome_DupocBot_vs_CupodBot",
-  ef "minconfidence" "prudent" "D" "dich_PrudentBot_vs_DupocBot"
+  ef "minconfidence" "prudent" "D" "dich_PrudentBot_vs_DupocBot",
+  ef "minconfidence" "dimdid" "D" "dich_DIMDID_vs_DupocBot"
 ]
 
 /-- `whnf` a closed `List Tmpl` term down to its constructor names (the engine's `listCtors`). -/
@@ -148,7 +164,7 @@ partial def listCtors (e : Expr) : MetaM (Array Name) := do
     return #[c] ++ (← listCtors t)
   | _ => throwError "tau row: order is not a list literal: {← ppExpr e}"
 
-/-- The 14 paper templates, as short names, in order. -/
+/-- The paper templates (16 since 2026-10-19), as short names, in order. -/
 def paperOrderNames : MetaM (Array Name) := do
   return (← listCtors (mkConst ``ArithS.Tau.paperOrder)).map ArithS.Outcome.shortName
 
@@ -193,7 +209,7 @@ def inspectRowA (env : Environment) (n : Name) : MetaM RowInfoA := do
   let paper ← paperOrderNames
   let tmpl ← tmplOf "tau_rowA" n "template" (args.getD 0 default)
   unless paper.contains tmpl do
-    throwError "@[tau_rowA] {n}: the template `{tmpl}` is not one of the 14 paper templates (`paperOrder`)"
+    throwError "@[tau_rowA] {n}: the template `{tmpl}` is not one of the paper templates (`paperOrder`)"
   -- the order: a LITERAL list (not a named constant), a sublist of `paperOrder`
   unless (args.getD 1 default).getAppFn.isConstOf ``List.cons || (args.getD 1 default).getAppFn.isConstOf ``List.nil do
     throwError "@[tau_rowA] {n}: the order must be a literal `List Tmpl` (write the slots out), got `{← ppExpr (args.getD 1 default)}`"

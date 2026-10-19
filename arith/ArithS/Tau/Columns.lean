@@ -400,6 +400,18 @@ theorem col_cupodTroll_coop (k : ℕ) : bitPlays k .cupodTroll .coop .C :=
   bit_search_not_found k (instCode_cupodTroll k _ (by decide)) (fun me opp ↦ eq_const_not_found (by decide) me opp k)
     (fun _ _ ↦ const_play 0 _ _ _)
 
+/-- τ(DupocTroll) (2026-10-19) at a hypothesis whose source is not Dupoc's: the identity is decidably false — SND, C,
+at every budget. -/
+theorem dupocTroll_C (k : ℕ) (T : Tmpl) (h : tmplSpec T ≠ tauDupocSpec) : bitPlays k .dupocTroll T .C :=
+  bit_search_not_found k (instCode_dupocTroll k T h) (fun me opp ↦ eq_const_not_found (by decide) me opp k)
+    (fun _ _ ↦ const_play 0 _ _ _)
+
+/-- …and at a hypothesis with Dupoc's source the identity is a `TAct`-theorem: D for all large budgets. -/
+theorem dupocTroll_rec_D (T : Tmpl) (h : tmplSpec T = tauDupocSpec) : bitEventually .dupocTroll T .D :=
+  bit_search_found (fun k ↦ instCode_dupocTroll_rec k T h) (eq_const_found .C) (fun _ _ ↦ const_play 0 _ _ _)
+
+theorem col_dupocTroll_coop (k : ℕ) : bitPlays k .dupocTroll .coop .C := dupocTroll_C k _ (by decide)
+
 /-- τ(Cupod) at the cooperator: "the cooperator defects against itself" is false — SND, C. -/
 theorem col_cupod_coop (k : ℕ) : bitPlays k .cupod .coop .C :=
   bit_search_not_found k (instCode_cupod_coop k) (fun me opp ↦ probe_const_not_found (by decide) me opp k)
@@ -464,6 +476,8 @@ theorem col_dbot_defect (k : ℕ) : bitPlays k .dbot .defect .C := by
 theorem col_cupodTroll_defect (k : ℕ) : bitPlays k .cupodTroll .defect .C :=
   bit_search_not_found k (instCode_cupodTroll k _ (by decide)) (fun me opp ↦ eq_const_not_found (by decide) me opp k)
     (fun _ _ ↦ const_play 0 _ _ _)
+
+theorem col_dupocTroll_defect (k : ℕ) : bitPlays k .dupocTroll .defect .C := dupocTroll_C k _ (by decide)
 
 /-- τ(Cupod) at the defector: "the defector defects against itself" is a `TAct`-theorem — POS, D. -/
 theorem col_cupod_defect : bitEventually .cupod .defect .D :=

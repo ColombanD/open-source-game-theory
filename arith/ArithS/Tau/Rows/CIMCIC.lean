@@ -4,6 +4,7 @@ import ArithS.Tau.Entangled.DupocCimcic
 import ArithS.Tau.Entangled.DimcidCimcic
 import ArithS.Tau.Entangled.CupodCimcic
 import ArithS.Tau.Entangled.CimcicPrudent
+import ArithS.Tau.Entangled.DimdidSys
 import ArithS.Tau.Attr
 
 /-!
@@ -74,6 +75,9 @@ theorem instCode_cimcic_dbot (k : ℕ) : instCode k .cimcic .dbot =
 theorem instCode_cimcic_cupodTroll (k : ℕ) : instCode k .cimcic .cupodTroll =
     pSearch k (templateCodeAt (cimG (inst (tauZoo k) .cupodTroll .cimcic)) k) (pConst 0) (pConst 1) := by
   unfold instCode; rw [inst_cimcic_peel_cupodTroll]; simp [actCode]
+theorem instCode_cimcic_dupocTroll (k : ℕ) : instCode k .cimcic .dupocTroll =
+    pSearch k (templateCodeAt (cimG (inst (tauZoo k) .dupocTroll .cimcic)) k) (pConst 0) (pConst 1) := by
+  unfold instCode; rw [inst_cimcic_peel_dupocTroll]; simp [actCode]
 
 /-- The diagonal: the tautology. -/
 theorem instCode_cimcic_cimcic (k : ℕ) : instCode k .cimcic .cimcic =
@@ -171,6 +175,15 @@ theorem cimcicRowSpecA : RowSpecA .cimcic
 
 /-! ### The floor bits — CIMCIC's own guard is the hinge (floor SIDE) -/
 
+/-- `cimcic × dimdid` ‡ (base `dich_DIMDID_vs_CIMCIC`, the self-dual pair, 2026-10-19): D when the CIMCIC member's
+guard about the DIMDID member is not found (`Tau/Entangled/DimdidSys.lean`). -/
+@[tau_floor_bitA]
+theorem cimcicRowSpecA_dimdid_floor : FloorBitA .cimcic .dimdid
+    (fun k ↦ □[k] (guardCodeB (templateCode (.impl (.plays .self (.bot (.sys (sys2 (cim 1 k) (ddm 0 k)) 1)) .C)
+      (.plays (.bot (.sys (sys2 (cim 1 k) (ddm 0 k)) 1)) .self .C)))
+      (pBot (instCode k .cimcic .dimdid)) (pBot (instCode k .cimcic .dimdid)) k)) .D :=
+  entFloor_cimcic_dimdid
+
 /-- CIMCIC's floor-side slot: its own guard not found — else-branch D. -/
 theorem cimcic_floor_D {k : ℕ} {T : Tmpl}
     (hc : instCode k .cimcic T = pSearch k (templateCodeAt (cimG (inst (tauZoo k) T .cimcic)) k) (pConst 0) (pConst 1))
@@ -208,6 +221,14 @@ theorem cimcicRowSpecA_cupodTroll_floor : FloorBitA .cimcic .cupodTroll
       (.plays (.bot (inst (tauZoo k) .cupodTroll .cimcic)) .self .C)))
       (pBot (instCode k .cimcic .cupodTroll)) (pBot (instCode k .cimcic .cupodTroll)) k)) .D :=
   FloorBitA.of_not_hinge ⟨0, fun k _ hn ↦ cimcic_floor_D (instCode_cimcic_cupodTroll k) rfl hn⟩
+
+/-- `cimcic × dupocTroll` ‡ (base `dich_DupocTrollBot_vs_CIMCIC`, 2026-10-19): the same floor as at `cupodTroll`. -/
+@[tau_floor_bitA]
+theorem cimcicRowSpecA_dupocTroll_floor : FloorBitA .cimcic .dupocTroll
+    (fun k ↦ □[k] (guardCodeB (templateCode (.impl (.plays .self (.bot (inst (tauZoo k) .dupocTroll .cimcic)) .C)
+      (.plays (.bot (inst (tauZoo k) .dupocTroll .cimcic)) .self .C)))
+      (pBot (instCode k .cimcic .dupocTroll)) (pBot (instCode k .cimcic .dupocTroll)) k)) .D :=
+  FloorBitA.of_not_hinge ⟨0, fun k _ hn ↦ cimcic_floor_D (instCode_cimcic_dupocTroll k) rfl hn⟩
 
 /-! ### The system floor bits — the CIMCIC member's own guard is the hinge (`Tau/Entangled/`) -/
 

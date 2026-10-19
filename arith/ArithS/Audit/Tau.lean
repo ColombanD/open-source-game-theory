@@ -4,6 +4,8 @@ import ArithS.Tau.Rows.TftSim
 import ArithS.Tau.Rows.DBot
 import ArithS.Tau.Rows.OBot
 import ArithS.Tau.Rows.CupodTroll
+import ArithS.Tau.Rows.DupocTroll
+import ArithS.Tau.Rows.Dimdid
 import ArithS.Tau.Rows.EBot
 import ArithS.Tau.Described
 import ArithS.Tau.Entangled.Base
@@ -27,6 +29,9 @@ import ArithS.Tau.Entangled.Mirror
 import ArithS.Tau.Entangled.EBotPrudent
 import ArithS.Tau.Entangled.Generic
 import ArithS.Tau.Entangled.DimcidPrudent
+import ArithS.Tau.Entangled.DimdidSys
+import ArithS.Tau.Dimdid
+import ArithS.Tau.ClosedWatchDd
 import ArithS.Tau.Quine
 import ArithS.Tau.ClosedProbe
 import ArithS.Tau.Watch
@@ -87,6 +92,7 @@ namespace ArithS.Tau
 #print axioms dbotRowSpecA
 #print axioms obotRowSpecA
 #print axioms cupodTrollRowSpecA
+#print axioms dupocTrollRowSpecA
 #print axioms ebotRowSpecA
 
 -- The thirteen floor bits (settled on this side; the partner's hinge).
@@ -99,6 +105,7 @@ namespace ArithS.Tau
 #print axioms cupodTrollRowSpecA_cimcic_floor
 #print axioms cupodTrollRowSpecA_maxconfidence_floor
 #print axioms cupodTrollRowSpecA_minconfidence_floor
+#print axioms dupocTrollRowSpecA_cimcic_floor
 #print axioms ebotRowSpecA_dupoc_floor
 #print axioms ebotRowSpecA_cimcic_floor
 #print axioms ebotRowSpecA_maxconfidence_floor
@@ -119,6 +126,48 @@ namespace ArithS.Tau
 #print axioms botSV_found_V
 #print axioms tact_qCT_above
 #print axioms cupod_cupodTroll_found
+-- 2026-10-19 — the `dupocTroll` slot (the Dupoc-hunting troll): the troll's bits, Dupoc's and the natives' theorem
+-- slots (SND, the troll defects on them), Cupod's C, Prudent's D, DIMCID's flip D.
+#print axioms dupocTroll_C
+#print axioms dupocTroll_rec_D
+#print axioms dupoc_dupocTroll_D
+#print axioms maxconfidence_dupocTroll_D
+#print axioms minconfidence_dupocTroll_D
+#print axioms cupod_dupocTroll_C
+#print axioms prudent_dupocTroll_D
+#print axioms dimcid_dupocTroll_D
+-- 2026-10-19 — τ(DIMDID) (`Tau/Dimdid.lean`, `Tau/Entangled/DimdidSys.lean`, `Tau/ClosedWatchDd.lean`,
+-- `Tau/Rows/Dimdid.lean`): the transposition bridge, the two columns, the self-defeating guard, the mutual families
+-- aligned on defection, the OBot flip (POS on the two-stage watch), the EBot slot (fragment-free), the row and its
+-- five floor bits, and the ten partner-side floor bits / theorem slots.
+#print axioms bitPlays_transpose
+#print axioms col_dimdid_coop
+#print axioms col_dimdid_defect
+#print axioms dimdid_not_found_of_C
+#print axioms dimdid_tftSim_C
+#print axioms dimdid_dbot_C
+#print axioms dimdid_cupodTroll_C
+#print axioms dimdid_dupocTroll_C
+#print axioms Sys2.loebSound_CDd
+#print axioms Sys2.loebSound_DdDi
+#print axioms ent_dimdid_cupod
+#print axioms ent_cupod_dimdid
+#print axioms ent_dimdid_dimcid
+#print axioms ent_dimcid_dimdid
+#print axioms dimdid_obot_D
+#print axioms dimdid_ebot_C
+#print axioms dimdid_quine_D
+#print axioms dimdidRowSpecA
+#print axioms dimdidRowSpecA_dupoc_floor
+#print axioms dimdidRowSpecA_maxconfidence_floor
+#print axioms dimdidRowSpecA_minconfidence_floor
+#print axioms dimdidRowSpecA_cimcic_floor
+#print axioms dimdidRowSpecA_prudent_floor
+#print axioms dupocRowSpecA_dimdid_floor
+#print axioms maxconfidenceRowSpecA_dimdid_floor
+#print axioms minconfidenceRowSpecA_dimdid_floor
+#print axioms cimcicRowSpecA_dimdid_floor
+#print axioms prudentRowSpecA_dimdid_floor
 
 -- Phase 3b — the length obstruction (`Tau/NeverFits.lean`): a `.self`-guard over a budget-carrying frozen
 -- instance is longer than its budget; the six slots it decides.
@@ -150,6 +199,7 @@ namespace ArithS.Tau
 #print axioms cimcicRowSpecA_ebot_floor
 #print axioms cimcicRowSpecA_dbot_floor
 #print axioms cimcicRowSpecA_cupodTroll_floor
+#print axioms cimcicRowSpecA_dupocTroll_floor
 #print axioms prudentRowSpecA_ebot_floor
 #print axioms prudentRowSpecA_prudent_floor
 #print axioms maxconfidenceRowSpecA_ebot_floor

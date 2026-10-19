@@ -3,6 +3,7 @@ import ArithS.Tau.Entangled.DupocPrudent
 import ArithS.Tau.Entangled.CupodPrudent
 import ArithS.Tau.Entangled.CimcicPrudent
 import ArithS.Tau.Entangled.DimcidPrudent
+import ArithS.Tau.Entangled.DimdidSys
 import ArithS.Tau.Attr
 
 /-!
@@ -74,6 +75,10 @@ theorem instCode_prudent_cupodTroll (k : ℕ) : instCode k .prudent .cupodTroll 
     pSearch k (templateCodeAt (probe (inst (tauZoo k) .cupodTroll .prudent)) k)
       (pSearch k (templateCodeAt (probeD (inst (tauZoo k) .cupodTroll .defect)) k) (pConst 0) (pConst 1)) (pConst 1) := by
   unfold instCode; rw [inst_prudent_peel_cupodTroll]; simp [actCode]
+theorem instCode_prudent_dupocTroll (k : ℕ) : instCode k .prudent .dupocTroll =
+    pSearch k (templateCodeAt (probe (inst (tauZoo k) .dupocTroll .prudent)) k)
+      (pSearch k (templateCodeAt (probeD (inst (tauZoo k) .dupocTroll .defect)) k) (pConst 0) (pConst 1)) (pConst 1) := by
+  unfold instCode; rw [inst_prudent_peel_dupocTroll]; simp [actCode]
 
 /-- The diagonal: the outer quine, the inner check on its own `defect` cell. -/
 theorem instCode_prudent_prudent (k : ℕ) : instCode k .prudent .prudent =
@@ -95,16 +100,19 @@ theorem prudent_dbot_D (k : ℕ) : bitPlays k .prudent .dbot .D :=
   prudent_D_of_inner_false_at (instCode_prudent_dbot k) rfl rfl (col_dbot_defect k)
 theorem prudent_cupodTroll_D (k : ℕ) : bitPlays k .prudent .cupodTroll .D :=
   prudent_D_of_inner_false_at₂ (instCode_prudent_cupodTroll k) rfl rfl (col_cupodTroll_defect k)
+theorem prudent_dupocTroll_D (k : ℕ) : bitPlays k .prudent .dupocTroll .D :=
+  prudent_D_of_inner_false_at₂ (instCode_prudent_dupocTroll k) rfl rfl (col_dupocTroll_defect k)
 
-/-- **τ(Prudent)'s row in `S'`** — the six non-entangled theorem slots and the entangled `dimcid` slot (Phase 3e). -/
+/-- **τ(Prudent)'s row in `S'`** — the seven non-entangled theorem slots and the entangled `dimcid` slot (Phase 3e). -/
 @[tau_rowA]
-theorem prudentRowSpecA : RowSpecA .prudent [.coop, .defect, .tftSim, .obot, .dbot, .cupodTroll, .dimcid] prudentRowA :=
+theorem prudentRowSpecA : RowSpecA .prudent [.coop, .defect, .tftSim, .obot, .dbot, .cupodTroll, .dupocTroll, .dimcid] prudentRowA :=
   RowSpecA.cons (bitEventually.of_forall col_prudent_coop) <|
   RowSpecA.cons (bitEventually.of_forall col_prudent_defect) <|
   RowSpecA.cons prudent_tftSim_D <|
   RowSpecA.cons prudent_obot_D <|
   RowSpecA.cons (bitEventually.of_forall prudent_dbot_D) <|
   RowSpecA.cons (bitEventually.of_forall prudent_cupodTroll_D) <|
+  RowSpecA.cons (bitEventually.of_forall prudent_dupocTroll_D) <|
   RowSpecA.cons ent_prudent_dimcid <|
   RowSpecA.nil _ _
 
@@ -153,8 +161,18 @@ theorem prudentRowSpecA_minconfidence_floor : FloorBitA .prudent .minconfidence
       (pBot (instCode k .prudent .minconfidence)) (pBot (instCode k .prudent .minconfidence)) k)) .D :=
   entFloor_prudent_minconfidence
 
+/-- `prudent × dimdid` ‡ (base `dich_DIMDID_vs_PrudentBot`, 2026-10-19): D when the Prudent member's outer probe of the
+DIMDID member is not found (`Tau/Entangled/DimdidSys.lean`). -/
+@[tau_floor_bitA]
+theorem prudentRowSpecA_dimdid_floor : FloorBitA .prudent .dimdid
+    (fun k ↦ □[k] (guardCodeB (templateCode (.plays (.bot (.sys (sys2 (pm 1 k .dimdid) (ddm 0 k)) 1))
+      (.bot (.sys (sys2 (pm 1 k .dimdid) (ddm 0 k)) 1)) .C))
+      (pBot (instCode k .prudent .dimdid)) (pBot (instCode k .prudent .dimdid)) k)) .D :=
+  entFloor_prudent_dimdid
+
 /-- `prudent × cupod` ‡ (base `dich_PrudentBot_vs_CupodBot`): D when the Prudent member's outer probe of the Cupod
 member is not found (`Tau/Entangled/CupodPrudent.lean`). -/
+
 @[tau_floor_bitA]
 theorem prudentRowSpecA_cupod_floor : FloorBitA .prudent .cupod
     (fun k ↦ □[k] (guardCodeB (templateCode (.plays (.bot (.sys (sys2 (pm 1 k .cupod) (cm 0 k)) 1))

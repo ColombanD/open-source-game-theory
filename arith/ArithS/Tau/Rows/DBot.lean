@@ -1,5 +1,6 @@
 import ArithS.Tau.Columns
 import ArithS.Tau.Described
+import ArithS.Tau.Dimdid
 import ArithS.Tau.Attr
 
 /-!
@@ -26,7 +27,7 @@ open PD PD.Tau
 trusts). -/
 def dbotRowA : Tmpl → Action
   | .coop => .D | .defect => .C | .tftSim => .C | .dupoc => .C | .ebot => .C | .obot => .C | .dbot => .D
-  | .cupodTroll => .D | .cupod => .C | .dimcid => .C | .cimcic => .C | .prudent => .C
+  | .cupodTroll => .D | .dupocTroll => .D | .cupod => .C | .dimcid => .C | .cimcic => .C | .dimdid => .C | .prudent => .C
   | .maxconfidence => .C | .minconfidence => .C
   | _ => .C
 
@@ -45,7 +46,7 @@ theorem dbot_D_of_col {k : ℕ} {T : Tmpl} (h : bitPlays k T .defect .C) : bitPl
 /-- **τ(DBot)'s row in `S'`** — the 10 theorem slots (the 4 floor bits are below). -/
 @[tau_rowA]
 theorem dbotRowSpecA : RowSpecA .dbot
-    [.coop, .defect, .tftSim, .ebot, .obot, .dbot, .cupodTroll, .cupod, .dimcid, .prudent] dbotRowA :=
+    [.coop, .defect, .tftSim, .ebot, .obot, .dbot, .cupodTroll, .dupocTroll, .cupod, .dimcid, .dimdid, .prudent] dbotRowA :=
   RowSpecA.cons (bitEventually.of_forall fun k ↦ dbot_D_of_col (col_coop_defect k)) <|
   RowSpecA.cons (bitEventually.of_forall fun k ↦ dbot_C_of_col (col_defect_defect k)) <|
   RowSpecA.cons (bitEventually.of_forall fun k ↦ dbot_C_of_col (col_tftSim_defect k)) <|
@@ -53,8 +54,10 @@ theorem dbotRowSpecA : RowSpecA .dbot
   RowSpecA.cons (bitEventually.of_forall fun k ↦ dbot_C_of_col (col_obot_defect k)) <|
   RowSpecA.cons (bitEventually.of_forall fun k ↦ dbot_D_of_col (col_dbot_defect k)) <|
   RowSpecA.cons (bitEventually.of_forall fun k ↦ dbot_D_of_col (col_cupodTroll_defect k)) <|
+  RowSpecA.cons (bitEventually.of_forall fun k ↦ dbot_D_of_col (col_dupocTroll_defect k)) <|
   RowSpecA.cons (bitEventually.mono (fun _ ↦ dbot_C_of_col) col_cupod_defect) <|
   RowSpecA.cons (bitEventually.mono (fun _ ↦ dbot_C_of_col) col_dimcid_defect) <|
+  RowSpecA.cons (bitEventually.mono (fun _ ↦ dbot_C_of_col) col_dimdid_defect) <|
   RowSpecA.cons (bitEventually.of_forall fun k ↦ dbot_C_of_col (col_prudent_defect k)) <|
   RowSpecA.nil _ _
 

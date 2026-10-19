@@ -5,6 +5,7 @@ import ArithS.Tau.Entangled.DimcidDupoc
 import ArithS.Tau.Entangled.DupocCimcic
 import ArithS.Tau.Entangled.DupocCupod
 import ArithS.Tau.Entangled.DupocPrudent
+import ArithS.Tau.Entangled.DimdidSys
 import ArithS.Tau.Attr
 
 /-!
@@ -77,6 +78,13 @@ theorem instCode_dupoc_cupodTroll (k : ℕ) : instCode k .dupoc .cupodTroll =
     .search k (probe (inst (tauZoo k) .cupodTroll .dupoc)) (.const .C) (.const .D) from rfl]
   simp [actCode]
 
+theorem instCode_dupoc_dupocTroll (k : ℕ) : instCode k .dupoc .dupocTroll =
+    pSearch k (templateCodeAt (probe (inst (tauZoo k) .dupocTroll .dupoc)) k) (pConst 0) (pConst 1) := by
+  unfold instCode
+  rw [show inst (tauZoo k) .dupoc .dupocTroll =
+    .search k (probe (inst (tauZoo k) .dupocTroll .dupoc)) (.const .C) (.const .D) from rfl]
+  simp [actCode]
+
 /-- The diagonal: the quine. -/
 theorem instCode_dupoc_dupoc (k : ℕ) : instCode k .dupoc .dupoc =
     pSearch k (templateCode (quineF .C)) (pConst 0) (pConst 1) := by
@@ -97,15 +105,21 @@ theorem col_obot_dupoc : bitEventually .obot .dupoc .D := obotRowSpecA.slot (by 
 theorem dupoc_obot_D : bitEventually .dupoc .obot .D :=
   bitEventually.mono (fun k h ↦ dupocLike_D_of_probe_false_at (instCode_dupoc_obot k) rfl h) col_obot_dupoc
 
-/-- **τ(Dupoc)'s row in `S'`** — the nine theorem slots (five non-entangled, four entangled). -/
+/-- `dupoc × dupocTroll` (2026-10-19): the troll DEFECTS on Dupoc, so Dupoc's probe of its instance is false — SND, D.
+A theorem slot where `dupoc × cupodTroll` is a floor bit: the troll it hunts cannot be fooled by its own else-play. -/
+theorem dupoc_dupocTroll_D : bitEventually .dupoc .dupocTroll .D :=
+  bitEventually.mono (fun k h ↦ dupocLike_D_of_probe_false_at (instCode_dupoc_dupocTroll k) rfl h) (dupocTroll_rec_D .dupoc rfl)
+
+/-- **τ(Dupoc)'s row in `S'`** — the ten theorem slots (six non-entangled, four entangled). -/
 @[tau_rowA]
 theorem dupocRowSpecA : RowSpecA .dupoc
-    [.coop, .defect, .tftSim, .dupoc, .obot, .dimcid, .cimcic, .maxconfidence, .minconfidence] dupocRowA :=
+    [.coop, .defect, .tftSim, .dupoc, .obot, .dupocTroll, .dimcid, .cimcic, .maxconfidence, .minconfidence] dupocRowA :=
   RowSpecA.cons col_dupoc_coop <|
   RowSpecA.cons (bitEventually.of_forall col_dupoc_defect) <|
   RowSpecA.cons dupoc_tftSim_C <|
   RowSpecA.cons dupoc_quine_C <|
   RowSpecA.cons dupoc_obot_D <|
+  RowSpecA.cons dupoc_dupocTroll_D <|
   RowSpecA.cons ent_dupoc_dimcid <|
   RowSpecA.cons ent_dupoc_cimcic <|
   RowSpecA.cons ent_dupoc_maxconfidence <|
@@ -148,8 +162,18 @@ theorem dupocRowSpecA_cupod_floor : FloorBitA .dupoc .cupod
       (pBot (instCode k .dupoc .cupod)) (pBot (instCode k .dupoc .cupod)) k)) .D :=
   entFloor_dupoc_cupod
 
+/-- `dupoc × dimdid` ‡ (base `dich_DIMDID_vs_DupocBot`, 2026-10-19): D when the Dupoc member's probe of the DIMDID
+member is not found — DIMDID's cooperation is an else-play (`Tau/Entangled/DimdidSys.lean`). -/
+@[tau_floor_bitA]
+theorem dupocRowSpecA_dimdid_floor : FloorBitA .dupoc .dimdid
+    (fun k ↦ □[k] (guardCodeB (templateCode (.plays (.bot (.sys (sys2 (dm 1 k) (ddm 0 k)) 1))
+      (.bot (.sys (sys2 (dm 1 k) (ddm 0 k)) 1)) .C))
+      (pBot (instCode k .dupoc .dimdid)) (pBot (instCode k .dupoc .dimdid)) k)) .D :=
+  entFloor_dupoc_dimdid
+
 /-- `dupoc × prudent` ‡ (base `dich_PrudentBot_vs_DupocBot`): D when the Dupoc member's probe of the Prudent member
 is not found (`Tau/Entangled/DupocPrudent.lean`). -/
+
 @[tau_floor_bitA]
 theorem dupocRowSpecA_prudent_floor : FloorBitA .dupoc .prudent
     (fun k ↦ □[k] (guardCodeB (templateCode (.plays (.bot (.sys (sys2 (dm 1 k) (pm 0 k .dupoc)) 1))

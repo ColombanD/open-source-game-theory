@@ -702,6 +702,10 @@ noncomputable abbrev gEqCD : Semisentence LAct 6 := template (.eq (.const .C) (.
 lemma SV_gEqCD_code (k : ℕ) : pBot (SV (V := ℕ) gEqCD 1 k) = progCode (.bot (inst (tauZoo k) .cupodTroll .dimcid)) := by
   rw [progCode_bot_inst, instCode_cupodTroll k .dimcid (by decide), SV_nat,
     templateCode_eq_quote_template (.eq (.const .C) (.const .D)) rfl]
+/-- τ(DupocTroll)'s instance at DIMCID: the same `.eq`-searcher on the false identity (2026-10-19). -/
+lemma SV_gEqCD_code_dupocTroll (k : ℕ) : pBot (SV (V := ℕ) gEqCD 1 k) = progCode (.bot (inst (tauZoo k) .dupocTroll .dimcid)) := by
+  rw [progCode_bot_inst, instCode_dupocTroll k .dimcid (by decide), SV_nat,
+    templateCode_eq_quote_template (.eq (.const .C) (.const .D)) rfl]
 
 /-! #### The DIMCID instances (the compiled searchers on the abstracted templates) -/
 
@@ -714,6 +718,9 @@ theorem instCode_dimcid_dbot' (k : ℕ) : instCode k .dimcid .dbot =
 theorem instCode_dimcid_cupodTroll' (k : ℕ) : instCode k .dimcid .cupodTroll =
     pSearch k (templateCodeAt (dimGf (inst (tauZoo k) .cupodTroll .dimcid)) k) (pConst 1) (pConst 0) := by
   unfold instCode; rw [inst_dimcid_peel_cupodTroll]; simp [actCode]
+theorem instCode_dimcid_dupocTroll' (k : ℕ) : instCode k .dimcid .dupocTroll =
+    pSearch k (templateCodeAt (dimGf (inst (tauZoo k) .dupocTroll .dimcid)) k) (pConst 1) (pConst 0) := by
+  unfold instCode; rw [inst_dimcid_peel_dupocTroll]; simp [actCode]
 
 /-- **`dimcid × tftSim` is D** — the `S'` flip of the engine's C: the self-fulfilling guard on τ(TFTSim)'s instance. -/
 theorem dimcid_tftSim_D : bitEventually .dimcid .tftSim .D :=
@@ -728,6 +735,11 @@ theorem dimcid_dbot_D : bitEventually .dimcid .dbot .D :=
 /-- **`dimcid × cupodTroll` is D** (flip). -/
 theorem dimcid_cupodTroll_D : bitEventually .dimcid .cupodTroll .D :=
   dimcid_D_of_SV .cupodTroll gEqCD 1 (Or.inr rfl) SV_gEqCD_code instCode_dimcid_cupodTroll' (fun _ ↦ rfl) (fun _ ↦ rfl)
+    (fun _ ↦ rfl) (fun _ ↦ rfl) (fun _ ↦ rfl) (fun _ ↦ rfl) (fun _ ↦ rfl)
+
+/-- **`dimcid × dupocTroll` is D** (flip, 2026-10-19): the same self-fulfilling guard on the troll's `.eq`-searcher. -/
+theorem dimcid_dupocTroll_D : bitEventually .dimcid .dupocTroll .D :=
+  dimcid_D_of_SV .dupocTroll gEqCD 1 (Or.inr rfl) SV_gEqCD_code_dupocTroll instCode_dimcid_dupocTroll' (fun _ ↦ rfl) (fun _ ↦ rfl)
     (fun _ ↦ rfl) (fun _ ↦ rfl) (fun _ ↦ rfl) (fun _ ↦ rfl) (fun _ ↦ rfl)
 
 /-! #### CIMCIC and Dupoc: the POS-above chain on the watch -/

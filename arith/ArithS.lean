@@ -112,7 +112,9 @@ import ArithS.Cells.CimcicEngine
 import ArithS.Cells.JustEngine
 import ArithS.Cells.CupodTrollEngine
 import ArithS.Cells.DupocTrollBot
+import ArithS.Cells.DupocTrollPrudent
 import ArithS.Cells.Dimdid
+import ArithS.Cells.DimdidTroll
 import ArithS.Cells.JustBot
 import ArithS.Cells.DIMCID
 import ArithS.Cells.PrudentMirror
@@ -168,6 +170,7 @@ import ArithS.Tau.Spec
 import ArithS.Tau.Attr
 import ArithS.Tau.Columns
 import ArithS.Tau.Described
+import ArithS.Tau.Dimdid
 import ArithS.Tau.Quine
 import ArithS.Tau.ClosedProbe
 import ArithS.Tau.Watch
@@ -177,6 +180,7 @@ import ArithS.Tau.Watch2
 import ArithS.Tau.ClosedWatch2
 import ArithS.Tau.Watch3
 import ArithS.Tau.ClosedWatch3
+import ArithS.Tau.ClosedWatchDd
 import ArithS.Tau.NeverFitsSys
 import ArithS.Tau.NeverFits
 import ArithS.Tau.Lint
@@ -186,6 +190,7 @@ import ArithS.Tau.Rows.TftSim
 import ArithS.Tau.Rows.DBot
 import ArithS.Tau.Rows.OBot
 import ArithS.Tau.Rows.CupodTroll
+import ArithS.Tau.Rows.DupocTroll
 import ArithS.Tau.Rows.EBot
 import ArithS.Tau.Rows.Dupoc
 import ArithS.Tau.Rows.Cupod
@@ -194,6 +199,7 @@ import ArithS.Tau.Rows.DIMCID
 import ArithS.Tau.Rows.Prudent
 import ArithS.Tau.Rows.MaxConfidence
 import ArithS.Tau.Rows.MinConfidence
+import ArithS.Tau.Rows.Dimdid
 import ArithS.Tau.Entangled.Base
 import ArithS.Tau.Entangled.Order
 import ArithS.Tau.Entangled.Tower
@@ -215,6 +221,7 @@ import ArithS.Tau.Entangled.Mirror
 import ArithS.Tau.Entangled.EBotPrudent
 import ArithS.Tau.Entangled.Generic
 import ArithS.Tau.Entangled.DimcidPrudent
+import ArithS.Tau.Entangled.DimdidSys
 import ArithS.Tour
 import ArithS.Core
 import ArithS.Frozen

@@ -72,15 +72,22 @@ theorem col_obot_minconfidence : bitEventually .obot .minconfidence .D := obotRo
 theorem minconfidence_obot_D : bitEventually .minconfidence .obot .D :=
   bitEventually.mono (fun k h ↦ dupocLike_D_of_probe_false_at (instCode_minconfidence_obot k) rfl h) col_obot_minconfidence
 
-/-- **MinConfidenceBot's row in `S'`** — the nine theorem slots (Dupoc's: five non-entangled, four entangled). -/
+/-- `minconfidence × dupocTroll` (2026-10-19): Dupoc's theorem slot through the bridge — the troll recognises the native's
+SOURCE as Dupoc's and defects, so the native's probe is false (SND, D). -/
+theorem minconfidence_dupocTroll_D : bitEventually .minconfidence .dupocTroll .D :=
+  bitEventually.mono (fun k h ↦ (bitPlays_congr (instCode_minconfidence_eq k .dupocTroll (by decide) (by decide) (by decide) (by decide)) _).mpr h)
+    dupoc_dupocTroll_D
+
+/-- **MinConfidenceBot's row in `S'`** — the ten theorem slots (Dupoc's: six non-entangled, four entangled). -/
 @[tau_rowA]
 theorem minconfidenceRowSpecA : RowSpecA .minconfidence
-    [.coop, .defect, .tftSim, .dupoc, .obot, .dimcid, .cimcic, .maxconfidence, .minconfidence] minconfidenceRowA :=
+    [.coop, .defect, .tftSim, .dupoc, .obot, .dupocTroll, .dimcid, .cimcic, .maxconfidence, .minconfidence] minconfidenceRowA :=
   RowSpecA.cons col_minconfidence_coop <|
   RowSpecA.cons (bitEventually.of_forall col_minconfidence_defect) <|
   RowSpecA.cons minconfidence_tftSim_C <|
   RowSpecA.cons ent_minconfidence_dupoc <|
   RowSpecA.cons minconfidence_obot_D <|
+  RowSpecA.cons minconfidence_dupocTroll_D <|
   RowSpecA.cons ent_minconfidence_dimcid <|
   RowSpecA.cons ent_minconfidence_cimcic <|
   RowSpecA.cons ent_minconfidence_maxconfidence <|
@@ -121,8 +128,17 @@ theorem minconfidenceRowSpecA_cupod_floor : FloorBitA .minconfidence .cupod
       (pBot (instCode k .minconfidence .cupod)) (pBot (instCode k .minconfidence .cupod)) k)) .D :=
   entFloor_minconfidence_cupod
 
+/-- `minconfidence × dimdid` ‡ (Dupoc's row by the bridge; base `dich_DIMDID_vs_DupocBot`). -/
+@[tau_floor_bitA]
+theorem minconfidenceRowSpecA_dimdid_floor : FloorBitA .minconfidence .dimdid
+    (fun k ↦ □[k] (guardCodeB (templateCode (.plays (.bot (.sys (sys2 (dm 1 k) (ddm 0 k)) 1))
+      (.bot (.sys (sys2 (dm 1 k) (ddm 0 k)) 1)) .C))
+      (pBot (instCode k .minconfidence .dimdid)) (pBot (instCode k .minconfidence .dimdid)) k)) .D :=
+  entFloor_minconfidence_dimdid
+
 /-- `minconfidence × prudent` ‡ (base `dich_PrudentBot_vs_DupocBot`): D when the Dupoc member's probe of the Prudent member is
 not found (`Tau/Entangled/DupocPrudent.lean`). -/
+
 @[tau_floor_bitA]
 theorem minconfidenceRowSpecA_prudent_floor : FloorBitA .minconfidence .prudent
     (fun k ↦ □[k] (guardCodeB (templateCode (.plays (.bot (.sys (sys2 (dm 1 k) (pm 0 k .minconfidence)) 1))

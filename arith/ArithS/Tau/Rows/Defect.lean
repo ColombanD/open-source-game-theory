@@ -18,10 +18,10 @@ def defectRowA : Tmpl → Action := fun _ => .D
 theorem defect_bit (k : ℕ) (T : Tmpl) : bitPlays k .defect T .D :=
   bitPlays_of_eq (instCode_defect k T) ⟨_, const_play 0 _ _ _⟩
 
-/-- **τ(Defect)'s row in `S'`** — all 14 paper slots, at every budget. -/
+/-- **τ(Defect)'s row in `S'`** — all 16 paper slots, at every budget. -/
 @[tau_rowA]
 theorem defectRowSpecA : RowSpecA .defect
-    [.coop, .defect, .tftSim, .dupoc, .ebot, .obot, .dbot, .cupodTroll, .cupod, .dimcid, .cimcic,
+    [.coop, .defect, .tftSim, .dupoc, .ebot, .obot, .dbot, .cupodTroll, .dupocTroll, .cupod, .dimcid, .cimcic, .dimdid,
      .prudent, .maxconfidence, .minconfidence] defectRowA :=
   ⟨0, fun k _ T _ ↦ defect_bit k T⟩
 

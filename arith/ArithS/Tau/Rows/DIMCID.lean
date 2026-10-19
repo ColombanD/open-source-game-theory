@@ -6,6 +6,7 @@ import ArithS.Tau.Entangled.DimcidDupoc
 import ArithS.Tau.Entangled.DimcidCupod
 import ArithS.Tau.Entangled.DimcidCimcic
 import ArithS.Tau.Entangled.DimcidPrudent
+import ArithS.Tau.Entangled.DimdidSys
 import ArithS.Tau.Attr
 
 /-!
@@ -74,11 +75,11 @@ theorem dimcid_quine_D : bitEventually .dimcid .dimcid .D := by
   refine ⟨k₀, fun k hk ↦ bitPlays_of_eq (instCode_dimcid_dimcid k) ?_⟩
   exact ⟨_, search_then dimQ (h k hk) (const_play 0 _ _ _)⟩
 
-/-- **τ(DIMCID)'s row in `S'`** — fourteen theorem slots (eight non-entangled, six entangled), all D. -/
+/-- **τ(DIMCID)'s row in `S'`** — sixteen theorem slots (nine non-entangled, seven entangled), all D. -/
 @[tau_rowA]
 theorem dimcidRowSpecA : RowSpecA .dimcid
-    [.coop, .defect, .tftSim, .dupoc, .ebot, .obot, .dbot, .cupodTroll, .cupod, .dimcid, .cimcic, .prudent,
-      .maxconfidence, .minconfidence] dimcidRowA :=
+    [.coop, .defect, .tftSim, .dupoc, .ebot, .obot, .dbot, .cupodTroll, .dupocTroll, .cupod, .dimcid, .cimcic, .dimdid,
+      .prudent, .maxconfidence, .minconfidence] dimcidRowA :=
   RowSpecA.cons col_dimcid_coop <|
   RowSpecA.cons col_dimcid_defect <|
   RowSpecA.cons dimcid_tftSim_D <|
@@ -87,9 +88,11 @@ theorem dimcidRowSpecA : RowSpecA .dimcid
   RowSpecA.cons dimcid_obot_D <|
   RowSpecA.cons dimcid_dbot_D <|
   RowSpecA.cons dimcid_cupodTroll_D <|
+  RowSpecA.cons dimcid_dupocTroll_D <|
   RowSpecA.cons ent_dimcid_cupod <|
   RowSpecA.cons dimcid_quine_D <|
   RowSpecA.cons ent_dimcid_cimcic <|
+  RowSpecA.cons ent_dimcid_dimdid <|
   RowSpecA.cons ent_dimcid_prudent <|
   RowSpecA.cons ent_dimcid_maxconfidence <|
   RowSpecA.cons ent_dimcid_minconfidence <|

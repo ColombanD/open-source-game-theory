@@ -1,5 +1,6 @@
 import ArithS.Tau.Columns
 import ArithS.Tau.Described
+import ArithS.Tau.Dimdid
 import ArithS.Tau.Entangled.Mirror
 import ArithS.Tau.Entangled.EBotPrudent
 import ArithS.Tau.Attr
@@ -32,7 +33,7 @@ open PD PD.Tau
 `dimcid` recorded (`D`, the engine says `C`). -/
 def ebotRowA : Tmpl → Action
   | .coop => .D | .defect => .D | .tftSim => .C | .dupoc => .C | .ebot => .C | .obot => .C | .dbot => .D
-  | .cupodTroll => .D | .cupod => .C | .dimcid => .D | .cimcic => .C | .prudent => .C
+  | .cupodTroll => .D | .dupocTroll => .D | .cupod => .C | .dimcid => .D | .cimcic => .C | .dimdid => .C | .prudent => .C
   | .maxconfidence => .C | .minconfidence => .C
   | _ => .C
 
@@ -71,7 +72,7 @@ theorem ebot_D_of_all {k : ℕ} {T : Tmpl} (h₁ : bitPlays k T .defect .D) (h�
 /-- **τ(EBot)'s row in `S'`** — the 9 theorem slots (the 5 floor bits are below). -/
 @[tau_rowA]
 theorem ebotRowSpecA : RowSpecA .ebot
-    [.coop, .defect, .tftSim, .ebot, .obot, .dbot, .cupodTroll, .cupod, .dimcid] ebotRowA :=
+    [.coop, .defect, .tftSim, .ebot, .obot, .dbot, .cupodTroll, .dupocTroll, .cupod, .dimcid, .dimdid] ebotRowA :=
   RowSpecA.cons (bitEventually.of_forall fun k ↦ ebot_D_of_defect (col_coop_defect k)) <|
   RowSpecA.cons (bitEventually.of_forall fun k ↦
     ebot_D_of_all (col_defect_defect k) (col_defect_coop k) (col_defect_mirror k)) <|
@@ -81,8 +82,10 @@ theorem ebotRowSpecA : RowSpecA .ebot
   RowSpecA.cons (bitEventually.of_forall fun k ↦ ebot_C_of (col_obot_defect k) (col_obot_coop k)) <|
   RowSpecA.cons (bitEventually.of_forall fun k ↦ ebot_D_of_defect (col_dbot_defect k)) <|
   RowSpecA.cons (bitEventually.of_forall fun k ↦ ebot_D_of_defect (col_cupodTroll_defect k)) <|
+  RowSpecA.cons (bitEventually.of_forall fun k ↦ ebot_D_of_defect (col_dupocTroll_defect k)) <|
   RowSpecA.cons (bitEventually.mono (fun k h₁ ↦ ebot_C_of h₁ (col_cupod_coop k)) col_cupod_defect) <|
   RowSpecA.cons ent_ebot_dimcid <|
+  RowSpecA.cons (bitEventually.mono (fun k h₁ ↦ ebot_C_of h₁ (col_dimdid_coop k)) col_dimdid_defect) <|
   RowSpecA.nil _ _
 
 /-! ### The floor bits — settled on this side, the partner's hinge -/

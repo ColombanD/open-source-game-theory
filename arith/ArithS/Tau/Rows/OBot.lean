@@ -1,5 +1,6 @@
 import ArithS.Tau.Columns
 import ArithS.Tau.Described
+import ArithS.Tau.Dimdid
 import ArithS.Tau.Attr
 
 /-!
@@ -25,7 +26,7 @@ open PD PD.Tau
 /-- τ(OBot)'s bit row: C only where both defection watches stay silent. -/
 def obotRowA : Tmpl → Action
   | .coop => .C | .defect => .D | .tftSim => .D | .dupoc => .D | .ebot => .D | .obot => .D | .dbot => .D
-  | .cupodTroll => .C | .cupod => .D | .dimcid => .D | .cimcic => .D | .prudent => .D
+  | .cupodTroll => .C | .dupocTroll => .C | .cupod => .D | .dimcid => .D | .cimcic => .D | .dimdid => .D | .prudent => .D
   | .maxconfidence => .D | .minconfidence => .D
   | _ => .D
 
@@ -57,7 +58,7 @@ theorem obot_C_of {k : ℕ} {T : Tmpl} (h₁ : bitPlays k T .coop .C) (h₂ : bi
 /-- **τ(OBot)'s row in `S'`** — the 13 theorem slots (the floor bit is below). -/
 @[tau_rowA]
 theorem obotRowSpecA : RowSpecA .obot
-    [.coop, .defect, .tftSim, .dupoc, .ebot, .obot, .dbot, .cupodTroll, .dimcid, .cimcic, .prudent,
+    [.coop, .defect, .tftSim, .dupoc, .ebot, .obot, .dbot, .cupodTroll, .dupocTroll, .dimcid, .cimcic, .dimdid, .prudent,
      .maxconfidence, .minconfidence] obotRowA :=
   RowSpecA.cons (bitEventually.of_forall fun k ↦ obot_C_of (col_coop_coop k) (col_coop_defect k)) <|
   RowSpecA.cons (bitEventually.of_forall fun k ↦ obot_D_of_coop (col_defect_coop k)) <|
@@ -68,12 +69,14 @@ theorem obotRowSpecA : RowSpecA .obot
   RowSpecA.cons (bitEventually.of_forall fun k ↦ obot_D_of_defect (col_obot_coop k) (col_obot_defect k)) <|
   RowSpecA.cons (bitEventually.of_forall fun k ↦ obot_D_of_coop (col_dbot_coop k)) <|
   RowSpecA.cons (bitEventually.of_forall fun k ↦ obot_C_of (col_cupodTroll_coop k) (col_cupodTroll_defect k)) <|
+  RowSpecA.cons (bitEventually.of_forall fun k ↦ obot_C_of (col_dupocTroll_coop k) (col_dupocTroll_defect k)) <|
   RowSpecA.cons (bitEventually.mono (fun k h₂ ↦
     let ⟨_, h₁⟩ := col_dimcid_coop_total k
     obot_D_of_defect h₁ h₂) col_dimcid_defect) <|
   RowSpecA.cons (bitEventually.of_forall fun k ↦
     let ⟨_, h₁⟩ := col_cimcic_coop_total k
     obot_D_of_defect h₁ (col_cimcic_defect k)) <|
+  RowSpecA.cons (bitEventually.mono (fun k h₂ ↦ obot_D_of_defect (col_dimdid_coop k) h₂) col_dimdid_defect) <|
   RowSpecA.cons (bitEventually.of_forall fun k ↦ obot_D_of_coop (col_prudent_coop k)) <|
   RowSpecA.cons (bitEventually.mono₂ (fun _ h₁ h₂ ↦ obot_D_of_defect h₁ h₂) col_maxconfidence_coop
     (bitEventually.of_forall col_maxconfidence_defect)) <|

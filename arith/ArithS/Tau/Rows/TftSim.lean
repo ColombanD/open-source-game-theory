@@ -1,5 +1,6 @@
 import ArithS.Tau.Columns
 import ArithS.Tau.Described
+import ArithS.Tau.Dimdid
 import ArithS.Tau.Attr
 
 /-!
@@ -22,7 +23,7 @@ open PD PD.Tau
 /-- τ(TFTSim)'s bit row: the `coop` column — the FLIP at `dimcid` recorded (`D`, the engine says `C`). -/
 def tftSimRowA : Tmpl → Action
   | .coop => .C | .defect => .D | .tftSim => .C | .dupoc => .C | .ebot => .D | .obot => .C | .dbot => .D
-  | .cupodTroll => .C | .cupod => .C | .dimcid => .D | .cimcic => .C | .prudent => .D
+  | .cupodTroll => .C | .cupod => .C | .dimcid => .D | .cimcic => .C | .dimdid => .C | .prudent => .D
   | .maxconfidence => .C | .minconfidence => .C
   | _ => .C
 
@@ -41,8 +42,8 @@ theorem tftSim_D_of_col {k : ℕ} {T : Tmpl} (h : bitPlays k T .coop .D) : bitPl
 /-- **τ(TFTSim)'s row in `S'`** — all 14 paper slots. -/
 @[tau_rowA]
 theorem tftSimRowSpecA : RowSpecA .tftSim
-    [.coop, .defect, .tftSim, .dupoc, .ebot, .obot, .dbot, .cupodTroll, .cupod, .dimcid, .cimcic, .prudent,
-     .maxconfidence, .minconfidence] tftSimRowA :=
+    [.coop, .defect, .tftSim, .dupoc, .ebot, .obot, .dbot, .cupodTroll, .dupocTroll, .cupod, .dimcid, .cimcic, .dimdid,
+     .prudent, .maxconfidence, .minconfidence] tftSimRowA :=
   RowSpecA.cons (bitEventually.of_forall fun k ↦ tftSim_C_of_col (col_coop_coop k)) <|
   RowSpecA.cons (bitEventually.of_forall fun k ↦ tftSim_D_of_col (col_defect_coop k)) <|
   RowSpecA.cons (bitEventually.of_forall fun k ↦ tftSim_C_of_col (col_tftSim_coop k)) <|
@@ -51,9 +52,11 @@ theorem tftSimRowSpecA : RowSpecA .tftSim
   RowSpecA.cons (bitEventually.of_forall fun k ↦ tftSim_C_of_col (col_obot_coop k)) <|
   RowSpecA.cons (bitEventually.of_forall fun k ↦ tftSim_D_of_col (col_dbot_coop k)) <|
   RowSpecA.cons (bitEventually.of_forall fun k ↦ tftSim_C_of_col (col_cupodTroll_coop k)) <|
+  RowSpecA.cons (bitEventually.of_forall fun k ↦ tftSim_C_of_col (col_dupocTroll_coop k)) <|
   RowSpecA.cons (bitEventually.of_forall fun k ↦ tftSim_C_of_col (col_cupod_coop k)) <|
   RowSpecA.cons (bitEventually.mono (fun _ ↦ tftSim_D_of_col) col_dimcid_coop) <|
   RowSpecA.cons (bitEventually.mono (fun _ ↦ tftSim_C_of_col) col_cimcic_coop) <|
+  RowSpecA.cons (bitEventually.of_forall fun k ↦ tftSim_C_of_col (col_dimdid_coop k)) <|
   RowSpecA.cons (bitEventually.of_forall fun k ↦ tftSim_D_of_col (col_prudent_coop k)) <|
   RowSpecA.cons (bitEventually.mono (fun _ ↦ tftSim_C_of_col) col_maxconfidence_coop) <|
   RowSpecA.cons (bitEventually.mono (fun _ ↦ tftSim_C_of_col) col_minconfidence_coop) <|

@@ -72,15 +72,22 @@ theorem col_obot_maxconfidence : bitEventually .obot .maxconfidence .D := obotRo
 theorem maxconfidence_obot_D : bitEventually .maxconfidence .obot .D :=
   bitEventually.mono (fun k h ↦ dupocLike_D_of_probe_false_at (instCode_maxconfidence_obot k) rfl h) col_obot_maxconfidence
 
-/-- **MaxConfidenceBot's row in `S'`** — the nine theorem slots (Dupoc's: five non-entangled, four entangled). -/
+/-- `maxconfidence × dupocTroll` (2026-10-19): Dupoc's theorem slot through the bridge — the troll recognises the native's
+SOURCE as Dupoc's and defects, so the native's probe is false (SND, D). -/
+theorem maxconfidence_dupocTroll_D : bitEventually .maxconfidence .dupocTroll .D :=
+  bitEventually.mono (fun k h ↦ (bitPlays_congr (instCode_maxconfidence_eq k .dupocTroll (by decide) (by decide) (by decide)) _).mpr h)
+    dupoc_dupocTroll_D
+
+/-- **MaxConfidenceBot's row in `S'`** — the ten theorem slots (Dupoc's: six non-entangled, four entangled). -/
 @[tau_rowA]
 theorem maxconfidenceRowSpecA : RowSpecA .maxconfidence
-    [.coop, .defect, .tftSim, .dupoc, .obot, .dimcid, .cimcic, .maxconfidence, .minconfidence] maxconfidenceRowA :=
+    [.coop, .defect, .tftSim, .dupoc, .obot, .dupocTroll, .dimcid, .cimcic, .maxconfidence, .minconfidence] maxconfidenceRowA :=
   RowSpecA.cons col_maxconfidence_coop <|
   RowSpecA.cons (bitEventually.of_forall col_maxconfidence_defect) <|
   RowSpecA.cons maxconfidence_tftSim_C <|
   RowSpecA.cons ent_maxconfidence_dupoc <|
   RowSpecA.cons maxconfidence_obot_D <|
+  RowSpecA.cons maxconfidence_dupocTroll_D <|
   RowSpecA.cons ent_maxconfidence_dimcid <|
   RowSpecA.cons ent_maxconfidence_cimcic <|
   RowSpecA.cons maxconfidence_quine_C <|
@@ -121,8 +128,17 @@ theorem maxconfidenceRowSpecA_cupod_floor : FloorBitA .maxconfidence .cupod
       (pBot (instCode k .maxconfidence .cupod)) (pBot (instCode k .maxconfidence .cupod)) k)) .D :=
   entFloor_maxconfidence_cupod
 
+/-- `maxconfidence × dimdid` ‡ (Dupoc's row by the bridge; base `dich_DIMDID_vs_DupocBot`). -/
+@[tau_floor_bitA]
+theorem maxconfidenceRowSpecA_dimdid_floor : FloorBitA .maxconfidence .dimdid
+    (fun k ↦ □[k] (guardCodeB (templateCode (.plays (.bot (.sys (sys2 (dm 1 k) (ddm 0 k)) 1))
+      (.bot (.sys (sys2 (dm 1 k) (ddm 0 k)) 1)) .C))
+      (pBot (instCode k .maxconfidence .dimdid)) (pBot (instCode k .maxconfidence .dimdid)) k)) .D :=
+  entFloor_maxconfidence_dimdid
+
 /-- `maxconfidence × prudent` ‡ (base `dich_PrudentBot_vs_DupocBot`): D when the Dupoc member's probe of the Prudent member is
 not found (`Tau/Entangled/DupocPrudent.lean`). -/
+
 @[tau_floor_bitA]
 theorem maxconfidenceRowSpecA_prudent_floor : FloorBitA .maxconfidence .prudent
     (fun k ↦ □[k] (guardCodeB (templateCode (.plays (.bot (.sys (sys2 (dm 1 k) (pm 0 k .maxconfidence)) 1))

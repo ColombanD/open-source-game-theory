@@ -8,7 +8,7 @@ The engine states every tau template's per-hypothesis content as a bit row
 (`Tau/RowSpec.lean`: at every large budget, template `A`'s compiled instance at hypothesis `T` plays
 `row T` against itself). This module is the same statement on CODES, for the arithmetized evaluator:
 
-* `paperOrder` — the 14 paper templates, in the engine's order (the columns of the table in §3 of the
+* `paperOrder` — the 16 paper templates, in the engine's order (the columns of the table in §3 of the
   design note);
 * `instCode k A T := progCode (inst (tauZoo k) A T)` — the code of the engine's compiled instance;
 * `bitPlays k A T a` — the engine's `RowSpec` frame on codes: some fuel runs the instance against
@@ -35,9 +35,11 @@ open PD PD.Tau
 
 /-! ### 1. The order, the instance codes, the bit -/
 
-/-- The 14 paper templates, in the engine's order: the columns of the Phase-3 table. -/
+/-- The 16 paper templates, in the engine's order: the columns of the Phase-3 table (14 until 2026-10-19, when
+`dupocTroll` — the Dupoc-hunting identity checker of the ladder zoo `body8+trolls` — joined after `cupodTroll`, and
+`dimdid` — τ(CIMCIC)'s C/D transposition, the second implication prover of `body8+trolls+provers` — after `cimcic`). -/
 def paperOrder : List Tmpl :=
-  [.coop, .defect, .tftSim, .dupoc, .ebot, .obot, .dbot, .cupodTroll, .cupod, .dimcid, .cimcic,
+  [.coop, .defect, .tftSim, .dupoc, .ebot, .obot, .dbot, .cupodTroll, .dupocTroll, .cupod, .dimcid, .cimcic, .dimdid,
    .prudent, .maxconfidence, .minconfidence]
 
 /-- The code of the engine's compiled instance of template `A` at hypothesis `T` and budget `k`. -/
@@ -184,5 +186,16 @@ theorem instCode_cupodTroll_cupod (k : ℕ) : instCode k .cupodTroll .cupod =
 theorem instCode_cupodTroll (k : ℕ) (T : Tmpl) (h : T ≠ .cupod) : instCode k .cupodTroll T =
     pSearch k (templateCode (.eq (.const .C) (.const .D))) (pConst 1) (pConst 0) := by
   unfold instCode; rw [inst_cupodTroll_peel k T h]; rw [progCode_search_noSnap _ _ _ _ rfl]; simp [actCode]
+
+/-- τ(DupocTroll) (2026-10-19) at a hypothesis with Dupoc's SOURCE (`.dupoc` and the two natives): the decidably
+TRUE identity, then-branch `D`. -/
+theorem instCode_dupocTroll_rec (k : ℕ) (T : Tmpl) (h : tmplSpec T = tauDupocSpec) : instCode k .dupocTroll T =
+    pSearch k (templateCode (.eq (.const .C) (.const .C))) (pConst 1) (pConst 0) := by
+  unfold instCode; rw [inst_dupocTroll_peel_rec k T h]; rw [progCode_search_noSnap _ _ _ _ rfl]; simp [actCode]
+
+/-- …and at every hypothesis whose source is not Dupoc's: the decidably FALSE identity, else-branch `C`. -/
+theorem instCode_dupocTroll (k : ℕ) (T : Tmpl) (h : tmplSpec T ≠ tauDupocSpec) : instCode k .dupocTroll T =
+    pSearch k (templateCode (.eq (.const .C) (.const .D))) (pConst 1) (pConst 0) := by
+  unfold instCode; rw [inst_dupocTroll_peel k T h]; rw [progCode_search_noSnap _ _ _ _ rfl]; simp [actCode]
 
 end ArithS.Tau

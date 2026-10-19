@@ -18,10 +18,10 @@ def coopRowA : Tmpl → Action := fun _ => .C
 theorem coop_bit (k : ℕ) (T : Tmpl) : bitPlays k .coop T .C :=
   bitPlays_of_eq (instCode_coop k T) ⟨_, const_play 0 _ _ _⟩
 
-/-- **τ(Cooperate)'s row in `S'`** — all 14 paper slots, at every budget. -/
+/-- **τ(Cooperate)'s row in `S'`** — all 16 paper slots, at every budget. -/
 @[tau_rowA]
 theorem coopRowSpecA : RowSpecA .coop
-    [.coop, .defect, .tftSim, .dupoc, .ebot, .obot, .dbot, .cupodTroll, .cupod, .dimcid, .cimcic,
+    [.coop, .defect, .tftSim, .dupoc, .ebot, .obot, .dbot, .cupodTroll, .dupocTroll, .cupod, .dimcid, .cimcic, .dimdid,
      .prudent, .maxconfidence, .minconfidence] coopRowA :=
   ⟨0, fun k _ T _ ↦ coop_bit k T⟩
 
