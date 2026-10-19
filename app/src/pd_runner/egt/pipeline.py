@@ -525,7 +525,7 @@ def linear_ts(steps: int) -> list[float]:
 # plus the two extremes. NOT `alpha_phase_representatives` — see its docstring;
 # at t < 1 that yields ~|zoo|² phases per t, and each distinct matrix costs a
 # full exact-rational Nash enumeration (~50s at N=11).
-DEFAULT_ALPHAS: tuple[float, ...] = (0.0, 0.3, 0.45, 0.62, 0.8, 1.0)
+DEFAULT_ALPHAS: tuple[float, ...] = (0.0, 0.2, 0.4, 0.5, 0.6, 0.8, 1.0)
 
 
 @dataclass
@@ -700,7 +700,8 @@ def sweep(
             if fp in by_fingerprint:
                 # Same cells => same EGT answer. Record the point and reuse.
                 existing = by_fingerprint[fp]
-                existing.grid_points.append((t, alpha))
+                if (t, alpha) not in existing.grid_points:  # a reused run may hold it already
+                    existing.grid_points.append((t, alpha))
                 existing.write_summary()
                 emit(f"(t={t}, α={alpha}) -> matrix {fp} (already analysed)")
                 continue

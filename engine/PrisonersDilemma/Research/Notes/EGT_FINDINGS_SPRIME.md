@@ -605,3 +605,64 @@ everywhere). `body8+trolls+provers` stays cell-backed at DIMDID (coverage 0.84).
 restated to SOURCE equality so the troll recognises the natives as Dupoc (see TAUBOTS.md 10-19). One base cell was
 added for the 15-template table, `PrudentBot × DupocTrollBot = (D, C)` (`Cells/DupocTrollPrudent.lean`; export 132
 cells, 30 floors). No sweep number changes (Def 3 ≡ Def 4 certifies the bits); the sweeps on disk were not re-run.
+
+## 11. The caution grid re-chosen (2026-10-19): α ∈ {0, 0.2, 0.4, 0.5, 0.6, 0.8, 1} — the threshold is NON-MONOTONE in caution
+
+**Why.** The old grid {0.3, 0.45, 0.62, 0.8} was tuned to the thesis zoo's t = 0 phases; on `body8` the t = 0
+masses are multiples of 1/8, so 0.45 and 0.62 sat in ONE phase and 0.62 was 0.005 below the 5/8 breakpoint.
+Matrix identity check (behavioral, engine side): 0.6 ≡ 0.62 at every t; 0.4 ≡ 0.45 except at t = 0.2; 0.5 is
+new only at t = 0.2 (the collapse band); 0.2 is new at t ∈ {0.6, 0.4, 0.2}. At t = 0.2 the signal spreads 52
+distinct C-masses over (0, 1), several within 0.003 of 0.4/0.5/0.6 (0.410, 0.419, 0.502, 0.598) — the t = 0.2
+column is α-sensitive at the third decimal for ANY grid; the α values are nominal.
+
+**Runs.** `DEFAULT_ALPHAS` (`egt/pipeline.py`), `tau/stats._DEFAULT_ALPHAS`, `gen_tau_body.ALPHAS`,
+`gen_tau_ladder.ALPHAS` switched; all 13 paper sweeps re-run (`sweep_logs/chain_2026-10-19.sh`, 16 min: body8 ×
+{behavioral, syntactic} × {engine, hinge} with Nash; three ladder rungs × both sides and body8+natives × three
+families Nash-free). Pipeline fix: a reused run appended a grid point it already held (`existing.grid_points`
+now checks membership). Clean-up: retired-α points dropped from every `summary.json`, 70 old-grid-only dirs +
+15 dirs shadowed by a same-fingerprint dir under the new first-hit name moved to
+`generated/egt/archive/runs_alpha_2026-10-19/`; `analysis` + `nash_structure` re-run for both policies,
+duplicate-free (102 rows each). 42 grid points → 14/14 distinct games (engine, behavioral/syntactic), 15/12
+(hinge); 23 distinct games per side; no pure ESS anywhere.
+
+**body8, behavioral, engine side — realized cooperation at (100,1) along t = 1, .8, .6, .4, .2, 0:**
+α=0.2: .92 .92 .86 .78 .22 0 · α=0.4: .92 .92 .92 .92 .84 0 · α=0.5: .92 .92 .92 .92 .85 0 ·
+α=0.6: .92 .92 .92 .92 .01 0 · α=0.8: .92 .92 .97 .02 0 0 · α=1: .92 0 0 0 0 0.
+**t_c(α) = 0.4 / 0.2 / 0.2 / 0.4 / 0.6 / 1 — a U in caution.** The most trusting population (α = 0.2) is not
+blurred out but INVADED: SS set Def+Dup at t = 0.4, Def alone at t = 0.2 (a lift that cooperates on a fifth of
+the mass cooperates with the blurred defectors too). Static ceiling (full-coop NE component, always the one
+spanned by Coop/Dup/TFT) drops at the SAME t as the population at every α
+(t_static 0.2/0/0/0.2/0.4/0.8). SS set: Dup alone on t ∈ [0.4, 1] for α ∈ [0.4, 0.8] (Dup+TFT at (0.6, 0.8)),
+Dup still in the set at t = 0.2 for all α ∈ [0.4, 0.8] (Dup+OB at α = 0.6, as a DEFECTOR). Tournament rates:
+α=0.2 CC 0.31→0.59 (t=0.2)→0.56, DD 0.25→0.06; α ∈ {0.4, 0.5, 0.6} constant down to t = 0.4; α=0.8 0.31→0.02 /
+0.25→0.77. Behavioral vs syntactic tournament rates differ by ≤ 0.05 (CC) and ≤ 0.14 (DD, at (0.8, 0.6)).
+
+**Syntactic, engine side:** realized α=0.2 .92 .92 .94 .84 .01 0; α=0.4/0.5 .92 ×5 0; α=0.6 .92 .92 .92 .92 .94 0;
+α=0.8 .92 .92 .97 .01 .01 0 → t_c 0.4/0.2/0.2/**0.2**/0.6/1: SAME as behavioral at every α but α = 0.6, where
+source blur keeps both the cooperative NE and the cooperating population at t = 0.2 (0.94 vs 0.01). SS differs
+at 5/36 points (all t ≤ 0.6), realized by > 0.05 at 6; source blur the more forgiving channel wherever they
+differ above the collapse (0.92 vs 0.84/0.85 at (0.2, 0.4/0.5); 0.84/0.94 vs 0.78/0.86 at α = 0.2, t = 0.4/0.6).
+
+**Ladder (behavioral, t_c for α = 0.2/0.4/0.5/0.6/0.8; realized at t = 1):** 7-bot 0.4/0.2/0.2/0.2/0.4 (0.92);
+body8 0.4/0.2/0.2/0.4/0.6 (0.92); +trolls 0.4/0.2/0.2/0.4/0.6 (0.94; α=0.2 dips to 0.57 at t = 0.6, SS
+Def+Dup+TFT); +provers 0.4/0.2/0.2/0.2/0.4 (0.97; CIM+Dup at every t ≥ 0.2 for α ∈ [0.4, 0.6], realized
+0.97–1.00). CIMCIC lowers the cautious thresholds (0.6: 0.4→0.2, 0.8: 0.6→0.4) and does NOTHING for α = 0.2
+(Def takes over at t = 0.2 on every rung).
+
+**Aggregators (body8+natives, ε-uniform):** Löbian class 94% even split for t ≥ 0.6 at every α (t ≥ 0.4 for
+α ∈ {0.4, 0.5, 0.6}); Min exits first (<1% by t=0.4 at α=0.2, by t=0.2 at α=0.4; Dup+Max 42 each); Max alone
+85–90% at (0.2, 0.5), (0.2, 0.6), (0.4, 0.8); (0.2, 0.8) Dup+Max 44 each, realized 0.01.
+
+**Hinge side, body8:** behavioral realized α=0.2 .84 .91 .85 .85 .34 0 (Cup+Dup on t ∈ [0.4, 0.8], Def at 0.2);
+α=0.4 .84 .91 .91 .91 .84 0; α=0.5 .84 .91 .91 .91 .88 0 (Cup+Dup on [0.2, 0.8]); α=0.6 .84 .39 .39 .04 .04 0
+(ceiling 0.61 at t = 0.8/0.6); α=0.8 .84 .39 .94 .01 .01 0 (non-monotone, TFT monoculture at 0.6). Syntactic
+realized α=0.2 .84 .84 .43 .27 .01 0 (t_c 0.8!); α=0.4 .84 .84 .84 .79 .49 0 (0.4); α=0.5 → 0.2 (.79); α=0.6 →
+0.2 (.79); α=0.8 .84 .84 .84 .03 .01 0 (0.6); static = dynamic at every α; families disagree 19/36 (5/36 floor).
+Bracket: the moderately cautious threshold (α = 0.5: 20%) survives the hinge under both channels; both ENDS of
+the caution range are hinge- and channel-dependent.
+
+**Paper text updated in place** (`paper_transparency.tex`: grid, coop-rate paragraph, summary caption, selection
+paragraph, ESS count, channel paragraph + its title, aggregators, ladder, closing paragraph;
+`paper_hinge_appendix.tex`: the transparency hinge subsection) — all 2026-10-14 change-log comments left as they
+were, a header line on each file records the grid change. Tables/figures regenerated (`tau_coop_body` now shaded,
+green ∝ (C,C) rate / gray ∝ (D,D) rate; `tau_ladder` has five α columns).

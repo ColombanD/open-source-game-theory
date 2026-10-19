@@ -78,7 +78,7 @@ def load_moran(out_root: Path, floor_policy: str = "engine_side") -> pd.DataFram
 
 def baseline(tidy: pd.DataFrame, moran: pd.DataFrame) -> str:
     cell = tidy[(tidy.zoo == BASE_ZOO) & (tidy.family == "behavioral")
-                & (tidy.t == 1.0) & (tidy.alpha == 0.3)].iloc[0]
+                & (tidy.t == 1.0) & (tidy.alpha == 0.2)].iloc[0]
     out = ["## 1. Baseline — base zoo, t = 1 (the anchor matrix = the base matrix)\n",
            f"pure ESS: {cell.n_pure_ess} · extreme NE: {cell.n_extreme_ne} in "
            f"{cell.n_ne_components} components · invasion SCCs: {cell.n_sccs} · "
@@ -87,7 +87,7 @@ def baseline(tidy: pd.DataFrame, moran: pd.DataFrame) -> str:
            f"(basin {cell.largest_basin:.0%})\n",
            "Full (M, β) Moran table (DupocBot share of the stationary distribution):\n"]
     m = moran[(moran.zoo == BASE_ZOO) & (moran.family == "behavioral")
-              & (moran.t == 1.0) & (moran.alpha == 0.3)]
+              & (moran.t == 1.0) & (moran.alpha == 0.2)]
     tab = m.assign(dup=[s.get("DupocBot", 0.0) for s in m.shares]).pivot_table(
         index="population", columns="beta", values="dup")
     out.append(_fence(tab.map(lambda v: f"{v:.0%}")))

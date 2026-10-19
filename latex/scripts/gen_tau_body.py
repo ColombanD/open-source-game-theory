@@ -5,6 +5,8 @@ Run from `app/`:  uv run python ../latex/scripts/gen_tau_body.py [engine_side|hi
 Outputs in `latex/figures and tables/` (suffix `_hinge_side` for the other floor branch):
   tau_coop_body.tex        (C,C) and (D,D) rates of the tau tournament, behavioral family, α × t
   tau_phase_body.tex       stochastically stable set at (M, β) = (100, 1), behavioral family, α × t
+  tau_fullcoop_body.tex    1/0: a fully cooperative extreme-NE component exists, behavioral family, α × t; a superscript
+                           lists the programs that join the core support {CooperateBot, DupocBot, TitForTatBot}
   fig_tau_summary_body     left: mutual-cooperation rate vs t; right: realized cooperation vs t (one curve per α)
   fig_tau_collapse_body    static ceiling (dashed) vs realized cooperation (solid), one panel per α
   fig_tau_families_body    realized cooperation, behavioral (solid) vs syntactic (dashed), one panel per α
@@ -32,10 +34,12 @@ warnings.simplefilter("ignore")
 from pd_runner.tau.channels import all_families  # noqa: E402
 from pd_runner.tau.matrix import ZOOS  # noqa: E402
 from pd_runner.tau.sweep import run_tournament  # noqa: E402
+from pd_runner.egt.analysis import load_run_summaries  # noqa: E402
+from pd_runner.egt.nash_structure import DEFAULT_OUT_ROOT, _latest_nash  # noqa: E402
 
 POLICY = sys.argv[1] if len(sys.argv) > 1 else "engine_side"
 ZOO = "body8"
-ALPHAS = [0.3, 0.45, 0.62, 0.8, 1.0]
+ALPHAS = [0.2, 0.4, 0.5, 0.6, 0.8, 1.0]
 TS = [1.0, 0.8, 0.6, 0.4, 0.2, 0.0]
 FAMILIES = ("behavioral", "syntactic")
 APP = Path(__file__).resolve().parents[2] / "app"
@@ -136,6 +140,54 @@ for a in ALPHAS:
 lines[-1] = lines[-1][:-2] + "\\\\\\bottomrule"
 lines += ["\\end{tabular}", "\\end{table}"]
 (OUT_DIR / f"tau_phase_body{SUFFIX}.tex").write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+# ── table: the fully cooperative Nash component ──────────────────────────────
+# Read from each run's extreme equilibria: components whose best equilibrium cooperates at rate 1, and
+# the union of their supports. The core support on body8 is {CooperateBot, DupocBot, TitForTatBot};
+# a cell superscript names whoever joins it at that grid point.
+import json  # noqa: E402
+
+CORE = {"CooperateBot", "DupocBot", "TitForTatBot"}
+ABBR = {"CupodBot": "Cup", "DBot": "DB", "EBot": "EB", "DefectBot": "Def", "OBot": "OB"}
+fullcoop: dict[tuple[float, float], tuple[int, list[str]]] = {}
+for r in load_run_summaries(DEFAULT_OUT_ROOT, POLICY):
+    if r["zoo"] != ZOO or r["family"] != "behavioral":
+        continue
+    nash_dir = _latest_nash(r["_dir"])
+    assert nash_dir is not None, f"{r['_dir']}: no Nash stage — the body8 sweeps must run with Nash"
+    eqs = [json.loads(line) for line in (nash_dir / "equilibria.jsonl").read_text().splitlines()]
+    full = [e for e in eqs if e["cooperation_rate_float"] >= 0.999]
+    comps = {e["component_id"] for e in full}
+    extra = sorted({b for e in full for b in e["support_row_names"] + e["support_col_names"]} - CORE)
+    for t, a in r["grid_points"]:
+        fullcoop[(float(a), float(t))] = (len(comps), extra)
+missing = [(a, t) for a in ALPHAS for t in TS if (a, t) not in fullcoop]
+assert not missing, f"fully cooperative component: no run at {missing}"
+
+
+def tex_full(a: float, t: float) -> str:
+    n, extra = fullcoop[(a, t)]
+    if n == 0:
+        return "0"
+    sup = f"$^{{+\\mathrm{{{','.join(ABBR.get(b, b) for b in extra)}}}}}$" if extra else ""
+    return f"\\cellcolor{{green!30}}{n}{sup}"
+
+
+lines = [
+    f"% figures and tables/tau_fullcoop_body{SUFFIX}.tex — fully cooperative Nash component of the tau tournament, body8, behavioral family, PA-S', hinge cells at the {SIDE}.",
+    GEN,
+    "% Requires: booktabs, xcolor with colortbl (\\cellcolor).",
+    "\\begin{table}[t]\\centering\\small",
+    f"\\caption{{Existence of a fully cooperative Nash component in the $\\tau$-tournament on the eight-bot zoo, behavioral family, hinge cells at the {SIDE}: the number of connected components of extreme Nash equilibria that contain an equilibrium with cooperation rate exactly $1$ (never more than one). Where it exists, its equilibria are mixtures of \\texttt{{CooperateBot}}, \\texttt{{DupocBot}} and \\texttt{{TitForTatBot}}; a superscript names the programs that join that support at the point. Each row is one caution $\\alpha$, each column one transparency $t$; the $t = 1$ column is the base matrix.}}",
+    f"\\label{{table:tau-ne-fullcoop-body{LABEL_SUFFIX}}}",
+    "\\begin{tabular}{@{}l" + "c" * len(TS) + "@{}}\\toprule",
+    f"$\\alpha \\backslash t$ & {head} \\\\\\midrule",
+]
+for a in ALPHAS:
+    lines.append(f"{fa(a)} & " + " & ".join(tex_full(a, t) for t in TS) + " \\\\")
+lines[-1] = lines[-1][:-2] + "\\\\\\bottomrule"
+lines += ["\\end{tabular}", "\\end{table}"]
+(OUT_DIR / f"tau_fullcoop_body{SUFFIX}.tex").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 # ── figures ──────────────────────────────────────────────────────────────────
 plt.rcParams.update({"font.size": 9, "axes.titlesize": 9, "legend.fontsize": 8,
