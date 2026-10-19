@@ -50,7 +50,7 @@ tex = [
     "\\end{tabular}",
     f"\\caption{{Moran stationary distribution on the eight-bot zoo at full transparency, hinge cells at the {side}: population shares in \\% (small-mutation limit) for population size $M$ and selection intensity $\\beta$. "
     f"$^{{\\star}}$ marks the stochastically stable set at that point (stationary mass $\\ge 1.5/N = {thr:.3f}$); \\texttt{{DupocBot}} is the unique stable type at {n_alone} of the 9 points. "
-    f"Shares are population shares, not cooperation rates: the last column is the fraction of the long run spent in self-cooperating states, i.e.\\ the stationary mass of the types whose self-play cell is $(C,C)$ (\\texttt{{DupocBot}}, \\texttt{{TitForTatBot}}, \\texttt{{CooperateBot}}, \\texttt{{EBot}}, \\texttt{{CupodTrollBot}}); at $(M,\\beta)=(100,1)$ it is ${realized_100_1:.3f}$. "
+    f"Shares are population shares, not cooperation rates: the last column is the fraction of the long run spent in self-cooperating states, i.e.\\ the stationary mass of the types whose self-play cell is $(C,C)$ ({', '.join(f'\\texttt{{{b}}}' for b in COLS + others if diag[b])}); at $(M,\\beta)=(100,1)$ it is ${realized_100_1:.3f}$. "
     f"``others'' = {', '.join(f'\\texttt{{{b}}}' for b in others)}, each at most ${max_other:.3f}$ everywhere and never stochastically stable.}}",
     "\\label{tab:moran-body}" if POLICY == "engine_side" else f"\\label{{tab:moran-body-{POLICY.replace('_', '-')}}}",
     "\\end{table}",

@@ -43,6 +43,8 @@ from pd_runner.egt.integrity import load_run_summaries
 from pd_runner.egt.pipeline import DEFAULT_OUT_ROOT
 
 LOEBIAN = ("DupocBot", "CIMCIC", "MaxConfidenceBot", "MinConfidenceBot")
+# The paper's base zoo (2026-10-13): the baseline section reads its t = 1 cell.
+BASE_ZOO = "body8"
 
 
 def _fence(obj) -> str:
@@ -54,10 +56,10 @@ def _moran_points(run_dir: Path) -> list[dict]:
     return json.loads(f.read_text())["points"] if f.exists() else []
 
 
-def load_moran(out_root: Path) -> pd.DataFrame:
+def load_moran(out_root: Path, floor_policy: str = "engine_side") -> pd.DataFrame:
     """One row per (zoo, family, t, α, M, β): SS set + stationary share dict."""
     rows = []
-    for r in load_run_summaries(out_root):
+    for r in load_run_summaries(out_root, floor_policy):
         for p in _moran_points(r["_dir"]):
             base = {
                 "zoo": r["zoo"], "family": r["family"],
@@ -75,16 +77,16 @@ def load_moran(out_root: Path) -> pd.DataFrame:
 
 
 def baseline(tidy: pd.DataFrame, moran: pd.DataFrame) -> str:
-    cell = tidy[(tidy.zoo == "body") & (tidy.family == "behavioral")
+    cell = tidy[(tidy.zoo == BASE_ZOO) & (tidy.family == "behavioral")
                 & (tidy.t == 1.0) & (tidy.alpha == 0.3)].iloc[0]
-    out = ["## 1. Baseline — body zoo, t = 1 (the anchor matrix = the base matrix)\n",
+    out = ["## 1. Baseline — base zoo, t = 1 (the anchor matrix = the base matrix)\n",
            f"pure ESS: {cell.n_pure_ess} · extreme NE: {cell.n_extreme_ne} in "
            f"{cell.n_ne_components} components · invasion SCCs: {cell.n_sccs} · "
            f"stable faces: {cell.n_stable_faces}/{cell.n_supports} supports\n",
            f"dominant replicator support: {cell.dominant_support} "
            f"(basin {cell.largest_basin:.0%})\n",
            "Full (M, β) Moran table (DupocBot share of the stationary distribution):\n"]
-    m = moran[(moran.zoo == "body") & (moran.family == "behavioral")
+    m = moran[(moran.zoo == BASE_ZOO) & (moran.family == "behavioral")
               & (moran.t == 1.0) & (moran.alpha == 0.3)]
     tab = m.assign(dup=[s.get("DupocBot", 0.0) for s in m.shares]).pivot_table(
         index="population", columns="beta", values="dup")
@@ -174,7 +176,7 @@ def ablation(moran: pd.DataFrame) -> str:
 
 
 def zoo_sensitivity(tidy: pd.DataFrame) -> str:
-    a = tidy[(tidy.zoo == "body") & (tidy.family == "behavioral") & (tidy.alpha > 0)]
+    a = tidy[(tidy.zoo == BASE_ZOO) & (tidy.family == "behavioral") & (tidy.alpha > 0)]
     b = tidy[(tidy.zoo == "body+twins") & (tidy.family == "behavioral")
              & (tidy.alpha > 0)]
     m = pd.merge(a, b, on=["t", "alpha"], suffixes=("_body", "_twins"))
@@ -216,8 +218,9 @@ def max_band(tidy: pd.DataFrame) -> str:
 
 def main() -> int:
     out_root = Path(sys.argv[1]) if len(sys.argv) > 1 else DEFAULT_OUT_ROOT
-    tidy = load_tidy(out_root)
-    moran = load_moran(out_root)
+    floor_policy = sys.argv[2] if len(sys.argv) > 2 else "engine_side"
+    tidy = load_tidy(out_root, floor_policy)
+    moran = load_moran(out_root, floor_policy)
     sections = [
         "# Findings — claim-driven analysis over the frozen sweeps\n",
         baseline(tidy, moran),
@@ -227,7 +230,7 @@ def main() -> int:
         zoo_sensitivity(tidy),
         max_band(tidy),
     ]
-    dest = out_root / "analysis" / "findings.md"
+    dest = out_root / ("analysis" if floor_policy == "engine_side" else f"analysis_{floor_policy}") / "findings.md"
     dest.write_text("\n\n".join(sections))
     print(f"findings -> {dest}")
     nonconv = moran[~moran.converged]

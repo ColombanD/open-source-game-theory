@@ -509,3 +509,99 @@ registered (frozen paper zoos the tau layer and tests reference) but have no run
 showed is recorded above (§5–9.1); reproducing any of them is one `pipeline.py` command. The ladder and the
 twins test in `latex/paper_status.tex` are reduced to the two existing rungs with PENDING markers until the
 new bots (CupodTrollBot + DupocTrollBot; CIMCIC + DIMDID) have `S'` cells.
+
+### 8.6 The trolls rung `body8+trolls` (10) and the pending provers rung (2026-10-13)
+
+The user's other session added two S'-only bots (no engine cells): `DupocTrollBot` (defect iff the opponent
+is literally `DupocBot k`, else cooperate — `.eq` guard, the mirror of CupodTrollBot; commit 2d3faed, 12 cells)
+and `DIMDID` = τ(CIMCIC) (defect iff ⊢ (I defect → you defect), else cooperate; commit 99fdcfe, 13 cells —
+its row matches the 2026-10-13 analytic screen at all ten predicted cells: CC vs Coop/TFT/DBot/EBot/CupT, DD
+vs Def/OBot/Cupod/itself, hinge (C,D)‡ vs Dupoc; plus (C,D)‡ vs CIMCIC and PrudentBot, DD vs DIMCID).
+Registry: `body8+trolls` (10) and `body8+trolls+provers` (12, + CIMCIC + DIMDID). The 12-bot zoo is NOT
+total: the DIMDID × DupocTrollBot pair is unstated (screen: (C,C) by soundness, DupocTroll cooperates with it).
+
+`body8+trolls` t = 1 (engine | hinge): cells 38/20/42 of 100, row C 59 | 44/22/34, 61; 4 hinge pairs (body8's
+three + CupT×Dupoc); unexploitable {Def, Dupoc, OBot}; no ESS; NE 35/3 comps (mixed comp now spans
+{Coop,CupT,Dup,DupT,EB,OB}) | 37/5; faces 7/1013; **basins {Dup,Coop,TFT} 64.7% + {Def,OB} 26.9%** (both
+trolls are exploited by Def/DBot/EBot and feed the all-defect face) | 40.3% + 32.3%; Dup 88.0% alone 8/9,
+trolls ≤ 0.5% at (100,1) | 63.7%, alone at (50,1),(100,1); {Dup,TFT} ×3; EBot alone at (10,0.1) and
+{EB,TFT,Dup} at (100,0.01); self-coop 0.941 | 0.827. Ladder table gained the 10-bot row and an all-defect-basin
+column; paper_status.tex ladder paragraph rewritten accordingly.
+
+### 8.7 The provers rung `body8+trolls+provers` (12) — the ladder is complete (2026-10-13)
+
+The missing cell DIMDID × DupocTrollBot = (C, C) (every k, SND: `Cells/DimdidTroll.lean`,
+`snd_DIMDID_vs_DupocTrollBot`; both orientations in `Outcome/Matrix/{DIMDID,DupocTrollBot}.lean`; export now
+130 cells + 30 floors). Zoo registered; t = 1 both policies.
+Engine side: cells 57/31/56 of 144, row C 85; 122 theorem cells, 11 hinge pairs; unexploitable {CIMCIC, Def,
+Dupoc, OBot}; no ESS; NE 69/3 comps (same three, full-coop now {CIM,Coop,Dup,TFT}); faces 8/4083; basin
+{CIM,Dup,Coop,TFT} 97.5%, ALL-DEFECT BASIN BACK TO 0 (the trolls' 27% closes); SS {CIM,Dup} at 8/9;
+(100,1): CIM 48.5%, Dup 44.6% (= 93.1%), DIMDID 0.0%, TFT 2.3%, Def 2.1%; self-coop 0.971. KEY: CIMCIC is
+Dupoc's ROW twin on the engine side but not its COLUMN twin — DupocTrollBot defects on the literal DupocBot and
+cooperates with CIMCIC — so the split is no longer exact and CIMCIC edges ahead ("a troll by name hands the
+advantage to the behavioral twin"). DIMDID: exploited by Dupoc and CIMCIC (two hinge cells (C,D)), ≈ 0 mass.
+Hinge side: cells 73/37/34, row C 90; unexploitable + DIMDID; NE 213/5; basins coop 43.8% + 13.4% + {Def,OB}
+12.9%; SS {Dup,CIM} at (50,1),(100,1) (39.8 + 34.2 = 74.0%), +TFT at β=0.1, EBot alone at (10,0.1), {EB,TFT,Dup}
+at (100,0.01); self-coop 0.891; DIMDID still ≈ 0. Ladder table complete (7/8/10/12 rows); paper_status.tex has
+the "implication provers, and the troll's twin" paragraph in place of the thesis's twins test.
+
+## 10. Partial transparency on the paper's zoos (2026-10-14) — body8 headline, ladder, natives, hinge appendix
+
+**Decisions (settled with Colomban before the rewrite):** headline zoo `body8` (twin-free, fully kernel-backed,
+full 6×6 grid in both families and both floor policies); families behavioral (headline) + syntactic (channel
+comparison), ε-uniform ONLY for the aggregator comparison (the natives are Dupoc twins as hypotheses: both
+distance families clamp at a twin ceiling of 0.857 on `body8+natives`, so their "t = 1" is already blurred —
+MaxConfidenceBot defects on DupocBot there); aggregators stay {sum, max, min}; hinge → appendix; no Discussion
+section (folded into a closing paragraph); Lean tau rows covered the 14 templates when this was written — DupocTrollBot and DIMDID had
+no `Tmpl` slot, so on the trolls/provers rungs their bits were read from the `S'` cells (coverage 0.81 / 0.69,
+`is_kernel_backed` False). The τ-DupocBot figure (`tau_dupoc_algo.png`, hypotheses at point mass on the blurred
+"me") is kept as the stated definition; the implemented Def 4 fixes "me" at point mass; they coincide for Dupoc
+at large k modulo the Cupod entry (a derivation, not a theorem) — the "final def" migration was costed at
+6–8 weeks (Dupoc only) / 3–5 months (all rows, non-total) and deferred past submission.
+
+**Runs added (engine side, `S'`, Nash-free `--stages ess,invasion,faces,replicator,moran`, chain
+`generated/egt/sweep_logs/chain_2026-10-14.sh`, 9 minutes in all):** nonprovers+dupoc, body8+trolls,
+body8+trolls+provers (behavioral), body8+natives (behavioral, syntactic, epsilon). New registry zoo
+`body8+natives` (`PAPER_BODY8_NATIVES_SUB_ZOO`, kernel-backed 1.00); the duplicate `body8+trolls` registry entry
+removed. `egt/findings.py` and `egt/nash_structure.py` take `[out_root] [floor_policy]` (baseline zoo = body8).
+Generators: `latex/scripts/gen_tau_body.py [policy]` (tau_coop_body, tau_phase_body, fig_tau_{summary,collapse,
+families}_body, `_hinge_side` variants) and `gen_tau_ladder.py` (tau_ladder, tau_aggregators{,_behavioral,
+_syntactic}). Paper text: `latex/paper_transparency.tex` (replaces paper_status.tex lines 60–166) and the
+transparency hinge subsection appended to `latex/paper_hinge_appendix.tex`.
+
+**body8, behavioral, engine side (realized cooperation at (100,1) along t = 1, .8, .6, .4, .2, 0):**
+α=0.3: .92 .92 .92 .86 .78 0 · α=0.45: .92 .92 .92 .92 .85 0 · α=0.62: .92 .92 .92 .85 .01 0 ·
+α=0.8: .92 .92 .97 .02 0 0 · α=1: .92 0 0 0 0 0. Static ceiling (best NE cooperation) drops at the SAME t at
+every α (t_static 0/0/0.2/0.4/0.8) — the thesis's α=0.3 exception is gone. SS set: Dup alone on t ∈ [0.4, 1]
+for every α ≤ 0.8 (Dup+TFT at (0.6, 0.8)), Dup still at t=0.2 for α ∈ {0.45, 0.8} — as a DEFECTOR (its self-cell
+turns (D,D)); so the collapse criterion is realized cooperation, not the SS set. Tournament (C,C)/(D,D) rates:
+α=0.3 0.31→0.56 / 0.25→0.06; α=0.8 0.31→0.02 / 0.25→0.77; α=0.45 constant to t=0.2. No pure ESS on any of the
+22 distinct games (thesis: 93/94). Critical transparency t_c(α) (lowest grid t with realized ≥ ½): 0.2/0.2/0.4/0.6
+(thesis on the 10-bot body: ~40%, moderate caution 20%). Syntactic: same t_c at every α; SS differs at 5/30
+points, realized by >0.05 at 4 — and source blur is the MORE forgiving channel where they differ (0.92–0.94 vs
+0.78–0.85 at t=0.2, α ≤ 0.45) — the thesis's "cautious needs 60% under source blur" does NOT hold on body8.
+
+**Ladder (behavioral, t_c per α = 0.3/0.45/0.62/0.8; realized at t=1):** 7-bot 0.2/0.2/0.2/0.4 (0.92);
+body8 0.2/0.2/0.4/0.6 (0.92); +trolls 0.2/0.2/0.4/0.6 (0.94); +provers 0.2/0.2/0.2/0.4 (0.97; SS {CIM,Dup}
+at every t ≥ 0.2 for α ≤ 0.62, realized 0.97–1.00 down to t=0.2). Trolls change nothing; a second Löbian
+cooperator lowers the cautious threshold (acts as extra transparency).
+
+**Aggregators (body8+natives, ε-uniform, shares at (100,1)):** Löbian class {Dup, Max, Min} 93.5% in an even
+split (31.2 each) for t ≥ 0.6 at every α (t ≥ 0.4 at α ∈ {0.45, 0.62}); Min exits first (<1% by t=0.4 at
+α=0.3, by t=0.2 at α=0.45; Dup+Max 43 each); Max alone 90% at (0.2, 0.62) and (0.4, 0.8); at (0.2, 0.8)
+Dup+Max 44 each but realized 0.01 (survival as defectors). Behavioral/syntactic natives tables generated too
+but twin-confounded (Löbian class 30% from t=0.8 for α ≥ 0.45) — do not cite as aggregator results.
+
+**Hinge side, body8 (appendix):** realized 0.84 at t=1; behavioral: Cup+Dup tie from t=0.8 (row twins),
+realized .84 .91 .91 .85 .85 0 at α=0.3, .84 .91 .91 .91 .84 0 at α=0.45, but .84 .39 .39 .04 .04 0 at α=0.62
+(ceiling 0.61 at t=0.8/0.6) and NON-MONOTONE .84 .39 .94 .01 .01 0 at α=0.8 (TFT monoculture at 0.6);
+syntactic: t_c 0.6/0.4/0.2/0.6, static = dynamic at every α; families disagree at 16/30 (vs 5/30 floor side).
+Bracket: trusting-population threshold (20%) survives the hinge; the cautious one becomes channel-dependent.
+
+**Update 2026-10-19 — DupocTrollBot has a tau row.** `Tmpl.dupocTroll` joined the engine roster (19 templates) and
+`paperOrder` (15; `arith/ArithS/Tau/Rows/DupocTroll.lean`, 225/225 = 176 row slots + 49 floor bits), so `body8+trolls`
+is now kernel-backed (coverage 1.00 on the engine side; 0.90 on the hinge side, its four floor bits unstated as
+everywhere). `body8+trolls+provers` stays cell-backed at DIMDID (coverage 0.84). The `proveEq` identity test was
+restated to SOURCE equality so the troll recognises the natives as Dupoc (see TAUBOTS.md 10-19). One base cell was
+added for the 15-template table, `PrudentBot × DupocTrollBot = (D, C)` (`Cells/DupocTrollPrudent.lean`; export 132
+cells, 30 floors). No sweep number changes (Def 3 ≡ Def 4 certifies the bits); the sweeps on disk were not re-run.

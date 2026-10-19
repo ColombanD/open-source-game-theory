@@ -7,6 +7,9 @@
 \usepackage{algpseudocode}
 \usepackage{enumitem}
 \usepackage{hyperref}
+\usepackage{caption}   % in the preamble, for \caption*
+
+
 
 \title{TauBots: graded transparency over the zoo\\
 \large Design, experimental setup, and first results}
@@ -103,12 +106,13 @@ The fix is to ground the hypotheses at the \emph{base} zoo:
 \end{algorithm}
 
 \begin{algorithm}[h]
-\caption{TauDupocBot: a concrete example of modified Def.~3}
+\caption*{\textbf{Algorithm} $\tau$-DupocBot}
 \begin{algorithmic}
-\Procedure{$\Tau$DupocBot$(\alpha)$}{$\Tau B_1,\dots,\Tau B_n; p_1,\dots,p_n$}
+\Require $\alpha \in (0,1)$; a signal $\tau$-$B_1,\dots,\tau$-$B_n$ with weights $p_1,\dots,p_n$, $\sum_i p_i = 1$
+\Procedure{$\tau$-DupocBot$(\alpha)$}{$\tau$-$B_1,\dots,\tau$-$B_n;\ p_1,\dots,p_n$}
   \State $\mathit{sumCs} \gets 0$
   \For{$i = 1, \dots, n$}
-    \If{proofSearch$(\Tau B_i(\alpha)($TauDupocBot$; 1) = C)$}
+    \If{proofSearch$\big(\tau$-$B_i(\alpha)(\tau\text{-DupocBot};\,1) = C\big)$}
       \State $\mathit{sumCs} \mathrel{+}= p_i$
     \EndIf
   \EndFor
@@ -116,13 +120,15 @@ The fix is to ground the hypotheses at the \emph{base} zoo:
 \EndProcedure
 \end{algorithmic}
 \end{algorithm}
+
 \begin{algorithm}[h]
-\caption{TauTitForTatBot: a concrete example of modified Def.~3}
+\caption*{\textbf{Algorithm} $\tau$-TitForTatBot}
 \begin{algorithmic}
-\Procedure{$\Tau$TitForTatBot$(\alpha)$}{$\Tau B_1,\dots,\Tau B_n; p_1,\dots,p_n$}
+\Require $\alpha \in (0,1)$; a signal $\tau$-$B_1,\dots,\tau$-$B_n$ with weights $p_1,\dots,p_n$, $\sum_i p_i = 1$
+\Procedure{$\tau$-TitForTatBot$(\alpha)$}{$\tau$-$B_1,\dots,\tau$-$B_n;\ p_1,\dots,p_n$}
   \State $\mathit{sumCs} \gets 0$
   \For{$i = 1, \dots, n$}
-    \If{proofSearch$(\Tau B_i(\alpha)($TauCooperateBot$; 1) = C)$}
+    \If{proofSearch$\big(\tau$-$B_i(\alpha)(\tau\text{-CooperateBot};\,1) = C\big)$}
       \State $\mathit{sumCs} \mathrel{+}= p_i$
     \EndIf
   \EndFor
@@ -130,18 +136,19 @@ The fix is to ground the hypotheses at the \emph{base} zoo:
 \EndProcedure
 \end{algorithmic}
 \end{algorithm}
+
 \begin{algorithm}[h]
-\caption{TauCooperateBot: a concrete example of modified Def.~3}
+\caption{$\tau$-CooperateBot: a concrete example of modified Def.~3}
 \begin{algorithmic}
-\Procedure{$\Tau$CooperateBot$(\alpha)$}{$\Tau B_1,\dots,\Tau B_n; p_1,\dots,p_n$}
+\Procedure{$\tau$-CooperateBot$(\alpha)$}{$\tau-B_1,\dots,\tau-B_n; p_1,\dots,p_n$}
 \Return $C$
 \EndProcedure
 \end{algorithmic}
 \end{algorithm}
 \begin{algorithm}[h]
-\caption{TauDefectBot: a concrete example of modified Def.~3}
+\caption{$\tau$-DefectBot: a concrete example of modified Def.~3}
 \begin{algorithmic}
-\Procedure{$\Tau$DefectBot$(\alpha)$}{$\Tau B_1,\dots,\Tau B_n; p_1,\dots,p_n$}
+\Procedure{$\tau$-DefectBot$(\alpha)$}{$\tau-B_1,\dots,\tau-B_n; p_1,\dots,p_n$}
 \Return $D$
 \EndProcedure
 \end{algorithmic}

@@ -1,0 +1,22 @@
+% figures and tables/hinge_body_compare.tex — the eight-bot zoo (body8) at t = 1 under both branches of its three hinge dichotomies.
+% Sources: app/generated/egt/runs/body8_sprime_t100_a030_ddbeab7343c4 (floor side) and body8_sprime_hinge_side_t100_a030_125c88740d9d (hinge side);
+% EGT_FINDINGS_SPRIME.md §8.4. "self-cooperating share" = stationary mass of the types whose self-play cell is (C,C).
+\begin{table}[t]
+\centering
+\begin{tabular}{lcc}
+\toprule
+\texttt{body}, $t = 1$ & floor side & hinge side \\
+\midrule
+pure ESS & none & none \\
+Nash components (extreme equilibria) & 3 (21) & 5 (16) \\
+dominant replicator support (basin) & \{\texttt{Dup}, \texttt{Coop}, \texttt{TFT}\} (88\%) & \{\texttt{Dup}, \texttt{TFT}, \texttt{Coop}\} (81\%) \\
+all-defect basin \{\texttt{Def}, \texttt{OB}\} & 0\% & 4.5\% \\
+\texttt{DupocBot} share at $(M,\beta) = (100, 1)$ & 85.9\% & 71.2\% \\
+\texttt{DefectBot} share at $(100, 1)$ & 4.5\% & 8.3\% \\
+$(M,\beta)$ points where \{\texttt{DupocBot}\} is the selected set & 8 / 9 & 5 / 9 \\
+self-cooperating share of the long run at $(100, 1)$ & 0.92 & 0.84 \\
+\bottomrule
+\end{tabular}
+\caption{The eight-bot zoo at full transparency under the two branches of its three hinge dichotomies. Floor side: the floor guards are not provable within budget (the engine's stipulation, the value of \cref{table:outcome-matrix-body}). Hinge side: they are. On the hinge side \texttt{TitForTatBot} ties \texttt{DupocBot} at $(50, 0.1)$ and $(100, 0.01)$, and no type is stochastically stable at the two weakest points.}
+\label{tab:hinge-body}
+\end{table}

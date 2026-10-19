@@ -222,15 +222,37 @@ PAPER_NATIVES_SUB_ZOO: tuple[str, ...] = (
 #   trolls, CupodTrollBot (targets CupodBot) and DupocTrollBot (targets DupocBot, the
 #   headline type; an S'-ONLY bot: no engine theorem, its twelve cells are in
 #   arith/ArithS/Cells/DupocTrollBot.lean, one new floor × CIMCIC). S' source only — on
-#   `engine` the roster is not total. DupocTrollBot has no Def-4 template, so its bits
-#   play from the S' base cells (Def 3) and the matrix is NOT kernel-backed, by design.
-# The next rung (+ CIMCIC + DIMDID) is added once DIMDID's S' cells are exported; the
-# intermediate rosters tried on 2026-10-09..13 (body-dimcid, body-cimcic,
+#   `engine` the roster is not total. KERNEL-BACKED since 2026-10-19: DupocTrollBot has its
+#   own roster slot (`Tmpl.dupocTroll`, engine row `dupocTrollRowSpec`, `S'` row
+#   `dupocTrollRowSpecA`), so every bit of this zoo is a kernel-stated bit on the engine side
+#   (coverage 1.0; the hinge side leaves its four floor bits unstated, as everywhere).
+# * BODY8+NATIVES (10, 2026-10-14): body8 plus the two native aggregator players over
+#   Dupoc's test, MaxConfidenceBot (max) and MinConfidenceBot (min) — the {sum, max, min}
+#   aggregator comparison of the partial-transparency section. Natives are Dupoc twins
+#   AS HYPOTHESES (a ceiling below 1 for the distance-based σ families, by design: the
+#   cost of ambiguity aversion), and differ from it only as ACTORS. Kernel-backed: the
+#   natives' bits are clones of Dupoc's row.
+# The intermediate rosters tried on 2026-10-09..13 (body-dimcid, body-cimcic,
 # body-dimcid+twins, body8+twins) were retired with their runs.
 PAPER_BODY8_SUB_ZOO: tuple[str, ...] = tuple(
     b for b in PAPER_BODY_SUB_ZOO if b not in ("DIMCID", "CupodTrollBot"))
+# * BODY8+TROLLS (10, 2026-10-13): the ladder rung with the two name-reading
+#   `.eq`-guard bots — CupodTrollBot (defect iff the opponent is literally CupodBot)
+#   and DupocTrollBot (defect iff it is literally DupocBot), one troll per Löbian
+#   archetype. DupocTrollBot is an S'-only bot (no engine cells).
+# * BODY8+TROLLS+CIMCIC+DIMDID (12): the rung with the two coherent implication
+#   provers added — CIMCIC (c ↔ □(c → q)) and DIMDID = τ(CIMCIC) (p ↔ □(p → q)),
+#   the polarity that does NOT collapse (DIMCID's does). Total since the DIMDID ×
+#   DupocTrollBot cell (`arith/ArithS/Cells/DimdidTroll.lean`, 2026-10-13).
+#   KERNEL-BACKED since 2026-10-19: DIMDID has its own roster slot (`Tmpl.dimdid`,
+#   engine row `dimdidRowSpec`, `S'` row `dimdidRowSpecA`, 16 paper templates), so every
+#   bit of this zoo is a kernel-stated bit on both sources.
 PAPER_BODY8_TROLLS_SUB_ZOO: tuple[str, ...] = tuple(
     sorted(PAPER_BODY8_SUB_ZOO + ("CupodTrollBot", "DupocTrollBot")))
+PAPER_BODY8_TROLLS_PROVERS_SUB_ZOO: tuple[str, ...] = tuple(
+    sorted(PAPER_BODY8_TROLLS_SUB_ZOO + ("CIMCIC", "DIMDID")))
+PAPER_BODY8_NATIVES_SUB_ZOO: tuple[str, ...] = tuple(
+    sorted(PAPER_BODY8_SUB_ZOO + ("MaxConfidenceBot", "MinConfidenceBot")))
 NONPROVERS_DUPOC_SUB_ZOO: tuple[str, ...] = (
     "CooperateBot",
     "DBot",
@@ -457,17 +479,41 @@ ZOOS: dict[str, NamedZoo] = {
     ),
     "body8+trolls": NamedZoo(
         key="body8+trolls",
-        label="body8 + CupodTrollBot + DupocTrollBot (10 bots, S' only)",
+        label="body8 + CupodTrollBot + DupocTrollBot (10 bots, the trolls rung)",
         description=(
-            "The first ladder rung above the paper's base zoo: body8 plus the two "
-            "`.eq`-guard trolls. CupodTrollBot targets CupodBot; DupocTrollBot "
-            "('defect iff the opponent IS DupocBot k', 2026-10-13) targets the headline "
-            "Löbian cooperator and is S'-only — the engine has no theorem about it. "
-            "S' source only; not kernel-backed (DupocTrollBot has no Def-4 template, its "
-            "bits play from the S' base cells). Four floor pairs: body8's three plus "
-            "Dupoc × CupodTroll; none at DupocTrollBot, since CIMCIC is not in the roster."
+            "The paper's base zoo plus the two name-reading bots, one troll per "
+            "Löbian archetype: CupodTrollBot defects exactly against the literal "
+            "CupodBot, DupocTrollBot exactly against the literal DupocBot. S' source "
+            "only (DupocTrollBot has no engine cell); kernel-backed on the engine side "
+            "since 2026-10-19 (both trolls have tau rows in Lean)."
         ),
         bots=PAPER_BODY8_TROLLS_SUB_ZOO,
+        stipulations={},
+    ),
+    "body8+trolls+provers": NamedZoo(
+        key="body8+trolls+provers",
+        label="body8 + trolls + CIMCIC + DIMDID (12 bots, the implication-provers rung)",
+        description=(
+            "The trolls rung plus the two coherent implication provers CIMCIC and "
+            "DIMDID (its C/D transposition): the polarity whose guard does not "
+            "collapse. Twelve bots, the top of the ladder. Kernel-backed on both "
+            "sources since 2026-10-19 (DIMDID's tau rows `dimdidRowSpec` / `dimdidRowSpecA`)."
+        ),
+        bots=PAPER_BODY8_TROLLS_PROVERS_SUB_ZOO,
+        stipulations={},
+    ),
+    "body8+natives": NamedZoo(
+        key="body8+natives",
+        label="body8 + MaxConfidenceBot + MinConfidenceBot (10 bots, aggregator comparison)",
+        description=(
+            "The paper's base zoo plus the two native aggregator players over Dupoc's "
+            "test: MaxConfidenceBot (cooperate iff some single hypothesis carrying at "
+            "least α provably cooperates) and MinConfidenceBot (cooperate iff no such "
+            "hypothesis provably defects) — the {sum, max, min} comparison. As "
+            "hypotheses both are Dupoc twins (their kernel bits are clones of its row), "
+            "so the distance-based σ families spread Dupoc's mass over three names."
+        ),
+        bots=PAPER_BODY8_NATIVES_SUB_ZOO,
         stipulations={},
     ),
     "nonprovers+dupoc": NamedZoo(
