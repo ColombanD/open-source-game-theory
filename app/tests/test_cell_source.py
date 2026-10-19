@@ -166,14 +166,16 @@ def test_sprime_cells_have_their_provenance(sprime_export) -> None:
     for t in cells:
         by_prov.setdefault(t.provenance, []).append(t)
     assert set(by_prov) == {"sprime", "floor_dichotomy"}
-    # 107 engine-cell statements + the 11 S'-only DupocTrollBot cells + the 10 S'-only DIMDID cells (2026-10-13);
+    # 107 engine-cell statements + the 12 S'-only DupocTrollBot cells + the 11 S'-only DIMDID cells (2026-10-13,
+    # incl. the DIMDID × DupocTrollBot pair in both orientations) + the PrudentBot × DupocTrollBot pair (2026-10-19,
+    # for the 15-template tau table);
     # 26 floors + DupocTrollBot's CIMCIC floor + DIMDID's three.
-    assert len(by_prov["sprime"]) == 128 and len(by_prov["floor_dichotomy"]) == 30
+    assert len(by_prov["sprime"]) == 132 and len(by_prov["floor_dichotomy"]) == 30
     for f in by_prov["floor_dichotomy"]:
         assert f.is_floor and f.hinge and f.dichotomy == f"dich_{f.left_bot}_vs_{f.right_bot}"
         assert f.shape == "threshold" and f.budget_regime == "eventual"
     # `restrict_zoo` drops the floors and nothing else.
-    assert len(scan_outcome_theorems(source="sprime", floor_policy="restrict_zoo")) == 128
+    assert len(scan_outcome_theorems(source="sprime", floor_policy="restrict_zoo")) == 132
 
 
 def test_sprime_digest_covers_the_floors(sprime_export, tmp_path) -> None:

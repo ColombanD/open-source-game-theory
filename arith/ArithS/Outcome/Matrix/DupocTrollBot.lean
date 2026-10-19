@@ -1,11 +1,13 @@
 import ArithS.Outcome.Spec
 import ArithS.Outcome.Attr
 import ArithS.Cells.DupocTrollBot
+import ArithS.Cells.DimdidTroll
+import ArithS.Cells.DupocTrollPrudent
 
 /-!
 # ArithS.Outcome.Matrix.DupocTrollBot — the `S'` cells with `DupocTrollBot` on the left
 
-`DupocTrollBot k` ("defect iff the opponent IS `DupocBot k`", 2026-10-13) has NO engine cell: these eleven cells and
+`DupocTrollBot k` ("defect iff the opponent IS `DupocBot k`", 2026-10-13) has NO engine cell: these fourteen cells (twelve of 2026-10-13, the DIMDID pair of the same day, the PrudentBot pair of 2026-10-19) and
 the floor `outcome_DupocTrollBot_vs_CIMCIC_floor` (`Outcome/Floors.lean`) are `S'`-only results
 (`Research/Notes/ROUTE_B_CENSUS.md`, "S'-only cells"). Each is the engine's statement (`OutcomeSpecA`,
 `Outcome/Spec.lean`) proved from the method-named theorem of `Cells/DupocTrollBot.lean` named in its docstring.
@@ -78,6 +80,13 @@ theorem outcome_DupocTrollBot_vs_EBot :
     OutcomeSpecA .universal (bot DupocTrollBot) (const EBot) (some (.C, .D)) :=
   OutcomeSpecA.universal_of fun k ↦ OutcomeAtA.of_evalGraph (snd_DupocTrollBot_vs_EBot k)
 
+/-- `snd_PrudentBot_vs_DupocTrollBot` read from the troll's side (`Cells/DupocTrollPrudent.lean`, 2026-10-19). -/
+@[outcomeA]
+theorem outcome_DupocTrollBot_vs_PrudentBot :
+    OutcomeSpecA .universal (bot DupocTrollBot) (bot PrudentBot) (some (.C, .D)) :=
+  OutcomeSpecA.universal_of fun k ↦
+    OutcomeAtA.of_evalGraph ⟨(snd_PrudentBot_vs_DupocTrollBot k).2, (snd_PrudentBot_vs_DupocTrollBot k).1⟩
+
 /-- `snd_DupocTrollBot_vs_OBot` -/
 @[outcomeA]
 theorem outcome_DupocTrollBot_vs_OBot :
@@ -89,5 +98,13 @@ theorem outcome_DupocTrollBot_vs_OBot :
 theorem outcome_DupocTrollBot_vs_TitForTatBot :
     OutcomeSpecA .universal (bot DupocTrollBot) (const TitForTatBot) (some (.C, .C)) :=
   OutcomeSpecA.universal_of fun k ↦ OutcomeAtA.of_evalGraph (snd_DupocTrollBot_vs_TitForTatBot k)
+
+/-- `snd_DIMDID_vs_DupocTrollBot` read from the troll's side (`Cells/DimdidTroll.lean`): the `.eq` guard is false
+against DIMDID, so the troll cooperates, and DIMDID's guard is self-defeating. -/
+@[outcomeA]
+theorem outcome_DupocTrollBot_vs_DIMDID :
+    OutcomeSpecA .universal (bot DupocTrollBot) (bot DIMDID) (some (.C, .C)) :=
+  OutcomeSpecA.universal_of fun k ↦
+    OutcomeAtA.of_evalGraph ⟨(snd_DIMDID_vs_DupocTrollBot k).2, (snd_DIMDID_vs_DupocTrollBot k).1⟩
 
 end ArithS

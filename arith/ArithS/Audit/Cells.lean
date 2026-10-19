@@ -9,7 +9,9 @@ import ArithS.Cells.CimcicEngine
 import ArithS.Cells.JustEngine
 import ArithS.Cells.CupodTrollEngine
 import ArithS.Cells.DupocTrollBot
+import ArithS.Cells.DupocTrollPrudent
 import ArithS.Cells.Dimdid
+import ArithS.Cells.DimdidTroll
 import ArithS.Cells.TauMember
 import PrisonersDilemma.Theorems.DupocBot.RedCellInstance
 
@@ -419,6 +421,9 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms snd_DupocTrollBot_vs_TitForTatBot
 #print axioms snd_DupocTrollBot_vs_CupodBot
 #print axioms snd_DupocTrollBot_vs_CupodTrollBot
+-- Cells/DupocTrollPrudent (2026-10-19): the PrudentBot pair, for the 15-template tau table.
+#print axioms progCode_PrudentBot_ne_DupocBot
+#print axioms snd_PrudentBot_vs_DupocTrollBot
 #print axioms snd_DupocTrollBot_vs_DupocTrollBot
 #print axioms tact_qTD
 #print axioms trollD_vs_dupoc_V
@@ -436,6 +441,11 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 -- model `obot_D_of_any_V`/`obotT_C_of_any_V`) and three two-hinge dichotomies (DIMDID's own guard the outer hinge).
 -- The three transposition cells (× DefectBot, × CupodBot, × DIMDID) are CIMCIC's cells through `outcomeSpecA_transpose`
 -- and are printed in `Audit/Outcome.lean`.
+-- Cells/DimdidTroll (2026-10-13) — the last pair of the twelve-bot ladder zoo: DIMDID × DupocTrollBot = (C, C), SND
+-- (the troll's `.eq` guard false by branch constants, DIMDID's guard self-defeating).
+#print axioms progCode_DIMDID_ne_DupocBot
+#print axioms snd_DIMDID_vs_DupocTrollBot
+
 #print axioms DIMDID_eq_transpose
 #print axioms progCode_DIMDID_SV
 #print axioms dimdid_selfref_not_found

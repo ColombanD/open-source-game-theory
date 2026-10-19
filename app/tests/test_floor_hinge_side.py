@@ -251,7 +251,7 @@ def test_unknown_dichotomy_is_an_error_not_a_default() -> None:
 def test_scan_under_hinge_side_carries_the_other_branch() -> None:
     engine_side = {t.name: t for t in scan_outcome_theorems(source="sprime", floor_policy="engine_side")}
     hinge_side = {t.name: t for t in scan_outcome_theorems(source="sprime", floor_policy="hinge_side")}
-    assert set(engine_side) == set(hinge_side) and len(hinge_side) == 158  # 128 cells + 30 floors
+    assert set(engine_side) == set(hinge_side) and len(hinge_side) == 162  # 132 cells + 30 floors
     for name, t in hinge_side.items():
         e = engine_side[name]
         if t.is_floor:

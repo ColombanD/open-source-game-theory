@@ -1,7 +1,7 @@
 {
  "schema_version": 1,
  "system": "sprime",
- "source_digest": "8827458606538783872",
+ "source_digest": "1304217929719056102",
  "theorems": [
   {
    "name": "outcome_CIMCIC_vs_CIMCIC",
@@ -854,6 +854,23 @@
    "provenance": "sprime"
   },
   {
+   "name": "outcome_DIMDID_vs_DupocTrollBot",
+   "module": "ArithS.Outcome.Matrix.DIMDID",
+   "file": "DIMDID.lean",
+   "left_bot": "DIMDID",
+   "right_bot": "DupocTrollBot",
+   "budget_regime": "eventual",
+   "fuel_pad": 0,
+   "staggered": false,
+   "left": "DIMDID k",
+   "right": "DupocTrollBot k",
+   "pair": [
+    "C",
+    "C"
+   ],
+   "provenance": "sprime"
+  },
+  {
    "name": "outcome_DIMDID_vs_EBot",
    "module": "ArithS.Outcome.Matrix.DIMDID",
    "file": "DIMDID.lean",
@@ -1126,6 +1143,23 @@
    "provenance": "sprime"
   },
   {
+   "name": "outcome_DupocTrollBot_vs_DIMDID",
+   "module": "ArithS.Outcome.Matrix.DupocTrollBot",
+   "file": "DupocTrollBot.lean",
+   "left_bot": "DupocTrollBot",
+   "right_bot": "DIMDID",
+   "budget_regime": "eventual",
+   "fuel_pad": 0,
+   "staggered": false,
+   "left": "DupocTrollBot k",
+   "right": "DIMDID k",
+   "pair": [
+    "C",
+    "C"
+   ],
+   "provenance": "sprime"
+  },
+  {
    "name": "outcome_DupocTrollBot_vs_DefectBot",
    "module": "ArithS.Outcome.Matrix.DupocTrollBot",
    "file": "DupocTrollBot.lean",
@@ -1207,6 +1241,23 @@
    "pair": [
     "C",
     "C"
+   ],
+   "provenance": "sprime"
+  },
+  {
+   "name": "outcome_DupocTrollBot_vs_PrudentBot",
+   "module": "ArithS.Outcome.Matrix.DupocTrollBot",
+   "file": "DupocTrollBot.lean",
+   "left_bot": "DupocTrollBot",
+   "right_bot": "PrudentBot",
+   "budget_regime": "eventual",
+   "fuel_pad": 0,
+   "staggered": false,
+   "left": "DupocTrollBot k",
+   "right": "PrudentBot k",
+   "pair": [
+    "C",
+    "D"
    ],
    "provenance": "sprime"
   },
@@ -1901,6 +1952,23 @@
    "pair": [
     "D",
     "D"
+   ],
+   "provenance": "sprime"
+  },
+  {
+   "name": "outcome_PrudentBot_vs_DupocTrollBot",
+   "module": "ArithS.Outcome.Matrix.PrudentBot",
+   "file": "PrudentBot.lean",
+   "left_bot": "PrudentBot",
+   "right_bot": "DupocTrollBot",
+   "budget_regime": "eventual",
+   "fuel_pad": 0,
+   "staggered": false,
+   "left": "PrudentBot k",
+   "right": "DupocTrollBot k",
+   "pair": [
+    "D",
+    "C"
    ],
    "provenance": "sprime"
   },

@@ -1,6 +1,7 @@
 import ArithS.Outcome.Spec
 import ArithS.Outcome.Attr
 import ArithS.Cells.Dimdid
+import ArithS.Cells.DimdidTroll
 import ArithS.Outcome.Matrix.CIMCIC
 
 /-!
@@ -15,7 +16,8 @@ the zoo — from the CIMCIC cell by the general transposition theorem `outcomeSp
 DupocBot)`, `DIMDID × DIMDID = τ(CIMCIC × CIMCIC)`. Its three floors (× DupocBot, × CIMCIC, × PrudentBot) are in
 `Outcome/Floors.lean`. The row, DIMDID's side: C against CooperateBot, TitForTatBot, DBot, EBot, CupodTrollBot
 (and, engine side of the floors, against DupocBot, CIMCIC, PrudentBot); D against DefectBot, OBot, CupodBot,
-DIMCID and itself.
+DIMCID and itself. The cell against DupocTrollBot (`Cells/DimdidTroll.lean`, `snd_DIMDID_vs_DupocTrollBot`, `(C, C)`)
+is stated in both orientations, here and in `Outcome/Matrix/DupocTrollBot.lean`.
 -/
 
 namespace ArithS
@@ -66,6 +68,13 @@ theorem outcome_DIMDID_vs_EBot :
 theorem outcome_DIMDID_vs_CupodTrollBot :
     OutcomeSpecA .universal (bot DIMDID) (bot CupodTrollBot) (some (.C, .C)) :=
   OutcomeSpecA.universal_of fun k ↦ OutcomeAtA.of_evalGraph (snd_DIMDID_vs_CupodTrollBot k)
+
+/-- `snd_DIMDID_vs_DupocTrollBot` (every `k`): the troll's `.eq` guard is false (DIMDID's branch constants are not
+Dupoc's), so it cooperates, and DIMDID's guard is self-defeating. -/
+@[outcomeA]
+theorem outcome_DIMDID_vs_DupocTrollBot :
+    OutcomeSpecA .universal (bot DIMDID) (bot DupocTrollBot) (some (.C, .C)) :=
+  OutcomeSpecA.universal_of fun k ↦ OutcomeAtA.of_evalGraph (snd_DIMDID_vs_DupocTrollBot k)
 
 /-- `loeb_DIMDID_vs_OBot`: OBot sees DIMDID's defection against `.bot DefectBot`, DIMDID's guard against OBot is
 found. -/

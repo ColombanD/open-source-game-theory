@@ -167,7 +167,7 @@ namespace ArithS
 #print axioms outcome_JustBot_vs_CupodBot_floor
 #print axioms outcome_CIMCIC_vs_CupodBot_floor
 
--- DupocTrollBot (2026-10-13): the eleven `S'`-only cells and the one `S'`-only floor (no engine counterpart).
+-- DupocTrollBot (2026-10-13): the twelve `S'`-only cells and the one `S'`-only floor (no engine counterpart).
 #print axioms outcome_DupocTrollBot_vs_CooperateBot
 #print axioms outcome_DupocTrollBot_vs_CupodBot
 #print axioms outcome_DupocTrollBot_vs_CupodTrollBot
@@ -177,8 +177,11 @@ namespace ArithS
 #print axioms outcome_DupocTrollBot_vs_DupocBot
 #print axioms outcome_DupocTrollBot_vs_DupocTrollBot
 #print axioms outcome_DupocTrollBot_vs_EBot
+#print axioms outcome_DupocTrollBot_vs_DIMDID
 #print axioms outcome_DupocTrollBot_vs_OBot
 #print axioms outcome_DupocTrollBot_vs_TitForTatBot
+#print axioms outcome_DupocTrollBot_vs_PrudentBot
+#print axioms outcome_PrudentBot_vs_DupocTrollBot
 #print axioms outcome_DupocTrollBot_vs_CIMCIC_floor
 
 -- DIMDID (2026-10-13, `Cells/Dimdid.lean`): the ten `S'`-only cells (three by the transposition theorem from CIMCIC's)
@@ -189,6 +192,7 @@ namespace ArithS
 #print axioms outcome_DIMDID_vs_DBot
 #print axioms outcome_DIMDID_vs_EBot
 #print axioms outcome_DIMDID_vs_CupodTrollBot
+#print axioms outcome_DIMDID_vs_DupocTrollBot
 #print axioms outcome_DIMDID_vs_OBot
 #print axioms outcome_DIMDID_vs_CupodBot
 #print axioms outcome_DIMDID_vs_DIMCID

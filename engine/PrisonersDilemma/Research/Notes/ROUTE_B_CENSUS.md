@@ -188,7 +188,8 @@ it: Löb engine, floor lemma, census) and the classification method are in git b
 
 **DupocTrollBot (2026-10-13).** `DupocTrollBot k := .search k (.eq .opp (DupocBot k)) D C` — "defect iff the
 opponent IS `DupocBot k`", the mirror image of CupodTrollBot — was added as an `S'` bot: the engine has its
-DEFINITION (`Bots/DupocTrollBot.lean`) and no theorem, so the twelve cells below are outside the 155-row ledger
+DEFINITION (`Bots/DupocTrollBot.lean`) and no theorem, so the cells below (thirteen on 2026-10-13, plus the
+PrudentBot pair of 2026-10-19 — fifteen with the DIMDID pair listed under DIMDID) are outside the 155-row ledger
 above and are counted separately. Theorems in `arith/ArithS/Cells/DupocTrollBot.lean`, statements in
 `Outcome/Matrix/DupocTrollBot.lean`, the floor in `Outcome/Floors.lean`. "Engine side" of the floor = what the
 engine's `+k` floor stipulation (`search_f`) would give. Roster: the ten `body` bots, CIMCIC, itself.
@@ -206,18 +207,21 @@ and, for the floor, the ENGINE-SIDE value the `+k` stipulation gives.
 | outcome_DupocTrollBot_vs_DefectBot | — | (C, D) | SND | snd_DupocTrollBot_vs_DefectBot |
 | outcome_DupocTrollBot_vs_DupocBot | — | (D, D) | POS | pos_DupocTrollBot_vs_DupocBot (the reflexive equation "`DupocBot k` IS `DupocBot k`" is a `TAct`-theorem in both readings, found ⇒ D; Dupoc's guard then false ⇒ D) |
 | outcome_DupocTrollBot_vs_DupocTrollBot | — | (C, C) | SND | snd_DupocTrollBot_vs_DupocTrollBot |
+| outcome_DupocTrollBot_vs_DIMDID | — | (C, C) | SND | snd_DIMDID_vs_DupocTrollBot read from the troll's side (`Cells/DimdidTroll.lean`, 2026-10-13: `.eq` guard false by branch constants, `progCode_DIMDID_ne_DupocBot`; DIMDID's guard then self-defeating) |
 | outcome_DupocTrollBot_vs_EBot | — | (C, D) | SND | snd_DupocTrollBot_vs_EBot |
 | outcome_DupocTrollBot_vs_OBot | — | (C, C) | SND | snd_DupocTrollBot_vs_OBot |
 | outcome_DupocTrollBot_vs_TitForTatBot | — | (C, C) | SND | snd_DupocTrollBot_vs_TitForTatBot |
+| outcome_DupocTrollBot_vs_PrudentBot | — | (C, D) | SND | snd_PrudentBot_vs_DupocTrollBot read from the troll's side (`Cells/DupocTrollPrudent.lean`, 2026-10-19: the pair the 15-template tau table needs; Prudent's prudence guard is false of the troll, which trusts the defector) |
+| outcome_PrudentBot_vs_DupocTrollBot | — | (D, C) | SND | snd_PrudentBot_vs_DupocTrollBot (`Cells/DupocTrollPrudent.lean`, 2026-10-19; `progCode_PrudentBot_ne_DupocBot` for the troll's false `.eq`) |
 | outcome_DupocTrollBot_vs_CIMCIC | (C, D) | — | GENUINE-FLOOR | CIMCIC's guard TRUE (consequent = the troll's else-play on a false `.eq`). Settled: `floor_DupocTrollBot_vs_CIMCIC_right`, `_true` — dichotomy `dich_DupocTrollBot_vs_CIMCIC` (hinge side `(C, C)`) |
 
-Counts with this bot: **stated 118 = 107 + 11; floors 27 = 26 + 1.** CIMCIC and DupocBot, behavioral twins on the
+Counts with this bot: **stated 118 = 107 + 11; floors 27 = 26 + 1** (2026-10-13; with DIMDID 130/30, with the PrudentBot pair of 2026-10-19 **132/30**). CIMCIC and DupocBot, behavioral twins on the
 engine's matrix, are separated by it: `(C, C)`-free `(D, D)` against DupocBot, a floor against CIMCIC.
 
 **DIMDID (2026-10-13).** `DIMDID k := .search k (.impl (.plays .self .opp .D) (.plays .opp .self .D)) D C` —
 "Defect If My Defection Implies Defection": defect only when defection is provably reciprocated. It is the C/D
 TRANSPOSITION of CIMCIC (`(CIMCIC k).transpose = DIMDID k` by `rfl`, `DIMDID_eq_transpose`), so on codes it is the
-generic searcher `SV (gI .D) 1 k`; the engine has its DEFINITION (`Bots/DIMDID.lean`) and no theorem, so the thirteen
+generic searcher `SV (gI .D) 1 k`; the engine has its DEFINITION (`Bots/DIMDID.lean`) and no theorem, so the fourteen
 cells below are outside the 155-row ledger. Theorems in `arith/ArithS/Cells/Dimdid.lean`, statements in
 `Outcome/Matrix/DIMDID.lean`, the three floors in `Outcome/Floors.lean` (their `dich_` beside the cells;
 `#check_floorA_theorems` runs on that file). Roster: the ten `body` bots, CIMCIC, PrudentBot, itself. Three cells are
@@ -235,6 +239,7 @@ are the three partners whose cooperation is itself an else-play (Dupoc, CIMCIC, 
 | outcome_DIMDID_vs_DBot | — | (C, C) | POS | pos_DIMDID_vs_DBot (DBot sees DIMDID's FOUND defection against `.bot DefectBot`, `pos_DIMDID_vs_botDB`, and cooperates) |
 | outcome_DIMDID_vs_EBot | — | (C, C) | POS | pos_DIMDID_vs_EBot |
 | outcome_DIMDID_vs_CupodTrollBot | — | (C, C) | SND | snd_DIMDID_vs_CupodTrollBot (the `.eq` guard false: `templateCode_phiDd_ne_phiCu` at the frame `(CooperateBot, CooperateBot)`; every `k`) |
+| outcome_DIMDID_vs_DupocTrollBot | — | (C, C) | SND | snd_DIMDID_vs_DupocTrollBot (`Cells/DimdidTroll.lean`, 2026-10-13: the troll's `.eq` guard false by branch constants; stated in both orientations) |
 | outcome_DIMDID_vs_OBot | — | (D, D) | LOEB | loeb_DIMDID_vs_OBot (family: DIMDID's guard vs OBot + vs `.bot DefectBot`; OBot defects against anyone who defects against `.bot DefectBot`, whatever its first probe — `obot_D_of_any_V`) |
 | outcome_DIMDID_vs_CupodBot | — | (D, D) | TAU | τ of `outcome_CIMCIC_vs_DupocBot` (the mutual Löb cell) |
 | outcome_DIMDID_vs_DIMCID | — | (D, D) | LOEB | loeb_DIMDID_vs_DIMCID (mutual family: "I defect ⇒ you defect" and "I cooperate ⇒ you defect", each consequent the other's found defection) |

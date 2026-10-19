@@ -9,6 +9,7 @@ import ArithS.Cells.PrudentMirror
 import ArithS.Cells.PrudentLoose
 import ArithS.Cells.PositiveCells
 import ArithS.Cells.SoundnessCells
+import ArithS.Cells.DupocTrollPrudent
 import ArithS.Cells.SearchFree
 import ArithS.Cells.CIMCIC
 import ArithS.Cells.DIMCID
@@ -43,6 +44,12 @@ theorem outcome_PrudentBot_vs_CooperateBot :
 theorem outcome_PrudentBot_vs_CupodTrollBot :
     OutcomeSpecA .universal (bot PrudentBot) (bot CupodTrollBot) (some (.D, .C)) :=
   OutcomeSpecA.universal_of fun k ↦ OutcomeAtA.of_evalGraph (snd_PrudentBot_vs_CupodTrollBot k)
+
+/-- `snd_PrudentBot_vs_DupocTrollBot` (`Cells/DupocTrollPrudent.lean`, 2026-10-19; `S'`-only, like every DupocTroll cell) -/
+@[outcomeA]
+theorem outcome_PrudentBot_vs_DupocTrollBot :
+    OutcomeSpecA .universal (bot PrudentBot) (bot DupocTrollBot) (some (.D, .C)) :=
+  OutcomeSpecA.universal_of fun k ↦ OutcomeAtA.of_evalGraph (snd_PrudentBot_vs_DupocTrollBot k)
 
 /-- `snd_PrudentBot_vs_DBot` -/
 @[outcomeA]
