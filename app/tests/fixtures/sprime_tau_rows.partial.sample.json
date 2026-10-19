@@ -1,7 +1,7 @@
 {
  "schema_version": 1,
  "system": "sprime",
- "source_digest": "15369158871352395625",
+ "source_digest": "3730915175545939259",
  "order": [
   "coop",
   "defect",
@@ -11,9 +11,11 @@
   "obot",
   "dbot",
   "cupodTroll",
+  "dupocTroll",
   "cupod",
   "dimcid",
   "cimcic",
+  "dimdid",
   "prudent",
   "maxconfidence",
   "minconfidence"
@@ -21,7 +23,7 @@
  "rows": [
   {
    "template": "dupoc",
-   "order": "[coop, defect, tftSim, dupoc, obot, cupod, dimcid, cimcic, maxconfidence, minconfidence]",
+   "order": "[coop, defect, tftSim, dupoc, obot, dupocTroll, cupod, dimcid, cimcic, maxconfidence, minconfidence]",
    "name": "dupocRowSpecA",
    "module": "ArithS.Tau.Rows.Dupoc",
    "bits": {
@@ -30,6 +32,7 @@
     "tftSim": "C",
     "dupoc": "C",
     "obot": "D",
+    "dupocTroll": "D",
     "cupod": "D",
     "dimcid": "D",
     "cimcic": "C",
@@ -39,7 +42,7 @@
   },
   {
    "template": "ebot",
-   "order": "[coop, defect, tftSim, ebot, obot, dbot, cupodTroll, cupod, dimcid]",
+   "order": "[coop, defect, tftSim, ebot, obot, dbot, cupodTroll, dupocTroll, cupod, dimcid, dimdid]",
    "name": "ebotRowSpecA",
    "module": "ArithS.Tau.Rows.EBot",
    "bits": {
@@ -50,8 +53,10 @@
     "obot": "C",
     "dbot": "D",
     "cupodTroll": "D",
+    "dupocTroll": "D",
     "cupod": "C",
-    "dimcid": "D"
+    "dimcid": "D",
+    "dimdid": "C"
    }
   }
  ],
@@ -81,6 +86,15 @@
    "module": "ArithS.Tau.Rows.Dupoc",
    "hinge": "□[k] (guardCodeB (templateCode phiDu) (progCode (DupocBot k)) (progCode (CupodTrollBot k)) k)",
    "dichotomy": "dich_DupocBot_vs_CupodTrollBot",
+   "action": "D"
+  },
+  {
+   "template": "dupoc",
+   "slot": "dimdid",
+   "name": "dupocRowSpecA_dimdid_floor",
+   "module": "ArithS.Tau.Rows.Dupoc",
+   "hinge": "□[k] (guardCodeB (templateCode phiDd) (progCode (DIMDID k)) (progCode (DupocBot k)) k) ∨ □[k] (guardCodeB (templateCode phiDu) (progCode (DupocBot k)) (progCode (DIMDID k)) k)",
+   "dichotomy": "dich_DIMDID_vs_DupocBot",
    "action": "D"
   },
   {

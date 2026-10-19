@@ -108,14 +108,17 @@ def tau_export_file(source: str | None = None) -> Path:
 TAU_ORDER: tuple[str, ...] = (
     "coop", "defect", "tftSim", "tftPf", "dupoc", "ebot", "just", "obot", "guardian",
     "dbot", "cupodTroll", "cupod", "cimcic", "dimcid", "prudent", "maxconfidence",
-    "minconfidence", "mirror")
-"""The Lean `tauOrder` slot order. The export carries the kernel's own copy and
+    "minconfidence", "dupocTroll", "dimdid", "mirror")
+"""The Lean `tauOrder` slot order (20 slots since 2026-10-19: `dupocTroll`, the Dupoc-hunting
+troll, and `dimdid`, τ(CIMCIC)'s C/D transposition, sit after `minconfidence` and before the
+diverging `mirror`). The export carries the kernel's own copy and
 `kernel_bits` refuses to run if the two disagree."""
 
 PAPER_ORDER: tuple[str, ...] = (
-    "coop", "defect", "tftSim", "dupoc", "ebot", "obot", "dbot", "cupodTroll", "cupod",
-    "dimcid", "cimcic", "prudent", "maxconfidence", "minconfidence")
-"""`ArithS.Tau.paperOrder` (`arith/ArithS/Tau/Spec.lean`): the 14 paper templates — the
+    "coop", "defect", "tftSim", "dupoc", "ebot", "obot", "dbot", "cupodTroll", "dupocTroll",
+    "cupod", "dimcid", "cimcic", "dimdid", "prudent", "maxconfidence", "minconfidence")
+"""`ArithS.Tau.paperOrder` (`arith/ArithS/Tau/Spec.lean`): the 16 paper templates (14 until
+2026-10-19, when `dupocTroll` joined after `cupodTroll` and `dimdid` after `cimcic`) — the
 columns of the §3 table of `SPRIME_SOURCE_OF_TRUTH.md`. A SUBSET of `TAU_ORDER` (the four
 engine-only templates `tftPf just guardian mirror` dropped) but NOT a sub-order of it: the
 paper order lists `dimcid` before `cimcic`, the engine's `tauOrder` the other way round.
@@ -356,6 +359,7 @@ TEMPLATES: tuple[str, ...] = (
     "TauCupod",
     "TauCIMCIC",
     "TauDIMCID",
+    "TauDIMDID",
     "TauPrudent",
     "TauMaxConfidence",
     "TauMinConfidence",
@@ -374,9 +378,11 @@ BASE_OF: dict[str, str] = {
     "TauGuardian": "GuardianBot",
     "TauDBot": "DBot",
     "TauCupodTroll": "CupodTrollBot",
+    "TauDupocTroll": "DupocTrollBot",
     "TauCupod": "CupodBot",
     "TauCIMCIC": "CIMCIC",
     "TauDIMCID": "DIMCID",
+    "TauDIMDID": "DIMDID",
     "TauPrudent": "PrudentBot",
     "TauMaxConfidence": "DupocBot",
     "TauMinConfidence": "DupocBot",
@@ -415,9 +421,11 @@ LEAN_SLOT: dict[str, str] = {
     "TauGuardian": "guardian",
     "TauDBot": "dbot",
     "TauCupodTroll": "cupodTroll",
+    "TauDupocTroll": "dupocTroll",
     "TauCupod": "cupod",
     "TauCIMCIC": "cimcic",
     "TauDIMCID": "dimcid",
+    "TauDIMDID": "dimdid",
     "TauPrudent": "prudent",
     "TauMaxConfidence": "maxconfidence",
     "TauMinConfidence": "minconfidence",
@@ -436,9 +444,11 @@ TEMPLATE_OF_BOT: dict[str, str] = {
     "GuardianBot": "TauGuardian",
     "DBot": "TauDBot",
     "CupodTrollBot": "TauCupodTroll",
+    "DupocTrollBot": "TauDupocTroll",
     "CupodBot": "TauCupod",
     "CIMCIC": "TauCIMCIC",
     "DIMCID": "TauDIMCID",
+    "DIMDID": "TauDIMDID",
     "PrudentBot": "TauPrudent",
     "MirrorBot": "TauMirror",
     "MaxConfidenceBot": "TauMaxConfidence",
@@ -453,7 +463,7 @@ question, no bot's own row."""
 
 PAPER_TEMPLATES: tuple[str, ...] = tuple(
     next(t for t, s in LEAN_SLOT.items() if s == slot) for slot in PAPER_ORDER)
-"""The 14 paper templates (`PAPER_ORDER`) by template name, in paper order — the scope
+"""The paper templates (`PAPER_ORDER`) by template name, in paper order — the scope
 of the `S'` certification (`compare.direct_kernel_vs_base` on `source="sprime"`)."""
 
 

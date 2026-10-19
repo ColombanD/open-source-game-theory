@@ -1,7 +1,7 @@
 {
  "schema_version": 1,
  "system": "sprime",
- "source_digest": "10391838195367496787",
+ "source_digest": "8610783530633330194",
  "order": [
   "coop",
   "defect",
@@ -11,9 +11,11 @@
   "obot",
   "dbot",
   "cupodTroll",
+  "dupocTroll",
   "cupod",
   "dimcid",
   "cimcic",
+  "dimdid",
   "prudent",
   "maxconfidence",
   "minconfidence"
@@ -21,7 +23,7 @@
  "rows": [
   {
    "template": "coop",
-   "order": "[coop, defect, tftSim, dupoc, ebot, obot, dbot, cupodTroll, cupod, dimcid, cimcic, prudent, maxconfidence, minconfidence]",
+   "order": "[coop, defect, tftSim, dupoc, ebot, obot, dbot, cupodTroll, dupocTroll, cupod, dimcid, cimcic, dimdid, prudent, maxconfidence, minconfidence]",
    "name": "coopRowSpecA",
    "module": "ArithS.Tau.Rows.Cooperate",
    "bits": {
@@ -33,9 +35,11 @@
     "obot": "C",
     "dbot": "C",
     "cupodTroll": "C",
+    "dupocTroll": "C",
     "cupod": "C",
     "dimcid": "C",
     "cimcic": "C",
+    "dimdid": "C",
     "prudent": "C",
     "maxconfidence": "C",
     "minconfidence": "C"
@@ -43,7 +47,7 @@
   },
   {
    "template": "defect",
-   "order": "[coop, defect, tftSim, dupoc, ebot, obot, dbot, cupodTroll, cupod, dimcid, cimcic, prudent, maxconfidence, minconfidence]",
+   "order": "[coop, defect, tftSim, dupoc, ebot, obot, dbot, cupodTroll, dupocTroll, cupod, dimcid, cimcic, dimdid, prudent, maxconfidence, minconfidence]",
    "name": "defectRowSpecA",
    "module": "ArithS.Tau.Rows.Defect",
    "bits": {
@@ -55,9 +59,11 @@
     "obot": "D",
     "dbot": "D",
     "cupodTroll": "D",
+    "dupocTroll": "D",
     "cupod": "D",
     "dimcid": "D",
     "cimcic": "D",
+    "dimdid": "D",
     "prudent": "D",
     "maxconfidence": "D",
     "minconfidence": "D"
@@ -65,7 +71,7 @@
   },
   {
    "template": "tftSim",
-   "order": "[coop, defect, tftSim, dupoc, ebot, obot, dbot, cupodTroll, cupod, dimcid, cimcic, prudent, maxconfidence, minconfidence]",
+   "order": "[coop, defect, tftSim, dupoc, ebot, obot, dbot, cupodTroll, dupocTroll, cupod, dimcid, cimcic, dimdid, prudent, maxconfidence, minconfidence]",
    "name": "tftSimRowSpecA",
    "module": "ArithS.Tau.Rows.TFTSim",
    "bits": {
@@ -77,9 +83,11 @@
     "obot": "C",
     "dbot": "D",
     "cupodTroll": "C",
+    "dupocTroll": "C",
     "cupod": "C",
     "dimcid": "D",
     "cimcic": "C",
+    "dimdid": "C",
     "prudent": "D",
     "maxconfidence": "C",
     "minconfidence": "C"
@@ -87,7 +95,7 @@
   },
   {
    "template": "dupoc",
-   "order": "[coop, defect, tftSim, dupoc, obot, cupod, dimcid, cimcic, maxconfidence, minconfidence]",
+   "order": "[coop, defect, tftSim, dupoc, obot, dupocTroll, cupod, dimcid, cimcic, maxconfidence, minconfidence]",
    "name": "dupocRowSpecA",
    "module": "ArithS.Tau.Rows.Dupoc",
    "bits": {
@@ -96,6 +104,7 @@
     "tftSim": "C",
     "dupoc": "C",
     "obot": "D",
+    "dupocTroll": "D",
     "cupod": "D",
     "dimcid": "D",
     "cimcic": "C",
@@ -105,7 +114,7 @@
   },
   {
    "template": "ebot",
-   "order": "[coop, defect, tftSim, ebot, obot, dbot, cupodTroll, cupod, dimcid]",
+   "order": "[coop, defect, tftSim, ebot, obot, dbot, cupodTroll, dupocTroll, cupod, dimcid, dimdid]",
    "name": "ebotRowSpecA",
    "module": "ArithS.Tau.Rows.EBot",
    "bits": {
@@ -116,13 +125,15 @@
     "obot": "C",
     "dbot": "D",
     "cupodTroll": "D",
+    "dupocTroll": "D",
     "cupod": "C",
-    "dimcid": "D"
+    "dimcid": "D",
+    "dimdid": "C"
    }
   },
   {
    "template": "obot",
-   "order": "[coop, defect, tftSim, dupoc, ebot, obot, dbot, cupodTroll, dimcid, cimcic, prudent, maxconfidence, minconfidence]",
+   "order": "[coop, defect, tftSim, dupoc, ebot, obot, dbot, cupodTroll, dupocTroll, dimcid, cimcic, dimdid, prudent, maxconfidence, minconfidence]",
    "name": "obotRowSpecA",
    "module": "ArithS.Tau.Rows.OBot",
    "bits": {
@@ -134,8 +145,10 @@
     "obot": "D",
     "dbot": "D",
     "cupodTroll": "C",
+    "dupocTroll": "C",
     "dimcid": "D",
     "cimcic": "D",
+    "dimdid": "D",
     "prudent": "D",
     "maxconfidence": "D",
     "minconfidence": "D"
@@ -143,7 +156,7 @@
   },
   {
    "template": "dbot",
-   "order": "[coop, defect, tftSim, ebot, obot, dbot, cupodTroll, cupod, dimcid, prudent]",
+   "order": "[coop, defect, tftSim, ebot, obot, dbot, cupodTroll, dupocTroll, cupod, dimcid, dimdid, prudent]",
    "name": "dbotRowSpecA",
    "module": "ArithS.Tau.Rows.DBot",
    "bits": {
@@ -154,14 +167,16 @@
     "obot": "C",
     "dbot": "D",
     "cupodTroll": "D",
+    "dupocTroll": "D",
     "cupod": "C",
     "dimcid": "C",
+    "dimdid": "C",
     "prudent": "C"
    }
   },
   {
    "template": "cupodTroll",
-   "order": "[coop, defect, tftSim, ebot, obot, dbot, cupodTroll, cupod, dimcid, prudent]",
+   "order": "[coop, defect, tftSim, ebot, obot, dbot, cupodTroll, dupocTroll, cupod, dimcid, dimdid, prudent]",
    "name": "cupodTrollRowSpecA",
    "module": "ArithS.Tau.Rows.CupodTroll",
    "bits": {
@@ -172,14 +187,39 @@
     "obot": "C",
     "dbot": "C",
     "cupodTroll": "C",
+    "dupocTroll": "C",
     "cupod": "D",
     "dimcid": "C",
+    "dimdid": "C",
     "prudent": "C"
    }
   },
   {
+   "template": "dupocTroll",
+   "order": "[coop, defect, tftSim, dupoc, ebot, obot, dbot, cupodTroll, dupocTroll, cupod, dimcid, dimdid, prudent, maxconfidence, minconfidence]",
+   "name": "dupocTrollRowSpecA",
+   "module": "ArithS.Tau.Rows.DupocTroll",
+   "bits": {
+    "coop": "C",
+    "defect": "C",
+    "tftSim": "C",
+    "dupoc": "D",
+    "ebot": "C",
+    "obot": "C",
+    "dbot": "C",
+    "cupodTroll": "C",
+    "dupocTroll": "C",
+    "cupod": "C",
+    "dimcid": "C",
+    "dimdid": "C",
+    "prudent": "C",
+    "maxconfidence": "D",
+    "minconfidence": "D"
+   }
+  },
+  {
    "template": "cupod",
-   "order": "[coop, defect, tftSim, dupoc, ebot, dbot, cupodTroll, cupod, dimcid, maxconfidence, minconfidence]",
+   "order": "[coop, defect, tftSim, dupoc, ebot, dbot, cupodTroll, dupocTroll, cupod, dimcid, dimdid, maxconfidence, minconfidence]",
    "name": "cupodRowSpecA",
    "module": "ArithS.Tau.Rows.Cupod",
    "bits": {
@@ -190,15 +230,17 @@
     "ebot": "C",
     "dbot": "C",
     "cupodTroll": "D",
+    "dupocTroll": "C",
     "cupod": "D",
     "dimcid": "D",
+    "dimdid": "D",
     "maxconfidence": "C",
     "minconfidence": "C"
    }
   },
   {
    "template": "dimcid",
-   "order": "[coop, defect, tftSim, dupoc, ebot, obot, dbot, cupodTroll, cupod, dimcid, cimcic, prudent, maxconfidence, minconfidence]",
+   "order": "[coop, defect, tftSim, dupoc, ebot, obot, dbot, cupodTroll, dupocTroll, cupod, dimcid, cimcic, dimdid, prudent, maxconfidence, minconfidence]",
    "name": "dimcidRowSpecA",
    "module": "ArithS.Tau.Rows.DIMCID",
    "bits": {
@@ -210,9 +252,11 @@
     "obot": "D",
     "dbot": "D",
     "cupodTroll": "D",
+    "dupocTroll": "D",
     "cupod": "D",
     "dimcid": "D",
     "cimcic": "D",
+    "dimdid": "D",
     "prudent": "D",
     "maxconfidence": "D",
     "minconfidence": "D"
@@ -236,8 +280,27 @@
    }
   },
   {
+   "template": "dimdid",
+   "order": "[coop, defect, tftSim, ebot, obot, dbot, cupodTroll, dupocTroll, cupod, dimcid, dimdid]",
+   "name": "dimdidRowSpecA",
+   "module": "ArithS.Tau.Rows.DIMDID",
+   "bits": {
+    "coop": "C",
+    "defect": "D",
+    "tftSim": "C",
+    "ebot": "C",
+    "obot": "D",
+    "dbot": "C",
+    "cupodTroll": "C",
+    "dupocTroll": "C",
+    "cupod": "D",
+    "dimcid": "D",
+    "dimdid": "D"
+   }
+  },
+  {
    "template": "prudent",
-   "order": "[coop, defect, tftSim, obot, dbot, cupodTroll, dimcid]",
+   "order": "[coop, defect, tftSim, obot, dbot, cupodTroll, dupocTroll, dimcid]",
    "name": "prudentRowSpecA",
    "module": "ArithS.Tau.Rows.Prudent",
    "bits": {
@@ -247,12 +310,13 @@
     "obot": "D",
     "dbot": "D",
     "cupodTroll": "D",
+    "dupocTroll": "D",
     "dimcid": "D"
    }
   },
   {
    "template": "maxconfidence",
-   "order": "[coop, defect, tftSim, dupoc, obot, cupod, dimcid, cimcic, maxconfidence, minconfidence]",
+   "order": "[coop, defect, tftSim, dupoc, obot, dupocTroll, cupod, dimcid, cimcic, maxconfidence, minconfidence]",
    "name": "maxconfidenceRowSpecA",
    "module": "ArithS.Tau.Rows.MaxConfidence",
    "bits": {
@@ -261,6 +325,7 @@
     "tftSim": "C",
     "dupoc": "C",
     "obot": "D",
+    "dupocTroll": "D",
     "cupod": "D",
     "dimcid": "D",
     "cimcic": "C",
@@ -270,7 +335,7 @@
   },
   {
    "template": "minconfidence",
-   "order": "[coop, defect, tftSim, dupoc, obot, cupod, dimcid, cimcic, maxconfidence, minconfidence]",
+   "order": "[coop, defect, tftSim, dupoc, obot, dupocTroll, cupod, dimcid, cimcic, maxconfidence, minconfidence]",
    "name": "minconfidenceRowSpecA",
    "module": "ArithS.Tau.Rows.MinConfidence",
    "bits": {
@@ -279,6 +344,7 @@
     "tftSim": "C",
     "dupoc": "C",
     "obot": "D",
+    "dupocTroll": "D",
     "cupod": "D",
     "dimcid": "D",
     "cimcic": "C",
@@ -313,6 +379,15 @@
    "module": "ArithS.Tau.Rows.Dupoc",
    "hinge": "□[k] (guardCodeB (templateCode phiDu) (progCode (DupocBot k)) (progCode (CupodTrollBot k)) k)",
    "dichotomy": "dich_DupocBot_vs_CupodTrollBot",
+   "action": "D"
+  },
+  {
+   "template": "dupoc",
+   "slot": "dimdid",
+   "name": "dupocRowSpecA_dimdid_floor",
+   "module": "ArithS.Tau.Rows.Dupoc",
+   "hinge": "□[k] (guardCodeB (templateCode phiDd) (progCode (DIMDID k)) (progCode (DupocBot k)) k) ∨ □[k] (guardCodeB (templateCode phiDu) (progCode (DupocBot k)) (progCode (DIMDID k)) k)",
+   "dichotomy": "dich_DIMDID_vs_DupocBot",
    "action": "D"
   },
   {
@@ -451,6 +526,15 @@
    "action": "C"
   },
   {
+   "template": "dupocTroll",
+   "slot": "cimcic",
+   "name": "dupocTrollRowSpecA_cimcic_floor",
+   "module": "ArithS.Tau.Rows.DupocTroll",
+   "hinge": "□[k] (guardCodeB (templateCode phiC) (progCode (CIMCIC k)) (progCode (DupocTrollBot k)) k)",
+   "dichotomy": "dich_DupocTrollBot_vs_CIMCIC",
+   "action": "C"
+  },
+  {
    "template": "cupod",
    "slot": "obot",
    "name": "cupodRowSpecA_obot_floor",
@@ -506,11 +590,29 @@
   },
   {
    "template": "cimcic",
+   "slot": "dupocTroll",
+   "name": "cimcicRowSpecA_dupocTroll_floor",
+   "module": "ArithS.Tau.Rows.CIMCIC",
+   "hinge": "□[k] (guardCodeB (templateCode phiC) (progCode (CIMCIC k)) (progCode (DupocTrollBot k)) k)",
+   "dichotomy": "dich_DupocTrollBot_vs_CIMCIC",
+   "action": "D"
+  },
+  {
+   "template": "cimcic",
    "slot": "cupod",
    "name": "cimcicRowSpecA_cupod_floor",
    "module": "ArithS.Tau.Rows.CIMCIC",
    "hinge": "□[k] (guardCodeB (templateCode phiC) (progCode (CIMCIC k)) (progCode (CupodBot k)) k) ∨ □[k] (guardCodeB (templateCode phiCu) (progCode (CupodBot k)) (progCode (CIMCIC k)) k)",
    "dichotomy": "dich_CIMCIC_vs_CupodBot",
+   "action": "D"
+  },
+  {
+   "template": "cimcic",
+   "slot": "dimdid",
+   "name": "cimcicRowSpecA_dimdid_floor",
+   "module": "ArithS.Tau.Rows.CIMCIC",
+   "hinge": "□[k] (guardCodeB (templateCode phiDd) (progCode (DIMDID k)) (progCode (CIMCIC k)) k) ∨ □[k] (guardCodeB (templateCode phiC) (progCode (CIMCIC k)) (progCode (DIMDID k)) k)",
+   "dichotomy": "dich_DIMDID_vs_CIMCIC",
    "action": "D"
   },
   {
@@ -521,6 +623,51 @@
    "hinge": "□[k] (guardCodeB (templateCode phiPo) (progCode (PrudentBot k)) (progCode (CIMCIC k)) k)",
    "dichotomy": "dich_CIMCIC_vs_PrudentBot",
    "action": "D"
+  },
+  {
+   "template": "dimdid",
+   "slot": "dupoc",
+   "name": "dimdidRowSpecA_dupoc_floor",
+   "module": "ArithS.Tau.Rows.DIMDID",
+   "hinge": "□[k] (guardCodeB (templateCode phiDd) (progCode (DIMDID k)) (progCode (DupocBot k)) k) ∨ □[k] (guardCodeB (templateCode phiDu) (progCode (DupocBot k)) (progCode (DIMDID k)) k)",
+   "dichotomy": "dich_DIMDID_vs_DupocBot",
+   "action": "C"
+  },
+  {
+   "template": "dimdid",
+   "slot": "cimcic",
+   "name": "dimdidRowSpecA_cimcic_floor",
+   "module": "ArithS.Tau.Rows.DIMDID",
+   "hinge": "□[k] (guardCodeB (templateCode phiDd) (progCode (DIMDID k)) (progCode (CIMCIC k)) k) ∨ □[k] (guardCodeB (templateCode phiC) (progCode (CIMCIC k)) (progCode (DIMDID k)) k)",
+   "dichotomy": "dich_DIMDID_vs_CIMCIC",
+   "action": "C"
+  },
+  {
+   "template": "dimdid",
+   "slot": "prudent",
+   "name": "dimdidRowSpecA_prudent_floor",
+   "module": "ArithS.Tau.Rows.DIMDID",
+   "hinge": "□[k] (guardCodeB (templateCode phiDd) (progCode (DIMDID k)) (progCode (PrudentBot k)) k) ∨ □[k] (guardCodeB (templateCode phiPo) (progCode (PrudentBot k)) (progCode (DIMDID k)) k)",
+   "dichotomy": "dich_DIMDID_vs_PrudentBot",
+   "action": "C"
+  },
+  {
+   "template": "dimdid",
+   "slot": "maxconfidence",
+   "name": "dimdidRowSpecA_maxconfidence_floor",
+   "module": "ArithS.Tau.Rows.DIMDID",
+   "hinge": "□[k] (guardCodeB (templateCode phiDd) (progCode (DIMDID k)) (progCode (DupocBot k)) k) ∨ □[k] (guardCodeB (templateCode phiDu) (progCode (DupocBot k)) (progCode (DIMDID k)) k)",
+   "dichotomy": "dich_DIMDID_vs_DupocBot",
+   "action": "C"
+  },
+  {
+   "template": "dimdid",
+   "slot": "minconfidence",
+   "name": "dimdidRowSpecA_minconfidence_floor",
+   "module": "ArithS.Tau.Rows.DIMDID",
+   "hinge": "□[k] (guardCodeB (templateCode phiDd) (progCode (DIMDID k)) (progCode (DupocBot k)) k) ∨ □[k] (guardCodeB (templateCode phiDu) (progCode (DupocBot k)) (progCode (DIMDID k)) k)",
+   "dichotomy": "dich_DIMDID_vs_DupocBot",
+   "action": "C"
   },
   {
    "template": "prudent",
@@ -556,6 +703,15 @@
    "module": "ArithS.Tau.Rows.Prudent",
    "hinge": "□[k] (guardCodeB (templateCode phiPo) (progCode (PrudentBot k)) (progCode (CIMCIC k)) k)",
    "dichotomy": "dich_CIMCIC_vs_PrudentBot",
+   "action": "D"
+  },
+  {
+   "template": "prudent",
+   "slot": "dimdid",
+   "name": "prudentRowSpecA_dimdid_floor",
+   "module": "ArithS.Tau.Rows.Prudent",
+   "hinge": "□[k] (guardCodeB (templateCode phiDd) (progCode (DIMDID k)) (progCode (PrudentBot k)) k) ∨ □[k] (guardCodeB (templateCode phiPo) (progCode (PrudentBot k)) (progCode (DIMDID k)) k)",
+   "dichotomy": "dich_DIMDID_vs_PrudentBot",
    "action": "D"
   },
   {
@@ -614,6 +770,15 @@
   },
   {
    "template": "maxconfidence",
+   "slot": "dimdid",
+   "name": "maxconfidenceRowSpecA_dimdid_floor",
+   "module": "ArithS.Tau.Rows.MaxConfidence",
+   "hinge": "□[k] (guardCodeB (templateCode phiDd) (progCode (DIMDID k)) (progCode (DupocBot k)) k) ∨ □[k] (guardCodeB (templateCode phiDu) (progCode (DupocBot k)) (progCode (DIMDID k)) k)",
+   "dichotomy": "dich_DIMDID_vs_DupocBot",
+   "action": "D"
+  },
+  {
+   "template": "maxconfidence",
    "slot": "prudent",
    "name": "maxconfidenceRowSpecA_prudent_floor",
    "module": "ArithS.Tau.Rows.MaxConfidence",
@@ -646,6 +811,15 @@
    "module": "ArithS.Tau.Rows.MinConfidence",
    "hinge": "□[k] (guardCodeB (templateCode phiDu) (progCode (DupocBot k)) (progCode (CupodTrollBot k)) k)",
    "dichotomy": "dich_DupocBot_vs_CupodTrollBot",
+   "action": "D"
+  },
+  {
+   "template": "minconfidence",
+   "slot": "dimdid",
+   "name": "minconfidenceRowSpecA_dimdid_floor",
+   "module": "ArithS.Tau.Rows.MinConfidence",
+   "hinge": "□[k] (guardCodeB (templateCode phiDd) (progCode (DIMDID k)) (progCode (DupocBot k)) k) ∨ □[k] (guardCodeB (templateCode phiDu) (progCode (DupocBot k)) (progCode (DIMDID k)) k)",
+   "dichotomy": "dich_DIMDID_vs_DupocBot",
    "action": "D"
   },
   {

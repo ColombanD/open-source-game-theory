@@ -236,8 +236,10 @@ def test_tft_variants_split_exactly_on_the_floor_bots() -> None:
     sim_row, pf_row = _row(tables, "TauTFTSim"), _row(tables, "TauTFTPf")
     # TauDIMCID joined the floor bots 2026-08-21: like Guardian's and Cupod's,
     # its cooperation is the ELSE-play of a failed search, so it is TRUE but
-    # uncitable — the behavioral TFT counts it, the prover TFT cannot.
-    floor_bots = {"TauGuardian", "TauCupodTroll", "TauCupod", "TauDIMCID"}
+    # uncitable — the behavioral TFT counts it, the prover TFT cannot. TauDIMDID
+    # (2026-10-19) likewise: its C at the cooperator is the ELSE-play of its
+    # self-defeating guard (`dimdid_coop_plays_C`), found by no search.
+    floor_bots = {"TauGuardian", "TauCupodTroll", "TauCupod", "TauDIMCID", "TauDIMDID"}
     for T in TEMPLATES:
         if T in floor_bots:
             assert (sim_row[T], pf_row[T]) == ("C", "D"), T

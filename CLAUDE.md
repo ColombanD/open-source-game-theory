@@ -283,7 +283,7 @@ into `submit_verdict`.
    basin 88% → 81%. All six paper tau sweeps re-run under `hinge_side` (2026-10-10, §9): the body F2′ picture is INTACT (lower shares, collapse one step earlier at α=0.3), twins/natives claims about PrudentBot FLIP; the natives hinge sweeps are Nash-free (`--stages ess,invasion,faces,replicator,moran`; hundreds of extreme NE per hinge-side 14-bot matrix); `pipeline.py --resume` reuses complete run dirs by fingerprint; `analysis.py [out_root] [floor_policy]` writes `analysis_hinge_side/`. A `≠` cell
    FLIPS the engine (all nine in-paper flips are DIMCID's). Kernel tau rows load PER SOURCE (Phase 4, 2026-10-01):
    `tau_rows.json` on `engine`, `sprime_tau_rows.json` on `sprime` (`def4_theorems.TAU_EXPORTS`;
-   the `S'` file = engine schema over the 14-template `PAPER_ORDER` + `floor_bits`, digest over
+   the `S'` file = engine schema over the 16-template `PAPER_ORDER` (14 + `dupocTroll` + `dimdid` since 2026-10-19) + `floor_bits`, digest over
    rows ++ floor_bits), each VERIFIED against its own cells at load — a floor bit must sit on a
    floor cell with the same engine-side value, a provenance swap raises — and never crossed (they
    disagree at DIMCID by theorem). The `S'` file may be PARTIAL during the Phase-3 rollout:
@@ -291,7 +291,7 @@ into `submit_verdict`.
    the report banner, `python -m pd_runner.tau.matrix`), `is_kernel_backed` is True only at full
    coverage, and uncovered bits fall back to the `S'` cells. `python -m pd_runner.tau.compare
    --zoo paper --source sprime` certifies Def 3 ≡ Def 4 on `S'` (agree / floor-agree / mismatch /
-   uncovered). **COMPLETE since 2026-10-02: 149 / 41 / 0 / 0, covered 196/196**, plus 6 RECORDED
+   uncovered). **COMPLETE since 2026-10-02: 149 / 41 / 0 / 0, covered 196/196** (the 14-bot paper zoo; the row file itself is 225/225 since 2026-10-19: 15 rows, 176 row slots, 49 floor bits), plus 6 RECORDED
    provenance divergences (`def4_theorems.SPRIME_RECORDED_DIVERGENCES`: the red-cell cross bits
    `dupoc/natives × cupod` are FLOOR bits in `S'` although the base cell is a theorem — no τ-symmetry
    inside one `.sys`; stated by the kernel, counted in `kernel_coverage`, the base cell is played; a
@@ -533,7 +533,7 @@ the ambiguity-averse Löbian cooperator. `Tau/Vote.lean::maxPlayer` (a chain of
 one-entry `.tvote`s, no new primitive), `Zoo.lean::MaxConfidenceBotZ`,
 `Tau/Theorems/TauMaxConfidence/Phase.lean` (`tauMaxConfidence_phase`; **`maxconfidence_not_linear`**
 — three signals on which the max plays C, D, C and no `θ' ≤ bitMass w r` can, for any
-row). It IS a roster slot (`.maxconfidence`, 17 templates): `inst` depends only on
+row). It IS a roster slot (`.maxconfidence`, 17 templates; 20 since 2026-10-19 with `.minconfidence`, `.dimdid` — τ(DIMDID) = τ̂(τ(CIMCIC)) template by template, `Tau/Bots/TauDIMDID.lean` + `Tau/Theorems/TauDIMDID/{Helpers,Loeb,Tower,Phase}.lean`, its engine arms proved by TRANSPOSITION of CIMCIC's through the new `Base/EvalTranspose.lean` (`eval_transpose`: `eval` commutes with τ̂ at the same fuel, all constructors) where the partner's transposition is a roster template, directly (self-defeating-guard censuses, a two-impl-member mutual Löb on the dd×di systems, three tower-census cells) elsewhere; its `S'` row `arith/ArithS/Tau/Rows/Dimdid.lean` (kits `Tau/Dimdid.lean`, `Tau/Entangled/DimdidSys.lean`, `Tau/ClosedWatchDd.lean`) agrees with the engine's at every slot but `obot`, the `S'` FLIP `dimdid × obot = D` (POS on OBot's two-stage watch: its second stage sees DIMDID's found defection against the defector in every model, so DIMDID's guard is a conditional `TAct`-theorem — the tau image of the base flip `outcome_DIMDID_vs_OBot = (D, D)`); 16 paper templates, 256/256 — and `.dupocTroll` — τ(DupocTrollBot), CupodTroll's twin aimed at Dupoc, `Tau/Bots/TauDupocTroll.lean` + `Tau/Theorems/TauDupocTroll/`, placed before `.mirror` in `tauOrder`; its `S'` row is `arith/ArithS/Tau/Rows/DupocTroll.lean`, and with it the ladder zoo `body8+trolls` is kernel-backed. **`proveEq` decides identity by SOURCE since 2026-10-19** (`eqGuardOf (Z.spec T) (Z.spec B)`, not the index `T = B`): the troll recognises every hypothesis whose spec is Dupoc's — `.dupoc` and both natives — so the natives stay Dupoc's twins as hypotheses and the `inst_*confidence_eq_dupoc` bridges hold by `rfl`; CupodTroll's bits are unchanged): `inst` depends only on
 specs and `tauMaxConfidenceSpec = tauDupocSpec`, so in the HYPOTHESIS role it is Dupoc by
 `rfl` (the bridges in `Zoo.lean`) except at the `maxconfidence × dupoc` pair — a symmetric
 `.sys` of two Dupoc-spec self-probers, mutual Löb, C (`TauMaxConfidence/Helpers.lean`) —
@@ -682,7 +682,7 @@ appears in the tau card, the EGT card and every stage CLI at once. **THE PAPER'S
 DefectBot, DupocBot, EBot, OBot, TitForTatBot — body without DIMCID (DefectBot's twin by theorem in
 `S'`, `dimcid_vs_closed`) and without CupodTrollBot (the name-reading `.eq` bot, a ladder rung); 3 hinge
 pairs, 0 flips, twin-free on the engine side (on the hinge side Cupod's and Dupoc's action rows coincide).
-Ladder rung `nonprovers+dupoc` (7). ONLY these two zoos have runs on disk since the 2026-10-13 clean-up
+Ladder rungs `nonprovers+dupoc` (7), `body8+trolls` (10), `body8+trolls+provers` (12), and `body8+natives` (10, the {sum, max, min} aggregator comparison, ε-uniform family only — the natives are Dupoc twins as hypotheses, both distance families clamp at 0.857 there). **Partial transparency on these zoos (2026-10-14, `EGT_FINDINGS_SPRIME.md` §10):** body8 critical transparency 20% for α ≤ 0.45, 40–60% for α ∈ {0.62, 0.8}, static = dynamic collapse at every α, no pure ESS on any game, syntactic channel same thresholds; ladder 7/8/10/12 rungs under transparency (`latex/scripts/gen_tau_ladder.py`, trolls change nothing, CIMCIC lowers the cautious threshold); hinge side in the appendix (Cupod/Dupoc row twin). Generators `latex/scripts/gen_tau_body.py`, text `latex/paper_transparency.tex`. ONLY these zoos have runs on disk since the 2026-10-13 clean-up
 (the thesis-era `body`/`body+twins`/`body+twins+natives` keys stay registered, runless; their numbers are in
 `EGT_FINDINGS_SPRIME.md` §5–9.1). Pending rungs once the new bots have `S'` cells: + CupodTrollBot +
 DupocTrollBot; + CIMCIC + DIMDID. WaryBot can be in no total `S'` roster (unproven cells) and no floor-free
@@ -794,7 +794,7 @@ LOEB × OBot and × DIMCID (both `(D, D)`, conjunction families over described p
 `outcomeSpecA_transpose` from CIMCIC's (× DefectBot, × CupodBot, × itself), 3 GENUINE two-hinge floors (× DupocBot, × CIMCIC,
 × PrudentBot: DIMDID's own guard the outer hinge, engine side `(C, D)`, hinge side `(D, D)`; `prudence_found_vs_DIMDID` discharges
 the prudence guard). The new argument is the SELF-DEFEATING guard (`dimdid_selfref_not_found`, dual of CIMCIC's self-refuting one):
-against anyone who cooperates with it the guard is true but never found, so DIMDID cooperates. Export: 128 cells, 30 floors. The disagreements are theorems, not gaps: the engine closes them by censuses that rest on a
+against anyone who cooperates with it the guard is true but never found, so DIMDID cooperates. Export: 128 cells, 30 floors (130 with the DIMDID × DupocTrollBot pair, 132 with the PrudentBot × DupocTrollBot pair of 2026-10-19, `Cells/DupocTrollPrudent.lean` — the one pair the 15-template tau table needed; DIMDID's own tau row of 2026-10-19 needed no new base cell: the matrix reads `X vs DIMDID` from the oriented `DIMDID vs X` cells). The disagreements are theorems, not gaps: the engine closes them by censuses that rest on a
 player being UNREADABLE by `S`'s rules (`no_provable_tailTo_unreadable`, the WV valuation censuses),
 and PA reads every source. `dimcid_vs_closed`: **in `S'`, DIMCID defects against every closed
 program** — its guard "my cooperating implies X" is self-fulfilling for any `X` — while the engine has

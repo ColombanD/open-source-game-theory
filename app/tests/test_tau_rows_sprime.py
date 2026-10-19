@@ -121,9 +121,9 @@ def _require_full(path: Path) -> None:
 
 
 def test_paper_order_is_the_lean_paper_order() -> None:
-    """`ArithS.Tau.paperOrder` — 14 templates, a subset of the engine's `tauOrder`, with
-    `dimcid` BEFORE `cimcic` (the engine orders them the other way)."""
-    assert len(PAPER_ORDER) == 14 and set(PAPER_ORDER) < set(TAU_ORDER)
+    """`ArithS.Tau.paperOrder` — 16 templates (14 + `dupocTroll` + `dimdid` since 2026-10-19), a subset of
+    the engine's `tauOrder`, with `dimcid` BEFORE `cimcic` (the engine orders them the other way)."""
+    assert len(PAPER_ORDER) == 16 and set(PAPER_ORDER) < set(TAU_ORDER)
     assert PAPER_ORDER.index("dimcid") < PAPER_ORDER.index("cimcic")
     assert TAU_ORDER.index("cimcic") < TAU_ORDER.index("dimcid")
     assert [LEAN_SLOT[t] for t in PAPER_TEMPLATES] == list(PAPER_ORDER)
@@ -226,7 +226,9 @@ def test_kernel_bits_equal_the_sprime_cells(sprime_rows) -> None:
     """Every stated bit at (A, T) is the S' base cell's A-action for `BASE_OF[A]` vs
     `BASE_OF[T]` (the natives on DupocBot), and a bit is a FLOOR bit iff that cell is
     a floor dichotomy — with the same engine-side value and the cell's hinge."""
-    m = load_tau_matrix(PAPER_TWINS_SUB_ZOO, source="sprime")
+    # the twins zoo plus DupocTrollBot and DIMDID (2026-10-19): every paper template's base bot, so every stated bit
+    # has a cell
+    m = load_tau_matrix(PAPER_TWINS_SUB_ZOO + ("DupocTrollBot", "DIMDID"), source="sprime")
     tables = kernel_bits(source="sprime")
     prov = kernel_bit_provenance(source="sprime")
     floors = kernel_floor_bits(source="sprime")
@@ -257,7 +259,7 @@ def test_kernel_bits_equal_the_sprime_cells(sprime_rows) -> None:
                 assert fb.dichotomy == f"dich_{cell.theorem[len('outcome_'):-len('_floor')]}", (A, T)
     assert stated > 0
     _require_full(sprime_rows)
-    assert stated == 196
+    assert stated == len(PAPER_ORDER) ** 2 == 256
     n_floor = sum(1 for r in prov.values() for v in r.values() if v == "floor_dichotomy")
     expected_floor = sum(
         1 for A in PAPER_TEMPLATES for T in PAPER_TEMPLATES
@@ -271,9 +273,13 @@ def test_kernel_bits_equal_the_sprime_cells(sprime_rows) -> None:
         and not m.cell(BASE_OF[next(A for A in PAPER_TEMPLATES if LEAN_SLOT[A] == a)],
                        BASE_OF[next(T for T in PAPER_TEMPLATES if LEAN_SLOT[T] == t)]).is_floor)
     assert n_floor == expected_floor + n_recorded_floor
-    # the §3 table: 13 flips of the engine among the 196, all DIMCID's
+    # the §3 table: 13 flips of the engine among the 196 bits of the 14 engine-comparable templates, all
+    # DIMCID's (`dupocTroll` and `dimdid` have no engine cell: their base bots are `S'`-only, so they are compared
+    # nowhere here — τ(DIMDID)'s own `obot` flip of the engine ROW is recorded in `TAUBOTS.md`, not counted)
     engine = load_tau_matrix(PAPER_TWINS_SUB_ZOO, source="engine")
-    flips = [(A, T) for A in PAPER_TEMPLATES for T in PAPER_TEMPLATES
+    comparable = [A for A in PAPER_TEMPLATES if BASE_OF[A] in engine.bots]
+    assert len(comparable) == 14
+    flips = [(A, T) for A in comparable for T in comparable
              if tables[LEAN_SLOT[A]][LEAN_SLOT[T]] != engine.action(BASE_OF[A], BASE_OF[T])]
     assert len(flips) == 13 and all("TauDIMCID" in p for p in flips)
 
@@ -409,9 +415,10 @@ def test_certification_on_the_partial_export(partial_rows) -> None:
     assert d.coverage_by_template["TauDupoc"] == (14, 14)
     assert d.coverage_by_template["TauCooperate"] == (0, 14)
     assert "TauCooperate" in d.missing_rows and "TauDupoc" not in d.missing_rows
+    # only the templates whose base bot is in the zoo are compared (DupocTrollBot is not in the twins zoo)
     assert d.floor_agreements == sum(
         1 for b in ("DupocBot", "EBot") for T in PAPER_TEMPLATES
-        if m.cell(b, BASE_OF[T]).is_floor)
+        if BASE_OF[T] in m.bots and m.cell(b, BASE_OF[T]).is_floor)
 
 
 def test_certification_scope_is_the_paper_templates_on_sprime(sprime_rows) -> None:
@@ -466,8 +473,11 @@ def test_sample_fixtures_are_current() -> None:
     assert json.loads(SPRIME_TAU_PARTIAL_EXPORT.read_text(encoding="utf-8")) == builder.build(
         templates=builder.PARTIAL_TEMPLATES)
     full = json.loads(SPRIME_TAU_SAMPLE_EXPORT.read_text(encoding="utf-8"))
-    assert len(full["rows"]) == 14 and len(full["floor_bits"]) == 41
-    assert sum(len(r["bits"]) for r in full["rows"]) == 155
+    # 16 templates since 2026-10-19: 256 bits = 203 cell-derived row slots + 53 floor cells (41 + the two
+    # `cimcic × dupocTroll` / `dupocTroll × cimcic` floors + DIMDID's ten: `dimdid × {dupoc, cimcic, prudent,
+    # maxconfidence, minconfidence}` and their mirrors)
+    assert len(full["rows"]) == 16 and len(full["floor_bits"]) == 53
+    assert sum(len(r["bits"]) for r in full["rows"]) == 203
 
 
 def test_real_export_coverage_report() -> None:
