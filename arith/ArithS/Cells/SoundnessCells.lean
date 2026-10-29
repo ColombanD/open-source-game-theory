@@ -522,13 +522,6 @@ lemma pSim_ne_pSearch (x y k g p q : ℕ) : pSim x y ≠ pSearch k g p q := by
 lemma pIte_ne_pSearch (b a x y k g p q : ℕ) : pIte b a x y ≠ pSearch k g p q := by
   simp [pIte, pSearch]
 
-/-- Two templates with different formulas have different codes (quote injectivity at ℕ). -/
-lemma templateCode_ne_of_ne {φ ψ : PD.Formula} (h : template φ ≠ template ψ)
-    (hφ : noSelfIdxF φ = true := by noSelfIdx_tac) (hψ : noSelfIdxF ψ = true := by noSelfIdx_tac) :
-    templateCode φ ≠ templateCode ψ := by
-  rw [templateCode_eq_quote_template φ hφ, templateCode_eq_quote_template ψ hψ]
-  intro e
-  exact h ((Sentence.quote_inj_iff (V := ℕ)).mp e)
 
 /-- **Semantic disjointness of templates**: two guards whose realizations differ in truth at ONE
 frame have different template codes (equal codes give equal realized sentences, `quote_sentenceAt` +
@@ -753,8 +746,6 @@ lemma not_models_phiCu_at_CB_Cupod (k : ℕ) : ¬ ℕ↓[LAct] ⊧ sentenceAt Co
   rintro ⟨N, hN⟩
   exact absurd (EvalGraph.unique' hN (snd_CupodBot_vs_CooperateBot_aux k)) (by decide)
 
-lemma templateCode_phiT_ne_phiCu (k : ℕ) : templateCode (phiT k) ≠ templateCode phiCu :=
-  templateCode_ne_of_models CooperateBot (CupodBot k) (models_phiT_at_CB_Cupod k) (not_models_phiCu_at_CB_Cupod k)
 
 /-- CupodTroll's STORED template (abstracted) differs from Cupod's. -/
 lemma templateCodeAt_phiT_ne_phiCu (k : ℕ) : templateCodeAt (phiT k) k ≠ templateCode phiCu :=

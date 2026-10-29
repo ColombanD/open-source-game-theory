@@ -154,19 +154,6 @@ theorem loeb_CupodBot_vs_CupodBot :
   obtain ⟨k₀, h⟩ := loeb_DupocBot_self_core
   exact ⟨k₀, fun k hk ↦ (h k hk).1.2⟩
 
-/-- **The box form**: Dupoc FINDS its guard against itself within its budget, for all large `k`. -/
-theorem loeb_DupocBot_vs_DupocBot_guard :
-    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
-      LenBox TAct k (guardCode (templateCode phiDu) (progCode (DupocBot k)) (progCode (DupocBot k))) := by
-  obtain ⟨k₀, h⟩ := loeb_DupocBot_self_core
-  exact ⟨k₀, fun k hk ↦ (h k hk).2.1⟩
-
-/-- **The box form**: Cupod FINDS its guard against itself within its budget, for all large `k`. -/
-theorem loeb_CupodBot_vs_CupodBot_guard :
-    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
-      LenBox TAct k (guardCode (templateCode phiCu) (progCode (CupodBot k)) (progCode (CupodBot k))) := by
-  obtain ⟨k₀, h⟩ := loeb_DupocBot_self_core
-  exact ⟨k₀, fun k hk ↦ (h k hk).2.2⟩
 
 end selfPlay
 
@@ -264,19 +251,6 @@ theorem loeb_CupodBot_vs_MirrorBot :
   obtain ⟨k₀, h⟩ := loeb_DupocBot_mirror_core
   exact ⟨k₀, fun k hk ↦ ⟨(h k hk).1.2, mirror_copies (h k hk).1.2⟩⟩
 
-/-- **The box form**: Dupoc FINDS its guard against Mirror within its budget, for all large `k`. -/
-theorem loeb_DupocBot_vs_MirrorBot_guard :
-    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
-      LenBox TAct k (guardCode (templateCode phiDu) (progCode (DupocBot k)) (progCode MirrorBot)) := by
-  obtain ⟨k₀, h⟩ := loeb_DupocBot_mirror_core
-  exact ⟨k₀, fun k hk ↦ (h k hk).2.1⟩
-
-/-- **The box form**: Cupod FINDS its guard against Mirror within its budget, for all large `k`. -/
-theorem loeb_CupodBot_vs_MirrorBot_guard :
-    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
-      LenBox TAct k (guardCode (templateCode phiCu) (progCode (CupodBot k)) (progCode MirrorBot)) := by
-  obtain ⟨k₀, h⟩ := loeb_DupocBot_mirror_core
-  exact ⟨k₀, fun k hk ↦ (h k hk).2.2⟩
 
 end mirror
 

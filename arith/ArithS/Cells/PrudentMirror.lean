@@ -70,8 +70,6 @@ def phiP1 : PD.Formula := .plays .opp .self .C
 /-- PrudentBot's inner (prudence) guard: "opp defects against `.bot DefectBot`". -/
 def phiP2 : PD.Formula := .plays .opp (.bot PD.Bots.DefectBot) .D
 
-lemma phiP1_transpose : phiP1.transpose = .plays .opp .self .D := rfl
-lemma phiP2_transpose : phiP2.transpose = .plays .opp (.bot (.const .C)) .C := rfl
 lemma fragF_phiP1 : fragF phiP1 = true := rfl
 lemma fragF_phiP2 : fragF phiP2 = true := rfl
 
@@ -86,10 +84,6 @@ noncomputable def templateP2T : Semisentence LAct 6 := template (.plays .opp (.b
 
 lemma lMap_swap_templateP1 : Semiformula.lMap swap templateP1 = templateP1T := lMap_swap_template phiP1 fragF_phiP1
 lemma lMap_swap_templateP2 : Semiformula.lMap swap templateP2 = templateP2T := lMap_swap_template phiP2 fragF_phiP2
-lemma lMap_swap_templateP1T : Semiformula.lMap swap templateP1T = templateP1 := by
-  rw [← lMap_swap_templateP1, lMap_swap_swap]
-lemma lMap_swap_templateP2T : Semiformula.lMap swap templateP2T = templateP2 := by
-  rw [← lMap_swap_templateP2, lMap_swap_swap]
 
 /-- `PrudentBot k` in an arbitrary model: the cooperation search at the root, the prudence search in
 its then-branch (found-found ⇒ `C`, else `D`). -/
@@ -107,7 +101,6 @@ noncomputable def Prudent (k : ℕ) : ℕ := PrudentV (V := ℕ) k
 noncomputable def PrudentT (k : ℕ) : ℕ := PrudentTV (V := ℕ) k
 
 lemma PrudentV_nat (k : ℕ) : PrudentV (V := ℕ) k = Prudent k := rfl
-lemma PrudentTV_nat (k : ℕ) : PrudentTV (V := ℕ) k = PrudentT k := rfl
 
 /-- **The bridge to the engine**: the code of the engine's `PrudentBot k` is `Prudent k`. -/
 theorem progCode_PrudentBot (k : ℕ) : progCode (PD.Bots.PrudentBot k) = Prudent k := by
@@ -123,8 +116,6 @@ theorem transposeCode_PrudentV (k : V) : transposeCode (PrudentV k) = PrudentTV 
     revalueTemplate_quote_sentence₆_V, revalueTemplate_quote_sentence₆_V, lMap_swap_templateP1, lMap_swap_templateP2]
   simp [revalueAction]
 
-theorem transposeCode_PrudentTV (k : V) : transposeCode (PrudentTV k) = PrudentV k := by
-  rw [← transposeCode_PrudentV, transposeCode_transposeCode]
 
 end programs
 
@@ -461,8 +452,6 @@ noncomputable def qPPT : Semisentence LAct 1 := Semiformula.lMap swap qPP
 
 lemma lMap_swap_qPM : Semiformula.lMap swap qPM = qPMT := rfl
 lemma lMap_swap_qPP : Semiformula.lMap swap qPP = qPPT := rfl
-lemma lMap_swap_qPMT : Semiformula.lMap swap qPMT = qPM := lMap_swap_swap _
-lemma lMap_swap_qPPT : Semiformula.lMap swap qPPT = qPP := lMap_swap_swap _
 
 theorem qPMT_eq : qPMT = qT templateP1T TP uPT wPT (cl TM) (numT 0) (numT 1) := by
   unfold qPMT qPM
@@ -757,22 +746,6 @@ theorem loeb_Prudent_vs_Mirror_of_nec {d : ℕ} (hE : BoundedInnerNec d) :
   obtain ⟨k₀, h⟩ := loeb_Prudent_vs_Mirror_core_of_nec hE
   exact ⟨k₀, fun k hk ↦ ⟨(h k hk).1.1, mirror_copies3_V (V := ℕ) _ _ (h k hk).1.1⟩⟩
 
-/-- **τ(PrudentBot) × Mirror is `(D, D)`**, conditional: the transposed searcher defects against
-Mirror (fuel 3) and Mirror copies (fuel 4). -/
-theorem loeb_PrudentT_vs_Mirror_of_nec {d : ℕ} (hE : BoundedInnerNec d) :
-    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
-      EvalGraph 3 (PrudentT k) Mirror (PrudentT k) 1 ∧ EvalGraph 4 Mirror (PrudentT k) Mirror 1 := by
-  obtain ⟨k₀, h⟩ := loeb_Prudent_vs_Mirror_core_of_nec hE
-  exact ⟨k₀, fun k hk ↦ ⟨(h k hk).1.2, mirror_copies3_V (V := ℕ) _ _ (h k hk).1.2⟩⟩
-
-/-- **The box form**: for all large `k`, Prudent FINDS proofs of BOTH its guards against Mirror
-within its budget `k` (conditional). -/
-theorem loeb_Prudent_vs_Mirror_guards_of_nec {d : ℕ} (hE : BoundedInnerNec d) :
-    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
-      LenBox TAct k (guardCode (⌜templateP1⌝ : ℕ) (Prudent k) Mirror) ∧
-      LenBox TAct k (guardCode (⌜templateP2⌝ : ℕ) (Prudent k) Mirror) := by
-  obtain ⟨k₀, h⟩ := loeb_Prudent_vs_Mirror_core_of_nec hE
-  exact ⟨k₀, fun k hk ↦ (h k hk).2⟩
 
 /-! #### Unconditional, at `boundedInnerNec_sixteen` -/
 
@@ -783,18 +756,6 @@ theorem loeb_Prudent_vs_Mirror :
       EvalGraph 3 (Prudent k) Mirror (Prudent k) 0 ∧ EvalGraph 4 Mirror (Prudent k) Mirror 0 :=
   loeb_Prudent_vs_Mirror_of_nec boundedInnerNec_sixteen
 
-/-- **τ(PrudentBot) × Mirror `(D, D)` in PA-`S'`, unconditional.** -/
-theorem loeb_PrudentT_vs_Mirror :
-    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
-      EvalGraph 3 (PrudentT k) Mirror (PrudentT k) 1 ∧ EvalGraph 4 Mirror (PrudentT k) Mirror 1 :=
-  loeb_PrudentT_vs_Mirror_of_nec boundedInnerNec_sixteen
-
-/-- **Prudent finds both its guards against Mirror, unconditional.** -/
-theorem loeb_Prudent_vs_Mirror_guards :
-    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
-      LenBox TAct k (guardCode (⌜templateP1⌝ : ℕ) (Prudent k) Mirror) ∧
-      LenBox TAct k (guardCode (⌜templateP2⌝ : ℕ) (Prudent k) Mirror) :=
-  loeb_Prudent_vs_Mirror_guards_of_nec boundedInnerNec_sixteen
 
 end cells
 

@@ -37,20 +37,6 @@ variable {V : Type*} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
 
 section search
 
-/-- **The then-clause of a search node on a six-variable template, in any frame**: the guard found within
-`k` and the then-branch playing `a` at fuel `n` make the searcher play `a` at fuel `n + 1`
-(`EvalGraph.search_iff₆`, the left disjunct). -/
-theorem search_then_V₆ {n me opp k g p q a : V} (hg : IsSemiformula LAct 6 g)
-    (h : LenBox TAct k (guardCode g me opp)) (hp : EvalGraph n me opp p a) :
-    EvalGraph (n + 1) me opp (pSearch k g p q) a :=
-  (EvalGraph.search_iff₆ hg).mpr (Or.inl ⟨h, hp⟩)
-
-/-- **The else-clause**: the guard NOT found within `k` and the else-branch playing `a` at fuel `n` make the
-searcher play `a` at fuel `n + 1` (the right disjunct). -/
-theorem search_else_V₆ {n me opp k g p q a : V} (hg : IsSemiformula LAct 6 g)
-    (h : ¬ LenBox TAct k (guardCode g me opp)) (hq : EvalGraph n me opp q a) :
-    EvalGraph (n + 1) me opp (pSearch k g p q) a :=
-  (EvalGraph.search_iff₆ hg).mpr (Or.inr ⟨h, hq⟩)
 
 end search
 
@@ -87,68 +73,6 @@ theorem SV_search_V (g : Semisentence LAct 6) (a : ℕ) (k opp : V)
   have e : EvalGraph (0 + 1) (SV g a k) opp (pConst (a : V)) (a : V) := EvalGraph.const_iff.mpr rfl
   rwa [zero_add] at e
 
-/-- **Dupoc's search clause in ANY frame** (fuel 2): `DupocV k` run in the frame `(me, opp)` plays
-`C` if `guardCode ⌜guardTemplate 0⌝ me opp` is provable within `k`. -/
-theorem dupoc_frame_search_V (k me opp : V) :
-    LenBox TAct k (guardCode (⌜guardTemplate 0⌝ : V) me opp) → EvalGraph 2 me opp (DupocV k) 0 := by
-  intro h
-  rw [show (2 : V) = 1 + 1 from one_add_one_eq_two.symm]
-  show EvalGraph (1 + 1) me opp (pSearch k (⌜guardTemplate 0⌝ : V) (pConst 0) (pConst 1)) 0
-  rw [EvalGraph.search_iff₆ (isSemiformula_quote₆ (guardTemplate 0))]
-  left
-  refine ⟨h, ?_⟩
-  rw [show (1 : V) = 0 + 1 by simp, EvalGraph.const_iff]
-
-/-- **Cupod's search clause in ANY frame** (fuel 2). -/
-theorem cupod_frame_search_V (k me opp : V) :
-    LenBox TAct k (guardCode (⌜guardTemplate 1⌝ : V) me opp) → EvalGraph 2 me opp (CupodV k) 1 := by
-  intro h
-  rw [show (2 : V) = 1 + 1 from one_add_one_eq_two.symm]
-  show EvalGraph (1 + 1) me opp (pSearch k (⌜guardTemplate 1⌝ : V) (pConst 1) (pConst 0)) 1
-  rw [EvalGraph.search_iff₆ (isSemiformula_quote₆ (guardTemplate 1))]
-  left
-  refine ⟨h, ?_⟩
-  have e : EvalGraph (0 + 1) me opp (pConst 1) 1 := EvalGraph.const_iff.mpr rfl
-  rwa [zero_add] at e
-
-/-- **The bot-wrapped Dupoc's search clause in any frame** (fuel 3: the bot step, the search step,
-the constant). -/
-theorem botDupoc_frame_search_V (k me opp : V) :
-    LenBox TAct k (guardCode (⌜guardTemplate 0⌝ : V) me opp) → EvalGraph 3 me opp (pBot (DupocV k)) 0 := by
-  intro h
-  rw [show (3 : V) = 2 + 1 from two_add_one_eq_three.symm, EvalGraph.bot_iff]
-  exact dupoc_frame_search_V k me opp h
-
-theorem botCupod_frame_search_V (k me opp : V) :
-    LenBox TAct k (guardCode (⌜guardTemplate 1⌝ : V) me opp) → EvalGraph 3 me opp (pBot (CupodV k)) 1 := by
-  intro h
-  rw [show (3 : V) = 2 + 1 from two_add_one_eq_three.symm, EvalGraph.bot_iff]
-  exact cupod_frame_search_V k me opp h
-
-/-- **Cupod's search clause against ANY opponent in every model** (fuel `2`). -/
-theorem cupod_search_any_V (k opp : V) :
-    LenBox TAct k (guardCode (⌜guardTemplate 1⌝ : V) (CupodV k) opp) →
-      EvalGraph 2 (CupodV k) opp (CupodV k) 1 := by
-  intro h
-  rw [show (2 : V) = 1 + 1 from one_add_one_eq_two.symm]
-  show EvalGraph (1 + 1) (CupodV k) opp (pSearch k (⌜guardTemplate 1⌝ : V) (pConst 1) (pConst 0)) 1
-  rw [EvalGraph.search_iff₆ (isSemiformula_quote₆ (guardTemplate 1))]
-  left
-  refine ⟨h, ?_⟩
-  have e : EvalGraph (0 + 1) (CupodV k) opp (pConst 1) 1 := EvalGraph.const_iff.mpr rfl
-  rwa [zero_add] at e
-
-/-- **Dupoc's search clause against ANY opponent in every model** (fuel `2`). -/
-theorem dupoc_search_any_V (k opp : V) :
-    LenBox TAct k (guardCode (⌜guardTemplate 0⌝ : V) (DupocV k) opp) →
-      EvalGraph 2 (DupocV k) opp (DupocV k) 0 := by
-  intro h
-  rw [show (2 : V) = 1 + 1 from one_add_one_eq_two.symm]
-  show EvalGraph (1 + 1) (DupocV k) opp (pSearch k (⌜guardTemplate 0⌝ : V) (pConst 0) (pConst 1)) 0
-  rw [EvalGraph.search_iff₆ (isSemiformula_quote₆ (guardTemplate 0))]
-  left
-  refine ⟨h, ?_⟩
-  rw [show (1 : V) = 0 + 1 by simp, EvalGraph.const_iff]
 
 end searchers
 

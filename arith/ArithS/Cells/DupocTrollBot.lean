@@ -393,16 +393,6 @@ theorem floor_DupocTrollBot_vs_CIMCIC_right (k : ℕ) :
     EvalGraph 2 (progCode (DupocTrollBot k)) (progCode (CIMCIC k)) (progCode (DupocTrollBot k)) (actCode .C) :=
   dtb_C_of_ne k (properPlayer_CIMCIC k) (progCode_CIMCIC_ne_DupocBot k)
 
-/-- **CIMCIC's guard against DupocTroll is TRUE in ℕ** at every `k` (its consequent "DupocTroll plays C against
-me" holds; residue: the troll's else-branch on a false `.eq` — its provability within `k` is the
-bounded-consistency hinge). -/
-theorem floor_DupocTrollBot_vs_CIMCIC_true (k : ℕ) :
-    ℕ↓[LAct] ⊧ sentenceAt (CIMCIC k) (DupocTrollBot k) phiC := by
-  rw [← sentenceAt_subst (CIMCIC k) (DupocTrollBot k) (properPlayer_CIMCIC k) (properPlayer_DupocTrollBot k) phiC rfl]
-  change ℕ↓[LAct] ⊧ sentenceAt (CIMCIC k) (DupocTrollBot k)
-    (.impl (.plays (CIMCIC k) (DupocTrollBot k) .C) (.plays (DupocTrollBot k) (CIMCIC k) .C))
-  rw [models_sentenceAt_impl, models_sentenceAt_plays _ _ _ _ _ (properPlayer_DupocTrollBot k) (properPlayer_CIMCIC k)]
-  exact fun _ ↦ ⟨2, floor_DupocTrollBot_vs_CIMCIC_right k⟩
 
 /-- **DupocTroll × CIMCIC** (engine-side value `(C, D)`, the `+k` floor stipulation; the troll has no engine cell).
 Hinge: CIMCIC's guard "I cooperate with the troll ⇒ it cooperates with me" (TRUE: its consequent is the troll's

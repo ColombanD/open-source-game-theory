@@ -70,14 +70,7 @@ section code
 /-- DIMDID's guard: "my defecting implies your defecting" — `phiC.transpose`. -/
 def phiDd : PD.Formula := .impl (.plays .self .opp .D) (.plays .opp .self .D)
 
-lemma phiDd_eq_transpose : phiDd = phiC.transpose := rfl
-lemma phiDd_transpose : phiDd.transpose = phiC := rfl
-lemma fragF_phiDd : fragF phiDd = true := rfl
 
-/-- **DIMDID is the transposition of CIMCIC.** -/
-theorem DIMDID_eq_transpose (k : ℕ) : DIMDID k = (CIMCIC k).transpose := rfl
-
-theorem fragP_DIMDID (k : ℕ) : fragP (DIMDID k) = true := rfl
 theorem fragP_CIMCIC (k : ℕ) : fragP (CIMCIC k) = true := rfl
 
 lemma properPlayer_DIMDID (k : ℕ) : ProperPlayer (DIMDID k) := ⟨by simp [DIMDID], by simp [DIMDID]⟩
@@ -86,8 +79,6 @@ lemma progCode_DIMDID_search (k : ℕ) :
     progCode (DIMDID k) = pSearch k (templateCode phiDd) (pConst 1) (pConst 0) := by
   rw [DIMDID, progCode_search_noSnap _ _ _ _ rfl]; simp [phiDd, actCode]
 
-/-- DIMDID's template is `gI .D` (`Cells/JustEngine.lean`), the transposition of CIMCIC's `gI .C`. -/
-lemma gI_D_eq_template : gI .D = template phiDd := rfl
 
 lemma lMap_swap_gI_D : Semiformula.lMap swap (gI .D) = gI .C := lMap_swap_template _ rfl
 
@@ -548,16 +539,6 @@ theorem loeb_DIMDID_vs_OBot :
   rw [OBotV_nat, ← progCode_DIMDID_SV] at hp
   exact hp
 
-/-- **The box form**: DIMDID FINDS its guard against OBot within the budget, for all large `k`. -/
-theorem loeb_DIMDID_vs_OBot_guard :
-    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
-      LenBox TAct k (guardCode (templateCode phiDd) (progCode (DIMDID k)) (progCode OBot)) := by
-  obtain ⟨k₀, h⟩ := ob_found
-  refine ⟨k₀, fun k hk ↦ ?_⟩
-  have hg := (h k hk obQ (by simp)).1
-  rw [obQ, ← guardCode_qF, dpDd_val, dpOB_val, OBotV_nat, ← progCode_DIMDID_SV] at hg
-  rw [templateCode_eq_quote_template phiDd rfl]
-  exact hg
 
 end dimdidOBot
 
@@ -623,19 +604,6 @@ theorem loeb_DIMDID_vs_DIMCID :
   rw [← progCode_DIMDID_SV, ← progCode_DIMCID_SV] at hp
   exact hp
 
-/-- **The box forms**: both searchers find their guards against each other within the budget. -/
-theorem loeb_DIMDID_vs_DIMCID_guards :
-    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
-      LenBox TAct k (guardCode (templateCode phiDd) (progCode (DIMDID k)) (progCode (DIMCID k))) ∧
-      LenBox TAct k (guardCode (templateCode phiD) (progCode (DIMCID k)) (progCode (DIMDID k))) := by
-  obtain ⟨k₀, h⟩ := di_found
-  refine ⟨k₀, fun k hk ↦ ?_⟩
-  have hg₁ := (h k hk diQ (by simp)).1
-  have hg₂ := (h k hk (qF (template phiD) dpDi dpDd) (by simp [diR])).1
-  rw [diQ, ← guardCode_qF, dpDd_val, dpDi_val, ← progCode_DIMDID_SV, ← progCode_DIMCID_SV] at hg₁
-  rw [← guardCode_qF, dpDd_val, dpDi_val, ← progCode_DIMDID_SV, ← progCode_DIMCID_SV] at hg₂
-  rw [templateCode_eq_quote_template phiDd rfl, templateCode_eq_quote_template phiD rfl]
-  exact ⟨hg₁, hg₂⟩
 
 end dimdidDimcid
 

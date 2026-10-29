@@ -1,11 +1,16 @@
 import ArithS
 import Lean
-/-! `scripts/DeadCode.lean` — the reachability audit of `ArithS` (2026-09-28). Not imported by the package.
+/-! `scripts/DeadCode.lean` — the reachability audit of `ArithS` (2026-09-28; restored 2026-10-29 with the
+claims-root mode). Not imported by the package.
 Run: `cd arith && lake env lean --run scripts/DeadCode.lean <roots.txt> <out.tsv>`; without args it reads
 `scripts/roots.txt` and writes `scripts/deadcode.tsv`. ROOTS = the names in `roots.txt` (the `#print axioms`
-census) + every instance + every macro/syntax in `ArithS.*`. LIVE = closure of ROOTS over the constants used in
-the TYPE and VALUE of each constant (so `simp` lemmas and auxiliary lemmas used inside proofs are live), restricted
-to `ArithS.*`. Output TSV: name, module, kind, startLine, endLine, LIVE|DEAD|ROOT, isAux. -/
+census; regenerate it with `grep -rhoE "#print axioms [^ ]+" ArithS/Audit/*.lean ArithS/Audit.lean | awk
+'{print $3}' | sort -u`) + every instance + every macro/syntax in `ArithS.*` + (claims mode) every non-aux
+constant of a module whose name starts with one of the comma-separated prefixes in `DEADCODE_ROOT_MODULES`
+(e.g. `ArithS.Outcome.,ArithS.Tau.Rows.`) — with an empty roots file that audits reachability from the
+package's CLAIMS alone, independently of what the census prints. LIVE = closure of ROOTS over the constants used
+in the TYPE and VALUE of each constant (so `simp` lemmas and auxiliary lemmas used inside proofs are live),
+restricted to `ArithS.*`. Output TSV: name, module, kind, startLine, endLine, LIVE|DEAD|ROOT, isAux. -/
 open Lean Meta
 
 def isArith (env : Environment) (n : Name) : Bool :=
@@ -41,9 +46,12 @@ unsafe def main (args : List String) : IO Unit := do
   for (n, _) in env.constants.toList do
     if isArith env n then names := names.push n
   let rootSet : Std.HashSet String := Std.HashSet.ofList rootLines
+  let prefixes := ((← IO.getEnv "DEADCODE_ROOT_MODULES").getD "").splitOn "," |>.filter (· ≠ "")
   let mut roots : Std.HashSet Name := {}
   for n in names do
     let s := n.toString
+    let modName := match env.getModuleIdxFor? n with | some i => (env.header.moduleNames.getD i.toNat .anonymous).toString | none => ""
+    if !isAuxName n && prefixes.any (fun p => modName.startsWith p) then roots := roots.insert n
     let bare := if s.startsWith "ArithS." then (s.drop 7).toString else s
     if rootSet.contains s || rootSet.contains bare then roots := roots.insert n
     if (instanceExtension.getState env).instanceNames.contains n then roots := roots.insert n

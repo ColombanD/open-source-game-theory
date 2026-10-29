@@ -1,6 +1,11 @@
-import ArithS.Cells.DupocMirror
 import ArithS.Necessitation.Package
 import PrisonersDilemma.Bots.LlmGenerations.DIMCID
+import ArithS.Cells.Common.Templates
+import ArithS.Cells.Common.Probers
+import ArithS.Cells.Common.Families
+import ArithS.Cells.Common.Khat
+import ArithS.Assembly.Cell
+import ArithS.Eval.SimTest
 
 /-!
 # ArithS.Cells.DIMCID — DIMCID × DIMCID, DIMCID × Mirror and DIMCID × Cupod, all `(D, D)`, in PA-`S'`
@@ -96,7 +101,6 @@ section template
 /-- DIMCID's guard: "my cooperating implies your defecting". -/
 def phiD : PD.Formula := .impl (.plays .self .opp .C) (.plays .opp .self .D)
 
-lemma phiD_transpose : phiD.transpose = .impl (.plays .self .opp .D) (.plays .opp .self .C) := rfl
 
 lemma fragF_phiD : fragF phiD = true := rfl
 
@@ -129,18 +133,10 @@ noncomputable def DimcidV (k : V) : V := pSearch k (⌜templateD⌝ : V) (pConst
 /-- The transposed searcher (τ(DIMCID)): its guard is the transposed template, found ⇒ `C`. -/
 noncomputable def DimcidTV (k : V) : V := pSearch k (⌜templateDT⌝ : V) (pConst 0) (pConst 1)
 
-/-- `DimcidV` IS the generic engine searcher `SV templateD 1` of `Cells/Common/Bots` (up to the casts of the
-branch constants) — the bridge the consolidation map asks for; `DupocV` has NO such bridge. -/
-lemma DimcidV_eq_SV (k : V) : DimcidV k = SV templateD 1 k := by
-  unfold DimcidV SV; norm_num
-
-lemma DimcidTV_eq_SV (k : V) : DimcidTV k = SV templateDT 0 k := by
-  unfold DimcidTV SV; norm_num
 
 /-- `DIMCID k` at `ℕ`. -/
 noncomputable def Dimcid (k : ℕ) : ℕ := DimcidV (V := ℕ) k
 
-lemma DimcidV_nat (k : ℕ) : DimcidV (V := ℕ) k = Dimcid k := rfl
 
 /-- **The bridge to the engine**: the code of the engine's `DIMCID k` is `Dimcid k`. -/
 theorem progCode_DIMCID (k : ℕ) : progCode (PD.Bots.DIMCID k) = Dimcid k := by
@@ -153,8 +149,6 @@ theorem transposeCode_DimcidV (k : V) : transposeCode (DimcidV k) = DimcidTV k :
   rw [revalue_search, revalue_const, revalue_const, revalueTemplate_quote_sentence₆_V, lMap_swap_templateD]
   simp [revalueAction]
 
-theorem transposeCode_DimcidTV (k : V) : transposeCode (DimcidTV k) = DimcidV k := by
-  rw [← transposeCode_DimcidV, transposeCode_transposeCode]
 
 end dimcid
 
@@ -414,12 +408,6 @@ theorem eval_qDG_swap_iff_V (k : V) (X : Semiterm LAct Empty 1) (U W : ClosedSem
         (qTG (Semiterm.lMap swap X) (Semiterm.lMap swap U) (Semiterm.lMap swap W)) := by
   rw [eval_swappedReading, lMap_swap_qDG, ← stdReadingV_eq_stdReading]
 
-omit [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] in
-theorem eval_qTG_swap_iff_V (k : V) (X : Semiterm LAct Empty 1) (U W : ClosedSemiterm LAct 0) :
-    Semiformula.Eval (s := swappedReading V) ![k] Empty.elim (qTG X U W) ↔
-      Semiformula.Eval (s := stdReadingV V) ![k] Empty.elim
-        (qDG (Semiterm.lMap swap X) (Semiterm.lMap swap U) (Semiterm.lMap swap W)) := by
-  rw [eval_swappedReading, lMap_swap_qTG, ← stdReadingV_eq_stdReading]
 
 end fixedFormulas
 
@@ -436,22 +424,6 @@ noncomputable def qDGVec (X : Semiterm LAct Empty 1) (U W : ClosedSemiterm LAct 
     ⌜(Rew.emb (cl U : Semiterm LAct Empty 1) : SyntacticSemiterm LAct 1)⌝ ∷
     ⌜(Rew.emb (cl W : Semiterm LAct Empty 1) : SyntacticSemiterm LAct 1)⌝ ∷ 0
 
-lemma semitermVec_val_qDG (X : Semiterm LAct Empty 1) (U W : ClosedSemiterm LAct 0) :
-    SemitermVec.val (fun i ↦ (⌜(Rew.emb ((![TDi, cl uDi, cl wDi, X, cl U, cl W] :
-      Fin 6 → Semiterm LAct Empty 1) i) : SyntacticSemiterm LAct 1)⌝ : Bootstrapping.Semiterm V LAct 1)) =
-      qDGVec X U W := by
-  have hv : (fun i ↦ (⌜(Rew.emb ((![TDi, cl uDi, cl wDi, X, cl U, cl W] :
-      Fin 6 → Semiterm LAct Empty 1) i) : SyntacticSemiterm LAct 1)⌝ : Bootstrapping.Semiterm V LAct 1)) =
-      ![⌜(Rew.emb TDi : SyntacticSemiterm LAct 1)⌝,
-        ⌜(Rew.emb (cl uDi : Semiterm LAct Empty 1) : SyntacticSemiterm LAct 1)⌝,
-        ⌜(Rew.emb (cl wDi : Semiterm LAct Empty 1) : SyntacticSemiterm LAct 1)⌝,
-        ⌜(Rew.emb X : SyntacticSemiterm LAct 1)⌝,
-        ⌜(Rew.emb (cl U : Semiterm LAct Empty 1) : SyntacticSemiterm LAct 1)⌝,
-        ⌜(Rew.emb (cl W : Semiterm LAct Empty 1) : SyntacticSemiterm LAct 1)⌝] := by
-    funext i; fin_cases i <;> rfl
-  rw [hv]
-  simp only [SemitermVec.val_cons, SemitermVec.val_nil]
-  rfl
 
 /-- The code of `qDG X U W` is the internal substitution of `qDGVec X U W` into the template code. -/
 theorem quote_qDG (X : Semiterm LAct Empty 1) (U W : ClosedSemiterm LAct 0) :
@@ -775,33 +747,6 @@ lemma descT_dimcid (k : V) :
       ((Semiterm.lMap swap TDi).val (s := stdReadingV V) ![k] Empty.elim) = DimcidTV k := by
   rw [lMap_swap_TDi, val_TDi_V]; exact revalue_val_uDiT_wDiT_V k
 
-/-- **The fixed formula of DIMCID against itself**: `qDD(k)` says "`DimcidV k` plays C against
-itself implies `DimcidV k` plays D against itself". -/
-noncomputable def qDD : Semisentence LAct 1 := qDG TDi uDi wDi
-
-lemma qDD_def : qDD = qDG TDi uDi wDi := rfl
-
-/-- **The instance equation on codes**: DIMCID's guard code against itself is the `binNumeral k`-instance
-of `⌜qDD⌝`, in every model. -/
-theorem guardCode_DimcidV_self_eq_instB (k : V) :
-    guardCode (⌜templateD⌝ : V) (DimcidV k) (DimcidV k) = instB (⌜qDD⌝ : V) k :=
-  guardCode_DimcidV_eq_instB k TDi uDi wDi (hX_dimcid k) (hU_dimcid k) (hW_dimcid k)
-
-/-- **The truth equation of `qDD` in every model** (standard reading). -/
-theorem eval_qDD_iff_V (k : V) :
-    Semiformula.Eval (s := stdReadingV V) ![k] Empty.elim qDD ↔
-      ((∃ n, EvalGraph n (DimcidV k) (DimcidV k) (DimcidV k) 0) →
-        (∃ n, EvalGraph n (DimcidV k) (DimcidV k) (DimcidV k) 1)) :=
-  eval_qDG_iff_V k TDi uDi wDi (desc_dimcid k)
-
-/-- **The truth equation of `qDD` in the swapped reading**: the transposed searcher against itself,
-"D implies C". -/
-theorem eval_qDD_swap_iff_V (k : V) :
-    Semiformula.Eval (s := swappedReading V) ![k] Empty.elim qDD ↔
-      ((∃ n, EvalGraph n (DimcidTV k) (DimcidTV k) (DimcidTV k) 1) →
-        (∃ n, EvalGraph n (DimcidTV k) (DimcidTV k) (DimcidTV k) 0)) := by
-  rw [qDD_def, eval_qDG_swap_iff_V]
-  exact eval_qTG_iff_V k _ _ _ (descT_dimcid k)
 
 /-- **The Löb family of the self-play cell**: `pDD := qDD ⋏ (its transposition)`. -/
 noncomputable def pDD : Semisentence LAct 1 := pG TDi uDi wDi
@@ -848,12 +793,6 @@ theorem loeb_Dimcid_vs_Dimcid_of_nec {d : ℕ} (hE : BoundedInnerNec d) :
   obtain ⟨k₀, h⟩ := loeb_Dimcid_vs_Dimcid_core_of_nec hE
   exact ⟨k₀, fun k hk ↦ (h k hk).1.1⟩
 
-/-- **The box form**: for all large `k`, DIMCID actually FINDS a proof of its guard against itself
-within its budget `k` (conditional). -/
-theorem loeb_Dimcid_vs_Dimcid_guard_of_nec {d : ℕ} (hE : BoundedInnerNec d) :
-    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k → LenBox TAct k (guardCode (⌜templateD⌝ : ℕ) (Dimcid k) (Dimcid k)) := by
-  obtain ⟨k₀, h⟩ := loeb_Dimcid_vs_Dimcid_core_of_nec hE
-  exact ⟨k₀, fun k hk ↦ (h k hk).2.1⟩
 
 /-- **DIMCID × DIMCID `(D, D)` in PA-`S'`, unconditional**: for all large `k`, `Dimcid k` defects
 against itself. -/
@@ -861,23 +800,6 @@ theorem loeb_Dimcid_vs_Dimcid :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k → EvalGraph 2 (Dimcid k) (Dimcid k) (Dimcid k) 1 :=
   loeb_Dimcid_vs_Dimcid_of_nec boundedInnerNec_sixteen
 
-/-- **DIMCID finds its guard against itself, unconditional.** -/
-theorem loeb_Dimcid_vs_Dimcid_guard :
-    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k → LenBox TAct k (guardCode (⌜templateD⌝ : ℕ) (Dimcid k) (Dimcid k)) :=
-  loeb_Dimcid_vs_Dimcid_guard_of_nec boundedInnerNec_sixteen
-
-/-- The consulted guard of the engine's `DIMCID k` against itself (`Agent.guardOf`) is the guard
-code of `Dimcid k` on `templateD`. -/
-lemma guardOf_DIMCID (k : ℕ) :
-    guardOf phiD (PD.Bots.DIMCID k) (PD.Bots.DIMCID k) = guardCode (⌜templateD⌝ : ℕ) (Dimcid k) (Dimcid k) := by
-  unfold guardOf; rw [progCode_DIMCID, templateCode_eq_quote_template phiD (noSelfIdxF_of_fragF _ fragF_phiD)]; rfl
-
-/-- **The engine-facing form, unconditional**: for all large `k`, the guard the arithmetized evaluator
-consults for the engine's `DIMCID k` against itself has a `TAct`-proof within the budget `k`. -/
-theorem loeb_DIMCID_vs_DIMCID_guardOf :
-    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k → LenBox TAct k (guardOf phiD (PD.Bots.DIMCID k) (PD.Bots.DIMCID k)) := by
-  obtain ⟨k₀, h⟩ := loeb_Dimcid_vs_Dimcid_guard
-  exact ⟨k₀, fun k hk ↦ by rw [guardOf_DIMCID]; exact h k hk⟩
 
 end selfCell
 
@@ -912,31 +834,6 @@ lemma descT_mirror (k : V) :
   rw [lMap_swap_numT, lMap_swap_numT, lMap_swap_cl, lMap_swap_TM]
   exact desc_mirror k
 
-/-- **The fixed formula of DIMCID against Mirror**: `qDMi(k)` says "`DimcidV k` plays C against
-Mirror implies Mirror plays D against `DimcidV k`". -/
-noncomputable def qDMi : Semisentence LAct 1 := qDG (cl TM) (numT 0) (numT 1)
-
-lemma qDMi_def : qDMi = qDG (cl TM) (numT 0) (numT 1) := rfl
-
-/-- **The instance equation on codes**: DIMCID's guard code against Mirror is the `binNumeral k`-instance
-of `⌜qDMi⌝`, in every model. -/
-theorem guardCode_DimcidV_MirrorV_eq_instB (k : V) :
-    guardCode (⌜templateD⌝ : V) (DimcidV k) MirrorV = instB (⌜qDMi⌝ : V) k :=
-  guardCode_DimcidV_eq_instB k (cl TM) (numT 0) (numT 1) (hX_mirror k) hU_mirror hW_mirror
-
-/-- **The truth equation of `qDMi` in every model** (standard reading). -/
-theorem eval_qDMi_iff_V (k : V) :
-    Semiformula.Eval (s := stdReadingV V) ![k] Empty.elim qDMi ↔
-      ((∃ n, EvalGraph n (DimcidV k) MirrorV (DimcidV k) 0) → (∃ n, EvalGraph n MirrorV (DimcidV k) MirrorV 1)) :=
-  eval_qDG_iff_V k (cl TM) (numT 0) (numT 1) (desc_mirror k)
-
-/-- **The truth equation of `qDMi` in the swapped reading**: the transposed searcher against Mirror,
-"D implies Mirror plays C". -/
-theorem eval_qDMi_swap_iff_V (k : V) :
-    Semiformula.Eval (s := swappedReading V) ![k] Empty.elim qDMi ↔
-      ((∃ n, EvalGraph n (DimcidTV k) MirrorV (DimcidTV k) 1) → (∃ n, EvalGraph n MirrorV (DimcidTV k) MirrorV 0)) := by
-  rw [qDMi_def, eval_qDG_swap_iff_V]
-  exact eval_qTG_iff_V k _ _ _ (descT_mirror k)
 
 /-- **The Löb family of the Mirror cell**: `pDMi := qDMi ⋏ (its transposition)`. -/
 noncomputable def pDMi : Semisentence LAct 1 := pG (cl TM) (numT 0) (numT 1)
@@ -981,12 +878,6 @@ theorem loeb_Dimcid_vs_Mirror_of_nec {d : ℕ} (hE : BoundedInnerNec d) :
   obtain ⟨k₀, h⟩ := loeb_Dimcid_vs_Mirror_core_of_nec hE
   exact ⟨k₀, fun k hk ↦ ⟨(h k hk).1.1, mirror_copies2_V (V := ℕ) (Dimcid k) 1 (h k hk).1.1⟩⟩
 
-/-- **The box form**: for all large `k`, DIMCID FINDS a proof of its guard against Mirror within its
-budget `k` (conditional). -/
-theorem loeb_Dimcid_vs_Mirror_guard_of_nec {d : ℕ} (hE : BoundedInnerNec d) :
-    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k → LenBox TAct k (guardCode (⌜templateD⌝ : ℕ) (Dimcid k) Mirror) := by
-  obtain ⟨k₀, h⟩ := loeb_Dimcid_vs_Mirror_core_of_nec hE
-  exact ⟨k₀, fun k hk ↦ (h k hk).2.1⟩
 
 /-- **DIMCID × Mirror `(D, D)` in PA-`S'`, unconditional**: for all large `k`, `Dimcid k` defects
 against Mirror and Mirror copies. -/
@@ -995,10 +886,6 @@ theorem loeb_Dimcid_vs_Mirror :
       EvalGraph 2 (Dimcid k) Mirror (Dimcid k) 1 ∧ EvalGraph 3 Mirror (Dimcid k) Mirror 1 :=
   loeb_Dimcid_vs_Mirror_of_nec boundedInnerNec_sixteen
 
-/-- **DIMCID finds its guard against Mirror, unconditional.** -/
-theorem loeb_Dimcid_vs_Mirror_guard :
-    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k → LenBox TAct k (guardCode (⌜templateD⌝ : ℕ) (Dimcid k) Mirror) :=
-  loeb_Dimcid_vs_Mirror_guard_of_nec boundedInnerNec_sixteen
 
 end mirrorCell
 
@@ -1014,75 +901,6 @@ section cupodCell
 
 /-! #### Cupod's guard against DIMCID, its transposition, and the mutual family -/
 
-/-- **Cupod's guard against DIMCID**: `qCD(k)` says "`DimcidV k` plays D against `CupodV k`". -/
-noncomputable def qCD : Semisentence LAct 1 := qG 1 TD uC wC TDi uDi wDi
-
-lemma qCD_def : qCD = qG 1 TD uC wC TDi uDi wDi := rfl
-
-/-- **The instance equation on codes**: Cupod's guard code against `DimcidV k`. -/
-theorem guardCode_CupodV_DimcidV_eq_instB (k : V) :
-    guardCode (⌜guardTemplate 1⌝ : V) (CupodV k) (DimcidV k) = instB (⌜qCD⌝ : V) k :=
-  guardCode_GtmplA_eq_instB 1 k TD uC wC TDi uDi wDi (hX_cupod k) (hU_cupod k) (hW_cupod k)
-    (hX_dimcid k) (hU_dimcid k) (hW_dimcid k)
-
-/-- **The transposed instance equation**: Dupoc's guard code against `DimcidTV k` is the
-`binNumeral k`-instance of `⌜lMap swap qCD⌝`. -/
-theorem guardCode_DupocV_DimcidTV_eq_instB (k : V) :
-    guardCode (⌜guardTemplate 0⌝ : V) (DupocV k) (DimcidTV k) = instB (⌜Semiformula.lMap swap qCD⌝ : V) k := by
-  have h := guardCode_GtmplA_swap_eq_instB 1 k TD uC wC TDi uDi wDi (hX_cupod k) (hU_cupod k) (hW_cupod k)
-    (hX_dimcid k) (hU_dimcid k) (hW_dimcid k)
-  rwa [swapAction_one, transposeCode_CupodV, transposeCode_DimcidV] at h
-
-/-- **The truth equation of `qCD` in every model** (standard reading). -/
-theorem eval_qCD_iff_V (k : V) :
-    Semiformula.Eval (s := stdReadingV V) ![k] Empty.elim qCD ↔
-      ∃ n, EvalGraph n (DimcidV k) (CupodV k) (DimcidV k) 1 := by
-  have h := eval_qG_iff_V 1 k TD uC wC TDi uDi wDi (desc_cupod k) (desc_dimcid k)
-  rwa [Nat.cast_one] at h
-
-/-- **The truth equation of `lMap swap qCD` in every model** (standard reading): "`DimcidTV k` plays C
-against `DupocV k`". -/
-theorem eval_qCD_swapped_iff_V (k : V) :
-    Semiformula.Eval (s := stdReadingV V) ![k] Empty.elim (Semiformula.lMap swap qCD) ↔
-      ∃ n, EvalGraph n (DimcidTV k) (DupocV k) (DimcidTV k) 0 := by
-  rw [qCD_def, lMap_swap_qG, swapAction_one]
-  have h := eval_qG_iff_V 0 k _ _ _ _ _ _ (descT_cupod k) (descT_dimcid k)
-  rwa [Nat.cast_zero] at h
-
-/-- The two-sided conjunct of the mutual family: Cupod's guard against DIMCID and its transposition. -/
-noncomputable def pCD : Semisentence LAct 1 := qCD ⋏ Semiformula.lMap swap qCD
-
-lemma pCD_def : pCD = qCD ⋏ Semiformula.lMap swap qCD := rfl
-
-lemma lMap_swap_pCD : Semiformula.lMap swap pCD = Semiformula.lMap swap qCD ⋏ qCD := by
-  rw [pCD_def, LogicalConnective.HomClass.map_and, lMap_swap_swap]
-
-/-- **The MUTUAL Löb family of the DIMCID × Cupod cell**: DIMCID's family against Cupod's triple
-(and the transposed searcher's against Dupoc's) AND Cupod's guard against DIMCID (and its
-transposition) — four guards, each searcher's box supplied by the same conjunction. -/
-noncomputable def pDC : Semisentence LAct 1 := pG TD uC wC ⋏ pCD
-
-lemma pDC_def : pDC = pG TD uC wC ⋏ pCD := rfl
-
-theorem instB_quote_pCD (k : V) :
-    instB (⌜pCD⌝ : V) k = instB (⌜qCD⌝ : V) k ^⋏ instB (⌜Semiformula.lMap swap qCD⌝ : V) k :=
-  instB_quote_and _ _ k
-
-theorem instB_quote_pDC (k : V) :
-    instB (⌜pDC⌝ : V) k = instB (⌜pG TD uC wC⌝ : V) k ^⋏ instB (⌜pCD⌝ : V) k :=
-  instB_quote_and _ _ k
-
-lemma formulaLen_instB_pCD (k : V) :
-    formulaLen LAct (instB (⌜pCD⌝ : V) k) =
-      formulaLen LAct (instB (⌜qCD⌝ : V) k) + formulaLen LAct (instB (⌜Semiformula.lMap swap qCD⌝ : V) k) + 1 := by
-  rw [instB_quote_pCD,
-    formulaLen_and (isFormula_instB_quote _ k).isUFormula (isFormula_instB_quote _ k).isUFormula]
-
-lemma formulaLen_instB_pDC (k : V) :
-    formulaLen LAct (instB (⌜pDC⌝ : V) k) =
-      formulaLen LAct (instB (⌜pG TD uC wC⌝ : V) k) + formulaLen LAct (instB (⌜pCD⌝ : V) k) + 1 := by
-  rw [instB_quote_pDC,
-    formulaLen_and (isFormula_instB_quote _ k).isUFormula (isFormula_instB_quote _ k).isUFormula]
 
 /-! #### The slack of a two-level ∧-elimination: `(14, 16)` -/
 
@@ -1128,159 +946,12 @@ lemma slack4_nat' (a x y u v z k : ℕ) (hy : y = u + v + 1) (hz : z = x + y + 1
   simp only [natCast_nat] at h1
   exact le_def_trans h1 (Nat.eq_or_lt_of_le h)
 
-/-- **All four searchers find their guards from a box of the mutual family** (fuel 2): DIMCID defects
-against Cupod, the transposed searcher cooperates with Dupoc, Cupod defects against DIMCID, Dupoc
-cooperates with the transposed searcher. -/
-theorem pDC_all_V (k a : V)
-    (ha₁ : a + 8 * (formulaLen LAct (instB (⌜pG TD uC wC⌝ : V) k) + formulaLen LAct (instB (⌜pCD⌝ : V) k)) + 7 +
-      8 * (formulaLen LAct (instB (⌜qDG TD uC wC⌝ : V) k) +
-        formulaLen LAct (instB (⌜qTG (Semiterm.lMap swap TD) (Semiterm.lMap swap uC) (Semiterm.lMap swap wC)⌝ : V) k))
-      + 7 ≤ k)
-    (ha₂ : a + 8 * (formulaLen LAct (instB (⌜pG TD uC wC⌝ : V) k) + formulaLen LAct (instB (⌜pCD⌝ : V) k)) + 7 +
-      8 * (formulaLen LAct (instB (⌜qCD⌝ : V) k) + formulaLen LAct (instB (⌜Semiformula.lMap swap qCD⌝ : V) k))
-      + 7 ≤ k)
-    (h : LenBoxUnbounded TAct a (instB (⌜pDC⌝ : V) k)) :
-    (EvalGraph 2 (DimcidV k) (CupodV k) (DimcidV k) 1 ∧ EvalGraph 2 (DimcidTV k) (DupocV k) (DimcidTV k) 0) ∧
-    (EvalGraph 2 (CupodV k) (DimcidV k) (CupodV k) 1 ∧ EvalGraph 2 (DupocV k) (DimcidTV k) (DupocV k) 0) := by
-  rw [instB_quote_pDC] at h
-  have hx := isFormula_instB_quote (pG TD uC wC) k
-  have hy := isFormula_instB_quote pCD k
-  have h₁ := lenBoxUnbounded_andL_V hx hy h
-  have h₂ := lenBoxUnbounded_andR_V hx hy h
-  obtain ⟨g1, g2⟩ := pG_both_V k TD uC wC (hX_cupod k) (hU_cupod k) (hW_cupod k) _ ha₁ h₁
-  rw [transposeCode_CupodV] at g2
-  have hx' := isFormula_instB_quote qCD k
-  have hy' := isFormula_instB_quote (Semiformula.lMap swap qCD) k
-  have h₂' : LenBoxUnbounded TAct
-      (a + 8 * (formulaLen LAct (instB (⌜pG TD uC wC⌝ : V) k) + formulaLen LAct (instB (⌜pCD⌝ : V) k)) + 7)
-      (instB (⌜qCD⌝ : V) k ^⋏ instB (⌜Semiformula.lMap swap qCD⌝ : V) k) := by
-    rw [← instB_quote_pCD]; exact h₂
-  have c1 := lenBoxUnbounded_mono_V ha₂ (lenBoxUnbounded_andL_V hx' hy' h₂')
-  have c2 := lenBoxUnbounded_mono_V ha₂ (lenBoxUnbounded_andR_V hx' hy' h₂')
-  rw [lenBoxUnbounded_iff_lenBox, ← guardCode_CupodV_DimcidV_eq_instB] at c1
-  rw [lenBoxUnbounded_iff_lenBox, ← guardCode_DupocV_DimcidTV_eq_instB] at c2
-  exact ⟨⟨g1, g2⟩, ⟨cupod_search_any_V k _ c1, dupoc_search_any_V k _ c2⟩⟩
-
-/-- **The box form**: the two guards of the cell are provable within `k`. -/
-theorem pDC_guards_V (k a : V)
-    (ha₁ : a + 8 * (formulaLen LAct (instB (⌜pG TD uC wC⌝ : V) k) + formulaLen LAct (instB (⌜pCD⌝ : V) k)) + 7 +
-      8 * (formulaLen LAct (instB (⌜qDG TD uC wC⌝ : V) k) +
-        formulaLen LAct (instB (⌜qTG (Semiterm.lMap swap TD) (Semiterm.lMap swap uC) (Semiterm.lMap swap wC)⌝ : V) k))
-      + 7 ≤ k)
-    (ha₂ : a + 8 * (formulaLen LAct (instB (⌜pG TD uC wC⌝ : V) k) + formulaLen LAct (instB (⌜pCD⌝ : V) k)) + 7 +
-      8 * (formulaLen LAct (instB (⌜qCD⌝ : V) k) + formulaLen LAct (instB (⌜Semiformula.lMap swap qCD⌝ : V) k))
-      + 7 ≤ k)
-    (h : LenBoxUnbounded TAct a (instB (⌜pDC⌝ : V) k)) :
-    LenBox TAct k (guardCode (⌜templateD⌝ : V) (DimcidV k) (CupodV k)) ∧
-    LenBox TAct k (guardCode (⌜guardTemplate 1⌝ : V) (CupodV k) (DimcidV k)) := by
-  rw [instB_quote_pDC] at h
-  have hx := isFormula_instB_quote (pG TD uC wC) k
-  have hy := isFormula_instB_quote pCD k
-  have h₁ := lenBoxUnbounded_andL_V hx hy h
-  have h₂ := lenBoxUnbounded_andR_V hx hy h
-  obtain ⟨g1, _⟩ := pG_guards_V k TD uC wC (hX_cupod k) (hU_cupod k) (hW_cupod k) _ ha₁ h₁
-  have hx' := isFormula_instB_quote qCD k
-  have hy' := isFormula_instB_quote (Semiformula.lMap swap qCD) k
-  have h₂' : LenBoxUnbounded TAct
-      (a + 8 * (formulaLen LAct (instB (⌜pG TD uC wC⌝ : V) k) + formulaLen LAct (instB (⌜pCD⌝ : V) k)) + 7)
-      (instB (⌜qCD⌝ : V) k ^⋏ instB (⌜Semiformula.lMap swap qCD⌝ : V) k) := by
-    rw [← instB_quote_pCD]; exact h₂
-  have c1 := lenBoxUnbounded_mono_V ha₂ (lenBoxUnbounded_andL_V hx' hy' h₂')
-  rw [lenBoxUnbounded_iff_lenBox, ← guardCode_CupodV_DimcidV_eq_instB] at c1
-  exact ⟨g1, c1⟩
 
 /-! #### `pDC` in both readings -/
 
-/-- `pDC(k)` in the standard reading. -/
-theorem eval_pDC_iff_std (k : V) :
-    Semiformula.Eval (s := stdReadingV V) ![k] Empty.elim pDC ↔
-      (((∃ n, EvalGraph n (DimcidV k) (CupodV k) (DimcidV k) 0) → (∃ n, EvalGraph n (CupodV k) (DimcidV k) (CupodV k) 1)) ∧
-       ((∃ n, EvalGraph n (DimcidTV k) (DupocV k) (DimcidTV k) 1) → (∃ n, EvalGraph n (DupocV k) (DimcidTV k) (DupocV k) 0))) ∧
-      ((∃ n, EvalGraph n (DimcidV k) (CupodV k) (DimcidV k) 1) ∧ (∃ n, EvalGraph n (DimcidTV k) (DupocV k) (DimcidTV k) 0)) := by
-  rw [pDC_def, pCD_def]
-  simp only [LogicalConnective.HomClass.map_and, LogicalConnective.Prop.and_eq]
-  rw [eval_pG_iff_std k TD uC wC (desc_cupod k) (descT_cupod k), eval_qCD_iff_V, eval_qCD_swapped_iff_V]
-
-/-- `pDC(k)` in the swapped reading: the SAME content (the conjuncts exchange roles). -/
-theorem eval_pDC_iff_swap (k : V) :
-    Semiformula.Eval (s := swappedReading V) ![k] Empty.elim pDC ↔
-      (((∃ n, EvalGraph n (DimcidV k) (CupodV k) (DimcidV k) 0) → (∃ n, EvalGraph n (CupodV k) (DimcidV k) (CupodV k) 1)) ∧
-       ((∃ n, EvalGraph n (DimcidTV k) (DupocV k) (DimcidTV k) 1) → (∃ n, EvalGraph n (DupocV k) (DimcidTV k) (DupocV k) 0))) ∧
-      ((∃ n, EvalGraph n (DimcidV k) (CupodV k) (DimcidV k) 1) ∧ (∃ n, EvalGraph n (DimcidTV k) (DupocV k) (DimcidTV k) 0)) := by
-  rw [eval_swappedReading, pDC_def, LogicalConnective.HomClass.map_and, lMap_swap_pG, lMap_swap_pCD, ← stdReadingV_eq_stdReading]
-  simp only [LogicalConnective.HomClass.map_and, LogicalConnective.Prop.and_eq]
-  rw [eval_qDG_iff_V k TD uC wC (desc_cupod k), eval_qTG_iff_V k _ _ _ (descT_cupod k), eval_qCD_iff_V,
-    eval_qCD_swapped_iff_V, and_comm (a := ∃ n, EvalGraph n (DimcidTV k) (DupocV k) (DimcidTV k) 0),
-    and_comm (a := (∃ n, EvalGraph n (DimcidTV k) (DupocV k) (DimcidTV k) 1) → _)]
-
-theorem eval_pDC_iff_stdReading (k : V) :
-    Semiformula.Eval (s := stdReading V) ![k] Empty.elim pDC ↔
-      (((∃ n, EvalGraph n (DimcidV k) (CupodV k) (DimcidV k) 0) → (∃ n, EvalGraph n (CupodV k) (DimcidV k) (CupodV k) 1)) ∧
-       ((∃ n, EvalGraph n (DimcidTV k) (DupocV k) (DimcidTV k) 1) → (∃ n, EvalGraph n (DupocV k) (DimcidTV k) (DupocV k) 0))) ∧
-      ((∃ n, EvalGraph n (DimcidV k) (CupodV k) (DimcidV k) 1) ∧ (∃ n, EvalGraph n (DimcidTV k) (DupocV k) (DimcidTV k) 0)) := by
-  rw [← stdReadingV_eq_stdReading]; exact eval_pDC_iff_std k
 
 /-! #### The Löb premise and the cells -/
 
-/-- **The bounded Löb premise of the mutual family, slack `(14, 16)`**: a box of `pDC(k)` makes all four
-searchers find their guards (fuel 2); DIMCID's implications hold because Cupod/Dupoc actually play the
-consequents, and Cupod's/Dupoc's guards are the plays of DIMCID/its transposition — true in both
-readings. -/
-theorem loebSound_pDC : LoebSound pDC 14 16 := by
-  intro V _ _ k a ha h
-  have : V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
-  have ha₁ := le_trans (slack4_le a _ _ _ _ _ (formulaLen_instB_pG TD uC wC k) (formulaLen_instB_pDC k)) ha
-  have ha₂ := le_trans (slack4_le' a _ _ _ _ _ (formulaLen_instB_pCD k) (formulaLen_instB_pDC k)) ha
-  obtain ⟨⟨g1, g2⟩, ⟨c1, c2⟩⟩ := pDC_all_V k a ha₁ ha₂ h
-  exact ⟨(eval_pDC_iff_stdReading k).mpr ⟨⟨fun _ ↦ ⟨2, c1⟩, fun _ ↦ ⟨2, c2⟩⟩, ⟨⟨2, g1⟩, ⟨2, g2⟩⟩⟩,
-    (eval_pDC_iff_swap k).mpr ⟨⟨fun _ ↦ ⟨2, c1⟩, fun _ ↦ ⟨2, c2⟩⟩, ⟨⟨2, g1⟩, ⟨2, g2⟩⟩⟩⟩
-
-/-- **The DIMCID × Cupod cell, packaged**: for all large `k`, DIMCID defects against Cupod and Cupod
-defects against DIMCID (fuel 2), and both guard boxes hold. -/
-theorem loeb_Dimcid_vs_Cupod_core_of_nec {d : ℕ} (hE : BoundedInnerNec d) :
-    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
-      (EvalGraph 2 (Dimcid k) (Cupod k) (Dimcid k) 1 ∧ EvalGraph 2 (Cupod k) (Dimcid k) (Cupod k) 1) ∧
-      (LenBox TAct k (guardCode (⌜templateD⌝ : ℕ) (Dimcid k) (Cupod k)) ∧
-        LenBox TAct k (guardCode (⌜guardTemplate 1⌝ : ℕ) (Cupod k) (Dimcid k))) := by
-  obtain ⟨k₀, h⟩ := family_found pDC hE loebSound_pDC
-  refine ⟨k₀, fun k hk ↦ ?_⟩
-  obtain ⟨a, ha, hpc⟩ := h k hk
-  have ha₁ := le_def.mpr (slack4_nat a _ _ _ _ _ k (formulaLen_instB_pG (V := ℕ) TD uC wC k)
-    (formulaLen_instB_pDC (V := ℕ) k) ha)
-  have ha₂ := le_def.mpr (slack4_nat' a _ _ _ _ _ k (formulaLen_instB_pCD (V := ℕ) k)
-    (formulaLen_instB_pDC (V := ℕ) k) ha)
-  obtain ⟨⟨g1, _⟩, ⟨c1, _⟩⟩ := pDC_all_V (V := ℕ) k a ha₁ ha₂ hpc
-  exact ⟨⟨g1, c1⟩, pDC_guards_V (V := ℕ) k a ha₁ ha₂ hpc⟩
-
-/-- **DIMCID × Cupod is `(D, D)` in PA-`S'`, conditional on bounded inner necessitation**: for all
-large `k`, `Dimcid k` defects against `Cupod k` and `Cupod k` defects against `Dimcid k` (fuel 2). -/
-theorem loeb_Dimcid_vs_Cupod_of_nec {d : ℕ} (hE : BoundedInnerNec d) :
-    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
-      EvalGraph 2 (Dimcid k) (Cupod k) (Dimcid k) 1 ∧ EvalGraph 2 (Cupod k) (Dimcid k) (Cupod k) 1 := by
-  obtain ⟨k₀, h⟩ := loeb_Dimcid_vs_Cupod_core_of_nec hE
-  exact ⟨k₀, fun k hk ↦ (h k hk).1⟩
-
-/-- **The box form**: for all large `k`, both DIMCID and Cupod FIND their guards against each other
-within the budget `k` (conditional). -/
-theorem loeb_Dimcid_vs_Cupod_guards_of_nec {d : ℕ} (hE : BoundedInnerNec d) :
-    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
-      LenBox TAct k (guardCode (⌜templateD⌝ : ℕ) (Dimcid k) (Cupod k)) ∧
-      LenBox TAct k (guardCode (⌜guardTemplate 1⌝ : ℕ) (Cupod k) (Dimcid k)) := by
-  obtain ⟨k₀, h⟩ := loeb_Dimcid_vs_Cupod_core_of_nec hE
-  exact ⟨k₀, fun k hk ↦ (h k hk).2⟩
-
-/-- **DIMCID × Cupod `(D, D)` in PA-`S'`, unconditional.** -/
-theorem loeb_Dimcid_vs_Cupod :
-    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
-      EvalGraph 2 (Dimcid k) (Cupod k) (Dimcid k) 1 ∧ EvalGraph 2 (Cupod k) (Dimcid k) (Cupod k) 1 :=
-  loeb_Dimcid_vs_Cupod_of_nec boundedInnerNec_sixteen
-
-/-- **DIMCID and Cupod find their guards against each other, unconditional.** -/
-theorem loeb_Dimcid_vs_Cupod_guards :
-    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
-      LenBox TAct k (guardCode (⌜templateD⌝ : ℕ) (Dimcid k) (Cupod k)) ∧
-      LenBox TAct k (guardCode (⌜guardTemplate 1⌝ : ℕ) (Cupod k) (Dimcid k)) :=
-  loeb_Dimcid_vs_Cupod_guards_of_nec boundedInnerNec_sixteen
 
 end cupodCell
 

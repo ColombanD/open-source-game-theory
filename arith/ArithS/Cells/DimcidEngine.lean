@@ -323,16 +323,6 @@ theorem loeb_DIMCID_vs_CupodBot :
   obtain ⟨k₀, h⟩ := loeb_DIMCID_vs_CupodBot_core_of_nec boundedInnerNec_sixteen
   exact ⟨k₀, fun k hk ↦ by rw [progCode_DIMCID, progCode_CupodBot_SV]; exact (h k hk).1⟩
 
-/-- **The box form, unconditional**: for all large `k`, both the engine's DIMCID and the engine's Cupod
-FIND their guards against each other within the budget `k`. -/
-theorem loeb_DIMCID_vs_CupodBot_guards :
-    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
-      LenBox TAct k (guardCode (templateCode phiD) (progCode (DIMCID k)) (progCode (CupodBot k))) ∧
-      LenBox TAct k (guardCode (templateCode phiCu) (progCode (CupodBot k)) (progCode (DIMCID k))) := by
-  obtain ⟨k₀, h⟩ := loeb_DIMCID_vs_CupodBot_core_of_nec boundedInnerNec_sixteen
-  exact ⟨k₀, fun k hk ↦ by
-    rw [progCode_DIMCID, progCode_CupodBot_SV, templateCode_eq_quote_template phiD rfl, templateCode_eq_quote_template phiCu rfl]
-    exact (h k hk).2⟩
 
 end cell
 

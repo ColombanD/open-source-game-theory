@@ -482,33 +482,11 @@ noncomputable def guardTemplateTroll7 : Semisentence LAct 7 := guardTemplateTrol
 
 lemma guardTemplateTroll7_def : guardTemplateTroll7 = guardTemplateTroll7A (uS gCu 1) (wS gCu 1) := rfl
 
-lemma lMap_swap_TCu4 : Semiterm.lMap swap TCu4 = TCu4 := by
-  unfold TCu4
-  change Semiterm.lMap swap (Rew.map (Fin.castLE _) id (TS gCu 1)) = Rew.map (Fin.castLE _) id (TS gCu 1)
-  rw [Semiterm.lMap_map, lMap_swap_TS]
-
-lemma lMap_swap_qE4 (U W : ClosedSemiterm LAct 0) :
-    Semiformula.lMap swap (qE4 U W) = qE4 (Semiterm.lMap swap U) (Semiterm.lMap swap W) := by
-  unfold qE4
-  rw [Semiformula.lMap_subst, lMap_swap_eqTmpl]
-  congr 1
-  funext i
-  fin_cases i <;> simp [lMap_swap_TCu4, lMap_swap_cl]
-
-lemma lMap_swap_guardTemplateTroll7A (U W : ClosedSemiterm LAct 0) :
-    Semiformula.lMap swap (guardTemplateTroll7A U W) = guardTemplateTroll7A (Semiterm.lMap swap U) (Semiterm.lMap swap W) := by
-  unfold guardTemplateTroll7A
-  rw [Semiformula.lMap_subst, lMap_swap_qE4]
-  congr 1
-  funext i
-  fin_cases i <;> simp
 
 /-- The transposed re-valuation terms of Cupod (those of Dupoc, `transposeCode (CupodBot k) = DupocBot k`). -/
 noncomputable def uST : ClosedSemiterm LAct 0 := Semiterm.lMap swap (uS gCu 1)
 noncomputable def wST : ClosedSemiterm LAct 0 := Semiterm.lMap swap (wS gCu 1)
 
-lemma lMap_swap_guardTemplateTroll7 : Semiformula.lMap swap guardTemplateTroll7 = guardTemplateTroll7A uST wST := by
-  rw [guardTemplateTroll7_def, lMap_swap_guardTemplateTroll7A]; rfl
 
 /-! #### The codes -/
 
@@ -600,16 +578,6 @@ theorem guardCodeB_guardTemplateTroll7 (me opp k : V) :
   rw [hu, hw]
   rfl
 
-/-- **The transposed instance equation**: the transposed template gives `eqTmpl` in the frame `(DupocBot k, opp)`. -/
-theorem guardCodeB_guardTemplateTroll7T (me opp k : V) :
-    guardCodeB (⌜guardTemplateTroll7A uST wST⌝ : V) me opp k = guardCode (⌜eqTmpl⌝ : V) (SV gDu 0 k) opp := by
-  have h := revalueTemplate_guardCodeB (isSemiformula_quote₇ guardTemplateTroll7) (transposeCode me) (transposeCode opp) k
-  rw [transposeCode_transposeCode, transposeCode_transposeCode, revalueTemplate_quote_sentence₇_V, lMap_swap_guardTemplateTroll7,
-    guardCodeB_guardTemplateTroll7] at h
-  rw [← h]
-  have hg : IsSemiformula LAct 6 (⌜eqTmpl⌝ : V) := isSemiformula_quote₆ eqTmpl
-  rw [← substTemplate_of_template hg, revalueTemplate_substTemplate, transposeCode_SV gCu 1 (Or.inr rfl), lMap_swap_gCu,
-    transposeCode_transposeCode, revalueTemplate_quote_sentence₆_V, lMap_swap_eqTmpl, substTemplate_of_template hg]
 
 /-! #### The engine bridge at ℕ -/
 
@@ -628,67 +596,6 @@ end trollTemplate
 
 section troll7
 
-/-- **CupodTroll on the constant template, in every model**: found ⇒ D, else C. -/
-noncomputable def CupodTrollV7 (k : V) : V := pSearch k (⌜guardTemplateTroll7⌝ : V) (pConst 1) (pConst 0)
-
-/-- The transposed searcher: "the opponent IS `DupocBot k`" ⇒ C, else D. -/
-noncomputable def CupodTrollTV7 (k : V) : V := pSearch k (⌜guardTemplateTroll7A uST wST⌝ : V) (pConst 0) (pConst 1)
-
-/-- **CupodTroll at ℕ on the constant template.** -/
-noncomputable def CupodTroll7 (k : ℕ) : ℕ := CupodTrollV7 (V := ℕ) k
-
-lemma CupodTrollV7_nat (k : ℕ) : CupodTrollV7 (V := ℕ) k = CupodTroll7 k := rfl
-
-theorem transposeCode_CupodTrollV7 (k : V) : transposeCode (CupodTrollV7 k) = CupodTrollTV7 k := by
-  unfold CupodTrollV7 CupodTrollTV7 transposeCode
-  rw [revalue_search, revalue_const, revalue_const, revalueTemplate_quote_sentence₇_V, lMap_swap_guardTemplateTroll7]
-  simp [revalueAction]
-
-theorem transposeCode_CupodTrollTV7 (k : V) : transposeCode (CupodTrollTV7 k) = CupodTrollV7 k := by
-  rw [← transposeCode_CupodTrollV7, transposeCode_transposeCode]
-
-/-- **CupodTroll's then-clause in ANY frame** (fuel 2): a proof within `k` of "`opp` is `CupodBot k`" makes
-`CupodTrollV7 k` DEFECT. -/
-theorem troll7_then_V (k me opp : V) (h : LenBox TAct k (guardCode (⌜eqTmpl⌝ : V) (SV gCu 1 k) opp)) :
-    EvalGraph 2 me opp (CupodTrollV7 k) 1 := by
-  rw [show (2 : V) = 1 + 1 from one_add_one_eq_two.symm]
-  show EvalGraph (1 + 1) me opp (pSearch k (⌜guardTemplateTroll7⌝ : V) (pConst 1) (pConst 0)) 1
-  rw [EvalGraph.search_iff, guardCodeB_guardTemplateTroll7]
-  left
-  refine ⟨h, ?_⟩
-  have e : EvalGraph (0 + 1) me opp (pConst 1) 1 := EvalGraph.const_iff.mpr rfl
-  rwa [zero_add] at e
-
-/-- **CupodTroll's else-clause in any frame** (fuel 2): no proof ⇒ COOPERATE. -/
-theorem troll7_else_V (k me opp : V) (h : ¬ LenBox TAct k (guardCode (⌜eqTmpl⌝ : V) (SV gCu 1 k) opp)) :
-    EvalGraph 2 me opp (CupodTrollV7 k) 0 := by
-  rw [show (2 : V) = 1 + 1 from one_add_one_eq_two.symm]
-  show EvalGraph (1 + 1) me opp (pSearch k (⌜guardTemplateTroll7⌝ : V) (pConst 1) (pConst 0)) 0
-  rw [EvalGraph.search_iff, guardCodeB_guardTemplateTroll7]
-  right
-  refine ⟨h, ?_⟩
-  rw [show (1 : V) = 0 + 1 by simp, EvalGraph.const_iff]
-
-/-- **The transposed searcher's then-clause in any frame** (fuel 2): found ⇒ C. -/
-theorem troll7T_then_V (k me opp : V) (h : LenBox TAct k (guardCode (⌜eqTmpl⌝ : V) (SV gDu 0 k) opp)) :
-    EvalGraph 2 me opp (CupodTrollTV7 k) 0 := by
-  rw [show (2 : V) = 1 + 1 from one_add_one_eq_two.symm]
-  show EvalGraph (1 + 1) me opp (pSearch k (⌜guardTemplateTroll7A uST wST⌝ : V) (pConst 0) (pConst 1)) 0
-  rw [EvalGraph.search_iff, guardCodeB_guardTemplateTroll7T]
-  left
-  refine ⟨h, ?_⟩
-  rw [show (1 : V) = 0 + 1 by simp, EvalGraph.const_iff]
-
-/-- **`CupodTroll7 k` and the engine's `CupodTrollBot k` play identically**: in every frame, at every fuel,
-the same results (the consulted guards have the same code, `guardCodeB_guardTemplateTroll7_nat`). -/
-theorem evalGraph_CupodTroll7_iff (n me opp a k : ℕ) :
-    EvalGraph n me opp (CupodTroll7 k) a ↔ EvalGraph n me opp (progCode (CupodTrollBot k)) a := by
-  cases n with
-  | zero => exact ⟨fun h ↦ absurd h EvalGraph.zero_iff, fun h ↦ absurd h EvalGraph.zero_iff⟩
-  | succ n =>
-    rw [progCode_CupodTrollBot]
-    show EvalGraph (n + 1) me opp (pSearch k (⌜guardTemplateTroll7⌝ : ℕ) (pConst 1) (pConst 0)) a ↔ _
-    rw [EvalGraph.search_iff, guardCodeB_guardTemplateTroll7_nat, EvalGraph.search_iff_at (phiT k)]
 
 end troll7
 
@@ -702,39 +609,11 @@ noncomputable def innerT : ℕ := ppair (⌜guardTemplateTroll7⌝ : ℕ) (ppair
 /-- The budget-independent inner part of the transposed searcher's code. -/
 noncomputable def innerTT : ℕ := ppair (⌜guardTemplateTroll7A uST wST⌝ : ℕ) (ppair (pConst 0) (pConst 1))
 
-lemma innerT_def : innerT = ppair (⌜guardTemplateTroll7⌝ : ℕ) (ppair (pConst 1) (pConst 0)) := rfl
-lemma innerTT_def : innerTT = ppair (⌜guardTemplateTroll7A uST wST⌝ : ℕ) (ppair (pConst 0) (pConst 1)) := rfl
 
 /- Closed constants built from the giant template: never to be evaluated. -/
 attribute [irreducible] innerT innerTT
 
-lemma cast_innerT : ((innerT : ℕ) : V) = ppair (⌜guardTemplateTroll7⌝ : V) (ppair (pConst 1) (pConst 0)) := by
-  rw [innerT_def, cast_ppair, cast_ppair, cast_pConst, cast_pConst, coe_quote_sentence₇]
-  push_cast
-  rfl
 
-lemma cast_innerTT : ((innerTT : ℕ) : V) = ppair (⌜guardTemplateTroll7A uST wST⌝ : V) (ppair (pConst 0) (pConst 1)) := by
-  rw [innerTT_def, cast_ppair, cast_ppair, cast_pConst, cast_pConst, coe_quote_sentence₇]
-  push_cast
-  rfl
-
-lemma CupodTrollV7_eq_inner (k : V) : CupodTrollV7 k = ppair 6 (ppair k (innerT : V)) + 1 := by
-  rw [cast_innerT]; rfl
-lemma CupodTrollTV7_eq_inner (k : V) : CupodTrollTV7 k = ppair 6 (ppair k (innerTT : V)) + 1 := by
-  rw [cast_innerTT]; rfl
-
-lemma CupodTrollV7_lt_CupodTrollTV7_iff (k : V) : CupodTrollV7 k < CupodTrollTV7 k ↔ innerT < innerTT := by
-  rw [CupodTrollV7_eq_inner, CupodTrollTV7_eq_inner, pSearchInner_lt_iff, Nat.cast_lt]
-
-lemma CupodTrollTV7_lt_CupodTrollV7_iff (k : V) : CupodTrollTV7 k < CupodTrollV7 k ↔ innerTT < innerT := by
-  rw [CupodTrollV7_eq_inner, CupodTrollTV7_eq_inner, pSearchInner_lt_iff, Nat.cast_lt]
-
-/-- The stored template of the canonical searcher. -/
-noncomputable def gTd : ℕ := if innerT ≤ innerTT then (⌜guardTemplateTroll7⌝ : ℕ) else (⌜guardTemplateTroll7A uST wST⌝ : ℕ)
-/-- Its then-branch. -/
-noncomputable def pTd : ℕ := if innerT ≤ innerTT then pConst 1 else pConst 0
-/-- Its else-branch. -/
-noncomputable def qTd : ℕ := if innerT ≤ innerTT then pConst 0 else pConst 1
 /-- The first re-valuation term of the description of `CupodTrollV7 k`. -/
 noncomputable def uT : ClosedSemiterm LAct 0 :=
   if innerT < innerTT then cterm Act.C else if innerTT < innerT then cterm Act.D else numT 0
@@ -742,132 +621,9 @@ noncomputable def uT : ClosedSemiterm LAct 0 :=
 noncomputable def wT : ClosedSemiterm LAct 0 :=
   if innerT < innerTT then cterm Act.D else if innerTT < innerT then cterm Act.C else numT 1
 
-lemma CupodTrollV7_eq_cast (k : V) :
-    CupodTrollV7 k = pSearch k ((⌜guardTemplateTroll7⌝ : ℕ) : V) ((pConst 1 : ℕ) : V) ((pConst 0 : ℕ) : V) := by
-  unfold CupodTrollV7; rw [coe_quote_sentence₇, cast_pConst, cast_pConst]; push_cast; rfl
-
-lemma CupodTrollTV7_eq_cast (k : V) :
-    CupodTrollTV7 k = pSearch k ((⌜guardTemplateTroll7A uST wST⌝ : ℕ) : V) ((pConst 0 : ℕ) : V) ((pConst 1 : ℕ) : V) := by
-  unfold CupodTrollTV7; rw [coe_quote_sentence₇, cast_pConst, cast_pConst]; push_cast; rfl
-
-/-- **The canonical code of `CupodTrollV7 k` is a searcher with the (cast) `k`-independent inner triple.** -/
-theorem canonical_CupodTrollV7 (k : V) : canonical (CupodTrollV7 k) = pSearch k (gTd : V) (pTd : V) (qTd : V) := by
-  by_cases h : innerT ≤ innerTT
-  · simp only [gTd, pTd, qTd, if_pos h]
-    rcases Nat.lt_or_eq_of_le h with h' | h'
-    · rw [canonical_of_lt (by rw [transposeCode_CupodTrollV7]; exact (CupodTrollV7_lt_CupodTrollTV7_iff k).mpr h')]
-      exact CupodTrollV7_eq_cast k
-    · rw [canonical_of_eq (by rw [transposeCode_CupodTrollV7, CupodTrollV7_eq_inner, CupodTrollTV7_eq_inner, h'])]
-      exact CupodTrollV7_eq_cast k
-  · simp only [gTd, pTd, qTd, if_neg h]
-    rw [canonical_of_gt (by rw [transposeCode_CupodTrollV7]; exact (CupodTrollTV7_lt_CupodTrollV7_iff k).mpr (Nat.lt_of_not_le h)),
-      transposeCode_CupodTrollV7]
-    exact CupodTrollTV7_eq_cast k
-
-theorem revalueU_CupodTrollV7 (k : V) : revalueU (CupodTrollV7 k) = (⌜uT⌝ : V) := by
-  unfold revalueU uT
-  rw [transposeCode_CupodTrollV7]
-  by_cases h1 : innerT < innerTT
-  · rw [if_pos ((CupodTrollV7_lt_CupodTrollTV7_iff k).mpr h1), if_pos h1, quote_cterm_C]
-  · rw [if_neg (fun h ↦ h1 ((CupodTrollV7_lt_CupodTrollTV7_iff k).mp h)), if_neg h1]
-    by_cases h2 : innerTT < innerT
-    · rw [if_pos ((CupodTrollTV7_lt_CupodTrollV7_iff k).mpr h2), if_pos h2, quote_cterm_D]
-    · rw [if_neg (fun h ↦ h2 ((CupodTrollTV7_lt_CupodTrollV7_iff k).mp h)), if_neg h2, quote_numT]
-      simp
-
-theorem revalueW_CupodTrollV7 (k : V) : revalueW (CupodTrollV7 k) = (⌜wT⌝ : V) := by
-  unfold revalueW wT
-  rw [transposeCode_CupodTrollV7]
-  by_cases h1 : innerT < innerTT
-  · rw [if_pos ((CupodTrollV7_lt_CupodTrollTV7_iff k).mpr h1), if_pos h1, quote_cterm_D]
-  · rw [if_neg (fun h ↦ h1 ((CupodTrollV7_lt_CupodTrollTV7_iff k).mp h)), if_neg h1]
-    by_cases h2 : innerTT < innerT
-    · rw [if_pos ((CupodTrollTV7_lt_CupodTrollV7_iff k).mpr h2), if_pos h2, quote_cterm_C]
-    · rw [if_neg (fun h ↦ h2 ((CupodTrollTV7_lt_CupodTrollV7_iff k).mp h)), if_neg h2, quote_numT]
-      simp
-
-/-- The one-variable description term of CupodTroll, over `LAct`. -/
-noncomputable def TT : Semiterm LAct Empty 1 := Semiterm.lMap emb (searchT1 gTd pTd qTd)
-
-lemma lMap_swap_TT : Semiterm.lMap swap TT = TT := term_lMap_swap_emb _
-
-/-- The code of `TT` (over `LAct`) is the `ℒₒᵣ` tower. -/
-theorem quote_emb_TT :
-    (⌜(Rew.emb TT : SyntacticSemiterm LAct 1)⌝ : V) =
-    ppairTerm (binNumeral 6) (ppairTerm (^#0) (ppairTerm (binNumeral (gTd : V)) (ppairTerm (codeTerm (pTd : V)) (codeTerm (qTd : V))))) ^+ 𝟏 := by
-  unfold TT
-  rw [term_emb_lMap_emb_n, quote_term_lMap_emb, quote_emb_searchT1]
-
-/-- **`TT` at the budget `k` denotes the canonical code of `CupodTrollV7 k`** (in `stdReadingV V`). -/
-theorem val_TT_V (k : V) : TT.val (s := stdReadingV V) ![k] Empty.elim = canonical (CupodTrollV7 k) := by
-  unfold TT
-  rw [Semiterm.val_lMap, stdReadingV_lMap_emb, val_searchT1_V, canonical_CupodTrollV7]
-
-/-- The `k`-independent re-valuation terms reconstruct `CupodTrollV7 k` from its canonical code. -/
-theorem revalue_val_uT_wT_V (k : V) :
-    revalue (uT.val (s := stdReadingV V) ![] Empty.elim) (wT.val (s := stdReadingV V) ![] Empty.elim)
-      (canonical (CupodTrollV7 k)) = CupodTrollV7 k := by
-  unfold uT wT
-  by_cases h1 : innerT < innerTT
-  · rw [if_pos h1, if_pos h1, val_cterm_C_V, val_cterm_D_V,
-      canonical_of_lt (by rw [transposeCode_CupodTrollV7]; exact (CupodTrollV7_lt_CupodTrollTV7_iff k).mpr h1), revalue_zero_one]
-  · rw [if_neg h1, if_neg h1]
-    by_cases h2 : innerTT < innerT
-    · rw [if_pos h2, if_pos h2, val_cterm_D_V, val_cterm_C_V,
-        canonical_of_gt (by rw [transposeCode_CupodTrollV7]; exact (CupodTrollTV7_lt_CupodTrollV7_iff k).mpr h2)]
-      exact transposeCode_transposeCode _
-    · have h' : innerT = innerTT := le_antisymm (not_lt.mp h2) (not_lt.mp h1)
-      rw [if_neg h2, if_neg h2, val_numT_V, val_numT_V, Nat.cast_zero, Nat.cast_one,
-        canonical_of_eq (by rw [transposeCode_CupodTrollV7, CupodTrollV7_eq_inner, CupodTrollTV7_eq_inner, h']), revalue_zero_one]
-
-/-- The transposed re-valuation terms. -/
-noncomputable def uTT : ClosedSemiterm LAct 0 := Semiterm.lMap swap uT
-noncomputable def wTT : ClosedSemiterm LAct 0 := Semiterm.lMap swap wT
-
-/-- The transposed descriptions reconstruct `CupodTrollTV7 k` from the canonical code of `CupodTrollV7 k`. -/
-theorem revalue_val_uTT_wTT_V (k : V) :
-    revalue (uTT.val (s := stdReadingV V) ![] Empty.elim) (wTT.val (s := stdReadingV V) ![] Empty.elim)
-      (canonical (CupodTrollV7 k)) = CupodTrollTV7 k := by
-  unfold uTT wTT uT wT
-  by_cases h1 : innerT < innerTT
-  · rw [if_pos h1, if_pos h1, lMap_swap_cterm_C, lMap_swap_cterm_D, val_cterm_D_V, val_cterm_C_V,
-      canonical_of_lt (by rw [transposeCode_CupodTrollV7]; exact (CupodTrollV7_lt_CupodTrollTV7_iff k).mpr h1)]
-    exact transposeCode_CupodTrollV7 k
-  · rw [if_neg h1, if_neg h1]
-    by_cases h2 : innerTT < innerT
-    · rw [if_pos h2, if_pos h2, lMap_swap_cterm_D, lMap_swap_cterm_C, val_cterm_C_V, val_cterm_D_V,
-        canonical_of_gt (by rw [transposeCode_CupodTrollV7]; exact (CupodTrollTV7_lt_CupodTrollV7_iff k).mpr h2),
-        transposeCode_CupodTrollV7, revalue_zero_one]
-    · have h' : innerT = innerTT := le_antisymm (not_lt.mp h2) (not_lt.mp h1)
-      rw [if_neg h2, if_neg h2, lMap_swap_numT, lMap_swap_numT, val_numT_V, val_numT_V, Nat.cast_zero,
-        Nat.cast_one, canonical_of_eq (by rw [transposeCode_CupodTrollV7, CupodTrollV7_eq_inner, CupodTrollTV7_eq_inner, h']),
-        revalue_zero_one]
-      have e : CupodTrollV7 k = CupodTrollTV7 k := by rw [CupodTrollV7_eq_inner, CupodTrollTV7_eq_inner, h']
-      exact e
 
 /-! #### The description hypotheses -/
 
-/-- CupodTroll's own triple describes `CupodTrollV7 k` on codes. -/
-lemma hX_troll7 (k : V) :
-    termSubst LAct (binNumeral k ∷ (0 : V)) (⌜(Rew.emb TT : SyntacticSemiterm LAct 1)⌝ : V) =
-      codeTerm (canonical (CupodTrollV7 k)) := by
-  rw [quote_emb_TT, termSubst_tower, canonical_CupodTrollV7]
-
-lemma hU_troll7 (k : V) : (⌜uT⌝ : V) = revalueU (CupodTrollV7 k) := (revalueU_CupodTrollV7 k).symm
-lemma hW_troll7 (k : V) : (⌜wT⌝ : V) = revalueW (CupodTrollV7 k) := (revalueW_CupodTrollV7 k).symm
-
-/-- CupodTroll's own triple describes `CupodTrollV7 k` in `stdReadingV V`. -/
-lemma desc_troll7 (k : V) :
-    revalue (uT.val (s := stdReadingV V) ![] Empty.elim) (wT.val (s := stdReadingV V) ![] Empty.elim)
-      (TT.val (s := stdReadingV V) ![k] Empty.elim) = CupodTrollV7 k := by
-  rw [val_TT_V]; exact revalue_val_uT_wT_V k
-
-/-- The transposed triple describes `CupodTrollTV7 k` in `stdReadingV V`. -/
-lemma descT_troll7 (k : V) :
-    revalue ((Semiterm.lMap swap uT).val (s := stdReadingV V) ![] Empty.elim)
-      ((Semiterm.lMap swap wT).val (s := stdReadingV V) ![] Empty.elim)
-      ((Semiterm.lMap swap TT).val (s := stdReadingV V) ![k] Empty.elim) = CupodTrollTV7 k := by
-  rw [lMap_swap_TT, val_TT_V]; exact revalue_val_uTT_wTT_V k
 
 end canonical
 
@@ -895,45 +651,6 @@ theorem tact_qEqSelf (g : Semisentence LAct 6) (a : ℕ) : TAct ⊢ ∀¹ qEqSel
     rw [qEqSelf, eval_qT_swap, lMap_swap_eqTmpl, eval_qT_iff, eval_eqTmpl_V]
     simp only [Matrix.cons_val]
 
-/-- **CupodTroll finds "the opponent IS `CupodBot k`" against `CupodBot k` in every model, above a
-threshold** (found ⇒ D, fuel 2). -/
-theorem troll7_vs_cupod_D_V :
-    ∃ kHat : ℕ, ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] (k : V), (kHat : V) ≤ k →
-      EvalGraph 2 (CupodTrollV7 k) (SV gCu 1 k) (CupodTrollV7 k) 1 := by
-  obtain ⟨kHat, h⟩ := found_of_all_V (tact_qEqSelf gCu 1)
-  exact ⟨kHat, fun V _ _ k hk ↦
-    troll7_then_V k _ _ (by rw [guardCode_eqSelf gCu 1 (Or.inr rfl)]; exact h V k hk)⟩
-
-/-- The transposed searcher finds "the opponent IS `DupocBot k`" against `DupocBot k` (found ⇒ C, fuel 2). -/
-theorem troll7T_vs_dupoc_C_V :
-    ∃ kHat : ℕ, ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] (k : V), (kHat : V) ≤ k →
-      EvalGraph 2 (CupodTrollTV7 k) (SV gDu 0 k) (CupodTrollTV7 k) 0 := by
-  obtain ⟨kHat, h⟩ := found_of_all_V (tact_qEqSelf gDu 0)
-  exact ⟨kHat, fun V _ _ k hk ↦
-    troll7T_then_V k _ _ (by rw [guardCode_eqSelf gDu 0 (Or.inl rfl)]; exact h V k hk)⟩
-
-/-- Cupod's guard against CupodTroll: "CupodTroll(k) plays D against Cupod(k)". -/
-noncomputable def qCuT7 : Semisentence LAct 1 := qT gCu (TS gCu 1) (uS gCu 1) (wS gCu 1) TT uT wT
-
-theorem guardCode_CuT7 (k : V) :
-    guardCode (⌜gCu⌝ : V) (SV gCu 1 k) (CupodTrollV7 k) = instB (⌜qCuT7⌝ : V) k :=
-  guardCode_qT_eq_instB gCu k _ _ _ _ _ _ (hX_SV gCu 1 (Or.inr rfl) k) (hU_SV gCu 1 (Or.inr rfl) k)
-    (hW_SV gCu 1 (Or.inr rfl) k) (hX_troll7 k) (hU_troll7 k) (hW_troll7 k)
-
-/-- `qCuT7` is true in both readings above a standard threshold: CupodTroll's `.eq` guard is found there. -/
-theorem tact_qCuT7_above : ∃ kHat : ℕ, TAct ⊢ ∀¹ ((leF (↑kHat) #0 : Semisentence LAct 1) 🡒 qCuT7) := by
-  obtain ⟨k₁, h₁⟩ := troll7_vs_cupod_D_V
-  obtain ⟨k₂, h₂⟩ := troll7T_vs_dupoc_C_V
-  refine ⟨k₁ + k₂, tact_all_above_of_both _ _ (fun M _ _ x hx ↦ ?_) (fun M _ _ x hx ↦ ?_)⟩
-  · have : M↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
-    rw [qCuT7, eval_qT_plays_opp_self .D _ _ _ _ _ _ x (desc_SV gCu 1 (Or.inr rfl) x) (desc_troll7 x),
-      actCode_D_cast]
-    exact ⟨_, h₁ M x (le_trans (by push_cast; exact le_self_add) hx)⟩
-  · have : M↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
-    rw [qCuT7, eval_qT_swap, lMap_swap_gCu,
-      eval_qT_plays_opp_self .C _ _ _ _ _ _ x (descT_SV gCu 1 (Or.inr rfl) x) (descT_troll7 x),
-      actCode_C_cast, lMap_swap_gCu]
-    exact ⟨_, h₂ M x (le_trans (by push_cast; exact le_add_self) hx)⟩
 
 /-- **CupodTroll's guard against `CupodBot k` is found within the budget, for all large `k`** (the box form,
 on the engine's own codes: the consulted guard is `eqTmpl` in the frame `(CupodBot k, CupodBot k)`,
@@ -945,27 +662,6 @@ theorem khat_CupodTrollBot_vs_CupodBot_guard :
     rw [← guardCodeB_guardTemplateTroll7_nat, guardCodeB_guardTemplateTroll7, progCode_CupodBot_SV]
     exact guardCode_eqSelf gCu 1 (Or.inr rfl) k)
 
-/-- **`CupodTrollBot × CupodBot = (D, D)`** (engine `outcome_CupodTrollBot_vs_CupodBot`, pad 2), for all large `k`,
-on the constant-template `CupodTroll7 k` (which plays as the engine's `CupodTrollBot k` in every frame,
-`evalGraph_CupodTroll7_iff`; an opponent's guard that DESCRIBES it is what needs the slot): CupodTroll's `.eq`
-guard against `CupodBot k` is the reflexive equation, found (`found_of_all`) ⇒ then-branch D; Cupod's guard
-"CupodTroll defects against me" is then TRUE above `k̂` in every model and found by the `k̂`-chain ⇒ D. -/
-theorem khat_CupodTrollBot_vs_CupodBot :
-    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
-      EvalGraph 2 (CupodTroll7 k) (progCode (CupodBot k)) (CupodTroll7 k) (actCode .D) ∧
-      EvalGraph 2 (progCode (CupodBot k)) (CupodTroll7 k) (progCode (CupodBot k)) (actCode .D) := by
-  obtain ⟨kHat, hq⟩ := tact_qCuT7_above
-  obtain ⟨k₀, h⟩ := found_of_all_above kHat hq
-    (fun k ↦ guardCode (templateCode phiCu) (progCode (CupodBot k)) (CupodTroll7 k))
-    (fun k ↦ by rw [progCode_CupodBot_SV, templateCode_eq_quote_template phiCu rfl]; exact guardCode_CuT7 (V := ℕ) k)
-  obtain ⟨k₁, h₁⟩ := troll7_vs_cupod_D_V
-  refine ⟨k₀ + k₁, fun k hk ↦ ⟨?_, ?_⟩⟩
-  · have := h₁ ℕ k (le_def.mpr (Or.inr (by rw [natCast_nat]; omega)))
-    rw [← progCode_CupodBot_SV] at this
-    exact this
-  · have hg := h k (by omega)
-    rw [progCode_CupodBot] at hg ⊢
-    exact search_then phiCu hg (const_play _ _ _ _)
 
 /-- CupodTroll's half on the ENGINE's own code (its guard does not read the frame's `me`). -/
 theorem khat_CupodTrollBot_vs_CupodBot_engine :

@@ -111,8 +111,6 @@ theorem transposeCode_TftV : transposeCode (TftV : V) = TftTV := by
   unfold TftV TftTV transposeCode
   simp [revalueAction]
 
-theorem transposeCode_TftTV : transposeCode (TftTV : V) = TftV := by
-  rw [← transposeCode_TftV, transposeCode_transposeCode]
 
 /-- TFT is CANONICAL: its code is below its transposition's (the probe's constant decides). -/
 theorem TftV_lt_TftTV : (TftV : V) < TftTV := by
@@ -173,8 +171,6 @@ noncomputable def TFTTV : V := pIte (pSim pOpp (pBot (pConst 1))) 1 (pConst 1) (
 lemma TFTV_eq_TftV : (TFTV : V) = TftV := rfl
 lemma TFTTV_eq_TftTV : (TFTTV : V) = TftTV := rfl
 
-lemma cast_TFT : ((progCode TitForTatBot : ℕ) : V) = TFTV := by
-  rw [TFTV_eq_TftV]; exact cast_Tft
 
 lemma TFTV_nat : TFTV (V := ℕ) = progCode TitForTatBot := by
   rw [TFTV_eq_TftV]; exact TftV_nat
@@ -182,9 +178,6 @@ lemma TFTV_nat : TFTV (V := ℕ) = progCode TitForTatBot := by
 theorem transposeCode_TFTV : transposeCode (TFTV : V) = TFTTV := by
   rw [TFTV_eq_TftV, TFTTV_eq_TftTV]; exact transposeCode_TftV
 
-/-- The code of TFT is below the code of its transposition (the probe `.bot CooperateBot` is the smaller). -/
-theorem TFTV_lt_TFTTV : (TFTV : V) < TFTTV := by
-  rw [TFTV_eq_TftV, TFTTV_eq_TftTV]; exact TftV_lt_TftTV
 
 lemma canonical_TFTV : canonical (TFTV : V) = TFTV := by
   rw [TFTV_eq_TftV]; exact canonical_TftV

@@ -260,13 +260,6 @@ theorem then_V (s : SM) (k me opp : V)
   rw [show (2 : V) = 1 + 1 from one_add_one_eq_two.symm, EvalGraph.search_iff]
   exact Or.inl ⟨h, by rw [show (1 : V) = 0 + 1 by simp, EvalGraph.const_iff]⟩
 
-/-- Its consulted code not found ⇒ the else-action. -/
-theorem else_V (s : SM) (k me opp : V)
-    (h : ¬ LenBox TAct k (guardCodeB ((⌜s.g⌝ : ℕ) : V) me opp k)) :
-    EvalGraph 2 me opp (s.code k) ((1 - s.a : ℕ) : V) := by
-  unfold code
-  rw [show (2 : V) = 1 + 1 from one_add_one_eq_two.symm, EvalGraph.search_iff]
-  exact Or.inr ⟨h, by rw [show (1 : V) = 0 + 1 by simp, EvalGraph.const_iff]⟩
 
 end Tau.SM
 
@@ -385,7 +378,6 @@ noncomputable def tr (p : DP) : DP :=
   ⟨Semiterm.lMap swap p.X, Semiterm.lMap swap p.U, Semiterm.lMap swap p.W, p.dT, by
     rw [term_lMap_swap_swap, term_lMap_swap_swap, term_lMap_swap_swap]; exact p.d⟩
 
-lemma tr_val (p : DP) (k : V) : p.tr.val k = transposeCode (p.val k) := p.d.hT V k
 
 /-- The engine searcher `SV g a k`. -/
 noncomputable def ofSV (g : Semisentence LAct 6) (a : ℕ) (ha : a = 0 ∨ a = 1) : DP :=
@@ -722,8 +714,6 @@ lemma worldC_J_nat (k : ℕ) : worldC.J.val (V := ℕ) k = progCode (JustBot k) 
 lemma worldC_D_nat (k : ℕ) : worldC.D.val (V := ℕ) k = progCode (DupocBot k) := by
   rw [worldC.hD ℕ k, progCode_DupocBot_SV]; rfl
 
-lemma worldC_B_nat (k : ℕ) : worldC.B.val (V := ℕ) k = pBot (progCode (DupocBot k)) := by
-  rw [worldC.hB ℕ k, progCode_DupocBot_SV]; rfl
 
 lemma worldC_I_nat (k : ℕ) : worldC.I.val (V := ℕ) k = progCode (CIMCIC k) := by
   rw [worldC.hI ℕ k, progCode_CIMCIC, ← CimcicV_nat, CimcicV_eq_SV]; rfl
@@ -731,34 +721,6 @@ lemma worldC_I_nat (k : ℕ) : worldC.I.val (V := ℕ) k = progCode (CIMCIC k) :
 lemma worldC_M_nat (k : ℕ) : worldC.M.val (V := ℕ) k = progCode MirrorBot := by
   rw [worldC.hM ℕ k, progCode_MirrorBot]; rfl
 
-/-- A found Just guard of the standard world IS the engine's consulted sentence
-`guardCode (templateCode (phiJ k)) me opp` (`guardCodeB_templateCodeAt`: the stored template, its budget slot
-filled, is the unabstracted guard). -/
-theorem worldC_qJ_guard (me opp : DP) (k : ℕ) (h : LenBox TAct k (instB (⌜worldC.qJ me opp⌝ : ℕ) k)) :
-    LenBox TAct k (guardCode (templateCode (phiJ k)) (me.val (V := ℕ) k) (opp.val (V := ℕ) k)) := by
-  unfold World.qJ at h
-  rw [← guardCodeB_qF13 _ (worldC.hg7 ℕ)] at h
-  simp only [natCast_nat] at h
-  have e : (⌜gSnap (gP worldC.c) (actCode worldC.c)⌝ : ℕ) = templateCodeAt (phiJ k) k := by
-    unfold templateCodeAt; rw [templateAt_phiJ]; rfl
-  rw [e, guardCodeB_templateCodeAt (phiJ k) _ _ k rfl] at h
-  exact h
-
-/-- A found Dupoc guard of the standard world is the engine's `guardCode (templateCode phiDu) me opp`. -/
-theorem worldC_qP_guard (me opp : DP) (k : ℕ) (h : LenBox TAct k (instB (⌜worldC.qP me opp⌝ : ℕ) k)) :
-    LenBox TAct k (guardCode (templateCode phiDu) (me.val (V := ℕ) k) (opp.val (V := ℕ) k)) := by
-  unfold World.qP at h
-  rw [← guardCode_qF] at h
-  rw [templateCode_eq_quote_template phiDu rfl]
-  exact h
-
-/-- A found CIMCIC guard of the standard world is the engine's `guardCode (templateCode phiC) me opp`. -/
-theorem worldC_qI_guard (me opp : DP) (k : ℕ) (h : LenBox TAct k (instB (⌜worldC.qI me opp⌝ : ℕ) k)) :
-    LenBox TAct k (guardCode (templateCode phiC) (me.val (V := ℕ) k) (opp.val (V := ℕ) k)) := by
-  unfold World.qI at h
-  rw [← guardCode_qF] at h
-  rw [templateCode_eq_quote_template phiC rfl]
-  exact h
 
 /-! ### 5. JustBot × MirrorBot `(C, C)` -/
 
@@ -806,14 +768,6 @@ theorem loeb_JustBot_vs_MirrorBot :
   simp only [natCast_nat] at hp
   exact hp
 
-/-- **The box form**: `JustBot k` FINDS its guard against Mirror within its budget, for all large `k`. -/
-theorem loeb_JustBot_vs_MirrorBot_guard :
-    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
-      LenBox TAct k (guardCode (templateCode (phiJ k)) (progCode (JustBot k)) (progCode MirrorBot)) := by
-  obtain ⟨k₀, h⟩ := jm_found
-  refine ⟨k₀, fun k hk ↦ ?_⟩
-  have hg := worldC_qJ_guard _ _ k (h k hk (worldC.qJ worldC.J worldC.M) (by simp [jmQ]))
-  rwa [worldC_J_nat, worldC_M_nat] at hg
 
 end justMirror
 
@@ -863,14 +817,6 @@ theorem loeb_JustBot_vs_JustBot :
   simp only [natCast_nat] at hp
   exact hp
 
-/-- **The box form**: `JustBot k` FINDS its guard against itself within its budget, for all large `k`. -/
-theorem loeb_JustBot_vs_JustBot_guard :
-    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
-      LenBox TAct k (guardCode (templateCode (phiJ k)) (progCode (JustBot k)) (progCode (JustBot k))) := by
-  obtain ⟨k₀, h⟩ := jj_found
-  refine ⟨k₀, fun k hk ↦ ?_⟩
-  have hg := worldC_qJ_guard _ _ k (h k hk (worldC.qJ worldC.J worldC.J) (by simp [jjQ]))
-  rwa [worldC_J_nat] at hg
 
 end justSelf
 
@@ -927,18 +873,6 @@ theorem loeb_JustBot_vs_DupocBot :
   simp only [natCast_nat] at hp
   exact hp
 
-/-- **The box forms**: `JustBot k` finds its guard against `DupocBot k` and `DupocBot k` finds its guard against
-`JustBot k`, within the budget, for all large `k`. -/
-theorem loeb_JustBot_vs_DupocBot_guards :
-    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
-      LenBox TAct k (guardCode (templateCode (phiJ k)) (progCode (JustBot k)) (progCode (DupocBot k))) ∧
-      LenBox TAct k (guardCode (templateCode phiDu) (progCode (DupocBot k)) (progCode (JustBot k))) := by
-  obtain ⟨k₀, h⟩ := jd_found
-  refine ⟨k₀, fun k hk ↦ ?_⟩
-  have hg₁ := worldC_qJ_guard _ _ k (h k hk (worldC.qJ worldC.J worldC.D) (by simp [jdQ]))
-  have hg₂ := worldC_qP_guard _ _ k (h k hk (worldC.qP worldC.D worldC.J) (by simp [jdR]))
-  rw [worldC_J_nat, worldC_D_nat] at hg₁ hg₂
-  exact ⟨hg₁, hg₂⟩
 
 end justDupoc
 
@@ -996,18 +930,6 @@ theorem loeb_CIMCIC_vs_JustBot :
   simp only [natCast_nat] at hp
   exact hp
 
-/-- **The box forms**: `CIMCIC k` finds its guard against `JustBot k` and `JustBot k` finds its guard against
-`CIMCIC k`, within the budget, for all large `k`. -/
-theorem loeb_CIMCIC_vs_JustBot_guards :
-    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
-      LenBox TAct k (guardCode (templateCode phiC) (progCode (CIMCIC k)) (progCode (JustBot k))) ∧
-      LenBox TAct k (guardCode (templateCode (phiJ k)) (progCode (JustBot k)) (progCode (CIMCIC k))) := by
-  obtain ⟨k₀, h⟩ := cj_found
-  refine ⟨k₀, fun k hk ↦ ?_⟩
-  have hg₁ := worldC_qI_guard _ _ k (h k hk (worldC.qI worldC.I worldC.J) (by simp [cjQ]))
-  have hg₂ := worldC_qJ_guard _ _ k (h k hk (worldC.qJ worldC.J worldC.I) (by simp [cjR]))
-  rw [worldC_J_nat, worldC_I_nat] at hg₁ hg₂
-  exact ⟨hg₁, hg₂⟩
 
 end cimcicJust
 
@@ -1041,12 +963,6 @@ theorem loeb_DIMCID_vs_JustBot_engine :
   obtain ⟨k₂, h₂⟩ := snd_JustBot_vs_DIMCID_engine
   exact ⟨k₁ + k₂, fun k hk ↦ ⟨(h₁ k (by omega)).1, h₂ k (by omega)⟩⟩
 
-/-- **The box form**: DIMCID FINDS its guard against the engine's `JustBot k` within its budget. -/
-theorem loeb_DIMCID_vs_JustBot_engine_guard :
-    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
-      LenBox TAct k (guardCode (templateCode phiD) (progCode (DIMCID k)) (progCode (JustBot k))) := by
-  obtain ⟨k₀, h⟩ := loeb_DIMCID_vs_JustBot_core
-  exact ⟨k₀, fun k hk ↦ (h k hk).2⟩
 
 end dimcidJust
 

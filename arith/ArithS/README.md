@@ -2,7 +2,7 @@
 
 `ArithS` is the engine's proof system `S` replaced by **Peano Arithmetic with a length-bounded
 provability predicate** (PA-`S'`), on the Foundation library, with the engine's matrix re-proved cell
-by cell. It is 134k lines of Lean, and a reader needs about 5 % of them. This file says which.
+by cell. It is about 160k lines of Lean (the U10 construction alone is 96k), and a reader needs about 5 % of them. This file says which.
 
 The design and its rationale are in `engine/PrisonersDilemma/Research/Notes/SPRIME_DESIGN_RATIONALE.md`;
 what is proved is in `ARITHMETIZED_S_RESULTS.md`; the cell ledger is `ROUTE_B_CENSUS.md`. This guide is

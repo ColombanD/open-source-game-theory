@@ -1,5 +1,6 @@
 import ArithS.Tau.Columns
-import ArithS.Cells.TauMember
+import ArithS.Bridge.Agent
+import ArithS.Eval.TauCheck
 
 /-!
 # ArithS.Tau.Entangled.Base — the entangled systems on codes, at ℕ (Phase 3, the entangled bits)

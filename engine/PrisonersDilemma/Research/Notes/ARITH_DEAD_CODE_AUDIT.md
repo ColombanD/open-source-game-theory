@@ -328,3 +328,46 @@ declaration ranges; the range sometimes starts at the docstring and sometimes af
 (`Agents/Fit`, `Assembly/Uniform`, `Theory/Symmetry`, `Box/Bew`, cell-file leftovers, the 173 aliases of
 `Cells/Names.lean`, the FitBox/SimTest results to be added to the census, `Bridge/*`) plus the 71
 above and ~70 one-line `*_R_eq`/`bvarList_*` rfl twins in the row tables — see §3.3–§3.4 and §4.
+
+## 8. Tier D executed (2026-10-29): the twin audit of `Cells/`
+
+**Question.** After the hand-template twins were retired from the matrix (2026-10-02: every cell stated
+on the engine's own `progCode`s), how much of `Cells/` still served a claim? The September audit could not
+say: its ROOTS were the census, and the twin cells were still `#print axioms`-ed, hence ROOT by definition.
+
+**Method.** `scripts/DeadCode.lean` (restored from `6bb4855`, gone since the spikes clean-up) gained a
+CLAIMS mode: `DEADCODE_ROOT_MODULES=<prefixes>` makes every non-aux constant of the named modules a root,
+independently of the census. Roots used: `Outcome.*` (the 132 `@[outcomeA]` cells and 30 `@[floorA]`
+floors), `Tau.Rows.*` + `Tau.Check`, `Readings`, `Assembly.Cell` (PBLT), `Necessitation.Package`,
+`Cells.{FloorDichotomy,FloorVerdicts,Transposition,RedCell}`, plus the 46 `#check` names of `Tour.lean`;
+635 roots. Scope: `ArithS.Cells.*` only (the results tier; the trusted base and the Löb tier were left
+alone — `Agents/InstanceV`'s `DupocV`/`CupodV` are LIVE anyway: they are the vehicles of the engine-code cells).
+
+**Result before.** 832 of 2417 hand-written declarations in `Cells/` (4185 lines) unreachable from any
+claim; 305 of them were census ROOTS (the retired twin cells `loeb_Just7_vs_Just7`, `loeb_Cimcic_vs_Just7`,
+`loeb_DIMCID_vs_Just7`, `loeb_DIMCID_vs_CupodTroll7`, the `Just7`/`CupodTroll7`/`JustV` towers and their
+`canonical_*`/`revalue*_*`/`transposeCode_*` kits). Five modules 100 % dead: `Cells/JustBot` (the hand
+`JustV`), `Cells/DupocMirror` (the hand-code Dupoc × Mirror route, superseded by `DupocEngine`),
+`Cells/SimSlot`, `Cells/TauMember` (Phase-2 gates), `Cells/Names` (the 173 deprecated aliases, §3.4).
+
+**Deletion rule (the fixpoint).** A dead declaration is deleted iff every textual mention of its short
+name outside its own range is inside a comment (a proper lexer: nested `/- -/`, `--`, strings) or inside
+the range of another declaration being deleted. Hand-written lemmas whose names contain `_eq_`
+(`JustV7_eq_inner`, …) are NOT compiler auxiliaries although the tool's `isAuxName` says so — 46 of them
+were added back into the candidate set by requiring that an "aux" row share its declaration range with a
+non-aux one. Two build-breaking lessons: a deleted module's `import`s are transitive for its importers
+(re-add the module's own imports where it was imported); an `omit … in` / `set_option … in` immediately
+before a deleted declaration dangles (one case; the six `omit … in` lines that precede a DOC COMMENT are
+legitimate — the modifier applies across the docstring).
+
+**Executed.** 795 declarations + the 173 aliases deleted, 5 modules removed, 5371 lines out of `ArithS/`
+(`Cells/` 20260 → 15257 lines), 322 `#print axioms` lines dropped from `Audit/Cells.lean` (the census is
+every claim's axioms, not every leftover's). 19 dead declarations kept: referenced from live code
+(`TBD`/`TBD4` from JustSlot's live `sVec7` kit, `cons_val_*` in JustEngine, `guardTemplateJust7*`, …).
+Build green (3502 jobs), censuses unchanged (132 / 30 / 78/78; tau 256/256 COMPLETE), the axiom census
+the same four pre-existing subsets, `export_sprime_outcomes` byte-identical, `check_tiers.py` ok.
+Confirming re-run: `Cells/` 1527 hand-written declarations, 31 dead (47 lines) from the claims, 35 from
+the census; the LIVE set is identical before and after (22264 constants).
+
+The tool and its two modes are documented in `arith/scripts/README.md`; `scripts/roots.txt` is the
+regenerated census (2219 names).

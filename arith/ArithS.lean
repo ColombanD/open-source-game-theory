@@ -104,7 +104,6 @@ import ArithS.Cells.Common.Templates
 import ArithS.Cells.Common.Probers
 import ArithS.Cells.Common.Families
 import ArithS.Cells.Common.Khat
-import ArithS.Cells.DupocMirror
 import ArithS.Cells.DupocEngine
 import ArithS.Cells.Transposition
 import ArithS.Cells.DimcidEngine
@@ -115,14 +114,11 @@ import ArithS.Cells.DupocTrollBot
 import ArithS.Cells.DupocTrollPrudent
 import ArithS.Cells.Dimdid
 import ArithS.Cells.DimdidTroll
-import ArithS.Cells.JustBot
 import ArithS.Cells.DIMCID
 import ArithS.Cells.PrudentMirror
 import ArithS.Cells.CIMCIC
 import ArithS.Cells.SearchFree
-import ArithS.Cells.TauMember
 import ArithS.Cells.JustSlot
-import ArithS.Cells.SimSlot
 import ArithS.Cells.SoundnessCells
 import ArithS.Cells.PositiveCells
 import ArithS.Cells.KhatCells
@@ -131,7 +127,6 @@ import ArithS.Cells.DimcidFlips
 import ArithS.Cells.FloorVerdicts
 import ArithS.Cells.FloorDichotomy
 import ArithS.Cells.PrudentLoose
-import ArithS.Cells.Names
 import ArithS.Bridge.Neg
 import ArithS.Bridge.Agent
 import ArithS.Bridge.AgentConverse

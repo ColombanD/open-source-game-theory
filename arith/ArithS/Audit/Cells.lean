@@ -1,6 +1,5 @@
 import ArithS.Audit.RedCellInstance
 import ArithS.Audit.RedCellUnsound
-import ArithS.Cells.SimSlot
 import ArithS.Cells.PrudentLoose
 import ArithS.Cells.DupocEngine
 import ArithS.Cells.Transposition
@@ -12,8 +11,10 @@ import ArithS.Cells.DupocTrollBot
 import ArithS.Cells.DupocTrollPrudent
 import ArithS.Cells.Dimdid
 import ArithS.Cells.DimdidTroll
-import ArithS.Cells.TauMember
 import PrisonersDilemma.Theorems.DupocBot.RedCellInstance
+import ArithS.Bridge.Agent
+import ArithS.Eval.TauCheck
+import ArithS.Cells.JustSlot
 
 /-!
 # ArithS.Audit.Cells — the axiom census of the arithmetized layer: Cells
@@ -63,9 +64,6 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms four_eq
 #print axioms coe_quote_sentence₆
 #print axioms revalueTemplate_quote_sentence₆_V
-#print axioms nth_descriptions_three
-#print axioms nth_descriptions_four
-#print axioms nth_descriptions_five
 #print axioms nth_descriptionsB_zero
 #print axioms nth_descriptionsB_one
 #print axioms nth_descriptionsB_two
@@ -80,7 +78,6 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms transposeCode_pBot
 #print axioms revalueU_pBot
 #print axioms revalueW_pBot
-#print axioms transposeCode_pBot_DupocV
 #print axioms pConst_zero_lt_one
 #print axioms transposeCode_pConst_zero
 #print axioms transposeCode_pConst_one
@@ -106,7 +103,6 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms TftV_nat
 #print axioms cast_Tft
 #print axioms transposeCode_TftV
-#print axioms transposeCode_TftTV
 #print axioms canonical_TftV
 #print axioms revalueU_TftV
 #print axioms revalueW_TftV
@@ -119,7 +115,6 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms val_desc_tft_swap
 #print axioms TFTV_eq_TftV
 #print axioms TFTTV_eq_TftTV
-#print axioms cast_TFT
 #print axioms TFTV_nat
 #print axioms transposeCode_TFTV
 #print axioms canonical_TFTV
@@ -170,43 +165,16 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms quote_emb_TBS
 #print axioms hU_botSV
 #print axioms hW_botSV
-#print axioms DimcidV_eq_SV
-#print axioms DimcidTV_eq_SV
 #print axioms CimcicV_eq_SV
-#print axioms CimcicTV_eq_SV
 
 -- Consolidation stage 3 (Cells/Common/Templates, 2026-09-24): qG/gVec, qT, JustBot's templateVec form (templateVec_eq_gVec
 -- NEW, rfl), the atom truths, the Dupoc towers (TD/TBD description hypotheses) and the Describes layer
 -- (descVal/Describes/DescribesAbove, describes_closed and the instances) — MOVED unchanged. Only the names not
 -- already printed elsewhere.
-#print axioms lMap_swap_qG
-#print axioms semitermVec_val_gVec
-#print axioms quote_qG
 #print axioms gVec_semitermVec
 #print axioms termSubstVec_gVec
 #print axioms lMap_swap_qT
 #print axioms quote_qT
-#print axioms quote_GtmplA_subst
-#print axioms templateVec_semitermVec
-#print axioms termSubstVec_templateVec
-#print axioms templateVec_eq_gVec
-#print axioms transposeCode_CupodV
-#print axioms canonical_CupodV_eq
-#print axioms hX_cupod
-#print axioms hU_cupod
-#print axioms hW_cupod
-#print axioms desc_cupod
-#print axioms descT_cupod
-#print axioms hX_dupoc
-#print axioms hU_dupoc
-#print axioms hW_dupoc
-#print axioms lMap_swap_TBD
-#print axioms quote_emb_TBD
-#print axioms quote_emb_uD_botDupocV
-#print axioms quote_emb_wD_botDupocV
-#print axioms hX_botDupoc
-#print axioms hU_botDupoc
-#print axioms hW_botDupoc
 #print axioms descVal_def
 #print axioms lMap_swap_canonicalMeta'
 #print axioms descVal_botCB
@@ -217,21 +185,11 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms descVal_SV_T
 #print axioms descVal_botSV
 #print axioms descVal_botSV_T
-#print axioms descVal_dupocV
-#print axioms descVal_dupocV_T
-#print axioms descVal_botDupoc
-#print axioms descVal_botDupoc_T
 
 -- Consolidation stage 4 (Cells/Common/Probers, 2026-09-24): the search clauses in any frame, Mirror's step and
 -- copies, TFT's probe steps, the constants — MOVED unchanged; NEW roots search_then_V₆/search_else_V₆ (the two
 -- directions of EvalGraph.search_iff₆). Only the names not already printed elsewhere.
-#print axioms search_then_V₆
-#print axioms search_else_V₆
 #print axioms botSV_then_V
-#print axioms cupod_frame_search_V
-#print axioms botCupod_frame_search_V
-#print axioms cupod_search_any_V
-#print axioms dupoc_search_any_V
 #print axioms mirror_copies2_V
 #print axioms mirror_copies3_V
 #print axioms tftT_D_of_probe_D_V
@@ -271,27 +229,6 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 -- UNCONDITIONAL at `boundedInnerNec_sixteen` — for all large `k`, `Dupoc k` cooperates with Mirror and Mirror
 -- copies (`(C, C)`), `Cupod k` defects against Mirror and Mirror copies (`(D, D)`), and both FIND their guards.
 #print axioms mirror_step_V
-#print axioms guardCode_DupocV_MirrorV_eq_instB
-#print axioms guardCode_CupodV_MirrorV_eq_instB
-#print axioms eval_qDM_iff_V
-#print axioms eval_qCM_iff_V
-#print axioms eval_qDM_swap_iff_V
-#print axioms eval_qCM_swap_iff_V
-#print axioms dupoc_mirror_search_V
-#print axioms cupod_mirror_search_V
-#print axioms instB_quote_pDM
-#print axioms pDM_both_V
-#print axioms pDM_guards_V
-#print axioms eval_pDM_iff_std
-#print axioms eval_pDM_iff_swap
-#print axioms loebSound_pDM
-#print axioms loeb_Dupoc_vs_Mirror_core_of_nec
-#print axioms loeb_Dupoc_vs_Mirror_of_nec
-#print axioms loeb_Cupod_vs_Mirror_of_nec
-#print axioms loeb_Dupoc_vs_Mirror_guard_of_nec
-#print axioms loeb_Cupod_vs_Mirror_guard_of_nec
-#print axioms loeb_Dupoc_vs_Mirror
-#print axioms loeb_Cupod_vs_Mirror
 
 -- Cells/DupocEngine — the same four Löb cells on the ENGINE's codes `progCode (DupocBot k)` /
 -- `progCode (CupodBot k)` (`SV gDu 0` / `SV gCu 1`), via the two-guard family `pQ` and `family_found`;
@@ -300,20 +237,14 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms loeb_CupodBot_vs_CupodBot
 #print axioms loeb_DupocBot_vs_MirrorBot
 #print axioms loeb_CupodBot_vs_MirrorBot
-#print axioms loeb_DupocBot_vs_DupocBot_guard
-#print axioms loeb_CupodBot_vs_CupodBot_guard
-#print axioms loeb_DupocBot_vs_MirrorBot_guard
-#print axioms loeb_CupodBot_vs_MirrorBot_guard
 
 -- Cells/DimcidEngine — DIMCID × Cupod on the ENGINE's `progCode (CupodBot k)` (= `SV gCu 1`), the
 -- mutual family of `Cells/DIMCID.lean` §9 re-run on the generic searcher; retires `outcome_DIMCID_vs_Cupod`.
 #print axioms loeb_DIMCID_vs_CupodBot
-#print axioms loeb_DIMCID_vs_CupodBot_guards
 
 -- Cells/CimcicEngine — CIMCIC × Dupoc on the ENGINE's `progCode (DupocBot k)` (= `SV gDu 0`), the mutual
 -- family of `Cells/CIMCIC.lean` §7 re-run on the generic searcher; retires `outcome_CIMCIC_vs_Dupoc`.
 #print axioms loeb_CIMCIC_vs_DupocBot
-#print axioms loeb_CIMCIC_vs_DupocBot_guards
 #print axioms loebSound_pCiDb
 
 -- Cells/JustEngine (2026-10-02) — JustBot's five twin cells on the ENGINE's `progCode (JustBot k)`, whose stored
@@ -333,7 +264,6 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms Tau.SM.describes
 #print axioms Tau.SM.describesT
 #print axioms Tau.SM.then_V
-#print axioms Tau.SM.else_V
 #print axioms eval_plAt_opp_closed
 #print axioms eval_gSnap
 #print axioms lMap_swap_gSnap
@@ -353,26 +283,20 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms swap_qI
 #print axioms loebSound_world
 #print axioms found_world
-#print axioms worldC_qJ_guard
 #print axioms jm_core
 #print axioms jm_found
 #print axioms loeb_JustBot_vs_MirrorBot
-#print axioms loeb_JustBot_vs_MirrorBot_guard
 #print axioms jj_core
 #print axioms jj_found
 #print axioms loeb_JustBot_vs_JustBot
-#print axioms loeb_JustBot_vs_JustBot_guard
 #print axioms jd_core
 #print axioms jd_found
 #print axioms loeb_JustBot_vs_DupocBot
-#print axioms loeb_JustBot_vs_DupocBot_guards
 #print axioms cj_core
 #print axioms cj_found
 #print axioms loeb_CIMCIC_vs_JustBot
-#print axioms loeb_CIMCIC_vs_JustBot_guards
 #print axioms loeb_DIMCID_vs_JustBot_core
 #print axioms loeb_DIMCID_vs_JustBot_engine
-#print axioms loeb_DIMCID_vs_JustBot_engine_guard
 
 -- Cells/CupodTrollEngine (2026-10-02) — CupodTrollBot's two twin cells on the ENGINE's `progCode (CupodTrollBot k)`
 -- (`templateAt_phiT`: its stored `.eq` template is the constant `gEq gCu 1`; `progCode_CupodTrollBot_sT`): the
@@ -399,7 +323,6 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms khat_CupodBot_vs_CupodTrollBot
 #print axioms loeb_DIMCID_vs_CupodTrollBot_core
 #print axioms loeb_DIMCID_vs_CupodTrollBot_engine
-#print axioms loeb_DIMCID_vs_CupodTrollBot_engine_guard
 
 -- Cells/DupocTrollBot (2026-10-13) — the twelve `S'`-ONLY cells of `DupocTrollBot k` ("defect iff the opponent IS
 -- `DupocBot k`", no engine cell): the simple-member form of the engine's code (`progCode_DupocTrollBot_sT`), the
@@ -430,7 +353,6 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms pos_DupocTrollBot_vs_DupocBot
 #print axioms loeb_DupocTrollBot_vs_DIMCID
 #print axioms floor_DupocTrollBot_vs_CIMCIC_right
-#print axioms floor_DupocTrollBot_vs_CIMCIC_true
 #print axioms dich_DupocTrollBot_vs_CIMCIC
 
 -- Cells/Dimdid (2026-10-13) — the thirteen `S'`-ONLY cells of `DIMDID k` ("defect iff my defection provably implies
@@ -446,7 +368,6 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms progCode_DIMDID_ne_DupocBot
 #print axioms snd_DIMDID_vs_DupocTrollBot
 
-#print axioms DIMDID_eq_transpose
 #print axioms progCode_DIMDID_SV
 #print axioms dimdid_selfref_not_found
 #print axioms eval_qT_impl
@@ -468,15 +389,11 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms obotT_C_of_any_V
 #print axioms ob_core
 #print axioms loeb_DIMDID_vs_OBot
-#print axioms loeb_DIMDID_vs_OBot_guard
 #print axioms di_core
 #print axioms loeb_DIMDID_vs_DIMCID
-#print axioms loeb_DIMDID_vs_DIMCID_guards
 #print axioms dich_DIMDID_vs_DupocBot
 #print axioms dich_DIMDID_vs_CIMCIC
 #print axioms dich_DIMDID_vs_PrudentBot
-#print axioms loeb_Dupoc_vs_Mirror_guard
-#print axioms loeb_Cupod_vs_Mirror_guard
 
 -- Route B Phase 2, the DIMCID family — DIMCID × DIMCID, DIMCID × Mirror and DIMCID × Cupod, all `(D, D)`, in
 -- PA-`S'` (Cells/DIMCID, 2026-09-23), the first family whose guard is the GENERAL translation `template` (an `.impl` of two
@@ -505,49 +422,19 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms pG_guards_V
 #print axioms eval_pG_iff_std
 #print axioms eval_pG_iff_swap
-#print axioms guardCode_DimcidV_self_eq_instB
-#print axioms eval_qDD_iff_V
-#print axioms eval_qDD_swap_iff_V
 #print axioms loebSound_pDD
 #print axioms loeb_Dimcid_vs_Dimcid_core_of_nec
 #print axioms loeb_Dimcid_vs_Dimcid_of_nec
-#print axioms loeb_Dimcid_vs_Dimcid_guard_of_nec
 #print axioms loeb_Dimcid_vs_Dimcid
-#print axioms loeb_Dimcid_vs_Dimcid_guard
-#print axioms loeb_DIMCID_vs_DIMCID_guardOf
-#print axioms guardCode_DimcidV_MirrorV_eq_instB
-#print axioms eval_qDMi_iff_V
-#print axioms eval_qDMi_swap_iff_V
 #print axioms loebSound_pDMi
 #print axioms loeb_Dimcid_vs_Mirror_core_of_nec
 #print axioms loeb_Dimcid_vs_Mirror_of_nec
-#print axioms loeb_Dimcid_vs_Mirror_guard_of_nec
 #print axioms loeb_Dimcid_vs_Mirror
-#print axioms loeb_Dimcid_vs_Mirror_guard
 -- Cell 3, the MUTUAL family DIMCID × Cupod `(D, D)` (engine `mutual_pblt_engine_id`): Cupod's description
 -- (`revalueU_CupodV`/`revalueW_CupodV`), the hand-written template filled with two arbitrary triples (`qG`, the generic
 -- `guardCode_GtmplA_eq_instB`/`_swap_eq_instB`, `eval_qG_iff_V`), Cupod's guard against DIMCID `qCD`, the four-guard
 -- family `pDC = pG TD uC wC ⋏ (qCD ⋏ τqCD)` with the two-level ∧-elimination at slack `(14, 16)` (`pDC_all_V`),
 -- `loebSound_pDC : LoebSound pDC 14 16`, then the cell: both defect at fuel 2, both find their guards.
-#print axioms revalueU_CupodV
-#print axioms revalueW_CupodV
-#print axioms guardCode_GtmplA_eq_instB
-#print axioms guardCode_GtmplA_swap_eq_instB
-#print axioms eval_qG_iff_V
-#print axioms guardCode_CupodV_DimcidV_eq_instB
-#print axioms guardCode_DupocV_DimcidTV_eq_instB
-#print axioms eval_qCD_iff_V
-#print axioms eval_qCD_swapped_iff_V
-#print axioms pDC_all_V
-#print axioms pDC_guards_V
-#print axioms eval_pDC_iff_std
-#print axioms eval_pDC_iff_swap
-#print axioms loebSound_pDC
-#print axioms loeb_Dimcid_vs_Cupod_core_of_nec
-#print axioms loeb_Dimcid_vs_Cupod_of_nec
-#print axioms loeb_Dimcid_vs_Cupod_guards_of_nec
-#print axioms loeb_Dimcid_vs_Cupod
-#print axioms loeb_Dimcid_vs_Cupod_guards
 
 -- Route B Phase 2, the JustBot family (Cells/JustBot, 2026-09-23) — the frozen-`.bot` Löb families. `pBot p` runs `p`
 -- in the SAME frame (`EvalGraph.bot_iff`) and the canonical description commutes with it (`canonical_pBot`/`revalueU_pBot`/
@@ -565,42 +452,6 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 -- Just × Dupoc are NOT here: Just's own description carries the leaf `binNumeral (gJ k)`, so no fixed formula has those
 -- guards as `k`-instances (see the module docstring).
 #print axioms canonical_pBot
-#print axioms dupoc_frame_search_V
-#print axioms botDupoc_frame_search_V
-#print axioms val_TBD_V
-#print axioms termSubst_TBD
-#print axioms guardCode_eq_instB_of
-#print axioms eval_GtmplA_subst_iff
-#print axioms guardCode_botDupocV_eq_instB
-#print axioms guardCode_botCupodV_eq_instB
-#print axioms eval_qBD_iff_V
-#print axioms eval_qBC_iff_V
-#print axioms pBD_both_V
-#print axioms loebSound_pBD
-#print axioms loeb_botDupoc_vs_botDupoc_core_of_nec
-#print axioms loeb_botDupoc_vs_botDupoc_of_nec
-#print axioms loeb_botDupoc_vs_botDupoc_guard_of_nec
-#print axioms loeb_botDupoc_vs_botDupoc
-#print axioms loeb_botCupod_vs_botCupod
-#print axioms loeb_botDupoc_vs_botDupoc_guard
-#print axioms termSubstVec_jVec
-#print axioms guardCode_JustV
-#print axioms just_search_V
-#print axioms quote_guardTemplateJust
-#print axioms JustV_nat
-#print axioms guardCode_botDupocV_MirrorV_eq_instB
-#print axioms guardCode_botCupodV_MirrorV_eq_instB
-#print axioms eval_qJM_iff_V
-#print axioms eval_qJC_iff_V
-#print axioms pJM_both_V
-#print axioms loebSound_pJM
-#print axioms loeb_Just_vs_Mirror_core_of_nec
-#print axioms loeb_Just_vs_Mirror_of_nec
-#print axioms loeb_botDupoc_vs_Mirror_of_nec
-#print axioms loeb_Just_vs_Mirror_guard_of_nec
-#print axioms loeb_Just_vs_Mirror
-#print axioms loeb_botDupoc_vs_Mirror
-#print axioms loeb_Just_vs_Mirror_guard
 
 -- Route (c) — templates with a BUDGET SLOT (ROUTE_B_SCOPE §8, 2026-09-23). The trusted base: `descriptionsB me opp k` =
 -- `descriptions me opp` extended by `binNumeral k` in a SEVENTH slot `#6` (LAST, so every six-variable template and `descriptions`
@@ -625,23 +476,9 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms EvalGraph.search_iff₆
 #print axioms quote_emb_castLE_V
 #print axioms termSubst_tower_of
-#print axioms termSubst_TBD_of
 #print axioms termRelabelVec_descriptionsB
 #print axioms revalueTemplate_guardCodeB
-#print axioms revalueTemplate_quote_sentence₇_V
-#print axioms lMap_swap_guardTemplateJust7
-#print axioms quote_guardTemplateJust7A
-#print axioms quote_qJ4
 #print axioms termSubstVec_sVec7
-#print axioms termSubstVec_jVec4
-#print axioms guardCodeB_guardTemplateJust7A
-#print axioms guardCodeB_guardTemplateJust7
-#print axioms guardCodeB_guardTemplateJust7T
-#print axioms transposeCode_JustV7
-#print axioms just7_search_V
-#print axioms just7T_search_V
-#print axioms evalGraph_JustV7_iff
-#print axioms evalGraph_Just7_iff
 
 -- The `.sim` debt of route (c) DISCHARGED (2026-09-24): `substTemplate` gets a MIDDLE case — a seven-variable template
 -- (not a six-variable one) is filled in `#0..#5` with the OUTER descriptions and KEEPS `#6` a variable
@@ -664,58 +501,6 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms termRelabelVec_descriptionsSlot
 #print axioms revalueTemplate_substTemplate
 #print axioms sim_search_outer_guard₇
-#print axioms evalGraph_substCode_JustV7_iff
-#print axioms evalGraph_sim_JustV7
-#print axioms evalGraph_sim_JustV7_self
-#print axioms loeb_Just7_vs_Mirror
-#print axioms canonical_JustV7
-#print axioms revalueU_JustV7
-#print axioms revalueW_JustV7
-#print axioms val_TJ_V
-#print axioms revalue_val_uJ_wJ_V
-#print axioms revalue_val_uJT_wJT_V
-#print axioms hX_just7
-#print axioms desc_just7
-#print axioms descT_just7
-#print axioms desc_botDupoc
-#print axioms descT_botDupoc
-#print axioms slack6_le
-#print axioms slack6_le'
-#print axioms slack6_le₁
-#print axioms guardCode_botDupocV_JustV7_eq_instB
-#print axioms guardCode_botCupodV_JustTV7_eq_instB
-#print axioms eval_qJJ_iff_V
-#print axioms eval_qJJ_swapped_iff_V
-#print axioms pJJ_all_V
-#print axioms pJJ_guards_V
-#print axioms loebSound_pJJ
-#print axioms loeb_Just7_vs_Just7_core_of_nec
-#print axioms loeb_Just7_vs_Just7_of_nec
-#print axioms loeb_Just7_vs_Just7
-#print axioms loeb_Just7_vs_Just7_guard
-#print axioms guardCode_botDupocV_DupocV_eq_instB
-#print axioms guardCode_DupocV_botDupocV_eq_instB
-#print axioms guardCode_DupocV_JustV7_eq_instB
-#print axioms guardCode_CupodV_JustTV7_eq_instB
-#print axioms eval_qJD_iff_V
-#print axioms eval_qBDD_iff_V
-#print axioms eval_qDJ_iff_V
-#print axioms pJD_guards_V
-#print axioms pJD_all_V
-#print axioms loebSound_pJD
-#print axioms loeb_Just7_vs_Dupoc_core_of_nec
-#print axioms loeb_Just7_vs_Dupoc_of_nec
-#print axioms loeb_Just7_vs_Dupoc
-#print axioms loeb_Just7_vs_Dupoc_guards
-#print axioms guardCode_botDupocV_CimcicV_eq_instB
-#print axioms guardCode_botCupodV_CimcicTV_eq_instB
-#print axioms eval_qJCi_iff_V
-#print axioms pCJ_all_V
-#print axioms loebSound_pCJ
-#print axioms loeb_Cimcic_vs_Just7_core_of_nec
-#print axioms loeb_Cimcic_vs_Just7_of_nec
-#print axioms loeb_Cimcic_vs_Just7
-#print axioms loeb_Cimcic_vs_Just7_guards
 
 -- Route B Phase 2, the CIMCIC family — CIMCIC × Dupoc, CIMCIC × Mirror and CIMCIC × CIMCIC, all `(C, C)`, in
 -- PA-`S'` (Cells/CIMCIC, 2026-09-23): `Cells/DIMCID` re-run on the guard `phiC = .impl (.plays .self .opp C)
@@ -750,42 +535,17 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms pGC_guards_V
 #print axioms eval_pGC_iff_std
 #print axioms eval_pGC_iff_swap
-#print axioms guardCode_CimcicV_DupocV_eq_instB
-#print axioms guardCode_DupocV_CimcicV_eq_instB
-#print axioms guardCode_CupodV_CimcicTV_eq_instB
-#print axioms eval_qCDu_iff_V
-#print axioms eval_qCDu_swap_iff_V
-#print axioms eval_qDCi_iff_V
-#print axioms eval_qDCi_swapped_iff_V
-#print axioms pCiD_all_V
-#print axioms pCiD_guards_V
-#print axioms eval_pCiD_iff_std
-#print axioms eval_pCiD_iff_swap
-#print axioms loebSound_pCiD
-#print axioms loeb_Cimcic_vs_Dupoc_core_of_nec
-#print axioms loeb_Cimcic_vs_Dupoc_of_nec
-#print axioms loeb_Cimcic_vs_Dupoc_guards_of_nec
-#print axioms loeb_Cimcic_vs_Dupoc
-#print axioms loeb_Cimcic_vs_Dupoc_guards
-#print axioms guardCode_CimcicV_MirrorV_eq_instB
-#print axioms eval_qCMi_iff_V
-#print axioms eval_qCMi_swap_iff_V
 #print axioms loebSound_pCMi
 #print axioms loeb_Cimcic_vs_Mirror_core_of_nec
 #print axioms loeb_Cimcic_vs_Mirror_of_nec
-#print axioms loeb_Cimcic_vs_Mirror_guard_of_nec
 #print axioms loeb_Cimcic_vs_Mirror
-#print axioms loeb_Cimcic_vs_Mirror_guard
 #print axioms guardCode_CimcicV_self_eq_instB
 #print axioms eval_qCC_iff_V
 #print axioms eval_qCC_swap_iff_V
 #print axioms tact_proves_qCC
-#print axioms exists_qCC_length
-#print axioms qCC_inst_V
 #print axioms linear_size_le_eventually
 #print axioms pos_Cimcic_vs_Cimcic_guard
 #print axioms pos_Cimcic_vs_Cimcic
-#print axioms pos_CIMCIC_vs_CIMCIC_guardOf
 
 -- Route B Phase 2, the PrudentBot family (Cells/PrudentMirror, 2026-09-23) — the NESTED-search Löb family. STEP 0:
 -- `PrudentBot k`'s two stored templates are budget-free constants (`templateP1`/`templateP2`; `.bot DefectBot` is closed), so
@@ -837,11 +597,7 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms loebSound_pPM
 #print axioms loeb_Prudent_vs_Mirror_core_of_nec
 #print axioms loeb_Prudent_vs_Mirror_of_nec
-#print axioms loeb_PrudentT_vs_Mirror_of_nec
-#print axioms loeb_Prudent_vs_Mirror_guards_of_nec
 #print axioms loeb_Prudent_vs_Mirror
-#print axioms loeb_PrudentT_vs_Mirror
-#print axioms loeb_Prudent_vs_Mirror_guards
 
 -- Route B Phase 4, the SEARCH-FREE class (Cells/SearchFree, 2026-09-23) — the 28 SF cells of `ROUTE_B_CENSUS.md`
 -- (both players in {CooperateBot, DefectBot, MirrorBot, TitForTatBot, DBot, EBot, OBot}: `const/sim/ite` only) in
@@ -862,7 +618,6 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms outcome_evalGraph_of_searchFree
 #print axioms outcomeSpec_evalGraph_of_searchFree
 #print axioms pa_proves_sentenceAt_of_evalGraph
-#print axioms pa_cell_of_evalGraph
 #print axioms progCode_MirrorBot
 #print axioms sf_CooperateBot_vs_CooperateBot
 #print axioms sf_CooperateBot_vs_DefectBot
@@ -892,35 +647,6 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms sf_TitForTatBot_vs_DBot
 #print axioms sf_TitForTatBot_vs_DefectBot
 #print axioms sf_TitForTatBot_vs_TitForTatBot
-#print axioms pa_CooperateBot_vs_CooperateBot
-#print axioms pa_CooperateBot_vs_DefectBot
-#print axioms pa_DBot_vs_CooperateBot
-#print axioms pa_DBot_vs_DBot
-#print axioms pa_DBot_vs_DefectBot
-#print axioms pa_DefectBot_vs_DefectBot
-#print axioms pa_EBot_vs_CooperateBot
-#print axioms pa_EBot_vs_DBot
-#print axioms pa_EBot_vs_DefectBot
-#print axioms pa_EBot_vs_EBot
-#print axioms pa_EBot_vs_MirrorBot
-#print axioms pa_EBot_vs_OBot
-#print axioms pa_EBot_vs_TitForTatBot
-#print axioms pa_MirrorBot_vs_CooperateBot
-#print axioms pa_MirrorBot_vs_DBot
-#print axioms pa_MirrorBot_vs_DefectBot
-#print axioms pa_MirrorBot_vs_OBot
-#print axioms pa_MirrorBot_vs_TitForTatBot
-#print axioms pa_OBot_vs_CooperateBot
-#print axioms pa_OBot_vs_DBot
-#print axioms pa_OBot_vs_DefectBot
-#print axioms pa_OBot_vs_OBot
-#print axioms pa_OBot_vs_TitForTatBot
-#print axioms pa_TitForTatBot_vs_CooperateBot
-#print axioms pa_TitForTatBot_vs_DBot
-#print axioms pa_TitForTatBot_vs_DefectBot
-#print axioms pa_TitForTatBot_vs_TitForTatBot
-#print axioms searchFree_census
-#print axioms searchFree_pa_census
 
 -- Route B Phase 4, the SND class (Cells/SoundnessCells, 2026-09-23) — the cells of `ROUTE_B_CENSUS.md` whose searcher
 -- takes its ELSE branch because its guard is semantically FALSE, in PA-`S'` at ℕ, unconditional (no oracle, no Löb,
@@ -956,7 +682,6 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms search_either
 #print axioms templateCode_ne_of_models
 #print axioms templateCode_phiG_ne_phiCu
-#print axioms templateCode_phiT_ne_phiCu
 #print axioms templateCode_phiW_ne_phiCu
 #print axioms snd_GuardianBot_vs_CupodBot
 #print axioms snd_GuardianBot_vs_CupodTrollBot
@@ -1110,12 +835,10 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms loebSound_pG_of
 #print axioms dimcid_vs_described
 #print axioms describes_botCB
-#print axioms TFTV_lt_TFTTV
 #print axioms describes_TFT
 #print axioms loeb_DIMCID_vs_botCB
 #print axioms loeb_DIMCID_vs_TitForTatBot_core
 #print axioms loeb_DIMCID_vs_TitForTatBot
-#print axioms loeb_DIMCID_vs_TitForTatBot_guard
 
 -- Cell 2: the box-consequence lemma (`BoxConseq`, `box_conseq_uniform`, `found_of_box_conseq` — the general
 -- `k̂`-chain: a guard whose truth needs ANOTHER searcher's Löb-found guard is `TAct`-provable within the budget,
@@ -1132,7 +855,6 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms guardian_finds_DIMCID
 #print axioms loeb_DIMCID_vs_GuardianBot_core
 #print axioms loeb_GuardianBot_vs_DIMCID
-#print axioms loeb_DIMCID_vs_GuardianBot_guard
 
 -- Cells 3, 4: the `.neg` family `pQ q := q ⋏ τq` (`pQ_both_V`, ∧-elimination on codes, slack `(7, 8)`), the search
 -- clause of the generic engine searcher in every model (`SV_search_V`), and `loeb_WaryBot_vs_MirrorBot` /
@@ -1146,10 +868,8 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms loebSound_pWW
 #print axioms loeb_WaryBot_vs_MirrorBot_core
 #print axioms loeb_WaryBot_vs_MirrorBot
-#print axioms loeb_WaryBot_vs_MirrorBot_guard
 #print axioms loeb_WaryBot_vs_WaryBot_core
 #print axioms loeb_WaryBot_vs_WaryBot
-#print axioms loeb_WaryBot_vs_WaryBot_guard
 
 -- Route B, the `k̂`-CHAIN cells (Cells/KhatCells, 2026-09-24) — the four POS cells `Cells/PositiveCells.lean`
 -- skipped: the searcher's guard is true only ABOVE a standard threshold `k̂`, because the opponent's play in a
@@ -1204,15 +924,7 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms guardCode_eqTmpl_eq_templateCode
 #print axioms guardCodeB_guardTemplateTroll7A
 #print axioms guardCodeB_guardTemplateTroll7
-#print axioms guardCodeB_guardTemplateTroll7T
 #print axioms guardCodeB_guardTemplateTroll7_nat
-#print axioms transposeCode_CupodTrollV7
-#print axioms troll7_then_V
-#print axioms evalGraph_CupodTroll7_iff
-#print axioms canonical_CupodTrollV7
-#print axioms hX_troll7
-#print axioms desc_troll7
-#print axioms descT_troll7
 
 -- CupodTroll × Cupod `(D, D)` (engine `outcome_CupodTrollBot_vs_CupodBot`, pad 2): CupodTroll's `.eq` guard
 -- against `CupodBot k` is the reflexive equation `qEqSelf` (`tact_qEqSelf`, both readings), found by `found_of_all`
@@ -1221,12 +933,7 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 -- `khat_CupodTrollBot_vs_CupodBot` (on `CupodTroll7 k`, the described code) and `_engine` (CupodTroll's half on
 -- `progCode (CupodTrollBot k)`).
 #print axioms tact_qEqSelf
-#print axioms troll7_vs_cupod_D_V
-#print axioms troll7T_vs_dupoc_C_V
-#print axioms guardCode_CuT7
-#print axioms tact_qCuT7_above
 #print axioms khat_CupodTrollBot_vs_CupodBot_guard
-#print axioms khat_CupodTrollBot_vs_CupodBot
 #print axioms khat_CupodTrollBot_vs_CupodBot_engine
 
 -- Cell 5: `loeb_DIMCID_vs_CupodTrollBot` — DIMCID × CupodTrollBot is `(D, C)` in `S'` (engine
@@ -1237,12 +944,7 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 -- (`snd_CupodTroll7_vs_DIMCID`, and on the engine's own code `snd_CupodTrollBot_vs_DIMCID_engine`, at every `k`).
 #print axioms templateCode_phiD_ne_phiCu
 #print axioms progCode_DIMCID_ne_CupodBot
-#print axioms snd_CupodTroll7_vs_DIMCID
 #print axioms snd_CupodTrollBot_vs_DIMCID_engine
-#print axioms describes_troll7
-#print axioms loeb_DIMCID_vs_CupodTroll7
-#print axioms loeb_DIMCID_vs_CupodTrollBot
-#print axioms loeb_DIMCID_vs_CupodTroll7_guard
 
 -- Route B, DIMCID's ROW (Cells/DimcidFlips, 2026-09-24) — the seven cells where the engine has DIMCID COOPERATING,
 -- every one by a census (a floor `no_provable_tailToS_floor`, a probe-first floor, or an unreadability census)
@@ -1265,9 +967,6 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms loebSound_pG_of_above
 #print axioms dimcid_vs_described_above
 #print axioms describes_botSV
-#print axioms describes_dupocV
-#print axioms describes_botDupoc
-#print axioms describes_just7
 #print axioms describesAbove_prudent
 
 -- The defections, one per opponent (each: DIMCID plays D at fuel 2 AND finds its guard within `k`, all large `k`),
@@ -1280,16 +979,11 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms loeb_DIMCID_vs_EBot_core
 #print axioms loeb_DIMCID_vs_OBot_core
 #print axioms loeb_DIMCID_vs_DupocBot_core
-#print axioms loeb_DIMCID_vs_Dupoc
 #print axioms loeb_DIMCID_vs_botDupocBot
-#print axioms loeb_DIMCID_vs_botDupoc
-#print axioms loeb_DIMCID_vs_Just7
 #print axioms loeb_DIMCID_vs_PrudentBot_core
 #print axioms progCode_CIMCIC_SV
 #print axioms loeb_DIMCID_vs_CIMCIC_core
 #print axioms ebot_D_of_probes_D
-#print axioms just7_else_V
-#print axioms just7_D_of_probe
 
 -- The seven cells (engine value → `S'` value), each with the box form: DIMCID × DBot `(C, C)` → `(D, C)`
 -- (`llm_outcome_DIMCID_vs_DBot`, floor); DIMCID × EBot `(C, C)` → `(D, D)` (`llm_outcome_DIMCID_vs_EBot`, floor +
@@ -1303,23 +997,12 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 -- floor; Prudent's outer guard false ⇒ D); CIMCIC × DIMCID `(D, C)` → `(D, D)` (`llm_outcome_CIMCIC_vs_DIMCID`,
 -- floor; CIMCIC's guard self-refuting ⇒ D, `snd_CIMCIC_vs_DIMCID_notFound`). The row: `dimcid_flips_census`.
 #print axioms loeb_DIMCID_vs_DBot
-#print axioms loeb_DIMCID_vs_DBot_guard
 #print axioms loeb_DIMCID_vs_EBot
-#print axioms loeb_DIMCID_vs_EBot_guard
 #print axioms loeb_DIMCID_vs_OBot
-#print axioms loeb_DIMCID_vs_OBot_guard
 #print axioms loeb_DIMCID_vs_DupocBot
-#print axioms loeb_DIMCID_vs_DupocBot_guard
-#print axioms snd_DupocBot_vs_DIMCID_notFound
 #print axioms snd_JustBot_vs_DIMCID_engine
-#print axioms loeb_DIMCID_vs_JustBot
-#print axioms loeb_DIMCID_vs_Just7_guard
 #print axioms loeb_DIMCID_vs_PrudentBot
-#print axioms loeb_DIMCID_vs_PrudentBot_guard
 #print axioms loeb_CIMCIC_vs_DIMCID
-#print axioms loeb_DIMCID_vs_CIMCIC_guard
-#print axioms snd_CIMCIC_vs_DIMCID_notFound
-#print axioms dimcid_flips_census
 
 -- THE FLOOR VERDICT PASS (Cells/FloorVerdicts, 2026-09-27) — every remaining engine floor cell without an `S'`
 -- statement (24 cells: Dupoc × DBot/EBot/CupodTroll, Just × DBot/EBot/CupodTroll/Cupod/Prudent, CIMCIC ×
@@ -1512,8 +1195,6 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms loebSound_pPB
 #print axioms loeb_Prudent_vs_botMirror_core
 #print axioms loeb_PrudentBot_vs_botMirror
-#print axioms loeb_PrudentBot_vs_botMirror_guards
-#print axioms loeb_PrudentT_vs_botMirror
 
 -- PRUDENT × EBOT CLOSED IN BOTH WORLDS (Cells/PrudentLoose §5, 2026-09-27) — EBot's ladder against `PrudentBot k`: rung 1
 -- (`.bot DefectBot`) and rung 2 (`.bot CooperateBot`) Prudent defects (SND), rung 3 (`.bot MirrorBot`) Prudent COOPERATES
@@ -1527,8 +1208,6 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 -- Phase 2, the pronoun reading (2026-10-01): the truth equation of the closed member's guard at ℕ — the evaluator's
 -- guard at member `i` of `cfdSys k` is "`.bot (.sys (cfdSys k) (1 - i))` plays C against itself", and the search
 -- clause of the closed member reads exactly that sentence.
-#print axioms cfd_closed_guard_iff
-#print axioms evalGraph_cfdMember_closed_iff
 
 -- Cells/Transposition — the GENERAL transposition theorem: on every `Transposable` code (search nodes store
 -- seven-variable templates; vote nodes allowed, systems excluded) the evaluator commutes with τ at the same

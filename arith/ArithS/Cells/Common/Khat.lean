@@ -251,8 +251,6 @@ def BoxConseq (p q : Semisentence LAct 1) (S₀ S₁ : ℕ) : Prop :=
     LenBoxUnbounded TAct a (instB (⌜p⌝ : V) k) →
     Semiformula.Eval (s := stdReading V) ![k] Empty.elim q ∧ Semiformula.Eval (s := swappedReading V) ![k] Empty.elim q
 
-lemma loebSound_iff_boxConseq (p : Semisentence LAct 1) (S₀ S₁ : ℕ) :
-    LoebSound p S₀ S₁ ↔ BoxConseq p p S₀ S₁ := Iff.rfl
 
 /-- **The uniform theorem of a box consequence** (`pblt_uniformF`'s shape, with `q` in the conclusion and the
 box `Box_g (psiF p)` as an explicit antecedent): `TAct ⊢ ∀ k, (k̂ ≤ k → (Box_g (psiF p) (k) → q(k)))` — by

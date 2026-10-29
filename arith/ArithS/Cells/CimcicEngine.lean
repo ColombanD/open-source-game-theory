@@ -71,33 +71,6 @@ end engineDupoc
 
 section fixedFormulas
 
-/-- **CIMCIC's guard against the engine Dupoc**: `qCDb(k)` says "`CimcicV k` plays C against `SV gDu 0 k`
-implies `SV gDu 0 k` plays C against `CimcicV k`". -/
-noncomputable def qCDb : Semisentence LAct 1 := qCG (TS gDu 0) (uS gDu 0) (wS gDu 0)
-
-lemma qCDb_def : qCDb = qCG (TS gDu 0) (uS gDu 0) (wS gDu 0) := rfl
-
-/-- **The instance equation on codes**: CIMCIC's guard code against `SV gDu 0 k`. -/
-theorem guardCode_CimcicV_SVDu_eq_instB (k : V) :
-    guardCode (⌜templateC⌝ : V) (CimcicV k) (SV gDu 0 k) = instB (⌜qCDb⌝ : V) k :=
-  guardCode_CimcicV_eq_instB k (TS gDu 0) (uS gDu 0) (wS gDu 0) (hX_SV gDu 0 (Or.inl rfl) k)
-    (hU_SV gDu 0 (Or.inl rfl) k) (hW_SV gDu 0 (Or.inl rfl) k)
-
-/-- **The truth equation of `qCDb` in every model** (standard reading). -/
-theorem eval_qCDb_iff_V (k : V) :
-    Semiformula.Eval (s := stdReadingV V) ![k] Empty.elim qCDb ↔
-      ((∃ n, EvalGraph n (CimcicV k) (SV gDu 0 k) (CimcicV k) 0) →
-        (∃ n, EvalGraph n (SV gDu 0 k) (CimcicV k) (SV gDu 0 k) 0)) :=
-  eval_qCG_iff_V k (TS gDu 0) (uS gDu 0) (wS gDu 0) (desc_SVDu k)
-
-/-- **The truth equation of `qCDb` in the swapped reading**: the transposed searcher against the engine
-Cupod, "D implies Cupod plays D". -/
-theorem eval_qCDb_swap_iff_V (k : V) :
-    Semiformula.Eval (s := swappedReading V) ![k] Empty.elim qCDb ↔
-      ((∃ n, EvalGraph n (CimcicTV k) (SV gCu 1 k) (CimcicTV k) 1) →
-        (∃ n, EvalGraph n (SV gCu 1 k) (CimcicTV k) (SV gCu 1 k) 1)) := by
-  rw [qCDb_def, eval_qCG_swap_iff_V]
-  exact eval_qCTG_iff_V k _ _ _ (descT_SVDu k)
 
 /-- **The engine Dupoc's guard against CIMCIC**: `qDbCi(k)` says "`CimcicV k` plays C against
 `SV gDu 0 k`" — the translated template `gDu` filled with Dupoc's triple (me) and CIMCIC's triple (opp). -/
@@ -330,16 +303,6 @@ theorem loeb_CIMCIC_vs_DupocBot :
   obtain ⟨k₀, h⟩ := loeb_CIMCIC_vs_DupocBot_core_of_nec boundedInnerNec_sixteen
   exact ⟨k₀, fun k hk ↦ by rw [progCode_CIMCIC, progCode_DupocBot_SV]; exact (h k hk).1⟩
 
-/-- **The box form, on the engine's codes**: for all large `k`, both `CIMCIC k` and `DupocBot k` FIND their
-guards against each other within the budget `k`. -/
-theorem loeb_CIMCIC_vs_DupocBot_guards :
-    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
-      LenBox TAct k (guardCode (templateCode phiC) (progCode (CIMCIC k)) (progCode (DupocBot k))) ∧
-      LenBox TAct k (guardCode (templateCode phiDu) (progCode (DupocBot k)) (progCode (CIMCIC k))) := by
-  obtain ⟨k₀, h⟩ := loeb_CIMCIC_vs_DupocBot_core_of_nec boundedInnerNec_sixteen
-  exact ⟨k₀, fun k hk ↦ by
-    rw [progCode_CIMCIC, progCode_DupocBot_SV, templateCode_eq_quote_template phiC rfl, templateCode_eq_quote_template phiDu rfl]
-    exact (h k hk).2⟩
 
 end cell
 

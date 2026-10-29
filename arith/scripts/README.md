@@ -42,6 +42,11 @@ strings; the design is `Research/Notes/M4_BOUNDED_HBL/DESIGN_fragments.md` §8.1
 
 ## `DeadCode.lean` — the reachability audit
 
+Two modes (2026-10-29): the CENSUS mode below (roots = `roots.txt`), and the CLAIMS mode —
+`DEADCODE_ROOT_MODULES="ArithS.Outcome.,ArithS.Tau.Rows.,…" lake env lean --run scripts/DeadCode.lean <roots> <out.tsv>`
+makes every non-aux constant of the listed modules a root, so reachability is measured from the package's
+claims rather than from what the census happens to print (`ARITH_DEAD_CODE_AUDIT.md` §8 used it on `Cells/`).
+
 `lake env lean --run scripts/DeadCode.lean scripts/roots.txt <out.tsv>` (≈3 min on a built package) marks
 every `ArithS` constant ROOT (in the `#print axioms` census, `roots.txt`; refresh it with
 `grep -rhoE '^\s*#print axioms\s+\S+' ArithS | awk '{print $3}' | sort -u > scripts/roots.txt`),

@@ -137,12 +137,6 @@ theorem loeb_DIMCID_vs_TitForTatBot :
   · exact EvalGraph.mono_le (by omega) (h₁ k (by omega)).1
   · exact EvalGraph.mono_le (by omega) (tft_D_of_probe_D (h₂ k (by omega)).1)
 
-/-- **The box form of cell 1**: DIMCID FINDS its guard against TitForTatBot within its budget, for all large `k`. -/
-theorem loeb_DIMCID_vs_TitForTatBot_guard :
-    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
-      LenBox TAct k (guardCode (templateCode phiD) (progCode (DIMCID k)) (progCode TitForTatBot)) := by
-  obtain ⟨k₀, h⟩ := loeb_DIMCID_vs_TitForTatBot_core
-  exact ⟨k₀, fun k hk ↦ (h k hk).2⟩
 
 end cell1
 
@@ -249,12 +243,6 @@ theorem loeb_GuardianBot_vs_DIMCID :
   obtain ⟨k₂, h₂⟩ := loeb_DIMCID_vs_GuardianBot_core
   exact ⟨k₁ + k₂, fun k hk ↦ ⟨guardian_D_of_found k (h₁ k (by omega)), (h₂ k (by omega)).1⟩⟩
 
-/-- **The box form of cell 2, DIMCID's side**: DIMCID FINDS its guard against Guardian within its budget. -/
-theorem loeb_DIMCID_vs_GuardianBot_guard :
-    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
-      LenBox TAct k (guardCode (templateCode phiD) (progCode (DIMCID k)) (progCode (GuardianBot k))) := by
-  obtain ⟨k₀, h⟩ := loeb_DIMCID_vs_GuardianBot_core
-  exact ⟨k₀, fun k hk ↦ (h k hk).2⟩
 
 end cell2
 
@@ -404,12 +392,6 @@ theorem loeb_WaryBot_vs_MirrorBot :
   obtain ⟨k₀, h⟩ := loeb_WaryBot_vs_MirrorBot_core
   exact ⟨k₀, fun k hk ↦ ⟨EvalGraph.mono_le (by omega) (h k hk).1, mirror_copies (h k hk).1⟩⟩
 
-/-- **The box form of cell 3**: Wary FINDS its `.neg` guard against Mirror within its budget. -/
-theorem loeb_WaryBot_vs_MirrorBot_guard :
-    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
-      LenBox TAct k (guardCode (templateCode phiW) (progCode (WaryBot k)) (progCode MirrorBot)) := by
-  obtain ⟨k₀, h⟩ := loeb_WaryBot_vs_MirrorBot_core
-  exact ⟨k₀, fun k hk ↦ (h k hk).2⟩
 
 /-- **Wary defects against itself and FINDS its `.neg` guard, for all large `k`**, unconditional. -/
 theorem loeb_WaryBot_vs_WaryBot_core :
@@ -436,12 +418,6 @@ theorem loeb_WaryBot_vs_WaryBot :
   obtain ⟨k₀, h⟩ := loeb_WaryBot_vs_WaryBot_core
   exact ⟨k₀, fun k hk ↦ ⟨(h k hk).1, (h k hk).1⟩⟩
 
-/-- **The box form of cell 4**: Wary FINDS its `.neg` guard against itself within its budget. -/
-theorem loeb_WaryBot_vs_WaryBot_guard :
-    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
-      LenBox TAct k (guardCode (templateCode phiW) (progCode (WaryBot k)) (progCode (WaryBot k))) := by
-  obtain ⟨k₀, h⟩ := loeb_WaryBot_vs_WaryBot_core
-  exact ⟨k₀, fun k hk ↦ (h k hk).2⟩
 
 end negFamily
 
@@ -475,64 +451,12 @@ lemma progCode_DIMCID_ne_CupodBot (k : ℕ) : progCode (DIMCID k) ≠ progCode (
   intro e
   exact templateCode_phiD_ne_phiCu (pSearch_inj e).2.1
 
-/-- **CupodTroll's `.eq` guard against DIMCID is FALSE, hence never found (soundness): `CupodTroll7 k`
-cooperates with `DIMCID k` at EVERY `k`** (the SND mechanism on the budget-slot code). -/
-theorem snd_CupodTroll7_vs_DIMCID (k : ℕ) : EvalGraph 2 (CupodTroll7 k) (progCode (DIMCID k)) (CupodTroll7 k) 0 := by
-  have hn := not_found_eq_opp (properPlayer_CupodTrollBot k) (properPlayer_DIMCID k) (Q := CupodBot k) rfl
-    (progCode_DIMCID_ne_CupodBot k) k
-  rw [← guardCode_eqTmpl_eq_templateCode (CupodBot k) (progCode (CupodTrollBot k)) (progCode (DIMCID k)), progCode_CupodBot_SV] at hn
-  exact troll7_else_V k _ _ hn
 
 /-- CupodTroll's half on the ENGINE's own code, at every `k` (its guard does not read the frame's `me`). -/
 theorem snd_CupodTrollBot_vs_DIMCID_engine (k : ℕ) :
     EvalGraph 2 (progCode (CupodTrollBot k)) (progCode (DIMCID k)) (progCode (CupodTrollBot k)) (actCode .C) :=
   ctb_C_of_ne k (properPlayer_DIMCID k) (progCode_DIMCID_ne_CupodBot k)
 
-lemma descVal_troll7 (k : V) : descVal TT uT wT k = CupodTrollV7 k := desc_troll7 k
-
-lemma descVal_troll7_T (k : V) :
-    descVal (Semiterm.lMap swap TT) (Semiterm.lMap swap uT) (Semiterm.lMap swap wT) k = CupodTrollTV7 k :=
-  descT_troll7 k
-
-/-- The canonical triple of the budget-slot CupodTroll describes it in every model (`KhatCells` §7). -/
-theorem describes_troll7 : Describes TT uT wT where
-  hX := by intro V _ _ k; rw [descVal_troll7]; exact hX_troll7 k
-  hU := by intro V _ _ k; rw [descVal_troll7]; exact hU_troll7 k
-  hW := by intro V _ _ k; rw [descVal_troll7]; exact hW_troll7 k
-  hT := by intro V _ _ k; rw [descVal_troll7_T, descVal_troll7, transposeCode_CupodTrollV7]
-
-/-- **DIMCID defects against `CupodTroll7 k` and FINDS its guard, for all large `k`** (the self-fulfilling
-refutation against the described CupodTroll). -/
-theorem loeb_DIMCID_vs_CupodTroll7 :
-    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
-      EvalGraph 2 (progCode (DIMCID k)) (CupodTroll7 k) (progCode (DIMCID k)) 1 ∧
-      LenBox TAct k (guardCode (templateCode phiD) (progCode (DIMCID k)) (CupodTroll7 k)) := by
-  obtain ⟨k₀, h⟩ := dimcid_vs_described describes_troll7
-  refine ⟨k₀, fun k hk ↦ ?_⟩
-  have := h k hk
-  rw [templateCode_eq_quote_template phiD rfl]
-  rwa [descVal_troll7, CupodTrollV7_nat, ← progCode_DIMCID] at this
-
-/-- **DIMCID × CupodTrollBot is `(D, C)` in PA-`S'`**, for all large `k`, unconditional, on the budget-slot
-`CupodTroll7 k` (which plays as the engine's `CupodTrollBot k` in every frame, `evalGraph_CupodTroll7_iff`).
-The engine proves `(C, C)` by an unreadability census (`llm_outcome_DIMCID_vs_CupodTrollBot`, pad 2); in `S'`
-the value is `(D, C)` because DIMCID's guard "I play C against CupodTroll ⇒ CupodTroll plays D against me" is
-SELF-FULFILLING (its proof makes DIMCID defect, which falsifies the antecedent — the consequent, false here,
-never enters) and bounded Löb finds it, so DIMCID defects; while CupodTroll's `.eq` guard "DIMCID is
-`CupodBot k`" is false, so by soundness it is never found and CupodTroll cooperates. -/
-theorem loeb_DIMCID_vs_CupodTrollBot :
-    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
-      EvalGraph 2 (progCode (DIMCID k)) (CupodTroll7 k) (progCode (DIMCID k)) (actCode .D) ∧
-      EvalGraph 2 (CupodTroll7 k) (progCode (DIMCID k)) (CupodTroll7 k) (actCode .C) := by
-  obtain ⟨k₀, h⟩ := loeb_DIMCID_vs_CupodTroll7
-  exact ⟨k₀, fun k hk ↦ ⟨(h k hk).1, snd_CupodTroll7_vs_DIMCID k⟩⟩
-
-/-- **The box form of cell 5**: DIMCID FINDS its guard against `CupodTroll7 k` within its budget. -/
-theorem loeb_DIMCID_vs_CupodTroll7_guard :
-    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
-      LenBox TAct k (guardCode (templateCode phiD) (progCode (DIMCID k)) (CupodTroll7 k)) := by
-  obtain ⟨k₀, h⟩ := loeb_DIMCID_vs_CupodTroll7
-  exact ⟨k₀, fun k hk ↦ (h k hk).2⟩
 
 end cell5
 

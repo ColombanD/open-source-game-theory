@@ -1,6 +1,5 @@
 import ArithS.Cells.SoundnessCells
 import ArithS.Cells.CIMCIC
-import ArithS.Cells.JustBot
 import ArithS.Cells.PrudentMirror
 
 /-!

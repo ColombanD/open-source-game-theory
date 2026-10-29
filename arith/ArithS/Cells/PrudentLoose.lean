@@ -271,8 +271,6 @@ theorem prudence_found_of_SV (g : Semisentence LAct 6) (a : ℕ) (ha : a = 0 ∨
 
 /-- The prudence template is the code of `phiPi` (the engine's stored template). -/
 lemma templateCode_phiPi : templateCode phiPi = (⌜templateP2⌝ : ℕ) := templateCode_eq_quote_template phiPi rfl
-/-- The outer template is the code of `phiPo`. -/
-lemma templateCode_phiPo : templateCode phiPo = (⌜templateP1⌝ : ℕ) := templateCode_eq_quote_template phiPo rfl
 
 /-- **Prudent's prudence guard against `GuardianBot k` is FOUND for all large `k`**: Guardian's defection against
 `.bot DefectBot` is its then-branch on a true closed atom, in every model above a threshold. -/
@@ -513,8 +511,6 @@ noncomputable def qPB2T : Semisentence LAct 1 := Semiformula.lMap swap qPB2
 
 lemma lMap_swap_qPB1 : Semiformula.lMap swap qPB1 = qPB1T := rfl
 lemma lMap_swap_qPB2 : Semiformula.lMap swap qPB2 = qPB2T := rfl
-lemma lMap_swap_qPB1T : Semiformula.lMap swap qPB1T = qPB1 := lMap_swap_swap _
-lemma lMap_swap_qPB2T : Semiformula.lMap swap qPB2T = qPB2 := lMap_swap_swap _
 
 /-- The instance equation on codes (above `KP`): Prudent's outer guard code against `.bot MirrorBot` is the
 `binNumeral k`-instance of `⌜qPB1⌝`. -/
@@ -765,24 +761,6 @@ theorem loeb_PrudentBot_vs_botMirror :
   rw [progCode_PrudentBot]
   exact ⟨(h k hk).1.1, botMirror_copies3_V (V := ℕ) _ _ (h k hk).1.1⟩
 
-/-- **The box form**: for all large `k`, Prudent FINDS proofs of BOTH its guards against `.bot MirrorBot` within its
-budget `k` (the outer one is the engine's `prudent_botmirror_coop`). -/
-theorem loeb_PrudentBot_vs_botMirror_guards :
-    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
-      LenBox TAct k (guardCode (templateCode phiPo) (progCode (PrudentBot k)) (pBot Mirror)) ∧
-      LenBox TAct k (guardCode (templateCode phiPi) (progCode (PrudentBot k)) (pBot Mirror)) := by
-  obtain ⟨k₀, h⟩ := loeb_Prudent_vs_botMirror_core
-  refine ⟨k₀, fun k hk ↦ ?_⟩
-  rw [progCode_PrudentBot, templateCode_phiPo, templateCode_phiPi]
-  exact (h k hk).2
-
-/-- **τ(PrudentBot) × `.bot MirrorBot` is `(D, D)`**, unconditional: the transposed searcher defects (fuel 3) and
-`.bot MirrorBot` copies (fuel 5). -/
-theorem loeb_PrudentT_vs_botMirror :
-    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
-      EvalGraph 3 (PrudentT k) (pBot Mirror) (PrudentT k) 1 ∧ EvalGraph 5 (pBot Mirror) (PrudentT k) (pBot Mirror) 1 := by
-  obtain ⟨k₀, h⟩ := loeb_Prudent_vs_botMirror_core
-  exact ⟨k₀, fun k hk ↦ ⟨(h k hk).1.2, botMirror_copies3_V (V := ℕ) _ _ (h k hk).1.2⟩⟩
 
 end botMirror
 

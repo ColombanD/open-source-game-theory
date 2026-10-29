@@ -92,19 +92,6 @@ end quotes
 
 section descriptions
 
-lemma nth_descriptions_three (me opp : V) : (descriptions me opp).[3] = codeTerm (canonical opp) := by
-  unfold descriptions
-  rw [show (3 : V) = 2 + 1 by norm_num, nth_adjoin_succ, nth_adjoin_two, nth_adjoin_one, nth_adjoin_zero]
-
-lemma nth_descriptions_four (me opp : V) : (descriptions me opp).[4] = revalueU opp := by
-  unfold descriptions
-  rw [show (4 : V) = 3 + 1 by norm_num, nth_adjoin_succ, show (3 : V) = 2 + 1 by norm_num, nth_adjoin_succ,
-    nth_adjoin_two, nth_adjoin_one, nth_adjoin_zero]
-
-lemma nth_descriptions_five (me opp : V) : (descriptions me opp).[5] = revalueW opp := by
-  unfold descriptions
-  rw [show (5 : V) = 4 + 1 by norm_num, nth_adjoin_succ, show (4 : V) = 3 + 1 by norm_num, nth_adjoin_succ,
-    show (3 : V) = 2 + 1 by norm_num, nth_adjoin_succ, nth_adjoin_two, nth_adjoin_one, nth_adjoin_zero]
 
 /-! #### The entries of `descriptionsB` -/
 
@@ -176,15 +163,6 @@ theorem revalueTemplate_guardCodeB {g : V} (hg : IsSemiformula LAct 7 g) (me opp
 lemma coe_quote_sentence₇ (σ : Semisentence LAct 7) : ((⌜σ⌝ : ℕ) : V) = ⌜σ⌝ := by
   rw [Sentence.quote_def, Sentence.quote_def, Semiformula.coe_quote_eq_quote]
 
-/-- The code-level τ of a seven-variable template code, in every model. -/
-lemma revalueTemplate_quote_sentence₇_V (σ : Semisentence LAct 7) :
-    revalueTemplate 1 0 (⌜σ⌝ : V) = ⌜Semiformula.lMap swap σ⌝ := by
-  have h := DefinedFunction.shigmaOne_absolute_func V (revalueTemplate.defined (V := ℕ))
-    (revalueTemplate.defined (V := V)) ![1, 0, (⌜σ⌝ : ℕ)]
-  simp only [Function.comp_def, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
-    Matrix.cons_val_succ, Matrix.vecHead, Matrix.vecTail, Nat.cast_one, Nat.cast_zero] at h
-  rw [revalueTemplate_quote_sentence, coe_quote_sentence₇, coe_quote_sentence₇] at h
-  exact h.symm
 
 end descriptions
 
@@ -264,8 +242,6 @@ section codes
 
 -- The `pBot` algebra (`pBot_le_pBot_iff` … `revalueW_pBot`) moved to `Agents/SubstTemplate.lean` (2026-10-01).
 
-lemma transposeCode_pBot_DupocV (k : V) : transposeCode (pBot (DupocV k)) = pBot (CupodV k) := by
-  rw [transposeCode_pBot, transposeCode_DupocV]
 
 lemma pConst_zero_lt_one : pConst (0 : V) < pConst 1 := by
   unfold pConst ppair; norm_num

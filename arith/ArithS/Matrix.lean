@@ -7,7 +7,6 @@ import ArithS.Cells.Common.Syntax
 import ArithS.Cells.Common.Templates
 import ArithS.Cells.DIMCID
 import ArithS.Cells.DimcidFlips
-import ArithS.Cells.DupocMirror
 import ArithS.Cells.DupocEngine
 import ArithS.Cells.Transposition
 import ArithS.Cells.DimcidEngine
@@ -21,17 +20,13 @@ import ArithS.Cells.Dimdid
 import ArithS.Cells.FlipCells
 import ArithS.Cells.FloorDichotomy
 import ArithS.Cells.FloorVerdicts
-import ArithS.Cells.JustBot
 import ArithS.Cells.JustSlot
 import ArithS.Cells.KhatCells
-import ArithS.Cells.Names
 import ArithS.Cells.PositiveCells
 import ArithS.Cells.PrudentLoose
 import ArithS.Cells.PrudentMirror
 import ArithS.Cells.RedCellEngine
 import ArithS.Cells.SearchFree
-import ArithS.Cells.TauMember
-import ArithS.Cells.SimSlot
 import ArithS.Cells.SoundnessCells
 import ArithS.Outcome.Matrix.CIMCIC
 import ArithS.Outcome.Matrix.CooperateBot

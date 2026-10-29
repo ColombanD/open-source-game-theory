@@ -340,12 +340,6 @@ theorem loeb_DIMCID_vs_CupodTrollBot_engine :
   obtain ⟨k₀, h⟩ := loeb_DIMCID_vs_CupodTrollBot_core
   exact ⟨k₀, fun k hk ↦ ⟨(h k hk).1, snd_CupodTrollBot_vs_DIMCID_engine k⟩⟩
 
-/-- **The box form**: DIMCID FINDS its guard against the engine's `CupodTrollBot k` within its budget. -/
-theorem loeb_DIMCID_vs_CupodTrollBot_engine_guard :
-    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
-      LenBox TAct k (guardCode (templateCode phiD) (progCode (DIMCID k)) (progCode (CupodTrollBot k))) := by
-  obtain ⟨k₀, h⟩ := loeb_DIMCID_vs_CupodTrollBot_core
-  exact ⟨k₀, fun k hk ↦ (h k hk).2⟩
 
 end dimcidTroll
 

@@ -104,9 +104,11 @@ the relevant `Audit/<Layer>.lean`; the nine generated row tables (`Necessitation
 `Lib/Frag`) are NEVER edited by hand — edit the generator, `scripts/regen_all.sh`
 (`scripts/README.md`); they are PRUNED at generation time by `scripts/prune.py` over
 `scripts/pruned/<module>.txt` (`ARITH_DEAD_CODE_AUDIT.md`; `rfl` lemmas and simp-set names are invisible
-to the closure — never delete on the audit alone, the build is the judge). The retired hand-template
-twins (`DupocV`/`CupodV` in `Agents/InstanceV`, `Just7`/`CupodTroll7` in `Cells/`) are still DEFINED and
-used as intermediate lemmas; the matrix is stated on the engine's own `progCode`s only.
+to the closure — never delete on the audit alone, the build is the judge). The hand codes
+`DupocV`/`CupodV` (`Agents/InstanceV`) are the vehicles of the engine-code cells and LIVE; the retired
+twin cells (`Just7`/`CupodTroll7`/`JustV`, `Cells/{JustBot,DupocMirror,SimSlot,TauMember,Names}`) were
+deleted on 2026-10-29 by the claims-mode reachability audit (`scripts/DeadCode.lean`,
+`ARITH_DEAD_CODE_AUDIT.md` §8); the matrix is stated on the engine's own `progCode`s only.
 
 **Notation** (`Research/Notes/PROVABILITY_NOTATION.md`): `⊢_k φ` = derivable at budget `k`
 (the engine's `Pf k φ`, the paper's `□_k`), `⊨ φ` = truth; a turnstile never means Lean; `¬ ⊢_k φ` (a

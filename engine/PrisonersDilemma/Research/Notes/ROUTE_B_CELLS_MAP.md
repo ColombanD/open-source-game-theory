@@ -55,7 +55,7 @@ Cells/FlipCells     ← PositiveCells, DIMCID, KhatCells
 Cells/DimcidFlips   ← FlipCells
 Cells/FloorVerdicts ← DimcidFlips                                         (2026-09-27: the settled halves / true guards of the 26 genuine floors; method prefix `floor`)
 Cells/FloorDichotomy← FloorVerdicts                                        (2026-09-27: the hypothesis-free dichotomies `dich_<L>_vs_<R>` of the 26 genuine floors)
-Cells/Names         ← every Cells file                                    (since 2026-09-27 the DEPRECATION layer: `@[deprecated]` aliases of the OLD names; imported by ArithS.lean, not Audit)
+Cells/Names         (DELETED 2026-10-29)                                      (2026-09-27 → 2026-10-29: the DEPRECATION layer, `@[deprecated]` aliases of the OLD `<method>_<L>_vs_<R>` names; nothing used them — the old names resolve through git history only)
 ```
 `ArithS.lean` imports every Common module, every Cells file and `Cells/Names`; `Audit.lean` imports the Common
 modules and prints, per module, the moved names that were not already printed (Syntax 33, Bots 81 incl. the

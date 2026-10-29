@@ -12,9 +12,13 @@ import ArithS.Cells.SoundnessCells
 import ArithS.Cells.SearchFree
 import ArithS.Cells.CIMCIC
 import ArithS.Cells.DIMCID
-import ArithS.Cells.DupocMirror
-import ArithS.Cells.JustBot
 import ArithS.Necessitation.Package
+import ArithS.Cells.Common.Templates
+import ArithS.Cells.Common.Probers
+import ArithS.Cells.Common.Families
+import ArithS.Cells.Common.Khat
+import ArithS.Assembly.Cell
+import ArithS.Eval.SimTest
 
 /-!
 # ArithS.Outcome.Matrix.CooperateBot — the `S'` cells with `CooperateBot` on the left
