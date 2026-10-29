@@ -1,0 +1,9 @@
+# Per-run artefacts of the agents (proof episodes, reviews, integrations) and the scratch Lean files.
+# `constructor_proposals/`, `prepass/` and `lemma_attempts/` stay tracked: small evidence records.
+outcomes/
+reviews/
+integrations/
+lean/*
+!lean/.gitkeep
+logs/*
+!logs/.gitkeep

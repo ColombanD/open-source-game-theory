@@ -14,7 +14,7 @@ import numpy as np  # type: ignore
 
 from .analysis import compute_readouts
 from .cross_check import compare_against_ess
-from .graph import SUSPECT_CELLS, build_strict, build_weak
+from .graph import build_strict, build_weak
 from .loader import load_numeric_A
 from .reporting import write_all
 from .viz import render_condensation, render_invasion

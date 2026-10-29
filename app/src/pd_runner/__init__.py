@@ -1,10 +1,5 @@
-"""pd_runner package."""
+"""pd_runner — the core of the Python layer: the proven outcome matrices (read from the Lean
+exports, never from Lean source), the tau layer (partial transparency) and the EGT analyses.
 
-# Load app/.env into os.environ before anything constructs an Anthropic client
-# (which reads ANTHROPIC_API_KEY at construction time). Importing here covers
-# every entry point — pd-serve, run-matchup, the eval harness, and ad-hoc
-# `python -c "import pd_runner..."` — without touching call sites.
-# See dotenv.py for why the key is not exported globally from the shell.
-from pd_runner.dotenv import load_dotenv as _load_dotenv
-
-_load_dotenv()
+The LLM pipeline (bot writer, proof agent, web UI) is the separate `pipeline/` project
+(`pd_pipeline`), which depends on this package."""

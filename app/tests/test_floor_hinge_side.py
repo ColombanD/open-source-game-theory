@@ -24,7 +24,7 @@ import pytest
 from pd_runner.eval import outcome_matrix as om
 from pd_runner.eval.outcome_matrix import scan_outcome_theorems
 from pd_runner.eval.sprime_floors import HINGE_SIDE_PAIRS, hinge_side_pair
-from pd_runner.tau.matrix import PAPER_BODY8_SUB_ZOO, PAPER_BODY_SUB_ZOO, PAPER_TWINS_SUB_ZOO, load_tau_matrix
+from pd_runner.tau.matrix import PAPER_BODY_SUB_ZOO, PAPER_TWINS_SUB_ZOO, load_tau_matrix
 
 ARITH = Path(__file__).resolve().parents[2] / "arith" / "ArithS"
 DICH_SOURCES = (ARITH / "Cells" / "FloorDichotomy.lean", ARITH / "Cells" / "PrudentLoose.lean",

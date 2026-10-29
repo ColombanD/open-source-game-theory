@@ -10,7 +10,7 @@ src.ingest is required.
 from __future__ import annotations
 
 from fractions import Fraction
-from typing import List, Tuple
+from typing import List
 
 from pd_runner.egt.ingest import ActionPair
 

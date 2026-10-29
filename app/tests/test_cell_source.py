@@ -17,7 +17,6 @@ import subprocess
 from pathlib import Path
 
 import pytest
-from fastapi.testclient import TestClient
 
 from pd_runner import settings
 from pd_runner.eval import outcome_matrix as om
@@ -467,57 +466,3 @@ def test_payoff_matrix_carries_source_and_floors(sprime_export) -> None:
     t = payoff_matrix_from_tournament(run_tournament(m, t=0.5, alpha=0.5), bots=m.bots,
                                       zoo="body", cell_source=m.source, floor_cells=m.floor_cells)
     assert t.cell_source == "sprime" and t.floor_cells == sp.floor_cells
-
-
-# ── (g) the API ────────────────────────────────────────────────────────────────
-
-
-@pytest.fixture(scope="module")
-def client():
-    from pd_runner.api.main import app
-
-    return TestClient(app)
-
-
-@pytest.mark.parametrize("source", ["engine", "sprime"])
-def test_matrix_endpoint_takes_a_source(client, source) -> None:
-    r = client.get(f"/matrix?source={source}")
-    assert r.status_code == 200
-    body = r.json()
-    assert body["source"] == source and body["floor_policy"] == settings.FLOOR_POLICY
-    assert body["rows"][0][0] == "Outcome Matrix"
-    marks = {e["mark"] for e in body["legend"]}
-    assert {"‡", "≠"} <= marks
-    if source == "sprime":
-        assert body["floors"] == 29 and body["flips"] == 13   # 30 floor rows, Cupod×Prudent both ways
-        d = body["details"]["DBot|DupocBot"]
-        assert d["floor"] and d["provenance"] == "floor_dichotomy"
-    else:
-        assert body["floors"] == 0 and body["flips"] == 0
-
-
-def test_matrix_endpoint_default_and_validation(client) -> None:
-    assert client.get("/matrix").json()["source"] == settings.CELL_SOURCE
-    r = client.get("/matrix?source=bogus")
-    assert r.status_code == 400 and "unknown cell source" in r.json()["detail"]
-    r = client.get("/tau/zoos?source=sprime")
-    assert r.status_code == 200
-    zoos = {z["key"]: z for z in r.json()["zoos"]}
-    body = zoos["body"]
-    assert body["floor_pairs"] == 4
-    # Phase 4: kernel backing comes from the S' row file (full ⇒ backed; partial ⇒ a
-    # coverage below 1 with the theorem / floor-dichotomy bit counts)
-    assert body["kernel_backed"] is (body["kernel_coverage"] == 1.0)
-    assert set(body["kernel_bits"]) == {"theorem", "floor_dichotomy"}
-    engine_body = client.get("/tau/zoos?source=engine").json()["zoos"][0]
-    assert engine_body["kernel_backed"] is True and engine_body["kernel_coverage"] == 1.0
-    assert engine_body["kernel_bits"]["floor_dichotomy"] == 0
-    r = client.get("/tau/report?zoo=body&alphas=0.5&source=sprime&floor_policy=restrict_zoo")
-    assert r.status_code == 409 and "FLOOR" in r.json()["detail"]
-
-
-def test_ui_ships_the_source_toggle_and_marks() -> None:
-    html = (Path(__file__).parents[1] / "src" / "pd_runner" / "api" / "static"
-            / "index.html").read_text(encoding="utf-8")
-    assert 'name="matrix-source"' in html and "matrixQuery()" in html
-    assert "mx-floor" in html and "mx-flip" in html

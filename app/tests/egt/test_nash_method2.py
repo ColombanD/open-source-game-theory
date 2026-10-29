@@ -3,10 +3,9 @@
 from __future__ import annotations
 
 from fractions import Fraction
-from typing import List, Set, Tuple
+from typing import Set, Tuple
 
 import numpy as np
-import pytest
 
 from pd_runner.egt.nash.classification import classify_all
 from pd_runner.egt.nash.game_construction import build_bimatrix

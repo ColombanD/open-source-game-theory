@@ -1052,35 +1052,6 @@ def test_robustness_thresholds_spare_the_constant_bots(matrix) -> None:
     assert any(v is not None for v in thresholds.values())
 
 
-def test_tau_report_endpoint() -> None:
-    """`GET /tau/report` serves the report fresh; bad alphas fail loudly."""
-    pytest.importorskip("fastapi")
-    from fastapi.testclient import TestClient
-
-    from pd_runner.api.main import app
-
-    client = TestClient(app)
-    from pd_runner.tau.report import _SLIDER_ALPHAS, _SLIDER_TRANSPARENCIES
-
-    n_a, n_t = len(_SLIDER_ALPHAS), len(_SLIDER_TRANSPARENCIES)
-    page = client.get("/tau/report?alphas=0.5")
-    assert page.status_code == 200
-    assert page.headers["content-type"].startswith("text/html")
-    assert "TauBots" in page.text
-    assert page.text.count("<svg") == 3 * (2 + 2 * n_a + n_t + n_a * n_t) + n_a
-    # top + charts 2, 3, 3b, 4
-    assert page.text.count('class="alpha-slider"') == 5
-    assert page.text.count('class="t-slider"') == 2  # charts 3b, 4b
-    assert 'name="family"' in page.text  # σ-family selector
-
-    assert client.get("/tau/report?alphas=abc").status_code == 400
-    assert client.get("/tau/report?alphas=,").status_code == 400
-
-    # The UI carries the trigger.
-    index = client.get("/")
-    assert "openTauReport" in index.text and "Run tau analysis" in index.text
-
-
 # --------------------------------------------------- σ channel families ----
 
 def test_every_zoo_bot_parses_to_an_ast(matrix) -> None:

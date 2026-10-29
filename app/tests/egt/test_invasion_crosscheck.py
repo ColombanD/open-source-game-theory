@@ -3,15 +3,10 @@
 from __future__ import annotations
 
 import csv
-import sys
 from pathlib import Path
-
-REPO_ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(REPO_ROOT))
 
 import numpy as np
 
-from pd_runner.egt.invasion.analysis import compute_readouts
 from pd_runner.egt.invasion.cross_check import compare_against_ess
 from pd_runner.egt.invasion.graph import build_strict, build_weak
 

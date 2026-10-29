@@ -7,7 +7,6 @@ lambda), not from a binder-name convention.
 from __future__ import annotations
 
 import json
-import re
 
 import pytest
 

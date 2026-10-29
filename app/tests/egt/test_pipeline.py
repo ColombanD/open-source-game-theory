@@ -285,14 +285,6 @@ def test_default_out_root_is_anchored_to_the_package_not_cwd(tmp_path, monkeypat
     assert DEFAULT_OUT_ROOT.parts[-3:] == ("app", "generated", "egt")
 
 
-def test_api_serves_runs_from_the_same_anchored_root():
-    """The static mount and the sweep output must agree on one directory."""
-    from pd_runner.api.main import _EGT_RUNS_DIR
-    from pd_runner.egt.pipeline import DEFAULT_OUT_ROOT
-
-    assert _EGT_RUNS_DIR == DEFAULT_OUT_ROOT / "runs"
-
-
 def test_family_sweep_is_isolated_and_named(tmp_path):
     """The σ-family extension (2026-09-01): a non-behavioral sweep carries its
     family in every run-directory name and writes `sweep_summary_<family>.json`,

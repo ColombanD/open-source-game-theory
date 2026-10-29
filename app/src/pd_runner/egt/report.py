@@ -865,12 +865,15 @@ def _nash_section(ts, alphas, index, heat: str = "", heat_label: str = "") -> st
                 elif not comps:
                     body = '<p class="note missing">No equilibria recorded.</p>'
                 else:
+                    def _pills(bots: list[str]) -> str:
+                        return " ".join(f'<span class="botpill">{html.escape(b)}</span>' for b in bots)
+
                     rows = "".join(
                         f"<tr><td>{c['id']}</td>"
                         f'<td class="num">{c["n_equilibria"]}</td>'
                         f'<td class="num">{html.escape(str(c["payoff"]))}</td>'
                         f'<td class="num">{html.escape(str(c["coop_rate"]))}</td>'
-                        f"<td>{' '.join(f'<span class=\"botpill\">{html.escape(b)}</span>' for b in c['bots'])}</td>"
+                        f"<td>{_pills(c['bots'])}</td>"
                         f"</tr>"
                         for c in comps
                     )

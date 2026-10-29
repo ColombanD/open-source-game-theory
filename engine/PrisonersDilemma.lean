@@ -1,7 +1,5 @@
 -- This module serves as the root of the `PrisonersDilemma` library:
 -- the agent language, the proof system, the zoo, and the outcome theorems.
--- The decidability metatheory (T31…T54) is a separate lake target,
--- `Metatheory`, rooted at `PrisonersDilemma.Decidability`.
 
 -- Bots with no engine outcome theorem yet (their PA-S' row lives in `arith/`):
 import PrisonersDilemma.Bots.DIMDID

@@ -6,7 +6,7 @@ which `reconcile` then deduplicates and merges.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from fractions import Fraction
 from typing import Optional, Tuple
 

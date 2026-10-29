@@ -1335,7 +1335,10 @@ def main() -> None:
             print("no stale status entries")
 
     if args.push:
-        from pd_runner.services.sheets import SheetsPushError, push_matrix
+        try:
+            from pd_pipeline.services.sheets import SheetsPushError, push_matrix
+        except ImportError as exc:  # the Sheet push is a pipeline tool
+            raise SystemExit("--push needs the pipeline project (`cd pipeline && uv sync`)") from exc
 
         try:
             summary = push_matrix(annotate=args.annotate, source=source,

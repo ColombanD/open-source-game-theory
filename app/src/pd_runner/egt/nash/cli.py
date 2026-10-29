@@ -16,7 +16,6 @@ import argparse
 import datetime as _dt
 import importlib.metadata as md
 import time
-from fractions import Fraction
 from pathlib import Path
 from typing import Dict, List, Tuple
 
@@ -341,7 +340,7 @@ def run_pipeline(
     else:
         print("  lrsnash  cross-check: SKIPPED (binary not on PATH)")
     if dominance.removals:
-        print(f"  Iterated strict dominance removed: "
+        print("  Iterated strict dominance removed: "
               + ", ".join(f"{r.strategy_name}({r.player})" for r in dominance.removals))
     return run_dir
 

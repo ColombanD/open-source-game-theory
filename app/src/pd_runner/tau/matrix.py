@@ -73,7 +73,6 @@ from pathlib import Path
 
 from pd_runner.eval.outcome_matrix import (
     index_by_ordered_pair,
-    library_bots,
     oriented_pair,
     roster_bots,
     scan_outcome_theorems,

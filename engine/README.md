@@ -1,188 +1,43 @@
-# PrisonersDilemma
+# `engine/` — the host: programs, evaluator, zoo, and the rule-based `S`
 
-Lean 4 formalization of Prisoner's Dilemma using fuel-bounded program evaluation.
+Lean 4 package `PrisonersDilemma` (namespace `PD`). It defines what an open-source game *is* —
+the agent language, the evaluator, the bots — and the rule-based proof system `S` with its
+machine-checked outcome matrix. The paper's proof system is the arithmetized PA-`S'` in
+[`../arith/`](../arith/), which imports this package (the language, the evaluator, the bots, the
+τ-bot specs, and the search-free cells) and never the other way round.
 
-This project provides a modular architecture to:
+## Layout (`PrisonersDilemma/`)
 
-1. Define executable game programs using inductive syntax,
-2. Evaluate programs under fuel constraints (to ensure termination),
-3. Encode bot strategies with simulation, branching, and oracle reasoning,
-4. Prove action and outcome claims via mechanized verification.
+| Layer | Files | What it defines |
+|---|---|---|
+| Language | `Program.lean` | `Action`, `Outcome`, the mutually recursive `Prog` (agent source: `.const/.self/.opp/.bot/.sim/.ite/.search`, plus the τ-bot constructors `.tvote/.sys/.selfIdx`) and `Formula` (`.plays/.impl/.neg/.box/.eq`); `subst`, `size`. |
+| Proof system `S` | `ProofSystem.lean` | The unified proof-term type `Pf k φ` (`⊢_k φ`), transcript-cumulative costs, the named eliminators. |
+| Dynamics | `Dynamics.lean` | The fuelled evaluator `eval`; `play`, `outcome`; `Formula.interp` (truth, `⊨ φ`). |
+| Meta-theorems | `Base/` | Soundness, monotonicity, the internalized bounded Löb (`Loeb`), the negative direction (`Exclusion`: the cost floors), the C/D transposition `τ̂` (`Transpose`: `S` is closed under it at the same budget — the red cell), the abstract bounded-GL interface (`BoundedGL`). `BaseTheorems.lean` re-exports. |
+| Bots | `Bots/`, `Bots/LlmGenerations/` | The zoo: CooperateBot, DefectBot, DBot, TitForTatBot, OBot, EBot, MirrorBot, CupodBot, DupocBot, CupodTrollBot, DupocTrollBot, DIMDID, and the LLM-written PrudentBot, JustBot, CIMCIC, DIMCID, WaryBot, LegibleBot, OptimBot, GuardianBot. |
+| Outcome theorems | `Theorems/<Left>/vs_<Right>.lean` | One file per ordered pair, `@[outcome] theorem outcome_<L>_vs_<R> : OutcomeSpec <regime> <pad> L R (some (.X, .Y))`; dir-local helpers in `Theorems/<Bot>/Helpers.lean`. |
+| Template, linter, census, export | `Outcome/` | `Spec.lean` (the typed statement), `Lint.lean`, `Check.lean` (lake target `OutcomeCheck`), `Export.lean` (`lake exe export_outcomes` → `app/generated/outcome_theorems.json`, `tau_rows.json`). |
+| τ-bots | `Tau/` | The Spec DSL and its compiler (`Spec.lean`), the vote constructor, the roster `Zoo.lean`, `RowSpec`, the per-template `Theorems/<T>/Phase.lean` rows, the row linter. |
+| Research notes | `Research/Notes/`, `Research/Readings/`, `Research/Data/` | Design notes and results records for the whole project (both Lean packages and the Python layer), source-paper extracts, golden outcome lists. |
 
-## Overview
-
-The codebase is organized around a **fuel-bounded evaluator** for game programs:
-
-- Program syntax and substitution in `PrisonersDilemma/Program.lean`,
-- Fuelled evaluation semantics in `PrisonersDilemma/Dynamics.lean`,
-- Bot strategy definitions in `PrisonersDilemma/Bots/`,
-- Theorem developments and helpers in `PrisonersDilemma/Theorems/`.
-
-The proving strategy focuses on outcome proofs:
-
-1. Define bot strategies as `Prog` terms,
-2. Establish guard evaluations and simulations,
-3. Prove `play` (single action) and `outcome` (action pair) claims.
-
-## Bot Results
-
-Bot outcomes are being recorded here: [Outcome Matrix](https://docs.google.com/spreadsheets/d/10oNMb88iDmsWcR6SBecopLhrlgilRU-htBB0q07eET8/edit?gid=0#gid=0)
-
-## Folder Map
-
-### Library entrypoint
-
-- `PrisonersDilemma.lean`
-	- Root import hub for all build targets in the new package.
-
-### Core semantics
-
-- `PrisonersDilemma/Program.lean`
-	- Defines `Action` (C or D), `Outcome` (action pair), and `Prog` inductive type.
-	- `Prog` variants: `.const`, `.self`, `.opp`, `.sim`, `.ite`, `.search`.
-	- Defines `Formula` for oracle-decidable propositions about programs.
-	- Implements `Prog.subst` and `Formula.subst` for variable capture.
-
-- `PrisonersDilemma/Dynamics.lean`
-	- Defines fuel-bounded evaluator `eval : Nat → Prog → Prog → Prog → Option Action`.
-	- Its `.search` guard calls `proofSearch : Nat → Formula → Bool := decide (Pf k φ)` (defined in `ProofSystem.lean`; the guard fires iff `⊢_k φ`, no axiom).
-	- Defines `play : Nat → Prog → Prog → Option Action` (single agent's move).
-	- Defines `outcome : Nat → Prog → Prog → Option Outcome` (both agents' moves).
-	- Defines `Formula.interp` (semantic interpretation of formulas — truth, `⊨ φ`).
-
-### Bots
-
-- `PrisonersDilemma/Bots/CooperateBot.lean`
-	- Always-cooperate strategy as `.const Action.C`.
-
-- `PrisonersDilemma/Bots/DefectBot.lean`
-	- Always-defect strategy as `.const Action.D`.
-
-- `PrisonersDilemma/Bots/DBot.lean`
-	- Defector bot: probes opponent against CooperateBot, responds to probe result.
-
-- `PrisonersDilemma/Bots/TitForTatBot.lean`
-	- Tit-for-tat bot: probes opponent against CooperateBot, cooperates if probe yields C.
-
-- `PrisonersDilemma/Bots/OBot.lean`
-	- Opportunistic bot: nested probes (CooperateBot, then DefectBot based on first result).
-
-- `PrisonersDilemma/Bots/CupodBot.lean`
-	- Cupod (Cooperative Until Provably Opportunistic Defector) strategy with fuel parameter.
-
-- `PrisonersDilemma/Bots/DupocBot.lean`
-	- Dupoc (Defector Unless Provably Opportunistic Cooperator) strategy.
-
-### Theorems
-
-- `PrisonersDilemma/Theorems/Helpers.lean`
-	- Reusable proof helpers:
-		- `play_from_eval`: Lifting eval results to play claims.
-		- `play_ite_from_guard(fuel n)`: Generic helper for if-then-else programs with parametric fuel offset.
-
-- `PrisonersDilemma/Theorems/CooperateBot.lean`
-	- Proves action claims for CooperateBot (always plays C).
-
-- `PrisonersDilemma/Theorems/DefectBot.lean`
-	- Proves action claims for DefectBot (always plays D).
-
-- `PrisonersDilemma/Theorems/DBot.lean`
-	- Proves outcome claims for DBot vs key opponents.
-
-- `PrisonersDilemma/Theorems/TitForTatBot.lean`
-	- Proves outcome claims for TitForTatBot vs key opponents.
-
-- `PrisonersDilemma/Theorems/OBot.lean`
-	- Proves outcome claims for OBot (handles nested simulation structure).
-
-- `PrisonersDilemma/Theorems/CupodBot.lean`
-	- Proves outcome claims for CupodBot with parametrized fuel.
-
-- `PrisonersDilemma/Theorems/Axioms.lean`
-	- Axioms and additional assumptions used across theorem development.
-
-## Core Concepts
-
-### Program Semantics: The Foundation
-
-**Programs** are defined inductively in `Prog`:
-- `.const a`: Always play action `a`.
-- `.self`: Evaluate the current program (self-reference).
-- `.opp`: Evaluate the opponent program.
-- `.sim p q`: Simulate program `p` against `q`, then evaluate the result.
-- `.ite b a p q`: If guard `b` evaluates to action `a`, run `p`, else run `q`.
-- `.search k φ p q`: If the proof system `S` derives `φ` at budget `k` (`⊢_k φ`), run `p`, else run `q`.
-
-### Evaluation: Fuel-Bounded Execution
-
-The evaluator `eval : Nat → Prog → Prog → Prog → Option Action` takes:
-- `fuel`: A natural number limiting recursion depth (ensures termination).
-- `me` and `opponent`: The two programs in the matchup.
-- `body`: The program to evaluate (usually `me` itself via `play`).
-
-Returns `Option Action`: `some a` if evaluation succeeds, `none` if fuel exhausted.
-
-**Key insight:** Fuel parametrization allows reasoning about "how deep" a proof can dig. Higher fuel enables more complex nested simulations.
-
-### Action and Outcome Claims
-
-| Term | Meaning |
-|---|---|
-| `play fuel me opp` | Single program `me`'s action when facing `opp` with given `fuel`. |
-| `outcome fuel p q` | Pair `(play fuel p q, play fuel q p)` of both programs' actions. |
-| Theorem proving `play`/`outcome` | Establishes, as a Lean theorem, what programs do at specific fuel levels. |
-
-### Substitution and Capture Avoidance
-
-`Prog.subst` replaces `.self` and `.opp` references:
-- In bot definitions, we write `.opp` abstractly.
-- During evaluation, `.opp` is substituted with the actual opponent program.
-- This avoids explicit lambda abstractions while enabling higher-order reasoning.
-
-### Nested Simulation and Proof Structuring
-
-Complex bots (e.g., OBot) involve nested `.ite` and `.sim` constructs:
-- **Guard evaluation**: Prove `eval (fuel + n) me opp guard_expr = some guardAct`.
-- **Branch instantiation**: Use `play_ite_from_guard` helper to connect guard result to branch outcome.
-- **Nested structures**: For nested ites, apply the helper recursively at different fuel levels.
-
-## How To Extend
-
-Recommended process for adding a new bot strategy:
-
-1. **Define the bot** in `PrisonersDilemma/Bots/<BotName>.lean`.
-   - Create a `def <botName> : Prog` using the inductive syntax.
-   - Document the strategy in comments.
-
-2. **Create theorems** in `PrisonersDilemma/Theorems/<BotName>.lean`.
-   - Import the bot definition and helper theorems.
-   - Prove `play` (single action) claims at specific fuel levels.
-   - Prove `outcome` (pair action) claims by combining two `play` results.
-
-3. **Reuse helpers** from `PrisonersDilemma/Theorems/Helpers.lean`.
-   - `play_from_eval`: Lift `eval` results to `play` goals.
-   - `play_ite_from_guard(fuel n)`: Handle if-then-else structure with fuel offset `n`.
-
-4. **Manage fuel tracking** carefully.
-   - Each simulation step consumes 1 fuel.
-   - Document fuel requirements as comments in proofs.
-   - Use parametric helpers to avoid repeating similar proofs at different fuel levels.
+The root `PrisonersDilemma.lean` imports every theorem module directly; the pipeline's library
+writer appends to it.
 
 ## Build
 
-From `engine/`:
-
 ```bash
-# Build the entire package
-lake build
-
-# Build only PrisonersDilemma
-lake build PrisonersDilemma
-
-# Build a specific theorem module
-lake build PrisonersDilemma.Theorems.OBot
+cd engine
+lake build                  # default targets: PrisonersDilemma + OutcomeCheck (linter + census)
+lake exe export_outcomes    # refresh app/generated/outcome_theorems.json and tau_rows.json
 ```
 
-**Toolchain:** Lean `v4.33.1` (see `lean-toolchain`).
+Toolchain `v4.33.1`, mathlib pinned in `lakefile.toml`. Zero project axioms, no `sorry`.
 
-**Note:** The deprecated `PrisonersDilemma` folder is kept for historical reference but is not actively maintained. Use `PrisonersDilemma` for all new work.
+## History
+
+The decidability metatheory (`Decidability/`, T31–T54: the verified enumerator `decFull`, the
+computable evaluator `evalG`, the modest and instance strata, CutRelevance) and the research spikes
+(`Research/Spikes/`) were removed on 2026-10-29 for the paper submission; both are in the git history
+before that date (last commit with them: `3f99464`). Docstrings that cite a spike by path refer to
+that history. The notes under `Research/Notes/` describe them (`DECIDABILITY_ROADMAP.md`,
+`CUT_RELEVANCE.md`).

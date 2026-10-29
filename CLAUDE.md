@@ -1,843 +1,305 @@
 # Project Guidelines
 
-**What this project is.** A mechanization of **Open-Source Game Theory (OSGT)** —
-Critch 2022's bounded-proof-search agents (`critch22.pdf`) — in **Lean 4**, plus an
-**LLM pipeline** that automates writing new agents and their correctness proofs. Two
-halves, in dependency order:
+**What this project is.** A mechanization of **open-source game theory (OSGT)** — Critch 2022's
+bounded-proof-search agents — in **Lean 4**, its extension to **partial transparency** (τ-bots),
+and the **evolutionary** analysis of the resulting populations. Companion code of the paper
+*Partial Transparency in OSGT* (`latex/paper_status.tex`). Four parts, in dependency order
+(each depends only on the ones above it):
 
-1. **`engine/`** — the Lean library: the agent language, evaluator, proof system `S`,
-   the bot zoo, and machine-checked outcome theorems. **This is the foundation; the app
-   sits on top of it.**
-2. **`app/`** — a Python service (`pd_runner`) that drives an LLM to generate bots from
-   natural language and prove their outcomes against the engine.
-3. **`arith/`** — the arithmetized system **PA-`S'`** on Foundation: the engine's `S`
-   replaced by Peano Arithmetic with a length-bounded box, Critch's PBLT proved
-   unconditionally, and the matrix re-proved cell by cell (Part III). Standalone package;
-   requires the engine, never imported by it.
+1. **`engine/`** — the HOST: the agent language `Prog`, the fuelled evaluator, the bot zoo, the
+   τ-bot DSL, the typed outcome-theorem template with its linter and census. Also the rule-based
+   proof system `S` and its outcome matrix — the COMPARISON system, not the paper's.
+2. **`arith/`** — **PA-`S'`, THE PAPER'S PROOF SYSTEM**: Peano Arithmetic with a provability
+   predicate bounded by proof length, on Foundation; Critch's PBLT proved unconditionally; the
+   matrix and the tau rows re-proved cell by cell. Imports the engine (language, evaluator, bots,
+   τ-specs, search-free cells); the engine never imports it.
+3. **`app/`** — the Python CORE (`pd_runner`): the matrices read from the two Lean exports, the tau
+   layer, the EGT stages. The paper's experiments and `latex/scripts/` run on it.
+4. **`pipeline/`** — the LLM PIPELINE (`pd_pipeline`): bots from natural language, outcome proofs
+   by an agent judged by the kernel, the faithfulness reviewer, the web UI. OUT OF THE PAPER'S SCOPE;
+   split off from `app/` on 2026-10-29; depends on `app/`.
 
-Other top-level: `latex/` (paper), `Research/` notes live under the engine, `README.md`,
-`critch22.pdf` (the source paper), `Pipeline Figure.jpeg`.
+Other top-level: `latex/` (the paper, figure/table generators in `latex/scripts/`, earlier notes
+and talks — the user curates it, do not delete there), `llm-distillation/` (a separate experiment,
+kept for later), `README.md`. The design notes and results records of the WHOLE project live in
+`engine/PrisonersDilemma/Research/Notes/` (both Lean packages, the Python layer, the paper).
+
+**Removed for the submission (2026-10-29, in git history before `3f99464`):** the engine's
+decidability metatheory (`Decidability/`, T31–T54, lake target `Metatheory`), the research spikes
+(`Research/Spikes/`), the memory copy `Research/Notes/CLAUDE_MEMORY/`, the root `PBLT_proof.tex` /
+`critch22.pdf` / `Pipeline Figure.jpeg`. Docstrings that cite a spike by path refer to that history.
+The pipeline's Tier A2 reviewer (`outcome_prepass`) ran `Decidability.T31EngineDecider` and is
+BROKEN until it is restored.
 
 ---
 
-# Part I — The Lean engine (`engine/PrisonersDilemma/`)
+# Part I — PA-`S'`, the arithmetized proof system (`arith/ArithS`)
 
-Build: `cd engine && lake build`. TWO lake targets (both default): `PrisonersDilemma`
-(root module `PrisonersDilemma.lean` — language, proof system, zoo, outcome theorems) and
-`Metatheory` (rooted at `PrisonersDilemma.Decidability` — the T31…T54 decidability chain;
-builds on the engine, the engine never imports it). Namespace `PD`. Layered bottom-up
-(each file imports the ones above):
+**Read first:** `arith/ArithS/Tour.lean` (the nine trusted definitions at ℕ by `rfl`, the red cell
+step by step, the headline `#check`s, the census), then `arith/ArithS/README.md` (the four tiers,
+the nine definitions in reading order, the engine↔ArithS↔paper dictionary), then
+`Research/Notes/SPRIME_DESIGN_RATIONALE.md` (what a reader accepts by eye), `ARITHMETIZED_S_RESULTS.md`
+(what is proved), `ROUTE_B_SCOPE.md` + `ROUTE_B_CENSUS.md` (the cell programme and its ledger),
+`ARITH_TRAPS.md` (read before writing a line of `ArithS`), `arith/PATHS.md` (the 2026-09-28 layer
+reorganization and the deep rename — older notes cite old paths; read them through its table).
 
-| Layer | File(s) | What it defines |
+Build: `cd arith && lake build --try-cache` (~3500 jobs; Foundation pinned; the engine is a PATH
+dependency `../engine`). Default targets: `ArithS`, `ArithSOutcomeCheck` (cell + floor census, paper-zoo
+coverage), `ArithSTauCheck` (row/floor-bit validator). Tier targets `ArithSCore/Frozen/Loeb/Matrix/Audit`
+rooted at `ArithS/{Core,Frozen,PBLT,Matrix,Audit}.lean`; `scripts/check_tiers.py` enforces the import
+direction core < frozen < Löb < results < audit and that each root imports exactly its tier — RUN IT
+after adding a module (Lake cannot). Three standard axioms end to end: `ArithS/Audit/<Layer>.lean` is
+every `#print axioms` the build runs. `lake exe export_sprime_outcomes` writes
+`app/generated/sprime_outcome_theorems.json` and `sprime_tau_rows.json`.
+
+| Layer | Files | What it defines |
 |---|---|---|
-| **Language** | `Program.lean` | `Action` (C/D), `Outcome`; the mutually-recursive `Prog` (agent source code — `.const/.self/.opp/.bot/.sim/.ite/.search`) and `Formula` (the logic agents reason in — `.plays/.impl/.neg/.box/.eq`); `subst`, `size`. Pure syntax — no actions until `eval`. |
-| **Proof system `S`** | `ProofSystem.lean` | **Pf-only since 2026-07-14** (`PF_ONLY_ROADMAP.md`): the mutual `PlaysProof`/`AtomProvable`/`Pf k φ` block — `Pf` is the ONE unified proof-term type (33 constructors; the former `Derivation`(Type)+`Provable`(Prop) split and its `struct`/`app`/`hypSyll` duplication are GONE). Ships the named eliminators `Pf.induct`/`PlaysProof.induct` (`@[elab_as_elim]`; NEVER use the raw mutual recursors outside `ProofSystem.lean` §4 and `Base/ValuationSoundness.lean` — the ONE parametric valuation-soundness master lemma `wv_sound_upto`, of which `sound_upto` (= the empty valuation) and the WaryBot `.neg`-guard censuses are instantiations since 2026-07-30). Cost constants `c_leaf/c_node/c_guard`; `atom_cost`. **Atom re-cost 2026-09-16 (branch `colomban-recost`, for the `S`→`S'` merge, `Research/Notes/ARITHMETIZED_S_ROADMAP.md` M6):** `AtomProvable.mk` requires `n + (Formula.plays me opponent a).size ≤ k` — the run cost PLUS the whole conclusion atom (before: `n ≤ k`, which let a leaf name a program of any size for free — the T2-NEG witness). Every derivable formula now fits its budget (`ArithS.pf_size`); all 155 cells, 4 companions and 18 tau rows kept their values, regimes and pads (export byte-identical); only internal thresholds/witnesses grew, and the WaryBot "defended" companion moved from budget 16 to 32. Meaning-preservation vs the pre-merge `S` is a THEOREM: `legacy_iff_live` in `Research/Spikes/unified_pf/LegacyS.lean`. **Notation convention** (`Research/Notes/PROVABILITY_NOTATION.md`): `⊢_k φ` = `Pf k φ` (`S` derives `φ` at budget `k`), `⊨ φ` = `φ.interp` (truth), meta = prose — a turnstile never means Lean; `¬ ⊢_k φ` (no derivation, a Lean fact) ≠ `⊢_k ¬φ` (`S` refutes). |
-| **Dynamics** | `Dynamics.lean` | The fuelled evaluator `eval` (its `.search` guard consults `proofSearch k φ := decide (Pf k φ)` — **currently `noncomputable`, see crux below**); `play`, `outcome`; `Formula.interp` (denotational semantics; `.box` = `Pf`). |
-| **Axioms** | *(file deleted — nothing to hold)* | **ZERO project axioms** (2026-07-03): the last one, `atom_complete_false_guard`, was machine-checked INCONSISTENT (anti-diagonal bot, `Research/Spikes/transcript/T32Inconsistency.lean`) and DELETED — replaced by the sound `search_f`/`atomNeg`/`eqNeg` machinery with a cost FLOOR. `PBLT` fell 2026-07-01 (theorem via the `.diag` fixpoint); everything rests on Lean's 3 standard axioms. Costs are transcript-cumulative (Critch's literal model) since 2026-07-02. |
-| **Meta-theorems** | `Base/` (`Asymptotics`, `AtomCerts`, `Soundness`, `Exclusion`, `Loeb`, `Transpose`, `BoundedGL`); `BaseTheorems.lean` is the re-exporting umbrella | Split 2026-07-09 (absorbed the former `SizeLemmas.lean` into `Base/Asymptotics`). Soundness (`sound_upto` — the ex-`Derivation.sound` arms folded in, `proofSearch_sound`), monotonicity, `atom_complete_searchfree`, log₂ arithmetic, the internalized Löb engines (`bloeb_engine`, `pblt_engine`, `mutual_pblt_*`), and the NEGATIVE direction (`Exclusion`: the transparency census `tail_plays_readable` + the generalized floor bound `no_provable_probeFirst_tail` (+`_botOpp` for `.bot`-wrapped searchers), plus `no_provable_searcherPlay_tail` for the searcher's OWN else-play, which resolved ALL SEVEN floor tombstones into honest outcomes: `outcome_DupocBot_vs_DBot`, `outcome_DupocBot_vs_EBot`, `outcome_PrudentBot_vs_EBot`, `outcome_JustBot_vs_DBot`, `outcome_JustBot_vs_EBot` — all `(D, C)` — `outcome_CupodBot_vs_OBot = (C, D)` (the defection-detector exploited), the same-`k` `outcome_PrudentBot_vs_PrudentBot = (D, D)` (single-tier prudence is self-defeating; `PrudentBot2` is the escape), and `outcome_PrudentBot_vs_CupodBot = (D, C)` at every same `k` (2026-08-25: two else-play floors facing each other — the tau layer's argument transplanted; it was the tau zoo's LAST stipulated cell, so `CUPOD_STIPULATIONS` is now empty and the default/enlarged tau zoos are fully proven)). `Base/Transpose` (2026-08-20): the C/D transposition τ̂ (involution, EXACTLY size-preserving, `subst`-equivariant; `.tvote` entries FROZEN — the vote thresholds on C-mass, the one τ-asymmetric primitive) and `Pf.transpose` — `S` is closed under τ at the SAME budget (47-arm joint induction, raw `Pf.rec`). It resolved **the red cell**, Critch's open `(CupodBot, DupocBot)`: `outcome_DupocBot_vs_CupodBot = (D, C)` at EVERY same-`k` (`Theorems/DupocBot/vs_CupodBot.lean`) — no census, and robust to any τ-symmetric rule extension (uses only soundness + τ-closure). All names still in `PD.BaseTheorems` (arithmetic and the τ layer in `PD`). The bridge from `S`-provability (`⊢_k φ`) to real plays (`⊨ φ`). `Base/BoundedGL` (2026-08-27): the abstract bounded-GL INTERFACE — `structure BoundedGL Sent` with the ten modal/glue schemes at their exact transcript costs (GL with proof-length-bounded modalities, the framing Foundation's maintainers suggested on Zulip); `pfBoundedGL` proves `Pf` is a model (every field = the same-named constructor), `BoundedGL.bloeb`/`.pblt` are bounded Löb and PBLT proved generically, and the engine's `bloeb_engine`/`pblt_engine` are the instances by `rfl`. The arithmetized (PA) model is the stated, unfilled obligation — no `axiom`, fields are hypotheses. |
-| **Unified proof terms** | `ProofSystem.lean` (the system itself) | **The `Pf` migration is COMPLETE (2026-07-14)**: `Pf` IS the proof system (see the row above); the coexistence module `Pf.lean` was absorbed. History and evidence: `Research/Notes/UNIFIED_PF_SKETCH.md` (design), `PF_REPLACEMENT_ASSESSMENT.md` (cost model), `PF_ONLY_ROADMAP.md` (the executed 5-phase plan, all gates met: 81/81 outcome statements byte-identical, 3-axiom footprint, D2 acceptance passed, `#eval` demos unchanged), `Research/Spikes/unified_pf/LegacyS.lean` (the frozen pre-merge `S` + `legacy_iff_live`). |
-| **Bots** | `Bots/*.lean`, `Bots/LlmGenerations/*.lean` | The agent zoo: `CooperateBot`, `DefectBot`, `MirrorBot`, `TitForTatBot`, `DupocBot`, `CupodBot`, `EBot`, … and LLM-generated `PrudentBot`, `JustBot`, `CIMCIC`, `DIMCID`. |
-| **Outcome theorems** | `Theorems/<LeftBot>/vs_<RightBot>.lean` (per-pair layout, FULLY MIGRATED 2026-07-27) | The headline results: `outcome_X_vs_Y = some (a,b)` (and `∃k₂,∀k>k₂,…` families). One file per ordered matchup, sharded into per-bot directories; dir-local shared lemmas (play/guard/probe/floor machinery) in `Theorems/<Bot>/Helpers.lean`; reusable rules go to `LlmLemmas`. **NO top-level per-bot files or umbrellas**: importers name the specific per-pair modules they need, and the ROOT `PrisonersDilemma.lean` imports every theorem module directly (the app's library writer appends new imports there). LLM-written theorems keep the `llm_outcome_` prefix. |
-| **Decidability** | `Decidability/` | The T3.2c/T4 chain (modules keep milestone names `T31`…`T54`; umbrella `Decidability.lean` re-exports the API): `decFull` (verified enumerator, `Pf_iff_decFull`), `evalG` (computable evaluation of search bots, sound both guard polarities, `#eval` demos), `PfG` strata (gate-parametric mirror of the unified `Pf`; uniform gating incl. ex-`Derivation` cuts — D2), the modest universe, `decideProvableG` (modest stratum decidable). Then the cut-relevance arc `T48`–`T54`: literal bounds + antecedent census (T48), the tree substrate / extraction machine / normalization theorem / excisor (T49), **the instance gate + transport theorem** (T50), **the falsification theorem** — the original CutRelevance is FALSE (T51), the gate-parametric decider (T52), **decidability at the instance gate** (T53), and **the certified zoo** (T54). |
-| **Research notes** | `Research/Notes/`, `Research/Readings/`, `Research/Data/` | Theory write-ups (esp. `COMPUTABLE_EVAL_NOTES.md`, `UnderstandingTheLayers.md`), extracted source papers, tournament data. |
-
-**The strict outcome-theorem template** is the linchpin the whole pipeline relies on.
-Since 2026-08-26 it is a TYPED object (`Outcome/Spec.lean`): every matrix theorem is
-`@[outcome] theorem (llm_)outcome_<L>_vs_<R> : OutcomeSpec <regime> <pad> L R (some (.X, .Y))`
-(there is NO guarded and NO existential-fuel template since 2026-08-27 — the one guarded cell was a floor in disguise, now the staggered `CupodTrollBot k` vs `DupocBot (2k+64)` — `Base/Helpers.outcome_at_of_ex` lifts a `Pf_sound` witness to a literal pad via fuel determinism + structural totality;
-regimes `nobudget | universal | eventual`; `L R : Nat → Prog` so staggering is a
-structural property of the lambda). `Outcome/Lint.lean` validates every tagged theorem
-against its own name and `Outcome/Check.lean` (lake target `OutcomeCheck`, in the
-default build) runs the census: every declaration named like a cell
-(`(llm_)outcome_<L>_vs_<R>`, both bot directories) is tagged — no allowlist; regime
-variants take a suffix (`_floor`, `_samek`) and are not cells. `lake exe export_outcomes` writes the cells to the
-committed `app/generated/outcome_theorems.json`, which is the ONLY source the app's
-matrix reads (no regex over Lean source). A pair's result under a budget STAGGER is kept
-as a `@[outcome_companion]` theorem named `…_staggered` (on the same template, must
-actually be staggered, must have a cell; the census refuses an untagged `…_staggered`);
-the export lists them beside the cells and the matrix renders a disagreeing companion as
-BUDGET-SENSITIVE, `(D, D) ⇄ (C, C)` — the staggered result is never lost. `†` now means
-only "no shared-budget theorem exists" (the LegibleBot/OptimBot two-tier cells). Because the statement is fully concrete,
-**compilation == correctness** — an LLM-written proof that type-checks is, modulo the
-NL→Lean *bot* translation, a verified result. The proof agent is ALIGNED with it (2026-08-26): `Outcome/Spec.lean` is embedded in the
-system prompt, the request templates are `OutcomeSpec` statements, the verdict gate
-compiles the submission with `#validate_outcome` appended (the library's own linter) plus
-textual checks (`@[outcome]`, template head, no Prop binders, retired heads rejected), and
-`library_writer` builds `PrisonersDilemma` + `OutcomeCheck` in its transaction and then
-refreshes the export.
-
-## Foundational status — zero axioms, transcript costs; `eval` computability reduced to ONE conjecture
-
-Authoritative notes: `engine/PrisonersDilemma/Research/Notes/DECIDABILITY_ROADMAP.md` (current),
-`COMPUTABLE_EVAL_NOTES.md`, `INTERNALIZATION_ROADMAP.md` (historical).
-
-- **2026-07-01 — `PBLT` became a THEOREM** (`BaseTheorems.bloeb_engine`/`pblt_engine`): bounded
-  Löb DERIVED IN `S` — Lean builds the `Provable` term (`⊢_m φ` from the Löb premise) via the
-  internalized fixpoint sentence `Formula.diag`.
-- **2026-07-02 — transcript-length accounting (Route B)**: every `Provable`/`Derivation` cost is
-  CUMULATIVE ("`k` means characters of proof transcript", Critch's literal model). This paid the
-  cuts (premise formulas are budget-bounded), making bounded proof search genuinely finite:
-  the logical fragment of `Provable` is DECIDABLE relative to the atom layer
-  (`Research/Spikes/transcript/T3DeciderMini.lean`, `T31EngineDecider.lean`).
-- **2026-07-02 — the last axiom was INCONSISTENT**: `atom_complete_false_guard` injected
-  else-play certificates below the guard budgets they refute; the anti-diagonal bot
-  ("if I can prove I defect vs myself, cooperate") yields machine-checked `False`
-  (`T32Inconsistency.lean`). Every result that had cited it was vacuous.
-- **2026-07-03 — the repair, ZERO axioms**: sound `PlaysProof.search_f` (else-certificates from a
-  Σ₁ REFUTATION of the guard, paying the full failed budget — the floor, forced by consistency,
-  by decidability, and by the Lean proof of soundness alike), `Provable.atomNeg` + `Derivation.eqNeg`
-  (the refutation suppliers), soundness by budget-strong-induction (`sound_upto`). Consequences,
-  all Critch-faithful: same-budget results whose proofs consumed a partner's else-play are
-  honestly FALSE and retired (tombstones in the theorem files); the survivors are re-certified
-  constructively; cross-bot cooperation returns at STAGGERED budgets
-  (`outcome_PrudentBot_vs_DupocBot_staggered`: `PrudentBot (2k+64)` vs `DupocBot k`;
-  `outcome_JustBot_vs_PrudentBot_staggered`; `outcome_JustBot_vs_CupodTrollBot_staggered`;
-  `outcome_CupodTrollBot_vs_DupocBot_staggered` — since 2026-08-27 these are NON-CELL
-  companions: the matrix cell is the SHARED-budget value, `(D,D)`/`(D,D)`/`(D,C)`/`(D,C)`,
-  the convention the tau zoo uses, so the tau whitelist is empty), and self-play needs the
-  two-tier `PrudentBot2` (prudence budget above the cooperation literal — the bounded analogue
-  of MIRI PrudentBot's PA+1 prudence, rediscovered here from consistency alone).
-- **2026-07-03 (later) — `Provable` is ABSOLUTELY SEMIDECIDABLE**: `decFull`, a verified
-  computable enumerator with `Provable k φ ↔ ∃ fuel, decFull fuel k φ = true`
-  (`Decidability/T31EngineDecider.lean` §7–8) — the logic and atom layers tied by fuel
-  stratification, no oracle, no hypothesis. And **search bots RUN**: `evalG` (spike §9) is a computable evaluator
-  with SOUND commits in BOTH guard polarities (true via `decFull`; false via a DERIVABLE
-  refutation + soundness/consistency — the honest replacement for what the deleted axiom
-  faked); `#eval` demos print real outcomes, `none` only at the Löb boundary. This supersedes
-  `evalC`'s role.
-- **2026-07-03 (latest) — the T4 pipeline: DECIDABILITY over the zoo universe.** The
-  `Decidability/` chain `T42ProvableB` → `T43ModestUniverse` → `T44BoundedDecider` →
-  `T45CertReads` → `T46LogicSpace` → `T47Stabilization` (promoted 2026-07-03 from
-  `Research/Spikes/transcript/`, wired into `lake build`; the abstract stabilization mini
-  `T4QueryBound` stays a spike) delivers
-  **`Decidable (ProvableG (modestGate N) k φ)`** with a computable fuel bound `|SL|`:
-  `ProvableG G` is the gate-parametric proof system (six conclusion-absent premise formulas
-  gated); `modestGate N` = literal-bounded + modest cuts; MODESTY (all `.sim` args and
-  guard-atom args are `.self`/`.opp`/frozen — true of the WHOLE zoo, each by `rfl`) makes the
-  substitution dynamics' query universe finite; the decider `decB` is sound + complete for
-  the stratum and stabilizes on the finite space by a countP pigeonhole.
-  `Provable ↔ ∃N, ProvableB N` (every derivation is finitely-cut) is a theorem.
-- **2026-07-08/09 — CutRelevance RESOLVED: falsified as stated, repaired, and the
-  repair delivered** (full history: `Research/Notes/CUT_RELEVANCE.md`):
-  * **FALSIFICATION (theorem, T51)**: `cutRelevance_modestGate_false` — the DupocBot
-    self-cooperation fact is `Provable` (bounded Löb) but `¬ProvableG (modestGate N)`
-    at EVERY `N` and budget: instance formulas are never `modestF`, the modest gate
-    blocks `diagF/diagB` on instances, and only diag breaks the fixpoint's cite
-    regress. The original conjecture is FALSE.
-  * **THE REPAIR (T50)**: the INSTANCE GATE `instGate P N` (argument positions may
-    hold pool members / closed raw-modest programs; stored guards stay raw). Real
-    Löb derivations pass it RAW. `ProvT.transport`/`certifyTransport`: four
-    kernel-decidable certificates put any tree into `ProvableG (instGate P N)`.
-  * **DECIDABILITY (T52/T53)**: the bounded decider is gate-parametric;
-    `ProvableG (instGate P N)` is semidecidable both ways and
-    `decideProvableG_inst` decides it with the computable fuel bound `|SL|`.
-  * **THE CERTIFIED ZOO (T54)**: every zoo guard shape (plays/impl/eq), every Löb
-    pattern (self, staggered mutual, bot-wrapped mutual) and every refutation
-    route is certified into the instance stratum — kernel-sealed, no excision.
-  * **Open frontier (universal closure)**: `Provable k φ → ProvableG (instGate P N₀) k φ`
-    for ARBITRARY minimal proofs (arbitrary trees may need excision + the cite/rawness
-    certificates established; the machinery exists, the composition is unproven).
-    `eval` is computable relative to certificates — uniform computability rests on
-    the universal closure.
-
-**Dead ends (do not retry):** deciding `Provable` by structural recursion on the program
-(`DecMeasure.lean`); the `derivable`/`playsCheck` separate-gas checker; proof-term enumeration
-under CONCLUSION-cost (mp-cut wall, `MN1_decidable.lean` — dissolved by transcript costs);
-model/realizability witness extraction (`ConstructiveLobToy.lean` §8); unprovability-premised
-`search_f` (non-monotone fixpoint — the anti-diagonal bot is its paradox); charging
-`searchThenSearch_t`'s inner premise (sinks the staggered Löb chains — cite via `c_guard`, like
-`search_t`); uniform (non-budget-stratified) size bounds for the decider's query space
-(cut-composites grow per descent — stratify: `ZS b := Z₀ + (RR−b)·stride`); structural size
-bounds for `enumFormula` members (the enum is a deliberate SUPERSET — bound by `foldMax` over
-the list itself).
-
----
-
-# Part II — The LLM pipeline (`app/`)
-
-Python service `pd_runner` (`app/src/pd_runner/`) that drives an LLM to **generate new
-bots from natural language and prove their outcome theorems against the engine.** The
-engine (Part I) is the ground truth: the LLM writes `.lean`, the Lean kernel judges it.
-
-## Package management — ALWAYS use `uv`, never `pip`
-
-- Install/sync: `uv sync` (inside `app/`)
-- Add a dependency: `uv add <package>` (inside `app/`)
-- Run a script: `uv run <script>` (inside `app/`)
-- Run tests: `uv run pytest` (inside `app/`)
-- Serve the API+UI: `uv run pd-serve --reload`
-
-## Pipeline vision
-
-Two programs enter → game outcome out. Inputs can be LLM-generated, user
-natural-language, or chosen from the predefined zoo. Backend = the Lean engine with an
-LLM writing the proofs, using the existing library as RAG / few-shot context.
-
-## Proof-agent architecture (AxProverBase-style rework, 2026-07-30)
-
-The proof agent follows the **Proposer → Compiler → Reviewer → Memory** loop of
-AxProverBase (arXiv 2602.24273), adapted to this domain:
-
-- **Episode loop** (`services/proof_episodes.py::run_proof_search`): up to
-  `max_episodes` (default 3) fresh-context episodes × `max_turns_per_episode`
-  (default 10) API round-trips. Only four things cross episodes: the **lab
-  notebook** (`update_notebook` tool, replace-whole-text ≤4k chars; a forced
-  reflection turn fires at episode end if stale), the best compiling source,
-  the last compiler feedback, and (retry only) the prior open verdict. Context
-  overflow ends an episode gracefully (~350k-token guard), never a hard crash.
-  **Open-verdict retry (2026-07-31)**: the FIRST `open_blocked`/`open_bistable`
-  verdict of a run does not end it — it buys ONE fresh retry episode that sees
-  the prior verdict + explanation and is told to re-derive the blocker from
-  scratch. The second open verdict (or one on the last available episode) is
-  final; if the retry ends with no verdict at all, the run falls back to the
-  retried open verdict rather than reporting `exhausted`. `proved` and
-  `constructor_proposed` always end the run immediately.
-- **Fast compile + sketch-then-fill** (`lean/interact.py`): `run_lean_proof`
-  first tries a persistent **LeanInteract** REPL (env cached per import block;
-  invalidated when `add_base_lemma` mutates the library; disable with
-  `PD_LEAN_INTERACT=0`) and silently degrades to `lake env lean` on any
-  problem. The REPL also reports the GOAL at every `sorry`, so the agent may
-  check sketches in-loop; a sketch never becomes the "best attempt" and the
-  verdict gate rejects `sorry`. The verdict gate and library writer ALWAYS
-  file-compile — acceptance never depends on REPL state.
-- **`search_library` tool** (`llm/library_search.py`): declaration search over
-  the whole engine (name or statement content, regex, leak-filtered like
-  `read_library_file`) — the closed-world replacement for LeanSearch; fixes
-  the find-the-census-in-another-bot's-Helpers problem (the DIMCID-vs-OBot
-  incident) without web access.
-- **Structured verdicts** (`services/verdicts.py`): the agent finishes via the
-  `submit_verdict` tool — `proved | open_bistable | open_blocked |
-  constructor_proposed` — never via prose ("PROOF COMPLETE" string sniffing is
-  gone). `search_proof_outcome(request) -> ProofOutcome` is the structured entry
-  point; `search_proof` remains the legacy facade (raises `ProofSearchError`
-  with `.outcome` attached).
-- **Deterministic exit verification** (`proof_episodes.verify_proved_submission`):
-  on `submit_verdict(proved)` the submitted source is RE-COMPILED and checked
-  against the strict template (exact `llm_outcome_<L>_vs_<R>` name, outcome
-  equation, no `proofSearch` premises, no sorry/axiom, no hand-rolled `Pf.induct`
-  census, no library name collisions — the same checks `library_writer` enforces
-  at write time). Rejections bounce back into the episode (cap 3/episode).
-  `CompileService`/`CompileReport.goals` is the reserved v2 seam for sorry-sketch
-  goal-state extraction.
-- **Prompt caching** (`llm/prompts.py::build_system_prompt_blocks` +
-  `llm/client.py`): 4 breakpoints — tools array, system block A (pair-INVARIANT:
-  role + core modules + rules; caches across a whole matrix run), system block B
-  (pair/session: search-tier modules, LlmLemmas, proposals), and a moving marker
-  on the newest user turn. `ProofSystem.lean` and `Base/Exclusion.lean` are
-  embedded as signature digests (`llm/lean_index.py::strip_proof_bodies`);
-  `Loeb/Asymptotics/Closure` stay verbatim (their proof bodies are templates).
-- **Config** (`settings.py`): single source for model default, budgets,
-  `RetryPolicy` (retries 429/500/529, honors retry-after), `RetrievalConfig`,
-  and `EvalGuard` — the explicit split of the old `exclude_bots` overload into
-  `hidden_bots` (leak prevention) vs `allow_library_growth` (mutation).
-- **Multi-provider clients (2026-08-05)**: every agent constructs its client via
-  `llm/factory.py::make_llm_client` — `claude-*` keeps the calibrated
-  `AnthropicClient` path byte-stable; other model names resolve through
-  `settings.OPENAI_COMPAT_PROVIDERS` (currently `leanstral-1-5` → Mistral's free
-  endpoint, `MISTRAL_API_KEY` in `app/.env`) or the `PD_OPENAI_BASE_URL`
-  override (self-hosted vLLM, any model name) to
-  `llm/openai_client.py::OpenAICompatClient` — same `run`/`run_episode`
-  interface and episode semantics (stop-tool verdicts, reminder, context guard,
-  forced notebook reflection; mirrored 1:1, change both). So
-  `--model leanstral-1-5` works everywhere `--model` already existed.
-- **Eval** (`eval/common.py` shared by `harness.py` + `run_bot_matrix.py`):
-  14 harness cases incl. `.search` Löb self-play, the staggered
-  PrudentBot-vs-DupocBot, the (D,D) census case, and the frozen-bot-guard Löb
-  case JustBot-vs-MirrorBot (`(C, C)` at large `k`; it was WRONGLY listed as
-  "known-OPEN, passes only on `open_bistable`" until 2026-08-25 — the harness was
-  failing correct proofs). Records
-  tokens/cost/cache-hit-rate; every run persists to one timestamped directory
-  under `generated/outcomes/` — per-episode meta `.json` (notebook embedded) +
-  transcript, plus the final episode's Lean source (never deleted —
-  longitudinal thesis data).
-
-Growth-tool semantics (Tier-1 `add_base_lemma` / Tier-2 `propose_pf_constructor`,
-human gates, escalation ladder) are UNCHANGED — only the signalling channel moved
-into `submit_verdict`.
-
-**Cross-cutting design decisions:**
-1. Proof agent may only ADD new files, never modify existing ones (v1 safety).
-2. Theorem statements use the strict `outcome_X_Y = some (.Action_X, .Action_Y)` template
-   (Part I) ⇒ compilation == correctness, modulo the NL→Lean *bot* translation step.
-3. NL→Lean translation accuracy is the remaining weak link; mitigated by an agent
-   reviewer + few-shotting from existing bots.
-4. Human-in-the-loop v1: a human accepts each new bot and theorem before it lands.
-5. The engine's reflection axioms (Part I crux) are orthogonal to this pipeline and not a
-   blocker for it.
-6. **`CellSource`/`FloorPolicy` (2026-09-30, `SPRIME_SOURCE_OF_TRUTH.md` §1.3).** PA-`S'`
-   (`app/generated/sprime_outcome_theorems.json`, `lake exe export_sprime_outcomes`) is the
-   app's SOURCE OF TRUTH; the engine's `S` export stays loadable as the COMPARISON.
-   `settings.CELL_SOURCE` (`PD_CELL_SOURCE`, default `sprime`) and `FLOOR_POLICY`
-   (`PD_FLOOR_POLICY`, default `engine_side`) are threaded through every loader
-   (`scan_outcome_theorems`/`build_outcome_matrix`, `load_tau_matrix`/`NamedZoo.load`, the EGT
-   `sweep`, `?source=` on the API, `push_matrix`). A `S'` GENUINE FLOOR is carried as a
-   labelled cell (`provenance="floor_dichotomy"`, `‡`, engine-side value), as a hole
-   (`restrict_zoo`, totality fails naming the pairs), or — **the ROBUSTNESS CHECK, `hinge_side`
-   (2026-10-09)** — as the OTHER branch of its dichotomy (every box hypothesis TRUE, the mirror of
-   the engine's stipulation; `eval/sprime_floors.HINGE_SIDE_PAIRS`, re-derived from the `dich_`
-   statements by `tests/test_floor_hinge_side.py`; `Cell.floor_branch`; floors are never `≠`
-   flips; the `S'` kernel floor bits are UNSTATED under it, so `is_kernel_backed` is False; run
-   dirs carry `_hinge_side_`, summaries `sweep_summary*_hinge_side.json`). Base-case verdict
-   (`EGT_FINDINGS_SPRIME.md` §8, on the paper's `body8`): DupocBot stays uniquely stochastically stable
-   at strong selection on both branches, share 85.9% → 71.2% at (100, 1), alone at 8/9 → 5/9 points,
-   basin 88% → 81%. All six paper tau sweeps re-run under `hinge_side` (2026-10-10, §9): the body F2′ picture is INTACT (lower shares, collapse one step earlier at α=0.3), twins/natives claims about PrudentBot FLIP; the natives hinge sweeps are Nash-free (`--stages ess,invasion,faces,replicator,moran`; hundreds of extreme NE per hinge-side 14-bot matrix); `pipeline.py --resume` reuses complete run dirs by fingerprint; `analysis.py [out_root] [floor_policy]` writes `analysis_hinge_side/`. A `≠` cell
-   FLIPS the engine (all nine in-paper flips are DIMCID's). Kernel tau rows load PER SOURCE (Phase 4, 2026-10-01):
-   `tau_rows.json` on `engine`, `sprime_tau_rows.json` on `sprime` (`def4_theorems.TAU_EXPORTS`;
-   the `S'` file = engine schema over the 16-template `PAPER_ORDER` (14 + `dupocTroll` + `dimdid` since 2026-10-19) + `floor_bits`, digest over
-   rows ++ floor_bits), each VERIFIED against its own cells at load — a floor bit must sit on a
-   floor cell with the same engine-side value, a provenance swap raises — and never crossed (they
-   disagree at DIMCID by theorem). The `S'` file may be PARTIAL during the Phase-3 rollout:
-   `TauMatrix.kernel_coverage` / `kernel_backed_bots` / `kernel_bit_counts` gauge it (`/tau/zoos`,
-   the report banner, `python -m pd_runner.tau.matrix`), `is_kernel_backed` is True only at full
-   coverage, and uncovered bits fall back to the `S'` cells. `python -m pd_runner.tau.compare
-   --zoo paper --source sprime` certifies Def 3 ≡ Def 4 on `S'` (agree / floor-agree / mismatch /
-   uncovered). **COMPLETE since 2026-10-02: 149 / 41 / 0 / 0, covered 196/196** (the 14-bot paper zoo; the row file itself is 225/225 since 2026-10-19: 15 rows, 176 row slots, 49 floor bits), plus 6 RECORDED
-   provenance divergences (`def4_theorems.SPRIME_RECORDED_DIVERGENCES`: the red-cell cross bits
-   `dupoc/natives × cupod` are FLOOR bits in `S'` although the base cell is a theorem — no τ-symmetry
-   inside one `.sys`; stated by the kernel, counted in `kernel_coverage`, the base cell is played; a
-   recorded divergence that no longer fires raises `StaleDivergenceWarning`). It REFUSES a `S'` matrix
-   only while the row file is absent. Test stand-ins: `tests/fixtures/sprime_tau_rows{,.partial}.sample.json`
-   (`make_sprime_tau_fixture.py`, derived from the `S'` base cells), used by `conftest.py` only
-   while the real file is absent. EGT run directories hash the source (`sprime_` in
-   the name); the engine path is byte-identical to before (`tests/test_cell_source.py`).
-   Diff report: `python -m pd_runner.eval.source_diff` → `app/generated/source_diff.md`.
-
-## Phase 2 milestones (proof-writing first) — COMPLETE ✅
-
-Start with proof-writing for human-written bots/theorem statements, NOT end-to-end NL→bot→proof. The agentic Lean loop is the riskiest unknown; test it against existing ground-truth proofs first.
-
-**Milestones:**
-1. **Real LLM client** ✅ — `llm/client.py` replaced with Anthropic-SDK-backed client (multi-turn tool use, prompt caching). Auto-retry on 529 overload errors with exponential backoff.
-2. **Lean tools for the agent** ✅ — `llm/tools.py` wraps `run_lean_proof_file` + `read_library_file` as Claude tool definitions. Fast per-iteration check (no `lake build`).
-3. **Retrieval over the library** ✅ — `llm/retrieval.py` returns relevant theorem files as few-shot context (name match). Bot definitions always injected upfront into the prompt. Eval harness uses `exclude_bots` to prevent leaking the target proof via few-shots or known-theorems summary.
-4. **Proof-search loop in `proof_service.py`** ✅ — agentic loop with retrieval, prompt building, tool use, and error feedback. `ProofRequest` carries `fuel` (correct minimum fuel offset per bot pair) and `exclude_bots`.
-5. **Evaluation harness** ✅ — `eval/harness.py` re-proves 10 held-out theorems. **10/10 passed** in ~263s avg 1.5 iterations on clean (leak-free) run. Supports `--cases N [M]`, `--log-level` (TRACE/DEBUG/INFO/WARNING), `--model`, `--max-iterations`, `--output`.
-6. **Library writer** ✅ — `services/library_writer.py` writes proven proofs to `engine/PrisonersDilemma/Theorems/LlmGenerations/`, appends import to `LlmGenerations.lean`, runs `lake build`, rolls back on failure. LLM-generated theorems use `llm_outcome_X_vs_Y` naming to avoid clashes with existing library theorems.
-
-**Key design notes:**
-- Theorem name prefix `llm_outcome_` avoids collision with hand-written theorems in the same namespace.
-- The ROOT `PrisonersDilemma.lean` is the index: the library writer (and
-  `add_base_lemma`'s bootstrap) append `import` lines directly to it. There is no
-  `Theorems/LlmGenerations.lean` index anymore.
-- Proof files land per-pair at `Theorems/<LeftBot>/vs_<RightBot>.lean` (module
-  `PrisonersDilemma.Theorems.<LeftBot>.vs_<RightBot>`); `library_writer.theorem_file_path`
-  is the single source of truth for the path.
-- Eval harness excludes the target bot pair from few-shots AND known-theorems summary to prevent answer leakage.
-
-## Phase 3 — NL→bot synthesis (current)
-
-Given a natural language description of a strategy, generate a valid Lean 4 bot definition, verify its behavior against canonical opponents, and prove its outcome theorems end-to-end.
-
-**Architecture:**
-```
-NL description
-    → bot writer agent → BotName.lean (compiles)
-    → reviewer workflow:
-        for each canonical opponent (CooperateBot, DefectBot, MirrorBot, TitForTatBot):
-            run search_proof(BotName, opponent)
-            record (opponent, action_pair)
-    → present outcomes to human: "Your bot cooperates with X, defects against Y..."
-    → human accepts → write bot + proofs to library
-```
-
-**Design decisions:**
-1. Bot writer agent has access to the full `Prog` language (all constructors including `.search`). No artificial restrictions — if a strategy needs `.search`, use it.
-2. Reviewer is a **workflow** (not a second agent) for v1 — deterministic execution of `search_proof` against fixed canonical opponents, no LLM reasoning needed.
-3. Automatic rewriter loop (reviewer feeds back into bot writer on mismatch) is deferred to v2.
-4. Bot files go in `Bots/LlmGenerations/`, proofs in `Theorems/LlmGenerations/` (same pattern as phase 2).
-5. Human acceptance gate before anything lands in the library.
-
-**Bot writer agent:**
-- **Input**: NL strategy description + desired bot name
-- **System prompt**: embeds `Program.lean` (full `Prog` language + semantics), all existing bot definitions as few-shots
-- **Tools**: `run_lean_build` (compile candidate bot file), `read_library_file` (inspect existing bots)
-- **Output**: valid `Bots/LlmGenerations/BotName.lean`
-
-**Milestones:**
-1. **Bot writer agent** ✅ — `services/bot_service.py`. Input = NL description + bot name, output = compiled `.lean` bot file. Uses `run_lean_build` tool (lake env lean, not lake build). Bot files go in `Bots/LlmGenerations/`.
-2. **Bot library writer** ✅ — `write_bot_to_library` in `library_writer.py`. Writes bot to `Bots/LlmGenerations/BotName.lean`. No `lake build` needed (bots imported transitively via theorem files).
-3. **Pipeline script** ✅ — `eval/run_bot_pipeline.py`. CLI: `--bot-a-name`, `--bot-a-strategy`, `--bot-b-name`, `--bot-b-strategy`, `--model`, `--log-level`. Generates two bots, human gates for each, proof agent discovers+proves outcome, human gate for proof, writes to library. Handles existing bot names (overwrite / rename / use existing).
-4. **Reviewer workflow** ✅ (2026-08-05, Tiers A+B) — **authoritative design note:
-   `app/docs/BOT_REVIEWER.md`** (architecture, rationale, the rewriter design, the
-   E2 plan, and the open conventions — read it before touching the reviewer).
-   The FAITHFULNESS gate the bot
-   writer never had: its only acceptance criterion was *compiles*, and `Prog` is
-   permissive enough that `.const Action.C` compiles for "defect against bullies".
-   Two tiers, cheap-and-certified first:
-   - **Tier A1 — blind expectation extractor** (`services/bot_expectation.py`):
-     an LLM turns the NL description into a predicted profile against the four
-     canonical opponents **without ever seeing the generated Lean** (enforced by
-     the signature — it takes the description string, never a `BotResult`; there
-     is a test asserting no `lean_source`/`bot_result` parameter appears). A judge
-     that reads both the source and the description just re-derives the writer's
-     reasoning from the same model family with the same blind spots; blindness is
-     what makes the check independent evidence, and it is the only formulation
-     that yields a defensible E2b number. `unspecified` is a first-class answer
-     (partial descriptions are the common case; a pressured guess manufactures
-     false alarms), and `explicit` vs `inferred` confidence decides hard-fail vs
-     warn.
-   - **Tier A2 — certified behavioral profile** (`services/bot_profile.py`):
-     `build_profile` runs the prepass evaluator over the four canonical opponents
-     at `k ∈ {2,4,6,16}`. Every determined cell is machine-certified
-     (`outcomeG_sound ∘ guardFast_sound`) — ground truth, not an opinion.
-     `staged_bot` temporarily places a not-yet-accepted bot where Lean can import
-     it (refusing to clobber an existing library file) so the review runs BEFORE
-     the human gate.
-   - **The comparison** (`bot_expectation.compare`) is pure deterministic code —
-     no judge, nothing to calibrate. Verdicts: `faithful | mismatch |
-     underdetermined`. Wired into `run_bot_pipeline` before each acceptance gate
-     (advisory only, `--no-review` to skip). **UNANIMITY OVERRIDES CONFIDENCE**
-     (`unanimous_mismatch`): one `inferred` mismatch is a warning, but if EVERY
-     certified cell (≥2) contradicts the description the verdict is `mismatch`
-     regardless. Found by review, not by test — an inverted-polarity GuardianBot
-     scored `faithful` on four inferred mismatches because each alone only warned.
-   - **Tier B — judge agent** (`services/bot_judge.py`), on the RESIDUAL only:
-     uncertified cells, phase-dependent ladders, and `structural_claims` behavior
-     cannot separate. Certified cells are passed as settled context and explicitly
-     NOT re-litigated — a judge that can overturn a machine proof is a liability.
-     Unfiltered `read_library_file`/`search_library` (there is no answer to leak:
-     Tier A2 already computed the behavior by proof). Fires only when
-     `comparison.needs_judge`. Verdict via `submit_review`, with
-     `underdetermined` a respectable answer and the default when it fails —
-     a judge that errors must never read as approval.
-   **THE BUDGET SWEEP IS LOAD-BEARING.** Outcomes are genuinely k-dependent
-   (`WaryBot vs DefectBot` = `(C,D)` at k≤6, `(D,D)` at k=16 under the pre-2026-09-16 atom
-   cost; since the re-cost of `AtomProvable.mk` the machine-checked defended budget is k=32 —
-   `outcome_WaryBot_vs_DefectBot_defended` — the k=16 statement is FALSE there). A single-k reviewer
-   reports that budget artifact as a faithfulness failure. `phase_dependent` is a
-   first-class cell verdict and NEVER a mismatch on its own — it routes to Tier B.
-   **Memory discipline:** `jobs × memory_mb` is what the machine sees, and
-   `build_profile` clamps `jobs` to enforce it (a fourth OOM restart, 2026-08-05,
-   came from two concurrent sweeps × 4 workers × 3GB). The 3072MB per-cell cap is
-   MEASURED, not chosen for comfort — at 2560MB determined cells silently become
-   `undetermined`, which reads exactly like a real Löb boundary. If memory is
-   tight, cut `jobs`, never the cap. Run sweeps sequentially.
-   *Reverses two earlier calls, both made before `outcome_prepass` existed:*
-   "reviewer is a workflow, not a second agent" (Tier A1 IS an agent, but only as
-   blind input to a deterministic comparison) and "no separate prediction step
-   needed" (the prediction is the whole point — it must not derive from the answer).
-5. **End-to-end test** ✅ — KindBot vs MeanBot pipeline ran successfully. Both bots compiled, proof found in 1 iteration, `lake build` green after write.
-6. API+UI ✅ — FastAPI server (`api/main.py`, `pd-serve` CLI). Two-step async job with human acceptance gates at bots and proof. Minimal HTML/JS frontend at `/`. Start with `uv run pd-serve --reload`.
-   - `POST /pipeline` returns 409 with `ConflictResponse` if any bot name already exists and no `conflict_resolution` is set.
-   - Conflict resolution options: `use_existing`, `overwrite`, or rename (client changes the name and resubmits).
-   - UI shows existing bot source on conflict, per-bot dropdown (use existing / overwrite / rename), rename input pre-filled with `<OldName>2`.
-   - Bot review gate shows `existing` / `new` badge per bot. Proof review gate shows full Lean source before accept/reject.
-
-**The OUTCOME-OPEN escalation ladder (2026-07-14).** The proof agent no longer dead-ends at
-`OUTCOME OPEN` when the missing piece is a missing rule. Two production-only tools (registered
-iff `exclude_bots` is empty — the eval harness never mutates the library):
-1. **`add_base_lemma` (Tier 1, autonomous)** — grow a persistent DERIVED-rule library
-   (`Theorems/LlmGenerations/LlmLemmas.lean`, namespace `PD.LlmLemmas`). Sound by
-   construction (theorems only; `axiom`/`sorry`/`inductive`/`native_decide`/metaprogramming
-   rejected by static guards); additive-only; transactional (byte-identical rollback on a
-   failed `lake build`). Motivated by history: `boxInternalize`/`box_provable` were both
-   thought to need axioms and turned out derivable.
-2. **`propose_pf_constructor` (Tier 2, human-gated)** — for genuinely UNDERIVABLE rules the
-   agent files an evidence bundle (`app/generated/constructor_proposals/<name>/`), never
-   touching the engine. Machine gate: a **soundness certificate** — the rule's interp-level
-   content proved as a theorem against the CURRENT engine, compiled by the tool (rejects
-   FALSE rules; the historically-inconsistent `atom_complete_false_guard` could never have
-   produced one). Human gate: the **faithfulness rationale** (sound-but-unfaithful rules like
-   a semantic-completeness oracle are machine-undetectable by design). Integration follows
-   the Phase-4 playbook in `PF_ONLY_ROADMAP.md`; at that point the floor/exclusion censuses
-   (which quantify over ALL constructors) are the canaries.
-Bare `OUTCOME OPEN` is now reserved for BISTABLE matchups (two fixed points, neither forced),
-where no sound rule can exist. (JustBot vs MirrorBot was the running example until it was PROVEN
-`(C, C)` at large `k` — `llm_outcome_JustBot_vs_MirrorBot`, 2026-08-03, Löb on the frozen-bot
-formula via `botSearchStep`; the frozen `.bot` guard was a missing RULE, not a semantic wall.
-No base cell is currently certified bistable; the open cells in `outcome_status.toml` are all
-`open_blocked` — census walls, not fixed-point pairs.)
-
-**Constructor integration (Stage C/D, landed 2026-07-27):** accepted Tier-2 proposals
-are integrated by an INTEGRATION AGENT working in a git WORKTREE (never the live
-tree) — constructor + `sound_upto` arm + `Pf_mono`/`Pf.induct` wiring + census/
-metatheory repairs until BOTH lake targets are green (the compiling `sound_upto` arm
-is the machine soundness gate) — then the `git diff` is human-reviewed and only on
-acceptance applied to the real tree (rebuild + rollback). Two human gates end to end
-(`/proposals/{name}/integrate`, `/integration/{job}/accept-diff`). Precedent: the
-first proposal (`identImpl`, 2026-07-27) was integrated MANUALLY as `Pf.implRefl`
-via the family-completion program before this flow ever ran; the agent flow remains
-unexercised in anger.
-
-**Tier B caveat (READ BEFORE CITING IT).** Tier B has **NO ground truth**. Tier A2's
-cells are theorems; the judge's verdict is an opinion from a model in the same family
-as the one that wrote the bot. It is advisory input to the human gate, never an
-acceptance criterion, and **must not be reported in the paper as a verification
-result**. The honest experiment for it: hand-label N generated bots and publish the
-judge's agreement rate against those labels. Until that exists, it is a hint.
-Observed behavior so far (n=2, anecdotal): it correctly resolved WaryBot's
-phase-dependent DefectBot ladder and verified the guard polarity by citing
-`.neg (.plays .opp .self Action.C)`; on the inverted-polarity control it *did* name
-the inverted branch polarity in its notes but still returned `faithful` — its
-top-level verdict is not reliable on its own, which is exactly why Tier A's
-deterministic verdict governs.
-
-**Automatic rewriter loop** ✅ (2026-08-05, `services/bot_rewriter.py`) —
-`rewrite_until_faithful` feeds `mismatch_brief()` (FAILING cells only, never the
-full profile — else the writer fits the four canonical opponents instead of the
-strategy) back into the bot writer via `BotRequest.feedback`. Triggers ONLY on
-`should_rewrite` (explicit or unanimous mismatch), never on inferred warnings,
-uncertified cells, or the judge. The expectation is extracted ONCE per run and
-injected via `evaluate_against`, so the prediction cannot drift toward what the
-bot currently does. Stops on faithful / budget / unchanged behavior / writer
-failure; best attempt wins with ties to the earlier one. Exposed as
-`--max-rewrites` (CLI), the "Faithfulness" dropdown (web app), and
-`review_bots`/`max_rewrites` (API); the web flow shows the verdict, cells,
-rewrite history and advisory judge line at the `bots_ready` gate. NOTHING
-auto-accepts — the human gate is unchanged.
-
-**Deferred:** the E2 harness (Phase-4 experiment: N NL descriptions → compiles? /
-profile matches? / end-to-end — the paper number; everything it needs now exists).
-
-**Known coverage limit:** the fast decider does not commit on every pair —
-`DupocBot` vs CooperateBot/DefectBot times out at 90s even pre-built and unstaged
-(a pre-existing property, not a staging artifact). Coverage against searcher-heavy
-bots is patchier than the WaryBot result suggests; those cells land in Tier B.
-
-## Phase 4 — Paper experiments (next)
-
-Workshop paper target: ICML math workshop, 8 pages, framing "first mechanized OSGT library + LLM-assisted proof automation."
-
-**Experiments to run:**
-
-1. **E1 — Full bot-matrix proof automation (headline).** Run `search_proof` on every ordered pair of bots in the library (N² theorems). Report pass-rate, iterations-to-success, wall-clock. Stratify by bot complexity (constant bots vs. `.search`-using bots). If N grows past ~30, sample a stratified subset.
-2. **E2 — NL→bot synthesis accuracy.** 10–20 NL strategy descriptions (mix of paraphrases of existing bots + genuinely new strategies). Measure: (a) compiles, (b) behaves as described against the four canonical opponents (CooperateBot, DefectBot, MirrorBot, TitForTatBot), (c) full pipeline end-to-end.
-3. **E3 — Ablations.** At minimum: retrieval on/off, tool-feedback on/off (single-shot whole-proof vs. agentic loop).
-4. **E4 — SOTA baseline (small slice).** Evidence accumulates in
-   `engine/PrisonersDilemma/Research/Notes/PROVER_MODEL_COMPARISON.md` (case study 1,
-   2026-08-05: leanstral-1-5 vs claude-opus-4-8 on DIMCID-vs-CupodBot — leanstral got the
-   semantics right but never submitted a verdict in 62 turns/6h; the gap is metatheoretic
-   judgment + verdict discipline, not Lean syntax). Run Goedel-Prover-V2 or Kimina-Prover on 10–20 theorems from E1 to quantify the domain gap. Expected outcome: very low pass-rate (these are trained on competition math, not custom inductive types). Even a 0/20 result is publishable — it justifies the bespoke pipeline. Budget: 1–2 days, not a refactor.
-
-**SOTA pipeline decision (not swapping in):** Do NOT replace the current Claude-based agent with DeepSeek-Prover / Goedel / Kimina / TheoremLlama / Lean Copilot / LeanDojo for v1 of the paper. Reasons: (1) those provers are fine-tuned on miniF2F/ProofNet-style competition math and are out-of-distribution for our custom `Prog` inductive type and `outcome_X_Y` templates; (2) LeanDojo/Lean Copilot are infrastructure, not drop-in solvers — our current `tools.py` + agentic loop already implements the LeanDojo retrieve-propose-check pattern; (3) the paper contribution is the mechanized OSGT library + NL→verified-outcome pipeline, not beating SOTA at proof search. Treat SOTA integration as future work, backed by E4 numbers.
-
-## Phase 5 — TauBots: graded transparency (upcoming, design fixed 2026-07-31)
-
-**Authoritative design note: `engine/PrisonersDilemma/Research/Notes/TAUBOTS.md`**
-(condensed 2026-08-26 from the former design note + the Def-4/Def-5 roadmaps, all
-deleted: the definition, what landed by date, dead ends, and remaining debt) — covering
-Defs 1–3, the σ families, and the REFINED Def 4 (the uniform source lift, fully
-executed 2026-08-18: the `tvote` action-vote constructor replaced `tsearch`, bots
-are Spec-DSL rows compiled by `Tau/Spec.lean` — a TREE DSL since 2026-08-24,
-`Spec = const | sim | ite | search`, i.e. `Prog` with a `Target` hole where the base
-says "`.opp` facing Q", so every τ-bot is written as its base source (τ(Mirror) =
-`sim self`; classifiers' compiled terms byte-identical to the former stage rows) —
-and the Python comparison now CERTIFIES Def 3 ≡ Def 4 at large k; 2026-08-24 evening: `Matrix.lean` removed — the per-bot `Phase.lean` theorems ARE the tau matrix (tau players are `.opp`-free, so a match is two independent plays) — 2026-08-25: ALL 15 phases stated and unconditional — τ(Mirror)'s with an honest `none` regime above its prefix mass, τ(DIMCID)'s via the new provability-tracking TOWER CENSUS `Base/TowerCensus.lean` for its two then-D searcher partners; certification 225/219/6, no missing rows; 2026-08-25 evening: PrudentBot ported at a SINGLE budget (`.prudent` before `.mirror`; row `D` everywhere but the mirror, closed by the new core rule `Pf.botSysSearchThenSearch` + Löb; 16 templates; certification 225/219/6 over the 15 templates with a base bot — `TauTFTPf` (the prover reading of TFT, no base bot) is compared nowhere since 2026-08-25, so all six whitelist cells are budget-staggered dagger cells: CupodTroll vs Dupoc/Just, and the base `PrudentBot (2k+64)` theorems vs DupocBot/JustBot both ways — and each is now certified on BOTH sides in base: the `_samek` theorems (`outcome_PrudentBot_vs_DupocBot_samek = (D, D)`, `outcome_JustBot_vs_PrudentBot_samek = (D, D)`, `outcome_DupocBot_vs_CupodTrollBot_samek = (D, C)`, `outcome_JustBot_vs_CupodTrollBot_samek = (D, C)`, via the bare else-play kernel `no_provable_searcherElse_tail`) prove the tau value at ONE budget, outside the strict matrix scan). **The porting phase is CLOSED at 16**: WaryBot/LegibleBot/OptimBot are excluded because their base rows are floor-only or open at a single budget (the `.neg` refutation-floor wall; the two-budget box guard) — see `TAUBOTS.md` §4) — read it before touching anything tau. Summary of the FIXED decisions:
-
-**MaxConfidenceBot — the first NATIVE tau player (2026-08-27).** A tau player is a
-(per-hypothesis TEST, AGGREGATOR) pair; every lift aggregates by `sum ≥ θ` (the
-signal's C-mass), and a lift's play is therefore a threshold of a quantity LINEAR in
-the signal. MaxConfidenceBot is (Dupoc's test, **`max ≥ θ`**): cooperate iff some SINGLE
-hypothesis carrying at least θ of the signal on its own provably cooperates with me —
-the ambiguity-averse Löbian cooperator. `Tau/Vote.lean::maxPlayer` (a chain of
-one-entry `.tvote`s, no new primitive), `Zoo.lean::MaxConfidenceBotZ`,
-`Tau/Theorems/TauMaxConfidence/Phase.lean` (`tauMaxConfidence_phase`; **`maxconfidence_not_linear`**
-— three signals on which the max plays C, D, C and no `θ' ≤ bitMass w r` can, for any
-row). It IS a roster slot (`.maxconfidence`, 17 templates; 20 since 2026-10-19 with `.minconfidence`, `.dimdid` — τ(DIMDID) = τ̂(τ(CIMCIC)) template by template, `Tau/Bots/TauDIMDID.lean` + `Tau/Theorems/TauDIMDID/{Helpers,Loeb,Tower,Phase}.lean`, its engine arms proved by TRANSPOSITION of CIMCIC's through the new `Base/EvalTranspose.lean` (`eval_transpose`: `eval` commutes with τ̂ at the same fuel, all constructors) where the partner's transposition is a roster template, directly (self-defeating-guard censuses, a two-impl-member mutual Löb on the dd×di systems, three tower-census cells) elsewhere; its `S'` row `arith/ArithS/Tau/Rows/Dimdid.lean` (kits `Tau/Dimdid.lean`, `Tau/Entangled/DimdidSys.lean`, `Tau/ClosedWatchDd.lean`) agrees with the engine's at every slot but `obot`, the `S'` FLIP `dimdid × obot = D` (POS on OBot's two-stage watch: its second stage sees DIMDID's found defection against the defector in every model, so DIMDID's guard is a conditional `TAct`-theorem — the tau image of the base flip `outcome_DIMDID_vs_OBot = (D, D)`); 16 paper templates, 256/256 — and `.dupocTroll` — τ(DupocTrollBot), CupodTroll's twin aimed at Dupoc, `Tau/Bots/TauDupocTroll.lean` + `Tau/Theorems/TauDupocTroll/`, placed before `.mirror` in `tauOrder`; its `S'` row is `arith/ArithS/Tau/Rows/DupocTroll.lean`, and with it the ladder zoo `body8+trolls` is kernel-backed. **`proveEq` decides identity by SOURCE since 2026-10-19** (`eqGuardOf (Z.spec T) (Z.spec B)`, not the index `T = B`): the troll recognises every hypothesis whose spec is Dupoc's — `.dupoc` and both natives — so the natives stay Dupoc's twins as hypotheses and the `inst_*confidence_eq_dupoc` bridges hold by `rfl`; CupodTroll's bits are unchanged): `inst` depends only on
-specs and `tauMaxConfidenceSpec = tauDupocSpec`, so in the HYPOTHESIS role it is Dupoc by
-`rfl` (the bridges in `Zoo.lean`) except at the `maxconfidence × dupoc` pair — a symmetric
-`.sys` of two Dupoc-spec self-probers, mutual Löb, C (`TauMaxConfidence/Helpers.lean`) —
-and the `.just` slot that probes it; `maxconfidenceRow = dupocRow`, and every other row's
-17th arm is its `.dupoc` arm through the bridge. Python: `tau/matrix.py::NATIVE_PLAYERS`
-(a zoo member named there loads as a CLONE of its base's cells, `Cell.clone_of`, and is
-played by `play.decision_mass` → `max_mass`), zoo `default+confidence` (retired 2026-09-01 for `body+twins+natives`),
-`BASE_OF["TauMaxConfidence"] = "DupocBot"` so the certification checks the clone (256/256/0).
-As a hypothesis it is a behavioral/syntactic twin of DupocBot — a ceiling below 1 for the
-distance-based σ families on that zoo, by design (the cost of ambiguity aversion; the
-`epsilon` family is unaffected). Trap: `omega` case-splits every `max` in a threshold
-tower (2ⁿ) — the phase theorems' thresholds are SUMS now. See `TAUBOTS.md` §1.
-
-**Def 4 is the analysis substrate (2026-09-01).** `TauMatrix.test_bit` plays from
-the kernel `RowSpec` bits (`def4_theorems.kernel_row_bits` over `tau_rows.json`,
-verified against the base cells at load; `is_kernel_backed` is the provenance flag;
-replay zoos drop the rows). Paper zoos (frozen 2026-09-01): `body` (10, the default),
-`body+twins` (12), `body+twins+natives` (14 — MaxConfidenceBot (max, né ConfidenceBot) +
-MinConfidenceBot (min), certification 289/289/0); retired: default, default+confidence,
-enlarged, full-certified, proven-only.
-
-**Tau rows are linted and exported like the base matrix (2026-08-27).** Each
-`Tau/Theorems/<Bot>/Phase.lean` states its bit row as `@[tau_row] theorem <t>RowSpec :
-RowSpec .<t> tauOrder <t>Row` (`Tau/RowSpec.lean` — unconditional at large `k`, the floors
-and Löb gates discharged inside; `RowSpec.bits` recovers the old `VoteBits` list;
-τ(Mirror)'s row is over `tauOrderInit`). `Tau/Lint.lean` validates every tagged row (literal
-template, order, row evaluated to bits by `whnf`, name = `<template>RowSpec`) and runs a
-ROSTER census (every `Tmpl` constructor has exactly one row) inside `lake build`;
-`lake exe export_outcomes` also writes `app/generated/tau_rows.json`, which is the ONLY
-thing `tau/def4_theorems.kernel_bits` reads (the source regex is gone). Before this the
-app scanned the CONDITIONAL `*Bits` theorems and could not see their Löb-gated hypotheses.
-
-- **What it is.** Partial transparency as a Harsanyi type space over the zoo: a bot
-  receives a **signal** — candidates `B₁…Bₙ` with weights `pᵢ` (blur in the weights,
-  NEVER in the programs — prover bots need exact syntax, so every hypothesis is a real
-  zoo member backed by a proven matrix cell). The σ family (temperature `t`) interpolates
-  Critch's OSGT (`t=0`, point mass) ↔ classical opaque PD (`t=∞`, uniform → unconditional
-  strategies). Headline experiment: *how much transparency does Löbian cooperation need?*
-- **THE definition (Def 3 — self probe, base hypotheses):**
-  `TauA(α)(sig) = C iff Σ{pᵢ : A's action in outcome(A, Bᵢ) = C} ≥ α`. Deterministic by
-  expectation-then-threshold (NO probabilistic agents). Anchor theorem: at `t=0` the tau
-  tournament equals the base matrix. REJECTED: Def 1 (tau hypotheses in the signal —
-  ill-typed + ungrounded bistable recursion with no Löb rescue) and Def 2 (reciprocity
-  probe `outcome(Bᵢ, A)` — a generalized-FairBot family, not a lift of A; doesn't
-  converge to A at full transparency). `outcome(A(TauB)) = outcome(A(B))` is FALSE as a
-  theorem (OSGT is intensional; costs scale with term size) but IS Def 3 as a stipulation.
-- **Two dials, never conflated:** σ-temperature `t` = transparency (signal property;
-  % scale via normalized mutual information); `α` = the agent's caution threshold.
-- **Division of labor:** the tau layer is pure matrix-arithmetic ⇒ **experiments live in
-  Python (`app/`)** over the exported matrix (the sheet-sync extraction +
-  `outcome_status.toml` already provide the table incl. open cells) — σ family, behavioral
-  Hamming distances, `(t, α)` phase-diagram sweeps, tau tournaments. A **thin Lean core**
-  keeps only what must be a theorem: the meta-level `Signal`/`coopMass`/`tauPlay` defs,
-  the anchor theorem, a few `decide`-certified sample cells cross-checking the Python.
-- **Order of work:** v1a Python explorer → v1b Lean core → (only if the prover-vs-tau
-  frontier matters) v2 compilation of TauBots to real `Prog`s (fixed signal ⇒ the
-  threshold is a finite monotone boolean function ⇒ nested `.ite`/`.sim` tree, NO
-  language extension) enabling mixed base-vs-tau matches and the **behavioral/prover
-  split theorem** (blur invisible to sim-only bots, detectable exactly by the Löbian
-  fragment).
-- **Conventions still OPEN** (decide before implementing): open matrix cells (pessimistic
-  vs renormalize), canonical budget per pair, static vs dynamic signals (static/compiled
-  ⇒ TauB is extensionally a CONSTANT program — this silently kills the split theorem),
-  δ vs σ inside counterfactual sims, `≥` vs `>` at the threshold.
-
----
-
-# Phase 6 — Evolutionary game theory (`app/src/pd_runner/egt/`, landed 2026-08-07)
-
-**What it answers.** The engine answers *what happens when X meets Y* (one match,
-machine-checked); the tau layer answers *what happens under graded transparency*
-(Def 3, the `(t, α)` dials); `egt/` answers **which bots survive in a POPULATION of
-bots**. Ported from the standalone `egt-osgt-main` repo (removed in the same commit;
-recoverable from `bb51559`) and rewired onto the Lean-certified matrix.
-
-**Four analysis stages**, carried over essentially unchanged — ordinary EGT
-mathematics, validated by their tests against textbook games (Hawk-Dove, RPS,
-coordination), NOT against OSGT:
-
-| Stage | Module | Computes |
-|---|---|---|
-| ii.a | `static_analysis/` | pure ESS (Maynard-Smith two clauses) |
-| ii.b | `invasion/` | `G>`/`G≥` graphs, SCCs, condensation, cycles |
-| ii.c | `faces/` | face equilibria: block solve, replicator Jacobian, tangent eigenvalues |
-| ii.d | `nash/` | extreme NE via best-response polytopes, exact `Fraction` arithmetic |
-| iii | `replicator/` | basins of attraction — WHERE a population lands, not just what rests |
-| iv | `moran/` | finite-population fixation, stochastic stability |
-
-**Stages (iii) and (iv) are NEW CODE, not ported** — the source repo's
-`src/replicator/` and `src/moran/` were never written. They close the gap the
-first four leave: ii.a-ii.d catalogue which resting points EXIST, these two say
-which one a population actually REACHES and how much of the state space leads
-there. Stage (v), a report layer, is covered by `egt/report.py`.
-
-Two things worth knowing about them:
-
-* **Basins group by SUPPORT, not by proximity.** On this zoo the endpoints land
-  on a *continuum* of neutrally-stable rest points: 26 interior samples gave 26
-  distinct endpoints (coordinate distances up to 0.45) sharing 2 supports.
-  Clustering by proximity would report 26 attractors at ~4% each — true
-  arithmetic, complete nonsense as an answer. The spread within a group is
-  reported so a continuum is visible rather than hidden.
-* **Non-convergence is a finding.** A trajectory that never settles is counted
-  in `n_unconverged` and NEVER assigned to an attractor; rock-paper-scissors
-  legitimately produces mostly-unconverged runs. Basin denominators are
-  converged interior samples only, with monoculture starts tracked separately
-  (they are measure-zero).
-
-**The headline result (2026-08-10, RE-RUN 2026-08-27 on the shared-budget cells and
-the 9-bot default zoo — it survives).** On the default zoo, `DupocBot` — the
-Löbian cooperator — is uniquely stochastically stable at full transparency, and
-its share of the long run RISES with selection intensity: 27% → 56% → 82% → 88%
-across the (M, β) sweep (M = 10/50/100, β = 0.01/0.1/1; was 20/55/82/89 on the
-old 11-bot zoo). At `t = 0` that collapses into a tie — {DefectBot, DupocBot, OBot}
-at α = 0.45, {DefectBot, DupocBot, EBot, OBot} at α = 0.62 (was a four-way tie
-including DefectBot). Cooperation under transparency is not merely an available
-equilibrium; it is where the population spends its time. Sweep: 36 grid points →
-15 distinct matrices, 112 s.
-**`S'` re-run (2026-09-30/10-01, `--source sprime`, 95 runs over the six paper sweeps;
-record: `engine/PrisonersDilemma/Research/Notes/EGT_FINDINGS_SPRIME.md`):** on the 10-bot
-`body` zoo `DupocBot` is still uniquely stochastically stable at full transparency
-(M=100, β=1; SS set {Dup} at 6/9 (M, β) points) and the ladder diagonal reads
-24% → 55% → 80% → 87% (headline 87.1%); at `t = 0` the ties are
-{DIMCID, DefectBot, DupocBot, OBot} at α = 0.45 (25% each) and NO stochastically stable
-set at α = 0.62 (seven types at 14.3% each) — DIMCID is DefectBot's payoff-exact twin
-under `S'`, so the body zoo is no longer twin-free.
-
-**`ingest.py` is the seam** — it REPLACED the old `src/ingest/` package wholesale.
-The original parsed a hand-transcribed CSV and imputed two special cells from a
-config file; both jobs are done better upstream (cells come from the theorem library
-via `tau.matrix`; open cells are resolved by RESTRICTING THE ZOO, so a `TauMatrix` is
-total by construction). Three entry points: cells → `A`, the base matrix (the `t=1`
-anchor), and a tau tournament at fixed `(t, α)` — the last is what makes the sweep
-possible. The PD convention `(D,C)=b, (C,C)=b-c, (D,D)=0, (C,D)=-c` with `b>c>0` is
-the one piece kept verbatim.
-
-**The unit of work is the distinct MATRIX, not the grid point** (`pipeline.py`). Two
-`(t, α)` points with the same action-pair cells give the same EGT answer, so they
-share one run directory (`generated/egt/runs/<zoo>_t<NNN>_a<NNN>_<hash>/`) and
-`grid_points` records which points mapped where. On the default 6×6 grid: 36 points →
-16 matrices. This is load-bearing, not an optimization — Nash costs ~50s per matrix at
-N=11 while a tournament costs milliseconds.
-
-**Zoos.** `--zoo` reuses the `tau.matrix` `ZOOS` registry, so a zoo added there
-appears in the tau card, the EGT card and every stage CLI at once. **THE PAPER'S BASE ZOO is `body8`** (2026-10-13; `PAPER_BODY8_SUB_ZOO`): CooperateBot, CupodBot, DBot,
-DefectBot, DupocBot, EBot, OBot, TitForTatBot — body without DIMCID (DefectBot's twin by theorem in
-`S'`, `dimcid_vs_closed`) and without CupodTrollBot (the name-reading `.eq` bot, a ladder rung); 3 hinge
-pairs, 0 flips, twin-free on the engine side (on the hinge side Cupod's and Dupoc's action rows coincide).
-Ladder rungs `nonprovers+dupoc` (7), `body8+trolls` (10), `body8+trolls+provers` (12), and `body8+natives` (10, the {sum, max, min} aggregator comparison, ε-uniform family only — the natives are Dupoc twins as hypotheses, both distance families clamp at 0.857 there). **Partial transparency on these zoos (2026-10-14, `EGT_FINDINGS_SPRIME.md` §10):** body8 critical transparency 20% for α ≤ 0.45, 40–60% for α ∈ {0.62, 0.8}, static = dynamic collapse at every α, no pure ESS on any game, syntactic channel same thresholds; ladder 7/8/10/12 rungs under transparency (`latex/scripts/gen_tau_ladder.py`, trolls change nothing, CIMCIC lowers the cautious threshold); hinge side in the appendix (Cupod/Dupoc row twin). Generators `latex/scripts/gen_tau_body.py`, text `latex/paper_transparency.tex`. ONLY these zoos have runs on disk since the 2026-10-13 clean-up
-(the thesis-era `body`/`body+twins`/`body+twins+natives` keys stay registered, runless; their numbers are in
-`EGT_FINDINGS_SPRIME.md` §5–9.1). Pending rungs once the new bots have `S'` cells: + CupodTrollBot +
-DupocTrollBot; + CIMCIC + DIMDID. WaryBot can be in no total `S'` roster (unproven cells) and no floor-free
-roster contains DupocBot. `critch8`
-(added 2026-08-10) is the standalone repo's original eight types, for
-reproducing its published analysis — but note it does NOT reproduce its
-numbers: that repo's hand-transcribed CSV disagrees with the Lean library on
-**6 of 62 cells** (enumerated in `CRITCH8_TRANSCRIPTION_DIFFS`). Four are
-`dagger` cells proven under a side hypothesis; `DBot`/`DupocBot` is a plain
-universal theorem, so the CSV is simply wrong there. Qualitative findings
-survive (no pure ESS, 3 stable faces) while counts shift (extreme NE 16 → 21,
-SCCs 4 → 3). Its former one hole — the SAME cell Critch et al. leave open,
-`(CupodBot, DupocBot)`, the "red cell" — is PROVEN since 2026-08-20
-(`outcome_DupocBot_vs_CupodBot = (D, C)` at every same-`k`, the τ-transposition
-route via `Base/Transpose`), with the value that repo's `config.json` had
-imputed: `critch8` is now fully proven, no stipulations.
-
-`superficial-standalone` is the companion VALIDATION zoo: same eight types, but
-the six disputed cells forced to the standalone CSV's values — values the
-kernel proves are WRONG. It exists only to feed the pipeline byte-identical
-input to that repo's, so any difference in the analysis isolates to the
-implementation. **It works**: given the same matrix, all 12 comparable metrics
-reproduce exactly (ESS 0, strict edges 18, SCCs 3, cycles 11, faces
-0/3/3/66/175 over 247 supports, 16 extreme NE in 5 components), which is the
-end-to-end evidence that the port preserved the mathematics
-(`tests/egt/test_standalone_parity.py`). Never cite a number from this zoo as
-a finding. Overrides go through `NamedZoo.contradictions` +
-`apply_contradictions`, deliberately SEPARATE from `stipulations` — which may
-only ever fill a genuine hole — so `load_tau_matrix`'s guard against shadowing
-a proven cell stays intact.
-
-**Run it:** `uv run python -m pd_runner.egt.pipeline --zoo default --t-steps 6`, or
-from the web app's "Evolutionary analysis (EGT)" card (`POST /egt/sweep`, job + SSE,
-no human gate — nothing lands in the library). `--zoo` is on every stage CLI and reuses
-the `tau.matrix` `ZOOS` registry, so a new zoo appears everywhere at once.
-
-**Things that will bite you:**
-
-1. **α="phases" is a trap at scale.** The `(t, α)` phase diagram IS piecewise constant,
-   so enumerating one α per phase is exact — but at `t < 1` the softmax spreads the
-   cooperation masses so nearly every (bot, signal) pair has its own, giving ~|zoo|²
-   phases per t (measured: 507 grid points → 349 distinct matrices ≈ 5h of Nash). The
-   default is an explicit α list; `--alphas phases` is for ONE t or for stages cheaper
-   than Nash.
-2. **A swept matrix never contains the `"N"` state.** `tau_play` thresholds a
-   cooperation mass and `cooperates()` tests `== "C"`, so a proven-`none` base cell
-   reads as not-cooperating and the tau lift emits a real `D`. **A TauBot always
-   terminates even when the bot it lifts does not.** Consequence: the enlarged zoo
-   analyses 15 types via the base path (MirrorBot dropped by `NonTerminationPolicy`)
-   but 16 anywhere in a sweep. Compare base-vs-swept results only with this in mind.
-3. **`lrsnash` is optional and usually absent.** lrslib is a conda-forge binary `uv`
-   cannot install; it is the SECONDARY Nash solver whose only job is to cross-check
-   pygambit. The pipeline degrades instead of failing and records
-   `cross_check_performed: false` — absence is never written as a passed check. Enable
-   with `conda install -c conda-forge lrslib`; no code change.
-4. **A truncated face enumeration says so.** `--max-support-size` bounds the `2^N-N-1`
-   support enumeration; both `summary.md` and `assumptions.json` then carry a TRUNCATED
-   marker, because "no stable equilibrium found" must not read as complete when it isn't.
-5. **Sweep artefacts are gitignored** (`generated/egt/.gitignore`) — reproducible
-   outputs, unlike the constructor proposals and outcome transcripts that
-   `app/generated/` tracks on purpose.
-
-**Ported-in fixes:** pygambit ≥16.7 indexes `game.players` by label (an int subscript
-raises); `test_faces_hawk_dove` asserted exact float equality on a linear-solve result.
-
-**Status:** the analysis is genuinely `(t, α)`-sensitive — at `t=0.5`, raising α from
-0.3 to 0.8 takes extreme NE 43→25, stable faces 4→2, and SCCs 5→7. No pure ESS exists
-on any zoo tried so far, reproducing the standalone repo's qualitative finding on
-different (certified) data.
-
----
-
-# Part III — PA-`S'`: the arithmetized proof system (`arith/ArithS`, since 2026-09-09)
-
-**What it is.** The engine's `S` is a STIPULATED rule set (33 `Pf` constructors). `arith/` builds the
-system Critch actually describes — **Peano Arithmetic with a provability predicate bounded by proof
-LENGTH** — on the Foundation library (FormalizedFormalLogic), and re-proves the engine's results in
-it. It is a standalone lake package (`cd arith && lake build ArithS`, ~3350 jobs; the engine is a path
-dependency, the engine never imports it). Three standard axioms end to end; the census is every
-`#print axioms` the build runs (`ArithS/Audit/<Layer>.lean`, nine per-layer files imported by the thin `ArithS/Audit.lean` since the 2026-09-28 reorganization — map `arith/PATHS.md` — plus the three audit files; ~1580 lines, all
-`[propext, Classical.choice, Quot.sound]` but four pre-existing subsets). **Read first:**
-`Research/Notes/SPRIME_DESIGN_RATIONALE.md` (the trusted base: what a reader accepts by eye),
-`ARITHMETIZED_S_RESULTS.md` (what is proved), `ROUTE_B_SCOPE.md` + `ROUTE_B_CENSUS.md` (the
-cell-by-cell programme and its ledger), `HANDOVER_ARITHMETIZED_S.md` §1 (build recipe, traps —
-there are MANY, and they are the reason single-file checks and existential thresholds are the norm).
-
-| Layer | File(s) | What it defines |
-|---|---|---|
-| **Theory** | `Theory/{LangAct,TheoryAct,Transpose,Sound,Symmetry}` | `LAct = ℒₒᵣ + {c_C, c_D}`; `TAct = PA ∪ {c_C ≠ c_D, c_D ≠ c_C, actionAxiom}` (the constants are `0/1` in one of two orders); τ = the constant swap, a language automorphism; the two standard readings `stdReading`/`swappedReading` and `TAct_complete_of_readings` (completeness over exactly those) — the whole positive method; soundness in ℕ — the whole negative method. |
-| **Length** | `Length/{Length,SequentLength,DerivationLength,MetaLength,Proper,ProofLength}` | `proofLen`: the STRUCTURAL symbol count of a coded derivation (symbol-blind, so τ preserves it EXACTLY; weakening and ∃-witnesses charged so it is PROPER: `codeBound k = exp³(12k)+1`); `proofLen ⌜d⌝ = proofLenMeta d`. Residue: unary variable indices. |
-| **The box** | `Box/{Bew,BewV,Cut,CutV,ProperBound}` | `□_k σ := ∃ d < codeBound k, Proof TAct d ⌜σ⌝ ∧ proofLen d ≤ k` (`LenBox`, Δ₁, the evaluator's box) and `LenBoxUnbounded` (Σ₁, no code bound, the Löb argument's box), equal in every model (`ProperBound`). Bounded D2 with length accounting (`CutV`). |
-| **Agents** | `Agents/{Prog,CodeTerm,RevalueTemplate,BinNumeral,Template,Guard,SubstTemplate,Subst,Code,Instance,InstanceV,Fit,FitBox}` | Program codes on the polynomial pairing `ppair` (term-expressible, unlike Foundation's `pair`); descriptions are TERMS in binary numerals (`codeTerm`, Critch's (b)); templates: the six-variable `guardTemplate` and the general translation `template : PD.Formula → Semisentence LAct 6`; `substCode`/`substTemplate` = the engine's one-shot `Prog.subst` (`.bot` frozen, guards read the OUTER players); **route (c), 2026-09-23**: a SEVENTH template slot `#6` filled with the node's own budget at guard time (`descriptionsB`/`guardCodeB`; gate lemma `guardCodeB_of_template`: a six-variable template never reads it) — a bot whose guard freezes a budget-carrying snapshot (`JustBot k` with `DupocBot k` inside, `CupodTrollBot k` with `CupodBot k`) is otherwise NOT a `binNumeral k`-instance of any fixed formula (`ROUTE_B_SCOPE.md` §7); the constant-template twins `Just7`/`CupodTroll7` play identically in every frame — hand-made stand-ins, RETIRED from the matrix 2026-10-02: since route (c) is generic (`Agents/{CodeTermAbs,CodeTermSlot}`) the engine's own `progCode (JustBot k)`/`progCode (CupodTrollBot k)` store constant templates. |
-| **Evaluator** | `Eval/{Fixpoint,Eval,EvalN,SimTest,Transparency,Det}`, `Bridge/{Agent,AgentConverse,Inst}` (+ `Bridge/{Core/,Neg,EngineBridge}`, the frozen T2 bridge) | `EvalGraph n me opp p a`: a Σ₁ fixpoint mirroring the engine's `eval` clause by clause; `search` consults `LenBox TAct k (guardCodeB g me opp k)`; deterministic and fuel-monotone; in LOCKSTEP with the engine's `eval` on search-free constructors (same fuel). Truth equations ("the sentence says what the program does"). T2 (2026-09-10, FROZEN): the engine's Löbian core is a fragment of GL over PA (`Core/`), evaluation certificates are arithmetized runs (`Agent`). |
-| **PBLT** | `Loeb/{Diag,InstV,NumeralFacts}`, `Assembly/{Prep,Family,Cell}`, `Necessitation/*`, `Necessitation/{Package,ClosedNec}` | The parametric diagonal lemma over `TAct`; Critch 2019's UNIFORM proof of the parametric bounded Löb theorem, **family-parametric** since 2026-09-23 (`LoebSound p S₀ S₁` — a proof of `p(k)` within the budget makes `p(k)` true in both readings — and `family_found`, the arithmetized `pblt_engine`); its one hypothesis, bounded inner necessitation (Critch's (d)), is a THEOREM: `boundedInnerNec_sixteen` (U10, 2026-09-16, degree 16 — a verification proof built as a derivation code in every model, never writing a code as a numeral; ~35 modules) and `closedInnerNec_sixteen` (any budget, any closed sentence). `pblt`, `dupoc_self_coop`. |
-| **Outcome** | `Outcome/Spec`, `Outcome/Matrix/<L>` (2026-09-29) | **The reading layer**: the engine's vocabulary on codes — `plays`, `OutcomeAtA`, `OutcomeSpecA regime L R (some (a, b))` with the engine's own `BudgetRegime`, `bot P`/`const P` = `progCode` of the engine's bots, the notation `□[k] φ` — and ONE theorem per ledger cell, `outcome_<L>_vs_<R> : OutcomeSpecA …`, proved from the method-named `Cells/` theorem (107 cells, ALL on the engine's own bots since 2026-10-02: the Dupoc/Cupod twins were retired 2026-09-30 by `Cells/{DupocEngine,CimcicEngine,DimcidEngine}`, the last seven — on `Just`/`Just7`/`CupodTroll7` — by `Cells/{JustEngine,CupodTrollEngine}`, which re-run each Löb family on the general templates (a hand template is a different SENTENCE, so no equation transfers the cell); the export carries no twin name and the app's `SPRIME_TWIN_BASE` aliasing is dormant). `Cells/RedCellEngine.lean` is the red cell on the engine's `progCode (DupocBot k)`. **Start with `ArithS/Tour.lean`** (the nine definitions at ℕ by `rfl`, the red cell step by step, the headline `#check`s, the census) **then `ArithS/README.md`** (the four tiers: trusted base / results / U10 construction / frozen+estimates+census; the nine trusted definitions in reading order; the engine↔ArithS↔paper dictionary). `ArithS/Notation.lean` holds the paper's symbols (`□[k] φ`); every trusted-base file opens with a **Reading guide** line (definition / plumbing to skip / facts); `Eval/Fixpoint` and `Agents/SubstTemplate` are the plumbing halves split off `Eval/Eval` and `Agents/Subst` (2026-09-30). |
-| **Cells** | `Cells/RedCell`, `Cells/*` (the red cell's audit twins: `Audit/{RedCellAudit,RedCellUnsound,RedCellInstance}`) | The engine's matrix re-proved in `S'` (route B, 2026-09-23/24): `red_cell` (every `k`, τ-symmetry + soundness, no Löb); `Cells/{DupocMirror,JustBot,DIMCID,CIMCIC,PrudentMirror,JustSlot,KhatCells}` (all 14 in-scope Löbian cells: single, MUTUAL as a conjunction family, nested searches, frozen `.bot`), `SearchFree` (28, by transfer at the engine's fuel), `SoundnessCells` (36 SND: guard false ⇒ else branch by soundness), `PositiveCells` (14 POS: `TAct ⊢ ∀¹ q` by completeness + instantiation, Löb-free), `FlipCells`/`DimcidFlips` (the DISAGREEMENTS). |
-
-**The ledger (2026-09-27, script-exact over the 155 census rows): 107 cells have an `S'` statement —
-94 agree with the engine, 13 FLIP; 26 are GENUINE floors (no statement, by decision); 22 are excluded
-(Legible/Optim/Wary-floor).** Plus, since 2026-10-13, **12 `S'`-ONLY cells** for `DupocTrollBot k` ("defect iff the
-opponent IS `DupocBot k`", `Bots/DupocTrollBot.lean` — an engine DEFINITION with no engine theorem; `outcome_matrix.roster_bots` adds
-the bots an `S'` cell names to the roster, so no `Theorems/` dir — the engine path stays byte-identical): `Cells/DupocTrollBot.lean` + `Outcome/Matrix/DupocTrollBot.lean`,
-against `body` + CIMCIC + itself — 9 SND, POS × DupocBot `(D, D)`, LOEB × DIMCID `(C, D)`, a 27th floor × CIMCIC whose
-`dich_` lives beside its cells (`#check_floorA_theorems` runs on that file too; `HINGE_SIDE_PAIRS` and the test's
-`DICH_SOURCES` list it). Export: 118 cells, 27 floors. It separates the engine-side twins CIMCIC/DupocBot. Plus (same day) **13 `S'`-ONLY cells for `DIMDID k`** ("defect iff my defection provably
-implies yours", `Bots/DIMDID.lean` — the C/D TRANSPOSITION of CIMCIC, `(CIMCIC k).transpose = DIMDID k` by `rfl`, so on codes
-`SV (gI .D) 1 k`): `Cells/Dimdid.lean` + `Outcome/Matrix/DIMDID.lean`, against `body` + CIMCIC + PrudentBot + itself — 3 SND, 2 POS,
-LOEB × OBot and × DIMCID (both `(D, D)`, conjunction families over described players, `found_pL`/`DP.ofClosed`), 3 cells by
-`outcomeSpecA_transpose` from CIMCIC's (× DefectBot, × CupodBot, × itself), 3 GENUINE two-hinge floors (× DupocBot, × CIMCIC,
-× PrudentBot: DIMDID's own guard the outer hinge, engine side `(C, D)`, hinge side `(D, D)`; `prudence_found_vs_DIMDID` discharges
-the prudence guard). The new argument is the SELF-DEFEATING guard (`dimdid_selfref_not_found`, dual of CIMCIC's self-refuting one):
-against anyone who cooperates with it the guard is true but never found, so DIMDID cooperates. Export: 128 cells, 30 floors (130 with the DIMDID × DupocTrollBot pair, 132 with the PrudentBot × DupocTrollBot pair of 2026-10-19, `Cells/DupocTrollPrudent.lean` — the one pair the 15-template tau table needed; DIMDID's own tau row of 2026-10-19 needed no new base cell: the matrix reads `X vs DIMDID` from the oriented `DIMDID vs X` cells). The disagreements are theorems, not gaps: the engine closes them by censuses that rest on a
-player being UNREADABLE by `S`'s rules (`no_provable_tailTo_unreadable`, the WV valuation censuses),
-and PA reads every source. `dimcid_vs_closed`: **in `S'`, DIMCID defects against every closed
-program** — its guard "my cooperating implies X" is self-fulfilling for any `X` — while the engine has
-it cooperating in thirteen cells, including the UNIVERSAL `outcome_DIMCID_vs_DupocBot = (C, D)`, which
-`S'` contradicts for all large `k`. Sentence for the paper: *the engine's `S` is PA plus free citation
-(its box rules are additive; PA's verification is polynomial — U10) and MINUS the reading of sources its
-rules do not cover; the two departures pull in opposite directions, and the second changes outcomes.*
-The natural next engine step is a sound reading rule that closes the blind spot (the Tier-2 constructor
-flow; the `S'` proofs are its soundness certificates).
-
-**Deliberately outside `S'`:** floors — the verdict pass of 2026-09-27 (`Cells/FloorVerdicts.lean`)
-found every remaining one GENUINE: in each, the floor guard is a true Σ₁ sentence whose only evaluation
-witness runs through the ELSE branch of a search on a guard σ that is FALSE in ℕ, so its provability
+| **Theory** | `Theory/{LangAct,TheoryAct,Transpose,Sound,Symmetry}` | `LAct = ℒₒᵣ + {c_C, c_D}`; `TAct = PA ∪ {c_C ≠ c_D, c_D ≠ c_C, actionAxiom}` (the constants are `0/1` in one of two orders); τ = the constant swap, a language automorphism; the two standard readings `stdReading`/`swappedReading` and `TAct_complete_of_readings` — the whole positive method; soundness in ℕ — the whole negative method. |
+| **Length** | `Length/{Length,SequentLength,DerivationLength,MetaLength,Proper,ProofLength}` | `proofLen`: the structural symbol count of a coded derivation (symbol-blind, so τ preserves it exactly; PROPER: `codeBound k = exp³(12k)+1`); `proofLen ⌜d⌝ = proofLenMeta d`. |
+| **The box** | `Box/{Bew,BewV,Cut,CutV,ProperBound}` | `□_k σ := ∃ d < codeBound k, Proof TAct d ⌜σ⌝ ∧ proofLen d ≤ k` (`LenBox`, Δ₁, the evaluator's box) and `LenBoxUnbounded` (Σ₁, the Löb argument's box), equal in every model. Bounded D2 with length accounting. Notation `□[k] φ` (`ArithS/Notation.lean`). |
+| **Agents** | `Agents/{Prog,CodeTerm,CodeTermAbs,CodeTermSlot,RevalueTemplate,BinNumeral,Template,Guard,SubstTemplate,Subst,Code,Instance,InstanceV,Fit,FitBox,SysClose,SysTemplate}` | Program codes on the polynomial pairing `ppair`; descriptions are TERMS in binary numerals (`codeTerm`); the six-variable `guardTemplate` and the general `template : PD.Formula → Semisentence LAct 6`; `substCode` = the engine's one-shot `Prog.subst`; **route (c)**: a seventh slot `#6` filled with the node's own budget at guard time (`guardCodeB`), GENERIC — a closed program inside a guard is described with its budget abstracted to the slot, through systems too (`guardCodeB_templateCodeAt`, `guardCodeB_sysCloseTemplateAt`); the thirteen-variable `templateAt` with member pronoun slots for `.sys`. |
+| **Evaluator** | `Eval/{Fixpoint,Eval,EvalN,SimTest,Transparency,Det,TauCheck}` | `EvalGraph n me opp p a`: a Σ₁ fixpoint mirroring the engine's `eval` clause by clause (incl. `.tvote/.sys/.selfIdx`); `search` consults `LenBox TAct k (guardCodeB g me opp k)`; deterministic, fuel-monotone, in LOCKSTEP with the engine on search-free constructors. |
+| **PBLT** | `Loeb/{Diag,InstV,NumeralFacts}`, `Assembly/{Prep,Family,Cell,Uniform}`, `Necessitation/*` | The parametric diagonal lemma over `TAct`; Critch 2019's uniform proof of the parametric bounded Löb theorem, family-parametric (`LoebSound`, `family_found`); its one hypothesis, bounded inner necessitation, is a THEOREM: `boundedInnerNec_sixteen` (U10, degree 16, ~96k generated lines — do not open; `Necessitation/Package.lean` is the statement) and `closedInnerNec_sixteen`. |
+| **Outcome** | `Outcome/{Spec,Attr,Floor,Floors,Lint,Check,Export}`, `Outcome/Matrix/<L>.lean` | The engine's vocabulary on codes: `OutcomeSpecA regime L R (some (a, b))`, `bot P`/`const P` = `progCode` of the engine's bots; ONE `@[outcomeA] theorem outcome_<L>_vs_<R>` per ledger cell, `@[floorA] … _floor` per floor. |
+| **Cells** | `Cells/*` (uniform methods by method, Löb by bot; `Cells/Common/` shared kits) | `RedCell`/`RedCellEngine` (every `k`, τ-symmetry + soundness, no Löb); `SearchFree` (transfer at the engine's fuel); `SoundnessCells` (guard false ⇒ else branch); `PositiveCells` (`TAct ⊢ ∀¹ q` by completeness); the Löb families (`DupocMirror`, `JustBot`, `DIMCID`, `CIMCIC`, `PrudentMirror`, `JustSlot`, `KhatCells`, `*Engine`, `DupocTrollBot`, `Dimdid`, `DimdidTroll`, `DupocTrollPrudent`); `FlipCells`/`DimcidFlips` (the disagreements with the engine); `FloorDichotomy`/`FloorVerdicts` (the floors); `Transposition` (`outcomeSpecA_transpose`, the general C/D transposition theorem on `fragP`). |
+| **Tau** | `Tau/{Spec,Attr,Lint,Check,Columns,Described,Quine,ClosedProbe,…}`, `Tau/Rows/*`, `Tau/Entangled/*` | The 16 paper templates as `RowSpecA` rows + `FloorBitA` floor bits; `.sys` only for ENTANGLED pairs (both self-probe); `#check_tau_rowsA strict`. |
+| **Frozen** | `Bridge/*`, `Eval/Det`, `Agents/Fit*`, `Length/Proper`, `Box/ProperBound` | The T2 rule bridge `S → S'` (IMPOSSIBLE at polynomial budgets, `MERGE_CROSSROAD.md`; route B re-proves cells directly) and the numeric estimates. Skip. |
+
+**The ledger (export of 2026-10-19): 132 cells, 30 genuine floors, 0 companions.** Of the engine's 155
+census rows: 107 have an `S'` statement (94 agree, 13 FLIP — 11 DIMCID's, 2 WaryBot's), 26 are genuine
+floors, 22 are excluded (LegibleBot: a box inside a guard; OptimBot; WaryBot's floor cells). Plus the
+`S'`-ONLY cells of `DupocTrollBot k` ("defect iff the opponent IS `DupocBot k`", separates the engine-side
+twins CIMCIC/DupocBot) and `DIMDID k` (the C/D transposition of CIMCIC, `(CIMCIC k).transpose = DIMDID k`
+by `rfl`; the SELF-DEFEATING guard argument), and the PrudentBot × DupocTrollBot pair. `S'`-only bots have
+an engine DEFINITION but no engine theorem; `outcome_matrix.roster_bots` adds them to the roster. Tau:
+16 rows, 197 row slots + 59 floor bits = 256/256 strict; 13 tau flips, all DIMCID's; one `S'` tau flip
+`dimdid × obot = D`; 6 RECORDED provenance divergences (the red-cell cross bits `dupoc/natives × cupod`
+are FLOOR bits in `S'` though the base cell is a theorem — no τ-symmetry inside one `.sys`).
+
+**The disagreements are theorems, not gaps.** The engine closes them by censuses resting on a player
+being UNREADABLE by `S`'s rules; PA reads every source. `dimcid_vs_closed`: in `S'` DIMCID defects
+against every closed program (its guard "my cooperating implies X" is self-fulfilling), contradicting
+the engine's universal `outcome_DIMCID_vs_DupocBot = (C, D)` — and Critch's own Example 5.3(a); DIMCID
+is DefectBot's payoff-exact twin under `S'`. Sentence for the paper: *the engine's `S` is PA plus free
+citation and MINUS the reading of sources its rules do not cover; the second departure changes outcomes.*
+
+**Floors.** Every remaining floor is GENUINE: the floor guard is a true Σ₁ sentence whose only
+evaluation witness runs through the ELSE branch of a search on a guard FALSE in ℕ, so its provability
 within budget is inter-derivable with bounded consistency `Con_TAct(k ± c)` — ONE proof-complexity
-question (Pudlák: lower bound `k^ε`, linear regime open); the engine stipulates `+k`. The settled halves
-and the guards' truth are theorems (`floor_*_right/_left/_true`), and each of the 26 cells is a
-hypothesis-free DICHOTOMY `dich_<L>_vs_<R>` (`Cells/FloorDichotomy.lean`, 2026-09-27): `¬A_k →` the engine's
-value, `A_k →` the other value, with the hinge `A_k = LenBox TAct k (the outer guard)` written INLINE;
-`hinge_reduces_to_bounded_consistency_DupocBot_vs_DBot` (+ converse) shows the hinge is bounded consistency
-at `k` up to an additive `C₀ + C₁·size k`. NEVER admit the hinge as an axiom: it is the linear-regime
-finite-consistency question, open in BOTH directions, and the two answers give DIFFERENT cell values —
-the engine's `+k` stipulates the negative side. The 26 cells stay the engine's results; LegibleBot
-(a box INSIDE a guard: `box_guard_never_fits` — the LENGTH is fixable inside route (c) with a polylog inner
-budget `gBudget #6`, but the cells need bounded inner necessitation for a box whose body is COMPUTED FROM
-THE FRAME — a third instance of the U10 kit, `ROUTE_B_SCOPE.md` §9; a body slot alone does NOT help); OptimBot
-(the same decision);
-WaryBot's floor cells. **The tau layer is INSIDE `S'` since 2026-10-02** (`SPRIME_SOURCE_OF_TRUTH.md`): codes for `.tvote`/`.sys`/`.selfIdx` (`Agents/{SysClose,SysTemplate}`), the thirteen-variable `templateAt` with member pronoun slots, **route (c) made GENERIC** — a closed program inside a guard is described with the node's budget abstracted to the slot `#6`, through systems too (`Agents/{CodeTermAbs,CodeTermSlot}`; the consulted sentence is provably unchanged: `guardCodeB_templateCodeAt`, `guardCodeB_sysCloseTemplateAt`), so a new bot with a budget-carrying snapshot needs no hand twin — and the 14 paper rows `Tau/Rows/*` on `RowSpecA`/`FloorBitA` (`#check_tau_rowsA strict`: 149 row slots + 47 floor bits = 196/196; 13 flips, all DIMCID's; `lake exe export_sprime_outcomes` also writes `sprime_tau_rows.json`). **T2 (`Bridge/Core/`, `Bridge/Agent`, `Bridge/AgentConverse`, `Bridge/Inst`, `Eval/Det`) is
-frozen** — the rule bridge `S → S'` was shown IMPOSSIBLE at polynomial budgets (`MERGE_CROSSROAD.md`:
-citation composes doubly-exponentially through nested boxes; `search_t` cites at `log k`); route B
-re-proves cells directly instead.
+question (Pudlák: lower bound `k^ε`, linear regime open). Each floor is a hypothesis-free DICHOTOMY
+`dich_<L>_vs_<R>` (`Cells/FloorDichotomy.lean`; `S'`-only bots keep theirs beside their cells): `¬A_k →`
+the engine's value, `A_k →` the other, hinge `A_k = LenBox TAct k (the outer guard)` inline. NEVER admit
+the hinge as an axiom: the two answers give DIFFERENT cell values; the engine's `+k` stipulates the
+negative side.
 
-**Working conventions (binding, from two months of traps):** all results "for all large `k`" with
-EXISTENTIAL thresholds (Cantor coding makes every constant astronomical — never quote one); `simp` must
-never see a closed Gödel quote (state for a variable sentence, bridge by `rfl`); `omega` is useless on
-`V` (`le_self_add`/`gcongr` under `open PeanoMinus`); at `V = ℕ` `<` is Nat's but `≤` is `le_def`;
-never compile Foundation or mathlib (`lake build --try-cache`; `arith/.lake` is a symlink outside
-OneDrive); ONE lake build on the machine at a time; single-file checks with `timeout 900 lake env lean`
-and CHECK THE EXIT CODE (`${pipestatus[1]}` in zsh); agents: one `Cells/<Bot>.lean` per family, targeted
-builds per agent, the coordinator runs the one full build, commit by file name only; every new module is
-imported in BOTH `ArithS.lean` and the relevant `Audit/<Layer>.lean`. The nine generated row tables
-(`Necessitation/*Rows.lean`, `RowInst`, `RowInstB`, `Lib/Frag`) are PRUNED at generation time — `scripts/prune.py`
-drops the names in `scripts/pruned/<module>.txt`, the dead set of the 2026-09-28 reachability audit
-(`Research/Notes/ARITH_DEAD_CODE_AUDIT.md`, tool `scripts/DeadCode.lean`; a missing row is a list entry, not a
-generator bug; `GtmplA` is `guardTemplate` since 2026-09-29, `arith/PATHS.md` lists the renames; regenerate producers before consumers; `rfl` lemmas and simp-set names are invisible to the
-closure — never delete on the audit alone, the build is the judge). The consolidated trap list is `Research/Notes/ARITH_TRAPS.md` (read it before writing a line
-of `ArithS`); the per-session originals stay in `ROUTE_B_SCOPE.md` §6 and `HANDOVER_ARITHMETIZED_S.md` §6.
+**Working conventions (binding):** all results "for all large `k`" with EXISTENTIAL thresholds (Cantor
+coding makes every constant astronomical — never quote one); `simp` must never see a closed Gödel quote
+(state for a variable sentence, bridge by `rfl`); `omega` is useless on `V` (`le_self_add`/`gcongr` under
+`open PeanoMinus`); at `V = ℕ` `<` is Nat's but `≤` is `le_def`; `const` inside `namespace ArithS` is
+`Outcome/Spec`'s — write `LAct.const`; never compile Foundation or mathlib (`lake build --try-cache`;
+`arith/.lake` is a symlink outside OneDrive); ONE lake build on the machine at a time; single-file checks
+with `timeout 900 lake env lean` and CHECK THE EXIT CODE (`${pipestatus[1]}` in zsh); a full rebuild after
+touching the trusted base is ~35 min; every new module is imported in `ArithS.lean`, its tier root, and
+the relevant `Audit/<Layer>.lean`; the nine generated row tables (`Necessitation/*Rows.lean`, `RowInst*`,
+`Lib/Frag`) are NEVER edited by hand — edit the generator, `scripts/regen_all.sh`
+(`scripts/README.md`); they are PRUNED at generation time by `scripts/prune.py` over
+`scripts/pruned/<module>.txt` (`ARITH_DEAD_CODE_AUDIT.md`; `rfl` lemmas and simp-set names are invisible
+to the closure — never delete on the audit alone, the build is the judge). The retired hand-template
+twins (`DupocV`/`CupodV` in `Agents/InstanceV`, `Just7`/`CupodTroll7` in `Cells/`) are still DEFINED and
+used as intermediate lemmas; the matrix is stated on the engine's own `progCode`s only.
+
+**Notation** (`Research/Notes/PROVABILITY_NOTATION.md`): `⊢_k φ` = derivable at budget `k`
+(the engine's `Pf k φ`, the paper's `□_k`), `⊨ φ` = truth; a turnstile never means Lean; `¬ ⊢_k φ` (a
+Lean fact) ≠ `⊢_k ¬φ`.
+
+---
+
+# Part II — The engine (`engine/PrisonersDilemma/`), the host
+
+Build: `cd engine && lake build` (default targets `PrisonersDilemma` + `OutcomeCheck` — the linter and
+the census run inside the build). Namespace `PD`. Toolchain `v4.33.1`, mathlib pinned. ZERO project
+axioms, no `sorry`. `lake exe export_outcomes` writes `app/generated/outcome_theorems.json` (155 cells,
+4 staggered companions) and `tau_rows.json` (20 rows). Layered bottom-up:
+
+| Layer | File(s) | What it defines |
+|---|---|---|
+| **Language** | `Program.lean` | `Action` (C/D), `Outcome`; the mutually recursive `Prog` (`.const/.self/.opp/.bot/.sim/.ite/.search`, plus the τ constructors `.tvote/.sys/.selfIdx`) and `Formula` (`.plays/.impl/.neg/.box/.eq`); `subst`, `size`. Pure syntax. |
+| **Proof system `S`** | `ProofSystem.lean` | The ONE unified proof-term type `Pf k φ` (33 constructors; eliminators `Pf.induct`/`PlaysProof.induct` — NEVER the raw mutual recursors outside `ProofSystem.lean` §4 and `Base/ValuationSoundness.lean`). Costs are transcript-cumulative (`k` = characters of proof transcript, Critch's literal model). `AtomProvable.mk` requires `n + (plays me opp a).size ≤ k` (the atom re-cost of 2026-09-16). |
+| **Dynamics** | `Dynamics.lean` | The fuelled evaluator `eval` (its `.search` guard is `proofSearch k φ := decide (Pf k φ)`, noncomputable — the engine's `eval` is a definition, not a program); `play`, `outcome`; `Formula.interp` (`.box` = `Pf`). |
+| **Meta-theorems** | `Base/{Asymptotics,AtomCerts,Soundness,ValuationSoundness,Exclusion,Loeb,Transpose,BoundedGL,Closure,Helpers,TowerCensus,EvalTranspose,RedCellFramework}`; `BaseTheorems.lean` re-exports | Soundness (`sound_upto`, instances of the parametric `wv_sound_upto`); monotonicity; the internalized bounded Löb (`bloeb_engine`/`pblt_engine` via the fixpoint sentence `Formula.diag`, mutual variants); the NEGATIVE direction (`Exclusion`: the transparency census `tail_plays_readable`, the floor bounds `no_provable_probeFirst_tail`, `no_provable_searcherPlay_tail`, `no_provable_searcherElse_tail` — the cost FLOOR forced by consistency: an else-play certificate pays the full failed budget); `Transpose` (τ̂: `S` closed under C/D transposition at the SAME budget, 47-arm raw `Pf.rec` — resolved Critch's open red cell `outcome_DupocBot_vs_CupodBot = (D, C)` at every same `k`); `EvalTranspose` (`eval` commutes with τ̂); `BoundedGL` (the abstract bounded-GL interface, `Pf` a model by `rfl`, Löb/PBLT generic). |
+| **Bots** | `Bots/*.lean`, `Bots/LlmGenerations/*.lean` | The zoo. `DupocTrollBot` and `DIMDID` have no engine theorems (their rows are `S'`-only). |
+| **Outcome theorems** | `Theorems/<Left>/vs_<Right>.lean`; dir-local lemmas in `Theorems/<Bot>/Helpers.lean`; reusable rules in `Theorems/LlmGenerations/LlmLemmas.lean` | One file per ordered matchup. NO umbrellas: the ROOT `PrisonersDilemma.lean` imports every theorem module directly. LLM-written theorems keep the `llm_outcome_` prefix. |
+| **Template, linter, census, export** | `Outcome/{Spec,Lint,Check,Export}` | See below. |
+| **τ-bots** | `Tau/{Spec,Vote,Zoo,RowSpec,Lint,…}`, `Tau/Bots/*`, `Tau/Theorems/<T>/Phase.lean` | See Part III. |
+
+**The strict outcome-theorem template is the linchpin.** Every matrix theorem is
+`@[outcome] theorem (llm_)outcome_<L>_vs_<R> : OutcomeSpec <regime> <pad> L R (some (.X, .Y))`
+(`Outcome/Spec.lean`; regimes `nobudget | universal | eventual`; `L R : Nat → Prog`, so staggering is a
+property of the lambda; no guarded and no existential-fuel template — `Base/Helpers.outcome_at_of_ex`
+lifts a `Pf_sound` witness to a literal pad). `Outcome/Lint.lean` validates every tagged theorem against
+its own name; `Outcome/Check.lean` runs the census: every declaration named like a cell is tagged, no
+allowlist; regime variants take a suffix (`_floor`, `_samek`) and are not cells. A pair's result under a
+budget STAGGER is a `@[outcome_companion]` theorem `…_staggered` (must be staggered, must have a cell); the
+matrix renders a disagreeing companion as BUDGET-SENSITIVE `(D, D) ⇄ (C, C)`; `†` = no shared-budget
+theorem (the LegibleBot/OptimBot two-tier cells). Cells are SHARED-budget values (the staggered
+cross-bot cooperations `PrudentBot (2k+64)` vs `DupocBot k`, JustBot × PrudentBot, JustBot ×
+CupodTrollBot, CupodTrollBot × DupocBot are non-cell companions). Because the statement is fully
+concrete, **compilation == correctness** (modulo the NL→Lean translation of a bot).
+
+**Foundational status.** `PBLT` is a theorem (bounded Löb derived IN `S` via `Formula.diag`,
+2026-07-01); costs transcript-cumulative (2026-07-02); the last axiom, `atom_complete_false_guard`, was
+machine-checked INCONSISTENT (the anti-diagonal bot) and replaced by the sound `search_f`/`atomNeg`/`eqNeg`
+machinery with the cost FLOOR (2026-07-03). Consequences, all Critch-faithful: same-budget results that
+consumed a partner's else-play are honestly FALSE (tombstones in the theorem files); the seven floor
+tombstones are honest outcomes (`outcome_DupocBot_vs_DBot = (D, C)`, `… PrudentBot_vs_PrudentBot = (D, D)`,
+`… CupodBot_vs_OBot = (C, D)`, …); cross-bot cooperation returns at STAGGERED budgets; self-play needs the
+two-tier `PrudentBot2`. Meaning-preservation vs the pre-merge `S` was a theorem (`legacy_iff_live`, in the
+removed spikes). The engine's `eval` is noncomputable; uniform computability rested on the universal
+closure of the instance gate (`CUT_RELEVANCE.md`, `DECIDABILITY_ROADMAP.md`) — the decidability chain
+that pursued it is removed.
+
+**Dead ends (do not retry):** deciding `Provable` by structural recursion on the program; a separate-gas
+checker; proof-term enumeration under CONCLUSION cost (dissolved by transcript costs); model/realizability
+witness extraction; unprovability-premised `search_f` (non-monotone fixpoint — the anti-diagonal bot is its
+paradox); charging `searchThenSearch_t`'s inner premise (sinks the staggered Löb chains); uniform size bounds
+for a decider's query space; a rule bridge `S → S'` (citation composes doubly-exponentially through nested
+boxes, `MERGE_CROSSROAD.md`).
+
+**Proof-craft traps:** OneDrive makes `lake build` print "Replaying X… time expired (60)" — I/O, not code;
+build the target directly then the full build; never wait on `pgrep -x lake` (matches the IDE's `lake
+serve`) — use `pgrep -f 'lake build'`. `simpa` needs `-forall_const` on quantified rows; set `maxHeartbeats`
+BEFORE the docstring; peel before `rfl` on `fragP (inst …)`; elaborate transposed bits without an expected
+type; `omega` case-splits every `max` in a threshold tower (2ⁿ) — thresholds are SUMS.
+
+---
+
+# Part III — The Python core (`app/`, package `pd_runner`)
+
+**Package management — ALWAYS `uv`, never `pip`:** `uv sync --extra dev`, `uv add`, `uv run pytest`,
+`uv run python -m pd_runner.…` (inside `app/`). Lint: `uv run ruff check src tests` (config in
+`pyproject.toml`, rule set `E4/E7/E9/F`, `E741` ignored; keep it green). 442 tests + 6 skipped.
+
+**Source of truth (`Research/Notes/SPRIME_SOURCE_OF_TRUTH.md`).** PA-`S'`
+(`app/generated/sprime_outcome_theorems.json`) is the app's source of truth; the engine's export stays
+loadable as the COMPARISON. `settings.CELL_SOURCE` (`PD_CELL_SOURCE`, default `sprime`) and
+`FLOOR_POLICY` (`PD_FLOOR_POLICY`, default `engine_side`) are threaded through every loader
+(`scan_outcome_theorems`/`build_outcome_matrix`, `load_tau_matrix`/`NamedZoo.load`, the EGT `sweep`).
+A `S'` GENUINE FLOOR is carried as a labelled cell (`provenance="floor_dichotomy"`, `‡`, the engine-side
+value), as a hole (`restrict_zoo`: totality fails naming the pairs), or — **the ROBUSTNESS CHECK,
+`hinge_side`** — as the OTHER branch of its dichotomy (every box hypothesis TRUE; `eval/sprime_floors.
+HINGE_SIDE_PAIRS`, re-derived from the `dich_` statements by `tests/test_floor_hinge_side.py`; floors are
+never `≠` flips; the `S'` kernel floor bits are unstated under it). A `≠` cell FLIPS the engine (all
+in-paper flips are DIMCID's). Kernel tau rows load PER SOURCE (`tau_rows.json` on `engine`,
+`sprime_tau_rows.json` on `sprime`), each VERIFIED against its own cells at load (a floor bit must sit on
+a floor cell with the same engine-side value; a provenance swap raises) and never crossed.
+`python -m pd_runner.tau.compare --zoo paper --source sprime` certifies Def 3 ≡ Def 4 on `S'`
+(agree / floor-agree / mismatch / uncovered: 149 / 41 / 0 / 0 on the 14-bot paper zoo, plus the 6
+recorded divergences `def4_theorems.SPRIME_RECORDED_DIVERGENCES`; a recorded divergence that no longer
+fires raises `StaleDivergenceWarning`). `python -m pd_runner.eval.source_diff` → `generated/source_diff.md`.
+Test stand-ins `tests/fixtures/sprime_*.sample.json` are used by `conftest.py` only while a real export is
+absent. A stipulation can never shadow a proven cell (`NamedZoo.contradictions` is the separate,
+loud override channel of the `superficial-standalone` validation zoo — never cite a number from it).
+
+**The tau layer (`tau/`; authoritative design note `Research/Notes/TAUBOTS.md`).** Partial
+transparency as a type space over the zoo: a bot receives a SIGNAL — candidates with weights (blur in
+the weights, never in the programs); the σ-families (temperature `t` = transparency, behavioral and
+syntactic distances, `epsilon`) interpolate Critch's OSGT (`t=0`… point mass) and the opaque PD. **Def 3**
+(self probe, base hypotheses): `TauA(α)(sig) = C iff Σ{pᵢ : A's action in outcome(A, Bᵢ) = C} ≥ α`;
+**Def 4** = the uniform SOURCE lift: τ-bots are Spec-DSL rows compiled to real `Prog`s (`.tvote`
+action votes, `.sys` for entangled pairs), their rows proved as `@[tau_row] RowSpec` theorems in
+`engine/…/Tau/Theorems/<T>/Phase.lean` (20 templates) and as `RowSpecA` rows in `arith/` (16 paper
+templates); the Python layer CERTIFIES Def 3 ≡ Def 4 instance-wise. Two dials, never conflated: `t`
+(signal) and `α` (caution). NATIVE players (`tau/matrix.py::NATIVE_PLAYERS`): MaxConfidenceBot /
+MinConfidenceBot = (Dupoc's test, `max`/`min ≥ θ`) — as hypotheses they are Dupoc twins (a ceiling
+below 1 for the distance families, by design); `maxconfidence_not_linear`. A τ-bot ALWAYS terminates:
+a swept matrix never contains the `none` state. `proveEq` decides identity by SOURCE.
+
+**Paper zoos (`ZOOS` in `tau/matrix.py`; `--zoo` everywhere).** **The paper's base zoo is `body8`**
+(CooperateBot, CupodBot, DBot, DefectBot, DupocBot, EBot, OBot, TitForTatBot — twin-free on the engine
+side, 3 hinge pairs, 0 flips); the ladder `nonprovers+dupoc` (7), `body8+trolls` (10),
+`body8+trolls+provers` (12), `body8+natives` (10, the aggregator comparison, ε-family only). Only these
+have runs on disk; `body`/`body+twins`/`body+twins+natives` (thesis era) stay registered, runless;
+`critch8` reproduces the standalone repo's eight types (fully proven since the red cell). WaryBot can be
+in no total `S'` roster; no floor-free roster contains DupocBot. Caution grid α ∈ {0.2, 0.4, 0.5, 0.6,
+0.8, 1} (re-chosen 2026-10-19).
+
+**EGT (`egt/`; records `Research/Notes/EGT_FINDINGS_SPRIME.md`, thesis-era `EGT_FINDINGS.md`).** Stages:
+`static_analysis/` (pure ESS), `invasion/` (`G>`/`G≥` graphs, SCCs), `faces/` (face equilibria), `nash/`
+(extreme NE, exact `Fraction`), `replicator/` (basins — grouped by SUPPORT, not proximity; non-convergence
+is a finding), `moran/` (fixation, stochastic stability; log-space); `pipeline.py` runs a `(t, α)` sweep
+(`--resume` reuses complete run dirs by fingerprint), `report.py` renders. PD convention `(D,C)=b,
+(C,C)=b−c, (D,D)=0, (C,D)=−c`. Headline: on `body8` DupocBot is uniquely stochastically stable at full
+transparency, its share rising with selection intensity (85.9% at (M, β) = (100, 1); 71.2% on the hinge
+side); partial transparency: critical transparency U-shaped in caution, static = dynamic collapse,
+same thresholds on the syntactic channel (`EGT_FINDINGS_SPRIME.md` §10, `latex/scripts/gen_tau_*.py`).
+**Traps:** `--alphas phases` is exact but ~|zoo|² phases per `t` (hours of Nash) — use the α list; the
+unit of work is the DISTINCT MATRIX (runs keyed by a cell hash; `grid_points` maps points to runs);
+`lrsnash` is optional and usually absent (recorded as `cross_check_performed: false`, never as passed);
+a truncated face enumeration carries a TRUNCATED marker; sweep artefacts are gitignored
+(`generated/egt/.gitignore`); share ≠ cooperation rate; α = 0 is degenerate. The standalone repo's
+hand-transcribed CSV disagrees with the kernel on 6 of 62 cells (`CRITCH8_TRANSCRIPTION_DIFFS`).
+
+---
+
+# Part IV — The LLM pipeline (`pipeline/`, package `pd_pipeline`)
+
+Out of the paper's scope; `pipeline/README.md` and `pipeline/docs/BOT_REVIEWER.md` are the
+references. `cd pipeline && uv sync --extra dev` (installs `pd-runner` from `../app` editable; `anthropic
+< 1` pinned — the 1.x SDK rejects the calibrated client's `httpx.Timeout`); `uv run pd-serve --reload`;
+`uv run run-matchup`; 255 tests. Keys in `pipeline/.env` (loaded on import; never exported from a shell
+rc). Its `generated/` holds the agents' artefacts: `constructor_proposals/`, `prepass/`,
+`lemma_attempts/` tracked; `outcomes/` (the proof-episode transcripts, longitudinal thesis data),
+`reviews/`, `integrations/`, `lean/`, `logs/` gitignored.
+
+**Architecture.** Proof agent = Proposer → Compiler → Reviewer → Memory (AxProverBase-style):
+`services/proof_episodes.py::run_proof_search`, up to 3 fresh-context episodes × 10 turns, only the lab
+notebook, the best compiling source, the last compiler feedback and a prior open verdict cross episodes;
+the first `open_*` verdict buys ONE retry episode. Fast compile through a persistent LeanInteract REPL
+(`lean/interact.py`, `PD_LEAN_INTERACT=0` to disable; the verdict gate and the library writer ALWAYS
+file-compile). Verdicts via `submit_verdict` (`proved | open_bistable | open_blocked |
+constructor_proposed`), never prose. A `proved` submission is RE-COMPILED with `#validate_outcome` plus
+textual checks (exact `llm_outcome_<L>_vs_<R>` name, `@[outcome]`, template head, no `proofSearch`
+premises, no sorry/axiom, no hand-rolled `Pf.induct` census, no name collisions) — the same checks
+`library_writer` enforces, which then builds `PrisonersDilemma` + `OutcomeCheck` in a transaction
+(byte-identical rollback) and refreshes the export. Prompt caching with 4 breakpoints
+(`llm/prompts.py::build_system_prompt_blocks`); `ProofSystem.lean` and `Base/Exclusion.lean` embedded as
+signature digests. Multi-provider: `claude-*` → the calibrated `AnthropicClient`; other names →
+`settings.OPENAI_COMPAT_PROVIDERS` (`leanstral-1-5`) or `PD_OPENAI_BASE_URL` → `OpenAICompatClient`
+(mirrored 1:1 — change both). Config: `pd_pipeline.settings` (`DEFAULT_MODEL`, `RetryPolicy`,
+`RetrievalConfig`, `EvalGuard` = `hidden_bots` vs `allow_library_growth`).
+
+**Bot synthesis and the faithfulness reviewer** (`docs/BOT_REVIEWER.md`): bot writer
+(`services/bot_service.py`, full `Prog`, `run_lean_build` tool); **Tier A1** blind expectation extractor
+(`bot_expectation.py` — takes the description string, never the Lean; `unspecified` is a first-class
+answer; `explicit` vs `inferred` decides hard-fail vs warn; UNANIMITY OVERRIDES CONFIDENCE); **Tier A2**
+certified behavioral profile (`bot_profile.py` over `eval/outcome_prepass.py`, `k ∈ {2,4,6,16}` — THE
+BUDGET SWEEP IS LOAD-BEARING; `jobs × memory_mb` is what the machine sees, the 3072 MB per-cell cap is
+MEASURED; **requires the removed `Decidability` chain**); **Tier B** judge on the residual only
+(advisory; NO ground truth; never a verification result in the paper). Comparison is deterministic code
+(`faithful | mismatch | underdetermined`); the rewriter loop (`bot_rewriter.py`) triggers only on
+`should_rewrite`. Nothing auto-accepts: human gates at bots and proof (`run_bot_pipeline`, the API).
+
+**Growth ladder:** `add_base_lemma` (Tier 1, derived rules in `LlmLemmas.lean`, sound by construction,
+transactional) and `propose_pf_constructor` (Tier 2, human-gated evidence bundle with a soundness
+certificate compiled against the engine; integration by an agent in a git WORKTREE, `git diff` reviewed
+by a human; `/proposals/{name}/integrate`, `/integration/{job}/accept-diff`). Both registered only when
+`hidden_bots` is empty — the eval harness never mutates the library. Bare `OUTCOME OPEN` is reserved for
+BISTABLE matchups; no base cell is currently certified bistable.
+
+**Eval:** `eval/common.py` (14 harness cases) shared by `harness.py` and `run_bot_matrix.py`; every run
+persists to `generated/outcomes/`. Prover-model comparison (E4): `Research/Notes/PROVER_MODEL_COMPARISON.md`.
+SOTA provers (DeepSeek/Goedel/Kimina) are NOT swapped in: out of distribution for the custom inductive
+types; E4 numbers justify the bespoke pipeline.
+
+---
+
+# Cross-cutting conventions
+
+* The two JSON exports are the ONLY interface between Lean and Python; no regex over Lean source.
+* Commit by file name; one lake build at a time; `arith/` and `engine/` share the toolchain and the
+  mathlib commit. CI (`.github/workflows/lean_action_ci.yml`) builds both Lean packages.
+* `latex/` is the user's: `paper_status.tex` and `figures and tables/` are edited by the user; the
+  generators `latex/scripts/gen_*.py` read `app/generated/` and the EGT runs.
+* Never quote a Cantor-coding constant; state every `S'` result "for all large `k`".
+* Memory of past sessions: the notes under `Research/Notes/` are the record; dated narratives there
+  supersede any summary here.

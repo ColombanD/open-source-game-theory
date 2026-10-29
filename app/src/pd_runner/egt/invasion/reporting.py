@@ -105,8 +105,10 @@ def write_ties_csv(
             continue
         i_name = G_weak.nodes[u]["name"]
         j_name = G_weak.nodes[v]["name"]
-        a_ij = float(A[u, v]); a_jj = float(A[v, v])
-        a_ji = float(A[v, u]); a_ii = float(A[u, u])
+        a_ij = float(A[u, v])
+        a_jj = float(A[v, v])
+        a_ji = float(A[v, u])
+        a_ii = float(A[u, u])
         explanation = (
             f"A[{i_name},{j_name}]={a_ij:g} == A[{j_name},{j_name}]={a_jj:g} "
             f"(clause (a) tied); clause (b) is decided by comparing "
@@ -139,7 +141,6 @@ def write_vertex_summary_csv(
     agreements: List[VertexAgreement],
     out_path: Path,
 ) -> None:
-    name_to_v = {G_strict.nodes[v]["name"]: v for v in G_strict.nodes}
     agreement_by_name = {a.name: a for a in agreements}
     scc_size = {s.scc_id: s.size for s in analysis.sccs}
     terminal = set(analysis.terminal_sccs)

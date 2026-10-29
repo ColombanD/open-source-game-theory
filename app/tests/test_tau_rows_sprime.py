@@ -491,32 +491,6 @@ def test_real_export_coverage_report() -> None:
                     f"({stated / total:.0%})")
 
 
-def test_tau_zoos_endpoint_reports_coverage(sprime_rows) -> None:
-    from fastapi.testclient import TestClient
-
-    from pd_runner.api.main import app
-
-    client = TestClient(app)
-    zoos = {z["key"]: z for z in client.get("/tau/zoos?source=sprime").json()["zoos"]}
-    body = zoos["body+twins+natives"]
-    assert body["total"] and 0 < body["kernel_coverage"] <= 1
-    assert body["kernel_backed"] is (body["kernel_coverage"] == 1.0)
-    bits = body["kernel_bits"]
-    # coverage counts STATED bits: the consulted ones plus the recorded divergences
-    assert (bits["theorem"] + bits["floor_dichotomy"] + body["kernel_recorded"]
-            == round(body["kernel_coverage"] * 196))
-    if _is_full(sprime_rows):
-        # a recorded divergence that fires is not CONSULTED (`_kernel_rows_for` plays the
-        # base cell) but it is STATED, so a full export is kernel-backed either way: the
-        # sample has none (155 + 41 consulted); the real export has the six red-cell
-        # provenance bits (149 theorem + 41 floor-dichotomy consulted, 6 recorded).
-        dropped = 196 - bits["theorem"] - bits["floor_dichotomy"]
-        assert dropped in (0, len(SPRIME_RECORDED_DIVERGENCES))
-        assert body["kernel_recorded"] == dropped
-        assert body["kernel_backed"] is True and body["kernel_coverage"] == 1.0
-        assert bits == {"theorem": 155 - dropped, "floor_dichotomy": 41}
-
-
 def test_report_banner_names_the_backing(sprime_rows) -> None:
     from pd_runner.tau.report import build_report
 

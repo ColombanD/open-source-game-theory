@@ -1,0 +1,54 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pd-pipeline"
+version = "0.1.0"
+description = "LLM pipeline over the OSGT Lean engine: bots from natural language, outcome proofs by an agent, web UI"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "pd-runner",
+    # <1: from 1.0.0 the SDK depends on httpx2 and rejects the httpx.Timeout the calibrated client passes.
+    "anthropic>=0.50,<1",
+    "openai>=2.53.0",
+    "httpx>=0.27",
+    "lean-interact>=0.11.5",
+    "fastapi>=0.135.2",
+    "uvicorn[standard]>=0.42.0",
+    "gspread>=6.2.1",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "ruff>=0.8"]
+
+[project.scripts]
+run-matchup = "pd_pipeline.cli:main"
+pd-serve = "pd_pipeline.api.serve:main"
+
+[tool.uv.sources]
+pd-runner = { path = "../app", editable = true }
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+target-version = "py311"
+
+[tool.ruff.lint]
+# The classic default set, pinned so both projects agree across ruff versions.
+select = ["E4", "E7", "E9", "F"]
+# E741: single-letter names (`l`) are used for "left" throughout, beside `r`.
+ignore = ["E741"]
+
+[tool.ruff.lint.per-file-ignores]
+# Deliberate mid-file imports: the API mounts a directory computed from a late import, and the
+# two client tests import their subject after a fixture section.
+"src/pd_pipeline/api/main.py" = ["E402"]
+"src/pd_pipeline/settings.py" = ["E402"]
+"tests/test_client.py" = ["E402"]
+"tests/test_interact.py" = ["E402"]

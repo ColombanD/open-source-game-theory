@@ -15,6 +15,8 @@ import ArithS.Cells.CimcicEngine
 import ArithS.Cells.JustEngine
 import ArithS.Cells.CupodTrollEngine
 import ArithS.Cells.DupocTrollBot
+import ArithS.Cells.DupocTrollPrudent
+import ArithS.Cells.DimdidTroll
 import ArithS.Cells.Dimdid
 import ArithS.Cells.FlipCells
 import ArithS.Cells.FloorDichotomy
@@ -105,6 +107,11 @@ import ArithS.Tau.Entangled.Mirror
 import ArithS.Tau.Entangled.EBotPrudent
 import ArithS.Tau.Entangled.Generic
 import ArithS.Tau.Entangled.DimcidPrudent
+import ArithS.Tau.Entangled.DimdidSys
+import ArithS.Tau.Dimdid
+import ArithS.Tau.ClosedWatchDd
+import ArithS.Tau.Rows.DupocTroll
+import ArithS.Tau.Rows.Dimdid
 
 /-!
 # ArithS.Matrix — the results: every cell of PA-`S'` (`lake build ArithSMatrix`)

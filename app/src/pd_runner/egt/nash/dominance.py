@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from fractions import Fraction
-from typing import List, Tuple
+from typing import List
 
 import numpy as np  # type: ignore
 
