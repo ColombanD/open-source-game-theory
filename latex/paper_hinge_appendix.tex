@@ -20,6 +20,13 @@ So far the signal was behavioral: a noisy record of how the opponent plays. What
   \label{fig:tau-families-body}
 \end{figure}
 
+% ---- moved 2026-10-19 from the main text (paper_status.tex): the aggregator comparison, two sentences there.
+\subsubsection{Aggregators under blur}
+\label{apx-subsubsection:Experiments-Transparency-Aggregators}
+How should a Löbian program \emph{vote} once identities blur? The zoo \texttt{body+natives} adds to \texttt{body} two programs that ask \texttt{DupocBot}'s question of every hypothesis, \enquote{does this hypothesis provably cooperate with me?}, and change only the vote: \texttt{MaxConfidenceBot} cooperates iff \emph{at least one} hypothesis of weight at least $\alpha$ passes the test, \texttt{MinConfidenceBot} iff \emph{every} hypothesis of weight at least $1-\alpha$ passes it, so that a single credible hypothesis that cannot be shown to cooperate vetoes. Both are behavioral and syntactic twins of \texttt{DupocBot}, so the comparison runs on the $\varepsilon$-uniform family, which has no twin ceiling. On \texttt{body+natives} under the $\varepsilon$-uniform family (\cref{table:tau-aggregators}), the Löbian class \{\texttt{DupocBot}, \texttt{Max}, \texttt{Min}\} holds nearly all of the long run in an even split as long as the signal is clear: the aggregator is irrelevant until blur reaches the thresholds. Below that the three separate in a fixed order. \texttt{MinConfidenceBot}, which any credible hypothesis it cannot certify vetoes, exits first; then, in a mid-blur band, \texttt{MaxConfidenceBot} alone holds the population, because the sum player is fooled into cooperating with blurred exploiters while the max player, which needs one hypothesis credible on its own, is not. The band is a band of \emph{survival}, not of cooperation: at the most cautious settings the sum and max players share the long run again, but as defectors, and the population's cooperation rate is near zero. Once identities blur, ambiguity aversion is what keeps a Löbian cooperator alive.
+
+\input{figures and tables/tau_aggregators}
+
 % ---- added 2026-10-14: the partial-transparency hinge check (body8, both families, hinge side). Sources:
 % app/generated/egt/runs/body8_sprime_hinge_side*_t*; analysis_hinge_side/{tidy,nash_structure}.csv; generator
 % latex/scripts/gen_tau_body.py hinge_side. Inputs: tau_coop_body_hinge_side, tau_phase_body_hinge_side,

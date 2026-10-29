@@ -118,7 +118,11 @@ class SigmaFamily:
         if t <= 0.0:
             raw = self._raw_hi
         elif t >= self.ceiling() - 1e-9:
-            raw = self._raw_lo
+            # At or above the family's ceiling the dial means FULL transparency: the exact point mass,
+            # as in `signal.temperature_for_transparency` (the legacy path the pipeline runs the
+            # behavioral family through). A tiny positive temperature would instead split the mass
+            # evenly over behavioral/syntactic twins and break the t = 1 anchor on a zoo with twins.
+            raw = 0.0
         else:
             lo, hi = self._raw_lo, self._raw_hi
             for _ in range(200):
@@ -203,6 +207,8 @@ def syntactic_family(matrix: TauMatrix) -> SigmaFamily:
         # Same softmax architecture as behavioral, over the code distance —
         # so behavioral-vs-syntactic differences are purely the distance's.
         channel: dict[str, Signal] = {}
+        if temp <= 1e-9:  # the point mass, exactly (see `raw_for`)
+            return {b: Signal.point_mass(b) for b in matrix.bots}
         for b in matrix.bots:
             logits = {b2: -distances[(b, b2)] / max(temp, 1e-12) for b2 in matrix.bots}
             peak = max(logits.values())

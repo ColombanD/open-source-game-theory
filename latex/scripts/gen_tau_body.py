@@ -94,7 +94,16 @@ def ft(t: float) -> str:
 
 
 def tex_ss(s: str) -> str:
-    return "---" if s == "—" else s.replace("+", "+")
+    """A stable set for a table cell: `Dup` in bold, '---' for the empty set."""
+    if s in ("—", "---", "", "nan"):
+        return "---"
+    return "+".join("\\textbf{Dup}" if b == "Dup" else b for b in s.split("+"))
+
+
+def two_channel(beh: str, syn: str) -> str:
+    """A cell that carries both channels: the behavioral value, and, where the syntactic one differs,
+    'behavioral / syntactic' on an orange ground."""
+    return beh if syn == beh else f"\\cellcolor{{orange!25}}{beh}\\,/\\,{syn}"
 
 
 # Cell shading on the base matrix's two tones (gen_outcome_matrix_body.py: CC = green, DD = black):
@@ -127,16 +136,17 @@ lines += ["\\end{tabular}", "\\end{table}"]
 
 # ── table: phase (stochastically stable set) ─────────────────────────────────
 lines = [
-    f"% figures and tables/tau_phase_body{SUFFIX}.tex — stochastically stable set at (M, β) = (100, 1), body8, behavioral family, PA-S', hinge cells at the {SIDE}.",
+    f"% figures and tables/tau_phase_body{SUFFIX}.tex — stochastically stable set at (M, β) = (100, 1), body8, both channels, PA-S', hinge cells at the {SIDE}.",
     GEN,
+    "% Requires: booktabs, xcolor with colortbl (\\cellcolor).",
     "\\begin{table}[t]\\centering\\small",
-    f"\\caption{{Stochastically stable set at $(M,\\beta)=(100,1)$ on the eight-bot zoo, behavioral family, hinge cells at the {SIDE}. Adjacent equal cells form one phase region; \\enquote{{---}} means no type reaches the stability threshold.}}",
+    f"\\caption{{Stochastically stable set at $(M,\\beta)=(100,1)$ on the eight-bot zoo, hinge cells at the {SIDE}, behavioral family; where the syntactic family selects a different set the cell is shaded and reads \\enquote{{behavioral / syntactic}}. \\enquote{{---}} means no type reaches the stability threshold.}}",
     f"\\label{{table:tau-phase-body{LABEL_SUFFIX}}}",
     "\\begin{tabular}{@{}l" + "c" * len(TS) + "@{}}\\toprule",
     "$\\alpha$ & " + " & ".join(f"$t = {ft(t)}$" if t == 1 else f"${ft(t)}$" for t in TS) + " \\\\\\midrule",
 ]
 for a in ALPHAS:
-    lines.append(f"{fa(a)} & " + " & ".join(tex_ss(ss["behavioral"][(a, t)]) for t in TS) + " \\\\")
+    lines.append(f"{fa(a)} & " + " & ".join(two_channel(tex_ss(ss["behavioral"][(a, t)]), tex_ss(ss["syntactic"][(a, t)])) for t in TS) + " \\\\")
 lines[-1] = lines[-1][:-2] + "\\\\\\bottomrule"
 lines += ["\\end{tabular}", "\\end{table}"]
 (OUT_DIR / f"tau_phase_body{SUFFIX}.tex").write_text("\n".join(lines) + "\n", encoding="utf-8")
@@ -148,37 +158,43 @@ lines += ["\\end{tabular}", "\\end{table}"]
 import json  # noqa: E402
 
 CORE = {"CooperateBot", "DupocBot", "TitForTatBot"}
-ABBR = {"CupodBot": "Cup", "DBot": "DB", "EBot": "EB", "DefectBot": "Def", "OBot": "OB"}
-fullcoop: dict[tuple[float, float], tuple[int, list[str]]] = {}
+ABBR = {"CupodBot": "Cup", "DBot": "DB", "EBot": "EB", "DefectBot": "Def", "OBot": "OB", "CooperateBot": "Coop", "DupocBot": "Dup", "TitForTatBot": "TFT"}
+fullcoop: dict[tuple[str, float, float], tuple[int, list[str]]] = {}
 for r in load_run_summaries(DEFAULT_OUT_ROOT, POLICY):
-    if r["zoo"] != ZOO or r["family"] != "behavioral":
+    if r["zoo"] != ZOO or r["family"] not in FAMILIES:
         continue
     nash_dir = _latest_nash(r["_dir"])
     assert nash_dir is not None, f"{r['_dir']}: no Nash stage — the body8 sweeps must run with Nash"
     eqs = [json.loads(line) for line in (nash_dir / "equilibria.jsonl").read_text().splitlines()]
     full = [e for e in eqs if e["cooperation_rate_float"] >= 0.999]
     comps = {e["component_id"] for e in full}
-    extra = sorted({b for e in full for b in e["support_row_names"] + e["support_col_names"]} - CORE)
+    support = {b for e in full for b in e["support_row_names"] + e["support_col_names"]}
     for t, a in r["grid_points"]:
-        fullcoop[(float(a), float(t))] = (len(comps), extra)
-missing = [(a, t) for a in ALPHAS for t in TS if (a, t) not in fullcoop]
+        fullcoop[(r["family"], float(a), float(t))] = (len(comps), sorted(support - CORE), sorted(CORE - support))
+missing = [(f, a, t) for f in FAMILIES for a in ALPHAS for t in TS if (f, a, t) not in fullcoop]
 assert not missing, f"fully cooperative component: no run at {missing}"
 
 
 def tex_full(a: float, t: float) -> str:
-    n, extra = fullcoop[(a, t)]
-    if n == 0:
+    """Behavioral count (shaded green when 1, with the programs joining the core support as a superscript);
+    where the syntactic count differs, 'behavioral / syntactic' on an orange ground."""
+    n, joins_b, leaves_b = fullcoop[("behavioral", a, t)]
+    m, joins_s, leaves_s = fullcoop[("syntactic", a, t)]
+    if not n and not m:
         return "0"
-    sup = f"$^{{+\\mathrm{{{','.join(ABBR.get(b, b) for b in extra)}}}}}$" if extra else ""
-    return f"\\cellcolor{{green!30}}{n}{sup}"
+    joins, leaves = (joins_b, leaves_b) if n else (joins_s, leaves_s)  # the channel the cell stands for
+    marks = ([f"+{','.join(ABBR.get(b, b) for b in joins)}"] if joins else []) + ([f"-{','.join(ABBR.get(b, b) for b in leaves)}"] if leaves else [])
+    sup = f"$^{{\\mathrm{{{';'.join(marks)}}}}}$" if marks else ""
+    tone = "green!30" if n and m else "blue!20" if n else "orange!25"  # both / behavioral only / syntactic only
+    return f"\\cellcolor{{{tone}}}{max(n, m)}{sup}"
 
 
 lines = [
-    f"% figures and tables/tau_fullcoop_body{SUFFIX}.tex — fully cooperative Nash component of the tau tournament, body8, behavioral family, PA-S', hinge cells at the {SIDE}.",
+    f"% figures and tables/tau_fullcoop_body{SUFFIX}.tex — fully cooperative Nash component of the tau tournament, body8, both channels, PA-S', hinge cells at the {SIDE}.",
     GEN,
     "% Requires: booktabs, xcolor with colortbl (\\cellcolor).",
     "\\begin{table}[t]\\centering\\small",
-    f"\\caption{{Existence of a fully cooperative Nash component in the $\\tau$-tournament on the eight-bot zoo, behavioral family, hinge cells at the {SIDE}: the number of connected components of extreme Nash equilibria that contain an equilibrium with cooperation rate exactly $1$ (never more than one). Where it exists, its equilibria are mixtures of \\texttt{{CooperateBot}}, \\texttt{{DupocBot}} and \\texttt{{TitForTatBot}}; a superscript names the programs that join that support at the point. Each row is one caution $\\alpha$, each column one transparency $t$; the $t = 1$ column is the base matrix.}}",
+    f"\\caption{{Existence of a fully cooperative Nash component, hinge cells at the {SIDE}: the number of connected components of extreme Nash equilibria that contain an equilibrium with cooperation rate exactly $1$, shown as $1$ wherever it exists under at least one channel: green under both the behavioral and the syntactic family, blue under the behavioral family only, orange under the syntactic family only. Where it exists, its equilibria are mixtures of \\texttt{{CooperateBot}}, \\texttt{{DupocBot}} and \\texttt{{TitForTatBot}}; a superscript names the programs that join ($+$) or leave ($-$) that support at the point, under the behavioral family where it has the component and under the syntactic family otherwise.}}",
     f"\\label{{table:tau-ne-fullcoop-body{LABEL_SUFFIX}}}",
     "\\begin{tabular}{@{}l" + "c" * len(TS) + "@{}}\\toprule",
     f"$\\alpha \\backslash t$ & {head} \\\\\\midrule",
@@ -203,9 +219,30 @@ def save(fig, name: str) -> None:
 
 # summary: mutual cooperation rate and realized cooperation vs t, one curve per α
 fig, axes = plt.subplots(1, 2, figsize=(7.0, 2.6), sharex=True)
+# behavioral family solid with markers; the syntactic family dotted in the same color, no markers — the
+# two channels carry the same information at equal t, so a near-coincident dotted curve is the point.
+from matplotlib.lines import Line2D  # noqa: E402
+# On the hinge side the dotted overlay is the FLOOR side (behavioral) instead, so the figure reads as the
+# robustness bracket: solid = hinge side, dotted = the main text's value.
+if POLICY == "engine_side":
+    overlay_rates, overlay_realized, overlay_label = rates["syntactic"], realized["syntactic"], "syntactic"
+else:
+    floor_matrix = ZOOS[ZOO].load(source="sprime", floor_policy="engine_side")
+    floor_fam = all_families(floor_matrix)["behavioral"]
+    overlay_rates = {}
+    for a in ALPHAS:
+        for t in TS:
+            r = run_tournament(floor_matrix, t, a, None, family=floor_fam)
+            overlay_rates[(a, t)] = (sum(v == ("C", "C") for v in r.cells.values()) / len(r.cells), None, None)
+    ns_floor = pd.read_csv(APP / "generated" / "egt" / "analysis" / "nash_structure.csv")
+    ns_floor = ns_floor[(ns_floor.zoo == ZOO) & (ns_floor.alpha > 0)]
+    overlay_realized = grid(ns_floor, "behavioral", "realized_coop")
+    overlay_label = "floor side"
 for a in ALPHAS:
     axes[0].plot(TS, [rates["behavioral"][(a, t)][0] for t in TS], "o-", ms=3, color=colors[a], label=f"$\\alpha={a:g}$")
     axes[1].plot(TS, [realized["behavioral"][(a, t)] for t in TS], "o-", ms=3, color=colors[a], label=f"$\\alpha={a:g}$")
+    axes[0].plot(TS, [overlay_rates[(a, t)][0] for t in TS], ":", lw=1.2, color=colors[a])
+    axes[1].plot(TS, [overlay_realized[(a, t)] for t in TS], ":", lw=1.2, color=colors[a])
 axes[0].set_title("$(C,C)$ rate of the $\\tau$-tournament")
 axes[1].set_title("realized cooperation, $(M,\\beta)=(100,1)$")
 for ax in axes:
@@ -213,7 +250,14 @@ for ax in axes:
     ax.set_xlim(1.02, -0.02)
     ax.set_ylim(-0.03, 1.03)
     ax.grid(alpha=0.25)
-axes[1].legend(loc="lower left", ncol=1, frameon=False)
+# the α legend goes above the panels: inside the right panel it would sit on the α ≥ 0.8 curves, which
+# run along zero from their collapse onward
+handles, labels = axes[1].get_legend_handles_labels()
+fig.legend(handles, labels, loc="upper center", ncol=len(ALPHAS), frameon=False, bbox_to_anchor=(0.5, 1.08),
+           columnspacing=1.2, handlelength=1.8)
+axes[0].legend(handles=[Line2D([], [], color="0.3", marker="o", ms=3, label="behavioral" if POLICY == "engine_side" else "hinge side"),
+                        Line2D([], [], color="0.3", linestyle=":", lw=1.2, label=overlay_label)],
+               loc="upper left", frameon=False)
 save(fig, f"fig_tau_summary_body{SUFFIX}")
 
 # collapse: static ceiling vs realized cooperation, one panel per α
@@ -226,7 +270,11 @@ for ax, a in zip(axes, ALPHAS):
     ax.set_ylim(-0.03, 1.03)
     ax.grid(alpha=0.25)
     ax.set_xlabel("$t$")
-axes[0].legend(loc="lower left", frameon=False)
+# one legend for the whole figure, above the panels — inside a panel it would sit on the curves,
+# which reach 0 in every panel's lower-left corner
+handles, labels = axes[0].get_legend_handles_labels()
+handles[1] = Line2D([], [], color="0.3", marker="o", ms=3)  # a colour-neutral stand-in for the per-α realized curves
+fig.legend(handles, labels, loc="upper center", ncol=2, frameon=False, bbox_to_anchor=(0.5, 1.14))
 save(fig, f"fig_tau_collapse_body{SUFFIX}")
 
 # families: realized cooperation, behavioral vs syntactic, one panel per α

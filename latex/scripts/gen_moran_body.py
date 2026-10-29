@@ -13,7 +13,7 @@ APP = Path(__file__).resolve().parents[2] / "app"
 RUNS = APP / "generated" / "egt" / "runs"
 ZOO = "body8"  # the paper's body since 2026-10-13: eight bots, no CupodTrollBot
 prefix = f"{ZOO}_sprime_" + ("" if POLICY == "engine_side" else f"{POLICY}_")
-(run_dir,) = sorted(RUNS.glob(prefix + "t100_a030_*"))
+(run_dir,) = sorted(RUNS.glob(prefix + "t100_a0[1-9]*"))
 OUT = Path(__file__).resolve().parents[1] / "figures and tables" / ("moran_body.tex" if POLICY == "engine_side" else f"moran_body_{POLICY}.tex")
 
 COLS = ["DupocBot", "TitForTatBot", "DefectBot", "CooperateBot"]

@@ -74,26 +74,40 @@ def ft(t: float) -> str:
 lines = [
     "% figures and tables/tau_ladder.tex — the transparency ladder: critical transparency per zoo rung and caution, PA-S', engine side, behavioral family.",
     GEN,
+    "% Requires: booktabs, xcolor with colortbl (\\cellcolor).",
     "\\begin{table}[t]\\centering\\small",
-    "\\caption{Critical transparency $t_c(\\alpha)$ on the four nested zoos, behavioral family, hinge cells at the engine side: the lowest transparency on the grid $t \\in \\{0, 0.2, \\dots, 1\\}$ at which the realized cooperation of the evolved population at $(M,\\beta)=(100,1)$ is still at least $\\tfrac12$ (\\enquote{---}: below $\\tfrac12$ already at $t = 1$). The second column is the realized cooperation at full transparency.}",
+    "\\caption{Critical transparency $t_c(\\alpha)$ on the four nested zoos, behavioral family, hinge cells at the engine side: the lowest transparency on the grid $t \\in \\{0, 0.2, \\dots, 1\\}$ at which the realized cooperation of the evolved population at $(M,\\beta)=(100,1)$ is still at least $\\tfrac12$ (\\enquote{---}: below $\\tfrac12$ already at $t = 1$). The second column is the realized cooperation at full transparency. A shaded cell differs from the \\texttt{body} row at the same caution: green where the rung needs less transparency, gray where it needs more.}",
     "\\label{tab:tau-ladder}",
     "\\begin{tabular}{@{}lrc" + "c" * len(ALPHAS) + "@{}}\\toprule",
     "zoo & $N$ & coop.\\ at $t{=}1$ & " + " & ".join(f"$\\alpha = {a:g}$" for a in ALPHAS) + " \\\\\\midrule",
 ]
 summary = {}
+tcs: dict[tuple[str, float], float | None] = {}
+r1s: dict[str, float] = {}
 for key, n, label in LADDER:
     pts = load_points(key)
     missing = [(a, t) for a in ALPHAS for t in TS if (a, t) not in pts]
     if missing:
         raise SystemExit(f"{key}: no run at {missing}")
-    cells = []
     for a in ALPHAS:
         alive = [t for t in TS if pts[(a, t)]["realized"] >= 0.5]
-        tc = min(alive) if alive else None
-        cells.append("---" if tc is None else f"${ft(tc)}$")
-        summary[(key, a)] = (tc, [round(pts[(a, t)]["realized"], 2) for t in TS], [pts[(a, t)]["ss"] for t in TS])
-    r1 = pts[(ALPHAS[0], 1.0)]["realized"]
-    lines.append(f"{label} & {n} & {r1:.2f} & " + " & ".join(cells) + " \\\\")
+        tcs[(key, a)] = min(alive) if alive else None
+        summary[(key, a)] = (tcs[(key, a)], [round(pts[(a, t)]["realized"], 2) for t in TS], [pts[(a, t)]["ss"] for t in TS])
+    r1s[key] = pts[(ALPHAS[0], 1.0)]["realized"]
+
+
+def tc_cell(key: str, a: float) -> str:
+    """t_c, shaded where it differs from the body row: green = less transparency needed, gray = more."""
+    tc, base = tcs[(key, a)], tcs[("body8", a)]
+    text = "---" if tc is None else f"${ft(tc)}$"
+    if key == "body8" or tc == base:
+        return text
+    lower = base is None or (tc is not None and tc < base)
+    return ("\\cellcolor{green!18}" if lower else "\\cellcolor{black!10}") + text
+
+
+for key, n, label in LADDER:
+    lines.append(f"{label} & {n} & {r1s[key]:.2f} & " + " & ".join(tc_cell(key, a) for a in ALPHAS) + " \\\\")
 lines[-1] = lines[-1][:-2] + "\\\\\\bottomrule"
 lines += ["\\end{tabular}", "\\end{table}"]
 (OUT_DIR / "tau_ladder.tex").write_text("\n".join(lines) + "\n", encoding="utf-8")
@@ -121,20 +135,36 @@ for family in ("epsilon", "behavioral", "syntactic"):
         f"% figures and tables/{fname} — the three aggregators over DupocBot's test on body8 + natives, PA-S', engine side, {family} family.",
         GEN,
         "\\begin{table}[t]\\centering\\small",
-        f"\\caption{{Stationary shares at $(M,\\beta)=(100,1)$ on the eight-bot zoo plus the two native aggregators, {FAMILY_LABEL[family]}, hinge cells at the engine side. The three aggregators over \\texttt{{DupocBot}}'s test: \\enquote{{sum}} is the lift \\texttt{{DupocBot}} itself, \\enquote{{max}} is \\texttt{{MaxConfidenceBot}}, \\enquote{{min}} is \\texttt{{MinConfidenceBot}}; \\enquote{{Löbian}} is their combined share. As hypotheses the three are twins, so at $t = 1$ they are payoff-identical and the share splits evenly; they separate only once the signal blurs. The last column is the stochastically stable set.}}",
+        f"\\caption{{Stationary shares at $(M,\\beta)=(100,1)$ on the eight-bot zoo plus the two native aggregators, {FAMILY_LABEL[family]}, hinge cells at the engine side. The three aggregators over \\texttt{{DupocBot}}'s test: \\enquote{{sum}} is the lift \\texttt{{DupocBot}} itself, \\enquote{{max}} is \\texttt{{MaxConfidenceBot}}, \\enquote{{min}} is \\texttt{{MinConfidenceBot}}; \\enquote{{Löbian}} is their combined share. As hypotheses the three are twins, so at $t = 1$ they are payoff-identical and the share splits evenly; they separate only once the signal blurs. Consecutive transparencies with the same shares and the same stable set are merged into one row. The last column is the stochastically stable set.}}",
         f"\\label{{{label}}}",
         "\\begin{tabular}{@{}llrrrrl@{}}\\toprule",
         "$\\alpha$ & $t$ & sum & max & min & Löbian & stable set \\\\\\midrule",
     ]
     print(f"aggregators (body8+natives, {family}): α t | sum max min | Löbian | SS | realized")
     for i, a in enumerate(ALPHAS):
+        # one row per run of consecutive t (from t = 1 downward) with the same printed shares and the
+        # same stable set — the even three-way split above the threshold would otherwise repeat itself
+        runs: list[tuple[list[float], tuple]] = []
         for t in TS:
             sh = pts[(a, t)]["shares"]
             vals = [sh.get(b, 0.0) for b, _ in AGG]
-            lines.append(f"{a:.2f} & {ft(t)} & " + " & ".join(f"{100 * v:.0f}\\%" for v in vals)
-                         + f" & {100 * sum(vals):.0f}\\% & {pts[(a, t)]['ss']} \\\\")
+            key = (tuple(f"{100 * v:.0f}" for v in vals), f"{100 * sum(vals):.0f}", pts[(a, t)]["ss"])
             print(f"  {a:<5g} {t:<4g} | " + " ".join(f"{100 * v:5.1f}" for v in vals)
                   + f" | {100 * sum(vals):5.1f} | {pts[(a, t)]['ss']:14s} | {pts[(a, t)]['realized']:.2f}")
+            if runs and runs[-1][1] == key:
+                runs[-1][0].append(t)
+            else:
+                runs.append(([t], key))
+        for ts, (shares, loeb, stable) in runs:
+            if len(ts) == 1:
+                t_label = f"${ft(ts[0])}$"
+            elif ts[0] == 1.0:
+                t_label = f"$\\ge {ft(ts[-1])}$"
+            elif ts[-1] == 0.0:
+                t_label = f"$\\le {ft(ts[0])}$"
+            else:
+                t_label = f"${ft(ts[0])}$ to ${ft(ts[-1])}$"
+            lines.append(f"{a:.2f} & {t_label} & " + " & ".join(f"{v}\\%" for v in shares) + f" & {loeb}\\% & {stable} \\\\")
         if i + 1 < len(ALPHAS):
             lines[-1] = lines[-1] + "\\midrule"
     lines[-1] = lines[-1][:-2] + "\\\\\\bottomrule"

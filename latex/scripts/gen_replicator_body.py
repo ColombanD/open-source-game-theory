@@ -14,7 +14,7 @@ POLICY = sys.argv[1] if len(sys.argv) > 1 else "engine_side"
 ZOO = "body8"
 APP = Path(__file__).resolve().parents[2] / "app"
 prefix = f"{ZOO}_sprime_" + ("" if POLICY == "engine_side" else f"{POLICY}_")
-(run_dir,) = sorted((APP / "generated" / "egt" / "runs").glob(prefix + "t100_a030_*"))
+(run_dir,) = sorted((APP / "generated" / "egt" / "runs").glob(prefix + "t100_a0[1-9]*"))
 OUT = Path(__file__).resolve().parents[1] / "figures and tables" / (
     "replicator_body.tex" if POLICY == "engine_side" else f"replicator_body_{POLICY}.tex")
 ABBREV = {"CooperateBot": "Coop", "DefectBot": "Def", "TitForTatBot": "TFT", "DupocBot": "Dup", "CupodBot": "Cup",
