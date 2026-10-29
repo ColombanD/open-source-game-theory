@@ -36,10 +36,6 @@ namespace ArithS
 
 -- Det: determinism in every model of IΣ₁; the negative atom; the atomNeg leaf of T2-CORE.
 #print axioms EvalGraph.unique_V'
-#print axioms models_sentenceAt_plays_V
-#print axioms pa_proves_neg_sentenceAt_inst
-#print axioms leaf_atomNeg_sound
-#print axioms leaf_atomNeg_sound_searchFree
 
 -- Phase 2 (2026-09-30) — the tau constructors in the evaluator: the inversion lemmas of the three new
 -- clauses, determinism and monotonicity across them (`EvalGraph.unique`, `EvalGraph.mono`, at ℕ;

@@ -31,7 +31,7 @@ behind `Eval/Eval.lean`, `Agents/SubstTemplate.lean` before `Agents/Subst.lean`)
 | **Trusted base** — the definitions a reader accepts by eye | `Theory/`, `Length/`, `Box/`, `Agents/`, `Eval/` | ~13k, of which the definitions themselves are a few hundred | read §2 in order; skim the lemmas around them | `ArithSCore` (root `Core.lean`) |
 | **Results** — the theorems | `Outcome/` (the matrix in the engine's vocabulary), `Cells/` (the proofs), `Assembly/` + `Loeb/` (PBLT), `Necessitation/Package.lean` (bounded inner necessitation, statements only) | ~19k | read `Outcome/`, then §3's reading order | `ArithSMatrix` (`Matrix.lean`); PBLT: `ArithSLoeb` (`PBLT.lean`) |
 | **Construction of U10** — the proof that PA verifies its own proofs within a polynomial budget | everything in `Necessitation/` except `Package.lean` | ~96k (72 %) | do not open; the design notes are `Research/Notes/M4_BOUNDED_HBL/` | pulled in by `ArithSLoeb` |
-| **Frozen, estimates, census** | `Bridge/` (the T2 bridge, frozen by decision), `Length/Proper`, `Box/ProperBound`, `Agents/Fit*` (numeric estimates), `Audit/` (every `#print axioms` the build runs) | ~6k | skip; `Audit/` is what `lake build` checks, not what you read | `ArithSFrozen` (`Frozen.lean`), `ArithSAudit` |
+| **Frozen, estimates, census** | `Bridge/` (the evaluation-certificate kit left of the T2 bridge; the bridge proper was deleted 2026-10-29), `Length/Proper`, `Box/ProperBound`, `Agents/Fit*` (numeric estimates), `Audit/` (every `#print axioms` the build runs) | ~6k | skip; `Audit/` is what `lake build` checks, not what you read | `ArithSFrozen` (`Frozen.lean`), `ArithSAudit` |
 
 Import direction between the tiers (core < frozen < Löb < results < audit; the results tier reaches the U10
 construction only through `Necessitation/Package` and `ClosedNec`) is checked by `scripts/check_tiers.py`, which
@@ -285,11 +285,12 @@ validator, the censuses and the coverage command · `Check` the lake root that r
 
 **Top level** — `Notation` the paper's symbols · `Tour` the guided tour.
 
-**`Bridge/`** — the frozen T2 bridge `S → S'` (`Core/`, `Agent`, `AgentConverse`, `Inst`, `Neg`,
-`EngineBridge`): shown impossible at polynomial budgets (`MERGE_CROSSROAD.md`); route B re-proves
+**`Bridge/`** — what remains of the T2 bridge `S → S'` after 2026-10-29 (`Agent`, `AgentConverse`, `Inst`, `Neg`:
+the certificate lemmas the cells use; `Core/` and `EngineBridge` deleted, `ARITH_DEAD_CODE_AUDIT.md` §9). The
+bridge was shown impossible at polynomial budgets (`MERGE_CROSSROAD.md`); route B re-proves
 cells directly instead.
 
-**`Audit/`** — one census file per layer plus the three red-cell audit files; `Audit.lean` imports them.
+**`Audit/`** — one census file per layer plus the two red-cell audit files (`RedCellAudit`, `RedCellUnsound`; the engine-level twin `RedCellInstance` was deleted 2026-10-29); `Audit.lean` imports them.
 
 ## 6. Build and check
 

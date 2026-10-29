@@ -11,8 +11,10 @@ and the **evolutionary** analysis of the resulting populations. Companion code o
    proof system `S` and its outcome matrix — the COMPARISON system, not the paper's.
 2. **`arith/`** — **PA-`S'`, THE PAPER'S PROOF SYSTEM**: Peano Arithmetic with a provability
    predicate bounded by proof length, on Foundation; Critch's PBLT proved unconditionally; the
-   matrix and the tau rows re-proved cell by cell. Imports the engine (language, evaluator, bots,
-   τ-specs, search-free cells); the engine never imports it.
+   matrix and the tau rows re-proved cell by cell. Imports the engine's GAME, not its proof system:
+   the language, the evaluator, the bots, the τ-roster, the syntactic transposition and 27 search-free
+   cells (246 constants, measured 2026-10-29); no theorem of `S` is used — `Pf` is in the transitive
+   closure only because `Dynamics.eval`'s search guard is `decide (Pf k φ)`. The engine never imports it.
 3. **`app/`** — the Python CORE (`pd_runner`): the matrices read from the two Lean exports, the tau
    layer, the EGT stages. The paper's experiments and `latex/scripts/` run on it.
 4. **`pipeline/`** — the LLM PIPELINE (`pd_pipeline`): bots from natural language, outcome proofs
@@ -63,7 +65,7 @@ every `#print axioms` the build runs. `lake exe export_sprime_outcomes` writes
 | **Outcome** | `Outcome/{Spec,Attr,Floor,Floors,Lint,Check,Export}`, `Outcome/Matrix/<L>.lean` | The engine's vocabulary on codes: `OutcomeSpecA regime L R (some (a, b))`, `bot P`/`const P` = `progCode` of the engine's bots; ONE `@[outcomeA] theorem outcome_<L>_vs_<R>` per ledger cell, `@[floorA] … _floor` per floor. |
 | **Cells** | `Cells/*` (uniform methods by method, Löb by bot; `Cells/Common/` shared kits) | `RedCell`/`RedCellEngine` (every `k`, τ-symmetry + soundness, no Löb); `SearchFree` (transfer at the engine's fuel); `SoundnessCells` (guard false ⇒ else branch); `PositiveCells` (`TAct ⊢ ∀¹ q` by completeness); the Löb families (`DupocMirror`, `JustBot`, `DIMCID`, `CIMCIC`, `PrudentMirror`, `JustSlot`, `KhatCells`, `*Engine`, `DupocTrollBot`, `Dimdid`, `DimdidTroll`, `DupocTrollPrudent`); `FlipCells`/`DimcidFlips` (the disagreements with the engine); `FloorDichotomy`/`FloorVerdicts` (the floors); `Transposition` (`outcomeSpecA_transpose`, the general C/D transposition theorem on `fragP`). |
 | **Tau** | `Tau/{Spec,Attr,Lint,Check,Columns,Described,Quine,ClosedProbe,…}`, `Tau/Rows/*`, `Tau/Entangled/*` | The 16 paper templates as `RowSpecA` rows + `FloorBitA` floor bits; `.sys` only for ENTANGLED pairs (both self-probe); `#check_tau_rowsA strict`. |
-| **Frozen** | `Bridge/*`, `Eval/Det`, `Agents/Fit*`, `Length/Proper`, `Box/ProperBound` | The T2 rule bridge `S → S'` (IMPOSSIBLE at polynomial budgets, `MERGE_CROSSROAD.md`; route B re-proves cells directly) and the numeric estimates. Skip. |
+| **Frozen / estimates** | `Bridge/{Agent,AgentConverse,Inst,Neg}`, `Eval/Det`, `Agents/Fit*`, `Length/Proper`, `Box/ProperBound` | `Bridge/` is what remains of the T2 rule bridge `S → S'` (shown IMPOSSIBLE at polynomial budgets, `MERGE_CROSSROAD.md`; the bridge proper was deleted 2026-10-29, `ARITH_DEAD_CODE_AUDIT.md` §9): the evaluation-certificate kit the cells use (`properPlayer_*`, `inst` and its simp set, `outcome_eq_some_iff`, the size arithmetic of `FitBox`/`NeverFits`). Plus the numeric estimates. |
 
 **The ledger (export of 2026-10-19): 132 cells, 30 genuine floors, 0 companions.** Of the engine's 155
 census rows: 107 have an `S'` statement (94 agree, 13 FLIP — 11 DIMCID's, 2 WaryBot's), 26 are genuine

@@ -1,5 +1,4 @@
 import ArithS.Bridge.AgentConverse
-import ArithS.Bridge.Core.Sound
 
 /-!
 # ArithS.Inst — the instantiation `c_C ↦ 0, c_D ↦ 1`: PA proves the atom sentences of modest plays
@@ -29,7 +28,7 @@ with the constants INSTANTIATED by their standard values:
   (`AtomProvable k (.plays me opp a)`), and `…_searchFree` the UNCONDITIONAL one (no oracle):
   on search-free players a certificate is a run of the arithmetized evaluator outright
   (`atomProvable_evalGraph_searchFree`).
-* **Composition with T2-CORE.** `Aι : Core.AtomRealization := fun p q a ↦ lMap inst (sentenceAt p q
+* **Composition with T2-CORE** (the translation `tr`, removed 2026-10-29 with the bridge). `Aι := fun p q a ↦ lMap inst (sentenceAt p q
   (.plays p q a))` (the frame is the pair itself — irrelevant for proper programs).
   `leaf_atom_sound` discharges the `Leaf.atom` shape of `Core.Pf_core_sound` on proper modest
   players; `leaf_atomBoxImpl_sound` discharges `Leaf.atomBoxImpl` for ALL programs and
@@ -79,14 +78,6 @@ def inst : LAct →ᵥ ℒₒᵣ where
     | Sum.inl r => r
     | Sum.inr e => PEmpty.elim e
 
-@[simp] lemma inst_inl {k : ℕ} (f : Language.Func ℒₒᵣ k) : inst.func (Sum.inl f : LAct.Func k) = f := rfl
-@[simp] lemma inst_C : inst.func (const Act.C) = Language.Zero.zero := rfl
-@[simp] lemma inst_D : inst.func (const Act.D) = Language.One.one := rfl
-@[simp] lemma inst_rel_inl {k : ℕ} (r : Language.Rel ℒₒᵣ k) : inst.rel (Sum.inl r : LAct.Rel k) = r := rfl
-
-/-- `inst` retracts the inclusion: `inst ∘ emb = id` on symbols. -/
-@[simp] lemma inst_emb_func {k : ℕ} (f : Language.Func ℒₒᵣ k) : inst.func (emb.func f) = f := rfl
-@[simp] lemma inst_emb_rel {k : ℕ} (r : Language.Rel ℒₒᵣ k) : inst.rel (emb.rel r) = r := rfl
 
 /-- The standard model of `ℒₒᵣ` pulled back along `inst` is `stdReadingNat`: both read `c_C` as `0`,
 `c_D` as `1`, and the arithmetic symbols standardly. -/
@@ -105,6 +96,21 @@ theorem models_inst (σ : Sentence LAct) :
   have := Semiformula.models_lMap (s₂ := standardModel ℕ) (Φ := inst) (σ := σ) (M := ℕ)
   rw [lMap_inst_std] at this
   exact this
+
+/-! ### The simp set of `inst` (restored 2026-10-29: `simp` uses them without a trace in the proof terms) -/
+
+@[simp] lemma inst_inl {k : ℕ} (f : Language.Func ℒₒᵣ k) : inst.func (Sum.inl f : LAct.Func k) = f := rfl
+
+@[simp] lemma inst_C : inst.func (const Act.C) = Language.Zero.zero := rfl
+
+@[simp] lemma inst_D : inst.func (const Act.D) = Language.One.one := rfl
+
+@[simp] lemma inst_rel_inl {k : ℕ} (r : Language.Rel ℒₒᵣ k) : inst.rel (Sum.inl r : LAct.Rel k) = r := rfl
+
+/-- `inst` retracts the inclusion: `inst ∘ emb = id` on symbols. -/
+@[simp] lemma inst_emb_func {k : ℕ} (f : Language.Func ℒₒᵣ k) : inst.func (emb.func f) = f := rfl
+
+@[simp] lemma inst_emb_rel {k : ℕ} (r : Language.Rel ℒₒᵣ k) : inst.rel (emb.rel r) = r := rfl
 
 /-! ### `inst ∘ emb = id` on terms and formulas -/
 
@@ -176,90 +182,8 @@ theorem hierarchy_lMap_inst_sentenceAt_plays (me' opp' me opp : PD.Prog) (a : PD
 
 /-! ### PA proves the atom sentences of modest plays -/
 
-/-- Truth in `ℕ` of the instantiated atom sentence, from an engine play (under `GuardAgree`). -/
-theorem models_inst_sentenceAt_plays (hga : GuardAgree) (me' opp' me opp : PD.Prog) (a : PD.Action)
-    (hme : ProperPlayer me) (hopp : ProperPlayer opp) (hm : modestP me = true) (hm' : modestP opp = true)
-    (h : ∃ n, PD.play n me opp = some a) :
-    ℕ↓[ℒₒᵣ] ⊧ Semiformula.lMap inst (sentenceAt me' opp' (.plays me opp a)) :=
-  (models_inst _).mpr ((models_sentenceAt_plays me' opp' me opp a hme hopp).mpr
-    ((play_iff_evalGraph hga hme hopp hm hm' a).mp h))
-
-/-- **PA proves the atom sentences of modest plays** (the constants instantiated): for proper
-modest players, given `GuardAgree`, an engine play `me(opp) = a` makes
-`lMap inst (sentenceAt me' opp' (.plays me opp a))` a theorem of PA — by Σ₁-completeness. -/
-theorem pa_proves_sentenceAt_inst (hga : GuardAgree) (me' opp' me opp : PD.Prog) (a : PD.Action)
-    (hme : ProperPlayer me) (hopp : ProperPlayer opp) (hm : modestP me = true) (hm' : modestP opp = true)
-    (h : ∃ n, PD.play n me opp = some a) :
-    𝗣𝗔 ⊢ Semiformula.lMap inst (sentenceAt me' opp' (.plays me opp a)) :=
-  sigma_one_completeness (T := 𝗣𝗔) (hierarchy_lMap_inst_sentenceAt_plays me' opp' me opp a)
-    (models_inst_sentenceAt_plays hga me' opp' me opp a hme hopp hm hm' h)
-
-/-- The certificate form: an engine atom certificate `⊢_k (.plays me opp a)` yields the PA
-theorem (through `playsProof_sound` and `pa_proves_sentenceAt_inst`). -/
-theorem pa_proves_sentenceAt_inst_of_atomProvable (hga : GuardAgree) (me' opp' : PD.Prog)
-    {k : ℕ} {me opp : PD.Prog} {a : PD.Action} (h : PD.AtomProvable k (.plays me opp a))
-    (hme : ProperPlayer me) (hopp : ProperPlayer opp) (hm : modestP me = true) (hm' : modestP opp = true) :
-    𝗣𝗔 ⊢ Semiformula.lMap inst (sentenceAt me' opp' (.plays me opp a)) := by
-  refine pa_proves_sentenceAt_inst hga me' opp' me opp a hme hopp hm hm' ?_
-  cases h with
-  | mk hp _ => exact PD.BaseTheorems.playsProof_sound hp
-
-/-- **Unconditional on search-free players**: no oracle hypothesis at all — a certificate on
-search-free players is a run of the arithmetized evaluator outright. -/
-theorem pa_proves_sentenceAt_inst_searchFree (me' opp' : PD.Prog)
-    {k : ℕ} {me opp : PD.Prog} {a : PD.Action} (h : PD.AtomProvable k (.plays me opp a))
-    (hme : ProperPlayer me) (hopp : ProperPlayer opp) (hm : modestP me = true) (hm' : modestP opp = true)
-    (hsme : me.hasSearch = false) (hsopp : opp.hasSearch = false) :
-    𝗣𝗔 ⊢ Semiformula.lMap inst (sentenceAt me' opp' (.plays me opp a)) :=
-  sigma_one_completeness (T := 𝗣𝗔) (hierarchy_lMap_inst_sentenceAt_plays me' opp' me opp a)
-    ((models_inst _).mpr ((models_sentenceAt_plays me' opp' me opp a hme hopp).mpr
-      (atomProvable_evalGraph_searchFree h hme hopp hm hm' hsme hsopp)))
 
 /-! ### Composition with T2-CORE -/
 
-/-- The atom realization of T2-AGENT, instantiated: `p(q) = a` means the instantiated
-`sentenceAt p q (.plays p q a)` (the frame is the pair itself; irrelevant for proper programs). -/
-noncomputable def Aι : Core.AtomRealization :=
-  fun p q a ↦ Semiformula.lMap inst (sentenceAt p q (.plays p q a))
-
-lemma Aι_def (p q : PD.Prog) (a : PD.Action) :
-    Aι p q a = Semiformula.lMap inst (sentenceAt p q (.plays p q a)) := rfl
-
-/-- Every atom of `Aι` is `Σ₁`. -/
-theorem hierarchy_Aι (p q : PD.Prog) (a : PD.Action) : Hierarchy 𝚺 1 (Aι p q a) :=
-  hierarchy_lMap_inst_sentenceAt_plays p q p q a
-
-/-- **The `Leaf.atom` shape of T2-CORE is discharged** on proper modest players (under
-`GuardAgree`): `Core.tr Aι (.plays me opp a)` is a PA theorem whenever `S` certifies the atom. -/
-theorem leaf_atom_sound (hga : GuardAgree) {k : ℕ} {me opp : PD.Prog} {a : PD.Action}
-    (h : PD.AtomProvable k (.plays me opp a))
-    (hme : ProperPlayer me) (hopp : ProperPlayer opp) (hm : modestP me = true) (hm' : modestP opp = true) :
-    𝗣𝗔 ⊢ Core.tr Aι (.plays me opp a) :=
-  pa_proves_sentenceAt_inst_of_atomProvable hga me opp h hme hopp hm hm'
-
-/-- The `Leaf.atom` shape, search-free players, no oracle. -/
-theorem leaf_atom_sound_searchFree {k : ℕ} {me opp : PD.Prog} {a : PD.Action}
-    (h : PD.AtomProvable k (.plays me opp a))
-    (hme : ProperPlayer me) (hopp : ProperPlayer opp) (hm : modestP me = true) (hm' : modestP opp = true)
-    (hsme : me.hasSearch = false) (hsopp : opp.hasSearch = false) :
-    𝗣𝗔 ⊢ Core.tr Aι (.plays me opp a) :=
-  pa_proves_sentenceAt_inst_searchFree me opp h hme hopp hm hm' hsme hsopp
-
-/-- **The `Leaf.atomBoxImpl` shape is discharged for ALL programs and budgets**, certificate or
-not: `plays p q a → □(plays p q a)` under `Aι` is formalized Σ₁-completeness
-(`provable_sigma_one_complete`, stated in `𝗜𝚺₁`, lifted along `𝗜𝚺₁ ⪯ 𝗣𝗔`). -/
-theorem leaf_atomBoxImpl_sound (kBox : ℕ) (p q : PD.Prog) (a : PD.Action) :
-    𝗣𝗔 ⊢ Core.tr Aι (.impl (.plays p q a) (.box kBox (.plays p q a))) :=
-  Entailment.WeakerThan.pbl (provable_sigma_one_complete (T := 𝗣𝗔) (hierarchy_Aι p q a))
-
-/-- **T2-CORE at the instantiated realization.** Every `S`-theorem `⊢_k φ` whose non-core leaves
-are PA-provable under `Aι` translates to a PA theorem. The `atom` leaves on proper modest
-players (`leaf_atom_sound`), the `atomBoxImpl` leaves (`leaf_atomBoxImpl_sound`) and the two
-identity leaves (`Core.leaf_eqRefl_sound`, `Core.leaf_eqNeg_sound`) are discharged by the
-theorems of this module; the module docstring lists exactly what `hleaf` still has to supply
-(the source-reading rules — bounded D1 inside PA — and `atomNeg` — internal determinism). -/
-theorem transfer_of_leaves (hleaf : ∀ ψ, Core.Leaf ψ → 𝗣𝗔 ⊢ Core.tr Aι ψ)
-    {k : ℕ} {φ : PD.Formula} (h : PD.Pf k φ) : 𝗣𝗔 ⊢ Core.tr Aι φ :=
-  Core.Pf_core_sound Aι hleaf h
 
 end ArithS

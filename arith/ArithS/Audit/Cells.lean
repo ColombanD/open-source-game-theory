@@ -1,4 +1,3 @@
-import ArithS.Audit.RedCellInstance
 import ArithS.Audit.RedCellUnsound
 import ArithS.Cells.PrudentLoose
 import ArithS.Cells.DupocEngine
@@ -11,10 +10,10 @@ import ArithS.Cells.DupocTrollBot
 import ArithS.Cells.DupocTrollPrudent
 import ArithS.Cells.Dimdid
 import ArithS.Cells.DimdidTroll
-import PrisonersDilemma.Theorems.DupocBot.RedCellInstance
 import ArithS.Bridge.Agent
 import ArithS.Eval.TauCheck
 import ArithS.Cells.JustSlot
+import ArithS.Cells.RedCell
 
 /-!
 # ArithS.Audit.Cells — the axiom census of the arithmetized layer: Cells
@@ -37,9 +36,6 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms red_cell_unique
 -- The red cell ONCE, abstractly (`Base/RedCellFramework`: symmetry excludes (C,C)/(D,D),
 -- soundness excludes (C,D)), and its two instances: the engine's `Pf` and PA-`S'`.
-#print axioms PD.RedCellFramework.red_cell
-#print axioms PD.Theorems.red_cell_engine
-#print axioms red_cell_via_framework
 #print axioms guard_fits
 #print axioms guard_fits'
 -- The audit's "drop soundness" mutation as a THEOREM (`RedCellUnsound`, Proposition 6.1):

@@ -1,6 +1,4 @@
 import ArithS.Bridge.Neg
-import PrisonersDilemma.Base.Soundness
-import PrisonersDilemma.Base.AtomCerts
 
 /-!
 # ArithS.Agent — T2-AGENT: engine certificates are runs of the arithmetized evaluator (roadmap M3, step (e))
@@ -86,17 +84,6 @@ lemma guardOf_eq_templateCode_subst {me opp : PD.Prog} (hme : me ≠ .self ∧ m
 
 /-! ### The oracle hypotheses -/
 
-/-- Bounded D1 on the consulted guards: an engine derivation `⊢_k` of the closed guard yields
-a `TAct`-proof of length `≤ k` of its realization. -/
-def GuardAgreeT : Prop :=
-  ∀ (φ : PD.Formula) (me opp : PD.Prog) (k : ℕ),
-    PD.Pf k (φ.subst me opp) → LenBox TAct k (guardOf φ me opp)
-
-/-- The negative direction: an engine refutation `⊢_m ¬guard` excludes a `TAct`-proof of
-length `≤ k` of the realization, at every `k`. -/
-def GuardAgreeF : Prop :=
-  ∀ (φ : PD.Formula) (me opp : PD.Prog) (k m : ℕ),
-    PD.Pf m (.neg (φ.subst me opp)) → ¬ LenBox TAct k (guardOf φ me opp)
 
 /-- **Soundness of a found guard**: if the arithmetized evaluator finds the guard, its
 realization is TRUE in `ℕ` (`TAct` is sound: `models_TAct`). -/
@@ -106,11 +93,6 @@ theorem models_sentenceAt_of_lenBox {φ : PD.Formula} {me opp : PD.Prog} {k : �
   rw [guardOf_eq_quote_sentenceAt φ me opp hφ, lenBox_nat] at h
   exact models_of_provable models_TAct (provable_iff_provable.mp h.provable)
 
-/-- What engine soundness gives on the OTHER side: a refuted closed guard is false in the
-engine's reading. This is `Formula.interp`, a sentence about `play`, not about `EvalGraph`;
-`GuardAgreeF` is not derived from it. -/
-theorem not_interp_of_pf_neg {ψ : PD.Formula} {m : ℕ} (h : PD.Pf m (.neg ψ)) : ¬ ψ.interp :=
-  PD.BaseTheorems.Pf_sound m (.neg ψ) h
 
 /-! ### Actions -/
 
@@ -170,10 +152,6 @@ lemma properPlayer_of_closedP {p : PD.Prog} (h : closedP p = true) : ProperPlaye
 lemma noSelfIdxP_of_modestP {p : PD.Prog} (h : modestP p = true) : noSelfIdxP p = true :=
   noSelfIdxP_of_fragP p (fragP_of_modestP p h)
 
-lemma fragF_of_modestP_search {k : ℕ} {φ : PD.Formula} {p q : PD.Prog} (h : modestP (.search k φ p q) = true) :
-    fragF φ = true := by
-  simp only [modestP, Bool.and_eq_true] at h
-  exact h.1.1
 
 /-- `subst` of an atomic program is `me`, `opp`, or the (closed) program itself. -/
 lemma subst_of_atomicP {p : PD.Prog} (hp : atomicP p = true) (me opp : PD.Prog) :
@@ -269,153 +247,6 @@ end Inv
 
 /-! ### The theorem -/
 
-/-- The core induction, with a flag `sf` that switches the oracle off (`sf = true`: the
-invariant forbids search nodes, so the oracle hypotheses are vacuous). -/
-theorem playsProof_evalGraph_core (sf : Bool) (hag : sf = false → GuardAgreeT)
-    (hneg : sf = false → GuardAgreeF) {me opp body : PD.Prog} {a : PD.Action} {n : ℕ}
-    (h : PD.PlaysProof me opp body a n) :
-    Inv sf me opp body → ∃ N, EvalGraph N (progCode me) (progCode opp) (progCode body) (actCode a) := by
-  refine PD.PlaysProof.induct
-    (motive := fun me opp body a n _ ↦
-      Inv sf me opp body → ∃ N, EvalGraph N (progCode me) (progCode opp) (progCode body) (actCode a))
-    ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ h
-  · -- const
-    intro me opp a _
-    refine ⟨1, ?_⟩
-    rw [progCode_const]
-    exact (EvalGraph.const_iff (n := 0)).mpr rfl
-  · -- self
-    intro me opp a n _ ih hI
-    obtain ⟨N, hN⟩ := ih (Inv.self hI)
-    refine ⟨N + 1, ?_⟩
-    rw [progCode_self, EvalGraph.self_iff]
-    exact hN
-  · -- opp
-    intro me opp a n _ ih hI
-    obtain ⟨N, hN⟩ := ih (Inv.opp hI)
-    refine ⟨N + 1, ?_⟩
-    rw [progCode_opp, EvalGraph.opp_iff]
-    exact hN
-  · -- bot
-    intro me opp p a n _ ih hI
-    obtain ⟨N, hN⟩ := ih (Inv.bot hI)
-    refine ⟨N + 1, ?_⟩
-    rw [progCode_bot, EvalGraph.bot_iff]
-    exact hN
-  · -- sim
-    intro a n me opp p q _ ih hI
-    obtain ⟨N, hN⟩ := ih (Inv.sim hI)
-    have hp : fragP p = true := fragP_of_modestP p (by
-      have := hI.2.2.2.2.1
-      simp only [modestP, Bool.and_eq_true] at this
-      exact this.1.2)
-    have hq : fragP q = true := fragP_of_modestP q (by
-      have := hI.2.2.2.2.1
-      simp only [modestP, Bool.and_eq_true] at this
-      exact this.2)
-    have hap : atomicP p = true := by
-      have := hI.2.2.2.2.1
-      simp only [modestP, Bool.and_eq_true] at this
-      exact this.1.1.1
-    have haq : atomicP q = true := by
-      have := hI.2.2.2.2.1
-      simp only [modestP, Bool.and_eq_true] at this
-      exact this.1.1.2
-    rw [progCode_subst_atomic hI.1 hI.2.1 (noSelfIdxP_of_modestP hI.2.2.1) (noSelfIdxP_of_modestP hI.2.2.2.1) p hp hap,
-      progCode_subst_atomic hI.1 hI.2.1 (noSelfIdxP_of_modestP hI.2.2.1) (noSelfIdxP_of_modestP hI.2.2.2.1) q hq haq] at hN
-    refine ⟨N + 1, ?_⟩
-    rw [progCode_sim, EvalGraph.sim_iff]
-    exact hN
-  · -- ite_t
-    intro me opp b r m a' p a n q _ hr _ ihb ihp hI
-    obtain ⟨hIb, hIp, _⟩ := Inv.ite hI
-    obtain ⟨N₁, h₁⟩ := ihb hIb
-    obtain ⟨N₂, h₂⟩ := ihp hIp
-    refine ⟨max N₁ N₂ + 1, ?_⟩
-    rw [progCode_ite, EvalGraph.ite_iff]
-    exact ⟨actCode r, EvalGraph.mono_le (le_max_left _ _) h₁,
-      Or.inl ⟨actCode_eq_of_beq hr, EvalGraph.mono_le (le_max_right _ _) h₂⟩⟩
-  · -- ite_f
-    intro me opp b r m a' q a n p _ hr _ ihb ihq hI
-    obtain ⟨hIb, _, hIq⟩ := Inv.ite hI
-    obtain ⟨N₁, h₁⟩ := ihb hIb
-    obtain ⟨N₂, h₂⟩ := ihq hIq
-    refine ⟨max N₁ N₂ + 1, ?_⟩
-    rw [progCode_ite, EvalGraph.ite_iff]
-    exact ⟨actCode r, EvalGraph.mono_le (le_max_left _ _) h₁,
-      Or.inr ⟨actCode_ne_of_beq_false hr, EvalGraph.mono_le (le_max_right _ _) h₂⟩⟩
-  · -- search_t
-    intro k me opp p a n φ q hg _ ih hI
-    obtain ⟨hsf, hIp, _⟩ := Inv.search hI
-    obtain ⟨N, hN⟩ := ih hIp
-    refine ⟨N + 1, ?_⟩
-    rw [progCode_search, EvalGraph.search_iff_at φ (noSelfIdxF_of_fragF φ (fragF_of_modestP_search hI.2.2.2.2.1))]
-    exact Or.inl ⟨hag hsf φ me opp k hg, hN⟩
-  · -- search_f
-    intro m me opp q a n k φ p hg _ ih hI
-    obtain ⟨hsf, _, hIq⟩ := Inv.search hI
-    obtain ⟨N, hN⟩ := ih hIq
-    refine ⟨N + 1, ?_⟩
-    rw [progCode_search, EvalGraph.search_iff_at φ (noSelfIdxF_of_fragF φ (fragF_of_modestP_search hI.2.2.2.2.1))]
-    exact Or.inr ⟨hneg hsf φ me opp k m hg, hN⟩
-  · -- voteZero_t
-    intro me opp p q a n v _ _ hI
-    exact (Inv.tvote hI).elim
-  · -- voteNil_f
-    intro me opp p q a n θ _ _ _ hI
-    exact (Inv.tvote hI).elim
-  · -- voteCons_c
-    intro me opp p q a n θ w m I rest _ _ _ _ _ hI
-    exact (Inv.tvote hI).elim
-  · -- voteCons_d
-    intro me opp p q a n θ w m I rest _ _ _ _ _ hI
-    exact (Inv.tvote hI).elim
-  · -- voteHigh_f
-    intro me opp p q a n θ c v _ _ _ _ hI
-    exact (Inv.tvote hI).elim
-  · -- sysStep
-    intro me opp defs i p a n _ _ _ hI
-    exact (Inv.sys hI).elim
-
-/-- **T2-AGENT.** Every evaluation certificate of `S` on the modest fragment is a run of the
-arithmetized evaluator, at the same budgets, given agreement on the consulted `□_k` facts
-(`GuardAgreeT`/`GuardAgreeF`). -/
-theorem playsProof_evalGraph (hag : GuardAgreeT) (hneg : GuardAgreeF)
-    {me opp body : PD.Prog} {a : PD.Action} {n : ℕ} (h : PD.PlaysProof me opp body a n)
-    (hme : ProperPlayer me) (hopp : ProperPlayer opp)
-    (hmme : modestP me = true) (hmopp : modestP opp = true) (hbody : modestP body = true) :
-    ∃ N, EvalGraph N (progCode me) (progCode opp) (progCode body) (actCode a) :=
-  playsProof_evalGraph_core false (fun _ ↦ hag) (fun _ ↦ hneg) h
-    ⟨hme, hopp, hmme, hmopp, hbody, fun h ↦ absurd h Bool.false_ne_true⟩
-
-/-- **T2-AGENT, search-free, unconditional**: no guard is consulted, no oracle hypothesis. -/
-theorem playsProof_evalGraph_searchFree
-    {me opp body : PD.Prog} {a : PD.Action} {n : ℕ} (h : PD.PlaysProof me opp body a n)
-    (hme : ProperPlayer me) (hopp : ProperPlayer opp)
-    (hmme : modestP me = true) (hmopp : modestP opp = true) (hbody : modestP body = true)
-    (hsme : me.hasSearch = false) (hsopp : opp.hasSearch = false) (hsbody : body.hasSearch = false) :
-    ∃ N, EvalGraph N (progCode me) (progCode opp) (progCode body) (actCode a) :=
-  playsProof_evalGraph_core true (fun h ↦ Bool.noConfusion h)
-    (fun h ↦ Bool.noConfusion h) h
-    ⟨hme, hopp, hmme, hmopp, hbody, fun _ ↦ ⟨hsme, hsopp, hsbody⟩⟩
-
-/-- The atom form: an engine atom certificate `⊢_k (.plays me opp a)` is a run of the
-arithmetized `play` (`eval me opp me`). -/
-theorem atomProvable_evalGraph (hag : GuardAgreeT) (hneg : GuardAgreeF)
-    {k : ℕ} {me opp : PD.Prog} {a : PD.Action} (h : PD.AtomProvable k (.plays me opp a))
-    (hme : ProperPlayer me) (hopp : ProperPlayer opp) (hmme : modestP me = true) (hmopp : modestP opp = true) :
-    ∃ N, EvalGraph N (progCode me) (progCode opp) (progCode me) (actCode a) := by
-  cases h with
-  | mk hp _ => exact playsProof_evalGraph hag hneg hp hme hopp hmme hmopp hmme
-
-/-- The atom form, search-free and unconditional. -/
-theorem atomProvable_evalGraph_searchFree
-    {k : ℕ} {me opp : PD.Prog} {a : PD.Action} (h : PD.AtomProvable k (.plays me opp a))
-    (hme : ProperPlayer me) (hopp : ProperPlayer opp) (hmme : modestP me = true) (hmopp : modestP opp = true)
-    (hsme : me.hasSearch = false) (hsopp : opp.hasSearch = false) :
-    ∃ N, EvalGraph N (progCode me) (progCode opp) (progCode me) (actCode a) := by
-  cases h with
-  | mk hp _ => exact playsProof_evalGraph_searchFree hp hme hopp hmme hmopp hmme hsme hsopp hsme
 
 /-! ### The truth equation for the realized play-atom -/
 
@@ -482,7 +313,6 @@ theorem models_sentenceAt_plays (me' opp' me opp : PD.Prog) (a : PD.Action)
 
 /-! ### Sanity: the zoo is modest -/
 
-theorem modestP_DupocBot (k : ℕ) : modestP (PD.Bots.DupocBot k) = true := rfl
 
 theorem properPlayer_DupocBot (k : ℕ) : ProperPlayer (PD.Bots.DupocBot k) := ⟨by simp [PD.Bots.DupocBot], by simp [PD.Bots.DupocBot]⟩
 

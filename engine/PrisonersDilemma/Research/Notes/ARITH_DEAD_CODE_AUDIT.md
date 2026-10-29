@@ -371,3 +371,38 @@ the census; the LIVE set is identical before and after (22264 constants).
 
 The tool and its two modes are documented in `arith/scripts/README.md`; `scripts/roots.txt` is the
 regenerated census (2219 names).
+
+
+## 9. Tier E executed (2026-10-29, same day): the engine's `S` is no longer used by `ArithS`
+
+**Question.** Which parts of the engine does `ArithS` really depend on? A reachability measurement
+(`EngineDeps.lean`, the same closure as §8 but collecting the ENGINE constants the live `ArithS`
+declarations use) answered: 246 constants in 54 engine modules — `Program` (71: the language),
+`Tau.Zoo`/`Roster`/`Spec`/`Vote` (87: the τ-roster), `Base.Transpose` (28: the syntactic transposition
+`τ̂`), `Dynamics` (8: `eval`/`play`/`outcome`, the lockstep), `Outcome.Spec` (6: the regimes), one
+constant from each of 20 bot files and each of 27 search-free cell theorems. ZERO constants from
+`ProofSystem`, `Base/Soundness`, `Base/AtomCerts`, `Base/Exclusion`, `Base/RedCellFramework`: the
+rule-based `S` was reached only by the frozen T2 bridge (`Bridge/`) and the engine-level red-cell audit twin
+(`Audit/RedCellInstance`), none of which any claim uses.
+
+**Executed.** The §8 fixpoint over `Bridge/*`, `Eval/Det`, `Audit/RedCellInstance`: 112 declarations and the
+modules `Bridge/EngineBridge`, `Bridge/Core/{Tr,Sound}`, `Audit/RedCellInstance` deleted (1242 lines); the
+five direct imports of `S`'s theory removed. What remains of `Bridge/` is the evaluation-certificate kit the
+cells use (`Agent`: `properPlayer_*`, `models_sentenceAt_of_lenBox`, …; `Inst`: the `inst` instantiation and
+its simp set; `AgentConverse`: `outcome_eq_some_iff`; `Neg`: the size arithmetic `FitBox`/`NeverFits` need) —
+not a bridge any more, kept under its old name so that the notes' paths resolve. Consequence for the engine
+dependency: `ArithS` imports the engine's language, evaluator, bots, τ-roster, `τ̂` and 27 search-free cells.
+`ProofSystem` stays in the TRANSITIVE closure for one reason only — `Dynamics.eval`'s search clause is
+`decide (Pf k φ)`, so `Pf` is part of the evaluator's definition — but no rule, soundness or exclusion
+theorem of `S` is used anywhere in `ArithS`.
+
+**Three traps, each one build.** (1) A `simp` set is invisible to the closure: six `@[simp] … := rfl`
+lemmas of `Bridge/Inst` (`inst_emb_func`, `inst_emb_rel`, …) were "dead" and `lMap_inst_emb` stopped
+closing — restored. (2) A surviving lemma used `PD.play` through a removed import — `Dynamics` imported
+explicitly. (3) `Mathlib.Tactic` (and `Mathlib.Data.Nat.Log`) reached `Necessitation/` only through the
+engine's `Base/Asymptotics`; `interval_cases` became an unknown tactic in `Layout.lean` — the two imports
+now sit in `Bridge/Neg.lean`, the lowest surviving point of the old chain.
+
+Gates: build 3495 jobs, censuses unchanged (132 / 30 / 78/78; tau 256/256), axiom census the same four
+subsets, export byte-identical, `check_tiers.py` ok (frozen tier 7 modules), LIVE set 22264 before and
+after, engine usage 246 constants before and after.

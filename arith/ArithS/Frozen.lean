@@ -3,9 +3,6 @@ import ArithS.Agents.FitBox
 import ArithS.Eval.Det
 import ArithS.Bridge.Agent
 import ArithS.Bridge.AgentConverse
-import ArithS.Bridge.Core.Sound
-import ArithS.Bridge.Core.Tr
-import ArithS.Bridge.EngineBridge
 import ArithS.Bridge.Inst
 import ArithS.Bridge.Neg
 

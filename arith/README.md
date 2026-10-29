@@ -70,8 +70,10 @@ rules are additive; PA's verification is polynomial, `BOXCOST_SPIKE.md`) — and
 of sources its rules do not cover, which is where the 15 disagreements come from. A rule-by-rule
 bridge `S → S'` at polynomial budgets is impossible (citation composes doubly-exponentially
 through nested boxes: `MERGE_CROSSROAD.md`); the decision (2026-09-23) was route B — re-prove the
-cells directly (`ROUTE_B_SCOPE.md`). The T2 bridge modules (`Bridge/Core/`, `Bridge/Agent`, `Bridge/AgentConverse`,
-`Bridge/Inst`, `Eval/Det`) are frozen.
+cells directly (`ROUTE_B_SCOPE.md`). The bridge proper was deleted on 2026-10-29 (`ARITH_DEAD_CODE_AUDIT.md`
+§9); `Bridge/{Agent,AgentConverse,Inst,Neg}` and `Eval/Det` keep the evaluation-certificate lemmas the cells use.
+`ArithS` uses nothing of the engine's proof system `S`: it imports the engine's language, evaluator, bots,
+τ-roster, transposition and 27 search-free cells.
 
 ## Building
 

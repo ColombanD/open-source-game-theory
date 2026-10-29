@@ -127,10 +127,6 @@ theorem EvalGraph.unique_V' (n : V) : ∀ n' me opp p a₁ a₂ : V,
       · exact hp (h ▸ IsShape.tvote _ _ _ _)
       · exact hp (h ▸ IsShape.sys _ _)
 
-/-- **Internal determinism** at one fuel. -/
-theorem EvalGraph.unique_V {n me opp p a₁ a₂ : V}
-    (h₁ : EvalGraph n me opp p a₁) (h₂ : EvalGraph n me opp p a₂) : a₁ = a₂ :=
-  EvalGraph.unique_V' n n me opp p a₁ a₂ h₁ h₂
 
 end det
 
@@ -329,102 +325,15 @@ lemma eval_closedDesc_V (c : ℕ) (b : Fin 7 → V) :
   · intro h
     exact ⟨_, rfl, by rw [revalue_val_desc_V]; exact h⟩
 
-/-- **The truth equation in every model of `𝗜𝚺₁`**: for PROPER programs the instantiated play-atom
-holds in `V` iff the arithmetized `play` on the CAST codes yields the cast action code; the frame
-`(me', opp')` is irrelevant. -/
-theorem models_sentenceAt_plays_V (me' opp' me opp : PD.Prog) (a : PD.Action)
-    (hme : ProperPlayer me) (hopp : ProperPlayer opp) :
-    V↓[ℒₒᵣ] ⊧ Semiformula.lMap inst (sentenceAt me' opp' (.plays me opp a)) ↔
-      ∃ N : V, EvalGraph N (progCode me : V) (progCode opp : V) (progCode me : V) (actCode a : V) := by
-  rw [models_inst_V]
-  unfold sentenceAt
-  rw [template_plays]
-  unfold progGraph
-  rw [progAux_of_ne hme.1 hme.2, progAux_of_ne hopp.1 hopp.2]
-  simp only [Semiformula.eval_substs, Semiformula.eval_ex, LogicalConnective.HomClass.map_and,
-    LogicalConnective.Prop.and_eq, eval_closedDesc_V, eval_evalG_V, Function.comp_def,
-    Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two, Matrix.cons_val_three,
-    Matrix.cons_val_four, Matrix.cons_val_succ, Matrix.vecHead, Matrix.vecTail, Semiterm.val_bvar,
-    val_cl_V, val_actT_V]
-  constructor
-  · rintro ⟨x, y, N, rfl, rfl, h⟩
-    exact ⟨N, h⟩
-  · rintro ⟨N, h⟩
-    exact ⟨_, _, N, rfl, rfl, h⟩
 
 end desc
 
 /-! ### The negative atom in every model of PA, and in PA -/
 
-/-- In a model of PA, a PA-provable positive atom for the play `b` refutes the atom for any
-`aN ≠ b`: the positive run transfers to `V`, the negative one would be a second run, and the
-evaluator is deterministic inside `V`. -/
-theorem models_neg_inst_sentenceAt_plays_V (V : Type*) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗣𝗔]
-    (me' opp' me opp : PD.Prog) {b aN : PD.Action} (hne : b ≠ aN)
-    (hme : ProperPlayer me) (hopp : ProperPlayer opp)
-    (hpos : 𝗣𝗔 ⊢ Semiformula.lMap inst (sentenceAt me' opp' (.plays me opp b))) :
-    V↓[ℒₒᵣ] ⊧ ∼ Semiformula.lMap inst (sentenceAt me' opp' (.plays me opp aN)) := by
-  have hV : V↓[ℒₒᵣ] ⊧ Semiformula.lMap inst (sentenceAt me' opp' (.plays me opp b)) :=
-    models_of_provable inferInstance hpos
-  rw [models_sentenceAt_plays_V me' opp' me opp b hme hopp] at hV
-  obtain ⟨N, hN⟩ := hV
-  rw [Semantics.Not.models_not, models_sentenceAt_plays_V me' opp' me opp aN hme hopp]
-  rintro ⟨N', hN'⟩
-  have e : (actCode b : V) = (actCode aN : V) := EvalGraph.unique_V' N N' _ _ _ _ _ hN hN'
-  exact hne (actCode_inj (nat_cast_inj.mp e))
-
-/-- **PA refutes the wrong atom, given the right one**: from `𝗣𝗔 ⊢ atom(b)` and `b ≠ aN`,
-`𝗣𝗔 ⊢ ∼ atom(aN)` — by the completeness theorem over `models_neg_inst_sentenceAt_plays_V`. -/
-theorem pa_proves_neg_sentenceAt_inst_of_pos (me' opp' me opp : PD.Prog) {b aN : PD.Action} (hne : b ≠ aN)
-    (hme : ProperPlayer me) (hopp : ProperPlayer opp)
-    (hpos : 𝗣𝗔 ⊢ Semiformula.lMap inst (sentenceAt me' opp' (.plays me opp b))) :
-    𝗣𝗔 ⊢ ∼ Semiformula.lMap inst (sentenceAt me' opp' (.plays me opp aN)) :=
-  Arithmetic.complete 𝗣𝗔 _ fun (V : Type) _ _ ↦
-    models_neg_inst_sentenceAt_plays_V V me' opp' me opp hne hme hopp hpos
-
-/-- **PA proves the negative atom sentences of modest plays**: for proper modest players, given
-`GuardAgree`, an engine play `me(opp) = b` with `b ≠ aN` makes
-`∼ lMap inst (sentenceAt me' opp' (.plays me opp aN))` a theorem of PA. -/
-theorem pa_proves_neg_sentenceAt_inst (hga : GuardAgree) (me' opp' me opp : PD.Prog) {b aN : PD.Action}
-    (hne : b ≠ aN) (hme : ProperPlayer me) (hopp : ProperPlayer opp) (hm : modestP me = true) (hm' : modestP opp = true)
-    (h : ∃ n, PD.play n me opp = some b) :
-    𝗣𝗔 ⊢ ∼ Semiformula.lMap inst (sentenceAt me' opp' (.plays me opp aN)) :=
-  pa_proves_neg_sentenceAt_inst_of_pos me' opp' me opp hne hme hopp
-    (pa_proves_sentenceAt_inst hga me' opp' me opp b hme hopp hm hm' h)
-
-/-- The search-free, unconditional form (no oracle): from an engine certificate of the play `b`. -/
-theorem pa_proves_neg_sentenceAt_inst_searchFree (me' opp' : PD.Prog) {k : ℕ} {me opp : PD.Prog}
-    {b aN : PD.Action} (h : PD.AtomProvable k (.plays me opp b)) (hne : b ≠ aN)
-    (hme : ProperPlayer me) (hopp : ProperPlayer opp) (hm : modestP me = true) (hm' : modestP opp = true)
-    (hsme : me.hasSearch = false) (hsopp : opp.hasSearch = false) :
-    𝗣𝗔 ⊢ ∼ Semiformula.lMap inst (sentenceAt me' opp' (.plays me opp aN)) :=
-  pa_proves_neg_sentenceAt_inst_of_pos me' opp' me opp hne hme hopp
-    (pa_proves_sentenceAt_inst_searchFree me' opp' h hme hopp hm hm' hsme hsopp)
 
 /-! ### The `atomNeg` leaf of T2-CORE -/
 
-/-- **The `Leaf.atomNeg` shape of T2-CORE is discharged** on proper modest players (under
-`GuardAgree`): `Core.tr Aι (.neg (.plays me opp aN))` is a PA theorem whenever `S` certifies the
-play `b ≠ aN`. -/
-theorem leaf_atomNeg_sound (hga : GuardAgree) {m : ℕ} {me opp : PD.Prog} {b aN : PD.Action}
-    (h : PD.AtomProvable m (.plays me opp b)) (hne : b ≠ aN)
-    (hme : ProperPlayer me) (hopp : ProperPlayer opp) (hm : modestP me = true) (hm' : modestP opp = true) :
-    𝗣𝗔 ⊢ Core.tr Aι (.neg (.plays me opp aN)) :=
-  pa_proves_neg_sentenceAt_inst_of_pos me opp me opp hne hme hopp
-    (pa_proves_sentenceAt_inst_of_atomProvable hga me opp h hme hopp hm hm')
-
-/-- The `Leaf.atomNeg` shape, search-free players, no oracle. -/
-theorem leaf_atomNeg_sound_searchFree {m : ℕ} {me opp : PD.Prog} {b aN : PD.Action}
-    (h : PD.AtomProvable m (.plays me opp b)) (hne : b ≠ aN)
-    (hme : ProperPlayer me) (hopp : ProperPlayer opp) (hm : modestP me = true) (hm' : modestP opp = true)
-    (hsme : me.hasSearch = false) (hsopp : opp.hasSearch = false) :
-    𝗣𝗔 ⊢ Core.tr Aι (.neg (.plays me opp aN)) :=
-  pa_proves_neg_sentenceAt_inst_searchFree me opp h hne hme hopp hm hm' hsme hsopp
 
 end ArithS
 
 #print axioms ArithS.EvalGraph.unique_V'
-#print axioms ArithS.models_sentenceAt_plays_V
-#print axioms ArithS.pa_proves_neg_sentenceAt_inst
-#print axioms ArithS.leaf_atomNeg_sound
-#print axioms ArithS.leaf_atomNeg_sound_searchFree

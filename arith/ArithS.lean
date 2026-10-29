@@ -37,7 +37,6 @@ import ArithS.Eval.SimTest
 import ArithS.Agents.Template
 import ArithS.Cells.RedCell
 import ArithS.Audit.RedCellAudit
-import ArithS.Audit.RedCellInstance
 import ArithS.Agents.Fit
 import ArithS.Audit.RedCellUnsound
 import ArithS.Agents.Code
@@ -133,9 +132,6 @@ import ArithS.Bridge.AgentConverse
 import ArithS.Bridge.Inst
 import ArithS.Eval.Det
 import ArithS.Agents.FitBox
-import ArithS.Bridge.EngineBridge
-import ArithS.Bridge.Core.Tr
-import ArithS.Bridge.Core.Sound
 import ArithS.Audit
 import ArithS.Outcome.Spec
 import ArithS.Outcome.Attr

@@ -61,3 +61,6 @@ budget-preserving embedding of the citation rule exists.*
   reducible to PA" acceptable (→ C)?
 * Is the floor (`search_f`) to be claimed in `S'` at all, or left as the engine's result with
   the reflection assumption stated?
+
+
+**2026-10-29.** The T2 bridge modules (`Bridge/Core/{Tr,Sound}`, `Bridge/EngineBridge`, the engine-level red-cell twin `Audit/RedCellInstance`, and the `S`-dependent halves of `Bridge/{Agent,AgentConverse,Inst,Neg}` and `Eval/Det`) were deleted for the submission (`ARITH_DEAD_CODE_AUDIT.md` §9); they are in git history at `ba925a4`. `ArithS` now uses no theorem of `S`.
