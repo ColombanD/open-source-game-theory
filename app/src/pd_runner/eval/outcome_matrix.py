@@ -33,7 +33,7 @@ the last `lake exe export_outcomes`. `export_staleness()` detects a lagging file
 `refresh_export()` regenerates it (build + export); the library writer refreshes it
 after every accepted proof and the web UI exposes the check and the button.
 
-TWO SOURCES (2026-09-30, `Research/Notes/SPRIME_SOURCE_OF_TRUTH.md`). The cells above
+TWO SOURCES (2026-09-30, `docs/notes/SPRIME_SOURCE_OF_TRUTH.md`). The cells above
 describe the engine's stipulated `S`. The arithmetized system PA-`S'` (`arith/`) re-proves
 the matrix cell by cell and exports it to `app/generated/sprime_outcome_theorems.json`
 (`lake exe export_sprime_outcomes`) in the SAME schema plus `"system": "sprime"` and a

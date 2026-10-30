@@ -12,7 +12,7 @@ One `@[floorA]` theorem per `dich_<L>_vs_<R>` of `Cells/FloorDichotomy.lean`:
 
     @[floorA] theorem outcome_<L>_vs_<R>_floor : FloorSpecA (bot L) (bot R) (fun k ↦ <hinge>) (some (a, b))
 
-with `(a, b)` the ENGINE's value (`Research/Notes/ROUTE_B_CENSUS.md`, column "engine") and `<hinge>` written
+with `(a, b)` the ENGINE's value (`docs/notes/ROUTE_B_CENSUS.md`, column "engine") and `<hinge>` written
 inline in the `□[k] φ` notation. For the single-hinge cells the hinge is the dichotomy's own `A_k`; for the
 NESTED cells (the prudence floors and the bistable-modulo-reflection pairs) it is the boolean combination of the
 outer hinges under which the engine's value is forced — read off the `dich_` statement, so that `¬ hinge k` is
@@ -21,7 +21,7 @@ hinge discharged (`dich_…_prudenceFound`) or the partner's side built (`dich_P
 sharper dichotomy is the one used, so the hinge names only the questions `S'` genuinely leaves open.
 
 Validated by `#check_floorA_theorems` (`Outcome/Lint.lean`), exported to `app/generated/sprime_outcome_theorems.json`
-(`floors`, provenance `floor_dichotomy`). Design note: `Research/Notes/SPRIME_SOURCE_OF_TRUTH.md` §1.1.
+(`floors`, provenance `floor_dichotomy`). Design note: `docs/notes/SPRIME_SOURCE_OF_TRUTH.md` §1.1.
 -/
 
 namespace ArithS

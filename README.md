@@ -13,6 +13,7 @@ analysis of the resulting populations. Companion to the paper *Partial Transpare
 | [`engine/`](engine/) | **The host**: the agent language (`Prog`), the fuelled evaluator, the bot zoo, the τ-bot DSL, and the typed outcome-theorem template with its linter and census. Also the rule-based system `S` and its outcome theorems, which `arith/` imports (search-free cells transfer) and the Python layer loads as the comparison source. `arith/` depends on it; it never imports `arith/`. | `cd engine && lake build` |
 | [`app/`](app/) | **The Python core** (`pd_runner`): the outcome matrices read from the two Lean exports (never from Lean source), the tau layer (signals, σ-families, the Def 3 ≡ Def 4 certification), and the EGT stages (ESS, invasion graphs, faces, Nash, replicator, Moran). The paper's experiments and the figure generators in `latex/scripts/` run on it. | `cd app && uv sync && uv run pytest` |
 | [`pipeline/`](pipeline/) | **The LLM pipeline** (`pd_pipeline`): bots written from natural language, outcome proofs written by an agent and judged by the Lean kernel, the faithfulness reviewer, the web UI. Out of the paper's scope; depends on `app/`. | `cd pipeline && uv sync && uv run pd-serve` |
+| [`docs/`](docs/) | The design record: live notes, the archive of decisions, reading notes. [`docs/README.md`](docs/README.md) is the index. | — |
 | [`latex/`](latex/) | The paper sources, the figure and table generators (`scripts/`), earlier notes and talks. | — |
 | [`llm-distillation/`](llm-distillation/) | A separate experiment (fitting LLM play to the matrix); kept for later work. | — |
 
@@ -29,7 +30,7 @@ whole build. No `sorry`. Every matrix cell is a theorem on a typed template, che
 census inside `lake build`, or an explicitly stated open case (a floor dichotomy).
 
 Project conventions for contributors and agents are in [`CLAUDE.md`](CLAUDE.md); the design notes
-live under [`engine/PrisonersDilemma/Research/Notes/`](engine/PrisonersDilemma/Research/Notes/).
+live under [`docs/`](docs/) — start with its [index](docs/README.md).
 
 ## Toolchain
 

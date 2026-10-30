@@ -3,7 +3,7 @@
 Each generator calls `prune(text, module)` on its output before writing. The names to drop live in
 `scripts/pruned/<module>.txt` (one Lean declaration name per line, `#` comments; the module name is the
 Lean module without the `ArithS.` prefix, e.g. `Necessitation.RowInstB`). The lists are the DEAD set of
-`Research/Notes/ARITH_DEAD_CODE_AUDIT.md` (2026-09-28, `scripts/DeadCode.lean`): nothing in the census
+`docs/notes/ARITH_DEAD_CODE_AUDIT.md` (2026-09-28, `scripts/DeadCode.lean`): nothing in the census
 reaches them, so dropping them changes no statement the package prints. A name in the list that the
 generator no longer emits is ignored; a live row that cites a pruned lemma fails the build, which is the
 check. To resurrect a row, delete its line from the list and regenerate.

@@ -5,7 +5,7 @@ defaultTargets = ["ArithS", "ArithSOutcomeCheck", "ArithSTauCheck"]
 # The arithmetized instance of S: PA (Foundation) + abstract action constants, a
 # structural proof-length measure `len`, and the length-bounded provability predicate
 # `Bew_k`. It requires Foundation at a pinned commit AND, since milestone M3 (the
-# transfer theorem, Research/Notes/ARITHMETIZED_S_ROADMAP.md), the engine itself as a
+# transfer theorem, docs/notes/archive/ARITHMETIZED_S_ROADMAP.md), the engine itself as a
 # PATH dependency (`../engine`, one workspace on the same toolchain and the same mathlib
 # commit). The dependency is one-way: the engine never imports ArithS.
 

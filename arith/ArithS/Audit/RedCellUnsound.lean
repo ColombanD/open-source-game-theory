@@ -5,7 +5,7 @@ import ArithS.Agents.Fit
 # ArithS.RedCellUnsound — the red cell FLIPS when soundness is dropped
 
 The "drop soundness" mutation of the red-cell audit
-(`engine/PrisonersDilemma/Research/Notes/RED_CELL_AUDIT.md` §4; the paper note's
+(`docs/notes/archive/RED_CELL_AUDIT.md` §4; the paper note's
 Proposition 6.1), executed as a POSITIVE theorem rather than as a scratch-copy compile
 failure.
 

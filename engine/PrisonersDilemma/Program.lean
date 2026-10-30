@@ -40,7 +40,7 @@ mutual
         -- > 0 → run `q`.
         --
         -- The vote reads TRUE PLAYS, not provability: that is the whole point of the
-        -- refined Def 4 (`Research/Notes/TAUBOTS.md` §1). A tau player votes once over the
+        -- refined Def 4 (`docs/notes/TAUBOTS.md` §1). A tau player votes once over the
         -- compound decisions of its own δ-instances; every `proofSearch` lives INSIDE
         -- an entry, exactly where the lifted base bot's own code puts it. NO budget
         -- argument: the vote itself never consults the oracle.
@@ -51,7 +51,7 @@ mutual
         -- frame.
     | sys     : ProgList → Nat → Prog
         -- the MUTUAL-FIXPOINT BINDER (revived 2026-08-20 for the Def-4 self-probers;
-        -- originally Def-5, see `Research/Notes/TAUBOTS.md`; archived at tag
+        -- originally Def-5, see `docs/notes/TAUBOTS.md`; archived at tag
         -- `taubot-def5-research`). `sys defs i` is the i-th component of the
         -- mutually-recursive system `defs`, whose members refer to each other via
         -- `.selfIdx`. LAZY unfold: `eval` closes one level per fuel tick via
@@ -87,7 +87,7 @@ mutual
     | neg   : Formula → Formula                   -- ¬ φ
     | box   : Nat → Formula → Formula             -- □_n φ: "S derives φ at budget n" (⊢_n φ; its interp is `Pf n φ`)
     | eq    : Prog → Prog → Formula               -- structural identity: "p and q are the same program". The 2nd arg is a frozen literal target (subst does not descend into it); the 1st is the probe (typically `.opp`), which subst resolves to the concrete player.
-    | diag  : Nat → Formula → Formula             -- the Löb-fixpoint sentence for target `tgt` at box budget `g`: ψ with ψ ↔ (□_g ψ → tgt). Its meaning (Dynamics.interp) is the fixpoint BY DESIGN — same pattern as `.box` meaning `Pf`; the meta-justification that a faithful arithmetization contains such a sentence is the Reflection layer's DERIVED diagonal (Research/Notes/INTERNALIZATION_ROADMAP.md, I0). Never appears in bot source; used only by the meta Löb chain (bounded Löb / PBLT).
+    | diag  : Nat → Formula → Formula             -- the Löb-fixpoint sentence for target `tgt` at box budget `g`: ψ with ψ ↔ (□_g ψ → tgt). Its meaning (Dynamics.interp) is the fixpoint BY DESIGN — same pattern as `.box` meaning `Pf`; the meta-justification that a faithful arithmetization contains such a sentence is the Reflection layer's DERIVED diagonal (docs/notes/INTERNALIZATION_ROADMAP.md, I0). Never appears in bot source; used only by the meta Löb chain (bounded Löb / PBLT).
 end
 deriving instance DecidableEq for Prog, VoteList, ProgList, Formula
 
@@ -268,7 +268,7 @@ def Prog.hasSearch : Prog → Bool
   -- be search-free would otherwise enter the search-free fragment and add a `.tvote`
   -- case to `atom_complete_searchfree` — for no benefit, since tau players are never
   -- census subjects and need no atom certificates. Conservative over-approximation
-  -- (Research/Notes/TAUBOTS.md).
+  -- (docs/notes/TAUBOTS.md).
   | .tvote _ _ _ _     => true
   | .sys _ _        => true      -- CONSERVATIVE: unfolding may consult the oracle through
                                  -- members; kept out of the searchfree fragment without a

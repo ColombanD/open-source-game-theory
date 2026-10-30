@@ -8,7 +8,7 @@ import ArithS.Outcome.Spec
 bounded consistency of `TAct` at `k` up to an additive constant, Pudlák's linear-regime question, open both
 ways), `¬A_k →` the engine's value and `A_k →` the found-branch value. Nothing will "prove" a floor; the app
 carries it as a cell with provenance `floor_dichotomy` and an explicit policy
-(`Research/Notes/SPRIME_SOURCE_OF_TRUTH.md` §0.2).
+(`docs/notes/SPRIME_SOURCE_OF_TRUTH.md` §0.2).
 
 `FloorSpecA L R hinge r` is the half the app reads under the `engine_side` policy, on the `OutcomeSpecA`
 vocabulary: for all large `k`, if the hinge fails then the outcome is `r`. The hinge is written INLINE in each

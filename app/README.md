@@ -53,5 +53,5 @@ committed samples in `tests/fixtures/` (see `tests/conftest.py`).
   cells, so grid points with the same cells share one run directory.
 * Package management is `uv` only.
 
-The design records are the notes under `../engine/PrisonersDilemma/Research/Notes/`
+The design records are the notes under `../docs/notes/`
 (`TAUBOTS.md`, `SPRIME_SOURCE_OF_TRUTH.md`, `EGT_FINDINGS_SPRIME.md`).

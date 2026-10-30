@@ -1,3 +1,5 @@
+> **Archived 2026-10-29.** This note describes the engine's decidability chain (`Decidability/`, T31–T54) and its spikes, deleted from the repository on 2026-10-29 for the paper submission; the code is in git history at commit `3f99464`, the last one holding it. The results it records (the verified enumerator, the computable evaluator `evalG`, the CutRelevance falsification) stand as stated.
+
 # Normalization for a Bounded-Löb Modal Proof Calculus (the D2f-b theorem)
 
 *Status 2026-07-03 (end of day): **PROVEN** — `boxInv_total`, kernel-checked in

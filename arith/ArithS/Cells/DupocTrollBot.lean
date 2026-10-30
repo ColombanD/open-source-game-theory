@@ -7,7 +7,7 @@ import PrisonersDilemma.Bots.DupocTrollBot
 
 `DupocTrollBot k := .search k (.eq .opp (DupocBot k)) D C` (`engine/.../Bots/DupocTrollBot.lean`, 2026-10-13):
 the troll aimed at the Löbian cooperator, the mirror image of `CupodTrollBot` (which targets CupodBot). It has
-NO engine cell — every cell below is an `S'`-only result (`Research/Notes/ROUTE_B_CENSUS.md`, "S'-only cells").
+NO engine cell — every cell below is an `S'`-only result (`docs/notes/ROUTE_B_CENSUS.md`, "S'-only cells").
 Twelve cells, DupocTroll on the left: the ten `body` bots, CIMCIC, and itself.
 
 1. **Its code and its simple-member form.** Like CupodTroll, its guard freezes a budget-carrying snapshot, so the
@@ -34,7 +34,7 @@ Twelve cells, DupocTroll on the left: the ten `body` bots, CIMCIC, and itself.
    / `_true` and the hypothesis-free dichotomy `dich_DupocTrollBot_vs_CIMCIC` (engine side `(C, D)`, hinge side
    `(C, C)`), registered in `Outcome/Floors.lean` and checked by `#check_floorA_theorems` on THIS file.
 
-Conventions (`Research/Notes/ARITH_TRAPS.md`): every threshold EXISTENTIAL; `simp` never sees a closed quote;
+Conventions (`docs/notes/ARITH_TRAPS.md`): every threshold EXISTENTIAL; `simp` never sees a closed quote;
 `omega` is never asked about `V`; at `V = ℕ` the V-generic `≤` is bridged by `le_def`.
 -/
 

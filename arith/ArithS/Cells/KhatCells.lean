@@ -4,7 +4,7 @@ import ArithS.Cells.JustSlot
 /-!
 # ArithS.Cells.KhatCells — the `k̂`-chain cells in PA-`S'`: the TFT probes and CupodTroll × Cupod
 
-`Research/Notes/ROUTE_B_SCOPE.md` §6 (Phase 4 addendum): the four POS cells skipped by
+`docs/notes/ROUTE_B_SCOPE.md` §6 (Phase 4 addendum): the four POS cells skipped by
 `Cells/PositiveCells.lean` — Dupoc × TFT, Just × TFT, CIMCIC × TFT, CupodTroll × Cupod. In each the
 searcher's guard is TRUE only ABOVE a standard threshold `k̂`: the opponent's play in a model `V`
 needs the searcher's own guard (or a probe's) FOUND in `V` at the budget `k`, and "found" holds

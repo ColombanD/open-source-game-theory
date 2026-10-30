@@ -3,7 +3,7 @@ import ArithS.Loeb.InstV
 /-!
 # ArithS.NumeralFacts — short `TAct` proofs of `numeral c ≤ binNumeralMeta k`
 
-M4 item U9 step 2 (`Research/Notes/M4_BOUNDED_HBL/BRIEF.md` §6): the final meta step of PBLT
+M4 item U9 step 2 (`docs/notes/archive/M4_BOUNDED_HBL/BRIEF.md` §6): the final meta step of PBLT
 instantiates `TAct ⊢ ∀¹ (numeral k̂ ≤ #0 🡒 ψ)` at the binary numeral `binNumeralMeta k` and must
 discharge the antecedent `numeral k̂ ≤ binNumeralMeta k` with a SHORT proof — short in `size k` (the bit
 length), never in `k`.

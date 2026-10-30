@@ -4,7 +4,7 @@ import ArithS.Agents.BinNumeral
 /-!
 # ArithS.InstV — the `binNumeral`-instance operator, the parametric box, and Quantifier Distribution on codes
 
-M4 items U1 and U3 of `Research/Notes/M4_BOUNDED_HBL/BRIEF.md` §3, V-generic (every model of
+M4 items U1 and U3 of `docs/notes/archive/M4_BOUNDED_HBL/BRIEF.md` §3, V-generic (every model of
 `IΣ₁`), on Foundation's formula/derivation CODES.
 
 * **U1.** `instB n k := subst LAct (binNumeral k ∷ 0) n` — the formula code `n` (one free variable

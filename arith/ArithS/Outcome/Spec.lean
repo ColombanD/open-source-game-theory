@@ -25,7 +25,7 @@ system, so that a cell of `S'` reads the way a cell of `S` does:
 * `□[k] φ`: the box, `LenBox TAct k φ` — the notation `□_k σ` of the notes (`ArithS.Notation`).
 
 The per-left-bot files `Outcome/Matrix/<L>.lean` state every cell of the ledger
-(`Research/Notes/ROUTE_B_CENSUS.md`, "S' status per cell") in this form, each proved from the
+(`docs/notes/ROUTE_B_CENSUS.md`, "S' status per cell") in this form, each proved from the
 method-named theorem of `Cells/` (`snd_…`, `pos_…`, `loeb_…`, `khat_…`, `sf_…`) that carries
 the mathematics. Nothing here proves anything new; it is the reading layer.
 -/

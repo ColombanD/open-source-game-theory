@@ -27,7 +27,7 @@ theorems are untouched.
 4. **DIMCID × CupodTrollBot `(D, C)`** (a FLIP): `dimcid_vs_described` on the engine CupodTroll's description,
    and `snd_CupodTrollBot_vs_DIMCID_engine`: **`loeb_DIMCID_vs_CupodTrollBot_engine`**.
 
-Conventions (`Research/Notes/ARITH_TRAPS.md`): every threshold EXISTENTIAL; `simp` never sees a closed quote;
+Conventions (`docs/notes/ARITH_TRAPS.md`): every threshold EXISTENTIAL; `simp` never sees a closed quote;
 `omega` is never asked about `V`; at `V = ℕ` the V-generic `≤` is bridged by `le_def`.
 -/
 

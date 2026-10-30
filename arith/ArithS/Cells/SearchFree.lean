@@ -32,7 +32,7 @@ import PrisonersDilemma.Theorems.TitForTatBot.vs_TitForTatBot
 /-!
 # ArithS.Cells.SearchFree — the 28 search-free cells of the census in PA-`S'`
 
-`Research/Notes/ROUTE_B_SCOPE.md` §3 Phase 4, class **SF** of `ROUTE_B_CENSUS.md`:
+`docs/notes/ROUTE_B_SCOPE.md` §3 Phase 4, class **SF** of `ROUTE_B_CENSUS.md`:
 both players in {CooperateBot, DefectBot, MirrorBot, TitForTatBot, DBot, EBot, OBot} — `const/sim/ite`
 only, no `.search` node anywhere, so the arithmetized evaluator NEVER consults `□_k` and the cells
 are unconditional: no oracle (`GuardAgree`), no Löb, no floor, no budget. Every cell is the engine's

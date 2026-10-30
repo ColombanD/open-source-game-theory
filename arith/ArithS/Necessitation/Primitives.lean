@@ -4,7 +4,7 @@ import ArithS.Box.ProperBound
 /-!
 # ArithS.Necessitation.Primitives — the two moves of the verification proof, on derivation codes
 
-`Research/Notes/M4_BOUNDED_HBL/DESIGN_inner_necessitation.md` §3.1 names the TWO primitive moves
+`docs/notes/archive/M4_BOUNDED_HBL/DESIGN_inner_necessitation.md` §3.1 names the TWO primitive moves
 of the inner verification proof (one-sided LK on codes; sequents are finite bit-SETS of formula
 codes; hypotheses live in a sequent as their negations):
 

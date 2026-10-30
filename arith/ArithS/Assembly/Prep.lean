@@ -5,7 +5,7 @@ import ArithS.Box.ProperBound
 /-!
 # ArithS.Assembly.Prep — every lemma the PBLT assembly (U8) needs that is not yet in the package
 
-M4 items of `Research/Notes/M4_BOUNDED_HBL/BRIEF.md` §6–§7 (with the §7 addendum: the Löb
+M4 items of `docs/notes/archive/M4_BOUNDED_HBL/BRIEF.md` §6–§7 (with the §7 addendum: the Löb
 family is the CONJUNCTION `qDupoc ⋏ qCupod`). V-generic (every model of `𝗜𝚺₁`, budgets `k : V`
 possibly nonstandard) unless a statement says `ℕ`.
 

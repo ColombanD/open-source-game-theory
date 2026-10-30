@@ -20,7 +20,7 @@ failure a `throwError` (never a warning), so that `lake build` (target `ArithSOu
   `theorem dich_<L>_vs_<R>` in that file (exact shape; `_core`/`_full`/`_prudenceFound` variants are not cells) has
   a tagged floor.
 * `#check_sprime_coverage` — every unordered pair of the 12 paper base bots (diagonals included) is a tagged cell
-  or a tagged floor, in either orientation (`Research/Notes/SPRIME_SOURCE_OF_TRUTH.md` §0.4).
+  or a tagged floor, in either orientation (`docs/notes/SPRIME_SOURCE_OF_TRUTH.md` §0.4).
 
 The `OutcomeSpecA`/`FloorSpecA` heads are matched SYNTACTICALLY: they are plain `def`s here, but the engine's
 `OutcomeSpec` is a reducible `abbrev` and `whnf` unfolds straight past it — the same discipline keeps the two

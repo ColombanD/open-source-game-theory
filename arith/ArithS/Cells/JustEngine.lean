@@ -47,7 +47,7 @@ sentence `guardCode (templateCode (phiJ k)) …` — and **`loeb_DIMCID_vs_JustB
 (`dimcid_vs_described` on the engine JustBot's own description; the bare name `loeb_DIMCID_vs_JustBot` is the
 twin theorem's, on `Just7 k`).
 
-Conventions (`Research/Notes/ARITH_TRAPS.md`): every threshold EXISTENTIAL; `simp` never sees a closed quote;
+Conventions (`docs/notes/ARITH_TRAPS.md`): every threshold EXISTENTIAL; `simp` never sees a closed quote;
 `omega` is never asked about `V`; at `V = ℕ` the V-generic `≤` is bridged by `le_def`.
 -/
 

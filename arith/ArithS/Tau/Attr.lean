@@ -7,7 +7,7 @@ The tau twin of `Outcome/Attr.lean`: `@[tau_rowA]` marks a template's row theore
 and `@[tau_floor_bitA]` one floor bit (`FloorBitA`). Validation is `Tau/Lint.lean`, serialization
 `Outcome/Export.lean` (`app/generated/sprime_tau_rows.json`); this module only maintains the lists, in its own
 module because an `initialize` block cannot be evaluated by the module that declares it. Design note:
-`Research/Notes/SPRIME_SOURCE_OF_TRUTH.md` §3 (the Phase 3 contract).
+`docs/notes/SPRIME_SOURCE_OF_TRUTH.md` §3 (the Phase 3 contract).
 
 Both are `registerTagAttribute`s (a hand-rolled extension's entries do not survive an import — the engine's
 incident, `Outcome/Attr.lean`); the tags are read with `taggedBy`, which walks the imported modules' entries.

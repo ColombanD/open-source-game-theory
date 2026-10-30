@@ -7,7 +7,7 @@ The PA-`S'` twin of the engine's `PrisonersDilemma/Outcome/Attr.lean`: records w
 `S'` matrix cells (`@[outcomeA]`, an `OutcomeSpecA` statement in `Outcome/Matrix/<L>.lean`) and which are the
 engine-side half of a floor dichotomy (`@[floorA]`, a `FloorSpecA` statement in `Outcome/Floors.lean`).
 Validation lives in `Outcome/Lint.lean` and serialization in `Outcome/Export.lean`; this module only maintains
-the lists. Design note: `Research/Notes/SPRIME_SOURCE_OF_TRUTH.md` §1.1.
+the lists. Design note: `docs/notes/SPRIME_SOURCE_OF_TRUTH.md` §1.1.
 
 It is a SEPARATE module from both of those because Lean cannot evaluate an `initialize` block in the module
 that declares it, so the attribute must be declared here and consumed elsewhere. `Outcome/Spec.lean` stays free

@@ -4,7 +4,7 @@ import PrisonersDilemma.Base.Loeb
 # Base/BoundedGL — the abstract bounded-GL interface: `S`'s modal core as a structure (2026-08-27)
 
 Promoted 2026-08-27 from `Research/Spikes/bounded_gl/BoundedGLSpike.lean` (the spike keeps
-the `#print axioms` audit). Design record: `Research/Notes/DESIGN_CHOICES.md`, the
+the `#print axioms` audit). Design record: `docs/notes/archive/DESIGN_CHOICES.md`, the
 2026-08-27 entry — it closes the "interface formalization (middle path)" row of the
 2026-08-20 entry "Why `S` is a RULE SET, not an arithmetized theory".
 

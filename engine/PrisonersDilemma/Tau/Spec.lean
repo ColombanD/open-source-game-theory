@@ -1,7 +1,7 @@
 import PrisonersDilemma.Tau.Vote
 
 /-!
-# Tau/Spec — the bot-spec DSL and its compiler (`Research/Notes/TAUBOTS.md`)
+# Tau/Spec — the bot-spec DSL and its compiler (`docs/notes/TAUBOTS.md`)
 
 **Machinery only** (since the 2026-08-18 per-bot-file reorganization): the spec
 TYPES, the compiler, and the vector builder — all generic in the zoo index `ι`.

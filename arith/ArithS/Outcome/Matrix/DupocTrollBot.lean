@@ -9,7 +9,7 @@ import ArithS.Cells.DupocTrollPrudent
 
 `DupocTrollBot k` ("defect iff the opponent IS `DupocBot k`", 2026-10-13) has NO engine cell: these fourteen cells (twelve of 2026-10-13, the DIMDID pair of the same day, the PrudentBot pair of 2026-10-19) and
 the floor `outcome_DupocTrollBot_vs_CIMCIC_floor` (`Outcome/Floors.lean`) are `S'`-only results
-(`Research/Notes/ROUTE_B_CENSUS.md`, "S'-only cells"). Each is the engine's statement (`OutcomeSpecA`,
+(`docs/notes/ROUTE_B_CENSUS.md`, "S'-only cells"). Each is the engine's statement (`OutcomeSpecA`,
 `Outcome/Spec.lean`) proved from the method-named theorem of `Cells/DupocTrollBot.lean` named in its docstring.
 -/
 

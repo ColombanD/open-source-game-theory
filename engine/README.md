@@ -18,7 +18,7 @@ machine-checked outcome matrix. The paper's proof system is the arithmetized PA-
 | Outcome theorems | `Theorems/<Left>/vs_<Right>.lean` | One file per ordered pair, `@[outcome] theorem outcome_<L>_vs_<R> : OutcomeSpec <regime> <pad> L R (some (.X, .Y))`; dir-local helpers in `Theorems/<Bot>/Helpers.lean`. |
 | Template, linter, census, export | `Outcome/` | `Spec.lean` (the typed statement), `Lint.lean`, `Check.lean` (lake target `OutcomeCheck`), `Export.lean` (`lake exe export_outcomes` → `app/generated/outcome_theorems.json`, `tau_rows.json`). |
 | τ-bots | `Tau/` | The Spec DSL and its compiler (`Spec.lean`), the vote constructor, the roster `Zoo.lean`, `RowSpec`, the per-template `Theorems/<T>/Phase.lean` rows, the row linter. |
-| Research notes | `Research/Notes/`, `Research/Readings/`, `Research/Data/` | Design notes and results records for the whole project (both Lean packages and the Python layer), source-paper extracts, golden outcome lists. |
+| Research data | `Research/Data/` | The golden outcome inventories of the `Pf` migration and their probe. The design notes of the whole project live in the top-level `docs/`. |
 
 The root `PrisonersDilemma.lean` imports every theorem module directly; the pipeline's library
 writer appends to it.
@@ -39,5 +39,5 @@ The decidability metatheory (`Decidability/`, T31–T54: the verified enumerator
 computable evaluator `evalG`, the modest and instance strata, CutRelevance) and the research spikes
 (`Research/Spikes/`) were removed on 2026-10-29 for the paper submission; both are in the git history
 before that date (last commit with them: `3f99464`). Docstrings that cite a spike by path refer to
-that history. The notes under `Research/Notes/` describe them (`DECIDABILITY_ROADMAP.md`,
+that history. The notes under `docs/notes/` describe them (`DECIDABILITY_ROADMAP.md`,
 `CUT_RELEVANCE.md`).

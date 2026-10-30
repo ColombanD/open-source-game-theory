@@ -4,7 +4,7 @@ import ArithS.Agents.Fit
 /-!
 # ArithS.RedCellAudit — the red cell's meaning, pinned
 
-Companion to `Research/Notes/RED_CELL_AUDIT.md`. Nothing here is new mathematics: each theorem
+Companion to `docs/notes/archive/RED_CELL_AUDIT.md`. Nothing here is new mathematics: each theorem
 restates, in the smallest possible form, one thing the reader must be able to check about
 `red_cell` without reading the package — that the result is not vacuous, not fuel-dependent,
 not an artefact of an under-determined evaluator, and that its NEGATION is refutable (the

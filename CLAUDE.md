@@ -21,14 +21,15 @@ and the **evolutionary** analysis of the resulting populations. Companion code o
    by an agent judged by the kernel, the faithfulness reviewer, the web UI. OUT OF THE PAPER'S SCOPE;
    split off from `app/` on 2026-10-29; depends on `app/`.
 
-Other top-level: `latex/` (the paper, figure/table generators in `latex/scripts/`, earlier notes
-and talks — the user curates it, do not delete there), `llm-distillation/` (a separate experiment,
-kept for later), `README.md`. The design notes and results records of the WHOLE project live in
-`engine/PrisonersDilemma/Research/Notes/` (both Lean packages, the Python layer, the paper).
+Other top-level: `docs/` (the design record of the WHOLE project — `docs/README.md` is the index: live
+notes in `docs/notes/`, historical ones in `docs/notes/archive/`, reading notes in `docs/readings/`),
+`latex/` (the paper, figure/table generators in `latex/scripts/`, earlier notes and talks — the user
+curates it, do not delete there), `llm-distillation/` (a separate experiment, kept for later; its note
+`LLM_DISTILLATION_LSTAR.md` moved there), `README.md`.
 
 **Removed for the submission (2026-10-29, in git history before `3f99464`):** the engine's
 decidability metatheory (`Decidability/`, T31–T54, lake target `Metatheory`), the research spikes
-(`Research/Spikes/`), the memory copy `Research/Notes/CLAUDE_MEMORY/`, the root `PBLT_proof.tex` /
+(`Research/Spikes/`), the memory copy `Research/Notes/CLAUDE_MEMORY/` (the engine's former notes directory), the root `PBLT_proof.tex` /
 `critch22.pdf` / `Pipeline Figure.jpeg`. Docstrings that cite a spike by path refer to that history.
 The pipeline's Tier A2 reviewer (`outcome_prepass`) ran `Decidability.T31EngineDecider` and is
 BROKEN until it is restored.
@@ -40,7 +41,7 @@ BROKEN until it is restored.
 **Read first:** `arith/ArithS/Tour.lean` (the nine trusted definitions at ℕ by `rfl`, the red cell
 step by step, the headline `#check`s, the census), then `arith/ArithS/README.md` (the four tiers,
 the nine definitions in reading order, the engine↔ArithS↔paper dictionary), then
-`Research/Notes/SPRIME_DESIGN_RATIONALE.md` (what a reader accepts by eye), `ARITHMETIZED_S_RESULTS.md`
+`docs/notes/SPRIME_DESIGN_RATIONALE.md` (what a reader accepts by eye), `ARITHMETIZED_S_RESULTS.md`
 (what is proved), `ROUTE_B_SCOPE.md` + `ROUTE_B_CENSUS.md` (the cell programme and its ledger),
 `ARITH_TRAPS.md` (read before writing a line of `ArithS`), `arith/PATHS.md` (the 2026-09-28 layer
 reorganization and the deep rename — older notes cite old paths; read them through its table).
@@ -112,7 +113,7 @@ twin cells (`Just7`/`CupodTroll7`/`JustV`, `Cells/{JustBot,DupocMirror,SimSlot,T
 deleted on 2026-10-29 by the claims-mode reachability audit (`scripts/DeadCode.lean`,
 `ARITH_DEAD_CODE_AUDIT.md` §8); the matrix is stated on the engine's own `progCode`s only.
 
-**Notation** (`Research/Notes/PROVABILITY_NOTATION.md`): `⊢_k φ` = derivable at budget `k`
+**Notation** (`docs/notes/PROVABILITY_NOTATION.md`): `⊢_k φ` = derivable at budget `k`
 (the engine's `Pf k φ`, the paper's `□_k`), `⊨ φ` = truth; a turnstile never means Lean; `¬ ⊢_k φ` (a
 Lean fact) ≠ `⊢_k ¬φ`.
 
@@ -183,7 +184,7 @@ type; `omega` case-splits every `max` in a threshold tower (2ⁿ) — thresholds
 `uv run python -m pd_runner.…` (inside `app/`). Lint: `uv run ruff check src tests` (config in
 `pyproject.toml`, rule set `E4/E7/E9/F`, `E741` ignored; keep it green). 442 tests + 6 skipped.
 
-**Source of truth (`Research/Notes/SPRIME_SOURCE_OF_TRUTH.md`).** PA-`S'`
+**Source of truth (`docs/notes/SPRIME_SOURCE_OF_TRUTH.md`).** PA-`S'`
 (`app/generated/sprime_outcome_theorems.json`) is the app's source of truth; the engine's export stays
 loadable as the COMPARISON. `settings.CELL_SOURCE` (`PD_CELL_SOURCE`, default `sprime`) and
 `FLOOR_POLICY` (`PD_FLOOR_POLICY`, default `engine_side`) are threaded through every loader
@@ -204,7 +205,7 @@ Test stand-ins `tests/fixtures/sprime_*.sample.json` are used by `conftest.py` o
 absent. A stipulation can never shadow a proven cell (`NamedZoo.contradictions` is the separate,
 loud override channel of the `superficial-standalone` validation zoo — never cite a number from it).
 
-**The tau layer (`tau/`; authoritative design note `Research/Notes/TAUBOTS.md`).** Partial
+**The tau layer (`tau/`; authoritative design note `docs/notes/TAUBOTS.md`).** Partial
 transparency as a type space over the zoo: a bot receives a SIGNAL — candidates with weights (blur in
 the weights, never in the programs); the σ-families (temperature `t` = transparency, behavioral and
 syntactic distances, `epsilon`) interpolate Critch's OSGT (`t=0`… point mass) and the opaque PD. **Def 3**
@@ -227,7 +228,7 @@ have runs on disk; `body`/`body+twins`/`body+twins+natives` (thesis era) stay re
 in no total `S'` roster; no floor-free roster contains DupocBot. Caution grid α ∈ {0.2, 0.4, 0.5, 0.6,
 0.8, 1} (re-chosen 2026-10-19).
 
-**EGT (`egt/`; records `Research/Notes/EGT_FINDINGS_SPRIME.md`, thesis-era `EGT_FINDINGS.md`).** Stages:
+**EGT (`egt/`; records `docs/notes/EGT_FINDINGS_SPRIME.md`, thesis-era `EGT_FINDINGS.md`).** Stages:
 `static_analysis/` (pure ESS), `invasion/` (`G>`/`G≥` graphs, SCCs), `faces/` (face equilibria), `nash/`
 (extreme NE, exact `Fraction`), `replicator/` (basins — grouped by SUPPORT, not proximity; non-convergence
 is a finding), `moran/` (fixation, stochastic stability; log-space); `pipeline.py` runs a `(t, α)` sweep
@@ -291,7 +292,7 @@ by a human; `/proposals/{name}/integrate`, `/integration/{job}/accept-diff`). Bo
 BISTABLE matchups; no base cell is currently certified bistable.
 
 **Eval:** `eval/common.py` (14 harness cases) shared by `harness.py` and `run_bot_matrix.py`; every run
-persists to `generated/outcomes/`. Prover-model comparison (E4): `Research/Notes/PROVER_MODEL_COMPARISON.md`.
+persists to `generated/outcomes/`. Prover-model comparison (E4): `docs/notes/archive/PROVER_MODEL_COMPARISON.md`.
 SOTA provers (DeepSeek/Goedel/Kimina) are NOT swapped in: out of distribution for the custom inductive
 types; E4 numbers justify the bespoke pipeline.
 
@@ -305,5 +306,5 @@ types; E4 numbers justify the bespoke pipeline.
 * `latex/` is the user's: `paper_status.tex` and `figures and tables/` are edited by the user; the
   generators `latex/scripts/gen_*.py` read `app/generated/` and the EGT runs.
 * Never quote a Cantor-coding constant; state every `S'` result "for all large `k`".
-* Memory of past sessions: the notes under `Research/Notes/` are the record; dated narratives there
-  supersede any summary here.
+* Memory of past sessions: the notes under `docs/` are the record (`docs/README.md` indexes them);
+  dated narratives there supersede any summary here.

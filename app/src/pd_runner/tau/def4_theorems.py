@@ -1,6 +1,6 @@
 """Fetch the Def-4 KERNEL bit tables from the Lean library.
 
-Under the refined Def 4 (the source lift, `Research/Notes/TAUBOTS.md`), each tau bot's
+Under the refined Def 4 (the source lift, `docs/notes/TAUBOTS.md`), each tau bot's
 entire per-hypothesis content is its BIT TABLE — what each compiled instance plays —
 certified in `Tau/Theorems/<Bot>/Phase.lean` as an UNCONDITIONAL `RowSpec` theorem
 (`Tau/RowSpec.lean`, tagged `@[tau_row]`):

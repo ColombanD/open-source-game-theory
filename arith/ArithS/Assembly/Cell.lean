@@ -4,7 +4,7 @@ import ArithS.Assembly.Uniform
 # ArithS.Assembly.Cell — the Löbian cell at ℕ (U9): Dupoc cooperates with itself, Cupod defects
 against itself, in PA-`S`, for all large `k`, conditional on bounded inner necessitation
 
-`Research/Notes/M4_BOUNDED_HBL/BRIEF.md` §6 (U9, steps 1–4). Everything is a theorem GIVEN
+`docs/notes/archive/M4_BOUNDED_HBL/BRIEF.md` §6 (U9, steps 1–4). Everything is a theorem GIVEN
 `BoundedInnerNec d` (Critch's assumption (d), `Assembly/Prep.lean` §6).
 
 **Since `ROUTE_B_SCOPE.md` §3 Phase 1 this file is an INSTANTIATION of

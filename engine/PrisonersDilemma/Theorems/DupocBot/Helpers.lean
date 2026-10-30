@@ -616,7 +616,7 @@ for "Cupod plays C" and `C` is Cupod's ELSE-action, so `search_t` mismatches on 
 alone and `search_f` pays the literal `k` — nothing about the guard's truth is needed.
 Kept beside the transpose route as a differential test: the model-specific census
 predicts exactly what the model-independent τ-argument proves. Why both exist, and
-why the transpose one is the paper's: `Research/Notes/DESIGN_CHOICES.md`
+why the transpose one is the paper's: `docs/notes/archive/DESIGN_CHOICES.md`
 (2026-08-25 entry). -/
 
 theorem not_Pf_dupoc_guard_floor (k : Nat) :

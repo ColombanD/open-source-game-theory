@@ -4,7 +4,7 @@ import ArithS.Necessitation.Package
 /-!
 # ArithS.Cells.Common.Khat — from `TAct ⊢ ∀¹ q` to "found at every large `k`": the `k̂`-chain
 
-Consolidation stage 6 (`Research/Notes/ROUTE_B_CELLS_MAP.md`). The lemmas that turn a
+Consolidation stage 6 (`docs/notes/ROUTE_B_CELLS_MAP.md`). The lemmas that turn a
 `TAct`-theorem (or a box consequence) into a guard FOUND within the budget for all large `k`, MOVED here
 unchanged (names, statements, proofs) from `Cells/CIMCIC`, `Cells/PositiveCells`, `Cells/KhatCells` and
 `Cells/FlipCells`:

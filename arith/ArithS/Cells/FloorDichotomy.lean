@@ -3,7 +3,7 @@ import ArithS.Cells.FloorVerdicts
 /-!
 # ArithS.Cells.FloorDichotomy — the genuine floors as DICHOTOMIES, hypothesis-free
 
-`Research/Notes/ROUTE_B_SCOPE.md` §6 and `ROUTE_B_CENSUS.md` "S' status per cell". The floor
+`docs/notes/ROUTE_B_SCOPE.md` §6 and `ROUTE_B_CENSUS.md` "S' status per cell". The floor
 verdict pass (`Cells/FloorVerdicts`) classified 26 engine cells as GENUINE floors in PA-`S'`: the floor side's
 guard is TRUE in ℕ, and its only evaluation witness runs through the ELSE branch of a search node whose guard
 σ is FALSE in ℕ — so its provability within the budget `k` is inter-derivable, up to additive overhead, with the

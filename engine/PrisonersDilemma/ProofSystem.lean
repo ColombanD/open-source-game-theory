@@ -98,7 +98,7 @@ guard fact: a `.search` test and an `.ite` probe, each in THEN polarity. Probe g
 restricted to the frame-independent `.sim .opp (.bot z)` — for any other guard the
 in-frame run differs from the standalone atom and the reading is unsound (see
 `iteBranchSearch_t`). An ite-ELSE rule would be sound but falsifies the floor censuses
-(`Research/Notes/FAMILY_COMPLETION_DESIGN.md`); search-ELSE is covered by
+(`docs/notes/archive/FAMILY_COMPLETION_DESIGN.md`); search-ELSE is covered by
 `searchElseChain` below. -/
 
 inductive CtxLayer where
@@ -291,7 +291,7 @@ mutual
         AtomProvable k (.plays me opponent a)
 
 /-- **`Pf k φ` — "φ has a proof transcript of ≤ k characters"**: the proof system `S`, as ONE type.
-Written `⊢_k φ` (`Research/Notes/PROVABILITY_NOTATION.md`); `⊢` never means Lean.
+Written `⊢_k φ` (`docs/notes/PROVABILITY_NOTATION.md`); `⊢` never means Lean.
 
 Each rule is (i) SOUND — `⊨` of its conclusion follows from `⊨` of its premises
 (the Lean theorem `BaseTheorems.sound_upto`) — and (ii) FAITHFUL to a PA-like `S` (critch22 Appendix B): a genuine

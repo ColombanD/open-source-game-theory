@@ -37,7 +37,7 @@ producers first (`gen_frag`, `gen_rowinst`), then `gen_prologue`, `gen_cert`, `g
 `gen_indrec`, `gen_numid`, `gen_proaxm` (the consumers read the producers' files from disk).
 
 The in-place writers must run from `arith/` (relative paths). Per-row proofs live in the tables as Lean
-strings; the design is `Research/Notes/M4_BOUNDED_HBL/DESIGN_fragments.md` §8.1. Verified in sync on
+strings; the design is `docs/notes/archive/M4_BOUNDED_HBL/DESIGN_fragments.md` §8.1. Verified in sync on
 2026-09-28 after the pruning (`regen_all.sh`: all nine `ok`).
 
 ## `DeadCode.lean` — the reachability audit
@@ -51,4 +51,4 @@ claims rather than from what the census happens to print (`ARITH_DEAD_CODE_AUDIT
 every `ArithS` constant ROOT (in the `#print axioms` census, `roots.txt`; refresh it with
 `grep -rhoE '^\s*#print axioms\s+\S+' ArithS | awk '{print $3}' | sort -u > scripts/roots.txt`),
 LIVE (reachable from a root through types and proof terms) or DEAD. Report and tiers:
-`engine/PrisonersDilemma/Research/Notes/ARITH_DEAD_CODE_AUDIT.md` (2026-09-28). The TSV is not committed.
+`docs/notes/ARITH_DEAD_CODE_AUDIT.md` (2026-09-28). The TSV is not committed.

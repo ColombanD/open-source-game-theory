@@ -4,7 +4,7 @@ import ArithS.Loeb.NumeralFacts
 /-!
 # ArithS.Assembly.Family — the PBLT assembly, parametrized by the Löb family
 
-`Research/Notes/ROUTE_B_SCOPE.md` §3 Phase 1. Everything `Assembly/Uniform.lean` and
+`docs/notes/ROUTE_B_SCOPE.md` §3 Phase 1. Everything `Assembly/Uniform.lean` and
 `Assembly/Cell.lean` did for the ONE family `pConj := qDupoc ⋏ qCupod` is done here for an
 ARBITRARY target `p : Semisentence LAct 1` (the sentence-with-budget-variable the argument must
 make true) and a SLACK `(S₀, S₁)` (the budget the family's consumer needs AFTER obtaining the box

@@ -10,7 +10,7 @@ import Lean
 relative to `arith/`), and the `@[tau_rowA]` rows and `@[tau_floor_bitA]` floor bits (`Tau/Spec.lean`, Phase 3) to
 `app/generated/sprime_tau_rows.json` (second argument; see `buildTauJsonA` for the schema). The schema is the engine's (`PrisonersDilemma/Outcome/Export.lean`), so the Python loader
 is shared, plus `system`, a `provenance` per row and the `floors` array
-(`Research/Notes/SPRIME_SOURCE_OF_TRUTH.md` §1.2):
+(`docs/notes/SPRIME_SOURCE_OF_TRUTH.md` §1.2):
 
     { "schema_version": 1, "system": "sprime", "source_digest": "<fnv1a64>",
       "theorems":   [ { name, module, file, left_bot, right_bot, budget_regime, fuel_pad: 0, pair, staggered,

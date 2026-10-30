@@ -30,7 +30,7 @@ Löbian cells (single Löb, MUTUAL Löb as a conjunction family, nested searches
 snapshots), 28 search-free cells (transferred from the engine at the same fuel), 36 cells closed by
 soundness (the guard is false, so no proof of any length exists), 14 positive cells (the guard is a
 `TAct`-theorem, found by instantiation, no Löb), and the disagreements. The ledger and the plan:
-`../engine/PrisonersDilemma/Research/Notes/ROUTE_B_SCOPE.md`, `ROUTE_B_CENSUS.md`.
+`../docs/notes/ROUTE_B_SCOPE.md`, `ROUTE_B_CENSUS.md`.
 
 **The disagreements are theorems.** The engine closes them by censuses that rest on a player being
 unreadable by `S`'s rules; PA reads every source. `ArithS.dimcid_vs_closed` (`Cells/DimcidFlips.lean`):
@@ -50,11 +50,11 @@ the budget slot `guardCodeB` a template may read (`Agents/Guard.lean`, route (c)
 gate lemma `guardCodeB_of_template` proving a six-variable template never reads it), the
 substitution `substCode`/`substTemplate` (`Agents/Subst.lean`), and the evaluator `EvalGraph` (`Eval/Eval.lean`). Everything else is a theorem about these. Why each is
 what it is, the alternative, and what breaks without it:
-`../engine/PrisonersDilemma/Research/Notes/SPRIME_DESIGN_RATIONALE.md`.
+`../docs/notes/SPRIME_DESIGN_RATIONALE.md`.
 
 ## How to check that the definitions mean what we claim
 
-`../engine/PrisonersDilemma/Research/Notes/RED_CELL_AUDIT.md`, with its executable companions:
+`../docs/notes/archive/RED_CELL_AUDIT.md`, with its executable companions:
 `ArithS/Audit/RedCellAudit.lean` (negative controls, determinism, fuel-independence, the truth
 equation, non-vacuity), `ArithS/Audit/RedCellUnsound.lean` (the "drop soundness" mutation as a
 theorem: an inconsistent theory flips the cell to (C, D)), and
@@ -90,7 +90,7 @@ A full incremental build is about 3350 jobs; a single file check needs ~5 GB of 
 
 ## Reading order
 
-1. `../engine/PrisonersDilemma/Research/Notes/ARITHMETIZED_S_RESULTS.md` — what is proved.
+1. `../docs/notes/ARITHMETIZED_S_RESULTS.md` — what is proved.
 2. `SPRIME_DESIGN_RATIONALE.md` — why the definitions are what they are.
 3. `RED_CELL_AUDIT.md` — how the meaning is pinned; then the three audit files above.
 4. `ROUTE_B_SCOPE.md`, `ROUTE_B_CENSUS.md` — the matrix programme, its ledger, the flips, the traps.

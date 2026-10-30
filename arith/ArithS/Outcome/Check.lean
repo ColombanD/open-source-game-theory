@@ -26,7 +26,7 @@ Its own lake library root (in `defaultTargets`), not imported by `ArithS.lean`: 
 precede commands, and a command in the root index would break the next module appended there. `lake build`
 builds this target, so the validator, the two censuses and the paper-zoo coverage run on every build.
 The exporter (`Outcome/Export.lean`, `lake exe export_sprime_outcomes`) imports THIS module, so what it writes
-has passed these gates. Design note: `Research/Notes/SPRIME_SOURCE_OF_TRUTH.md` §1.1.
+has passed these gates. Design note: `docs/notes/SPRIME_SOURCE_OF_TRUTH.md` §1.1.
 -/
 
 -- Every declaration named like a cell under `Outcome/Matrix/` is `@[outcomeA]`-tagged and on the

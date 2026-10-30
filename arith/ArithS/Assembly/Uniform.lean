@@ -3,7 +3,7 @@ import ArithS.Assembly.Family
 /-!
 # ArithS.Assembly.Uniform — the uniform PBLT chain (U8) at the conjunction family `pConj`
 
-`Research/Notes/M4_BOUNDED_HBL/BRIEF.md` §6 (U8, steps 1–8) with the §7 addendum (the Löb
+`docs/notes/archive/M4_BOUNDED_HBL/BRIEF.md` §6 (U8, steps 1–8) with the §7 addendum (the Löb
 family is the conjunction `pConj := qDupoc ⋏ qCupod`, the models are the two standard readings
 `stdReading`/`swappedReading`). Everything is a theorem GIVEN the one named hypothesis
 `BoundedInnerNec d` (`Assembly/Prep.lean` §6, Critch's assumption (d): a per-`χ` constant `C_χ`

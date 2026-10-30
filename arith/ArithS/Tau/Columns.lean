@@ -4,7 +4,7 @@ import ArithS.Cells.SoundnessCells
 /-!
 # ArithS.Tau.Columns — what the hypotheses' instances play, on codes (Phase 3)
 
-A tau bit is the base cell on the compiled instances (`Research/Notes/SPRIME_SOURCE_OF_TRUTH.md` §3, "a tau bit
+A tau bit is the base cell on the compiled instances (`docs/notes/SPRIME_SOURCE_OF_TRUTH.md` §3, "a tau bit
 at point mass IS the base cell"): the row of a search-free template at hypothesis `T` is decided by what `T`'s
 instance at a NAMED target plays against itself — τ(TFTSim)'s row is the `coop` column of the table
 (`instCode k T .coop` run in its own frame), τ(DBot)'s row the `defect` column negated, τ(OBot)'s and τ(EBot)'s

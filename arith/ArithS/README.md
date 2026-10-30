@@ -4,7 +4,7 @@
 provability predicate** (PA-`S'`), on the Foundation library, with the engine's matrix re-proved cell
 by cell. It is about 160k lines of Lean (the U10 construction alone is 96k), and a reader needs about 5 % of them. This file says which.
 
-The design and its rationale are in `engine/PrisonersDilemma/Research/Notes/SPRIME_DESIGN_RATIONALE.md`;
+The design and its rationale are in `docs/notes/SPRIME_DESIGN_RATIONALE.md`;
 what is proved is in `ARITHMETIZED_S_RESULTS.md`; the cell ledger is `ROUTE_B_CENSUS.md`. This guide is
 the index of the code.
 
@@ -30,7 +30,7 @@ behind `Eval/Eval.lean`, `Agents/SubstTemplate.lean` before `Agents/Subst.lean`)
 |---|---|---:|---|---|
 | **Trusted base** — the definitions a reader accepts by eye | `Theory/`, `Length/`, `Box/`, `Agents/`, `Eval/` | ~13k, of which the definitions themselves are a few hundred | read §2 in order; skim the lemmas around them | `ArithSCore` (root `Core.lean`) |
 | **Results** — the theorems | `Outcome/` (the matrix in the engine's vocabulary), `Cells/` (the proofs), `Assembly/` + `Loeb/` (PBLT), `Necessitation/Package.lean` (bounded inner necessitation, statements only) | ~19k | read `Outcome/`, then §3's reading order | `ArithSMatrix` (`Matrix.lean`); PBLT: `ArithSLoeb` (`PBLT.lean`) |
-| **Construction of U10** — the proof that PA verifies its own proofs within a polynomial budget | everything in `Necessitation/` except `Package.lean` | ~96k (72 %) | do not open; the design notes are `Research/Notes/M4_BOUNDED_HBL/` | pulled in by `ArithSLoeb` |
+| **Construction of U10** — the proof that PA verifies its own proofs within a polynomial budget | everything in `Necessitation/` except `Package.lean` | ~96k (72 %) | do not open; the design notes are `docs/notes/archive/M4_BOUNDED_HBL/` | pulled in by `ArithSLoeb` |
 | **Frozen, estimates, census** | `Bridge/` (the evaluation-certificate kit left of the T2 bridge; the bridge proper was deleted 2026-10-29), `Length/Proper`, `Box/ProperBound`, `Agents/Fit*` (numeric estimates), `Audit/` (every `#print axioms` the build runs) | ~6k | skip; `Audit/` is what `lake build` checks, not what you read | `ArithSFrozen` (`Frozen.lean`), `ArithSAudit` |
 
 Import direction between the tiers (core < frozen < Löb < results < audit; the results tier reaches the U10
@@ -307,7 +307,7 @@ lake exe export_sprime_outcomes                # writes ../app/generated/sprime_
 ```
 
 **The export discipline** (`Outcome/{Attr,Floor,Floors,Lint,Check,Export}.lean`, the twin of the engine's
-`Outcome/{Attr,Lint,Check,Export}.lean`; design: `Research/Notes/SPRIME_SOURCE_OF_TRUTH.md` §1). Every cell of
+`Outcome/{Attr,Lint,Check,Export}.lean`; design: `docs/notes/SPRIME_SOURCE_OF_TRUTH.md` §1). Every cell of
 `Outcome/Matrix/<L>.lean` carries `@[outcomeA]`; every genuine floor has its engine-side half
 `@[floorA] theorem outcome_<L>_vs_<R>_floor : FloorSpecA (bot L) (bot R) (fun k ↦ <hinge>) (some (a, b))` in
 `Outcome/Floors.lean`, proved from `dich_<L>_vs_<R>` (`Cells/FloorDichotomy.lean`; where `Cells/PrudentLoose.lean`
@@ -330,8 +330,8 @@ everywhere (fuel is existential). `source_digest` is the engine's FNV-1a over th
 `json.dumps(row, sort_keys=True, separators=(",", ":"), ensure_ascii=False)` — the hinge text is Unicode.
 
 The census is every `#print axioms` the build runs (`Audit/`): all `[propext, Classical.choice,
-Quot.sound]` but four pre-existing subsets. Traps: `Research/Notes/ARITH_TRAPS.md`. Dead-code audit and
-pruning: `Research/Notes/ARITH_DEAD_CODE_AUDIT.md`, `scripts/DeadCode.lean`.
+Quot.sound]` but four pre-existing subsets. Traps: `docs/notes/ARITH_TRAPS.md`. Dead-code audit and
+pruning: `docs/notes/ARITH_DEAD_CODE_AUDIT.md`, `scripts/DeadCode.lean`.
 
 ## 7. What is deliberately not here
 

@@ -10,7 +10,7 @@ import ArithS.Eval.SimTest
 /-!
 # ArithS.Cells.DIMCID — DIMCID × DIMCID, DIMCID × Mirror and DIMCID × Cupod, all `(D, D)`, in PA-`S'`
 
-`Research/Notes/ROUTE_B_SCOPE.md` §3 Phase 2: the DIMCID family — the arithmetized
+`docs/notes/ROUTE_B_SCOPE.md` §3 Phase 2: the DIMCID family — the arithmetized
 twins of the engine's `llm_outcome_DIMCID_vs_DIMCID = (D, D)` (`pblt_engine`),
 `llm_outcome_DIMCID_vs_MirrorBot = (D, D)` and `outcome_DIMCID_vs_CupodBot = (D, D)`
 (`mutual_pblt_engine_id`). The engine's bot is

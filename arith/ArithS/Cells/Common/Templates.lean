@@ -3,7 +3,7 @@ import ArithS.Cells.Common.Bots
 /-!
 # ArithS.Cells.Common.Templates — template instances, instance/truth equations, the `Describes` layer
 
-Consolidation stage 3 (`Research/Notes/ROUTE_B_CELLS_MAP.md`). Everything here was MOVED
+Consolidation stage 3 (`docs/notes/ROUTE_B_CELLS_MAP.md`). Everything here was MOVED
 unchanged (names, statements, definition bodies) out of `Cells/DIMCID`, `Cells/PrudentMirror`,
 `Cells/JustBot`, `Cells/JustSlot`, `Cells/PositiveCells`, `Cells/FlipCells` and `Cells/DimcidFlips`:
 

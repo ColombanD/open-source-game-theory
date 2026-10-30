@@ -13,7 +13,7 @@ from typing import Literal
 # Cell source — which proof system's matrix the app treats as ground truth
 # ---------------------------------------------------------------------------
 #
-# Since 2026-09-30 (`Research/Notes/SPRIME_SOURCE_OF_TRUTH.md` §0) the arithmetized
+# Since 2026-09-30 (`docs/notes/SPRIME_SOURCE_OF_TRUTH.md` §0) the arithmetized
 # system PA-`S'` (`arith/`, export `app/generated/sprime_outcome_theorems.json`) is the
 # SOURCE OF TRUTH for the matrix, the tau layer and the EGT experiments; the engine's
 # stipulated `S` (`app/generated/outcome_theorems.json`) stays loadable as the

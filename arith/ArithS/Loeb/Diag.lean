@@ -3,7 +3,7 @@ import ArithS.Loeb.InstV
 /-!
 # ArithS.Diag — the parametric diagonal lemma over `TAct` for `LAct` formulas
 
-M4 item U6 of `Research/Notes/M4_BOUNDED_HBL/BRIEF.md` §3. Foundation's parametric fixed point
+M4 item U6 of `docs/notes/archive/M4_BOUNDED_HBL/BRIEF.md` §3. Foundation's parametric fixed point
 (`Foundation/FirstOrder/Bootstrapping/FixedPoint.lean`, `parameterizedFixedpoint` /
 `parameterized_diagonal₁`) is stated for theories over `ℒₒᵣ`; the Löb argument's fixed point
 lives over `LAct` (its target is Dupoc's guard formula, which mentions the action constants) in

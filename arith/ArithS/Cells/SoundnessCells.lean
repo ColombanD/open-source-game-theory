@@ -12,7 +12,7 @@ import PrisonersDilemma.Bots.CupodTrollBot
 /-!
 # ArithS.Cells.SoundnessCells — the SND class of the census in PA-`S'`, and Guardian's positive cells
 
-`Research/Notes/ROUTE_B_SCOPE.md` §3 Phase 4, class **SND** of `ROUTE_B_CENSUS.md`: the 36 cells
+`docs/notes/ROUTE_B_SCOPE.md` §3 Phase 4, class **SND** of `ROUTE_B_CENSUS.md`: the 36 cells
 whose searcher takes its ELSE branch because its guard is semantically FALSE — the red cell's argument
 (`RedCell.lean`), cell by cell, with no oracle, no Löb, no floor and no budget threshold (every `k`, or all large
 `k` where a positive sub-fact is needed).

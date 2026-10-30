@@ -5,7 +5,7 @@ import ArithS.Cells.DupocTrollBot
 # ArithS.Cells.DimdidTroll — `DIMDID × DupocTrollBot = (C, C)` at every `k` (2026-10-13)
 
 **Reading guide.** One SND cell, the last pair of the twelve-bot ladder zoo `body8 + CupodTrollBot + DupocTrollBot +
-CIMCIC + DIMDID` (`Research/Notes/EGT_FINDINGS_SPRIME.md` §8.6). Facts: `progCode_DIMDID_ne_DupocBot`,
+CIMCIC + DIMDID` (`docs/notes/EGT_FINDINGS_SPRIME.md` §8.6). Facts: `progCode_DIMDID_ne_DupocBot`,
 `snd_DIMDID_vs_DupocTrollBot`.
 
 The troll's `.eq` guard "the opponent IS `DupocBot k`" is false against `DIMDID k` — the two codes differ already

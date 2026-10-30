@@ -25,7 +25,7 @@ import ArithS.Eval.SimTest
 
 Each cell is the engine's statement (`OutcomeSpecA`, `Outcome/Spec.lean`) proved from the method-named
 theorem of `Cells/` that carries the mathematics (named in each docstring). Values are PA-`S'` values:
-where they contradict the engine's cell the docstring says FLIP (`Research/Notes/ROUTE_B_CENSUS.md`,
+where they contradict the engine's cell the docstring says FLIP (`docs/notes/ROUTE_B_CENSUS.md`,
 "S' status per cell").
 -/
 

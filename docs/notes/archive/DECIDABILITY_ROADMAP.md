@@ -1,3 +1,5 @@
+> **Archived 2026-10-29.** This note describes the engine's decidability chain (`Decidability/`, T31–T54) and its spikes, deleted from the repository on 2026-10-29 for the paper submission; the code is in git history at commit `3f99464`, the last one holding it. The results it records (the verified enumerator, the computable evaluator `evalG`, the CutRelevance falsification) stand as stated.
+
 # Decidability Roadmap — decidable `Provable`, computable `eval`, ZERO axioms
 
 > **STATUS (2026-07-09).** This roadmap ran to completion: the T4 chain is
@@ -36,7 +38,7 @@ headline API under `PD.Decidability`), and `ComputableEval/Computable.lean`'s he
 marks `evalC` HISTORICAL/superseded-by-`evalG`. Deferred to a future session: rewiring
 `proofSearch` (its right form depends on the conjecture below) and `by decide` outcome demos.
 
-**T4.1b attack — the full 2026-07-03 arc: `Research/Notes/CUT_RELEVANCE.md`** (§5b has the
+**T4.1b attack — the full 2026-07-03 arc: `docs/notes/archive/CUT_RELEVANCE.md`** (§5b has the
 milestone ledger; read §5c–§5g before touching anything). Executive summary:
 
 * **The judgment-local program is CLOSED by three kernel-checked refutations**
@@ -63,7 +65,7 @@ milestone ledger; read §5c–§5g before touching anything). Executive summary:
   `μ(box) = 0` + the fundamental lemma (contraction free by hypothesis reuse; Löb case
   by fuel monotonicity; modal leaves by cumulative determinism). Plausibly the first
   normalization theorem for a bounded provability logic —
-  `Research/Notes/BOUNDED_LOB_NORMALIZATION.md` is the paper-grade record. The total
+  `docs/notes/BOUNDED_LOB_NORMALIZATION.md` is the paper-grade record. The total
   computable extractor `boxInvT` + `box_inversion_diet` (diet-controlled constructive
   box inversion) are the assembly interface. REMAINING to CutRelevance (assembly, no
   open math): the excisor/crossing over general cores, `TreeModestRelevance` for zoo

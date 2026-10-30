@@ -15,7 +15,7 @@ transposition theorem (`Cells/Transposition.lean`, `outcomeSpecA_transpose`) han
 partner's transposition is in the zoo: `DIMDID × DefectBot = τ(CIMCIC × CooperateBot)`, `DIMDID × CupodBot =
 τ(CIMCIC × DupocBot)`, `DIMDID × DIMDID = τ(CIMCIC × CIMCIC)` (those three cells are stated directly in
 `Outcome/Matrix/DIMDID.lean` from the CIMCIC cells). It has NO engine cell — every result here is `S'`-only
-(`Research/Notes/ROUTE_B_CENSUS.md`, "S'-only cells"). Thirteen cells, DIMDID on the left: the ten `body` bots,
+(`docs/notes/ROUTE_B_CENSUS.md`, "S'-only cells"). Thirteen cells, DIMDID on the left: the ten `body` bots,
 CIMCIC, PrudentBot and itself.
 
 The one new argument — **the self-defeating guard** (`dimdid_selfref_not_found`, the dual of
@@ -49,7 +49,7 @@ the soundness step pointing the other way.
    else-play — is provable within `k`. Registered in `Outcome/Floors.lean`, censused by `#check_floorA_theorems` on
    THIS file.
 
-Conventions (`Research/Notes/ARITH_TRAPS.md`): every threshold EXISTENTIAL; `simp` never sees a closed quote;
+Conventions (`docs/notes/ARITH_TRAPS.md`): every threshold EXISTENTIAL; `simp` never sees a closed quote;
 `omega` is never asked about `V`; at `V = ℕ` the V-generic `≤` is bridged by `le_def`.
 -/
 

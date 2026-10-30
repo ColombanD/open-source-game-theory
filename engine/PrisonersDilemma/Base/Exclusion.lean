@@ -22,7 +22,7 @@ premise-free with an arbitrary tail and FALSIFY that census as stated (machine-c
 reflexive/K shapes self-destruct (`⟨h, hn⟩` with `hn h`), and every premise-carrying
 rule closes via `by_cases` on the antecedent — see `no_provable_tailTo_floor`. This
 file is therefore ALREADY closed under the Family-B extension; new constructors add
-one arm per census, nothing more. (Design: `Research/Notes/FAMILY_COMPLETION_DESIGN.md`.)
+one arm per census, nothing more. (Design: `docs/notes/archive/FAMILY_COMPLETION_DESIGN.md`.)
 
 Contents:
 * `Formula.size_pos` — every formula costs at least one character.
@@ -51,7 +51,7 @@ Every family below is the same argument three times; a family that exists in one
 column and not another is a LIBRARY hole, never a mathematical one — the 2026-08-25
 review found base and tau closing the SAME cell (Dupoc × Cupod) by different-looking
 routes only because the bare else-floor edition was written last (history and the
-epistemic point in `Research/Notes/DESIGN_CHOICES.md`, 2026-08-25 entry).
+epistemic point in `docs/notes/archive/DESIGN_CHOICES.md`, 2026-08-25 entry).
 
 The columns are NOT symmetric across layers, and that is structural, not a gap: the
 bare column is base-only (tau's probe atoms are `.bot`-framed by definition —

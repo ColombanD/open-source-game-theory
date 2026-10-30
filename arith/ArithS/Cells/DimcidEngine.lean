@@ -40,7 +40,7 @@ readings (`loebSound_pDCE : LoebSound pDCE 14 16`). Then `family_found _ bounded
 * **`loeb_DIMCID_vs_CupodBot_guards`**: the box form — both guards (`templateCode phiD`,
   `templateCode phiCu`) are `TAct`-provable within `k`.
 
-Conventions (`Research/Notes/ARITH_TRAPS.md`): every threshold EXISTENTIAL; `simp` never sees a closed
+Conventions (`docs/notes/ARITH_TRAPS.md`): every threshold EXISTENTIAL; `simp` never sees a closed
 quote (the quote equations are for VARIABLE sentences, instantiated; `rfl`-bridges); `omega` is never
 asked about `V`; at `V = ℕ` the V-generic `≤` is bridged by `le_def`.
 -/
