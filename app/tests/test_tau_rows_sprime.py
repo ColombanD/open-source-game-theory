@@ -273,15 +273,17 @@ def test_kernel_bits_equal_the_sprime_cells(sprime_rows) -> None:
         and not m.cell(BASE_OF[next(A for A in PAPER_TEMPLATES if LEAN_SLOT[A] == a)],
                        BASE_OF[next(T for T in PAPER_TEMPLATES if LEAN_SLOT[T] == t)]).is_floor)
     assert n_floor == expected_floor + n_recorded_floor
-    # the §3 table: 13 flips of the engine among the 196 bits of the 14 engine-comparable templates, all
-    # DIMCID's (`dupocTroll` and `dimdid` have no engine cell: their base bots are `S'`-only, so they are compared
+    # the §3 table: 14 flips of the engine among the 196 bits of the 14 engine-comparable templates — 13
+    # DIMCID's, and since 2026-11-05 `cupod × obot` (the tau image of the base flip `CupodBot × OBot = (D, D)`,
+    # `arith/ArithS/Tau/ClosedWatchCu.lean`; a floor bit until then) (`dupocTroll` and `dimdid` have no engine cell: their base bots are `S'`-only, so they are compared
     # nowhere here — τ(DIMDID)'s own `obot` flip of the engine ROW is recorded in `TAUBOTS.md`, not counted)
     engine = load_tau_matrix(PAPER_TWINS_SUB_ZOO, source="engine")
     comparable = [A for A in PAPER_TEMPLATES if BASE_OF[A] in engine.bots]
     assert len(comparable) == 14
     flips = [(A, T) for A in comparable for T in comparable
              if tables[LEAN_SLOT[A]][LEAN_SLOT[T]] != engine.action(BASE_OF[A], BASE_OF[T])]
-    assert len(flips) == 13 and all("TauDIMCID" in p for p in flips)
+    assert len(flips) == 14
+    assert [p for p in flips if "TauDIMCID" not in p] == [("TauCupod", "TauOBot")]
 
 
 def test_natives_read_their_own_rows(sprime_rows) -> None:
@@ -400,11 +402,14 @@ def test_certification_on_sprime(sprime_rows) -> None:
     assert d.complete and d.covered == 196 and d.uncovered == () and d.missing_rows == ()
     # the 14×14 table's floor cells: the natives' rows and columns are Dupoc's
     table = ZOOS["body+twins+natives"].load(source="sprime")
-    assert d.floor_agreements == len(table.floor_cells) == 41
+    # (39 since 2026-11-05: `CupodBot × OBot` left the floors in both orientations)
+    assert d.floor_agreements == len(table.floor_cells) == 39
     # theorem agreements: everything but the floor cells and the recorded divergences
-    # (155 on the cell-derived sample, 149 on the real export — six recorded red-cell bits)
+    # (157 on the cell-derived sample, 151 on the real export — six recorded red-cell bits)
     assert d.theorem_agreements == 196 - d.floor_agreements - len(d.whitelisted_divergences)
-    assert len(d.whitelisted_divergences) in (0, len(SPRIME_RECORDED_DIVERGENCES))
+    # (six of the eight recorded entries: the two on the self-dual pair `dimdid × cimcic` are outside this
+    # 14-template zoo — DIMDID is `S'`-only)
+    assert len(d.whitelisted_divergences) in (0, 6)
 
 
 def test_certification_on_the_partial_export(partial_rows) -> None:
@@ -473,11 +478,12 @@ def test_sample_fixtures_are_current() -> None:
     assert json.loads(SPRIME_TAU_PARTIAL_EXPORT.read_text(encoding="utf-8")) == builder.build(
         templates=builder.PARTIAL_TEMPLATES)
     full = json.loads(SPRIME_TAU_SAMPLE_EXPORT.read_text(encoding="utf-8"))
-    # 16 templates since 2026-10-19: 256 bits = 203 cell-derived row slots + 53 floor cells (41 + the two
+    # (207 + 49 since 2026-11-05: DIMDID × CIMCIC became a base theorem, both orientations)
+    # 16 templates since 2026-10-19: 256 bits = 205 cell-derived row slots + 51 floor cells (39 + the two
     # `cimcic × dupocTroll` / `dupocTroll × cimcic` floors + DIMDID's ten: `dimdid × {dupoc, cimcic, prudent,
     # maxconfidence, minconfidence}` and their mirrors)
-    assert len(full["rows"]) == 16 and len(full["floor_bits"]) == 53
-    assert sum(len(r["bits"]) for r in full["rows"]) == 203
+    assert len(full["rows"]) == 16 and len(full["floor_bits"]) == 49
+    assert sum(len(r["bits"]) for r in full["rows"]) == 207
 
 
 def test_real_export_coverage_report() -> None:
@@ -513,11 +519,14 @@ def test_report_banner_names_the_backing(sprime_rows) -> None:
 
 
 def test_the_value_divergences_are_gone() -> None:
-    """Route (c) made generic dissolved the six VALUE divergences of Phases 3b–3d; only the
-    six red-cell PROVENANCE divergences remain recorded."""
-    assert len(SPRIME_RECORDED_DIVERGENCES) == 6
+    """Route (c) made generic dissolved the six VALUE divergences of Phases 3b–3d; only
+    PROVENANCE divergences remain recorded: the six red-cell ones and, since 2026-11-05, the two
+    on the self-dual pair DIMDID × CIMCIC — both base theorems by τ-symmetry, floors inside a `.sys`."""
+    assert len(SPRIME_RECORDED_DIVERGENCES) == 8
     assert {d.kind for d in SPRIME_RECORDED_DIVERGENCES.values()} == {"provenance"}
-    assert all("cupod" in pair for pair in SPRIME_RECORDED_DIVERGENCES)
+    assert sum("cupod" in pair for pair in SPRIME_RECORDED_DIVERGENCES) == 6
+    assert {p for p in SPRIME_RECORDED_DIVERGENCES if "cupod" not in p} == {
+        ("dimdid", "cimcic"), ("cimcic", "dimdid")}
 
 
 @pytest.mark.skipif(not SPRIME_TAU_REAL_EXPORT.exists(),

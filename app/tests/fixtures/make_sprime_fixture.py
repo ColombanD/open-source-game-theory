@@ -30,8 +30,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 WORKSPACE = HERE.parents[2]
-LEDGER = (WORKSPACE / "engine" / "PrisonersDilemma" / "Research" / "Notes"
-          / "ROUTE_B_CENSUS.md")
+LEDGER = WORKSPACE / "docs" / "notes" / "ROUTE_B_CENSUS.md"   # moved out of the engine on 2026-10-30
 OUT = HERE / "sprime_outcome_theorems.sample.json"
 
 # Bots whose engine definition takes no budget (`CooperateBot`, not `CooperateBot k`).

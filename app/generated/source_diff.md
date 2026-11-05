@@ -4,11 +4,16 @@
 
 | zoo | bots | pairs | agree | flip | floor (rows) | missing |
 |---|---|---|---|---|---|---|
-| body | 10 | 55 | 44 | 7 | 4 (4) | 0 |
-| body+twins | 12 | 78 | 56 | 9 | 13 (14) | 0 |
-| body+twins+natives | 12 | 78 | 56 | 9 | 13 (14) | 0 |
-| critch8 | 8 | 36 | 33 | 0 | 3 (3) | 0 |
-| paper12 | 12 | 78 | 56 | 9 | 13 (14) | 0 |
+| body | 10 | 55 | 44 | 8 | 3 (3) | 0 |
+| body+twins | 12 | 78 | 56 | 10 | 12 (13) | 0 |
+| body+twins+natives | 12 | 78 | 56 | 10 | 12 (13) | 0 |
+| body8 | 8 | 36 | 33 | 1 | 2 (2) | 0 |
+| body8+trolls | 10 | 55 | 41 | 1 | 3 (3) | 10 |
+| body8+trolls+provers | 12 | 78 | 47 | 1 | 7 (9) | 23 |
+| body8+natives | 8 | 36 | 33 | 1 | 2 (2) | 0 |
+| nonprovers+dupoc | 7 | 28 | 26 | 0 | 2 (2) | 0 |
+| critch8 | 8 | 36 | 33 | 1 | 2 (2) | 0 |
+| paper12 | 12 | 78 | 56 | 10 | 12 (13) | 0 |
 
 ## body (10 bots, the paper zoo)
 
@@ -19,6 +24,7 @@ Bots: CooperateBot, CupodBot, CupodTrollBot, DBot, DIMCID, DefectBot, DupocBot, 
 | pair | engine | S' | theorems |
 |---|---|---|---|
 | CooperateBot vs DIMCID | (C, C) | (C, D) | `outcome_DIMCID_vs_CooperateBot` / `outcome_DIMCID_vs_CooperateBot` |
+| CupodBot vs OBot | (C, D) | (D, D) | `outcome_CupodBot_vs_OBot` / `outcome_CupodBot_vs_OBot` |
 | CupodTrollBot vs DIMCID | (C, C) | (C, D) | `llm_outcome_DIMCID_vs_CupodTrollBot` / `outcome_DIMCID_vs_CupodTrollBot` |
 | DBot vs DIMCID | (C, C) | (C, D) | `llm_outcome_DIMCID_vs_DBot` / `outcome_DIMCID_vs_DBot` |
 | DIMCID vs DupocBot | (C, D) | (D, D) | `outcome_DIMCID_vs_DupocBot` / `outcome_DIMCID_vs_DupocBot` |
@@ -30,7 +36,6 @@ Bots: CooperateBot, CupodBot, CupodTrollBot, DBot, DIMCID, DefectBot, DupocBot, 
 
 | pair | value | dichotomy | hinge |
 |---|---|---|---|
-| CupodBot vs OBot | (C, D) | `dich_CupodBot_vs_OBot` | `□[k] (guardCodeB (templateCode phiCu) (progCode (CupodBot k)) (progCode OBot) k)` |
 | CupodTrollBot vs DupocBot | (C, D) | `dich_DupocBot_vs_CupodTrollBot` | `□[k] (guardCodeB (templateCode phiDu) (progCode (DupocBot k)) (progCode (CupodTrollBot k)) k)` |
 | DBot vs DupocBot | (C, D) | `dich_DupocBot_vs_DBot` | `□[k] (guardCodeB (templateCode phiDu) (progCode (DupocBot k)) (progCode DBot) k)` |
 | DupocBot vs EBot | (D, C) | `dich_DupocBot_vs_EBot` | `□[k] (guardCodeB (templateCode phiDu) (progCode (DupocBot k)) (progCode EBot) k)` |
@@ -47,6 +52,7 @@ Bots: CIMCIC, CooperateBot, CupodBot, CupodTrollBot, DBot, DIMCID, DefectBot, Du
 |---|---|---|---|
 | CIMCIC vs DIMCID | (D, C) | (D, D) | `llm_outcome_CIMCIC_vs_DIMCID` / `outcome_CIMCIC_vs_DIMCID` |
 | CooperateBot vs DIMCID | (C, C) | (C, D) | `outcome_DIMCID_vs_CooperateBot` / `outcome_DIMCID_vs_CooperateBot` |
+| CupodBot vs OBot | (C, D) | (D, D) | `outcome_CupodBot_vs_OBot` / `outcome_CupodBot_vs_OBot` |
 | CupodTrollBot vs DIMCID | (C, C) | (C, D) | `llm_outcome_DIMCID_vs_CupodTrollBot` / `outcome_DIMCID_vs_CupodTrollBot` |
 | DBot vs DIMCID | (C, C) | (C, D) | `llm_outcome_DIMCID_vs_DBot` / `outcome_DIMCID_vs_DBot` |
 | DIMCID vs DupocBot | (C, D) | (D, D) | `outcome_DIMCID_vs_DupocBot` / `outcome_DIMCID_vs_DupocBot` |
@@ -64,7 +70,6 @@ Bots: CIMCIC, CooperateBot, CupodBot, CupodTrollBot, DBot, DIMCID, DefectBot, Du
 | CIMCIC vs DBot | (D, C) | `dich_CIMCIC_vs_DBot` | `□[k] (guardCodeB (templateCode phiC) (progCode (CIMCIC k)) (progCode DBot) k)` |
 | CIMCIC vs EBot | (D, C) | `dich_CIMCIC_vs_EBot` | `□[k] (guardCodeB (templateCode phiC) (progCode (CIMCIC k)) (progCode EBot) k)` |
 | CIMCIC vs PrudentBot | (D, D) | `dich_CIMCIC_vs_PrudentBot` | `□[k] (guardCodeB (templateCode phiPo) (progCode (PrudentBot k)) (progCode (CIMCIC k)) k)` |
-| CupodBot vs OBot | (C, D) | `dich_CupodBot_vs_OBot` | `□[k] (guardCodeB (templateCode phiCu) (progCode (CupodBot k)) (progCode OBot) k)` |
 | CupodBot vs PrudentBot | (C, D) | `dich_CupodBot_vs_PrudentBot` | `□[k] (guardCodeB (templateCode phiCu) (progCode (CupodBot k)) (progCode (PrudentBot k)) k) ∨ □[k] (guardCodeB (templateCode phiPo) (progCode (PrudentBot k)) (progCode (CupodBot k)) k)` |
 | CupodTrollBot vs DupocBot | (C, D) | `dich_DupocBot_vs_CupodTrollBot` | `□[k] (guardCodeB (templateCode phiDu) (progCode (DupocBot k)) (progCode (CupodTrollBot k)) k)` |
 | DBot vs DupocBot | (C, D) | `dich_DupocBot_vs_DBot` | `□[k] (guardCodeB (templateCode phiDu) (progCode (DupocBot k)) (progCode DBot) k)` |
@@ -85,6 +90,7 @@ Bots: CIMCIC, CooperateBot, CupodBot, CupodTrollBot, DBot, DIMCID, DefectBot, Du
 |---|---|---|---|
 | CIMCIC vs DIMCID | (D, C) | (D, D) | `llm_outcome_CIMCIC_vs_DIMCID` / `outcome_CIMCIC_vs_DIMCID` |
 | CooperateBot vs DIMCID | (C, C) | (C, D) | `outcome_DIMCID_vs_CooperateBot` / `outcome_DIMCID_vs_CooperateBot` |
+| CupodBot vs OBot | (C, D) | (D, D) | `outcome_CupodBot_vs_OBot` / `outcome_CupodBot_vs_OBot` |
 | CupodTrollBot vs DIMCID | (C, C) | (C, D) | `llm_outcome_DIMCID_vs_CupodTrollBot` / `outcome_DIMCID_vs_CupodTrollBot` |
 | DBot vs DIMCID | (C, C) | (C, D) | `llm_outcome_DIMCID_vs_DBot` / `outcome_DIMCID_vs_DBot` |
 | DIMCID vs DupocBot | (C, D) | (D, D) | `outcome_DIMCID_vs_DupocBot` / `outcome_DIMCID_vs_DupocBot` |
@@ -102,7 +108,6 @@ Bots: CIMCIC, CooperateBot, CupodBot, CupodTrollBot, DBot, DIMCID, DefectBot, Du
 | CIMCIC vs DBot | (D, C) | `dich_CIMCIC_vs_DBot` | `□[k] (guardCodeB (templateCode phiC) (progCode (CIMCIC k)) (progCode DBot) k)` |
 | CIMCIC vs EBot | (D, C) | `dich_CIMCIC_vs_EBot` | `□[k] (guardCodeB (templateCode phiC) (progCode (CIMCIC k)) (progCode EBot) k)` |
 | CIMCIC vs PrudentBot | (D, D) | `dich_CIMCIC_vs_PrudentBot` | `□[k] (guardCodeB (templateCode phiPo) (progCode (PrudentBot k)) (progCode (CIMCIC k)) k)` |
-| CupodBot vs OBot | (C, D) | `dich_CupodBot_vs_OBot` | `□[k] (guardCodeB (templateCode phiCu) (progCode (CupodBot k)) (progCode OBot) k)` |
 | CupodBot vs PrudentBot | (C, D) | `dich_CupodBot_vs_PrudentBot` | `□[k] (guardCodeB (templateCode phiCu) (progCode (CupodBot k)) (progCode (PrudentBot k)) k) ∨ □[k] (guardCodeB (templateCode phiPo) (progCode (PrudentBot k)) (progCode (CupodBot k)) k)` |
 | CupodTrollBot vs DupocBot | (C, D) | `dich_DupocBot_vs_CupodTrollBot` | `□[k] (guardCodeB (templateCode phiDu) (progCode (DupocBot k)) (progCode (CupodTrollBot k)) k)` |
 | DBot vs DupocBot | (C, D) | `dich_DupocBot_vs_DBot` | `□[k] (guardCodeB (templateCode phiDu) (progCode (DupocBot k)) (progCode DBot) k)` |
@@ -113,15 +118,158 @@ Bots: CIMCIC, CooperateBot, CupodBot, CupodTrollBot, DBot, DIMCID, DefectBot, Du
 
 Agreeing pairs: 56 of 78.
 
-## critch8 (8 bots, the standalone-repo zoo)
+## body8 (8 bots, the paper's base zoo)
 
-Bots: CooperateBot, CupodBot, DBot, DefectBot, DupocBot, OBot, TitForTatBot, EBot
+Bots: CooperateBot, CupodBot, DBot, DefectBot, DupocBot, EBot, OBot, TitForTatBot
+
+### Flips
+
+| pair | engine | S' | theorems |
+|---|---|---|---|
+| CupodBot vs OBot | (C, D) | (D, D) | `outcome_CupodBot_vs_OBot` / `outcome_CupodBot_vs_OBot` |
 
 ### Floors (engine-side value, hinge)
 
 | pair | value | dichotomy | hinge |
 |---|---|---|---|
-| CupodBot vs OBot | (C, D) | `dich_CupodBot_vs_OBot` | `□[k] (guardCodeB (templateCode phiCu) (progCode (CupodBot k)) (progCode OBot) k)` |
+| DBot vs DupocBot | (C, D) | `dich_DupocBot_vs_DBot` | `□[k] (guardCodeB (templateCode phiDu) (progCode (DupocBot k)) (progCode DBot) k)` |
+| DupocBot vs EBot | (D, C) | `dich_DupocBot_vs_EBot` | `□[k] (guardCodeB (templateCode phiDu) (progCode (DupocBot k)) (progCode EBot) k)` |
+
+Agreeing pairs: 33 of 36.
+
+## body8 + CupodTrollBot + DupocTrollBot (10 bots, the trolls rung)
+
+Bots: CooperateBot, CupodBot, CupodTrollBot, DBot, DefectBot, DupocBot, DupocTrollBot, EBot, OBot, TitForTatBot
+
+### Flips
+
+| pair | engine | S' | theorems |
+|---|---|---|---|
+| CupodBot vs OBot | (C, D) | (D, D) | `outcome_CupodBot_vs_OBot` / `outcome_CupodBot_vs_OBot` |
+
+### Floors (engine-side value, hinge)
+
+| pair | value | dichotomy | hinge |
+|---|---|---|---|
+| CupodTrollBot vs DupocBot | (C, D) | `dich_DupocBot_vs_CupodTrollBot` | `□[k] (guardCodeB (templateCode phiDu) (progCode (DupocBot k)) (progCode (CupodTrollBot k)) k)` |
+| DBot vs DupocBot | (C, D) | `dich_DupocBot_vs_DBot` | `□[k] (guardCodeB (templateCode phiDu) (progCode (DupocBot k)) (progCode DBot) k)` |
+| DupocBot vs EBot | (D, C) | `dich_DupocBot_vs_EBot` | `□[k] (guardCodeB (templateCode phiDu) (progCode (DupocBot k)) (progCode EBot) k)` |
+
+### Missing
+
+| pair | engine | S' |
+|---|---|---|
+| CooperateBot vs DupocTrollBot | — | (C, C) |
+| CupodBot vs DupocTrollBot | — | (C, C) |
+| CupodTrollBot vs DupocTrollBot | — | (C, C) |
+| DBot vs DupocTrollBot | — | (D, C) |
+| DefectBot vs DupocTrollBot | — | (D, C) |
+| DupocBot vs DupocTrollBot | — | (D, D) |
+| DupocTrollBot vs DupocTrollBot | — | (C, C) |
+| DupocTrollBot vs EBot | — | (C, D) |
+| DupocTrollBot vs OBot | — | (C, C) |
+| DupocTrollBot vs TitForTatBot | — | (C, C) |
+
+Agreeing pairs: 41 of 55.
+
+## body8 + trolls + CIMCIC + DIMDID (12 bots, the implication-provers rung)
+
+Bots: CIMCIC, CooperateBot, CupodBot, CupodTrollBot, DBot, DIMDID, DefectBot, DupocBot, DupocTrollBot, EBot, OBot, TitForTatBot
+
+### Flips
+
+| pair | engine | S' | theorems |
+|---|---|---|---|
+| CupodBot vs OBot | (C, D) | (D, D) | `outcome_CupodBot_vs_OBot` / `outcome_CupodBot_vs_OBot` |
+
+### Floors (engine-side value, hinge)
+
+| pair | value | dichotomy | hinge |
+|---|---|---|---|
+| CIMCIC vs CupodBot | (D, C) | `dich_CIMCIC_vs_CupodBot` | `□[k] (guardCodeB (templateCode phiC) (progCode (CIMCIC k)) (progCode (CupodBot k)) k) ∨ □[k] (guardCodeB (templateCode phiCu) (progCode (CupodBot k)) (progCode (CIMCIC k)) k)` |
+| CIMCIC vs CupodTrollBot | (D, C) | `dich_CIMCIC_vs_CupodTrollBot` | `□[k] (guardCodeB (templateCode phiC) (progCode (CIMCIC k)) (progCode (CupodTrollBot k)) k)` |
+| CIMCIC vs DBot | (D, C) | `dich_CIMCIC_vs_DBot` | `□[k] (guardCodeB (templateCode phiC) (progCode (CIMCIC k)) (progCode DBot) k)` |
+| CIMCIC vs EBot | (D, C) | `dich_CIMCIC_vs_EBot` | `□[k] (guardCodeB (templateCode phiC) (progCode (CIMCIC k)) (progCode EBot) k)` |
+| CupodTrollBot vs DupocBot | (C, D) | `dich_DupocBot_vs_CupodTrollBot` | `□[k] (guardCodeB (templateCode phiDu) (progCode (DupocBot k)) (progCode (CupodTrollBot k)) k)` |
+| DBot vs DupocBot | (C, D) | `dich_DupocBot_vs_DBot` | `□[k] (guardCodeB (templateCode phiDu) (progCode (DupocBot k)) (progCode DBot) k)` |
+| DupocBot vs EBot | (D, C) | `dich_DupocBot_vs_EBot` | `□[k] (guardCodeB (templateCode phiDu) (progCode (DupocBot k)) (progCode EBot) k)` |
+
+### Missing
+
+| pair | engine | S' |
+|---|---|---|
+| CIMCIC vs DIMDID | — | (D, C) |
+| CIMCIC vs DupocTrollBot | — | (D, C) |
+| CooperateBot vs DIMDID | — | (C, C) |
+| CooperateBot vs DupocTrollBot | — | (C, C) |
+| CupodBot vs DIMDID | — | (D, D) |
+| CupodBot vs DupocTrollBot | — | (C, C) |
+| CupodTrollBot vs DIMDID | — | (C, C) |
+| CupodTrollBot vs DupocTrollBot | — | (C, C) |
+| DBot vs DIMDID | — | (C, C) |
+| DBot vs DupocTrollBot | — | (D, C) |
+| DIMDID vs DIMDID | — | (D, D) |
+| DIMDID vs DefectBot | — | (D, D) |
+| DIMDID vs DupocBot | — | (C, D) |
+| DIMDID vs DupocTrollBot | — | (C, C) |
+| DIMDID vs EBot | — | (C, C) |
+| DIMDID vs OBot | — | (D, D) |
+| DIMDID vs TitForTatBot | — | (C, C) |
+| DefectBot vs DupocTrollBot | — | (D, C) |
+| DupocBot vs DupocTrollBot | — | (D, D) |
+| DupocTrollBot vs DupocTrollBot | — | (C, C) |
+| DupocTrollBot vs EBot | — | (C, D) |
+| DupocTrollBot vs OBot | — | (C, C) |
+| DupocTrollBot vs TitForTatBot | — | (C, C) |
+
+Agreeing pairs: 47 of 78.
+
+## body8 + MaxConfidenceBot + MinConfidenceBot (10 bots, aggregator comparison)
+
+Bots: CooperateBot, CupodBot, DBot, DefectBot, DupocBot, EBot, OBot, TitForTatBot
+
+### Flips
+
+| pair | engine | S' | theorems |
+|---|---|---|---|
+| CupodBot vs OBot | (C, D) | (D, D) | `outcome_CupodBot_vs_OBot` / `outcome_CupodBot_vs_OBot` |
+
+### Floors (engine-side value, hinge)
+
+| pair | value | dichotomy | hinge |
+|---|---|---|---|
+| DBot vs DupocBot | (C, D) | `dich_DupocBot_vs_DBot` | `□[k] (guardCodeB (templateCode phiDu) (progCode (DupocBot k)) (progCode DBot) k)` |
+| DupocBot vs EBot | (D, C) | `dich_DupocBot_vs_EBot` | `□[k] (guardCodeB (templateCode phiDu) (progCode (DupocBot k)) (progCode EBot) k)` |
+
+Agreeing pairs: 33 of 36.
+
+## non-provers + DupocBot (7 bots, minimal headline zoo)
+
+Bots: CooperateBot, DBot, DefectBot, DupocBot, EBot, OBot, TitForTatBot
+
+### Floors (engine-side value, hinge)
+
+| pair | value | dichotomy | hinge |
+|---|---|---|---|
+| DBot vs DupocBot | (C, D) | `dich_DupocBot_vs_DBot` | `□[k] (guardCodeB (templateCode phiDu) (progCode (DupocBot k)) (progCode DBot) k)` |
+| DupocBot vs EBot | (D, C) | `dich_DupocBot_vs_EBot` | `□[k] (guardCodeB (templateCode phiDu) (progCode (DupocBot k)) (progCode EBot) k)` |
+
+Agreeing pairs: 26 of 28.
+
+## critch8 (8 bots, the standalone-repo zoo)
+
+Bots: CooperateBot, CupodBot, DBot, DefectBot, DupocBot, OBot, TitForTatBot, EBot
+
+### Flips
+
+| pair | engine | S' | theorems |
+|---|---|---|---|
+| CupodBot vs OBot | (C, D) | (D, D) | `outcome_CupodBot_vs_OBot` / `outcome_CupodBot_vs_OBot` |
+
+### Floors (engine-side value, hinge)
+
+| pair | value | dichotomy | hinge |
+|---|---|---|---|
 | DBot vs DupocBot | (C, D) | `dich_DupocBot_vs_DBot` | `□[k] (guardCodeB (templateCode phiDu) (progCode (DupocBot k)) (progCode DBot) k)` |
 | DupocBot vs EBot | (D, C) | `dich_DupocBot_vs_EBot` | `□[k] (guardCodeB (templateCode phiDu) (progCode (DupocBot k)) (progCode EBot) k)` |
 
@@ -137,6 +285,7 @@ Bots: CIMCIC, CooperateBot, CupodBot, CupodTrollBot, DBot, DIMCID, DefectBot, Du
 |---|---|---|---|
 | CIMCIC vs DIMCID | (D, C) | (D, D) | `llm_outcome_CIMCIC_vs_DIMCID` / `outcome_CIMCIC_vs_DIMCID` |
 | CooperateBot vs DIMCID | (C, C) | (C, D) | `outcome_DIMCID_vs_CooperateBot` / `outcome_DIMCID_vs_CooperateBot` |
+| CupodBot vs OBot | (C, D) | (D, D) | `outcome_CupodBot_vs_OBot` / `outcome_CupodBot_vs_OBot` |
 | CupodTrollBot vs DIMCID | (C, C) | (C, D) | `llm_outcome_DIMCID_vs_CupodTrollBot` / `outcome_DIMCID_vs_CupodTrollBot` |
 | DBot vs DIMCID | (C, C) | (C, D) | `llm_outcome_DIMCID_vs_DBot` / `outcome_DIMCID_vs_DBot` |
 | DIMCID vs DupocBot | (C, D) | (D, D) | `outcome_DIMCID_vs_DupocBot` / `outcome_DIMCID_vs_DupocBot` |
@@ -154,7 +303,6 @@ Bots: CIMCIC, CooperateBot, CupodBot, CupodTrollBot, DBot, DIMCID, DefectBot, Du
 | CIMCIC vs DBot | (D, C) | `dich_CIMCIC_vs_DBot` | `□[k] (guardCodeB (templateCode phiC) (progCode (CIMCIC k)) (progCode DBot) k)` |
 | CIMCIC vs EBot | (D, C) | `dich_CIMCIC_vs_EBot` | `□[k] (guardCodeB (templateCode phiC) (progCode (CIMCIC k)) (progCode EBot) k)` |
 | CIMCIC vs PrudentBot | (D, D) | `dich_CIMCIC_vs_PrudentBot` | `□[k] (guardCodeB (templateCode phiPo) (progCode (PrudentBot k)) (progCode (CIMCIC k)) k)` |
-| CupodBot vs OBot | (C, D) | `dich_CupodBot_vs_OBot` | `□[k] (guardCodeB (templateCode phiCu) (progCode (CupodBot k)) (progCode OBot) k)` |
 | CupodBot vs PrudentBot | (C, D) | `dich_CupodBot_vs_PrudentBot` | `□[k] (guardCodeB (templateCode phiCu) (progCode (CupodBot k)) (progCode (PrudentBot k)) k) ∨ □[k] (guardCodeB (templateCode phiPo) (progCode (PrudentBot k)) (progCode (CupodBot k)) k)` |
 | CupodTrollBot vs DupocBot | (C, D) | `dich_DupocBot_vs_CupodTrollBot` | `□[k] (guardCodeB (templateCode phiDu) (progCode (DupocBot k)) (progCode (CupodTrollBot k)) k)` |
 | DBot vs DupocBot | (C, D) | `dich_DupocBot_vs_DBot` | `□[k] (guardCodeB (templateCode phiDu) (progCode (DupocBot k)) (progCode DBot) k)` |

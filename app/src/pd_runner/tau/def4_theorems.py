@@ -482,6 +482,11 @@ _RED_CELL = ("the tau image of the red cell: outcome_DupocBot_vs_CupodBot is a t
              "the base by τ-symmetry, but inside one compiled .sys system the two members' "
              "guards are not τ-images, so the bit is a FLOOR in S' (Tau/Entangled/DupocCupod.lean)")
 
+_SELF_DUAL = ("the tau image of the self-dual pair: outcome_DIMDID_vs_CIMCIC is a theorem in the "
+              "base by τ-symmetry (Cells/SelfDual.lean, 2026-11-05), but inside one compiled .sys "
+              "system the two members' guards are not τ-images, so the bit is a FLOOR in S' "
+              "(Tau/Entangled/DimdidSys.lean)")
+
 SPRIME_RECORDED_DIVERGENCES: dict[tuple[str, str], RecordedDivergence] = {
     ("dupoc", "cupod"): RecordedDivergence("provenance", _RED_CELL),
     ("maxconfidence", "cupod"): RecordedDivergence("provenance", _RED_CELL),
@@ -489,8 +494,10 @@ SPRIME_RECORDED_DIVERGENCES: dict[tuple[str, str], RecordedDivergence] = {
     ("cupod", "dupoc"): RecordedDivergence("provenance", _RED_CELL),
     ("cupod", "maxconfidence"): RecordedDivergence("provenance", _RED_CELL),
     ("cupod", "minconfidence"): RecordedDivergence("provenance", _RED_CELL),
+    ("dimdid", "cimcic"): RecordedDivergence("provenance", _SELF_DUAL),
+    ("cimcic", "dimdid"): RecordedDivergence("provenance", _SELF_DUAL),
 }
-"""The six `S'` bits at which the kernel row and the base cell differ BY THEOREM — keyed by
+"""The eight `S'` bits (six until 2026-11-05) at which the kernel row and the base cell differ BY THEOREM — keyed by
 Lean `Tmpl` slot names `(template, hypothesis)`, machine-checked in
 `arith/ArithS/Tau/Rows/*`: the six PROVENANCE divergences (floor bits on the tau images of
 the red cell, a base theorem; independent of the coding). The matrix loader

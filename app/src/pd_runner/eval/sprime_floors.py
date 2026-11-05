@@ -11,7 +11,7 @@ CONDITIONAL on one proof-complexity question. This table is the other answer.
 **Convention.** `HINGE_SIDE_PAIRS[dich]` is the branch in which EVERY box hypothesis of the
 dichotomy statement is TRUE (the outer hinge and, where the statement nests a partner's own
 guard under `¬outer`, those too). It is the exact mirror of the engine side (every box
-false): the two are the extreme worlds and bracket every mixed assignment. For the 17
+false): the two are the extreme worlds and bracket every mixed assignment. For the 16
 single-hinge cells there is nothing to choose; for the 9 nested cells the all-true branch
 is the outer-true branch, which the statements settle outright.
 
@@ -41,7 +41,8 @@ HINGE_SIDE_PAIRS: dict[str, tuple[str, str]] = {
     "dich_GuardianBot_vs_CIMCIC": ("C", "C"),       # engine (C, D)
     "dich_GuardianBot_vs_DupocBot": ("C", "C"),     # engine (C, D)
     "dich_GuardianBot_vs_JustBot": ("C", "C"),      # engine (C, D)
-    "dich_CupodBot_vs_OBot": ("D", "D"),            # engine (C, D): Cupod's defection detector fires
+    # (dich_CupodBot_vs_OBot left this table on 2026-11-05: its hinge is FOUND, the pair is the
+    #  THEOREM outcome_CupodBot_vs_OBot = (D, D) — arith/ArithS/Cells/CupodOBot.lean.)
     "dich_PrudentBot_vs_DupocBot": ("C", "C"),      # engine (D, D)
     "dich_PrudentBot_vs_PrudentBot": ("C", "C"),    # engine (D, D)
     "dich_PrudentBot_vs_EBot": ("C", "C"),          # engine (D, C), via dich_PrudentBot_vs_EBot_full
@@ -63,7 +64,10 @@ HINGE_SIDE_PAIRS: dict[str, tuple[str, str]] = {
     #    transposition of CIMCIC) has no engine cell. Two hinges each, NESTED: DIMDID's own guard
     #    (outer) and the partner's guard; all boxes true = DIMDID's guard found ⇒ (D, D).
     "dich_DIMDID_vs_DupocBot": ("D", "D"),          # engine side (C, D); Cells/Dimdid.lean
-    "dich_DIMDID_vs_CIMCIC": ("D", "D"),            # engine side (C, D)
+    # (dich_DIMDID_vs_CIMCIC left this table on 2026-11-05: the self-dual pair is the THEOREM
+    #  outcome_DIMDID_vs_CIMCIC = (C, D) at every budget — arith/ArithS/Cells/SelfDual.lean. The
+    #  (D, D) this table carried for it is IMPOSSIBLE: the two hinges hold together or not at all,
+    #  and together they contradict each other.)
     "dich_DIMDID_vs_PrudentBot": ("D", "D"),        # engine side (C, D)
 }
 

@@ -1148,8 +1148,11 @@ def test_confusion_structure_inversion(matrix) -> None:
     # Syntactically close, behaviorally far… (5 differing columns on the 11-bot
     # zoo; 3 of 9 on the twin-free 9-bot zoo of 2026-08-27 — still three times the
     # Coop/CupodTroll distance below)
+    # (2 since 2026-11-05: CupodBot × OBot = (D, D) is a PA-S' theorem, so Cupod now
+    # DEFECTS against OBot as Dupoc does — one differing column fewer; still twice
+    # the Coop/CupodTroll distance below)
     assert syn[("DupocBot", "CupodBot")] < syn[("CooperateBot", "CupodTrollBot")]
-    assert beh[("DupocBot", "CupodBot")] >= 3
+    assert beh[("DupocBot", "CupodBot")] >= 2
     # …and the reverse: behavioral near-twins that are syntactic opposites.
     assert beh[("CooperateBot", "CupodTrollBot")] <= 1
 
@@ -1473,7 +1476,8 @@ def test_critch8_transcription_diffs_are_accurate():
     """The recorded deltas must match what the library actually proves.
 
     This zoo does NOT reproduce the standalone repo's numbers — its
-    hand-transcribed CSV disagrees with the kernel on 6 of 62 cells. The
+    hand-transcribed CSV disagrees with the kernel on 4 of 62 cells (6 against
+    the engine; CupodBot × OBot = (D, D) is a PA-S' theorem since 2026-11-05). The
     disagreement is documented as data so the delta can be explained rather
     than discovered; this test keeps that record honest.
     """
@@ -1561,8 +1565,7 @@ def test_contradictions_apply_to_both_orientations():
     from pd_runner.tau.matrix import get_zoo
 
     matrix = get_zoo("superficial-standalone").load()
-    for row, col in (("CupodBot", "OBot"), ("DBot", "DupocBot"),
-                     ("DupocBot", "EBot")):
+    for row, col in (("DBot", "DupocBot"), ("DupocBot", "EBot")):
         forward = matrix.cell(row, col)
         reverse = matrix.cell(col, row)
         assert (forward.row_action, forward.col_action) == (

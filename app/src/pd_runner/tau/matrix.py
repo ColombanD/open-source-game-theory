@@ -211,8 +211,10 @@ PAPER_NATIVES_SUB_ZOO: tuple[str, ...] = (
 # * BODY8 (8, 2026-10-13): THE PAPER'S BASE ZOO — body without DIMCID (DefectBot's
 #   payoff twin by theorem in S', `dimcid_vs_closed`) and without CupodTrollBot (the
 #   one `.eq`-guard bot, which reads the opponent's source by NAME; a ladder rung,
-#   not a strategy). Three hinge pairs (Dupoc × {DBot, EBot}, Cupod × OBot), zero
-#   S'≠engine flips, twin-free on the engine side. On the hinge side CupodBot's and
+#   not a strategy). Two hinge pairs (Dupoc × {DBot, EBot}), both proved inter-reducible
+#   with ONE bounded-consistency sentence, and ONE S'≠engine flip, Cupod × OBot = (D, D)
+#   (a third hinge pair until 2026-11-05, when its hinge was proved FOUND:
+#   arith/ArithS/Cells/CupodOBot.lean). Twin-free on the engine side. On the hinge side CupodBot's and
 #   DupocBot's action ROWS coincide (their columns do not), so the behavioral σ
 #   channel cannot separate them there (EGT_FINDINGS_SPRIME.md §9.1).
 # * NONPROVERS+DUPOC (7): the six search-free bots plus the one Löbian cooperator —
@@ -275,7 +277,12 @@ CRITCH8_SUB_ZOO: tuple[str, ...] = (
 
 # Where the standalone repo's hand-transcribed matrix DISAGREES with the Lean
 # library, measured 2026-08-10 against `egt-osgt-main/data/payoff_matrix.csv`
-# as of commit bb51559: 56 of 62 filled cells agree, these 6 do not.
+# as of commit bb51559: 56 of 62 filled cells agreed with the ENGINE, 6 did not.
+# Against PA-S' (the default source) it is 58 of 62 since 2026-11-05: the CSV's
+# `CupodBot × OBot = (D, D)` is a THEOREM there (arith/ArithS/Cells/CupodOBot.lean;
+# the engine's `(C, D)` is its floor stipulation), so that pair left this table. The
+# four entries below are the two floors Dupoc × DBot/EBot, where the CSV took the
+# POSITIVE side of a hinge that PA-S' leaves open.
 #
 # `standalone` is what that CSV said; `certified` is what the theorem library
 # proves. Four of the six are `dagger` cells — proven under a side hypothesis,
@@ -287,8 +294,6 @@ CRITCH8_SUB_ZOO: tuple[str, ...] = (
 # "reproduce the standalone analysis and explain the delta", and that needs
 # the delta enumerated.
 CRITCH8_TRANSCRIPTION_DIFFS: dict[tuple[str, str], dict[str, tuple[str, str]]] = {
-    ("CupodBot", "OBot"): {"standalone": ("D", "D"), "certified": ("C", "D")},
-    ("OBot", "CupodBot"): {"standalone": ("D", "D"), "certified": ("D", "C")},
     ("DBot", "DupocBot"): {"standalone": ("C", "C"), "certified": ("C", "D")},
     ("DupocBot", "DBot"): {"standalone": ("C", "C"), "certified": ("D", "C")},
     ("DupocBot", "EBot"): {"standalone": ("C", "C"), "certified": ("D", "C")},
@@ -471,7 +476,8 @@ ZOOS: dict[str, NamedZoo] = {
         description=(
             "The paper's base zoo: the body zoo without DIMCID (DefectBot's twin by "
             "theorem in PA-S') and without CupodTrollBot (reads the opponent's source "
-            "by name). Three hinge pairs, zero flips, twin-free on the engine side."
+            "by name). Two hinge pairs (DupocBot × DBot/EBot), one flip (CupodBot × OBot = "
+            "(D, D), a theorem in PA-S' since 2026-11-05), twin-free on the engine side."
         ),
         bots=PAPER_BODY8_SUB_ZOO,
         stipulations={},
@@ -564,8 +570,7 @@ ZOOS: dict[str, NamedZoo] = {
         contradictions={
             pair: diff["standalone"]
             for pair, diff in CRITCH8_TRANSCRIPTION_DIFFS.items()
-            if pair in (("CupodBot", "OBot"), ("DBot", "DupocBot"),
-                        ("DupocBot", "EBot"))
+            if pair in (("DBot", "DupocBot"), ("DupocBot", "EBot"))
         },
     ),
 }

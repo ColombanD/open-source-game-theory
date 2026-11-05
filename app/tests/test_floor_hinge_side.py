@@ -251,7 +251,7 @@ def test_unknown_dichotomy_is_an_error_not_a_default() -> None:
 def test_scan_under_hinge_side_carries_the_other_branch() -> None:
     engine_side = {t.name: t for t in scan_outcome_theorems(source="sprime", floor_policy="engine_side")}
     hinge_side = {t.name: t for t in scan_outcome_theorems(source="sprime", floor_policy="hinge_side")}
-    assert set(engine_side) == set(hinge_side) and len(hinge_side) == 162  # 132 cells + 30 floors
+    assert set(engine_side) == set(hinge_side) and len(hinge_side) == 162  # 133 cells + 29 floors
     for name, t in hinge_side.items():
         e = engine_side[name]
         if t.is_floor:
@@ -267,10 +267,13 @@ def test_body_zoo_under_hinge_side() -> None:
     eng = load_tau_matrix(PAPER_BODY_SUB_ZOO, source="sprime", floor_policy="engine_side")
     hin = load_tau_matrix(PAPER_BODY_SUB_ZOO, source="sprime", floor_policy="hinge_side")
     assert hin.floor_policy == "hinge_side" and hin.is_fully_proven
-    assert hin.floor_cells == eng.floor_cells and len(hin.floor_cells) == 8
-    # The four body floors, hinge side: Cupod's detector fires, the three Löbian
-    # searchers cooperate with the else-players they were defecting against.
-    assert (hin.action("CupodBot", "OBot"), hin.action("OBot", "CupodBot")) == ("D", "D")
+    assert hin.floor_cells == eng.floor_cells and len(hin.floor_cells) == 6
+    # The three body floors, hinge side: Dupoc cooperates with the else-players it was
+    # defecting against. CupodBot × OBot was a fourth until 2026-11-05; its hinge is FOUND,
+    # so it is the theorem (D, D) under BOTH policies and no longer a floor.
+    for mm in (eng, hin):
+        assert (mm.action("CupodBot", "OBot"), mm.action("OBot", "CupodBot")) == ("D", "D")
+        assert not mm.cell("CupodBot", "OBot").is_floor
     for other in ("DBot", "EBot", "CupodTrollBot"):
         assert hin.action("DupocBot", other) == "C" and hin.action(other, "DupocBot") == "C"
         assert eng.action("DupocBot", other) == "D"
@@ -281,20 +284,20 @@ def test_body_zoo_under_hinge_side() -> None:
         for c in hin.bots:
             if (r, c) not in hin.floor_cells:
                 assert hin.cell(r, c) == eng.cell(r, c)
-    # A floor is never a flip — the ≠ set is the same under both policies (DIMCID's).
+    # A floor is never a flip — the ≠ set is the same under both policies (DIMCID's, and Cupod × OBot).
     assert set(hin.flip_cells) == set(eng.flip_cells)
     assert not set(hin.flip_cells) & set(hin.floor_cells)
     # No kernel floor bit exists for the hinge branch: unstated, coverage drops.
-    assert eng.is_kernel_backed and eng.kernel_bit_counts["floor_dichotomy"] == 8
+    assert eng.is_kernel_backed and eng.kernel_bit_counts["floor_dichotomy"] == 6
     assert not hin.is_kernel_backed and hin.kernel_bit_counts["floor_dichotomy"] == 0
     assert hin.kernel_bit_counts["theorem"] == eng.kernel_bit_counts["theorem"]
 
 
 @needs_real_export
-def test_twins_zoo_under_hinge_side_flips_all_25_floor_rows() -> None:
+def test_twins_zoo_under_hinge_side_flips_all_23_floor_rows() -> None:
     eng = load_tau_matrix(PAPER_TWINS_SUB_ZOO, source="sprime", floor_policy="engine_side")
     hin = load_tau_matrix(PAPER_TWINS_SUB_ZOO, source="sprime", floor_policy="hinge_side")
-    assert len(hin.floor_cells) == 25
+    assert len(hin.floor_cells) == 23
     for k in hin.floor_cells:
         assert hin.cell(*k).floor_branch == "hinge_side"
         assert (hin.cell(*k).row_action, hin.cell(*k).col_action) != (
@@ -336,8 +339,8 @@ def test_egt_identity_separates_the_two_branches() -> None:
 
 
 @needs_real_export
-@pytest.mark.parametrize("zoo,size,n_floor_pairs", [("body8", 8, 3), ("nonprovers+dupoc", 7, 2)])
-def test_floor_robustness_zoos_are_total_flip_free_and_twin_free(zoo, size, n_floor_pairs) -> None:
+@pytest.mark.parametrize("zoo,size,n_floor_pairs", [("body8", 8, 2), ("nonprovers+dupoc", 7, 2)])
+def test_floor_robustness_zoos_are_total_and_twin_free(zoo, size, n_floor_pairs) -> None:
     from pd_runner.tau.matrix import ZOOS
     from pd_runner.tau.signal import behavioral_twins
 
@@ -345,9 +348,12 @@ def test_floor_robustness_zoos_are_total_flip_free_and_twin_free(zoo, size, n_fl
         m = ZOOS[zoo].load(source="sprime", floor_policy=policy)
         assert len(m) == size and m.is_fully_proven
         assert len(m.floor_pairs) == n_floor_pairs
-        # Zero flips: on these rosters PA-S' and the engine agree on every non-floor
-        # cell, so the floor policy is the ONLY difference between the two systems.
-        assert m.flip_cells == ()
+        # On `nonprovers+dupoc` PA-S' and the engine agree on every non-floor cell, so the
+        # floor policy is the ONLY difference between the two systems. On `body8` there is
+        # one flip since 2026-11-05: CupodBot × OBot = (D, D), a theorem under both policies
+        # (the engine's floor rule says (C, D)).
+        assert {tuple(sorted(p)) for p in m.flip_cells} == (
+            {("CupodBot", "OBot")} if zoo == "body8" else set())
         # Twin-free on the engine side; on the hinge side body8's CupodBot and DupocBot
         # share an action ROW (EGT_FINDINGS_SPRIME.md §9.1), which the test records.
         twins = [g for g in behavioral_twins(m) if len(g) > 1]
