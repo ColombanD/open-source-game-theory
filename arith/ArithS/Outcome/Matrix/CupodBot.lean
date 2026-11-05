@@ -4,6 +4,7 @@ import ArithS.Cells.RedCellEngine
 import ArithS.Cells.DimcidFlips
 import ArithS.Cells.FlipCells
 import ArithS.Cells.KhatCells
+import ArithS.Cells.CupodOBot
 import ArithS.Cells.JustSlot
 import ArithS.Cells.PrudentMirror
 import ArithS.Cells.PrudentLoose
@@ -65,6 +66,17 @@ theorem outcome_CupodBot_vs_EBot :
     OutcomeSpecA .eventual (bot CupodBot) (const EBot) (some (.C, .C)) :=
   OutcomeSpecA.eventual_of (by
     obtain ⟨k₀, h⟩ := pos_CupodBot_vs_EBot
+    exact ⟨k₀, fun k hk ↦ OutcomeAtA.of_evalGraph (h k hk)⟩)
+
+/-- `khat_CupodBot_vs_OBot` (`Cells/CupodOBot.lean`, 2026-11-05) — **FLIP** of the engine's `(C, D)`, and until then
+a floor of the ledger (`dich_CupodBot_vs_OBot`): Cupod's guard "OBot plays D against me" is FOUND for all large `k`,
+because OBot's defection is over-determined (Cupod defects against `.bot DefectBot` through its then-branch, so
+whatever it plays against `.bot CooperateBot` OBot ends on a D) — `TAct` splits on a search it need not decide. -/
+@[outcomeA]
+theorem outcome_CupodBot_vs_OBot :
+    OutcomeSpecA .eventual (bot CupodBot) (const OBot) (some (.D, .D)) :=
+  OutcomeSpecA.eventual_of (by
+    obtain ⟨k₀, h⟩ := khat_CupodBot_vs_OBot
     exact ⟨k₀, fun k hk ↦ OutcomeAtA.of_evalGraph (h k hk)⟩)
 
 /-- `snd_CupodBot_vs_TitForTatBot` -/

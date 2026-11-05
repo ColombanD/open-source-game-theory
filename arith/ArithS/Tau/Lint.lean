@@ -25,7 +25,9 @@ The engine's `Tau/Lint.lean` adapted to `RowSpecA`/`FloorBitA` (`Tau/Spec.lean`)
   `info` and succeeds (the build stays green while the rows land one by one); `#check_tau_rowsA strict` makes
   every gap an error — the form `Tau/Check.lean` runs since Phase 3f (2026-10-02: 14 rows, 149 row slots, 47 floor
   bits, 196/196; 2026-10-19, `dupocTroll` joined: 15 rows, 176 row slots, 49 floor bits, 225/225, then `dimdid`: 16 rows, 197 row
-  slots, 59 floor bits, 256/256; the last bit `dimcid × ebot` landed with decision (α), the abstraction descending into systems).
+  slots, 59 floor bits, 256/256; the last bit `dimcid × ebot` landed with decision (α), the abstraction descending into systems;
+  2026-11-05: `cupod × obot` and `obot × cupod` became row slots with the base cell `CupodBot × OBot = (D, D)`: 199 row slots,
+  57 floor bits).
 -/
 
 open Lean Elab Command Meta
@@ -62,7 +64,10 @@ structure FloorBitInfoA where
 action and the base dichotomy (`Cells/FloorDichotomy.lean`) it is the bit of. The field is carried into the export
 and never resolved to a constant: for the six tau images of the RED CELL (`dupoc/maxconfidence/minconfidence ×
 cupod` and back), which are floors in `S'` although the base cell is a THEOREM (`Tau/Entangled/DupocCupod.lean`), it
-names that base theorem, `outcome_DupocBot_vs_CupodBot`, since no `dich_` exists. -/
+names that base theorem, `outcome_DupocBot_vs_CupodBot`, since no `dich_` exists. Likewise, since 2026-11-05, for the
+two tau images of the SELF-DUAL pair (`dimdid × cimcic` and back): the base cell `outcome_DIMDID_vs_CIMCIC = (C, D)` is
+a theorem by τ-symmetry (`Cells/SelfDual.lean`), and inside the compiled `.sys` the two members' guards are not
+τ-images, so the bits stay floors (`Tau/Entangled/DimdidSys.lean`). -/
 structure ExpectedFloor where
   template  : Name
   slot      : Name
@@ -73,7 +78,7 @@ structure ExpectedFloor where
 private def ef (t s a : String) (d : String) : ExpectedFloor :=
   ⟨Name.mkSimple t, Name.mkSimple s, Name.mkSimple a, d⟩
 
-/-- **The 49 `‡` cells** of the Phase-3 table (47 until 2026-10-19), row by row (engine-side action; base dichotomy). A floor that
+/-- **The `‡` cells** of the Phase-3 table (47 until 2026-10-19, 49 then, 59 with `dimdid`, 57 since 2026-11-05), row by row (engine-side action; base dichotomy). A floor that
 becomes a theorem, or a theorem that becomes a floor, fails the census and forces the table — and this list —
 to be updated together. 2026-10-01 (Phase 3c/3d): the six tau images of the red cell joined the list — theorems
 in the base (`outcome_DupocBot_vs_CupodBot`, by τ-symmetry), FLOORS on the compiled `.sys` systems (no τ-symmetry
@@ -92,8 +97,7 @@ def expectedFloorBits : Array ExpectedFloor := #[
   ef "ebot" "prudent" "C" "dich_PrudentBot_vs_EBot",
   ef "ebot" "maxconfidence" "C" "dich_DupocBot_vs_EBot",
   ef "ebot" "minconfidence" "C" "dich_DupocBot_vs_EBot",
-  -- obot: cupod D‡
-  ef "obot" "cupod" "D" "dich_CupodBot_vs_OBot",
+  -- obot: none (2026-11-05: `cupod` became a row slot with the base cell `outcome_CupodBot_vs_OBot = (D, D)`)
   -- dbot: dupoc C‡, cimcic C‡, maxconf C‡, minconf C‡
   ef "dbot" "dupoc" "C" "dich_DupocBot_vs_DBot",
   ef "dbot" "cimcic" "C" "dich_CIMCIC_vs_DBot",
@@ -109,13 +113,13 @@ def expectedFloorBits : Array ExpectedFloor := #[
   -- dimdid (2026-10-19, τ(CIMCIC) transposed): dupoc C‡, cimcic C‡, prudent C‡, maxconf C‡, minconf C‡ — DIMDID's own
   -- guard is the hinge (base `dich_DIMDID_vs_DupocBot / CIMCIC / PrudentBot`, two-hinge floors, engine side `(C, D)`)
   ef "dimdid" "dupoc" "C" "dich_DIMDID_vs_DupocBot",
-  ef "dimdid" "cimcic" "C" "dich_DIMDID_vs_CIMCIC",
+  ef "dimdid" "cimcic" "C" "outcome_DIMDID_vs_CIMCIC",   -- a base THEOREM since 2026-11-05 (self-dual pair), a floor in the `.sys`
   ef "dimdid" "prudent" "C" "dich_DIMDID_vs_PrudentBot",
   ef "dimdid" "maxconfidence" "C" "dich_DIMDID_vs_DupocBot",
   ef "dimdid" "minconfidence" "C" "dich_DIMDID_vs_DupocBot",
-  -- cupod: dupoc C‡ (red cell), obot C‡, cimcic C‡, prudent C‡, maxconf C‡ (red cell), minconf C‡ (red cell)
+  -- cupod: dupoc C‡ (red cell), cimcic C‡, prudent C‡, maxconf C‡ (red cell), minconf C‡ (red cell)
+  -- (2026-11-05: `obot` became the row slot D, `Tau/ClosedWatchCu.cupod_obot_D`)
   ef "cupod" "dupoc" "C" "outcome_DupocBot_vs_CupodBot",
-  ef "cupod" "obot" "C" "dich_CupodBot_vs_OBot",
   ef "cupod" "cimcic" "C" "dich_CIMCIC_vs_CupodBot",
   ef "cupod" "prudent" "C" "dich_CupodBot_vs_PrudentBot",
   ef "cupod" "maxconfidence" "C" "outcome_DupocBot_vs_CupodBot",
@@ -127,7 +131,7 @@ def expectedFloorBits : Array ExpectedFloor := #[
   ef "cimcic" "dupocTroll" "D" "dich_DupocTrollBot_vs_CIMCIC",
   ef "cimcic" "cupod" "D" "dich_CIMCIC_vs_CupodBot",
   ef "cimcic" "prudent" "D" "dich_CIMCIC_vs_PrudentBot",
-  ef "cimcic" "dimdid" "D" "dich_DIMDID_vs_CIMCIC",
+  ef "cimcic" "dimdid" "D" "outcome_DIMDID_vs_CIMCIC",   -- idem
   -- prudent: dupoc D‡, ebot D‡, cupod D‡, cimcic D‡, prudent D‡, maxconf D‡, minconf D‡
   ef "prudent" "dupoc" "D" "dich_PrudentBot_vs_DupocBot",
   ef "prudent" "ebot" "D" "dich_PrudentBot_vs_EBot",

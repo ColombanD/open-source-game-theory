@@ -10,13 +10,14 @@ import ArithS.Tau.Attr
 at the defector, and cooperates only if both stay silent (`instCode_obot`). Engine twin:
 `Tau/Theorems/TauOBot/Phase.lean` (`obotRowSpec`); every stated slot agrees.
 
-**Floor bit** (`‡`, one): `cupod` — settled on this side (Cupod's instance at the cooperator is SND, at the
-defector POS: the second watch fires, D); the hinge is Cupod's probe of OBot's instance (base
-`dich_CupodBot_vs_OBot`), the partner's open question.
+No floor bit. `cupod` (D) was one until 2026-11-05 — settled on this side all along (Cupod's instance at the
+cooperator is SND, at the defector POS: the second watch fires), a floor only because the base pair was
+(`dich_CupodBot_vs_OBot`); the base cell is now the theorem `outcome_CupodBot_vs_OBot = (D, D)` (`Cells/CupodOBot`),
+so the bit is a row slot.
 
 The `cimcic` and `dimcid` slots need no verdict on the instance at the cooperator: whatever it plays, the cascade
 ends in D (`col_cimcic_coop_total` + `col_cimcic_defect`; `col_dimcid_coop_total` + `Tau/Described.col_dimcid_defect`).
-All 13 theorem slots are stated.
+All 16 slots are stated.
 -/
 
 namespace ArithS.Tau
@@ -55,11 +56,11 @@ theorem obot_C_of {k : ℕ} {T : Tmpl} (h₁ : bitPlays k T .coop .C) (h₂ : bi
   obtain ⟨n₂, h₂⟩ := h₂
   exact ⟨_, watch_falls' h₁ (by decide) (watch_falls' h₂ (by decide) (const_play 0 _ _ _))⟩
 
-/-- **τ(OBot)'s row in `S'`** — the 13 theorem slots (the floor bit is below). -/
+/-- **τ(OBot)'s row in `S'`** — all 16 slots, no floor bit. -/
 @[tau_rowA]
 theorem obotRowSpecA : RowSpecA .obot
-    [.coop, .defect, .tftSim, .dupoc, .ebot, .obot, .dbot, .cupodTroll, .dupocTroll, .dimcid, .cimcic, .dimdid, .prudent,
-     .maxconfidence, .minconfidence] obotRowA :=
+    [.coop, .defect, .tftSim, .dupoc, .ebot, .obot, .dbot, .cupodTroll, .dupocTroll, .cupod, .dimcid, .cimcic, .dimdid,
+     .prudent, .maxconfidence, .minconfidence] obotRowA :=
   RowSpecA.cons (bitEventually.of_forall fun k ↦ obot_C_of (col_coop_coop k) (col_coop_defect k)) <|
   RowSpecA.cons (bitEventually.of_forall fun k ↦ obot_D_of_coop (col_defect_coop k)) <|
   RowSpecA.cons (bitEventually.of_forall fun k ↦ obot_D_of_defect (col_tftSim_coop k) (col_tftSim_defect k)) <|
@@ -70,6 +71,7 @@ theorem obotRowSpecA : RowSpecA .obot
   RowSpecA.cons (bitEventually.of_forall fun k ↦ obot_D_of_coop (col_dbot_coop k)) <|
   RowSpecA.cons (bitEventually.of_forall fun k ↦ obot_C_of (col_cupodTroll_coop k) (col_cupodTroll_defect k)) <|
   RowSpecA.cons (bitEventually.of_forall fun k ↦ obot_C_of (col_dupocTroll_coop k) (col_dupocTroll_defect k)) <|
+  RowSpecA.cons (bitEventually.mono (fun k h₂ ↦ obot_D_of_defect (col_cupod_coop k) h₂) col_cupod_defect) <|
   RowSpecA.cons (bitEventually.mono (fun k h₂ ↦
     let ⟨_, h₁⟩ := col_dimcid_coop_total k
     obot_D_of_defect h₁ h₂) col_dimcid_defect) <|
@@ -83,16 +85,5 @@ theorem obotRowSpecA : RowSpecA .obot
   RowSpecA.cons (bitEventually.mono₂ (fun _ h₁ h₂ ↦ obot_D_of_defect h₁ h₂) col_minconfidence_coop
     (bitEventually.of_forall col_minconfidence_defect)) <|
   RowSpecA.nil _ _
-
-/-! ### The floor bit — settled on this side, the partner's hinge -/
-
-/-- `obot × cupod` ‡ (base `dich_CupodBot_vs_OBot`): Cupod's instance cooperates with the cooperator (SND) and
-defects against the defector (POS), so the second watch fires — D. Hinge: Cupod's probe of OBot's instance, in
-Cupod's own frame. -/
-@[tau_floor_bitA]
-theorem obotRowSpecA_cupod_floor : FloorBitA .obot .cupod
-    (fun k ↦ □[k] (guardCodeB (templateCode (probeD (inst (tauZoo k) .obot .cupod)))
-      (pBot (instCode k .cupod .obot)) (pBot (instCode k .cupod .obot)) k)) .D :=
-  FloorBitA.of _ (bitEventually.mono (fun k h₂ ↦ obot_D_of_defect (col_cupod_coop k) h₂) col_cupod_defect)
 
 end ArithS.Tau

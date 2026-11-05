@@ -6,7 +6,10 @@ import ArithS.Cells.DupocTrollBot
 import ArithS.Cells.Dimdid
 
 /-!
-# ArithS.Outcome.Floors — the 26 genuine floors, engine side, on the `FloorSpecA` template
+# ArithS.Outcome.Floors — the genuine floors, engine side, on the `FloorSpecA` template
+
+(25 engine cells since 2026-11-05, when Cupod × OBot became the cell `outcome_CupodBot_vs_OBot = (D, D)`, plus the
+three `S'`-only floors of DupocTrollBot and DIMDID (DIMDID × CIMCIC left them the same day, `Cells/SelfDual`): 28.)
 
 One `@[floorA]` theorem per `dich_<L>_vs_<R>` of `Cells/FloorDichotomy.lean`:
 
@@ -116,13 +119,6 @@ open Classical
       (fun k ↦ □[k] (guardCodeB (templateCode (phiJ k)) (progCode (JustBot k)) (progCode (GuardianBot k)) k))
       (some (.C, .D)) :=
   FloorSpecA.of_dich dich_GuardianBot_vs_JustBot
-
-/-- `dich_CupodBot_vs_OBot` -/
-@[floorA] theorem outcome_CupodBot_vs_OBot_floor :
-    FloorSpecA (bot CupodBot) (const OBot)
-      (fun k ↦ □[k] (guardCodeB (templateCode phiCu) (progCode (CupodBot k)) (progCode OBot) k))
-      (some (.C, .D)) :=
-  FloorSpecA.of_dich dich_CupodBot_vs_OBot
 
 /-- `dich_DupocTrollBot_vs_CIMCIC` (`Cells/DupocTrollBot.lean`, 2026-10-13 — an `S'`-ONLY floor: DupocTrollBot has
 no engine cell, and `(C, D)` is what the engine's `+k` floor stipulation would give; the hinge is CIMCIC's guard
@@ -279,18 +275,6 @@ Dupoc's guard against DIMDID is found; `A_k ⇒ (D, D)`, `¬A_k ∧ B_k ⇒ (C, 
                □[k] (guardCodeB (templateCode phiDu) (progCode (DupocBot k)) (progCode (DIMDID k)) k))
       (some (.C, .D)) := by
   obtain ⟨k₀, h⟩ := dich_DIMDID_vs_DupocBot
-  refine ⟨k₀, fun k hk hn ↦ ?_⟩
-  rw [not_or] at hn
-  exact OutcomeAtA.of_evalGraph₂ ((h k hk).2 hn.1).1 (((h k hk).2 hn.1).2.1 hn.2)
-
-/-- `dich_DIMDID_vs_CIMCIC` (the self-dual pair: CIMCIC is DIMDID's transposition): the engine's `+k` world `(C, D)`
-is where neither DIMDID's guard nor CIMCIC's guard against DIMDID is found. -/
-@[floorA] theorem outcome_DIMDID_vs_CIMCIC_floor :
-    FloorSpecA (bot DIMDID) (bot CIMCIC)
-      (fun k ↦ □[k] (guardCodeB (templateCode phiDd) (progCode (DIMDID k)) (progCode (CIMCIC k)) k) ∨
-               □[k] (guardCodeB (templateCode phiC) (progCode (CIMCIC k)) (progCode (DIMDID k)) k))
-      (some (.C, .D)) := by
-  obtain ⟨k₀, h⟩ := dich_DIMDID_vs_CIMCIC
   refine ⟨k₀, fun k hk hn ↦ ?_⟩
   rw [not_or] at hn
   exact OutcomeAtA.of_evalGraph₂ ((h k hk).2 hn.1).1 (((h k hk).2 hn.1).2.1 hn.2)

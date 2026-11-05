@@ -41,7 +41,7 @@ the soundness step pointing the other way.
    guard against DIMCID and DIMCID's against DIMDID, each the other's consequent.
 5. **The floors**: three GENUINE two-hinge dichotomies, DIMDID's own guard `A_k` the outer hinge, the partner's
    guard `B_k` nested under `¬A_k` (the shape of `dich_WaryBot_vs_DupocBot`): `dich_DIMDID_vs_DupocBot`,
-   `dich_DIMDID_vs_CIMCIC`, `dich_DIMDID_vs_PrudentBot`. `A_k ⇒ (D, D)` (DIMDID defects, the partner's guard is
+   `split_DIMDID_vs_CIMCIC` (NOT a floor since 2026-11-05, see below), `dich_DIMDID_vs_PrudentBot`. `A_k ⇒ (D, D)` (DIMDID defects, the partner's guard is
    false by soundness); `¬A_k ⇒` DIMDID C, then `¬B_k ⇒` the partner defects — the engine side `(C, D)` — and
    `B_k ⇒` the partner cooperates (for Prudent, with its prudence guard FOUND: `prudence_found_vs_DIMDID`, the
    `k̂`-chain on the found probe of §2). Both hinges are bounded-consistency-type sentences: `A_k` says a short
@@ -643,8 +643,12 @@ theorem dich_DIMDID_vs_DupocBot :
 /-- **DIMDID × CIMCIC** (the self-dual pair: CIMCIC is DIMDID's transposition): two hinges, NESTED — `A` = DIMDID's
 guard "I defect against CIMCIC ⇒ CIMCIC defects against me" (outer split), `B` = CIMCIC's guard "I cooperate with
 DIMDID ⇒ DIMDID cooperates with me". `A ⇒ (D, D)` (DIMDID defects, so `B` is self-refuting); `¬A ⇒` DIMDID C, then
-`¬B ⇒ CIMCIC D` (the engine's world, `(C, D)`) and `B ⇒ CIMCIC C` (`(C, C)`). -/
-theorem dich_DIMDID_vs_CIMCIC :
+`¬B ⇒ CIMCIC D` (the engine's world, `(C, D)`) and `B ⇒ CIMCIC C` (`(C, C)`).
+
+NOT a floor since 2026-11-05: `A ↔ B` by τ-symmetry (the pair is self-dual) and `A ∧ B` is impossible, so neither
+holds and the pair is `(C, D)` at every budget — `Cells/SelfDual.snd_DIMDID_vs_CIMCIC`, the red cell's argument.
+Named `split_`, not `dich_`: the floor census reads every `dich_<L>_vs_<R>` of this file as a floor. -/
+theorem split_DIMDID_vs_CIMCIC :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       (LenBox TAct k (guardCodeB (templateCode phiDd) (progCode (DIMDID k)) (progCode (CIMCIC k)) k) →
         EvalGraph 2 (progCode (DIMDID k)) (progCode (CIMCIC k)) (progCode (DIMDID k)) (actCode .D) ∧

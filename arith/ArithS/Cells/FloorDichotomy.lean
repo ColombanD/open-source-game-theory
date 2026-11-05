@@ -17,7 +17,9 @@ INLINE in every statement (no structure, no named hypothesis, no conditional val
 
   `dich_<L>_vs_<R> : ∃ k₀, ∀ k > k₀, (¬ A_k → ⟨the engine's value⟩) ∧ (A_k → ⟨the found-branch value⟩)`,
 
-both worlds at the engine's fuel on the engine's own codes. The ELSE world is the verdict pass's settled half
+both worlds at the engine's fuel on the engine's own codes. (2026-11-05: 25 of the 26 are floors. Cupod × OBot's
+hinge is FOUND — `Cells/CupodOBot`, the cell is `(D, D)` — so its two-world statement is `split_CupodBot_vs_OBot`
+here, not a `dich_`; and the reduction of §5 has a twin for Dupoc × EBot in `Cells/FloorReductions`.) The ELSE world is the verdict pass's settled half
 plus the search-else clause; the THEN world is the then-branch plus the partner's play, which the same probers
 determine — and where the partner is itself a searcher whose guard speaks about the floor side, SOUNDNESS of the
 found hinge (`models_sentenceAt_of_lenBox`) plus the evaluator's determinism recover the partner's verdict
@@ -484,9 +486,13 @@ theorem dich_GuardianBot_vs_JustBot :
     rw [progCode_JustBot] at hf ⊢
     exact search_then_at (phiJ k) hf (const_play 0 _ _ _)
 
-/-- **Cupod × OBot** (engine `(C, D)`, pad 5). OBot's D is settled (`floor_CupodBot_vs_OBot_right`); hinge: Cupod's
-guard "OBot plays D against me" (TRUE). Not found ⇒ Cupod's else-branch C, `(C, D)`; found ⇒ `(D, D)`. -/
-theorem dich_CupodBot_vs_OBot :
+/-- **Cupod × OBot** (engine `(C, D)`, pad 5) — NOT a floor (2026-11-05): the two worlds of Cupod's guard "OBot plays
+D against me" (TRUE). OBot's D is settled (`floor_CupodBot_vs_OBot_right`); not found ⇒ Cupod's else-branch C,
+`(C, D)`; found ⇒ `(D, D)`. The guard IS found for all large `k` (`Cells/CupodOBot.hinge_found_CupodBot_vs_OBot`:
+OBot's defection is over-determined, no bounded-consistency statement enters), so the cell is `(D, D)`
+(`khat_CupodBot_vs_OBot`), a FLIP of the engine. Named `split_`, not `dich_`: the floor census reads every
+`dich_<L>_vs_<R>` of this file as a floor. -/
+theorem split_CupodBot_vs_OBot :
     ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
       (¬ LenBox TAct k (guardCodeB (templateCode phiCu) (progCode (CupodBot k)) (progCode OBot) k) →
         EvalGraph 5 (progCode (CupodBot k)) (progCode OBot) (progCode (CupodBot k)) (actCode .C) ∧

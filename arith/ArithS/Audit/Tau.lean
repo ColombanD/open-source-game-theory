@@ -32,6 +32,7 @@ import ArithS.Tau.Entangled.DimcidPrudent
 import ArithS.Tau.Entangled.DimdidSys
 import ArithS.Tau.Dimdid
 import ArithS.Tau.ClosedWatchDd
+import ArithS.Tau.ClosedWatchCu
 import ArithS.Tau.Quine
 import ArithS.Tau.ClosedProbe
 import ArithS.Tau.Watch
@@ -100,7 +101,6 @@ namespace ArithS.Tau
 #print axioms dbotRowSpecA_cimcic_floor
 #print axioms dbotRowSpecA_maxconfidence_floor
 #print axioms dbotRowSpecA_minconfidence_floor
-#print axioms obotRowSpecA_cupod_floor
 #print axioms cupodTrollRowSpecA_dupoc_floor
 #print axioms cupodTrollRowSpecA_cimcic_floor
 #print axioms cupodTrollRowSpecA_maxconfidence_floor
@@ -195,7 +195,6 @@ namespace ArithS.Tau
 #print axioms dupocRowSpecA_ebot_floor
 #print axioms dupocRowSpecA_dbot_floor
 #print axioms dupocRowSpecA_cupodTroll_floor
-#print axioms cupodRowSpecA_obot_floor
 #print axioms cimcicRowSpecA_ebot_floor
 #print axioms cimcicRowSpecA_dbot_floor
 #print axioms cimcicRowSpecA_cupodTroll_floor
@@ -404,5 +403,18 @@ namespace ArithS.Tau
 #print axioms binNumeral_le_templateCode_selfBot_sys
 #print axioms selfBot_sys_guard_not_found
 #print axioms dimcid_selfBot_sys_C
+
+-- 2026-11-05 — `cupod × obot = D` (`Tau/ClosedWatchCu.lean`), the tau image of the base flip `CupodBot × OBot = (D, D)`
+-- (`Cells/CupodOBot.lean`): Cupod's defection probe of τ(OBot)'s two-stage cascade is a conditional `TAct`-theorem
+-- (`tact_qPrD_above`) — the second watch fires on Cupod's then-branch D at the defector, the first is total
+-- (`WoCu_plays_D`, `ClosedWatchDd.WoDd_plays_D` with the Cupod members) — found by the `k̂`-chain (`cupod_D_of_W2`).
+-- The two floor bits `cupod × obot` and `obot × cupod` are row slots since.
+#print axioms templateAt_probeD_eq
+#print axioms tact_qPrD_above
+#print axioms cupod_D_of_W2
+#print axioms WoCu_code
+#print axioms WoCu_plays_D
+#print axioms WoCu_tr_plays_C
+#print axioms cupod_obot_D
 
 end ArithS.Tau

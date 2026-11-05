@@ -31,6 +31,17 @@ open) — a genuine lower-bound question, not a fact this development can settle
 residue of the "floors dropped" decision: `S'` does not claim them, and their engine values rest on the
 reflection assumption stated in prose.
 
+**CORRECTION (2026-11-05): Cupod × OBot is (P), not (G).** "Its only EVALUATION witness runs through an else-branch"
+does not make a guard's proofs long: a proof need not follow the evaluation. OBot defects unless its opponent
+cooperates with BOTH `.bot CooperateBot` and `.bot DefectBot`; Cupod defects against `.bot DefectBot` through its
+THEN-branch, so OBot's defection is over-determined and `TAct` proves it by splitting on Cupod's (decided, unknown)
+play against `.bot CooperateBot` — no `Con_TAct` instance enters. Cupod's guard is found and the cell is `(D, D)`, a
+flip (`Cells/CupodOBot.khat_CupodBot_vs_OBot`). The (G) verdict of a cell is therefore only as good as a REDUCTION
+of its hinge to bounded consistency: proved for Dupoc × DBot (`Cells/FloorDichotomy` §5) and Dupoc × EBot
+(`Cells/FloorReductions`), where the opponent's cooperation REQUIRES the searcher's else-play; for the other floors
+it is the structural argument above, not a theorem. The lemmas `floor_CupodBot_vs_OBot_right`/`_true` below stand
+(OBot's D, and the truth of Cupod's guard) and keep their names.
+
 What IS unconditional, and proved here — the machine-checked shape of each residue:
 
 1. **The settled halves** (`floor_<L>_vs_<R>_left`/`_right`): the play of the side whose value does NOT

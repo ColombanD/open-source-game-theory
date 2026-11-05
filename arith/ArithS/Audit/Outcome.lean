@@ -48,6 +48,7 @@ namespace ArithS
 #print axioms outcome_CupodBot_vs_EBot
 #print axioms outcome_CupodBot_vs_TitForTatBot
 #print axioms outcome_CupodBot_vs_MirrorBot
+#print axioms outcome_CupodBot_vs_OBot
 #print axioms outcome_CupodBot_vs_CupodBot
 #print axioms outcome_CupodTrollBot_vs_CooperateBot
 #print axioms outcome_CupodTrollBot_vs_CupodBot
@@ -152,7 +153,6 @@ namespace ArithS
 #print axioms outcome_GuardianBot_vs_CIMCIC_floor
 #print axioms outcome_GuardianBot_vs_DupocBot_floor
 #print axioms outcome_GuardianBot_vs_JustBot_floor
-#print axioms outcome_CupodBot_vs_OBot_floor
 #print axioms outcome_PrudentBot_vs_DupocBot_floor
 #print axioms outcome_PrudentBot_vs_PrudentBot_floor
 #print axioms outcome_JustBot_vs_PrudentBot_floor
@@ -193,12 +193,12 @@ namespace ArithS
 #print axioms outcome_DIMDID_vs_EBot
 #print axioms outcome_DIMDID_vs_CupodTrollBot
 #print axioms outcome_DIMDID_vs_DupocTrollBot
+#print axioms outcome_DIMDID_vs_CIMCIC
 #print axioms outcome_DIMDID_vs_OBot
 #print axioms outcome_DIMDID_vs_CupodBot
 #print axioms outcome_DIMDID_vs_DIMCID
 #print axioms outcome_DIMDID_vs_DIMDID
 #print axioms outcome_DIMDID_vs_DupocBot_floor
-#print axioms outcome_DIMDID_vs_CIMCIC_floor
 #print axioms outcome_DIMDID_vs_PrudentBot_floor
 
 end ArithS

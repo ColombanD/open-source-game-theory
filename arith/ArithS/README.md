@@ -165,8 +165,12 @@ Then, in order:
    `worldD`, their transposition).
 5. **The flips** — `Cells/FlipCells.lean`, `Cells/DimcidFlips.lean`: where PA-`S'` contradicts the
    engine, and why (`dimcid_vs_closed`: DIMCID defects against every closed program).
-6. **The floors** — `Cells/FloorDichotomy.lean`: the 26 genuine floors as hypothesis-free dichotomies
-   on the hinge `□[k] (the outer guard)`; `hinge_reduces_to_bounded_consistency_DupocBot_vs_DBot`.
+6. **The floors** — `Cells/FloorDichotomy.lean`: the genuine floors (25 engine cells since 2026-11-05) as
+   hypothesis-free dichotomies on the hinge `□[k] (the outer guard)`;
+   `hinge_reduces_to_bounded_consistency_DupocBot_vs_DBot` and, in `Cells/FloorReductions.lean`, its twin for
+   Dupoc × EBot on the SAME sentence. `Cells/CupodOBot.lean`: the one "floor" whose hinge is FOUND —
+   `CupodBot × OBot = (D, D)`, a flip (OBot's defection is over-determined; a proof need not follow the
+   evaluation).
 7. **An `S'`-only bot** — `Cells/DupocTrollBot.lean` (2026-10-13): `DupocTrollBot k` ("defect iff the opponent
    IS `DupocBot k`", no engine theorem), twelve cells against `body` + CIMCIC + itself: nine SND, the POS cell
    × DupocBot `(D, D)`, the Löb cell × DIMCID `(C, D)`, and a 27th genuine floor × CIMCIC (its `dich_` lives in
@@ -280,7 +284,7 @@ engine's codes `DupocEngine`, `CimcicEngine`, `DimcidEngine`, `JustEngine`, `Cup
 shared bot codes, templates, probers, families, the `k̂`-chain; `Names` the deprecated old names.
 
 **`Outcome/`** — `Spec` the vocabulary · `Matrix/<L>` the cells (`@[outcomeA]`) · `Floor` the floor template
-`FloorSpecA` · `Floors` the 26 engine-side floor halves (`@[floorA]`) · `Attr` the two tag attributes · `Lint` the
+`FloorSpecA` · `Floors` the engine-side floor halves (`@[floorA]`, 28 with the `S'`-only bots) · `Attr` the two tag attributes · `Lint` the
 validator, the censuses and the coverage command · `Check` the lake root that runs them · `Export` the JSON exporter.
 
 **Top level** — `Notation` the paper's symbols · `Tour` the guided tour.
@@ -337,8 +341,10 @@ pruning: `docs/notes/ARITH_DEAD_CODE_AUDIT.md`, `scripts/DeadCode.lean`.
 
 * **LegibleBot, OptimBot, WaryBot's floor cells** (22 cells): a box INSIDE a guard needs a third instance of
   the U10 kit for a body computed from the frame (`ROUTE_B_SCOPE.md` §9).
-* **The 26 genuine floors** take no side: each is a dichotomy on a hinge that is bounded consistency of
-  `TAct` at `k` up to a constant — Pudlák's linear-regime question. Never admit the hinge as an axiom.
+* **The genuine floors** (25 engine cells + 3 `S'`-only) take no side: each is a dichotomy on a hinge. For
+  Dupoc × DBot and Dupoc × EBot the hinge is PROVED inter-reducible with bounded consistency of `TAct` at `k` —
+  Pudlák's linear-regime question; for the others that is the structural argument, not a theorem (and it failed once:
+  Cupod × OBot, 2026-11-05). Never admit the hinge as an axiom.
 * **The outcomes of the entangled tau pairs** (Phase 3). The pronoun reading of `.selfIdx` — the last item of
   Phase 2 — LANDED on 2026-10-01: a system member's guard is described through the member slots `#7..#12` of the
   thirteen-variable `template13`, `sysCloseTemplate` on it is the engine's `Formula.sysClose`

@@ -2,6 +2,7 @@ import ArithS.Outcome.Spec
 import ArithS.Outcome.Attr
 import ArithS.Cells.Dimdid
 import ArithS.Cells.DimdidTroll
+import ArithS.Cells.SelfDual
 import ArithS.Outcome.Matrix.CIMCIC
 
 /-!
@@ -106,5 +107,14 @@ theorem outcome_DIMDID_vs_DIMDID :
     OutcomeSpecA .eventual (bot DIMDID) (bot DIMDID) (some (.D, .D)) :=
   (outcomeSpecA_transpose (L := CIMCIC) (R := CIMCIC) fragP_CIMCIC fragP_CIMCIC (some (.C, .C))).mp
     outcome_CIMCIC_vs_CIMCIC
+
+/-- `snd_DIMDID_vs_CIMCIC` (`Cells/SelfDual.lean`, 2026-11-05) — the SELF-DUAL pair, by the red cell's argument at
+every budget: the two guards are τ-images of each other, so they are found together, and found together they
+contradict each other (DIMDID's makes it defect; CIMCIC's guard against a defector is self-refuting). Neither is
+found: DIMDID cooperates, CIMCIC defects. A two-hinge floor of the ledger until then, carried at this value. -/
+@[outcomeA]
+theorem outcome_DIMDID_vs_CIMCIC :
+    OutcomeSpecA .universal (bot DIMDID) (bot CIMCIC) (some (.C, .D)) :=
+  OutcomeSpecA.universal_of fun k ↦ OutcomeAtA.of_evalGraph (snd_DIMDID_vs_CIMCIC k)
 
 end ArithS

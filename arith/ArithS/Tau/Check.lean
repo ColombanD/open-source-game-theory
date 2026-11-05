@@ -25,7 +25,8 @@ floor bit is on its template with a name that agrees with its statement, no bit 
 are exactly `‡` cells of the table. STRICT since Phase 3f (2026-10-02): 14 rows, 149 row slots, 47 floor bits,
 196/196 — every coverage gap is a build error; 2026-10-19: 15 rows, 176 row slots, 49 floor bits, 225/225 with `dupocTroll`, then 16 rows, 197 row slots, 59 floor
 bits, 256/256 with `dimdid` (`Tau/Rows/Dimdid.lean`) (the last bit, `dimcid × ebot`, landed when the budget abstraction
-descended into systems: `Tau/ClosedWatch3.dimcid_ebot_D`). The exporter
+descended into systems: `Tau/ClosedWatch3.dimcid_ebot_D`); 2026-11-05: 199 row slots, 57 floor bits — `cupod × obot` and
+`obot × cupod` are theorems (`Tau/ClosedWatchCu.cupod_obot_D`, the tau image of the base flip `CupodBot × OBot = (D, D)`). The exporter
 (`Outcome/Export.lean`) imports THIS module, so what it writes to `app/generated/sprime_tau_rows.json` has passed
 the gate.
 -/

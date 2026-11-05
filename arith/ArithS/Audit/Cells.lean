@@ -10,6 +10,12 @@ import ArithS.Cells.DupocTrollBot
 import ArithS.Cells.DupocTrollPrudent
 import ArithS.Cells.Dimdid
 import ArithS.Cells.DimdidTroll
+import ArithS.Cells.CupodOBot
+import ArithS.Cells.FloorReductions
+import ArithS.Cells.SelfDual
+import ArithS.Cells.TrollReduction
+import ArithS.Cells.ConReduction
+import ArithS.Cells.NestedReduction
 import ArithS.Bridge.Agent
 import ArithS.Eval.TauCheck
 import ArithS.Cells.JustSlot
@@ -388,7 +394,7 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms di_core
 #print axioms loeb_DIMDID_vs_DIMCID
 #print axioms dich_DIMDID_vs_DupocBot
-#print axioms dich_DIMDID_vs_CIMCIC
+#print axioms split_DIMDID_vs_CIMCIC
 #print axioms dich_DIMDID_vs_PrudentBot
 
 -- Route B Phase 2, the DIMCID family — DIMCID × DIMCID, DIMCID × Mirror and DIMCID × Cupod, all `(D, D)`, in
@@ -1087,7 +1093,7 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms dich_GuardianBot_vs_CIMCIC
 #print axioms dich_GuardianBot_vs_DupocBot
 #print axioms dich_GuardianBot_vs_JustBot
-#print axioms dich_CupodBot_vs_OBot
+#print axioms split_CupodBot_vs_OBot
 #print axioms dich_PrudentBot_vs_DupocBot
 #print axioms dich_PrudentBot_vs_PrudentBot
 #print axioms prudent_of_verdicts
@@ -1128,6 +1134,100 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms bounded_consistency_reduces_to_hinge_DupocBot_vs_DBot
 #print axioms substs_lMap_swap_binNumeralMeta
 #print axioms negTwin_true_iff
+
+-- CUPOD × OBOT IS NOT A FLOOR (Cells/CupodOBot, 2026-11-05) — `CupodBot × OBot = (D, D)` for all large `k`, a FLIP of
+-- the engine's `(C, D)` and until then one of the ledger's floors. Cupod's guard "OBot plays D against me" is FOUND:
+-- OBot cooperates only with an opponent that cooperates with BOTH `.bot CooperateBot` and `.bot DefectBot`, and Cupod
+-- defects against `.bot DefectBot` through its THEN-branch in every model above a threshold (`cupod_botDB_V`), so
+-- whatever it plays against `.bot CooperateBot` — a search is decided in every model — OBot ends on a D
+-- (`obot_D_vs_cupod_V`; the transposed statement `obotT_C_vs_dupoc_V`). Hence `tact_rOB_above`, a conditional
+-- `TAct`-theorem with NO bounded-consistency statement in it, found by the `k̂`-chain (`hinge_found_CupodBot_vs_OBot`);
+-- the cell is the found branch of `split_CupodBot_vs_OBot` (the former `dich_`). The verdict pass read OBot's
+-- EVALUATION, which does run through Cupod's else-play; a proof need not follow the evaluation.
+#print axioms SV_play_succ_V
+#print axioms obot_D_vs_cupod_V
+#print axioms obotT_C_vs_dupoc_V
+#print axioms guardCode_rOB
+#print axioms tact_rOB_above
+#print axioms hinge_found_CupodBot_vs_OBot
+#print axioms khat_CupodBot_vs_OBot
+
+-- TWO FLOORS CLOSED BY τ-SYMMETRY (Cells/SelfDual, 2026-11-05). (1) `DIMDID × CIMCIC = (C, D)` at EVERY budget, by the
+-- red cell's argument: the pair is self-dual (`(CIMCIC k).transpose = DIMDID k`), so DIMDID's guard and CIMCIC's guard
+-- are τ-images and found together (`guard_DIMDID_iff_guard_CIMCIC`, from `lenBox_guardCode_transpose`: the box does not
+-- see τ on the engine's guard codes); found together they contradict each other (`cimcic_selfref_not_found`); so neither
+-- is found (`guard_DIMDID_vs_CIMCIC_not_found`) and both play their else-branch. A two-hinge floor until then; the
+-- former dichotomy is `split_DIMDID_vs_CIMCIC`. (2) `DIMDID × Dupoc` is the transposition of `CIMCIC × Cupod`: their two
+-- hinges coincide pairwise and their outcomes are transposes at every budget — one floor, not two.
+#print axioms lMap_swap_sentenceAt_frag
+#print axioms lenBox_guardCode_transpose
+#print axioms guard_DIMDID_iff_guard_CIMCIC
+#print axioms guard_DIMDID_vs_CIMCIC_not_found
+#print axioms snd_DIMDID_vs_CIMCIC
+#print axioms guards_DIMDID_DupocBot_iff_CIMCIC_CupodBot
+#print axioms outcomeAtA_DIMDID_vs_DupocBot_iff
+
+-- THE TROLL REDUCTION (Cells/TrollReduction, 2026-11-05) — Dupoc × CupodTroll, BOTH directions, no threshold: the troll is a
+-- single search node, so it cooperates with Dupoc IFF its own `.eq` guard ε_k ("the opponent IS CupodBot k", false in ℕ)
+-- is not found. Hinge within `k` ⇒ `negTwinT(k)` within `k + C₀ + C₁·size k`; `conjTwinT(k)` within `m` ⇒ hinge within
+-- `m + C₀ + C₁·size k`; at ℕ `negTwinT(k)` says exactly `¬□_k ε_k` (`negTwinT_true_iff`).
+#print axioms tact_rTr_imp_negTwinT
+#print axioms tact_conjTwinT_imp_rTr
+#print axioms hinge_DupocBot_vs_CupodTrollBot_eq
+#print axioms hinge_reduces_to_bounded_consistency_DupocBot_vs_CupodTrollBot
+#print axioms bounded_consistency_reduces_to_hinge_DupocBot_vs_CupodTrollBot
+#print axioms negTwinT_true_iff
+
+-- THE GENERIC REDUCTION TO LITERAL BOUNDED CONSISTENCY (Cells/ConReduction, Cells/NestedReduction, 2026-11-05) — ONE
+-- direction: if a hinge formula `r`, when TRUE in a model, forbids that all of a finite list of guard boxes hold at the
+-- budget (`hstd`/`hswap`), then `TAct ⊢ ∀ k ≥ k̂, r(k) → conBelow C₀ C₁ (k)`, where `conBelow` says "⊥ has no proof
+-- within `k − C₀ − C₁·‖k‖`" (`conBelow_true_iff`) — by ex falso with length accounting IN EVERY MODEL (`exFalso_V`: a
+-- proof of ⊥ within `j` gives a proof of any fixed guard instance within `j + E₀ + E₁·‖k‖`). Hence
+-- `hinge_con_reduction`: the hinge found within `k` yields a proof of `Con_TAct(k − C₀ − C₁·size k)` within
+-- `k + D₀ + D₁·size k + D₂·(size k)²`. Instances: CIMCIC × DBot/EBot (CIMCIC's guard against `.bot DefectBot`),
+-- CIMCIC × CupodTroll/DupocTroll (the troll's `.eq` guard), both hinges of CIMCIC × Cupod and, across the transposition,
+-- of DIMDID × Dupoc; Dupoc × DBot/EBot re-derived as a check. No converse (it would need consistency at a
+-- polynomially larger level).
+#print axioms tact_botF_imp
+#print axioms exFalso_V
+#print axioms exFalso_list_V
+#print axioms eval_conBelow_iff
+#print axioms tact_imp_conBelow
+#print axioms con_reduction_of
+#print axioms conBelow_true_iff
+#print axioms hinge_con_reduction
+#print axioms hinge_reduces_to_bounded_consistency_CIMCIC_vs_DBot
+#print axioms hinge_reduces_to_bounded_consistency_CIMCIC_vs_EBot
+#print axioms hinge_reduces_to_bounded_consistency_CIMCIC_vs_CupodTrollBot
+#print axioms hinge_reduces_to_bounded_consistency_CIMCIC_vs_DupocTrollBot
+#print axioms hinge_reduces_to_bounded_consistency_CIMCIC_vs_CupodBot
+#print axioms hinge_reduces_to_literal_consistency_DupocBot_vs_DBot
+#print axioms hinge_reduces_to_literal_consistency_DupocBot_vs_EBot
+#print axioms hinge_CupodBot_vs_CIMCIC_eq
+#print axioms hinge_reduces_to_bounded_consistency_CupodBot_vs_CIMCIC
+#print axioms hinge_reduces_to_bounded_consistency_DIMDID_vs_DupocBot
+#print axioms hinge_reduces_to_bounded_consistency_DupocBot_vs_DIMDID
+#print axioms hinge_reduces_to_literal_consistency_DupocBot_vs_CupodTrollBot
+
+-- THE SECOND REDUCTION (Cells/FloorReductions, 2026-11-05) — the hinge of Dupoc × EBot is inter-reducible with the
+-- SAME bounded-consistency instance as Dupoc × DBot (`σ_k` = Dupoc's guard against `.bot DefectBot`): EBot's cooperation
+-- passes its first rung, so `σ_k` (or its τ-twin) was not found (`tact_rEB_imp_negTwin`, cost `k + C₀ + C₁·size k`);
+-- conversely, from the conjunction, Dupoc's else-play fells the first rung and its THEN-branch C against
+-- `.bot CooperateBot` (found above a threshold in every model) fires the second — a CONDITIONAL uniform theorem
+-- (`tact_conjTwin_imp_rEB_above`), whose instance costs `K₀ + K₁·size k + K₂·(size k)²` (polylogarithmic overhead).
+-- With Cupod × OBot decided, the two floors of the paper's base zoo rest on one sentence.
+#print axioms cast_EBot
+#print axioms transposeCode_EBotV
+#print axioms ebot_C_of_probes_V
+#print axioms ebotT_D_of_probes_V
+#print axioms probe_of_ebot_C_V
+#print axioms probe_of_ebotT_D_V
+#print axioms guardCode_rEB
+#print axioms tact_rEB_imp_negTwin
+#print axioms tact_conjTwin_imp_rEB_above
+#print axioms hinge_DupocBot_vs_EBot_eq
+#print axioms hinge_reduces_to_bounded_consistency_DupocBot_vs_EBot
+#print axioms bounded_consistency_reduces_to_hinge_DupocBot_vs_EBot
 
 -- THE PRUDENCE `k̂`-CHAIN (Cells/PrudentLoose §1–3, 2026-09-27) — Prudent's prudence guard `B_k` ("the opponent defects
 -- against `.bot DefectBot`") DISCHARGED where the verdict pass rated it (P): against an engine searcher `SV g a k` the

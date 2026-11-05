@@ -1,5 +1,7 @@
 import ArithS.Outcome.Matrix.DupocBot
 import ArithS.Outcome.Matrix.DIMCID
+import ArithS.Outcome.Matrix.CupodBot
+import ArithS.Cells.FloorReductions
 import ArithS.Audit.RedCellAudit
 import ArithS.Audit.RedCellUnsound
 import ArithS.Necessitation.ClosedNec
@@ -136,11 +138,16 @@ Cupod cooperates. Four ingredients, no Löb, no census:
 
 #check dimcid_vs_closed            -- DIMCID defects against every closed program
 #check outcome_DIMCID_vs_DupocBot  -- the engine has (C, D) at EVERY k; `S'` has (D, D) for all large k
+#check hinge_found_CupodBot_vs_OBot -- Cupod's guard against OBot is FOUND: OBot's defection is over-determined
+#check outcome_CupodBot_vs_OBot    -- so the pair is (D, D); the engine's floor rule says (C, D)
 
 /-! ## 6. The floors: no side taken -/
 
 #check dich_DupocBot_vs_DBot       -- ¬hinge → the engine's value; hinge → the other value
-#check hinge_reduces_to_bounded_consistency_DupocBot_vs_DBot
+#check hinge_reduces_to_bounded_consistency_DupocBot_vs_DBot   -- hinge within k ⇒ bounded consistency within k + O(log k)
+#check bounded_consistency_reduces_to_hinge_DupocBot_vs_DBot   -- and conversely
+#check hinge_reduces_to_bounded_consistency_DupocBot_vs_EBot   -- the other floor of the base zoo: the SAME sentence
+#check bounded_consistency_reduces_to_hinge_DupocBot_vs_EBot
 
 /-! ## 7. Negative controls: the definitions are not vacuous -/
 

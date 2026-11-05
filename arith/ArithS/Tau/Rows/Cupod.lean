@@ -1,5 +1,6 @@
 import ArithS.Tau.Quine
 import ArithS.Tau.ClosedProbe
+import ArithS.Tau.ClosedWatchCu
 import ArithS.Tau.Entangled.DimcidCupod
 import ArithS.Tau.Entangled.DupocCupod
 import ArithS.Tau.Entangled.CupodCimcic
@@ -16,7 +17,11 @@ seeing Cupod: `.search k (probeD (inst T .cupod)) D C` (`Tau/Zoo.inst_cupod_peel
 (`Tau/Quine.quine_found .D` — Dupoc's argument with the polarity flipped: Cupod provably DEFECTS against
 itself, Critch's twin cell). Engine twin: `Tau/Theorems/TauCupod/Phase.lean` (`cupodRowSpec`).
 
-Slots stated here (`[coop, defect, tftSim, ebot, dbot, cupodTroll, cupod, dimcid]`): `coop` C (SND), `defect` D (POS),
+Slots stated here (`[coop, defect, tftSim, ebot, obot, dbot, cupodTroll, cupod, dimcid]`): `coop` C (SND), `defect` D (POS),
+`obot` D (2026-11-05, the tau image of the base FLIP `CupodBot × OBot = (D, D)`: Cupod's defection probe of τ(OBot)'s
+two-stage cascade is a TRUE closed probe of a budget-carrying watch whose defection is over-determined — the second
+watch fires on Cupod's then-branch D at the defector whatever the first sees — found by the `k̂`-chain,
+`Tau/ClosedWatchCu.cupod_obot_D`; a floor bit until then),
 `tftSim`/`ebot`/`dbot` C (SND: the hypothesis's instance at Cupod COOPERATES — τ(TFTSim) copies Cupod's C at the
 cooperator, τ(EBot)'s reciprocity watch fires, τ(DBot) trusts Cupod's D at the defector — so the defection probe is
 false), `cupodTroll` D (POS-above: τ(CupodTroll)'s instance at Cupod is the `.eq`-searcher `.search k (.eq C C) D C`,
@@ -25,9 +30,8 @@ by the `k̂`-chain on the bot tower, `Tau/ClosedProbe.cupod_cupodTroll_found`), 
 entangled `dimcid` D (the DIMCID member defects by its self-fulfilling family, so Cupod's punish-probe is a box
 consequence of it — `Tau/Entangled/DimcidCupod.ent_cupod_dimcid`).
 
-**Floor bits** (`‡`, six, floor SIDE): `obot` — hinge = Cupod's own defection probe of τ(OBot)'s instance seeing
-Cupod (true in ℕ: OBot's second watch fires; base `dich_CupodBot_vs_OBot`); not found ⇒ else-branch C — and the five
-system floors (`Tau/Entangled/`, the hinge the Cupod member's own punish-probe in the bit's frame): `dupoc`,
+**Floor bits** (`‡`, five, floor SIDE), all system floors (`Tau/Entangled/`, the hinge the Cupod member's own
+punish-probe in the bit's frame): `dupoc`,
 `maxconfidence`, `minconfidence` (the tau images of the RED CELL, floors in `S'` although the base cell is a theorem:
 `DupocCupod.lean`), `cimcic` (base `dich_CIMCIC_vs_CupodBot`) and `prudent` (base `dich_CupodBot_vs_PrudentBot`).
 -/
@@ -36,9 +40,9 @@ namespace ArithS.Tau
 
 open PD PD.Tau
 
-/-- τ(Cupod)'s bit row (floor bit at its engine-side value). -/
+/-- τ(Cupod)'s bit row (floor bits at their engine-side value). -/
 def cupodRowA : Tmpl → Action
-  | .coop => .C | .defect => .D | .tftSim => .C | .dupoc => .C | .ebot => .C | .obot => .C | .dbot => .C
+  | .coop => .C | .defect => .D | .tftSim => .C | .dupoc => .C | .ebot => .C | .obot => .D | .dbot => .C
   | .cupodTroll => .D | .cupod => .D | .dimcid => .D | .cimcic => .C | .dimdid => .D | .prudent => .C
   | .maxconfidence => .C | .minconfidence => .C
   | _ => .C
@@ -106,14 +110,15 @@ defection probe is false (SND, C). -/
 theorem cupod_dupocTroll_C : bitEventually .cupod .dupocTroll .C :=
   bitEventually.of_forall fun k ↦ cupod_C_of_probeD_false_at (instCode_cupod_dupocTroll k) rfl (dupocTroll_C k _ (by decide))
 
-/-- **τ(Cupod)'s row in `S'`** — the nine theorem slots (eight non-entangled, `dimcid` entangled). -/
+/-- **τ(Cupod)'s row in `S'`** — the eleven theorem slots (nine non-entangled, `dimcid`/`dimdid` entangled). -/
 @[tau_rowA]
 theorem cupodRowSpecA : RowSpecA .cupod
-    [.coop, .defect, .tftSim, .ebot, .dbot, .cupodTroll, .dupocTroll, .cupod, .dimcid, .dimdid] cupodRowA :=
+    [.coop, .defect, .tftSim, .ebot, .obot, .dbot, .cupodTroll, .dupocTroll, .cupod, .dimcid, .dimdid] cupodRowA :=
   RowSpecA.cons (bitEventually.of_forall col_cupod_coop) <|
   RowSpecA.cons col_cupod_defect <|
   RowSpecA.cons cupod_tftSim_C <|
   RowSpecA.cons cupod_ebot_C <|
+  RowSpecA.cons cupod_obot_D <|
   RowSpecA.cons cupod_dbot_C <|
   RowSpecA.cons cupod_cupodTroll_D <|
   RowSpecA.cons cupod_dupocTroll_C <|
@@ -121,16 +126,6 @@ theorem cupodRowSpecA : RowSpecA .cupod
   RowSpecA.cons ent_cupod_dimcid <|
   RowSpecA.cons ent_cupod_dimdid <|
   RowSpecA.nil _ _
-
-/-! ### The floor bit — Cupod's own defection probe is the hinge (floor SIDE) -/
-
-/-- `cupod × obot` ‡ (base `dich_CupodBot_vs_OBot`): hinge = Cupod's defection probe of τ(OBot)'s instance seeing
-Cupod, in the bit's frame; not found ⇒ C. -/
-@[tau_floor_bitA]
-theorem cupodRowSpecA_obot_floor : FloorBitA .cupod .obot
-    (fun k ↦ □[k] (guardCodeB (templateCode (probeD (inst (tauZoo k) .obot .cupod)))
-      (pBot (instCode k .cupod .obot)) (pBot (instCode k .cupod .obot)) k)) .C :=
-  FloorBitA.of_not_hinge ⟨0, fun k _ hn ↦ cupod_floor_C_at (instCode_cupod_obot k) rfl hn⟩
 
 /-! ### The system floor bits — the Cupod member's own punish-probe is the hinge (`Tau/Entangled/`) -/
 
