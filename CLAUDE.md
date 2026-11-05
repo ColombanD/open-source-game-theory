@@ -64,20 +64,22 @@ every `#print axioms` the build runs. `lake exe export_sprime_outcomes` writes
 | **Evaluator** | `Eval/{Fixpoint,Eval,EvalN,SimTest,Transparency,Det,TauCheck}` | `EvalGraph n me opp p a`: a Σ₁ fixpoint mirroring the engine's `eval` clause by clause (incl. `.tvote/.sys/.selfIdx`); `search` consults `LenBox TAct k (guardCodeB g me opp k)`; deterministic, fuel-monotone, in LOCKSTEP with the engine on search-free constructors. |
 | **PBLT** | `Loeb/{Diag,InstV,NumeralFacts}`, `Assembly/{Prep,Family,Cell,Uniform}`, `Necessitation/*` | The parametric diagonal lemma over `TAct`; Critch 2019's uniform proof of the parametric bounded Löb theorem, family-parametric (`LoebSound`, `family_found`); its one hypothesis, bounded inner necessitation, is a THEOREM: `boundedInnerNec_sixteen` (U10, degree 16, ~96k generated lines — do not open; `Necessitation/Package.lean` is the statement) and `closedInnerNec_sixteen`. |
 | **Outcome** | `Outcome/{Spec,Attr,Floor,Floors,Lint,Check,Export}`, `Outcome/Matrix/<L>.lean` | The engine's vocabulary on codes: `OutcomeSpecA regime L R (some (a, b))`, `bot P`/`const P` = `progCode` of the engine's bots; ONE `@[outcomeA] theorem outcome_<L>_vs_<R>` per ledger cell, `@[floorA] … _floor` per floor. |
-| **Cells** | `Cells/*` (uniform methods by method, Löb by bot; `Cells/Common/` shared kits) | `RedCell`/`RedCellEngine` (every `k`, τ-symmetry + soundness, no Löb); `SearchFree` (transfer at the engine's fuel); `SoundnessCells` (guard false ⇒ else branch); `PositiveCells` (`TAct ⊢ ∀¹ q` by completeness); the Löb families (`DupocMirror`, `JustBot`, `DIMCID`, `CIMCIC`, `PrudentMirror`, `JustSlot`, `KhatCells`, `*Engine`, `DupocTrollBot`, `Dimdid`, `DimdidTroll`, `DupocTrollPrudent`); `FlipCells`/`DimcidFlips` (the disagreements with the engine); `FloorDichotomy`/`FloorVerdicts` (the floors); `Transposition` (`outcomeSpecA_transpose`, the general C/D transposition theorem on `fragP`). |
+| **Cells** | `Cells/*` (uniform methods by method, Löb by bot; `Cells/Common/` shared kits) | `RedCell`/`RedCellEngine` (every `k`, τ-symmetry + soundness, no Löb); `SearchFree` (transfer at the engine's fuel); `SoundnessCells` (guard false ⇒ else branch); `PositiveCells` (`TAct ⊢ ∀¹ q` by completeness); the Löb families (`DupocMirror`, `JustBot`, `DIMCID`, `CIMCIC`, `PrudentMirror`, `JustSlot`, `KhatCells`, `*Engine`, `DupocTrollBot`, `Dimdid`, `DimdidTroll`, `DupocTrollPrudent`); `FlipCells`/`DimcidFlips`/`CupodOBot` (the disagreements with the engine); `FloorDichotomy`/`FloorVerdicts` (the floors), `FloorReductions`/`TrollReduction`/`ConReduction`/`NestedReduction` (their reductions to bounded consistency), `SelfDual` (DIMDID × CIMCIC by τ-symmetry); `Transposition` (`outcomeSpecA_transpose`, the general C/D transposition theorem on `fragP`). |
 | **Tau** | `Tau/{Spec,Attr,Lint,Check,Columns,Described,Quine,ClosedProbe,…}`, `Tau/Rows/*`, `Tau/Entangled/*` | The 16 paper templates as `RowSpecA` rows + `FloorBitA` floor bits; `.sys` only for ENTANGLED pairs (both self-probe); `#check_tau_rowsA strict`. |
 | **Frozen / estimates** | `Bridge/{Agent,AgentConverse,Inst,Neg}`, `Eval/Det`, `Agents/Fit*`, `Length/Proper`, `Box/ProperBound` | `Bridge/` is what remains of the T2 rule bridge `S → S'` (shown IMPOSSIBLE at polynomial budgets, `MERGE_CROSSROAD.md`; the bridge proper was deleted 2026-10-29, `ARITH_DEAD_CODE_AUDIT.md` §9): the evaluation-certificate kit the cells use (`properPlayer_*`, `inst` and its simp set, `outcome_eq_some_iff`, the size arithmetic of `FitBox`/`NeverFits`). Plus the numeric estimates. |
 
-**The ledger (export of 2026-10-19): 132 cells, 30 genuine floors, 0 companions.** Of the engine's 155
-census rows: 107 have an `S'` statement (94 agree, 13 FLIP — 11 DIMCID's, 2 WaryBot's), 26 are genuine
-floors, 22 are excluded (LegibleBot: a box inside a guard; OptimBot; WaryBot's floor cells). Plus the
+**The ledger (export of 2026-11-05): 134 cells, 28 genuine floors, 0 companions.** Of the engine's 155
+census rows: 108 have an `S'` statement (94 agree, 14 FLIP — 11 DIMCID's, 2 WaryBot's, and `CupodBot × OBot =
+(D, D)`, a floor until 2026-11-05), 25 are genuine floors, 22 are excluded (LegibleBot: a box inside a guard; OptimBot; WaryBot's floor cells). Plus the
 `S'`-ONLY cells of `DupocTrollBot k` ("defect iff the opponent IS `DupocBot k`", separates the engine-side
 twins CIMCIC/DupocBot) and `DIMDID k` (the C/D transposition of CIMCIC, `(CIMCIC k).transpose = DIMDID k`
-by `rfl`; the SELF-DEFEATING guard argument), and the PrudentBot × DupocTrollBot pair. `S'`-only bots have
+by `rfl`; the SELF-DEFEATING guard argument; `DIMDID × CIMCIC = (C, D)` at every `k` by the red cell's argument on
+the self-dual pair, `Cells/SelfDual`), and the PrudentBot × DupocTrollBot pair. `S'`-only bots have
 an engine DEFINITION but no engine theorem; `outcome_matrix.roster_bots` adds them to the roster. Tau:
-16 rows, 197 row slots + 59 floor bits = 256/256 strict; 13 tau flips, all DIMCID's; one `S'` tau flip
-`dimdid × obot = D`; 6 RECORDED provenance divergences (the red-cell cross bits `dupoc/natives × cupod`
-are FLOOR bits in `S'` though the base cell is a theorem — no τ-symmetry inside one `.sys`).
+16 rows, 199 row slots + 57 floor bits = 256/256 strict; 14 tau flips (13 DIMCID's, `cupod × obot = D`); one
+`S'` tau flip `dimdid × obot = D`; 8 RECORDED provenance divergences (the red-cell cross bits `dupoc/natives × cupod` and the
+self-dual bits `dimdid × cimcic` are FLOOR bits in `S'` though the base cell is a theorem — no τ-symmetry inside
+one `.sys`).
 
 **The disagreements are theorems, not gaps.** The engine closes them by censuses resting on a player
 being UNREADABLE by `S`'s rules; PA reads every source. `dimcid_vs_closed`: in `S'` DIMCID defects
@@ -86,10 +88,21 @@ the engine's universal `outcome_DIMCID_vs_DupocBot = (C, D)` — and Critch's ow
 is DefectBot's payoff-exact twin under `S'`. Sentence for the paper: *the engine's `S` is PA plus free
 citation and MINUS the reading of sources its rules do not cover; the second departure changes outcomes.*
 
-**Floors.** Every remaining floor is GENUINE: the floor guard is a true Σ₁ sentence whose only
-evaluation witness runs through the ELSE branch of a search on a guard FALSE in ℕ, so its provability
-within budget is inter-derivable with bounded consistency `Con_TAct(k ± c)` — ONE proof-complexity
-question (Pudlák: lower bound `k^ε`, linear regime open). Each floor is a hypothesis-free DICHOTOMY
+**Floors.** A floor is a cell `S'` determines only UP TO ITS HINGE. The structural argument: the floor
+guard is a true Σ₁ sentence whose only EVALUATION witness runs through the ELSE branch of a search on a guard
+FALSE in ℕ, so its provability within budget should be inter-derivable with bounded consistency
+`Con_TAct(k ± c)` — ONE proof-complexity question (Pudlák: lower bound `k^ε`, linear regime open). That is a
+THEOREM in BOTH directions for three floors — Dupoc × DBot (`Cells/FloorDichotomy` §5), Dupoc × EBot
+(`Cells/FloorReductions`, the SAME sentence), Dupoc × CupodTroll (`Cells/TrollReduction`) — and in ONE direction
+(hinge found ⇒ `TAct` proves `Con_TAct(k − O(log k))` within `k + O((log k)²)`, `Cells/ConReduction.hinge_con_reduction`,
+generic) for every hinge of EVERY floor of the 12-bot ladder, the three included (`hinge_reduces_to_literal_consistency_*`;
+`ARITHMETIZED_S_RESULTS.md` §5.2). And it
+FAILED once: a proof need not follow the evaluation.
+`CupodBot × OBot` was a "genuine floor" until 2026-11-05; OBot's defection is over-determined (Cupod defects
+against `.bot DefectBot` through its THEN-branch), `TAct` proves it by splitting on a search it need not
+decide, the hinge is FOUND and the cell is `(D, D)` (`Cells/CupodOBot`). Before calling any other floor
+genuine, check it for over-determination and for a τ-symmetry between its hinges (`ARITHMETIZED_S_RESULTS.md`
+§5.1–5.2; DIMDID × Dupoc IS CIMCIC × Cupod transposed: one floor, `Cells/SelfDual`). Each floor is a hypothesis-free DICHOTOMY
 `dich_<L>_vs_<R>` (`Cells/FloorDichotomy.lean`; `S'`-only bots keep theirs beside their cells): `¬A_k →`
 the engine's value, `A_k →` the other, hinge `A_k = LenBox TAct k (the outer guard)` inline. NEVER admit
 the hinge as an axiom: the two answers give DIFFERENT cell values; the engine's `+k` stipulates the
@@ -198,7 +211,7 @@ in-paper flips are DIMCID's). Kernel tau rows load PER SOURCE (`tau_rows.json` o
 `sprime_tau_rows.json` on `sprime`), each VERIFIED against its own cells at load (a floor bit must sit on
 a floor cell with the same engine-side value; a provenance swap raises) and never crossed.
 `python -m pd_runner.tau.compare --zoo paper --source sprime` certifies Def 3 ≡ Def 4 on `S'`
-(agree / floor-agree / mismatch / uncovered: 149 / 41 / 0 / 0 on the 14-bot paper zoo, plus the 6
+(agree / floor-agree / mismatch / uncovered: 151 / 39 / 0 / 0 on the 14-bot paper zoo, plus the 6
 recorded divergences `def4_theorems.SPRIME_RECORDED_DIVERGENCES`; a recorded divergence that no longer
 fires raises `StaleDivergenceWarning`). `python -m pd_runner.eval.source_diff` → `generated/source_diff.md`.
 Test stand-ins `tests/fixtures/sprime_*.sample.json` are used by `conftest.py` only while a real export is
@@ -221,7 +234,8 @@ a swept matrix never contains the `none` state. `proveEq` decides identity by SO
 
 **Paper zoos (`ZOOS` in `tau/matrix.py`; `--zoo` everywhere).** **The paper's base zoo is `body8`**
 (CooperateBot, CupodBot, DBot, DefectBot, DupocBot, EBot, OBot, TitForTatBot — twin-free on the engine
-side, 3 hinge pairs, 0 flips); the ladder `nonprovers+dupoc` (7), `body8+trolls` (10),
+side, 2 hinge pairs (Dupoc × DBot/EBot, both PROVED inter-reducible with one bounded-consistency sentence),
+1 flip (Cupod × OBot)); the ladder `nonprovers+dupoc` (7), `body8+trolls` (10),
 `body8+trolls+provers` (12), `body8+natives` (10, the aggregator comparison, ε-family only). Only these
 have runs on disk; `body`/`body+twins`/`body+twins+natives` (thesis era) stay registered, runless;
 `critch8` reproduces the standalone repo's eight types (fully proven since the red cell). WaryBot can be
@@ -233,16 +247,19 @@ in no total `S'` roster; no floor-free roster contains DupocBot. Caution grid α
 (extreme NE, exact `Fraction`), `replicator/` (basins — grouped by SUPPORT, not proximity; non-convergence
 is a finding), `moran/` (fixation, stochastic stability; log-space); `pipeline.py` runs a `(t, α)` sweep
 (`--resume` reuses complete run dirs by fingerprint), `report.py` renders. PD convention `(D,C)=b,
-(C,C)=b−c, (D,D)=0, (C,D)=−c`. Headline: on `body8` DupocBot is uniquely stochastically stable at full
-transparency, its share rising with selection intensity (85.9% at (M, β) = (100, 1); 71.2% on the hinge
-side); partial transparency: critical transparency U-shaped in caution, static = dynamic collapse,
+(C,C)=b−c, (D,D)=0, (C,D)=−c`. **EVERY RUN MADE BEFORE 2026-11-05 ON A ROSTER WITH BOTH CupodBot AND OBot IS STALE** (it
+used `(C, D)` for that cell on the engine side; the cell is the theorem `(D, D)`) — `nonprovers+dupoc` is the
+only paper roster unaffected; re-run before quoting. Headline AS LAST COMPUTED: on `body8` DupocBot is uniquely
+stochastically stable at full transparency, its share rising with selection intensity (85.9% at (M, β) =
+(100, 1); 71.2% on the hinge side); partial transparency: critical transparency U-shaped in caution, static = dynamic collapse,
 same thresholds on the syntactic channel (`EGT_FINDINGS_SPRIME.md` §10, `latex/scripts/gen_tau_*.py`).
 **Traps:** `--alphas phases` is exact but ~|zoo|² phases per `t` (hours of Nash) — use the α list; the
 unit of work is the DISTINCT MATRIX (runs keyed by a cell hash; `grid_points` maps points to runs);
 `lrsnash` is optional and usually absent (recorded as `cross_check_performed: false`, never as passed);
 a truncated face enumeration carries a TRUNCATED marker; sweep artefacts are gitignored
 (`generated/egt/.gitignore`); share ≠ cooperation rate; α = 0 is degenerate. The standalone repo's
-hand-transcribed CSV disagrees with the kernel on 6 of 62 cells (`CRITCH8_TRANSCRIPTION_DIFFS`).
+hand-transcribed CSV disagrees with PA-`S'` on 4 of 62 cells (`CRITCH8_TRANSCRIPTION_DIFFS`; 6 against the
+engine — its `CupodBot × OBot = (D, D)` is the `S'` theorem).
 
 ---
 

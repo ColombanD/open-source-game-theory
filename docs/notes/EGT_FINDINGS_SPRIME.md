@@ -7,6 +7,17 @@ structure as `EGT_FINDINGS.md`; the engine numbers quoted here are the ones reco
 the full engine Moran ladder, in the verified memory note `project_base_zoo_egt_numbers.md`) — this
 worktree holds no engine runs.*
 
+> **STALE SINCE 2026-11-05 — every number below predates a cell change.** `CupodBot × OBot` was carried as a floor
+> at its engine-side value `(C, D)` (and as `(D, D)` on the hinge side). It is now the THEOREM `(D, D)`
+> (`arith/ArithS/Cells/CupodOBot.lean`, `ARITHMETIZED_S_RESULTS.md` §5.1): not a floor, a flip of the engine. Every
+> roster containing both bots is affected — `body8` and all its ladder rungs, `body`, `body+twins`, `critch8`;
+> `nonprovers+dupoc` is NOT (it has no CupodBot). The engine-side runs used the wrong value for this cell; the hinge-side runs
+> had the right value for it but also moved the two real floors (Dupoc × DBot, Dupoc × EBot), so the new ground truth
+> lies between the two columns of every engine|hinge table here. `body8` now has 2 hinge pairs and 1 flip. Nothing
+> below has been re-run; re-run before quoting.
+> Same day, second change: `DIMDID × CIMCIC` is the THEOREM `(C, D)` (`Cells/SelfDual.lean`). The engine-side runs
+> already used that value; the HINGE-side runs of `body8+trolls+provers` used `(D, D)`, which is impossible.
+
 ---
 
 ## 1. What was run (provenance)

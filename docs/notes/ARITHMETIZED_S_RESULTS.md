@@ -33,9 +33,10 @@ every loss traceable to unary variable indices in `proofLen`; the results are pa
 
 ## 3. The matrix in `S'` (the ledger, cell-exact)
 
-155 engine cells: **107 stated in `S'`** (`Outcome/Matrix/<L>.lean`, `outcome_<L>_vs_<R>`), of which
-**94 agree with the engine and 13 disagree**; **26 genuine floors** (dichotomies, no side taken);
-**22 excluded** (LegibleBot 16, OptimBot 4, WaryBot's two floor cells).
+155 engine cells: **108 stated in `S'`** (`Outcome/Matrix/<L>.lean`, `outcome_<L>_vs_<R>`), of which
+**94 agree with the engine and 14 disagree**; **25 genuine floors** (dichotomies, no side taken);
+**22 excluded** (LegibleBot 16, OptimBot 4, WaryBot's two floor cells). *(107 / 13 / 26 until 2026-11-05, when
+Cupod × OBot left the floors — §5.1.)*
 
 Beyond the engine's ledger, **12 `S'`-only cells** (2026-10-13): `DupocTrollBot k` ("defect iff the opponent IS
 `DupocBot k`", an engine definition with no engine theorem) against the ten `body` bots, CIMCIC and itself —
@@ -126,6 +127,76 @@ MirrorBot` by Löb).
 
 **Paper sentence.** *The engine's floor rule stipulates the negative side of the linear-regime
 finite-consistency question; `S'` proves the dependence and takes no side.*
+
+### 5.1 2026-11-05 — one floor was not a floor; a second reduction
+
+**The claim "the only witness runs through an else-branch, so the hinge is bounded consistency" is an ARGUMENT
+about the evaluation, and a proof need not follow the evaluation.** Checked cell by cell on the paper's base zoo
+(`body8`: Dupoc × DBot, Dupoc × EBot, Cupod × OBot), it holds for two and FAILS for the third.
+
+* **Cupod × OBot is `(D, D)`, a theorem** (`Cells/CupodOBot.lean`, `outcome_CupodBot_vs_OBot`; the engine says
+  `(C, D)`). OBot cooperates only with an opponent that cooperates with BOTH `.bot CooperateBot` and
+  `.bot DefectBot`. Cupod defects against `.bot DefectBot` through its THEN-branch, found in every model above a
+  threshold (`cupod_botDB_V`). So OBot's defection is over-determined: whatever Cupod plays against
+  `.bot CooperateBot` — and a search is decided in every model — OBot ends on a D. `TAct` proves
+  `∀ k ≥ k̂, "OBot plays D against CupodBot k"` by that case split (`tact_rOB_above`), with no consistency statement
+  in it; the instance is found by the `k̂`-chain (`hinge_found_CupodBot_vs_OBot`), Cupod plays its then-branch.
+  The tau images follow: `cupod × obot = D` (`Tau/ClosedWatchCu.cupod_obot_D`, the argument of
+  `ClosedWatchDd.WoDd_plays_D` on the Cupod members) and `obot × cupod = D` are row slots; **199 row slots + 57
+  floor bits = 256**. The value agrees with the standalone repo's hand table (`CRITCH8_TRANSCRIPTION_DIFFS`), which
+  had `(D, D)` all along.
+* **Dupoc × EBot is inter-reducible with the SAME bounded-consistency instance as Dupoc × DBot**
+  (`Cells/FloorReductions.lean`): `hinge_reduces_to_bounded_consistency_DupocBot_vs_EBot` (cost `k + C₀ + C₁·size k`,
+  verbatim DBot's: EBot's cooperation passes its first rung) and `bounded_consistency_reduces_to_hinge_DupocBot_vs_EBot`
+  (for `k > k̂`, cost `m + C₀ + C₁·size k + C₂·(size k)²`: the second rung needs Dupoc's then-branch C against
+  `.bot CooperateBot`, true above a threshold, so the uniform theorem is conditional and its threshold costs one
+  more cut).
+
+So on `body8` the ledger is **two floors, both proved inter-reducible with one sentence `σ_k`, and one flip**. For the
+floors outside `body8` the reduction is NOT mechanized: they are cells `S'` determines only up to their hinge, and
+"genuine" is the structural argument, to be checked per cell for over-determination before it is claimed.
+
+### 5.2 2026-11-05 (later) — the eight remaining floors of the 12-bot ladder, one by one
+
+After §5.1 the paper's top rung (`body8+trolls+provers`) had ten floor pairs, two of them reduced. The other eight:
+
+| pair | result | where |
+|---|---|---|
+| DIMDID × CIMCIC | **DECIDED: `(C, D)` at every `k`** — the red cell's argument. The pair is self-dual, so the two guards are τ-images, found together (`guard_DIMDID_iff_guard_CIMCIC`); together they contradict each other; neither is found | `Cells/SelfDual.snd_DIMDID_vs_CIMCIC`, `outcome_DIMDID_vs_CIMCIC` |
+| Dupoc × CupodTroll | **two-way reduction**, no threshold, overhead `C₀ + C₁·size k` each way: the troll is ONE search node, so it cooperates iff its `.eq` guard `ε_k` (false) is not found | `Cells/TrollReduction` |
+| CIMCIC × DBot, × EBot | **one-way**: hinge within `k` ⇒ `Con_TAct(k − C₀ − C₁·size k)` within `k + O((log k)²)` | `Cells/ConReduction` |
+| CIMCIC × CupodTroll, × DupocTroll | **one-way**, same statement | `Cells/ConReduction` |
+| CIMCIC × Cupod | **one-way, both hinges**; NOT decided (three outcomes consistent) | `Cells/ConReduction`, `Cells/NestedReduction` |
+| DIMDID × Dupoc | **the SAME floor as CIMCIC × Cupod** (its transposition: hinges coincide pairwise, outcomes are transposes at every `k`); both hinges one-way | `Cells/SelfDual`, `Cells/NestedReduction` |
+
+**The generic one-way reduction** (`Cells/ConReduction.hinge_con_reduction`). If a hinge formula `r`, when TRUE in a
+model at `x`, forbids that all of a finite list of guard boxes hold at budget `x` (evaluator determinism: a play
+that differs from a then-constant is a guard not found), then `TAct ⊢ ∀ k ≥ k̂, r(k) → conBelow C₀ C₁ (k)`, where
+`conBelow` says "`⊥` has no proof within `k − C₀ − C₁·‖k‖`" — because a proof of `⊥` within `j` gives a proof of any
+fixed guard instance within `j + E₀ + E₁·‖k‖` IN EVERY MODEL (`exFalso_V`, ex falso with length accounting). `⊥` is
+τ-invariant, so no twin disjunction. This is the paper's "bounded consistency" VERBATIM, for every remaining hinge.
+For CIMCIC the list is {its own hinge, the guard its opponent's cooperation needs to fail}: CIMCIC's guard is an
+implication about its own play, `φ ↔ (□φ → q)`, and `q` needs a box to fail.
+
+**Literal form for all nine** (2026-11-05, evening). The three Dupoc floors also have the literal one-way statement
+through the generic lemma: `hinge_reduces_to_literal_consistency_DupocBot_vs_{DBot, EBot}` (`Cells/ConReduction` §6)
+and `…_DupocBot_vs_CupodTrollBot` (`Cells/NestedReduction` §3). So the paper's main thread — *if the hinge holds,
+`S` proves within about `k` symbols that it has no contradiction of length about `k`* — is a theorem for EVERY hinge
+of the nine floors of the 12-bot ladder, in the SAME form (`conBelow`).
+
+**No converse for the one-way ones**, and on paper none at additive overhead: from consistency one must first PROVE the
+guard boxes as theorems (inner necessitation, polynomial), so the converse starts from `Con_TAct(poly(k))`. In GL
+terms CIMCIC's guard against these opponents is the fixed point `p ↔ (□p → Con)`, i.e. `Con` itself.
+
+**Ledger after §5.2.** 134 cells / 28 floors. On the 12-bot rung: **nine floor pairs, eight independent questions**
+(Dupoc × DBot, × EBot, × CupodTroll two-way; four CIMCIC single-hinge one-way; one nested one-way), every hinge of
+every one of them tied to bounded consistency BY THEOREM in at least one direction. The tau bits `dimdid × cimcic` and
+back stay floor bits (no τ-symmetry inside one `.sys`): two more RECORDED provenance divergences (eight in all).
+The hinge-side table carried `(D, D)` for DIMDID × CIMCIC, a value now proved impossible.
+
+**Consequences downstream.** The export is 134 cells / 28 floors (133 / 29 after §5.1 alone); `body8` has 2 hinge pairs and 1 flip; every EGT
+run made before this date used `(C, D)` for Cupod × OBot on the engine side and must be re-run (the hinge-side runs
+had `(D, D)` for this cell but also move the two real floors).
 
 ## 6. The bridge `S → S'` (T2, frozen)
 

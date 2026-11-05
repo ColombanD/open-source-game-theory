@@ -14,15 +14,20 @@ it: Löb engine, floor lemma, census) and the classification method are in git b
 * **SND** — a searcher's guard is FALSE in ℕ, so never found (soundness); the else branch plays.
 * **POS** — the guard is `TAct`-provable (completeness); its `k`-instance fits for large `k`. No Löb.
 * **LOEB** — bounded Löb (`family_found`, `BoundedInnerNec 16`).
-* **FLIP** — stated in `S'` with a value that CONTRADICTS the engine (all on a self-fulfilling negative guard).
+* **FLIP** — stated in `S'` with a value that CONTRADICTS the engine (13 on a self-fulfilling negative guard; since
+  2026-11-05 one more, Cupod × OBot, on an OVER-DETERMINED play: `TAct` splits on a search it need not decide).
 * **GENUINE-FLOOR** — a true guard whose provability within `k` is bounded consistency at `k` (Pudlák); no `S'`
   value; the hypothesis-free dichotomy `dich_<L>_vs_<R>` is the theorem.
 * **EXCLUDED** — LegibleBot, OptimBot (boxes inside guards), WaryBot's two floor cells.
 
 ## Counts
 
-155 = 28 SF + 39 SND + 13 POS + 14 LOEB + 13 FLIP + 26 GENUINE-FLOOR + 22 EXCLUDED.
-**Stated: 107. Agree with the engine: 94. Disagree: 13.**
+155 = 28 SF + 39 SND + 13 POS + 14 LOEB + 14 FLIP + 25 GENUINE-FLOOR + 22 EXCLUDED.
+**Stated: 108. Agree with the engine: 94. Disagree: 14.**
+
+*(Until 2026-11-05: 13 FLIP + 26 GENUINE-FLOOR, 107 stated. Cupod × OBot left the floors that day — its hinge is
+FOUND, `Cells/CupodOBot.lean`. Older notes and counts below that say 107 / 26 / 13 predate it; with the `S'`-only
+cells the export was **133 cells, 29 floors**; **134 / 28** once DIMDID × CIMCIC was decided the same day, see the `S'`-only table.)*
 
 ## The table
 
@@ -87,7 +92,7 @@ it: Löb engine, floor lemma, census) and the classification method are in git b
 | outcome_CupodBot_vs_DefectBot | (D, D) | (D, D) | POS | pos_CupodBot_vs_DefectBot |
 | outcome_CupodBot_vs_EBot | (C, C) | (C, C) | SND | pos_CupodBot_vs_EBot |
 | outcome_CupodBot_vs_MirrorBot | (D, D) | (D, D) | LOEB | loeb_CupodBot_vs_MirrorBot (`Cells/DupocEngine`; the hand-twin form is `loeb_Cupod_vs_Mirror`) |
-| outcome_CupodBot_vs_OBot | (C, D) | — | GENUINE-FLOOR | Cupod's guard TRUE (OBot's D needs Cupod's else-play vs `.bot CooperateBot`). Settled: `floor_CupodBot_vs_OBot_right`, `_true` — dichotomy: `dich_CupodBot_vs_OBot` |
+| outcome_CupodBot_vs_OBot | (C, D) | (D, D) | FLIP | 2026-11-05, was GENUINE-FLOOR. Cupod's guard "OBot plays D against me" is FOUND: OBot cooperates only with an opponent that cooperates with both `.bot CooperateBot` and `.bot DefectBot`, and Cupod defects against `.bot DefectBot` through its THEN-branch (`cupod_botDB_V`), so OBot's D is over-determined — `TAct` splits on Cupod's play against `.bot CooperateBot` without deciding it (`tact_rOB_above`, no bounded-consistency statement). `khat_CupodBot_vs_OBot` (`Cells/CupodOBot.lean`); the former dichotomy is `split_CupodBot_vs_OBot`. Agrees with the standalone repo's table (`CRITCH8_TRANSCRIPTION_DIFFS`) |
 | outcome_CupodBot_vs_PrudentBot | (C, D) | — | GENUINE-FLOOR | prudence (P) FOUND (`prudence_found_vs_CupodBot`); Cupod's guard / Prudent's outer bistable modulo reflection; no side settled — dichotomy: `dich_CupodBot_vs_PrudentBot_prudenceFound` (two hinges `Cu`, `A`; the original `dich_CupodBot_vs_PrudentBot` stands) |
 | outcome_CupodBot_vs_TitForTatBot | (C, C) | (C, C) | SND | snd_CupodBot_vs_TitForTatBot |
 | outcome_CupodTrollBot_vs_CooperateBot | (C, C) | (C, C) | SND | snd_CupodTrollBot_vs_CooperateBot |
@@ -244,11 +249,11 @@ are the three partners whose cooperation is itself an else-play (Dupoc, CIMCIC, 
 | outcome_DIMDID_vs_CupodBot | — | (D, D) | TAU | τ of `outcome_CIMCIC_vs_DupocBot` (the mutual Löb cell) |
 | outcome_DIMDID_vs_DIMCID | — | (D, D) | LOEB | loeb_DIMDID_vs_DIMCID (mutual family: "I defect ⇒ you defect" and "I cooperate ⇒ you defect", each consequent the other's found defection) |
 | outcome_DIMDID_vs_DIMDID | — | (D, D) | TAU | τ of `outcome_CIMCIC_vs_CIMCIC` (the guard against itself is a tautology) |
-| outcome_DIMDID_vs_DupocBot | (C, D) | — | GENUINE-FLOOR | two hinges, NESTED: `A` = DIMDID's guard (outer), `B` = Dupoc's "DIMDID cooperates with me"; `A ⇒ (D, D)`, `¬A ∧ ¬B ⇒ (C, D)` (DIMDID exploited — the engine's `+k` world), `¬A ∧ B ⇒ (C, C)` — dichotomy `dich_DIMDID_vs_DupocBot` (hinge side `(D, D)`) |
-| outcome_DIMDID_vs_CIMCIC | (C, D) | — | GENUINE-FLOOR | the self-dual pair; `A` = DIMDID's guard, `B` = CIMCIC's; `A ⇒ (D, D)` (CIMCIC's guard self-refuting), `¬A ∧ ¬B ⇒ (C, D)`, `¬A ∧ B ⇒ (C, C)` — dichotomy `dich_DIMDID_vs_CIMCIC` (hinge side `(D, D)`) |
+| outcome_DIMDID_vs_DupocBot | (C, D) | — | GENUINE-FLOOR | two hinges, NESTED: `A` = DIMDID's guard (outer), `B` = Dupoc's "DIMDID cooperates with me"; `A ⇒ (D, D)`, `¬A ∧ ¬B ⇒ (C, D)` (DIMDID exploited — the engine's `+k` world), `¬A ∧ B ⇒ (C, C)` — dichotomy `dich_DIMDID_vs_DupocBot` (hinge side `(D, D)`) — **the SAME floor as `CIMCIC × CupodBot`** (2026-11-05, `Cells/SelfDual.guards_DIMDID_DupocBot_iff_CIMCIC_CupodBot`, `outcomeAtA_DIMDID_vs_DupocBot_iff`): the pair is its transposition, the hinges coincide pairwise, the outcomes are transposes at every budget |
+| outcome_DIMDID_vs_CIMCIC | — | (C, D) | SND | 2026-11-05, was GENUINE-FLOOR (two hinges). `snd_DIMDID_vs_CIMCIC` (`Cells/SelfDual.lean`), every `k`: the red cell's argument on the SELF-DUAL pair — DIMDID's guard `A` and CIMCIC's guard `B` are τ-images, so found together (`guard_DIMDID_iff_guard_CIMCIC`), and together they contradict each other (`A` makes DIMDID defect; CIMCIC's guard against a defector is self-refuting), so neither is found. The former dichotomy is `split_DIMDID_vs_CIMCIC`; the `(D, D)` its found branch carried is impossible |
 | outcome_DIMDID_vs_PrudentBot | (C, D) | — | GENUINE-FLOOR | `A` = DIMDID's guard, `B` = Prudent's outer guard, the prudence guard DISCHARGED (`prudence_found_vs_DIMDID`: DIMDID's defection against `.bot DefectBot` is its then-branch, the `k̂`-chain); `A ⇒ (D, D)`, `¬A ∧ ¬B ⇒ (C, D)`, `¬A ∧ B ⇒ (C, C)` — dichotomy `dich_DIMDID_vs_PrudentBot` (hinge side `(D, D)`) |
 
-Counts with both `S'`-only bots: **stated 128 = 107 + 11 + 10; floors 30 = 26 + 1 + 3.** DIMDID's row differs from
+Counts with both `S'`-only bots: **stated 128 = 107 + 11 + 10; floors 30 = 26 + 1 + 3.** *(2026-11-05: DIMDID × CIMCIC left the floors too — with Cupod × OBot the export is **134 cells, 28 floors**.)* DIMDID's row differs from
 every body member's: it is CupodBot's at DefectBot/OBot/CupodBot/DIMCID/itself but cooperates with CupodTrollBot and
 TitForTatBot, and it is exploited (engine side) by DupocBot, the partner whose cooperation it cannot see.
 
@@ -296,7 +301,7 @@ TitForTatBot, and it is exploited (engine side) by DupocBot, the partner whose c
 | Wary × Just | both | G | idem in the snapshot's frame | — |
 | Wary × Prudent | Prudent prudence | P | Wary defects vs `.bot DefectBot` (`pos_WaryBot_vs_botDB`) | verdict only |
 | Wary × Prudent | Wary / Prudent outer | G | bistable modulo reflection | — |
-| Cupod × OBot | Cupod | G | OBot's D runs through Cupod's else-play vs `.bot CooperateBot` | `_true` |
+| Cupod × OBot | Cupod | **P** (2026-11-05, was G) | OBot's EVALUATION runs through Cupod's else-play vs `.bot CooperateBot`, but its D is over-determined by Cupod's then-branch D vs `.bot DefectBot`: the guard is found | `hinge_found_CupodBot_vs_OBot` |
 | Cupod × OBot | OBot | settled | C vs `.bot CooperateBot` (else), D vs `.bot DefectBot` (found) | `_right` |
 | Cupod × Prudent, Prudent × Cupod | Prudent prudence | P | Cupod defects vs `.bot DefectBot` (found) | verdict only |
 | Cupod × Prudent, Prudent × Cupod | Cupod / Prudent outer | G | bistable modulo reflection | — |

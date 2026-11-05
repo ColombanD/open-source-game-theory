@@ -217,6 +217,15 @@ CodeTerm/Guard slots/SubstTemplate → Code → RedCellUnsound arms → full bui
    are all DIMCID's (its row but `defect cupod dimcid`, and `tftSim × dimcid`, `ebot × dimcid`); `cimcic × tftSim` is
    `C` again since Phase 3e (the `D≠C` the 3d table showed was the pre-abstraction coding's artefact).)
 
+   *2026-11-05 — superseded counts.* `CupodBot × OBot` is the theorem `(D, D)` (its hinge is found,
+   `arith/ArithS/Cells/CupodOBot.lean`), so `cupod × obot` (D, the one non-DIMCID flip of the engine's tau rows) and
+   `obot × cupod` (D) are ROW SLOTS: on the 16 templates **199 row slots + 57 floor bits = 256**; on the 14
+   engine-comparable ones 14 flips (13 DIMCID's + `cupod × obot`); `tau.compare --zoo paper --source sprime` reads
+   151 / 39 / 0 / 0. Base ledger: 133 cells, 29 floors; 14 flips over the 155 engine rows. Later the same day
+   `DIMDID × CIMCIC` became the base theorem `(C, D)` (`Cells/SelfDual.lean`): **134 cells, 28 floors**; its two tau
+   bits stay floor bits inside the `.sys`, so the RECORDED provenance divergences are eight (the six red-cell ones and
+   `dimdid × cimcic`, `cimcic × dimdid`); the tau counts are unchanged.
+
    | A \ T | coop | defect | tftSim | dupoc | ebot | obot | dbot | cupodTroll | cupod | dimcid | cimcic | prudent | maxconf | minconf |
    |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
    | coop | C | C | C | C | C | C | C | C | C | C | C | C | C | C |
