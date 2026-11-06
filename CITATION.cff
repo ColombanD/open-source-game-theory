@@ -32,7 +32,8 @@ keywords:
   - bounded Löb theorem
   - partial transparency
   - evolutionary game theory
-# To fill at release: repository-code, commit, date-released, license.
+repository-code: "https://github.com/ColombanD/open-source-game-theory"
+# To fill at release: version, date-released, license.
 preferred-citation:
   type: unpublished
   title: "Open Source Game Theory: Formalization, Transparency, and Cooperation in Program Games"

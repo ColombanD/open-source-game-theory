@@ -16,8 +16,7 @@ analysis of the resulting populations. Companion to the paper
 | [`app/`](app/) | **The Python core** (`pd_runner`): the outcome matrices read from the two Lean exports (never from Lean source), the tau layer (signals, σ-families, the Def 3 ≡ Def 4 certification), and the EGT stages (ESS, invasion graphs, faces, Nash, replicator, Moran). The paper's experiments and the figure generators in `latex/scripts/` run on it. | `cd app && uv sync && uv run pytest` |
 | [`pipeline/`](pipeline/) | **The LLM pipeline** (`pd_pipeline`): bots written from natural language, outcome proofs written by an agent and judged by the Lean kernel, the faithfulness reviewer, the web UI. Out of the paper's scope; depends on `app/`. | `cd pipeline && uv sync && uv run pd-serve` |
 | [`docs/`](docs/) | The design record: live notes, the archive of decisions, reading notes. [`docs/README.md`](docs/README.md) is the index. | — |
-| [`latex/`](latex/) | The paper sources, the figure and table generators (`scripts/`), earlier notes and talks. | — |
-| [`llm-distillation/`](llm-distillation/) | A separate experiment (fitting LLM play to the matrix); kept for later work. | — |
+| [`latex/`](latex/) | The generators of the paper's figures and tables (`scripts/`, each run from `app/`) and their outputs (`figures and tables/`). | `cd app && uv run python ../latex/scripts/gen_….py` |
 
 The two JSON exports are the only interface between Lean and Python:
 `lake exe export_sprime_outcomes` (in `arith/`) writes `app/generated/sprime_outcome_theorems.json`

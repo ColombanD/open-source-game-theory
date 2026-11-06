@@ -4,7 +4,7 @@
 bounded-proof-search agents — in **Lean 4**, its extension to **partial transparency** (τ-bots),
 and the **evolutionary** analysis of the resulting populations. Companion code of the paper
 *Open Source Game Theory: Formalization, Transparency, and Cooperation in Program Games*
-(`latex/paper.tex`; Duclaux, Formenti, Cobben, Zhang, Schölkopf, Jin — the author list is `CITATION.cff`).
+(Duclaux, Formenti, Cobben, Zhang, Schölkopf, Jin — the author list is `CITATION.cff`).
 Four parts, in dependency order (each depends only on the ones above it):
 
 1. **`engine/`** — the HOST: the agent language `Prog`, the fuelled evaluator, the bot zoo, the
@@ -24,9 +24,9 @@ Four parts, in dependency order (each depends only on the ones above it):
 
 Other top-level: `docs/` (the design record of the WHOLE project — `docs/README.md` is the index: live
 notes in `docs/notes/`, historical ones in `docs/notes/archive/`, reading notes in `docs/readings/`),
-`latex/` (the paper, figure/table generators in `latex/scripts/`, earlier notes and talks — the user
-curates it, do not delete there), `llm-distillation/` (a separate experiment, kept for later; its note
-`LLM_DISTILLATION_LSTAR.md` moved there), `README.md`.
+`latex/` (the figure/table generators in `latex/scripts/` and their outputs in `latex/figures and tables/`),
+`README.md`. **This is the RELEASE branch:** the earlier notes and talks under `latex/`, the separate
+experiment `llm-distillation/` and `.claude/settings.json` live on `main` only.
 
 **Removed for the submission (2026-10-29, in git history before `3f99464`):** the engine's
 decidability metatheory (`Decidability/`, T31–T54, lake target `Metatheory`), the research spikes
@@ -321,7 +321,7 @@ types; E4 numbers justify the bespoke pipeline.
 * The two JSON exports are the ONLY interface between Lean and Python; no regex over Lean source.
 * Commit by file name; one lake build at a time; `arith/` and `engine/` share the toolchain and the
   mathlib commit. CI (`.github/workflows/lean_action_ci.yml`) builds both Lean packages.
-* `latex/` is the user's: `paper.tex` and `figures and tables/` are edited by the user; the
+* `latex/` is the user's: `figures and tables/` is edited by the user; the
   generators `latex/scripts/gen_*.py` read `app/generated/` and the EGT runs.
 * Never quote a Cantor-coding constant; state every `S'` result "for all large `k`".
 * Memory of past sessions: the notes under `docs/` are the record (`docs/README.md` indexes them);
