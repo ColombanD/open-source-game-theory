@@ -55,7 +55,7 @@ theorem co_OBot_plays_D (k fuel : Nat)
       eval (fuel + 4) OBot (CIMCIC k)
         (.ite (.sim .opp (.bot DefectBot)) Action.C (.const Action.C)
           (.const Action.D)) = some .D := by
-    simpa [Nat.add_assoc] using
+    simpa [Nat.add_assoc] using!
       (eval_ite_from_guard (fuel + 3) OBot (CIMCIC k)
         (.sim .opp (.bot DefectBot)) (.const Action.C) (.const Action.D)
         Action.C Action.D hGuard2)
@@ -65,7 +65,7 @@ theorem co_OBot_plays_D (k fuel : Nat)
     (.const Action.D)
     Action.C Action.C
     (by rfl) hGuard1
-  simpa [Nat.add_assoc, hInner] using hPlay
+  simpa [Nat.add_assoc, hInner] using! hPlay
 
 /-- CIMCIC's guard against OBot has no `S`-derivation (`¬ ⊢_k`) — by soundness and determinism:
     a derivable guard fires CIMCIC's own search, making the antecedent true, so

@@ -68,6 +68,6 @@ theorem outcome_PrudentBot_vs_CooperateBot :
   have hA : play (fuel + 3) (PrudentBot k) CooperateBot = some .D :=
     PrudentBot_plays_D_against_CooperateBot k fuel
   have hB : play (fuel + 3) CooperateBot (PrudentBot k) = some .C := by
-    simpa [Nat.add_comm] using play_CooperateBot (fuel + 2) (PrudentBot k)
+    simpa [Nat.add_comm] using! play_CooperateBot (fuel + 2) (PrudentBot k)
   exact outcome_of_plays _ _ _ _ _ hA hB
 end PD.Theorems

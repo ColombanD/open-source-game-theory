@@ -1,0 +1,1220 @@
+# ARITHMETIZED_S_ROADMAP — from the rule set `Pf` to length-bounded provability over PA (2026-09-09)
+
+*File paths in this note predate the 2026-09-28 reorganization of `ArithS/` (map: `arith/PATHS.md`).*
+
+*Companion to `DESIGN_CHOICES.md` ("Why `S` is a RULE SET", 2026-08-20; the `BoundedGL`
+interface entry, 2026-08-27). This note is the executable plan for the obligation those
+entries leave open: an ARITHMETIZED instance of `S`, built on Foundation
+(FormalizedFormalLogic), so that the outcome theorems are connected to an independently
+maintained formalization of PA rather than to a stipulated rule set.*
+
+**Decisions fixed 2026-09-09.** (1) The measure is proof LENGTH (characters / structural
+size), not Gödel-number magnitude. (2) The work lives in a STANDALONE lake package
+(working name `ArithS`) that requires Foundation, and later the engine for the transfer
+theorem; the engine never imports it.
+
+---
+
+## 0. The end goal, stated precisely
+
+The sentence we want to be able to write in the paper:
+
+> OSGT is formalized in Lean. The agents' proof system `S` is Peano Arithmetic with a
+> length-bounded provability predicate `□_k`, built on Foundation's arithmetization of
+> IΣ₁/PA. `outcome(CupodBot k, DupocBot k) = (D, C)` for all large `k` is a theorem about
+> THAT `S`, and its proof uses only soundness of PA and the C/D symmetry of the encoding,
+> so it does not depend on which proof calculus or constants one picks.
+
+What this does NOT say, and the map is honest about: Critch's own `S` is not a single
+theory. Appendix B of `critch22` fixes `S` only by four assumptions — (a) represents all
+computable functions, (b) writes `k` in `O(lg k)` characters, (c) allows abbreviations
+mid-proof, (d) has a LINEAR proof-expansion constant `e*` (a `k`-character proof can be
+verified by an `e*·k`-character proof). "Literally like Critch" therefore means: a concrete
+theory over PA, with a concrete length measure, for which (a)–(d) are THEOREMS. (d) is the
+one nobody has proved in any prover, and for a plain Hilbert calculus without abbreviations
+the honest bound is polynomial, not linear (§5, danger 1).
+
+Three tiers of claim, each a milestone gate:
+
+| Tier | Claim | Needs |
+|---|---|---|
+| T1 | The red cell `(Cupod, Dupoc) = (D, C)` holds for PA with `□_k` | M1 + M2 (Foundation only, no Löb, no costs) |
+| T2 | `S` relative to PA, as PROVED (2026-09-10): T2-CORE (modal core sound over PA, budget erased), T2-AGENT (evaluation certificates = arith evaluator runs, same budgets, relative to the consulted `□_k` facts), T2-NEG (no budget-keeping transfer at any inflation) — see `ARITHMETIZED_S_RESULTS.md` | M3 DONE |
+| T3 | The Löbian cells (`Dupoc` self-cooperation, mutual Löb) hold in PA at large `k` | M4 + M5 (bounded HBL, parametric PBLT) |
+
+T1 and T2 together are the originally scoped finish line (BOTH DONE 2026-09-10; results record: `ARITHMETIZED_S_RESULTS.md`). T3 is a second program — DONE 2026-09-16 for the Dupoc self-cooperation cell and PBLT (M5, unconditional). The MERGE of the engine's rule system onto `S'` is milestone **M6** (§3, design fixed 2026-09-16): the engine's rules as derived rules of `S'`, budget-keeping — its atom obstruction is repaired by the re-cost, its box obstruction is recorded there with the three shapes the merge can take.
+
+---
+
+## 1. What Foundation provides (declarations, as of master 2026-09, Lean v4.33.1)
+
+`Foundation/FirstOrder/Incompleteness/`:
+
+* `RestrictedProvability.lean` — `Theory.RestrictedProvable f e T φ :=
+  ∃ d < f (numeral e), Bootstrapping.Proof T d φ` (a 𝚷₁ predicate via `restrictedProvable`),
+  the restricted Gödel sentence `restrictedGödel`, `true_restrictedGödel`,
+  `provable_restrictedGödel`, and `lower_bound_gödelNumber_proof_restrictedGödel`
+  (every proof of it has code `≥ f e`). Bounds the CODE `d`, not a length. The template
+  for M1, not the object.
+* `StandardProvability.lean` — `provable_D1` (meta), `provable_D2`, `provable_D3`
+  (via `provable_sigma_one_complete`), `Diagonalization 𝗜𝚺₁`, `HBL2`/`HBL3`/`HBL`
+  instances, `SoundOn ℕ`, `provable_sound`/`provable_complete`. All UNBOUNDED.
+* `ProvabilityAbstraction/Basic.lean` — `structure Provability T₀ T` (`prov`, `bew_def` =
+  D1), classes `HBL2` (D2), `HBL3` (D3), `Mono`, `Ext`, `Rosser`, `FormalizedCompleteOn`,
+  `SoundOn`, `Kreisel`. Two-theory pattern: schemes about provability in `T` are proved in
+  the metatheory `T₀` (IΣ₁). Our `Bew_k` follows the same pattern.
+* `Löb.lean`, `Second.lean`, `Consistency.lean` — qualitative Löb/G2 from HBL.
+* `Speedup.lean` — `Theory.minProof`, `computablePred_proof` (the proof relation is
+  computable): the ingredients for "the set of proofs below a bound is finite/decidable".
+* `Arithmetic/HFS/Superexp.lean` — `Superexp.superexp`, `two_pow_le_superexp`: the
+  Σ₁-definable bound that makes a length-bounded search finite inside IΣ₁.
+
+Not in Foundation: any length measure on proofs, any costed derivability condition, any
+bounded diagonal lemma, any bounded Löb. Maintainers' view (Zulip, 2026-08-27): bounded
+provability is "too niche" for Foundation proper; an abstract bounded-GL is "legitimate";
+arithmetized instances "would probably be technically difficult". Plan for a standalone
+package pinned to a Foundation commit, not for upstreaming.
+
+Toolchain: Foundation pins Lean/mathlib v4.33.1; the engine is on mathlib v4.28.0. M1–M2
+need only Foundation; M3 needs both, so the engine must be bumped before M3.
+
+---
+
+## 2. The objects
+
+**2.1 Length.** `len : ℕ → ℕ`, Δ₁-definable in IΣ₁ on proof codes, STRUCTURAL: the size
+of the decoded derivation tree, formulas counted by symbol, binary numerals by bit-length,
+and a quotation `⌜φ⌝` occurring as a numeral counted as `size φ` (so quotation is
+structural, exactly as in the engine's `Formula.size`). Two properties are load-bearing:
+
+* PROPER: `{d | len d ≤ k}` is finite, with an IΣ₁-provable bound `d < superexp k` (or a
+  weaker Σ₁ function). Without this `Bew_k` is not Δ₁, the evaluator is not total, and the
+  agents do not terminate.
+* τ-INVARIANT: the C/D relabeling of a coded derivation preserves `len` EXACTLY. This is why
+  the measure is structural and not the bit-length of the code — pairing-based codes of `C`
+  and `D` differ in magnitude and would break exact preservation (cf. the "nonstandard token
+  encoding" caveat, `DESIGN_CHOICES.md` 2026-08-20 item 3).
+
+**2.2 The predicate.** `Bew_k(x) := ∃ d, len d ≤ k ∧ Proof PA d x`. Δ₁ in IΣ₁ by
+properness. Meta-level: `PA ⊢_k σ :⇔ ∃ d, len d ≤ k ∧ Proof PA d ⌜σ⌝`. The sentence
+`□_k σ := Bew_k(⌜σ⌝)` is Critch's Notation 3.5 verbatim, with `len` as "characters".
+
+**2.3 Agents.** `Prog`/`Formula` re-declared in the package as coded data (HFS or ℕ), with
+`tr : Formula → ArithmeticSentence` (`impl`/`neg` → connectives, `box k φ` → `Bew_k(⌜tr φ⌝)`,
+`diag g φ` → Foundation's `fixedpoint`, `plays me opp p a` → `Eval(⌜me⌝,⌜opp⌝,⌜p⌝) = ⌜a⌝`).
+`Eval` is the fuelled evaluator of `Dynamics.lean`, Δ₁-definable, whose `.search` clause
+evaluates `Bew_k(TR(guard))` with `TR` the PA-internal twin of `tr`. Bookkeeping lemma:
+`tr` agrees with `TR` on codes. No circularity: `Bew_k` quantifies over PA proofs of
+arbitrary sentences; `Eval` is just a Δ₁ function mentioning it.
+
+**2.4 Transposition — abstract action constants, not code swapping.** A naive "swap the
+codes of `C` and `D` throughout" is NOT a symbol substitution: actions, programs and quoted
+formulas are numerals, numerals are rigid, and a derivation may reason about them
+arithmetically. So the theory is `T' := PA` plus two FRESH constant symbols `c_C`, `c_D`
+with only the axioms `c_C ≠ c_D`, `c_D ≠ c_C` (both orientations, literally — closure up to a
+one-line derivation would give `k` vs `k + c`, and the red cell needs an exact iff) and
+`Act(x) ↔ x = c_C ∨ x = c_D`. Everything agent-facing is PARAMETRIC in them: programs are
+values built by pairing functions (`const(a)`, `search(k, g, p, q)`) with the action passed
+as the constant, so `cupod(k)` and `dupoc(k)` differ only by which constant sits where;
+quoted actions go through Foundation's value substitution `⌜σ(ẏ)⌝[y := c_C]`, never a
+symbol code; `Eval`, formula decoding and `len` mention no action numeral. Foundation's
+Gödel numbering is untouched: `Proof T' d y` mentions symbol codes as numerals, τ swaps
+symbols, so it is literally τ-invariant. Standard model: `c_C ↦ 0`, `c_D ↦ 1`; `T'` is
+conservative over PA (Critch: "PA or an extension thereof").
+
+τ is then the language automorphism swapping the constants, and the per-rule check of the
+engine's `Pf.transpose` (47 arms) becomes three finite lemmas:
+1. renaming: each rule of Foundation's derivation calculus commutes with a constant swap
+   (check whether derivations already transport along Foundation's language maps);
+2. axiom closure: PA's schemata never mention the constants, the action axioms are closed by
+   construction;
+3. `len ∘ τ = len`, by induction on derivations (a constant symbol counts 1 either way).
+Plus `τ(cupod k) = dupoc k` as values and τ-invariance of `Eval`'s definition (`tvote`
+stays frozen). Then `T' ⊢_k σ ↔ T' ⊢_k τσ` is a META theorem over Lean-level derivations,
+which is all the red cell needs because outcomes are evaluated in ℕ. Audit item: NO action
+numeral anywhere in the axiom set or the definitions — one baked-in numeral breaks lemma 2
+silently while everything still type-checks.
+
+**2.5 The interface instance (T3 only).** `BoundedGL ArithmeticSentence` with
+`Proves k σ := PA ⊢_k σ`, `box k σ := □_k σ`, `diag := fixedpoint`, and `size` := the
+CERTIFIED cost (a polynomial of syntactic size and the budget numerals), NOT the symbol
+count — so that all ten fields hold literally. `SizeExact` fails; `bloeb`/`mutual_loeb`
+transfer as they use no size law; `pblt` gets a new asymptotic wrapper.
+
+---
+
+## 3. Milestones
+
+**M0 — package and toolchain.** `ArithS` lakefile requiring Foundation at a pinned commit;
+CI builds it. **Build recipe (learned the hard way, 2026-09-09):** `arith/.lake` is a
+SYMLINK to `~/wt/arith-lake` (a Foundation build under OneDrive stalls in disk wait), and
+Foundation is NEVER compiled locally — `lake build --try-cache ArithS` downloads its
+prebuilt artifacts (Reservoir cache) in ~90 s; a local compile of `Term/Basic.lean` alone
+took 22 min and 11 GB. A Lean check of one `ArithS` file needs ~5 GB of resident imports;
+on the 16 GB laptop with swap full it thrashes (10 min per file) — reboot first. Decide HFS vs ℕ coding for `Prog` (follow Foundation's `Bootstrapping`
+conventions so `Proof` and `Eval` live in the same coding). Engine bump to Foundation's
+toolchain is scheduled before M3, not before.
+
+**M1 status (2026-09-09 evening, branch `colomban-arith-s`, all compiling):**
+`ArithS/Length.lean` (listSum, termLen, formulaLen — Σ₁ functions by Foundation's
+`VecRec`/`TermRec`/`UformulaRec1` schemes), `SequentLength.lean` (`sequentLen` by PR over the
+bit-set), `DerivationLength.lean` (`ProofLenGraph` as a Δ₁ fixpoint on pairs `⟪d, n⟫`, the ten
+inversion lemmas, existence/uniqueness by `Derivation.induction1`, `proofLen T` a Σ₁ function),
+`Bew.lean` (`LenBoxNat f k T φ := ∃ d < f k, Proof T d φ ∧ proofLen T d ≤ k`, Π₁-defined;
+`lenGödel`, `true_lenGödel`, `provable_lenGödel`, `lower_bound_proofLen_proof_lenGödel` under
+the `Proper` hypothesis). DONE 2026-09-10: the meta bridge (`MetaLength.lean`: `termLen/formulaLen/sequentLen/proofLen` =
+`termLenMeta/formulaLenMeta/sequentLenMeta/proofLenMeta` under quotation) and PROPERNESS (`Proper.lean`: towers
+`E s = 2^2^s`, `F s = 2^2^2^s`; `⌜t⌝ ≤ E (8 termLenMeta t)`, `⌜φ⌝ ≤ E (8 formulaLenMeta φ)`,
+`⌜Γ⌝ ≤ F (8 sequentLenMeta Γ + 1)`, `⌜d⌝ ≤ F (12 proofLenMeta d)`; `codeBound k = exp³(12k) + 1`, Σ₁-definable;
+`properPlayer_of_small` for any language with symbol codes ≤ 8). **The M1 gate
+`lower_bound_proofLen_proof_lenGödel_codeBound` is unconditional.** M1 is COMPLETE.
+Proof-craft traps hit: `omega` is useless on `V` (use `le_self_add`/`le_add_self` under
+`open PeanoMinus`); a `“ ”`-DSL wrapper around a PR `resultDef` makes `simp` run away
+(17 GB) — define such wrappers as `.rew (Rew.subst …)` instances; Δ₁ blueprints put the Σ
+formula in antecedent position of the Π form; `Fin 0 → V` parameter vectors need a
+`Subsingleton.elim` step; `≤` on `V = ℕ` is `le_def` (`x = y ∨ x < y`), NOT `Nat.le`.
+
+**M1 — `Bew_k` by length (Foundation only).** `len`, properness with the `superexp` bound,
+`Bew_k` as a Δ₁ predicate (mirror `RestrictedProvable.defined`), monotonicity in `k`,
+standard-model characterisation (`models_iff`), `Bew_k σ → PA ⊢ σ` (soundness, from
+`SoundOn ℕ`). Gate: the restricted Gödel sentence and its lower bound re-proved for the
+length measure — a like-for-like check against `RestrictedProvability.lean`.
+
+**M2 status (2026-09-09 night, all compiling):** `LangAct.lean` (`LAct := ℒₒᵣ + constant Act`,
+hand-written encoding keeping the `ℒₒᵣ` codes, Δ₀ symbol sets, `emb`, `swap`, `termLenMeta`/`formulaLenMeta`
+invariant under any hom), `TheoryAct.lean` (`TAct := insert constNe (insert constNe' (lMap emb 𝗣𝗔))`,
+standard model `c_C ↦ 0, c_D ↦ 1`, `quote_lMap_emb` code agreement, Δ₁ via PA's own class ∧
+"is an ℒₒᵣ-formula", `lMap_swap_mem_TAct`), `Transpose.lean` (`lMapT`: derivations transport
+along a hom mapping axioms to axioms; `proofLenMeta_lMapT` for injective homs; `lMap_swap_swap`;
+`transpose_exists`), `Sound.lean` (`Derivation.sound'`: a code IS the code of a meta
+derivation), `Symmetry.lean` (`provableLen_swap_iff : TAct ⊢_k φ ↔ TAct ⊢_k swap φ`, Σ₁ form).
+DESIGN CONCLUSION: the evaluator must be a Δ₁ FORMULA inside `TAct` (Critch's own setup —
+"PA represents the evaluator"), not a new relation symbol with clause axioms: the latter's
+axioms would mention the proof predicate of the theory they axiomatize, a circularity
+Foundation's `Theory.Δ₁` (a `ch` given upfront) cannot express. A Δ₁ evaluator needs the
+Δ₁ (code-bounded) `□_k`, whose swap-symmetry needs PROPERNESS (same length, different
+code) — so properness precedes the evaluator. Proof-craft traps: `axm`/`func`/`verum` are
+ambiguous patterns (qualify or dot-pattern); instances on `LAct.Func k` must be keyed on the
+folded `Sum` form; simp lemmas about `encode` must fix `(α := LAct.Func k)`; Foundation's
+notation forms (`⊤`, `⋏`, `∀¹`) differ syntactically from the constructors `induction`
+produces — bridge with `change`; the hom lemmas are `LogicalConnective.HomClass.map_*`.
+
+**M2 evaluator design (decided 2026-09-10, restricted template first).** Programs are
+pair-codes in ℕ with action VALUES `0/1` (as in the engine): `const a`, `self`, `opp`,
+`bot p`, `sim p q`, `ite b a p q`, `search k a p q` — a search node carries only the budget
+and the action `a` of the ONE template "opp plays `a` against me" (generalisation to arbitrary
+guard templates later). Numerals are rigid under τ, so a program never enters a sentence as a
+bare numeral: the runtime guard sentence of `search k a p q` at `(me, opp)` is
+`∃ m o, m = revalue(⌜x_me⌝, c_?, c_?) ∧ o = revalue(⌜x_opp⌝, c_?, c_?) ∧ ∃ n, Eval(n, o, m, o, c_a)`,
+where `revalue(x, u, v)` re-values the actions `0 ↦ u, 1 ↦ v` and each program is described
+CANONICALLY: `x₀ := min(x, transposeCode x)` as the numeral, constants in the matching order,
+and `(0, 1)` (no constants) in the tie case `x = transposeCode x`. Then
+`guard(transposeCode me, transposeCode opp, swap a) = swap (guard me opp a)` SYNTACTICALLY, for every
+program. No diagonal lemma, no circular theory: self-reference happens at runtime, as with
+the engine's `.self`/`.opp`. Files: `Prog.lean` (codes, Δ₀ graphs, `transposeCode`),
+`BewV.lean` (`□_k` with `k` a variable, Δ₁), `Guard.lean` (template, canonical description,
+internal `guardCode` via `substs`), `Eval.lean` (Δ₁ fixpoint with fuel, meta `evalN`,
+correctness, determinism), `RedCell.lean`.
+
+**M2 COMPLETE (2026-09-10) — T1 IS A THEOREM.** `arith/ArithS/RedCell.lean`:
+
+```
+theorem red_cell (k : ℕ) :
+    EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph 2 (Cupod k) (Dupoc k) (Cupod k) 0
+theorem red_cell_unique : any result at any fuel is (1, 0)      -- determinism
+#print axioms red_cell  = [propext, Classical.choice, Quot.sound]
+```
+
+with `Dupoc k := pSearch k ⌜guardTemplate7⌝ 0 (pConst 0) (pConst 1)` and `Cupod k := transposeCode (Dupoc k)`
+(= `pSearch k ⌜guardTemplate7⌝ 1 (pConst 1) (pConst 0)`, `transposeCode_Dupoc`). Proof, exactly the engine's
+`outcome_DupocBot_vs_CupodBot`: (i) `guard_Dupoc_iff_guard_Cupod` — the two runtime guard
+codes are `⌜σ⌝` and `⌜swap σ⌝` (code equation + swap equation), so
+`lenBoxNat_swap_iff` makes them provable together; (ii) `evalGraph_of_guard` — a found
+guard is TRUE in `ℕ` (`LenBoxNat.provable` → `provable_iff_provable` → `models_of_provable`
+with `ℕ ⊧* TAct` → the truth equation); (iii) both found ⇒ Dupoc plays `1` (truth of Cupod's
+guard) and `0` (its own search clause) ⇒ `EvalGraph.unique'`. Files landed for M2 stage 2:
+`Prog.lean` (codes, `revalue` fixpoint, `transposeCode` involution), `BewV.lean` (`□_k` with `k` a
+variable, Δ₁), `Guard.lean` (canonical descriptions `canonical/revalueU/revalueW`, `guardCode` via internal
+`subst`), `Eval.lean` (`EvalGraph` as a `Finite` Σ₁ fixpoint on `⟪n,me,opp,p,a⟫`; `sim` has NO
+clause yet), `EvalN.lean` (inversion per shape, determinism, fuel monotonicity at ℕ),
+`Template.lean` (`guardTemplateRaw : 𝚺₁.Semisentence 7` from `revalueDef`/`evalGraphDef`; `guardTemplate7` its
+`emb`; `guardSentence`; `quote_guardSentence`, `lMap_swap_guardSentence`,
+`models_guardSentence_iff`). Proof-craft traps added: at `V = ℕ`, `<` is `Nat.lt` but `≤` is
+PeanoMinus's `x = y ∨ x < y` — `if_pos` on a `≤` needs `le_def`, so prove `canonical_of_lt/eq/gt`
+helpers instead of rewriting; `.val` of a closed term is `t.val (s := stdReadingNat) ![] Empty.elim`
+(`s` is instance-implicit); `Semisentence` quotes use `Sentence.quote_def`;
+`Semiformula.coe_subst_eq_subst_coe` + `typed_quote_substs` + `val_substs` is the code equation
+route; `decide` fails on `Structure.rel` (classical instance) — `change ¬((0:ℕ) = 1)` first.
+
+**2026-09-10, later — the unary-numeral VACUITY (theorem, then fixed).** `Vacuity.lean`
+(commit 470ee43) proved: under Foundation's unary numerals a guard sentence mentions the
+searcher's own code as `numeral (canonical me)` with `canonical me ≥ k`, so `formulaLenMeta guard ≥ 2k > k`,
+every proof of it is longer than the budget, and `search_never_found : ¬LenBox TAct k
+(guardCode ⌜guardTemplate7⌝ (pSearch k ⌜guardTemplate7⌝ a p q) opp a')` for EVERY top-level search node —
+`Dupoc_always_defects`, `Cupod_always_cooperates`. `red_cell` was true, but for a reason
+unrelated to symmetry: the model was degenerate (no bounded search can ever succeed). This
+is Critch's assumption (b) — a number `k` must be written in `O(lg k)` characters, so that
+an agent's own source, which contains `k`, fits inside budget `k` — and `Length.lean`'s
+claim that (b) is "irrelevant to T1/T2" was wrong. FIX (M3 prerequisite, in progress):
+describe programs by BINARY numeral TERMS `binNumeral n` (`𝟎`, `𝟏`, `𝟐·t`, `𝟐·t+𝟏` along the bits
+of `n`, length `O(‖n‖)`), a Σ₁ StrongFinite fixpoint like `revalue`, with a meta twin
+`binNumeralMeta`, code equation `⌜binNumeralMeta n⌝ = binNumeral n`, truth `val (binNumeralMeta n) = n`; only `descriptions`
+(Guard.lean) and `canonicalMeta` (Template.lean) change — the length measure, properness and the
+symmetry layer are untouched, and the honest symbol count stays a character count.
+`Vacuity.lean` is retired for `Fit.lean`: `guard_fits : ∃ K, ∀ k ≥ K, formulaLenMeta (guardSentence
+(Dupoc k) (Cupod k) a) ≤ k` — for all large budgets the guard fits (its constant is the bit
+length of `⌜guardTemplate7⌝` under Cantor pairing: large, but a constant). Non-vacuity of T1 is then
+a theorem; whether a guard is actually PROVABLE within `k` is T3's question.
+
+**Left open by design (generalise next):** `pSim` semantics (program substitution); general
+guard templates (any Σ₁ formula in the seven description variables, swap-invariant); an
+`Option`-valued meta evaluator `evalN` and its agreement with the engine's `Dynamics.eval`
+(that is M3's bridge, on the bumped toolchain).
+
+**M2 — the original plan (kept for the record).** Coded `Prog`, Δ₁ `Eval`,
+`plays` sentences, `tr`/`TR` agreement, τ as the constant-swap automorphism of `T'` (2.4: renaming, axiom closure, `len ∘ τ = len`, `Eval` invariance),
+Σ₁-soundness for `plays` sentences. Then, verbatim from `Theorems/DupocBot/vs_CupodBot.lean`:
+
+```
+Dupoc plays C  iff  PA ⊢_k ⌜Cupod plays C vs Dupoc⌝
+Cupod plays D  iff  PA ⊢_k ⌜Dupoc plays D vs Cupod⌝
+τ(cupod k) = dupoc k as values, so the two searches succeed together (2.4).
+Both succeed ⇒ (soundness) Cupod plays C and Dupoc plays D, but Dupoc's search succeeded
+so Dupoc plays C — contradiction. Both fail ⇒ (D, C).
+```
+
+No Löb, no cost constants, no floor. Gate: `outcome_arith (CupodBot k) (DupocBot k) = some (.C, .D)`
+mirrored as `(DupocBot, CupodBot) = (D, C)`, for every `k` with enough fuel, `#print axioms`
+= Lean's three. **This is T1 and the paper's headline for the arithmetized layer.**
+
+**M3 status (2026-09-10 night, session wrap-up).** Started on the user's go-ahead. State:
+1. ENGINE BUMP DONE: worktree `~/wt/osgt-arith-m3`, branch `colomban-arith-m3` (off
+   `colomban-arith-s` @2a16615), commit 5b0dc7b: `engine/` on Lean v4.33.1, mathlib
+   0df444a360ea (= arith's), `PrisonersDilemma` + `OutcomeCheck` green, proof-only repairs
+   (127 `simpa … using!`, `dsimp +instances` for stale `Decidable` instances, `clear_value`
+   for an omega recursion-depth regression, `simpa [-forall_const]` for typeclass timeouts).
+   `Metatheory` was already broken before the bump (docstring above imports; the T31 chain
+   lacks tvote/sys arms — TAUBOTS.md §4 debt). App caveat: LeanInteract's REPL fork has no
+   v4.33.1 tag yet — the proof agent's fast checker will fall back to `lake env lean`.
+2. WORKSPACE WIRING DONE (same worktree, commit aededc4, arith builds against the engine in
+   3.5 s with zero engine rebuild; only `Formula` needs the `PD.` prefix): `arith/lakefile.toml`
+   gains `[[require]] name = "PrisonersDilemma" path = "../engine"`, `arith/.lake ->
+   ~/wt/arith-lake-m3` (packages shared with `~/wt/arith-lake`, own `build/`), smoke module
+   `arith/ArithS/EngineBridge.lean` (`#check @PD.Pf`, `@ArithS.red_cell`). Next: MERGE `colomban-arith-s` (Vacuity/Fit commits) into `colomban-arith-m3`.
+3. VACUITY FIXED (binary descriptions LANDED on `colomban-arith-s`: `BinNumeral.lean` 9a66980,
+   `Guard.lean`/`Template.lean` binary `descriptions`/`canonicalMeta`, `ProofLength.lean`; package green
+   through `Fit`). `Fit.lean` LANDED: `guard_fits : ∃ K, ∀ k ≥ K, ∀ a ≤ 1, formulaLenMeta (guardSentence
+   (Dupoc k) (Cupod k) a) ≤ k` (and the swapped `guard_fits'`) — T1 is non-vacuous. TRAP
+   (cost a day): a theorem stated with CLOSED constants built from the template (`10 * cG₀`,
+   `Nat.size cP`) makes Lean's `Nat` defeq machinery try to EVALUATE `formulaLenMeta guardTemplate7`/`encode
+   guardTemplate7` on the giant DSL term — hours, then a kernel "deterministic timeout";
+   `@[irreducible]` does not stop the kernel. Cure: package such constants EXISTENTIALLY
+   (`exists_guard_const`, `exists_size_const`) and do all arithmetic over variables. Also:
+   `lake env lean` output is block-buffered when redirected, so a partial log shows nothing;
+   bisect slow files by truncation with `timeout`. Original note: `Vacuity.lean` (470ee43, see the paragraph above) proves the
+   unary-numeral degeneracy; an agent is replacing it by `BinNumeral.lean` (binary numeral term
+   codes, Σ₁ fixpoint) + binary `descriptions`/`canonicalMeta` + `Fit.lean` (`guard_fits`). If that work
+   is not on `colomban-arith-s` when you read this, redo it from the plan in `Notes/M3_TRANSFER/BRIEF.md` §2.
+3b. `pSim` SEMANTICS — LANDED 2026-09-10 (see step (b) below; the paragraph is the original brief): `substCode me opp p` one-shot as in the engine (`pBot` frozen; a `pSearch`
+   node's TEMPLATE is instantiated with the outer `me`/`opp` descriptions, keeping the action
+   slot `#6` free, so `guardCode (substTemplate me opp g) me' opp' a = guardCode g me opp a` — the
+   engine's "guards inside a simulated program refer to the outer players"), the evaluator
+   clause `EvalGraph n me opp (pSim p q) a ↔ EvalGraph n' p' q' p' a`, and τ generalised to act
+   on templates (`revalueTemplate u w`: symbol code `2+a ↦ 2+revalueAction a u w`), so that
+   `transposeCode (substCode me opp p) = substCode (transposeCode me) (transposeCode opp) (transposeCode p)`. If this is
+   not on the branch when you read this, redo it from this paragraph.
+
+4. THE TRANSFER THEOREM — DESIGN, NOT YET DECIDED. The reading (`M3_TRANSFER/READ_*.md`) and
+   the brief (`M3_TRANSFER/BRIEF.md`, §3 and §5) establish: the engine's `.box` is interpreted
+   by `Pf` ITSELF, so `boxIntro` is sound by fiat and no length bookkeeping exists; a
+   same-budget "Pf k φ → PA ⊢ tr φ" over all 33 rules is equivalent to bounded HBL (M4):
+   the budget-erased reading breaks `search_f` (Gödel II), the budget-keeping reading breaks
+   `boxIntro` (danger 2), and a hybrid breaks `searchBranch`. Foundation at the pinned commit
+   has NO modal realization package but keeps `ProvabilityAbstraction` (D1/D2/D3,
+   formalized Löb, Diagonalization) and full r.e./computable representability
+   (`rePred_weak_representation`, `codeOfComputablePred_provable(_neg)`). Honest M3
+   candidates (to be settled by the judge panel whose first proposal is saved as
+   `M3_TRANSFER/PROPOSAL_faithful.md`): (i) budget-erased soundness of the modal-
+   propositional core with atoms as hypotheses ("S's Löbian core is a fragment of GL over
+   PA"); (ii) same-budget PA-soundness of the agent layer for the arith evaluator, relative
+   to the consulted bounded box facts (Δ₁/Σ₁-completeness per arm); (iii) the engine's
+   `BoundedGL` interface instantiated for PA-S with the bounded-HBL fields as NAMED
+   hypotheses; (iv) `Pf k φ ↔ PA ⊢ ρ(k,⌜φ⌝)` by representability (cheap, but it says "PA
+   verifies S", not "S ⊆ PA"). Recommended combination: (i) + (ii) + (iii), stated
+   with explicit boundaries; T2's paper sentence becomes "S is sound relative to PA up to
+   Critch's assumption (d), which is stated as the one open hypothesis".
+
+**M3 DESIGN DECISION (2026-09-10, after the panel's surviving proposal
+`M3_TRANSFER/PROPOSAL_faithful.md`; the judge/synthesis stages were killed by a rate limit
+and are NOT needed — the decision below is the orchestrator's, on the evidence in
+`M3_TRANSFER/BRIEF.md` §3/§5 and the proposal's §0/§3).** T2 is REFORMULATED as three
+theorems that locate exactly where the engine's `Pf` and PA-`S` agree and where they cannot:
+
+* **T2-NEG (impossibility, unconditional).** No budget-keeping transfer exists at ANY
+  inflation `e`: `Pf 1 (.plays (.const C) q C)` holds for every program `q`
+  (`AtomProvable.mk` charges evaluation STEPS `n ≤ k`, never the conclusion's size —
+  `pf_size_or_atom`'s exception), while any arithmetical realization of that atom writes
+  `⌜TR q⌝` and a PA proof is at least as long as its conclusion (`formulaLenMeta_le_proofLenMeta`), so its
+  length is unbounded in `q`. Second departure: `search_t` cites a budget-`k` proof at cost
+  `numCost k = log₂ k + 1` (a budget DROP; `atom_search_t_top`). These are the two places
+  where the engine's transcript-cost model presupposes Critch's (b)/(d) instead of
+  counting characters. Deliverable: `theorem no_budget_keeping_transfer (e : ℕ → ℕ) :
+  ∃ k φ, PD.Pf k φ ∧ ¬LenBoxNat codeBound (e k) 𝗣𝗔 ⌜tr φ⌝` (witness `k = 1`,
+  `q = botIter (e 1 + 8) (.const C)`), stated parametrically in the realization
+  (hypothesis: `formulaLenMeta (tr (.plays p q a)) ≥ ‖⌜TR q⌝‖`).
+* **T2-AGENT (same budgets, relative to the consulted box facts).** Every engine evaluation
+  certificate is a run of the arithmetized evaluator: `PlaysProof me opp body a n → GuardAgree
+  → ∃ N, EvalGraph N ⌜TR me⌝ ⌜TR opp⌝ ⌜TR body⌝ a`, where `GuardAgree` says that at every
+  `.search k ψ` node the engine's `Pf k` verdict and `LenBox 𝗣𝗔 k ⌜tr (ψ.subst me opp)⌝`
+  agree; unconditional for search-free programs. Needs the full-Prog evaluator (`pSim` via
+  `substCode`, then `tvote`/`sys`/`selfIdx` or a `noTau` side condition closed under subst),
+  the code translation `TR : Prog → ℕ`, and the substitution code equation
+  `substCode ⌜me⌝ ⌜opp⌝ ⌜p⌝ = ⌜p.subst me opp⌝`. The box agreement IS bounded D1 — it is a
+  hypothesis, named, never an axiom.
+* **T2-CORE (budget-erased soundness of the modal-propositional core).** A `PfCore Γ φ`
+  mirror of the 16 modal/propositional rules (`boxIntro axK axKf box4 boxMono diagF diagB
+  atomBoxImpl implRefl implK implS mp implTrans weakenImpl impS2 contrapose negElim`) with
+  atom hypotheses `Γ`, and `PfCore Γ φ → 𝗣𝗔 + tr⁰ Γ ⊢ tr⁰ φ` for `tr⁰` sending `.box k ψ` to
+  Foundation's `provabilityPred 𝗣𝗔` and `.diag` to `fixedpoint`, discharged by
+  `ProvabilityAbstraction` (D1/D2/D3, `formalized_löb_theorem`, `Diagonalization`) — "S's
+  Löbian core is a fragment of GL over PA". (`atomBoxImpl` needs the atom realization to be
+  Σ₁: `provable_sigma_one_complete`.)
+* **T2-COND (the precise M4 obligation, optional).** `PALength e` with fields bounded
+  D1/D2/D3/diag/cut/mono and `transfer_bounded` on the size-gated fragment; only `cut` and
+  `mono` are provable now. State it as the `BoundedGL` instance's missing fields; do not
+  put it in the paper as a result.
+
+Paper sentence: "`S` is sound relative to PA wherever a character count exists (T2-CORE for
+the logic, T2-AGENT for the agents); where the engine charges evaluation steps and cheap
+citations instead of characters, no PA proof length can match, and we prove it (T2-NEG);
+budget-keeping soundness is therefore exactly Critch's assumption (d), left as M4." The
+budget-erased world is Barász/Berns' unbounded modal agents — T2-CORE reuses it, our
+novelty stays the BOUNDED `S`. Engine-side cost-model finding for the user: charging
+`AtomProvable.mk` by `n + |φ| ≤ k` and `search_t` by `n + k` would make a budget-keeping
+transfer plausible but breaks every cheap-citation cell (`(2k+64)` staggers,
+`outcome_DupocBot_vs_CooperateBot` at pad `atom_cost 1`) — a design decision, not M3.
+CANONICAL BRANCH (2026-09-10): `colomban-arith-m3` in the worktree `~/wt/osgt-arith-m3`
+(merge commit 2584ed4 = engine bump + workspace wiring + every arith result incl. `Fit`;
+`lake build ArithS` there builds engine + arith in ~20 s incremental). The OneDrive checkout
+stays on `colomban-arith-s` (arith-only, engine still v4.28 there) so the app/IDE keep working;
+do NOT develop on `-s` any more — cherry-pick or merge INTO `-m3`.
+
+**T2-CORE LANDED (2026-09-10, `colomban-arith-m3` commits 2cb55aa, f8382f4; files
+`arith/ArithS/Core/Tr.lean`, `Core/Sound.lean`; not yet in `ArithS.lean`'s import list —
+add `import ArithS.Core.Sound` after the template re-shaping lands).**
+`tr A : PD.Formula → ArithmeticSentence` (budget-erased: `.box _ ψ ↦ provabilityPred 𝗣𝗔 (tr ψ)`,
+`.diag _ tgt ↦ fixedpoint “x. prov x → tr tgt”` = Foundation's `kreisel`, `.eq ↦ ⊤/⊥`,
+atoms by a parameter `A`), `inductive Leaf` (17 constructors = the non-core rules' conclusion
+shapes, budgets dropped), and
+`Pf_core_sound (A) (hleaf : ∀ ψ, Leaf ψ → 𝗣𝗔 ⊢ tr A ψ) : PD.Pf k φ → 𝗣𝗔 ⊢ tr A φ`
+by `Pf.induct` (34 arms; core arms via `Entailment` lemmas `C_trans/C_of_conseq/mdp₁/implyK/
+implyS/contra/neg_mdp`, `provable_D1/D2/D3`, `kreisel_spec`), three standard axioms. Reading:
+"the engine's Löbian core is a fragment of GL over PA". Remaining for T2-CORE's paper use: an
+instance `A` (the arith evaluator's `∃ n, EvalGraph …` sentence, after step (c)) and the leaf
+discharge for that `A` — which is exactly T2-AGENT's content.
+
+**M4 first field — bounded D2 in rule form (DONE 2026-09-11, `colomban-arith-m3`,
+`ArithS/Cut.lean`, imported after `ProofLength`; census +6, three axioms).** The meta cut
+`cutMP : T ⟹₂ {φ ➝ ψ} → T ⟹₂ {φ} → T ⟹₂ {ψ}` (one `cut` on `φ ➝ ψ = ∼φ ⋎ ψ`; right premise
+`and` from a weakening of the proof of `φ` and the closed leaf `{ψ, ∼ψ}`; no cast needed —
+`∼(∼φ ⋎ ψ) = φ ⋏ ∼ψ` is a `simp` fact) with EXACT accounting `proofLenMeta (cutMP d₁ d₂) ≤ proofLenMeta d₁ +
+proofLenMeta d₂ + 5|φ| + 10|ψ| + 9` (every node charges its whole conclusion sequent: five sequents
+of the cut tree, each bounded by `sequentLenMeta_insert_le`/`formulaLenMeta_neg`/`formulaLenMeta_imply`). Code level by
+the `lenBoxNat_codeBound_swap` pattern, factored into two reusable bridges:
+`derivation_of_lenBoxNat` (code → meta derivation of `proofLenMeta ≤ k`) and
+`lenBoxNat_of_derivation` (meta derivation of `proofLenMeta ≤ k` → `LenBoxNat codeBound k`, code
+bound by properness) — every further rule of the bounded-GL interface is "meta construction +
+these two". Traps met: the arrow token in Foundation is `🡒` (`➝` does not parse); `have b := d.cast _`
+forgets the definition so `proofLenMeta_cast` cannot fire — `obtain ⟨b, hb⟩ : ∃ b, proofLenMeta b ≤ k`;
+`Monotone codeBound` under Mathlib's `Preorder ℕ` does NOT unify with `LenBoxNat.mono`'s
+`ORingStructure` preorder — prove monotonicity inline through `le_def`; `formulaLenMeta_neg`/`formulaLenMeta_imply`
+were already in `FitBox.lean` (deleted there, `Cut` is upstream).
+
+**Post-M3 increments (2026-09-10/11, `colomban-arith-m3`).** DONE: `AgentConverse` (eval ↔
+EvalGraph under one two-sided `GuardAgree`; `GuardAgreeF` derived from engine soundness),
+`Inst` (hom `c_C ↦ 0, c_D ↦ 1`; `pa_proves_sentenceAt_inst`; atom leaves of T2-CORE discharged),
+`Det` (determinism in every model of IΣ₁ by `pi1_order_induction`; negative atoms PA-provable
+via the completeness theorem; `atomNeg` leaf discharged — only the twelve source-reading
+leaves remain hypotheses = bounded D1), `Audit.lean` census (43 theorems, 3 axioms).
+FitBox DONE (commit 7fd38cc, wired; census 47 theorems): Critch's (b) for box-carrying guards
+SPLITS. Positive: `exists_formulaLenMeta_template_const : BudgetLinear F → ∃ c₀ c₁, ∀ k, formulaLenMeta (template (F k)) ≤
+c₀ + c₁ · size k` (the TEMPLATE of a box is short). Negative, at EVERY budget:
+`size_binNumeral_ge : n + 2 ≤ Nat.size (binNumeral n)` (under Cantor pairing the CODE of a binary numeral
+term squares at every bit, so it is as long as a unary numeral), hence
+`box_guard_never_fits : HasBox k φ → k < formulaLenMeta (sentenceAt (.search k' φ p q) opp φ)` and the zoo
+instances `legibleBot_guard_never_fits` — a searcher whose guard names its own budget inside a
+box cannot fit its budget. T1/T2 unaffected (box-free guards); this blocks T3 until the
+coding changes. Design fix (not implemented): store box budgets as node DATA referenced by a
+seventh template variable (`lenProvG ⇜ ![#6, #0]`, filled by `descriptions` from the node's `k`),
+so the stored template's code is constant in `k`; or balanced numeral terms (depth
+O(log log n), polylog codes). Occurrence of `#0` in `lenProvG` turned out provable
+SYNTACTICALLY in 10 s (`simp only [sigma_mkDelta, val_mkSigma]` exposes only the connective
+skeleton; the `!p` substitutions stay opaque) — the hangs were three other mechanisms, all
+recorded in the file's proof-craft note (unification unfolding `qqAnd/qqExs` to `pair`; an
+index mismatch `9` vs `6+1+1+1` making `isDefEq` unfold a giant quote; `whnf` of closed
+`Nat` arithmetic on symbol counts).
+
+IMPLEMENTATION SEQUENCE (decided 2026-09-10; each step is one agent-sized task, committed and
+recorded here before the next starts):
+ (a) TEMPLATE RE-SHAPING: `pSearch k g p q` with `g` a SIX-variable template code
+     (me-triple `x₁ u₁ w₁`, opp-triple `x₂ u₂ w₂`; no action slot), `guardCode g me opp :=
+     subst LAct (descVec6 me opp) g`; τ acts on templates: `revalueTemplate u w` maps function
+     symbol code `2+a ↦ 2+revalueAction a u w` (identity for `(0,1)`, the `swap` code image for
+     `(1,0)`), and `revalue u w (pSearch k g p q) = pSearch k (revalueTemplate u w g) …`. The
+     restricted templates become the two closed instances `guardTemplate a := guardTemplateRaw ⇜ [#0..#5, c_a]`
+     (so `revalueTemplate 1 0 (guardTemplate 0) = guardTemplate 1`), `Dupoc k = pSearch k (guardTemplate 0) (pConst 0)
+     (pConst 1)`, `Cupod k = transposeCode (Dupoc k) = pSearch k (guardTemplate 1) (pConst 1) (pConst 0)`;
+     `red_cell` re-proved (same argument). Guard/Template/RedCell/Fit change; Eval's search
+     clause loses the action argument.
+     **DONE 2026-09-10 (branch `colomban-arith-m3`, commits 7b96eda + 6dcb1b8, `lake build
+     ArithS` green, `#print axioms red_cell`/`guard_fits` = Lean's three).** New module
+     `ArithS/RevalueTemplate.lean`: `revalueSym` (Δ₀, `2 ↦ 2+u`, `3 ↦ 2+w`), `termRelabel`/
+     `termRelabelVec` (`TermRec`, arity 2) and `revalueTemplate u w g` (`UformulaRec1` with
+     param `⟪u, w⟫`, identity on non-formula codes) — Σ₁ functions; `revalueTemplate_zero_one`
+     and `revalueTemplate_swap_swap` on EVERY code (formula codes by `sigma1_succ_induction`
+     with the `IsUFormula` preservation lemma for `u, w ∈ {0,1}`); the meta link at ℕ,
+     `revalueTemplate_quote : revalueTemplate 1 0 ⌜φ⌝ = ⌜lMap swap φ⌝` (propositions, then
+     `_sentence`). `Prog.lean`: `pSearch k g p q`, the `Revalue` core is now a Δ₁ blueprint
+     (`.mkDelta`, both polarities cite `revalueTemplateGraph` like `Eval` cites
+     `guardCodeGraph`; still StrongFinite — the bound on `revalueTemplate` is never needed,
+     the referenced pairs are `⟪p, p'⟫` with `p < x`, `p' < y`). `Template.lean`: `actT6`,
+     `guardTemplate a := guardTemplate7 ⇜ ![#0..#5, actT6 a]`, `guardSentence a me opp`, `lMap_swap_GtmplA`,
+     `revalueTemplate_quote_GtmplA`, and the code/swap/truth equations under the new names.
+     `Fit.lean`: constants `cG a := formulaLenMeta (guardTemplate a)` (irreducible, packaged as `cG 0 + cG 1`
+     in `exists_guard_const`) and `cP := ⟪⌜guardTemplate 0⌝, pConst 0, pConst 1⟫`. Proof-craft traps
+     added: (i) at `V = ℕ` the coercion `(↑k : ℕ)` inside quoted codes is Foundation's
+     `Nat.cast` (from `instCommSemiring_foundation`), NOT definitionally `k` — `show`/`change`
+     to plain `k` fails; the simp lemma is `natCast_nat` (`Nat.numeral_eq` is for
+     `ORingStructure.numeral`); (ii) for the same reason numeral literals inside a generic-`V`
+     definition (`if f = 2`) do not match ℕ-literals after `change` — prove the equations
+     generically (`revalueSym_two : revalueSym 2 u w = 2 + u`) and instantiate with `exact
+     (… (V := ℕ) …).trans rfl`; (iii) a `TermRec` graph `.rew (Rew.subst ![…])` of arity ≥ 5
+     needs the evaluation spelled out (`val_rew`, `Semiformula.eval_substs`, a `funext`
+     lemma for `val ∘ ![#0, #3, …]`) — `simpa [Matrix.comp_vecCons']` alone stalls; (iv)
+     `section meta` is a syntax error on v4.33.1 (`meta` is a keyword); (v) `fin_cases` is
+     not in scope in modules importing only `LangAct` — use `match i with | 0 => rfl | …`;
+     (vi) `IsUTermVec`/`IsUTerm`/`IsUFormula` are defs, so dot-notation (`hv.termRelabelVec`)
+     fails — call the lemmas explicitly.
+ (b) `substCode`/`pSim` (3b above, now with `substTemplate me opp g := subst (descVec6 me opp) g` closed —
+     no free slot to keep), evaluator clause, determinism/mono, τ-equivariance.
+     **DONE 2026-09-10 (branch `colomban-arith-m3`, commits fd45457 + 40eae59; `lake build
+     ArithS` green, `#print axioms red_cell`/`guard_fits`/`transposeCode_substCode`/`guardCode_substTemplate` =
+     Lean's three).** New module `ArithS/Subst.lean` (between `Guard` and `Eval`): `substTemplate me
+     opp g` = `guardCode g me opp` on templates (`IsSemiformula LAct 6 g`, `substTemplate_of_template`)
+     and the IDENTITY on every other code — ONE deliberate deviation from the brief, forced by
+     τ-equivariance (trap (i) below); `guardCode_substTemplate : IsSemiformula LAct 6 g → guardCode
+     (substTemplate me opp g) me' opp' = substTemplate me opp g` (the instantiated template is a SENTENCE:
+     `descriptions_semitermVec`, `isSemiformula_guardCode`, and the new `subst_eq_self_of_le` — a
+     formula with `n` free variables is fixed by any LONGER vector whose first `n` entries are
+     the variables; Foundation's `subst_eq_self` needs exactly `n`); Σ₁ graph `substTemplateGraph`.
+     `substCode me opp p`: Δ₁ fixpoint with parameters `me opp`, **StrongFinite** (the referenced
+     pairs `⟪p, p'⟫` are sub-pairs, as for `Revalue` — the brief's "Finite if substTemplate grows codes"
+     was too cautious), `substCodeDef : 𝚺₁.Semisentence 4`, `𝚺₁-Function₃`, equations
+     `substCode_const/self/opp/bot/sim/ite/search`, `substCode_of_not_shape`. τ-equivariance on EVERY
+     code: `transposeCode_substCode : transposeCode (substCode me opp p) = substCode (transposeCode me) (transposeCode opp)
+     (transposeCode p)`, from `revalueTemplate_subst` (`revalueTemplate u w (subst v p) = subst
+     (termRelabelVec u w n v) (revalueTemplate u w p)` for `u, w ∈ {0,1}`, `IsSemiformula n p`,
+     `IsSemitermVec n m v` — term/formula recursions as `substs_substs`, plus
+     `termRelabelVec_qVec`), the code-level description swap `termRelabelVec_descriptions :
+     termRelabelVec 1 0 6 (descriptions me opp) = descriptions (transposeCode me) (transposeCode opp)`
+     (`termRelabel_revalueU/revalueW`, `termRelabel_binNumeral` via `termRelabel_of_LOR`, `canonical_transposeCode` — the
+     `canonical_*` helpers moved here from `Template.lean`) and `revalueTemplate_substTemplate`. `Eval.lean`:
+     the sim clause `⟪n, substCode me opp p, substCode me opp q, substCode me opp p, a⟫ ∈ C` in `Phi` and
+     both blueprint polarities (`∃ sp, !substCodeDef sp me opp p' ∧ …` / `∀ sp, … →`), `Finite`
+     kept, `case_iff` extended; `EvalN.lean`: real `sim_iff`, `unique`/`mono` extended.
+     `SimTest.lean`: `Mirror := pSim pOpp pSelf`, `mirror_vs_const : EvalGraph 2 Mirror (pConst a)
+     Mirror a`, `mirror_vs_mirror : ∀ n a, ¬EvalGraph n Mirror Mirror Mirror a` (the engine's
+     `none`), `transposeCode_substCode_Mirror`, `sim_search_outer_guard` (a search node under `sim`
+     consults `guardCode g me opp` of the OUTER frame). Proof-craft traps: (i) with `substTemplate :=
+     guardCode` on ALL codes the τ-equivariance is FALSE — `subst` truncates out-of-range
+     variables to `0` and `revalueTemplate` fixes the resulting non-formula, so on `g = ^rel 2 R
+     ?[c_C, #7]` (seven free variables) `revalueTemplate 1 0 (subst v g) = ^rel 2 R ?[c_C, 0]`
+     but `subst v' (revalueTemplate 1 0 g) = ^rel 2 R ?[c_D, 0]`; the `IsSemiformula LAct 6`
+     guard is what makes the statement unconditional (`isSemiformula_revalueTemplate_swap_iff`);
+     (ii) `binNumeral_semiterm`/`numeral_semiterm` are stated over `ℒₒᵣ` — transport with
+     `IsSemiterm.LAct_of_LOR` (`isFunc_LOR` from `func_def_LOR`; `LAct` keeps the `ℒₒᵣ` symbol
+     codes); (iii) inside a `have … (x ∷ 0)` the `0` elaborates at `ℕ` (`Adjoin V ℕ` failure) —
+     write `(0 : V)`, and never leave `binNumeral _` with a hole inside a `.isUTerm` chain; (iv)
+     numerals: `(6 : V) = 0+1+1+1+1+1+1`, `(2:V)+1 = 3`, `(0:V) ≠ 2` etc. are all `norm_num` —
+     rewrite `six_eq` before `IsSemitermVec.adjoin`/`termRelabelVec_cons` chains; (v)
+     `add_le_add_right` on `V` yields `1 + n ≤ 1 + m` — use `add_le_add h (le_refl 1)`; (vi)
+     names of the form `IsSemiformula.foo` declared in `ArithS` are not reachable by dot
+     notation on Foundation's `IsSemiformula` (trap (vi) of step (a)) — call them, or name them
+     `isSemiformula_foo`.
+ (c) `TR : PD.Prog → ℕ` and `templateCode : PD.Formula → template code` (the general template
+     builder: `.plays p q a ↦ ∃ n, EvalGraph n (pc p) (pc q) (pc p) a` with the program terms
+     built by Σ₁ graphs from the description triples, `.box k ψ ↦ ∃ g', substsGraph g'
+     (descVec6 me opp) ⌜templateCode ψ⌝ ∧ lenBox k g'`, `.eq`, `.diag` via fixedpoint codes),
+     the code equations `TR (p.subst me opp) = substCode (TR me) (TR opp) (TR p)` and
+     `⌜tr (ψ.subst me opp)⌝ = guardCode (templateCode ψ) (TR me) (TR opp)`.
+ **DONE 2026-09-10 (branch `colomban-arith-m3`, commit 21a31aa; `lake build ArithS` green,
+     `#print axioms` of every headline theorem = Lean's three).** New module `ArithS/Code.lean`
+     (imported after `Fit` in `ArithS.lean`). NAMES: `progCode : PD.Prog → ℕ` (the brief's `TR`),
+     `template : PD.Formula → Semisentence LAct 6`, `templateCode φ := ⌜template φ⌝` — one `mutual` block by
+     STRUCTURAL recursion on the engine's mutual inductive (works with only the `Prog`/`Formula`
+     functions declared; equation lemmas `progCode_*`/`template_*` by `rw [progCode]`/`rw [template]`, never
+     `rfl`). `actCode : Action → ℕ` (`C ↦ 0`, `D ↦ 1`), tau constructors `↦ 0` (non-shape).
+     THE DESIGN THAT MAKES THE META EQUATION LITERAL: every program inside an atom is described
+     by ONE shape `descF X T U W := ∃ d, d = T ∧ X = revalue U W d` (`relDesc := lMap emb
+     revalueDef.val`), with `(T, U, W)` = the frame variables for `.self`/`.opp` and the closed
+     terms `cl (canonicalMeta c), cl (revalueUMeta c), cl (revalueWMeta c)` of the program's own code `c` otherwise
+     (`progAux`/`progGraph`/`closedDesc`; `cl t := Rew.castLE _ t` casts a closed term into any
+     context and is fixed by EVERY rewriter, `rew_cl`). `.plays p q a ↦ ∃ x y n, D_p(x) ∧ D_q(y)
+     ∧ evalG n x y x c_a` (`evalG := lMap emb evalGraphDef.val`; the engine's `play = eval me opp
+     me`); `.eq p q ↦ ∃ x y, D_p(x) ∧ closedDesc (progCode q) y ∧ x = y` (frozen RHS by its code);
+     `.box k ψ ↦ ∃ me opp, D_self(me) ∧ D_opp(opp) ∧ ∃ g, guardCodeG g (numTB ⌜template ψ⌝) me opp ∧
+     lenProvG (numTB k) g` (binary numerals `numTB c := lMap emb (binNumeralMeta c)` everywhere — no
+     unary numeral of a code); `.diag ↦ ⊥` (side condition `noDiag`). Side conditions: `noTauP`
+     (+ `noTauP_subst`), `closedP`/`closedF` (`subst_of_closedP/F`: `subst` fixes a closed
+     program/formula), `atomicP p := p = .self ∨ p = .opp ∨ closedP p`, and THE FRAGMENT
+     `fragP`/`fragF` (no tau, no `.box`, atoms over `atomicP ∧ fragP` programs).
+     THEOREMS (all under `hme : me ≠ .self ∧ me ≠ .opp`, `hopp` likewise — players are programs,
+     not pronouns; needed because `progAux .self` is the frame description):
+     `template_subst : fragF ψ → template (ψ.subst me opp) = template ψ ⇜ descTerms6 me opp` (the meta
+     equation, `descTerms6 := cl ∘ descriptionTerms (progCode me) (progCode opp)` at SIX variables — the two
+     sides must have the same type; the LHS simply does not use its frame variables);
+     `quote_subst_cl : ⌜σ ⇜ (cl ∘ w)⌝ = ⌜σ ⇜ w⌝` (codes do not see the context);
+     `quote_sentenceAt : ⌜sentenceAt me opp φ⌝ = guardCode (templateCode φ) (progCode me) (progCode opp)` for
+     `sentenceAt me opp φ := template φ ⇜ descriptionTerms (progCode me) (progCode opp)` (EVERY φ — this is the
+     T2-AGENT atom realization); `templateCode_subst : fragF ψ → templateCode (ψ.subst me opp) = substTemplate
+     (progCode me) (progCode opp) (templateCode ψ)`; `progCode_subst : fragP p → progCode (p.subst me opp) = substCode
+     (progCode me) (progCode opp) (progCode p)`. τ: `lMap_swap_template : fragF φ → lMap swap (template φ) = template
+     φ.transpose` and `transposeCode_progCode : fragP p → transposeCode (progCode p) = progCode p.transpose`
+     (mutual), `revalueTemplate_templateCode : fragF φ → revalueTemplate 1 0 (templateCode φ) = templateCode
+     φ.transpose`. Sanity: `progCode_DupocBot`, `fragP_DupocBot`, `transposeCode_progCode_DupocBot`.
+     SCOPE, HONESTLY: the code equations and τ hold on the BOX-FREE fragment, and cannot hold
+     for `.box` under ANY compositional `template`: the translated box carries the CODE of its body
+     as a numeral, and `⌜template (ψ.subst me opp)⌝ ≠ ⌜template ψ⌝` — `template (.box k (ψ.subst me opp))`
+     and `template (.box k ψ) ⇜ desc` are PA-provably equivalent sentences, not identical ones,
+     and length-bounded provability is not invariant under provable equivalence (`□A(x)` vs
+     `Prov(sub(⌜A⌝, x))`). The same numeral blocks τ on boxes (`swap` does not re-value a
+     code constant; a `revalueTemplate`-based canonical description of TEMPLATE codes, like
+     `canonical`/`revalueU`/`revalueW` for programs, would fix τ but not substitution). The zoo is box-free in
+     its templates except LegibleBot/OptimBot. `.tvote/.sys/.selfIdx` satisfy both code
+     equations trivially (`0 = 0`) but are excluded from `frag` since `EvalGraph` knows nothing
+     about code `0`. The stored template of `progCode (DupocBot k)` is NOT `⌜guardTemplate 0⌝` (different
+     quantifier order/shape; equivalent guards, two different searchers) — `Dupoc k` of
+     `RedCell.lean` stays the red cell's object. Proof-craft traps: (i) a `/-! … -/` docstring
+     containing `me-/opp` ENDS at that `-/` (cost a cascade of 30 phantom errors); (ii) `∃¹ ∃¹ φ`
+     does not parse — write `∃¹ (∃¹ (…))`, and parenthesize `⋏ (∃¹ …)`; (iii) `Rew.q`-chains on
+     literal bound variables compute by `rfl` (`ω.q.q.q #3 = bShift³ (ω #0)`), so state the
+     needed instance with `show … = _` and finish with `rw [rew_cl]; try rfl` — `simp
+     [Rew.q_bvar_succ]` never fires on a literal `#3`; (iv) `refine (lemma _ _ ?_ …)` with a
+     `rfl` argument for `w 0 = w' 0` UNIFIES `w := w'` — give the equation as a `?_` goal;
+     (v) `congr n` counts `∃¹` AND `⋏` layers (`∃¹∃¹∃¹ (A ⋏ (B ⋏ C))` needs `congr 4` then `congr
+     1`); (vi) `Semiformula.rel` is ambiguous under the opens (`Bootstrapping.` vs
+     `FirstOrder.`) inside `show` — qualify; (vii) `induction` on the engine's mutual `Formula`
+     is unavailable — write recursive `theorem`s with pattern matching (Lean accepts the
+     structural recursion), `mutual theorem … end` for the τ pair.
+ (d) T2-NEG (`ProofLength.lean` has `formulaLenMeta_le_of_lenBoxNat`; add `TR`'s code lower bound
+     for `.bot`-iterates and the engine example `Pf 1 (.plays (.const C) q C)`).
+     **DONE 2026-09-10 (commit 2882d49; `lake build ArithS` green, three axioms).** New module
+     `ArithS/Neg.lean` (after `Code`). `botIter n p := .bot^n p`, `pBotIter`, `progCode_botIter`,
+     `two_mul_lt_pBot : 2x < pBot x` (`unfold pBot pair; split_ifs; nlinarith/omega` after `show`
+     at ℕ), `size_lt_size_pBot`, `le_size_canonical_pBotIter : n ≤ size (canonical (pBot^n x))` (`canonical` is
+     the code or its `transposeCode`, and `transposeCode (pBot^n x) = pBot^n (transposeCode x)`),
+     `size_le_termLenMeta_binNumeralMeta : size n ≤ termLenMeta (binNumeralMeta n)` (the lower bound twin of `termLenMeta_binNumeralMeta`),
+     `formulaLenMeta_emb_descF_ge : termLenMeta T + 1 ≤ formulaLenMeta (emb (descF X T U W))` (the `∃ d, d = T` shape puts
+     the numeral at a SHALLOW position — no occurrence argument through the Σ₁ graphs needed),
+     `size_canonical_le_formulaLenMeta_sentenceAt : closedP q → size (canonical (progCode q)) ≤ formulaLenMeta (sentenceAt me opp (.plays p
+     q a))`. HEADLINE: `no_budget_keeping_transfer (e : ℕ → ℕ) (tr : PD.Formula → Sentence LAct)
+     (htr : ∀ p q a, closedP q = true → Nat.size (canonical (progCode q)) ≤ formulaLenMeta (tr (.plays p q a))) :
+     ∃ k φ, PD.Pf k φ ∧ ¬LenBoxNat codeBound (e k) TAct ⌜tr φ⌝` — witness `k = 1`, `φ = .plays
+     (.const C) (botIter (e 1 + 1) (.const C)) C`, `Pf.atom (AtomProvable.mk PlaysProof.const
+     (le_refl _))`; instances `no_budget_keeping_transfer_template` (for `sentenceAt me opp`) and
+     `no_budget_keeping_transfer_guardCode` (on `guardCode (templateCode φ) (progCode me) (progCode opp)`,
+     the code the arithmetized evaluator consults). Trap: after `simp only [app_exs, map_and,
+     formulaLenMeta_exs, formulaLenMeta_and]` the conjunct's context is `3`, not `9` (the outer `⇜ descriptionTerms` closes
+     the six frame variables) — read the goal before writing the `have`; `omega` needs the
+     bound `hB` stated with the goal's exact `Rewriting.app Rew.emb` spelling (`Rewriting.emb`
+     is an abbrev but a different atom to omega) — ascribe the type and `exact` the lemma.
+ (e) T2-AGENT for the const/self/opp/bot/sim/ite/search fragment (`noTau` side condition),
+     then tvote/sys if time permits.
+     **DONE 2026-09-10 (branch `colomban-arith-m3`; `lake build ArithS` green, 3201 jobs;
+     `#print axioms` of every headline theorem = Lean's three).** New module `ArithS/Agent.lean`
+     (imported after `Neg` in `ArithS.lean`). THE CONSULTED GUARD: `guardOf φ me opp :=
+     guardCode (templateCode φ) (progCode me) (progCode opp)` (= `⌜sentenceAt me opp φ⌝`, `guardOf_eq_quote_sentenceAt`;
+     on the fragment = `templateCode (φ.subst me opp)`, the template code of the CLOSED instantiation,
+     `guardOf_eq_templateCode_subst` from `templateCode_subst` + `substTemplate_of_template`). THE ORACLE HYPOTHESES
+     (bounded D1 on the consulted guards — named, never an axiom; T2-NEG says no budget-keeping
+     transfer exists in general, so this is exactly where Critch's (d) enters):
+     `GuardAgreeT := ∀ φ me opp k, PD.Pf k (φ.subst me opp) → LenBox TAct k (guardOf φ me opp)`
+     and `GuardAgreeF := ∀ φ me opp k m, PD.Pf m (.neg (φ.subst me opp)) → ¬LenBox TAct k
+     (guardOf φ me opp)`. One-sided facts proved: `models_sentenceAt_of_lenBox` (a found
+     arithmetized guard is TRUE in ℕ — `lenBox_nat`, `provable_iff_provable`,
+     `models_of_provable models_TAct`) and `not_interp_of_pf_neg` (an engine refutation
+     falsifies the ENGINE reading `Formula.interp`, via `PD.BaseTheorems.Pf_sound`) — two
+     different sentences (`play` vs `EvalGraph`), so `GuardAgreeF` is NOT derived.
+     THE THEOREM: `playsProof_evalGraph (hag : GuardAgreeT) (hneg : GuardAgreeF) (h : PD.PlaysProof
+     me opp body a n) (hme : Proper me) (hopp : Proper opp) (modestP me) (modestP opp) (modestP body) :
+     ∃ N, EvalGraph N (progCode me) (progCode opp) (progCode body) (actCode a)`, by `PD.PlaysProof.induct`
+     with the invariant IN THE MOTIVE (`Inv sf me opp body := Proper me ∧ Proper opp ∧ modestP
+     me ∧ modestP opp ∧ modestP body ∧ (sf = true → all three `hasSearch = false`)`; the core
+     `playsProof_evalGraph_core sf (hag : sf = false → …) (hneg : sf = false → …)` runs ONE
+     induction for both headline versions). Arms: `const` at fuel 1; `self/opp/bot` at `N+1`
+     through the inversion lemmas; `sim` through `progCode_subst` (both players) and `sim_iff`;
+     `ite_t/ite_f` at `max N₁ N₂ + 1` via `mono_le` (`actCode_eq_of_beq`/`actCode_ne_of_beq_false`
+     bridge the engine's derived `BEq` — `cases <;> decide`); `search_t/search_f` cite the oracle on
+     the closed guard; the five vote arms and `sysStep` are `False` from modesty.
+     `playsProof_evalGraph_searchFree` (same, `me/opp/body.hasSearch = false`, NO oracle),
+     `atomProvable_evalGraph`/`_searchFree` (the `AtomProvable k (.plays me opp a)` forms —
+     `cases` on the mutual-block inductive works), and THE TRUTH EQUATION `models_sentenceAt_plays
+     (me' opp' me opp a) : closedP me → closedP opp → (ℕ↓[LAct] ⊧ sentenceAt me' opp' (.plays me opp a)
+     ↔ ∃ N, EvalGraph N (progCode me) (progCode opp) (progCode me) (actCode a))` (`eval_relDesc`,
+     `eval_evalG`, `eval_closedDesc : Eval b (closedDesc c) ↔ b 0 = c` via `revalue_val_desc`).
+     THE FRAGMENT IS MODEST, NOT `fragP`: the brief's `fragP_subst : fragP p → fragP me → fragP opp
+     → fragP (p.subst me opp)` is FALSE — `.self.subst me opp = me` must be `atomicP`, i.e.
+     `closedP me`, and NO searcher is `closedP` (its template names `.self`/`.opp`; `closedP
+     (DupocBot k) = false`). `modestP` = `fragP` with every `.sim` argument `atomicP` (placeholder
+     or closed) — the engine's own T43 modesty, `modestP (DupocBot k) = true` by `rfl` — and then
+     the `.sim` step's new frame is drawn from `{me, opp, p, q}` (`Inv.sim`), so no substitution
+     closure lemma is needed at all. GAPS: (i) [CLOSED in instantiated form — the INSTANTIATION paragraph below] TRUTH → `TAct ⊢ sentenceAt …` (Σ₁-completeness) is NOT
+     derived: Foundation's `sigma_one_completeness` is over `ℒₒᵣ`, `TAct` is over `LAct`, and the
+     realized sentence names `c_C`/`c_D`, which `TAct` leaves uninterpreted (only `c_C ≠ c_D`; the
+     descriptions re-value programs through the same constants, so the sentence is
+     action-symmetric and NOT an `emb`-image) — a proof would reason generically in the two
+     constants; (ii) `GuardAgreeF` from engine soundness would need the CONVERSE of T2-AGENT
+     (`EvalGraph → eval`) — DONE, the CONVERSE paragraph below; (iii) tvote/sys stay outside
+     (code `0`). Proof-craft
+     traps: `simp` never rewrites inside the INSTANCE-IMPLICIT structure argument of
+     `Semiformula.Eval`, so `stdReadingNat_lMap_emb` must be applied by `rw` in standalone
+     evaluation lemmas (`eval_relDesc`/`eval_evalG`, using `revalue_defined.df v` /
+     `evalGraph_defined.df v`) and those used under binders; `⋏` on `Prop` is
+     `LogicalConnective.Prop.and_eq`; `stdReadingNat.rel op(=) v ↔ v 0 = v 1` is `Iff.rfl`; literal
+     `![…] i` indices need `Matrix.cons_val_two/three` AND `Matrix.cons_val_succ` together;
+     `Pf_sound` lives in `PD.BaseTheorems` (import `PrisonersDilemma.Base.Soundness`;
+     `hasSearch_subst` in `Base.AtomCerts`); a `variable {me opp}` clashes with a lemma named
+     `opp` in the same namespace; `Bool.true_ne_false` does not exist (`Bool.noConfusion`).
+     **THE CONVERSE — DONE 2026-09-10 (`ArithS/AgentConverse.lean`, imported after `Agent`;
+     `lake build ArithS` green, 3203 jobs; eight new census lines in `Audit.lean`, all three
+     standard axioms).** ONE two-sided oracle `GuardAgree := ∀ φ me opp k, fragF φ → Proper me →
+     Proper opp → modestP me → modestP opp → (PD.Pf k (φ.subst me opp) ↔ LenBox TAct k
+     (guardOf φ me opp))` — restricted to exactly the guards a modest match consults, the WEAKEST
+     hypothesis both directions need (`GuardAgree.of_forall` from the unrestricted `Iff`,
+     `GuardAgree.of_T` from `GuardAgreeT` + its converse). `GuardAgree.toT`/`.toF`: the `Iff`
+     subsumes the modest instances of BOTH T2-AGENT hypotheses, `F` by engine soundness
+     (`not_interp_of_pf_neg` + `Pf_sound` on the guard the `Iff` hands back). THEOREMS:
+     `evalGraph_of_eval` (`PD.eval n me opp body = some a → ∃ N, EvalGraph N ⌜me⌝ ⌜opp⌝ ⌜body⌝ a`,
+     induction on the ENGINE fuel unfolding `PD.eval` clause by clause, mirroring
+     `eval_mono`'s case skeleton), `eval_of_evalGraph` (the converse, induction on the ARITH fuel
+     through `EvalN`'s inversion lemmas), `eval_iff_evalGraph` / `play_iff_evalGraph` /
+     `outcome_iff_evalGraph` (the `outcome` form via `outcome_eq_some_iff` + `eval_mono_le` at
+     `max`), `playsProof_evalGraph_of_guardAgree` (T2-AGENT re-derived through
+     `playsProof_sound`), `plays_interp_iff` (`(.plays me opp a).interp ↔ ℕ↓[LAct] ⊧ sentenceAt me' opp'
+     (.plays me opp a)` for closed modest players, via `models_sentenceAt_plays`). PROOF-CRAFT: (1) the
+     converse's core is stated for an ARBITRARY result code `r` (`∃ a, r = actCode a ∧ ∃ n, eval n
+     … = some a`, `eval_of_evalGraph_core`) — the arithmetized `.ite` clause returns the guard's
+     result as a bare natural, and the IH must first learn it is an action code; with an
+     `actCode a`-shaped statement the `.ite` case is stuck. (2) NO `progCode` injectivity: induct on
+     the fuel with the engine program in the frame, rewrite `progCode body` by its `@[simp]` equations
+     and apply the inversion lemma of that shape; the `.sim` case is `← progCode_subst` on both
+     players (the frame stays inside `{me, opp, p, q}` by `Inv.sim`). (3) `guardCode (templateCode φ)
+     (progCode me) (progCode opp) = guardOf φ me opp` is `rfl` — state it as a lemma so `rw` after
+     `search_iff` lands on the oracle's spelling. (4) The engine's `.ite` `do` block: `rw [PD.eval,
+     h₁]; simp only [bind, Option.bind]; rw [if_pos (beq_of_actCode_eq e)]` — `BEq` on `Action`
+     is bridged by `cases <;> first | rfl | exact absurd …` (`beq_of_actCode_eq`,
+     `beq_false_of_actCode_ne`; `if_neg` wants `¬ (r == c) = true`, take
+     `Bool.eq_false_iff.mp`). (5) The `.search` `if` on a `Bool` is `if proofSearch … = true`;
+     `proofSearch_spec` + the `Iff` in either direction; the else-branch needs only the
+     contrapositive of `mp`, never a refutation.
+     **THE INSTANTIATION — DONE 2026-09-10 (`ArithS/Inst.lean`, imported after `AgentConverse`;
+     `lake build ArithS` green, 3204 jobs; nine new census lines in `Audit.lean`, all three
+     standard axioms).** Closes gap (i) in its honest form: PA proves the atom sentences with
+     the action constants INSTANTIATED. `inst : LAct →ᵥ ℒₒᵣ` (`Sum.inl f ↦ f`, `c_C ↦
+     Language.Zero.zero`, `c_D ↦ Language.One.one`; match on `k, f` as `swap` does);
+     `inst_emb_func`/`lMap_inst_emb` (the retraction `inst ∘ emb = id`, the same induction as
+     `lMap_swap_emb`); `lMap_inst_std : Structure.lMap inst (standardModel ℕ) = stdReadingNat`;
+     `models_inst : ℕ↓[ℒₒᵣ] ⊧ lMap inst σ ↔ ℕ↓[LAct] ⊧ σ` (`Semiformula.models_lMap` with `(s₂ :=
+     standardModel ℕ)`, then `rw` the structure equation). Σ₁-NESS WITHOUT A GENERIC
+     `Hierarchy.lMap`: `Hierarchy` is defined over any `[L.LT]` language, but nothing beyond
+     `∃¹/⋏/rel/⇜` closure is needed (`sigma_iff`, `and_iff`, `rel`, `rew_iff` — `⇜` is an abbrev
+     for `Rew.subst w ▹`, so `rew_iff` fires under `simp`) once `lMap inst relDesc =
+     revalueDef.val` and `lMap inst evalG = evalGraphDef.val` (instances of `lMap_inst_emb`)
+     and `hierarchy_sigma` for the `𝚺₁.Semisentence`s; `progAux` by `split_ifs` (all three
+     branches are `descF`), so `hierarchy_lMap_inst_sentenceAt_plays` holds for EVERY frame and pair.
+     THEOREMS: `pa_proves_sentenceAt_inst (hga : GuardAgree) (me' opp' me opp a) (Proper me) (Proper
+     opp) (modestP me) (modestP opp) : (∃ n, PD.play n me opp = some a) → 𝗣𝗔 ⊢ lMap inst (sentenceAt
+     me' opp' (.plays me opp a))` (`play_iff_evalGraph` → `models_sentenceAt_plays` → `models_inst` →
+     `sigma_one_completeness`); `pa_proves_sentenceAt_inst_of_atomProvable` (through
+     `playsProof_sound`); `pa_proves_sentenceAt_inst_searchFree` (NO oracle, through
+     `atomProvable_evalGraph_searchFree`); `Aι : Core.AtomRealization := fun p q a ↦ lMap inst
+     (sentenceAt p q (.plays p q a))`; `leaf_atom_sound`/`_searchFree` (the `Leaf.atom` shape),
+     `leaf_atomBoxImpl_sound (kBox p q a)` (ALL programs, formalized Σ₁-completeness
+     `provable_sigma_one_complete (T := 𝗣𝗔)` lifted by `Entailment.WeakerThan.pbl`),
+     `transfer_of_leaves = Core.Pf_core_sound Aι`. PROOF-CRAFT: `Structure.ext` takes equalities
+     of the WHOLE `func`/`rel` fields — `refine Structure.ext ?_ ?_` then `funext k f v` and
+     `rcases f with f | ⟨(_ | _)⟩ <;> rfl` (a bare `ext k f v` misparses the second goal);
+     `sigma_one_completeness (T := 𝗣𝗔)` finds `𝗥₀ ⪯ 𝗣𝗔` through `[𝗣𝗔⁻ ⪯ T] : 𝗥₀ ⪯ T`
+     (Schemata.lean), no extra import; `Core.tr_plays` is `rfl`, so the leaf lemmas are the
+     PA theorems verbatim; `Inst` must import `ArithS.Core.Sound` itself (`AgentConverse` does
+     not). `closedP` → `Proper`: `models_sentenceAt_plays` and `plays_interp_iff` now take `Proper`
+     (their proofs used closedness only through `closedP_ne_self/opp`); every searcher is
+     `Proper` and NONE is `closedP` (`closedP (DupocBot k) = false`), so the `closedP`-stated
+     versions would have excluded every Löbian cell. NOT BUILT (recorded, results §4 boundary
+     2): the NEGATIVE atom `𝗣𝗔 ⊢ ∼ lMap inst (sentenceAt …)` from a play of `b ≠ a` — Π₁, needs
+     PA-internal determinism (`EvalGraph.unique'` holds in every model of IΣ₁; the route is the
+     completeness theorem + Σ₁ upward transfer of the positive run + internal uniqueness, but
+     `val_binNumeralMeta`/`revalue_val_desc` are ℕ-only, ~150 lines of general-model evaluation lemmas
+     first) — this is exactly T2-CORE's `atomNeg` leaf; and the generic `TAct ⊢ sentenceAt …` with
+     the constants uninterpreted (not an instance of Σ₁-completeness, not known true, needed
+     by nothing).
+ (f) T2-CORE via `ProvabilityAbstraction`.
+Order of work: (1) merge `colomban-arith-s` (binary descriptions, `Fit.lean`) into
+`colomban-arith-m3`; (2) `pSim`/`substCode`/`revalueTemplate` (3b); (3) T2-NEG (small);
+(4) `TR` + substitution code equation + T2-AGENT for the sim/search fragment; (5) T2-CORE.
+
+**M3 — unbounded soundness of `Pf` relative to PA.** Engine bumped; `ArithS` requires
+`PrisonersDilemma`. Theorem `Pf k φ → PA ⊢ tr φ` by `Pf.induct`: modal arms from
+`provable_D1/D2/D3` + `diagonal` + Löb; atom arms from Σ₁-completeness of true computation
+steps (`provable_sigma_one_complete`); `search_f`/`atomNeg`/`eqNeg` arms from the sound
+refutation + soundness of PA. Gate: every positive engine cell (a `Pf` witness) is a PA
+theorem. **This is T2.** Corollary worth stating: `Pf_sound` factors through PA-soundness.
+
+**M4 STARTED 2026-09-11 (new session; design brief `M4_BOUNDED_HBL/BRIEF.md`, reader reports
+`M4_BOUNDED_HBL/READ_*.md`).** Goal restated: a working `S'` with PBLT as a theorem;
+the T2 bridge is DEFERRED (do not extend). Decisions: (1) follow Critch 2019's UNIFORM proof of
+PBLT (one PA proof with `k` free, one meta instantiation at `O(lg k)`) — this needs NO
+proof-producing bounded D1; the only hard item is bounded INNER necessitation
+(`□_a ψ → □_{E a} □_a ψ`, `E` subexponential), stated first as a named hypothesis; bounded D2 and
+instantiation are V-GENERIC lemmas on codes + `complete`. (2) The guard mismatch (a searcher's
+guard names the numeral of its whole code, which is the `k`-instance of no formula because
+Foundation's `pair` has an `if`) is fixed by re-coding PROGRAMS on the term-expressible pairing
+`ppair x y = (x+y)²+y` and describing programs by TERMS — then Dupoc's guard is literally
+`subst (binNumeral k) ⌜q_D⌝`. The earlier "box budgets as node data" fix is NOT a PBLT prerequisite
+(Dupoc's guard is box-free); it stays deferred with the bridge. Agents launched: `ppair`
+re-pairing of `Prog.lean` + downstream; `CutV.lean` (bounded D2 on codes inside every model).
+
+**U2 DONE 2026-09-11 — bounded D2 on CODES inside every model of IΣ₁ (`ArithS/CutV.lean`,
+census +6, three axioms).** `cutCode φ ψ d₁ d₂` (the five-sequent cut of `Cut.lean`, now on
+derivation CODES via Foundation's internal constructors), `cutCode_proof`, `proofLen_cutCode_le`
+(`≤ proofLen d₁ + proofLen d₂ + 5|φ| + 10|ψ| + 9` by the `ProofLenGraph` inversion clauses);
+`LenBoxUnbounded T k φ := ∃ d, Proof T d φ ∧ proofLen T d ≤ k` (Σ₁, NO code bound) with
+`lenBoxUnbounded_mp` UNCONDITIONAL for any Δ₁ theory; the `LenBox`-shaped
+`lenBox_cut_V` (uniform `c₁ = 10, c₀ = 9`) under the named hypothesis `ProperBound V T`
+("a `T`-proof code of length `≤ k` is `< codeBound k`") — a THEOREM at `V = ℕ` (`properBound_nat_TAct`,
+through `Proof.sound'` + `quote_derivation_le`), OPEN for general `V` (needs a V-internal
+induction on derivation codes — brief §5 danger 4; wanted for the uniform argument);
+`lenBox_mono_V`; and the whole thing as ONE ℒₒᵣ-sentence `cutSentence` with
+`isigma1_proves_cutSentence`/`pa_proves_cutSentence`/`tact_proves_cutSentence` by the
+completeness theorem (`Det.lean`'s pattern) — Critch's Property 1 as a PA theorem.
+LESSON for the parametric box (U1): use `LenBoxUnbounded` (Σ₁, no `codeBound`) inside the Löb
+argument; `codeBound`/`LenBox` is only needed where the EVALUATOR's guard is consulted
+(Δ₁-ness of the search clause), so `ProperBound V` enters exactly once, at the final step.
+
+**U1 + U3 DONE 2026-09-11 (`ArithS/InstV.lean`, commit 47fa241, census 79 lines, three axioms,
+NO named hypotheses).** `instB n k := subst LAct (binNumeral k ∷ 0) n` (the `binNumeral`-instance of a
+one-variable formula code; Σ₁ graph; `quote_instB : instB ⌜φ⌝ k = ⌜φ ⇜ ![lMap emb (binNumeralMeta k)]⌝`;
+`formulaLen_instB_le : |instB n k| ≤ |n| · |binNumeral k|` via a general `formulaLen_subst_le` with the
+Δ₁ invariant `SubstInv`), the PARAMETRIC BOX `bewB a n k := LenBoxUnbounded TAct a (instB n k)` with
+`bewBDef : 𝚺₁.Semisentence 3` — every later Löb sentence is written with it. Property 2 on codes:
+`instCode` (cut of the `∀`-proof against `exsIntro` from an `axL` leaf), `proofLen_instCode_le ≤
+proofLen d + 5|χ[t]| + 3|χ| + |t| + 7`, `lenBoxUnbounded_inst_V`/`lenBoxUnbounded_instB_V`/`bewB_of_all`
+(V-generic, unconditional), meta twin `lenBoxNat_inst`/`lenBoxNat_inst_size`
+(`+ 6·size k + 8` for the term) — the FINAL meta step of PBLT — and `pa_proves_instSentence`/
+`tact_proves_instSentence`. Trap: state instantiation costs in `|χ[t]|, |χ|, |t|` separately
+(`|χ| ≤ |χ[t]|` needs `#0` to occur). NEXT: U6 `Diag.lean` (parametric diagonal lemma over TAct
+for LAct formulas — agent launched), then `ProperBound V TAct` for general V, U7 (after the term
+descriptions land), U8/U9.
+
+**U0 DONE 2026-09-12 (`ArithS/CodeTerm.lean`, `ArithS/Instance.lean`, `ArithS/InstanceV.lean`;
+descriptions switched in `Guard`/`Template`, consumers `Subst`/`Code`/`Neg`/`FitBox`/`Det`/`Fit`
+repaired; full build green, every census line three axioms).** Programs are described by the
+STRUCTURAL TERM of their code over `ppair`: `ppairTerm s t := ((s ^+ t) ^* (s ^+ t)) ^+ t` on term
+codes and `codeTerm : V → V` (Σ₁, a StrongFinite fixpoint on pairs exactly like `revalue`; budget
+`k` and template code `g` as `binNumeral` leaves; `binNumeral x` on non-shapes), `IsSemiterm ℒₒᵣ`, Δ₁ graph
+`codeTermGraphDef`, `codeTerm.defined`; meta twin `codeTermMeta : ℕ → ClosedSemiterm ℒₒᵣ 0` (an inductive
+graph with EXPLICIT equations — `cases` on a family indexed by `pBot p` fails — plus choice),
+`quote_codeTermMeta : ⌜codeTermMeta x⌝ = codeTerm ↑x` in EVERY model (proved in `V` with cast lemmas
+`cast_pConst … cast_pSearch` for the shapes and Σ₁-absoluteness `cast_codeTerm` +
+`Semiterm.coe_quote_eq_quote` for the non-shape leaf — the ℕ-only route drowns in `OfNat`
+instance mismatches, `instOfNatNat 3` vs `instOfNat` at `V = ℕ`), `val_codeTermMeta : val (codeTermMeta x) = x`
+(`ppair` being a term is exactly what makes the description DENOTE the code), exact lengths
+`|ppairTermMeta s t| = 2|s| + 3|t| + 4`, `|succTT t| = |t| + 2` (searcher: `2|6̂| + 6|k̂| + 18|ĝ| +
+54|p| + 81|q| + 162`), and the lower bound `size x ≤ |codeTermMeta x|` for free from
+`val_lt_two_pow_termLenMeta` (every closed ℒₒᵣ-term denotes `< 2^length`) — no size arithmetic on the
+tower at all. `descriptions me opp := codeTerm (canonical me) ∷ revalueU me ∷ revalueW me ∷ …`, `canonicalMeta x := lMap emb
+(codeTermMeta (canonical x))`; `canonicalMeta_eq_numTB` is gone. `Fit`: `exists_guard_const` now
+`formulaLenMeta ≤ c · (|canonicalMeta me| + |canonicalMeta opp| + 5)`, `exists_desc_const : |canonicalMeta (Dupoc k)| ≤ 36 · size k
++ D` (the constant carries `|binNumeralMeta ⌜guardTemplate a⌝|`, packaged existentially), `guard_fits`/`guard_fits'`
+byte-identical. THE HEADLINE: `canonical (Dupoc k) = pSearch k gD pD qD` with a `k`-INDEPENDENT inner
+triple decided by the fixed inequality `innerD ≤ innerC` between two closed constants (never
+evaluated; `ppair` reflects the order in its second argument, `pSearchInner_lt_iff`), `revalueUMeta/revalueWMeta
+(Dupoc k)` `k`-independent, `codeTermMeta (pSearch k g p q) = searchT1 g p q ⇜ ![binNumeralMeta k]`, hence
+`exists_dupoc_instance : ∃ q : Semisentence LAct 1, ∀ k, guardSentence 0 (Dupoc k) (Dupoc k) =
+q ⇜ ![lMap emb (binNumeralMeta k)]` (witness `qDupoc := guardTemplate 0 ⇜ ![TD, cl uD, cl wD, TD, cl uD, cl wD]`)
+and `exists_dupoc_instance_code : ∃ cq, IsSemiformula LAct 1 cq ∧ ∀ k, guardCode ⌜guardTemplate 0⌝
+(Dupoc k) (Dupoc k) = subst LAct (binNumeral k ∷ 0) cq`; and V-GENERIC, for possibly NONSTANDARD
+budgets: `exists_dupoc_instance_code_V : ∃ cq : ℕ, IsSemiformula LAct 1 cq ∧ ∀ (V) [𝗜𝚺₁] (k : V),
+guardCode ⌜guardTemplate 0⌝ (DupocV k) (DupocV k) = subst LAct (binNumeral k ∷ 0) ↑cq` — i.e. the guard code
+is `instB cq k` (`InstV`), the input the parametric box `bewB` expects. Its proof re-runs the
+analysis inside `V` (`transposeCode_DupocV` by Σ₁-absoluteness of `revalueTemplate`; `Nat.cast_lt` for
+the deciding inequality — PA⁻ models are `IsStrictOrderedRing`) and then composes internal
+substitutions: `substs_substs` on the code of `qDupoc`, the code of the one-variable term `TD`
+being the `ppairTerm`-tower with `^#0` in the budget slot (`quote_emb_searchT1`) which
+`termSubst (binNumeral k ∷ 0)` fills (`termSubst_tower`, via `termSubst_func` + `termSubstVec_cons₂`
+and `termSubst_eq_self` for the closed leaves). Traps: `≤` at `V = ℕ` is `instLE_foundation`
+(`x = y ∨ x < y`), NOT `instLENat` — state comparisons with `<` (which IS `Nat.lt`) or with
+V-generic lemmas instantiated at ℕ; `Phi`/equations over `V` must annotate `(𝟏 : V)` and the
+existentials `: V`, or the whole pair elaborates at ℕ and casts; `(binNumeral k ∷ 0)` in a STATEMENT
+needs `(0 : V)`; `rw [quote_binNumeralMeta]` at ℕ leaves `binNumeral ↑3` whose cast is not `rfl`-removable —
+use `quote_binNumeralMeta_nat` or stay in `V`; `omega` mis-atomizes `2^a * 2^b` written twice through
+different instance paths — factor the arithmetic into a helper over variables; the `‘…’`
+term notation's `1` is the numeral operator, not `func one ![]` (`succTT` is characterized
+through `oneTT`); the meta inductive graph needs explicit `hx : x = pBot p` arguments.
+NEXT: U7 (Dupoc transparency in `V`, on `DupocV`), then U8/U9 with U5 as the named hypothesis.
+
+**U6 DONE 2026-09-12 (`ArithS/Diag.lean`, commit 669704c, census +8, three axioms).** The
+parametric diagonal lemma over `TAct` for `LAct` formulas: `tact_parametric_diagonal θ : ∃ ψ,
+TAct ⊢ ∀¹ (ψ 🡘 θ ⇜ ![lMap emb ⌜ψ⌝, #0])` (Foundation's `parameterizedFixedpoint` is ℒₒᵣ-only —
+`subst ℒₒᵣ` is the `L`-indexed recursion and ignores `c_C/c_D`; re-done with
+`substNumeralParamsA := subst LAct (numeral x ∷ ^#0 ∷ 0)`), the `binNumeralMeta k` instances
+(`tact_parametric_diagonal_inst`, `models_…`, `provable_code_…`; the two sides are DIFFERENT codes
+`instB ⌜ψ⌝ k` / `instB ⌜θ/[⌜ψ⌝,#0]⌝ k` that TAct proves equivalent). REUSABLE: `TAct_complete`
+(completeness for `TAct` restricted to models with REAL equality — `Theory.Proof.complete` alone
+admits congruence models; Foundation's `complete_on_eq_models` needs `𝗘𝗤 LAct ⪯ TAct`, proved here
+axiom by axiom via PA's equality axioms along `emb`). TRAP: any `simp` touching the closed quote
+`⌜tactDiag θ⌝` makes the kernel build a numeral over `LEAN_NAT_MAX_SIZE` — prove quote equations
+for a VARIABLE sentence and instantiate; unfold `tactFixedpoint` only by its `rfl` lemma.
+
+**U0b 2026-09-12 — the action axiom (a vacuity fixed).** `TAct` had only `constNe : c_C ≠ c_D`
+(both orientations): the action constants were merely DISTINCT. But the guard sentences of the
+search bots (`Template`/`Guard`) feed the constants as action VALUES into `revalue U W d`
+(`Prog.lean`), which is only meaningful on `{0, 1}`: in a model of `TAct` reading `c_C ↦ 5, c_D ↦ 7`
+the described program `revalue 5 7 (canonical (Dupoc k))` has a garbage template (`revalueTemplate 5 7`
+produces the non-existent symbol code `2 + 5`), its search finds nothing, it plays `7`, and Dupoc's
+guard sentence `guardSentence 0 (Dupoc k) (Dupoc k)` is FALSE there. Hence `TAct ⊬ guard` for every
+`k`, and Dupoc could never cooperate in the arithmetized `S'` — a vacuity of the same kind as the
+retired unary-numeral one (the model-class finding of `Transparency.lean`, 54aee07: the truth
+equations hold only in `stdReadingV V`). THE FIX (`TheoryAct.lean`): the closed `LAct`-sentences
+`actionAxiom : (c_C = 0 ∧ c_D = 1) ∨ (c_C = 1 ∧ c_D = 0)` and its transposition
+`actionAxiom' : (c_D = 0 ∧ c_C = 1) ∨ (c_D = 1 ∧ c_C = 0)` (`lMap swap actionAxiom = actionAxiom'` and back, so the
+axiom set stays LITERALLY swap-closed — `lMap_swap_mem_TAct`, the red cell's exact iff survives);
+`TAct := insert actionAxiom (insert actionAxiom' (insert constNe (insert constNe' (lMap emb PA))))` — `constNe/constNe'`
+KEPT (implied, but every membership chain expected them; now the chains go through the named
+lemmas `actionAxiom_mem_TAct … lMap_emb_PA_subset_TAct`, never re-derived downstream). `0`/`1` are
+`zeroT/oneT := func (emb.func zero/one) ![]`, `eqF t u := rel eq ![t, u]`; Δ₁ by Foundation's
+`Theory.Δ₁.insert` (two short closed codes). NEW: `stdReading M`/`swappedReading M` (the two readings,
+generic over `ORingStructure M`; `stdReadingV_eq_stdReading`, `stdReading_nat`), `eval_actionAxiom_iff`/
+`models_actionAxiom_iff` (a structure with standard reduct — hence real equality — satisfies `actionAxiom` iff
+its constants read `(0,1)` or `(1,0)`), **`structure_eq_of_actionAxiom : S = stdReading M ∨ S = swappedReading M`**
+(the model class of `TAct` on `M` is EXACTLY the two standard readings), `tact_proves_actionAxiom`,
+`models_actionAxiom` (ℕ), and in `Diag.lean` `TAct_complete` now hands `H` the four action axioms and
+**`TAct_complete_of_readings : (∀ M ⊧ PA, σ true in stdReading M ∧ in swappedReading M) → TAct ⊢ σ`** — the form the
+Löbian cells need (the guard truth equations are proved in `stdReadingV V`, i.e. `stdReading V`; the swapped
+reading is its τ-twin). Every Audit statement unchanged, census three-axiom, +8 lines. Consumers
+touched: `RedCell.models_TAct`, `Diag`, the `hPA` extractions of `CutV/InstV/Transparency`, `Det`.
+Not changed: `Neg.lean` (`¬LenBoxNat` is a length argument, theory-independent); `Symmetry`/
+`Transpose` (through `lMap_swap_mem_TAct`, statement unchanged).
+
+**U7 DONE 2026-09-12 (`ArithS/Transparency.lean`, 54aee07, census +11).** Critch's step 0 for
+Dupoc in every model: `eval_qDupoc_iff_V` (truth equation of `qDupoc` in `stdReadingV V`, `k : V`
+arbitrary), `dupoc_search_V` (`LenBox TAct k (guard) → EvalGraph 2 (DupocV k) … 0`),
+`dupoc_search_instB_V` (unconditional), `dupoc_loeb_premise_V` (via `ProperBound`), the ℕ forms, and the
+uniform ℒₒᵣ-sentence `dupocPremise` proved by IΣ₁/PA/TAct. FINDING that led to U0b: the truth
+equations hold only in the standard readings of the constants — `Det.lean` already had the V-generic
+evaluation lemmas (`val_binNumeralMeta_V`, `stdReadingV`, …; the reader's "ℕ-only" note was stale).
+**ProperBound DONE 2026-09-12 (`ArithS/ProperBound.lean`, 5d9fc0a, census 115, UNCONDITIONAL).**
+Properness of derivation codes inside every model of IΣ₁: internal towers `EV/FV` (Σ₁), sharp
+`⟪a,b⟫ + 1 ≤ (max+1)²` (Foundation's `pair_polybound` is too weak for two tower levels),
+`isUTerm_le_EV`, `isSemiformula_le_EV`, `isFormulaSet_le_FV`, `derivation_le_FV_proofLen` (by
+`IsUTerm.induction`/`sigma1_structural_induction`/`Derivation.induction1`), hence `properBound_TAct`,
+`properBound_LOR`, `lenBox_mp` (no hypothesis) and **`lenBoxUnbounded_iff_lenBox`** — the
+Σ₁ box of the Löb argument and the Δ₁ box of the evaluator coincide in every model. Small-code
+hypotheses are the INTERNAL `SmallCodesV`/`SmallRelCodesV` (a nonstandard model can carry
+nonstandard symbol codes; for `LAct`/`ℒₒᵣ` they are explicit Δ₀ disjunctions). Traps: unification
+whnf-timeouts on `V` from mismatched `+` shapes (state helper lemmas with the exact shape);
+`1 ≤ proofLen`/`1 ≤ formulaLen` are load-bearing for the `wk/shift` and `∀/∃` nodes.
+IN FLIGHT: `NumeralFacts.lean` (short proofs of `numeral c ≤ binNumeralMeta k`), `Assembly/Prep.lean`
+(Cupod's instance + truth equations, the conjunction `qDupoc ⋏ qCupod`, ∧-elimination on codes,
+`Box_g`/`θ`, Σ₁ upward transfer, `BoundedInnerNec`); then U8/U9.
+
+**U8-prep DONE 2026-09-12 (`ArithS/Assembly/Prep.lean`, ec5a8b6, census 138, no hypotheses).**
+Cupod's instance (`qCupod := lMap swap qDupoc`, `guardCode_CupodV_eq_instB`, `cupod_search_V`), the
+truth equations in BOTH readings (`eval_qCupod_iff_V`; `eval_swappedReading : Eval (swappedReading) φ ↔ Eval
+(stdReading) (lMap swap φ)` — `swappedReading` is literally the pull-back), the conjunction family
+`pConj := qDupoc ⋏ qCupod` with `instB_quote_pConj`, ∧-elimination on codes (`lenBoxUnbounded_andL_V`:
+`+ 8(|x|+|y|) + 7`), `pconj_both_V` (a bounded proof of the conjunction ⇒ BOTH searchers find their
+guards ⇒ `EvalGraph 2 Dupoc … 0 ∧ EvalGraph 2 Cupod … 1`), `gBudget k := ‖k‖²`, the box formula
+`Box_g χ` with `eval_Box_g_iff` in both readings, `theta` (`#0` = code slot, `#1` = budget),
+`psi := tactFixedpoint theta` with **`psi_fixed_point : TAct ⊢ ∀¹ (psi 🡘 (Box_g psi 🡒 pConj))`**,
+Σ₁ upward transfer `lenBoxUnbounded_of_nat`, `exists_lenBoxUnbounded_V_of_proof`, and the ONE hypothesis
+`structure BoundedInnerNec (d c c₁ c₀ : ℕ)` (Critch's Property 4 / assumption (d), polynomial `E`).
+IN FLIGHT: `Assembly/Uniform.lean` (U8: `poly_size_le_eventually`, `chain_V`, `psi_true_V`,
+`pblt_uniform`), `Assembly/Cell.lean` (U9: `dupoc_self_coop_of_nec`), `NumeralFacts.lean`.
+
+**NumeralFacts DONE 2026-09-12 (`ArithS/NumeralFacts.lean`, 7ab172f, census +8).**
+`lenBoxNat_le_binNumeralMeta (c) : ∃ C₀ C₁, ∀ k ≥ c, LenBoxNat codeBound (C₀ + C₁·size k²) TAct
+⌜leF ↑c (lMap emb (binNumeralMeta k))⌝` (+ strict twin): bit recursion cutting two uniform PA lemmas
+(`c ≤ x → c ≤ 2x`, `c ≤ x → c ≤ 2x+1`, lengths existential) into the chain, finite base cases by
+completeness; QUADRATIC in `size k` (each bit step pays the instantiation cost `5|χ[t]|`), so the
+Löb budget becomes `gBudget k := ‖k‖³` (Prep). `leF t u := rel Eq ⋎ rel LT` = Foundation's `“t ≤ u”`;
+bridge `substs_leF_imp` gives the exact instance shape for the meta closure.
+
+**U8 + U9 DONE 2026-09-12 — PBLT IN PA-`S` AND THE DUPOC CELL, CONDITIONAL ON ONE NAMED HYPOTHESIS
+(`ArithS/Assembly/Uniform.lean` 91df6b9, `ArithS/Assembly/Cell.lean` 4c8ecc9; census 162, three
+axioms).** With `psi := tactFixedpoint theta` (`TAct ⊢ ∀¹ (psi 🡘 (Box_g psi 🡒 pConj))`,
+`pConj = qDupoc ⋏ qCupod`, `gBudget k = ‖k‖³`) and the ONE hypothesis
+`BoundedInnerNec d : ∀ χ, ∃ C, ∀ V k, L (g k) (instB ⌜χ⌝ k) → ∃ e ≤ C·((g k)^d + 1), L e (instB ⌜Box_g χ⌝ k)`
+(Critch's Property 4 / assumption (d), polynomial expansion; the FIRST formulation with a uniform
+`c₁·formulaLenMeta χ` term was UNSATISFIABLE — the target names `χ` by a unary numeral — and was restated;
+`M4_BOUNDED_HBL/DESIGN_inner_necessitation.md` §10):
+* `chain_V` — the uniform chain in every model (`chainBound … ≤ k` + a box of `psi(k)` at `g k` ⇒
+  both searchers find their guards ⇒ `EvalGraph 2 (DupocV k) … 0 ∧ EvalGraph 2 (CupodV k) … 1`),
+  `chainBound_poly` (`≤ C·‖k‖^(3d+3)`), `poly_size_le_eventually` (no induction inside `V`),
+  `psi_true_V` (in both standard readings), **`pblt_uniform : ∃ k̂, TAct ⊢ ∀¹ (leF ↑k̂ #0 🡒 psi)`**;
+* `exists_psi_instance_length` (the meta closure: `LenBoxNat (K₀ + K₁·size k + K₂·size k²)
+  TAct ⌜psi[binNumeralMeta k]⌝`, via `lenBoxNat_inst_size` + `NumeralFacts` + `Cut`),
+  **`dupoc_self_coop_of_nec (hE : BoundedInnerNec d) : ∃ k₀, ∀ k > k₀, EvalGraph 2 (Dupoc k) (Dupoc k)
+  (Dupoc k) 0 ∧ EvalGraph 2 (Cupod k) (Cupod k) (Cupod k) 1`** and `dupoc_finds_guard` (both
+  searchers actually FIND their guards within `k`) — Critch's Theorem 3.7 in PA-`S`.
+Thresholds are strict at ℕ (`k₀ < k`: `<` is `Nat.lt`, `≤` is `le_def`). Traps: `k̂`/`lit` are not
+identifiers; uniform existential constants must be built as pure terms (mvar depth); `set` does not
+fold into later facts; pin `(k := 0)` on `qqTwo_semiterm.isUTerm`; two `Nat.cast` instances at ℕ.
+**REMAINING for the unconditional cell: U10 = prove `BoundedInnerNec 3`** (design + estimate in
+`M4_BOUNDED_HBL/DESIGN_inner_necessitation.md`: eigenvariable construction, ~40 lemma-sentences by
+`complete`, a `Derivation.induction1` recursion; 2.5–4 months; risk (1) checked OK). Notes NOT yet
+synced to the OneDrive branch (do by copy, as before).
+
+**U10 IN PROGRESS (2026-09-12/13, branch `colomban-arith-u10` off `-m3` @ 15b015a; full plan and
+status in `M4_BOUNDED_HBL/BRIEF.md` §9–§10, design in `DESIGN_inner_necessitation.md` and
+`DESIGN_describe.md`).** Goal: prove `BoundedInnerNec 3` (the one hypothesis of `dupoc_self_coop_of_nec`)
+by a verification-proof construction on derivation CODES inside every model. LANDED, all green, census
+292, three axioms: `Necessitation/Primitives` (useLemma/elimExists, 204c012), `Lib/{Basic,Sets,
+Formulas,Lengths}` (145 rows, f6536fc), `Lib/Nodes` (Intro/ProofLen/axiom recognizer, d95ba66),
+`Lib/Bridge` (ℒₒᵣ/LAct, 637df06), `Steps` (useHorn/introFact + the fragment protocol, 511e5f1),
+`ShiftLen` (additive shift bounds, 1eb099b), `Lib/Walk` + `WalkLemmas` (gaps, `cT`, `bvOcc`,
+45c8844). ARCHITECTURE (brief §10): a flat STEP LIST + a PR chain builder (`chainCode`) instead of
+CPS recursion (which is Π₂ and not a fixpoint). UNCOMMITTED/PARTIAL: `Necessitation/Chain.lean`
+(832 lines — Part A "vector twins" of the Steps machinery: `revV`, `tailIter`, `qVecIterV`,
+`impChainV`, `mapSubst`, `exsChainV`, `ctxChain`…; NO `applyStep`/`StepOK`/`chainCode` yet; type-check status at handover time: a `lake env lean` run had not finished within 15 minutes
+when the branch was committed — treat it as UNVERIFIED; check it first). NOT STARTED: `RowInst` (row-shape/instantiation lemmas),
+`describeSteps` (the walk, a `Fixpoint` on `⟪n, r⟫`), `negSteps/shiftSteps/substSteps/freeSteps`,
+the ten per-tag fragments, `verifySteps`, the top (DESIGN §4.3), the `Steps.lean` `_occ` lemma
+swap. Estimate remaining: 2–3 months. Agents die at the account's session rate limit (twice on
+2026-09-12: 04:10 and 16:20 resets); their files stay on disk.
+
+**U10 — `Chain.lean` DONE 2026-09-13 (9bf20ba, census 301, three axioms; new account).** The
+30-min stall was the BLUEPRINT TRAP (direct Σ₁-graph clauses `!(qVecGraph L) y ih`, `!(impGraph L)
+y x ih` → ∃-wrap; bisection by truncation found it in minutes); then 25 real errors (the guessed
+`VecRec.Construction.result_defined_iff` — the real lemma is `VecRec.Construction.eval_resultDef`
+(`HFS/Vec.lean:504`), `PR` keeps `result_defined_iff`; `rw [hv.lh]` before `nth_termBShiftVec`; a
+`: ℕ` ascription that unified `V := ℕ`). Part A: vector twins `useHornV/useHornAndV/introFactV`
+EQUAL to the list constructors on `vecOf` (`instOuterAt_eq_subst`: one simultaneous substitution).
+Part B: rows `⟪dΛ, m, B⟫`, `TableOK`; steps `sUseHorn/sUseHornAnd/sIntroFact` (CARRY their Horn
+decomposition `(as, c)` — no `hornSplit`), `sElimExs P`, `sSplit p q`, `sWkDrop Γ'` (`axLFactCode` is
+the chain's leaf `d`); `applyStep`, `ctxAfter` (no table), `stepCost N E Γ s` (explicit polynomials
+per tag), `StepOK tbl E M Γ s` (Δ₁; `M` = arity cap, needed for the standardness bridge
+`exists_list_of_len_le` to the list theorems); PR `ctxVec`, `chainCode` (from the end, fixed
+params), `costSum`; THEOREMS `applyStep_proof`, `proofLen_applyStep_le`, **`chainCode_proof`**,
+**`proofLen_chainCode_le`** (by `pi1_succ_induction` on the index), `ctxVec_isFormulaSet`,
+`mem_ctxAfter_of_noShift/_of_shift`, `chainCode_two`. IN FLIGHT: `RowInst`, the `Steps`
+`proofLen_introFactCode_le_occ` swap. NEXT: `describeSteps` (DESIGN_describe).
+
+**U10 — `RowInst.lean` DONE 2026-09-13 (a40e816, census 334, three axioms).** Every row of the
+formula walk (87: totality, formation, LAct bridges, `<`, closed symbols, vector rows,
+`substs1Substs`, the neg/substs/shift/free commutation rows) with its row-shape lemma
+`quote_row_<row>`, the formula-ness of its pieces, and `inst_<row>` at arbitrary closed witnesses;
+the canonical fact codes (`piFact`, …, `ltFact`, `negFact`, …) with `IsFormula`, shift, length and
+`fvOccF` bounds; the instantiation laws `instOuter_subst_listToVec`/`instOuterAt_and` and the
+introduction laws `freeIterAt`/`freeIter_exsIter`/`freeIterAt_subst_listToVec` (entrywise
+`freeIterT`). Two DSL literals to know: the `1` of `isSemiformulaSubsts1B`/`isFormulaFreeB` is `𝟏`,
+not `cT 1`. IN FLIGHT: `Lib/Occ`. NEXT: `describeSteps` (DESIGN_describe §4).
+
+**M5 — the hypothesis discharged (2026-09-16).** `BoundedInnerNec 16` is a theorem; with it
+`dupoc_self_coop` and `pblt` hold with no hypothesis. Build 3270 jobs,
+census 918, all three standard axioms, zero `sorry`/`axiom`/`native_decide`. U10 delivered in
+`Necessitation/`: the library and step language, the formula walk, the numeral provers, the
+certification passes, all ten per-tag fragments and their prologues, the ten motive wrappers, the
+`Derivation.induction1 𝚷` recursion (`armHyps_of_arms`), the axiom recogniser (standard axioms +
+nonstandard induction instances), the per-χ pinning, and the size/length discipline
+(`sizeThmAll_holds`). Degree 16 rather than 3: every loss traces to unary variable-index charging;
+the M4 results are parametric in `d`, so nothing downstream depends on it. Three optional
+improvements deferred (certificate redesign, occurrence accounting, binary index charging).
+**Six corrections were forced by one pattern** — an obligation fixed before the thing it must
+dominate; four constants before their quantifier, one layout before its case distinction, three
+missing interface binders. Lesson: *an interface written ahead of its consumer has provisional
+binders until the consumer compiles against it.*
+
+**M6 — THE MERGE `S` → `S'` (design fixed 2026-09-16; status log below).**
+
+*The decision.* `S'` (= PA-`S`: `TAct` + the length-bounded `□_k`, `LenBoxUnbounded`/`LenBox`)
+is THE formal system. The engine's `Pf` is not a second system: each of its 33 constructors is to
+be a DERIVED RULE of `S'` — a theorem "premises in `S'` at their budgets ⇒ conclusion in `S'` at
+budget `f`(engine budget)". The ~155 outcome theorems stay untouched: an engine derivation is a
+tree of rule applications, so ONE induction over `Pf` composes the per-rule theorems into an
+`S'` derivation. The rule layer is the API (as tactics are to a kernel); re-deriving outcomes
+from `S'` primitives is not planned — it would buy constants only. Budget-KEEPING, not the erased
+T2-CORE: erased, `.box ↦ Bew_PA` and every outcome is a fact about UNBOUNDED modal agents
+(Barász 2014 = FAF's ModalAgents, the competitor); Critch's theorems are about proof length;
+U10 exists for this. OptimBot/LegibleBot stay OUT of the merge (two-tier box guards).
+
+*The two trusted definitions* (what a reader must accept by eye; everything else is checked):
+`tr : Formula → Sentence LAct` (`Core/Tr.lean`, today budget-erased; the budget-keeping version
+changes the `.box` clause to the bounded predicate at the rewritten budget and must rewrite the
+budgets inside PROGRAMS the same way, `search k ↦ search (f k)`, or self-referential bots do not
+translate to themselves) and `f` (the budget function; per-template constants packaged
+existentially — the numeral trap).
+
+*Obstruction 1 — the atom leaf (T2-NEG), REPAIRED by the re-cost.* `AtomProvable.mk` charged
+the run cost only, so `Pf 1 (.plays (.const C) q C)` for every `q`. Branch `colomban-recost`
+(2026-09-16): `mk : PlaysProof … n → n + (Formula.plays me opponent a).size ≤ k → …` — the WHOLE
+conclusion, because the subject side has its own witness (an untaken `.ite` branch is never
+paid: `Pf 3 (.plays (.ite (.const C) C (.const C) huge) q C)`); a first pass charged only
+`opponent.size` and was corrected the same day. With it `pf_size_or_atom` loses its exception.
+Rejected alternative: keep the engine's cost and let `f` read `|φ|` (`Pf k φ → □_{f(k,|φ|)} tr φ`
+evades T2-NEG, whose `e` sees `k` only) — it leaves a cost model in which a leaf does not pay for
+the program it names, unfaithful to Critch's character count independently of any bridge.
+
+*Obstruction 2 — the box rules, FOUND 2026-09-16 while checking step 2; NOT repaired; the
+user's decision.* The engine's `boxIntro`/`box4`/`axK` are ADDITIVE: `Pf a φ → Pf (a + |□_a φ|)
+(□_a φ)`. `S'`'s provable inner necessitation is POLYNOMIAL (degree 16, U10; linear is not
+available without abbreviations). A budget-rewriting `f` must therefore satisfy
+`f(a + |□_a φ|) ≥ C_φ · f(a)^16`, which no polynomial does (`(a + log a + s)^D < C a^{16 D}`),
+nor any single exponential; `f(a) = 2^{2^{αa}}` works (`f(a+1) = f(a)^{2^α} ≥ C f(a)^16` for
+`α ≥ 5`). So a rule-by-rule budget-keeping bridge exists only with a DOUBLY-EXPONENTIAL budget
+rewriting, applied uniformly to every box and every `search` budget (then self-reference closes:
+`tr (Dupoc k) = Dupoc' (f k)` consults `□_{f k} tr guard`, and the bridge delivers exactly
+`LenBoxNat (f k) (tr guard)` from `Pf k guard`). Two consequences. (i) On the Löbian cells the
+bridge is DOMINATED by M5: it gives `Dupoc' (f k)` self-cooperation at the budgets `f k` only,
+while `dupoc_self_coop` gives ALL large budgets directly (the parametric PBLT is
+the mechanism by which a bounded agent's certificate fits its OWN budget in `S'`; the engine's
+mechanism is the additive citation rule — they are different mechanisms, and the second is
+Critch's (c)+(d) taken as a rule with `e* = 1`). (ii) `search_t` cites a budget-`k` proof at
+cost `numCost k = log₂ k + 1` (the second departure T2-NEG already named); under any monotone
+`f` the obligation `f(log k + c) ≥ C f(k)^16` is unsatisfiable, so the bridge additionally needs
+`search_t` re-costed to charge `k` (the M3 note's own suggestion; blast radius unmeasured —
+the same-`k` cells that cite a partner's fired search are at risk).
+
+*Three shapes the merge can take (to decide before step 3):*
+  A. **Uniform bridge with a doubly-exponential `f`** + the `search_t` re-cost. Realizes the
+     stated design literally (33 derived rules, one induction), engine budgets become nominal.
+  B. **No rule bridge; direct `S'` proofs of the bounded cells** in the M5 pattern (Dupoc self
+     done; next mutual-Löb Prudent/Just × Dupoc and the staggers), plus the erased T2-CORE for the
+     logic. NOTE the erased bridge does not cover the source-reading leaves for search bots:
+     `Bew_PA (tr guard) → plays` is false when the evaluator consults the bounded `□_g`.
+  C. **`S''`: the citation rule as a primitive of the arithmetized system** — derivations =
+     `TAct` proof codes + a `cite` node charging `|□_k σ|` (Critch's (c)/(d) built in, as his
+     Appendix B assumes); the engine's rules become derived rules of `S''` at essentially the
+     SAME budgets (no `search_t` re-cost), and U10 becomes the theorem that `S''` reduces to PA
+     with polynomial expansion per box level. New construction in `arith/`, moderate size (the
+     U10 kit does the reduction).
+
+*Step 2 check (2026-09-16), "are the M3 lemmas stated at explicit budgets":* bounded D2 YES
+(`CutV.lenBoxUnbounded_cut_V_TAct : a + b + 10(|φ|+|ψ|) + 9`; `Cut.lenBoxNat_mp`); quantifier
+distribution YES (`InstV.lenBoxUnbounded_instB_V`); the diagonal lemma NO — `Diag.tact_parametric_
+diagonal_inst` is `TAct ⊢ …` with no length; the bounded instance follows by the
+`Uniform.exists_forward_length`/`forward_inst_V` pattern (one existential constant per template
++ `lenBoxUnbounded_instB_V`), a small wrapper to write; bounded D1 PARAMETRIC ONLY — `BoundedInnerNec
+16` is stated for `instB ⌜χ⌝ k` at budget `gBudget k = ‖k‖³` tied to the instance parameter, so
+a closed-sentence, arbitrary-budget form `LenBoxUnbounded b ⌜σ⌝ → LenBoxUnbounded (C_σ (b^16+1)) ⌜□_b σ⌝`
+must be re-packaged from the kit (`Necessitation/Top.lean`), not read off.
+
+*Status log.* 2026-09-16: STEP 1 DONE — re-cost applied and repaired on `colomban-recost`
+(engine 3278 jobs green, export byte-identical: 155 cells / 4 companions / 18 tau rows keep
+values, regimes and pads; blast radius and the few statement changes in the results record §5;
+`ArithS/Neg.lean` retired T2-NEG and proves `no_budget_keeping_witness_pays` + `pf_size`).
+STEP 2 DONE with the finding above. STEP 3 (the induction) NOT started — waiting on the A/B/C
+decision. The `4·log2 k ≤ k + 12` lemma now exists privately in four theorem files
+(PrudentBot ×2, JustBot ×2) — promote it to `Base/Asymptotics` in a follow-up.
+2026-09-23: DECIDED — route B (`ROUTE_B_SCOPE.md`: no rule bridge; direct `S'` proofs per family on the M5
+pattern, the floor as ONE named hypothesis `BoundedReflection`; route D recorded as an independent engine-side
+recommendation, not landed). Branch `colomban-route-b` off `colomban-recost`. Phase 0 (U10 closed-sentence
+arbitrary-budget form `Necessitation/ClosedNec`; the per-cell census) and Phase 1 (the family-parametric assembly
+`Assembly/Family`: `psiF/chiF/chainBoundF/LoebSound/pblt_uniformF/family_found`, Uniform/Cell as the `pConj`
+instance with byte-identical statements) started.
+
+**M4 — quantitative HBL and parametric bounded Löb in PA.** The research-grade block:
+* bounded D1: `PA ⊢_k σ → PA ⊢_{e(k)+|□_k σ|} □_k σ` — Critch's (d) with `e` linear or
+  polynomial (danger 1);
+* bounded D2: additive (concatenation), cheap — **DONE 2026-09-11 in RULE form with
+  constants (`ArithS/Cut.lean`, first M4 field): `lenBoxNat_mp : □_{k₁}(φ ➝ ψ) → □_{k₂} φ →
+  □_{k₁ + k₂ + c₁(|φ| + |ψ|) + c₀} ψ` with `(c₁, c₀) = (10, 9)`, sharp form
+  `k₁ + k₂ + 5|φ| + 10|ψ| + 9` (`lenBoxNat_mp_sharp`), plus `lenBox_mp`,
+  `lenBoxNat_codeBound_mono`, `lenBoxNat_verum`; three axioms. The engine's `mp` charges
+  `|ψ|` only, PA-S also pays `|φ|` (the cut formula is copied into the side sequents) — a
+  constant-factor departure. Still open here: D2 as an INTERNAL sentence (`IΣ₁ ⊢ □_a(φ➝ψ) ⋏
+  □_b φ ➝ □_{…} ψ`), which needs the cut construction formalized inside IΣ₁;**
+* bounded D3: `IΣ₁ ⊢ □_a σ → □_{q(a,|σ|)} □_a σ` — formalized FEASIBLE Σ₁-completeness with
+  its length tracked inside IΣ₁; the hardest single item;
+* bounded diagonal lemma (fixed shape: constant + linear terms);
+* PBLT (Critch Lemma 3.6) in its PARAMETRIC form: one uniform proof of `∀k ≥ N, ψ(k)`,
+  instantiated at cost `O(lg k)` — this is what lets a bounded agent's certificate fit its
+  OWN budget `k` (danger 2).
+
+**M5 — the interface instance and the Löbian cells.** `pfBoundedGL`'s arithmetized sibling
+(2.5); `bloeb`/`mutual_loeb` for free; new `pblt_arith` with polynomial staggering; the
+Dupoc self-cooperation and mutual-Löb cells RE-PROVED parametrically (not transferred —
+danger 2). **This is T3.**
+
+**M6 — floors (open-ended, report honestly).** Each engine floor cell is, in PA, a
+proof-length LOWER bound on `¬Bew_k(⌜φ⌝)` — a restricted-consistency statement. Template:
+`lower_bound_gödelNumber_proof_restrictedGödel`; the mathematics is Pudlák's `k^ε` bound on
+finite consistency, which is BELOW the engine's `+k` floor (danger 3). Expected result: some
+same-`k` floor cells are OPEN in PA and are reported as such. Out of scope here.
+
+---
+
+## 4. What transfers and what does not
+
+| Engine result | In PA-`S` | Route |
+|---|---|---|
+| Red cell `(Dupoc, Cupod) = (D, C)` | holds, every `k` | M2, soundness + τ |
+| Every positive `Pf`-cell (as a PA theorem, budget forgotten) | holds | M3 |
+| Löbian cells at same `k`, large `k` | expected to hold | M4–M5, parametric PBLT, re-proved |
+| Staggered cells `(2k+64, k)` | hold with POLYNOMIAL stagger | M5 |
+| Floor cells `(D, C)` by `search_f` | OPEN until a lower bound is proved | M6 |
+| Censuses (`no_provable_*`) | do not transfer; PA reads source for free (Σ₁-completeness), so PA-`S` is STRONGER than `Pf` and negatives are weaker — CONFIRMED 2026-09-23: 6 of the 10 unreadability cells FLIP in `S'`, `DIMCID × CooperateBot (C, C) → (D, C)` PROVED (`loeb_DIMCID_vs_CooperateBot`, results record) | route B |
+
+The rule set `Pf` stays: it is the proof-search-friendly calculus the LLM pipeline targets,
+and after M3 it is certified sound for PA-`S`. Nothing in the engine is replaced.
+
+---
+
+## 5. The real dangers
+
+1. **Critch's assumption (d) is unproven and may be false for plain PA.** Linear proof
+   expansion (`e*·k`) presupposes (c), abbreviations mid-proof. For a Hilbert calculus
+   without a definition mechanism the verification proof is polynomial. Either extend the
+   calculus with abbreviations (a design choice that must itself be justified as "an
+   extension of PA") or accept polynomial `e` (Critch 2019's general setting; thresholds
+   change, PBLT survives). Decide at M4, not before; T1/T2 do not depend on it.
+2. **Budget fit.** A transferred `Pf` derivation of budget `k` becomes a PA proof of length
+   `F(k) > k`, which does not fit the agent's own `□_k`. Same-`k` positive cells are NOT
+   corollaries of M3; they need the parametric route (uniform proof + `O(lg k)`
+   instantiation). The engine's additive costs are a faithful MODEL of that trick, not of
+   raw PA lengths.
+3. **Floors may flip.** The engine charges exactly `+k` for an else-certificate; in PA the
+   proven lower bound on finite consistency is `k^ε`. A same-`k` floor cell can therefore
+   be genuinely open in PA. This is the one place the arithmetized `S` can DISAGREE with the
+   engine, and it is why the red cell (no floor) is the headline, not a floor cell.
+4. **Encoding sensitivity.** Every cost constant depends on the coding of terms, numerals,
+   and derivations; state large-`k` results only, never quote a constant. τ-equivariance
+   depends on the abstract-constant design of 2.4: actions must NEVER be baked in as
+   numerals visible to derivations (a silent, type-checking failure mode).
+5. **Properness of `len` inside IΣ₁.** If the finiteness bound (`superexp`) is not proved
+   internally, `Bew_k` is merely Σ₁, `Eval` is not Δ₁, and the agents are not provably
+   total. Do this in M1 before anything else.
+6. **Soundness as an instance, not an axiom.** Foundation states `SoundOn`/`SoundOnHierarchy`
+   as classes; make sure the PA instance for ℕ is DISCHARGED (it is, from `ℕ ⊧* 𝗣𝗔`), and
+   run `#print axioms` at every gate. A class assumption left open reads exactly like the
+   deleted `atom_complete_false_guard` did.
+7. **Toolchain and API churn.** Foundation moves fast (module system, `public import`,
+   `grind` attributes). Pin a commit; budget a re-pin per quarter; the engine bump for M3 is
+   a separate, dated task.
+8. **Scope.** M4 is a research program (no prover has costed HBL). The originally scoped
+   finish line is T1 + T2; M4–M6 are future work and must be labelled so in the paper.
+9. **Overclaiming.** "Cannot be false" is true of the red cell in the precise sense that its
+   proof uses only PA-soundness and τ-symmetry, which every instance of Critch's (a)–(d)
+   has. It is NOT true of floor cells (3) and not of same-`k` Löb cells until M5. Say which.
+
+---
+
+## 6. Order of work (first four weeks)
+
+1. M0: package skeleton, Foundation pinned, CI green on an empty theory.
+2. M1: `len`, properness via `superexp`, `Bew_k` Δ₁, mono, `models_iff`, restricted
+   Gödel re-proved by length. Post the design (length vs code) on the Zulip topic of
+   2026-08-27 for a sanity check before M2.
+3. M2 in three PRs: coded `Prog` + `Eval` Δ₁; `plays` soundness + `tr`/`TR`; τ + the red
+   cell. Gate: `#print axioms`.
+4. Schedule the engine toolchain bump; M3 starts after.

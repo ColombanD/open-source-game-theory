@@ -52,7 +52,7 @@ theorem MirrorBot_plays_C_against_CIMCIC (k fuel : Nat)
     play (fuel + 3) MirrorBot (CIMCIC k) = some .C := by
   have hCimcic : play (fuel + 2) (CIMCIC k) MirrorBot = some .C :=
     CIMCIC_plays_C_against_MirrorBot k fuel hk
-  simpa [play, eval, Prog.subst, MirrorBot] using hCimcic
+  simpa [play, eval, Prog.subst, MirrorBot] using! hCimcic
 
 @[outcome]
 theorem llm_outcome_CIMCIC_vs_MirrorBot :

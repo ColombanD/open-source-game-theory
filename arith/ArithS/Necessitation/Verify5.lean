@@ -1,0 +1,4315 @@
+import ArithS.Necessitation.Verify4
+import ArithS.Necessitation.Assemble
+import ArithS.Necessitation.Bounds
+
+/-!
+# ArithS.Necessitation.Verify5 — the size half of the verification list
+
+`Verify4.verifyGraph''_ok4` tracks `ListOK`/`NoDrop'`/`shiftsV`/the goal fact of a `VerifyGraph''` list, but NOT
+`len` and NOT `SizeOK`. `Assemble.lean` §6 names that gap `VerifySizeOracle`; this file DISCHARGES it, and
+`Necessitation/Package.lean` consumes it as the carrying size theorem `SizeThm` (unconditional since 2026-09-16, U10).
+
+**The hypothesis the size half needs, and why it is carried.** Every prologue size lemma
+(`Prologue.sizeOK_layoutSteps`, `sizeOK_proIns`, `sizeOK_proOr`, `sizeOK_proWk`, `sizeOK_proShift`, `sizeOK_proSS`,
+`sizeOK_proAll`, `sizeOK_proExs`, `sizeOK_proIns0`) REQUIRES `NumTableOK T N' B'` for the numeral table `T` and lands
+in the class `(layQ B B' D, layD N' B' D)`, whose only route to the kit class `(kitQ Cz B E, kitD Cz d)` is
+`Assemble.layQ_le` / `layD_le` — and those need `N'`, `B'` as NUMBERS. With `T` free Lean cannot even elaborate the
+application (`don't know how to synthesize implicit argument N'`). `Assemble.vList_full` goes through exactly because
+it CARRIES `htblN : NumTableOK T (N' : V) (B' : V)` (it proves `layQ_le`/`layD_le` for its own `layoutSteps {x}` block
+that way). So `verifySizeOracle_of_arms` (§2) and `verifyGraph''_size4_of_arms` (§9) state the size half WITH
+`NumTableOK`, and the package applies it at the CANONICAL numeral table of `NumSteps.exists_numTable`, where
+`N'`/`B'` ARE fixed naturals (so the constant `Cz` may depend on them — the quantifier order of `Package.SizeThmAll`).
+History (one sentence): a first formulation, `Assemble.SizeOracle`, bound `T` with NO `NumTableOK` and was
+machine-checked UNPROVABLE as stated (2026-09-15); it and its `_of_size` consumers were deleted 2026-09-27.
+
+Contents: §1 monotonicity of the layout class; §2 the size invariant and its ten-arm scaffold `ArmHyps`; §3–§26 the
+arms' ingredients (node codes' lengths, the landing lemmas, the per-tag prologue/fragment sizes); §27 the ten arms
+discharged (`armHyps_of_arms`); §28 the constant chosen (`armHypsAll_of_arms`, `Cz := 8·Cn`); §9 the shape the
+package consumes.
+-/
+
+namespace ArithS
+
+open FFL FFL.FirstOrder Arithmetic Bootstrapping
+open FFL.FirstOrder.Arithmetic.Bootstrapping.Arithmetic
+open PeanoMinus ISigma0 ISigma1
+open LAct
+
+variable {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
+
+set_option linter.unusedSimpArgs false
+set_option linter.unusedTactic false
+set_option linter.unreachableTactic false
+set_option linter.unusedVariables false
+set_option linter.unnecessarySeqFocus false
+set_option linter.unusedSectionVars false
+set_option maxRecDepth 20000
+
+/-! ## 1. Monotonicity of the layout size class in its size parameter -/
+
+section layMono
+
+lemma lenQ_mono (B' : V) {a b : V} (h : a ≤ b) : lenQ B' a ≤ lenQ B' b :=
+  mul_le_mul_of_nonneg_left (cTE_mono h) zero_le
+
+lemma lenD_mono (N' B' : V) {a b : V} (h : a ≤ b) : lenD N' B' a ≤ lenD N' B' b := by
+  unfold lenD
+  exact mul_le_mul (mul_le_mul (add_le_add h le_rfl) (add_le_add (length_monotone h) le_rfl) zero_le zero_le)
+    (nodeCost_mono (cTE_mono h)) zero_le zero_le
+
+lemma sum2Q_mono (B : V) {a b : V} (h : a ≤ b) : sum2Q B a ≤ sum2Q B b := by
+  unfold sum2Q
+  exact mul_le_mul_of_nonneg_left (add_le_add (mul_le_mul_of_nonneg_left (length_monotone h) zero_le) le_rfl) zero_le
+
+lemma sum2D_mono (N' B' : V) {a b : V} (h : a ≤ b) : sum2D N' B' a ≤ sum2D N' B' b := by
+  unfold sum2D
+  have hl : ‖a‖ ≤ ‖b‖ := length_monotone h
+  have hE : 18 * ‖a‖ + 7 ≤ 18 * ‖b‖ + 7 := add_le_add (mul_le_mul_of_nonneg_left hl zero_le) le_rfl
+  exact mul_le_mul_of_nonneg_left
+    (mul_le_mul (mul_le_mul (add_le_add hl le_rfl) (add_le_add hl le_rfl) zero_le zero_le)
+      (nodeCost_mono hE) zero_le zero_le) zero_le
+
+lemma layQ_mono (B B' : V) {a b : V} (h : a ≤ b) : layQ B B' a ≤ layQ B B' b := by
+  unfold layQ; exact add_le_add (lenQ_mono B' h) (sum2Q_mono B h)
+
+lemma layD_mono (N' B' : V) {a b : V} (h : a ≤ b) : layD N' B' a ≤ layD N' B' b := by
+  unfold layD; exact add_le_add (lenD_mono N' B' h) (sum2D_mono N' B' h)
+
+end layMono
+/-! ## 2. The size invariant of the verification list
+
+The `NumTableOK`-carrying variant of `Assemble.VerifySizeOracle`. The ten arms of the
+`Derivation.induction1` glue are, for now, one explicitly named hypothesis (`ArmHyps`);
+they are discharged in turn below, mirroring `Verify4.verifyGraph''_ok4` arm for arm with
+`len`/`SizeOK` in place of `shiftsV`.
+
+The size classes that occur, and how each lands in the kit class:
+
+* the LAYOUT class `(layQ B B' D, layD N' B' D)` of every prologue (`Prologue.sizeOK_pro*`),
+  lifted by `layQ_mono`/`layD_mono` of section 1 to `D = 2d` and then by `Assemble.layQ_le`/`layD_le`;
+* the GOAL-FACT class `4 * |goalFact &j u|` of `postIns`/`goalElim` and each node's goal step,
+  landed directly by `Assemble.goalFact4_le_kitQ`;
+* the `axm` ENTRY class `entryB Cv p`, already carried by `Verify3.AxmEntryOK'`.
+-/
+
+section sizeInvariant
+
+/-- The per-arm obligations of the size glue, as ONE named hypothesis (discharged arm by arm below).
+This is a scaffold: with it assumed, `verifySizeOracle_of` is immediate; the mathematics is in
+replacing it. -/
+def ArmHyps (tbl B Wl Wc W₁ W₂ W T : V) (Cv Cz : ℕ) : Prop :=
+  ∀ {E A ρ L : V}, AxmTableOK' tbl E walkPieces A (Cv : V) → Derivation TAct ρ →
+    VerifyGraph'' walkPieces Wl Wc W₁ W₂ W T A ρ L →
+    (Cz : V) * (proofLen TAct ρ + 1) ^ 4 ≤ E →
+    len L ≤ (Cz : V) * (proofLen TAct ρ + 1) ^ 4 ∧
+      SizeOK (kitQ (Cz : V) B E) (kitD (Cz : V) (proofLen TAct ρ)) L
+
+/-- **The size half of the verify list, from the ten arms.** `Assemble.VerifySizeOracle` at a numeral table `T`
+that carries `NumTableOK T N' B'` (the hypothesis this file's header explains; `Cz` may therefore depend on the
+fixed naturals `N'`, `B'`). The arms are discharged in §27 (`armHyps_of_arms`); the package applies the result at
+the canonical numeral table of `NumSteps.exists_numTable` (`Package.kitPackage'''_of_size'`). -/
+theorem verifySizeOracle_of_arms {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
+    {tbl B T : V} {Cv Cz : ℕ}
+    (harms : ArmHyps tbl B layoutPieces certPieces frag1Pieces frag2Pieces proPieces T Cv Cz) :
+    VerifySizeOracle tbl B layoutPieces certPieces frag1Pieces frag2Pieces proPieces T Cv Cz := by
+  intro E A rho L hA hd hL hEcap
+  exact harms hA hd hL hEcap
+
+end sizeInvariant
+/-! ## 3. The node codes' derivation lengths, in the layout size class
+
+`Frag1.sizeOK_fragAxL` / `sizeOK_nodeAnd` / … each take `proofLen TAct (leafCode tblN L n) ≤ D` (resp. `bin2Code`,
+`bin3Code`) as a HYPOTHESIS, and no caller in the tree ever discharges it: `NumSteps` stops at the raw
+decompositions `proofLen_leafCode_le` / `proofLen_bin2Code_le` / `proofLen_bin3Code_le` (and one compact `proofLen_bin3Code_poly`
+with no users). This section supplies the missing bounds, in the shape the layout class already uses:
+`Prologue.proofLen_sum2Code_le' : proofLen (sum2Code T a b n) ≤ sum2D N' B' Dz`, whose proof is the template — with
+`K := (‖Dz‖ + 1)(‖Dz‖ + 2) * nodeCost N' B' (18‖Dz‖ + 7)` and `sum2D N' B' Dz = 4 * K`.
+
+Summand counts against `K`: `succCode ≤ K`, `addCode ≤ K`, `leCode ≤ 2K`, the node's own `nodeCost ≤ K`. So
+`leafCode ≤ 4K = sum2D`, `bin2Code ≤ 5K` and `bin3Code ≤ 6K`, i.e. all three land in `2 * sum2D N' B' Dz`.
+-/
+
+section nodeCodes
+
+variable {T N' B' : V}
+
+/-- The common cubic budget of the layout class: `sum2D N' B' Dz = 4 * codeK N' B' Dz`. -/
+noncomputable def codeK (N' B' Dz : V) : V :=
+  (‖Dz‖ + 1) * (‖Dz‖ + 2) * nodeCost N' B' (18 * ‖Dz‖ + 7)
+
+lemma sum2D_eq_four_codeK (N' B' Dz : V) : sum2D N' B' Dz = 4 * codeK N' B' Dz := by
+  unfold sum2D codeK; rfl
+
+lemma one_le_lenBox (Dz : V) : (1 : V) ≤ (‖Dz‖ + 1) * (‖Dz‖ + 2) :=
+  le_trans (by norm_num : (1 : V) ≤ 1 * 2) (mul_le_mul le_add_self le_add_self zero_le zero_le)
+
+lemma nodeCost_le_codeK (N' B' Dz : V) : nodeCost N' B' (18 * ‖Dz‖ + 7) ≤ codeK N' B' Dz := by
+  unfold codeK; exact le_mul_of_one_le_left zero_le (one_le_lenBox Dz)
+
+lemma one_le_len_succ (Dz : V) : (1 : V) ≤ ‖Dz‖ + 2 :=
+  le_trans (by norm_num : (1 : V) ≤ 2) le_add_self
+
+lemma nodeCost_bk_le_codeK {n Dz : V} (hn : n ≤ Dz) : nodeCost N' B' (18 * ‖n‖ + 7) ≤ codeK N' B' Dz :=
+  le_trans (nodeCost_mono (add_le_add (mul_le_mul_of_nonneg_left (length_monotone hn) zero_le) le_rfl))
+    (nodeCost_le_codeK N' B' Dz)
+
+/-- `nodeCost` at any `12x + 3` with `x ≤ ‖Dz‖` is below the node budget. -/
+lemma nodeCost_add_le (N' B' Dz : V) {x : V} (hx : x ≤ ‖Dz‖) :
+    nodeCost N' B' (12 * x + 3) ≤ nodeCost N' B' (18 * ‖Dz‖ + 7) :=
+  nodeCost_mono (add_le_add (le_trans (mul_le_mul_of_nonneg_left hx zero_le)
+    (mul_le_mul_of_nonneg_right (by norm_num) zero_le)) (by norm_num))
+
+lemma proofLen_succCode_le_codeK (htblN : NumTableOK T N' B') {z Dz : V} (hz : z + 1 ≤ Dz) :
+    proofLen TAct (succCode T z) ≤ codeK N' B' Dz := by
+  refine le_trans (proofLen_succCode_le htblN z) ?_
+  unfold codeK
+  have hl : ‖z‖ ≤ ‖Dz‖ := length_monotone (le_trans le_self_add hz)
+  -- the node argument: `6‖z+1‖+3 ≤ 12‖Dz‖+3 ≤ 18‖Dz‖+7`
+  have hnc : nodeCost N' B' (6 * ‖z + 1‖ + 3) ≤ nodeCost N' B' (18 * ‖Dz‖ + 7) :=
+    nodeCost_mono (le_trans (succE_le_addE hz) (addE_le_bkE Dz))
+  -- the count: `‖z‖ + 1 ≤ (‖Dz‖ + 1) * (‖Dz‖ + 2)`
+  have hcnt : ‖z‖ + 1 ≤ (‖Dz‖ + 1) * (‖Dz‖ + 2) :=
+    le_trans (add_le_add hl le_rfl) (le_mul_of_one_le_right zero_le (one_le_len_succ Dz))
+  exact mul_le_mul hcnt hnc zero_le zero_le
+
+lemma proofLen_addCode_le_codeK (htblN : NumTableOK T N' B') {a b Dz : V} (hab : a + b ≤ Dz) :
+    proofLen TAct (addCode T a b) ≤ codeK N' B' Dz := by
+  refine le_trans (proofLen_addCode_le htblN a b) ?_
+  unfold codeK
+  have hla : ‖a‖ ≤ ‖Dz‖ := length_monotone (le_trans le_self_add hab)
+  have hlab : ‖a + b‖ ≤ ‖Dz‖ := length_monotone hab
+  exact mul_le_mul (mul_le_mul (add_le_add hla le_rfl) (add_le_add hlab le_rfl) zero_le zero_le)
+    (nodeCost_add_le N' B' Dz hlab) zero_le zero_le
+
+lemma proofLen_leCode_le_codeK (htblN : NumTableOK T N' B') {a b Dz : V} (hab : a ≤ b) (hb : b ≤ Dz) :
+    proofLen TAct (leCode T a b) ≤ codeK N' B' Dz + codeK N' B' Dz := by
+  refine le_trans (proofLen_leCode_le htblN hab) (add_le_add ?_ ?_)
+  · refine proofLen_addCode_le_codeK htblN ?_
+    rw [add_tsub_cancel_of_le hab]; exact hb
+  · exact le_trans (nodeCost_add_le N' B' Dz (length_monotone hb)) (nodeCost_le_codeK N' B' Dz)
+
+/-- **`leafCode` lands in the layout class**: `succCode + leCode + nodeCost ≤ K + 2K + K = sum2D`. -/
+theorem proofLen_leafCode_le' (htblN : NumTableOK T N' B') {a n Dz : V} (h : a + 1 ≤ n) (hn : n ≤ Dz) :
+    proofLen TAct (leafCode T a n) ≤ sum2D N' B' Dz := by
+  have hK := proofLen_leafCode_le htblN h
+  rw [sum2D_eq_four_codeK]
+  refine le_trans hK ?_
+  have b1 : proofLen TAct (succCode T a) ≤ codeK N' B' Dz :=
+    proofLen_succCode_le_codeK htblN (le_trans h hn)
+  have b2 : proofLen TAct (leCode T (a + 1) n) ≤ codeK N' B' Dz + codeK N' B' Dz :=
+    proofLen_leCode_le_codeK htblN h hn
+  have b3 : nodeCost N' B' (18 * ‖n‖ + 7) ≤ codeK N' B' Dz := nodeCost_bk_le_codeK hn
+  calc proofLen TAct (succCode T a) + proofLen TAct (leCode T (a + 1) n) + nodeCost N' B' (18 * ‖n‖ + 7)
+      ≤ codeK N' B' Dz + (codeK N' B' Dz + codeK N' B' Dz) + codeK N' B' Dz :=
+        add_le_add (add_le_add b1 b2) b3
+    _ = 4 * codeK N' B' Dz := by ring
+
+/-- **`bin2Code` lands in twice the layout class**: `addCode + succCode + leCode + nodeCost ≤ 5K ≤ 8K`. -/
+theorem proofLen_bin2Code_le' (htblN : NumTableOK T N' B') {a b n Dz : V} (h : a + b + 1 ≤ n) (hn : n ≤ Dz) :
+    proofLen TAct (bin2Code T a b n) ≤ 2 * sum2D N' B' Dz := by
+  have hK := proofLen_bin2Code_le htblN h
+  rw [sum2D_eq_four_codeK]
+  refine le_trans hK ?_
+  have hab : a + b ≤ Dz := le_trans (le_trans le_self_add h) hn
+  have b1 : proofLen TAct (addCode T a b) ≤ codeK N' B' Dz := proofLen_addCode_le_codeK htblN hab
+  have b2 : proofLen TAct (succCode T (a + b)) ≤ codeK N' B' Dz :=
+    proofLen_succCode_le_codeK htblN (le_trans h hn)
+  have b3 : proofLen TAct (leCode T (a + b + 1) n) ≤ codeK N' B' Dz + codeK N' B' Dz :=
+    proofLen_leCode_le_codeK htblN h hn
+  have b4 : nodeCost N' B' (18 * ‖n‖ + 7) ≤ codeK N' B' Dz := nodeCost_bk_le_codeK hn
+  calc proofLen TAct (addCode T a b) + proofLen TAct (succCode T (a + b)) + proofLen TAct (leCode T (a + b + 1) n)
+        + nodeCost N' B' (18 * ‖n‖ + 7)
+      ≤ codeK N' B' Dz + codeK N' B' Dz + (codeK N' B' Dz + codeK N' B' Dz) + codeK N' B' Dz :=
+        add_le_add (add_le_add (add_le_add b1 b2) b3) b4
+    _ ≤ 2 * (4 * codeK N' B' Dz) := by
+        refine le_of_add_eq' (c := 3 * codeK N' B' Dz) ?_; ring
+
+/-- **`bin3Code` lands in twice the layout class**: two `addCode`, one `succCode`, one `leCode`, one node: `6K ≤ 8K`. -/
+theorem proofLen_bin3Code_le' (htblN : NumTableOK T N' B') {a b c n Dz : V} (h : a + b + c + 1 ≤ n) (hn : n ≤ Dz) :
+    proofLen TAct (bin3Code T a b c n) ≤ 2 * sum2D N' B' Dz := by
+  have hK := proofLen_bin3Code_le htblN h
+  rw [sum2D_eq_four_codeK]
+  refine le_trans hK ?_
+  have habc : a + b + c ≤ Dz := le_trans (le_trans le_self_add h) hn
+  have hab : a + b ≤ Dz := le_trans le_self_add habc
+  have b1 : proofLen TAct (addCode T a b) ≤ codeK N' B' Dz := proofLen_addCode_le_codeK htblN hab
+  have b2 : proofLen TAct (addCode T (a + b) c) ≤ codeK N' B' Dz := proofLen_addCode_le_codeK htblN habc
+  have b3 : proofLen TAct (succCode T (a + b + c)) ≤ codeK N' B' Dz :=
+    proofLen_succCode_le_codeK htblN (le_trans h hn)
+  have b4 : proofLen TAct (leCode T (a + b + c + 1) n) ≤ codeK N' B' Dz + codeK N' B' Dz :=
+    proofLen_leCode_le_codeK htblN h hn
+  have b5 : nodeCost N' B' (18 * ‖n‖ + 7) ≤ codeK N' B' Dz := nodeCost_bk_le_codeK hn
+  calc proofLen TAct (addCode T a b) + proofLen TAct (addCode T (a + b) c) + proofLen TAct (succCode T (a + b + c))
+        + proofLen TAct (leCode T (a + b + c + 1) n) + nodeCost N' B' (18 * ‖n‖ + 7)
+      ≤ codeK N' B' Dz + codeK N' B' Dz + codeK N' B' Dz + (codeK N' B' Dz + codeK N' B' Dz)
+        + codeK N' B' Dz := add_le_add (add_le_add (add_le_add (add_le_add b1 b2) b3) b4) b5
+    _ ≤ 2 * (4 * codeK N' B' Dz) := by
+        refine le_of_add_eq' (c := 2 * codeK N' B' Dz) ?_; ring
+
+/-- All three node codes land in `2 * layD N' B' Dz` (`sum2D ≤ layD` by `layD = lenD + sum2D`). -/
+lemma sum2D_le_layD (N' B' Dz : V) : sum2D N' B' Dz ≤ layD N' B' Dz := by
+  unfold layD; exact le_add_self
+
+end nodeCodes
+
+
+/-! ## 4. The size-class landing lemmas and the `axm` arm
+
+The three classes of §2's docstring, each landed in the kit class `(kitQ Cz B E, kitD Cz d)`:
+
+* `entryB_le_kitQ` / `entryB_le_kitD` — the `axm` ENTRY class `entryB Cv p = Cv·(|p|+1)³`
+  (`Verify3.AxmEntryOK'` already carries `len pro ≤ entryB Cv p` and `SizeOK (entryB Cv p) (entryB Cv p) pro`),
+  under `|p| + 1 ≤ d + 1` and the E-room `p3 (d+1) ≤ E`;
+* `BE_le_kitQ` — the fragments' closed leaf/bin facts, which `Frag1.formulaLen_{leaf,bin2,bin3}Fact_le` bound by `B·E`;
+* `goalFact_le_kitQ` — the goal fact at the SINGLE multiple (`Assemble.goalFact4_le_kitQ` gives `4·|goalFact|`).
+
+Then the first arm: `vAxm' = pro ++ nodeAxm` (`Verify3` §2), so `len = len pro + 9` (`len_nodeAxm`, structural —
+the applicability hypotheses of `Frag2.nodeAxm_ok` are NOT needed for the length) and the sizes are the entry's
+lifted class appended to `Frag2.sizeOK_nodeAxm`, whose `proofLen (leafCode …) ≤ D` side condition is exactly what §3's
+`proofLen_leafCode_le'` was written to discharge.
+-/
+
+section landing
+
+/-- `E ≤ (B + 1)(E + 1)` — the factor `kitQ` hides. -/
+lemma le_kitQ_factor (B E : V) : E ≤ (B + 1) * (E + 1) :=
+  le_trans le_self_add (le_mul_of_one_le_left zero_le le_add_self)
+
+/-- **The fragments' closed facts land**: `Frag1.formulaLen_{leaf,bin2,bin3}Fact_le` all conclude `≤ B·E`. -/
+lemma BE_le_kitQ {Cz B E : V} (hCz : 1 ≤ Cz) : B * E ≤ kitQ Cz B E := by
+  unfold kitQ
+  calc B * E ≤ (B + 1) * (E + 1) := mul_le_mul le_self_add le_self_add zero_le zero_le
+    _ = 1 * ((B + 1) * (E + 1)) := by ring
+    _ ≤ Cz * ((B + 1) * (E + 1)) := mul_le_mul_of_nonneg_right hCz zero_le
+
+/-- **The goal fact lands at the single multiple** (`Assemble.goalFact4_le_kitQ` states the quadruple). -/
+lemma goalFact_le_kitQ {Cz B E j u : V} (hE1 : 1 ≤ E) (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (hj : j + 1 ≤ E) (hu : IsSemiterm LAct 0 u) (hlu : termLen LAct u ≤ E)
+    (hC : 4 * ((cDer : V) + cDlen + cFst + 6) ≤ Cz) :
+    formulaLen LAct (goalFact (^&j) u) ≤ kitQ Cz B E :=
+  le_trans (le_mul_of_one_le_left zero_le (by norm_num : (1 : V) ≤ 4))
+    (goalFact4_le_kitQ hE1 hPle hj hu hlu hC)
+
+/-- **The `axm` entry's `Q` lands**, under the E-room `p3 (d+1) ≤ E` (which `Verify4`'s cap supplies through
+`p3_le_p4`) and `Cv ≤ Cz`. -/
+lemma entryB_le_kitQ {Cv Cz B E p d : V} (hpd : formulaLen LAct p + 1 ≤ d + 1)
+    (hE : p3 (d + 1) ≤ E) (hC : Cv ≤ Cz) : entryB Cv p ≤ kitQ Cz B E := by
+  unfold entryB kitQ
+  calc Cv * p3 (formulaLen LAct p + 1) ≤ Cz * E :=
+        mul_le_mul hC (le_trans (p3_mono hpd) hE) zero_le zero_le
+    _ ≤ Cz * ((B + 1) * (E + 1)) := mul_le_mul_of_nonneg_left (le_kitQ_factor B E) zero_le
+
+/-- **The `axm` entry's `D` lands** — `entryB` is cubic and `kitD Cz d = Cz·(d+1)³` (`pow3_eq_p3`). -/
+lemma entryB_le_kitD {Cv Cz p d : V} (hpd : formulaLen LAct p + 1 ≤ d + 1) (hC : Cv ≤ Cz) :
+    entryB Cv p ≤ kitD Cz d := by
+  unfold entryB kitD
+  rw [pow3_eq_p3]
+  exact mul_le_mul hC (p3_mono hpd) zero_le zero_le
+
+/-- `len (nodeAxm …) = 9`, STRUCTURALLY — `Frag2.nodeAxm_ok` proves the same equation but only under its full
+applicability hypotheses, which the size glue does not have at hand. -/
+lemma len_nodeAxm (W tblN is il ip L n : V) : len (nodeAxm W tblN is il ip L n) = 9 := by
+  unfold nodeAxm nodeAxmHead goalTailLeaf proofLenLeafSteps
+  rw [len_appendV, len_appendV]
+  simp [len_adjoin]
+  norm_num
+
+/-- `|p| + 1 ≤ proofLen (axm s p) + 1` for `p ∈ s` (`proofLen_axm : proofLen = sequentLen s + 1`). -/
+lemma axm_hpd {s p : V} (hD : Derivation TAct (axm s p)) (hp : p ∈ s) :
+    formulaLen LAct p + 1 ≤ proofLen TAct (axm s p) + 1 := by
+  rw [proofLen_axm hD]
+  exact add_le_add (le_trans (formulaLen_le_sequentLen_of_mem (L := LAct) hp) le_self_add) le_rfl
+
+end landing
+
+section axmArm
+
+/-- **THE `axm` ARM, length half**: `vAxm' = pro ++ nodeAxm`, and the node is nine steps. -/
+theorem axm_arm_len (Wc W₂ T s p pro : V) :
+    len (vAxm' walkPieces Wc W₂ T s p pro) = len pro + 9 := by
+  unfold vAxm'
+  rw [len_appendV, len_nodeAxm]
+
+/-- **THE `axm` ARM, size half**: the certificate's own class (`Verify3.AxmEntryOK'`) lifted into the kit class,
+appended to `Frag2.sizeOK_nodeAxm` — whose `leafFact` side condition goes through `BE_le_kitQ`, whose goal-fact side
+condition through `goalFact_le_kitQ`, and whose `proofLen (leafCode …) ≤ D` side condition is §3's `proofLen_leafCode_le'`. -/
+theorem axm_arm_size {Wc W₂ T s p pro B E Cv Cz : V}
+    (hW₂ : W₂ = frag2Pieces)
+    (hs : IsFormulaSet LAct s) (hp : p ∈ s) (hax : p ∈ TAct.Δ₁Class)
+    (hsz : SizeOK (entryB Cv p) (entryB Cv p) pro)
+    (hCv : Cv ≤ Cz) (hCz1 : 1 ≤ Cz)
+    (hE1 : 1 ≤ E) (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (hp3E : p3 (proofLen TAct (axm s p) + 1) ≤ E)
+    (hgoalE : len (memberList s) + 1 + shiftsV pro + 1 + 1 ≤ E)
+    (hbn : termLen LAct (binNumeral (proofLen TAct (axm s p))) ≤ E)
+    (hcG : 4 * ((cDer : V) + cDlen + cFst + 6) ≤ Cz)
+    (hleaf : proofLen TAct (leafCode T (sequentLen LAct s) (proofLen TAct (axm s p))) ≤ kitD Cz (proofLen TAct (axm s p)))
+    (hLn : sequentLen LAct s + 1 ≤ proofLen TAct (axm s p))
+    (hnE : 18 * ‖proofLen TAct (axm s p)‖ + 7 ≤ E) :
+    SizeOK (kitQ Cz B E) (kitD Cz (proofLen TAct (axm s p))) (vAxm' walkPieces Wc W₂ T s p pro) := by
+  have hD : Derivation TAct (axm s p) := Derivation.axm hs hp hax
+  have hpd := axm_hpd hD hp
+  unfold vAxm'
+  refine sizeOK_appendV (hsz.mono (entryB_le_kitQ hpd hp3E hCv) (entryB_le_kitD hpd hCv)) ?_
+  refine sizeOK_nodeAxm hW₂ ?_ hleaf ?_
+  · exact le_trans (formulaLen_leafFact_le hE1 hPle hnE (le_trans le_self_add hLn)) (BE_le_kitQ hCz1)
+  · exact goalFact_le_kitQ hE1 hPle hgoalE (isSemiterm_binNumeral_LAct 0 _) hbn hcG
+
+end axmArm
+
+
+/-! ## 5. The `axL` and `verumIntro` arms
+
+The two LEAF arms, and the cheapest after `axm`: `vAxL = proAxL ++ fragAxL` and `vVerum = fragVerum` (no prologue
+at all — `Prologue.layout_verum` reads the node's facts straight off the layout). Both fragments are
+`head (four steps) ++ goalTailLeaf (five steps)`, so their lengths are `9` structurally, exactly as `len_nodeAxm`.
+
+The size half needs NO layout class: `proAxL = reidxL (certNeg …)` is HORN-ONLY (`Prologue.proAxL_ok`'s third
+conjunct), so `Cert.sizeOK_of_hornOnly` places it at ANY class, and the fragment goes through
+`Frag1.sizeOK_fragAxL`/`sizeOK_fragVerum` with §4's landing lemmas — `BE_le_kitQ` for the closed `leafFact`,
+`goalFact_le_kitQ` for the goal fact, and §3's `proofLen_leafCode_le'` for the `proofLen (leafCode …) ≤ D` side condition.
+-/
+
+section leafArms
+
+lemma len_fragAxL (W tblN is il ip inp L n : V) : len (fragAxL W tblN is il ip inp L n) = 9 := by
+  unfold fragAxL fragAxLHead goalTailLeaf proofLenLeafSteps
+  rw [len_appendV, len_appendV]
+  simp [len_adjoin]
+  norm_num
+
+lemma len_fragVerum (W tblN is il iv L n : V) : len (fragVerum W tblN is il iv L n) = 9 := by
+  unfold fragVerum fragVerumHead goalTailLeaf proofLenLeafSteps
+  rw [len_appendV, len_appendV]
+  simp [len_adjoin]
+  norm_num
+
+/-- **The `axL` arm, length half**: the Horn prologue plus the nine-step fragment. -/
+theorem axL_arm_len (Ww Wc W₁ T s p : V) :
+    len (vAxL Ww Wc W₁ T s p) = len (proAxL Ww Wc T s p 0) + 9 := by
+  unfold vAxL
+  rw [len_appendV, len_fragAxL]
+
+/-- **The `verumIntro` arm, length half**: the list IS the fragment. -/
+theorem verum_arm_len (Ww Wc W₁ T s : V) : len (vVerum Ww Wc W₁ T s) = 9 := by
+  unfold vVerum
+  rw [len_fragVerum]
+
+/-- **The `axL` arm, size half**, given the prologue's `HornOnly` (`Prologue.proAxL_ok`). -/
+theorem axL_arm_size {Ww Wc W₁ T s p B E Cz L n is il ip inp : V} (hW₁ : W₁ = frag1Pieces)
+    (hho : HornOnly (proAxL Ww Wc T s p 0))
+    (hCz1 : 1 ≤ Cz) (hE1 : 1 ≤ E) (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (hnE : 18 * ‖n‖ + 7 ≤ E) (hLn : L + 1 ≤ n)
+    (hgoalE : is + 1 + 1 ≤ E) (hbn : termLen LAct (binNumeral n) ≤ E)
+    (hcG : 4 * ((cDer : V) + cDlen + cFst + 6) ≤ Cz)
+    (hleaf : proofLen TAct (leafCode T L n) ≤ kitD Cz n) :
+    SizeOK (kitQ Cz B E) (kitD Cz n) (appendV (proAxL Ww Wc T s p 0) (fragAxL W₁ T is il ip inp L n)) := by
+  refine sizeOK_appendV (sizeOK_of_hornOnly hho) ?_
+  refine sizeOK_fragAxL hW₁ ?_ hleaf ?_
+  · exact le_trans (formulaLen_leafFact_le hE1 hPle hnE (le_trans le_self_add hLn)) (BE_le_kitQ hCz1)
+  · exact goalFact_le_kitQ hE1 hPle hgoalE (isSemiterm_binNumeral_LAct 0 _) hbn hcG
+
+/-- **The `verumIntro` arm, size half**: the fragment alone. -/
+theorem verum_arm_size {W₁ T B E Cz L n is il iv : V} (hW₁ : W₁ = frag1Pieces)
+    (hCz1 : 1 ≤ Cz) (hE1 : 1 ≤ E) (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (hnE : 18 * ‖n‖ + 7 ≤ E) (hLn : L + 1 ≤ n)
+    (hgoalE : is + 1 + 1 ≤ E) (hbn : termLen LAct (binNumeral n) ≤ E)
+    (hcG : 4 * ((cDer : V) + cDlen + cFst + 6) ≤ Cz)
+    (hleaf : proofLen TAct (leafCode T L n) ≤ kitD Cz n) :
+    SizeOK (kitQ Cz B E) (kitD Cz n) (fragVerum W₁ T is il iv L n) := by
+  refine sizeOK_fragVerum hW₁ ?_ hleaf ?_
+  · exact le_trans (formulaLen_leafFact_le hE1 hPle hnE (le_trans le_self_add hLn)) (BE_le_kitQ hCz1)
+  · exact goalFact_le_kitQ hE1 hPle hgoalE (isSemiterm_binNumeral_LAct 0 _) hbn hcG
+
+end leafArms
+
+
+/-! ## 6. The REUSABLE CORE: the layout class lands in the kit class; the recovery blocks
+
+Every remaining arm (`wk`, `shift`, `and`, `or`, `cut`, `all`, `exs`) is
+`prologue ++ child ++ recovery ++ node`, and the prologue's size class is ALWAYS the layout class
+`(layQ B B' D, layD N' B' D)` of `Prologue.sizeOK_pro*`. This section lands that class in the kit class once
+and for all — which is exactly why the size oracle must CARRY `NumTableOK T N' B'`: `Assemble.layQ_le`/`layD_le`
+need `N'` and `B'` as numbers (the defect this file works around, see the header).
+
+`layD_le_kitD`'s cube step goes through `pow3_eq_p3` + `Verify3.p3_mono`; Mathlib's `pow_le_pow_left` does not
+exist at this structure (machine-checked).
+
+The RECOVERY blocks are the other half: `Frag1.goalElim` (five steps, recovering a child's goal) and
+`Prologue.postIns` (six steps) both sit at the goal-fact class `4·|goalFact …|`, which `Assemble.goalFact4_le_kitQ`
+lands directly — at ANY `D`, so they never touch the layout class.
+-/
+
+section layoutLanding
+
+/-- **The layout `Q` lands**: `layQ B B' D ≤ kitQ Cz B E` for `D ≤ E` and `19B' + 25 ≤ Cz`. -/
+lemma layQ_le_kitQ {B B' D E Cz : V} (hDE : D ≤ E) (hC : 19 * B' + 25 ≤ Cz) :
+    layQ B B' D ≤ kitQ Cz B E := by
+  unfold kitQ
+  exact le_trans (layQ_le B B' D E hDE) (mul_le_mul_of_nonneg_right hC zero_le)
+
+/-- **The layout `D` lands**: `layD N' B' D ≤ kitD Cz d` for `D ≤ d` and `27N' + 525600B' ≤ Cz`. -/
+lemma layD_le_kitD {N' B' D d Cz : V} (hDd : D ≤ d) (hC : 27 * N' + 525600 * B' ≤ Cz) :
+    layD N' B' D ≤ kitD Cz d := by
+  unfold kitD
+  refine le_trans (layD_le N' B' D) (mul_le_mul hC ?_ zero_le zero_le)
+  rw [pow3_eq_p3, pow3_eq_p3]
+  exact p3_mono (add_le_add hDd le_rfl)
+
+/-- **The recovery block `goalElim` lands** (at any `D` — it carries no derivation). -/
+lemma sizeOK_goalElim_kit {Cz B E j u D : V} (hE1 : 1 ≤ E)
+    (hPle : formulaLen LAct (Ple : V) ≤ B) (hj : j + 1 ≤ E)
+    (hu : IsSemiterm LAct 0 u) (hlu : termLen LAct u ≤ E)
+    (hC : 4 * ((cDer : V) + cDlen + cFst + 6) ≤ Cz) :
+    SizeOK (kitQ Cz B E) D (goalElim (^&j) u) :=
+  (sizeOK_goalElim (hf_ j) hu).mono (goalFact4_le_kitQ hE1 hPle hj hu hlu hC) le_rfl
+
+/-- **The recovery block `postIns` lands** (likewise at any `D`). -/
+lemma sizeOK_postIns_kit {W Cz B E s'' cp n D : V} (hWp : W = proPieces) (hE1 : 1 ≤ E)
+    (hPle : formulaLen LAct (Ple : V) ≤ B) (hj : s'' + 1 ≤ E)
+    (hbn : termLen LAct (binNumeral n) ≤ E)
+    (hC : 4 * ((cDer : V) + cDlen + cFst + 6) ≤ Cz) :
+    SizeOK (kitQ Cz B E) D (postIns W s'' cp n) :=
+  (sizeOK_postIns hWp D).mono
+    (goalFact4_le_kitQ hE1 hPle hj (isSemiterm_binNumeral_LAct 0 n) hbn hC) le_rfl
+
+end layoutLanding
+
+/-! ## 7. The `wk` and `shift` tier: the node and selector lengths
+
+`vWk = wkPro ++ L' ++ goalElim ++ nodeWk` and `vShift = shiftPro ++ L' ++ goalElim ++ nodeShift`
+(`Verify2.lean` §5). The nodes are nine steps, structurally, exactly as `len_nodeAxm`; the SELECTORS split on
+the empty child (`Verify2.wkPro`/`shiftPro`), and in the empty branch the pieces are closed lists whose lengths
+are literals — `proWk0 ++ emptyFsetPi` is `7 + 4 = 11`, and `proShift0 ++ reset0 ++ emptyFsetPi` is
+`11 + 8 + 4 = 23`. In the nonempty branch the length is the prologue's own, bounded by `Prologue.len_proWk_le` /
+`len_proShift_le`.
+-/
+
+section wkShiftLengths
+
+lemma len_nodeWk (W tblN is il ic id in₁ L m₁ n : V) :
+    len (nodeWk W tblN is il ic id in₁ L m₁ n) = 9 := by
+  unfold nodeWk nodeWkHead goalTailUnary proofLenUnarySteps
+  rw [len_appendV, len_appendV]
+  simp [len_adjoin]
+  norm_num
+
+lemma len_nodeShift (W tblN is il ic id in₁ L m₁ n : V) :
+    len (nodeShift W tblN is il ic id in₁ L m₁ n) = 9 := by
+  unfold nodeShift nodeShiftHead goalTailUnary proofLenUnarySteps
+  rw [len_appendV, len_appendV]
+  simp [len_adjoin]
+  norm_num
+
+lemma len_emptyFsetPi (W : V) : len (emptyFsetPi W) = 4 := by
+  unfold emptyFsetPi; simp [len_adjoin]; norm_num
+
+lemma len_reset0 (W : V) : len (reset0 W) = 8 := by
+  unfold reset0
+  rw [len_appendV, len_layoutSteps0]
+  simp [len_adjoin]
+  norm_num
+
+/-- The `wk` selector's length, by branch. -/
+lemma len_wkPro (Ww Wl Wc W T s c : V) :
+    len (wkPro Ww Wl Wc W T s c) =
+      if memberList c = 0 then 11 else len (proWk Ww Wl Wc W T s c 0) := by
+  unfold wkPro
+  by_cases h : memberList c = 0
+  · rw [if_pos h, if_pos h, len_appendV, len_proWk0, len_emptyFsetPi]; norm_num
+  · rw [if_neg h, if_neg h]
+
+/-- The `shift` selector's length, by branch. -/
+lemma len_shiftPro (Ww Wl Wc W T s c : V) :
+    len (shiftPro Ww Wl Wc W T s c) =
+      if memberList c = 0 then 23 else len (proShift Ww Wl Wc W T s c 0) := by
+  unfold shiftPro
+  by_cases h : memberList c = 0
+  · rw [if_pos h, if_pos h, len_appendV, len_appendV, len_proShift0, len_reset0, len_emptyFsetPi]; norm_num
+  · rw [if_neg h, if_neg h]
+
+end wkShiftLengths
+
+
+/-! ## 8. The `wk`/`shift` selectors' sizes, and the node codes in the kit class
+
+The SELECTORS (`Verify2.wkPro`/`shiftPro`) split on the empty child, so their size discipline needs both branches:
+the empty one is closed Horn material (`Prologue.sizeOK_proWk0`/`sizeOK_proShift0` hold at EVERY class; the two
+pieces `emptyFsetPi` and `reset0` had no size lemma in the tree and get one here, by tag inspection — rows 81/157/82/84
+and `layoutSteps0` + 42/43/158, all tag `0`), and the nonempty one is the layout class of
+`Prologue.sizeOK_proWk`/`sizeOK_proShift`.
+
+The unary/binary NODE CODES land too: §3 bounds them by `2·sum2D N' B' Dz`, and `sum2D ≤ layD` absorbs one factor,
+so the doubling is absorbed into the kit constant (`2·(27N' + 525600B') ≤ Cz`). These are what `Frag1`/`Frag2`'s
+`sizeOK_node*` need for their `proofLen (bin2Code …) ≤ D` side conditions at the non-leaf tags.
+-/
+
+section selectorSizes
+
+/-- `emptyFsetPi` is size-disciplined at every class (four Horn steps: rows 81, 157, 82, 84). -/
+lemma sizeOK_emptyFsetPi {W : V} (hWp : W = proPieces) (Q Dd : V) :
+    SizeOK Q Dd (emptyFsetPi W) := by
+  have e81 : ∀ ev : V, mkStep proPieces (81 : V) ev = mkStep layoutPieces (81 : V) ev := fun ev ↦ by
+    have := mkStep_pro_layout 81 (by decide) ev; simpa using this
+  have e82 : ∀ ev : V, mkStep proPieces (82 : V) ev = mkStep layoutPieces (82 : V) ev := fun ev ↦ by
+    have := mkStep_pro_layout 82 (by decide) ev; simpa using this
+  have e84 : ∀ ev : V, mkStep proPieces (84 : V) ev = mkStep layoutPieces (84 : V) ev := fun ev ↦ by
+    have := mkStep_pro_layout 84 (by decide) ev; simpa using this
+  unfold emptyFsetPi
+  subst hWp
+  refine sizeOK_cons (stepSizeOK_of_tag ?_) (sizeOK_cons (stepSizeOK_of_tag ?_)
+    (sizeOK_cons (stepSizeOK_of_tag ?_) (sizeOK_single (stepSizeOK_of_tag ?_))))
+  · rw [e81, ltag_emptySubsetC rfl]; simp
+  · rw [ptag_congSubsetL rfl]; simp
+  · rw [e82, ltag_fsetOfSubsetZeroC rfl]; simp
+  · rw [e84, ltag_fsetSigmaPiC rfl]; simp
+
+/-- `reset0` is size-disciplined at every class (`layoutSteps0` + rows 42, 43, 158). -/
+lemma sizeOK_reset0 {W : V} (hWp : W = proPieces) (Q Dd : V) : SizeOK Q Dd (reset0 W) := by
+  have e42 : ∀ ev : V, mkStep proPieces (42 : V) ev = mkStep layoutPieces (42 : V) ev := fun ev ↦ by
+    have := mkStep_pro_layout 42 (by decide) ev; simpa using this
+  have e43 : ∀ ev : V, mkStep proPieces (43 : V) ev = mkStep layoutPieces (43 : V) ev := fun ev ↦ by
+    have := mkStep_pro_layout 43 (by decide) ev; simpa using this
+  unfold reset0
+  subst hWp
+  refine sizeOK_appendV (sizeOK_layoutSteps0 rfl Q Dd)
+    (sizeOK_cons (stepSizeOK_of_tag ?_) (sizeOK_cons (stepSizeOK_of_tag ?_)
+      (sizeOK_single (stepSizeOK_of_tag ?_))))
+  · rw [e42, ltag_eqSymm rfl]; simp
+  · rw [e43, ltag_eqTrans rfl]; simp
+  · rw [ptag_congSetShiftR rfl]; simp
+
+/-- **The `wk` selector is size-disciplined in BOTH branches**, at the layout class. -/
+lemma sizeOK_wkPro {Wl Wc W T s c : V} (hWp : W = proPieces)
+    {tbl N N' B' B D E Γ : V} (htbl : TableOK tbl N) (hP : ProTable tbl)
+    (htblN : NumTableOK T N' B') (hWl : Wl = layoutPieces) (hWc : Wc = certPieces)
+    (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (hs : IsFormulaSet LAct s) (hc : c ⊆ s) (hsD : sequentLen LAct s ≤ D) (hcD : sequentLen LAct c ≤ D)
+    (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E) (hiE : 0 + 14 * D + 5 ≤ E)
+    (hΓ : IsFormulaSet LAct Γ) (hLay : Layout walkPieces Wc T Γ s 0) :
+    SizeOK (layQ B B' D) (layD N' B' D) (wkPro walkPieces Wl Wc W T s c) := by
+  unfold wkPro
+  by_cases h : memberList c = 0
+  · rw [if_pos h]
+    exact sizeOK_appendV (sizeOK_proWk0 hWp s 0 _ _) (sizeOK_emptyFsetPi hWp _ _)
+  · rw [if_neg h]
+    exact sizeOK_proWk htbl hP htblN hWl hWc hWp hPle hs hc (one_le_len_memberList_of_ne h) hsD hcD hE hiE hΓ hLay
+
+/-- **The `shift` selector is size-disciplined in BOTH branches**, at the layout class. -/
+lemma sizeOK_shiftPro {Wl Wc W T s c : V} (hWp : W = proPieces)
+    {tbl N N' B' B D E Γ : V} (htbl : TableOK tbl N) (hP : ProTable tbl)
+    (htblN : NumTableOK T N' B') (hWl : Wl = layoutPieces) (hWc : Wc = certPieces)
+    (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (hs : IsFormulaSet LAct s) (hc : IsFormulaSet LAct c) (hsc : s = setShift LAct c)
+    (hsD : sequentLen LAct s ≤ D) (hcD : sequentLen LAct c ≤ D)
+    (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E) (hiE : 0 + 16 * D + 8 ≤ E)
+    (hΓ : IsFormulaSet LAct Γ) (hLay : Layout walkPieces Wc T Γ s 0) :
+    SizeOK (layQ B B' D) (layD N' B' D) (shiftPro walkPieces Wl Wc W T s c) := by
+  unfold shiftPro
+  by_cases h : memberList c = 0
+  · rw [if_pos h]
+    exact sizeOK_appendV (sizeOK_proShift0 hWp 0 _ _)
+      (sizeOK_appendV (sizeOK_reset0 hWp _ _) (sizeOK_emptyFsetPi hWp _ _))
+  · rw [if_neg h]
+    exact sizeOK_proShift htbl hP htblN hWl hWc hWp hPle hs hc hsc (one_le_len_memberList_of_ne h)
+      hsD hcD hE hiE hΓ hLay
+
+end selectorSizes
+
+section nodeCodeKit
+
+/-- **`bin2Code` lands in the kit class** (§3's `2·sum2D`, one factor absorbed by `sum2D ≤ layD`). -/
+lemma proofLen_bin2Code_le_kitD {T N' B' Cz L m n d : V} (htblN : NumTableOK T N' B')
+    (h : L + m + 1 ≤ n) (hn : n ≤ 2 * d) (hC : 2 * (27 * N' + 525600 * B') ≤ Cz) :
+    proofLen TAct (bin2Code T L m n) ≤ kitD Cz (2 * d) := by
+  refine le_trans (proofLen_bin2Code_le' htblN h hn) ?_
+  refine le_trans (mul_le_mul_of_nonneg_left (sum2D_le_layD N' B' (2 * d)) zero_le) ?_
+  refine le_trans (mul_le_mul_of_nonneg_left
+    (layD_le_kitD (d := 2 * d) le_rfl (le_refl (27 * N' + 525600 * B'))) zero_le) ?_
+  unfold kitD
+  calc 2 * ((27 * N' + 525600 * B') * (2 * d + 1) ^ 3)
+      = (2 * (27 * N' + 525600 * B')) * (2 * d + 1) ^ 3 := by ring
+    _ ≤ Cz * (2 * d + 1) ^ 3 := mul_le_mul_of_nonneg_right hC zero_le
+
+/-- **`bin3Code` lands in the kit class**, likewise. -/
+lemma proofLen_bin3Code_le_kitD {T N' B' Cz L m₁ m₂ n d : V} (htblN : NumTableOK T N' B')
+    (h : L + m₁ + m₂ + 1 ≤ n) (hn : n ≤ 2 * d) (hC : 2 * (27 * N' + 525600 * B') ≤ Cz) :
+    proofLen TAct (bin3Code T L m₁ m₂ n) ≤ kitD Cz (2 * d) := by
+  refine le_trans (proofLen_bin3Code_le' htblN h hn) ?_
+  refine le_trans (mul_le_mul_of_nonneg_left (sum2D_le_layD N' B' (2 * d)) zero_le) ?_
+  refine le_trans (mul_le_mul_of_nonneg_left
+    (layD_le_kitD (d := 2 * d) le_rfl (le_refl (27 * N' + 525600 * B'))) zero_le) ?_
+  unfold kitD
+  calc 2 * ((27 * N' + 525600 * B') * (2 * d + 1) ^ 3)
+      = (2 * (27 * N' + 525600 * B')) * (2 * d + 1) ^ 3 := by ring
+    _ ≤ Cz * (2 * d + 1) ^ 3 := mul_le_mul_of_nonneg_right hC zero_le
+
+end nodeCodeKit
+
+
+/-! ## 9. The size statement in the shape the package consumes
+
+`Package.lean` §1 names the statement the size glue must deliver: `SizeThm N' B' Cz`, i.e.
+`VerifySizeOracle` universally quantified over the models and the tables with `NumTableOK T (N' : V) (B' : V)`
+— the hypothesis every prologue size lemma needs (this file's header). `SizeThmAll` is
+`∀ N' B', ∃ Cz, SizeThm N' B' Cz`; the quantifier ORDER is the bypass (`N'`, `B'` fixed first by
+`NumSteps.exists_numTable`, `Cz` chosen after, so `Cz` may depend on them).
+
+This section states that shape modulo the ten induction arms, which remain the named hypothesis of §2 lifted
+uniformly over the models (`ArmHypsAll`). With the arms discharged, `verifyGraph''_size4_of_arms` IS
+`Package.SizeThm N' B' Cz`, and `SizeThmAll` follows by choosing `Cz` per `(N', B')`.
+
+**Status of the arms** (2026-09-16): `axm` (§4), `axL` and `verumIntro` (§5) are PROVED as standalone arm lemmas;
+the reusable machinery every remaining arm needs is in place — the layout-class landing (§6 `layQ_le_kitQ`,
+`layD_le_kitD`), the recovery blocks (§6 `sizeOK_goalElim_kit`, `sizeOK_postIns_kit`), the `wk`/`shift` node and
+selector lengths (§7) and selector sizes (§8 `sizeOK_wkPro`, `sizeOK_shiftPro`), and the node codes in the kit
+class (§8 `proofLen_bin2Code_le_kitD`, `proofLen_bin3Code_le_kitD`). What remains is the assembly of the seven non-leaf
+arms (`wk`, `shift`, `and`, `or`, `cut`, `all`, `exs`) from those blocks and the `Derivation.induction1 𝚷`
+recursion that threads them — the shape of `Verify4.verifyGraph''_ok4`, with `len`/`SizeOK` in place of `shiftsV`.
+-/
+
+section packageShape
+
+/-- The ten arms, uniformly in the model, at a FIXED numeral table (`N'`, `B'` naturals). -/
+def ArmHypsAll (N N' B' Cv Cz : ℕ) : Prop :=
+  ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] (tbl B T : V),
+    TableOK tbl (N : V) → IndRecTable tbl →
+    (∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ B) →
+    formulaLen LAct (Ple : V) ≤ B → NumTableOK T (N' : V) (B' : V) →
+    ArmHyps tbl B layoutPieces certPieces frag1Pieces frag2Pieces proPieces T Cv Cz
+
+/-- **The size theorem in `Package.SizeThm`'s shape**, modulo the ten arms: on every `IndRec` table with its
+row-body bound and every numeral table described by the fixed naturals `N'`, `B'`, every graph list of a
+`VerifyGraph''` is `≤ Cz·(proofLen ρ + 1)^4` long and size-disciplined at the kit class. -/
+theorem verifyGraph''_size4_of_arms (N N' B' : ℕ) {Cv Cz : ℕ} (harms : ArmHypsAll N N' B' Cv Cz) :
+    ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] (tbl B T : V),
+      TableOK tbl (N : V) → IndRecTable tbl →
+      (∀ j < len tbl, formulaLen LAct (rowB tbl.[j]) ≤ B) →
+      formulaLen LAct (Ple : V) ≤ B → NumTableOK T (N' : V) (B' : V) →
+      VerifySizeOracle tbl B layoutPieces certPieces frag1Pieces frag2Pieces proPieces T Cv Cz :=
+  fun V _ _ tbl B T htbl hPA hB hPle htblN ↦
+    verifySizeOracle_of_arms (harms V tbl B T htbl hPA hB hPle htblN)
+
+end packageShape
+
+
+/-! ## 10. The `wk` and `shift` arms
+
+The first two NON-LEAF arms, and the template for the remaining five: each list is
+`selector ++ (child ++ (recovery ++ node))`, a right-nested `appendV` (`Verify2.lean` §5), so
+
+* the LENGTH is `len selector + (len L' + (5 + 9))` — `len_goalElim = 5` and §7's `len_nodeWk`/`len_nodeShift`;
+* the SIZES are `sizeOK_appendV` over the four blocks: the selector at the LAYOUT class (§8's
+  `sizeOK_wkPro`/`sizeOK_shiftPro`, covering BOTH branches of the empty-child split) lifted by §6's
+  `layQ_le_kitQ`/`layD_le_kitD`; the child from the induction hypothesis; the recovery by §6's
+  `sizeOK_goalElim_kit`; and the node by `Frag1.sizeOK_nodeWk`/`Frag2.sizeOK_nodeShift`, whose three side
+  conditions are `formulaLen_bin2Fact_le` + §4's `BE_le_kitQ`, §8's `proofLen_bin2Code_le_kitD`, and §4's
+  `goalFact_le_kitQ`.
+
+The kit class is stated at `kitD Cz (2 * d)` throughout, matching `Verify4`'s `D = 2d` convention (`proofLen_bin2Code_le_kitD`
+is stated there). TRAP: the recovery block's goal fact is at the CHILD's `proofLen d'` while the node's is at the PARENT's
+`proofLen (wkRule s d')`, so the two term-length hypotheses `hbn`/`hbn'` are genuinely different and both are needed.
+-/
+
+section wkShiftArms
+
+/-- **The `wk` arm, length half.** -/
+theorem len_vWk_eq (Ww Wl Wc W₁ W T s d' L' : V) :
+    len (vWk Ww Wl Wc W₁ W T s d' L') =
+      len (wkPro Ww Wl Wc W T s (fstIdx d')) + (len L' + (5 + 9)) := by
+  unfold vWk
+  rw [len_appendV, len_appendV, len_appendV, len_goalElim, len_nodeWk]
+
+/-- **The `shift` arm, length half.** -/
+theorem len_vShift_eq (Ww Wl Wc W₂ W T s d' L' : V) :
+    len (vShift Ww Wl Wc W₂ W T s d' L') =
+      len (shiftPro Ww Wl Wc W T s (fstIdx d')) + (len L' + (5 + 9)) := by
+  unfold vShift
+  rw [len_appendV, len_appendV, len_appendV, len_goalElim, len_nodeShift]
+
+/-- **The `wk` arm, size half.** -/
+theorem wk_arm_size {Wl Wc W₁ W T s d' L' B E Cz N' B' D d Γ : V}
+    (hWp : W = proPieces) (hW₁ : W₁ = frag1Pieces)
+    {tbl N : V} (htbl : TableOK tbl N) (hP : ProTable tbl) (htblN : NumTableOK T N' B')
+    (hWl : Wl = layoutPieces) (hWc : Wc = certPieces)
+    (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (hs : IsFormulaSet LAct s) (hsub : fstIdx d' ⊆ s)
+    (hsD : sequentLen LAct s ≤ D) (hcD : sequentLen LAct (fstIdx d') ≤ D)
+    (hEpro : 13 * D + 18 * ‖D‖ + 12 ≤ E) (hiEpro : 0 + 14 * D + 5 ≤ E)
+    (hΓ : IsFormulaSet LAct Γ) (hLay : Layout walkPieces Wc T Γ s 0)
+    (hDE : D ≤ E) (hDd : D ≤ 2 * d)
+    (hCQ : 19 * B' + 25 ≤ Cz) (hCD : 27 * N' + 525600 * B' ≤ Cz) (hCz1 : 1 ≤ Cz)
+    (hchild : SizeOK (kitQ Cz B E) (kitD Cz (2 * d)) L')
+    (hE1 : 1 ≤ E) (hcG : 4 * ((cDer : V) + cDlen + cFst + 6) ≤ Cz)
+    (hgE : len (memberList (fstIdx d')) + 1 + shiftsV L' + 1 ≤ E)
+    (hbn : termLen LAct (binNumeral (proofLen TAct d')) ≤ E)
+    (hbn' : termLen LAct (binNumeral (proofLen TAct (wkRule s d'))) ≤ E)
+    (hnE : 18 * ‖proofLen TAct (wkRule s d')‖ + 7 ≤ E)
+    (hLn : sequentLen LAct s + proofLen TAct d' + 1 ≤ proofLen TAct (wkRule s d'))
+    (hnd : proofLen TAct (wkRule s d') ≤ 2 * d)
+    (hgE2 : shiftsV (wkPro walkPieces Wl Wc W T s (fstIdx d')) + shiftsV L' + 2 + (len (memberList s) + 1) + 1 + 1 ≤ E)
+    (hCbin : 2 * (27 * N' + 525600 * B') ≤ Cz) :
+    SizeOK (kitQ Cz B E) (kitD Cz (2 * d)) (vWk walkPieces Wl Wc W₁ W T s d' L') := by
+  unfold vWk
+  refine sizeOK_appendV ?_ (sizeOK_appendV hchild (sizeOK_appendV ?_ ?_))
+  · exact (sizeOK_wkPro hWp htbl hP htblN hWl hWc hPle hs hsub hsD hcD hEpro hiEpro hΓ hLay).mono
+      (layQ_le_kitQ hDE hCQ) (layD_le_kitD hDd hCD)
+  · exact sizeOK_goalElim_kit hE1 hPle hgE (isSemiterm_binNumeral_LAct 0 _) hbn hcG
+  · refine sizeOK_nodeWk hW₁ ?_ ?_ ?_
+    · exact le_trans (formulaLen_bin2Fact_le hE1 hPle hnE
+        (le_trans (le_trans le_self_add le_self_add) hLn) (le_trans (le_trans le_add_self le_self_add) hLn))
+        (BE_le_kitQ hCz1)
+    · exact proofLen_bin2Code_le_kitD htblN hLn hnd hCbin
+    · exact goalFact_le_kitQ hE1 hPle hgE2 (isSemiterm_binNumeral_LAct 0 _) hbn' hcG
+
+/-- **The `shift` arm, size half.** -/
+theorem shift_arm_size {Wl Wc W₂ W T s d' L' B E Cz N' B' D d Γ : V}
+    (hWp : W = proPieces) (hW₂ : W₂ = frag2Pieces)
+    {tbl N : V} (htbl : TableOK tbl N) (hP : ProTable tbl) (htblN : NumTableOK T N' B')
+    (hWl : Wl = layoutPieces) (hWc : Wc = certPieces)
+    (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (hs : IsFormulaSet LAct s) (hc : IsFormulaSet LAct (fstIdx d')) (hsc : s = setShift LAct (fstIdx d'))
+    (hsD : sequentLen LAct s ≤ D) (hcD : sequentLen LAct (fstIdx d') ≤ D)
+    (hEpro : 13 * D + 18 * ‖D‖ + 12 ≤ E) (hiEpro : 0 + 16 * D + 8 ≤ E)
+    (hΓ : IsFormulaSet LAct Γ) (hLay : Layout walkPieces Wc T Γ s 0)
+    (hDE : D ≤ E) (hDd : D ≤ 2 * d)
+    (hCQ : 19 * B' + 25 ≤ Cz) (hCD : 27 * N' + 525600 * B' ≤ Cz) (hCz1 : 1 ≤ Cz)
+    (hchild : SizeOK (kitQ Cz B E) (kitD Cz (2 * d)) L')
+    (hE1 : 1 ≤ E) (hcG : 4 * ((cDer : V) + cDlen + cFst + 6) ≤ Cz)
+    (hgE : len (memberList (fstIdx d')) + 1 + shiftsV L' + 1 ≤ E)
+    (hbn : termLen LAct (binNumeral (proofLen TAct d')) ≤ E)
+    (hbn' : termLen LAct (binNumeral (proofLen TAct (shiftRule s d'))) ≤ E)
+    (hnE : 18 * ‖proofLen TAct (shiftRule s d')‖ + 7 ≤ E)
+    (hLn : sequentLen LAct s + proofLen TAct d' + 1 ≤ proofLen TAct (shiftRule s d'))
+    (hnd : proofLen TAct (shiftRule s d') ≤ 2 * d)
+    (hgE2 : shiftsV (shiftPro walkPieces Wl Wc W T s (fstIdx d')) + shiftsV L' + 2 + (len (memberList s) + 1) + 1 + 1 ≤ E)
+    (hCbin : 2 * (27 * N' + 525600 * B') ≤ Cz) :
+    SizeOK (kitQ Cz B E) (kitD Cz (2 * d)) (vShift walkPieces Wl Wc W₂ W T s d' L') := by
+  unfold vShift
+  refine sizeOK_appendV ?_ (sizeOK_appendV hchild (sizeOK_appendV ?_ ?_))
+  · exact (sizeOK_shiftPro hWp htbl hP htblN hWl hWc hPle hs hc hsc hsD hcD hEpro hiEpro hΓ hLay).mono
+      (layQ_le_kitQ hDE hCQ) (layD_le_kitD hDd hCD)
+  · exact sizeOK_goalElim_kit hE1 hPle hgE (isSemiterm_binNumeral_LAct 0 _) hbn hcG
+  · refine sizeOK_nodeShift hW₂ ?_ ?_ ?_
+    · exact le_trans (formulaLen_bin2Fact_le hE1 hPle hnE
+        (le_trans (le_trans le_self_add le_self_add) hLn) (le_trans (le_trans le_add_self le_self_add) hLn))
+        (BE_le_kitQ hCz1)
+    · exact proofLen_bin2Code_le_kitD htblN hLn hnd hCbin
+    · exact goalFact_le_kitQ hE1 hPle hgE2 (isSemiterm_binNumeral_LAct 0 _) hbn' hcG
+
+end wkShiftArms
+
+
+/-! ## 11. The `or` arm, and the binary nodes' lengths
+
+`vOr = proOr ++ (L' ++ (postIns ++ nodeOr))` — the four-block shape of §10 with `Prologue.postIns` (six steps) as the
+recovery block in place of `goalElim` (five), so the tail contributes `6 + 9`. The size halves differ from `wk`/`shift`
+only in the prologue (`Prologue.sizeOK_proOr`, which additionally wants the two dossier hypotheses `DossF … p`/`… q`
+that `Prologue.layout_or` supplies at the glue level) and in the recovery block (§6's `sizeOK_postIns_kit`).
+
+The three NON-LEAF node lengths are proved here together: `nodeOr` sits on the UNARY tail (`goalTailUnary`), `nodeAnd`
+and `nodeCut` on the BINARY one (`goalTailBinary`), and all three are `head (four steps) ++ tail (five steps) = 9`,
+the same structural computation as `len_nodeAxm`. `len_nodeAnd`/`len_nodeCut` are advance work for §12.
+-/
+
+section orArm
+
+lemma len_nodeOr (W tblN is il ir ip iq id icq ic in₁ L m₁ n : V) :
+    len (nodeOr W tblN is il ir ip iq id icq ic in₁ L m₁ n) = 9 := by
+  unfold nodeOr nodeOrHead goalTailUnary proofLenUnarySteps
+  rw [len_appendV, len_appendV]
+  simp [len_adjoin]
+  norm_num
+
+lemma len_nodeAnd (W tblN is il ir ip iq id₁ id₂ icp icq in₁ in₂ L m₁ m₂ n : V) :
+    len (nodeAnd W tblN is il ir ip iq id₁ id₂ icp icq in₁ in₂ L m₁ m₂ n) = 9 := by
+  unfold nodeAnd nodeAndHead goalTailBinary proofLenBinarySteps
+  rw [len_appendV, len_appendV]
+  simp [len_adjoin]
+  norm_num
+
+lemma len_nodeCut (W tblN is il ip inp id₁ id₂ ic₁ ic₂ in₁ in₂ L m₁ m₂ n : V) :
+    len (nodeCut W tblN is il ip inp id₁ id₂ ic₁ ic₂ in₁ in₂ L m₁ m₂ n) = 9 := by
+  unfold nodeCut nodeCutHead goalTailBinary proofLenBinarySteps
+  rw [len_appendV, len_appendV]
+  simp [len_adjoin]
+  norm_num
+
+/-- **The `or` arm, length half** (`postIns` is six steps, so the tail is `6 + 9`). -/
+theorem len_vOr_eq (Ww Wl Wc W₁ W T s p q d' L' : V) :
+    len (vOr Ww Wl Wc W₁ W T s p q d' L') =
+      len (proOr Ww Wl Wc W T s p q 0 (memTop Ww Wc T s (p ^⋎ q) 0 + descCountF Ww 0 q + 1)
+        (memTop Ww Wc T s (p ^⋎ q) 0 + 1)) + (len L' + (6 + 9)) := by
+  unfold vOr
+  rw [len_appendV, len_appendV, len_appendV, len_postIns, len_nodeOr]
+
+/-- **The `or` arm, size half.** -/
+theorem or_arm_size {Wl Wc W₁ W T s p q d' L' B E Cz N' B' D d Γ : V}
+    (hWp : W = proPieces) (hW₁ : W₁ = frag1Pieces)
+    {tbl N : V} (htbl : TableOK tbl N) (hP : ProTable tbl) (htblN : NumTableOK T N' B')
+    (hWl : Wl = layoutPieces) (hWc : Wc = certPieces)
+    (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 0 p) (hq : IsSemiformula LAct 0 q)
+    (hk1 : 1 ≤ len (memberList s)) (hsD : sequentLen LAct (insert p (insert q s)) ≤ D)
+    (hEpro : 13 * D + 18 * ‖D‖ + 12 ≤ E) (hiEpro : 0 + 14 * D + 5 ≤ E)
+    (hipE : memTop walkPieces Wc T s (p ^⋎ q) 0 + descCountF walkPieces 0 q + 1 + 14 * D + 6 ≤ E)
+    (hiqE : memTop walkPieces Wc T s (p ^⋎ q) 0 + 1 + 8 * D + 4 ≤ E)
+    (hΓ : IsFormulaSet LAct Γ) (hLay : Layout walkPieces Wc T Γ s 0)
+    (hDp : DossF walkPieces Γ 0 p (memTop walkPieces Wc T s (p ^⋎ q) 0 + descCountF walkPieces 0 q + 1))
+    (hDq : DossF walkPieces Γ 0 q (memTop walkPieces Wc T s (p ^⋎ q) 0 + 1))
+    (hDE : D ≤ E) (hDd : D ≤ 2 * d)
+    (hCQ : 19 * B' + 25 ≤ Cz) (hCD : 27 * N' + 525600 * B' ≤ Cz) (hCz1 : 1 ≤ Cz)
+    (hchild : SizeOK (kitQ Cz B E) (kitD Cz (2 * d)) L')
+    (hE1 : 1 ≤ E) (hcG : 4 * ((cDer : V) + cDlen + cFst + 6) ≤ Cz)
+    (hgE : len (memberList (insert p (insert q s))) + 1 + shiftsV L' + 1 ≤ E)
+    (hbn : termLen LAct (binNumeral (proofLen TAct d')) ≤ E)
+    (hbn' : termLen LAct (binNumeral (proofLen TAct (orIntro s p q d'))) ≤ E)
+    (hnE : 18 * ‖proofLen TAct (orIntro s p q d')‖ + 7 ≤ E)
+    (hLn : sequentLen LAct s + proofLen TAct d' + 1 ≤ proofLen TAct (orIntro s p q d'))
+    (hnd : proofLen TAct (orIntro s p q d') ≤ 2 * d)
+    (hgE2 : 1 + proSig walkPieces Wl Wc W T (insert q s) +
+      (1 + proSig walkPieces Wl Wc W T (insert p (insert q s))) + shiftsV L' + 2 + (len (memberList s) + 1) + 1 + 1 ≤ E)
+    (hCbin : 2 * (27 * N' + 525600 * B') ≤ Cz) :
+    SizeOK (kitQ Cz B E) (kitD Cz (2 * d)) (vOr walkPieces Wl Wc W₁ W T s p q d' L') := by
+  unfold vOr
+  refine sizeOK_appendV ?_ (sizeOK_appendV hchild (sizeOK_appendV ?_ ?_))
+  · exact (sizeOK_proOr htbl hP htblN hWl hWc hWp hPle hs hp hq hk1 hsD hEpro hiEpro hipE hiqE hΓ hLay hDp hDq).mono
+      (layQ_le_kitQ hDE hCQ) (layD_le_kitD hDd hCD)
+  · exact sizeOK_postIns_kit hWp hE1 hPle hgE hbn hcG
+  · refine sizeOK_nodeOr hW₁ ?_ ?_ ?_
+    · exact le_trans (formulaLen_bin2Fact_le hE1 hPle hnE
+        (le_trans (le_trans le_self_add le_self_add) hLn) (le_trans (le_trans le_add_self le_self_add) hLn))
+        (BE_le_kitQ hCz1)
+    · exact proofLen_bin2Code_le_kitD htblN hLn hnd hCbin
+    · exact goalFact_le_kitQ hE1 hPle hgE2 (isSemiterm_binNumeral_LAct 0 _) hbn' hcG
+
+end orArm
+
+
+/-! ## 12. The `and` and `cut` arms
+
+The two-child arms. `vAnd` is SEVEN blocks — `proIns ++ L₁ ++ postIns ++ proIns ++ L₂ ++ postIns ++ nodeAnd` — and
+`vCut` is EIGHT: `proCutPre ++ cutPro ++ L₁ ++ postIns ++ cutPro ++ L₂ ++ postIns ++ nodeCut`. Both nodes sit on the
+BINARY tail, so their side conditions are `bin3Fact`/`bin3Code` (§8's `proofLen_bin3Code_le_kitD`).
+
+Two new landing lemmas are needed and proved here:
+
+* `sizeOK_proCutPre_kit` — `Prologue.sizeOK_proCutPre` lands in `(lenQ B' D + Q', lenD N' B' D + D')` at ANY `Q'`,
+  `D'`, NOT the layout class; instantiating `Q' = D' = 0` and routing `lenQ ≤ layQ` (`lenQ_le_layQ`, by definition
+  since `layQ = lenQ + sum2Q`) puts it in the kit class;
+* `sizeOK_cutPro` — the `cut` selector splits on the EMPTY PARENT (`proIns0` vs `proIns`), the third and last
+  selector split in the file (§8 did `wkPro`/`shiftPro`, which split on the empty CHILD).
+
+The second `proIns`/`cutPro` of each arm runs in a LATER context (after the first child and its `postIns`), so the
+arms take that context and its layout as separate hypotheses — the glue supplies them by transport. TRAP: a context
+variable introduced only in a hypothesis is autobound AFTER the section's `variable {V …}`, leaving its `V` a
+metavariable and stalling instance search ("typeclass instance problem is stuck"); bind it in the binder list.
+-/
+
+section andCutArms
+
+/-- `lenQ ≤ layQ`, by definition (`layQ = lenQ + sum2Q`). -/
+lemma lenQ_le_layQ (B B' Dz : V) : lenQ B' Dz ≤ layQ B B' Dz := by unfold layQ; exact le_self_add
+
+/-- `lenD ≤ layD`, by definition (`layD = lenD + sum2D`). -/
+lemma lenD_le_layD (N' B' Dz : V) : lenD N' B' Dz ≤ layD N' B' Dz := by unfold layD; exact le_self_add
+
+/-- **`proCutPre` lands in the kit class**: its class is `(lenQ B' D + Q', lenD N' B' D + D')` at ANY `Q'`, `D'`,
+so instantiate `Q' := 0`, `D' := 0` and route `lenQ ≤ layQ ≤ kitQ`. -/
+lemma sizeOK_proCutPre_kit {tbl N N' B' T Wc p B E Cz D d Γ : V} (htbl : TableOK tbl N) (hP : ProTable tbl)
+    (htblN : NumTableOK T N' B') (hWc : Wc = certPieces)
+    (hp : IsSemiformula LAct 0 p) (hpD : formulaLen LAct p ≤ D) (hnpD : formulaLen LAct (neg LAct p) ≤ D)
+    (hE : 13 * D + 8 ≤ E) (hΓ : IsFormulaSet LAct Γ)
+    (hDE : D ≤ E) (hDd : D ≤ 2 * d)
+    (hCQ : 19 * B' + 25 ≤ Cz) (hCD : 27 * N' + 525600 * B' ≤ Cz) :
+    SizeOK (kitQ Cz B E) (kitD Cz (2 * d)) (proCutPre walkPieces Wc T p) := by
+  have h := sizeOK_proCutPre (B' := B') (Q' := 0) (D' := 0) htbl hP htblN hWc hp hpD hnpD hE hΓ
+  refine h.mono ?_ ?_
+  · rw [add_zero]; exact le_trans (lenQ_le_layQ B B' D) (layQ_le_kitQ hDE hCQ)
+  · rw [add_zero]; exact le_trans (lenD_le_layD N' B' D) (layD_le_kitD hDd hCD)
+
+/-- **The `cut` selector is size-disciplined in BOTH branches** (the empty-PARENT split), at the layout class. -/
+lemma sizeOK_cutPro {Wl Wc W T s p i ip : V} (hWp : W = proPieces)
+    {tbl N N' B' B D E Γ : V} (htbl : TableOK tbl N) (hP : ProTable tbl)
+    (htblN : NumTableOK T N' B') (hWl : Wl = layoutPieces) (hWc : Wc = certPieces)
+    (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 0 p)
+    (hsD : sequentLen LAct (insert p s) ≤ D)
+    (hE : 13 * D + 18 * ‖D‖ + 12 ≤ E) (hiE : i + 14 * D + 5 ≤ E) (hipE : ip + 8 * D + 4 ≤ E)
+    (hΓ : IsFormulaSet LAct Γ) (hDp : DossF walkPieces Γ 0 p ip)
+    (hLay : PLay Wc T Γ s i)
+    (hsD0 : sequentLen LAct (insert p (0 : V)) ≤ D) :
+    SizeOK (layQ B B' D) (layD N' B' D) (cutPro walkPieces Wl Wc W T s p i ip) := by
+  unfold cutPro
+  by_cases h : memberList s = 0
+  · rw [if_pos h]
+    have hLay0 : Layout0 walkPieces Wc T Γ i := by
+      rcases hLay with ⟨hk1, -⟩ | ⟨-, h0⟩
+      · exfalso
+        rw [h, len_nil] at hk1
+        exact absurd hk1 (by simp)
+      · exact h0
+    exact sizeOK_proIns0 htbl hP htblN hWl hWc hWp hPle hp hsD0 hE hiE hipE hΓ hLay0 hDp
+  · rw [if_neg h]
+    exact sizeOK_proIns htbl hP htblN hWl hWc hWp hPle hs hp (one_le_len_memberList_of_ne h) hsD hE hiE hipE hΓ hLay.layout hDp
+
+/-- **The `and` arm, length half**: seven blocks, two `postIns` (six each), the node (nine). -/
+theorem len_vAnd_eq (Ww Wl Wc W₁ W T s p q dp dq L₁ L₂ : V) :
+    len (vAnd Ww Wl Wc W₁ W T s p q dp dq L₁ L₂) =
+      len (proIns Ww Wl Wc W T s p 0 (memTop Ww Wc T s (p ^⋏ q) 0 + descCountF Ww 0 q + 1)) +
+      (len L₁ + (6 +
+        (len (proIns Ww Wl Wc W T s q (1 + proSig Ww Wl Wc W T (insert p s) + shiftsV L₁ + 2)
+          (memTop Ww Wc T s (p ^⋏ q) 0 + 1 + (1 + proSig Ww Wl Wc W T (insert p s) + shiftsV L₁ + 2))) +
+          (len L₂ + (6 + 9))))) := by
+  unfold vAnd
+  rw [len_appendV, len_appendV, len_appendV, len_appendV, len_appendV, len_appendV,
+    len_postIns, len_postIns, len_nodeAnd]
+
+/-- **The `cut` arm, length half**: eight blocks. -/
+theorem len_vCut_eq (Ww Wl Wc W₁ W T s p d₁ d₂ L₁ L₂ : V) :
+    len (vCut Ww Wl Wc W₁ W T s p d₁ d₂ L₁ L₂) =
+      len (proCutPre Ww Wc T p) +
+      (len (cutPro Ww Wl Wc W T s p (mShift Ww Wc T p + mShift Ww Wc T (neg LAct p))
+        (mLen Wc T p + mShift Ww Wc T (neg LAct p))) +
+        (len L₁ + (6 +
+          (len (cutPro Ww Wl Wc W T s (neg LAct p)
+            (mShift Ww Wc T p + mShift Ww Wc T (neg LAct p) + (1 + proSig Ww Wl Wc W T (insert p s) + shiftsV L₁ + 2))
+            (mLen Wc T (neg LAct p) + (1 + proSig Ww Wl Wc W T (insert p s) + shiftsV L₁ + 2))) +
+            (len L₂ + (6 + 9)))))) := by
+  unfold vCut
+  rw [len_appendV, len_appendV, len_appendV, len_appendV, len_appendV, len_appendV, len_appendV,
+    len_postIns, len_postIns, len_nodeCut]
+
+/-- **The `and` arm, size half** — seven blocks, two children, two `postIns`, a `bin3` node. -/
+theorem and_arm_size {Wl Wc W₁ W T s p q dp dq L₁ L₂ B E Cz N' B' D d Γ Γ₃ : V}
+    (hWp : W = proPieces) (hW₁ : W₁ = frag1Pieces)
+    {tbl N : V} (htbl : TableOK tbl N) (hP : ProTable tbl) (htblN : NumTableOK T N' B')
+    (hWl : Wl = layoutPieces) (hWc : Wc = certPieces)
+    (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 0 p) (hq : IsSemiformula LAct 0 q)
+    (hk1 : 1 ≤ len (memberList s))
+    (hsDp : sequentLen LAct (insert p s) ≤ D) (hsDq : sequentLen LAct (insert q s) ≤ D)
+    (hEpro : 13 * D + 18 * ‖D‖ + 12 ≤ E)
+    (hiE₁ : 0 + 14 * D + 5 ≤ E)
+    (hipE₁ : memTop walkPieces Wc T s (p ^⋏ q) 0 + descCountF walkPieces 0 q + 1 + 8 * D + 4 ≤ E)
+    (hiE₂ : 1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2 + 14 * D + 5 ≤ E)
+    (hipE₂ : memTop walkPieces Wc T s (p ^⋏ q) 0 + 1 +
+      (1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2) + 8 * D + 4 ≤ E)
+    (hΓ : IsFormulaSet LAct Γ) (hLay : Layout walkPieces Wc T Γ s 0)
+    (hDp : DossF walkPieces Γ 0 p (memTop walkPieces Wc T s (p ^⋏ q) 0 + descCountF walkPieces 0 q + 1))
+    (hΓ₃ : IsFormulaSet LAct Γ₃)
+    (hLay₃ : Layout walkPieces Wc T Γ₃ s (1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2))
+    (hDq₃ : DossF walkPieces Γ₃ 0 q (memTop walkPieces Wc T s (p ^⋏ q) 0 + 1 +
+      (1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2)))
+    (hDE : D ≤ E) (hDd : D ≤ 2 * d)
+    (hCQ : 19 * B' + 25 ≤ Cz) (hCD : 27 * N' + 525600 * B' ≤ Cz) (hCz1 : 1 ≤ Cz)
+    (hchild₁ : SizeOK (kitQ Cz B E) (kitD Cz (2 * d)) L₁)
+    (hchild₂ : SizeOK (kitQ Cz B E) (kitD Cz (2 * d)) L₂)
+    (hE1 : 1 ≤ E) (hcG : 4 * ((cDer : V) + cDlen + cFst + 6) ≤ Cz)
+    (hgE₁ : len (memberList (insert p s)) + 1 + shiftsV L₁ + 1 ≤ E)
+    (hgE₂ : len (memberList (insert q s)) + 1 + shiftsV L₂ + 1 ≤ E)
+    (hbn₁ : termLen LAct (binNumeral (proofLen TAct dp)) ≤ E)
+    (hbn₂ : termLen LAct (binNumeral (proofLen TAct dq)) ≤ E)
+    (hbn' : termLen LAct (binNumeral (proofLen TAct (andIntro s p q dp dq))) ≤ E)
+    (hnE : 18 * ‖proofLen TAct (andIntro s p q dp dq)‖ + 7 ≤ E)
+    (hLn : sequentLen LAct s + proofLen TAct dp + proofLen TAct dq + 1 ≤ proofLen TAct (andIntro s p q dp dq))
+    (hnd : proofLen TAct (andIntro s p q dp dq) ≤ 2 * d)
+    (hgE3 : 1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2 +
+      (1 + proSig walkPieces Wl Wc W T (insert q s) + shiftsV L₂ + 2) + (len (memberList s) + 1) + 1 + 1 ≤ E)
+    (hCbin : 2 * (27 * N' + 525600 * B') ≤ Cz) :
+    SizeOK (kitQ Cz B E) (kitD Cz (2 * d)) (vAnd walkPieces Wl Wc W₁ W T s p q dp dq L₁ L₂) := by
+  unfold vAnd
+  refine sizeOK_appendV ?_ (sizeOK_appendV hchild₁ (sizeOK_appendV ?_
+    (sizeOK_appendV ?_ (sizeOK_appendV hchild₂ (sizeOK_appendV ?_ ?_)))))
+  · exact (sizeOK_proIns htbl hP htblN hWl hWc hWp hPle hs hp hk1 hsDp hEpro hiE₁ hipE₁ hΓ hLay hDp).mono
+      (layQ_le_kitQ hDE hCQ) (layD_le_kitD hDd hCD)
+  · exact sizeOK_postIns_kit hWp hE1 hPle hgE₁ hbn₁ hcG
+  · exact (sizeOK_proIns htbl hP htblN hWl hWc hWp hPle hs hq hk1 hsDq hEpro hiE₂ hipE₂ hΓ₃ hLay₃ hDq₃).mono
+      (layQ_le_kitQ hDE hCQ) (layD_le_kitD hDd hCD)
+  · exact sizeOK_postIns_kit hWp hE1 hPle hgE₂ hbn₂ hcG
+  · refine sizeOK_nodeAnd hW₁ ?_ ?_ ?_
+    · exact le_trans (formulaLen_bin3Fact_le hE1 hPle hnE
+        (le_trans (le_trans (le_trans le_self_add le_self_add) le_self_add) hLn)
+        (le_trans (le_trans (le_trans le_add_self le_self_add) le_self_add) hLn)
+        (le_trans (le_trans le_add_self le_self_add) hLn))
+        (BE_le_kitQ hCz1)
+    · exact proofLen_bin3Code_le_kitD htblN hLn hnd hCbin
+    · exact goalFact_le_kitQ hE1 hPle hgE3 (isSemiterm_binNumeral_LAct 0 _) hbn' hcG
+
+/-- **The `cut` arm, size half** — eight blocks: `proCutPre`, two `cutPro` selectors, two children, two `postIns`,
+the node. -/
+theorem cut_arm_size {Wl Wc W₁ W T s p d₁ d₂ L₁ L₂ B E Cz N' B' D d Γ Γ₄ Γc : V}
+    (hWp : W = proPieces) (hW₁ : W₁ = frag1Pieces)
+    {tbl N : V} (htbl : TableOK tbl N) (hP : ProTable tbl) (htblN : NumTableOK T N' B')
+    (hWl : Wl = layoutPieces) (hWc : Wc = certPieces)
+    (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 0 p)
+    (hpD : formulaLen LAct p ≤ D) (hnpD : formulaLen LAct (neg LAct p) ≤ D)
+    (hsDp : sequentLen LAct (insert p s) ≤ D) (hsDnp : sequentLen LAct (insert (neg LAct p) s) ≤ D)
+    (hsD0p : sequentLen LAct (insert p (0 : V)) ≤ D) (hsD0np : sequentLen LAct (insert (neg LAct p) (0 : V)) ≤ D)
+    (hEpre : 13 * D + 8 ≤ E) (hEpro : 13 * D + 18 * ‖D‖ + 12 ≤ E)
+    (hiE₁ : mShift walkPieces Wc T p + mShift walkPieces Wc T (neg LAct p) + 14 * D + 5 ≤ E)
+    (hipE₁ : mLen Wc T p + mShift walkPieces Wc T (neg LAct p) + 8 * D + 4 ≤ E)
+    (hiE₂ : mShift walkPieces Wc T p + mShift walkPieces Wc T (neg LAct p) +
+      (1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2) + 14 * D + 5 ≤ E)
+    (hipE₂ : mLen Wc T (neg LAct p) + (1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2) + 8 * D + 4 ≤ E)
+    (hΓ : IsFormulaSet LAct Γ)
+    (hLay₁ : PLay Wc T Γ s (mShift walkPieces Wc T p + mShift walkPieces Wc T (neg LAct p)))
+    (hDp₁ : DossF walkPieces Γ 0 p (mLen Wc T p + mShift walkPieces Wc T (neg LAct p)))
+    (hΓ₄ : IsFormulaSet LAct Γ₄)
+    (hLay₄ : PLay Wc T Γ₄ s (mShift walkPieces Wc T p + mShift walkPieces Wc T (neg LAct p) +
+      (1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2)))
+    (hDnp₄ : DossF walkPieces Γ₄ 0 (neg LAct p)
+      (mLen Wc T (neg LAct p) + (1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2)))
+    (hΓc : IsFormulaSet LAct Γc)
+    (hDE : D ≤ E) (hDd : D ≤ 2 * d)
+    (hCQ : 19 * B' + 25 ≤ Cz) (hCD : 27 * N' + 525600 * B' ≤ Cz) (hCz1 : 1 ≤ Cz)
+    (hchild₁ : SizeOK (kitQ Cz B E) (kitD Cz (2 * d)) L₁)
+    (hchild₂ : SizeOK (kitQ Cz B E) (kitD Cz (2 * d)) L₂)
+    (hE1 : 1 ≤ E) (hcG : 4 * ((cDer : V) + cDlen + cFst + 6) ≤ Cz)
+    (hgE₁ : len (memberList (insert p s)) + 1 + shiftsV L₁ + 1 ≤ E)
+    (hgE₂ : len (memberList (insert (neg LAct p) s)) + 1 + shiftsV L₂ + 1 ≤ E)
+    (hbn₁ : termLen LAct (binNumeral (proofLen TAct d₁)) ≤ E)
+    (hbn₂ : termLen LAct (binNumeral (proofLen TAct d₂)) ≤ E)
+    (hbn' : termLen LAct (binNumeral (proofLen TAct (cutRule s p d₁ d₂))) ≤ E)
+    (hnE : 18 * ‖proofLen TAct (cutRule s p d₁ d₂)‖ + 7 ≤ E)
+    (hLn : sequentLen LAct s + proofLen TAct d₁ + proofLen TAct d₂ + 1 ≤ proofLen TAct (cutRule s p d₁ d₂))
+    (hnd : proofLen TAct (cutRule s p d₁ d₂) ≤ 2 * d)
+    (hgE3 : mShift walkPieces Wc T p + mShift walkPieces Wc T (neg LAct p) +
+      (1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2) +
+      (1 + proSig walkPieces Wl Wc W T (insert (neg LAct p) s) + shiftsV L₂ + 2) + (len (memberList s) + 1) + 1 + 1 ≤ E)
+    (hCbin : 2 * (27 * N' + 525600 * B') ≤ Cz) :
+    SizeOK (kitQ Cz B E) (kitD Cz (2 * d)) (vCut walkPieces Wl Wc W₁ W T s p d₁ d₂ L₁ L₂) := by
+  unfold vCut
+  refine sizeOK_appendV ?_ (sizeOK_appendV ?_ (sizeOK_appendV hchild₁ (sizeOK_appendV ?_
+    (sizeOK_appendV ?_ (sizeOK_appendV hchild₂ (sizeOK_appendV ?_ ?_))))))
+  · exact sizeOK_proCutPre_kit (B := B) (d := d) htbl hP htblN hWc hp hpD hnpD hEpre hΓc hDE hDd hCQ hCD
+  · exact (sizeOK_cutPro hWp htbl hP htblN hWl hWc hPle hs hp hsDp hEpro hiE₁ hipE₁ hΓ hDp₁ hLay₁ hsD0p).mono
+      (layQ_le_kitQ hDE hCQ) (layD_le_kitD hDd hCD)
+  · exact sizeOK_postIns_kit hWp hE1 hPle hgE₁ hbn₁ hcG
+  · exact (sizeOK_cutPro hWp htbl hP htblN hWl hWc hPle hs hp.neg hsDnp hEpro hiE₂ hipE₂ hΓ₄ hDnp₄ hLay₄ hsD0np).mono
+      (layQ_le_kitQ hDE hCQ) (layD_le_kitD hDd hCD)
+  · exact sizeOK_postIns_kit hWp hE1 hPle hgE₂ hbn₂ hcG
+  · refine sizeOK_nodeCut hW₁ ?_ ?_ ?_
+    · exact le_trans (formulaLen_bin3Fact_le hE1 hPle hnE
+        (le_trans (le_trans (le_trans le_self_add le_self_add) le_self_add) hLn)
+        (le_trans (le_trans (le_trans le_add_self le_self_add) le_self_add) hLn)
+        (le_trans (le_trans le_add_self le_self_add) hLn))
+        (BE_le_kitQ hCz1)
+    · exact proofLen_bin3Code_le_kitD htblN hLn hnd hCbin
+    · exact goalFact_le_kitQ hE1 hPle hgE3 (isSemiterm_binNumeral_LAct 0 _) hbn' hcG
+
+end andCutArms
+
+
+/-! ## 13. The `all` and `exs` arms — the last two, and all ten are now proved
+
+Both quantifier arms have the FOUR-block shape of `or` (`Verify2.lean` §5): `proAll ++ (L' ++ (postIns ++ nodeAll))`
+and `proExs ++ (L' ++ (postIns ++ nodeExs))`, so their lengths are `len pro + (len L' + (6 + 9))` exactly as
+`len_vOr_eq`, and the size halves are the prologue at the LAYOUT class (`Prologue.sizeOK_proAll`/`sizeOK_proExs`,
+whose extra `hEQ`/`hiE` hypotheses are the QUADRATIC E-rooms of the certification blocks) lifted by §6, the child
+from the induction hypothesis, §6's `sizeOK_postIns_kit`, and the node.
+
+The two nodes differ in their tail: `nodeAll` sits on the UNARY one (`bin2Fact`/`bin2Code`, the child's `proofLen`
+alone), `nodeExs` on the BINARY one (`bin3Fact`/`bin3Code`, with `Lt = termLen t` as the second summand — the
+witness term's length enters the node's arithmetic).
+
+With these, ALL TEN arms have standalone size and length lemmas: `axm` (§4), `axL`/`verumIntro` (§5),
+`wk`/`shift` (§10), `or` (§11), `and`/`cut` (§12), `all`/`exs` (here).
+-/
+
+section allExsArms
+
+lemma len_nodeAll (W tblN is il ir ip ifp iss ic id in₁ L m₁ n : V) :
+    len (nodeAll W tblN is il ir ip ifp iss ic id in₁ L m₁ n) = 9 := by
+  unfold nodeAll nodeAllHead goalTailUnary proofLenUnarySteps
+  rw [len_appendV, len_appendV]
+  simp [len_adjoin]
+  norm_num
+
+lemma len_nodeExs (W tblN is il ir ip it ipt ic id ilt in₁ L Lt m₁ n : V) :
+    len (nodeExs W tblN is il ir ip it ipt ic id ilt in₁ L Lt m₁ n) = 9 := by
+  unfold nodeExs nodeExsHead goalTailBinary proofLenBinarySteps
+  rw [len_appendV, len_appendV]
+  simp [len_adjoin]
+  norm_num
+
+/-- **The `all` arm, length half.** -/
+theorem len_vAll_eq (Ww Wl Wc W₂ W T s p d' L' : V) :
+    len (vAll Ww Wl Wc W₂ W T s p d' L') =
+      len (proAll Ww Wl Wc W T s p 0) + (len L' + (6 + 9)) := by
+  unfold vAll
+  rw [len_appendV, len_appendV, len_appendV, len_postIns, len_nodeAll]
+
+/-- **The `exs` arm, length half.** -/
+theorem len_vExs_eq (Ww Wl Wc W₂ W T s p t d' L' : V) :
+    len (vExs Ww Wl Wc W₂ W T s p t d' L') =
+      len (proExs Ww Wl Wc W T s p t 0) + (len L' + (6 + 9)) := by
+  unfold vExs
+  rw [len_appendV, len_appendV, len_appendV, len_postIns, len_nodeExs]
+
+/-- **The `all` arm, size half** (the node is on the UNARY tail: `bin2Fact`/`bin2Code`). -/
+theorem all_arm_size {Wl Wc W₂ W T s p d' L' B E Cz N' B' D d Γ : V}
+    (hWp : W = proPieces) (hW₂ : W₂ = frag2Pieces)
+    {tbl N : V} (htbl : TableOK tbl N) (hP : ProTable tbl) (htblN : NumTableOK T N' B')
+    (hWl : Wl = layoutPieces) (hWc : Wc = certPieces)
+    (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 1 p) (hr : (^∀ p) ∈ s)
+    (hsD : sequentLen LAct s ≤ D) (hcD : sequentLen LAct (insert (free LAct p) (setShift LAct s)) ≤ D)
+    (hspD : formulaLen LAct (shift LAct p) ≤ D)
+    (hEpro : 13 * D + 18 * ‖D‖ + 12 ≤ E)
+    (hEQ : 2 * ((1 + D) * (1 + D + 1)) * (D + 1) + 4 * D + 11 ≤ E)
+    (hiE : 0 + 2 * ((1 + D) * (1 + D + 1)) * D + 40 * D + 20 ≤ E)
+    (hΓ : IsFormulaSet LAct Γ) (hLay : Layout walkPieces Wc T Γ s 0)
+    (hDE : D ≤ E) (hDd : D ≤ 2 * d)
+    (hCQ : 19 * B' + 25 ≤ Cz) (hCD : 27 * N' + 525600 * B' ≤ Cz) (hCz1 : 1 ≤ Cz)
+    (hchild : SizeOK (kitQ Cz B E) (kitD Cz (2 * d)) L')
+    (hE1 : 1 ≤ E) (hcG : 4 * ((cDer : V) + cDlen + cFst + 6) ≤ Cz)
+    (hgE : len (memberList (insert (free LAct p) (setShift LAct s))) + 1 + shiftsV L' + 1 ≤ E)
+    (hbn : termLen LAct (binNumeral (proofLen TAct d')) ≤ E)
+    (hbn' : termLen LAct (binNumeral (proofLen TAct (allIntro s p d'))) ≤ E)
+    (hnE : 18 * ‖proofLen TAct (allIntro s p d')‖ + 7 ≤ E)
+    (hLn : sequentLen LAct s + proofLen TAct d' + 1 ≤ proofLen TAct (allIntro s p d'))
+    (hnd : proofLen TAct (allIntro s p d') ≤ 2 * d)
+    (hgE2 : allCertSig walkPieces Wc p +
+      (proSig walkPieces Wl Wc W T (setShift LAct s) + (1 + (len (memberList s) + 1) + proSig walkPieces Wl Wc W T s)) +
+      (1 + proSig walkPieces Wl Wc W T (insert (free LAct p) (setShift LAct s))) + shiftsV L' + 2 +
+      (len (memberList s) + 1) + 1 + 1 ≤ E)
+    (hCbin : 2 * (27 * N' + 525600 * B') ≤ Cz) :
+    SizeOK (kitQ Cz B E) (kitD Cz (2 * d)) (vAll walkPieces Wl Wc W₂ W T s p d' L') := by
+  unfold vAll
+  refine sizeOK_appendV ?_ (sizeOK_appendV hchild (sizeOK_appendV ?_ ?_))
+  · exact (sizeOK_proAll htbl hP htblN hWl hWc hWp hPle hs hp hr hsD hcD hspD hEpro hEQ hiE hΓ hLay).mono
+      (layQ_le_kitQ hDE hCQ) (layD_le_kitD hDd hCD)
+  · exact sizeOK_postIns_kit hWp hE1 hPle hgE hbn hcG
+  · refine sizeOK_nodeAll hW₂ ?_ ?_ ?_
+    · exact le_trans (formulaLen_bin2Fact_le hE1 hPle hnE
+        (le_trans (le_trans le_self_add le_self_add) hLn) (le_trans (le_trans le_add_self le_self_add) hLn))
+        (BE_le_kitQ hCz1)
+    · exact proofLen_bin2Code_le_kitD htblN hLn hnd hCbin
+    · exact goalFact_le_kitQ hE1 hPle hgE2 (isSemiterm_binNumeral_LAct 0 _) hbn' hcG
+
+/-- **The `exs` arm, size half** (the node is on the BINARY tail: `bin3Fact`/`bin3Code` with `Lt = termLen t`). -/
+theorem exs_arm_size {Wl Wc W₂ W T s p t d' L' B E Cz N' B' D d Γ : V}
+    (hWp : W = proPieces) (hW₂ : W₂ = frag2Pieces)
+    {tbl N : V} (htbl : TableOK tbl N) (hP : ProTable tbl) (htblN : NumTableOK T N' B')
+    (hWl : Wl = layoutPieces) (hWc : Wc = certPieces)
+    (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 1 p) (hr : (^∃ p) ∈ s)
+    (ht : IsSemiterm LAct 0 t)
+    (hsD : sequentLen LAct s ≤ D) (hcD : sequentLen LAct (insert (substs1 LAct t p) s) ≤ D)
+    (htD : termLen LAct t ≤ D)
+    (hEpro : 13 * D + 18 * ‖D‖ + 12 ≤ E)
+    (hEQ : 2 * ((1 + D) * (1 + D + D)) * (D + 1) + 4 * D + 11 ≤ E)
+    (hiE : 0 + 2 * ((1 + D) * (1 + D + D)) * D + 40 * D + 20 ≤ E)
+    (hΓ : IsFormulaSet LAct Γ) (hLay : Layout walkPieces Wc T Γ s 0)
+    (hDE : D ≤ E) (hDd : D ≤ 2 * d)
+    (hCQ : 19 * B' + 25 ≤ Cz) (hCD : 27 * N' + 525600 * B' ≤ Cz) (hCz1 : 1 ≤ Cz)
+    (hchild : SizeOK (kitQ Cz B E) (kitD Cz (2 * d)) L')
+    (hE1 : 1 ≤ E) (hcG : 4 * ((cDer : V) + cDlen + cFst + 6) ≤ Cz)
+    (hgE : len (memberList (insert (substs1 LAct t p) s)) + 1 + shiftsV L' + 1 ≤ E)
+    (hbn : termLen LAct (binNumeral (proofLen TAct d')) ≤ E)
+    (hbn' : termLen LAct (binNumeral (proofLen TAct (exsIntro s p t d'))) ≤ E)
+    (hnE : 18 * ‖proofLen TAct (exsIntro s p t d')‖ + 7 ≤ E)
+    (hLn : sequentLen LAct s + termLen LAct t + proofLen TAct d' + 1 ≤ proofLen TAct (exsIntro s p t d'))
+    (hnd : proofLen TAct (exsIntro s p t d') ≤ 2 * d)
+    (hgE2 : exsSig walkPieces Wc T s p t 0 +
+      (1 + proSig walkPieces Wl Wc W T (insert (substs1 LAct t p) s)) + shiftsV L' + 2 +
+      (len (memberList s) + 1) + 1 + 1 ≤ E)
+    (hCbin : 2 * (27 * N' + 525600 * B') ≤ Cz) :
+    SizeOK (kitQ Cz B E) (kitD Cz (2 * d)) (vExs walkPieces Wl Wc W₂ W T s p t d' L') := by
+  unfold vExs
+  refine sizeOK_appendV ?_ (sizeOK_appendV hchild (sizeOK_appendV ?_ ?_))
+  · exact (sizeOK_proExs htbl hP htblN hWl hWc hWp hPle hs hp hr ht hsD hcD htD hEpro hEQ hiE hΓ hLay).mono
+      (layQ_le_kitQ hDE hCQ) (layD_le_kitD hDd hCD)
+  · exact sizeOK_postIns_kit hWp hE1 hPle hgE hbn hcG
+  · refine sizeOK_nodeExs hW₂ ?_ ?_ ?_
+    · exact le_trans (formulaLen_bin3Fact_le hE1 hPle hnE
+        (le_trans (le_trans (le_trans le_self_add le_self_add) le_self_add) hLn)
+        (le_trans (le_trans (le_trans le_add_self le_self_add) le_self_add) hLn)
+        (le_trans (le_trans le_add_self le_self_add) hLn))
+        (BE_le_kitQ hCz1)
+    · exact proofLen_bin3Code_le_kitD htblN hLn hnd hCbin
+    · exact goalFact_le_kitQ hE1 hPle hgE2 (isSemiterm_binNumeral_LAct 0 _) hbn' hcG
+
+end allExsArms
+
+
+/-! ## 14. The selectors' lengths as BOUNDS — the length gap closed
+
+§7's `len_wkPro`/`len_shiftPro` are branch EQUATIONS (`if memberList c = 0 then 11 else len (proWk …)`), and the
+recursion needs a single `≤` covering both branches; `cutPro` had no length lemma at all. This section supplies all
+three, in the `D`-shape the induction carries:
+
+* `len_wkPro_le ≤ 44·D + 11` — the empty branch is the literal `11` (`proWk0 ++ emptyFsetPi`, `7 + 4`), the other
+  is `Prologue.len_proWk_le`'s `44·sequentLen c + 7`;
+* `len_shiftPro_le ≤ 62·D + 23` — the empty branch is `23` (`proShift0 ++ reset0 ++ emptyFsetPi`, `11 + 8 + 4`),
+  the other is `len_proShift_le`'s `61·sequentLen c + sequentLen s + 20`, so BOTH size hypotheses are consumed;
+* `len_cutPro_le ≤ 55·D + 13` — THE MISSING ONE. `cutPro` splits on the EMPTY PARENT, so the two branches are
+  `Prologue.len_proIns0_le`'s `49·sequentLen (insert p 0) + 13` and `len_proIns_le`'s `55·sequentLen (insert p s) + 12`;
+  the bound takes the larger coefficient from one and the larger constant from the other, and the empty-parent
+  branch needs its own size hypothesis (`sequentLen (insert p 0) ≤ D`) since `insert p 0` is not `insert p s`.
+-/
+
+section selectorLengths
+
+/-- **The `wk` selector's length, as a BOUND covering both branches.** -/
+theorem len_wkPro_le {tbl N : V} (htbl : TableOK tbl N) (hP : ProTable tbl) {Wl Wc : V}
+    (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (Ww W T s : V) {c D : V}
+    (hc : IsFormulaSet LAct c) (hcD : sequentLen LAct c ≤ D) :
+    len (wkPro Ww Wl Wc W T s c) ≤ 44 * D + 11 := by
+  rw [len_wkPro]
+  by_cases h : memberList c = 0
+  · rw [if_pos h]; exact le_add_self
+  · rw [if_neg h]
+    refine le_trans (len_proWk_le htbl hP hWl hWc Ww W T s 0 hc) ?_
+    exact add_le_add (mul_le_mul_of_nonneg_left hcD zero_le) (by norm_num : (7 : V) ≤ 11)
+
+/-- **The `shift` selector's length, as a BOUND covering both branches.** -/
+theorem len_shiftPro_le {Wc : V} (hWc : Wc = certPieces) (Ww Wl W T : V) {s c D : V}
+    (hs : IsFormulaSet LAct s) (hc : IsFormulaSet LAct c)
+    (hsD : sequentLen LAct s ≤ D) (hcD : sequentLen LAct c ≤ D) :
+    len (shiftPro Ww Wl Wc W T s c) ≤ 62 * D + 23 := by
+  rw [len_shiftPro]
+  by_cases h : memberList c = 0
+  · rw [if_pos h]; exact le_add_self
+  · rw [if_neg h]
+    refine le_trans (len_proShift_le hWc Ww Wl W T 0 hs hc) ?_
+    calc 61 * sequentLen LAct c + sequentLen LAct s + 20 ≤ 61 * D + D + 20 :=
+          add_le_add (add_le_add (mul_le_mul_of_nonneg_left hcD zero_le) hsD) le_rfl
+      _ = 62 * D + 20 := by ring
+      _ ≤ 62 * D + 23 := add_le_add le_rfl (by norm_num : (20 : V) ≤ 23)
+
+/-- **The `cut` selector's length** — the lemma the tree never had (`cutPro` splits on the EMPTY PARENT). -/
+theorem len_cutPro_le {tbl N : V} (htbl : TableOK tbl N) (hP : ProTable tbl) {Wl Wc : V}
+    (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (Ww W T i ip : V) {s p D : V}
+    (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 0 p)
+    (hsDp : sequentLen LAct (insert p s) ≤ D) (hsD0 : sequentLen LAct (insert p (0 : V)) ≤ D) :
+    len (cutPro Ww Wl Wc W T s p i ip) ≤ 55 * D + 13 := by
+  unfold cutPro
+  by_cases h : memberList s = 0
+  · rw [if_pos h]
+    refine le_trans (len_proIns0_le htbl hP hWl hWc Ww W T i ip hp) ?_
+    exact add_le_add (le_trans (mul_le_mul_of_nonneg_left hsD0 zero_le)
+      (mul_le_mul_of_nonneg_right (by norm_num : (49 : V) ≤ 55) zero_le)) le_rfl
+  · rw [if_neg h]
+    refine le_trans (len_proIns_le htbl hP hWl hWc Ww W T i ip hs hp) ?_
+    exact add_le_add (mul_le_mul_of_nonneg_left hsDp zero_le) (by norm_num : (12 : V) ≤ 13)
+
+end selectorLengths
+
+
+/-! ## 15. Three lemmas the recursion needs: `kitD` monotone, the doubling, `leafCode` in the kit class
+
+The arm lemmas of §§4–13 conclude at the class `kitD Cz n` with `n` the node's OWN `proofLen`, while the recursion's
+motive carries `kitD Cz (2 * proofLen ρ)` (the `D = 2d` convention of `Verify4`, which §8's `proofLen_bin2Code_le_kitD`
+and `proofLen_bin3Code_le_kitD` are already stated at). Widening one to the other is `kitD_mono` plus `le_two_mul_self`,
+and the third lemma is the `leafCode` analogue of §8's two: §3 bounds it by a SINGLE `sum2D` (not the doubled one),
+so no doubling constant is needed and `sum2D ≤ layD ≤ kitD` suffices.
+
+TRAP: in `proofLen_leafCode_le_kitD`'s chain the size argument is pinned at `Dz` by `sum2D_le_layD`, so `layD_le_kitD`
+there takes `le_rfl`, NOT the `d ≤ 2 * d` widening — that step happens afterwards, through `kitD_mono`.
+-/
+
+section recursionPrep
+
+/-- `kitD` is monotone in its size argument (`kitD Cz z = Cz·(z+1)³`). -/
+lemma kitD_mono {Cz a b : V} (h : a ≤ b) : kitD Cz a ≤ kitD Cz b := by
+  unfold kitD
+  refine mul_le_mul_of_nonneg_left ?_ zero_le
+  rw [pow3_eq_p3, pow3_eq_p3]
+  exact p3_mono (add_le_add h le_rfl)
+
+/-- `d ≤ 2·d`. -/
+lemma le_two_mul_self (d : V) : d ≤ 2 * d := le_of_add_eq' (c := d) (by ring)
+
+/-- **`leafCode` lands in the kit class** — the `leafCode` analogue of §8's `proofLen_bin2Code_le_kitD`, with NO
+doubling constant (§3 bounds `leafCode` by a single `sum2D`). -/
+lemma proofLen_leafCode_le_kitD {T N' B' Cz a n d : V} (htblN : NumTableOK T N' B')
+    (h : a + 1 ≤ n) (hn : n ≤ 2 * d) (hC : 27 * N' + 525600 * B' ≤ Cz) :
+    proofLen TAct (leafCode T a n) ≤ kitD Cz (2 * d) :=
+  le_trans (proofLen_leafCode_le' htblN h hn)
+    (le_trans (sum2D_le_layD N' B' (2 * d)) (layD_le_kitD le_rfl hC))
+
+/-- **THE DOUBLING ABSORBED INTO THE CONSTANT.** The ten motive wrappers conclude at `kitD Cz (2·proofLen ρ)`, while
+`ArmHyps`/`Assemble.VerifySizeOracle` demand the UNDOUBLED `kitD Cz (proofLen ρ)`. `kitD Cz z = Cz·(z+1)³` is INCREASING
+in `z`, so `kitD_mono` (which only weakens upward) cannot bridge them and neither can `SizeOK.mono`: the doubling is
+a genuine strengthening of the class, not a notational difference.
+
+It IS absorbable into the CONSTANT, which is what the recursion does — `2·d + 1 ≤ 2·(d + 1)`, so
+
+  `kitD Cz (2·d) = Cz·(2d+1)³ ≤ Cz·(2(d+1))³ = 8·Cz·(d+1)³ = kitD (8·Cz) d`.
+
+`ArmHypsAll` quantifies `Cz` AFTER the fixed naturals `N'`, `B'`, so instantiating the arms at `8·Czv` costs nothing
+and leaves `ArmHyps` byte-identical (which `Package.lean` requires). -/
+lemma kitD_two_mul_le (Cz d : V) : kitD Cz (2 * d) ≤ kitD (8 * Cz) d := by
+  unfold kitD
+  rw [pow3_eq_p3, pow3_eq_p3]
+  calc Cz * p3 (2 * d + 1) ≤ Cz * p3 (2 * (d + 1)) :=
+        mul_le_mul_of_nonneg_left (p3_mono (le_of_add_eq' (c := 1) (by ring))) zero_le
+    _ = Cz * (8 * p3 (d + 1)) := by rw [p3_two_mul]
+    _ = 8 * Cz * p3 (d + 1) := by ring
+
+/-- **`kitQ` is monotone in its CONSTANT** (`kitQ C B E = C·((B+1)(E+1))`) — the `Q`-side companion of
+`kitD_two_mul_le`, so a wrapper's conclusion at `Czv` weakens to the recursion's `8·Czv`. No such lemma existed
+anywhere in the tree: §4's family (`le_kitQ_factor`, `BE_le_kitQ`, `goalFact_le_kitQ`, `entryB_le_kitQ`) all LAND a
+quantity in the class and none of them varies the constant. -/
+lemma kitQ_mono_const {C C' : V} (B E : V) (h : C ≤ C') : kitQ C B E ≤ kitQ C' B E := by
+  unfold kitQ
+  exact mul_le_mul_of_nonneg_right h zero_le
+
+end recursionPrep
+
+
+/-! ## 16. The per-arm MOTIVE WRAPPERS — `axL`
+
+TRAP 15 (Part 3) measured that filling one arm INSIDE the ten-arm `Derivation.induction1` body does not converge
+(>40 min on the cheapest arm, against ~10 s standalone). The restructuring is one TOP-LEVEL theorem per arm, taking
+the induction's binders and the cap as explicit hypotheses and concluding the MOTIVE at that node; the recursion
+body then becomes ten one-line applications.
+
+**TRAP 16 — the actual cost centre, and the fix.** The blowup is NOT the induction context: it is `isDefEq`
+searching for the arm lemma's IMPLICIT arguments (`is`, `il`, `ip`, `inp`, `L`, `n`, …) against the large unfolded
+list term. Pinning them by name turns that search into a check. Measured on this wrapper: unpinned, `isDefEq`
+timeout at 2 000 000 heartbeats after 73 s; **pinned, green in 5 s** — the same content, a >480× collapse against
+the in-body figure. Every remaining wrapper must pin its arm lemma's implicits the same way.
+
+The wrapper also needs `set_option maxHeartbeats 2000000` (the default 200 000 is not enough even pinned) and its
+constant hypotheses in the SHAPE the arithmetic lemmas expect — `lin_le_p3` wants `(12 : V) + 9 ≤ Czv`, not
+`((21 : ℕ) : V) ≤ Czv`; a cast mismatch there reads as an application type error, not as a numeric one.
+-/
+
+section motiveWrappers
+
+set_option maxHeartbeats 2000000 in
+/-- **THE `axL` MOTIVE WRAPPER** — top-level, taking the induction's binders and the cap explicitly,
+concluding the motive at an `axL` node. The E-room constructions live HERE, not in the recursion body. -/
+theorem axL_wrapper {tbl N N' B' Wc W₁ T B E Czv Γ s p : V}
+    (htbl : TableOK tbl N) (hP : ProTable tbl) (htblN : NumTableOK T N' B')
+    (hWc : Wc = certPieces) (hW₁ : W₁ = frag1Pieces)
+    (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (hCz1 : 1 ≤ Czv) (hCk : ∀ a : ℕ, a ≤ 1000000 → ((a : ℕ) : V) ≤ Czv)
+    (hC21 : (12 : V) + 9 ≤ Czv)
+    (hCD : 27 * N' + 525600 * B' ≤ Czv)
+    (hcG : 4 * ((cDer : V) + cDlen + cFst + 6) ≤ Czv)
+    (hs : IsFormulaSet LAct s) (hp : p ∈ s) (hnp : neg LAct p ∈ s)
+    (hΓ : IsFormulaSet LAct Γ) (hLay : NodeLay walkPieces Wc T Γ s)
+    (hE : Czv * p4 (proofLen TAct (axL s p) + 1) ≤ E) :
+    len (vAxL walkPieces Wc W₁ T s p) ≤ Czv * p4 (proofLen TAct (axL s p)) ∧
+    SizeOK (kitQ Czv B E) (kitD Czv (2 * proofLen TAct (axL s p))) (vAxL walkPieces Wc W₁ T s p) := by
+  have hD : Derivation TAct (axL s p) := Derivation.axL hs hp hnp
+  have hd1 : 1 ≤ proofLen TAct (axL s p) := one_le_proofLen hD
+  have hsD : sequentLen LAct s ≤ proofLen TAct (axL s p) := by
+    have := sequentLen_fstIdx_le_proofLen hD; rwa [fstIdx_axL] at this
+  have hkD : len (memberList s) ≤ proofLen TAct (axL s p) := le_trans (len_memberList_le_sequentLen hs) hsD
+  have hpD : formulaLen LAct p ≤ proofLen TAct (axL s p) :=
+    formulaLen_le_proofLen_of_mem hD (by rw [fstIdx_axL]; exact hp)
+  have hdl : proofLen TAct (axL s p) = sequentLen LAct s + 1 := proofLen_axL hD
+  obtain ⟨d, hdd⟩ : ∃ x, x = proofLen TAct (axL s p) := ⟨_, rfl⟩
+  rw [← hdd] at hE hd1 hsD hkD hpD hdl ⊢
+  have he1 : (1 : V) ≤ d + 1 := le_add_self
+  have hE1 : (1 : V) ≤ E := le_trans (le_trans hd1 (le_p4_self hd1))
+    (le_trans (le_mul_of_one_le_left zero_le hCz1)
+      (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE))
+  have hEax : 13 * d + 18 * ‖d‖ + 8 ≤ E := capE4' hE he1 (hCk 39 (by norm_num)) (by
+    calc 13 * d + 18 * ‖d‖ + 8 ≤ (13 + 18 + 8) * (d + 1) := lin_cap 13 18 8 d
+      _ = ((39 : ℕ) : V) * (d + 1) := by push_cast; ring)
+  have hiEax : 0 + 8 * d + 3 ≤ E := capE4' hE he1 (hCk 11 (by norm_num)) (by
+    push_cast; exact le_of_add_eq' (c := 3 * d + 8) (by ring))
+  obtain ⟨-, -, hho, -, hlenp, -⟩ := proAxL_ok (D := d) htbl hP htblN hWc hs hp hnp hsD hEax hiEax hΓ hLay.layout
+  have hnE : 18 * ‖d‖ + 7 ≤ E := capE4' hE he1 (hCk 25 (by norm_num)) (by
+    calc 18 * ‖d‖ + 7 ≤ 0 * d + 18 * ‖d‖ + 7 := by rw [zero_mul, zero_add]
+      _ ≤ (0 + 18 + 7) * (d + 1) := lin_cap 0 18 7 d
+      _ = ((25 : ℕ) : V) * (d + 1) := by push_cast; ring)
+  have hLn : sequentLen LAct s + 1 ≤ d := le_of_eq hdl.symm
+  have hgoalE : len (memberList s) + 1 + 1 + 1 ≤ E := capE4' hE he1 (hCk 4 (by norm_num)) (by
+    calc len (memberList s) + 1 + 1 + 1 ≤ d + 3 :=
+          (add_le_add (add_le_add (add_le_add hkD le_rfl) le_rfl) le_rfl).trans (le_of_eq (by ring))
+      _ ≤ ((4 : ℕ) : V) * (d + 1) := by push_cast; exact le_of_add_eq' (c := 3 * d + 1) (by ring))
+  have hbn : termLen LAct (binNumeral d) ≤ E := capE4' hE he1 (hCk 7 (by norm_num)) (by
+    refine le_trans (termLen_binNumeral_le_V d) ?_
+    calc 6 * ‖d‖ + 1 ≤ 6 * (d + 1) + 1 * (d + 1) :=
+          add_le_add (mul_le_mul_of_nonneg_left (le_trans (length_le d) le_self_add) zero_le)
+            (by rw [one_mul]; exact le_add_self)
+      _ = ((7 : ℕ) : V) * (d + 1) := by push_cast; ring)
+  refine ⟨?_, ?_⟩
+  · rw [axL_arm_len]
+    refine le_trans (add_le_add (le_trans (le_trans le_self_add hlenp)
+      (mul_le_mul_of_nonneg_left hpD zero_le)) (le_refl (9 : V))) ?_
+    exact le_trans (lin_le_p3 hd1 hC21) (mul_le_mul_of_nonneg_left (p3_le_p4 hd1) zero_le)
+  · unfold vAxL
+    rw [← hdd]
+    exact (axL_arm_size (Ww := walkPieces) (Wc := Wc) (W₁ := W₁) (T := T) (s := s) (p := p)
+      (B := B) (E := E) (Cz := Czv)
+      (is := len (memberList s) + 1) (il := 0)
+      (ip := memTop walkPieces Wc T s p 0) (inp := memTop walkPieces Wc T s (neg LAct p) 0)
+      (L := sequentLen LAct s) (n := d)
+      hW₁ hho hCz1 hE1 hPle hnE hLn hgoalE hbn hcG
+      (le_trans (proofLen_leafCode_le' htblN (le_of_eq hdl.symm) le_rfl)
+        (le_trans (sum2D_le_layD N' B' d) (layD_le_kitD le_rfl hCD)))).mono le_rfl
+      (kitD_mono (le_two_mul_self d))
+
+
+/-! ### 16.1 The `verumIntro` wrapper
+
+The second wrapper, and the confirmation that the template generalises: green in 5 s, the same cost as `axL`.
+`vVerum = fragVerum` alone (no prologue), so there is no `HornOnly` block and no `proAxL_ok` destructuring — just
+the four E-rooms and `verum_arm_size` with its implicits pinned.
+
+**TRAP 17 — `rw [← hdd]` must come AFTER the `unfold`.** The wrapper abbreviates `d = proofLen TAct (…)` and rewrites
+it through the goal in bulk at the top; `unfold vVerum` then RE-EXPOSES the raw `proofLen` in the fragment's `n`
+position, so the pinned `n := d` no longer matches and the application fails on a `SizeOK … (fragVerum … d)` versus
+`SizeOK … (fragVerum … (proofLen TAct (verumIntro s)))` mismatch. Repeating the rewrite after the unfold fixes it.
+-/
+
+set_option maxHeartbeats 2000000 in
+/-- **THE `verumIntro` MOTIVE WRAPPER** — `vVerum = fragVerum` alone (no prologue). -/
+theorem verum_wrapper {tbl N N' B' Wc W₁ T B E Czv Γ s : V}
+    (htbl : TableOK tbl N) (hP : ProTable tbl) (htblN : NumTableOK T N' B')
+    (hWc : Wc = certPieces) (hW₁ : W₁ = frag1Pieces)
+    (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (hCz1 : 1 ≤ Czv) (hCk : ∀ a : ℕ, a ≤ 1000000 → ((a : ℕ) : V) ≤ Czv)
+    (hC9 : (9 : V) ≤ Czv)
+    (hCD : 27 * N' + 525600 * B' ≤ Czv)
+    (hcG : 4 * ((cDer : V) + cDlen + cFst + 6) ≤ Czv)
+    (hs : IsFormulaSet LAct s) (hv : (^⊤ : V) ∈ s)
+    (hΓ : IsFormulaSet LAct Γ) (hLay : NodeLay walkPieces Wc T Γ s)
+    (hE : Czv * p4 (proofLen TAct (verumIntro s) + 1) ≤ E) :
+    len (vVerum walkPieces Wc W₁ T s) ≤ Czv * p4 (proofLen TAct (verumIntro s)) ∧
+    SizeOK (kitQ Czv B E) (kitD Czv (2 * proofLen TAct (verumIntro s))) (vVerum walkPieces Wc W₁ T s) := by
+  have hD : Derivation TAct (verumIntro s) := Derivation.verumIntro hs hv
+  have hd1 : 1 ≤ proofLen TAct (verumIntro s) := one_le_proofLen hD
+  have hsD : sequentLen LAct s ≤ proofLen TAct (verumIntro s) := by
+    have := sequentLen_fstIdx_le_proofLen hD; rwa [fstIdx_verumIntro] at this
+  have hkD : len (memberList s) ≤ proofLen TAct (verumIntro s) := le_trans (len_memberList_le_sequentLen hs) hsD
+  have hdl : proofLen TAct (verumIntro s) = sequentLen LAct s + 1 := proofLen_verumIntro hD
+  obtain ⟨d, hdd⟩ : ∃ x, x = proofLen TAct (verumIntro s) := ⟨_, rfl⟩
+  rw [← hdd] at hE hd1 hsD hkD hdl ⊢
+  have he1 : (1 : V) ≤ d + 1 := le_add_self
+  have hE1 : (1 : V) ≤ E := le_trans (le_trans hd1 (le_p4_self hd1))
+    (le_trans (le_mul_of_one_le_left zero_le hCz1)
+      (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE))
+  have hnE : 18 * ‖d‖ + 7 ≤ E := capE4' hE he1 (hCk 25 (by norm_num)) (by
+    calc 18 * ‖d‖ + 7 ≤ 0 * d + 18 * ‖d‖ + 7 := by rw [zero_mul, zero_add]
+      _ ≤ (0 + 18 + 7) * (d + 1) := lin_cap 0 18 7 d
+      _ = ((25 : ℕ) : V) * (d + 1) := by push_cast; ring)
+  have hLn : sequentLen LAct s + 1 ≤ d := le_of_eq hdl.symm
+  have hgoalE : len (memberList s) + 1 + 1 + 1 ≤ E := capE4' hE he1 (hCk 4 (by norm_num)) (by
+    calc len (memberList s) + 1 + 1 + 1 ≤ d + 3 :=
+          (add_le_add (add_le_add (add_le_add hkD le_rfl) le_rfl) le_rfl).trans (le_of_eq (by ring))
+      _ ≤ ((4 : ℕ) : V) * (d + 1) := by push_cast; exact le_of_add_eq' (c := 3 * d + 1) (by ring))
+  have hbn : termLen LAct (binNumeral d) ≤ E := capE4' hE he1 (hCk 7 (by norm_num)) (by
+    refine le_trans (termLen_binNumeral_le_V d) ?_
+    calc 6 * ‖d‖ + 1 ≤ 6 * (d + 1) + 1 * (d + 1) :=
+          add_le_add (mul_le_mul_of_nonneg_left (le_trans (length_le d) le_self_add) zero_le)
+            (by rw [one_mul]; exact le_add_self)
+      _ = ((7 : ℕ) : V) * (d + 1) := by push_cast; ring)
+  refine ⟨?_, ?_⟩
+  · rw [verum_arm_len]
+    exact le_trans hC9 (le_mul_of_one_le_right zero_le (one_le_p4 hd1))
+  · unfold vVerum
+    rw [← hdd]
+    exact (verum_arm_size (W₁ := W₁) (T := T) (B := B) (E := E) (Cz := Czv)
+      (is := len (memberList s) + 1) (il := 0) (iv := memTop walkPieces Wc T s (^⊤ : V) 0)
+      (L := sequentLen LAct s) (n := d)
+      hW₁ hCz1 hE1 hPle hnE hLn hgoalE hbn hcG
+      (le_trans (proofLen_leafCode_le' htblN (le_of_eq hdl.symm) le_rfl)
+        (le_trans (sum2D_le_layD N' B' d) (layD_le_kitD le_rfl hCD)))).mono le_rfl
+      (kitD_mono (le_two_mul_self d))
+
+end motiveWrappers
+
+
+/-! ## 17. The E-room helper family
+
+Part 5 spent its whole round on hand-built inequality chains: every wrapper's `hEpro`/`hiEpro`/`hnE`/`hbn` is the
+same `capE4'`+`lin_cap`+`hCk` composition at a different coefficient triple, and each hand-rolling went wrong in a
+different way (a leading `0 +` blocking `ring`, a mis-associated `le_of_add_eq'`, `44 + 25` written as `65`). This
+section factors the three shapes once.
+
+* `eroom_lin hE hCk a b c _ : (a : V)·D + (b : V)·‖D‖ + (c : V) ≤ E` — the general LINEAR room, subsuming the
+  prologue room `(13, 18, 12)`, the node room `(0, 18, 7)`, the insert room `(14, 0, 5)`, and every other
+  `lin_cap` chain in the wrappers;
+* `eroom_binNumeral hE hCk hn : termLen LAct (binNumeral n) ≤ E` for `n ≤ D` — covers the parent's and the child's `proofLen`
+  alike (`termLen_binNumeral_le_V` at coefficient `7`);
+* `eroom_off hE hCk hx c _ : x + (c : V) ≤ E` for `x ≤ D` — the goal-fact offset shape.
+
+**Usage.** The helpers are stated with ℕ-casts on the coefficients so the constant side discharges by `norm_num`
+against `hCk`; a call site wanting the literal `V`-shape follows with `push_cast at this`, and for a triple with
+`a = 0` additionally `rw [zero_mul, zero_add] at this` — the leading zero is exactly what blocked `ring` when these
+were hand-rolled. Both idioms are exercised by the smoke tests this section was validated against.
+-/
+
+section eroom
+
+/-- **The general LINEAR E-room**: `a·D + b·‖D‖ + c ≤ E` under the cap, for `a + b + c ≤ 1000000`. -/
+lemma eroom_lin {D E Czv : V} (hE : Czv * p4 (D + 1) ≤ E) (hCk : ∀ n : ℕ, n ≤ 1000000 → ((n : ℕ) : V) ≤ Czv)
+    (a b c : ℕ) (habc : a + b + c ≤ 1000000) :
+    ((a : ℕ) : V) * D + ((b : ℕ) : V) * ‖D‖ + ((c : ℕ) : V) ≤ E := by
+  refine capE4' hE le_add_self (hCk (a + b + c) habc) ?_
+  refine le_trans (lin_cap ((a : ℕ) : V) ((b : ℕ) : V) ((c : ℕ) : V) D) ?_
+  exact le_of_eq (by push_cast; ring)
+
+/-- **The `binNumeral` E-room**: `termLen (binNumeral n) ≤ E` for any `n ≤ D` (`termLen_binNumeral_le_V` at coefficient `7`). -/
+lemma eroom_binNumeral {D E Czv n : V} (hE : Czv * p4 (D + 1) ≤ E)
+    (hCk : ∀ m : ℕ, m ≤ 1000000 → ((m : ℕ) : V) ≤ Czv) (hn : n ≤ D) :
+    termLen LAct (binNumeral n) ≤ E := by
+  refine capE4' hE le_add_self (hCk 7 (by norm_num)) ?_
+  refine le_trans (termLen_binNumeral_le_V n) ?_
+  calc 6 * ‖n‖ + 1 ≤ 6 * (D + 1) + 1 * (D + 1) :=
+        add_le_add (mul_le_mul_of_nonneg_left
+          (le_trans (length_monotone hn) (le_trans (length_le D) le_self_add)) zero_le)
+          (by rw [one_mul]; exact le_add_self)
+    _ = ((7 : ℕ) : V) * (D + 1) := by push_cast; ring
+
+/-- **The OFFSET E-room**: `x + c ≤ E` for `x ≤ D` and a literal `c`. -/
+lemma eroom_off {D E Czv x : V} (hE : Czv * p4 (D + 1) ≤ E)
+    (hCk : ∀ m : ℕ, m ≤ 1000000 → ((m : ℕ) : V) ≤ Czv) (hx : x ≤ D)
+    (c : ℕ) (hc : 1 + c ≤ 1000000) :
+    x + ((c : ℕ) : V) ≤ E := by
+  refine capE4' hE le_add_self (hCk (1 + c) hc) ?_
+  calc x + ((c : ℕ) : V) ≤ D + ((c : ℕ) : V) := add_le_add hx le_rfl
+    _ ≤ ((1 + c : ℕ) : V) * (D + 1) := by
+        push_cast
+        exact le_of_add_eq' (c := (c : V) * D + 1) (by ring)
+
+end eroom
+
+/-! ## 18. The `wk` motive wrapper
+
+The third wrapper, and the first NON-LEAF one. Written UNABBREVIATED per TRAP 18 (`wk_arm_size` hard-wires
+`proofLen TAct (wkRule s d')` and `proofLen TAct d'` in its hypothesis types), with the arm lemma's implicits pinned per
+TRAP 16 and every E-room from §17's helper family.
+
+The two goal-fact offsets and the length half all close the same way: a linear term plus the child's
+`Czv·p4 (proofLen d')`, absorbed by `Bounds.rec1₄` at `hdeq : proofLen (wkRule s d') = proofLen d' + (sequentLen s + 1)`.
+
+**RESIDUAL (Part 6):** `lin_le_p3` concludes at `1 * D + c`, not `D + c`, so each of its uses here is followed by
+`rw [one_mul] at …`. -/
+
+section wkWrapper
+
+set_option maxHeartbeats 2000000 in
+/-- **THE `wk` MOTIVE WRAPPER.** -/
+theorem wk_wrapper {tbl N N' B' Wl Wc W₁ W T B E Czv Γ s d' L' : V}
+    (htbl : TableOK tbl N) (hP : ProTable tbl) (htblN : NumTableOK T N' B')
+    (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (hWp : W = proPieces) (hW₁ : W₁ = frag1Pieces)
+    (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (hCz1 : 1 ≤ Czv) (hCk : ∀ n : ℕ, n ≤ 1000000 → ((n : ℕ) : V) ≤ Czv)
+    (hCQ : 19 * B' + 25 ≤ Czv) (hCD : 27 * N' + 525600 * B' ≤ Czv)
+    (hCbin : 2 * (27 * N' + 525600 * B') ≤ Czv)
+    (hcG : 4 * ((cDer : V) + cDlen + cFst + 6) ≤ Czv)
+    (hs : IsFormulaSet LAct s) (hsub : fstIdx d' ⊆ s) (hd' : Derivation TAct d')
+    (hΓ : IsFormulaSet LAct Γ) (hLay : NodeLay walkPieces Wc T Γ s)
+    (hchildSz : SizeOK (kitQ Czv B E) (kitD Czv (2 * proofLen TAct (wkRule s d'))) L')
+    (hchildLen : len L' ≤ Czv * p4 (proofLen TAct d'))
+    (hE : Czv * p4 (proofLen TAct (wkRule s d') + 1) ≤ E) :
+    len (vWk walkPieces Wl Wc W₁ W T s d' L') ≤ Czv * p4 (proofLen TAct (wkRule s d')) ∧
+    SizeOK (kitQ Czv B E) (kitD Czv (2 * proofLen TAct (wkRule s d'))) (vWk walkPieces Wl Wc W₁ W T s d' L') := by
+  have hD : Derivation TAct (wkRule s d') := Derivation.wkRule hs hsub ⟨rfl, hd'⟩
+  have hd1 : 1 ≤ proofLen TAct (wkRule s d') := one_le_proofLen hD
+  have hsD : sequentLen LAct s ≤ proofLen TAct (wkRule s d') := by
+    have := sequentLen_fstIdx_le_proofLen hD; rwa [fstIdx_wkRule] at this
+  have hcD : sequentLen LAct (fstIdx d') ≤ proofLen TAct (wkRule s d') := sequentLen_child_le_proofLen_wkRule hD
+  have hdl : proofLen TAct (wkRule s d') = sequentLen LAct s + proofLen TAct d' + 1 := proofLen_wkRule hD
+  have hcs : IsFormulaSet LAct (fstIdx d') := DerivationOf.isFormulaSet ⟨rfl, hd'⟩
+  have hkcD : len (memberList (fstIdx d')) ≤ proofLen TAct (wkRule s d') :=
+    le_trans (len_memberList_le_sequentLen hcs) hcD
+  have hksD : len (memberList s) ≤ proofLen TAct (wkRule s d') :=
+    le_trans (len_memberList_le_sequentLen hs) hsD
+  have he1 : (1 : V) ≤ proofLen TAct (wkRule s d') + 1 := le_add_self
+  have hyd : proofLen TAct d' ≤ proofLen TAct (wkRule s d') := by
+    rw [hdl]; exact le_of_add_eq' (c := sequentLen LAct s + 1) (by ring)
+  have hdeq : proofLen TAct (wkRule s d') = proofLen TAct d' + (sequentLen LAct s + 1) := by rw [hdl]; ring
+  have hE1 : (1 : V) ≤ E := le_trans (le_trans hd1 (le_p4_self hd1))
+    (le_trans (le_mul_of_one_le_left zero_le hCz1)
+      (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE))
+  have hDE : proofLen TAct (wkRule s d') ≤ E := le_trans (le_p4_self hd1)
+    (le_trans (le_mul_of_one_le_left zero_le hCz1)
+      (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE))
+  have hEpro : 13 * proofLen TAct (wkRule s d') + 18 * ‖proofLen TAct (wkRule s d')‖ + 12 ≤ E := by
+    have := eroom_lin hE hCk 13 18 12 (by norm_num)
+    push_cast at this
+    exact this
+  have hiEpro : 0 + 14 * proofLen TAct (wkRule s d') + 5 ≤ E := by
+    rw [zero_add]
+    have := eroom_lin hE hCk 14 0 5 (by norm_num)
+    push_cast at this
+    rw [zero_mul, add_zero] at this
+    exact this
+  have hnE : 18 * ‖proofLen TAct (wkRule s d')‖ + 7 ≤ E := by
+    have := eroom_lin hE hCk 0 18 7 (by norm_num)
+    push_cast at this
+    rw [zero_mul, zero_add] at this
+    exact this
+  have hbnc : termLen LAct (binNumeral (proofLen TAct d')) ≤ E := eroom_binNumeral hE hCk hyd
+  have hbn' : termLen LAct (binNumeral (proofLen TAct (wkRule s d'))) ≤ E := eroom_binNumeral hE hCk le_rfl
+  have hLn : sequentLen LAct s + proofLen TAct d' + 1 ≤ proofLen TAct (wkRule s d') := le_of_eq hdl.symm
+  have hnd : proofLen TAct (wkRule s d') ≤ 2 * proofLen TAct (wkRule s d') := le_two_mul_self _
+  have hshL : shiftsV L' ≤ Czv * p4 (proofLen TAct d') := le_trans (shiftsV_le_len L') hchildLen
+  have hlenPro : len (wkPro walkPieces Wl Wc W T s (fstIdx d')) ≤ 44 * proofLen TAct (wkRule s d') + 11 :=
+    len_wkPro_le htbl hP hWl hWc walkPieces W T s hcs hcD
+  have hshPro : shiftsV (wkPro walkPieces Wl Wc W T s (fstIdx d')) ≤ 44 * proofLen TAct (wkRule s d') + 11 :=
+    le_trans (shiftsV_le_len _) hlenPro
+  have hgE : len (memberList (fstIdx d')) + 1 + shiftsV L' + 1 ≤ E := by
+    have hlin : proofLen TAct (wkRule s d') + 2 ≤ Czv * p3 (proofLen TAct (wkRule s d')) := by
+      have h3 := hCk 3 (by norm_num)
+      push_cast at h3
+      have := lin_le_p3 (a := 1) (b := 2) hd1 (by
+        exact le_trans (le_of_eq (by norm_num : (1 : V) + 2 = 3)) h3)
+      rw [one_mul] at this
+      exact this
+    refine le_trans ?_ (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE)
+    calc len (memberList (fstIdx d')) + 1 + shiftsV L' + 1
+        ≤ proofLen TAct (wkRule s d') + 1 + Czv * p4 (proofLen TAct d') + 1 :=
+          add_le_add (add_le_add (add_le_add hkcD le_rfl) hshL) le_rfl
+      _ = (proofLen TAct (wkRule s d') + 2) + Czv * p4 (proofLen TAct d') := by ring
+      _ ≤ Czv * p4 (proofLen TAct (wkRule s d')) := rec1₄ le_add_self hdeq hlin
+  have hgE2 : shiftsV (wkPro walkPieces Wl Wc W T s (fstIdx d')) + shiftsV L' + 2 +
+      (len (memberList s) + 1) + 1 + 1 ≤ E := by
+    have hlin : 45 * proofLen TAct (wkRule s d') + 16 ≤ Czv * p3 (proofLen TAct (wkRule s d')) := by
+      have h61 := hCk 61 (by norm_num)
+      push_cast at h61
+      exact lin_le_p3 hd1 (le_trans (le_of_eq (by norm_num : (45 : V) + 16 = 61)) h61)
+    refine le_trans ?_ (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE)
+    calc shiftsV (wkPro walkPieces Wl Wc W T s (fstIdx d')) + shiftsV L' + 2 +
+          (len (memberList s) + 1) + 1 + 1
+        ≤ (44 * proofLen TAct (wkRule s d') + 11) + Czv * p4 (proofLen TAct d') + 2 +
+          (proofLen TAct (wkRule s d') + 1) + 1 + 1 :=
+          add_le_add (add_le_add (add_le_add (add_le_add (add_le_add hshPro hshL) le_rfl)
+            (add_le_add hksD le_rfl)) le_rfl) le_rfl
+      _ = (45 * proofLen TAct (wkRule s d') + 16) + Czv * p4 (proofLen TAct d') := by ring
+      _ ≤ Czv * p4 (proofLen TAct (wkRule s d')) := rec1₄ le_add_self hdeq hlin
+  refine ⟨?_, ?_⟩
+  · rw [len_vWk_eq]
+    have hX : 44 * proofLen TAct (wkRule s d') + 25 ≤ Czv * p3 (proofLen TAct (wkRule s d')) := by
+      have h69 := hCk 69 (by norm_num)
+      push_cast at h69
+      exact lin_le_p3 hd1 (le_trans (le_of_eq (by norm_num : (44 : V) + 25 = 69)) h69)
+    calc len (wkPro walkPieces Wl Wc W T s (fstIdx d')) + (len L' + (5 + 9))
+        ≤ (44 * proofLen TAct (wkRule s d') + 11) + (Czv * p4 (proofLen TAct d') + 14) :=
+          add_le_add hlenPro (add_le_add hchildLen (by norm_num))
+      _ = (44 * proofLen TAct (wkRule s d') + 25) + Czv * p4 (proofLen TAct d') := by ring
+      _ ≤ Czv * p4 (proofLen TAct (wkRule s d')) := rec1₄ le_add_self hdeq hX
+  · exact wk_arm_size (Wl := Wl) (Wc := Wc) (W₁ := W₁) (W := W) (T := T) (s := s) (d' := d') (L' := L')
+      (B := B) (E := E) (Cz := Czv) (N' := N') (B' := B')
+      (D := proofLen TAct (wkRule s d')) (d := proofLen TAct (wkRule s d')) (Γ := Γ)
+      hWp hW₁ htbl hP htblN hWl hWc hPle hs hsub hsD hcD hEpro hiEpro hΓ hLay.layout
+      hDE hnd hCQ hCD hCz1 hchildSz hE1 hcG hgE hbnc hbn' hnE hLn hnd hgE2 hCbin
+
+end wkWrapper
+
+/-! ## 19. The `shift` motive wrapper
+
+The `wk` wrapper's twin. `shift_arm_size` differs from `wk_arm_size` in three places only: it wants the child's
+`IsFormulaSet` and the shift equation (`hc`, `hsc : s = setShift LAct (fstIdx d')`) in place of `wk`'s `hsub`, and
+its insert room is `0 + 16·D + 8` rather than `0 + 14·D + 5`. `proofLen_shiftRule` has the same shape as `proofLen_wkRule`
+(`sequentLen s + proofLen d + 1`), so `hdeq`, `hyd` and `hLn` transcribe unchanged.
+
+The constants move with `len_shiftPro_le ≤ 62·D + 23` (against `wk`'s `44·D + 11`): the length half needs
+`62 + 23 + 14 = 99` and `hgE2` needs `63·D + 28`, i.e. `91`. -/
+
+section shiftWrapper
+
+set_option maxHeartbeats 2000000 in
+/-- **THE `shift` MOTIVE WRAPPER.** -/
+theorem shift_wrapper {tbl N N' B' Wl Wc W₂ W T B E Czv Γ s d' L' : V}
+    (htbl : TableOK tbl N) (hP : ProTable tbl) (htblN : NumTableOK T N' B')
+    (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (hWp : W = proPieces) (hW₂ : W₂ = frag2Pieces)
+    (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (hCz1 : 1 ≤ Czv) (hCk : ∀ n : ℕ, n ≤ 1000000 → ((n : ℕ) : V) ≤ Czv)
+    (hCQ : 19 * B' + 25 ≤ Czv) (hCD : 27 * N' + 525600 * B' ≤ Czv)
+    (hCbin : 2 * (27 * N' + 525600 * B') ≤ Czv)
+    (hcG : 4 * ((cDer : V) + cDlen + cFst + 6) ≤ Czv)
+    (hs : IsFormulaSet LAct s) (hsc : s = setShift LAct (fstIdx d')) (hd' : Derivation TAct d')
+    (hΓ : IsFormulaSet LAct Γ) (hLay : NodeLay walkPieces Wc T Γ s)
+    (hchildSz : SizeOK (kitQ Czv B E) (kitD Czv (2 * proofLen TAct (shiftRule s d'))) L')
+    (hchildLen : len L' ≤ Czv * p4 (proofLen TAct d'))
+    (hE : Czv * p4 (proofLen TAct (shiftRule s d') + 1) ≤ E) :
+    len (vShift walkPieces Wl Wc W₂ W T s d' L') ≤ Czv * p4 (proofLen TAct (shiftRule s d')) ∧
+    SizeOK (kitQ Czv B E) (kitD Czv (2 * proofLen TAct (shiftRule s d')))
+      (vShift walkPieces Wl Wc W₂ W T s d' L') := by
+  have hD : Derivation TAct (shiftRule s d') := by
+    have := Derivation.shiftRule (T := TAct) ⟨rfl, hd'⟩; rwa [← hsc] at this
+  have hd1 : 1 ≤ proofLen TAct (shiftRule s d') := one_le_proofLen hD
+  have hsD : sequentLen LAct s ≤ proofLen TAct (shiftRule s d') := by
+    have := sequentLen_fstIdx_le_proofLen hD; rwa [fstIdx_shiftRule] at this
+  have hcD : sequentLen LAct (fstIdx d') ≤ proofLen TAct (shiftRule s d') := sequentLen_child_le_proofLen_shiftRule hD
+  have hdl : proofLen TAct (shiftRule s d') = sequentLen LAct s + proofLen TAct d' + 1 := proofLen_shiftRule hD
+  have hcs : IsFormulaSet LAct (fstIdx d') := DerivationOf.isFormulaSet ⟨rfl, hd'⟩
+  have hkcD : len (memberList (fstIdx d')) ≤ proofLen TAct (shiftRule s d') :=
+    le_trans (len_memberList_le_sequentLen hcs) hcD
+  have hksD : len (memberList s) ≤ proofLen TAct (shiftRule s d') :=
+    le_trans (len_memberList_le_sequentLen hs) hsD
+  have he1 : (1 : V) ≤ proofLen TAct (shiftRule s d') + 1 := le_add_self
+  have hyd : proofLen TAct d' ≤ proofLen TAct (shiftRule s d') := by
+    rw [hdl]; exact le_of_add_eq' (c := sequentLen LAct s + 1) (by ring)
+  have hdeq : proofLen TAct (shiftRule s d') = proofLen TAct d' + (sequentLen LAct s + 1) := by rw [hdl]; ring
+  have hE1 : (1 : V) ≤ E := le_trans (le_trans hd1 (le_p4_self hd1))
+    (le_trans (le_mul_of_one_le_left zero_le hCz1)
+      (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE))
+  have hDE : proofLen TAct (shiftRule s d') ≤ E := le_trans (le_p4_self hd1)
+    (le_trans (le_mul_of_one_le_left zero_le hCz1)
+      (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE))
+  have hEpro : 13 * proofLen TAct (shiftRule s d') + 18 * ‖proofLen TAct (shiftRule s d')‖ + 12 ≤ E := by
+    have := eroom_lin hE hCk 13 18 12 (by norm_num)
+    push_cast at this
+    exact this
+  have hiEpro : 0 + 16 * proofLen TAct (shiftRule s d') + 8 ≤ E := by
+    rw [zero_add]
+    have := eroom_lin hE hCk 16 0 8 (by norm_num)
+    push_cast at this
+    rw [zero_mul, add_zero] at this
+    exact this
+  have hnE : 18 * ‖proofLen TAct (shiftRule s d')‖ + 7 ≤ E := by
+    have := eroom_lin hE hCk 0 18 7 (by norm_num)
+    push_cast at this
+    rw [zero_mul, zero_add] at this
+    exact this
+  have hbnc : termLen LAct (binNumeral (proofLen TAct d')) ≤ E := eroom_binNumeral hE hCk hyd
+  have hbn' : termLen LAct (binNumeral (proofLen TAct (shiftRule s d'))) ≤ E := eroom_binNumeral hE hCk le_rfl
+  have hLn : sequentLen LAct s + proofLen TAct d' + 1 ≤ proofLen TAct (shiftRule s d') := le_of_eq hdl.symm
+  have hnd : proofLen TAct (shiftRule s d') ≤ 2 * proofLen TAct (shiftRule s d') := le_two_mul_self _
+  have hshL : shiftsV L' ≤ Czv * p4 (proofLen TAct d') := le_trans (shiftsV_le_len L') hchildLen
+  have hlenPro : len (shiftPro walkPieces Wl Wc W T s (fstIdx d')) ≤
+      62 * proofLen TAct (shiftRule s d') + 23 :=
+    len_shiftPro_le hWc walkPieces Wl W T hs hcs hsD hcD
+  have hshPro : shiftsV (shiftPro walkPieces Wl Wc W T s (fstIdx d')) ≤
+      62 * proofLen TAct (shiftRule s d') + 23 :=
+    le_trans (shiftsV_le_len _) hlenPro
+  have hgE : len (memberList (fstIdx d')) + 1 + shiftsV L' + 1 ≤ E := by
+    have hlin : proofLen TAct (shiftRule s d') + 2 ≤ Czv * p3 (proofLen TAct (shiftRule s d')) := by
+      have h3 := hCk 3 (by norm_num)
+      push_cast at h3
+      have := lin_le_p3 (a := 1) (b := 2) hd1 (by
+        exact le_trans (le_of_eq (by norm_num : (1 : V) + 2 = 3)) h3)
+      rw [one_mul] at this
+      exact this
+    refine le_trans ?_ (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE)
+    calc len (memberList (fstIdx d')) + 1 + shiftsV L' + 1
+        ≤ proofLen TAct (shiftRule s d') + 1 + Czv * p4 (proofLen TAct d') + 1 :=
+          add_le_add (add_le_add (add_le_add hkcD le_rfl) hshL) le_rfl
+      _ = (proofLen TAct (shiftRule s d') + 2) + Czv * p4 (proofLen TAct d') := by ring
+      _ ≤ Czv * p4 (proofLen TAct (shiftRule s d')) := rec1₄ le_add_self hdeq hlin
+  have hgE2 : shiftsV (shiftPro walkPieces Wl Wc W T s (fstIdx d')) + shiftsV L' + 2 +
+      (len (memberList s) + 1) + 1 + 1 ≤ E := by
+    have hlin : 63 * proofLen TAct (shiftRule s d') + 28 ≤ Czv * p3 (proofLen TAct (shiftRule s d')) := by
+      have h91 := hCk 91 (by norm_num)
+      push_cast at h91
+      exact lin_le_p3 hd1 (le_trans (le_of_eq (by norm_num : (63 : V) + 28 = 91)) h91)
+    refine le_trans ?_ (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE)
+    calc shiftsV (shiftPro walkPieces Wl Wc W T s (fstIdx d')) + shiftsV L' + 2 +
+          (len (memberList s) + 1) + 1 + 1
+        ≤ (62 * proofLen TAct (shiftRule s d') + 23) + Czv * p4 (proofLen TAct d') + 2 +
+          (proofLen TAct (shiftRule s d') + 1) + 1 + 1 :=
+          add_le_add (add_le_add (add_le_add (add_le_add (add_le_add hshPro hshL) le_rfl)
+            (add_le_add hksD le_rfl)) le_rfl) le_rfl
+      _ = (63 * proofLen TAct (shiftRule s d') + 28) + Czv * p4 (proofLen TAct d') := by ring
+      _ ≤ Czv * p4 (proofLen TAct (shiftRule s d')) := rec1₄ le_add_self hdeq hlin
+  refine ⟨?_, ?_⟩
+  · rw [len_vShift_eq]
+    have hX : 62 * proofLen TAct (shiftRule s d') + 37 ≤ Czv * p3 (proofLen TAct (shiftRule s d')) := by
+      have h99 := hCk 99 (by norm_num)
+      push_cast at h99
+      exact lin_le_p3 hd1 (le_trans (le_of_eq (by norm_num : (62 : V) + 37 = 99)) h99)
+    calc len (shiftPro walkPieces Wl Wc W T s (fstIdx d')) + (len L' + (5 + 9))
+        ≤ (62 * proofLen TAct (shiftRule s d') + 23) + (Czv * p4 (proofLen TAct d') + 14) :=
+          add_le_add hlenPro (add_le_add hchildLen (by norm_num))
+      _ = (62 * proofLen TAct (shiftRule s d') + 37) + Czv * p4 (proofLen TAct d') := by ring
+      _ ≤ Czv * p4 (proofLen TAct (shiftRule s d')) := rec1₄ le_add_self hdeq hX
+  · exact shift_arm_size (Wl := Wl) (Wc := Wc) (W₂ := W₂) (W := W) (T := T) (s := s) (d' := d') (L' := L')
+      (B := B) (E := E) (Cz := Czv) (N' := N') (B' := B')
+      (D := proofLen TAct (shiftRule s d')) (d := proofLen TAct (shiftRule s d')) (Γ := Γ)
+      hWp hW₂ htbl hP htblN hWl hWc hPle hs hcs hsc hsD hcD hEpro hiEpro hΓ hLay.layout
+      hDE hnd hCQ hCD hCz1 hchildSz hE1 hcG hgE hbnc hbn' hnE hLn hnd hgE2 hCbin
+
+end shiftWrapper
+
+/-! ## 20. The general E-room, and why the offset shapes need no bespoke helper
+
+The `or`/`and`/`cut` arms want rooms over `memTop`, `descCountF` and `proSig` offsets — e.g. `or`'s
+`hipE : memTop … (p ^⋎ q) 0 + descCountF … 0 q + 1 + 14·D + 6 ≤ E`. Those look like a new shape, but each
+summand's own bound is already LINEAR in `D` (`Prologue.memTop_le ≤ i + 6·D + 1`,
+`Verify2.descCountF_le_of_len ≤ 2·D`, `Prologue.proSig_le ≤ 6·D + 1`), so every such room COLLAPSES to
+`a·D + c` once the summands are bounded — `hipE` to `22·D + 8`, `hiqE` to `14·D + 6`.
+
+So the widening that was wanted is not a `memTop`-shaped helper but the general one: anything bounded by
+`a·D + c` is bounded by `E`. `eroom_of_le` is that lemma, and it subsumes `eroom_lin`'s role at `b = 0` as
+well as every offset room of the remaining arms.
+
+**Usage.** Bound each summand by its own `k·D + c`, sum the coefficients, then
+`refine eroom_of_le hE hCk a c (by norm_num) ?_; push_cast` and close with one `calc … := by ring`.
+`Prologue.proSig_le` itself needs an E-room at `(13, 18, 8)`, supplied by `eroom_lin`. -/
+
+section eroomGeneral
+
+/-- **The GENERAL E-room**: anything bounded by `a·D + c` is bounded by `E`. -/
+lemma eroom_of_le {D E Czv X : V} (hE : Czv * p4 (D + 1) ≤ E)
+    (hCk : ∀ n : ℕ, n ≤ 1000000 → ((n : ℕ) : V) ≤ Czv)
+    (a c : ℕ) (hac : a + c ≤ 1000000)
+    (hX : X ≤ ((a : ℕ) : V) * D + ((c : ℕ) : V)) : X ≤ E := by
+  refine le_trans hX ?_
+  have := eroom_lin hE hCk a 0 c (by omega)
+  rw [Nat.cast_zero, zero_mul, add_zero] at this
+  exact this
+
+end eroomGeneral
+
+/-! ## 21. The `or` motive wrapper
+
+The first arm with a `postIns` recovery block (six steps, against `goalElim`'s five) and with DOSSIER hypotheses.
+Still one child and one context, so it transcribes like `wk`/`shift` with three differences:
+
+* the tail is `6 + 9 = 15`, and `Prologue.len_proOr_le ≤ 110·sequentLen (insert p (insert q s)) + 25` with the `sequentLen`
+  bounded by `sequentLen_child_le_proofLen_orIntro`, so the length half's constant is `110 + 25 + 15 = 150`;
+* the two OFFSET rooms go through §20's `eroom_of_le` after their summands are bounded —
+  `hipE` collapses to `22·D + 8` (`memTop_le ≤ 0 + 6·D + 1`, `descCountF_le_of_len ≤ 2·D`) and `hiqE` to `14·D + 6`;
+* `hgE2` carries two `proSig` terms, each `≤ 6·D + 1` by `Prologue.proSig_le`, which itself needs an E-room at
+  `(13, 18, 8)`.
+
+`proofLen_orIntro` has the same `sequentLen s + proofLen d' + 1` shape as `wk`/`shift`, so `hdeq`, `hyd` and `hLn` are unchanged. -/
+
+section orWrapper
+
+set_option maxHeartbeats 2000000 in
+/-- **THE `or` MOTIVE WRAPPER.** -/
+theorem or_wrapper {tbl N N' B' Wl Wc W₁ W T B E Czv Γ s p q d' L' : V}
+    (htbl : TableOK tbl N) (hP : ProTable tbl) (htblN : NumTableOK T N' B')
+    (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (hWp : W = proPieces) (hW₁ : W₁ = frag1Pieces)
+    (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (hCz1 : 1 ≤ Czv) (hCk : ∀ n : ℕ, n ≤ 1000000 → ((n : ℕ) : V) ≤ Czv)
+    (hCQ : 19 * B' + 25 ≤ Czv) (hCD : 27 * N' + 525600 * B' ≤ Czv)
+    (hCbin : 2 * (27 * N' + 525600 * B') ≤ Czv)
+    (hcG : 4 * ((cDer : V) + cDlen + cFst + 6) ≤ Czv)
+    (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 0 p) (hq : IsSemiformula LAct 0 q)
+    (hpq : (p ^⋎ q) ∈ s) (hd' : DerivationOf TAct d' (insert p (insert q s)))
+    (hΓ : IsFormulaSet LAct Γ) (hLay : NodeLay walkPieces Wc T Γ s)
+    (hchildSz : SizeOK (kitQ Czv B E) (kitD Czv (2 * proofLen TAct (orIntro s p q d'))) L')
+    (hchildLen : len L' ≤ Czv * p4 (proofLen TAct d'))
+    (hE : Czv * p4 (proofLen TAct (orIntro s p q d') + 1) ≤ E) :
+    len (vOr walkPieces Wl Wc W₁ W T s p q d' L') ≤ Czv * p4 (proofLen TAct (orIntro s p q d')) ∧
+    SizeOK (kitQ Czv B E) (kitD Czv (2 * proofLen TAct (orIntro s p q d')))
+      (vOr walkPieces Wl Wc W₁ W T s p q d' L') := by
+  have hD : Derivation TAct (orIntro s p q d') := Derivation.orIntro hpq hd'
+  have hd1 : 1 ≤ proofLen TAct (orIntro s p q d') := one_le_proofLen hD
+  have hsD : sequentLen LAct s ≤ proofLen TAct (orIntro s p q d') := by
+    have := sequentLen_fstIdx_le_proofLen hD; rwa [fstIdx_orIntro] at this
+  have hcD : sequentLen LAct (insert p (insert q s)) ≤ proofLen TAct (orIntro s p q d') :=
+    sequentLen_child_le_proofLen_orIntro hD
+  have hdl : proofLen TAct (orIntro s p q d') = sequentLen LAct s + proofLen TAct d' + 1 := proofLen_orIntro hD
+  have hcs : IsFormulaSet LAct (insert p (insert q s)) :=
+    IsFormulaSet.insert_iff.mpr ⟨hp, IsFormulaSet.insert_iff.mpr ⟨hq, hs⟩⟩
+  have hkcD : len (memberList (insert p (insert q s))) ≤ proofLen TAct (orIntro s p q d') :=
+    le_trans (len_memberList_le_sequentLen hcs) hcD
+  have hksD : len (memberList s) ≤ proofLen TAct (orIntro s p q d') :=
+    le_trans (len_memberList_le_sequentLen hs) hsD
+  have hk1 : 1 ≤ len (memberList s) := one_le_len_memberList_of_mem hpq
+  have he1 : (1 : V) ≤ proofLen TAct (orIntro s p q d') + 1 := le_add_self
+  have hyd : proofLen TAct d' ≤ proofLen TAct (orIntro s p q d') := by
+    rw [hdl]; exact le_of_add_eq' (c := sequentLen LAct s + 1) (by ring)
+  have hdeq : proofLen TAct (orIntro s p q d') = proofLen TAct d' + (sequentLen LAct s + 1) := by rw [hdl]; ring
+  have hqmem : q ∈ insert p (insert q s) := by simp
+  have hqD : formulaLen LAct q ≤ proofLen TAct (orIntro s p q d') :=
+    le_trans (formulaLen_le_sequentLen_of_mem (L := LAct) hqmem) hcD
+  have hE1 : (1 : V) ≤ E := le_trans (le_trans hd1 (le_p4_self hd1))
+    (le_trans (le_mul_of_one_le_left zero_le hCz1)
+      (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE))
+  have hDE : proofLen TAct (orIntro s p q d') ≤ E := le_trans (le_p4_self hd1)
+    (le_trans (le_mul_of_one_le_left zero_le hCz1)
+      (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE))
+  have hEpro : 13 * proofLen TAct (orIntro s p q d') + 18 * ‖proofLen TAct (orIntro s p q d')‖ + 12 ≤ E := by
+    have := eroom_lin hE hCk 13 18 12 (by norm_num)
+    push_cast at this
+    exact this
+  have hE8 : 13 * proofLen TAct (orIntro s p q d') + 18 * ‖proofLen TAct (orIntro s p q d')‖ + 8 ≤ E := by
+    have := eroom_lin hE hCk 13 18 8 (by norm_num)
+    push_cast at this
+    exact this
+  have hiEpro : 0 + 14 * proofLen TAct (orIntro s p q d') + 5 ≤ E := by
+    rw [zero_add]
+    have := eroom_lin hE hCk 14 0 5 (by norm_num)
+    push_cast at this
+    rw [zero_mul, add_zero] at this
+    exact this
+  have hnE : 18 * ‖proofLen TAct (orIntro s p q d')‖ + 7 ≤ E := by
+    have := eroom_lin hE hCk 0 18 7 (by norm_num)
+    push_cast at this
+    rw [zero_mul, zero_add] at this
+    exact this
+  have hmT : memTop walkPieces Wc T s (p ^⋎ q) 0 ≤ 0 + 6 * proofLen TAct (orIntro s p q d') + 1 :=
+    memTop_le htbl hP.walkTable hWc T hs hpq hsD
+  have hdC : descCountF walkPieces 0 q ≤ 2 * proofLen TAct (orIntro s p q d') :=
+    descCountF_le_of_len htbl hP.walkTable hq hqD
+  have hipE : memTop walkPieces Wc T s (p ^⋎ q) 0 + descCountF walkPieces 0 q + 1 +
+      14 * proofLen TAct (orIntro s p q d') + 6 ≤ E := by
+    refine eroom_of_le hE hCk 22 8 (by norm_num) ?_
+    push_cast
+    calc memTop walkPieces Wc T s (p ^⋎ q) 0 + descCountF walkPieces 0 q + 1 +
+          14 * proofLen TAct (orIntro s p q d') + 6
+        ≤ (0 + 6 * proofLen TAct (orIntro s p q d') + 1) + 2 * proofLen TAct (orIntro s p q d') + 1 +
+          14 * proofLen TAct (orIntro s p q d') + 6 :=
+          add_le_add (add_le_add (add_le_add (add_le_add hmT hdC) le_rfl) le_rfl) le_rfl
+      _ = 22 * proofLen TAct (orIntro s p q d') + 8 := by ring
+  have hiqE : memTop walkPieces Wc T s (p ^⋎ q) 0 + 1 + 8 * proofLen TAct (orIntro s p q d') + 4 ≤ E := by
+    refine eroom_of_le hE hCk 14 6 (by norm_num) ?_
+    push_cast
+    calc memTop walkPieces Wc T s (p ^⋎ q) 0 + 1 + 8 * proofLen TAct (orIntro s p q d') + 4
+        ≤ (0 + 6 * proofLen TAct (orIntro s p q d') + 1) + 1 + 8 * proofLen TAct (orIntro s p q d') + 4 :=
+          add_le_add (add_le_add (add_le_add hmT le_rfl) le_rfl) le_rfl
+      _ = 14 * proofLen TAct (orIntro s p q d') + 6 := by ring
+  have hbnc : termLen LAct (binNumeral (proofLen TAct d')) ≤ E := eroom_binNumeral hE hCk hyd
+  have hbn' : termLen LAct (binNumeral (proofLen TAct (orIntro s p q d'))) ≤ E := eroom_binNumeral hE hCk le_rfl
+  have hLn : sequentLen LAct s + proofLen TAct d' + 1 ≤ proofLen TAct (orIntro s p q d') := le_of_eq hdl.symm
+  have hnd : proofLen TAct (orIntro s p q d') ≤ 2 * proofLen TAct (orIntro s p q d') := le_two_mul_self _
+  have hshL : shiftsV L' ≤ Czv * p4 (proofLen TAct d') := le_trans (shiftsV_le_len L') hchildLen
+  have hlenPro : len (proOr walkPieces Wl Wc W T s p q 0
+      (memTop walkPieces Wc T s (p ^⋎ q) 0 + descCountF walkPieces 0 q + 1)
+      (memTop walkPieces Wc T s (p ^⋎ q) 0 + 1)) ≤
+      110 * proofLen TAct (orIntro s p q d') + 25 := by
+    refine le_trans (len_proOr_le htbl hP hWl hWc walkPieces W T 0 _ _ hs hp hq) ?_
+    exact add_le_add (mul_le_mul_of_nonneg_left hcD zero_le) le_rfl
+  have hqsf : IsFormulaSet LAct (insert q s) := IsFormulaSet.insert_iff.mpr ⟨hq, hs⟩
+  have hqsD : sequentLen LAct (insert q s) ≤ proofLen TAct (orIntro s p q d') :=
+    le_trans (sequentLen_le_insert p (insert q s)) hcD
+  have hk1q : 1 ≤ len (memberList (insert q s)) :=
+    one_le_len_memberList_of_mem (by simp : q ∈ insert q s)
+  have hk1c : 1 ≤ len (memberList (insert p (insert q s))) :=
+    one_le_len_memberList_of_mem (by simp : p ∈ insert p (insert q s))
+  have hsig1 : proSig walkPieces Wl Wc W T (insert q s) ≤ 6 * proofLen TAct (orIntro s p q d') + 1 :=
+    proSig_le htbl hP hWc htblN hWl hWp hqsf hk1q hqsD hE8 hΓ
+  have hsig2 : proSig walkPieces Wl Wc W T (insert p (insert q s)) ≤
+      6 * proofLen TAct (orIntro s p q d') + 1 :=
+    proSig_le htbl hP hWc htblN hWl hWp hcs hk1c hcD hE8 hΓ
+  have hgE : len (memberList (insert p (insert q s))) + 1 + shiftsV L' + 1 ≤ E := by
+    have hlin : proofLen TAct (orIntro s p q d') + 2 ≤ Czv * p3 (proofLen TAct (orIntro s p q d')) := by
+      have h3 := hCk 3 (by norm_num)
+      push_cast at h3
+      have := lin_le_p3 (a := 1) (b := 2) hd1 (by
+        exact le_trans (le_of_eq (by norm_num : (1 : V) + 2 = 3)) h3)
+      rw [one_mul] at this
+      exact this
+    refine le_trans ?_ (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE)
+    calc len (memberList (insert p (insert q s))) + 1 + shiftsV L' + 1
+        ≤ proofLen TAct (orIntro s p q d') + 1 + Czv * p4 (proofLen TAct d') + 1 :=
+          add_le_add (add_le_add (add_le_add hkcD le_rfl) hshL) le_rfl
+      _ = (proofLen TAct (orIntro s p q d') + 2) + Czv * p4 (proofLen TAct d') := by ring
+      _ ≤ Czv * p4 (proofLen TAct (orIntro s p q d')) := rec1₄ le_add_self hdeq hlin
+  have hgE2 : 1 + proSig walkPieces Wl Wc W T (insert q s) +
+      (1 + proSig walkPieces Wl Wc W T (insert p (insert q s))) + shiftsV L' + 2 +
+      (len (memberList s) + 1) + 1 + 1 ≤ E := by
+    have hlin : 13 * proofLen TAct (orIntro s p q d') + 9 ≤ Czv * p3 (proofLen TAct (orIntro s p q d')) := by
+      have h22 := hCk 22 (by norm_num)
+      push_cast at h22
+      exact lin_le_p3 hd1 (le_trans (le_of_eq (by norm_num : (13 : V) + 9 = 22)) h22)
+    refine le_trans ?_ (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE)
+    calc 1 + proSig walkPieces Wl Wc W T (insert q s) +
+          (1 + proSig walkPieces Wl Wc W T (insert p (insert q s))) + shiftsV L' + 2 +
+          (len (memberList s) + 1) + 1 + 1
+        ≤ 1 + (6 * proofLen TAct (orIntro s p q d') + 1) +
+          (1 + (6 * proofLen TAct (orIntro s p q d') + 1)) + Czv * p4 (proofLen TAct d') + 2 +
+          (proofLen TAct (orIntro s p q d') + 1) + 1 + 1 :=
+          add_le_add (add_le_add (add_le_add (add_le_add (add_le_add (add_le_add
+            (add_le_add le_rfl hsig1) (add_le_add le_rfl hsig2)) hshL) le_rfl)
+            (add_le_add hksD le_rfl)) le_rfl) le_rfl
+      _ = (13 * proofLen TAct (orIntro s p q d') + 9) + Czv * p4 (proofLen TAct d') := by ring
+      _ ≤ Czv * p4 (proofLen TAct (orIntro s p q d')) := rec1₄ le_add_self hdeq hlin
+  refine ⟨?_, ?_⟩
+  · rw [len_vOr_eq]
+    have hX : 110 * proofLen TAct (orIntro s p q d') + 40 ≤ Czv * p3 (proofLen TAct (orIntro s p q d')) := by
+      have h150 := hCk 150 (by norm_num)
+      push_cast at h150
+      exact lin_le_p3 hd1 (le_trans (le_of_eq (by norm_num : (110 : V) + 40 = 150)) h150)
+    calc len (proOr walkPieces Wl Wc W T s p q 0
+          (memTop walkPieces Wc T s (p ^⋎ q) 0 + descCountF walkPieces 0 q + 1)
+          (memTop walkPieces Wc T s (p ^⋎ q) 0 + 1)) + (len L' + (6 + 9))
+        ≤ (110 * proofLen TAct (orIntro s p q d') + 25) + (Czv * p4 (proofLen TAct d') + 15) :=
+          add_le_add hlenPro (add_le_add hchildLen (by norm_num))
+      _ = (110 * proofLen TAct (orIntro s p q d') + 40) + Czv * p4 (proofLen TAct d') := by ring
+      _ ≤ Czv * p4 (proofLen TAct (orIntro s p q d')) := rec1₄ le_add_self hdeq hX
+  · obtain ⟨-, hDp, hDq, -⟩ := layout_or htbl hP hp hq hpq hLay.layout
+    exact or_arm_size (Wl := Wl) (Wc := Wc) (W₁ := W₁) (W := W) (T := T) (s := s) (p := p) (q := q)
+      (d' := d') (L' := L') (B := B) (E := E) (Cz := Czv) (N' := N') (B' := B')
+      (D := proofLen TAct (orIntro s p q d')) (d := proofLen TAct (orIntro s p q d')) (Γ := Γ)
+      hWp hW₁ htbl hP htblN hWl hWc hPle hs hp hq hk1 hcD hEpro hiEpro hipE hiqE hΓ hLay.layout
+      hDp hDq hDE hnd hCQ hCD hCz1 hchildSz hE1 hcG hgE hbnc hbn' hnE hLn hnd hgE2 hCbin
+
+end orWrapper
+
+/-! ## 22. The `and` motive wrapper
+
+The first TWO-CHILD arm, and the first to need `Bounds.rec2₄` rather than `rec1₄`: `proofLen_andIntro` is
+`sequentLen s + proofLen dp + proofLen dq + 1`, so `hdeq` takes the shape `proofLen (andIntro …) = proofLen dp + proofLen dq + (sequentLen s + 1)`
+that `rec2₄`'s `d = y₁ + y₂ + m` wants.
+
+Seven blocks (`proIns ++ L₁ ++ postIns ++ proIns ++ L₂ ++ postIns ++ nodeAnd`), so the length half is two
+`Prologue.len_proIns_le ≤ 55·sequentLen (insert · s) + 12` — the two `sequentLen`s bounded by
+`sequentLen_child_le_proofLen_andIntro_left`/`_right` — plus `6 + 6 + 9 = 21`, i.e. the constant `110·D + 45 = 155`.
+
+**The later-context hypotheses are EXPLICIT** (the Part-8 finding): the second `proIns` runs after the first child
+and its `postIns`, so `hΓ₃`, `hLay₃` and `hDq₃` are wrapper hypotheses that the recursion supplies by transport.
+`hDp` comes from `Prologue.layout_and` at the node's own layout. `shiftsV L₁ ≤ Czv·p4 (proofLen dp)` (via
+`shiftsV_le_len` on the first child's motive) is what bounds the later-context rooms `hiE₂`, `hipE₂` and `hgE3`. -/
+
+section andWrapper
+
+set_option maxHeartbeats 2000000 in
+/-- **THE `and` MOTIVE WRAPPER.** -/
+theorem and_wrapper {tbl N N' B' Wl Wc W₁ W T B E Czv Γ Γ₃ s p q dp dq L₁ L₂ : V}
+    (htbl : TableOK tbl N) (hP : ProTable tbl) (htblN : NumTableOK T N' B')
+    (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (hWp : W = proPieces) (hW₁ : W₁ = frag1Pieces)
+    (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (hCz1 : 1 ≤ Czv) (hCk : ∀ n : ℕ, n ≤ 1000000 → ((n : ℕ) : V) ≤ Czv)
+    (hCQ : 19 * B' + 25 ≤ Czv) (hCD : 27 * N' + 525600 * B' ≤ Czv)
+    (hCbin : 2 * (27 * N' + 525600 * B') ≤ Czv)
+    (hcG : 4 * ((cDer : V) + cDlen + cFst + 6) ≤ Czv)
+    (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 0 p) (hq : IsSemiformula LAct 0 q)
+    (hpq : (p ^⋏ q) ∈ s)
+    (hdp : DerivationOf TAct dp (insert p s)) (hdq : DerivationOf TAct dq (insert q s))
+    (hΓ : IsFormulaSet LAct Γ) (hLay : NodeLay walkPieces Wc T Γ s)
+    (hΓ₃ : IsFormulaSet LAct Γ₃)
+    (hLay₃ : Layout walkPieces Wc T Γ₃ s (1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2))
+    (hDq₃ : DossF walkPieces Γ₃ 0 q (memTop walkPieces Wc T s (p ^⋏ q) 0 + 1 +
+      (1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2)))
+    (hchildSz₁ : SizeOK (kitQ Czv B E) (kitD Czv (2 * proofLen TAct (andIntro s p q dp dq))) L₁)
+    (hchildSz₂ : SizeOK (kitQ Czv B E) (kitD Czv (2 * proofLen TAct (andIntro s p q dp dq))) L₂)
+    (hchildLen₁ : len L₁ ≤ Czv * p4 (proofLen TAct dp))
+    (hchildLen₂ : len L₂ ≤ Czv * p4 (proofLen TAct dq))
+    (hE : Czv * p4 (proofLen TAct (andIntro s p q dp dq) + 1) ≤ E) :
+    len (vAnd walkPieces Wl Wc W₁ W T s p q dp dq L₁ L₂) ≤
+      Czv * p4 (proofLen TAct (andIntro s p q dp dq)) ∧
+    SizeOK (kitQ Czv B E) (kitD Czv (2 * proofLen TAct (andIntro s p q dp dq)))
+      (vAnd walkPieces Wl Wc W₁ W T s p q dp dq L₁ L₂) := by
+  have hD : Derivation TAct (andIntro s p q dp dq) := Derivation.andIntro hpq hdp hdq
+  have hd1 : 1 ≤ proofLen TAct (andIntro s p q dp dq) := one_le_proofLen hD
+  have hsD : sequentLen LAct s ≤ proofLen TAct (andIntro s p q dp dq) := by
+    have := sequentLen_fstIdx_le_proofLen hD; rwa [fstIdx_andIntro] at this
+  have hcD₁ : sequentLen LAct (insert p s) ≤ proofLen TAct (andIntro s p q dp dq) :=
+    sequentLen_child_le_proofLen_andIntro_left hD
+  have hcD₂ : sequentLen LAct (insert q s) ≤ proofLen TAct (andIntro s p q dp dq) :=
+    sequentLen_child_le_proofLen_andIntro_right hD
+  have hdl : proofLen TAct (andIntro s p q dp dq) = sequentLen LAct s + proofLen TAct dp + proofLen TAct dq + 1 :=
+    proofLen_andIntro hD
+  have hdeq : proofLen TAct (andIntro s p q dp dq) =
+      proofLen TAct dp + proofLen TAct dq + (sequentLen LAct s + 1) := by rw [hdl]; ring
+  have hps : IsFormulaSet LAct (insert p s) := IsFormulaSet.insert_iff.mpr ⟨hp, hs⟩
+  have hqs : IsFormulaSet LAct (insert q s) := IsFormulaSet.insert_iff.mpr ⟨hq, hs⟩
+  have hksD : len (memberList s) ≤ proofLen TAct (andIntro s p q dp dq) :=
+    le_trans (len_memberList_le_sequentLen hs) hsD
+  have hk1 : 1 ≤ len (memberList s) := one_le_len_memberList_of_mem hpq
+  have hkD₁ : len (memberList (insert p s)) ≤ proofLen TAct (andIntro s p q dp dq) :=
+    le_trans (len_memberList_le_sequentLen hps) hcD₁
+  have hkD₂ : len (memberList (insert q s)) ≤ proofLen TAct (andIntro s p q dp dq) :=
+    le_trans (len_memberList_le_sequentLen hqs) hcD₂
+  have he1 : (1 : V) ≤ proofLen TAct (andIntro s p q dp dq) + 1 := le_add_self
+  have hyp : proofLen TAct dp ≤ proofLen TAct (andIntro s p q dp dq) := by
+    rw [hdeq]; exact le_trans le_self_add le_self_add
+  have hyq : proofLen TAct dq ≤ proofLen TAct (andIntro s p q dp dq) := by
+    rw [hdeq]; exact le_trans le_add_self le_self_add
+  have hqmem : q ∈ insert q s := by simp
+  have hqD : formulaLen LAct q ≤ proofLen TAct (andIntro s p q dp dq) :=
+    le_trans (formulaLen_le_sequentLen_of_mem (L := LAct) hqmem) hcD₂
+  have hE1 : (1 : V) ≤ E := le_trans (le_trans hd1 (le_p4_self hd1))
+    (le_trans (le_mul_of_one_le_left zero_le hCz1)
+      (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE))
+  have hDE : proofLen TAct (andIntro s p q dp dq) ≤ E := le_trans (le_p4_self hd1)
+    (le_trans (le_mul_of_one_le_left zero_le hCz1)
+      (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE))
+  have hEpro : 13 * proofLen TAct (andIntro s p q dp dq) +
+      18 * ‖proofLen TAct (andIntro s p q dp dq)‖ + 12 ≤ E := by
+    have := eroom_lin hE hCk 13 18 12 (by norm_num)
+    push_cast at this
+    exact this
+  have hE8 : 13 * proofLen TAct (andIntro s p q dp dq) +
+      18 * ‖proofLen TAct (andIntro s p q dp dq)‖ + 8 ≤ E := by
+    have := eroom_lin hE hCk 13 18 8 (by norm_num)
+    push_cast at this
+    exact this
+  have hiE₁ : 0 + 14 * proofLen TAct (andIntro s p q dp dq) + 5 ≤ E := by
+    rw [zero_add]
+    have := eroom_lin hE hCk 14 0 5 (by norm_num)
+    push_cast at this
+    rw [zero_mul, add_zero] at this
+    exact this
+  have hnE : 18 * ‖proofLen TAct (andIntro s p q dp dq)‖ + 7 ≤ E := by
+    have := eroom_lin hE hCk 0 18 7 (by norm_num)
+    push_cast at this
+    rw [zero_mul, zero_add] at this
+    exact this
+  have hmT : memTop walkPieces Wc T s (p ^⋏ q) 0 ≤ 0 + 6 * proofLen TAct (andIntro s p q dp dq) + 1 :=
+    memTop_le htbl hP.walkTable hWc T hs hpq hsD
+  have hdC : descCountF walkPieces 0 q ≤ 2 * proofLen TAct (andIntro s p q dp dq) :=
+    descCountF_le_of_len htbl hP.walkTable hq hqD
+  have hshL₁ : shiftsV L₁ ≤ Czv * p4 (proofLen TAct dp) := le_trans (shiftsV_le_len L₁) hchildLen₁
+  have hshL₂ : shiftsV L₂ ≤ Czv * p4 (proofLen TAct dq) := le_trans (shiftsV_le_len L₂) hchildLen₂
+  have hsig₁ : proSig walkPieces Wl Wc W T (insert p s) ≤
+      6 * proofLen TAct (andIntro s p q dp dq) + 1 :=
+    proSig_le htbl hP hWc htblN hWl hWp hps
+      (one_le_len_memberList_of_mem (by simp : p ∈ insert p s)) hcD₁ hE8 hΓ
+  have hsig₂ : proSig walkPieces Wl Wc W T (insert q s) ≤
+      6 * proofLen TAct (andIntro s p q dp dq) + 1 :=
+    proSig_le htbl hP hWc htblN hWl hWp hqs
+      (one_le_len_memberList_of_mem (by simp : q ∈ insert q s)) hcD₂ hE8 hΓ
+  have hipE₁ : memTop walkPieces Wc T s (p ^⋏ q) 0 + descCountF walkPieces 0 q + 1 +
+      8 * proofLen TAct (andIntro s p q dp dq) + 4 ≤ E := by
+    refine eroom_of_le hE hCk 16 6 (by norm_num) ?_
+    push_cast
+    calc memTop walkPieces Wc T s (p ^⋏ q) 0 + descCountF walkPieces 0 q + 1 +
+          8 * proofLen TAct (andIntro s p q dp dq) + 4
+        ≤ (0 + 6 * proofLen TAct (andIntro s p q dp dq) + 1) +
+          2 * proofLen TAct (andIntro s p q dp dq) + 1 +
+          8 * proofLen TAct (andIntro s p q dp dq) + 4 :=
+          add_le_add (add_le_add (add_le_add (add_le_add hmT hdC) le_rfl) le_rfl) le_rfl
+      _ = 16 * proofLen TAct (andIntro s p q dp dq) + 6 := by ring
+  have hiE₂ : 1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2 +
+      14 * proofLen TAct (andIntro s p q dp dq) + 5 ≤ E := by
+    refine le_trans ?_ (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE)
+    have hlin : 20 * proofLen TAct (andIntro s p q dp dq) + 9 ≤
+        Czv * p3 (proofLen TAct (andIntro s p q dp dq)) := by
+      have h29 := hCk 29 (by norm_num)
+      push_cast at h29
+      exact lin_le_p3 hd1 (le_trans (le_of_eq (by norm_num : (20 : V) + 9 = 29)) h29)
+    calc 1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2 +
+          14 * proofLen TAct (andIntro s p q dp dq) + 5
+        ≤ 1 + (6 * proofLen TAct (andIntro s p q dp dq) + 1) + Czv * p4 (proofLen TAct dp) + 2 +
+          14 * proofLen TAct (andIntro s p q dp dq) + 5 :=
+          add_le_add (add_le_add (add_le_add (add_le_add (add_le_add le_rfl hsig₁) hshL₁) le_rfl)
+            le_rfl) le_rfl
+      _ ≤ (20 * proofLen TAct (andIntro s p q dp dq) + 9) +
+          Czv * p4 (proofLen TAct dp) + Czv * p4 (proofLen TAct dq) :=
+          le_of_add_eq' (c := Czv * p4 (proofLen TAct dq)) (by ring)
+      _ ≤ Czv * p4 (proofLen TAct (andIntro s p q dp dq)) := rec2₄ le_add_self hdeq hlin
+  have hipE₂ : memTop walkPieces Wc T s (p ^⋏ q) 0 + 1 +
+      (1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2) +
+      8 * proofLen TAct (andIntro s p q dp dq) + 4 ≤ E := by
+    refine le_trans ?_ (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE)
+    have hlin2 : 20 * proofLen TAct (andIntro s p q dp dq) + 10 ≤
+        Czv * p3 (proofLen TAct (andIntro s p q dp dq)) := by
+      have h30 := hCk 30 (by norm_num)
+      push_cast at h30
+      exact lin_le_p3 hd1 (le_trans (le_of_eq (by norm_num : (20 : V) + 10 = 30)) h30)
+    calc memTop walkPieces Wc T s (p ^⋏ q) 0 + 1 +
+          (1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2) +
+          8 * proofLen TAct (andIntro s p q dp dq) + 4
+        ≤ (0 + 6 * proofLen TAct (andIntro s p q dp dq) + 1) + 1 +
+          (1 + (6 * proofLen TAct (andIntro s p q dp dq) + 1) + Czv * p4 (proofLen TAct dp) + 2) +
+          8 * proofLen TAct (andIntro s p q dp dq) + 4 :=
+          add_le_add (add_le_add (add_le_add (add_le_add hmT le_rfl)
+            (add_le_add (add_le_add (add_le_add le_rfl hsig₁) hshL₁) le_rfl)) le_rfl) le_rfl
+      _ ≤ (20 * proofLen TAct (andIntro s p q dp dq) + 10) +
+          Czv * p4 (proofLen TAct dp) + Czv * p4 (proofLen TAct dq) :=
+          le_of_add_eq' (c := Czv * p4 (proofLen TAct dq)) (by ring)
+      _ ≤ Czv * p4 (proofLen TAct (andIntro s p q dp dq)) := rec2₄ le_add_self hdeq hlin2
+  have hbn₁ : termLen LAct (binNumeral (proofLen TAct dp)) ≤ E := eroom_binNumeral hE hCk hyp
+  have hbn₂ : termLen LAct (binNumeral (proofLen TAct dq)) ≤ E := eroom_binNumeral hE hCk hyq
+  have hbn' : termLen LAct (binNumeral (proofLen TAct (andIntro s p q dp dq))) ≤ E := eroom_binNumeral hE hCk le_rfl
+  have hLn : sequentLen LAct s + proofLen TAct dp + proofLen TAct dq + 1 ≤
+      proofLen TAct (andIntro s p q dp dq) := le_of_eq hdl.symm
+  have hnd : proofLen TAct (andIntro s p q dp dq) ≤ 2 * proofLen TAct (andIntro s p q dp dq) :=
+    le_two_mul_self _
+  have hgE₁ : len (memberList (insert p s)) + 1 + shiftsV L₁ + 1 ≤ E := by
+    refine le_trans ?_ (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE)
+    have hlin : proofLen TAct (andIntro s p q dp dq) + 2 ≤
+        Czv * p3 (proofLen TAct (andIntro s p q dp dq)) := by
+      have h3 := hCk 3 (by norm_num)
+      push_cast at h3
+      have := lin_le_p3 (a := 1) (b := 2) hd1 (by
+        exact le_trans (le_of_eq (by norm_num : (1 : V) + 2 = 3)) h3)
+      rw [one_mul] at this
+      exact this
+    calc len (memberList (insert p s)) + 1 + shiftsV L₁ + 1
+        ≤ proofLen TAct (andIntro s p q dp dq) + 1 + Czv * p4 (proofLen TAct dp) + 1 :=
+          add_le_add (add_le_add (add_le_add hkD₁ le_rfl) hshL₁) le_rfl
+      _ ≤ (proofLen TAct (andIntro s p q dp dq) + 2) +
+          Czv * p4 (proofLen TAct dp) + Czv * p4 (proofLen TAct dq) :=
+          le_of_add_eq' (c := Czv * p4 (proofLen TAct dq)) (by ring)
+      _ ≤ Czv * p4 (proofLen TAct (andIntro s p q dp dq)) := rec2₄ le_add_self hdeq hlin
+  have hgE₂ : len (memberList (insert q s)) + 1 + shiftsV L₂ + 1 ≤ E := by
+    refine le_trans ?_ (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE)
+    have hlin : proofLen TAct (andIntro s p q dp dq) + 2 ≤
+        Czv * p3 (proofLen TAct (andIntro s p q dp dq)) := by
+      have h3 := hCk 3 (by norm_num)
+      push_cast at h3
+      have := lin_le_p3 (a := 1) (b := 2) hd1 (by
+        exact le_trans (le_of_eq (by norm_num : (1 : V) + 2 = 3)) h3)
+      rw [one_mul] at this
+      exact this
+    calc len (memberList (insert q s)) + 1 + shiftsV L₂ + 1
+        ≤ proofLen TAct (andIntro s p q dp dq) + 1 + Czv * p4 (proofLen TAct dq) + 1 :=
+          add_le_add (add_le_add (add_le_add hkD₂ le_rfl) hshL₂) le_rfl
+      _ ≤ (proofLen TAct (andIntro s p q dp dq) + 2) +
+          Czv * p4 (proofLen TAct dp) + Czv * p4 (proofLen TAct dq) :=
+          le_of_add_eq' (c := Czv * p4 (proofLen TAct dp)) (by ring)
+      _ ≤ Czv * p4 (proofLen TAct (andIntro s p q dp dq)) := rec2₄ le_add_self hdeq hlin
+  have hgE3 : 1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2 +
+      (1 + proSig walkPieces Wl Wc W T (insert q s) + shiftsV L₂ + 2) +
+      (len (memberList s) + 1) + 1 + 1 ≤ E := by
+    refine le_trans ?_ (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE)
+    have hlin : 13 * proofLen TAct (andIntro s p q dp dq) + 11 ≤
+        Czv * p3 (proofLen TAct (andIntro s p q dp dq)) := by
+      have h24 := hCk 24 (by norm_num)
+      push_cast at h24
+      exact lin_le_p3 hd1 (le_trans (le_of_eq (by norm_num : (13 : V) + 11 = 24)) h24)
+    calc 1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2 +
+          (1 + proSig walkPieces Wl Wc W T (insert q s) + shiftsV L₂ + 2) +
+          (len (memberList s) + 1) + 1 + 1
+        ≤ 1 + (6 * proofLen TAct (andIntro s p q dp dq) + 1) + Czv * p4 (proofLen TAct dp) + 2 +
+          (1 + (6 * proofLen TAct (andIntro s p q dp dq) + 1) + Czv * p4 (proofLen TAct dq) + 2) +
+          (proofLen TAct (andIntro s p q dp dq) + 1) + 1 + 1 :=
+          add_le_add (add_le_add (add_le_add (add_le_add (add_le_add (add_le_add
+            (add_le_add le_rfl hsig₁) hshL₁) le_rfl)
+            (add_le_add (add_le_add (add_le_add le_rfl hsig₂) hshL₂) le_rfl))
+            (add_le_add hksD le_rfl)) le_rfl) le_rfl
+      _ = (13 * proofLen TAct (andIntro s p q dp dq) + 11) +
+          Czv * p4 (proofLen TAct dp) + Czv * p4 (proofLen TAct dq) := by ring
+      _ ≤ Czv * p4 (proofLen TAct (andIntro s p q dp dq)) := rec2₄ le_add_self hdeq hlin
+  refine ⟨?_, ?_⟩
+  · rw [len_vAnd_eq]
+    have hlenPro₁ : len (proIns walkPieces Wl Wc W T s p 0
+        (memTop walkPieces Wc T s (p ^⋏ q) 0 + descCountF walkPieces 0 q + 1)) ≤
+        55 * proofLen TAct (andIntro s p q dp dq) + 12 := by
+      refine le_trans (len_proIns_le htbl hP hWl hWc walkPieces W T 0 _ hs hp) ?_
+      exact add_le_add (mul_le_mul_of_nonneg_left hcD₁ zero_le) le_rfl
+    have hlenPro₂ : len (proIns walkPieces Wl Wc W T s q
+        (1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2)
+        (memTop walkPieces Wc T s (p ^⋏ q) 0 + 1 +
+          (1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2))) ≤
+        55 * proofLen TAct (andIntro s p q dp dq) + 12 := by
+      refine le_trans (len_proIns_le htbl hP hWl hWc walkPieces W T _ _ hs hq) ?_
+      exact add_le_add (mul_le_mul_of_nonneg_left hcD₂ zero_le) le_rfl
+    have hX : 110 * proofLen TAct (andIntro s p q dp dq) + 45 ≤
+        Czv * p3 (proofLen TAct (andIntro s p q dp dq)) := by
+      have h155 := hCk 155 (by norm_num)
+      push_cast at h155
+      exact lin_le_p3 hd1 (le_trans (le_of_eq (by norm_num : (110 : V) + 45 = 155)) h155)
+    calc len (proIns walkPieces Wl Wc W T s p 0
+            (memTop walkPieces Wc T s (p ^⋏ q) 0 + descCountF walkPieces 0 q + 1)) +
+          (len L₁ + (6 +
+            (len (proIns walkPieces Wl Wc W T s q
+              (1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2)
+              (memTop walkPieces Wc T s (p ^⋏ q) 0 + 1 +
+                (1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2))) +
+              (len L₂ + (6 + 9)))))
+        ≤ (55 * proofLen TAct (andIntro s p q dp dq) + 12) +
+          (Czv * p4 (proofLen TAct dp) + (6 +
+            ((55 * proofLen TAct (andIntro s p q dp dq) + 12) +
+              (Czv * p4 (proofLen TAct dq) + 15)))) :=
+          add_le_add hlenPro₁ (add_le_add hchildLen₁ (add_le_add le_rfl
+            (add_le_add hlenPro₂ (add_le_add hchildLen₂ (by norm_num)))))
+      _ = (110 * proofLen TAct (andIntro s p q dp dq) + 45) +
+          Czv * p4 (proofLen TAct dp) + Czv * p4 (proofLen TAct dq) := by ring
+      _ ≤ Czv * p4 (proofLen TAct (andIntro s p q dp dq)) := rec2₄ le_add_self hdeq hX
+  · obtain ⟨-, hDp, -, -⟩ := layout_and htbl hP hp hq hpq hLay.layout
+    exact and_arm_size (Wl := Wl) (Wc := Wc) (W₁ := W₁) (W := W) (T := T) (s := s) (p := p) (q := q)
+      (dp := dp) (dq := dq) (L₁ := L₁) (L₂ := L₂)
+      (B := B) (E := E) (Cz := Czv) (N' := N') (B' := B')
+      (D := proofLen TAct (andIntro s p q dp dq)) (d := proofLen TAct (andIntro s p q dp dq))
+      (Γ := Γ) (Γ₃ := Γ₃)
+      hWp hW₁ htbl hP htblN hWl hWc hPle hs hp hq hk1 hcD₁ hcD₂ hEpro hiE₁ hipE₁ hiE₂ hipE₂
+      hΓ hLay.layout hDp hΓ₃ hLay₃ hDq₃ hDE hnd hCQ hCD hCz1 hchildSz₁ hchildSz₂ hE1 hcG
+      hgE₁ hgE₂ hbn₁ hbn₂ hbn' hnE hLn hnd hgE3 hCbin
+
+end andWrapper
+
+/-! ## 23. The `cut` motive wrapper
+
+`and`'s shape with a `proCutPre` prefix and the two `cutPro` selectors, so EIGHT blocks and — being two-child —
+every room on `Bounds.rec2₄` per TRAP 19. `proofLen_cutRule` is `sequentLen s + proofLen d₁ + proofLen d₂ + 1`, the same shape as
+`proofLen_andIntro`.
+
+Length half: `Prologue.len_proCutPre_le ≤ 64·|p|` (with `|p| ≤ D`) plus TWO `§14.len_cutPro_le ≤ 55·D + 13` plus
+`6 + 6 + 9 = 21`, i.e. `174·D + 47 = 221`.
+
+The rooms are stated over `mShift`/`mLen` rather than `memTop`/`descCountF`, bounded by `Prologue.mShift_le ≤ 4·|x|`
+and `mLen_succ_le : mLen + 1 ≤ 2·|x|`, with `CutV.formulaLen_neg` turning `|neg p|` into `|p|`.
+
+**The later contexts are EXPLICIT, and the two `cutPro` layouts are `PLay`.** The earlier design demanded
+`Layout … s i` AND `Layout0 … i` at both `cutPro` offsets. That pair is not dischargeable from above: `Layout0`
+(`Prologue` §12) asserts `eqFactB (^&(i+1)) 𝟎 ∈ Γ` — the sequent object IS `𝟎` — which is FALSE at a nonempty
+parent, and nothing upstream deposits it (`proCutPre` is two member blocks plus `certNeg`). The lemmas were sound
+but unusable: `sizeOK_cutPro` splits on `memberList s = 0` and consumes each hypothesis only in the branch where it
+holds, yet demanded both BEFORE the split. The fix is the disjunction the codebase already uses for this selector
+(`Verify2.PLay`, as in `cutBlock_ok`): `hLay₁`/`hLay₄` are `PLay`, and the branch projections (`PLay.layout`, and
+the `Or.inr` disjunct) happen inside `sizeOK_cutPro`. The later context `Γ₄` and the `proCutPre` context `Γc`
+remain wrapper hypotheses the recursion discharges, alongside `hDnp₄`. -/
+
+section cutWrapper
+
+set_option maxHeartbeats 2000000 in
+/-- **THE `cut` MOTIVE WRAPPER.** -/
+theorem cut_wrapper {tbl N N' B' Wl Wc W₁ W T B E Czv Γ Γ₄ Γc s p d₁ d₂ L₁ L₂ : V}
+    (htbl : TableOK tbl N) (hP : ProTable tbl) (htblN : NumTableOK T N' B')
+    (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (hWp : W = proPieces) (hW₁ : W₁ = frag1Pieces)
+    (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (hCz1 : 1 ≤ Czv) (hCk : ∀ n : ℕ, n ≤ 1000000 → ((n : ℕ) : V) ≤ Czv)
+    (hCQ : 19 * B' + 25 ≤ Czv) (hCD : 27 * N' + 525600 * B' ≤ Czv)
+    (hCbin : 2 * (27 * N' + 525600 * B') ≤ Czv)
+    (hcG : 4 * ((cDer : V) + cDlen + cFst + 6) ≤ Czv)
+    (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 0 p)
+    (hd₁ : DerivationOf TAct d₁ (insert p s)) (hd₂ : DerivationOf TAct d₂ (insert (neg LAct p) s))
+    (hsD0p : sequentLen LAct (insert p (0 : V)) ≤ proofLen TAct (cutRule s p d₁ d₂))
+    (hsD0np : sequentLen LAct (insert (neg LAct p) (0 : V)) ≤ proofLen TAct (cutRule s p d₁ d₂))
+    (hΓ : IsFormulaSet LAct Γ)
+    (hLay₁ : PLay Wc T Γ s (mShift walkPieces Wc T p + mShift walkPieces Wc T (neg LAct p)))
+    (hDp₁ : DossF walkPieces Γ 0 p (mLen Wc T p + mShift walkPieces Wc T (neg LAct p)))
+    (hΓ₄ : IsFormulaSet LAct Γ₄)
+    (hLay₄ : PLay Wc T Γ₄ s (mShift walkPieces Wc T p + mShift walkPieces Wc T (neg LAct p) +
+      (1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2)))
+    (hDnp₄ : DossF walkPieces Γ₄ 0 (neg LAct p)
+      (mLen Wc T (neg LAct p) + (1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2)))
+    (hΓc : IsFormulaSet LAct Γc)
+    (hchildSz₁ : SizeOK (kitQ Czv B E) (kitD Czv (2 * proofLen TAct (cutRule s p d₁ d₂))) L₁)
+    (hchildSz₂ : SizeOK (kitQ Czv B E) (kitD Czv (2 * proofLen TAct (cutRule s p d₁ d₂))) L₂)
+    (hchildLen₁ : len L₁ ≤ Czv * p4 (proofLen TAct d₁))
+    (hchildLen₂ : len L₂ ≤ Czv * p4 (proofLen TAct d₂))
+    (hE : Czv * p4 (proofLen TAct (cutRule s p d₁ d₂) + 1) ≤ E) :
+    len (vCut walkPieces Wl Wc W₁ W T s p d₁ d₂ L₁ L₂) ≤ Czv * p4 (proofLen TAct (cutRule s p d₁ d₂)) ∧
+    SizeOK (kitQ Czv B E) (kitD Czv (2 * proofLen TAct (cutRule s p d₁ d₂)))
+      (vCut walkPieces Wl Wc W₁ W T s p d₁ d₂ L₁ L₂) := by
+  have hD : Derivation TAct (cutRule s p d₁ d₂) := Derivation.cutRule hd₁ hd₂
+  have hd1 : 1 ≤ proofLen TAct (cutRule s p d₁ d₂) := one_le_proofLen hD
+  have hsD : sequentLen LAct s ≤ proofLen TAct (cutRule s p d₁ d₂) := by
+    have := sequentLen_fstIdx_le_proofLen hD; rwa [fstIdx_cutRule] at this
+  have hcD₁ : sequentLen LAct (insert p s) ≤ proofLen TAct (cutRule s p d₁ d₂) :=
+    sequentLen_child_le_proofLen_cutRule_left hD
+  have hcD₂ : sequentLen LAct (insert (neg LAct p) s) ≤ proofLen TAct (cutRule s p d₁ d₂) :=
+    sequentLen_child_le_proofLen_cutRule_right hD
+  have hdl : proofLen TAct (cutRule s p d₁ d₂) = sequentLen LAct s + proofLen TAct d₁ + proofLen TAct d₂ + 1 :=
+    proofLen_cutRule hD
+  have hdeq : proofLen TAct (cutRule s p d₁ d₂) =
+      proofLen TAct d₁ + proofLen TAct d₂ + (sequentLen LAct s + 1) := by rw [hdl]; ring
+  have hps : IsFormulaSet LAct (insert p s) := IsFormulaSet.insert_iff.mpr ⟨hp, hs⟩
+  have hnps : IsFormulaSet LAct (insert (neg LAct p) s) :=
+    IsFormulaSet.insert_iff.mpr ⟨hp.neg, hs⟩
+  have hksD : len (memberList s) ≤ proofLen TAct (cutRule s p d₁ d₂) :=
+    le_trans (len_memberList_le_sequentLen hs) hsD
+  have hkD₁ : len (memberList (insert p s)) ≤ proofLen TAct (cutRule s p d₁ d₂) :=
+    le_trans (len_memberList_le_sequentLen hps) hcD₁
+  have hkD₂ : len (memberList (insert (neg LAct p) s)) ≤ proofLen TAct (cutRule s p d₁ d₂) :=
+    le_trans (len_memberList_le_sequentLen hnps) hcD₂
+  have he1 : (1 : V) ≤ proofLen TAct (cutRule s p d₁ d₂) + 1 := le_add_self
+  have hyp : proofLen TAct d₁ ≤ proofLen TAct (cutRule s p d₁ d₂) := by
+    rw [hdeq]; exact le_trans le_self_add le_self_add
+  have hyq : proofLen TAct d₂ ≤ proofLen TAct (cutRule s p d₁ d₂) := by
+    rw [hdeq]; exact le_trans le_add_self le_self_add
+  have hpmem : p ∈ insert p s := by simp
+  have hpD : formulaLen LAct p ≤ proofLen TAct (cutRule s p d₁ d₂) :=
+    le_trans (formulaLen_le_sequentLen_of_mem (L := LAct) hpmem) hcD₁
+  have hnpD : formulaLen LAct (neg LAct p) ≤ proofLen TAct (cutRule s p d₁ d₂) := by
+    rw [formulaLen_neg hp.isUFormula]; exact hpD
+  have hE1 : (1 : V) ≤ E := le_trans (le_trans hd1 (le_p4_self hd1))
+    (le_trans (le_mul_of_one_le_left zero_le hCz1)
+      (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE))
+  have hDE : proofLen TAct (cutRule s p d₁ d₂) ≤ E := le_trans (le_p4_self hd1)
+    (le_trans (le_mul_of_one_le_left zero_le hCz1)
+      (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE))
+  have hEpre : 13 * proofLen TAct (cutRule s p d₁ d₂) + 8 ≤ E := by
+    refine eroom_of_le hE hCk 13 8 (by norm_num) ?_
+    push_cast
+    exact le_rfl
+  have hEpro : 13 * proofLen TAct (cutRule s p d₁ d₂) +
+      18 * ‖proofLen TAct (cutRule s p d₁ d₂)‖ + 12 ≤ E := by
+    have := eroom_lin hE hCk 13 18 12 (by norm_num)
+    push_cast at this
+    exact this
+  have hE8 : 13 * proofLen TAct (cutRule s p d₁ d₂) +
+      18 * ‖proofLen TAct (cutRule s p d₁ d₂)‖ + 8 ≤ E := by
+    have := eroom_lin hE hCk 13 18 8 (by norm_num)
+    push_cast at this
+    exact this
+  have hnE : 18 * ‖proofLen TAct (cutRule s p d₁ d₂)‖ + 7 ≤ E := by
+    have := eroom_lin hE hCk 0 18 7 (by norm_num)
+    push_cast at this
+    rw [zero_mul, zero_add] at this
+    exact this
+  have hmSp : mShift walkPieces Wc T p ≤ 4 * proofLen TAct (cutRule s p d₁ d₂) :=
+    le_trans (mShift_le htbl hP.walkTable hWc T hp) (mul_le_mul_of_nonneg_left hpD zero_le)
+  have hmSnp : mShift walkPieces Wc T (neg LAct p) ≤ 4 * proofLen TAct (cutRule s p d₁ d₂) :=
+    le_trans (mShift_le htbl hP.walkTable hWc T hp.neg) (mul_le_mul_of_nonneg_left hnpD zero_le)
+  have hmLp : mLen Wc T p ≤ 2 * proofLen TAct (cutRule s p d₁ d₂) :=
+    le_trans le_self_add (le_trans (mLen_succ_le hWc T hp) (mul_le_mul_of_nonneg_left hpD zero_le))
+  have hmLnp : mLen Wc T (neg LAct p) ≤ 2 * proofLen TAct (cutRule s p d₁ d₂) :=
+    le_trans le_self_add
+      (le_trans (mLen_succ_le hWc T hp.neg) (mul_le_mul_of_nonneg_left hnpD zero_le))
+  have hshL₁ : shiftsV L₁ ≤ Czv * p4 (proofLen TAct d₁) := le_trans (shiftsV_le_len L₁) hchildLen₁
+  have hshL₂ : shiftsV L₂ ≤ Czv * p4 (proofLen TAct d₂) := le_trans (shiftsV_le_len L₂) hchildLen₂
+  have hsig₁ : proSig walkPieces Wl Wc W T (insert p s) ≤
+      6 * proofLen TAct (cutRule s p d₁ d₂) + 1 :=
+    proSig_le htbl hP hWc htblN hWl hWp hps
+      (one_le_len_memberList_of_mem hpmem) hcD₁ hE8 hΓ
+  have hsig₂ : proSig walkPieces Wl Wc W T (insert (neg LAct p) s) ≤
+      6 * proofLen TAct (cutRule s p d₁ d₂) + 1 :=
+    proSig_le htbl hP hWc htblN hWl hWp hnps
+      (one_le_len_memberList_of_mem (by simp : neg LAct p ∈ insert (neg LAct p) s)) hcD₂ hE8 hΓ
+  have hiE₁ : mShift walkPieces Wc T p + mShift walkPieces Wc T (neg LAct p) +
+      14 * proofLen TAct (cutRule s p d₁ d₂) + 5 ≤ E := by
+    refine eroom_of_le hE hCk 22 5 (by norm_num) ?_
+    push_cast
+    calc mShift walkPieces Wc T p + mShift walkPieces Wc T (neg LAct p) +
+          14 * proofLen TAct (cutRule s p d₁ d₂) + 5
+        ≤ 4 * proofLen TAct (cutRule s p d₁ d₂) + 4 * proofLen TAct (cutRule s p d₁ d₂) +
+          14 * proofLen TAct (cutRule s p d₁ d₂) + 5 :=
+          add_le_add (add_le_add (add_le_add hmSp hmSnp) le_rfl) le_rfl
+      _ = 22 * proofLen TAct (cutRule s p d₁ d₂) + 5 := by ring
+  have hipE₁ : mLen Wc T p + mShift walkPieces Wc T (neg LAct p) +
+      8 * proofLen TAct (cutRule s p d₁ d₂) + 4 ≤ E := by
+    refine eroom_of_le hE hCk 14 4 (by norm_num) ?_
+    push_cast
+    calc mLen Wc T p + mShift walkPieces Wc T (neg LAct p) +
+          8 * proofLen TAct (cutRule s p d₁ d₂) + 4
+        ≤ 2 * proofLen TAct (cutRule s p d₁ d₂) + 4 * proofLen TAct (cutRule s p d₁ d₂) +
+          8 * proofLen TAct (cutRule s p d₁ d₂) + 4 :=
+          add_le_add (add_le_add (add_le_add hmLp hmSnp) le_rfl) le_rfl
+      _ = 14 * proofLen TAct (cutRule s p d₁ d₂) + 4 := by ring
+  have hiE₂ : mShift walkPieces Wc T p + mShift walkPieces Wc T (neg LAct p) +
+      (1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2) +
+      14 * proofLen TAct (cutRule s p d₁ d₂) + 5 ≤ E := by
+    refine le_trans ?_ (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE)
+    have hlin : 28 * proofLen TAct (cutRule s p d₁ d₂) + 9 ≤
+        Czv * p3 (proofLen TAct (cutRule s p d₁ d₂)) := by
+      have h37 := hCk 37 (by norm_num)
+      push_cast at h37
+      exact lin_le_p3 hd1 (le_trans (le_of_eq (by norm_num : (28 : V) + 9 = 37)) h37)
+    calc mShift walkPieces Wc T p + mShift walkPieces Wc T (neg LAct p) +
+          (1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2) +
+          14 * proofLen TAct (cutRule s p d₁ d₂) + 5
+        ≤ 4 * proofLen TAct (cutRule s p d₁ d₂) + 4 * proofLen TAct (cutRule s p d₁ d₂) +
+          (1 + (6 * proofLen TAct (cutRule s p d₁ d₂) + 1) + Czv * p4 (proofLen TAct d₁) + 2) +
+          14 * proofLen TAct (cutRule s p d₁ d₂) + 5 :=
+          add_le_add (add_le_add (add_le_add (add_le_add hmSp hmSnp)
+            (add_le_add (add_le_add (add_le_add le_rfl hsig₁) hshL₁) le_rfl)) le_rfl) le_rfl
+      _ ≤ (28 * proofLen TAct (cutRule s p d₁ d₂) + 9) +
+          Czv * p4 (proofLen TAct d₁) + Czv * p4 (proofLen TAct d₂) :=
+          le_of_add_eq' (c := Czv * p4 (proofLen TAct d₂)) (by ring)
+      _ ≤ Czv * p4 (proofLen TAct (cutRule s p d₁ d₂)) := rec2₄ le_add_self hdeq hlin
+  have hipE₂ : mLen Wc T (neg LAct p) +
+      (1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2) +
+      8 * proofLen TAct (cutRule s p d₁ d₂) + 4 ≤ E := by
+    refine le_trans ?_ (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE)
+    have hlin : 16 * proofLen TAct (cutRule s p d₁ d₂) + 8 ≤
+        Czv * p3 (proofLen TAct (cutRule s p d₁ d₂)) := by
+      have h24 := hCk 24 (by norm_num)
+      push_cast at h24
+      exact lin_le_p3 hd1 (le_trans (le_of_eq (by norm_num : (16 : V) + 8 = 24)) h24)
+    calc mLen Wc T (neg LAct p) +
+          (1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2) +
+          8 * proofLen TAct (cutRule s p d₁ d₂) + 4
+        ≤ 2 * proofLen TAct (cutRule s p d₁ d₂) +
+          (1 + (6 * proofLen TAct (cutRule s p d₁ d₂) + 1) + Czv * p4 (proofLen TAct d₁) + 2) +
+          8 * proofLen TAct (cutRule s p d₁ d₂) + 4 :=
+          add_le_add (add_le_add (add_le_add hmLnp
+            (add_le_add (add_le_add (add_le_add le_rfl hsig₁) hshL₁) le_rfl)) le_rfl) le_rfl
+      _ ≤ (16 * proofLen TAct (cutRule s p d₁ d₂) + 8) +
+          Czv * p4 (proofLen TAct d₁) + Czv * p4 (proofLen TAct d₂) :=
+          le_of_add_eq' (c := Czv * p4 (proofLen TAct d₂)) (by ring)
+      _ ≤ Czv * p4 (proofLen TAct (cutRule s p d₁ d₂)) := rec2₄ le_add_self hdeq hlin
+  have hbn₁ : termLen LAct (binNumeral (proofLen TAct d₁)) ≤ E := eroom_binNumeral hE hCk hyp
+  have hbn₂ : termLen LAct (binNumeral (proofLen TAct d₂)) ≤ E := eroom_binNumeral hE hCk hyq
+  have hbn' : termLen LAct (binNumeral (proofLen TAct (cutRule s p d₁ d₂))) ≤ E := eroom_binNumeral hE hCk le_rfl
+  have hLn : sequentLen LAct s + proofLen TAct d₁ + proofLen TAct d₂ + 1 ≤
+      proofLen TAct (cutRule s p d₁ d₂) := le_of_eq hdl.symm
+  have hnd : proofLen TAct (cutRule s p d₁ d₂) ≤ 2 * proofLen TAct (cutRule s p d₁ d₂) :=
+    le_two_mul_self _
+  have hgE₁ : len (memberList (insert p s)) + 1 + shiftsV L₁ + 1 ≤ E := by
+    refine le_trans ?_ (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE)
+    have hlin : proofLen TAct (cutRule s p d₁ d₂) + 2 ≤
+        Czv * p3 (proofLen TAct (cutRule s p d₁ d₂)) := by
+      have h3 := hCk 3 (by norm_num)
+      push_cast at h3
+      have := lin_le_p3 (a := 1) (b := 2) hd1 (by
+        exact le_trans (le_of_eq (by norm_num : (1 : V) + 2 = 3)) h3)
+      rw [one_mul] at this
+      exact this
+    calc len (memberList (insert p s)) + 1 + shiftsV L₁ + 1
+        ≤ proofLen TAct (cutRule s p d₁ d₂) + 1 + Czv * p4 (proofLen TAct d₁) + 1 :=
+          add_le_add (add_le_add (add_le_add hkD₁ le_rfl) hshL₁) le_rfl
+      _ ≤ (proofLen TAct (cutRule s p d₁ d₂) + 2) +
+          Czv * p4 (proofLen TAct d₁) + Czv * p4 (proofLen TAct d₂) :=
+          le_of_add_eq' (c := Czv * p4 (proofLen TAct d₂)) (by ring)
+      _ ≤ Czv * p4 (proofLen TAct (cutRule s p d₁ d₂)) := rec2₄ le_add_self hdeq hlin
+  have hgE₂ : len (memberList (insert (neg LAct p) s)) + 1 + shiftsV L₂ + 1 ≤ E := by
+    refine le_trans ?_ (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE)
+    have hlin : proofLen TAct (cutRule s p d₁ d₂) + 2 ≤
+        Czv * p3 (proofLen TAct (cutRule s p d₁ d₂)) := by
+      have h3 := hCk 3 (by norm_num)
+      push_cast at h3
+      have := lin_le_p3 (a := 1) (b := 2) hd1 (by
+        exact le_trans (le_of_eq (by norm_num : (1 : V) + 2 = 3)) h3)
+      rw [one_mul] at this
+      exact this
+    calc len (memberList (insert (neg LAct p) s)) + 1 + shiftsV L₂ + 1
+        ≤ proofLen TAct (cutRule s p d₁ d₂) + 1 + Czv * p4 (proofLen TAct d₂) + 1 :=
+          add_le_add (add_le_add (add_le_add hkD₂ le_rfl) hshL₂) le_rfl
+      _ ≤ (proofLen TAct (cutRule s p d₁ d₂) + 2) +
+          Czv * p4 (proofLen TAct d₁) + Czv * p4 (proofLen TAct d₂) :=
+          le_of_add_eq' (c := Czv * p4 (proofLen TAct d₁)) (by ring)
+      _ ≤ Czv * p4 (proofLen TAct (cutRule s p d₁ d₂)) := rec2₄ le_add_self hdeq hlin
+  have hgE3 : mShift walkPieces Wc T p + mShift walkPieces Wc T (neg LAct p) +
+      (1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2) +
+      (1 + proSig walkPieces Wl Wc W T (insert (neg LAct p) s) + shiftsV L₂ + 2) +
+      (len (memberList s) + 1) + 1 + 1 ≤ E := by
+    refine le_trans ?_ (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE)
+    have hlin : 21 * proofLen TAct (cutRule s p d₁ d₂) + 11 ≤
+        Czv * p3 (proofLen TAct (cutRule s p d₁ d₂)) := by
+      have h32 := hCk 32 (by norm_num)
+      push_cast at h32
+      exact lin_le_p3 hd1 (le_trans (le_of_eq (by norm_num : (21 : V) + 11 = 32)) h32)
+    calc mShift walkPieces Wc T p + mShift walkPieces Wc T (neg LAct p) +
+          (1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2) +
+          (1 + proSig walkPieces Wl Wc W T (insert (neg LAct p) s) + shiftsV L₂ + 2) +
+          (len (memberList s) + 1) + 1 + 1
+        ≤ 4 * proofLen TAct (cutRule s p d₁ d₂) + 4 * proofLen TAct (cutRule s p d₁ d₂) +
+          (1 + (6 * proofLen TAct (cutRule s p d₁ d₂) + 1) + Czv * p4 (proofLen TAct d₁) + 2) +
+          (1 + (6 * proofLen TAct (cutRule s p d₁ d₂) + 1) + Czv * p4 (proofLen TAct d₂) + 2) +
+          (proofLen TAct (cutRule s p d₁ d₂) + 1) + 1 + 1 :=
+          add_le_add (add_le_add (add_le_add (add_le_add (add_le_add (add_le_add hmSp hmSnp)
+            (add_le_add (add_le_add (add_le_add le_rfl hsig₁) hshL₁) le_rfl))
+            (add_le_add (add_le_add (add_le_add le_rfl hsig₂) hshL₂) le_rfl))
+            (add_le_add hksD le_rfl)) le_rfl) le_rfl
+      _ = (21 * proofLen TAct (cutRule s p d₁ d₂) + 11) +
+          Czv * p4 (proofLen TAct d₁) + Czv * p4 (proofLen TAct d₂) := by ring
+      _ ≤ Czv * p4 (proofLen TAct (cutRule s p d₁ d₂)) := rec2₄ le_add_self hdeq hlin
+  refine ⟨?_, ?_⟩
+  · rw [len_vCut_eq]
+    have hlenPre : len (proCutPre walkPieces Wc T p) ≤ 64 * proofLen TAct (cutRule s p d₁ d₂) :=
+      le_trans (len_proCutPre_le hWc walkPieces T hp) (mul_le_mul_of_nonneg_left hpD zero_le)
+    have hlenCut₁ : len (cutPro walkPieces Wl Wc W T s p
+        (mShift walkPieces Wc T p + mShift walkPieces Wc T (neg LAct p))
+        (mLen Wc T p + mShift walkPieces Wc T (neg LAct p))) ≤
+        55 * proofLen TAct (cutRule s p d₁ d₂) + 13 :=
+      len_cutPro_le htbl hP hWl hWc walkPieces W T _ _ hs hp hcD₁ hsD0p
+    have hlenCut₂ : len (cutPro walkPieces Wl Wc W T s (neg LAct p)
+        (mShift walkPieces Wc T p + mShift walkPieces Wc T (neg LAct p) +
+          (1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2))
+        (mLen Wc T (neg LAct p) +
+          (1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2))) ≤
+        55 * proofLen TAct (cutRule s p d₁ d₂) + 13 :=
+      len_cutPro_le htbl hP hWl hWc walkPieces W T _ _ hs hp.neg hcD₂ hsD0np
+    have hX : 174 * proofLen TAct (cutRule s p d₁ d₂) + 47 ≤
+        Czv * p3 (proofLen TAct (cutRule s p d₁ d₂)) := by
+      have h221 := hCk 221 (by norm_num)
+      push_cast at h221
+      exact lin_le_p3 hd1 (le_trans (le_of_eq (by norm_num : (174 : V) + 47 = 221)) h221)
+    calc len (proCutPre walkPieces Wc T p) +
+          (len (cutPro walkPieces Wl Wc W T s p
+            (mShift walkPieces Wc T p + mShift walkPieces Wc T (neg LAct p))
+            (mLen Wc T p + mShift walkPieces Wc T (neg LAct p))) +
+            (len L₁ + (6 +
+              (len (cutPro walkPieces Wl Wc W T s (neg LAct p)
+                (mShift walkPieces Wc T p + mShift walkPieces Wc T (neg LAct p) +
+                  (1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2))
+                (mLen Wc T (neg LAct p) +
+                  (1 + proSig walkPieces Wl Wc W T (insert p s) + shiftsV L₁ + 2))) +
+                (len L₂ + (6 + 9))))))
+        ≤ 64 * proofLen TAct (cutRule s p d₁ d₂) +
+          ((55 * proofLen TAct (cutRule s p d₁ d₂) + 13) +
+            (Czv * p4 (proofLen TAct d₁) + (6 +
+              ((55 * proofLen TAct (cutRule s p d₁ d₂) + 13) +
+                (Czv * p4 (proofLen TAct d₂) + 15))))) :=
+          add_le_add hlenPre (add_le_add hlenCut₁ (add_le_add hchildLen₁ (add_le_add le_rfl
+            (add_le_add hlenCut₂ (add_le_add hchildLen₂ (by norm_num))))))
+      _ = (174 * proofLen TAct (cutRule s p d₁ d₂) + 47) +
+          Czv * p4 (proofLen TAct d₁) + Czv * p4 (proofLen TAct d₂) := by ring
+      _ ≤ Czv * p4 (proofLen TAct (cutRule s p d₁ d₂)) := rec2₄ le_add_self hdeq hX
+  · exact cut_arm_size (Wl := Wl) (Wc := Wc) (W₁ := W₁) (W := W) (T := T) (s := s) (p := p)
+      (d₁ := d₁) (d₂ := d₂) (L₁ := L₁) (L₂ := L₂)
+      (B := B) (E := E) (Cz := Czv) (N' := N') (B' := B')
+      (D := proofLen TAct (cutRule s p d₁ d₂)) (d := proofLen TAct (cutRule s p d₁ d₂))
+      (Γ := Γ) (Γ₄ := Γ₄) (Γc := Γc)
+      hWp hW₁ htbl hP htblN hWl hWc hPle hs hp hpD hnpD hcD₁ hcD₂ hsD0p hsD0np
+      hEpre hEpro hiE₁ hipE₁ hiE₂ hipE₂ hΓ hLay₁ hDp₁ hΓ₄ hLay₄ hDnp₄ hΓc
+      hDE hnd hCQ hCD hCz1 hchildSz₁ hchildSz₂ hE1 hcG hgE₁ hgE₂ hbn₁ hbn₂ hbn' hnE hLn hnd
+      hgE3 hCbin
+
+end cutWrapper
+
+/-! ## 24. The `all` motive wrapper
+
+The first QUADRATIC arm, and the first whose `D` is not the node's `proofLen`.
+
+**TRAP 21: `all` instantiates `D := 2 · proofLen (allIntro s p d')`** — unlike every prior wrapper — for two reasons
+that agree: `hspD : formulaLen (shift p) ≤ D` only holds at TWICE the `proofLen` (`Primitives.formulaLen_shift_le ≤
+2·|p|`, with `|p| ≤ |∀p| ≤ proofLen` by `formulaLen_all_le_proofLen_allIntro`), and `Bounds.allEQ_p3`/`alliE_p3` are stated
+at exactly `D = 2d`. The motive's `d` stays `proofLen (allIntro …)`, so `hDd : D ≤ 2·d` is `le_rfl`, and `hsD`/`hcD`
+weaken to `≤ 2·proofLen` through `le_two_mul_self`.
+
+No new helper was needed: the two quadratic rooms route through `allEQ_p3 ≤ 27·p3 (d+1)` and
+`alliE_p3 ≤ 96·p3 (d+1)`, lifted by `p3_le_p4` and capped by `Bounds.capE4`, as `Verify4`'s own `all` arm does.
+
+The CUBIC length half goes through `Bounds.len_proAll_le_cubic ≤ 402·p3 (D+1)` at `D = 2·proofLen`, i.e.
+`402·p3 (2·proofLen + 1)`; `p3_mono` takes `2d+1 ≤ 2(d+1)`, `p3_two_mul` turns `p3 (2(d+1))` into `8·p3 (d+1)`, and
+`p3_succ_le` turns that into `64·p3 d` — so the constant is `402·64 = 25728`.
+
+`hgE2` carries `allCertSig`, bounded by `Prologue.allCert_ok`'s sixth conjunct
+(`≤ 4·D + 2 + 2·((1+D)(1+D+1))·D`), plus three `proSig ≤ 6·D + 1` — one at `setShift s`, whose `IsFormulaSet` is
+`hs.setShift` and whose member count is `one_le_len_memberList_setShift`. -/
+
+section allWrapper
+
+set_option maxHeartbeats 4000000 in
+/-- **THE `all` MOTIVE WRAPPER.** -/
+theorem all_wrapper {tbl N N' B' Wl Wc W₂ W T B E Czv Γ s p d' L' : V}
+    (htbl : TableOK tbl N) (hP : ProTable tbl) (htblN : NumTableOK T N' B')
+    (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (hWp : W = proPieces) (hW₂ : W₂ = frag2Pieces)
+    (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (hCz1 : 1 ≤ Czv) (hCk : ∀ n : ℕ, n ≤ 1000000 → ((n : ℕ) : V) ≤ Czv)
+    (hCQ : 19 * B' + 25 ≤ Czv) (hCD : 27 * N' + 525600 * B' ≤ Czv)
+    (hCbin : 2 * (27 * N' + 525600 * B') ≤ Czv)
+    (hcG : 4 * ((cDer : V) + cDlen + cFst + 6) ≤ Czv)
+    (hs : IsFormulaSet LAct s) (hr : (^∀ p) ∈ s)
+    (hd' : DerivationOf TAct d' (insert (free LAct p) (setShift LAct s)))
+    (hΓ : IsFormulaSet LAct Γ) (hLay : NodeLay walkPieces Wc T Γ s)
+    (hchildSz : SizeOK (kitQ Czv B E) (kitD Czv (2 * proofLen TAct (allIntro s p d'))) L')
+    (hchildLen : len L' ≤ Czv * p4 (proofLen TAct d'))
+    (hE : Czv * p4 (proofLen TAct (allIntro s p d') + 1) ≤ E) :
+    len (vAll walkPieces Wl Wc W₂ W T s p d' L') ≤ Czv * p4 (proofLen TAct (allIntro s p d')) ∧
+    SizeOK (kitQ Czv B E) (kitD Czv (2 * proofLen TAct (allIntro s p d')))
+      (vAll walkPieces Wl Wc W₂ W T s p d' L') := by
+  have hD : Derivation TAct (allIntro s p d') := Derivation.allIntro hr hd'
+  have hd1 : 1 ≤ proofLen TAct (allIntro s p d') := one_le_proofLen hD
+  have hp1 : IsSemiformula LAct 1 p := by
+    have := IsSemiformula.all.mp (hs _ hr); simpa using this
+  have hsD0 : sequentLen LAct s ≤ proofLen TAct (allIntro s p d') := by
+    have := sequentLen_fstIdx_le_proofLen hD; rwa [fstIdx_allIntro] at this
+  have hcD0 : sequentLen LAct (insert (free LAct p) (setShift LAct s)) ≤
+      proofLen TAct (allIntro s p d') := sequentLen_child_le_proofLen_allIntro hD
+  have hdl : proofLen TAct (allIntro s p d') = sequentLen LAct s + proofLen TAct d' + 1 := proofLen_allIntro hD
+  have hdeq : proofLen TAct (allIntro s p d') = proofLen TAct d' + (sequentLen LAct s + 1) := by rw [hdl]; ring
+  have hyd : proofLen TAct d' ≤ proofLen TAct (allIntro s p d') := by
+    rw [hdeq]; exact le_of_add_eq' (c := sequentLen LAct s + 1) (by ring)
+  have he1 : (1 : V) ≤ proofLen TAct (allIntro s p d') + 1 := le_add_self
+  have hsD : sequentLen LAct s ≤ 2 * proofLen TAct (allIntro s p d') :=
+    le_trans hsD0 (le_two_mul_self _)
+  have hcD : sequentLen LAct (insert (free LAct p) (setShift LAct s)) ≤
+      2 * proofLen TAct (allIntro s p d') := le_trans hcD0 (le_two_mul_self _)
+  have hspD : formulaLen LAct (shift LAct p) ≤ 2 * proofLen TAct (allIntro s p d') := by
+    refine le_trans (formulaLen_shift_le hp1) (mul_le_mul_of_nonneg_left ?_ zero_le)
+    have := formulaLen_all_le_proofLen_allIntro hD
+    rw [formulaLen_all hp1.isUFormula] at this
+    exact le_trans le_self_add this
+  have hV : IsFormulaSet LAct (setShift LAct s) := hs.setShift
+  have hk1 : 1 ≤ len (memberList s) := one_le_len_memberList_of_mem hr
+  have hkV1 : 1 ≤ len (memberList (setShift LAct s)) := one_le_len_memberList_setShift rfl hk1
+  have hvD : sequentLen LAct (setShift LAct s) ≤ 2 * proofLen TAct (allIntro s p d') :=
+    le_trans (sequentLen_le_insert (free LAct p) (setShift LAct s)) hcD
+  have hksD : len (memberList s) ≤ 2 * proofLen TAct (allIntro s p d') :=
+    le_trans (len_memberList_le_sequentLen hs) hsD
+  have hkcD : len (memberList (insert (free LAct p) (setShift LAct s))) ≤
+      2 * proofLen TAct (allIntro s p d') :=
+    le_trans (len_memberList_le_sequentLen (IsFormulaSet.insert_iff.mpr ⟨hp1.free, hV⟩)) hcD
+  have hE1 : (1 : V) ≤ E := le_trans (le_trans hd1 (le_p4_self hd1))
+    (le_trans (le_mul_of_one_le_left zero_le hCz1)
+      (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE))
+  have hDE : 2 * proofLen TAct (allIntro s p d') ≤ E := by
+    refine eroom_of_le hE hCk 2 0 (by norm_num) ?_
+    push_cast
+    rw [add_zero]
+  have hEpro : 13 * (2 * proofLen TAct (allIntro s p d')) +
+      18 * ‖2 * proofLen TAct (allIntro s p d')‖ + 12 ≤ E := by
+    refine eroom_of_le hE hCk 62 12 (by norm_num) ?_
+    push_cast
+    calc 13 * (2 * proofLen TAct (allIntro s p d')) +
+          18 * ‖2 * proofLen TAct (allIntro s p d')‖ + 12
+        ≤ 26 * proofLen TAct (allIntro s p d') +
+          18 * (2 * proofLen TAct (allIntro s p d')) + 12 :=
+          add_le_add (add_le_add (le_of_eq (by ring))
+            (mul_le_mul_of_nonneg_left (length_le _) zero_le)) le_rfl
+      _ = 62 * proofLen TAct (allIntro s p d') + 12 := by ring
+  have hE8 : 13 * (2 * proofLen TAct (allIntro s p d')) +
+      18 * ‖2 * proofLen TAct (allIntro s p d')‖ + 8 ≤ E :=
+    le_trans (add_le_add le_rfl (by norm_num : (8 : V) ≤ 12)) hEpro
+  have hnE : 18 * ‖proofLen TAct (allIntro s p d')‖ + 7 ≤ E := by
+    have := eroom_lin hE hCk 0 18 7 (by norm_num)
+    push_cast at this
+    rw [zero_mul, zero_add] at this
+    exact this
+  have hEQ : 2 * ((1 + 2 * proofLen TAct (allIntro s p d')) *
+      (1 + 2 * proofLen TAct (allIntro s p d') + 1)) * (2 * proofLen TAct (allIntro s p d') + 1) +
+      4 * (2 * proofLen TAct (allIntro s p d')) + 11 ≤ E := by
+    refine capE4 hE (hCk 27 (by norm_num)) ?_
+    refine le_trans (allEQ_p3 (D := 2 * proofLen TAct (allIntro s p d'))
+      (d := proofLen TAct (allIntro s p d')) rfl) ?_
+    exact mul_le_mul_of_nonneg_left (p3_le_p4 he1) zero_le
+  have hiE : 0 + 2 * ((1 + 2 * proofLen TAct (allIntro s p d')) *
+      (1 + 2 * proofLen TAct (allIntro s p d') + 1)) * (2 * proofLen TAct (allIntro s p d')) +
+      40 * (2 * proofLen TAct (allIntro s p d')) + 20 ≤ E := by
+    refine capE4 hE (hCk 96 (by norm_num)) ?_
+    refine le_trans (alliE_p3 (D := 2 * proofLen TAct (allIntro s p d'))
+      (d := proofLen TAct (allIntro s p d')) rfl) ?_
+    exact mul_le_mul_of_nonneg_left (p3_le_p4 he1) zero_le
+  have hbn : termLen LAct (binNumeral (proofLen TAct d')) ≤ E := eroom_binNumeral hE hCk hyd
+  have hbn' : termLen LAct (binNumeral (proofLen TAct (allIntro s p d'))) ≤ E := eroom_binNumeral hE hCk le_rfl
+  have hLn : sequentLen LAct s + proofLen TAct d' + 1 ≤ proofLen TAct (allIntro s p d') := le_of_eq hdl.symm
+  have hnd : proofLen TAct (allIntro s p d') ≤ 2 * proofLen TAct (allIntro s p d') := le_two_mul_self _
+  have hshL : shiftsV L' ≤ Czv * p4 (proofLen TAct d') := le_trans (shiftsV_le_len L') hchildLen
+  have hsigS : proSig walkPieces Wl Wc W T s ≤ 6 * (2 * proofLen TAct (allIntro s p d')) + 1 :=
+    proSig_le htbl hP hWc htblN hWl hWp hs hk1 hsD hE8 hΓ
+  have hsigV : proSig walkPieces Wl Wc W T (setShift LAct s) ≤
+      6 * (2 * proofLen TAct (allIntro s p d')) + 1 :=
+    proSig_le htbl hP hWc htblN hWl hWp hV hkV1 hvD hE8 hΓ
+  have hsigC : proSig walkPieces Wl Wc W T (insert (free LAct p) (setShift LAct s)) ≤
+      6 * (2 * proofLen TAct (allIntro s p d')) + 1 :=
+    proSig_le htbl hP hWc htblN hWl hWp (IsFormulaSet.insert_iff.mpr ⟨hp1.free, hV⟩)
+      (one_le_len_memberList_insert _ _) hcD hE8 hΓ
+  have hgE : len (memberList (insert (free LAct p) (setShift LAct s))) + 1 + shiftsV L' + 1 ≤ E := by
+    refine le_trans ?_ (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE)
+    have hlin : 2 * proofLen TAct (allIntro s p d') + 2 ≤
+        Czv * p3 (proofLen TAct (allIntro s p d')) := by
+      have h4 := hCk 4 (by norm_num)
+      push_cast at h4
+      exact lin_le_p3 hd1 (le_trans (le_of_eq (by norm_num : (2 : V) + 2 = 4)) h4)
+    calc len (memberList (insert (free LAct p) (setShift LAct s))) + 1 + shiftsV L' + 1
+        ≤ 2 * proofLen TAct (allIntro s p d') + 1 + Czv * p4 (proofLen TAct d') + 1 :=
+          add_le_add (add_le_add (add_le_add hkcD le_rfl) hshL) le_rfl
+      _ = (2 * proofLen TAct (allIntro s p d') + 2) + Czv * p4 (proofLen TAct d') := by ring
+      _ ≤ Czv * p4 (proofLen TAct (allIntro s p d')) := rec1₄ le_add_self hdeq hlin
+  have hACS : allCertSig walkPieces Wc p ≤
+      4 * (2 * proofLen TAct (allIntro s p d')) + 2 +
+      2 * ((1 + 2 * proofLen TAct (allIntro s p d')) *
+        (1 + 2 * proofLen TAct (allIntro s p d') + 1)) * (2 * proofLen TAct (allIntro s p d')) := by
+    obtain ⟨-, -, -, -, -, h, -, -, -⟩ :=
+      allCert_ok (i := 0) (D := 2 * proofLen TAct (allIntro s p d')) (E := E)
+        htbl hP hWc hs hp1 hr hsD hspD hEpro hEQ (le_trans (le_of_eq (by ring)) hiE) hΓ hLay.layout
+    exact h
+  have hgE2 : allCertSig walkPieces Wc p +
+      (proSig walkPieces Wl Wc W T (setShift LAct s) +
+        (1 + (len (memberList s) + 1) + proSig walkPieces Wl Wc W T s)) +
+      (1 + proSig walkPieces Wl Wc W T (insert (free LAct p) (setShift LAct s))) +
+      shiftsV L' + 2 + (len (memberList s) + 1) + 1 + 1 ≤ E := by
+    refine le_trans ?_ (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE)
+    have hquad : 0 + 2 * ((1 + 2 * proofLen TAct (allIntro s p d')) *
+        (1 + 2 * proofLen TAct (allIntro s p d') + 1)) * (2 * proofLen TAct (allIntro s p d')) +
+        40 * (2 * proofLen TAct (allIntro s p d')) + 20 ≤ 96 * p3 (proofLen TAct (allIntro s p d') + 1) :=
+      alliE_p3 (D := 2 * proofLen TAct (allIntro s p d')) (d := proofLen TAct (allIntro s p d')) rfl
+    have hlin : 96 * p3 (proofLen TAct (allIntro s p d') + 1) ≤
+        Czv * p3 (proofLen TAct (allIntro s p d')) := by
+      refine le_trans (mul_le_mul_of_nonneg_left (p3_succ_le hd1) zero_le) ?_
+      have h768 := hCk 768 (by norm_num)
+      push_cast at h768
+      calc 96 * (8 * p3 (proofLen TAct (allIntro s p d'))) =
+            768 * p3 (proofLen TAct (allIntro s p d')) := by ring
+        _ ≤ Czv * p3 (proofLen TAct (allIntro s p d')) :=
+            mul_le_mul_of_nonneg_right h768 zero_le
+    calc allCertSig walkPieces Wc p +
+          (proSig walkPieces Wl Wc W T (setShift LAct s) +
+            (1 + (len (memberList s) + 1) + proSig walkPieces Wl Wc W T s)) +
+          (1 + proSig walkPieces Wl Wc W T (insert (free LAct p) (setShift LAct s))) +
+          shiftsV L' + 2 + (len (memberList s) + 1) + 1 + 1
+        ≤ (4 * (2 * proofLen TAct (allIntro s p d')) + 2 +
+            2 * ((1 + 2 * proofLen TAct (allIntro s p d')) *
+              (1 + 2 * proofLen TAct (allIntro s p d') + 1)) * (2 * proofLen TAct (allIntro s p d'))) +
+          ((6 * (2 * proofLen TAct (allIntro s p d')) + 1) +
+            (1 + (2 * proofLen TAct (allIntro s p d') + 1) +
+              (6 * (2 * proofLen TAct (allIntro s p d')) + 1))) +
+          (1 + (6 * (2 * proofLen TAct (allIntro s p d')) + 1)) +
+          Czv * p4 (proofLen TAct d') + 2 + (2 * proofLen TAct (allIntro s p d') + 1) + 1 + 1 :=
+          add_le_add (add_le_add (add_le_add (add_le_add (add_le_add (add_le_add
+            (add_le_add hACS (add_le_add hsigV (add_le_add (add_le_add le_rfl
+              (add_le_add hksD le_rfl)) hsigS)))
+            (add_le_add le_rfl hsigC)) hshL) le_rfl) (add_le_add hksD le_rfl)) le_rfl) le_rfl
+      _ ≤ (0 + 2 * ((1 + 2 * proofLen TAct (allIntro s p d')) *
+            (1 + 2 * proofLen TAct (allIntro s p d') + 1)) * (2 * proofLen TAct (allIntro s p d')) +
+            40 * (2 * proofLen TAct (allIntro s p d')) + 20) + Czv * p4 (proofLen TAct d') :=
+          le_of_add_eq' (c := 7 + 32 * proofLen TAct (allIntro s p d')) (by ring)
+      _ ≤ 96 * p3 (proofLen TAct (allIntro s p d') + 1) + Czv * p4 (proofLen TAct d') :=
+          add_le_add hquad le_rfl
+      _ ≤ Czv * p3 (proofLen TAct (allIntro s p d')) + Czv * p4 (proofLen TAct d') :=
+          add_le_add hlin le_rfl
+      _ ≤ Czv * p4 (proofLen TAct (allIntro s p d')) :=
+          rec1₄ le_add_self hdeq le_rfl
+  refine ⟨?_, ?_⟩
+  · rw [len_vAll_eq]
+    have hlenPro : len (proAll walkPieces Wl Wc W T s p 0) ≤
+        402 * p3 (2 * proofLen TAct (allIntro s p d') + 1) :=
+      len_proAll_le_cubic htbl hP hWl hWc walkPieces W T 0 hs hp1 hr hsD hcD hspD
+    have hcube : 402 * p3 (2 * proofLen TAct (allIntro s p d') + 1) ≤
+        25728 * p3 (proofLen TAct (allIntro s p d')) := by
+      have h1 : p3 (2 * proofLen TAct (allIntro s p d') + 1) ≤
+          p3 (2 * (proofLen TAct (allIntro s p d') + 1)) :=
+        p3_mono (le_of_add_eq' (c := 1) (by ring))
+      have h2 : p3 (2 * (proofLen TAct (allIntro s p d') + 1)) =
+          8 * p3 (proofLen TAct (allIntro s p d') + 1) := p3_two_mul _
+      have h3 : p3 (proofLen TAct (allIntro s p d') + 1) ≤
+          8 * p3 (proofLen TAct (allIntro s p d')) := p3_succ_le hd1
+      calc 402 * p3 (2 * proofLen TAct (allIntro s p d') + 1)
+          ≤ 402 * (8 * p3 (proofLen TAct (allIntro s p d') + 1)) := by
+            rw [← h2]; exact mul_le_mul_of_nonneg_left h1 zero_le
+        _ ≤ 402 * (8 * (8 * p3 (proofLen TAct (allIntro s p d')))) :=
+            mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left h3 zero_le) zero_le
+        _ = 25728 * p3 (proofLen TAct (allIntro s p d')) := by ring
+    have hX : 25728 * p3 (proofLen TAct (allIntro s p d')) + 15 ≤
+        Czv * p3 (proofLen TAct (allIntro s p d')) := by
+      have h25743 := hCk 25743 (by norm_num)
+      push_cast at h25743
+      calc 25728 * p3 (proofLen TAct (allIntro s p d')) + 15
+          ≤ 25728 * p3 (proofLen TAct (allIntro s p d')) +
+            15 * p3 (proofLen TAct (allIntro s p d')) :=
+            add_le_add le_rfl (le_mul_of_one_le_right zero_le (one_le_p3 hd1))
+        _ = 25743 * p3 (proofLen TAct (allIntro s p d')) := by ring
+        _ ≤ Czv * p3 (proofLen TAct (allIntro s p d')) :=
+            mul_le_mul_of_nonneg_right h25743 zero_le
+    calc len (proAll walkPieces Wl Wc W T s p 0) + (len L' + (6 + 9))
+        ≤ 402 * p3 (2 * proofLen TAct (allIntro s p d') + 1) + (Czv * p4 (proofLen TAct d') + 15) :=
+          add_le_add hlenPro (add_le_add hchildLen (by norm_num))
+      _ ≤ 25728 * p3 (proofLen TAct (allIntro s p d')) + (Czv * p4 (proofLen TAct d') + 15) :=
+          add_le_add hcube le_rfl
+      _ = (25728 * p3 (proofLen TAct (allIntro s p d')) + 15) + Czv * p4 (proofLen TAct d') := by ring
+      _ ≤ Czv * p4 (proofLen TAct (allIntro s p d')) := rec1₄ le_add_self hdeq hX
+  · exact all_arm_size (Wl := Wl) (Wc := Wc) (W₂ := W₂) (W := W) (T := T) (s := s) (p := p)
+      (d' := d') (L' := L') (B := B) (E := E) (Cz := Czv) (N' := N') (B' := B')
+      (D := 2 * proofLen TAct (allIntro s p d')) (d := proofLen TAct (allIntro s p d')) (Γ := Γ)
+      hWp hW₂ htbl hP htblN hWl hWc hPle hs hp1 hr hsD hcD hspD hEpro hEQ hiE hΓ hLay.layout
+      hDE le_rfl hCQ hCD hCz1 hchildSz hE1 hcG hgE hbn hbn' hnE hLn hnd hgE2 hCbin
+
+end allWrapper
+
+/-! ## 25. The `exs` motive wrapper
+
+Mechanically `all`'s twin at `D := 2 · proofLen (exsIntro s p t d')` (TRAP 21 again), with four differences:
+
+* the quadratic rooms carry `(1 + D + D)` rather than `(1 + D + 1)`, matching `Bounds.exsEQ_p3 ≤ 43·p3 (d+1)` and
+  `exsiE_p3 ≤ 112·p3 (d+1)`;
+* `proofLen_exsIntro = sequentLen s + termLen t + proofLen d' + 1`, so `hdeq` is `proofLen d' + (sequentLen s + termLen t + 1)` — the
+  witness term's length joins the `rec1₄` remainder;
+* the arm wants `ht : IsSemiterm LAct 0 t` and `htD : termLen t ≤ D` (`termLen_le_proofLen_exsIntro`);
+* `hgE2` carries `exsSig`, bounded by `Prologue.exsCert_ok`'s FIFTH conjunct
+  (`≤ 2·((1+D)(1+D+D))·D + 6·D + 1`), whose own `hptD` comes from `formulaLen_substs1_le_proofLen_exsIntro`.
+
+The cubic length half is `Bounds.len_proExs_le_cubic ≤ 256·p3 (D+1)` at `D = 2·proofLen`, so `256·64 = 16384`,
+capped at `16399`. -/
+
+section exsWrapper
+
+set_option maxHeartbeats 4000000 in
+/-- **THE `exs` MOTIVE WRAPPER.** -/
+theorem exs_wrapper {tbl N N' B' Wl Wc W₂ W T B E Czv Γ s p t d' L' : V}
+    (htbl : TableOK tbl N) (hP : ProTable tbl) (htblN : NumTableOK T N' B')
+    (hWl : Wl = layoutPieces) (hWc : Wc = certPieces) (hWp : W = proPieces) (hW₂ : W₂ = frag2Pieces)
+    (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (hCz1 : 1 ≤ Czv) (hCk : ∀ n : ℕ, n ≤ 1000000 → ((n : ℕ) : V) ≤ Czv)
+    (hCQ : 19 * B' + 25 ≤ Czv) (hCD : 27 * N' + 525600 * B' ≤ Czv)
+    (hCbin : 2 * (27 * N' + 525600 * B') ≤ Czv)
+    (hcG : 4 * ((cDer : V) + cDlen + cFst + 6) ≤ Czv)
+    (hs : IsFormulaSet LAct s) (hr : (^∃ p) ∈ s) (ht : IsSemiterm LAct 0 t)
+    (hd' : DerivationOf TAct d' (insert (substs1 LAct t p) s))
+    (hΓ : IsFormulaSet LAct Γ) (hLay : NodeLay walkPieces Wc T Γ s)
+    (hchildSz : SizeOK (kitQ Czv B E) (kitD Czv (2 * proofLen TAct (exsIntro s p t d'))) L')
+    (hchildLen : len L' ≤ Czv * p4 (proofLen TAct d'))
+    (hE : Czv * p4 (proofLen TAct (exsIntro s p t d') + 1) ≤ E) :
+    len (vExs walkPieces Wl Wc W₂ W T s p t d' L') ≤ Czv * p4 (proofLen TAct (exsIntro s p t d')) ∧
+    SizeOK (kitQ Czv B E) (kitD Czv (2 * proofLen TAct (exsIntro s p t d')))
+      (vExs walkPieces Wl Wc W₂ W T s p t d' L') := by
+  have hD : Derivation TAct (exsIntro s p t d') := Derivation.exsIntro hr ht hd'
+  have hd1 : 1 ≤ proofLen TAct (exsIntro s p t d') := one_le_proofLen hD
+  have hp1 : IsSemiformula LAct 1 p := by
+    have := IsSemiformula.exs.mp (hs _ hr); simpa using this
+  have hsD0 : sequentLen LAct s ≤ proofLen TAct (exsIntro s p t d') := by
+    have := sequentLen_fstIdx_le_proofLen hD; rwa [fstIdx_exsIntro] at this
+  have hcD0 : sequentLen LAct (insert (substs1 LAct t p) s) ≤ proofLen TAct (exsIntro s p t d') :=
+    sequentLen_child_le_proofLen_exsIntro hD
+  have htD0 : termLen LAct t ≤ proofLen TAct (exsIntro s p t d') := termLen_le_proofLen_exsIntro hD
+  have hptD0 : formulaLen LAct (substs1 LAct t p) ≤ proofLen TAct (exsIntro s p t d') :=
+    formulaLen_substs1_le_proofLen_exsIntro hD
+  have hdl : proofLen TAct (exsIntro s p t d') =
+      sequentLen LAct s + termLen LAct t + proofLen TAct d' + 1 := proofLen_exsIntro hD
+  have hdeq : proofLen TAct (exsIntro s p t d') =
+      proofLen TAct d' + (sequentLen LAct s + termLen LAct t + 1) := by rw [hdl]; ring
+  have hyd : proofLen TAct d' ≤ proofLen TAct (exsIntro s p t d') := by
+    rw [hdeq]; exact le_of_add_eq' (c := sequentLen LAct s + termLen LAct t + 1) (by ring)
+  have he1 : (1 : V) ≤ proofLen TAct (exsIntro s p t d') + 1 := le_add_self
+  have hsD : sequentLen LAct s ≤ 2 * proofLen TAct (exsIntro s p t d') :=
+    le_trans hsD0 (le_two_mul_self _)
+  have hcD : sequentLen LAct (insert (substs1 LAct t p) s) ≤ 2 * proofLen TAct (exsIntro s p t d') :=
+    le_trans hcD0 (le_two_mul_self _)
+  have htD : termLen LAct t ≤ 2 * proofLen TAct (exsIntro s p t d') :=
+    le_trans htD0 (le_two_mul_self _)
+  have hptD : formulaLen LAct (substs1 LAct t p) ≤ 2 * proofLen TAct (exsIntro s p t d') :=
+    le_trans hptD0 (le_two_mul_self _)
+  have hk1 : 1 ≤ len (memberList s) := one_le_len_memberList_of_mem hr
+  have hksD : len (memberList s) ≤ 2 * proofLen TAct (exsIntro s p t d') :=
+    le_trans (len_memberList_le_sequentLen hs) hsD
+  have hcs : IsFormulaSet LAct (insert (substs1 LAct t p) s) :=
+    IsFormulaSet.insert_iff.mpr ⟨hp1.substs1 ht, hs⟩
+  have hkcD : len (memberList (insert (substs1 LAct t p) s)) ≤
+      2 * proofLen TAct (exsIntro s p t d') := le_trans (len_memberList_le_sequentLen hcs) hcD
+  have hE1 : (1 : V) ≤ E := le_trans (le_trans hd1 (le_p4_self hd1))
+    (le_trans (le_mul_of_one_le_left zero_le hCz1)
+      (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE))
+  have hDE : 2 * proofLen TAct (exsIntro s p t d') ≤ E := by
+    refine eroom_of_le hE hCk 2 0 (by norm_num) ?_
+    push_cast
+    rw [add_zero]
+  have hEpro : 13 * (2 * proofLen TAct (exsIntro s p t d')) +
+      18 * ‖2 * proofLen TAct (exsIntro s p t d')‖ + 12 ≤ E := by
+    refine eroom_of_le hE hCk 62 12 (by norm_num) ?_
+    push_cast
+    calc 13 * (2 * proofLen TAct (exsIntro s p t d')) +
+          18 * ‖2 * proofLen TAct (exsIntro s p t d')‖ + 12
+        ≤ 26 * proofLen TAct (exsIntro s p t d') +
+          18 * (2 * proofLen TAct (exsIntro s p t d')) + 12 :=
+          add_le_add (add_le_add (le_of_eq (by ring))
+            (mul_le_mul_of_nonneg_left (length_le _) zero_le)) le_rfl
+      _ = 62 * proofLen TAct (exsIntro s p t d') + 12 := by ring
+  have hE8 : 13 * (2 * proofLen TAct (exsIntro s p t d')) +
+      18 * ‖2 * proofLen TAct (exsIntro s p t d')‖ + 8 ≤ E :=
+    le_trans (add_le_add le_rfl (by norm_num : (8 : V) ≤ 12)) hEpro
+  have hnE : 18 * ‖proofLen TAct (exsIntro s p t d')‖ + 7 ≤ E := by
+    have := eroom_lin hE hCk 0 18 7 (by norm_num)
+    push_cast at this
+    rw [zero_mul, zero_add] at this
+    exact this
+  have hEQ : 2 * ((1 + 2 * proofLen TAct (exsIntro s p t d')) *
+      (1 + 2 * proofLen TAct (exsIntro s p t d') + 2 * proofLen TAct (exsIntro s p t d'))) *
+      (2 * proofLen TAct (exsIntro s p t d') + 1) +
+      4 * (2 * proofLen TAct (exsIntro s p t d')) + 11 ≤ E := by
+    refine capE4 hE (hCk 43 (by norm_num)) ?_
+    refine le_trans (exsEQ_p3 (D := 2 * proofLen TAct (exsIntro s p t d'))
+      (d := proofLen TAct (exsIntro s p t d')) rfl) ?_
+    exact mul_le_mul_of_nonneg_left (p3_le_p4 he1) zero_le
+  have hiE : 0 + 2 * ((1 + 2 * proofLen TAct (exsIntro s p t d')) *
+      (1 + 2 * proofLen TAct (exsIntro s p t d') + 2 * proofLen TAct (exsIntro s p t d'))) *
+      (2 * proofLen TAct (exsIntro s p t d')) +
+      40 * (2 * proofLen TAct (exsIntro s p t d')) + 20 ≤ E := by
+    refine capE4 hE (hCk 112 (by norm_num)) ?_
+    refine le_trans (exsiE_p3 (D := 2 * proofLen TAct (exsIntro s p t d'))
+      (d := proofLen TAct (exsIntro s p t d')) rfl) ?_
+    exact mul_le_mul_of_nonneg_left (p3_le_p4 he1) zero_le
+  have hbn : termLen LAct (binNumeral (proofLen TAct d')) ≤ E := eroom_binNumeral hE hCk hyd
+  have hbn' : termLen LAct (binNumeral (proofLen TAct (exsIntro s p t d'))) ≤ E := eroom_binNumeral hE hCk le_rfl
+  have hLn : sequentLen LAct s + termLen LAct t + proofLen TAct d' + 1 ≤
+      proofLen TAct (exsIntro s p t d') := le_of_eq hdl.symm
+  have hnd : proofLen TAct (exsIntro s p t d') ≤ 2 * proofLen TAct (exsIntro s p t d') :=
+    le_two_mul_self _
+  have hshL : shiftsV L' ≤ Czv * p4 (proofLen TAct d') := le_trans (shiftsV_le_len L') hchildLen
+  have hsigC : proSig walkPieces Wl Wc W T (insert (substs1 LAct t p) s) ≤
+      6 * (2 * proofLen TAct (exsIntro s p t d')) + 1 :=
+    proSig_le htbl hP hWc htblN hWl hWp hcs (one_le_len_memberList_insert _ _) hcD hE8 hΓ
+  have hgE : len (memberList (insert (substs1 LAct t p) s)) + 1 + shiftsV L' + 1 ≤ E := by
+    refine le_trans ?_ (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE)
+    have hlin : 2 * proofLen TAct (exsIntro s p t d') + 2 ≤
+        Czv * p3 (proofLen TAct (exsIntro s p t d')) := by
+      have h4 := hCk 4 (by norm_num)
+      push_cast at h4
+      exact lin_le_p3 hd1 (le_trans (le_of_eq (by norm_num : (2 : V) + 2 = 4)) h4)
+    calc len (memberList (insert (substs1 LAct t p) s)) + 1 + shiftsV L' + 1
+        ≤ 2 * proofLen TAct (exsIntro s p t d') + 1 + Czv * p4 (proofLen TAct d') + 1 :=
+          add_le_add (add_le_add (add_le_add hkcD le_rfl) hshL) le_rfl
+      _ = (2 * proofLen TAct (exsIntro s p t d') + 2) + Czv * p4 (proofLen TAct d') := by ring
+      _ ≤ Czv * p4 (proofLen TAct (exsIntro s p t d')) := rec1₄ le_add_self hdeq hlin
+  have hESig : exsSig walkPieces Wc T s p t 0 ≤
+      2 * ((1 + 2 * proofLen TAct (exsIntro s p t d')) *
+        (1 + 2 * proofLen TAct (exsIntro s p t d') + 2 * proofLen TAct (exsIntro s p t d'))) *
+        (2 * proofLen TAct (exsIntro s p t d')) + 6 * (2 * proofLen TAct (exsIntro s p t d')) + 1 := by
+    obtain ⟨-, -, -, -, h, -, -, -, -, -⟩ :=
+      exsCert_ok (i := 0) (D := 2 * proofLen TAct (exsIntro s p t d')) (E := E)
+        htbl hP htblN hWc hWp hs hp1 hr ht hsD htD hptD hEpro hEQ
+        (le_trans (le_of_eq (by ring)) hiE) hΓ hLay.layout
+    exact h
+  have hgE2 : exsSig walkPieces Wc T s p t 0 +
+      (1 + proSig walkPieces Wl Wc W T (insert (substs1 LAct t p) s)) + shiftsV L' + 2 +
+      (len (memberList s) + 1) + 1 + 1 ≤ E := by
+    refine le_trans ?_ (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE)
+    have hquad : 0 + 2 * ((1 + 2 * proofLen TAct (exsIntro s p t d')) *
+        (1 + 2 * proofLen TAct (exsIntro s p t d') + 2 * proofLen TAct (exsIntro s p t d'))) *
+        (2 * proofLen TAct (exsIntro s p t d')) + 40 * (2 * proofLen TAct (exsIntro s p t d')) + 20 ≤
+        112 * p3 (proofLen TAct (exsIntro s p t d') + 1) :=
+      exsiE_p3 (D := 2 * proofLen TAct (exsIntro s p t d'))
+        (d := proofLen TAct (exsIntro s p t d')) rfl
+    have hlin : 112 * p3 (proofLen TAct (exsIntro s p t d') + 1) ≤
+        Czv * p3 (proofLen TAct (exsIntro s p t d')) := by
+      refine le_trans (mul_le_mul_of_nonneg_left (p3_succ_le hd1) zero_le) ?_
+      have h896 := hCk 896 (by norm_num)
+      push_cast at h896
+      calc 112 * (8 * p3 (proofLen TAct (exsIntro s p t d'))) =
+            896 * p3 (proofLen TAct (exsIntro s p t d')) := by ring
+        _ ≤ Czv * p3 (proofLen TAct (exsIntro s p t d')) :=
+            mul_le_mul_of_nonneg_right h896 zero_le
+    calc exsSig walkPieces Wc T s p t 0 +
+          (1 + proSig walkPieces Wl Wc W T (insert (substs1 LAct t p) s)) + shiftsV L' + 2 +
+          (len (memberList s) + 1) + 1 + 1
+        ≤ (2 * ((1 + 2 * proofLen TAct (exsIntro s p t d')) *
+            (1 + 2 * proofLen TAct (exsIntro s p t d') + 2 * proofLen TAct (exsIntro s p t d'))) *
+            (2 * proofLen TAct (exsIntro s p t d')) + 6 * (2 * proofLen TAct (exsIntro s p t d')) + 1) +
+          (1 + (6 * (2 * proofLen TAct (exsIntro s p t d')) + 1)) +
+          Czv * p4 (proofLen TAct d') + 2 + (2 * proofLen TAct (exsIntro s p t d') + 1) + 1 + 1 :=
+          add_le_add (add_le_add (add_le_add (add_le_add (add_le_add
+            (add_le_add hESig (add_le_add le_rfl hsigC)) hshL) le_rfl)
+            (add_le_add hksD le_rfl)) le_rfl) le_rfl
+      _ ≤ (0 + 2 * ((1 + 2 * proofLen TAct (exsIntro s p t d')) *
+            (1 + 2 * proofLen TAct (exsIntro s p t d') + 2 * proofLen TAct (exsIntro s p t d'))) *
+            (2 * proofLen TAct (exsIntro s p t d')) +
+            40 * (2 * proofLen TAct (exsIntro s p t d')) + 20) + Czv * p4 (proofLen TAct d') :=
+          le_of_add_eq' (c := 12 + 54 * proofLen TAct (exsIntro s p t d')) (by ring)
+      _ ≤ 112 * p3 (proofLen TAct (exsIntro s p t d') + 1) + Czv * p4 (proofLen TAct d') :=
+          add_le_add hquad le_rfl
+      _ ≤ Czv * p3 (proofLen TAct (exsIntro s p t d')) + Czv * p4 (proofLen TAct d') :=
+          add_le_add hlin le_rfl
+      _ ≤ Czv * p4 (proofLen TAct (exsIntro s p t d')) := rec1₄ le_add_self hdeq le_rfl
+  refine ⟨?_, ?_⟩
+  · rw [len_vExs_eq]
+    have hlenPro : len (proExs walkPieces Wl Wc W T s p t 0) ≤
+        256 * p3 (2 * proofLen TAct (exsIntro s p t d') + 1) :=
+      len_proExs_le_cubic htbl hP hWl hWc walkPieces W T 0 hs hp1 hr ht hsD hcD htD
+    have hcube : 256 * p3 (2 * proofLen TAct (exsIntro s p t d') + 1) ≤
+        16384 * p3 (proofLen TAct (exsIntro s p t d')) := by
+      have h1 : p3 (2 * proofLen TAct (exsIntro s p t d') + 1) ≤
+          p3 (2 * (proofLen TAct (exsIntro s p t d') + 1)) :=
+        p3_mono (le_of_add_eq' (c := 1) (by ring))
+      have h2 : p3 (2 * (proofLen TAct (exsIntro s p t d') + 1)) =
+          8 * p3 (proofLen TAct (exsIntro s p t d') + 1) := p3_two_mul _
+      have h3 : p3 (proofLen TAct (exsIntro s p t d') + 1) ≤
+          8 * p3 (proofLen TAct (exsIntro s p t d')) := p3_succ_le hd1
+      calc 256 * p3 (2 * proofLen TAct (exsIntro s p t d') + 1)
+          ≤ 256 * (8 * p3 (proofLen TAct (exsIntro s p t d') + 1)) := by
+            rw [← h2]; exact mul_le_mul_of_nonneg_left h1 zero_le
+        _ ≤ 256 * (8 * (8 * p3 (proofLen TAct (exsIntro s p t d')))) :=
+            mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left h3 zero_le) zero_le
+        _ = 16384 * p3 (proofLen TAct (exsIntro s p t d')) := by ring
+    have hX : 16384 * p3 (proofLen TAct (exsIntro s p t d')) + 15 ≤
+        Czv * p3 (proofLen TAct (exsIntro s p t d')) := by
+      have h16399 := hCk 16399 (by norm_num)
+      push_cast at h16399
+      calc 16384 * p3 (proofLen TAct (exsIntro s p t d')) + 15
+          ≤ 16384 * p3 (proofLen TAct (exsIntro s p t d')) +
+            15 * p3 (proofLen TAct (exsIntro s p t d')) :=
+            add_le_add le_rfl (le_mul_of_one_le_right zero_le (one_le_p3 hd1))
+        _ = 16399 * p3 (proofLen TAct (exsIntro s p t d')) := by ring
+        _ ≤ Czv * p3 (proofLen TAct (exsIntro s p t d')) :=
+            mul_le_mul_of_nonneg_right h16399 zero_le
+    calc len (proExs walkPieces Wl Wc W T s p t 0) + (len L' + (6 + 9))
+        ≤ 256 * p3 (2 * proofLen TAct (exsIntro s p t d') + 1) + (Czv * p4 (proofLen TAct d') + 15) :=
+          add_le_add hlenPro (add_le_add hchildLen (by norm_num))
+      _ ≤ 16384 * p3 (proofLen TAct (exsIntro s p t d')) + (Czv * p4 (proofLen TAct d') + 15) :=
+          add_le_add hcube le_rfl
+      _ = (16384 * p3 (proofLen TAct (exsIntro s p t d')) + 15) + Czv * p4 (proofLen TAct d') := by ring
+      _ ≤ Czv * p4 (proofLen TAct (exsIntro s p t d')) := rec1₄ le_add_self hdeq hX
+  · exact exs_arm_size (Wl := Wl) (Wc := Wc) (W₂ := W₂) (W := W) (T := T) (s := s) (p := p)
+      (t := t) (d' := d') (L' := L') (B := B) (E := E) (Cz := Czv) (N' := N') (B' := B')
+      (D := 2 * proofLen TAct (exsIntro s p t d')) (d := proofLen TAct (exsIntro s p t d')) (Γ := Γ)
+      hWp hW₂ htbl hP htblN hWl hWc hPle hs hp1 hr ht hsD hcD htD hEpro hEQ hiE hΓ hLay.layout
+      hDE le_rfl hCQ hCD hCz1 hchildSz hE1 hcG hgE hbn hbn' hnE hLn hnd hgE2 hCbin
+
+end exsWrapper
+
+/-! ## 26. The `axm` motive wrapper — the last arm
+
+Written UNABBREVIATED per TRAP 18: `axm_arm_size` hard-wires `proofLen TAct (axm s p)` in `hp3E`, `hgoalE`, `hbn`,
+`hleaf`, `hLn`, `hnE` and in its conclusion's class, so no `d` abbreviation can be pinned into it.
+
+`axm` is the only arm whose prologue is NOT built by the wrapper: the certificate `pro` comes from the shifted
+certificate table, so its three facts — `SizeOK (entryB Cv p) (entryB Cv p) pro`, `len pro ≤ entryB Cv p` and
+`shiftsV pro ≤ entryB Cv p` — are EXPLICIT wrapper hypotheses, which the recursion supplies by destructuring
+`AxmTableOK'` at the node's table entry (`Verify4`'s `axm` arm does exactly that).
+
+Length half: `axm_arm_len` gives `len pro + 9`; `entryB Cv p = Cv·p3 (|p|+1)` and `axm_hpd` push `|p|+1` up to
+`proofLen + 1`, then `p3_succ_le` turns `p3 (proofLen+1)` into `8·p3 proofLen`, so the constant is `8·Cv + 9 ≤ Czv`.
+
+`hleaf` cannot use §15's `proofLen_leafCode_le_kitD` (that lands at `kitD Cz (2·d)`, while this arm's class is
+`kitD Cz (proofLen)`); it takes §3's `proofLen_leafCode_le'` then `sum2D_le_layD` then `layD_le_kitD le_rfl` directly.
+The conclusion is then widened to the motive's `kitD Czv (2·proofLen)` by §15's `kitD_mono`. -/
+
+section axmWrapper
+
+set_option maxHeartbeats 2000000 in
+/-- **THE `axm` MOTIVE WRAPPER.** -/
+theorem axm_wrapper {tbl N N' B' Wc W₂ T B E Czv Cv Γ s p pro : V}
+    (htblN : NumTableOK T N' B') (hWc : Wc = certPieces) (hW₂ : W₂ = frag2Pieces)
+    (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (hCz1 : 1 ≤ Czv) (hCk : ∀ n : ℕ, n ≤ 1000000 → ((n : ℕ) : V) ≤ Czv)
+    (hCD : 27 * N' + 525600 * B' ≤ Czv)
+    (hcG : 4 * ((cDer : V) + cDlen + cFst + 6) ≤ Czv)
+    (hCv : Cv ≤ Czv) (hCv8 : 8 * Cv + 9 ≤ Czv)
+    (hs : IsFormulaSet LAct s) (hps : p ∈ s) (hpT : p ∈ TAct.Δ₁Class)
+    (hΓ : IsFormulaSet LAct Γ) (hLay : NodeLay walkPieces Wc T Γ s)
+    (hszPro : SizeOK (entryB Cv p) (entryB Cv p) pro)
+    (hlenPro : len pro ≤ entryB Cv p)
+    (hshPro : shiftsV pro ≤ entryB Cv p)
+    (hE : Czv * p4 (proofLen TAct (axm s p) + 1) ≤ E) :
+    len (vAxm' walkPieces Wc W₂ T s p pro) ≤ Czv * p4 (proofLen TAct (axm s p)) ∧
+    SizeOK (kitQ Czv B E) (kitD Czv (2 * proofLen TAct (axm s p)))
+      (vAxm' walkPieces Wc W₂ T s p pro) := by
+  have hD : Derivation TAct (axm s p) := Derivation.axm hs hps hpT
+  have hd1 : 1 ≤ proofLen TAct (axm s p) := one_le_proofLen hD
+  have hsD : sequentLen LAct s ≤ proofLen TAct (axm s p) := by
+    have := sequentLen_fstIdx_le_proofLen hD; rwa [fstIdx_axm] at this
+  have hkD : len (memberList s) ≤ proofLen TAct (axm s p) :=
+    le_trans (len_memberList_le_sequentLen hs) hsD
+  have hdl : proofLen TAct (axm s p) = sequentLen LAct s + 1 := proofLen_axm hD
+  have hLn : sequentLen LAct s + 1 ≤ proofLen TAct (axm s p) := le_of_eq hdl.symm
+  have hpd : formulaLen LAct p + 1 ≤ proofLen TAct (axm s p) + 1 := axm_hpd hD hps
+  have he1 : (1 : V) ≤ proofLen TAct (axm s p) + 1 := le_add_self
+  have hE1 : (1 : V) ≤ E := le_trans (le_trans hd1 (le_p4_self hd1))
+    (le_trans (le_mul_of_one_le_left zero_le hCz1)
+      (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE))
+  have hp3E : p3 (proofLen TAct (axm s p) + 1) ≤ E :=
+    le_trans (p3_le_p4 he1) (le_trans (le_mul_of_one_le_left zero_le hCz1) hE)
+  have hnE : 18 * ‖proofLen TAct (axm s p)‖ + 7 ≤ E := by
+    have := eroom_lin hE hCk 0 18 7 (by norm_num)
+    push_cast at this
+    rw [zero_mul, zero_add] at this
+    exact this
+  have hbn : termLen LAct (binNumeral (proofLen TAct (axm s p))) ≤ E := eroom_binNumeral hE hCk le_rfl
+  have hentryP4 : entryB Cv p ≤ 8 * Cv * p3 (proofLen TAct (axm s p)) := by
+    unfold entryB
+    calc Cv * p3 (formulaLen LAct p + 1) ≤ Cv * p3 (proofLen TAct (axm s p) + 1) :=
+          mul_le_mul_of_nonneg_left (p3_mono hpd) zero_le
+      _ ≤ Cv * (8 * p3 (proofLen TAct (axm s p))) :=
+          mul_le_mul_of_nonneg_left (p3_succ_le hd1) zero_le
+      _ = 8 * Cv * p3 (proofLen TAct (axm s p)) := by ring
+  have hshE : shiftsV pro ≤ 8 * Cv * p3 (proofLen TAct (axm s p)) := le_trans hshPro hentryP4
+  have hgoalE : len (memberList s) + 1 + shiftsV pro + 1 + 1 ≤ E := by
+    refine le_trans ?_ (le_trans (mul_le_mul_of_nonneg_left (p4_mono le_self_add) zero_le) hE)
+    calc len (memberList s) + 1 + shiftsV pro + 1 + 1
+        ≤ proofLen TAct (axm s p) + 1 + 8 * Cv * p3 (proofLen TAct (axm s p)) + 1 + 1 :=
+          add_le_add (add_le_add (add_le_add (add_le_add hkD le_rfl) hshE) le_rfl) le_rfl
+      _ = (proofLen TAct (axm s p) + 3) + 8 * Cv * p3 (proofLen TAct (axm s p)) := by ring
+      _ ≤ 4 * p3 (proofLen TAct (axm s p)) + 8 * Cv * p3 (proofLen TAct (axm s p)) :=
+          add_le_add (by
+            calc proofLen TAct (axm s p) + 3 ≤ p3 (proofLen TAct (axm s p)) + 3 * p3 (proofLen TAct (axm s p)) :=
+                  add_le_add (le_p3_self hd1)
+                    (le_mul_of_one_le_right zero_le (one_le_p3 hd1))
+              _ = 4 * p3 (proofLen TAct (axm s p)) := by ring) le_rfl
+      _ = (4 + 8 * Cv) * p3 (proofLen TAct (axm s p)) := by ring
+      _ ≤ Czv * p3 (proofLen TAct (axm s p)) :=
+          mul_le_mul_of_nonneg_right (by
+            refine le_trans ?_ hCv8
+            exact le_of_add_eq' (c := 5) (by ring)) zero_le
+      _ ≤ Czv * p4 (proofLen TAct (axm s p)) :=
+          mul_le_mul_of_nonneg_left (p3_le_p4 hd1) zero_le
+  have hleaf : proofLen TAct (leafCode T (sequentLen LAct s) (proofLen TAct (axm s p))) ≤
+      kitD Czv (proofLen TAct (axm s p)) :=
+    le_trans (proofLen_leafCode_le' htblN hLn le_rfl)
+      (le_trans (sum2D_le_layD N' B' (proofLen TAct (axm s p))) (layD_le_kitD le_rfl hCD))
+  refine ⟨?_, ?_⟩
+  · rw [axm_arm_len]
+    have hX : 8 * Cv * p3 (proofLen TAct (axm s p)) + 9 ≤ Czv * p3 (proofLen TAct (axm s p)) := by
+      calc 8 * Cv * p3 (proofLen TAct (axm s p)) + 9
+          ≤ 8 * Cv * p3 (proofLen TAct (axm s p)) + 9 * p3 (proofLen TAct (axm s p)) :=
+            add_le_add le_rfl (le_mul_of_one_le_right zero_le (one_le_p3 hd1))
+        _ = (8 * Cv + 9) * p3 (proofLen TAct (axm s p)) := by ring
+        _ ≤ Czv * p3 (proofLen TAct (axm s p)) := mul_le_mul_of_nonneg_right hCv8 zero_le
+    calc len pro + 9 ≤ 8 * Cv * p3 (proofLen TAct (axm s p)) + 9 :=
+          add_le_add (le_trans hlenPro hentryP4) le_rfl
+      _ ≤ Czv * p3 (proofLen TAct (axm s p)) := hX
+      _ ≤ Czv * p4 (proofLen TAct (axm s p)) :=
+          mul_le_mul_of_nonneg_left (p3_le_p4 hd1) zero_le
+  · exact (axm_arm_size (Wc := Wc) (W₂ := W₂) (T := T) (s := s) (p := p) (pro := pro)
+      (B := B) (E := E) (Cv := Cv) (Cz := Czv)
+      hW₂ hs hps hpT hszPro hCv hCz1 hE1 hPle hp3E hgoalE hbn hcG hleaf hLn hnE).mono le_rfl
+      (kitD_mono (le_two_mul_self _))
+
+end axmWrapper
+
+/-! ## 26.1 A NODE CONTEXT EXISTS AT EVERY SEQUENT
+
+The recursion's arms hand each wrapper a context `Γ` with `NodeLay walkPieces certPieces T Γ s` at the node's own
+sequent (the wrappers feed `hLay.layout` to `proAxL_ok`/`sizeOK_wkPro`/`layout_or`/`layout_and`). The motive is
+context-free (TRAP 24), so no context is threaded through the induction — each arm BUILDS one.
+
+It is built from the EMPTY context, which is the point: `layoutSteps_ok` at `Γ := 0` already concludes
+`Layout walkPieces Wc T (finalCtx 0 (layoutSteps …)) s 0`, so `NodeLay`'s first disjunct is immediate for a
+nonempty sequent. For the empty sequent the second disjunct wants `Layout0 … Γ 0` AND `fsetPiFact (^&1) ∈ Γ`:
+`layoutSteps0_ok` gives the former (and `Layout0`'s own second conjunct at `i = 0` IS `eqFactB (^&1) 𝟎`, exactly
+`emptyFsetPi_ok`'s precondition), and appending `emptyFsetPi` gives the latter, with `Layout0.mono` carrying the
+layout across on `emptyFsetPi_ok`'s context-monotonicity conjunct.
+
+This is why no `∃ Γ` hypothesis is needed anywhere: the obligation is DISCHARGEABLE, not merely relocatable. -/
+
+section nodeContext
+
+set_option maxHeartbeats 2000000 in
+/-- **A node context exists at every sequent.** -/
+theorem nodeCtx_exists {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
+    {tbl N N' B' T D E : V} (htbl : TableOK tbl N) (hP : ProTable tbl)
+    (htblN : NumTableOK T N' B') {s : V} (hs : IsFormulaSet LAct s)
+    (hsD : sequentLen LAct s ≤ D) (hE : 13 * D + 18 * ‖D‖ + 8 ≤ E) (hE2 : (2 : V) ≤ E) :
+    ∃ Γ : V, IsFormulaSet LAct Γ ∧ NodeLay walkPieces certPieces T Γ s := by
+  by_cases h0 : memberList s = 0
+  · have hs0 := eq_zero_of_memberList_eq_zero h0
+    subst hs0
+    obtain ⟨lok, lnd, lsh, llen, lLay0⟩ :=
+      layoutSteps0_ok (Γ := (0 : V)) (E := E) (Wc := certPieces) (T := T)
+        htbl hP rfl IsFormulaSet.empty hE2
+    have hΓ1 : IsFormulaSet LAct (finalCtx (0 : V) (layoutSteps0 proPieces)) :=
+      finalCtx_isFormulaSet 8 htbl IsFormulaSet.empty lok
+    obtain ⟨eok, end', esh, efact, emono⟩ :=
+      emptyFsetPi_ok (Γ := finalCtx (0 : V) (layoutSteps0 proPieces)) (E := E)
+        htbl hP rfl hΓ1 hE2 (by simpa using lLay0.2)
+    exact ⟨_, finalCtx_isFormulaSet 8 htbl hΓ1 eok, Or.inr ⟨rfl, lLay0.mono emono, efact⟩⟩
+  · have hk1 : 1 ≤ len (memberList s) :=
+      pos_iff_one_le.mp (pos_iff_ne_zero.mpr (fun hz ↦ h0 (len_zero_iff_eq_nil.mp hz)))
+    obtain ⟨lok, lnd, lsh, llen, lLay⟩ :=
+      layoutSteps_ok (Γ := (0 : V)) (D := D) (E := E) htbl hP htblN rfl rfl rfl hs hk1 hsD hE
+        IsFormulaSet.empty
+    exact ⟨_, finalCtx_isFormulaSet 8 htbl IsFormulaSet.empty lok, Or.inl ⟨hk1, lLay⟩⟩
+
+end nodeContext
+
+/-! ## 26.2 THE `and` TRANSPORT CHAIN'S E-ROOMS
+
+The `and` chain (§28) runs `Prologue.proIns_ok`, `proSig_le`, `memTop_le`, `descCountF_le_of_len` and
+`postIns_ok`, each of which wants a LINEAR room (`13·D + 18·‖D‖ + 12`, `i + 14·D + 5`, `ip + 8·D + 4`, …) while
+the recursion's arms carry the `p4` cap `Czv·p4 (proofLen ρ + 1) ≤ E`. These four lemmas bridge that, each by one
+`Bounds.capE4'` at its own constant, with the offset inputs at the bounds the tree actually delivers:
+`memTop_le` gives `≤ i + 6·D + 1` (so `≤ 6·D + 1` at `i = 0`), `descCountF_le_of_len` gives `≤ 2·D`, hence
+`ir₀ + cq + 1 ≤ 8·D + 2`, and `proSig_le` gives `≤ 6·D + 1`. -/
+
+section andRooms
+
+/-- `proIns_ok`'s `hE` room (`13 + 18 + 12 = 43`). -/
+theorem and_room13 {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] {E Czv D : V}
+    (hCk : ∀ n : ℕ, n ≤ 1000000 → ((n : ℕ) : V) ≤ Czv)
+    (hE : Czv * p4 (D + 1) ≤ E) :
+    13 * D + 18 * ‖D‖ + 12 ≤ E := by
+  have he1 : (1 : V) ≤ D + 1 := le_add_self
+  exact capE4' hE he1 (hCk 43 (by norm_num)) (by
+    push_cast
+    exact le_trans (lin_cap 13 18 12 D) (le_of_eq (by ring)))
+
+/-- `proSig_le`'s room (`13 + 18 + 8 = 39`). -/
+theorem and_room8 {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] {E Czv D : V}
+    (hCk : ∀ n : ℕ, n ≤ 1000000 → ((n : ℕ) : V) ≤ Czv)
+    (hE : Czv * p4 (D + 1) ≤ E) :
+    13 * D + 18 * ‖D‖ + 8 ≤ E := by
+  have he1 : (1 : V) ≤ D + 1 := le_add_self
+  exact capE4' hE he1 (hCk 39 (by norm_num)) (by
+    push_cast
+    exact le_trans (lin_cap 13 18 8 D) (le_of_eq (by ring)))
+
+/-- `proIns_ok`'s `hiE` at any offset `i ≤ 6·D + 1`: folded `≤ 20·D + 6`, constant `26`. -/
+theorem and_roomI {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] {E Czv D i : V}
+    (hCk : ∀ n : ℕ, n ≤ 1000000 → ((n : ℕ) : V) ≤ Czv)
+    (hi : i ≤ 6 * D + 1)
+    (hE : Czv * p4 (D + 1) ≤ E) :
+    i + 14 * D + 5 ≤ E := by
+  have he1 : (1 : V) ≤ D + 1 := le_add_self
+  refine capE4' hE he1 (hCk 26 (by norm_num)) ?_
+  push_cast
+  calc i + 14 * D + 5 ≤ (6 * D + 1) + 14 * D + 5 := add_le_add (add_le_add hi le_rfl) le_rfl
+    _ = 20 * D + 6 := by ring
+    _ ≤ 26 * (D + 1) := le_of_add_eq' (c := 6 * D + 20) (by ring)
+
+/-- `proIns_ok`'s `hipE` at `ip ≤ 8·D + 2` (that is `ir₀ + cq + 1` with `ir₀ ≤ 6·D + 1`, `cq ≤ 2·D`):
+folded `≤ 16·D + 6`, constant `22`. -/
+theorem and_roomIP {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] {E Czv D ip : V}
+    (hCk : ∀ n : ℕ, n ≤ 1000000 → ((n : ℕ) : V) ≤ Czv)
+    (hip : ip ≤ 8 * D + 2)
+    (hE : Czv * p4 (D + 1) ≤ E) :
+    ip + 8 * D + 4 ≤ E := by
+  have he1 : (1 : V) ≤ D + 1 := le_add_self
+  refine capE4' hE he1 (hCk 22 (by norm_num)) ?_
+  push_cast
+  calc ip + 8 * D + 4 ≤ (8 * D + 2) + 8 * D + 4 := add_le_add (add_le_add hip le_rfl) le_rfl
+    _ = 16 * D + 6 := by ring
+    _ ≤ 22 * (D + 1) := le_of_add_eq' (c := 6 * D + 16) (by ring)
+
+/-! ### 26.3 The two CHILD-CARRYING rooms
+
+`postIns_ok`'s `hsE`/`hcE` differ from §26.2's four: their left sides carry the CHILD's shift `sv`, so they are not
+pure linear caps. Both still close at the arm's OWN single cap `Czv·p4 (D+1) ≤ E`, by splitting the cap with
+`Bounds.p4_split D 1 : p4 D + p3 (D+1) ≤ p4 (D+1)` — the child term goes under `p4 D` (`child_bound4`) and the
+linear part under the spare `p3 (D+1)`.
+
+That spare has to cover the linear part EXACTLY, and the two rooms differ there:
+
+* `hsE`'s linear part is `k + 1 + 3 ≤ D + 4`, and `D + 4 ≤ p3 (D+1)` holds from `1 ≤ D` (`lin4_le_p3succ`;
+  at `D = 1`, `5 ≤ 8`).
+* `hcE`'s is `σ + 3 ≤ 6·D + 4`, and `6·D + 4 ≤ p3 (D+1)` is FALSE at `D = 1` (`10 ≤ 8`). It needs `2 ≤ D`
+  (`lin6_le_p3succ`; at `D = 2`, `16 ≤ 27`), which the STRICT DESCENT supplies: the child has `1 ≤ y`
+  (`one_le_proofLen`) and `y + 1 ≤ D` (`proofLen_dp_succ_le_andIntro`), so `2 ≤ D`. Both are already bound in the arm,
+  so the room is callable at the single cap — no doubled cap and no second constant.
+
+TRAP 26: in `hD2`'s `calc (2:V) = 1 + 1 ≤ y + 1 ≤ D`, the `1` on the right of `add_le_add hy0 _` must be pinned
+`(le_refl (1 : V))`; plain `le_rfl` elaborates it as `Nat.unaryCast 1` against `hy1` and the application fails. -/
+
+/-- `D + 4 ≤ p3 (D + 1)` for `1 ≤ D` (at `D = 1`: `5 ≤ 8`). -/
+theorem lin4_le_p3succ {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] {D : V}
+    (hD1 : 1 ≤ D) : D + 4 ≤ p3 (D + 1) := by
+  have h2 : (2 : V) ≤ D + 1 := by
+    calc (2 : V) = 1 + 1 := by norm_num
+      _ ≤ D + 1 := add_le_add hD1 le_rfl
+  simp only [p3]
+  calc D + 4 ≤ (D + 1) + 4 := add_le_add le_self_add le_rfl
+    _ ≤ (D + 1) + 2 * (D + 1) := add_le_add le_rfl (by
+        calc (4 : V) = 2 * 2 := by norm_num
+          _ ≤ 2 * (D + 1) := mul_le_mul_of_nonneg_left h2 zero_le)
+    _ = 3 * (D + 1) := by ring
+    _ ≤ (D + 1) * (D + 1) * (D + 1) := by
+        calc 3 * (D + 1) ≤ ((D + 1) * (D + 1)) * (D + 1) := by
+              refine mul_le_mul_of_nonneg_right ?_ zero_le
+              calc (3 : V) ≤ 4 := by norm_num
+                _ = 2 * 2 := by norm_num
+                _ ≤ (D + 1) * (D + 1) := mul_le_mul h2 h2 zero_le zero_le
+          _ = (D + 1) * (D + 1) * (D + 1) := by ring
+
+/-- `6*D + 4 ≤ p3 (D + 1)` once `2 ≤ D` (at `D = 2`: `16 ≤ 27`). -/
+theorem lin6_le_p3succ {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] {D : V}
+    (hD2 : 2 ≤ D) : 6 * D + 4 ≤ p3 (D + 1) := by
+  have h3 : (3 : V) ≤ D + 1 := by
+    calc (3 : V) = 2 + 1 := by norm_num
+      _ ≤ D + 1 := add_le_add hD2 le_rfl
+  simp only [p3]
+  calc 6 * D + 4 ≤ 6 * (D + 1) + 4 :=
+        add_le_add (mul_le_mul_of_nonneg_left le_self_add zero_le) le_rfl
+    _ ≤ 6 * (D + 1) + 2 * (D + 1) := add_le_add le_rfl (by
+        calc (4 : V) ≤ 6 := by norm_num
+          _ = 2 * 3 := by norm_num
+          _ ≤ 2 * (D + 1) := mul_le_mul_of_nonneg_left h3 zero_le)
+    _ = 8 * (D + 1) := by ring
+    _ ≤ ((D + 1) * (D + 1)) * (D + 1) := by
+        refine mul_le_mul_of_nonneg_right ?_ zero_le
+        calc (8 : V) ≤ 9 := by norm_num
+          _ = 3 * 3 := by norm_num
+          _ ≤ (D + 1) * (D + 1) := mul_le_mul h3 h3 zero_le zero_le
+    _ = (D + 1) * (D + 1) * (D + 1) := by ring
+
+/-- **`postIns_ok`'s `hsE` at the arm's own single cap.** -/
+theorem and_roomS {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] {E Czv D y k sv : V}
+    (hCz1 : 1 ≤ Czv) (hD1 : 1 ≤ D)
+    (hk : k ≤ D) (hsv : sv ≤ Czv * p4 y) (hy : y ≤ D)
+    (hE : Czv * p4 (D + 1) ≤ E) :
+    k + 1 + sv + 3 ≤ E := by
+  have hgap : p4 D + p3 (D + 1) ≤ p4 (D + 1) := by
+    have := p4_split D 1; rwa [one_mul] at this
+  have hlin : k + 1 + 3 ≤ p3 (D + 1) :=
+    le_trans (le_trans (add_le_add (add_le_add hk le_rfl) le_rfl)
+      (le_of_eq (by ring : D + 1 + 3 = D + 4))) (lin4_le_p3succ hD1)
+  have hchild : sv ≤ Czv * p4 D := le_trans hsv (child_bound4 hy)
+  refine le_trans ?_ hE
+  calc k + 1 + sv + 3 = (k + 1 + 3) + sv := by ring
+    _ ≤ p3 (D + 1) + Czv * p4 D := add_le_add hlin hchild
+    _ ≤ Czv * p3 (D + 1) + Czv * p4 D :=
+        add_le_add (le_mul_of_one_le_left zero_le hCz1) le_rfl
+    _ = Czv * (p4 D + p3 (D + 1)) := by ring
+    _ ≤ Czv * p4 (D + 1) := mul_le_mul_of_nonneg_left hgap zero_le
+
+/-- **`postIns_ok`'s `hcE` at the arm's own single cap**, on the STRICT-DESCENT route. -/
+theorem and_roomC {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] {E Czv D y σ sv : V}
+    (hCz1 : 1 ≤ Czv)
+    (hy0 : 1 ≤ y) (hy1 : y + 1 ≤ D)
+    (hσ : σ ≤ 6 * D + 1) (hsv : sv ≤ Czv * p4 y)
+    (hE : Czv * p4 (D + 1) ≤ E) :
+    σ + sv + 3 ≤ E := by
+  have hD2 : (2 : V) ≤ D := by
+    calc (2 : V) = 1 + 1 := by norm_num
+      _ ≤ y + 1 := add_le_add hy0 (le_refl (1 : V))
+      _ ≤ D := hy1
+  have hyD : y ≤ D := le_trans le_self_add hy1
+  have hgap : p4 D + p3 (D + 1) ≤ p4 (D + 1) := by
+    have := p4_split D 1; rwa [one_mul] at this
+  have hlin : σ + 3 ≤ p3 (D + 1) := by
+    refine le_trans (add_le_add hσ le_rfl) ?_
+    calc 6 * D + 1 + 3 = 6 * D + 4 := by ring
+      _ ≤ p3 (D + 1) := lin6_le_p3succ hD2
+  have hchild : sv ≤ Czv * p4 D := le_trans hsv (child_bound4 hyD)
+  refine le_trans ?_ hE
+  calc σ + sv + 3 = (σ + 3) + sv := by ring
+    _ ≤ p3 (D + 1) + Czv * p4 D := add_le_add hlin hchild
+    _ ≤ Czv * p3 (D + 1) + Czv * p4 D :=
+        add_le_add (le_mul_of_one_le_left zero_le hCz1) le_rfl
+    _ = Czv * (p4 D + p3 (D + 1)) := by ring
+    _ ≤ Czv * p4 (D + 1) := mul_le_mul_of_nonneg_left hgap zero_le
+
+end andRooms
+
+/-! ## 26.4 THE `and` CHAIN'S INPUT BLOCK
+
+The first seam of the `and` transport chain (§28): from the node's own layout, run
+`Prologue.layout_and` and the first `proIns`, and carry the `q`-dossier across it.
+
+The first `proIns` sits at OFFSET `0` with dossier index `ir₀ + cq + 1`, where
+`ir₀ = memTop … 0 ≤ 6·D + 1` (`memTop_le` at `i = 0`) and `cq = descCountF 0 q ≤ 2·D`
+(`descCountF_le_of_len`), so `proIns_ok`'s three E-rooms are exactly §26.2's: `and_room13`,
+`and_roomI` AT `i := 0`, and `and_roomIP` at `ip ≤ 8·D + 2`.
+
+TRAP 27: `proIns_ok`'s `i` is inferred from whichever room lemma supplies `hiE`. Passing
+`and_roomI hCk hir₀ hE` unifies `i` with `memTop … 0` and the layouts stop lining up — the
+offset must be pinned `(i := 0)` with the room at `(0 : V) ≤ 6·D + 1`.
+
+TRAP 28: `IdFrame` has NAMED fields (`child`, `parent`, `dp`, `cp`). The parent layout is
+`fr₁.parent`; an anonymous `fr₁.2.1` descends into `parent`'s own conjunction instead.
+
+The FIFTH component (`proIns_ok`'s sixth conjunct, the `eqFactB` on the row object) is
+exposed because §26.5's crossing needs it as `heq₁`. An earlier form returned only four and
+was green but did not COMPOSE with the next seam — the same failure class as a green but
+uncallable lemma, caught here by checking the composition before banking. -/
+
+section andInput
+
+set_option maxHeartbeats 4000000 in
+/-- **The `and` chain's input block**: `layout_and` + the first `proIns`, with the
+`q`-dossier transported across. -/
+theorem and_input {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
+    {tbl N N' B' T E Czv D Γ s p q : V}
+    (htbl : TableOK tbl N) (hP : ProTable tbl) (htblN : NumTableOK T N' B')
+    (hCk : ∀ n : ℕ, n ≤ 1000000 → ((n : ℕ) : V) ≤ Czv)
+    (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 0 p) (hq : IsSemiformula LAct 0 q)
+    (hpq : (p ^⋏ q) ∈ s)
+    (hsD : sequentLen LAct s ≤ D) (hc₁D : sequentLen LAct (insert p s) ≤ D)
+    (hqD : formulaLen LAct q ≤ D)
+    (hΓ : IsFormulaSet LAct Γ) (hLayS : Layout walkPieces certPieces T Γ s 0)
+    (hE : Czv * p4 (D + 1) ≤ E) :
+    ∃ Γ₁ : V, IsFormulaSet LAct Γ₁ ∧
+      Layout walkPieces certPieces T Γ₁ (insert p s) 0 ∧
+      Layout walkPieces certPieces T Γ₁ s
+        (0 + 1 + proSig walkPieces layoutPieces certPieces proPieces T (insert p s)) ∧
+      DossF walkPieces Γ₁ 0 q
+        (memTop walkPieces certPieces T s (p ^⋏ q) 0 + 1 +
+          (1 + proSig walkPieces layoutPieces certPieces proPieces T (insert p s))) ∧
+      neg LAct (eqFactB
+          (^&(proSig walkPieces layoutPieces certPieces proPieces T (insert p s)))
+          (^&(0 + (len (memberList (insert p s)) + 1)))) ∈ Γ₁ := by
+  have hW : WalkTable tbl := hP.walkTable
+  have hk1 : 1 ≤ len (memberList s) := one_le_len_memberList_of_mem hpq
+  obtain ⟨hand, hDp, hDq, hmr⟩ := layout_and htbl hP hp hq hpq hLayS
+  have hir₀ : memTop walkPieces certPieces T s (p ^⋏ q) 0 ≤ 6 * D + 1 := by
+    have := memTop_le htbl hW rfl T hs hpq hsD (i := 0); rwa [zero_add] at this
+  have hcq : descCountF walkPieces 0 q ≤ 2 * D := descCountF_le_of_len htbl hW hq hqD
+  have hip : memTop walkPieces certPieces T s (p ^⋏ q) 0 + descCountF walkPieces 0 q + 1
+      ≤ 8 * D + 2 := by
+    calc memTop walkPieces certPieces T s (p ^⋏ q) 0 + descCountF walkPieces 0 q + 1
+        ≤ (6 * D + 1) + 2 * D + 1 := add_le_add (add_le_add hir₀ hcq) le_rfl
+      _ = 8 * D + 2 := by ring
+  have hzero : (0 : V) ≤ 6 * D + 1 := zero_le
+  obtain ⟨pok₁, pnd₁, psh₁, layC₁, fr₁, heq₁⟩ :=
+    proIns_ok (i := 0) (ip := memTop walkPieces certPieces T s (p ^⋏ q) 0 +
+        descCountF walkPieces 0 q + 1)
+      htbl hP htblN rfl rfl rfl hs hp hk1 hc₁D
+      (and_room13 hCk hE) (and_roomI hCk hzero hE) (and_roomIP hCk hip hE)
+      hΓ hLayS hDp
+  refine ⟨_, finalCtx_isFormulaSet 8 htbl hΓ pok₁, layC₁, fr₁.parent, ⟨?_, heq₁⟩⟩
+  have := dossF_transport' pnd₁ hDq
+  rwa [psh₁] at this
+
+end andInput
+
+/-! ## 26.5 THE `and` CHAIN'S CHILD CROSSING
+
+The second seam: given the input block's `Γ₁` and the child's own facts — which come from
+`Verify4.verifyGraph''_ok4` instantiated at `dp`, the sourcing that avoids a third motive
+conjunct — cross `L₁` and apply `postIns_ok`.
+
+The two shapes line up without adjustment:
+
+* `cgoal₁` arrives as `neg (goalFact (^&(len (memberList (fstIdx dp)) + 1 + shiftsV L₁))
+  (binNumeral (proofLen dp)))` in `finalCtx Γ₁ L₁`, which is `postIns_ok`'s `hg` at
+  `s'' := len (memberList (insert p s)) + 1 + shiftsV L₁` once `hdp.1` rewrites `fstIdx dp`.
+* `heq₁₂` is `proIns_ok`'s sixth conjunct pushed across `L₁` by `tr_fact` and normalised by
+  `shiftIterV_eqFactB` + two `termShiftIterV_fvar` + `zero_add`, giving `postIns_ok`'s
+  `heq` at `cp := proSig (insert p s) + shiftsV L₁`.
+
+`postIns_ok` has EIGHT conclusion conjuncts (`ListOK`, `NoDrop'`, `shiftsV`, `len`, and the
+four row facts); only the first three are needed here. -/
+
+section andCross
+
+set_option maxHeartbeats 4000000 in
+/-- **The `and` chain's child crossing**: across `L₁`, then `postIns`. -/
+theorem and_cross {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
+    {tbl N T E Γ₁ L₁ s p dp : V}
+    (htbl : TableOK tbl N) (hP : ProTable tbl)
+    (hdp : DerivationOf TAct dp (insert p s))
+    (hΓ₁ : IsFormulaSet LAct Γ₁)
+    (cok₁ : ListOK tbl E ((9 : ℕ) : V) Γ₁ L₁)
+    (cnd₁ : NoDrop' L₁)
+    (cgoal₁ : neg LAct (goalFact (^&(len (memberList (fstIdx dp)) + 1 + shiftsV L₁))
+      (binNumeral (proofLen TAct dp))) ∈ finalCtx Γ₁ L₁)
+    (heq₁ : neg LAct (eqFactB (^&(proSig walkPieces layoutPieces certPieces proPieces T (insert p s)))
+      (^&(0 + (len (memberList (insert p s)) + 1)))) ∈ Γ₁)
+    (hsE : len (memberList (insert p s)) + 1 + shiftsV L₁ + 3 ≤ E)
+    (hcE : proSig walkPieces layoutPieces certPieces proPieces T (insert p s) + shiftsV L₁ + 3 ≤ E) :
+    IsFormulaSet LAct (finalCtx (finalCtx Γ₁ L₁)
+        (postIns proPieces (len (memberList (insert p s)) + 1 + shiftsV L₁)
+          (proSig walkPieces layoutPieces certPieces proPieces T (insert p s) + shiftsV L₁)
+          (proofLen TAct dp))) ∧
+      NoDrop' (postIns proPieces (len (memberList (insert p s)) + 1 + shiftsV L₁)
+          (proSig walkPieces layoutPieces certPieces proPieces T (insert p s) + shiftsV L₁)
+          (proofLen TAct dp)) ∧
+      shiftsV (postIns proPieces (len (memberList (insert p s)) + 1 + shiftsV L₁)
+          (proSig walkPieces layoutPieces certPieces proPieces T (insert p s) + shiftsV L₁)
+          (proofLen TAct dp)) = 2 := by
+  have hΓ₂f : IsFormulaSet LAct (finalCtx Γ₁ L₁) :=
+    finalCtx_isFormulaSet 9 htbl hΓ₁ cok₁
+  have hg : neg LAct (goalFact (^&(len (memberList (insert p s)) + 1 + shiftsV L₁))
+      (binNumeral (proofLen TAct dp))) ∈ finalCtx Γ₁ L₁ := by
+    rw [hdp.1] at cgoal₁; exact cgoal₁
+  have heq₁₂ : neg LAct (eqFactB
+      (^&(proSig walkPieces layoutPieces certPieces proPieces T (insert p s) + shiftsV L₁))
+      (^&(len (memberList (insert p s)) + 1 + shiftsV L₁))) ∈ finalCtx Γ₁ L₁ := by
+    have := tr_fact cnd₁ (isFormula_eqFactB (hf_ _) (hf_ _)) heq₁
+    rwa [shiftIterV_eqFactB (hf_ _) (hf_ _), termShiftIterV_fvar, termShiftIterV_fvar,
+      zero_add] at this
+  obtain ⟨qok₁, qnd₁, qsh₁, -, -, -, -, -⟩ :=
+    postIns_ok htbl hP rfl hΓ₂f hsE hcE hg heq₁₂
+  exact ⟨finalCtx_isFormulaSet 8 htbl hΓ₂f qok₁, qnd₁, qsh₁⟩
+
+end andCross
+
+/-! ## 26.6 THE `and` CHAIN'S THREE TRANSPORTS
+
+The third seam, and the last new mathematics for `and`: carry the input block's parent
+layout and `q`-dossier across `appendV L₁ postIns`, landing exactly on `and_arm_size`'s
+`hLay₃` and `hDq₃`.
+
+`Γ₃` is `finalCtx (finalCtx Γ₁ L₁) postIns` as §26.5 returns it; the transports want the
+APPENDED form `finalCtx Γ₁ (appendV L₁ postIns)`, which is `finalCtx_appendV`. The block's
+shift is `shiftsV L₁ + 2` (`shiftsV_appendV` + `postIns_ok`'s `shiftsV … = 2`), and its
+`NoDrop'` is `noDrop'_appendV cnd₁ qnd₁`.
+
+TRAP 30: both normalisations need an explicit `show … = … by ring`, NOT chained
+`← add_assoc`. `Layout.transport`/`dossF_transport'` deliver `i + shiftsV S` fully
+LEFT-nested (`memTop + 1 + 1 + proSig + shiftsV L₁ + 2`) while the targets carry an inner
+group (`memTop + 1 + (1 + proSig + shiftsV L₁ + 2)`); associativity rewrites peel the wrong
+way. `Verify2`'s own chain uses the same `show … by ring` idiom. -/
+
+section andTrans
+
+set_option maxHeartbeats 4000000 in
+/-- **The `and` chain's three transports**: across `appendV L₁ postIns`, onto
+`and_arm_size`'s `hLay₃`/`hDq₃`. -/
+theorem and_trans {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
+    {T Γ₁ L₁ s p q dp : V}
+    (layS₁ : Layout walkPieces certPieces T Γ₁ s
+      (0 + 1 + proSig walkPieces layoutPieces certPieces proPieces T (insert p s)))
+    (hDq₁ : DossF walkPieces Γ₁ 0 q
+      (memTop walkPieces certPieces T s (p ^⋏ q) 0 + 1 +
+        (1 + proSig walkPieces layoutPieces certPieces proPieces T (insert p s))))
+    (cnd₁ : NoDrop' L₁)
+    (qnd₁ : NoDrop' (postIns proPieces
+      (len (memberList (insert p s)) + 1 + shiftsV L₁)
+      (proSig walkPieces layoutPieces certPieces proPieces T (insert p s) + shiftsV L₁)
+      (proofLen TAct dp)))
+    (qsh₁ : shiftsV (postIns proPieces
+      (len (memberList (insert p s)) + 1 + shiftsV L₁)
+      (proSig walkPieces layoutPieces certPieces proPieces T (insert p s) + shiftsV L₁)
+      (proofLen TAct dp)) = 2) :
+    Layout walkPieces certPieces T
+        (finalCtx Γ₁ (appendV L₁ (postIns proPieces
+          (len (memberList (insert p s)) + 1 + shiftsV L₁)
+          (proSig walkPieces layoutPieces certPieces proPieces T (insert p s) + shiftsV L₁)
+          (proofLen TAct dp)))) s
+        (1 + proSig walkPieces layoutPieces certPieces proPieces T (insert p s) + shiftsV L₁ + 2) ∧
+      DossF walkPieces
+        (finalCtx Γ₁ (appendV L₁ (postIns proPieces
+          (len (memberList (insert p s)) + 1 + shiftsV L₁)
+          (proSig walkPieces layoutPieces certPieces proPieces T (insert p s) + shiftsV L₁)
+          (proofLen TAct dp)))) 0 q
+        (memTop walkPieces certPieces T s (p ^⋏ q) 0 + 1 +
+          (1 + proSig walkPieces layoutPieces certPieces proPieces T (insert p s) + shiftsV L₁ + 2)) := by
+  have hndB : NoDrop' (appendV L₁ (postIns proPieces
+      (len (memberList (insert p s)) + 1 + shiftsV L₁)
+      (proSig walkPieces layoutPieces certPieces proPieces T (insert p s) + shiftsV L₁)
+      (proofLen TAct dp))) := noDrop'_appendV cnd₁ qnd₁
+  have hshB : shiftsV (appendV L₁ (postIns proPieces
+      (len (memberList (insert p s)) + 1 + shiftsV L₁)
+      (proSig walkPieces layoutPieces certPieces proPieces T (insert p s) + shiftsV L₁)
+      (proofLen TAct dp))) = shiftsV L₁ + 2 := by
+    rw [shiftsV_appendV, qsh₁]
+  constructor
+  · have h := layS₁.transport hndB
+    rw [hshB] at h
+    rwa [show (0 : V) + 1 + proSig walkPieces layoutPieces certPieces proPieces T (insert p s)
+        + (shiftsV L₁ + 2)
+        = 1 + proSig walkPieces layoutPieces certPieces proPieces T (insert p s) + shiftsV L₁ + 2
+      from by ring] at h
+  · have h := dossF_transport' hndB hDq₁
+    rw [hshB] at h
+    rwa [show memTop walkPieces certPieces T s (p ^⋏ q) 0 + 1 +
+          (1 + proSig walkPieces layoutPieces certPieces proPieces T (insert p s))
+          + (shiftsV L₁ + 2)
+        = memTop walkPieces certPieces T s (p ^⋏ q) 0 + 1 +
+          (1 + proSig walkPieces layoutPieces certPieces proPieces T (insert p s)
+            + shiftsV L₁ + 2)
+      from by ring] at h
+
+end andTrans
+
+/-! ## 26.7 THE `cut` CHAIN'S INPUT BLOCK
+
+The first seam of the `cut` transport chain, and the analogue of §26.4 `and_input`: from the
+node's own layout, run `proCutPre` (the cut formula and its negation, walked and certified)
+and then the FIRST `cutPro` selector, producing the context in which the first child runs.
+
+Two differences from `and`, both structural:
+
+* the offsets come from `mShift`/`mLen` rather than `memTop`/`descCountF` (`mShift_le ≤ 4·|x|`,
+  `mLen_succ_le : mLen + 1 ≤ 2·|x|`), so the parent sits at `mShift p + mShift (neg p) ≤ 8·D`
+  and the dossier at `mLen p + mShift (neg p) ≤ 6·D`. §26.2's `and_roomI`/`and_roomIP` do NOT
+  apply — they want `i ≤ 6·D + 1` and `ip ≤ 8·D + 2` — so the two offset rooms are taken
+  directly from the general `eroom_of_le` at `22·D + 5` and `14·D + 4` (the coordinator's
+  standing preference for the general machinery over new special cases). Only `and_room13`
+  is reused, unchanged.
+* the parent's layout is a `PLay` throughout, because the empty-parent case is real here —
+  that is what `cutPro` selects on.
+
+**The statement does NOT mention `cutPro`.** An earlier draft tried `rw [cutPro, if_pos hs0]`
+and failed with "Failed to rewrite using equation theorems": the goal is an `∃ Γ₁, …` whose
+body never contains the selector, so there is no occurrence to rewrite. `cutBlock_ok` and
+`sizeOK_cutPro` can unfold it only because their own conclusions name it. The fix is that the
+seam needs no selector at all: each branch supplies its own witness (`finalCtx Γ₀ (proIns0 …)`
+or `finalCtx Γ₀ (proIns …)`) and which one produced it is invisible downstream — the selector
+is re-assembled later, inside `sizeOK_cutPro`, which does its own split. This is why `and`
+needed no analogue.
+
+TRAP 28 applies here too: `IdFrame`'s fields are NAMED (`child`, `parent`, `dp`, `cp`), so the
+nonempty branch's parent layout is `fr.parent`, never an anonymous projection. -/
+
+section cutInput
+
+set_option maxHeartbeats 4000000 in
+/-- **The `cut` chain's input block**: `proCutPre`, then the first `cutPro` selector. -/
+theorem cut_input {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
+    {tbl N N' B' T E Czv D Γ s p : V}
+    (htbl : TableOK tbl N) (hP : ProTable tbl) (htblN : NumTableOK T N' B')
+    (hCk : ∀ n : ℕ, n ≤ 1000000 → ((n : ℕ) : V) ≤ Czv)
+    (hs : IsFormulaSet LAct s) (hp : IsSemiformula LAct 0 p)
+    (hpD : formulaLen LAct p ≤ D) (hnpD : formulaLen LAct (neg LAct p) ≤ D)
+    (hc₁D : sequentLen LAct (insert p s) ≤ D)
+    (hsD0p : sequentLen LAct (insert p (0 : V)) ≤ D)
+    (hΓ : IsFormulaSet LAct Γ) (hLay : NodeLay walkPieces certPieces T Γ s)
+    (hE : Czv * p4 (D + 1) ≤ E) :
+    ∃ Γ₁ : V, IsFormulaSet LAct Γ₁ ∧
+      Layout walkPieces certPieces T Γ₁ (insert p s) 0 ∧
+      PLay certPieces T Γ₁ s
+        (mShift walkPieces certPieces T p + mShift walkPieces certPieces T (neg LAct p) +
+          (1 + proSig walkPieces layoutPieces certPieces proPieces T (insert p s))) ∧
+      DossF walkPieces Γ₁ 0 (neg LAct p)
+        (mLen certPieces T (neg LAct p) +
+          (1 + proSig walkPieces layoutPieces certPieces proPieces T (insert p s))) ∧
+      neg LAct (eqFactB
+          (^&(proSig walkPieces layoutPieces certPieces proPieces T (insert p s)))
+          (^&(0 + (len (memberList (insert p s)) + 1)))) ∈ Γ₁ := by
+  have hW : WalkTable tbl := hP.walkTable
+  have hnp : IsSemiformula LAct 0 (neg LAct p) := hp.neg
+  -- the prefix's room, via the general machinery
+  have hEc : 13 * D + 8 ≤ E := by
+    refine eroom_of_le hE hCk 13 8 (by norm_num) ?_
+    push_cast
+    exact le_rfl
+  obtain ⟨c0ok, c0nd, c0sh, hDp, -, hDnp, -, hneg⟩ :=
+    proCutPre_ok htbl hP htblN rfl hp hpD hnpD hEc hΓ
+  have hΓ₀f : IsFormulaSet LAct (finalCtx Γ (proCutPre walkPieces certPieces T p)) :=
+    finalCtx_isFormulaSet 8 htbl hΓ c0ok
+  have layP₀ : PLay certPieces T (finalCtx Γ (proCutPre walkPieces certPieces T p)) s
+      (mShift walkPieces certPieces T p + mShift walkPieces certPieces T (neg LAct p)) := by
+    have h := hLay.play.transport c0nd
+    rwa [c0sh, zero_add] at h
+  -- the three E-rooms for the first `cutPro`
+  have hml : mLen certPieces T p ≤ 2 * D :=
+    le_trans le_self_add (le_trans (mLen_succ_le rfl T hp)
+      (mul_le_mul_of_nonneg_left hpD zero_le))
+  have hmsn : mShift walkPieces certPieces T (neg LAct p) ≤ 4 * D :=
+    le_trans (mShift_le htbl hW rfl T hnp) (mul_le_mul_of_nonneg_left hnpD zero_le)
+  have hmsp : mShift walkPieces certPieces T p ≤ 4 * D :=
+    le_trans (mShift_le htbl hW rfl T hp) (mul_le_mul_of_nonneg_left hpD zero_le)
+  have hE13 : 13 * D + 18 * ‖D‖ + 12 ≤ E := and_room13 hCk hE
+  have hiE : mShift walkPieces certPieces T p + mShift walkPieces certPieces T (neg LAct p)
+      + 14 * D + 5 ≤ E := by
+    refine eroom_of_le hE hCk 22 5 (by norm_num) ?_
+    push_cast
+    calc mShift walkPieces certPieces T p + mShift walkPieces certPieces T (neg LAct p)
+          + 14 * D + 5
+        ≤ 4 * D + 4 * D + 14 * D + 5 :=
+          add_le_add (add_le_add (add_le_add hmsp hmsn) le_rfl) le_rfl
+      _ = 22 * D + 5 := by ring
+  have hipE : mLen certPieces T p + mShift walkPieces certPieces T (neg LAct p)
+      + 8 * D + 4 ≤ E := by
+    refine eroom_of_le hE hCk 14 4 (by norm_num) ?_
+    push_cast
+    calc mLen certPieces T p + mShift walkPieces certPieces T (neg LAct p) + 8 * D + 4
+        ≤ 2 * D + 4 * D + 8 * D + 4 :=
+          add_le_add (add_le_add (add_le_add hml hmsn) le_rfl) le_rfl
+      _ = 14 * D + 4 := by ring
+  -- the selector, both branches (the `cutBlock_ok` `key` recipe)
+  by_cases hs0 : memberList s = 0
+  · have hs0' : s = 0 := eq_zero_of_memberList_eq_zero hs0
+    have hLay0 : Layout0 walkPieces certPieces T
+        (finalCtx Γ (proCutPre walkPieces certPieces T p))
+        (mShift walkPieces certPieces T p + mShift walkPieces certPieces T (neg LAct p)) := by
+      rcases layP₀ with ⟨hk1, -⟩ | ⟨-, h0⟩
+      · exfalso; rw [hs0', len_memberList_zero] at hk1; exact absurd hk1 (by simp)
+      · exact h0
+    subst hs0'
+    obtain ⟨pok, pnd, psh, layC, layP, hins, heq⟩ :=
+      proIns0_ok htbl hP htblN rfl rfl rfl hp hsD0p hE13 hiE hipE hΓ₀f hLay0 hDp
+    refine ⟨_, finalCtx_isFormulaSet 8 htbl hΓ₀f pok, layC, Or.inr ⟨rfl, ?_⟩, ?_, heq⟩
+    · rwa [add_assoc] at layP
+    · have h := dossF_transport' pnd hDnp
+      rwa [psh] at h
+  · have hk1 : 1 ≤ len (memberList s) := one_le_len_memberList_of_ne hs0
+    obtain ⟨pok, pnd, psh, layC, fr, heq⟩ :=
+      proIns_ok htbl hP htblN rfl rfl rfl hs hp hk1 hc₁D hE13 hiE hipE hΓ₀f layP₀.layout hDp
+    refine ⟨_, finalCtx_isFormulaSet 8 htbl hΓ₀f pok, layC, Or.inl ⟨hk1, ?_⟩, ?_, heq⟩
+    · have h := fr.parent
+      rwa [add_assoc] at h
+    · have h := dossF_transport' pnd hDnp
+      rwa [psh] at h
+
+end cutInput
+
+/-! ## 26.8 THE `cut` CHAIN'S TRANSPORTS
+
+The second and last new seam for `cut`. §26.5's `and_cross` is REUSED VERBATIM — its binders
+are parametric in the context and its `heq₁` is exactly the `eqFactB` §26.7 returns, so the
+child crossing is shared between the two arms and there is no `cut_cross`. (Checked by
+compiling the application before writing anything: the second `cut` lemma to dissolve on
+inspection, after `cutPro_ok`.)
+
+§26.6's `and_trans` does NOT transfer, for a real reason: it carries a `Layout … Γ₁ s
+(0 + 1 + proSig …)`, while `cut`'s parent is a `PLay` — the empty-parent case is live — at
+the offset `mShift p + mShift (neg p) + (1 + proSig …)`, the prefix's own shift rather than
+`0`. So the transports are restated over `PLay.transport`, landing exactly on `cut_wrapper`'s
+`hLay₄` and `hDnp₄`.
+
+TRAP 30 applies unchanged: both normalisations need an explicit `show … = … by ring`, never
+chained `← add_assoc`. `PLay.transport`/`dossF_transport'` deliver `i + shiftsV S` fully
+LEFT-nested while the targets carry an inner group; associativity rewrites peel the wrong
+way. `Verify2`'s `cutBlock_ok` uses the same idiom for its own `layP₃`. -/
+
+section cutTrans
+
+set_option maxHeartbeats 4000000 in
+/-- **The `cut` chain's transports**: the parent's `PLay` and the negation's dossier across
+`appendV L₁ postIns`, onto `cut_wrapper`'s `hLay₄`/`hDnp₄`. -/
+theorem cut_trans {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
+    {T Γ₁ L₁ s p d₁ : V}
+    (layP₁ : PLay certPieces T Γ₁ s
+      (mShift walkPieces certPieces T p + mShift walkPieces certPieces T (neg LAct p) +
+        (1 + proSig walkPieces layoutPieces certPieces proPieces T (insert p s))))
+    (hDnp₁ : DossF walkPieces Γ₁ 0 (neg LAct p)
+      (mLen certPieces T (neg LAct p) +
+        (1 + proSig walkPieces layoutPieces certPieces proPieces T (insert p s))))
+    (cnd₁ : NoDrop' L₁)
+    (qnd₁ : NoDrop' (postIns proPieces
+      (len (memberList (insert p s)) + 1 + shiftsV L₁)
+      (proSig walkPieces layoutPieces certPieces proPieces T (insert p s) + shiftsV L₁)
+      (proofLen TAct d₁)))
+    (qsh₁ : shiftsV (postIns proPieces
+      (len (memberList (insert p s)) + 1 + shiftsV L₁)
+      (proSig walkPieces layoutPieces certPieces proPieces T (insert p s) + shiftsV L₁)
+      (proofLen TAct d₁)) = 2) :
+    PLay certPieces T
+        (finalCtx Γ₁ (appendV L₁ (postIns proPieces
+          (len (memberList (insert p s)) + 1 + shiftsV L₁)
+          (proSig walkPieces layoutPieces certPieces proPieces T (insert p s) + shiftsV L₁)
+          (proofLen TAct d₁)))) s
+        (mShift walkPieces certPieces T p + mShift walkPieces certPieces T (neg LAct p) +
+          (1 + proSig walkPieces layoutPieces certPieces proPieces T (insert p s)
+            + shiftsV L₁ + 2)) ∧
+      DossF walkPieces
+        (finalCtx Γ₁ (appendV L₁ (postIns proPieces
+          (len (memberList (insert p s)) + 1 + shiftsV L₁)
+          (proSig walkPieces layoutPieces certPieces proPieces T (insert p s) + shiftsV L₁)
+          (proofLen TAct d₁)))) 0 (neg LAct p)
+        (mLen certPieces T (neg LAct p) +
+          (1 + proSig walkPieces layoutPieces certPieces proPieces T (insert p s)
+            + shiftsV L₁ + 2)) := by
+  have hndB : NoDrop' (appendV L₁ (postIns proPieces
+      (len (memberList (insert p s)) + 1 + shiftsV L₁)
+      (proSig walkPieces layoutPieces certPieces proPieces T (insert p s) + shiftsV L₁)
+      (proofLen TAct d₁))) := noDrop'_appendV cnd₁ qnd₁
+  have hshB : shiftsV (appendV L₁ (postIns proPieces
+      (len (memberList (insert p s)) + 1 + shiftsV L₁)
+      (proSig walkPieces layoutPieces certPieces proPieces T (insert p s) + shiftsV L₁)
+      (proofLen TAct d₁))) = shiftsV L₁ + 2 := by
+    rw [shiftsV_appendV, qsh₁]
+  constructor
+  · have h := layP₁.transport hndB
+    rw [hshB] at h
+    rwa [show mShift walkPieces certPieces T p + mShift walkPieces certPieces T (neg LAct p) +
+          (1 + proSig walkPieces layoutPieces certPieces proPieces T (insert p s))
+          + (shiftsV L₁ + 2)
+        = mShift walkPieces certPieces T p + mShift walkPieces certPieces T (neg LAct p) +
+          (1 + proSig walkPieces layoutPieces certPieces proPieces T (insert p s)
+            + shiftsV L₁ + 2)
+      from by ring] at h
+  · have h := dossF_transport' hndB hDnp₁
+    rw [hshB] at h
+    rwa [show mLen certPieces T (neg LAct p) +
+          (1 + proSig walkPieces layoutPieces certPieces proPieces T (insert p s))
+          + (shiftsV L₁ + 2)
+        = mLen certPieces T (neg LAct p) +
+          (1 + proSig walkPieces layoutPieces certPieces proPieces T (insert p s)
+            + shiftsV L₁ + 2)
+      from by ring] at h
+
+end cutTrans
+
+/-! ## 27. THE TEN-ARM RECURSION
+
+`Verify4.verifyGraph''_ok4`'s shape with `len`/`SizeOK` in place of `shiftsV`: one `Derivation.induction1 𝚷` whose
+ten arms are one-line applications of §§16–26's wrappers (TRAP 15 — the constructions must NOT sit in the body).
+
+**TRAP 24 — the motive is CONTEXT-FREE.** `Verify4`'s motive carries `∀ L Γ, … → IsFormulaSet Γ →
+NodeLay … Γ (fstIdx ρ) → …` because its conjuncts MENTION the context (`ListOK tbl E 9 Γ L`, `… ∈ finalCtx Γ L`).
+`ArmHyps`' two conjuncts do not: `len L ≤ Cz·(proofLen ρ+1)^4` and `SizeOK (kitQ …) (kitD …) L` are both context-free.
+Copying `Verify4`'s binders made the induction hypothesis UNUSABLE at a child, because discharging it would need a
+`NodeLay` at the CHILD's sequent and no such witness exists — every `NodeLay` in the tree (`Verify2` 2295/2511/2578,
+`Assemble` 698) is built as `Or.inl ⟨one_le_len_memberList_insert _, layC⟩` from a `Layout` at a PROLOGUE's
+`finalCtx`, and there is no from-nothing constructor. Dropping `Γ` from the motive removes the obligation entirely:
+the `ih` then applies to a child directly. It also removes `and`/`cut`'s special status — their `Γ₃`/`Γ₄`/`Γc` are
+still wrapper hypotheses, but they are now supplied by this theorem's own binders like every other arm's.
+
+The node's OWN context stays: the wrappers feed `hLay.layout` to `proAxL_ok`/`sizeOK_wkPro`/`layout_or`/`layout_and`,
+so `hΓ`/`hLay` at `fstIdx ρ` are hypotheses OF THIS THEOREM (never of `ArmHyps`, which stays byte-identical). -/
+
+section recursion
+
+set_option maxHeartbeats 4000000 in
+/-- **THE RECURSION**, with the node context as an explicit hypothesis and the `and`/`cut` context witnesses as
+named hypotheses (their shifted-offset layouts have no producer). -/
+theorem armHyps_of_arms {V : Type} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
+    {tbl N N' B' T B E A Czv : V} {Cv Cs Ck : ℕ}
+    (htbl : TableOK tbl N) (hP : ProTable tbl) (htblN : NumTableOK T N' B')
+    (hPle : formulaLen LAct (Ple : V) ≤ B)
+    (hCz1 : 1 ≤ Czv) (hCk : ∀ n : ℕ, n ≤ 1000000 → ((n : ℕ) : V) ≤ Czv)
+    (hCQ : 19 * B' + 25 ≤ Czv) (hCD : 27 * N' + 525600 * B' ≤ Czv)
+    (hCbin : 2 * (27 * N' + 525600 * B') ≤ Czv)
+    (hcG : 4 * ((cDer : V) + cDlen + cFst + 6) ≤ Czv)
+    (hCv : (Cv : V) ≤ Czv) (hCv8 : 8 * (Cv : V) + 9 ≤ Czv)
+    (hCkDom : ((Ck : ℕ) : V) + 5 * (Cv : V) ≤ Czv)
+    (hV4 : ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
+      {tbl N N' B' Ww Wl Wc W₁ W₂ W T A Cv E ρ : V},
+      TableOK tbl N → ProTable tbl → NumTableOK T N' B' → Ww = walkPieces → Wl = layoutPieces →
+      Wc = certPieces → W₁ = frag1Pieces → W₂ = frag2Pieces → W = proPieces →
+      AxmTableOK' tbl E Ww A Cv → Derivation TAct ρ →
+      (((Ck : ℕ) : V) + 5 * Cv) * p4 (proofLen TAct ρ + 1) ≤ E →
+      ∀ L Γ : V, VerifyGraph'' Ww Wl Wc W₁ W₂ W T A ρ L → IsFormulaSet LAct Γ →
+        NodeLay Ww Wc T Γ (fstIdx ρ) →
+        ListOK tbl E ((9 : ℕ) : V) Γ L ∧ NoDrop' L ∧
+          shiftsV L ≤ (((Cs : ℕ) : V) + Cv) * p4 (proofLen TAct ρ) ∧
+          neg LAct (goalFact (^&(len (memberList (fstIdx ρ)) + 1 + shiftsV L))
+            (binNumeral (proofLen TAct ρ))) ∈ finalCtx Γ L)
+    (hA : AxmTableOK' tbl E walkPieces A (Cv : V))
+    {ρ : V} (hd : Derivation TAct ρ) :
+    Czv * p4 (proofLen TAct ρ + 1) ≤ E → ∀ L : V,
+      VerifyGraph'' walkPieces layoutPieces certPieces frag1Pieces frag2Pieces proPieces T A ρ L →
+      len L ≤ Czv * p4 (proofLen TAct ρ) ∧
+        SizeOK (kitQ Czv B E) (kitD Czv (2 * proofLen TAct ρ)) L := by
+  apply Derivation.induction1 𝚷 (T := TAct)
+    (P := fun ρ ↦ Czv * p4 (proofLen TAct ρ + 1) ≤ E → ∀ L : V,
+      VerifyGraph'' walkPieces layoutPieces certPieces frag1Pieces frag2Pieces proPieces T A ρ L →
+      len L ≤ Czv * p4 (proofLen TAct ρ) ∧
+        SizeOK (kitQ Czv B E) (kitD Czv (2 * proofLen TAct ρ)) L)
+    (by simp only [VerifyGraph'', p4, kitQ, kitD]; definability) hd
+  · -- axL
+    intro s hs p hp hnp hE L hL
+    rw [VerifyGraph''.axL_iff] at hL; subst hL
+    have hD : Derivation TAct (axL s p) := Derivation.axL hs hp hnp
+    have hsD : sequentLen LAct s ≤ proofLen TAct (axL s p) := by
+      have := sequentLen_fstIdx_le_proofLen hD; rwa [fstIdx_axL] at this
+    have he1 : (1 : V) ≤ proofLen TAct (axL s p) + 1 := le_add_self
+    obtain ⟨Γ, hΓ, hLay⟩ := nodeCtx_exists htbl hP htblN hs hsD
+      (capE4' hE he1 (hCk 39 (by norm_num)) (by
+        push_cast
+        exact le_trans (lin_cap 13 18 8 (proofLen TAct (axL s p))) (le_of_eq (by ring))))
+      (capE4' hE he1 (hCk 2 (by norm_num)) (by
+        push_cast
+        exact le_mul_of_one_le_right zero_le he1))
+    exact axL_wrapper (tbl := tbl) (N := N) (N' := N') (B' := B') (Wc := certPieces)
+      (W₁ := frag1Pieces) (T := T) (B := B) (E := E) (Czv := Czv) (Γ := Γ) (s := s) (p := p)
+      htbl hP htblN rfl rfl hPle hCz1 hCk
+      (by have := hCk 21 (by norm_num); push_cast at this; exact le_trans (by norm_num) this)
+      hCD hcG hs hp hnp hΓ hLay hE
+  · -- verumIntro
+    intro s hs hv hE L hL
+    rw [VerifyGraph''.verumIntro_iff] at hL; subst hL
+    have hD : Derivation TAct (verumIntro s) := Derivation.verumIntro hs hv
+    have hsD : sequentLen LAct s ≤ proofLen TAct (verumIntro s) := by
+      have := sequentLen_fstIdx_le_proofLen hD; rwa [fstIdx_verumIntro] at this
+    have he1 : (1 : V) ≤ proofLen TAct (verumIntro s) + 1 := le_add_self
+    obtain ⟨Γ, hΓ, hLay⟩ := nodeCtx_exists htbl hP htblN hs hsD
+      (capE4' hE he1 (hCk 39 (by norm_num)) (by
+        push_cast
+        exact le_trans (lin_cap 13 18 8 (proofLen TAct (verumIntro s))) (le_of_eq (by ring))))
+      (capE4' hE he1 (hCk 2 (by norm_num)) (by
+        push_cast
+        exact le_mul_of_one_le_right zero_le he1))
+    exact verum_wrapper (tbl := tbl) (N := N) (N' := N') (B' := B') (Wc := certPieces)
+      (W₁ := frag1Pieces) (T := T) (B := B) (E := E) (Czv := Czv) (Γ := Γ) (s := s)
+      htbl hP htblN rfl rfl hPle hCz1 hCk
+      (by have := hCk 9 (by norm_num); push_cast at this; exact this)
+      hCD hcG hs hv hΓ hLay hE
+  · -- andIntro
+    intro s hs p q dp dq hpq hdp hdq ih₁ ih₂ hE L hL
+    rw [VerifyGraph''.andIntro_iff] at hL
+    obtain ⟨L₁, -, hL₁, L₂, -, hL₂, rfl⟩ := hL
+    have hD : Derivation TAct (andIntro s p q dp dq) := Derivation.andIntro hpq hdp hdq
+    have hsD : sequentLen LAct s ≤ proofLen TAct (andIntro s p q dp dq) := by
+      have := sequentLen_fstIdx_le_proofLen hD; rwa [fstIdx_andIntro] at this
+    have he1 : (1 : V) ≤ proofLen TAct (andIntro s p q dp dq) + 1 := le_add_self
+    obtain ⟨hp, hq⟩ := IsSemiformula.and.mp (hs _ hpq)
+    have hy₁ := proofLen_dp_succ_le_andIntro hD
+    have hy₂ := proofLen_dq_succ_le_andIntro hD
+    obtain ⟨o₁, z₁⟩ := ih₁ (le_trans (child_bound4 (le_trans hy₁ le_self_add)) hE) L₁ hL₁
+    obtain ⟨o₂, z₂⟩ := ih₂ (le_trans (child_bound4 (le_trans hy₂ le_self_add)) hE) L₂ hL₂
+    obtain ⟨Γ, hΓ, hLay⟩ := nodeCtx_exists htbl hP htblN hs hsD
+      (capE4' hE he1 (hCk 39 (by norm_num)) (by
+        push_cast
+        exact le_trans (lin_cap 13 18 8 (proofLen TAct (andIntro s p q dp dq))) (le_of_eq (by ring))))
+      (capE4' hE he1 (hCk 2 (by norm_num)) (by
+        push_cast
+        exact le_mul_of_one_le_right zero_le he1))
+    -- §§26.4-26.6 chained: input block, child crossing, transports, then the wrapper.
+    -- `hV4` is instantiated AT `Γ₁` (the context `and_input` produces), since `and_cross`
+    -- wants the child's `ListOK`/goal fact there; `hV4` is universally quantified over the
+    -- context, so this costs nothing and needs no second `nodeCtx_exists`.
+    have hc₁D : sequentLen LAct (insert p s) ≤ proofLen TAct (andIntro s p q dp dq) :=
+      sequentLen_child_le_proofLen_andIntro_left hD
+    have hqD : formulaLen LAct q ≤ proofLen TAct (andIntro s p q dp dq) :=
+      formulaLen_q_le_proofLen_andIntro hD
+    have hcs : IsFormulaSet LAct (insert p s) := DerivationOf.isFormulaSet hdp
+    obtain ⟨Γ₁, h1, h2, h3, h4, h5⟩ :=
+      and_input htbl hP htblN hCk hs hp hq hpq hsD hc₁D hqD hΓ hLay.layout hE
+    have hE4 : (((Ck : ℕ) : V) + 5 * (Cv : V)) * p4 (proofLen TAct dp + 1) ≤ E := by
+      refine le_trans ?_ hE
+      refine le_trans (mul_le_mul_of_nonneg_right hCkDom zero_le) ?_
+      exact mul_le_mul_of_nonneg_left (p4_mono (le_trans hy₁ le_self_add)) zero_le
+    have hLayC : NodeLay walkPieces certPieces T Γ₁ (fstIdx dp) := by
+      rw [hdp.1]; exact Or.inl ⟨one_le_len_memberList_insert _ _, h2⟩
+    obtain ⟨cok₁, cnd₁, -, cgoal₁⟩ :=
+      hV4 V htbl hP htblN rfl rfl rfl rfl rfl rfl hA hdp.2 hE4 L₁ Γ₁ hL₁ h1 hLayC
+    have hk : len (memberList (insert p s)) ≤ proofLen TAct (andIntro s p q dp dq) :=
+      le_trans (len_memberList_le_sequentLen hcs) hc₁D
+    have hsv : shiftsV L₁ ≤ Czv * p4 (proofLen TAct dp) := le_trans (shiftsV_le_len L₁) o₁
+    have hyd : proofLen TAct dp ≤ proofLen TAct (andIntro s p q dp dq) := le_trans le_self_add hy₁
+    have hsE : len (memberList (insert p s)) + 1 + shiftsV L₁ + 3 ≤ E :=
+      and_roomS hCz1 (one_le_proofLen hD) hk hsv hyd hE
+    have hσ : proSig walkPieces layoutPieces certPieces proPieces T (insert p s)
+        ≤ 6 * proofLen TAct (andIntro s p q dp dq) + 1 :=
+      proSig_le htbl hP rfl htblN rfl rfl hcs (one_le_len_memberList_insert _ _) hc₁D
+        (and_room8 hCk hE) hΓ
+    have hcE : proSig walkPieces layoutPieces certPieces proPieces T (insert p s) +
+        shiftsV L₁ + 3 ≤ E :=
+      and_roomC hCz1 (one_le_proofLen hdp.2) hy₁ hσ hsv hE
+    obtain ⟨hnested, qnd₁, qsh₁⟩ :=
+      and_cross htbl hP hdp h1 cok₁ cnd₁ cgoal₁ h5 hsE hcE
+    obtain ⟨hLay₃, hDq₃⟩ := and_trans h3 h4 cnd₁ qnd₁ qsh₁
+    have hΓ₃ : IsFormulaSet LAct (finalCtx Γ₁ (appendV L₁
+        (postIns proPieces (len (memberList (insert p s)) + 1 + shiftsV L₁)
+          (proSig walkPieces layoutPieces certPieces proPieces T (insert p s) + shiftsV L₁)
+          (proofLen TAct dp)))) := by
+      rwa [finalCtx_appendV]
+    exact and_wrapper htbl hP htblN rfl rfl rfl rfl hPle hCz1 hCk hCQ hCD hCbin hcG
+      hs hp hq hpq hdp hdq hΓ hLay hΓ₃ hLay₃ hDq₃
+      (z₁.mono le_rfl (kitD_mono (mul_le_mul_of_nonneg_left (le_trans le_self_add hy₁) zero_le)))
+      (z₂.mono le_rfl (kitD_mono (mul_le_mul_of_nonneg_left (le_trans le_self_add hy₂) zero_le)))
+      o₁ o₂ hE
+  · -- orIntro
+    intro s hs p q d' hpq hd' ih hE L hL
+    rw [VerifyGraph''.orIntro_iff] at hL
+    obtain ⟨L', -, hL', rfl⟩ := hL
+    have hD : Derivation TAct (orIntro s p q d') := Derivation.orIntro hpq hd'
+    have hsD : sequentLen LAct s ≤ proofLen TAct (orIntro s p q d') := by
+      have := sequentLen_fstIdx_le_proofLen hD; rwa [fstIdx_orIntro] at this
+    have he1 : (1 : V) ≤ proofLen TAct (orIntro s p q d') + 1 := le_add_self
+    obtain ⟨hp, hq⟩ := IsSemiformula.or.mp (hs _ hpq)
+    have hy := proofLen_d_succ_le_orIntro hD
+    obtain ⟨o, z⟩ := ih (le_trans (child_bound4 (le_trans hy le_self_add)) hE) L' hL'
+    obtain ⟨Γ, hΓ, hLay⟩ := nodeCtx_exists htbl hP htblN hs hsD
+      (capE4' hE he1 (hCk 39 (by norm_num)) (by
+        push_cast
+        exact le_trans (lin_cap 13 18 8 (proofLen TAct (orIntro s p q d'))) (le_of_eq (by ring))))
+      (capE4' hE he1 (hCk 2 (by norm_num)) (by
+        push_cast
+        exact le_mul_of_one_le_right zero_le he1))
+    exact or_wrapper (tbl := tbl) (N := N) (N' := N') (B' := B') (Wl := layoutPieces)
+      (Wc := certPieces) (W₁ := frag1Pieces) (W := proPieces) (T := T) (B := B) (E := E)
+      (Czv := Czv) (Γ := Γ) (s := s) (p := p) (q := q) (d' := d') (L' := L')
+      htbl hP htblN rfl rfl rfl rfl hPle hCz1 hCk hCQ hCD hCbin hcG hs hp hq hpq hd' hΓ hLay
+      (z.mono le_rfl (kitD_mono (mul_le_mul_of_nonneg_left (le_trans le_self_add hy) zero_le))) o hE
+  · -- allIntro
+    intro s hs p d' hr hd' ih hE L hL
+    rw [VerifyGraph''.allIntro_iff] at hL
+    obtain ⟨L', -, hL', rfl⟩ := hL
+    have hD : Derivation TAct (allIntro s p d') := Derivation.allIntro hr hd'
+    have hsD : sequentLen LAct s ≤ proofLen TAct (allIntro s p d') := by
+      have := sequentLen_fstIdx_le_proofLen hD; rwa [fstIdx_allIntro] at this
+    have he1 : (1 : V) ≤ proofLen TAct (allIntro s p d') + 1 := le_add_self
+    have hy := proofLen_d_succ_le_allIntro hD
+    obtain ⟨o, z⟩ := ih (le_trans (child_bound4 (le_trans hy le_self_add)) hE) L' hL'
+    obtain ⟨Γ, hΓ, hLay⟩ := nodeCtx_exists htbl hP htblN hs hsD
+      (capE4' hE he1 (hCk 39 (by norm_num)) (by
+        push_cast
+        exact le_trans (lin_cap 13 18 8 (proofLen TAct (allIntro s p d'))) (le_of_eq (by ring))))
+      (capE4' hE he1 (hCk 2 (by norm_num)) (by
+        push_cast
+        exact le_mul_of_one_le_right zero_le he1))
+    exact all_wrapper (tbl := tbl) (N := N) (N' := N') (B' := B') (Wl := layoutPieces)
+      (Wc := certPieces) (W₂ := frag2Pieces) (W := proPieces) (T := T) (B := B) (E := E)
+      (Czv := Czv) (Γ := Γ) (s := s) (p := p) (d' := d') (L' := L')
+      htbl hP htblN rfl rfl rfl rfl hPle hCz1 hCk hCQ hCD hCbin hcG hs hr hd' hΓ hLay
+      (z.mono le_rfl (kitD_mono (mul_le_mul_of_nonneg_left (le_trans le_self_add hy) zero_le))) o hE
+  · -- exsIntro
+    intro s hs p t d' hr ht hd' ih hE L hL
+    rw [VerifyGraph''.exsIntro_iff] at hL
+    obtain ⟨L', -, hL', rfl⟩ := hL
+    have hD : Derivation TAct (exsIntro s p t d') := Derivation.exsIntro hr ht hd'
+    have hsD : sequentLen LAct s ≤ proofLen TAct (exsIntro s p t d') := by
+      have := sequentLen_fstIdx_le_proofLen hD; rwa [fstIdx_exsIntro] at this
+    have he1 : (1 : V) ≤ proofLen TAct (exsIntro s p t d') + 1 := le_add_self
+    have hy := proofLen_d_succ_le_exsIntro hD
+    obtain ⟨o, z⟩ := ih (le_trans (child_bound4 (le_trans hy le_self_add)) hE) L' hL'
+    obtain ⟨Γ, hΓ, hLay⟩ := nodeCtx_exists htbl hP htblN hs hsD
+      (capE4' hE he1 (hCk 39 (by norm_num)) (by
+        push_cast
+        exact le_trans (lin_cap 13 18 8 (proofLen TAct (exsIntro s p t d'))) (le_of_eq (by ring))))
+      (capE4' hE he1 (hCk 2 (by norm_num)) (by
+        push_cast
+        exact le_mul_of_one_le_right zero_le he1))
+    exact exs_wrapper (tbl := tbl) (N := N) (N' := N') (B' := B') (Wl := layoutPieces)
+      (Wc := certPieces) (W₂ := frag2Pieces) (W := proPieces) (T := T) (B := B) (E := E)
+      (Czv := Czv) (Γ := Γ) (s := s) (p := p) (t := t) (d' := d') (L' := L')
+      htbl hP htblN rfl rfl rfl rfl hPle hCz1 hCk hCQ hCD hCbin hcG hs hr ht hd' hΓ hLay
+      (z.mono le_rfl (kitD_mono (mul_le_mul_of_nonneg_left (le_trans le_self_add hy) zero_le))) o hE
+  · -- wkRule
+    intro s hs d' hsub hd' ih hE L hL
+    rw [VerifyGraph''.wkRule_iff] at hL
+    obtain ⟨L', -, hL', rfl⟩ := hL
+    have hD : Derivation TAct (wkRule s d') := Derivation.wkRule hs hsub ⟨rfl, hd'⟩
+    have hsD : sequentLen LAct s ≤ proofLen TAct (wkRule s d') := by
+      have := sequentLen_fstIdx_le_proofLen hD; rwa [fstIdx_wkRule] at this
+    have he1 : (1 : V) ≤ proofLen TAct (wkRule s d') + 1 := le_add_self
+    have hy := proofLen_d_succ_le_wkRule hD
+    obtain ⟨o, z⟩ := ih (le_trans (child_bound4 (le_trans hy le_self_add)) hE) L' hL'
+    obtain ⟨Γ, hΓ, hLay⟩ := nodeCtx_exists htbl hP htblN hs hsD
+      (capE4' hE he1 (hCk 39 (by norm_num)) (by
+        push_cast
+        exact le_trans (lin_cap 13 18 8 (proofLen TAct (wkRule s d'))) (le_of_eq (by ring))))
+      (capE4' hE he1 (hCk 2 (by norm_num)) (by
+        push_cast
+        exact le_mul_of_one_le_right zero_le he1))
+    exact wk_wrapper (tbl := tbl) (N := N) (N' := N') (B' := B') (Wl := layoutPieces)
+      (Wc := certPieces) (W₁ := frag1Pieces) (W := proPieces) (T := T) (B := B) (E := E)
+      (Czv := Czv) (Γ := Γ) (s := s) (d' := d') (L' := L')
+      htbl hP htblN rfl rfl rfl rfl hPle hCz1 hCk hCQ hCD hCbin hcG hs hsub hd' hΓ hLay
+      (z.mono le_rfl (kitD_mono (mul_le_mul_of_nonneg_left (le_trans le_self_add hy) zero_le))) o hE
+  · -- shiftRule
+    intro s hs d' hsc hd' ih hE L hL
+    rw [VerifyGraph''.shiftRule_iff] at hL
+    obtain ⟨L', -, hL', rfl⟩ := hL
+    have hD : Derivation TAct (shiftRule s d') := by
+      have := Derivation.shiftRule (T := TAct) ⟨rfl, hd'⟩; rwa [← hsc] at this
+    have hsD : sequentLen LAct s ≤ proofLen TAct (shiftRule s d') := by
+      have := sequentLen_fstIdx_le_proofLen hD; rwa [fstIdx_shiftRule] at this
+    have he1 : (1 : V) ≤ proofLen TAct (shiftRule s d') + 1 := le_add_self
+    have hy := proofLen_d_succ_le_shiftRule hD
+    obtain ⟨o, z⟩ := ih (le_trans (child_bound4 (le_trans hy le_self_add)) hE) L' hL'
+    obtain ⟨Γ, hΓ, hLay⟩ := nodeCtx_exists htbl hP htblN hs hsD
+      (capE4' hE he1 (hCk 39 (by norm_num)) (by
+        push_cast
+        exact le_trans (lin_cap 13 18 8 (proofLen TAct (shiftRule s d'))) (le_of_eq (by ring))))
+      (capE4' hE he1 (hCk 2 (by norm_num)) (by
+        push_cast
+        exact le_mul_of_one_le_right zero_le he1))
+    exact shift_wrapper (tbl := tbl) (N := N) (N' := N') (B' := B') (Wl := layoutPieces)
+      (Wc := certPieces) (W₂ := frag2Pieces) (W := proPieces) (T := T) (B := B) (E := E)
+      (Czv := Czv) (Γ := Γ) (s := s) (d' := d') (L' := L')
+      htbl hP htblN rfl rfl rfl rfl hPle hCz1 hCk hCQ hCD hCbin hcG hs hsc hd' hΓ hLay
+      (z.mono le_rfl (kitD_mono (mul_le_mul_of_nonneg_left (le_trans le_self_add hy) zero_le))) o hE
+  · -- cutRule
+    intro s hs p d₁ d₂ hd₁ hd₂ ih₁ ih₂ hE L hL
+    rw [VerifyGraph''.cutRule_iff] at hL
+    obtain ⟨L₁, -, hL₁, L₂, -, hL₂, rfl⟩ := hL
+    have hD : Derivation TAct (cutRule s p d₁ d₂) := Derivation.cutRule hd₁ hd₂
+    have hsD : sequentLen LAct s ≤ proofLen TAct (cutRule s p d₁ d₂) := by
+      have := sequentLen_fstIdx_le_proofLen hD; rwa [fstIdx_cutRule] at this
+    have he1 : (1 : V) ≤ proofLen TAct (cutRule s p d₁ d₂) + 1 := le_add_self
+    have hc₁ : IsFormulaSet LAct (insert p s) := DerivationOf.isFormulaSet hd₁
+    have hp : IsSemiformula LAct 0 p := hc₁ p (by simp)
+    have hy₁ := proofLen_d₁_succ_le_cutRule hD
+    have hy₂ := proofLen_d₂_succ_le_cutRule hD
+    obtain ⟨o₁, z₁⟩ := ih₁ (le_trans (child_bound4 (le_trans hy₁ le_self_add)) hE) L₁ hL₁
+    obtain ⟨o₂, z₂⟩ := ih₂ (le_trans (child_bound4 (le_trans hy₂ le_self_add)) hE) L₂ hL₂
+    obtain ⟨Γ, hΓ, hLay⟩ := nodeCtx_exists htbl hP htblN hs hsD
+      (capE4' hE he1 (hCk 39 (by norm_num)) (by
+        push_cast
+        exact le_trans (lin_cap 13 18 8 (proofLen TAct (cutRule s p d₁ d₂))) (le_of_eq (by ring))))
+      (capE4' hE he1 (hCk 2 (by norm_num)) (by
+        push_cast
+        exact le_mul_of_one_le_right zero_le he1))
+    -- §26.7 `cut_input` → `hV4` at its context → §26.5 `and_cross` (REUSED) → §26.8
+    -- `cut_trans` → §23 `cut_wrapper`. NOTE: `cut_input` does NOT supply `cut_wrapper`'s
+    -- `Γ`/`hLay₁`; those are the PRE-selector, post-`proCutPre` context, one block earlier.
+    have hW : WalkTable tbl := hP.walkTable
+    have hnp : IsSemiformula LAct 0 (neg LAct p) := hp.neg
+    have hc₁D : sequentLen LAct (insert p s) ≤ proofLen TAct (cutRule s p d₁ d₂) :=
+      sequentLen_child_le_proofLen_cutRule_left hD
+    have hpD : formulaLen LAct p ≤ proofLen TAct (cutRule s p d₁ d₂) :=
+      le_trans (formulaLen_le_sequentLen_of_mem (L := LAct) (by simp)) hc₁D
+    have hnpD : formulaLen LAct (neg LAct p) ≤ proofLen TAct (cutRule s p d₁ d₂) := by
+      rw [formulaLen_neg hp.isUFormula]; exact hpD
+    have hsing : ∀ x : V, sequentLen LAct (insert x (0 : V)) = formulaLen LAct x := fun x => by
+      have hnm : x ∉ (0 : V) := by simp
+      rw [sequentLen_insert_of_not_mem_V hnm, ← emptyset_def, sequentLen_empty', zero_add]
+    have hsD0p : sequentLen LAct (insert p (0 : V)) ≤ proofLen TAct (cutRule s p d₁ d₂) := by
+      rw [hsing]; exact hpD
+    have hsD0np : sequentLen LAct (insert (neg LAct p) (0 : V)) ≤ proofLen TAct (cutRule s p d₁ d₂) := by
+      rw [hsing]; exact hnpD
+    have hEc : 13 * proofLen TAct (cutRule s p d₁ d₂) + 8 ≤ E := by
+      refine eroom_of_le hE hCk 13 8 (by norm_num) ?_
+      push_cast
+      exact le_rfl
+    obtain ⟨c0ok, c0nd, c0sh, hDp, -, hDnp, -, hneg⟩ :=
+      proCutPre_ok htbl hP htblN rfl hp hpD hnpD hEc hΓ
+    have hΓ₀f : IsFormulaSet LAct (finalCtx Γ (proCutPre walkPieces certPieces T p)) :=
+      finalCtx_isFormulaSet 8 htbl hΓ c0ok
+    have layP₀ : PLay certPieces T (finalCtx Γ (proCutPre walkPieces certPieces T p)) s
+        (mShift walkPieces certPieces T p + mShift walkPieces certPieces T (neg LAct p)) := by
+      have h := hLay.play.transport c0nd
+      rwa [c0sh, zero_add] at h
+    obtain ⟨Γ₁, h1, h2, h3, h4, h5⟩ :=
+      cut_input htbl hP htblN hCk hs hp hpD hnpD hc₁D hsD0p hΓ hLay hE
+    have hE₁ : (((Ck : ℕ) : V) + 5 * (Cv : V)) * p4 (proofLen TAct d₁ + 1) ≤ E := by
+      refine le_trans ?_ hE
+      refine le_trans (mul_le_mul_of_nonneg_right hCkDom zero_le) ?_
+      exact mul_le_mul_of_nonneg_left (p4_mono (le_trans hy₁ le_self_add)) zero_le
+    have hLayC : NodeLay walkPieces certPieces T Γ₁ (fstIdx d₁) := by
+      rw [hd₁.1]; exact Or.inl ⟨one_le_len_memberList_insert _ _, h2⟩
+    obtain ⟨cok₁, cnd₁, -, cgoal₁⟩ :=
+      hV4 V htbl hP htblN rfl rfl rfl rfl rfl rfl hA hd₁.2 hE₁ L₁ Γ₁ hL₁ h1 hLayC
+    have hk : len (memberList (insert p s)) ≤ proofLen TAct (cutRule s p d₁ d₂) :=
+      le_trans (len_memberList_le_sequentLen hc₁) hc₁D
+    have hsv : shiftsV L₁ ≤ Czv * p4 (proofLen TAct d₁) := le_trans (shiftsV_le_len L₁) o₁
+    have hyd : proofLen TAct d₁ ≤ proofLen TAct (cutRule s p d₁ d₂) := le_trans le_self_add hy₁
+    have hsE : len (memberList (insert p s)) + 1 + shiftsV L₁ + 3 ≤ E :=
+      and_roomS hCz1 (one_le_proofLen hD) hk hsv hyd hE
+    have hσ : proSig walkPieces layoutPieces certPieces proPieces T (insert p s)
+        ≤ 6 * proofLen TAct (cutRule s p d₁ d₂) + 1 :=
+      proSig_le htbl hP rfl htblN rfl rfl hc₁ (one_le_len_memberList_insert _ _) hc₁D
+        (and_room8 hCk hE) hΓ
+    have hcE : proSig walkPieces layoutPieces certPieces proPieces T (insert p s) +
+        shiftsV L₁ + 3 ≤ E :=
+      and_roomC hCz1 (one_le_proofLen hd₁.2) hy₁ hσ hsv hE
+    obtain ⟨hnested, qnd₁, qsh₁⟩ :=
+      and_cross htbl hP hd₁ h1 cok₁ cnd₁ cgoal₁ h5 hsE hcE
+    obtain ⟨hLay₄, hDnp₄⟩ := cut_trans h3 h4 cnd₁ qnd₁ qsh₁
+    have hΓ₄ : IsFormulaSet LAct (finalCtx Γ₁ (appendV L₁
+        (postIns proPieces (len (memberList (insert p s)) + 1 + shiftsV L₁)
+          (proSig walkPieces layoutPieces certPieces proPieces T (insert p s) + shiftsV L₁)
+          (proofLen TAct d₁)))) := by
+      rwa [finalCtx_appendV]
+    exact cut_wrapper htbl hP htblN rfl rfl rfl rfl hPle hCz1 hCk hCQ hCD hCbin hcG
+      hs hp hd₁ hd₂ hsD0p hsD0np hΓ₀f layP₀ hDp hΓ₄ hLay₄ hDnp₄ hΓ
+      (z₁.mono le_rfl (kitD_mono (mul_le_mul_of_nonneg_left (le_trans le_self_add hy₁) zero_le)))
+      (z₂.mono le_rfl (kitD_mono (mul_le_mul_of_nonneg_left (le_trans le_self_add hy₂) zero_le)))
+      o₁ o₂ hE
+  · -- axm
+    intro s hs p hps hpT hE L hL
+    rw [VerifyGraph''.axm_iff] at hL
+    obtain ⟨pro, -, hmem, rfl⟩ := hL
+    obtain ⟨p', -, ip', -, pro', -, heq, hok, hnd, hsh, hlen, hszp, hfact⟩ := hA _ hmem
+    obtain ⟨e₁, heq₂⟩ := pair_ext_iff.mp heq
+    obtain ⟨e₂, e₃⟩ := pair_ext_iff.mp heq₂
+    subst e₁; subst e₂; subst e₃
+    have hD : Derivation TAct (axm s p) := Derivation.axm hs hps hpT
+    have hsD : sequentLen LAct s ≤ proofLen TAct (axm s p) := by
+      have := sequentLen_fstIdx_le_proofLen hD; rwa [fstIdx_axm] at this
+    have he1 : (1 : V) ≤ proofLen TAct (axm s p) + 1 := le_add_self
+    obtain ⟨Γ, hΓ, hLay⟩ := nodeCtx_exists htbl hP htblN hs hsD
+      (capE4' hE he1 (hCk 39 (by norm_num)) (by
+        push_cast
+        exact le_trans (lin_cap 13 18 8 (proofLen TAct (axm s p))) (le_of_eq (by ring))))
+      (capE4' hE he1 (hCk 2 (by norm_num)) (by
+        push_cast
+        exact le_mul_of_one_le_right zero_le he1))
+    exact axm_wrapper (tbl := tbl) (N := N) (N' := N') (B' := B') (Wc := certPieces)
+      (W₂ := frag2Pieces) (T := T) (B := B) (E := E) (Czv := Czv) (Cv := (Cv : V)) (Γ := Γ)
+      (s := s) (p := p) (pro := pro)
+      htblN rfl rfl hPle hCz1 hCk hCD hcG hCv hCv8 hs hps hpT hΓ hLay hszp hlen hsh hE
+
+end recursion
+
+/-! ## 28. THE INSTANTIATION — `ArmHypsAll` DISCHARGED
+
+The ten arms are unconditional (§27), so `ArmHypsAll` is now a matter of CHOOSING the
+constant — and the constant is chosen LAST, the standing lesson from the ordering bugs.
+
+`Cz := 8 * Cn` is FORCED, not chosen: the recursion's size conjunct sits at
+`kitD Czv (2 * proofLen ρ)` (the arms double `D`), while `ArmHyps` demands the UNDOUBLED
+`kitD Cz (proofLen ρ)`, and §15's `kitD_two_mul_le` bridges exactly that at the cost of a
+factor `8`. The `Q` side then rides along by §15's `kitQ_mono_const`, and the length side
+by `p4_mono le_self_add` + `pow4_eq_p4` — the recursion's `p4 (proofLen ρ)` is SMALLER than
+`ArmHyps`' `(proofLen ρ + 1)^4`, so that direction is free.
+
+`Cn` collects every constant the recursion's nine domination hypotheses need, each as a
+SUMMAND: `1000000` (for `hCk`'s `∀ n ≤ 1000000`), the two numeral-table constants, their
+doubling, the goal-fact constant `cG`, then `8·Cv + 9` and `Ck + 5·Cv`. Both `cG` (from
+`Assemble.exists_cGoal`) and `Ck` (from `Verify4.verifyGraph''_ok4`) are OPAQUE and never
+unfolded — `exists_cGoal` exists precisely because a `def` of `4·(cDer + …)` stalls the
+kernel on the giant DSL constants.
+
+TRAP: this theorem must sit AFTER §27, not beside `ArmHypsAll`'s definition in §2 —
+`armHyps_of_arms` is declared at the file's end and Lean needs the callee first. A first
+attempt placed it in `packageShape` and failed with `Unknown identifier armHyps_of_arms`.
+
+TRAP: `ArmHyps` binds `{E A ρ L}` IMPLICITLY, so the arm goal is reached by the tactic
+`intro E A rho L hA hd hL hEcap`, mirroring `verifySizeOracle_of_arms`. A term-mode
+`fun … ↦` there binds the wrong slots and the context silently shifts by one (`L` catching
+the `AxmTableOK'`, `hA` the `Derivation`). -/
+
+section instantiation
+
+set_option maxHeartbeats 4000000 in
+/-- **`ArmHypsAll` holds**, at `Cz = 8·Cn` with `Cn` built last. -/
+theorem armHypsAll_of_arms (N N' B' Cv : ℕ) : ∃ Cz : ℕ, ArmHypsAll N N' B' Cv Cz := by
+  obtain ⟨Cs, Ck, hV4⟩ := verifyGraph''_ok4
+  obtain ⟨cG, hcG⟩ := exists_cGoal
+  refine ⟨8 * (1000000 + (19 * B' + 25) + 2 * (27 * N' + 525600 * B') + cG
+      + (8 * Cv + 9) + (Ck + 5 * Cv)), ?_⟩
+  intro V _ _ tbl B T htbl hPA hB hPle htblN
+  set Cn : ℕ := 1000000 + (19 * B' + 25) + 2 * (27 * N' + 525600 * B') + cG
+      + (8 * Cv + 9) + (Ck + 5 * Cv) with hCn
+  obtain ⟨Czv, hCzv⟩ : ∃ x : V, x = ((Cn : ℕ) : V) := ⟨_, rfl⟩
+  have hCz1 : (1 : V) ≤ Czv := by
+    rw [hCzv]; exact_mod_cast (by omega : 1 ≤ Cn)
+  have hCk : ∀ n : ℕ, n ≤ 1000000 → ((n : ℕ) : V) ≤ Czv := fun n hn ↦ by
+    rw [hCzv]; exact_mod_cast (by omega : n ≤ Cn)
+  have hCQ : 19 * (B' : V) + 25 ≤ Czv := by
+    rw [hCzv]
+    calc 19 * (B' : V) + 25 = (((19 * B' + 25 : ℕ) : ℕ) : V) := by push_cast; ring
+      _ ≤ ((Cn : ℕ) : V) := by exact_mod_cast (by omega : 19 * B' + 25 ≤ Cn)
+  have hCD : 27 * (N' : V) + 525600 * (B' : V) ≤ Czv := by
+    rw [hCzv]
+    calc 27 * (N' : V) + 525600 * (B' : V)
+        = (((27 * N' + 525600 * B' : ℕ) : ℕ) : V) := by push_cast; ring
+      _ ≤ ((Cn : ℕ) : V) := by exact_mod_cast (by omega : 27 * N' + 525600 * B' ≤ Cn)
+  have hCbin : 2 * (27 * (N' : V) + 525600 * (B' : V)) ≤ Czv := by
+    rw [hCzv]
+    calc 2 * (27 * (N' : V) + 525600 * (B' : V))
+        = (((2 * (27 * N' + 525600 * B') : ℕ) : ℕ) : V) := by push_cast; ring
+      _ ≤ ((Cn : ℕ) : V) := by exact_mod_cast (by omega : 2 * (27 * N' + 525600 * B') ≤ Cn)
+  have hcGv : 4 * ((cDer : V) + cDlen + cFst + 6) ≤ Czv := by
+    rw [← hcG V, hCzv]; exact_mod_cast (by omega : cG ≤ Cn)
+  have hCvv : ((Cv : ℕ) : V) ≤ Czv := by
+    rw [hCzv]; exact_mod_cast (by omega : Cv ≤ Cn)
+  have hCv8 : 8 * ((Cv : ℕ) : V) + 9 ≤ Czv := by
+    rw [hCzv]
+    calc 8 * ((Cv : ℕ) : V) + 9 = (((8 * Cv + 9 : ℕ) : ℕ) : V) := by push_cast; ring
+      _ ≤ ((Cn : ℕ) : V) := by exact_mod_cast (by omega : 8 * Cv + 9 ≤ Cn)
+  have hCkDom : ((Ck : ℕ) : V) + 5 * ((Cv : ℕ) : V) ≤ Czv := by
+    rw [hCzv]
+    calc ((Ck : ℕ) : V) + 5 * ((Cv : ℕ) : V) = (((Ck + 5 * Cv : ℕ) : ℕ) : V) := by push_cast; ring
+      _ ≤ ((Cn : ℕ) : V) := by exact_mod_cast (by omega : Ck + 5 * Cv ≤ Cn)
+  intro E A rho L hA hd hL hEcap
+  have hcast : (((8 * Cn : ℕ) : V)) = 8 * Czv := by rw [hCzv]; push_cast; ring
+  rw [hcast] at hEcap ⊢
+  have hE : Czv * p4 (proofLen TAct rho + 1) ≤ E := by
+    refine le_trans ?_ hEcap
+    rw [pow4_eq_p4]
+    exact mul_le_mul_of_nonneg_right
+      (le_mul_of_one_le_left zero_le (by norm_num : (1 : V) ≤ 8)) zero_le
+  obtain ⟨hlen, hsz⟩ :=
+    armHyps_of_arms htbl hPA.proTable htblN hPle hCz1 hCk hCQ hCD hCbin hcGv hCvv hCv8 hCkDom
+      hV4 hA hd hE L hL
+  refine ⟨?_, ?_⟩
+  · rw [pow4_eq_p4]
+    refine le_trans hlen ?_
+    exact mul_le_mul (le_mul_of_one_le_left zero_le (by norm_num : (1 : V) ≤ 8))
+      (p4_mono le_self_add) zero_le zero_le
+  · exact hsz.mono (kitQ_mono_const B E
+      (le_mul_of_one_le_left zero_le (by norm_num : (1 : V) ≤ 8)))
+      (kitD_two_mul_le Czv (proofLen TAct rho))
+
+end instantiation
+
+end ArithS

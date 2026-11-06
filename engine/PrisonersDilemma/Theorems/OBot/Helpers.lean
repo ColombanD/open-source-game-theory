@@ -25,6 +25,6 @@ theorem OBot_plays_D_against_DB (fuel : Nat) :
         (.const Action.D)
         Action.C Action.D
         (by rfl) hGuard
-    simpa [eval] using hPlay
+    simpa [eval] using! hPlay
 
 end PD.Theorems

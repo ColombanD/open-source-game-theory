@@ -1,4 +1,5 @@
 import PrisonersDilemma.Tau.Theorems.TauPrudent.Helpers
+import PrisonersDilemma.Tau.Theorems.TauDIMDID.Helpers
 import PrisonersDilemma.Tau.RowSpec
 import PrisonersDilemma.Outcome.Attr
 
@@ -47,6 +48,8 @@ theorem prudentRow_plays :
   | guardian => exact prudent_guardian_plays_D
   | dbot => exact prudent_dbot_plays_D hk2 hL
   | cupodTroll => exact prudent_cupodTroll_plays_D hk3
+  | dupocTroll => exact prudent_dupocTroll_plays_D hk3
+  | dimdid => exact prudent_dimdid_plays_D
   | cupod => exact prudent_cupod_plays_D
   | cimcic => exact prudent_cimcic_plays_D
   | dimcid => exact prudent_dimcid_plays_D
@@ -78,7 +81,7 @@ theorem tauPrudent_phase :
   have h := phase_of_bits (tauZoo k) .prudent w prudentRow tauOrder θ opponent
     (fun T _ => hrow k hk T)
   simp only [bitMass, tauOrder, List.map, prudentRow, massOf, massOf_ifC, massOf_ifD] at h
-  exact ⟨fun hθ => h.1 (by unfold prudentMass at hθ; omega),
-         fun hθ => h.2 (by unfold prudentMass at hθ; omega)⟩
+  exact ⟨fun hθ => h.1 (by simpa [prudentMass] using hθ),
+         fun hθ => h.2 (by simpa [prudentMass] using hθ)⟩
 
 end PD.Tau

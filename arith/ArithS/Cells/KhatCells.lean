@@ -1,0 +1,678 @@
+import ArithS.Cells.PositiveCells
+import ArithS.Cells.JustSlot
+
+/-!
+# ArithS.Cells.KhatCells — the `k̂`-chain cells in PA-`S'`: the TFT probes and CupodTroll × Cupod
+
+`docs/notes/ROUTE_B_SCOPE.md` §6 (Phase 4 addendum): the four POS cells skipped by
+`Cells/PositiveCells.lean` — Dupoc × TFT, Just × TFT, CIMCIC × TFT, CupodTroll × Cupod. In each the
+searcher's guard is TRUE only ABOVE a standard threshold `k̂`: the opponent's play in a model `V`
+needs the searcher's own guard (or a probe's) FOUND in `V` at the budget `k`, and "found" holds
+uniformly for `k ≥ k̂` because the instance of a `TAct`-theorem `∀¹ q` at `binNumeral k` costs
+`K₀ + K₁·‖k‖ ≤ k` in EVERY model (`found_of_all_V`). So the guard is a `TAct`-theorem only in the
+conditional form `∀¹ (k̂ ≤ #0 🡒 q)` (`tact_all_above_of_both`), and its instance at `k` is found within
+`k` by ONE cut against `NumeralFacts.lenBoxNat_le_binNumeralMeta` (`found_of_all_above`, the
+`Assembly/Family.exists_psiF_instance_length` route without Löb).
+
+1. **The `k̂`-chain**: `found_of_all_V` (the V-generic `found_of_all`), `tact_all_above_of_both`,
+   `found_of_all_above` (cost `K₀ + K₁·size k + K₂·size k²`, below `k` for large `k`).
+2. **TitForTatBot in every model**: `TftV`, its transposition, the closed description triple
+   `(cl TTft, cterm C, cterm D)` (TFT is canonical: `TftV < transposeCode TftV` by the probe's constant), the
+   probe lemmas `tft_C_of_probe_C_V`/`tftT_D_of_probe_D_V`, and the searchers' clauses in every frame
+   (`SV_then_V`, `botSV_then_V`).
+3. **The three TFT cells**, unconditional at the engine's pads: `khat_DupocBot_vs_TitForTatBot` `(C, C)`,
+   `khat_JustBot_vs_TitForTatBot` `(C, C)` (on the engine's own `progCode (JustBot k)`),
+   `khat_CIMCIC_vs_TitForTatBot` `(C, C)`.
+4. **`CupodTroll7`** — CupodTroll on a CONSTANT seven-variable template (route (c), `Cells/JustSlot.lean`'s
+   construction): `CupodTrollBot k := .search k (.eq .opp (CupodBot k)) (.const D) (.const C)` freezes the
+   budget-carrying snapshot `CupodBot k` inside its `.eq` guard (§7 of the scope note). The six-variable base
+   `eqTmpl` says "the program described by the opp-triple IS the program described by the me-triple";
+   `guardTemplateTroll7 := (eqTmpl ⇜ ![TCu4, cl uCu, cl wCu, #1, #2, #3]) ⇜ ![#6, #3, #4, #5]` reads the snapshot's
+   budget from the slot `#6` through Cupod's description tower `TS gCu 1`. Instance equation
+   `guardCodeB_guardTemplateTroll7 : guardCodeB ⌜guardTemplateTroll7⌝ me opp k = guardCode ⌜eqTmpl⌝ (SV gCu 1 k) opp`, truth
+   equation `eval_eqTmpl_V` ("`opp = SV gCu 1 k`"), the engine bridge `guardCodeB_guardTemplateTroll7_nat` (the same
+   CODE as the engine's guard `guardCode (templateCode (phiT k)) me opp`, through the typed equality
+   `eqTmpl_subst_eq_template_eq`), hence `evalGraph_CupodTroll7_iff` (the same play as `progCode (CupodTrollBot k)`
+   in every frame at every fuel), and the description layer `TT/uT/wT`, `hX_troll7`/`desc_troll7`.
+5. **CupodTroll × Cupod `(D, D)`** (`outcome_CupodTrollBot_vs_CupodBot`): CupodTroll's guard against
+   `Cupod k` is the true equation `SV gCu 1 k = SV gCu 1 k` in both readings (`tact_qTC`), found for all
+   large `k` (`found_of_all`, `tact_qEqSelf`), so CupodTroll plays its then-branch D; Cupod's guard "CupodTroll plays D
+   against me" is then TRUE above `k̂` in every model (`found_of_all_V`), found by the chain
+   (`found_of_all_above`): `khat_CupodTrollBot_vs_CupodBot` (on the described `CupodTroll7 k`; CupodTroll's half also on the engine's code, `_engine`).
+
+Conventions: every threshold EXISTENTIAL; `simp` never sees a closed quote; `omega` is never asked about
+`V`; `≤` at ℕ bridged by `le_def`.
+-/
+
+set_option linter.constructorNameAsVariable false
+
+namespace ArithS
+
+open FFL FFL.FirstOrder Arithmetic Bootstrapping
+open PeanoMinus ISigma0 ISigma1
+open FFL.FirstOrder.Arithmetic.Bootstrapping.Arithmetic
+open LAct
+open PD.Bots
+
+variable {V : Type*} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
+
+/-! ### 1. The `k̂`-chain -/
+
+section chain
+
+
+end chain
+
+/-! ### 2. TitForTatBot in every model, and the searchers' clauses in every frame -/
+
+section tft
+
+
+end tft
+
+/-! ### 3. The probes against `.bot CooperateBot`/`.bot DefectBot`, found in every model above `k̂` -/
+
+section probes
+
+/-- Dupoc's guard against `.bot CooperateBot`: "`.bot CooperateBot` plays C against Dupoc(k)". -/
+noncomputable def qDuB0 : Semisentence LAct 1 :=
+  qT gDu (TS gDu 0) (uS gDu 0) (wS gDu 0) (cl TB0) (cterm Act.C) (cterm Act.D)
+
+theorem guardCode_DuB0 (k : V) :
+    guardCode (⌜gDu⌝ : V) (SV gDu 0 k) (pBot (pConst 0)) = instB (⌜qDuB0⌝ : V) k :=
+  guardCode_qT_eq_instB gDu k _ _ _ _ _ _ (hX_SV gDu 0 (Or.inl rfl) k) (hU_SV gDu 0 (Or.inl rfl) k)
+    (hW_SV gDu 0 (Or.inl rfl) k) (hX_bot_zero k) hU_C_bot_zero hW_D_bot_zero
+
+theorem tact_qDuB0 : TAct ⊢ ∀¹ qDuB0 := by
+  refine tact_all_of_both _ (fun M _ _ x ↦ ?_) (fun M _ _ x ↦ ?_)
+  · have : M↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
+    rw [qDuB0, eval_qT_plays_opp_self .C _ _ _ _ _ _ x (desc_SV gDu 0 (Or.inl rfl) x) (val_desc_bot_zero x),
+      actCode_C_cast]
+    exact bot_const_play_V _ _ _
+  · have : M↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
+    rw [qDuB0, eval_qT_swap, lMap_swap_gDu, lMap_swap_cl, lMap_swap_TB0, lMap_swap_cterm_C, lMap_swap_cterm_D,
+      eval_qT_plays_opp_self .D _ _ _ _ _ _ x (descT_SV gDu 0 (Or.inl rfl) x) (val_desc_bot_one x),
+      actCode_D_cast]
+    exact bot_const_play_V _ _ _
+
+/-- **Dupoc cooperates with `.bot CooperateBot` in every model, above a standard threshold** (fuel 2). -/
+theorem dupoc_botCB_V :
+    ∃ kHat : ℕ, ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] (k : V), (kHat : V) ≤ k →
+      EvalGraph 2 (SV gDu 0 k) (pBot (pConst 0)) (SV gDu 0 k) 0 := by
+  obtain ⟨kHat, h⟩ := found_of_all_V tact_qDuB0
+  refine ⟨kHat, fun V _ _ k hk ↦ ?_⟩
+  have := SV_then_V gDu 0 k (SV gDu 0 k) (pBot (pConst 0)) (by rw [guardCode_DuB0]; exact h V k hk)
+  rwa [Nat.cast_zero] at this
+
+/-- **Cupod defects against `.bot DefectBot` in every model, above a standard threshold** (fuel 2). -/
+theorem cupod_botDB_V :
+    ∃ kHat : ℕ, ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] (k : V), (kHat : V) ≤ k →
+      EvalGraph 2 (SV gCu 1 k) (pBot (pConst 1)) (SV gCu 1 k) 1 := by
+  obtain ⟨kHat, h⟩ := found_of_all_V tact_qCuB1
+  refine ⟨kHat, fun V _ _ k hk ↦ ?_⟩
+  have := SV_then_V gCu 1 k (SV gCu 1 k) (pBot (pConst 1)) (by rw [guardCode_CuB1]; exact h V k hk)
+  rwa [Nat.cast_one] at this
+
+/-- The bot-wrapped Dupoc's guard against `.bot CooperateBot` (Just's consulted guard there). -/
+noncomputable def qJB0 : Semisentence LAct 1 :=
+  qT gDu (TBS gDu 0) (uS gDu 0) (wS gDu 0) (cl TB0) (cterm Act.C) (cterm Act.D)
+
+theorem guardCode_JB0 (k : V) :
+    guardCode (⌜gDu⌝ : V) (pBot (SV gDu 0 k)) (pBot (pConst 0)) = instB (⌜qJB0⌝ : V) k :=
+  guardCode_qT_eq_instB gDu k _ _ _ _ _ _ (termSubst_TBS gDu 0 (Or.inl rfl) k) (hU_botSV gDu 0 (Or.inl rfl) k)
+    (hW_botSV gDu 0 (Or.inl rfl) k) (hX_bot_zero k) hU_C_bot_zero hW_D_bot_zero
+
+theorem tact_qJB0 : TAct ⊢ ∀¹ qJB0 := by
+  refine tact_all_of_both _ (fun M _ _ x ↦ ?_) (fun M _ _ x ↦ ?_)
+  · have : M↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
+    rw [qJB0, eval_qT_plays_opp_self .C _ _ _ _ _ _ x (desc_botSV gDu 0 (Or.inl rfl) x) (val_desc_bot_zero x),
+      actCode_C_cast]
+    exact bot_const_play_V _ _ _
+  · have : M↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
+    rw [qJB0, eval_qT_swap, lMap_swap_gDu, lMap_swap_cl, lMap_swap_TB0, lMap_swap_cterm_C, lMap_swap_cterm_D,
+      eval_qT_plays_opp_self .D _ _ _ _ _ _ x (descT_botSV gDu 0 (Or.inl rfl) x) (val_desc_bot_one x),
+      actCode_D_cast]
+    exact bot_const_play_V _ _ _
+
+/-- The bot-wrapped Cupod's guard against `.bot DefectBot` (the τ-twin). -/
+noncomputable def qJB1 : Semisentence LAct 1 :=
+  qT gCu (TBS gCu 1) (uS gCu 1) (wS gCu 1) (cl TB0) (cterm Act.D) (cterm Act.C)
+
+theorem guardCode_JB1 (k : V) :
+    guardCode (⌜gCu⌝ : V) (pBot (SV gCu 1 k)) (pBot (pConst 1)) = instB (⌜qJB1⌝ : V) k :=
+  guardCode_qT_eq_instB gCu k _ _ _ _ _ _ (termSubst_TBS gCu 1 (Or.inr rfl) k) (hU_botSV gCu 1 (Or.inr rfl) k)
+    (hW_botSV gCu 1 (Or.inr rfl) k) (hX_bot_one k) hU_D_bot_one hW_C_bot_one
+
+theorem tact_qJB1 : TAct ⊢ ∀¹ qJB1 := by
+  refine tact_all_of_both _ (fun M _ _ x ↦ ?_) (fun M _ _ x ↦ ?_)
+  · have : M↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
+    rw [qJB1, eval_qT_plays_opp_self .D _ _ _ _ _ _ x (desc_botSV gCu 1 (Or.inr rfl) x) (val_desc_bot_one x),
+      actCode_D_cast]
+    exact bot_const_play_V _ _ _
+  · have : M↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
+    rw [qJB1, eval_qT_swap, lMap_swap_gCu, lMap_swap_cl, lMap_swap_TB0, lMap_swap_cterm_C, lMap_swap_cterm_D,
+      eval_qT_plays_opp_self .C _ _ _ _ _ _ x (descT_botSV gCu 1 (Or.inr rfl) x) (val_desc_bot_zero x),
+      actCode_C_cast]
+    exact bot_const_play_V _ _ _
+
+/-- **The bot-wrapped Dupoc cooperates with `.bot CooperateBot` in every model, above a threshold** (fuel 3). -/
+theorem botDupoc_botCB_V :
+    ∃ kHat : ℕ, ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] (k : V), (kHat : V) ≤ k →
+      EvalGraph 3 (pBot (SV gDu 0 k)) (pBot (pConst 0)) (pBot (SV gDu 0 k)) 0 := by
+  obtain ⟨kHat, h⟩ := found_of_all_V tact_qJB0
+  refine ⟨kHat, fun V _ _ k hk ↦ ?_⟩
+  have := botSV_then_V gDu 0 k (pBot (SV gDu 0 k)) (pBot (pConst 0)) (by rw [guardCode_JB0]; exact h V k hk)
+  rwa [Nat.cast_zero] at this
+
+/-- **The bot-wrapped Cupod defects against `.bot DefectBot` in every model, above a threshold** (fuel 3). -/
+theorem botCupod_botDB_V :
+    ∃ kHat : ℕ, ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] (k : V), (kHat : V) ≤ k →
+      EvalGraph 3 (pBot (SV gCu 1 k)) (pBot (pConst 1)) (pBot (SV gCu 1 k)) 1 := by
+  obtain ⟨kHat, h⟩ := found_of_all_V tact_qJB1
+  refine ⟨kHat, fun V _ _ k hk ↦ ?_⟩
+  have := botSV_then_V gCu 1 k (pBot (SV gCu 1 k)) (pBot (pConst 1)) (by rw [guardCode_JB1]; exact h V k hk)
+  rwa [Nat.cast_one] at this
+
+/-- The transposed CIMCIC's guard against `.bot DefectBot`. -/
+noncomputable def qCiTB1 : Semisentence LAct 1 := qCTG (cl TB0) (cterm Act.D) (cterm Act.C)
+
+theorem guardCode_CiTB1 (k : V) :
+    guardCode (⌜templateCT⌝ : V) (CimcicTV k) (pBot (pConst 1)) = instB (⌜qCiTB1⌝ : V) k := by
+  have h := guardCode_CimcicTV_eq_instB k (cl TB0) (cterm Act.C) (cterm Act.D) (hX_bot_zero k) hU_C_bot_zero
+    hW_D_bot_zero
+  rw [transposeCode_pBot, transposeCode_pConst_zero, lMap_swap_cl, lMap_swap_TB0, lMap_swap_cterm_C, lMap_swap_cterm_D] at h
+  exact h
+
+theorem tact_qCiTB1 : TAct ⊢ ∀¹ qCiTB1 := by
+  refine tact_all_of_both _ (fun M _ _ x ↦ ?_) (fun M _ _ x ↦ ?_)
+  · have : M↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
+    rw [qCiTB1, eval_qCTG_iff_V x _ _ _ (val_desc_bot_one x)]
+    exact fun _ ↦ bot_const_play_V _ _ _
+  · have : M↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
+    rw [qCiTB1, eval_qCTG_swap_iff_V, lMap_swap_cl, lMap_swap_TB0, lMap_swap_cterm_C, lMap_swap_cterm_D,
+      eval_qCG_iff_V x _ _ _ (val_desc_bot_zero x)]
+    exact fun _ ↦ bot_const_play_V _ _ _
+
+/-- **CIMCIC cooperates with `.bot CooperateBot` in every model, above a threshold** (fuel 2). -/
+theorem cimcic_botCB_V :
+    ∃ kHat : ℕ, ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] (k : V), (kHat : V) ≤ k →
+      EvalGraph 2 (CimcicV k) (pBot (pConst 0)) (CimcicV k) 0 := by
+  obtain ⟨kHat, h⟩ := found_of_all_V tact_qCiB0
+  exact ⟨kHat, fun V _ _ k hk ↦ cimcic_search_V k _ (by rw [guardCode_CiB0]; exact h V k hk)⟩
+
+/-- **The transposed CIMCIC defects against `.bot DefectBot` in every model, above a threshold** (fuel 2). -/
+theorem cimcicT_botDB_V :
+    ∃ kHat : ℕ, ∀ (V : Type) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] (k : V), (kHat : V) ≤ k →
+      EvalGraph 2 (CimcicTV k) (pBot (pConst 1)) (CimcicTV k) 1 := by
+  obtain ⟨kHat, h⟩ := found_of_all_V tact_qCiTB1
+  exact ⟨kHat, fun V _ _ k hk ↦ cimcicT_search_V k _ (by rw [guardCode_CiTB1]; exact h V k hk)⟩
+
+end probes
+
+/-! ### 4. The three TFT cells -/
+
+section tftCells
+
+/-! #### DupocBot × TitForTatBot `(C, C)` -/
+
+/-- Dupoc's guard against TFT: "TFT plays C against Dupoc(k)". -/
+noncomputable def qDT : Semisentence LAct 1 :=
+  qT gDu (TS gDu 0) (uS gDu 0) (wS gDu 0) (cl TTft) (cterm Act.C) (cterm Act.D)
+
+theorem guardCode_DT (k : V) : guardCode (⌜gDu⌝ : V) (SV gDu 0 k) TftV = instB (⌜qDT⌝ : V) k :=
+  guardCode_qT_eq_instB gDu k _ _ _ _ _ _ (hX_SV gDu 0 (Or.inl rfl) k) (hU_SV gDu 0 (Or.inl rfl) k)
+    (hW_SV gDu 0 (Or.inl rfl) k) (hX_tft k) hU_tft hW_tft
+
+/-- `qDT` is true in both readings above a standard threshold: TFT's probe of Dupoc against
+`.bot CooperateBot` succeeds there (and Cupod's against `.bot DefectBot` in the swap reading). -/
+theorem tact_qDT_above : ∃ kHat : ℕ, TAct ⊢ ∀¹ ((leF (↑kHat) #0 : Semisentence LAct 1) 🡒 qDT) := by
+  obtain ⟨k₁, h₁⟩ := dupoc_botCB_V
+  obtain ⟨k₂, h₂⟩ := cupod_botDB_V
+  refine ⟨k₁ + k₂, tact_all_above_of_both _ _ (fun M _ _ x hx ↦ ?_) (fun M _ _ x hx ↦ ?_)⟩
+  · have : M↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
+    rw [qDT, eval_qT_plays_opp_self .C _ _ _ _ _ _ x (desc_SV gDu 0 (Or.inl rfl) x) (val_desc_tft x),
+      actCode_C_cast]
+    exact ⟨_, tft_C_of_probe_C_V (h₁ M x (le_trans (by push_cast; exact le_self_add) hx))⟩
+  · have : M↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
+    rw [qDT, eval_qT_swap, lMap_swap_gDu, lMap_swap_cl, lMap_swap_TTft, lMap_swap_cterm_C, lMap_swap_cterm_D,
+      eval_qT_plays_opp_self .D _ _ _ _ _ _ x (descT_SV gDu 0 (Or.inl rfl) x) (val_desc_tft_swap x),
+      actCode_D_cast, lMap_swap_gDu]
+    exact ⟨_, tftT_D_of_probe_D_V (h₂ M x (le_trans (by push_cast; exact le_add_self) hx))⟩
+
+/-- **`DupocBot × TitForTatBot = (C, C)`** (engine `outcome_DupocBot_vs_TitForTatBot`, pad 4), for all large
+`k`, on the engine's own codes: Dupoc's guard "TFT cooperates with me" is true above `k̂` and found by the
+`k̂`-chain; TFT's probe sees Dupoc cooperate with `.bot CooperateBot`. -/
+theorem khat_DupocBot_vs_TitForTatBot :
+    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
+      EvalGraph 4 (progCode (DupocBot k)) (progCode TitForTatBot) (progCode (DupocBot k)) (actCode .C) ∧
+      EvalGraph 4 (progCode TitForTatBot) (progCode (DupocBot k)) (progCode TitForTatBot) (actCode .C) := by
+  obtain ⟨kHat, hq⟩ := tact_qDT_above
+  obtain ⟨k₀, h⟩ := found_of_all_above kHat hq
+    (fun k ↦ guardCode (templateCode phiDu) (progCode (DupocBot k)) (progCode TitForTatBot))
+    (fun k ↦ by rw [← TftV_nat, progCode_DupocBot_SV, templateCode_eq_quote_template phiDu rfl]; exact guardCode_DT (V := ℕ) k)
+  obtain ⟨k₁, h₁⟩ := dupoc_botCB_V
+  refine ⟨k₀ + k₁, fun k hk ↦ ⟨?_, ?_⟩⟩
+  · have hg := h k (by omega)
+    rw [progCode_DupocBot_search] at hg ⊢
+    refine EvalGraph.mono_le (n := 0 + 1 + 1) (by omega) ?_
+    exact search_then phiDu hg (const_play _ _ _ _)
+  · have hp := h₁ ℕ k (le_def.mpr (Or.inr (by rw [natCast_nat]; omega)))
+    rw [← progCode_DupocBot_SV] at hp
+    exact tft_C_of_probe_C hp
+
+/-! #### JustBot × TitForTatBot `(C, C)` -/
+
+/-- Just's guard against TFT: "TFT plays C against the frozen `.bot (DupocBot k)`". -/
+noncomputable def qJT : Semisentence LAct 1 :=
+  qT gDu (TBS gDu 0) (uS gDu 0) (wS gDu 0) (cl TTft) (cterm Act.C) (cterm Act.D)
+
+theorem guardCode_JT (k : V) : guardCode (⌜gDu⌝ : V) (pBot (SV gDu 0 k)) TftV = instB (⌜qJT⌝ : V) k :=
+  guardCode_qT_eq_instB gDu k _ _ _ _ _ _ (termSubst_TBS gDu 0 (Or.inl rfl) k) (hU_botSV gDu 0 (Or.inl rfl) k)
+    (hW_botSV gDu 0 (Or.inl rfl) k) (hX_tft k) hU_tft hW_tft
+
+/-- Just cooperates with `.bot CooperateBot` for all large `k`, on the engine's own code (the consulted guard is
+the snapshot's, `guardCode_JustBot_eq`, the `binNumeral k`-instance of `qJB0`). -/
+theorem pos_JustBot_vs_botCB :
+    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k → EvalGraph 2 (progCode (JustBot k)) (pBot (pConst 0)) (progCode (JustBot k)) 0 := by
+  obtain ⟨k₀, h⟩ := found_of_all tact_qJB0
+    (fun k ↦ guardCode (templateCode (phiJ k)) (progCode (JustBot k)) (pBot (pConst 0)))
+    (fun k ↦ by
+      rw [← progCode_botCB, guardCode_JustBot_eq k properPlayer_botCB, progCode_botCB, progCode_DupocBot_SV,
+        templateCode_eq_quote_template phiDu rfl]
+      exact guardCode_JB0 (V := ℕ) k)
+  refine ⟨k₀, fun k hk ↦ ?_⟩
+  have hg := h k hk
+  rw [progCode_JustBot] at hg ⊢
+  exact search_then_at (phiJ k) hg (const_play _ _ _ _)
+
+theorem tact_qJT_above : ∃ kHat : ℕ, TAct ⊢ ∀¹ ((leF (↑kHat) #0 : Semisentence LAct 1) 🡒 qJT) := by
+  obtain ⟨k₁, h₁⟩ := botDupoc_botCB_V
+  obtain ⟨k₂, h₂⟩ := botCupod_botDB_V
+  refine ⟨k₁ + k₂, tact_all_above_of_both _ _ (fun M _ _ x hx ↦ ?_) (fun M _ _ x hx ↦ ?_)⟩
+  · have : M↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
+    rw [qJT, eval_qT_plays_opp_self .C _ _ _ _ _ _ x (desc_botSV gDu 0 (Or.inl rfl) x) (val_desc_tft x),
+      actCode_C_cast]
+    exact ⟨_, tft_C_of_probe_C_V (h₁ M x (le_trans (by push_cast; exact le_self_add) hx))⟩
+  · have : M↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
+    rw [qJT, eval_qT_swap, lMap_swap_gDu, lMap_swap_cl, lMap_swap_TTft, lMap_swap_cterm_C, lMap_swap_cterm_D,
+      eval_qT_plays_opp_self .D _ _ _ _ _ _ x (descT_botSV gDu 0 (Or.inl rfl) x) (val_desc_tft_swap x),
+      actCode_D_cast, lMap_swap_gDu]
+    exact ⟨_, tftT_D_of_probe_D_V (h₂ M x (le_trans (by push_cast; exact le_add_self) hx))⟩
+
+/-- **`JustBot × TitForTatBot = (C, C)`** (engine `outcome_JustBot_vs_TitForTatBot`, pad 5), for all large `k`,
+on the engine's own `progCode (JustBot k)`: the consulted guard is Dupoc's in the snapshot's frame
+(`guardCode_JustBot_eq`), true above `k̂` because TFT sees the frozen `.bot (DupocBot k)` cooperate with
+`.bot CooperateBot`. -/
+theorem khat_JustBot_vs_TitForTatBot :
+    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
+      EvalGraph 5 (progCode (JustBot k)) (progCode TitForTatBot) (progCode (JustBot k)) (actCode .C) ∧
+      EvalGraph 5 (progCode TitForTatBot) (progCode (JustBot k)) (progCode TitForTatBot) (actCode .C) := by
+  obtain ⟨kHat, hq⟩ := tact_qJT_above
+  obtain ⟨k₀, h⟩ := found_of_all_above kHat hq
+    (fun k ↦ guardCode (templateCode (phiJ k)) (progCode (JustBot k)) (progCode TitForTatBot))
+    (fun k ↦ by
+      rw [guardCode_JustBot_eq k sfp_TitForTatBot.1, ← TftV_nat, progCode_DupocBot_SV, templateCode_eq_quote_template phiDu rfl]
+      exact guardCode_JT (V := ℕ) k)
+  obtain ⟨k₁, h₁⟩ := pos_JustBot_vs_botCB
+  refine ⟨k₀ + k₁, fun k hk ↦ ⟨?_, ?_⟩⟩
+  · have hg := h k (by omega)
+    rw [progCode_JustBot] at hg ⊢
+    refine EvalGraph.mono_le (n := 0 + 1 + 1) (by omega) ?_
+    exact search_then_at (phiJ k) hg (const_play _ _ _ _)
+  · exact EvalGraph.mono_le (n := 2 + 1 + 1) (by omega) (tft_C_of_probe_C (h₁ k (by omega)))
+
+/-! #### CIMCIC × TitForTatBot `(C, C)` -/
+
+/-- CIMCIC's guard against TFT: "CIMCIC(k) plays C against TFT ⇒ TFT plays C against CIMCIC(k)". -/
+noncomputable def qCT : Semisentence LAct 1 := qCG (cl TTft) (cterm Act.C) (cterm Act.D)
+
+theorem guardCode_CT (k : V) : guardCode (⌜templateC⌝ : V) (CimcicV k) TftV = instB (⌜qCT⌝ : V) k :=
+  guardCode_CimcicV_eq_instB k (cl TTft) _ _ (hX_tft k) hU_tft hW_tft
+
+theorem tact_qCT_above : ∃ kHat : ℕ, TAct ⊢ ∀¹ ((leF (↑kHat) #0 : Semisentence LAct 1) 🡒 qCT) := by
+  obtain ⟨k₁, h₁⟩ := cimcic_botCB_V
+  obtain ⟨k₂, h₂⟩ := cimcicT_botDB_V
+  refine ⟨k₁ + k₂, tact_all_above_of_both _ _ (fun M _ _ x hx ↦ ?_) (fun M _ _ x hx ↦ ?_)⟩
+  · have : M↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
+    rw [qCT, eval_qCG_iff_V x _ _ _ (val_desc_tft x)]
+    exact fun _ ↦ ⟨_, tft_C_of_probe_C_V (h₁ M x (le_trans (by push_cast; exact le_self_add) hx))⟩
+  · have : M↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
+    rw [qCT, eval_qCG_swap_iff_V, lMap_swap_cl, lMap_swap_TTft, lMap_swap_cterm_C, lMap_swap_cterm_D,
+      eval_qCTG_iff_V x _ _ _ (val_desc_tft_swap x)]
+    exact fun _ ↦ ⟨_, tftT_D_of_probe_D_V (h₂ M x (le_trans (by push_cast; exact le_add_self) hx))⟩
+
+/-- **`CIMCIC × TitForTatBot = (C, C)`** (engine `llm_outcome_CIMCIC_vs_TitForTatBot`, pad 6), for all large `k`:
+the consequent of CIMCIC's guard, "TFT cooperates with me", is true above `k̂` (TFT sees CIMCIC cooperate with
+`.bot CooperateBot`), so the guard is found by the `k̂`-chain (the engine's `weakenImpl`). -/
+theorem khat_CIMCIC_vs_TitForTatBot :
+    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
+      EvalGraph 6 (progCode (CIMCIC k)) (progCode TitForTatBot) (progCode (CIMCIC k)) (actCode .C) ∧
+      EvalGraph 6 (progCode TitForTatBot) (progCode (CIMCIC k)) (progCode TitForTatBot) (actCode .C) := by
+  obtain ⟨kHat, hq⟩ := tact_qCT_above
+  obtain ⟨k₀, h⟩ := found_of_all_above kHat hq
+    (fun k ↦ guardCode (⌜templateC⌝ : ℕ) (Cimcic k) (progCode TitForTatBot))
+    (fun k ↦ by rw [← TftV_nat]; exact guardCode_CT (V := ℕ) k)
+  obtain ⟨k₁, h₁⟩ := cimcic_botCB_V
+  refine ⟨k₀ + k₁, fun k hk ↦ ⟨?_, ?_⟩⟩
+  · rw [progCode_CIMCIC]
+    exact EvalGraph.mono_le (n := 2) (by omega) (cimcic_search_V (V := ℕ) k _ (h k (by omega)))
+  · have hp := h₁ ℕ k (le_def.mpr (Or.inr (by rw [natCast_nat]; omega)))
+    rw [progCode_CIMCIC]
+    exact EvalGraph.mono_le (n := 2 + 1 + 1) (by omega) (tft_C_of_probe_C hp)
+
+end tftCells
+
+/-! ### 5. `CupodTroll7`: CupodTroll on a CONSTANT template with a budget slot -/
+
+section trollTemplate
+
+/-- **The six-variable base of the `.eq` guard**: "the program described by the opp-triple `(#3, #4, #5)`
+IS the program described by the me-triple `(#0, #1, #2)`" — `template (.eq .opp q)` with the frozen literal's
+closed description (`closedDesc (progCode q)`) replaced by the me-triple's (`progAux .self _`). -/
+noncomputable def eqTmpl : Semisentence LAct 6 :=
+  ∃¹ (∃¹ (((descF #1 #5 #6 #7 : Semisentence LAct 7) ⇜ ![#1, #2, #3, #4, #5, #6, #7]) ⋏
+    (((descF #1 #2 #3 #4 : Semisentence LAct 7) ⇜ ![#0, #2, #3, #4, #5, #6, #7]) ⋏
+      Semiformula.rel (Language.Eq.eq : LAct.Rel 2) ![#1, #0])))
+
+/-- **The truth of `eqTmpl` at a frame, in every model**: the opp-triple and the me-triple describe the
+same program. -/
+theorem eval_eqTmpl_V (b : Fin 6 → V) :
+    Semiformula.Eval (s := stdReadingV V) b Empty.elim eqTmpl ↔
+      revalue (b 4) (b 5) (b 3) = revalue (b 1) (b 2) (b 0) := by
+  unfold eqTmpl descF
+  simp only [Semiformula.eval_substs, Semiformula.eval_ex, LogicalConnective.HomClass.map_and,
+    LogicalConnective.Prop.and_eq, Semiformula.eval_rel, eval_relDesc_V, stdReadingV_rel_eq, Function.comp_def,
+    Matrix.cons_val, Semiterm.val_bvar]
+  constructor
+  · rintro ⟨x, y, ⟨d, rfl, rfl⟩, ⟨d', rfl, rfl⟩, h⟩
+    exact h
+  · intro h
+    exact ⟨_, _, ⟨_, rfl, rfl⟩, ⟨_, rfl, rfl⟩, h⟩
+
+/-- `eqTmpl` is τ-fixed. -/
+lemma lMap_swap_eqTmpl : Semiformula.lMap swap eqTmpl = eqTmpl := by
+  unfold eqTmpl
+  simp only [Semiformula.lMap_exs, LogicalConnective.HomClass.map_and, Semiformula.lMap_subst, lMap_swap_descF,
+    Semiformula.lMap_rel, Semiterm.lMap_bvar]
+  congr 3
+  · congr 1; funext i; fin_cases i <;> rfl
+  · congr 1
+    · congr 1; funext i; fin_cases i <;> rfl
+    · congr 1; funext i; fin_cases i <;> rfl
+
+/-- `descF #1 #2 #3 #4 ⇜ w` is the closed description of `c` when `w` carries `c`'s description terms
+in the me-slots (the `.self` case of `Code.progAux_subst`, without a frame). -/
+lemma descF_self_subst {m : ℕ} (c : ℕ) (w w' : Fin 7 → Semiterm LAct Empty m) (h0 : w 0 = w' 0)
+    (h1 : w 1 = cl (canonicalMeta c)) (h2 : w 2 = cl (revalueUMeta c)) (h3 : w 3 = cl (revalueWMeta c)) :
+    (descF #1 #2 #3 #4 : Semisentence LAct 7) ⇜ w = closedDesc c ⇜ w' := by
+  rw [closedDesc_subst]
+  unfold Rewriting.subst
+  rw [rew_descF]
+  show descF (Rew.bShift (w 0)) (Rew.bShift (w 1)) (Rew.bShift (w 2)) (Rew.bShift (w 3)) = _
+  rw [h0, h1, h2, h3, rew_cl, rew_cl, rew_cl]
+
+/-- `descF #1 #5 #6 #7 ⇜ w` depends only on the entries `0, 4, 5, 6` of `w`. -/
+lemma descF_opp_subst {m : ℕ} (w w' : Fin 7 → Semiterm LAct Empty m) (h0 : w 0 = w' 0)
+    (h4 : w 4 = w' 4) (h5 : w 5 = w' 5) (h6 : w 6 = w' 6) :
+    (descF #1 #5 #6 #7 : Semisentence LAct 7) ⇜ w = (descF #1 #5 #6 #7 : Semisentence LAct 7) ⇜ w' := by
+  unfold Rewriting.subst
+  rw [rew_descF, rew_descF]
+  show descF (Rew.bShift (w 0)) (Rew.bShift (w 4)) (Rew.bShift (w 5)) (Rew.bShift (w 6)) =
+    descF (Rew.bShift (w' 0)) (Rew.bShift (w' 4)) (Rew.bShift (w' 5)) (Rew.bShift (w' 6))
+  rw [h0, h4, h5, h6]
+
+/-- **The typed bridge**: `eqTmpl` filled with the description of `progCode Q` in the me-slots and `opp`'s in the
+opp-slots IS `template (.eq .opp Q)` filled with ANY me-description and `opp`'s (the literal `Q` is closed, the
+frame's `me` unused on both sides). -/
+theorem eqTmpl_subst_eq_template_eq (Q : PD.Prog) (me opp : ℕ) :
+    (eqTmpl ⇜ (fun i ↦ (cl (descriptionTerms (progCode Q) opp i) : Semiterm LAct Empty 6))) =
+      template (.eq .opp Q) ⇜ (fun i ↦ (cl (descriptionTerms me opp i) : Semiterm LAct Empty 6)) := by
+  rw [template_eq]
+  unfold eqTmpl progGraph
+  rw [progAux_opp]
+  simp only [Rewriting.app_exs, Rew.q_subst, LogicalConnective.HomClass.map_and, rew_subst_eq]
+  congr 3
+  · refine descF_opp_subst _ _ ?_ ?_ ?_ ?_
+    · rfl
+    all_goals (show Rew.bShift (Rew.bShift (cl _)) = Rew.bShift (Rew.bShift (cl _)); rfl)
+  · congr 1
+    · refine descF_self_subst (progCode Q) _ _ ?_ ?_ ?_ ?_
+      · rfl
+      all_goals (show Rew.bShift (Rew.bShift (cl _)) = _; rw [rew_cl, rew_cl]; try rfl)
+    · rw [Semiformula.rew_rel, Semiformula.rew_rel]
+      congr 1
+      funext i
+      fin_cases i <;> rfl
+
+/-- `guardCode ⌜g⌝ me opp` at ℕ is the code of the guard sentence, for ANY six-variable template
+(`Code.quote_sentenceAt`'s argument). -/
+theorem quote_subst_descriptionTerms (g : Semisentence LAct 6) (me opp : ℕ) :
+    (⌜(g ⇜ descriptionTerms me opp : Sentence LAct)⌝ : ℕ) = guardCode (⌜g⌝ : ℕ) me opp := by
+  unfold guardCode
+  rw [Sentence.quote_def, Semiformula.coe_subst_eq_subst_coe, Semiformula.quote_def,
+    Semiformula.typed_quote_substs, Bootstrapping.Semiformula.val_substs, ← Semiformula.quote_def,
+    ← Sentence.quote_def]
+  congr 1
+  exact semitermVec_val_descriptionTerms _ _
+
+/-- **The guard-code bridge at ℕ**: `eqTmpl` in the frame `(progCode Q, opp)` has the SAME code as the engine's
+`.eq .opp Q` template in any frame `(me, opp)`. -/
+theorem guardCode_eqTmpl_eq_templateCode (Q : PD.Prog) (me opp : ℕ) (hQ : noSelfIdxP Q = true := by noSelfIdx_tac) :
+    guardCode (⌜eqTmpl⌝ : ℕ) (progCode Q) opp = guardCode (templateCode (.eq .opp Q)) me opp := by
+  rw [templateCode_eq_quote_template _ (by simp only [noSelfIdxF, noSelfIdxP, Bool.true_and]; exact hQ)]
+  rw [← quote_subst_descriptionTerms, ← quote_subst_descriptionTerms, ← quote_subst_cl, ← quote_subst_cl,
+    eqTmpl_subst_eq_template_eq Q me opp]
+
+/-! #### The seven-variable template -/
+
+/-- Cupod's description tower with the budget as `#0`, cast into four variables. -/
+noncomputable def TCu4 : Semiterm LAct Empty 4 := Rew.castLE (by norm_num) (TS gCu 1)
+
+/-- "The program described by the triple `(#1, #2, #3)` is the Cupod of budget `#0` (described by
+`(TS gCu 1 (#0), U, W)`)". -/
+noncomputable def qE4 (U W : ClosedSemiterm LAct 0) : Semisentence LAct 4 :=
+  eqTmpl ⇜ ![TCu4, cl U, cl W, #1, #2, #3]
+
+/-- **The constant seven-variable template**: the frame's opp-triple in `#3 #4 #5`, the node budget in `#6`. -/
+noncomputable def guardTemplateTroll7A (U W : ClosedSemiterm LAct 0) : Semisentence LAct 7 :=
+  qE4 U W ⇜ ![#6, #3, #4, #5]
+
+/-- **CupodTroll's template**: "the opponent IS `CupodBot #6`". -/
+noncomputable def guardTemplateTroll7 : Semisentence LAct 7 := guardTemplateTroll7A (uS gCu 1) (wS gCu 1)
+
+lemma guardTemplateTroll7_def : guardTemplateTroll7 = guardTemplateTroll7A (uS gCu 1) (wS gCu 1) := rfl
+
+
+/-- The transposed re-valuation terms of Cupod (those of Dupoc, `transposeCode (CupodBot k) = DupocBot k`). -/
+noncomputable def uST : ClosedSemiterm LAct 0 := Semiterm.lMap swap (uS gCu 1)
+noncomputable def wST : ClosedSemiterm LAct 0 := Semiterm.lMap swap (wS gCu 1)
+
+
+/-! #### The codes -/
+
+/-- The codes of `![TCu4, cl U, cl W, #1, #2, #3]`. -/
+noncomputable def eVec4 (U W : ClosedSemiterm LAct 0) : V :=
+  (⌜(Rew.emb TCu4 : SyntacticSemiterm LAct 4)⌝ : V) ∷
+    ⌜(Rew.emb (cl U : Semiterm LAct Empty 4) : SyntacticSemiterm LAct 4)⌝ ∷
+    ⌜(Rew.emb (cl W : Semiterm LAct Empty 4) : SyntacticSemiterm LAct 4)⌝ ∷
+    ⌜(Rew.emb (#1 : Semiterm LAct Empty 4) : SyntacticSemiterm LAct 4)⌝ ∷
+    ⌜(Rew.emb (#2 : Semiterm LAct Empty 4) : SyntacticSemiterm LAct 4)⌝ ∷
+    ⌜(Rew.emb (#3 : Semiterm LAct Empty 4) : SyntacticSemiterm LAct 4)⌝ ∷ 0
+
+theorem quote_guardTemplateTroll7A (U W : ClosedSemiterm LAct 0) :
+    (⌜guardTemplateTroll7A U W⌝ : V) = subst LAct sVec7 (⌜qE4 U W⌝ : V) := by
+  unfold guardTemplateTroll7A
+  rw [Sentence.quote_def, Semiformula.coe_subst_eq_subst_coe, Semiformula.quote_def,
+    Semiformula.typed_quote_substs, Bootstrapping.Semiformula.val_substs, ← Semiformula.quote_def,
+    ← Sentence.quote_def]
+  congr 1
+
+theorem quote_qE4 (U W : ClosedSemiterm LAct 0) :
+    (⌜qE4 U W⌝ : V) = subst LAct (eVec4 U W) (⌜eqTmpl⌝ : V) := by
+  unfold qE4
+  rw [Sentence.quote_def, Semiformula.coe_subst_eq_subst_coe, Semiformula.quote_def,
+    Semiformula.typed_quote_substs, Bootstrapping.Semiformula.val_substs, ← Semiformula.quote_def,
+    ← Sentence.quote_def]
+  congr 1
+
+lemma eVec4_semitermVec (U W : ClosedSemiterm LAct 0) : IsSemitermVec LAct 6 4 (eVec4 U W : V) := by
+  rw [six_eq, eVec4]
+  exact ((((((IsSemitermVec.nil 4).adjoin (semiterm_quote_emb₄ (#3 : Semiterm LAct Empty 4))).adjoin
+    (semiterm_quote_emb₄ (#2 : Semiterm LAct Empty 4))).adjoin
+    (semiterm_quote_emb₄ (#1 : Semiterm LAct Empty 4))).adjoin
+    (semiterm_quote_emb₄ (cl W : Semiterm LAct Empty 4))).adjoin
+    (semiterm_quote_emb₄ (cl U : Semiterm LAct Empty 4))).adjoin (semiterm_quote_emb₄ TCu4)
+
+/-- Filling `![TCu4, cl U, cl W, #1, #2, #3]` with the budget vector gives the description vector of
+`(SV gCu 1 k, opp)` up to the two closed entries. -/
+theorem termSubstVec_eVec4 (U W : ClosedSemiterm LAct 0) (opp k : V) :
+    termSubstVec LAct 6 (bVec4 opp k) (eVec4 U W) =
+      codeTerm (canonical (SV gCu 1 k)) ∷ (⌜(Rew.emb U : SyntacticSemiterm LAct 0)⌝ : V) ∷
+        (⌜(Rew.emb W : SyntacticSemiterm LAct 0)⌝ : V) ∷ codeTerm (canonical opp) ∷ revalueU opp ∷ revalueW opp ∷ 0 := by
+  unfold eVec4 TCu4
+  rw [quote_emb_castLE_V, show (cl U : Semiterm LAct Empty 4) = Rew.castLE (Nat.zero_le 4) U from rfl,
+    show (cl W : Semiterm LAct Empty 4) = Rew.castLE (Nat.zero_le 4) W from rfl,
+    quote_emb_castLE_V, quote_emb_castLE_V, quote_emb_bvar4_1, quote_emb_bvar4_2, quote_emb_bvar4_3]
+  have hT : IsUTerm LAct (⌜(Rew.emb (TS gCu 1) : SyntacticSemiterm LAct 1)⌝ : V) := (semiterm_quote_emb₁ _).isUTerm
+  have hU : IsUTerm LAct (⌜(Rew.emb U : SyntacticSemiterm LAct 0)⌝ : V) := (semiterm_quote_emb₀ _).isUTerm
+  have hW : IsUTerm LAct (⌜(Rew.emb W : SyntacticSemiterm LAct 0)⌝ : V) := (semiterm_quote_emb₀ _).isUTerm
+  have h1 : IsUTerm LAct (^#1 : V) := (IsSemiterm.bvar.mpr (by norm_num : (1 : V) < 4)).isUTerm
+  have h2 : IsUTerm LAct (^#2 : V) := (IsSemiterm.bvar.mpr (by norm_num : (2 : V) < 4)).isUTerm
+  have h3 : IsUTerm LAct (^#3 : V) := (IsSemiterm.bvar.mpr (by norm_num : (3 : V) < 4)).isUTerm
+  have e0 : IsUTermVec LAct 0 (0 : V) := IsUTermVec.empty
+  have e1 := e0.adjoin h3
+  have e2 := e1.adjoin h2
+  have e3 := e2.adjoin h1
+  have e4 := e3.adjoin hW
+  have e5 := e4.adjoin hU
+  rw [six_eq, termSubstVec_cons hT e5, termSubstVec_cons hU e4, termSubstVec_cons hW e3,
+    termSubstVec_cons h1 e2, termSubstVec_cons h2 e1, termSubstVec_cons h3 e0, termSubstVec_nil,
+    quote_emb_TS, termSubst_tower_of _ k _ _ _ (by unfold bVec4; rw [nth_adjoin_zero]),
+    ← canonical_SV gCu 1 (Or.inr rfl) k,
+    termSubst_closed _ (semiterm_quote_emb₀ _), termSubst_closed _ (semiterm_quote_emb₀ _),
+    termSubst_bvar, termSubst_bvar, termSubst_bvar]
+  unfold bVec4
+  rw [show (3 : V) = 2 + 1 by norm_num, nth_adjoin_succ]
+  simp only [nth_adjoin_zero, nth_adjoin_one, nth_adjoin_two]
+
+/-- **The generic instance equation of the seven-variable template**. -/
+theorem guardCodeB_guardTemplateTroll7A (U W : ClosedSemiterm LAct 0) (me opp k : V) :
+    guardCodeB (⌜guardTemplateTroll7A U W⌝ : V) me opp k =
+      subst LAct (codeTerm (canonical (SV gCu 1 k)) ∷ (⌜(Rew.emb U : SyntacticSemiterm LAct 0)⌝ : V) ∷
+        (⌜(Rew.emb W : SyntacticSemiterm LAct 0)⌝ : V) ∷ codeTerm (canonical opp) ∷ revalueU opp ∷ revalueW opp ∷ 0)
+        (⌜eqTmpl⌝ : V) := by
+  unfold guardCodeB
+  rw [quote_guardTemplateTroll7A, substs_substs (isSemiformula_quote₄ (qE4 U W)) (descriptionsB_semitermVec me opp k)
+    sVec7_semitermVec, termSubstVec_sVec7, quote_qE4,
+    substs_substs (isSemiformula_quote₆ eqTmpl) (bVec4_semitermVec opp k) (eVec4_semitermVec U W),
+    termSubstVec_eVec4]
+
+/-- **CupodTroll's instance equation**: in the frame `(me, opp)` the constant template filled with the node
+budget `k` IS the guard of `eqTmpl` in the frame `(CupodBot k, opp)` — "`opp` is `CupodBot k`". -/
+theorem guardCodeB_guardTemplateTroll7 (me opp k : V) :
+    guardCodeB (⌜guardTemplateTroll7⌝ : V) me opp k = guardCode (⌜eqTmpl⌝ : V) (SV gCu 1 k) opp := by
+  rw [guardTemplateTroll7_def, guardCodeB_guardTemplateTroll7A]
+  have hu := hU_SV gCu 1 (Or.inr rfl) k
+  have hw := hW_SV gCu 1 (Or.inr rfl) k
+  rw [Semiterm.empty_quote_def] at hu hw
+  rw [hu, hw]
+  rfl
+
+
+/-! #### The engine bridge at ℕ -/
+
+/-- **`guardTemplateTroll7` consults the engine's guard**: at ℕ, in every frame, the constant template filled with the
+node budget has the SAME code as the engine's `.eq .opp (CupodBot k)` template filled with the frame. -/
+theorem guardCodeB_guardTemplateTroll7_nat (me opp k : ℕ) :
+    guardCodeB (⌜guardTemplateTroll7⌝ : ℕ) me opp k = guardCode (templateCode (phiT k)) me opp := by
+  rw [guardCodeB_guardTemplateTroll7]
+  have h := guardCode_eqTmpl_eq_templateCode (CupodBot k) me opp
+  rw [progCode_CupodBot_SV] at h
+  exact h
+
+end trollTemplate
+
+/-! ### 6. `CupodTrollV7`: the searcher on the constant template -/
+
+section troll7
+
+
+end troll7
+
+/-! ### 7. The description layer of `CupodTrollV7 k` (`Cells/JustSlot.lean` §3 re-run) -/
+
+section canonical
+
+/-- The budget-independent inner part of CupodTroll's code. -/
+noncomputable def innerT : ℕ := ppair (⌜guardTemplateTroll7⌝ : ℕ) (ppair (pConst 1) (pConst 0))
+
+/-- The budget-independent inner part of the transposed searcher's code. -/
+noncomputable def innerTT : ℕ := ppair (⌜guardTemplateTroll7A uST wST⌝ : ℕ) (ppair (pConst 0) (pConst 1))
+
+
+/- Closed constants built from the giant template: never to be evaluated. -/
+attribute [irreducible] innerT innerTT
+
+
+/-- The first re-valuation term of the description of `CupodTrollV7 k`. -/
+noncomputable def uT : ClosedSemiterm LAct 0 :=
+  if innerT < innerTT then cterm Act.C else if innerTT < innerT then cterm Act.D else numT 0
+/-- The second re-valuation term of the description of `CupodTrollV7 k`. -/
+noncomputable def wT : ClosedSemiterm LAct 0 :=
+  if innerT < innerTT then cterm Act.D else if innerTT < innerT then cterm Act.C else numT 1
+
+
+/-! #### The description hypotheses -/
+
+
+end canonical
+
+/-! ### 8. CupodTroll × Cupod `(D, D)` -/
+
+section trollCupod
+
+/-- **The `.eq` guard of a searcher against the program it describes**: "the program described by
+`(TS g a, uS g a, wS g a)` IS the program described by the same triple" — a true equation in both readings. -/
+noncomputable def qEqSelf (g : Semisentence LAct 6) (a : ℕ) : Semisentence LAct 1 :=
+  qT eqTmpl (TS g a) (uS g a) (wS g a) (TS g a) (uS g a) (wS g a)
+
+theorem guardCode_eqSelf (g : Semisentence LAct 6) (a : ℕ) (ha : a = 0 ∨ a = 1) (k : V) :
+    guardCode (⌜eqTmpl⌝ : V) (SV g a k) (SV g a k) = instB (⌜qEqSelf g a⌝ : V) k :=
+  guardCode_qT_eq_instB eqTmpl k _ _ _ _ _ _ (hX_SV g a ha k) (hU_SV g a ha k) (hW_SV g a ha k)
+    (hX_SV g a ha k) (hU_SV g a ha k) (hW_SV g a ha k)
+
+/-- `TAct ⊢ ∀¹ qEqSelf g a`: the equation is reflexive in both readings (the engine's `eqRefl`). -/
+theorem tact_qEqSelf (g : Semisentence LAct 6) (a : ℕ) : TAct ⊢ ∀¹ qEqSelf g a := by
+  refine tact_all_of_both _ (fun M _ _ x ↦ ?_) (fun M _ _ x ↦ ?_)
+  · have : M↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
+    rw [qEqSelf, eval_qT_iff, eval_eqTmpl_V]
+    simp only [Matrix.cons_val]
+  · have : M↓[ℒₒᵣ] ⊧* 𝗜𝚺₁ := inferInstance
+    rw [qEqSelf, eval_qT_swap, lMap_swap_eqTmpl, eval_qT_iff, eval_eqTmpl_V]
+    simp only [Matrix.cons_val]
+
+
+/-- **CupodTroll's guard against `CupodBot k` is found within the budget, for all large `k`** (the box form,
+on the engine's own codes: the consulted guard is `eqTmpl` in the frame `(CupodBot k, CupodBot k)`,
+`guardCodeB_guardTemplateTroll7_nat`). -/
+theorem khat_CupodTrollBot_vs_CupodBot_guard :
+    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
+      LenBox TAct k (guardCode (templateCode (phiT k)) (progCode (CupodTrollBot k)) (progCode (CupodBot k))) :=
+  found_of_all (tact_qEqSelf gCu 1) _ (fun k ↦ by
+    rw [← guardCodeB_guardTemplateTroll7_nat, guardCodeB_guardTemplateTroll7, progCode_CupodBot_SV]
+    exact guardCode_eqSelf gCu 1 (Or.inr rfl) k)
+
+
+/-- CupodTroll's half on the ENGINE's own code (its guard does not read the frame's `me`). -/
+theorem khat_CupodTrollBot_vs_CupodBot_engine :
+    ∃ k₀ : ℕ, ∀ k : ℕ, k₀ < k →
+      EvalGraph 2 (progCode (CupodTrollBot k)) (progCode (CupodBot k)) (progCode (CupodTrollBot k)) (actCode .D) := by
+  obtain ⟨k₀, h⟩ := khat_CupodTrollBot_vs_CupodBot_guard
+  refine ⟨k₀, fun k hk ↦ ?_⟩
+  have hg := h k hk
+  rw [progCode_CupodTrollBot] at hg ⊢
+  exact search_then_at (phiT k) hg (const_play _ _ _ _)
+
+end trollCupod
+
+end ArithS

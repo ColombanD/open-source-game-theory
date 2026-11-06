@@ -151,7 +151,7 @@ fundamental (Σ₁ vs Π₁), not a stylistic choice:
 
 • `proofSearch k φ = true`  — COMPLETENESS / Σ₁ side. Exhibit a witness.
     For a plays-atom `φ = .plays p q a`: produce a real `play n p q = some a`,
-    feed it to `atom_complete_searchfree` (→ `AtomProvable (3 ^ n) φ`; search-free
+    feed it to `atom_complete_searchfree` (→ `AtomProvable (3 ^ n + φ.size) φ`; search-free
     bots only), then flip with
     `(proofSearch_spec _ _).2 (Pf.atom …)`. `proofSearch_complete_plays`
     below packages exactly this. For a structural `φ` (e.g. `.eq p p`), use the
@@ -187,7 +187,7 @@ theorem proofSearch_complete_plays :
     ∀ p q a, p.hasSearch = false → q.hasSearch = false →
       (∃ n, play n p q = some a) → ∃ k, proofSearch k (.plays p q a) = true := by
   intro p q a hp hq ⟨n, hn⟩
-  exact ⟨3 ^ n, (proofSearch_spec _ (.plays p q a)).2
+  exact ⟨3 ^ n + (Formula.plays p q a).size, (proofSearch_spec _ (.plays p q a)).2
     (Pf.atom (atom_complete_searchfree p q a n hp hq hn))⟩
 
 -- Monotonicity in proof-search budget: the Bool reflection of `Pf_mono`

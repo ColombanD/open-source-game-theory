@@ -56,7 +56,7 @@ def test_kernel_scanner_finds_all_rows() -> None:
     over `tauOrderInit` (its diagonal diverges; the scanner records that slot as
     "N"). τ(DIMCID)'s — the last to land — needed the provability-tracking tower
     census (`Base/TowerCensus.lean`) for its two then-D searcher partners."""
-    tables = kernel_bits()
+    tables = kernel_bits(source="engine")
     assert set(tables) == set(TAU_ORDER)
     assert tables["mirror"]["mirror"] == "N"
 
@@ -64,7 +64,7 @@ def test_kernel_scanner_finds_all_rows() -> None:
 def test_every_stated_row_is_complete() -> None:
     """A stated row carries a bit for every slot in `tauOrder` — the scanner
     raises on a short row, so this pins that it stays that way."""
-    for tmpl, row in kernel_bits().items():
+    for tmpl, row in kernel_bits(source="engine").items():
         assert set(row) == set(TAU_ORDER), tmpl
 
 
@@ -87,7 +87,7 @@ def test_kernel_agrees_with_base_directly() -> None:
     shared-budget values and the staggered results became `*_staggered` non-cell
     theorems; 256/256/0 later that day with MaxConfidenceBot's slot; 289/289/0 on
     2026-09-01 with MinConfidenceBot's.)"""
-    d = direct_kernel_vs_base(load_tau_matrix(FULL_BOTS))
+    d = direct_kernel_vs_base(load_tau_matrix(FULL_BOTS, source="engine"))
     assert len(d.cells) == 289
     assert d.passed, d.unexpected
     assert d.agreements == 289
@@ -119,19 +119,19 @@ def test_tftpf_is_not_certified_against_base() -> None:
     """TauTFTPf is the prover reading of TitForTatBot's question — a tau-only
     variant with no base bot. It has a kernel row (the α-gap tests read it) but
     must appear in no base comparison, as row or as hypothesis."""
-    d = direct_kernel_vs_base(load_tau_matrix(FULL_BOTS))
+    d = direct_kernel_vs_base(load_tau_matrix(FULL_BOTS, source="engine"))
     assert all(c.template != "TauTFTPf" and c.hypothesis != "TauTFTPf" for c in d.cells)
     assert "TauTFTPf" not in d.missing_rows
     assert "TauTFTPf" not in BASE_OF
 
 
 def test_certification_end_to_end() -> None:
-    cert = certify(load_tau_matrix(SEPARATING_BOTS), "separating")
+    cert = certify(load_tau_matrix(SEPARATING_BOTS, source="engine"), "separating")
     assert cert.passed
 
 
 def test_control_zoo_certifies() -> None:
-    cert = certify(load_tau_matrix(CONTROL_BOTS), "control")
+    cert = certify(load_tau_matrix(CONTROL_BOTS, source="engine"), "control")
     assert cert.passed
 
 
@@ -142,10 +142,10 @@ def test_missing_rows_are_reported_not_guessed(monkeypatch) -> None:
     with nothing to check it against. Every row is stated now, so the property is
     exercised on a kernel table with DIMCID's row withheld."""
     from pd_runner.tau import compare as compare_mod
-    full = kernel_bits()
+    full = kernel_bits(source="engine")
     withheld = {k: v for k, v in full.items() if k != "dimcid"}
-    monkeypatch.setattr(compare_mod, "kernel_bits", lambda: withheld)
-    d = direct_kernel_vs_base(load_tau_matrix(FULL_BOTS))
+    monkeypatch.setattr(compare_mod, "kernel_bits", lambda *a, **k: withheld)
+    d = direct_kernel_vs_base(load_tau_matrix(FULL_BOTS, source="engine"))
     assert "TauDIMCID" in d.missing_rows
     assert all(c.template != "TauDIMCID" for c in d.cells)
 
@@ -179,7 +179,7 @@ def test_whitelist_splits_into_three_distinct_causes() -> None:
 
     Only the middle group is evidence for the α-gap; conflating the others would
     overstate it."""
-    m = load_tau_matrix(FULL_BOTS)
+    m = load_tau_matrix(FULL_BOTS, source="engine")
     dagger = set(m.dagger_cells)
 
     # budget staggering: EMPTY since 2026-08-27 — the six former entries are now
@@ -209,7 +209,7 @@ def test_whitelist_splits_into_three_distinct_causes() -> None:
 def test_every_whitelisted_cell_actually_diverges() -> None:
     """The whitelist must not accumulate cells that have since been repaired — a
     stale entry would silently excuse a future regression at that cell."""
-    d = direct_kernel_vs_base(load_tau_matrix(FULL_BOTS))
+    d = direct_kernel_vs_base(load_tau_matrix(FULL_BOTS, source="engine"))
     diverging = {(c.template, c.hypothesis) for c in d.whitelisted_divergences}
     assert diverging == set(WHITELIST)
 
@@ -232,12 +232,14 @@ def test_tft_variants_split_exactly_on_the_floor_bots() -> None:
     floor-priced — true but uncitable — and agree everywhere else.
 
     Now read off the KERNEL rows instead of the deleted model's decision table."""
-    tables = kernel_bits()
+    tables = kernel_bits(source="engine")
     sim_row, pf_row = _row(tables, "TauTFTSim"), _row(tables, "TauTFTPf")
     # TauDIMCID joined the floor bots 2026-08-21: like Guardian's and Cupod's,
     # its cooperation is the ELSE-play of a failed search, so it is TRUE but
-    # uncitable — the behavioral TFT counts it, the prover TFT cannot.
-    floor_bots = {"TauGuardian", "TauCupodTroll", "TauCupod", "TauDIMCID"}
+    # uncitable — the behavioral TFT counts it, the prover TFT cannot. TauDIMDID
+    # (2026-10-19) likewise: its C at the cooperator is the ELSE-play of its
+    # self-defeating guard (`dimdid_coop_plays_C`), found by no search.
+    floor_bots = {"TauGuardian", "TauCupodTroll", "TauCupod", "TauDIMCID", "TauDIMDID"}
     for T in TEMPLATES:
         if T in floor_bots:
             assert (sim_row[T], pf_row[T]) == ("C", "D"), T
@@ -251,7 +253,7 @@ def test_obot_cooperates_exactly_with_the_non_bullies() -> None:
     identity check never fires, so it cooperates with everyone including the
     defector. The invariant is 'cooperates with whoever never defects on the
     canonical pair', not 'only with TauCooperate'."""
-    row = _row(kernel_bits(), "TauOBot")
+    row = _row(kernel_bits(source="engine"), "TauOBot")
     want_C = {"TauCooperate", "TauCupodTroll"}
     for T in TEMPLATES:
         assert row[T] == ("C" if T in want_C else "D"), T
@@ -259,7 +261,7 @@ def test_obot_cooperates_exactly_with_the_non_bullies() -> None:
 
 def test_constant_rows_are_constant() -> None:
     """The two `.const` templates play their action against every hypothesis."""
-    tables = kernel_bits()
+    tables = kernel_bits(source="engine")
     assert set(_row(tables, "TauCooperate").values()) == {"C"}
     assert set(_row(tables, "TauDefect").values()) == {"D"}
 
@@ -274,7 +276,9 @@ def test_paper_zoos_are_kernel_backed() -> None:
     from pd_runner.tau.matrix import ZOOS
 
     for key in ("body", "body+twins", "body+twins+natives", "critch8"):
-        m = ZOOS[key].load()
+        # The kernel rows are the ENGINE's (`tau_rows.json`); on S' they are not
+        # consulted until Phase 4 — see test_cell_source.py.
+        m = ZOOS[key].load(source="engine")
         assert m.is_kernel_backed, key
         assert set(m.kernel_backed_bots) == set(m.bots), key
 
@@ -285,12 +289,12 @@ def test_replay_zoo_is_not_kernel_backed() -> None:
     so. Its test bits follow the contradictions, not the kernel."""
     from pd_runner.tau.matrix import ZOOS
 
-    m = ZOOS["superficial-standalone"].load()
+    m = ZOOS["superficial-standalone"].load(source="engine")
     assert not m.is_kernel_backed
     assert m.kernel_backed_bots == ()
     # the DBot/DupocBot cell is one the CSV got wrong: (C, C) there, (C, D) proven
     assert m.test_bit("DupocBot", "DBot") == "C"      # the contradicted value…
-    certified = ZOOS["critch8"].load()
+    certified = ZOOS["critch8"].load(source="engine")
     assert certified.test_bit("DupocBot", "DBot") == "D"  # …not the kernel's
 
 
@@ -300,7 +304,7 @@ def test_templateless_bot_degrades_without_lying() -> None:
     from pd_runner.tau.matrix import load_tau_matrix
 
     m = load_tau_matrix(bots=("CooperateBot", "DefectBot", "WaryBot"),
-                        hypothetical_cells={})
+                        hypothetical_cells={}, source="engine")
     assert not m.is_kernel_backed
     assert m.cooperates("CooperateBot", "WaryBot")  # base cell still answers
 
@@ -314,7 +318,7 @@ def test_kernel_base_mismatch_raises() -> None:
 
     from pd_runner.tau.matrix import PAPER_BODY_SUB_ZOO, _kernel_rows_for, load_tau_matrix
 
-    m = load_tau_matrix(PAPER_BODY_SUB_ZOO, hypothetical_cells={})
+    m = load_tau_matrix(PAPER_BODY_SUB_ZOO, hypothetical_cells={}, source="engine")
     doctored = dict(m._cells)
     key = ("DupocBot", "DefectBot")   # proven (D, C); pretend the theorem said C
     doctored[key] = dataclasses.replace(doctored[key], row_action="C")

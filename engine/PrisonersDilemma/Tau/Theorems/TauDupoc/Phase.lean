@@ -30,6 +30,8 @@ def dupocRow : Tmpl → Action
   | .dbot     => .D
   | .cupod      => .D
   | .cupodTroll => .D
+  | .dupocTroll => .D
+  | .dimdid     => .D
   | .cimcic     => .C
   | .dimcid     => .D
   | .prudent    => .D
@@ -39,8 +41,8 @@ def dupocRow : Tmpl → Action
 
 /-- The row's witness: prove-stages on the δ_L column; the diagonal is the Löb
     quine, supplied as a hypothesis. -/
-theorem dupocRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
-    (hk7 : c_guard k + 7 ≤ k)
+theorem dupocRow_plays {k : Nat} (hk : 7 ≤ k) (hkk : 3 * c_guard k + 22 ≤ k)
+    (hk7 : 7 * c_guard k + 54 ≤ k)
     (hquine : proofSearch k (probe (inst (tauZoo k) .dupoc .dupoc)) = true)
     (hcim : proofSearch k (probe (inst (tauZoo k) .cimcic .dupoc)) = dupocColBit .cimcic)
     (hmir : proofSearch k (probe (inst (tauZoo k) .mirror .dupoc)) = dupocColBit .mirror)
@@ -72,6 +74,8 @@ theorem dupocRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
   | .cupod      => -- the entangled cell, CLOSED BY THE FLOOR (TauCupod/Helpers)
       dupoc_cupod_plays_D
   | .cupodTroll => searchProbe_plays_D _ _ (bL .cupodTroll)
+  | .dupocTroll => searchProbe_plays_D _ _ (bL .dupocTroll)   -- the troll defects on Dupoc: false probe, D by soundness
+  | .dimdid     => dupoc_dimdid_plays_D   -- the anti-aligned system, closed by the floor (τ of cupod × cimcic)
   | .cimcic     => hdmP   -- the mutual-Löb cell (∃k₂-gated, TauCIMCIC/Helpers)
   | .prudent    => dupoc_prudent_plays_D   -- its probe of Prudent's member fails (D by soundness)
   | .mirror     => hmirP   -- the mirror×dupoc entangled cell (gated)
@@ -86,7 +90,7 @@ theorem dupocRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k)
 @[tau_row]
 theorem dupocRowSpec : RowSpec .dupoc tauOrder dupocRow := by
   obtain ⟨kL, hkL⟩ := ps_probe_inst_quine
-  obtain ⟨kA, hkA⟩ := linear_log2_add_le 1 8
+  obtain ⟨kA, hkA⟩ := linear_log2_add_le 12 140
   obtain ⟨kM, hkM⟩ := ps_probe_inst_cimcic_dupoc
   obtain ⟨kP, hkP⟩ := dupoc_cimcic_plays_C
   obtain ⟨kX, hkX⟩ := ps_probe_mirror_dupoc
@@ -95,16 +99,16 @@ theorem dupocRowSpec : RowSpec .dupoc tauOrder dupocRow := by
   obtain ⟨kD, hkD⟩ := dupoc_maxconfidence_plays_C
   refine ⟨kL + kA + kM + kP + kX + kY + kC + kD, fun k hk T _ => ?_⟩
   have hquine := hkL k (by omega)
-  have hkA' : 1 * Nat.log2 k + 8 ≤ k := hkA k (by omega)
+  have hkA' : 12 * Nat.log2 k + 140 ≤ k := hkA k (by omega)
   have hcim := hkM k (by omega)
   have hdmP := hkP k (by omega)
   have hmir := hkX k (by omega)
   have hmirP := hkY k (by omega)
   have hconf := hkC k (by omega)
   have hcfP := hkD k (by omega)
-  have hk2 : 2 ≤ k := by omega
-  have hkk : c_guard k + 3 ≤ k := by simp only [c_guard, numCost]; omega
-  have hk7 : c_guard k + 7 ≤ k := by simp only [c_guard, numCost]; omega
+  have hk2 : 7 ≤ k := by omega
+  have hkk : 3 * c_guard k + 22 ≤ k := by simp only [c_guard, numCost]; omega
+  have hk7 : 7 * c_guard k + 54 ≤ k := by simp only [c_guard, numCost]; omega
   exact dupocRow_plays hk2 hkk hk7 hquine hcim hmir hconf hcfP hmirP hdmP T
 
 /-- **τ(DupocBot)** — boundary `θ ≤ dupMass`. UNCONDITIONAL: the mirror×dupoc
@@ -118,7 +122,7 @@ theorem tauDupoc_phase :
       (θ ≤ dupMass w → ∃ N, play N (TauBotZ k .dupoc w θ) opponent = some .C)
       ∧ (¬ θ ≤ dupMass w → ∃ N, play N (TauBotZ k .dupoc w θ) opponent = some .D) := by
   obtain ⟨kL, hkL⟩ := ps_probe_inst_quine
-  obtain ⟨kA, hkA⟩ := linear_log2_add_le 1 8
+  obtain ⟨kA, hkA⟩ := linear_log2_add_le 12 140
   obtain ⟨kM, hkM⟩ := ps_probe_inst_cimcic_dupoc
   obtain ⟨kP, hkP⟩ := dupoc_cimcic_plays_C
   obtain ⟨kX, hkX⟩ := ps_probe_mirror_dupoc
@@ -127,16 +131,16 @@ theorem tauDupoc_phase :
   obtain ⟨kD, hkD⟩ := dupoc_maxconfidence_plays_C
   refine ⟨kL + kA + kM + kP + kX + kY + kC + kD, fun k hk θ w opponent => ?_⟩
   have hquine := hkL k (by omega)
-  have hkA' : 1 * Nat.log2 k + 8 ≤ k := hkA k (by omega)
+  have hkA' : 12 * Nat.log2 k + 140 ≤ k := hkA k (by omega)
   have hcim := hkM k (by omega)
   have hdmP := hkP k (by omega)
   have hmir := hkX k (by omega)
   have hmirP := hkY k (by omega)
   have hconf := hkC k (by omega)
   have hcfP := hkD k (by omega)
-  have hk2 : 2 ≤ k := by omega
-  have hkk : c_guard k + 3 ≤ k := by simp only [c_guard, numCost]; omega
-  have hk7 : c_guard k + 7 ≤ k := by simp only [c_guard, numCost]; omega
+  have hk2 : 7 ≤ k := by omega
+  have hkk : 3 * c_guard k + 22 ≤ k := by simp only [c_guard, numCost]; omega
+  have hk7 : 7 * c_guard k + 54 ≤ k := by simp only [c_guard, numCost]; omega
   have h := phase_of_bits (tauZoo k) .dupoc w dupocRow tauOrder θ opponent
     (fun T _ => dupocRow_plays hk2 hkk hk7 hquine hcim hmir hconf hcfP hmirP hdmP T)
   simp only [bitMass, tauOrder, List.map, dupocRow, massOf, massOf_ifC, massOf_ifD,

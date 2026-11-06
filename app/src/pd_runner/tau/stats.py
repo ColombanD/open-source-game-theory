@@ -27,7 +27,7 @@ if TYPE_CHECKING:
 
 # Transparency levels sampled left-to-right on the x-axis (1.0 = full).
 _TRANSPARENCY_GRID = [round(1.0 - 0.025 * i, 3) for i in range(41)]
-_DEFAULT_ALPHAS = (0.3, 0.45, 0.62, 0.8)
+_DEFAULT_ALPHAS = (0.2, 0.4, 0.5, 0.6, 0.8)
 
 # The α slider's grid. The report is self-contained static HTML, so the slider
 # works by pre-rendering the two single-α panels (composition, robustness

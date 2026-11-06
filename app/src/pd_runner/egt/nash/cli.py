@@ -16,7 +16,6 @@ import argparse
 import datetime as _dt
 import importlib.metadata as md
 import time
-from fractions import Fraction
 from pathlib import Path
 from typing import Dict, List, Tuple
 
@@ -341,7 +340,7 @@ def run_pipeline(
     else:
         print("  lrsnash  cross-check: SKIPPED (binary not on PATH)")
     if dominance.removals:
-        print(f"  Iterated strict dominance removed: "
+        print("  Iterated strict dominance removed: "
               + ", ".join(f"{r.strategy_name}({r.player})" for r in dominance.removals))
     return run_dir
 
@@ -353,6 +352,8 @@ def main() -> None:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--zoo", default=DEFAULT_ZOO, choices=sorted(ZOOS),
                    help="which tau sub-zoo to analyse (must match the ESS run)")
+    p.add_argument("--source", choices=("sprime", "engine"), default=None,
+                   help="proof system the cells come from (default: settings.CELL_SOURCE)")
     p.add_argument(
         "--numeric-csv", type=Path,
         default=Path("generated/egt/ess/payoff_matrix_numeric.csv"),
@@ -366,7 +367,7 @@ def main() -> None:
     p.add_argument("--lrsnash-timeout-seconds", type=int, default=300)
     args = p.parse_args()
 
-    payoff = payoff_matrix_from_tau_matrix(get_zoo(args.zoo).load(), zoo=args.zoo)
+    payoff = payoff_matrix_from_tau_matrix(get_zoo(args.zoo).load(source=args.source), zoo=args.zoo)
 
     run_pipeline(
         payoff=payoff,

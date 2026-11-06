@@ -14,7 +14,7 @@ import numpy as np  # type: ignore
 
 from .analysis import compute_readouts
 from .cross_check import compare_against_ess
-from .graph import SUSPECT_CELLS, build_strict, build_weak
+from .graph import build_strict, build_weak
 from .loader import load_numeric_A
 from .reporting import write_all
 from .viz import render_condensation, render_invasion
@@ -132,6 +132,8 @@ def main() -> None:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--zoo", default=DEFAULT_ZOO, choices=sorted(ZOOS),
                    help="which tau sub-zoo to analyse (must match the ESS run)")
+    p.add_argument("--source", choices=("sprime", "engine"), default=None,
+                   help="proof system the cells come from (default: settings.CELL_SOURCE)")
     p.add_argument("--numeric-csv", type=Path,
                    default=Path("generated/egt/ess/payoff_matrix_numeric.csv"))
     p.add_argument("--inherited-assumptions", type=Path,
@@ -144,7 +146,7 @@ def main() -> None:
     p.add_argument("--seed", type=int, default=20260514)
     args = p.parse_args()
 
-    payoff = payoff_matrix_from_tau_matrix(get_zoo(args.zoo).load(), zoo=args.zoo)
+    payoff = payoff_matrix_from_tau_matrix(get_zoo(args.zoo).load(source=args.source), zoo=args.zoo)
     names = list(payoff.bots)
 
     G_strict, G_weak, analysis, agreements, layout_backend = run_invasion(

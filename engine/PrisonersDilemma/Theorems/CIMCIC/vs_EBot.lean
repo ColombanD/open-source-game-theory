@@ -123,8 +123,11 @@ theorem interp_cimcic_guard_botDef_true (k : Nat) :
 /-! ## CIMCIC vs `.bot CooperateBot` : cooperates (guard consequent provable) -/
 
 theorem cimcic_botCoop_consequent (k : Nat) :
-    Pf (atom_cost 2) (Formula.plays (.bot CooperateBot) (CIMCIC k) Action.C) :=
-  Pf.atom ⟨PlaysProof.bot PlaysProof.const, by decide⟩
+    Pf (atom_cost 2 + (Formula.plays (.bot CooperateBot) (CIMCIC k) Action.C).size)
+      (Formula.plays (.bot CooperateBot) (CIMCIC k) Action.C) :=
+  Pf.atom ⟨PlaysProof.bot PlaysProof.const, by
+    have h1 : atom_cost 2 = 7 := by decide
+    simp only [c_leaf, c_node]; omega⟩
 
 theorem proofSearch_true_CIMCIC_vs_botCoop :
     ∃ K, ∀ k, k ≥ K →
@@ -137,7 +140,8 @@ theorem proofSearch_true_CIMCIC_vs_botCoop :
   show Pf k
     (Formula.impl (.plays (CIMCIC k) (.bot CooperateBot) Action.C)
                   (.plays (.bot CooperateBot) (CIMCIC k) Action.C))
-  refine Pf.weakenImpl _ _ (atom_cost 2) (cimcic_botCoop_consequent k) ?_
+  refine Pf.weakenImpl _ _ (atom_cost 2 + (Formula.plays (.bot CooperateBot) (CIMCIC k) Action.C).size)
+    (cimcic_botCoop_consequent k) ?_
   have hb := hK k hk
   have h1 : atom_cost 2 = 7 := by decide
   simp only [numCost, Formula.size, Prog.size, CIMCIC, CooperateBot]
@@ -179,7 +183,7 @@ theorem EBot_plays_C_against_CIMCIC (k fuel : Nat)
         (.ite (.sim .opp (.bot CooperateBot)) Action.C (.const Action.C)
           (.ite (.sim .opp (.bot MirrorBot)) Action.C (.const Action.C) (.const Action.D))) =
         some .C := by
-    simpa [Nat.add_assoc] using
+    simpa [Nat.add_assoc] using!
       (eval_ite_from_guard (fuel + 3) EBot (CIMCIC k)
         (.sim .opp (.bot CooperateBot)) (.const Action.C)
         (.ite (.sim .opp (.bot MirrorBot)) Action.C (.const Action.C) (.const Action.D))
@@ -191,7 +195,7 @@ theorem EBot_plays_C_against_CIMCIC (k fuel : Nat)
       (.ite (.sim .opp (.bot MirrorBot)) Action.C (.const Action.C) (.const Action.D)))
     Action.C Action.D
     (by rfl) hGuard1
-  simpa [Nat.add_assoc, hInner] using hPlay
+  simpa [Nat.add_assoc, hInner] using! hPlay
 
 /-! ## CIMCIC's guard against EBot is unprovable → CIMCIC defects -/
 

@@ -520,7 +520,7 @@ theorem Pf.transpose {k : Nat} {φ : Formula} (h : Pf k φ) : Pf k φ.transpose 
     -- ── AtomProvable arm (1): the bridge transposes by transposing its transcript ──
     (fun _ hle ihcert => by
         simp only [Formula.transpose]
-        exact AtomProvable.mk ihcert hle)
+        exact AtomProvable.mk ihcert (by simpa [Formula.size, Prog.size_transpose] using hle))
     -- ── Pf arms (30, family order A/B/C) ──
     -- atom
     (fun _ ihatom => Pf.atom ihatom)

@@ -13,7 +13,6 @@ port preserved the mathematics.
 
 from __future__ import annotations
 
-import json
 
 import pytest
 
@@ -86,9 +85,6 @@ def test_parity_is_over_the_replay_zoo_not_the_certified_one():
     If this ever started matching too, the replay zoo would have stopped
     replaying anything.
     """
-    from pd_runner.egt.static_analysis.cli import run_ess
-    import tempfile
-    from pathlib import Path
 
     certified = payoff_matrix_from_tau_matrix(
         get_zoo("critch8").load(), zoo="critch8"

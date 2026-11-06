@@ -24,7 +24,7 @@ def test_library_bots_are_theorem_directories() -> None:
 
 
 def test_scan_accepts_only_strict_names() -> None:
-    theorems = scan_outcome_theorems()
+    theorems = scan_outcome_theorems(source="engine")
     assert len(theorems) >= 95
     names = {t.name for t in theorems}
     assert "outcome_CooperateBot_vs_DefectBot" in names
@@ -40,7 +40,7 @@ def test_scan_accepts_only_strict_names() -> None:
 
 
 def test_side_hypotheses_are_flagged() -> None:
-    by_name = {t.name: t for t in scan_outcome_theorems()}
+    by_name = {t.name: t for t in scan_outcome_theorems(source="engine")}
     assert by_name["outcome_LegibleBot_vs_CIMCIC"].staggered
     # The shared-budget cells that replaced the staggered ones (2026-08-27) carry no dagger.
     assert not by_name["outcome_PrudentBot_vs_DupocBot"].staggered
@@ -48,7 +48,9 @@ def test_side_hypotheses_are_flagged() -> None:
 
 
 def test_matrix_cells() -> None:
-    bots, cells = build_outcome_matrix()
+    # The ENGINE matrix: statuses, WaryBot's census cells and LegibleBot's daggers
+    # are facts of S (the S' matrix is pinned in test_cell_source.py).
+    bots, cells = build_outcome_matrix(source="engine")
     assert cells[("CooperateBot", "DefectBot")] == "(C, D)"
     # Only outcome_DBot_vs_CooperateBot = (D, C) exists; the cell is swapped.
     assert cells[("CooperateBot", "DBot")] == "(C, D)"
@@ -96,7 +98,7 @@ def test_status_file_tried_and_validation(tmp_path: Path) -> None:
         '[[tried]]\npair = ["CupodBot", "OptimBot"]\nreason = "no luck"\n',
         encoding="utf-8",
     )
-    _, cells = build_outcome_matrix(status_file=status)
+    _, cells = build_outcome_matrix(status_file=status, source="engine")
     assert cells[("CupodBot", "OptimBot")] == "Tried"
 
     status.write_text('[[open]]\npair = ["NoSuchBot", "DBot"]\n', encoding="utf-8")
@@ -166,7 +168,7 @@ def test_format_csv_quotes_pairs() -> None:
     import csv
     import io
 
-    bots, cells = build_outcome_matrix()
+    bots, cells = build_outcome_matrix(source="engine")
     rendered = format_matrix(bots, cells, fmt="csv")
     # Cells contain commas, so CSV must quote them and round-trip cleanly.
     rows = list(csv.reader(io.StringIO(rendered)))
@@ -177,7 +179,7 @@ def test_format_csv_quotes_pairs() -> None:
 
 
 def test_format_tsv_is_upper_triangular() -> None:
-    bots, cells = build_outcome_matrix()
+    bots, cells = build_outcome_matrix(source="engine")
     rendered = format_matrix(bots, cells, fmt="tsv")
     lines = rendered.split("\n")
     assert lines[0].split("\t") == ["Outcome Matrix", *bots]
@@ -192,7 +194,7 @@ def test_cell_details_explain_budget_sensitive_cells() -> None:
     """The tooltip/note names both theorems and the stagger, from the row bot's side."""
     from pd_runner.eval.outcome_matrix import build_outcome_details
 
-    details = build_outcome_details()
+    details = build_outcome_details(source="engine")
     d = details[("DupocBot", "PrudentBot")]
     assert d["theorem"] == "outcome_PrudentBot_vs_DupocBot"
     assert d["budget_sensitive"] and not d["staggered"]

@@ -49,7 +49,7 @@ theorem MirrorBot_plays_D_against_LegibleBot_floor (kOut kIn fuel : Nat)
     play (fuel + 3) MirrorBot (LegibleBot kOut kIn) = some .D := by
   have h := LegibleBot_defects_floor kOut kIn fuel MirrorBot hszM
   show eval (fuel + 3) MirrorBot (LegibleBot kOut kIn) MirrorBot = some .D
-  simpa [eval, MirrorBot, Prog.subst] using h
+  simpa [eval, MirrorBot, Prog.subst] using! h
 
 /-- TitForTatBot's CooperateBot probe sees the floor-defection and punishes. -/
 theorem TitForTatBot_plays_D_against_LegibleBot_floor (kOut kIn fuel : Nat)
@@ -65,7 +65,7 @@ theorem TitForTatBot_plays_D_against_LegibleBot_floor (kOut kIn fuel : Nat)
         CooperateBot .D hL)
   have hPlay := play_ite_from_guard fuel 3 TitForTatBot (LegibleBot kOut kIn)
     (.sim .opp (.bot CooperateBot)) (.const .C) (.const .D) .C .D (by rfl) hGuard
-  simpa [eval] using hPlay
+  simpa [eval] using! hPlay
 
 /-- DBot's DefectBot probe sees the floor-defection, so DBot cooperates (it only
     exploits bots that cooperate with defectors). -/
@@ -82,7 +82,7 @@ theorem DBot_plays_C_against_LegibleBot_floor (kOut kIn fuel : Nat)
         DefectBot .D hL)
   have hPlay := play_ite_from_guard fuel 3 DBot (LegibleBot kOut kIn)
     (.sim .opp (.bot DefectBot)) (.const .D) (.const .C) .C .D (by rfl) hGuard
-  simpa [eval] using hPlay
+  simpa [eval] using! hPlay
 
 /-- OBot's first probe (vs CooperateBot) already sees the floor-defection and
     OBot defects. -/
@@ -101,7 +101,7 @@ theorem OBot_plays_D_against_LegibleBot_floor (kOut kIn fuel : Nat)
     (.sim .opp (.bot CooperateBot))
     (.ite (.sim .opp (.bot DefectBot)) .C (.const .C) (.const .D)) (.const .D)
     .C .D (by rfl) hGuard
-  simpa [eval] using hPlay
+  simpa [eval] using! hPlay
 
 /-- EBot walks all three probes (DefectBot, CooperateBot, MirrorBot), sees the
     floor-defection each time, and defects. -/
@@ -138,7 +138,7 @@ theorem EBot_plays_D_against_LegibleBot_floor (kOut kIn fuel : Nat)
       (.ite (.sim .opp (.bot MirrorBot)) .C (.const .C) (.const .D)) = some .D := by
     have h := eval_ite_from_guard (fuel + 3) EBot (LegibleBot kOut kIn)
       (.sim .opp (.bot MirrorBot)) (.const .C) (.const .D) .C .D hG3
-    simpa [Nat.add_assoc, eval] using h
+    simpa [Nat.add_assoc, eval] using! h
   have hInner2 : eval (fuel + 5) EBot (LegibleBot kOut kIn)
       (.ite (.sim .opp (.bot CooperateBot)) .C (.const .C)
         (.ite (.sim .opp (.bot MirrorBot)) .C (.const .C) (.const .D))) = some .D := by
@@ -146,13 +146,13 @@ theorem EBot_plays_D_against_LegibleBot_floor (kOut kIn fuel : Nat)
       (.sim .opp (.bot CooperateBot)) (.const .C)
       (.ite (.sim .opp (.bot MirrorBot)) .C (.const .C) (.const .D)) .C .D hG2
     rw [show fuel + 4 + 1 = fuel + 5 by omega] at h
-    simpa [hInner3] using h
+    simpa [hInner3] using! h
   have hPlay := play_ite_from_guard fuel 5 EBot (LegibleBot kOut kIn)
     (.sim .opp (.bot DefectBot)) (.const .D)
     (.ite (.sim .opp (.bot CooperateBot)) .C (.const .C)
       (.ite (.sim .opp (.bot MirrorBot)) .C (.const .C) (.const .D)))
     .C .D (by rfl) hG1
-  simpa [hInner2] using hPlay
+  simpa [hInner2] using! hPlay
 
 /-- CIMCIC's implication guard hits the size floor against a same-budget
     LegibleBot. -/
@@ -247,6 +247,7 @@ theorem LegibleBot_cooperates_Pf (X : Nat → Prog) (B : Nat)
     show 8192 * (pm k + (φ k).size + Nat.log2 (id k) + 8) ≤ id k
     rw [hφsz, hpmval]
     simp only [id]
+    simp only [Nat.mul_add, ← Nat.mul_assoc, ← Nat.add_assoc, Nat.reduceMul] at hbig
     omega
   obtain ⟨k₂, hk₂⟩ := pblt_engine φ id pm (max Kc Ksz) hLoeb hsz
   exact ⟨k₂, hk₂⟩

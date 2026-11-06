@@ -52,7 +52,8 @@ theorem outcome_LegibleBot_vs_CIMCIC :
     have hbox : Pf (2*k+64) (.box k (.plays (LegibleBot (2*k+64) k) (CIMCIC k) .C)) :=
       LegibleBot_playC_gives_box k n (CIMCIC k) hn
     -- the O(log k) atom certificate: search_t citing the fired guard
-    have hatom : AtomProvable (c_leaf + c_guard (2*k+64) + c_node)
+    have hatom : AtomProvable (c_leaf + c_guard (2*k+64) + c_node
+          + (Formula.plays (LegibleBot (2*k+64) k) (CIMCIC k) .C).size)
         (.plays (LegibleBot (2*k+64) k) (CIMCIC k) .C) :=
       ⟨PlaysProof.search_t hbox PlaysProof.const, Nat.le_refl _⟩
     -- CIMCIC's guard is provable at its own budget k

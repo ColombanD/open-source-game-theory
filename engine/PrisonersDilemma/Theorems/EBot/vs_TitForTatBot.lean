@@ -26,7 +26,7 @@ theorem outcome_EBot_vs_TitForTatBot :
             (.ite (.sim .opp (.bot CooperateBot)) Action.C (.const Action.C) (.ite (.sim .opp (.bot MirrorBot)) Action.C (.const Action.C) (.const Action.D)))
             Action.C Action.D
             (by rfl) hGuard1
-        simpa [eval, hGuard2] using hPlay
+        simpa [eval, hGuard2] using! hPlay
     -- hGuard3 reduces to "EBot vs (.bot CooperateBot)". EBot's outer guard
     -- sees (.bot CooperateBot) cooperate against DefectBot, so it defects.
     have hOuterCB : eval (fuel + 4) EBot (.bot CooperateBot) (.sim .opp (.bot DefectBot)) = some .C := by
@@ -38,7 +38,7 @@ theorem outcome_EBot_vs_TitForTatBot :
         (.ite (.sim .opp (.bot CooperateBot)) Action.C (.const Action.C) (.ite (.sim .opp (.bot MirrorBot)) Action.C (.const Action.C) (.const Action.D)))
         Action.C Action.C
         (by unfold EBot; rfl) hOuterCB
-      simpa [eval] using hPlay
+      simpa [eval] using! hPlay
     have hGuard3 : eval (fuel + 6) TitForTatBot EBot (.sim .opp (.bot CooperateBot)) = some .D :=
       eval_sim_opp_bot_of_play _ _ _ _ _ hEBotBotCB
     have hB : play (fuel + 7) TitForTatBot EBot = some .D := by
@@ -48,7 +48,7 @@ theorem outcome_EBot_vs_TitForTatBot :
             (.const Action.D)
             Action.C Action.D
             (by rfl) hGuard3
-        simpa [eval] using hPlay
+        simpa [eval] using! hPlay
     exact outcome_of_plays _ _ _ _ _ hA hB
 
 end PD.Theorems

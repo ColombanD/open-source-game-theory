@@ -1,0 +1,320 @@
+import ArithS.Bridge.Neg
+
+/-!
+# ArithS.Agent — T2-AGENT: engine certificates are runs of the arithmetized evaluator (roadmap M3, step (e))
+
+**Every evaluation certificate of `S` is a run of the arithmetized evaluator at the same
+budgets, given agreement on the consulted `□_k` facts; unconditional for search-free
+programs.**
+
+The engine's `PlaysProof me opp body a n` (`ProofSystem.lean`) is the certificate that, in
+the frame `(me, opp)`, the body plays `a` in `n` evaluation steps; its `search_t`/`search_f`
+arms consult the proof system on the CLOSED guard `φ.subst me opp` (a `Pf k` derivation,
+resp. a `Pf m` refutation). The arithmetized evaluator `EvalGraph N ⌜me⌝ ⌜opp⌝ ⌜body⌝ a`
+(`ArithS.Eval`) consults instead `LenBox TAct k (guardCode (templateCode φ) (progCode me)
+(progCode opp))` — the code of the template `template φ` filled with the players' descriptions,
+which on the fragment IS the template code of the closed instantiation
+(`guardOf_eq_templateCode_subst`, from `templateCode_subst`).
+
+* `guardOf φ me opp := guardCode (templateCode φ) (progCode me) (progCode opp)` — the consulted guard;
+  `guardOf_eq_quote_sentenceAt` (it is `⌜sentenceAt me opp φ⌝`), `guardOf_eq_templateCode_subst`.
+* `GuardAgreeT` / `GuardAgreeF` — the two directions of "the engine's `Pf` verdict and the
+  arithmetized `□_k` verdict agree on the consulted guards": a `Pf k` derivation of the
+  closed guard yields a `TAct`-proof of length `≤ k` of its realization (bounded D1 — a
+  HYPOTHESIS, named, never an axiom: T2-NEG shows no budget-keeping transfer exists in
+  general, so this is exactly where Critch's (d) enters), and a `Pf m` refutation excludes
+  one. `models_sentenceAt_of_lenBox` is the one-sided fact PA-soundness gives for free: a
+  found arithmetized guard is TRUE in `ℕ`. Engine-refutability plus engine soundness
+  (`PD.Pf_sound`) gives falsity of the ENGINE reading `Formula.interp` — a different
+  sentence (`play`, not `EvalGraph`) — so `GuardAgreeF` is not derived from soundness here.
+* `playsProof_evalGraph` — THE THEOREM, on the MODEST fragment (`modestP`: the search-bot
+  fragment `fragP` of `ArithS.Code` with `.sim` arguments a placeholder or a closed
+  program — the engine's own modesty condition of `Decidability/T43ModestUniverse`, true of
+  the whole zoo). Modesty is what makes the fragment CLOSED under the `.sim` step: the new
+  frame `(p.subst me opp, q.subst me opp)` is drawn from `{me, opp, p, q}`. The plain
+  `fragP` is NOT closed under `subst` — `fragP (p.subst me opp)` needs `atomicP me` as
+  soon as `p` contains a searcher whose template names a placeholder, and no searcher is
+  `closedP` (its template names `.self`/`.opp`).
+* `playsProof_evalGraph_searchFree` — the UNCONDITIONAL version for search-free players
+  and body (`Prog.hasSearch = false`): no guard is ever consulted, so no oracle hypothesis.
+* `atomProvable_evalGraph` — the atom form (`AtomProvable k (.plays me opp a)`).
+* `models_sentenceAt_plays` — the TRUTH equation for the realized play-atom on PROPER programs
+  (players that are not bare pronouns; searchers included):
+  `ℕ ⊧ sentenceAt me' opp' (.plays me opp a) ↔ ∃ N, EvalGraph N ⌜me⌝ ⌜opp⌝ ⌜me⌝ a` (the frame
+  `me'`, `opp'` is irrelevant for proper programs).
+
+## Remaining gap (recorded, not forced)
+
+From TRUTH of `sentenceAt me' opp' (.plays me opp a)` to `TAct ⊢ sentenceAt …` (Σ₁-completeness):
+Foundation's `sigma_one_completeness` is stated for theories over `ℒₒᵣ`; `TAct` is a
+theory over `LAct`, and the realized sentence names the action constants `c_C`, `c_D`,
+which `TAct` leaves uninterpreted (only `c_C ≠ c_D` — the τ-symmetry of
+`ArithS.Symmetry` depends on it), so the sentence is not the `emb`-image of an `ℒₒᵣ`
+sentence and cannot be transported. A proof would reason generically in the two constants;
+it is not attempted here.
+-/
+
+set_option linter.constructorNameAsVariable false
+
+namespace ArithS
+
+open FFL FFL.FirstOrder Arithmetic Bootstrapping
+open PeanoMinus ISigma0 ISigma1
+open LAct
+
+/-! ### The consulted guard -/
+
+/-- The guard code the arithmetized evaluator consults at the node `.search k φ p q` in the
+frame `(me, opp)`: the template code of `φ` filled with the players' descriptions. -/
+noncomputable def guardOf (φ : PD.Formula) (me opp : PD.Prog) : ℕ :=
+  guardCode (templateCode φ) (progCode me) (progCode opp)
+
+lemma guardOf_eq_quote_sentenceAt (φ : PD.Formula) (me opp : PD.Prog) (hφ : noSelfIdxF φ = true := by noSelfIdx_tac) :
+    guardOf φ me opp = ⌜sentenceAt me opp φ⌝ :=
+  (quote_sentenceAt me opp φ hφ).symm
+
+/-- On the fragment the consulted guard IS the template code of the CLOSED instantiation
+`φ.subst me opp` — the formula the engine's `search_t`/`search_f` premises are about. -/
+lemma guardOf_eq_templateCode_subst {me opp : PD.Prog} (hme : me ≠ .self ∧ me ≠ .opp)
+    (hopp : opp ≠ .self ∧ opp ≠ .opp) (φ : PD.Formula) (h : fragF φ = true)
+    (hme' : noSelfIdxP me = true := by noSelfIdx_tac) (hopp' : noSelfIdxP opp = true := by noSelfIdx_tac) :
+    guardOf φ me opp = templateCode (φ.subst me opp) := by
+  rw [templateCode_subst hme hopp hme' hopp' φ h, substTemplate_of_template (isSemiformula_templateCode φ)]
+  rfl
+
+/-! ### The oracle hypotheses -/
+
+
+/-- **Soundness of a found guard**: if the arithmetized evaluator finds the guard, its
+realization is TRUE in `ℕ` (`TAct` is sound: `models_TAct`). -/
+theorem models_sentenceAt_of_lenBox {φ : PD.Formula} {me opp : PD.Prog} {k : ℕ}
+    (h : LenBox TAct k (guardOf φ me opp)) (hφ : noSelfIdxF φ = true := by noSelfIdx_tac) :
+    ℕ↓[LAct] ⊧ sentenceAt me opp φ := by
+  rw [guardOf_eq_quote_sentenceAt φ me opp hφ, lenBox_nat] at h
+  exact models_of_provable models_TAct (provable_iff_provable.mp h.provable)
+
+
+/-! ### Actions -/
+
+lemma actCode_inj {r a : PD.Action} (h : actCode r = actCode a) : r = a := by
+  cases r <;> cases a <;> first | rfl | exact absurd h (by decide)
+
+lemma actCode_eq_of_beq {r a : PD.Action} (h : (r == a) = true) : actCode r = actCode a := by
+  cases r <;> cases a <;> first | rfl | exact absurd h (by decide)
+
+lemma actCode_ne_of_beq_false {r a : PD.Action} (h : (r == a) = false) : actCode r ≠ actCode a := by
+  cases r <;> cases a <;> first | exact absurd h (by decide) | decide
+
+/-! ### The modest fragment -/
+
+/-- The MODEST search-bot fragment: `fragP` with every `.sim` argument a placeholder or a
+closed program (`atomicP`). This is the engine's modesty condition
+(`Decidability/T43ModestUniverse`), true of the whole zoo, and it is what closes the
+fragment under the `.sim` step's substitution. -/
+def modestP : PD.Prog → Bool
+  | .const _ => true
+  | .self => true
+  | .opp => true
+  | .bot p => modestP p
+  | .sim p q => atomicP p && atomicP q && modestP p && modestP q
+  | .ite b _ p q => modestP b && modestP p && modestP q
+  | .search _ φ p q => fragF φ && modestP p && modestP q
+  | .tvote _ _ _ _ => false
+  | .sys _ _ => false
+  | .selfIdx _ => false
+
+theorem fragP_of_modestP : ∀ p : PD.Prog, modestP p = true → fragP p = true
+  | .const _, _ => rfl
+  | .self, _ => rfl
+  | .opp, _ => rfl
+  | .bot p, h => fragP_of_modestP p h
+  | .sim p q, h => by
+    simp only [modestP, Bool.and_eq_true] at h
+    simp only [fragP, fragP_of_modestP p h.1.2, fragP_of_modestP q h.2, Bool.and_self]
+  | .ite b _ p q, h => by
+    simp only [modestP, Bool.and_eq_true] at h
+    simp only [fragP, fragP_of_modestP b h.1.1, fragP_of_modestP p h.1.2, fragP_of_modestP q h.2,
+      Bool.and_self]
+  | .search _ φ p q, h => by
+    simp only [modestP, Bool.and_eq_true] at h
+    simp only [fragP, h.1.1, fragP_of_modestP p h.1.2, fragP_of_modestP q h.2, Bool.and_self]
+  | .tvote _ _ _ _, h => by simp [modestP] at h
+  | .sys _ _, h => by simp [modestP] at h
+  | .selfIdx _, h => by simp [modestP] at h
+
+/-- A player is a program, not a pronoun (the side condition of `progCode_subst`). -/
+def ProperPlayer (p : PD.Prog) : Prop := p ≠ .self ∧ p ≠ .opp
+
+lemma properPlayer_of_closedP {p : PD.Prog} (h : closedP p = true) : ProperPlayer p :=
+  ⟨closedP_ne_self h, closedP_ne_opp h⟩
+
+/-- A modest program has no dangling pronoun (`fragP` excludes the tau constructors). -/
+lemma noSelfIdxP_of_modestP {p : PD.Prog} (h : modestP p = true) : noSelfIdxP p = true :=
+  noSelfIdxP_of_fragP p (fragP_of_modestP p h)
+
+
+/-- `subst` of an atomic program is `me`, `opp`, or the (closed) program itself. -/
+lemma subst_of_atomicP {p : PD.Prog} (hp : atomicP p = true) (me opp : PD.Prog) :
+    p.subst me opp = me ∨ p.subst me opp = opp ∨ (closedP p = true ∧ p.subst me opp = p) := by
+  simp only [atomicP, Bool.or_eq_true, beq_iff_eq] at hp
+  rcases hp with (rfl | rfl) | hc
+  · exact Or.inl rfl
+  · exact Or.inr (Or.inl rfl)
+  · exact Or.inr (Or.inr ⟨hc, subst_of_closedP p me opp hc⟩)
+
+/-! ### The evaluation invariant -/
+
+/-- The invariant carried along a derivation: proper modest players, a modest body, and
+(when `sf = true`) no search node in any of them. -/
+def Inv (sf : Bool) (me opp body : PD.Prog) : Prop :=
+  ProperPlayer me ∧ ProperPlayer opp ∧ modestP me = true ∧ modestP opp = true ∧ modestP body = true ∧
+    (sf = true → me.hasSearch = false ∧ opp.hasSearch = false ∧ body.hasSearch = false)
+
+namespace Inv
+
+variable {sf : Bool} {me op : PD.Prog}
+
+lemma self (h : Inv sf me op .self) : Inv sf me op me :=
+  ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1, h.2.2.1, fun hs ↦ ⟨(h.2.2.2.2.2 hs).1, (h.2.2.2.2.2 hs).2.1, (h.2.2.2.2.2 hs).1⟩⟩
+
+lemma opp (h : Inv sf me op .opp) : Inv sf me op op :=
+  ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1, h.2.2.2.1,
+    fun hs ↦ ⟨(h.2.2.2.2.2 hs).1, (h.2.2.2.2.2 hs).2.1, (h.2.2.2.2.2 hs).2.1⟩⟩
+
+lemma bot {p : PD.Prog} (h : Inv sf me op (.bot p)) : Inv sf me op p :=
+  ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2.1,
+    fun hs ↦ ⟨(h.2.2.2.2.2 hs).1, (h.2.2.2.2.2 hs).2.1, by simpa [PD.Prog.hasSearch] using (h.2.2.2.2.2 hs).2.2⟩⟩
+
+lemma ite {b p q : PD.Prog} {a : PD.Action} (h : Inv sf me op (.ite b a p q)) :
+    Inv sf me op b ∧ Inv sf me op p ∧ Inv sf me op q := by
+  obtain ⟨hme, hop, hmm, hmo, hmb, hs⟩ := h
+  simp only [modestP, Bool.and_eq_true] at hmb
+  have hs' : sf = true → me.hasSearch = false ∧ op.hasSearch = false ∧
+      (b.hasSearch = false ∧ p.hasSearch = false ∧ q.hasSearch = false) := fun h ↦ by
+    obtain ⟨h1, h2, h3⟩ := hs h
+    simp only [PD.Prog.hasSearch, Bool.or_eq_false_iff] at h3
+    exact ⟨h1, h2, h3.1.1, h3.1.2, h3.2⟩
+  exact ⟨⟨hme, hop, hmm, hmo, hmb.1.1, fun h ↦ ⟨(hs' h).1, (hs' h).2.1, (hs' h).2.2.1⟩⟩,
+    ⟨hme, hop, hmm, hmo, hmb.1.2, fun h ↦ ⟨(hs' h).1, (hs' h).2.1, (hs' h).2.2.2.1⟩⟩,
+    ⟨hme, hop, hmm, hmo, hmb.2, fun h ↦ ⟨(hs' h).1, (hs' h).2.1, (hs' h).2.2.2.2⟩⟩⟩
+
+/-- A search node is never reached under `sf = true`; otherwise both branches inherit. -/
+lemma search {k : ℕ} {φ : PD.Formula} {p q : PD.Prog} (h : Inv sf me op (.search k φ p q)) :
+    sf = false ∧ Inv sf me op p ∧ Inv sf me op q := by
+  obtain ⟨hme, hop, hmm, hmo, hmb, hs⟩ := h
+  have hsf : sf = false := by
+    cases sf
+    · rfl
+    · exact absurd (hs rfl).2.2 (by simp [PD.Prog.hasSearch])
+  simp only [modestP, Bool.and_eq_true] at hmb
+  refine ⟨hsf, ⟨hme, hop, hmm, hmo, hmb.1.2, ?_⟩, ⟨hme, hop, hmm, hmo, hmb.2, ?_⟩⟩ <;>
+    exact fun h ↦ absurd (hsf.symm.trans h) Bool.false_ne_true
+
+lemma tvote {v : PD.VoteList} {θ : ℕ} {p q : PD.Prog} (h : Inv sf me op (.tvote v θ p q)) : False := by
+  simpa [modestP] using h.2.2.2.2.1
+
+lemma sys {defs : PD.ProgList} {i : ℕ} (h : Inv sf me op (.sys defs i)) : False := by
+  simpa [modestP] using h.2.2.2.2.1
+
+/-- The body of a `.sim` node is one atomic program at a time. -/
+lemma sim_arg {p : PD.Prog} (h : Inv sf me op p) (hp : atomicP p = true) :
+    ProperPlayer (p.subst me op) ∧ modestP (p.subst me op) = true ∧
+      (sf = true → (p.subst me op).hasSearch = false) := by
+  obtain ⟨hme, hop, hmm, hmo, hmp, hs⟩ := h
+  rcases subst_of_atomicP hp me op with e | e | ⟨hc, e⟩
+  · rw [e]; exact ⟨hme, hmm, fun h ↦ (hs h).1⟩
+  · rw [e]; exact ⟨hop, hmo, fun h ↦ (hs h).2.1⟩
+  · rw [e]; exact ⟨properPlayer_of_closedP hc, hmp, fun h ↦ (hs h).2.2⟩
+
+/-- **Closure under the `.sim` step**: the new frame `(p.subst me op, q.subst me op)` with
+body `p.subst me op` satisfies the invariant. -/
+lemma sim {p q : PD.Prog} (h : Inv sf me op (.sim p q)) :
+    Inv sf (p.subst me op) (q.subst me op) (p.subst me op) := by
+  obtain ⟨hme, hop, hmm, hmo, hmb, hs⟩ := h
+  simp only [modestP, Bool.and_eq_true] at hmb
+  have hs' : sf = true → me.hasSearch = false ∧ op.hasSearch = false ∧
+      (p.hasSearch = false ∧ q.hasSearch = false) := fun h ↦ by
+    obtain ⟨h1, h2, h3⟩ := hs h
+    simp only [PD.Prog.hasSearch, Bool.or_eq_false_iff] at h3
+    exact ⟨h1, h2, h3⟩
+  have hp : Inv sf me op p := ⟨hme, hop, hmm, hmo, hmb.1.2, fun h ↦ ⟨(hs' h).1, (hs' h).2.1, (hs' h).2.2.1⟩⟩
+  have hq : Inv sf me op q := ⟨hme, hop, hmm, hmo, hmb.2, fun h ↦ ⟨(hs' h).1, (hs' h).2.1, (hs' h).2.2.2⟩⟩
+  obtain ⟨pp, mp, sp⟩ := sim_arg hp hmb.1.1.1
+  obtain ⟨pq, mq, sq⟩ := sim_arg hq hmb.1.1.2
+  exact ⟨pp, pq, mp, mq, mp, fun h ↦ ⟨sp h, sq h, sp h⟩⟩
+
+end Inv
+
+/-! ### The theorem -/
+
+
+/-! ### The truth equation for the realized play-atom -/
+
+lemma val_cl {n : ℕ} (t : ClosedSemiterm LAct 0) (b : Fin n → ℕ) :
+    (cl t : Semiterm LAct Empty n).val (s := stdReadingNat) b Empty.elim = t.val (s := stdReadingNat) ![] Empty.elim := by
+  unfold cl
+  rw [Semiterm.val_castLE, Subsingleton.elim (fun x : Fin 0 ↦ b (x.castLE (Nat.zero_le n))) ![]]
+
+lemma stdReadingNat_rel_eq (v : Fin 2 → ℕ) :
+    stdReadingNat.rel (Language.Eq.eq : LAct.Rel 2) v ↔ v 0 = v 1 := Iff.rfl
+
+/-- `relDesc` in `ℕ` is the graph of `revalue`. -/
+lemma eval_relDesc (v : Fin 4 → ℕ) :
+    Semiformula.Eval (s := stdReadingNat) v Empty.elim relDesc ↔ v 0 = revalue (v 1) (v 2) (v 3) := by
+  unfold relDesc
+  rw [Semiformula.eval_lMap, stdReadingNat_lMap_emb]
+  exact revalue_defined.df v
+
+/-- `evalG` in `ℕ` is `EvalGraph`. -/
+lemma eval_evalG (v : Fin 5 → ℕ) :
+    Semiformula.Eval (s := stdReadingNat) v Empty.elim evalG ↔ EvalGraph (v 0) (v 1) (v 2) (v 3) (v 4) := by
+  unfold evalG
+  rw [Semiformula.eval_lMap, stdReadingNat_lMap_emb]
+  exact evalGraph_defined.df v
+
+/-- A closed description in `ℕ` pins the program: `∃ d, d = canonical c ∧ x = revalue (revalueU c) (revalueW c) d`
+is `x = c`. -/
+lemma eval_closedDesc (c : ℕ) (b : Fin 7 → ℕ) :
+    Semiformula.Eval (s := stdReadingNat) b Empty.elim (closedDesc c) ↔ b 0 = c := by
+  unfold closedDesc descF
+  simp only [Semiformula.eval_ex, LogicalConnective.HomClass.map_and, LogicalConnective.Prop.and_eq,
+    Semiformula.eval_rel, Semiformula.eval_substs, eval_relDesc, stdReadingNat_rel_eq, Function.comp_def,
+    Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two, Matrix.cons_val_three,
+    Matrix.cons_val_succ, Matrix.vecHead, Matrix.vecTail, Semiterm.val_bvar, val_cl, val_canonicalMeta]
+  constructor
+  · rintro ⟨x, rfl, h⟩
+    rwa [revalue_val_desc] at h
+  · intro h
+    exact ⟨canonical c, rfl, by rw [revalue_val_desc]; exact h⟩
+
+/-- **The truth equation**: for PROPER programs (not the bare pronouns `.self`/`.opp` — every
+zoo bot, searchers included; `closedP` is NOT required, see `properPlayer_of_closedP`) the realized
+play-atom holds in `ℕ` iff the arithmetized `play` yields `a`; the frame `(me', opp')` is
+irrelevant. -/
+theorem models_sentenceAt_plays (me' opp' me opp : PD.Prog) (a : PD.Action)
+    (hme : ProperPlayer me) (hopp : ProperPlayer opp) :
+    ℕ↓[LAct] ⊧ sentenceAt me' opp' (.plays me opp a) ↔
+      ∃ N, EvalGraph N (progCode me) (progCode opp) (progCode me) (actCode a) := by
+  rw [models_iff]
+  unfold sentenceAt Semiformula.Realize
+  rw [template_plays]
+  unfold progGraph
+  rw [progAux_of_ne hme.1 hme.2, progAux_of_ne hopp.1 hopp.2]
+  simp only [Semiformula.eval_substs, Semiformula.eval_ex, LogicalConnective.HomClass.map_and,
+    LogicalConnective.Prop.and_eq, eval_closedDesc, eval_evalG, Function.comp_def,
+    Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two, Matrix.cons_val_three,
+    Matrix.cons_val_four, Matrix.cons_val_succ, Matrix.vecHead, Matrix.vecTail, Semiterm.val_bvar,
+    val_cl, val_actT]
+  constructor
+  · rintro ⟨x, y, N, rfl, rfl, h⟩
+    exact ⟨N, h⟩
+  · rintro ⟨N, h⟩
+    exact ⟨_, _, N, rfl, rfl, h⟩
+
+/-! ### Sanity: the zoo is modest -/
+
+
+theorem properPlayer_DupocBot (k : ℕ) : ProperPlayer (PD.Bots.DupocBot k) := ⟨by simp [PD.Bots.DupocBot], by simp [PD.Bots.DupocBot]⟩
+
+end ArithS
+

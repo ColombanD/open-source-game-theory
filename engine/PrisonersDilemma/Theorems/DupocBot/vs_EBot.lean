@@ -24,8 +24,11 @@ namespace PD.Theorems
 theorem outcome_DupocBot_vs_EBot :
     OutcomeSpec .eventual 5
       DupocBot (fun _ => EBot) (some (.D, .C)) := by
-  refine ⟨1, fun k hlt fuel => ?_⟩
-  have hk : 2 ≤ k := hlt
+  -- EBot's second probe certificate pays the atom's size (`Nat.log2 k + 12`, the recost
+  -- of 2026-09-16), so the threshold comes from `linear_log2_add_le`.
+  obtain ⟨K, hK⟩ := linear_log2_add_le 1 12
+  refine ⟨K, fun k hlt fuel => ?_⟩
+  have hk : Nat.log2 k + 12 ≤ k := by have := hK k (Nat.le_of_lt hlt); omega
   have hA : play (fuel + 5) (DupocBot k) EBot = some .D := by
     simpa [Nat.add_assoc] using DupocBot_plays_D_against_EBot k (fuel + 3)
   have hB : play (fuel + 5) EBot (DupocBot k) = some .C :=

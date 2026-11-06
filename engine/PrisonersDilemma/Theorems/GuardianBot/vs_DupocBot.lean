@@ -16,14 +16,15 @@ namespace PD.Theorems
 
 -- === GuardianBot side: cooperates (guard refuted) ===
 
-theorem gd_dupoc_C_vs_botCB (k fuel : Nat) (hk : 2 ≤ k) :
+-- The `.bot CooperateBot` certificate pays the atom's size since the recost of
+-- 2026-09-16: `Nat.log2 k + 12 ≤ k` (it was `2 ≤ k`), threaded through the `gd_` chain.
+theorem gd_dupoc_C_vs_botCB (k fuel : Nat) (hk : Nat.log2 k + 12 ≤ k) :
     play (fuel + 2) (DupocBot k) (.bot CooperateBot) = some .C := by
   have hCB : proofSearch k (.plays (.bot CooperateBot) (DupocBot k) .C) = true :=
-    (proofSearch_spec _ _).2 (Pf.atom
-      ⟨PlaysProof.bot PlaysProof.const, by simp only [c_leaf, c_node]; omega⟩)
+    proofSearch_true_for_bot_CooperateBot_ge k hk
   exact DupocBot_plays_C_against_bot_CooperateBot k fuel hCB
 
-theorem gd_interp_dupoc_D_vs_botCB_false (k : Nat) (hk : 2 ≤ k) :
+theorem gd_interp_dupoc_D_vs_botCB_false (k : Nat) (hk : Nat.log2 k + 12 ≤ k) :
     ¬ (Formula.plays (DupocBot k) (.bot CooperateBot) .D).interp := by
   rintro ⟨n, hn⟩
   have hC : play (n + 2) (DupocBot k) (.bot CooperateBot) = some .C :=
@@ -32,13 +33,13 @@ theorem gd_interp_dupoc_D_vs_botCB_false (k : Nat) (hk : 2 ≤ k) :
     eval_mono_le hn (n + 2) (by omega)
   rw [hC] at hD; simp at hD
 
-theorem gd_guardian_guard_false (k : Nat) (hk : 2 ≤ k) :
+theorem gd_guardian_guard_false (k : Nat) (hk : Nat.log2 k + 12 ≤ k) :
     proofSearch k (.plays (DupocBot k) (.bot CooperateBot) .D) = false := by
   cases hps : proofSearch k (.plays (DupocBot k) (.bot CooperateBot) .D) with
   | true  => exact absurd (proofSearch_sound _ _ hps) (gd_interp_dupoc_D_vs_botCB_false k hk)
   | false => rfl
 
-theorem gd_GuardianBot_C_vs_DupocBot (k fuel : Nat) (hk : 2 ≤ k) :
+theorem gd_GuardianBot_C_vs_DupocBot (k fuel : Nat) (hk : Nat.log2 k + 12 ≤ k) :
     play (fuel + 2) (GuardianBot k) (DupocBot k) = some .C := by
   have hg := gd_guardian_guard_false k hk
   show eval (fuel + 2) (GuardianBot k) (DupocBot k) (GuardianBot k) = some .C
@@ -168,9 +169,10 @@ theorem gd_DupocBot_D_vs_GuardianBot (k fuel : Nat) :
 theorem llm_outcome_GuardianBot_vs_DupocBot :
     OutcomeSpec .eventual 2
       GuardianBot DupocBot (some (.C, .D)) := by
-  refine ⟨2, fun k hk fuel => outcome_mono_le (N := 2) ?_ (fuel + 2) (by omega)⟩
+  obtain ⟨K, hK⟩ := linear_log2_add_le 1 12
+  refine ⟨K, fun k hk fuel => outcome_mono_le (N := 2) ?_ (fuel + 2) (by omega)⟩
   have hA : play 2 (GuardianBot k) (DupocBot k) = some .C :=
-    gd_GuardianBot_C_vs_DupocBot k 0 (by omega)
+    gd_GuardianBot_C_vs_DupocBot k 0 (by have := hK k (Nat.le_of_lt hk); omega)
   have hB : play 2 (DupocBot k) (GuardianBot k) = some .D :=
     gd_DupocBot_D_vs_GuardianBot k 0
   exact outcome_of_plays _ _ _ _ _ hA hB

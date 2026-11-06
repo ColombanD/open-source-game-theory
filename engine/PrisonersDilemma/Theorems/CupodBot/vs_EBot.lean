@@ -16,10 +16,12 @@ namespace PD.Theorems
 @[outcome]
 theorem outcome_CupodBot_vs_EBot :
     OutcomeSpec .eventual 5 CupodBot (fun _ => EBot) (some (.C, .C)) := by
-  refine ⟨atom_cost 2, fun k hlt fuel => ?_⟩
+  -- The `.bot DefectBot` certificate pays the atom's size (`Nat.log2 k + 12`, the
+  -- recost of 2026-09-16), so the threshold comes from `linear_log2_add_le`.
+  obtain ⟨K, hK⟩ := linear_log2_add_le 1 12
+  refine ⟨K, fun k hlt fuel => ?_⟩
   have hk : proofSearch k (.plays (.bot DefectBot) (CupodBot k) .D) = true :=
-    (proofSearch_spec _ _).2 (Pf.atom ⟨PlaysProof.bot PlaysProof.const, by
-      simp [atom_cost] at hlt ⊢; omega⟩)
+    proofSearch_true_for_bot_DefectBot_ge k (by have := hK k (Nat.le_of_lt hlt); omega)
   have hA : play (fuel + 5) (CupodBot k) EBot = some .C := by
     have hg := proofSearch_false_for_EBot k hk
     show eval (fuel + 5) (CupodBot k) EBot (CupodBot k) = some .C

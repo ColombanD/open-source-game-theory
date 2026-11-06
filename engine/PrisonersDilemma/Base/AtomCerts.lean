@@ -64,14 +64,19 @@ The old `atom_complete` (`play fuel p q = some a → AtomProvable (atom_cost fue
 with its axiom: it was FALSE — an else-play of a failed search has certificates only ABOVE the
 failed budget (the `search_f` floor), and an anti-diagonal else-play has none at all
 (`T32Inconsistency.lean`). What survives, constructively:
-  * SEARCH-FREE runs certify at `3 ^ fuel` (`atom_complete_searchfree` — the honest bound;
-    the old `atom_cost fuel` never actually bounded branching runs, the axiom silently
+  * SEARCH-FREE runs certify at `3 ^ fuel + |φ|` (`atom_complete_searchfree` — the honest
+    bound; the old `atom_cost fuel` never actually bounded branching runs, the axiom silently
     covered the gap);
-  * FIRED top-level searches certify at `log2 k + 3` via `search_t` (`atom_search_t_top` /
-    `…_bot_top`) — cheap, since `search_t` cites the oracle rather than embedding the proof;
-  * FAILED top-level searches certify at `m + k + 2` via `search_f` (`atom_search_f_top` /
-    `…_bot_top`) given a refutation of the guard (`Pf.atomNeg`) — the floor `≥ k + 1`
-    is what consistency forces. Deeper runs compose these per site. -/
+  * FIRED top-level searches certify at `log2 k + 3 + |φ|` via `search_t`
+    (`atom_search_t_top` / `…_bot_top`) — cheap, since `search_t` cites the oracle rather than
+    embedding the proof;
+  * FAILED top-level searches certify at `m + k + 2 + |φ|` via `search_f`
+    (`atom_search_f_top` / `…_bot_top`) given a refutation of the guard (`Pf.atomNeg`) — the
+    floor `≥ k + 1` is what consistency forces. Deeper runs compose these per site.
+  Every bound carries the SIZE `|φ|` OF THE CONCLUSION ATOM (`(.plays me oppo a).size =
+  me.size + oppo.size + 1`) since the 2026-09-16 re-cost of `AtomProvable.mk` (`ProofSystem.lean`
+  §3): the atom rule pays for the programs its conclusion names, which is what makes a
+  budget-keeping arithmetical realization possible (`ArithS.Neg`). -/
 
 theorem cert_searchfree : ∀ (fuel : Nat) (me oppo body : Prog) (a : Action),
     me.hasSearch = false → oppo.hasSearch = false → body.hasSearch = false →
@@ -137,28 +142,32 @@ theorem cert_searchfree : ∀ (fuel : Nat) (me oppo body : Prog) (a : Action),
     `atom_complete`, at the honest bound `3 ^ fuel`. -/
 theorem atom_complete_searchfree (p q : Prog) (a : Action) (fuel : Nat)
     (hp : p.hasSearch = false) (hq : q.hasSearch = false)
-    (h : play fuel p q = some a) : AtomProvable (3 ^ fuel) (.plays p q a) := by
+    (h : play fuel p q = some a) :
+    AtomProvable (3 ^ fuel + (Formula.plays p q a).size) (.plays p q a) := by
   obtain ⟨n, cert, hn⟩ := cert_searchfree fuel p q p a hp hq hp h
-  exact ⟨cert, hn⟩
+  exact ⟨cert, by omega⟩
 
 /-- FIRED top-level search (the Dupoc/Cupod shape): the guard's `S`-derivability at its own
     literal (`⊢_k guard`) certifies the then-play at `log2 k + 3` characters. -/
 theorem atom_search_t_top (k : Nat) (g : Formula) (aT aE : Action) (oppo : Prog)
     (hg : Pf k (g.subst (.search k g (.const aT) (.const aE)) oppo)) :
-    AtomProvable (Nat.log2 k + 3)
+    AtomProvable (Nat.log2 k + 3 + (Formula.plays (.search k g (.const aT) (.const aE)) oppo aT).size)
       (.plays (.search k g (.const aT) (.const aE)) oppo aT) := by
   refine ⟨PlaysProof.search_t hg PlaysProof.const, ?_⟩
-  show c_leaf + c_guard k + c_node ≤ Nat.log2 k + 3
+  show c_leaf + c_guard k + c_node + (Formula.plays (.search k g (.const aT) (.const aE)) oppo aT).size
+    ≤ Nat.log2 k + 3 + (Formula.plays (.search k g (.const aT) (.const aE)) oppo aT).size
   simp only [numCost, c_leaf, c_guard, c_node]
   omega
 
 /-- FIRED `.bot`-wrapped top-level search (the `.bot DupocBot` shape). -/
 theorem atom_search_t_bot_top (k : Nat) (g : Formula) (aT aE : Action) (oppo : Prog)
     (hg : Pf k (g.subst (.bot (.search k g (.const aT) (.const aE))) oppo)) :
-    AtomProvable (Nat.log2 k + 4)
+    AtomProvable (Nat.log2 k + 4 + (Formula.plays (.bot (.search k g (.const aT) (.const aE))) oppo aT).size)
       (.plays (.bot (.search k g (.const aT) (.const aE))) oppo aT) := by
   refine ⟨PlaysProof.bot (PlaysProof.search_t hg PlaysProof.const), ?_⟩
-  show c_leaf + c_guard k + c_node + c_node ≤ Nat.log2 k + 4
+  show c_leaf + c_guard k + c_node + c_node
+      + (Formula.plays (.bot (.search k g (.const aT) (.const aE))) oppo aT).size
+    ≤ Nat.log2 k + 4 + (Formula.plays (.bot (.search k g (.const aT) (.const aE))) oppo aT).size
   simp only [numCost, c_leaf, c_guard, c_node]
   omega
 
@@ -166,20 +175,23 @@ theorem atom_search_t_bot_top (k : Nat) (g : Formula) (aT aE : Action) (oppo : P
     FLOOR `≥ k + 1` (the cost pays the whole failed budget; consistency forces this). -/
 theorem atom_search_f_top (k m : Nat) (g : Formula) (aT aE : Action) (oppo : Prog)
     (hneg : Pf m (.neg (g.subst (.search k g (.const aT) (.const aE)) oppo))) :
-    AtomProvable (m + k + 2)
+    AtomProvable (m + k + 2 + (Formula.plays (.search k g (.const aT) (.const aE)) oppo aE).size)
       (.plays (.search k g (.const aT) (.const aE)) oppo aE) := by
   refine ⟨PlaysProof.search_f hneg PlaysProof.const, ?_⟩
-  show c_leaf + m + k + c_node ≤ m + k + 2
+  show c_leaf + m + k + c_node + (Formula.plays (.search k g (.const aT) (.const aE)) oppo aE).size
+    ≤ m + k + 2 + (Formula.plays (.search k g (.const aT) (.const aE)) oppo aE).size
   simp only [c_leaf, c_node]
   omega
 
 /-- FAILED `.bot`-wrapped top-level search. -/
 theorem atom_search_f_bot_top (k m : Nat) (g : Formula) (aT aE : Action) (oppo : Prog)
     (hneg : Pf m (.neg (g.subst (.bot (.search k g (.const aT) (.const aE))) oppo))) :
-    AtomProvable (m + k + 3)
+    AtomProvable (m + k + 3 + (Formula.plays (.bot (.search k g (.const aT) (.const aE))) oppo aE).size)
       (.plays (.bot (.search k g (.const aT) (.const aE))) oppo aE) := by
   refine ⟨PlaysProof.bot (PlaysProof.search_f hneg PlaysProof.const), ?_⟩
-  show c_leaf + m + k + c_node + c_node ≤ m + k + 3
+  show c_leaf + m + k + c_node + c_node
+      + (Formula.plays (.bot (.search k g (.const aT) (.const aE))) oppo aE).size
+    ≤ m + k + 3 + (Formula.plays (.bot (.search k g (.const aT) (.const aE))) oppo aE).size
   simp only [c_leaf, c_node]
   omega
 

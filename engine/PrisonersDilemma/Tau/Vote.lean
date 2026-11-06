@@ -10,7 +10,7 @@ compiled shapes (play-lemmas, false-bit lemmas, bridges, glue) lives in
 `Tau/Theorems/Helpers.lean`, per the Tau-layout doctrine; `eval_det` was promoted to
 `Base/ValuationSoundness.lean`.
 
-The **refined Def 4** (`Research/Notes/TAUBOTS.md`) is the uniform structural
+The **refined Def 4** (`docs/notes/TAUBOTS.md`) is the uniform structural
 SOURCE LIFT τ: lift base bot `A`'s code constructor-by-constructor, and let the player
 take ONE weighted vote over the COMPOUND per-hypothesis decisions
 
@@ -114,14 +114,13 @@ theorem eval_tvote_of_bits (me opponent : Prog) :
       ∃ N, eval N me opponent (tauPlayer v θ)
         = some (if θ ≤ massOf bs then Action.C else Action.D)
   | .nil, _, θ, .nil => by
-      simp only [massOf]
       cases θ with
       | zero =>
           refine ⟨2, ?_⟩
-          rw [if_pos (Nat.le_refl 0), tauPlayer, eval_tvote_zero 1]; rfl
+          rw [if_pos (Nat.zero_le _), tauPlayer, eval_tvote_zero 1]; rfl
       | succ m =>
           refine ⟨2, ?_⟩
-          rw [if_neg (by simp), tauPlayer, eval_tvote_nil 1 (by omega)]; rfl
+          rw [if_neg (by simp [massOf]), tauPlayer, eval_tvote_nil 1 (by omega)]; rfl
   | .cons w I rest, _, θ, .cons (a := a) (bs := bs) hI hrest => by
       cases θ with
       | zero =>
@@ -450,7 +449,7 @@ Def 4: `TauA(δ_B) = inst(A, δ_B)` behaviorally, which is what makes the vote a
 of `A` rather than some new agent built out of `A`'s parts.
 
 **Intentionally unconsumed**: this is a spec-level RESULT (like an outcome
-theorem), whose consumer is the design review and the thesis, not another proof —
+theorem), whose consumer is the design review and the paper, not another proof —
 zero in-tree uses is its correct state, not dead code.
 
 The retracted `TauEBot` (nested `tsearch`, θ inside the cascade) satisfies this at

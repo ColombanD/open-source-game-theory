@@ -1,4 +1,4 @@
-name: Lean Action CI
+name: Lean CI
 
 on:
   push:
@@ -6,11 +6,28 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  # The host: agent language, evaluator, bot zoo, rule-based S and its outcome theorems
+  # (`engine/`, default targets `PrisonersDilemma` + `OutcomeCheck`, i.e. the linter and census run).
+  engine:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v5
       - uses: leanprover/lean-action@v1
         with:
           lake-package-directory: engine
+          use-github-cache: true
+
+  # PA-S' (`arith/`): depends on Foundation (pinned) and on `../engine` as a path dependency, so it
+  # builds the engine too. Cold builds are long (the U10 construction alone is ~100k lines); the
+  # GitHub cache of `.lake` makes warm runs incremental. Default targets include the outcome and
+  # tau-row gates (`ArithSOutcomeCheck`, `ArithSTauCheck`).
+  arith:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v5
+      - uses: leanprover/lean-action@v1
+        with:
+          lake-package-directory: arith
+          use-github-cache: true
+          build-args: "--try-cache"

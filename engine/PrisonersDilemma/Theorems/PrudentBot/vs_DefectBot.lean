@@ -40,6 +40,6 @@ theorem outcome_PrudentBot_vs_DefectBot :
   have hA : play (fuel + 2) (PrudentBot k) DefectBot = some .D :=
     PrudentBot_plays_D_against_DefectBot k fuel
   have hB : play (fuel + 2) DefectBot (PrudentBot k) = some .D := by
-    simpa [Nat.add_comm] using play_DefectBot (fuel + 1) (PrudentBot k)
+    simpa [Nat.add_comm] using! play_DefectBot (fuel + 1) (PrudentBot k)
   exact outcome_of_plays _ _ _ _ _ hA hB
 end PD.Theorems

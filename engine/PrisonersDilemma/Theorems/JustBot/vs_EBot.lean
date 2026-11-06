@@ -66,16 +66,18 @@ theorem JustBot_plays_D_against_EBot (k fuel : Nat) :
   simp [eval, Prog.subst, Formula.subst, hg]
 
 /-- The `.bot CooperateBot` probe guard vs `.bot DupocBot` is Σ₁-certifiable at run
-    price, feeding `JustBot_plays_C_against_bot_CooperateBot` at every `k ≥ 2`. -/
-theorem proofSearch_true_bot_CooperateBot_vs_botDupoc (k : Nat) (hk : 2 ≤ k) :
+    price plus the atom's own size (`log2 k + 13`), feeding
+    `JustBot_plays_C_against_bot_CooperateBot` at every such `k`. -/
+theorem proofSearch_true_bot_CooperateBot_vs_botDupoc (k : Nat) (hk : Nat.log2 k + 13 ≤ k) :
     proofSearch k (.plays (.bot CooperateBot) (.bot (DupocBot k)) .C) = true :=
   (proofSearch_spec _ _).2 (Pf.atom
-    ⟨PlaysProof.bot PlaysProof.const, by simp only [c_leaf, c_node]; omega⟩)
+    ⟨PlaysProof.bot PlaysProof.const, by
+      simp only [Formula.size, DupocBot_size, CooperateBot, Prog.size, c_leaf, c_node]; omega⟩)
 
 /-- EBot cooperates with JustBot: probe 1 watches JustBot defect vs `.bot DefectBot`
     (descend), probe 2 watches it cooperate vs `.bot CooperateBot` (the shared guard
     fires Σ₁-cheaply) — EBot takes the cooperate branch. Pure simulation, no floor. -/
-theorem EBot_plays_C_against_JustBot (k fuel : Nat) (hk : 2 ≤ k) :
+theorem EBot_plays_C_against_JustBot (k fuel : Nat) (hk : Nat.log2 k + 13 ≤ k) :
     play (fuel + 5) EBot (JustBot k) = some .C := by
   have hP1 : play (fuel + 3) (JustBot k) (.bot DefectBot) = some .D := by
     simpa [Nat.add_assoc] using JustBot_plays_D_against_bot_DefectBot_JB k (fuel + 1)
@@ -99,13 +101,15 @@ theorem EBot_plays_C_against_JustBot (k fuel : Nat) (hk : 2 ≤ k) :
   rw [eval_ite_from_guard _ _ _ _ _ _ _ _ hG1]
   exact hInner
 
-/-- **The honest JustBot×EBot outcome — `(D, C)` for every `k ≥ 2`.** -/
+/-- **The honest JustBot×EBot outcome — `(D, C)` for every large `k`** (above the
+    `log2 k + 13` price of the `.bot CooperateBot` probe certificate). -/
 @[outcome]
 theorem outcome_JustBot_vs_EBot :
     OutcomeSpec .eventual 5
       JustBot (fun _ => EBot) (some (.D, .C)) := by
-  refine ⟨1, fun k hlt fuel => ?_⟩
-  have hk : 2 ≤ k := hlt
+  obtain ⟨K, hK⟩ := linear_log2_add_le 1 13
+  refine ⟨K, fun k hlt fuel => ?_⟩
+  have hk : Nat.log2 k + 13 ≤ k := by have := hK k (Nat.le_of_lt hlt); omega
   have hA : play (fuel + 5) (JustBot k) EBot = some .D := by
     simpa [Nat.add_assoc] using JustBot_plays_D_against_EBot k (fuel + 3)
   have hB := EBot_plays_C_against_JustBot k fuel hk

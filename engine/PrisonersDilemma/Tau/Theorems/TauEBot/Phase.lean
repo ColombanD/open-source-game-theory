@@ -34,6 +34,8 @@ def eRow : Tmpl → Action
   | .dbot     => .D
   | .cupod      => .C
   | .cupodTroll => .D
+  | .dupocTroll => .D
+  | .dimdid     => .C
   | .cimcic     => .C
   | .dimcid     => .C
   | .prudent    => .C
@@ -43,8 +45,8 @@ def eRow : Tmpl → Action
 
 /-- The row's witness: each entry is the two-stage run cascade fed the δ_D
     (exploit-watch) and δ_C (reciprocity-watch) behavioral columns. -/
-theorem eRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 ≤ k)
-    (h10 : 10 ≤ k) (hL : 100 * Nat.log2 k + 1000 ≤ k) (hcg : c_guard k + 20 ≤ k)
+theorem eRow_plays {k : Nat} (hk : 7 ≤ k) (hkk : 3 * c_guard k + 22 ≤ k) (h6 : 25 ≤ k)
+    (h10 : 43 ≤ k) (hL : 100 * Nat.log2 k + 1000 ≤ k) (hcg : 3 * c_guard k + 30 ≤ k)
     (hpm : ∃ N, eval N (.bot (inst (tauZoo k) .prudent .mirror))
       (.bot (inst (tauZoo k) .prudent .mirror)) (inst (tauZoo k) .prudent .mirror)
       = some Action.C) :
@@ -73,6 +75,8 @@ theorem eRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 
   | .dbot     => simWatchC_fires _ _ (pD .dbot)
   | .cupod      => simWatchC_falls _ _ (pD .cupod) (simWatchC_fires _ _ (pC .cupod))
   | .cupodTroll => simWatchC_fires _ _ (pD .cupodTroll)
+  | .dupocTroll => simWatchC_fires _ _ (pD .dupocTroll)
+  | .dimdid     => simWatchC_falls _ _ (pD .dimdid) (simWatchC_fires _ _ (pC .dimdid))
   | .cimcic     => simWatchC_falls _ _ (pD .cimcic) (simWatchC_fires _ _ (pC .cimcic))
   | .dimcid     => simWatchC_falls _ _ (pD .dimcid) (simWatchC_fires _ _ (pC .dimcid))
   | .prudent    => -- w1, w2 fall (Prudent defects on both constants); w3 FIRES: it
@@ -97,8 +101,8 @@ theorem ebotRowSpec : RowSpec .ebot tauOrder eRow := by
     (by simp only [c_guard, numCost]; omega) (hP k (by omega)) T
 
 /-- **τ(EBot)** — one-sided boundary `θ ≤ eMass`, no window. -/
-theorem tauEBot_phase {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 ≤ k)
-    (h10 : 10 ≤ k) (hL : 100 * Nat.log2 k + 1000 ≤ k) (hcg : c_guard k + 20 ≤ k)
+theorem tauEBot_phase {k : Nat} (hk : 7 ≤ k) (hkk : 3 * c_guard k + 22 ≤ k) (h6 : 25 ≤ k)
+    (h10 : 43 ≤ k) (hL : 100 * Nat.log2 k + 1000 ≤ k) (hcg : 3 * c_guard k + 30 ≤ k)
     (hpm : ∃ N, eval N (.bot (inst (tauZoo k) .prudent .mirror))
       (.bot (inst (tauZoo k) .prudent .mirror)) (inst (tauZoo k) .prudent .mirror)
       = some Action.C) (θ : Nat) (w : Tmpl → Nat) (opponent : Prog) :
@@ -108,6 +112,6 @@ theorem tauEBot_phase {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 :
     (fun T _ => eRow_plays hk hkk h6 h10 hL hcg hpm T)
   simp only [bitMass, tauOrder, List.map, eRow, massOf, massOf_ifC, massOf_ifD,
     TauBotZ] at h ⊢
-  simpa [eMass] using h
+  simpa [eMass, -forall_const] using h
 
 end PD.Tau

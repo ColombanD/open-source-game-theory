@@ -32,14 +32,16 @@ theorem llm_outcome_LegibleBot_vs_JustBot :
     have hbox : Pf (2*k+64) (.box k (.plays (LegibleBot (2*k+64) k) (.bot (DupocBot k)) .C)) :=
       LegibleBot_playC_gives_box k n' (.bot (DupocBot k)) hn'
     -- Cheap atom certificate for LegibleBot plays C vs .bot (DupocBot k), at budget k
-    have hatom : AtomProvable (c_leaf + c_guard (2*k+64) + c_node)
+    -- (the transcript: search_t ∘ const, plus the atom's own size)
+    have hatom : AtomProvable (c_leaf + c_guard (2*k+64) + c_node
+          + (Formula.plays (LegibleBot (2*k+64) k) (.bot (DupocBot k)) .C).size)
         (.plays (LegibleBot (2*k+64) k) (.bot (DupocBot k)) .C) :=
       ⟨PlaysProof.search_t hbox PlaysProof.const, Nat.le_refl _⟩
     have hatomK : AtomProvable k (.plays (LegibleBot (2*k+64) k) (.bot (DupocBot k)) .C) := by
       refine atom_monotone _ k _ ?_ hatom
       have hKk := hK k (Nat.le_of_lt (lt_of_le_of_lt (Nat.le_max_right _ _) hk))
       have hst := log2_stagger_le k
-      simp only [c_leaf, c_node, c_guard, numCost]
+      simp only [c_leaf, c_node, c_guard, numCost, Formula.size, Prog.size, LegibleBot, DupocBot]
       omega
     -- JustBot's guard fires
     have hguard : proofSearch k

@@ -69,7 +69,7 @@ theorem outcome_LegibleBot_vs_TitForTatBot :
     have hT := play_ite_from_guard (max n₁ n₂) 1 TitForTatBot (LegibleBot (2*k+64) k)
       (.sim .opp (.bot CooperateBot)) (.const .C) (.const .D) .C .C rfl hGuard
     have hT' : play (max n₁ n₂ + 2) TitForTatBot (LegibleBot (2*k+64) k) = some .C := by
-      simpa [eval] using hT
+      simpa [eval] using! hT
     exact ⟨max n₁ n₂ + 2, outcome_of_plays _ _ _ _ _ hL hT'⟩
   -- …and the match is determined at fuel 4 whatever the oracle says, so
   -- determinism (`play_unique`) pins the value there and monotonicity does the rest.

@@ -30,6 +30,8 @@ def tftSimRow : Tmpl → Action
   | .dbot     => .D
   | .cupod      => .C
   | .cupodTroll => .C
+  | .dupocTroll => .C
+  | .dimdid     => .C
   | .cimcic     => .C
   | .dimcid     => .C
   | .prudent    => .D
@@ -39,8 +41,8 @@ def tftSimRow : Tmpl → Action
 
 /-- The row's witness: every entry is a run-stage copy of the δ_C behavioral
     column. -/
-theorem tftSimRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 ≤ k)
-    (h10 : 10 ≤ k) (hL : 100 * Nat.log2 k + 1000 ≤ k) (hcg : c_guard k + 20 ≤ k) :
+theorem tftSimRow_plays {k : Nat} (hk : 7 ≤ k) (hkk : 3 * c_guard k + 22 ≤ k) (h6 : 25 ≤ k)
+    (h10 : 43 ≤ k) (hL : 100 * Nat.log2 k + 1000 ≤ k) (hcg : 3 * c_guard k + 30 ≤ k) :
     ∀ T, ∃ N, eval N (.bot (inst (tauZoo k) .tftSim T)) (.bot (inst (tauZoo k) .tftSim T))
               (inst (tauZoo k) .tftSim T) = some (tftSimRow T) :=
   let pC := inst_coop_plays hk hkk h6 h10 hL
@@ -57,6 +59,8 @@ theorem tftSimRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6
   | .dbot     => simCopy_plays _ _ (pC .dbot)
   | .cupod      => simCopy_plays _ _ (pC .cupod)
   | .cupodTroll => simCopy_plays _ _ (pC .cupodTroll)
+  | .dupocTroll => simCopy_plays _ _ (pC .dupocTroll)
+  | .dimdid     => simCopy_plays _ _ (pC .dimdid)
   | .cimcic     => simCopy_plays _ _ (pC .cimcic)
   | .dimcid     => simCopy_plays _ _ (pC .dimcid)
   | .prudent    => simCopy_plays _ _ (pC .prudent)
@@ -77,14 +81,14 @@ theorem tftSimRowSpec : RowSpec .tftSim tauOrder tftSimRow := by
     (by simp only [c_guard, numCost]; omega) T
 
 /-- **τ(TitForTatBot), behavioral** — boundary `θ ≤ simMass` (incl. Guardian). -/
-theorem tauTFTSim_phase {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 ≤ k)
-    (h10 : 10 ≤ k) (hL : 100 * Nat.log2 k + 1000 ≤ k) (hcg : c_guard k + 20 ≤ k) (θ : Nat) (w : Tmpl → Nat) (opponent : Prog) :
+theorem tauTFTSim_phase {k : Nat} (hk : 7 ≤ k) (hkk : 3 * c_guard k + 22 ≤ k) (h6 : 25 ≤ k)
+    (h10 : 43 ≤ k) (hL : 100 * Nat.log2 k + 1000 ≤ k) (hcg : 3 * c_guard k + 30 ≤ k) (θ : Nat) (w : Tmpl → Nat) (opponent : Prog) :
     (θ ≤ simMass w → ∃ N, play N (TauBotZ k .tftSim w θ) opponent = some .C)
     ∧ (¬ θ ≤ simMass w → ∃ N, play N (TauBotZ k .tftSim w θ) opponent = some .D) := by
   have h := phase_of_bits (tauZoo k) .tftSim w tftSimRow tauOrder θ opponent
     (fun T _ => tftSimRow_plays hk hkk h6 h10 hL hcg T)
   simp only [bitMass, tauOrder, List.map, tftSimRow, massOf, massOf_ifC, massOf_ifD,
     TauBotZ] at h ⊢
-  simpa [simMass] using h
+  simpa [simMass, -forall_const] using h
 
 end PD.Tau

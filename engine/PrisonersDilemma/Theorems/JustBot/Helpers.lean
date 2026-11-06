@@ -61,7 +61,7 @@ theorem JustBot_plays_C_against_bot_CooperateBot (k fuel : Nat)
     (hk : proofSearch k (Formula.plays (.bot CooperateBot) (.bot (DupocBot k)) Action.C) = true) :
     play (fuel + 2) (JustBot k) (.bot CooperateBot) = some .C := by
   refine JustBot_eval_step k fuel (.bot CooperateBot) .C ?_
-  simpa using hk
+  simpa using! hk
 end PD.Theorems
 
 /-! ## JustBot's defection floor, generic in the opponent (2026-08-21)

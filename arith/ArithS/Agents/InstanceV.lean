@@ -1,0 +1,309 @@
+import ArithS.Agents.Instance
+import ArithS.Loeb.InstV
+
+/-!
+# ArithS.InstanceV — the instance equation on codes, in EVERY model of `𝗜𝚺₁`
+
+`ArithS.Instance` proves at `ℕ` that Dupoc's guard code is `subst (binNumeral k ∷ 0) cq` for one
+fixed formula code `cq`. The parametric bounded Löb argument (roadmap M4, U6–U8) runs INSIDE
+a model `V` with a possibly nonstandard budget `k : V`, so it needs the same equation for
+`DupocV k := pSearch k ⌜guardTemplate 0⌝ (pConst 0) (pConst 1)` at every `k : V`:
+
+**`exists_dupoc_instance_code_V`**: `∃ cq : ℕ, IsSemiformula LAct 1 cq ∧ ∀ V k,
+guardCode ⌜guardTemplate 0⌝ (DupocV k) (DupocV k) = subst LAct (binNumeral k ∷ 0) (cq : V)`.
+
+The proof re-runs the `ℕ` analysis inside `V`: the transposition `transposeCode (DupocV k) =
+CupodV k` (the code-level τ of the template is absolute, `revalueTemplate` being Σ₁), the
+canonical code `canonical (DupocV k) = pSearch k ↑gD ↑pD ↑qD` (the deciding inequality between
+the two constants is absolute: `Nat.cast_lt`), the `k`-independent re-valuation codes, and
+then the internal substitution composition `substs_substs` on the code of the fixed formula
+`qDupoc = guardTemplate 0 ⇜ ![TD, …]`: the code of the one-variable term `TD` is a `ppairTerm`-tower
+with the bound variable `^#0` in the budget slot, and `termSubst (binNumeral k ∷ 0)` fills it with
+`binNumeral k`, giving exactly `codeTerm (pSearch k ↑gD ↑pD ↑qD)`.
+-/
+
+universe u
+
+namespace ArithS
+
+open FFL FFL.FirstOrder Arithmetic Bootstrapping
+open PeanoMinus ISigma0 ISigma1
+open FFL.FirstOrder.Arithmetic.Bootstrapping.Arithmetic
+open LAct
+
+variable {V : Type*} [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁]
+
+/-! ### 1. The two searchers in an arbitrary model, and their transposition -/
+
+/-- `Dupoc` in an arbitrary model (`Dupoc k` is `DupocV k` at `V = ℕ`). -/
+noncomputable def DupocV (k : V) : V := pSearch k (⌜guardTemplate 0⌝ : V) (pConst 0) (pConst 1)
+
+/-- `Cupod` in an arbitrary model. -/
+noncomputable def CupodV (k : V) : V := pSearch k (⌜guardTemplate 1⌝ : V) (pConst 1) (pConst 0)
+
+lemma DupocV_nat (k : ℕ) : DupocV (V := ℕ) k = Dupoc k := rfl
+lemma CupodV_nat (k : ℕ) : CupodV (V := ℕ) k = Cupod k := rfl
+
+lemma coe_quote_GtmplA (a : ℕ) : ((⌜guardTemplate a⌝ : ℕ) : V) = ⌜guardTemplate a⌝ := by
+  rw [Sentence.quote_def, Sentence.quote_def, Semiformula.coe_quote_eq_quote]
+
+/-- The code-level τ of the template codes, in every model (Σ₁-absoluteness of `revalueTemplate`). -/
+lemma revalueTemplate_quote_GtmplA_V (a : ℕ) :
+    revalueTemplate 1 0 (⌜guardTemplate a⌝ : V) = ⌜guardTemplate (swapAction a)⌝ := by
+  have h := DefinedFunction.shigmaOne_absolute_func V (revalueTemplate.defined (V := ℕ))
+    (revalueTemplate.defined (V := V)) ![1, 0, (⌜guardTemplate a⌝ : ℕ)]
+  simp [Function.comp_def] at h
+  rw [revalueTemplate_quote_GtmplA, coe_quote_GtmplA, coe_quote_GtmplA] at h
+  exact h.symm
+
+theorem transposeCode_DupocV (k : V) : transposeCode (DupocV k) = CupodV k := by
+  unfold DupocV CupodV transposeCode
+  rw [revalue_search, revalue_const, revalue_const, revalueTemplate_quote_GtmplA_V, swapAction_zero]
+  simp [revalueAction]
+
+/-! ### 2. The canonical code and the re-valuation codes are `k`-independent -/
+
+lemma cast_innerD : ((innerD : ℕ) : V) = ppair (⌜guardTemplate 0⌝ : V) (ppair (pConst 0) (pConst 1)) := by
+  rw [innerD_def, cast_ppair, cast_ppair, cast_pConst, cast_pConst, coe_quote_GtmplA]
+  push_cast
+  rfl
+
+lemma cast_innerC : ((innerC : ℕ) : V) = ppair (⌜guardTemplate 1⌝ : V) (ppair (pConst 1) (pConst 0)) := by
+  rw [innerC_def, cast_ppair, cast_ppair, cast_pConst, cast_pConst, coe_quote_GtmplA]
+  push_cast
+  rfl
+
+lemma DupocV_eq_inner (k : V) : DupocV k = ppair 6 (ppair k (innerD : V)) + 1 := by
+  rw [cast_innerD]; rfl
+lemma CupodV_eq_inner (k : V) : CupodV k = ppair 6 (ppair k (innerC : V)) + 1 := by
+  rw [cast_innerC]; rfl
+
+lemma DupocV_lt_CupodV_iff (k : V) : DupocV k < CupodV k ↔ innerD < innerC := by
+  rw [DupocV_eq_inner, CupodV_eq_inner, pSearchInner_lt_iff, Nat.cast_lt]
+
+lemma CupodV_lt_DupocV_iff (k : V) : CupodV k < DupocV k ↔ innerC < innerD := by
+  rw [DupocV_eq_inner, CupodV_eq_inner, pSearchInner_lt_iff, Nat.cast_lt]
+
+lemma DupocV_eq_cast : DupocV (k : V) = pSearch k ((⌜guardTemplate 0⌝ : ℕ) : V) ((pConst 0 : ℕ) : V) ((pConst 1 : ℕ) : V) := by
+  unfold DupocV; rw [coe_quote_GtmplA, cast_pConst, cast_pConst]; push_cast; rfl
+
+lemma CupodV_eq_cast : CupodV (k : V) = pSearch k ((⌜guardTemplate 1⌝ : ℕ) : V) ((pConst 1 : ℕ) : V) ((pConst 0 : ℕ) : V) := by
+  unfold CupodV; rw [coe_quote_GtmplA, cast_pConst, cast_pConst]; push_cast; rfl
+
+/-- **The canonical code of `DupocV k` is a searcher with the (cast) `k`-independent inner triple.** -/
+theorem canonical_DupocV (k : V) : canonical (DupocV k) = pSearch k (gD : V) (pD : V) (qD : V) := by
+  by_cases h : innerD ≤ innerC
+  · simp only [gD, pD, qD, if_pos h]
+    rcases Nat.lt_or_eq_of_le h with h' | h'
+    · rw [canonical_of_lt (by rw [transposeCode_DupocV]; exact (DupocV_lt_CupodV_iff k).mpr h')]
+      exact DupocV_eq_cast
+    · rw [canonical_of_eq (by rw [transposeCode_DupocV, DupocV_eq_inner, CupodV_eq_inner, h'])]
+      exact DupocV_eq_cast
+  · simp only [gD, pD, qD, if_neg h]
+    rw [canonical_of_gt (by rw [transposeCode_DupocV]; exact (CupodV_lt_DupocV_iff k).mpr (Nat.lt_of_not_le h)),
+      transposeCode_DupocV]
+    exact CupodV_eq_cast
+
+theorem revalueU_DupocV (k : V) : revalueU (DupocV k) = (⌜uD⌝ : V) := by
+  unfold revalueU uD
+  rw [transposeCode_DupocV]
+  by_cases h1 : innerD < innerC
+  · rw [if_pos ((DupocV_lt_CupodV_iff k).mpr h1), if_pos h1, quote_cterm_C]
+  · rw [if_neg (fun h ↦ h1 ((DupocV_lt_CupodV_iff k).mp h)), if_neg h1]
+    by_cases h2 : innerC < innerD
+    · rw [if_pos ((CupodV_lt_DupocV_iff k).mpr h2), if_pos h2, quote_cterm_D]
+    · rw [if_neg (fun h ↦ h2 ((CupodV_lt_DupocV_iff k).mp h)), if_neg h2, quote_numT]
+      simp
+
+theorem revalueW_DupocV (k : V) : revalueW (DupocV k) = (⌜wD⌝ : V) := by
+  unfold revalueW wD
+  rw [transposeCode_DupocV]
+  by_cases h1 : innerD < innerC
+  · rw [if_pos ((DupocV_lt_CupodV_iff k).mpr h1), if_pos h1, quote_cterm_D]
+  · rw [if_neg (fun h ↦ h1 ((DupocV_lt_CupodV_iff k).mp h)), if_neg h1]
+    by_cases h2 : innerC < innerD
+    · rw [if_pos ((CupodV_lt_DupocV_iff k).mpr h2), if_pos h2, quote_cterm_C]
+    · rw [if_neg (fun h ↦ h2 ((CupodV_lt_DupocV_iff k).mp h)), if_neg h2, quote_numT]
+      simp
+
+/-! ### 3. The code of the one-variable description term, and its internal substitution -/
+
+section termCodes
+
+/-- The code of the one-variable searcher term: the `ppairTerm`-tower with `^#0` in the budget slot. -/
+theorem quote_emb_searchT1 (g p q : ℕ) :
+    (⌜(Rew.emb (searchT1 g p q) : SyntacticSemiterm ℒₒᵣ 1)⌝ : V) =
+    ppairTerm (binNumeral 6) (ppairTerm (^#0) (ppairTerm (binNumeral (g : V)) (ppairTerm (codeTerm (p : V)) (codeTerm (q : V))))) ^+ 𝟏 := by
+  rw [searchT1, quote_emb_succT1, quote_emb_ppairT1, quote_emb_ppairT1, quote_emb_bShift, quote_emb_bShift,
+    quote_emb_bvar_zero, ← Semiterm.empty_quote_def, ← Semiterm.empty_quote_def, quote_binNumeralMeta, quote_ppairTermMeta,
+    quote_ppairTermMeta, quote_binNumeralMeta, quote_codeTermMeta, quote_codeTermMeta]
+  push_cast
+  rfl
+
+/-- `Rew.emb` commutes with `lMap emb` (any bound-variable count). -/
+lemma term_emb_lMap_emb_n {n : ℕ} (t : Semiterm ℒₒᵣ Empty n) :
+    (Rew.emb (Semiterm.lMap emb t) : SyntacticSemiterm LAct n) = Semiterm.lMap emb (Rew.emb t) := by
+  induction t with
+  | bvar x => rfl
+  | fvar x => exact x.elim
+  | func f v ih => simp [Rew.func, Semiterm.lMap_func, Function.comp_def, ih]
+
+/-- The code of `TD` (over `LAct`) is the `ℒₒᵣ` tower. -/
+theorem quote_emb_TD :
+    (⌜(Rew.emb TD : SyntacticSemiterm LAct 1)⌝ : V) =
+    ppairTerm (binNumeral 6) (ppairTerm (^#0) (ppairTerm (binNumeral (gD : V)) (ppairTerm (codeTerm (pD : V)) (codeTerm (qD : V))))) ^+ 𝟏 := by
+  unfold TD
+  rw [term_emb_lMap_emb_n, quote_term_lMap_emb, quote_emb_searchT1]
+
+/-! #### Internal substitution on the tower -/
+
+lemma bvar_zero_uterm : IsUTerm LAct (^#0 : V) := (IsSemiterm.bvar.mpr (by simp : (0 : V) < 1)).isUTerm
+
+/-- **Filling the budget slot**: the substitution of `binNumeral k` into the tower is the structural
+term of the searcher `pSearch k g p q`. -/
+theorem termSubst_tower (k g p q : V) :
+    termSubst LAct (binNumeral k ∷ (0 : V))
+      (ppairTerm (binNumeral 6) (ppairTerm (^#0) (ppairTerm (binNumeral g) (ppairTerm (codeTerm p) (codeTerm q)))) ^+ 𝟏) =
+    codeTerm (pSearch k g p q) := by
+  have hb6 : IsUTerm LAct (binNumeral (6 : V)) := (binNumeral_semiterm_LAct 0 _).isUTerm
+  have hbg : IsUTerm LAct (binNumeral g) := (binNumeral_semiterm_LAct 0 _).isUTerm
+  have hp : IsUTerm LAct (codeTerm p) := (codeTerm_semiterm_LAct 0 _).isUTerm
+  have hq : IsUTerm LAct (codeTerm q) := (codeTerm_semiterm_LAct 0 _).isUTerm
+  have h1 : IsUTerm LAct (ppairTerm (codeTerm p) (codeTerm q)) := ppairTerm_uterm_LAct hp hq
+  have h2 : IsUTerm LAct (ppairTerm (binNumeral g) (ppairTerm (codeTerm p) (codeTerm q))) := ppairTerm_uterm_LAct hbg h1
+  have h3 : IsUTerm LAct (ppairTerm (^#0) (ppairTerm (binNumeral g) (ppairTerm (codeTerm p) (codeTerm q)))) :=
+    ppairTerm_uterm_LAct bvar_zero_uterm h2
+  have h4 : IsUTerm LAct (ppairTerm (binNumeral 6) (ppairTerm (^#0) (ppairTerm (binNumeral g) (ppairTerm (codeTerm p) (codeTerm q))))) :=
+    ppairTerm_uterm_LAct hb6 h3
+  have hone : IsUTerm LAct (𝟏 : V) := (IsSemiterm.LAct_of_LOR (one_semiterm (n := 0))).isUTerm
+  rw [termSubst_qqAdd _ h4 hone, termSubst_ppairTerm _ hb6 h3, termSubst_ppairTerm _ bvar_zero_uterm h2,
+    termSubst_ppairTerm _ hbg h1, termSubst_ppairTerm _ hp hq, termSubst_bvar, nth_adjoin_zero,
+    termSubst_closed _ (binNumeral_semiterm_LAct 0 _), termSubst_closed _ (binNumeral_semiterm_LAct 0 _),
+    termSubst_closed _ (codeTerm_semiterm_LAct 0 _), termSubst_closed _ (codeTerm_semiterm_LAct 0 _),
+    termSubst_closed _ (IsSemiterm.LAct_of_LOR one_semiterm), codeTerm_search]
+
+end termCodes
+
+/-! ### 4. The instance equation on codes, in every model -/
+
+section codes
+
+/-- The code of a closed term cast into one bound variable is the code of the term. -/
+lemma quote_emb_cl_V (t : ClosedSemiterm LAct 0) :
+    (⌜(Rew.emb (cl t : Semiterm LAct Empty 1) : SyntacticSemiterm LAct 1)⌝ : V) =
+    ⌜(Rew.emb t : SyntacticSemiterm LAct 0)⌝ := by
+  induction t with
+  | bvar x => exact x.elim0
+  | fvar x => exact x.elim
+  | func f v ih =>
+    show (⌜(Rew.emb (Rew.castLE _ (Semiterm.func f v)) : SyntacticSemiterm LAct 1)⌝ : V) = _
+    rw [Rew.func, Rew.func, Rew.func, Semiterm.quote_func, Semiterm.quote_func]
+    congr 1
+    unfold SemitermVec.val
+    exact matrixToVec_congr (fun i ↦ ih i)
+
+lemma semiterm_quote_emb₀ (t : ClosedSemiterm LAct 0) :
+    IsSemiterm LAct 0 (⌜(Rew.emb t : SyntacticSemiterm LAct 0)⌝ : V) := by
+  rw [Semiterm.quote_def]
+  exact (⌜(Rew.emb t : SyntacticSemiterm LAct 0)⌝ : Bootstrapping.Semiterm V LAct 0).isSemiterm_zero
+
+lemma semiterm_quote_emb₁ (t : Semiterm LAct Empty 1) :
+    IsSemiterm LAct 1 (⌜(Rew.emb t : SyntacticSemiterm LAct 1)⌝ : V) := by
+  rw [Semiterm.quote_def]
+  exact (⌜(Rew.emb t : SyntacticSemiterm LAct 1)⌝ : Bootstrapping.Semiterm V LAct 1).isSemiterm_one
+
+/-- The six codes of the substituted terms of `qDupoc`, as an internal vector. -/
+noncomputable def qDupocVec : V :=
+  (⌜(Rew.emb TD : SyntacticSemiterm LAct 1)⌝ : V) ∷ ⌜(Rew.emb (cl uD : Semiterm LAct Empty 1) : SyntacticSemiterm LAct 1)⌝ ∷
+    ⌜(Rew.emb (cl wD : Semiterm LAct Empty 1) : SyntacticSemiterm LAct 1)⌝ ∷ ⌜(Rew.emb TD : SyntacticSemiterm LAct 1)⌝ ∷
+    ⌜(Rew.emb (cl uD : Semiterm LAct Empty 1) : SyntacticSemiterm LAct 1)⌝ ∷
+    ⌜(Rew.emb (cl wD : Semiterm LAct Empty 1) : SyntacticSemiterm LAct 1)⌝ ∷ 0
+
+lemma semitermVec_val_qDupoc :
+    SemitermVec.val (fun i ↦ (⌜(Rew.emb ((![TD, cl uD, cl wD, TD, cl uD, cl wD] : Fin 6 → Semiterm LAct Empty 1) i) :
+      SyntacticSemiterm LAct 1)⌝ : Bootstrapping.Semiterm V LAct 1)) = qDupocVec := by
+  have hv : (fun i ↦ (⌜(Rew.emb ((![TD, cl uD, cl wD, TD, cl uD, cl wD] : Fin 6 → Semiterm LAct Empty 1) i) :
+      SyntacticSemiterm LAct 1)⌝ : Bootstrapping.Semiterm V LAct 1)) =
+      ![⌜(Rew.emb TD : SyntacticSemiterm LAct 1)⌝, ⌜(Rew.emb (cl uD : Semiterm LAct Empty 1) : SyntacticSemiterm LAct 1)⌝,
+        ⌜(Rew.emb (cl wD : Semiterm LAct Empty 1) : SyntacticSemiterm LAct 1)⌝, ⌜(Rew.emb TD : SyntacticSemiterm LAct 1)⌝,
+        ⌜(Rew.emb (cl uD : Semiterm LAct Empty 1) : SyntacticSemiterm LAct 1)⌝,
+        ⌜(Rew.emb (cl wD : Semiterm LAct Empty 1) : SyntacticSemiterm LAct 1)⌝] := by
+    funext i; fin_cases i <;> rfl
+  rw [hv]
+  simp only [SemitermVec.val_cons, SemitermVec.val_nil]
+  rfl
+
+/-- The code of `qDupoc` is the internal substitution of `qDupocVec` into the template code. -/
+theorem quote_qDupoc : (⌜qDupoc⌝ : V) = subst LAct qDupocVec (⌜guardTemplate 0⌝ : V) := by
+  unfold qDupoc
+  rw [Sentence.quote_def, Semiformula.coe_subst_eq_subst_coe, Semiformula.quote_def,
+    Semiformula.typed_quote_substs, Bootstrapping.Semiformula.val_substs, ← Semiformula.quote_def,
+    ← Sentence.quote_def]
+  congr 1
+
+lemma qDupocVec_semitermVec : IsSemitermVec LAct 6 1 (qDupocVec : V) := by
+  rw [six_eq, qDupocVec]
+  exact ((((((IsSemitermVec.nil 1).adjoin (semiterm_quote_emb₁ _)).adjoin (semiterm_quote_emb₁ _)).adjoin
+    (semiterm_quote_emb₁ _)).adjoin (semiterm_quote_emb₁ _)).adjoin (semiterm_quote_emb₁ _)).adjoin
+    (semiterm_quote_emb₁ _)
+
+lemma binNumeral_cons_semitermVec (k : V) : IsSemitermVec LAct 1 0 (binNumeral k ∷ (0 : V)) := by
+  rw [show (1 : V) = 0 + 1 by simp]
+  exact (IsSemitermVec.nil 0).adjoin (binNumeral_semiterm_LAct 0 k)
+
+/-- Substituting `binNumeral k` into the six codes gives the description vector of `DupocV k`. -/
+theorem termSubstVec_qDupocVec (k : V) :
+    termSubstVec LAct 6 (binNumeral k ∷ (0 : V)) qDupocVec = descriptions (DupocV k) (DupocV k) := by
+  have hT : IsUTerm LAct (⌜(Rew.emb TD : SyntacticSemiterm LAct 1)⌝ : V) := (semiterm_quote_emb₁ _).isUTerm
+  have hU : IsUTerm LAct (⌜(Rew.emb (cl uD : Semiterm LAct Empty 1) : SyntacticSemiterm LAct 1)⌝ : V) :=
+    (semiterm_quote_emb₁ _).isUTerm
+  have hW : IsUTerm LAct (⌜(Rew.emb (cl wD : Semiterm LAct Empty 1) : SyntacticSemiterm LAct 1)⌝ : V) :=
+    (semiterm_quote_emb₁ _).isUTerm
+  have e0 : IsUTermVec LAct 0 (0 : V) := IsUTermVec.empty
+  have e1 := e0.adjoin hW
+  have e2 := e1.adjoin hU
+  have e3 := e2.adjoin hT
+  have e4 := e3.adjoin hW
+  have e5 := e4.adjoin hU
+  have sT : termSubst LAct (binNumeral k ∷ 0) (⌜(Rew.emb TD : SyntacticSemiterm LAct 1)⌝ : V) =
+      codeTerm (canonical (DupocV k)) := by
+    rw [quote_emb_TD, termSubst_tower, canonical_DupocV]
+  have sU : termSubst LAct (binNumeral k ∷ 0) (⌜(Rew.emb (cl uD : Semiterm LAct Empty 1) : SyntacticSemiterm LAct 1)⌝ : V) =
+      revalueU (DupocV k) := by
+    rw [quote_emb_cl_V, termSubst_closed _ (semiterm_quote_emb₀ _), revalueU_DupocV, Semiterm.empty_quote_def]
+  have sW : termSubst LAct (binNumeral k ∷ 0) (⌜(Rew.emb (cl wD : Semiterm LAct Empty 1) : SyntacticSemiterm LAct 1)⌝ : V) =
+      revalueW (DupocV k) := by
+    rw [quote_emb_cl_V, termSubst_closed _ (semiterm_quote_emb₀ _), revalueW_DupocV, Semiterm.empty_quote_def]
+  unfold qDupocVec descriptions
+  rw [six_eq, termSubstVec_cons hT e5, termSubstVec_cons hU e4, termSubstVec_cons hW e3,
+    termSubstVec_cons hT e2, termSubstVec_cons hU e1, termSubstVec_cons hW e0, termSubstVec_nil,
+    sT, sU, sW]
+
+/-- **The instance equation on codes, in every model**: for every `k : V`, Dupoc's guard code
+against itself is the substitution of `binNumeral k` into the (cast) code of `qDupoc`. -/
+theorem guardCode_DupocV_eq (k : V) :
+    guardCode (⌜guardTemplate 0⌝ : V) (DupocV k) (DupocV k) = subst LAct (binNumeral k ∷ (0 : V)) (⌜qDupoc⌝ : V) := by
+  rw [quote_qDupoc, substs_substs (p := (⌜guardTemplate 0⌝ : V)) (l := 6)
+    (by simpa using Sentence.quote_isSemiformula (V := V) (guardTemplate 0))
+    (binNumeral_cons_semitermVec k) qDupocVec_semitermVec, termSubstVec_qDupocVec]
+  rfl
+
+/-- The same, in the vocabulary of the parametric box (`ArithS.InstV`): the guard code is the
+`binNumeral`-instance `instB ⌜qDupoc⌝ k`. -/
+theorem guardCode_DupocV_eq_instB (k : V) :
+    guardCode (⌜guardTemplate 0⌝ : V) (DupocV k) (DupocV k) = instB (⌜qDupoc⌝ : V) k :=
+  guardCode_DupocV_eq k
+
+lemma coe_quote_qDupoc : ((⌜qDupoc⌝ : ℕ) : V) = ⌜qDupoc⌝ := by
+  rw [Sentence.quote_def, Sentence.quote_def, Semiformula.coe_quote_eq_quote]
+
+end codes
+
+/-- **The instance equation on codes, in every model of `𝗜𝚺₁`, existentially packaged.** -/
+theorem exists_dupoc_instance_code_V :
+    ∃ cq : ℕ, IsSemiformula LAct 1 cq ∧
+      ∀ (V : Type u) [ORingStructure V] [V↓[ℒₒᵣ] ⊧* 𝗜𝚺₁] (k : V),
+        guardCode (⌜guardTemplate 0⌝ : V) (DupocV k) (DupocV k) = subst LAct (binNumeral k ∷ (0 : V)) (cq : V) :=
+  ⟨⌜qDupoc⌝, by simp, fun V _ _ k ↦ by rw [coe_quote_qDupoc]; exact guardCode_DupocV_eq k⟩
+
+end ArithS

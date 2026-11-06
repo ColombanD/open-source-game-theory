@@ -70,7 +70,7 @@ theorem outcome_LegibleBot_vs_DBot :
     have hD := play_ite_from_guard (max n₁ n₂) 1 DBot (LegibleBot (2*k+64) k)
       (.sim .opp (.bot DefectBot)) (.const .D) (.const .C) .C .C rfl hGuard
     have hD' : play (max n₁ n₂ + 2) DBot (LegibleBot (2*k+64) k) = some .D := by
-      simpa [eval] using hD
+      simpa [eval] using! hD
     exact ⟨max n₁ n₂ + 2, outcome_of_plays _ _ _ _ _ hL hD'⟩
   -- …and the match is determined at fuel 4 whatever the oracle says, so
   -- determinism (`play_unique`) pins the value there and monotonicity does the rest.

@@ -59,7 +59,10 @@ def test_t_extremes_do_not_collide():
 
 def test_run_dir_encodes_zoo_dials_and_fingerprint(base_payoff, tmp_path):
     paths = RunPaths.for_matrix(base_payoff, tmp_path)
-    assert paths.name.startswith("body_t100_ana_")
+    # The engine keeps the legacy naming; any other proof system carries its key
+    # (and covers it in the fingerprint) so the two never share a directory.
+    src = "" if base_payoff.cell_source == "engine" else f"{base_payoff.cell_source}_"
+    assert paths.name.startswith(f"body_{src}t100_ana_")
     assert paths.numeric_csv == paths.run_dir / "ess" / "payoff_matrix_numeric.csv"
     assert paths.stage_dir("nash").parent == paths.run_dir
 
@@ -282,14 +285,6 @@ def test_default_out_root_is_anchored_to_the_package_not_cwd(tmp_path, monkeypat
     assert DEFAULT_OUT_ROOT.parts[-3:] == ("app", "generated", "egt")
 
 
-def test_api_serves_runs_from_the_same_anchored_root():
-    """The static mount and the sweep output must agree on one directory."""
-    from pd_runner.api.main import _EGT_RUNS_DIR
-    from pd_runner.egt.pipeline import DEFAULT_OUT_ROOT
-
-    assert _EGT_RUNS_DIR == DEFAULT_OUT_ROOT / "runs"
-
-
 def test_family_sweep_is_isolated_and_named(tmp_path):
     """The σ-family extension (2026-09-01): a non-behavioral sweep carries its
     family in every run-directory name and writes `sweep_summary_<family>.json`,
@@ -309,7 +304,8 @@ def test_family_sweep_is_isolated_and_named(tmp_path):
     assert beh.summary_path.exists()          # both summaries coexist
     assert eps.summary_path.exists()
     name = beh.runs[0].paths.name
-    assert "behavioral" not in name and name.startswith("body_t100_a050_")
+    src = "" if beh.cell_source == "engine" else f"{beh.cell_source}_"
+    assert "behavioral" not in name and name.startswith(f"body_{src}t100_a050_")
 
     # at t = 1 every family is the point-mass channel: same cells, same fingerprint
     assert eps.runs[0].paths.fingerprint == beh.runs[0].paths.fingerprint

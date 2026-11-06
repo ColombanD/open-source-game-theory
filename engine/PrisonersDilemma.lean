@@ -1,7 +1,8 @@
 -- This module serves as the root of the `PrisonersDilemma` library:
 -- the agent language, the proof system, the zoo, and the outcome theorems.
--- The decidability metatheory (T31…T54) is a separate lake target,
--- `Metatheory`, rooted at `PrisonersDilemma.Decidability`.
+
+-- Bots with no engine outcome theorem yet (their PA-S' row lives in `arith/`):
+import PrisonersDilemma.Bots.DIMDID
 
 import PrisonersDilemma.Theorems.CooperateBot.Helpers
 import PrisonersDilemma.Theorems.CooperateBot.vs_DefectBot
@@ -24,6 +25,8 @@ import PrisonersDilemma.Theorems.CupodTrollBot.vs_CupodTrollBot
 import PrisonersDilemma.Theorems.CupodTrollBot.vs_CooperateBot
 import PrisonersDilemma.Theorems.CupodTrollBot.vs_DefectBot
 import PrisonersDilemma.Theorems.CupodTrollBot.vs_TitForTatBot
+-- DupocTrollBot (2026-10-13): definition only — its cells are proved in PA-S' (arith/), not here.
+import PrisonersDilemma.Bots.DupocTrollBot
 import PrisonersDilemma.Theorems.CupodTrollBot.vs_DBot
 import PrisonersDilemma.Theorems.CupodTrollBot.vs_OBot
 import PrisonersDilemma.Theorems.CupodTrollBot.vs_MirrorBot
@@ -48,6 +51,7 @@ import PrisonersDilemma.Theorems.DupocBot.vs_EBot
 import PrisonersDilemma.Theorems.DupocBot.vs_DupocBot
 import PrisonersDilemma.Theorems.DupocBot.vs_MirrorBot
 import PrisonersDilemma.Theorems.DupocBot.vs_CupodBot
+import PrisonersDilemma.Theorems.DupocBot.RedCellInstance
 import PrisonersDilemma.Theorems.DupocBot.vs_CupodTrollBot
 
 import PrisonersDilemma.Theorems.EBot.Helpers
@@ -219,6 +223,13 @@ import PrisonersDilemma.Tau.Theorems.TauDBot.Helpers
 import PrisonersDilemma.Tau.Theorems.TauDBot.Phase
 import PrisonersDilemma.Tau.Theorems.TauCupodTroll.Helpers
 import PrisonersDilemma.Tau.Theorems.TauCupodTroll.Phase
+import PrisonersDilemma.Tau.Theorems.TauDupocTroll.Helpers
+import PrisonersDilemma.Tau.Theorems.TauDupocTroll.Phase
+import PrisonersDilemma.Base.EvalTranspose
+import PrisonersDilemma.Tau.Theorems.TauDIMDID.Helpers
+import PrisonersDilemma.Tau.Theorems.TauDIMDID.Loeb
+import PrisonersDilemma.Tau.Theorems.TauDIMDID.Tower
+import PrisonersDilemma.Tau.Theorems.TauDIMDID.Phase
 import PrisonersDilemma.Tau.Theorems.TauCupod.Helpers
 import PrisonersDilemma.Tau.Theorems.TauCupod.Phase
 import PrisonersDilemma.Tau.Theorems.TauCIMCIC.Helpers

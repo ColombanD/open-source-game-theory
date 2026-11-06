@@ -13,11 +13,12 @@
 *.minted
 *.DS_Store
 
-# LaTeX build outputs
+# LaTeX build outputs (latexmk; the top-level one is stray output of PBLT_proof.tex)
+/build/
 /latex/build/
 
 # Lean/Lake build outputs
-/code/.lake/
+/arith/.lake
 /engine/.lake/
 EXAMPLE.lean
 
@@ -50,9 +51,11 @@ poetry.lock
 __pycache__/
 *.py[cod]
 
-# uv/setuptools artifacts for app runner
+# uv/setuptools artifacts of the two Python projects
 app/uv.lock
 app/src/*.egg-info/
+pipeline/uv.lock
+pipeline/src/*.egg-info/
 
 # Node modules (if used)
 node_modules/
@@ -70,3 +73,5 @@ npm-debug.log
 # `--out-root generated/egt` from here still would, and one sweep is ~120
 # files. The tracked copy lives under app/generated/ with its own rules.
 /generated/
+# Engine-era tau HTML reports and the first bot-matrix run log, untracked 2026-10-29 (history has them).
+/app/generated/archive/

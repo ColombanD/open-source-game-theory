@@ -31,7 +31,7 @@ theorem cimcic_ctb_guard_unprovable_tail (k : Nat) :
       | search_t hProv hbr =>
           have : (Formula.eq (CIMCIC k) (CupodBot k)).interp := by
             have := Pf_sound _ _ hProv
-            simpa [Formula.subst] using this
+            simpa [Formula.subst] using! this
           simp only [Formula.interp] at this
           simp [CIMCIC, CupodBot] at this
       | search_f hneg hbr =>
@@ -146,7 +146,7 @@ theorem proofSearch_false_CIMCIC_vs_CupodTrollBot (k : Nat) :
           (Formula.impl (.plays (CIMCIC k) (CupodTrollBot k) Action.C)
                         (.plays (CupodTrollBot k) (CIMCIC k) Action.C)) := by
         have := (proofSearch_spec _ _).1 hps
-        simpa [Formula.subst] using this
+        simpa [Formula.subst] using! this
       refine cimcic_ctb_guard_unprovable_tail k k _ hpf (Nat.le_refl _) ?_
       refine ⟨rfl, ?_⟩
       intro hA

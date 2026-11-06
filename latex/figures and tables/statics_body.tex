@@ -1,0 +1,13 @@
+% figures and tables/statics_body.tex — static analysis of the eight-bot zoo (body8), t = 1, PA-S', hinge cells at the engine side (the floor value).
+% Source: app/generated/egt/runs/body8_sprime_t100_a030_ddbeab7343c4/{ess/ess_summary.csv, nash/latest/equilibria.jsonl}.
+\begin{table}[t]\centering\small
+\begin{tabular}{@{}llp{0.42\textwidth}cc@{}}\toprule
+Stage & & Support & Payoff & $\Pr[(C,C)]$ \\\midrule
+Pure ESS & none & \texttt{DupocBot} fails only by exact ties with \texttt{CooperateBot} and \texttt{TitForTatBot}; \texttt{DefectBot} ties with five types & & \\\midrule
+Nash equilibria & C0 & fully cooperative: supports within \{\texttt{CooperateBot}, \texttt{DupocBot}, \texttt{TitForTatBot}\} & $2$ & $1$ \\
+ & C1 & one mixed equilibrium on \{\texttt{CooperateBot}, \texttt{EBot}, \texttt{OBot}\} & $\tfrac32$ & $\tfrac{11}{18}$ \\
+ & C2 & all-defect: supports within \{\texttt{DefectBot}, \texttt{OBot}\} & $0$ & $0$ \\\bottomrule
+\end{tabular}
+\caption{Static analysis of the eight-bot zoo at full transparency, hinge cells at the engine side. No pure ESS exists; the 21 extreme Nash equilibria form three connected components, listed with the payoff each player receives and the probability of mutual cooperation. Equilibria are enumerated exactly and re-verified on the payoff matrix $A$.}
+\label{tab:statics-body}
+\end{table}

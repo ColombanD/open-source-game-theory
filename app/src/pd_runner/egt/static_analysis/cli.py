@@ -88,12 +88,14 @@ def main() -> None:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--zoo", default=DEFAULT_ZOO, choices=sorted(ZOOS),
                    help="which tau sub-zoo to analyse")
+    p.add_argument("--source", choices=("sprime", "engine"), default=None,
+                   help="proof system the cells come from (default: settings.CELL_SOURCE)")
     p.add_argument("--out", type=Path, default=Path("generated/egt/ess/"))
     p.add_argument("--atol", type=float, default=1e-12)
     args = p.parse_args()
 
     named = get_zoo(args.zoo)
-    payoff = payoff_matrix_from_tau_matrix(named.load(), zoo=args.zoo)
+    payoff = payoff_matrix_from_tau_matrix(named.load(source=args.source), zoo=args.zoo)
     bot_names = list(payoff.bots)
 
     result = run_ess(payoff, args.out, atol=args.atol)

@@ -52,7 +52,6 @@ def solve_face(A_S: np.ndarray, tol: float) -> FaceSolution:
     if A_S.shape != (k, k):
         raise ValueError(f"A_S must be square; got {A_S.shape}")
 
-    ones = np.ones((k, 1))
     M = np.zeros((k + 1, k + 1), dtype=float)
     M[:k, :k] = A_S
     M[:k, k] = -1.0

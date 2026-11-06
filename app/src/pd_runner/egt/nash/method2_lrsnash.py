@@ -32,7 +32,7 @@ import tempfile
 from dataclasses import dataclass
 from fractions import Fraction
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import List
 
 from pd_runner.egt.nash.extreme_ne import ExtremeNE, make_extreme_ne
 

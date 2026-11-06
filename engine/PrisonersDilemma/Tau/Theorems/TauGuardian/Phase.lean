@@ -31,6 +31,8 @@ def guardianRow : Tmpl → Action
   | .dbot     => .D
   | .cupod      => .C
   | .cupodTroll => .C
+  | .dupocTroll => .C
+  | .dimdid     => .C
   | .cimcic     => .C
   | .dimcid     => .C
   | .prudent    => .C
@@ -40,8 +42,8 @@ def guardianRow : Tmpl → Action
 
 /-- The row's witness: every entry is the punish-probe (`test = .D` prove-stage)
     fed the guard column's bits. -/
-theorem guardianRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 ≤ k)
-    (h10 : 10 ≤ k) (hL : 100 * Nat.log2 k + 1000 ≤ k) (hcg : c_guard k + 20 ≤ k) :
+theorem guardianRow_plays {k : Nat} (hk : 7 ≤ k) (hkk : 3 * c_guard k + 22 ≤ k) (h6 : 25 ≤ k)
+    (h10 : 43 ≤ k) (hL : 100 * Nat.log2 k + 1000 ≤ k) (hcg : 3 * c_guard k + 30 ≤ k) :
     ∀ T, ∃ N, eval N (.bot (inst (tauZoo k) .guardian T))
               (.bot (inst (tauZoo k) .guardian T))
               (inst (tauZoo k) .guardian T) = some (guardianRow T) :=
@@ -59,6 +61,8 @@ theorem guardianRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (
   | .dbot     => searchProbeD_plays_D _ _ (gB .dbot)
   | .cupod      => searchProbeD_plays_C _ _ (gB .cupod)
   | .cupodTroll => searchProbeD_plays_C _ _ (gB .cupodTroll)
+  | .dupocTroll => searchProbeD_plays_C _ _ (gB .dupocTroll)
+  | .dimdid     => searchProbeD_plays_C _ _ (gB .dimdid)
   | .cimcic     => searchProbeD_plays_C _ _ (gB .cimcic)
   | .dimcid     => searchProbeD_plays_C _ _ (gB .dimcid)
   | .prudent    => searchProbeD_plays_C _ _ (gB .prudent)
@@ -79,14 +83,14 @@ theorem guardianRowSpec : RowSpec .guardian tauOrder guardianRow := by
     (by simp only [c_guard, numCost]; omega) T
 
 /-- **τ(GuardianBot)** — boundary `θ ≤ guardMass`. -/
-theorem tauGuardian_phase {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 ≤ k)
-    (h10 : 10 ≤ k) (hL : 100 * Nat.log2 k + 1000 ≤ k) (hcg : c_guard k + 20 ≤ k) (θ : Nat) (w : Tmpl → Nat) (opponent : Prog) :
+theorem tauGuardian_phase {k : Nat} (hk : 7 ≤ k) (hkk : 3 * c_guard k + 22 ≤ k) (h6 : 25 ≤ k)
+    (h10 : 43 ≤ k) (hL : 100 * Nat.log2 k + 1000 ≤ k) (hcg : 3 * c_guard k + 30 ≤ k) (θ : Nat) (w : Tmpl → Nat) (opponent : Prog) :
     (θ ≤ guardMass w → ∃ N, play N (TauBotZ k .guardian w θ) opponent = some .C)
     ∧ (¬ θ ≤ guardMass w → ∃ N, play N (TauBotZ k .guardian w θ) opponent = some .D) := by
   have h := phase_of_bits (tauZoo k) .guardian w guardianRow tauOrder θ opponent
     (fun T _ => guardianRow_plays hk hkk h6 h10 hL hcg T)
   simp only [bitMass, tauOrder, List.map, guardianRow, massOf, massOf_ifC, massOf_ifD,
     TauBotZ] at h ⊢
-  simpa [guardMass, simMass] using h
+  simpa [-forall_const, guardMass, simMass] using h
 
 end PD.Tau

@@ -7,7 +7,6 @@ lambda), not from a binder-name convention.
 from __future__ import annotations
 
 import json
-import re
 
 import pytest
 
@@ -83,7 +82,7 @@ def test_export_feeds_the_scan() -> None:
     """Every exported theorem reaches `scan_outcome_theorems` with a mapped shape."""
     exported = {t.name: t for t in _theorems_from_export()}
     assert exported, "export is present but empty"
-    scanned = {t.name: t for t in scan_outcome_theorems()}
+    scanned = {t.name: t for t in scan_outcome_theorems(source="engine")}
     for name, t in exported.items():
         assert name in scanned, f"{name} exported but missing from the scan"
         # The export is authoritative where it and the legacy regex overlap.
@@ -219,7 +218,7 @@ def test_tau_export_has_one_row_per_template() -> None:
     # reader fills its diagonal with "N".
     prefix = [r["template"] for r in data["rows"] if r["order"] == "tauOrderInit"]
     assert prefix == ["mirror"]
-    assert kernel_bits()["mirror"]["mirror"] == "N"
+    assert kernel_bits(source="engine")["mirror"]["mirror"] == "N"
 
 
 @pytest.mark.skipif(not _TAU_EXPORT.exists(), reason="tau_rows.json not generated yet")
@@ -249,7 +248,7 @@ def test_companions_are_exported_and_attached() -> None:
     for c in companions:
         assert c["name"].endswith("_staggered"), c
         assert c["staggered"] is True, c
-    by_pair = {frozenset((t.left_bot, t.right_bot)): t for t in scan_outcome_theorems()}
+    by_pair = {frozenset((t.left_bot, t.right_bot)): t for t in scan_outcome_theorems(source="engine")}
     for c in companions:
         cell = by_pair[frozenset((c["left_bot"], c["right_bot"]))]
         assert any(x.name == c["name"] for x in cell.companions), c["name"]

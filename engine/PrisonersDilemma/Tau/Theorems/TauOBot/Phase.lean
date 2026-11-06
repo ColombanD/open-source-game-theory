@@ -31,6 +31,8 @@ def obotRow : Tmpl → Action
   | .dbot     => .D
   | .cupod      => .D
   | .cupodTroll => .C
+  | .dupocTroll => .C
+  | .dimdid     => .D
   | .cimcic     => .D
   | .dimcid     => .D
   | .prudent    => .D
@@ -40,8 +42,8 @@ def obotRow : Tmpl → Action
 
 /-- The row's witness: two chained run-stage defection watches over the δ_C and
     δ_D behavioral columns. -/
-theorem obotRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 ≤ k)
-    (h10 : 10 ≤ k) (hL : 100 * Nat.log2 k + 1000 ≤ k) (hcg : c_guard k + 20 ≤ k) :
+theorem obotRow_plays {k : Nat} (hk : 7 ≤ k) (hkk : 3 * c_guard k + 22 ≤ k) (h6 : 25 ≤ k)
+    (h10 : 43 ≤ k) (hL : 100 * Nat.log2 k + 1000 ≤ k) (hcg : 3 * c_guard k + 30 ≤ k) :
     ∀ T, ∃ N, eval N (.bot (inst (tauZoo k) .obot T)) (.bot (inst (tauZoo k) .obot T))
               (inst (tauZoo k) .obot T) = some (obotRow T) :=
   let pC := inst_coop_plays hk hkk h6 h10 hL
@@ -60,6 +62,9 @@ theorem obotRow_plays {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 :
   | .cupod      => simTestD_falls _ _ (pC .cupod) (simTestD_fires _ _ (pD .cupod))
   | .cupodTroll => simTestD_falls _ _ (pC .cupodTroll)
       (simTestD_falls _ _ (pD .cupodTroll) ⟨1, rfl⟩)
+  | .dupocTroll => simTestD_falls _ _ (pC .dupocTroll)
+      (simTestD_falls _ _ (pD .dupocTroll) ⟨1, rfl⟩)
+  | .dimdid     => simTestD_falls _ _ (pC .dimdid) (simTestD_fires _ _ (pD .dimdid))
   | .cimcic     => simTestD_falls _ _ (pC .cimcic) (simTestD_fires _ _ (pD .cimcic))
   | .dimcid     => simTestD_falls _ _ (pC .dimcid) (simTestD_fires _ _ (pD .dimcid))
   | .prudent    => simTestD_fires _ _ (pC .prudent)
@@ -80,8 +85,8 @@ theorem obotRowSpec : RowSpec .obot tauOrder obotRow := by
     (by simp only [c_guard, numCost]; omega) T
 
 /-- **τ(OBot)** — boundary `θ ≤ obotMass`. -/
-theorem tauOBot_phase {k : Nat} (hk : 2 ≤ k) (hkk : c_guard k + 3 ≤ k) (h6 : 6 ≤ k)
-    (h10 : 10 ≤ k) (hL : 100 * Nat.log2 k + 1000 ≤ k) (hcg : c_guard k + 20 ≤ k) (θ : Nat) (w : Tmpl → Nat) (opponent : Prog) :
+theorem tauOBot_phase {k : Nat} (hk : 7 ≤ k) (hkk : 3 * c_guard k + 22 ≤ k) (h6 : 25 ≤ k)
+    (h10 : 43 ≤ k) (hL : 100 * Nat.log2 k + 1000 ≤ k) (hcg : 3 * c_guard k + 30 ≤ k) (θ : Nat) (w : Tmpl → Nat) (opponent : Prog) :
     (θ ≤ obotMass w → ∃ N, play N (TauBotZ k .obot w θ) opponent = some .C)
     ∧ (¬ θ ≤ obotMass w → ∃ N, play N (TauBotZ k .obot w θ) opponent = some .D) := by
   have h := phase_of_bits (tauZoo k) .obot w obotRow tauOrder θ opponent

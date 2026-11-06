@@ -31,21 +31,31 @@ theorem proofSearch_false_for_CooperateBot (k : Nat) :
 
 -- DefectBot --
 
-/-- Proof search is true for DefectBot vs CupodBot k at budget/index
-    `atom_cost 1`. DefectBot ignores its opponent
+/-- `CupodBot k`'s source size: the budget numeral, the guard atom (3), two constant
+    branches and the node — `Nat.log2 k + 7`. Every atom certificate against Cupod now
+    pays this on top of its transcript (the recost of 2026-09-16). -/
+theorem CupodBot_size (k : Nat) : (CupodBot k).size = Nat.log2 k + 7 := by
+  simp only [CupodBot, Prog.size, Formula.size, numCost]
+
+/-- Proof search is true for DefectBot vs CupodBot k at SOME budget/index: one leaf
+    plus the atom's size `1 + (Nat.log2 k + 7) + 1`. DefectBot ignores its opponent
     so the plays-atom is `S`-derivable (`⊢`) for any CupodBot index. -/
 theorem proofSearch_true_for_DefectBot :
-    ∃ k, proofSearch k (.plays DefectBot (CupodBot k) .D) = true :=
-  let k := atom_cost 1
-  ⟨k, (proofSearch_spec _ _).2 (Pf.atom ⟨PlaysProof.const, by decide⟩)⟩
+    ∃ k, proofSearch k (.plays DefectBot (CupodBot k) .D) = true := by
+  obtain ⟨K, hK⟩ := linear_log2_add_le 1 10
+  exact ⟨K, (proofSearch_spec _ _).2 (Pf.atom ⟨PlaysProof.const,
+    by have := hK K le_rfl
+       simp only [Formula.size, CupodBot_size, DefectBot, Prog.size, c_leaf]; omega⟩)⟩
 
 /-- Threshold form of `proofSearch_true_for_DefectBot`: the certificate is a fixed
     `Pf.atom` whose only side condition is a COST INEQUALITY, so the guard fires (`⊢_k`) at every
-    budget above `atom_cost 1` -- not merely at that one witness. This is what lets the
-    outcome theorem be stated in the `.eventual` regime. -/
-theorem proofSearch_true_for_DefectBot_ge (k : Nat) (hk : atom_cost 1 ≤ k) :
+    budget above `Nat.log2 k + 10` (leaf + the atom's size) -- not merely at one witness. This is
+    what lets the outcome theorem be stated in the `.eventual` regime
+    (`linear_log2_add_le 1 10` supplies the threshold). -/
+theorem proofSearch_true_for_DefectBot_ge (k : Nat) (hk : Nat.log2 k + 10 ≤ k) :
     proofSearch k (.plays DefectBot (CupodBot k) .D) = true :=
-  (proofSearch_spec _ _).2 (Pf.atom ⟨PlaysProof.const, by simp [atom_cost] at hk ⊢; omega⟩)
+  (proofSearch_spec _ _).2 (Pf.atom ⟨PlaysProof.const,
+    by simp only [Formula.size, CupodBot_size, DefectBot, Prog.size, c_leaf]; omega⟩)
 
 
 -- CupodBot --
@@ -106,7 +116,7 @@ theorem TitForTatBot_plays_C_against_CupodBot (k fuel : Nat) :
     (.const Action.C) (.const Action.D)
     Action.C Action.C
     (by rfl) hGuard
-  simpa [eval] using hPlay
+  simpa [eval] using! hPlay
 
 /-- Semantically, TitForTat never plays D against CUPOD. -/
 theorem interp_TitForTatBot_plays_D_false (k : Nat) :
@@ -125,6 +135,8 @@ theorem interp_TitForTatBot_plays_D_false (k : Nat) :
               cases fuel with
               | zero =>
                   simp [play, eval, TitForTatBot, CupodBot, Prog.subst, Formula.subst, CooperateBot] at hn
+                  dsimp +instances only [Formula.subst, Prog.subst, TitForTatBot, CupodBot, CooperateBot] at hn
+                  simp at hn
               | succ fuel =>
                   have hC : play (fuel + 1 + 1 + 1 + 1) TitForTatBot (CupodBot k) = some .C := by
                     simpa [Nat.add_assoc] using TitForTatBot_plays_C_against_CupodBot k fuel
@@ -142,17 +154,24 @@ theorem proofSearch_false_for_TitForTatBot (k : Nat) :
 
 -- DBot --
 
+/-- Proof search is true for `.bot DefectBot` vs CupodBot k at SOME budget: a
+    two-character transcript plus the atom's size `2 + (Nat.log2 k + 7) + 1`. -/
 theorem proofSearch_true_for_bot_DefectBot :
-    ∃ k, proofSearch k (.plays (.bot DefectBot) (CupodBot k) .D) = true :=
-  let k := atom_cost 2
-  ⟨k, (proofSearch_spec _ _).2 (Pf.atom ⟨PlaysProof.bot PlaysProof.const, by decide⟩)⟩
+    ∃ k, proofSearch k (.plays (.bot DefectBot) (CupodBot k) .D) = true := by
+  obtain ⟨K, hK⟩ := linear_log2_add_le 1 12
+  exact ⟨K, (proofSearch_spec _ _).2 (Pf.atom ⟨PlaysProof.bot PlaysProof.const,
+    by have := hK K le_rfl
+       simp only [Formula.size, CupodBot_size, DefectBot, Prog.size, c_leaf, c_node]; omega⟩)⟩
 
 /-- Threshold form of `proofSearch_true_for_bot_DefectBot`: the certificate's only side
-    condition is a COST INEQUALITY, so the guard fires (`⊢_k`) at every budget above `atom_cost 2`. -/
-theorem proofSearch_true_for_bot_DefectBot_ge (k : Nat) (hk : atom_cost 2 ≤ k) :
+    condition is a COST INEQUALITY, so the guard fires (`⊢_k`) at every budget above
+    `Nat.log2 k + 12` (bot + leaf + the atom's size; `linear_log2_add_le 1 12` supplies
+    the threshold). -/
+theorem proofSearch_true_for_bot_DefectBot_ge (k : Nat) (hk : Nat.log2 k + 12 ≤ k) :
     proofSearch k (.plays (.bot DefectBot) (CupodBot k) .D) = true :=
   (proofSearch_spec _ _).2
-    (Pf.atom ⟨PlaysProof.bot PlaysProof.const, by simp [atom_cost] at hk ⊢; omega⟩)
+    (Pf.atom ⟨PlaysProof.bot PlaysProof.const,
+      by simp only [Formula.size, CupodBot_size, DefectBot, Prog.size, c_leaf, c_node]; omega⟩)
 
 /-- CUPOD defects against `.bot DefectBot` once its search guard succeeds. -/
 theorem CupodBot_plays_D_against_bot_DefectBot (k fuel : Nat)
@@ -178,7 +197,7 @@ theorem DBot_plays_C_against_CupodBot (k fuel : Nat)
     (.const Action.D) (.const Action.C)
     Action.C Action.D
     (by rfl) hGuard
-  simpa [eval] using hPlay
+  simpa [eval] using! hPlay
 
 /-- Semantically, DBot never plays D against CUPOD (given the DefectBot probe
     succeeds). -/
@@ -199,6 +218,8 @@ theorem interp_DBot_plays_D_false (k : Nat)
               cases fuel with
               | zero =>
                   simp [play, eval, DBot, CupodBot, Prog.subst, Formula.subst, DefectBot] at hn
+                  dsimp +instances only [Formula.subst, Prog.subst, DBot, CupodBot, DefectBot] at hn
+                  simp at hn
               | succ fuel =>
                   have hC : play (fuel + 1 + 1 + 1 + 1) DBot (CupodBot k) = some .C := by
                     simpa [Nat.add_assoc] using DBot_plays_C_against_CupodBot k fuel hk
@@ -244,11 +265,11 @@ theorem OBot_plays_D_against_CupodBot (k fuel : Nat)
       eval (fuel + 4) OBot (CupodBot k)
         (.ite (.sim .opp (.bot DefectBot)) Action.C (.const Action.C) (.const Action.D)) =
           some .D := by
-    simpa [Nat.add_assoc] using
+    simpa [Nat.add_assoc] using!
       (eval_ite_from_guard (fuel + 3) OBot (CupodBot k)
         (.sim .opp (.bot DefectBot)) (.const Action.C) (.const Action.D)
         Action.C Action.D hGuard2)
-  simpa [hInner] using hPlay
+  simpa [hInner] using! hPlay
 
 /-! ### CupodBot vs OBot — the honest `(C, D)` outcome (floor formalized 2026-07-09).
 
@@ -313,11 +334,13 @@ theorem CupodBot_plays_C_against_OBot (k fuel : Nat) :
   simp [eval, Prog.subst, Formula.subst, hg]
 
 /-- The `.bot DefectBot` probe guard is Σ₁-certifiable at run price, discharging
-    `OBot_plays_D_against_CupodBot`'s hypothesis at every `k ≥ 2`. -/
-theorem proofSearch_true_for_bot_DefectBot_vs_Cupod (k : Nat) (hk : 2 ≤ k) :
+    `OBot_plays_D_against_CupodBot`'s hypothesis at every `k` with `Nat.log2 k + 12 ≤ k`
+    (two characters + the atom's size). -/
+theorem proofSearch_true_for_bot_DefectBot_vs_Cupod (k : Nat) (hk : Nat.log2 k + 12 ≤ k) :
     proofSearch k (.plays (.bot DefectBot) (CupodBot k) .D) = true :=
   (proofSearch_spec _ _).2 (Pf.atom
-    ⟨PlaysProof.bot PlaysProof.const, by simp only [c_leaf, c_node]; omega⟩)
+    ⟨PlaysProof.bot PlaysProof.const,
+      by simp only [Formula.size, CupodBot_size, DefectBot, Prog.size, c_leaf, c_node]; omega⟩)
 
 theorem CupodBot_plays_D_against_OBot (fuel : Nat) (k : Nat)
     (hk : proofSearch k (.plays OBot (CupodBot k) .D) = true) :
@@ -352,7 +375,7 @@ theorem EBot_plays_C_against_CupodBot (k fuel : Nat)
         (.ite (.sim .opp (.bot CooperateBot)) Action.C (.const Action.C)
           (.ite (.sim .opp (.bot MirrorBot)) Action.C (.const Action.C) (.const Action.D))) =
         some .C := by
-    simpa [Nat.add_assoc] using
+    simpa [Nat.add_assoc] using!
       (eval_ite_from_guard (fuel + 3) EBot (CupodBot k)
         (.sim .opp (.bot CooperateBot)) (.const Action.C)
         (.ite (.sim .opp (.bot MirrorBot)) Action.C (.const Action.C) (.const Action.D))
@@ -364,7 +387,7 @@ theorem EBot_plays_C_against_CupodBot (k fuel : Nat)
       (.ite (.sim .opp (.bot MirrorBot)) Action.C (.const Action.C) (.const Action.D)))
     Action.C Action.D
     (by rfl) hGuard1
-  simpa [Nat.add_assoc, hInner] using hPlay
+  simpa [Nat.add_assoc, hInner] using! hPlay
 
 /-- Semantically, EBot never plays D against CUPOD (given the DefectBot probe
     succeeds). -/
@@ -384,15 +407,18 @@ theorem interp_EBot_plays_D_false (k : Nat)
               cases fuel with
               | zero =>
                   simp [play, eval, EBot, CupodBot, Prog.subst, Formula.subst] at hn
+                  dsimp +instances only [Formula.subst, Prog.subst, EBot, CupodBot] at hn
+                  simp at hn
               | succ fuel =>
                   cases fuel with
                   | zero =>
                       have hk' := hk
                       unfold CupodBot at hk'
                       simp [play, eval, EBot, CupodBot, Prog.subst, Formula.subst, hk'] at hn
-                      have hDC : (Action.D == Action.C) = false := by decide
-                      rw [hDC] at hn
-                      cases hn
+                      dsimp +instances only [Formula.subst, Prog.subst, EBot, CupodBot, CooperateBot,
+                        DefectBot] at hn
+                      simp [hk'] at hn
+                      exact absurd hn (by decide)
                   | succ fuel =>
                       have hC :
                           play (fuel + 1 + 1 + 1 + 1 + 1) EBot (CupodBot k) = some .C := by
@@ -455,7 +481,7 @@ theorem MirrorBot_plays_D_against_CupodBot (k fuel : Nat)
     play (fuel + 3) MirrorBot (CupodBot k) = some .D := by
   have hCupod : play (fuel + 2) (CupodBot k) MirrorBot = some .D :=
     CupodBot_plays_D_against_MirrorBot k fuel hk
-  simpa [play, eval, Prog.subst, MirrorBot] using hCupod
+  simpa [play, eval, Prog.subst, MirrorBot] using! hCupod
 
 /-- Dual of `CupodBot_plays_D_against_MirrorBot`: when proofSearch fails,
     CupodBot falls through to its `.const .C` cooperate branch. -/
@@ -473,7 +499,7 @@ theorem MirrorBot_plays_C_against_CupodBot (k fuel : Nat)
     play (fuel + 3) MirrorBot (CupodBot k) = some .C := by
   have hCupod : play (fuel + 2) (CupodBot k) MirrorBot = some .C :=
     CupodBot_plays_C_against_MirrorBot k fuel hk
-  simpa [play, eval, Prog.subst, MirrorBot] using hCupod
+  simpa [play, eval, Prog.subst, MirrorBot] using! hCupod
 
 /-- Inversion: from a `play` witness on MirrorBot's leg, recover that
     CupodBot's proof-search guard at parameter `k` must have fired. The play
@@ -494,6 +520,8 @@ theorem proofSearch_k_of_play_MirrorBot
     · have hev : play 2 MirrorBot (CupodBot k) = none := by
         unfold CupodBot
         simp [play, eval, Prog.subst, MirrorBot, Formula.subst]
+        dsimp +instances only [Formula.subst, Prog.subst, MirrorBot, CupodBot]
+        simp
       rw [hev] at h
       cases h
     · have hev : play (n + 3) MirrorBot (CupodBot k) = some .C := by

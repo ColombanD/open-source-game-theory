@@ -17,8 +17,10 @@ namespace PD.Theorems
 /-! ## GuardianBot's side: refute its guard against CIMCIC (CIMCIC doesn't bully CB). -/
 
 theorem gc_CIMCIC_consequent_botCB (k : Nat) :
-    Pf (atom_cost 2) (Formula.plays (.bot CooperateBot) (CIMCIC k) Action.C) :=
-  Pf.atom ⟨PlaysProof.bot PlaysProof.const, by decide⟩
+    Pf (atom_cost 2 + (Formula.plays (.bot CooperateBot) (CIMCIC k) Action.C).size)
+      (Formula.plays (.bot CooperateBot) (CIMCIC k) Action.C) :=
+  Pf.atom ⟨PlaysProof.bot PlaysProof.const,
+    by simp only [c_leaf, c_node, atom_cost, c_guard, numCost]; omega⟩
 
 theorem gc_proofSearch_true_CIMCIC_vs_botCB :
     ∃ K, ∀ k, k ≥ K →
@@ -31,7 +33,9 @@ theorem gc_proofSearch_true_CIMCIC_vs_botCB :
   show Pf k
     (Formula.impl (.plays (CIMCIC k) (.bot CooperateBot) Action.C)
                   (.plays (.bot CooperateBot) (CIMCIC k) Action.C))
-  refine Pf.weakenImpl _ _ (atom_cost 2) (gc_CIMCIC_consequent_botCB k) ?_
+  refine Pf.weakenImpl _ _
+    (atom_cost 2 + (Formula.plays (.bot CooperateBot) (CIMCIC k) Action.C).size)
+    (gc_CIMCIC_consequent_botCB k) ?_
   have hb := hK k hk
   have h1 : atom_cost 2 = 7 := by decide
   simp only [numCost, Formula.size, Prog.size, CIMCIC, CooperateBot]

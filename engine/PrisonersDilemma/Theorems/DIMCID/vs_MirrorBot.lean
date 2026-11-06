@@ -152,7 +152,7 @@ theorem dm_fb_bound (Kc Ksz : Nat)
 theorem dm_mirror_copies (k fuel : Nat) (a : Action)
     (h : play (fuel + 1) (DIMCID k) MirrorBot = some a) :
     play (fuel + 2) MirrorBot (DIMCID k) = some a := by
-  simpa [play, eval, Prog.subst, MirrorBot] using h
+  simpa [play, eval, Prog.subst, MirrorBot] using! h
 
 /-- **DIMCID vs MirrorBot: mutual defection (D, D)** for all sufficiently large `k`. -/
 @[outcome]

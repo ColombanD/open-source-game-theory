@@ -51,7 +51,7 @@ theorem outcome_LegibleBot_vs_MirrorBot :
       eval_mono_le hn' (n+1) (Nat.le_succ n)
     have hM : play (n+1) MirrorBot (LegibleBot (2*k+64) k) = some .C := by
       show eval (n+1) MirrorBot (LegibleBot (2*k+64) k) MirrorBot = some .C
-      simpa [eval, MirrorBot, Prog.subst] using hn
+      simpa [eval, MirrorBot, Prog.subst] using! hn
     exact ⟨n+1, outcome_of_plays _ _ _ _ _ hL hM⟩
   -- …and the match is determined at fuel 3 whatever the oracle says, so
   -- determinism (`play_unique`) pins the value there and monotonicity does the rest.

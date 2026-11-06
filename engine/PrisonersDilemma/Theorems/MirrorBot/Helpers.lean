@@ -35,7 +35,7 @@ theorem DBot_plays_C_against_MirrorBot (fuel : Nat) :
         (.const Action.D) (.const Action.C)
         Action.C Action.D
         (by rfl) hGuard
-    simpa [eval] using hPlay
+    simpa [eval] using! hPlay
 
 -- The three "MirrorBot copies its opponent's play" steps below used to be
 -- `simpa [play, eval, Prog.subst, MirrorBot]`, i.e. a blind simp over the whole `eval`
@@ -69,7 +69,7 @@ theorem OBot_plays_D_against_MirrorBot (fuel : Nat) :
         (.const Action.D)
         Action.C Action.C
         (by rfl) hGuard1
-    simpa [eval, hGuard2] using hPlay
+    simpa [eval, hGuard2] using! hPlay
 
 theorem MirrorBot_plays_D_against_OBot (fuel : Nat) :
     play (fuel + 7) MirrorBot OBot = some .D := by
@@ -89,7 +89,7 @@ theorem TitForTatBot_plays_C_against_MirrorBot (fuel : Nat) :
         (.const Action.C) (.const Action.D)
         Action.C Action.C
         (by rfl) hGuard
-    simpa [eval] using hPlay
+    simpa [eval] using! hPlay
 
 theorem MirrorBot_plays_C_against_TitForTatBot (fuel : Nat) :
     play (fuel + 6) MirrorBot TitForTatBot = some .C := by

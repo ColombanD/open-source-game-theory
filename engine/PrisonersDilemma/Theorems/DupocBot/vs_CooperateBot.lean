@@ -18,8 +18,11 @@ namespace PD.Theorems
 theorem outcome_DupocBot_vs_CooperateBot :
     OutcomeSpec .eventual 2
       DupocBot (fun _ => CooperateBot) (some (.C, .C)) := by
-  refine ⟨atom_cost 1, fun k hlt fuel => ?_⟩
-  have hk := proofSearch_true_for_CooperateBot_ge k (Nat.le_of_lt hlt)
+  -- The guard's certificate now pays the atom's size (`Nat.log2 k + 10`, the recost of
+  -- 2026-09-16), so the threshold comes from `linear_log2_add_le`, not a literal.
+  obtain ⟨K, hK⟩ := linear_log2_add_le 1 10
+  refine ⟨K, fun k hlt fuel => ?_⟩
+  have hk := proofSearch_true_for_CooperateBot_ge k (by have := hK k (Nat.le_of_lt hlt); omega)
 
   have hA : play (fuel + 2) (DupocBot k) CooperateBot = some .C := by
     show eval (fuel + 2) (DupocBot k) CooperateBot (DupocBot k) = some .C

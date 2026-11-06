@@ -78,10 +78,11 @@ def _self_coop(run_dir: Path) -> dict[str, int]:
     return {b: int(m.loc[b, b] > 0) for b in m.index}
 
 
-def load_nash_structure(out_root: Path = DEFAULT_OUT_ROOT) -> pd.DataFrame:
+def load_nash_structure(out_root: Path = DEFAULT_OUT_ROOT,
+                        floor_policy: str = "engine_side") -> pd.DataFrame:
     """One row per grid point: component-level cooperation classification."""
     rows = []
-    for r in load_run_summaries(out_root):
+    for r in load_run_summaries(out_root, floor_policy):
         nash_dir = _latest_nash(r["_dir"])
         if nash_dir is None:
             continue
@@ -106,12 +107,12 @@ def load_nash_structure(out_root: Path = DEFAULT_OUT_ROOT) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def _assemble(out_root: Path) -> pd.DataFrame:
+def _assemble(out_root: Path, floor_policy: str = "engine_side") -> pd.DataFrame:
     """Join the static classification with faces + the realized Moran share."""
-    ns = load_nash_structure(out_root)
-    tidy = load_tidy(out_root)[
+    ns = load_nash_structure(out_root, floor_policy)
+    tidy = load_tidy(out_root, floor_policy)[
         ["zoo", "family", "t", "alpha", "n_stable_faces", "moran_ss"]]
-    moran = load_moran(out_root)
+    moran = load_moran(out_root, floor_policy)
     strong = moran[(moran.population == 100) & (moran.beta == 1.0)]
     df = ns.merge(tidy, on=["zoo", "family", "t", "alpha"]).merge(
         strong[["zoo", "family", "t", "alpha", "shares"]],
@@ -210,9 +211,10 @@ def report(df: pd.DataFrame, coll: pd.DataFrame) -> str:
 
 def main() -> int:
     out_root = Path(sys.argv[1]) if len(sys.argv) > 1 else DEFAULT_OUT_ROOT
-    df = _assemble(out_root)
+    floor_policy = sys.argv[2] if len(sys.argv) > 2 else "engine_side"
+    df = _assemble(out_root, floor_policy)
     coll = collapse_table(df)
-    dest = out_root / "analysis"
+    dest = out_root / ("analysis" if floor_policy == "engine_side" else f"analysis_{floor_policy}")
     dest.mkdir(parents=True, exist_ok=True)
     df.to_csv(dest / "nash_structure.csv", index=False)
     (dest / "nash_structure.md").write_text(report(df, coll))
@@ -222,8 +224,8 @@ def main() -> int:
         print(f"figure -> {fig_path}")
     print(f"table  -> {dest / 'nash_structure.csv'}")
     print(f"report -> {dest / 'nash_structure.md'}\n")
-    body = coll[(coll.zoo == "body") & (coll.family == "behavioral")]
-    print("body/behavioral collapse points:\n",
+    body = coll[(coll.zoo == "body8") & (coll.family == "behavioral")]
+    print("body8/behavioral collapse points:\n",
           body[["alpha", "t_static", "t_moran"]].to_string(index=False))
     return 0
 

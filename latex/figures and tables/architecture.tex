@@ -1,0 +1,41 @@
+% Architecture of the formalization (PA-S'), kernel side only. Needs tikz
+% (arrows.meta, fit, backgrounds) and xcolor. Input it inside a \centering figure, no resizebox.
+% The section tags are macros so that the paper can point them at real labels, e.g.
+%   \renewcommand{\archSecSystem}{\S\ref{subsection:Lean-FormalSystem}}
+\providecommand{\archSecPrograms}{\S4.1}
+\providecommand{\archSecSystem}{\S4.2}
+\providecommand{\archSecMethods}{\S4.3}
+\providecommand{\archSecFloors}{\S4.4}
+\providecommand{\archSecTau}{\S4.5}
+\providecommand{\archTag}[1]{{\scriptsize\itshape\color{black!60}#1}}
+\colorlet{archFull}{blue!55!black}
+\colorlet{archPartial}{orange!75!black}
+\begin{tikzpicture}[
+  font=\footnotesize,
+  box/.style={draw, rounded corners=2pt, align=center, inner sep=4pt, text width=6.6cm, fill=white},
+  lib/.style={box, fill=black!8},
+  full/.style={box, draw=archFull, thick, fill=archFull!8},
+  partial/.style={box, draw=archPartial, thick, fill=archPartial!10},
+  arr/.style={-{Stealth[length=2mm]}, semithick},
+  note/.style={font=\scriptsize\itshape, text=black!60},
+  lbl/.style={font=\scriptsize, align=left, text width=3.3cm, anchor=west, xshift=2mm},
+  region/.style={font=\footnotesize\bfseries, text=black!70},
+]
+\node[lib]  (found)  at (0,0)
+  {\textbf{Foundation} (trusted as a library)\\ first-order arithmetic, G\"odel coding, the proof predicate};
+\node[box]  (base)   at (0,1.7)
+  {\textbf{Trusted base}: nine definitions \archTag{\archSecPrograms, \archSecSystem}\\ theory $T_{\mathrm{Act}}$, proof length $|d|$, box $\Box_k$,\\ program codes, guard, evaluator};
+\node[full] (matrix) at (0,4.0)
+  {\textbf{Outcome matrix} \archTag{\archSecMethods, \archSecFloors}\\ full transparency: one theorem per pair,\\ floors as dichotomies};
+\node[partial] (tau) at (0,6.3)
+  {\textbf{$\tau$-rows} \archTag{\archSecTau}\\ partial transparency: $\tau$-programs and\\ their rows, one theorem per program};
+\draw[arr] (found) -- (base);
+\draw[arr] (base) -- node[lbl] {\textbf{proof methods} \archTag{\archSecMethods}\\ soundness, completeness,\\ bounded L\"ob} (matrix);
+\draw[arr] (matrix) -- node[lbl] {\textbf{source lift}\\ $\tau$-programs are programs;\\ rows proved from cells\\ and floors} (tau);
+% build-time checks around the two statement layers
+\begin{scope}[on background layer]
+  \node[draw=black!50, densely dotted, rounded corners=3pt, inner sep=6pt, fit=(matrix)(tau)] (checks) {};
+\end{scope}
+\node[note, anchor=south west] at ([xshift=1mm]checks.north west) {linter $\cdot$ census $\cdot$ coverage, inside \texttt{lake build}};
+\node[region, anchor=south west] at ([yshift=5mm]checks.north west) {Checked by the Lean kernel, no project axioms};
+\end{tikzpicture}

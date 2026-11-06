@@ -202,7 +202,7 @@ theorem cimcic_pb_guard_false (k : Nat) :
           (Formula.impl (.plays (CIMCIC k) (PrudentBot k) Action.C)
                         (.plays (PrudentBot k) (CIMCIC k) Action.C)) := by
         have := (proofSearch_spec _ _).1 h
-        simpa [Formula.subst] using this
+        simpa [Formula.subst] using! this
       have hsound := Pf_sound _ _ hpf
       simp only [Formula.interp] at hsound
       exact cimcic_pb_PB_not_C k (hsound hCimC)

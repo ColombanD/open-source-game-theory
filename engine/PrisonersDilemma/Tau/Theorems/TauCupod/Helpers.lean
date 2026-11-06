@@ -141,7 +141,7 @@ theorem cupod_coop_plays_C {k : Nat} :
   searchProbeD_plays_C _ _ (ps_probeD_false_of_plays_C k ⟨1, rfl⟩)
 
 /-- τ(Cupod) PUNISHES the defector: its defection is a trivial positive atom. -/
-theorem cupod_defect_plays_D {k : Nat} (hk : 2 ≤ k) :
+theorem cupod_defect_plays_D {k : Nat} (hk : 7 ≤ k) :
     ∃ N, eval N (.bot (inst (tauZoo k) .cupod .defect))
       (.bot (inst (tauZoo k) .cupod .defect))
       (inst (tauZoo k) .cupod .defect) = some Action.D :=
@@ -343,7 +343,7 @@ theorem pp_cupod_coop_C {k m : Nat}
 
 /-- Cupod PUNISHES the defector, with a transcript: `search_t` citing the trivial
     defection atom. -/
-theorem pp_cupod_defect_D {k : Nat} (hk : 2 ≤ k) :
+theorem pp_cupod_defect_D {k : Nat} (hk : 7 ≤ k) :
     PlaysProof (.bot (inst (tauZoo k) .cupod .defect))
       (.bot (inst (tauZoo k) .cupod .defect)) (inst (tauZoo k) .cupod .defect)
       Action.D (c_leaf + c_guard k + c_node) := by

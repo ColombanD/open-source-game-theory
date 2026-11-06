@@ -26,11 +26,11 @@ floor `> k` — JustBot at the same budget can never see it and defects (D). -/
 
 /-! ## DupocBot side (feeds GuardianBot's guard against `.bot (DupocBot k)`). -/
 
-theorem gjb_DupocBot_plays_C_vs_botCB (k : Nat) (hk : 2 ≤ k) :
+theorem gjb_DupocBot_plays_C_vs_botCB (k : Nat) (hk : Nat.log2 k + 12 ≤ k) :
     ∃ n, play n (DupocBot k) (.bot CooperateBot) = some .C := by
   have hg : proofSearch k (.plays (.bot CooperateBot) (DupocBot k) .C) = true := by
     refine (proofSearch_spec _ _).2 (Pf.atom ⟨PlaysProof.bot PlaysProof.const, ?_⟩)
-    unfold c_leaf c_node; omega
+    simp only [c_leaf, c_node, Formula.size, Prog.size, numCost, CooperateBot, DupocBot]; omega
   refine ⟨2, ?_⟩
   show eval 2 (DupocBot k) (.bot CooperateBot) (DupocBot k) = some .C
   unfold DupocBot
@@ -167,15 +167,15 @@ theorem gjb_JustBot_plays_D_vs_Guardian (k fuel : Nat) :
 
 /-! ## LEFT: GuardianBot cooperates vs JustBot. -/
 
-theorem gjb_JustBot_plays_C_vs_botCB (k fuel : Nat) (hk : 2 ≤ k) :
+theorem gjb_JustBot_plays_C_vs_botCB (k fuel : Nat) (hk : Nat.log2 k + 13 ≤ k) :
     play (fuel + 2) (JustBot k) (.bot CooperateBot) = some .C := by
   have hg : proofSearch k
       (.plays (.bot CooperateBot) (.bot (DupocBot k)) .C) = true := by
     refine (proofSearch_spec _ _).2 (Pf.atom ⟨PlaysProof.bot PlaysProof.const, ?_⟩)
-    unfold c_leaf c_node; omega
+    simp only [c_leaf, c_node, Formula.size, Prog.size, numCost, CooperateBot, DupocBot]; omega
   exact JustBot_plays_C_against_bot_CooperateBot k fuel hg
 
-theorem gjb_JustBot_D_vs_botCB_false (k : Nat) (hk : 2 ≤ k) :
+theorem gjb_JustBot_D_vs_botCB_false (k : Nat) (hk : Nat.log2 k + 13 ≤ k) :
     ¬ (Formula.plays (JustBot k) (.bot CooperateBot) .D).interp := by
   rintro ⟨n, hn⟩
   have hC : play (n + 2) (JustBot k) (.bot CooperateBot) = some .C :=
@@ -184,13 +184,13 @@ theorem gjb_JustBot_D_vs_botCB_false (k : Nat) (hk : 2 ≤ k) :
     eval_mono_le hn (n + 2) (by omega)
   rw [hC] at hD; simp at hD
 
-theorem gjb_guardian_guard_vs_JustBot_false (k : Nat) (hk : 2 ≤ k) :
+theorem gjb_guardian_guard_vs_JustBot_false (k : Nat) (hk : Nat.log2 k + 13 ≤ k) :
     proofSearch k (.plays (JustBot k) (.bot CooperateBot) .D) = false := by
   cases h : proofSearch k (.plays (JustBot k) (.bot CooperateBot) .D) with
   | true => exact absurd (proofSearch_sound _ _ h) (gjb_JustBot_D_vs_botCB_false k hk)
   | false => rfl
 
-theorem gjb_GuardianBot_plays_C_vs_JustBot (k fuel : Nat) (hk : 2 ≤ k) :
+theorem gjb_GuardianBot_plays_C_vs_JustBot (k fuel : Nat) (hk : Nat.log2 k + 13 ≤ k) :
     play (fuel + 2) (GuardianBot k) (JustBot k) = some .C := by
   have hg := gjb_guardian_guard_vs_JustBot_false k hk
   show eval (fuel + 2) (GuardianBot k) (JustBot k) (GuardianBot k) = some .C
@@ -203,8 +203,9 @@ theorem gjb_GuardianBot_plays_C_vs_JustBot (k fuel : Nat) (hk : 2 ≤ k) :
 theorem llm_outcome_GuardianBot_vs_JustBot :
     OutcomeSpec .eventual 2
       GuardianBot JustBot (some (.C, .D)) := by
-  refine ⟨2, fun k hk fuel => outcome_mono_le (N := 2) ?_ (fuel + 2) (by omega)⟩
-  have hk2 : 2 ≤ k := by omega
+  obtain ⟨K, hK⟩ := linear_log2_add_le 1 13
+  refine ⟨K, fun k hk fuel => outcome_mono_le (N := 2) ?_ (fuel + 2) (by omega)⟩
+  have hk2 : Nat.log2 k + 13 ≤ k := by have := hK k (Nat.le_of_lt hk); omega
   have hA : play 2 (GuardianBot k) (JustBot k) = some .C :=
     gjb_GuardianBot_plays_C_vs_JustBot k 0 hk2
   have hB : play 2 (JustBot k) (GuardianBot k) = some .D :=
