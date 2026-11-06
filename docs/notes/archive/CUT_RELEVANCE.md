@@ -704,7 +704,7 @@ the termination formalization.
   (i) Tait-style computability predicates over `ProvT` (the honest SN proof;
   heavyweight); (ii) a Gentzen rank development on segment formulas; (iii) PER-INSTANCE
   fuel — the machine already semidecides, and concrete zoo trees can be excised by
-  `#eval` with per-theorem certificates (E-grade thesis content without the SN proof).
+  `#eval` with per-theorem certificates (E-grade content without the SN proof).
 - **D2f-c ✅ (2026-07-03, T49 §16) — executable diet certificates**: `gateOKb` (the
   Boolean mirror of the cut-diet check, over the full mutual triple),
   `gateOKb_sound`, and **`certify`** — a concrete tree whose checker returns `true`
@@ -747,7 +747,7 @@ along a run), the diag circle broken by the pinned budget `g` (fact 5), outer in
 on run-closure material. This is normalization for a **bounded-Löb modal proof
 calculus** — plausibly novel (GL lacks ordinary cut-elimination; boundedness is exactly
 what restores it) and plausibly a stand-alone paper. It needs offline mathematical
-iteration. Meanwhile the thesis does not wait: `boxInv_total_of_freeS2` covers the
+iteration. Meanwhile the write-up does not wait: `boxInv_total_of_freeS2` covers the
 contraction-free fragment, and the executable instance route (synthesize → excise →
 check → `certify`) delivers zoo-scale certificates without the SN theorem.
 
@@ -963,7 +963,7 @@ crossing fell back (O2/O3).
   `impl atom atom` roots, where the known derivation forms are `weakenImpl(atom-cert)`
   and the Löb chain `atomBoxImpl → axK/boxMono links → guard-box` — all middles
   box-shaped and conclusion-tied. The general dichotomy/bracket-abstraction machinery
-  is NOT needed for the thesis-grade zoo statement; keep it as the route for full
+  is NOT needed for the publishable zoo statement; keep it as the route for full
   generality.
 - **O5 SITE INVENTORY (2026-07-08, verified against the actual defs — supersedes the
   sketch below).** The assembly = proving `certifyExcised rounds fuel N₀ t = some _`
@@ -1071,7 +1071,7 @@ crossing fell back (O2/O3).
     DIRECT gate-transport (T50's evidence), with excision reserved for genuinely
     fresh cuts in arbitrary minimal trees; (iv) the regress lemma (the modest stratum
     derives no self-referential fact: `¬ ⊢^{modestGate N}_m tgtD`) as the falsification
-    half — thesis content.
+    half — publishable content.
 
 - **🎯 THE FALSIFICATION EXPERIMENT (original plan, superseded by the verdict above).**
   Decide the pivot empirically before more theory. Build the ProvT tree of a REAL
@@ -1234,7 +1234,7 @@ crossing fell back (O2/O3).
   (c) `struct`: no Derivation concludes plays-of-a-search-bot: its only census is
       searchBranch (impl-shaped), and Derivation-mp would need a box-antecedent
       Derivation (`derivation_no_box`) — dead. Small lemma via T48 shapes.
-  Yield: CutRelevance-with-modestGate REFUTED as a THEOREM (thesis content), the
+  Yield: CutRelevance-with-modestGate REFUTED as a THEOREM (publishable content), the
   companion to `dupoc_selfcoop_certified` (the repair holding on the same fact).
 
 - **⚠️ THE INSTANCE-GATE PIVOT (2026-07-08, LATER — read BEFORE the tie-down design

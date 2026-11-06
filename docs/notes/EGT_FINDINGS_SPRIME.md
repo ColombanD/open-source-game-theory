@@ -554,11 +554,11 @@ advantage to the behavioral twin"). DIMDID: exploited by Dupoc and CIMCIC (two h
 Hinge side: cells 73/37/34, row C 90; unexploitable + DIMDID; NE 213/5; basins coop 43.8% + 13.4% + {Def,OB}
 12.9%; SS {Dup,CIM} at (50,1),(100,1) (39.8 + 34.2 = 74.0%), +TFT at β=0.1, EBot alone at (10,0.1), {EB,TFT,Dup}
 at (100,0.01); self-coop 0.891; DIMDID still ≈ 0. Ladder table complete (7/8/10/12 rows); paper_status.tex has
-the "implication provers, and the troll's twin" paragraph in place of the thesis's twins test.
+the "implication provers, and the troll's twin" paragraph in place of the earlier analysis's twins test.
 
 ## 10. Partial transparency on the paper's zoos (2026-10-14) — body8 headline, ladder, natives, hinge appendix
 
-**Decisions (settled with Colomban before the rewrite):** headline zoo `body8` (twin-free, fully kernel-backed,
+**Decisions (settled before the rewrite):** headline zoo `body8` (twin-free, fully kernel-backed,
 full 6×6 grid in both families and both floor policies); families behavioral (headline) + syntactic (channel
 comparison), ε-uniform ONLY for the aggregator comparison (the natives are Dupoc twins as hypotheses: both
 distance families clamp at a twin ceiling of 0.857 on `body8+natives`, so their "t = 1" is already blurred —
@@ -583,14 +583,14 @@ transparency hinge subsection appended to `latex/paper_hinge_appendix.tex`.
 **body8, behavioral, engine side (realized cooperation at (100,1) along t = 1, .8, .6, .4, .2, 0):**
 α=0.3: .92 .92 .92 .86 .78 0 · α=0.45: .92 .92 .92 .92 .85 0 · α=0.62: .92 .92 .92 .85 .01 0 ·
 α=0.8: .92 .92 .97 .02 0 0 · α=1: .92 0 0 0 0 0. Static ceiling (best NE cooperation) drops at the SAME t at
-every α (t_static 0/0/0.2/0.4/0.8) — the thesis's α=0.3 exception is gone. SS set: Dup alone on t ∈ [0.4, 1]
+every α (t_static 0/0/0.2/0.4/0.8) — the earlier analysis's α=0.3 exception is gone. SS set: Dup alone on t ∈ [0.4, 1]
 for every α ≤ 0.8 (Dup+TFT at (0.6, 0.8)), Dup still at t=0.2 for α ∈ {0.45, 0.8} — as a DEFECTOR (its self-cell
 turns (D,D)); so the collapse criterion is realized cooperation, not the SS set. Tournament (C,C)/(D,D) rates:
 α=0.3 0.31→0.56 / 0.25→0.06; α=0.8 0.31→0.02 / 0.25→0.77; α=0.45 constant to t=0.2. No pure ESS on any of the
-22 distinct games (thesis: 93/94). Critical transparency t_c(α) (lowest grid t with realized ≥ ½): 0.2/0.2/0.4/0.6
-(thesis on the 10-bot body: ~40%, moderate caution 20%). Syntactic: same t_c at every α; SS differs at 5/30
+22 distinct games (earlier analysis: 93/94). Critical transparency t_c(α) (lowest grid t with realized ≥ ½): 0.2/0.2/0.4/0.6
+(earlier analysis, on the 10-bot body: ~40%, moderate caution 20%). Syntactic: same t_c at every α; SS differs at 5/30
 points, realized by >0.05 at 4 — and source blur is the MORE forgiving channel where they differ (0.92–0.94 vs
-0.78–0.85 at t=0.2, α ≤ 0.45) — the thesis's "cautious needs 60% under source blur" does NOT hold on body8.
+0.78–0.85 at t=0.2, α ≤ 0.45) — the earlier analysis's "cautious needs 60% under source blur" does NOT hold on body8.
 
 **Ladder (behavioral, t_c per α = 0.3/0.45/0.62/0.8; realized at t=1):** 7-bot 0.2/0.2/0.2/0.4 (0.92);
 body8 0.2/0.2/0.4/0.6 (0.92); +trolls 0.2/0.2/0.4/0.6 (0.94); +provers 0.2/0.2/0.2/0.4 (0.97; SS {CIM,Dup}
@@ -619,7 +619,7 @@ cells, 30 floors). No sweep number changes (Def 3 ≡ Def 4 certifies the bits);
 
 ## 11. The caution grid re-chosen (2026-10-19): α ∈ {0, 0.2, 0.4, 0.5, 0.6, 0.8, 1} — the threshold is NON-MONOTONE in caution
 
-**Why.** The old grid {0.3, 0.45, 0.62, 0.8} was tuned to the thesis zoo's t = 0 phases; on `body8` the t = 0
+**Why.** The old grid {0.3, 0.45, 0.62, 0.8} was tuned to the earlier 10-bot zoo's t = 0 phases; on `body8` the t = 0
 masses are multiples of 1/8, so 0.45 and 0.62 sat in ONE phase and 0.62 was 0.005 below the 5/8 breakpoint.
 Matrix identity check (behavioral, engine side): 0.6 ≡ 0.62 at every t; 0.4 ≡ 0.45 except at t = 0.2; 0.5 is
 new only at t = 0.2 (the collapse band); 0.2 is new at t ∈ {0.6, 0.4, 0.2}. At t = 0.2 the signal spreads 52

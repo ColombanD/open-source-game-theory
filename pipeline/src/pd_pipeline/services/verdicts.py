@@ -83,7 +83,7 @@ class ProofOutcome:
     turns_used: int = 0
     tool_calls_used: int = 0
     usage: UsageTotals = field(default_factory=UsageTotals)
-    notebook: str = ""                   # final lab-notebook text (thesis data)
+    notebook: str = ""                   # final lab-notebook text (research data)
 
     @property
     def proved(self) -> bool:

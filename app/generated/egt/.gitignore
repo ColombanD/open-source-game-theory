@@ -5,7 +5,7 @@
 #
 # This is deliberately narrower than ignoring `app/generated/`, which tracks
 # constructor proposals and outcome transcripts on purpose (longitudinal
-# thesis data that cannot be regenerated).
+# research data that cannot be regenerated).
 #
 # Keep a result set by copying it out, or point `--out-root` elsewhere.
 runs/

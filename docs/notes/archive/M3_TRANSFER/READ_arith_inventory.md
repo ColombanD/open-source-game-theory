@@ -2,7 +2,7 @@ I have everything needed. Final report follows.
 
 # ArithS package inventory (branch `colomban-arith-s`, `arith/`)
 
-Root: `/Users/colomband/Library/CloudStorage/OneDrive-Personal/Documents/Studies/ETH/Master Thesis/workspace/open-source-game-theory/arith/`. Lakefile pins Foundation `rev = "58c76ac8b26cfda45d0d5430511750489d39b25a"`, single `lean_lib` `ArithS`, `defaultTargets = ["ArithS"]`. `.lake` is a symlink to `/Users/colomband/wt/arith-lake`.
+Root: `arith/`. Lakefile pins Foundation `rev = "58c76ac8b26cfda45d0d5430511750489d39b25a"`, single `lean_lib` `ArithS`, `defaultTargets = ["ArithS"]`. `.lake` is a symlink to `~/wt/arith-lake`.
 
 ## Import order (`arith/ArithS.lean`, 19 lines, verbatim)
 

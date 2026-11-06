@@ -1,6 +1,6 @@
 # READ: Foundation's calculus, coded derivations, provability abstraction, fixed points, Σ₁-completeness — what the bounded-HBL design depends on
 
-Verbatim reader report. Source: `/Users/colomband/wt/arith-lake/packages/Foundation` at commit
+Verbatim reader report. Source: `~/wt/arith-lake/packages/Foundation` at commit
 `58c76ac8b26cfda45d0d5430511750489d39b25a` (Lean v4.33.1; namespace root `FFL`). File paths below are
 relative to `Foundation/` inside that package. Paragraphs marked **ANALYSIS** are mine; everything else is
 quoted or paraphrased with `file:line`.
@@ -13,7 +13,7 @@ Target of the next milestone (restated for reference; the ArithS side is only su
 
 ## 0. What ArithS already bridges (orientation only; another reader covers it in detail)
 
-`/Users/colomband/wt/osgt-arith-m3/arith/ArithS/`:
+`~/wt/osgt-arith-m3/arith/ArithS/`:
 
 - `Bew.lean:35` — `def LenBoxNat (f : V → V) (k : ℕ) (T : Theory L) [T.Δ₁] (φ : V) : Prop := ∃ d < f (ORingStructure.numeral k), Proof T d φ ∧ proofLen T d ≤ ORingStructure.numeral k`; `lenBoxNat … : 𝚷₁.Semisentence 1` (:40); `LenBoxNat.mono` (:53), `LenBoxNat.provable` (:60); the length-Gödel sentence `lenGödel` and `lower_bound_proofLen_proof_lenGödel` (:170), modelled 1:1 on Foundation's `RestrictedProvability.lean` (§3.4 below).
 - `BewV.lean:23` — `def LenBox (k φ : V) : Prop := ∃ d < codeBound k, Proof T d φ ∧ proofLen T d ≤ k` with the **Δ₁** definition `lenBox : 𝚫₁.Semisentence 2` (:25-28) and `lenBox_numeral` (:43). This is the budget-as-object-variable predicate the parametric box needs.

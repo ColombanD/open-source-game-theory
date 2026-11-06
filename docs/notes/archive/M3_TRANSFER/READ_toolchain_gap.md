@@ -12,11 +12,11 @@ Method: read-only greps over `engine/PrisonersDilemma/**` (built modules = every
 | vendored mathlib | `engine/.lake/packages/mathlib/lean-toolchain` = `leanprover/lean4:v4.28.0`, commit `8f9d9cff6bd728b17a24e163c9402775d9e6a365` (2026-02-16) | mathlib tag `v4.33.1` `lean-toolchain` = `leanprover/lean4:v4.33.1` (verified via raw GitHub) |
 | inherited deps pinned by version | `Cli` `inputRev "v4.28.0"`, `proofwidgets` `inputRev "v0.0.87"` (`engine/lake-manifest.json`) | arith manifest adds `doc-gen4`, `leansqlite`, `UnicodeBasic`, `BibtexQuery`, `MD4Lean`, `axiom-audit` (Foundation-only; irrelevant to engine) |
 | elan | `elan toolchain list` already has `leanprover/lean4:v4.33.1` (and v4.29.0, v4.30.0, v4.31.0, v4.32.2) | — |
-| `.lake` location | `engine/.lake/` is a REAL directory inside OneDrive (`build/`, `packages/`); `.gitignore:21` `/engine/.lake/` | `arith/.lake -> /Users/colomband/wt/arith-lake` symlink OUTSIDE OneDrive |
+| `.lake` location | `engine/.lake/` is a REAL directory inside OneDrive (`build/`, `packages/`); `.gitignore:21` `/engine/.lake/` | `arith/.lake -> ~/wt/arith-lake` symlink OUTSIDE OneDrive |
 | default targets | `engine/lakefile.toml:7` `defaultTargets = ["PrisonersDilemma", "OutcomeCheck"]`; `Metatheory` (roots `PrisonersDilemma.Decidability`) is UNPINNED from default, build with `lake build Metatheory`; `[[lean_exe]] name = "export_outcomes" root = "PrisonersDilemma.Outcome.Export"` | — |
 | CI | `.github/workflows/lean_action_ci.yml:14-16` `uses: leanprover/lean-action@v1` / `lake-package-directory: engine` (reads `engine/lean-toolchain`, no version literal) | — |
 | Docs literal | `engine/README.md:186` `**Toolchain:** Lean \`v4.28.0\` (see \`lean-toolchain\`).` | — |
-| Worktrees | main tree `colomban-arith-s` @2a16615; `/Users/colomband/wt/osgt-arith-m3` `[colomban-arith-m3]` | — |
+| Worktrees | main tree `colomban-arith-s` @2a16615; `~/wt/osgt-arith-m3` `[colomban-arith-m3]` | — |
 
 Size of the surface: 290 built `.lean` files, 57,329 lines. `Base` 11 files/6,529 lines; `Theorems` 178/19,201; `Decidability` 17/18,894; `Tau` 55/10,146; `Outcome` 5/595; `Bots` 18+8 files/679 lines.
 

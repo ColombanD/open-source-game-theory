@@ -35,7 +35,7 @@ namespace PD.Tau
 /-- TRUE: `inst .ebot .dupoc` plays C (the exploit-watch falls, the
     reciprocity-watch fires). **Intentionally unconsumed**: the spec-level record
     that the 0-bit below sits over REAL cooperation — the honest-divergence half of
-    the pair, consumed by the design review and the thesis. -/
+    the pair, consumed by the design review and the paper. -/
 theorem interp_probe_inst_ebot_dupoc {k : Nat} (hk : 7 ≤ k) :
     (probe (inst (tauZoo k) .ebot .dupoc)).interp := by
   have h1 : ∃ N, eval N (.bot (inst (tauZoo k) .dupoc .defect))

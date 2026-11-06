@@ -1282,8 +1282,17 @@ def diff_sources(bots: tuple[str, ...] | None = None) -> SourceDiff:
                         PAPER_BASE_BOTS))
     return SourceDiff(
         zoos=tuple(_diff_roster(k, lbl, b, engine, sprime, floor_rows) for k, lbl, b in rosters),
-        engine_file=str(engine_file), sprime_file=str(sprime_file),
+        engine_file=_repo_relative(engine_file), sprime_file=_repo_relative(sprime_file),
     )
+
+
+def _repo_relative(path: Path) -> str:
+    """`path` relative to the repository root when it lies inside it, so that a committed
+    report does not record the checkout's absolute location."""
+    try:
+        return path.resolve().relative_to(_workspace_root()).as_posix()
+    except ValueError:
+        return str(path)
 
 
 def main() -> None:

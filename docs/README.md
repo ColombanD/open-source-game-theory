@@ -32,7 +32,7 @@ say *why*. Names are stable; older notes cite each other by name.
 | [`ARITHMETIZED_S_ROADMAP.md`](notes/archive/ARITHMETIZED_S_ROADMAP.md), [`HANDOVER_ARITHMETIZED_S.md`](notes/archive/HANDOVER_ARITHMETIZED_S.md) | The milestones M1–M6 of `arith/` and the hand-over note (build recipe, the first trap list). |
 | [`BEW_PRIMER.md`](notes/archive/BEW_PRIMER.md), [`BOXCOST_SPIKE.md`](notes/archive/BOXCOST_SPIKE.md) | A primer on Foundation's provability predicate, and the measurement that fixed the cost of a box. |
 | [`RED_CELL_AUDIT.md`](notes/archive/RED_CELL_AUDIT.md) | The audit of the red cell (CupodBot vs DupocBot) before it was promoted. |
-| [`EGT_FINDINGS.md`](notes/archive/EGT_FINDINGS.md) | The thesis-era evolutionary results on the engine's matrices (superseded by the `S'` findings). |
+| [`EGT_FINDINGS.md`](notes/archive/EGT_FINDINGS.md) | The earlier evolutionary results on the engine's matrices (superseded by the `S'` findings). |
 | [`PROVER_MODEL_COMPARISON.md`](notes/archive/PROVER_MODEL_COMPARISON.md) | The LLM pipeline's prover-model case study (out of the paper's scope). |
 | [`UnderstandingTheLayers.md`](notes/archive/UnderstandingTheLayers.md) | An early tutorial walk through the engine's layers. |
 | [`DeadEnds/`](notes/archive/DeadEnds/) | Constructive bounded Löb, a constructed `Bew`, a normalization road map: tried and abandoned, with the reasons. |

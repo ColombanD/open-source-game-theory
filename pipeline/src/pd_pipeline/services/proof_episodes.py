@@ -20,7 +20,7 @@ Proposer → Compiler → Reviewer → Memory, adapted to this project:
 Every run gets one directory under `generated/outcomes/` (timestamped stem);
 each episode persists its meta recap (notebook embedded) + full transcript,
 and the final episode also persists the Lean source. Attempts are never
-deleted (longitudinal thesis data).
+deleted (longitudinal research data).
 
 Episodes serve two purposes: crash recovery (turn cap, context guard,
 verification-bounce cap end an episode WITHOUT a verdict, and the next episode

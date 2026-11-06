@@ -1,0 +1,52 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite the paper below."
+type: software
+title: "Open-Source Game Theory, mechanized"
+abstract: >-
+  A Lean 4 mechanization of proof-based open-source game theory (the engine, and PA-S', Peano
+  Arithmetic with a provability predicate bounded by proof length), its extension to partial
+  transparency, and the evolutionary analysis of the resulting populations.
+authors:
+  - given-names: Colomban
+    family-names: Duclaux
+    affiliation: "ETH Zürich; EuroSafeAI"
+  - given-names: Riccardo
+    family-names: Formenti
+    affiliation: "ETH Zürich; EuroSafeAI"
+  - given-names: Pepijn
+    family-names: Cobben
+    affiliation: "ETH Zürich; EuroSafeAI"
+  - given-names: Terry Jingchen
+    family-names: Zhang
+    affiliation: "University of Oxford; EuroSafeAI; Vector Institute"
+  - given-names: Bernhard
+    family-names: Schölkopf
+    affiliation: "ETH Zürich; Max Planck Institute for Intelligent Systems; ELLIS Institute Tübingen"
+  - given-names: Zhijing
+    family-names: Jin
+    affiliation: "EuroSafeAI; Max Planck Institute for Intelligent Systems; University of Toronto; Vector Institute"
+keywords:
+  - open-source game theory
+  - program equilibrium
+  - Lean 4
+  - bounded Löb theorem
+  - partial transparency
+  - evolutionary game theory
+# To fill at release: repository-code, commit, date-released, license.
+preferred-citation:
+  type: unpublished
+  title: "Open Source Game Theory: Formalization, Transparency, and Cooperation in Program Games"
+  year: 2026
+  authors:
+    - given-names: Colomban
+      family-names: Duclaux
+    - given-names: Riccardo
+      family-names: Formenti
+    - given-names: Pepijn
+      family-names: Cobben
+    - given-names: Terry Jingchen
+      family-names: Zhang
+    - given-names: Bernhard
+      family-names: Schölkopf
+    - given-names: Zhijing
+      family-names: Jin

@@ -219,11 +219,11 @@ lemma; the application lemma; the 16-arm fundamental lemma (the run-plumbing reu
 established machine-proof pattern plus a step-composition lemma); the corollary. One to
 two sessions of mechanical work — the design risk is now zero modulo Lean engineering.
 
-## 7. Why it matters beyond the thesis
+## 7. Why it matters beyond this project
 
 GL (provability logic) does not enjoy cut-elimination in the ordinary sense; the Löb
 axiom is the obstruction. This engine's BOUNDED Löb — where every box carries a budget
 and the fixpoint's unfolding is budget-pinned (`content_wt_le_subscript`) — appears to
 restore normalization. A proof would be, to our knowledge, the first normalization
 theorem for a bounded provability logic, with the bounded-Löb cap as its load-bearing
-novelty. That is a paper regardless of the thesis timeline.
+novelty. That is a paper in its own right.

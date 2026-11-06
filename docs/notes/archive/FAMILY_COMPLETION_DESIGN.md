@@ -187,7 +187,7 @@ an `implChain` induction per invariant).
    conclusion DERIVED from telescope + boxIntro/boxMono/weakenImpl/impS2. The fused
    rules survive as transcript-cheaper conveniences only.
 
-## THE CLOSURE AUDIT (2026-07-28, after Colomban's challenge) — what "complete" is
+## THE CLOSURE AUDIT (2026-07-28, after the completeness claim was challenged) — what "complete" is
 ## CERTIFIED to mean, family by family, and what remains
 
 **Family B — COMPLETED 2026-07-28 (the honest, certified scope).** LANDED: **S as an
@@ -338,7 +338,7 @@ a strictly more exotic one; the current leak is an `impS2` corner at
 box-tower-height-mismatched cuts, where one premise is provable via `atomBoxImpl`
 and the other is semantically unprovable but unclassifiable. VERDICT: the else
 polarity needs cut-elimination-strength machinery over the modal tier — a dedicated
-research track (thesis-chapter scale), not an integration task. Family A is
+research track (chapter scale), not an integration task. Family A is
 COMPLETE-over-derivable-content; the else cell is expressiveness-only, blocked, and
 its attack ladder is fully recorded (`ProvenanceSpike.lean` §4).
 

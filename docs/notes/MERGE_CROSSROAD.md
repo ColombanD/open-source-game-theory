@@ -55,7 +55,7 @@ with a citation rule; PA-`S'` is its arithmetic counterpart; the Löbian cells a
 are re-proved in PA-`S'`; citation is polynomially eliminable (U10); no polynomial
 budget-preserving embedding of the citation rule exists.*
 
-## Open questions for Colomban
+## Open questions
 
 * Must the box mean *PA* provability (→ B, D), or is "a system over PA satisfying (a)–(d),
   reducible to PA" acceptable (→ C)?

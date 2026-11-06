@@ -3,8 +3,9 @@
 **What this project is.** A mechanization of **open-source game theory (OSGT)** — Critch 2022's
 bounded-proof-search agents — in **Lean 4**, its extension to **partial transparency** (τ-bots),
 and the **evolutionary** analysis of the resulting populations. Companion code of the paper
-*Partial Transparency in OSGT* (`latex/paper_status.tex`). Four parts, in dependency order
-(each depends only on the ones above it):
+*Open Source Game Theory: Formalization, Transparency, and Cooperation in Program Games*
+(`latex/paper.tex`; Duclaux, Formenti, Cobben, Zhang, Schölkopf, Jin — the author list is `CITATION.cff`).
+Four parts, in dependency order (each depends only on the ones above it):
 
 1. **`engine/`** — the HOST: the agent language `Prog`, the fuelled evaluator, the bot zoo, the
    τ-bot DSL, the typed outcome-theorem template with its linter and census. Also the rule-based
@@ -237,12 +238,12 @@ a swept matrix never contains the `none` state. `proveEq` decides identity by SO
 side, 2 hinge pairs (Dupoc × DBot/EBot, both PROVED inter-reducible with one bounded-consistency sentence),
 1 flip (Cupod × OBot)); the ladder `nonprovers+dupoc` (7), `body8+trolls` (10),
 `body8+trolls+provers` (12), `body8+natives` (10, the aggregator comparison, ε-family only). Only these
-have runs on disk; `body`/`body+twins`/`body+twins+natives` (thesis era) stay registered, runless;
+have runs on disk; `body`/`body+twins`/`body+twins+natives` (the earlier analysis) stay registered, runless;
 `critch8` reproduces the standalone repo's eight types (fully proven since the red cell). WaryBot can be
 in no total `S'` roster; no floor-free roster contains DupocBot. Caution grid α ∈ {0.2, 0.4, 0.5, 0.6,
 0.8, 1} (re-chosen 2026-10-19).
 
-**EGT (`egt/`; records `docs/notes/EGT_FINDINGS_SPRIME.md`, thesis-era `EGT_FINDINGS.md`).** Stages:
+**EGT (`egt/`; records `docs/notes/EGT_FINDINGS_SPRIME.md`, the earlier `archive/EGT_FINDINGS.md`).** Stages:
 `static_analysis/` (pure ESS), `invasion/` (`G>`/`G≥` graphs, SCCs), `faces/` (face equilibria), `nash/`
 (extreme NE, exact `Fraction`), `replicator/` (basins — grouped by SUPPORT, not proximity; non-convergence
 is a finding), `moran/` (fixation, stochastic stability; log-space); `pipeline.py` runs a `(t, α)` sweep
@@ -270,7 +271,7 @@ references. `cd pipeline && uv sync --extra dev` (installs `pd-runner` from `../
 < 1` pinned — the 1.x SDK rejects the calibrated client's `httpx.Timeout`); `uv run pd-serve --reload`;
 `uv run run-matchup`; 255 tests. Keys in `pipeline/.env` (loaded on import; never exported from a shell
 rc). Its `generated/` holds the agents' artefacts: `constructor_proposals/`, `prepass/`,
-`lemma_attempts/` tracked; `outcomes/` (the proof-episode transcripts, longitudinal thesis data),
+`lemma_attempts/` tracked; `outcomes/` (the proof-episode transcripts, longitudinal research data),
 `reviews/`, `integrations/`, `lean/`, `logs/` gitignored.
 
 **Architecture.** Proof agent = Proposer → Compiler → Reviewer → Memory (AxProverBase-style):
@@ -320,7 +321,7 @@ types; E4 numbers justify the bespoke pipeline.
 * The two JSON exports are the ONLY interface between Lean and Python; no regex over Lean source.
 * Commit by file name; one lake build at a time; `arith/` and `engine/` share the toolchain and the
   mathlib commit. CI (`.github/workflows/lean_action_ci.yml`) builds both Lean packages.
-* `latex/` is the user's: `paper_status.tex` and `figures and tables/` are edited by the user; the
+* `latex/` is the user's: `paper.tex` and `figures and tables/` are edited by the user; the
   generators `latex/scripts/gen_*.py` read `app/generated/` and the EGT runs.
 * Never quote a Cantor-coding constant; state every `S'` result "for all large `k`".
 * Memory of past sessions: the notes under `docs/` are the record (`docs/README.md` indexes them);

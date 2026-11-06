@@ -357,7 +357,7 @@ rather than emerging from an axiom set and a proof-string predicate.
 | Alternative | Fate |
 |---|---|
 | Full arithmetization on mathlib `ModelTheory` | Wrong niche — no syntactic calculus with derivations as data; items (1)–(3) of the needed stack would be built from bare ground. Do not retry. |
-| Full arithmetization on Foundation | The right base IF ever attempted (derivations are measurable data; qualitative Gödel/Löb stack done), but the quantitative layer is virgin territory and the token-encoding equivariance becomes a real design obligation. Multi-person-year program; future work, not thesis scope. |
+| Full arithmetization on Foundation | The right base IF ever attempted (derivations are measurable data; qualitative Gödel/Löb stack done), but the quantitative layer is virgin territory and the token-encoding equivariance becomes a real design obligation. Multi-person-year program; future work, out of scope here. |
 | Interface formalization (middle path) | **LANDED 2026-08-27 for the modal core** — `Base/BoundedGL.lean` (`structure BoundedGL`, `Pf` a model by `rfl`, bounded Löb + PBLT generic); see the 2026-08-27 entry above. Soundness, the τ-involution and the transparency family remain per-rule prose; the arithmetized instance is the stated obligation. |
 
 **One-line summary.** The rule set is not a stand-in for the "real" `S` we failed to

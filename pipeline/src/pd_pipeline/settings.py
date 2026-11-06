@@ -21,7 +21,7 @@ from dataclasses import dataclass, field
 # All current eval baselines and the adaptive-thinking-stall workaround notes
 # (see llm/client.py) are calibrated on opus-4-7; change this only at a
 # designated re-baselining point so model and architecture effects stay
-# separable in the thesis data.
+# separable in the recorded data.
 DEFAULT_MODEL = "claude-opus-4-7"
 
 # (input $/MTok, output $/MTok) — used for cost reporting in eval records.

@@ -7,6 +7,14 @@ name = "pd-pipeline"
 version = "0.1.0"
 description = "LLM pipeline over the OSGT Lean engine: bots from natural language, outcome proofs by an agent, web UI"
 readme = "README.md"
+authors = [
+    { name = "Colomban Duclaux" },
+    { name = "Riccardo Formenti" },
+    { name = "Pepijn Cobben" },
+    { name = "Terry Jingchen Zhang" },
+    { name = "Bernhard Schölkopf" },
+    { name = "Zhijing Jin" },
+]
 requires-python = ">=3.11"
 dependencies = [
     "pd-runner",

@@ -3,7 +3,9 @@
 A Lean 4 mechanization of **open-source game theory** (Critch 2022: agents that read each other's
 source code and search for bounded proofs about it), the **partial-transparency** extension
 (τ-bots: agents that receive a blurred signal about their opponent), and the **evolutionary**
-analysis of the resulting populations. Companion to the paper *Partial Transparency in OSGT*.
+analysis of the resulting populations. Companion to the paper
+*Open Source Game Theory: Formalization, Transparency, and Cooperation in Program Games*
+(Duclaux, Formenti, Cobben, Zhang, Schölkopf and Jin; see [Authors and citation](#authors-and-citation)).
 
 ## Layout
 
@@ -31,6 +33,25 @@ census inside `lake build`, or an explicitly stated open case (a floor dichotomy
 
 Project conventions for contributors and agents are in [`CLAUDE.md`](CLAUDE.md); the design notes
 live under [`docs/`](docs/) — start with its [index](docs/README.md).
+
+## Authors and citation
+
+Colomban Duclaux (ETH Zürich, EuroSafeAI), Riccardo Formenti (ETH Zürich, EuroSafeAI), Pepijn Cobben
+(ETH Zürich, EuroSafeAI), Terry Jingchen Zhang (University of Oxford, EuroSafeAI, Vector Institute),
+Bernhard Schölkopf (ETH Zürich, Max Planck Institute for Intelligent Systems, ELLIS Institute Tübingen)
+and Zhijing Jin (EuroSafeAI, Max Planck Institute for Intelligent Systems, University of Toronto, Vector
+Institute).
+
+To cite this repository, cite the paper ([`CITATION.cff`](CITATION.cff) carries the same record):
+
+```bibtex
+@unpublished{duclaux2026osgt,
+  title  = {Open Source Game Theory: Formalization, Transparency, and Cooperation in Program Games},
+  author = {Duclaux, Colomban and Formenti, Riccardo and Cobben, Pepijn and Zhang, Terry Jingchen and
+            Sch{\"o}lkopf, Bernhard and Jin, Zhijing},
+  year   = {2026},
+}
+```
 
 ## Toolchain
 

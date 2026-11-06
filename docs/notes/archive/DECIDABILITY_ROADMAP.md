@@ -75,7 +75,7 @@ milestone ledger; read §5c–§5g before touching anything). Executive summary:
 `T42ProvableB.lean`): a computable `N₀` with `Provable k φ → ProvableG (modestGate (N₀ k φ))
 k φ` (`⊢_k φ ⟹ ⊢^{G}_k φ`, object to object). Given it, `proofSearch` is decidable ⇒ `eval` computable ⇒ outcomes `by decide`. If it
 fails, `Provable` is a candidate undecidable bounded-provability predicate. Either resolution
-is thesis-grade. (Optional consolidation, T5: promote the spike chain into the engine tree,
+is publication-grade. (Optional consolidation, T5: promote the spike chain into the engine tree,
 wire `proofSearch` to the decided fragment, retire `evalC`.)
 
 ---
@@ -328,7 +328,7 @@ right only if "never touch existing proofs" is paramount — explicitly not the 
       unsound axiom).
     * Search-free-probe results (PrudentBot×MirrorBot, Dupoc/Cupod self-play & vs
       const/sim bots) survive as-is (their prudence/probe facts have ordinary certificates).
-    DECISION (Colomban, 2026-07-02): staggered budgets (recommendation).
+    DECISION (2026-07-02): staggered budgets (recommendation).
   - **T3.2a STEP 2 — ✅ SHIPPED (2026-07-03, build green): THE AXIOM IS DELETED — ZERO
     PROJECT AXIOMS.** Every surviving theorem (`#print axioms`) rests on `[propext,
     Classical.choice, Quot.sound]` only. What shipped:

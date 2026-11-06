@@ -3,7 +3,7 @@
 *Read-only design report, 2026-09-12. Companion to `BRIEF.md` §1/§3/§6/§7 and
 `READ_foundation_calculus.md` §2/§5. FACT = verified in the sources cited (`file:line`);
 ANALYSIS = paper-and-pencil reasoning by the author of this note. Foundation paths are relative
-to `/Users/colomband/wt/arith-lake/packages/Foundation/Foundation/FirstOrder/`, package paths to
+to `~/wt/arith-lake/packages/Foundation/Foundation/FirstOrder/`, package paths to
 `arith/ArithS/`. Line numbers are those of the checked-out sources on the day of writing.*
 
 ## 0. Verdict in one paragraph

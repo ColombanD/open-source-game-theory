@@ -6,7 +6,7 @@ Critch 2022 verbatim), `READ_foundation_calculus.md` (Foundation's calculus, cod
 package has). Critch 2019 (JSL, "A parametric, resource-bounded generalization of Löb's theorem")
 §4–5 was extracted separately (`pypdf` over the arXiv PDF) and is quoted below where used.*
 
-**Goal restated (Colomban, 2026-09-11).** A working `S'` = PA (Foundation) + the length-bounded
+**Goal restated (2026-09-11).** A working `S'` = PA (Foundation) + the length-bounded
 `□_k`, in which the PARAMETRIC bounded Löb theorem (PBLT) is a theorem, the red cell holds (done,
 T1), and the zoo programs run. The bridge to the rule-based `Pf` (T2) is DEFERRED; nothing in this
 brief extends it. FACT / ANALYSIS marking as in the M3 brief.
@@ -260,7 +260,7 @@ disjunction of numerals — constant). Risk (1) is not a blocker.
 
 ## 9. U10 execution (started 2026-09-12, branch `colomban-arith-u10` off `colomban-arith-m3` @ 15b015a)
 
-Colomban's decision: push for the one obligation. Plan = `DESIGN_inner_necessitation.md` §5, cut into
+Decision: push for the one obligation. Plan = `DESIGN_inner_necessitation.md` §5, cut into
 agent-sized tasks under `arith/ArithS/Necessitation/`:
 * `Primitives.lean` — the two moves of §3.1 as derivation-code constructors with `proofLen` bounds:
   `useLemmaCode` (cut a stored `∀x̄ B` in at witnesses `ē`: `wk` + `m` `exsIntro`s + `cut`) and
@@ -2522,7 +2522,7 @@ the `∀…→` chain, so the new argument threads DEFINITIONALLY.
 **A FALSE ALARM, REPORTED RATHER THAN BURIED — and the reporting was worth more than the error
 cost.** The agent briefly concluded EVERY `lake build` green this session was measuring a stale
 external library: `find .lake -name "*.olean"` returned nothing while oleans existed under
-`/Users/colomband/wt/arith-lake-m3`. **The fault was its own: `.lake` is a SYMLINK to that directory
+`~/wt/arith-lake-m3`. **The fault was its own: `.lake` is a SYMLINK to that directory
 (coordinator-verified) and `find` does not follow symlinks without `-L`** — it then "deleted" oleans
 its own `find` had failed to locate and read the fast rebuild as proof. Confirmed live THREE ways
 before committing: olean mtimes matching the sources', direct `lake env lean` exiting 0 on both

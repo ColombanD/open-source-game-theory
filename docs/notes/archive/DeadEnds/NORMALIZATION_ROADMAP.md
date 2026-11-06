@@ -157,5 +157,5 @@ out on the SAME irreducible fact: turning the object Löb PROOF into a play WITN
 for a diagonal-carrying modal system, which is an open problem. `provesN_play_extract` is not merely
 "equivalent to PBLT"; it is equivalent to constructive modal-fixpoint normalization, which no one has
 mechanized. **Recommendation: N5 (bank the floor).** The result is a complete, machine-checked
-CHARACTERIZATION of the crux with every shortcut provably excluded — strong thesis material — plus the
+CHARACTERIZATION of the crux with every shortcut provably excluded — strong material for the write-up — plus the
 axiom-free constructive Löb term (M1). Deleting PBLT requires solving the normalization open problem.

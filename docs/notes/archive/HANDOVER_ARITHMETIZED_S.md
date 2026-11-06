@@ -10,7 +10,7 @@ U10. Adapt the commit attribution line in §5 to the new assistant.*
 
 ## 0. Who and what
 
-Colomban Duclaux, ETH master thesis: a Lean 4 mechanization of Open-Source Game Theory
+A Lean 4 mechanization of Open-Source Game Theory
 (Critch 2022, bounded-proof-search agents in the Prisoner's Dilemma). The repository has an
 ENGINE (`engine/`, namespace `PD`: agent language `Prog`/`Formula`, the rule-based proof
 system `Pf` ("`S`", 33 constructors, transcript-cumulative costs), the fuelled evaluator

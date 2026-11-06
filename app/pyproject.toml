@@ -7,6 +7,14 @@ name = "pd-runner"
 version = "0.1.0"
 description = "Core of the OSGT Python layer: proven outcome matrices from the Lean exports, the tau layer (partial transparency), EGT analyses"
 readme = "README.md"
+authors = [
+    { name = "Colomban Duclaux" },
+    { name = "Riccardo Formenti" },
+    { name = "Pepijn Cobben" },
+    { name = "Terry Jingchen Zhang" },
+    { name = "Bernhard Schölkopf" },
+    { name = "Zhijing Jin" },
+]
 requires-python = ">=3.11"
 dependencies = [
     "matplotlib>=3.11.1",

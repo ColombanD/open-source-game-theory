@@ -108,7 +108,7 @@ staggers polynomial; `≤` on `V = ℕ` is `le_def`; `simp` never sees a closed 
 `omega` is never asked about `V`; two Lean agents concurrently at most; single-file checks with
 `timeout 600 lake env lean`, check the exit code; census in `Audit.lean` must stay all-standard.
 
-## 5. What it delivers for the thesis
+## 5. What it delivers
 
 The census table of §2 with `S'` status per family, and two proven sentences: *the Löbian cells and
 the red cell hold in PA-`S'` for all large `k`, unconditionally where the guard is positive and
@@ -262,7 +262,7 @@ twins until their Löb families are re-run on the general templates.*
   `pConst 1` at once; zsh: `${pipestatus[1]}`, not `${PIPESTATUS[0]}`, to read `lake env lean`'s exit
   code through a pipe.
 
-## 8. Decisions (Colomban, 2026-09-23 evening)
+## 8. Decisions (2026-09-23 evening)
 
 1. **§7 route: try (c) — templates with a BUDGET SLOT — with (a) the transparency lift as the fallback.**
    Design of (c): a stored template may have a 7th free variable; the evaluator's `search` clause fills
@@ -276,8 +276,8 @@ twins until their Löb families are re-run on the general templates.*
 2. **Floors DROPPED from `S'` for now**: no `BoundedReflection`, no Phase 3; the 32 FLOOR(cen) cells, the
    3 in-scope LOEB-FP cells and the 4 companions stay the ENGINE's results, with the reflection assumption
    stated in prose. `S'` is the positive theory.
-3. Branch pushed by Colomban.
-Also: the thesis is DONE (2026-09-23); the audience from here is the JMLR paper and the project.
+3. The branch is pushed by hand.
+Also (2026-09-23): the audience from here is the paper and the project.
 Phase 4 starts with the search-free cells (they never unfold the `search` clause, so they are safe
 alongside (c)); SND/POS wait for (c) to settle.
 * 2026-09-23 (evening): **Phase 4 search-free class DONE** (`8c49ec4`, `Cells/SearchFree.lean`): all 28 SF
@@ -370,7 +370,7 @@ alongside (c)); SND/POS wait for (c) to settle.
   template hangs (giant terms) — separate templates SEMANTICALLY (`templateCode_ne_of_models`), Wary from Cupod at the
   non-terminating frame `(Mirror, Mirror)`; `EvalGraph.mono_le (by omega)` needs the source fuel explicit
   (`const_play 3 _ _ _`, not `_`); `one_ne_zero` is ambiguous under `open Arithmetic` (`_root_.`).
-* 2026-09-23 (late): NEXT STEPS STARTED (Colomban: "go with all"): `Cells/FlipCells.lean` (the five
+* 2026-09-23 (late): NEXT STEPS STARTED (decision: "go with all"): `Cells/FlipCells.lean` (the five
   verdict-only flips as theorems), `Cells/KhatCells.lean` (`found_of_all_above`, the 3 TFT `k̂`-chain cells,
   the budget-slot `CupodTroll7`, CupodTroll × Cupod), `SPRIME_DESIGN_RATIONALE.md` (the trusted base,
   written against the post-route-(c) tree); the `substTemplate` `.sim` debt is queued AFTER the two cell agents
@@ -429,7 +429,7 @@ alongside (c)); SND/POS wait for (c) to settle.
   `Nat.cast_id` does not fire on that cast either (`natCast_nat` does); `Template.lMap_swap_canonicalMeta` already
   exists with the OTHER normal form (`canonicalMeta (transposeCode x)`) — a same-named local lemma is silently shadowed
   by the import and the `rw` picks the import's.
-* 2026-09-24 (housekeeping, Colomban's "3 first"): `CLAUDE.md` Part III (the `arith/` layer table, the
+* 2026-09-24 (housekeeping, "3 first"): `CLAUDE.md` Part III (the `arith/` layer table, the
   ledger, conventions) — `c076838`; `arith/README.md` refreshed for route B; `ARITH_TRAPS.md` (the
   consolidated trap list) and `HANDOVER` §1/§9 — `778c062`. IN FLIGHT: a read-only survey of the
   duplicated machinery across `Cells/*.lean` → the consolidation refactor (`Cells/Common/*`, gate:
@@ -459,7 +459,7 @@ alongside (c)); SND/POS wait for (c) to settle.
   ORIGINAL line numbers in one pass per file (the mover deletes descending); `gcongr`/`ring`/`push_cast` are
   enough for the depth-`d` slack on `V`, and the ℕ forms follow from the `V` ones by `le_def.mp` +
   `simp only [natCast_nat]` + `le_def_trans` (no cast trap when the `V`-lemma is instantiated, not restated).
-* 2026-09-27 (Colomban: work on `S'` only; floors stay DROPPED): **the FLOOR VERDICT PASS started** —
+* 2026-09-27 (decision: work on `S'` only; floors stay DROPPED): **the FLOOR VERDICT PASS started** —
   every remaining engine "floor" cell without an `S'` statement (~25, Optim/Legible and the staggered
   companions excluded) classified by the trichotomy (guard FALSE ⇒ soundness; TRUE and PROVABLE ⇒ found,
   possibly a FLIP; TRUE and only long proofs ⇒ a GENUINE floor, no theorem), the first two kinds proved
@@ -474,7 +474,7 @@ alongside (c)); SND/POS wait for (c) to settle.
   No (F)/(P) cell, 0 new flips; proved: 13 settled halves + 17 true guards + `floor_settled_census`. Cell-exact
   tally (script over the 155 rows, `ROUTE_B_CENSUS.md` "S' status per cell"): 107 stated, 94 agree, 13 flip, 26
   genuine floors, 22 excluded. Gate 3358 jobs, census 1792 (1788 standard + the 4 subsets).
-* 2026-09-27 (later; Colomban): the floor residue is NOT to be admitted as an axiom — the hinge is the
+* 2026-09-27 (later; decision): the floor residue is NOT to be admitted as an axiom — the hinge is the
   linear-regime finite-consistency question (sub-`k` proofs of `Con_TAct(k)`-type instances), OPEN in both
   directions, and the two answers give DIFFERENT cell values; the engine's `+k` stipulates the negative
   side. Decision: **dichotomy theorems, hypothesis-free** (`Cells/FloorDichotomy.lean`, in flight): per
@@ -533,7 +533,7 @@ it is the SAME decision as OptimBot. Expected values if unblocked: the 15 LOEB-F
 Legible's side C; **Legible × DIMCID a FLIP `(C, C)` → `(C, D)`** (`dimcid_vs_described`: `LegV K` is a
 described searcher). Blast radius of an 8th slot if ever wanted: 25 files, ~345 sites, all one-rewrite
 (`guardCodeBB_of_template₇` is `guardCodeB_of_template` one slot further). Decision: USER.
-* 2026-09-27 (later; Colomban: "Prudent loose ends"): **DONE** (`cefdb43`, `4e21d83`; `Cells/PrudentLoose.lean`, imported by
+* 2026-09-27 (later; "Prudent loose ends"): **DONE** (`cefdb43`, `4e21d83`; `Cells/PrudentLoose.lean`, imported by
   `ArithS.lean` and `Audit.lean`). (a) The prudence `k̂`-chain, where the verdict pass rated it (P): against an engine
   searcher `SV g a k` the prudence guard is the `binNumeral k`-instance of the fixed formula `qPiS g a`, TRUE in every model above a
   threshold when the opponent's defection against `.bot DefectBot` is its THEN-branch, hence a `TAct`-theorem `∀¹ (k̂ ≤ #0 🡒 …)`

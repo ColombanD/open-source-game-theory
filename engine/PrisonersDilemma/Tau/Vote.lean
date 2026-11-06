@@ -449,7 +449,7 @@ Def 4: `TauA(δ_B) = inst(A, δ_B)` behaviorally, which is what makes the vote a
 of `A` rather than some new agent built out of `A`'s parts.
 
 **Intentionally unconsumed**: this is a spec-level RESULT (like an outcome
-theorem), whose consumer is the design review and the thesis, not another proof —
+theorem), whose consumer is the design review and the paper, not another proof —
 zero in-tree uses is its correct state, not dead code.
 
 The retracted `TauEBot` (nested `tsearch`, θ inside the cascade) satisfies this at

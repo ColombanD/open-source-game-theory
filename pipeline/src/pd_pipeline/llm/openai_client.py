@@ -3,7 +3,7 @@ as `AnthropicClient` — for non-Anthropic models (Leanstral 1.5 via Mistral's
 hosted endpoint, or anything served by vLLM).
 
 Deliberately a SEPARATE class rather than a shared base: the Anthropic path is
-the calibrated thesis baseline (prompt-cache breakpoints, budgeted/adaptive
+the calibrated baseline (prompt-cache breakpoints, budgeted/adaptive
 thinking, streaming observability) and must stay byte-stable, while this path
 normalizes a different wire format (tool_calls with JSON-string arguments,
 role="tool" results, no cache control). The episode-loop SEMANTICS — stop-tool

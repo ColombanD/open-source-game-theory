@@ -1,7 +1,7 @@
 # READ — inventory of `arith/ArithS/` for M4 (bounded HBL + parametric PBLT)
 
 Read-only report, 2026-09-11, branch `colomban-arith-m3` (engine v4.33.1, Foundation at
-`/Users/colomband/wt/arith-lake/packages/Foundation`). Every statement below is VERBATIM
+`~/wt/arith-lake/packages/Foundation`). Every statement below is VERBATIM
 from the source with `file:line` (paths relative to `arith/ArithS/` unless prefixed
 `Foundation/`). Paragraphs marked **ANALYSIS** are mine and not in the code.
 

@@ -42,7 +42,7 @@ Three tiers of claim, each a milestone gate:
 | T2 | `S` relative to PA, as PROVED (2026-09-10): T2-CORE (modal core sound over PA, budget erased), T2-AGENT (evaluation certificates = arith evaluator runs, same budgets, relative to the consulted `□_k` facts), T2-NEG (no budget-keeping transfer at any inflation) — see `ARITHMETIZED_S_RESULTS.md` | M3 DONE |
 | T3 | The Löbian cells (`Dupoc` self-cooperation, mutual Löb) hold in PA at large `k` | M4 + M5 (bounded HBL, parametric PBLT) |
 
-T1 and T2 together are the thesis-scoped finish line (BOTH DONE 2026-09-10; results record: `ARITHMETIZED_S_RESULTS.md`). T3 is a second program — DONE 2026-09-16 for the Dupoc self-cooperation cell and PBLT (M5, unconditional). The MERGE of the engine's rule system onto `S'` is milestone **M6** (§3, design fixed 2026-09-16): the engine's rules as derived rules of `S'`, budget-keeping — its atom obstruction is repaired by the re-cost, its box obstruction is recorded there with the three shapes the merge can take.
+T1 and T2 together are the originally scoped finish line (BOTH DONE 2026-09-10; results record: `ARITHMETIZED_S_RESULTS.md`). T3 is a second program — DONE 2026-09-16 for the Dupoc self-cooperation cell and PBLT (M5, unconditional). The MERGE of the engine's rule system onto `S'` is milestone **M6** (§3, design fixed 2026-09-16): the engine's rules as derived rules of `S'`, budget-keeping — its atom obstruction is repaired by the re-cost, its box obstruction is recorded there with the three shapes the merge can take.
 
 ---
 
@@ -771,7 +771,7 @@ refutation + soundness of PA. Gate: every positive engine cell (a `Pf` witness) 
 theorem. **This is T2.** Corollary worth stating: `Pf_sound` factors through PA-soundness.
 
 **M4 STARTED 2026-09-11 (new session; design brief `M4_BOUNDED_HBL/BRIEF.md`, reader reports
-`M4_BOUNDED_HBL/READ_*.md`).** Goal restated by Colomban: a working `S'` with PBLT as a theorem;
+`M4_BOUNDED_HBL/READ_*.md`).** Goal restated: a working `S'` with PBLT as a theorem;
 the T2 bridge is DEFERRED (do not extend). Decisions: (1) follow Critch 2019's UNIFORM proof of
 PBLT (one PA proof with `k` free, one meta instantiation at `O(lg k)`) — this needs NO
 proof-producing bounded D1; the only hard item is bounded INNER necessitation
@@ -1035,7 +1035,7 @@ dominate; four constants before their quantifier, one layout before its case dis
 missing interface binders. Lesson: *an interface written ahead of its consumer has provisional
 binders until the consumer compiles against it.*
 
-**M6 — THE MERGE `S` → `S'` (design fixed with Colomban 2026-09-16; status log below).**
+**M6 — THE MERGE `S` → `S'` (design fixed 2026-09-16; status log below).**
 
 *The decision.* `S'` (= PA-`S`: `TAct` + the length-bounded `□_k`, `LenBoxUnbounded`/`LenBox`)
 is THE formal system. The engine's `Pf` is not a second system: each of its 33 constructors is to
@@ -1150,7 +1150,7 @@ danger 2). **This is T3.**
 proof-length LOWER bound on `¬Bew_k(⌜φ⌝)` — a restricted-consistency statement. Template:
 `lower_bound_gödelNumber_proof_restrictedGödel`; the mathematics is Pudlák's `k^ε` bound on
 finite consistency, which is BELOW the engine's `+k` floor (danger 3). Expected result: some
-same-`k` floor cells are OPEN in PA and are reported as such. Not thesis scope.
+same-`k` floor cells are OPEN in PA and are reported as such. Out of scope here.
 
 ---
 
@@ -1201,8 +1201,8 @@ and after M3 it is certified sound for PA-`S`. Nothing in the engine is replaced
 7. **Toolchain and API churn.** Foundation moves fast (module system, `public import`,
    `grind` attributes). Pin a commit; budget a re-pin per quarter; the engine bump for M3 is
    a separate, dated task.
-8. **Scope.** M4 is a research program (no prover has costed HBL). Finish line for the
-   thesis is T1 + T2; M4–M6 are future work and must be labelled so in the paper.
+8. **Scope.** M4 is a research program (no prover has costed HBL). The originally scoped
+   finish line is T1 + T2; M4–M6 are future work and must be labelled so in the paper.
 9. **Overclaiming.** "Cannot be false" is true of the red cell in the precise sense that its
    proof uses only PA-soundness and τ-symmetry, which every instance of Critch's (a)–(d)
    has. It is NOT true of floor cells (3) and not of same-`k` Löb cells until M5. Say which.
