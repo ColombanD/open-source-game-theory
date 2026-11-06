@@ -2,8 +2,8 @@
 
 The deterministic half of the project: it reads the two Lean exports and computes the paper's
 tables, figures and experiments. It never reads Lean source. The LLM pipeline (bots from natural
-language, the proof agent, the web UI) is the separate [`../pipeline/`](../pipeline/) project, which
-depends on this one.
+language, the proof agent, the web UI) is a separate project (`pipeline/`, on the `main` branch); it
+depends on this one and is not part of this release.
 
 ## What is here
 

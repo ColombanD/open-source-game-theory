@@ -33,7 +33,8 @@ keywords:
   - partial transparency
   - evolutionary game theory
 repository-code: "https://github.com/ColombanD/open-source-game-theory"
-# To fill at release: version, date-released, license.
+version: "osgt-formalization-transparency-cooperation"
+date-released: 2026-11-06
 preferred-citation:
   type: unpublished
   title: "Open Source Game Theory: Formalization, Transparency, and Cooperation in Program Games"

@@ -14,7 +14,6 @@ analysis of the resulting populations. Companion to the paper
 | [`arith/`](arith/) | **The proof system of the paper: PA-`S'`** — Peano Arithmetic with a provability predicate bounded by proof length, on the [Foundation](https://github.com/FormalizedFormalLogic/Foundation) library. The bounded Löb theorem proved unconditionally, the outcome matrix re-proved cell by cell, the tau rows, the floor dichotomies. Start with [`arith/ArithS/Tour.lean`](arith/ArithS/Tour.lean) and [`arith/ArithS/README.md`](arith/ArithS/README.md). | `cd arith && lake build --try-cache` |
 | [`engine/`](engine/) | **The host**: the agent language (`Prog`), the fuelled evaluator, the bot zoo, the τ-bot DSL, and the typed outcome-theorem template with its linter and census. Also the rule-based system `S` and its outcome theorems, which `arith/` imports (search-free cells transfer) and the Python layer loads as the comparison source. `arith/` depends on it; it never imports `arith/`. | `cd engine && lake build` |
 | [`app/`](app/) | **The Python core** (`pd_runner`): the outcome matrices read from the two Lean exports (never from Lean source), the tau layer (signals, σ-families, the Def 3 ≡ Def 4 certification), and the EGT stages (ESS, invasion graphs, faces, Nash, replicator, Moran). The paper's experiments and the figure generators in `latex/scripts/` run on it. | `cd app && uv sync && uv run pytest` |
-| [`pipeline/`](pipeline/) | **The LLM pipeline** (`pd_pipeline`): bots written from natural language, outcome proofs written by an agent and judged by the Lean kernel, the faithfulness reviewer, the web UI. Out of the paper's scope; depends on `app/`. | `cd pipeline && uv sync && uv run pd-serve` |
 | [`docs/`](docs/) | The design record: live notes, the archive of decisions, reading notes. [`docs/README.md`](docs/README.md) is the index. | — |
 | [`latex/`](latex/) | The generators of the paper's figures and tables (`scripts/`, each run from `app/`) and their outputs (`figures and tables/`). | `cd app && uv run python ../latex/scripts/gen_….py` |
 
@@ -41,6 +40,7 @@ Bernhard Schölkopf (ETH Zürich, Max Planck Institute for Intelligent Systems, 
 and Zhijing Jin (EuroSafeAI, Max Planck Institute for Intelligent Systems, University of Toronto, Vector
 Institute).
 
+The code described in the paper is the tag `osgt-formalization-transparency-cooperation`.
 To cite this repository, cite the paper ([`CITATION.cff`](CITATION.cff) carries the same record):
 
 ```bibtex

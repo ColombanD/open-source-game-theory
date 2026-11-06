@@ -20,13 +20,14 @@ Four parts, in dependency order (each depends only on the ones above it):
    layer, the EGT stages. The paper's experiments and `latex/scripts/` run on it.
 4. **`pipeline/`** — the LLM PIPELINE (`pd_pipeline`): bots from natural language, outcome proofs
    by an agent judged by the kernel, the faithfulness reviewer, the web UI. OUT OF THE PAPER'S SCOPE;
-   split off from `app/` on 2026-10-29; depends on `app/`.
+   split off from `app/` on 2026-10-29; depends on `app/`. NOT ON THIS BRANCH (Part IV).
 
 Other top-level: `docs/` (the design record of the WHOLE project — `docs/README.md` is the index: live
 notes in `docs/notes/`, historical ones in `docs/notes/archive/`, reading notes in `docs/readings/`),
 `latex/` (the figure/table generators in `latex/scripts/` and their outputs in `latex/figures and tables/`),
 `README.md`. **This is the RELEASE branch:** the earlier notes and talks under `latex/`, the separate
-experiment `llm-distillation/` and `.claude/settings.json` live on `main` only.
+experiment `llm-distillation/`, the LLM pipeline `pipeline/` and `.claude/settings.json` live on `main` only.
+The paper's code is the tag `osgt-formalization-transparency-cooperation`.
 
 **Removed for the submission (2026-10-29, in git history before `3f99464`):** the engine's
 decidability metatheory (`Decidability/`, T31–T54, lake target `Metatheory`), the research spikes
@@ -266,53 +267,9 @@ engine — its `CupodBot × OBot = (D, D)` is the `S'` theorem).
 
 # Part IV — The LLM pipeline (`pipeline/`, package `pd_pipeline`)
 
-Out of the paper's scope; `pipeline/README.md` and `pipeline/docs/BOT_REVIEWER.md` are the
-references. `cd pipeline && uv sync --extra dev` (installs `pd-runner` from `../app` editable; `anthropic
-< 1` pinned — the 1.x SDK rejects the calibrated client's `httpx.Timeout`); `uv run pd-serve --reload`;
-`uv run run-matchup`; 255 tests. Keys in `pipeline/.env` (loaded on import; never exported from a shell
-rc). Its `generated/` holds the agents' artefacts: `constructor_proposals/`, `prepass/`,
-`lemma_attempts/` tracked; `outcomes/` (the proof-episode transcripts, longitudinal research data),
-`reviews/`, `integrations/`, `lean/`, `logs/` gitignored.
-
-**Architecture.** Proof agent = Proposer → Compiler → Reviewer → Memory (AxProverBase-style):
-`services/proof_episodes.py::run_proof_search`, up to 3 fresh-context episodes × 10 turns, only the lab
-notebook, the best compiling source, the last compiler feedback and a prior open verdict cross episodes;
-the first `open_*` verdict buys ONE retry episode. Fast compile through a persistent LeanInteract REPL
-(`lean/interact.py`, `PD_LEAN_INTERACT=0` to disable; the verdict gate and the library writer ALWAYS
-file-compile). Verdicts via `submit_verdict` (`proved | open_bistable | open_blocked |
-constructor_proposed`), never prose. A `proved` submission is RE-COMPILED with `#validate_outcome` plus
-textual checks (exact `llm_outcome_<L>_vs_<R>` name, `@[outcome]`, template head, no `proofSearch`
-premises, no sorry/axiom, no hand-rolled `Pf.induct` census, no name collisions) — the same checks
-`library_writer` enforces, which then builds `PrisonersDilemma` + `OutcomeCheck` in a transaction
-(byte-identical rollback) and refreshes the export. Prompt caching with 4 breakpoints
-(`llm/prompts.py::build_system_prompt_blocks`); `ProofSystem.lean` and `Base/Exclusion.lean` embedded as
-signature digests. Multi-provider: `claude-*` → the calibrated `AnthropicClient`; other names →
-`settings.OPENAI_COMPAT_PROVIDERS` (`leanstral-1-5`) or `PD_OPENAI_BASE_URL` → `OpenAICompatClient`
-(mirrored 1:1 — change both). Config: `pd_pipeline.settings` (`DEFAULT_MODEL`, `RetryPolicy`,
-`RetrievalConfig`, `EvalGuard` = `hidden_bots` vs `allow_library_growth`).
-
-**Bot synthesis and the faithfulness reviewer** (`docs/BOT_REVIEWER.md`): bot writer
-(`services/bot_service.py`, full `Prog`, `run_lean_build` tool); **Tier A1** blind expectation extractor
-(`bot_expectation.py` — takes the description string, never the Lean; `unspecified` is a first-class
-answer; `explicit` vs `inferred` decides hard-fail vs warn; UNANIMITY OVERRIDES CONFIDENCE); **Tier A2**
-certified behavioral profile (`bot_profile.py` over `eval/outcome_prepass.py`, `k ∈ {2,4,6,16}` — THE
-BUDGET SWEEP IS LOAD-BEARING; `jobs × memory_mb` is what the machine sees, the 3072 MB per-cell cap is
-MEASURED; **requires the removed `Decidability` chain**); **Tier B** judge on the residual only
-(advisory; NO ground truth; never a verification result in the paper). Comparison is deterministic code
-(`faithful | mismatch | underdetermined`); the rewriter loop (`bot_rewriter.py`) triggers only on
-`should_rewrite`. Nothing auto-accepts: human gates at bots and proof (`run_bot_pipeline`, the API).
-
-**Growth ladder:** `add_base_lemma` (Tier 1, derived rules in `LlmLemmas.lean`, sound by construction,
-transactional) and `propose_pf_constructor` (Tier 2, human-gated evidence bundle with a soundness
-certificate compiled against the engine; integration by an agent in a git WORKTREE, `git diff` reviewed
-by a human; `/proposals/{name}/integrate`, `/integration/{job}/accept-diff`). Both registered only when
-`hidden_bots` is empty — the eval harness never mutates the library. Bare `OUTCOME OPEN` is reserved for
-BISTABLE matchups; no base cell is currently certified bistable.
-
-**Eval:** `eval/common.py` (14 harness cases) shared by `harness.py` and `run_bot_matrix.py`; every run
-persists to `generated/outcomes/`. Prover-model comparison (E4): `docs/notes/archive/PROVER_MODEL_COMPARISON.md`.
-SOTA provers (DeepSeek/Goedel/Kimina) are NOT swapped in: out of distribution for the custom inductive
-types; E4 numbers justify the bespoke pipeline.
+NOT ON THIS BRANCH. Out of the paper's scope: bots from natural language, outcome proofs by an agent judged by
+the kernel, the faithfulness reviewer, the web UI. It lives on `main` (`pipeline/README.md` there) and depends
+on `app/`; nothing in `engine/`, `arith/` or `app/` needs it (`outcome_matrix --push` alone imports it, lazily).
 
 ---
 
