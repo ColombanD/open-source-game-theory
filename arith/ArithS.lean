@@ -40,6 +40,7 @@ import ArithS.Audit.RedCellAudit
 import ArithS.Agents.Fit
 import ArithS.Audit.RedCellUnsound
 import ArithS.Agents.Code
+import ArithS.Agents.CodeTranspose
 import ArithS.Agents.SysTemplate
 import ArithS.Eval.TauCheck
 import ArithS.Agents.Instance

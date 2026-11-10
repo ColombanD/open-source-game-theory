@@ -10,10 +10,10 @@ the index of the code.
 
 ## 0. Two files to open first
 
-* [`Tour.lean`](Tour.lean) — the nine trusted definitions restated at `V = ℕ` (kept in sync by `rfl`), the red
+* [`Tour.lean`](Tour.lean) — the ten trusted definitions restated at `V = ℕ` (kept in sync by `rfl`), the red
   cell step by step, the headline theorems by `#check`, and the axiom census of what it cites. One file,
   no proofs.
-* [`Readings.lean`](Readings.lean) — the nine definitions read at `V = ℕ`, one named theorem each (`box_nat`: `□[k] ⌜σ⌝`
+* [`Readings.lean`](Readings.lean) — the ten definitions read at `V = ℕ`, one named theorem each (`box_nat`: `□[k] ⌜σ⌝`
   holds iff some meta derivation of `σ` has symbol count `≤ k`; `guard_nat`; `TAct_sound_nat`; …), each proved from
   the lemma that already carries the fact, so the reading cannot drift from the definition.
 * [`Notation.lean`](Notation.lean) — the paper's symbols in Lean: `□[k] φ` is `LenBox TAct k φ` (the paper's
@@ -48,7 +48,7 @@ never edit them (`scripts/README.md`).
 Nine definitions. Everything else in the package is a theorem about them or a construction. Each entry
 says what a reader accepts and the one design choice behind it.
 
-The other files in these five folders hold no definitions to accept, only theorems about these nine
+The other files in these five folders hold no definitions to accept, only theorems about these ten
 (`Theory/Transpose`, `Sound`, `Symmetry` = the τ-closure chain ending in `lenBoxNat_swap_iff`;
 `Length/Proper`, `Box/ProperBound` = the properness estimates; `Box/Cut*` = bounded modus ponens; `Agents/Fit*`
 = the guard fits its budget): read their statements, let Lean keep their proofs.
@@ -107,6 +107,11 @@ The other files in these five folders hold no definitions to accept, only theore
    node's own budget (route (c); `EvalGraph.search_iff_at` is the search clause on a stored template, read as
    the unabstracted guard): [`Agents/Template.lean`](Agents/Template.lean),
    [`Agents/Code.lean`](Agents/Code.lean), [`Agents/Guard.lean`](Agents/Guard.lean).
+7b. **The name of a formula inside a box** — `boxQuote σ` ([`Agents/Code.lean`](Agents/Code.lean), 2026-11-09): a
+   `.box k ψ` names `template13 ψ` by a closed term carrying one action constant, `r + d · c`, whose value is
+   `⌜σ⌝` under the standard reading and `⌜τσ⌝` under the swapped one (`val_boxQuote`, `val_lMap_swap_boxQuote`),
+   with `τ (boxQuote σ) = boxQuote (τσ)` (`lMap_swap_boxQuote`). With a numeral quote, τ could not reach the quoted
+   formula; now τ on codes is the engine's τ̂ through boxes ([`Agents/CodeTranspose.lean`](Agents/CodeTranspose.lean)).
 8. **Substitution** — `substCode`, the engine's one-shot `Prog.subst` on codes (`.bot` frozen, guards read
    the outer players, vote entries frozen, a system a binder): [`Agents/Subst.lean`](Agents/Subst.lean) (the
    equations `substCode_*` are the definition), on top of `substTemplate`, the instantiation of a stored
@@ -135,6 +140,10 @@ The other files in these five folders hold no definitions to accept, only theore
    tau-search-free fragment, [`Eval/TauCheck.lean`](Eval/TauCheck.lean) (the Phase-2 gates).
 
 The bridge from the engine is `progCode : PD.Prog → ℕ` and `templateCode : PD.Formula → ℕ` in `Agents/Code.lean`.
+A `.box` inside a guard names the template of its body by `boxQuote`, a closed term carrying an action
+constant (its value is the template's code under the standard reading, the code of its transposition under
+the swapped one), so that τ acts on it; [`Agents/CodeTranspose.lean`](Agents/CodeTranspose.lean) proves that
+τ on codes is the engine's τ̂ on every program without a tau constructor (`transposableP`), boxes included.
 
 ## 3. The results, and a reading order
 

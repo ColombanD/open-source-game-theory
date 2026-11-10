@@ -114,7 +114,7 @@ mutual
     | k₀, .box k ψ, defs, h => by
       simp only [noSelfIdxF] at h
       rw [PD.Formula.sysClose, templateAt_box, templateAt_box]
-      unfold templateCode template13
+      unfold template13
       rw [templateAt_sysClose_of_noSelfIdxF none ψ defs h]
     | k₀, .eq p q, defs, h => by
       simp only [noSelfIdxF, Bool.and_eq_true] at h

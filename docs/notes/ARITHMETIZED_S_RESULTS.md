@@ -214,7 +214,13 @@ Three theorems settle what a rule-by-rule bridge can be:
 ## 7. Boundaries
 
 * `.box` is not compositional under LENGTH-bounded provability (a box names its body's code; provable
-  equivalence does not preserve `□_k`) — the code equations are on the box-free fragment.
+  equivalence does not preserve `□_k`) — the SUBSTITUTION code equations are on the box-free fragment. The
+  τ equations hold through boxes since 2026-11-09: a box names its body by `boxQuote`, a term τ re-values
+  (`Agents/CodeTranspose`), and the transposition theorem of outcomes and its corollary (a program and its
+  transpose play opposite actions) hold on every program without a tau constructor, at every budget
+  (`outcomeAtA_transpose_of_transposableP`, `opposite_of_plays_transpose_of_transposableP`; LegibleBot is
+  in that fragment). Not done: the truth equation of a box sentence under the two readings, and τ through
+  `.sys` (the 8 recorded tau provenance divergences).
 * Encoding: `‖⌜φ⌝‖` is exponential in syntax depth; every statement is "for all large `k`".
 * LegibleBot: fixable in length within route (c) (inner budget `gBudget #6`, polylog; a linear stagger is
   impossible in `S'`), blocked on necessitation for a frame-computed box body — a third U10-kit instance.

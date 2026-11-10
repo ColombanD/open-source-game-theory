@@ -57,7 +57,8 @@ after substitution the frame variables are unused and every description has the 
 shape `descF`.
 
 WHY `.box` IS EXCLUDED (an honest boundary, not a gap in the proof): the translated box
-carries the CODE of its body as a numeral constant, and codes are not compositional under
+NAMES the template of its body by a closed term (`boxQuote`, whose value under the standard reading is the
+template's code), and codes are not compositional under
 substitution — `template (.box k (ψ.subst me opp))` mentions `⌜template (ψ.subst me opp)⌝` while
 `template (.box k ψ) ⇜ desc` mentions `⌜template ψ⌝` and the descriptions: two sentences that are
 PA-provably equivalent (both say that the same instantiated sentence is provable) but not
@@ -70,8 +71,11 @@ outside the fragment.
 
 On the same fragment the code-level transposition of `ArithS.Prog` is the code of the
 engine's `Prog.transpose`/`Formula.transpose` (`Base/Transpose`): `lMap swap (template φ) =
-template φ.transpose` (`lMap_swap_template`), then `revalueTemplate_quote_sentence`. The box is
-excluded here for the same reason (its code constant is not re-valued by `swap`).
+template φ.transpose` (`lMap_swap_template`), then `revalueTemplate_quote_sentence`. In this file the
+statements are on `fragP`/`fragF`; they hold THROUGH boxes (`Agents/CodeTranspose`, on `transposableP`): a box
+names its body by `boxQuote`, a closed term carrying an action constant, so that `swap` re-values it
+(`lMap_swap_boxQuote`). With a plain numeral it did not — and the box sentence was not even invariant under
+the two readings (the frame was transposed, the quoted formula was not).
 
 **Reading guide.** Definition: `actCode`, `progCode`, `template13` and `template` (§The translation) — the bridge from the engine's `Prog`/`Formula` to codes and templates; `sentenceAt` is the closed guard sentence of a pair. Facts: the description lemma, the substitution equation (`progCode_subst`), τ, and the sanity checks on the engine's `DupocBot`. §The Σ₁ graphs over `LAct` and §The description shape are plumbing for the translation — skip on first reading. At ℕ: `progCode_subst` (`ArithS.Readings`).
 -/
@@ -141,6 +145,68 @@ lemma comp_subst_eq {n m k : ℕ} (ω : Rew LAct Empty m Empty k) (v : Fin n →
 
 /-- The binary numeral of a code, as an `LAct`-term. -/
 noncomputable def numTB (c : ℕ) : ClosedSemiterm LAct 0 := Semiterm.lMap emb (binNumeralMeta c)
+
+lemma lMap_swap_numTB (c : ℕ) : Semiterm.lMap swap (numTB c) = numTB c := term_lMap_swap_emb _
+
+/-! ### The quote of a formula inside a box
+
+A `.box k ψ` hypothesis says "the instance of `ψ` in the frame is provable within `k`", and has to NAME `ψ`.
+A numeral of the code of `ψ`'s template contains no action constant, so the symmetry τ (the exchange of
+`c_C`/`c_D`) leaves it alone and the transposed sentence still speaks of `ψ`, not of `τψ` — worse, under the
+swapped reading the frame is transposed and the quoted formula is not, so the sentence is not
+reading-invariant. `boxQuote σ` names `σ` the way `canonicalMeta`/`revalueUMeta`/`revalueWMeta` name a
+program: by a closed term carrying one action constant, whose value is `⌜σ⌝` under the standard reading and
+`⌜τσ⌝` under the swapped one,
+
+    boxQuote σ = r + d · Z,   r = min ⌜σ⌝ ⌜τσ⌝,  d = |⌜σ⌝ − ⌜τσ⌝|,  Z = c_C if ⌜σ⌝ < ⌜τσ⌝, c_D if ⌜τσ⌝ < ⌜σ⌝,
+
+and the plain numeral on a tie (a self-dual `σ`: the old coding, unchanged). `lMap_swap_boxQuote`:
+`τ (boxQuote σ) = boxQuote (τ σ)`, syntactically. -/
+
+/-- Sum of two `LAct`-terms (the embedded arithmetic symbol). -/
+def addT {ξ : Type*} {n : ℕ} (t u : Semiterm LAct ξ n) : Semiterm LAct ξ n :=
+  Semiterm.func (emb.func Language.Add.add) ![t, u]
+
+/-- Product of two `LAct`-terms (the embedded arithmetic symbol). -/
+def mulT {ξ : Type*} {n : ℕ} (t u : Semiterm LAct ξ n) : Semiterm LAct ξ n :=
+  Semiterm.func (emb.func Language.Mul.mul) ![t, u]
+
+lemma lMap_swap_addT {ξ : Type*} {n : ℕ} (t u : Semiterm LAct ξ n) :
+    Semiterm.lMap swap (addT t u) = addT (Semiterm.lMap swap t) (Semiterm.lMap swap u) := by
+  unfold addT
+  rw [Semiterm.lMap_func, swap_emb]
+  congr 1
+  funext i; fin_cases i <;> rfl
+
+lemma lMap_swap_mulT {ξ : Type*} {n : ℕ} (t u : Semiterm LAct ξ n) :
+    Semiterm.lMap swap (mulT t u) = mulT (Semiterm.lMap swap t) (Semiterm.lMap swap u) := by
+  unfold mulT
+  rw [Semiterm.lMap_func, swap_emb]
+  congr 1
+  funext i; fin_cases i <;> rfl
+
+/-- **The quote of a formula inside a box**: a closed term naming `σ`, carrying the action constant that tells
+`σ` from its transposition (see the section docstring). -/
+noncomputable def boxQuote {n : ℕ} (σ : Semisentence LAct n) : ClosedSemiterm LAct 0 :=
+  if (⌜σ⌝ : ℕ) < (⌜Semiformula.lMap swap σ⌝ : ℕ) then
+    addT (numTB (⌜σ⌝ : ℕ)) (mulT (numTB ((⌜Semiformula.lMap swap σ⌝ : ℕ) - (⌜σ⌝ : ℕ))) (cterm Act.C))
+  else if (⌜Semiformula.lMap swap σ⌝ : ℕ) < (⌜σ⌝ : ℕ) then
+    addT (numTB (⌜Semiformula.lMap swap σ⌝ : ℕ)) (mulT (numTB ((⌜σ⌝ : ℕ) - (⌜Semiformula.lMap swap σ⌝ : ℕ))) (cterm Act.D))
+  else numTB (⌜σ⌝ : ℕ)
+
+/-- **τ on the quote**: the transposition of the name of `σ` is the name of the transposed `σ`. -/
+lemma lMap_swap_boxQuote {n : ℕ} (σ : Semisentence LAct n) :
+    Semiterm.lMap swap (boxQuote σ) = boxQuote (Semiformula.lMap swap σ) := by
+  unfold boxQuote
+  rw [lMap_swap_swap]
+  generalize (⌜Semiformula.lMap swap σ⌝ : ℕ) = c'
+  generalize (⌜σ⌝ : ℕ) = c
+  rcases lt_trichotomy c c' with h | h | h
+  · rw [if_pos h, if_neg (lt_asymm h), if_pos h, lMap_swap_addT, lMap_swap_mulT, lMap_swap_numTB, lMap_swap_numTB,
+      lMap_swap_cterm_C]
+  · subst h; simp [lMap_swap_numTB]
+  · rw [if_neg (lt_asymm h), if_pos h, if_pos h, lMap_swap_addT, lMap_swap_mulT, lMap_swap_numTB, lMap_swap_numTB,
+      lMap_swap_cterm_D]
 
 /-! ### The Σ₁ graphs over `LAct` -/
 
@@ -513,8 +579,9 @@ mutual
   clauses index for index, in the frame `#0..#12` (me-triple, opp-triple, budget slot, the two member
   triples), with the pronoun reading of `progAuxAt` and every closed program described with the budget `k₀`
   abstracted into the slot `#6` (`closedDescAt`). `none` abstracts nothing (`template13`, today's coding).
-  The code constant a `.box` carries is the UNABSTRACTED template code of its body (box guards are outside
-  the zoo's fragment: LegibleBot/OptimBot, `Agents/FitBox.lean`). -/
+  A `.box` names the UNABSTRACTED template of its body by the closed term `boxQuote` (value: its code under the
+  standard reading, the code of its transposition under the swapped one; box guards are outside the zoo's
+  fragment: LegibleBot/OptimBot, `Agents/FitBox.lean`). -/
   noncomputable def templateAt : PD.Formula → Option ℕ → Semisentence LAct 13
     | .plays p q a, k₀ =>
         ∃¹ (∃¹ (∃¹ ((progAuxAt k₀ p (progCode p) ⇜ ![#2, #3, #4, #5, #6, #7, #8, #9, #10, #11, #12, #13, #14, #15]) ⋏
@@ -525,7 +592,7 @@ mutual
     | .box k ψ, k₀ =>
         ∃¹ (∃¹ ((progAuxAt k₀ .self 0 ⇜ ![#1, #2, #3, #4, #5, #6, #7, #8, #9, #10, #11, #12, #13, #14]) ⋏
           ((progAuxAt k₀ .opp 0 ⇜ ![#0, #2, #3, #4, #5, #6, #7, #8, #9, #10, #11, #12, #13, #14]) ⋏
-            (∃¹ ((guardCodeG ⇜ ![#0, cl (numTB (⌜templateAt ψ none⌝ : ℕ)), #2, #1]) ⋏
+            (∃¹ ((guardCodeG ⇜ ![#0, cl (boxQuote (templateAt ψ none)), #2, #1]) ⋏
               (lenProvG ⇜ ![cl (numTB k), #0]))))))
     | .eq p q, k₀ =>
         ∃¹ (∃¹ ((progAuxAt k₀ p (progCode p) ⇜ ![#1, #2, #3, #4, #5, #6, #7, #8, #9, #10, #11, #12, #13, #14]) ⋏
@@ -550,9 +617,10 @@ described with the budget `k` abstracted into the slot `#6`. `progCode (.search 
 noncomputable def templateCodeAt (φ : PD.Formula) (k : ℕ) : ℕ := ⌜templateAt φ (some k)⌝
 
 /-- The six-variable template of a formula (the original translation, kept as the reading every
-`Cells/` file works with). Its body is the pre-pronoun one, except that the code constant a `.box`
-carries is `templateCode ψ` — the code `pSearch` stores — which is `⌜template ψ⌝` whenever `ψ` mentions
-no pronoun (the bridge), i.e. on every box the zoo carries. -/
+`Cells/` file works with). Its body is the pre-pronoun one, except that the term a `.box` carries is
+`boxQuote (template13 ψ)`, the name of the thirteen-variable template of its body, whose value under the
+standard reading is `templateCode ψ` — the code `pSearch` stores — which is `⌜template ψ⌝` whenever `ψ`
+mentions no pronoun (the bridge), i.e. on every box the zoo carries. -/
 noncomputable def template : PD.Formula → Semisentence LAct 6
   | .plays p q a =>
       ∃¹ (∃¹ (∃¹ ((progAux p (progCode p) ⇜ ![#2, #3, #4, #5, #6, #7, #8]) ⋏
@@ -563,7 +631,7 @@ noncomputable def template : PD.Formula → Semisentence LAct 6
   | .box k ψ =>
       ∃¹ (∃¹ ((progAux .self 0 ⇜ ![#1, #2, #3, #4, #5, #6, #7]) ⋏
         ((progAux .opp 0 ⇜ ![#0, #2, #3, #4, #5, #6, #7]) ⋏
-          (∃¹ ((guardCodeG ⇜ ![#0, cl (numTB (templateCode ψ)), #2, #1]) ⋏
+          (∃¹ ((guardCodeG ⇜ ![#0, cl (boxQuote (template13 ψ)), #2, #1]) ⋏
             (lenProvG ⇜ ![cl (numTB k), #0]))))))
   | .eq p q =>
       ∃¹ (∃¹ ((progAux p (progCode p) ⇜ ![#1, #2, #3, #4, #5, #6, #7]) ⋏
@@ -649,7 +717,7 @@ lemma templateAt_neg (k₀ φ) : templateAt (.neg φ) k₀ = ∼ templateAt φ k
 lemma templateAt_box (k₀ k ψ) : templateAt (.box k ψ) k₀ =
     ∃¹ (∃¹ ((progAuxAt k₀ .self 0 ⇜ ![#1, #2, #3, #4, #5, #6, #7, #8, #9, #10, #11, #12, #13, #14]) ⋏
       ((progAuxAt k₀ .opp 0 ⇜ ![#0, #2, #3, #4, #5, #6, #7, #8, #9, #10, #11, #12, #13, #14]) ⋏
-        (∃¹ ((guardCodeG ⇜ ![#0, cl (numTB (templateCode ψ)), #2, #1]) ⋏
+        (∃¹ ((guardCodeG ⇜ ![#0, cl (boxQuote (template13 ψ)), #2, #1]) ⋏
           (lenProvG ⇜ ![cl (numTB k), #0])))))) := by
   rw [templateAt]; rfl
 lemma templateAt_eq (k₀ p q) : templateAt (.eq p q) k₀ =
@@ -668,7 +736,7 @@ lemma template13_neg (φ) : template13 (.neg φ) = ∼ template13 φ := template
 lemma template13_box (k ψ) : template13 (.box k ψ) =
     ∃¹ (∃¹ ((progAux13 .self 0 ⇜ ![#1, #2, #3, #4, #5, #6, #7, #8, #9, #10, #11, #12, #13, #14]) ⋏
       ((progAux13 .opp 0 ⇜ ![#0, #2, #3, #4, #5, #6, #7, #8, #9, #10, #11, #12, #13, #14]) ⋏
-        (∃¹ ((guardCodeG ⇜ ![#0, cl (numTB (templateCode ψ)), #2, #1]) ⋏
+        (∃¹ ((guardCodeG ⇜ ![#0, cl (boxQuote (template13 ψ)), #2, #1]) ⋏
           (lenProvG ⇜ ![cl (numTB k), #0])))))) := templateAt_box none k ψ
 lemma template13_eq (p q) : template13 (.eq p q) =
     ∃¹ (∃¹ ((progGraph13 p ⇜ ![#1, #2, #3, #4, #5, #6, #7, #8, #9, #10, #11, #12, #13, #14]) ⋏
@@ -686,7 +754,7 @@ lemma template_neg (φ) : template (.neg φ) = ∼ template φ := by rw [templat
 lemma template_box (k ψ) : template (.box k ψ) =
     ∃¹ (∃¹ ((progAux .self 0 ⇜ ![#1, #2, #3, #4, #5, #6, #7]) ⋏
       ((progAux .opp 0 ⇜ ![#0, #2, #3, #4, #5, #6, #7]) ⋏
-        (∃¹ ((guardCodeG ⇜ ![#0, cl (numTB (templateCode ψ)), #2, #1]) ⋏
+        (∃¹ ((guardCodeG ⇜ ![#0, cl (boxQuote (template13 ψ)), #2, #1]) ⋏
           (lenProvG ⇜ ![cl (numTB k), #0])))))) := by
   rw [template]
 lemma template_eq (p q) : template (.eq p q) =
@@ -1639,7 +1707,7 @@ noncomputable def template7At : PD.Formula → Option ℕ → Semisentence LAct 
   | .box k ψ, k₀ =>
       ∃¹ (∃¹ ((progAux7At k₀ .self 0 ⇜ ![#1, #2, #3, #4, #5, #6, #7, #8]) ⋏
         ((progAux7At k₀ .opp 0 ⇜ ![#0, #2, #3, #4, #5, #6, #7, #8]) ⋏
-          (∃¹ ((guardCodeG ⇜ ![#0, cl (numTB (templateCode ψ)), #2, #1]) ⋏
+          (∃¹ ((guardCodeG ⇜ ![#0, cl (boxQuote (template13 ψ)), #2, #1]) ⋏
             (lenProvG ⇜ ![cl (numTB k), #0]))))))
   | .eq p q, k₀ =>
       ∃¹ (∃¹ ((progAux7At k₀ p (progCode p) ⇜ ![#1, #2, #3, #4, #5, #6, #7, #8]) ⋏
@@ -1656,7 +1724,7 @@ lemma template7At_neg (k₀ φ) : template7At (.neg φ) k₀ = ∼ template7At �
 lemma template7At_box (k₀ k ψ) : template7At (.box k ψ) k₀ =
     ∃¹ (∃¹ ((progAux7At k₀ .self 0 ⇜ ![#1, #2, #3, #4, #5, #6, #7, #8]) ⋏
       ((progAux7At k₀ .opp 0 ⇜ ![#0, #2, #3, #4, #5, #6, #7, #8]) ⋏
-        (∃¹ ((guardCodeG ⇜ ![#0, cl (numTB (templateCode ψ)), #2, #1]) ⋏
+        (∃¹ ((guardCodeG ⇜ ![#0, cl (boxQuote (template13 ψ)), #2, #1]) ⋏
           (lenProvG ⇜ ![cl (numTB k), #0])))))) := by rw [template7At]
 lemma template7At_eq (k₀ p q) : template7At (.eq p q) k₀ =
     ∃¹ (∃¹ ((progAux7At k₀ p (progCode p) ⇜ ![#1, #2, #3, #4, #5, #6, #7, #8]) ⋏
