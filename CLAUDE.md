@@ -196,7 +196,7 @@ type; `omega` case-splits every `max` in a threshold tower (2ⁿ) — thresholds
 
 **Package management — ALWAYS `uv`, never `pip`:** `uv sync --extra dev`, `uv add`, `uv run pytest`,
 `uv run python -m pd_runner.…` (inside `app/`). Lint: `uv run ruff check src tests` (config in
-`pyproject.toml`, rule set `E4/E7/E9/F`, `E741` ignored; keep it green). 442 tests + 6 skipped.
+`pyproject.toml`, rule set `E4/E7/E9/F`, `E741` ignored; keep it green). 455 tests + 6 skipped.
 
 **Source of truth (`docs/notes/SPRIME_SOURCE_OF_TRUTH.md`).** PA-`S'`
 (`app/generated/sprime_outcome_theorems.json`) is the app's source of truth; the engine's export stays
@@ -245,15 +245,30 @@ in no total `S'` roster; no floor-free roster contains DupocBot. Caution grid α
 
 **EGT (`egt/`; records `docs/notes/EGT_FINDINGS_SPRIME.md`, the earlier `archive/EGT_FINDINGS.md`).** Stages:
 `static_analysis/` (pure ESS), `invasion/` (`G>`/`G≥` graphs, SCCs), `faces/` (face equilibria), `nash/`
-(extreme NE, exact `Fraction`), `replicator/` (basins — grouped by SUPPORT, not proximity; non-convergence
-is a finding), `moran/` (fixation, stochastic stability; log-space); `pipeline.py` runs a `(t, α)` sweep
+(extreme NE, exact `Fraction`; components = the connected components of the bipartite graph of extreme NE,
+NOT a midpoint test — fixed 2026-11-10), `replicator/` (LSODA on log-shares; convergence = a symmetric NE up
+to 1e-6 at BOTH `H/2` and `H`, horizons 1e5 → 1e9, never a speed test; basins are shares of ALL interior starts,
+by SUPPORT and, when the Nash stage ran, by Nash COMPONENT; a rest point with a second-order invader is flagged
+`metastable`; a game where half of the first 100 starts cycle is cut there, `truncated_cycling`; rewritten
+2026-11-10 after Riccardo Formenti's replication found the speed test passing slow escapes), `moran/` (fixation,
+stochastic stability; log-space); `pipeline.py` runs a `(t, α)` sweep
 (`--resume` reuses complete run dirs by fingerprint), `report.py` renders. PD convention `(D,C)=b,
-(C,C)=b−c, (D,D)=0, (C,D)=−c`. **EVERY RUN MADE BEFORE 2026-11-05 ON A ROSTER WITH BOTH CupodBot AND OBot IS STALE** (it
-used `(C, D)` for that cell on the engine side; the cell is the theorem `(D, D)`) — `nonprovers+dupoc` is the
-only paper roster unaffected; re-run before quoting. Headline AS LAST COMPUTED: on `body8` DupocBot is uniquely
-stochastically stable at full transparency, its share rising with selection intensity (85.9% at (M, β) =
-(100, 1); 71.2% on the hinge side); partial transparency: critical transparency U-shaped in caution, static = dynamic collapse,
-same thresholds on the syntactic channel (`EGT_FINDINGS_SPRIME.md` §10, `latex/scripts/gen_tau_*.py`).
+(C,C)=b−c, (D,D)=0, (C,D)=−c`. **Runs on disk: the re-run of 2026-11-11** (`generated/egt/sweep_logs/chain_2026-11-11.sh`;
+`CupodBot × OBot = (D, D)`, the fixed Nash components and replicator; the earlier runs are in
+`generated/egt/archive/runs_2026-10-22_pre_replicator_fix`, STALE on all three counts, and `runs_2026-11-10_first_pass`,
+made before the metastable test covered tied types with a share below 1e-3). Headline: on `body8`
+DupocBot carries 86.0% of the Moran stationary distribution at full transparency, (M, β) = (100, 1), its share rising
+with selection intensity (71.2% on the hinge side); every replicator start reaches the cooperative component on the
+7-, 8- and 12-bot rosters, 97.5% on `body8+trolls` (the rest sits near full defection, METASTABLE: DupocBot invades
+it at second order); on the 12-bot roster CIMCIC and DupocBot share the Moran mass (48.5% / 44.6%); on the hinge side of
+`body8` 959 of 1000 starts reach cooperation and 41 are metastable at full defection. The PAPER (decided 2026-11-11,
+`latex/Experiments.tex`) reports equilibria + replicator dynamics only — no Moran — and the hinge side only as a
+robustness subsection for `body8` at full transparency. **Partial transparency in the paper is the FINE grid**
+(`generated/egt_fine/`, `run_fine.sh`: `body8`, t step 0.01, both families, Nash + replicator; figures by
+`latex/scripts/gen_partial_transparency_figs.py`): on the negative side the behavioral thresholds are t* = 0.14, 0.29,
+0.44, 0.48, 0.66, 1 for α = 0.5 … 1, with three narrow windows where populations CYCLE (`cycle_average.py`); the syntactic
+ones 0.07, 0.20, 0.37, 0.57, 0.79, 1. The coarse-grid record (`EGT_FINDINGS_SPRIME.md` §10, `latex/scripts/gen_tau_*.py`)
+was computed BEFORE the re-run and is NOT re-audited — check it against `generated/egt/analysis/` before quoting.
 **Traps:** `--alphas phases` is exact but ~|zoo|² phases per `t` (hours of Nash) — use the α list; the
 unit of work is the DISTINCT MATRIX (runs keyed by a cell hash; `grid_points` maps points to runs);
 `lrsnash` is optional and usually absent (recorded as `cross_check_performed: false`, never as passed);
