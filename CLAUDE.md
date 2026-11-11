@@ -196,7 +196,7 @@ type; `omega` case-splits every `max` in a threshold tower (2ⁿ) — thresholds
 
 **Package management — ALWAYS `uv`, never `pip`:** `uv sync --extra dev`, `uv add`, `uv run pytest`,
 `uv run python -m pd_runner.…` (inside `app/`). Lint: `uv run ruff check src tests` (config in
-`pyproject.toml`, rule set `E4/E7/E9/F`, `E741` ignored; keep it green). 455 tests + 6 skipped.
+`pyproject.toml`, rule set `E4/E7/E9/F`, `E741` ignored; keep it green). 476 tests + 6 skipped.
 
 **Source of truth (`docs/notes/SPRIME_SOURCE_OF_TRUTH.md`).** PA-`S'`
 (`app/generated/sprime_outcome_theorems.json`) is the app's source of truth; the engine's export stays
@@ -264,10 +264,16 @@ it at second order); on the 12-bot roster CIMCIC and DupocBot share the Moran ma
 `body8` 959 of 1000 starts reach cooperation and 41 are metastable at full defection. The PAPER (decided 2026-11-11,
 `latex/Experiments.tex`) reports equilibria + replicator dynamics only — no Moran — and the hinge side only as a
 robustness subsection for `body8` at full transparency. **Partial transparency in the paper is the FINE grid**
-(`generated/egt_fine/`, `run_fine.sh`: `body8`, t step 0.01, both families, Nash + replicator; figures by
-`latex/scripts/gen_partial_transparency_figs.py`): on the negative side the behavioral thresholds are t* = 0.14, 0.29,
-0.44, 0.48, 0.66, 1 for α = 0.5 … 1, with three narrow windows where populations CYCLE (`cycle_average.py`); the syntactic
-ones 0.07, 0.20, 0.37, 0.57, 0.79, 1. The coarse-grid record (`EGT_FINDINGS_SPRIME.md` §10, `latex/scripts/gen_tau_*.py`)
+(`body8`, t step 0.01, both families, both sides, Nash + replicator): on the negative side the behavioral thresholds are
+t* = 0.14, 0.29, 0.44, 0.48, 0.66, 1 for α = 0.5 … 1, with three narrow windows where populations CYCLE; the syntactic
+ones 0.07, 0.20, 0.37, 0.57, 0.79, 1. **THE PAPER'S EXPERIMENTS ARE `pd_runner.paper`** (`REPRODUCING.md` at the root is
+the reviewer's guide, paper ↔ code): `scripts/rerun_paper_experiments.sh` runs the sweeps (~1 h; a from-scratch run reproduced the snapshot byte for byte, 2026-11-11), `paper.snapshot`
+reduces their output to the TRACKED `app/paper_results/` (dropping the centre start: the stage integrates 1,001 interior
+starts, the paper reports the 1,000 uniform draws; and adding the long-run average where populations cycle),
+`paper.numbers` prints every number of the experiments section from it, `paper.matrix` an outcome matrix with the Lean
+theorem behind each cell, `tests/test_paper_numbers.py` PINS the paper's numbers — change the paper and that test together.
+`latex/scripts/gen_partial_transparency_figs.py` reads the same snapshot.
+The coarse-grid record (`EGT_FINDINGS_SPRIME.md` §10, `latex/scripts/gen_tau_*.py`)
 was computed BEFORE the re-run and is NOT re-audited — check it against `generated/egt/analysis/` before quoting.
 **Traps:** `--alphas phases` is exact but ~|zoo|² phases per `t` (hours of Nash) — use the α list; the
 unit of work is the DISTINCT MATRIX (runs keyed by a cell hash; `grid_points` maps points to runs);

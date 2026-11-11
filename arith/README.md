@@ -90,6 +90,9 @@ A full incremental build is about 3350 jobs; a single file check needs ~5 GB of 
 
 ## Reading order
 
+For the paper's statements and where each is proved, see `../REPRODUCING.md`; for the code, start at
+`ArithS/Tour.lean`. The notes below are in `../docs/notes/` or its `archive/`.
+
 1. `../docs/notes/ARITHMETIZED_S_RESULTS.md` — what is proved.
 2. `SPRIME_DESIGN_RATIONALE.md` — why the definitions are what they are.
 3. `RED_CELL_AUDIT.md` — how the meaning is pinned; then the three audit files above.
@@ -100,6 +103,5 @@ A full incremental build is about 3350 jobs; a single file check needs ~5 GB of 
 8. The code, in `SPRIME_DESIGN_RATIONALE.md` §10's order; for the cells: `ArithS/Cells/Common/*`
    (the shared substrate), the cell files, `ArithS/Cells/FloorVerdicts.lean` and
    `ArithS/Cells/FloorDichotomy.lean` (the genuine floors — 25 engine cells since 2026-11-05: settled halves, then the
-   hypothesis-free dichotomies), and `ArithS/Cells/Names.lean` — the naming scheme
-   `<method>_<L>_vs_<R>[_<suffix>]` (primary since 2026-09-27; the old names are deprecated
-   aliases there) — `ROUTE_B_CELLS_MAP.md` has the map.
+   hypothesis-free dichotomies). The naming scheme is `<method>_<L>_vs_<R>[_<suffix>]`; `ROUTE_B_CELLS_MAP.md`
+   has the map.

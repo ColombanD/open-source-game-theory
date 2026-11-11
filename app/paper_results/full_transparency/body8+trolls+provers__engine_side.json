@@ -1,0 +1,1359 @@
+{
+ "library": "body8+trolls+provers",
+ "side": "engine_side",
+ "matrix_fingerprint": "f17dfb2b0a4e",
+ "cell_source": "sprime",
+ "programs": [
+  "CIMCIC",
+  "CooperateBot",
+  "CupodBot",
+  "CupodTrollBot",
+  "DBot",
+  "DIMDID",
+  "DefectBot",
+  "DupocBot",
+  "DupocTrollBot",
+  "EBot",
+  "OBot",
+  "TitForTatBot"
+ ],
+ "hinge_cells": [
+  [
+   "CIMCIC",
+   "CupodBot"
+  ],
+  [
+   "CIMCIC",
+   "CupodTrollBot"
+  ],
+  [
+   "CIMCIC",
+   "DBot"
+  ],
+  [
+   "CIMCIC",
+   "DupocTrollBot"
+  ],
+  [
+   "CIMCIC",
+   "EBot"
+  ],
+  [
+   "CupodBot",
+   "CIMCIC"
+  ],
+  [
+   "CupodTrollBot",
+   "CIMCIC"
+  ],
+  [
+   "CupodTrollBot",
+   "DupocBot"
+  ],
+  [
+   "DBot",
+   "CIMCIC"
+  ],
+  [
+   "DBot",
+   "DupocBot"
+  ],
+  [
+   "DIMDID",
+   "DupocBot"
+  ],
+  [
+   "DupocBot",
+   "CupodTrollBot"
+  ],
+  [
+   "DupocBot",
+   "DBot"
+  ],
+  [
+   "DupocBot",
+   "DIMDID"
+  ],
+  [
+   "DupocBot",
+   "EBot"
+  ],
+  [
+   "DupocTrollBot",
+   "CIMCIC"
+  ],
+  [
+   "EBot",
+   "CIMCIC"
+  ],
+  [
+   "EBot",
+   "DupocBot"
+  ]
+ ],
+ "payoff_matrix": [
+  [
+   2,
+   2,
+   3,
+   3,
+   3,
+   3,
+   0,
+   2,
+   3,
+   3,
+   0,
+   2
+  ],
+  [
+   2,
+   2,
+   2,
+   2,
+   -1,
+   2,
+   -1,
+   2,
+   2,
+   -1,
+   2,
+   2
+  ],
+  [
+   -1,
+   2,
+   0,
+   0,
+   2,
+   0,
+   0,
+   -1,
+   2,
+   2,
+   0,
+   2
+  ],
+  [
+   -1,
+   2,
+   0,
+   2,
+   -1,
+   2,
+   -1,
+   -1,
+   2,
+   -1,
+   2,
+   2
+  ],
+  [
+   -1,
+   3,
+   2,
+   3,
+   0,
+   2,
+   -1,
+   -1,
+   3,
+   -1,
+   -1,
+   -1
+  ],
+  [
+   -1,
+   2,
+   0,
+   2,
+   2,
+   0,
+   0,
+   -1,
+   2,
+   2,
+   0,
+   2
+  ],
+  [
+   0,
+   3,
+   0,
+   3,
+   3,
+   0,
+   0,
+   0,
+   3,
+   0,
+   0,
+   0
+  ],
+  [
+   2,
+   2,
+   3,
+   3,
+   3,
+   3,
+   0,
+   2,
+   0,
+   3,
+   0,
+   2
+  ],
+  [
+   -1,
+   2,
+   2,
+   2,
+   -1,
+   2,
+   -1,
+   0,
+   2,
+   -1,
+   2,
+   2
+  ],
+  [
+   -1,
+   3,
+   2,
+   3,
+   3,
+   2,
+   0,
+   -1,
+   3,
+   2,
+   -1,
+   -1
+  ],
+  [
+   0,
+   2,
+   0,
+   2,
+   3,
+   0,
+   0,
+   0,
+   2,
+   3,
+   0,
+   3
+  ],
+  [
+   2,
+   2,
+   2,
+   2,
+   3,
+   2,
+   0,
+   2,
+   2,
+   3,
+   -1,
+   2
+  ]
+ ],
+ "equilibria": [
+  {
+   "component": 0,
+   "row": {
+    "CIMCIC": "1"
+   },
+   "col": {
+    "CIMCIC": "1"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 0,
+   "row": {
+    "CIMCIC": "1"
+   },
+   "col": {
+    "CIMCIC": "1/3",
+    "CooperateBot": "2/3"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 0,
+   "row": {
+    "CIMCIC": "1"
+   },
+   "col": {
+    "CooperateBot": "2/3",
+    "DupocBot": "1/3"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 0,
+   "row": {
+    "CIMCIC": "1"
+   },
+   "col": {
+    "CIMCIC": "1/9",
+    "CooperateBot": "2/3",
+    "TitForTatBot": "2/9"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 0,
+   "row": {
+    "CIMCIC": "1"
+   },
+   "col": {
+    "CooperateBot": "2/3",
+    "DupocBot": "1/9",
+    "TitForTatBot": "2/9"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 0,
+   "row": {
+    "CIMCIC": "1"
+   },
+   "col": {
+    "DupocBot": "1"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 0,
+   "row": {
+    "CIMCIC": "1"
+   },
+   "col": {
+    "CIMCIC": "1/3",
+    "TitForTatBot": "2/3"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 0,
+   "row": {
+    "CIMCIC": "1"
+   },
+   "col": {
+    "DupocBot": "1/3",
+    "TitForTatBot": "2/3"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 0,
+   "row": {
+    "CIMCIC": "1/3",
+    "CooperateBot": "2/3"
+   },
+   "col": {
+    "CIMCIC": "1"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 0,
+   "row": {
+    "CIMCIC": "1/3",
+    "CooperateBot": "2/3"
+   },
+   "col": {
+    "CIMCIC": "1/3",
+    "CooperateBot": "2/3"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 0,
+   "row": {
+    "CIMCIC": "1/3",
+    "CooperateBot": "2/3"
+   },
+   "col": {
+    "CooperateBot": "2/3",
+    "DupocBot": "1/3"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 0,
+   "row": {
+    "CIMCIC": "1/3",
+    "CooperateBot": "2/3"
+   },
+   "col": {
+    "CIMCIC": "1/9",
+    "CooperateBot": "2/3",
+    "TitForTatBot": "2/9"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 0,
+   "row": {
+    "CIMCIC": "1/3",
+    "CooperateBot": "2/3"
+   },
+   "col": {
+    "CooperateBot": "2/3",
+    "DupocBot": "1/9",
+    "TitForTatBot": "2/9"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 0,
+   "row": {
+    "CIMCIC": "1/3",
+    "CooperateBot": "2/3"
+   },
+   "col": {
+    "DupocBot": "1"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 0,
+   "row": {
+    "CIMCIC": "1/3",
+    "CooperateBot": "2/3"
+   },
+   "col": {
+    "CIMCIC": "1/3",
+    "TitForTatBot": "2/3"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 0,
+   "row": {
+    "CIMCIC": "1/3",
+    "CooperateBot": "2/3"
+   },
+   "col": {
+    "DupocBot": "1/3",
+    "TitForTatBot": "2/3"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 0,
+   "row": {
+    "CooperateBot": "2/3",
+    "DupocBot": "1/3"
+   },
+   "col": {
+    "CIMCIC": "1"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 0,
+   "row": {
+    "CooperateBot": "2/3",
+    "DupocBot": "1/3"
+   },
+   "col": {
+    "CIMCIC": "1/3",
+    "CooperateBot": "2/3"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 0,
+   "row": {
+    "CooperateBot": "2/3",
+    "DupocBot": "1/3"
+   },
+   "col": {
+    "CooperateBot": "2/3",
+    "DupocBot": "1/3"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 0,
+   "row": {
+    "CooperateBot": "2/3",
+    "DupocBot": "1/3"
+   },
+   "col": {
+    "CIMCIC": "1/9",
+    "CooperateBot": "2/3",
+    "TitForTatBot": "2/9"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 0,
+   "row": {
+    "CooperateBot": "2/3",
+    "DupocBot": "1/3"
+   },
+   "col": {
+    "CooperateBot": "2/3",
+    "DupocBot": "1/9",
+    "TitForTatBot": "2/9"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 0,
+   "row": {
+    "CooperateBot": "2/3",
+    "DupocBot": "1/3"
+   },
+   "col": {
+    "DupocBot": "1"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 0,
+   "row": {
+    "CooperateBot": "2/3",
+    "DupocBot": "1/3"
+   },
+   "col": {
+    "CIMCIC": "1/3",
+    "TitForTatBot": "2/3"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 0,
+   "row": {
+    "CooperateBot": "2/3",
+    "DupocBot": "1/3"
+   },
+   "col": {
+    "DupocBot": "1/3",
+    "TitForTatBot": "2/3"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 0,
+   "row": {
+    "CIMCIC": "1/9",
+    "CooperateBot": "2/3",
+    "TitForTatBot": "2/9"
+   },
+   "col": {
+    "CIMCIC": "1"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 0,
+   "row": {
+    "CIMCIC": "1/9",
+    "CooperateBot": "2/3",
+    "TitForTatBot": "2/9"
+   },
+   "col": {
+    "CIMCIC": "1/3",
+    "CooperateBot": "2/3"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 0,
+   "row": {
+    "CIMCIC": "1/9",
+    "CooperateBot": "2/3",
+    "TitForTatBot": "2/9"
+   },
+   "col": {
+    "CooperateBot": "2/3",
+    "DupocBot": "1/3"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 0,
+   "row": {
+    "CIMCIC": "1/9",
+    "CooperateBot": "2/3",
+    "TitForTatBot": "2/9"
+   },
+   "col": {
+    "CIMCIC": "1/9",
+    "CooperateBot": "2/3",
+    "TitForTatBot": "2/9"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 0,
+   "row": {
+    "CIMCIC": "1/9",
+    "CooperateBot": "2/3",
+    "TitForTatBot": "2/9"
+   },
+   "col": {
+    "CooperateBot": "2/3",
+    "DupocBot": "1/9",
+    "TitForTatBot": "2/9"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 0,
+   "row": {
+    "CIMCIC": "1/9",
+    "CooperateBot": "2/3",
+    "TitForTatBot": "2/9"
+   },
+   "col": {
+    "DupocBot": "1"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 0,
+   "row": {
+    "CIMCIC": "1/9",
+    "CooperateBot": "2/3",
+    "TitForTatBot": "2/9"
+   },
+   "col": {
+    "CIMCIC": "1/3",
+    "TitForTatBot": "2/3"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 0,
+   "row": {
+    "CIMCIC": "1/9",
+    "CooperateBot": "2/3",
+    "TitForTatBot": "2/9"
+   },
+   "col": {
+    "DupocBot": "1/3",
+    "TitForTatBot": "2/3"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 0,
+   "row": {
+    "CooperateBot": "2/3",
+    "DupocBot": "1/9",
+    "TitForTatBot": "2/9"
+   },
+   "col": {
+    "CIMCIC": "1"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 0,
+   "row": {
+    "CooperateBot": "2/3",
+    "DupocBot": "1/9",
+    "TitForTatBot": "2/9"
+   },
+   "col": {
+    "CIMCIC": "1/3",
+    "CooperateBot": "2/3"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 0,
+   "row": {
+    "CooperateBot": "2/3",
+    "DupocBot": "1/9",
+    "TitForTatBot": "2/9"
+   },
+   "col": {
+    "CooperateBot": "2/3",
+    "DupocBot": "1/3"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 0,
+   "row": {
+    "CooperateBot": "2/3",
+    "DupocBot": "1/9",
+    "TitForTatBot": "2/9"
+   },
+   "col": {
+    "CIMCIC": "1/9",
+    "CooperateBot": "2/3",
+    "TitForTatBot": "2/9"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 0,
+   "row": {
+    "CooperateBot": "2/3",
+    "DupocBot": "1/9",
+    "TitForTatBot": "2/9"
+   },
+   "col": {
+    "CooperateBot": "2/3",
+    "DupocBot": "1/9",
+    "TitForTatBot": "2/9"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 0,
+   "row": {
+    "CooperateBot": "2/3",
+    "DupocBot": "1/9",
+    "TitForTatBot": "2/9"
+   },
+   "col": {
+    "DupocBot": "1"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 0,
+   "row": {
+    "CooperateBot": "2/3",
+    "DupocBot": "1/9",
+    "TitForTatBot": "2/9"
+   },
+   "col": {
+    "CIMCIC": "1/3",
+    "TitForTatBot": "2/3"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 0,
+   "row": {
+    "CooperateBot": "2/3",
+    "DupocBot": "1/9",
+    "TitForTatBot": "2/9"
+   },
+   "col": {
+    "DupocBot": "1/3",
+    "TitForTatBot": "2/3"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 1,
+   "row": {
+    "DefectBot": "1"
+   },
+   "col": {
+    "DefectBot": "1"
+   },
+   "cooperation": "0",
+   "row_payoff": "0",
+   "col_payoff": "0"
+  },
+  {
+   "component": 1,
+   "row": {
+    "DefectBot": "1"
+   },
+   "col": {
+    "DefectBot": "2/3",
+    "OBot": "1/3"
+   },
+   "cooperation": "0",
+   "row_payoff": "0",
+   "col_payoff": "0"
+  },
+  {
+   "component": 0,
+   "row": {
+    "DupocBot": "1"
+   },
+   "col": {
+    "CIMCIC": "1"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 0,
+   "row": {
+    "DupocBot": "1"
+   },
+   "col": {
+    "CIMCIC": "1/3",
+    "CooperateBot": "2/3"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 0,
+   "row": {
+    "DupocBot": "1"
+   },
+   "col": {
+    "CooperateBot": "2/3",
+    "DupocBot": "1/3"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 0,
+   "row": {
+    "DupocBot": "1"
+   },
+   "col": {
+    "CIMCIC": "1/9",
+    "CooperateBot": "2/3",
+    "TitForTatBot": "2/9"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 0,
+   "row": {
+    "DupocBot": "1"
+   },
+   "col": {
+    "CooperateBot": "2/3",
+    "DupocBot": "1/9",
+    "TitForTatBot": "2/9"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 0,
+   "row": {
+    "DupocBot": "1"
+   },
+   "col": {
+    "DupocBot": "1"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 0,
+   "row": {
+    "DupocBot": "1"
+   },
+   "col": {
+    "CIMCIC": "1/3",
+    "TitForTatBot": "2/3"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 0,
+   "row": {
+    "DupocBot": "1"
+   },
+   "col": {
+    "DupocBot": "1/3",
+    "TitForTatBot": "2/3"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 2,
+   "row": {
+    "CooperateBot": "1/2",
+    "EBot": "1/6",
+    "OBot": "1/3"
+   },
+   "col": {
+    "CooperateBot": "1/2",
+    "EBot": "1/6",
+    "OBot": "1/3"
+   },
+   "cooperation": "11/18",
+   "row_payoff": "3/2",
+   "col_payoff": "3/2"
+  },
+  {
+   "component": 1,
+   "row": {
+    "DefectBot": "2/3",
+    "OBot": "1/3"
+   },
+   "col": {
+    "DefectBot": "1"
+   },
+   "cooperation": "0",
+   "row_payoff": "0",
+   "col_payoff": "0"
+  },
+  {
+   "component": 1,
+   "row": {
+    "DefectBot": "2/3",
+    "OBot": "1/3"
+   },
+   "col": {
+    "DefectBot": "2/3",
+    "OBot": "1/3"
+   },
+   "cooperation": "0",
+   "row_payoff": "0",
+   "col_payoff": "0"
+  },
+  {
+   "component": 0,
+   "row": {
+    "CIMCIC": "1/3",
+    "TitForTatBot": "2/3"
+   },
+   "col": {
+    "CIMCIC": "1"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 0,
+   "row": {
+    "CIMCIC": "1/3",
+    "TitForTatBot": "2/3"
+   },
+   "col": {
+    "CIMCIC": "1/3",
+    "CooperateBot": "2/3"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 0,
+   "row": {
+    "CIMCIC": "1/3",
+    "TitForTatBot": "2/3"
+   },
+   "col": {
+    "CooperateBot": "2/3",
+    "DupocBot": "1/3"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 0,
+   "row": {
+    "CIMCIC": "1/3",
+    "TitForTatBot": "2/3"
+   },
+   "col": {
+    "CIMCIC": "1/9",
+    "CooperateBot": "2/3",
+    "TitForTatBot": "2/9"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 0,
+   "row": {
+    "CIMCIC": "1/3",
+    "TitForTatBot": "2/3"
+   },
+   "col": {
+    "CooperateBot": "2/3",
+    "DupocBot": "1/9",
+    "TitForTatBot": "2/9"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 0,
+   "row": {
+    "CIMCIC": "1/3",
+    "TitForTatBot": "2/3"
+   },
+   "col": {
+    "DupocBot": "1"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 0,
+   "row": {
+    "CIMCIC": "1/3",
+    "TitForTatBot": "2/3"
+   },
+   "col": {
+    "CIMCIC": "1/3",
+    "TitForTatBot": "2/3"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 0,
+   "row": {
+    "CIMCIC": "1/3",
+    "TitForTatBot": "2/3"
+   },
+   "col": {
+    "DupocBot": "1/3",
+    "TitForTatBot": "2/3"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 0,
+   "row": {
+    "DupocBot": "1/3",
+    "TitForTatBot": "2/3"
+   },
+   "col": {
+    "CIMCIC": "1"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 0,
+   "row": {
+    "DupocBot": "1/3",
+    "TitForTatBot": "2/3"
+   },
+   "col": {
+    "CIMCIC": "1/3",
+    "CooperateBot": "2/3"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 0,
+   "row": {
+    "DupocBot": "1/3",
+    "TitForTatBot": "2/3"
+   },
+   "col": {
+    "CooperateBot": "2/3",
+    "DupocBot": "1/3"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 0,
+   "row": {
+    "DupocBot": "1/3",
+    "TitForTatBot": "2/3"
+   },
+   "col": {
+    "CIMCIC": "1/9",
+    "CooperateBot": "2/3",
+    "TitForTatBot": "2/9"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 0,
+   "row": {
+    "DupocBot": "1/3",
+    "TitForTatBot": "2/3"
+   },
+   "col": {
+    "CooperateBot": "2/3",
+    "DupocBot": "1/9",
+    "TitForTatBot": "2/9"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 0,
+   "row": {
+    "DupocBot": "1/3",
+    "TitForTatBot": "2/3"
+   },
+   "col": {
+    "DupocBot": "1"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 0,
+   "row": {
+    "DupocBot": "1/3",
+    "TitForTatBot": "2/3"
+   },
+   "col": {
+    "CIMCIC": "1/3",
+    "TitForTatBot": "2/3"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 0,
+   "row": {
+    "DupocBot": "1/3",
+    "TitForTatBot": "2/3"
+   },
+   "col": {
+    "DupocBot": "1/3",
+    "TitForTatBot": "2/3"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  }
+ ],
+ "replicator_stage": {
+  "n_interior_samples": 1001,
+  "n_interior_converged": 1001,
+  "n_unconverged": 0,
+  "n_budget_exhausted": 0,
+  "n_metastable": 0,
+  "seed": 20260514,
+  "horizon": 100000.0,
+  "max_horizon": 1000000000.0,
+  "tol": 1e-06,
+  "horizons_reached": {
+   "100000": 1001
+  },
+  "components": [
+   {
+    "component_id": 0,
+    "n_interior": 1001,
+    "basin_fraction": 1.0,
+    "basin_ci95": [
+     0.996177,
+     1.0
+    ],
+    "n_metastable": 0,
+    "bots": [
+     "CIMCIC",
+     "CooperateBot",
+     "DupocBot",
+     "TitForTatBot"
+    ],
+    "n_supports": 1
+   }
+  ],
+  "supports_reached": [
+   {
+    "support": [
+     "CIMCIC",
+     "DupocBot",
+     "TitForTatBot",
+     "CooperateBot"
+    ],
+    "n_interior": 1001,
+    "n_metastable": 0,
+    "invaders": [],
+    "components": [
+     0
+    ]
+   }
+  ]
+ },
+ "uniform_starts": {
+  "n": 1000,
+  "seed": 20260514,
+  "n_converged": 1000,
+  "n_unconverged": 0,
+  "by_component": [
+   {
+    "component": 0,
+    "n": 1000,
+    "n_at_last_horizon_with_an_invader": 0
+   }
+  ],
+  "by_support": [
+   {
+    "present": [
+     "CIMCIC",
+     "CooperateBot",
+     "DupocBot",
+     "TitForTatBot"
+    ],
+    "n": 1000
+   }
+  ],
+  "final_share_range": {
+   "CIMCIC": [
+    0.000393,
+    0.949557
+   ],
+   "CooperateBot": [
+    2e-06,
+    0.664421
+   ],
+   "CupodBot": [
+    0.0,
+    0.0
+   ],
+   "CupodTrollBot": [
+    0.0,
+    0.0
+   ],
+   "DBot": [
+    0.0,
+    0.0
+   ],
+   "DIMDID": [
+    0.0,
+    0.0
+   ],
+   "DefectBot": [
+    0.0,
+    0.0
+   ],
+   "DupocBot": [
+    0.00051,
+    0.954271
+   ],
+   "DupocTrollBot": [
+    0.0,
+    0.0
+   ],
+   "EBot": [
+    0.0,
+    0.0
+   ],
+   "OBot": [
+    0.0,
+    0.0
+   ],
+   "TitForTatBot": [
+    0.000262,
+    0.642929
+   ]
+  },
+  "centre_start_ends_on": [
+   "CIMCIC",
+   "CooperateBot",
+   "DupocBot",
+   "TitForTatBot"
+  ]
+ }
+}

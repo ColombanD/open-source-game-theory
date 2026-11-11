@@ -1,10 +1,9 @@
 """Generate the two partial-transparency figures of the experiments section from the fine-grid runs.
 
 Run from `app/`:  uv run python ../latex/scripts/gen_partial_transparency_figs.py
-Reads  app/generated/egt_fine/{behavioral,syntactic}_engine_side/runs/*  (run_fine.sh, 2026-11-11: body8, t step
-0.01, negative side of the hinge, Nash + replicator, 1,000 starts) and `cycling_time_averages.json` (written by
-`app/generated/egt_fine/cycle_average.py`: the long-run average of Pr[(C,C)] in the games where no population
-settles).
+Reads  app/paper_results/partial_transparency/{behavioral,syntactic}_engine_side.json, the tracked snapshot of the
+fine-grid sweeps (body8, t step 0.01, negative side of the hinge, Nash + replicator, 1,000 starts; built by
+`python -m pd_runner.paper.snapshot` from the output of `app/scripts/rerun_paper_experiments.sh`).
 Writes app/generated/egt_fine/figures/{figure_A,figure_D}.pdf (+ .png previews) and `figure_data.json`.
 It does NOT write into `latex/figures and tables/`: copy the PDFs there (or to Overleaf) by hand.
 
@@ -17,9 +16,7 @@ font, viridis by caution level, left/bottom spines, legends above the axes.
 """
 from __future__ import annotations
 
-import glob
 import json
-from collections import defaultdict
 from fractions import Fraction as F
 from pathlib import Path
 
@@ -29,8 +26,8 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 
 APP = Path(__file__).resolve().parents[2] / "app"
-ROOT = APP / "generated" / "egt_fine"
-OUT = ROOT / "figures"
+RESULTS = APP / "paper_results" / "partial_transparency"
+OUT = APP / "generated" / "egt_fine" / "figures"
 ALPHAS = [0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
 
 # Style of the paper's existing figures: viridis by caution level, default sans font.
@@ -47,33 +44,26 @@ plt.rcParams.update({
 
 def load(combo: str) -> dict[tuple[float, float], dict]:
     """(t, alpha) -> max / min equilibrium cooperation and the cooperation the sampled populations end with."""
-    cyc_path = ROOT / combo / "cycling_time_averages.json"
-    cycles = json.loads(cyc_path.read_text()) if cyc_path.exists() else {}
     pts: dict[tuple[float, float], dict] = {}
-    for f in glob.glob(str(ROOT / combo / "runs" / "*" / "summary.json")):
-        d = Path(f).parent
-        s = json.loads(Path(f).read_text())
-        comp = defaultdict(set)
-        for line in (d / "nash" / "latest" / "equilibria.jsonl").read_text().splitlines():
-            r = json.loads(line)
-            comp[r["component_id"]].add(F(r["cooperation_rate_rational"]))
-        levels = sorted({c for v in comp.values() for c in v})
-        b = json.loads((d / "replicator" / "basins.json").read_text())
-        n = b["n_interior_samples"]
+    for g in json.loads((RESULTS / f"{combo}.json").read_text()):
+        level = {c["id"]: [F(x) for x in c["cooperation"]] for c in g["components"]}
+        levels = sorted({x for v in level.values() for x in v})
+        rep = g["replicator"]
+        n = rep["n"]
         selected = 0.0
-        for c in b["components"]:
-            (level,) = comp[c["component_id"]]      # cooperation is constant on every component reached
-            selected += c["n_interior"] / n * float(level)
-        if b["n_unconverged"]:
-            if d.name not in cycles:
-                if b["n_unconverged"] / n > 0.02:
-                    raise SystemExit(f"{d.name}: {b['n_unconverged']} of {n} starts unconverged and no time average")
+        for c in rep["reached"]:
+            (lv,) = level[c["id"]]      # cooperation is constant on every component reached
+            selected += c["n"] / n * float(lv)
+        if rep["n_unconverged"]:
+            if "cycle" not in g:
+                if rep["n_unconverged"] / n > 0.02:
+                    raise SystemExit(f"{g['run']}: {rep['n_unconverged']} of {n} starts unconverged and no time average")
             else:
-                selected += b["n_unconverged"] / n * cycles[d.name]["time_avg_coop_mean"]
+                selected += rep["n_unconverged"] / n * g["cycle"]["time_average_cooperation"]
         rec = {"max": float(levels[-1]), "min": float(levels[0]), "full": levels[-1] == 1,
-               "selected": selected, "cycling": bool(b["n_unconverged"] / n > 0.5), "levels": [str(x) for x in levels]}
-        for t, a in s["grid_points"]:
-            pts[(round(t, 2), round(a, 2))] = rec
+               "selected": selected, "cycling": bool(rep["n_unconverged"] / n > 0.5), "levels": [str(x) for x in levels]}
+        for t, a in g["grid_points"]:
+            pts[(t, a)] = rec
     return pts
 
 

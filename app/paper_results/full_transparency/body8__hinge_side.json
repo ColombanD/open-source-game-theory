@@ -1,0 +1,538 @@
+{
+ "library": "body8",
+ "side": "hinge_side",
+ "matrix_fingerprint": "125c88740d9d",
+ "cell_source": "sprime",
+ "programs": [
+  "CooperateBot",
+  "CupodBot",
+  "DBot",
+  "DefectBot",
+  "DupocBot",
+  "EBot",
+  "OBot",
+  "TitForTatBot"
+ ],
+ "hinge_cells": [
+  [
+   "DBot",
+   "DupocBot"
+  ],
+  [
+   "DupocBot",
+   "DBot"
+  ],
+  [
+   "DupocBot",
+   "EBot"
+  ],
+  [
+   "EBot",
+   "DupocBot"
+  ]
+ ],
+ "payoff_matrix": [
+  [
+   2,
+   2,
+   -1,
+   -1,
+   2,
+   -1,
+   2,
+   2
+  ],
+  [
+   2,
+   0,
+   2,
+   0,
+   -1,
+   2,
+   0,
+   2
+  ],
+  [
+   3,
+   2,
+   0,
+   -1,
+   2,
+   -1,
+   -1,
+   -1
+  ],
+  [
+   3,
+   0,
+   3,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  [
+   2,
+   3,
+   2,
+   0,
+   2,
+   2,
+   0,
+   2
+  ],
+  [
+   3,
+   2,
+   3,
+   0,
+   2,
+   2,
+   -1,
+   -1
+  ],
+  [
+   2,
+   0,
+   3,
+   0,
+   0,
+   3,
+   0,
+   3
+  ],
+  [
+   2,
+   2,
+   3,
+   0,
+   2,
+   3,
+   -1,
+   2
+  ]
+ ],
+ "equilibria": [
+  {
+   "component": 0,
+   "row": {
+    "CooperateBot": "2/7",
+    "DefectBot": "2/7",
+    "DupocBot": "1/21",
+    "EBot": "2/21",
+    "OBot": "2/7"
+   },
+   "col": {
+    "CooperateBot": "2/7",
+    "DefectBot": "2/7",
+    "DupocBot": "1/21",
+    "EBot": "2/21",
+    "OBot": "2/7"
+   },
+   "cooperation": "43/147",
+   "row_payoff": "6/7",
+   "col_payoff": "6/7"
+  },
+  {
+   "component": 1,
+   "row": {
+    "CooperateBot": "2/3",
+    "DupocBot": "1/9",
+    "TitForTatBot": "2/9"
+   },
+   "col": {
+    "CooperateBot": "2/3",
+    "DupocBot": "1/9",
+    "TitForTatBot": "2/9"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 1,
+   "row": {
+    "CooperateBot": "2/3",
+    "DupocBot": "1/9",
+    "TitForTatBot": "2/9"
+   },
+   "col": {
+    "DupocBot": "1"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 1,
+   "row": {
+    "CooperateBot": "2/3",
+    "DupocBot": "1/9",
+    "TitForTatBot": "2/9"
+   },
+   "col": {
+    "DupocBot": "1/3",
+    "TitForTatBot": "2/3"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 2,
+   "row": {
+    "CooperateBot": "1/2",
+    "EBot": "1/6",
+    "OBot": "1/3"
+   },
+   "col": {
+    "CooperateBot": "1/2",
+    "EBot": "1/6",
+    "OBot": "1/3"
+   },
+   "cooperation": "11/18",
+   "row_payoff": "3/2",
+   "col_payoff": "3/2"
+  },
+  {
+   "component": 3,
+   "row": {
+    "DefectBot": "1"
+   },
+   "col": {
+    "DefectBot": "1"
+   },
+   "cooperation": "0",
+   "row_payoff": "0",
+   "col_payoff": "0"
+  },
+  {
+   "component": 3,
+   "row": {
+    "DefectBot": "1"
+   },
+   "col": {
+    "DefectBot": "2/3",
+    "OBot": "1/3"
+   },
+   "cooperation": "0",
+   "row_payoff": "0",
+   "col_payoff": "0"
+  },
+  {
+   "component": 1,
+   "row": {
+    "DupocBot": "1"
+   },
+   "col": {
+    "CooperateBot": "2/3",
+    "DupocBot": "1/9",
+    "TitForTatBot": "2/9"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 1,
+   "row": {
+    "DupocBot": "1"
+   },
+   "col": {
+    "DupocBot": "1"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 1,
+   "row": {
+    "DupocBot": "1"
+   },
+   "col": {
+    "DupocBot": "1/3",
+    "TitForTatBot": "2/3"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 4,
+   "row": {
+    "CooperateBot": "1/3",
+    "DupocBot": "1/9",
+    "EBot": "2/9",
+    "OBot": "1/3"
+   },
+   "col": {
+    "CooperateBot": "1/3",
+    "DupocBot": "1/9",
+    "EBot": "2/9",
+    "OBot": "1/3"
+   },
+   "cooperation": "14/27",
+   "row_payoff": "4/3",
+   "col_payoff": "4/3"
+  },
+  {
+   "component": 3,
+   "row": {
+    "DefectBot": "2/3",
+    "OBot": "1/3"
+   },
+   "col": {
+    "DefectBot": "1"
+   },
+   "cooperation": "0",
+   "row_payoff": "0",
+   "col_payoff": "0"
+  },
+  {
+   "component": 3,
+   "row": {
+    "DefectBot": "2/3",
+    "OBot": "1/3"
+   },
+   "col": {
+    "DefectBot": "2/3",
+    "OBot": "1/3"
+   },
+   "cooperation": "0",
+   "row_payoff": "0",
+   "col_payoff": "0"
+  },
+  {
+   "component": 1,
+   "row": {
+    "DupocBot": "1/3",
+    "TitForTatBot": "2/3"
+   },
+   "col": {
+    "CooperateBot": "2/3",
+    "DupocBot": "1/9",
+    "TitForTatBot": "2/9"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 1,
+   "row": {
+    "DupocBot": "1/3",
+    "TitForTatBot": "2/3"
+   },
+   "col": {
+    "DupocBot": "1"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  },
+  {
+   "component": 1,
+   "row": {
+    "DupocBot": "1/3",
+    "TitForTatBot": "2/3"
+   },
+   "col": {
+    "DupocBot": "1/3",
+    "TitForTatBot": "2/3"
+   },
+   "cooperation": "1",
+   "row_payoff": "2",
+   "col_payoff": "2"
+  }
+ ],
+ "replicator_stage": {
+  "n_interior_samples": 1001,
+  "n_interior_converged": 1001,
+  "n_unconverged": 0,
+  "n_budget_exhausted": 0,
+  "n_metastable": 41,
+  "seed": 20260514,
+  "horizon": 100000.0,
+  "max_horizon": 1000000000.0,
+  "tol": 1e-06,
+  "horizons_reached": {
+   "100000": 935,
+   "1e+07": 16,
+   "1e+09": 50
+  },
+  "components": [
+   {
+    "component_id": 1,
+    "n_interior": 960,
+    "basin_fraction": 0.959041,
+    "basin_ci95": [
+     0.944907,
+     0.969666
+    ],
+    "n_metastable": 0,
+    "bots": [
+     "CooperateBot",
+     "DupocBot",
+     "TitForTatBot"
+    ],
+    "n_supports": 3
+   },
+   {
+    "component_id": 3,
+    "n_interior": 41,
+    "basin_fraction": 0.040959,
+    "basin_ci95": [
+     0.030334,
+     0.055093
+    ],
+    "n_metastable": 41,
+    "bots": [
+     "DefectBot",
+     "OBot"
+    ],
+    "n_supports": 1
+   }
+  ],
+  "supports_reached": [
+   {
+    "support": [
+     "DupocBot",
+     "TitForTatBot",
+     "CooperateBot"
+    ],
+    "n_interior": 857,
+    "n_metastable": 0,
+    "invaders": [],
+    "components": [
+     1
+    ]
+   },
+   {
+    "support": [
+     "DupocBot"
+    ],
+    "n_interior": 60,
+    "n_metastable": 0,
+    "invaders": [],
+    "components": [
+     1
+    ]
+   },
+   {
+    "support": [
+     "DupocBot",
+     "TitForTatBot"
+    ],
+    "n_interior": 43,
+    "n_metastable": 0,
+    "invaders": [],
+    "components": [
+     1
+    ]
+   },
+   {
+    "support": [
+     "DefectBot",
+     "OBot"
+    ],
+    "n_interior": 41,
+    "n_metastable": 41,
+    "invaders": [
+     "DupocBot"
+    ],
+    "components": [
+     3
+    ]
+   }
+  ]
+ },
+ "uniform_starts": {
+  "n": 1000,
+  "seed": 20260514,
+  "n_converged": 1000,
+  "n_unconverged": 0,
+  "by_component": [
+   {
+    "component": 1,
+    "n": 959,
+    "n_at_last_horizon_with_an_invader": 0
+   },
+   {
+    "component": 3,
+    "n": 41,
+    "n_at_last_horizon_with_an_invader": 41
+   }
+  ],
+  "by_support": [
+   {
+    "present": [
+     "CooperateBot",
+     "DupocBot",
+     "TitForTatBot"
+    ],
+    "n": 856
+   },
+   {
+    "present": [
+     "DupocBot"
+    ],
+    "n": 60
+   },
+   {
+    "present": [
+     "DupocBot",
+     "TitForTatBot"
+    ],
+    "n": 43
+   },
+   {
+    "present": [
+     "DefectBot",
+     "OBot"
+    ],
+    "n": 41
+   }
+  ],
+  "final_share_range": {
+   "CooperateBot": [
+    0.0,
+    0.623301
+   ],
+   "CupodBot": [
+    0.0,
+    0.0
+   ],
+   "DBot": [
+    0.0,
+    0.0
+   ],
+   "DefectBot": [
+    0.0,
+    0.747196
+   ],
+   "DupocBot": [
+    0.0,
+    1.0
+   ],
+   "EBot": [
+    0.0,
+    0.0
+   ],
+   "OBot": [
+    0.0,
+    0.252805
+   ],
+   "TitForTatBot": [
+    0.0,
+    0.639682
+   ]
+  },
+  "centre_start_ends_on": [
+   "CooperateBot",
+   "DupocBot",
+   "TitForTatBot"
+  ]
+ }
+}

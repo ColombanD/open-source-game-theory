@@ -17,6 +17,10 @@ worktree holds no engine runs.*
 > below has been re-run; re-run before quoting.
 > Same day, second change: `DIMDID × CIMCIC` is the THEOREM `(C, D)` (`Cells/SelfDual.lean`). The engine-side runs
 > already used that value; the HINGE-side runs of `body8+trolls+provers` used `(D, D)`, which is impossible.
+>
+> **Current numbers (2026-11-11):** the sweeps were re-run with both cells, and with the equilibrium-component and
+> replicator-convergence fixes of 2026-11-10. The results the paper quotes are tracked in `app/paper_results/` and
+> printed by `python -m pd_runner.paper.numbers` (`REPRODUCING.md` at the repository root).
 
 ---
 
