@@ -1,0 +1,79 @@
+{
+ "body8_sprime_t003_a070_6add2eee1773": {
+  "grid_points": [
+   [
+    0.03,
+    0.7
+   ]
+  ],
+  "time_avg_coop_mean": 0.2017446195523563,
+  "min": 0.16789844905077855,
+  "max": 0.23921098589775444,
+  "support": [
+   "CupodBot",
+   "DupocBot",
+   "EBot",
+   "TitForTatBot"
+  ],
+  "n_unconverged": 100,
+  "n": 100
+ },
+ "body8_sprime_t015_a080_23d61463b3db": {
+  "grid_points": [
+   [
+    0.15,
+    0.8
+   ]
+  ],
+  "time_avg_coop_mean": 0.1962024443625133,
+  "min": 0.16668682009717686,
+  "max": 0.23515870018001145,
+  "support": [
+   "CupodBot",
+   "DupocBot",
+   "EBot",
+   "TitForTatBot"
+  ],
+  "n_unconverged": 100,
+  "n": 100
+ },
+ "body8_sprime_t037_a090_9d7abc30aa8a": {
+  "grid_points": [
+   [
+    0.13,
+    0.8
+   ],
+   [
+    0.14,
+    0.8
+   ],
+   [
+    0.34,
+    0.9
+   ],
+   [
+    0.35,
+    0.9
+   ],
+   [
+    0.36,
+    0.9
+   ],
+   [
+    0.37,
+    0.9
+   ]
+  ],
+  "time_avg_coop_mean": 0.2007876320234346,
+  "min": 0.16784138703192966,
+  "max": 0.23844359484121624,
+  "support": [
+   "CupodBot",
+   "DupocBot",
+   "EBot",
+   "TitForTatBot"
+  ],
+  "n_unconverged": 100,
+  "n": 100
+ }
+}

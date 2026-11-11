@@ -1,0 +1,8 @@
+# Fine-grid partial-transparency sweeps (run_fine.sh, run_fine_low_alpha.sh): same rule as ../egt/.gitignore.
+# The run directories (~5,000 files) and their summaries are reproducible outputs and stay out of git.
+# Tracked here: the two run scripts, cycle_average.py and its output, and figures/ (the PDFs and the numbers
+# behind them, written by latex/scripts/gen_partial_transparency_figs.py).
+runs/
+sweep_summary*.json
+logs/
+figures/*.png
