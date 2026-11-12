@@ -1,0 +1,9 @@
+# Output of the fine-grid partial-transparency sweeps (app/scripts/rerun_paper_experiments.sh): same rule as
+# ../egt/.gitignore. The run directories (~5,000 files), their summaries and the logs are reproducible and stay
+# out of git; the numbers the paper reads from them are in app/paper_results/ (python -m pd_runner.paper.snapshot).
+# Tracked here: figures/, the two PDFs of the paper and the numbers behind them, written by
+# latex/scripts/gen_partial_transparency_figs.py.
+runs/
+sweep_summary*.json
+logs/
+figures/*.png

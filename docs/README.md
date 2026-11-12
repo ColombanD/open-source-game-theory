@@ -9,7 +9,7 @@ say *why*. Names are stable; older notes cite each other by name.
 
 | Note | What it holds |
 |---|---|
-| [`SPRIME_DESIGN_RATIONALE.md`](notes/SPRIME_DESIGN_RATIONALE.md) | The trusted base of PA-`S'`: the nine definitions a reader accepts by eye, and the one design choice behind each. Read first. |
+| [`SPRIME_DESIGN_RATIONALE.md`](notes/SPRIME_DESIGN_RATIONALE.md) | The trusted base of PA-`S'`: the ten definitions a reader accepts by eye, and the one design choice behind each. Read first. |
 | [`ARITHMETIZED_S_RESULTS.md`](notes/ARITHMETIZED_S_RESULTS.md) | What `arith/` proves: PBLT, bounded inner necessitation, the matrix, the floors, the flips. |
 | [`ROUTE_B_SCOPE.md`](notes/ROUTE_B_SCOPE.md) | The cell-by-cell programme (route B): methods per cell class, route (c) for budget-carrying snapshots, what is deliberately out of scope (LegibleBot, OptimBot, WaryBot's floors). |
 | [`ROUTE_B_CENSUS.md`](notes/ROUTE_B_CENSUS.md) | The ledger over the engine's census rows: stated / agree / flip / floor / excluded, cell by cell. |

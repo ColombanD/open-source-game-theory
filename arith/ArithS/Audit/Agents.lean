@@ -5,6 +5,7 @@ import ArithS.Agents.InstanceV
 import ArithS.Agents.FitBox
 import ArithS.Agents.CodeTermSlot
 import ArithS.Agents.CodeTermAbs
+import ArithS.Agents.CodeTranspose
 
 /-!
 # ArithS.Audit.Agents — the axiom census of the arithmetized layer: Agents
@@ -34,6 +35,17 @@ namespace ArithS
 #print axioms progCode_subst
 #print axioms templateCode_subst
 #print axioms transposeCode_progCode
+
+-- τ with boxes (`Agents/CodeTranspose.lean`): a `.box` names the template of its body by `boxQuote`, a closed
+-- term carrying an action constant; τ acts on it, it denotes the code under the standard reading, and the
+-- code-level transposition is the engine's on every program without a tau constructor.
+#print axioms lMap_swap_boxQuote
+#print axioms val_boxQuote
+#print axioms val_lMap_swap_boxQuote
+#print axioms lMap_swap_templateAt_of_transposableF
+#print axioms lMap_swap_template_of_transposableF
+#print axioms transposeCode_progCode_of_transposableP
+#print axioms lMap_swap_sentenceAt_of_transposableP
 
 -- FitBox: Critch's (b) for box-carrying guards — the positive budget-linear bound and the
 -- obstruction: under Cantor pairing a searcher whose guard names its own budget cannot fit.

@@ -39,9 +39,9 @@ BROKEN until it is restored.
 
 # Part I — PA-`S'`, the arithmetized proof system (`arith/ArithS`)
 
-**Read first:** `arith/ArithS/Tour.lean` (the nine trusted definitions at ℕ by `rfl`, the red cell
+**Read first:** `arith/ArithS/Tour.lean` (the ten trusted definitions at ℕ by `rfl`, the red cell
 step by step, the headline `#check`s, the census), then `arith/ArithS/README.md` (the four tiers,
-the nine definitions in reading order, the engine↔ArithS↔paper dictionary), then
+the ten definitions in reading order, the engine↔ArithS↔paper dictionary), then
 `docs/notes/SPRIME_DESIGN_RATIONALE.md` (what a reader accepts by eye), `ARITHMETIZED_S_RESULTS.md`
 (what is proved), `ROUTE_B_SCOPE.md` + `ROUTE_B_CENSUS.md` (the cell programme and its ledger),
 `ARITH_TRAPS.md` (read before writing a line of `ArithS`), `arith/PATHS.md` (the 2026-09-28 layer
@@ -61,11 +61,11 @@ every `#print axioms` the build runs. `lake exe export_sprime_outcomes` writes
 | **Theory** | `Theory/{LangAct,TheoryAct,Transpose,Sound,Symmetry}` | `LAct = ℒₒᵣ + {c_C, c_D}`; `TAct = PA ∪ {c_C ≠ c_D, c_D ≠ c_C, actionAxiom}` (the constants are `0/1` in one of two orders); τ = the constant swap, a language automorphism; the two standard readings `stdReading`/`swappedReading` and `TAct_complete_of_readings` — the whole positive method; soundness in ℕ — the whole negative method. |
 | **Length** | `Length/{Length,SequentLength,DerivationLength,MetaLength,Proper,ProofLength}` | `proofLen`: the structural symbol count of a coded derivation (symbol-blind, so τ preserves it exactly; PROPER: `codeBound k = exp³(12k)+1`); `proofLen ⌜d⌝ = proofLenMeta d`. |
 | **The box** | `Box/{Bew,BewV,Cut,CutV,ProperBound}` | `□_k σ := ∃ d < codeBound k, Proof TAct d ⌜σ⌝ ∧ proofLen d ≤ k` (`LenBox`, Δ₁, the evaluator's box) and `LenBoxUnbounded` (Σ₁, the Löb argument's box), equal in every model. Bounded D2 with length accounting. Notation `□[k] φ` (`ArithS/Notation.lean`). |
-| **Agents** | `Agents/{Prog,CodeTerm,CodeTermAbs,CodeTermSlot,RevalueTemplate,BinNumeral,Template,Guard,SubstTemplate,Subst,Code,Instance,InstanceV,Fit,FitBox,SysClose,SysTemplate}` | Program codes on the polynomial pairing `ppair`; descriptions are TERMS in binary numerals (`codeTerm`); the six-variable `guardTemplate` and the general `template : PD.Formula → Semisentence LAct 6`; `substCode` = the engine's one-shot `Prog.subst`; **route (c)**: a seventh slot `#6` filled with the node's own budget at guard time (`guardCodeB`), GENERIC — a closed program inside a guard is described with its budget abstracted to the slot, through systems too (`guardCodeB_templateCodeAt`, `guardCodeB_sysCloseTemplateAt`); the thirteen-variable `templateAt` with member pronoun slots for `.sys`. |
+| **Agents** | `Agents/{Prog,CodeTerm,CodeTermAbs,CodeTermSlot,RevalueTemplate,BinNumeral,Template,Guard,SubstTemplate,Subst,Code,CodeTranspose,Instance,InstanceV,Fit,FitBox,SysClose,SysTemplate}` | Program codes on the polynomial pairing `ppair`; descriptions are TERMS in binary numerals (`codeTerm`); the six-variable `guardTemplate` and the general `template : PD.Formula → Semisentence LAct 6`; `substCode` = the engine's one-shot `Prog.subst`; **route (c)**: a seventh slot `#6` filled with the node's own budget at guard time (`guardCodeB`), GENERIC — a closed program inside a guard is described with its budget abstracted to the slot, through systems too (`guardCodeB_templateCodeAt`, `guardCodeB_sysCloseTemplateAt`); the thirteen-variable `templateAt` with member pronoun slots for `.sys`; a `.box` names its body by `boxQuote`, a closed term carrying an action constant (2026-11-09), so that τ re-values it (`CodeTranspose`: τ on codes and templates on `transposableP` = no tau constructor, boxes allowed). |
 | **Evaluator** | `Eval/{Fixpoint,Eval,EvalN,SimTest,Transparency,Det,TauCheck}` | `EvalGraph n me opp p a`: a Σ₁ fixpoint mirroring the engine's `eval` clause by clause (incl. `.tvote/.sys/.selfIdx`); `search` consults `LenBox TAct k (guardCodeB g me opp k)`; deterministic, fuel-monotone, in LOCKSTEP with the engine on search-free constructors. |
 | **PBLT** | `Loeb/{Diag,InstV,NumeralFacts}`, `Assembly/{Prep,Family,Cell,Uniform}`, `Necessitation/*` | The parametric diagonal lemma over `TAct`; Critch 2019's uniform proof of the parametric bounded Löb theorem, family-parametric (`LoebSound`, `family_found`); its one hypothesis, bounded inner necessitation, is a THEOREM: `boundedInnerNec_sixteen` (U10, degree 16, ~96k generated lines — do not open; `Necessitation/Package.lean` is the statement) and `closedInnerNec_sixteen`. |
 | **Outcome** | `Outcome/{Spec,Attr,Floor,Floors,Lint,Check,Export}`, `Outcome/Matrix/<L>.lean` | The engine's vocabulary on codes: `OutcomeSpecA regime L R (some (a, b))`, `bot P`/`const P` = `progCode` of the engine's bots; ONE `@[outcomeA] theorem outcome_<L>_vs_<R>` per ledger cell, `@[floorA] … _floor` per floor. |
-| **Cells** | `Cells/*` (uniform methods by method, Löb by bot; `Cells/Common/` shared kits) | `RedCell`/`RedCellEngine` (every `k`, τ-symmetry + soundness, no Löb); `SearchFree` (transfer at the engine's fuel); `SoundnessCells` (guard false ⇒ else branch); `PositiveCells` (`TAct ⊢ ∀¹ q` by completeness); the Löb families (`DupocMirror`, `JustBot`, `DIMCID`, `CIMCIC`, `PrudentMirror`, `JustSlot`, `KhatCells`, `*Engine`, `DupocTrollBot`, `Dimdid`, `DimdidTroll`, `DupocTrollPrudent`); `FlipCells`/`DimcidFlips`/`CupodOBot` (the disagreements with the engine); `FloorDichotomy`/`FloorVerdicts` (the floors), `FloorReductions`/`TrollReduction`/`ConReduction`/`NestedReduction` (their reductions to bounded consistency), `SelfDual` (DIMDID × CIMCIC by τ-symmetry); `Transposition` (`outcomeSpecA_transpose`, the general C/D transposition theorem on `fragP`). |
+| **Cells** | `Cells/*` (uniform methods by method, Löb by bot; `Cells/Common/` shared kits) | `RedCell`/`RedCellEngine` (every `k`, τ-symmetry + soundness, no Löb); `SearchFree` (transfer at the engine's fuel); `SoundnessCells` (guard false ⇒ else branch); `PositiveCells` (`TAct ⊢ ∀¹ q` by completeness); the Löb families (`DupocMirror`, `JustBot`, `DIMCID`, `CIMCIC`, `PrudentMirror`, `JustSlot`, `KhatCells`, `*Engine`, `DupocTrollBot`, `Dimdid`, `DimdidTroll`, `DupocTrollPrudent`); `FlipCells`/`DimcidFlips`/`CupodOBot` (the disagreements with the engine); `FloorDichotomy`/`FloorVerdicts` (the floors), `FloorReductions`/`TrollReduction`/`ConReduction`/`NestedReduction` (their reductions to bounded consistency), `SelfDual` (DIMDID × CIMCIC by τ-symmetry); `Transposition` (`outcomeSpecA_transpose`, the general C/D transposition theorem on `fragP`; §7 the same through boxes, on `transposableP`: `outcomeAtA_transpose_of_transposableP`, `opposite_of_plays_transpose_of_transposableP`). |
 | **Tau** | `Tau/{Spec,Attr,Lint,Check,Columns,Described,Quine,ClosedProbe,…}`, `Tau/Rows/*`, `Tau/Entangled/*` | The 16 paper templates as `RowSpecA` rows + `FloorBitA` floor bits; `.sys` only for ENTANGLED pairs (both self-probe); `#check_tau_rowsA strict`. |
 | **Frozen / estimates** | `Bridge/{Agent,AgentConverse,Inst,Neg}`, `Eval/Det`, `Agents/Fit*`, `Length/Proper`, `Box/ProperBound` | `Bridge/` is what remains of the T2 rule bridge `S → S'` (shown IMPOSSIBLE at polynomial budgets, `MERGE_CROSSROAD.md`; the bridge proper was deleted 2026-10-29, `ARITH_DEAD_CODE_AUDIT.md` §9): the evaluation-certificate kit the cells use (`properPlayer_*`, `inst` and its simp set, `outcome_eq_some_iff`, the size arithmetic of `FitBox`/`NeverFits`). Plus the numeric estimates. |
 
@@ -196,7 +196,7 @@ type; `omega` case-splits every `max` in a threshold tower (2ⁿ) — thresholds
 
 **Package management — ALWAYS `uv`, never `pip`:** `uv sync --extra dev`, `uv add`, `uv run pytest`,
 `uv run python -m pd_runner.…` (inside `app/`). Lint: `uv run ruff check src tests` (config in
-`pyproject.toml`, rule set `E4/E7/E9/F`, `E741` ignored; keep it green). 442 tests + 6 skipped.
+`pyproject.toml`, rule set `E4/E7/E9/F`, `E741` ignored; keep it green). 476 tests + 6 skipped.
 
 **Source of truth (`docs/notes/SPRIME_SOURCE_OF_TRUTH.md`).** PA-`S'`
 (`app/generated/sprime_outcome_theorems.json`) is the app's source of truth; the engine's export stays
@@ -245,15 +245,36 @@ in no total `S'` roster; no floor-free roster contains DupocBot. Caution grid α
 
 **EGT (`egt/`; records `docs/notes/EGT_FINDINGS_SPRIME.md`, the earlier `archive/EGT_FINDINGS.md`).** Stages:
 `static_analysis/` (pure ESS), `invasion/` (`G>`/`G≥` graphs, SCCs), `faces/` (face equilibria), `nash/`
-(extreme NE, exact `Fraction`), `replicator/` (basins — grouped by SUPPORT, not proximity; non-convergence
-is a finding), `moran/` (fixation, stochastic stability; log-space); `pipeline.py` runs a `(t, α)` sweep
+(extreme NE, exact `Fraction`; components = the connected components of the bipartite graph of extreme NE,
+NOT a midpoint test — fixed 2026-11-10), `replicator/` (LSODA on log-shares; convergence = a symmetric NE up
+to 1e-6 at BOTH `H/2` and `H`, horizons 1e5 → 1e9, never a speed test; basins are shares of ALL interior starts,
+by SUPPORT and, when the Nash stage ran, by Nash COMPONENT; a rest point with a second-order invader is flagged
+`metastable`; a game where half of the first 100 starts cycle is cut there, `truncated_cycling`; rewritten
+2026-11-10 after Riccardo Formenti's replication found the speed test passing slow escapes), `moran/` (fixation,
+stochastic stability; log-space); `pipeline.py` runs a `(t, α)` sweep
 (`--resume` reuses complete run dirs by fingerprint), `report.py` renders. PD convention `(D,C)=b,
-(C,C)=b−c, (D,D)=0, (C,D)=−c`. **EVERY RUN MADE BEFORE 2026-11-05 ON A ROSTER WITH BOTH CupodBot AND OBot IS STALE** (it
-used `(C, D)` for that cell on the engine side; the cell is the theorem `(D, D)`) — `nonprovers+dupoc` is the
-only paper roster unaffected; re-run before quoting. Headline AS LAST COMPUTED: on `body8` DupocBot is uniquely
-stochastically stable at full transparency, its share rising with selection intensity (85.9% at (M, β) =
-(100, 1); 71.2% on the hinge side); partial transparency: critical transparency U-shaped in caution, static = dynamic collapse,
-same thresholds on the syntactic channel (`EGT_FINDINGS_SPRIME.md` §10, `latex/scripts/gen_tau_*.py`).
+(C,C)=b−c, (D,D)=0, (C,D)=−c`. **Runs on disk: the re-run of 2026-11-11** (`generated/egt/sweep_logs/chain_2026-11-11.sh`;
+`CupodBot × OBot = (D, D)`, the fixed Nash components and replicator; the earlier runs are in
+`generated/egt/archive/runs_2026-10-22_pre_replicator_fix`, STALE on all three counts, and `runs_2026-11-10_first_pass`,
+made before the metastable test covered tied types with a share below 1e-3). Headline: on `body8`
+DupocBot carries 86.0% of the Moran stationary distribution at full transparency, (M, β) = (100, 1), its share rising
+with selection intensity (71.2% on the hinge side); every replicator start reaches the cooperative component on the
+7-, 8- and 12-bot rosters, 97.5% on `body8+trolls` (the rest sits near full defection, METASTABLE: DupocBot invades
+it at second order); on the 12-bot roster CIMCIC and DupocBot share the Moran mass (48.5% / 44.6%); on the hinge side of
+`body8` 959 of 1000 starts reach cooperation and 41 are metastable at full defection. The PAPER (decided 2026-11-11,
+`latex/Experiments.tex`) reports equilibria + replicator dynamics only — no Moran — and the hinge side only as a
+robustness subsection for `body8` at full transparency. **Partial transparency in the paper is the FINE grid**
+(`body8`, t step 0.01, both families, both sides, Nash + replicator): on the negative side the behavioral thresholds are
+t* = 0.14, 0.29, 0.44, 0.48, 0.66, 1 for α = 0.5 … 1, with three narrow windows where populations CYCLE; the syntactic
+ones 0.07, 0.20, 0.37, 0.57, 0.79, 1. **THE PAPER'S EXPERIMENTS ARE `pd_runner.paper`** (`REPRODUCING.md` at the root is
+the reviewer's guide, paper ↔ code): `scripts/rerun_paper_experiments.sh` runs the sweeps (~1 h; a from-scratch run reproduced the snapshot byte for byte, 2026-11-11), `paper.snapshot`
+reduces their output to the TRACKED `app/paper_results/` (dropping the centre start: the stage integrates 1,001 interior
+starts, the paper reports the 1,000 uniform draws; and adding the long-run average where populations cycle),
+`paper.numbers` prints every number of the experiments section from it, `paper.matrix` an outcome matrix with the Lean
+theorem behind each cell, `tests/test_paper_numbers.py` PINS the paper's numbers — change the paper and that test together.
+`latex/scripts/gen_partial_transparency_figs.py` reads the same snapshot.
+The coarse-grid record (`EGT_FINDINGS_SPRIME.md` §10, `latex/scripts/gen_tau_*.py`)
+was computed BEFORE the re-run and is NOT re-audited — check it against `generated/egt/analysis/` before quoting.
 **Traps:** `--alphas phases` is exact but ~|zoo|² phases per `t` (hours of Nash) — use the α list; the
 unit of work is the DISTINCT MATRIX (runs keyed by a cell hash; `grid_points` maps points to runs);
 `lrsnash` is optional and usually absent (recorded as `cross_check_performed: false`, never as passed);

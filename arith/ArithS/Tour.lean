@@ -6,11 +6,12 @@ import ArithS.Audit.RedCellAudit
 import ArithS.Audit.RedCellUnsound
 import ArithS.Necessitation.ClosedNec
 import ArithS.Readings
+import ArithS.Agents.CodeTranspose
 
 /-!
 # ArithS.Tour — a guided tour of PA-`S'`, in one file
 
-Open this file first. It restates the nine trusted definitions of `ArithS/README.md` §2 at `V = ℕ`
+Open this file first. It restates the ten trusted definitions of `ArithS/README.md` §2 at `V = ℕ`
 (each `example … := rfl` is kept in sync with the real definition by the compiler; the reading of each at ℕ is a named theorem of `ArithS.Readings`, cited here), walks through the
 red cell — the one cell to understand fully — names the headline theorems, and ends with the axiom
 census of the results it cites. Every `#check` prints the statement the paper quotes; nothing here
@@ -26,7 +27,7 @@ open PeanoMinus
 open LAct
 open PD.Bots
 
-/-! ## 1. The nine trusted definitions, at ℕ -/
+/-! ## 1. The ten trusted definitions, at ℕ -/
 
 /-! ### 1. The language: `ℒₒᵣ` plus two constant symbols, and the transposition τ -/
 
@@ -76,6 +77,14 @@ example (k : ℕ) : bot DupocBot k = progCode (DupocBot k) := rfl
 #check @guardCode                  -- fill the slots with the descriptions of the frame
 #check @guardCodeB                 -- ... and the node's own budget in the seventh slot
 #check guard_nat                   -- the guard code is the code of a sentence, true iff opp plays a against me
+
+/-! ### 7b. The name of a formula inside a box: a term carrying one action constant -/
+
+#check @boxQuote                   -- `r + d · c`, `r`/`d` the smaller code and the gap, `c` the orienting constant
+#check val_boxQuote                -- it denotes the code of the formula, at ℕ under the standard reading
+#check val_lMap_swap_boxQuote      -- ... and the code of the transposed formula under the swapped one
+#check lMap_swap_boxQuote          -- τ on the name is the name of the transposed formula
+#check @boxQuote_nat               -- the two readings, as one named theorem of `ArithS.Readings`
 
 /-! ### 8. Substitution: the engine's one-shot `Prog.subst`, on codes -/
 

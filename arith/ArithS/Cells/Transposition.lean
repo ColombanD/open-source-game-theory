@@ -3,6 +3,8 @@ import ArithS.Theory.Symmetry
 import ArithS.Cells.Common.Syntax
 import ArithS.Cells.RedCellEngine
 import ArithS.Cells.DupocEngine
+import ArithS.Agents.CodeTranspose
+import PrisonersDilemma.Bots.LlmGenerations.LegibleBot
 
 /-!
 # ArithS.Cells.Transposition — the transposition theorem of the arithmetized evaluator
@@ -32,6 +34,10 @@ the evaluator: transposing both programs transposes what they play.
   below the code bound. No hypothesis on `x`.
 * A sanity corollary: `(CupodBot, CupodBot) = (D, D)` eventually, re-derived in one line from
   `loeb_DupocBot_vs_DupocBot`, and the red-cell symmetry as an instance of `plays_transpose`.
+* With boxes (§7, 2026-11-09): the engine-level statements on `transposableP` (`Agents/CodeTranspose`: no tau
+  constructor, `.box` allowed in a guard at any depth) — `plays_transpose_of_transposableP`,
+  `outcomeAtA_transpose_of_transposableP`, `outcomeSpecA_transpose_of_transposableP`,
+  `opposite_of_plays_transpose_of_transposableP`. `fragP ⊆ transposableP`; LegibleBot is in the second only.
 
 **The well-formedness predicate.** `Transposable p` (an inductive predicate on codes): `p` is built
 from `pConst`, `pSelf`, `pOpp`, `pBot`, `pSim`, `pIte`, `pSearch`, `pTvote`, hereditarily through the
@@ -403,5 +409,132 @@ theorem opposite_of_plays_transpose {A : PD.Prog} (hA : fragP A = true) (hA' : f
     {a b : PD.Action} (ha : plays (progCode A) (progCode A.transpose) a)
     (hb : plays (progCode A.transpose) (progCode A) b) : b = a.swap :=
   plays_unique hb ((plays_transpose_self hA hA' a).mp ha)
+
+/-! ### 7. The theorem with boxes: the transposition fragment `transposableP`
+
+The engine-level theorems above are stated on `fragP`, which has no `.box` in a guard. They hold on
+`transposableP` (`Agents/CodeTranspose`): no tau constructor, `.box` allowed at any depth. The one new
+ingredient is `transposeCode_progCode_of_transposableP` — the code-level transposition of a program's code is
+the code of the engine's transposed program — which holds through a box because a box names the template of
+its body by `boxQuote`, a term τ acts on (`lMap_swap_boxQuote`). The code-level theorem
+(`evalGraph_transposeCode_iff`) never had a restriction on the stored templates. -/
+
+mutual
+/-- The transposition fragment is closed under τ̂. -/
+theorem transposableP_transpose : ∀ p : PD.Prog, transposableP p.transpose = transposableP p
+  | .const _ => rfl
+  | .self => rfl
+  | .opp => rfl
+  | .bot p => by simp only [PD.Prog.transpose, transposableP, transposableP_transpose p]
+  | .sim p q => by
+    simp only [PD.Prog.transpose, transposableP, transposableP_transpose p, transposableP_transpose q]
+  | .ite b _ p q => by
+    simp only [PD.Prog.transpose, transposableP, transposableP_transpose b, transposableP_transpose p,
+      transposableP_transpose q]
+  | .search _ φ p q => by
+    simp only [PD.Prog.transpose, transposableP, transposableF_transpose φ, transposableP_transpose p,
+      transposableP_transpose q]
+  | .tvote _ _ _ _ => rfl
+  | .sys _ _ => rfl
+  | .selfIdx _ => rfl
+/-- The transposition fragment of guards is closed under τ̂. -/
+theorem transposableF_transpose : ∀ φ : PD.Formula, transposableF φ.transpose = transposableF φ
+  | .plays p q _ => by
+    simp only [PD.Formula.transpose, transposableF, transposableP_transpose p, transposableP_transpose q]
+  | .impl φ ψ => by
+    simp only [PD.Formula.transpose, transposableF, transposableF_transpose φ, transposableF_transpose ψ]
+  | .neg φ => by simp only [PD.Formula.transpose, transposableF, transposableF_transpose φ]
+  | .box _ φ => by simp only [PD.Formula.transpose, transposableF, transposableF_transpose φ]
+  | .eq p q => by
+    simp only [PD.Formula.transpose, transposableF, transposableP_transpose p, transposableP_transpose q]
+  | .diag _ _ => rfl
+end
+
+/-- The code of a program of the transposition fragment is well-formed. -/
+theorem transposable_progCode_of_transposableP : ∀ p : PD.Prog, transposableP p = true → Transposable (progCode p)
+  | .const a, _ => by rw [progCode_const]; exact .const _
+  | .self, _ => by rw [progCode_self]; exact .self
+  | .opp, _ => by rw [progCode_opp]; exact .opp
+  | .bot p, h => by
+    simp only [transposableP] at h
+    rw [progCode_bot]; exact .bot (transposable_progCode_of_transposableP p h)
+  | .sim p q, h => by
+    simp only [transposableP, Bool.and_eq_true] at h
+    rw [progCode_sim]
+    exact .sim (transposable_progCode_of_transposableP p h.1) (transposable_progCode_of_transposableP q h.2)
+  | .ite b a p q, h => by
+    simp only [transposableP, Bool.and_eq_true] at h
+    rw [progCode_ite]
+    exact .ite _ (transposable_progCode_of_transposableP b h.1.1) (transposable_progCode_of_transposableP p h.1.2)
+      (transposable_progCode_of_transposableP q h.2)
+  | .search k φ p q, h => by
+    simp only [transposableP, Bool.and_eq_true] at h
+    rw [progCode_search]
+    exact .search k (isSemiformula_templateCodeAt₇ φ k (noSelfIdxF_of_transposableF φ h.1.1))
+      (transposable_progCode_of_transposableP p h.1.2) (transposable_progCode_of_transposableP q h.2)
+  | .tvote _ _ _ _, h => by simp [transposableP] at h
+  | .sys _ _, h => by simp [transposableP] at h
+  | .selfIdx _, h => by simp [transposableP] at h
+
+/-- **Plays transpose, boxes included**: `L` plays `a` against `R` iff the transposed `L` plays the other
+action against the transposed `R`. -/
+theorem plays_transpose_of_transposableP {L R : PD.Prog} (hL : transposableP L = true)
+    (hR : transposableP R = true) (a : PD.Action) :
+    plays (progCode L) (progCode R) a ↔ plays (progCode L.transpose) (progCode R.transpose) a.swap := by
+  rw [← transposeCode_progCode_of_transposableP L hL, ← transposeCode_progCode_of_transposableP R hR]
+  exact plays_transposeCode_iff (transposable_progCode_of_transposableP L hL)
+    (transposable_progCode_of_transposableP R hR) a
+
+/-- **Divergence transposes, boxes included.** -/
+theorem diverges_transpose_of_transposableP {L R : PD.Prog} (hL : transposableP L = true)
+    (hR : transposableP R = true) :
+    diverges (progCode L) (progCode R) ↔ diverges (progCode L.transpose) (progCode R.transpose) := by
+  rw [← transposeCode_progCode_of_transposableP L hL, ← transposeCode_progCode_of_transposableP R hR]
+  exact diverges_transposeCode_iff (transposable_progCode_of_transposableP L hL)
+    (transposable_progCode_of_transposableP R hR)
+
+/-- **Outcomes transpose, boxes included**: the transposition theorem on every program without a tau
+constructor, at every budget. -/
+theorem outcomeAtA_transpose_of_transposableP {L R : PD.Prog} (hL : transposableP L = true)
+    (hR : transposableP R = true) (r : Option PD.Outcome) :
+    OutcomeAtA (progCode L) (progCode R) r ↔
+    OutcomeAtA (progCode L.transpose) (progCode R.transpose) (transposeOutcome r) := by
+  rw [← transposeCode_progCode_of_transposableP L hL, ← transposeCode_progCode_of_transposableP R hR]
+  exact outcomeAtA_transposeCode_iff (transposable_progCode_of_transposableP L hL)
+    (transposable_progCode_of_transposableP R hR) r
+
+/-- **Cells transpose, boxes included.** -/
+theorem outcomeSpecA_transpose_of_transposableP {regime : PD.BudgetRegime} {L R : ℕ → PD.Prog}
+    (hL : ∀ k, transposableP (L k) = true) (hR : ∀ k, transposableP (R k) = true) (r : Option PD.Outcome) :
+    OutcomeSpecA regime (bot L) (bot R) r ↔
+    OutcomeSpecA regime (bot fun k ↦ (L k).transpose) (bot fun k ↦ (R k).transpose) (transposeOutcome r) := by
+  cases regime with
+  | nobudget => exact outcomeAtA_transpose_of_transposableP (hL 0) (hR 0) r
+  | universal => exact forall_congr' fun k ↦ outcomeAtA_transpose_of_transposableP (hL k) (hR k) r
+  | eventual =>
+    exact exists_congr fun k₀ ↦ forall_congr' fun k ↦ imp_congr_right fun _ ↦
+      outcomeAtA_transpose_of_transposableP (hL k) (hR k) r
+
+/-- **A program and its transpose mirror each other, boxes included.** -/
+theorem plays_transpose_self_of_transposableP {A : PD.Prog} (hA : transposableP A = true) (a : PD.Action) :
+    plays (progCode A) (progCode A.transpose) a ↔ plays (progCode A.transpose) (progCode A) a.swap := by
+  have h := plays_transpose_of_transposableP hA (by rw [transposableP_transpose]; exact hA) a
+  rwa [PD.Prog.transpose_transpose] at h
+
+/-- **A program and its transpose play OPPOSITE actions, boxes included**, whenever both play. -/
+theorem opposite_of_plays_transpose_of_transposableP {A : PD.Prog} (hA : transposableP A = true)
+    {a b : PD.Action} (ha : plays (progCode A) (progCode A.transpose) a)
+    (hb : plays (progCode A.transpose) (progCode A) b) : b = a.swap :=
+  plays_unique hb ((plays_transpose_self_of_transposableP hA a).mp ha)
+
+/-- The zoo's box bot is in the transposition fragment (it is not in `fragP`). -/
+theorem transposableP_LegibleBot (kOut kIn : ℕ) : transposableP (PD.Bots.LegibleBot kOut kIn) = true := rfl
+
+/-- LegibleBot against its transpose: opposite actions, whenever both play. -/
+example (kOut kIn : ℕ) {a b : PD.Action}
+    (ha : plays (progCode (PD.Bots.LegibleBot kOut kIn)) (progCode (PD.Bots.LegibleBot kOut kIn).transpose) a)
+    (hb : plays (progCode (PD.Bots.LegibleBot kOut kIn).transpose) (progCode (PD.Bots.LegibleBot kOut kIn)) b) :
+    b = a.swap :=
+  opposite_of_plays_transpose_of_transposableP (transposableP_LegibleBot kOut kIn) ha hb
 
 end ArithS

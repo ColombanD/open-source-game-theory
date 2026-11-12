@@ -261,7 +261,9 @@ def run_stages(
     seed: int = 20260514,
     render: bool = True,
     lrsnash_bin: str = "lrsnash",
-    replicator_samples: int = 200,
+    # 1000 interior starts: the stage costs about a second per 200 starts since the 2026-11-10
+    # rewrite (adaptive solver on log-shares), and a basin's 95% interval is then about ±1.5 points.
+    replicator_samples: int = 1000,
     moran_populations: tuple[int, ...] = (10, 50, 100),
     moran_betas: tuple[float, ...] = (0.01, 0.1, 1.0),
     on_event: Callable[[str], None] | None = None,
@@ -355,10 +357,15 @@ def run_stages(
                     "cross_check_performed": prov["cross_check_performed"],
                 }
             elif stage == "replicator":
+                # The Nash stage of THIS run, when it ran (it precedes this
+                # stage): its extreme equilibria label the endpoints by component.
+                nash_eq = paths.stage_dir("nash") / "latest" / "equilibria.jsonl"
                 basins = run_replicator(
                     paths.numeric_csv, out_dir,
                     inherited_assumptions=paths.ess_assumptions,
                     n_samples=replicator_samples, seed=seed,
+                    equilibria_jsonl=nash_eq if (
+                        "nash" in stages and nash_eq.exists()) else None,
                 )
                 largest = max(
                     (basins.basin_fraction(a) for a in basins.attractors),
@@ -366,8 +373,13 @@ def run_stages(
                 )
                 summary = {
                     "n_attractors": len(basins.attractors),
+                    "n_interior_samples": basins.n_interior_samples,
                     "n_unconverged": basins.n_unconverged,
+                    "n_budget_exhausted": basins.n_budget_exhausted,
+                    "n_metastable": basins.n_metastable,
+                    "truncated_cycling": basins.truncated_cycling,
                     "all_converged": basins.all_converged,
+                    "components": basins.component_basins(),
                     "largest_basin": round(largest, 6),
                     "dominant_support": next(
                         (a.support(basins.names) for a in sorted(

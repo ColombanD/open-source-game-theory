@@ -128,6 +128,46 @@ def test_classify_symmetric_vs_asymmetric_pairs_hawk_dove():
 
 
 # --------------------------------------------------------------------------
+# Nash components: the bipartite graph of extreme NE, not a midpoint test
+# --------------------------------------------------------------------------
+
+
+def test_coordination_game_has_three_isolated_components():
+    """A = I: (e1, e1), (e2, e2) and the mixed NE are three isolated equilibria.
+
+    The midpoint of the two pure equilibria IS the mixed one, so a grouping
+    that merges two extreme NE whenever their midpoint is an NE reports two
+    components. The regression this test pins (fixed 2026-11-10).
+    """
+    A = np.array([[1, 0], [0, 1]], dtype=float)
+    A_frac, merged, _, _ = _enumerate_both(A)
+    classified = classify_all(A_frac, merged)
+    assert len(classified) == 3
+    assert len({c.component_id for c in classified}) == 3
+
+
+def test_a_continuum_of_equilibria_is_one_component():
+    """Two payoff-identical strategies: every pairing is an NE, one component."""
+    A = np.array([[1, 1], [1, 1]], dtype=float)
+    A_frac, merged, _, _ = _enumerate_both(A)
+    classified = classify_all(A_frac, merged)
+    assert len(classified) == 4  # the four pure pairings are the extreme NE
+    assert {c.component_id for c in classified} == {0}
+
+
+def test_components_chain_through_shared_strategies():
+    """Extreme NE that share a row or a column strategy are linked, transitively."""
+    from pd_runner.egt.nash.classification import group_components
+    from pd_runner.egt.nash.reconcile import ReconciledNE
+
+    a, b, c = (F(1), F(0), F(0)), (F(0), F(1), F(0)), (F(0), F(0), F(1))
+    ne = lambda xi, eta: ReconciledNE(xi=xi, eta=eta, support_x=(), support_y=())  # noqa: E731
+    # (a, a) - (a, b) share a row; (a, b) - (c, b) share a column; (b, c) shares neither
+    # its row strategy b nor its column strategy c with any of them (a ROW b is not a COLUMN b).
+    assert group_components([], [ne(a, a), ne(a, b), ne(c, b), ne(b, c)]) == [0, 0, 0, 1]
+
+
+# --------------------------------------------------------------------------
 # Iterated strict dominance on a NON-SQUARE reduced matrix
 # --------------------------------------------------------------------------
 

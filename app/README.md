@@ -13,7 +13,10 @@ depends on this one.
 | `eval/sprime_floors.py` | The `S'` floor dichotomies: the hinge-side pairs for the robustness check. |
 | `tau/` | Partial transparency: `matrix.py` (zoos, `TauMatrix`, the kernel-row backing), `signal.py` / `channels.py` (the σ-families over behavioral and syntactic distances), `play.py`, `sweep.py`, `def4_theorems.py` (the exported tau rows), `compare.py` (Def 3 ≡ Def 4 certification), `report.py` (the HTML report). |
 | `egt/` | Evolutionary analysis of a matrix: `static_analysis/` (ESS), `invasion/` (graphs, SCCs), `faces/` (face equilibria), `nash/` (extreme NE), `replicator/` (basins), `moran/` (fixation, stochastic stability); `pipeline.py` runs a `(t, α)` sweep, `report.py` renders it. |
+| `paper/` | The paper's experiments, from tracked results: `numbers` (every number of the experiments section), `matrix` (an outcome matrix with the Lean theorem behind each cell), `snapshot` (rebuilds `paper_results/` from the sweep output). `../REPRODUCING.md` is the guide. |
 | `settings.py` | `CELL_SOURCE` (`PD_CELL_SOURCE`, default `sprime`) and `FLOOR_POLICY` (`PD_FLOOR_POLICY`: `engine_side` default, `restrict_zoo`, `hinge_side`). |
+| `paper_results/` | The results the paper quotes, tracked: one JSON per game at full transparency, one per fine-grid sweep. `tests/test_paper_numbers.py` pins the paper's numbers against it. |
+| `scripts/rerun_paper_experiments.sh` | Re-runs every sweep of the paper from the Lean export and rebuilds `paper_results/` (about an hour). |
 | `generated/` | The exports (`sprime_outcome_theorems.json`, `sprime_tau_rows.json`, `outcome_theorems.json`, `tau_rows.json`), `source_diff.md`, and the EGT sweep output (`egt/runs/`, gitignored). |
 
 ## Quick start
@@ -28,9 +31,12 @@ uv run python -m pd_runner.eval.outcome_matrix --source engine       # the engin
 uv run python -m pd_runner.eval.source_diff                          # S vs S' diff report
 uv run python -m pd_runner.tau.compare --zoo paper --source sprime   # Def 3 ≡ Def 4 certification
 uv run python -m pd_runner.egt.pipeline --zoo body8 --t-steps 6      # a (t, α) sweep
+uv run python -m pd_runner.paper.numbers                             # the numbers of the paper's experiments
+uv run python -m pd_runner.paper.matrix                              # the paper's outcome matrix, with theorem names
 ```
 
-The paper's tables and figures are generated from here by the scripts in `../latex/scripts/`.
+The paper's tables and figures are generated from here by the scripts in `../latex/scripts/`;
+[`../REPRODUCING.md`](../REPRODUCING.md) says which script and which result file is behind each one.
 
 ## Refreshing the exports
 

@@ -23,7 +23,7 @@ three conjuncts do not depend on `k`. Hence (§6):
 * `BudgetLinear F` (constants, `fun k ↦ .box k ψ`, `.impl`, `.neg`) and
   `exists_formulaLenMeta_template_const : BudgetLinear F → ∃ c₀ c₁, ∀ k, formulaLenMeta (emb (template (F k))) ≤ c₀ + c₁ · size k`.
   A box NESTED inside a box is not budget-linear: the inner formula's budget sits inside the
-  code constant `numTB (templateCode ψ)` of the outer template, and codes are what the negative half is
+  code term `boxQuote (template13 ψ)` of the outer template, and codes are what the negative half is
   about.
 
 ## The negative half (the finding): the CODE of a binary numeral is exponential
@@ -537,8 +537,6 @@ lemma binNumeral_le_quote_boxShape_neg (k : ℕ) {w : Fin 2 → Semiterm LAct Em
   rw [neg_boxShape, neg_subst]
   exact binNumeral_le_quote_allShape k hw _ _ _
 
-lemma lMap_swap_numTB (c : ℕ) : Semiterm.lMap swap (numTB c) = numTB c := term_lMap_swap_emb _
-
 lemma lMap_swap_neg_lenProvG : Semiformula.lMap swap (∼lenProvG) = ∼lenProvG := by
   rw [LogicalConnective.HomClass.map_neg, lMap_swap_lenProvG]
 
@@ -822,7 +820,7 @@ section templateLength
 without ever being evaluated. -/
 noncomputable def boxA : Semisentence LAct 8 := progAux .self 0 ⇜ ![#1, #2, #3, #4, #5, #6, #7]
 noncomputable def boxB : Semisentence LAct 8 := progAux .opp 0 ⇜ ![#0, #2, #3, #4, #5, #6, #7]
-noncomputable def boxC (ψ : PD.Formula) : Semisentence LAct 9 := guardCodeG ⇜ ![#0, cl (numTB (templateCode ψ)), #2, #1]
+noncomputable def boxC (ψ : PD.Formula) : Semisentence LAct 9 := guardCodeG ⇜ ![#0, cl (boxQuote (template13 ψ)), #2, #1]
 
 lemma template_box_eq (k : ℕ) (ψ : PD.Formula) :
     template (.box k ψ) = ∃¹ (∃¹ (boxA ⋏ (boxB ⋏ (∃¹ (boxC ψ ⋏ (lenProvG ⇜ ![cl (numTB k), #0])))))) :=

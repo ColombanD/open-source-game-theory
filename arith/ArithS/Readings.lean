@@ -1,4 +1,5 @@
 import ArithS.Agents.Code
+import ArithS.Agents.CodeTranspose
 import ArithS.Box.Cut
 import ArithS.Length.MetaLength
 import ArithS.Notation
@@ -20,6 +21,7 @@ files point here from their reading guides.
 | 4 | `LenBox` (`□[k] φ`) | `box_nat` — `□[k] ⌜σ⌝` holds iff some meta derivation of `σ` has length `≤ k` |
 | 5 | program codes | `progCode_*` — the engine's constructors map to the tagged codes |
 | 6 | descriptions | `description_nat`, `binNumeral_nat` — the term's code is the code's term and it DENOTES the code |
+| 6b | the name of a formula inside a box | `boxQuote_nat` — the name denotes the formula's code under the standard reading, the transposed formula's code under the swapped one |
 | 7 | the guard | `guard_nat` — the runtime guard code is the code of the guard sentence, true iff `opp` plays `a` against `me` |
 | 8 | substitution | `progCode_subst` — `substCode` is the engine's `Prog.subst` on codes |
 | 9 | the evaluator | `eval_deterministic_nat`, `eval_monotone_nat` |
@@ -89,6 +91,15 @@ theorem binNumeral_nat (n : ℕ) :
     (⌜binNumeralMeta n⌝ : ℕ) = binNumeral n ∧
     (binNumeralMeta n).val (s := standardModel ℕ) ![] Empty.elim = n :=
   ⟨quote_binNumeralMeta_nat n, val_binNumeralMeta n⟩
+
+/-! ### 6b. The name of a formula inside a box: what it denotes under each reading -/
+
+/-- **The reading of the box quote.** `boxQuote σ` denotes `⌜σ⌝` under the standard reading of the constants, and its
+transposition — the same term under the swapped reading — denotes `⌜τσ⌝`. -/
+theorem boxQuote_nat {n : ℕ} (σ : Semisentence LAct n) :
+    (boxQuote σ).val (s := stdReadingNat) ![] Empty.elim = (⌜σ⌝ : ℕ) ∧
+    (Semiterm.lMap swap (boxQuote σ)).val (s := stdReadingNat) ![] Empty.elim = (⌜Semiformula.lMap swap σ⌝ : ℕ) :=
+  ⟨val_boxQuote σ, val_lMap_swap_boxQuote σ⟩
 
 /-! ### 7. The guard: its code, and its truth -/
 

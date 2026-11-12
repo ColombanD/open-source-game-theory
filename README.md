@@ -7,6 +7,17 @@ analysis of the resulting populations. Companion to the paper
 *Open Source Game Theory: Formalization, Transparency, and Cooperation in Program Games*
 (Duclaux, Formenti, Cobben, Zhang, Schölkopf and Jin; see [Authors and citation](#authors-and-citation)).
 
+## Start here
+
+* **To check a claim of the paper:** [`REPRODUCING.md`](REPRODUCING.md) maps every theorem, table and figure to its
+  code and gives the command that checks it. It also translates the paper's vocabulary into the code's: the
+  paper's formal system `S` is `arith/` (called PA-`S'` in the code), its program libraries are "zoos", and the
+  negative side of a hinge is `engine_side`.
+* **To read the formalization:** [`arith/ArithS/Tour.lean`](arith/ArithS/Tour.lean), then
+  [`arith/ArithS/README.md`](arith/ArithS/README.md).
+* **To read the experiments' results:** `cd app && uv run python -m pd_runner.paper.numbers`, from the tracked
+  folder [`app/paper_results/`](app/paper_results/).
+
 ## Layout
 
 | Directory | What it is | Build / run |

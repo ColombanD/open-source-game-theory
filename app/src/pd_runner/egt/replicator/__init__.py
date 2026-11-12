@@ -20,8 +20,11 @@ was a TODO — so this is new code rather than a port.
 
 from .dynamics import (
     Trajectory,
-    replicator_field,
+    growth_rates,
     integrate,
+    nash_labels,
+    replicator_field,
+    second_order_invaders,
     simplex_samples,
 )
 from .basins import (
@@ -32,8 +35,11 @@ from .basins import (
 
 __all__ = [
     "Trajectory",
+    "growth_rates",
     "replicator_field",
     "integrate",
+    "nash_labels",
+    "second_order_invaders",
     "simplex_samples",
     "Attractor",
     "BasinResult",

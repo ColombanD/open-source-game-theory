@@ -1326,5 +1326,10 @@ example : ∀ k : ℕ, EvalGraph 2 (Dupoc k) (Cupod k) (Dupoc k) 1 ∧ EvalGraph
 #print axioms outcomeSpecA_transpose
 #print axioms plays_transpose_self
 #print axioms opposite_of_plays_transpose
+-- The same on the transposition fragment `transposableP` (boxes allowed in guards).
+#print axioms transposable_progCode_of_transposableP
+#print axioms outcomeAtA_transpose_of_transposableP
+#print axioms outcomeSpecA_transpose_of_transposableP
+#print axioms opposite_of_plays_transpose_of_transposableP
 
 end ArithS

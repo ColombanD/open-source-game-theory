@@ -5,11 +5,19 @@ Asymmetric NE: xi != eta. Every asymmetric NE (xi, eta) of a symmetric
               bimatrix game (A, A^T) is paired with (eta, xi), which is
               also an NE. We assign matched pairs a shared id.
 
-Nash components are connected sets of NE. We group extreme NE into
-components by repeatedly testing midpoint NE-ness on the original A:
-two extreme NE are in the same component iff their midpoint (and hence
-the whole connecting segment, by convexity of the NE set on a face) is
-also an NE.
+Nash components are the connected components of the equilibrium set. That set
+is the union of conv(X) x conv(Y) over the maximal bicliques X x Y of the
+bipartite graph whose nodes are the row strategies and the column strategies of
+the extreme NE, with one edge per extreme NE (Avis, Rosenberg, Savani and von
+Stengel 2010; Jansen 1981). Two extreme NE therefore lie in one component iff a
+path of that graph joins them, i.e. iff a chain of extreme NE links them, each
+sharing its row strategy or its column strategy with the next.
+
+Until 2026-11-10 the grouping tested whether the MIDPOINT of two extreme NE is
+an NE. That is not sufficient: the midpoint can be a separate equilibrium. In
+the coordination game A = I, (e1, e1) and (e2, e2) are isolated, yet their
+midpoint is the third, mixed equilibrium, so the test reported two components
+where there are three.
 """
 
 from __future__ import annotations
@@ -27,32 +35,6 @@ class ClassifiedNE:
     classification: str                 # "symmetric" | "asymmetric"
     asymmetric_pair_id: Optional[int]
     component_id: int
-
-
-def _is_ne(
-    A: List[List[Fraction]],
-    xi: Tuple[Fraction, ...],
-    eta: Tuple[Fraction, ...],
-) -> bool:
-    """Exact test: is (xi, eta) a NE of the bimatrix (A, A^T)?
-
-    Row's BR vector: (A eta)[i] = sum_j A[i,j] eta[j].
-    Col's BR vector: (Axi_col)[j] = sum_i A[j,i] xi[i] (B = A^T).
-    """
-    n = len(A)
-    A_eta = [sum(A[i][j] * eta[j] for j in range(n)) for i in range(n)]
-    u = sum(xi[i] * A_eta[i] for i in range(n))
-    if any(A_eta[i] > u for i in range(n)):
-        return False
-    if any(xi[i] > 0 and A_eta[i] != u for i in range(n)):
-        return False
-    Axi_col = [sum(A[j][i] * xi[i] for i in range(n)) for j in range(n)]
-    v = sum(eta[j] * Axi_col[j] for j in range(n))
-    if any(Axi_col[j] > v for j in range(n)):
-        return False
-    if any(eta[j] > 0 and Axi_col[j] != v for j in range(n)):
-        return False
-    return True
 
 
 def classify_symmetry(merged: List[ReconciledNE]) -> Dict[int, Tuple[str, Optional[int]]]:
@@ -88,45 +70,30 @@ def group_components(
 ) -> List[int]:
     """Return component id for each extreme NE.
 
-    Two extreme NE i, j are in the same component iff
-    (xi_avg, eta_avg) = ((xi_i + xi_j)/2, (eta_i + eta_j)/2) is itself an NE.
-    Components are then the connected components of this relation.
+    The connected components of the bipartite graph on (row strategies, column
+    strategies) with one edge per extreme NE: two extreme NE are in the same
+    component iff a chain of extreme NE joins them, consecutive ones sharing
+    their `xi` or their `eta`. `A` is not needed (the extreme NE determine the
+    components) and is kept for the call signature.
     """
-    n = len(merged)
-    parent = list(range(n))
+    parent: Dict[Tuple[str, Tuple[Fraction, ...]], Tuple[str, Tuple[Fraction, ...]]] = {}
 
-    def find(x: int) -> int:
-        while parent[x] != x:
-            parent[x] = parent[parent[x]]
-            x = parent[x]
-        return x
+    def find(node: Tuple[str, Tuple[Fraction, ...]]) -> Tuple[str, Tuple[Fraction, ...]]:
+        parent.setdefault(node, node)
+        while parent[node] != node:
+            parent[node] = parent[parent[node]]
+            node = parent[node]
+        return node
 
-    def union(x: int, y: int) -> None:
-        rx, ry = find(x), find(y)
-        if rx != ry:
-            parent[ry] = rx
-
-    half = Fraction(1, 2)
-    for i in range(n):
-        for j in range(i + 1, n):
-            if find(i) == find(j):
-                continue
-            xi_avg = tuple(half * (merged[i].xi[k] + merged[j].xi[k]) for k in range(len(merged[i].xi)))
-            eta_avg = tuple(half * (merged[i].eta[k] + merged[j].eta[k]) for k in range(len(merged[i].eta)))
-            if _is_ne(A, xi_avg, eta_avg):
-                union(i, j)
+    for ne in merged:
+        parent[find(("row", tuple(ne.xi)))] = find(("col", tuple(ne.eta)))
 
     # Renumber so component IDs are 0..K-1 in first-occurrence order.
-    relabel: Dict[int, int] = {}
-    out: List[int] = []
-    next_id = 0
-    for i in range(n):
-        root = find(i)
-        if root not in relabel:
-            relabel[root] = next_id
-            next_id += 1
-        out.append(relabel[root])
-    return out
+    relabel: Dict[Tuple[str, Tuple[Fraction, ...]], int] = {}
+    return [
+        relabel.setdefault(find(("row", tuple(ne.xi))), len(relabel))
+        for ne in merged
+    ]
 
 
 def classify_all(

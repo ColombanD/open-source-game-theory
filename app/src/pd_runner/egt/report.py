@@ -977,8 +977,8 @@ def _replicator_section(ts, alphas, index) -> str:
                     unconverged = (
                         f'<p class="banner warn"><b>{data["n_unconverged"]} of '
                         f'{data["n_interior_samples"] + data["n_vertex_samples"]} '
-                        "trajectories did not settle.</b> They are excluded from "
-                        "every basin below. A game with closed orbits cycles "
+                        "trajectories did not settle.</b> They are assigned to no "
+                        "attractor and count against every basin below. A game with closed orbits cycles "
                         "forever instead of converging — that is a result about "
                         "the dynamics, not a numerical failure.</p>"
                         if data["n_unconverged"] else ""
@@ -1009,7 +1009,7 @@ def _replicator_section(ts, alphas, index) -> str:
                         f"{unconverged}"
                         f'<p class="note">{data["n_interior_converged"]} of '
                         f'{data["n_interior_samples"]} interior starts settled. '
-                        "Basins are shares of those; monoculture starts are "
+                        "Basins are shares of all interior starts; monoculture starts are "
                         "listed separately in the last column because they are "
                         "a measure-zero set.</p>"
                         f'<div class="panel"><table class="fam"><thead><tr>'
