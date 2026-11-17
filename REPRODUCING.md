@@ -1,7 +1,7 @@
 # Reproducing the paper
 
-This guide maps each claim of the paper *Open Source Game Theory: Formalization, Transparency, and Cooperation
-in Program Games* to the code that backs it, and gives the command that checks it.
+This guide maps each claim of the paper *Formalization, Transparency, and Collusion in Open-Source Game Theory*
+to the code that backs it, and gives the command that checks it.
 
 There are two kinds of claims and two ways to check them.
 

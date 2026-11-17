@@ -3,7 +3,7 @@
 **What this project is.** A mechanization of **open-source game theory (OSGT)** — Critch 2022's
 bounded-proof-search agents — in **Lean 4**, its extension to **partial transparency** (τ-bots),
 and the **evolutionary** analysis of the resulting populations. Companion code of the paper
-*Open Source Game Theory: Formalization, Transparency, and Cooperation in Program Games*
+*Formalization, Transparency, and Collusion in Open-Source Game Theory*
 (`latex/paper.tex`; Duclaux, Formenti, Cobben, Zhang, Schölkopf, Jin — the author list is `CITATION.cff`).
 Four parts, in dependency order (each depends only on the ones above it):
 

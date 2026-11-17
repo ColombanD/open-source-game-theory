@@ -4,7 +4,7 @@ A Lean 4 mechanization of **open-source game theory** (Critch 2022: agents that 
 source code and search for bounded proofs about it), the **partial-transparency** extension
 (τ-bots: agents that receive a blurred signal about their opponent), and the **evolutionary**
 analysis of the resulting populations. Companion to the paper
-*Open Source Game Theory: Formalization, Transparency, and Cooperation in Program Games*
+*Formalization, Transparency, and Collusion in Open-Source Game Theory*
 (Duclaux, Formenti, Cobben, Zhang, Schölkopf and Jin; see [Authors and citation](#authors-and-citation)).
 
 ## Start here
@@ -57,7 +57,7 @@ To cite this repository, cite the paper ([`CITATION.cff`](CITATION.cff) carries 
 
 ```bibtex
 @unpublished{duclaux2026osgt,
-  title  = {Open Source Game Theory: Formalization, Transparency, and Cooperation in Program Games},
+  title  = {Formalization, Transparency, and Collusion in Open-Source Game Theory},
   author = {Duclaux, Colomban and Formenti, Riccardo and Cobben, Pepijn and Zhang, Terry Jingchen and
             Sch{\"o}lkopf, Bernhard and Jin, Zhijing},
   year   = {2026},
