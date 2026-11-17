@@ -1,7 +1,7 @@
 # Reproducing the paper
 
-This guide maps each claim of the paper *Open Source Game Theory: Formalization, Transparency, and Cooperation
-in Program Games* to the code that backs it, and gives the command that checks it.
+This guide maps each claim of the paper *Formalization, Transparency, and Collusion in Open-Source Game Theory*
+to the code that backs it, and gives the command that checks it.
 
 There are two kinds of claims and two ways to check them.
 
@@ -30,7 +30,7 @@ The code was written before the paper's vocabulary settled. Read the code throug
 | The paper says | The code says |
 |---|---|
 | the formal system `S` | **PA-`S'`**, `S'`, `sprime`, `ArithS`: everything under `arith/` |
-| (not in the paper) | **`S`**, `Pf`, "the engine's rule system": an earlier rule-based proof system in `engine/`, kept as a comparison. No theorem of `arith/` uses it. |
+| (not in the paper) | **`S`**, `Pf`, "the engine's rule system": an earlier rule-based proof system in `engine/`, kept as a comparison. No result of `arith/` rests on a derivation in it. |
 | program | bot, `Prog` |
 | program library | zoo |
 | the library `Σ` (8 programs) | `body8` |
@@ -197,6 +197,9 @@ Paths are relative to `app/src/pd_runner/`.
 
 * `engine/`'s rule-based proof system `S` and its own outcome theorems (`engine/PrisonersDilemma/Theorems/`), and the
   second export `outcome_theorems.json`. `app/generated/source_diff.md` lists where the two systems disagree.
+  One exception: for the 28 pairs of programs that contain no proof search, `arith/` reuses the engine's theorem
+  (`arith/ArithS/Cells/SearchFree.lean`). Those theorems are facts about the evaluator alone and involve no proof
+  system.
 * Programs beyond the paper's: `MirrorBot`, `JustBot`, `GuardianBot`, `WaryBot`, `LegibleBot`, `OptimBot`.
 * Other evolutionary stages (`egt/moran/`, `egt/invasion/`, `egt/faces/`, `egt/static_analysis/`) and their generators
   `latex/scripts/gen_moran_body.py`, `gen_replicator_body.py`, `gen_zoo_ladder.py`, `gen_tau_body.py`,
